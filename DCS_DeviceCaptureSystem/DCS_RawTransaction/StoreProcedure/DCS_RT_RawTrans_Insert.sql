@@ -20,7 +20,7 @@ BEGIN
     (
 		LoginName					VARCHAR(100) CHARACTER SET UTF8MB4 	NOT NULL	
 		, SubscriberName			VARCHAR(50) 						NOT NULL
-		, TransDate					TIMESTAMP(4)	 					NOT NULL
+		, TransTime					TIMESTAMP(4)	 					NOT NULL
 		, DeviceCode				VARCHAR(62) 						NULL		COMMENT 'Device Inject Code: 32 characters is auto generated'
 		, FingerprintCode			VARCHAR(2000)						NULL		COMMENT 'Device Fingerprint Codes, the hashcode bases on the set attributes'    
 		, FingerprintMoreInfo		TEXT	CHARACTER SET UTF8MB4		NULL
@@ -36,7 +36,7 @@ BEGIN
 	INSERT INTO Temp_Transactions
 	(	LoginName
 		, SubscriberName
-		, TransDate
+		, TransTime
 		, DeviceCode
 		, FingerprintCode
 		, FingerprintMoreInfo
@@ -51,7 +51,7 @@ BEGIN
 	SELECT
 			rt.LoginName
 			, rt.SubscriberName
-			, rt.TransDate
+			, rt.TransTime
 			, rt.DeviceCode
 			, (CASE WHEN rt.DeviceCode ="" THEN "" ELSE rt.FingerprintCode 		END) 	AS FingerprintCode
 			, (CASE WHEN rt.DeviceCode ="" THEN "" ELSE rt.FingerprintMoreInfo	END) AS FingerprintMoreInfo
@@ -67,7 +67,7 @@ BEGIN
 			 "$[*]" COLUMNS(
 							  LoginName				VARCHAR(100) CHARACTER SET UTF8MB4	PATH "$.LoginName"       
 							, SubscriberName		VARCHAR(50) 	PATH "$.SubscriberName"   
-							, TransDate				TIMESTAMP(4) 	PATH "$.TransDate"
+							, TransTime				TIMESTAMP(4) 	PATH "$.TransTime"
 							, DeviceCode			VARCHAR(64)		PATH "$.DeviceCode"
 							, FingerprintCode		VARCHAR(2000)	PATH "$.FingerprintCode"
 							, FingerprintMoreInfo	TEXT	CHARACTER SET UTF8MB4  	PATH "$.FingerprintMoreInfo"
@@ -84,7 +84,7 @@ BEGIN
 	INSERT INTO DCS_RawTransaction.RawTransaction
 	(	LoginName
 		, SubscriberName
-		, TransDate
+		, TransTime
 		, CreatedDate
 		, DeviceCode
 		, FingerprintCode
@@ -100,8 +100,8 @@ BEGIN
 	SELECT
 		rt.LoginName
 		, rt.SubscriberName
-		, rt.TransDate
-		, DATE(rt.TransDate) AS CreatedDate
+		, rt.TransTime
+		, DATE(rt.TransTime) AS CreatedDate
 		, rt.DeviceCode
 		, rt.FingerprintCode
 		, rt.FingerprintMoreInfo

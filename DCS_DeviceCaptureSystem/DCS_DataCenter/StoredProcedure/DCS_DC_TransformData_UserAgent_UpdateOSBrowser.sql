@@ -46,7 +46,7 @@ BEGIN
 		UserAgentKey 		BIGINT
 		,	BrowserName		VARCHAR(100)
 		,	OSName			VARCHAR(100)
-        ,   CreatedDate		TIMESTAMP(4)
+        ,   CreatedDate		DATETIME
         ,	BrowserID		INT
         ,	OSID			INT
 	);
@@ -54,10 +54,10 @@ BEGIN
 	#=======================
 
 	INSERT INTO Temp_UserAgent(UserAgentKey, BrowserName, OSName, CreatedDate)
-	SELECT 	UserAgentKey
-            , BrowserName
-            , OSName
-            , CreatedDate
+	SELECT 	tmpUA.UserAgentKey
+            , tmpUA.BrowserName
+            , tmpUA.OSName
+            , tmpUA.CreatedDate
 	FROM
 	JSON_TABLE(
 				ip_UserAgentJson
@@ -65,7 +65,7 @@ BEGIN
 								UserAgentKey 		BIGINT PATH "$.UserAgentKey"							
 								, BrowserName		VARCHAR(100) PATH "$.BrowserName" 
 								, OSName			VARCHAR(100) PATH "$.OSName"
-                                , CreatedDate		TIMESTAMP(4) PATH "$.CreatedDate" 
+                                , CreatedDate		DATETIME PATH "$.CreatedDate" 
 								)
 				) AS  tmpUA;
 

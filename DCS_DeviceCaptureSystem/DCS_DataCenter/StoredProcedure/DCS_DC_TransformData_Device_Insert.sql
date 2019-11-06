@@ -48,46 +48,47 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_InputTrans;
 	CREATE TEMPORARY TABLE Temp_InputTrans 
 	(	
-		StagingTransID			BIGINT			UNSIGNED
+		TransID			BIGINT			UNSIGNED
 		, AccountID				BIGINT			UNSIGNED
 		, SubscriberID			INT
         , UserAgentKey			BIGINT			UNSIGNED
 		, DeviceCodeKey			BIGINT			UNSIGNED
 	);
-
+    
 	#========GET INPUT DATA===========================
 	INSERT INTO Temp_InputTrans(
-				StagingTransID 
+				TransID 
 				, AccountID
 				, SubscriberID
                 , UserAgentKey
 				, DeviceCodeKey
 				)
-	SELECT tmpTrans.StagingTransID
-			, tmpTrans.AccountID
-			, tmpTrans.SubscriberID
-            , tmpTrans.UserAgentKey
-			, tmpTrans.DeviceCodeKey
+	SELECT TransID
+			, AccountID
+			, SubscriberID
+            , UserAgentKey
+			, DeviceCodeKey
 			 FROM
 			   JSON_TABLE(
 				ip_TransJson,
 				 "$[*]" COLUMNS(
-				  StagingTransID 			BIGINT UNSIGNED PATH "$.StagingTransId"         
+				  TransID 			BIGINT UNSIGNED PATH "$.TransId"         
 				, AccountID					BIGINT UNSIGNED PATH "$.AccountId"
 				, SubscriberID				INT PATH "$.SubscriberId"
                 , UserAgentKey 				BIGINT UNSIGNED PATH "$.UserAgentKey"         
 				, DeviceCodeKey				BIGINT UNSIGNED PATH "$.DeviceCodeKey"
 				 )
 			   ) AS  tmpTrans;
+               
     /*           
 	INSERT INTO Temp_InputTrans(
-				StagingTransID 
+				TransID 
 				, AccountID
 				, SubscriberID
                 , UserAgentKey
                 , DeviceCodeKey
 				)
-	SELECT		StagingTransID 
+	SELECT		TransID 
 				, AccountID
 				, SubscriberID
                 , UserAgentKey
@@ -100,7 +101,7 @@ BEGIN
 	/* ### PERFORMANCE START
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 	SET	vrEndTime = CURRENT_TIMESTAMP(4);
-    SELECT Count(1), Min(tts.StagingTransID), Max(tts.StagingTransID)
+    SELECT Count(1), Min(tts.TransID), Max(tts.TransID)
     INTO	vrTotalRecord, vrFromID, vrToID
     FROM	Temp_InputTrans AS tts;
     
@@ -122,7 +123,7 @@ BEGIN
 	#======GET DATA FROM RAW TRANSACTION===========================
 	DROP TEMPORARY TABLE IF EXISTS Temp_Transaction;
 	CREATE TEMPORARY TABLE Temp_Transaction(
-		StagingTransID			BIGINT	UNSIGNED
+		TransID			BIGINT	UNSIGNED
 		, AccountID				BIGINT	UNSIGNED
 		, SubscriberID			INT
         , UserAgentKey			BIGINT
@@ -133,7 +134,7 @@ BEGIN
 		
 		, PluginID				INT
 		, CreatedDate			DATETIME
-		, TransDate				DATETIME
+		, TransTime				DATETIME
 		
 		, DeviceID				BIGINT	UNSIGNED		NULL
 		, DeviceStatus			TINYINT					NULL
@@ -141,8 +142,8 @@ BEGIN
         , LastDeviceStatus		TINYINT					NULL				
 	);
 	  
-	INSERT INTO Temp_Transaction(StagingTransID, AccountID, SubscriberID, UserAgentKey, DeviceCodeKey, DeviceCode, FingerprintCode, FingerprintMoreInfo, PluginID, CreatedDate, TransDate)
-	SELECT 		tit.StagingTransID
+	INSERT INTO Temp_Transaction(TransID, AccountID, SubscriberID, UserAgentKey, DeviceCodeKey, DeviceCode, FingerprintCode, FingerprintMoreInfo, PluginID, CreatedDate, TransTime)
+	SELECT 		tit.TransID
 				, tit.AccountID
 				, tit.SubscriberID
                 , tit.UserAgentKey
@@ -152,10 +153,10 @@ BEGIN
                 , rt.FingerprintMoreInfo
 				, rt.PluginID
 				, rt.CreatedDate
-				, rt.TransDate
+				, rt.TransTime
 	FROM		Temp_InputTrans						AS tit
 	INNER JOIN	DCS_RawTransaction.RawTransaction	AS rt
-				ON	tit.StagingTransID = rt.StagingTransID;
+				ON	tit.TransID = rt.TransID;
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_InputTrans;
     
@@ -200,7 +201,7 @@ BEGIN
 	INNER JOIN	DCS_DataCenter.DeviceCode AS dc
 				ON	tts.DeviceCodeKey = dc.DeviceCodeKey
 	SET			tts.DeviceID = dc.DeviceID
-				, tts.DeviceStatus = (CASE WHEN dc.FirstStagingTransID = tts.StagingTransID THEN dc.FirstStatus ELSE vrDeviceStatusOld END)
+				, tts.DeviceStatus = (CASE WHEN dc.FirstTransID = tts.TransID THEN dc.FirstStatus ELSE vrDeviceStatusOld END)
 				, tts.FirstDeviceCode = dc.FirstDeviceCode
 	WHERE		tts.DeviceID IS NULL;
     
@@ -222,14 +223,14 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_NewDeviceCode;
 	CREATE TEMPORARY TABLE Temp_NewDeviceCode(
 		DeviceCode				VARCHAR(64)
-		, MinStagingTransID		BIGINT			UNSIGNED
-		, MaxStagingTransID		BIGINT			UNSIGNED
+		, MinTransID		BIGINT			UNSIGNED
+		, MaxTransID		BIGINT			UNSIGNED
 	);
 
-	INSERT INTO Temp_NewDeviceCode(DeviceCode, MinStagingTransID, MaxStagingTransID)
+	INSERT INTO Temp_NewDeviceCode(DeviceCode, MinTransID, MaxTransID)
 	SELECT	tts.DeviceCode
-			, MIN(tts.StagingTransID)
-			, MAX(tts.StagingTransID)
+			, MIN(tts.TransID)
+			, MAX(tts.TransID)
 	FROM	Temp_Transaction	AS tts
 	GROUP BY	tts.DeviceCode;
 	
@@ -252,7 +253,7 @@ BEGIN
     THEN		
 		UPDATE		Temp_Transaction AS tts    
 		INNER JOIN	Temp_NewDeviceCode AS tnc
-					ON	tts.StagingTransID = tnc.MinStagingTransID
+					ON	tts.TransID = tnc.MinTransID
 		INNER JOIN	DCS_DataCenter.Association AS ass USE INDEX(IX_Association_SubscriberID_AccountID_DeviceID)
 					ON tts.SubscriberID = ass.SubscriberID AND tts.AccountID = ass.AccountID
 		INNER JOIN	DCS_DataCenter.Device AS dv
@@ -284,7 +285,7 @@ BEGIN
     THEN
 		UPDATE		Temp_Transaction AS tts
 		LEFT JOIN	Temp_NewDeviceCode AS tnd
-					ON	tts.StagingTransID = tnd.MinStagingTransID
+					ON	tts.TransID = tnd.MinTransID
 		SET			tts.DeviceID = CRC32(tts.DeviceCode)
 					, tts.DeviceStatus = (CASE WHEN tnd.DeviceCode IS NOT NULL THEN vrDeviceStatusNew ELSE vrDeviceStatusOld END)
 					, tts.FirstDeviceCode = tts.DeviceCode
@@ -295,7 +296,7 @@ BEGIN
 	#==========================================================================
 	DROP TEMPORARY TABLE IF EXISTS Temp_Transaction_02;
 	CREATE TEMPORARY TABLE Temp_Transaction_02(
-		StagingTransID			BIGINT	UNSIGNED
+		TransID			BIGINT	UNSIGNED
 		, AccountID				BIGINT	UNSIGNED
 		, SubscriberID			INT
 		, DeviceCode			VARCHAR(64)
@@ -303,15 +304,15 @@ BEGIN
 		, UserAgentKey			BIGINT
 		, PluginID				INT
 		, CreatedDate			DATETIME
-		, TransDate				DATETIME
+		, TransTime				DATETIME
 		
 		, DeviceID				BIGINT	UNSIGNED		NULL
 		, DeviceStatus			TINYINT					NULL
 		, FirstDeviceCode		VARCHAR(64)				NULL
 	);
 
-	INSERT INTO Temp_Transaction_02(StagingTransID, AccountID, SubscriberID, DeviceCode, FingerprintCode, UserAgentKey, PluginID, CreatedDate, TransDate, DeviceID, DeviceStatus, FirstDeviceCode)
-	SELECT 		tts.StagingTransID
+	INSERT INTO Temp_Transaction_02(TransID, AccountID, SubscriberID, DeviceCode, FingerprintCode, UserAgentKey, PluginID, CreatedDate, TransTime, DeviceID, DeviceStatus, FirstDeviceCode)
+	SELECT 		tts.TransID
 				, tts.AccountID
 				, tts.SubscriberID
 				, tts.DeviceCode
@@ -319,28 +320,28 @@ BEGIN
 				, tts.UserAgentKey
 				, tts.PluginID
 				, tts.CreatedDate
-				, tts.TransDate
+				, tts.TransTime
 				, tts.DeviceID
 				, tts.DeviceStatus
 				, tts.FirstDeviceCode
 	FROM			Temp_Transaction		AS tts
 	INNER JOIN	Temp_NewDeviceCode		AS tnd
-				ON tts.StagingTransID = tnd.MinStagingTransID;
+				ON tts.TransID = tnd.MinTransID;
 
 	UPDATE 		Temp_Transaction AS tts
 	INNER JOIN	Temp_NewDeviceCode	AS tnd
-				ON tts.StagingTransID = tnd.MinStagingTransID
+				ON tts.TransID = tnd.MinTransID
 	INNER JOIN	Temp_Transaction_02	tts02
 				ON	tts02.AccountID = tts.AccountID
-					AND tts.StagingTransID > tts02.StagingTransID
+					AND tts.TransID > tts02.TransID
 					AND DCS_DC_ISLISTSMATCHBYITEM(';',tts.FingerprintCode, tts02.FingerprintCode) = 1
 	SET		tts.DeviceStatus = vrDeviceStatusRecover
 			, tts.FirstDeviceCode = tts02.DeviceCode
 			, tts.DeviceID	= tts02.DeviceID;
 	
     TRUNCATE TABLE Temp_Transaction_02;
-    INSERT INTO Temp_Transaction_02(StagingTransID, AccountID, SubscriberID, DeviceCode, FingerprintCode, UserAgentKey, PluginID, CreatedDate, TransDate, DeviceID, DeviceStatus, FirstDeviceCode)
-	SELECT 		tts.StagingTransID
+    INSERT INTO Temp_Transaction_02(TransID, AccountID, SubscriberID, DeviceCode, FingerprintCode, UserAgentKey, PluginID, CreatedDate, TransTime, DeviceID, DeviceStatus, FirstDeviceCode)
+	SELECT 		tts.TransID
 				, tts.AccountID
 				, tts.SubscriberID
 				, tts.DeviceCode
@@ -348,13 +349,13 @@ BEGIN
 				, tts.UserAgentKey
 				, tts.PluginID
 				, tts.CreatedDate
-				, tts.TransDate
+				, tts.TransTime
 				, tts.DeviceID
 				, tts.DeviceStatus
 				, tts.FirstDeviceCode
 	FROM		Temp_Transaction		AS tts
 	INNER JOIN	Temp_NewDeviceCode		AS tnd
-				ON tts.StagingTransID = tnd.MaxStagingTransID;
+				ON tts.TransID = tnd.MaxTransID;
     
     UPDATE 		Temp_Transaction AS tts
     INNER JOIN	Temp_Transaction_02 AS tts02
@@ -377,30 +378,31 @@ BEGIN
     ### PERFORMANCE  END */
     
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    
 	#=======Insert New Device    
-	INSERT IGNORE INTO	DCS_DataCenter.Device (DeviceID, FirstDeviceCode, UserAgentKey, FirstStagingTransID, CreatedDate, DeviceStatus, InsertTime)
-	SELECT		tts.DeviceID
+	INSERT IGNORE INTO	DCS_DataCenter.Device (DeviceKey, FirstDeviceCode, UserAgentKey, FirstTransID, CreatedDate, DeviceStatus, InsertTime)
+	SELECT		tts.DeviceCodeKey
 				, tts.FirstDeviceCode
 				, tts.UserAgentKey
-				, tts.StagingTransID
+				, tts.TransID
 				, tts.CreatedDate
 				, tts.DeviceStatus
                 , CURRENT_TIMESTAMP(4) 		AS InsertTime
 	FROM 		Temp_Transaction AS tts
 	INNER JOIN	Temp_NewDeviceCode	AS tnd
-				ON tts.StagingTransID = tnd.MinStagingTransID
+				ON tts.TransID = tnd.MinTransID
 	WHERE		tts.DeviceStatus = vrDeviceStatusNew
-    ORDER BY	tts.StagingTransID Desc;  
-    
+    ORDER BY	tts.TransID Desc;  
+   
     DROP TEMPORARY TABLE IF EXISTS Temp_DeviceMaxID;
     CREATE TEMPORARY TABLE Temp_DeviceMaxID
     (
 			DeviceID	BIGINT
-            , MaxStagingTransID	BIGINT	
+            , MaxTransID	BIGINT	
     );
     
-	INSERT INTO	Temp_DeviceMaxID(DeviceID,MaxStagingTransID)
-    SELECT		tts.DeviceID, Max(tts.StagingTransID)
+	INSERT INTO	Temp_DeviceMaxID(DeviceID,MaxTransID)
+    SELECT		tts.DeviceID, Max(tts.TransID)
     FROM		Temp_Transaction tts
     GROUP BY	tts.DeviceID;    
     
@@ -408,7 +410,7 @@ BEGIN
     INNER JOIN	Temp_Transaction AS tts
 				ON dv.DeviceID = tts.DeviceID
     INNER JOIN	Temp_DeviceMaxID	AS dmi
-				ON tts.StagingTransID = dmi.MaxStagingTransID
+				ON tts.TransID = dmi.MaxTransID
     SET			dv.DeviceStatus = tts.DeviceStatus;
     
 	/* ### PERFORMANCE START
@@ -424,19 +426,19 @@ BEGIN
     
     ### PERFORMANCE  END */
     
-	INSERT IGNORE INTO	DCS_DataCenter.DeviceCode (DeviceCodeKey, DeviceCode, DeviceID, CreatedDate, FirstDeviceCode, LastStatus, FirstStagingTransID, FirstStatus, InsertTime)
+	INSERT IGNORE INTO	DCS_DataCenter.DeviceCode (DeviceCodeKey, DeviceCode, DeviceID, CreatedDate, FirstDeviceCode, LastStatus, FirstTransID, FirstStatus, InsertTime)
 	SELECT		tts.DeviceCodeKey
 				, tts.DeviceCode
 				, tts.DeviceID
 				, tts.CreatedDate
 				, tts.FirstDeviceCode
 				, tts.DeviceStatus			AS LastStatus
-                , tts.StagingTransID
+                , tts.TransID
                 , tts.DeviceStatus
                 , CURRENT_TIMESTAMP(4) 		AS InsertTime
 	FROM 		Temp_Transaction AS tts
 	INNER JOIN	Temp_NewDeviceCode	AS tnd
-				ON tts.StagingTransID = tnd.MinStagingTransID
+				ON tts.TransID = tnd.MinTransID
 	WHERE		tts.DeviceStatus IN (vrDeviceStatusNew, vrDeviceStatusRecover)
 				AND tts.DeviceID !=0 ;   
                 
@@ -457,7 +459,7 @@ BEGIN
     INNER JOIN	Temp_Transaction AS tts
 				ON tts.DeviceCodeKey = dc.DeviceCodeKey
 	INNER JOIN	Temp_NewDeviceCode	AS tnd
-				ON tts.StagingTransID = tnd.MaxStagingTransID
+				ON tts.TransID = tnd.MaxTransID
 	SET			dc.LastStatus = tts.DeviceStatus;	
                 
 	/* ### PERFORMANCE START
@@ -473,8 +475,8 @@ BEGIN
     
     ### PERFORMANCE  END */   
     
-	INSERT IGNORE INTO DCS_DataCenter.DeviceFingerprint(FingerprintID, FingerprintCode, FingerprintMoreInfo, UserAgentKey, PluginID, DeviceID, CreatedDate, InsertTime)
-    SELECT		CRC32(tts.FingerprintCode) AS FingerprintID
+	INSERT IGNORE INTO DCS_DataCenter.DeviceFingerprint(FingerprintKey, FingerprintCode, FingerprintMoreInfo, UserAgentKey, PluginID, DeviceID, CreatedDate, InsertTime)
+    SELECT		CRC32(tts.FingerprintCode) AS FingerprintKey
 				, tts.FingerprintCode
                 , tts.FingerprintMoreInfo
                 , tts.UserAgentKey
@@ -498,13 +500,12 @@ BEGIN
     
     ### PERFORMANCE  END */
     
-   INSERT IGNORE INTO DCS_DataCenter.Association(AssociationID, AccountID, DeviceID, SubscriberID, CreatedDate, SyncGraphDB, InsertTime)
+   INSERT IGNORE INTO DCS_DataCenter.Association(AssociationID, AccountID, DeviceID, SubscriberID, CreatedDate, InsertTime)
 	SELECT		CRC32(CONCAT(AccountID,'A',DeviceID)) AS AssociationID
 				, tts.AccountID
 				, tts.DeviceID
                 , tts.SubscriberID
                 , MIN(tts.CreatedDate)
-                , 0 # SyncGraphDB
                 , CURRENT_TIMESTAMP(4) AS InsertTime
     FROM		Temp_Transaction AS tts
     WHERE		tts.DeviceID != 0
@@ -526,17 +527,17 @@ BEGIN
     
    UPDATE DCS_DataCenter.Transaction ts
    INNER JOIN Temp_Transaction AS tts
-				ON	ts.StagingTransID = tts.StagingTransID
-   SET		ts.DeviceID = tts.DeviceID
-			, ts.DeviceStatus = tts.DeviceStatus
-			, ts.FirstDeviceCode = tts.FirstDeviceCode;
+				ON	ts.TransID = tts.TransID
+   SET		ts.ReferDeviceID = tts.DeviceID
+			, ts.ReferDeviceStatus = tts.DeviceStatus
+			, ts.ReferDeviceCode = tts.FirstDeviceCode;
 	
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 	
 	### PERFORMANCE
 	SET	vrEndTime = CURRENT_TIMESTAMP(4);
 	
-    SELECT Count(1), Min(tts.StagingTransID), Max(tts.StagingTransID)
+    SELECT Count(1), Min(tts.TransID), Max(tts.TransID)
     INTO	vrTotalRecord, vrFromID, vrToID
     FROM	Temp_Transaction AS tts;
     

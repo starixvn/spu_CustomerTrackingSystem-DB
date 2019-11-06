@@ -20,7 +20,7 @@ BEGIN
     
 	DECLARE	vrUnhandleStatus_Subscriber	 BIT(16) DEFAULT 1;
     DECLARE	vrUnhandleStatus_Action	 BIT(16) DEFAULT 2;
-    DECLARE vrUnhandleStatus	TINYINT DEFAULT 0;
+    DECLARE vrUnhandleStatus	TINYINT DEFAULT -1;
     DECLARE vrNotTransformedStatus BIT(16);
     
 	### PERFORMANCE: START
