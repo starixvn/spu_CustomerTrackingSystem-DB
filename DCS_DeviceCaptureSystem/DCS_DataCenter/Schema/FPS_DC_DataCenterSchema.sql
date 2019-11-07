@@ -27,10 +27,10 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
 		DeviceCodeID			BIGINT	UNSIGNED	AUTO_INCREMENT
 		, DeviceCodeKey			BIGINT			NOT NULL		COMMENT '= CRC32(DeviceCode)'
 		, DeviceCode			VARCHAR(32) 	NOT NULL		COMMENT ' DeviceCode Captured From DI'
-        , DeviceID				BIGINT			NULL        
+        , DeviceKey				BIGINT			NULL        
         , FirstDeviceCode		VARCHAR(32)		NULL			COMMENT 'DeviceCode Of Device. Defferent with DeviceCode Field'
         , LastStatus			TINYINT			NULL			
-		, FirstTransID	BIGINT			NULL
+		, FirstTransID			BIGINT			NULL
         , FirstStatus			TINYINT			NULL
         , CreatedDate			DATETIME		NULL
         , InsertTime			TIMESTAMP(4)	NULL
@@ -38,8 +38,7 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
         , PRIMARY KEY	PK_DeviceCode_DeviceCodeKey(DeviceCodeKey)
         , UNIQUE KEY	UK_DeviceCode_ID(DeviceCodeID)
         , INDEX			IX_DeviceCode_CreatedDate(CreatedDate)
-        , INDEX			IX_DeviceCode_DeviceID(DeviceID)
-        
+        , INDEX			IX_DeviceCode_DeviceID(DeviceKey)      
         
      ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
      
@@ -51,28 +50,26 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
 		, FingerprintMoreInfo	TEXT			NULL
         , UserAgentKey			BIGINT			NULL
 		, PluginID				BIGINT			NULL
-        , DeviceID				BIGINT			NULL
+        , DeviceKey				BIGINT			NULL
         , CreatedDate			DATETIME		NULL
         , InsertTime			TIMESTAMP(4)	NULL
         
         , PRIMARY KEY	PK_Fingerprint_FingerprintKey(FingerprintKey)
 		, UNIQUE KEY	UK_DeviceFingerprint_FingerprintID(FingerprintID)
-        , INDEX			IX_Fingerprint_FingerprintCode(DeviceID)
+        , INDEX			IX_Fingerprint_FingerprintCode(DeviceKey)
      ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
     
 # =======Association============================================
 	CREATE TABLE IF NOT EXISTS DCS_DataCenter.Association(
-		AssociationID		BIGINT	UNSIGNED	AUTO_INCREMENT					
-		, AssociationKey	BIGINT 		NOT NULL
-		, DeviceID			BIGINT		NOT NULL
+		AssociationID		BIGINT	UNSIGNED	AUTO_INCREMENT			
+		, DeviceKey			BIGINT		NOT NULL
 		, AccountID			BIGINT		NOT NULL
 		, SubscriberID		INT			NOT NULL
 		, CreatedDate		DATETIME	NOT NULL		
         , InsertTime		TIMESTAMP(4)	NULL
         
-        , PRIMARY KEY	PK_Association_AssociationKey(AssociationKey)
-        , UNIQUE KEY	UK_Association_AssociationID(AssociationID)
-        , INDEX	IX_Association_SubscriberID_AccountID_DeviceID(SubscriberID, AccountID, DeviceID)
+        , PRIMARY KEY	PK_Association_AssociationID(AssociationID)
+        , INDEX	IX_Association_SubscriberID_AccountID_DeviceID(SubscriberID, AccountID, DeviceKey)
      ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 
 # =======Account============================================
@@ -101,7 +98,7 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
         , URLKey			BIGINT				UNSIGNED		NULL     
         , DeviceCode		VARCHAR(32)							NULL		COMMENT 'Trans Device Code'
 		, DeviceCodeKey		BIGINT								NULL		
-        , ReferDeviceID		BIGINT				UNSIGNED		NULL		
+        , ReferDeviceKey	BIGINT				UNSIGNED		NULL		
         , ReferDeviceCode	VARCHAR(32)							NULL
         , ReferDeviceStatus		TINYINT							NULL		COMMENT 'Trans Device Status at Insert Time'
         , FingerprintCodeKey	BIGINT			UNSIGNED		NULL
