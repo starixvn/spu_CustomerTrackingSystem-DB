@@ -11,7 +11,7 @@ Reviewer:
 CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomer (
-	CTSCustID			BIGINT	UNSIGNED AUTO_INCREMENT
+	CTSCustID			BIGINT	UNSIGNED	AUTO_INCREMENT
     , SubscriberID		INT	UNSIGNED
     , CustID			BIGINT	UNSIGNED
     , HeadCustID		BIGINT	UNSIGNED
@@ -30,10 +30,10 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomer (
 
 
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.Association(
-	CTSAssID		BIGINT	UNSIGNED
+	CTSAssID		BIGINT	UNSIGNED	AUTO_INCREMENT
 	,CTSCustID		BIGINT	UNSIGNED
     , DCSDeviceID	BIGINT
-    , SubsciberID	INT
+    , SubscriberID	INT
     , CreatedTime	TIMESTAMP(4)
     , InsertTime	TIMESTAMP(4)
     , PRIMARY KEY	PK_Association_CTSAssID(CTSAssID)    
@@ -80,17 +80,17 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.Evidence(
 
 # =======CustEvidence============================================
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustEvidence(
-		CustEvidID			BIGINT			UNSIGNED			NOT NULL
-		, CTSCustID			BIGINT			UNSIGNED			NOT NULL
-        , SubscriberID		INT									NOT NULL
-		, EvidenceID		SMALLINT							NOT NULL
+		CustEvidID			BIGINT		UNSIGNED	AUTO_INCREMENT	NOT NULL
+		, CTSCustID			BIGINT		UNSIGNED					NOT NULL
+        , SubscriberID		INT										NOT NULL
+		, EvidenceID		SMALLINT								NOT NULL
 		, Remark			VARCHAR(500)	CHARACTER SET UTF8MB4	NULL
-		, `Level`			TINYINT								NOT NULL COMMENT 'Level 1 - 2'
-		, FromCustID		BIGINT								NOT NULL
-		, CreatedDate		DATETIME							NOT NULL
-		, CreatedBy			INT									NOT NULL
-		, IsCreatedByMaster	TINYINT								NOT NULL
-		, IsRetracted		TINYINT								NOT NULL
+		, `Level`			TINYINT									NOT NULL COMMENT 'Level 1 - 2'
+		, FromCustID		BIGINT									NOT NULL
+		, CreatedDate		DATETIME								NOT NULL
+		, CreatedBy			INT										NOT NULL
+		, IsCreatedByMaster	TINYINT									NOT NULL
+		, IsRetracted		TINYINT									NOT NULL
         
         , PRIMARY KEY	PK_CustEvidence_CustEvidID(CustEvidID)
         , INDEX	IX_CustEvidence_EvidenceGroupID_EvidenceCode(SubscriberID, CTSCustID)
