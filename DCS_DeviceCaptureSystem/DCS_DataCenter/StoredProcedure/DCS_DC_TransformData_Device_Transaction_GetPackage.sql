@@ -63,7 +63,7 @@ BEGIN
             , ts.DeviceCodeKey
 	FROM 	DCS_DataCenter.Transaction AS ts
 	WHERE	ts.AccountID 	IS NOT NULL
-			AND ts.ReferDeviceID IS NULL
+			AND ts.ReferDeviceKey IS NULL
 	LIMIT	TotalRecord;
     
     WHILE (EXISTS (SELECT (1) FROM Temp_Trans WHERE BatchID IS NULL LIMIT 1)) DO
