@@ -45,19 +45,21 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Account;
     CREATE TEMPORARY TABLE Temp_Account 
     (	
-		BatchID				TINYINT
-        , AccountID			BIGINT	UNSIGNED
-        , LoginName			VARCHAR(100)
-        , SubscriberID		INT
+		BatchID					TINYINT
+        , AccountID				BIGINT	UNSIGNED
+        , LoginNameWithPrefix	VARCHAR(100)
+        , SubscriberID			INT
     ); 
    
 	SET TotalRecord = ip_NoOfTickets*ip_NoOfBatch;
     
-	INSERT INTO Temp_Account( AccountID, LoginName, SubscriberID)
+	INSERT INTO Temp_Account( AccountID, LoginNameWithPrefix, SubscriberID)
 	SELECT	ac.AccountID
-			, ac.LoginName
+			, CONCAT(su.SubscriberPrefix,ac.LoginName) AS LoginNameWithPrefix
             , ac.SubscriberID
 	FROM 	DCS_DataCenter.Account AS ac
+	INNER JOIN	CTS_Admin.Subscriber AS su
+				ON ac.SubscriberID = su.SubscriberID
 	WHERE	ac.IsCTSTransformed = 0
 	LIMIT	TotalRecord;
     
@@ -71,7 +73,7 @@ BEGIN
     
     SELECT	ac.BatchID
 			, ac.AccountID
-            , ac.LoginName
+            , ac.LoginNameWithPrefix
             , ac.SubscriberID
 	FROM Temp_Account AS ac;
     
