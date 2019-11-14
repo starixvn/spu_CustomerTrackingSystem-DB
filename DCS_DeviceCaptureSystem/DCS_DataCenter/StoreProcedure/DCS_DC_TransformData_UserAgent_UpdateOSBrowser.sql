@@ -43,7 +43,7 @@ BEGIN
 
 	CREATE TEMPORARY TABLE Temp_UserAgent
 	( 
-		UserAgentKey 		BIGINT
+		UserAgentKey 		VARCHAR(32)
 		,	BrowserName		VARCHAR(100)
 		,	OSName			VARCHAR(100)
         ,   CreatedDate		DATETIME
@@ -62,7 +62,7 @@ BEGIN
 	JSON_TABLE(
 				ip_UserAgentJson
 				, "$[*]" COLUMNS(
-								UserAgentKey 		BIGINT PATH "$.UserAgentKey"							
+								UserAgentKey 		VARCHAR(32) PATH "$.UserAgentKey"							
 								, BrowserName		VARCHAR(100) PATH "$.BrowserName" 
 								, OSName			VARCHAR(100) PATH "$.OSName"
                                 , CreatedDate		DATETIME PATH "$.CreatedDate" 

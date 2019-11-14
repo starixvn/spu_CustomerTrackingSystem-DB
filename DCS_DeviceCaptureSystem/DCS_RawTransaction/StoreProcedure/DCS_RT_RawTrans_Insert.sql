@@ -26,6 +26,7 @@ BEGIN
 		, FingerprintMoreInfo		TEXT	CHARACTER SET UTF8MB4		NULL
 		, UserAgent					TEXT		 						NULL
 		, IP						VARCHAR(50) 						NULL
+        , IPID						BIGINT								NULL
 		, PluginID					BIGINT 								NULL	
 		, URL						VARCHAR(500) 						NULL
 		, ActionResult				VARCHAR(100) 						NULL
@@ -42,6 +43,7 @@ BEGIN
 		, FingerprintMoreInfo
 		, UserAgent
 		, IP
+        , IPID
 		, PluginID
 		, URL
 		, ActionResult
@@ -57,7 +59,8 @@ BEGIN
 			, (CASE WHEN rt.DeviceCode ="" THEN "" ELSE rt.FingerprintMoreInfo	END) AS FingerprintMoreInfo
 			, rt.UserAgent
 			, rt.IP
-			, rt.PluginID
+            , rt.IPID
+			, rt.PluginID            
 			, rt.URL
 			, rt.ActionResult
             , InvalidDevice
@@ -73,6 +76,7 @@ BEGIN
 							, FingerprintMoreInfo	TEXT	CHARACTER SET UTF8MB4  	PATH "$.FingerprintMoreInfo"
 							, UserAgent				TEXT 	PATH "$.UserAgent"
 							, IP					VARCHAR(50) 	PATH "$.IP"
+                            , IPID					BIGINT			PATH "$.IPId"
 							, PluginID				BIGINT 			PATH "$.PluginID"
 							, URL					VARCHAR(500) 	PATH "$.URL"
 							, ActionResult			VARCHAR(100) 	PATH "$.ActionResult"
@@ -91,6 +95,7 @@ BEGIN
 		, FingerprintMoreInfo
 		, UserAgent
 		, IP
+        , IPID
 		, PluginID
 		, URL
 		, ActionResult
@@ -107,6 +112,7 @@ BEGIN
 		, rt.FingerprintMoreInfo
 		, rt.UserAgent
 		, rt.IP
+        , rt.IPID
 		, rt.PluginID
 		, rt.URL
 		, rt.ActionResult

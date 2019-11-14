@@ -20,7 +20,7 @@ BEGIN
     
 	DECLARE	vrUnhandleStatus_Subscriber	 BIT(16) DEFAULT 1;
     DECLARE	vrUnhandleStatus_Action	 BIT(16) DEFAULT 2;
-    DECLARE vrUnhandleStatus	TINYINT DEFAULT -1;
+    DECLARE vrUnhandleStatus	TINYINT DEFAULT 0;
     DECLARE vrNotTransformedStatus BIT(16);
     
 	### PERFORMANCE: START
@@ -51,8 +51,7 @@ BEGIN
 		TransID			BIGINT
 		, SubscriberName		VARCHAR(30)        
         , ActionResult			VARCHAR(200)
-        , URL					VARCHAR(250)
-        , URLKey				BIGINT	UNSIGNED
+        , URLDetails			VARCHAR(250)
         , TransStatus			INT
         , CreatedDate			DATETIME	#	Date Only        
         , SubscriberID			INT
@@ -64,31 +63,26 @@ BEGIN
     
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;    
     
-    INSERT	INTO Temp_Transaction(TransID, SubscriberName, ActionResult, URL, URLKey, TransStatus, CreatedDate, SubscriberID
-								, SubscriberStatus, ActionResultID, ActionResultStatus)
+    INSERT	INTO Temp_Transaction(TransID, SubscriberName, ActionResult, URLDetails, TransStatus, CreatedDate, SubscriberID
+									, SubscriberStatus, ActionResultID, ActionResultStatus)
     SELECT 	rt.TransID
 			, rt.SubscriberName
             , rt.ActionResult
             , rt.URL
-            , ur.URLKey
             , rt.TransStatus
             , rt.CreatedDate
             , su.SubscriberID
             , su.SubscriberStatus
-            , ac.ActionResultID
-            , ac.ActionStatus
-            
+            , ActionResultID
+            , ActionResultStatus
 	FROM	DCS_RawTransaction.RawTransaction AS rt
 	LEFT JOIN	CTS_Admin.Subscriber AS su
 				ON rt.SubscriberName = su.SubscriberName
-	LEFT JOIN	DCS_DataCenter.ActionResult AS ac
-				ON ac.ActionResultID =  CRC32(LOWER(rt.ActionResult)) 
-	LEFT JOIN   DCS_DataCenter.URL AS ur
-				ON su.SubscriberID = ur.SubscriberID
-					AND CRC32(LOWER(rt.URL)) = ur.URLKey
+	LEFT JOIN	DCS_DataCenter.ActionResult AS ar
+				ON rt.ActionResult = ar.ActionResultDetails
     WHERE	rt.TransID BETWEEN ip_FromTransID AND ip_ToTransID
 				AND rt.IsProcessed = 0;   
-                
+        
     #==UNHANDLE SUBSCRIBER================================================================
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
@@ -101,24 +95,13 @@ BEGIN
     GROUP BY	ts.SubscriberName;
 
     #==UNHANDLE ACTION================================================================    
-	INSERT IGNORE INTO DCS_DataCenter.ActionResult (ActionResultID, ActionResultKey, CreatedDate, ActionStatus)
-	SELECT 		 CRC32(LOWER(ts.ActionResult)) AS ActionResultID
-				, ts.ActionResult
+	INSERT IGNORE INTO DCS_DataCenter.ActionResult (ActionResultDetails, CreatedDate, ActionResultStatus)
+	SELECT 		ts.ActionResult 		AS ActionResultDetails
 				, MIN(ts.CreatedDate)	AS CreatedDate
-				, vrUnhandleStatus		AS ActionStatus # vrUnhandleStatus_Subscriber
+				, vrUnhandleStatus		AS ActionResultStatus # vrUnhandleStatus_Subscriber
     FROM		Temp_Transaction	AS ts
-	WHERE		ts.ActionResultID IS NULL
     GROUP BY	ts.ActionResult;
 	
-    #===INSERT SUBCRIBERURL    
-    INSERT IGNORE INTO DCS_DataCenter.URL(URLKey, URL, SubscriberID, CreatedDate)
-    SELECT		CRC32(LOWER(ts.URL)) AS URLKey
-				, ts.URL
-                , ts.SubscriberID
-                , MIN(ts.CreatedDate)
-	FROM		Temp_Transaction AS ts
-	WHERE		ts.URLKey IS NULL
-	GROUP BY	ts.SubscriberID, ts.URL;    
 	
     SET vrNotTransformedStatus = DCS_DC_GetTransStatus_NotTransformed();
 
@@ -127,20 +110,29 @@ BEGIN
 	SET			TransStatus = TransStatus | vrUnhandleStatus_Subscriber
     WHERE		ts.SubscriberID IS NULL
 				OR ts.SubscriberStatus = vrUnhandleStatus;
- 
+	    
+   # SELECT 		ts.TransID, ts.TransStatus, vrNotTransformedStatus, ts.TransStatus & vrNotTransformedStatus
+    #FROM		Temp_Transaction AS ts;
+    
 	#===Update NOT Transform status for the Invalid Action Result(Invalid Action Result)
     UPDATE 		Temp_Transaction AS ts
 	SET			TransStatus = TransStatus | vrUnhandleStatus_Action
     WHERE		ts.ActionResultID IS NULL
 				OR ts.ActionResultStatus = vrUnhandleStatus; 
 
+	
     #==========================================================================
+    
+   # SELECT 		ts.TransID, ts.TransStatus, vrNotTransformedStatus, ts.TransStatus & vrNotTransformedStatus
+    #FROM		Temp_Transaction AS ts;
+    
+   
     UPDATE		DCS_RawTransaction.RawTransaction AS rt
     INNER JOIN	Temp_Transaction AS ts
 				ON rt.TransID = ts.TransID
-	SET			rt.IsProcessed = CASE WHEN (ts.TransStatus & vrNotTransformedStatus) != 0 THEN vrUnhandleStatus ELSE rt.IsProcessed END 
+	SET			rt.IsProcessed = CASE WHEN (ts.TransStatus & vrNotTransformedStatus) != 0 THEN -1 ELSE rt.IsProcessed END 
 				, rt.TransStatus = ts.TransStatus;
-    
+   
 	### PERFORMANCE
 	SET	vrEndTime = CURRENT_TIMESTAMP(4);
     

@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS DCS_RawTransaction.RawTransaction(
     , FingerprintMoreInfo		TEXT	CHARACTER SET UTF8MB4		NULL
     , UserAgent					TEXT		 						NULL
 	, IP						VARCHAR(50) 						NULL
+    , IPID						BIGINT								NULL
 	, PluginID					BIGINT 								NULL	
 	, URL						VARCHAR(500) 						NULL
 	, ActionResult				VARCHAR(100) 						NULL

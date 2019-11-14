@@ -82,7 +82,7 @@ BEGIN
 	### PERFORMANCE
 	SET		vrEndTime = CURRENT_TIMESTAMP(4);
     
-    SELECT 	Count(1), Min(TransId), Max(TransId)
+    SELECT 	Count(1), Min(AccountID), Max(AccountID)
     INTO	vrTotalRecord, vrFromID, vrToID
     FROM	Temp_Account AS tts;
     

@@ -43,18 +43,18 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_UserAgent;
     CREATE TEMPORARY TABLE Temp_UserAgent 
     (		
-		UserAgentKey			BIGINT
+		UserAgentKey		VARCHAR(32)
         , UserAgent			TEXT
         , CreatedDate		DATETIME
     );    
 	    
     INSERT INTO Temp_UserAgent (UserAgentKey, UserAgent, CreatedDate)
-    SELECT		CRC32(LOWER(rt.UserAgent)) AS UserAgentKey
+    SELECT		MD5(LOWER(rt.UserAgent)) AS UserAgentKey
 				, rt.UserAgent
                 , MIN(rt.CreatedDate)
 	FROM		DCS_RawTransaction.RawTransaction	AS rt
     LEFT JOIN	DCS_DataCenter.UserAgent 			AS ua
-				ON ua.UserAgentKey = CRC32(LOWER(rt.UserAgent))
+				ON ua.UserAgentKey = MD5(LOWER(rt.UserAgent))
     WHERE		rt.TransID BETWEEN ip_FromTransID AND ip_ToTransID
 				AND rt.IsProcessed = 0
                 AND ua.UserAgentKey IS NULL

@@ -15,7 +15,6 @@ BEGIN
 	Revisions:
 	Param's Explanation (filtered by):
 */
-
 	### PERFORMANCE: START
     DECLARE		vrExecKey		BIGINT	UNSIGNED;
 	DECLARE		vrSPName		VARCHAR(200) DEFAULT 'DCS_DC_TransformData_Transaction_Insert' ;
@@ -44,18 +43,17 @@ BEGIN
 	CREATE TEMPORARY TABLE IF NOT EXISTS Temp_RawTransaction (
 		TransID					BIGINT UNSIGNED NOT NULL
 		, LoginName				VARCHAR(100) NOT NULL
-        , LoginNameKey			BIGINT	UNSIGNED NOT NULL
 		, TransTime				TIMESTAMP(4) NOT NULL
 		, SubscriberID			INT NULL
         , AccountID				BIGINT	UNSIGNED NULL
         , SubscriberType		TINYINT	UNSIGNED	NULL
-		, URLKey				BIGINT UNSIGNED NULL
+        , URLDetails			VARCHAR(250)	NULL
+		, URLID					INT
 		, DeviceCode			VARCHAR(32) NULL COMMENT 'Trans Device Code'
-		, DeviceCodeKey			BIGINT NULL
-		, FingerprintCodeKey	BIGINT UNSIGNED NULL
-		, UserAgentKey			BIGINT NULL
+        , UserAgentKey			VARCHAR(32)
 		, IP					VARCHAR(50) NULL
-		, ActionResultKey		BIGINT NULL
+        , IPID					BIGINT
+		, ActionResultID		INT
 		, Flagged				SMALLINT NULL COMMENT 'captcha & browserless'
 		, PluginID				BIGINT NULL
 		, TransStatus			BIT(16) NULL
@@ -64,27 +62,24 @@ BEGIN
 	);
     # =================================================================
     DROP TEMPORARY TABLE IF EXISTS Temp_Account;
-	CREATE TABLE IF NOT EXISTS Temp_Account(
+	CREATE TEMPORARY TABLE  Temp_Account(
 		LoginName				VARCHAR(100) NOT NULL
 		, SubscriberID			INT NULL
         , SubscriberType		TINYINT	UNSIGNED	NULL
     );
       
-	INSERT INTO Temp_RawTransaction(TransID, LoginName, LoginNameKey, TransTime, SubscriberID, SubscriberType, URLKey, DeviceCode, DeviceCodeKey, FingerprintCodeKey
-				, UserAgentKey, IP, ActionResultKey, Flagged, PluginID, TransStatus, CreatedDate)
+	INSERT INTO Temp_RawTransaction(TransID, LoginName, TransTime, SubscriberID, SubscriberType, DeviceCode, URLDetails, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate)
 	SELECT  rt.TransID
 			, rt.LoginName
-            , CRC32(LOWER(rt.LoginName)) AS LoginNameKey
             , rt.TransTime
             , su.SubscriberID
-            , su.SubscriberType
-            , CRC32(LOWER(rt.URL)) AS URLKey
+            , su.SubscriberType        
             , rt.DeviceCode
-            , CRC32(rt.DeviceCode) AS DeviceCodeKey
-            , CRC32(rt.FingerprintCode) AS FingerprintCodeKey
-            , CRC32(LOWER(rt.UserAgent)) AS UserAgentKey
+            , rt.URL
+            , MD5(LOWER(rt.UserAgent))
             , rt.IP
-            , CRC32(LOWER(rt.ActionResult)) ActionResultKey
+            , rt.IPID
+            , ar.ActionResultID
             , 0 AS Flagged
             , rt.PluginID
             , rt.TransStatus
@@ -92,51 +87,64 @@ BEGIN
 	FROM		DCS_RawTransaction.RawTransaction AS rt
     INNER JOIN	CTS_Admin.Subscriber AS su
 				ON	rt.SubscriberName = su.SubscriberName
+	INNER JOIN	DCS_DataCenter.ActionResult AS ar
+				ON	rt.ActionResult = ActionResultDetails
 	WHERE		rt.IsProcessed = 0
 				AND rt.TransID BETWEEN ip_FromTransID AND ip_ToTransID;
+	
+	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;    
+    	
+    #===INSERT SUBCRIBERURL    
+    INSERT IGNORE INTO DCS_DataCenter.URL(URLDetails, SubscriberID, CreatedDate)
+	SELECT		trt.URLDetails
+                , trt.SubscriberID
+                , MIN(trt.CreatedDate)
+	FROM		Temp_RawTransaction AS trt
+	GROUP BY	trt.SubscriberID, trt.URLDetails;    
 
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-	         
-    INSERT IGNORE INTO DCS_DataCenter.Account(LoginName, LoginNameKey, SubscriberID, SubscriberType, CreatedDate, InsertTime)
+	# Insert New Account
+    INSERT IGNORE INTO DCS_DataCenter.Account(LoginName, SubscriberID, SubscriberType, CreatedDate, InsertTime)
     SELECT		trt.LoginName
-				, trt.LoginNameKey
 				, trt.SubscriberID
 				, trt.SubscriberType
 				, MIN(trt.CreatedDate)
 				, CURRENT_TIMESTAMP(4)	AS InsertTime
     FROM		Temp_RawTransaction AS trt
-    GROUP BY	trt.SubscriberID, trt.SubscriberType, trt.LoginName, trt.LoginNameKey;
+    GROUP BY	trt.SubscriberID, trt.SubscriberType, trt.LoginName;
     
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;      
+    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
+
+    # Update AccountID to Temp_Transaction
     UPDATE 		Temp_RawTransaction AS trt
     INNER JOIN	DCS_DataCenter.Account AS ac
-				ON trt.LoginNameKey = ac.LoginNameKey
-    SET		trt.AccountID = ac.AccountID;  
+				ON trt.SubscriberID = ac.SubscriberID AND trt.LoginName = ac.LoginName
+	INNER JOIN	DCS_DataCenter.URL	AS ur
+				ON	trt.URLDetails = ur.URLDetails
+    SET		trt.AccountID = ac.AccountID
+            , trt.URLID = ur.URLID;
+            
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-    
-    INSERT IGNORE INTO  DCS_DataCenter.Transaction(TransID, LoginName, LoginNameKey, TransTime, SubscriberID, AccountID, URLKey, DeviceCode, DeviceCodeKey
-			, FingerprintCodeKey, UserAgentKey, IP, ActionResultKey, Flagged, PluginID, TransStatus, CreatedDate, InsertTime)
+
+    INSERT IGNORE INTO  DCS_DataCenter.Transaction(TransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCode, UserAgentKey
+						, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime)
    	SELECT 		trt.TransID
 				, trt.LoginName
-                , trt.LoginNameKey
                 , trt.TransTime                
 				, trt.SubscriberID
                 , trt.AccountID
-				, trt.URLKey
+				, trt.URLID
                 , trt.DeviceCode
-                , trt.DeviceCodeKey
-                , trt.FingerprintCodeKey
-                , trt.UserAgentKey   
+                , trt.UserAgentKey
                 , trt.IP
-                , trt.ActionResultKey
+                , trt.IPID
+                , trt.ActionResultID
 				, trt.Flagged
                 , trt.PluginID
                 , trt.TransStatus				
 				, trt.CreatedDate                
                 , CURRENT_TIMESTAMP(4) 	AS InsertTime
 	FROM		Temp_RawTransaction AS trt;	
-    
+
     #================================================================
     UPDATE		DCS_RawTransaction.RawTransaction AS rt
     INNER JOIN	Temp_RawTransaction AS trt

@@ -2,9 +2,9 @@ DELIMITER $$
 
 USE DCS_DataCenter$$
 
-DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformToCST_Association_GetPackage$$
+DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformData_Device_Transaction_GetPackage$$
 
-CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformToCST_Association_GetPackage(IN ip_NoOfTickets INT, IN ip_NoOfBatch INT)
+CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformData_Device_Transaction_GetPackage (IN ip_NoOfTickets INT, IN ip_NoOfBatch INT)
 BEGIN
 	/*
 	Created: 20190730@Casey.Huynh
@@ -21,7 +21,7 @@ BEGIN
     
 	### PERFORMANCE: START
     DECLARE		vrExecKey		BIGINT	UNSIGNED;
-	DECLARE		vrSPName		VARCHAR(200)  DEFAULT 'DCS_DC_TransformToCST_Association_GetPackage' ;
+	DECLARE		vrSPName		VARCHAR(200)  DEFAULT 'DCS_DC_TransformData_Device_Transaction_GetPackage' ;
     DECLARE		vrStepID		INT;
 	DECLARE 	vrNotes	 		VARCHAR(500);
 	DECLARE 	vrStartTime		TIMESTAMP(4);
@@ -42,41 +42,45 @@ BEGIN
 
 	### PERFORMANCE: END
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_Account;
-    CREATE TEMPORARY TABLE Temp_Account 
+    DROP TEMPORARY TABLE IF EXISTS Temp_Trans;
+    CREATE TEMPORARY TABLE Temp_Trans 
     (	
 		BatchID				TINYINT
+		, TransID	BIGINT	UNSIGNED
         , AccountID			BIGINT	UNSIGNED
-        , DeviceKey			BIGINT
-        , CreatedTime		TIMESTAMP(4)
-        , SubscriberID		INT
+        , SubscriberID		BIGINT
+		, UserAgentKey		VARCHAR(32)
+        , DeviceCode		VARCHAR(32)
     ); 
    
 	SET TotalRecord = ip_NoOfTickets*ip_NoOfBatch;
     
-	INSERT INTO Temp_Account( AccountID, DeviceKey, CreatedTime, SubscriberID)
-	SELECT	ass.AccountID
-			, ass.DeviceKey
-            , ass.CreatedDate
-            , ass.SubscriberID
-	FROM 	DCS_DataCenter.Association AS ass
-	WHERE	ass.IsCTSTransformed = 0
+	INSERT INTO Temp_Trans(TransID, AccountID, SubscriberID, UserAgentKey, DeviceCode)
+    SELECT	ts.TransID
+			, ts.AccountID
+            , ts.SubscriberID
+            , ts.UserAgentKey
+            , ts.DeviceCode
+	FROM 	DCS_DataCenter.Transaction AS ts
+	WHERE	ts.AccountID 	IS NOT NULL
+			AND ts.ReferDeviceID IS NULL
 	LIMIT	TotalRecord;
     
-    WHILE (EXISTS (SELECT (1) FROM Temp_Account WHERE BatchID IS NULL LIMIT 1)) DO
-    	  UPDATE 	Temp_Account
+    WHILE (EXISTS (SELECT (1) FROM Temp_Trans WHERE BatchID IS NULL LIMIT 1)) DO
+    	  UPDATE 	Temp_Trans
 		  SET		BatchID = Batch
           WHERE		BatchID IS NULL 
           LIMIT 	ip_NoOfTickets;    
 		  SET Batch = Batch + 1;
     END WHILE;
     
-    SELECT	ass.BatchID
-			, ass.AccountID
-            , ass.DeviceKey
-            , ass.CreatedTime
-            , ass.SubscriberID
-	FROM Temp_Account AS ass;
+    SELECT	ts.BatchID
+			, ts.TransID
+			, ts.AccountID
+            , ts.SubscriberID
+            , ts.UserAgentKey
+            , ts.DeviceCode
+	FROM Temp_Trans AS ts;
     
    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 	
@@ -85,7 +89,7 @@ BEGIN
     
     SELECT 	Count(1), Min(TransId), Max(TransId)
     INTO	vrTotalRecord, vrFromID, vrToID
-    FROM	Temp_Account AS tts;
+    FROM	Temp_Trans AS tts;
     
     UPDATE	DCS_DataCenter.zzTracePerformance AS z
     SET		z.EndTime = vrEndTime
