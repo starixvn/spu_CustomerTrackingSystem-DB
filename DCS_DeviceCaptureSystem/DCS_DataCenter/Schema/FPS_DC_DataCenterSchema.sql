@@ -60,10 +60,10 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
 # =======Association============================================
 	CREATE TABLE IF NOT EXISTS DCS_DataCenter.Association(
 		AssociationID		BIGINT	UNSIGNED	AUTO_INCREMENT			
-		, DeviceID			BIGINT		NOT NULL
-		, AccountID			BIGINT		NOT NULL
-		, SubscriberID		INT			NOT NULL
-		, CreatedDate		DATETIME	NOT NULL		
+		, DeviceID			BIGINT			NOT NULL
+		, AccountID			BIGINT			NOT NULL
+		, SubscriberID		INT				NOT NULL
+        , CreatedTime		TIMESTAMP(4) 	NULL
         , InsertTime		TIMESTAMP(4)	NULL
         , IsCTSTransformed	TINYINT		DEFAULT 0
         , PRIMARY KEY	PK_Association_AssociationID(AssociationID)

@@ -8,7 +8,7 @@ CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformToCST_Association_Completed(IN i
 BEGIN
 	/*
 	Created: 20191109@Casey.Huynh
-	Task : Transform DSC to CTS: Account_Update Completed
+	Task : Transform DSC to CTS: Association_Update Completed
 	DB: DCS_DataCenter
 	Original:
 
@@ -21,7 +21,7 @@ BEGIN
     
 	### PERFORMANCE: START
     DECLARE		vrExecKey		BIGINT	UNSIGNED;
-	DECLARE		vrSPName		VARCHAR(200)  DEFAULT 'DCS_DC_TransformToCST_ass_Completed' ;
+	DECLARE		vrSPName		VARCHAR(200)  DEFAULT 'DCS_DC_TransformToCST_Association_Completed' ;
     DECLARE		vrStepID		INT;
 	DECLARE 	vrNotes	 		VARCHAR(500);
 	DECLARE 	vrStartTime		TIMESTAMP(4);
@@ -44,16 +44,16 @@ BEGIN
     
 
 
-	DROP TABLE IF EXISTS Temp_Account;
+	DROP TABLE IF EXISTS Temp_Association;
 
-	CREATE TEMPORARY TABLE Temp_Account
+	CREATE TEMPORARY TABLE Temp_Association
 	( 
 		AssociationID			BIGINT UNSIGNED
 	);
 
 	#=======================
 
-	INSERT INTO Temp_Account(AssociationID)
+	INSERT INTO Temp_Association(AssociationID)
 	SELECT 	tempAss.AssociationID
 	FROM
 	JSON_TABLE(
@@ -65,8 +65,8 @@ BEGIN
 
    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 	
-    UPDATE		DCS_DataCenter.Account AS ac
-    INNER JOIN 	Temp_Account AS tac
+    UPDATE		DCS_DataCenter.Association AS ac
+    INNER JOIN 	Temp_Association AS tac
 				ON ac.AssociationID = tac.AssociationID
     SET			ac.IsCTSTransformed = 1;
     

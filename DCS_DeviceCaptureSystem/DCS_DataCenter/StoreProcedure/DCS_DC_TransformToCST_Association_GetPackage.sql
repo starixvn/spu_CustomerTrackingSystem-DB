@@ -59,7 +59,7 @@ BEGIN
 	SELECT	ass.AssociationID
 			, ass.AccountID
 			, ass.DeviceID
-            , ass.CreatedDate
+            , ass.CreatedTime
             , ass.SubscriberID
 	FROM 	DCS_DataCenter.Association AS ass
 	WHERE	ass.IsCTSTransformed = 0
