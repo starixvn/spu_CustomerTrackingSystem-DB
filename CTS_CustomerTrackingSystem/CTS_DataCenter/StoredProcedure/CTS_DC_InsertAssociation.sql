@@ -15,7 +15,7 @@ BEGIN
 	*/
 
     
-    INSERT INTO `CTS_DataCenter`.`Association`
+    INSERT INTO `CTS_DataCenter`.`AssociationByDevice`
 		(`CTSCustID`,
 		`DCSDeviceID`,
 		`SubscriberID`,
