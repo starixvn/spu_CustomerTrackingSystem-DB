@@ -1,8 +1,5 @@
 DELIMITER $$
-USE `CTS_DataCenter` $$
-DROP PROCEDURE IF EXISTS CTS_DC_InsertAssociation $$
-
-CREATE PROCEDURE CTS_DC_InsertAssociation (IN ip_AssociationList JSON)
+CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_InsertAssociation`(IN ip_AssociationList JSON)
 BEGIN
 	/*
 		Created:	20191107@Harvey
@@ -24,16 +21,14 @@ BEGIN
 		`SubscriberID`,
 		`CreatedTime`,
 		`InsertTime`)
-	SELECT *
+	SELECT tmpTable.CTSCustID, tmpTable.DCSDeviceID, tmpTable.SubscriberID, tmpTable.CreatedTime, now()
 	FROM JSON_TABLE(ip_AssociationList,
 		 "$[*]" COLUMNS(
-		  CTSCustID 		BIGINT 			PATH "$.CTSCustID"         
-		, DCSDeviceID		BIGINT			PATH "$.DCSDeviceID" 
-        , SubscriberID		INT				PATH "$.SubscriberID" 
-        , CreatedTime		TIMESTAMP(4)	PATH "$.CreatedTime"
-        , InsertTime		TIMESTAMP(4) 	PATH "$.InsertTime" 
+		  CTSCustID 		BIGINT 			PATH "$.CustId"         
+		, DCSDeviceID		BIGINT			PATH "$.DeviceId" 
+        , SubscriberID		INT				PATH "$.SubscriberId" 
+        , CreatedTime		TIMESTAMP(4)	PATH "$.CreatedTime"        
 		 )) as tmpTable;      
 
 END$$
-
 DELIMITER ;
