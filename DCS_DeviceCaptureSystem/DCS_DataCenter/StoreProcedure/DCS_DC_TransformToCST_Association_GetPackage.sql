@@ -4,7 +4,7 @@ USE DCS_DataCenter$$
 
 DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformToCST_Association_GetPackage$$
 
-CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformToCST_Association_GetPackage(IN ip_NoOfTickets INT, IN ip_NoOfBatch INT)
+CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformToCST_Association_GetPackage(IN ip_NoOfAssociation INT, IN ip_NoOfBatch INT)
 BEGIN
 	/*
 	Created: 20190730@Casey.Huynh
@@ -32,7 +32,7 @@ BEGIN
     DECLARE		vrToID			BIGINT;
 
     SET		vrExecKey = CRC32((UUID_Short()));    
-    SET		vrNotes = CONCAT('Input: ',ip_NoOfTickets,'_', ip_NoOfBatch) ;		
+    SET		vrNotes = CONCAT('Input: ',ip_NoOfAssociation,'_', ip_NoOfBatch) ;		
     SET 	vrStepID = 1;
     
     SET 	vrStartTime = CURRENT_TIMESTAMP(4);	
@@ -42,20 +42,22 @@ BEGIN
 
 	### PERFORMANCE: END
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_Account;
-    CREATE TEMPORARY TABLE Temp_Account 
+    DROP TEMPORARY TABLE IF EXISTS Temp_Association;
+    CREATE TEMPORARY TABLE Temp_Association 
     (	
 		BatchID				TINYINT
+        , AssociationID		BIGINT	UNSIGNED
         , AccountID			BIGINT	UNSIGNED
         , DeviceID			BIGINT
         , CreatedTime		TIMESTAMP(4)
         , SubscriberID		INT
     ); 
    
-	SET TotalRecord = ip_NoOfTickets*ip_NoOfBatch;
+	SET TotalRecord = ip_NoOfAssociation*ip_NoOfBatch;
     
-	INSERT INTO Temp_Account( AccountID, DeviceID, CreatedTime, SubscriberID)
-	SELECT	ass.AccountID
+	INSERT INTO Temp_Association(AssociationID, AccountID, DeviceID, CreatedTime, SubscriberID)
+	SELECT	ass.AssociationID
+			, ass.AccountID
 			, ass.DeviceID
             , ass.CreatedDate
             , ass.SubscriberID
@@ -63,29 +65,30 @@ BEGIN
 	WHERE	ass.IsCTSTransformed = 0
 	LIMIT	TotalRecord;
     
-    WHILE (EXISTS (SELECT (1) FROM Temp_Account WHERE BatchID IS NULL LIMIT 1)) DO
-    	  UPDATE 	Temp_Account
+    WHILE (EXISTS (SELECT (1) FROM Temp_Association WHERE BatchID IS NULL LIMIT 1)) DO
+    	  UPDATE 	Temp_Association
 		  SET		BatchID = Batch
           WHERE		BatchID IS NULL 
-          LIMIT 	ip_NoOfTickets;    
+          LIMIT 	ip_NoOfAssociation;    
 		  SET Batch = Batch + 1;
     END WHILE;
     
-    SELECT	ass.BatchID
-			, ass.AccountID
-            , ass.DeviceID
-            , ass.CreatedTime
-            , ass.SubscriberID
-	FROM Temp_Account AS ass;
+    SELECT	tas.AssociationID
+			, tas.BatchID
+			, tas.AccountID
+            , tas.DeviceID
+            , tas.CreatedTime
+            , tas.SubscriberID
+	FROM Temp_Association AS tas;
     
    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 	
 	### PERFORMANCE
 	SET		vrEndTime = CURRENT_TIMESTAMP(4);
     
-    SELECT 	Count(1), Min(TransId), Max(TransId)
+    SELECT 	Count(1), Min(tas.AssociationID), Max(tas.AssociationID)
     INTO	vrTotalRecord, vrFromID, vrToID
-    FROM	Temp_Account AS tts;
+    FROM	Temp_Association AS tas;
     
     UPDATE	DCS_DataCenter.zzTracePerformance AS z
     SET		z.EndTime = vrEndTime

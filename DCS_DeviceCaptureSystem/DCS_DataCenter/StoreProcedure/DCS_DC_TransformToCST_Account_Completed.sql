@@ -68,8 +68,6 @@ BEGIN
     UPDATE		DCS_DataCenter.Account AS ac
     INNER JOIN 	Temp_Account AS tac
 				ON ac.AccountID = tac.AccountID
-    INNER JOIN	CTS_DataCenter.CustDCSAccount AS ca
-				ON tac.AccountID = ca.AccountID
     SET			ac.IsCTSTransformed = 1;
     
 	### PERFORMANCE

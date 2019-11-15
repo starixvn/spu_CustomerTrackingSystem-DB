@@ -4,7 +4,7 @@ USE DCS_DataCenter$$
 
 DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformToCST_Account_GetPackage$$
 
-CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformToCST_Account_GetPackage(IN ip_NoOfTickets INT, IN ip_NoOfBatch INT)
+CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformToCST_Account_GetPackage(IN ip_NoOfAccount INT, IN ip_NoOfBatch INT)
 BEGIN
 	/*
 	Created: 20190730@Casey.Huynh
@@ -32,7 +32,7 @@ BEGIN
     DECLARE		vrToID			BIGINT;
 
     SET		vrExecKey = CRC32((UUID_Short()));    
-    SET		vrNotes = CONCAT('Input: ',ip_NoOfTickets,'_', ip_NoOfBatch) ;		
+    SET		vrNotes = CONCAT('Input: ',ip_NoOfAccount,'_', ip_NoOfBatch) ;		
     SET 	vrStepID = 1;
     
     SET 	vrStartTime = CURRENT_TIMESTAMP(4);	
@@ -51,7 +51,7 @@ BEGIN
         , SubscriberID			INT
     ); 
    
-	SET TotalRecord = ip_NoOfTickets*ip_NoOfBatch;
+	SET TotalRecord = ip_NoOfAccount*ip_NoOfBatch;
     
 	INSERT INTO Temp_Account( AccountID, LoginNameWithPrefix, SubscriberID)
 	SELECT	ac.AccountID
@@ -67,7 +67,7 @@ BEGIN
     	  UPDATE 	Temp_Account
 		  SET		BatchID = Batch
           WHERE		BatchID IS NULL 
-          LIMIT 	ip_NoOfTickets;    
+          LIMIT 	ip_NoOfAccount;    
 		  SET Batch = Batch + 1;
     END WHILE;
     
