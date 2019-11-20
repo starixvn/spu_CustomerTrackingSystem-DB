@@ -36,30 +36,8 @@ BEGIN
 		 )) as tmpTable;     
     
 	# Insert Null account into CTSCustomer
-    INSERT INTO CTS_DataCenter.CTSCustomer(SubscriberID, 
-    CustID, 
-    CustSubID, 
-    UserName, 
-    UserName2, 
-    Site, 
-    RoleID, 
-    Currency, 
-    CurrencyID, 
-    SRecommend, 
-    MRecommend, 
-    Recommend)
-    SELECT acc.SubscriberID,
-    0,
-    0,
-    NULL,
-    LoginNameWithPrefix,
-    NULL,
-    0,
-    NULL,
-    0,
-    0,
-    0,
-    0
+    INSERT INTO CTS_DataCenter.CTSCustomer(SubscriberID, UserName2)
+    SELECT acc.SubscriberID, LoginNameWithPrefix  
     FROM Temp_Account AS acc 
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON acc.LoginNameWithPrefix = cus.UserName2
     WHERE cus.CTSCustID is null;
