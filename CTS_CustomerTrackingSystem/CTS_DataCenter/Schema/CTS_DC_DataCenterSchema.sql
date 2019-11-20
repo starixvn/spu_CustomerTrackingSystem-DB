@@ -1,8 +1,8 @@
 /*
-Creator: 20191106@CaseyHuynh
+Creator: 20191106@CaseyHuynh + Harvey.Nguyen
 Task:	 
 Server:  
-DBName:	CTS_Admin
+DBName:	CTS_DataCenter
 
 Revisions: 
 Reviewer:
@@ -14,10 +14,10 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomer (
 	CTSCustID			BIGINT	UNSIGNED	AUTO_INCREMENT
     , SubscriberID		INT	UNSIGNED
     , CustID			BIGINT	UNSIGNED
-    , HeadCustID		BIGINT	UNSIGNED
+    , CustSubID		BIGINT	UNSIGNED
     , UserName			VARCHAR(50)
     , UserName2			VARCHAR(50)
-    , Site				BIGINT	UNSIGNED    
+    , Site				VARCHAR(20)
     , RoleID			INT
     , Currency			VARCHAR(10)
     , CurrencyID		INT		
@@ -28,17 +28,45 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomer (
 	, INDEX	UIX_CTSCustomer_SubscriberID_UserName_UserName2(SubscriberID, UserName,UserName2)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
 
-
-CREATE TABLE IF NOT EXISTS CTS_DataCenter.Association(
-	CTSAssID		BIGINT	UNSIGNED	AUTO_INCREMENT
-	,CTSCustID		BIGINT	UNSIGNED
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociationByDevice(
+	CTSAssDevID		BIGINT	UNSIGNED AUTO_INCREMENT
+	, CTSCustID		BIGINT	UNSIGNED
     , DCSDeviceID	BIGINT
     , SubscriberID	INT
     , CreatedTime	TIMESTAMP(4)
     , InsertTime	TIMESTAMP(4)
-    , PRIMARY KEY	PK_Association_CTSAssID(CTSAssID)    
+    , PRIMARY KEY	PK_AssociationByDevice_CTSAssDevID(CTSAssDevID)    
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
 
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociationByIP(
+	CTSAssIPID		BIGINT	UNSIGNED	AUTO_INCREMENT
+	, CTSCustID		BIGINT	UNSIGNED
+    , IP			BIGINT
+    , SubscriberID	INT
+    , ExpiredDate	TIMESTAMP(4)
+    , CreatedTime	TIMESTAMP(4)
+    , InsertTime	TIMESTAMP(4)
+    , PRIMARY KEY	PK_AssociationByIP_CTSAssID(CTSAssIPID)    
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
+
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociatedCustomer(
+	CTSCustID				BIGINT	UNSIGNED
+	, AssociatedCTSCustID	BIGINT	UNSIGNED
+    , SubscriberID			INT
+    , AssType				TINYINT
+    , CreatedTime			TIMESTAMP(4)
+    , InsertTime			TIMESTAMP(4)
+    , PRIMARY KEY	PK_AssociatedCustomer_CTSCustID_AssociatedCTSCustID(CTSCustID, AssociatedCTSCustID)    
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociationType(
+	AssTypeID				BIGINT	UNSIGNED AUTO_INCREMENT
+	, TypeName				BIGINT	UNSIGNED
+    , Description			INT
+    , CreatedTime			TIMESTAMP(4)
+    , InsertTime			TIMESTAMP(4)
+    , PRIMARY KEY	PK_AssociationType_AssTypeID(AssTypeID)    
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
 
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustDCSAccount(
 	CTSCustID			BIGINT	UNSIGNED

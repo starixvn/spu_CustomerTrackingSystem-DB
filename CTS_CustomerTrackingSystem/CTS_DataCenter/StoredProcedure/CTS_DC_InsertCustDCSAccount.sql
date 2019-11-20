@@ -2,7 +2,7 @@ DELIMITER $$
 USE `CTS_DataCenter` $$
 DROP PROCEDURE IF EXISTS CTS_DC_InsertCustDCSAccount $$
 
-CREATE PROCEDURE CTS_DC_InsertCustDCSAccount (IN ip_AssociationList JSON)
+CREATE PROCEDURE CTS_DC_InsertCustDCSAccount (IN ip_CustDCSAccountList JSON)
 BEGIN
 	/*
 		Created:	20191107@Harvey
@@ -23,7 +23,7 @@ BEGIN
 				`SubscriberID`,
 				`InsertTime`)
 	SELECT *
-	FROM JSON_TABLE(ip_AssociationList,
+	FROM JSON_TABLE(ip_CustDCSAccountList,
 		 "$[*]" COLUMNS(
 		  CTSCustID 		BIGINT 			PATH "$.CTSCustID"         
 		, AccountID			BIGINT			PATH "$.AccountID" 
