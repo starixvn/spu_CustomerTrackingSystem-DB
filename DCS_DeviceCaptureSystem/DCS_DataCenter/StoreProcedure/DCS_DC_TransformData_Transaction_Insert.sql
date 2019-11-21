@@ -88,7 +88,8 @@ BEGIN
     INNER JOIN	CTS_Admin.Subscriber AS su
 				ON	rt.SubscriberName = su.SubscriberName
 	INNER JOIN	DCS_DataCenter.ActionResult AS ar
-				ON	rt.ActionResult = ActionResultDetails
+				ON	rt.Action = ar.Action
+					AND rt.ActionResult = ar.ActionResult
 	WHERE		rt.IsProcessed = 0
 				AND rt.TransID BETWEEN ip_FromTransID AND ip_ToTransID;
 	
@@ -125,7 +126,7 @@ BEGIN
             
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 
-    INSERT IGNORE INTO  DCS_DataCenter.Transaction(TransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCode, UserAgentKey
+    INSERT IGNORE INTO  DCS_DataCenter.Transaction(TransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey
 						, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime)
    	SELECT 		trt.TransID
 				, trt.LoginName
@@ -133,7 +134,6 @@ BEGIN
 				, trt.SubscriberID
                 , trt.AccountID
 				, trt.URLID
-                , trt.DeviceCode
                 , trt.UserAgentKey
                 , trt.IP
                 , trt.IPID

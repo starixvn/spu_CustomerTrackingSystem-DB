@@ -2,9 +2,9 @@ DELIMITER $$
 
 USE DCS_DataCenter$$
 
-DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformToCST_Association_GetPackage$$
+DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformToCTS_Association_GetPackage$$
 
-CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformToCST_Association_GetPackage(IN ip_NoOfAssociation INT, IN ip_NoOfBatch INT)
+CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformToCTS_Association_GetPackage(IN ip_NoOfAssociation INT, IN ip_NoOfBatch INT)
 BEGIN
 	/*
 	Created: 20190730@Casey.Huynh
@@ -21,7 +21,7 @@ BEGIN
     
 	### PERFORMANCE: START
     DECLARE		vrExecKey		BIGINT	UNSIGNED;
-	DECLARE		vrSPName		VARCHAR(200)  DEFAULT 'DCS_DC_TransformToCST_Association_GetPackage' ;
+	DECLARE		vrSPName		VARCHAR(200)  DEFAULT 'DCS_DC_TransformToCTS_Association_GetPackage' ;
     DECLARE		vrStepID		INT;
 	DECLARE 	vrNotes	 		VARCHAR(500);
 	DECLARE 	vrStartTime		TIMESTAMP(4);

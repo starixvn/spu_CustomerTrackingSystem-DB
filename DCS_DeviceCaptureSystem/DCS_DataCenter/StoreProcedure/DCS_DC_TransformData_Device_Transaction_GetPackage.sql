@@ -60,10 +60,11 @@ BEGIN
 			, ts.AccountID
             , ts.SubscriberID
             , ts.UserAgentKey
-            , ts.DeviceCode
+            , rt.DeviceCode
 	FROM 	DCS_DataCenter.Transaction AS ts
+	INNER JOIN DCS_RawTransaction.RawTransaction AS rt ON ts.TransId = rt.TransID 
 	WHERE	ts.AccountID 	IS NOT NULL
-			AND ts.ReferDeviceID IS NULL
+			AND ts.DeviceID IS NULL
 	LIMIT	TotalRecord;
     
     WHILE (EXISTS (SELECT (1) FROM Temp_Trans WHERE BatchID IS NULL LIMIT 1)) DO

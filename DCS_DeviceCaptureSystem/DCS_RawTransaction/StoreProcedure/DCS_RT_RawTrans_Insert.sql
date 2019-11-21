@@ -29,6 +29,7 @@ BEGIN
         , IPID						BIGINT								NULL
 		, PluginID					BIGINT 								NULL	
 		, URL						VARCHAR(500) 						NULL
+        , `Action`					VARCHAR(100) 						NULL
 		, ActionResult				VARCHAR(100) 						NULL
 		, InvalidDevice				TEXT	CHARACTER SET UTF8MB4		NULL
 		, TransStatus				BIT(16)								NULL	
@@ -46,6 +47,7 @@ BEGIN
         , IPID
 		, PluginID
 		, URL
+        , Action
 		, ActionResult
         , InvalidDevice
 		, TransStatus
@@ -62,6 +64,7 @@ BEGIN
             , rt.IPID
 			, rt.PluginID            
 			, rt.URL
+            , rt.Action
 			, rt.ActionResult
             , InvalidDevice
 			, TransStatus
@@ -79,6 +82,7 @@ BEGIN
                             , IPID					BIGINT			PATH "$.IPId"
 							, PluginID				BIGINT 			PATH "$.PluginID"
 							, URL					VARCHAR(500) 	PATH "$.URL"
+                            , Action				VARCHAR(100)	PATH "$.Action"
 							, ActionResult			VARCHAR(100) 	PATH "$.ActionResult"
                             , InvalidDevice	TEXT	CHARACTER SET UTF8MB4 	PATH "$.InvalidDevice"
                             , TransStatus	BIT(16)		 					PATH "$.TransStatus"
@@ -98,6 +102,7 @@ BEGIN
         , IPID
 		, PluginID
 		, URL
+        , Action
 		, ActionResult
         , InvalidDevice
         , TransStatus
@@ -115,6 +120,7 @@ BEGIN
         , rt.IPID
 		, rt.PluginID
 		, rt.URL
+        , rt.Action
 		, rt.ActionResult
         , rt.InvalidDevice
         , rt.TransStatus

@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
 		, FirstDeviceCode		VARCHAR(32)		NULL
         , UserAgentKey			VARCHAR(32)		NULL
         , FirstTransID			BIGINT			NULL
-        , DeviceStatus			TINYINT			NULL			COMMENT 'New Device, Old Device'
+		, CreatedTime			TIMESTAMP(4)	NULL			COMMENT 'CreatedTime of First Transaction'
         , CreatedDate			DATETIME		NULL        	COMMENT 'Date Only, Date of First Transaction'
         , InsertTime			TIMESTAMP(4)	NULL			COMMENT 'DateTime, the time that data Insert to Table'
         
@@ -25,11 +25,9 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
 	CREATE TABLE IF NOT EXISTS DCS_DataCenter.DeviceCode(
 		DeviceCodeID			BIGINT	UNSIGNED	AUTO_INCREMENT
 		, DeviceCode			VARCHAR(32) 	NOT NULL		COMMENT ' DeviceCode Captured From DI'
-        , DeviceID				BIGINT	UNSIGNED	NULL        
-        , FirstDeviceCode		VARCHAR(32)		NULL			COMMENT 'DeviceCode Of Device. Defferent with DeviceCode Field'
-        , LastStatus			TINYINT			NULL			
+        , DeviceID				BIGINT	UNSIGNED	NULL        			
 		, FirstTransID			BIGINT			NULL
-        , FirstStatus			TINYINT			NULL
+		, CreatedTime			TIMESTAMP(4)	NULL
         , CreatedDate			DATETIME		NULL
         , InsertTime			TIMESTAMP(4)	NULL
         
@@ -42,19 +40,16 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
      
 # ======DeviceDetail=============================================
 	CREATE TABLE IF NOT EXISTS DCS_DataCenter.DeviceFingerprint(
-		FingerprintID			BIGINT	UNSIGNED	AUTO_INCREMENT
-		, FingerprintKey		VARCHAR(32)			 NOT NULL
+		DeviceFingerprintID			BIGINT	UNSIGNED	AUTO_INCREMENT
+        , DeviceID				BIGINT			NULL
         , FingerprintCode		VARCHAR(620)	NOT NULL
 		, FingerprintMoreInfo	TEXT			NULL
-        , UserAgentKey			VARCHAR(32)		NULL
-		, PluginID				BIGINT			NULL
-        , DeviceID				BIGINT			NULL
+        , CreatedTime			TIMESTAMP(4)	NULL
         , CreatedDate			DATETIME		NULL
         , InsertTime			TIMESTAMP(4)	NULL
         
-        , PRIMARY KEY	PK_Fingerprint_FingerprintKey(FingerprintKey)
-		, UNIQUE KEY	UK_DeviceFingerprint_FingerprintID(FingerprintID)
-        , INDEX			IX_Fingerprint_FingerprintCode(DeviceID)
+        , PRIMARY KEY	PK_Fingerprint_FingerprintKey(DeviceFingerprintID)
+		, UNIQUE KEY	UK_DeviceFingerprint_FingerprintID(FingerprintCode,DeviceID)
      ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
     
 # =======Association============================================
@@ -64,6 +59,7 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
 		, AccountID			BIGINT			NOT NULL
 		, SubscriberID		INT				NOT NULL
         , CreatedTime		TIMESTAMP(4) 	NULL
+        , CreatedDate		TIMESTAMP(4) 	NULL
         , InsertTime		TIMESTAMP(4)	NULL
         , IsCTSTransformed	TINYINT		DEFAULT 0
         , PRIMARY KEY	PK_Association_AssociationID(AssociationID)
@@ -93,12 +89,15 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
         , SubscriberID		INT									NULL
         , AccountID			BIGINT				UNSIGNED		NULL
         , URLID				BIGINT				UNSIGNED		NULL     
-        , DeviceCode		VARCHAR(32)							NULL		COMMENT 'Trans Device Code'
-		, DeviceCodeID		BIGINT								NULL		
-        , ReferDeviceID		BIGINT				UNSIGNED		NULL		
-        , ReferDeviceCode	VARCHAR(32)							NULL
-        , ReferDeviceStatus	TINYINT							NULL		COMMENT 'Trans Device Status at Insert Time'
-        , FingerprintCodeID	BIGINT			UNSIGNED		NULL
+	# 	, DeviceCode		VARCHAR(32)							NULL		COMMENT 'Trans Device Code'
+		, DeviceCodeID		BIGINT				UNSIGNED		NULL
+		, DeviceID			BIGINT				UNSIGNED		NULL
+        , FirstDeviceCode	VARCHAR(64)							NULL
+        , DeviceStatus		TINYINT								NULL
+     #   , ReferDeviceID		BIGINT				UNSIGNED		NULL		
+     #   , ReferDeviceCode	VARCHAR(32)							NULL
+     #   , ReferDeviceStatus	TINYINT							NULL		COMMENT 'Trans Device Status at Insert Time'
+        , DeviceFingerprintID	BIGINT			UNSIGNED		NULL
         , UserAgentKey		VARCHAR(32)							NULL
         , IP				VARCHAR(50)							NULL
         , IPID				BIGINT								NULL
@@ -138,12 +137,13 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
 # ===========================================================================
 	CREATE TABLE IF NOT EXISTS DCS_DataCenter.ActionResult(
 		ActionResultID			INT				AUTO_INCREMENT
-		, ActionResultDetails	VARCHAR(200)	NOT NULL
-        , ActionResultStatus			TINYINT			NOT NULL	COMMENT '0: Inactive; 1: Active; -1: Unhandled(Action has not defined in Intergrated Action List)'
+        , Action				VARCHAR(100)	NOT NULL
+		, ActionResult			VARCHAR(100)	NOT NULL
+        , ActionResultStatus	TINYINT			NOT NULL	COMMENT '0: Inactive; 1: Active; -1: Unhandled(Action has not defined in Intergrated Action List)'
         , CreatedDate			DATETIME		NOT NULL	COMMENT 'Date Only'
         
         , PRIMARY KEY 	PK_ActionResult_ActionResultID(ActionResultID)
-        , UNIQUE KEY	UK_ActionResult_ActionResultDetails(ActionResultDetails)
+        , UNIQUE KEY	UK_ActionResult_ActionResultDetails(Action, ActionResult)
      ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 
 # ===========================================================================	

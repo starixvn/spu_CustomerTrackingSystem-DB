@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS DCS_RawTransaction.RawTransaction(
     , IPID						BIGINT								NULL
 	, PluginID					BIGINT 								NULL	
 	, URL						VARCHAR(500) 						NULL
+    , `Action`					VARCHAR(100) 						NULL
 	, ActionResult				VARCHAR(100) 						NULL
 	, InvalidDevice				TEXT	CHARACTER SET UTF8MB4		NULL
     , TransStatus				BIT(16)								NULL	  COMMENT 	'Refer Table TransStatus'
