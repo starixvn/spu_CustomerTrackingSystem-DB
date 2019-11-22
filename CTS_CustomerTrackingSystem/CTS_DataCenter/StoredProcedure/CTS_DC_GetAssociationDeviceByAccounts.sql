@@ -1,5 +1,5 @@
 DELIMITER $$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_GetCTSCustomerByAccounts`(IN ip_AssociationList JSON)
+CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_GetAssociationDeviceByAccounts`(IN ip_AssociationList JSON)
 BEGIN
 /*
 		Created:	20191115@Terry.Nguyen
@@ -18,9 +18,9 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Association;
     
 	CREATE TEMPORARY TABLE Temp_Association 
-    (	    
-		AssociationID	        BIGINT	UNSIGNED
-		,AccountID				BIGINT	UNSIGNED
+    (	
+		  AssociationID	        BIGINT	UNSIGNED
+		, AccountID				BIGINT	UNSIGNED
         , DeviceID				BIGINT	UNSIGNED
         , SubscriberID			INT
         , CreatedTime			TIMESTAMP(4)
@@ -32,7 +32,8 @@ BEGIN
 				DeviceID,
 				SubscriberID,
                 CreatedTime)                
-	SELECT 	tmpTable.AccountID, 
+	SELECT 	tmpTable.AssociationID,
+			tmpTable.AccountID, 
 			tmpTable.DeviceID, 
 			tmpTable.SubscriberID,
             tmpTable.CreatedTime
@@ -45,7 +46,11 @@ BEGIN
             , CreatedTime				TIMESTAMP(4)	PATH "$.CreatedTime"
 		 )) as tmpTable;   
     
-    SELECT cus.CTSCustID AS CustID, ass.DeviceID as DeviceID, ass.SubscriberID, MIN(ass.CreatedTime) As CreatedTime, ass.AssociationId
+    SELECT cus.CTSCustID AS CustID, 
+    ass.DeviceID as DeviceID, 
+    ass.SubscriberID, 
+    MIN(ass.CreatedTime) As CreatedTime,
+    ass.AssociationId
 		FROM Temp_Association AS ass 
 		INNER JOIN CTS_DataCenter.CustDCSAccount AS cus ON ass.AccountID = cus.AccountID        
 		GROUP BY cus.CTSCustID, ass.DeviceID, ass.SubscriberID;
