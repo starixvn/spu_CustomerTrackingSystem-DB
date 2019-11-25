@@ -40,8 +40,8 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
      
 # ======DeviceDetail=============================================
 	CREATE TABLE IF NOT EXISTS DCS_DataCenter.DeviceFingerprint(
-		DeviceFingerprintID			BIGINT	UNSIGNED	AUTO_INCREMENT
-        , DeviceID				BIGINT			NULL
+		DeviceFingerprintID		BIGINT	UNSIGNED	AUTO_INCREMENT
+        , DeviceID				BIGINT	UNSIGNED	NULL
         , FingerprintCode		VARCHAR(620)	NOT NULL
 		, FingerprintMoreInfo	TEXT			NULL
         , CreatedTime			TIMESTAMP(4)	NULL
@@ -55,8 +55,8 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
 # =======Association============================================
 	CREATE TABLE IF NOT EXISTS DCS_DataCenter.Association(
 		AssociationID		BIGINT	UNSIGNED	AUTO_INCREMENT			
-		, DeviceID			BIGINT			NOT NULL
-		, AccountID			BIGINT			NOT NULL
+		, DeviceID			BIGINT	UNSIGNED	NOT NULL
+		, AccountID			INT		UNSIGNED	NOT NULL
 		, SubscriberID		INT				NOT NULL
         , CreatedTime		TIMESTAMP(4) 	NULL
         , CreatedDate		TIMESTAMP(4) 	NULL
@@ -65,10 +65,21 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
         , PRIMARY KEY	PK_Association_AssociationID(AssociationID)
         , INDEX	IX_Association_SubscriberID_AccountID_DeviceID(SubscriberID, AccountID, DeviceID)
      ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
-
+# =======IPAssociation============================================
+	CREATE TABLE IF NOT EXISTS DCS_DataCenter.AssociationByIP(
+		AssociationByIPID	BIGINT	UNSIGNED	AUTO_INCREMENT		
+		, AccountID			INT		UNSIGNED	NOT NULL
+		, SubscriberID		INT				NOT NULL
+        , CreatedTime		TIMESTAMP(4) 	NULL
+        , CreatedDate		TIMESTAMP(4) 	NULL
+        , InsertTime		TIMESTAMP(4)	NULL
+        , IsCTSTransformed	TINYINT		DEFAULT 0
+        , PRIMARY KEY	PK_Association_AssociationID(AssociationID)
+        , INDEX	IX_Association_SubscriberID_AccountID_DeviceID(SubscriberID, AccountID, DeviceID)
+     ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 # =======Account============================================
 	CREATE TABLE IF NOT EXISTS DCS_DataCenter.`Account`(
-		AccountID			BIGINT		UNSIGNED	AUTO_INCREMENT	NOT NULL        
+		AccountID			INT		UNSIGNED	AUTO_INCREMENT	NOT NULL        
         , LoginName			VARCHAR(100)							NOT NULL
         , SubscriberID		INT										NOT NULL
         , SubscriberType	TINYINT									NULL
@@ -87,16 +98,12 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
 		, LoginName			VARCHAR(100) 						NOT NULL
         , TransTime			TIMESTAMP(4)						NOT	NULL                
         , SubscriberID		INT									NULL
-        , AccountID			BIGINT				UNSIGNED		NULL
-        , URLID				BIGINT				UNSIGNED		NULL     
-	# 	, DeviceCode		VARCHAR(32)							NULL		COMMENT 'Trans Device Code'
-		, DeviceCodeID		BIGINT				UNSIGNED		NULL
-		, DeviceID			BIGINT				UNSIGNED		NULL
+        , AccountID			INT				UNSIGNED			NULL
+        , URLID				BIGINT			UNSIGNED			NULL
+		, DeviceCodeID		BIGINT			UNSIGNED			NULL
+		, DeviceID			BIGINT			UNSIGNED			NULL
         , FirstDeviceCode	VARCHAR(64)							NULL
         , DeviceStatus		TINYINT								NULL
-     #   , ReferDeviceID		BIGINT				UNSIGNED		NULL		
-     #   , ReferDeviceCode	VARCHAR(32)							NULL
-     #   , ReferDeviceStatus	TINYINT							NULL		COMMENT 'Trans Device Status at Insert Time'
         , DeviceFingerprintID	BIGINT			UNSIGNED		NULL
         , UserAgentKey		VARCHAR(32)							NULL
         , IP				VARCHAR(50)							NULL
