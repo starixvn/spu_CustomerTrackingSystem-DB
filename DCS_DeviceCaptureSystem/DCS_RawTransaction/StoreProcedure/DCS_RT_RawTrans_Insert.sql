@@ -56,17 +56,17 @@ BEGIN
 			rt.LoginName
 			, rt.SubscriberName
 			, rt.TransTime
-			, rt.DeviceCode
-			, (CASE WHEN rt.DeviceCode ="" THEN "" ELSE rt.FingerprintCode 		END) 	AS FingerprintCode
-			, (CASE WHEN rt.DeviceCode ="" THEN "" ELSE rt.FingerprintMoreInfo	END) AS FingerprintMoreInfo
-			, rt.UserAgent
-			, rt.IP
-            , rt.IPID
-			, rt.PluginID            
-			, rt.URL
-            , rt.Action
-			, rt.ActionResult
-            , InvalidDevice
+			, (CASE WHEN rt.DeviceCode ="null" THEN NULL ELSE rt.DeviceCode END) AS DeviceCode
+			, (CASE WHEN rt.FingerprintCode ="null" OR rt.DeviceCode ="null"	THEN NULL ELSE rt.FingerprintCode 		END) 	AS FingerprintCode
+			, (CASE WHEN rt.FingerprintMoreInfo ="null" OR rt.DeviceCode ="null" THEN NULL ELSE rt.FingerprintMoreInfo	END) AS FingerprintMoreInfo
+			, (CASE WHEN rt.UserAgent ="null" THEN NULL ELSE rt.UserAgent END) AS UserAgent
+			, (CASE WHEN rt.IP ="null" THEN NULL ELSE rt.IP END) AS IP
+            , (CASE WHEN rt.IPID = 0 THEN NULL ELSE rt.IPID END) AS IPID
+			, (CASE WHEN rt.PluginID = 0 THEN NULL ELSE rt.PluginID END) AS PluginID            
+			, (CASE WHEN rt.URL ="null" THEN NULL ELSE rt.URL END) AS URL
+            , (CASE WHEN rt.Action ="null" THEN NULL ELSE rt.Action END) AS Action
+			, (CASE WHEN rt.ActionResult ="null" THEN NULL ELSE rt.ActionResult END) AS ActionResult
+            , (CASE WHEN rt.InvalidDevice ="null" THEN NULL ELSE rt.InvalidDevice END) AS InvalidDevice
 			, TransStatus
 	FROM	JSON_TABLE(
 			ip_RawTransJson,

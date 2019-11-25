@@ -135,6 +135,8 @@ BEGIN
                 , tts.DeviceStatus = vrDeviceStatusRecover
 	WHERE		tts.DeviceID IS NULL;
 	
+	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    
 	DROP TEMPORARY TABLE IF EXISTS Temp_NewDeviceCode;
     CREATE TEMPORARY TABLE Temp_NewDeviceCode(
 		DeviceCode		VARCHAR(32)
@@ -189,12 +191,14 @@ BEGIN
     FROM		Temp_Transaction AS tts
     WHERE		tts.DeviceStatus = vrDeviceStatusNew;
 	
+    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
     UPDATE		Temp_Transaction AS tts
     INNER JOIN 	DCS_DataCenter.Device AS dv
 				ON tts.DeviceCode = dv.FirstDeviceCode
 	SET			tts.DeviceID = dv.DeviceID
-    WHERE		tts.DeviceStatus = vrDeviceStatusNew;
-    
+    WHERE		tts.DeviceStatus = vrDeviceStatusNew;    
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+       
     DROP TEMPORARY TABLE IF EXISTS Temp_RecoverDevice;
     CREATE TEMPORARY TABLE Temp_RecoverDevice(
 		TransID				VARCHAR(32)
@@ -223,12 +227,14 @@ BEGIN
     From	Temp_Transaction AS tts
     WHERE	tts.DeviceStatus = vrDeviceStatusNew
 			OR tts.DeviceStatus = vrDeviceStatusRecover;    
-            
+    
+    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
 	UPDATE		Temp_Transaction AS tts
     INNER JOIN	DCS_DataCenter.DeviceCode	AS dc
 				ON	tts.DeviceCode = dc.DeviceCode
 	SET			tts.DeviceID = dc.DeviceID
                 , tts.DeviceCodeID =  dc.DeviceCodeID;    
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
     INSERT IGNORE INTO DCS_DataCenter.DeviceFingerprint(FingerprintCode, FingerprintMoreInfo, DeviceID, CreatedTime, CreatedDate, InsertTime)
      SELECT tts.FingerprintCode
@@ -250,21 +256,21 @@ BEGIN
     FROM Temp_Transaction AS tts
     GROUP BY  tts.DeviceID, tts.AccountID, tts.SubscriberID; 
     
+    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 	UPDATE		Temp_Transaction AS tts
     INNER JOIN	DCS_DataCenter.DeviceCode	AS dc
 				ON	tts.DeviceCode = dc.DeviceCode
 	SET			tts.DeviceID = dc.DeviceID
                 , tts.DeviceCodeID =  dc.DeviceCodeID
 	WHERE 		tts.DeviceCodeID IS NULL;    
-
-   
+	   
 	UPDATE		Temp_Transaction AS tts
     INNER JOIN	DCS_DataCenter.DeviceFingerprint	AS df
 				ON	tts.FingerprintCode = df.FingerprintCode
 					AND tts.DeviceID = df.DeviceID
 	SET			tts.DeviceID = df.DeviceID
                 , tts.DeviceFingerprintID =  df.DeviceFingerprintID;  
-	
+	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
 	UPDATE	DCS_DataCenter.Transaction AS ts
     INNER JOIN	Temp_Transaction AS tts
@@ -273,10 +279,7 @@ BEGIN
                 , ts.DeviceID = tts.DeviceID
                 , ts.FirstDeviceCode = tts.DeviceCode
                 , ts.DeviceStatus = tts.DeviceStatus
-                , ts.DeviceFingerprintID = tts.DeviceFingerprintID;    
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-	
+                , ts.DeviceFingerprintID = tts.DeviceFingerprintID;	
 	### PERFORMANCE
 	SET	vrEndTime = CURRENT_TIMESTAMP(4);
 	

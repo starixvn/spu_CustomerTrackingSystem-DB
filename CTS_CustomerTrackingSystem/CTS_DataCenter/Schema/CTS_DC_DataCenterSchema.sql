@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomer (
 	CTSCustID			BIGINT	UNSIGNED	AUTO_INCREMENT
     , SubscriberID		INT	UNSIGNED
     , CustID			BIGINT	UNSIGNED
-    , CustSubID		BIGINT	UNSIGNED
+    , CustSubID			BIGINT	UNSIGNED
     , UserName			VARCHAR(50)
     , UserName2			VARCHAR(50)
     , Site				VARCHAR(20)
@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociatedCustomer(
 	CTSCustID				BIGINT	UNSIGNED
 	, AssociatedCTSCustID	BIGINT	UNSIGNED
     , SubscriberID			INT
-    , AssType				TINYINT
+    , AssTypeValue			BIT(16)
     , CreatedTime			TIMESTAMP(4)
     , InsertTime			TIMESTAMP(4)
     , PRIMARY KEY	PK_AssociatedCustomer_CTSCustID_AssociatedCTSCustID(CTSCustID, AssociatedCTSCustID)    
@@ -61,8 +61,9 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociatedCustomer(
 
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociationType(
 	AssTypeID				BIGINT	UNSIGNED AUTO_INCREMENT
-	, TypeName				BIGINT	UNSIGNED
-    , Description			INT
+	, AssTypeName			VARCHAR(50)
+    , AssTypeValue			BIT(16)
+    , Description			VARCHAR(200)
     , CreatedTime			TIMESTAMP(4)
     , InsertTime			TIMESTAMP(4)
     , PRIMARY KEY	PK_AssociationType_AssTypeID(AssTypeID)    
@@ -75,7 +76,6 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustDCSAccount(
     , InsertTime	TIMESTAMP(4)
     , PRIMARY KEY	PK_CustDCSAccount_AccountID(AccountID)    
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
-
 
 # ======EvidenceGroup=============================================
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.EvidenceGroup(

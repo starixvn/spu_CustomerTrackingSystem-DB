@@ -19,10 +19,10 @@ CREATE TABLE IF NOT EXISTS DCS_RawTransaction.RawTransaction(
     , FingerprintMoreInfo		TEXT	CHARACTER SET UTF8MB4		NULL
     , UserAgent					TEXT		 						NULL
 	, IP						VARCHAR(50) 						NULL
-    , IPID						BIGINT								NULL
+    , IPID						DECIMAL(50,0)						NULL
 	, PluginID					BIGINT 								NULL	
 	, URL						VARCHAR(500) 						NULL
-    , `Action`					VARCHAR(100) 						NULL
+    , Action					VARCHAR(100) 						NULL
 	, ActionResult				VARCHAR(100) 						NULL
 	, InvalidDevice				TEXT	CHARACTER SET UTF8MB4		NULL
     , TransStatus				BIT(16)								NULL	  COMMENT 	'Refer Table TransStatus'
