@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomer (
     , MRecommend		BIGINT
     , Recommend			BIGINT
     , PRIMARY KEY	PK_CTSCustomer_CTSCustID(CTSCustID)    
-	, INDEX	UIX_CTSCustomer_SubscriberID_UserName_UserName2(SubscriberID, UserName,UserName2)
+	, INDEX	IX_CTSCustomer_SubscriberID_UserName_UserName2(SubscriberID, UserName,UserName2)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
 
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociationByDevice(
@@ -76,6 +76,14 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustDCSAccount(
     , InsertTime	TIMESTAMP(4)
     , PRIMARY KEY	PK_CustDCSAccount_AccountID(AccountID)    
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
+
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.MappingSubscriberSite(
+	SiteId				BIGINT	UNSIGNED
+    , SiteName			NVARCHAR(50)
+    , SubscriberID		INT
+    , SubscriberName	NVARCHAR(50)
+    , PRIMARY KEY	PK_MappingSubscriberSite(SiteId)    
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 
 # ======EvidenceGroup=============================================
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.EvidenceGroup(
