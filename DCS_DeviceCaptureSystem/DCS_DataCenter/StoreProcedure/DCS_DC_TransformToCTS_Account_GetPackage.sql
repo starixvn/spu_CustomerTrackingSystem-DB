@@ -47,19 +47,17 @@ BEGIN
     (	
 		BatchID					TINYINT
         , AccountID				BIGINT	UNSIGNED
-        , LoginNameWithPrefix	VARCHAR(100)
+        , LoginName				VARCHAR(50)
         , SubscriberID			INT
     ); 
    
 	SET TotalRecord = ip_NoOfAccount*ip_NoOfBatch;
     
-	INSERT INTO Temp_Account( AccountID, LoginNameWithPrefix, SubscriberID)
+	INSERT INTO Temp_Account( AccountID, LoginName, SubscriberID)
 	SELECT	ac.AccountID
-			, CONCAT(su.SubscriberPrefix,ac.LoginName) AS LoginNameWithPrefix
+			, ac.LoginName
             , ac.SubscriberID
 	FROM 	DCS_DataCenter.Account AS ac
-	INNER JOIN	CTS_Admin.Subscriber AS su
-				ON ac.SubscriberID = su.SubscriberID
 	WHERE	ac.IsCTSTransformed = 0
 	LIMIT	TotalRecord;
     
@@ -73,7 +71,7 @@ BEGIN
     
     SELECT	ac.BatchID
 			, ac.AccountID
-            , ac.LoginNameWithPrefix
+            , ac.LoginName
             , ac.SubscriberID
 	FROM Temp_Account AS ac;
     

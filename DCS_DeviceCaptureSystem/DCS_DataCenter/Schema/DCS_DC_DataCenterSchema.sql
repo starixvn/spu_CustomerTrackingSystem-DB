@@ -65,18 +65,7 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
         , PRIMARY KEY	PK_Association_AssociationID(AssociationID)
         , INDEX	IX_Association_SubscriberID_AccountID_DeviceID(SubscriberID, AccountID, DeviceID)
      ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
-# =======IPAssociation============================================
-	CREATE TABLE IF NOT EXISTS DCS_DataCenter.AssociationByIP(
-		AssociationByIPID	BIGINT	UNSIGNED	AUTO_INCREMENT		
-		, AccountID			INT		UNSIGNED	NOT NULL
-		, SubscriberID		INT				NOT NULL
-        , CreatedTime		TIMESTAMP(4) 	NULL
-        , CreatedDate		TIMESTAMP(4) 	NULL
-        , InsertTime		TIMESTAMP(4)	NULL
-        , IsCTSTransformed	TINYINT		DEFAULT 0
-        , PRIMARY KEY	PK_Association_AssociationID(AssociationID)
-        , INDEX	IX_Association_SubscriberID_AccountID_DeviceID(SubscriberID, AccountID, DeviceID)
-     ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+
 # =======Account============================================
 	CREATE TABLE IF NOT EXISTS DCS_DataCenter.`Account`(
 		AccountID			INT		UNSIGNED	AUTO_INCREMENT	NOT NULL        
@@ -107,7 +96,7 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
         , DeviceFingerprintID	BIGINT			UNSIGNED		NULL
         , UserAgentKey		VARCHAR(32)							NULL
         , IP				VARCHAR(50)							NULL
-        , IPID				BIGINT								NULL
+        , IPID				DECIMAL(50,0)						NULL
         , ActionResultID 	BIGINT								NULL
 		, Flagged			SMALLINT							NULL		COMMENT 'captcha & browserless'		
         , PluginID			BIGINT 								NULL
@@ -184,6 +173,21 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.TransStatus(
      , IsTransformed		BIT(1)
      , CreatedDate			DATETIME
      , PRIMARY KEY PK_TransStatus(StatusValue)
+);
+
+# ==========TransStatus============================================
+CREATE TABLE IF NOT EXISTS DCS_DataCenter.TransactionIP(
+	 TransID				BIGINT			UNSIGNED	NOT NULL
+     , AccountID			INT				UNSIGNED	NOT NULL     
+     , LoginName			VARCHAR(100)	NOT NULL
+     , SubscriberID			INT				NOT NULL
+     , IP					VARCHAR(50)			NULL
+	 , IPID					DECIMAL(50,0)		NULL
+     , TransTime			TIMESTAMP(4)	NOT NULL
+     , CreatedDate			DATETIME		NOT NULL
+     , IsCTSTransformed		TINYINT			NOT NULL	DEFAULT 0
+     , PRIMARY KEY	PK_CTSTransformIP_TransID(TransID)
+     , INDEX 		IX_TCTSTransformIP_IsTransformed(CreatedDate, IsCTSTransformed)
 );
 # ===================================================
 CREATE TABLE IF NOT EXISTS DCS_DataCenter.zzTracePerformance (

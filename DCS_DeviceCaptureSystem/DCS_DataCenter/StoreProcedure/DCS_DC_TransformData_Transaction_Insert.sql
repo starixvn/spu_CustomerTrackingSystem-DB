@@ -125,7 +125,8 @@ BEGIN
             , trt.URLID = ur.URLID;
             
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-	INSERT IGNORE INTO DCS_DataCenter.TransactionIP (TransID, AccountID, LoginName, SubscriberID, IP, IPID, TransTime, CreatedDate)
+	
+    INSERT IGNORE INTO DCS_DataCenter.TransactionIP (TransID, AccountID, LoginName, SubscriberID, IP, IPID, TransTime, CreatedDate)
     SELECT 	trt.TransID
 			, trt.AccountID
             , trt.LoginName

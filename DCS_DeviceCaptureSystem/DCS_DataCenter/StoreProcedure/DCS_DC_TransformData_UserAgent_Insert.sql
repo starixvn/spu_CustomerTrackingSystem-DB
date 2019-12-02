@@ -58,6 +58,7 @@ BEGIN
     WHERE		rt.TransID BETWEEN ip_FromTransID AND ip_ToTransID
 				AND rt.IsProcessed = 0
                 AND ua.UserAgentKey IS NULL
+                AND rt.UserAgent IS NOT NULL
     GROUP BY	rt.UserAgent;  
     
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;

@@ -35,7 +35,7 @@ BEGIN
   
     SET		vrExecKey = CRC32((UUID_Short()));
     
-    SET		vrNotes = 'Insert(DC, DC, ASCT) and Update DeviceInfo to Transaction ';
+    SET		vrNotes = 'DCS_DC_TransformData_Device_Insert';
 	SET 	vrStartTime = CURRENT_TIMESTAMP(4);	
     SET 	vrStepID = 1;
     
@@ -66,8 +66,8 @@ BEGIN
 	SELECT TransID
 			, AccountID
 			, SubscriberID
-            , UserAgentKey
-			, DeviceCode
+            , (CASE WHEN tmpTrans.UserAgentKey ="null" THEN NULL ELSE tmpTrans.UserAgentKey END) AS UserAgentKey
+			, (CASE WHEN tmpTrans.DeviceCode ="null" THEN NULL ELSE tmpTrans.DeviceCode END) AS DeviceCode
 			 FROM
 			   JSON_TABLE(
 				ip_TransJson,
@@ -189,14 +189,15 @@ BEGIN
                 , tts.CreatedDate
                 , CURRENT_TIMESTAMP(4)	AS InsertTime
     FROM		Temp_Transaction AS tts
-    WHERE		tts.DeviceStatus = vrDeviceStatusNew;
+    WHERE		tts.DeviceStatus = vrDeviceStatusNew
+				AND tts.DeviceCode IS NOT NULL;
 	
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
     UPDATE		Temp_Transaction AS tts
     INNER JOIN 	DCS_DataCenter.Device AS dv
 				ON tts.DeviceCode = dv.FirstDeviceCode
 	SET			tts.DeviceID = dv.DeviceID
-    WHERE		tts.DeviceStatus = vrDeviceStatusNew;    
+    WHERE		tts.DeviceStatus = vrDeviceStatusNew;
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
        
     DROP TEMPORARY TABLE IF EXISTS Temp_RecoverDevice;
@@ -225,8 +226,9 @@ BEGIN
             , tts.CreatedDate
             , CURRENT_TIMESTAMP(4)	AS InsertTime
     From	Temp_Transaction AS tts
-    WHERE	tts.DeviceStatus = vrDeviceStatusNew
-			OR tts.DeviceStatus = vrDeviceStatusRecover;    
+    WHERE	(tts.DeviceStatus = vrDeviceStatusNew
+			OR tts.DeviceStatus = vrDeviceStatusRecover)
+            AND tts.DeviceCode IS NOT NULL;    
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
 	UPDATE		Temp_Transaction AS tts
@@ -244,6 +246,7 @@ BEGIN
             , MIN(tts.CreatedDate)
             , CURRENT_TIMESTAMP(4)	AS InsertTime
     FROM	Temp_Transaction AS tts
+    WHERE	tts.FingerprintCode IS NOT NULL
     GROUP BY tts.FingerprintCode, tts.DeviceID;
     
     INSERT IGNORE INTO DCS_DataCenter.Association(DeviceID, AccountID, SubscriberID, CreatedTime, CreatedDate,  InsertTime)
@@ -254,6 +257,7 @@ BEGIN
             , MIN(tts.CreatedDate)
             , CURRENT_TIMESTAMP(4)	AS InsertTime
     FROM Temp_Transaction AS tts
+    WHERE	DeviceID IS NOT NULL
     GROUP BY  tts.DeviceID, tts.AccountID, tts.SubscriberID; 
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;

@@ -39,35 +39,18 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociationByDevice(
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
 
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociationByIP(
-	CTSAssIPID		BIGINT	UNSIGNED	AUTO_INCREMENT
-	, CTSCustID		BIGINT	UNSIGNED
-    , IP			BIGINT
-    , SubscriberID	INT
-    , ExpiredDate	TIMESTAMP(4)
-    , CreatedTime	TIMESTAMP(4)
-    , InsertTime	TIMESTAMP(4)
-    , PRIMARY KEY	PK_AssociationByIP_CTSAssID(CTSAssIPID)    
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
-
-CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociatedCustomer(
-	CTSCustID				BIGINT	UNSIGNED
-	, AssociatedCTSCustID	BIGINT	UNSIGNED
-    , SubscriberID			INT
-    , AssTypeValue			BIT(16)
-    , CreatedTime			TIMESTAMP(4)
-    , InsertTime			TIMESTAMP(4)
-    , PRIMARY KEY	PK_AssociatedCustomer_CTSCustID_AssociatedCTSCustID(CTSCustID, AssociatedCTSCustID)    
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
-
-CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociationType(
-	AssTypeID				BIGINT	UNSIGNED AUTO_INCREMENT
-	, AssTypeName			VARCHAR(50)
-    , AssTypeValue			BIT(16)
-    , Description			VARCHAR(200)
-    , CreatedTime			TIMESTAMP(4)
-    , InsertTime			TIMESTAMP(4)
-    , PRIMARY KEY	PK_AssociationType_AssTypeID(AssTypeID)    
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
+	CTSAssIPID			BIGINT	UNSIGNED	AUTO_INCREMENT
+	, CTSCustID			BIGINT	UNSIGNED
+    , IP				VARCHAR(50)
+    , IPID				BIGINT
+    , SubscriberID		INT
+    , FirstLoginTime	TIMESTAMP(4)
+    , LastLoginTime		TIMESTAMP(4)
+    , InsertTime		TIMESTAMP(4)
+    , PRIMARY KEY	PK_AssociationByIP_CTSAssID(CTSAssIPID)
+    , UNIQUE KEY	UK_AssociationByIP_CTSCustID_IPID(CTSCustID,IPID)
+    , INDEX			IX_AssociationByIP_LastLoginTime_CustID_IPID(LastLoginTime,CTSCustID,IPID)
+    );
 
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustDCSAccount(
 	CTSCustID			BIGINT	UNSIGNED
