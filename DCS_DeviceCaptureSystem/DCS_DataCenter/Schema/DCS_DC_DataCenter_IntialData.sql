@@ -15,18 +15,6 @@ VALUES (0,'',0,'2011-01-01')
         , (3686301690,'successfully',1,'2011-01-01')
         , (2250713929,'fail',0,'2011-01-01');
 
-INSERT INTO DCS_DataCenter.OS(OSName, CreatedDate)
-VALUES('','2011-01-01');
-
-INSERT INTO DCS_DataCenter.Browser(BrowserName, CreatedDate)
-VALUES('','2011-01-01');
-
-INSERT INTO DCS_DataCenter.UserAgent(UserAgentID, UserAgent, BrowserID, OSID, OS, Browser, CreatedDate)
-VALUES(0,'',1,1,'','','2011-01-01');
-
-INSERT INTO DCS_DataCenter.Device(DeviceID, DeviceKey, FirstDeviceCode, UserAgentID, FirstTransID, CreatedDate, DeviceStatus, InsertTime)
-VALUES(0,0,'',0,0,'2011-01-01',0,'2011-01-01');
-
 INSERT INTO DCS_DataCenter.TransStatus(TransStatusName, StatusValue, Notes, IsTransformed, CreatedDate)
 VALUES('Valid Transaction', b'0','', 1,CURRENT_DATE())
 			,('Invalid Subscriber', b'1', 'Handle At SP DCS_DC_TransformData_UnhandleSubscriberAction', 0, CURRENT_DATE())
