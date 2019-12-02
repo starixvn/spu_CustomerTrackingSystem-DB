@@ -124,3 +124,46 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustEvidence(
         
         , PRIMARY KEY	PK_LogType_LogTypeID(LogTypeID)
      ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+# ========IPLocation===========================================
+CREATE TABLE `IPRangeLocation` (
+  `IPRangeLocationID` int(11) NOT NULL AUTO_INCREMENT,
+  `IPRangeLocationCode` varchar(64) DEFAULT NULL,
+  `FromIP` decimal(50,0) NOT NULL,
+  `ToIP` decimal(50,0) NOT NULL,
+  `CountryCode` varchar(10) DEFAULT NULL,
+  `CountryName` varchar(80) DEFAULT NULL,
+  `Region` varchar(128) DEFAULT NULL,
+  `City` varchar(100) DEFAULT NULL,
+  `ISPName` varchar(256) DEFAULT NULL,
+  `Status` tinyint(4) DEFAULT NULL COMMENT '0: Inactive; 1: Active',
+  `CreatedDate` datetime DEFAULT NULL,
+  PRIMARY KEY (`IPRangeLocationID`),
+  UNIQUE KEY `UK_IPRangeLocation_FromIP_ToIP` (`FromIP`,`ToIP`),
+  KEY `IX_IPRangeLocation_IPRangeLocationCode` (`IPRangeLocationCode`)
+) ENGINE=InnoDB AUTO_INCREMENT=21155421 DEFAULT CHARSET=latin1;
+
+CREATE TABLE `IPRangeLocation_Initial` (
+  `IPRangeLocationID` int(11) NOT NULL AUTO_INCREMENT,
+  `IPRangeLocationCode` varchar(64) DEFAULT NULL,
+  `FromIP` decimal(50,0) NOT NULL,
+  `ToIP` decimal(50,0) NOT NULL,
+  `CountryCode` varchar(10) DEFAULT NULL,
+  `CountryName` varchar(80) DEFAULT NULL,
+  `Region` varchar(128) DEFAULT NULL,
+  `City` varchar(100) DEFAULT NULL,
+  `ISPName` varchar(256) DEFAULT NULL,
+  `Status` tinyint(4) DEFAULT NULL COMMENT '0: Inactive; 1: Active',
+  `CreatedDate` datetime DEFAULT NULL,
+  PRIMARY KEY (`IPRangeLocationID`),
+  KEY `IX_IPRangeLocationInit_FromIP_ToIP` (`FromIP`,`ToIP`),
+  KEY `IX_IPRangeLocationInit_IPRangeLocationCode` (`IPRangeLocationCode`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+CREATE TABLE `IPTableLog` (
+  `IPTableLogID` int(11) NOT NULL AUTO_INCREMENT,
+  `UpdatedDate` datetime DEFAULT NULL,
+  `IsNewUpdate` tinyint(4) DEFAULT NULL COMMENT '0: old, 1: New',
+  PRIMARY KEY (`IPTableLogID`),
+  KEY `IX_IPTableLog_IPType_Flag` (`IsNewUpdate`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
