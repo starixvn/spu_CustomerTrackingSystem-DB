@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomer (
     , PRIMARY KEY	PK_CTSCustomer_CTSCustID(CTSCustID)    
 	, UNIQUE KEY	UK_CTSCustomer_SubscriberID_UserName_UserName2(SubscriberID, UserName, UserName2)
     , INDEX			IX_CTSCustomer_UserNameUserName2(UserName,UserName2)
-   , INDEX			IX_CTSCustomer_UserName2(UserName2)
+    , INDEX			IX_CTSCustomer_UserName2(UserName2)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
 
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociationByDevice(
