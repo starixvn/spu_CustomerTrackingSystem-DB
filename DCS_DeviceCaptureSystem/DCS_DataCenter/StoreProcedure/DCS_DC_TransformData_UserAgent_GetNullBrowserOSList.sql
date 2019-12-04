@@ -1,7 +1,5 @@
 DELIMITER $$
 
-USE DCS_DataCenter$$
-
 DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformData_UserAgent_GetNullBrowserOSList $$
 
 CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformData_UserAgent_GetNullBrowserOSList(IN ip_size INT)

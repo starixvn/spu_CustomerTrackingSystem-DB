@@ -1,7 +1,5 @@
 DELIMITER $$
 
-USE DCS_DataCenter$$
-
 DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformData_Transaction_Insert$$
 
 CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformData_Transaction_Insert(IN ip_FromTransID BIGINT, IN ip_ToTransID BIGINT)
@@ -42,7 +40,7 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_RawTransaction;
 	CREATE TEMPORARY TABLE IF NOT EXISTS Temp_RawTransaction (
 		TransID					BIGINT UNSIGNED NOT NULL
-		, LoginName				VARCHAR(100) NOT NULL
+		, LoginName				VARCHAR(100) CHARACTER SET UTF8MB4 NOT NULL
 		, TransTime				TIMESTAMP(4) NOT NULL
 		, SubscriberID			INT NULL
         , AccountID				BIGINT	UNSIGNED NULL
@@ -63,7 +61,7 @@ BEGIN
     # =================================================================
     DROP TEMPORARY TABLE IF EXISTS Temp_Account;
 	CREATE TEMPORARY TABLE  Temp_Account(
-		LoginName				VARCHAR(100) NOT NULL
+		LoginName				VARCHAR(100) CHARACTER SET UTF8MB4 NOT NULL
 		, SubscriberID			INT NULL
         , SubscriberType		TINYINT	UNSIGNED	NULL
     );

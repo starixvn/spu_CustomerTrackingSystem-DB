@@ -1,6 +1,5 @@
 DELIMITER $$
 
-USE DCS_DataCenter$$
 
 DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformToCTS_Account_Completed$$
 

@@ -1,5 +1,6 @@
 DELIMITER $$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_GetLatestUpdatedDate_IPRange`()
+DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_GetLatestUpdatedDate_IPRange $$
+CREATE DEFINER=`fps`@`%` PROCEDURE CTS_DataCenter.CTS_DC_GetLatestUpdatedDate_IPRange()
 BEGIN
 	/*
 		Created: 20190620@Terry

@@ -1,7 +1,5 @@
 DELIMITER $$
 
-USE DCS_DataCenter$$
-
 DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformToCTS_Association_GetPackage$$
 
 CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformToCTS_Association_GetPackage(IN ip_NoOfAssociation INT, IN ip_NoOfBatch INT)

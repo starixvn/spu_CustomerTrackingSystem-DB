@@ -1,8 +1,6 @@
 
 DELIMITER $$
 
-USE DCS_DataCenter$$
-
 DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformData_UnhandleSubscriberAction$$
 
 CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformData_UnhandleSubscriberAction(IN ip_FromTransID BIGINT, IN ip_ToTransID BIGINT)

@@ -1,5 +1,6 @@
 DELIMITER $$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_InsertIPRangeLocation`(IN ip_UpdatedDate DATETIME)
+DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_InsertIPRangeLocation $$
+CREATE DEFINER=`fps`@`%` PROCEDURE CTS_DataCenter.CTS_DC_InsertIPRangeLocation(IN ip_UpdatedDate DATETIME)
 BEGIN
 	/*
 		Created: 20190730@Terry.Nguyen

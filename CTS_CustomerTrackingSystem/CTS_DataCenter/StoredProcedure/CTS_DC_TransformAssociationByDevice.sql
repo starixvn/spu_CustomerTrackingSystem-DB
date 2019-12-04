@@ -1,5 +1,6 @@
 DELIMITER $$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_TransformAssociationByDevice`(IN ip_AssociationList JSON)
+DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_TransformAssociationByDevice$$
+CREATE DEFINER=`fps`@`%` PROCEDURE CTS_DataCenter.CTS_DC_TransformAssociationByDevice(IN ip_AssociationList JSON)
 BEGIN
 /*
 		Created:	20191115@Terry.Nguyen

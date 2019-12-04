@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
 # =======Account============================================
 	CREATE TABLE IF NOT EXISTS DCS_DataCenter.`Account`(
 		AccountID			INT		UNSIGNED	AUTO_INCREMENT	NOT NULL        
-        , LoginName			VARCHAR(100)							NOT NULL
+        , LoginName			VARCHAR(100)		CHARACTER SET UTF8MB4	NOT NULL
         , SubscriberID		INT										NOT NULL
         , SubscriberType	TINYINT									NULL
 		, CreatedDate		DATETIME								NULL
@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
 # =======Transactions============================================
 	CREATE TABLE IF NOT EXISTS DCS_DataCenter.`Transaction`(
 		TransID				BIGINT	UNSIGNED					NOT NULL
-		, LoginName			VARCHAR(100) 						NOT NULL
+		, LoginName			VARCHAR(100) 		CHARACTER SET UTF8MB4		NOT NULL
         , TransTime			TIMESTAMP(4)						NOT	NULL                
         , SubscriberID		INT									NULL
         , AccountID			INT				UNSIGNED			NULL
@@ -180,7 +180,7 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.TransStatus(
 CREATE TABLE IF NOT EXISTS DCS_DataCenter.TransactionIP(
 	 TransID				BIGINT			UNSIGNED	NOT NULL
      , AccountID			INT				UNSIGNED	NOT NULL     
-     , LoginName			VARCHAR(100)	NOT NULL
+     , LoginName			VARCHAR(100) CHARACTER SET UTF8MB4	NOT NULL
      , SubscriberID			INT				NOT NULL
      , IP					VARCHAR(50)			NULL
 	 , IPID					DECIMAL(50,0)		NULL

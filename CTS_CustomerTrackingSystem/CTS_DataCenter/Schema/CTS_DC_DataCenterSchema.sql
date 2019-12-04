@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.MappingSubscriberSite(
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.EvidenceGroup(
 		EvidenceGroupID			TINYINT			AUTO_INCREMENT		NOT NULL
 		, EvidenceGroupName		VARCHAR(50)							NOT NULL
-		, EvidenceGroupDesc		VARCHAR(200)	CHARACTER SET UTF8MB4	NULL
+		, EvidenceGroupDesc		VARCHAR(200)	CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_general_ci'	NULL
 		, OrderNo				SMALLINT							NULL
 		, CreatedDate			DATETIME							NOT NULL
 		, CreatedBy				INT									NOT NULL
@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.Evidence(
 		, EvidenceGroupID	TINYINT									NOT NULL
 		, EvidenceCode		VARCHAR(10)								NOT NULL
 		, EvidenceName		VARCHAR(50)								NOT NULL
-		, EvidenceDesc		VARCHAR(200)	CHARACTER SET UTF8MB4	NULL
+		, EvidenceDesc		VARCHAR(200)	CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_general_ci'	NULL
 		, OrderNo			SMALLINT								NOT NULL
 		, CreatedDate		DATETIME								NOT NULL
 		, CreatedBy			INT										NOT NULL
@@ -105,7 +105,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustEvidence(
 		, CTSCustID			BIGINT		UNSIGNED					NOT NULL
         , SubscriberID		INT										NOT NULL
 		, EvidenceID		SMALLINT								NOT NULL
-		, Remark			VARCHAR(500)	CHARACTER SET UTF8MB4	NULL
+		, Remark			VARCHAR(500)	CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_general_ci'	NULL
 		, `Level`			TINYINT									NOT NULL COMMENT 'Level 1 - 2'
 		, FromCustID		BIGINT									NOT NULL
 		, CreatedDate		DATETIME								NOT NULL
@@ -122,7 +122,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustEvidence(
 	CREATE TABLE  IF NOT EXISTS CTS_DataCenter.LogType(
 		LogTypeID				SMALLINT		AUTO_INCREMENT		NOT NULL
 		, LogTypeName			VARCHAR(50)							NULL
-		, LogTypeDescription	VARCHAR(200)	CHARACTER SET UTF8MB4	NULL
+		, LogTypeDescription	VARCHAR(200)	CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_general_ci'	NULL
         
         , PRIMARY KEY	PK_LogType_LogTypeID(LogTypeID)
      ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;

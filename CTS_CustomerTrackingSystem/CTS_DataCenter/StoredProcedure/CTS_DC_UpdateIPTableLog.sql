@@ -1,5 +1,6 @@
 DELIMITER $$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_UpdateIPTableLog`(IN ip_UpdatedDate DATETIME)
+DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_UpdateIPTableLog $$
+CREATE DEFINER=`fps`@`%` PROCEDURE CTS_DataCenter.CTS_DC_UpdateIPTableLog(IN ip_UpdatedDate DATETIME)
 BEGIN
 	/*
 		Created: 20190620@Terry

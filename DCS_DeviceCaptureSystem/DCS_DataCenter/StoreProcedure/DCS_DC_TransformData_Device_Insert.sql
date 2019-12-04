@@ -89,7 +89,7 @@ BEGIN
         , UserAgentKey			VARCHAR(32)
 		, DeviceCode			VARCHAR(32)
 		, FingerprintCode		VARCHAR(640)
-        , FingerprintMoreInfo	TEXT
+        , FingerprintMoreInfo	TEXT	CHARACTER SET UTF8MB4
 		, CreatedDate			DATETIME
 		, TransTime				TIMESTAMP(4)
 		

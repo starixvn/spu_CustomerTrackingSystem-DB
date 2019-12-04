@@ -1,7 +1,5 @@
 DELIMITER $$
 
-USE DCS_DataCenter$$
-
 DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformToCTS_Association_Completed$$
 
 CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformToCTS_Association_Completed(IN ip_AssociationJson LONGTEXT)
