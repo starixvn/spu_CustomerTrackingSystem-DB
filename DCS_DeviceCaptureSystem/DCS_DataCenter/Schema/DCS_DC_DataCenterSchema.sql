@@ -41,15 +41,15 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
 # ======DeviceDetail=============================================
 	CREATE TABLE IF NOT EXISTS DCS_DataCenter.DeviceFingerprint(
 		DeviceFingerprintID		BIGINT	UNSIGNED	AUTO_INCREMENT
-        , DeviceID				BIGINT	UNSIGNED	NULL
-        , FingerprintCode		VARCHAR(620)	NOT NULL
+        , DeviceID				BIGINT	UNSIGNED	NOT NULL
+        , FingerprintCode		VARCHAR(620)		NOT NULL
 		, FingerprintMoreInfo	TEXT			NULL
         , CreatedTime			TIMESTAMP(4)	NULL
         , CreatedDate			DATETIME		NULL
         , InsertTime			TIMESTAMP(4)	NULL
         
-        , PRIMARY KEY	PK_Fingerprint_FingerprintKey(DeviceFingerprintID)
-		, UNIQUE KEY	UK_DeviceFingerprint_FingerprintID(FingerprintCode,DeviceID)
+        , PRIMARY KEY	PK_Fingerprint_FingerprintCode_DeviceID(FingerprintCode,DeviceID)
+		, UNIQUE KEY	UK_DeviceFingerprint_DeviceFingerprintID(DeviceFingerprintID)
      ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
     
 # =======Association============================================
@@ -62,8 +62,9 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
         , CreatedDate		TIMESTAMP(4) 	NULL
         , InsertTime		TIMESTAMP(4)	NULL
         , IsCTSTransformed	TINYINT		DEFAULT 0
-        , PRIMARY KEY	PK_Association_AssociationID(AssociationID)
+        , PRIMARY KEY	PK_Association_AccountID_Device(AccountID, DeviceID)
         , INDEX	IX_Association_SubscriberID_AccountID_DeviceID(SubscriberID, AccountID, DeviceID)
+        , UNIQUE KEY UK_Association_AssociationID(AssociationID)
      ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 
 # =======Account============================================

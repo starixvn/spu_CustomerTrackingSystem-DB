@@ -49,10 +49,10 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_InputTrans 
 	(	
 		TransID					BIGINT			UNSIGNED
-		, AccountID				BIGINT			UNSIGNED
+		, AccountID				INT			UNSIGNED
 		, SubscriberID			INT
         , UserAgentKey			VARCHAR(32)		
-		, DeviceCode			VARCHAR(64)
+		, DeviceCode			VARCHAR(32)
 	);
     
 	#========GET INPUT DATA===========================
@@ -73,10 +73,10 @@ BEGIN
 				ip_TransJson,
 				 "$[*]" COLUMNS(
 				  TransID 			BIGINT UNSIGNED PATH "$.TransId"         
-				, AccountID					BIGINT UNSIGNED PATH "$.AccountId"
+				, AccountID					INT UNSIGNED PATH "$.AccountId"
 				, SubscriberID				INT PATH "$.SubscriberId"
                 , UserAgentKey 				VARCHAR(32) PATH "$.UserAgentKey"         
-				, DeviceCode				VARCHAR(64) PATH "$.DeviceCode"
+				, DeviceCode				VARCHAR(32) PATH "$.DeviceCode"
 				 )
 			   ) AS  tmpTrans;
                
@@ -84,11 +84,11 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_Transaction;
 	CREATE TEMPORARY TABLE Temp_Transaction(
 		 TransID				BIGINT	UNSIGNED
-		, AccountID				BIGINT	UNSIGNED
+		, AccountID				INT	UNSIGNED
 		, SubscriberID			INT
         , UserAgentKey			VARCHAR(32)
-		, DeviceCode			VARCHAR(64)
-		, FingerprintCode		VARCHAR(1000)
+		, DeviceCode			VARCHAR(32)
+		, FingerprintCode		VARCHAR(640)
         , FingerprintMoreInfo	TEXT
 		, CreatedDate			DATETIME
 		, TransTime				TIMESTAMP(4)
@@ -125,7 +125,7 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_InputTrans;
     
     UPDATE	Temp_Transaction AS tts
-    INNER JOIN	DCS_DataCenter.Association AS ass
+    INNER JOIN	DCS_DataCenter.Association AS ass 
 				ON tts.AccountID = ass.AccountID
 	INNER JOIN	DCS_DataCenter.DeviceFingerprint AS df
 				ON ass.DeviceID = df.DeviceID
@@ -232,9 +232,9 @@ BEGIN
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
 	UPDATE		Temp_Transaction AS tts
-    INNER JOIN	DCS_DataCenter.DeviceCode	AS dc
+    LEFT JOIN	DCS_DataCenter.DeviceCode	AS dc
 				ON	tts.DeviceCode = dc.DeviceCode
-	SET			tts.DeviceID = dc.DeviceID
+	SET			tts.DeviceID = IFNULL(dc.DeviceID,0)
                 , tts.DeviceCodeID =  dc.DeviceCodeID;    
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
