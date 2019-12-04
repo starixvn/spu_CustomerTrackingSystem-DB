@@ -20,21 +20,46 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS TempCTSCustomer;
     
 	CREATE TEMPORARY TABLE TempCTSCustomer
-	AS
-	SELECT *
+	( 	SubscriberID 	INT 			
+		, CustID		BIGINT			
+		, CustSubID		BIGINT			
+		, UserName		VARCHAR(50) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_general_ci'
+		, UserName2		VARCHAR(50) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_general_ci'
+		, Site			VARCHAR(20) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_general_ci'
+		, RoleID		TINYINT		 
+		, Currency		VARCHAR(50) 	
+		, CurrencyID	INT			 	
+		, SRecommend	BIGINT		 	
+		, MRecommend	BIGINT 			
+		, Recommend		BIGINT
+        );
+    
+    INSERT INTO TempCTSCustomer
+	SELECT SubscriberID 	
+		, CustID		
+		, CustSubID		
+		, UserName		
+		, CASE WHEN UserName2 = 'null' THEN NULL ELSE UserName2 END
+		, CASE WHEN Site = 'null' THEN NULL ELSE Site END	
+		, RoleID		
+		, Currency		
+		, CurrencyID	
+		, SRecommend	
+		, MRecommend	
+		, Recommend	
 	FROM JSON_TABLE(ip_CustomerList,
 		 "$[*]" COLUMNS(
-		  SubscriberID 	INT 			PATH "$.SubscriberID"
-		, CustID		BIGINT			PATH "$.CustID" 
-		, CustSubID		BIGINT			PATH "$.CustSubID" 
-		, UserName		VARCHAR(50)		PATH "$.UserName"
-		, UserName2		VARCHAR(50) 	PATH "$.UserName2" 
+		  SubscriberID 	INT 			PATH "$.SubscriberId"
+		, CustID		BIGINT			PATH "$.CustId" 
+		, CustSubID		BIGINT			PATH "$.CustSubId" 
+		, UserName		VARCHAR(50)		PATH "$.Username"
+		, UserName2		VARCHAR(50) 	PATH "$.Username2" 
 		, Site			VARCHAR(20)	 	PATH "$.Site" 
-		, RoleID		TINYINT		 	PATH "$.RoleID" 
+		, RoleID		TINYINT		 	PATH "$.RoleId" 
 		, Currency		VARCHAR(50) 	PATH "$.Currency" 
-		, CurrencyID	INT			 	PATH "$.CurrencyID" 
-		, SRecommend	BIGINT		 	PATH "$.SRecommend" 
-		, MRecommend	BIGINT 			PATH "$.MRecommend" 
+		, CurrencyID	INT			 	PATH "$.CurrencyId" 
+		, SRecommend	BIGINT		 	PATH "$.Srecommend" 
+		, MRecommend	BIGINT 			PATH "$.Mrecommend" 
 		, Recommend		BIGINT 			PATH "$.Recommend" 
 		 )) as tmpTable;
 
@@ -43,6 +68,20 @@ SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 		INNER JOIN CTS_DataCenter.MappingSubscriberSite mss ON cust.Site = mss.SiteName 
 	SET cust.SubscriberID = mss.SubscriberID;
 SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+
+UPDATE CTS_DataCenter.CTSCustomer ctsCust
+        INNER JOIN TempCTSCustomer tempCust ON tempCust.UserName2 = ctsCust.UserName2 
+SET 
+    ctsCust.SubscriberID 	= tempCust.SubscriberID,
+    ctsCust.CustID 			= tempCust.CustID,
+    ctsCust.CustSubID 		= tempCust.CustSubID,
+    ctsCust.UserName 		= tempCust.UserName,
+    ctsCust.Site 			= tempCust.Site,
+    ctsCust.RoleID 			= tempCust.RoleID,
+    ctsCust.Currency 		= tempCust.Currency,
+    ctsCust.CurrencyID 		= tempCust.CurrencyID,
+    ctsCust.SRecommend 		= tempCust.SRecommend,
+    ctsCust.MRecommend 		= tempCust.MRecommend;
 
     INSERT INTO `CTS_DataCenter`.`CTSCustomer`
 				(`SubscriberID`,
@@ -57,19 +96,21 @@ SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 				`SRecommend`,
 				`MRecommend`,
 				`Recommend`)
-	SELECT    SubscriberID
-			, CustID
-            , CustSubID
-            , UserName
-            , UserName2
-            , Site
-            , RoleID
-            , Currency
-            , CurrencyID
-            , SRecommend
-            , MRecommend
-            , Recommend
-	FROM TempCTSCustomer;
+	SELECT    tempCust.SubscriberID
+			, tempCust.CustID
+            , tempCust.CustSubID
+            , tempCust.UserName
+            , tempCust.UserName2
+            , tempCust.Site
+            , tempCust.RoleID
+            , tempCust.Currency
+            , tempCust.CurrencyID
+            , tempCust.SRecommend
+            , tempCust.MRecommend
+            , tempCust.Recommend
+	FROM TempCTSCustomer tempCust
+		LEFT JOIN CTS_DataCenter.CTSCustomer ctsCust on tempCust.UserName2 = ctsCust.UserName2
+	WHERE ctsCust.UserName2 IS NULL;
 
 END$$
 DELIMITER ;
