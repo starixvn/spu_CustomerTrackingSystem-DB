@@ -57,7 +57,7 @@ BEGIN;
 	SELECT TOP (@totalRow) cust.custid
 		,cust.username
 		,cust.username2
-		,cust.site
+		,upl.site
 		,cust.roleid
 		,cust.currency 'currencyid'
 		,ex.currency
@@ -65,6 +65,7 @@ BEGIN;
 		,cust.mrecommend
 		,cust.recommend
 	FROM dbo.Customer cust WITH (NOLOCK)
+		INNER JOIN	dbo.Customer upl WITH (NOLOCK) ON cust.srecommend = upl.custid
 		INNER JOIN dbo.Exchange ex WITH (NOLOCK) ON cust.currency = ex.exchangeid
 	WHERE cust.custid > @maxCustId
 	ORDER BY cust.custid
