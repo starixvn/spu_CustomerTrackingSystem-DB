@@ -50,7 +50,7 @@ BEGIN
 		, DeviceCode			VARCHAR(32) NULL COMMENT 'Trans Device Code'
         , UserAgentKey			VARCHAR(32)
 		, IP					VARCHAR(50) NULL
-        , IPID					BIGINT
+        , IPID					DECIMAL(50,1)
 		, ActionResultID		INT
 		, Flagged				SMALLINT NULL COMMENT 'captcha & browserless'
 		, PluginID				BIGINT NULL
