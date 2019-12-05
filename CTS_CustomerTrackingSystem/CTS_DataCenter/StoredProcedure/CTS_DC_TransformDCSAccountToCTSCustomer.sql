@@ -68,7 +68,7 @@ BEGIN
     
 	 #=============GET CTSCustomerInfo=========================================
     UPDATE Temp_Account AS tmpTable
-	INNER JOIN	CTS_DataCenter.CTSCustomer AS cus USE INDEX(IX_CTSCustomer_UserNameUserName2,IX_CTSCustomer_UserName2)
+	INNER JOIN	CTS_DataCenter.CTSCustomer AS cus USE INDEX(IX_CTSCustomer_UserName_UserName2,IX_CTSCustomer_UserName2)
 				ON (tmpTable.LoginNameWithPrefix COLLATE utf8mb4_unicode_ci   	= cus.Username
 					OR tmpTable.LoginNameWithPrefix COLLATE utf8mb4_unicode_ci  = cus.Username2)
 	SET 		tmpTable.CTSCustID = cus.CTSCustID;
@@ -85,7 +85,7 @@ BEGIN
 
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
 	UPDATE 		Temp_Account AS acc
-    INNER JOIN	CTS_DataCenter.CTSCustomer AS cus USE INDEX(IX_CTSCustomer_UserNameUserName2,IX_CTSCustomer_UserName2)
+    INNER JOIN	CTS_DataCenter.CTSCustomer AS cus USE INDEX(IX_CTSCustomer_UserName_UserName2,IX_CTSCustomer_UserName2)
 				ON (acc.LoginNameWithPrefix COLLATE utf8mb4_unicode_ci   	= cus.Username
 					OR acc.LoginNameWithPrefix COLLATE utf8mb4_unicode_ci  = cus.Username2)
 				#ON	acc.LoginNameWithPrefix COLLATE utf8mb4_unicode_ci IN (cus.UserName, cus.UserName2)

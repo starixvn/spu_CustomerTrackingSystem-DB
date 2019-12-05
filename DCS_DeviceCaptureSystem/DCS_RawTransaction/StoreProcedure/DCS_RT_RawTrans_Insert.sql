@@ -26,7 +26,7 @@ BEGIN
 		, FingerprintMoreInfo		TEXT	CHARACTER SET UTF8MB4		NULL
 		, UserAgent					TEXT		 						NULL
 		, IP						VARCHAR(50) 						NULL
-        , IPID						BIGINT								NULL
+        , IPID						DECIMAL(50,0)						NULL
 		, PluginID					BIGINT 								NULL	
 		, URL						VARCHAR(500) 						NULL
         , `Action`					VARCHAR(100) 						NULL
@@ -79,7 +79,7 @@ BEGIN
 							, FingerprintMoreInfo	TEXT	CHARACTER SET UTF8MB4  	PATH "$.FingerprintMoreInfo"
 							, UserAgent				TEXT 	PATH "$.UserAgent"
 							, IP					VARCHAR(50) 	PATH "$.IP"
-                            , IPID					BIGINT			PATH "$.IPId"
+                            , IPID					DECIMAL(50,0)	PATH "$.IPId"
 							, PluginID				BIGINT 			PATH "$.PluginID"
 							, URL					VARCHAR(500) 	PATH "$.URL"
                             , Action				VARCHAR(100)	PATH "$.Action"
