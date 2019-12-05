@@ -71,9 +71,8 @@ SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 
 UPDATE CTS_DataCenter.CTSCustomer ctsCust
-		INNER JOIN TempCTSCustomer tempCust ON tempCust.UserName2 = ctsCust.UserName2 
+		INNER JOIN TempCTSCustomer tempCust ON tempCust.UserName2 = ctsCust.UserName2 AND tempCust.UserName2 IS NOT NULL
 SET 
-	ctsCust.SubscriberID 	= tempCust.SubscriberID,
 	ctsCust.CustID 			= tempCust.CustID,
 	ctsCust.CustSubID 		= tempCust.CustSubID,
 	ctsCust.UserName 		= tempCust.UserName,
@@ -110,8 +109,8 @@ SET
             , tempCust.MRecommend
             , tempCust.Recommend
 	FROM TempCTSCustomer tempCust
-		LEFT JOIN CTS_DataCenter.CTSCustomer ctsCust on tempCust.UserName2 = ctsCust.UserName2
-	WHERE ctsCust.UserName2 IS NULL;
+		LEFT JOIN CTS_DataCenter.CTSCustomer ctsCust on tempCust.CustID = ctsCust.CustID
+	WHERE ctsCust.CustID IS NULL;
 
 END$$
 DELIMITER ;
