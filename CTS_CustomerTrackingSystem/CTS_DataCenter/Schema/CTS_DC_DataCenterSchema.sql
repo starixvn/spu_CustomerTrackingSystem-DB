@@ -12,18 +12,18 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 
 	CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomer (
 		CTSCustID			BIGINT	UNSIGNED	AUTO_INCREMENT
-		, SubscriberID		INT	UNSIGNED
-		, CustID			BIGINT	UNSIGNED
-		, CustSubID			BIGINT	UNSIGNED
-		, UserName			VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_GENERAL_CI'
-		, UserName2			VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_GENERAL_CI'
+		, SubscriberID		INT		UNSIGNED
+		, CustID			INT		UNSIGNED
+		, CustSubID			INT		UNSIGNED
+		, UserName			VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+		, UserName2			VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 		, Site				VARCHAR(20)
-		, RoleID			INT
+		, RoleID			TINYINT
 		, Currency			VARCHAR(10)
 		, CurrencyID		INT		
-		, SRecommend		BIGINT
-		, MRecommend		BIGINT
-		, Recommend			BIGINT
+		, SRecommend		INT		UNSIGNED
+		, MRecommend		INT		UNSIGNED	
+		, Recommend			INT		UNSIGNED
 		, PRIMARY KEY	PK_CTSCustomer_CTSCustID(CTSCustID)    
 		, UNIQUE KEY	UK_CTSCustomer_SubscriberID_UserName_UserName2(SubscriberID, UserName, UserName2)
 		, INDEX			IX_CTSCustomer_UserName_UserName2(UserName,UserName2)
@@ -38,7 +38,8 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, SubscriberID	INT
 		, CreatedTime	TIMESTAMP(4)
 		, InsertTime	TIMESTAMP(4)
-		, PRIMARY KEY	PK_AssociationByDevice_CTSAssDevID(CTSAssDevID)    
+		, PRIMARY KEY	PK_AssociationByDevice_CTSAssDevID(CTSAssDevID)
+        , UNIQUE KEY	IX_AssociationByDevice_CTSCustID_DCSDeviceID(CTSCustID, DCSDeviceID)
 	) ENGINE=INNODB AUTO_INCREMENT=1;
 
 	CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociationByIP(
@@ -61,21 +62,21 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, SubscriberID		INT
 		, InsertTime		TIMESTAMP(4)
 		, PRIMARY KEY		PK_CustDCSAccount_AccountID(AccountID)    
-	) ENGINE=INNODB  DEFAULT CHARSET=LATIN1 AUTO_INCREMENT=1;
+	) ENGINE=INNODB  AUTO_INCREMENT=1;
 
 	CREATE TABLE IF NOT EXISTS CTS_DataCenter.MappingSubscriberSite(
-		SiteId				BIGINT	UNSIGNED
-		, SiteName			NVARCHAR(50)
+		SiteID				BIGINT	UNSIGNED
+		, SiteName			VARCHAR(50)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 		, SubscriberID		INT
-		, SubscriberName	NVARCHAR(50)
-		, PRIMARY KEY	PK_MappingSubscriberSite(SiteId)    
+		, SubscriberName	VARCHAR(50)
+		, PRIMARY KEY	PK_MappingSubscriberSite(SiteID)    
 	) ENGINE=INNODB;
 
 # ======EvidenceGroup=============================================
 	CREATE TABLE IF NOT EXISTS CTS_DataCenter.EvidenceGroup(
 		EvidenceGroupID			TINYINT			AUTO_INCREMENT		NOT NULL
 		, EvidenceGroupName		VARCHAR(50)							NOT NULL
-		, EvidenceGroupDesc		VARCHAR(200)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_GENERAL_CI'	NULL
+		, EvidenceGroupDesc		VARCHAR(200)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	NULL
 		, OrderNo				SMALLINT							NULL
 		, CreatedDate			DATETIME							NOT NULL
 		, CreatedBy				INT									NOT NULL
@@ -90,7 +91,7 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, EvidenceGroupID	TINYINT									NOT NULL
 		, EvidenceCode		VARCHAR(10)								NOT NULL
 		, EvidenceName		VARCHAR(50)								NOT NULL
-		, EvidenceDesc		VARCHAR(200)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_GENERAL_CI'	NULL
+		, EvidenceDesc		VARCHAR(200)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	NULL
 		, OrderNo			SMALLINT								NOT NULL
 		, CreatedDate		DATETIME								NOT NULL
 		, CreatedBy			INT										NOT NULL
@@ -106,7 +107,7 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, CTSCustID			BIGINT		UNSIGNED					NOT NULL
         , SubscriberID		INT										NOT NULL
 		, EvidenceID		SMALLINT								NOT NULL
-		, Remark			VARCHAR(500)	CHARACTER SET 'UTF8MB4' NULL		COLLATE 'UTF8MB4_GENERAL_CI'
+		, Remark			VARCHAR(500)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NULL
 		, Level				TINYINT									NOT NULL	COMMENT 'Level 1 - 2'
 		, FromCustID		BIGINT									NOT NULL
 		, CreatedDate		DATETIME								NOT NULL
@@ -122,13 +123,13 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 	CREATE TABLE  IF NOT EXISTS CTS_DataCenter.LogType(
 		LogTypeID				SMALLINT		AUTO_INCREMENT		NOT NULL
 		, LogTypeName			VARCHAR(50)							NULL
-		, LogTypeDescription	VARCHAR(200)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_GENERAL_CI'	NULL
+		, LogTypeDescription	VARCHAR(200)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	NULL
         
         , PRIMARY KEY	PK_LogType_LogTypeID(LogTypeID)
      ) ENGINE=INNODB  AUTO_INCREMENT=1;
      
 	# ========IPLocation===========================================
-	CREATE TABLE IPRangeLocation (
+	CREATE TABLE IF NOT EXISTS IPRangeLocation (
 		IPRangeLocationID			INT 			NOT NULL 		AUTO_INCREMENT
 		, IPRangeLocationCode		VARCHAR(64) 	DEFAULT NULL
 		, FromIP					DECIMAL(50,0) 	NOT NULL
@@ -145,7 +146,7 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, INDEX		IX_IPRangeLocation_IPRangeLocationCode(IPRangeLocationCode)
 	) ENGINE=INNODB  AUTO_INCREMENT=1;
 
-	CREATE TABLE IPRangeLocation_Initial (
+	CREATE TABLE IF NOT EXISTS IPRangeLocation_Initial (
 		IPRangeLocationID 		INT				NOT NULL 		AUTO_INCREMENT
 		, IPRangeLocationCode	VARCHAR(64) 	DEFAULT NULL
 		, FromIP 				DECIMAL(50,0)	NOT NULL
@@ -162,7 +163,7 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, INDEX			IX_IPRangeLocation_Initial_IPRangeLocationCode (IPRangeLocationCode)
 	) ENGINE=INNODB AUTO_INCREMENT=1;
 
-	CREATE TABLE IPTableLog (
+	CREATE TABLE IF NOT EXISTS IPTableLog (
 		IPTableLogID 			INT			NOT NULL 		AUTO_INCREMENT
 		, UpdatedDate			DATETIME	DEFAULT NULL
 		, IsNewUpdate			TINYINT		DEFAULT NULL	COMMENT '0: old, 1: New'

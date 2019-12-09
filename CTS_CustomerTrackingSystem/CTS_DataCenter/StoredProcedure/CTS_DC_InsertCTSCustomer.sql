@@ -1,5 +1,5 @@
 DELIMITER $$
-USE `CTS_DataCenter` $$
+USE CTS_DataCenter $$
 DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_InsertCTSCustomer $$
 
 CREATE PROCEDURE CTS_DC_InsertCTSCustomer (IN ip_CustomerList JSON)
@@ -21,17 +21,17 @@ BEGIN
     
 	CREATE TEMPORARY TABLE TempCTSCustomer
 	( 	SubscriberID 	INT 			
-		, CustID		BIGINT			
+		, CustID		INT	 UNSIGNED		
 		, CustSubID		BIGINT			
-		, UserName		VARCHAR(50) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_general_ci'
-		, UserName2		VARCHAR(50) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_general_ci'
-		, Site			VARCHAR(20) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_general_ci'
+		, UserName		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+		, UserName2		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+		, Site			VARCHAR(20) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 		, RoleID		TINYINT		 
 		, Currency		VARCHAR(50) 	
 		, CurrencyID	INT			 	
-		, SRecommend	BIGINT		 	
-		, MRecommend	BIGINT 			
-		, Recommend		BIGINT
+		, SRecommend	INT	 UNSIGNED		 	
+		, MRecommend	INT	 UNSIGNED 			
+		, Recommend		INT	 UNSIGNED
         , INDEX			IX_TempCTSCustomer_UserName2(UserName2)
         );
     
@@ -51,51 +51,42 @@ BEGIN
 	FROM JSON_TABLE(ip_CustomerList,
 		 "$[*]" COLUMNS(
 		  SubscriberID 	INT 			PATH "$.SubscriberId"
-		, CustID		BIGINT			PATH "$.CustId" 
+		, CustID		INT	 UNSIGNED	PATH "$.CustId" 
 		, CustSubID		BIGINT			PATH "$.CustSubId" 
-		, UserName		VARCHAR(50)		PATH "$.Username"
-		, UserName2		VARCHAR(50) 	PATH "$.Username2" 
-		, Site			VARCHAR(20)	 	PATH "$.Site" 
+		, UserName		VARCHAR(50)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	PATH "$.Username"
+		, UserName2		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	PATH "$.Username2" 
+		, Site			VARCHAR(20)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' 	PATH "$.Site" 
 		, RoleID		TINYINT		 	PATH "$.RoleId" 
 		, Currency		VARCHAR(50) 	PATH "$.Currency" 
 		, CurrencyID	INT			 	PATH "$.CurrencyId" 
-		, SRecommend	BIGINT		 	PATH "$.Srecommend" 
-		, MRecommend	BIGINT 			PATH "$.Mrecommend" 
-		, Recommend		BIGINT 			PATH "$.Recommend" 
+		, SRecommend	INT	 UNSIGNED	PATH "$.Srecommend" 
+		, MRecommend	INT	 UNSIGNED 	PATH "$.Mrecommend" 
+		, Recommend		INT	 UNSIGNED 	PATH "$.Recommend" 
 		 )) as tmpTable;
 
-SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-	UPDATE TempCTSCustomer cust
-		INNER JOIN CTS_DataCenter.MappingSubscriberSite mss ON cust.Site = mss.SiteName 
-	SET cust.SubscriberID = mss.SubscriberID;
-SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+		UPDATE 		TempCTSCustomer cust
+		INNER JOIN	CTS_DataCenter.MappingSubscriberSite mss 
+					ON cust.Site = mss.SiteName 
+		SET 		cust.SubscriberID = mss.SubscriberID;
+	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 
-UPDATE CTS_DataCenter.CTSCustomer ctsCust
-		INNER JOIN TempCTSCustomer tempCust ON tempCust.UserName2 = ctsCust.UserName2 AND tempCust.UserName2 IS NOT NULL
-SET 
-	ctsCust.CustID 			= tempCust.CustID,
-	ctsCust.CustSubID 		= tempCust.CustSubID,
-	ctsCust.UserName 		= tempCust.UserName,
-	ctsCust.Site 			= tempCust.Site,
-	ctsCust.RoleID 			= tempCust.RoleID,
-	ctsCust.Currency 		= tempCust.Currency,
-	ctsCust.CurrencyID 		= tempCust.CurrencyID,
-	ctsCust.SRecommend 		= tempCust.SRecommend,
-	ctsCust.MRecommend 		= tempCust.MRecommend;
+	UPDATE 		CTS_DataCenter.CTSCustomer ctsCust
+	INNER JOIN	TempCTSCustomer tempCust 
+				ON tempCust.UserName2 = ctsCust.UserName2 
+					AND tempCust.UserName2 IS NOT NULL
+	SET 
+		ctsCust.CustID 			= tempCust.CustID
+		, ctsCust.CustSubID 	= tempCust.CustSubID
+		, ctsCust.UserName 		= tempCust.UserName
+		, ctsCust.Site 			= tempCust.Site
+		, ctsCust.RoleID 		= tempCust.RoleID
+		, ctsCust.Currency 		= tempCust.Currency
+		, ctsCust.CurrencyID 	= tempCust.CurrencyID
+		, ctsCust.SRecommend 	= tempCust.SRecommend
+		, ctsCust.MRecommend 	= tempCust.MRecommend;
 
-    INSERT INTO `CTS_DataCenter`.`CTSCustomer`
-				(`SubscriberID`,
-				`CustID`,
-				`CustSubID`,
-				`UserName`,
-				`UserName2`,
-				`Site`,
-				`RoleID`,
-				`Currency`,
-				`CurrencyID`,
-				`SRecommend`,
-				`MRecommend`,
-				`Recommend`)
+	INSERT IGNORE INTO CTS_DataCenter.CTSCustomer(SubscriberID, CustID, CustSubID, UserName, UserName2, Site, RoleID, Currency, CurrencyID, SRecommend, MRecommend, Recommend)
 	SELECT    tempCust.SubscriberID
 			, tempCust.CustID
             , tempCust.CustSubID
@@ -108,9 +99,7 @@ SET
             , tempCust.SRecommend
             , tempCust.MRecommend
             , tempCust.Recommend
-	FROM TempCTSCustomer tempCust
-		LEFT JOIN CTS_DataCenter.CTSCustomer ctsCust on tempCust.CustID = ctsCust.CustID
-	WHERE ctsCust.CustID IS NULL;
+	FROM 		TempCTSCustomer tempCust;
 
 END$$
 DELIMITER ;

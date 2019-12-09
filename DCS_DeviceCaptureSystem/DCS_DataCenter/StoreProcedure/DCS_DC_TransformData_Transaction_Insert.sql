@@ -40,28 +40,28 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_RawTransaction;
 	CREATE TEMPORARY TABLE IF NOT EXISTS Temp_RawTransaction (
 		TransID					BIGINT UNSIGNED NOT NULL
-		, LoginName				VARCHAR(100)  CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_general_ci' NOT NULL
-		, TransTime				TIMESTAMP(4) NOT NULL
-		, SubscriberID			INT NULL
-        , AccountID				BIGINT	UNSIGNED NULL
+		, LoginName				VARCHAR(100)  CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NOT NULL
+		, TransTime				TIMESTAMP(4) 		NOT NULL
+		, SubscriberID			INT NULL			NULL	
+        , AccountID				BIGINT	UNSIGNED 	NULL
         , SubscriberType		TINYINT	UNSIGNED	NULL
-        , URLDetails			VARCHAR(250)	NULL
-		, URLID					INT
-		, DeviceCode			VARCHAR(32) NULL COMMENT 'Trans Device Code'
-        , UserAgentKey			VARCHAR(32)
-		, IP					VARCHAR(50) NULL
-        , IPID					DECIMAL(50,1)
-		, ActionResultID		INT
-		, Flagged				SMALLINT NULL COMMENT 'captcha & browserless'
-		, PluginID				BIGINT NULL
-		, TransStatus			BIT(16) NULL
-		, CreatedDate			DATETIME NULL COMMENT 'Date Only' NOT NULL
-		, InsertTime			TIMESTAMP(4) NULL
+        , URLDetails			VARCHAR(250)		NULL
+		, URLID					INT					NULL
+		, DeviceCode			VARCHAR(32) 		NULL COMMENT 'Trans Device Code'
+        , UserAgentKey			VARCHAR(32)			NULL
+		, IP					VARCHAR(50) 		NULL
+        , IPID					DECIMAL(50,1)		NULL	
+		, ActionResultID		INT					NULL
+		, Flagged				SMALLINT 			NULL COMMENT 'captcha & browserless'
+		, PluginID				BIGINT 				NULL
+		, TransStatus			BIT(16) 			NULL
+		, CreatedDate			DATETIME 			NULL COMMENT 'Date Only' NOT NULL
+		, InsertTime			TIMESTAMP(4) 		NULL
 	);
     # =================================================================
     DROP TEMPORARY TABLE IF EXISTS Temp_Account;
 	CREATE TEMPORARY TABLE  Temp_Account(
-		LoginName				VARCHAR(100) CHARACTER SET UTF8MB4 NOT NULL
+		LoginName				VARCHAR(100) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NOT NULL
 		, SubscriberID			INT NULL
         , SubscriberType		TINYINT	UNSIGNED	NULL
     );

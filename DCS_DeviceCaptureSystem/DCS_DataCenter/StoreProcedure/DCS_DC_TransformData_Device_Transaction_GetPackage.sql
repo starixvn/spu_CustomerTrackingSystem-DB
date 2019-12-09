@@ -44,7 +44,7 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_Trans 
     (	
 		BatchID				TINYINT
-		, TransID	BIGINT	UNSIGNED
+		, TransID			BIGINT	UNSIGNED
         , AccountID			BIGINT	UNSIGNED
         , SubscriberID		BIGINT
 		, UserAgentKey		VARCHAR(32)
@@ -52,7 +52,7 @@ BEGIN
     ); 
    
 	SET TotalRecord = ip_NoOfTickets*ip_NoOfBatch;
-    
+
 	INSERT INTO Temp_Trans(TransID, AccountID, SubscriberID, UserAgentKey, DeviceCode)
     SELECT	ts.TransID
 			, ts.AccountID

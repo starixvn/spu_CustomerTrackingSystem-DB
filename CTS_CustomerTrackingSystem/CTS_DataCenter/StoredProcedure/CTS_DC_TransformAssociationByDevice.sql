@@ -1,6 +1,6 @@
 DELIMITER $$
 DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_TransformAssociationByDevice$$
-CREATE DEFINER=`fps`@`%` PROCEDURE CTS_DataCenter.CTS_DC_TransformAssociationByDevice(IN ip_AssociationList JSON)
+CREATE PROCEDURE CTS_DataCenter.CTS_DC_TransformAssociationByDevice(IN ip_AssociationList JSON)
 BEGIN
 /*
 		Created:	20191115@Terry.Nguyen
@@ -12,9 +12,7 @@ BEGIN
         
 		Param's Explanation (filtered by):
                 
-	*/
-    
-    
+	*/    
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Association;
     
@@ -56,32 +54,31 @@ BEGIN
         , SubscriberID			INT
         , CreatedTime			TIMESTAMP(4)
     ); 
-    INSERT INTO Temp_AssociationByDevice
-		SELECT cus.CTSCustID, 
-		ass.DeviceID as DCSDeviceID, 
-		ass.SubscriberID, 
-		MIN(ass.CreatedTime) As CreatedTime
-			FROM Temp_Association AS ass 
-			INNER JOIN CTS_DataCenter.CustDCSAccount AS cus ON ass.AccountID = cus.AccountID        
-			GROUP BY cus.CTSCustID, ass.DeviceID, ass.SubscriberID;         
+    INSERT INTO 	Temp_AssociationByDevice(CTSCustID, DCSDeviceID, SubscriberID, CreatedTime)
+	SELECT 			cus.CTSCustID, 
+					tmpAss.DeviceID AS DCSDeviceID, 
+					tmpAss.SubscriberID, 
+					MIN(tmpAss.CreatedTime) AS CreatedTime
+	FROM 			Temp_Association AS tmpAss 
+	INNER JOIN 		CTS_DataCenter.CustDCSAccount AS cus 
+					ON tmpAss.AccountID = cus.AccountID        
+	GROUP BY 		cus.CTSCustID, tmpAss.DeviceID, tmpAss.SubscriberID;           
           
-    INSERT INTO  CTS_DataCenter.AssociationByDevice
-		(`CTSCustID`,
-		`DCSDeviceID`,
-		`SubscriberID`,
-		`CreatedTime`,
-		`InsertTime`)
-		SELECT 	tmpAssDe.CTSCustID, 
-				tmpAssDe.DCSDeviceID,
-                tmpAssDe.SubscriberID,
-                tmpAssDe.CreatedTime,
-                NOW()
-                FROM Temp_AssociationByDevice AS tmpAssDe
-                LEFT JOIN  CTS_DataCenter.AssociationByDevice AS AssDe 
-					ON tmpAssDe.CTSCustID = AssDe.CTSCustID AND tmpAssDe.DCSDeviceID = AssDe.DCSDeviceID
-				WHERE AssDe.CTSAssDevID is null;     
+    INSERT IGNORE INTO 	CTS_DataCenter.AssociationByDevice(CTSCustID, DCSDeviceID, SubscriberID, CreatedTime, InsertTime)
+	SELECT 			tmpAssDe.CTSCustID 
+					, tmpAssDe.DCSDeviceID
+					, tmpAssDe.SubscriberID
+					, tmpAssDe.CreatedTime
+					, CURRENT_TIMESTAMP(4) AS InsertTime
+	FROM 			Temp_AssociationByDevice AS tmpAssDe;
+	/*LEFT JOIN  		CTS_DataCenter.AssociationByDevice AS AssDe 
+					ON tmpAssDe.CTSCustID		= AssDe.CTSCustID 
+						AND tmpAssDe.DCSDeviceID	= AssDe.DCSDeviceID
+	WHERE			AssDe.CTSAssDevID IS NULL;  */   
     
-	SELECT 		tmpAss.AssociationId, cus.CTSCustID AS CustId, tmpAss.DeviceID 
+	SELECT 		tmpAss.AssociationId
+				, cus.CTSCustID AS CustId
+                , tmpAss.DeviceID 
     FROM 		Temp_Association tmpAss 
 	INNER JOIN	CTS_DataCenter.CustDCSAccount cus 
 				ON tmpAss.AccountID = cus.AccountID

@@ -18,12 +18,12 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_Transactions;
 	CREATE TEMPORARY TABLE Temp_Transactions
     (
-		LoginName					VARCHAR(100) CHARACTER SET UTF8MB4 	NOT NULL	
+		LoginName					VARCHAR(100) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NOT NULL	
 		, SubscriberName			VARCHAR(50) 						NOT NULL
 		, TransTime					TIMESTAMP(4)	 					NOT NULL
 		, DeviceCode				VARCHAR(62) 						NULL		COMMENT 'Device Inject Code: 32 characters is auto generated'
 		, FingerprintCode			VARCHAR(2000)						NULL		COMMENT 'Device Fingerprint Codes, the hashcode bases on the set attributes'    
-		, FingerprintMoreInfo		TEXT	CHARACTER SET UTF8MB4		NULL
+		, FingerprintMoreInfo		TEXT	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NULL
 		, UserAgent					TEXT		 						NULL
 		, IP						VARCHAR(50) 						NULL
         , IPID						DECIMAL(50,0)						NULL
@@ -31,7 +31,7 @@ BEGIN
 		, URL						VARCHAR(500) 						NULL
         , `Action`					VARCHAR(100) 						NULL
 		, ActionResult				VARCHAR(100) 						NULL
-		, InvalidDevice				TEXT	CHARACTER SET UTF8MB4		NULL
+		, InvalidDevice				TEXT	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NULL
 		, TransStatus				BIT(16)								NULL	
     );     
 		
@@ -71,12 +71,12 @@ BEGIN
 	FROM	JSON_TABLE(
 			ip_RawTransJson,
 			 "$[*]" COLUMNS(
-							  LoginName				VARCHAR(100) CHARACTER SET UTF8MB4	PATH "$.LoginName"       
+							  LoginName				VARCHAR(100) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' PATH "$.LoginName"       
 							, SubscriberName		VARCHAR(50) 	PATH "$.SubscriberName"   
 							, TransTime				TIMESTAMP(4) 	PATH "$.TransTime"
 							, DeviceCode			VARCHAR(64)		PATH "$.DeviceCode"
 							, FingerprintCode		VARCHAR(2000)	PATH "$.FingerprintCode"
-							, FingerprintMoreInfo	TEXT	CHARACTER SET UTF8MB4  	PATH "$.FingerprintMoreInfo"
+							, FingerprintMoreInfo	TEXT	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' PATH "$.FingerprintMoreInfo"
 							, UserAgent				TEXT 	PATH "$.UserAgent"
 							, IP					VARCHAR(50) 	PATH "$.IP"
                             , IPID					DECIMAL(50,0)	PATH "$.IPId"
@@ -84,7 +84,7 @@ BEGIN
 							, URL					VARCHAR(500) 	PATH "$.URL"
                             , Action				VARCHAR(100)	PATH "$.Action"
 							, ActionResult			VARCHAR(100) 	PATH "$.ActionResult"
-                            , InvalidDevice	TEXT	CHARACTER SET UTF8MB4 	PATH "$.InvalidDevice"
+                            , InvalidDevice	TEXT	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' PATH "$.InvalidDevice"
                             , TransStatus	BIT(16)		 					PATH "$.TransStatus"
 							)
 		   ) AS  rt; 

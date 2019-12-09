@@ -40,10 +40,10 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_Account 
     (	
 		AccountID				BIGINT	UNSIGNED
-        , LoginName				VARCHAR(100)   	CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_general_ci'     
+        , LoginName				VARCHAR(100)   	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'    
         , SubscriberID			INT
 		, SubscriberType		INT
-		, LoginNameWithPrefix	VARCHAR(100)	CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_general_ci'
+		, LoginNameWithPrefix	VARCHAR(100)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
         , CTSCustID				BIGINT UNSIGNED
     , PRIMARY KEY	PK_TempAccount_AccountID(AccountID)
 	, UNIQUE KEY	UK_TempAccount_SubscriberIDLoginName(SubscriberID, LoginName)    
@@ -60,7 +60,7 @@ BEGIN
 	FROM JSON_TABLE(ip_AccountList,
 		 "$[*]" COLUMNS(
 			  AccountID 				BIGINT 																	PATH "$.AccountId"
-            , LoginName					VARCHAR(100) 	CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_general_ci'  	PATH "$.LoginName" 
+            , LoginName					VARCHAR(100) 	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'  	PATH "$.LoginName" 
 			, SubscriberID				INT																		PATH "$.SubscriberId"
 		 )) as tmpTable  
 	INNER JOIN 	CTS_Admin.Subscriber AS sub
@@ -88,7 +88,6 @@ BEGIN
     INNER JOIN	CTS_DataCenter.CTSCustomer AS cus USE INDEX(IX_CTSCustomer_UserName_UserName2,IX_CTSCustomer_UserName2)
 				ON (acc.LoginNameWithPrefix = cus.Username
 					OR acc.LoginNameWithPrefix = cus.Username2)
-				#ON	acc.LoginNameWithPrefix COLLATE utf8mb4_unicode_ci IN (cus.UserName, cus.UserName2)
 	SET			acc.CTSCustID = cus.CTSCustID
 	WHERE		acc.SubscriberType = vrDepositSubType 
 				AND acc.CTSCustID IS NULL;   	
@@ -101,11 +100,11 @@ BEGIN
 			, acc.AccountID
 			, acc.SubscriberID 
             , CURRENT_TIMESTAMP(4) AS InserTime
-    FROM 	Temp_Account as acc
+    FROM 	Temp_Account AS acc
 	WHERE acc.CTSCustID IS NOT NULL;    
     
     
-    Update DCS_DataCenter.Account acc
+    UPDATE DCS_DataCenter.Account acc
 	INNER JOIN	Temp_Account AS tac 
 				ON acc.AccountID = tac.AccountID
 	SET IsCTSTransformed = 1

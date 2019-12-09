@@ -78,9 +78,9 @@ BEGIN
         
     END LOOP;
     
-    SELECT tmpTT.MinTransID
-        , tmpTT.MaxTransID
-	FROM  Temp_Transaction AS tmpTT;
+    SELECT	tmpTT.MinTransID
+			, tmpTT.MaxTransID
+	FROM	Temp_Transaction AS tmpTT;
     
    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 	

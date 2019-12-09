@@ -49,7 +49,7 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_InputTrans 
 	(	
 		TransID					BIGINT			UNSIGNED
-		, AccountID				INT			UNSIGNED
+		, AccountID				INT				UNSIGNED
 		, SubscriberID			INT
         , UserAgentKey			VARCHAR(32)		
 		, DeviceCode			VARCHAR(32)
@@ -89,7 +89,7 @@ BEGIN
         , UserAgentKey			VARCHAR(32)
 		, DeviceCode			VARCHAR(32)
 		, FingerprintCode		VARCHAR(640)
-        , FingerprintMoreInfo	TEXT	CHARACTER SET UTF8MB4
+        , FingerprintMoreInfo	TEXT	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 		, CreatedDate			DATETIME
 		, TransTime				TIMESTAMP(4)
 		
