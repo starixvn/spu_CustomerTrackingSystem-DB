@@ -40,10 +40,10 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_Account 
     (	
 		AccountID				BIGINT	UNSIGNED
-        , LoginName				VARCHAR(100)   	CHARACTER SET 'utf8mb4'     
+        , LoginName				VARCHAR(100)   	CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_general_ci'     
         , SubscriberID			INT
 		, SubscriberType		INT
-		, LoginNameWithPrefix	VARCHAR(100)	CHARACTER SET 'utf8mb4'
+		, LoginNameWithPrefix	VARCHAR(100)	CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_general_ci'
         , CTSCustID				BIGINT UNSIGNED
     , PRIMARY KEY	PK_TempAccount_AccountID(AccountID)
 	, UNIQUE KEY	UK_TempAccount_SubscriberIDLoginName(SubscriberID, LoginName)    
@@ -59,9 +59,9 @@ BEGIN
             , CONCAT(sub.SubscriberPrefix, tmpTable.LoginName) AS LoginNameWithPrefix
 	FROM JSON_TABLE(ip_AccountList,
 		 "$[*]" COLUMNS(
-			  AccountID 				BIGINT 										PATH "$.AccountId"
-            , LoginName					VARCHAR(100) 	CHARACTER SET 'utf8mb4'  	PATH "$.LoginName" 
-			, SubscriberID				INT											PATH "$.SubscriberId"
+			  AccountID 				BIGINT 																	PATH "$.AccountId"
+            , LoginName					VARCHAR(100) 	CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_general_ci'  	PATH "$.LoginName" 
+			, SubscriberID				INT																		PATH "$.SubscriberId"
 		 )) as tmpTable  
 	INNER JOIN 	CTS_Admin.Subscriber AS sub
 				ON tmpTable.SubscriberID = sub.SubscriberID;
@@ -69,8 +69,8 @@ BEGIN
 	 #=============GET CTSCustomerInfo=========================================
     UPDATE Temp_Account AS tmpTable
 	INNER JOIN	CTS_DataCenter.CTSCustomer AS cus USE INDEX(IX_CTSCustomer_UserName_UserName2,IX_CTSCustomer_UserName2)
-				ON (tmpTable.LoginNameWithPrefix COLLATE utf8mb4_unicode_ci   	= cus.Username
-					OR tmpTable.LoginNameWithPrefix COLLATE utf8mb4_unicode_ci  = cus.Username2)
+				ON (tmpTable.LoginNameWithPrefix = cus.Username
+					OR tmpTable.LoginNameWithPrefix = cus.Username2)
 	SET 		tmpTable.CTSCustID = cus.CTSCustID;
 
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
@@ -86,8 +86,8 @@ BEGIN
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
 	UPDATE 		Temp_Account AS acc
     INNER JOIN	CTS_DataCenter.CTSCustomer AS cus USE INDEX(IX_CTSCustomer_UserName_UserName2,IX_CTSCustomer_UserName2)
-				ON (acc.LoginNameWithPrefix COLLATE utf8mb4_unicode_ci   	= cus.Username
-					OR acc.LoginNameWithPrefix COLLATE utf8mb4_unicode_ci  = cus.Username2)
+				ON (acc.LoginNameWithPrefix = cus.Username
+					OR acc.LoginNameWithPrefix = cus.Username2)
 				#ON	acc.LoginNameWithPrefix COLLATE utf8mb4_unicode_ci IN (cus.UserName, cus.UserName2)
 	SET			acc.CTSCustID = cus.CTSCustID
 	WHERE		acc.SubscriberType = vrDepositSubType 

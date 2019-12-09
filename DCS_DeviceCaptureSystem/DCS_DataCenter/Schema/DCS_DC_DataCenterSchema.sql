@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
         , PRIMARY KEY	PK_Device_DeviceKey(DeviceID)
         , UNIQUE KEY	UK_Device_FirstDeviceCode(FirstDeviceCode)
         , INDEX			IX_Device_CreatedDate(CreatedDate)        
-     ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+     ) ENGINE=InnoDB; #  DEFAULT CHARSET=latin1;
 # ======Device=============================================
 	CREATE TABLE IF NOT EXISTS DCS_DataCenter.DeviceCode(
 		DeviceCodeID			BIGINT	UNSIGNED	AUTO_INCREMENT
@@ -36,21 +36,21 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
         , INDEX			IX_DeviceCode_CreatedDate(CreatedDate)
         , INDEX			IX_DeviceCode_DeviceID(DeviceID)      
         
-     ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+     ) ENGINE=InnoDB; #  DEFAULT CHARSET=latin1;
      
 # ======DeviceDetail=============================================
 	CREATE TABLE IF NOT EXISTS DCS_DataCenter.DeviceFingerprint(
 		DeviceFingerprintID		BIGINT	UNSIGNED	AUTO_INCREMENT
         , DeviceID				BIGINT	UNSIGNED	NOT NULL
         , FingerprintCode		VARCHAR(620)		NOT NULL
-		, FingerprintMoreInfo	TEXT			NULL
+		, FingerprintMoreInfo	TEXT	CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_general_ci'	NULL
         , CreatedTime			TIMESTAMP(4)	NULL
         , CreatedDate			DATETIME		NULL
         , InsertTime			TIMESTAMP(4)	NULL
         
-        , PRIMARY KEY	PK_Fingerprint_FingerprintCode_DeviceID(FingerprintCode,DeviceID)
-		, UNIQUE KEY	UK_DeviceFingerprint_DeviceFingerprintID(DeviceFingerprintID)
-     ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+        , PRIMARY KEY	PK_DeviceFingerprint_DeviceFingerprintID(DeviceFingerprintID)
+		, INDEX	IX_DeviceFingerprint_DeviceID(DeviceID)
+     ) ENGINE=InnoDB;#  DEFAULT CHARSET=latin1;
     
 # =======Association============================================
 	CREATE TABLE IF NOT EXISTS DCS_DataCenter.Association(
@@ -65,12 +65,12 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
         , PRIMARY KEY	PK_Association_AccountID_Device(AccountID, DeviceID)
         , INDEX	IX_Association_SubscriberID_AccountID_DeviceID(SubscriberID, AccountID, DeviceID)
         , UNIQUE KEY UK_Association_AssociationID(AssociationID)
-     ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+     ) ENGINE=InnoDB ; # DEFAULT CHARSET=latin1;
 
 # =======Account============================================
 	CREATE TABLE IF NOT EXISTS DCS_DataCenter.`Account`(
 		AccountID			INT		UNSIGNED	AUTO_INCREMENT	NOT NULL        
-        , LoginName			VARCHAR(100)		CHARACTER SET UTF8MB4	NOT NULL
+        , LoginName			VARCHAR(100)		CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_general_ci'	NOT NULL
         , SubscriberID		INT										NOT NULL
         , SubscriberType	TINYINT									NULL
 		, CreatedDate		DATETIME								NULL
@@ -80,12 +80,12 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
         
         , PRIMARY KEY	PK_Account_AccountID(AccountID)
         , UNIQUE KEY	UK_Account_SubscriberIDLoginName(SubscriberID, LoginName)
-     ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+     ) ENGINE=InnoDB ; # DEFAULT CHARSET=latin1;
 
 # =======Transactions============================================
 	CREATE TABLE IF NOT EXISTS DCS_DataCenter.`Transaction`(
 		TransID				BIGINT	UNSIGNED					NOT NULL
-		, LoginName			VARCHAR(100) 		CHARACTER SET UTF8MB4		NOT NULL
+		, LoginName			VARCHAR(100) 		CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_general_ci'		NOT NULL
         , TransTime			TIMESTAMP(4)						NOT	NULL                
         , SubscriberID		INT									NULL
         , AccountID			INT				UNSIGNED			NULL
@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
         , INDEX			IX_Transaction_SubscriberIDAccountID(SubscriberID, LoginName, AccountID)
         , INDEX			IX_Transaction_IPID_IP(IPID, IP)
         , INDEX			IX_Transaction_CreatedDate(CreatedDate)       
-	 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+	 ) ENGINE=InnoDB;#  DEFAULT CHARSET=latin1;
 
 # ===========================================================================
 	CREATE TABLE IF NOT EXISTS DCS_DataCenter.OS(
@@ -119,7 +119,7 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
         
         , PRIMARY KEY 	PK_OS_ISID(OSID)
         , UNIQUE KEY	UK_OSName(OSName)
-     ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+     ) ENGINE=InnoDB; #  DEFAULT CHARSET=latin1;
      
 # ===========================================================================
 	CREATE TABLE IF NOT EXISTS DCS_DataCenter.Browser(
@@ -129,7 +129,7 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
         
         , PRIMARY KEY 	PK_Browser_BrowserID(BrowserID)
         , UNIQUE KEY	UK_BrowserName(BrowserName)
-     ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+     ) ENGINE=InnoDB;#  DEFAULT CHARSET=latin1;
 
 # ===========================================================================
 	CREATE TABLE IF NOT EXISTS DCS_DataCenter.ActionResult(
@@ -141,7 +141,7 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
         
         , PRIMARY KEY 	PK_ActionResult_ActionResultID(ActionResultID)
         , UNIQUE KEY	UK_ActionResult_ActionResultDetails(Action, ActionResult)
-     ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+     ) ENGINE=InnoDB; #  DEFAULT CHARSET=latin1;
 
 # ===========================================================================	
     CREATE TABLE IF NOT EXISTS DCS_DataCenter.URL(
@@ -152,7 +152,7 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
         
         , PRIMARY KEY 	PK_URL_URLID(URLID)
         , UNIQUE KEY	UK_URL_URLDetails(URLDetails)
-     ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+     ) ENGINE=InnoDB; #  DEFAULT CHARSET=latin1;
      
 # =======UserAgent============================================
 	CREATE TABLE IF NOT EXISTS DCS_DataCenter.UserAgent(
@@ -165,7 +165,7 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
         , CreatedDate	DATETIME		NULL
         
         , PRIMARY KEY 	PK_UserAgent_UserAgentKey(UserAgentKey)
-     ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+     ) ENGINE=InnoDB; # DEFAULT CHARSET=latin1;
 # ==========TransStatus============================================
 CREATE TABLE IF NOT EXISTS DCS_DataCenter.TransStatus(
 	 TransStatusName		VARCHAR(100)
@@ -180,7 +180,7 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.TransStatus(
 CREATE TABLE IF NOT EXISTS DCS_DataCenter.TransactionIP(
 	 TransID				BIGINT			UNSIGNED	NOT NULL
      , AccountID			INT				UNSIGNED	NOT NULL     
-     , LoginName			VARCHAR(100) CHARACTER SET UTF8MB4	NOT NULL
+     , LoginName			VARCHAR(100) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_general_ci'	NOT NULL
      , SubscriberID			INT				NOT NULL
      , IP					VARCHAR(50)			NULL
 	 , IPID					DECIMAL(50,0)		NULL
@@ -189,7 +189,7 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.TransactionIP(
      , IsCTSTransformed		TINYINT			NOT NULL	DEFAULT 0
      , PRIMARY KEY	PK_CTSTransformIP_TransID(TransID)
      , INDEX 		IX_TCTSTransformIP_IsTransformed(CreatedDate, IsCTSTransformed)
-);
+) ENGINE=InnoDB;
 # ===================================================
 CREATE TABLE IF NOT EXISTS DCS_DataCenter.zzTracePerformance (
 	ID				BIGINT			AUTO_INCREMENT
