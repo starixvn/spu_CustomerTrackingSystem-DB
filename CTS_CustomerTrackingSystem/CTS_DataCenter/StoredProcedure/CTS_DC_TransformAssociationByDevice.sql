@@ -71,10 +71,6 @@ BEGIN
 					, tmpAssDe.CreatedTime
 					, CURRENT_TIMESTAMP(4) AS InsertTime
 	FROM 			Temp_AssociationByDevice AS tmpAssDe;
-	/*LEFT JOIN  		CTS_DataCenter.AssociationByDevice AS AssDe 
-					ON tmpAssDe.CTSCustID		= AssDe.CTSCustID 
-						AND tmpAssDe.DCSDeviceID	= AssDe.DCSDeviceID
-	WHERE			AssDe.CTSAssDevID IS NULL;  */   
     
 	SELECT 		tmpAss.AssociationId
 				, cus.CTSCustID AS CustId
