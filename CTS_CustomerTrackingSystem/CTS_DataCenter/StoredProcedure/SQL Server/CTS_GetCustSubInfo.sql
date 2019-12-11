@@ -31,6 +31,7 @@ BEGIN;
 	CREATE TABLE #tempCustomer (
 		 BatchId	TINYINT
 		,CustId		INT
+		,CustSubId	INT
 		,Username	VARCHAR(30)
 		,Username2	VARCHAR(50)
 		,Site		VARCHAR(10)
@@ -44,6 +45,7 @@ BEGIN;
 
 	INSERT INTO #tempCustomer
 	(	 CustId		
+		,CustSubId
 		,Username	
 		,Username2	
 		,Site		
@@ -54,7 +56,8 @@ BEGIN;
 		,Mrecommend 
 		,Recommend	
 	)
-	SELECT TOP (@totalRow) cust.custid
+	SELECT TOP (@totalRow) sub.custid
+		,sub.subaccid
 		,sub.username
 		,sub.username2
 		,upl.site
@@ -65,15 +68,14 @@ BEGIN;
 		,cust.mrecommend
 		,cust.recommend
 	FROM dbo.custSub sub WITH (NOLOCK)
-		INNER JOIN dbo.Customer cust with (nolock) on sub.custid = cust.custid
+		INNER JOIN dbo.Customer cust WITH (NOLOCK) ON sub.custid = cust.custid
 		INNER JOIN	dbo.Customer upl WITH (NOLOCK) ON cust.srecommend = upl.custid
 		INNER JOIN dbo.Exchange ex WITH (NOLOCK) ON cust.currency = ex.exchangeid
 	WHERE cust.custid > @maxCustId
 	ORDER BY sub.subaccid
 
 	WHILE @currentBatch <= @numberOfBatch
-	BEGIN
-	
+	BEGIN	
 		UPDATE TOP (@rowSize) tcust
 		SET BatchId = @currentBatch
 		FROM #tempCustomer tcust
@@ -84,6 +86,7 @@ BEGIN;
 
 	SELECT BatchId
 		,CustId
+		,CustSubId
 		,Username
 		,Username2
 		,Site
