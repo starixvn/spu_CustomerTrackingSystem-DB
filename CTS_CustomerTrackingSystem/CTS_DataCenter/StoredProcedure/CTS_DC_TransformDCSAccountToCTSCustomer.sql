@@ -13,6 +13,8 @@ BEGIN
 		Param's Explanation (filtered by):                
 	*/
 	DECLARE vrDepositSubType TINYINT DEFAULT 1;
+    DECLARE vrNOTMainSubType TINYINT DEFAULT 2;
+
     ### PERFORMANCE: START
     DECLARE		vrExecKey		BIGINT	UNSIGNED;
 	DECLARE		vrSPName		VARCHAR(200) DEFAULT 'CTS_DC_TransformDCSAccountToCTSCustomer' ;
@@ -60,7 +62,7 @@ BEGIN
 	FROM JSON_TABLE(ip_AccountList,
 		 "$[*]" COLUMNS(
 			  AccountID 				BIGINT 																	PATH "$.AccountId"
-            , LoginName					VARCHAR(100) 	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'  	PATH "$.LoginName" 
+            , LoginName					VARCHAR(100) 														  	PATH "$.LoginName" 
 			, SubscriberID				INT																		PATH "$.SubscriberId"
 		 )) as tmpTable  
 	INNER JOIN 	CTS_Admin.Subscriber AS sub
@@ -68,7 +70,7 @@ BEGIN
     
 	 #=============GET CTSCustomerInfo=========================================
     UPDATE Temp_Account AS tmpTable
-	INNER JOIN	CTS_DataCenter.CTSCustomer AS cus USE INDEX(IX_CTSCustomer_UserName_UserName2,IX_CTSCustomer_UserName2)
+	INNER JOIN	CTS_DataCenter.CTSCustomer AS cus #USE INDEX(IX_CTSCustomer_UserName_UserName2,IX_CTSCustomer_UserName2)
 				ON (tmpTable.LoginNameWithPrefix = cus.Username
 					OR tmpTable.LoginNameWithPrefix = cus.Username2)
 	SET 		tmpTable.CTSCustID = cus.CTSCustID;
@@ -80,39 +82,40 @@ BEGIN
     SELECT		acc.SubscriberID
 				, acc.LoginNameWithPrefix
     FROM 		Temp_Account AS acc
-    WHERE		acc.SubscriberType = vrDepositSubType 
+    WHERE		acc.SubscriberType IN (vrDepositSubType, vrNOTMainSubType)
 				AND acc.CTSCustID IS NULL;   			
 
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
 	UPDATE 		Temp_Account AS acc
-    INNER JOIN	CTS_DataCenter.CTSCustomer AS cus USE INDEX(IX_CTSCustomer_UserName_UserName2,IX_CTSCustomer_UserName2)
-				ON (acc.LoginNameWithPrefix = cus.Username
-					OR acc.LoginNameWithPrefix = cus.Username2)
+    INNER JOIN	CTS_DataCenter.CTSCustomer AS cus # USE INDEX(IX_CTSCustomer_UserName_UserName2,IX_CTSCustomer_UserName2)
+				ON (acc.LoginNameWithPrefix = cus.Username2
+					OR acc.LoginNameWithPrefix = cus.Username)
 	SET			acc.CTSCustID = cus.CTSCustID
-	WHERE		acc.SubscriberType = vrDepositSubType 
-				AND acc.CTSCustID IS NULL;   	
+	WHERE		acc.SubscriberType IN (vrDepositSubType, vrNOTMainSubType)
+				AND acc.CTSCustID IS NULL;
 	
-
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
    
     INSERT IGNORE INTO CTS_DataCenter.CustDCSAccount(CTSCustID, AccountID, SubscriberID, InsertTime)
 	SELECT  acc.CTSCustID
 			, acc.AccountID
 			, acc.SubscriberID 
-            , CURRENT_TIMESTAMP(4) AS InserTime
+            , CURRENT_TIMESTAMP(4) AS InsertTime
     FROM 	Temp_Account AS acc
-	WHERE acc.CTSCustID IS NOT NULL;    
-    
+	WHERE acc.CTSCustID IS NOT NULL;       
     
     UPDATE DCS_DataCenter.Account acc
 	INNER JOIN	Temp_Account AS tac 
 				ON acc.AccountID = tac.AccountID
-	SET IsCTSTransformed = 1
-     WHERE tac.CTSCustID IS NOT NULL
-			OR (
-				tac.SubscriberType = vrDepositSubType 
-				AND tac.CTSCustID IS NULL   
-            );
+	SET 	acc.IsCTSTransformed = 1
+	WHERE 	tac.CTSCustID IS NOT NULL;
+    
+	UPDATE DCS_DataCenter.Account acc
+	INNER JOIN	Temp_Account AS tac 
+				ON acc.AccountID = tac.AccountID
+	SET 	acc.IsCTSTransformed = acc.IsCTSTransformed - 1
+	WHERE 	tac.CTSCustID IS NULL;
+ 
             
 	DROP TABLE IF EXISTS Temp_Account;
 	#=======================

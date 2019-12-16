@@ -16,7 +16,7 @@ CREATE TABLE CTS_Admin.Subscriber (
 ,	SubscriberPrefix	VARCHAR(30) 	NULL
 ,	CreatedDate			DATETIME	 	NULL
 ,	CreatedBy			INT 			NULL
-,	SubscriberType		TINYINT	UNSIGNED	NULL	# 0: Credit, 1: Deposit 			
+,	SubscriberType		TINYINT	UNSIGNED	NULL	# 0: Credit, 1: Deposit, 2: SUB not have Customer in MainDB (ex: CTMAX, ALPHACTMAX)			
 ,	SubscriberStatus	TINYINT	NOT NULL	COMMENT '0: Inactive; 1: Active; -1: Unhandle (sub that not integrate, is insert new from transaction)'
 ,	IsTest				TINYINT	NULL
 ,	PRIMARY KEY	PK_Subscriber_SubscriberID (SubscriberID)
