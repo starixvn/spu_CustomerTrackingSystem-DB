@@ -9,7 +9,8 @@ BEGIN
 		Original:
 
 		Revisions:
-        
+        	#1. [20191217@CaseyHuynh][#125530]: Implement LastLoginTime
+            
 		Param's Explanation (filtered by):                
 	*/
 	DECLARE vrDepositSubType TINYINT DEFAULT 1;
@@ -45,6 +46,7 @@ BEGIN
         , LoginName				VARCHAR(100)   	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'    
         , SubscriberID			INT
 		, SubscriberType		INT
+        , LastLoginTime			TIMESTAMP(4)
 		, LoginNameWithPrefix	VARCHAR(100)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
         , CTSCustID				BIGINT UNSIGNED
     , PRIMARY KEY	PK_TempAccount_AccountID(AccountID)
@@ -53,17 +55,19 @@ BEGIN
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;     
 
-	INSERT INTO Temp_Account(AccountID, LoginName, SubscriberID, SubscriberType, LoginNameWithPrefix)
+	INSERT INTO Temp_Account(AccountID, LoginName, SubscriberID, SubscriberType, LastLoginTime, LoginNameWithPrefix)
 	SELECT 	tmpTable.AccountID 
             , tmpTable.LoginName 
 			, tmpTable.SubscriberID
             , sub.SubscriberType
+            , tmpTable.LastLoginTime
             , CONCAT(sub.SubscriberPrefix, tmpTable.LoginName) AS LoginNameWithPrefix
 	FROM JSON_TABLE(ip_AccountList,
 		 "$[*]" COLUMNS(
 			  AccountID 				BIGINT 																	PATH "$.AccountId"
             , LoginName					VARCHAR(100) 														  	PATH "$.LoginName" 
 			, SubscriberID				INT																		PATH "$.SubscriberId"
+            , LastLoginTime				TIMESTAMP(4)															PATH "$.LastLoginTime"
 		 )) as tmpTable  
 	INNER JOIN 	CTS_Admin.Subscriber AS sub
 				ON tmpTable.SubscriberID = sub.SubscriberID;
@@ -93,6 +97,15 @@ BEGIN
 	SET			acc.CTSCustID = cus.CTSCustID
 	WHERE		acc.SubscriberType IN (vrDepositSubType, vrNOTMainSubType)
 				AND acc.CTSCustID IS NULL;
+                
+	UPDATE		CTS_DataCenter.CTSCustomer AS cus
+    INNER JOIN	(	SELECT		acc.CTSCustID
+								, MAX(acc.LastLoginTime) AS LastLoginTime
+					FROM		Temp_Account AS acc
+                    GROUP BY	acc.CTSCustID) AS tac
+				ON	cus.CTSCustID = tac.CTSCustID
+	SET			cus.LastLoginTime = tac.LastLoginTime
+	WHERE		cus.LastLoginTime < tac.LastLoginTime;
 	
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
    

@@ -11,6 +11,8 @@ BEGIN
 	Original:
 
 	Revisions:
+		#1. [20191217@CaseyHuynh][#125530]: Implement LastLoginTime
+        
 	Param's Explanation (filtered by):
 	*/
 	
@@ -47,14 +49,16 @@ BEGIN
         , AccountID				BIGINT	UNSIGNED
         , LoginName				VARCHAR(50)
         , SubscriberID			INT
+        , LastLoginTime			TIMESTAMP(4)
     ); 
    
 	SET TotalRecord = ip_NoOfAccount*ip_NoOfBatch;
     
-	INSERT INTO Temp_Account( AccountID, LoginName, SubscriberID)
+	INSERT INTO Temp_Account( AccountID, LoginName, SubscriberID, LastLoginTime)
 	SELECT	ac.AccountID
 			, ac.LoginName
             , ac.SubscriberID
+            , ac.LastLoginTime
 	FROM 	DCS_DataCenter.Account AS ac
 	WHERE	ac.IsCTSTransformed < 0
     ORDER BY	IsCTSTransformed ASC
@@ -72,6 +76,7 @@ BEGIN
 			, ac.AccountID
             , ac.LoginName
             , ac.SubscriberID
+            , ac.LastLoginTime
 	FROM Temp_Account AS ac;
     
    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;

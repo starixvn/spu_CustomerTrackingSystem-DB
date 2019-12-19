@@ -1,10 +1,11 @@
 /*
 Creator: 20191106@CaseyHuynh + Harvey.Nguyen
-Task:	 
-Server:  
-DBName:	CTS_DataCenter
+Task:	 	CTS_Schema
+Server:  	Slave
+DBName:		CTS_DataCenter
 
 Revisions: 
+		- [20191217@CaseyHuynh][#125530]: Add Column LastLoginDate column to table CTSCustomer.
 Reviewer:
 */
 
@@ -24,6 +25,7 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, SRecommend		INT		UNSIGNED
 		, MRecommend		INT		UNSIGNED	
 		, Recommend			INT		UNSIGNED
+        , LastLoginDate		TIMESTAMP(4)
 		, PRIMARY KEY	PK_CTSCustomer_CTSCustID(CTSCustID)    
 		, UNIQUE KEY	UK_CTSCustomer_SubscriberID_UserName_UserName2(SubscriberID, UserName, UserName2)
 		, INDEX			IX_CTSCustomer_UserName_UserName2(UserName,UserName2)
@@ -61,7 +63,7 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, AccountID			BIGINT	UNSIGNED
 		, SubscriberID		INT
 		, InsertTime		TIMESTAMP(4)
-		, PRIMARY KEY		PK_CustDCSAccount_AccountID(AccountID)    
+		, PRIMARY KEY		PK_CustDCSAccount_AccountID(AccountID)  
 	) ENGINE=INNODB  AUTO_INCREMENT=1;
 
 	CREATE TABLE IF NOT EXISTS CTS_DataCenter.MappingSubscriberSite(
@@ -171,3 +173,6 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, INDEX 		IX_IPTableLog_IPType_Flag (IsNewUpdate)
 	) ENGINE=INNODB AUTO_INCREMENT=1;
 
+/* ==========================PHASE 2===================================*/
+ALTER TABLE		CTS_DataCenter.CTSCustomer
+ADD COLUMN	
