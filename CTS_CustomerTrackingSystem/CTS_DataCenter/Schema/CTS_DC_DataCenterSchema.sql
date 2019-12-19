@@ -25,7 +25,8 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, SRecommend		INT		UNSIGNED
 		, MRecommend		INT		UNSIGNED	
 		, Recommend			INT		UNSIGNED
-        , LastLoginDate		TIMESTAMP(4)
+        , LastLoginTime		TIMESTAMP(4)
+        , CreatedDate		DATETIME
 		, PRIMARY KEY	PK_CTSCustomer_CTSCustID(CTSCustID)    
 		, UNIQUE KEY	UK_CTSCustomer_SubscriberID_UserName_UserName2(SubscriberID, UserName, UserName2)
 		, INDEX			IX_CTSCustomer_UserName_UserName2(UserName,UserName2)

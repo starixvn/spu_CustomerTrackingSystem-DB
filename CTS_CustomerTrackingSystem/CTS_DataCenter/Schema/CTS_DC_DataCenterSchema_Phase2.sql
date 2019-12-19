@@ -5,8 +5,9 @@ Server:  	Slave
 DBName:		CTS_DataCenter
 
 Revisions: 
-	#1. [20191217@CaseyHuynh][#125530]: Add Column LastLoginDate column to table CTSCustomer.
+	#1. [20191217@CaseyHuynh][#125530]: Add LastLoginDate column to table CTSCustomer.
     #2. [20191217@CaseyHuynh][#125534]: Create StaticList table
+    #3. [20191217@Harvey.Nguyen][#125530]: Add CreatedDate column to table CTSCustomer.
     
 Reviewer:
 	#1. Harvey: 
@@ -15,7 +16,10 @@ Reviewer:
 /* ==========================PHASE 2===================================*/
 #1. [20191217@CaseyHuynh][#125530]
 ALTER TABLE		CTS_DataCenter.CTSCustomer
-ADD COLUMN		LastLoginTime1	TIMESTAMP(4);
+ADD COLUMN		LastLoginTime	TIMESTAMP(4);
+
+ALTER TABLE		CTS_DataCenter.CTSCustomer
+ADD COLUMN		CreatedDate		DATETIME;
 
 #
 # ===================================================
