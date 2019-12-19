@@ -32,6 +32,7 @@ BEGIN
 		, SRecommend	INT	 UNSIGNED		 	
 		, MRecommend	INT	 UNSIGNED 			
 		, Recommend		INT	 UNSIGNED
+        , CreatedDate	DATETIME
         , INDEX			IX_TempCTSCustomer_UserName2(UserName2)
         );
     
@@ -48,6 +49,7 @@ BEGIN
 		, SRecommend	
 		, MRecommend	
 		, Recommend	
+        , CreatedDate
 	FROM JSON_TABLE(ip_CustomerList,
 		 "$[*]" COLUMNS(
 		  SubscriberID 	INT 			PATH "$.SubscriberId"
@@ -62,6 +64,7 @@ BEGIN
 		, SRecommend	INT	 UNSIGNED	PATH "$.Srecommend" 
 		, MRecommend	INT	 UNSIGNED 	PATH "$.Mrecommend" 
 		, Recommend		INT	 UNSIGNED 	PATH "$.Recommend" 
+        , CreatedDate	DATETIME	 	PATH "$.CreatedDate" 
 		 )) as tmpTable;
 
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
@@ -84,9 +87,11 @@ BEGIN
 		, ctsCust.Currency 		= tempCust.Currency
 		, ctsCust.CurrencyID 	= tempCust.CurrencyID
 		, ctsCust.SRecommend 	= tempCust.SRecommend
-		, ctsCust.MRecommend 	= tempCust.MRecommend;
+		, ctsCust.MRecommend 	= tempCust.MRecommend
+        , ctsCust.Recommend 	= tempCust.Recommend
+        , ctsCust.CreatedDate 	= tempCust.CreatedDate;
 
-	INSERT IGNORE INTO CTS_DataCenter.CTSCustomer(SubscriberID, CustID, CustSubID, UserName, UserName2, Site, RoleID, Currency, CurrencyID, SRecommend, MRecommend, Recommend)
+	INSERT IGNORE INTO CTS_DataCenter.CTSCustomer(SubscriberID, CustID, CustSubID, UserName, UserName2, Site, RoleID, Currency, CurrencyID, SRecommend, MRecommend, Recommend, CreatedDate)
 	SELECT    tempCust.SubscriberID
 			, tempCust.CustID
             , tempCust.CustSubID
@@ -99,6 +104,7 @@ BEGIN
             , tempCust.SRecommend
             , tempCust.MRecommend
             , tempCust.Recommend
+            , tempCust.CreatedDate
 	FROM 		TempCTSCustomer tempCust;
 
 END$$
