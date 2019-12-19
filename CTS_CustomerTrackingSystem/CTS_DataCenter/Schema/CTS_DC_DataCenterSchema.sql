@@ -173,6 +173,16 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, INDEX 		IX_IPTableLog_IPType_Flag (IsNewUpdate)
 	) ENGINE=INNODB AUTO_INCREMENT=1;
 
-/* ==========================PHASE 2===================================*/
-ALTER TABLE		CTS_DataCenter.CTSCustomer
-ADD COLUMN	
+# ===================================================
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.StaticList
+(
+	ListNo			INT
+    , ItemNo		INT
+    , ListName		VARCHAR(200)
+    , ItemName		VARCHAR(200)
+    , Status		BOOL
+    , Description	VARCHAR(200)
+    , CreatedDate	DATETIME
+    
+    , PRIMARY KEY PK_StaticList_ListNo_ItemNo(ListNo, ItemNo)
+) 
