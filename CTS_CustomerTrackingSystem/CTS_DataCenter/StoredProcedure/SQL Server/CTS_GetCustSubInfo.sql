@@ -15,7 +15,6 @@ AS
 	
 	Revisions:
 		- 20181121@Harvey:	Initial - [Redmine: #124592]
-		- 20191212@Harvey:	Fix bug for CustSub - [Redmine: #125693]
 		
 	Developer's Notes:
 		- @Example:			NULL		- Explaination [DEFAULT]
@@ -42,6 +41,7 @@ BEGIN;
 		,Srecommend INT
 		,Mrecommend INT
 		,Recommend	INT
+		,CreatedDate	DATETIME
 		)
 
 	INSERT INTO #tempCustomer
@@ -56,6 +56,7 @@ BEGIN;
 		,Srecommend 
 		,Mrecommend 
 		,Recommend	
+		,CreatedDate
 	)
 	SELECT TOP (@totalRow) sub.custid
 		,sub.subaccid
@@ -68,6 +69,7 @@ BEGIN;
 		,cust.srecommend
 		,cust.mrecommend
 		,cust.recommend
+		,sub.createdate
 	FROM dbo.custSub sub WITH (NOLOCK)
 		INNER JOIN dbo.Customer cust WITH (NOLOCK) ON sub.custid = cust.custid
 		INNER JOIN	dbo.Customer upl WITH (NOLOCK) ON cust.srecommend = upl.custid
@@ -97,6 +99,7 @@ BEGIN;
 		,Srecommend
 		,Mrecommend
 		,Recommend
+		,CreatedDate
 	FROM #tempCustomer
 
 END;
