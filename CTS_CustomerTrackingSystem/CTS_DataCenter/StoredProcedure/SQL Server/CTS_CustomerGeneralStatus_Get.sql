@@ -1,4 +1,4 @@
-/*<info serverAlias="DBFS-bodb_FraudSensor" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBTP-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 
 GO
 SET ANSI_NULLS ON
@@ -16,9 +16,9 @@ AS
 	Original:
 
 	Revisions:
-		-	20190826@Harvey: init SPs			(#119205)
-		-	20190917@Harvey: Handle for CN88	
-		-	20190917@Terry: Remove Customer Suspiciouses
+		-	20190826@Harvey: init SPs						[Redmine: #119205]
+		-	20190917@Harvey: Handle for CN88				[Redmine: #125693]
+		-	20190917@Terry: Remove Customer Suspiciouses	[Redmine: #125693]
 
 	Param's Explanation:
 
@@ -56,9 +56,9 @@ BEGIN
 					THEN 0
 				ELSE 1
 				END 'ProblemAccount'
-	FROM bodb02.dbo.custInfo ci WITH (NOLOCK)
-		LEFT JOIN bodb02.dbo.CS_CustomerStatus cs WITH (NOLOCK) ON cs.custid = ci.custid
-		LEFT JOIN bodb02.dbo.CS_ProblemAccount pa WITH (NOLOCK) ON ci.custid = pa.custid
+	FROM dbo.custInfo ci WITH (NOLOCK)
+		LEFT JOIN dbo.CS_CustomerStatus cs WITH (NOLOCK) ON cs.custid = ci.custid
+		LEFT JOIN dbo.CS_ProblemAccount pa WITH (NOLOCK) ON ci.custid = pa.custid
 	WHERE ci.custid = @custId
 
 END;
