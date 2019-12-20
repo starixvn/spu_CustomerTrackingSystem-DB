@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [dbo].[CTS_CustomerLastTicket_Get] 
+ALTER PROCEDURE [dbo].[CTS_CustomerLastTicketDate_Get] 
 		 @custId				INT
 AS
 /*
@@ -18,7 +18,7 @@ AS
 
 	Param's Explanation:
 
-	EXEC [CTS_CustomerLastTicket_Get] 7508205
+	EXEC [CTS_CustomerLastTicketDate_Get] 7508205
 */
 BEGIN
 	SET NOCOUNT ON;
