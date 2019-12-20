@@ -1,4 +1,4 @@
-
+/*<info serverAlias="DBFS-bodb_FraudSensor" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 GO
 SET ANSI_NULLS ON
 GO
@@ -15,6 +15,7 @@ AS
 	Original:
 
 	Revisions:
+		- 20191220@CaseyHuynh:	Initial - [Redmine: #125531]
 
 	Param's Explanation:
 */
@@ -37,5 +38,4 @@ BEGIN
 	WHERE	sc.Custid = @custId;
 
 END;
-/*<info serverAlias="DBFS-bodb_FraudSensor" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 GO
