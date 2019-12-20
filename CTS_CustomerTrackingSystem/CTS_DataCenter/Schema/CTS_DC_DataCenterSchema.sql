@@ -18,7 +18,7 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, CustSubID			INT		UNSIGNED
 		, UserName			VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 		, UserName2			VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
-		, Site				VARCHAR(20)
+		, Site				VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 		, RoleID			TINYINT
 		, Currency			VARCHAR(10)
 		, CurrencyID		INT		
@@ -29,9 +29,9 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
         , CreatedDate		DATETIME
 		, PRIMARY KEY	PK_CTSCustomer_CTSCustID(CTSCustID)    
 		, UNIQUE KEY	UK_CTSCustomer_SubscriberID_UserName_UserName2(SubscriberID, UserName, UserName2)
-		, INDEX			IX_CTSCustomer_UserName_UserName2(UserName,UserName2)
+		, INDEX			IX_CTSCustomer_UserName_UserName2(UserName, UserName2)
 		, INDEX			IX_CTSCustomer_UserName2(UserName2)
-		, INDEX			IX_CTSCustomer_CustID_CustSubID(CustID,CustSubID)
+		, INDEX			IX_CTSCustomer_CustID_CustSubID(CustID, CustSubID)
 	) ENGINE=INNODB AUTO_INCREMENT=1;
 
 	CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociationByDevice(
@@ -56,8 +56,8 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, InsertTime		TIMESTAMP(4)
 		, PRIMARY KEY	PK_AssociationByIP_CTSAssID(CTSAssIPID)
 		, UNIQUE KEY	UK_AssociationByIP_CTSCustID_IPID(CTSCustID,IPID)
-		, INDEX			IX_AssociationByIP_LastLoginTime_CustID_IPID(LastLoginTime,CTSCustID,IPID)
-		)ENGINE=INNODB  AUTO_INCREMENT=1;
+		, INDEX			IX_AssociationByIP_LastLoginTime_CustID_IPID(LastLoginTime, CTSCustID, IPID)
+	)ENGINE=INNODB  AUTO_INCREMENT=1;
 
 	CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustDCSAccount(
 		CTSCustID			BIGINT	UNSIGNED
@@ -72,7 +72,8 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, SiteName			VARCHAR(50)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 		, SubscriberID		INT
 		, SubscriberName	VARCHAR(50)
-		, PRIMARY KEY	PK_MappingSubscriberSite(SiteID)    
+        , RoleIDMapping		INT
+		, UNIQUE KEY	PK_MappingSubscriberSite_SubscriberID(SiteID, SubscriberID)    
 	) ENGINE=INNODB;
 
 # ======EvidenceGroup=============================================
