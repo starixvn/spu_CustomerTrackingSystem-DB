@@ -66,13 +66,15 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, InsertTime		TIMESTAMP(4)
 		, PRIMARY KEY		PK_CustDCSAccount_AccountID(AccountID)  
 	) ENGINE=INNODB  AUTO_INCREMENT=1;
-
-	CREATE TABLE IF NOT EXISTS CTS_DataCenter.MappingSubscriberSite(
+	
+   CREATE TABLE IF NOT EXISTS CTS_DataCenter.MappingSubscriberSite(
 		SiteID				BIGINT	UNSIGNED
 		, SiteName			VARCHAR(50)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 		, SubscriberID		INT
 		, SubscriberName	VARCHAR(50)
-        , RoleIDMapping		INT
+        , SiteType			TINYINT							COMMENT '1: Deposit, 0:Credit'
+        , MappingType		TINYINT							COMMENT '-2:NOT Existing Main but DCS, -1:Existing Main but NOT DCS, 0: mapping SiteName, 1: Mapping SiteName ADN RoleID =1, 2: Mapping SiteName ADN RoleID > 1'
+        , Comments			VARCHAR(200)
 		, UNIQUE KEY	PK_MappingSubscriberSite_SubscriberID(SiteID, SubscriberID)    
 	) ENGINE=INNODB;
 
