@@ -1,9 +1,9 @@
-/*<info serverAlias="DBTP-bodb02" executers="bodbSPUNet" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
 GO
-ALTER PROCEDURE	CTS_GetCustSubInfo
+ALTER PROCEDURE	CTS_GetCustomerInfo
 						 @maxCustId INT = 0
 						,@rowSize INT = 500
 						,@numberOfBatch INT = 1
@@ -11,7 +11,7 @@ AS
 /*
 	Creator:	20191128@Harvey
 	Task:		Get customer - [Redmine: #124592]
-	Database:	DBTP.bodb02
+	Database:	DBCTS.bodb02
 	
 	Revisions:
 		- 20181121@Harvey:	Initial - [Redmine: #124592]
@@ -19,7 +19,7 @@ AS
 	Developer's Notes:
 		- @Example:			NULL		- Explaination [DEFAULT]
 
-	exec CTS_GetCustSubInfo 0,500,2
+	exec CTS_GetCustomerInfo 0,500,2
 		
 */
 BEGIN;
@@ -29,24 +29,22 @@ BEGIN;
 			,@currentBatch TINYINT = 1
 
 	CREATE TABLE #tempCustomer (
-		 BatchId	TINYINT
-		,CustId		INT
-		,CustSubId	INT
-		,Username	VARCHAR(30)
-		,Username2	VARCHAR(50)
-		,Site		VARCHAR(10)
-		,RoleId		TINYINT
-		,CurrencyId TINYINT
-		,Currency	VARCHAR(50)
-		,Srecommend INT
-		,Mrecommend INT
-		,Recommend	INT
+		 BatchId		TINYINT
+		,CustId			INT
+		,Username		VARCHAR(30)
+		,Username2		VARCHAR(50)
+		,Site			VARCHAR(10)
+		,RoleId			TINYINT
+		,CurrencyId		TINYINT
+		,Currency		VARCHAR(50)
+		,Srecommend		INT
+		,Mrecommend		INT
+		,Recommend		INT
 		,CreatedDate	DATETIME
 		)
 
 	INSERT INTO #tempCustomer
 	(	 CustId		
-		,CustSubId
 		,Username	
 		,Username2	
 		,Site		
@@ -58,10 +56,9 @@ BEGIN;
 		,Recommend	
 		,CreatedDate
 	)
-	SELECT TOP (@totalRow) sub.custid
-		,sub.subaccid
-		,sub.username
-		,sub.username2
+	SELECT TOP (@totalRow) cust.custid
+		,cust.username
+		,cust.username2
 		,upl.site
 		,cust.roleid
 		,cust.currency 'currencyid'
@@ -69,13 +66,12 @@ BEGIN;
 		,cust.srecommend
 		,cust.mrecommend
 		,cust.recommend
-		,sub.createdate
-	FROM dbo.custSub sub WITH (NOLOCK)
-		INNER JOIN dbo.Customer cust WITH (NOLOCK) ON sub.custid = cust.custid
+		,cust.creatdate
+	FROM dbo.Customer cust WITH (NOLOCK)
 		INNER JOIN	dbo.Customer upl WITH (NOLOCK) ON cust.srecommend = upl.custid
 		INNER JOIN dbo.Exchange ex WITH (NOLOCK) ON cust.currency = ex.exchangeid
-	WHERE sub.subaccid > @maxCustId
-	ORDER BY sub.subaccid
+	WHERE cust.custid > @maxCustId
+	ORDER BY cust.custid
 
 	WHILE @currentBatch <= @numberOfBatch
 	BEGIN	
@@ -89,7 +85,6 @@ BEGIN;
 
 	SELECT BatchId
 		,CustId
-		,CustSubId
 		,Username
 		,Username2
 		,Site

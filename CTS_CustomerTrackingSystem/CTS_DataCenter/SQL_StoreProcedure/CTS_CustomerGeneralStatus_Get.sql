@@ -1,4 +1,4 @@
-/*<info serverAlias="DBTP-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 
 GO
 SET ANSI_NULLS ON
@@ -16,9 +16,11 @@ AS
 	Original:
 
 	Revisions:
-		-	20190826@Harvey: init SPs						[Redmine: #119205]
-		-	20190917@Harvey: Handle for CN88				[Redmine: #125693]
-		-	20190917@Terry: Remove Customer Suspiciouses	[Redmine: #125693]
+		-	20190826@Harvey: init SPs											[Redmine: #119205]
+		-	20190917@Harvey: Handle for CN88									[Redmine: #125693]
+		-	20190917@Terry: Remove Customer Suspiciouses						[Redmine: #125693]
+		-	20191223@Harvey: Get Bet Restriction, smart punter information		[Redmine: #125693]
+		 
 
 	Param's Explanation:
 
