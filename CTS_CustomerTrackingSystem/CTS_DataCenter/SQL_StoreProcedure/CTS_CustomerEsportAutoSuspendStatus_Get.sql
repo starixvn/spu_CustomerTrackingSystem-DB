@@ -9,13 +9,13 @@ CREATE PROCEDURE [dbo].[CTS_CustomerEsportAutoSuspendStatus_Get]
 		 @custId				INT
 AS
 /*
-	Created: 20192012@CaseyHuynh
-	Task : GET Customer Fraud Info (Classification, FraudCases)
-	DB: [bodb_FraudSensor]
+	Created: 20192012@HarveyNguyen
+	Task : GET Auto suspend status
+	DB: [bodb02]
 	Original:
 
 	Revisions:
-		- 20191220@CaseyHuynh:	Initial - [Redmine: #125531]
+		- 20191220@Harvey:	Initial - [Redmine: #125862]
 
 	Param's Explanation:
 
