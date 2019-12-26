@@ -51,7 +51,7 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, IP				VARCHAR(50)
 		, IPID				BIGINT
 		, SubscriberID		INT
-		, FirstLoginTime	TIMESTAMP(4)
+		, CreatedTime		TIMESTAMP(4)
 		, LastLoginTime		TIMESTAMP(4)
 		, InsertTime		TIMESTAMP(4)
 		, PRIMARY KEY	PK_AssociationByIP_CTSAssID(CTSAssIPID)

@@ -61,7 +61,7 @@ BEGIN
 		, IP				VARCHAR(50)
 		, IPID				BIGINT
 		, SubscriberID		INT
-		, FirstLoginTime	TIMESTAMP(4)
+		, CreatedTime		TIMESTAMP(4)
 		, LastLoginTime		TIMESTAMP(4)
 	);
 	#===================================================================================================================
@@ -92,12 +92,12 @@ BEGIN
 				ON tip.AccountID = ca.AccountID
 	SET			tip.CTSCustID = ca.CTSCustID;
     
-    INSERT INTO Temp_AssociationIP(CTSCustID, IP, IPID, SubscriberID, FirstLoginTime, LastLoginTime)
+    INSERT INTO Temp_AssociationIP(CTSCustID, IP, IPID, SubscriberID, CreatedTime, LastLoginTime)
     SELECT		tip.CTSCustID
 				, tip.IP
                 , tip.IPID
                 , tip.SubscriberID
-                , MIN(tip.TransTime) AS  FirstLoginTime
+                , MIN(tip.TransTime) AS  CreatedTime
 				, MAX(tip.TransTime) AS  LastLoginTime
     FROM		Temp_TransactionIP AS tip
     WHERE		tip.CTSCustID IS NOT NULL
@@ -105,12 +105,12 @@ BEGIN
         
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;	
 
-	INSERT IGNORE INTO CTS_DataCenter.AssociationByIP(CTSCustID, IP, IPID, SubscriberID, FirstLoginTime, LastLoginTime, InsertTime)
+	INSERT IGNORE INTO CTS_DataCenter.AssociationByIP(CTSCustID, IP, IPID, SubscriberID, CreatedTime, LastLoginTime, InsertTime)
 	SELECT		tap.CTSCustID
 				, tap.IP
                 , tap.IPID
                 , tap.SubscriberID
-                , tap.FirstLoginTime
+                , tap.CreatedTime
                 , tap.LastLoginTime
                 , CURRENT_TIMESTAMP(4) AS InsertTime
 	FROM 		Temp_AssociationIP	AS tap;
