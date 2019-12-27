@@ -1,0 +1,36 @@
+{ 
+   "name":"Neo4jSink-CTSCustomer-Connector",
+   "config":{ 
+      "topics":"mysql-jdbc-cts-CTSCustomer",
+      "connector.class":"streams.kafka.connect.sink.Neo4jSinkConnector",
+      "errors.retry.timeout":"-1",
+      "errors.retry.delay.max.ms":"1000",
+      "errors.tolerance":"all",
+      "errors.log.enable":"true",
+      "errors.log.include.messages":"true",
+      "neo4j.server.uri":"bolt://10.18.200.70:7687",
+      "neo4j.authentication.basic.username":"neo4j",
+      "neo4j.authentication.basic.password":"1234aa",
+      "neo4j.encryption.enabled":"false",
+      "neo4j.topic.cypher.mysql-jdbc-cts-CTSCustomer":"MERGE (c:CTSCustomer {CTSCustID: event.CTSCustID}) ON CREATE SET c.SubscriberID = event.SubscriberID, c.CustID = event.CustID, c.CustSubID = event.CustSubID, c.UserName = event.UserName, c.UserName2 = event.UserName2, c.Site = event.Site, c.RoleID = event.RoleID, c.Currency = event.Currency, c.CurrencyID = event.CurrencyID, c.SRecommend = event.SRecommend, c.MRecommend = event.MRecommend, c.Recommend = event.Recommend, c.LastLoginTime = event.LastLoginTime, c.CreatedDate = event.CreatedDate ON MATCH SET c.SubscriberID = event.SubscriberID, c.CustID = event.CustID, c.CustSubID = event.CustSubID, c.UserName = event.UserName, c.UserName2 = event.UserName2, c.Site = event.Site, c.RoleID = event.RoleID, c.Currency = event.Currency, c.CurrencyID = event.CurrencyID, c.SRecommend = event.SRecommend, c.MRecommend = event.MRecommend, c.Recommend = event.Recommend, c.LastLoginTime = event.LastLoginTime, c.CreatedDate = event.CreatedDate"
+   }
+}
+
+
+{ 
+   "name":"Neo4jSink-AssociationByDevice-Connector",
+   "config":{ 
+      "topics":"mysql-jdbc-cts-AssociationByDevice",
+      "connector.class":"streams.kafka.connect.sink.Neo4jSinkConnector",
+      "errors.retry.timeout":"-1",
+      "errors.retry.delay.max.ms":"1000",
+      "errors.tolerance":"all",
+      "errors.log.enable":"true",
+      "errors.log.include.messages":"true",
+      "neo4j.server.uri":"bolt://10.18.200.70:7687",
+      "neo4j.authentication.basic.username":"neo4j",
+      "neo4j.authentication.basic.password":"1234aa",
+      "neo4j.encryption.enabled":"false",
+      "neo4j.topic.cypher.mysql-jdbc-cts-AssociationByDevice":"MERGE (c:CTSCustomer {CTSCustID: event.CTSCustID}) MERGE (d:Device {DeviceId: event.DCSDeviceID}) WITH c,d,event MERGE (c)-[r:USED_DEVICE {CTSAssDevID: event.CTSAssDevID}]->(d) ON CREATE SET r.SubscriberID = event.SubscriberID, r.CreatedTime = event.CreatedTime, r.InsertTime = event.InsertTime"
+   }
+}

@@ -1,0 +1,25 @@
+{ 
+   "name":"source-mysql-ctsdatacenter-jdbc-autoincrement",
+   "config":{ 
+      "connector.class":"io.confluent.connect.jdbc.JdbcSourceConnector",
+      "tasks.max":"1",
+      "mode":"incrementing",
+      "connection.url":"jdbc:mysql://10.18.200.72:3306/CTS_DataCenter?useSSL=false&user=fps&password=fps&defaultFetchSize=10000&useCursorFetch=true",
+      "table.whitelist":"CTSCustomer",
+      "incrementing.column.name":"CTSCustID",
+      "topic.prefix":"mysql-jdbc-cts-"
+   }
+}
+
+{ 
+   "name":"source-mysql-associationbydevice-jdbc-autoincrement",
+   "config":{ 
+      "connector.class":"io.confluent.connect.jdbc.JdbcSourceConnector",
+      "tasks.max":"1",
+      "mode":"incrementing",
+      "connection.url":"jdbc:mysql://10.18.200.72:3306/CTS_DataCenter?useSSL=false&user=fps&password=fps&defaultFetchSize=10000&useCursorFetch=true",
+      "table.whitelist":"AssociationByDevice",
+      "incrementing.column.name":"CTSAssDevID",
+      "topic.prefix":"mysql-jdbc-cts-"
+   }
+}
