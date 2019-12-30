@@ -7,7 +7,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 ALTER PROCEDURE [dbo].[CTS_CustomerGeneralStatus_Get] 
-		 @custId				INT
+		 @custIds				VARCHAR(MAX)
 AS
 /*
 	Created: 20190826@Harvey
@@ -28,6 +28,12 @@ AS
 */
 BEGIN
 	SET NOCOUNT ON;
+
+	CREATE TABLE #tmpCustomers (CustId INT)
+
+	INSERT INTO #tmpCustomers(CustId)
+	SELECT val FROM dbo.f_SplitString(@custIds,',')
+	OPTION (maxrecursion 0);
 
 	SELECT	ci.custid
 			,username
@@ -84,12 +90,12 @@ BEGIN
 				ELSE 0
 				END 'SmartPunter'
 	FROM dbo.custInfo ci WITH (NOLOCK)
+		INNER JOIN #tmpCustomers tcust WITH (NOLOCK) ON ci.custid = tcust.CustId
 		LEFT JOIN dbo.CS_CustomerStatus cs WITH (NOLOCK) ON cs.custid = ci.custid
 		LEFT JOIN dbo.CS_ProblemAccount pa WITH (NOLOCK) ON ci.custid = pa.custid
 		LEFT JOIN dbo.BetRestriction_Customer brcust WITH (NOLOCK) ON ci.custid = brcust.CustID
 		LEFT JOIN dbo.BetRestriction_Currency  brcur WITH (NOLOCK) ON ci.custid = brcur.FollowAccount
 		LEFT JOIN dbo.BetRestriction_Site brsite WITH (NOLOCK) ON ci.custid = brsite.FollowAccount
 		LEFT JOIN dbo.SmartPunterList spl WITH (NOLOCK) ON ci.custid = spl.custid
-	WHERE ci.custid = @custId
 
 END;
