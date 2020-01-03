@@ -24,7 +24,7 @@ AS
 
 	Param's Explanation:
 
-	EXEC [CTS_CustomerGeneralStatus_Get] '28625904'
+	EXEC [CTS_CustomerGeneralStatus_Get] '1255893'
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -36,7 +36,8 @@ BEGIN
 	OPTION (maxrecursion 0);
 
 	SELECT	ci.custid
-			,username
+			,ci.username
+			,cusSite.isLicensee
 			,CASE 
 				WHEN cs.custid IS NULL
 					THEN -1
@@ -52,7 +53,8 @@ BEGIN
 				ELSE 4 --Active
 				END AS [cn88status] 
 			,reject -- suspend (reject=1) only for MBC
-			,closed -- CN88: locked (closed=1) || MBC: disabled (closed=1) active (closed=0)
+			,closed -- CN88: locked (closed=1) || MBC: closed (closed=1) Open (closed=0)
+			,ci.Enabled -- MBC: = 0 Disabled
 			,danger -- original
 			,danger2 -- Non live
 			,danger3 -- Other sports
@@ -91,6 +93,8 @@ BEGIN
 				END 'SmartPunter'
 	FROM dbo.custInfo ci WITH (NOLOCK)
 		INNER JOIN #tmpCustomers tcust WITH (NOLOCK) ON ci.custid = tcust.CustId
+		INNER JOIN dbo.Customer cus WITH (NOLOCK) ON tcust.CustId = cus.custid
+		LEFT JOIN dbo.Site cusSite WITH (NOLOCK) ON cus.site = cusSite.site
 		LEFT JOIN dbo.CS_CustomerStatus cs WITH (NOLOCK) ON cs.custid = ci.custid
 		LEFT JOIN dbo.CS_ProblemAccount pa WITH (NOLOCK) ON ci.custid = pa.custid
 		LEFT JOIN dbo.BetRestriction_Customer brcust WITH (NOLOCK) ON ci.custid = brcust.CustID
