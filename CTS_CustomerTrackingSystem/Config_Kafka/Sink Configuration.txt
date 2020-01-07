@@ -73,9 +73,9 @@
 }
 
 { 
-   "name":"Neo4jSink-AssociationByIp-Connector",
+   "name":"Neo4jSink-AssociationByIP-Connector",
    "config":{ 
-      "topics":"mysql-jdbc-cts-AssociationByIp",
+      "topics":"mysql-jdbc-cts-AssociationByIP",
       "connector.class":"streams.kafka.connect.sink.Neo4jSinkConnector",
       "errors.retry.timeout":"-1",
       "errors.retry.delay.max.ms":"1000",
@@ -86,7 +86,7 @@
       "neo4j.authentication.basic.username":"neo4j",
       "neo4j.authentication.basic.password":"1234aa",
       "neo4j.encryption.enabled":"false",
-      "neo4j.topic.cypher.mysql-jdbc-cts-AssociationByIp":"
+      "neo4j.topic.cypher.mysql-jdbc-cts-AssociationByIP":"
 		MERGE (c:CTSCustomer {CTSCustID: event.CTSCustID})
 		MERGE (i:Ip {IPID: event.IPID})
 		WITH c,i,event
