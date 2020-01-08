@@ -24,7 +24,7 @@ AS
 
 	Param's Explanation:
 
-	EXEC [CTS_CustomerGeneralStatus_Get] '1255893'
+	EXEC [CTS_CustomerGeneralStatus_Get] '888234'
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -77,15 +77,20 @@ BEGIN
 				ELSE 0
 				END 'BetRestrictedAccount'
 			,CASE 
-				WHEN brcur.FollowAccount IS NOT NULL AND brcust.CustID IS NULL AND brsite.FollowAccount IS NULL
+				WHEN brcur.ExchangeID IS NOT NULL AND brcust.CustID IS NULL AND brsite.SiteID IS NULL
 					THEN 1
 				ELSE 0
 				END 'BetRestrictedCurrency'
 			,CASE 
-				WHEN brsite.FollowAccount IS NOT NULL AND brcust.CustID IS NULL AND brcur.FollowAccount IS NULL
+				WHEN brsite.SiteID IS NOT NULL AND brcust.CustID IS NULL AND brcur.ExchangeID IS NULL
 					THEN 1
 				ELSE 0
 				END 'BetRestrictedSite'
+			,CASE 
+				WHEN brsite.SiteID IS NOT NULL AND brcur.ExchangeID IS NOT NULL AND brcust.CustID IS NULL
+					THEN 1
+				ELSE 0
+				END 'BetRestrictedSiteAndCurrency'
 			,CASE 
 				WHEN spl.custid IS NOT NULL
 					THEN 1
@@ -93,13 +98,13 @@ BEGIN
 				END 'SmartPunter'
 	FROM dbo.custInfo ci WITH (NOLOCK)
 		INNER JOIN #tmpCustomers tcust WITH (NOLOCK) ON ci.custid = tcust.CustId
-		INNER JOIN dbo.Customer cus WITH (NOLOCK) ON tcust.CustId = cus.custid
+		INNER JOIN dbo.Customer cus WITH (NOLOCK) ON ci.srecommend = cus.custid
 		LEFT JOIN dbo.Site cusSite WITH (NOLOCK) ON cus.site = cusSite.site
 		LEFT JOIN dbo.CS_CustomerStatus cs WITH (NOLOCK) ON cs.custid = ci.custid
 		LEFT JOIN dbo.CS_ProblemAccount pa WITH (NOLOCK) ON ci.custid = pa.custid
 		LEFT JOIN dbo.BetRestriction_Customer brcust WITH (NOLOCK) ON ci.custid = brcust.CustID
-		LEFT JOIN dbo.BetRestriction_Currency  brcur WITH (NOLOCK) ON ci.custid = brcur.FollowAccount
-		LEFT JOIN dbo.BetRestriction_Site brsite WITH (NOLOCK) ON ci.custid = brsite.FollowAccount
+		LEFT JOIN dbo.BetRestriction_Currency  brcur WITH (NOLOCK) ON ci.currency = brcur.ExchangeID
+		LEFT JOIN dbo.BetRestriction_Site brsite WITH (NOLOCK) ON cusSite.siteid = brsite.SiteID
 		LEFT JOIN dbo.SmartPunterList spl WITH (NOLOCK) ON ci.custid = spl.custid
 
 END;

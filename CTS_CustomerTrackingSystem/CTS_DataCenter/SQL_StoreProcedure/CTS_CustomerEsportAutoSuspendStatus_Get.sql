@@ -5,7 +5,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[CTS_CustomerEsportAutoSuspendStatus_Get] 
+ALTER PROCEDURE [dbo].[CTS_CustomerEsportAutoSuspendStatus_Get] 
 		 @custId				INT
 AS
 /*
@@ -44,8 +44,8 @@ BEGIN
 	FROM VRSettingHierarchy h WITH (NOLOCK)
 		LEFT JOIN VRLeagueGroup lg WITH (NOLOCK) ON h.VRLeagueGroupID = lg.GroupID
 		LEFT JOIN VRLeagueGroupMapping lm WITH (NOLOCK) ON lg.GroupID = lm.VRLeagueGroupID
-		CROSS APPLY f_GetVRAutosuspendStatus(@custId, h.SportType, h.BetType, lm.LeagueGroupID, 1) AS fnGetAutoSuspendForLive
-		CROSS APPLY f_GetVRAutosuspendStatus(@custId, h.SportType, h.BetType, lm.LeagueGroupID, 0) AS fnGetAutoSuspendForNonLive
+		CROSS APPLY f_GetVRAutosuspendStatus_xtest(@custId, h.SportType, h.BetType, lm.LeagueGroupID, 1) AS fnGetAutoSuspendForLive
+		CROSS APPLY f_GetVRAutosuspendStatus_xtest(@custId, h.SportType, h.BetType, lm.LeagueGroupID, 0) AS fnGetAutoSuspendForNonLive
 	WHERE h.SportType = @sportType
 		AND h.bettype <> - 1;
 
