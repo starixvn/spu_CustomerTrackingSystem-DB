@@ -1,5 +1,5 @@
 { 
-   "name":"Neo4jSink-CTSCustomer-Connector-126789",
+   "name":"Neo4jSink-CTSCustomer-Connector-1267895",
    "config":{ 
       "topics":"mysql-jdbc-cts-CTSCustomer",
       "connector.class":"streams.kafka.connect.sink.Neo4jSinkConnector",
@@ -28,7 +28,7 @@
 
 
 { 
-   "name":"Neo4jSink-AssociationByDevice-Connector-126789",
+   "name":"Neo4jSink-AssociationByDevice-Connector-1267895",
    "config":{ 
       "topics":"mysql-jdbc-cts-AssociationByDevice",
       "connector.class":"streams.kafka.connect.sink.Neo4jSinkConnector",
@@ -72,8 +72,9 @@
    }
 }
 
+
 { 
-   "name":"Neo4jSink-AssociationByIP-Connector-126789",
+   "name":"Neo4jSink-AssociationByIP-Connector-1267895",
    "config":{ 
       "topics":"mysql-jdbc-cts-AssociationByIP",
       "connector.class":"streams.kafka.connect.sink.Neo4jSinkConnector",

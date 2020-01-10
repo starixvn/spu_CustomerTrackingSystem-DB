@@ -1,5 +1,5 @@
 { 
-   "name":"source-mysql-ctsdatacenter-jdbc-autoincrement",
+   "name":"source-mysql-ctsdatacenter-jdbc-autoincrement-1267892",
    "config":{ 
       "connector.class":"io.confluent.connect.jdbc.JdbcSourceConnector",
       "tasks.max":"1",
@@ -12,7 +12,7 @@
 }
 
 { 
-   "name":"source-mysql-associationbydevice-jdbc-autoincrement",
+   "name":"source-mysql-associationbydevice-jdbc-autoincrement-1267892",
    "config":{ 
       "connector.class":"io.confluent.connect.jdbc.JdbcSourceConnector",
       "tasks.max":"1",
@@ -25,7 +25,7 @@
 }
 
 { 
-   "name":"source-mysql-associationbydevice-jdbc-autoincrement",
+   "name":"source-mysql-associationbyip-jdbc-autoincrement-1267892",
    "config":{ 
       "connector.class":"io.confluent.connect.jdbc.JdbcSourceConnector",
       "tasks.max":"1",

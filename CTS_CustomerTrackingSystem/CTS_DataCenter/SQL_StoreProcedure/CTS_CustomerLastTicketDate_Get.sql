@@ -35,7 +35,7 @@ BEGIN
 	SELECT TOP 1 custid
 		,transdate
 	FROM bettrans WITH (NOLOCK)
-	WHERE custid = @custId
+	WHERE custid = @custId AND bettype < 19999
 	ORDER BY transdate DESC
 
 	IF NOT EXISTS (
@@ -50,7 +50,7 @@ BEGIN
 		SELECT TOP 1 custid
 			,transdate
 		FROM bettrans14 WITH (NOLOCK)
-		WHERE custid = @custId
+		WHERE custid = @custId AND bettype < 19999
 		ORDER BY transdate DESC;
 	END;
 
@@ -66,7 +66,7 @@ BEGIN
 		SELECT TOP 1 custid
 			,transdate
 		FROM bodb_Archive.dbo.bettrans_bk WITH (NOLOCK)
-		WHERE custid = @custId
+		WHERE custid = @custId AND bettype < 19999
 		ORDER BY transdate DESC;
 	END;
 
