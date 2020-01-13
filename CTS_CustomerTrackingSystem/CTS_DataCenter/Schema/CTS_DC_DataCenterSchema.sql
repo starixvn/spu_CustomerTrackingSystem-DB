@@ -15,8 +15,8 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, SubscriberID		INT		UNSIGNED
 		, CustID			INT		UNSIGNED
 		, CustSubID			INT		UNSIGNED
-		, UserName			VARCHAR(50) CHARACTER SET latin1 COLLATE latin1_fulltext_ci DEFAULT NULL
-		, UserName2			VARCHAR(50) CHARACTER SET latin1 COLLATE latin1_fulltext_ci DEFAULT NULL
+		, UserName			VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+		, UserName2			VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
 		, Site				VARCHAR(20)
 		, RoleID			TINYINT
 		, Currency			VARCHAR(10)
