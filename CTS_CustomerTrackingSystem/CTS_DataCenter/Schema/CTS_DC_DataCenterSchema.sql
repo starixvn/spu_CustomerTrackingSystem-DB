@@ -5,7 +5,8 @@ Server:  	Slave
 DBName:		CTS_DataCenter
 
 Revisions: 
-		- [20191217@CaseyHuynh][#125530]: Add Column LastLoginDate column to table CTSCustomer.
+		- 20191217@CaseyHuynh: Add Column LastLoginDate column to table CTSCustomer.  	(#125530)
+        - 20200117@HarveyNguyen: Add table CustRetractEvidence							(#127352)
 Reviewer:
 */
 
@@ -189,4 +190,13 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.StaticList
     , CreatedDate	DATETIME
     
     , PRIMARY KEY PK_StaticList_ListNo_ItemNo(ListNo, ItemNo)
-) 
+) ;
+
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustRetractEvidence
+(
+	  CTSCustID			BIGINT		NOT NULL
+    , EvidenceID		SMALLINT    NOT NULL
+    , CreatedDate		DATETIME
+    
+    , PRIMARY KEY PK_CustRetractEvidence_CTSCustID_EvidenceID(CTSCustID,EvidenceID)
+) ENGINE=INNODB;
