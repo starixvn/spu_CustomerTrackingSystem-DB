@@ -13,15 +13,16 @@ CREATE DATABASE IF NOT EXISTS CTS_Admin;
 CREATE TABLE CTS_Admin.Subscriber (
 		SubscriberID		INT				NOT NULL	AUTO_INCREMENT
 	,	SubscriberName		VARCHAR(50) 	NOT NULL
-	,	SubscriberPrefix	VARCHAR(30) 	NULL
-    ,	IntegrationDate	DATETIME		NULL	
-	,	SubscriberStatus	TINYINT	NOT NULL	COMMENT '0: Inactive; 1: Active; -1: Unhandle (sub that not integrate, is insert new from transaction)'
-    ,	SubscriberType		TINYINT	UNSIGNED	NULL	# 0: Credit, 1: Deposit, 2: SUB not have Customer in MainDB (ex: CTMAX, ALPHACTMAX)		
+	,	SubscriberPrefix	VARCHAR(30) 	NULL    
+    , 	SubscriberType		TINYINT	UNSIGNED	NULL	COMMENT' 0: Credit, 1: Deposit, 2: SUB not have Customer in MainDB (ex: CTMAX, AGENTCTMAX)'
+	,	SubscriberStatus	TINYINT	NOT NULL			COMMENT '0: Inactive; 1: Active'
     ,	CreatedDate			DATETIME	 	NULL
 	,	CreatedBy			INT 			NULL	
 	,	IsTest				TINYINT			NULL
+    , 	DCSStatus			BOOLEAN			NULL		COMMENT '0: Inactive; 1: Active; -1: Unhandle (sub that not integrate, is insert new from transaction)'
+    ,	DCSIntegrationDate	DATETIME		NULL		
 	,	PRIMARY KEY	PK_Subscriber_SubscriberID (SubscriberID)
-	,	UNIQUE KEY IX_Subscriber_SubscriberName_SubScriberPrefix (SubscriberName,SubScriberPrefix)
+	,	UNIQUE KEY	IX_Subscriber_SubscriberName_SubScriberPrefix (SubscriberName,SubScriberPrefix)
 ) ENGINE=InnoDB AUTO_INCREMENT=1;
 
 CREATE TABLE CTS_Admin.UserSubscriber (
