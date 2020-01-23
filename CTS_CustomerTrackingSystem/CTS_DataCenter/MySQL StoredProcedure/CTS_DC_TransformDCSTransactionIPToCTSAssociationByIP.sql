@@ -59,7 +59,7 @@ BEGIN
 	( 
 		CTSCustID			BIGINT	UNSIGNED
 		, IP				VARCHAR(50)
-		, IPID				BIGINT
+		, IPID				DECIMAL(50,0)
 		, SubscriberID		INT
 		, CreatedTime		TIMESTAMP(4)
 		, LastLoginTime		TIMESTAMP(4)

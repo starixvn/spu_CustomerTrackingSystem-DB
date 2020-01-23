@@ -34,7 +34,7 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, INDEX			IX_CTSCustomer_UserName2(UserName2)
 		, INDEX			IX_CTSCustomer_CustID_CustSubID(CustID, CustSubID)
 		, FULLTEXT 		IX_FullText_UserName_UserName2 (UserName,UserName2)
-	) ENGINE=MyISAM AUTO_INCREMENT=1;
+	) ENGINE=INNODB AUTO_INCREMENT=1;
 
 	CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociationByDevice(
 		CTSAssDevID		BIGINT	UNSIGNED AUTO_INCREMENT
@@ -51,7 +51,7 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		CTSAssIPID			BIGINT	UNSIGNED	AUTO_INCREMENT
 		, CTSCustID			BIGINT	UNSIGNED
 		, IP				VARCHAR(50)
-		, IPID				BIGINT
+		, IPID				DECIMAL(50,0)
 		, SubscriberID		INT
 		, CreatedTime		TIMESTAMP(4)
 		, LastLoginTime		TIMESTAMP(4)
@@ -201,3 +201,15 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustRetractEvidence
     
     , PRIMARY KEY PK_CustRetractEvidence_CTSCustID_EvidenceID(CTSCustID,EvidenceID)
 ) ENGINE=INNODB;
+
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustException
+(
+	FromCTSCustID		BIGINT		NOT NULL
+    , ToCTSCustID		BIGINT		NOT NULL
+    , CreatedDate		DATETIME
+    , CreatedBy			BIGINT
+    , Comment			VARCHAR(200)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	NULL
+	
+    , PRIMARY KEY	PK_CustException_FromCTSCustID_ToCTSCustID(FromCTSCustID,ToCTSCustID)
+) ENGINE=INNODB;
+

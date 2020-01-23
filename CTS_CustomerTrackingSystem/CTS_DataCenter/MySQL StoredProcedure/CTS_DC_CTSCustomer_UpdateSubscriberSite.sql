@@ -35,11 +35,8 @@ BEGIN
                     , CASE WHEN c.RoleID = 1 THEN 1 ELSE 2 END AS RoleMapping
         FROM 		CTS_DataCenter.CTSCustomer AS c
 		WHERE		c.SubscriberID IS NULL
-        LIMIT		1000;
-        
-        SELECT *
-        FROM Temp_CustSub;
-        
+        LIMIT		1000;    
+
         
 		IF (SELECT 1 FROM Temp_CustSub LIMIT 1) THEN
 			           
