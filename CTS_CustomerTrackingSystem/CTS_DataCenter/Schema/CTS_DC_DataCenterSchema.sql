@@ -33,7 +33,7 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, INDEX			IX_CTSCustomer_UserName_UserName2(UserName, UserName2)
 		, INDEX			IX_CTSCustomer_UserName2(UserName2)
 		, INDEX			IX_CTSCustomer_CustID_CustSubID(CustID, CustSubID)
-		, FULLTEXT 		IX_FullText_UserName_UserName2 (UserName,UserName2)
+		, FULLTEXT 		IX_FullText_CTSCustomer_UserName_UserName2 (UserName,UserName2)
 	) ENGINE=INNODB AUTO_INCREMENT=1;
 
 	CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociationByDevice(
