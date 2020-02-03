@@ -37,14 +37,16 @@ BEGIN
 		EviCode VARCHAR(10) PRIMARY KEY    
 	);
     
-	Evidence_loop: LOOP
-		 SET a = a + 1;
-		 SET str = SPLIT_STR(ip_EvidenceCodes,",",a);
-		 IF str = '' THEN
-			LEAVE Evidence_loop;
-		 END IF;         
-		 INSERT INTO tmpEvidenceCodes VALUES (str);
-    END LOOP Evidence_loop;
+    IF ip_EvidenceCodes IS NOT NULL THEN
+		Evidence_loop: LOOP
+			 SET a = a + 1;
+			 SET str = SPLIT_STR(ip_EvidenceCodes,",",a);
+			 IF str = '' THEN
+				LEAVE Evidence_loop;
+			 END IF;         
+			 INSERT INTO tmpEvidenceCodes VALUES (str);
+		END LOOP Evidence_loop;
+    END IF;
       
    
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;   
