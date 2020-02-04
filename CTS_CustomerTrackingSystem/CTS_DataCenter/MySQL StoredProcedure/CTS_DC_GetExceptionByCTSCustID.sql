@@ -5,22 +5,20 @@ CREATE PROCEDURE CTS_DataCenter.CTS_DC_GetExceptionByCTSCustID(IN ip_CTSCustID B
 BEGIN
 	/*
 		Created:	20191225@Casey.Huynh	
-		Task :		Get Flag Info By CTSCustID
+		Task :		Get Exception by CTSCustID
 		DB:			CTS_DataCenter
-		Original: Spec https://nexdev.net/projects/customer-tracking-system/wiki/CTS_-_General_Information_Panel
-					IF account has 
+		Original: 
 		Revisions:
 		Param's Explanation (filtered by):
 	*/
-    DECLARE		vrIsFlagged			TINYINT DEFAULT -1 ;  # 0: NOT Flag, 1: BlackFlaged, 2: Flagged; 
- 
+	
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustException;
     CREATE TEMPORARY TABLE Temp_CustException
     (
 		ExceptionCTSCustID 	BIGINT
         , ExceptionDate		DATETIME
         , Comment			VARCHAR(200)
-        , CreatedBy			BIGINT
-
+        , CreatedBy			INT
     );
     
 	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
@@ -40,10 +38,12 @@ BEGIN
                 , ct.UserName2	AS LoginID
 				, ce_temp.ExceptionDate
                 , ce_temp.Comment
-                , ce_temp.CreatedBy
+                , us.UserName
     FROM		Temp_CustException AS ce_temp
     INNER JOIN	CTS_DataCenter.CTSCustomer AS ct
-				ON ce_temp.ExceptionCTSCustID = ct.CTSCustID;    
+				ON ce_temp.ExceptionCTSCustID = ct.CTSCustID
+	INNER JOIN	CTS_Admin.CTSUser AS us
+				ON ce_temp.CreatedBy = us.UserID;    
 		
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 END$$

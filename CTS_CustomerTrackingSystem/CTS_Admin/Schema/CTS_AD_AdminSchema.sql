@@ -30,7 +30,7 @@ CREATE TABLE CTS_Admin.UserSubscriber (
 	,	SubscriberID		INT			NOT NULL
 	,	CreatedDate			DATETIME	NULL
 	,	CreatedBy			INT			NULL
-	,	PRIMARY KEY	CIX_UserSubscriber_UserID_SubscriberID (UserID,SubscriberID)
+	,	PRIMARY KEY	PK_UserSubscriber_UserID_SubscriberID (UserID,SubscriberID)
 ) ENGINE=InnoDB;
 
 CREATE TABLE CTS_Admin.LogType (
@@ -46,4 +46,12 @@ CREATE TABLE CTS_Admin.UserLog (
 	,	LogInfo				VARCHAR(500) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	NULL COMMENT 'NVARCHAR'
 	,	CreatedDate			DATETIME	 NULL
 	,	CreatedBy			INT NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE CTS_Admin.CTSUser (
+		UserID				INT 		NOT NULL
+	,	UserName			VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NOT NULL
+	,	CreatedDate			DATETIME	NULL
+    ,	IsMaster			BOOL
+	,	PRIMARY KEY	PK_CTSUser_UserID (UserID)
 ) ENGINE=InnoDB;

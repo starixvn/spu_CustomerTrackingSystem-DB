@@ -27,6 +27,9 @@ ADD COLUMN		SiteID		INT;
 ALTER TABLE		CTS_DataCenter.CTSCustomer
 ADD	FULLTEXT 	IX_FullText_UserName_UserName2 (UserName,UserName2);
 
+ALTER TABLE		CTS_DataCenter.AssociationByDevice
+ADD	INDEX		IX_AssociationByDevice_SubscriberID_DeviceID(SubscriberID, DCSDeviceID);
+
 # ===================================================
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.StaticList
 (
