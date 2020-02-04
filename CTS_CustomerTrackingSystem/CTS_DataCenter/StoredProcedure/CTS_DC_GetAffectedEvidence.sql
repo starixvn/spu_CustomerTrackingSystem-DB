@@ -54,12 +54,30 @@ BEGIN
 	INNER JOIN CustEvidence AS ce 
 		   ON (e.EvidenceID = ce.EvidenceID)	
 	INNER JOIN CTSCustomer AS cust
-		   ON (cust.CTSCustID = ce.CTSCustID)
+		   ON (cust.CTSCustID = ce.CTSCustID)	
     INNER JOIN tmpEvidenceCodes AS codes
-		   ON (codes.EviCode = e.EvidenceCode)       
+		   ON (codes.EviCode = e.EvidenceCode)           
 	WHERE e.IsActive = True
 		  AND ce.Level = 2
 		  AND ce.CTSCustID = ip_CustID;          
+          
+    SELECT e.EvidenceID
+		   ,e.EvidenceCode           
+		   ,e.EvidenceName
+		   ,e.EvidenceDesc           		   
+           ,cust.UserName2 As LoginID		   
+           ,'Device' AS AssociationType
+           ,cre.CreatedDate
+           ,cust.LastLoginTime					
+    FROM Evidence AS e 	
+	INNER JOIN CustRetractEvidence AS cre
+		   ON (e.EvidenceID = cre.EvidenceID)	
+	INNER JOIN CTSCustomer AS cust
+		   ON (cust.CTSCustID = cre.CTSCustID)	
+    INNER JOIN tmpEvidenceCodes AS codes
+		   ON (codes.EviCode = e.EvidenceCode)           
+	WHERE e.IsActive = True		  
+		  AND cre.CTSCustID = ip_CustID;
     
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     	
