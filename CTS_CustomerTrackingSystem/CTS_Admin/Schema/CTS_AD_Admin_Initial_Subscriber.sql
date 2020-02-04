@@ -1,14 +1,14 @@
-INSERT IGNORE INTO `CTS_Admin`.`Subscriber_cs`
-(`SubscriberID`,
-`SubscriberName`,
-`SubscriberPrefix`,
-`SubscriberType`,
-`SubscriberStatus`,
-`CreatedDate`,
-`CreatedBy`,
-`IsTest`,
-`DCSStatus`,
-`DCSIntegrationDate`)
+/*
+Creator: 20200204@CaseyHuynh
+Task:	 Initail Subscribers
+Server:  
+DBName:	CTS_Admin
+
+Revisions: 
+Reviewer:
+*/
+
+INSERT IGNORE INTO CTS_Admin.Subscriber(SubscriberID, SubscriberName, SubscriberPrefix, SubscriberType, SubscriberStatus, CreatedDate, CreatedBy, IsTest, DCSStatus, DCSIntegrationDate)
 VALUES(130	,'MAXBET'	,''	,0	,1	,NULL	,NULL	,0	,1	,NULL)
 ,(2	,'Alpha'	,''	,0	,1	,NULL	,NULL	,0	,1	,NULL)
 ,(169	,'MAXBET789y'	,''	,0	,1	,NULL	,NULL	,0	,1	,'2015-03-09')
