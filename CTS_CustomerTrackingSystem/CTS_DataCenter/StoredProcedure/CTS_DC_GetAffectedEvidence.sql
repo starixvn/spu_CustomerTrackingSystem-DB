@@ -3,7 +3,7 @@ USE `CTS_DataCenter` $$
 DROP PROCEDURE IF EXISTS CTS_DC_GetAffectedEvidence $$
 
 CREATE PROCEDURE CTS_DC_GetAffectedEvidence (
-	IN ip_CustID BIGINT,    
+	IN ip_CTSCustID BIGINT,    
     IN ip_EvidenceCodes TEXT
 )
 BEGIN
@@ -17,7 +17,7 @@ BEGIN
         
 		Param's Explanation (filtered by):			
         
-        CALL CTS_DC_GetAffectedEvidence (27, '1.1,6.1,6.2')
+        CALL CTS_DC_GetAffectedEvidence (11113, '1.2,6.1,6.2')
 	*/        
            
 	DECLARE a INT Default 0 ;
@@ -59,7 +59,7 @@ BEGIN
 		   ON (codes.EviCode = e.EvidenceCode)           
 	WHERE e.IsActive = True
 		  AND ce.Level = 2
-		  AND ce.CTSCustID = ip_CustID;          
+		  AND ce.CTSCustID = ip_CTSCustID;          
           
     SELECT e.EvidenceID
 		   ,e.EvidenceCode           
@@ -77,7 +77,7 @@ BEGIN
     INNER JOIN tmpEvidenceCodes AS codes
 		   ON (codes.EviCode = e.EvidenceCode)           
 	WHERE e.IsActive = True		  
-		  AND cre.CTSCustID = ip_CustID;
+		  AND cre.CTSCustID = ip_CTSCustID;
     
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     	

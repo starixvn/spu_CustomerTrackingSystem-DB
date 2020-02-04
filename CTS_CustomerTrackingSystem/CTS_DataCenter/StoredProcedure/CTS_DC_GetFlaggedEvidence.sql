@@ -3,7 +3,7 @@ USE `CTS_DataCenter` $$
 DROP PROCEDURE IF EXISTS CTS_DC_GetFlaggedEvidence $$
 
 CREATE PROCEDURE CTS_DC_GetFlaggedEvidence (
-	IN ip_CustID BIGINT,    
+	IN ip_CTSCustID BIGINT,    
     IN ip_EvidenceCodes TEXT	
 )
 BEGIN
@@ -17,7 +17,7 @@ BEGIN
         
 		Param's Explanation (filtered by):			
         
-        CALL CTS_DC_GetFlaggedEvidence (27, '1.1,6.1,6.2')
+        CALL CTS_DC_GetFlaggedEvidence (11113, '1.2,6.1,6.2')
 	*/
             
 	DECLARE a INT Default 0 ;
@@ -59,7 +59,7 @@ BEGIN
 		   ON (codes.EviCode = e.EvidenceCode)       
 	WHERE e.IsActive = True
 		  AND ce.Level = 0
-		  AND ce.CTSCustID = ip_CustID;          
+		  AND ce.CTSCustID = ip_CTSCustID;          
     
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     	
