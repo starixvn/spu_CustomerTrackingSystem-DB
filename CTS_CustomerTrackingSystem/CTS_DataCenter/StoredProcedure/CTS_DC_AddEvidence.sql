@@ -29,6 +29,11 @@ proc_label: BEGIN
     
     SET	vr_CreatedDate = CURRENT_TIME();
         	
+	IF NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomer
+			WHERE CTSCustID = ip_CTSCustID) THEN
+		LEAVE proc_label;
+	END IF;
+    
     IF EXISTS (SELECT 1 FROM CTS_DataCenter.CustEvidence
 				WHERE CTSCustID = ip_CTSCustID										
 					AND EvidenceID = ip_EvidenceID
@@ -49,16 +54,20 @@ proc_label: BEGIN
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;   
     
     INSERT INTO tmpAffectedDevices(DCSDeviceID)
-    SELECT DISTINCT DCSDeviceID
-    FROM CTS_DataCenter.AssociationByDevice
-    WHERE CTSCustID = ip_CTSCustID
-		AND SubscriberID = ip_SubscriberID;
+    SELECT DISTINCT ass.DCSDeviceID
+    FROM CTS_DataCenter.AssociationByDevice ass
+    INNER JOIN DCS_DataCenter.Device dev
+			ON (dev.DeviceID = ass.DCSDeviceID)
+    WHERE ass.CTSCustID = ip_CTSCustID
+		AND  ass.SubscriberID = ip_SubscriberID;
     
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
 	INSERT INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
     SELECT DISTINCT ass.CTSCustID, ip_SubscriberID, ip_EvidenceID, ip_Remark, 2, ip_CTSCustID, vr_CreatedDate, ip_UserID, ip_IsCreatedByMaster
     FROM CTS_DataCenter.AssociationByDevice AS ass
+    INNER JOIN CTS_DataCenter.CTSCustomer cust
+		   ON (cust.CTSCustID = ass.CTSCustID)
     INNER JOIN tmpAffectedDevices AS dev    
 		   ON (ass.DCSDeviceID = dev.DCSDeviceID)
 	WHERE ass.CTSCustID <> ip_CTSCustID		
