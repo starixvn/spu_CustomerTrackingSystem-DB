@@ -47,6 +47,7 @@ BEGIN
 		   ,e.EvidenceName
 		   ,e.EvidenceDesc           		   
            ,cust.UserName2 As LoginID		   
+           ,cust.UserName
            ,'Device' AS AssociationType
            ,ce.CreatedDate
            ,cust.LastLoginTime					
@@ -65,8 +66,9 @@ BEGIN
 		   ,e.EvidenceCode           
 		   ,e.EvidenceName
 		   ,e.EvidenceDesc           		   
-           ,cust.UserName2 As LoginID		   
-           ,'Device' AS AssociationType
+           ,cust.UserName2 As LoginID
+		   ,cust.UserName
+		   ,'Device' AS AssociationType
            ,cre.CreatedDate
            ,cust.LastLoginTime					
     FROM Evidence AS e 	

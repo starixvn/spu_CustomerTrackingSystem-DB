@@ -31,7 +31,8 @@ proc_label: BEGIN
         	
     IF EXISTS (SELECT 1 FROM CTS_DataCenter.CustEvidence
 				WHERE CTSCustID = ip_CTSCustID										
-					AND EvidenceID = ip_EvidenceID) THEN
+					AND EvidenceID = ip_EvidenceID
+                    AND Level = 0) THEN
 		LEAVE proc_label;
 	END IF;
     
@@ -63,7 +64,10 @@ proc_label: BEGIN
 	WHERE ass.CTSCustID <> ip_CTSCustID		
 		AND ass.CTSCustID NOT IN (SELECT ToCTSCustID
 									FROM CTS_DataCenter.CustException AS exc
-                                    WHERE exc.FromCTSCustID = ip_CTSCustID);    	
+                                    WHERE exc.FromCTSCustID = ip_CTSCustID)
+		AND ass.CTSCustID NOT IN (SELECT CTSCustID
+									FROM CTS_DataCenter.CustRetractEvidence AS cre
+                                    WHERE cre.EvidenceID = ip_EvidenceID);    	
     
     #=====LOG==========================
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
