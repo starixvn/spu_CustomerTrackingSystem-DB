@@ -28,7 +28,8 @@ BEGIN
     
     DELETE FROM CTS_DataCenter.CustEvidence
 	WHERE CTSCustID = ip_CTSCustID		
-		AND EvidenceID = ip_EvidenceID; 
+		AND EvidenceID = ip_EvidenceID
+        AND Level = 0;
         
 	SET SQL_SAFE_UPDATES = 1;
         
