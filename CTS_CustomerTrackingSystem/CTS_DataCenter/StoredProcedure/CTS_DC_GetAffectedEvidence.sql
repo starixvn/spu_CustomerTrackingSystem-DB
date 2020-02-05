@@ -9,7 +9,7 @@ CREATE PROCEDURE CTS_DC_GetAffectedEvidence (
 BEGIN
 	/*
 		Created:	20200123@Thai
-		Task:		Get affected evidences by CustID and evidence codes [Redmine ID: 127150]
+		Task:		Get affected evidences for CustID and evidence codes [Redmine ID: 127150]
 		DB:			CTS_DataCenter
 		Original:
 
