@@ -9,7 +9,7 @@ CREATE PROCEDURE CTS_DC_GetAffectedEvidence (
 BEGIN
 	/*
 		Created:	20200123@Thai
-		Task:		Get affected evidences for CustID and evidence codes [Redmine ID: 127150]
+		Task:		Get evidences which the member is affected and evidences which the member is retracted [Redmine ID: 127150]
 		DB:			CTS_DataCenter
 		Original:
 
@@ -17,7 +17,7 @@ BEGIN
         
 		Param's Explanation (filtered by):			
         
-        CALL CTS_DC_GetAffectedEvidence (11115, '1.2,6.1,6.2')
+        CALL CTS_DC_GetAffectedEvidence (10515, '6.9')
 	*/        
            
 	DECLARE a INT Default 0 ;
@@ -42,20 +42,27 @@ BEGIN
       
    
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;   
+    
+    
+    DROP TABLE IF EXISTS tmpAffectedEvidences;
+    CREATE TEMPORARY TABLE tmpAffectedEvidences(
+        CustEvidID BIGINT,
+		EvidenceID SMALLINT,
+        EvidenceCode VARCHAR(10),
+        EvidenceName VARCHAR(50),        
+        CreatedDate DATETIME
+	);
+    
+    #=====GET AFFECTED EVIDENCES FOR MEMBER==========================
+    
+    INSERT INTO tmpAffectedEvidences (EvidenceID, EvidenceCode, EvidenceName, CreatedDate)
 	SELECT e.EvidenceID
 		   ,e.EvidenceCode           
-		   ,e.EvidenceName
-		   ,e.EvidenceDesc           		   
-           ,cust.UserName2 As LoginID		   
-           ,cust.UserName
-           ,'Device' AS AssociationType
-           ,ce.CreatedDate
-           ,cust.LastLoginTime					
-    FROM Evidence AS e 	
-	INNER JOIN CustEvidence AS ce 
-		   ON (e.EvidenceID = ce.EvidenceID)	
-	INNER JOIN CTSCustomer AS cust
-		   ON (cust.CTSCustID = ce.CTSCustID)	
+		   ,e.EvidenceName					              
+           ,ce.CreatedDate		
+    FROM CustEvidence AS ce 	
+	INNER JOIN Evidence AS e 
+		   ON (ce.EvidenceID = e.EvidenceID)		
     INNER JOIN tmpEvidenceCodes AS codes
 		   ON (codes.EviCode = e.EvidenceCode)           
 	WHERE e.IsActive = True
@@ -64,7 +71,24 @@ BEGIN
           AND ce.EvidenceID NOT IN (SELECT cre.EvidenceID
 									FROM CustRetractEvidence AS cre
 									WHERE cre.CTSCustID = ce.CTSCustID);
+                                                                 
+	#=====DISPLAY EVIDENCES CREATED BY==========================
+     SELECT e.EvidenceID
+		   ,e.EvidenceCode           
+		   ,e.EvidenceName		   
+           ,cust.UserName2 As LoginID
+		   ,cust.UserName
+		   ,'Device' AS AssociationType
+           ,e.CreatedDate
+           ,cust.LastLoginTime           
+    FROM tmpAffectedEvidences AS e	
+    INNER JOIN CustEvidence AS ce 
+		   ON (e.EvidenceID = ce.EvidenceID)	
+	INNER JOIN CTSCustomer AS cust
+		   ON (cust.CTSCustID = ce.CTSCustID)
+	WHERE ce.Level = 0;          
           
+    #=====GET RETRACTED EVIDENCES FOR MEMBER==========================
     SELECT e.EvidenceID
 		   ,e.EvidenceCode           
 		   ,e.EvidenceName
