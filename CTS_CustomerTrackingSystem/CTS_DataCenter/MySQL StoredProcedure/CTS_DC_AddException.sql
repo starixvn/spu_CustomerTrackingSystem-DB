@@ -1,7 +1,7 @@
 DELIMITER $$
 DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_AddException$$
 
-CREATE PROCEDURE CTS_DataCenter.CTS_DC_AddException(IN ip_UserID INT, IN ip_FromCTSCustID BIGINT, IN ip_ToUserName VARCHAR(50), IN ip_Comment VARCHAR(200))
+CREATE PROCEDURE CTS_DataCenter.CTS_DC_AddException(IN ip_UserID INT, IN ip_FromCTSCustID BIGINT, IN ip_ToUserName VARCHAR(50), IN ip_Comment VARCHAR(200), OUT op_Error INT)
 BEGIN
 	/*
 		Created:	20200123@Casey.Huynh	
@@ -53,6 +53,6 @@ BEGIN
 		SET	vr_Error = 0;        
     END IF;
     
-    SELECT vr_Error;
+    SET op_Error = vr_Error;
 END$$	
 DELIMITER ;

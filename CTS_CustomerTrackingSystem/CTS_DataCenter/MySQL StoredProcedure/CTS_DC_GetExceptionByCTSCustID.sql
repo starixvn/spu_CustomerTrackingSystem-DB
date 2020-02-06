@@ -38,7 +38,7 @@ BEGIN
                 , ct.UserName2	AS LoginID
 				, ce_temp.ExceptionDate
                 , ce_temp.Comment
-                , us.UserName
+                , us.UserName AS CreatedBy
     FROM		Temp_CustException AS ce_temp
     INNER JOIN	CTS_DataCenter.CTSCustomer AS ct
 				ON ce_temp.ExceptionCTSCustID = ct.CTSCustID

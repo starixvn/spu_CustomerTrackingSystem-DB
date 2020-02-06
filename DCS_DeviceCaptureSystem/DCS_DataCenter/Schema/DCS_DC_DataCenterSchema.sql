@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
         , InsertTime			TIMESTAMP(4)	NOT NULL
         
         , PRIMARY KEY	PK_DeviceFingerprint_DeviceFingerprintID(DeviceFingerprintID)
-		, INDEX	IX_DeviceFingerprint_DeviceID(DeviceID)
+        , UNIQUE KEY	UK_DeviceFingerprint(DeviceID,FingerprintCode)
      ) ENGINE=InnoDB AUTO_INCREMENT = 1;
     
 # =======Association============================================

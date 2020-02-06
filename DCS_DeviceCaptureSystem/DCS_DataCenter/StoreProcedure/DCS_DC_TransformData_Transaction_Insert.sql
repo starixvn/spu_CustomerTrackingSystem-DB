@@ -174,7 +174,7 @@ BEGIN
     INNER JOIN	Temp_RawTransaction AS trt
 				ON rt.TransID = trt.TransID
     SET			rt.IsProcessed = 1;
-	#===============================================================================================================	
+	#=================================================================	
   
 	### PERFORMANCE
 	SET	vrEndTime = CURRENT_TIMESTAMP(4);
