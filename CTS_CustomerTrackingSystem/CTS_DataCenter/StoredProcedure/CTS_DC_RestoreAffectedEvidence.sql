@@ -10,7 +10,7 @@ CREATE PROCEDURE CTS_DC_RestoreAffectedEvidence (
 BEGIN
 	/*
 		Created:	20200204@Thai
-		Task:		Restore an affected evidence for the customer [Redmine ID: 127150]
+		Task:		The customer will be affected with this evidence [Redmine ID: 127150]
 		DB:			CTS_DataCenter
 		Original:
 

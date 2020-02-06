@@ -9,7 +9,7 @@ CREATE PROCEDURE CTS_DC_RetractAffectedEvidence (
 BEGIN
 	/*
 		Created:	20200204@Thai
-		Task:		Retract an affected evidence for a customer then remove his affected evidence [Redmine ID: 127150]
+		Task:		Add an evidence that the customer will not be affected [Redmine ID: 127150]
 		DB:			CTS_DataCenter
 		Original:
 
@@ -33,17 +33,7 @@ BEGIN
 		VALUES (ip_CTSCustID, ip_EvidenceID, vr_CreatedDate);		
                 
 	END IF;
-    
-    #=====REMOVE AFFECTED EVIDENCE==========================
-	SET SQL_SAFE_UPDATES = 0;
-	
-	DELETE FROM CTS_DataCenter.CustEvidence
-	WHERE CTSCustID = ip_CTSCustID
-		AND EvidenceID = ip_EvidenceID
-		AND Level = 2;
-	
-	SET SQL_SAFE_UPDATES = 1;
-    		
+       
     #=====LOG==========================
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	VALUES(5, vr_SPName, CONCAT('Retract Affected Evidence: ip_CTSCustID = ', ip_CTSCustID, ';ip_EvidenceID = ', ip_EvidenceID), vr_CreatedDate, ip_UserID);
