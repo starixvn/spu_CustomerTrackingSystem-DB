@@ -17,7 +17,7 @@ BEGIN
         
 		Param's Explanation (filtered by):			
         
-        CALL CTS_DC_GetAffectedEvidence (11113, '1.2,6.1,6.2')
+        CALL CTS_DC_GetAffectedEvidence (11115, '1.2,6.1,6.2')
 	*/        
            
 	DECLARE a INT Default 0 ;
@@ -60,7 +60,10 @@ BEGIN
 		   ON (codes.EviCode = e.EvidenceCode)           
 	WHERE e.IsActive = True
 		  AND ce.Level = 2
-		  AND ce.CTSCustID = ip_CTSCustID;          
+		  AND ce.CTSCustID = ip_CTSCustID
+          AND ce.EvidenceID NOT IN (SELECT cre.EvidenceID
+									FROM CustRetractEvidence AS cre
+									WHERE cre.CTSCustID = ce.CTSCustID);
           
     SELECT e.EvidenceID
 		   ,e.EvidenceCode           
