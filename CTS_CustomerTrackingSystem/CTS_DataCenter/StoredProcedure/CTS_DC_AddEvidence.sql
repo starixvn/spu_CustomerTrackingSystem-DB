@@ -55,9 +55,7 @@ proc_label: BEGIN
     
     INSERT INTO tmpAffectedDevices(DCSDeviceID)
     SELECT DISTINCT ass.DCSDeviceID
-    FROM CTS_DataCenter.AssociationByDevice ass
-    INNER JOIN DCS_DataCenter.Device dev
-			ON (dev.DeviceID = ass.DCSDeviceID)
+    FROM CTS_DataCenter.AssociationByDevice ass    
     WHERE ass.CTSCustID = ip_CTSCustID
 		AND  ass.SubscriberID = ip_SubscriberID;
     
