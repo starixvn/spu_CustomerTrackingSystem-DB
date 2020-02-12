@@ -5,6 +5,7 @@ DROP PROCEDURE IF EXISTS CTS_DC_RetractAffectedEvidence $$
 CREATE PROCEDURE CTS_DC_RetractAffectedEvidence (
 	IN ip_CTSCustID BIGINT,        
     IN ip_EvidenceID SMALLINT,	
+    IN ip_Remark VARCHAR(500), 
     IN ip_UserID INT)
 BEGIN
 	/*
@@ -29,8 +30,8 @@ BEGIN
 						AND EvidenceID = ip_EvidenceID) THEN
 	
 		#=====INSERT RETRACT EVIDENCE==========================
-		INSERT INTO CTS_DataCenter.CustRetractEvidence( CTSCustID, EvidenceID, CreatedDate)
-		VALUES (ip_CTSCustID, ip_EvidenceID, vr_CreatedDate);		
+		INSERT INTO CTS_DataCenter.CustRetractEvidence( CTSCustID, EvidenceID, Remark, CreatedDate, CreatedBy)
+		VALUES (ip_CTSCustID, ip_EvidenceID, ip_Remark, vr_CreatedDate, ip_UserID);				
                 
 	END IF;
        

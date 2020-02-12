@@ -118,6 +118,28 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
         , PRIMARY KEY	PK_CustEvidence_CustEvidID(CustEvidID)
         , INDEX	IX_CustEvidence_EvidenceGroupID_EvidenceCode(SubscriberID, CTSCustID)
 	) ENGINE=INNODB  AUTO_INCREMENT=1;
+	
+	# =======CustException============================================
+	CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustException (
+		FromCTSCustID bigint(20) NOT NULL
+		, ToCTSCustID bigint(20) NOT NULL
+		, LeastCTSCustID_Order bigint(20) GENERATED ALWAYS AS (least(`FromCTSCustID`,`ToCTSCustID`)) STORED NOT NULL
+		, GreatestCTSCustID_Order bigint(20) GENERATED ALWAYS AS (greatest(`FromCTSCustID`,`ToCTSCustID`)) STORED NOT NULL
+		, CreatedDate datetime DEFAULT NULL
+		, CreatedBy bigint(20) DEFAULT NULL
+		, Comment varchar(200) CHARACTER SET utf8mb4 COLLATE UTF8MB4_UNICODE_CI DEFAULT NULL
+		PRIMARY KEY PK_CustException_LeastCTSCustID_Order_GreatestCTSCustID_Order(LeastCTSCustID_Order, GreatestCTSCustID_Order)
+	) ENGINE=INNODB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+	
+	# =======CustRetractEvidence============================================
+	CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustRetractEvidence (
+		CTSCustID BIGINT(20) NOT NULL
+		, EvidenceID SMALLINT(6) NOT NULL
+		, Remark VARCHAR(500) COLLATE utf8_unicode_ci DEFAULT NULL
+		, CreatedDate DATETIME DEFAULT NULL
+		, CreatedBy int(11) NOT NULL
+		, PRIMARY KEY PK_CustRetractEvidence_CTSCustID_EvidenceID(CTSCustID, EvidenceID)
+	) ENGINE=INNODB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 	# ========LogType===========================================
 	CREATE TABLE  IF NOT EXISTS CTS_DataCenter.LogType(

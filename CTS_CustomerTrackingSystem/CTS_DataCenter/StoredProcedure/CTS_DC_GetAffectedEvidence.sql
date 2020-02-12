@@ -96,7 +96,9 @@ BEGIN
            ,cust.UserName2 As LoginID
 		   ,cust.UserName
 		   ,'Device' AS AssociationType
+           ,cre.Remark
            ,cre.CreatedDate
+           ,user.UserName AS Creator
            ,cust.LastLoginTime					
     FROM Evidence AS e 	
 	INNER JOIN CustRetractEvidence AS cre
@@ -105,6 +107,8 @@ BEGIN
 		   ON (cust.CTSCustID = cre.CTSCustID)	
     INNER JOIN tmpEvidenceCodes AS codes
 		   ON (codes.EviCode = e.EvidenceCode)           
+	INNER JOIN CTS_Admin.CTSUser AS user
+		   ON (user.UserID = cre.CreatedBy)
 	WHERE e.IsActive = True		  
 		  AND cre.CTSCustID = ip_CTSCustID;
     
