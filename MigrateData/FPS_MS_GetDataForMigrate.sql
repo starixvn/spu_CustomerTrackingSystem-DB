@@ -36,6 +36,8 @@ BEGIN
 		,IP
 		,ActionName
 		,ActionResult
+		,UserAgent
+		,URL
 	INTO #tempTrans
 	FROM [uat].[CTSMigrateTrans] mt WITH (NOLOCK)
 
@@ -55,6 +57,8 @@ BEGIN
 		,IP
 		,ActionName
 		,ActionResult 
+		,UserAgent
+		,URL
 	FROM #tempTrans
 
 	DROP TABLE #tempTrans
