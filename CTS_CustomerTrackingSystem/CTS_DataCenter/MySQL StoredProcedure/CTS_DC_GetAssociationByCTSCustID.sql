@@ -1,8 +1,5 @@
 DELIMITER $$
-USE CTS_DataCenter$$
-DROP PROCEDURE IF EXISTS CTS_DC_GetAssociationByCTSCustID $$
-
-CREATE PROCEDURE CTS_DC_GetAssociationByCTSCustID(IN ip_CTSCustID INT)
+CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_GetAssociationByCTSCustID`(IN ip_CTSCustID INT)
 BEGIN
 	/*
 		Created:	20191217@Marcus
@@ -11,16 +8,15 @@ BEGIN
 		Original:
 
 		Revisions:
+        - 20200213@Terry: Fix bug for total accounts counter
 		Param's Explanation (filtered by):
 	*/
-	
-    DECLARE		totalAccountByDevices		INT		DEFAULT 0;
-    DECLARE		totalAccountByIPs		INT		DEFAULT 0;
-	DECLARE		totalDevices		INT		DEFAULT 0;
-    DECLARE		totalIPs		    INT		DEFAULT 0;
+	DECLARE		totalAccounts			INT		DEFAULT 0;   
+	DECLARE		totalDevices			INT		DEFAULT 0;
+    DECLARE		totalIPs		    	INT		DEFAULT 0;
     
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-	
+            
     SELECT	COUNT(1) INTO totalDevices	
 	FROM    AssociationByDevice AS ass
 	WHERE   ass.CTSCustID = ip_CTSCustID;
@@ -28,23 +24,25 @@ BEGIN
     SELECT	COUNT(1) INTO totalIPs	
 	FROM    AssociationByIP AS ass
 	WHERE   ass.CTSCustID = ip_CTSCustID;
-    
-	SELECT  COUNT(1) INTO totalAccountByDevices
-	FROM    AssociationByDevice AS ass 
+
+	SELECT COUNT(tmp.CTSCustID) INTO totalAccounts FROM (
+	SELECT  CTSCustID
+	FROM    AssociationByDevice 
 	WHERE   DCSDeviceID IN (SELECT DCSDeviceID 
 						    FROM   AssociationByDevice 
 						    WHERE  CTSCustID = ip_CTSCustID)
-					    AND ass.CTSCustID <> ip_CTSCustID;
-                        
-	SELECT  COUNT(1) INTO totalAccountByIPs
-	FROM    AssociationByIP AS ass 
+					    AND CTSCustID <> ip_CTSCustID
+    UNION                         
+	SELECT  CTSCustID
+	FROM    AssociationByIP 
 	WHERE   IPID IN (SELECT IPID 
 						    FROM   AssociationByIP 
 						    WHERE  CTSCustID = ip_CTSCustID)
-					    AND ass.CTSCustID <> ip_CTSCustID;
+					    AND CTSCustID <> ip_CTSCustID) AS tmp;
 	
    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-   SELECT	(totalAccountByDevices + totalAccountByIPs) as totalAccounts, totalDevices, totalIPs; 
+   
+   SELECT	totalAccounts, totalDevices, totalIPs;    
     
 END$$
 DELIMITER ;
