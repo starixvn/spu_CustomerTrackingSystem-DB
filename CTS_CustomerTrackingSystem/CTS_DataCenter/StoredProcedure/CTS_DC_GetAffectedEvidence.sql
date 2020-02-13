@@ -75,7 +75,8 @@ BEGIN
 	#=====DISPLAY EVIDENCES CREATED BY==========================
      SELECT e.EvidenceID
 		   ,e.EvidenceCode           
-		   ,e.EvidenceName		   
+		   ,e.EvidenceName
+		   ,cust.CTSCustID		   
            ,cust.UserName2 As LoginID
 		   ,cust.UserName
 		   ,'Device' AS AssociationType
@@ -92,7 +93,8 @@ BEGIN
     SELECT e.EvidenceID
 		   ,e.EvidenceCode           
 		   ,e.EvidenceName
-		   ,e.EvidenceDesc           		   
+		   ,e.EvidenceDesc
+		   ,cust.CTSCustID		   
            ,cust.UserName2 As LoginID
 		   ,cust.UserName
 		   ,'Device' AS AssociationType
