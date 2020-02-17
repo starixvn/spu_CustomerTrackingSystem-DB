@@ -47,6 +47,8 @@ BEGIN
     DROP TABLE IF EXISTS tmpAffectedEvidences;
     CREATE TEMPORARY TABLE tmpAffectedEvidences(
         CustEvidID BIGINT,
+        CTSCustID BIGINT,
+        FromCTSCustID BIGINT,
 		EvidenceID SMALLINT,
         EvidenceCode VARCHAR(10),
         EvidenceName VARCHAR(50),        
@@ -55,8 +57,10 @@ BEGIN
     
     #=====GET AFFECTED EVIDENCES FOR MEMBER==========================
     
-    INSERT INTO tmpAffectedEvidences (EvidenceID, EvidenceCode, EvidenceName, CreatedDate)
+    INSERT INTO tmpAffectedEvidences (EvidenceID, CTSCustID, FromCTSCustID, EvidenceCode, EvidenceName, CreatedDate)
 	SELECT e.EvidenceID
+		   ,ce.CTSCustID
+           ,ce.FromCustID
 		   ,e.EvidenceCode           
 		   ,e.EvidenceName					              
            ,ce.CreatedDate		
@@ -73,23 +77,59 @@ BEGIN
 									WHERE cre.CTSCustID = ce.CTSCustID);
                                                                  
 	#=====DISPLAY EVIDENCES CREATED BY==========================
-     SELECT e.EvidenceID
-		   ,e.EvidenceCode           
-		   ,e.EvidenceName
-		   ,cust.CTSCustID		   
-           ,cust.UserName2 As LoginID
-		   ,cust.UserName
-		   ,'Device' AS AssociationType
-           ,e.CreatedDate
-           ,cust.LastLoginTime           
-    FROM tmpAffectedEvidences AS e	
-    INNER JOIN CustEvidence AS ce 
-		   ON (e.EvidenceID = ce.EvidenceID)	
+    
+    DROP TABLE IF EXISTS tmpEvidences;
+    CREATE TEMPORARY TABLE tmpEvidences( 
+		CTSCustID BIGINT,
+		EvidenceID SMALLINT,
+        EvidenceCode VARCHAR(10),        
+        EvidenceName VARCHAR(50),
+        LoginID VARCHAR(50),
+        UserName VARCHAR(50),  
+        AssociationType VARCHAR(50),
+        LastLoginTime DATETIME,
+        CreatedDate DATETIME,
+        RowNumber SMALLINT
+	);
+    
+    INSERT tmpEvidences(CTSCustID, 
+    EvidenceID,     
+    EvidenceCode, 
+    EvidenceName,
+    LoginID,
+    UserName,
+    AssociationType,
+    LastLoginTime, 
+    CreatedDate,
+    RowNumber)
+    SELECT 
+		e.FromCTSCustID
+		,e.EvidenceID 
+		,e.EvidenceCode
+        ,e.EvidenceName
+        ,cust.UserName2
+        ,cust.UserName
+        ,'Device'
+		,cust.LastLoginTime
+        ,e.CreatedDate
+        , ROW_NUMBER() OVER (PARTITION BY e.EvidenceID ORDER BY cust.LastLoginTime DESC) AS RowNumber
+    FROM tmpAffectedEvidences AS e	 
 	INNER JOIN CTSCustomer AS cust
-		   ON (cust.CTSCustID = ce.CTSCustID)
-	WHERE ce.Level = 0
-	ORDER BY cust.LastLoginTime DESC
-    LIMIT 50;	        
+		   ON (cust.CTSCustID = e.FromCTSCustID);	
+    
+    
+	SELECT 
+		CTSCustID
+		,EvidenceID    
+		,EvidenceCode
+		,EvidenceName
+		,LoginID
+		,UserName
+		,AssociationType
+		,LastLoginTime
+		,CreatedDate              
+    FROM tmpEvidences 
+    WHERE RowNumber <= 50;	        
           
     #=====GET RETRACTED EVIDENCES FOR MEMBER==========================
     SELECT e.EvidenceID
