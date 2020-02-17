@@ -1,0 +1,54 @@
+/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" viewers="" isFunction="0" isNested="0"></info>*/
+
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
+GO
+ALTER PROCEDURE CTS_GetMainDbCustomerForUpdateUsername2
+						 @CustIds		VARCHAR(MAX)
+						,@IsGetCustSub	BIT
+AS
+/*
+	Creator:	20191128@Harvey
+	Task:		Get customer - [Redmine: #124592]
+	Database:	DBTP.bodb02
+	
+	Revisions:
+		- 20181121@Harvey:	Initial - [Redmine: #124592]
+		
+	Developer's Notes:
+		- @Example:			NULL		- Explaination [DEFAULT]
+
+	exec CTS_GetMainDbCustomerForUpdateUsername2 '27144,27224,27227,1003,1014', 1
+		
+*/
+BEGIN;
+	SET NOCOUNT ON;
+
+	CREATE TABLE #tmpCust (CustId BIGINT)
+
+	INSERT INTO #tmpCust
+	SELECT val
+	FROM dbo.f_SplitString(@CustIds, ',')
+	OPTION (MAXRECURSION 0)
+
+	IF @IsGetCustSub = 1
+	BEGIN
+		SELECT cust.[custid]
+			,cust.subaccid 'custsubId' 
+			,cust.username
+			,cust.username2
+		FROM [bodb02].[dbo].[custSub] cust WITH (NOLOCK)
+		INNER JOIN #tmpCust tmpcust ON cust.subaccid = tmpcust.CustId
+	END
+	ELSE
+	BEGIN
+		SELECT cust.[custid]
+			,cust.username
+			,cust.username2
+		FROM [bodb02].[dbo].[Customer] cust WITH (NOLOCK)
+		INNER JOIN #tmpCust tmpcust ON cust.custid = tmpcust.CustId
+	END
+
+	DROP TABLE #tmpCust
+END;
+GO
