@@ -46,7 +46,7 @@ BEGIN
 		   ,e.EvidenceCode           
 		   ,e.EvidenceName
 		   ,e.EvidenceDesc           		   
-		   ,e.CreatedDate
+		   ,ce.CreatedDate
            ,ce.Level		   
            ,ce.Remark
            ,user.UserName AS Creator

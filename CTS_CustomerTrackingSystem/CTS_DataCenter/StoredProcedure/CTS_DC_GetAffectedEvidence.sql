@@ -87,7 +87,9 @@ BEGIN
 		   ON (e.EvidenceID = ce.EvidenceID)	
 	INNER JOIN CTSCustomer AS cust
 		   ON (cust.CTSCustID = ce.CTSCustID)
-	WHERE ce.Level = 0;          
+	WHERE ce.Level = 0
+	ORDER BY cust.LastLoginTime DESC
+    LIMIT 50;	        
           
     #=====GET RETRACTED EVIDENCES FOR MEMBER==========================
     SELECT e.EvidenceID

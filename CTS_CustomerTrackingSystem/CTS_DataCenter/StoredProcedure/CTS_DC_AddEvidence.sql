@@ -71,7 +71,7 @@ proc_label: BEGIN
 	WHERE ass.CTSCustID <> ip_CTSCustID		
 		AND ass.CTSCustID NOT IN (SELECT ToCTSCustID
 									FROM CTS_DataCenter.CustException AS exc
-                                    WHERE exc.FromCTSCustID = ip_CTSCustID)
+                                    WHERE exc.ToCTSCustID = ip_CTSCustID)
 		AND ass.CTSCustID NOT IN (SELECT CTSCustID
 									FROM CTS_DataCenter.CustRetractEvidence AS cre
                                     WHERE cre.EvidenceID = ip_EvidenceID);    	
