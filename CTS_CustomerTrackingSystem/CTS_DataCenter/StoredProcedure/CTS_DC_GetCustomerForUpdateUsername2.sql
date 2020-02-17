@@ -14,11 +14,12 @@ BEGIN
         
 		Param's Explanation (filtered by):         
         
-        CALL CTS_DC_GetCustomerForUpdateUsername2 (500,0,0)
+        CALL CTS_DC_GetCustomerForUpdateUsername2 (500,0,1)
 	*/	   
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 
-	SELECT CustID
+	SELECT CTSCustID
+		,CustID
 		,CustSubID
 	FROM CTSCustomer
 	WHERE UserName2 IS NULL

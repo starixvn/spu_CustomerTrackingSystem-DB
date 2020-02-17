@@ -38,7 +38,8 @@ BEGIN;
 			,cust.username
 			,cust.username2
 		FROM [bodb02].[dbo].[custSub] cust WITH (NOLOCK)
-		INNER JOIN #tmpCust tmpcust ON cust.subaccid = tmpcust.CustId
+			INNER JOIN #tmpCust tmpcust ON cust.subaccid = tmpcust.CustId
+		WHERE cust.UserName2 IS NOT NULL
 	END
 	ELSE
 	BEGIN
@@ -46,7 +47,8 @@ BEGIN;
 			,cust.username
 			,cust.username2
 		FROM [bodb02].[dbo].[Customer] cust WITH (NOLOCK)
-		INNER JOIN #tmpCust tmpcust ON cust.custid = tmpcust.CustId
+			INNER JOIN #tmpCust tmpcust ON cust.custid = tmpcust.CustId
+		WHERE cust.UserName2 IS NOT NULL
 	END
 
 	DROP TABLE #tmpCust
