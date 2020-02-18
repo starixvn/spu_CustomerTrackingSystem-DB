@@ -1,4 +1,4 @@
-/*<info serverAlias="DBFS-bodb_FraudSensor" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+/*<ignore deploy-info serverAlias="DBFS-bodb_FraudSensor" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 GO
 SET ANSI_NULLS ON
 GO
