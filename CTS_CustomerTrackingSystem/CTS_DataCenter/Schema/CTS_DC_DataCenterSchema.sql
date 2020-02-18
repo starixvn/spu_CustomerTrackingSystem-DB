@@ -1,10 +1,12 @@
 /*
 Creator: 20191106@CaseyHuynh + Harvey.Nguyen
-Task:	 
-Server:  
-DBName:	CTS_DataCenter
+Task:	 	CTS_Schema
+Server:  	Slave
+DBName:		CTS_DataCenter
 
 Revisions: 
+		- 20191217@CaseyHuynh: Add Column LastLoginDate column to table CTSCustomer.  	(#125530)
+        - 20200117@HarveyNguyen: Add table CustRetractEvidence							(#127352)
 Reviewer:
 */
 
@@ -17,18 +19,21 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, CustSubID			INT		UNSIGNED
 		, UserName			VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 		, UserName2			VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
-		, Site				VARCHAR(20)
+		, Site				VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 		, RoleID			TINYINT
 		, Currency			VARCHAR(10)
 		, CurrencyID		INT		
 		, SRecommend		INT		UNSIGNED
 		, MRecommend		INT		UNSIGNED	
 		, Recommend			INT		UNSIGNED
+        , LastLoginTime		TIMESTAMP(4)
+        , CreatedDate		DATETIME
 		, PRIMARY KEY	PK_CTSCustomer_CTSCustID(CTSCustID)    
 		, UNIQUE KEY	UK_CTSCustomer_SubscriberID_UserName_UserName2(SubscriberID, UserName, UserName2)
-		, INDEX			IX_CTSCustomer_UserName_UserName2(UserName,UserName2)
+		, INDEX			IX_CTSCustomer_UserName_UserName2(UserName, UserName2)
 		, INDEX			IX_CTSCustomer_UserName2(UserName2)
-		, INDEX			IX_CTSCustomer_CustID_CustSubID(CustID,CustSubID)
+		, INDEX			IX_CTSCustomer_CustID_CustSubID(CustID, CustSubID)
+		, FULLTEXT 		IX_FullText_CTSCustomer_UserName_UserName2 (UserName,UserName2)
 	) ENGINE=INNODB AUTO_INCREMENT=1;
 
 	CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociationByDevice(
@@ -46,30 +51,33 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		CTSAssIPID			BIGINT	UNSIGNED	AUTO_INCREMENT
 		, CTSCustID			BIGINT	UNSIGNED
 		, IP				VARCHAR(50)
-		, IPID				BIGINT
+		, IPID				DECIMAL(50,0)
 		, SubscriberID		INT
-		, FirstLoginTime	TIMESTAMP(4)
+		, CreatedTime		TIMESTAMP(4)
 		, LastLoginTime		TIMESTAMP(4)
 		, InsertTime		TIMESTAMP(4)
 		, PRIMARY KEY	PK_AssociationByIP_CTSAssID(CTSAssIPID)
 		, UNIQUE KEY	UK_AssociationByIP_CTSCustID_IPID(CTSCustID,IPID)
-		, INDEX			IX_AssociationByIP_LastLoginTime_CustID_IPID(LastLoginTime,CTSCustID,IPID)
-		)ENGINE=INNODB  AUTO_INCREMENT=1;
+		, INDEX			IX_AssociationByIP_LastLoginTime_CustID_IPID(LastLoginTime, CTSCustID, IPID)
+	)ENGINE=INNODB  AUTO_INCREMENT=1;
 
 	CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustDCSAccount(
 		CTSCustID			BIGINT	UNSIGNED
 		, AccountID			BIGINT	UNSIGNED
 		, SubscriberID		INT
 		, InsertTime		TIMESTAMP(4)
-		, PRIMARY KEY		PK_CustDCSAccount_AccountID(AccountID)    
+		, PRIMARY KEY		PK_CustDCSAccount_AccountID(AccountID)  
 	) ENGINE=INNODB  AUTO_INCREMENT=1;
-
-	CREATE TABLE IF NOT EXISTS CTS_DataCenter.MappingSubscriberSite(
+	
+   CREATE TABLE IF NOT EXISTS CTS_DataCenter.MappingSubscriberSite(
 		SiteID				BIGINT	UNSIGNED
 		, SiteName			VARCHAR(50)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 		, SubscriberID		INT
 		, SubscriberName	VARCHAR(50)
-		, PRIMARY KEY	PK_MappingSubscriberSite(SiteID)    
+        , SiteType			TINYINT							COMMENT '1: Deposit, 0:Credit'
+        , MappingType		TINYINT							COMMENT '-2:NOT Existing Main but DCS, -1:Existing Main but NOT DCS, 0: mapping SiteName, 1: Mapping SiteName ADN RoleID =1, 2: Mapping SiteName ADN RoleID > 1'
+        , Comments			VARCHAR(200)
+		, UNIQUE KEY	PK_MappingSubscriberSite_SubscriberID(SiteID, SubscriberID)    
 	) ENGINE=INNODB;
 
 # ======EvidenceGroup=============================================
@@ -170,4 +178,40 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, PRIMARY KEY	PK_IPTableLog_IPTableLogID(IPTableLogID)
 		, INDEX 		IX_IPTableLog_IPType_Flag (IsNewUpdate)
 	) ENGINE=INNODB AUTO_INCREMENT=1;
+
+# ===================================================
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.StaticList
+(
+	ListNo			INT
+    , ItemNo		INT
+    , ListName		VARCHAR(200)
+    , ItemName		VARCHAR(200)
+    , Status		BOOL
+    , Description	VARCHAR(200)
+    , CreatedDate	DATETIME
+    
+    , PRIMARY KEY PK_StaticList_ListNo_ItemNo(ListNo, ItemNo)
+) ;
+
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustRetractEvidence
+(
+	  CTSCustID			BIGINT		NOT NULL
+    , EvidenceID		SMALLINT    NOT NULL
+    , CreatedDate		DATETIME
+    
+    , PRIMARY KEY PK_CustRetractEvidence_CTSCustID_EvidenceID(CTSCustID,EvidenceID)
+) ENGINE=INNODB;
+
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustException
+(	
+	FromCTSCustID			BIGINT 		NOT NULL
+    , ToCTSCustID			BIGINT		NOT NULL
+	, LeastCTSCustID_Order			BIGINT		AS (LEAST(FromCTSCustID, ToCTSCustID)) 		STORED
+    , GreatestCTSCustID_Order		BIGINT		AS (GREATEST(FromCTSCustID, ToCTSCustID))	STORED
+    , CreatedDate		DATETIME	NULL
+    , CreatedBy			BIGINT		NULL	
+    , Comment			VARCHAR(200)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	NULL
+	
+    , PRIMARY KEY	PK_CustException_FromCTSCustID_ToCTSCustID(LeastCTSCustID_Order,GreatestCTSCustID_Order)
+) ENGINE=INNODB;
 

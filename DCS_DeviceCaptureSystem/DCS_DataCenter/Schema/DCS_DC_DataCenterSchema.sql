@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
         , InsertTime			TIMESTAMP(4)	NOT NULL
         
         , PRIMARY KEY	PK_DeviceFingerprint_DeviceFingerprintID(DeviceFingerprintID)
-		, INDEX	IX_DeviceFingerprint_DeviceID(DeviceID)
+        , UNIQUE KEY	UK_DeviceFingerprint(DeviceID,FingerprintCode)
      ) ENGINE=InnoDB AUTO_INCREMENT = 1;
     
 # =======Association============================================
@@ -71,12 +71,12 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
 # =======Account============================================
 	CREATE TABLE IF NOT EXISTS DCS_DataCenter.`Account`(
 		AccountID			BIGINT		UNSIGNED	AUTO_INCREMENT	NOT NULL        
-        , LoginName			VARCHAR(100)		CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	NOT NULL
+        , LoginName			VARCHAR(100)			CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	NOT NULL
         , SubscriberID		INT										NOT NULL
         , SubscriberType	TINYINT									NOT NULL
         , CreatedTime		TIMESTAMP(4)							NOT NULL
+        , LastLoginTime		TIMESTAMP(4)							NOT NULL
 		, CreatedDate		DATETIME								NOT NULL
-        , LastArchivedDate	DATETIME								NOT NULL			
         , InsertTime		TIMESTAMP(4)							NOT NULL
         , IsCTSTransformed	TINYINT									NOT NULL DEFAULT 0
         

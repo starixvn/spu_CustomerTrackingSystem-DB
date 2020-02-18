@@ -11,6 +11,10 @@ BEGIN
 	Original:
 
 	Revisions:
+		#1. [20191217@CaseyHuynh][#125530]: Implement LastLoginTime 
+	
+    Reviewer:
+		#1 [Name]: New
 	Param's Explanation (filtered by):
 */
 	### PERFORMANCE: START
@@ -100,15 +104,26 @@ BEGIN
                 , MIN(trt.CreatedDate)
 	FROM		Temp_RawTransaction AS trt
 	GROUP BY	trt.SubscriberID, trt.URLDetails;    
-
+	
+    # Update Account Last Login
+    UPDATE		DCS_DataCenter.Account 	AS acc
+    INNER JOIN	(SELECT		trt.AccountID
+							, MAX(trt.TransTime) 	AS LastLoginDate
+				 FROM		Temp_RawTransaction 	AS trt
+                 GROUP BY	trt.AccountID) AS tac
+				ON	acc.AccountID = tac.AccountID
+	SET			acc.LastLoginTime = tac.LastLoginDate;
+    
 	# Insert New Account
-    INSERT IGNORE INTO DCS_DataCenter.Account(LoginName, SubscriberID, SubscriberType, CreatedDate, InsertTime)
+    INSERT IGNORE INTO DCS_DataCenter.Account(LoginName, SubscriberID, SubscriberType, CreatedDate, InsertTime, CreatedTime, LastLoginTime)
     SELECT		trt.LoginName
 				, trt.SubscriberID
 				, trt.SubscriberType
 				, MIN(trt.CreatedDate)
-				, CURRENT_TIMESTAMP(4)	AS InsertTime
-    FROM		Temp_RawTransaction AS trt
+				, CURRENT_TIMESTAMP(4)		AS InsertTime
+                , MIN(trt.TransTime) 		AS CreatedTime
+                , MAX(trt.TransTime)		AS LastLoginTime
+    FROM		Temp_RawTransaction AS trt 
     GROUP BY	trt.SubscriberID, trt.SubscriberType, trt.LoginName;
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
@@ -159,7 +174,7 @@ BEGIN
     INNER JOIN	Temp_RawTransaction AS trt
 				ON rt.TransID = trt.TransID
     SET			rt.IsProcessed = 1;
-	#===============================================================================================================	
+	#=================================================================	
   
 	### PERFORMANCE
 	SET	vrEndTime = CURRENT_TIMESTAMP(4);

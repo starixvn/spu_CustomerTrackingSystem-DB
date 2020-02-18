@@ -1,4 +1,4 @@
-/*<info serverAlias="DBTP-bodb02" executers="bodbSPUNet" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
@@ -11,7 +11,7 @@ AS
 /*
 	Creator:	20191128@Harvey
 	Task:		Get customer - [Redmine: #124592]
-	Database:	DBTP.bodb02
+	Database:	DBCTS.bodb02
 	
 	Revisions:
 		- 20181121@Harvey:	Initial - [Redmine: #124592]
@@ -41,6 +41,7 @@ BEGIN;
 		,Srecommend INT
 		,Mrecommend INT
 		,Recommend	INT
+		,CreatedDate	DATETIME
 		)
 
 	INSERT INTO #tempCustomer
@@ -55,6 +56,7 @@ BEGIN;
 		,Srecommend 
 		,Mrecommend 
 		,Recommend	
+		,CreatedDate
 	)
 	SELECT TOP (@totalRow) sub.custid
 		,sub.subaccid
@@ -67,6 +69,7 @@ BEGIN;
 		,cust.srecommend
 		,cust.mrecommend
 		,cust.recommend
+		,sub.createdate
 	FROM dbo.custSub sub WITH (NOLOCK)
 		INNER JOIN dbo.Customer cust WITH (NOLOCK) ON sub.custid = cust.custid
 		INNER JOIN	dbo.Customer upl WITH (NOLOCK) ON cust.srecommend = upl.custid
@@ -96,6 +99,7 @@ BEGIN;
 		,Srecommend
 		,Mrecommend
 		,Recommend
+		,CreatedDate
 	FROM #tempCustomer
 
 END;

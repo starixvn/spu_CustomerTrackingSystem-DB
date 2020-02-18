@@ -1,4 +1,4 @@
-/*<info serverAlias="DBTP-bodb02" executers="bodbSPUNet" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
@@ -11,7 +11,7 @@ AS
 /*
 	Creator:	20191128@Harvey
 	Task:		Get customer - [Redmine: #124592]
-	Database:	DBTP.bodb02
+	Database:	DBCTS.bodb02
 	
 	Revisions:
 		- 20181121@Harvey:	Initial - [Redmine: #124592]
@@ -29,17 +29,18 @@ BEGIN;
 			,@currentBatch TINYINT = 1
 
 	CREATE TABLE #tempCustomer (
-		 BatchId	TINYINT
-		,CustId		INT
-		,Username	VARCHAR(30)
-		,Username2	VARCHAR(50)
-		,Site		VARCHAR(10)
-		,RoleId		TINYINT
-		,CurrencyId TINYINT
-		,Currency	VARCHAR(50)
-		,Srecommend INT
-		,Mrecommend INT
-		,Recommend	INT
+		 BatchId		TINYINT
+		,CustId			INT
+		,Username		VARCHAR(30)
+		,Username2		VARCHAR(50)
+		,Site			VARCHAR(10)
+		,RoleId			TINYINT
+		,CurrencyId		TINYINT
+		,Currency		VARCHAR(50)
+		,Srecommend		INT
+		,Mrecommend		INT
+		,Recommend		INT
+		,CreatedDate	DATETIME
 		)
 
 	INSERT INTO #tempCustomer
@@ -53,6 +54,7 @@ BEGIN;
 		,Srecommend 
 		,Mrecommend 
 		,Recommend	
+		,CreatedDate
 	)
 	SELECT TOP (@totalRow) cust.custid
 		,cust.username
@@ -64,6 +66,7 @@ BEGIN;
 		,cust.srecommend
 		,cust.mrecommend
 		,cust.recommend
+		,cust.creatdate
 	FROM dbo.Customer cust WITH (NOLOCK)
 		INNER JOIN	dbo.Customer upl WITH (NOLOCK) ON cust.srecommend = upl.custid
 		INNER JOIN dbo.Exchange ex WITH (NOLOCK) ON cust.currency = ex.exchangeid
@@ -91,6 +94,7 @@ BEGIN;
 		,Srecommend
 		,Mrecommend
 		,Recommend
+		,CreatedDate
 	FROM #tempCustomer
 
 END;
