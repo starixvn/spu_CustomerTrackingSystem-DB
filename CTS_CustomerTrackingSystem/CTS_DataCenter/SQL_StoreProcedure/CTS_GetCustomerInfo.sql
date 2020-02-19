@@ -33,6 +33,7 @@ BEGIN;
 		,CustId			INT
 		,Username		VARCHAR(30)
 		,Username2		VARCHAR(50)
+		,SiteId			INT
 		,Site			VARCHAR(10)
 		,RoleId			TINYINT
 		,CurrencyId		TINYINT
@@ -47,6 +48,7 @@ BEGIN;
 	(	 CustId		
 		,Username	
 		,Username2	
+		,SiteId
 		,Site		
 		,RoleId		
 		,CurrencyId 
@@ -59,6 +61,7 @@ BEGIN;
 	SELECT TOP (@totalRow) cust.custid
 		,cust.username
 		,cust.username2
+		,st.siteid
 		,upl.site
 		,cust.roleid
 		,cust.currency 'currencyid'
@@ -70,6 +73,7 @@ BEGIN;
 	FROM dbo.Customer cust WITH (NOLOCK)
 		INNER JOIN	dbo.Customer upl WITH (NOLOCK) ON cust.srecommend = upl.custid
 		INNER JOIN dbo.Exchange ex WITH (NOLOCK) ON cust.currency = ex.exchangeid
+		INNER JOIN dbo.Site st WITH (NOLOCK) ON cust.site = st.site
 	WHERE cust.custid > @maxCustId
 	ORDER BY cust.custid
 
@@ -87,6 +91,7 @@ BEGIN;
 		,CustId
 		,Username
 		,Username2
+		,SiteId
 		,Site
 		,RoleId
 		,CurrencyId

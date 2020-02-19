@@ -20,12 +20,13 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS TempCTSCustomer;
     
 	CREATE TEMPORARY TABLE TempCTSCustomer
-	( 	SubscriberID 	INT 			
+	( 	  SubscriberID 	INT 			
 		, CustID		INT	 UNSIGNED		
 		, CustSubID		BIGINT			
 		, UserName		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 		, UserName2		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
-		, Site			VARCHAR(20) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+		, SiteID		INT
+        , Site			VARCHAR(20) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 		, RoleID		TINYINT		 
 		, Currency		VARCHAR(50) 	
 		, CurrencyID	INT			 	
@@ -42,6 +43,7 @@ BEGIN
 		, CustSubID		
 		, UserName		
 		, CASE WHEN UserName2 = 'null' THEN NULL ELSE UserName2 END
+        , SiteID
 		, CASE WHEN Site = 'null' THEN NULL ELSE Site END	
 		, RoleID		
 		, Currency		
@@ -57,6 +59,7 @@ BEGIN
 		, CustSubID		BIGINT			PATH "$.CustSubId" 
 		, UserName		VARCHAR(50)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	PATH "$.Username"
 		, UserName2		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	PATH "$.Username2" 
+        , SiteID		INT 			PATH "$.SiteId" 
 		, Site			VARCHAR(20)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' 	PATH "$.Site" 
 		, RoleID		TINYINT		 	PATH "$.RoleId" 
 		, Currency		VARCHAR(50) 	PATH "$.Currency" 
@@ -70,7 +73,10 @@ BEGIN
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 		UPDATE 		TempCTSCustomer cust
 		INNER JOIN	CTS_DataCenter.MappingSubscriberSite mss 
-					ON cust.Site = mss.SiteName 
+					ON cust.SiteID = mss.SiteID 
+                    AND ((ms.RoleMapping = 1 AND ct.RoleID = 1)
+						OR (ms.RoleMapping = 2 AND ct.RoleID > 1)
+						OR (ms.RoleMapping = 0))
 		SET 		cust.SubscriberID = mss.SubscriberID;
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 
@@ -78,10 +84,12 @@ BEGIN
 	INNER JOIN	TempCTSCustomer tempCust 
 				ON tempCust.UserName2 = ctsCust.UserName2 
 					AND tempCust.UserName2 IS NOT NULL
+                    AND tempCust.SubscriberID = ctsCust.SubscriberID
 	SET 
 		ctsCust.CustID 			= tempCust.CustID
 		, ctsCust.CustSubID 	= tempCust.CustSubID
 		, ctsCust.UserName 		= tempCust.UserName
+        , ctsCust.SiteID 		= tempCust.SiteID
 		, ctsCust.Site 			= tempCust.Site
 		, ctsCust.RoleID 		= tempCust.RoleID
 		, ctsCust.Currency 		= tempCust.Currency
@@ -91,12 +99,13 @@ BEGIN
         , ctsCust.Recommend 	= tempCust.Recommend
         , ctsCust.CreatedDate 	= tempCust.CreatedDate;
 
-	INSERT IGNORE INTO CTS_DataCenter.CTSCustomer(SubscriberID, CustID, CustSubID, UserName, UserName2, Site, RoleID, Currency, CurrencyID, SRecommend, MRecommend, Recommend, CreatedDate)
+	INSERT INTO CTS_DataCenter.CTSCustomer(SubscriberID, CustID, CustSubID, UserName, UserName2, SiteID, Site, RoleID, Currency, CurrencyID, SRecommend, MRecommend, Recommend, CreatedDate)
 	SELECT    tempCust.SubscriberID
 			, tempCust.CustID
             , tempCust.CustSubID
             , tempCust.UserName
             , tempCust.UserName2
+            , tempCust.SiteID
             , tempCust.Site
             , tempCust.RoleID
             , tempCust.Currency
@@ -105,7 +114,11 @@ BEGIN
             , tempCust.MRecommend
             , tempCust.Recommend
             , tempCust.CreatedDate
-	FROM 		TempCTSCustomer tempCust;
+    FROM TempCTSCustomer tempCust
+		LEFT JOIN CTS_DataCenter.CTSCustomer ctsCust 
+			ON tempCust.CustID = ctsCust.CustID 
+				AND tempCust.CustSubID = ctsCust.CustSubID
+	WHERE ctsCust.CustID IS NULL;
 
 END$$
 DELIMITER ;
