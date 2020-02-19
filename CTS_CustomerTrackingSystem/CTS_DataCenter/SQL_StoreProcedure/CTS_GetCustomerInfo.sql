@@ -73,7 +73,7 @@ BEGIN;
 	FROM dbo.Customer cust WITH (NOLOCK)
 		INNER JOIN	dbo.Customer upl WITH (NOLOCK) ON cust.srecommend = upl.custid
 		INNER JOIN dbo.Exchange ex WITH (NOLOCK) ON cust.currency = ex.exchangeid
-		INNER JOIN dbo.Site st WITH (NOLOCK) ON cust.site = st.site
+		INNER JOIN dbo.Site st WITH (NOLOCK) ON upl.site = st.site
 	WHERE cust.custid > @maxCustId
 	ORDER BY cust.custid
 
