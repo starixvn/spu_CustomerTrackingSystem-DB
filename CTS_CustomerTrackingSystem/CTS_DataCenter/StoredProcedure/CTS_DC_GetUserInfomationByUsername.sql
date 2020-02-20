@@ -1,6 +1,5 @@
 DELIMITER $$
-DROP PROCEDURE IF EXISTS CTS_DC_GetUserInfomationByUsername$$
-CREATE DEFINER=`fps`@`%` PROCEDURE CTS_DC_GetUserInfomationByUsername (IN ip_username VARCHAR(50))
+CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_GetUserInfomationByUsername`(IN ip_username VARCHAR(50))
 BEGIN
 	/*
 		Created:	20191112@Terry
@@ -11,14 +10,14 @@ BEGIN
 		Revisions:
         
 		Param's Explanation (filtered by):                
-	*/
-		SET @LastLogin = CURRENT_TIMESTAMP();
-    
+	*/	   
+        
 		SELECT 
 			ctsCus.CTSCustID
+            , ctsCus.CustId
 			, ctsCus.UserName
 			, ctsCus.UserName2  
-            , @LastLogin AS 'LastLogin'
+            , ctsCus.LastLoginTime AS 'LastLogin'
             , ctsCus.CurrencyID
             , ctsCus.Currency
             , ctsCus.RoleID
@@ -32,7 +31,8 @@ BEGIN
             , sub.SubscriberName            
         FROM CTS_DataCenter.CTSCustomer AS ctsCus
 			INNER JOIN CTS_Admin.Subscriber AS sub ON ctsCus.SubscriberID = sub.SubscriberID
-        WHERE  ctsCus.Username like CONCAT(ip_username, '%') OR ctsCus.Username2 like CONCAT(ip_username, '%')
+        WHERE       
+            Match(ctsCus.UserName, ctsCus.UserName2) AGAINST(ip_username IN BOOLEAN MODE)
         LIMIT 50;
 END$$
 DELIMITER ;
