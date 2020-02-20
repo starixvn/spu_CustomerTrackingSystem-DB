@@ -47,7 +47,7 @@ BEGIN
     (	
 		BatchID				TINYINT
 		, TransID			BIGINT			UNSIGNED	NOT NULL
-		, AccountID			INT				UNSIGNED	NOT NULL
+		, AccountID			BIGINT			UNSIGNED	NOT NULL
         , SubscriberID		INT				NOT NULL
 		, IP				VARCHAR(50)			NULL
 		, IPID				DECIMAL(50,0)		NULL
@@ -65,7 +65,7 @@ BEGIN
             , tip.IP
             , tip.IPID
             , tip.TransTime
-	FROM 	DCS_DataCenter.TransactionIP AS tip
+	FROM 	DCS_DataCenter.TransactionIP_TransformTemp AS tip
 	WHERE	tip.IsCTSTransformed = 0
 	LIMIT	TotalRecord;
     
@@ -78,15 +78,15 @@ BEGIN
           LIMIT 	ip_NoOfTransaction;    
 		  SET Batch = Batch + 1;
     END WHILE;
-    
+
     SELECT	tip.BatchID
 			, tip.TransID
 			, tip.AccountID
             , tip.SubscriberID
             , tip.IP
-            , tip.IPID
+            , CONCAT(tip.IPID) AS IPID
             , tip.TransTime
-	FROM Temp_TransactionIP AS tip;   
+	FROM 	Temp_TransactionIP AS tip;
 	
 	### PERFORMANCE
 	SET		vrEndTime = CURRENT_TIMESTAMP(4);

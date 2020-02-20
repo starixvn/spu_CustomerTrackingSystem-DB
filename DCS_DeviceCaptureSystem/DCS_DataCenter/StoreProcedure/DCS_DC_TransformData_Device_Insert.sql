@@ -284,6 +284,10 @@ BEGIN
                 , tts.DeviceFingerprintID =  df.DeviceFingerprintID;  
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
+    UPDATE	Temp_Transaction AS tts
+    SET		DeviceStatus = NULL
+    WHERE	DeviceID = 0;
+    
 	UPDATE	DCS_DataCenter.Transaction AS ts
     INNER JOIN	Temp_Transaction AS tts
 				ON ts.TransID = tts.TransID
@@ -295,7 +299,7 @@ BEGIN
                 
 	#================================================================
     UPDATE		DCS_RawTransaction.RawTransaction AS rt
-    INNER JOIN	Temp_RawTransaction AS trt
+    INNER JOIN	Temp_Transaction AS trt
 				ON rt.TransID = trt.TransID
     SET			rt.IsProcessed = 2;
 	#=================================================================  

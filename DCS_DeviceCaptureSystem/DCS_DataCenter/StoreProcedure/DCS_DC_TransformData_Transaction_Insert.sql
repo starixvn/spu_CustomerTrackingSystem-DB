@@ -54,7 +54,7 @@ BEGIN
 		, DeviceCode			VARCHAR(32) 		NULL COMMENT 'Trans Device Code'
         , UserAgentKey			VARCHAR(32)			NULL
 		, IP					VARCHAR(50) 		NULL
-        , IPID					DECIMAL(50,1)		NULL	
+        , IPID					DECIMAL(50,0)		NULL	
 		, ActionResultID		INT					NULL
 		, Flagged				SMALLINT 			NULL COMMENT 'captcha & browserless'
 		, PluginID				BIGINT 				NULL
@@ -91,7 +91,7 @@ BEGIN
 				ON	rt.SubscriberName = su.SubscriberName
 	INNER JOIN	DCS_DataCenter.ActionResult AS ar
 				ON	rt.Action = ar.Action
-					AND rt.ActionResult = ar.ActionResult
+					AND IFNULL(rt.ActionResult,'') = ar.ActionResult
 	WHERE		rt.IsProcessed = 0
 				AND rt.TransID BETWEEN ip_FromTransID AND ip_ToTransID;
 	
@@ -112,7 +112,7 @@ BEGIN
 				 FROM		Temp_RawTransaction 	AS trt
                  GROUP BY	trt.AccountID) AS tac
 				ON	acc.AccountID = tac.AccountID
-	SET			acc.LastLoginTime = tac.LastLoginDate;
+	SET			acc.LastLoginTime = GREATEST(tac.LastLoginDate,acc.LastLoginTime);
     
 	# Insert New Account
     INSERT IGNORE INTO DCS_DataCenter.Account(LoginName, SubscriberID, SubscriberType, CreatedDate, InsertTime, CreatedTime, LastLoginTime)
@@ -132,14 +132,14 @@ BEGIN
     UPDATE 		Temp_RawTransaction AS trt
     INNER JOIN	DCS_DataCenter.Account AS ac
 				ON trt.SubscriberID = ac.SubscriberID AND trt.LoginName = ac.LoginName
-	INNER JOIN	DCS_DataCenter.URL	AS ur
+	LEFT JOIN	DCS_DataCenter.URL	AS ur
 				ON	trt.URLDetails = ur.URLDetails
     SET		trt.AccountID = ac.AccountID
             , trt.URLID = ur.URLID;
             
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 	
-    INSERT IGNORE INTO DCS_DataCenter.TransactionIP (TransID, AccountID, LoginName, SubscriberID, IP, IPID, TransTime, CreatedDate)
+    INSERT IGNORE INTO DCS_DataCenter.TransactionIP_TransformTemp (TransID, AccountID, LoginName, SubscriberID, IP, IPID, TransTime, CreatedDate)
     SELECT 	trt.TransID
 			, trt.AccountID
             , trt.LoginName

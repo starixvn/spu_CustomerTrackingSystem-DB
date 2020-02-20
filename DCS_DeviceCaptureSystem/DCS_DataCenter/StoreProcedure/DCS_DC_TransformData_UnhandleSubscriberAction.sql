@@ -78,6 +78,7 @@ BEGIN
 	FROM	DCS_RawTransaction.RawTransaction AS rt
 	LEFT JOIN	CTS_Admin.Subscriber AS su
 				ON rt.SubscriberName = su.SubscriberName
+					AND su.DCSStatus = 1
 	LEFT JOIN	DCS_DataCenter.ActionResult AS ar
 				ON rt.Action = ar.Action
 					AND rt.ActionResult = ar.ActionResult

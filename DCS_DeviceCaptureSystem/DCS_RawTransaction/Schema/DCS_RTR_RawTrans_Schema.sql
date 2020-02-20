@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS DCS_RawTransaction.RawTransaction(
 	, ActionResult				VARCHAR(100) 						NULL
 	, InvalidDevice				TEXT	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'		NULL
     , TransStatus				BIT(16)								NULL	  COMMENT 	'Refer Table TransStatus'
+    , FPSTransID				BIGINT  UNSIGNED
 ) ENGINE=InnoDB;
 
 
