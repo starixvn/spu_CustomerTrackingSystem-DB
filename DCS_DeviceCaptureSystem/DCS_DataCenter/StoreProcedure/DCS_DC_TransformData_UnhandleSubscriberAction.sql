@@ -88,8 +88,9 @@ BEGIN
     #==UNHANDLE SUBSCRIBER================================================================
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
-	INSERT IGNORE INTO CTS_Admin.Subscriber (SubscriberName, CreatedDate, SubscriberStatus)
+	INSERT IGNORE INTO CTS_Admin.Subscriber (SubscriberName, SubscriberPrefix,  CreatedDate, SubscriberStatus)
 	SELECT 		ts.SubscriberName
+				, ''
 				, MIN(ts.CreatedDate) AS CreatedDate
 				, vrUnhandleStatus	AS Status # vrUnhandleStatus_Subscriber
     FROM		Temp_Transaction AS ts   

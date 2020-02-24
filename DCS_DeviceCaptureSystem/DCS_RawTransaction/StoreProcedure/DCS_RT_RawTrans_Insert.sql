@@ -33,7 +33,6 @@ BEGIN
 		, ActionResult				VARCHAR(100) 						NULL
 		, InvalidDevice				TEXT	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NULL
 		, TransStatus				BIT(16)								NULL
-        , FPSTransID				BIGINT  UNSIGNED					NULL
     );     
 		
 	INSERT INTO Temp_Transactions
@@ -69,7 +68,6 @@ BEGIN
 			, (CASE WHEN rt.ActionResult ="null" THEN NULL ELSE rt.ActionResult END) AS ActionResult
             , (CASE WHEN rt.InvalidDevice ="null" THEN NULL ELSE rt.InvalidDevice END) AS InvalidDevice
 			, TransStatus
-            , (CASE WHEN rt.FPSTransID ="null" THEN NULL ELSE rt.FPSTransID END) AS FPSTransID
 	FROM	JSON_TABLE(
 			ip_RawTransJson,
 			 "$[*]" COLUMNS(
@@ -88,7 +86,6 @@ BEGIN
 							, ActionResult			VARCHAR(100) 	PATH "$.ActionResult"
                             , InvalidDevice	TEXT	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' PATH "$.InvalidDevice"
                             , TransStatus	BIT(16)		 					PATH "$.TransStatus"
-                            , FPSTransID	BIGINT  UNSIGNED				PATH "$.FPSTransID"
 							)
 		   ) AS  rt; 
 	
@@ -109,7 +106,6 @@ BEGIN
 		, ActionResult
         , InvalidDevice
         , TransStatus
-        , FPSTransID
 	)
 	SELECT
 		rt.LoginName
@@ -128,7 +124,6 @@ BEGIN
 		, rt.ActionResult
         , rt.InvalidDevice
         , rt.TransStatus
-        , rt.FPSTransID
 	FROM	Temp_Transactions AS rt;
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_Transactions;

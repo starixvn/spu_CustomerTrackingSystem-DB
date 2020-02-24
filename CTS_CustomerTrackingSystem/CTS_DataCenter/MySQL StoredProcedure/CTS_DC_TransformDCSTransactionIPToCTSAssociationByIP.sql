@@ -119,7 +119,7 @@ BEGIN
     INNER JOIN	Temp_AssociationIP AS tap
 				ON aip.CTSCustID = tap.CTSCustID
 					AND aip.IPID = tap.IPID
-	SET			aip.LastLoginTime = tap.LastLoginTime;
+	SET			aip.LastLoginTime = GREATEST(aip.LastLoginTime,tap.LastLoginTime);
 
     UPDATE		DCS_DataCenter.TransactionIP AS tp
     INNER JOIN	Temp_TransactionIP	AS tip

@@ -77,6 +77,7 @@ BEGIN
 	INNER JOIN	CTS_DataCenter.CTSCustomer AS cus #USE INDEX(IX_CTSCustomer_UserName_UserName2,IX_CTSCustomer_UserName2)
 				ON (tmpTable.LoginNameWithPrefix = cus.Username
 					OR tmpTable.LoginNameWithPrefix = cus.Username2)
+				AND tmpTable.SubsciberID = cus.SubscriberID
 	SET 		tmpTable.CTSCustID = cus.CTSCustID;
 
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;

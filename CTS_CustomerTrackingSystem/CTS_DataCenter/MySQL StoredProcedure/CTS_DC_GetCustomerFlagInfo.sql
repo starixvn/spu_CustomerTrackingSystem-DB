@@ -25,8 +25,7 @@ BEGIN
 											AND ced.CTSCustID		= ip_CTSCustID                                
 											AND evd.EvidenceCode	= 100
                                             AND evd.EvidenceGroupID	= 99
-											AND ced.IsRetracted		= 0
-                                            AND ced.Level = 1
+                                            AND ced.Level = 0
 									LIMIT 1),0);              
                                     
 	 /*Check If Account IS IS  FLAG*/
@@ -36,9 +35,8 @@ BEGIN
 										INNER JOIN	CTS_DataCenter.Evidence	AS  evd
 													ON ced.EvidenceID = evd.EvidenceID
 										WHERE 	ced.SubscriberID		= ip_SubscriberID
-												AND ced.CTSCustID		= ip_CTSCustID                          
-												AND ced.IsRetracted		= 0
-                                                AND ced.Level = 1
+												AND ced.CTSCustID		= ip_CTSCustID        
+                                                AND ced.Level = 0
 										LIMIT 1),0);
 	END IF;   
     
