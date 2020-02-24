@@ -1,4 +1,4 @@
-/*<info serverAlias="FPSADMIN-FPS_MiddleService" executers="fpsWinService" viewers="" isFunction="0" isNested="0"></info>*/
+/*<<ignore deploy-info serverAlias="FPSADMIN-FPS_MiddleService" executers="fpsWinService" viewers="" isFunction="0" isNested="0"></info>*/
 SET ANSI_NULLS ON
 GO
 
