@@ -31,14 +31,8 @@ BEGIN
             , sub.SubscriberName            
         FROM CTS_DataCenter.CTSCustomer AS ctsCus
 			INNER JOIN CTS_Admin.Subscriber AS sub ON ctsCus.SubscriberID = sub.SubscriberID
-        WHERE         
-            Match(ctsCus.UserName, ctsCus.UserName2) AGAINST(
-				CASE 
-					WHEN LOCATE('$', ip_username) > 0 THEN CONCAT('+', SUBSTRING_INDEX(ip_username, '$', 1), '* +', SUBSTRING_INDEX(ip_username, '$', -1),'*') 
-                    WHEN LOCATE('@', ip_username) > 0 THEN CONCAT('+', SUBSTRING_INDEX(ip_username, '@', 1), '* +', SUBSTRING_INDEX(ip_username, '@', -1),'*') 
-					ELSE CONCAT('+', ip_username, '*') 
-                END
-            IN BOOLEAN MODE)
+        WHERE       
+            Match(ctsCus.UserName, ctsCus.UserName2) AGAINST(ip_username IN BOOLEAN MODE)
         LIMIT 50;
 END$$
 DELIMITER ;
