@@ -6,27 +6,24 @@ CREATE PROCEDURE CTS_DC_GetEvidenceByCTSCustID(IN ip_CTSCustID INT)
 BEGIN
 	/*
 		Created:	20191218@Marcus
-		Task :		Get Evidence 
+		Task :		Get Distinct Customer Evidence for All Level
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
+					20200218@CaseyHuynh: Remove Inner Join with EvidenceGroup, and Disctinct Evidence
 		Param's Explanation (filtered by):
 	*/
-	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;   
-	SELECT e.EvidenceName
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+    
+	SELECT DISTINCT e.EvidenceName
 		   ,e.EvidenceDesc
 		   ,e.EvidenceCode
 		   ,e.OrderNo
-		   ,e.CreatedDate
-		   ,eg.EvidenceGroupName
 	FROM   CustEvidence AS ce
 	INNER JOIN Evidence AS e 
 		   ON (ce.EvidenceID = e.EvidenceID)
-	INNER JOIN EvidenceGroup AS eg
-		   ON (e.EvidenceGroupID = eg.EvidenceGroupID)
-	WHERE e.IsActive = True
-		  AND ce.CTSCustID = ip_CTSCustID;
+	WHERE  ce.CTSCustID = ip_CTSCustID;
           
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;   
 END$$
