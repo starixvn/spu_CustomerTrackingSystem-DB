@@ -18,6 +18,7 @@ proc_label: BEGIN
 		Original:
 
 		Revisions:
+		   - 20200225@Lex: Fix cocurrency issue when inserting
         
 		Param's Explanation (filtered by):			
         
@@ -42,7 +43,7 @@ proc_label: BEGIN
 	END IF;
     
     #======INSERT FLAGGED EVIDENCE=================================    
-	INSERT INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
+	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
 	VALUES (ip_CTSCustID, ip_SubscriberID, ip_EvidenceID, ip_Remark, 0, ip_CTSCustID, vr_CreatedDate, ip_UserID, ip_IsCreatedByMaster);
 	
 	#=====INSERT AFFECTED EVIDENCE==========================
@@ -61,7 +62,7 @@ proc_label: BEGIN
     
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
-	INSERT INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
+	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
     SELECT DISTINCT ass.CTSCustID, ip_SubscriberID, ip_EvidenceID, ip_Remark, 2, ip_CTSCustID, vr_CreatedDate, ip_UserID, ip_IsCreatedByMaster
     FROM CTS_DataCenter.AssociationByDevice AS ass
     INNER JOIN CTS_DataCenter.CTSCustomer cust
