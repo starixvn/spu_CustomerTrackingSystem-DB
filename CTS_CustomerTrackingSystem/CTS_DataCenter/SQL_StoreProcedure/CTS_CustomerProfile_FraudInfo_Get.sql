@@ -1,4 +1,4 @@
-/*<ignore deploy-info serverAlias="DBFS-bodb_FraudSensor" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBFS-bodb_FraudSensor" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 GO
 SET ANSI_NULLS ON
 GO
@@ -27,13 +27,13 @@ BEGIN
 			, sc.IsDelinquent
 			, sc.IsHedge
 			, sc.IsDirty
-	FROM	dbo.SuspiciousCustomer AS sc
+	FROM	dbo.SuspiciousCustomer AS sc WITH (NOLOCK)
 	WHERE	sc.Custid = @custId;
 
 	--Return Classification---
 	SELECT		DISTINCT fc.FraudCaseId, fc.FraudCaseName
-	FROM		dbo.SuspiciousInfo	AS sc WITH(NOLOCK)
-	INNER JOIN	dbo.FraudCase		AS fc WITH(NOLOCK)
+	FROM		dbo.SuspiciousInfo	AS sc WITH (NOLOCK)
+	INNER JOIN	dbo.FraudCase		AS fc WITH (NOLOCK)
 				ON	sc.FraudCaseId = fc.FraudCaseId
 	WHERE	sc.Custid = @custId;
 

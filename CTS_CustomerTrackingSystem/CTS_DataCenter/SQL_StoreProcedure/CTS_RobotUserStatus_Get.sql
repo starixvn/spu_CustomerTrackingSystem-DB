@@ -1,4 +1,4 @@
-/*<ignore deploy-info serverAlias="DBONUSER-ON_USER" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBONUSER-ON_USER" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 GO
 SET ANSI_NULLS ON
 GO
