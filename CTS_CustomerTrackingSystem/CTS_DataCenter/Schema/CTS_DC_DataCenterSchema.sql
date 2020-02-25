@@ -19,6 +19,7 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, CustSubID			INT		UNSIGNED
 		, UserName			VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 		, UserName2			VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+        , SiteID			INT
 		, Site				VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 		, RoleID			TINYINT
 		, Currency			VARCHAR(10)
@@ -45,6 +46,7 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, InsertTime	TIMESTAMP(4)
 		, PRIMARY KEY	PK_AssociationByDevice_CTSAssDevID(CTSAssDevID)
         , UNIQUE KEY	IX_AssociationByDevice_CTSCustID_DCSDeviceID(CTSCustID, DCSDeviceID)
+        , INDEX			IX_AssociationByDevice_SubscriberID_DeviceID(SubscriberID, DCSDeviceID)
 	) ENGINE=INNODB AUTO_INCREMENT=1;
 
 	CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociationByIP(
@@ -70,14 +72,16 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 	) ENGINE=INNODB  AUTO_INCREMENT=1;
 	
    CREATE TABLE IF NOT EXISTS CTS_DataCenter.MappingSubscriberSite(
-		SiteID				BIGINT	UNSIGNED
-		, SiteName			VARCHAR(50)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
-		, SubscriberID		INT
+		
+		SubscriberID		INT
 		, SubscriberName	VARCHAR(50)
-        , SiteType			TINYINT							COMMENT '1: Deposit, 0:Credit'
-        , MappingType		TINYINT							COMMENT '-2:NOT Existing Main but DCS, -1:Existing Main but NOT DCS, 0: mapping SiteName, 1: Mapping SiteName ADN RoleID =1, 2: Mapping SiteName ADN RoleID > 1'
+        , RoleMapping		TINYINT
+		, SubscriberType	TINYINT
+        , SubscriberStatus	TINYINT
+        , SiteID			INT
+        , SiteName			VARCHAR(50)
         , Comments			VARCHAR(200)
-		, UNIQUE KEY	PK_MappingSubscriberSite_SubscriberID(SiteID, SubscriberID)    
+		, PRIMARY KEY	PK_MappingSubscriberSite_SubscriberID(SiteID, SubscriberID)    
 	) ENGINE=INNODB;
 
 # ======EvidenceGroup=============================================
@@ -106,7 +110,7 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, IsActive			TINYINT									NOT NULL
         
         , PRIMARY KEY	PK_Evidence_EvidenceID(EvidenceID)
-        , UNIQUE INDEX	UIX_Evidence_EvidenceGroupID_EvidenceCode(EvidenceGroupID, EvidenceCode)
+        , UNIQUE INDEX	UX_Evidence_EvidenceGroupID_EvidenceCode(EvidenceGroupID, EvidenceCode)
 	) ENGINE=INNODB  AUTO_INCREMENT=1;
 
 	# =======CustEvidence============================================
@@ -117,38 +121,25 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, EvidenceID		SMALLINT								NOT NULL
 		, Remark			VARCHAR(500)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NULL
 		, Level				TINYINT									NOT NULL	COMMENT 'Level 1 - 2'
-		, FromCustID		BIGINT									NOT NULL
+		, FromCustID		BIGINT		UNSIGNED					NOT NULL
 		, CreatedDate		DATETIME								NOT NULL
 		, CreatedBy			INT										NOT NULL
 		, IsCreatedByMaster	TINYINT									NOT NULL
-		, IsRetracted		TINYINT									NOT NULL
         
-        , PRIMARY KEY	PK_CustEvidence_CustEvidID(CustEvidID)
-        , INDEX	IX_CustEvidence_EvidenceGroupID_EvidenceCode(SubscriberID, CTSCustID)
+        , PRIMARY KEY	PK_CustEvidence(SubscriberID, CTSCustID, FromCustID, EvidenceID, IsCreatedByMaster)
+        , UNIQUE INDEX	UX_CustEvidence_CustEvidID(CustEvidID)
 	) ENGINE=INNODB  AUTO_INCREMENT=1;
 	
-	# =======CustException============================================
-	CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustException (
-		FromCTSCustID bigint(20) NOT NULL
-		, ToCTSCustID bigint(20) NOT NULL
-		, LeastCTSCustID_Order bigint(20) GENERATED ALWAYS AS (least(`FromCTSCustID`,`ToCTSCustID`)) STORED NOT NULL
-		, GreatestCTSCustID_Order bigint(20) GENERATED ALWAYS AS (greatest(`FromCTSCustID`,`ToCTSCustID`)) STORED NOT NULL
-		, CreatedDate datetime DEFAULT NULL
-		, CreatedBy bigint(20) DEFAULT NULL
-		, Comment varchar(200) CHARACTER SET utf8mb4 COLLATE UTF8MB4_UNICODE_CI DEFAULT NULL
-		PRIMARY KEY PK_CustException_LeastCTSCustID_Order_GreatestCTSCustID_Order(LeastCTSCustID_Order, GreatestCTSCustID_Order)
-	) ENGINE=INNODB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-	
-	# =======CustRetractEvidence============================================
+    # =======CustRetractEvidence============================================
 	CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustRetractEvidence (
-		CTSCustID BIGINT(20) NOT NULL
-		, EvidenceID SMALLINT(6) NOT NULL
-		, Remark VARCHAR(500) COLLATE utf8_unicode_ci DEFAULT NULL
-		, CreatedDate DATETIME DEFAULT NULL
-		, CreatedBy int(11) NOT NULL
+		CTSCustID 			BIGINT		UNSIGNED	NOT NULL
+		, EvidenceID 		SMALLINT				 NOT NULL
+		, Remark 			VARCHAR(500) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' DEFAULT NULL
+		, CreatedDate 		DATETIME DEFAULT NULL
+		, CreatedBy 		INT		 NOT NULL
 		, PRIMARY KEY PK_CustRetractEvidence_CTSCustID_EvidenceID(CTSCustID, EvidenceID)
-	) ENGINE=INNODB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
+	) ENGINE=INNODB;
+    
 	# ========LogType===========================================
 	CREATE TABLE  IF NOT EXISTS CTS_DataCenter.LogType(
 		LogTypeID				SMALLINT		AUTO_INCREMENT		NOT NULL
@@ -204,36 +195,45 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 # ===================================================
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.StaticList
 (
-	ListNo			INT
-    , ItemNo		INT
-    , ListName		VARCHAR(200)
-    , ItemName		VARCHAR(200)
-    , Status		BOOL
-    , Description	VARCHAR(200)
-    , CreatedDate	DATETIME
+	ListID				INT
+    , ItemID			SMALLINT
+    , ListName			VARCHAR(100)
+    , ListNameDisplay	VARCHAR(200)
+    , ItemName			VARCHAR(100)
+    , ItemNameDisplay	VARCHAR(200)
+    , PriorityOrder		SMALLINT
+    , Status			BOOL
+    , Description		VARCHAR(200)    
+    , CreatedDate		DATETIME
     
-    , PRIMARY KEY PK_StaticList_ListNo_ItemNo(ListNo, ItemNo)
+    , PRIMARY KEY PK_StaticList_ListID_ItemID(ListID, ItemID)
 ) ;
 
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustRetractEvidence
 (
-	  CTSCustID			BIGINT		NOT NULL
+	  CTSCustID			BIGINT		UNSIGNED	NOT NULL
     , EvidenceID		SMALLINT    NOT NULL
+    , Remark			VARCHAR(500)
     , CreatedDate		DATETIME
+    , CreatedBy			INT
     
     , PRIMARY KEY PK_CustRetractEvidence_CTSCustID_EvidenceID(CTSCustID,EvidenceID)
 ) ENGINE=INNODB;
 
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustException
 (	
-	FromCTSCustID			BIGINT 		NOT NULL
-    , ToCTSCustID			BIGINT		NOT NULL
-	, LeastCTSCustID_Order			BIGINT		AS (LEAST(FromCTSCustID, ToCTSCustID)) 		STORED
-    , GreatestCTSCustID_Order		BIGINT		AS (GREATEST(FromCTSCustID, ToCTSCustID))	STORED
+	FromCTSCustID					BIGINT 	UNSIGNED	NOT NULL
+    , ToCTSCustID					BIGINT	UNSIGNED	NOT NULL
+	, LeastCTSCustID_Order			BIGINT	UNSIGNED	AS (LEAST(FromCTSCustID, ToCTSCustID)) 		STORED
+    , GreatestCTSCustID_Order		BIGINT	UNSIGNED	AS (GREATEST(FromCTSCustID, ToCTSCustID))	STORED
     , CreatedDate		DATETIME	NULL
     , CreatedBy			BIGINT		NULL	
-    , Comment			VARCHAR(200)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	NULL
+    , Comment			VARCHAR(500)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	NULL
 	
     , PRIMARY KEY	PK_CustException_FromCTSCustID_ToCTSCustID(LeastCTSCustID_Order,GreatestCTSCustID_Order)
 ) ENGINE=INNODB;
 
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.ProcessAffectedEvidence
+(	
+	LastCTSAssDevID		BIGINT	UNSIGNED
+)  ENGINE=INNODB;
