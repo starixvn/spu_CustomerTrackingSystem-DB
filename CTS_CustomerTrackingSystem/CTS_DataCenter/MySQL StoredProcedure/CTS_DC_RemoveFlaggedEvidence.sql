@@ -14,6 +14,7 @@ BEGIN
 		Original:
 
 		Revisions:
+			- 20200225@Lex: Fix remove flag evidence also associted evidence (level 2)
         
 		Param's Explanation (filtered by):			
         
@@ -27,9 +28,8 @@ BEGIN
 	SET SQL_SAFE_UPDATES = 0;
     
     DELETE FROM CTS_DataCenter.CustEvidence
-	WHERE CTSCustID = ip_CTSCustID		
-		AND EvidenceID = ip_EvidenceID
-        AND Level = 0;
+	WHERE FromCustID = ip_CTSCustID		
+		AND EvidenceID = ip_EvidenceID;
         
 	SET SQL_SAFE_UPDATES = 1;
         
