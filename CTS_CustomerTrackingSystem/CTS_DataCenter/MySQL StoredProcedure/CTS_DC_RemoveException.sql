@@ -76,7 +76,7 @@ BEGIN
 			#=====Insert Affected Evidence: GET Device And Association into Temp Table
 			SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;           
             
-			INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy. IsCreatedByMaster)
+			INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
 			SELECT	tca.ToCTSCustID
 					, ce.SubscriberID
 					, EvidenceID
