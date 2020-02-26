@@ -11,6 +11,7 @@ BEGIN
 	Original:
 
 	Revisions:
+			[20200226@CaseyHuynh: Move Archive Data to New Table Transaction_BK01 and RawTransaction_BK01]
 	Param's Explanation (filtered by):
 	*/
 	DECLARE	vr_FromID 	BIGINT	UNSIGNED;
@@ -44,7 +45,7 @@ BEGIN
     DO        
 		# ======================MOVE Transaction==========================================================
         SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-		INSERT IGNORE INTO  DCS_DataCenter.Transaction_BK(TransID, LoginName, TransTime, SubscriberID, AccountID
+		INSERT IGNORE INTO  DCS_DataCenter.Transaction_BK01(TransID, LoginName, TransTime, SubscriberID, AccountID
         , URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID
 		, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime)        
         SELECT 	ts.TransID, LoginName, TransTime, SubscriberID, AccountID
@@ -63,7 +64,7 @@ BEGIN
         
         # ======================MOVE RawTransaction========================================================== 
         SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-        INSERT IGNORE INTO DCS_RawTransaction.RawTransaction_BK
+        INSERT IGNORE INTO DCS_RawTransaction.RawTransaction_BK01
 		(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, FingerprintMoreInfo, UserAgent
         , IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID)
 		SELECT
