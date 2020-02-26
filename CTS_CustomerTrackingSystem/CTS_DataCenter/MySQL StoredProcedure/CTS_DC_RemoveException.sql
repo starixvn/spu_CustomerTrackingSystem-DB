@@ -76,7 +76,7 @@ BEGIN
 			#=====Insert Affected Evidence: GET Device And Association into Temp Table
 			SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;           
             
-			INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
+			INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy. IsCreatedByMaster)
 			SELECT	tca.ToCTSCustID
 					, ce.SubscriberID
 					, EvidenceID
@@ -85,6 +85,7 @@ BEGIN
 					, ip_FromCTSCustID	AS FromCustID
 					, vr_CreatedDate	AS CreatedDate
 					, ip_UserID 		AS CreatedBy
+                    , 1 				AS IsCreatedByMaster
 			FROM		CTS_DataCenter.CustEvidence	AS ce
 			INNER JOIN	Temp_CustAssociation AS tca
 						ON ce.CTSCustID = tca.FromCTSCustID
@@ -92,7 +93,7 @@ BEGIN
 			WHERE		ce.CTSCustID	= ip_FromCTSCustID
 						AND ce.Level	= 0;	
 			
-			INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
+			INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
 			SELECT	ip_FromCTSCustID
 					, ce.SubscriberID
 					, EvidenceID
@@ -101,6 +102,7 @@ BEGIN
 					, ip_ToCTSCustID	AS FromCustID
 					, vr_CreatedDate	AS CreatedDate
 					, ip_UserID 		AS CreatedBy
+                    , 1					AS IsCreatedByMaster
 			FROM		CTS_DataCenter.CustEvidence	AS ce
 			INNER JOIN	Temp_CustAssociation AS tca
 						ON ce.CTSCustID = tca.FromCTSCustID
