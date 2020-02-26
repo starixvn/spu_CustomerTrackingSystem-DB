@@ -55,7 +55,8 @@ BEGIN
 				ON	ced.SubscriberID	= tmpCust.SubscriberID
 				AND ced.CTSCustID		= tmpCust.CTSCustID
 	SET			tmpCust.FlaggedTag = 2
-    WHERE		ced.Level = 0;
+    WHERE		ced.Level = 0
+				AND tmpCust.FlaggedTag = 0;
 	 
 	SELECT 	tmpCust.SubscriberID
 			, tmpCust.CTSCustID
