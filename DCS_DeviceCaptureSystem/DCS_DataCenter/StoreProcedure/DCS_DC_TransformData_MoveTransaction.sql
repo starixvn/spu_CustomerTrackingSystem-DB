@@ -17,6 +17,26 @@ BEGIN
 	DECLARE	vr_FromID 	BIGINT	UNSIGNED;
 	DECLARE	vr_MaxToID	BIGINT	UNSIGNED;
 
+    ### PERFORMANCE: START
+    DECLARE		vrExecKey		BIGINT	UNSIGNED;
+	DECLARE		vrSPName		VARCHAR(200)  DEFAULT 'DCS_DC_TransformData_MoveTransaction' ;
+    DECLARE		vrStepID		INT;
+	DECLARE 	vrNotes	 		VARCHAR(500);
+	DECLARE 	vrStartTime		TIMESTAMP(4);
+	DECLARE		vrEndTime 		TIMESTAMP(4);
+	DECLARE		vrDuration 		BIGINT;	
+    DECLARE		vrTotalRecord	INT;
+    DECLARE		vrFromID		BIGINT;
+    DECLARE		vrToID			BIGINT;
+
+    SET		vrExecKey = CRC32((UUID_Short()));    
+    SET		vrNotes = CONCAT('ip_NoOfTickets: ',ip_NoOfTickets) ;		
+    SET 	vrStepID = 1;
+    
+    SET 	vrStartTime = CURRENT_TIMESTAMP(4);	
+    
+    INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
+    VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;   
     
@@ -26,23 +46,14 @@ BEGIN
 		TransID		BIGINT	UNSIGNED
     );
     
-	SET vr_FromID = (SELECT LastTransID FROM DCS_DataCenter.MoveTransaction);    
-    
-    SET vr_MaxToID = (SELECT MAX(TransID) FROM DCS_RawTransaction.RawTransaction WHERE IsProcessed = 2) + 1;
-    
 	TRUNCATE TABLE Temp_RemoveTrans;
 	INSERT INTO Temp_RemoveTrans(TransID)
 	SELECT TransID 
 	FROM   DCS_RawTransaction.RawTransaction WHERE IsProcessed = 2
 	LIMIT  ip_NoOfTickets; 
     
-    SET vr_FromID = (SELECT MIN(TransID) FROM Temp_RemoveTrans);    
-    
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-
-    
-    WHILE (vr_FromID < vr_MaxToID)
-    DO        
+     
 		# ======================MOVE Transaction==========================================================
         SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 		INSERT IGNORE INTO  DCS_DataCenter.Transaction_BK01(TransID, LoginName, TransTime, SubscriberID, AccountID
@@ -83,19 +94,26 @@ BEGIN
 		UPDATE	DCS_DataCenter.MoveTransaction
 		SET		LastTransID = (SELECT MAX(TransID) FROM Temp_RemoveTrans);        
         
-        #============================================
-        TRUNCATE TABLE Temp_RemoveTrans;
-		INSERT INTO Temp_RemoveTrans(TransID)
-		SELECT TransID 
-		FROM   DCS_RawTransaction.RawTransaction WHERE IsProcessed = 2
-		LIMIT  ip_NoOfTickets; 
-    
-		SET vr_FromID = (SELECT MIN(TransID) FROM Temp_RemoveTrans);    
 
+		SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
         #--===================================================================        
-    END WHILE ;
     
-   
+   ### PERFORMANCE
+	SET		vrEndTime = CURRENT_TIMESTAMP(4);
+    
+    SELECT 	Count(1), Min(TransId), Max(TransId)
+    INTO	vrTotalRecord, vrFromID, vrToID
+    FROM	Temp_RemoveTrans AS tts;
+    
+    UPDATE	DCS_DataCenter.zzTracePerformance AS z
+    SET		z.EndTime = vrEndTime
+			, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
+            , z.TotalRecord = vrTotalRecord
+            , z.FromID = vrFromID
+            , z.ToID		= vrToID
+
+    WHERE	z.ExecKey = vrExecKey AND z.StepID = z.StepID;
+    ### PERFORMANCE: END 
     
 END$$
 DELIMITER ;

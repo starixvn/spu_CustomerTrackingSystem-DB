@@ -70,15 +70,13 @@ proc_label: BEGIN
     INNER JOIN tmpAffectedDevices AS dev    
 		   ON (ass.DCSDeviceID = dev.DCSDeviceID)
 	WHERE ass.CTSCustID <> ip_CTSCustID		
-		AND ass.CTSCustID NOT IN (SELECT ToCTSCustID
+    		AND (ass.CTSCustID NOT IN (SELECT ToCTSCustID
 									FROM CTS_DataCenter.CustException AS exc
                                     WHERE exc.FromCTSCustID = ip_CTSCustID)
-        AND ass.CTSCustID NOT IN (SELECT ToCTSCustID
+			OR ass.CTSCustID NOT IN (SELECT ToCTSCustID
 									FROM CTS_DataCenter.CustException AS exc
-                                    WHERE exc.ToCTSCustID = ip_CTSCustID) 
-		AND ass.CTSCustID NOT IN (SELECT CTSCustID
-									FROM CTS_DataCenter.CustRetractEvidence AS cre
-                                    WHERE cre.EvidenceID = ip_EvidenceID);    	
+                                    WHERE exc.ToCTSCustID = ip_CTSCustID));
+ 	
     
     #=====LOG==========================
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
