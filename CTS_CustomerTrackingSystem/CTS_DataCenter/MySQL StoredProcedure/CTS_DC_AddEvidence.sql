@@ -19,6 +19,7 @@ proc_label: BEGIN
 
 		Revisions:
 		   - 20200225@Lex: Fix cocurrency issue when inserting
+		   - 20200227@Lex: Fix exclude exception
         
 		Param's Explanation (filtered by):			
         
@@ -42,7 +43,12 @@ proc_label: BEGIN
 		LEAVE proc_label;
 	END IF;
     
-    #======INSERT FLAGGED EVIDENCE=================================    
+	DROP TABLE IF EXISTS tmpExclusion;
+    CREATE TEMPORARY TABLE tmpExclusion(
+		CTSCustID BIGINT
+	);
+    
+  #======INSERT FLAGGED EVIDENCE=================================    
 	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
 	VALUES (ip_CTSCustID, ip_SubscriberID, ip_EvidenceID, ip_Remark, 0, ip_CTSCustID, vr_CreatedDate, ip_UserID, ip_IsCreatedByMaster);
 	
@@ -51,7 +57,7 @@ proc_label: BEGIN
     CREATE TEMPORARY TABLE tmpAffectedDevices(
 		DCSDeviceID BIGINT
 	);
-    
+	
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;   
     
     INSERT INTO tmpAffectedDevices(DCSDeviceID)
@@ -59,6 +65,13 @@ proc_label: BEGIN
     FROM CTS_DataCenter.AssociationByDevice ass    
     WHERE ass.CTSCustID = ip_CTSCustID
 		AND  ass.SubscriberID = ip_SubscriberID;
+
+	#======GET EXCEPTION LIST=================================
+    INSERT INTO tmpExclusion(CTSCustID)
+    SELECT DISTINCT CASE WHEN LeastCTSCustID_Order = ip_CTSCustID THEN GreatestCTSCustID_Order ELSE LeastCTSCustID_Order END
+    FROM CTS_DataCenter.CustException
+    WHERE LeastCTSCustID_Order = ip_CTSCustID
+    OR GreatestCTSCustID_Order = ip_CTSCustID;
     
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
@@ -70,13 +83,7 @@ proc_label: BEGIN
     INNER JOIN tmpAffectedDevices AS dev    
 		   ON (ass.DCSDeviceID = dev.DCSDeviceID)
 	WHERE ass.CTSCustID <> ip_CTSCustID		
-    		AND (ass.CTSCustID NOT IN (SELECT ToCTSCustID
-									FROM CTS_DataCenter.CustException AS exc
-                                    WHERE exc.FromCTSCustID = ip_CTSCustID)
-			OR ass.CTSCustID NOT IN (SELECT ToCTSCustID
-									FROM CTS_DataCenter.CustException AS exc
-                                    WHERE exc.ToCTSCustID = ip_CTSCustID));
- 	
+    	AND ass.CTSCustID NOT IN (SELECT CTSCustID FROM tmpExclusion);
     
     #=====LOG==========================
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
