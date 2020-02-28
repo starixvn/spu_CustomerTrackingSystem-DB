@@ -12,6 +12,7 @@ BEGIN
 		Revisions:
         - 20200213@Terry: Fix bug for total accounts counter
 		- 20200226@Lex: Enhance performance
+		- 20200228@Lex: Exclude IP from counter
 		
 		Param's Explanation (filtered by):
 	*/
@@ -30,40 +31,46 @@ BEGIN
 		DCSDeviceID bigint
 	);
  
+	/*
     DROP TABLE IF EXISTS tmpAffectedIP;
     CREATE TEMPORARY TABLE tmpAffectedIP(
 		IPID decimal(50,0)
 	);
+	*/
  
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
  
 	# Get devices list for root
 	INSERT INTO tmpAffectedDev(DCSDeviceID)
 	SELECT DCSDeviceID
-	FROM   AssociationByDevice
+	FROM   CTS_DataCenter.AssociationByDevice
 	WHERE  CTSCustID = ip_CTSCustID;
     
+	/*
 	# Get ipid list for root
 	INSERT INTO tmpAffectedIP(IPID)
 	SELECT IPID
-	FROM   AssociationByIP
+	FROM   CTS_DataCenter.AssociationByIP
     WHERE  CTSCustID = ip_CTSCustID;
+	*/
 
 	# Get direct associations account with devices & ipid list
 	INSERT INTO tmpAffectedAss(CTSCustID)
     SELECT	ad.CTSCustID
-	FROM	AssociationByDevice as ad
-    INNER JOIN tmpAffectedDev as dv on ad.DCSDeviceID = dv.DCSDeviceID
+	FROM	CTS_DataCenter.AssociationByDevice AS ad
+    INNER JOIN tmpAffectedDev AS dv ON ad.DCSDeviceID = dv.DCSDeviceID
     WHERE	ad.CTSCustID <> ip_CTSCustID;
 
+	/*
 	INSERT INTO tmpAffectedAss(CTSCustID)
     SELECT	aip.CTSCustID
-	FROM	AssociationByIP as aip
-    INNER JOIN tmpAffectedIP as ip on aip.IPID = ip.IPID
+	FROM	CTS_DataCenter.AssociationByIP AS aip
+    INNER JOIN tmpAffectedIP AS ip ON aip.IPID = ip.IPID
     WHERE	aip.CTSCustID <> ip_CTSCustID;
+	*/
     
     SELECT COUNT(1) INTO totalDevices from tmpAffectedDev;
-    SELECT COUNT(1) INTO totalIPs	 from tmpAffectedIP;
+    #SELECT COUNT(1) INTO totalIPs	 from tmpAffectedIP;
     SELECT COUNT(DISTINCT CTSCustID) INTO totalAccounts from tmpAffectedAss;
 	
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
