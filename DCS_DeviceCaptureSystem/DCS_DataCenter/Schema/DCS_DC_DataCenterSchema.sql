@@ -210,3 +210,10 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.zzTracePerformance (
 	, PRIMARY KEY PK_zzTracePerformance_ID(ID)
 	, INDEX 		IX_zzTracePerformance_ExecKey_StepID(ExecKey,StepID)
 ) ENGINE=InnoDB ;
+
+
+CREATE TABLE IF NOT EXISTS DCS_DataCenter.TrasformLastLoginTime(
+		ID				BIGINT			AUTO_INCREMENT
+        , AccountID			BIGINT		UNSIGNED	NOT NULL   
+        , LastLoginTime		TIMESTAMP(4)			NOT NULL 
+     ) ENGINE=InnoDB, AUTO_INCREMENT = 1;
