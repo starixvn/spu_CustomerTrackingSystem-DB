@@ -94,7 +94,7 @@ BEGIN
 					AND IFNULL(rt.ActionResult,'') = ar.ActionResult
 	WHERE		rt.IsProcessed = 0
 				AND rt.TransID BETWEEN ip_FromTransID AND ip_ToTransID;
-	
+
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;    
     	
     #===INSERT SUBCRIBERURL    
@@ -104,15 +104,7 @@ BEGIN
                 , MIN(trt.CreatedDate)
 	FROM		Temp_RawTransaction AS trt
 	GROUP BY	trt.SubscriberID, trt.URLDetails;    
-	
-    # Update Account Last Login
-    UPDATE		DCS_DataCenter.Account 	AS acc
-    INNER JOIN	(SELECT		trt.AccountID
-							, MAX(trt.TransTime) 	AS LastLoginDate
-				 FROM		Temp_RawTransaction 	AS trt
-                 GROUP BY	trt.AccountID) AS tac
-				ON	acc.AccountID = tac.AccountID
-	SET			acc.LastLoginTime = GREATEST(tac.LastLoginDate,acc.LastLoginTime);
+
     
 	# Insert New Account
     INSERT IGNORE INTO DCS_DataCenter.Account(LoginName, SubscriberID, SubscriberType, CreatedDate, InsertTime, CreatedTime, LastLoginTime)
@@ -136,9 +128,36 @@ BEGIN
 				ON	trt.URLDetails = ur.URLDetails
     SET		trt.AccountID = ac.AccountID
             , trt.URLID = ur.URLID;
-            
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 	
+	
+    DROP TEMPORARY TABLE IF EXISTS Temp_LastLoginTime;
+    CREATE TEMPORARY TABLE Temp_LastLoginTime
+    (
+		SubscriberID	INT
+        , AccountID		BIGINT UNSIGNED
+        , LastLoginTime	TIMESTAMP(4)
+    );
+   
+    INSERT INTO Temp_LastLoginTime(SubscriberID, AccountID, LastLoginTime)   
+    SELECT 		acc.SubscriberID, acc.AccountID, tac.LastLoginTime
+    FROM		DCS_DataCenter.Account 	AS acc
+    INNER JOIN	(SELECT		trt.AccountID
+							, MAX(trt.TransTime) 	AS LastLoginTime
+				 FROM		Temp_RawTransaction 	AS trt
+                 GROUP BY	trt.AccountID) AS tac
+				ON	acc.AccountID = tac.AccountID
+    WHERE		tac.LastLoginTime > acc.LastLoginTime;
+    
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;  
+    INSERT INTO  TransformTemp_LastLoginTime(SubscriberID, AccountID, LastLoginTime)
+    SELECT 	SubscriberID, AccountID, LastLoginTime
+    FROM	Temp_LastLoginTime;    
+    
+    UPDATE		DCS_DataCenter.Account 	AS acc
+    INNER JOIN	Temp_LastLoginTime	AS tll
+				ON acc.AccountID = tll.AccountID
+	SET			acc.LastLoginTime = tll.LastLoginTime;
+    
     INSERT IGNORE INTO DCS_DataCenter.TransactionIP_TransformTemp (TransID, AccountID, LoginName, SubscriberID, IP, IPID, TransTime, CreatedDate)
     SELECT 	trt.TransID
 			, trt.AccountID

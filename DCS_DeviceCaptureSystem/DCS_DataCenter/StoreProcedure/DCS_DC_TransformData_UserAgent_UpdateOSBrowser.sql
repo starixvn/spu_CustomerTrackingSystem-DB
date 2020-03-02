@@ -35,7 +35,7 @@ BEGIN
 	  
 	### PERFORMANCE: END  
 	
-	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;     
+	
 
 	DROP TABLE IF EXISTS Temp_UserAgent;
 
@@ -80,7 +80,8 @@ BEGIN
 	SELECT 		tmpOs.OSName, MIN(CreatedDate) 
 	FROM 		Temp_UserAgent AS tmpOs 
     GROUP BY 	tmpOs.OSName;
-
+	
+    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;     
 	# Update Browser and OS Id into temporary table
 	UPDATE 		Temp_UserAgent as tmpAU 
 	INNER JOIN	DCS_DataCenter.OS AS os
@@ -89,7 +90,7 @@ BEGIN
 				ON tmpAU.BrowserName = br.BrowserName
 	SET  		tmpAU.BrowserID = br.BrowserID
 				, tmpAU.OSID = os.OSID;             
-	
+	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ ;
 	# Update Browser and OS into User Agent table
 	UPDATE 		DCS_DataCenter.UserAgent AS us 
 	INNER JOIN	Temp_UserAgent AS tmp 

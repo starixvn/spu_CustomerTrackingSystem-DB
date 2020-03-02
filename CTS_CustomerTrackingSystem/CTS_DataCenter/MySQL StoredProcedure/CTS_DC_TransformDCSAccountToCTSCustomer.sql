@@ -73,40 +73,36 @@ BEGIN
 				ON tmpTable.SubscriberID = sub.SubscriberID;
     
 	 #=============GET CTSCustomerInfo=========================================
-    UPDATE Temp_Account AS tmpTable
-	INNER JOIN	CTS_DataCenter.CTSCustomer AS cus #USE INDEX(IX_CTSCustomer_UserName_UserName2,IX_CTSCustomer_UserName2)
+    UPDATE 		Temp_Account AS tmpTable
+	INNER JOIN	CTS_DataCenter.CTSCustomer AS cus
 				ON (tmpTable.LoginNameWithPrefix = cus.Username
 					OR tmpTable.LoginNameWithPrefix = cus.Username2)
-				AND tmpTable.SubsciberID = cus.SubscriberID
+				# AND tmpTable.SubscriberID = cus.SubscriberID
 	SET 		tmpTable.CTSCustID = cus.CTSCustID;
-
+	
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
     #=======New Deposit Account that not existing in CTSCustomer
-    INSERT IGNORE INTO	CTS_DataCenter.CTSCustomer(SubscriberID, UserName2)
+    INSERT IGNORE INTO	CTS_DataCenter.CTSCustomer(SubscriberID, UserName2, LastLoginTime)
     SELECT		acc.SubscriberID
 				, acc.LoginNameWithPrefix
+                , MAX(LastLoginTime)
     FROM 		Temp_Account AS acc
     WHERE		acc.SubscriberType IN (vrDepositSubType, vrNOTMainSubType)
-				AND acc.CTSCustID IS NULL;   			
+				AND acc.CTSCustID IS NULL
+	GROUP BY 	acc.SubscriberID
+				, acc.LoginNameWithPrefix;   			
 
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
+    
 	UPDATE 		Temp_Account AS acc
     INNER JOIN	CTS_DataCenter.CTSCustomer AS cus # USE INDEX(IX_CTSCustomer_UserName_UserName2,IX_CTSCustomer_UserName2)
 				ON (acc.LoginNameWithPrefix = cus.Username2
 					OR acc.LoginNameWithPrefix = cus.Username)
+				AND  acc.SubscriberID = cus.SubscriberID
 	SET			acc.CTSCustID = cus.CTSCustID
 	WHERE		acc.SubscriberType IN (vrDepositSubType, vrNOTMainSubType)
 				AND acc.CTSCustID IS NULL;
-                
-	UPDATE		CTS_DataCenter.CTSCustomer AS cus
-    INNER JOIN	(	SELECT		acc.CTSCustID
-								, MAX(acc.LastLoginTime) AS LastLoginTime
-					FROM		Temp_Account AS acc
-                    GROUP BY	acc.CTSCustID) AS tac
-				ON	cus.CTSCustID = tac.CTSCustID
-	SET			cus.LastLoginTime = tac.LastLoginTime
-	WHERE		cus.LastLoginTime < tac.LastLoginTime;
 	
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
    
@@ -131,7 +127,7 @@ BEGIN
 	WHERE 	tac.CTSCustID IS NULL;
  
             
-	DROP TABLE IF EXISTS Temp_Account;
+	DROP TEMPORARY TABLE IF EXISTS Temp_Account;
 	#=======================
     
 	### PERFORMANCE

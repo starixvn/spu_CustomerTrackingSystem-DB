@@ -212,8 +212,13 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.zzTracePerformance (
 ) ENGINE=InnoDB ;
 
 
-CREATE TABLE IF NOT EXISTS DCS_DataCenter.TrasformLastLoginTime(
-		ID				BIGINT			AUTO_INCREMENT
+CREATE TABLE IF NOT EXISTS DCS_DataCenter.TransformTemp_LastLoginTime(
+		ID					BIGINT			AUTO_INCREMENT
+        , SubscriberID		INT
         , AccountID			BIGINT		UNSIGNED	NOT NULL   
         , LastLoginTime		TIMESTAMP(4)			NOT NULL 
+        
+        , PRIMARY KEY	PK_TrasformLastLoginTime_ID(ID)
+        , INDEX 		IX_TrasformLastLoginTime_AccountID(AccountID)
+        
      ) ENGINE=InnoDB, AUTO_INCREMENT = 1;
