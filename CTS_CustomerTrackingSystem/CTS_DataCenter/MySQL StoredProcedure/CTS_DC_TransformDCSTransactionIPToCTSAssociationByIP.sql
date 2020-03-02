@@ -37,7 +37,7 @@ BEGIN
 	  
 	### PERFORMANCE: END  
 	
-	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;     
+
 
 	DROP TABLE IF EXISTS Temp_TransactionIP;
 
@@ -60,7 +60,7 @@ BEGIN
 		CTSCustID			BIGINT	UNSIGNED
 		, IP				VARCHAR(50)
 		, IPID				DECIMAL(50,0)
-		, SubscriberID		INT
+		, SubscriberID		BIGINT
 		, CreatedTime		TIMESTAMP(4)
 		, LastLoginTime		TIMESTAMP(4)
 	);
@@ -85,13 +85,11 @@ BEGIN
 								)
 				) AS  tip;
 	# =====================================================================================
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-    
 	UPDATE		Temp_TransactionIP AS tip
 	INNER JOIN	CTS_DataCenter.CustDCSAccount AS ca
 				ON tip.AccountID = ca.AccountID
-	SET			tip.CTSCustID = ca.CTSCustID;
-    
+	SET			tip.CTSCustID = ca.CTSCustID;    
+
     INSERT INTO Temp_AssociationIP(CTSCustID, IP, IPID, SubscriberID, CreatedTime, LastLoginTime)
     SELECT		tip.CTSCustID
 				, tip.IP
@@ -101,9 +99,7 @@ BEGIN
 				, MAX(tip.TransTime) AS  LastLoginTime
     FROM		Temp_TransactionIP AS tip
     WHERE		tip.CTSCustID IS NOT NULL
-	GROUP BY	tip.CTSCustID,  tip.IP, tip.IPID, tip.SubscriberID;
-        
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;	
+	GROUP BY	tip.CTSCustID,  tip.IP, tip.IPID, tip.SubscriberID;        
 
 	INSERT IGNORE INTO CTS_DataCenter.AssociationByIP(CTSCustID, IP, IPID, SubscriberID, CreatedTime, LastLoginTime, InsertTime)
 	SELECT		tap.CTSCustID
@@ -119,13 +115,19 @@ BEGIN
     INNER JOIN	Temp_AssociationIP AS tap
 				ON aip.CTSCustID = tap.CTSCustID
 					AND aip.IPID = tap.IPID
-	SET			aip.LastLoginTime = GREATEST(aip.LastLoginTime,tap.LastLoginTime);
+	SET			aip.LastLoginTime = tap.LastLoginTime;
 
-    UPDATE		DCS_DataCenter.TransactionIP AS tp
+	DELETE		tp
+    FROM		DCS_DataCenter.TransactionIP_TransformTemp AS tp
     INNER JOIN	Temp_TransactionIP	AS tip
 				ON	tip.TransID = tp.TransID
-	SET			tp.IsCTSTransformed = 1
 	WHERE		tip.CTSCustID IS NOT NULL;    
+    
+    UPDATE		DCS_DataCenter.TransactionIP_TransformTemp AS tp
+    INNER JOIN	Temp_TransactionIP	AS tip
+    			ON	tip.TransID = tp.TransID                
+	SET			tp.IsCTSTransformed = -1
+	WHERE		tip.CTSCustID IS  NULL; 
 	
 	# =====================================================================================
 	DROP TABLE IF EXISTS Temp_TransactionIP;
