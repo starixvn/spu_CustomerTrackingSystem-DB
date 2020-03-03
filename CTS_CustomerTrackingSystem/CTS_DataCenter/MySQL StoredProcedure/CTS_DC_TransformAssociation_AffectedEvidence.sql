@@ -39,7 +39,7 @@ BEGIN
 	#===1. GET List of New Association=====================================================================
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED ;
 
-    SET vr_LastCTSAssDevID = (SELECT LastCTSAssDevID FROM CTS_DataCenter.TransformAssDevice LIMIT 1);
+    SET vr_LastCTSAssDevID = (SELECT LastCTSAssDevID FROM CTS_DataCenter.ProcessAffectedEvidence LIMIT 1);
     
     INSERT INTO TempAssociationByDevice(CTSAssDevID, FromCTSCustID, DCSDeviceID, SubscriberID)
     SELECT		ad.CTSAssDevID
@@ -67,6 +67,7 @@ BEGIN
 				ON	ce.LeastCTSCustID_Order = LEAST(tmp_ca.FromCTSCustID, tmp_ca.ToCTSCustID)
 					AND GreatestCTSCustID_Order = GREATEST(tmp_ca.FromCTSCustID, tmp_ca.ToCTSCustID);
                     
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ ;                
     #===3. Place Affected Evidence Level 0  Of (FromCTSCust) for (ToCTSCust)===============================
     IF EXISTS (SELECT 1 FROM TempCustAssociation LIMIT 1) THEN        
 		INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
@@ -103,8 +104,11 @@ BEGIN
 							AND ce.SubscriberID = tmp_ca.SubscriberID
 			WHERE		ce.CTSCustID	= tmp_ca.ToCTSCustID
 						AND ce.Level	= 0;	
-
+	#=====Update ProcessAffectedEvidence ===============================================
+    UPDATE	CTS_DataCenter.ProcessAffectedEvidence
+    SET		LastCTSAssDevID = (SELECT MAX(CTSAssDevID) FROM TempAssociationByDevice);
+    
 	END IF;
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ ;
+
 END$$	
 DELIMITER ;
