@@ -13,6 +13,7 @@ BEGIN
         - 20200213@Terry: Fix bug for total accounts counter
 		- 20200226@Lex: Enhance performance
 		- 20200228@Lex: Exclude IP from counter
+		- 20200302@Lex: Include IP from counter again
 		
 		Param's Explanation (filtered by):
 	*/
@@ -31,12 +32,10 @@ BEGIN
 		DCSDeviceID bigint
 	);
  
-	/*
     DROP TABLE IF EXISTS tmpAffectedIP;
     CREATE TEMPORARY TABLE tmpAffectedIP(
 		IPID decimal(50,0)
 	);
-	*/
  
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
  
@@ -46,13 +45,11 @@ BEGIN
 	FROM   CTS_DataCenter.AssociationByDevice
 	WHERE  CTSCustID = ip_CTSCustID;
     
-	/*
 	# Get ipid list for root
 	INSERT INTO tmpAffectedIP(IPID)
 	SELECT IPID
 	FROM   CTS_DataCenter.AssociationByIP
     WHERE  CTSCustID = ip_CTSCustID;
-	*/
 
 	# Get direct associations account with devices & ipid list
 	INSERT INTO tmpAffectedAss(CTSCustID)
@@ -61,16 +58,14 @@ BEGIN
     INNER JOIN tmpAffectedDev AS dv ON ad.DCSDeviceID = dv.DCSDeviceID
     WHERE	ad.CTSCustID <> ip_CTSCustID;
 
-	/*
 	INSERT INTO tmpAffectedAss(CTSCustID)
     SELECT	aip.CTSCustID
 	FROM	CTS_DataCenter.AssociationByIP AS aip
     INNER JOIN tmpAffectedIP AS ip ON aip.IPID = ip.IPID
     WHERE	aip.CTSCustID <> ip_CTSCustID;
-	*/
     
     SELECT COUNT(1) INTO totalDevices from tmpAffectedDev;
-    #SELECT COUNT(1) INTO totalIPs	 from tmpAffectedIP;
+    SELECT COUNT(1) INTO totalIPs	 from tmpAffectedIP;
     SELECT COUNT(DISTINCT CTSCustID) INTO totalAccounts from tmpAffectedAss;
 	
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
