@@ -47,18 +47,8 @@ BEGIN
             , CTSCustID		BIGINT UNSIGNED
     );
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_CustLastLogin;
-    CREATE TEMPORARY TABLE Temp_CustLastLogin
-    (
-			CTSCustID		BIGINT UNSIGNED
-            , LastLoginTime	TIMESTAMP(4)	
-    );
-    
-    
-    
-    
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-	
+	# --===GET Association which has CTSCustID
     INSERT INTO Temp_AccLastLogin(ID, AccountID, LastLoginTime, CTSCustID)
     SELECT		lt.ID
 				, lt.AccountID
@@ -66,19 +56,12 @@ BEGIN
                 , ca.CTSCustID
     FROM		DCS_DataCenter.TransformTemp_LastLoginTime AS lt
     INNER JOIN	CTS_DataCenter.CustDCSAccount	AS ca
-				ON	tl.AccountID = ca.AccountID
+				ON	lt.AccountID = ca.AccountID
     LIMIT		ip_Batch;
     
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-    SELECT *
-    FROM    CTS_DataCenter.CTSCustomer AS ct
-    INNER JOIN	(	SELECT 		CTSCustID
-								, MAX(LastLoginTime) AS MaxLastLoginTime
-					FROM		Temp_AccLastLogin AS al
-                    GROUP BY 	al.CTSCustID
-				) AS gc
-				ON ct.CTSCustID =gc.CTSCustID;
-    /*
+    
+    # --===Update CTSCustomer.LastLoginTime
     UPDATE CTS_DataCenter.CTSCustomer AS ct
     INNER JOIN	(	SELECT 		CTSCustID
 								, MAX(LastLoginTime) AS MaxLastLoginTime
@@ -86,7 +69,13 @@ BEGIN
                     GROUP BY 	al.CTSCustID
 				) AS gc
 				ON ct.CTSCustID =gc.CTSCustID
-	SET		ct.LastLoginTime = MaxLastLoginTime;*/
+	SET		ct.LastLoginTime = gc.MaxLastLoginTime
+    WHERE	ct.LastLoginTime < gc.MaxLastLoginTime;
+    
+    DELETE 		lt
+    FROM		DCS_DataCenter.TransformTemp_LastLoginTime AS lt
+    INNER JOIN 	Temp_AccLastLogin al
+				ON lt.ID = al.ID;
 	#=======================
     
 	### PERFORMANCE
