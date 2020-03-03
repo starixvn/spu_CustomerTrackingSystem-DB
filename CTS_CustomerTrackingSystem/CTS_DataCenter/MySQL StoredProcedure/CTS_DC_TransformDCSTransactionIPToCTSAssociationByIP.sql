@@ -39,7 +39,7 @@ BEGIN
 	
 
 
-	DROP TABLE IF EXISTS Temp_TransactionIP;
+	DROP TEMPORARY TABLE IF EXISTS Temp_TransactionIP;
 
 	CREATE TEMPORARY TABLE Temp_TransactionIP
 	( 
@@ -53,7 +53,7 @@ BEGIN
 	);
 
 	#=======================================================
-    DROP TABLE IF EXISTS Temp_AssociationIP;
+    DROP TEMPORARY TABLE IF EXISTS Temp_AssociationIP;
 
 	CREATE TEMPORARY TABLE Temp_AssociationIP
 	( 
@@ -85,6 +85,19 @@ BEGIN
 								)
 				) AS  tip;
 	# =====================================================================================
+    # ================START LOG ZZ PERFORMANCE
+    SELECT  	COUNT(1)		,  MIN(TransID)	, Max(TransID) 
+	INTO 		vrTotalRecord	,  vrFromID		, vrToID
+    FROM		Temp_TransactionIP;
+    
+    
+    UPDATE	DCS_DataCenter.zzTracePerformance AS z
+    SET		TotalRecord = vrTotalRecord
+            , FromID = vrFromID
+            , ToID = vrToID
+    WHERE	z.ExecKey = vrExecKey AND z.StepID = z.StepID;
+    # ================END LOG ZZ PERFORMANCE
+    
 	UPDATE		Temp_TransactionIP AS tip
 	INNER JOIN	CTS_DataCenter.CustDCSAccount AS ca
 				ON tip.AccountID = ca.AccountID
@@ -130,7 +143,7 @@ BEGIN
 	WHERE		tip.CTSCustID IS  NULL; 
 	
 	# =====================================================================================
-	DROP TABLE IF EXISTS Temp_TransactionIP;
+	DROP TEMPORARY TABLE IF EXISTS Temp_TransactionIP;
 	#=======================
     
 	### PERFORMANCE

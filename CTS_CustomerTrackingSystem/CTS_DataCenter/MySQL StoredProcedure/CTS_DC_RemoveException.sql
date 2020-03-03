@@ -80,11 +80,11 @@ BEGIN
 			SELECT	tca.ToCTSCustID
 					, ce.SubscriberID
 					, EvidenceID
-					, 'By Remove Exception' AS Remark
+					, 'Auto RemoveException' AS Remark	# Auto by RemoveException
 					, 2 				AS Level
 					, ip_FromCTSCustID	AS FromCustID
 					, vr_CreatedDate	AS CreatedDate
-					, ip_UserID 		AS CreatedBy
+					, ce.CreatedBy 		AS CreatedBy
                     , 1 				AS IsCreatedByMaster
 			FROM		CTS_DataCenter.CustEvidence	AS ce
 			INNER JOIN	Temp_CustAssociation AS tca
@@ -97,11 +97,11 @@ BEGIN
 			SELECT	ip_FromCTSCustID
 					, ce.SubscriberID
 					, EvidenceID
-					, 'By Remove Exception' AS Remark
+					, 'Auto RemoveException' AS Remark
 					, 2 				AS Level
 					, ip_ToCTSCustID	AS FromCustID
 					, vr_CreatedDate	AS CreatedDate
-					, ip_UserID 		AS CreatedBy
+					, ce.CreatedBy 		AS CreatedBy
                     , 1					AS IsCreatedByMaster
 			FROM		CTS_DataCenter.CustEvidence	AS ce
 			INNER JOIN	Temp_CustAssociation AS tca

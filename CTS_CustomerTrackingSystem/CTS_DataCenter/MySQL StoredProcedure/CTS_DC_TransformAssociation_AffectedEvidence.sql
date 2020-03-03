@@ -7,7 +7,8 @@ BEGIN
 		Task :		Place Affected Evidence for New AssociationByDevice
 		DB:			CTS_DataCenter
 		Original: 
-		Revisions:
+		Revisions:	
+					[20200303@Casey.Huynh]. Update Affected CreateBy = Root CreatedBy
 		Param's Explanation (filtered by):
 	*/
     
@@ -15,7 +16,7 @@ BEGIN
     DECLARE	vr_LastCTSAssDevID BIGINT UNSIGNED;
     DECLARE	vr_CreatedDate	DATETIME;
     DECLARE	vr_SPName 	VARCHAR(100) 	DEFAULT 'CTS_DC_TransformAssociation_AffectedEvidence';
-    DECLARE	vr_UserID	INT	DEFAULT 8;
+    DECLARE	vr_UserID	INT;
     
     SET	vr_CreatedDate = CURRENT_TIME();
     
@@ -53,8 +54,8 @@ BEGIN
     #===2.GET CTSCust Association with Step1 (CTSCust, Device, Subscriber)=================================
     INSERT INTO	TempCustAssociation(FromCTSCustID, ToCTSCustID, SubscriberID)
     SELECT		DISTINCT tmp_ad.FromCTSCustID
-				, ad.CTSCustID AS ToCTSCustID
-                , tmp_ad.SubscriberID
+						, ad.CTSCustID AS ToCTSCustID
+						, tmp_ad.SubscriberID
 	FROM		TempAssociationByDevice	AS tmp_ad
     INNER JOIN	CTS_DataCenter.AssociationByDevice AS ad
 				ON tmp_ad.DCSDeviceID = ad.DCSDeviceID
@@ -68,9 +69,8 @@ BEGIN
 					AND GreatestCTSCustID_Order = GREATEST(tmp_ca.FromCTSCustID, tmp_ca.ToCTSCustID);
                     
     #===3. Place Affected Evidence Level 0  Of (FromCTSCust) for (ToCTSCust)===============================
-    IF EXISTS (SELECT 1 FROM TempCustAssociation LIMIT 1) THEN
-        
-		INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
+    IF EXISTS (SELECT 1 FROM TempCustAssociation LIMIT 1) THEN        
+		INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
 		SELECT	tmp_ca.ToCTSCustID
 				, ce.SubscriberID
 				, ce.EvidenceID
@@ -78,17 +78,17 @@ BEGIN
 				, 2 				AS Level
 				, tmp_ca.FromCTSCustID
 				, vr_CreatedDate	AS CreatedDate
-				, vr_UserID 		AS CreatedBy
+				, ce.CreatedBy 		AS CreatedBy
+                , ce.IsCreatedByMaster 
 		FROM		CTS_DataCenter.CustEvidence	AS ce
 		INNER JOIN	TempCustAssociation AS tmp_ca
-					ON	ce.CTSCustID = tmp_ca.FromCTSCustID
+					ON		ce.CTSCustID 	= tmp_ca.FromCTSCustID
 						AND ce.SubscriberID = tmp_ca.SubscriberID
 		WHERE		ce.CTSCustID	= tmp_ca.FromCTSCustID
 					AND ce.Level	= 0;    
 			
     #===4. Place Affected Evidence Of Level 0 (ToCTSCust) for (ToCTSCust)==================================
-
-		INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
+		INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
 			SELECT	tmp_ca.FromCTSCustID
 					, ce.SubscriberID
 					, ce.EvidenceID
@@ -96,7 +96,8 @@ BEGIN
 					, 2 				AS Level
 					, tmp_ca.ToCTSCustID
 					, vr_CreatedDate	AS CreatedDate
-					, vr_UserID 		AS CreatedBy
+					, ce.CreatedBy 		AS CreatedBy
+                    , ce.IsCreatedByMaster
 			FROM		CTS_DataCenter.CustEvidence	AS ce
 			INNER JOIN	TempCustAssociation AS tmp_ca
 						ON	ce.CTSCustID = tmp_ca.ToCTSCustID
