@@ -61,7 +61,7 @@ BEGIN
 		FROM		Temp_CustDevice 		AS tcd
 		INNER JOIN	CTS_DataCenter.AssociationByDevice 	AS ad
 					ON	tcd.DCSDeviceID			= ad.DCSDeviceID
-						AND ad.SubscriberID	= ip_FromSubscriberID
+						AND ad.SubscriberID		= ip_FromSubscriberID
 		WHERE		ad.CTSCustID IN (ip_FromCTSCustID,ip_ToCTSCustID);
 		
 		SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
@@ -85,7 +85,7 @@ BEGIN
 					, ip_FromCTSCustID	AS FromCustID
 					, vr_CreatedDate	AS CreatedDate
 					, ce.CreatedBy 		AS CreatedBy
-                    , 1 				AS IsCreatedByMaster
+                    , ce.IsCreatedByMaster	AS IsCreatedByMaster
 			FROM		CTS_DataCenter.CustEvidence	AS ce
 			INNER JOIN	Temp_CustAssociation AS tca
 						ON ce.CTSCustID = tca.FromCTSCustID
@@ -102,7 +102,7 @@ BEGIN
 					, ip_ToCTSCustID	AS FromCustID
 					, vr_CreatedDate	AS CreatedDate
 					, ce.CreatedBy 		AS CreatedBy
-                    , 1					AS IsCreatedByMaster
+                    , ce.IsCreatedByMaster	AS IsCreatedByMaster
 			FROM		CTS_DataCenter.CustEvidence	AS ce
 			INNER JOIN	Temp_CustAssociation AS tca
 						ON ce.CTSCustID = tca.FromCTSCustID

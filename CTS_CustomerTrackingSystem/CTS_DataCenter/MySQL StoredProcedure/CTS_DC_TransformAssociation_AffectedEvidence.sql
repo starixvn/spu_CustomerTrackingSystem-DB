@@ -16,7 +16,6 @@ BEGIN
     DECLARE	vr_LastCTSAssDevID BIGINT UNSIGNED;
     DECLARE	vr_CreatedDate	DATETIME;
     DECLARE	vr_SPName 	VARCHAR(100) 	DEFAULT 'CTS_DC_TransformAssociation_AffectedEvidence';
-    DECLARE	vr_UserID	INT;
     
     SET	vr_CreatedDate = CURRENT_TIME();
     
