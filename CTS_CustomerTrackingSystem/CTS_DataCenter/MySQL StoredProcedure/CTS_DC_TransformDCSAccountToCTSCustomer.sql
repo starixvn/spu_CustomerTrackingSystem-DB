@@ -123,7 +123,7 @@ BEGIN
 	UPDATE DCS_DataCenter.Account acc
 	INNER JOIN	Temp_Account AS tac 
 				ON acc.AccountID = tac.AccountID
-	SET 	acc.IsCTSTransformed = - 1
+	SET 	acc.IsCTSTransformed = (CASE WHEN acc.IsCTSTransformed = -1 THEN -2 ELSE -1 END)
 	WHERE 	tac.CTSCustID IS NULL;
  
             

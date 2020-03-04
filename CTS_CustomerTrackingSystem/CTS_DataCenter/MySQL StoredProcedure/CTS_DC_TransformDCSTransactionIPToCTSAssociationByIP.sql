@@ -139,7 +139,7 @@ BEGIN
     UPDATE		DCS_DataCenter.TransactionIP_TransformTemp AS tp
     INNER JOIN	Temp_TransactionIP	AS tip
     			ON	tip.TransID = tp.TransID                
-	SET			tp.IsCTSTransformed = -1
+	SET			tp.IsCTSTransformed = (CASE WHEN tp.IsCTSTransformed = -1 THEN -2 ELSE -1 END)
 	WHERE		tip.CTSCustID IS  NULL; 
 	
 	# =====================================================================================

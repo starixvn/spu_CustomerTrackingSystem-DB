@@ -61,7 +61,7 @@ BEGIN
             , ac.LastLoginTime
 	FROM 	DCS_DataCenter.Account AS ac
 	WHERE	ac.IsCTSTransformed < 0
-    ORDER BY	IsCTSTransformed ASC
+    ORDER BY	IsCTSTransformed DESC
 	LIMIT	TotalRecord;
     
     WHILE (EXISTS (SELECT (1) FROM Temp_Account WHERE BatchID IS NULL LIMIT 1)) DO

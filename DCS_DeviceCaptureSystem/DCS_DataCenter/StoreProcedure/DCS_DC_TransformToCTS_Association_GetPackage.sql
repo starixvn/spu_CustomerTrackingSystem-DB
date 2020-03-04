@@ -46,13 +46,14 @@ BEGIN
 		BatchID				TINYINT
         , AssociationID		BIGINT	UNSIGNED
         , AccountID			BIGINT	UNSIGNED
-        , DeviceID			BIGINT
+        , DeviceID			BIGINT	UNSIGNED
         , CreatedTime		TIMESTAMP(4)
         , SubscriberID		INT
     ); 
    
 	SET TotalRecord = ip_NoOfAssociation*ip_NoOfBatch;
     
+    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED ;
 	INSERT INTO Temp_Association(AssociationID, AccountID, DeviceID, CreatedTime, SubscriberID)
 	SELECT	ass.AssociationID
 			, ass.AccountID
@@ -62,7 +63,8 @@ BEGIN
 	FROM 	DCS_DataCenter.Association AS ass
 	WHERE	ass.IsCTSTransformed = 0
 	LIMIT	TotalRecord;
-    
+	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+     
     WHILE (EXISTS (SELECT (1) FROM Temp_Association WHERE BatchID IS NULL LIMIT 1)) DO
     	  UPDATE 	Temp_Association
 		  SET		BatchID = Batch
@@ -79,8 +81,6 @@ BEGIN
             , tas.SubscriberID
 	FROM Temp_Association AS tas;
     
-   SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-	
 	### PERFORMANCE
 	SET		vrEndTime = CURRENT_TIMESTAMP(4);
     

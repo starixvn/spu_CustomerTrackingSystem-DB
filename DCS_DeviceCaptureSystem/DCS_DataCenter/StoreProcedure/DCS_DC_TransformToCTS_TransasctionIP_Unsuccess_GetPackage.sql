@@ -67,6 +67,7 @@ BEGIN
             , tip.TransTime
 	FROM 	DCS_DataCenter.TransactionIP_TransformTemp AS tip
 	WHERE	tip.IsCTSTransformed < 0
+    ORDER BY tip.IsCTSTransformed DESC
 	LIMIT	TotalRecord;
     
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;

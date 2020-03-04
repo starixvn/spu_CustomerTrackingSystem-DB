@@ -22,6 +22,7 @@ BEGIN
         , DeviceID				BIGINT	UNSIGNED
         , SubscriberID			INT
         , CreatedTime			TIMESTAMP(4)
+        , CTSCustID				BIGINT	UNSIGNED
     ); 
     
     INSERT INTO Temp_Association
@@ -45,42 +46,39 @@ BEGIN
 			, SubscriberID				INT				PATH "$.SubscriberId"
             , CreatedTime				TIMESTAMP(4)	PATH "$.CreatedTime"
 		 )) as tmpTable;   
-         
-    DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByDevice;
-    CREATE TEMPORARY TABLE Temp_AssociationByDevice 
-    (	
-		  CTSCustID				BIGINT	UNSIGNED
-        , DCSDeviceID			BIGINT	UNSIGNED
-        , SubscriberID			INT
-        , CreatedTime			TIMESTAMP(4)
-    ); 
-    INSERT INTO 	Temp_AssociationByDevice(CTSCustID, DCSDeviceID, SubscriberID, CreatedTime)
-	SELECT 			cus.CTSCustID, 
-					tmpAss.DeviceID AS DCSDeviceID, 
-					tmpAss.SubscriberID, 
-					MIN(tmpAss.CreatedTime) AS CreatedTime
-	FROM 			Temp_Association AS tmpAss 
-	INNER JOIN 		CTS_DataCenter.CustDCSAccount AS cus 
-					ON tmpAss.AccountID = cus.AccountID        
-	GROUP BY 		cus.CTSCustID, tmpAss.DeviceID, tmpAss.SubscriberID;           
-          
-    INSERT IGNORE INTO 	CTS_DataCenter.AssociationByDevice(CTSCustID, DCSDeviceID, SubscriberID, CreatedTime, InsertTime)
-	SELECT 			tmpAssDe.CTSCustID 
-					, tmpAssDe.DCSDeviceID
-					, tmpAssDe.SubscriberID
-					, tmpAssDe.CreatedTime
-					, CURRENT_TIMESTAMP(4) AS InsertTime
-	FROM 			Temp_AssociationByDevice AS tmpAssDe;
+	
+	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+    #=========GET CTSCustID IF Existing
+    UPDATE 		Temp_Association AS tmp_ass
+    INNER JOIN	CTS_DataCenter.CustDCSAccount AS cus 
+					ON tmp_ass.AccountID = cus.AccountID
+	SET			tmp_ass.CTSCustID = cus.CTSCustID;
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
-	SELECT 		tmpAss.AssociationId
-				, cus.CTSCustID AS CustId
-                , tmpAss.DeviceID 
-    FROM 		Temp_Association tmpAss 
-	INNER JOIN	CTS_DataCenter.CustDCSAccount cus 
-				ON tmpAss.AccountID = cus.AccountID
-	INNER JOIN	Temp_AssociationByDevice tmpAssD 
-				ON cus.CTSCustID = tmpAssD.CTSCustID 
-                AND tmpAssD.DCSDeviceID = tmpAss.DeviceID;     
+    #=======IF CTSCustID Existing 
+	INSERT IGNORE INTO 	CTS_DataCenter.AssociationByDevice(CTSCustID, DCSDeviceID, SubscriberID, CreatedTime, InsertTime)
+	SELECT 		tmp_ass.CTSCustID 
+				, tmp_ass.DeviceID
+				, tmp_ass.SubscriberID
+				, MIN(tmp_ass.CreatedTime)	
+				, CURRENT_TIMESTAMP()	AS InsertTime
+	FROM 		Temp_Association 	AS tmp_ass
+    WHERE		tmp_ass.CTSCustID IS NOT NULL
+    GROUP BY	tmp_ass.CTSCustID, tmp_ass.DeviceID, tmp_ass.SubscriberID; 
+	
+    UPDATE 		DCS_DataCenter.Association	AS ass
+    INNER JOIN	Temp_Association			AS tmp_ass
+				ON	ass.AssociationID = tmp_ass.AssociationID
+	SET			ass.IsCTSTransformed = 1
+	WHERE 		tmp_ass.CTSCustID IS NOT NULL;    
+    
+	#======IF CTSCustID NOT Existing Then update IsCTSTransformed to unsuccess
+    UPDATE 		DCS_DataCenter.Association	AS ass
+    INNER JOIN	Temp_Association			AS tmp_ass
+				ON	ass.AssociationID = tmp_ass.AssociationID
+	SET			ass.IsCTSTransformed = (CASE WHEN ass.IsCTSTransformed = -1 THEN -2 ELSE -1 END)
+	WHERE 		tmp_ass.CTSCustID IS NULL;  
+	
                           
 END$$
 DELIMITER ;
