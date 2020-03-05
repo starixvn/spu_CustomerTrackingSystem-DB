@@ -30,7 +30,7 @@ curl -X POST -H "Content-Type: application/json" --data '{
       "connector.class":"io.confluent.connect.jdbc.JdbcSourceConnector",
       "tasks.max":"1",
       "mode":"incrementing",
-      "connection.url":"jdbc:mysql://10.18.200.72:3306/CTS_DataCenter?useSSL=false&user=fps&password=fps&defaultFetchSize=10000&useCursorFetch=true",
+      "connection.url":"jdbc:mysql://10.18.200.72:3306/CTS_DataCenter?useSSL=false&user=fps&password=fps&defaultFetchSize=1000&useCursorFetch=true",
       "table.whitelist":"AssociationByDevice",
       "incrementing.column.name":"CTSAssDevID",
       "topic.prefix":"mysql-jdbc-cts-"
@@ -43,9 +43,9 @@ curl -X POST -H "Content-Type: application/json" --data '{
       "connector.class":"io.confluent.connect.jdbc.JdbcSourceConnector",
       "tasks.max":"1",
       "mode":"incrementing",
-      "connection.url":"jdbc:mysql://10.18.200.72:3306/CTS_DataCenter?useSSL=false&user=fps&password=fps&defaultFetchSize=10000&useCursorFetch=true",
-      "table.whitelist":"AssociationByIP",
+      "connection.url":"jdbc:mysql://10.18.200.72:3306/CTS_DataCenter?useSSL=false&user=fps&password=fps&defaultFetchSize=5000&useCursorFetch=true",
+	  "query":"SELECT CTSAssIPID,CTSCustID,IP,CONVERT(IPID, CHAR(30)) AS IPID,SubscriberID,CreatedTime,LastLoginTime,InsertTime FROM CTS_DataCenter.AssociationByIP",
       "incrementing.column.name":"CTSAssIPID",
-      "topic.prefix":"mysql-jdbc-cts-"
+      "topic.prefix":"mysql-jdbc-cts-AssociationByIP-query"
    }
 }
