@@ -203,7 +203,7 @@ BEGIN
         , IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID)
 		SELECT
 		rt.LoginName, rt.SubscriberName, rt.TransTime, rt.CreatedDate, rt.DeviceCode, rt.FingerprintCode, rt.FingerprintMoreInfo, rt.UserAgent
-        , rt.IP, rt.IPID, rt.PluginID, rt.URL, rt.Action, rt.ActionResult, rt.InvalidDevice, rt.TransStatus, rt.IsProcessed, rt.rt.TransID
+        , rt.IP, rt.IPID, rt.PluginID, rt.URL, rt.Action, rt.ActionResult, rt.InvalidDevice, rt.TransStatus, rt.IsProcessed, rt.TransID
         FROM 	DCS_RawTransaction.RawTransaction AS rt
         INNER JOIN	Temp_RawTransaction	AS tmp_rm
 					ON	rt.TransID = tmp_rm.TransID;
