@@ -74,8 +74,8 @@ BEGIN
 			, (CASE WHEN tmpTrans.DeviceCode ="null" THEN NULL ELSE tmpTrans.DeviceCode END) AS DeviceCode
             , CreatedDate
 			, TransTime
-            , FingerprintCode
-			, FingerprintMoreInfo
+            ,  (CASE WHEN tmpTrans.FingerprintCode ="null" THEN NULL ELSE tmpTrans.FingerprintCode END) FingerprintCode
+			,  (CASE WHEN tmpTrans.FingerprintMoreInfo ="null" THEN NULL ELSE tmpTrans.FingerprintMoreInfo END)FingerprintMoreInfo
             , vrDeviceStatusNew AS DeviceStatus
 			 FROM
 			   JSON_TABLE(
@@ -94,7 +94,7 @@ BEGIN
 			   ) AS  tmpTrans ;
 
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;   
-    SELECT * FROM        Temp_Transaction; 
+ 
 	UPDATE		Temp_Transaction AS tts
     INNER JOIN	DCS_DataCenter.DeviceCode	AS dc
 				ON	tts.DeviceCode = dc.DeviceCode
@@ -273,14 +273,33 @@ BEGIN
                 , ts.FirstDeviceCode = tts.FirstDeviceCode
                 , ts.DeviceStatus = tts.DeviceStatus
                 , ts.DeviceFingerprintID = tts.DeviceFingerprintID;
-                
+        
 	#================================================================
+	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+	INSERT IGNORE INTO  DCS_DataCenter.Transaction_BK01(TransID, LoginName, TransTime, SubscriberID, AccountID
+	, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID
+	, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime)        
+	SELECT 	ts.TransID, ts.LoginName, ts.TransTime, ts.SubscriberID, ts.AccountID
+			, ts.URLID, ts.DeviceCodeID, ts.DeviceID, ts.FirstDeviceCode, ts.DeviceStatus, ts.DeviceFingerprintID
+			, ts.UserAgentKey, ts.IP, ts.IPID, ts.ActionResultID, ts.Flagged, ts.PluginID, ts.TransStatus, ts.CreatedDate, ts.InsertTime
+	FROM		DCS_DataCenter.Transaction AS ts
+	INNER JOIN	Temp_Transaction	AS tmp_rm
+				ON	ts.TransID = tmp_rm.TransID;
+				
+	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+	
+	DELETE	ts
+	FROM		DCS_DataCenter.Transaction AS ts
+	INNER JOIN	Temp_Transaction	AS tmp_rm
+				ON	ts.TransID = 	tmp_rm.TransID;
+
+      /*      
     UPDATE		DCS_RawTransaction.RawTransaction AS rt
     INNER JOIN	Temp_Transaction AS trt
 				ON rt.TransID = trt.TransID
     SET			rt.IsProcessed = 2;
 	#=================================================================  
-                
+    */            
 	
 	### PERFORMANCE
 	SET	vrEndTime = CURRENT_TIMESTAMP(4);
