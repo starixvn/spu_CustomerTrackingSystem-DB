@@ -83,8 +83,9 @@ BEGIN
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
     #=======New Deposit Account that not existing in CTSCustomer
-    INSERT IGNORE INTO	CTS_DataCenter.CTSCustomer(SubscriberID, UserName2, LastLoginTime)
+    INSERT IGNORE INTO	CTS_DataCenter.CTSCustomer(SubscriberID, UserName, UserName2, LastLoginTime)
     SELECT		acc.SubscriberID
+				, '' AS UserName
 				, acc.LoginNameWithPrefix
                 , MAX(LastLoginTime)
     FROM 		Temp_Account AS acc

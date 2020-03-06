@@ -108,6 +108,10 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
         , CreatedDate		DATETIME							NOT NULL		COMMENT 'Date Only'	NOT	NULL
         , InsertTime		TIMESTAMP(4)						NOT NULL
         
+        , DeviceCode			VARCHAR(32)						NULL
+        , FingerprintCode		VARCHAR(2000)					NULL
+        , FingerprintMoreInfo	TEXT	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	NULL
+        
         , PRIMARY KEY	PK_Transaction_TransID(TransID)
         , INDEX			IX_Transaction_SubscriberIDAccountID(SubscriberID, LoginName, AccountID)
         , INDEX			IX_Transaction_IPID_IP(IPID, IP)

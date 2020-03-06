@@ -61,6 +61,8 @@ BEGIN
 		, TransStatus			BIT(16) 			NULL
 		, CreatedDate			DATETIME 			NULL COMMENT 'Date Only' NOT NULL
 		, InsertTime			TIMESTAMP(4) 		NULL
+        , FingerprintCode		VARCHAR(2000)
+        , FingerprintMoreInfo	TEXT	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 	);
     # =================================================================
     DROP TEMPORARY TABLE IF EXISTS Temp_Account;
@@ -70,7 +72,8 @@ BEGIN
         , SubscriberType		TINYINT	UNSIGNED	NULL
     );
       
-	INSERT INTO Temp_RawTransaction(TransID, LoginName, TransTime, SubscriberID, SubscriberType, DeviceCode, URLDetails, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate)
+	INSERT INTO Temp_RawTransaction(TransID, LoginName, TransTime, SubscriberID, SubscriberType, DeviceCode
+			, URLDetails, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, FingerprintCode, FingerprintMoreInfo)
 	SELECT  rt.TransID
 			, rt.LoginName
             , rt.TransTime
@@ -86,6 +89,8 @@ BEGIN
             , rt.PluginID
             , rt.TransStatus
             , rt.CreatedDate
+            , rt.FingerprintCode
+            , rt.FingerprintMoreInfo
 	FROM		DCS_RawTransaction.RawTransaction AS rt
     INNER JOIN	CTS_Admin.Subscriber AS su
 				ON	rt.SubscriberName = su.SubscriberName
@@ -170,7 +175,7 @@ BEGIN
     FROM	Temp_RawTransaction AS trt;
     
     INSERT IGNORE INTO  DCS_DataCenter.Transaction(TransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey
-						, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime)
+						, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, FingerprintCode, FingerprintMoreInfo)
    	SELECT 		trt.TransID
 				, trt.LoginName
                 , trt.TransTime                
@@ -186,6 +191,9 @@ BEGIN
                 , trt.TransStatus				
 				, trt.CreatedDate                
                 , CURRENT_TIMESTAMP(4) 	AS InsertTime
+                , trt.DeviceCode
+                , FingerprintCode
+                , FingerprintMoreInfo
 	FROM		Temp_RawTransaction AS trt;	
 
     #================================================================

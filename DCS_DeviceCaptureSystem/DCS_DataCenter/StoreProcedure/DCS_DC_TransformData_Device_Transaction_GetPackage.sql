@@ -49,18 +49,26 @@ BEGIN
         , SubscriberID		BIGINT
 		, UserAgentKey		VARCHAR(32)
         , DeviceCode		VARCHAR(32)
+        , FingerprintCode		VARCHAR(2000)
+        , FingerprintMoreInfo	TEXT	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+        , TransTime				TIMESTAMP(4) 
+        , CreatedDate			DATETIME 
     ); 
    
 	SET TotalRecord = ip_NoOfTickets*ip_NoOfBatch;
 
-	INSERT INTO Temp_Trans(TransID, AccountID, SubscriberID, UserAgentKey, DeviceCode)
+	INSERT INTO Temp_Trans(TransID, AccountID, SubscriberID, UserAgentKey, DeviceCode,FingerprintCode, FingerprintMoreInfo, CreatedDate, TransTime)
     SELECT	ts.TransID
 			, ts.AccountID
             , ts.SubscriberID
             , ts.UserAgentKey
-            , rt.DeviceCode
+            , ts.DeviceCode
+            , ts.FingerprintCode
+			, ts.FingerprintMoreInfo
+			, ts.CreatedDate
+			, ts.TransTime
 	FROM 	DCS_DataCenter.Transaction AS ts
-	INNER JOIN DCS_RawTransaction.RawTransaction AS rt ON ts.TransId = rt.TransID 
+	#INNER JOIN DCS_RawTransaction.RawTransaction AS rt ON ts.TransId = rt.TransID 
 	WHERE	ts.AccountID 	IS NOT NULL
 			AND ts.DeviceID IS NULL
 	LIMIT	TotalRecord;
@@ -79,6 +87,10 @@ BEGIN
             , ts.SubscriberID
             , ts.UserAgentKey
             , ts.DeviceCode
+            , ts.FingerprintCode
+			, ts.FingerprintMoreInfo
+			, ts.CreatedDate
+			, ts.TransTime
 	FROM Temp_Trans AS ts;
     
    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;

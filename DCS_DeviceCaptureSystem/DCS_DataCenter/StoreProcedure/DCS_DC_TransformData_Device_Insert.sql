@@ -43,48 +43,11 @@ BEGIN
     VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);    
 	### PERFORMANCE  END
 	
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;   
-    
-	DROP TEMPORARY TABLE IF EXISTS Temp_InputTrans;
-	CREATE TEMPORARY TABLE Temp_InputTrans 
-	(	
-		TransID					BIGINT			UNSIGNED
-		, AccountID				INT				UNSIGNED
-		, SubscriberID			INT
-        , UserAgentKey			VARCHAR(32)		
-		, DeviceCode			VARCHAR(32)
-	);
-    
-	#========GET INPUT DATA===========================
-	INSERT INTO Temp_InputTrans(
-				TransID 
-				, AccountID
-				, SubscriberID
-                , UserAgentKey
-				, DeviceCode
-				)
-	SELECT TransID
-			, AccountID
-			, SubscriberID
-            , (CASE WHEN tmpTrans.UserAgentKey ="null" THEN NULL ELSE tmpTrans.UserAgentKey END) AS UserAgentKey
-			, (CASE WHEN tmpTrans.DeviceCode ="null" THEN NULL ELSE tmpTrans.DeviceCode END) AS DeviceCode
-			 FROM
-			   JSON_TABLE(
-				ip_TransJson,
-				 "$[*]" COLUMNS(
-				  TransID 			BIGINT UNSIGNED PATH "$.TransId"         
-				, AccountID					INT UNSIGNED PATH "$.AccountId"
-				, SubscriberID				INT PATH "$.SubscriberId"
-                , UserAgentKey 				VARCHAR(32) PATH "$.UserAgentKey"         
-				, DeviceCode				VARCHAR(32) PATH "$.DeviceCode"
-				 )
-			   ) AS  tmpTrans;
-               
-	#======GET DATA FROM RAW TRANSACTION===========================
+    	#======GET DATA FROM RAW TRANSACTION===========================
 	DROP TEMPORARY TABLE IF EXISTS Temp_Transaction;
 	CREATE TEMPORARY TABLE Temp_Transaction(
 		 TransID				BIGINT	UNSIGNED
-		, AccountID				INT	UNSIGNED
+		, AccountID				BIGINT	UNSIGNED
 		, SubscriberID			INT
         , UserAgentKey			VARCHAR(32)
 		, DeviceCode			VARCHAR(32)
@@ -100,30 +63,44 @@ BEGIN
 		, DeviceFingerprintID	BIGINT	UNSIGNED		NULL
         , RecoverTransID		BIGINT  UNSIGNED		NULL
 	);
-	  
-	INSERT INTO Temp_Transaction(TransID, AccountID, SubscriberID, UserAgentKey, DeviceCode, FingerprintCode, FingerprintMoreInfo, CreatedDate, TransTime, DeviceStatus)
-	SELECT 		tit.TransID
-				, tit.AccountID
-				, tit.SubscriberID
-                , tit.UserAgentKey
-                , tit.DeviceCode
-				, rt.FingerprintCode
-                , rt.FingerprintMoreInfo
-				, rt.CreatedDate
-				, rt.TransTime
-                , vrDeviceStatusNew AS DeviceStatus
-	FROM		Temp_InputTrans	AS tit
-	INNER JOIN	DCS_RawTransaction.RawTransaction	AS rt
-				ON	tit.TransID = rt.TransID;
-                
+    
+   
+	#========GET INPUT DATA===========================
+	INSERT INTO Temp_Transaction(TransID, AccountID, SubscriberID, UserAgentKey, DeviceCode, CreatedDate, TransTime,  FingerprintCode, FingerprintMoreInfo, DeviceStatus)
+    SELECT TransID
+			, AccountID
+			, SubscriberID
+            , (CASE WHEN tmpTrans.UserAgentKey ="null" THEN NULL ELSE tmpTrans.UserAgentKey END) AS UserAgentKey
+			, (CASE WHEN tmpTrans.DeviceCode ="null" THEN NULL ELSE tmpTrans.DeviceCode END) AS DeviceCode
+            , CreatedDate
+			, TransTime
+            , FingerprintCode
+			, FingerprintMoreInfo
+            , vrDeviceStatusNew AS DeviceStatus
+			 FROM
+			   JSON_TABLE(
+				ip_TransJson,
+				 "$[*]" COLUMNS(
+				  TransID 			BIGINT UNSIGNED PATH "$.TransId"         
+				, AccountID					INT UNSIGNED PATH "$.AccountId"
+				, SubscriberID				INT PATH "$.SubscriberId"
+                , UserAgentKey 				VARCHAR(32) PATH "$.UserAgentKey"         
+				, DeviceCode				VARCHAR(32) PATH "$.DeviceCode"
+                , TransTime				TIMESTAMP(4) PATH "$.TransTime"
+				, CreatedDate			DATETIME PATH "$.CreatedDate"	
+                , FingerprintCode			VARCHAR(2000) PATH "$.FingerprintCode"
+                , FingerprintMoreInfo		TEXT CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' PATH "$.FingerprintMoreInfo"                			
+				 )
+			   ) AS  tmpTrans ;
+
+    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;   
+    SELECT * FROM        Temp_Transaction; 
 	UPDATE		Temp_Transaction AS tts
     INNER JOIN	DCS_DataCenter.DeviceCode	AS dc
 				ON	tts.DeviceCode = dc.DeviceCode
 	SET			tts.DeviceID = dc.DeviceID
 				, tts.DeviceStatus = vrDeviceStatusOld
                 , tts.DeviceCodeID =  dc.DeviceCodeID;
-    
-	DROP TEMPORARY TABLE IF EXISTS Temp_InputTrans;
     
     UPDATE	Temp_Transaction AS tts
     INNER JOIN	DCS_DataCenter.Association AS ass 
