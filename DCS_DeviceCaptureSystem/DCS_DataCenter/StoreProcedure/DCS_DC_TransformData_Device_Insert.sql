@@ -11,6 +11,7 @@ BEGIN
 	Original:
 
 	Revisions:
+			[20200310@Casey.Huynh][130110]: After Transform Device Done, Move Transaction From Transaction Table to Transaction07 Table
 	Param's Explanation (filtered by):
 	*/
 
