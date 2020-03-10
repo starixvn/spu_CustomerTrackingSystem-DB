@@ -259,7 +259,6 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.TransformTemp_LastLoginTime(
         , INDEX			IX_Transaction_CreatedDate(CreatedDate)       
 	 ) ENGINE=InnoDB;
      
-     # =======Transactions============================================
 	CREATE TABLE IF NOT EXISTS DCS_DataCenter.Transaction07(
 		TransID				BIGINT	UNSIGNED					NOT NULL
 		, LoginName			VARCHAR(100) 		CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'		NOT NULL
@@ -292,3 +291,21 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.TransformTemp_LastLoginTime(
         , INDEX			IX_Transaction_CreatedDate(CreatedDate)
         , INDEX			IX_Transaction_DeviceIDDeviceCode(DeviceID, DeviceCode)
 	 ) ENGINE=InnoDB;
+     
+	CREATE TABLE IF NOT EXISTS DCS_DataCenter.ArchiveStatus(
+		ArchiveID				INT
+		, ArchiveName			VARCHAR(100)	
+		, LastArchivedDate		DATETIME
+        , UpdateDate			DATETIME				
+    ) ENGINE=InnoDB;
+
+    CREATE TABLE IF NOT EXISTS DCS_DataCenter.ArchiveHistory(
+		ID						INT UNSIGNED AUTO_INCREMENT
+        , ArchiveID				INT
+        , ArchivedDate			DATETIME
+        , StartTime				TIMESTAMP(4)
+        , EndTime				TIMESTAMP(4)
+        , Status				TINYINT
+        
+		, PRIMARY KEY	PK_ArchiveHistory_ID(ID)
+    ) ENGINE=InnoDB;
