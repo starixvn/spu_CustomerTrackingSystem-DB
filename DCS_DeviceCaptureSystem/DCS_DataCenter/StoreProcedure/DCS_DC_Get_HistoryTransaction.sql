@@ -129,7 +129,7 @@ BEGIN
 					ON trs.URLID = ur.URLID AND trs.SubscriberID = ur.SubscriberID
 			WHERE trs.AccountID IN (SELECT AccountID FROM Temp_Account)
 				AND trs.SubscriberID=ip_SubscriberId 
-				AND trs.CreatedDate BETWEEN @MoveDate And @ToDate;         
+				AND trs.CreatedDate BETWEEN DATE_ADD(@MoveDate, INTERVAL 1 DAY) And @ToDate;         
 		
         
         INSERT INTO Temp_History_Transaction(TransID, TransTime, DeviceID, IP, IPID, Flagged, Action, ActionResult, OSName, BrowserName, URL)   
