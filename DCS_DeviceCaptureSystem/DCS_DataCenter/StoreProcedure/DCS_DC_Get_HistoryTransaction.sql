@@ -1,5 +1,6 @@
 DELIMITER $$
-CREATE DEFINER=`fps`@`%` PROCEDURE `DCS_DC_Get_HistoryTransaction`(
+DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_Get_HistoryTransaction$$
+CREATE DEFINER=`fps`@`%` PROCEDURE DCS_DataCenter.DCS_DC_Get_HistoryTransaction(
 	IN ip_FromDate DATETIME, 
 	IN ip_ToDate DATETIME, 
 	IN ip_SubscriberId INT, 
@@ -21,6 +22,7 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_History_Transaction;  
 	CREATE TEMPORARY TABLE Temp_History_Transaction
 	(
+			TransID			BIGINT(20),
 			TransTime	 	TIMESTAMP(4), 
             DeviceID 		VARCHAR(64),
             IP				VARCHAR(50),
@@ -32,84 +34,133 @@ BEGIN
             BrowserName		VARCHAR(100),
             URL				VARCHAR(100)           
     );
-       
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_Account;  
+    
+    CREATE TEMPORARY TABLE Temp_Account
+	(
+			AccountID	 	BIGINT(20)      
+    );
     
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED ; 
 	
-    SELECT datediff(ip_ToDate, ip_FromDate) INTO @numOfDays;    
-    SELECT cusAcc.AccountID INTO @AccountId FROM CTS_DataCenter.CustDCSAccount cusAcc WHERE cusAcc.CTSCustID = ip_CTSCustId AND cusAcc.SubscriberID = ip_SubscriberId;
+    SELECT LastArchivedDate INTO @MoveTransTime 
+		FROM DCS_DataCenter.ArchiveStatus 
+        WHERE ArchiveID = 1;       
     
-    IF @numOfDays > 7 THEN
-		INSERT INTO Temp_History_Transaction(
-				TransTime	 	, 
-				DeviceID 		,
-				IP				,
-                IPID			,
-				Flagged			,
-				Action			,
-				ActionResult	,
-				OSName			,
-				BrowserName		,
-				URL				
-		)    
-		SELECT 	trs.TransTime,  
-				trs.FirstDeviceCode, 
-				trs.IP, 
-                trs.IPID,
-				trs.Flagged, 
-				ar.Action, 
-				ar.ActionResult, 
-				uag.OS, 
-				uag.Browser, 
-				ur.URLDetails
-		FROM DCS_DataCenter.Transaction_BK trs
-		INNER JOIN DCS_DataCenter.UserAgent uag 
-				ON trs.UserAgentKey = uag.UserAgentKey
-		INNER JOIN DCS_DataCenter.ActionResult ar 
-				ON trs.ActionResultID = ar.ActionResultID
-		INNER JOIN DCS_DataCenter.URL ur 
-				ON trs.URLID = ur.URLID AND trs.SubscriberID = ur.SubscriberID
-		WHERE trs.AccountID = @AccountId 
-			AND trs.SubscriberID=ip_SubscriberId 
-			AND trs.CreatedDate BETWEEN ip_FromDate And ip_ToDate;	
-    ELSE
-		INSERT INTO Temp_History_Transaction(
-			TransTime	 	, 
-            DeviceID 		,
-            IP				,
-			IPID			,
-            Flagged			,
-            Action			,
-            ActionResult	,
-            OSName			,
-            BrowserName		,
-            URL				
-    )    
-    SELECT 	trs.TransTime,  
-			trs.FirstDeviceCode, 
-			trs.IP, 
-            trs.IPID,
-			trs.Flagged, 
-			ar.Action, 
-			ar.ActionResult, 
-			uag.OS, 
-			uag.Browser, 
-			ur.URLDetails
-    FROM DCS_DataCenter.Transaction07 trs 
-    INNER JOIN DCS_DataCenter.UserAgent uag 
-			ON trs.UserAgentKey = uag.UserAgentKey
-    INNER JOIN DCS_DataCenter.ActionResult ar 
-			ON trs.ActionResultID = ar.ActionResultID
-    INNER JOIN DCS_DataCenter.URL ur 
-			ON trs.URLID = ur.URLID AND trs.SubscriberID = ur.SubscriberID
-    WHERE trs.AccountID = @AccountId 
-		AND trs.SubscriberID=ip_SubscriberId 
-		AND trs.CreatedDate BETWEEN ip_FromDate And ip_ToDate;	
-    END IF;       
+    INSERT INTO Temp_Account 
+		SELECT cusAcc.AccountID 
+			FROM CTS_DataCenter.CustDCSAccount cusAcc 
+			WHERE cusAcc.CTSCustID = ip_CTSCustId	
+					AND cusAcc.SubscriberID = ip_SubscriberId;
     
+    SET @MoveDate = Date(@MoveTransTime);
+    SET @FromDate = Date(ip_FromDate);
+    SET @ToDate = Date(ip_ToDate);
+    
+    IF @MoveDate <= @FromDate THEN # scan 07
+		INSERT INTO Temp_History_Transaction(TransID, TransTime, DeviceID, IP, IPID, Flagged, Action, ActionResult, OSName, BrowserName, URL)    
+			SELECT 	trs.TransID,
+					trs.TransTime,  
+					trs.FirstDeviceCode, 
+					trs.IP, 
+					trs.IPID,
+					trs.Flagged, 
+					ar.Action, 
+					ar.ActionResult, 
+					uag.OS, 
+					uag.Browser, 
+					ur.URLDetails
+			FROM DCS_DataCenter.Transaction07 trs 
+			LEFT JOIN DCS_DataCenter.UserAgent uag 
+					ON trs.UserAgentKey = uag.UserAgentKey
+			LEFT JOIN DCS_DataCenter.ActionResult ar 
+					ON trs.ActionResultID = ar.ActionResultID
+			LEFT JOIN DCS_DataCenter.URL ur 
+					ON trs.URLID = ur.URLID AND trs.SubscriberID = ur.SubscriberID
+			WHERE trs.AccountID IN (SELECT AccountID FROM Temp_Account)
+				AND trs.SubscriberID = ip_SubscriberId 
+				AND trs.CreatedDate BETWEEN @FromDate And @ToDate;
+        
+    ELSEIF @MoveDate >= @ToDate THEN # scan bk
+    
+		INSERT INTO Temp_History_Transaction(TransID, TransTime, DeviceID, IP, IPID, Flagged, Action, ActionResult, OSName, BrowserName, URL)    
+			SELECT 	trs.TransID,
+					trs.TransTime,  
+					trs.FirstDeviceCode, 
+					trs.IP, 
+					trs.IPID,
+					trs.Flagged, 
+					ar.Action, 
+					ar.ActionResult, 
+					uag.OS, 
+					uag.Browser, 
+					ur.URLDetails
+			FROM DCS_DataCenter.Transaction_BK01 trs
+			LEFT JOIN DCS_DataCenter.UserAgent uag 
+					ON trs.UserAgentKey = uag.UserAgentKey
+			LEFT JOIN DCS_DataCenter.ActionResult ar 
+					ON trs.ActionResultID = ar.ActionResultID
+			LEFT JOIN DCS_DataCenter.URL ur 
+					ON trs.URLID = ur.URLID AND trs.SubscriberID = ur.SubscriberID
+			WHERE trs.AccountID IN (SELECT AccountID FROM Temp_Account)
+				AND trs.SubscriberID=ip_SubscriberId 
+				AND trs.CreatedDate BETWEEN @FromDate And @ToDate;	
+    ELSE # scan 07 & bk
+		
+		INSERT INTO Temp_History_Transaction(TransID, TransTime, DeviceID, IP, IPID, Flagged, Action, ActionResult, OSName, BrowserName, URL)   
+			SELECT 	trs.TransID,
+					trs.TransTime,  
+					trs.FirstDeviceCode, 
+					trs.IP, 
+					trs.IPID,
+					trs.Flagged, 
+					ar.Action, 
+					ar.ActionResult, 
+					uag.OS, 
+					uag.Browser, 
+					ur.URLDetails
+			FROM DCS_DataCenter.Transaction07 trs 
+			LEFT JOIN DCS_DataCenter.UserAgent uag 
+					ON trs.UserAgentKey = uag.UserAgentKey
+			LEFT JOIN DCS_DataCenter.ActionResult ar 
+					ON trs.ActionResultID = ar.ActionResultID
+			LEFT JOIN DCS_DataCenter.URL ur 
+					ON trs.URLID = ur.URLID AND trs.SubscriberID = ur.SubscriberID
+			WHERE trs.AccountID IN (SELECT AccountID FROM Temp_Account)
+				AND trs.SubscriberID=ip_SubscriberId 
+				AND trs.CreatedDate BETWEEN @MoveDate And @ToDate;         
+		
+        
+        INSERT INTO Temp_History_Transaction(TransID, TransTime, DeviceID, IP, IPID, Flagged, Action, ActionResult, OSName, BrowserName, URL)   
+			SELECT 	trs.TransID,
+					trs.TransTime,  
+					trs.FirstDeviceCode, 
+					trs.IP, 
+					trs.IPID,
+					trs.Flagged, 
+					ar.Action, 
+					ar.ActionResult, 
+					uag.OS, 
+					uag.Browser, 
+					ur.URLDetails
+			FROM DCS_DataCenter.Transaction_BK01 trs
+			LEFT JOIN DCS_DataCenter.UserAgent uag 
+					ON trs.UserAgentKey = uag.UserAgentKey
+			LEFT JOIN DCS_DataCenter.ActionResult ar 
+					ON trs.ActionResultID = ar.ActionResultID
+			LEFT JOIN DCS_DataCenter.URL ur 
+					ON trs.URLID = ur.URLID AND trs.SubscriberID = ur.SubscriberID
+			WHERE trs.AccountID IN (SELECT AccountID FROM Temp_Account)
+				AND trs.SubscriberID=ip_SubscriberId 
+				AND trs.CreatedDate BETWEEN @FromDate And @MoveDate;        
+	END IF; 
+     
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
-    SELECT TransTime	 	, 
+    
+    SELECT 	TransID			,
+			TransTime	 	, 
             DeviceID 		,
             IP				,
             IPID			,
