@@ -5,14 +5,12 @@ Server:  	Slave
 DBName:		DCS_DataCenter
 
 Revisions: 
-	[20200310@Casey.Huynh][130109]: Create Schema table `Transaction07`
+	#1. [20191217@CaseyHuynh][#125530]: Add Column LastLoginTime column to table CTSCustomer.
     
 Reviewer:
-
+	#1. Harvey: 
 */
-# [20200310@Casey.Huynh][130109]: Create Schema table `Transaction07`
- # =======Transactions============================================
-	CREATE TABLE IF NOT EXISTS DCS_DataCenter.Transaction07(
+CREATE TABLE IF NOT EXISTS DCS_DataCenter.Transaction07(
 		TransID				BIGINT	UNSIGNED					NOT NULL
 		, LoginName			VARCHAR(100) 		CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'		NOT NULL
         , TransTime			TIMESTAMP(4)						NOT	NULL                
@@ -49,16 +47,23 @@ Reviewer:
 		ArchiveID				INT
 		, ArchiveName			VARCHAR(100)	
 		, LastArchivedDate		DATETIME
-        , UpdateDate			DATETIME				
+        , UpdateTime			DATETIME				
     ) ENGINE=InnoDB;
 
     CREATE TABLE IF NOT EXISTS DCS_DataCenter.ArchiveHistory(
 		ID						INT UNSIGNED AUTO_INCREMENT
         , ArchiveID				INT
-        , ArchivedDate			DATETIME
+        , ArchivedDate			DATETIME				# Date is moved data
+        , Status				TINYINT
+        , ScheduleTime			DATETIME				# Schedule Time  run
         , StartTime				TIMESTAMP(4)
         , EndTime				TIMESTAMP(4)
-        , Status				TINYINT
         
 		, PRIMARY KEY	PK_ArchiveHistory_ID(ID)
+    ) ENGINE=InnoDB;
+    
+    CREATE TABLE IF NOT EXISTS DCS_DataCenter.Temp_ArchiveTrans07Date(
+        ArchivedDate			DATETIME				# Date is moved data    
+        , ScheduleTime			DATETIME
+		, PRIMARY KEY	PK_Temp_ArchiveTrans07Date_(ArchivedDate)
     ) ENGINE=InnoDB;

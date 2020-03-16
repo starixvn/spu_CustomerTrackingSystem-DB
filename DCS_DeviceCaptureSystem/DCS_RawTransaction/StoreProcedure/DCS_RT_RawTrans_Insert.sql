@@ -27,6 +27,7 @@ BEGIN
 		, UserAgent					TEXT		 						NULL
 		, IP						VARCHAR(50) 						NULL
         , IPID						DECIMAL(50,0)						NULL
+        , Flagged					SMALLINT							NULL
 		, PluginID					BIGINT 								NULL	
 		, URL						VARCHAR(500) 						NULL
         , `Action`					VARCHAR(100) 						NULL
@@ -45,6 +46,7 @@ BEGIN
 		, UserAgent
 		, IP
         , IPID
+        , Flagged
 		, PluginID
 		, URL
         , Action
@@ -62,6 +64,7 @@ BEGIN
 			, (CASE WHEN rt.UserAgent ="null" THEN NULL ELSE rt.UserAgent END) AS UserAgent
 			, (CASE WHEN rt.IP ="null" THEN NULL ELSE rt.IP END) AS IP
             , (CASE WHEN rt.IPID = 0 THEN NULL ELSE rt.IPID END) AS IPID
+            , (CASE WHEN rt.Flagged = -1 THEN NULL ELSE rt.Flagged END) AS Flagged
 			, (CASE WHEN rt.PluginID = 0 THEN NULL ELSE rt.PluginID END) AS PluginID            
 			, (CASE WHEN rt.URL ="null" THEN NULL ELSE rt.URL END) AS URL
             , (CASE WHEN rt.Action ="null" THEN NULL ELSE rt.Action END) AS Action
@@ -80,6 +83,7 @@ BEGIN
 							, UserAgent				TEXT 	PATH "$.UserAgent"
 							, IP					VARCHAR(50) 	PATH "$.IP"
                             , IPID					DECIMAL(50,0)	PATH "$.IPId"
+                            , Flagged				SMALLINT		PATH "$.Flagged"
 							, PluginID				BIGINT 			PATH "$.PluginID"
 							, URL					VARCHAR(500) 	PATH "$.URL"
                             , Action				VARCHAR(100)	PATH "$.Action"
@@ -100,6 +104,7 @@ BEGIN
 		, UserAgent
 		, IP
         , IPID
+        , Flagged
 		, PluginID
 		, URL
         , Action
@@ -118,6 +123,7 @@ BEGIN
 		, rt.UserAgent
 		, rt.IP
         , rt.IPID
+        , rt.Flagged
 		, rt.PluginID
 		, rt.URL
         , rt.Action

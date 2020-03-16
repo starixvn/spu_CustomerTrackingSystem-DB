@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS DCS_RawTransaction.RawTransaction(
     , UserAgent					TEXT		 						NULL
 	, IP						VARCHAR(50) 						NULL
     , IPID						DECIMAL(50,0)						NULL
+    , Flagged					SMALLINT							NULL
 	, PluginID					BIGINT 								NULL	
 	, URL						VARCHAR(500) 						NULL
     , Action					VARCHAR(100) 						NULL
@@ -30,8 +31,7 @@ CREATE TABLE IF NOT EXISTS DCS_RawTransaction.RawTransaction(
     , FPSTransID				BIGINT  UNSIGNED
     
     , IsProcessed				TINYINT								NOT	NULL	DEFAULT '0'
-    , TransID					BIGINT	UNSIGNED AUTO_INCREMENT  	NOT NULL
-    
+    , TransID					BIGINT	UNSIGNED AUTO_INCREMENT  	NOT NULL    
 
 	, PRIMARY KEY PK_RawTransaction_StaingTransID(TransID)
 	, INDEX IX_RawTransaction_IsProcessed(IsProcessed)
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS DCS_RawTransaction.RawTransaction(
 ) ENGINE=InnoDB;
 
 
-CREATE TABLE IF NOT EXISTS DCS_RawTransaction.RawTransaction_BK(	
+CREATE TABLE IF NOT EXISTS DCS_RawTransaction.RawTransaction_BK01(	
 	LoginName					VARCHAR(100) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' 	NOT NULL	
 	, SubscriberName			VARCHAR(50) 						NOT NULL
 	, TransTime					TIMESTAMP(4)	 					NOT NULL
@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS DCS_RawTransaction.RawTransaction_BK(
     , UserAgent					TEXT		 						NULL
 	, IP						VARCHAR(50) 						NULL
     , IPID						DECIMAL(50,0)						NULL
+    , Flagged					SMALLINT							NULL
 	, PluginID					BIGINT 								NULL	
 	, URL						VARCHAR(500) 						NULL
     , Action					VARCHAR(100) 						NULL
@@ -60,9 +61,8 @@ CREATE TABLE IF NOT EXISTS DCS_RawTransaction.RawTransaction_BK(
     , FPSTransID				BIGINT  UNSIGNED
     
     , IsProcessed				TINYINT								NOT	NULL	DEFAULT '0'
-    , TransID					BIGINT	UNSIGNED AUTO_INCREMENT  	NOT NULL		
-	
-    
+    , TransID					BIGINT	UNSIGNED AUTO_INCREMENT  	NOT NULL    
+
 	, PRIMARY KEY PK_RawTransaction_StaingTransID(TransID)
 	, INDEX IX_RawTransaction_IsProcessed(IsProcessed)
 	, INDEX IX_RawTransaction_SubscriberName(SubscriberName, CreatedDate)
