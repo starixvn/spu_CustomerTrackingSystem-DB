@@ -8,7 +8,7 @@ CREATE DEFINER=`fps`@`%` PROCEDURE `DCS_DC_Get_HistoryTransaction`(
     IN ip_PageSize INT,
     IN ip_PageNumber INT,
     OUT op_TotalItem INT)
-BEGIN
+proc_label: BEGIN
 	/*
 		Created:	20200311@Terry
 		Task:		Get history transaction by date [Redmine ID: 130074]
@@ -47,6 +47,34 @@ BEGIN
     
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED ; 
 	
+    IF ISNULL(ip_FromDate) OR ISNULL(ip_ToDate) THEN
+		SELECT Count(TransID) INTO op_TotalItem FROM Temp_History_Transaction;
+    
+		SELECT 	TransID			,
+				DATE_FORMAT(TransTime, "%M %d, %y")	as TransTime 	, 
+				DeviceID 		,
+				IP				,
+				IPID			,
+				CASE
+					WHEN Flagged = 5 THEN 'Robot (Browserless - Empty Token)'
+					WHEN Flagged = 6 THEN 'Robot (Browserless - Empty Analysis)'
+					WHEN Flagged = 7 THEN 'Robot (Browserless - Disabled JS)'
+					WHEN Flagged = 8 THEN 'Robot (Browserless - Invalid Analysis)'
+					WHEN Flagged = 9 THEN 'Robot (Browserless - Invalid Token)'
+					WHEN Flagged = 10 THEN 'Robot (Browserless - Invalid Device Code)'
+					ELSE 'Green'
+				END AS Flagged	,
+				Action			,
+				ActionResult	,
+				OSName			,
+				BrowserName		,
+				URL				
+		FROM Temp_History_Transaction       
+		LIMIT ip_PageNumber, ip_PageSize;
+    
+		LEAVE proc_label;
+    END IF;    
+    
     SELECT LastArchivedDate INTO @MoveTransTime 
 		FROM DCS_DataCenter.ArchiveStatus 
         WHERE ArchiveID = 1;       
@@ -58,7 +86,7 @@ BEGIN
 					AND cusAcc.SubscriberID = ip_SubscriberId;
     
     SET @MoveDate = Date(@MoveTransTime);
-    SET @FromDate = IF(ISNULL(ip_FromDate) , CURRENT_DATE() , Date(ip_FromDate));
+    SET @FromDate = Date(ip_FromDate);
     SET @ToDate = Date(ip_ToDate);
     
     IF @MoveDate <= @FromDate THEN # scan 07
