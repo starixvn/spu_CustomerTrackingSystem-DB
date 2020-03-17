@@ -1,12 +1,13 @@
 DELIMITER $$
 DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_Get_HistoryTransaction$$
-CREATE DEFINER=`fps`@`%` PROCEDURE DCS_DataCenter.DCS_DC_Get_HistoryTransaction(
+CREATE DEFINER=`fps`@`%` PROCEDURE `DCS_DC_Get_HistoryTransaction`(
 	IN ip_FromDate DATETIME, 
 	IN ip_ToDate DATETIME, 
 	IN ip_SubscriberId INT, 
     IN ip_CTSCustId BIGINT,
     IN ip_PageSize INT,
-    IN ip_PageNumber INT)
+    IN ip_PageNumber INT,
+    OUT op_TotalItem INT)
 BEGIN
 	/*
 		Created:	20200311@Terry
@@ -59,8 +60,6 @@ BEGIN
     SET @MoveDate = Date(@MoveTransTime);
     SET @FromDate = Date(ip_FromDate);
     SET @ToDate = Date(ip_ToDate);
-    SET @LimitNumber = ip_PageSize;
-    SET @OffsetNumber = @limitNumber * (@limitNumber - 1);
     
     IF @MoveDate <= @FromDate THEN # scan 07
 		INSERT INTO Temp_History_Transaction(TransID, TransTime, DeviceID, IP, IPID, Flagged, Action, ActionResult, OSName, BrowserName, URL)    
@@ -162,6 +161,7 @@ BEGIN
      
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
+    SELECT Count(TransID) INTO op_TotalItem FROM Temp_History_Transaction;
     
     SELECT 	TransID			,
 			DATE_FORMAT(TransTime, "%M %d, %y")	as TransTime 	, 
@@ -182,10 +182,7 @@ BEGIN
             OSName			,
             BrowserName		,
             URL				
-	FROM Temp_History_Transaction
-    ORDER BY TransTime DESC
-    LIMIT @limitNumber
-    OFFSET @offset;
-    
+	FROM Temp_History_Transaction       
+    LIMIT ip_PageNumber, ip_PageSize;    
 END$$
 DELIMITER ;
