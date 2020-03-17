@@ -58,7 +58,7 @@ BEGIN
 					AND cusAcc.SubscriberID = ip_SubscriberId;
     
     SET @MoveDate = Date(@MoveTransTime);
-    SET @FromDate = Date(ip_FromDate);
+    SET @FromDate = IF(ISNULL(ip_FromDate) , CURRENT_DATE() , Date(ip_FromDate));
     SET @ToDate = Date(ip_ToDate);
     
     IF @MoveDate <= @FromDate THEN # scan 07
