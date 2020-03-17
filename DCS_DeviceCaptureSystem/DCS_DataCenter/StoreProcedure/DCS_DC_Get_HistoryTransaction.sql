@@ -4,7 +4,9 @@ CREATE DEFINER=`fps`@`%` PROCEDURE DCS_DataCenter.DCS_DC_Get_HistoryTransaction(
 	IN ip_FromDate DATETIME, 
 	IN ip_ToDate DATETIME, 
 	IN ip_SubscriberId INT, 
-    IN ip_CTSCustId BIGINT)
+    IN ip_CTSCustId BIGINT,
+    IN ip_PageSize INT,
+    IN ip_PageNumber INT)
 BEGIN
 	/*
 		Created:	20200311@Terry
@@ -57,6 +59,8 @@ BEGIN
     SET @MoveDate = Date(@MoveTransTime);
     SET @FromDate = Date(ip_FromDate);
     SET @ToDate = Date(ip_ToDate);
+    SET @LimitNumber = ip_PageSize;
+    SET @OffsetNumber = @limitNumber * (@limitNumber - 1);
     
     IF @MoveDate <= @FromDate THEN # scan 07
 		INSERT INTO Temp_History_Transaction(TransID, TransTime, DeviceID, IP, IPID, Flagged, Action, ActionResult, OSName, BrowserName, URL)    
@@ -160,16 +164,28 @@ BEGIN
     
     
     SELECT 	TransID			,
-			TransTime	 	, 
+			DATE_FORMAT(TransTime, "%M %d, %y")	as TransTime 	, 
             DeviceID 		,
             IP				,
             IPID			,
-            Flagged			,
+            CASE
+				WHEN Flagged = 5 THEN 'Robot (Browserless - Empty Token)'
+                WHEN Flagged = 6 THEN 'Robot (Browserless - Empty Analysis)'
+                WHEN Flagged = 7 THEN 'Robot (Browserless - Disabled JS)'
+                WHEN Flagged = 8 THEN 'Robot (Browserless - Invalid Analysis)'
+                WHEN Flagged = 9 THEN 'Robot (Browserless - Invalid Token)'
+                WHEN Flagged = 10 THEN 'Robot (Browserless - Invalid Device Code)'
+                ELSE 'Green'
+			END AS Flagged	,
             Action			,
             ActionResult	,
             OSName			,
             BrowserName		,
             URL				
-	FROM Temp_History_Transaction;
+	FROM Temp_History_Transaction
+    ORDER BY TransTime DESC
+    LIMIT @limitNumber
+    OFFSET @offset;
+    
 END$$
 DELIMITER ;
