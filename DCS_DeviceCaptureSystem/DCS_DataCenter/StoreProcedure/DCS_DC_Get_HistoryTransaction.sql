@@ -1,5 +1,5 @@
 DELIMITER $$
-DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_Get_HistoryTransaction$$
+#DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_Get_HistoryTransaction$$
 CREATE DEFINER=`fps`@`%` PROCEDURE `DCS_DC_Get_HistoryTransaction`(
 	IN ip_FromDate DATETIME, 
 	IN ip_ToDate DATETIME, 
@@ -26,7 +26,7 @@ proc_label: BEGIN
 	CREATE TEMPORARY TABLE Temp_History_Transaction
 	(
 			TransID			BIGINT(20),
-			TransTime	 	TIMESTAMP(4), 
+			TransTime	 	DATETIME, 
             DeviceID 		VARCHAR(64),
             IP				VARCHAR(50),
             IPID			DECIMAL(50,0),
@@ -192,7 +192,7 @@ proc_label: BEGIN
     SELECT Count(TransID) INTO op_TotalItem FROM Temp_History_Transaction;
     
     SELECT 	TransID			,
-			DATE_FORMAT(TransTime, "%M %d, %y")	as TransTime 	, 
+			TransTime	 	, 
             DeviceID 		,
             IP				,
             IPID			,
@@ -210,7 +210,8 @@ proc_label: BEGIN
             OSName			,
             BrowserName		,
             URL				
-	FROM Temp_History_Transaction       
+	FROM Temp_History_Transaction   
+    ORDER BY TransTime
     LIMIT ip_PageNumber, ip_PageSize;    
 END$$
 DELIMITER ;
