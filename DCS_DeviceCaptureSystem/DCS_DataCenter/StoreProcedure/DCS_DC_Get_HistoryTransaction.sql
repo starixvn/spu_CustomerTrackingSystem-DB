@@ -1,8 +1,7 @@
 DELIMITER $$
-#DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_Get_HistoryTransaction$$
+DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_Get_HistoryTransaction$$
 CREATE DEFINER=`fps`@`%` PROCEDURE `DCS_DC_Get_HistoryTransaction`(
-	IN ip_FromDate DATETIME, 
-	IN ip_ToDate DATETIME, 
+	IN ip_DateRange INT, 	
 	IN ip_SubscriberId INT, 
     IN ip_CTSCustId BIGINT,
     IN ip_PageSize INT,
@@ -46,8 +45,8 @@ proc_label: BEGIN
     );
     
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED ; 
-	
-    IF ISNULL(ip_FromDate) OR ISNULL(ip_ToDate) THEN
+	    
+    IF ISNULL(ip_DateRange) OR ip_DateRange < 0 THEN
 		SELECT Count(TransID) INTO op_TotalItem FROM Temp_History_Transaction;
     
 		SELECT 	TransID			,
@@ -75,6 +74,8 @@ proc_label: BEGIN
 		LEAVE proc_label;
     END IF;    
     
+    
+    
     SELECT LastArchivedDate INTO @MoveTransTime 
 		FROM DCS_DataCenter.ArchiveStatus 
         WHERE ArchiveID = 1;       
@@ -86,9 +87,14 @@ proc_label: BEGIN
 					AND cusAcc.SubscriberID = ip_SubscriberId;
     
     SET @MoveDate = Date(@MoveTransTime);
-    SET @FromDate = Date(ip_FromDate);
-    SET @ToDate = Date(ip_ToDate);
-    
+    SET @FromDate = CURRENT_DATE();
+    SET @ToDate = CASE 
+						WHEN ip_DateRange = 1 THEN DATE_ADD(CURRENT_DATE(), INTERVAL -1 DAY)
+                        WHEN ip_DateRange = 7 THEN DATE_ADD(CURRENT_DATE(), INTERVAL -7 DAY)
+                        WHEN ip_DateRange = 30 THEN DATE_ADD(CURRENT_DATE(), INTERVAL -30 DAY)
+                        WHEN ip_DateRange = 180 THEN DATE_ADD(CURRENT_DATE(), INTERVAL -180 DAY)
+				 END;                
+                 
     IF @MoveDate <= @FromDate THEN # scan 07
 		INSERT INTO Temp_History_Transaction(TransID, TransTime, DeviceID, IP, IPID, Flagged, Action, ActionResult, OSName, BrowserName, URL)    
 			SELECT 	trs.TransID,
