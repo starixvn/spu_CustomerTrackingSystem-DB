@@ -93,6 +93,7 @@ proc_label: BEGIN
                         WHEN ip_DateRange = 7 THEN DATE_ADD(CURRENT_DATE(), INTERVAL -7 DAY)
                         WHEN ip_DateRange = 30 THEN DATE_ADD(CURRENT_DATE(), INTERVAL -30 DAY)
                         WHEN ip_DateRange = 180 THEN DATE_ADD(CURRENT_DATE(), INTERVAL -180 DAY)
+                        ELSE CURRENT_DATE()
 				 END;                
                  
     IF @MoveDate <= @FromDate THEN # scan 07
@@ -217,7 +218,7 @@ proc_label: BEGIN
             BrowserName		,
             URL				
 	FROM Temp_History_Transaction   
-    ORDER BY TransTime
+    ORDER BY TransTime DESC
     LIMIT ip_PageNumber, ip_PageSize;    
 END$$
 DELIMITER ;
