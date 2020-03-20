@@ -87,8 +87,8 @@ proc_label: BEGIN
 					AND cusAcc.SubscriberID = ip_SubscriberId;
     
     SET @MoveDate = Date(@MoveTransTime);
-    SET @FromDate = CURRENT_DATE();
-    SET @ToDate = CASE 
+    SET @ToDate = CURRENT_DATE();
+    SET @FromDate = CASE 
 						WHEN ip_DateRange = 1 THEN DATE_ADD(CURRENT_DATE(), INTERVAL -1 DAY)
                         WHEN ip_DateRange = 7 THEN DATE_ADD(CURRENT_DATE(), INTERVAL -7 DAY)
                         WHEN ip_DateRange = 30 THEN DATE_ADD(CURRENT_DATE(), INTERVAL -30 DAY)
