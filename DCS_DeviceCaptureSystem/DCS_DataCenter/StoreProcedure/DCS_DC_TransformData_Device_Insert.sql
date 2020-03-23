@@ -95,15 +95,18 @@ BEGIN
 			   ) AS  tmpTrans ;
 
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;   
- 
+    # *******1. PROCESS OLD DEVICE*************************
+    # **************************************************
+	# 1.1 Get Existing DeviceID BY Existing Device Code
 	UPDATE		Temp_Transaction AS tts
     INNER JOIN	DCS_DataCenter.DeviceCode	AS dc
 				ON	tts.DeviceCode = dc.DeviceCode
 	SET			tts.DeviceID = dc.DeviceID
 				, tts.DeviceStatus = vrDeviceStatusOld
                 , tts.DeviceCodeID =  dc.DeviceCodeID;
-    
-    UPDATE	Temp_Transaction AS tts
+                
+    # 1.2 Recover Existing DeviceID  BY AccountID and FingerprintCode
+    UPDATE		Temp_Transaction AS tts
     INNER JOIN	DCS_DataCenter.Association AS ass 
 				ON tts.AccountID = ass.AccountID
 	INNER JOIN	DCS_DataCenter.DeviceFingerprint AS df
@@ -116,12 +119,15 @@ BEGIN
 	
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
+    # *******2. PROCESS NEW DEVICE*********************
+    # **************************************************
 	DROP TEMPORARY TABLE IF EXISTS Temp_NewDeviceCode;
     CREATE TEMPORARY TABLE Temp_NewDeviceCode(
 		DeviceCode		VARCHAR(32)
 		, MinTransID	BIGINT UNSIGNED
 	);
     
+    # 2.1 Get the First TransID Group By DeviceCode
     INSERT INTO Temp_NewDeviceCode(DeviceCode, MinTransID)
     SELECT	tts.DeviceCode
 			, Min(tts.TransID)
@@ -129,12 +135,14 @@ BEGIN
     WHERE	tts.DeviceID IS NULL
     GROUP BY tts.DeviceCode;
     
+    # 2.2  Update DeviceStatus IS 'Old DeviceCode' For TransID (excluding FirstTransID (Step 2.1)
 	UPDATE		Temp_Transaction AS tts
     INNER JOIN  Temp_NewDeviceCode AS nd
 				ON tts.DeviceCode 	= nd.DeviceCode
                 AND tts.TransID 	!= nd.MinTransID
     SET			tts.DeviceStatus	= vrDeviceStatusOld;
-        
+    
+    # 2.3 Update DeviceStatus Recover
 	DROP TEMPORARY TABLE IF EXISTS Temp_AccountFingerprint;
     CREATE TEMPORARY TABLE Temp_AccountFingerprint(
 		TransID				VARCHAR(32)
@@ -159,7 +167,7 @@ BEGIN
 				AND tts.DeviceID IS NULL
                 AND tts.DeviceStatus = vrDeviceStatusNew;
     
-   #====Process New Device
+   # 2.4  Insert New Device for New DeviceCode with DeviceStatus Is NEW
     INSERT IGNORE INTO DCS_DataCenter.Device(FirstDeviceCode, UserAgentKey, FirstTransID, CreatedTime, CreatedDate, InsertTime)
     SELECT 		tts.DeviceCode
 				, tts.UserAgentKey
@@ -173,13 +181,15 @@ BEGIN
 	
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
     
+    # 2.4  Update to DeviceID for New Device
     UPDATE		Temp_Transaction AS tts
     INNER JOIN 	DCS_DataCenter.Device AS dv
 				ON tts.DeviceCode	= dv.FirstDeviceCode
 	SET			tts.DeviceID 		= dv.DeviceID
     WHERE		tts.DeviceStatus	= vrDeviceStatusNew;
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-       
+    
+    # 2.5  Update to DeviceID for Recover Device
     DROP TEMPORARY TABLE IF EXISTS Temp_RecoverDevice;
     CREATE TEMPORARY TABLE Temp_RecoverDevice(
 		TransID				VARCHAR(32)
@@ -198,6 +208,7 @@ BEGIN
     SET		tts.DeviceID = tgd.DeviceId
     WHERE	tts.DeviceID IS NULL;
     
+    # 2.5 Insert New DeviceCode
     INSERT IGNORE INTO DCS_DataCenter.DeviceCode(DeviceCode, DeviceID, FirstTransID, CreatedTime, CreatedDate, InsertTime)
     SELECT 	tts.DeviceCode
 			, tts.DeviceID
@@ -210,6 +221,7 @@ BEGIN
 			OR tts.DeviceStatus = vrDeviceStatusRecover)
             AND tts.DeviceCode IS NOT NULL;    
     
+    # 2.6 Update DeviceCodeID
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
 	UPDATE		Temp_Transaction AS tts
     LEFT JOIN	DCS_DataCenter.DeviceCode	AS dc
@@ -218,6 +230,7 @@ BEGIN
                 , tts.DeviceCodeID =  dc.DeviceCodeID;    
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
+    # 2.7 Insert New DeviceFingerprint
     INSERT IGNORE INTO DCS_DataCenter.DeviceFingerprint(FingerprintCode, FingerprintMoreInfo, DeviceID, CreatedTime, CreatedDate, InsertTime)
      SELECT tts.FingerprintCode
 			, MIN(tts.FingerprintMoreInfo)
@@ -229,6 +242,7 @@ BEGIN
     WHERE	tts.FingerprintCode IS NOT NULL
     GROUP BY tts.FingerprintCode, tts.DeviceID;
     
+    # 2.6 Insert New Association
     INSERT IGNORE INTO DCS_DataCenter.Association(DeviceID, AccountID, SubscriberID, CreatedTime, CreatedDate,  InsertTime)
     SELECT tts.DeviceID
 			, tts.AccountID
@@ -266,6 +280,7 @@ BEGIN
     SET		DeviceStatus = NULL
     WHERE	DeviceID = 0;
     
+    # 2.7 Update Transacton Info (DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID)    
 	UPDATE	DCS_DataCenter.Transaction AS ts
     INNER JOIN	Temp_Transaction AS tts
 				ON ts.TransID = tts.TransID
@@ -273,39 +288,13 @@ BEGIN
                 , ts.DeviceID = tts.DeviceID
                 , ts.FirstDeviceCode = tts.FirstDeviceCode
                 , ts.DeviceStatus = tts.DeviceStatus
-                , ts.DeviceFingerprintID = tts.DeviceFingerprintID;
-        
-	#================================================================
-	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-	INSERT IGNORE INTO  DCS_DataCenter.Transaction07(TransID, LoginName, TransTime, SubscriberID, AccountID
-	, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID
-	, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime)        
-	SELECT 	ts.TransID, ts.LoginName, ts.TransTime, ts.SubscriberID, ts.AccountID
-			, ts.URLID, ts.DeviceCodeID, ts.DeviceID, ts.FirstDeviceCode, ts.DeviceStatus, ts.DeviceFingerprintID
-			, ts.UserAgentKey, ts.IP, ts.IPID, ts.ActionResultID, ts.Flagged, ts.PluginID, ts.TransStatus, ts.CreatedDate, ts.InsertTime
-	FROM		DCS_DataCenter.Transaction AS ts
-	INNER JOIN	Temp_Transaction	AS tmp_rm
-				ON	ts.TransID = tmp_rm.TransID;
-				
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-	
-	DELETE	ts
-	FROM		DCS_DataCenter.Transaction AS ts
-	INNER JOIN	Temp_Transaction	AS tmp_rm
-				ON	ts.TransID = 	tmp_rm.TransID;
-
-      /*      
-    UPDATE		DCS_RawTransaction.RawTransaction AS rt
-    INNER JOIN	Temp_Transaction AS trt
-				ON rt.TransID = trt.TransID
-    SET			rt.IsProcessed = 2;
-	#=================================================================  
-    */            
+                , ts.DeviceFingerprintID = tts.DeviceFingerprintID;   
+     
 	
 	### PERFORMANCE
 	SET	vrEndTime = CURRENT_TIMESTAMP(4);
-	
-    SELECT Count(1), Min(tts.TransID), Max(tts.TransID)
+    
+    SELECT 	Count(1), Min(tts.TransID), Max(tts.TransID)
     INTO	vrTotalRecord, vrFromID, vrToID
     FROM	Temp_Transaction AS tts;
     
@@ -315,7 +304,7 @@ BEGIN
             , z.TotalRecord = vrTotalRecord
             , z.FromID = vrFromID
             , z.ToID		= vrToID
-    WHERE	z.ExecKey = vrExecKey AND z.StepID = z.StepID;
+    WHERE	z.ExecKey = vrExecKey AND z.StepID = vrStepID;
     ### PERFORMANCE: END
 	
     #============================================

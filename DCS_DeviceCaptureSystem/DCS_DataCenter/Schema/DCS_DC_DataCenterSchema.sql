@@ -120,7 +120,8 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(
         , PRIMARY KEY	PK_Transaction_TransID(TransID)
         , INDEX			IX_Transaction_SubscriberIDAccountID(SubscriberID, LoginName, AccountID)
         , INDEX			IX_Transaction_IPID_IP(IPID, IP)
-        , INDEX			IX_Transaction_CreatedDate(CreatedDate)       
+        , INDEX			IX_Transaction_CreatedDate(CreatedDate)
+        , INDEX			IX_Transaction_DeviceIDDeviceCode(DeviceID)
 	 ) ENGINE=InnoDB;
 
 # ===========================================================================
@@ -263,7 +264,7 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.TransformTemp_LastLoginTime(
         , INDEX			IX_Transaction_SubscriberIDAccountID(SubscriberID, AccountID, CreatedDate)
         , INDEX			IX_Transaction_IPID_IP(IPID, IP)
         , INDEX			IX_Transaction_CreatedDate(CreatedDate)
-        , INDEX			IX_Transaction_DeviceIDDeviceCode(DeviceID, DeviceCode)
+        , INDEX			IX_Transaction_DeviceID(DeviceID)
 	 ) ENGINE=InnoDB;
      
 	CREATE TABLE IF NOT EXISTS DCS_DataCenter.ArchiveStatus(

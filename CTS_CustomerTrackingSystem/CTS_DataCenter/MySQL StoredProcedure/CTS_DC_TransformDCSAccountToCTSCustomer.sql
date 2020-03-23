@@ -10,6 +10,7 @@ BEGIN
 
 		Revisions:
         	#1. [20191217@CaseyHuynh][#125530]: Implement LastLoginTime
+            #2. [20190319@CaseyHuynh][IssueCN88]: Update Join LoginName = UserName
             
 		Param's Explanation (filtered by):                
 	*/
@@ -75,9 +76,8 @@ BEGIN
 	 #=============GET CTSCustomerInfo=========================================
     UPDATE 		Temp_Account AS tmpTable
 	INNER JOIN	CTS_DataCenter.CTSCustomer AS cus
-				ON (tmpTable.LoginNameWithPrefix = cus.Username
+				ON (tmpTable.LoginName = cus.Username
 					OR tmpTable.LoginNameWithPrefix = cus.Username2)
-				# AND tmpTable.SubscriberID = cus.SubscriberID
 	SET 		tmpTable.CTSCustID = cus.CTSCustID;
 	
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
@@ -98,9 +98,8 @@ BEGIN
     
 	UPDATE 		Temp_Account AS acc
     INNER JOIN	CTS_DataCenter.CTSCustomer AS cus # USE INDEX(IX_CTSCustomer_UserName_UserName2,IX_CTSCustomer_UserName2)
-				ON (acc.LoginNameWithPrefix = cus.Username2
-					OR acc.LoginNameWithPrefix = cus.Username)
-				AND  acc.SubscriberID = cus.SubscriberID
+				ON (acc.LoginName = cus.Username
+					OR acc.LoginNameWithPrefix = cus.Username2)
 	SET			acc.CTSCustID = cus.CTSCustID
 	WHERE		acc.SubscriberType IN (vrDepositSubType, vrNOTMainSubType)
 				AND acc.CTSCustID IS NULL;
@@ -127,18 +126,22 @@ BEGIN
 	SET 	acc.IsCTSTransformed = (CASE WHEN acc.IsCTSTransformed = -1 THEN -2 ELSE -1 END)
 	WHERE 	tac.CTSCustID IS NULL;
  
-            
-	DROP TEMPORARY TABLE IF EXISTS Temp_Account;
-	#=======================
-    
+		
+	#=======================    
 	### PERFORMANCE
 	SET	vrEndTime = CURRENT_TIMESTAMP(4);	
+    
+	SELECT 	Count(1), Min(tas.AccountID), Max(tas.AccountID)
+    INTO	vrTotalRecord, vrFromID, vrToID
+    FROM	Temp_Account AS tas;    
     
     UPDATE	DCS_DataCenter.zzTracePerformance AS z
     SET		z.EndTime = vrEndTime
 			, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
+            , z.TotalRecord = vrTotalRecord
+            , z.FromID = vrFromID
+            , z.ToID		= vrToID
     WHERE	z.ExecKey = vrExecKey  AND z.StepID = vrStepID;
-    
     ### PERFORMANCE: END
 END$$
 DELIMITER ;

@@ -11,7 +11,8 @@ BEGIN
 	Original:
 
 	Revisions:
-			[20200226@CaseyHuynh: Move Archive Data to New Table Transaction_BK01 and RawTransaction_BK01]
+			- [20200226@CaseyHuynh: Move Archive Data to New Table Transaction_BK01 and RawTransaction_BK01]
+            - [20200318@CaseyHuynh: Move Archive Data to New Table Transaction07]
 	Param's Explanation (filtered by):
 	*/
 	DECLARE	vr_FromID 	BIGINT	UNSIGNED;
@@ -38,25 +39,27 @@ BEGIN
     INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
     VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);
     
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;   
     
-    DROP Temporary TABLE IF EXISTS Temp_RemoveTrans;
-    CREATE Temporary TABLE Temp_RemoveTrans
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_RemoveTrans;
+    CREATE TEMPORARY TABLE Temp_RemoveTrans
     (
 		TransID		BIGINT	UNSIGNED
     );
     
-	TRUNCATE TABLE Temp_RemoveTrans;
+	  
+    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;   
 	INSERT INTO Temp_RemoveTrans(TransID)
 	SELECT TransID 
-	FROM   DCS_RawTransaction.RawTransaction WHERE IsProcessed = 2
-	LIMIT  ip_NoOfTickets; 
+	FROM    DCS_DataCenter.Transaction
+    WHERE 	DeviceID IS NOT NULL
+	LIMIT   ip_NoOfTickets; 
     
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
      
 		# ======================MOVE Transaction==========================================================
         SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-		INSERT IGNORE INTO  DCS_DataCenter.Transaction_BK01(TransID, LoginName, TransTime, SubscriberID, AccountID
+		INSERT IGNORE INTO  DCS_DataCenter.Transaction07(TransID, LoginName, TransTime, SubscriberID, AccountID
         , URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID
 		, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime)        
         SELECT 	ts.TransID, LoginName, TransTime, SubscriberID, AccountID
@@ -72,33 +75,13 @@ BEGIN
         FROM		DCS_DataCenter.Transaction AS ts
         INNER JOIN	Temp_RemoveTrans	AS tmp_rm
 					ON	ts.TransID = 	tmp_rm.TransID;
-        
-        # ======================MOVE RawTransaction========================================================== 
-        SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-        INSERT IGNORE INTO DCS_RawTransaction.RawTransaction_BK01
-		(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, FingerprintMoreInfo, UserAgent
-        , IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID)
-		SELECT
-		LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, FingerprintMoreInfo, UserAgent
-        , IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, rt.TransID
-        FROM 	DCS_RawTransaction.RawTransaction AS rt
-        INNER JOIN	Temp_RemoveTrans	AS tmp_rm
-					ON	rt.TransID = tmp_rm.TransID;
-        SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
-        
-		DELETE	rt
-        FROM 	DCS_RawTransaction.RawTransaction AS rt
-        INNER JOIN	Temp_RemoveTrans	AS tmp_rm
-					ON	rt.TransID = tmp_rm.TransID;
         #=====================================================================       
 		UPDATE	DCS_DataCenter.MoveTransaction
 		SET		LastTransID = (SELECT MAX(TransID) FROM Temp_RemoveTrans);        
         
-
-		SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
         #--===================================================================        
     
-   ### PERFORMANCE
+	### PERFORMANCE
 	SET		vrEndTime = CURRENT_TIMESTAMP(4);
     
     SELECT 	Count(1), Min(TransId), Max(TransId)
