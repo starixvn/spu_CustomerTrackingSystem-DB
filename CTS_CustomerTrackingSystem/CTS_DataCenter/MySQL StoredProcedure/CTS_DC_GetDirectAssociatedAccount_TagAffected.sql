@@ -34,7 +34,7 @@ BEGIN
 			   JSON_TABLE(
 				ip_AssCTSCustJson,
 				 "$[*]" COLUMNS(
-				SubscriberID 			BIGINT UNSIGNED PATH "$.SubscriberId"
+				SubscriberID 			INT SIGNED PATH "$.SubscriberId"
 				, FromCTSCustID 		BIGINT UNSIGNED PATH "$.FromCTSCustId"         
 				, ToCTSCustID 			BIGINT UNSIGNED PATH "$.ToCTSCustId"   
 				 )

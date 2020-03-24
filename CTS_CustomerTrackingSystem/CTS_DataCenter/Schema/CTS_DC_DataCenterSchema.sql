@@ -7,6 +7,7 @@ DBName:		CTS_DataCenter
 Revisions: 
 		- 20191217@CaseyHuynh: Add Column LastLoginDate column to table CTSCustomer.  	(#125530)
         - 20200117@HarveyNguyen: Add table CustRetractEvidence							(#127352)
+        - [202002130@Casey.Huynh][130109]: Add INDEX (SubscriberID, CTSCustID) on TABLE CustDCSAcount.
 Reviewer:
 */
 
@@ -69,6 +70,8 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, SubscriberID		INT
 		, InsertTime		TIMESTAMP(4)
 		, PRIMARY KEY		PK_CustDCSAccount_AccountID(AccountID)  
+        
+		, INDEX	IX_CustDCSAccount_SubscriberID_CTSCustID(SubscriberID,CTSCustID)
 	) ENGINE=INNODB  AUTO_INCREMENT=1;
 	
    CREATE TABLE IF NOT EXISTS CTS_DataCenter.MappingSubscriberSite(

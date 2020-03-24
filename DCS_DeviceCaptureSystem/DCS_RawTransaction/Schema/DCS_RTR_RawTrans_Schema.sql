@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS DCS_RawTransaction.RawTransaction(
     , UserAgent					TEXT		 						NULL
 	, IP						VARCHAR(50) 						NULL
     , IPID						DECIMAL(50,0)						NULL
+    , Flagged					SMALLINT							NULL
 	, PluginID					BIGINT 								NULL	
 	, URL						VARCHAR(500) 						NULL
     , Action					VARCHAR(100) 						NULL
@@ -29,7 +30,4 @@ CREATE TABLE IF NOT EXISTS DCS_RawTransaction.RawTransaction(
     , FPSTransID				BIGINT  UNSIGNED
     , INDEX						IX_RawTransaction_CreatedDate(CreatedDate)
 ) ENGINE=InnoDB;
-
-
-
 

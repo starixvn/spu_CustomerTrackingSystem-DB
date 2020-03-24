@@ -85,7 +85,7 @@ BEGIN
             , rt.IP
             , rt.IPID
             , ar.ActionResultID
-            , 0 AS Flagged
+            , rt.Flagged
             , rt.PluginID
             , rt.TransStatus
             , rt.CreatedDate
@@ -198,19 +198,18 @@ BEGIN
 
     #================================================================
      SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-        INSERT IGNORE INTO DCS_RawTransaction.RawTransaction_BK01
-		(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, FingerprintMoreInfo, UserAgent
-        , IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID)
-		SELECT
-		rt.LoginName, rt.SubscriberName, rt.TransTime, rt.CreatedDate, rt.DeviceCode, rt.FingerprintCode, rt.FingerprintMoreInfo, rt.UserAgent
-        , rt.IP, rt.IPID, rt.PluginID, rt.URL, rt.Action, rt.ActionResult, rt.InvalidDevice, rt.TransStatus, rt.IsProcessed, rt.TransID
-        FROM 	DCS_RawTransaction.RawTransaction AS rt
+        INSERT IGNORE INTO DCS_RawTransaction.RawTransaction_BK01(
+					LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, FingerprintMoreInfo, UserAgent
+					, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID)
+		SELECT		rt.LoginName, rt.SubscriberName, rt.TransTime, rt.CreatedDate, rt.DeviceCode, rt.FingerprintCode, rt.FingerprintMoreInfo, rt.UserAgent
+					, rt.IP, rt.IPID, rt.Flagged, rt.PluginID, rt.URL, rt.Action, rt.ActionResult, rt.InvalidDevice, rt.TransStatus, rt.IsProcessed, rt.TransID
+        FROM 		DCS_RawTransaction.RawTransaction AS rt
         INNER JOIN	Temp_RawTransaction	AS tmp_rm
 					ON	rt.TransID = tmp_rm.TransID;
         SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
         
-		DELETE	rt
-        FROM 	DCS_RawTransaction.RawTransaction AS rt
+		DELETE		rt
+        FROM 		DCS_RawTransaction.RawTransaction AS rt
         INNER JOIN	Temp_RawTransaction	AS tmp_rm
 					ON	rt.TransID = tmp_rm.TransID;
     
