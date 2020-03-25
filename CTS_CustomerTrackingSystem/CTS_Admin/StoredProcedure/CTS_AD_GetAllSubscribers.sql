@@ -28,7 +28,7 @@ BEGIN
 				ON sub.SubscriberID = us.SubscriberID AND us.UserID = ip_userId
 	WHERE 	(us.UserID IS NULL OR us.UserID = ip_userId)
 			AND sub.IsTest = 0 
-			AND sub.SubscriberStatus = 1;
+			AND sub.SubscriberStatus IN (1,-1);
     
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 END$$
