@@ -19,6 +19,7 @@ BEGIN
 	DECLARE	vrUnhandleStatus_Subscriber	 BIT(16) DEFAULT 1;
     DECLARE	vrUnhandleStatus_Action	 BIT(16) DEFAULT 2;
     DECLARE vrUnhandleStatus	TINYINT DEFAULT 0;
+    DECLARE vrUnhandleIsTest	TINYINT DEFAULT 0;
     DECLARE vrNotTransformedStatus BIT(16);
     
 	### PERFORMANCE: START
@@ -88,11 +89,12 @@ BEGIN
     #==UNHANDLE SUBSCRIBER================================================================
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
-	INSERT IGNORE INTO CTS_Admin.Subscriber (SubscriberName, SubscriberPrefix,  CreatedDate, SubscriberStatus)
+	INSERT IGNORE INTO CTS_Admin.Subscriber (SubscriberName, SubscriberPrefix,  CreatedDate, SubscriberStatus, IsTest)
 	SELECT 		ts.SubscriberName
 				, ''
 				, MIN(ts.CreatedDate) AS CreatedDate
 				, vrUnhandleStatus	AS Status # vrUnhandleStatus_Subscriber
+                , vrUnhandleIsTest AS IsTest
     FROM		Temp_Transaction AS ts   
     WHERE		ts.SubscriberID IS NULL
     GROUP BY	ts.SubscriberName;
