@@ -68,6 +68,7 @@ BEGIN
 			SELECT 1
 			FROM #tempCustomerAndUpLines cau
 				INNER JOIN dbo.RobotUsers ru WITH (NOLOCK) ON cau.CustId = ru.custid
+			WHERE ru.counter > 10
 			)
 		SET @isRobotUser = 1;
 
