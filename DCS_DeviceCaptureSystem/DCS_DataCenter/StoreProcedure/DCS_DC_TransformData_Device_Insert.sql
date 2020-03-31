@@ -44,7 +44,7 @@ BEGIN
     VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);    
 	### PERFORMANCE  END
 	
-    	#======GET DATA FROM RAW TRANSACTION===========================
+	#======GET DATA FROM RAW TRANSACTION===========================
 	DROP TEMPORARY TABLE IF EXISTS Temp_Transaction;
 	CREATE TEMPORARY TABLE Temp_Transaction(
 		 TransID				BIGINT	UNSIGNED
@@ -104,7 +104,8 @@ BEGIN
 	SET			tts.DeviceID = dc.DeviceID
 				, tts.DeviceStatus = vrDeviceStatusOld
                 , tts.DeviceCodeID =  dc.DeviceCodeID;
-                
+    
+    /*# Comment for Issue: WRONG_DI: Start
     # 1.2 Recover Existing DeviceID  BY AccountID and FingerprintCode
     UPDATE		Temp_Transaction AS tts
     INNER JOIN	DCS_DataCenter.Association AS ass 
@@ -116,7 +117,8 @@ BEGIN
 				, tts.DeviceID = df.DeviceID
                 , tts.DeviceStatus = vrDeviceStatusRecover
 	WHERE		tts.DeviceID IS NULL;
-	
+	# Comment for Issue: WRONG_DI: END*/
+    
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
     # *******2. PROCESS NEW DEVICE*********************
@@ -142,6 +144,7 @@ BEGIN
                 AND tts.TransID 	!= nd.MinTransID
     SET			tts.DeviceStatus	= vrDeviceStatusOld;
     
+    
     # 2.3 Update DeviceStatus Recover
 	DROP TEMPORARY TABLE IF EXISTS Temp_AccountFingerprint;
     CREATE TEMPORARY TABLE Temp_AccountFingerprint(
@@ -166,6 +169,7 @@ BEGIN
     WHERE		tts.TransID > taf.TransID
 				AND tts.DeviceID IS NULL
                 AND tts.DeviceStatus = vrDeviceStatusNew;
+   
     
    # 2.4  Insert New Device for New DeviceCode with DeviceStatus Is NEW
     INSERT IGNORE INTO DCS_DataCenter.Device(FirstDeviceCode, UserAgentKey, FirstTransID, CreatedTime, CreatedDate, InsertTime)
@@ -189,6 +193,7 @@ BEGIN
     WHERE		tts.DeviceStatus	= vrDeviceStatusNew;
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
+    /*# Comment for Issue: WRONG_DI: Start
     # 2.5  Update to DeviceID for Recover Device
     DROP TEMPORARY TABLE IF EXISTS Temp_RecoverDevice;
     CREATE TEMPORARY TABLE Temp_RecoverDevice(
@@ -207,7 +212,8 @@ BEGIN
 				ON tts.RecoverTransID = tgd.TransID
     SET		tts.DeviceID = tgd.DeviceId
     WHERE	tts.DeviceID IS NULL;
-    
+   # Comment for Issue: WRONG_DI: END*/
+   
     # 2.5 Insert New DeviceCode
     INSERT IGNORE INTO DCS_DataCenter.DeviceCode(DeviceCode, DeviceID, FirstTransID, CreatedTime, CreatedDate, InsertTime)
     SELECT 	tts.DeviceCode
@@ -274,6 +280,7 @@ BEGIN
 					AND tts.DeviceID = df.DeviceID
 	SET			tts.DeviceID = df.DeviceID
                 , tts.DeviceFingerprintID =  df.DeviceFingerprintID;  
+                
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
     UPDATE	Temp_Transaction AS tts
@@ -289,8 +296,7 @@ BEGIN
                 , ts.FirstDeviceCode = tts.FirstDeviceCode
                 , ts.DeviceStatus = tts.DeviceStatus
                 , ts.DeviceFingerprintID = tts.DeviceFingerprintID;   
-     
-	
+   	
 	### PERFORMANCE
 	SET	vrEndTime = CURRENT_TIMESTAMP(4);
     
