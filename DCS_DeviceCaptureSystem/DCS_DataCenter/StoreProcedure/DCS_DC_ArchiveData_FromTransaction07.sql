@@ -22,10 +22,8 @@ BEGIN
     
 
     SET vr_ScheduleTime = CURRENT_TIME();
-	SET vr_ToDate = DATE_SUB(CURRENT_DATE(), INTERVAL 6 DAY);
-    
-    
-    
+	SET vr_ToDate = DATE_SUB(CURRENT_DATE(), INTERVAL 6 DAY);   
+        
     DROP TEMPORARY TABLE IF EXISTS ArchiveTrans07_DateTemp;
     CREATE TEMPORARY TABLE ArchiveTrans07_DateTemp
     (
