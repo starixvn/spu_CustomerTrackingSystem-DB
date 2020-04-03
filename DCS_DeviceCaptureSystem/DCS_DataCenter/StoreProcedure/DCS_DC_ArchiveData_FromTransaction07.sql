@@ -22,7 +22,7 @@ BEGIN
     
 
     SET vr_ScheduleTime = CURRENT_TIME();
-	SET vr_ToDate = CURRENT_DATE() - 6;
+	SET vr_ToDate = DATE_SUB(CURRENT_DATE(), INTERVAL 6 DAY);
     
     
     
