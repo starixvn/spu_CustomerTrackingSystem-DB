@@ -11,6 +11,7 @@ BEGIN
 		Original:
 
 		Revisions:
+			- 20200704@Harvey: Handle updating/mapping customer on username for deposit
         
 		Param's Explanation (filtered by):
         
@@ -34,6 +35,7 @@ BEGIN
 		, MRecommend	INT	 UNSIGNED 			
 		, Recommend		INT	 UNSIGNED
         , CreatedDate	DATETIME
+        , HasUpdate		TINYINT
         , INDEX			IX_TempCTSCustomer_UserName2(UserName2)
         );
     
@@ -52,6 +54,7 @@ BEGIN
 		, MRecommend	
 		, Recommend	
         , CreatedDate
+        , 0
 	FROM JSON_TABLE(ip_CustomerList,
 		 "$[*]" COLUMNS(
 		  SubscriberID 	INT 			PATH "$.SubscriberId"
@@ -85,6 +88,7 @@ BEGIN
 	INNER JOIN	TempCTSCustomer tempCust 
 				ON tempCust.UserName2 = ctsCust.UserName2 
 					AND tempCust.UserName2 IS NOT NULL
+                    AND tempCust.HasUpdate	= 0
                     AND tempCust.SubscriberID = ctsCust.SubscriberID
 	SET 
 		ctsCust.CustID 			= tempCust.CustID
@@ -98,7 +102,29 @@ BEGIN
 		, ctsCust.SRecommend 	= tempCust.SRecommend
 		, ctsCust.MRecommend 	= tempCust.MRecommend
         , ctsCust.Recommend 	= tempCust.Recommend
-        , ctsCust.CreatedDate 	= tempCust.CreatedDate;
+        , ctsCust.CreatedDate 	= tempCust.CreatedDate
+        , tempCust.HasUpdate	= 1;
+        
+	UPDATE 		CTS_DataCenter.CTSCustomer ctsCust
+	INNER JOIN	TempCTSCustomer tempCust 
+				ON tempCust.UserName = ctsCust.UserName 
+					AND tempCust.UserName IS NOT NULL
+                    AND tempCust.HasUpdate	= 0
+                    AND tempCust.SubscriberID = ctsCust.SubscriberID
+	SET 
+		ctsCust.CustID 			= tempCust.CustID
+		, ctsCust.CustSubID 	= tempCust.CustSubID
+		, ctsCust.UserName2		= tempCust.UserName2
+        , ctsCust.SiteID 		= tempCust.SiteID
+		, ctsCust.Site 			= tempCust.Site
+		, ctsCust.RoleID 		= tempCust.RoleID
+		, ctsCust.Currency 		= tempCust.Currency
+		, ctsCust.CurrencyID 	= tempCust.CurrencyID
+		, ctsCust.SRecommend 	= tempCust.SRecommend
+		, ctsCust.MRecommend 	= tempCust.MRecommend
+        , ctsCust.Recommend 	= tempCust.Recommend
+        , ctsCust.CreatedDate 	= tempCust.CreatedDate
+        , tempCust.HasUpdate	= 1;
 
 	INSERT INTO CTS_DataCenter.CTSCustomer(SubscriberID, CustID, CustSubID, UserName, UserName2, SiteID, Site, RoleID, Currency, CurrencyID, SRecommend, MRecommend, Recommend, CreatedDate)
 	SELECT    tempCust.SubscriberID
