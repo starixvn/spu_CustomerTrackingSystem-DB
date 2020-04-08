@@ -85,14 +85,15 @@ BEGIN
     #=======New Deposit Account that not existing in CTSCustomer
     INSERT IGNORE INTO	CTS_DataCenter.CTSCustomer(SubscriberID, UserName, UserName2, LastLoginTime)
     SELECT		acc.SubscriberID
-				, '' AS UserName
+				, acc.LoginName AS UserName
 				, acc.LoginNameWithPrefix
                 , MAX(LastLoginTime)
     FROM 		Temp_Account AS acc
     WHERE		acc.SubscriberType IN (vrDepositSubType, vrNOTMainSubType)
 				AND acc.CTSCustID IS NULL
 	GROUP BY 	acc.SubscriberID
-				, acc.LoginNameWithPrefix;   			
+				, acc.LoginNameWithPrefix
+                , acc.LoginName;   			
 
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
     
