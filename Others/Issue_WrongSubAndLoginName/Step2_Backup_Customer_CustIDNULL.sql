@@ -25,3 +25,4 @@
 	) ENGINE=INNODB AUTO_INCREMENT=1;
 
 #2. Call SP Copy to CTSCustomer;
+CALL CTS_DataCenter.zzzIssueLoginName_CTSCustomer();
