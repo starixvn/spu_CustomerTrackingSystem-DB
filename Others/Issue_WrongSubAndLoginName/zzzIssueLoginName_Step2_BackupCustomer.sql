@@ -12,23 +12,25 @@ BEGIN
 	*/
     
 	DECLARE vr_MaxID BIGINT;
-	DECLARE vr_LoopID BIGINT DEFAULT 0;
+	DECLARE vr_LoopID BIGINT;
  
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED ;  
 	SET vr_MaxID = (SELECT	MAX(CTSCustID)
 					FROM 	CTS_DataCenter.CTSCustomer
-					WHERE	CustID IS NULL AND SubscriberID NOT IN (2367,2328));  
-   
-   WHILE (vr_LoopID <= vr_MaxID)  
+					WHERE	CustID IS NULL AND SubscriberID NOT IN (2367,2328)); 
+                    
+   SET vr_LoopID = (SELECT	IFNULL(MAX(CTSCustID),0) FROM CTS_DataCenter.zzzIssueLoginName_CTSCustomer); 
+   WHILE (vr_LoopID < vr_MaxID)  
    DO
-		
-        INSERT INTO zzzIssueLoginName_CTSCustomer
+
+        INSERT INTO CTS_DataCenter.zzzIssueLoginName_CTSCustomer
         SELECT 	*
-        FROM	zzzIssueLoginName_CTSCustomer
+        FROM	CTS_DataCenter.CTSCustomer
         WHERE	CustID IS NULL AND SubscriberID NOT IN (2367,2328)
-        LIMIT 	50000;
+				AND CTSCustID > vr_LoopID
+        LIMIT 	5000;
         
-        SET vr_LoopID = (SELECT	MAX(CTSCustID) FROM zzzIssueLoginName_CTSCustomer);
+        SET vr_LoopID = (SELECT	MAX(CTSCustID) FROM CTS_DataCenter.zzzIssueLoginName_CTSCustomer);
 	END WHILE;
     
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
