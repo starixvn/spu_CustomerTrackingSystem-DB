@@ -30,7 +30,7 @@ BEGIN
 		SET vr_ToID = (	SELECT MAX(tmp.CTSCustID) 
 							FROM (SELECT CTSCustID FROM CTS_DataCenter.zzzIssueLoginName_CTSCustomer WHERE CTSCustID >= vr_FromID LIMIT 10000) AS tmp);
                             
-		INSERT INTO CTS_DataCenter.zzzIssueLoginName_CustEvidence
+		INSERT IGNORE INTO CTS_DataCenter.zzzIssueLoginName_CustEvidence
         SELECT 		ct.*
         FROM 		CTS_DataCenter.CustEvidence						AS ct
         INNER JOIN	CTS_DataCenter.zzzIssueLoginName_CTSCustomer	AS zz
