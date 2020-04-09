@@ -16,15 +16,7 @@ BEGIN
 	DECLARE vr_ArchiveID		TINYINT DEFAULT 1;
     DECLARE	vr_LastTrans		BIGINT DEFAULT 0;
     
-    
-	DROP TEMPORARY TABLE IF EXISTS DCS_DataCenter.ArchiveTrans07_TransTemp;
-    CREATE TEMPORARY TABLE DCS_DataCenter.ArchiveTrans07_TransTemp
-    (
-		TransID			BIGINT
-    );
-
-    #========================================================= 
-	TRUNCATE TABLE DCS_DataCenter.ArchiveTrans07_TransTemp;
+ 
     WHILE EXISTS (SELECT 1 FROM DCS_DataCenter.ArchiveTrans07_TransTemp LIMIT 1)
     DO
 		SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
@@ -44,10 +36,8 @@ BEGIN
         FROM	DCS_DataCenter.ArchiveTrans07_TransTemp AS temp_arc
         WHERE 	temp_arc.TransID <= vr_LastTrans;	
         
-		SELECT 'Detele', ip_MoveDate, vr_LastTrans;
     END WHILE;
     
-    	
 
 END$$
 

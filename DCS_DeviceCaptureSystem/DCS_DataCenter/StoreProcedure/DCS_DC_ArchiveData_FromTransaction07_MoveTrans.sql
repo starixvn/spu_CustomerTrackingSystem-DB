@@ -30,7 +30,7 @@ BEGIN
 				AND	t07.TransID > vr_LastTrans
 		LIMIT	ip_Batch;      
         
-        INSERT IGNORE INTO  DCS_DataCenter.Transaction_Casey(TransID, LoginName, TransTime, SubscriberID, AccountID
+        INSERT IGNORE INTO  DCS_DataCenter.Transaction_BK01(TransID, LoginName, TransTime, SubscriberID, AccountID
 					, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID
 					, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime)        
 		SELECT 		ts07.TransID, ts07.LoginName, ts07.TransTime, ts07.SubscriberID, ts07.AccountID
@@ -40,13 +40,8 @@ BEGIN
 		INNER JOIN	DCS_DataCenter.ArchiveTrans07_TransTemp	AS tmp_rm
 					ON	ts07.TransID = tmp_rm.TransID
 		WHERE 		tmp_rm.TransID > vr_LastTrans;
-		
-                    
-        SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 
         SET vr_LastTrans = (SELECT MAX(TransID) FROM DCS_DataCenter.ArchiveTrans07_TransTemp);
-		
-        SELECT 'Move', ip_MoveDate, vr_LastTrans;
     END WHILE;
     
    
