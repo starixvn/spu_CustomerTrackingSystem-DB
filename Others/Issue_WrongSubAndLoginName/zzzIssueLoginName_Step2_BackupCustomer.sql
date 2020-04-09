@@ -25,7 +25,7 @@ BEGIN
 
         INSERT INTO CTS_DataCenter.zzzIssueLoginName_CTSCustomer
         SELECT 	*
-        FROM	CTS_DataCenter.CTSCustomer
+        FROM	CTS_DataCenter.CTSCustomer 
         WHERE	CustID IS NULL AND SubscriberID NOT IN (2367,2328)
 				AND CTSCustID > vr_LoopID
         LIMIT 	5000;
