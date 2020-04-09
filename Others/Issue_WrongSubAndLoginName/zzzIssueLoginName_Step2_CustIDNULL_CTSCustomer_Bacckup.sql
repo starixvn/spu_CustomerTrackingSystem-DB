@@ -1,10 +1,10 @@
 DELIMITER $$
 
-USE DCS_DataCenter$$
+USE CTS_DataCenter$$
 
-DROP PROCEDURE IF EXISTS DCS_DataCenter.zzzIssueLoginName_Step2_CustIDNULL_CTSCustomer_Bacckup$$
+DROP PROCEDURE IF EXISTS CTS_DataCenter.zzzIssueLoginName_Step2_CustIDNULL_CTSCustomer_Bacckup$$
 
-CREATE PROCEDURE DCS_DataCenter.zzzIssueLoginName_Step2_CustIDNULL_CTSCustomer_Bacckup()
+CREATE PROCEDURE CTS_DataCenter.zzzIssueLoginName_Step2_CustIDNULL_CTSCustomer_Bacckup()
 BEGIN
 	/*
 		Created:	20200313@CaseyHuynh
