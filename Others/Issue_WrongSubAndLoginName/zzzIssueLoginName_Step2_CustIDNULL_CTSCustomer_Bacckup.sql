@@ -2,9 +2,9 @@ DELIMITER $$
 
 USE DCS_DataCenter$$
 
-DROP PROCEDURE IF EXISTS DCS_DataCenter.zzzIssueLoginName_Step2_BackupCustomer$$
+DROP PROCEDURE IF EXISTS DCS_DataCenter.zzzIssueLoginName_Step2_CustIDNULL_CTSCustomer_Bacckup$$
 
-CREATE PROCEDURE DCS_DataCenter.zzzIssueLoginName_Step2_BackupCustomer()
+CREATE PROCEDURE DCS_DataCenter.zzzIssueLoginName_Step2_CustIDNULL_CTSCustomer_Bacckup()
 BEGIN
 	/*
 		Created:	20200313@CaseyHuynh
