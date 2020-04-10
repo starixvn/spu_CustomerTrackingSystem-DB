@@ -15,12 +15,12 @@ Reviewer:
 CREATE DATABASE IF NOT EXISTS DCS_DataCenter;
 CREATE TABLE IF NOT EXISTS DCS_DataCenter.Device(		
         DeviceID				BIGINT	UNSIGNED	AUTO_INCREMENT NOT NULL  
-		, FirstDeviceCode		VARCHAR(32)		NOT NULL
-        , UserAgentKey			VARCHAR(32)		NULL
-        , FirstTransID			BIGINT			NULL
-		, CreatedTime			TIMESTAMP(4)	NOT NULL			COMMENT 'CreatedTime of First Transaction'
-        , CreatedDate			DATETIME		NOT NULL        	COMMENT 'Date Only, Date of First Transaction'
-        , InsertTime			TIMESTAMP(4)	NOT NULL			COMMENT 'DateTime, the time that data Insert to Table'
+		, FirstDeviceCode		VARCHAR(32)			NOT NULL
+        , UserAgentKey			VARCHAR(32)			NULL
+        , FirstTransID			BIGINT				NULL
+		, CreatedTime			TIMESTAMP(4)		NOT NULL			COMMENT 'CreatedTime of First Transaction'
+        , CreatedDate			DATETIME			NOT NULL        	COMMENT 'Date Only, Date of First Transaction'
+        , InsertTime			TIMESTAMP(4)		NOT NULL			COMMENT 'DateTime, the time that data Insert to Table'
         
         , PRIMARY KEY	PK_Device_DeviceKey(DeviceID)
         , UNIQUE KEY	UK_Device_FirstDeviceCode(FirstDeviceCode)
@@ -284,6 +284,7 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.TransformTemp_LastLoginTime(
         , EndTime				TIMESTAMP(4)
         
 		, PRIMARY KEY	PK_ArchiveHistory_ID(ID)
+        , INDEX 		IX_ArchiveHistory_ArchivedDate(ArchivedDate)
     ) ENGINE=InnoDB;
     
     CREATE TABLE IF NOT EXISTS DCS_DataCenter.Temp_ArchiveTrans07Date(
