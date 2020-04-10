@@ -33,7 +33,8 @@ BEGIN
         DELETE 	ct
         FROM 		CTS_DataCenter.CustDCSAccount AS ct
         INNER JOIN	CTS_DataCenter.zzzIssueLoginName_CustDCSAccount AS zz
-					ON ct.CTSCustID = zz.CTSCustID
+					ON  ct.SubscriberID = zz.SubscriberID
+						AND ct.CTSCustID = zz.CTSCustID
         WHERE		ct.CTSCustID BETWEEN vr_FromID AND vr_ToID;
         
         SET vr_FromID = vr_ToID + 1 ;

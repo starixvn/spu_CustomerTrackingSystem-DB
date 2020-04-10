@@ -13,23 +13,16 @@ BEGIN
     
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED ;  
   
-   WHILE EXISTS (SELECT		ct.CTSCustID
-				FROM 		CTS_DataCenter.CTSCustomer ct
-				LEFT JOIN 	CTS_DataCenter.zzzIssueLoginName_CTSCustomer_DuplicateNew dp
-							ON dp.SubscriberID = 105 AND ct.UserName = dp.UserName AND ct.UserName2 = dp.UserName2
-				WHERE	ct.SubscriberID = 4427
-				AND dp.SubscriberID IS NULL
-				LIMIT 	1)
+   WHILE EXISTS (	SELECT	CTSCustID 
+					FROM 	CTS_DataCenter.CTSCustomer
+					WHERE	SubscriberID = 4427 LIMIT 1)
    DO
 		SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
         
-        UPDATE		CTS_DataCenter.CTSCustomer ct
-        LEFT JOIN 	CTS_DataCenter.zzzIssueLoginName_CTSCustomer_DuplicateNew dp
-					ON dp.SubscriberID = 105 AND ct.UserName = dp.UserName AND ct.UserName2 = dp.UserName2
-        SET		ct.SubscriberID = 105
-        WHERE	ct.SubscriberID = 4427
-				AND dp.SubscriberID IS NULL
-        LIMIT 	2000;
+        UPDATE	CTS_DataCenter.CTSCustomer 
+        SET		SubscriberID = 105
+        WHERE	SubscriberID = 4427
+        LIMIT 	10000;
         
        	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED ;  
         
