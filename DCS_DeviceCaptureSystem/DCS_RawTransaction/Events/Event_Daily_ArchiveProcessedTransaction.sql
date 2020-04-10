@@ -1,7 +1,8 @@
 DELIMITER //
 DROP EVENT IF EXISTS Event_Daily_ArchiveProcessedTransaction;
-CREATE EVENT Event_Daily_ArchiveProcessedTransaction
-	/*
+CREATE EVENT Event_Daily_ArchiveProcessedTransaction	
+    ON SCHEDULE
+    /*
 	Created: 20200330@Terry.Nguyen
 	Task : Archive processed raw transaction
 	DB: DCS_RawTransaction
@@ -9,7 +10,7 @@ CREATE EVENT Event_Daily_ArchiveProcessedTransaction
 	Revisions:
 	Param's Explanation (filtered by):
 	*/
-    ON SCHEDULE
+    
 		#EVERY 1 DAY
 		#STARTS (TIMESTAMP(CURRENT_DATE) + INTERVAL 1 DAY + INTERVAL 1 HOUR)
         EVERY 30 MINUTE

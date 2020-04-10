@@ -20,8 +20,8 @@ BEGIN
     SET v_executedDate = NOW();
     
     INSERT 
-		INTO DCS_RawTransaction.ArchiveTransactionLog(ExecutedDate,IsCompleted)
-		VALUES(v_executedDate, false);     
+		INTO DCS_RawTransaction.ArchiveTransactionLog(ExecutedDate,IsCompleted, StartTime, EndTime)
+		VALUES(v_executedDate, false, NOW(), NOW());     
     
     #====================== 
     # Keep data in 2 days
@@ -43,7 +43,8 @@ BEGIN
 	WHERE DATE(CreatedDate) < v_fromDate;
     
     UPDATE DCS_RawTransaction.ArchiveTransactionLog 
-		SET IsCompleted = true 
+		SET IsCompleted = true,
+			EndTime = NOW()
 	WHERE ExecutedDate = v_executedDate;       
 END$$
 DELIMITER ;
