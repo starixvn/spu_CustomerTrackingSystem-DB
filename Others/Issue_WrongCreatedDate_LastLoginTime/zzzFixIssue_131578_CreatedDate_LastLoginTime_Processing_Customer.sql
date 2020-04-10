@@ -34,7 +34,9 @@ BEGIN
 					INNER JOIN CTS_DataCenter.CustDCSAccount cusacc ON acc.AccountID = cusacc.AccountID
 				WHERE acc.AccountID BETWEEN v_minId AND v_maxId) tmpAcc
 			ON cus.CTSCustID = tmpAcc.CTSCustId
-            SET cus.LastLoginTime = tmpAcc.LastLoginTime;
+            SET cus.LastLoginTime = CASE WHEN tmpAcc.LastLoginTime > cus.LastLoginTime THEN tmpAcc.LastLoginTime
+                        ELSE cus.LastLoginTime
+						END;
             
            UPDATE DCS_DataCenter.zzzTransaction_temp_AccountId SET status = true WHERE FromAccountId = v_minId and ToAccountId = v_maxId;
         END IF;

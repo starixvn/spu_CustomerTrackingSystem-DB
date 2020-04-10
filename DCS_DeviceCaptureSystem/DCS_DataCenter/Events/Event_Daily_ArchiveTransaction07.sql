@@ -11,10 +11,10 @@ DROP EVENT IF EXISTS Event_Daily_ArchiveTransaction;
 	*/
 CREATE EVENT Event_Daily_ArchiveTransaction
     ON SCHEDULE
-		#EVERY 1 DAY
-		#STARTS (TIMESTAMP(CURRENT_DATE) + INTERVAL 1 DAY + INTERVAL 1 HOUR)
-        EVERY 5 MINUTE
-        STARTS NOW()
+		EVERY 1 DAY
+		STARTS (TIMESTAMP(CURRENT_DATE) + INTERVAL 1 DAY + INTERVAL 1 HOUR)
+        #EVERY 5 MINUTE
+        #STARTS NOW()
         ON COMPLETION PRESERVE ENABLE
     COMMENT 'Archive data from Transaction07 to Transaction_BK01 with package size = 1000'
     DO this_event:BEGIN      	
