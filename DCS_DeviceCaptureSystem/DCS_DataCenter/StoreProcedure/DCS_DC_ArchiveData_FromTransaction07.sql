@@ -23,16 +23,8 @@ BEGIN
 
     SET vr_ScheduleTime = CURRENT_TIME();
 	SET vr_ToDate = DATE_SUB(CURRENT_DATE(), INTERVAL 6 DAY);   
-        
-    DROP TEMPORARY TABLE IF EXISTS ArchiveTrans07_DateTemp;
-    CREATE TEMPORARY TABLE ArchiveTrans07_DateTemp
-    (
-		ArchivedDate	DATETIME
-        , ScheduleTime 	DATETIME
-        , LastTrans		BIGINT UNSIGNED
-    );
-        
-    TRUNCATE TABLE ArchiveTrans07_DateTemp;
+
+    TRUNCATE TABLE DCS_DataCenter.ArchiveTrans07_DateTemp;
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED ;
     
