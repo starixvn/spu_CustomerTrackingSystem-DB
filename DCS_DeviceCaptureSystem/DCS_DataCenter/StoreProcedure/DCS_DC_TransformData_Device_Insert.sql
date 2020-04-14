@@ -103,9 +103,8 @@ BEGIN
 				ON	tts.DeviceCode = dc.DeviceCode
 	SET			tts.DeviceID = dc.DeviceID
 				, tts.DeviceStatus = vrDeviceStatusOld
-                , tts.DeviceCodeID =  dc.DeviceCodeID;
-    
-    /*# Comment for Issue: WRONG_DI: Start
+                , tts.DeviceCodeID =  dc.DeviceCodeID;    
+
     # 1.2 Recover Existing DeviceID  BY AccountID and FingerprintCode
     UPDATE		Temp_Transaction AS tts
     INNER JOIN	DCS_DataCenter.Association AS ass 
@@ -117,7 +116,6 @@ BEGIN
 				, tts.DeviceID = df.DeviceID
                 , tts.DeviceStatus = vrDeviceStatusRecover
 	WHERE		tts.DeviceID IS NULL;
-	# Comment for Issue: WRONG_DI: END*/
     
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
@@ -191,9 +189,8 @@ BEGIN
 				ON tts.DeviceCode	= dv.FirstDeviceCode
 	SET			tts.DeviceID 		= dv.DeviceID
     WHERE		tts.DeviceStatus	= vrDeviceStatusNew;
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-    
-    /*# Comment for Issue: WRONG_DI: Start
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;    
+
     # 2.5  Update to DeviceID for Recover Device
     DROP TEMPORARY TABLE IF EXISTS Temp_RecoverDevice;
     CREATE TEMPORARY TABLE Temp_RecoverDevice(
@@ -212,7 +209,7 @@ BEGIN
 				ON tts.RecoverTransID = tgd.TransID
     SET		tts.DeviceID = tgd.DeviceId
     WHERE	tts.DeviceID IS NULL;
-   # Comment for Issue: WRONG_DI: END*/
+  
    
     # 2.5 Insert New DeviceCode
     INSERT IGNORE INTO DCS_DataCenter.DeviceCode(DeviceCode, DeviceID, FirstTransID, CreatedTime, CreatedDate, InsertTime)
