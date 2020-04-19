@@ -24,6 +24,8 @@ BEGIN
 		  CustID		BIGINT	 UNSIGNED		
 		, CustSubID		BIGINT			
 		, UserName2		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+		, SiteID		INT
+		, RoleID		TINYINT
         , INDEX			IX_TempCTSCustomer_UserName2(UserName2)
         );
         
@@ -36,10 +38,23 @@ BEGIN
 		  CustID		INT	 UNSIGNED	PATH "$.CustId" 
 		, CustSubID		BIGINT			PATH "$.CustSubId" 
 		, UserName2		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	PATH "$.Username2" 
+		, SiteID		INT	 			PATH "$.SiteId" 
+		, RoleID		TINYINT			PATH "$.RoleId" 
 		 )) as tmpTable;
+		 
+	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+		UPDATE 		TempCTSCustomer cust
+		INNER JOIN	CTS_DataCenter.MappingSubscriberSite mss 
+					ON cust.SiteID = mss.SiteID 
+                    AND ((mss.RoleMapping = 1 AND cust.RoleID = 1)
+						OR (mss.RoleMapping = 2 AND cust.RoleID > 1)
+						OR (mss.RoleMapping = 0))
+		SET 		cust.SubscriberID 	= 	mss.SubscriberID;
+	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
     UPDATE CTSCustomer cust
 		INNER JOIN TempCTSCustomer tmpCust ON cust.CustID = tmpCust.CustID AND cust.CustSubID = tmpCust.CustSubID
-	SET cust.UserName2 = tmpCust.UserName2;    
+	SET cust.UserName2 = tmpCust.UserName2
+		,cust.SubscriberID = tmpCust.SubscriberID;    
 END$$
 DELIMITER ;
