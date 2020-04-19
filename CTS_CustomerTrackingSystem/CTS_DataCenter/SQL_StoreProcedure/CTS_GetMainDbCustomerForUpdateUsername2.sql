@@ -33,12 +33,17 @@ BEGIN;
 
 	IF @IsGetCustSub = 1
 	BEGIN
-		SELECT cust.[custid]
-			,cust.subaccid 'custsubId' 
-			,cust.username
-			,cust.username2
-		FROM [bodb02].[dbo].[custSub] cust WITH (NOLOCK)
-			INNER JOIN #tmpCust tmpcust ON cust.subaccid = tmpcust.CustId
+		SELECT sub.[custid]
+			,sub.subaccid 'custsubId' 
+			,sub.username
+			,sub.username2
+			,cust.roleid
+			,st.siteid
+		FROM [bodb02].[dbo].[custSub] sub WITH (NOLOCK)
+			INNER JOIN #tmpCust tmpcust ON sub.subaccid = tmpcust.CustId
+			INNER JOIN dbo.Customer cust WITH (NOLOCK) ON sub.custid = cust.custid
+			INNER JOIN	dbo.Customer upl WITH (NOLOCK) ON cust.srecommend = upl.custid
+			INNER JOIN dbo.Site st WITH (NOLOCK) ON upl.site = st.site
 		WHERE cust.UserName2 IS NOT NULL
 	END
 	ELSE
@@ -46,8 +51,12 @@ BEGIN;
 		SELECT cust.[custid]
 			,cust.username
 			,cust.username2
+			,cust.roleid
+			,st.siteid
 		FROM [bodb02].[dbo].[Customer] cust WITH (NOLOCK)
 			INNER JOIN #tmpCust tmpcust ON cust.custid = tmpcust.CustId
+			INNER JOIN dbo.Customer upl WITH (NOLOCK) ON cust.srecommend = upl.custid
+			INNER JOIN dbo.Site st WITH (NOLOCK) ON upl.site = st.site
 		WHERE cust.UserName2 IS NOT NULL
 	END
 

@@ -80,8 +80,7 @@ BEGIN
                     AND ((mss.RoleMapping = 1 AND cust.RoleID = 1)
 						OR (mss.RoleMapping = 2 AND cust.RoleID > 1)
 						OR (mss.RoleMapping = 0))
-		SET 		cust.SubscriberID 	= 	mss.SubscriberID,
-					cust.SiteID			= 	mss.SiteID;
+		SET 		cust.SubscriberID 	= 	mss.SubscriberID;
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 
 	UPDATE 		CTS_DataCenter.CTSCustomer ctsCust
