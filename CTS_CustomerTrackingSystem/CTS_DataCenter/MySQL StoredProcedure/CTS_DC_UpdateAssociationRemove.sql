@@ -9,6 +9,7 @@ CREATE PROCEDURE `CTS_DataCenter`.`CTS_DC_UpdateAssociationRemove`(
     , 	IN ip_ToCTSCustID 		BIGINT
     , 	IN ip_Remark 			VARCHAR(500)
     , 	IN ip_CreatedBy 		BIGINT
+    ,	IN ip_IsActionRemove	BIT
     
     , 	OUT op_ErrorMessage 	VARCHAR(200)
 )
@@ -51,18 +52,24 @@ BEGIN
 						,	lv_ToCTSCustID = ip_ToCTSCustID;
 			END IF;
 
-			IF EXISTS(SELECT 1 FROM CTS_DataCenter.AssociationRemove WHERE FromCTSCustID = lv_FromCustID AND ToCTSCustID = lv_ToCustID)
+			IF (ip_IsActionRemove = 1)
 				THEN
 					DELETE FROM CTS_DataCenter.AssociationRemove
-					WHERE FromCTSCustID = lv_FromCustID AND ToCTSCustID = lv_ToCustID;
-				ELSE
+					WHERE FromCTSCustID = lv_FromCTSCustID AND ToCTSCustID = lv_ToCTSCustID;
+                    
+                    INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
+					VALUES(9, 'CTS_DC_UpdateAssociationRemove', CONCAT('Delete Association Remove: ip_FromCTSCustID_', lv_FromCTSCustID, ';ip_ToCTSCustID_', lv_ToCTSCustID,')'), CURRENT_TIME(), ip_CreatedBy);    
+                ELSE
 					SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
-			
+					
 					INSERT INTO CTS_DataCenter.AssociationRemove(FromSubscriberID, FromCTSCustID, ToSubscriberID, ToCTSCustID, Remark, CreatedDate, CreatedBy)
 					VALUES(lv_FromSubscriberID, lv_FromCTSCustID, lv_ToSubscriberID, lv_ToCTSCustID, ip_Remark, CURRENT_TIME(), ip_CreatedBy);
 				   
+					INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
+					VALUES(8, 'CTS_DC_UpdateAssociationRemove', CONCAT('Insert Association Remove: ip_FromCTSCustID_', lv_FromCTSCustID, ';ip_ToCTSCustID_', lv_ToCTSCustID,')'), CURRENT_TIME(), ip_CreatedBy);
+	
 					SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-			END IF;    
+			END IF;
     END IF;
 END$$	
 DELIMITER ;
