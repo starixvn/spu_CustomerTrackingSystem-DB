@@ -4,9 +4,9 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_AddManualAssociation`$$
 
 CREATE PROCEDURE `CTS_DataCenter`.`CTS_DC_AddManualAssociation`(
 		IN ip_FromSubscriberID 	INT
-    , 	IN ip_FromCustID 		BIGINT
+    , 	IN ip_FromCTSCustID 	BIGINT
     ,	IN ip_ToSubscriberID 	INT
-    , 	IN ip_ToCustID 			BIGINT
+    , 	IN ip_ToCTSCustID 		BIGINT
     , 	IN ip_Remark 			VARCHAR(500)
     , 	IN ip_CreatedBy 		BIGINT
     
@@ -25,33 +25,37 @@ BEGIN
 	*/ 
  
     DECLARE lv_FromSubscriberID 	INT;
-	DECLARE lv_FromCustID 			BIGINT;
+	DECLARE lv_FromCTSCustID 		BIGINT;
     DECLARE lv_ToSubscriberID 		INT;
-    DECLARE lv_ToCustID 			BIGINT;
+    DECLARE lv_ToCTSCustID 			BIGINT;
  
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
 
-	IF ip_FromCustID > ip_ToCustID
+	IF ip_FromCTSCustID > ip_ToCTSCustID
 		THEN
 			SET 	lv_FromSubscriberID = ip_ToSubscriberID
-				,	lv_FromCustID = ip_ToCustID
+				,	lv_FromCTSCustID = ip_ToCTSCustID
                 ,	lv_ToSubscriberID = ip_FromSubscriberID
-                ,	lv_ToCustID = ip_FromCustID;
+                ,	lv_ToCTSCustID = ip_FromCTSCustID;
         ELSE
 			SET 	lv_FromSubscriberID = ip_FromSubscriberID
-				,	lv_FromCustID = ip_FromCustID
+				,	lv_FromCTSCustID = ip_FromCTSCustID
                 ,	lv_ToSubscriberID = ip_ToSubscriberID
-                ,	lv_ToCustID = ip_ToCustID;
+                ,	lv_ToCTSCustID = ip_ToCTSCustID;
 	END IF;
 
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
     
-	INSERT INTO CTS_DataCenter.AssociationByManual(FromSubscriberID, FromCustID, ToSubscriberID, ToCustID, Remark, CreatedDate, CreatedBy)
-	VALUES(lv_FromSubscriberID, lv_FromCustID, lv_ToSubscriberID, lv_ToCustID, ip_Remark, CURRENT_TIME(), ip_CreatedBy);
+	INSERT INTO CTS_DataCenter.AssociationByManual(FromSubscriberID, FromCTSCustID, ToSubscriberID, ToCTSCustID, Remark, CreatedDate, CreatedBy)
+	VALUES(lv_FromSubscriberID, lv_FromCTSCustID, lv_ToSubscriberID, lv_ToCTSCustID, ip_Remark, CURRENT_TIME(), ip_CreatedBy);
    
+   
+	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
+	VALUES(7, 'CTS_DC_AddManualAssociation', CONCAT('Insert Manual Association: ip_FromCTSCustID_', lv_FromCTSCustID, ';ip_ToCTSCustID_', vr_ToCTSCustID,')'), CURRENT_TIME(), ip_CreatedBy);
+	
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 END$$	
 DELIMITER ;
