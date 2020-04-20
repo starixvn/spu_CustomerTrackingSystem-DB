@@ -26,6 +26,7 @@ BEGIN
 		, UserName2		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 		, SiteID		INT
 		, RoleID		TINYINT
+        , SubscriberID	INT
         , INDEX			IX_TempCTSCustomer_UserName2(UserName2)
         );
         
@@ -33,6 +34,9 @@ BEGIN
 	SELECT CustID		
 		, CustSubID		
 		, CASE WHEN UserName2 = 'null' THEN NULL ELSE UserName2 END
+        , SiteID
+        , RoleID
+        , NULL
 	FROM JSON_TABLE(ip_CustomerList,
 		 "$[*]" COLUMNS(
 		  CustID		INT	 UNSIGNED	PATH "$.CustId" 
