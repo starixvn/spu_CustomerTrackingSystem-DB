@@ -54,7 +54,7 @@ BEGIN
    
    
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-	VALUES(7, 'CTS_DC_AddManualAssociation', CONCAT('Insert Manual Association: ip_FromCTSCustID_', lv_FromCTSCustID, ';ip_ToCTSCustID_', vr_ToCTSCustID,')'), CURRENT_TIME(), ip_CreatedBy);
+	VALUES(7, 'CTS_DC_AddManualAssociation', CONCAT('Insert Manual Association: ip_FromCTSCustID_', lv_FromCTSCustID, ';ip_ToCTSCustID_', lv_ToCTSCustID,')'), CURRENT_TIME(), ip_CreatedBy);
 	
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 END$$	
