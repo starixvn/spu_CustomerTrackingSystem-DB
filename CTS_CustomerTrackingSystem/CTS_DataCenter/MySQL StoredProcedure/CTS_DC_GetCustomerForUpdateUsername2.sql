@@ -23,7 +23,7 @@ BEGIN
 			,CustID
 			,CustSubID
 		FROM CTSCustomer
-		WHERE UserName2 IS NULL
+		WHERE (UserName2 IS NULL OR SubscriberID IS NULL)
 			AND CustID > ip_CustID
 			AND CustSubID = 0
 		ORDER BY CustID
@@ -33,7 +33,7 @@ BEGIN
 			,CustID
 			,CustSubID
 		FROM CTSCustomer
-		WHERE UserName2 IS NULL
+		WHERE (UserName2 IS NULL OR SubscriberID IS NULL)
 			AND CustID > 0
 			AND CustSubID > ip_CustID
 		ORDER BY CustSubID
