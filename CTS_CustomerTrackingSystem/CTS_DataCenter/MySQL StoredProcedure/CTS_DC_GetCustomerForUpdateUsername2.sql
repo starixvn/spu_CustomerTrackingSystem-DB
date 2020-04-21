@@ -11,6 +11,7 @@ BEGIN
 		Original:
 
 		Revisions:
+			- 20200421@Harvey:	Get customer for update SubscriberID - [Redmine: #132705]
         
 		Param's Explanation (filtered by):         
         
