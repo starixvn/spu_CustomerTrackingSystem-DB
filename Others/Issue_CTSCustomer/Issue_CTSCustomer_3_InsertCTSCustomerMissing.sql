@@ -25,9 +25,9 @@ BEGIN
 	
 	WHILE (i < n)
     DO
-		SET k = (SELECT MAX(bt.CTSCustID) FROM ( SELECT ms.CTSCustID
+				SET k = (SELECT MAX(bt.CTSCustID) FROM ( SELECT ms.CTSCustID
 												 FROM 	CTS_DataCenter.zzzIssueCustMissing_CustDCSAccount AS ms
-												 WHERE	ms.CTSCustID >= i
+												 WHERE	ms.CTSCustID >= i AND NewCTSCustID = -1
 												 LIMIT	1000
 												) AS bt);
 												
@@ -41,9 +41,11 @@ BEGIN
 		INNER JOIN	DCS_DataCenter.Account AS ac
 					ON ms.AccountID = ac.AccountID
 		WHERE		ms.SubscriberType IN (1,2)
+					AND NewCTSCustID = -1
 		GROUP BY 	ms.SubscriberID
 					, ms.LoginNameWithPrefix
 					, ms.LoginName; 
+		
 		
 		SET i = k;
     END WHILE;
