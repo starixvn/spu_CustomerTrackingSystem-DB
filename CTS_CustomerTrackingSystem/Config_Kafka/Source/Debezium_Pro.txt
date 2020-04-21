@@ -39,6 +39,8 @@ curl -X POST -H "Content-Type: application/json" --data '{
       "table.whitelist":"CTS_DataCenter.CTSCustomer,CTS_DataCenter.AssociationByDevice",
       "database.history.kafka.bootstrap.servers": "localhost:9092", 
       "database.history.kafka.topic": "dbhistory.ctsserver", 
+      "database.history.store.only.monitored.tables.ddl": "true",
+      "database.history.skip.unparseable.ddl": "true",
       "include.schema.changes": "true" 
    }
 }
