@@ -20,7 +20,7 @@ WHERE		ms.NewCTSCustID > 0;
 UPDATE		CTS_DataCenter.AssociationByDevice AS ad
 INNER JOIN	CTS_DataCenter.zzzIssueCustMissing_CustDCSAccount AS ms
 			ON ad.CTSCustID = ms.CTSCustID
-				AND acc.SubscriberID = ms.SubscriberID
+				AND ad.SubscriberID = ms.SubscriberID
 SET			ad.CTSCustID = ms.NewCTSCustID                
 WHERE		ms.NewCTSCustID > 0;
 
