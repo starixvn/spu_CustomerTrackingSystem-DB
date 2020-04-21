@@ -17,8 +17,8 @@ INNER JOIN	CTS_DataCenter.zzzIssueCustMissing_CustDCSAccount AS ms
 				AND acc.SubscriberID = ms.SubscriberID
 WHERE		ms.LoginName IS NULL; #COUNT = 7934
 
-DELETE		ac
+DELETE		ad
 FROM		CTS_DataCenter.AssociationByDevice AS ad
 INNER JOIN	CTS_DataCenter.zzzIssueCustMissing_CustDCSAccount AS ms
-			ON ac.CTSCustID = ms.CTSCustID
+			ON ad.CTSCustID = ms.CTSCustID
 WHERE		ms.LoginName IS NULL; 
