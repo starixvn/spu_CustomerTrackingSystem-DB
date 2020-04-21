@@ -14,17 +14,14 @@ UPDATE		CTS_DataCenter.CustDCSAccount AS acc
 INNER JOIN	CTS_DataCenter.zzzIssueCustMissing_CustDCSAccount AS ms
 			ON acc.CTSCustID = ms.CTSCustID
 				AND acc.SubscriberID = ms.SubscriberID
-SET			acc.CTSCustID = ms.NewSubscriberID                
+SET			acc.CTSCustID = ms.NewCTSCustID                
 WHERE		ms.NewCTSCustID > 0;
 
 UPDATE		CTS_DataCenter.AssociationByDevice AS ad
 INNER JOIN	CTS_DataCenter.zzzIssueCustMissing_CustDCSAccount AS ms
 			ON ad.CTSCustID = ms.CTSCustID
 				AND acc.SubscriberID = ms.SubscriberID
-SET			ad.CTSCustID = ms.NewSubscriberID                
+SET			ad.CTSCustID = ms.NewCTSCustID                
 WHERE		ms.NewCTSCustID > 0;
 
-#3. Insert CTS_Customer 
-CALL CTS_DataCenter.Issue_CTSCustomer_3_InsertCTSCustomerMissing;
 
-#4. Correct Data for AlphaCN88 and CN88
