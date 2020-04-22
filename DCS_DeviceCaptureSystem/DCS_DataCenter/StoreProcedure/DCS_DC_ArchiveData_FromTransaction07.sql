@@ -13,18 +13,20 @@ BEGIN
 	
 	DECLARE	vr_ToDate				DATETIME;
     DECLARE	vr_MoveDate				DATETIME;
-    DECLARE vr_Id					INT DEFAULT 1;
+    DECLARE vr_Id					INT DEFAULT 0;
+    DECLARE vr_ArchiveId			INT DEFAULT 1;
  	DECLARE	vr_ArchiveDate			DATETIME;
     DECLARE vr_Status				TINYINT;
 
 	SET vr_ToDate = DATE_SUB(CURRENT_DATE(), INTERVAL 6 DAY);   
     SET vr_ArchiveDate = NOW();
     
-    INSERT IGNORE INTO DCS_DataCenter.ArchiveHistory(ArchivedDate, ScheduleTime, StartTime, Status)
+    INSERT IGNORE INTO DCS_DataCenter.ArchiveHistory(ArchivedDate, ScheduleTime, StartTime, Status, ArchiveID)
     SELECT 	 DISTINCT CreatedDate 
 			, NOW()
             , NOW()
             , 0 AS Status
+            , vr_ArchiveId
     FROM 	DCS_DataCenter.Transaction07
     WHERE CreatedDate < vr_ToDate; 
     
@@ -45,7 +47,7 @@ BEGIN
         ORDER BY ArchivedDate
         LIMIT 1;
         
-        IF vr_Id IS NOT NULL  && vr_Id != 0 THEN
+        IF vr_Id != 0 THEN
         
 			SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 			UPDATE DCS_DataCenter.ArchiveHistory 
@@ -82,7 +84,13 @@ BEGIN
                 END IF;
 			ELSE
 				CALL DCS_DataCenter.DCS_DC_ArchiveData_FromTransaction07_DeleteTrans(vr_ArchiveDate, vr_Id);
-			END IF;             
+			END IF; 
+            
+            UPDATE 	DCS_DataCenter.ArchiveStatus
+			SET		LastArchivedDate = vr_ArchiveDate
+					, UpdateTime = NOW()
+			WHERE	ArchiveID = vr_ArchiveId; 
+            
 		END IF;   
         
     END WHILE;    
