@@ -42,7 +42,8 @@ BEGIN
 					ON ms.AccountID = ac.AccountID
 		WHERE		ms.SubscriberType IN (1,2)
 					AND NewCTSCustID = -1
-		GROUP BY 	ms.SubscriberID
+		GROUP BY 	ms.CTSCustID
+					, ms.SubscriberID
 					, ms.LoginNameWithPrefix
 					, ms.LoginName; 
 		
