@@ -61,7 +61,7 @@ BEGIN;
 	SELECT TOP (@totalRow) cust.custid
 		,cust.username
 		,cust.username2
-		,st.siteid
+		,CASE WHEN cust.roleid = 1 THEN st.siteid ELSE st2.siteid END 'siteid'
 		,upl.site
 		,cust.roleid
 		,cust.currency 'currencyid'
@@ -71,9 +71,10 @@ BEGIN;
 		,cust.recommend
 		,cust.creatdate
 	FROM dbo.Customer cust WITH (NOLOCK)
-		INNER JOIN	dbo.Customer upl WITH (NOLOCK) ON cust.srecommend = upl.custid
 		INNER JOIN dbo.Exchange ex WITH (NOLOCK) ON cust.currency = ex.exchangeid
-		INNER JOIN dbo.Site st WITH (NOLOCK) ON upl.site = st.site
+		LEFT JOIN	dbo.Customer upl WITH (NOLOCK) ON cust.recommend = upl.custid
+		LEFT JOIN dbo.Site st WITH (NOLOCK) ON upl.site = st.site
+		LEFT JOIN dbo.Site st2 WITH (NOLOCK) ON cust.site = st2.site
 	WHERE cust.custid > @maxCustId
 	ORDER BY cust.custid
 
