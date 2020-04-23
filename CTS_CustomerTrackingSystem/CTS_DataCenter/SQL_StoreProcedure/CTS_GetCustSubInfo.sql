@@ -15,6 +15,7 @@ AS
 	
 	Revisions:
 		- 20181121@Harvey:	Initial - [Redmine: #124592]
+		- 20200423@Harvey:	New way to get siteId, siteName - [Redmine: #132705]
 		
 	Developer's Notes:
 		- @Example:			NULL		- Explaination [DEFAULT]

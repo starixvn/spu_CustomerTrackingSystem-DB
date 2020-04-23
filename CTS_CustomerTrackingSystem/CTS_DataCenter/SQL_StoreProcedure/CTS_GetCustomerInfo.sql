@@ -15,6 +15,7 @@ AS
 	
 	Revisions:
 		- 20181121@Harvey:	Initial - [Redmine: #124592]
+		- 20200423@Harvey:	New way to get siteId, siteName - [Redmine: #132705]
 		
 	Developer's Notes:
 		- @Example:			NULL		- Explaination [DEFAULT]
@@ -62,7 +63,7 @@ BEGIN;
 		,cust.username
 		,cust.username2
 		,CASE WHEN cust.roleid = 1 THEN st.siteid ELSE st2.siteid END 'siteid'
-		,upl.site
+		,CASE WHEN cust.roleid = 1 THEN upl.site ELSE cust.site END 'site'
 		,cust.roleid
 		,cust.currency 'currencyid'
 		,ex.currency
