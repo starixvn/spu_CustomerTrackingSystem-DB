@@ -7,7 +7,7 @@ CREATE PROCEDURE `CTS_DataCenter`.`CTS_DC_AddCTSCustomerClassification`(
     ,	IN ip_SubscriberID		INT
 	,	IN ip_CategoryID		SMALLINT
     , 	IN ip_SportGroupIDList 	VARCHAR(50)
-    , 	IN ip_Remark 			VARCHAR(500)
+    , 	IN ip_Remark 			VARCHAR(300)
 	,	IN ip_CreatedBy 		INT
     
     , 	OUT op_ErrorMessage 	VARCHAR(200)

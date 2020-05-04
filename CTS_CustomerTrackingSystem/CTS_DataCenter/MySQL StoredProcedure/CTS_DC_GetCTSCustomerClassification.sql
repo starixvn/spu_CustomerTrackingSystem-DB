@@ -23,8 +23,8 @@ BEGIN
 		,	a.CategoryName
         ,	b.CategoryID AS ParentCategoryID
 		,	b.CategoryName AS ParentCategoryName
-        , 	LEFT(GROUP_CONCAT(s.SportGroupID ORDER BY s.SportGroupID ASC SEPARATOR ','),255) AS SportGroupIDList
-        , 	LEFT(GROUP_CONCAT(s.SportGroupName ORDER BY s.SportGroupID ASC SEPARATOR ','),255) AS SportGroupNameList
+        , 	LEFT(GROUP_CONCAT(s.SportGroupID ORDER BY s.SportGroupID ASC SEPARATOR ', '),255) AS SportGroupIDList
+        , 	LEFT(GROUP_CONCAT(s.SportGroupName ORDER BY s.SportGroupID ASC SEPARATOR ', '),255) AS SportGroupNameList
         ,	c.Remark
         ,	CASE
 				WHEN c.LastModifiedBy = 0 THEN "System"
