@@ -15,6 +15,7 @@ AS
 	
 	Revisions:
 		- 20181121@Harvey:	Initial - [Redmine: #124592]
+		- 20200423@Harvey:	New way to get siteId, siteName - [Redmine: #132705]
 		
 	Developer's Notes:
 		- @Example:			NULL		- Explaination [DEFAULT]
@@ -65,7 +66,7 @@ BEGIN;
 		,sub.username
 		,sub.username2
 		,st.siteid
-		,upl.site
+		,cust.site
 		,cust.roleid
 		,cust.currency 'currencyid'
 		,ex.currency
@@ -75,9 +76,8 @@ BEGIN;
 		,sub.createdate
 	FROM dbo.custSub sub WITH (NOLOCK)
 		INNER JOIN dbo.Customer cust WITH (NOLOCK) ON sub.custid = cust.custid
-		INNER JOIN	dbo.Customer upl WITH (NOLOCK) ON cust.srecommend = upl.custid
 		INNER JOIN dbo.Exchange ex WITH (NOLOCK) ON cust.currency = ex.exchangeid
-		INNER JOIN dbo.Site st WITH (NOLOCK) ON upl.site = st.site
+		INNER JOIN dbo.Site st WITH (NOLOCK) ON cust.site = st.site
 	WHERE sub.subaccid > @maxCustId
 	ORDER BY sub.subaccid
 
