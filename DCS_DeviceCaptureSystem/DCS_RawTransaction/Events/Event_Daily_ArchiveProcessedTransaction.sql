@@ -23,7 +23,7 @@ CREATE EVENT Event_Daily_ArchiveProcessedTransaction
 		   DO RELEASE_LOCK('lock_event');
 		 END;
          IF GET_LOCK('lock_event', 0) THEN
-				CALL DCS_RawTransaction.DCS_ST_ArchiveProcessedTransaction(30);  
+				CALL DCS_RawTransaction.DCS_ST_ArchiveProcessedTransaction(7);  
 		 END IF;
 		 DO RELEASE_LOCK('lock_event');             
       END //
