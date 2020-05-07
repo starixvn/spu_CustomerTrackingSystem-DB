@@ -2,7 +2,7 @@ DELIMITER $$
 
 DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformToCTS_Account_Unsuccess_GetPackage$$
 
-CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformToCTS_Account_Unsuccess_GetPackage(IN ip_NoOfAccount INT, IN ip_NoOfBatch INT)
+CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformToCTS_Account_Unsuccess_GetPackage(IN ip_NoOfAccount INT)
 BEGIN
 	/*
 	Created: 20190730@Casey.Huynh
@@ -32,7 +32,7 @@ BEGIN
     DECLARE		vrToID			BIGINT;
 
     SET		vrExecKey = CRC32((UUID_Short()));    
-    SET		vrNotes = CONCAT('Input: ',ip_NoOfAccount,'_', ip_NoOfBatch) ;		
+    SET		vrNotes = CONCAT('Input: ',ip_NoOfAccount) ;		
     SET 	vrStepID = 1;
     
     SET 	vrStartTime = CURRENT_TIMESTAMP(4);	
@@ -52,7 +52,7 @@ BEGIN
         , LastLoginTime			TIMESTAMP(4)
     ); 
    
-	SET TotalRecord = ip_NoOfAccount*ip_NoOfBatch;
+	#SET TotalRecord = ip_NoOfAccount*ip_NoOfBatch;
     
 	INSERT INTO Temp_Account( AccountID, LoginName, SubscriberID, LastLoginTime)
 	SELECT	ac.AccountID
@@ -60,9 +60,9 @@ BEGIN
             , ac.SubscriberID
             , ac.LastLoginTime
 	FROM 	DCS_DataCenter.Account AS ac
-	WHERE	ac.IsCTSTransformed < 0
-    ORDER BY	IsCTSTransformed DESC
-	LIMIT	TotalRecord;
+	WHERE	ac.IsCTSTransformed < 0 AND ac.IsCTSTransformed > -3
+    ORDER BY	IsCTSTransformed DESC;
+
     
     WHILE (EXISTS (SELECT (1) FROM Temp_Account WHERE BatchID IS NULL LIMIT 1)) DO
     	  UPDATE 	Temp_Account

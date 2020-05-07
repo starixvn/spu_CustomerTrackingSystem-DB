@@ -69,8 +69,11 @@ BEGIN
     UPDATE 		DCS_DataCenter.Association	AS ass
     INNER JOIN	Temp_Association			AS tmp_ass
 				ON	ass.AssociationID = tmp_ass.AssociationID
-	SET			ass.IsCTSTransformed = 1
-	WHERE 		tmp_ass.CTSCustID IS NOT NULL;    
+	SET			ass.IsCTSTransformed =	(CASE WHEN tmp_ass.CTSCustID IS NOT NULL 
+													THEN 1
+											WHEN tmp_ass.CTSCustID IS NULL AND ass.IsCTSTransformed > -4 
+													THEN ass.IsCTSTransformed = ass.IsCTSTransformed -1
+											END);
     
 	#======IF CTSCustID NOT Existing Then update IsCTSTransformed to unsuccess
     UPDATE 		DCS_DataCenter.Association	AS ass

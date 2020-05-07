@@ -11,6 +11,7 @@ BEGIN
 		Revisions:
         	#1. [20191217@CaseyHuynh][#125530]: Implement LastLoginTime
             #2. [20190319@CaseyHuynh][IssueCN88]: Update Join LoginName = UserName
+            #3. [20200506@CaseyHuynh][133486]: Remove code add new CTSCustomer for Not Deposit Account
             
 		Param's Explanation (filtered by):                
 	*/
@@ -76,35 +77,22 @@ BEGIN
 	 #=============GET CTSCustomerInfo=========================================
     UPDATE 		Temp_Account AS tmpTable
 	INNER JOIN	CTS_DataCenter.CTSCustomer AS cus
-				ON (tmpTable.LoginName = cus.Username
-					OR tmpTable.LoginNameWithPrefix = cus.Username2)
+				ON tmpTable.LoginNameWithPrefix = cus.Username2
 	SET 		tmpTable.CTSCustID = cus.CTSCustID;
 	
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    SELECT *
+    FROM Temp_Account;
     
-    #=======New Deposit Account that not existing in CTSCustomer
-    INSERT IGNORE INTO	CTS_DataCenter.CTSCustomer(SubscriberID, UserName, UserName2, LastLoginTime)
-    SELECT		acc.SubscriberID
-				, acc.LoginName AS UserName
-				, acc.LoginNameWithPrefix
-                , MAX(LastLoginTime)
-    FROM 		Temp_Account AS acc
-    WHERE		acc.SubscriberType IN (vrDepositSubType, vrNOTMainSubType)
-				AND acc.CTSCustID IS NULL
-	GROUP BY 	acc.SubscriberID
-				, acc.LoginNameWithPrefix
-                , acc.LoginName;   			
-
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
+	UPDATE 		Temp_Account AS tmpTable
+	INNER JOIN	CTS_DataCenter.CTSCustomer AS cus
+				ON (tmpTable.LoginName = cus.Username
+					AND tmpTable.SubscriberID = cus.SubscriberID)
+	SET 		tmpTable.CTSCustID = cus.CTSCustID
+    WHERE		tmpTable.CTSCustID IS NULL;    
     
-	UPDATE 		Temp_Account AS acc
-    INNER JOIN	CTS_DataCenter.CTSCustomer AS cus # USE INDEX(IX_CTSCustomer_UserName_UserName2,IX_CTSCustomer_UserName2)
-				ON (acc.LoginName = cus.Username
-					OR acc.LoginNameWithPrefix = cus.Username2)
-	SET			acc.CTSCustID = cus.CTSCustID
-	WHERE		acc.SubscriberType IN (vrDepositSubType, vrNOTMainSubType)
-				AND acc.CTSCustID IS NULL;
-	
+      SELECT *
+    FROM Temp_Account;
+    
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
    
     INSERT IGNORE INTO CTS_DataCenter.CustDCSAccount(CTSCustID, AccountID, SubscriberID, InsertTime)
@@ -113,21 +101,16 @@ BEGIN
 			, acc.SubscriberID 
             , CURRENT_TIMESTAMP(4) AS InsertTime
     FROM 	Temp_Account AS acc
-	WHERE acc.CTSCustID IS NOT NULL;       
+	WHERE 	acc.CTSCustID IS NOT NULL;      
     
     UPDATE DCS_DataCenter.Account acc
 	INNER JOIN	Temp_Account AS tac 
 				ON acc.AccountID = tac.AccountID
-	SET 	acc.IsCTSTransformed = 1
-	WHERE 	tac.CTSCustID IS NOT NULL;
-    
-	UPDATE DCS_DataCenter.Account acc
-	INNER JOIN	Temp_Account AS tac 
-				ON acc.AccountID = tac.AccountID
-	SET 	acc.IsCTSTransformed = (CASE WHEN acc.IsCTSTransformed = -1 THEN -2 ELSE -1 END)
-	WHERE 	tac.CTSCustID IS NULL;
- 
-		
+	SET 	acc.IsCTSTransformed = (CASE WHEN tac.CTSCustID IS NOT NULL THEN 1
+										 WHEN tac.CTSCustID IS NULL AND acc.IsCTSTransformed > -3 THEN  acc.IsCTSTransformed - 1
+                                         ELSE  acc.IsCTSTransformed
+									END);
+	
 	#=======================    
 	### PERFORMANCE
 	SET	vrEndTime = CURRENT_TIMESTAMP(4);	

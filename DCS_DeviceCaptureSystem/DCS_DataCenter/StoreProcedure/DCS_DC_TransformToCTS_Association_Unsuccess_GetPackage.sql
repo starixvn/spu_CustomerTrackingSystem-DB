@@ -2,7 +2,7 @@ DELIMITER $$
 
 DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformToCTS_Association_Unsuccess_GetPackage$$
 
-CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformToCTS_Association_Unsuccess_GetPackage(IN ip_NoOfAssociation INT, IN ip_NoOfBatch INT)
+CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformToCTS_Association_Unsuccess_GetPackage(IN ip_NoOfAssociation INT)
 BEGIN
 	/*
 	Created: 20190730@Casey.Huynh
@@ -30,7 +30,7 @@ BEGIN
     DECLARE		vrToID			BIGINT;
 
     SET		vrExecKey = CRC32((UUID_Short()));    
-    SET		vrNotes = CONCAT('Input: ',ip_NoOfAssociation,'_', ip_NoOfBatch) ;		
+    SET		vrNotes = CONCAT('Input: ',ip_NoOfAssociation) ;		
     SET 	vrStepID = 1;
     
     SET 	vrStartTime = CURRENT_TIMESTAMP(4);	
@@ -51,8 +51,7 @@ BEGIN
         , SubscriberID		INT
     ); 
    
-	SET TotalRecord = ip_NoOfAssociation*ip_NoOfBatch;
-    
+	    
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 	INSERT INTO Temp_Association(AssociationID, AccountID, DeviceID, CreatedTime, SubscriberID)
 	SELECT	ass.AssociationID
@@ -61,9 +60,9 @@ BEGIN
             , ass.CreatedTime
             , ass.SubscriberID
 	FROM 	DCS_DataCenter.Association AS ass
-	WHERE	ass.IsCTSTransformed < 0
-    ORDER BY ass.IsCTSTransformed DESC
-	LIMIT	TotalRecord;
+	WHERE	ass.IsCTSTransformed < 0 AND ass.IsCTSTransformed > -4
+    ORDER BY ass.IsCTSTransformed DESC;
+    
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ ;
     
     WHILE (EXISTS (SELECT (1) FROM Temp_Association WHERE BatchID IS NULL LIMIT 1)) DO

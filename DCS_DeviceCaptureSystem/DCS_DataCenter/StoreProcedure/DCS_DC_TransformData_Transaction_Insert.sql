@@ -12,7 +12,9 @@ BEGIN
 
 	Revisions:
 		#1. [20191217@CaseyHuynh][#125530]: Implement LastLoginTime 
-	
+        #2. [20200416@Terry]: Archive Completed RawTransaction to DCS_RawTransaction.ProcessedTransaction.
+		#3. [20200506@CaseyHuynh][133486]: Not Deposit Account
+				+ Insert Ignore On Duplicate, Update (LastLoginTime, IsCTSTransfromed)
     Reviewer:
 		#1 [Name]: New
 	Param's Explanation (filtered by):
@@ -121,18 +123,27 @@ BEGIN
                 , MIN(trt.TransTime) 		AS CreatedTime
                 , MAX(trt.TransTime)		AS LastLoginTime
     FROM		Temp_RawTransaction AS trt 
-    GROUP BY	trt.SubscriberID, trt.SubscriberType, trt.LoginName;
+    GROUP BY	trt.SubscriberID, trt.SubscriberType, trt.LoginName
+    ON DUPLICATE KEY UPDATE IsCTSTransformed = (CASE WHEN IsCTSTransformed = -3 THEN -1 END );
+    
+    UPDATE 		CTS_DataCenter.Association AS ass
+    INNER JOIN	CTS_DataCenter.Account AS acc
+				ON ass.AccountID = acc.AccountID
+	SET		ass.IsCTSTransformed = -1
+    WHERE	acc.IsCTSTransformed = -1;
+			
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
 
     # Update AccountID to Temp_Transaction
     UPDATE 		Temp_RawTransaction AS trt
     INNER JOIN	DCS_DataCenter.Account AS ac
-				ON trt.SubscriberID = ac.SubscriberID AND trt.LoginName = ac.LoginName
+				ON 	trt.SubscriberID = ac.SubscriberID 
+					AND trt.LoginName = ac.LoginName
 	LEFT JOIN	DCS_DataCenter.URL	AS ur
 				ON	trt.URLDetails = ur.URLDetails
-    SET		trt.AccountID = ac.AccountID
-            , trt.URLID = ur.URLID;
+    SET			trt.AccountID = ac.AccountID
+				, trt.URLID = ur.URLID;
 	
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_LastLoginTime;
@@ -198,7 +209,7 @@ BEGIN
 
     #================================================================
      SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-        INSERT IGNORE INTO DCS_RawTransaction.RawTransaction_BK01(
+        INSERT IGNORE INTO DCS_RawTransaction.ProcessedTransaction(
 					LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, FingerprintMoreInfo, UserAgent
 					, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID)
 		SELECT		rt.LoginName, rt.SubscriberName, rt.TransTime, rt.CreatedDate, rt.DeviceCode, rt.FingerprintCode, rt.FingerprintMoreInfo, rt.UserAgent
@@ -206,20 +217,13 @@ BEGIN
         FROM 		DCS_RawTransaction.RawTransaction AS rt
         INNER JOIN	Temp_RawTransaction	AS tmp_rm
 					ON	rt.TransID = tmp_rm.TransID;
-        SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
+	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
         
 		DELETE		rt
         FROM 		DCS_RawTransaction.RawTransaction AS rt
         INNER JOIN	Temp_RawTransaction	AS tmp_rm
 					ON	rt.TransID = tmp_rm.TransID;
     
-    
-    
-    /* UPDATE		DCS_RawTransaction.RawTransaction AS rt
-    INNER JOIN	Temp_RawTransaction AS trt
-				ON rt.TransID = trt.TransID
-    SET			rt.IsProcessed = 1;
-    */
 	#=================================================================	
   
 	### PERFORMANCE
