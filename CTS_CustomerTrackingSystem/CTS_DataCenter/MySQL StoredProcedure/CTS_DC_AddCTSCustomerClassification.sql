@@ -1,8 +1,5 @@
 DELIMITER $$
-USE CTS_DataCenter $$
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_AddCTSCustomerClassification`$$
-
-CREATE PROCEDURE `CTS_DataCenter`.`CTS_DC_AddCTSCustomerClassification`(
+CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_AddCTSCustomerClassification`(
 		IN ip_CTSCustID			BIGINT UNSIGNED
     ,	IN ip_SubscriberID		INT
 	,	IN ip_CategoryID		SMALLINT
@@ -12,7 +9,7 @@ CREATE PROCEDURE `CTS_DataCenter`.`CTS_DC_AddCTSCustomerClassification`(
     
     , 	OUT op_ErrorMessage 	VARCHAR(200)
 )
-BEGIN
+sp: BEGIN
 	/*
 		Created:	20200423@Long.Luu	
 		Task :		Insert CTSCustomer Category
@@ -28,6 +25,13 @@ BEGIN
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
+    
+    CALL CTS_DataCenter.CTS_DC_VerifyCTSCustomerClassification(ip_CTSCustID, ip_SubscriberID, ip_CategoryID, @errorMessage);
+    
+    IF @errorMessage IS NOT NULL THEN
+		SET op_ErrorMessage = @errorMessage;
+        LEAVE sp;
+    END IF;
     
     DROP TEMPORARY TABLE IF EXISTS tempSportGroupID;
     CREATE TEMPORARY TABLE tempSportGroupID (
@@ -54,5 +58,5 @@ BEGIN
 	VALUES(10, 'CTS_DC_AddCTSCustomerClassification', CONCAT('Insert CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID, ';ip_CategoryID_', ip_CategoryID, ';ip_SportGroupIDList_', ip_SportGroupIDList, ';ip_Remark_', ip_Remark,')'), CURRENT_TIME(), ip_CreatedBy);
 	
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-END$$	
+END$$
 DELIMITER ;
