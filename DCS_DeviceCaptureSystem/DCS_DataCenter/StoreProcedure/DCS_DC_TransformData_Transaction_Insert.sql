@@ -15,6 +15,7 @@ BEGIN
         #2. [20200416@Terry]: Archive Completed RawTransaction to DCS_RawTransaction.ProcessedTransaction.
 		#3. [20200506@CaseyHuynh][133486]: Not Deposit Account
 				+ Insert Ignore On Duplicate, Update (LastLoginTime, IsCTSTransfromed)
+                + Remove code "INSERT IGNORE INTO DCS_DataCenter.TransactionIP_TransformTemp"
     Reviewer:
 		#1 [Name]: New
 	Param's Explanation (filtered by):
@@ -139,10 +140,10 @@ BEGIN
     SET			trt.AccountID = ac.AccountID
 				, trt.URLID = ur.URLID;   
     
-    UPDATE 		CTS_DataCenter.Association AS ass
+    UPDATE 		DCS_DataCenter.Association AS ass
     INNER JOIN	(SELECT DISTINCT AccountID FROM Temp_RawTransaction trt) AS trtAcc
 				ON ass.AccountID = trtAcc.AccountID
-    INNER JOIN	CTS_DataCenter.Account AS acc
+    INNER JOIN	DCS_DataCenter.Account AS acc
 				ON ass.AccountID = acc.AccountID
 	SET			ass.IsCTSTransformed = -1
     WHERE		acc.IsCTSTransformed = -1;		
@@ -176,17 +177,7 @@ BEGIN
 				ON acc.AccountID = tll.AccountID
 	SET			acc.LastLoginTime = tll.LastLoginTime;
     
-    INSERT IGNORE INTO DCS_DataCenter.TransactionIP_TransformTemp (TransID, AccountID, LoginName, SubscriberID, IP, IPID, TransTime, CreatedDate)
-    SELECT 	trt.TransID
-			, trt.AccountID
-            , trt.LoginName
-            , trt.SubscriberID
-            , trt.IP
-            , trt.IPID
-            , trt.TransTime
-            , trt.CreatedDate
-    FROM	Temp_RawTransaction AS trt;
-    
+
     INSERT IGNORE INTO  DCS_DataCenter.Transaction(TransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey
 						, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, FingerprintCode, FingerprintMoreInfo)
    	SELECT 		trt.TransID
