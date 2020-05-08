@@ -9,7 +9,7 @@ BEGIN
 		Original:
 
 		Revisions:
-        
+        #1. [20200506@CaseyHuynh][133486]: Retry Transform If > -4
 		Param's Explanation (filtered by):
                 
 	*/    
@@ -72,7 +72,8 @@ BEGIN
 	SET			ass.IsCTSTransformed =	(CASE WHEN tmp_ass.CTSCustID IS NOT NULL 
 													THEN 1
 											WHEN tmp_ass.CTSCustID IS NULL AND ass.IsCTSTransformed > -4 
-													THEN ass.IsCTSTransformed = ass.IsCTSTransformed -1
+													THEN ass.IsCTSTransformed - 1
+                                                    ELSE  acc.IsCTSTransformed
 											END);
     
 	#======IF CTSCustID NOT Existing Then update IsCTSTransformed to unsuccess

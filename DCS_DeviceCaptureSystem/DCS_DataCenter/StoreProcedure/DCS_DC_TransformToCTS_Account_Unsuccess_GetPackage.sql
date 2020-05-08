@@ -12,6 +12,7 @@ BEGIN
 
 	Revisions:
 		#1. [20191217@CaseyHuynh][#125530]: Implement LastLoginTime
+        #2. [20200506@CaseyHuynh][133486]:  Update Unsuccessfully flow. Daily and try tranform if IsCTSTransformed > -3
         
 	Param's Explanation (filtered by):
 	*/

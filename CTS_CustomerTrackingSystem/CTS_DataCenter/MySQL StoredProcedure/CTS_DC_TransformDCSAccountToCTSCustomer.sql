@@ -11,7 +11,7 @@ BEGIN
 		Revisions:
         	#1. [20191217@CaseyHuynh][#125530]: Implement LastLoginTime
             #2. [20190319@CaseyHuynh][IssueCN88]: Update Join LoginName = UserName
-            #3. [20200506@CaseyHuynh][133486]: Remove code add new CTSCustomer for Not Deposit Account
+            #3. [20200506@CaseyHuynh][133486]: Remove code "add new CTSCustomer" for Not Deposit Account
             
 		Param's Explanation (filtered by):                
 	*/

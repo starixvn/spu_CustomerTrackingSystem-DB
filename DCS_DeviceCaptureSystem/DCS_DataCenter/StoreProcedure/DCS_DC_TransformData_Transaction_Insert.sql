@@ -126,13 +126,7 @@ BEGIN
     GROUP BY	trt.SubscriberID, trt.SubscriberType, trt.LoginName
     ON DUPLICATE KEY UPDATE IsCTSTransformed = (CASE WHEN IsCTSTransformed = -3 THEN -1 END );
     
-    UPDATE 		CTS_DataCenter.Association AS ass
-    INNER JOIN	CTS_DataCenter.Account AS acc
-				ON ass.AccountID = acc.AccountID
-	SET		ass.IsCTSTransformed = -1
-    WHERE	acc.IsCTSTransformed = -1;
-			
-    
+        
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
 
     # Update AccountID to Temp_Transaction
@@ -143,8 +137,16 @@ BEGIN
 	LEFT JOIN	DCS_DataCenter.URL	AS ur
 				ON	trt.URLDetails = ur.URLDetails
     SET			trt.AccountID = ac.AccountID
-				, trt.URLID = ur.URLID;
-	
+				, trt.URLID = ur.URLID;   
+    
+    UPDATE 		CTS_DataCenter.Association AS ass
+    INNER JOIN	(SELECT DISTINCT AccountID FROM Temp_RawTransaction trt) AS trtAcc
+				ON ass.AccountID = trtAcc.AccountID
+    INNER JOIN	CTS_DataCenter.Account AS acc
+				ON ass.AccountID = acc.AccountID
+	SET			ass.IsCTSTransformed = -1
+    WHERE		acc.IsCTSTransformed = -1;		
+    
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_LastLoginTime;
     CREATE TEMPORARY TABLE Temp_LastLoginTime
