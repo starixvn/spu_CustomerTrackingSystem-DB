@@ -1,5 +1,8 @@
 DELIMITER $$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_AddCTSCustomerClassification`(
+USE CTS_DataCenter $$
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_AddCTSCustomerClassification` $$
+
+CREATE PROCEDURE `CTS_DataCenter`.`CTS_DC_AddCTSCustomerClassification`(
 		IN ip_CTSCustID			BIGINT UNSIGNED
     ,	IN ip_SubscriberID		INT
 	,	IN ip_CategoryID		SMALLINT
@@ -41,6 +44,11 @@ sp: BEGIN
 	SET @sql = CONCAT("INSERT INTO tempSportGroupID (SportGroupID) VALUES ('", REPLACE(ip_SportGroupIDList, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
+
+	IF (SELECT COUNT(1) FROM CTS_DataCenter.CustomerCategory WHERE CategoryID = ip_CategoryID AND IsUsedManually = 0) > 0 THEN		
+		SET op_ErrorMessage = 'This Category is not allowed for manually update!';
+        LEAVE sp;
+    END IF;
 
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
     

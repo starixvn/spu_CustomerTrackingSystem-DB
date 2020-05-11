@@ -22,7 +22,8 @@ BEGIN
     SELECT DISTINCT a.CategoryID, a.CategoryName, a.ParentID, a.DisplayOrder
     FROM CTS_DataCenter.CustomerCategory AS a
 		LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS b ON a.CategoryID = b.CategoryID AND b.CTSCustID = ip_CTSCustID
-    WHERE b.CategoryID IS NULL
+    WHERE a.IsUsedManually = 1
+		AND b.CategoryID IS NULL
 		AND a.IsActive = 1
     ORDER BY a.DisplayOrder ASC; 
     
