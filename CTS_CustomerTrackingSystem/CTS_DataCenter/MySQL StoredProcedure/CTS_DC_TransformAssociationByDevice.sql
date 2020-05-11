@@ -73,7 +73,7 @@ BEGIN
 													THEN 1
 											WHEN tmp_ass.CTSCustID IS NULL AND ass.IsCTSTransformed > -4 
 													THEN ass.IsCTSTransformed - 1
-                                                    ELSE  acc.IsCTSTransformed
+                                                    ELSE  ass.IsCTSTransformed
 											END);
     
 	#======IF CTSCustID NOT Existing Then update IsCTSTransformed to unsuccess
