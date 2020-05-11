@@ -20,6 +20,7 @@ sp: BEGIN
 		Original: 
 		Revisions:
 			- 20200423@Long.Luu: Created [Redmine ID: #132623]
+			
             
 		Param's Explanation:
 	*/ 
@@ -46,7 +47,7 @@ sp: BEGIN
 	EXECUTE stmt1;
 
 	IF (SELECT COUNT(1) FROM CTS_DataCenter.CustomerCategory WHERE CategoryID = ip_CategoryID AND IsUsedManually = 0) > 0 THEN		
-		SET op_ErrorMessage = 'This Category is not allowed for manually update!';
+		SET op_ErrorMessage = 'This Category is not allowed for manually update!!!!';
         LEAVE sp;
     END IF;
 
