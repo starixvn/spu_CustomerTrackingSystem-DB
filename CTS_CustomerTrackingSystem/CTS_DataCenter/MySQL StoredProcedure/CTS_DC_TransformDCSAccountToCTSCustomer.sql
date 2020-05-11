@@ -79,19 +79,14 @@ BEGIN
 	INNER JOIN	CTS_DataCenter.CTSCustomer AS cus
 				ON tmpTable.LoginNameWithPrefix = cus.Username2
 	SET 		tmpTable.CTSCustID = cus.CTSCustID;
-	
-    SELECT *
-    FROM Temp_Account;
-    
+
 	UPDATE 		Temp_Account AS tmpTable
 	INNER JOIN	CTS_DataCenter.CTSCustomer AS cus
 				ON (tmpTable.LoginName = cus.Username
 					AND tmpTable.SubscriberID = cus.SubscriberID)
 	SET 		tmpTable.CTSCustID = cus.CTSCustID
     WHERE		tmpTable.CTSCustID IS NULL;    
-    
-      SELECT *
-    FROM Temp_Account;
+
     
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
    
