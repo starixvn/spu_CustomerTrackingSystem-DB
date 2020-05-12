@@ -37,11 +37,11 @@ sp: BEGIN
 								AND 		SubscriberID = ip_SubscriberID
                                 AND 		CategoryID IN (6, 7))) THEN
                                 
-					SET op_ErrorMessage = CONCAT("This account is already have <b> Smart Punter & High Risk </b> Punter in Category List. You are not allow to add <b>", vr_CategoryName, "</b> category.");		
+					SET op_ErrorMessage = CONCAT("This account is already have <b> Smart Punter & High Risk Punter</b> in Category List. You are not allow to add <b>", vr_CategoryName, "</b> category.");		
                     LEAVE sp;
 			END IF;
 	END IF;
     
-   SET op_ErrorMessage = "";
+   SET op_ErrorMessage = NULL;
 END$$
 DELIMITER ;
