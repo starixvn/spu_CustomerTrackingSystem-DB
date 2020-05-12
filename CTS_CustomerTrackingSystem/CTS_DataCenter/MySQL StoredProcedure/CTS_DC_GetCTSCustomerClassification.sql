@@ -60,13 +60,13 @@ BEGIN
 	INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON r.CategoryID = d.CategoryID AND d.LastModifiedDate = r.MaxLastModified
 	WHERE d.CTSCustID = ip_CTSCustID;
     
-    IF (SELECT COUNT(DISTINCT CategoryID) FROM tempLatestRecordOfCategory) > 1 THEN
+    IF (SELECT COUNT(DISTINCT CategoryID) FROM tempResults) > 1 THEN
 		DELETE t
 		FROM tempLatestRecordOfCategory AS t
 		WHERE t.CategoryID = 2;
     END IF;
     
-    IF (SELECT COUNT(1) FROM tempLatestRecordOfCategory WHERE CategoryID IN (6,7)) > 1 THEN
+    IF (SELECT COUNT(1) FROM tempResults WHERE CategoryID IN (6,7)) >= 1 THEN
 		DELETE t
 		FROM tempLatestRecordOfCategory AS t
 		WHERE t.CategoryID IN (3,5);
