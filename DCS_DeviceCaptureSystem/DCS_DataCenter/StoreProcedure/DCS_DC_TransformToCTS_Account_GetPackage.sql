@@ -12,7 +12,7 @@ BEGIN
 
 	Revisions:
 		#1. [20191217@CaseyHuynh][#125530]: Implement LastLoginTime 
-	
+		#2. [20200512@CaseyHuynh]: Add Nolock Statement
 	Param's Explanation (filtered by):
 	*/
 	
@@ -54,6 +54,7 @@ BEGIN
    
 	SET TotalRecord = ip_NoOfAccount*ip_NoOfBatch;
     
+    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 	INSERT INTO Temp_Account( AccountID, LoginName, SubscriberID, LastLoginTime)
 	SELECT	ac.AccountID
 			, ac.LoginName
@@ -62,6 +63,7 @@ BEGIN
 	FROM 	DCS_DataCenter.Account AS ac
 	WHERE	ac.IsCTSTransformed = 0
 	LIMIT	TotalRecord;
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
     WHILE (EXISTS (SELECT (1) FROM Temp_Account WHERE BatchID IS NULL LIMIT 1)) DO
     	  UPDATE 	Temp_Account
