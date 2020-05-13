@@ -25,6 +25,7 @@ SET EvidenceName  = (CASE 	WHEN EvidenceCode IN ('6.1','6.11','6.21') THEN 'Grou
                             WHEN EvidenceCode IN ('6.18') THEN 'Bonus Hunter'
                             WHEN EvidenceCode IN ('6.19') THEN 'danger 19'
                             WHEN EvidenceCode IN ('6.20') THEN 'danger 20'
+                            ELSE EvidenceName
 					END)
 WHERE EvidenceGroupID = 6; 
 
