@@ -15,7 +15,7 @@ SET EvidenceName  = (CASE 	WHEN EvidenceCode IN ('6.1','6.11','6.21') THEN 'Grou
 							WHEN EvidenceCode IN ('6.2','6.12') THEN 'Fixed Game'
                             WHEN EvidenceCode IN ('6.3','6.13') THEN 'Arbitrage'
 							WHEN EvidenceCode IN ('6.4','6.14') THEN 'Hedging'
-                            WHEN EvidenceCode IN ('6.5','6.15') THEN 'Irregation Bet'
+                            WHEN EvidenceCode IN ('6.5','6.15') THEN 'Irrigation Bet'
                             WHEN EvidenceCode IN ('6.6','6.16') THEN 'System Formula Bet'
                             WHEN EvidenceCode IN ('6.7') THEN 'danger 7'
                             WHEN EvidenceCode IN ('6.8') THEN 'danger 8'
@@ -33,7 +33,7 @@ INSERT INTO CTS_DataCenter.Evidence(EvidenceGroupID, EvidenceCode, EvidenceName,
 VALUES (6	,'6.22'	,'Fixed Game'	,''	,22	,'2020-05-12'	,0	,1)
 ,(6	,'6.23'	,'Arbitrage'	,''	,23	,'2020-05-12'	,0	,1)
 ,(6	,'6.24'	,'Hedging'	,''	,24	,'2020-05-12'	,0	,1)
-,(6	,'6.25'	,'Irregation Bet'	,''	,25	,'2020-05-12'	,0	,1)
+,(6	,'6.25'	,'Irrigation Bet'	,''	,25	,'2020-05-12'	,0	,1)
 ,(6	,'6.26'	,'System Formula Bet'	,''	,26	,'2020-05-12'	,0	,1)
 ,(6	,'6.27'	,'AB Bet'	,''	,27	,'2020-05-12'	,0	,1)
 ,(6	,'6.28'	,'Bonus Hunter'	,''	,28	,'2020-05-12'	,0	,1)
