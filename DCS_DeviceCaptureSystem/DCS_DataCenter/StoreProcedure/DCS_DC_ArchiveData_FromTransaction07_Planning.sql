@@ -12,7 +12,7 @@ BEGIN
 	*/
 
     DECLARE	v_minId		BIGINT DEFAULT 0;
-    DECLARE	v_maxId		BIGINT DEFAULT 1;
+    DECLARE	v_maxId		BIGINT DEFAULT 0;
     
     #========================================================= 
     CREATE TABLE IF NOT EXISTS DCS_DataCenter.ArchiveTransLog
@@ -29,7 +29,7 @@ BEGIN
     
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-    WHILE v_maxId is not null && v_maxId != 0 DO  
+    WHILE v_maxId IS NOT NULL DO  
 				                
 		SELECT Min(a.TransId), Max(a.TransId) INTO v_minId, v_maxId 
 			FROM (SELECT TransId 

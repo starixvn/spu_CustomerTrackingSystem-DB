@@ -12,8 +12,8 @@ BEGIN
 	*/
 
     DECLARE	v_minId		BIGINT DEFAULT 0;
-    DECLARE	v_maxId		BIGINT DEFAULT 1;
-    DECLARE v_id		INT DEFAULT 1;
+    DECLARE	v_maxId		BIGINT DEFAULT 0;
+    DECLARE v_id		INT DEFAULT 0;
     DECLARE v_moved 	BOOLEAN;
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
@@ -26,7 +26,7 @@ BEGIN
                 
 		IF v_id != 0 THEN			
 			IF v_moved = false THEN
-				 INSERT INTO  DCS_DataCenter.Transaction_BK01(TransID, LoginName, TransTime, SubscriberID, AccountID
+				 INSERT INTO  DCS_DataCenter.Transaction09(TransID, LoginName, TransTime, SubscriberID, AccountID
 				, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID
 				, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime)        
 				SELECT 		ts07.TransID, ts07.LoginName, ts07.TransTime, ts07.SubscriberID, ts07.AccountID

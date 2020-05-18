@@ -20,6 +20,7 @@ proc_label: BEGIN
 		Revisions:
 		   - 20200225@Lex: Fix cocurrency issue when inserting
 		   - 20200227@Lex: Fix exclude exception
+           - 20200513@Lex: Fix wrong subID mapping of level 2
         
 		Param's Explanation (filtered by):			
         
@@ -76,7 +77,7 @@ proc_label: BEGIN
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
 	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
-    SELECT DISTINCT ass.CTSCustID, ip_SubscriberID, ip_EvidenceID, ip_Remark, 2, ip_CTSCustID, vr_CreatedDate, ip_UserID, ip_IsCreatedByMaster
+    SELECT DISTINCT ass.CTSCustID, cust.SubscriberID, ip_EvidenceID, ip_Remark, 2, ip_CTSCustID, vr_CreatedDate, ip_UserID, ip_IsCreatedByMaster
     FROM CTS_DataCenter.AssociationByDevice AS ass
     INNER JOIN CTS_DataCenter.CTSCustomer cust
 		   ON (cust.CTSCustID = ass.CTSCustID)
