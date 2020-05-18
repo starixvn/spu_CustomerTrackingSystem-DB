@@ -15,6 +15,7 @@ proc_label: BEGIN
 		Original:
 
 		Revisions:
+         Lex@2020/05/18: Update robot description from Green to Human
         
 		Param's Explanation (filtered by):			
         
@@ -61,7 +62,7 @@ proc_label: BEGIN
 					WHEN Flagged = 8 THEN 'Robot (Browserless - Invalid Analysis)'
 					WHEN Flagged = 9 THEN 'Robot (Browserless - Invalid Token)'
 					WHEN Flagged = 10 THEN 'Robot (Browserless - Invalid Device Code)'
-					ELSE 'Green'
+					ELSE 'Human'
 				END AS Flagged	,
 				Action			,
 				ActionResult	,
@@ -210,7 +211,7 @@ proc_label: BEGIN
                 WHEN Flagged = 8 THEN 'Robot (Browserless - Invalid Analysis)'
                 WHEN Flagged = 9 THEN 'Robot (Browserless - Invalid Token)'
                 WHEN Flagged = 10 THEN 'Robot (Browserless - Invalid Device Code)'
-                ELSE 'Green'
+                ELSE 'Human'
 			END AS Flagged	,
             Action			,
             ActionResult	,
