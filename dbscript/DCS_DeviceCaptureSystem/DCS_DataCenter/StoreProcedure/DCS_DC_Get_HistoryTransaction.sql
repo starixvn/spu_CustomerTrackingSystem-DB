@@ -15,7 +15,7 @@ proc_label: BEGIN
 		Original:
 
 		Revisions:
-         Lex@2020/05/18: Update robot description from Green to Human
+			20200518@lex.khuat: Update robot description from Green to Human [Redmine ID: #133934]
         
 		Param's Explanation (filtered by):			
         

@@ -1,4 +1,10 @@
-# 2020/05/18: Lex - Update displayname & name
+/*
+Created: 20200518@lex.khuat
+		Task:		Update robot description from Green to Human [Redmine ID: #133934]
+		DB:			CTS_DataCenter
+		Original:
+		Revisions:
+/*
 
 /****=====Step=====****/ 
 UPDATE CTS_DataCenter.StaticList
