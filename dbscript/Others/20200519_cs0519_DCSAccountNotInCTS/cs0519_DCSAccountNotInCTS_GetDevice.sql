@@ -21,7 +21,7 @@ BEGIN
 	INNER JOIN 	CTS_Adhoc.cs0519_Association_RemoveBK AS devRev
 				ON dev.DeviceID = devRev.DeviceID
 	GROUP BY	dev.DeviceID
-    HAVING		COUNT(dev.AccountID) = 1;	
+    HAVING		COUNT(AccountID) = 1;	
 
 	DROP TABLE IF EXISTS CTS_Adhoc.cs0519_Device_RemoveBK;
 	CREATE TABLE CTS_Adhoc.cs0519_Device_RemoveBK
