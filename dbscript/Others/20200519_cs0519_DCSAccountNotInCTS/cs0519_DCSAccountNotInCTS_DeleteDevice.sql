@@ -15,7 +15,7 @@ BEGIN
 	*/
 	
 	DELETE 		dev
-    FROM 		CTS_DataCenter.Device AS dev
+    FROM 		DCS_DataCenter.Device AS dev
     INNER JOIN	CTS_Adhoc.cs0519_Device_RemoveBK AS devRev
     WHERE		dev.DeviceID = devRev.DeviceID;
     
