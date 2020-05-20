@@ -16,6 +16,7 @@ AS
 	Revisions:
 		- 20181121@Harvey:	Initial - [Redmine: #124592]
 		- 20200423@Harvey:	New way to get siteId, siteName - [Redmine: #132705]
+		- 20202005@Harvey:	only get SMAP (roleid 4321) 	- [Redmine: #133934]
 		
 	Developer's Notes:
 		- @Example:			NULL		- Explaination [DEFAULT]
@@ -77,6 +78,7 @@ BEGIN;
 		LEFT JOIN dbo.Site st WITH (NOLOCK) ON upl.site = st.site
 		LEFT JOIN dbo.Site st2 WITH (NOLOCK) ON cust.site = st2.site
 	WHERE cust.custid > @maxCustId
+		AND cust.roleid BETWEEN 1 AND 4
 	ORDER BY cust.custid
 
 	WHILE @currentBatch <= @numberOfBatch
