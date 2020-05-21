@@ -20,7 +20,7 @@ BEGIN
 	CREATE TABLE CTS_Adhoc.cs0519_DeviceCode_RemoveBK
     SELECT 		dcd.*
     FROM 		DCS_DataCenter.DeviceCode AS dcd
-    INNER JOIN  CTS_Adhoc.cs0519_DeviceCode_RemoveBK AS revDev
+    INNER JOIN  CTS_Adhoc.cs0519_Device_RemoveBK AS revDev
 				ON dcd.DeviceID = revDev.DeviceID;
                 
 END$$
