@@ -14,8 +14,7 @@ BEGIN
 		Param's Explanation (filtered by):
 	*/
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-    DROP TABLE IF EXISTS CTS_Adhoc.cs0519_DeviceFingerprint_RemoveBK;
-	CREATE TABLE CTS_Adhoc.cs0519_DeviceFingerprint_RemoveBK
+    INSERT INTO CTS_Adhoc.cs0519_DeviceFingerprint_RemoveBK
     SELECT		def.*
 	FROM 		DCS_DataCenter.DeviceFingerprint AS def
 	INNER JOIN 	CTS_Adhoc.cs0519_Device_RemoveBK AS dev
