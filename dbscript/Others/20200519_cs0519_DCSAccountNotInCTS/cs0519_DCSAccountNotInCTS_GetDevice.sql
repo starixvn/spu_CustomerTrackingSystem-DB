@@ -24,7 +24,7 @@ BEGIN
     CREATE TEMPORARY TABLE tempAssociationDeviceCount
     SELECT		revCou.DeviceID, COUNT(1) AS NoOfAccount
 	FROM		tempAssRevDeviceCount AS revCou
-	INNER JOIN	CTS_DataCenter.Association AS ass
+	INNER JOIN	DCS_DataCenter.Association AS ass
 				ON revCou.DeviceID = ass.DeviceID
 	GROUP BY	revCou.DeviceID;    
 
@@ -32,7 +32,7 @@ BEGIN
 	CREATE TABLE CTS_Adhoc.cs0519_Device_RemoveBK
     SELECT 		dev.*
     FROM 		DCS_DataCenter.Device AS dev
-	INNER JOIN 	(	SELECT 		DeviceID
+	INNER JOIN 	(	SELECT 		revCou.DeviceID
 					FROM 		tempAssRevDeviceCount AS revCou
                     INNER JOIN 	tempAssociationDeviceCount AS assCou
 								ON revCou.DeviceID = assCou.DeviceID

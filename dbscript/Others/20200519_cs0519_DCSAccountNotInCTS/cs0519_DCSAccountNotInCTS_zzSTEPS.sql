@@ -23,6 +23,10 @@
     #====STEP04: GET DeviceFingerprint backup
     CALL CTS_Adhoc.cs0519_DCSAccountNotInCTS_GetDeviceFingerprint();
     
+	#====STEP04.1: GET DeviceCode backup
+    CALL CTS_Adhoc.cs0519_DCSAccountNotInCTS_GetDeviceCode();
+    
+    
 /********************************REMOVE DATA **********************************/	
 /******************************************************************************/
 	#====STEP05: DELETE Account 
@@ -36,3 +40,6 @@
     
     #====STEP08: DELETE DeviceFingerprint 
     CALL CTS_Adhoc.cs0519_DCSAccountNotInCTS_DeleteDeviceFingerprint;
+    
+    #====STEP9: DELETE DeviceCode 
+    CALL CTS_Adhoc.cs0519_DCSAccountNotInCTS_DeleteDeviceCode;
