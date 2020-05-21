@@ -14,20 +14,30 @@ BEGIN
 		Param's Explanation (filtered by):
 	*/
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-    DROP TEMPORARY TABLE IF EXISTS tempDeviceID_Remove;
-    CREATE TEMPORARY TABLE tempDeviceID_Remove
-    SELECT		dev.DeviceID
-	FROM 		DCS_DataCenter.Device AS dev
-	INNER JOIN 	CTS_Adhoc.cs0519_Association_RemoveBK AS devRev
-				ON dev.DeviceID = devRev.DeviceID
-	GROUP BY	dev.DeviceID
-    HAVING		COUNT(AccountID) = 1;	
+    DROP TEMPORARY TABLE IF EXISTS tempAssRevDeviceCount;
+    CREATE TEMPORARY TABLE tempAssRevDeviceCount
+    SELECT		assRev.DeviceID, COUNT(1) AS NoOfAccount
+	FROM		CTS_Adhoc.cs0519_Association_RemoveBK AS assRev
+	GROUP BY	assRev.DeviceID;
+        
+    DROP TEMPORARY TABLE IF EXISTS tempAssociationDeviceCount;
+    CREATE TEMPORARY TABLE tempAssociationDeviceCount
+    SELECT		revCou.DeviceID, COUNT(1) AS NoOfAccount
+	FROM		tempAssRevDeviceCount AS revCou
+	INNER JOIN	CTS_DataCenter.Association AS ass
+				ON revCou.DeviceID = ass.DeviceID
+	GROUP BY	revCou.DeviceID;    
 
 	DROP TABLE IF EXISTS CTS_Adhoc.cs0519_Device_RemoveBK;
 	CREATE TABLE CTS_Adhoc.cs0519_Device_RemoveBK
     SELECT 		dev.*
     FROM 		DCS_DataCenter.Device AS dev
-	INNER JOIN 	tempDeviceID_Remove AS tmpDev
+	INNER JOIN 	(	SELECT 		DeviceID
+					FROM 		tempAssRevDeviceCount AS revCou
+                    INNER JOIN 	tempAssociationDeviceCount AS assCou
+								ON revCou.DeviceID = assCou.DeviceID
+									AND revCou.NoOfAccount = assCou.NoOfAccount
+				) AS tmpDev
 				ON dev.DeviceID = tmpDev.DeviceID;
                 
 END$$
