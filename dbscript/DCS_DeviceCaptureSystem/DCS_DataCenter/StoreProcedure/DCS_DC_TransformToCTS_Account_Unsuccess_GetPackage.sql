@@ -14,7 +14,7 @@ BEGIN
 		#1. [20191217@CaseyHuynh][#125530]: Implement LastLoginTime
         #2. [20200506@CaseyHuynh][133486]:  Update Unsuccessfully flow. Daily and try tranform if IsCTSTransformed > -3
         #3. [20200518@CaseyHuynh][133486]:  Change data type (Batch and BatchID) from TINYINT to INT;
-        #4. [20200522@CaseyHuynh][133486]:  Add NOLOCK Comment
+        #4. [20200522@CaseyHuynh][133486]:  Add NOLOCK Command;
         
 	Param's Explanation (filtered by):
 	*/

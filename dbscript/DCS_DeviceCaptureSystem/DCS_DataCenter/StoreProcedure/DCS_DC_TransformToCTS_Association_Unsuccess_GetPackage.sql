@@ -13,6 +13,7 @@ BEGIN
 	Revisions:
 		#1. [20200506@CaseyHuynh][133486]:  Update Unsuccessfully flow. Daily and try tranform if IsCTSTransformed > -4
 		#2. [20200518@CaseyHuynh][133486]: Change data type (Batch and BatchID) from TINYINT to INT;
+        #3. [20200522@CaseyHuynh][133486]:  Add NOLOCK Command;
 	Param's Explanation (filtered by):
 	*/
 	
