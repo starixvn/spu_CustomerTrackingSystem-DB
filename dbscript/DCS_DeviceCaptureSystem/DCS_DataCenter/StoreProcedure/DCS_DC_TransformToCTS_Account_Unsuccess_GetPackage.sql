@@ -13,12 +13,14 @@ BEGIN
 	Revisions:
 		#1. [20191217@CaseyHuynh][#125530]: Implement LastLoginTime
         #2. [20200506@CaseyHuynh][133486]:  Update Unsuccessfully flow. Daily and try tranform if IsCTSTransformed > -3
-        #3. [20200512@CaseyHuynh]: Add Nolock Statement
+        #3. [20200518@CaseyHuynh][133486]:  Change data type (Batch and BatchID) from TINYINT to INT;
+        #4. [20200522@CaseyHuynh][133486]:  Add NOLOCK Comment
+        
 	Param's Explanation (filtered by):
 	*/
 	
 	DECLARE		TotalRecord		INT UNSIGNED DEFAULT 0;
-	DECLARE		Batch			TINYINT DEFAULT 1;
+	DECLARE		Batch			INT UNSIGNED DEFAULT 1;
     
 	### PERFORMANCE: START
     DECLARE		vrExecKey		BIGINT	UNSIGNED;
@@ -46,7 +48,7 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Account;
     CREATE TEMPORARY TABLE Temp_Account 
     (	
-		BatchID					TINYINT
+		BatchID					INT UNSIGNED
         , AccountID				BIGINT	UNSIGNED
         , LoginName				VARCHAR(50)
         , SubscriberID			INT
@@ -70,7 +72,7 @@ BEGIN
 		  SET		BatchID = Batch
           WHERE		BatchID IS NULL 
           LIMIT 	ip_NoOfAccount;    
-		  SET Batch = Batch + 1;
+		  SET 		Batch = Batch + 1;
     END WHILE;
     
     SELECT	ac.BatchID
@@ -79,7 +81,8 @@ BEGIN
             , ac.SubscriberID
             , ac.LastLoginTime
 	FROM Temp_Account AS ac;
-      
+    
+   
 	
 	### PERFORMANCE
 	SET		vrEndTime = CURRENT_TIMESTAMP(4);
