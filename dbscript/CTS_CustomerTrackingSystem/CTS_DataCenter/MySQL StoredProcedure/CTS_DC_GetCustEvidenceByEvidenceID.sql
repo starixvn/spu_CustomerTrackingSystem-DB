@@ -15,11 +15,8 @@ BEGIN
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 
 	SELECT DISTINCT cust.CustID
-					, evi.EvidenceCode
-					, evi.EvidenceName
 	FROM CTS_DataCenter.CustEvidence ce
 		INNER JOIN CTS_DataCenter.CTSCustomer cust ON ce.CTSCustID = cust.CTSCustID
-		INNER JOIN CTS_DataCenter.Evidence evi ON ce.EvidenceID = evi.EvidenceID
 	WHERE ce.EvidenceID = ip_EvidenceID
 		AND cust.CustID IS NOT NULL;
 				
