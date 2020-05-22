@@ -38,44 +38,38 @@ BEGIN
 	### PERFORMANCE: END  
 	
 	# =====================================================================================
-	DROP TEMPORARY TABLE IF EXISTS Temp_AccLastLogin;
-    CREATE TEMPORARY TABLE Temp_AccLastLogin
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustLastLogin;
+    CREATE TEMPORARY TABLE Temp_CustLastLogin
     (
 			ID				BIGINT UNSIGNED
-            , AccountID 	BIGINT UNSIGNED
+            , CTSCustID 	BIGINT UNSIGNED
             , LastLoginTime	TIMESTAMP(4)
-            , CTSCustID		BIGINT UNSIGNED
     );
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 	# --===GET Association which has CTSCustID
-    INSERT INTO Temp_AccLastLogin(ID, AccountID, LastLoginTime, CTSCustID)
+    INSERT INTO Temp_CustLastLogin(ID, CTSCustID, LastLoginTime)
     SELECT		lt.ID
-				, lt.AccountID
+				, lt.CTSCustID
                 , lt.LastLoginTime
-                , ca.CTSCustID
-    FROM		DCS_DataCenter.TransformTemp_LastLoginTime AS lt
-    INNER JOIN	CTS_DataCenter.CustDCSAccount	AS ca
-				ON	lt.AccountID = ca.AccountID
+    FROM		DCS_DataCenter.LastLoginTime_TransformTemp AS lt
     LIMIT		ip_Batch;
     
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-    
+
     # --===Update CTSCustomer.LastLoginTime
-    UPDATE CTS_DataCenter.CTSCustomer AS ct
-    INNER JOIN	(	SELECT 		CTSCustID
-								, MAX(LastLoginTime) AS MaxLastLoginTime
-					FROM		Temp_AccLastLogin AS al
-                    GROUP BY 	al.CTSCustID
-				) AS gc
-				ON ct.CTSCustID =gc.CTSCustID
-	SET		ct.LastLoginTime = gc.MaxLastLoginTime
-    WHERE	ct.LastLoginTime < gc.MaxLastLoginTime;
+    UPDATE 		CTS_DataCenter.CTSCustomer AS ct
+    INNER JOIN	Temp_CustLastLogin AS  gc
+				ON ct.CTSCustID = gc.CTSCustID
+	SET		ct.LastLoginTime = gc.LastLoginTime
+    WHERE	ct.LastLoginTime < gc.LastLoginTime;
+    
     
     DELETE 		lt
-    FROM		DCS_DataCenter.TransformTemp_LastLoginTime AS lt
-    INNER JOIN 	Temp_AccLastLogin al
+    FROM		DCS_DataCenter.LastLoginTime_TransformTemp AS lt
+    INNER JOIN 	Temp_CustLastLogin AS al
 				ON lt.ID = al.ID;
+	
 	#=======================
     
 	### PERFORMANCE

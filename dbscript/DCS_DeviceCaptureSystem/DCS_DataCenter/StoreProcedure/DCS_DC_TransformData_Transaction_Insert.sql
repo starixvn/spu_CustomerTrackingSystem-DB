@@ -1,8 +1,8 @@
 DELIMITER $$
 
-DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformData_Transaction_Insert$$
+DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformData_Transaction_Insert_cs$$
 
-CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformData_Transaction_Insert(IN ip_FromTransID BIGINT, IN ip_ToTransID BIGINT)
+CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformData_Transaction_Insert_cs(IN ip_FromTransID BIGINT, IN ip_ToTransID BIGINT)
 BEGIN
 /*
 	Created: 20190730@Casey.Huynh
@@ -168,9 +168,13 @@ BEGIN
     WHERE		tac.LastLoginTime > acc.LastLoginTime;
     
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;  
-    INSERT INTO  TransformTemp_LastLoginTime(SubscriberID, AccountID, LastLoginTime)
-    SELECT 	SubscriberID, AccountID, LastLoginTime
-    FROM	Temp_LastLoginTime;    
+    INSERT INTO LastLoginTime_TransformTemp(CTSCustID, LastLoginTime)
+    SELECT 		cus.CTSCustID
+				, MAX(lgn.LastLoginTime)
+    FROM		Temp_LastLoginTime AS lgn
+    INNER JOIN  CTS_DataCenter.CustDCSAccount AS cus
+				ON lgn.AccountID = cus.AccountID
+	GROUP BY 	cus.CTSCustID;    
     
     UPDATE		DCS_DataCenter.Account 	AS acc
     INNER JOIN	Temp_LastLoginTime	AS tll
