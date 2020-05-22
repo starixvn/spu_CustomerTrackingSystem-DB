@@ -12,11 +12,12 @@ BEGIN
 
 	Revisions:
 		#1. [20200506@CaseyHuynh][133486]:  Update Unsuccessfully flow. Daily and try tranform if IsCTSTransformed > -4
+		#2. [20200518@CaseyHuynh][133486]: Change data type (Batch and BatchID) from TINYINT to INT;
 	Param's Explanation (filtered by):
 	*/
 	
 	DECLARE		TotalRecord		INT UNSIGNED DEFAULT 0;
-	DECLARE		Batch			TINYINT DEFAULT 1;
+	DECLARE		Batch			INT UNSIGNED DEFAULT 1;
     
 	### PERFORMANCE: START
     DECLARE		vrExecKey		BIGINT	UNSIGNED;
@@ -44,7 +45,7 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Association;
     CREATE TEMPORARY TABLE Temp_Association 
     (	
-		BatchID				TINYINT
+		BatchID				INT	UNSIGNED
         , AssociationID		BIGINT	UNSIGNED
         , AccountID			BIGINT	UNSIGNED
         , DeviceID			BIGINT  UNSIGNED

@@ -79,8 +79,7 @@ BEGIN
             , ac.SubscriberID
             , ac.LastLoginTime
 	FROM Temp_Account AS ac;
-    
-   
+      
 	
 	### PERFORMANCE
 	SET		vrEndTime = CURRENT_TIMESTAMP(4);
