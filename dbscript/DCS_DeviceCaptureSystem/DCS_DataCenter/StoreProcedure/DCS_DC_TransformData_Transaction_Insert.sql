@@ -1,8 +1,8 @@
 DELIMITER $$
 
-DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformData_Transaction_Insert_cs$$
+DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformData_Transaction_Insert$$
 
-CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformData_Transaction_Insert_cs(IN ip_FromTransID BIGINT, IN ip_ToTransID BIGINT)
+CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformData_Transaction_Insert(IN ip_FromTransID BIGINT, IN ip_ToTransID BIGINT)
 BEGIN
 /*
 	Created: 20190730@Casey.Huynh
@@ -15,7 +15,8 @@ BEGIN
         #2. [20200416@Terry]: Archive Completed RawTransaction to DCS_RawTransaction.ProcessedTransaction.
 		#3. [20200506@CaseyHuynh][133486]: Not Deposit Account
 				+ Insert Ignore On Duplicate, Update (LastLoginTime, IsCTSTransfromed)
-                + Remove code "INSERT IGNORE INTO DCS_DataCenter.TransactionIP_TransformTemp"
+                 + Remove code "INSERT IGNORE INTO DCS_DataCenter.TransactionIP_TransformTemp"
+		#4. [20200515@CaseyHuynh][133263]: Update LastLoginTime
     Reviewer:
 		#1 [Name]: New
 	Param's Explanation (filtered by):
@@ -168,7 +169,7 @@ BEGIN
     WHERE		tac.LastLoginTime > acc.LastLoginTime;
     
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;  
-    INSERT INTO LastLoginTime_TransformTemp(CTSCustID, LastLoginTime)
+    INSERT INTO DCS_DataCenter.LastLoginTime_TransformTemp(CTSCustID, LastLoginTime)
     SELECT 		cus.CTSCustID
 				, MAX(lgn.LastLoginTime)
     FROM		Temp_LastLoginTime AS lgn
