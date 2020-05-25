@@ -8,7 +8,7 @@ CREATE PROCEDURE CTS_Adhoc.UpdateLastLoginTime()
 BEGIN
 	/*
 		Created:	20200525@CaseyHuynh
-		Task :		Update Last Login Time
+		Task :		133263-Update Last Login Time
 		DB:			
 		Original:
 
@@ -18,14 +18,22 @@ BEGIN
     DECLARE vrloopAccountID BIGINT UNSIGNED;
     DECLARE vrMaxAccountID BIGINT UNSIGNED;
     
+    
+     CREATE TABLE IF NOT EXISTS CTS_Adhoc.cs133263_LastLoginNameProcessing
+    (
+		loopAccountID	BIGINT UNSIGNED
+        , minAccountID	BIGINT UNSIGNED
+        , maxAccountID	BIGINT UNSIGNED
+    );
+    
     TRUNCATE TABLE CTS_Adhoc.cs133263_LastLoginNameProcessing;	
     
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 	  
+    
     SELECT 	Min(AccountID), Max(AccountID)
     INTO 	vrLoopAccountID, vrMaxAccountID
     FROM	CTS_DataCenter.CustDCSAccount;
-
-
+	
     INSERT INTO CTS_Adhoc.cs133263_LastLoginNameProcessing(loopAccountID, minAccountID, maxAccountID) 
     SELECT 	vrLoopAccountID -1 , vrLoopAccountID, vrMaxAccountID;
 
@@ -41,8 +49,7 @@ BEGIN
     
     WHILE ( vrLoopAccountID < vrMaxAccountID)
     DO
-		
-        TRUNCATE TABLE Temp_Account;    
+		TRUNCATE TABLE Temp_Account;    
         
 		SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;         
         INSERT INTO Temp_Account(CTSCustID, AccountID, LastLoginTime)
@@ -53,7 +60,7 @@ BEGIN
         INNER JOIN	DCS_DataCenter.Account AS acc
 					ON cts.AccountID = acc.AccountID
 		WHERE		cts.AccountID >= vrLoopAccountID
-        LIMIT		1000;
+        LIMIT		5000;
         
         UPDATE 		CTS_DataCenter.CTSCustomer AS cus
         INNER JOIN	Temp_Account AS tmp_acc
