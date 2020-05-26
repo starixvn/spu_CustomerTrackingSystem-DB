@@ -7,7 +7,7 @@ DROP PROCEDURE IF EXISTS CTS_Adhoc.UpdateLastLoginTime$$
 CREATE PROCEDURE CTS_Adhoc.UpdateLastLoginTime()
 BEGIN
 	/*
-		Created:	20200525@CaseyHuynh
+		Created:	20200526@CaseyHuynh
 		Task :		133263-Update Last Login Time
 		DB:			
 		Original:
@@ -65,7 +65,9 @@ BEGIN
         UPDATE 		CTS_DataCenter.CTSCustomer AS cus
         INNER JOIN	Temp_Account AS tmp_acc
 					ON cus.CTSCustID = tmp_acc.CTSCustID
-        SET			cus.LastLoginTime = GREATEST(cus.LastLoginTime, tmp_acc.LastLoginTime);
+        SET			cus.LastLoginTime =  tmp_acc.LastLoginTime
+        WHERE		cus.LastLoginTime < tmp_acc.LastLoginTime
+					OR cus.LastLoginTime IS NULL;
         
         
         UPDATE CTS_Adhoc.cs133263_LastLoginNameProcessing
