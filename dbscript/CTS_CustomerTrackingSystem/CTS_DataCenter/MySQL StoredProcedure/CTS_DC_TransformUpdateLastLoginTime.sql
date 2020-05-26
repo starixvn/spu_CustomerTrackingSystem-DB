@@ -26,7 +26,9 @@ BEGIN
     DECLARE		vrTotalRecord	INT;
     DECLARE		vrFromID		BIGINT;
     DECLARE		vrToID			BIGINT;
-
+	
+    SET ip_Batch = 500;
+    
     SET		vrExecKey = CRC32((UUID_Short()));    
     SET		vrNotes = 'Transform Update Last Login Time';		
     SET 	vrStepID = 1;
@@ -53,6 +55,7 @@ BEGIN
 				, lt.CTSCustID
                 , lt.LastLoginTime
     FROM		DCS_DataCenter.LastLoginTime_TransformTemp AS lt
+    ORDER BY 	ID ASC
     LIMIT		ip_Batch;
     
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
@@ -62,9 +65,9 @@ BEGIN
     INNER JOIN	Temp_CustLastLogin AS  gc
 				ON ct.CTSCustID = gc.CTSCustID
 	SET		ct.LastLoginTime = gc.LastLoginTime
-    WHERE	ct.LastLoginTime < gc.LastLoginTime;
-    
-    
+    WHERE	ct.LastLoginTime < gc.LastLoginTime
+			OR ct.LastLoginTime IS NULL;
+            
     DELETE 		lt
     FROM		DCS_DataCenter.LastLoginTime_TransformTemp AS lt
     INNER JOIN 	Temp_CustLastLogin AS al
