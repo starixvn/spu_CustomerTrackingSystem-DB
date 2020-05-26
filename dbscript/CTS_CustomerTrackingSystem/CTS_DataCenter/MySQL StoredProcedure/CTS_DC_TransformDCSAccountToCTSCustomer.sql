@@ -12,7 +12,7 @@ BEGIN
         	#1. [20191217@CaseyHuynh][#125530]: Implement LastLoginTime
             #2. [20190319@CaseyHuynh][IssueCN88]: Update Join LoginName = UserName
             #3. [20200506@CaseyHuynh][133486]: Remove code "add new CTSCustomer" for Not Deposit Account
-            
+            #4. [20200526@CaseyHuynh][133263]: Update LastLoginTime 
 		Param's Explanation (filtered by):                
 	*/
 	DECLARE vrDepositSubType TINYINT DEFAULT 1;
@@ -85,9 +85,7 @@ BEGIN
 				ON (tmpTable.LoginName = cus.Username
 					AND tmpTable.SubscriberID = cus.SubscriberID)
 	SET 		tmpTable.CTSCustID = cus.CTSCustID
-    WHERE		tmpTable.CTSCustID IS NULL;    
-
-    
+    WHERE		tmpTable.CTSCustID IS NULL;        
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
    
     INSERT IGNORE INTO CTS_DataCenter.CustDCSAccount(CTSCustID, AccountID, SubscriberID, InsertTime)
@@ -106,6 +104,13 @@ BEGIN
                                          ELSE  acc.IsCTSTransformed
 									END);
 	
+    UPDATE 		CTS_DataCenter.CTSCustomer AS cus
+    INNER JOIN 	Temp_Account AS acc
+				ON cus.CTSCustID = acc.CTSCustID
+    SET			cus.LastLoginTime = acc.LastLoginTime
+    WHERE		cus.LastLoginTime < acc.LastLoginTime
+				OR cus.LastLoginTime IS NULL;
+                
 	#=======================    
 	### PERFORMANCE
 	SET	vrEndTime = CURRENT_TIMESTAMP(4);	
