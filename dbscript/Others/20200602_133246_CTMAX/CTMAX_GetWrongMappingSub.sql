@@ -18,12 +18,12 @@ BEGIN
 		INTO 	FromCTSCustID, toCTSCustID
 		FROM 	(	SELECT CTSCustID 
 					FROM 	CTS_Adhoc.csCTMax_CustDCSAccount_bk AS map 
-					WHERE	 map.cusSubscriberID IS NULL 
+					WHERE	 map.IssueType IS NULL 
 					ORDER BY CTSCustID
 					LIMIT 1000 ) AS a);
         
         UPDATE 		CTS_Adhoc.csCTMax_CustDCSAccount_bk AS map
-		INNER JOIN	CTS_DataCenter.CTSCustomer AS cus
+		LEFT JOIN	CTS_DataCenter.CTSCustomer AS cus
 					ON map.CTSCustID = cus.CTSCustID
 		SET 		map.cusSubscriberID = cus.SubscriberID
 					,map.IssueType = (CASE WHEN map.SubscriberID != cus.SubscriberID THEN 1 ELSE 0 END)

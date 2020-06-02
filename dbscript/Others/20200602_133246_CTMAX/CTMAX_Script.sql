@@ -22,7 +22,7 @@ CALL CTS_Adhoc.CTMAX_GetDCSAssociationByDevice();
 CALL CTS_Adhoc.CTMAX_GetWrongMappingSub();
 
 INSERT INTO CTS_Adhoc.csCTMax_CustDCSAccount_bk
-SELECT 	*, NULL AS cusSubscriberID, 0 AS IssueType
+SELECT 	*, NULL AS cusSubscriberID, NULL AS IssueType
 FROM 	CTS_DataCenter.CustDCSAccount
 WHERE	SubscriberID IN (2328, 2367);
 

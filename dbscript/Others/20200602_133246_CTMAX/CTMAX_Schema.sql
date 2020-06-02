@@ -80,4 +80,17 @@ CREATE TABLE IF NOT EXISTS CTS_Adhoc.csCTMax_AssociationByDevice_bk(
 		, UNIQUE KEY	UK_CTSCustomer_SubscriberID_UserName_UserName2(SubscriberID, UserName, UserName2)
 		, INDEX			IX_CTSCustomer_UserName_UserName2(UserName, UserName2)
 		, INDEX			IX_CTSCustomer_UserName2(UserName2)
-	) ENGINE=INNODB AUTO_INCREMENT=1;
+	) ENGINE=INNODB AUTO_INCREMENT=1;    
+    
+    CREATE TABLE IF NOT EXISTS CTS_Adhoc.csCTMax_DeviceFingerprint_bk(
+		DeviceFingerprintID		BIGINT	UNSIGNED	AUTO_INCREMENT NOT NULL  
+        , DeviceID				BIGINT	UNSIGNED	NOT NULL
+        , FingerprintCode		VARCHAR(620)		NOT NULL
+		, FingerprintMoreInfo	TEXT	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	NULL
+        , CreatedTime			TIMESTAMP(4)	NOT NULL
+        , CreatedDate			DATETIME		NOT NULL
+        , InsertTime			TIMESTAMP(4)	NOT NULL
+        
+        , PRIMARY KEY	PK_DeviceFingerprint_DeviceFingerprintID(DeviceFingerprintID)
+        , UNIQUE KEY	UK_DeviceFingerprint(DeviceID,FingerprintCode)
+     ) ENGINE=InnoDB AUTO_INCREMENT = 1;
