@@ -1,19 +1,25 @@
 SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-#***Step08********************************
+#***Step09********************************
 CALL CTS_Adhoc.CTMAX_GetDeviceCode();
+
 #***Step08********************************
 CALL CTS_Adhoc.CTMAX_GetDeviceFingerprint();
+
 #***Step07********************************
 CALL CTS_Adhoc.CTMAX_GetDeviceCode();
+
 #***Step06********************************
 CALL CTS_Adhoc.CTMAX_GetDevice();
+
 #***Step05********************************
 INSERT INTO CTS_Adhoc.csCTMax_CTSCustomer_bk
 SELECT 	*
 FROM 	CTS_DataCenter.CTSCustomer
 WHERE	SubscriberID IN (2328, 2367);
+
 #***Step04********************************
 CALL CTS_Adhoc.CTMAX_GetDCSAssociationByDevice();
+
 #***Step03********************************
 CALL CTS_Adhoc.CTMAX_GetWrongMappingSub();
 
