@@ -1,6 +1,4 @@
 SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-#***Step09********************************
-CALL CTS_Adhoc.CTMAX_GetDeviceCode();
 
 #***Step08********************************
 CALL CTS_Adhoc.CTMAX_GetDeviceFingerprint();

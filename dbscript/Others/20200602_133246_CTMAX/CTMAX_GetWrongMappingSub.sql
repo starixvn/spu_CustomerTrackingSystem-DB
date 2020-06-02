@@ -26,7 +26,7 @@ BEGIN
 		INNER JOIN	CTS_DataCenter.CTSCustomer AS cus
 					ON map.CTSCustID = cus.CTSCustID
 		SET 		map.cusSubscriberID = cus.SubscriberID
-					,map.IssueType = (CASE WHEN map.cusSubscriberID != cus.SubscriberID THEN 1 ELSE 0 END)
+					,map.IssueType = (CASE WHEN map.SubscriberID != cus.SubscriberID THEN 1 ELSE 0 END)
 		WHERE 		map.CTSCustID BETWEEN FromCTSCustID AND ToCTSCustID;  
         
         
