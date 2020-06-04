@@ -8,6 +8,11 @@ Revisions:
 		- 20191217@CaseyHuynh: Add Column LastLoginDate column to table CTSCustomer.  	(#125530)
         - 20200117@HarveyNguyen: Add table CustRetractEvidence							(#127352)
         - [202002130@Casey.Huynh][130109]: Add INDEX (SubscriberID, CTSCustID) on TABLE CustDCSAcount.
+        - [20200416@Long.Luu][131506]: Manage Association_Create tables(AssociationByManual, AssociationRemove)
+        - [20200416@Long.Luu][132623]: Customer Category_Create tables(SportGroup, CustomerCategory, CTSCustomerClassification)
+        - [20200603@Casey.Huynh][135324]: 
+			+ Alter Table CTSCustomerClassification, add column LastScannedDate
+            + Alter table CTS_DataCenter.CustomerCategory: Add ScanIntervalInSecond
 Reviewer:
 */
 
@@ -240,3 +245,81 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.ProcessAffectedEvidence
 (	
 	LastCTSAssDevID		BIGINT	UNSIGNED
 )  ENGINE=INNODB;
+
+
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociationByManual (
+	FromSubscriberID		INT		UNSIGNED
+	, FromCTSCustID			BIGINT	UNSIGNED
+	, ToSubscriberID		INT		UNSIGNED
+	, ToCTSCustID			BIGINT	UNSIGNED
+	, Remark				VARCHAR(500) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+	, CreatedDate			DATETIME
+    , CreatedBy				BIGINT
+	, PRIMARY KEY	PK_AssociationByManual_FromCustIDToCustID(FromCTSCustID, ToCTSCustID)
+	, INDEX			IX_AssociationByManual_ToCTSCustID(ToCTSCustID)
+    , INDEX			IX_AssociationByManual_FromSubscriberIDToSubscriberID(FromSubscriberID, ToSubscriberID)
+	, INDEX			IX_AssociationByManual_CreatedDate(CreatedDate)
+) ENGINE=INNODB AUTO_INCREMENT=1;
+
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociationRemove (
+	FromSubscriberID		INT		UNSIGNED
+	, FromCTSCustID			BIGINT	UNSIGNED
+	, ToSubscriberID		INT		UNSIGNED
+	, ToCTSCustID			BIGINT	UNSIGNED
+	, Remark				VARCHAR(500) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+	, CreatedDate			DATETIME
+    , CreatedBy				BIGINT
+	, PRIMARY KEY	PK_AssociationRemove_FromCustIDToCustID(FromCTSCustID, ToCTSCustID)
+	, INDEX			IX_AssociationRemove_ToCTSCustID(ToCTSCustID)
+	, INDEX			IX_AssociationRemove_FromSubscriberIDToSubscriberID(FromSubscriberID, ToSubscriberID)
+	, INDEX			IX_AssociationRemove_CreatedDate(CreatedDate)
+) ENGINE=INNODB AUTO_INCREMENT=1;
+
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.SportGroup (
+		SportGroupID		SMALLINT UNSIGNED AUTO_INCREMENT
+	, 	SportGroupName		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+    ,	MainDBSportID		SMALLINT UNSIGNED
+	, 	DisplayOrder		TINYINT UNSIGNED
+    ,	IsActive			BIT DEFAULT 1
+	, 	CreatedDate			DATETIME
+    ,	CreatedBy			INT UNSIGNED
+	, 	PRIMARY KEY		PK_SportGroup_SportGroupIDDisplayOrder(SportGroupID,DisplayOrder)
+	, 	INDEX			IX_SportGroup_MainDBSportID(MainDBSportID)
+    , 	INDEX			IX_SportGroup_IsActive(IsActive)
+) ENGINE=INNODB AUTO_INCREMENT=1;
+
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustomerCategory (
+		CategoryID			SMALLINT UNSIGNED AUTO_INCREMENT
+	, 	CategoryName		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+    , 	CategorySpec		VARCHAR(200) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+    ,	ParentID			SMALLINT UNSIGNED
+	, 	DisplayOrder		TINYINT UNSIGNED
+    ,	IsActive			BIT DEFAULT 1
+	, 	CreatedDate			DATETIME
+    ,	CreatedBy			INT UNSIGNED
+    , 	LastModifiedDate	DATETIME
+    ,	LastModifiedBy		INT UNSIGNED
+    , 	ScanIntervalInSecond	BIGINT
+	, 	PRIMARY KEY			PK_CustomerCategory_CategoryIDDisplayOrder(CategoryID,DisplayOrder)
+	, 	INDEX				IX_CustomerCategory_ParentID(ParentID)
+    , 	INDEX				IX_CustomerCategory_IsActive(IsActive)
+) ENGINE=INNODB AUTO_INCREMENT=1;
+
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomerClassification (
+		CTSCustID			BIGINT UNSIGNED
+    ,   CustID				INT UNSIGNED
+	, 	SubscriberID		INT	UNSIGNED
+	, 	CategoryID			SMALLINT UNSIGNED
+    ,	SportGroupID		SMALLINT UNSIGNED
+	, 	Remark				VARCHAR(500) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+	, 	CreatedDate			DATETIME
+    ,	CreatedBy			INT -- > 0 for normal user, 0 for auto, and may be negative for other sources in the future
+    , 	LastModifiedDate	DATETIME
+    ,	LastModifiedBy		INT UNSIGNED
+    ,	LastScannedDate		DATETIME
+    , 	IsAutoTag			TINYINT
+	, 	PRIMARY KEY			PK_CTSCustomerClassification_CTSCustID(CTSCustID, SportGroupID, CategoryID)
+	, 	INDEX				IX_CTSCustomerClassification_SubscriberID(SubscriberID)
+    ,	INDEX				IX_CTSCustomerClassification_LastScannedDate(LastScannedDate)
+    ,   INDEX				IX_CTSCustomerClassification_CategoryID(CategoryID)
+) ENGINE=INNODB;
