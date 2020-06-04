@@ -317,7 +317,6 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomerClassification (
     , 	LastModifiedDate	DATETIME
     ,	LastModifiedBy		INT UNSIGNED
     ,	LastScannedDate		DATETIME
-    , 	IsAutoTag			TINYINT
 	, 	PRIMARY KEY			PK_CTSCustomerClassification_CTSCustID(CTSCustID, SportGroupID, CategoryID)
 	, 	INDEX				IX_CTSCustomerClassification_SubscriberID(SubscriberID)
     ,	INDEX				IX_CTSCustomerClassification_LastScannedDate(LastScannedDate)
