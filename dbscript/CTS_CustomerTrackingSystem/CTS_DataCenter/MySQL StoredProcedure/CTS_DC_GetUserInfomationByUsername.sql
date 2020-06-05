@@ -9,7 +9,7 @@ BEGIN
 		Original:
 
 		Revisions:
-			- 20200601@Harvey: add code for searching with username2
+			- 20200604@Harvey: search by RegisterName
         
 		Param's Explanation (filtered by):                
 	*/	 
@@ -33,6 +33,6 @@ BEGIN
             , ctsCus.SubscriberID
             , null as SubscriberName            
         FROM CTS_DataCenter.CTSCustomer AS ctsCus
-        WHERE ctsCus.Username = ip_original_username OR ctsCus.RegisterName = ip_original_username;
+        WHERE ctsCus.Username = ip_username OR ctsCus.RegisterName = ip_username;
 END$$
 DELIMITER ;
