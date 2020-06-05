@@ -240,3 +240,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.ProcessAffectedEvidence
 (	
 	LastCTSAssDevID		BIGINT	UNSIGNED
 )  ENGINE=INNODB;
+
+-- DROP INDEX IX_FullText_CTSCustomer_UserName_UserName2 ON CTS_DataCenter.CTSCustomer;
+ALTER TABLE CTS_DataCenter.CTSCustomer ADD INDEX IX_CTSCustomer_RegisterName (RegisterName);
+ALTER TABLE CTSCustomer RENAME TO CTSCustomer_old, ALGORITHM = INSTANT;

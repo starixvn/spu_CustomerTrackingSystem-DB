@@ -1,5 +1,5 @@
 DELIMITER $$
-DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_GetUserInfomationByUsername $$
+DROP procedure IF EXISTS `CTS_DC_GetUserInfomationByUsername`;
 CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_GetUserInfomationByUsername`(IN ip_username VARCHAR(50))
 BEGIN
 	/*
@@ -13,8 +13,8 @@ BEGIN
         
 		Param's Explanation (filtered by):                
 	*/	 
-    
-    SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
+  
+	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
        SELECT 
 			ctsCus.CTSCustID
             , ctsCus.CustId
@@ -33,6 +33,6 @@ BEGIN
             , ctsCus.SubscriberID
             , null as SubscriberName            
         FROM CTS_DataCenter.CTSCustomer AS ctsCus
-        WHERE ctsCus.Username = ip_username OR ctsCus.UserName2 Like CONCAT('%', ip_username);
+        WHERE ctsCus.Username = ip_original_username OR ctsCus.RegisterName = ip_original_username;
 END$$
 DELIMITER ;
