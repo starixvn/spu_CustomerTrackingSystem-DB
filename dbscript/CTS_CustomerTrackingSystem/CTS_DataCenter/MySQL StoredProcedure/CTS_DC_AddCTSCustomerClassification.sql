@@ -27,6 +27,9 @@ sp: BEGIN
 		Param's Explanation:
 	*/ 
     
+    DECLARE vr_CurrentTime DATETIME;
+    
+   
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
@@ -58,6 +61,8 @@ sp: BEGIN
     FROM 		CTS_DataCenter.CTSCustomerClassification  AS ccl    
 	WHERE		ccl.CategoryID = 2 AND CustID = ip_CustID; 
     
+	SET vr_CurrentTime = CURRENT_TIME();
+    
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID,  CategoryID, SportGroupID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy)
 	SELECT 	ip_CustID
 		, 	ip_CTSCustID
@@ -65,12 +70,22 @@ sp: BEGIN
         , 	ip_CategoryID
         , 	s.SportGroupID
         , 	ip_Remark
-        , 	CURRENT_TIME(), ip_CreatedBy, CURRENT_TIME(), ip_CreatedBy
+        , 	vr_CurrentTime, ip_CreatedBy, vr_CurrentTime, ip_CreatedBy
     FROM tempSportGroupID AS s;
    
    
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	VALUES(10, 'CTS_DC_AddCTSCustomerClassification', CONCAT('Insert CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID, ';ip_CategoryID_', ip_CategoryID, ';ip_SportGroupIDList_', ip_SportGroupIDList, ';ip_Remark_', ip_Remark,')'), CURRENT_TIME(), ip_CreatedBy);
+    
+    INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID
+					,SportGroupID ,LastModifiedDate, LastModifiedBy, IsAuto)
+	SELECT 	ip_CustID
+		, 	ip_CTSCustID
+        , 	ip_CategoryID
+        , 	s.SportGroupID
+        , 	vr_CurrentTime, ip_CreatedBy
+        ,   0 AS IsAuto
+    FROM tempSportGroupID AS s;
 	
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 END$$

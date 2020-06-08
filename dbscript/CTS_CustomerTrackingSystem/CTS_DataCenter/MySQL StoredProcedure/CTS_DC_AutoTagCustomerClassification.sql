@@ -67,6 +67,11 @@ BEGIN
    
     #=========================================================
     #=====Remove New Member Category IF SportGroupID= -1(AI,Robot...) OR SportGroupID >0
+    DELETE 		tmpCla
+    FROM 		Temp_NewClassification AS tmpCla
+    INNER JOIN 	CTS_DataCenter.CTSCustomerClassification  AS ccl
+				ON tmpCla.CustID = ccl.CustID
+	WHERE		tmpCla.CategoryID = 2;
     
     DELETE 		ccl
     FROM 		CTS_DataCenter.CTSCustomerClassification  AS ccl
