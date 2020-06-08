@@ -13,17 +13,18 @@ BEGIN
         
 		Param's Explanation (filtered by):
          ip_CategoryIDList: ex: '1,2,3'       
-	*/   
-
-	SELECT 		ccl.CustID
-				, ccl.SportGroupID
-                , ccl.CategoryID
-    FROM		CTS_DataCenter.CTSCustomerClassification AS ccl
+	*/
+    DECLARE vrScannedDate DATETIME DEFAULT CURRENT_DATE();
+    
+    UPDATE 		CTS_DataCenter.CTSCustomerClassification AS ccl
     INNER JOIN	CTS_DataCenter.CustomerCategory AS cat
 				ON ccl.CategoryID = cat.CategoryID
+	SET			ccl.LastScannedDate = @updatedList := vrScannedDate
 	WHERE		cat.IsActive = 1
 				AND cat.IsUsedManually = 0
-				AND DATE_ADD(ccl.LastScannedDate, INTERVAL cat.ScanIntervalInSecond SECOND) <= CURRENT_DATE();
+				AND DATE_ADD(ccl.LastScannedDate, INTERVAL cat.ScanIntervalInSecond SECOND) <= CURRENT_DATE();  
+                
+    SELECT  @updatedList;
     
 END$$
 DELIMITER ;

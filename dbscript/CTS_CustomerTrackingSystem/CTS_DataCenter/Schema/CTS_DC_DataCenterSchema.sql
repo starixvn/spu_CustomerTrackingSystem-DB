@@ -288,7 +288,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.SportGroup (
     , 	INDEX			IX_SportGroup_IsActive(IsActive)
 ) ENGINE=INNODB AUTO_INCREMENT=1;
 
-CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustomerCategory (
+CREATE TABLE IF NOT EXISTS 	CTS_DataCenter.CustomerCategory (
 		CategoryID			SMALLINT UNSIGNED AUTO_INCREMENT
 	, 	CategoryName		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
     , 	CategorySpec		VARCHAR(200) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
@@ -299,6 +299,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustomerCategory (
     ,	CreatedBy			INT UNSIGNED
     , 	LastModifiedDate	DATETIME
     ,	LastModifiedBy		INT UNSIGNED
+    ,	IsUsedManually		BIT	
     , 	ScanIntervalInSecond	BIGINT
 	, 	PRIMARY KEY			PK_CustomerCategory_CategoryIDDisplayOrder(CategoryID,DisplayOrder)
 	, 	INDEX				IX_CustomerCategory_ParentID(ParentID)
@@ -306,19 +307,34 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustomerCategory (
 ) ENGINE=INNODB AUTO_INCREMENT=1;
 
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomerClassification (
-		CTSCustID			BIGINT UNSIGNED
-    ,   CustID				INT UNSIGNED
+		CustID				BIGINT UNSIGNED
+	,	CTSCustID			BIGINT UNSIGNED
 	, 	SubscriberID		INT	UNSIGNED
 	, 	CategoryID			SMALLINT UNSIGNED
     ,	SportGroupID		SMALLINT UNSIGNED
 	, 	Remark				VARCHAR(500) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 	, 	CreatedDate			DATETIME
-    ,	CreatedBy			INT -- > 0 for normal user, 0 for auto, and may be negative for other sources in the future
+    ,	CreatedBy			INT
     , 	LastModifiedDate	DATETIME
     ,	LastModifiedBy		INT UNSIGNED
     ,	LastScannedDate		DATETIME
-	, 	PRIMARY KEY			PK_CTSCustomerClassification_CTSCustID(CTSCustID, SportGroupID, CategoryID)
+	, 	PRIMARY KEY			PK_CTSCustomerClassification_CTSCustID(CustID, SportGroupID, CategoryID)
 	, 	INDEX				IX_CTSCustomerClassification_SubscriberID(SubscriberID)
     ,	INDEX				IX_CTSCustomerClassification_LastScannedDate(LastScannedDate)
     ,   INDEX				IX_CTSCustomerClassification_CategoryID(CategoryID)
 ) ENGINE=INNODB;
+
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomerClassification_History (
+		ID					BIGINT UNSIGNED AUTO_INCREMENT
+	,	CustID				INT UNSIGNED
+    ,  	CTSCustID			BIGINT UNSIGNED
+	, 	CategoryID			SMALLINT UNSIGNED
+    ,	SportGroupID		SMALLINT UNSIGNED
+    , 	LastModifiedDate	DATETIME
+    ,	LastModifiedBy		INT UNSIGNED
+    ,   OldValue			VARCHAR(1000)		#Format: {FieldName1: Value1}, {FieldName2: Value2}
+    , 	PRIMARY KEY			PK_CTSCustomerClassification_History_ID(ID)
+	, 	INDEX				IX_CTSCustomerClassification_CTSCustID(CustID, SportGroupID, CategoryID)
+    ,	INDEX				IX_CTSCustomerClassification_LastScannedDate(LastModifiedDate)
+) ENGINE=INNODB AUTO_INCREMENT=1;
+
