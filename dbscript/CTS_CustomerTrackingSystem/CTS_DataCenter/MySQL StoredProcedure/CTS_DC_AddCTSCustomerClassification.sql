@@ -3,7 +3,8 @@ USE CTS_DataCenter $$
 DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_AddCTSCustomerClassification` $$
 
 CREATE PROCEDURE `CTS_DataCenter`.`CTS_DC_AddCTSCustomerClassification`(
-		IN ip_CTSCustID			BIGINT UNSIGNED
+		IN ip_CustID			BIGINT UNSIGNED
+	, 	IN ip_CTSCustID			BIGINT UNSIGNED	
     ,	IN ip_SubscriberID		INT
 	,	IN ip_CategoryID		SMALLINT
     , 	IN ip_SportGroupIDList 	VARCHAR(50)
@@ -20,7 +21,8 @@ sp: BEGIN
 		Original: 
 		Revisions:
 			- 20200423@Long.Luu: Created [Redmine ID: #132623]
-			
+			- 20200608@Casey.Huynh: Add parameter ip_CustID
+					+ Remove Category "New Member" if existing
             
 		Param's Explanation:
 	*/ 
@@ -52,9 +54,13 @@ sp: BEGIN
     END IF;
 
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
+    DELETE 		ccl
+    FROM 		CTS_DataCenter.CTSCustomerClassification  AS ccl    
+	WHERE		ccl.CategoryID = 2 AND CustID = ip_CustID; 
     
-	INSERT INTO CTS_DataCenter.CTSCustomerClassification(CTSCustID, SubscriberID, CategoryID, SportGroupID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy)
-	SELECT 	ip_CTSCustID
+	INSERT INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID,  CategoryID, SportGroupID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy)
+	SELECT 	ip_CustID
+		, 	ip_CTSCustID
 		, 	ip_SubscriberID
         , 	ip_CategoryID
         , 	s.SportGroupID

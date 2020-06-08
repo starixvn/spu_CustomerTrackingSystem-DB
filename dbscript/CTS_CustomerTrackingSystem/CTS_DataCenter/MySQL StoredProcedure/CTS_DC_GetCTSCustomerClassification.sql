@@ -13,6 +13,7 @@ BEGIN
 		Original: 
 		Revisions:
 			- 20200423@Long.Luu: Created [Redmine ID: #132623]
+            - 20200608@Casey.Huynh: Enhance SP
             
 		Param's Explanation:
 	*/ 

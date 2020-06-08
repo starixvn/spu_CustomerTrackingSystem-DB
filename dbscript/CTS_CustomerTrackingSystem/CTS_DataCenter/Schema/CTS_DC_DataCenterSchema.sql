@@ -332,7 +332,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomerClassification_History (
     ,	SportGroupID		SMALLINT UNSIGNED
     , 	LastModifiedDate	DATETIME
     ,	LastModifiedBy		INT UNSIGNED
-    ,   OldValue			VARCHAR(1000)		#Format: {FieldName1: Value1}, {FieldName2: Value2}
+    ,	IsAuto				BIT
     , 	PRIMARY KEY			PK_CTSCustomerClassification_History_ID(ID)
 	, 	INDEX				IX_CTSCustomerClassification_CTSCustID(CustID, SportGroupID, CategoryID)
     ,	INDEX				IX_CTSCustomerClassification_LastScannedDate(LastModifiedDate)
