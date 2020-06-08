@@ -1,7 +1,7 @@
 DELIMITER $$
-DROP PROCEDURE IF EXISTS CTS_DC_AutoTagCustomerClassification;
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_AutoTagCustomerClassification`(IN ip_NewClassification JSON)
-sp: BEGIN
+DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_AutoTagCustomerClassification$$
+CREATE DEFINER=`fps`@`%` PROCEDURE CTS_DataCenter.CTS_DC_AutoTagCustomerClassification(IN ip_NewClassification JSON)
+BEGIN
 	/*
 		Created:	20200505@Terry.Nguyen
 		Task:		Auto tag for Customer Classification
@@ -17,8 +17,7 @@ sp: BEGIN
     DECLARE v_remark VARCHAR(50);
     DECLARE v_createdBy INT;
     DECLARE v_LastScannedDate DATETIME;
-    
-    SET v_remark = 'Auto tag customer classification';
+
     SET v_createdBy = 1027893;
 	SET  v_LastScannedDate = CURRENT_DATE();
     
@@ -51,34 +50,49 @@ sp: BEGIN
 			, CategoryID		SMALLINT UNSIGNED	PATH "$.CategoryId"
 			, LastModifiedDate	DATETIME			PATH "$.CreatedTime"
 		 )) as tmpTable;   
-  
+
     #=========GET CTSCustID IF Existing
     UPDATE 		Temp_NewClassification AS tmpCla
     LEFT JOIN	CTS_DataCenter.CTSCustomer AS cus 
 					ON tmpCla.CustID = cus.CustID
 	SET			tmpCla.CTSCustID = cus.CTSCustID
 				, tmpCla.SubscriberID = cus.SubscriberID;
-		
     #==========================================================        
     UPDATE 		Temp_NewClassification AS tmpCla
     LEFT JOIN 	CTS_DataCenter.CTSCustomerClassification AS ccl
 				ON tmpCla.CustID = ccl.CustID
-				AND tmpCla.SportGroupID = ccl.SportGroupID
-	SET 	tmpCla.ActionType = (CASE WHEN (tmpCla.CategoryID != ccl.CategoryID) OR tmpCla.CategoryID = 0 THEN 1 
-									ELSE 2 END)
-			, tmpCla.OldCategoryID = ccl.CategoryID;
+					AND tmpCla.SportGroupID = ccl.SportGroupID
+	SET 		tmpCla.ActionType = (	CASE WHEN (tmpCla.CategoryID != ccl.CategoryID) OR tmpCla.CategoryID = 0 THEN 1 
+									ELSE 0 END)
+				, tmpCla.OldCategoryID = ccl.CategoryID;
             
     #=========================================================
     #=====Remove New Member Category IF SportGroupID= -1(AI,Robot...) OR SportGroupID >0
+    
+	#======= INSERT Customer Classification History
+	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID,SportGroupID,LastModifiedDate, LastModifiedBy, OldValue)
+    SELECT 	tmpCla.CustID
+			, tmpCla.CTSCustID
+			, tmpCla.CategoryID
+            , tmpCla.SportGroupID
+            , tmpCla.LastModifiedDate
+            , v_createdBy
+            , CONCAT('{OldCategoryID: ', ccl.CategoryID,'}' ) AS OldValue
+	FROM 		CTS_DataCenter.CTSCustomerClassification  AS ccl
+    INNER JOIN 	Temp_NewClassification AS tmpCla
+				ON tmpCla.CustID = ccl.CustID
+	WHERE		ccl.CategoryID = 2
+    ORDER BY 	tmpCla.SportGroupID, tmpCla.CategoryID
+    LIMIT 1; 
+    
+    
     DELETE 		ccl
     FROM 		CTS_DataCenter.CTSCustomerClassification  AS ccl
     INNER JOIN 	Temp_NewClassification AS tmpCla
 				ON tmpCla.CustID = ccl.CustID
-	WHERE		(tmpCla.SportGroupID > 0 OR tmpCla.CategoryID = 0)
-				AND ccl.CategoryID = 2; #"New Member" Category
-   
-    #=======INSERT NEW Customer Classification
-    INSERT INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
+	WHERE		ccl.CategoryID = 2; 
+                
+    INSERT  INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
 	SELECT 
 			temp.CustID
 			, temp.CTSCustID
