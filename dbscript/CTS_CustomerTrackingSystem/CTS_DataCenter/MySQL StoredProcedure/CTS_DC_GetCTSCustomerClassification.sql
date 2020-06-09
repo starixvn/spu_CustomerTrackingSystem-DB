@@ -44,7 +44,7 @@ BEGIN
     IF (SELECT COUNT(1) FROM tempLatestRecordOfCategory WHERE CategoryID IN (6,7)) >= 1 THEN
 		DELETE t
 		FROM tempLatestRecordOfCategory AS t
-		WHERE t.CategoryID IN (3,5);
+		WHERE t.CategoryID IN (5);
     END IF;
 
     SELECT 	a.CategoryID

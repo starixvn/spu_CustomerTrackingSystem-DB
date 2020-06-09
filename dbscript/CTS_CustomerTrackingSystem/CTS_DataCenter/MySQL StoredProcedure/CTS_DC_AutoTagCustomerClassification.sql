@@ -57,16 +57,25 @@ BEGIN
 					ON tmpCla.CustID = cus.CustID
 	SET			tmpCla.CTSCustID = cus.CTSCustID
 				, tmpCla.SubscriberID = cus.SubscriberID;
-    #==========================================================        
-    UPDATE 		Temp_NewClassification AS tmpCla
+    #==========================================================       
+    SELECT 		tmpCla.CategoryID, ccl.CategoryID AS OldCategory , tmpCla.SportGroupID, ccl.SportGroupID AS OldSportGroupID
+    FROM 		Temp_NewClassification AS tmpCla
     LEFT JOIN 	CTS_DataCenter.CTSCustomerClassification AS ccl
 				ON tmpCla.CustID = ccl.CustID
 	INNER JOIN 	CTS_DataCenter.CustomerCategory AS cua
+				ON ccl.CategoryID = cua.CategoryID AND cua.IsUsedManually = 0;
+    
+    
+    UPDATE 		Temp_NewClassification AS tmpCla
+    INNER JOIN 	CTS_DataCenter.CTSCustomerClassification AS ccl
+				ON tmpCla.CustID = ccl.CustID
+                AND tmpCla.SportGroupID = ccl.SportGroupID
+	INNER JOIN 	CTS_DataCenter.CustomerCategory AS cua
 				ON ccl.CategoryID = cua.CategoryID AND cua.IsUsedManually = 0
-	SET 		tmpCla.ActionType = (CASE WHEN (tmpCla.CategoryID != ccl.CategoryID AND tmpCla.SportGroupID = ccl.SportGroupID) THEN 1 #OR tmpCla.CategoryID = 0 
+	SET 		tmpCla.ActionType = (CASE WHEN (tmpCla.CategoryID != ccl.CategoryID) THEN 1 #OR tmpCla.CategoryID = 0 
 									ELSE 0 END)
 				, tmpCla.OldCategoryID = ccl.CategoryID;
-   
+	
     #=========================================================
     #=====Remove New Member Category IF SportGroupID= -1(AI,Robot...) OR SportGroupID >0
     DELETE 		tmpCla
@@ -80,7 +89,7 @@ BEGIN
     INNER JOIN 	Temp_NewClassification AS tmpCla
 				ON tmpCla.CustID = ccl.CustID
 	WHERE		ccl.CategoryID = 2; 
-                
+     SELECT * FROM Temp_NewClassification;           
     INSERT  IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
 	SELECT 
 			temp.CustID
@@ -103,6 +112,8 @@ BEGIN
     INNER JOIN 	Temp_NewClassification tmpCla 
 				ON 	tmpCla.CustID = ccl.CustID		
 				AND tmpCla.SportGroupID = ccl.SportGroupID
+	INNER JOIN 	CTS_DataCenter.CustomerCategory AS cua
+				ON ccl.CategoryID = cua.CategoryID AND cua.IsUsedManually = 0 
  	SET  ccl.CategoryID = tmpCla.CategoryID
         , ccl.LastModifiedDate = tmpCla.LastModifiedDate 
         , ccl.LastModifiedBy = v_createdBy

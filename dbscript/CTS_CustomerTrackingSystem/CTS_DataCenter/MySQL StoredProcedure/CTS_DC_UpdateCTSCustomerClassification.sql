@@ -63,7 +63,8 @@ BEGIN
     
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
     
-	INSERT INTO CTS_DataCenter.CTSCustomerClassification(CTSCustID, SubscriberID, CategoryID, SportGroupID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy)
+	INSERT INTO CTS_DataCenter.CTSCustomerClassification(CTSCustID, CustID, SubscriberID, CategoryID, SportGroupID
+		, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy)
 	SELECT 	ip_CTSCustID
 		, 	ip_CustID
 		, 	ip_SubscriberID
@@ -73,16 +74,6 @@ BEGIN
         , 	vr_CurrentTime, ip_CreatedBy, vr_CurrentTime , ip_CreatedBy
     FROM tempSportGroupID AS s
     WHERE s.ActionStatus = 0;
-   
-    INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, SportGroupID, CategoryID ,LastModifiedDate, LastModifiedBy, IsAuto)
-	SELECT 	ip_CustID
-		, 	ip_CTSCustID
-        , 	s.SportGroupID
-        , 	ip_CategoryID
-        , 	vr_CurrentTime AS LastModifiedDate
-        , 	ip_CreatedBy
-        ,   0 AS IsAuto
-	FROM tempSportGroupID AS s;
    
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	VALUES(11, 'CTS_DC_UpdateCTSCustomerClassification', CONCAT('Update CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID, ';ip_CategoryID_', ip_CategoryID, ';ip_SportGroupIDList_', ip_SportGroupIDList, ';ip_Remark_', ip_Remark,')'), vr_CurrentTime, ip_CreatedBy);
