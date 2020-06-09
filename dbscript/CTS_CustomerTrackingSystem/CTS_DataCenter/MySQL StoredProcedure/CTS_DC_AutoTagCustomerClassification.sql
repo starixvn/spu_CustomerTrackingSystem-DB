@@ -58,13 +58,6 @@ BEGIN
 	SET			tmpCla.CTSCustID = cus.CTSCustID
 				, tmpCla.SubscriberID = cus.SubscriberID;
     #==========================================================       
-    SELECT 		tmpCla.CategoryID, ccl.CategoryID AS OldCategory , tmpCla.SportGroupID, ccl.SportGroupID AS OldSportGroupID
-    FROM 		Temp_NewClassification AS tmpCla
-    LEFT JOIN 	CTS_DataCenter.CTSCustomerClassification AS ccl
-				ON tmpCla.CustID = ccl.CustID
-	INNER JOIN 	CTS_DataCenter.CustomerCategory AS cua
-				ON ccl.CategoryID = cua.CategoryID AND cua.IsUsedManually = 0;
-    
     
     UPDATE 		Temp_NewClassification AS tmpCla
     INNER JOIN 	CTS_DataCenter.CTSCustomerClassification AS ccl
@@ -89,7 +82,7 @@ BEGIN
     INNER JOIN 	Temp_NewClassification AS tmpCla
 				ON tmpCla.CustID = ccl.CustID
 	WHERE		ccl.CategoryID = 2; 
-     SELECT * FROM Temp_NewClassification;           
+    
     INSERT  IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
 	SELECT 
 			temp.CustID

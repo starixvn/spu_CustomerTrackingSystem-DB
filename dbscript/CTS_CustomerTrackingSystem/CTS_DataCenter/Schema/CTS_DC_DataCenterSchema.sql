@@ -318,7 +318,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomerClassification (
     , 	LastModifiedDate	DATETIME
     ,	LastModifiedBy		INT UNSIGNED
     ,	LastScannedDate		DATETIME
-	, 	PRIMARY KEY			PK_CTSCustomerClassification_CTSCustID(CustID, SportGroupID, CategoryID)
+	, 	PRIMARY KEY			PK_CTSCustomerClassification_CustIDSportGroupIDCategoryID(CustID, SportGroupID, CategoryID)
 	, 	INDEX				IX_CTSCustomerClassification_SubscriberID(SubscriberID)
     ,	INDEX				IX_CTSCustomerClassification_LastScannedDate(LastScannedDate)
     ,   INDEX				IX_CTSCustomerClassification_CategoryID(CategoryID, SportGroupID)
