@@ -1,23 +1,22 @@
 DELIMITER $$
 USE `CTS_DataCenter` $$
-DROP PROCEDURE IF EXISTS CTS_DC_AddMultiAccountEvidence $$
+DROP PROCEDURE IF EXISTS CTS_DC_API_AddEvidencesForCustomers $$
 
-CREATE PROCEDURE CTS_DC_AddMultiAccountEvidence (
-		IN ip_NewAccountEvidences 	JSON    
-    ,	IN ip_UserID 				INT
-    ,	IN ip_IsCreatedByMaster 	BOOL
+CREATE PROCEDURE CTS_DC_API_AddEvidencesForCustomers (
+		IN ip_CustIds 				VARCHAR(4000)
+    ,   IN ip_EvidenceCodes 		VARCHAR(4000)
     
     , 	OUT op_ErrorMessage 		VARCHAR(200))
     
 sp: BEGIN
 	/*
-		Created:	20200608@Long.Luu
-		Task:		Insert multiple account-evidences [Redmine ID: 134489]
+		Created:	20200610@Long.Luu
+		Task:		Insert multiple evidences for multiple customers [Redmine ID: 135585]
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
-		   - 20200608@Long.Luu: Created [Redmine ID: 134489]
+		   - 20200610@Long.Luu: Created [Redmine ID: 135585]
 	*/    
    /*
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
@@ -25,9 +24,11 @@ sp: BEGIN
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
   */
-    DECLARE	vr_SPName 		VARCHAR(100) DEFAULT 'CTS_DC_AddMultiAccountEvidence';  
+    DECLARE	vr_SPName 		VARCHAR(100) DEFAULT 'CTS_DC_API_AddEvidencesForCustomers';  
     DECLARE	vr_CreatedDate	DATETIME;      
     SET	vr_CreatedDate 		= CURRENT_TIME();
+	SET @ip_IsCreatedByMaster = 1;
+    SET @ip_UserID = 1027893;
      
     DROP TEMPORARY TABLE IF EXISTS tmpMultipleAccountEvidence;    
 	CREATE TEMPORARY TABLE tmpMultipleAccountEvidence 
@@ -53,71 +54,78 @@ sp: BEGIN
         , 	PRIMARY KEY	tmpAffectedDevices(CTSCustID,DCSDeviceID) 
 	);
     
-    INSERT INTO tmpMultipleAccountEvidence(CTSCustID, EvidenceID, Remark)
-	SELECT 	tmpTable.CTSCustID
-		, 	tmpTable.EvidenceID
-		, 	tmpTable.Remark
-	FROM JSON_TABLE(ip_NewAccountEvidences,
-		 "$[*]" COLUMNS(
-			  CTSCustID 	BIGINT UNSIGNED		PATH "$.CTSCustID"
-			, EvidenceID	SMALLINT UNSIGNED	PATH "$.EvidenceID"
-			, Remark		VARCHAR(500)		PATH "$.Comment"
-		 )) AS tmpTable;  
-         
-	IF EXISTS (	SELECT 1 
-				FROM tmpMultipleAccountEvidence AS t 
-					LEFT JOIN CTS_DataCenter.CustEvidence AS ce ON t.CTSCustID = ce.CTSCustID AND t.EvidenceID = ce.EvidenceID
-				WHERE ce.CTSCustID IS NOT NULL
-					AND ce.EvidenceID IS NOT NULL
-                    AND Level = 0) THEN
-		SET op_ErrorMessage = 'This Customer has been flagged with this Evicence already.';
-		LEAVE sp;
-	END IF;
-     
-	SET SQL_SAFE_UPDATES = 0;
-    UPDATE tmpMultipleAccountEvidence AS t
-		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON t.CTSCustID = t.CTSCustID
-    SET t.SubscriberID = c.SubscriberID;
-      
-	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
+    DROP TEMPORARY TABLE IF EXISTS tmpAccountList;
+    CREATE TEMPORARY TABLE tmpAccountList (
+			CustID			BIGINT UNSIGNED    
+		,	CTSCustID		BIGINT UNSIGNED    
+        ,	SubcriberID		INT UNSIGNED
+    );
+    
+	SET @sql = CONCAT("INSERT INTO tmpAccountList (CustID) VALUES ('", REPLACE(ip_CustIds, ",", "'),('"),"');");
+	PREPARE stmt1 FROM @sql;
+	EXECUTE stmt1;
+    
+    DROP TEMPORARY TABLE IF EXISTS tmpEvidenceList;
+    CREATE TEMPORARY TABLE tmpEvidenceList (
+			EvidenceID		SMALLINT UNSIGNED    
+        ,	EvidenceCode	VARCHAR(10)
+    );
+    
+	SET @sql = CONCAT("INSERT INTO tmpEvidenceList (EvidenceCode) VALUES ('", REPLACE(ip_EvidenceCodes, ",", "'),('"),"');");
+	PREPARE stmt1 FROM @sql;
+	EXECUTE stmt1;
+    
+    # START
+    SET SQL_SAFE_UPDATES = 0;
+    UPDATE tmpAccountList AS t
+		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON t.CustID = c.CustID AND c.CustSubID = 0
+    SET t.CTSCustID = c.CTSCustID
+		,	t.SubcriberID = c.SubscriberID;
+        
+	UPDATE tmpEvidenceList AS t
+		INNER JOIN CTS_DataCenter.Evidence AS c ON t.EvidenceCode = c.EvidenceCode
+    SET t.EvidenceID = c.EvidenceID;    
+    
+    INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
 	SELECT 	t.CTSCustID
 		,	t.SubscriberID
-		,	t.EvidenceID
-        ,	t.Remark
+		,	e.EvidenceID
+        ,	''
         ,	0 
         ,	t.CTSCustID
         ,	vr_CreatedDate
-        ,	ip_UserID
-        ,	ip_IsCreatedByMaster
-    FROM tmpMultipleAccountEvidence AS t;
-	
+        ,	@ip_UserID
+        ,	@ip_IsCreatedByMaster
+    FROM tmpAccountList AS t
+		CROSS JOIN tmpEvidenceList AS e;
+    
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;       
     INSERT INTO tmpAffectedDevices(CTSCustID, DCSDeviceID)
     SELECT DISTINCT t.CTSCustID, a.DCSDeviceID
     FROM CTS_DataCenter.AssociationByDevice AS a    
-		INNER JOIN tmpMultipleAccountEvidence AS t ON a.CTSCustID = t.CTSCustID AND a.SubscriberID = t.SubscriberID;
+		INNER JOIN tmpAccountList AS t ON a.CTSCustID = t.CTSCustID AND a.SubscriberID = t.SubscriberID;
 
     INSERT INTO tmpAssociationException(FromCTSCustID, ToCTSCustID)
     SELECT DISTINCT t.CTSCustID
 		,	CASE WHEN e.LeastCTSCustID_Order = t.CTSCustID THEN e.GreatestCTSCustID_Order ELSE e.LeastCTSCustID_Order END
     FROM CTS_DataCenter.CustException AS e
-		INNER JOIN tmpMultipleAccountEvidence AS t ON e.LeastCTSCustID_Order = t.CTSCustID
+		INNER JOIN tmpAccountList AS t ON e.LeastCTSCustID_Order = t.CTSCustID
 													OR e.GreatestCTSCustID_Order = t.CTSCustID;
     
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;    
 	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
-    SELECT DISTINCT a.CTSCustID, c.SubscriberID, t.EvidenceID, t.Remark, 2, t.CTSCustID, vr_CreatedDate, ip_UserID, ip_IsCreatedByMaster
-    FROM tmpMultipleAccountEvidence AS t
+    SELECT DISTINCT a.CTSCustID, c.SubscriberID, ev.EvidenceID, '', 2, t.CTSCustID, vr_CreatedDate, @ip_UserID, @ip_IsCreatedByMaster
+    FROM tmpAccountList AS t
 		INNER JOIN tmpAffectedDevices AS d ON t.CTSCustID = d.CTSCustID
 		INNER JOIN CTS_DataCenter.AssociationByDevice AS a ON a.DCSDeviceID = d.DCSDeviceID
-        LEFT JOIN CTS_DataCenter.CTSCustomer AS c ON a.CTSCustID = c.CTSCustID
+        LEFT JOIN CTS_DataCenter.CTSCustomer AS c ON a.CTSCustID = c.CTSCustID AND c.CustSubID = 0
         LEFT JOIN tmpAssociationException AS e ON t.CTSCustID = e.FromCTSCustID AND a.CTSCustID = e.ToCTSCustID
+        CROSS JOIN tmpEvidenceList AS ev
 	WHERE a.CTSCustID <> d.CTSCustID		
     	AND (e.FromCTSCustID IS NULL OR e.ToCTSCustID IS NULL);
     
-    #=====LOG==========================
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-	VALUES(3, vr_SPName, 'Insert bunch of Customer Evidences', vr_CreatedDate, ip_UserID);
+	VALUES(3, vr_SPName, 'Insert bunch of Customers - Evidences', vr_CreatedDate, @ip_UserID);
     
 END$$
 DELIMITER ;

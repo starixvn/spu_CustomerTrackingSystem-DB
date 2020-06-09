@@ -1,8 +1,8 @@
 DELIMITER $$
 USE `CTS_DataCenter` $$
-DROP PROCEDURE IF EXISTS CTS_DC_CheckMultiAccountEvidence $$
+DROP PROCEDURE IF EXISTS CTS_DC_CheckMultiCustomerEvidence $$
 
-CREATE PROCEDURE CTS_DC_CheckMultiAccountEvidence (
+CREATE PROCEDURE CTS_DC_CheckMultiCustomerEvidence (
 	IN ip_NewAccountEvidences 	JSON
 )
     
@@ -44,10 +44,10 @@ BEGIN
 		,	c.CTSCustID
         ,	e.EvidenceID
         ,	CASE 
-				WHEN c.CTSCustID IS NULL AND e.EvidenceID IS NULL THEN 'This Customer & Evidence are not exist.'
-                WHEN c.CTSCustID IS NULL THEN 'This Customer is not exist.'
-                WHEN e.EvidenceID IS NULL THEN 'This Evidence is not exist.'
-                WHEN ce.CTSCustID IS NOT NULL AND ce.EvidenceID IS NOT NULL THEN 'This Customer has been flagged with this Evicence already.'
+				WHEN c.CTSCustID IS NULL AND e.EvidenceID IS NULL THEN 'Both Customer & Evidence do not exist.'
+                WHEN c.CTSCustID IS NULL THEN 'This Customer does not exist.'
+                WHEN e.EvidenceID IS NULL THEN 'This Evidence does not exist.'
+                WHEN ce.CTSCustID IS NOT NULL AND ce.EvidenceID IS NOT NULL THEN 'This Customer has already been flagged with this Evidence.'
                 ELSE ''
 			END AS RowStatus
     FROM tmpMultipleAccountEvidence AS t
