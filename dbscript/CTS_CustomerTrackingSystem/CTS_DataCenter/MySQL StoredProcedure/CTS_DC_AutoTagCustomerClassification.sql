@@ -60,7 +60,9 @@ BEGIN
     #==========================================================        
     UPDATE 		Temp_NewClassification AS tmpCla
     LEFT JOIN 	CTS_DataCenter.CTSCustomerClassification AS ccl
-				ON tmpCla.CustID = ccl.CustID					
+				ON tmpCla.CustID = ccl.CustID
+	INNER JOIN 	CTS_DataCenter.CustomerCategory AS cua
+				ON ccl.CategoryID = cua.CategoryID AND cua.IsUsedManually = 0
 	SET 		tmpCla.ActionType = (CASE WHEN (tmpCla.CategoryID != ccl.CategoryID AND tmpCla.SportGroupID = ccl.SportGroupID) THEN 1 #OR tmpCla.CategoryID = 0 
 									ELSE 0 END)
 				, tmpCla.OldCategoryID = ccl.CategoryID;
@@ -79,7 +81,7 @@ BEGIN
 				ON tmpCla.CustID = ccl.CustID
 	WHERE		ccl.CategoryID = 2; 
                 
-    INSERT  INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
+    INSERT  IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
 	SELECT 
 			temp.CustID
 			, temp.CTSCustID
@@ -93,7 +95,8 @@ BEGIN
             , LastModifiedDate
 	FROM 	Temp_NewClassification AS temp
 	WHERE 	temp.ActionType = 0
-			AND temp.CategoryId != 0;
+			AND temp.CategoryId != 0
+	ON DUPLICATE KEY UPDATE   LastModifiedDate = temp.LastModifiedDate;
     
     #======= UPDATE Customer Classification   
     UPDATE 		CTS_DataCenter.CTSCustomerClassification ccl

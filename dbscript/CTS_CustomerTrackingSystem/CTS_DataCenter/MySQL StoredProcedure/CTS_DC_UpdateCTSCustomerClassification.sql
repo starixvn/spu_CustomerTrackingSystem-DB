@@ -4,6 +4,7 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_UpdateCTSCustomerClassificatio
 
 CREATE PROCEDURE `CTS_DataCenter`.`CTS_DC_UpdateCTSCustomerClassification`(
 		IN ip_CTSCustID			BIGINT UNSIGNED
+    ,   IN ip_CustID			BIGINT UNSIGNED
     ,	IN ip_SubscriberID		INT
 	,	IN ip_CategoryID		SMALLINT
     , 	IN ip_SportGroupIDList 	VARCHAR(50)
@@ -23,7 +24,7 @@ BEGIN
             
 		Param's Explanation:
 	*/ 
-    
+    DECLARE vr_CurrentTime DATETIME DEFAULT CURRENT_TIME();
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
@@ -56,25 +57,35 @@ BEGIN
 		INNER JOIN tempSportGroupID AS s ON t.SportGroupID = s.SportGroupID AND t.CategoryID = ip_CategoryID
     SET 	t.Remark = ip_Remark
         ,	t.LastModifiedBy = ip_CreatedBy
-		,	t.LastModifiedDate = CURRENT_TIME()
-	WHERE t.CTSCustID = ip_CTSCustID
+		,	t.LastModifiedDate = vr_CurrentTime
+	WHERE t.CustID = ip_CustID
 		AND s.ActionStatus = 1;
     
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
     
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification(CTSCustID, SubscriberID, CategoryID, SportGroupID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy)
 	SELECT 	ip_CTSCustID
+		, 	ip_CustID
 		, 	ip_SubscriberID
         , 	ip_CategoryID
         , 	s.SportGroupID
         , 	ip_Remark
-        , 	CURRENT_TIME(), ip_CreatedBy, CURRENT_TIME(), ip_CreatedBy
+        , 	vr_CurrentTime, ip_CreatedBy, vr_CurrentTime , ip_CreatedBy
     FROM tempSportGroupID AS s
     WHERE s.ActionStatus = 0;
    
+    INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, SportGroupID, CategoryID ,LastModifiedDate, LastModifiedBy, IsAuto)
+	SELECT 	ip_CustID
+		, 	ip_CTSCustID
+        , 	s.SportGroupID
+        , 	ip_CategoryID
+        , 	vr_CurrentTime AS LastModifiedDate
+        , 	ip_CreatedBy
+        ,   0 AS IsAuto
+	FROM tempSportGroupID AS s;
    
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-	VALUES(11, 'CTS_DC_UpdateCTSCustomerClassification', CONCAT('Update CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID, ';ip_CategoryID_', ip_CategoryID, ';ip_SportGroupIDList_', ip_SportGroupIDList, ';ip_Remark_', ip_Remark,')'), CURRENT_TIME(), ip_CreatedBy);
+	VALUES(11, 'CTS_DC_UpdateCTSCustomerClassification', CONCAT('Update CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID, ';ip_CategoryID_', ip_CategoryID, ';ip_SportGroupIDList_', ip_SportGroupIDList, ';ip_Remark_', ip_Remark,')'), vr_CurrentTime, ip_CreatedBy);
 	
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 END$$	

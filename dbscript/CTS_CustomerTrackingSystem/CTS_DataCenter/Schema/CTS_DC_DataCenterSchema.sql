@@ -321,20 +321,21 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomerClassification (
 	, 	PRIMARY KEY			PK_CTSCustomerClassification_CTSCustID(CustID, SportGroupID, CategoryID)
 	, 	INDEX				IX_CTSCustomerClassification_SubscriberID(SubscriberID)
     ,	INDEX				IX_CTSCustomerClassification_LastScannedDate(LastScannedDate)
-    ,   INDEX				IX_CTSCustomerClassification_CategoryID(CategoryID)
+    ,   INDEX				IX_CTSCustomerClassification_CategoryID(CategoryID, SportGroupID)
+    , 	INDEX 				IX_CTSCustomerClassification_CustID(CustID)
 ) ENGINE=INNODB;
 
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomerClassification_History (
 		ID					BIGINT UNSIGNED AUTO_INCREMENT
-	,	CustID				INT UNSIGNED
+	,	CustID				BIGINT UNSIGNED
     ,  	CTSCustID			BIGINT UNSIGNED
 	, 	CategoryID			SMALLINT UNSIGNED
     ,	SportGroupID		SMALLINT UNSIGNED
     , 	LastModifiedDate	DATETIME
     ,	LastModifiedBy		INT UNSIGNED
     ,	IsAuto				BIT
-    , 	PRIMARY KEY			PK_CTSCustomerClassification_History_ID(ID)
-	, 	INDEX				IX_CTSCustomerClassification_CTSCustID(CustID, SportGroupID, CategoryID)
-    ,	INDEX				IX_CTSCustomerClassification_LastScannedDate(LastModifiedDate)
+    , 	PRIMARY KEY			PK_CTSCustomerClassificationHistory_ID(ID)
+	, 	INDEX				IX_CTSCustomerClassificationHistory_CustIDSportGroupID(CustID, SportGroupID)
+    ,	INDEX				IX_CTSCustomerClassificationHistory_LastModifiedDate(LastModifiedDate)
 ) ENGINE=INNODB AUTO_INCREMENT=1;
 
