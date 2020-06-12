@@ -9,7 +9,7 @@ BEGIN
 		Original:
 
 		Revisions:
-				20200604@CaseyHuynh: Enhance SP
+				[20200612@Casey.Huynh][135324]: Enhance SP                
         
 		Param's Explanation (filtered by):
                 
@@ -52,6 +52,7 @@ BEGIN
 		 )) as tmpTable;   
 
     #=========GET CTSCustID IF Existing
+    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     UPDATE 		Temp_NewClassification AS tmpCla
     LEFT JOIN	CTS_DataCenter.CTSCustomer AS cus 
 					ON tmpCla.CustID = cus.CustID
@@ -65,10 +66,9 @@ BEGIN
                 AND tmpCla.SportGroupID = ccl.SportGroupID
 	INNER JOIN 	CTS_DataCenter.CustomerCategory AS cua
 				ON ccl.CategoryID = cua.CategoryID AND cua.IsUsedManually = 0
-	SET 		tmpCla.ActionType = (CASE WHEN (tmpCla.CategoryID != ccl.CategoryID) THEN 1 #OR tmpCla.CategoryID = 0 
-									ELSE 0 END)
+	SET 		tmpCla.ActionType = (CASE WHEN (tmpCla.CategoryID != ccl.CategoryID) THEN 1 
+										ELSE 0 END)
 				, tmpCla.OldCategoryID = ccl.CategoryID;
-	
     #=========================================================
     #=====Remove New Member Category IF SportGroupID= -1(AI,Robot...) OR SportGroupID >0
     DELETE 		tmpCla
@@ -83,6 +83,8 @@ BEGIN
 				ON tmpCla.CustID = ccl.CustID
 	WHERE		ccl.CategoryID = 2; 
     
+    
+    
     INSERT  IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
 	SELECT 
 			temp.CustID
@@ -94,7 +96,7 @@ BEGIN
 			, v_createdBy
 			, LastModifiedDate
 			, v_createdBy
-            , LastModifiedDate
+            , DATE(LastModifiedDate) AS LastScannedDate
 	FROM 	Temp_NewClassification AS temp
 	WHERE 	temp.ActionType = 0
 			AND temp.CategoryId != 0
@@ -123,8 +125,8 @@ BEGIN
             , v_createdBy
             , 1 AS IsByAuto
 	FROM 	Temp_NewClassification AS tmpCla; 
-    #WHERE	tmpCla.ActionType = 1;
+	
     #==========================================
-  
+	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 END$$
 DELIMITER ;

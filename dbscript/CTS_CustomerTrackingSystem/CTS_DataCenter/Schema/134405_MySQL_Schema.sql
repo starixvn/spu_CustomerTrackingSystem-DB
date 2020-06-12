@@ -5,13 +5,25 @@ Server:  	Slave
 DBName:		CTS_DataCenter
 
 Revisions: 
-
-        - [20200603@Casey.Huynh][135324]: 
-			+ Alter Table CTSCustomerClassification, add column LastScannedDate
-            + Alter table CTS_DataCenter.CustomerCategory: Add ScanIntervalInSecond
+	[20200612@Casey.Huynh][135324]: 
+		+ Alter Table CTSCustomerClassification, add column LastScannedDate
+		+ Alter table CTS_DataCenter.CustomerCategory: Add ScanIntervalInSecond
+		+ Re-Design Table CTS_DataCenter.CustomerCategory_History
+		+ Add table CTS_DataCenter.CTSCustomerClassification_ScanStatus
 Reviewer:
 */
+CREATE TABLE CTS_DataCenter.CTSCustomerClassification_ScanStatus
+(
+	ScanTime		DATETIME
+    , LastCustID	BIGINT UNSIGNED
+    , ScanStatus	TINYINT				# 0-Inprogress, 1-Done
+    
+    ,PRIMARY KEY	PK_CTSCustomerClassification_ScanStatus_ScannedTime(ScanTime)
+);
 
+INSERT INTO CTS_DataCenter.CTSCustomerClassification_ScanStatus(ScanTime, LastCustID, ScanStatus)
+VALUES('2020-05-17', LastCustID, 1);
+/***************************************************************/
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification
 ADD COLUMN LastScannedDate DATETIME;
 

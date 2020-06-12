@@ -10,9 +10,11 @@ Revisions:
         - [202002130@Casey.Huynh][130109]: Add INDEX (SubscriberID, CTSCustID) on TABLE CustDCSAcount.
         - [20200416@Long.Luu][131506]: Manage Association_Create tables(AssociationByManual, AssociationRemove)
         - [20200416@Long.Luu][132623]: Customer Category_Create tables(SportGroup, CustomerCategory, CTSCustomerClassification)
-        - [20200603@Casey.Huynh][135324]: 
+        - [20200612@Casey.Huynh][135324]: 
 			+ Alter Table CTSCustomerClassification, add column LastScannedDate
             + Alter table CTS_DataCenter.CustomerCategory: Add ScanIntervalInSecond
+            + Re-Design Table CTS_DataCenter.CustomerCategory_History
+            + Add table CTS_DataCenter.CTSCustomerClassification_ScanStatus
 Reviewer:
 */
 
@@ -339,3 +341,11 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomerClassification_History (
     ,	INDEX				IX_CTSCustomerClassificationHistory_LastModifiedDate(LastModifiedDate)
 ) ENGINE=INNODB AUTO_INCREMENT=1;
 
+CREATE TABLE IF NOT EXISTS  CTS_DataCenter.CTSCustomerClassification_ScanStatus
+(
+	ScanTime		DATETIME
+    , LastCustID	BIGINT UNSIGNED
+    , ScanStatus	TINYINT				# 0-Inprogress, 1-Done
+    
+    ,PRIMARY KEY	PK_CTSCustomerClassification_ScanStatus_ScannedTime(ScanTime)
+);
