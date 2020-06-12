@@ -80,7 +80,6 @@ BEGIN
 				, tmpList.CustID 		
 				, tmpList.SportGroupID	
 				, tmpList.CategoryID
-				, tmpList.BatchID
 	FROM 		temp_scanList	AS tmpList;     
 
 	UPDATE 		CTS_DataCenter.CTSCustomerClassification AS ccl
