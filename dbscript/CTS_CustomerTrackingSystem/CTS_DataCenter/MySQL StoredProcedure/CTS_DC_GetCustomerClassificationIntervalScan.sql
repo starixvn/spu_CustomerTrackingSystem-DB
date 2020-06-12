@@ -63,7 +63,7 @@ BEGIN
 	WHERE		cat.IsActive = 1
 				AND cat.IsUsedManually = 0
                 AND cat.ScanIntervalInSecond > 0
-                AND	ccl.CustID > vrLastCustID
+                AND	ccl.CustID >= vrLastCustID
 				AND DATE_ADD(ccl.LastScannedDate, INTERVAL cat.ScanIntervalInSecond SECOND) <= vrScanDate
 	ORDER BY 	ccl.CustID
 	LIMIT		vrTotalRecord;    
@@ -85,7 +85,7 @@ BEGIN
 	UPDATE 		CTS_DataCenter.CTSCustomerClassification AS ccl
 	INNER JOIN 	temp_scanList	AS tmpList
 				ON ccl.CustID = tmpList.CustID
-				AND ccl.SportGroupID = ccl.SportGroupID
+				AND ccl.SportGroupID = tmpList.SportGroupID
 	SET			ccl.LastScannedDate = vrScanDate;
 		
 	IF NOT EXISTS (SELECT 1 FROM temp_scanList LIMIT 1)
