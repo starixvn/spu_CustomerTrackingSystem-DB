@@ -62,12 +62,15 @@ BEGIN
     DELETE fc
 	FROM flaggedCustomers fc
 	INNER JOIN CustRetractEvidence cre ON fc.CTSCustID = cre.CTSCustID
-		AND fc.EviID = cre.EvidenceID;
+		AND fc.EviID = cre.EvidenceID
+        AND fc.LEVEL = 2;
         
-    SELECT DISTINCT CustId
+    SELECT CustId
 		,EvidenceCode 
         ,EvidenceName
-		,CreatedDate
-	FROM flaggedCustomers;
+		,MIN(CreatedDate) AS 'CreatedDate'
+	FROM flaggedCustomers
+    GROUP BY CustId, EvidenceCode, EvidenceName;
+    
 END$$
 DELIMITER ;
