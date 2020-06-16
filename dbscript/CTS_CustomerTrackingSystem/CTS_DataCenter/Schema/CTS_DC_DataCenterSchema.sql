@@ -349,3 +349,21 @@ CREATE TABLE IF NOT EXISTS  CTS_DataCenter.CTSCustomerClassification_ScanStatus
     
     ,PRIMARY KEY	PK_CTSCustomerClassification_ScanStatus_ScannedTime(ScanTime)
 );
+
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.SmartGroup (
+		GroupID				INT UNSIGNED NOT NULL
+    ,   CustID				INT UNSIGNED NOT NULL
+	,	Username			VARCHAR(64) NOT NULL
+	, 	Similarity			FLOAT NOT NULL DEFAULT '0'
+    ,	Currency 			VARCHAR(8) NOT NULL
+    ,	Site	 			VARCHAR(32) NOT NULL
+	, 	AgentID				INT UNSIGNED NOT NULL 
+	, 	AgentName			VARCHAR(64) NOT NULL
+    , 	MasterID			INT UNSIGNED NOT NULL 
+	, 	MasterName			VARCHAR(64) NOT NULL
+    , 	SuperID				INT UNSIGNED NOT NULL 
+	, 	SuperName			VARCHAR(64) NOT NULL
+	, 	CreatedDate			DATETIME DEFAULT NULL
+	, 	PRIMARY KEY			PK_SmartGroup_CustIDGroupID(CustID, GroupID)
+	, 	INDEX				IX_SmartGroup_Username(Username)
+) ENGINE=INNODB DEFAULT CHARSET='UTF8MB4' COLLATE='UTF8MB4_UNICODE_CI';
