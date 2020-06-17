@@ -70,7 +70,7 @@ sp: BEGIN
 				WHERE ce.CTSCustID IS NOT NULL
 					AND ce.EvidenceID IS NOT NULL
                     AND Level = 0) THEN
-		SET op_ErrorMessage = 'This Customer has been flagged with this Evicence already.';
+		SET op_ErrorMessage = 'This Customer has already been flagged with this Evidence.';
 		LEAVE sp;
 	END IF;
      
