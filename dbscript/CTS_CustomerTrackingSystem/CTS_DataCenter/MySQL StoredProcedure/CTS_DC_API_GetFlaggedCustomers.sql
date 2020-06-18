@@ -2,7 +2,7 @@ DELIMITER $$
 USE CTS_DataCenter $$
 DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_API_GetFlaggedCustomers $$
 
-CREATE PROCEDURE CTS_DC_API_GetFlaggedCustomers (IN ip_CustIds VARCHAR(21845))
+CREATE PROCEDURE CTS_DC_API_GetFlaggedCustomers (IN ip_CustIds TEXT)
 BEGIN
 	/*
 		Created:	20200610@Harvey
@@ -17,6 +17,7 @@ BEGIN
         CALL CTS_DC_API_GetFlaggedCustomers ('3698310,910137,1176070,1176083');
 	*/
     
+	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     DROP TEMPORARY TABLE IF EXISTS flaggedCustomers;
     CREATE TEMPORARY TABLE flaggedCustomers (
 		CTSCustID		BIGINT
@@ -49,7 +50,7 @@ BEGIN
 		,cevi.CreatedDate
 	FROM CustEvidence cevi
 		INNER JOIN Evidence evi ON cevi.EvidenceID = evi.EvidenceID
-		INNER JOIN CTSCustomer cust ON cust.CTSCustID = cevi.CTSCustID
+		INNER JOIN CTSCustomer cust ON cust.CTSCustID = cevi.CTSCustID AND cust.SubscriberID = cevi.SubscriberID
 		INNER JOIN tempCustID tcust ON cust.CustID = tcust.CustID;
 
     -- remove because of exception
