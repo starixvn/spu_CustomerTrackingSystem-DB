@@ -40,17 +40,17 @@ BEGIN
         WHERE UserID = ip_userId;
         
         INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-			VALUES(13, vr_SPName, CONCAT('Update logged in for username: ip_userId_ ', ip_userId, ';vr_oldName_', vr_currName) , vr_CreatedDate, 1);
+			VALUES(14, vr_SPName, CONCAT('Update logged in for username: ip_userId_ ', ip_userId, ';vr_oldName_', vr_currName) , vr_CreatedDate, null);
         
 	ELSEIF vr_isAdded = 0 THEN
         
         ######## if username does not exists, insert new user ########
         SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
         INSERT IGNORE INTO CTS_Admin.CTSUser(UserID, UserName, CreatedDate, IsMaster)
-			VALUES (ip_userId, ip_userName, vr_CreatedDate, 1);
+			VALUES (ip_userId, ip_userName, vr_CreatedDate, 0);
         
         INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-			VALUES(13, vr_SPName, CONCAT('Insert new logged in user: ip_userId_ ', ip_userId, ';ip_userName_', ip_userName) , vr_CreatedDate, 1);
+			VALUES(13, vr_SPName, CONCAT('Insert new logged in user: ip_userId_ ', ip_userId, ';ip_userName_', ip_userName) , vr_CreatedDate, null);
         
     END IF;
 
