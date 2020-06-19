@@ -9,6 +9,8 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original:	
 		Revisions:
+
+            
 		Param's Explanation (filtered by):
 			Input: (ip_AssCTSCustJson: SubscriberId, FromCTSCustId, ToCTSCustId )
             Output: Distinct FromCTSCustId Within AffectedTag value

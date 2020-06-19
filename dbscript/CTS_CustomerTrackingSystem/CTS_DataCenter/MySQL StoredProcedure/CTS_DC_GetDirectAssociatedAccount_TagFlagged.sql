@@ -9,6 +9,7 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original:	
 		Revisions:
+			- 20200619@Harvey: remove BLACKFLAGGED for evidence 100				[Redmine: 133935]
 		Param's Explanation (filtered by):
 	*/
     #DECLARE		vrIsFlagged			TINYINT DEFAULT -1 ;  # 0: NOT Flag, 1: BlackFlaged, 2: Flagged; 
@@ -36,18 +37,6 @@ BEGIN
 				, SubscriberID			INT PATH "$.SubscriberId"
 				 )
 			   ) AS  tmpCust;    
-               
-    /*Check If Account IS IS BLACK FLAG*/
-    UPDATE		Temp_CTSCustomer 		AS tmpCust
-    INNER JOIN	CTS_DataCenter.CustEvidence AS ced
-				ON	ced.SubscriberID	= tmpCust.SubscriberID
-					AND ced.CTSCustID	= tmpCust.CTSCustID
-    INNER JOIN	CTS_DataCenter.Evidence	AS  evd
-				ON ced.EvidenceID = evd.EvidenceID
-    SET			tmpCust.FlaggedTag = 1
-    WHERE 		evd.EvidenceCode	= 100
-				AND evd.EvidenceGroupID	= 99
-				AND ced.Level = 0;
     
 	/*Check If Account IS IS  FLAG*/
     UPDATE		Temp_CTSCustomer 		AS tmpCust

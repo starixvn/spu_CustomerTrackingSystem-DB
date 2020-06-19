@@ -2,7 +2,7 @@ DELIMITER $$
 USE CTS_DataCenter $$
 DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_API_GetFlaggedCustomers $$
 
-CREATE PROCEDURE CTS_DC_API_GetFlaggedCustomers (IN ip_CustIds TEXT)
+CREATE PROCEDURE CTS_DC_API_GetFlaggedCustomers (IN ip_CustIds LONGTEXT)
 BEGIN
 	/*
 		Created:	20200610@Harvey
@@ -11,6 +11,7 @@ BEGIN
 		Original:
 
 		Revisions:
+			- 20200619@Harvey: only get FLAGGED customer (has evidence level 0)
         
 		Param's Explanation (filtered by):
         
@@ -48,30 +49,32 @@ BEGIN
 		,cevi.LEVEL
 		,cevi.FromCustID
 		,cevi.CreatedDate
+	FROM tempCustID tcust
+		INNER JOIN CTSCustomer cust ON cust.CustID = tcust.CustID AND cust.CustSubID = 0
+        INNER JOIN CustEvidence cevi ON cust.CTSCustID = cevi.CTSCustID AND cust.SubscriberID = cevi.SubscriberID
+        INNER JOIN Evidence evi ON cevi.EvidenceID = evi.EvidenceID
+	WHERE cevi.LEVEL = 0;
+    
+    /*
+    	SELECT cevi.CTSCustID
+		,cust.CustID
+		,cevi.EvidenceID
+		,evi.EvidenceCode
+        ,evi.EvidenceName
+		,cevi.LEVEL
+		,cevi.FromCustID
+		,cevi.CreatedDate
 	FROM CustEvidence cevi
 		INNER JOIN Evidence evi ON cevi.EvidenceID = evi.EvidenceID
 		INNER JOIN CTSCustomer cust ON cust.CTSCustID = cevi.CTSCustID AND cust.SubscriberID = cevi.SubscriberID
 		INNER JOIN tempCustID tcust ON cust.CustID = tcust.CustID;
+    */
 
-    -- remove because of exception
-    DELETE fc
-	FROM flaggedCustomers fc
-	INNER JOIN CustException cex ON LEAST(fc.CTSCustID, fc.FromCTSCustID) = cex.LeastCTSCustID_Order
-		AND GREATEST(fc.CTSCustID, fc.FromCTSCustID) = cex.GreatestCTSCustID_Order;
-        
-	-- remove because retracted evidence
-    DELETE fc
-	FROM flaggedCustomers fc
-	INNER JOIN CustRetractEvidence cre ON fc.CTSCustID = cre.CTSCustID
-		AND fc.EviID = cre.EvidenceID
-        AND fc.LEVEL = 2;
-        
     SELECT CustId
 		,EvidenceCode 
         ,EvidenceName
-		,MIN(CreatedDate) AS 'CreatedDate'
-	FROM flaggedCustomers
-    GROUP BY CustId, EvidenceCode, EvidenceName;
+		,CreatedDate
+	FROM flaggedCustomers;
     
 END$$
 DELIMITER ;

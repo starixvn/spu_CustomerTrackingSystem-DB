@@ -16,6 +16,7 @@ AS
 
 	Revisions:
 		- 20191225@Harvey:	Initial - [Redmine: #126079]
+        - 20200619@Harvey:	change condition for detect robot - [Redmine: 133935]
 
 	Param's Explanation:
 
@@ -68,7 +69,7 @@ BEGIN
 			SELECT 1
 			FROM #tempCustomerAndUpLines cau
 				INNER JOIN dbo.RobotUsers ru WITH (NOLOCK) ON cau.CustId = ru.custid
-			WHERE ru.counter > 10
+			WHERE ru.counter >= 10
 			)
 		SET @isRobotUser = 1;
 
