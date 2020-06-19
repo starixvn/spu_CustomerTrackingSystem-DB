@@ -38,7 +38,6 @@ BEGIN
 		, MRecommend	INT	 UNSIGNED 			
 		, Recommend		INT	 UNSIGNED
         , CreatedDate	DATETIME
-        , HasUpdate		TINYINT
         , INDEX			IX_TempCTSCustomer_UserName2(UserName2)
         );
     
@@ -58,7 +57,6 @@ BEGIN
 		, MRecommend	
 		, Recommend	
         , CreatedDate
-        , 0
 	FROM JSON_TABLE(ip_CustomerList,
 		 "$[*]" COLUMNS(
 		  SubscriberID 	INT 			PATH "$.SubscriberId"
@@ -88,34 +86,11 @@ BEGIN
 						OR (mss.RoleMapping = 2 AND cust.RoleID > 1)
 						OR (mss.RoleMapping = 0))
 		SET 		cust.SubscriberID 	= 	mss.SubscriberID;
-
-	UPDATE 		CTS_DataCenter.CTSCustomer ctsCust
-	INNER JOIN	TempCTSCustomer tempCust 
-				ON tempCust.UserName2 = ctsCust.UserName2 
-					AND tempCust.UserName2 IS NOT NULL
-                    AND tempCust.HasUpdate	= 0
-                    AND tempCust.SubscriberID = ctsCust.SubscriberID
-	SET 
-		ctsCust.CustID 			= tempCust.CustID
-		, ctsCust.CustSubID 	= tempCust.CustSubID
-		, ctsCust.UserName 		= tempCust.UserName
-        , ctsCust.SiteID 		= tempCust.SiteID
-		, ctsCust.Site 			= tempCust.Site
-		, ctsCust.RoleID 		= tempCust.RoleID
-		, ctsCust.Currency 		= tempCust.Currency
-		, ctsCust.CurrencyID 	= tempCust.CurrencyID
-		, ctsCust.SRecommend 	= tempCust.SRecommend
-		, ctsCust.MRecommend 	= tempCust.MRecommend
-        , ctsCust.Recommend 	= tempCust.Recommend
-        , ctsCust.CreatedDate 	= tempCust.CreatedDate
-        , ctsCust.RegisterName 	= tempCust.RegisterName
-        , tempCust.HasUpdate	= 1;
         
 	UPDATE 		CTS_DataCenter.CTSCustomer ctsCust
 	INNER JOIN	TempCTSCustomer tempCust 
 				ON ctsCust.CustID = tempCust.CustID
 					AND ctsCust.CustSubID = tempCust.CustSubID 
-                    AND tempCust.HasUpdate	= 0
 	SET 
 		  ctsCust.UserName 		= tempCust.UserName
 		, ctsCust.UserName2		= tempCust.UserName2
@@ -129,8 +104,7 @@ BEGIN
 		, ctsCust.MRecommend 	= tempCust.MRecommend
         , ctsCust.Recommend 	= tempCust.Recommend
         , ctsCust.CreatedDate 	= tempCust.CreatedDate
-        , ctsCust.RegisterName 	= tempCust.RegisterName
-        , tempCust.HasUpdate	= 1;
+        , ctsCust.RegisterName 	= tempCust.RegisterName;
 
 	INSERT INTO CTS_DataCenter.CTSCustomer(SubscriberID, CustID, CustSubID, UserName, UserName2, SiteID, Site, RoleID, Currency, CurrencyID, SRecommend, MRecommend, Recommend, CreatedDate,RegisterName)
 	SELECT    tempCust.SubscriberID
