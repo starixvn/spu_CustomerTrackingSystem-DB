@@ -15,22 +15,14 @@ AS
 	Original:
 
 	Revisions:
-		- 20191220@CaseyHuynh:	Initial - [Redmine: #125531]
+		- 20191220@CaseyHuynh:	Initial											[Redmine: #125531]
+		- 20200619@Harvey: Remove unused information							[Redmine: #136148]
 
 	Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
 
-	--Return Classification---
-	SELECT	sc.Custid
-			, sc.IsDelinquent
-			, sc.IsHedge
-			, sc.IsDirty
-	FROM	dbo.SuspiciousCustomer AS sc WITH (NOLOCK)
-	WHERE	sc.Custid = @custId;
-
-	--Return Classification---
 	SELECT		DISTINCT fc.FraudCaseId, fc.FraudCaseName
 	FROM		dbo.SuspiciousInfo	AS sc WITH (NOLOCK)
 	INNER JOIN	dbo.FraudCase		AS fc WITH (NOLOCK)

@@ -13,6 +13,7 @@ BEGIN
 		Revisions:
 			- 20200704@Harvey: Handle updating/mapping customer on username for deposit
             - 20200603@Harvey: add column RegisterName for search nick name
+            - 20200618@Harvey: use CustId as a key when update data (do not have new deposit in our db from now)
         
 		Param's Explanation (filtered by):
         
@@ -112,14 +113,13 @@ BEGIN
         
 	UPDATE 		CTS_DataCenter.CTSCustomer ctsCust
 	INNER JOIN	TempCTSCustomer tempCust 
-				ON tempCust.UserName = ctsCust.UserName 
-					AND tempCust.UserName IS NOT NULL
+				ON ctsCust.CustID = tempCust.CustID
+					AND ctsCust.CustSubID = tempCust.CustSubID 
                     AND tempCust.HasUpdate	= 0
-                    AND tempCust.SubscriberID = ctsCust.SubscriberID
 	SET 
-		ctsCust.CustID 			= tempCust.CustID
-		, ctsCust.CustSubID 	= tempCust.CustSubID
+		  ctsCust.UserName 		= tempCust.UserName
 		, ctsCust.UserName2		= tempCust.UserName2
+        , ctsCust.SubscriberID	= tempCust.SubscriberID
         , ctsCust.SiteID 		= tempCust.SiteID
 		, ctsCust.Site 			= tempCust.Site
 		, ctsCust.RoleID 		= tempCust.RoleID
