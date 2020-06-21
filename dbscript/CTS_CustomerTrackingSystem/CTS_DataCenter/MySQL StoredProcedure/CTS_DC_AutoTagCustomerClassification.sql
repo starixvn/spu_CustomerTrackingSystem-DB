@@ -9,7 +9,8 @@ BEGIN
 		Original:
 
 		Revisions:
-				[20200612@Casey.Huynh][135324]: Enhance SP                
+				[20200612@Casey.Huynh][135324]: Enhance SP      
+                [20200618@Casey.Huynh]135324]: Enhance SP  
         
 		Param's Explanation (filtered by):
                 
@@ -81,9 +82,7 @@ BEGIN
     FROM 		CTS_DataCenter.CTSCustomerClassification  AS ccl
     INNER JOIN 	Temp_NewClassification AS tmpCla
 				ON tmpCla.CustID = ccl.CustID
-	WHERE		ccl.CategoryID = 2; 
-    
-    
+	WHERE		ccl.CategoryID = 2;     
     
     INSERT  IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
 	SELECT 
@@ -96,11 +95,12 @@ BEGIN
 			, v_createdBy
 			, LastModifiedDate
 			, v_createdBy
-            , DATE(LastModifiedDate) AS LastScannedDate
+            , v_LastScannedDate AS LastScannedDate
 	FROM 	Temp_NewClassification AS temp
 	WHERE 	temp.ActionType = 0
 			AND temp.CategoryId != 0
-	ON DUPLICATE KEY UPDATE   LastModifiedDate = temp.LastModifiedDate;
+	ON DUPLICATE KEY UPDATE   LastModifiedDate = temp.LastModifiedDate
+							  , LastScannedDate = v_LastScannedDate;
     
     #======= UPDATE Customer Classification   
     UPDATE 		CTS_DataCenter.CTSCustomerClassification ccl
@@ -112,6 +112,7 @@ BEGIN
  	SET  ccl.CategoryID = tmpCla.CategoryID
         , ccl.LastModifiedDate = tmpCla.LastModifiedDate 
         , ccl.LastModifiedBy = v_createdBy
+        , ccl.LastScannedDate = v_LastScannedDate
 	WHERE tmpCla.ActionType = 1;
     
     #======= INSERT Customer Classification History
