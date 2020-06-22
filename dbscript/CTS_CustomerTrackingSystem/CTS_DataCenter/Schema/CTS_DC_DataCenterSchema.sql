@@ -87,7 +87,24 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, PRIMARY KEY	PK_MappingSubscriberSite_SubscriberID(SiteID, SubscriberID)    
 	) ENGINE=INNODB;
 
-# ======EvidenceGroup=============================================
+	# ======SubscriberGroup=============================================
+    CREATE TABLE IF NOT EXISTS CTS_DataCenter.SubscriberGroup (
+		SubscriberGroupID			SMALLINT UNSIGNED AUTO_INCREMENT
+	, 	SubscriberGroupName		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+    , 	SubscriberGroupDesc		VARCHAR(200) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+    ,	ParentID			SMALLINT UNSIGNED
+	, 	DisplayOrder		TINYINT UNSIGNED
+    ,	IsActive			BIT DEFAULT 1
+	, 	CreatedDate			DATETIME
+    ,	CreatedBy			INT UNSIGNED
+    , 	LastModifiedDate	DATETIME
+    ,	LastModifiedBy		INT UNSIGNED
+	, 	PRIMARY KEY			PK_SubscriberGroup_SubscriberGroupDisplayOrder(SubscriberGroupID,DisplayOrder)
+	, 	INDEX				IX_SubscriberGroup_ParentID(ParentID)
+    , 	INDEX				IX_SubscriberGroup_IsActive(IsActive)
+) ENGINE=INNODB AUTO_INCREMENT=1;
+
+	# ======EvidenceGroup=============================================
 	CREATE TABLE IF NOT EXISTS CTS_DataCenter.EvidenceGroup(
 		EvidenceGroupID			TINYINT			AUTO_INCREMENT		NOT NULL
 		, EvidenceGroupName		VARCHAR(50)							NOT NULL
