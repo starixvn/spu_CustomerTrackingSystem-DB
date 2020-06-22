@@ -81,6 +81,7 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
         , RoleMapping		TINYINT
 		, SubscriberType	TINYINT
         , SubscriberStatus	TINYINT
+		, SubscriberGroupID SMALLINT UNSIGNED
         , SiteID			INT
         , SiteName			VARCHAR(50)
         , Comments			VARCHAR(200)
