@@ -12,14 +12,16 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original: 
 		Revisions:
-			- 20200416@Harvey.Nguye: Initial	 		[Redmine ID: #136212]
+			- 20200416@Harvey.Nguyen: Initial	 		[Redmine ID: #136212]
             
 		Param's Explanation:
         
         CALL CTS_DataCenter.CTS_DC_AddManualAssociationMultiple ('[{"FromSubscriberID":2,"FromCTSCustID":1,"ToSubscriberID":2,"ToCTSCustID":2,"Remark":"test","CreatedBy":"8"}]')
 	*/ 
 
-    DECLARE ip_CreatedBy BIGINT;
+    DECLARE vrCreatedBy 		BIGINT;
+    DECLARE vrFromCTSCustId 	VARCHAR(500);
+    DECLARE vrToCTSCustId 		VARCHAR(500);
     DROP TEMPORARY TABLE IF EXISTS TempManualAssociation;
     
 	CREATE TEMPORARY TABLE TempManualAssociation( 	 
@@ -61,12 +63,20 @@ BEGIN
     FROM TempManualAssociation;
     
     SELECT CreatedBy
-    INTO ip_CreatedBy
+    INTO vrCreatedBy
     FROM TempManualAssociation
     LIMIT 1;
+    
+    SELECT DISTINCT FromCTSCustID
+    INTO vrFromCTSCustId
+    FROM TempManualAssociation;
+    
+    SELECT GROUP_CONCAT(ToCTSCustID SEPARATOR ',') 
+    INTO vrToCTSCustId
+    FROM TempManualAssociation;    
    
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-	VALUES(7, 'CTS_DC_AddManualAssociation', CONCAT('Insert Manual Association: ip_ManualAssociationList', ip_ManualAssociationList,')'), CURRENT_TIME(), ip_CreatedBy);
+	VALUES(7, 'CTS_DC_AddManualAssociationMultiple', CONCAT('Insert Manual Multiple Association: ip_FromCTSCustID: ', vrFromCTSCustId,'; ip_ToCTSCustIDList: ', vrToCTSCustId,')'), CURRENT_TIME(), vrCreatedBy);
 	
 END$$	
 DELIMITER ;

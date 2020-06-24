@@ -35,7 +35,7 @@ curl -X POST -H "Content-Type: application/json" --data '{
       "database.server.name": "mysqllocaltest",
       "database.allowPublicKeyRetrieval":"true",
       "database.whitelist": "CTS_DataCenter", 
-      "table.whitelist":"CTS_DataCenter.CTSCustomer,CTS_DataCenter.AssociationByDevice,CTS_DataCenter.AssociationByManual,CTS_DataCenter.AssociationRemove",
+      "table.whitelist":"CTS_DataCenter.CTSCustomer,CTS_DataCenter.AssociationByDevice,CTS_DataCenter.AssociationByManual,CTS_DataCenter.AssociationRemove,CTS_DataCenter.Evidence",
       "database.history.kafka.bootstrap.servers": "localhost:9092", 
       "database.history.kafka.topic": "dbhistory.ctscustomer", 
       "database.history.store.only.monitored.tables.ddl": "true",
