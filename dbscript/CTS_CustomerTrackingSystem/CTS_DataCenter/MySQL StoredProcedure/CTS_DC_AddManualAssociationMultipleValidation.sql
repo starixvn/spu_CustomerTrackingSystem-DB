@@ -40,6 +40,9 @@ BEGIN
     INNER JOIN CTS_DataCenter.AssociationByManual abm ON abm.FromCTSCustID = ip_RootCTSCustID AND abm.ToCTSCustID = tvu.CTSCustID
     SET tvu.IsDuplicated = TRUE;
     
-    SELECT * FROM TempValidateUsername;
+    SELECT UserName
+			,CTSCustID
+			,IsDuplicated 
+	FROM TempValidateUsername;
 END$$	
 DELIMITER ;
