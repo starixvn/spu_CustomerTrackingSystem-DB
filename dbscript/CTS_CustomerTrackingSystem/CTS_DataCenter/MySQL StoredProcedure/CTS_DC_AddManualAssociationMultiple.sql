@@ -16,14 +16,14 @@ BEGIN
             
 		Param's Explanation:
         
-        CALL CTS_DataCenter.CTS_DC_AddManualAssociationMultiple ('[{"FromSubscriberID":2,"FromCTSCustID":1,"ToSubscriberID":2,"ToCTSCustID":2,"Remark":"test","CreatedBy":"8"}]')
+        CALL CTS_DataCenter.CTS_DC_AddManualAssociationMultiple ('[{"FromSubscriberID":2,"FromCTSCustID":1,"ToSubscriberID":2,"ToCTSCustID":2,"Remark":"test","CreatedBy":"8"},{"FromSubscriberID":2,"FromCTSCustID":1,"ToSubscriberID":2,"ToCTSCustID":4,"Remark":"test","CreatedBy":"8"}]')
 	*/ 
 
     DECLARE vrCreatedBy 		BIGINT;
     DECLARE vrFromCTSCustId 	VARCHAR(500);
     DECLARE vrToCTSCustId 		VARCHAR(500);
     DROP TEMPORARY TABLE IF EXISTS TempManualAssociation;
-    
+
 	CREATE TEMPORARY TABLE TempManualAssociation( 	 
 		 FromSubscriberID 	INT
     , 	 FromCTSCustID 		BIGINT
@@ -53,14 +53,14 @@ BEGIN
     
 	INSERT INTO CTS_DataCenter.AssociationByManual(FromSubscriberID, FromCTSCustID, ToSubscriberID, ToCTSCustID, Remark, CreatedDate, CreatedBy)
 	SELECT 
-			FromSubscriberID
-        ,	FromCTSCustID
-        ,	ToSubscriberID
-        ,	ToCTSCustID
-        ,	Remark
+			tma.FromSubscriberID
+        ,	tma.FromCTSCustID
+        ,	tma.ToSubscriberID
+        ,	tma.ToCTSCustID
+        ,	tma.Remark
         , 	CURRENT_TIME()
-        ,	CreatedBy
-    FROM TempManualAssociation;
+        ,	tma.CreatedBy
+    FROM TempManualAssociation tma;
     
     SELECT CreatedBy
     INTO vrCreatedBy
