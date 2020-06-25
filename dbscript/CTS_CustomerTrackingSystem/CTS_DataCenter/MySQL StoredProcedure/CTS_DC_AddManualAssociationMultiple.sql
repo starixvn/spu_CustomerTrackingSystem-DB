@@ -34,10 +34,10 @@ BEGIN
  
 	INSERT INTO TempManualAssociation
 	SELECT 
-			CASE WHEN FromCTSCustID > ToCTSCustID THEN ToSubscriberID ELSE FromSubscriberID END
-        ,	CASE WHEN FromCTSCustID > ToCTSCustID THEN ToCTSCustID ELSE FromCTSCustID END
-        ,	CASE WHEN FromCTSCustID > ToCTSCustID THEN FromSubscriberID ELSE ToSubscriberID END
-        ,	CASE WHEN FromCTSCustID > ToCTSCustID THEN FromCTSCustID ELSE ToCTSCustID END
+			FromSubscriberID 
+        ,	FromCTSCustID 
+        ,	ToSubscriberID 
+        ,	ToCTSCustID
         ,	Remark
         ,	CreatedBy
 	FROM JSON_TABLE(ip_ManualAssociationList,
@@ -53,21 +53,21 @@ BEGIN
     
 	INSERT INTO CTS_DataCenter.AssociationByManual(FromSubscriberID, FromCTSCustID, ToSubscriberID, ToCTSCustID, Remark, CreatedDate, CreatedBy)
 	SELECT 
-			tma.FromSubscriberID
-        ,	tma.FromCTSCustID
-        ,	tma.ToSubscriberID
-        ,	tma.ToCTSCustID
+			CASE WHEN tma.FromCTSCustID > tma.ToCTSCustID THEN tma.ToSubscriberID ELSE tma.FromSubscriberID END
+        ,	CASE WHEN tma.FromCTSCustID > tma.ToCTSCustID THEN tma.ToCTSCustID ELSE tma.FromCTSCustID END
+        ,	CASE WHEN tma.FromCTSCustID > tma.ToCTSCustID THEN tma.FromSubscriberID ELSE tma.ToSubscriberID END
+        ,	CASE WHEN tma.FromCTSCustID > tma.ToCTSCustID THEN tma.FromCTSCustID ELSE tma.ToCTSCustID END
         ,	tma.Remark
         , 	CURRENT_TIME()
         ,	tma.CreatedBy
     FROM TempManualAssociation tma;
     
-    SELECT CreatedBy
+    SELECT DISTINCT CreatedBy
     INTO vrCreatedBy
     FROM TempManualAssociation
     LIMIT 1;
     
-    SELECT DISTINCT FromCTSCustID
+    SELECT GROUP_CONCAT(DISTINCT FromCTSCustID SEPARATOR ',') 
     INTO vrFromCTSCustId
     FROM TempManualAssociation;
     
@@ -76,7 +76,7 @@ BEGIN
     FROM TempManualAssociation;    
    
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-	VALUES(7, 'CTS_DC_AddManualAssociationMultiple', CONCAT('Insert Manual Multiple Association: ip_FromCTSCustID: ', vrFromCTSCustId,'; ip_ToCTSCustIDList: ', vrToCTSCustId,')'), CURRENT_TIME(), vrCreatedBy);
+	VALUES(7, 'CTS_DC_AddManualAssociationMultiple', CONCAT('Insert Manual Multiple Association: ip_FromCTSCustID: ', vrFromCTSCustId,'; ip_ToCTSCustIDList: ', vrToCTSCustId), CURRENT_TIME(), vrCreatedBy);
 	
 END$$	
 DELIMITER ;

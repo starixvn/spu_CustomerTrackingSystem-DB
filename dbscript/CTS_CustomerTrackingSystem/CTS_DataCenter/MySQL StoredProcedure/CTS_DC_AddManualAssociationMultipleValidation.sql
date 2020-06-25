@@ -33,11 +33,13 @@ BEGIN
     SELECT item FROM TempItemTable;
     
     UPDATE TempValidateUsername tvu
-    INNER JOIN CTS_DataCenter.CTSCustomer cust ON tvu.UserName = cust.UserName
+		INNER JOIN CTS_DataCenter.CTSCustomer cust ON tvu.UserName = cust.UserName
     SET tvu.CTSCustID = cust.CTSCustID;
     
     UPDATE TempValidateUsername tvu
-    INNER JOIN CTS_DataCenter.AssociationByManual abm ON abm.FromCTSCustID = ip_RootCTSCustID AND abm.ToCTSCustID = tvu.CTSCustID
+		INNER JOIN CTS_DataCenter.AssociationByManual abm 
+			ON ((abm.FromCTSCustID = ip_RootCTSCustID AND abm.ToCTSCustID = tvu.CTSCustID)
+				OR (abm.FromCTSCustID = tvu.CTSCustID AND abm.ToCTSCustID = ip_RootCTSCustID))
     SET tvu.IsDuplicated = TRUE;
     
     SELECT UserName
