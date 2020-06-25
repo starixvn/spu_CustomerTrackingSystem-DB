@@ -14,6 +14,7 @@ BEGIN
 		Revisions:
 			- 20200423@Long.Luu: Created [Redmine ID: #132623]
             - 20200608@Casey.Huynh: Enhance SP
+            - 20200608@Casey.Huynh[136305]: Remove rule "hide VIP IF has SmartPunter/Highrisk
             
 		Param's Explanation:
 	*/ 
@@ -39,13 +40,7 @@ BEGIN
                 , cla.LastModifiedDate
                 , cla.Remark
     FROM		CTS_DataCenter.CTSCustomerClassification AS cla
-    WHERE		cla.CustID = ip_CustID;
-    
-    IF (SELECT COUNT(1) FROM tempLatestRecordOfCategory WHERE CategoryID IN (6,7)) >= 1 THEN
-		DELETE t
-		FROM tempLatestRecordOfCategory AS t
-		WHERE t.CategoryID IN (5);
-    END IF;
+    WHERE		cla.CustID = ip_CustID;    
 
     SELECT 	a.CategoryID
 		,	a.CategoryName

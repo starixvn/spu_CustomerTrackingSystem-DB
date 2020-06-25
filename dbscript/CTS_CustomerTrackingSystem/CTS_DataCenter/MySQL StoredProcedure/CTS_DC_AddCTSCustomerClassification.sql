@@ -22,8 +22,10 @@ sp: BEGIN
 		Revisions:
 			- 20200423@Long.Luu: Created [Redmine ID: #132623]
 			- 20200608@Casey.Huynh: Add parameter ip_CustID
-					+ Remove Category "New Member" if existing
-            
+					+ Rule "Delete Category "New Member" When Add Manaual Caterory"
+            - 20200624@Casey.Huynh: 
+					+ Remove Rule "Delete Category "New Member" When Add Manaual Caterory"
+                    + Update History table
 		Param's Explanation:
 	*/ 
     
@@ -56,10 +58,7 @@ sp: BEGIN
         LEAVE sp;
     END IF;
 
-    SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
-    DELETE 		ccl
-    FROM 		CTS_DataCenter.CTSCustomerClassification  AS ccl    
-	WHERE		ccl.CategoryID = 2 AND CustID = ip_CustID; 
+   
     
 	SET vr_CurrentTime = CURRENT_TIME();
     
@@ -77,16 +76,29 @@ sp: BEGIN
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	VALUES(10, 'CTS_DC_AddCTSCustomerClassification', CONCAT('Insert CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID, ';ip_CategoryID_', ip_CategoryID, ';ip_SportGroupIDList_', ip_SportGroupIDList, ';ip_Remark_', ip_Remark,')'), CURRENT_TIME(), ip_CreatedBy);
     
+    SELECT 	ip_CustID
+		, 	ip_CTSCustID
+        , 	ip_CategoryID
+        , 	s.SportGroupID
+        , 	vr_CurrentTime
+        , 	ip_CreatedBy
+        , 	DATE(vr_CurrentTime)
+        ,	0 AS ActionType # Add Action
+        ,	0 AS IsAuto
+    FROM tempSportGroupID AS s;
+    
     INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID
-					,SportGroupID ,LastModifiedDate, LastModifiedBy, IsAuto)
+					,SportGroupID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto)
 	SELECT 	ip_CustID
 		, 	ip_CTSCustID
         , 	ip_CategoryID
         , 	s.SportGroupID
-        , 	vr_CurrentTime, ip_CreatedBy
-        ,   0 AS IsAuto
+        , 	vr_CurrentTime
+        , 	ip_CreatedBy
+        ,	0 AS ActionType # Add Action
+        ,	0 AS IsAuto
     FROM tempSportGroupID AS s;
 	
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    
 END$$
 DELIMITER ;

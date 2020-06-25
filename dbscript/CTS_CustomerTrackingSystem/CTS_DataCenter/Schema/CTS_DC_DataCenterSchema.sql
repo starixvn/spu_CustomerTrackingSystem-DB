@@ -335,7 +335,13 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomerClassification_History (
     ,	SportGroupID		SMALLINT UNSIGNED
     , 	LastModifiedDate	DATETIME
     ,	LastModifiedBy		INT UNSIGNED
+    , 	TurnoverRM			DECIMAL(20,4)
+    , 	WinlossRM			DECIMAL(20,4)
+    , 	BetCount			BIGINT
+	, 	ActiveDays			INT
+    ,	ActionType			TINYINT
     ,	IsAuto				BIT
+    , 	InsertDate			DATETIME
     , 	PRIMARY KEY			PK_CTSCustomerClassificationHistory_ID(ID)
 	, 	INDEX				IX_CTSCustomerClassificationHistory_CustIDSportGroupID(CustID, SportGroupID)
     ,	INDEX				IX_CTSCustomerClassificationHistory_LastModifiedDate(LastModifiedDate)
