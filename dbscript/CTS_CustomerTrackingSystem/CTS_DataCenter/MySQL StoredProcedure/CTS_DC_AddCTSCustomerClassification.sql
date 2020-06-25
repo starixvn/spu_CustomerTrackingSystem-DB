@@ -56,9 +56,7 @@ sp: BEGIN
 	IF (SELECT COUNT(1) FROM CTS_DataCenter.CustomerCategory WHERE CategoryID = ip_CategoryID AND IsUsedManually = 0) > 0 THEN		
 		SET op_ErrorMessage = 'This Category is not allowed for manually update!!!!';
         LEAVE sp;
-    END IF;
-
-   
+    END IF;   
     
 	SET vr_CurrentTime = CURRENT_TIME();
     
@@ -70,23 +68,11 @@ sp: BEGIN
         , 	s.SportGroupID
         , 	ip_Remark
         , 	vr_CurrentTime, ip_CreatedBy, vr_CurrentTime, ip_CreatedBy
-    FROM tempSportGroupID AS s;
-   
+    FROM tempSportGroupID AS s;   
    
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	VALUES(10, 'CTS_DC_AddCTSCustomerClassification', CONCAT('Insert CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID, ';ip_CategoryID_', ip_CategoryID, ';ip_SportGroupIDList_', ip_SportGroupIDList, ';ip_Remark_', ip_Remark,')'), CURRENT_TIME(), ip_CreatedBy);
-    
-    SELECT 	ip_CustID
-		, 	ip_CTSCustID
-        , 	ip_CategoryID
-        , 	s.SportGroupID
-        , 	vr_CurrentTime
-        , 	ip_CreatedBy
-        , 	DATE(vr_CurrentTime)
-        ,	0 AS ActionType # Add Action
-        ,	0 AS IsAuto
-    FROM tempSportGroupID AS s;
-    
+
     INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID
 					,SportGroupID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto)
 	SELECT 	ip_CustID
