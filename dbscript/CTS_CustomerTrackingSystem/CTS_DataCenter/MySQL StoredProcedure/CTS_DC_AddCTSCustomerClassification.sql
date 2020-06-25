@@ -26,6 +26,7 @@ sp: BEGIN
             - 20200624@Casey.Huynh: 
 					+ Remove Rule "Delete Category "New Member" When Add Manaual Caterory"
                     + Update History table
+			- 20200625@Casey.Huynh: Remove Verify VIP vs Smartpunter 
 		Param's Explanation:
 	*/ 
     
@@ -36,13 +37,6 @@ sp: BEGIN
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
-    
-    CALL CTS_DataCenter.CTS_DC_VerifyCTSCustomerClassification(ip_CTSCustID, ip_SubscriberID, ip_CategoryID, @errorMessage);
-    
-    IF @errorMessage IS NOT NULL THEN
-		SET op_ErrorMessage = @errorMessage;
-        LEAVE sp;
-    END IF;
     
     DROP TEMPORARY TABLE IF EXISTS tempSportGroupID;
     CREATE TEMPORARY TABLE tempSportGroupID (
