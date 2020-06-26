@@ -65,7 +65,7 @@ BEGIN
 	
     #=========GET CTSCustID IF Existing
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;    
-    SELECT * FROM Temp_NewClassification;
+    
     UPDATE 		Temp_NewClassification AS tmpCla
     LEFT JOIN	CTS_DataCenter.CTSCustomer AS cus 
 					ON tmpCla.CustID = cus.CustID

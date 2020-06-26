@@ -10,7 +10,7 @@ BEGIN
 		Original:
 
 		Revisions:
-        
+			[20200624@Casey.Huynh]135324]: Chagne Flow and Store more Info		
 		Param's Explanation (filtered by):
          ip_CategoryIDList: ex: '1,2,3'       
 	*/
@@ -103,9 +103,6 @@ BEGIN
 				, tmpList.SportGroupID	
 				, tmpList.CategoryID
 	FROM 		temp_scanList	AS tmpList;     
-   	
-    UPDATE 		CTS_DataCenter.CTSCustomerClassification_ScanStatus
-    SET			LastCustID = (SELECT MAX(CustID) FROM temp_scanList WHERE ScanTime = vrScanTime);
 	
 	IF NOT EXISTS (SELECT 1 FROM temp_scanList LIMIT 1)
     THEN
