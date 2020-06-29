@@ -19,7 +19,29 @@ BEGIN
     DECLARE v_remark VARCHAR(50);
     DECLARE v_createdBy INT;
     DECLARE v_LastScannedDate DATETIME;
+    
+	### PERFORMANCE: START
+    DECLARE		vrExecKey		BIGINT	UNSIGNED;
+	DECLARE		vrSPName		VARCHAR(200)  DEFAULT 'CTS_DC_AutoTagCustomerClassification_xtest' ;
+    DECLARE		vrStepID		INT;
+	DECLARE 	vrNotes	 		VARCHAR(500);
+	DECLARE 	vrStartTime		TIMESTAMP(4);
+	DECLARE		vrEndTime 		TIMESTAMP(4);
+	DECLARE		vrDuration 		BIGINT;	
+    DECLARE		vrLgTotalRecord	INT;
+    DECLARE		vrFromID		BIGINT;
+    DECLARE		vrToID			BIGINT;
 
+    SET		vrExecKey = CRC32((UUID_Short()));    
+    SET		vrNotes = '';# CONCAT('Input: ',ip_NoOfAssociation,'_', ip_NoOfBatch) ;		
+    SET 	vrStepID = 1;
+    
+    SET 	vrStartTime = CURRENT_TIMESTAMP(4);	
+    
+    INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
+    VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);
+	### PERFORMANCE: END
+    
     SET  v_createdBy = 1027893;
 	SET  v_LastScannedDate = CURRENT_DATE();
     
@@ -67,7 +89,7 @@ BEGIN
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;    
     
     UPDATE 		Temp_NewClassification AS tmpCla
-    LEFT JOIN	CTS_DataCenter.CTSCustomer AS cus 
+    INNER JOIN	CTS_DataCenter.CTSCustomer AS cus 
 					ON tmpCla.CustID = cus.CustID
 	SET			tmpCla.CTSCustID = cus.CTSCustID
 				, tmpCla.SubscriberID = cus.SubscriberID;
@@ -160,6 +182,21 @@ BEGIN
 	FROM 	Temp_NewClassification AS tmpCla
     WHERE	tmpCla.ActionType IN (-1, 0, 1);   
 
-	
+	### PERFORMANCE
+	SET		vrEndTime = CURRENT_TIMESTAMP(4);
+    
+	SELECT 	Count(1), Min(tas.CustID), Max(tas.CustID)
+    INTO	vrLgTotalRecord, vrFromID, vrToID
+    FROM	Temp_NewClassification AS tas;    
+    
+    UPDATE	DCS_DataCenter.zzTracePerformance AS z
+    SET		z.EndTime = vrEndTime
+			, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
+            , z.TotalRecord = vrLgTotalRecord
+            , z.FromID = vrFromID
+            , z.ToID		= vrToID
+    WHERE	z.ExecKey = vrExecKey AND z.StepID = vrStepID ;    
+    
+    ### PERFORMANCE: END 
 END$$
 DELIMITER ;
