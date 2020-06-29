@@ -66,17 +66,18 @@ BEGIN
     INNER JOIN 	Temp_CustSport AS tmpCs
 				ON cl.CustID = tmpCs.CustID
 				AND	cl.SportGroupID = tmpCs.SportGroupID
-    SET			cl.LastScannedDate = GREATEST(vrScanDate, cl.LastScannedDate);
+    SET			cl.LastScannedDate = GREATEST(vrScanTime, cl.LastScannedDate);
     
     UPDATE 		CTS_DataCenter.CTSCustomerClassification_ScanStatus
-    SET			LastCustID = (SELECT MAX(CustID) FROM Temp_CustSport);
+    SET			LastCustID = (SELECT MAX(CustID) FROM Temp_CustSport)
+    WHERE		ScanTime = vrScanTime;
     
 	### PERFORMANCE
 	SET		vrEndTime = CURRENT_TIMESTAMP(4);
     
 	SELECT 	Count(1), Min(tas.CustID), Max(tas.CustID)
     INTO	vrLgTotalRecord, vrFromID, vrToID
-    FROM	temp_scanList AS tas;    
+    FROM	Temp_CustSport AS tas;    
     
     UPDATE	DCS_DataCenter.zzTracePerformance AS z
     SET		z.EndTime = vrEndTime

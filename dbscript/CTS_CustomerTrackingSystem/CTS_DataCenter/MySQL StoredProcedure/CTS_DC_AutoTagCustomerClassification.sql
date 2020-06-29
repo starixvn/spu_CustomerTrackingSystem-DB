@@ -80,10 +80,9 @@ BEGIN
 	INNER JOIN 	CTS_DataCenter.CustomerCategory AS cua
 				ON ccl.CategoryID = cua.CategoryID 
 					AND cua.IsUsedManually = 0
-	SET 		tmpCla.ActionType = 1
-	WHERE		tmpCla.CategoryID != ccl.CategoryID
-				AND tmpCla.CategoryID !=0;    
-    
+	SET 		tmpCla.ActionType =  (CASE WHEN tmpCla.CategoryID != ccl.CategoryID THEN 1
+											  WHEN tmpCla.CategoryID = ccl.CategoryID THEN 4 END)		
+	WHERE		tmpCla.CategoryID !=0;  
     /*================================================================================================================
     Update Temp Table: -1: Delete, 3: NOT Insert
 		-1: Delete CTSCustomerClassification table with CategoryID = 2:  IF SportGroupID= 0, CategoryID = 0 (AI,Robot...) OR SportGroupID > 0
@@ -103,6 +102,7 @@ BEGIN
     WHERE		tmpCla.ActionType = 0 AND tmpCla.CategoryID = 0;
 
     #================================================================================================================
+	
     DELETE 		ccl
     FROM 		CTS_DataCenter.CTSCustomerClassification  AS ccl
     INNER JOIN 	Temp_NewClassification AS tmpCla
@@ -127,6 +127,7 @@ BEGIN
 	WHERE 	tmpCla.ActionType IN (0,-1)
 			AND tmpCla.CategoryId != 0;   
 
+	
     UPDATE 		CTS_DataCenter.CTSCustomerClassification AS ccl
     INNER JOIN 	Temp_NewClassification AS tmpCla 
 				ON 	tmpCla.CustID = ccl.CustID		
@@ -157,8 +158,7 @@ BEGIN
             , 1
             , CURRENT_DATE() AS InsertDate
 	FROM 	Temp_NewClassification AS tmpCla
-    WHERE	tmpCla.ActionType IN (-1, 0, 1);     
-	
+    WHERE	tmpCla.ActionType IN (-1, 0, 1);   
 
 	
 END$$

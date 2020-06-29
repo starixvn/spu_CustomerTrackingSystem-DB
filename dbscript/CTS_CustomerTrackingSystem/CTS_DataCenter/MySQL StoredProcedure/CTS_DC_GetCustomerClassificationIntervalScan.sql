@@ -70,7 +70,8 @@ BEGIN
 	ELSE	
 		SET vrScanTime = vrLastScanTime;
     END IF;
-	SET vrLastCustID = (	SELECT 	LastCustID
+	
+    SET vrLastCustID = (	SELECT 	LastCustID
 							FROM 	CTS_DataCenter.CTSCustomerClassification_ScanStatus  
 							WHERE 	ScanTime = vrScanTime);   
     
