@@ -322,6 +322,13 @@ AND SiteID in (
         ,507      # Winbox
         ,508      # pmwint
         ,509      # ZhiFeng021
+		,510      # liv66	
+        ,511      # HC6YAYOU	
+        ,512      # TIC88	
+        ,513      # Nbet	
+        ,514      # Sky88	
+        ,515      # Kbet	
+        ,516      # Dabet	
 );
 
 # Update groupID for mapped credit
