@@ -47,7 +47,7 @@ BEGIN
 		, ToSubscriberID	BIGINT			PATH "$.ToSubscriberID" 
         , ToCTSCustID		INT 			PATH "$.ToCTSCustID" 
 		, Remark			VARCHAR(500) 	PATH "$.Remark" 
-		, CreatedBy			VARCHAR(50) 	PATH "$.CreatedBy" 
+		, CreatedBy			BIGINT		 	PATH "$.CreatedBy" 
 		 )) as tmpTable;
 
     

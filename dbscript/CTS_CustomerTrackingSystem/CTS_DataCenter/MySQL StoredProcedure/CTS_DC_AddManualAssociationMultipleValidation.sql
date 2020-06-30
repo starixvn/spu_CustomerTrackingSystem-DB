@@ -25,16 +25,24 @@ BEGIN
 	CREATE TEMPORARY TABLE TempValidateUsername( 	 
 		UserName			VARCHAR(50)
 	,	CTSCustID			BIGINT
+    ,	SubscriberID		INT
     ,	IsDuplicated		BOOLEAN		DEFAULT FALSE);
+    
+    DROP TABLE IF EXISTS TempUserStatistic;
+    CREATE TEMPORARY TABLE TempUserStatistic( 	 
+		CTSCustID			BIGINT
+    ,	Quantity			INT);
  
     CALL CTS_DC_Sys_SplitStringToTempItemTable(ip_UsernameList,",",'VARCHAR(50)');
     
     INSERT INTO TempValidateUsername(UserName)
     SELECT item FROM TempItemTable;
     
+    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     UPDATE TempValidateUsername tvu
 		INNER JOIN CTS_DataCenter.CTSCustomer cust ON tvu.UserName = cust.UserName
-    SET tvu.CTSCustID = cust.CTSCustID;
+    SET tvu.CTSCustID = cust.CTSCustID
+	,	tvu.SubscriberID = cust.SubscriberID;
     
     UPDATE TempValidateUsername tvu
 		INNER JOIN CTS_DataCenter.AssociationByManual abm 
@@ -42,8 +50,21 @@ BEGIN
 				OR (abm.FromCTSCustID = tvu.CTSCustID AND abm.ToCTSCustID = ip_RootCTSCustID))
     SET tvu.IsDuplicated = TRUE;
     
+
+    INSERT INTO TempUserStatistic (CTSCustID,Quantity)
+	SELECT CTSCustID,count(CTSCustID)
+		FROM TempValidateUsername
+	GROUP BY CTSCustID;
+
+	UPDATE TempValidateUsername tvu
+		INNER JOIN TempUserStatistic tus ON tvu.CTSCustID = tus.CTSCustID
+	SET tvu.IsDuplicated = TRUE
+	WHERE tus.Quantity > 1;
+
+    
     SELECT UserName
 			,CTSCustID
+            ,SubscriberID
 			,IsDuplicated 
 	FROM TempValidateUsername;
 END$$	
