@@ -1,6 +1,6 @@
 DELIMITER $$
-DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_GetCustomerClassificationIntervalScan_v1$$
-CREATE DEFINER=fps@`%` PROCEDURE CTS_DataCenter.CTS_DC_GetCustomerClassificationIntervalScan_v1(IN ip_NoOfRecord INT, IN ip_Batch INT)
+DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_GetCustomerClassificationIntervalScan$$
+CREATE DEFINER=fps@`%` PROCEDURE CTS_DataCenter.CTS_DC_GetCustomerClassificationIntervalScan(IN ip_NoOfRecord INT, IN ip_Batch INT) 
 BEGIN
 	/*
 		Created:	[20200612@Casey.Huynh][135324]
@@ -52,7 +52,7 @@ BEGIN
 		CustID BIGINT UNSIGNED
         , SportGroupID SMALLINT UNSIGNED
         , CategoryID	SMALLINT UNSIGNED    
-		, ID			INT AUTO_INCREMENT
+		, ID			INT SIGNED AUTO_INCREMENT
         ,INDEX	IX_temp_scanList_ID(ID)
         ,INDEX	IX_temp_scanList_CustID(CustID)
     );
@@ -74,22 +74,22 @@ BEGIN
 							FROM 	CTS_DataCenter.CTSCustomerClassification_ScanStatus  
 							WHERE 	ScanTime = vrScanTime);   
     
-    SET vrTotalRecord =ip_Batch * ip_NoOfRecord ;
-	
+    SET vrTotalRecord = ip_Batch * ip_NoOfRecord ;
+	    
 	INSERT INTO temp_scanList (CustID, SportGroupID, CategoryID)
 	SELECT 		ccl.CustID 			AS CustID
 				, ccl.SportGroupID	AS SportGroupID
                 , ccl.CategoryID	AS CategoryID
-    FROM		CTS_DataCenter.CTSCustomerClassification AS ccl
+    FROM		CTS_DataCenter.CTSCustomerClassification AS ccl USE INDEX(IX_CTSCustomerClassification_LastScannedDate)
     INNER JOIN	CTS_DataCenter.CustomerCategory AS cat
 				ON ccl.CategoryID = cat.CategoryID
 	WHERE		cat.IsActive = 1
 				AND cat.IsUsedManually = 0
                 AND cat.ScanIntervalInSecond > 0
-				AND DATE_ADD(ccl.LastScannedDate, INTERVAL cat.ScanIntervalInSecond SECOND) <= vrScanDate
-	LIMIT		vrTotalRecord;    
-	
-	SELECT 		((tmpList.ID DIV ip_NoOfRecord) + 1) AS BatchID
+                AND ccl.LastScannedDate <= DATE_SUB(vrScanDate, INTERVAL cat.ScanIntervalInSecond SECOND)
+	LIMIT		vrTotalRecord;
+    
+	SELECT 		(((tmpList.ID-1) DIV ip_NoOfRecord) + 1) AS BatchID
 				, tmpList.CustID 		
 				, tmpList.SportGroupID	
 				, tmpList.CategoryID

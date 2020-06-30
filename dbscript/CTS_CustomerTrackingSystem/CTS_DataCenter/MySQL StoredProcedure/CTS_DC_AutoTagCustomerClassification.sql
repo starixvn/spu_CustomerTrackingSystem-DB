@@ -11,7 +11,7 @@ BEGIN
 		Revisions:
 				[20200612@Casey.Huynh][135324]: Enhance SP      
                 [20200618@Casey.Huynh]135324]: Enhance SP  
-                [20200624@Casey.Huynh]135324]: Chagne Flow and Store more Info
+                [20200630@Casey.Huynh]135324]: Chagne Flow and Store more Info
         
 		Param's Explanation (filtered by):
                 
@@ -22,7 +22,7 @@ BEGIN
     
 	### PERFORMANCE: START
     DECLARE		vrExecKey		BIGINT	UNSIGNED;
-	DECLARE		vrSPName		VARCHAR(200)  DEFAULT 'CTS_DC_AutoTagCustomerClassification_xtest' ;
+	DECLARE		vrSPName		VARCHAR(200)  DEFAULT 'CTS_DC_AutoTagCustomerClassification' ;
     DECLARE		vrStepID		INT;
 	DECLARE 	vrNotes	 		VARCHAR(500);
 	DECLARE 	vrStartTime		TIMESTAMP(4);
@@ -122,7 +122,6 @@ BEGIN
     UPDATE		Temp_NewClassification AS tmpCla    
     SET			tmpCla.ActionType = 3
     WHERE		tmpCla.ActionType = 0 AND tmpCla.CategoryID = 0;
-
     #================================================================================================================
 	
     DELETE 		ccl
