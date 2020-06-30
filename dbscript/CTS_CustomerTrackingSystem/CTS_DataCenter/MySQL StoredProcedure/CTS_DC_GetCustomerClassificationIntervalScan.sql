@@ -1,6 +1,6 @@
 DELIMITER $$
-DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_GetCustomerClassificationIntervalScan$$
-CREATE DEFINER=fps@`%` PROCEDURE CTS_DataCenter.CTS_DC_GetCustomerClassificationIntervalScan(IN ip_NoOfRecord INT, IN ip_Batch INT)
+DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_GetCustomerClassificationIntervalScan_v1$$
+CREATE DEFINER=fps@`%` PROCEDURE CTS_DataCenter.CTS_DC_GetCustomerClassificationIntervalScan_v1(IN ip_NoOfRecord INT, IN ip_Batch INT)
 BEGIN
 	/*
 		Created:	[20200612@Casey.Huynh][135324]
@@ -52,9 +52,8 @@ BEGIN
 		CustID BIGINT UNSIGNED
         , SportGroupID SMALLINT UNSIGNED
         , CategoryID	SMALLINT UNSIGNED    
-        , BatchID		INT
-        
-        ,INDEX	IX_temp_scanList_BatchID(BatchID)
+		, ID			INT AUTO_INCREMENT
+        ,INDEX	IX_temp_scanList_ID(ID)
         ,INDEX	IX_temp_scanList_CustID(CustID)
     );
     
@@ -89,17 +88,8 @@ BEGIN
                 AND cat.ScanIntervalInSecond > 0
 				AND DATE_ADD(ccl.LastScannedDate, INTERVAL cat.ScanIntervalInSecond SECOND) <= vrScanDate
 	LIMIT		vrTotalRecord;    
-
-    
-	WHILE (EXISTS (SELECT (1) FROM temp_scanList WHERE BatchID IS NULL LIMIT 1)) DO
-		  UPDATE 	temp_scanList
-		  SET		BatchID = vrBatch
-		  WHERE		BatchID IS NULL 
-		  LIMIT 	ip_NoOfRecord;    
-		  SET vrBatch = vrBatch + 1;
-	END WHILE;
 	
-	SELECT 		tmpList.BatchID
+	SELECT 		((tmpList.ID DIV ip_NoOfRecord) + 1) AS BatchID
 				, tmpList.CustID 		
 				, tmpList.SportGroupID	
 				, tmpList.CategoryID

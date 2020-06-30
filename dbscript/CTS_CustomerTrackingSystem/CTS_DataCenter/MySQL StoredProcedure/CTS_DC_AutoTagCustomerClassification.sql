@@ -144,11 +144,10 @@ BEGIN
 			, v_createdBy
 			, tmpCla.LastModifiedDate
 			, v_createdBy
-            , tmpCla.LastModifiedDate 	AS LastScannedDate
+            , DATE(tmpCla.LastModifiedDate)	AS LastScannedDate
 	FROM 	Temp_NewClassification 		AS tmpCla
 	WHERE 	tmpCla.ActionType IN (0,-1)
 			AND tmpCla.CategoryId != 0;   
-
 	
     UPDATE 		CTS_DataCenter.CTSCustomerClassification AS ccl
     INNER JOIN 	Temp_NewClassification AS tmpCla 
@@ -160,7 +159,7 @@ BEGIN
  	SET  ccl.CategoryID = tmpCla.CategoryID
         , ccl.LastModifiedDate = tmpCla.LastModifiedDate 
         , ccl.LastModifiedBy = v_createdBy
-        , ccl.LastScannedDate = GREATEST(tmpCla.LastModifiedDate,ccl.LastScannedDate)
+        , ccl.LastScannedDate = GREATEST(DATE(tmpCla.LastModifiedDate),ccl.LastScannedDate)
 	WHERE tmpCla.ActionType = 1;
     
     #======= INSERT Customer Classification History

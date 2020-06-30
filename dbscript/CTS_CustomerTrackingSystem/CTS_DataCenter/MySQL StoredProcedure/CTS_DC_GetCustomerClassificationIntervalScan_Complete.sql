@@ -66,7 +66,7 @@ BEGIN
     INNER JOIN 	Temp_CustSport AS tmpCs
 				ON cl.CustID = tmpCs.CustID
 				AND	cl.SportGroupID = tmpCs.SportGroupID
-    SET			cl.LastScannedDate = GREATEST(vrScanTime, cl.LastScannedDate);
+    SET			cl.LastScannedDate = GREATEST(vrScanDate, cl.LastScannedDate);
     
     UPDATE 		CTS_DataCenter.CTSCustomerClassification_ScanStatus
     SET			LastCustID = (SELECT MAX(CustID) FROM Temp_CustSport)
