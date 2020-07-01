@@ -14,7 +14,8 @@ BEGIN
 		Revisions:
 			- 20200423@Long.Luu: Created [Redmine ID: #132623]
             - 20200608@Casey.Huynh: Enhance SP
-            - 20200608@Casey.Huynh[136305]: Remove rule "hide VIP IF has SmartPunter/Highrisk
+            - [20200701@Casey.Huynh][135324]: Chagne Flow and Store more Info
+					+ Remove rule "hide VIP IF has SmartPunter/Highrisk
             
 		Param's Explanation:
 	*/ 

@@ -11,7 +11,7 @@ BEGIN
 		Revisions:
 				[20200612@Casey.Huynh][135324]: Enhance SP      
                 [20200618@Casey.Huynh]135324]: Enhance SP  
-                [20200630@Casey.Huynh]135324]: Chagne Flow and Store more Info
+                [20200701@Casey.Huynh]135324]: Chagne Flow and Store more Info
         
 		Param's Explanation (filtered by):
                 
@@ -86,7 +86,9 @@ BEGIN
 		 )) as tmpTable;   
 	
     #=========GET CTSCustID IF Existing
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;    
+    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
+    
+    SET vrNotes = CONCAT(vrNotes, ' 1.', CURRENT_TIME());
     
     UPDATE 		Temp_NewClassification AS tmpCla
     INNER JOIN	CTS_DataCenter.CTSCustomer AS cus 
@@ -95,13 +97,11 @@ BEGIN
 				, tmpCla.SubscriberID = cus.SubscriberID;
                 
     #===================================================================================================    
+	SET vrNotes = CONCAT(vrNotes, ' 2.', CURRENT_TIME());
     UPDATE 		Temp_NewClassification AS tmpCla
     INNER JOIN 	CTS_DataCenter.CTSCustomerClassification AS ccl
 				ON tmpCla.CustID = ccl.CustID
                 AND tmpCla.SportGroupID = ccl.SportGroupID
-	INNER JOIN 	CTS_DataCenter.CustomerCategory AS cua
-				ON ccl.CategoryID = cua.CategoryID 
-					AND cua.IsUsedManually = 0
 	SET 		tmpCla.ActionType =  (CASE WHEN tmpCla.CategoryID != ccl.CategoryID THEN 1
 											  WHEN tmpCla.CategoryID = ccl.CategoryID THEN 4 END)		
 	WHERE		tmpCla.CategoryID !=0;  
@@ -110,27 +110,31 @@ BEGIN
 		-1: Delete CTSCustomerClassification table with CategoryID = 2:  IF SportGroupID= 0, CategoryID = 0 (AI,Robot...) OR SportGroupID > 0
 		 2: Remove From Tem table Category =2: Not Insert New Category If Customer has any Category (both Manual and Auto)*/	
     
-       
+    SET vrNotes = CONCAT(vrNotes, ' 3.', CURRENT_TIME());    
     UPDATE 		Temp_NewClassification 	AS tmpCla
     INNER JOIN	CTS_DataCenter.CTSCustomerClassification  AS ccl 
 				ON tmpCla.CustID = ccl.CustID
 	SET			tmpCla.ActionType = (CASE WHEN (ccl.CategoryID = 2 AND tmpCla.CategoryID != 2) THEN -1 
 										  WHEN (tmpCla.CategoryID = 2) THEN 2 ELSE tmpCla.ActionType
 									 END)
-	WHERE		tmpCla.ActionType = 0;
+	WHERE		tmpCla.ActionType = 0;    
     
     UPDATE		Temp_NewClassification AS tmpCla    
     SET			tmpCla.ActionType = 3
     WHERE		tmpCla.ActionType = 0 AND tmpCla.CategoryID = 0;
+
     #================================================================================================================
-	
+	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    
+    SET vrNotes = CONCAT(vrNotes, ' 4.', CURRENT_TIME());
     DELETE 		ccl
     FROM 		CTS_DataCenter.CTSCustomerClassification  AS ccl
     INNER JOIN 	Temp_NewClassification AS tmpCla
 				ON tmpCla.CustID = ccl.CustID
 	WHERE		ccl.CategoryID = 2 
 				AND tmpCla.ActionType = -1;     
-    
+                
+    SET vrNotes = CONCAT(vrNotes, ' 5.', CURRENT_TIME());
     INSERT  INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, 
 				 CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
 	SELECT 
@@ -147,20 +151,21 @@ BEGIN
 	FROM 	Temp_NewClassification 		AS tmpCla
 	WHERE 	tmpCla.ActionType IN (0,-1)
 			AND tmpCla.CategoryId != 0;   
-	
+            
+	SET vrNotes = CONCAT(vrNotes, ' 6.', CURRENT_TIME());
+    
     UPDATE 		CTS_DataCenter.CTSCustomerClassification AS ccl
     INNER JOIN 	Temp_NewClassification AS tmpCla 
 				ON 	tmpCla.CustID = ccl.CustID		
 				AND tmpCla.SportGroupID = ccl.SportGroupID
-	INNER JOIN 	CTS_DataCenter.CustomerCategory AS cua
-				ON ccl.CategoryID = cua.CategoryID 
-                AND cua.IsUsedManually = 0 
  	SET  ccl.CategoryID = tmpCla.CategoryID
         , ccl.LastModifiedDate = tmpCla.LastModifiedDate 
         , ccl.LastModifiedBy = v_createdBy
         , ccl.LastScannedDate = GREATEST(DATE(tmpCla.LastModifiedDate),ccl.LastScannedDate)
 	WHERE tmpCla.ActionType = 1;
     
+    SET vrNotes = CONCAT(vrNotes, ' 7.', CURRENT_TIME());   
+     
     #======= INSERT Customer Classification History
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID
 					,SportGroupID ,LastModifiedDate, LastModifiedBy,TurnoverRM, WinlossRM, BetCount, ActiveDays, ActionType,  IsAuto, InsertDate)
@@ -179,7 +184,7 @@ BEGIN
             , CURRENT_DATE() AS InsertDate
 	FROM 	Temp_NewClassification AS tmpCla
     WHERE	tmpCla.ActionType IN (-1, 0, 1);   
-
+	SET vrNotes = CONCAT(vrNotes, ' 8.', CURRENT_TIME());
 	### PERFORMANCE
 	SET		vrEndTime = CURRENT_TIMESTAMP(4);
     
@@ -193,6 +198,7 @@ BEGIN
             , z.TotalRecord = vrLgTotalRecord
             , z.FromID = vrFromID
             , z.ToID		= vrToID
+            , z.Notes = vrNotes
     WHERE	z.ExecKey = vrExecKey AND z.StepID = vrStepID ;    
     
     ### PERFORMANCE: END 

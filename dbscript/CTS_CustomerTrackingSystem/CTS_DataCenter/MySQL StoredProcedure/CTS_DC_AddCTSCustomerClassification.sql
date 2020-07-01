@@ -23,10 +23,10 @@ sp: BEGIN
 			- 20200423@Long.Luu: Created [Redmine ID: #132623]
 			- 20200608@Casey.Huynh: Add parameter ip_CustID
 					+ Rule "Delete Category "New Member" When Add Manaual Caterory"
-            - 20200624@Casey.Huynh: 
+            - 20200701@Casey.Huynh: 
 					+ Remove Rule "Delete Category "New Member" When Add Manaual Caterory"
                     + Update History table
-			- 20200625@Casey.Huynh: Remove Verify VIP vs Smartpunter 
+					+ Remove Verify VIP vs Smartpunter 
 		Param's Explanation:
 	*/ 
     

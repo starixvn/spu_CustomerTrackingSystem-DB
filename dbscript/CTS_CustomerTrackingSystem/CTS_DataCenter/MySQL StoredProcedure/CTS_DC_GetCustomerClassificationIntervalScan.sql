@@ -10,7 +10,7 @@ BEGIN
 		Original:
 
 		Revisions:
-			[20200624@Casey.Huynh]135324]: Chagne Flow and Store more Info		
+			[20200701@Casey.Huynh]135324]: Chagne Flow and Store more Info		
 		Param's Explanation (filtered by):
          ip_CategoryIDList: ex: '1,2,3'       
 	*/
@@ -59,6 +59,7 @@ BEGIN
     
 	SET vrScanTime = CURRENT_TIME();
     SET vrLastScanTime = (SELECT MAX(ScanTime) FROM CTS_DataCenter.CTSCustomerClassification_ScanStatus);
+    
 	SET vrScanDate = DATE(vrScanTime);
     SET vrLastScanDate = DATE(vrLastScanTime);
     

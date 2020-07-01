@@ -10,7 +10,7 @@ BEGIN
 		Original:
 
 		Revisions:
-        
+			[20200701@Casey.Huynh]135324]: Chagne Flow and Store more Info
 		Param's Explanation (filtered by):
          ip_CategoryIDList: ex: '1,2,3'       
 	*/     
