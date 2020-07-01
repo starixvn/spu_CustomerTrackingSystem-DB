@@ -244,3 +244,9 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.ProcessAffectedEvidence
 -- DROP INDEX IX_FullText_CTSCustomer_UserName_UserName2 ON CTS_DataCenter.CTSCustomer;
 ALTER TABLE CTS_DataCenter.CTSCustomer ADD INDEX IX_CTSCustomer_RegisterName (RegisterName);
 ALTER TABLE CTSCustomer RENAME TO CTSCustomer_old, ALGORITHM = INSTANT;
+
+ALTER TABLE CTSCustomerClassification RENAME TO CTSCustomerClassification_bk, ALGORITHM = INSTANT;
+ALTER TABLE CTSCustomerClassification_UAT RENAME TO CTSCustomerClassification, ALGORITHM = INSTANT;
+
+ALTER TABLE CTSCustomerClassification_History RENAME TO CTSCustomerClassification_History_bk, ALGORITHM = INSTANT;
+ALTER TABLE CTSCustomerClassification_History_UAT RENAME TO CTSCustomerClassification_History, ALGORITHM = INSTANT;
