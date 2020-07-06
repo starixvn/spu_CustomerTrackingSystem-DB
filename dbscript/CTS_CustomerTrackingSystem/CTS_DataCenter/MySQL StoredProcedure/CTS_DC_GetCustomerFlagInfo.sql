@@ -12,7 +12,7 @@ BEGIN
 		Original: Spec https://nexdev.net/projects/customer-tracking-system/wiki/CTS_-_General_Information_Panel
 					IF account has 
 		Revisions:
-			- 20200706@Lex: Fix logic return flag and affected evidence for root account
+			- 20200706@Lex: Fix logic return flag and affected evidence for root account [Redmine ID: #137055]
 
 		Param's Explanation (filtered by):
 	*/
