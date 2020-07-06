@@ -88,13 +88,31 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
         , RoleMapping		TINYINT
 		, SubscriberType	TINYINT
         , SubscriberStatus	TINYINT
+		, SubscriberGroupID SMALLINT UNSIGNED
         , SiteID			INT
         , SiteName			VARCHAR(50)
         , Comments			VARCHAR(200)
 		, PRIMARY KEY	PK_MappingSubscriberSite_SubscriberID(SiteID, SubscriberID)    
 	) ENGINE=INNODB;
 
-# ======EvidenceGroup=============================================
+	# ======SubscriberGroup=============================================
+    CREATE TABLE IF NOT EXISTS CTS_DataCenter.SubscriberGroup (
+		SubscriberGroupID			SMALLINT UNSIGNED AUTO_INCREMENT
+	, 	SubscriberGroupName		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+    , 	SubscriberGroupDesc		VARCHAR(200) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+    ,	ParentID			SMALLINT UNSIGNED
+	, 	DisplayOrder		TINYINT UNSIGNED
+    ,	IsActive			BIT DEFAULT 1
+	, 	CreatedDate			DATETIME
+    ,	CreatedBy			INT UNSIGNED
+    , 	LastModifiedDate	DATETIME
+    ,	LastModifiedBy		INT UNSIGNED
+	, 	PRIMARY KEY			PK_SubscriberGroup_SubscriberGroupDisplayOrder(SubscriberGroupID,DisplayOrder)
+	, 	INDEX				IX_SubscriberGroup_ParentID(ParentID)
+    , 	INDEX				IX_SubscriberGroup_IsActive(IsActive)
+) ENGINE=INNODB AUTO_INCREMENT=1;
+
+	# ======EvidenceGroup=============================================
 	CREATE TABLE IF NOT EXISTS CTS_DataCenter.EvidenceGroup(
 		EvidenceGroupID			TINYINT			AUTO_INCREMENT		NOT NULL
 		, EvidenceGroupName		VARCHAR(50)							NOT NULL
@@ -287,6 +305,42 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.SportGroup (
     ,	CreatedBy			INT UNSIGNED
 	, 	PRIMARY KEY		PK_SportGroup_SportGroupIDDisplayOrder(SportGroupID,DisplayOrder)
 	, 	INDEX			IX_SportGroup_MainDBSportID(MainDBSportID)
+
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.SmartGroup (
+		GroupID				INT UNSIGNED NOT NULL
+    ,   CustID				INT UNSIGNED NOT NULL
+    ,	Username			VARCHAR(64) NOT NULL
+    , 	Similarity			FLOAT NOT NULL DEFAULT '0'
+    ,	Currency 			VARCHAR(8) NOT NULL
+    ,	Site	 			VARCHAR(32) NOT NULL
+    , 	AgentID				INT UNSIGNED NOT NULL 
+    , 	AgentName			VARCHAR(64) NOT NULL
+    , 	MasterID			INT UNSIGNED NOT NULL 
+    , 	MasterName			VARCHAR(64) NOT NULL
+    , 	SuperID				INT UNSIGNED NOT NULL 
+    , 	SuperName			VARCHAR(64) NOT NULL
+    , 	CreatedDate			DATETIME DEFAULT NULL
+    , 	PRIMARY KEY			PK_SmartGroup_CustIDGroupID(CustID, GroupID)
+    , 	INDEX				IX_SmartGroup_Username(Username)
+) ENGINE=INNODB DEFAULT CHARSET='UTF8MB4' COLLATE='UTF8MB4_UNICODE_CI';
+
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.SmartGroupHistory (
+		GroupID				INT UNSIGNED NOT NULL
+    ,   CustID				INT UNSIGNED NOT NULL
+    ,	Username			VARCHAR(64) NOT NULL
+    , 	Similarity			FLOAT NOT NULL DEFAULT '0'
+    ,	Currency 			VARCHAR(8) NOT NULL
+    ,	Site	 			VARCHAR(32) NOT NULL
+    , 	AgentID				INT UNSIGNED NOT NULL 
+    , 	AgentName			VARCHAR(64) NOT NULL
+    , 	MasterID			INT UNSIGNED NOT NULL 
+    , 	MasterName			VARCHAR(64) NOT NULL
+    , 	SuperID				INT UNSIGNED NOT NULL 
+    , 	SuperName			VARCHAR(64) NOT NULL
+    , 	CreatedDate			DATE NOT NULL
+    , 	PRIMARY KEY			PK_SmartGroup_CustIDGroupID(CustID, CreatedDate)
+    , 	INDEX				IX_SmartGroup_Username(Username)
+) ENGINE=INNODB DEFAULT CHARSET='UTF8MB4' COLLATE='UTF8MB4_UNICODE_CI';
     , 	INDEX			IX_SportGroup_IsActive(IsActive)
 ) ENGINE=INNODB AUTO_INCREMENT=1;
 
