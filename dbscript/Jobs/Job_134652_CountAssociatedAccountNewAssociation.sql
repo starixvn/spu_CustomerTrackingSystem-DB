@@ -61,7 +61,7 @@ CREATE EVENT CTS_DataCenter.CTS_JOB_CountAssociatedAccountNewAssociation
         FROM CTS_DataCenter.AssociationByDevice AS a
 			INNER JOIN TmpAccountDevice AS t ON a.DCSDeviceID = t.DCSDeviceID
             INNER JOIN CTS_DataCenter.CTSCustomer AS c ON t.CTSCustID = c.CTSCustID
-        WHERE a.CTSAssDevID > LastScannedCTSAssDevID AND a.CTSAssDevID <= CurrentMaxCTSAssDevID
+        WHERE a.CTSAssDevID > LastScannedCTSAssDevID AND a.CTSAssDevID <= CurrentMaxCTSAssDevID AND a.CTSCustID <> t.CTSCustID
         GROUP BY t.CTSCustID, c.UserName;
         
         # Remove the useless data
