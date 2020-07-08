@@ -19,7 +19,7 @@ CREATE EVENT CTS_DataCenter.CTS_JOB_CountAssociatedAccountNewAssociation
 	DO BEGIN
 		DECLARE LastScannedCTSAssDevID		BIGINT;
         DECLARE CurrentMaxCTSAssDevID		BIGINT;
-        SET @CurrentScanTime				= CURRENT_TIME();
+        SET @CurrentScanTime				= NOW();
         SET @CurrentScanDate				= CURRENT_DATE();
         SET @DataDateRange					= DATE(DATE_ADD(CURRENT_DATE(), INTERVAL -5 DAY));
         

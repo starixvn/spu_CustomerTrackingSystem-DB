@@ -27,6 +27,7 @@ BEGIN
     END;
     
     SET @lv_CurrentDate 	= CURRENT_DATE();    
+    SET @lv_CurrentDateTime	= NOW(); 
     SET @lv_SPName 		= 'CTS_DC_InsertAssociatedAccountMonitor';
     
 	DROP TEMPORARY TABLE IF EXISTS TmpCTSCustIDsList;    
@@ -44,7 +45,7 @@ BEGIN
 		,	ip_Remark
         ,	ip_UserID
         ,	@lv_CurrentDate
-        ,	@lv_CurrentDate
+        ,	@lv_CurrentDateTime
 	FROM TmpCTSCustIDsList AS c;
 
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
