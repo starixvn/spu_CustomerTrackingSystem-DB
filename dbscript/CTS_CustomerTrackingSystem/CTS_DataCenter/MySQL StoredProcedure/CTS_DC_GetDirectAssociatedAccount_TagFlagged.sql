@@ -3,7 +3,7 @@ DROP procedure IF EXISTS `CTS_DC_GetDirectAssociatedAccount_TagFlagged`;
 
 DELIMITER $$
 USE `CTS_DataCenter`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_GetDirectAssociatedAccount_TagFlagged`(IN ip_CTSCustJson LONGTEXT)
+CREATE PROCEDURE `CTS_DC_GetDirectAssociatedAccount_TagFlagged`(IN ip_CTSCustJson LONGTEXT)
 BEGIN
 	/*
 		Created:	20191225@Casey.Huynh	
@@ -46,6 +46,7 @@ BEGIN
                  LEFT JOIN CTS_DataCenter.CustRetractEvidence AS crev
 					ON ce.CTSCustID = crev.CTSCustID
 						AND ce.EvidenceID = crev.EvidenceID
+                        AND ce.Level = 2
                  WHERE ce.SubscriberID	= tmpCust.SubscriberID
 					AND ce.CTSCustID	= tmpCust.CTSCustID
                     AND crev.CTSCustID IS NULL
