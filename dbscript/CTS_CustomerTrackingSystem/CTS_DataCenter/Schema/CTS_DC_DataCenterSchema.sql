@@ -15,6 +15,7 @@ Revisions:
             + Alter table CTS_DataCenter.CustomerCategory: Add ScanIntervalInSecond
             + Re-Design Table CTS_DataCenter.CustomerCategory_History
             + Add table CTS_DataCenter.CTSCustomerClassification_ScanStatus
+		- 20200706@Long.Luu: Associated Account Monitor	[Redmine ID: #134652]
 Reviewer:
 */
 
@@ -426,4 +427,29 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.SmartGroup (
 	, 	CreatedDate			DATETIME DEFAULT NULL
 	, 	PRIMARY KEY			PK_SmartGroup_CustIDGroupID(CustID, GroupID)
 	, 	INDEX				IX_SmartGroup_Username(Username)
+) ENGINE=INNODB DEFAULT CHARSET='UTF8MB4' COLLATE='UTF8MB4_UNICODE_CI';
+
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociatedAccountMonitor (
+		CTSCustID			INT UNSIGNED NOT NULL
+	,	Remark				VARCHAR(200) NOT NULL
+	, 	CreatedBy			INT UNSIGNED NOT NULL
+    , 	CreatedTime			DATETIME NOT NULL
+	, 	PRIMARY KEY			PK_AssociatedAccountMonitor_CTSCustID(CTSCustID)
+) ENGINE=INNODB DEFAULT CHARSET='UTF8MB4' COLLATE='UTF8MB4_UNICODE_CI';
+
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociatedAccountNewAssociation (
+		AccountNewAssID			BIGINT UNSIGNED AUTO_INCREMENT
+    ,	CTSCustID				INT UNSIGNED NOT NULL
+	,	UserName				VARCHAR(50) NOT NULL
+	, 	NewAssCount				SMALLINT UNSIGNED NOT NULL DEFAULT 0
+    , 	CreatedDate				DATE NOT NULL
+    , 	CreatedTime				DATETIME NOT NULL
+	, 	PRIMARY KEY				PK_AssociatedAccountNewAssociation_AccountNewAssID(AccountNewAssID)
+    ,	INDEX					IX_AssociatedAccountNewAssociation_CTSCustID(CTSCustID)
+    ,	INDEX					IX_AssociatedAccountNewAssociation_CreatedDate(CreatedDate)
+) ENGINE=INNODB DEFAULT CHARSET='UTF8MB4' COLLATE='UTF8MB4_UNICODE_CI';
+
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSUserNotificationParameter (
+		UserID					INT UNSIGNED PRIMARY KEY
+    ,	AccountNewAssID			BIGINT UNSIGNED DEFAULT 0
 ) ENGINE=INNODB DEFAULT CHARSET='UTF8MB4' COLLATE='UTF8MB4_UNICODE_CI';
