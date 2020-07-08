@@ -48,7 +48,8 @@ BEGIN
 	SET TmpUsernames.IsDuplicated = 1;
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-    SELECT 	u.UserName
+    SELECT 	c.CTSCustID
+		,	u.UserName
 		,	CASE 
 				WHEN u.IsDuplicated = 1 THEN 1 # duplicated username in the input list
                 WHEN c.CTSCustID IS NOT NULL AND a.CTSCustID IS NOT NULL THEN 2 # existed in AssociatedAccountMonitor

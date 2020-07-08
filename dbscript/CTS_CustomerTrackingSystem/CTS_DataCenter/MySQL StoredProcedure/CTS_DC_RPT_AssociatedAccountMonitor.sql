@@ -35,7 +35,7 @@ BEGIN
         ,	s.SubscriberName
         ,	a.Remark
         ,	l.UserName AS CreatedBy
-        ,	c.CreatedTime
+        ,	a.CreatedTime
     FROM CTS_DataCenter.AssociatedAccountMonitor AS a
 		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON a.CTSCustID = c.CTSCustID
         INNER JOIN CTS_Admin.Subscriber AS s ON c.SubscriberID = s.SubscriberID

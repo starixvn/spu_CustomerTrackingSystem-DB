@@ -26,7 +26,6 @@ BEGIN
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
     
-    SET @lv_CurrentDate 	= CURRENT_DATE();    
     SET @lv_CurrentDateTime	= NOW(); 
     SET @lv_SPName 		= 'CTS_DC_InsertAssociatedAccountMonitor';
     
@@ -40,18 +39,17 @@ BEGIN
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
 	
-	INSERT IGNORE INTO CTS_DataCenter.AssociatedAccountMonitor(CTSCustID, Remark, CreatedBy, CreatedDate, CreatedTime)
+	INSERT IGNORE INTO CTS_DataCenter.AssociatedAccountMonitor(CTSCustID, Remark, CreatedBy, CreatedTime)
 	SELECT  c.CTSCustID
 		,	ip_Remark
         ,	ip_UserID
-        ,	@lv_CurrentDate
         ,	@lv_CurrentDateTime
 	FROM TmpCTSCustIDsList AS c;
 
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 	
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-	VALUES(17, @lv_SPName, CONCAT('Add Associated Account Monitor: ip_CTSCustIDs_ ', ip_CTSCustIDs, ';Remark_', ip_Remark) , lv_CreatedDate, ip_UserID);
+	VALUES(17, @lv_SPName, CONCAT('Add Associated Account Monitor: ip_CTSCustIDs_ ', ip_CTSCustIDs, ';Remark_', ip_Remark) , @lv_CurrentDateTime, ip_UserID);
 	
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 END$$
