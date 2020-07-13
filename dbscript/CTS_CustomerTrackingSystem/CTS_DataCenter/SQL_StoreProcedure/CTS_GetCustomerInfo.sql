@@ -47,7 +47,7 @@ BEGIN;
 	END;
 
 	CREATE TABLE #tmpCustomers (
-			BatchId			TINYINT
+			RowNo			INT IDENTITY
 		,	CustId			INT NOT NULL PRIMARY KEY
 		,	CustStatusID	TINYINT NULL
 		,	Danger1			TINYINT NULL
@@ -115,16 +115,6 @@ BEGIN;
 		AND cust.roleid BETWEEN 1 AND 4
 	ORDER BY cust.custid;
 
-	WHILE @currentBatch <= @numberOfBatch
-	BEGIN	
-		UPDATE TOP (@rowSize) tcust WITH(ROWLOCK, UPDLOCK)
-		SET BatchId = @currentBatch
-		FROM #tmpCustomers AS tcust
-		WHERE BatchId IS NULL;
-
-		SET @currentBatch += 1;	
-	END;
-
 	-- Get MBC's Customer Status
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
 	SET a.CustStatusID = (CASE 
@@ -176,7 +166,7 @@ BEGIN;
 	WHERE cc.RowNum > 1;
 
 
-	SELECT	a.BatchId
+	SELECT	(RowNo/(@rowSize+1)) AS 'BatchId'
 		,	a.CustId
 		,	a.CustStatusID
 		,	a.Danger1
