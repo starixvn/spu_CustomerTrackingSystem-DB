@@ -3,7 +3,8 @@ USE CTS_DataCenter $$
 DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_GetAssociatedAccountNewAssNotification` $$
 
 CREATE PROCEDURE `CTS_DataCenter`.`CTS_DC_GetAssociatedAccountNewAssNotification`(
-	IN 	ip_UserID 		INT UNSIGNED
+		IN 	ip_UserID 			INT UNSIGNED
+    ,	IN 	ip_IsViewed 		BIT
 )
 BEGIN
 	/*
@@ -46,6 +47,7 @@ BEGIN
     SELECT 	a.CTSCustID
         ,	a.UserName
         ,	SUM(a.NewAssCount) AS NewAssocitionCount
+        ,	MAX(a.CreatedTime) AS CreatedDate
     FROM CTS_DataCenter.AssociatedAccountNewAssociation AS a
 	WHERE a.AccountNewAssID > lv_UserLastNotificationID
     GROUP BY a.CTSCustID
@@ -53,9 +55,11 @@ BEGIN
     
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
-    UPDATE CTS_DataCenter.CTSUserNotificationParameter
-    SET AccountNewAssID = lv_UserMaxNotificationID
-    WHERE UserID = ip_UserID;
+    IF (ip_IsViewed = 1) THEN		
+		UPDATE CTS_DataCenter.CTSUserNotificationParameter
+		SET AccountNewAssID = lv_UserMaxNotificationID
+		WHERE UserID = ip_UserID;
+	END IF;
     
 END$$
 DELIMITER ;

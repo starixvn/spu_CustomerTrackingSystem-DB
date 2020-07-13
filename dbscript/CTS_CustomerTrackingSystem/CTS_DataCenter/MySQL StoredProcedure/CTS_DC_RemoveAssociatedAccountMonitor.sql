@@ -35,7 +35,7 @@ BEGIN
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 	
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-	VALUES(18, @lv_SPName, CONCAT('Remove Associated Account Monitor: ip_CTSCustID_ ', ip_CTSCustID) , lv_CreatedDate, ip_UserID);
+	VALUES(18, @lv_SPName, CONCAT('Remove Associated Account Monitor: ip_CTSCustID_ ', ip_CTSCustID) , @lv_CurrentDate, ip_UserID);
 	
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 END$$
