@@ -47,7 +47,7 @@ BEGIN;
 	END;
 
 	CREATE TABLE #tmpCustomers (
-			BatchId			TINYINT
+			RowNo			INT IDENTITY
 		,	CustId			INT NOT NULL PRIMARY KEY
 		,	CustStatusID	TINYINT NULL
 		,	Danger1			TINYINT NULL
@@ -64,6 +64,19 @@ BEGIN;
 		,	Mrecommend		INT
 		,	Recommend		INT
 		,	CreatedDate		DATETIME
+	);
+
+			
+	-- Get Dangerous Customers
+	IF	OBJECT_ID('tempdb..#tmpDangerousCustomer') IS NOT NULL
+		DROP TABLE	#tmpDangerousCustomer;
+
+	CREATE TABLE #tmpDangerousCustomer(
+		[CustId]			INT NOT NULL
+	);
+
+	CREATE CLUSTERED INDEX IX_tmpDangerousCustomer_CustId ON #tmpDangerousCustomer(
+		[CustId]			ASC
 	);
 
 	INSERT INTO #tmpCustomers
@@ -102,16 +115,6 @@ BEGIN;
 		AND cust.roleid BETWEEN 1 AND 4
 	ORDER BY cust.custid;
 
-	WHILE @currentBatch <= @numberOfBatch
-	BEGIN	
-		UPDATE TOP (@rowSize) tcust WITH(ROWLOCK, UPDLOCK)
-		SET BatchId = @currentBatch
-		FROM #tmpCustomers AS tcust
-		WHERE BatchId IS NULL;
-
-		SET @currentBatch += 1;	
-	END;
-
 	-- Get MBC's Customer Status
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
 	SET a.CustStatusID = (CASE 
@@ -134,8 +137,36 @@ BEGIN;
 							WHEN (c.InactiveInfo = 0 AND c.SuspendedInfo = 0 AND c.ViewOnlyInfo = 0) THEN @CN88_ACCOUNTSTATUS_ACTIVE END)
 	FROM #tmpCustomers AS a
 		INNER JOIN bodb02.dbo.CS_CustomerStatus AS c WITH(NOLOCK) ON a.CustId = c.custid;
-		
-	SELECT	a.BatchId
+
+	-- Get Robot customers for MBC
+	INSERT INTO #tmpDangerousCustomer(CustId)
+	SELECT DISTINCT r.CustId
+	FROM DBONUSER.ON_USER.dbo.RobotUsers r WITH (NOLOCK)
+	WHERE r.[counter] >= 10;
+
+	-- Get Robot customers for CN88
+	INSERT INTO #tmpDangerousCustomer(CustId)
+	SELECT p.CustId
+	FROM bodb02.dbo.CS_ProblemAccount AS p WITH (NOLOCK);
+
+	-- Get Abnormal Customers
+	INSERT INTO #tmpDangerousCustomer(CustId)
+	SELECT a.CustId
+	FROM DBONUSER.ON_USER.dbo.AbnormalUsers AS a WITH(NOLOCK)
+	WHERE (flags & 4) = 4;
+	
+	-- Remove duplicated accounts
+	DELETE c WITH(ROWLOCK)
+	FROM #tmpDangerousCustomer AS c
+		INNER JOIN (
+				SELECT	cc.CustId
+					,	ROW_NUMBER() OVER(PARTITION BY cc.CustId ORDER BY cc.CustId) AS RowNum
+				FROM #tmpDangerousCustomer AS cc
+			) AS cc ON c.CustId = cc.CustId
+	WHERE cc.RowNum > 1;
+
+
+	SELECT	(RowNo/(@rowSize+1)) AS 'BatchId'
 		,	a.CustId
 		,	a.CustStatusID
 		,	a.Danger1
@@ -152,6 +183,8 @@ BEGIN;
 		,	a.Mrecommend
 		,	a.Recommend
 		,	a.CreatedDate
-	FROM #tmpCustomers AS a WITH(NOLOCK);
+		,	CASE WHEN d.CustId IS NULL THEN 0 ELSE 1 END AS IsDangerous
+	FROM #tmpCustomers AS a WITH(NOLOCK)
+		LEFT JOIN #tmpDangerousCustomer AS d WITH(NOLOCK) ON a.CustId = d.CustId;
 END;
 GO
