@@ -4,7 +4,7 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_GetAssociatedAccountNewAssNoti
 
 CREATE PROCEDURE `CTS_DataCenter`.`CTS_DC_GetAssociatedAccountNewAssNotification`(
 		IN 	ip_UserID 			INT UNSIGNED
-    ,	IN 	ip_IsViewed 		BIT
+    ,	IN 	ip_MaxNewAssID 		BIGINT
 )
 BEGIN
 	/*
@@ -19,47 +19,70 @@ BEGIN
 		Param's Explanation (filtered by):
 	*/
     
-    DECLARE lv_UserLastNotificationID 	BIGINT;
-    DECLARE lv_UserMaxNotificationID 	BIGINT;
+    DECLARE lv_UserCurrentFromNotificationID 	BIGINT;
+    DECLARE lv_UserCurrentToNotificationID 		BIGINT;
+    DECLARE lv_MaxNotificationID 				BIGINT;
+    DECLARE lv_IsSeen 							BIT;
     
 	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     
+    SELECT MAX(a.AccountNewAssID)
+    INTO lv_MaxNotificationID
+    FROM CTS_DataCenter.AssociatedAccountNewAssociation AS a;    
+    
+	SELECT u.FromNewAssID, u.ToNewAssID
+	INTO lv_UserCurrentFromNotificationID, lv_UserCurrentToNotificationID
+	FROM CTS_DataCenter.CTSUserNotificationParameter AS u
+	WHERE u.UserID = ip_UserID;
+            
+    IF (ip_MaxNewAssID <> 0) THEN		
+		SET 	lv_UserCurrentFromNotificationID = lv_UserCurrentToNotificationID
+			,	lv_UserCurrentToNotificationID = lv_MaxNotificationID
+			,	lv_IsSeen = 1;
+                        
+		UPDATE CTS_DataCenter.CTSUserNotificationParameter
+		SET 	FromNewAssID = lv_UserCurrentFromNotificationID
+			,	ToNewAssID = lv_UserCurrentToNotificationID
+		WHERE UserID = ip_UserID;        
+	END IF;
+    
     IF EXISTS (SELECT 1 FROM CTS_DataCenter.CTSUserNotificationParameter WHERE UserID = ip_UserID) THEN
-		BEGIN 
-			SELECT u.AccountNewAssID
-            INTO lv_UserLastNotificationID
-			FROM CTS_DataCenter.CTSUserNotificationParameter AS u
-			WHERE u.UserID = ip_UserID;
+		BEGIN             
+            IF (lv_MaxNotificationID = lv_UserCurrentToNotificationID) THEN
+				BEGIN
+					SET 	lv_IsSeen = 1;
+				END;
+			ELSE
+				BEGIN
+					SET 	lv_UserCurrentFromNotificationID = lv_UserCurrentToNotificationID
+						,	lv_UserCurrentToNotificationID = lv_MaxNotificationID
+						,	lv_IsSeen = 0;
+				END;
+			END IF;
 		END;
     ELSE
 		BEGIN
-			SET lv_UserLastNotificationID = 0;
+			SET 	lv_UserCurrentFromNotificationID = 0
+				,	lv_UserCurrentToNotificationID = lv_MaxNotificationID
+                ,	lv_IsSeen = 0;
 			
-			INSERT INTO CTS_DataCenter.CTSUserNotificationParameter(UserID, AccountNewAssID)
-			VALUES(ip_UserID, lv_UserLastNotificationID);
+			INSERT INTO CTS_DataCenter.CTSUserNotificationParameter(UserID,FromNewAssID,ToNewAssID)
+			VALUES(ip_UserID, lv_UserCurrentFromNotificationID, lv_UserCurrentToNotificationID);
 		END;
     END IF;
-    
-    SELECT MAX(a.AccountNewAssID)
-    INTO lv_UserMaxNotificationID
-    FROM CTS_DataCenter.AssociatedAccountNewAssociation AS a;
     
     SELECT 	a.CTSCustID
         ,	a.UserName
         ,	SUM(a.NewAssCount) AS NewAssocitionCount
         ,	MAX(a.CreatedTime) AS CreatedDate
+        ,	MAX(a.AccountNewAssID) AS MaxNewAssociationID
+        ,	lv_IsSeen AS IsSeen
     FROM CTS_DataCenter.AssociatedAccountNewAssociation AS a
-	WHERE a.AccountNewAssID > lv_UserLastNotificationID
+	WHERE a.AccountNewAssID > lv_UserCurrentFromNotificationID AND a.AccountNewAssID <= lv_UserCurrentToNotificationID
     GROUP BY a.CTSCustID
         ,	a.UserName;
     
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-    
-    IF (ip_IsViewed = 1) THEN		
-		UPDATE CTS_DataCenter.CTSUserNotificationParameter
-		SET AccountNewAssID = lv_UserMaxNotificationID
-		WHERE UserID = ip_UserID;
-	END IF;
     
 END$$
 DELIMITER ;

@@ -17,6 +17,6 @@ VALUES ('Insert Associated Account Monitor','Insert Associated Account Monitor')
 INSERT INTO CTS_Admin.LogType(LogTypeName, LogTypeDescription)
 VALUES ('Delete Associated Account Monitor','Delete Associated Account Monitor');
 
-INSERT INTO CTS_DataCenter.CTSUserNotificationParameter(UserID,AccountNewAssID)
-SELECT 229, MAX(a.CTSAssDevID)
+INSERT INTO CTS_DataCenter.CTSUserNotificationParameter(UserID,FromNewAssID,ToNewAssID)
+SELECT 229, MAX(a.CTSAssDevID), MAX(a.CTSAssDevID)
 FROM CTS_DataCenter.AssociationByDevice AS a;

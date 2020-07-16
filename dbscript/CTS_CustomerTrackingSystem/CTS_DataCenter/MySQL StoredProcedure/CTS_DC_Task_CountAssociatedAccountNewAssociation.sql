@@ -30,7 +30,7 @@ BEGIN
         WHERE CreatedDate < @DataDateRange;
     
 		# Get last scanned CTSAssDevID value
-        SELECT u.AccountNewAssID
+        SELECT u.ToNewAssID
         INTO LastScannedCTSAssDevID
         FROM CTS_DataCenter.CTSUserNotificationParameter AS u
         WHERE u.UserID = 229;
@@ -67,7 +67,8 @@ BEGIN
         
         # Update last scanned CTSAssDevID value
         UPDATE CTS_DataCenter.CTSUserNotificationParameter
-        SET AccountNewAssID = CurrentMaxCTSAssDevID
+        SET ToNewAssID = CurrentMaxCTSAssDevID
+			,	FromNewAssID = CurrentMaxCTSAssDevID
         WHERE UserID = 229;
 	END$$
 DELIMITER ;
