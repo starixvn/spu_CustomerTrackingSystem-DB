@@ -1,6 +1,6 @@
 DELIMITER $$
 DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_Task_CountAssociatedAccountNewAssociation $$
-CREATE DEFINER=`fps`@`%` PROCEDURE CTS_DataCenter.CTS_DC_Task_CountAssociatedAccountNewAssociation()
+CREATE PROCEDURE CTS_DataCenter.CTS_DC_Task_CountAssociatedAccountNewAssociation()
 BEGIN
 /*
 	Created: 20200706@Long.Luu
@@ -79,7 +79,8 @@ BEGIN
         # Remove unused data
         DELETE t
         FROM TmpAssociations AS t
-			INNER JOIN TmpHistoricalAssociations AS h ON t.SourceCTSCustID = h.SourceCTSCustID AND t.TargetCTSCustID = h.TargetCTSCustID
+			INNER JOIN TmpHistoricalAssociations AS h ON (t.SourceCTSCustID = h.SourceCTSCustID AND t.TargetCTSCustID = h.TargetCTSCustID) 
+				OR (t.SourceCTSCustID = h.TargetCTSCustID AND t.TargetCTSCustID = h.SourceCTSCustID)
 		WHERE t.AssociationDevID > LastScannedCTSAssDevID;
         
         DELETE FROM TmpAssociations
