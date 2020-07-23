@@ -27,6 +27,7 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, CustSubID			INT		UNSIGNED
 		, UserName			VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 		, UserName2			VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+        , RegisterName 		VARCHAR(50)
         , SiteID			INT
 		, Site				VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 		, RoleID			TINYINT
@@ -37,12 +38,17 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, Recommend			INT		UNSIGNED
         , LastLoginTime		TIMESTAMP(4)
         , CreatedDate		DATETIME
+        , CustStatusID		TINYINT
+        , Danger1			TINYINT
+        , Danger2			TINYINT
+        , Danger3			TINYINT
 		, PRIMARY KEY	PK_CTSCustomer_CTSCustID(CTSCustID)    
-		, UNIQUE KEY	UK_CTSCustomer_SubscriberID_UserName_UserName2(SubscriberID, UserName, UserName2)
-		, INDEX			IX_CTSCustomer_UserName_UserName2(UserName, UserName2)
-		, INDEX			IX_CTSCustomer_UserName2(UserName2)
-		, INDEX			IX_CTSCustomer_CustID_CustSubID(CustID, CustSubID)
-		, FULLTEXT 		IX_FullText_CTSCustomer_UserName_UserName2 (UserName,UserName2)
+		, UNIQUE KEY	UK_CTSCustomer_04062020_SubID_UserName_UserName2(SubscriberID, UserName, UserName2)
+		, INDEX			IX_CTSCustomer_04062020_UserName(UserName)
+		, INDEX			IX_CTSCustomer_04062020_UserName2(UserName2)
+        , INDEX			IX_CTSCustomer_04062020_RegisterName(RegisterName)
+		, INDEX			IX_CTSCustomer_04062020_CustID_CustSubID(CustID, CustSubID)
+        
 	) ENGINE=INNODB AUTO_INCREMENT=1;
 
 	CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociationByDevice(

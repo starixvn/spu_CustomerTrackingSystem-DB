@@ -7,8 +7,10 @@ DBName:	DCS_DataCenter
 Revisions:
 		[202002130@Casey.Huynh][130109]: 
 			+ DCS: Create Schema table `Transaction07`, ArchiveHistory, ArchiveStatus, ArchiveTrans07_DateTemp, ArchiveTrans07_TransTemp
-         
-
+        [20200723@Casey.Huynh]: 
+			+ Add Transaction90
+            + Update ArchiveHistory
+            + Remove ArchiveTransLog
 Reviewer: 
 */
 
@@ -256,9 +258,34 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.TransformTemp_LastLoginTime(
         , CreatedDate		DATETIME							NOT NULL	COMMENT 'Date Only'	NOT	NULL
         , InsertTime		TIMESTAMP(4)						NOT NULL
         
-        , DeviceCode			VARCHAR(32)						NULL
-        , FingerprintCode		VARCHAR(2000)					NULL
-        , FingerprintMoreInfo	TEXT	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	NULL
+        , PRIMARY KEY	PK_Transaction_TransID(TransID)
+        , INDEX			IX_Transaction_SubscriberIDAccountID(SubscriberID, AccountID, CreatedDate)
+        , INDEX			IX_Transaction_IPID_IP(IPID, IP)
+        , INDEX			IX_Transaction_CreatedDate(CreatedDate)
+        , INDEX			IX_Transaction_DeviceID(DeviceID)
+	 ) ENGINE=InnoDB;
+     
+     CREATE TABLE IF NOT EXISTS DCS_DataCenter.Transaction90(
+		TransID				BIGINT	UNSIGNED					NOT NULL
+		, LoginName			VARCHAR(100) 		CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'		NOT NULL
+        , TransTime			TIMESTAMP(4)						NOT	NULL                
+        , SubscriberID		INT									NULL
+        , AccountID			BIGINT			UNSIGNED			NULL
+        , URLID				BIGINT			UNSIGNED			NULL
+		, DeviceCodeID		BIGINT			UNSIGNED			NULL
+		, DeviceID			BIGINT			UNSIGNED			NULL
+        , FirstDeviceCode	VARCHAR(64)							NULL
+        , DeviceStatus		TINYINT								NULL
+        , DeviceFingerprintID	BIGINT			UNSIGNED		NULL
+        , UserAgentKey		VARCHAR(32)							NULL
+        , IP				VARCHAR(50)							NULL
+        , IPID				DECIMAL(50,0)						NULL
+        , ActionResultID 	BIGINT								NULL
+		, Flagged			SMALLINT							NULL		COMMENT 'captcha & browserless'		
+        , PluginID			BIGINT 								NULL
+        , TransStatus		BIT(16)								NULL
+        , CreatedDate		DATETIME							NOT NULL	COMMENT 'Date Only'	NOT	NULL
+        , InsertTime		TIMESTAMP(4)						NOT NULL
         
         , PRIMARY KEY	PK_Transaction_TransID(TransID)
         , INDEX			IX_Transaction_SubscriberIDAccountID(SubscriberID, AccountID, CreatedDate)
@@ -281,10 +308,24 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.TransformTemp_LastLoginTime(
         , Status				TINYINT
         , ScheduleTime			DATETIME				# Schedule Time  run
         , StartTime				TIMESTAMP(4)
+        , MovedEndTime			TIMESTAMP(4)
         , EndTime				TIMESTAMP(4)
-        
+        , FromTransID			BIGINT UNSIGNED
+        , ToTransID				BIGINT UNSIGNED
+        , TotalRecord        	INT
 		, PRIMARY KEY	PK_ArchiveHistory_ID(ID)
-        , INDEX 		IX_ArchiveHistory_ArchivedDate(ArchivedDate)
+        , UNIQUE KEY 	UX_ArchiveHistory_ArchivedDate(ArchivedDate)
+    ) ENGINE=InnoDB;
+    
+     CREATE TABLE IF NOT EXISTS DCS_DataCenter.ArchiveTransLog(
+		ID						INT UNSIGNED AUTO_INCREMENT
+        , FromTransId			BIGINT UNSIGNED
+        , ToTransId				BIGINT UNSIGNED
+        , Moved					BOOLEAN
+        , Deleted				BOOLEAN
+        , ArchivedDate			DATETIME			
+		, PRIMARY KEY	PK_ArchiveTransLog_ID(ID)
+        , INDEX 		IX_ArchiveTransLog_ArchivedDate(ArchivedDate)
     ) ENGINE=InnoDB;
     
     CREATE TABLE IF NOT EXISTS DCS_DataCenter.Temp_ArchiveTrans07Date(
