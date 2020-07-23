@@ -328,8 +328,3 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.TransformTemp_LastLoginTime(
         , INDEX 		IX_ArchiveTransLog_ArchivedDate(ArchivedDate)
     ) ENGINE=InnoDB;
     
-    CREATE TABLE IF NOT EXISTS DCS_DataCenter.Temp_ArchiveTrans07Date(
-        ArchivedDate			DATETIME				# Date is moved data    
-        , ScheduleTime			DATETIME
-		, PRIMARY KEY	PK_Temp_ArchiveTrans07Date_(ArchivedDate)
-    ) ENGINE=InnoDB;
