@@ -11,9 +11,8 @@ BEGIN
 	Revisions:
 	Param's Explanation (filtered by):
 	*/
-	DECLARE	vr_FromDate				DATETIME;
+
 	DECLARE	vr_ToDate				DATETIME;
-    DECLARE	vr_MoveDate				DATETIME;
     DECLARE vr_Id					INT DEFAULT 0;
     DECLARE vr_ArchiveId			INT DEFAULT 1;
  	DECLARE	vr_ArchiveDate			DATETIME;
@@ -21,9 +20,7 @@ BEGIN
 	
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;    
     
-	SET vr_FromDate = (SELECT MIN(CreatedDate) FROM DCS_DataCenter.Transaction07);
     SET vr_ToDate = DATE_SUB(CURRENT_DATE(), INTERVAL 6 DAY);   
-    SET vr_ArchiveDate = NOW();
     
 	INSERT IGNORE INTO DCS_DataCenter.ArchiveHistory(ArchivedDate, ScheduleTime, StartTime, Status, ArchiveID, FromTransID, ToTransID, TotalRecord)
 	SELECT	CreatedDate, NOW(),NULL , 0, vr_ArchiveId
@@ -31,7 +28,7 @@ BEGIN
 			, Max(TransID) AS ToTransID
 			, COUNT(1) AS TotalRecord
 	FROM 	DCS_DataCenter.Transaction07 AS ts07            
-	WHERE 	ts07.CreatedDate >= vr_FromDate
+	WHERE 	ts07.CreatedDate < vr_ToDate
 	GROUP BY CreatedDate;
 	
     SELECT 	ArchivedDate
