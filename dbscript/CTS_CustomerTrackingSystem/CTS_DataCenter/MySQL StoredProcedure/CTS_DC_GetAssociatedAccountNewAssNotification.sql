@@ -62,7 +62,7 @@ BEGIN
 		END;
     ELSE
 		BEGIN
-			SET 	lv_UserCurrentFromNotificationID = 0
+			SET 	lv_UserCurrentFromNotificationID = (lv_MaxNotificationID + 1)
 				,	lv_UserCurrentToNotificationID = lv_MaxNotificationID
                 ,	lv_IsSeen = 0;
 			
