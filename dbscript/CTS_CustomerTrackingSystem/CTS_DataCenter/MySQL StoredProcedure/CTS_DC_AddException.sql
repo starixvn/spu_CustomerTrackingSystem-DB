@@ -19,6 +19,7 @@ BEGIN
     DECLARE		vr_Error	INT DEFAULT 0;
     
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
+    SET SESSION default_collation_for_utf8mb4 = utf8mb4_0900_ai_ci;
     
     SET vr_ToCTSCustID = (	SELECT	CTSCustID 
 							FROM	CTS_DataCenter.CTSCustomer AS ct 
@@ -54,5 +55,6 @@ BEGIN
     END IF;
     
     SET op_Error = vr_Error;
+    SET SESSION default_collation_for_utf8mb4 = utf8mb4_general_ci;
 END$$	
 DELIMITER ;
