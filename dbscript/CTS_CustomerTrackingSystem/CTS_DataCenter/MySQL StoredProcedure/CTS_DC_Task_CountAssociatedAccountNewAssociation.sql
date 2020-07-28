@@ -12,8 +12,8 @@ BEGIN
 
 	Param's Explanation:
 */   
-		DECLARE LastScannedCTSAssDevID		BIGINT;
-        DECLARE CurrentMaxCTSAssDevID		BIGINT;
+		DECLARE LastScannedCTSAssDevID		BIGINT UNSIGNED;
+        DECLARE CurrentMaxCTSAssDevID		BIGINT UNSIGNED;
         SET @CurrentScanTime				= NOW();
         SET @CurrentScanDate				= CURRENT_DATE();
         SET @DataDateRange					= DATE(DATE_ADD(CURRENT_DATE(), INTERVAL -5 DAY));
@@ -47,10 +47,10 @@ BEGIN
         WHERE CreatedDate < @DataDateRange;
     
 		# Get last scanned CTSAssDevID value
-        SELECT u.ToNewAssID
+        SELECT CAST(s.ParameterValue AS UNSIGNED)
         INTO LastScannedCTSAssDevID
-        FROM CTS_DataCenter.CTSUserNotificationParameter AS u
-        WHERE u.UserID = 229;
+        FROM CTS_DataCenter.SystemParameter AS s
+        WHERE s.ParameterID = 1;
         
         # Get current max CTSAssDevID value
         SELECT MAX(a.CTSAssDevID)
@@ -104,9 +104,8 @@ BEGIN
 		WHERE m.CTSCustID IS NULL;
         
         # Update last scanned CTSAssDevID value
-        UPDATE CTS_DataCenter.CTSUserNotificationParameter
-        SET ToNewAssID = CurrentMaxCTSAssDevID
-			,	FromNewAssID = CurrentMaxCTSAssDevID
-        WHERE UserID = 229;
+        UPDATE CTS_DataCenter.SystemParameter
+        SET ParameterValue = CAST(CurrentMaxCTSAssDevID AS CHAR)
+        WHERE ParameterID = 1;
 	END$$
 DELIMITER ;
