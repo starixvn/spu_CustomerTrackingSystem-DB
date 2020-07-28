@@ -81,7 +81,8 @@ BEGIN
         ,	a.AccountNewAssID AS MaxNewAssociationID
         ,	CASE WHEN a.AccountNewAssID <= lv_UserCurrentFromNotificationID THEN 1 ELSE 0 END AS IsSeen
     FROM CTS_DataCenter.AssociatedAccountNewAssociation AS a
-	WHERE a.CreatedDate > @FromScanDate AND a.CreatedDate <= @ToScanDate;    
+	WHERE a.CreatedDate > @FromScanDate AND a.CreatedDate <= @ToScanDate
+    ORDER BY CreatedDate DESC;    
     
     /*
     SELECT 	a.CTSCustID

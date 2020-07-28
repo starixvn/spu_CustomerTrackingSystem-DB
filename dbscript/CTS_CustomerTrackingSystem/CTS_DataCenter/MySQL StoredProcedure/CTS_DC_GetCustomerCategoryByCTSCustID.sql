@@ -25,6 +25,7 @@ BEGIN
     WHERE a.IsUsedManually = 1
 		AND b.CategoryID IS NULL
 		AND a.IsActive = 1
+		AND a.CategoryID < 50
     ORDER BY a.DisplayOrder ASC; 
     
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
