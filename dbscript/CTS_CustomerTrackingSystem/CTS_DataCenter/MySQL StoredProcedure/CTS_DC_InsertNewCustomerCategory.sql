@@ -17,7 +17,7 @@ BEGIN
 	*/
 
 	SET @v_NewAccountCategory = 2;
-    SET @v_CreatedBy = 1027893;
+    SET @v_CreatedBy = 10278938;
     SET @v_CurrentDate = CURRENT_DATE();
     
 	DROP TEMPORARY TABLE IF EXISTS TmpNewCustomers;
