@@ -22,7 +22,10 @@ BEGIN
     DECLARE lv_UserCurrentFromNotificationID 	BIGINT;
     DECLARE lv_UserCurrentToNotificationID 		BIGINT;
     DECLARE lv_MaxNotificationID 				BIGINT;
-    DECLARE lv_IsSeen 							BIT;
+    DECLARE lv_IsSeen 							BIT;    
+    
+	SET @ToScanDate						= CURRENT_DATE();
+	SET @FromScanDate					= DATE(DATE_ADD(CURRENT_DATE(), INTERVAL -3 DAY));
     
 	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     
@@ -73,6 +76,16 @@ BEGIN
     
     SELECT 	a.CTSCustID
         ,	a.UserName
+        ,	a.NewAssCount AS NewAssocitionCount
+        ,	a.CreatedTime AS CreatedDate
+        ,	a.AccountNewAssID AS MaxNewAssociationID
+        ,	CASE WHEN a.AccountNewAssID <= lv_UserCurrentFromNotificationID THEN 1 ELSE 0 END AS IsSeen
+    FROM CTS_DataCenter.AssociatedAccountNewAssociation AS a
+	WHERE a.CreatedDate > @FromScanDate AND a.CreatedDate <= @ToScanDate;    
+    
+    /*
+    SELECT 	a.CTSCustID
+        ,	a.UserName
         ,	SUM(a.NewAssCount) AS NewAssocitionCount
         ,	MAX(a.CreatedTime) AS CreatedDate
         ,	MAX(a.AccountNewAssID) AS MaxNewAssociationID
@@ -80,7 +93,7 @@ BEGIN
     FROM CTS_DataCenter.AssociatedAccountNewAssociation AS a
 	WHERE a.AccountNewAssID > lv_UserCurrentFromNotificationID AND a.AccountNewAssID <= lv_UserCurrentToNotificationID
     GROUP BY a.CTSCustID
-        ,	a.UserName;
+        ,	a.UserName;*/        
     
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     

@@ -15,6 +15,7 @@ Revisions:
             + Alter table CTS_DataCenter.CustomerCategory: Add ScanIntervalInSecond
             + Re-Design Table CTS_DataCenter.CustomerCategory_History
             + Add table CTS_DataCenter.CTSCustomerClassification_ScanStatus
+            
 		- 20200706@Long.Luu: Associated Account Monitor	[Redmine ID: #134652]
 Reviewer:
 */
@@ -453,4 +454,12 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSUserNotificationParameter (
 		UserID					INT UNSIGNED PRIMARY KEY
     ,	FromNewAssID			BIGINT UNSIGNED DEFAULT 0
     ,	ToNewAssID				BIGINT UNSIGNED DEFAULT 0
+) ENGINE=INNODB DEFAULT CHARSET='UTF8MB4' COLLATE='UTF8MB4_UNICODE_CI';
+
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.SystemParameter (
+		ParameterID				SMALLINT UNSIGNED PRIMARY KEY
+    ,	ParameterName			VARCHAR(50)
+    ,	ParameterDesc			VARCHAR(200)
+    ,	ParameterDataType		VARCHAR(50)
+    ,	ParameterValue			VARCHAR(200)
 ) ENGINE=INNODB DEFAULT CHARSET='UTF8MB4' COLLATE='UTF8MB4_UNICODE_CI';
