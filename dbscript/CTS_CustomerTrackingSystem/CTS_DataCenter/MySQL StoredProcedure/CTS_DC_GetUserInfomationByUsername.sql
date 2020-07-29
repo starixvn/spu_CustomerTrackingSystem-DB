@@ -31,8 +31,9 @@ BEGIN
                 WHEN 4 THEN 'Super'
 			  END RoleName
             , ctsCus.SubscriberID
-            , null as SubscriberName            
+            , sub.SubscriberName       
         FROM CTS_DataCenter.CTSCustomer AS ctsCus
+			INNER JOIN CTS_Admin.Subscriber AS sub on ctsCus.SubscriberID = sub.SubscriberID
         WHERE ctsCus.Username = ip_username OR ctsCus.RegisterName = ip_username;
 END$$
 DELIMITER ;
