@@ -9,6 +9,7 @@ BEGIN
 		Original: 
 		Revisions:	
 					[20200303@Casey.Huynh]. Update Affected CreateBy = Root CreatedBy
+                    [20200805@Casey.Huynh]: Update Bussiness affect Crosssub and correct update value LastCTSAssDevID
 		Param's Explanation (filtered by):
 	*/
     
@@ -58,7 +59,6 @@ BEGIN
 	FROM		TempAssociationByDevice	AS tmp_ad
     INNER JOIN	CTS_DataCenter.AssociationByDevice AS ad
 				ON tmp_ad.DCSDeviceID = ad.DCSDeviceID
-					AND tmp_ad.SubscriberID = ad.SubscriberID
 	WHERE		tmp_ad.FromCTSCustID <> ad.CTSCustID;
     
     DELETE 		tmp_ca
@@ -83,7 +83,6 @@ BEGIN
 		FROM		CTS_DataCenter.CustEvidence	AS ce
 		INNER JOIN	TempCustAssociation AS tmp_ca
 					ON		ce.CTSCustID 	= tmp_ca.FromCTSCustID
-						AND ce.SubscriberID = tmp_ca.SubscriberID
 		WHERE		ce.CTSCustID	= tmp_ca.FromCTSCustID
 					AND ce.Level	= 0;    
 			
@@ -101,12 +100,12 @@ BEGIN
 			FROM		CTS_DataCenter.CustEvidence	AS ce
 			INNER JOIN	TempCustAssociation AS tmp_ca
 						ON	ce.CTSCustID = tmp_ca.ToCTSCustID
-							AND ce.SubscriberID = tmp_ca.SubscriberID
 			WHERE		ce.CTSCustID	= tmp_ca.ToCTSCustID
 						AND ce.Level	= 0;	
+                        
 	#=====Update ProcessAffectedEvidence ===============================================
     UPDATE	CTS_DataCenter.ProcessAffectedEvidence
-    SET		LastCTSAssDevID = (SELECT MAX(CTSAssDevID) FROM TempAssociationByDevice);
+    SET		LastCTSAssDevID = (SELECT IFNULL(MAX(CTSAssDevID),LastCTSAssDevID) FROM TempAssociationByDevice);
     
 	END IF;
 
