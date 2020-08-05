@@ -17,6 +17,7 @@ Revisions:
             + Add table CTS_DataCenter.CTSCustomerClassification_ScanStatus
             
 		- 20200706@Long.Luu: Associated Account Monitor	[Redmine ID: #134652]
+        - 20200806@Casey.Huynh: Add Index for table AssociationByDevice
 Reviewer:
 */
 
@@ -57,6 +58,7 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, PRIMARY KEY	PK_AssociationByDevice_CTSAssDevID(CTSAssDevID)
         , UNIQUE KEY	IX_AssociationByDevice_CTSCustID_DCSDeviceID(CTSCustID, DCSDeviceID)
         , INDEX			IX_AssociationByDevice_SubscriberID_DeviceID(SubscriberID, DCSDeviceID)
+        , INDEX			IX_AssociationByDevice_DCSDeviceID_CTSCustID( DCSDeviceID, CTSCustID)
 	) ENGINE=INNODB AUTO_INCREMENT=1;
 
 	CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociationByIP(
