@@ -16,7 +16,27 @@ BEGIN
     #===0.Declare==========================================================================================
     DECLARE	vr_LastCTSAssDevID BIGINT UNSIGNED;
     DECLARE	vr_CreatedDate	DATETIME;
-    DECLARE	vr_SPName 	VARCHAR(100) 	DEFAULT 'CTS_DC_TransformAssociation_AffectedEvidence';
+	### PERFORMANCE: START
+    DECLARE		vrExecKey		BIGINT	UNSIGNED;
+	DECLARE		vrSPName		VARCHAR(200) DEFAULT 'CTS_DC_TransformAssociation_AffectedEvidence' ;
+    DECLARE		vrStepID		INT;
+	DECLARE 	vrNotes	 		VARCHAR(500);
+	DECLARE 	vrStartTime		TIMESTAMP(4);
+	DECLARE		vrEndTime 		TIMESTAMP(4);
+	DECLARE		vrDuration 		BIGINT;	
+    DECLARE		vrTotalRecord	INT;
+    DECLARE		vrFromID		BIGINT;
+    DECLARE		vrToID			BIGINT;
+
+    SET		vrExecKey = CRC32((UUID_Short()));    
+    SET		vrNotes = '';		
+    SET 	vrStepID = 1;
+	SET 	vrStartTime = CURRENT_TIMESTAMP(4);  
+    
+    INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
+    VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);
+	  
+	### PERFORMANCE: END  
     
     SET	vr_CreatedDate = CURRENT_TIME();
     
@@ -26,15 +46,17 @@ BEGIN
 		CTSAssDevID		BIGINT	UNSIGNED
         , FromCTSCustID	BIGINT	UNSIGNED
         , DCSDeviceID	BIGINT	UNSIGNED
-        , SubscriberID	INT
+        , FromSubscriberID	INT
 	);
 	
 	DROP TEMPORARY TABLE IF EXISTS TempCustAssociation;    
 	CREATE TEMPORARY TABLE TempCustAssociation
 	( 	
+		
 		FromCTSCustID		BIGINT	UNSIGNED
+        , FromSubscriberID	INT
         , ToCTSCustID		BIGINT	UNSIGNED
-        , SubscriberID		INT
+        , ToSubscriberID	INT
 	);	
     
 	#===1. GET List of New Association=====================================================================
@@ -42,7 +64,7 @@ BEGIN
 
     SET vr_LastCTSAssDevID = (SELECT LastCTSAssDevID FROM CTS_DataCenter.ProcessAffectedEvidence LIMIT 1);
     
-    INSERT INTO TempAssociationByDevice(CTSAssDevID, FromCTSCustID, DCSDeviceID, SubscriberID)
+    INSERT INTO TempAssociationByDevice(CTSAssDevID, FromCTSCustID, DCSDeviceID, FromSubscriberID)
     SELECT		ad.CTSAssDevID
 				, ad.CTSCustID		AS FromCTSCustID
                 , ad.DCSDeviceID
@@ -52,10 +74,11 @@ BEGIN
     LIMIT		ip_Batch;    
     
     #===2.GET CTSCust Association with Step1 (CTSCust, Device, Subscriber)=================================
-    INSERT INTO	TempCustAssociation(FromCTSCustID, ToCTSCustID, SubscriberID)
+    INSERT INTO	TempCustAssociation(FromCTSCustID, FromSubscriberID, ToCTSCustID, ToSubscriberID)
     SELECT		DISTINCT tmp_ad.FromCTSCustID
-						, ad.CTSCustID AS ToCTSCustID
 						, tmp_ad.SubscriberID
+						, ad.CTSCustID AS ToCTSCustID
+						, ad.SubscriberID
 	FROM		TempAssociationByDevice	AS tmp_ad
     INNER JOIN	CTS_DataCenter.AssociationByDevice AS ad
 				ON tmp_ad.DCSDeviceID = ad.DCSDeviceID
@@ -67,12 +90,12 @@ BEGIN
 				ON	ce.LeastCTSCustID_Order = LEAST(tmp_ca.FromCTSCustID, tmp_ca.ToCTSCustID)
 					AND GreatestCTSCustID_Order = GREATEST(tmp_ca.FromCTSCustID, tmp_ca.ToCTSCustID);
                     
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ ;                
+                   
     #===3. Place Affected Evidence Level 0  Of (FromCTSCust) for (ToCTSCust)===============================
     IF EXISTS (SELECT 1 FROM TempCustAssociation LIMIT 1) THEN        
 		INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
 		SELECT	tmp_ca.ToCTSCustID
-				, ce.SubscriberID
+				, tmp_ca.ToSubscriberID
 				, ce.EvidenceID
 				, 'Auto New AssDev' AS Remark
 				, 2 				AS Level
@@ -89,7 +112,7 @@ BEGIN
     #===4. Place Affected Evidence Of Level 0 (ToCTSCust) for (ToCTSCust)==================================
 		INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
 			SELECT	tmp_ca.FromCTSCustID
-					, ce.SubscriberID
+					, tmp_ca.FromSubscriberID
 					, ce.EvidenceID
 					, 'Auto New AssDev' AS Remark
 					, 2 				AS Level
@@ -108,6 +131,26 @@ BEGIN
     SET		LastCTSAssDevID = (SELECT IFNULL(MAX(CTSAssDevID),LastCTSAssDevID) FROM TempAssociationByDevice);
     
 	END IF;
-
+    
+    #=====Update ProcessAffectedEvidence ===============================================
+    UPDATE	CTS_DataCenter.ProcessAffectedEvidence
+    SET		LastCTSAssDevID = (SELECT MAX(CTSAssDevID) FROM TempAssociationByDevice);
+	
+    ### PERFORMANCE
+	SET	vrEndTime = CURRENT_TIMESTAMP(4);
+    
+    SELECT 	Count(1), Min(tts.CTSAssDevID), Max(tts.CTSAssDevID)
+    INTO	vrTotalRecord, vrFromID, vrToID
+    FROM	TempAssociationByDevice AS tts;
+    
+    UPDATE	DCS_DataCenter.zzTracePerformance AS z
+    SET		z.EndTime = vrEndTime
+			, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
+            , z.TotalRecord = vrTotalRecord
+            , z.FromID = vrFromID
+            , z.ToID		= vrToID
+    WHERE	z.ExecKey = vrExecKey AND z.StepID = vrStepID;
+    ### PERFORMANCE: END
+	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ ;
 END$$	
 DELIMITER ;
