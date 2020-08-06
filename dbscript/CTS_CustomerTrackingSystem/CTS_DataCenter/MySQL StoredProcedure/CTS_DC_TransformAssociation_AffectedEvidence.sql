@@ -76,7 +76,7 @@ BEGIN
     #===2.GET CTSCust Association with Step1 (CTSCust, Device, Subscriber)=================================
     INSERT INTO	TempCustAssociation(FromCTSCustID, FromSubscriberID, ToCTSCustID, ToSubscriberID)
     SELECT		DISTINCT tmp_ad.FromCTSCustID
-						, tmp_ad.SubscriberID
+						, tmp_ad.FromSubscriberID
 						, ad.CTSCustID AS ToCTSCustID
 						, ad.SubscriberID
 	FROM		TempAssociationByDevice	AS tmp_ad
