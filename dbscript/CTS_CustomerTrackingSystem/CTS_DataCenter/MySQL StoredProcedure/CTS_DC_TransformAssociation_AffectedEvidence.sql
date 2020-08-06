@@ -124,17 +124,14 @@ BEGIN
 			INNER JOIN	TempCustAssociation AS tmp_ca
 						ON	ce.CTSCustID = tmp_ca.ToCTSCustID
 			WHERE		ce.CTSCustID	= tmp_ca.ToCTSCustID
-						AND ce.Level	= 0;	
-                        
+						AND ce.Level	= 0;	                        
+
+	END IF;
+    
 	#=====Update ProcessAffectedEvidence ===============================================
     UPDATE	CTS_DataCenter.ProcessAffectedEvidence
     SET		LastCTSAssDevID = (SELECT IFNULL(MAX(CTSAssDevID),LastCTSAssDevID) FROM TempAssociationByDevice);
     
-	END IF;
-    
-    #=====Update ProcessAffectedEvidence ===============================================
-    UPDATE	CTS_DataCenter.ProcessAffectedEvidence
-    SET		LastCTSAssDevID = (SELECT MAX(CTSAssDevID) FROM TempAssociationByDevice);
 	
     ### PERFORMANCE
 	SET	vrEndTime = CURRENT_TIMESTAMP(4);
