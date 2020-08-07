@@ -1,7 +1,7 @@
 DELIMITER $$
 DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_AddException$$
 
-CREATE PROCEDURE CTS_DataCenter.CTS_DC_AddException(IN ip_UserID INT, IN ip_FromCTSCustID BIGINT, IN ip_ToUserName VARCHAR(50), IN ip_Comment VARCHAR(200), OUT op_Error INT)
+CREATE PROCEDURE CTS_DataCenter.CTS_DC_AddException(IN ip_UserID INT, IN ip_FromCTSCustID BIGINT, IN ip_ToUserName VARCHAR(50), IN ip_Comment VARCHAR(500), OUT op_Error INT)
 BEGIN
 	/*
 		Created:	20200123@Casey.Huynh	
@@ -9,6 +9,7 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original: 
 		Revisions:
+			[20200807@Casey.Huynh]:[138925]: Change ip_Comment VARCHAR(200) To ip_Comment VARCHAR(500)
 		Param's Explanation (filtered by):
 			OutPut: vr_Error (1: User Is not Existing, 0: Add Successfully)
 	*/ 

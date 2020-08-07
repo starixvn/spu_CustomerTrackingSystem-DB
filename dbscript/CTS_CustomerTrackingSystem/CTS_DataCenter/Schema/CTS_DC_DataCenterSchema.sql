@@ -18,6 +18,7 @@ Revisions:
             
 		- 20200706@Long.Luu: Associated Account Monitor	[Redmine ID: #134652]
         - 20200806@Casey.Huynh: Add Index for table AssociationByDevice
+        - 20200807@Casey.Huynh:[138925] Chagne CustEvidence Structure for Cross Subscriber
 Reviewer:
 */
 
@@ -145,7 +146,7 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
         , UNIQUE INDEX	UX_Evidence_EvidenceGroupID_EvidenceCode(EvidenceGroupID, EvidenceCode)
 	) ENGINE=INNODB  AUTO_INCREMENT=1;
 
-	# =======CustEvidence============================================
+/*	# =======CustEvidence============================================
 	CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustEvidence(
 		CustEvidID			BIGINT		UNSIGNED	AUTO_INCREMENT	NOT NULL
 		, CTSCustID			BIGINT		UNSIGNED					NOT NULL
@@ -161,7 +162,7 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
         , PRIMARY KEY	PK_CustEvidence(SubscriberID, CTSCustID, FromCustID, EvidenceID, IsCreatedByMaster)
         , UNIQUE INDEX	UX_CustEvidence_CustEvidID(CustEvidID)
 	) ENGINE=INNODB  AUTO_INCREMENT=1;
-	
+*/	
     # =======CustRetractEvidence============================================
 	CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustRetractEvidence (
 		CTSCustID 			BIGINT		UNSIGNED	NOT NULL
@@ -308,7 +309,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.SportGroup (
 	, 	CreatedDate			DATETIME
     ,	CreatedBy			INT UNSIGNED
 	, 	PRIMARY KEY		PK_SportGroup_SportGroupIDDisplayOrder(SportGroupID,DisplayOrder)
-	, 	INDEX			IX_SportGroup_MainDBSportID(MainDBSportID)
+	, 	INDEX			IX_SportGroup_MainDBSportID(MainDBSportID));
 
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.SmartGroup (
 		GroupID				INT UNSIGNED NOT NULL
@@ -465,3 +466,23 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.SystemParameter (
     ,	ParameterDataType		VARCHAR(50)
     ,	ParameterValue			VARCHAR(200)
 ) ENGINE=INNODB DEFAULT CHARSET='UTF8MB4' COLLATE='UTF8MB4_UNICODE_CI';
+
+#- 20200807@Casey.Huynh: Chagne CustEvidence Structure
+
+	# =======CustEvidence============================================
+    DROP TABLE IF EXISTS CTS_DataCenter.CustEvidence;
+	CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustEvidence(
+		CustEvidID			BIGINT		UNSIGNED	AUTO_INCREMENT	NOT NULL
+		, CTSCustID			BIGINT		UNSIGNED					NOT NULL
+		, EvidenceID		SMALLINT								NOT NULL
+		, Remark			VARCHAR(500)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NULL
+		, Level				TINYINT									NOT NULL	COMMENT 'Level 1 - 2'
+		, FromCustID		BIGINT		UNSIGNED					NOT NULL
+		, CreatedDate		DATETIME								NOT NULL
+		, CreatedBy			INT										NOT NULL
+        
+        , PRIMARY KEY	PK_CustEvidence(CTSCustID, FromCustID, EvidenceID)
+        , INDEX			PK_CustEvidence(FromCustID, CTSCustID, EvidenceID)
+        , UNIQUE INDEX	UX_CustEvidence_CustEvidID(CustEvidID)
+	) ENGINE=INNODB  AUTO_INCREMENT=1;
+	

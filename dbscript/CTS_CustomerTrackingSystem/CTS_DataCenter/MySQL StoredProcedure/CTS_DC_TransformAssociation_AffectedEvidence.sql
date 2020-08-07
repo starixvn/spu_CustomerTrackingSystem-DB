@@ -10,6 +10,7 @@ BEGIN
 		Revisions:	
 					[20200303@Casey.Huynh]. Update Affected CreateBy = Root CreatedBy
                     [20200805@Casey.Huynh]: Update Bussiness affect Crosssub and correct update value LastCTSAssDevID
+					[20200807@Casey.Huynh]:[138925] Chagne CustEvidence Structure for Cross Subscriber : Remove SubscriberID and IsCreatedByMaster
 		Param's Explanation (filtered by):
 	*/
     
@@ -46,7 +47,6 @@ BEGIN
 		CTSAssDevID		BIGINT	UNSIGNED
         , FromCTSCustID	BIGINT	UNSIGNED
         , DCSDeviceID	BIGINT	UNSIGNED
-        , FromSubscriberID	INT
 	);
 	
 	DROP TEMPORARY TABLE IF EXISTS TempCustAssociation;    
@@ -54,9 +54,7 @@ BEGIN
 	( 	
 		
 		FromCTSCustID		BIGINT	UNSIGNED
-        , FromSubscriberID	INT
         , ToCTSCustID		BIGINT	UNSIGNED
-        , ToSubscriberID	INT
 	);	
     
 	#===1. GET List of New Association=====================================================================
@@ -64,21 +62,18 @@ BEGIN
 
     SET vr_LastCTSAssDevID = (SELECT LastCTSAssDevID FROM CTS_DataCenter.ProcessAffectedEvidence LIMIT 1);
     
-    INSERT INTO TempAssociationByDevice(CTSAssDevID, FromCTSCustID, DCSDeviceID, FromSubscriberID)
+    INSERT INTO TempAssociationByDevice(CTSAssDevID, FromCTSCustID, DCSDeviceID)
     SELECT		ad.CTSAssDevID
 				, ad.CTSCustID		AS FromCTSCustID
                 , ad.DCSDeviceID
-                , ad.SubscriberID
     FROM		CTS_DataCenter.AssociationByDevice AS ad
 	WHERE		ad.CTSAssDevID > vr_LastCTSAssDevID
     LIMIT		ip_Batch;    
     
     #===2.GET CTSCust Association with Step1 (CTSCust, Device, Subscriber)=================================
-    INSERT INTO	TempCustAssociation(FromCTSCustID, FromSubscriberID, ToCTSCustID, ToSubscriberID)
+    INSERT INTO	TempCustAssociation(FromCTSCustID, ToCTSCustID)
     SELECT		DISTINCT tmp_ad.FromCTSCustID
-						, tmp_ad.FromSubscriberID
 						, ad.CTSCustID AS ToCTSCustID
-						, ad.SubscriberID
 	FROM		TempAssociationByDevice	AS tmp_ad
     INNER JOIN	CTS_DataCenter.AssociationByDevice AS ad
 				ON tmp_ad.DCSDeviceID = ad.DCSDeviceID
@@ -93,9 +88,8 @@ BEGIN
                    
     #===3. Place Affected Evidence Level 0  Of (FromCTSCust) for (ToCTSCust)===============================
     IF EXISTS (SELECT 1 FROM TempCustAssociation LIMIT 1) THEN        
-		INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
+		INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
 		SELECT	tmp_ca.ToCTSCustID
-				, tmp_ca.ToSubscriberID
 				, ce.EvidenceID
 				, 'Auto New AssDev' AS Remark
 				, 2 				AS Level
@@ -110,9 +104,8 @@ BEGIN
 					AND ce.Level	= 0;    
 			
     #===4. Place Affected Evidence Of Level 0 (ToCTSCust) for (ToCTSCust)==================================
-		INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
+		INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
 			SELECT	tmp_ca.FromCTSCustID
-					, tmp_ca.FromSubscriberID
 					, ce.EvidenceID
 					, 'Auto New AssDev' AS Remark
 					, 2 				AS Level

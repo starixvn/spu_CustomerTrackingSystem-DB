@@ -21,6 +21,7 @@ proc_label: BEGIN
 		   - 20200225@Lex: Fix cocurrency issue when inserting
 		   - 20200227@Lex: Fix exclude exception
            - 20200513@Lex: Fix wrong subID mapping of level 2
+			[20200807@Casey.Huynh]:[138925] Chagne CustEvidence Structure for Cross Subscriber : Remove SubscriberID and IsCreatedByMaster
         
 		Param's Explanation (filtered by):			
         
@@ -50,8 +51,8 @@ proc_label: BEGIN
 	);
     
   #======INSERT FLAGGED EVIDENCE=================================    
-	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
-	VALUES (ip_CTSCustID, ip_SubscriberID, ip_EvidenceID, ip_Remark, 0, ip_CTSCustID, vr_CreatedDate, ip_UserID, ip_IsCreatedByMaster);
+	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
+	VALUES (ip_CTSCustID, ip_EvidenceID, ip_Remark, 0, ip_CTSCustID, vr_CreatedDate, ip_UserID);
 	
 	#=====INSERT AFFECTED EVIDENCE==========================
     DROP TABLE IF EXISTS tmpAffectedDevices;
@@ -76,8 +77,8 @@ proc_label: BEGIN
     
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
-	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
-    SELECT DISTINCT ass.CTSCustID, cust.SubscriberID, ip_EvidenceID, ip_Remark, 2, ip_CTSCustID, vr_CreatedDate, ip_UserID, ip_IsCreatedByMaster
+	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
+    SELECT DISTINCT ass.CTSCustID, ip_EvidenceID, ip_Remark, 2, ip_CTSCustID, vr_CreatedDate, ip_UserID
     FROM CTS_DataCenter.AssociationByDevice AS ass
     INNER JOIN CTS_DataCenter.CTSCustomer cust
 		   ON (cust.CTSCustID = ass.CTSCustID)
@@ -88,7 +89,7 @@ proc_label: BEGIN
     
     #=====LOG==========================
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-	VALUES(3, vr_SPName, CONCAT('Insert Evidence: ip_CTSCustID = ', ip_CTSCustID, ';ip_SubscriberID = ', ip_SubscriberID, ';ip_EvidenceID = ', ip_EvidenceID), vr_CreatedDate, ip_UserID);
+	VALUES(3, vr_SPName, CONCAT('Insert Evidence: ip_CTSCustID = ', ip_CTSCustID, ';ip_EvidenceID = ', ip_EvidenceID), vr_CreatedDate, ip_UserID);
     
 END$$
 DELIMITER ;
