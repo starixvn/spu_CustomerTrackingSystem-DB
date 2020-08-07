@@ -33,8 +33,7 @@ sp: BEGIN
     DROP TEMPORARY TABLE IF EXISTS tmpMultipleAccountEvidence;    
 	CREATE TEMPORARY TABLE tmpMultipleAccountEvidence 
     (	 
-			CTSCustID		BIGINT UNSIGNED     
-		,	SubscriberID	INT UNSIGNED
+			CTSCustID		BIGINT UNSIGNED    
         , 	EvidenceID		SMALLINT UNSIGNED
         , 	Remark			VARCHAR(500)  
         , 	PRIMARY KEY	tmpMultipleAccountEvidence(CTSCustID,EvidenceID) 
@@ -58,7 +57,6 @@ sp: BEGIN
     CREATE TEMPORARY TABLE tmpAccountList (
 			CustID			BIGINT UNSIGNED    
 		,	CTSCustID		BIGINT UNSIGNED    
-        ,	SubscriberID		INT UNSIGNED
     );
     
 	SET @sql = CONCAT("INSERT INTO tmpAccountList (CustID) VALUES ('", REPLACE(ip_CustIds, ",", "'),('"),"');");
@@ -79,23 +77,20 @@ sp: BEGIN
     SET SQL_SAFE_UPDATES = 0;
     UPDATE tmpAccountList AS t
 		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON t.CustID = c.CustID AND c.CustSubID = 0
-    SET t.CTSCustID = c.CTSCustID
-		,	t.SubscriberID = c.SubscriberID;
+    SET t.CTSCustID = c.CTSCustID;
         
 	UPDATE tmpEvidenceList AS t
 		INNER JOIN CTS_DataCenter.Evidence AS c ON t.EvidenceCode = c.EvidenceCode
     SET t.EvidenceID = c.EvidenceID;    
     
-    INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
+    INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
 	SELECT 	t.CTSCustID
-		,	t.SubscriberID
 		,	e.EvidenceID
         ,	''
         ,	0 
         ,	t.CTSCustID
         ,	vr_CreatedDate
         ,	@ip_UserID
-        ,	@ip_IsCreatedByMaster
     FROM tmpAccountList AS t
 		CROSS JOIN tmpEvidenceList AS e;
     
@@ -103,7 +98,7 @@ sp: BEGIN
     INSERT INTO tmpAffectedDevices(CTSCustID, DCSDeviceID)
     SELECT DISTINCT t.CTSCustID, a.DCSDeviceID
     FROM CTS_DataCenter.AssociationByDevice AS a    
-		INNER JOIN tmpAccountList AS t ON a.CTSCustID = t.CTSCustID AND a.SubscriberID = t.SubscriberID;
+		INNER JOIN tmpAccountList AS t ON a.CTSCustID = t.CTSCustID;
 
     INSERT INTO tmpAssociationException(FromCTSCustID, ToCTSCustID)
     SELECT DISTINCT t.CTSCustID
@@ -113,8 +108,8 @@ sp: BEGIN
 													OR e.GreatestCTSCustID_Order = t.CTSCustID;
     
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;    
-	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
-    SELECT DISTINCT a.CTSCustID, c.SubscriberID, ev.EvidenceID, '', 2, t.CTSCustID, vr_CreatedDate, @ip_UserID, @ip_IsCreatedByMaster
+	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID,EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
+    SELECT DISTINCT a.CTSCustID, ev.EvidenceID, '', 2, t.CTSCustID, vr_CreatedDate, @ip_UserID
     FROM tmpAccountList AS t
 		INNER JOIN tmpAffectedDevices AS d ON t.CTSCustID = d.CTSCustID
 		INNER JOIN CTS_DataCenter.AssociationByDevice AS a ON a.DCSDeviceID = d.DCSDeviceID
