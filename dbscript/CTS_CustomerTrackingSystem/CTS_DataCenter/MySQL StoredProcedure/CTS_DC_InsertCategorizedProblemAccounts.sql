@@ -69,7 +69,11 @@ BEGIN
                             WHEN MainDBCategoryID = 255 THEN 160
 						END;
     
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
+    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;     
+    DELETE c
+    FROM CTS_DataCenter.CTSCustomerClassification AS c
+    INNER JOIN Tmp_ProblemAccounts AS t ON	t.CustID = c.CustID
+    WHERE c.CategoryID < 50;
     
 	UPDATE Tmp_ProblemAccounts AS t
 		LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS c ON t.CustID = c.CustID
@@ -80,7 +84,7 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON t.CustID = c.CustID
 	SET		t.CTSCustID = c.CTSCustID
 		, 	t.SubscriberID = c.SubscriberID
-	WHERE t.IsNew = 1;      	
+	WHERE t.IsNew = 1;      	    
     
     DELETE c
     FROM CTS_DataCenter.CTSCustomerClassification AS c
