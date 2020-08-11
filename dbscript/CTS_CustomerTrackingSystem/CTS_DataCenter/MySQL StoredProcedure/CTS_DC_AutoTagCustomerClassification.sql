@@ -45,6 +45,13 @@ BEGIN
     SET  v_createdBy = 10278938;
 	SET  v_LastScannedDate = CURRENT_DATE();
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_ProblemAccounts;    
+	CREATE TEMPORARY TABLE Temp_ProblemAccounts 
+    (	  
+		  CustID		BIGINT UNSIGNED        
+        , PRIMARY KEY	PK_Temp_ProblemAccounts_CustID(CustID)   
+    );     
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;    
 	CREATE TEMPORARY TABLE Temp_NewClassification 
     (	  
@@ -88,7 +95,17 @@ BEGIN
     #=========GET CTSCustID IF Existing
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
     
-    SET vrNotes = CONCAT(vrNotes, ' 1.', CURRENT_TIME());
+    INSERT INTO Temp_ProblemAccounts(CustID)
+    SELECT DISTINCT c.CustID
+    FROM CTS_DataCenter.CTSCustomerClassification AS c
+	WHERE c.CategoryID > 50;
+    
+    DELETE n
+    FROM Temp_NewClassification AS n
+    LEFT JOIN Temp_ProblemAccounts AS t ON n.CustID = t.CustID
+    WHERE t.CustID IS NOT NULL;
+    
+    SET vrNotes = CONCAT(vrNotes, ' 1.', CURRENT_TIME());    
     
     UPDATE 		Temp_NewClassification AS tmpCla
     INNER JOIN	CTS_DataCenter.CTSCustomer AS cus 
