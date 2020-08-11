@@ -100,6 +100,7 @@ BEGIN
     UPDATE CTS_DataCenter.CTSCustomerClassification AS c
     INNER JOIN Tmp_ProblemAccounts AS t ON	t.CustID = c.CustID
  	SET  	c.CategoryID = t.CategoryID 
+		,	c.SportGroup = 0
 		,	c.LastModifiedDate = lv_CurrentDateTime
         , 	c.LastModifiedBy = lv_CreatedBy
         , 	c.LastScannedDate = DATE(lv_CurrentDateTime)
