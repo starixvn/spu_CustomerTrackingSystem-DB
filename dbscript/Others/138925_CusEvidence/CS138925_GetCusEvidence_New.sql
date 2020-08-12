@@ -38,11 +38,9 @@ BEGIN
 		INSERT IGNORE INTO CTS_DataCenter.CS138925_CustEvidence_New
 		SELECT  	ce.*, cus.CTSCustID, cus.SubscriberID
 		FROM 		CTS_DataCenter.CustEvidence AS ce
-        INNER JOIN 	CTS_DataCenter.CTSCustomer AS cus
-					ON ce.CTSCustID = cus.CTSCustID
 		WHERE 		CustEvidID > vrCustEvidID
 		ORDER BY 	CustEvidID ASC 
-		LIMIT 10000;
+		LIMIT 		10000;
 		
 		SET vrCustEvidID = (SELECT MAX(CustEvidID) FROM CTS_DataCenter.CS138925_CustEvidence_New);
     END WHILE;
