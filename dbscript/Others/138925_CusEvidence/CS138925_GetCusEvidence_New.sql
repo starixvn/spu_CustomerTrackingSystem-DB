@@ -14,29 +14,28 @@ BEGIN
     DECLARE vrCustEvidID INT DEFAULT 0;
     DECLARE vrMaxCustEvidID INT ;
     #===0.Declare==========================================================================================
+    
 	CREATE TABLE IF NOT EXISTS CTS_DataCenter.CS138925_CustEvidence_New(
-		CustEvidID			BIGINT		UNSIGNED					NOT NULL
+		CustEvidID			BIGINT		UNSIGNED	AUTO_INCREMENT	NOT NULL
 		, CTSCustID			BIGINT		UNSIGNED					NOT NULL
-        , SubscriberID		INT										NOT NULL
 		, EvidenceID		SMALLINT								NOT NULL
 		, Remark			VARCHAR(500)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NULL
 		, Level				TINYINT									NOT NULL	COMMENT 'Level 1 - 2'
 		, FromCustID		BIGINT		UNSIGNED					NOT NULL
 		, CreatedDate		DATETIME								NOT NULL
 		, CreatedBy			INT										NOT NULL
-		, IsCreatedByMaster	TINYINT									NOT NULL
-									
-        , PRIMARY KEY	PK_CustEvidence_CustEvidID(CustEvidID)
-        , UNIQUE INDEX	UX_CustEvidence_CTSCustIDFromCustIDEvidenceID(CTSCustID, FromCustID, EvidenceID)
-        , INDEX 		IX_CustEvidence_FromCustIDCTSCustIDEvidenceID(CTSCustID, FromCustID)
-	) ENGINE=INNODB;   
+        
+        , PRIMARY KEY	PK_CustEvidence(CTSCustID, FromCustID, EvidenceID)
+        , INDEX			PK_CustEvidence(FromCustID, CTSCustID, EvidenceID)
+        , UNIQUE INDEX	UX_CustEvidence_CustEvidID(CustEvidID)
+	) ENGINE=INNODB  AUTO_INCREMENT=1;  
     
     SET vrMaxCustEvidID = (SELECT MAX(CustEvidID) FROM CTS_DataCenter.CustEvidence);
     
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED ;
 	WHILE (vrCustEvidID < vrMaxCustEvidID)
     DO
-		INSERT IGNORE INTO CTS_Adhoc.CS138925_CustEvidence_New
+		INSERT IGNORE INTO CTS_DataCenter.CS138925_CustEvidence_New
 		SELECT  	ce.*, cus.CTSCustID, cus.SubscriberID
 		FROM 		CTS_DataCenter.CustEvidence AS ce
         INNER JOIN 	CTS_DataCenter.CTSCustomer AS cus
