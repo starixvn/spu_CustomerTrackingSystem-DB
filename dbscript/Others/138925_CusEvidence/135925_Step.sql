@@ -43,7 +43,8 @@ CALL CTS_Adhoc.CS138925_GetCusEvidence_NewGAP();
 	CTS_DC_API_AddEvidencesForCustomers
     CTS_DC_GetCustomerFlagInfo
     CTS_DC_GetDirectAssociatedAccount_TagFlagged
-    CTS_DC_TransformAssociation_AffectedEvidence    
+    CTS_DC_TransformAssociation_AffectedEvidence 
+    CTS_DC_RemoveException
     
 #2.4: QC Verify PRO: @Lex.Khuuất
 

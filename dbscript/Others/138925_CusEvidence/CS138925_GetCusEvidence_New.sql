@@ -35,8 +35,8 @@ BEGIN
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED ;
 	WHILE (vrCustEvidID < vrMaxCustEvidID)
     DO
-		INSERT IGNORE INTO CTS_DataCenter.CS138925_CustEvidence_New
-		SELECT  	ce.*
+		INSERT IGNORE INTO CTS_DataCenter.CS138925_CustEvidence_New(CustEvidID, CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
+		SELECT  	ce.CustEvidID, ce.CTSCustID, ce.EvidenceID, ce.Remark, ce.Level, ce.FromCustID, ce.CreatedDate, ce.CreatedBy
 		FROM 		CTS_DataCenter.CustEvidence AS ce
 		WHERE 		CustEvidID > vrCustEvidID
 		ORDER BY 	CustEvidID ASC 
