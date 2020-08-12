@@ -3,7 +3,7 @@ DROP procedure IF EXISTS `CTS_DC_GetCustomerFlagInfo`;
 
 DELIMITER $$
 USE `CTS_DataCenter`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_GetCustomerFlagInfo`(IN ip_SubscriberID INT, IN ip_CTSCustID INT)
+CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_GetCustomerFlagInfo`(IN ip_CTSCustID INT)
 BEGIN
 	/*
 		Created:	20191225@Casey.Huynh	

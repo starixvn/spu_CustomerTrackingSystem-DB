@@ -346,7 +346,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.SmartGroupHistory (
     , 	PRIMARY KEY			PK_SmartGroup_CustIDGroupID(CustID, CreatedDate)
     , 	INDEX				IX_SmartGroup_Username(Username)
 ) ENGINE=INNODB DEFAULT CHARSET='UTF8MB4' COLLATE='UTF8MB4_UNICODE_CI';
-    , 	INDEX			IX_SportGroup_IsActive(IsActive)
+  
 ) ENGINE=INNODB AUTO_INCREMENT=1;
 
 CREATE TABLE IF NOT EXISTS 	CTS_DataCenter.CustomerCategory (

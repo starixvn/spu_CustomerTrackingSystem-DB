@@ -1,19 +1,35 @@
-/***Step01: Move data to New table ******/
+/****STEP01: COPY DATE TO NEW TABLE****/
+#1.1: GET ALL DATA @Casey.Huynh
 CALL CTS_Adhoc.CS138925_GetCusEvidence_New();
 
-/***Step02: UM*/
-#2.1: Remove Evidence
+#1.2: GET GAP AND DELETE Evidence*****/
+CALL CTS_Adhoc.CS138925_GetCusEvidence_NewGAP(); 
+
 DELETE		 	ed
-FROM 			CTS_Adhoc.CS138925_CustEvidence_BK	AS ed
+FROM 			CTS_Adhoc.CS138925_CustEvidence_New	AS ed
 LEFT JOIN  		CTS_DataCenter.CustEvidence AS cus
 				ON ed.CustEvidID = cus.CustEvidID
 WHERE			cus.CustEvidID IS NULL;
 
-#2.2: Copy Evidence: GAP
+/****STEP02: START UM****/
+#2.1. Web Deploy @Long.Luu
+
+#2.2: Remove Evidence  @Casey.Huynh
+DELETE		 	ed
+FROM 			CTS_Adhoc.CS138925_CustEvidence_New	AS ed
+LEFT JOIN  		CTS_DataCenter.CustEvidence AS cus
+				ON ed.CustEvidID = cus.CustEvidID
+WHERE			cus.CustEvidID IS NULL;
+
 CALL CTS_Adhoc.CS138925_GetCusEvidence_NewGAP();
 
-#2.3: Rename Table 
+#2.3: Rename Table AND Deploy SPs 
+#2.3a
+	 Rename Table "CTS_DataCenter.CustEvidence" to "CTS_DataCenter.CustEvidence_BK"
+	 Rename Table "CTS_DataCenter.CS138925_CustEvidence_New" to "CTS_DataCenter.CustEvidence"
+#2.3b
+	Deploy SPs (Original and xtest)
+    
+#2.4: QC Verify PRO
 
-Rename Table "CTS_DataCenter.CustEvidence" to "CTS_DataCenter.CustEvidence_BK"
-
-Rename Table "CTS_DataCenter.CS138925_CustEvidence_New" to "CTS_DataCenter.CustEvidence"
+/******END UM************/

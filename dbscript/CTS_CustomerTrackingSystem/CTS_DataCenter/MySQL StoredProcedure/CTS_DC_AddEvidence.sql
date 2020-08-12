@@ -3,12 +3,11 @@ USE `CTS_DataCenter` $$
 DROP PROCEDURE IF EXISTS CTS_DC_AddEvidence $$
 
 CREATE PROCEDURE CTS_DC_AddEvidence (
-	IN ip_CTSCustID BIGINT,    
-    IN ip_SubscriberID INT,
+	IN ip_CTSCustID BIGINT,        
     IN ip_EvidenceID SMALLINT,
     IN ip_Remark VARCHAR(500),    
-    IN ip_UserID INT,
-    IN ip_IsCreatedByMaster BOOL)
+    IN ip_UserID INT
+)
     
 proc_label: BEGIN
 	/*

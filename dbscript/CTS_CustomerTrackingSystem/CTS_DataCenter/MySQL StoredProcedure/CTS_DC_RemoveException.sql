@@ -1,7 +1,7 @@
 DELIMITER $$
 DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_RemoveException$$
 
-CREATE PROCEDURE CTS_DataCenter.CTS_DC_RemoveException(IN ip_UserID INT, IN ip_FromSubscriberID INT, IN ip_FromCTSCustID BIGINT, IN ip_ToCTSCustID BIGINT)
+CREATE PROCEDURE CTS_DataCenter.CTS_DC_RemoveException(IN ip_UserID INT, IN ip_FromCTSCustID BIGINT, IN ip_ToCTSCustID BIGINT)
 BEGIN
 	/*
 		Created:	20200123@Casey.Huynh	

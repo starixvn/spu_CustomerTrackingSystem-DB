@@ -27,8 +27,7 @@ BEGIN
 				FromCTSCustID 
 				, ToCTSCustID
 				)                
-	SELECT 	tmpAss.SubscriberID
-			, tmpAss.FromCTSCustID
+	SELECT 	tmpAss.FromCTSCustID
 			, tmpAss.ToCTSCustID
 			 FROM
 			   JSON_TABLE(
