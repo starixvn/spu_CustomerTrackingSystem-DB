@@ -64,8 +64,7 @@ proc_label: BEGIN
     INSERT INTO tmpAffectedDevices(DCSDeviceID)
     SELECT DISTINCT ass.DCSDeviceID
     FROM CTS_DataCenter.AssociationByDevice ass    
-    WHERE ass.CTSCustID = ip_CTSCustID
-		AND  ass.SubscriberID = ip_SubscriberID;
+    WHERE ass.CTSCustID = ip_CTSCustID;
 
 	#======GET EXCEPTION LIST=================================
     INSERT INTO tmpExclusion(CTSCustID)

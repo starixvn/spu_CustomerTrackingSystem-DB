@@ -27,7 +27,7 @@ sp: BEGIN
     DECLARE	vr_SPName 		VARCHAR(100) DEFAULT 'CTS_DC_API_AddEvidencesForCustomers';  
     DECLARE	vr_CreatedDate	DATETIME;      
     SET	vr_CreatedDate 		= CURRENT_TIME();
-	SET @ip_IsCreatedByMaster = 1;
+
     SET @ip_UserID = 1027893;
      
     DROP TEMPORARY TABLE IF EXISTS tmpMultipleAccountEvidence;    

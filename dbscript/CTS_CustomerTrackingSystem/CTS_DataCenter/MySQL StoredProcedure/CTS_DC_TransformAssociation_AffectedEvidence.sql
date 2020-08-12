@@ -88,7 +88,7 @@ BEGIN
                    
     #===3. Place Affected Evidence Level 0  Of (FromCTSCust) for (ToCTSCust)===============================
     IF EXISTS (SELECT 1 FROM TempCustAssociation LIMIT 1) THEN        
-		INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
+		INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
 		SELECT	tmp_ca.ToCTSCustID
 				, ce.EvidenceID
 				, 'Auto New AssDev' AS Remark
@@ -96,7 +96,6 @@ BEGIN
 				, tmp_ca.FromCTSCustID
 				, vr_CreatedDate	AS CreatedDate
 				, ce.CreatedBy 		AS CreatedBy
-                , ce.IsCreatedByMaster 
 		FROM		CTS_DataCenter.CustEvidence	AS ce
 		INNER JOIN	TempCustAssociation AS tmp_ca
 					ON		ce.CTSCustID 	= tmp_ca.FromCTSCustID
@@ -104,7 +103,7 @@ BEGIN
 					AND ce.Level	= 0;    
 			
     #===4. Place Affected Evidence Of Level 0 (ToCTSCust) for (ToCTSCust)==================================
-		INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
+		INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
 			SELECT	tmp_ca.FromCTSCustID
 					, ce.EvidenceID
 					, 'Auto New AssDev' AS Remark
@@ -112,7 +111,6 @@ BEGIN
 					, tmp_ca.ToCTSCustID
 					, vr_CreatedDate	AS CreatedDate
 					, ce.CreatedBy 		AS CreatedBy
-                    , ce.IsCreatedByMaster
 			FROM		CTS_DataCenter.CustEvidence	AS ce
 			INNER JOIN	TempCustAssociation AS tmp_ca
 						ON	ce.CTSCustID = tmp_ca.ToCTSCustID

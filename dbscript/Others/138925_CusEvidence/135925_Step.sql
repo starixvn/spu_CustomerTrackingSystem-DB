@@ -28,7 +28,18 @@ CALL CTS_Adhoc.CS138925_GetCusEvidence_NewGAP();
 	 Rename Table "CTS_DataCenter.CustEvidence" to "CTS_DataCenter.CustEvidence_BK"
 	 Rename Table "CTS_DataCenter.CS138925_CustEvidence_New" to "CTS_DataCenter.CustEvidence"
 #2.3b
-	Deploy SPs (Original and xtest)
+	#==DROP SP===
+    ;DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_GetDirectAssociatedAccount_TagAffected;
+    
+    #==Deploy SPs (Original and xtest):
+    CTS_DC_AddEvidence
+	CTS_DC_AddException
+	CTS_DC_AddMultiCustomerEvidence
+	CTS_DC_API_AddEvidencesForCustomers
+    CTS_DC_GetCustomerFlagInfo
+    CTS_DC_GetDirectAssociatedAccount_TagFlagged
+    CTS_DC_TransformAssociation_AffectedEvidence
+    
     
 #2.4: QC Verify PRO
 
