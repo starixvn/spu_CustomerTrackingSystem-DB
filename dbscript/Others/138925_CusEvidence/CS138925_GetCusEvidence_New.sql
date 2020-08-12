@@ -36,7 +36,7 @@ BEGIN
 	WHILE (vrCustEvidID < vrMaxCustEvidID)
     DO
 		INSERT IGNORE INTO CTS_DataCenter.CS138925_CustEvidence_New
-		SELECT  	ce.*, cus.CTSCustID, cus.SubscriberID
+		SELECT  	ce.*
 		FROM 		CTS_DataCenter.CustEvidence AS ce
 		WHERE 		CustEvidID > vrCustEvidID
 		ORDER BY 	CustEvidID ASC 
