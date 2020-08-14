@@ -26,6 +26,14 @@ BEGIN
     
 	SET @ToScanDate						= CURRENT_DATE();
 	SET @FromScanDate					= DATE(DATE_ADD(CURRENT_DATE(), INTERVAL -3 DAY));
+
+	DROP TEMPORARY TABLE IF EXISTS Temp_Union_CTSUserNotificationParameter;
+    CREATE TEMPORARY TABLE Temp_Union_CTSUserNotificationParameter 
+    (	
+		`AccountNewAssID` BIGINT UNSIGNED,
+		`GrantedFrom` DATETIME DEFAULT NULL,
+		`GrantedTo` DATETIME DEFAULT NULL
+    );
     
 	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     
@@ -73,7 +81,35 @@ BEGIN
 			VALUES(ip_UserID, lv_UserCurrentFromNotificationID, lv_UserCurrentToNotificationID);
 		END;
     END IF;
+
+	INSERT INTO Temp_Union_CTSUserNotificationParameter(AccountNewAssID, GrantedFrom, GrantedTo)
+		SELECT a.AccountNewAssID
+			, a.GrantedFrom
+			, a.GrantedTo
+		FROM (
+            SELECT ass.AccountNewAssID, his.GrantedFrom, his.GrantedTo
+				FROM CTS_DataCenter.CTSUserPermission_History his
+					INNER JOIN CTS_DataCenter.AssociatedAccountNewAssociation ass ON  his.GrantedFrom <= ass.CreatedTime AND his.GrantedTo >= ass.CreatedTime
+				WHERE his.UserID = ip_UserID AND his.Type = "AssociatedAccountMonitor"
+				Union
+				SELECT ass.AccountNewAssID, his.GrantedFrom, his.GrantedTo
+				FROM CTS_DataCenter.CTSUserPermission_History his
+					INNER JOIN CTS_DataCenter.AssociatedAccountNewAssociation ass ON  his.GrantedFrom <= ass.CreatedTime AND his.GrantedTo is null
+				WHERE his.UserID = ip_UserID AND his.Type = "AssociatedAccountMonitor"
+            ) as a;
+            
+     SELECT ass.CTSCustID
+        ,	ass.UserName
+        ,	ass.NewAssCount AS NewAssocitionCount
+        ,	ass.CreatedTime AS CreatedDate
+        ,	ass.AccountNewAssID AS MaxNewAssociationID
+        ,	CASE WHEN ass.AccountNewAssID <= lv_UserCurrentFromNotificationID THEN 1 ELSE 0 END AS IsSeen
+     FROM Temp_Union_CTSUserNotificationParameter tmp 
+     INNER JOIN CTS_DataCenter.AssociatedAccountNewAssociation ass ON tmp.AccountNewAssID = ass.AccountNewAssID
+     WHERE ass.CreatedDate > @FromScanDate AND ass.CreatedDate <= @ToScanDate
+     ORDER BY ass.CreatedDate DESC;
     
+	/*
     SELECT 	a.CTSCustID
         ,	a.UserName
         ,	a.NewAssCount AS NewAssocitionCount
@@ -82,7 +118,7 @@ BEGIN
         ,	CASE WHEN a.AccountNewAssID <= lv_UserCurrentFromNotificationID THEN 1 ELSE 0 END AS IsSeen
     FROM CTS_DataCenter.AssociatedAccountNewAssociation AS a
 	WHERE a.CreatedDate > @FromScanDate AND a.CreatedDate <= @ToScanDate
-    ORDER BY CreatedDate DESC;    
+    ORDER BY CreatedDate DESC;  */   
     
     /*
     SELECT 	a.CTSCustID
