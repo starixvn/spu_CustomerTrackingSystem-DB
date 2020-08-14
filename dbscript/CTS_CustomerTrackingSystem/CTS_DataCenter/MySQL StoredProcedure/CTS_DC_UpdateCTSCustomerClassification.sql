@@ -42,13 +42,15 @@ BEGIN
     
     SET SQL_SAFE_UPDATES = 0;
     UPDATE tempSportGroupID AS s
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS t ON t.SportGroupID = s.SportGroupID AND t.CategoryID = ip_CategoryID
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS t 
+        ON t.SportGroupID = s.SportGroupID AND t.CategoryID = ip_CategoryID
 	SET s.ActionStatus = 1
     WHERE t.CTSCustID = ip_CTSCustID;
     
     DELETE t
     FROM CTS_DataCenter.CTSCustomerClassification AS t
-		LEFT JOIN tempSportGroupID AS s ON t.SportGroupID = s.SportGroupID
+		LEFT JOIN tempSportGroupID AS s 
+        ON t.SportGroupID = s.SportGroupID
     WHERE t.CTSCustID = ip_CTSCustID
 		AND t.CategoryID = ip_CategoryID
         AND s.SportGroupID IS NULL;

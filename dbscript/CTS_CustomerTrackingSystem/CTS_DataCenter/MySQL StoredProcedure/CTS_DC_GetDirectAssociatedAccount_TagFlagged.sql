@@ -39,7 +39,6 @@ BEGIN
 	/* Mark flagged tag for each associated account */
     UPDATE Temp_CTSCustomer AS tmpCust, 
 	LATERAL	(SELECT ce.CTSCustID
-				,	ce.SubscriberID
 				,	MAX(CASE WHEN ce.Level = 0 THEN 1 ELSE 0 END) AS IsFlagged
 				,	MAX(CASE WHEN ce.Level = 2 THEN 1 ELSE 0 END) AS IsAffected
 				 FROM CTS_DataCenter.CustEvidence AS ce
@@ -47,10 +46,9 @@ BEGIN
 					ON ce.CTSCustID = crev.CTSCustID
 						AND ce.EvidenceID = crev.EvidenceID
                         AND ce.Level = 2
-                 WHERE ce.SubscriberID	= tmpCust.SubscriberID
-					AND ce.CTSCustID	= tmpCust.CTSCustID
+                 WHERE ce.CTSCustID	= tmpCust.CTSCustID
                     AND crev.CTSCustID IS NULL
-				GROUP BY ce.CTSCustID, ce.SubscriberID) as ce
+				GROUP BY ce.CTSCustID) as ce
 	SET tmpCust.IsFlagged = ce.IsFlagged
     ,	tmpCust.IsAffected = ce.IsAffected;
 	

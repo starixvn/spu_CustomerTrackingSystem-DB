@@ -3,7 +3,7 @@ DROP procedure IF EXISTS `CTS_DC_GetCustomerFlagInfo`;
 
 DELIMITER $$
 USE `CTS_DataCenter`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_GetCustomerFlagInfo`(IN ip_SubscriberID INT, IN ip_CTSCustID INT)
+CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_GetCustomerFlagInfo`(IN ip_CTSCustID INT)
 BEGIN
 	/*
 		Created:	20191225@Casey.Huynh	
@@ -26,8 +26,7 @@ BEGIN
 							FROM	CTS_DataCenter.CustEvidence AS ced
                             INNER JOIN	CTS_DataCenter.Evidence	AS  evd
 								ON ced.EvidenceID = evd.EvidenceID
-							WHERE 	ced.SubscriberID 	= ip_SubscriberID
-								AND ced.CTSCustID		= ip_CTSCustID        
+							WHERE 	ced.CTSCustID		= ip_CTSCustID        
                                 AND ced.Level = 0
 							LIMIT 1), 0);
     
@@ -39,8 +38,7 @@ BEGIN
 							LEFT JOIN CTS_DataCenter.CustRetractEvidence AS crev
 								ON ced.CTSCustID = crev.CTSCustID
 									AND ced.EvidenceID = crev.EvidenceID
-							WHERE 	ced.SubscriberID 	= ip_SubscriberID
-								AND ced.CTSCustID		= ip_CTSCustID        
+							WHERE 	ced.CTSCustID		= ip_CTSCustID        
                                 AND ced.Level = 2
                                 AND crev.CTSCustID IS NULL
 							LIMIT 1), 0);

@@ -1,7 +1,7 @@
 DELIMITER $$
 DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_RemoveException$$
 
-CREATE PROCEDURE CTS_DataCenter.CTS_DC_RemoveException(IN ip_UserID INT, IN ip_FromSubscriberID INT, IN ip_FromCTSCustID BIGINT, IN ip_ToCTSCustID BIGINT)
+CREATE PROCEDURE CTS_DataCenter.CTS_DC_RemoveException(IN ip_UserID INT, IN ip_FromCTSCustID BIGINT, IN ip_ToCTSCustID BIGINT)
 BEGIN
 	/*
 		Created:	20200123@Casey.Huynh	
@@ -49,8 +49,7 @@ BEGIN
 				, ad.DCSDeviceID
 	FROM		CTS_DataCenter.AssociationByDevice AS ad
     WHERE		(ad.CTSCustID 	= ip_FromCTSCustID
-				OR ad.CTSCustID = ip_ToCTSCustID)
-                AND ad.SubscriberID = ip_FromSubscriberID;    
+				OR ad.CTSCustID = ip_ToCTSCustID);    
     
     # If exist any device association with The removed exception Customers
     IF EXISTS (SELECT 1 FROM Temp_CustDevice LIMIT 1) THEN
@@ -61,7 +60,6 @@ BEGIN
 		FROM		Temp_CustDevice 		AS tcd
 		INNER JOIN	CTS_DataCenter.AssociationByDevice 	AS ad
 					ON	tcd.DCSDeviceID			= ad.DCSDeviceID
-						AND ad.SubscriberID		= ip_FromSubscriberID
 		WHERE		ad.CTSCustID IN (ip_FromCTSCustID,ip_ToCTSCustID);
 		
 		SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
@@ -76,37 +74,31 @@ BEGIN
 			#=====Insert Affected Evidence: GET Device And Association into Temp Table
 			SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;           
             
-			INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
+			INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
 			SELECT	tca.ToCTSCustID
-					, ce.SubscriberID
 					, EvidenceID
 					, 'Auto RemoveException' AS Remark	# Auto by RemoveException
 					, 2 				AS Level
 					, ip_FromCTSCustID	AS FromCustID
 					, vr_CreatedDate	AS CreatedDate
 					, ce.CreatedBy 		AS CreatedBy
-                    , ce.IsCreatedByMaster	AS IsCreatedByMaster
 			FROM		CTS_DataCenter.CustEvidence	AS ce
 			INNER JOIN	Temp_CustAssociation AS tca
 						ON ce.CTSCustID = tca.FromCTSCustID
-							AND ce.SubscriberID = ip_FromSubscriberID
 			WHERE		ce.CTSCustID	= ip_FromCTSCustID
 						AND ce.Level	= 0;	
 			
-			INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, SubscriberID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, IsCreatedByMaster)
+			INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
 			SELECT	ip_FromCTSCustID
-					, ce.SubscriberID
 					, EvidenceID
 					, 'Auto RemoveException' AS Remark
 					, 2 				AS Level
 					, ip_ToCTSCustID	AS FromCustID
 					, vr_CreatedDate	AS CreatedDate
 					, ce.CreatedBy 		AS CreatedBy
-                    , ce.IsCreatedByMaster	AS IsCreatedByMaster
 			FROM		CTS_DataCenter.CustEvidence	AS ce
 			INNER JOIN	Temp_CustAssociation AS tca
 						ON ce.CTSCustID = tca.FromCTSCustID
-							AND ce.SubscriberID = ip_FromSubscriberID
 			WHERE		ce.CTSCustID	= ip_ToCTSCustID			
 						AND ce.Level = 0;
 						
