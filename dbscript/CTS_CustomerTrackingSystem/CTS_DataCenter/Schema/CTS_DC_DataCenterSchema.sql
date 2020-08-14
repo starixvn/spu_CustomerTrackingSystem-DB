@@ -482,7 +482,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.SystemParameter (
 		, CreatedBy			INT										NOT NULL
         
         , PRIMARY KEY	PK_CustEvidence(CTSCustID, FromCustID, EvidenceID)
-        , INDEX			PK_CustEvidence(FromCustID, CTSCustID, EvidenceID)
+        , INDEX			IX_CustEvidence(FromCustID, CTSCustID, EvidenceID)
         , UNIQUE INDEX	UX_CustEvidence_CustEvidID(CustEvidID)
 	) ENGINE=INNODB  AUTO_INCREMENT=1;
 	
