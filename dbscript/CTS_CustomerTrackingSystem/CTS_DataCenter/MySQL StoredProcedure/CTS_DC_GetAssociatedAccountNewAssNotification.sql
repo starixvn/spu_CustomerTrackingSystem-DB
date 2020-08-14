@@ -90,12 +90,12 @@ BEGIN
             SELECT ass.AccountNewAssID, his.GrantedFrom, his.GrantedTo
 				FROM CTS_DataCenter.CTSUserPermission_History his
 					INNER JOIN CTS_DataCenter.AssociatedAccountNewAssociation ass ON  his.GrantedFrom <= ass.CreatedTime AND his.GrantedTo >= ass.CreatedTime
-				WHERE his.UserID = ip_UserID AND his.Type = "AssociatedAccountMonitor"
+				WHERE his.UserID = ip_UserID AND his.Type = "AssociatedAccountMonitor" AND ass.CreatedDate > @FromScanDate AND ass.CreatedDate <= @ToScanDate
 				Union
 				SELECT ass.AccountNewAssID, his.GrantedFrom, his.GrantedTo
 				FROM CTS_DataCenter.CTSUserPermission_History his
 					INNER JOIN CTS_DataCenter.AssociatedAccountNewAssociation ass ON  his.GrantedFrom <= ass.CreatedTime AND his.GrantedTo is null
-				WHERE his.UserID = ip_UserID AND his.Type = "AssociatedAccountMonitor"
+				WHERE his.UserID = ip_UserID AND his.Type = "AssociatedAccountMonitor" AND ass.CreatedDate > @FromScanDate AND ass.CreatedDate <= @ToScanDate
             ) as a;
             
      SELECT ass.CTSCustID
@@ -106,7 +106,6 @@ BEGIN
         ,	CASE WHEN ass.AccountNewAssID <= lv_UserCurrentFromNotificationID THEN 1 ELSE 0 END AS IsSeen
      FROM Temp_Union_CTSUserNotificationParameter tmp 
      INNER JOIN CTS_DataCenter.AssociatedAccountNewAssociation ass ON tmp.AccountNewAssID = ass.AccountNewAssID
-     WHERE ass.CreatedDate > @FromScanDate AND ass.CreatedDate <= @ToScanDate
      ORDER BY ass.CreatedDate DESC;
     
 	/*
