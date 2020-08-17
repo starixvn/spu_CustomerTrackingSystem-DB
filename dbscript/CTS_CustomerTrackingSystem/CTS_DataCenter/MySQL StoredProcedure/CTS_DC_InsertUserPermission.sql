@@ -33,7 +33,7 @@ BEGIN
 		,	GrantedTo				DATETIME DEFAULT NULL
 	);
     
-    # create table store data when GrantedFrom and GrantedTo not null
+    # Create table store data when GrantedFrom and GrantedTo not null
     DROP TEMPORARY TABLE IF EXISTS TmpCTSUserPermission_History_Update_NotNull;
 	CREATE TEMPORARY TABLE TmpCTSUserPermission_History_Update_NotNull(
 		UserID					INT
@@ -42,7 +42,7 @@ BEGIN
 		,	GrantedTo				DATETIME DEFAULT NULL
 	);
     
-    # create table store data when GrantedTo is null
+    # Create table store data when GrantedTo is null
 	DROP TEMPORARY TABLE IF EXISTS TmpCTSUserPermission_History_Update_Null;
 	CREATE TEMPORARY TABLE TmpCTSUserPermission_History_Update_Null(
 		UserID					INT
@@ -51,7 +51,7 @@ BEGIN
 		,	GrantedTo				DATETIME DEFAULT NULL
 	);
     
-    # create table store data after validate
+    # Create table store data after validate
     DROP TEMPORARY TABLE IF EXISTS TmpCTSUserPermission_History_Update_Validate;
 	CREATE TEMPORARY TABLE TmpCTSUserPermission_History_Update_Validate(
 		UserID					INT
@@ -80,14 +80,14 @@ BEGIN
 				LEFT JOIN TmpCTSUserPermission_History tmpPermis ON tmpPermis.UserID = permis.UserID
 			WHERE permis.GrantedTo IS NULL AND tmpPermis.UserID IS NULL AND permis.Type = ip_Type;
 		
-		# 1. Create a table to store data if they are non-null
+		#1. Create a table to store data if they are non-null
 		 INSERT INTO TmpCTSUserPermission_History_Update_NotNull(UserID,Type)
 			SELECT permis.UserID, permis.Type
 				FROM TmpCTSUserPermission_History tmpPermis
 					INNER JOIN CTSUserPermission_History permis ON tmpPermis.UserID = permis.UserID
 				WHERE permis.GrantedFrom IS NOT NULL AND permis.GrantedTo IS NOT NULL AND permis.Type = ip_Type
 				GROUP BY permis.UserID, permis.Type;
-		 #2. Create a table to store data if GrantedFrom is null
+		 #2. Create a table to store data if GrantedTo is null
 		INSERT INTO TmpCTSUserPermission_History_Update_Null(UserID,Type)
 			SELECT permis.UserID, permis.Type
 				FROM TmpCTSUserPermission_History tmpPermis
@@ -95,7 +95,7 @@ BEGIN
 				WHERE permis.GrantedFrom IS NOT NULL AND permis.GrantedTo IS NULL AND permis.Type = ip_Type
 				GROUP BY permis.UserID, permis.Type;
 		
-		# 3: Filtering conditions
+		#3. Filtering conditions
 		  INSERT INTO TmpCTSUserPermission_History_Update_Validate(UserID,Type, GrantedFrom, GrantedTo)
 			SELECT notNullPermis.UserID, notNullPermis.Type, NULL, NULL
 				FROM TmpCTSUserPermission_History_Update_NotNull notNullPermis
@@ -103,7 +103,7 @@ BEGIN
 				WHERE nullPermiss.UserID IS NULL AND notNullPermis.Type = ip_Type;
 
 		SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;	
-		#Insert new UserIds
+		# Insert new UserIds
         IF EXISTS (SELECT distinct * FROM TmpCTSUserPermission_History tmpPermis LEFT JOIN CTSUserPermission_History permis ON tmpPermis.UserID = permis.UserID  WHERE  (tmpPermis.UserID, tmpPermis.Type) NOT IN ( SELECT his.UserID, his.Type FROM CTSUserPermission_History his)) THEN
              BEGIN     
 				   INSERT INTO CTS_DataCenter.CTSUserPermission_History(UserID, Type, GrantedFrom, GrantedTo)
@@ -117,7 +117,7 @@ BEGIN
 				END;                 
         END IF;                              
 		
-		# create new value if GrantedFrom && GrantedTo not null
+		# Create new value if GrantedFrom && GrantedTo not null
 		IF ((SELECT COUNT(DISTINCT(tmpValue.UserID)) FROM TmpCTSUserPermission_History_Update_Validate tmpValue WHERE tmpValue.Type = ip_Type) > 0) THEN
 			INSERT INTO CTS_DataCenter.CTSUserPermission_History(UserID, Type, GrantedFrom, GrantedTo)
 				SELECT tmpValue.UserID
@@ -128,7 +128,7 @@ BEGIN
 				WHERE tmpValue.Type = ip_Type;
 		END IF;
 					
-		#check userids exist and after update GrantedTo
+		# Check userids exist and after update GrantedTo
 		IF ((SELECT COUNT(*) FROM TmpCTSUserPermission_History_Update tmpPermis) > 0) THEN
 			SET SQL_SAFE_UPDATES = 0;
 			UPDATE CTSUserPermission_History permis
