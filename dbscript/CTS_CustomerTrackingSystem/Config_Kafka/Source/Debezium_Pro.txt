@@ -47,7 +47,7 @@ curl -X POST -H "Content-Type: application/json" --data '{
 }
 
 { 
-   "name":"source-ctsdatacenter-evidence-cdc-connector",
+   "name":"source-ctsdatacenter-evidence-cdc-connector-2",
    "config":{ 
       "connector.class":"io.debezium.connector.mysql.MySqlConnector",
       "tasks.max":"1",
@@ -55,7 +55,7 @@ curl -X POST -H "Content-Type: application/json" --data '{
       "database.port": "3306", 
       "database.user": "repDeb", 
       "database.password": "replication", 
-      "database.server.id": "9",
+      "database.server.id": "10",
       "database.server.name": "ctsserver",
       "database.allowPublicKeyRetrieval":"true",
       "database.whitelist": "CTS_DataCenter", 
@@ -65,6 +65,6 @@ curl -X POST -H "Content-Type: application/json" --data '{
       "database.history.store.only.monitored.tables.ddl": "false",
       "database.history.skip.unparseable.ddl": "true",
       "include.schema.changes": "true",
-	  "snapshot.mode": "when_needed"
+      "snapshot.mode": "when_needed"
    }
 }
