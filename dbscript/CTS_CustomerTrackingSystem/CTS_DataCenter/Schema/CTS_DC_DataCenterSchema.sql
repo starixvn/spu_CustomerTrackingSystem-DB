@@ -490,7 +490,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.SystemParameter (
 DROP TABLE IF EXISTS CTS_DataCenter.CTSUserPermission_History;
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSUserPermission_History (
 		UserID					INT UNSIGNED
-	,	Type					VARCHAR(50)
+	,	FunctionName			VARCHAR(500)
     ,	GrantedFrom				DATETIME DEFAULT NULL
     ,	GrantedTo				DATETIME DEFAULT NULL
 	,	INDEX					IX_CTSUserPermission_History_UserID(UserID)
