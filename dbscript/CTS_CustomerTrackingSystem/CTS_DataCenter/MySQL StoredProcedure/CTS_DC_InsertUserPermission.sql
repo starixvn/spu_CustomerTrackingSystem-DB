@@ -50,20 +50,20 @@ BEGIN
     SET SQL_SAFE_UPDATES = 0;
     
     # Update EndDate for users that currently have no permission on this function
-    UPDATE CTS_DataCenter.CTSUserPermission_History AS h
+    UPDATE CTS_DataCenter.CTSUserPermission AS h
 		LEFT JOIN TmpCTSUserPermission AS t ON t.UserID = h.UserID
 	SET h.GrantedTo = lv_CurrentDateTime
 	WHERE h.FunctionName = ip_FunctionName
 		AND t.UserID IS NULL;
 	   
     # Insert New
-    INSERT INTO CTS_DataCenter.CTSUserPermission_History(UserID, FunctionName, GrantedFrom, GrantedTo)
+    INSERT INTO CTS_DataCenter.CTSUserPermission(UserID, FunctionName, GrantedFrom, GrantedTo)
 	SELECT 	t.UserID
 		,	ip_FunctionName
 		,	lv_CurrentDateTime
 		,	NULL
 	FROM TmpCTSUserPermission AS t
-		LEFT JOIN CTS_DataCenter.CTSUserPermission_History AS h ON t.UserID = h.UserID AND h.FunctionName = ip_FunctionName
+		LEFT JOIN CTS_DataCenter.CTSUserPermission AS h ON t.UserID = h.UserID AND h.FunctionName = ip_FunctionName
 	WHERE h.UserID IS NULL
 		OR (h.UserID IS NOT NULL AND h.GrantedTo IS NOT NULL);
 	

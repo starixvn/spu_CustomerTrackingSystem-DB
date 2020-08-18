@@ -83,7 +83,7 @@ BEGIN
         ,	a.AccountNewAssID AS MaxNewAssociationID
         ,	CASE WHEN a.AccountNewAssID <= lv_UserCurrentFromNotificationID THEN 1 ELSE 0 END AS IsSeen
     FROM CTS_DataCenter.AssociatedAccountNewAssociation AS a
-		INNER JOIN CTS_DataCenter.CTSUserPermission_History AS p ON a.CreatedTime >= p.GrantedFrom AND (a.CreatedTime <= p.GrantedTo OR p.GrantedTo IS NULL)
+		INNER JOIN CTS_DataCenter.CTSUserPermission AS p ON a.CreatedTime >= p.GrantedFrom AND (a.CreatedTime <= p.GrantedTo OR p.GrantedTo IS NULL)
 	WHERE a.CreatedDate > @FromScanDate AND a.CreatedDate <= @ToScanDate
 		AND p.UserID = ip_UserID 
     ORDER BY CreatedDate DESC;
