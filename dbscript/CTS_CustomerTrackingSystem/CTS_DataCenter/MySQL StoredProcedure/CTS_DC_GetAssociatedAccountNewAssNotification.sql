@@ -15,6 +15,7 @@ BEGIN
 
 		Revisions:
 			- 20200706@Long.Luu: Created [Redmine ID: #134652]
+			- 20200818@Long.Luu: Get notification based on permission granted time range [Redmine ID: #138575]
         
 		Param's Explanation (filtered by):
 	*/
@@ -26,14 +27,6 @@ BEGIN
     
 	SET @ToScanDate						= CURRENT_DATE();
 	SET @FromScanDate					= DATE(DATE_ADD(CURRENT_DATE(), INTERVAL -3 DAY));
-
-	DROP TEMPORARY TABLE IF EXISTS Temp_Union_CTSUserNotificationParameter;
-    CREATE TEMPORARY TABLE Temp_Union_CTSUserNotificationParameter 
-    (	
-		`AccountNewAssID` BIGINT UNSIGNED,
-		`GrantedFrom` DATETIME DEFAULT NULL,
-		`GrantedTo` DATETIME DEFAULT NULL
-    );
     
 	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     
@@ -82,33 +75,7 @@ BEGIN
 		END;
     END IF;
 
-	INSERT INTO Temp_Union_CTSUserNotificationParameter(AccountNewAssID, GrantedFrom, GrantedTo)
-		SELECT a.AccountNewAssID
-			, a.GrantedFrom
-			, a.GrantedTo
-		FROM (
-            SELECT ass.AccountNewAssID, his.GrantedFrom, his.GrantedTo
-				FROM CTS_DataCenter.CTSUserPermission_History his
-					INNER JOIN CTS_DataCenter.AssociatedAccountNewAssociation ass ON  his.GrantedFrom <= ass.CreatedTime AND his.GrantedTo >= ass.CreatedTime
-				WHERE his.UserID = ip_UserID AND his.FunctionName = "AssociatedAccountMonitor" AND ass.CreatedDate > @FromScanDate AND ass.CreatedDate <= @ToScanDate
-				UNION
-				SELECT ass.AccountNewAssID, his.GrantedFrom, his.GrantedTo
-				FROM CTS_DataCenter.CTSUserPermission_History his
-					INNER JOIN CTS_DataCenter.AssociatedAccountNewAssociation ass ON  his.GrantedFrom <= ass.CreatedTime AND his.GrantedTo is null
-				WHERE his.UserID = ip_UserID AND his.FunctionName = "AssociatedAccountMonitor" AND ass.CreatedDate > @FromScanDate AND ass.CreatedDate <= @ToScanDate
-            ) as a;
-            
-     SELECT ass.CTSCustID
-        ,	ass.UserName
-        ,	ass.NewAssCount AS NewAssocitionCount
-        ,	ass.CreatedTime AS CreatedDate
-        ,	ass.AccountNewAssID AS MaxNewAssociationID
-        ,	CASE WHEN ass.AccountNewAssID <= lv_UserCurrentFromNotificationID THEN 1 ELSE 0 END AS IsSeen
-     FROM Temp_Union_CTSUserNotificationParameter tmp 
-     INNER JOIN CTS_DataCenter.AssociatedAccountNewAssociation ass ON tmp.AccountNewAssID = ass.AccountNewAssID
-     ORDER BY ass.CreatedDate DESC;
-    
-	/*
+	# Get available notification
     SELECT 	a.CTSCustID
         ,	a.UserName
         ,	a.NewAssCount AS NewAssocitionCount
@@ -116,20 +83,10 @@ BEGIN
         ,	a.AccountNewAssID AS MaxNewAssociationID
         ,	CASE WHEN a.AccountNewAssID <= lv_UserCurrentFromNotificationID THEN 1 ELSE 0 END AS IsSeen
     FROM CTS_DataCenter.AssociatedAccountNewAssociation AS a
+		INNER JOIN CTS_DataCenter.CTSUserPermission_History AS p ON a.CreatedTime >= p.GrantedFrom AND (a.CreatedTime <= p.GrantedTo OR p.GrantedTo IS NULL)
 	WHERE a.CreatedDate > @FromScanDate AND a.CreatedDate <= @ToScanDate
-    ORDER BY CreatedDate DESC;  */   
-    
-    /*
-    SELECT 	a.CTSCustID
-        ,	a.UserName
-        ,	SUM(a.NewAssCount) AS NewAssocitionCount
-        ,	MAX(a.CreatedTime) AS CreatedDate
-        ,	MAX(a.AccountNewAssID) AS MaxNewAssociationID
-        ,	lv_IsSeen AS IsSeen
-    FROM CTS_DataCenter.AssociatedAccountNewAssociation AS a
-	WHERE a.AccountNewAssID > lv_UserCurrentFromNotificationID AND a.AccountNewAssID <= lv_UserCurrentToNotificationID
-    GROUP BY a.CTSCustID
-        ,	a.UserName;*/        
+		AND p.UserID = ip_UserID 
+    ORDER BY CreatedDate DESC;
     
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
