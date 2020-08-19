@@ -52,19 +52,27 @@ BEGIN
     # Update EndDate for users that currently have no permission on this function
     UPDATE CTS_DataCenter.CTSUserPermission AS h
 		LEFT JOIN TmpCTSUserPermission AS t ON t.UserID = h.UserID
-	SET h.GrantedTo = lv_CurrentDateTime
+	SET h.GrantedTo = lv_CurrentDateTime,
+		h.LastModifiedDate = lv_CurrentDateTime
 	WHERE h.FunctionName = ip_FunctionName
-		AND t.UserID IS NULL;
+		AND t.UserID IS NULL 
+        AND h.GrantedTo IS NULL;
 	   
     # Insert New
-    INSERT INTO CTS_DataCenter.CTSUserPermission(UserID, FunctionName, GrantedFrom, GrantedTo)
-	SELECT 	t.UserID
+    INSERT INTO CTS_DataCenter.CTSUserPermission(UserID, FunctionName, GrantedFrom, GrantedTo, CreatedDate)
+    SELECT DISTINCT t.UserID
 		,	ip_FunctionName
 		,	lv_CurrentDateTime
 		,	NULL
+        ,   lv_CurrentDateTime
 	FROM TmpCTSUserPermission AS t
 		LEFT JOIN CTS_DataCenter.CTSUserPermission AS h ON t.UserID = h.UserID AND h.FunctionName = ip_FunctionName
-	WHERE h.UserID IS NULL
-		OR (h.UserID IS NOT NULL AND h.GrantedTo IS NOT NULL);
+	WHERE h.UserID IS NULL 
+		OR (h.UserID IS NOT NULL 
+			AND NOT EXISTS (SELECT 1 
+							FROM CTS_DataCenter.CTSUserPermission AS his 
+                            WHERE his.UserID = h.UserID 
+								AND his.FunctionName = ip_FunctionName
+                                AND his.GrantedTo IS NULL));
 	
 END

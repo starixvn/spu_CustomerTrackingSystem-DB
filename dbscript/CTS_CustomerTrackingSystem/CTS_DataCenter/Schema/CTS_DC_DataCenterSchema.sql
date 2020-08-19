@@ -495,8 +495,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSUserPermission (
     ,	GrantedTo				DATETIME DEFAULT NULL
 	, 	CreatedDate				DATETIME DEFAULT NULL
     , 	LastModifiedDate		DATETIME DEFAULT NULL
-	,	INDEX					IX_CTSUserPermission_UserID(UserID)
-	,	INDEX					IX_CTSUserPermission_FunctionName(FunctionName)
+	,	INDEX					IX_CTSUserPermission(UserID, FunctionName)
 ) ENGINE=INNODB DEFAULT CHARSET='UTF8MB4' COLLATE='UTF8MB4_UNICODE_CI';
 
 	
