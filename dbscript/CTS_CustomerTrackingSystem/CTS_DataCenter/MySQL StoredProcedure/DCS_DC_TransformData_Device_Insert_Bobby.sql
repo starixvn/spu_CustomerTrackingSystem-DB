@@ -80,20 +80,21 @@ BEGIN
     # START
     -- existed device
     CREATE TEMPORARY TABLE Temp_ExistedDevice(
-		DeviceID				BIGINT PRIMARY KEY
+		DeviceID				BIGINT
         , DeviceCode   			VARCHAR(32) UNIQUE
         , DeviceCodeID  		BIGINT
         , FirstTransID  		BIGINT
         , DeviceFingerprintID 	BIGINT
         , FirstDeviceCode 		VARCHAR(32)
+        , PRIMARY KEY PK_Temp_ExistedDevice(DeviceCode, DeviceID)
 	) ENGINE = MEMORY;
     
     INSERT INTO Temp_ExistedDevice (DeviceID, DeviceCode, DeviceCodeID, FirstTransID, FirstDeviceCode)
     WITH CTE_DeviceCode AS (SELECT DISTINCT DeviceCode FROM Temp_Transaction)
-    SELECT dv.DeviceID, tts.DeviceCode, dc.DeviceCodeID, dv.FirstTransID, dv.FirstDeviceCode
+    SELECT DISTINCT dc.DeviceID, dc.DeviceCode, dc.DeviceCodeID, dv.FirstTransID, dv.FirstDeviceCode
     FROM CTE_DeviceCode tts
-	INNER JOIN DCS_DataCenter.Device dv ON dv.FirstDeviceCode = tts.DeviceCode
     INNER JOIN DCS_DataCenter.DeviceCode dc ON dc.DeviceCode = tts.DeviceCode
+    INNER JOIN DCS_DataCenter.Device dv ON dv.DeviceID = dc.DeviceID
     ;
     #select * from Temp_ExistedDevice;
     
