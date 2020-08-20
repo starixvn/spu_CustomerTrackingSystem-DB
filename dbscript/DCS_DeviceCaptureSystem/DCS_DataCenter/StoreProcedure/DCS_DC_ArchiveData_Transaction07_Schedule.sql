@@ -32,6 +32,7 @@ BEGIN
 			, COUNT(1) AS TotalRecord
 	FROM 	DCS_DataCenter.Transaction07 AS ts07            
 	WHERE 	ts07.CreatedDate < vr_ToDate
+			AND ts07.CreatedDate > vr_MAXArchiveDate
 	GROUP BY CreatedDate;
 	END IF;
     
