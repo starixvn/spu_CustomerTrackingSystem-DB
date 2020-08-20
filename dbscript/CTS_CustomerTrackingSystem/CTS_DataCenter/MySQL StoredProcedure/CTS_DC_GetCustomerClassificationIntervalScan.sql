@@ -10,7 +10,8 @@ BEGIN
 		Original:
 
 		Revisions:
-			[20200701@Casey.Huynh]135324]: Chagne Flow and Store more Info		
+			[20200701@Casey.Huynh]135324]: Chagne Flow and Store more Info
+            [20200820@Casey.Huynh][139061]: Remove USE INDEX 
 		Param's Explanation (filtered by):
          ip_CategoryIDList: ex: '1,2,3'       
 	*/
@@ -81,7 +82,7 @@ BEGIN
 	SELECT 		ccl.CustID 			AS CustID
 				, ccl.SportGroupID	AS SportGroupID
                 , ccl.CategoryID	AS CategoryID
-    FROM		CTS_DataCenter.CTSCustomerClassification AS ccl USE INDEX(IX_CTSCustomerClassification_LastScannedDate)
+    FROM		CTS_DataCenter.CTSCustomerClassification AS ccl
     INNER JOIN	CTS_DataCenter.CustomerCategory AS cat
 				ON ccl.CategoryID = cat.CategoryID
 	WHERE		cat.IsActive = 1
