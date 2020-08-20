@@ -1,4 +1,4 @@
-CREATE DEFINER=`fps`@`%` PROCEDURE `DCS_DC_TransformData_Device_Insert_Bobby`(IN ip_TransJson LONGTEXT)
+CREATE DEFINER=`fps`@`%` PROCEDURE `DCS_DC_TransformData_Device_Insert_Bobby`(IN ip_TransJson LONGTEXT CHARSET utf8mb4 COLLATE utf8mb4_unicode_520_ci)
 BEGIN
 	/*
 	Created: 20200730@Bobby.Nguyen
@@ -77,11 +77,16 @@ BEGIN
     SET batchCount = (SELECT COUNT(1) FROM Temp_Transaction);
     #SELECT batchCount AS batchCount;
     
+    #============================================
+    DROP TEMPORARY TABLE IF EXISTS Temp_ExistedDevice;
+    DROP TEMPORARY TABLE IF EXISTS Temp_RecoveredDevice;
+    #==============================================
+    
     # START
     -- existed device
     CREATE TEMPORARY TABLE Temp_ExistedDevice(
 		DeviceID				BIGINT
-        , DeviceCode   			VARCHAR(32) UNIQUE
+        , DeviceCode   			VARCHAR(32)
         , DeviceCodeID  		BIGINT
         , FirstTransID  		BIGINT
         , DeviceFingerprintID 	BIGINT
@@ -140,22 +145,54 @@ BEGIN
     FROM Temp_Transaction AS tts
     WHERE tts.DeviceCode IS NOT NULL
 		AND NOT EXISTS (SELECT 1 FROM Temp_ExistedDevice de WHERE de.DeviceCode = tts.DeviceCode)
-		AND NOT EXISTS (SELECT 1 FROM Temp_RecoveredDevice dr WHERE dr.DeviceCode = tts.DeviceCode)
+		AND NOT EXISTS (SELECT 1 FROM Temp_RecoveredDevice dr WHERE dr.DeviceCode = tts.DeviceCode) 
     GROUP BY tts.DeviceCode, tts.UserAgentKey
     ;
 	
     # INSERT new DeviceCode
     INSERT IGNORE INTO DCS_DataCenter.DeviceCode(DeviceCode, DeviceID, FirstTransID, CreatedTime, CreatedDate, InsertTime)
+    WITH CTE_DeviceCode AS (
+		SELECT t.DeviceCode
+			, MIN(t.TransID) AS FirstTransID
+			, MIN(t.TransTime) AS CreatedTime
+			, MIN(t.CreatedDate) AS CreatedDate
+            , insertionTime	AS InsertTime
+		FROM Temp_Transaction AS t
+        WHERE NOT EXISTS (SELECT 1 FROM Temp_ExistedDevice de WHERE de.DeviceCode = t.DeviceCode)
+        GROUP BY t.DeviceCode
+    )
+    # NEW code - new DeviceID
     SELECT tts.DeviceCode
-			, dv.DeviceID
-			, MIN(tts.TransID) AS FirstTransID
-			, MIN(tts.TransTime) AS CreatedTime
-			, MIN(tts.CreatedDate) AS CreatedDate
-			, insertionTime	AS InsertTime
-	From	Temp_Transaction AS tts
+		, dv.DeviceID
+		, tts.FirstTransID
+		, tts.CreatedTime
+		, tts.CreatedDate
+		, tts.InsertTime
+	FROM CTE_DeviceCode AS tts
 	INNER JOIN DCS_DataCenter.Device dv ON dv.FirstDeviceCode = tts.DeviceCode
-	WHERE NOT EXISTS (SELECT 1 FROM Temp_ExistedDevice de WHERE de.DeviceCode = tts.DeviceCode)
-	GROUP BY tts.DeviceCode, dv.DeviceID
+    ;
+    
+    #NEW code vs Old DeviceID
+    INSERT IGNORE INTO DCS_DataCenter.DeviceCode(DeviceCode, DeviceID, FirstTransID, CreatedTime, CreatedDate, InsertTime)
+    WITH CTE_DeviceCode AS (
+		SELECT t.DeviceCode
+			, MIN(t.TransID) AS FirstTransID
+			, MIN(t.TransTime) AS CreatedTime
+			, MIN(t.CreatedDate) AS CreatedDate
+            , insertionTime	AS InsertTime
+		FROM Temp_Transaction AS t
+        WHERE NOT EXISTS (SELECT 1 FROM Temp_ExistedDevice de WHERE de.DeviceCode = t.DeviceCode)
+        GROUP BY t.DeviceCode
+    ), 
+    CTE_NewCodeOldDeviceID AS (SELECT DISTINCT DeviceCode, DeviceID FROM Temp_RecoveredDevice)
+    SELECT tts.DeviceCode
+		, dr.DeviceID
+		, tts.FirstTransID
+		, tts.CreatedTime
+		, tts.CreatedDate
+		, tts.InsertTime
+	FROM CTE_DeviceCode AS tts
+	INNER JOIN CTE_NewCodeOldDeviceID dr ON dr.DeviceCode = tts.DeviceCode
 	;
 	
     # MERGE existed, recoverd vs inserted devices
