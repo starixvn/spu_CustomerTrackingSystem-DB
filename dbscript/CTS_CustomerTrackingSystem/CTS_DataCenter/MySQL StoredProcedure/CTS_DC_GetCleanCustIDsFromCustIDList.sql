@@ -41,7 +41,7 @@ BEGIN
 	GROUP BY c.CTSCustID
 	HAVING COUNT(1) = 0;
 
-    SELECT 	c.CustID
+    SELECT DISTINCT	c.CustID
     FROM TempCleanCustID AS a
 		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON a.CTSCustID = c.CTSCustID;
         

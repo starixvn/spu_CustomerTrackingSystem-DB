@@ -1,9 +1,8 @@
-USE `CTS_DataCenter`;
-DROP procedure IF EXISTS `CTS_DC_GetAssociatedCustIDsWithOtherEvidence`;
-
 DELIMITER $$
 USE `CTS_DataCenter`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_GetAssociatedCustIDsWithOtherEvidence`(
+DROP PROCEDURE IF EXISTS `CTS_DC_GetAssociatedCustIDsWithOtherEvidence`;
+
+CREATE PROCEDURE `CTS_DC_GetAssociatedCustIDsWithOtherEvidence`(
 		IN ip_CTSCustID 		BIGINT
 	,	IN ip_EvidenceID 		SMALLINT
 )
@@ -15,7 +14,7 @@ BEGIN
 		Original:
 
 		Revisions:
-        - 20200820@Aries.Nguyen: created [Redmine ID: 139701]  	
+			- 20200820@Aries.Nguyen: created [Redmine ID: 139701]  	
         
 		Param's Explanation (filtered by):
         
@@ -52,7 +51,7 @@ BEGIN
         INNER JOIN CTS_DataCenter.CTSCustomer AS c ON t.CTSCustID = c.CTSCustID
 	WHERE e.EvidenceID <> ip_EvidenceID
     GROUP BY t.CTSCustID
-    HAVING COUNT(1) > 0;
+    HAVING COUNT(1) = 0;
     
     DROP TEMPORARY TABLE IF EXISTS TempAffectedDevices;
     DROP TEMPORARY TABLE IF EXISTS TempAssociations;

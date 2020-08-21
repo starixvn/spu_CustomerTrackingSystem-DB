@@ -18,23 +18,13 @@ BEGIN
     
     DROP TABLE IF EXISTS TempAffectedDevices;
     CREATE TEMPORARY TABLE TempAffectedDevices(
-			CTSCustID		BIGINT UNSIGNED
-		,	DCSDeviceID 	BIGINT
-        ,	INDEX IX_TempAffectedDevices_CTSCustIDDCSDeviceID (DCSDeviceID, CTSCustID)
+			DCSDeviceID 	BIGINT PRIMARY KEY
 	);
  
 	DROP TEMPORARY TABLE IF EXISTS TempCTSCustIDs;
     CREATE TEMPORARY TABLE TempCTSCustIDs (
 			CTSCustID 		BIGINT UNSIGNED PRIMARY KEY
     );
-    
-    DROP TABLE IF EXISTS TempAssociations;
-    CREATE TEMPORARY TABLE TempAssociations(
-			RootCustId		BIGINT UNSIGNED
-		,	AffectedCustId 	BIGINT UNSIGNED
-        ,	INDEX IX_TempAssociations_RootCustId (RootCustId)
-        ,	INDEX IX_TempAssociations_AffectedCustId (AffectedCustId)
-	);
     
 	SET @sql = CONCAT("INSERT INTO TempCTSCustIDs (CTSCustID) VALUES ('", REPLACE(ip_CTSCustIDList, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
@@ -43,22 +33,16 @@ BEGIN
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
  
 	# Get devices list for root account
-	INSERT INTO TempAffectedDevices(DCSDeviceID, CTSCustID)
-	SELECT DISTINCT a.DCSDeviceID, t.CTSCustID
+	INSERT INTO TempAffectedDevices(DCSDeviceID)
+	SELECT DISTINCT a.DCSDeviceID
 	FROM CTS_DataCenter.AssociationByDevice AS a
 		INNER JOIN TempCTSCustIDs AS t ON a.CTSCustID = t.CTSCustID;
     
 	# Get associated accounts
-    INSERT INTO TempAssociations(RootCustId, AffectedCustId)
-    SELECT DISTINCT t.CTSCustID, a.CTSCustID
+    SELECT DISTINCT c.CustID
 	FROM CTS_DataCenter.AssociationByDevice AS a
-		INNER JOIN TempAffectedDevices AS t ON a.DCSDeviceID = t.DCSDeviceID;
-	
-    SELECT 	c1.CustID AS FromCustId
-		,	c2.CustID AS ToCustId
-    FROM TempAssociations AS a
-		INNER JOIN CTS_DataCenter.CTSCustomer AS c1 ON a.RootCustId = c1.CTSCustID
-        INNER JOIN CTS_DataCenter.CTSCustomer AS c2 ON a.AffectedCustId = c2.CTSCustID;
+		INNER JOIN TempAffectedDevices AS t ON a.DCSDeviceID = t.DCSDeviceID        
+        INNER JOIN CTS_DataCenter.CTSCustomer AS c ON a.CTSCustID = c.CTSCustID;
         
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
