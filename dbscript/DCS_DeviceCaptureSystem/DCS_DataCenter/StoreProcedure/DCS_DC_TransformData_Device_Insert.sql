@@ -11,7 +11,8 @@ BEGIN
 	Original:
 
 	Revisions:
-			[20200310@Casey.Huynh][130110]: After Transform Device Done, Move Transaction From Transaction Table to Transaction07 Table
+			[20200727@Casey.Huynh][130110]: After Transform Device Done, Move Transaction From Transaction Table to Transaction07 Table
+            [20200804@Casey.Huynh][130110]: Change DataType "FingerprintMoreInfo" FROM TEXT to VARCHAR(250)
 	Param's Explanation (filtered by):
 	*/
 
@@ -28,6 +29,7 @@ BEGIN
 	DECLARE 	vrStartTime	TIMESTAMP(4);
 	DECLARE		vrEndTime 	TIMESTAMP(4);
 	DECLARE		vrDuration 	BIGINT;
+    DECLARE		vrFromTime	TIMESTAMP(4);
 	
     DECLARE		vrFromID	BIGINT;
     DECLARE		vrToID		BIGINT;
@@ -36,9 +38,10 @@ BEGIN
   
     SET		vrExecKey = CRC32((UUID_Short()));
     
-    SET		vrNotes = 'DCS_DC_TransformData_Device_Insert';
+    SET		vrNotes = '';
 	SET 	vrStartTime = CURRENT_TIMESTAMP(4);	
     SET 	vrStepID = 1;
+    SET 	vrFromTime = vrStartTime;
     
     INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
     VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);    
@@ -52,8 +55,8 @@ BEGIN
 		, SubscriberID			INT
         , UserAgentKey			VARCHAR(32)
 		, DeviceCode			VARCHAR(32)
-		, FingerprintCode		VARCHAR(640)
-        , FingerprintMoreInfo	TEXT	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+		, FingerprintCode		VARCHAR(620)
+        , FingerprintMoreInfo	VARCHAR(250)
 		, CreatedDate			DATETIME
 		, TransTime				TIMESTAMP(4)
 		
@@ -63,9 +66,14 @@ BEGIN
 		, DeviceStatus			TINYINT					NULL DEFAULT 1
 		, DeviceFingerprintID	BIGINT	UNSIGNED		NULL
         , RecoverTransID		BIGINT  UNSIGNED		NULL
+        
+        , PRIMARY KEY	PK_Temp_Transaction_TransID(TransID)
+        , INDEX 		IX_Temp_Transaction_DeviceCode(DeviceCode)
+        , INDEX			IX_Temp_Transaction_DeviceID(DeviceID,FingerprintCode)
 	);
     
-   
+	SET vrNotes =  CONCAT (vrNotes,' 1_',TIMESTAMPDIFF(SECOND,  vrFromTime, CURRENT_TIMESTAMP(4)));
+    SET vrFromTime = CURRENT_TIMESTAMP(4);
 	#========GET INPUT DATA===========================
 	INSERT INTO Temp_Transaction(TransID, AccountID, SubscriberID, UserAgentKey, DeviceCode, CreatedDate, TransTime,  FingerprintCode, FingerprintMoreInfo, DeviceStatus)
     SELECT TransID
@@ -82,19 +90,21 @@ BEGIN
 			   JSON_TABLE(
 				ip_TransJson,
 				 "$[*]" COLUMNS(
-				  TransID 			BIGINT UNSIGNED PATH "$.TransId"         
+				  TransID 					BIGINT UNSIGNED PATH "$.TransId"         
 				, AccountID					INT UNSIGNED PATH "$.AccountId"
 				, SubscriberID				INT PATH "$.SubscriberId"
                 , UserAgentKey 				VARCHAR(32) PATH "$.UserAgentKey"         
 				, DeviceCode				VARCHAR(32) PATH "$.DeviceCode"
-                , TransTime				TIMESTAMP(4) PATH "$.TransTime"
-				, CreatedDate			DATETIME PATH "$.CreatedDate"	
-                , FingerprintCode			VARCHAR(2000) PATH "$.FingerprintCode"
-                , FingerprintMoreInfo		TEXT CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' PATH "$.FingerprintMoreInfo"                			
+                , TransTime					TIMESTAMP(4) PATH "$.TransTime"
+				, CreatedDate				DATETIME PATH "$.CreatedDate"	
+                , FingerprintCode			VARCHAR(620) PATH "$.FingerprintCode"
+                , FingerprintMoreInfo		VARCHAR(250) PATH "$.FingerprintMoreInfo"                			
 				 )
 			   ) AS  tmpTrans ;
 
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;   
+    SET vrNotes =  CONCAT(vrNotes,',2_',TIMESTAMPDIFF(SECOND,  vrFromTime, CURRENT_TIMESTAMP(4)));
+    SET vrFromTime = CURRENT_TIMESTAMP(4);
     # *******1. PROCESS OLD DEVICE*************************
     # **************************************************
 	# 1.1 Get Existing DeviceID BY Existing Device Code
@@ -103,8 +113,12 @@ BEGIN
 				ON	tts.DeviceCode = dc.DeviceCode
 	SET			tts.DeviceID = dc.DeviceID
 				, tts.DeviceStatus = vrDeviceStatusOld
-                , tts.DeviceCodeID =  dc.DeviceCodeID;    
-
+                , tts.DeviceCodeID =  dc.DeviceCodeID
+	WHERE		tts.DeviceCode IS NOT NULL;    
+                
+	SET vrNotes =  CONCAT(vrNotes,',3_',TIMESTAMPDIFF(SECOND,  vrFromTime, CURRENT_TIMESTAMP(4)));
+    SET vrFromTime = CURRENT_TIMESTAMP(4);
+    
     # 1.2 Recover Existing DeviceID  BY AccountID and FingerprintCode
     UPDATE		Temp_Transaction AS tts
     INNER JOIN	DCS_DataCenter.Association AS ass 
@@ -115,7 +129,11 @@ BEGIN
 	SET			tts.DeviceFingerprintID = df.DeviceFingerprintID
 				, tts.DeviceID = df.DeviceID
                 , tts.DeviceStatus = vrDeviceStatusRecover
-	WHERE		tts.DeviceID IS NULL;
+	WHERE		tts.DeviceID IS NULL
+				AND tts.FingerprintCode IS NOT NULL;
+    
+    SET vrNotes =  CONCAT(vrNotes,',4_',TIMESTAMPDIFF(SECOND,  vrFromTime, CURRENT_TIMESTAMP(4)));
+    SET vrFromTime = CURRENT_TIMESTAMP(4);
     
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
@@ -135,6 +153,9 @@ BEGIN
     WHERE	tts.DeviceID IS NULL
     GROUP BY tts.DeviceCode;
     
+    SET vrNotes =  CONCAT(vrNotes,',5_',TIMESTAMPDIFF(SECOND,  vrFromTime, CURRENT_TIMESTAMP(4)));
+    SET vrFromTime = CURRENT_TIMESTAMP(4);
+    
     # 2.2  Update DeviceStatus IS 'Old DeviceCode' For TransID (excluding FirstTransID (Step 2.1)
 	UPDATE		Temp_Transaction AS tts
     INNER JOIN  Temp_NewDeviceCode AS nd
@@ -142,6 +163,9 @@ BEGIN
                 AND tts.TransID 	!= nd.MinTransID
     SET			tts.DeviceStatus	= vrDeviceStatusOld;
     
+    
+    SET vrNotes =  CONCAT(vrNotes,',6_',TIMESTAMPDIFF(SECOND,  vrFromTime, CURRENT_TIMESTAMP(4)));
+    SET vrFromTime = CURRENT_TIMESTAMP(4);
     
     # 2.3 Update DeviceStatus Recover
 	DROP TEMPORARY TABLE IF EXISTS Temp_AccountFingerprint;
@@ -151,12 +175,21 @@ BEGIN
         , FingerprintCode	VARCHAR(640)
 	);
     
+    
+    SET vrNotes =  CONCAT(vrNotes,',7_',TIMESTAMPDIFF(SECOND,  vrFromTime, CURRENT_TIMESTAMP(4)));
+    SET vrFromTime = CURRENT_TIMESTAMP(4);
+    
     INSERT INTO Temp_AccountFingerprint(TransID, AccountID, FingerprintCode)
     SELECT		TransID
 				, AccountID
                 , FingerprintCode
 	FROM		Temp_Transaction AS tts
     WHERE		tts.DeviceID IS NULL;
+    
+    
+    SET vrNotes =  CONCAT(vrNotes,',8_',TIMESTAMPDIFF(SECOND,  vrFromTime, CURRENT_TIMESTAMP(4)));
+    SET vrFromTime = CURRENT_TIMESTAMP(4);
+    
     
     UPDATE		Temp_Transaction AS tts
     INNER JOIN	Temp_AccountFingerprint AS taf
@@ -168,6 +201,9 @@ BEGIN
 				AND tts.DeviceID IS NULL
                 AND tts.DeviceStatus = vrDeviceStatusNew;
    
+   
+    SET vrNotes =  CONCAT(vrNotes,',9_',TIMESTAMPDIFF(SECOND,  vrFromTime, CURRENT_TIMESTAMP(4)));
+    SET vrFromTime = CURRENT_TIMESTAMP(4);    
     
    # 2.4  Insert New Device for New DeviceCode with DeviceStatus Is NEW
     INSERT IGNORE INTO DCS_DataCenter.Device(FirstDeviceCode, UserAgentKey, FirstTransID, CreatedTime, CreatedDate, InsertTime)
@@ -181,16 +217,31 @@ BEGIN
     WHERE		tts.DeviceStatus = vrDeviceStatusNew
 				AND tts.DeviceCode IS NOT NULL;
 	
+    
+    SET vrNotes =  CONCAT(vrNotes,',10_',TIMESTAMPDIFF(SECOND,  vrFromTime, CURRENT_TIMESTAMP(4)));
+    SET vrFromTime = CURRENT_TIMESTAMP(4);    
+    
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
     
+    
+    SET vrNotes =  CONCAT(vrNotes,',11_',TIMESTAMPDIFF(SECOND,  vrFromTime, CURRENT_TIMESTAMP(4)));
+    SET vrFromTime = CURRENT_TIMESTAMP(4);
+    
+    
     # 2.4  Update to DeviceID for New Device
+ #   SET @@SESSION.autocommit=0;
     UPDATE		Temp_Transaction AS tts
     INNER JOIN 	DCS_DataCenter.Device AS dv
 				ON tts.DeviceCode	= dv.FirstDeviceCode
 	SET			tts.DeviceID 		= dv.DeviceID
     WHERE		tts.DeviceStatus	= vrDeviceStatusNew;
+#    SET @@SESSION.autocommit=1;
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;    
-
+	
+    
+    SET vrNotes =  CONCAT(vrNotes,',12_',TIMESTAMPDIFF(SECOND,  vrFromTime, CURRENT_TIMESTAMP(4)));
+    SET vrFromTime = CURRENT_TIMESTAMP(4);
+    
     # 2.5  Update to DeviceID for Recover Device
     DROP TEMPORARY TABLE IF EXISTS Temp_RecoverDevice;
     CREATE TEMPORARY TABLE Temp_RecoverDevice(
@@ -204,6 +255,10 @@ BEGIN
     FROM	Temp_Transaction AS tts
     WHERE 	tts.DeviceStatus = vrDeviceStatusNew;
     
+    
+    SET vrNotes =  CONCAT(vrNotes,',13_',TIMESTAMPDIFF(SECOND,  vrFromTime, CURRENT_TIMESTAMP(4)));
+    SET vrFromTime = CURRENT_TIMESTAMP(4);
+    
     UPDATE  Temp_Transaction AS tts
     INNER JOIN  Temp_RecoverDevice AS tgd
 				ON tts.RecoverTransID = tgd.TransID
@@ -211,6 +266,9 @@ BEGIN
     WHERE	tts.DeviceID IS NULL;
   
    
+    SET vrNotes =  CONCAT(vrNotes,',14_',TIMESTAMPDIFF(SECOND,  vrFromTime, CURRENT_TIMESTAMP(4)));
+    SET vrFromTime = CURRENT_TIMESTAMP(4);
+    
     # 2.5 Insert New DeviceCode
     INSERT IGNORE INTO DCS_DataCenter.DeviceCode(DeviceCode, DeviceID, FirstTransID, CreatedTime, CreatedDate, InsertTime)
     SELECT 	tts.DeviceCode
@@ -222,7 +280,11 @@ BEGIN
     From	Temp_Transaction AS tts
     WHERE	(tts.DeviceStatus = vrDeviceStatusNew
 			OR tts.DeviceStatus = vrDeviceStatusRecover)
-            AND tts.DeviceCode IS NOT NULL;    
+             AND tts.DeviceCode IS NOT NULL; 
+    
+    
+    SET vrNotes =  CONCAT(vrNotes,',15_',TIMESTAMPDIFF(SECOND,  vrFromTime, CURRENT_TIMESTAMP(4)));
+    SET vrFromTime = CURRENT_TIMESTAMP(4);
     
     # 2.6 Update DeviceCodeID
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
@@ -233,7 +295,12 @@ BEGIN
                 , tts.DeviceCodeID =  dc.DeviceCodeID;    
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
+    
+    SET vrNotes =  CONCAT(vrNotes,',16_',TIMESTAMPDIFF(SECOND,  vrFromTime, CURRENT_TIMESTAMP(4)));
+    SET vrFromTime = CURRENT_TIMESTAMP(4);
+    
     # 2.7 Insert New DeviceFingerprint
+    
     INSERT IGNORE INTO DCS_DataCenter.DeviceFingerprint(FingerprintCode, FingerprintMoreInfo, DeviceID, CreatedTime, CreatedDate, InsertTime)
      SELECT tts.FingerprintCode
 			, MIN(tts.FingerprintMoreInfo)
@@ -243,7 +310,10 @@ BEGIN
             , CURRENT_TIMESTAMP(4)	AS InsertTime
     FROM	Temp_Transaction AS tts
     WHERE	tts.FingerprintCode IS NOT NULL
-    GROUP BY tts.FingerprintCode, tts.DeviceID;
+    GROUP BY tts.FingerprintCode, tts.DeviceID;    
+    
+    SET vrNotes =  CONCAT(vrNotes,',17_',TIMESTAMPDIFF(SECOND,  vrFromTime, CURRENT_TIMESTAMP(4)));
+    SET vrFromTime = CURRENT_TIMESTAMP(4);    
     
     # 2.6 Insert New Association
     INSERT IGNORE INTO DCS_DataCenter.Association(DeviceID, AccountID, SubscriberID, CreatedTime, CreatedDate,  InsertTime)
@@ -257,19 +327,31 @@ BEGIN
     WHERE		DeviceID > 0
     GROUP BY  	tts.DeviceID, tts.AccountID, tts.SubscriberID; 
     
+    
+    SET vrNotes =  CONCAT(vrNotes,',18_',TIMESTAMPDIFF(SECOND,  vrFromTime, CURRENT_TIMESTAMP(4)));
+    SET vrFromTime = CURRENT_TIMESTAMP(4);
+    
+    
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 	UPDATE		Temp_Transaction AS tts
     INNER JOIN	DCS_DataCenter.DeviceCode	AS dc
-				ON	tts.DeviceCode = dc.DeviceCode
-	
+				ON	tts.DeviceCode = dc.DeviceCode	
 	SET			tts.DeviceID = dc.DeviceID
                 , tts.DeviceCodeID =  dc.DeviceCodeID
 	WHERE 		tts.DeviceCodeID IS NULL;    
-	  
+	
+    
+    SET vrNotes =  CONCAT(vrNotes,',19_',TIMESTAMPDIFF(SECOND,  vrFromTime, CURRENT_TIMESTAMP(4)));
+    SET vrFromTime = CURRENT_TIMESTAMP(4);
+    
+    
 	UPDATE		Temp_Transaction AS tts
     INNER JOIN 	DCS_DataCenter.Device AS dv
 				ON tts.DeviceID 		= dv.DeviceID
 	SET			tts.FirstDeviceCode	= dv.FirstDeviceCode;
+    
+    SET vrNotes =  CONCAT(vrNotes,',20_',TIMESTAMPDIFF(SECOND,  vrFromTime, CURRENT_TIMESTAMP(4)));
+    SET vrFromTime = CURRENT_TIMESTAMP(4);
        
 	UPDATE		Temp_Transaction AS tts
     INNER JOIN	DCS_DataCenter.DeviceFingerprint	AS df
@@ -277,12 +359,18 @@ BEGIN
 					AND tts.DeviceID = df.DeviceID
 	SET			tts.DeviceID = df.DeviceID
                 , tts.DeviceFingerprintID =  df.DeviceFingerprintID;  
+    
+    SET vrNotes =  CONCAT(vrNotes,',21_',TIMESTAMPDIFF(SECOND,  vrFromTime, CURRENT_TIMESTAMP(4)));
+    SET vrFromTime = CURRENT_TIMESTAMP(4);
                 
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
     UPDATE	Temp_Transaction AS tts
     SET		DeviceStatus = NULL
     WHERE	DeviceID = 0;
+    
+    SET vrNotes =  CONCAT(vrNotes,',22_',TIMESTAMPDIFF(SECOND,  vrFromTime, CURRENT_TIMESTAMP(4)));
+    SET vrFromTime = CURRENT_TIMESTAMP(4);
     
     # 2.7 Update Transacton Info (DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID)    
 	UPDATE	DCS_DataCenter.Transaction AS ts
@@ -292,8 +380,37 @@ BEGIN
                 , ts.DeviceID = tts.DeviceID
                 , ts.FirstDeviceCode = tts.FirstDeviceCode
                 , ts.DeviceStatus = tts.DeviceStatus
-                , ts.DeviceFingerprintID = tts.DeviceFingerprintID;   
-   	
+                , ts.DeviceFingerprintID = tts.DeviceFingerprintID;  
+                
+	/*****MOVE TRans competed to Trans07****************************************************/
+   # SET @@SESSION.autocommit=0;
+	SET vrNotes =  CONCAT(vrNotes,',24_',(TIMESTAMPDIFF(MICROSECOND,  vrFromTime, CURRENT_TIMESTAMP(4)))/1000);
+    SET vrFromTime = CURRENT_TIMESTAMP(4);
+    INSERT IGNORE INTO  DCS_DataCenter.Transaction07(TransID, LoginName, TransTime, SubscriberID, AccountID
+	, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID
+	, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime)      
+	SELECT 	ts.TransID, ts.LoginName, ts.TransTime, ts.SubscriberID, ts.AccountID
+			, ts.URLID, ts.DeviceCodeID, ts.DeviceID, ts.FirstDeviceCode, ts.DeviceStatus, ts.DeviceFingerprintID
+			, ts.UserAgentKey, ts.IP, ts.IPID, ts.ActionResultID, ts.Flagged, ts.PluginID, ts.TransStatus, ts.CreatedDate, ts.InsertTime
+	FROM		DCS_DataCenter.Transaction AS ts
+	INNER JOIN	Temp_Transaction AS tmp_rm
+				ON	ts.TransID = tmp_rm.TransID
+	WHERE		tmp_rm.DeviceID IS NOT NULL;
+    
+	SET vrNotes =  CONCAT(vrNotes,',25_',(TIMESTAMPDIFF(MICROSECOND,  vrFromTime, CURRENT_TIMESTAMP(4)))/1000);
+    SET vrFromTime = CURRENT_TIMESTAMP(4);
+	DELETE		ts
+	FROM		DCS_DataCenter.Transaction AS ts
+	INNER JOIN	Temp_Transaction 	AS tmp_rm
+				ON	ts.TransID = 	tmp_rm.TransID
+	WHERE		tmp_rm.DeviceID IS NOT NULL;
+	SET vrNotes =  CONCAT(vrNotes,',26_',(TIMESTAMPDIFF(MICROSECOND,  vrFromTime, CURRENT_TIMESTAMP(4)))/1000);
+    SET vrFromTime = CURRENT_TIMESTAMP(4);
+#	SET @@SESSION.autocommit=1;
+    /******************/
+    SET vrNotes =  CONCAT(vrNotes,',27_',TIMESTAMPDIFF(SECOND,  vrFromTime, CURRENT_TIMESTAMP(4)));
+    SET vrFromTime = CURRENT_TIMESTAMP(4);
+    
 	### PERFORMANCE
 	SET	vrEndTime = CURRENT_TIMESTAMP(4);
     
@@ -307,6 +424,7 @@ BEGIN
             , z.TotalRecord = vrTotalRecord
             , z.FromID = vrFromID
             , z.ToID		= vrToID
+            , z.Notes = vrNotes
     WHERE	z.ExecKey = vrExecKey AND z.StepID = vrStepID;
     ### PERFORMANCE: END
 	
