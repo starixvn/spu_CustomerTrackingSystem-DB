@@ -486,3 +486,16 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.SystemParameter (
         , UNIQUE INDEX	UX_CustEvidence_CustEvidID(CustEvidID)
 	) ENGINE=INNODB  AUTO_INCREMENT=1;
 	
+# - 138575@Roger.Le: Enhance Associated Account Monitor by NAP Permission
+DROP TABLE IF EXISTS CTS_DataCenter.CTSUserPermission;
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSUserPermission (
+		UserID					INT UNSIGNED
+	,	FunctionName			VARCHAR(50)
+    ,	GrantedFrom				DATETIME DEFAULT NULL
+    ,	GrantedTo				DATETIME DEFAULT NULL
+	, 	CreatedDate				DATETIME DEFAULT NULL
+    , 	LastModifiedDate		DATETIME DEFAULT NULL
+	,	INDEX					IX_CTSUserPermission(UserID, FunctionName)
+) ENGINE=INNODB DEFAULT CHARSET='UTF8MB4' COLLATE='UTF8MB4_UNICODE_CI';
+
+	

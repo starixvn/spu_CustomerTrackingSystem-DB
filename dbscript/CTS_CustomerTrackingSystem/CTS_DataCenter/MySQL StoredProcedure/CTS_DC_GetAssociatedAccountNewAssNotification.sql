@@ -15,6 +15,7 @@ BEGIN
 
 		Revisions:
 			- 20200706@Long.Luu: Created [Redmine ID: #134652]
+			- 20200818@Long.Luu: Get notification based on permission granted time range [Redmine ID: #138575]
         
 		Param's Explanation (filtered by):
 	*/
@@ -73,7 +74,8 @@ BEGIN
 			VALUES(ip_UserID, lv_UserCurrentFromNotificationID, lv_UserCurrentToNotificationID);
 		END;
     END IF;
-    
+
+	# Get available notification
     SELECT 	a.CTSCustID
         ,	a.UserName
         ,	a.NewAssCount AS NewAssocitionCount
@@ -81,20 +83,10 @@ BEGIN
         ,	a.AccountNewAssID AS MaxNewAssociationID
         ,	CASE WHEN a.AccountNewAssID <= lv_UserCurrentFromNotificationID THEN 1 ELSE 0 END AS IsSeen
     FROM CTS_DataCenter.AssociatedAccountNewAssociation AS a
+		INNER JOIN CTS_DataCenter.CTSUserPermission AS p ON a.CreatedTime >= p.GrantedFrom AND (a.CreatedTime <= p.GrantedTo OR p.GrantedTo IS NULL)
 	WHERE a.CreatedDate > @FromScanDate AND a.CreatedDate <= @ToScanDate
-    ORDER BY CreatedDate DESC;    
-    
-    /*
-    SELECT 	a.CTSCustID
-        ,	a.UserName
-        ,	SUM(a.NewAssCount) AS NewAssocitionCount
-        ,	MAX(a.CreatedTime) AS CreatedDate
-        ,	MAX(a.AccountNewAssID) AS MaxNewAssociationID
-        ,	lv_IsSeen AS IsSeen
-    FROM CTS_DataCenter.AssociatedAccountNewAssociation AS a
-	WHERE a.AccountNewAssID > lv_UserCurrentFromNotificationID AND a.AccountNewAssID <= lv_UserCurrentToNotificationID
-    GROUP BY a.CTSCustID
-        ,	a.UserName;*/        
+		AND p.UserID = ip_UserID 
+    ORDER BY CreatedDate DESC;
     
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
