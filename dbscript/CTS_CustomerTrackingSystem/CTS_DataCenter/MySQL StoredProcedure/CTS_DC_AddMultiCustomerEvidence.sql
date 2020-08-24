@@ -5,6 +5,7 @@ DROP PROCEDURE IF EXISTS CTS_DC_AddMultiCustomerEvidence $$
 CREATE PROCEDURE CTS_DC_AddMultiCustomerEvidence (
 		IN ip_NewAccountEvidences 	JSON    
     ,	IN ip_UserID 				INT
+	, 	IN ip_Override				INT
     
     , 	OUT op_ErrorMessage 		VARCHAR(200))
     
@@ -18,6 +19,7 @@ sp: BEGIN
 		Revisions:
 		   - 20200608@Long.Luu: Created [Redmine ID: 134489]
            [20200807@Casey.Huynh]:[138925] Chagne CustEvidence Structure for Cross Subscriber : Remove SubscriberID and IsCreatedByMaster
+		   - 20200824@Roger.Le: Evidence Upload - Overrite the data [Redmine ID: 137551]
 	*/    
    /*
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
@@ -51,6 +53,12 @@ sp: BEGIN
 		,	DCSDeviceID		BIGINT UNSIGNED
         , 	PRIMARY KEY	tmpAffectedDevices(CTSCustID,DCSDeviceID) 
 	);
+
+	DROP TABLE IF EXISTS tmpAssociation;
+    CREATE TEMPORARY TABLE tmpAssociation(
+			CTSCustID 	BIGINT UNSIGNED
+        ,	FromCTSCustID 	BIGINT UNSIGNED
+	);
     
     INSERT INTO tmpMultipleAccountEvidence(CTSCustID, EvidenceID, Remark)
 	SELECT 	tmpTable.CTSCustID
@@ -63,25 +71,15 @@ sp: BEGIN
 			, Remark		VARCHAR(500)		PATH "$.Comment"
 		 )) AS tmpTable;  
          
-	IF EXISTS (	SELECT 1 
+	IF (ip_Override = 0 AND EXISTS (	SELECT 1 
 				FROM tmpMultipleAccountEvidence AS t 
 					LEFT JOIN CTS_DataCenter.CustEvidence AS ce ON t.CTSCustID = ce.CTSCustID AND t.EvidenceID = ce.EvidenceID
 				WHERE ce.CTSCustID IS NOT NULL
 					AND ce.EvidenceID IS NOT NULL
-                    AND Level = 0) THEN
+                    AND Level = 0)) THEN
 		SET op_ErrorMessage = 'This Customer has already been flagged with this Evidence.';
 		LEAVE sp;
 	END IF;
-      
-	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID,  EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
-	SELECT 	t.CTSCustID
-		,	t.EvidenceID
-        ,	t.Remark
-        ,	0 
-        ,	t.CTSCustID
-        ,	vr_CreatedDate
-        ,	ip_UserID
-    FROM tmpMultipleAccountEvidence AS t;
 	
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;       
     INSERT INTO tmpAffectedDevices(CTSCustID, DCSDeviceID)
@@ -95,7 +93,40 @@ sp: BEGIN
     FROM CTS_DataCenter.CustException AS e
 		INNER JOIN tmpMultipleAccountEvidence AS t ON e.LeastCTSCustID_Order = t.CTSCustID
 													OR e.GreatestCTSCustID_Order = t.CTSCustID;
-    
+
+    IF (ip_Override = 1) THEN
+		BEGIN
+			# Delete itself
+            DELETE cus  FROM CTS_DataCenter.CustEvidence cus INNER JOIN tmpMultipleAccountEvidence tmp
+            WHERE  cus.CTSCustID = tmp.CTSCustID 
+					AND cus.Level = 0;
+            
+            # Delelete affected
+			INSERT INTO tmpAssociation(CTSCustID, FromCTSCustID)
+				SELECT 	DISTINCT a.CTSCustID,
+						t.CTSCustID
+				FROM tmpMultipleAccountEvidence AS t
+					INNER JOIN tmpAffectedDevices AS d ON t.CTSCustID = d.CTSCustID
+					INNER JOIN CTS_DataCenter.AssociationByDevice AS a ON a.DCSDeviceID = d.DCSDeviceID
+					LEFT JOIN tmpAssociationException AS e ON t.CTSCustID = e.FromCTSCustID AND a.CTSCustID = e.ToCTSCustID
+			WHERE a.CTSCustID <> d.CTSCustID
+				AND (e.FromCTSCustID IS NULL OR e.ToCTSCustID IS NULL);
+             
+			DELETE cus  FROM CTS_DataCenter.CustEvidence cus INNER JOIN tmpAssociation tmp
+            WHERE  tmp.CTSCustID = cus.CTSCustID AND cus.FromCustID = tmp.FromCTSCustID;
+		END;
+    END IF;
+
+	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID,  EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
+	SELECT 	t.CTSCustID
+		,	t.EvidenceID
+        ,	t.Remark
+        ,	0 
+        ,	t.CTSCustID
+        ,	vr_CreatedDate
+        ,	ip_UserID
+    FROM tmpMultipleAccountEvidence AS t;
+
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;    
 	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
     SELECT DISTINCT a.CTSCustID, t.EvidenceID, t.Remark, 2, t.CTSCustID, vr_CreatedDate, ip_UserID
