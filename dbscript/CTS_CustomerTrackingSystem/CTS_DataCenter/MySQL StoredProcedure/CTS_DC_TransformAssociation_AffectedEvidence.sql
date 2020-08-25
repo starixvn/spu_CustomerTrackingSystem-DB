@@ -132,8 +132,15 @@ BEGIN
 		WHERE		ce.CTSCustID	= tmp_ca.ToCTSCustID
 					AND ce.Level	= 0;
                     
-		IF EXISTS (SELECT 1 FROM TempCustEvidence LIMIT 1) THEN    
-			INSERT IGNORE INTO DCS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
+		IF EXISTS (SELECT 1 FROM TempCustEvidence LIMIT 1) THEN  
+			DELETE tce
+            FROM	TempCustEvidence AS tce
+            INNER JOIN CTS_DataCenter.CustEvidence  AS ce
+						ON tce.CTSCustID = ce.CTSCustID
+							AND tce.FromCustID = ce.FromCustID
+                            AND tce.EvidenceID = ce.EvidenceID;            
+            
+			INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
 			SELECT	tce.CTSCustID
 					, tce.EvidenceID
 					, tce.Remark
@@ -143,6 +150,9 @@ BEGIN
 					, tce.CreatedBy
 			FROM	TempCustEvidence	AS tce;	
 			
+ 
+            SELECT DISTINCT'DEBUG',  e.CTSCustID FROM TempCustEvidence e;
+            
 			SELECT 		cus.CustID
 			FROM		(SELECT DISTINCT CTSCustID FROM TempCustEvidence)	AS tce
 			INNER JOIN	CTS_DataCenter.CTSCustomer AS cus
