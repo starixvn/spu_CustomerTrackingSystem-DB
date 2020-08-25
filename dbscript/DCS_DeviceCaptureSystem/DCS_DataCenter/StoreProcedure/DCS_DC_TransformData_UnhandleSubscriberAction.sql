@@ -48,7 +48,7 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_Transaction 
     (	
 		TransID			BIGINT
-		, SubscriberName		VARCHAR(30)
+		, SubscriberName		VARCHAR(50)
         , Action				VARCHAR(100)
         , ActionResult			VARCHAR(100)
         , URLDetails			VARCHAR(250)

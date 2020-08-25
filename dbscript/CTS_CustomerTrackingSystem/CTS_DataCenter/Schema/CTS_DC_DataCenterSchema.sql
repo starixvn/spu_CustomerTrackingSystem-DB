@@ -5,8 +5,8 @@ Server:  	Slave
 DBName:		CTS_DataCenter
 
 Revisions: 
-		- 20191217@CaseyHuynh: Add Column LastLoginDate column to table CTSCustomer.  	(#125530)
-        - 20200117@HarveyNguyen: Add table CustRetractEvidence							(#127352)
+		- [20191217@CaseyHuynh][125530]: Add Column LastLoginDate column to table CTSCustomer.  	(#125530)
+        - [20200117@HarveyNguyen][127352]: Add table CustRetractEvidence							(#127352)
         - [202002130@Casey.Huynh][130109]: Add INDEX (SubscriberID, CTSCustID) on TABLE CustDCSAcount.
         - [20200416@Long.Luu][131506]: Manage Association_Create tables(AssociationByManual, AssociationRemove)
         - [20200416@Long.Luu][132623]: Customer Category_Create tables(SportGroup, CustomerCategory, CTSCustomerClassification)
@@ -16,9 +16,10 @@ Revisions:
             + Re-Design Table CTS_DataCenter.CustomerCategory_History
             + Add table CTS_DataCenter.CTSCustomerClassification_ScanStatus
             
-		- 20200706@Long.Luu: Associated Account Monitor	[Redmine ID: #134652]
-        - 20200806@Casey.Huynh: Add Index for table AssociationByDevice
-        - 20200807@Casey.Huynh:[138925] Chagne CustEvidence Structure for Cross Subscriber
+		- [20200706@Long.Luu][134652]: Associated Account Monitor	[Redmine ID: #134652]
+        - [20200806@Casey.Huynh]: Add Index for table AssociationByDevice
+        - [20200807@Casey.Huynh][138925]: Chagne CustEvidence Structure for Cross Subscriber
+        - [20200820@Casey.Huynh][139061]: Update Index CTSCustomer Classification
 Reviewer:
 */
 
@@ -31,6 +32,7 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, CustSubID			INT		UNSIGNED
 		, UserName			VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 		, UserName2			VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+        , RegisterName 		VARCHAR(50)
         , SiteID			INT
 		, Site				VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 		, RoleID			TINYINT
@@ -41,12 +43,17 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 		, Recommend			INT		UNSIGNED
         , LastLoginTime		TIMESTAMP(4)
         , CreatedDate		DATETIME
+        , CustStatusID		TINYINT
+        , Danger1			TINYINT
+        , Danger2			TINYINT
+        , Danger3			TINYINT
 		, PRIMARY KEY	PK_CTSCustomer_CTSCustID(CTSCustID)    
-		, UNIQUE KEY	UK_CTSCustomer_SubscriberID_UserName_UserName2(SubscriberID, UserName, UserName2)
-		, INDEX			IX_CTSCustomer_UserName_UserName2(UserName, UserName2)
-		, INDEX			IX_CTSCustomer_UserName2(UserName2)
-		, INDEX			IX_CTSCustomer_CustID_CustSubID(CustID, CustSubID)
-		, FULLTEXT 		IX_FullText_CTSCustomer_UserName_UserName2 (UserName,UserName2)
+		, UNIQUE KEY	UK_CTSCustomer_04062020_SubID_UserName_UserName2(SubscriberID, UserName, UserName2)
+		, INDEX			IX_CTSCustomer_04062020_UserName(UserName)
+		, INDEX			IX_CTSCustomer_04062020_UserName2(UserName2)
+        , INDEX			IX_CTSCustomer_04062020_RegisterName(RegisterName)
+		, INDEX			IX_CTSCustomer_04062020_CustID_CustSubID(CustID, CustSubID)
+        
 	) ENGINE=INNODB AUTO_INCREMENT=1;
 
 	CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociationByDevice(
@@ -380,10 +387,8 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomerClassification (
     ,	LastModifiedBy		INT UNSIGNED
     ,	LastScannedDate		DATETIME
 	, 	PRIMARY KEY			PK_CTSCustomerClassification_CustIDSportGroupIDCategoryID(CustID, SportGroupID, CategoryID)
-	, 	INDEX				IX_CTSCustomerClassification_SubscriberID(SubscriberID)
-    ,	INDEX				IX_CTSCustomerClassification_LastScannedDate(LastScannedDate)
-    ,   INDEX				IX_CTSCustomerClassification_CategoryID(CategoryID, SportGroupID)
-    , 	INDEX 				IX_CTSCustomerClassification_CustID(CustID)
+    ,   INDEX				IX_CTSCustomerClassification_CategoryIDLastScannedDate(CategoryID, LastScannedDate, SportGroupID, CustID)
+    , 	INDEX 				IX_CTSCustomerClassification_CTSCustID(CTSCustID)
 ) ENGINE=INNODB;
 
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomerClassification_History (
