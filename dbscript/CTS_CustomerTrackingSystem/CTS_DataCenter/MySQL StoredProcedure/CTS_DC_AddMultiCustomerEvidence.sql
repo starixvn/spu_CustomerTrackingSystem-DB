@@ -5,7 +5,7 @@ DROP PROCEDURE IF EXISTS CTS_DC_AddMultiCustomerEvidence $$
 CREATE PROCEDURE CTS_DC_AddMultiCustomerEvidence (
 		IN ip_NewAccountEvidences 	JSON    
     ,	IN ip_UserID 				INT
-	, 	IN ip_Rollback				BOOLEAN
+	, 	IN ip_Override				BOOLEAN
     
     , 	OUT op_ErrorMessage 		VARCHAR(200))
     
