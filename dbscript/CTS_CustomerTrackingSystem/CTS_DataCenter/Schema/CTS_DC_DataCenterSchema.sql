@@ -485,4 +485,18 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.SystemParameter (
         , INDEX			IX_CustEvidence(FromCustID, CTSCustID, EvidenceID)
         , UNIQUE INDEX	UX_CustEvidence_CustEvidID(CustEvidID)
 	) ENGINE=INNODB  AUTO_INCREMENT=1;
+
+	DROP TABLE IF EXISTS CTS_DataCenter.CustEvidenceLog;
+	CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustEvidenceLog(
+		CustEvidID			BIGINT		UNSIGNED	AUTO_INCREMENT	NOT NULL
+		, CTSCustID			BIGINT		UNSIGNED					NOT NULL
+		, EvidenceID		SMALLINT								NOT NULL
+		, Remark			VARCHAR(500)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NULL
+		, Level				TINYINT									NOT NULL	COMMENT 'Level 0 - 2'
+		, FromCustID		BIGINT		UNSIGNED					NOT NULL
+		, CreatedDate		DATETIME								NOT NULL
+		, CreatedBy			INT										NOT NULL
+        
+        , PRIMARY KEY	CustEvidenceLog(CustEvidID)
+	) ENGINE=INNODB  AUTO_INCREMENT=1;
 	
