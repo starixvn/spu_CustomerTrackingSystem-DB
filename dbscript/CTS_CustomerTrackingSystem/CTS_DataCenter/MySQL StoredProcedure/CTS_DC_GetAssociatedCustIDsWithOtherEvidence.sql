@@ -29,6 +29,18 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS TempAssociations;
     CREATE TEMPORARY TABLE TempAssociations (
 		CTSCustID 		BIGINT UNSIGNED PRIMARY KEY
+    );    
+        
+    DROP TEMPORARY TABLE IF EXISTS TempCustEvidence;
+    CREATE TEMPORARY TABLE TempCustEvidence (
+			CTSCustID 		BIGINT UNSIGNED
+		,	EvidenceID		SMALLINT
+        ,	INDEX TempCustEvidence_CTSCustIDEvidenceID(CTSCustID,EvidenceID)
+    );
+    
+    DROP TEMPORARY TABLE IF EXISTS TempCleanCustID;
+    CREATE TEMPORARY TABLE TempCleanCustID (
+			CTSCustID 		BIGINT UNSIGNED PRIMARY KEY
     );
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
@@ -45,19 +57,37 @@ BEGIN
 	FROM CTS_DataCenter.AssociationByDevice AS a
 		INNER JOIN TempAffectedDevices AS t ON a.DCSDeviceID = t.DCSDeviceID;
     
-    SELECT DISTINCT c.CustID
-    FROM TempAssociations AS t
-		INNER JOIN CTS_DataCenter.CustEvidence AS e ON t.CTSCustID = e.CTSCustID
-        INNER JOIN CTS_DataCenter.CTSCustomer AS c ON t.CTSCustID = c.CTSCustID
-	WHERE e.EvidenceID <> ip_EvidenceID
-    GROUP BY t.CTSCustID
-    HAVING COUNT(1) = 0;
+    # Get customer evidences
+    INSERT INTO TempCustEvidence(CTSCustID, EvidenceID)
+    SELECT c.CTSCustID, c.EvidenceID
+    FROM CTS_DataCenter.CustEvidence AS c
+		INNER JOIN TempAssociations AS t ON c.CTSCustID = t.CTSCustID
+	WHERE c.EvidenceID <> ip_EvidenceID;
+        
+	SET SQL_SAFE_UPDATES = 0;
+    
+    DELETE c
+    FROM TempCustEvidence AS c
+		INNER JOIN CTS_DataCenter.CustRetractEvidence AS r ON c.CTSCustID = r.CTSCustID AND c.EvidenceID = r.EvidenceID;
+        
+    # Accounts that are clean
+    INSERT INTO TempCleanCustID(CTSCustID)
+    SELECT DISTINCT c.CTSCustID
+	FROM TempAssociations AS c
+		LEFT JOIN (	SELECT DISTINCT CTSCustID
+					FROM TempCustEvidence) AS r ON c.CTSCustID = r.CTSCustID
+	WHERE r.CTSCustID IS NULL ;
+    
+    SELECT DISTINCT	c.CustID
+    FROM TempCleanCustID AS a
+		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON a.CTSCustID = c.CTSCustID;
+        
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
     DROP TEMPORARY TABLE IF EXISTS TempAffectedDevices;
     DROP TEMPORARY TABLE IF EXISTS TempAssociations;
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-    
+    DROP TEMPORARY TABLE IF EXISTS TempCustEvidence;
+    DROP TEMPORARY TABLE IF EXISTS TempCleanCustID;    
     
 END$$
 

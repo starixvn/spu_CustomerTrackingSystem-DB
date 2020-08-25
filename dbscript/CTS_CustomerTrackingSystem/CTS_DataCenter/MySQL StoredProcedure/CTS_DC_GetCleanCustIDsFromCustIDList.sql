@@ -19,6 +19,13 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS TempCTSCustIDs;
     CREATE TEMPORARY TABLE TempCTSCustIDs (
 			CTSCustID 		BIGINT UNSIGNED PRIMARY KEY
+    );    
+    
+    DROP TEMPORARY TABLE IF EXISTS TempCustEvidence;
+    CREATE TEMPORARY TABLE TempCustEvidence (
+			CTSCustID 		BIGINT UNSIGNED
+		,	EvidenceID		SMALLINT
+        ,	INDEX TempCustEvidence_CTSCustIDEvidenceID(CTSCustID,EvidenceID)
     );
     
     DROP TEMPORARY TABLE IF EXISTS TempCleanCustID;
@@ -30,22 +37,35 @@ BEGIN
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
     
-	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;    
+    
+    INSERT INTO TempCustEvidence(CTSCustID, EvidenceID)
+    SELECT c.CTSCustID, c.EvidenceID
+    FROM CTS_DataCenter.CustEvidence AS c
+		INNER JOIN TempCTSCustIDs AS t ON c.CTSCustID = t.CTSCustID;
+    
+    SET SQL_SAFE_UPDATES = 0;
+    
+    DELETE c
+    FROM TempCustEvidence AS c
+		INNER JOIN CTS_DataCenter.CustRetractEvidence AS r ON c.CTSCustID = r.CTSCustID AND c.EvidenceID = r.EvidenceID;
     
     INSERT INTO TempCleanCustID(CTSCustID)
 	SELECT DISTINCT c.CTSCustID
-	FROM CTS_DataCenter.CustEvidence AS c
-		INNER JOIN TempCTSCustIDs AS t ON c.CTSCustID = t.CTSCustID
-		LEFT JOIN CTS_DataCenter.CustRetractEvidence AS r ON c.CTSCustID = r.CTSCustID AND c.EvidenceID = r.EvidenceID
-	WHERE (r.CTSCustID IS NULL AND r.EvidenceID IS NULL)
-	GROUP BY c.CTSCustID
-	HAVING COUNT(1) = 0;
-
+	FROM TempCTSCustIDs AS c
+		LEFT JOIN (	SELECT DISTINCT CTSCustID
+					FROM TempCustEvidence) AS r ON c.CTSCustID = r.CTSCustID
+	WHERE r.CTSCustID IS NULL ;
+    
     SELECT DISTINCT	c.CustID
     FROM TempCleanCustID AS a
 		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON a.CTSCustID = c.CTSCustID;
         
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    
+    DROP TEMPORARY TABLE IF EXISTS TempCTSCustIDs;  
+    DROP TEMPORARY TABLE IF EXISTS TempCustEvidence;  
+    DROP TEMPORARY TABLE IF EXISTS TempCleanCustID;  
     
 END$$
 DELIMITER ;
