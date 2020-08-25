@@ -73,6 +73,12 @@ BEGIN
         ,	a.IsUsedManually
         ,	a.ScanIntervalInSecond
     ORDER BY LastModifiedDate DESC;
+
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+	
+	# Begin: Cleanup
+	DROP TEMPORARY TABLE tempLatestRecordOfCategory;
+	# End: Cleanup
    
 END$$
 DELIMITER ;
