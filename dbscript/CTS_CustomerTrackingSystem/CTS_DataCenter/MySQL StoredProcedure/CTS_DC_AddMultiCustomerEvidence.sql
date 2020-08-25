@@ -125,6 +125,12 @@ sp: BEGIN
     
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	VALUES(3, vr_SPName, 'Insert bunch of Customer Evidences', vr_CreatedDate, ip_UserID);
+
+	# Begin: Cleanup
+	DROP TEMPORARY TABLE tmpMultipleAccountEvidence;
+	DROP TEMPORARY TABLE tmpAssociationException;
+	DROP TEMPORARY TABLE tmpAffectedDevices;
+	# End: Cleanup
     
 END$$
 DELIMITER ;

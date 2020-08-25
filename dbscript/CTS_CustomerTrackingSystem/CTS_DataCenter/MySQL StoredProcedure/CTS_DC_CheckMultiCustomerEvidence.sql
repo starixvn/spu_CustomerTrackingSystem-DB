@@ -40,7 +40,7 @@ BEGIN
 			, EvidenceCode		VARCHAR(10)			PATH "$.EvidenceCode"
 		 )) AS tmpTable;  
     
-    SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
+    SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     SELECT 	RowId
 		,	c.CTSCustID
         ,	e.EvidenceID
@@ -55,5 +55,12 @@ BEGIN
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS c ON t.Username = c.Username
         LEFT JOIN CTS_DataCenter.Evidence AS e ON t.EvidenceCode = e.EvidenceCode
         LEFT JOIN CTS_DataCenter.CustEvidence AS ce ON c.CTSCustID = ce.CTSCustID AND e.EvidenceID = ce.EvidenceID AND ce.Level = 0;
+
+	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+
+	# Begin: Cleanup
+	DROP TEMPORARY TABLE tmpMultipleAccountEvidence;
+	# End: Cleanup
+
 END$$
 DELIMITER ;

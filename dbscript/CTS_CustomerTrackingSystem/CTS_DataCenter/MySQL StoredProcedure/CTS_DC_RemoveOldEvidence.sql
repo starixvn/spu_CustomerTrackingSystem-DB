@@ -93,6 +93,7 @@ sp: BEGIN
 			WHERE e.FromCTSCustID IS NULL OR e.ToCTSCustID IS NULL; 
             
             # Save log
+            SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
             INSERT IGNORE INTO CTS_DataCenter.CustEvidenceLog(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
 				SELECT cus.CTSCustID, cus.EvidenceID, cus.Remark, cus.Level, cus.FromCustID, cus.CreatedDate, cus.CreatedBy
 				FROM tmpCustEvidence tmp
@@ -103,6 +104,13 @@ sp: BEGIN
             WHERE  tmp.CTSCustID = cus.CTSCustID AND cus.FromCustID = tmp.FromCustID;
             
             SET op_ErrorMessage = "Remove evidence success";
+
+            # Begin: Cleanup
+            DROP TEMPORARY TABLE tmpMultipleAccount;
+			DROP TEMPORARY TABLE tmpAssociationException;
+			DROP TEMPORARY TABLE tmpAffectedDevices;
+			DROP TEMPORARY TABLE tmpCustEvidence;
+            # End: Cleanup
             
             LEAVE sp;
         END;
