@@ -5,7 +5,7 @@ DROP PROCEDURE IF EXISTS CTS_DC_RemoveOldEvidence $$
 
 CREATE PROCEDURE `CTS_DC_RemoveOldEvidence`(
 	IN ip_CTSCustIDs 			JSON    
-	,IN ip_Timetemp 			INT
+	,IN ip_Timetemp 			BIGINT
 	,IN ip_Rollback 			BOOLEAN
     ,IN ip_ClearHistory 		BOOLEAN
     
@@ -33,7 +33,7 @@ sp: BEGIN
 			# Remove log data
             DELETE FROM CTS_DataCenter.CustEvidenceLog
 			WHERE TimeTemp = ip_Timetemp;
-            
+
             LEAVE sp;
         END;
     END IF;
@@ -94,16 +94,35 @@ sp: BEGIN
 					INNER JOIN tmpAffectedDevices AS d ON t.CTSCustID = d.CTSCustID
 					INNER JOIN CTS_DataCenter.AssociationByDevice AS a ON a.DCSDeviceID = d.DCSDeviceID
 					LEFT JOIN tmpAssociationException AS e ON t.CTSCustID = e.FromCTSCustID AND a.CTSCustID = e.ToCTSCustID
-	WHERE e.FromCTSCustID IS NULL OR e.ToCTSCustID IS NULL;
+	WHERE a.CTSCustID <> d.CTSCustID		
+    	AND (e.FromCTSCustID IS NULL OR e.ToCTSCustID IS NULL);
     
+    IF(!ip_Rollback) THEN
+		BEGIN
+			 # Save log
+            SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+            INSERT IGNORE INTO CTS_DataCenter.CustEvidenceLog(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, TimeTemp)
+				SELECT cus.CTSCustID, cus.EvidenceID, cus.Remark, cus.Level, cus.FromCustID, cus.CreatedDate, cus.CreatedBy, ip_Timetemp
+				FROM tmpMultipleAccount tmp
+					INNER JOIN CTS_DataCenter.CustEvidence as cus ON tmp.CTSCustID = cus.CTSCustID AND cus.Level = 0;
+                    
+            INSERT IGNORE INTO CTS_DataCenter.CustEvidenceLog(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, TimeTemp)
+				SELECT cus.CTSCustID, cus.EvidenceID, cus.Remark, cus.Level, cus.FromCustID, cus.CreatedDate, cus.CreatedBy, ip_Timetemp
+				FROM tmpCustEvidence tmp
+					INNER JOIN CTS_DataCenter.CustEvidence as cus ON tmp.CTSCustID = cus.CTSCustID AND cus.FromCustID = tmp.FromCustID;
+        END;
+    END IF;
+    
+    # Remove old evidence
+	DELETE cus  FROM CTS_DataCenter.CustEvidence cus INNER JOIN tmpMultipleAccount tmp
+	WHERE  cus.CTSCustID = tmp.CTSCustID
+			AND cus.Level = 0;
+			
+	DELETE cus  FROM CTS_DataCenter.CustEvidence cus INNER JOIN tmpCustEvidence tmp
+	WHERE  tmp.CTSCustID = cus.CTSCustID AND cus.FromCustID = tmp.FromCustID;
+            
     IF(ip_Rollback) THEN
 		BEGIN
-			SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-        
-			# Remove old evidence
-			DELETE cus  FROM CTS_DataCenter.CustEvidence cus INNER JOIN tmpCustEvidence tmp
-            WHERE  tmp.CTSCustID = cus.CTSCustID AND cus.FromCustID = tmp.FromCustID;
-            
             # Rollback data
             INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
 				SELECT log.CTSCustID, log.EvidenceID, log.Remark, log.Level, log.FromCustID, log.CreatedDate, log.CreatedBy
@@ -113,23 +132,6 @@ sp: BEGIN
             # Remove log data
             DELETE FROM CTS_DataCenter.CustEvidenceLog
 			WHERE TimeTemp = ip_Timetemp;
-            
-            SET op_ErrorMessage = "Rollback log success";
-        END;
-    ELSE
-		BEGIN
-            # Save log
-            SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-            INSERT IGNORE INTO CTS_DataCenter.CustEvidenceLog(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, TimeTemp)
-				SELECT cus.CTSCustID, cus.EvidenceID, cus.Remark, cus.Level, cus.FromCustID, cus.CreatedDate, cus.CreatedBy, ip_Timetemp
-				FROM tmpCustEvidence tmp
-					INNER JOIN CTS_DataCenter.CustEvidence as cus ON tmp.CTSCustID = cus.CTSCustID AND cus.FromCustID = tmp.FromCustID;
-                 
-            # Remove old evidence
-			DELETE cus  FROM CTS_DataCenter.CustEvidence cus INNER JOIN tmpCustEvidence tmp
-            WHERE  tmp.CTSCustID = cus.CTSCustID AND cus.FromCustID = tmp.FromCustID;
-            
-            SET op_ErrorMessage = "Remove evidence success";
         END;
     END IF;
     
