@@ -127,9 +127,9 @@ sp: BEGIN
 	VALUES(3, vr_SPName, 'Insert bunch of Customer Evidences', vr_CreatedDate, ip_UserID);
 
 	# Begin: Cleanup
-	DROP TEMPORARY TABLE tmpMultipleAccountEvidence;
-	DROP TEMPORARY TABLE tmpAssociationException;
-	DROP TEMPORARY TABLE tmpAffectedDevices;
+	DROP TEMPORARY TABLE IF EXISTS tmpMultipleAccountEvidence;
+	DROP TEMPORARY TABLE IF EXISTS tmpAssociationException;
+	DROP TEMPORARY TABLE IF EXISTS tmpAffectedDevices;
 	# End: Cleanup
     
 END$$

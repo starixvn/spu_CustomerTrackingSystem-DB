@@ -136,10 +136,10 @@ sp: BEGIN
     END IF;
     
 	# Begin: Cleanup
-	DROP TEMPORARY TABLE tmpMultipleAccount;
-	DROP TEMPORARY TABLE tmpAssociationException;
-	DROP TEMPORARY TABLE tmpAffectedDevices;
-	DROP TEMPORARY TABLE tmpCustEvidence;
+	DROP TEMPORARY TABLE IF EXISTS tmpMultipleAccount;
+	DROP TEMPORARY TABLE IF EXISTS tmpAssociationException;
+	DROP TEMPORARY TABLE IF EXISTS tmpAffectedDevices;
+	DROP TEMPORARY TABLE IF EXISTS tmpCustEvidence;
 	# End: Cleanup
      
 END$$

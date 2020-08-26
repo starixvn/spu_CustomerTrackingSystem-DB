@@ -59,7 +59,7 @@ BEGIN
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 
 	# Begin: Cleanup
-	DROP TEMPORARY TABLE tmpMultipleAccountEvidence;
+	DROP TEMPORARY TABLE IF EXISTS tmpMultipleAccountEvidence;
 	# End: Cleanup
 
 END$$
