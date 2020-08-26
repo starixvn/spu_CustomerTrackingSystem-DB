@@ -5,9 +5,9 @@ DROP PROCEDURE IF EXISTS CTS_DC_RemoveOldEvidence $$
 
 CREATE PROCEDURE `CTS_DC_RemoveOldEvidence`(
 	IN ip_CTSCustIDs 			JSON    
-	,IN ip_Timetemp 			BIGINT
-	,IN ip_Rollback 			BOOLEAN
-    ,IN ip_ClearHistory 		BOOLEAN
+	,IN ip_SesionId 			BIGINT
+	,IN ip_IsRollback 			BOOLEAN
+    ,IN ip_IsClearLog			BOOLEAN
     
     ,OUT op_ErrorMessage 		VARCHAR(200)
 )
@@ -22,18 +22,18 @@ sp: BEGIN
 		   - 20200825@Roger.Le: Created [Redmine ID: 137551]
 	*/
     
-     # Handle error
+    # Handle error
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
     
-    IF(ip_ClearHistory) THEN
+    IF(ip_IsClearLog) THEN
 		BEGIN
 			# Remove log data
             DELETE FROM CTS_DataCenter.CustEvidenceLog
-			WHERE TimeTemp = ip_Timetemp;
-
+			WHERE SesionId = ip_SesionId;
+            
             LEAVE sp;
         END;
     END IF;
@@ -97,17 +97,17 @@ sp: BEGIN
 	WHERE a.CTSCustID <> d.CTSCustID		
     	AND (e.FromCTSCustID IS NULL OR e.ToCTSCustID IS NULL);
     
-    IF(!ip_Rollback) THEN
+    IF(!ip_IsRollback) THEN
 		BEGIN
 			 # Save log
             SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-            INSERT IGNORE INTO CTS_DataCenter.CustEvidenceLog(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, TimeTemp)
-				SELECT cus.CTSCustID, cus.EvidenceID, cus.Remark, cus.Level, cus.FromCustID, cus.CreatedDate, cus.CreatedBy, ip_Timetemp
+            INSERT IGNORE INTO CTS_DataCenter.CustEvidenceLog(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, SesionId)
+				SELECT cus.CTSCustID, cus.EvidenceID, cus.Remark, cus.Level, cus.FromCustID, cus.CreatedDate, cus.CreatedBy, ip_SesionId
 				FROM tmpMultipleAccount tmp
 					INNER JOIN CTS_DataCenter.CustEvidence as cus ON tmp.CTSCustID = cus.CTSCustID AND cus.Level = 0;
                     
-            INSERT IGNORE INTO CTS_DataCenter.CustEvidenceLog(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, TimeTemp)
-				SELECT cus.CTSCustID, cus.EvidenceID, cus.Remark, cus.Level, cus.FromCustID, cus.CreatedDate, cus.CreatedBy, ip_Timetemp
+            INSERT IGNORE INTO CTS_DataCenter.CustEvidenceLog(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, SesionId)
+				SELECT cus.CTSCustID, cus.EvidenceID, cus.Remark, cus.Level, cus.FromCustID, cus.CreatedDate, cus.CreatedBy, ip_SesionId
 				FROM tmpCustEvidence tmp
 					INNER JOIN CTS_DataCenter.CustEvidence as cus ON tmp.CTSCustID = cus.CTSCustID AND cus.FromCustID = tmp.FromCustID;
         END;
@@ -121,17 +121,17 @@ sp: BEGIN
 	DELETE cus  FROM CTS_DataCenter.CustEvidence cus INNER JOIN tmpCustEvidence tmp
 	WHERE  tmp.CTSCustID = cus.CTSCustID AND cus.FromCustID = tmp.FromCustID;
             
-    IF(ip_Rollback) THEN
+    IF(ip_IsRollback) THEN
 		BEGIN
             # Rollback data
             INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
 				SELECT log.CTSCustID, log.EvidenceID, log.Remark, log.Level, log.FromCustID, log.CreatedDate, log.CreatedBy
 				FROM CTS_DataCenter.CustEvidenceLog log
-                WHERE log.TimeTemp = ip_Timetemp;
+                WHERE log.SesionId = ip_SesionId;
                 
             # Remove log data
             DELETE FROM CTS_DataCenter.CustEvidenceLog
-			WHERE TimeTemp = ip_Timetemp;
+			WHERE SesionId = ip_SesionId;
         END;
     END IF;
     
