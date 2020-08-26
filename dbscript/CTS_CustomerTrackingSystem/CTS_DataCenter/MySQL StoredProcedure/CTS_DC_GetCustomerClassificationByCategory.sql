@@ -14,6 +14,28 @@ BEGIN
 		Param's Explanation (filtered by):
          ip_CategoryIDList: ex: '1,2,3'       
 	*/     
+    ### PERFORMANCE: START
+    DECLARE		vrExecKey		BIGINT	UNSIGNED;
+	DECLARE		vrSPName		VARCHAR(200)  DEFAULT 'CTS_DC_GetCustomerClassificationIntervalScan' ;
+    DECLARE		vrStepID		INT;
+	DECLARE 	vrNotes	 		VARCHAR(500);
+	DECLARE 	vrStartTime		TIMESTAMP(4);
+	DECLARE		vrEndTime 		TIMESTAMP(4);
+	DECLARE		vrDuration 		BIGINT;	
+    DECLARE		vrLgTotalRecord	INT;
+    DECLARE		vrFromID		BIGINT;
+    DECLARE		vrToID			BIGINT;
+
+    SET		vrExecKey = CRC32((UUID_Short()));    
+    SET		vrNotes = '';
+    SET 	vrStepID = 1;
+    
+    SET 	vrStartTime = CURRENT_TIMESTAMP(4);	
+    
+    INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
+    VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);
+
+	### PERFORMANCE: END
     
     DROP TEMPORARY TABLE IF EXISTS Temp_inputCategory;
     CREATE TEMPORARY TABLE Temp_inputCategory(
@@ -63,6 +85,23 @@ BEGIN
 			OR tmpCusCat.CategoryID IS NOT NULL;
 
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    
+    ### PERFORMANCE
+	SET		vrEndTime = CURRENT_TIMESTAMP(4);
+    
+	SELECT 	Count(1), Min(tas.CustID), Max(tas.CustID)
+    INTO	vrLgTotalRecord, vrFromID, vrToID
+    FROM	Temp_inputCustSport AS tas;    
+    
+    UPDATE	DCS_DataCenter.zzTracePerformance AS z
+    SET		z.EndTime = vrEndTime
+			, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
+            , z.TotalRecord = vrLgTotalRecord
+            , z.FromID = vrFromID
+            , z.ToID		= vrToID
+    WHERE	z.ExecKey = vrExecKey AND z.StepID = vrStepID ;    
+    
+    ### PERFORMANCE: END 
     
 END$$
 DELIMITER ;
