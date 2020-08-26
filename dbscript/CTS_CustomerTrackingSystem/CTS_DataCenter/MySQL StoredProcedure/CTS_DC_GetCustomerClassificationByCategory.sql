@@ -10,13 +10,14 @@ BEGIN
 		Original:
 
 		Revisions:
-			[20200701@Casey.Huynh]135324]: Chagne Flow and Store more Info
+			[20200701@Casey.Huynh][135324]: Chagne Flow and Store more Info
+            [20200826@Casey.Huynh][137693]: Add Trace Performance
 		Param's Explanation (filtered by):
          ip_CategoryIDList: ex: '1,2,3'       
 	*/     
     ### PERFORMANCE: START
     DECLARE		vrExecKey		BIGINT	UNSIGNED;
-	DECLARE		vrSPName		VARCHAR(200)  DEFAULT 'CTS_DC_GetCustomerClassificationIntervalScan' ;
+	DECLARE		vrSPName		VARCHAR(200)  DEFAULT 'CTS_DC_GetCustomerClassificationByCategory' ;
     DECLARE		vrStepID		INT;
 	DECLARE 	vrNotes	 		VARCHAR(500);
 	DECLARE 	vrStartTime		TIMESTAMP(4);
