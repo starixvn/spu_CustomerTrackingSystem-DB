@@ -77,7 +77,7 @@ BEGIN
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 	
 	# Begin: Cleanup
-	DROP TEMPORARY TABLE tempLatestRecordOfCategory;
+	DROP TEMPORARY TABLE IF EXISTS tempLatestRecordOfCategory;
 	# End: Cleanup
    
 END$$
