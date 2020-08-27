@@ -12,11 +12,11 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original: 
 		Revisions:
-			- 20200423@Long.Luu: Created [Redmine ID: #132623]
+			- 20200423@Long.Luu [Redmine ID: #132623]: Created
             - 20200608@Casey.Huynh: Enhance SP
             - [20200701@Casey.Huynh][135324]: Chagne Flow and Store more Info
 					+ Remove rule "hide VIP IF has SmartPunter/Highrisk
-            - 20200820@Roger.Le: New Column "Next Scan Date" for Customer Category [Redmine ID: #139969]
+            - 20200820@Roger.Le [Redmine ID: #139969]: New Column "Next Scan Date" for Customer Category
             
 		Param's Explanation:
 	*/ 
@@ -76,9 +76,7 @@ BEGIN
 
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 	
-	# Begin: Cleanup
 	DROP TEMPORARY TABLE IF EXISTS tempLatestRecordOfCategory;
-	# End: Cleanup
    
 END$$
 DELIMITER ;
