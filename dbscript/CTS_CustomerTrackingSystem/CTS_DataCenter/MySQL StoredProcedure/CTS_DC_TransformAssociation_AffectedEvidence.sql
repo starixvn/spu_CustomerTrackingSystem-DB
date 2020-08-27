@@ -11,6 +11,7 @@ BEGIN
 					[20200303@Casey.Huynh]. Update Affected CreateBy = Root CreatedBy
                     [20200805@Casey.Huynh]: Update Bussiness affect Crosssub and correct update value LastCTSAssDevID
 					[20200807@Casey.Huynh]:[138925] Chagne CustEvidence Structure for Cross Subscriber : Remove SubscriberID and IsCreatedByMaster
+                    [20200821@Casey.Huynh]:[140100]: Return CustID is added affected evidence
 		Param's Explanation (filtered by):
 	*/
     
@@ -57,6 +58,19 @@ BEGIN
         , ToCTSCustID		BIGINT	UNSIGNED
 	);	
     
+	DROP TEMPORARY TABLE IF EXISTS TempCustEvidence;    
+	CREATE TEMPORARY TABLE TempCustEvidence(
+		CTSCustID			BIGINT		UNSIGNED					NOT NULL
+		, EvidenceID		SMALLINT								NOT NULL
+		, Remark			VARCHAR(500)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NULL
+		, Level				TINYINT									NOT NULL	COMMENT 'Level 1 - 2'
+		, FromCustID		BIGINT		UNSIGNED					NOT NULL
+		, CreatedDate		DATETIME								NOT NULL
+		, CreatedBy			INT										NOT NULL
+        
+         , PRIMARY KEY	PK_CustEvidence(CTSCustID, FromCustID, EvidenceID)
+	);
+    
 	#===1. GET List of New Association=====================================================================
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED ;
 
@@ -87,8 +101,9 @@ BEGIN
                     
                    
     #===3. Place Affected Evidence Level 0  Of (FromCTSCust) for (ToCTSCust)===============================
-    IF EXISTS (SELECT 1 FROM TempCustAssociation LIMIT 1) THEN        
-		INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
+    IF EXISTS (SELECT 1 FROM TempCustAssociation LIMIT 1) THEN     
+        
+		INSERT IGNORE INTO TempCustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
 		SELECT	tmp_ca.ToCTSCustID
 				, ce.EvidenceID
 				, 'Auto New AssDev' AS Remark
@@ -103,20 +118,46 @@ BEGIN
 					AND ce.Level	= 0;    
 			
     #===4. Place Affected Evidence Of Level 0 (ToCTSCust) for (ToCTSCust)==================================
-		INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
-			SELECT	tmp_ca.FromCTSCustID
-					, ce.EvidenceID
-					, 'Auto New AssDev' AS Remark
-					, 2 				AS Level
-					, tmp_ca.ToCTSCustID
-					, vr_CreatedDate	AS CreatedDate
-					, ce.CreatedBy 		AS CreatedBy
-			FROM		CTS_DataCenter.CustEvidence	AS ce
-			INNER JOIN	TempCustAssociation AS tmp_ca
-						ON	ce.CTSCustID = tmp_ca.ToCTSCustID
-			WHERE		ce.CTSCustID	= tmp_ca.ToCTSCustID
-						AND ce.Level	= 0;	                        
-
+		INSERT IGNORE INTO TempCustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
+		SELECT	tmp_ca.FromCTSCustID
+				, ce.EvidenceID
+				, 'Auto New AssDev' AS Remark
+				, 2 				AS Level
+				, tmp_ca.ToCTSCustID
+				, vr_CreatedDate	AS CreatedDate
+				, ce.CreatedBy 		AS CreatedBy
+		FROM		CTS_DataCenter.CustEvidence	AS ce
+		INNER JOIN	TempCustAssociation AS tmp_ca
+					ON	ce.CTSCustID = tmp_ca.ToCTSCustID
+		WHERE		ce.CTSCustID	= tmp_ca.ToCTSCustID
+					AND ce.Level	= 0;
+                    
+		IF EXISTS (SELECT 1 FROM TempCustEvidence LIMIT 1) THEN  
+			DELETE tce
+            FROM	TempCustEvidence AS tce
+            INNER JOIN CTS_DataCenter.CustEvidence  AS ce
+						ON tce.CTSCustID = ce.CTSCustID
+							AND tce.FromCustID = ce.FromCustID
+                            AND tce.EvidenceID = ce.EvidenceID;            
+            
+			INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
+			SELECT	tce.CTSCustID
+					, tce.EvidenceID
+					, tce.Remark
+					, tce.Level
+					, tce.FromCustID
+					, tce.CreatedDate
+					, tce.CreatedBy
+			FROM	TempCustEvidence	AS tce;	
+			
+ 
+            SELECT DISTINCT'DEBUG',  e.CTSCustID FROM TempCustEvidence e;
+            
+			SELECT 		cus.CustID
+			FROM		(SELECT DISTINCT CTSCustID FROM TempCustEvidence)	AS tce
+			INNER JOIN	CTS_DataCenter.CTSCustomer AS cus
+						ON tce.CTSCustID = cus.CTSCustID;	
+		END IF;
 	END IF;
     
 	#=====Update ProcessAffectedEvidence ===============================================
