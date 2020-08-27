@@ -55,7 +55,7 @@ BEGIN
         
         INSERT INTO Temp_PerformanceStats(step_name, start_time, diff_time, stats)
 		WITH CTE_Stats AS (
-			SELECT CONCAT('ERROR_',err_no) AS step_name, start_time, TIMESTAMPDIFF(MICROSECOND, CURRENT_TIMESTAMP(4), start_time) / 1000 as diff_time, JSON_OBJECT('cod_name', cod_name, 'err_message', err_message, 'sch_name', sch_name, 'tab_name', tab_name, 'col_name', col_name) as stats
+			SELECT CONCAT('ERROR_',err_no) AS step_name, start_time, TIMESTAMPDIFF(MICROSECOND, start_time, CURRENT_TIMESTAMP(4) ) / 1000 as diff_time, JSON_OBJECT('cod_name', cod_name, 'err_message', err_message, 'sch_name', sch_name, 'tab_name', tab_name, 'col_name', col_name) as stats
 		)
         SELECT step_name, start_time, diff_time, stats
         FROM CTE_Stats;
@@ -91,16 +91,17 @@ BEGIN
 		, SubscriberID			INT
         , UserAgentKey			VARCHAR(32)
 		, DeviceCode			VARCHAR(32)
-		, FingerprintCode		VARCHAR(2000) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+		, FingerprintCode		VARCHAR(692) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
         , FingerprintMoreInfo	VARCHAR(250) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 		, CreatedDate			DATETIME
 		, TransTime				TIMESTAMP(4) 
         , INDEX 				IX_Temp_Transaction_DeviceCode(DeviceCode)
-	) ENGINE = InnoDB
+        , INDEX 				IX_Temp_Transaction_AccountID(AccountID, DeviceCode, FingerprintCode)
+	) ENGINE = MEMORY
     ;
     
 	#========GET INPUT DATA===========================
-    SET start_time = CURRENT_TIMESTAMP(4);
+    set start_time  = CURRENT_TIMESTAMP(4);
 	INSERT INTO Temp_Transaction(TransID, AccountID, SubscriberID, UserAgentKey, DeviceCode, CreatedDate, TransTime,  FingerprintCode, FingerprintMoreInfo)
     WITH CTE_Trans AS (
 		SELECT TransID
@@ -186,7 +187,7 @@ BEGIN
     SELECT AccountID, DeviceCode, FingerprintCode, DeviceID
     FROM (
 		SELECT tts.AccountID, tts.DeviceCode, tts.FingerprintCode, MIN(ass.DeviceID) AS DeviceID
-			, MAX(DCS_DC_ISLISTSMATCHBYITEM(';',tts.FingerprintCode, df.FingerprintCode)) AS IsMatched
+			, MAX(DCS_DC_IsListsMatchByItem(';',tts.FingerprintCode, df.FingerprintCode)) AS IsMatched
 		FROM 
 			CTE_Assosiation tts
 		INNER JOIN DCS_DataCenter.Association AS ass 
@@ -206,7 +207,17 @@ BEGIN
     ;
    
 	# UPDATE recover level 2
-	CREATE TEMPORARY TABLE Temp_RecoverDeviceByBet 
+	CREATE TEMPORARY TABLE Temp_RecoverDeviceByBet (
+		TransID				BIGINT	UNSIGNED PRIMARY KEY
+		, AccountID				BIGINT	UNSIGNED
+		, DeviceCode			VARCHAR(32)
+		, FingerprintCode		VARCHAR(692)
+        , INDEX 				IX_Temp_RecoverDeviceByBet_AccountID(AccountID, DeviceCode, FingerprintCode)
+        #, INDEX 				IX_Temp_RecoverDeviceByBet_DeviceCode(DeviceCode)
+    ) engine=MEMORY;
+    
+    SET start_time = CURRENT_TIMESTAMP(4);
+    INSERT INTO Temp_RecoverDeviceByBet(TransID, AccountID, DeviceCode, FingerprintCode)
 	SELECT TransID, AccountID, DeviceCode, FingerprintCode 
 	FROM Temp_Transaction tts
 	WHERE tts.DeviceCode IS NOT NULL
@@ -215,7 +226,6 @@ BEGIN
 		AND NOT EXISTS (SELECT 1 FROM Temp_RecoveredDevice dr WHERE dr.DeviceCode = tts.DeviceCode)
 	;
     
-    SET start_time = CURRENT_TIMESTAMP(4);
 	INSERT IGNORE INTO Temp_RecoveredDevice(AccountID, DeviceCode, FingerprintCode, DeviceID, RecoverCode)
     SELECT AccountID, DeviceCode, FingerprintCode, DeviceID, RecoverCode
     FROM (
@@ -224,7 +234,7 @@ BEGIN
 		FROM Temp_Transaction tts
 		INNER JOIN Temp_RecoverDeviceByBet rb ON rb.AccountID = tts.AccountID 
 			AND rb.DeviceCode <> tts.DeviceCode
-			AND DCS_DC_ISLISTSMATCHBYITEM(';',tts.FingerprintCode, rb.FingerprintCode) = 1
+			AND DCS_DC_IsListsMatchByItem(';',tts.FingerprintCode, rb.FingerprintCode) = 1
 		WHERE rb.TransID > tts.TransID
     ) as p
     WHERE rowIdx = 1
@@ -368,23 +378,6 @@ BEGIN
     )
     SELECT step_name, start_time, diff_time, stats FROM CTE_Stats
     ;
-    
-    # UPDATE DeviceFingerprintID
-    /*SET start_time = CURRENT_TIMESTAMP(4);
-    WITH cte_Trans AS (SELECT DISTINCT DeviceCode, FingerprintCode FROM Temp_Transaction)
-    UPDATE Temp_ExistedDevice de
-    INNER JOIN cte_Trans tts ON tts.DeviceCode = de.DeviceCode
-    INNER JOIN DCS_DataCenter.DeviceFingerprint df ON df.DeviceID = de.DeviceID AND df.FingerprintCode = tts.FingerprintCode
-    SET 
-		de.DeviceFingerprintID = df.DeviceFingerprintID
-    ;
-    GET DIAGNOSTICS rowCount = ROW_COUNT;
-    INSERT INTO Temp_PerformanceStats(step_name, start_time, diff_time, stats)
-    WITH CTE_Stats AS (
-		SELECT 'UPDATE_FingerprintID' AS step_name, start_time, TIMESTAMPDIFF(MICROSECOND, start_time, CURRENT_TIMESTAMP(4)) / 1000 as diff_time, JSON_OBJECT('rowCount', rowCount) as stats
-    )
-    SELECT step_name, start_time, diff_time, stats FROM CTE_Stats
-    ;*/
    
     # INSERT new Association
     SET start_time = CURRENT_TIMESTAMP(4);
@@ -437,11 +430,28 @@ BEGIN
     ;
 	# END
     
+    /*****MOVE TRans competed to Trans07****************************************************/
+	SET start_time = CURRENT_TIMESTAMP(4);
+    INSERT IGNORE INTO  DCS_DataCenter.Transaction07(TransID, LoginName, TransTime, SubscriberID, AccountID
+	, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID
+	, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime)      
+	SELECT 	ts.TransID, ts.LoginName, ts.TransTime, ts.SubscriberID, ts.AccountID
+			, ts.URLID, ts.DeviceCodeID, ts.DeviceID, ts.FirstDeviceCode, ts.DeviceStatus, ts.DeviceFingerprintID
+			, ts.UserAgentKey, ts.IP, ts.IPID, ts.ActionResultID, ts.Flagged, ts.PluginID, ts.TransStatus, ts.CreatedDate, ts.InsertTime
+	FROM DCS_DataCenter.Transaction AS ts
+	INNER JOIN	Temp_Transaction AS tmp_rm
+				ON	ts.TransID = tmp_rm.TransID
+	WHERE		ts.DeviceID IS NOT NULL;
+    GET DIAGNOSTICS rowCount = ROW_COUNT;
+    INSERT INTO Temp_PerformanceStats(step_name, start_time, diff_time, stats)
+    WITH CTE_Stats AS (
+		SELECT 'MOVE_Transaction07' AS step_name, start_time, TIMESTAMPDIFF(MICROSECOND, start_time, CURRENT_TIMESTAMP(4)) / 1000 as diff_time, JSON_OBJECT('rowCount', rowCount) as stats
+    )
+    SELECT step_name, start_time, diff_time, stats FROM CTE_Stats
+    ;
+    
     # INSERT perf counter
     INSERT INTO MonDB.dba_SP_PerformanceStats (sch_name, sp_name, step_id, step_name, start_time, diff_time, stats, call_time, end_time)
-	SELECT sch_name, sp_name, step_id, step_name, start_time, diff_time, stats, call_time, CURRENT_TIMESTAMP(4) as end_time
-	FROM Temp_PerformanceStats;
-    
-    select * from Temp_ExistedDevice;
-    select * from Temp_RecoveredDevice;
+	SELECT sch_name, sp_name, step_id, step_name, st.start_time, diff_time, stats, call_time, CURRENT_TIMESTAMP(4) as end_time
+	FROM Temp_PerformanceStats st;
 END
