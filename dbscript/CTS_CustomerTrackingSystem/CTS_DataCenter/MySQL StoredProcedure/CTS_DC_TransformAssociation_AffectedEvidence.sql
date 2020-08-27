@@ -149,9 +149,6 @@ BEGIN
 					, tce.CreatedDate
 					, tce.CreatedBy
 			FROM	TempCustEvidence	AS tce;	
-			
- 
-            SELECT DISTINCT'DEBUG',  e.CTSCustID FROM TempCustEvidence e;
             
 			SELECT 		cus.CustID
 			FROM		(SELECT DISTINCT CTSCustID FROM TempCustEvidence)	AS tce
