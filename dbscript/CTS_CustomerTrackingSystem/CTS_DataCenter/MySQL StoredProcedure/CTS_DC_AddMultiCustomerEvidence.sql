@@ -5,7 +5,7 @@ DROP PROCEDURE IF EXISTS CTS_DC_AddMultiCustomerEvidence $$
 CREATE PROCEDURE CTS_DC_AddMultiCustomerEvidence (
 		IN ip_NewAccountEvidences 	JSON    
     ,	IN ip_UserID 				INT
-	, 	IN ip_Override				BOOLEAN
+	, 	IN ip_IsOverride				BOOLEAN
     
     , 	OUT op_ErrorMessage 		VARCHAR(200))
     
@@ -80,12 +80,12 @@ sp: BEGIN
 			, Remark		VARCHAR(500)		PATH "$.Comment"
 		 )) AS tmpTable;  
          
-	IF EXISTS (	SELECT 1 
+	IF (!ip_IsOverride AND EXISTS (	SELECT 1 
 				FROM tmpMultipleAccountEvidence AS t 
 					LEFT JOIN CTS_DataCenter.CustEvidence AS ce ON t.CTSCustID = ce.CTSCustID AND t.EvidenceID = ce.EvidenceID
 				WHERE ce.CTSCustID IS NOT NULL
 					AND ce.EvidenceID IS NOT NULL
-                    AND Level = 0) THEN
+                    AND Level = 0)) THEN
 		SET op_ErrorMessage = 'This Customer has already been flagged with this Evidence.';
 		LEAVE sp;
 	END IF;
@@ -126,11 +126,9 @@ sp: BEGIN
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	VALUES(3, vr_SPName, 'Insert bunch of Customer Evidences', vr_CreatedDate, ip_UserID);
 
-	# Begin: Cleanup
 	DROP TEMPORARY TABLE IF EXISTS tmpMultipleAccountEvidence;
 	DROP TEMPORARY TABLE IF EXISTS tmpAssociationException;
 	DROP TEMPORARY TABLE IF EXISTS tmpAffectedDevices;
-	# End: Cleanup
     
 END$$
 DELIMITER ;

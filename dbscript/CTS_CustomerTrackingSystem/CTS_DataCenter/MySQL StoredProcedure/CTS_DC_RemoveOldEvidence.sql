@@ -97,10 +97,10 @@ sp: BEGIN
 	WHERE a.CTSCustID <> d.CTSCustID		
     	AND (e.FromCTSCustID IS NULL OR e.ToCTSCustID IS NULL);
     
+	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     IF(!ip_IsRollback) THEN
 		BEGIN
 			 # Save log
-            SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
             INSERT IGNORE INTO CTS_DataCenter.CustEvidenceLog(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, SesionId)
 				SELECT cus.CTSCustID, cus.EvidenceID, cus.Remark, cus.Level, cus.FromCustID, cus.CreatedDate, cus.CreatedBy, ip_SesionId
 				FROM tmpMultipleAccount tmp
@@ -135,12 +135,10 @@ sp: BEGIN
         END;
     END IF;
     
-	# Begin: Cleanup
 	DROP TEMPORARY TABLE IF EXISTS tmpMultipleAccount;
 	DROP TEMPORARY TABLE IF EXISTS tmpAssociationException;
 	DROP TEMPORARY TABLE IF EXISTS tmpAffectedDevices;
 	DROP TEMPORARY TABLE IF EXISTS tmpCustEvidence;
-	# End: Cleanup
      
 END$$
 DELIMITER ;
