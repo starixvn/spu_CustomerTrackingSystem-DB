@@ -12,10 +12,11 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original: 
 		Revisions:
-			- 20200423@Long.Luu: Created [Redmine ID: #132623]
+			- 20200423@Long.Luu [Redmine ID: #132623]: Created
             - 20200608@Casey.Huynh: Enhance SP
             - [20200701@Casey.Huynh][135324]: Chagne Flow and Store more Info
 					+ Remove rule "hide VIP IF has SmartPunter/Highrisk
+            - 20200820@Roger.Le [Redmine ID: #139969]: New Column "Next Scan Date" for Customer Category
             
 		Param's Explanation:
 	*/ 
@@ -28,18 +29,20 @@ BEGIN
 	, 	Remark				VARCHAR(500) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
     , 	LastModifiedDate	DATETIME
     ,	LastModifiedBy		INT UNSIGNED
+    , 	LastScannedDate		DATETIME
 	#, 	PRIMARY KEY			PK_tempLatestRecordOfCategory_CategoryID(CategoryID)
     );
     
     SET v_remark = 'Auto tag customer classification';
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     
-    INSERT INTO tempLatestRecordOfCategory(CategoryID, SportGroupID, LastModifiedBy, LastModifiedDate, Remark)
+    INSERT INTO tempLatestRecordOfCategory(CategoryID, SportGroupID, LastModifiedBy, LastModifiedDate, Remark, LastScannedDate)
     SELECT 		cla.CategoryID
 				, cla.SportGroupID
 				, cla.LastModifiedBy
                 , cla.LastModifiedDate
                 , cla.Remark
+                , cla.LastScannedDate
     FROM		CTS_DataCenter.CTSCustomerClassification AS cla
     WHERE		cla.CustID = ip_CustID;    
 
@@ -52,6 +55,8 @@ BEGIN
         ,	(CASE WHEN a.IsUsedManually = 0 THEN v_remark ELSE  c.Remark END ) AS Remark
         ,	u.UserName AS LastModifiedBy
         ,	MAX(c.LastModifiedDate) AS LastModifiedDate
+        ,	DATE_ADD(MIN(c.LastScannedDate), INTERVAL a.ScanIntervalInSecond SECOND) AS NextScanFromDate
+        , 	DATE_ADD(MAX(c.LastScannedDate), INTERVAL a.ScanIntervalInSecond SECOND) AS NextScanToDate
         ,	a.IsUsedManually AS IsEnabledDelete 
     FROM tempLatestRecordOfCategory AS c
 		INNER JOIN CTS_DataCenter.CustomerCategory AS a ON c.CategoryID = a.CategoryID
@@ -66,7 +71,12 @@ BEGIN
         ,	c.LastModifiedBy
         , 	u.Username
         ,	a.IsUsedManually
+        ,	a.ScanIntervalInSecond
     ORDER BY LastModifiedDate DESC;
+
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+	
+	DROP TEMPORARY TABLE IF EXISTS tempLatestRecordOfCategory;
    
 END$$
 DELIMITER ;
