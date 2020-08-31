@@ -8,7 +8,6 @@ CREATE PROCEDURE `CTS_DC_RemoveOldEvidence`(
 	,IN ip_SessionId 			BIGINT
 	,IN ip_IsRollback 			BOOLEAN
     ,IN ip_IsClearLog			BOOLEAN
-    
     ,OUT op_ErrorMessage 		VARCHAR(200)
 )
 sp: BEGIN
@@ -73,7 +72,7 @@ sp: BEGIN
 			  CTSCustID 	BIGINT UNSIGNED		PATH "$.CTSCustID"
 		 )) AS tmpTable;
  
-	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;      
+	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 	INSERT INTO tmpAffectedDevices(CTSCustID, DCSDeviceID)
 	SELECT DISTINCT t.CTSCustID, a.DCSDeviceID
 	FROM CTS_DataCenter.AssociationByDevice AS a    

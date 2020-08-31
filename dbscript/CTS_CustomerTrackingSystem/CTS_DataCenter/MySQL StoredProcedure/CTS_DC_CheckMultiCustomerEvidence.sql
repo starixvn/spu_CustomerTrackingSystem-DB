@@ -3,7 +3,7 @@ USE `CTS_DataCenter` $$
 DROP PROCEDURE IF EXISTS CTS_DC_CheckMultiCustomerEvidence $$
 
 CREATE PROCEDURE CTS_DC_CheckMultiCustomerEvidence (
-	IN ip_NewAccountEvidences 	JSON
+	IN 		ip_NewAccountEvidences 	JSON
 	,IN 	ip_IsOverride			BOOLEAN
 )
     
@@ -55,8 +55,6 @@ BEGIN
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS c ON t.Username = c.Username
         LEFT JOIN CTS_DataCenter.Evidence AS e ON t.EvidenceCode = e.EvidenceCode
         LEFT JOIN CTS_DataCenter.CustEvidence AS ce ON c.CTSCustID = ce.CTSCustID AND e.EvidenceID = ce.EvidenceID AND ce.Level = 0;
-
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 
 	DROP TEMPORARY TABLE IF EXISTS tmpMultipleAccountEvidence;
 

@@ -66,6 +66,7 @@ sp: BEGIN
 			, Remark		VARCHAR(500)		PATH "$.Comment"
 		 )) AS tmpTable;  
          
+	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 	IF (!ip_IsOverride AND EXISTS (	SELECT 1 
 				FROM tmpMultipleAccountEvidence AS t 
 					LEFT JOIN CTS_DataCenter.CustEvidence AS ce ON t.CTSCustID = ce.CTSCustID AND t.EvidenceID = ce.EvidenceID
@@ -86,7 +87,6 @@ sp: BEGIN
         ,	ip_UserID
     FROM tmpMultipleAccountEvidence AS t;
 	
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;       
     INSERT INTO tmpAffectedDevices(CTSCustID, DCSDeviceID)
     SELECT DISTINCT t.CTSCustID, a.DCSDeviceID
     FROM CTS_DataCenter.AssociationByDevice AS a    
@@ -99,7 +99,6 @@ sp: BEGIN
 		INNER JOIN tmpMultipleAccountEvidence AS t ON e.LeastCTSCustID_Order = t.CTSCustID
 													OR e.GreatestCTSCustID_Order = t.CTSCustID;
     
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;    
 	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
     SELECT DISTINCT a.CTSCustID, t.EvidenceID, t.Remark, 2, t.CTSCustID, vr_CreatedDate, ip_UserID
     FROM tmpMultipleAccountEvidence AS t
