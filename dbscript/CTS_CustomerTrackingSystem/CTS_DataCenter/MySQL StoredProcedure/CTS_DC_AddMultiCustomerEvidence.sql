@@ -31,20 +31,6 @@ sp: BEGIN
     END;
     
     SET	vr_CreatedDate 		= CURRENT_TIME();
-    
-    # rollback data if insert failed
-    IF(ip_Rollback) THEN
-		BEGIN
-			# Insert all data
-			INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
-				SELECT log.CTSCustID, log.EvidenceID, log.Remark, log.Level, log.FromCustID, log.CreatedDate, log.CreatedBy
-				FROM CustEvidenceLog log;
-            SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
-            
-            SET op_ErrorMessage = 'Rollback evidence success';
-            LEAVE sp;
-        END;
-    END IF;
      
     DROP TEMPORARY TABLE IF EXISTS tmpMultipleAccountEvidence;    
 	CREATE TEMPORARY TABLE tmpMultipleAccountEvidence 
@@ -100,7 +86,7 @@ sp: BEGIN
         ,	ip_UserID
     FROM tmpMultipleAccountEvidence AS t;
 	
-    SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;       
+    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;       
     INSERT INTO tmpAffectedDevices(CTSCustID, DCSDeviceID)
     SELECT DISTINCT t.CTSCustID, a.DCSDeviceID
     FROM CTS_DataCenter.AssociationByDevice AS a    
