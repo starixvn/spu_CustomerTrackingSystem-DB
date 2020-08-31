@@ -496,9 +496,9 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.SystemParameter (
 		, FromCustID		BIGINT		UNSIGNED					NOT NULL
 		, CreatedDate		DATETIME								NOT NULL
 		, CreatedBy			INT										NOT NULL
-		, SesionId			BIGINT									NOT NULL
+		, SessionId			BIGINT									NOT NULL
         
         , PRIMARY KEY	CustEvidenceLog(CustEvidID)
-		, INDEX			IX_CustEvidenceLog(SesionId)
+		, INDEX			IX_CustEvidenceLog(SessionId)
 	) ENGINE=INNODB  AUTO_INCREMENT=1;
 	
