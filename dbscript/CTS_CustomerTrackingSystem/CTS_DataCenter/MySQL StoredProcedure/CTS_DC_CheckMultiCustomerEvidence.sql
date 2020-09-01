@@ -3,8 +3,8 @@ USE `CTS_DataCenter` $$
 DROP PROCEDURE IF EXISTS CTS_DC_CheckMultiCustomerEvidence $$
 
 CREATE PROCEDURE CTS_DC_CheckMultiCustomerEvidence (
-	IN 		ip_NewAccountEvidences 	JSON
-	,IN 	ip_IsOverride			BOOLEAN
+		IN 		ip_NewAccountEvidences 	JSON
+	,	IN 	ip_IsOverride			BOOLEAN
 )
     
 BEGIN
@@ -16,6 +16,7 @@ BEGIN
 
 		Revisions:
 		   - 20200608@Long.Luu: Created [Redmine ID: 134489]
+		   - 20200824@Roger.Le[Redmine ID: 137551]: Evidence Upload - Overrite the data
         
 		Param's Explanation (filtered by):
 	*/    

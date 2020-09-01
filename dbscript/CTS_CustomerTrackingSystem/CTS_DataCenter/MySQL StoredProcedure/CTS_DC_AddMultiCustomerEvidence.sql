@@ -19,7 +19,7 @@ sp: BEGIN
 		Revisions:
 		   - 20200608@Long.Luu: Created [Redmine ID: 134489]
            [20200807@Casey.Huynh]:[138925] Chagne CustEvidence Structure for Cross Subscriber : Remove SubscriberID and IsCreatedByMaster
-		   - 20200824@Roger.Le: Evidence Upload - Overrite the data [Redmine ID: 137551]
+		   - 20200824@Roger.Le[Redmine ID: 137551]: Evidence Upload - Overrite the data
 	*/    
   
     DECLARE	vr_SPName 		VARCHAR(100) DEFAULT 'CTS_DC_AddMultiCustomerEvidence';  

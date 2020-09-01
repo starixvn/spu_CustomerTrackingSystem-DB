@@ -4,11 +4,11 @@ DROP PROCEDURE IF EXISTS CTS_DC_RemoveOldEvidence $$
 
 
 CREATE PROCEDURE `CTS_DC_RemoveOldEvidence`(
-	IN ip_CTSCustIDs 			JSON    
-	,IN ip_SessionId 			BIGINT
-	,IN ip_IsRollback 			BOOLEAN
-    ,IN ip_IsClearLog			BOOLEAN
-    ,OUT op_ErrorMessage 		VARCHAR(200)
+		IN ip_CTSCustIDs 			JSON    
+	,	IN ip_SessionId 			BIGINT
+	,	IN ip_IsRollback 			BOOLEAN
+    ,	IN ip_IsClearLog			BOOLEAN
+    ,	OUT op_ErrorMessage 		VARCHAR(200)
 )
 sp: BEGIN
 	/*
@@ -18,7 +18,7 @@ sp: BEGIN
 		Original:
 
 		Revisions:
-		   - 20200825@Roger.Le: Created [Redmine ID: 137551]
+		   - 20200825@Roger.Le[Redmine ID: 137551]: Created
 	*/
     
     # Handle error
