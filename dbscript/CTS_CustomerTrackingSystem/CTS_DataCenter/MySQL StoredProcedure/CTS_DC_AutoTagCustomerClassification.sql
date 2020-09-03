@@ -105,7 +105,7 @@ BEGIN
     -- Update info ctscustid , subscriberid
     SET vrNotes = CONCAT(vrNotes, ' 3.', CURRENT_TIME());       
     UPDATE 		Temp_NewClassification AS temp
-    INNER JOIN	CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID
+    INNER JOIN	CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.RoleID = 1
 	SET			temp.CTSCustID = cust.CTSCustID, temp.SubscriberID = cust.SubscriberID;
     
     #===================================================================================================    
