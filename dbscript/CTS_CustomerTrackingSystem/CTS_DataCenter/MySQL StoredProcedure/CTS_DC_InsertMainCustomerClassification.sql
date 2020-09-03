@@ -69,7 +69,7 @@ BEGIN
 
     UPDATE 		Temp_NewClassification AS ct
     INNER JOIN	CTS_DataCenter.CTSCustomer AS c
-					ON ct.CustID = c.CustID AND c.CustSubID = 0
+					ON ct.CustID = c.CustID AND c.RoleID = 1
 	SET			ct.ActionType = 0
 				, ct.CTSCustID = c.CTSCustID
 				, ct.SubscriberID = c.SubscriberID;
