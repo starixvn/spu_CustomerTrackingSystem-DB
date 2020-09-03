@@ -1,6 +1,6 @@
 DELIMITER $$
 DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_GetCustomerClassificationIntervalScan$$
-CREATE DEFINER=fps@`%` PROCEDURE CTS_DataCenter.CTS_DC_GetCustomerClassificationIntervalScan(IN ip_NoOfRecord INT, IN ip_Batch INT) 
+CREATE DEFINER=fps@`%` PROCEDURE CTS_DataCenter.CTS_DC_GetCustomerClassificationIntervalScan(IN ip_NoOfRecord INT, IN ip_Batch INT, IN ip_ParentCategoryID INT) 
 BEGIN
 	/*
 		Created:	[20200612@Casey.Huynh][135324]
@@ -12,14 +12,16 @@ BEGIN
 		Revisions:
 			[20200701@Casey.Huynh]135324]: Chagne Flow and Store more Info
             [20200820@Casey.Huynh][139061]: Remove USE INDEX 
+            [20200903@Harvey.Nguyen][xxxxx]: Add ParentID 
+			
 		Param's Explanation (filtered by):
          ip_CategoryIDList: ex: '1,2,3'       
+         CALL CTS_DC_GetCustomerClassificationIntervalScan (100,1,200);
 	*/
     DECLARE vrScanTime DATETIME;
     DECLARE vrScanDate DATETIME;    
     DECLARE vrLastScanTime DATETIME;
     DECLARE vrLastScanDate DATETIME;
-    DECLARE vrLastCustID BIGINT UNSIGNED;
     DECLARE vrTotalRecord BIGINT UNSIGNED;
 	DECLARE vrBatch INT UNSIGNED DEFAULT 1;
 	  
@@ -59,22 +61,18 @@ BEGIN
     );
     
 	SET vrScanTime = CURRENT_TIME();
-    SET vrLastScanTime = (SELECT MAX(ScanTime) FROM CTS_DataCenter.CTSCustomerClassification_ScanStatus);
+    SET vrLastScanTime = (SELECT MAX(ScanTime) FROM CTS_DataCenter.CTSCustomerClassification_ScanStatus WHERE ParentCategoryID = ip_ParentCategoryID);
     
 	SET vrScanDate = DATE(vrScanTime);
     SET vrLastScanDate = DATE(vrLastScanTime);
     
     IF(vrLastScanDate != vrScanDate)
     THEN
-		INSERT INTO CTS_DataCenter.CTSCustomerClassification_ScanStatus(ScanTime, LastCustID, ScanStatus)
-		VALUES(vrScanTime, 0, 0);
+		INSERT INTO CTS_DataCenter.CTSCustomerClassification_ScanStatus(ScanTime, LastCustID, ScanStatus, ParentCategoryID)
+		VALUES(vrScanTime, 0, 0, ip_ParentCategoryID);
 	ELSE	
 		SET vrScanTime = vrLastScanTime;
     END IF;
-	
-    SET vrLastCustID = (	SELECT 	LastCustID
-							FROM 	CTS_DataCenter.CTSCustomerClassification_ScanStatus  
-							WHERE 	ScanTime = vrScanTime);   
     
     SET vrTotalRecord = ip_Batch * ip_NoOfRecord ;
 	    
@@ -88,6 +86,7 @@ BEGIN
 	WHERE		cat.IsActive = 1
 				AND cat.IsUsedManually = 0
                 AND cat.ScanIntervalInSecond > 0
+                AND cat.ParentID = ip_ParentCategoryID
                 AND ccl.LastScannedDate <= DATE_SUB(vrScanDate, INTERVAL cat.ScanIntervalInSecond SECOND)
 	LIMIT		vrTotalRecord;
     
@@ -101,7 +100,8 @@ BEGIN
     THEN
 		UPDATE CTS_DataCenter.CTSCustomerClassification_ScanStatus
         SET		ScanStatus = 1
-        WHERE	ScanTime = vrScanTime;
+        WHERE	ScanTime = vrScanTime
+			AND ParentCategoryID = ip_ParentCategoryID;
     END IF;
 	
 	### PERFORMANCE

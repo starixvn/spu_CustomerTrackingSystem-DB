@@ -504,19 +504,20 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSUserPermission (
 ) ENGINE=INNODB DEFAULT CHARSET='UTF8MB4' COLLATE='UTF8MB4_UNICODE_CI';
 
 
-	DROP TABLE IF EXISTS CTS_DataCenter.CustEvidenceLog;
-	CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustEvidenceLog(
-		CustEvidID			BIGINT		UNSIGNED	AUTO_INCREMENT	NOT NULL
-		, CTSCustID			BIGINT		UNSIGNED					NOT NULL
-		, EvidenceID		SMALLINT								NOT NULL
-		, Remark			VARCHAR(500)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NULL
-		, Level				TINYINT									NOT NULL	COMMENT 'Level 0 - 2'
-		, FromCustID		BIGINT		UNSIGNED					NOT NULL
-		, CreatedDate		DATETIME								NOT NULL
-		, CreatedBy			INT										NOT NULL
-		, SessionId			BIGINT									NOT NULL
-        
-        , PRIMARY KEY	CustEvidenceLog(CustEvidID)
-		, INDEX			IX_CustEvidenceLog(SessionId)
-	) ENGINE=INNODB  AUTO_INCREMENT=1;
+DROP TABLE IF EXISTS CTS_DataCenter.CustEvidenceLog;
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustEvidenceLog(
+	CustEvidID			BIGINT		UNSIGNED	AUTO_INCREMENT	NOT NULL
+	, CTSCustID			BIGINT		UNSIGNED					NOT NULL
+	, EvidenceID		SMALLINT								NOT NULL
+	, Remark			VARCHAR(500)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NULL
+	, Level				TINYINT									NOT NULL	COMMENT 'Level 0 - 2'
+	, FromCustID		BIGINT		UNSIGNED					NOT NULL
+	, CreatedDate		DATETIME								NOT NULL
+	, CreatedBy			INT										NOT NULL
+	, SessionId			BIGINT									NOT NULL
 	
+	, PRIMARY KEY	CustEvidenceLog(CustEvidID)
+	, INDEX			IX_CustEvidenceLog(SessionId)
+) ENGINE=INNODB  AUTO_INCREMENT=1;
+	
+ALTER TABLE CTS_DataCenter.CTSCustomerClassification_ScanStatus ADD COLUMN ParentCategoryID SMALLINT;
