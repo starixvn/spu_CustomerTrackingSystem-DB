@@ -78,7 +78,7 @@ BEGIN
     UPDATE Temp_NewClassification AS ct,
     LATERAL (
 		SELECT DISTINCT	cc.CustID
-						, CASE WHEN c.ParentID = 50 THEN 0	# Ignore all abnormal customers
+						, CASE WHEN c.ParentID = 50 THEN 2	# Ignore all abnormal customers
 								WHEN c.ParentID = 200 THEN 1	# If already exists, change action type from insert to update
 								ELSE 2
 							END AS ActionType
