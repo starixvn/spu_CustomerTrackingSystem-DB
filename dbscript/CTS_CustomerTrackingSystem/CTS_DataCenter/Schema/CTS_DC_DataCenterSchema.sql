@@ -20,6 +20,7 @@ Revisions:
         - [20200806@Casey.Huynh]: Add Index for table AssociationByDevice
         - [20200807@Casey.Huynh][138925]: Chagne CustEvidence Structure for Cross Subscriber
         - [20200820@Casey.Huynh][139061]: Update Index CTSCustomer Classification
+        - [20200903@Harvey.Nguyen][140869]: Add more column to table CTSCustomerClassification_ScanStatus
 Reviewer:
 */
 

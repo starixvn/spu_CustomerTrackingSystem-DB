@@ -10,9 +10,9 @@ BEGIN
 		Original:
 
 		Revisions:
-			[20200701@Casey.Huynh]135324]: Chagne Flow and Store more Info
-            [20200820@Casey.Huynh][139061]: Remove USE INDEX 
-            [20200903@Harvey.Nguyen][xxxxx]: Add ParentID 
+			[20200701@Casey.Huynh]		[135324]: Chagne Flow and Store more Info
+            [20200820@Casey.Huynh]		[139061]: Remove USE INDEX 
+            [20200903@Harvey.Nguyen]	[140869]: Add ParentID 
 			
 		Param's Explanation (filtered by):
          ip_CategoryIDList: ex: '1,2,3'       
