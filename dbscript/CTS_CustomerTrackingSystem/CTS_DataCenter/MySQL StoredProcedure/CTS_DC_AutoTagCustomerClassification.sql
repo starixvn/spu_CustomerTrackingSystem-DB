@@ -105,7 +105,7 @@ BEGIN
     -- Update info ctscustid , subscriberid
     SET vrNotes = CONCAT(vrNotes, ' 3.', CURRENT_TIME());       
     UPDATE 		Temp_NewClassification AS temp
-    INNER JOIN	CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.RoleID = 1
+    INNER JOIN	CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID
 	SET			temp.CTSCustID = cust.CTSCustID, temp.SubscriberID = cust.SubscriberID;
     
     #===================================================================================================    
@@ -129,7 +129,7 @@ BEGIN
 	SET			tmpCla.ActionType = (CASE WHEN (ccl.CategoryID = 2 AND tmpCla.CategoryID != 2) THEN -1 
 										  WHEN (tmpCla.CategoryID = 2) THEN 2 ELSE tmpCla.ActionType
 									 END)
-	WHERE		tmpCla.ActionType = 0 AND cc.ParentID <> 200;    
+	WHERE		tmpCla.ActionType = 0 AND cc.ParentID = 1;    
 
     #================================================================================================================
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
