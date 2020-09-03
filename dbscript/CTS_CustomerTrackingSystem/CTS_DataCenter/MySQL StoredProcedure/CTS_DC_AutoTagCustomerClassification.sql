@@ -1,6 +1,5 @@
 DELIMITER $$
-DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_AutoTagCustomerClassification$$
-CREATE DEFINER=`fps`@`%` PROCEDURE CTS_DataCenter.CTS_DC_AutoTagCustomerClassification(IN ip_NewClassification JSON)
+CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_AutoTagCustomerClassification`(IN ip_NewClassification JSON)
 BEGIN
 	/*
 		Created:	20200505@Terry.Nguyen
@@ -12,7 +11,7 @@ BEGIN
 				[20200612@Casey.Huynh][135324]: Enhance SP      
                 [20200618@Casey.Huynh]135324]: Enhance SP  
                 [20200701@Casey.Huynh]135324]: Chagne Flow and Store more Info
-        
+				[20200903@Irena.vo][137550]: Update ignore SMA & Main category with ACtionType = -1.
 		Param's Explanation (filtered by):
                 
 	*/   
@@ -64,13 +63,6 @@ BEGIN
         , INDEX 		IX_Temp_NewClassification_ActionType(ActionType)        
     );     
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_ProblemAccounts;    
-	CREATE TEMPORARY TABLE Temp_ProblemAccounts 
-    (	  
-		  CustID		BIGINT UNSIGNED        
-        , PRIMARY KEY	PK_Temp_ProblemAccounts_CustID(CustID)   
-    );   
-    
     INSERT INTO Temp_NewClassification(CustID, SportGroupID, CategoryID, LastModifiedDate, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT 		tmpTable.CustID
 				, tmpTable.SportGroupID
@@ -115,8 +107,14 @@ BEGIN
     FROM Temp_NewClassification AS temp
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = cate.CategoryID
-	WHERE cc.ParentID IN (50);
-                
+	WHERE cc.ParentID = 50;
+          
+    -- Remove invalid category
+    SET vrNotes = CONCAT(vrNotes, ' 4.', CURRENT_TIME());    
+    DELETE temp
+    FROM Temp_NewClassification temp
+    WHERE temp.CategoryID = 0;
+    
     #===================================================================================================    
 	SET vrNotes = CONCAT(vrNotes, ' 4.', CURRENT_TIME());
     UPDATE 		Temp_NewClassification AS tmpCla
@@ -138,12 +136,7 @@ BEGIN
 	SET			tmpCla.ActionType = (CASE WHEN (ccl.CategoryID = 2 AND tmpCla.CategoryID != 2) THEN -1 
 										  WHEN (tmpCla.CategoryID = 2) THEN 2 ELSE tmpCla.ActionType
 									 END)
-	WHERE		tmpCla.ActionType = 0
-		AND cc.ParentID <> 200;    
-    
-    UPDATE		Temp_NewClassification AS tmpCla    
-    SET			tmpCla.ActionType = 3
-    WHERE		tmpCla.ActionType = 0 AND tmpCla.CategoryID = 0;
+	WHERE		tmpCla.ActionType = 0 AND cc.ParentID <> 200;    
 
     #================================================================================================================
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
