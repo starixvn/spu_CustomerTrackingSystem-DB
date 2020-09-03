@@ -46,7 +46,7 @@ BEGIN
     #========= GET LIST OF MAIN CATEGORIES FROM PARAMS =========
     INSERT INTO Temp_NewClassification(CustID, SportGroupID, CategoryID, LastModifiedDate, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT 		tmpTable.CustID
-				, 0
+				, 200
 				, tmpTable.CategoryID
 				, tmpTable.LastModifiedDate
                 , tmpTable.TurnoverRM
@@ -80,14 +80,14 @@ BEGIN
 		SELECT DISTINCT	cc.CustID
 						, CASE WHEN c.ParentID = 50 THEN 2	# Ignore all abnormal customers
 								WHEN c.ParentID = 200 THEN 1	# If already exists, change action type from insert to update
-								ELSE 2
+								ELSE 0
 							END AS ActionType
         FROM CTS_DataCenter.CTSCustomerClassification AS cc
         INNER JOIN CTS_DataCenter.CustomerCategory AS c
 			ON cc.CategoryID = c.CategoryID
-            AND c.ParentID in (50, 200)
 		WHERE cc.CustID = ct.CustID
-			AND cc.SportGroupID = 0
+			AND c.ParentID in (50, 200)
+            AND cc.SportGroupID in (0, 200)
 	) AS pa
     SET ct.ActionType = pa.ActionType
     WHERE ct.ActionType = 0;
