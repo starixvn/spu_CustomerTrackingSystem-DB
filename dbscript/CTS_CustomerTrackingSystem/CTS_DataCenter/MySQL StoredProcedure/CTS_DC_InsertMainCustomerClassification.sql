@@ -74,7 +74,7 @@ BEGIN
 				, ct.CTSCustID = c.CTSCustID
 				, ct.SubscriberID = c.SubscriberID;
                 
-	#========= SET UPDATE/INSERT/IGNORE MARK TO CUSTOMER CLASSIFICATION LIST IN TEMP TABLE =========   
+	#========= SET UPDATE/INSERT/IGNORE MARK TO CUSTOMER CLASSIFICATION LIST IN TEMP TABLE =========
     UPDATE Temp_NewClassification AS ct,
     LATERAL (
 		SELECT DISTINCT	cc.CustID
@@ -92,6 +92,7 @@ BEGIN
     SET ct.ActionType = pa.ActionType
     WHERE ct.ActionType = 0;
     
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     #========= UPDATE EXISTING CUSTOMER CATEGORY LIST IN PHYSIC TABLE =========
     UPDATE CTS_DataCenter.CTSCustomerClassification AS cc
     INNER JOIN CTS_DataCenter.CustomerCategory AS c
@@ -124,6 +125,12 @@ BEGIN
 	FROM 	Temp_NewClassification AS tmp
 	WHERE 	tmp.ActionType = 0;
     
+    #========= RETURN LIST OF CUSTOMER CATEGORIES TO UPDATE ON MAINDB =========
+    SELECT	CustID
+			, CategoryID
+    FROM Temp_NewClassification
+    WHERE ActionType IN (0, 1);
+    
     #========= INSERT LOG =========
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID
 					, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, ActionType, IsAuto, InsertDate)
@@ -143,8 +150,6 @@ BEGIN
 	FROM 	Temp_NewClassification AS tmp
     WHERE	tmp.ActionType IN (0, 1);   
     
-    #================================================================================================================
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 END$$
 
 DELIMITER ;
