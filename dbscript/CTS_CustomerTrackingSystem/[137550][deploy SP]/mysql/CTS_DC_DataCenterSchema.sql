@@ -520,5 +520,3 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustEvidenceLog(
 	, PRIMARY KEY	CustEvidenceLog(CustEvidID)
 	, INDEX			IX_CustEvidenceLog(SessionId)
 ) ENGINE=INNODB  AUTO_INCREMENT=1;
-	
-ALTER TABLE CTS_DataCenter.CTSCustomerClassification_ScanStatus ADD COLUMN ParentCategoryID SMALLINT;
