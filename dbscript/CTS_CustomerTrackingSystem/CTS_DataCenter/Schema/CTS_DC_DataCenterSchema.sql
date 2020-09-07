@@ -21,6 +21,7 @@ Revisions:
         - [20200807@Casey.Huynh][138925]: Chagne CustEvidence Structure for Cross Subscriber
         - [20200820@Casey.Huynh][139061]: Update Index CTSCustomer Classification
         - [20200903@Harvey.Nguyen][140869]: Add more column to table CTSCustomerClassification_ScanStatus
+        - [20200905@Long.Luu][140996]: New table for storing Hardcoded CustomerClass's customers
 Reviewer:
 */
 
@@ -522,3 +523,20 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustEvidenceLog(
 ) ENGINE=INNODB  AUTO_INCREMENT=1;
 	
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification_ScanStatus ADD COLUMN ParentCategoryID SMALLINT;
+
+#[20200905@Long.Luu][140996]: New table for storing Hardcoded CustomerClass's customers
+DROP TABLE IF EXISTS CTS_DataCenter.SpecialCustomerClass;
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.SpecialCustomerClass(
+		CTSCustID			BIGINT UNSIGNED	NOT NULL
+	, 	CustID				INT UNSIGNED NOT NULL
+	, 	RootCTSCustID		BIGINT UNSIGNED	NOT NULL
+	, 	SubscriberID		INT NOT NULL
+	, 	CustomerClass		SMALLINT NOT NULL
+	, 	CreatedBy			INT	NOT NULL
+	, 	CreatedDate			DATETIME DEFAULT NULL
+    , 	LastModifiedBy		DATETIME DEFAULT NULL	
+	, 	LastModifiedDate	DATETIME DEFAULT NULL
+	, 	PRIMARY KEY			PK_SpecialCustomerClass_CTSCustID(CTSCustID)
+	, 	INDEX				IX_SpecialCustomerClass_SubscriberID(SubscriberID)
+    , 	INDEX				IX_SpecialCustomerClass_RootCTSCustID(RootCTSCustID)
+) ENGINE=INNODB;
