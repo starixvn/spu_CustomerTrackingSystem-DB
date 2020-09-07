@@ -1,6 +1,6 @@
 DELIMITER $$
 DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_GetCustomerClassificationIntervalScan_Complete$$
-CREATE DEFINER=fps@`%` PROCEDURE CTS_DataCenter.CTS_DC_GetCustomerClassificationIntervalScan_Complete(IN ip_CustSport JSON)
+CREATE DEFINER=fps@`%` PROCEDURE CTS_DataCenter.CTS_DC_GetCustomerClassificationIntervalScan_Complete(IN ip_CustSport JSON, IN ip_ParentCategoryID INT)
 BEGIN
 	/*
 		Created:	[20200625@Casey.Huynh][135324]
@@ -41,7 +41,7 @@ BEGIN
 	### PERFORMANCE: END
     
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-	SET vrScanTime = (SELECT MAX(ScanTime) FROM CTS_DataCenter.CTSCustomerClassification_ScanStatus);
+	SET vrScanTime = (SELECT MAX(ScanTime) FROM CTS_DataCenter.CTSCustomerClassification_ScanStatus WHERE ParentCategoryID = ip_ParentCategoryID);
 	SET vrScanDate = DATE(vrScanTime);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustSport;    
@@ -49,7 +49,6 @@ BEGIN
     (	  
 		  CustID			BIGINT UNSIGNED        
         , SportGroupID		SMALLINT UNSIGNED        
-        
         , PRIMARY KEY	PK_Temp_CustSport_CTSCustID(CustID, SportGroupID)    
     );     
     
@@ -59,14 +58,16 @@ BEGIN
 	FROM JSON_TABLE(ip_CustSport,
 		 "$[*]" COLUMNS(
 			  CustID 			BIGINT UNSIGNED		PATH "$.CustId"
-			, SportGroupID 		SMALLINT UNSIGNED	PATH "$.SportGroupId" #0:
+			, SportGroupID 		SMALLINT UNSIGNED	PATH "$.SportGroupId"
 		 )) as tmpTable;
     
     UPDATE 		CTS_DataCenter.CTSCustomerClassification AS cl
     INNER JOIN 	Temp_CustSport AS tmpCs
 				ON cl.CustID = tmpCs.CustID
 				AND	cl.SportGroupID = tmpCs.SportGroupID
-    SET			cl.LastScannedDate = GREATEST(vrScanDate, cl.LastScannedDate);
+	INNER JOIN	CustomerCategory cusCate ON cl.CategoryID = cusCate.CategoryID
+    SET			cl.LastScannedDate = GREATEST(vrScanDate, cl.LastScannedDate)
+    WHERE 		cusCate.ParentID = ip_ParentCategoryID;
     
     UPDATE 		CTS_DataCenter.CTSCustomerClassification_ScanStatus
     SET			LastCustID = (SELECT MAX(CustID) FROM Temp_CustSport)

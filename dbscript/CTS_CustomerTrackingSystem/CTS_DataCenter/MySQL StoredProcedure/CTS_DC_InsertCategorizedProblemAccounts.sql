@@ -73,7 +73,8 @@ BEGIN
     DELETE c
     FROM CTS_DataCenter.CTSCustomerClassification AS c
     INNER JOIN Tmp_ProblemAccounts AS t ON	t.CustID = c.CustID
-    WHERE c.CategoryID < 50;
+    INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON c.CategoryID = cc.CategoryID
+    WHERE cc.ParentID IN (1,200);
     
 	UPDATE Tmp_ProblemAccounts AS t
 		LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS c ON t.CustID = c.CustID
@@ -84,12 +85,7 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON t.CustID = c.CustID
 	SET		t.CTSCustID = c.CTSCustID
 		, 	t.SubscriberID = c.SubscriberID
-	WHERE t.IsNew = 1;      	    
-    
-    DELETE c
-    FROM CTS_DataCenter.CTSCustomerClassification AS c
-    INNER JOIN Tmp_ProblemAccounts AS t ON	t.CustID = c.CustID
-    WHERE c.CategoryID < 50;
+	WHERE t.IsNew = 1;
     
     INSERT  INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, 
 		 CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
