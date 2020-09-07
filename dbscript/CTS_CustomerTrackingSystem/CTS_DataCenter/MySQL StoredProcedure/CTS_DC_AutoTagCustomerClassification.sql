@@ -1,8 +1,12 @@
+USE `CTS_DataCenter`;
+DROP procedure IF EXISTS `CTS_DC_AutoTagCustomerClassification`;
+
 DELIMITER $$
+USE `CTS_DataCenter`$$
 CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_AutoTagCustomerClassification`(IN ip_NewClassification JSON)
 BEGIN
 	/*
-		Created:	20200505@Terry.Nguyen
+		Created:	20200505@Terry.Nguyen212121
 		Task:		Auto tag for Customer Classification
 		DB:			CTS_DataCenter
 		Original:
@@ -11,7 +15,8 @@ BEGIN
 				[20200612@Casey.Huynh][135324]: Enhance SP      
                 [20200618@Casey.Huynh]135324]: Enhance SP  
                 [20200701@Casey.Huynh]135324]: Chagne Flow and Store more Info
-				[20200903@Irena.vo][137550]: Ignore Main category with ActionType = -1.
+				[20200903@Irena.Vo][137550]: Ignore Main category with ActionType = -1. 
+                [20200903@Irena.Vo][141042]: Enhance get IsUsedManually = 0 for update category
 		Param's Explanation (filtered by):
                 
 	*/   
@@ -88,7 +93,7 @@ BEGIN
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
     SET SQL_SAFE_UPDATES = 0;
     
-     -- Ignore existed customer has Problem Category & Main Category before
+    -- Ignore existed customer has Problem Category & Main Category before
     SET vrNotes = CONCAT(vrNotes, ' 1.', CURRENT_TIME());    
     DELETE temp
     FROM Temp_NewClassification AS temp
@@ -161,16 +166,18 @@ BEGIN
 			AND tmpCla.CategoryId != 0;   
             
 	SET vrNotes = CONCAT(vrNotes, ' 8.', CURRENT_TIME());
-    
     UPDATE 		CTS_DataCenter.CTSCustomerClassification AS ccl
     INNER JOIN 	Temp_NewClassification AS tmpCla 
 				ON 	tmpCla.CustID = ccl.CustID		
 				AND tmpCla.SportGroupID = ccl.SportGroupID
+    INNER JOIN CTS_DataCenter.CustomerCategory AS cc 
+		ON cc.CategoryID = ccl.CategoryID
  	SET  ccl.CategoryID = tmpCla.CategoryID
         , ccl.LastModifiedDate = tmpCla.LastModifiedDate 
         , ccl.LastModifiedBy = v_createdBy
         , ccl.LastScannedDate = GREATEST(DATE(tmpCla.LastModifiedDate),ccl.LastScannedDate)
-	WHERE tmpCla.ActionType = 1;
+	WHERE tmpCla.ActionType = 1
+		AND cc.IsUsedManually = 0; # Get this item so that update correct category
     
     SET vrNotes = CONCAT(vrNotes, ' 9.', CURRENT_TIME());   
      
@@ -211,4 +218,6 @@ BEGIN
     
     ### PERFORMANCE: END 
 END$$
+
 DELIMITER ;
+
