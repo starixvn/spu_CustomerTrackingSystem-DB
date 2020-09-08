@@ -22,6 +22,7 @@ BEGIN
     
     IF (ip_IsGetAllInfo = 1) THEN
 		SELECT 	s.CTSCustID
+			,	s.CustID
 			, 	c.UserName
 			,	s.RootCTSCustID
 			, 	sub.SubscriberName
