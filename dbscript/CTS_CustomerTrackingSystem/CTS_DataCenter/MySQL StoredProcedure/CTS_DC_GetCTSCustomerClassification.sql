@@ -83,8 +83,13 @@ BEGIN
         , 	u.Username
         ,	a.IsUsedManually
 		,	a.ScanIntervalInSecond
-    ORDER BY c.LastModifiedDate DESC;
+    ORDER BY LastModifiedDate DESC;
    
+    -- Return isPinCategory for customer
+   SELECT CASE WHEN ip_CustID IN (SELECT CustID FROM CTS_DataCenter.SpecialCustomerClass WHERE CreatedFromFunction = 21) THEN 1
+               ELSE 0
+		  END AS isPinCategory;
+          
    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 	
 	# Begin: Cleanup
