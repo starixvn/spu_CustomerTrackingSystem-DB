@@ -1,13 +1,13 @@
-DELIMITER $$
-USE CTS_DataCenter $$
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_RemoveCTSCustomerClassification`$$
+USE `CTS_DataCenter`;
+DROP procedure IF EXISTS `CTS_DC_RemoveCTSCustomerClassification`;
 
-CREATE PROCEDURE `CTS_DataCenter`.`CTS_DC_RemoveCTSCustomerClassification`(
+DELIMITER $$
+USE `CTS_DataCenter`$$
+CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_RemoveCTSCustomerClassification`(
 		IN ip_CustID			BIGINT UNSIGNED
-	,   IN ip_CTSCustID			BIGINT	UNSIGNED 
+	,   IN ip_CTSCustID			BIGINT UNSIGNED 
 	,	IN ip_CategoryID		SMALLINT
 	,	IN ip_CreatedBy 		INT
-    
     , 	OUT op_ErrorMessage 	VARCHAR(200)
 )
 BEGIN
@@ -17,35 +17,67 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original: 
 		Revisions:
-			- 20200423@Long.Luu: Created [Redmine ID: #132623]
+			- 20200423@Long.Luu [Redmine ID: #132623]: Created 
+            - 20200908@Irena.Vo [Redmine ID: #141020]: Delete VVIP OR All Category has Pin before (Include Customer Class)
             
 		Param's Explanation:
 	*/ 
-    DECLARE vr_CurrentTime DATETIME DEFAULT CURRENT_TIME();
+    DECLARE lv_CurrentTime DATETIME DEFAULT CURRENT_TIME();
     
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
     
-    DELETE 	t
-    FROM 	CTS_DataCenter.CTSCustomerClassification AS t
-    WHERE 	t.CustID = ip_CustID
-			AND t.CategoryID = ip_CategoryID;
+	DROP TEMPORARY TABLE IF EXISTS Temp_DeleteCustomerClass;
+	CREATE TEMPORARY TABLE Temp_DeleteCustomerClass
+	(		CustID			    BIGINT UNSIGNED PRIMARY KEY
+        ,	CustomerClass		VARCHAR(20)
+	);
     
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;   
-   
-	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-	VALUES(12, 'CTS_DC_RemoveCTSCustomerClassification', CONCAT('Delete CTSCustomerClassification: ip_CustID_', ip_CustID, ';ip_CategoryID_', ip_CategoryID,')'), vr_CurrentTime, ip_CreatedBy);
-	
-    INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID ,LastModifiedDate, LastModifiedBy, IsAuto)
+    SET SQL_SAFE_UPDATES = 0;
+    
+    -- Remove data from CTS_DataCenter.SpecialCustomerClass
+    IF (ip_CategoryID = 3) THEN
+		DELETE 	sc
+		FROM 	CTS_DataCenter.SpecialCustomerClass AS sc
+		WHERE 	sc.CustID = ip_CustID AND sc.CreatedFromFunction = 11; -- For VVIP
+    END IF;
+    
+     -- Insert customers removed CustomerClass
+    INSERT INTO Temp_DeleteCustomerClass
+    SELECT ip_CustID, -1
+    WHERE ip_CategoryID = 3 -- For VVIP
+          OR ip_CategoryID = (SELECT cate.CategoryID
+                              FROM CTS_DataCenter.CTSCustomerClassification AS cate
+                              INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cate.CategoryID = cc.CategoryID
+                              WHERE cc.ParentID IN (50,200) AND cate.CustID = ip_CustID); -- For General
+    
+    -- Remove data from CTS_DataCenter.CTSCustomerClassification
+    DELETE 	cate
+    FROM 	CTS_DataCenter.CTSCustomerClassification AS cate
+    WHERE 	cate.CustID = ip_CustID AND cate.CategoryID = ip_CategoryID;
+
+    -- Insert history
+    INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate)
 	SELECT 	ip_CustID
 		, 	ip_CTSCustID
         , 	ip_CategoryID
-        , 	vr_CurrentTime AS LastModifiedDate
+        , 	lv_CurrentTime
         , 	ip_CreatedBy
-        ,   0 AS IsAuto;
+        ,   -100 -- -100: Delete
+        ,   0 -- IsAuto
+        ,   DATE(lv_CurrentTime);
+   
+    -- Insert log
+	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
+	VALUES(12, 'CTS_DC_RemoveCTSCustomerClassification', CONCAT('Delete CTSCustomerClassification: ip_CustID_', ip_CustID, ';ip_CategoryID_', ip_CategoryID,')'), lv_CurrentTime, ip_CreatedBy);
+	
+    -- Return customers removed CustomerClass
+    SELECT * FROM Temp_DeleteCustomerClass;
     
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-END$$	
+END$$
+
 DELIMITER ;

@@ -22,6 +22,7 @@ Revisions:
         - [20200820@Casey.Huynh][139061]: Update Index CTSCustomer Classification
         - [20200903@Harvey.Nguyen][140869]: Add more column to table CTSCustomerClassification_ScanStatus
         - [20200905@Long.Luu][140996]: New table for storing Hardcoded CustomerClass's customers
+        - [20200909@Irena.Vo][141020]: Enhance Schema for params CustomerClass's customers
 Reviewer:
 */
 
@@ -525,18 +526,20 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustEvidenceLog(
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification_ScanStatus ADD COLUMN ParentCategoryID SMALLINT;
 
 #[20200905@Long.Luu][140996]: New table for storing Hardcoded CustomerClass's customers
+#[20200909@Irena.Vo][141020]: Enhance Schema for params
 DROP TABLE IF EXISTS CTS_DataCenter.SpecialCustomerClass;
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.SpecialCustomerClass(
 		CTSCustID			BIGINT UNSIGNED	NOT NULL
 	, 	CustID				INT UNSIGNED NOT NULL
 	, 	RootCTSCustID		BIGINT UNSIGNED	NOT NULL
 	, 	SubscriberID		INT NOT NULL
-	, 	CustomerClass		SMALLINT NOT NULL
+	, 	CustomerClass		TINYINT DEFAULT NULL
 	, 	CreatedBy			INT	NOT NULL
-	, 	CreatedDate			DATETIME DEFAULT NULL
-    , 	LastModifiedBy		DATETIME DEFAULT NULL	
+	, 	CreatedDate			DATETIME NOT NULL
+    , 	LastModifiedBy		INT DEFAULT NULL	
 	, 	LastModifiedDate	DATETIME DEFAULT NULL
-	, 	PRIMARY KEY			PK_SpecialCustomerClass_CTSCustID(CTSCustID)
+    ,   CreatedFromFunction TINYINT NOT NULL
+	, 	PRIMARY KEY			PK_SpecialCustomerClass_CTSCustID_CreatedFromFunction(CTSCustID, CreatedFromFunction)
 	, 	INDEX				IX_SpecialCustomerClass_SubscriberID(SubscriberID)
     , 	INDEX				IX_SpecialCustomerClass_RootCTSCustID(RootCTSCustID)
 ) ENGINE=INNODB;

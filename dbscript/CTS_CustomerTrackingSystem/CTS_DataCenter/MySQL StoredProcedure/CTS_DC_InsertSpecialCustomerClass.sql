@@ -1,16 +1,16 @@
-DELIMITER $$
-USE `CTS_DataCenter` $$
-DROP PROCEDURE IF EXISTS CTS_DC_InsertSpecialCustomerClass $$
+USE `CTS_DataCenter`;
+DROP procedure IF EXISTS `CTS_DC_InsertSpecialCustomerClass`;
 
-CREATE PROCEDURE CTS_DC_InsertSpecialCustomerClass (
+DELIMITER $$
+USE `CTS_DataCenter`$$
+CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_InsertSpecialCustomerClass`(
 		IN ip_Username 					VARCHAR(50)     
-    ,	IN ip_CustomerClass 			SMALLINT 
+    ,	IN ip_CustomerClass 			TINYINT 
     ,	IN ip_IsAffectedToAssociation	BIT
     ,	IN ip_UserID 					INT
     
     , 	OUT op_ErrorMessage 			VARCHAR(200)
 )
-    
 sp: BEGIN
 	/*
 		Created:	20200905@Long.Luu
@@ -19,7 +19,8 @@ sp: BEGIN
 		Original:
 
 		Revisions:
-		   - 20200905@Long.Luu [140996]: created
+		   - 20200905@Long.Luu [140996]: Created
+           - 20200908@Irena.Vo [141020]: Error MSG for the customers have VVIP before and Update CreatedFromFunction = 1 for special customer (Normal)
            
 		Param's Explanation (filtered by):
 	*/    
@@ -28,7 +29,7 @@ sp: BEGIN
     DECLARE lv_CustID			INT UNSIGNED;
 	DECLARE lv_SubscriberID 	INT;
     DECLARE	lv_CurrentDateTime	DATETIME;
-    DECLARE	lv_SPName 			VARCHAR(100) 	DEFAULT 'CTS_DC_InsertSpecialCustomerClass';        
+    DECLARE	lv_SPName 			VARCHAR(100) 	DEFAULT 'CTS_DC_InsertSpecialCustomerClass_Irena';        
     
     
     # Handle error
@@ -65,7 +66,8 @@ sp: BEGIN
 	);
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-    
+   
+    -- Check invalid customer in CTS.
     IF NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomer WHERE UserName = ip_Username OR UserName2 = ip_Username) THEN
 		SET op_ErrorMessage = 'This account is not existed in the system!';
         SELECT NULL AS CustID,	NULL AS CustomerClass;
@@ -78,29 +80,35 @@ sp: BEGIN
     FROM CTS_DataCenter.CTSCustomer 
     WHERE UserName = ip_Username OR UserName2 = ip_Username;    
     
-    IF EXISTS (SELECT 1 FROM CTS_DataCenter.SpecialCustomerClass WHERE CTSCustID = lv_CTSCustID) THEN
-		SET op_ErrorMessage = 'This account has already been marked with a CustomerClass!';
+	-- Existed VVIP CustomerClass before -> Display error message
+	IF EXISTS (SELECT 1 FROM CTS_DataCenter.SpecialCustomerClass WHERE CTSCustID = lv_CTSCustID AND CreatedFromFunction = 11) THEN
+		SET op_ErrorMessage = 'This account has already been marked with VVIP CustomerClass!';
+		SELECT NULL AS CustID,	NULL AS CustomerClass;
+        LEAVE sp;
+	END IF;
+	-- Existed CustomerClass before
+	IF EXISTS (SELECT 1 FROM CTS_DataCenter.SpecialCustomerClass WHERE CTSCustID = lv_CTSCustID AND CreatedFromFunction = 1) THEN
+		SET op_ErrorMessage = 'This account has already been marked with a CustomerClass!';    
         SELECT NULL AS CustID,	NULL AS CustomerClass;
         LEAVE sp;
 	END IF;
-    		
-    -- #2: get affected customers
-    INSERT INTO Temp_AffectedCustomers(CTSCustID)
+	-- #2: get affected customers
+	INSERT INTO Temp_AffectedCustomers(CTSCustID)
 	VALUES(lv_CTSCustID);
-    
-    IF (ip_IsAffectedToAssociation = 1) THEN
+	
+	IF (ip_IsAffectedToAssociation = 1) THEN
 		# 2.1: get affected devices
 		INSERT INTO Temp_AffectedDevices(DCSDeviceID)
 		SELECT DISTINCT a.DCSDeviceID
 		FROM CTS_DataCenter.AssociationByDevice AS a    
 		WHERE a.CTSCustID = lv_CTSCustID;
-        
-        # 2.2: get association exception
-        INSERT INTO Temp_AssociationException(CTSCustID)
+		
+		# 2.2: get association exception
+		INSERT INTO Temp_AssociationException(CTSCustID)
 		SELECT DISTINCT (CASE WHEN e.LeastCTSCustID_Order <> lv_CTSCustID THEN e.LeastCTSCustID_Order ELSE e.GreatestCTSCustID_Order END)
 		FROM CTS_DataCenter.CustException AS e
 		WHERE e.LeastCTSCustID_Order = lv_CTSCustID OR e.GreatestCTSCustID_Order = lv_CTSCustID;
-                   
+				   
 		# 2.3: get affected ones
 		INSERT INTO Temp_AffectedCustomers(CTSCustID)
 		SELECT DISTINCT a.CTSCustID
@@ -110,37 +118,41 @@ sp: BEGIN
 		WHERE a.SubscriberID = lv_SubscriberID
 			AND a.CTSCustID <> lv_CTSCustID
 			AND e.CTSCustID IS NULL;
-    END IF;
-    
-    INSERT INTO Temp_NewCustomerClass(CTSCustID, CustID, SubscriberID, CustomerClass)
-    SELECT 	DISTINCT t.CTSCustID
+	END IF;
+
+	INSERT INTO Temp_NewCustomerClass(CTSCustID, CustID, SubscriberID, CustomerClass)
+	SELECT 	DISTINCT t.CTSCustID
 		,	c.CustID
 		,	lv_SubscriberID
 		,	ip_CustomerClass
-    FROM Temp_AffectedCustomers AS t
+	FROM Temp_AffectedCustomers AS t
 		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS s ON t.CTSCustID = s.CTSCustID
 		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON t.CTSCustID = c.CTSCustID
-	WHERE s.CTSCustID IS NULL
+	WHERE s.CTSCustID IS NULL OR (s.CreatedFromFunction = 21) -- Allow Pin category will insert new CustomerClass
 		AND c.RoleID = 1;
-    
-    INSERT INTO CTS_DataCenter.SpecialCustomerClass(CTSCustID, CustID, RootCTSCustID, SubscriberID, CustomerClass, CreatedBy, CreatedDate)
-    SELECT 	CTSCustID
+	
+	INSERT INTO CTS_DataCenter.SpecialCustomerClass(CTSCustID, CustID, RootCTSCustID, SubscriberID, CustomerClass, CreatedBy, CreatedDate, LastModifiedBy, LastModifiedDate, CreatedFromFunction)
+	SELECT 	CTSCustID
 		,	CustID
 		,	lv_CTSCustID
 		,	SubscriberID
 		,	CustomerClass
 		,	ip_UserID
 		,	lv_CurrentDateTime
-    FROM Temp_NewCustomerClass;
-    
-    SELECT 	DISTINCT CustID
+		,	ip_UserID
+		,	lv_CurrentDateTime
+		,   1 -- for Special Customer
+	FROM Temp_NewCustomerClass;
+	
+	SELECT 	DISTINCT CustID
 		,	CustomerClass
-    FROM Temp_NewCustomerClass;
-    
-    # Logging
+	FROM Temp_NewCustomerClass;
+	
+	# Logging
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	VALUES(19, lv_SPName, CONCAT('Insert SpecialCustomerClass: ip_CTSCustID = ', lv_CTSCustID, ';ip_CustomerClass = ', ip_CustomerClass), lv_CurrentDateTime, ip_UserID);
-    
+
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 END$$
+
 DELIMITER ;
