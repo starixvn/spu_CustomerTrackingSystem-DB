@@ -1,9 +1,9 @@
 USE `CTS_DataCenter`;
-DROP procedure IF EXISTS `CTS_DC_GetCTSCustomerClassification_Harvey`;
+DROP procedure IF EXISTS `CTS_DC_GetCTSCustomerClassification`;
 
 DELIMITER $$
 USE `CTS_DataCenter`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_GetCTSCustomerClassification_Harvey`(
+CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_GetCTSCustomerClassification`(
 	IN ip_CustIDs 			VARCHAR(2000),
     IN ip_ParentCateID		SMALLINT
 )
