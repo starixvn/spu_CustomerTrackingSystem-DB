@@ -66,8 +66,12 @@ BEGIN
         ,	(CASE WHEN a.IsUsedManually = 0 THEN lv_Remark ELSE  c.Remark END ) AS Remark
         ,	u.UserName AS LastModifiedBy
         ,	MAX(c.LastModifiedDate) AS LastModifiedDate
-        ,	DATE_ADD(MIN(c.LastScannedDate), INTERVAL a.ScanIntervalInSecond SECOND) AS NextScanFromDate
-        , 	DATE_ADD(MAX(c.LastScannedDate), INTERVAL a.ScanIntervalInSecond SECOND) AS NextScanToDate
+        ,   CASE WHEN ip_CustID IN (SELECT CustID FROM CTS_DataCenter.SpecialCustomerClass WHERE CreatedFromFunction = 21) THEN '-'
+				 ELSE DATE_ADD(MIN(c.LastScannedDate), INTERVAL a.ScanIntervalInSecond SECOND) 
+			END AS NextScanFromDate
+        , 	 CASE WHEN ip_CustID IN (SELECT CustID FROM CTS_DataCenter.SpecialCustomerClass WHERE CreatedFromFunction = 21) THEN '-'
+				 ELSE DATE_ADD(MAX(c.LastScannedDate), INTERVAL a.ScanIntervalInSecond SECOND) 
+			END AS NextScanToDate
         ,	1 AS IsEnabledDelete-- all category will be delete
     FROM Temp_LatestRecordOfCategory AS c
 		INNER JOIN CTS_DataCenter.CustomerCategory AS a ON c.CategoryID = a.CategoryID
