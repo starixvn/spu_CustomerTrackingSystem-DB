@@ -22,7 +22,7 @@ Revisions:
         - [20200820@Casey.Huynh][139061]: Update Index CTSCustomer Classification
         - [20200903@Harvey.Nguyen][140869]: Add more column to table CTSCustomerClassification_ScanStatus
         - [20200905@Long.Luu][140996]: New table for storing Hardcoded CustomerClass's customers
-        - [20200909@Irena.Vo][141020]: Enhance Schema for params CustomerClass's customers
+        - [20200909@Irena.Vo][141020]: Enhance Schema for params CustomerClass's customers & LogTypeID = 21, 22 for Pin category
 Reviewer:
 */
 
@@ -526,7 +526,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustEvidenceLog(
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification_ScanStatus ADD COLUMN ParentCategoryID SMALLINT;
 
 #[20200905@Long.Luu][140996]: New table for storing Hardcoded CustomerClass's customers
-#[20200909@Irena.Vo][141020]: Enhance Schema for params
+#[20200909@Irena.Vo][141020]: Enhance Schema for params & insert LogTypeID = 21, 22
 DROP TABLE IF EXISTS CTS_DataCenter.SpecialCustomerClass;
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.SpecialCustomerClass(
 		CTSCustID			BIGINT UNSIGNED	NOT NULL
@@ -543,3 +543,6 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.SpecialCustomerClass(
 	, 	INDEX				IX_SpecialCustomerClass_SubscriberID(SubscriberID)
     , 	INDEX				IX_SpecialCustomerClass_RootCTSCustID(RootCTSCustID)
 ) ENGINE=INNODB;
+
+USE CTS_DataCenter;
+INSERT INTO CTS_Admin.LogType VALUES (21, 'Pin Category', 'Pin Category'), (22, 'Unpin Category', 'Unpin Category');
