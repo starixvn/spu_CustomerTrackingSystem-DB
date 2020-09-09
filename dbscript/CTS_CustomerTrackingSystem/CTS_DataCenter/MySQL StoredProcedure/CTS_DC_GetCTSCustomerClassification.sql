@@ -68,7 +68,7 @@ BEGIN
         ,	MAX(c.LastModifiedDate) AS LastModifiedDate
         ,	DATE_ADD(MIN(c.LastScannedDate), INTERVAL a.ScanIntervalInSecond SECOND) AS NextScanFromDate
         , 	DATE_ADD(MAX(c.LastScannedDate), INTERVAL a.ScanIntervalInSecond SECOND) AS NextScanToDate
-        ,	1 -- all category will be delete
+        ,	1 AS IsEnableDelete-- all category will be delete
     FROM Temp_LatestRecordOfCategory AS c
 		INNER JOIN CTS_DataCenter.CustomerCategory AS a ON c.CategoryID = a.CategoryID
         INNER JOIN CTS_DataCenter.CustomerCategory AS b ON a.ParentID = b.CategoryID
