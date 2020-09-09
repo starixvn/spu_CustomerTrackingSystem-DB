@@ -76,7 +76,7 @@ BEGIN
    
     -- Insert log
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-	VALUES(12, 'CTS_DC_RemoveCTSCustomerClassification', CONCAT('Delete CTSCustomerClassification: ip_CustID_', ip_CustID, ';ip_CategoryID_', ip_CategoryID,')'), lv_CurrentTime, ip_CreatedBy);
+	VALUES(12, 'CTS_DC_RemoveCTSCustomerClassification', CONCAT('Delete CTSCustomerClassification: ip_CustID_', ip_CustID, ';ip_CategoryID_', ip_CategoryID), lv_CurrentTime, ip_CreatedBy);
 	
     -- Return customers removed CustomerClass
     SELECT * FROM Temp_DeleteCustomerClass;
