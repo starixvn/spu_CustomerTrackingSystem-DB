@@ -11,6 +11,7 @@ CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_AddCTSCustomerClassification`(
 	,	IN ip_CategoryID		SMALLINT
     , 	IN ip_Remark 			VARCHAR(300)
 	,	IN ip_CreatedBy 		INT
+    
     , 	OUT op_ErrorMessage 	VARCHAR(200)
 )
 
@@ -31,7 +32,9 @@ sp: BEGIN
 			- 20200908@Irena.Vo [Redmine ID: #141020]: Enhance insert manual for VVIP (include CustomerClass) 
 		Param's Explanation:
 	*/ 
-    DECLARE lv_CurrentTime DATETIME;
+   DECLARE lv_CurrentTime DATETIME DEFAULT CURRENT_TIME();
+	DECLARE lv_SPName VARCHAR(200) DEFAULT 'CTS_DC_AddCTSCustomerClassification';
+    
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
@@ -54,23 +57,16 @@ sp: BEGIN
 		SET op_ErrorMessage = 'This Category is not allowed for manually update!!!!'; 
         LEAVE sp;
     END IF;   
-    
-	SET lv_CurrentTime = CURRENT_TIME();
-    
+ 
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 	SET SQL_SAFE_UPDATES = 0;
-    
     -- FOR VVIP
     IF (ip_CategoryID = 3) THEN
         -- Remove all category before: General & Detailed, Problem.
 	    DELETE cate
 		FROM CTS_DataCenter.CTSCustomerClassification AS cate
 		WHERE cate.CustID = ip_CustID; 
-        
-        -- Remove old customer class before
-        DELETE sc
-		FROM CTS_DataCenter.SpecialCustomerClass AS sc
-        
+
 		  -- Remove old customer class before
         DELETE sc
 		FROM CTS_DataCenter.SpecialCustomerClass AS sc
@@ -89,8 +85,7 @@ sp: BEGIN
 			,	lv_CurrentTime
 			,   11; -- VVIP
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-	    VALUES(19, lv_SPName, CONCAT('Insert SpecialCustomerClass: ip_CTSCustID = ', ip_CTSCustID, ';ip_CustomerClass = ', ip_CustomerClass), lv_CurrentTime, ip_CreatedBy);
-
+	    VALUES(19, lv_SPName, CONCAT('Insert SpecialCustomerClass: ip_CTSCustID = ', ip_CTSCustID, ';ip_CustomerClass = ', 100), lv_CurrentTime, ip_CreatedBy);
     END IF;
   
     -- Insert for CTSCustomerClassification
@@ -122,10 +117,10 @@ sp: BEGIN
         ,	0 -- IsAuto
         ,   lv_CurrentTime
 	FROM Temp_SportGroupID;
-    
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	VALUES(10, 'CTS_DC_AddCTSCustomerClassification', CONCAT('Insert CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID,';ip_SportGroupIDList_', ip_SportGroupIDList,  ';ip_CategoryID_', ip_CategoryID, ';ip_Remark_', ip_Remark,')'), lv_CurrentTime, ip_CreatedBy);
 
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 END$$
 
 DELIMITER ;

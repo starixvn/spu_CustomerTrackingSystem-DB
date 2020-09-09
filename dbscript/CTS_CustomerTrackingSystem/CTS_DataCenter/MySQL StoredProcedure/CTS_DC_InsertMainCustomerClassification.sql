@@ -19,7 +19,7 @@ BEGIN
 				{"CustId": 2, "CategoryId": 202, "CreatedTime": "2020-09-13 00:01:01", "TurnoverRM": 200, "WinlossRM": 10, "BetCount": 10, "ActiveDays": 12}]');
 	*/ 
 
-    DECLARE lv_CreatedBy			INT			DEFAULT 10278938;		# Default user for auto main categories creator 'starixIT'
+    DECLARE lv_CreatedBy			INT	 DEFAULT 10278938;		# Default user for auto main categories creator 'starixIT'
     
     #============================================
     DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;
@@ -64,6 +64,7 @@ BEGIN
 	
     #========= FILL CUSTOMER INFORMATION (MEMBER ONLY) =========
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
+    SET SQL_SAFE_UPDATES = 0;
     
     -- Ignore VVIP, Pin Category before
     DELETE temp
@@ -102,7 +103,6 @@ BEGIN
     SET temp.ActionType = pa.ActionType
     WHERE temp.ActionType = 0;
     
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     #========= UPDATE EXISTING CUSTOMER CATEGORY LIST IN PHYSIC TABLE =========
     UPDATE CTS_DataCenter.CTSCustomerClassification AS cate
     INNER JOIN CTS_DataCenter.CustomerCategory AS cc
@@ -157,6 +157,8 @@ BEGIN
             , CURRENT_DATE()
 	FROM 	Temp_NewClassification AS temp
     WHERE	temp.ActionType IN (0, 1);   
+    
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
 END$$
 

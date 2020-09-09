@@ -17,11 +17,8 @@ BEGIN
 		Param's Explanation (filtered by):
                 
 	*/   
-    DECLARE lv_CreatedBy 		INT;
-    DECLARE lv_CurrentDateTime 	DATETIME;
-    
-    SET  lv_CreatedBy = 10278938;
-	SET  lv_CurrentDateTime = NOW();
+    DECLARE lv_CreatedBy 		INT DEFAULT 10278938;
+    DECLARE lv_CurrentDateTime 	DATETIME DEFAULT NOW();
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ProblemAccounts;    
 	CREATE TEMPORARY TABLE Temp_ProblemAccounts 
@@ -142,6 +139,8 @@ BEGIN
 		, 	DATE(lv_CurrentDateTime)
 	FROM 	Temp_ProblemAccounts AS temp;   
 	
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    
 END$$
 
 DELIMITER ;

@@ -4,7 +4,7 @@ DROP procedure IF EXISTS `CTS_DC_GetCTSCustomerClassification`;
 DELIMITER $$
 USE `CTS_DataCenter`$$
 CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_GetCTSCustomerClassification`(
-	IN ip_CustID 	BIGINT UNSIGNED
+	IN ip_CustID 	INT UNSIGNED
 )
 BEGIN
 	/*
@@ -23,7 +23,7 @@ BEGIN
             
 		Param's Explanation:
 	*/ 
-	DECLARE lv_Remark VARCHAR(50);
+	DECLARE lv_Remark VARCHAR(200) DEFAULT 'Auto tag customer classification';
 
     DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory;
     CREATE TEMPORARY TABLE Temp_LatestRecordOfCategory (
@@ -36,7 +36,6 @@ BEGIN
 	,   CategoryType        SMALLINT UNSIGNED DEFAULT 0 -- 0: ParentID = 1, 1: ParentID = 200, 2: ParentID = 50 OR CategoryID = 3
     );
     
-    SET lv_Remark = 'Auto tag customer classification';
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     
    INSERT INTO Temp_LatestRecordOfCategory (CategoryID, SportGroupID, LastModifiedBy, LastModifiedDate, Remark, LastScannedDate, CategoryType)
@@ -66,13 +65,13 @@ BEGIN
         ,	(CASE WHEN a.IsUsedManually = 0 THEN lv_Remark ELSE  c.Remark END ) AS Remark
         ,	u.UserName AS LastModifiedBy
         ,	MAX(c.LastModifiedDate) AS LastModifiedDate
-        ,   CASE WHEN ip_CustID IN (SELECT CustID FROM CTS_DataCenter.SpecialCustomerClass WHERE CreatedFromFunction = 21) THEN '-'
+        ,   CASE WHEN ip_CustID IN (SELECT CustID FROM CTS_DataCenter.SpecialCustomerClass WHERE CreatedFromFunction = 21) THEN NULL
 				 ELSE DATE_ADD(MIN(c.LastScannedDate), INTERVAL a.ScanIntervalInSecond SECOND) 
 			END AS NextScanFromDate
-        , 	 CASE WHEN ip_CustID IN (SELECT CustID FROM CTS_DataCenter.SpecialCustomerClass WHERE CreatedFromFunction = 21) THEN '-'
+        , 	 CASE WHEN ip_CustID IN (SELECT CustID FROM CTS_DataCenter.SpecialCustomerClass WHERE CreatedFromFunction = 21) THEN NULL
 				 ELSE DATE_ADD(MAX(c.LastScannedDate), INTERVAL a.ScanIntervalInSecond SECOND) 
 			END AS NextScanToDate
-        ,	1 AS IsEnabledDelete-- all category will be delete
+        ,	1 AS IsEnabledDelete -- all category will be delete
     FROM Temp_LatestRecordOfCategory AS c
 		INNER JOIN CTS_DataCenter.CustomerCategory AS a ON c.CategoryID = a.CategoryID
         INNER JOIN CTS_DataCenter.CustomerCategory AS b ON a.ParentID = b.CategoryID
@@ -89,11 +88,11 @@ BEGIN
 		,	a.ScanIntervalInSecond
     ORDER BY LastModifiedDate DESC;
    
-    -- Return isPinCategory for customer
+   -- Return isPinCategory for customer
    SELECT CASE WHEN ip_CustID IN (SELECT CustID FROM CTS_DataCenter.SpecialCustomerClass WHERE CreatedFromFunction = 21) THEN 1
                ELSE 0
 		  END AS isPinCategory;
-          
+
    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 	
 	# Begin: Cleanup

@@ -22,7 +22,7 @@ BEGIN
                 
 	*/   
     
-    DECLARE     lv_CreatedBy INT;
+    DECLARE     lv_CreatedBy INT DEFAULT 10278938;
     
 	### PERFORMANCE: START
     DECLARE		lv_ExecKey		BIGINT	UNSIGNED;
@@ -45,8 +45,6 @@ BEGIN
     INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
     VALUES(lv_ExecKey, lv_StepID, lv_SPName,  lv_Notes, lv_StartTime);
 	### PERFORMANCE: END
-    
-    SET  lv_CreatedBy = 10278938;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;    
 	CREATE TEMPORARY TABLE Temp_NewClassification 
@@ -212,6 +210,8 @@ BEGIN
     WHERE	z.ExecKey = lv_ExecKey AND z.StepID = lv_StepID ;    
     
     ### PERFORMANCE: END 
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    
 END$$
 
 DELIMITER ;

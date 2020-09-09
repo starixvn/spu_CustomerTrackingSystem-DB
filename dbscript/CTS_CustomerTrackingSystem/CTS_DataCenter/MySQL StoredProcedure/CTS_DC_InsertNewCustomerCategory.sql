@@ -17,11 +17,8 @@ BEGIN
         
 		Param's Explanation (filtered by):
 	*/
-    DECLARE lv_CreatedBy INT;
-	DECLARE lv_CurrentDate DATETIME;
-     
-    SET lv_CreatedBy = 10278938;
-    SET lv_CurrentDate = CURRENT_DATE();
+    DECLARE lv_CreatedBy INT DEFAULT 10278938;
+	DECLARE lv_CurrentDate DATETIME DEFAULT CURRENT_DATE();
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_NewCustomers;
     
@@ -56,8 +53,6 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cate ON cate.CustID = temp.CustID
     SET 	temp.CTSCustID = cate.CTSCustID
 		,	temp.SubscriberID = cate.SubscriberID;
-	
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
           
 	# Insert customers' classification
     INSERT INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, 
@@ -91,6 +86,9 @@ BEGIN
 		, 	1
 		, 	DATE(lv_CurrentDate)
 	FROM Temp_NewCustomers;   
+    
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    
 END$$
 
 DELIMITER ;

@@ -22,14 +22,14 @@ sp: BEGIN
 			- 20200909@Irena.Vo [Redmine ID: #141020]: Verify Pin Category
 		Param's Explanation:
 	*/ 
-    DECLARE lv_CurrentTime DATETIME;
+    DECLARE lv_CurrentTime DATETIME DEFAULT CURRENT_TIME();
+    DECLARE lv_SPName VARCHAR(200) DEFAULT 'CTS_DC_VerifyPinCTSCustomerClassification';
+    
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
-    
-	SET lv_CurrentTime = CURRENT_TIME();
-    
+   
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 	SET SQL_SAFE_UPDATES = 0;
     
@@ -49,9 +49,9 @@ sp: BEGIN
                 
 		-- Insert log      
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-		VALUES(21, 'CTS_DC_VerifyPinCTSCustomerClassification', CONCAT('Pin CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID), lv_CurrentTime, ip_CreatedBy);
-	
+		VALUES(21, lv_SPName, CONCAT('Pin CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID), lv_CurrentTime, ip_CreatedBy);
     END IF;   
+    
     -- Verify Unpin category.
 	IF (ip_IsPinCategory = 0) THEN 
         -- Remove CustomerClass after Unpin
@@ -61,9 +61,9 @@ sp: BEGIN
         
 		-- Insert log
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-		VALUES(22, 'CTS_DC_VerifyPinCTSCustomerClassification', CONCAT('Unpin CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID), lv_CurrentTime, ip_CreatedBy);
-   
+		VALUES(22, lv_SPName, CONCAT('Unpin CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID), lv_CurrentTime, ip_CreatedBy);
    END IF;   
+   
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
 END$$
 

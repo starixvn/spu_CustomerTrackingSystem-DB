@@ -8,6 +8,7 @@ CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_RemoveCTSCustomerClassification`(
 	,   IN ip_CTSCustID			BIGINT UNSIGNED 
 	,	IN ip_CategoryID		SMALLINT
 	,	IN ip_CreatedBy 		INT
+    
     , 	OUT op_ErrorMessage 	VARCHAR(200)
 )
 BEGIN

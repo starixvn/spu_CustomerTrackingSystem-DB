@@ -28,9 +28,8 @@ sp: BEGIN
 	DECLARE lv_CTSCustID		BIGINT UNSIGNED;
     DECLARE lv_CustID			INT UNSIGNED;
 	DECLARE lv_SubscriberID 	INT;
-    DECLARE	lv_CurrentDateTime	DATETIME;
-    DECLARE	lv_SPName 			VARCHAR(100) 	DEFAULT 'CTS_DC_InsertSpecialCustomerClass_Irena';        
-    
+    DECLARE	lv_CurrentDateTime	DATETIME DEFAULT NOW();
+    DECLARE	lv_SPName 			VARCHAR(100) 	DEFAULT 'CTS_DC_InsertSpecialCustomerClass';        
     
     # Handle error
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
@@ -38,8 +37,6 @@ sp: BEGIN
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;        
         SELECT NULL AS CustID,	NULL AS CustomerClass;
     END;
-    
-	SET lv_CurrentDateTime = NOW();
     
     DROP TEMPORARY TABLE IF EXISTS Temp_AffectedCustomers;    
 	CREATE TEMPORARY TABLE Temp_AffectedCustomers 
@@ -66,7 +63,7 @@ sp: BEGIN
 	);
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-   
+    SET SQL_SAFE_UPDATES = 0;
     -- Check invalid customer in CTS.
     IF NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomer WHERE UserName = ip_Username OR UserName2 = ip_Username) THEN
 		SET op_ErrorMessage = 'This account is not existed in the system!';
