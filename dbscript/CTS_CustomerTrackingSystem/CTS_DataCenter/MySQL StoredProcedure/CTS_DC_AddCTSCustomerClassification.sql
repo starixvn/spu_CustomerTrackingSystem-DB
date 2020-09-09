@@ -66,10 +66,16 @@ sp: BEGIN
 	    DELETE cate
 		FROM CTS_DataCenter.CTSCustomerClassification AS cate
 		WHERE cate.CustID = ip_CustID; 
+        
         -- Remove old customer class before
         DELETE sc
 		FROM CTS_DataCenter.SpecialCustomerClass AS sc
-		WHERE sc.CTSCustID = ip_CTSCustID;
+        
+		  -- Remove old customer class before
+        DELETE sc
+		FROM CTS_DataCenter.SpecialCustomerClass AS sc
+		WHERE sc.CTSCustID = ip_CTSCustID AND sc.CreatedFromFunction = 1; 
+        
         -- Insert for SpecialCustomerClass For VVIP
         INSERT INTO CTS_DataCenter.SpecialCustomerClass(CTSCustID, CustID, RootCTSCustID, SubscriberID, CustomerClass, CreatedBy, CreatedDate, LastModifiedBy, LastModifiedDate, CreatedFromFunction)
 		SELECT 	ip_CTSCustID
@@ -82,6 +88,9 @@ sp: BEGIN
             ,   ip_CreatedBy
 			,	lv_CurrentTime
 			,   11; -- VVIP
+		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
+	    VALUES(19, lv_SPName, CONCAT('Insert SpecialCustomerClass: ip_CTSCustID = ', ip_CTSCustID, ';ip_CustomerClass = ', ip_CustomerClass), lv_CurrentTime, ip_CreatedBy);
+
     END IF;
   
     -- Insert for CTSCustomerClassification

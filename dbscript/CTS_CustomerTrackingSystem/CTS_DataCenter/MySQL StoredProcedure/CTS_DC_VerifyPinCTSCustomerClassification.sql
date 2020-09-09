@@ -46,20 +46,24 @@ sp: BEGIN
 				,   ip_CreatedBy
 				,	lv_CurrentTime
 				,   21; -- Pin  
+                
 		-- Insert log      
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 		VALUES(21, 'CTS_DC_VerifyPinCTSCustomerClassification', CONCAT('Pin CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID), lv_CurrentTime, ip_CreatedBy);
-	END IF;   
+	
+    END IF;   
     -- Verify Unpin category.
 	IF (ip_IsPinCategory = 0) THEN 
         -- Remove CustomerClass after Unpin
 		DELETE sc
 		FROM CTS_DataCenter.SpecialCustomerClass AS sc
 		WHERE sc.CTSCustID = ip_CTSCustID AND sc.CreatedFromFunction = 21;
+        
 		-- Insert log
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 		VALUES(22, 'CTS_DC_VerifyPinCTSCustomerClassification', CONCAT('Unpin CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID), lv_CurrentTime, ip_CreatedBy);
-    END IF;   
+   
+   END IF;   
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
 END$$
 

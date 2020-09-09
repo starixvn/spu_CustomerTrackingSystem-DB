@@ -43,6 +43,9 @@ BEGIN
 		DELETE 	sc
 		FROM 	CTS_DataCenter.SpecialCustomerClass AS sc
 		WHERE 	sc.CustID = ip_CustID AND sc.CreatedFromFunction = 11; -- For VVIP
+        
+		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
+	    VALUES(20, @lv_SPName, CONCAT('Remove special customer class: ip_CTSCustID_ ', ip_CTSCustID) , lv_CurrentTime, ip_CreatedBy);
     END IF;
     
      -- Insert customers removed CustomerClass
