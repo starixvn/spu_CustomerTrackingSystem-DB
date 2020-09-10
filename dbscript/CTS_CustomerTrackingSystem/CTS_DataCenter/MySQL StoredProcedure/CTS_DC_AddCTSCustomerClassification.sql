@@ -12,7 +12,7 @@ CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_AddCTSCustomerClassification`(
     , 	IN ip_Remark 			VARCHAR(300)
 	,	IN ip_CreatedBy 		INT
     
-    , 	OUT op_ErrorMessage 	VARCHAR(200) 
+    , 	OUT op_ErrorMessage 	VARCHAR(200)
 )
 sp: BEGIN
 	/*
@@ -66,13 +66,45 @@ sp: BEGIN
 	    DELETE cate
 		FROM CTS_DataCenter.CTSCustomerClassification AS cate
 		WHERE cate.CustID = ip_CustID; 
-
-		  -- Remove old customer class before
+	
+        -- Insert for CTSCustomerClassification
+        INSERT INTO CTS_DataCenter.CTSCustomerClassification
+		(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
+		SELECT 	ip_CustID
+			, 	ip_CTSCustID
+			, 	ip_SubscriberID
+			, 	ip_CategoryID + 210 -- For VVIP (General)
+			,   SportGroupID
+			, 	ip_Remark
+			, 	lv_CurrentTime
+			,   ip_CreatedBy
+			,   lv_CurrentTime
+			,   ip_CreatedBy
+			,   DATE(lv_CurrentTime)
+		FROM Temp_SportGroupID;
+        
+	   -- Insert history
+        INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
+		(CustID, CTSCustID, CategoryID,SportGroupID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate)
+		SELECT 	ip_CustID
+			, 	ip_CTSCustID
+			, 	ip_CategoryID + 210   -- For VVIP (General)
+			, 	SportGroupID 
+			, 	lv_CurrentTime
+			, 	ip_CreatedBy
+			,	0 -- Add new
+			,	1 -- IsAuto
+			,   DATE(lv_CurrentTime)
+		FROM Temp_SportGroupID;
+		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
+		VALUES(10, lv_SPName, CONCAT('Insert CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID,';ip_SportGroupIDList_', ip_SportGroupIDList,  ';ip_CategoryID_', ip_CategoryID + 210, ';ip_Remark_', ip_Remark), lv_CurrentTime, ip_CreatedBy);
+    
+        -- Remove old customer class before
         DELETE sc
 		FROM CTS_DataCenter.SpecialCustomerClass AS sc
 		WHERE sc.CTSCustID = ip_CTSCustID AND sc.CreatedFromFunction = 1; 
         
-        -- Insert for SpecialCustomerClass For VVIP
+		 -- Insert for SpecialCustomerClass For VVIP
         INSERT INTO CTS_DataCenter.SpecialCustomerClass(CTSCustID, CustID, RootCTSCustID, SubscriberID, CustomerClass, CreatedBy, CreatedDate, LastModifiedBy, LastModifiedDate, CreatedFromFunction)
 		SELECT 	ip_CTSCustID
 			,	ip_CustID
@@ -86,40 +118,7 @@ sp: BEGIN
 			,   11; -- VVIP
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	    VALUES(19, lv_SPName, CONCAT('Insert SpecialCustomerClass: ip_CTSCustID = ', ip_CTSCustID, ';ip_CustomerClass = ', 100), lv_CurrentTime, ip_CreatedBy);
-        
-        -- Insert for CTSCustomerClassification
-        -- For VVIP (General)
-        INSERT INTO CTS_DataCenter.CTSCustomerClassification
-		(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
-		SELECT 	ip_CustID
-			, 	ip_CTSCustID
-			, 	ip_SubscriberID
-			, 	ip_CategoryID + 210
-			,   SportGroupID
-			, 	ip_Remark
-			, 	lv_CurrentTime
-			,   ip_CreatedBy
-			,   lv_CurrentTime
-			,   ip_CreatedBy
-			,   DATE(lv_CurrentTime)
-		FROM Temp_SportGroupID;
-
-	   -- Insert history
-        -- For VVIP (General)
-        INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
-		(CustID, CTSCustID, CategoryID,SportGroupID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate)
-		SELECT 	ip_CustID
-			, 	ip_CTSCustID
-			, 	ip_CategoryID + 210
-			, 	SportGroupID 
-			, 	lv_CurrentTime
-			, 	ip_CreatedBy
-			,	0 -- Add new
-			,	1 -- IsAuto
-			,   DATE(lv_CurrentTime)
-		FROM Temp_SportGroupID;
-		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-		VALUES(10, lv_SPName, CONCAT('Insert CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID,';ip_SportGroupIDList_', ip_SportGroupIDList,  ';ip_CategoryID_', ip_CategoryID + 210, ';ip_Remark_', ip_Remark), lv_CurrentTime, ip_CreatedBy);
+   
     END IF;
   
     -- Insert for CTSCustomerClassification
@@ -155,7 +154,7 @@ sp: BEGIN
 	VALUES(10, lv_SPName, CONCAT('Insert CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID,';ip_SportGroupIDList_', ip_SportGroupIDList,  ';ip_CategoryID_', ip_CategoryID, ';ip_Remark_', ip_Remark), lv_CurrentTime, ip_CreatedBy);
     
     SET SQL_SAFE_UPDATES = 1;
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
 
 END$$
 

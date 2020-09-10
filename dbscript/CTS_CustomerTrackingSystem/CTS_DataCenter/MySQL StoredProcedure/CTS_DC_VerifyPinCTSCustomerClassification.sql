@@ -30,22 +30,39 @@ sp: BEGIN
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
     
+    DROP TABLE IF EXISTS Temp_PinCategory;
+    CREATE TEMPORARY TABLE Temp_PinCategory(
+			CTSCustID 		BIGINT UNSIGNED PRIMARY KEY
+		,	CustID			INT UNSIGNED
+        ,	SubscriberID	INT
+        ,	CreatedBy	    INT
+        ,   IsPinCategory   BIT
+	);
+    
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 	SET SQL_SAFE_UPDATES = 0;
+    
+    INSERT INTO Temp_PinCategory (CustID, CTSCustID, SubscriberID, CreatedBy, IsPinCategory)
+    SELECT 	        ip_CustID
+				,	ip_CTSCustID
+				,	ip_SubscriberID
+				,	ip_CreatedBy
+                ,   ip_IsPinCategory;
     
     -- Verify Pin category.
     IF (ip_IsPinCategory = 1) THEN
 		-- Insert data with CustomerClass = -99 and CreatedFromFunction = 21
 		INSERT INTO CTS_DataCenter.SpecialCustomerClass(CTSCustID, CustID, RootCTSCustID, SubscriberID, CreatedBy, CreatedDate, LastModifiedBy, LastModifiedDate, CreatedFromFunction)
-		SELECT 	    ip_CTSCustID
-				,	ip_CustID
-				,	ip_CTSCustID
-				,	ip_SubscriberID
-				,	ip_CreatedBy
+		SELECT 	    temp.CTSCustID
+				,	temp.CustID
+				,	temp.CTSCustID
+				,	temp.SubscriberID
+				,	temp.CreatedBy
 				,	lv_CurrentTime
-				,   ip_CreatedBy
+				,   temp.CreatedBy
 				,	lv_CurrentTime
-				,   21; -- Pin  
+				,   21 -- Pin  
+		FROM    Temp_PinCategory AS temp;
                 
 		-- Insert log      
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
