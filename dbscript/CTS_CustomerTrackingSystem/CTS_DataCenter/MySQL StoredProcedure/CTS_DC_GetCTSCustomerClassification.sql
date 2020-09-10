@@ -9,7 +9,7 @@ CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_GetCTSCustomerClassification`(
 BEGIN
 	/*
 		Created:	20200423@Long.Luu	
-		Task :		Get CTSCustomer Category 
+		Task :		Get CTSCustomer Category
 		DB:			CTS_DataCenter
 		Original: 
 		Revisions:
@@ -24,6 +24,7 @@ BEGIN
 		Param's Explanation:
 	*/ 
 	DECLARE lv_Remark VARCHAR(200) DEFAULT 'Auto tag customer classification';
+    DECLARE lv_IsPinCategory BIT DEFAULT 0;
 
     DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory;
     CREATE TEMPORARY TABLE Temp_LatestRecordOfCategory (
@@ -37,6 +38,10 @@ BEGIN
     );
 
    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+   
+   IF EXISTS (SELECT 1 FROM CTS_DataCenter.SpecialCustomerClass WHERE CustID = ip_CustID AND CreatedFromFunction = 21) THEN
+      SET lv_IsPinCategory = 1;
+   END IF;
    
    INSERT INTO Temp_LatestRecordOfCategory (CategoryID, SportGroupID, LastModifiedBy, LastModifiedDate, Remark, LastScannedDate, CategoryType)
    SELECT 	  cate.CategoryID
@@ -66,10 +71,10 @@ BEGIN
 			END AS Remark
         ,	u.UserName AS LastModifiedBy
         ,	MAX(c.LastModifiedDate) AS LastModifiedDate
-        ,   CASE WHEN ip_CustID IN (SELECT CustID FROM CTS_DataCenter.SpecialCustomerClass WHERE CreatedFromFunction = 21) THEN NULL
+        ,   CASE WHEN lv_IsPinCategory = 1  THEN NULL
 				 ELSE DATE_ADD(MIN(c.LastScannedDate), INTERVAL a.ScanIntervalInSecond SECOND) 
 			END AS NextScanFromDate
-        , 	 CASE WHEN ip_CustID IN (SELECT CustID FROM CTS_DataCenter.SpecialCustomerClass WHERE CreatedFromFunction = 21) THEN NULL
+        , 	 CASE WHEN lv_IsPinCategory = 1  THEN NULL
 				 ELSE DATE_ADD(MAX(c.LastScannedDate), INTERVAL a.ScanIntervalInSecond SECOND) 
 			END AS NextScanToDate
         ,	1 AS IsEnabledDelete -- all category will be delete
@@ -88,16 +93,14 @@ BEGIN
         ,	a.IsUsedManually
 		,	a.ScanIntervalInSecond
     ORDER BY LastModifiedDate DESC;
-   
-   -- Return isPinCategory for customer
-   SELECT CASE WHEN ip_CustID IN (SELECT CustID FROM CTS_DataCenter.SpecialCustomerClass WHERE CreatedFromFunction = 21) THEN 1
-               ELSE 0
-		  END AS isPinCategory;
 
 	# Begin: Cleanup
-	DROP TEMPORARY TABLE Temp_LatestRecordOfCategory;
+	DROP TEMPORARY TABLE Temp_LatestRecordOfCategory; 
 	# End: Cleanup
     
+    -- Return isPinCategory for customer
+	SELECT lv_IsPinCategory AS isPinCategory;   
+          
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 END$$
 

@@ -526,7 +526,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustEvidenceLog(
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification_ScanStatus ADD COLUMN ParentCategoryID SMALLINT;
 
 #[20200905@Long.Luu][140996]: New table for storing Hardcoded CustomerClass's customers
-#[20200909@Irena.Vo][141020]: Enhance Schema for params & insert LogTypeID = 21, 22
+#[20200909@Irena.Vo][141020]: Enhance Schema for params & insert LogTypeID = 21, 22. Add Index for custid
 DROP TABLE IF EXISTS CTS_DataCenter.SpecialCustomerClass;
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.SpecialCustomerClass(
 		CTSCustID			BIGINT UNSIGNED	NOT NULL
@@ -542,4 +542,5 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.SpecialCustomerClass(
 	, 	PRIMARY KEY			PK_SpecialCustomerClass_CTSCustID_CreatedFromFunction(CTSCustID, CreatedFromFunction)
 	, 	INDEX				IX_SpecialCustomerClass_SubscriberID(SubscriberID)
     , 	INDEX				IX_SpecialCustomerClass_RootCTSCustID(RootCTSCustID)
+    , 	INDEX				IX_SpecialCustomerClass_CustID(CustID)
 ) ENGINE=INNODB;

@@ -19,51 +19,33 @@ sp: BEGIN
 		DB:			CTS_DataCenter
 		Original: 
 		Revisions:
-			- 20200909@Irena.Vo [Redmine ID: #141020]: Verify Pin Category 
+			- 20200909@Irena.Vo [Redmine ID: #141020]: Verify Pin Category
 		Param's Explanation:
 	*/ 
     DECLARE lv_CurrentTime DATETIME DEFAULT CURRENT_TIME();
-    DECLARE lv_SPName VARCHAR(200) DEFAULT 'CTS_DC_VerifyPinCTSCustomerClassification';
+    DECLARE lv_SPName VARCHAR(200) DEFAULT 'CTS_DC_VerifyPinCTSCustomerClassification'; 
     
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
     
-    DROP TABLE IF EXISTS Temp_PinCategory;
-    CREATE TEMPORARY TABLE Temp_PinCategory(
-			CTSCustID 		BIGINT UNSIGNED PRIMARY KEY
-		,	CustID			INT UNSIGNED
-        ,	SubscriberID	INT
-        ,	CreatedBy	    INT
-        ,   IsPinCategory   BIT
-	);
-    
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 	SET SQL_SAFE_UPDATES = 0;
-    
-    INSERT INTO Temp_PinCategory (CustID, CTSCustID, SubscriberID, CreatedBy, IsPinCategory)
-    SELECT 	        ip_CustID
-				,	ip_CTSCustID
-				,	ip_SubscriberID
-				,	ip_CreatedBy
-                ,   ip_IsPinCategory;
     
     -- Verify Pin category.
     IF (ip_IsPinCategory = 1) THEN
 		-- Insert data with CustomerClass = -99 and CreatedFromFunction = 21
 		INSERT INTO CTS_DataCenter.SpecialCustomerClass(CTSCustID, CustID, RootCTSCustID, SubscriberID, CreatedBy, CreatedDate, LastModifiedBy, LastModifiedDate, CreatedFromFunction)
-		SELECT 	    temp.CTSCustID
-				,	temp.CustID
-				,	temp.CTSCustID
-				,	temp.SubscriberID
-				,	temp.CreatedBy
+		SELECT 	    ip_CTSCustID
+				,	ip_CustID
+				,	ip_CTSCustID
+				,	ip_SubscriberID
+				,	ip_CreatedBy
 				,	lv_CurrentTime
-				,   temp.CreatedBy
+				,   ip_CreatedBy
 				,	lv_CurrentTime
-				,   21 -- Pin  
-		FROM    Temp_PinCategory AS temp;
-                
+				,   21; -- Pin 
 		-- Insert log      
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 		VALUES(21, lv_SPName, CONCAT('Pin CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID), lv_CurrentTime, ip_CreatedBy);
@@ -74,8 +56,7 @@ sp: BEGIN
         -- Remove CustomerClass after Unpin
 		DELETE sc
 		FROM CTS_DataCenter.SpecialCustomerClass AS sc
-		WHERE sc.CTSCustID = ip_CTSCustID AND sc.CreatedFromFunction = 21;
-        
+		WHERE sc.CustID = ip_CustID AND sc.CreatedFromFunction = 21;
 		-- Insert log
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 		VALUES(22, lv_SPName, CONCAT('Unpin CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID), lv_CurrentTime, ip_CreatedBy);

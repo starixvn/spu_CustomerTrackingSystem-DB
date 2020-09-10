@@ -37,7 +37,7 @@ BEGIN
     ELSE
 		SELECT CustID
 		FROM CTS_DataCenter.SpecialCustomerClass
-        WHERE CreatedFromFunction = 1;
+        WHERE CreatedFromFunction IN (1, 11, 21); -- Exclude Normal, VVIP, Pin Category customer class.
     END IF;
     
 	SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;

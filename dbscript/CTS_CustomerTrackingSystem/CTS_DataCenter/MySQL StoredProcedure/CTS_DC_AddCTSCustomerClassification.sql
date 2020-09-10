@@ -23,7 +23,7 @@ sp: BEGIN
 		Revisions:
 			- 20200423@Long.Luu [Redmine ID: #132623]: Created 
 			- 20200608@Casey.Huynh [Redmine ID: #]: Add parameter ip_CustID
-					+ Rule "Delete Category "New Member" When Add Manaual Caterory"
+					+ Rule "Delete Category "New Member" When Add Manaual Caterory" 
             - 20200701@Casey.Huynh [Redmine ID: #]: 
 					+ Remove Rule "Delete Category "New Member" When Add Manaual Caterory"
                     + Update History table
@@ -45,7 +45,7 @@ sp: BEGIN
     );
     
     IF(ip_SportGroupIDList = '') THEN
-       INSERT INTO Temp_SportGroupID (SportGroupID) VALUES (0);
+       INSERT INTO Temp_SportGroupID (SportGroupID) VALUES (0); -- For VVIP
 	ELSE
 		SET @sql = CONCAT("INSERT INTO Temp_SportGroupID (SportGroupID) VALUES ('", REPLACE(ip_SportGroupIDList, ",", "'),('"),"');");
 		PREPARE stmt1 FROM @sql;
@@ -74,14 +74,13 @@ sp: BEGIN
 			, 	ip_CTSCustID
 			, 	ip_SubscriberID
 			, 	ip_CategoryID + 210 -- For VVIP (General)
-			,   SportGroupID
+			,   200
 			, 	ip_Remark
 			, 	lv_CurrentTime
 			,   ip_CreatedBy
 			,   lv_CurrentTime
 			,   ip_CreatedBy
-			,   DATE(lv_CurrentTime)
-		FROM Temp_SportGroupID;
+			,   DATE(lv_CurrentTime);
         
 	   -- Insert history
         INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
@@ -89,13 +88,13 @@ sp: BEGIN
 		SELECT 	ip_CustID
 			, 	ip_CTSCustID
 			, 	ip_CategoryID + 210   -- For VVIP (General)
-			, 	SportGroupID 
+			, 	200 
 			, 	lv_CurrentTime
 			, 	ip_CreatedBy
 			,	0 -- Add new
-			,	1 -- IsAuto
-			,   DATE(lv_CurrentTime)
-		FROM Temp_SportGroupID;
+			,	0 -- IsAuto
+			,   DATE(lv_CurrentTime);
+
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 		VALUES(10, lv_SPName, CONCAT('Insert CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID,';ip_SportGroupIDList_', ip_SportGroupIDList,  ';ip_CategoryID_', ip_CategoryID + 210, ';ip_Remark_', ip_Remark), lv_CurrentTime, ip_CreatedBy);
     
@@ -128,14 +127,14 @@ sp: BEGIN
 		, 	ip_CTSCustID
 		, 	ip_SubscriberID
         , 	ip_CategoryID
-        ,   SportGroupID
+        ,   s.SportGroupID
         , 	ip_Remark
         , 	lv_CurrentTime
         ,   ip_CreatedBy
         ,   lv_CurrentTime
         ,   ip_CreatedBy
         ,   DATE(lv_CurrentTime)
-	FROM Temp_SportGroupID;
+	FROM Temp_SportGroupID AS s;
 
    -- Insert history
    INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
@@ -143,18 +142,18 @@ sp: BEGIN
 	SELECT 	ip_CustID
 		, 	ip_CTSCustID
         , 	ip_CategoryID
-        , 	SportGroupID 
+        , 	s.SportGroupID 
         , 	lv_CurrentTime
         , 	ip_CreatedBy
         ,	0 -- Add new
         ,	0 -- IsAuto
         ,   DATE(lv_CurrentTime)
-	FROM Temp_SportGroupID;
+	FROM Temp_SportGroupID AS s;
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	VALUES(10, lv_SPName, CONCAT('Insert CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID,';ip_SportGroupIDList_', ip_SportGroupIDList,  ';ip_CategoryID_', ip_CategoryID, ';ip_Remark_', ip_Remark), lv_CurrentTime, ip_CreatedBy);
     
     SET SQL_SAFE_UPDATES = 1;
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 
 END$$
 

@@ -19,17 +19,23 @@ BEGIN
 		Original: 
 		Revisions:
 			- 20200423@Long.Luu [Redmine ID: #132623]: Created 
-            - 20200908@Irena.Vo [Redmine ID: #141020]: Delete VVIP OR All Category has Pin before (Include Customer Class) 
+            - 20200908@Irena.Vo [Redmine ID: #141020]: Delete VVIP OR All Category has Pin before (Include Customer Class)
             
 		Param's Explanation:
 	*/ 
     DECLARE lv_CurrentTime DATETIME DEFAULT CURRENT_TIME();
-    DECLARE lv_SPName VARCHAR(200) DEFAULT 'CTS_DC_RemoveCTSCustomerClassification';
+    DECLARE lv_SPName VARCHAR(200) DEFAULT 'CTS_DC_RemoveCTSCustomerClassification'; 
     
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_GeneralCategory;
+	CREATE TEMPORARY TABLE Temp_GeneralCategory
+	(		CustID			    BIGINT UNSIGNED PRIMARY KEY
+        ,	GeneralCategory		INT
+	);
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_DeleteCustomerClass;
 	CREATE TEMPORARY TABLE Temp_DeleteCustomerClass
@@ -40,14 +46,18 @@ BEGIN
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;   
     SET SQL_SAFE_UPDATES = 0;
     
+    -- Insert General Category
+    INSERT INTO Temp_GeneralCategory
+    SELECT ip_CustID, cate.CategoryID
+	FROM CTS_DataCenter.CTSCustomerClassification AS cate
+	INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cate.CategoryID = cc.CategoryID 
+	WHERE cc.ParentID IN (50,200) AND cate.CustID = ip_CustID;
+    
     -- Insert customers removed CustomerClass
     INSERT INTO Temp_DeleteCustomerClass
     SELECT ip_CustID, -1
     WHERE  ip_CategoryID IN (3, 213) -- For VVIP
-           OR ip_CategoryID = (SELECT cate.CategoryID
-                              FROM CTS_DataCenter.CTSCustomerClassification AS cate
-                              INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cate.CategoryID = cc.CategoryID
-                              WHERE cc.ParentID IN (50,200) AND cate.CustID = ip_CustID); -- For General
+           OR ip_CategoryID = (SELECT GeneralCategory FROM Temp_GeneralCategory); -- For General
     
     -- Remove data from CTS_DataCenter.SpecialCustomerClass
     IF (ip_CategoryID IN (3, 213)) THEN
@@ -72,7 +82,7 @@ BEGIN
     FROM 	CTS_DataCenter.CTSCustomerClassification AS cate
     WHERE 	cate.CustID = ip_CustID AND cate.CategoryID = ip_CategoryID;
 
-    -- Insert history
+    -- Insert history.
     INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate)
 	SELECT 	ip_CustID
 		, 	ip_CTSCustID
