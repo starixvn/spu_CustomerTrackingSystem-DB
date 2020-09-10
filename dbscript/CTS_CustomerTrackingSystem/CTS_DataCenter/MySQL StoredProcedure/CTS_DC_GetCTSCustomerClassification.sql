@@ -9,7 +9,7 @@ CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_GetCTSCustomerClassification`(
 BEGIN
 	/*
 		Created:	20200423@Long.Luu	
-		Task :		Get CTSCustomer Category
+		Task :		Get CTSCustomer Category 
 		DB:			CTS_DataCenter
 		Original: 
 		Revisions:
@@ -19,7 +19,7 @@ BEGIN
 					+ Remove rule "hide VIP IF has SmartPunter/Highrisk
             - 20200820@Roger.Le [Redmine ID: #139969]: New Column "Next Scan Date" for Customer Category
             - 20200903@Long.Luu [Redmine ID: #137550]: Get for both General & Detailed Categories
-            - 20200908@Irena.Vo [Redmine ID: #141020]: Get for VVIP. VVIP -> PA -> Detailed & General
+            - 20200908@Irena.Vo [Redmine ID: #141020]: Get for VVIP. VVIP -> PA -> Detailed & General. Add VVIP (General)
             
 		Param's Explanation:
 	*/ 
@@ -35,9 +35,9 @@ BEGIN
     , 	LastScannedDate		DATETIME
 	,   CategoryType        SMALLINT UNSIGNED DEFAULT 0 -- 0: ParentID = 1, 1: ParentID = 200, 2: ParentID = 50 OR CategoryID = 3
     );
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-    
+
+   SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+   
    INSERT INTO Temp_LatestRecordOfCategory (CategoryID, SportGroupID, LastModifiedBy, LastModifiedDate, Remark, LastScannedDate, CategoryType)
    SELECT 	  cate.CategoryID
 			, cate.SportGroupID
@@ -46,7 +46,6 @@ BEGIN
 			, cate.Remark
 			, cate.LastScannedDate
 			, CASE
-                  WHEN a.CategoryID = 3 THEN 2 -- For VVIP 
 				  WHEN b.CategoryID = 50 THEN 2
 				  WHEN b.CategoryID = 1 THEN 0
 				  WHEN b.CategoryID = 200  THEN 1
@@ -62,7 +61,9 @@ BEGIN
 		,	a.CategoryName
         , 	LEFT(GROUP_CONCAT(s.SportGroupID ORDER BY s.SportGroupID ASC SEPARATOR ', '),255) AS SportGroupIDList
         , 	LEFT(GROUP_CONCAT(s.SportGroupName ORDER BY s.SportGroupID ASC SEPARATOR ', '),255) AS SportGroupNameList
-        ,	(CASE WHEN a.IsUsedManually = 0 THEN lv_Remark ELSE  c.Remark END ) AS Remark
+        ,	CASE  WHEN a.CategoryID IN (3, 213) THEN c.Remark
+                  WHEN a.IsUsedManually = 0 THEN lv_Remark
+			END AS Remark
         ,	u.UserName AS LastModifiedBy
         ,	MAX(c.LastModifiedDate) AS LastModifiedDate
         ,   CASE WHEN ip_CustID IN (SELECT CustID FROM CTS_DataCenter.SpecialCustomerClass WHERE CreatedFromFunction = 21) THEN NULL
@@ -93,11 +94,11 @@ BEGIN
                ELSE 0
 		  END AS isPinCategory;
 
-   SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-	
 	# Begin: Cleanup
 	DROP TEMPORARY TABLE Temp_LatestRecordOfCategory;
 	# End: Cleanup
+    
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 END$$
 
 DELIMITER ;

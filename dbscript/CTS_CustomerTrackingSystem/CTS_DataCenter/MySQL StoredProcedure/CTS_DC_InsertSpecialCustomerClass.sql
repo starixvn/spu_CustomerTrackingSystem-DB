@@ -14,7 +14,7 @@ CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_InsertSpecialCustomerClass`(
 sp: BEGIN
 	/*
 		Created:	20200905@Long.Luu
-		Task:		Insert special customer class
+		Task:		Insert special customer class 
 		DB:			CTS_DataCenter
 		Original:
 
@@ -64,6 +64,7 @@ sp: BEGIN
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     SET SQL_SAFE_UPDATES = 0;
+   
     -- Check invalid customer in CTS.
     IF NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomer WHERE UserName = ip_Username OR UserName2 = ip_Username) THEN
 		SET op_ErrorMessage = 'This account is not existed in the system!';
@@ -77,7 +78,7 @@ sp: BEGIN
     FROM CTS_DataCenter.CTSCustomer 
     WHERE UserName = ip_Username OR UserName2 = ip_Username;    
     
-	-- Existed VVIP CustomerClass before -> Display error message
+     -- Existed VVIP CustomerClass before -> Display error message
 	IF EXISTS (SELECT 1 FROM CTS_DataCenter.SpecialCustomerClass WHERE CTSCustID = lv_CTSCustID AND CreatedFromFunction = 11) THEN
 		SET op_ErrorMessage = 'This account has already been marked with VVIP CustomerClass!';
 		SELECT NULL AS CustID,	NULL AS CustomerClass;
@@ -89,6 +90,7 @@ sp: BEGIN
         SELECT NULL AS CustID,	NULL AS CustomerClass;
         LEAVE sp;
 	END IF;
+    
 	-- #2: get affected customers
 	INSERT INTO Temp_AffectedCustomers(CTSCustID)
 	VALUES(lv_CTSCustID);
@@ -149,7 +151,9 @@ sp: BEGIN
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	VALUES(19, lv_SPName, CONCAT('Insert SpecialCustomerClass: ip_CTSCustID = ', lv_CTSCustID, ';ip_CustomerClass = ', ip_CustomerClass), lv_CurrentDateTime, ip_UserID);
 
+    SET SQL_SAFE_UPDATES = 1;
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    
 END$$
 
 DELIMITER ;

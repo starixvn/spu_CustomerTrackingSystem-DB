@@ -19,7 +19,7 @@ BEGIN
 				{"CustId": 2, "CategoryId": 202, "CreatedTime": "2020-09-13 00:01:01", "TurnoverRM": 200, "WinlossRM": 10, "BetCount": 10, "ActiveDays": 12}]');
 	*/ 
 
-    DECLARE lv_CreatedBy			INT	 DEFAULT 10278938;		# Default user for auto main categories creator 'starixIT'
+    DECLARE lv_CreatedBy			INT	DEFAULT 10278938;		# Default user for auto main categories creator 'starixIT' 
     
     #============================================
     DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;
@@ -158,8 +158,9 @@ BEGIN
 	FROM 	Temp_NewClassification AS temp
     WHERE	temp.ActionType IN (0, 1);   
     
+	SET SQL_SAFE_UPDATES = 1;
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-    
+   
 END$$
 
 DELIMITER ;

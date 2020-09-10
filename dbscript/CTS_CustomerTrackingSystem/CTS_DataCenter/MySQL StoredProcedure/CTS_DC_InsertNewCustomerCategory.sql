@@ -18,10 +18,9 @@ BEGIN
 		Param's Explanation (filtered by):
 	*/
     DECLARE lv_CreatedBy INT DEFAULT 10278938;
-	DECLARE lv_CurrentDate DATETIME DEFAULT CURRENT_DATE();
+	DECLARE lv_CurrentDate DATETIME DEFAULT CURRENT_DATE(); 
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_NewCustomers;
-    
 	CREATE TEMPORARY TABLE Temp_NewCustomers
 	(		
             CustID			INT	 UNSIGNED PRIMARY KEY
@@ -87,6 +86,7 @@ BEGIN
 		, 	DATE(lv_CurrentDate)
 	FROM Temp_NewCustomers;   
     
+    SET SQL_SAFE_UPDATES = 1;
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
 END$$

@@ -12,9 +12,8 @@ CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_AddCTSCustomerClassification`(
     , 	IN ip_Remark 			VARCHAR(300)
 	,	IN ip_CreatedBy 		INT
     
-    , 	OUT op_ErrorMessage 	VARCHAR(200)
+    , 	OUT op_ErrorMessage 	VARCHAR(200) 
 )
-
 sp: BEGIN
 	/*
 		Created:	20200423@Long.Luu	
@@ -29,10 +28,10 @@ sp: BEGIN
 					+ Remove Rule "Delete Category "New Member" When Add Manaual Caterory"
                     + Update History table
 					+ Remove Verify VIP vs Smartpunter 
-			- 20200908@Irena.Vo [Redmine ID: #141020]: Enhance insert manual for VVIP (include CustomerClass) 
+			- 20200908@Irena.Vo [Redmine ID: #141020]: Enhance insert manual for VVIP (include CustomerClass) . Add categoryid = 207 for VVIP (general)
 		Param's Explanation:
 	*/ 
-   DECLARE lv_CurrentTime DATETIME DEFAULT CURRENT_TIME();
+    DECLARE lv_CurrentTime DATETIME DEFAULT CURRENT_TIME();
 	DECLARE lv_SPName VARCHAR(200) DEFAULT 'CTS_DC_AddCTSCustomerClassification';
     
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
@@ -60,6 +59,7 @@ sp: BEGIN
  
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 	SET SQL_SAFE_UPDATES = 0;
+    
     -- FOR VVIP
     IF (ip_CategoryID = 3) THEN
         -- Remove all category before: General & Detailed, Problem.
@@ -86,6 +86,40 @@ sp: BEGIN
 			,   11; -- VVIP
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	    VALUES(19, lv_SPName, CONCAT('Insert SpecialCustomerClass: ip_CTSCustID = ', ip_CTSCustID, ';ip_CustomerClass = ', 100), lv_CurrentTime, ip_CreatedBy);
+        
+        -- Insert for CTSCustomerClassification
+        -- For VVIP (General)
+        INSERT INTO CTS_DataCenter.CTSCustomerClassification
+		(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
+		SELECT 	ip_CustID
+			, 	ip_CTSCustID
+			, 	ip_SubscriberID
+			, 	ip_CategoryID + 210
+			,   SportGroupID
+			, 	ip_Remark
+			, 	lv_CurrentTime
+			,   ip_CreatedBy
+			,   lv_CurrentTime
+			,   ip_CreatedBy
+			,   DATE(lv_CurrentTime)
+		FROM Temp_SportGroupID;
+
+	   -- Insert history
+        -- For VVIP (General)
+        INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
+		(CustID, CTSCustID, CategoryID,SportGroupID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate)
+		SELECT 	ip_CustID
+			, 	ip_CTSCustID
+			, 	ip_CategoryID + 210
+			, 	SportGroupID 
+			, 	lv_CurrentTime
+			, 	ip_CreatedBy
+			,	0 -- Add new
+			,	1 -- IsAuto
+			,   DATE(lv_CurrentTime)
+		FROM Temp_SportGroupID;
+		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
+		VALUES(10, lv_SPName, CONCAT('Insert CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID,';ip_SportGroupIDList_', ip_SportGroupIDList,  ';ip_CategoryID_', ip_CategoryID + 210, ';ip_Remark_', ip_Remark), lv_CurrentTime, ip_CreatedBy);
     END IF;
   
     -- Insert for CTSCustomerClassification
@@ -101,7 +135,7 @@ sp: BEGIN
         ,   ip_CreatedBy
         ,   lv_CurrentTime
         ,   ip_CreatedBy
-        ,   lv_CurrentTime
+        ,   DATE(lv_CurrentTime)
 	FROM Temp_SportGroupID;
 
    -- Insert history
@@ -110,17 +144,19 @@ sp: BEGIN
 	SELECT 	ip_CustID
 		, 	ip_CTSCustID
         , 	ip_CategoryID
-        , 	SportGroupID
+        , 	SportGroupID 
         , 	lv_CurrentTime
         , 	ip_CreatedBy
         ,	0 -- Add new
         ,	0 -- IsAuto
-        ,   lv_CurrentTime
+        ,   DATE(lv_CurrentTime)
 	FROM Temp_SportGroupID;
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-	VALUES(10, 'CTS_DC_AddCTSCustomerClassification', CONCAT('Insert CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID,';ip_SportGroupIDList_', ip_SportGroupIDList,  ';ip_CategoryID_', ip_CategoryID, ';ip_Remark_', ip_Remark), lv_CurrentTime, ip_CreatedBy);
-
+	VALUES(10, lv_SPName, CONCAT('Insert CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID,';ip_SportGroupIDList_', ip_SportGroupIDList,  ';ip_CategoryID_', ip_CategoryID, ';ip_Remark_', ip_Remark), lv_CurrentTime, ip_CreatedBy);
+    
+    SET SQL_SAFE_UPDATES = 1;
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+
 END$$
 
 DELIMITER ;

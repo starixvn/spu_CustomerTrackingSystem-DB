@@ -19,7 +19,7 @@ sp: BEGIN
 		DB:			CTS_DataCenter
 		Original: 
 		Revisions:
-			- 20200909@Irena.Vo [Redmine ID: #141020]: Verify Pin Category
+			- 20200909@Irena.Vo [Redmine ID: #141020]: Verify Pin Category 
 		Param's Explanation:
 	*/ 
     DECLARE lv_CurrentTime DATETIME DEFAULT CURRENT_TIME();
@@ -29,7 +29,7 @@ sp: BEGIN
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
-   
+    
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 	SET SQL_SAFE_UPDATES = 0;
     
@@ -62,9 +62,11 @@ sp: BEGIN
 		-- Insert log
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 		VALUES(22, lv_SPName, CONCAT('Unpin CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID), lv_CurrentTime, ip_CreatedBy);
-   END IF;   
-   
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
+    END IF; 
+    
+    SET SQL_SAFE_UPDATES = 1;
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    
 END$$
 
 DELIMITER ;

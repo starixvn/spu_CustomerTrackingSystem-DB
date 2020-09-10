@@ -17,7 +17,7 @@ BEGIN
 		Param's Explanation (filtered by):
                 
 	*/   
-    DECLARE lv_CreatedBy 		INT DEFAULT 10278938;
+    DECLARE lv_CreatedBy 		INT DEFAULT 10278938; 
     DECLARE lv_CurrentDateTime 	DATETIME DEFAULT NOW();
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ProblemAccounts;    
@@ -43,7 +43,7 @@ BEGIN
          
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;     
     SET SQL_SAFE_UPDATES = 0;
-   
+    
      -- Ignore VVIP, Pin Category before
     DELETE temp
     FROM Temp_ProblemAccounts AS temp
@@ -138,7 +138,8 @@ BEGIN
 		, 	1
 		, 	DATE(lv_CurrentDateTime)
 	FROM 	Temp_ProblemAccounts AS temp;   
-	
+    
+	SET SQL_SAFE_UPDATES = 1;
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
 END$$

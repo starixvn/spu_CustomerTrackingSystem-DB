@@ -17,16 +17,15 @@ BEGIN
                 [20200701@Casey.Huynh][135324]: Chagne Flow and Store more Info
 				[20200903@Irena.Vo][137550]: Ignore Main category with ActionType = -1. 
                 [20200903@Irena.Vo][141042]: Enhance get IsUsedManually = 0 for update category
-                [20200908@Irena.Vo][141020]: Enhance exclude VVIP Customers, Pin Category
+                [20200908@Irena.Vo][141020]: Enhance exclude VVIP Customers, Pin Category 
 		Param's Explanation (filtered by):
                 
 	*/   
-    
     DECLARE     lv_CreatedBy INT DEFAULT 10278938;
     
 	### PERFORMANCE: START
     DECLARE		lv_ExecKey		BIGINT	UNSIGNED;
-	DECLARE		lv_SPName		VARCHAR(200)  DEFAULT 'CTS_DC_AutoTagCustomerClassification_Irena' ;
+	DECLARE		lv_SPName		VARCHAR(200)  DEFAULT 'CTS_DC_AutoTagCustomerClassification' ;
     DECLARE		lv_StepID		INT;
 	DECLARE 	lv_Notes	 		VARCHAR(500);
 	DECLARE 	lv_StartTime		TIMESTAMP(4);
@@ -137,8 +136,7 @@ BEGIN
 	WHERE		temp.ActionType = 0 AND cc.ParentID = 1;    
 
     #================================================================================================================
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-    SET lv_Notes = CONCAT(lv_Notes, ' 7.', CURRENT_TIME());
+	SET lv_Notes = CONCAT(lv_Notes, ' 7.', CURRENT_TIME());
     DELETE 		cate
     FROM 		CTS_DataCenter.CTSCustomerClassification  AS cate
 		INNER JOIN 	Temp_NewClassification AS temp ON temp.CustID = cate.CustID
@@ -210,8 +208,9 @@ BEGIN
     WHERE	z.ExecKey = lv_ExecKey AND z.StepID = lv_StepID ;    
     
     ### PERFORMANCE: END 
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
+    SET SQL_SAFE_UPDATES = 1;
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 END$$
 
 DELIMITER ;
