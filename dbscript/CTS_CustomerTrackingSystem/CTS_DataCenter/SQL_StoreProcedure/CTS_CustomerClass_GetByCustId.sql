@@ -33,7 +33,7 @@ BEGIN
 	OPTION (maxrecursion 0);
 
 	SELECT	ci.custid
-		,	ci.CustomerClass AS 'Class'
+		,	ci.CustomerClass
 	FROM dbo.custInfo ci WITH (NOLOCK)
 		INNER JOIN #tmpCustomers tcust WITH (NOLOCK) ON ci.custid = tcust.CustId;
 

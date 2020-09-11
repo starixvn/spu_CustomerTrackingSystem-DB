@@ -21,6 +21,7 @@ BEGIN
             - 20200820@Roger.Le [Redmine ID: #139969]: New Column "Next Scan Date" for Customer Category
             - 20200903@Long.Luu [Redmine ID: #137550]: Get for both General & Detailed Categories
 			- 20200903@Irena.Vo: Update for Internal/External category [137550]
+            - 20200910@Harvey.Nguyen [Redmine ID: #140971]: change parameter for general usage
 		Param's Explanation:
 	*/ 
 	DECLARE v_remark VARCHAR(50);
