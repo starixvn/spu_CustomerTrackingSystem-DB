@@ -3,7 +3,7 @@ DROP procedure IF EXISTS `CTS_DC_SpecialCustClass_InsertRobotUsers`;
 
 DELIMITER $$
 USE `CTS_DataCenter`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_SpecialCustClass_InsertRobotUsers`( 
+CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_SpecialCustClass_InsertRobotUsers`(
      IN ip_CustIDs 	TEXT  
 )
 BEGIN
@@ -48,21 +48,21 @@ BEGIN
     
 	-- Ignore VVIP & Robot Customer Class
     DELETE temp
-    FROM Temp_RobotUsers AS temp
-    WHERE temp.CustID IN (SELECT DISTINCT CustID
-	                      FROM CTS_DataCenter.SpecialCustomerClass 
-						  WHERE CreatedFromFunction = 11 OR (CreatedFromFunction = 1 AND CustomerClass = 13));
+    FROM Temp_RobotUsers AS temp 
+    INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc ON sc.CustID = temp.CustID
+    WHERE sc.CreatedFromFunction = 11 OR (sc.CreatedFromFunction = 1 AND sc.CustomerClass = 13);
   
 	-- Delete old Customer Class before.
     DELETE sc
     FROM CTS_DataCenter.SpecialCustomerClass AS sc
-    WHERE sc.CustID IN (SELECT DISTINCT CustID FROM Temp_RobotUsers) AND sc.CreatedFromFunction = 1;
+    INNER JOIN Temp_RobotUsers AS temp ON temp.CustID = sc.CustID
+    WHERE sc.CreatedFromFunction = 1;
     
 	-- Get customer info
     INSERT INTO Temp_CustomerInfo
-    SELECT DISTINCT CTSCustID, CustID, SubscriberID
-    FROM CTS_DataCenter.CTSCustomer 
-    WHERE CustID IN (SELECT DISTINCT CustID FROM Temp_RobotUsers) AND CustSubID = 0;    
+    SELECT cust.CTSCustID, cust.CustID, cust.SubscriberID
+    FROM CTS_DataCenter.CTSCustomer AS cust
+    INNER JOIN Temp_RobotUsers AS temp ON temp.CustID = cust.CustID AND cust.CustSubID = 0; 
     
     -- Insert Robot Customer Class
     INSERT INTO CTS_DataCenter.SpecialCustomerClass(CTSCustID, CustID, RootCTSCustID, SubscriberID, CustomerClass, CreatedBy, CreatedDate, LastModifiedBy, LastModifiedDate, CreatedFromFunction)
