@@ -24,7 +24,7 @@ BEGIN
 		Param's Explanation:
 	*/ 
     DECLARE lv_CurrentTime DATETIME DEFAULT CURRENT_TIME();
-    DECLARE lv_SPName VARCHAR(200) DEFAULT 'CTS_DC_RemoveCTSCustomerClassification'; 
+    DECLARE lv_SPName VARCHAR(200) DEFAULT 'CTS_DC_RemoveCTSCustomerClassification';
     
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
@@ -50,9 +50,11 @@ BEGIN
     INSERT INTO Temp_GeneralCategory
     SELECT ip_CustID, cate.CategoryID
 	FROM CTS_DataCenter.CTSCustomerClassification AS cate
-	INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cate.CategoryID = cc.CategoryID 
-	WHERE cc.ParentID IN (50,200) AND cate.CustID = ip_CustID;
-    
+	INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cate.CategoryID = cc.CategoryID
+	WHERE cc.ParentID IN (50,200) 
+    AND cate.CustID = ip_CustID 
+    AND NOT EXISTS (SELECT 1 FROM CTS_DataCenter.SpecialCustomerClass WHERE CustID = ip_CustID  AND CreatedFromFunction = 1); -- Exclude customers have Special Customer Class. Not delete -1.
+     
     -- Insert customers removed CustomerClass
     INSERT INTO Temp_DeleteCustomerClass
     SELECT ip_CustID, -1
