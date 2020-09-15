@@ -1,8 +1,9 @@
-DELIMITER $$
-USE CTS_DataCenter $$
-DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_InsertNewCustomerCategory $$
+USE `CTS_DataCenter`;
+DROP procedure IF EXISTS `CTS_DC_InsertNewCustomerCategory`;
 
-CREATE PROCEDURE CTS_DC_InsertNewCustomerCategory (IN ip_CustIds TEXT)
+DELIMITER $$
+USE `CTS_DataCenter`$$
+CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_InsertNewCustomerCategory`(IN ip_CustIds TEXT)
 BEGIN
 	/*
 		Created:	20200703@Long.Luu
@@ -12,74 +13,82 @@ BEGIN
 
 		Revisions:
 			- 20200703@Long.Luu: created [Redmine ID: 136903]
+            - 20200908@Irena.Vo: Enhance ignore VVIP & Pin category [Redmine ID: 141020]
         
 		Param's Explanation (filtered by):
 	*/
-
-	SET @v_NewAccountCategory = 2;
-    SET @v_CreatedBy = 10278938;
-    SET @v_CurrentDate = CURRENT_DATE();
+    DECLARE lv_CreatedBy INT DEFAULT 10278938;
+	DECLARE lv_CurrentDate DATETIME DEFAULT CURRENT_DATE(); 
     
-	DROP TEMPORARY TABLE IF EXISTS TmpNewCustomers;
-    
-	CREATE TEMPORARY TABLE TmpNewCustomers
+	DROP TEMPORARY TABLE IF EXISTS Temp_NewCustomers;
+	CREATE TEMPORARY TABLE Temp_NewCustomers
 	(		
-			CustID			INT	 UNSIGNED PRIMARY KEY
+            CustID			INT	 UNSIGNED PRIMARY KEY
         ,	CTSCustID		BIGINT UNSIGNED
         ,	SubscriberID	INT
 	);
 
 	# Parse new customers
-	SET @sql = CONCAT("INSERT INTO TmpNewCustomers(CustID) VALUES ('", REPLACE(ip_CustIds, ",", "'),('"),"');");
+	SET @sql = CONCAT("INSERT INTO Temp_NewCustomers(CustID) VALUES ('", REPLACE(ip_CustIds, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
+    SET SQL_SAFE_UPDATES = 0;
+    
+    -- Ignore VVIP, Pin Category before
+    DELETE temp
+    FROM Temp_NewClassification AS temp
+        INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc on sc.CustID = temp.CustID
+	WHERE sc.CreatedFromFunction IN (11, 21);
     
     # Remove new customers that have been categorized
-    DELETE n
-    FROM TmpNewCustomers AS n
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS c ON c.CustID = n.CustID;
+    DELETE temp
+    FROM Temp_NewCustomers AS temp
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID;
         
 	# Get customers' info
-    UPDATE TmpNewCustomers AS n
-		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON c.CustID = n.CustID
-    SET 	n.CTSCustID = c.CTSCustID
-		,	n.SubscriberID = c.SubscriberID;
-	
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    UPDATE Temp_NewCustomers AS temp
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cate ON cate.CustID = temp.CustID
+    SET 	temp.CTSCustID = cate.CTSCustID
+		,	temp.SubscriberID = cate.SubscriberID;
           
 	# Insert customers' classification
     INSERT INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, 
 			CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
-	SELECT 	n.CustID
-		, 	n.CTSCustID
-		, 	n.SubscriberID
-		, 	@v_NewAccountCategory
+	SELECT 	CustID
+		, 	CTSCustID
+		, 	SubscriberID
+		, 	2 -- New Customer
 		, 	0
-		, 	@v_CurrentDate
-		, 	@v_CreatedBy
-		, 	@v_CurrentDate
-		, 	@v_CreatedBy
-		, 	DATE(@v_CurrentDate)
-	FROM TmpNewCustomers AS n;   
+		, 	lv_CurrentDate
+		, 	lv_CreatedBy
+		, 	lv_CurrentDate
+		, 	lv_CreatedBy
+		, 	DATE(lv_CurrentDate)
+	FROM Temp_NewCustomers;   
             
 	# Insert  customers' classification to history
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID,
 			LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, ActionType, IsAuto, InsertDate)
-    SELECT 	n.CustID
-		, 	n.CTSCustID
-		, 	@v_NewAccountCategory
+    SELECT 	CustID
+		, 	CTSCustID
+		, 	2 -- New Customer
 		, 	0
-		, 	@v_CurrentDate
-		, 	@v_CreatedBy
+		, 	lv_CurrentDate
+		, 	lv_CreatedBy
 		, 	0
 		, 	0
 		, 	0
 		, 	0
 		, 	0 # insert
 		, 	1
-		, 	@v_CurrentDate
-	FROM TmpNewCustomers AS n;   
+		, 	DATE(lv_CurrentDate)
+	FROM Temp_NewCustomers;   
+    
+    SET SQL_SAFE_UPDATES = 1;
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    
 END$$
+
 DELIMITER ;
