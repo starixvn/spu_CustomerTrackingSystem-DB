@@ -1,6 +1,6 @@
 DELIMITER $$
-DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_GetStaticList$$
-CREATE PROCEDURE CTS_DataCenter.CTS_DC_GetStaticList(IN ip_ListID INT, IN ip_Status BOOL)
+DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_Common_GetStaticList$$
+CREATE PROCEDURE CTS_DataCenter.CTS_DC_Common_GetStaticList(IN ip_ListID INT, IN ip_Status BOOL)
 BEGIN
 /*
 		Created:	20191219@CaseyHuynh	

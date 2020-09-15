@@ -1,8 +1,8 @@
 DELIMITER $$
 USE CTS_DataCenter $$
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_GetAllSportGroups`$$
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_Common_GetAllSportGroups`$$
 
-CREATE PROCEDURE `CTS_DataCenter`.`CTS_DC_GetAllSportGroups`()
+CREATE PROCEDURE `CTS_DataCenter`.`CTS_DC_Common_GetAllSportGroups`()
 BEGIN
 	/*
 		Created:	20200423@Long.Luu	

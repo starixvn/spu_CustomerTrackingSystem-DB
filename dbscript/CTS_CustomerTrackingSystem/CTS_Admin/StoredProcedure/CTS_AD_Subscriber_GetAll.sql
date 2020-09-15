@@ -1,8 +1,8 @@
 DELIMITER $$
 USE CTS_Admin $$
-DROP PROCEDURE IF EXISTS CTS_Admin.CTS_AD_GetAllSubscribers $$
+DROP PROCEDURE IF EXISTS CTS_Admin.CTS_AD_Subscriber_GetAll $$
 
-CREATE PROCEDURE CTS_Admin.CTS_AD_GetAllSubscribers (IN ip_userId INT)
+CREATE PROCEDURE CTS_Admin.CTS_AD_Subscriber_GetAll (IN ip_userId INT)
 BEGIN
 	/*
 		Created:	20190715@Harvey

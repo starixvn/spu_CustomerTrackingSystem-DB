@@ -1,9 +1,9 @@
 USE `CTS_Admin`;
-DROP procedure IF EXISTS `CTS_AD_InsertCTSUser`;
+DROP procedure IF EXISTS `CTS_AD_CTSUser_Insert`;
 
 DELIMITER $$
 USE `CTS_Admin`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_AD_InsertCTSUser`(IN ip_userId INT, IN ip_userName VARCHAR(50))
+CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_AD_CTSUser_Insert`(IN ip_userId INT, IN ip_userName VARCHAR(50))
 BEGIN
 
 	/*

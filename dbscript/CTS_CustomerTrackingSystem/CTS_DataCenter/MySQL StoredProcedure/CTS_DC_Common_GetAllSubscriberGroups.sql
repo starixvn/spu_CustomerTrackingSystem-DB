@@ -1,9 +1,9 @@
 USE `CTS_DataCenter`;
-DROP procedure IF EXISTS `CTS_DC_GetAllSubscriberGroups`;
+DROP procedure IF EXISTS `CTS_DC_Common_GetAllSubscriberGroups`;
 
 DELIMITER $$
 USE `CTS_DataCenter`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_GetAllSubscriberGroups`()
+CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_Common_GetAllSubscriberGroups`()
 BEGIN
 	/*
 		Created:	20200622@Lex.Khuat
@@ -18,7 +18,13 @@ BEGIN
 
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     
-    SELECT DISTINCT s.SiteID, s.SiteName, s.SubscriberGroupID, sg.SubscriberGroupName, sg.ParentID, sg.DisplayOrder, sg.IsActive
+    SELECT DISTINCT s.SiteID
+		, 	s.SiteName
+        , 	s.SubscriberGroupID
+        , 	sg.SubscriberGroupName
+        , 	sg.ParentID
+        , 	sg.DisplayOrder
+        , 	sg.IsActive
     FROM CTS_DataCenter.MappingSubscriberSite AS s
 		INNER JOIN CTS_DataCenter.SubscriberGroup AS sg ON s.SubscriberGroupID = sg.SubscriberGroupID
         LEFT JOIN CTS_Admin.Subscriber AS sub ON s.SubscriberID = sub.SubscriberID

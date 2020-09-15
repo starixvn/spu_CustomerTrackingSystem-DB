@@ -1,8 +1,8 @@
 DELIMITER $$
 USE CTS_DataCenter $$
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_GetCustomerGroup`$$
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_Common_GetCustomerGroup`$$
 
-CREATE PROCEDURE `CTS_DataCenter`.`CTS_DC_GetCustomerGroup`(
+CREATE PROCEDURE `CTS_DataCenter`.`CTS_DC_Common_GetCustomerGroup`(
 		IN ip_CustomerTransDateList 	JSON
 )
 BEGIN
@@ -33,7 +33,7 @@ BEGIN
 		  CustID 		INT 			PATH "$.CustID"         
 		, TransID		BIGINT			PATH "$.TransID"       
         , TransDate		DATE			PATH "$.TransDate"
-	)) as tmpTable;
+	)) AS tmpTable;
     
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
 	SELECT 	c.CustID
