@@ -1,9 +1,9 @@
 USE `CTS_DataCenter`;
-DROP procedure IF EXISTS `CTS_DC_VerifyPinCTSCustomerClassification`;
+DROP procedure IF EXISTS `CTS_DC_AssociatedAccountMonitor_VerifyPin`;
 
 DELIMITER $$
 USE `CTS_DataCenter`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_VerifyPinCTSCustomerClassification`(
+CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_AssociatedAccountMonitor_VerifyPin`(
 	    IN ip_CustID            INT UNSIGNED	
     ,   IN ip_CTSCustID			BIGINT UNSIGNED	
     ,	IN ip_SubscriberID		INT
@@ -23,7 +23,7 @@ sp: BEGIN
 		Param's Explanation:
 	*/ 
     DECLARE lv_CurrentTime DATETIME DEFAULT CURRENT_TIME();
-    DECLARE lv_SPName VARCHAR(200) DEFAULT 'CTS_DC_VerifyPinCTSCustomerClassification'; 
+    DECLARE lv_SPName VARCHAR(200) DEFAULT 'CTS_DC_AssociatedAccountMonitor_VerifyPin'; 
     
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         

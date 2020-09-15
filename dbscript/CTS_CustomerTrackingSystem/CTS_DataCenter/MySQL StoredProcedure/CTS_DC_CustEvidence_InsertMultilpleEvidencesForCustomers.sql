@@ -1,8 +1,8 @@
 DELIMITER $$
 USE `CTS_DataCenter` $$
-DROP PROCEDURE IF EXISTS CTS_DC_API_AddEvidencesForCustomers $$
+DROP PROCEDURE IF EXISTS CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers $$
 
-CREATE PROCEDURE CTS_DC_API_AddEvidencesForCustomers (
+CREATE PROCEDURE CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers (
 		IN ip_CustIds 				VARCHAR(4000)
     ,   IN ip_EvidenceCodes 		VARCHAR(4000)
     
@@ -24,7 +24,7 @@ sp: BEGIN
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
   */
-    DECLARE	vr_SPName 		VARCHAR(100) DEFAULT 'CTS_DC_API_AddEvidencesForCustomers';  
+    DECLARE	vr_SPName 		VARCHAR(100) DEFAULT 'CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers';  
     DECLARE	vr_CreatedDate	DATETIME;      
     SET	vr_CreatedDate 		= CURRENT_TIME();
 
