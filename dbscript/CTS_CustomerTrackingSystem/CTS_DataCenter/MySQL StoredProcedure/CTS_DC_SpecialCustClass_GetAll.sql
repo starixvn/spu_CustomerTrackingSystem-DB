@@ -16,6 +16,7 @@ BEGIN
 		Revisions:
 		   - 20200905@Long.Luu [140996]: Created
            - 20200908@Irena.Vo [141020]: Exclude VVIP, Pin category in list
+           - 20020915@Irena.Vo [141020]: Enhance sort data
            
 		Param's Explanation (filtered by):
 	*/        
@@ -33,7 +34,8 @@ BEGIN
 			INNER JOIN CTS_DataCenter.CTSCustomer AS c ON s.CTSCustID = c.CTSCustID
 			INNER JOIN CTS_Admin.Subscriber AS sub ON s.SubscriberID = sub.SubscriberID
 			INNER JOIN CTS_Admin.CTSUser AS u ON s.CreatedBy = u.UserID
-		WHERE s.CreatedFromFunction = 1;
+		WHERE s.CreatedFromFunction = 1
+		ORDER BY s.CreatedDate DESC; -- Enhance sort data
     ELSE
 		SELECT CustID
 		FROM CTS_DataCenter.SpecialCustomerClass
