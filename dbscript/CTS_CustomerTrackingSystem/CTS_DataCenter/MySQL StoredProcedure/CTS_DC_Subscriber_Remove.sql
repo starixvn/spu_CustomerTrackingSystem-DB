@@ -1,9 +1,9 @@
 DELIMITER $$
 USE `CTS_DataCenter` $$
-DROP PROCEDURE IF EXISTS CTS_DC_RemoveSubscriber $$
+DROP PROCEDURE IF EXISTS CTS_DC_Subscriber_Remove $$
 
 
-CREATE PROCEDURE `CTS_DC_RemoveSubscriber`(
+CREATE PROCEDURE `CTS_DC_Subscriber_Remove`(
 		IN ip_SubscriberID	INT UNSIGNED
     ,	IN ip_SiteID			INT    
     
@@ -30,7 +30,7 @@ BEGIN
 	-- Update subscriber
     UPDATE 	CTS_Admin.Subscriber AS sub
 	SET	
-			sub.DeletedDate = lv_CurrentDate
+			sub.TerminatedDate = lv_CurrentDate
 		,	sub.SubscriberStatus = -1
     WHERE sub.SubscriberID = ip_SubscriberID;
     

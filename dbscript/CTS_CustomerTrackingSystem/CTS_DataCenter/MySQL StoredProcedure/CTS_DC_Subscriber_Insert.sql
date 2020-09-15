@@ -1,9 +1,9 @@
 DELIMITER $$
 USE `CTS_DataCenter` $$
-DROP PROCEDURE IF EXISTS CTS_DC_InsertSubscriber $$
+DROP PROCEDURE IF EXISTS CTS_DC_Subscriber_Insert $$
 
 
-CREATE PROCEDURE `CTS_DC_InsertSubscriber`(
+CREATE PROCEDURE `CTS_DC_Subscriber_Insert`(
 			IN  ip_SubscriberList 	JSON
 		, 	OUT op_ErrorMessage 	VARCHAR(200)
 )
@@ -34,19 +34,20 @@ sp: BEGIN
 		, 	Site 					VARCHAR(50)
 		,	SubscriberName 			VARCHAR(50)
 		, 	IBCUserNamePrefix 		VARCHAR(30)
-		, 	SubscriberGroup 		INT
+		, 	SubscriberGroup 		SMALLINT
 		, 	RoleMapping 			TINYINT
 		, 	SubscriberID 			INT
 		, 	SubscriberType			TINYINT 
+		, 	IsTest					TINYINT 
 		, 	IsAction 				INT DEFAULT 0
         
         , 	PRIMARY KEY	Temp_Subscriber(SiteID)
         , 	INDEX		IX_Subscriber(SiteID, SubscriberName)
-		,	INDEX		IX_Subscriber_SubscriberName(SubscriberName)
+        ,	INDEX		IX_Subscriber_SubscriberName(SubscriberName)
         ,	INDEX		IX_Subscriber_IsAction(IsAction) 
     );
  
-	INSERT INTO Temp_Subscriber(SiteID, Site, IBCUserNamePrefix, SubscriberGroup, SubscriberName, RoleMapping)
+	INSERT INTO Temp_Subscriber(SiteID, Site, IBCUserNamePrefix, SubscriberGroup, SubscriberName, RoleMapping, IsAction)
 	SELECT 
 			SiteID
 		,	Site
@@ -54,14 +55,16 @@ sp: BEGIN
         ,	SubscriberGroup
         ,	SubscriberName
         ,	RoleMapping
+        ,	IsTest
 	FROM JSON_TABLE(ip_SubscriberList,
 		 "$[*]" COLUMNS(
 		  SiteID				INT	 UNSIGNED		PATH "$.SiteID" 
 		, Site 					VARCHAR(50) 		PATH "$.Site"
 		, IBCUserNamePrefix		VARCHAR(30)			PATH "$.IBCUserNamePrefix" 
-        , SubscriberGroup		INT 				PATH "$.SubscriberGroup" 
+        , SubscriberGroup		SMALLINT 			PATH "$.SubscriberGroup" 
 		, SubscriberName		VARCHAR(50) 		PATH "$.SubscriberName" 
 		, RoleMapping			TINYINT 			PATH "$.RoleMapping" 
+		, IsTest				TINYINT 			PATH "$.IsTest" 
 		 )) as tmpTable;
 		
 
@@ -85,15 +88,15 @@ sp: BEGIN
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     
     -- validate SubscriberGroup
-    UPDATE Temp_Subscriber AS tmp
-		INNER JOIN CTS_DataCenter.SubscriberGroup AS sub ON tmp.SubscriberGroup = sub.SubscriberGroupID
-    SET     tmp.SubscriberGroup = sub.SubscriberGroupID;
+    #UPDATE Temp_Subscriber AS tmp
+		#INNER JOIN CTS_DataCenter.SubscriberGroup AS sub ON tmp.SubscriberGroup = sub.SubscriberGroupID
+    #SET     tmp.SubscriberGroup = sub.SubscriberGroupID;
     
-    -- Update SubscriberType
+    -- Update SubscriberGroup
     UPDATE Temp_Subscriber
-    SET SubscriberType =  CASE
-							WHEN SubscriberGroup =  1 THEN 0
-                            WHEN SubscriberGroup =  2 THEN 1
+    SET SubscriberGroup =  CASE
+							WHEN SubscriberType =  0 THEN 1
+                            WHEN SubscriberType =  1 THEN 2
                         END;
    
     -- Create new subscriber
@@ -103,7 +106,7 @@ sp: BEGIN
 	SET	tmp.IsAction = 2
     WHERE sub.SubscriberName IS NULL;
             
-    INSERT INTO CTS_Admin.Subscriber(SubscriberName, SubscriberPrefix, SubscriberType, SubscriberStatus, CreatedDate, CreatedBy, IsTest, DCSIntegrationDate, FPSSubscriberID)
+    INSERT INTO CTS_Admin.Subscriber(SubscriberName, SubscriberPrefix, SubscriberType, SubscriberStatus, CreatedDate, CreatedBy, IsTest)
     SELECT 
 		tmp.SubscriberName
         , tmp.IBCUserNamePrefix
@@ -111,9 +114,7 @@ sp: BEGIN
         , 1
         , lv_CurrentTime
         , ip_UserID
-        , 0
-        , lv_CurrentTime
-        , ip_UserID
+        , tmp.IsTest
 	FROM Temp_Subscriber AS tmp
 	WHERE tmp.IsAction = 2;
     
