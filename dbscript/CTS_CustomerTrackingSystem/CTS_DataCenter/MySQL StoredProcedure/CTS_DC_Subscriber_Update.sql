@@ -44,13 +44,14 @@ BEGIN
         , 	INDEX		IX_Subscriber(SiteID, SubscriberID)
         , 	INDEX		IX_Subscriber_SubscriberID(SubscriberID)
     );
-    
-    INSERT INTO Temp_Subscriber(SiteID, Site, IBCUserNamePrefix, SubscriberGroup, SubscriberName, RoleMapping, IsAction)
+
+    INSERT INTO Temp_Subscriber(SiteID, Site, IBCUserNamePrefix, SubscriberID, SubscriberType, SubscriberName, RoleMapping, IsTest)
 	SELECT 
 			SiteID
 		,	Site
         ,	IBCUserNamePrefix 
-        ,	SubscriberGroup
+        ,	SubscriberID 
+        ,	SubscriberType
         ,	SubscriberName
         ,	RoleMapping
         ,	IsTest
@@ -59,7 +60,8 @@ BEGIN
 		  SiteID				INT	 UNSIGNED		PATH "$.SiteID" 
 		, Site 					VARCHAR(50) 		PATH "$.Site"
 		, IBCUserNamePrefix		VARCHAR(30)			PATH "$.IBCUserNamePrefix" 
-        , SubscriberGroup		SMALLINT 			PATH "$.SubscriberGroup" 
+		, SubscriberID			VARCHAR(30)			PATH "$.SubscriberID" 
+        , SubscriberType		SMALLINT 			PATH "$.SubscriberType" 
 		, SubscriberName		VARCHAR(50) 		PATH "$.SubscriberName" 
 		, RoleMapping			TINYINT 			PATH "$.RoleMapping" 
 		, IsTest				TINYINT 			PATH "$.IsTest" 
@@ -72,6 +74,7 @@ BEGIN
                             WHEN SubscriberType =  1 THEN 2
                         END;
      -- Update subscriber
+    
 	UPDATE CTS_Admin.Subscriber AS sub
 		INNER JOIN Temp_Subscriber AS tmp ON tmp.SubscriberID = sub.SubscriberID
     SET    	sub.SubscriberPrefix 	= 	tmp.IBCUserNamePrefix,
@@ -86,10 +89,10 @@ BEGIN
     SET     map.RoleMapping 		= 	tmp.RoleMapping,
 			map.SubscriberType 		= 	tmp.SubscriberType,
 			map.SubscriberGroupID 	= 	tmp.SubscriberGroup,
-			map.SiteName 			= 	tmp.SiteName
+			map.SiteName 			= 	tmp.Site
     WHERE 	map.SubscriberStatus <> -1;
-
-    DROP TEMPORARY TABLE IF EXISTS Temp_Subscriber;
+    
+	DROP TEMPORARY TABLE IF EXISTS Temp_Subscriber;
             
 END$$
 DELIMITER ;

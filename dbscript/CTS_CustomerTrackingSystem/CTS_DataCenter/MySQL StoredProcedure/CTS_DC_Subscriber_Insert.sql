@@ -47,12 +47,12 @@ sp: BEGIN
         ,	INDEX		IX_Subscriber_IsAction(IsAction) 
     );
  
-	INSERT INTO Temp_Subscriber(SiteID, Site, IBCUserNamePrefix, SubscriberGroup, SubscriberName, RoleMapping, IsAction)
+	INSERT INTO Temp_Subscriber(SiteID, Site, IBCUserNamePrefix, SubscriberType, SubscriberName, RoleMapping, IsTest)
 	SELECT 
 			SiteID
 		,	Site
         ,	IBCUserNamePrefix 
-        ,	SubscriberGroup
+        ,	SubscriberType
         ,	SubscriberName
         ,	RoleMapping
         ,	IsTest
@@ -61,7 +61,7 @@ sp: BEGIN
 		  SiteID				INT	 UNSIGNED		PATH "$.SiteID" 
 		, Site 					VARCHAR(50) 		PATH "$.Site"
 		, IBCUserNamePrefix		VARCHAR(30)			PATH "$.IBCUserNamePrefix" 
-        , SubscriberGroup		SMALLINT 			PATH "$.SubscriberGroup" 
+        , SubscriberType		SMALLINT 			PATH "$.SubscriberType" 
 		, SubscriberName		VARCHAR(50) 		PATH "$.SubscriberName" 
 		, RoleMapping			TINYINT 			PATH "$.RoleMapping" 
 		, IsTest				TINYINT 			PATH "$.IsTest" 
