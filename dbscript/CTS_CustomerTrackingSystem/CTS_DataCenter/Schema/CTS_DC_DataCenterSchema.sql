@@ -525,7 +525,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustEvidenceLog(
 	
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification_ScanStatus ADD COLUMN ParentCategoryID SMALLINT;
 
-#[20200905@Long.Luu][140996]: New table for storing Hardcoded CustomerClass's customers. 
+#[20200905@Long.Luu][140996]: New table for storing Hardcoded CustomerClass customers. 
 -- CreatedFromFunction = 1: Normal, CreatedFromFunction = 11: VVIP, CreatedFromFunction = 21: Pin Category
 #[20200909@Irena.Vo][141020]: Enhance Schema for params & insert LogTypeID = 21, 22. Add Index for custid
 DROP TABLE IF EXISTS CTS_DataCenter.SpecialCustomerClass;
@@ -545,3 +545,17 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.SpecialCustomerClass(
     , 	INDEX				IX_SpecialCustomerClass_RootCTSCustID(RootCTSCustID)
     , 	INDEX				IX_SpecialCustomerClass_CustID(CustID)
 ) ENGINE=INNODB;
+
+USE DCS_DataCenter;
+ALTER TABLE DeviceFingerprint 
+	DROP PRIMARY KEY
+    , DROP INDEX UK_DeviceFingerprint_DeviceID_FingerprintCode
+	, ADD KEY KEY_DeviceFingerprintID (DeviceFingerprintID)
+	, ADD PRIMARY KEY (`DeviceID`, `FingerprintCode`);
+	
+USE DCS_DataCenter;
+ALTER TABLE Association 
+	DROP PRIMARY KEY
+        , DROP INDEX UK_Association_AccountID_Device
+	, ADD KEY KEY_AssociationID (AssociationID)
+	, ADD PRIMARY KEY(`AccountID`, `DeviceID`);
