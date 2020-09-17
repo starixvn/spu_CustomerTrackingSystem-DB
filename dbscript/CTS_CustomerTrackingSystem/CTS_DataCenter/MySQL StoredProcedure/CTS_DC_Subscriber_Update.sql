@@ -45,6 +45,7 @@ BEGIN
         , 	INDEX		IX_Subscriber_SubscriberID(SubscriberID)
     );
 
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     INSERT INTO Temp_Subscriber(SiteID, Site, IBCUserNamePrefix, SubscriberID, SubscriberType, SubscriberName, RoleMapping, IsTest)
 	SELECT 
 			SiteID
@@ -67,6 +68,7 @@ BEGIN
 		, IsTest				TINYINT 			PATH "$.IsTest" 
 		 )) as tmpTable;
      
+    SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
      -- Update SubscriberGroup
     UPDATE Temp_Subscriber
     SET SubscriberGroup =  CASE
@@ -80,7 +82,7 @@ BEGIN
     SET    	sub.SubscriberPrefix 	= 	tmp.IBCUserNamePrefix,
 			sub.SubscriberType 		= 	tmp.SubscriberType,
 			sub.IsTest 				= 	tmp.IsTest
-   WHERE 	sub.SubscriberStatus <> -1;
+	WHERE 	sub.SubscriberStatus <> -1;
      
      -- Update subscriber mapping
     UPDATE CTS_DataCenter.MappingSubscriberSite AS map
