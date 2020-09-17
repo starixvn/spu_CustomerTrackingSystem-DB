@@ -30,9 +30,9 @@ BEGIN
     FROM  CTS_Admin.Subscriber AS sub
         INNER JOIN CTS_DataCenter.MappingSubscriberSite AS s ON s.SubscriberID = sub.SubscriberID
         INNER JOIN CTS_DataCenter.SubscriberGroup AS sg ON s.SubscriberGroupID = sg.SubscriberGroupID
-	ORDER BY sub.DeletedDate ASC, sub.SubscriberID ASC;
-    
-    SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;    
+	ORDER BY sub.TerminatedDate ASC, sub.SubscriberID ASC;
+
+    SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 
 END$$
 DELIMITER ;
