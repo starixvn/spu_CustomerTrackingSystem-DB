@@ -23,6 +23,7 @@ Revisions:
         - [20200903@Harvey.Nguyen][140869]: Add more column to table CTSCustomerClassification_ScanStatus
         - [20200905@Long.Luu][140996]: New table for storing Hardcoded CustomerClass's customers
         - [20200909@Irena.Vo][141020]: Enhance Schema for params CustomerClass's customers
+        - [20200917@Long.Luu][141755]: Probation Category Monitoring
 Reviewer:
 */
 
@@ -559,3 +560,32 @@ ALTER TABLE Association
         , DROP INDEX UK_Association_AccountID_Device
 	, ADD KEY KEY_AssociationID (AssociationID)
 	, ADD PRIMARY KEY(`AccountID`, `DeviceID`);
+    
+#[20200917@Long.Luu][141755]: Probation Category Monitoring
+DROP TABLE IF EXISTS CTS_DataCenter.ProbationCategoryMonitor;
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.ProbationAccountMonitor(
+		CTSCustID			BIGINT UNSIGNED	NOT NULL
+	, 	CustID				INT UNSIGNED NOT NULL
+	, 	SportGroupID		SMALLINT NOT NULL
+	, 	TargetCategoryID	SMALLINT DEFAULT NULL
+    ,	FirstMargin			DECIMAL(20,4)
+	, 	CreatedBy			INT	NOT NULL
+	, 	CreatedDate			DATETIME NOT NULL
+    , 	CreatedTime			DATETIME NOT NULL
+	, 	PRIMARY KEY			PK_ProbationAccountMonitor_CTSCustID_SportGroupID(CTSCustID, SportGroupID)
+    , 	INDEX				IX_ProbationAccountMonitor_CustID(CustID)
+	, 	INDEX				IX_ProbationAccountMonitor_CreatedDate(CreatedDate)
+    , 	INDEX				IX_ProbationAccountMonitor_TargetCategoryID(TargetCategoryID)
+) ENGINE=INNODB;
+
+DROP TABLE IF EXISTS CTS_DataCenter.ProbationAccountInfo;
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.ProbationAccountInfo(
+	 	CustID				INT UNSIGNED NOT NULL
+	, 	SportGroupID		SMALLINT NOT NULL
+    ,	CurrentMargin		DECIMAL(20,4)
+	, 	Last60daysWinCount	TINYINT	DEFAULT 0
+	, 	Last30daysWinCount	TINYINT	DEFAULT 0
+    , 	BetCount			INT UNSIGNED
+	, 	CreatedDate			DATETIME NOT NULL
+	, 	PRIMARY KEY			PK_ProbationAccountInfo_CustID_SportGroupID(CustID, SportGroupID)
+) ENGINE=INNODB;
