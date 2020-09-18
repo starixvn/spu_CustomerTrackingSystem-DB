@@ -96,6 +96,7 @@ BEGIN
     SELECT	CustID
 			, Username
 			, Site
+            , SportGroupID
             , SportGroupName AS Sport
             , TargetCategoryName AS TargetCategory
             , CreatedTime AS TaggedDate
