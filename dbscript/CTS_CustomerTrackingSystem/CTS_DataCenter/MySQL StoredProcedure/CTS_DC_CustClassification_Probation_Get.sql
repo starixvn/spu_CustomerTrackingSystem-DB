@@ -44,6 +44,8 @@ BEGIN
     ,	CreatedTime			DATETIME
     ,	FirstMargin			DECIMAL(20, 4)
     ,	DaysLeft			SMALLINT
+    ,	PRIMARY KEY	PK_Temp_NewClassification_CTSCustID(CTSCustID, SportGroupID, TargetCategoryID) 
+	,	INDEX 		IX_Temp_NewClassification_TargetCategoryID(TargetCategoryID)   
     );
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
