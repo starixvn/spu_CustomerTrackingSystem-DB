@@ -578,14 +578,22 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.ProbationAccountMonitor(
     , 	INDEX				IX_ProbationAccountMonitor_TargetCategoryID(TargetCategoryID)
 ) ENGINE=INNODB;
 
-DROP TABLE IF EXISTS CTS_DataCenter.ProbationAccountInfo;
-CREATE TABLE IF NOT EXISTS CTS_DataCenter.ProbationAccountInfo(
-	 	CustID				INT UNSIGNED NOT NULL
-	, 	SportGroupID		SMALLINT NOT NULL
-    ,	CurrentMargin		DECIMAL(20,4)
-	, 	Last60daysWinCount	TINYINT	DEFAULT 0
-	, 	Last30daysWinCount	TINYINT	DEFAULT 0
-    , 	BetCount			INT UNSIGNED
-	, 	CreatedDate			DATETIME NOT NULL
-	, 	PRIMARY KEY			PK_ProbationAccountInfo_CustID_SportGroupID(CustID, SportGroupID)
-) ENGINE=INNODB;
+DROP TABLE IF EXISTS CTS_DataCenter.ProbationAccountNotification;
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.ProbationAccountNotification (
+		NotificationID			BIGINT UNSIGNED AUTO_INCREMENT
+	,	NotificationType		TINYINT NOT NULL # 1: margin < 0; 2: jump level failed after probation duration
+	, 	Counter					SMALLINT UNSIGNED NOT NULL DEFAULT 0
+    , 	CreatedDate				DATE NOT NULL
+    , 	CreatedTime				DATETIME NOT NULL
+	, 	PRIMARY KEY				PK_ProbationAccountNotification_NotificationID(NotificationID)
+    ,	INDEX					IX_ProbationAccountNotification_CreatedDate(CreatedDate)
+    ,	INDEX					IX_ProbationAccountNotification_NotificationType(NotificationType)
+) ENGINE=INNODB DEFAULT CHARSET='UTF8MB4' COLLATE='UTF8MB4_UNICODE_CI';
+
+ALTER TABLE CTS_DataCenter.CTSUserPermission
+ADD COLUMN FunctionID SMALLINT UNSIGNED NOT NULL; # 1: Associated Account Monitor, 2: Probation Account
+ALTER TABLE CTS_DataCenter.CTSUserPermission 
+ADD INDEX IX_ProbationAccountNotification_FunctionID(FunctionID DESC);
+
+UPDATE CTS_DataCenter.CTSUserPermission
+SET FunctionID = 1;
