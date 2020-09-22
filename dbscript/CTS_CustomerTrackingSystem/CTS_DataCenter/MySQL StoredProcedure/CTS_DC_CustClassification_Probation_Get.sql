@@ -100,7 +100,8 @@ BEGIN
 			, Site
             , SportGroupID
             , SportGroupName AS Sport
-            , TargetCategoryName AS TargetCategory
+			, TargetCategoryID
+            , TargetCategoryName
             , CreatedTime AS TaggedDate
             , FirstMargin
             , null AS CurrentMargin
