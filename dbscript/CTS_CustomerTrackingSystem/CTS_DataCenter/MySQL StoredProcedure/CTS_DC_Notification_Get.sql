@@ -34,7 +34,7 @@ BEGIN
     INTO lv_MaxNotificationID
     FROM CTS_DataCenter.AssociatedAccountNotification AS a;    
     
-	SELECT u.FromID, u.ToID
+	SELECT u.FromNotificationID, u.ToNotificationID
 	INTO lv_UserCurrentFromNotificationID, lv_UserCurrentToNotificationID
 	FROM CTS_DataCenter.CTSUserNotificationParameter AS u
 	WHERE u.UserID = ip_UserID;
@@ -45,8 +45,8 @@ BEGIN
 			,	lv_IsSeen = 1;
                         
 		UPDATE CTS_DataCenter.CTSUserNotificationParameter
-		SET 	FromID = lv_UserCurrentFromNotificationID
-			,	ToID = lv_UserCurrentToNotificationID
+		SET 	FromNotificationID = lv_UserCurrentFromNotificationID
+			,	ToNotificationID = lv_UserCurrentToNotificationID
 		WHERE UserID = ip_UserID;        
 	END IF;
     
@@ -70,7 +70,7 @@ BEGIN
 				,	lv_UserCurrentToNotificationID = lv_MaxNotificationID
                 ,	lv_IsSeen = 0;
 			
-			INSERT INTO CTS_DataCenter.CTSUserNotificationParameter(UserID,FromID,ToID)
+			INSERT INTO CTS_DataCenter.CTSUserNotificationParameter(UserID,FromNotificationID,ToNotificationID)
 			VALUES(ip_UserID, lv_UserCurrentFromNotificationID, lv_UserCurrentToNotificationID);
 		END;
     END IF;
