@@ -1,8 +1,9 @@
 USE `CTS_DataCenter`;
-DROP PROCEDURE IF EXISTS `CTS_DC_Notification_Get`;
+DROP procedure IF EXISTS `CTS_DC_Notification_GetNewAssociation`;
 
 DELIMITER $$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_Notification_Get`(
+USE `CTS_DataCenter`$$
+CREATE DEFINER=`ctsWeb`@`%` PROCEDURE `CTS_DC_Notification_GetNewAssociation`(
 		IN 	ip_UserID 			INT UNSIGNED
     ,	IN 	ip_MaxNewAssID 		BIGINT
 )
@@ -18,6 +19,8 @@ BEGIN
 			- 20200818@Long.Luu: Get notification based on permission granted time range [Redmine ID: #138575]
         
 		Param's Explanation (filtered by):
+        
+			call CTS_DC_Notification_GetNewAssociation(8,1);
 	*/
     
     DECLARE lv_UserCurrentFromNotificationID 	BIGINT;
@@ -33,45 +36,23 @@ BEGIN
     SELECT MAX(a.AccountNewAssID)
     INTO lv_MaxNotificationID
     FROM CTS_DataCenter.AssociatedAccountNotification AS a;    
-    
+
 	SELECT u.FromNotificationID, u.ToNotificationID
 	INTO lv_UserCurrentFromNotificationID, lv_UserCurrentToNotificationID
 	FROM CTS_DataCenter.CTSUserNotificationParameter AS u
-	WHERE u.UserID = ip_UserID;
+	WHERE u.UserID = ip_UserID AND u.FunctionID = 1;
             
     IF (ip_MaxNewAssID <> 0) THEN		
-		SET 	lv_UserCurrentFromNotificationID = lv_UserCurrentToNotificationID
-			,	lv_UserCurrentToNotificationID = lv_MaxNotificationID
-			,	lv_IsSeen = 1;
-                        
 		UPDATE CTS_DataCenter.CTSUserNotificationParameter
-		SET 	FromNotificationID = lv_UserCurrentFromNotificationID
-			,	ToNotificationID = lv_UserCurrentToNotificationID
-		WHERE UserID = ip_UserID;        
+		SET 	FromNotificationID = lv_UserCurrentToNotificationID
+			,	ToNotificationID = lv_MaxNotificationID
+		WHERE UserID = ip_UserID AND u.FunctionID = 1;        
 	END IF;
     
-    IF EXISTS (SELECT 1 FROM CTS_DataCenter.CTSUserNotificationParameter WHERE UserID = ip_UserID) THEN
-		BEGIN             
-            IF (lv_MaxNotificationID = lv_UserCurrentToNotificationID) THEN
-				BEGIN
-					SET 	lv_IsSeen = 1;
-				END;
-			ELSE
-				BEGIN
-					SET 	lv_UserCurrentFromNotificationID = lv_UserCurrentToNotificationID
-						,	lv_UserCurrentToNotificationID = lv_MaxNotificationID
-						,	lv_IsSeen = 0;
-				END;
-			END IF;
-		END;
-    ELSE
+    IF NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSUserNotificationParameter WHERE UserID = ip_UserID AND FunctionID = 1) THEN    
 		BEGIN
-			SET 	lv_UserCurrentFromNotificationID = (lv_MaxNotificationID + 1)
-				,	lv_UserCurrentToNotificationID = lv_MaxNotificationID
-                ,	lv_IsSeen = 0;
-			
-			INSERT INTO CTS_DataCenter.CTSUserNotificationParameter(UserID,FromNotificationID,ToNotificationID)
-			VALUES(ip_UserID, lv_UserCurrentFromNotificationID, lv_UserCurrentToNotificationID);
+			INSERT INTO CTS_DataCenter.CTSUserNotificationParameter(UserID, FunctionID, FromNotificationID, ToNotificationID)
+			VALUES(ip_UserID, 1, (lv_MaxNotificationID + 1), lv_MaxNotificationID);
 		END;
     END IF;
 
