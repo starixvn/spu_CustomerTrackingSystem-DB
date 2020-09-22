@@ -582,7 +582,9 @@ DROP TABLE IF EXISTS CTS_DataCenter.ProbationAccountNotification;
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.ProbationAccountNotification (
 		NotificationID			BIGINT UNSIGNED AUTO_INCREMENT
 	,	NotificationType		TINYINT NOT NULL # 1: margin < 0; 2: jump level failed after probation duration
-	, 	Counter					SMALLINT UNSIGNED NOT NULL DEFAULT 0
+	, 	TotalScanned			SMALLINT UNSIGNED NOT NULL DEFAULT 0
+    , 	TotalFailed				SMALLINT UNSIGNED NOT NULL DEFAULT 0
+    , 	TotalGeneralFailed		SMALLINT UNSIGNED NOT NULL DEFAULT 0
     , 	CreatedDate				DATE NOT NULL
     , 	CreatedTime				DATETIME NOT NULL
 	, 	PRIMARY KEY				PK_ProbationAccountNotification_NotificationID(NotificationID)
@@ -603,6 +605,10 @@ ALTER TABLE CTS_DataCenter.CTSUserNotificationParameter
 ADD COLUMN FunctionID SMALLINT UNSIGNED NOT NULL; # 1: Associated Account Monitor, 2: Probation Account
 UPDATE CTS_DataCenter.CTSUserNotificationParameter
 SET FunctionID = 1;
+ALTER TABLE CTS_DataCenter.CTSUserNotificationParameter DROP PRIMARY KEY;
+ALTER TABLE CTS_DataCenter.CTSUserNotificationParameter
+ADD PRIMARY KEY(UserID,FunctionID);
+
 ALTER TABLE CTS_DataCenter.CTSUserNotificationParameter
 ADD COLUMN FromNotificationID BIGINT UNSIGNED;
 ALTER TABLE CTS_DataCenter.CTSUserNotificationParameter
