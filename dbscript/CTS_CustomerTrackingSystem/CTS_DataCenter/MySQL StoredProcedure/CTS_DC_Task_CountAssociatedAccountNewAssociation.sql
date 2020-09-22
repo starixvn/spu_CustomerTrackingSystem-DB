@@ -42,8 +42,8 @@ BEGIN
         
         SET SQL_SAFE_UPDATES = 0;
         
-        # Delete old data in AssociatedAccountNewAssociation
-        DELETE FROM CTS_DataCenter.AssociatedAccountNewAssociation
+        # Delete old data in AssociatedAccountNotification
+        DELETE FROM CTS_DataCenter.AssociatedAccountNotification
         WHERE CreatedDate < @DataDateRange;
     
 		# Get last scanned CTSAssDevID value
@@ -87,7 +87,7 @@ BEGIN
         WHERE AssociationDevID <= LastScannedCTSAssDevID;
         
         # Count new association for AssociatedAccountMonitor
-        INSERT INTO CTS_DataCenter.AssociatedAccountNewAssociation(CTSCustID, UserName, NewAssCount, CreatedDate, CreatedTime)
+        INSERT INTO CTS_DataCenter.AssociatedAccountNotification(CTSCustID, UserName, NewAssCount, CreatedDate, CreatedTime)
         SELECT 	a.SourceCTSCustID
 			,	c.UserName
 			, 	COUNT(DISTINCT a.TargetCTSCustID) AS NewAssCount
@@ -99,7 +99,7 @@ BEGIN
         
         # Remove the useless data
         DELETE a
-        FROM CTS_DataCenter.AssociatedAccountNewAssociation AS a
+        FROM CTS_DataCenter.AssociatedAccountNotification AS a
 			LEFT JOIN CTS_DataCenter.AssociatedAccountMonitor AS m ON a.CTSCustID = m.CTSCustID
 		WHERE m.CTSCustID IS NULL;
         

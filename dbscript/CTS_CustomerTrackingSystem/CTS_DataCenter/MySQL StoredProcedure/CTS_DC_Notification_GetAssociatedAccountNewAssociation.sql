@@ -1,8 +1,8 @@
-DELIMITER $$
-USE CTS_DataCenter $$
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_Notification_GetAssociatedAccountNewAssociation` $$
+USE `CTS_DataCenter`;
+DROP PROCEDURE IF EXISTS `CTS_DC_Notification_Get`;
 
-CREATE PROCEDURE `CTS_DataCenter`.`CTS_DC_Notification_GetAssociatedAccountNewAssociation`(
+DELIMITER $$
+CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_Notification_Get`(
 		IN 	ip_UserID 			INT UNSIGNED
     ,	IN 	ip_MaxNewAssID 		BIGINT
 )
@@ -32,9 +32,9 @@ BEGIN
     
     SELECT MAX(a.AccountNewAssID)
     INTO lv_MaxNotificationID
-    FROM CTS_DataCenter.AssociatedAccountNewAssociation AS a;    
+    FROM CTS_DataCenter.AssociatedAccountNotification AS a;    
     
-	SELECT u.FromNewAssID, u.ToNewAssID
+	SELECT u.FromID, u.ToID
 	INTO lv_UserCurrentFromNotificationID, lv_UserCurrentToNotificationID
 	FROM CTS_DataCenter.CTSUserNotificationParameter AS u
 	WHERE u.UserID = ip_UserID;
@@ -45,8 +45,8 @@ BEGIN
 			,	lv_IsSeen = 1;
                         
 		UPDATE CTS_DataCenter.CTSUserNotificationParameter
-		SET 	FromNewAssID = lv_UserCurrentFromNotificationID
-			,	ToNewAssID = lv_UserCurrentToNotificationID
+		SET 	FromID = lv_UserCurrentFromNotificationID
+			,	ToID = lv_UserCurrentToNotificationID
 		WHERE UserID = ip_UserID;        
 	END IF;
     
@@ -70,7 +70,7 @@ BEGIN
 				,	lv_UserCurrentToNotificationID = lv_MaxNotificationID
                 ,	lv_IsSeen = 0;
 			
-			INSERT INTO CTS_DataCenter.CTSUserNotificationParameter(UserID,FromNewAssID,ToNewAssID)
+			INSERT INTO CTS_DataCenter.CTSUserNotificationParameter(UserID,FromID,ToID)
 			VALUES(ip_UserID, lv_UserCurrentFromNotificationID, lv_UserCurrentToNotificationID);
 		END;
     END IF;
@@ -82,13 +82,13 @@ BEGIN
         ,	a.CreatedTime AS CreatedDate
         ,	a.AccountNewAssID AS MaxNewAssociationID
         ,	CASE WHEN a.AccountNewAssID <= lv_UserCurrentFromNotificationID THEN 1 ELSE 0 END AS IsSeen
-    FROM CTS_DataCenter.AssociatedAccountNewAssociation AS a
+    FROM CTS_DataCenter.AssociatedAccountNotification AS a
 		INNER JOIN CTS_DataCenter.CTSUserPermission AS p ON a.CreatedTime >= p.GrantedFrom AND (a.CreatedTime <= p.GrantedTo OR p.GrantedTo IS NULL)
 	WHERE a.CreatedDate > @FromScanDate AND a.CreatedDate <= @ToScanDate
 		AND p.UserID = ip_UserID 
     ORDER BY CreatedDate DESC;
     
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-    
 END$$
+
 DELIMITER ;

@@ -592,8 +592,43 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.ProbationAccountNotification (
 
 ALTER TABLE CTS_DataCenter.CTSUserPermission
 ADD COLUMN FunctionID SMALLINT UNSIGNED NOT NULL; # 1: Associated Account Monitor, 2: Probation Account
+ALTER TABLE CTS_DataCenter.CTSUserPermission
+ADD COLUMN IsTurnedOnNotification BOOLEAN DEFAULT 1; 
 ALTER TABLE CTS_DataCenter.CTSUserPermission 
 ADD INDEX IX_ProbationAccountNotification_FunctionID(FunctionID DESC);
-
 UPDATE CTS_DataCenter.CTSUserPermission
+SET FunctionID = 1, IsTurnedOnNotification = 1;
+
+ALTER TABLE CTS_DataCenter.CTSUserNotificationParameter
+ADD COLUMN FunctionID SMALLINT UNSIGNED NOT NULL; # 1: Associated Account Monitor, 2: Probation Account
+UPDATE CTS_DataCenter.CTSUserNotificationParameter
 SET FunctionID = 1;
+ALTER TABLE CTS_DataCenter.CTSUserNotificationParameter
+ADD COLUMN FromNotificationID BIGINT UNSIGNED;
+ALTER TABLE CTS_DataCenter.CTSUserNotificationParameter
+ADD COLUMN ToNotificationID BIGINT UNSIGNED;
+SET SQL_SAFE_UPDATES = 0;
+UPDATE CTS_DataCenter.CTSUserNotificationParameter
+SET FromNotificationID = FromID, ToNotificationID = ToID;
+ALTER TABLE CTS_DataCenter.CTSUserNotificationParameter
+DROP COLUMN FromID;
+ALTER TABLE CTS_DataCenter.CTSUserNotificationParameter
+DROP COLUMN ToID;
+
+
+DROP TABLE IF EXISTS CTS_DataCenter.AssociatedAccountNewAssociation;
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociatedAccountNotification (
+		AccountNewAssID			BIGINT UNSIGNED AUTO_INCREMENT
+    ,	CTSCustID				INT UNSIGNED NOT NULL
+	,	UserName				VARCHAR(50) NOT NULL
+	, 	NewAssCount				SMALLINT UNSIGNED NOT NULL DEFAULT 0
+    , 	CreatedDate				DATE NOT NULL
+    , 	CreatedTime				DATETIME NOT NULL
+	, 	PRIMARY KEY				PK_AssociatedAccountNotification_AccountNewAssID(AccountNewAssID)
+    ,	INDEX					IX_AssociatedAccountNotification_CTSCustID(CTSCustID)
+    ,	INDEX					IX_AssociatedAccountNotification_CreatedDate(CreatedDate)
+) ENGINE=INNODB DEFAULT CHARSET='UTF8MB4' COLLATE='UTF8MB4_UNICODE_CI';
+SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+INSERT INTO AssociatedAccountNotification(AccountNewAssID, CTSCustID, UserName, NewAssCount, CreatedDate, CreatedTime)
+SELECT AccountNewAssID, CTSCustID, UserName, NewAssCount, CreatedDate, CreatedTime
+FROM  CTS_DataCenter.AssociatedAccountNewAssociation;
