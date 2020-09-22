@@ -17,12 +17,16 @@ sp: BEGIN
 		Original: 
 		Revisions:
 			- 20200918@Lex.Khuat [Redmine ID: #141755]: Created
-            
-		Param's Explanation:
+		
+        Param's Explanation:
+			- ip_CustidList: Json list with CustID, SportGroupID, NewCategoryID
+            - ip_Remark: Remark to manual mark in batch
+            - ip_CreatedBy: UserID to mark in batch
+		Sample:
+			- call CTS_DataCenter.CTS_DC_CustClassification_Probation_Update('[{"CustID": 1408, "SportGroupID": 1, "NewCategoryID": 6}, {"CustID": 1408, "SportGroupID": 200, "NewCategoryID": 202}]', '', 8, @aaaa);
 	*/
     
     DECLARE lv_CurrentTime	DATETIME DEFAULT CURRENT_TIME();
-    DECLARE lv_CreatedBy	INT	DEFAULT 10278938;		# Default user for auto main categories creator 'starixIT'
 
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
@@ -44,7 +48,7 @@ sp: BEGIN
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     
-    #========= IF SEARCH FOR SPECIFIC CUSTOMER, GET CTSCUSTID FROM KEYWORD =========
+    #========= GET DATA TO UPDATE =========
 	INSERT INTO Temp_TargetCustomerCategory(CustID, SportGroupID, NewCategoryID)
 	SELECT 	tmp.CustID
 		, 	tmp.SportGroupID
@@ -79,14 +83,16 @@ sp: BEGIN
 		ON	temp.CTSCustID = sc.CTSCustID
         AND	sc.CreatedFromFunction IN (1, 11);
       
-    #========= REMOVE OLD CATEGORIES =========
+    #========= REMOVE OLD GENERAL/DETAIL CATEGORIES =========
     DELETE cc
     FROM CTS_DataCenter.CTSCustomerClassification AS cc
     INNER JOIN Temp_TargetCustomerCategory AS temp
 		ON	temp.CustID = cc.CustID
+        AND	temp.SportGroupID = cc.SportGroupID
 	INNER JOIN CTS_DataCenter.CustomerCategory AS cate
 		ON	cc.CategoryID = cate.CategoryID
-        AND temp.ParentID = cate.ParentID;
+	WHERE temp.ParentID = cate.ParentID
+		AND	cate.ParentID in (1, 200);
 
     #========= REMOVE PROBATION MONITOR DATA =========
     DELETE pam
@@ -119,7 +125,7 @@ sp: BEGIN
 			, temp.NewCategoryID
             , temp.SportGroupID
             , lv_CurrentTime
-            , lv_CreatedBy
+            , ip_CreatedBy
             , 0
             , 0
             , 0
