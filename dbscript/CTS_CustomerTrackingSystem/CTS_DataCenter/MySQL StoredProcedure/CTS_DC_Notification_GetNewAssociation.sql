@@ -26,7 +26,6 @@ BEGIN
     DECLARE lv_UserCurrentFromNotificationID 	BIGINT;
     DECLARE lv_UserCurrentToNotificationID 		BIGINT;
     DECLARE lv_MaxNotificationID 				BIGINT;
-    DECLARE lv_IsSeen 							BIT;    
     
 	SET @ToScanDate						= CURRENT_DATE();
 	SET @FromScanDate					= DATE(DATE_ADD(CURRENT_DATE(), INTERVAL -3 DAY));
@@ -43,10 +42,12 @@ BEGIN
 	WHERE u.UserID = ip_UserID AND u.FunctionID = 1;
             
     IF (ip_MaxNewAssID <> 0) THEN		
+		SET 	lv_UserCurrentFromNotificationID = lv_UserCurrentToNotificationID
+			,	lv_UserCurrentToNotificationID = ip_MaxNewAssID;
 		UPDATE CTS_DataCenter.CTSUserNotificationParameter
 		SET 	FromNotificationID = lv_UserCurrentToNotificationID
 			,	ToNotificationID = lv_MaxNotificationID
-		WHERE UserID = ip_UserID AND u.FunctionID = 1;        
+		WHERE UserID = ip_UserID AND FunctionID = 1;        
 	END IF;
     
     IF NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSUserNotificationParameter WHERE UserID = ip_UserID AND FunctionID = 1) THEN    
@@ -63,6 +64,7 @@ BEGIN
         ,	a.CreatedTime AS CreatedDate
         ,	a.AccountNewAssID AS MaxNewAssociationID
         ,	CASE WHEN a.AccountNewAssID <= lv_UserCurrentFromNotificationID THEN 1 ELSE 0 END AS IsSeen
+        , 	a.AccountNewAssID,lv_UserCurrentFromNotificationID
     FROM CTS_DataCenter.AssociatedAccountNotification AS a
 		INNER JOIN CTS_DataCenter.CTSUserPermission AS p ON a.CreatedTime >= p.GrantedFrom AND (a.CreatedTime <= p.GrantedTo OR p.GrantedTo IS NULL)
 	WHERE a.CreatedDate > @FromScanDate AND a.CreatedDate <= @ToScanDate

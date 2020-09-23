@@ -41,7 +41,7 @@ BEGIN
 
     IF (ip_ReadNotificationID <> 0) THEN		
 		SET 	lv_UserCurrentFromNotificationID = lv_UserCurrentToNotificationID
-			,	lv_UserCurrentToNotificationID = lv_MaxNotificationID;
+			,	lv_UserCurrentToNotificationID = ip_ReadNotificationID;
 
 		UPDATE CTS_DataCenter.CTSUserNotificationParameter
 		SET 	FromNotificationID = lv_UserCurrentFromNotificationID
