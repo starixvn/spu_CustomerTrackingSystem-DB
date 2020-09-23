@@ -76,12 +76,12 @@ sp: BEGIN
 											ELSE temp.SportGroupID
 									END;
             
-	#========= EXCLUDES VVIP, SPECIAL CUSTOMER =========
+	#========= SKIP VVIP FROM PROCESSING CLASSIFICATION DATA =========
     DELETE temp
     FROM Temp_TargetCustomerCategory AS temp
     INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc
 		ON	temp.CTSCustID = sc.CTSCustID
-        AND	sc.CreatedFromFunction IN (1, 11);
+        AND	sc.CreatedFromFunction IN (11);
       
     #========= REMOVE OLD GENERAL/DETAIL CATEGORIES =========
     DELETE cc
@@ -134,6 +134,13 @@ sp: BEGIN
             , 0
             , DATE(lv_CurrentTime)
 	FROM 	Temp_TargetCustomerCategory AS temp;
+    
+    #========= SKIP SPECIAL + ROBOT + VVIP FROM SENDING CUSTOMER CLASS TO MAINDB =========
+    DELETE temp
+    FROM Temp_TargetCustomerCategory AS temp
+    INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc
+		ON	temp.CTSCustID = sc.CTSCustID
+        AND	sc.CreatedFromFunction IN (1);
     
     #========= SENDING CUSTOMER CLASS AFTER APPLY NEW GENERAL/DETAILED CUSTOMER CATEGORIES =========
     SELECT DISTINCT CustID,

@@ -74,7 +74,6 @@ BEGIN
     INNER JOIN CTS_DataCenter.CustomerCategory AS cc
 		ON pam.TargetCategoryID = cc.CategoryID
     WHERE (lv_CTSCustID = 0 OR lv_CTSCustID = pam.CTSCustID)
-		AND (IFNULL(ip_DaysLeft, -1) < 0 OR 60 - DATEDIFF(lv_CurrentDate, pam.CreatedDate) <= ip_DaysLeft)
         AND	CASE 	WHEN IFNULL(ip_CategoryMode, -1) = 1 THEN 200	# General catergory
 					WHEN IFNULL(ip_CategoryMode, -1) = 2 THEN 1		# Detailed category
 					ELSE -1
@@ -107,6 +106,7 @@ BEGIN
             , null AS CurrentMargin
             , DaysLeft
     FROM Temp_ProbationCustomer
+    WHERE IFNULL(ip_DaysLeft, -1) < 0 OR DaysLeft = ip_DaysLeft
     ORDER BY DaysLeft DESC;
     
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;

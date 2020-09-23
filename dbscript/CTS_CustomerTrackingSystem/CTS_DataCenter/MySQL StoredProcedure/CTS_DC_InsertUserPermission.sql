@@ -69,7 +69,7 @@ BEGIN
     INSERT INTO CTS_DataCenter.CTSUserPermission (UserID, FunctionName, GrantedFrom, GrantedTo, CreatedDate, LastModifiedDate, FunctionID, IsTurnedOnNotification)
     SELECT	DISTINCT temp.UserID
 		,	CASE	WHEN temp.FuncID = 1 THEN 'AssociatedAccountMonitor'
-					WHEN temp.FuncID = 2 THEN 'ProbationMonitor'
+					WHEN temp.FuncID = 2 THEN 'ProbationManagement'
                     ELSE 'Unassigned'
 			END
 		,	lv_CurrentTime AS GrantedFrom
