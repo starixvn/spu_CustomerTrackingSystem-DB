@@ -38,7 +38,7 @@ BEGIN
     INNER JOIN 	Temp_CustSport AS tmpCs
 				ON cl.CustID = tmpCs.CustID
 				AND	cl.SportGroupID = tmpCs.SportGroupID
-    SET			cl.LastScannedDate = GREATEST(vrScanDate, cl.LastScannedDate);
+    SET			cl.LastScannedDate = current_time();
     
 END$$
 DELIMITER ;

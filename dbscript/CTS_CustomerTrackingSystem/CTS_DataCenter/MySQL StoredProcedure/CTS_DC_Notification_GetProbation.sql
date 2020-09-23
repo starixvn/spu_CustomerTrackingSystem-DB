@@ -4,7 +4,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_Notification_GetProbation`;
 DELIMITER $$
 CREATE DEFINER=`ctsWeb`@`%` PROCEDURE `CTS_DC_Notification_GetProbation`(
 		IN 	ip_UserID 					INT UNSIGNED
-    ,	IN 	ip_MaxNotificationID 		BIGINT
+    ,	IN 	ip_ReadNotificationID 		BIGINT
 )
 BEGIN
 	/*
@@ -39,14 +39,14 @@ BEGIN
 	FROM CTS_DataCenter.CTSUserNotificationParameter AS notiParam
 	WHERE notiParam.UserID = ip_UserID AND notiParam.FunctionID = 2;
 
-    IF (lv_MaxNotificationID <> 0) THEN		
+    IF (ip_ReadNotificationID <> 0) THEN		
 		SET 	lv_UserCurrentFromNotificationID = lv_UserCurrentToNotificationID
 			,	lv_UserCurrentToNotificationID = lv_MaxNotificationID;
 
 		UPDATE CTS_DataCenter.CTSUserNotificationParameter
-		SET 	FromID = lv_UserCurrentFromNotificationID
-			,	ToID = lv_UserCurrentToNotificationID
-		WHERE UserID = ip_UserID AND FunctionID = 2;        
+		SET 	FromNotificationID = lv_UserCurrentFromNotificationID
+			,	ToNotificationID = lv_UserCurrentToNotificationID
+		WHERE UserID = ip_UserID AND FunctionID = 2;
 	END IF;
 
     IF NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSUserNotificationParameter WHERE UserID = ip_UserID AND FunctionID = 2) THEN
@@ -55,13 +55,14 @@ BEGIN
 			VALUES(ip_UserID, 2,  (lv_MaxNotificationID + 1), lv_MaxNotificationID);
 		END;
     END IF;
-    select * from ProbationAccountNotification;
+    
 	# Get available notification
     SELECT 	a.TotalScanned
 		,	a.TotalFailed
         ,	a.TotalGeneralFailed
+        ,	a.NotificationType
         ,	a.CreatedTime AS CreatedDate
-        ,	a.NotificationID AS MaxNewAssociationID
+        ,	a.NotificationID AS MaxNotificationID
         ,	CASE WHEN a.NotificationID <= lv_UserCurrentFromNotificationID THEN 1 ELSE 0 END AS IsSeen
     FROM CTS_DataCenter.ProbationAccountNotification AS a
 		INNER JOIN CTS_DataCenter.CTSUserPermission AS p ON p.FunctionID =2

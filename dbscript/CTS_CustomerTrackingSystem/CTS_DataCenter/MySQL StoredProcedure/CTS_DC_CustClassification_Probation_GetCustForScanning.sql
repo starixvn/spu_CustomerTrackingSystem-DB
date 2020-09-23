@@ -18,8 +18,8 @@ BEGIN
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     
-    SELECT 		ccl.CustID 			AS CustID
-				, ccl.SportGroupID	AS SportGroupID
+    SELECT 		ccl.CustID 			AS CustId
+				, ccl.SportGroupID	AS SportGroupId
                 , ccl.CreatedDate > DATE_SUB(current_date(), INTERVAL 60 DAY) AS IsIn60Days
     FROM		CTS_DataCenter.CTSCustomerClassification AS ccl
     INNER JOIN	CTS_DataCenter.CustomerCategory AS cat
