@@ -23,6 +23,8 @@ CREATE TABLE CTS_Admin.Subscriber (
     ,	DCSIntegrationDate	DATETIME		NULL		
 	,	PRIMARY KEY	PK_Subscriber_SubscriberID (SubscriberID)
 	,	UNIQUE KEY	IX_Subscriber_SubscriberName_SubScriberPrefix (SubscriberName,SubScriberPrefix)
+	,	INDEX		IX_Subscriber_SubscriberPrefix(SubscriberPrefix)
+	
 ) ENGINE=InnoDB AUTO_INCREMENT=1;
 
 CREATE TABLE CTS_Admin.UserSubscriber (
