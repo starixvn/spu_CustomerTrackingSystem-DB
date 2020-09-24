@@ -1,6 +1,9 @@
+USE `CTS_DataCenter`;
+DROP procedure IF EXISTS `CTS_DC_GetCustomerClassificationIntervalScan`;
+
 DELIMITER $$
-DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_GetCustomerClassificationIntervalScan$$
-CREATE DEFINER=fps@`%` PROCEDURE CTS_DataCenter.CTS_DC_GetCustomerClassificationIntervalScan(IN ip_NoOfRecord INT, IN ip_Batch INT, IN ip_ParentCategoryID INT) 
+USE `CTS_DataCenter`$$
+CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_GetCustomerClassificationIntervalScan`(IN ip_NoOfRecord INT, IN ip_Batch INT, IN ip_ParentCategoryID INT)
 BEGIN
 	/*
 		Created:	[20200612@Casey.Huynh][135324]
@@ -13,70 +16,71 @@ BEGIN
 			[20200701@Casey.Huynh]		[135324]: Chagne Flow and Store more Info
             [20200820@Casey.Huynh]		[139061]: Remove USE INDEX 
             [20200903@Harvey.Nguyen]	[140869]: Add ParentID 
-			
+			[20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow.
+            [20200923@Irena.Vo][141755]: Enhance SP
+            
 		Param's Explanation (filtered by):
          ip_CategoryIDList: ex: '1,2,3'       
          CALL CTS_DC_GetCustomerClassificationIntervalScan (100,1,200);
 	*/
-    DECLARE vrScanTime DATETIME;
-    DECLARE vrScanDate DATETIME;    
-    DECLARE vrLastScanTime DATETIME;
-    DECLARE vrLastScanDate DATETIME;
-    DECLARE vrTotalRecord BIGINT UNSIGNED;
-	DECLARE vrBatch INT UNSIGNED DEFAULT 1;
+    DECLARE lv_ScanTime DATETIME;
+    DECLARE lv_ScanDate DATETIME;    
+    DECLARE lv_LastScanTime DATETIME;
+    DECLARE lv_LastScanDate DATETIME;
+    DECLARE lv_TotalRecord BIGINT UNSIGNED;
+	DECLARE lv_Batch INT UNSIGNED DEFAULT 1;
 	  
-    
     ### PERFORMANCE: START
-    DECLARE		vrExecKey		BIGINT	UNSIGNED;
-	DECLARE		vrSPName		VARCHAR(200)  DEFAULT 'CTS_DC_GetCustomerClassificationIntervalScan' ;
-    DECLARE		vrStepID		INT;
-	DECLARE 	vrNotes	 		VARCHAR(500);
-	DECLARE 	vrStartTime		TIMESTAMP(4);
-	DECLARE		vrEndTime 		TIMESTAMP(4);
-	DECLARE		vrDuration 		BIGINT;	
-    DECLARE		vrLgTotalRecord	INT;
-    DECLARE		vrFromID		BIGINT;
-    DECLARE		vrToID			BIGINT;
+    DECLARE		lv_ExecKey		BIGINT	UNSIGNED;
+	DECLARE		lv_SPName		VARCHAR(200)  DEFAULT 'CTS_DC_GetCustomerClassificationIntervalScan' ;
+    DECLARE		lv_StepID		INT;
+	DECLARE 	lv_Notes	 		VARCHAR(500);
+	DECLARE 	lv_StartTime		TIMESTAMP(4);
+	DECLARE		lv_EndTime 		TIMESTAMP(4);
+	DECLARE		lv_Duration 		BIGINT;	
+    DECLARE		lv_LogTotalRecord	INT;
+    DECLARE		lv_FromID		BIGINT;
+    DECLARE		lv_ToID			BIGINT;
 
-    SET		vrExecKey = CRC32((UUID_Short()));    
-    SET		vrNotes = '';# CONCAT('Input: ',ip_NoOfAssociation,'_', ip_NoOfBatch) ;		
-    SET 	vrStepID = 1;
+    SET		lv_ExecKey = CRC32((UUID_Short()));    
+    SET		lv_Notes = '';# CONCAT('Input: ',ip_NoOfAssociation,'_', ip_NoOfBatch) ;		
+    SET 	lv_StepID = 1;
     
-    SET 	vrStartTime = CURRENT_TIMESTAMP(4);	
+    SET 	lv_StartTime = CURRENT_TIMESTAMP(4);	
     
     INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
-    VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);
-
+    VALUES(lv_ExecKey, lv_StepID, lv_SPName,  lv_Notes, lv_StartTime);
 	### PERFORMANCE: END
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-    DROP TEMPORARY TABLE IF EXISTS temp_scanList;
-	CREATE TEMPORARY TABLE temp_scanList(
-		CustID BIGINT UNSIGNED
+    DROP TEMPORARY TABLE IF EXISTS Temp_ScanList;
+	CREATE TEMPORARY TABLE Temp_ScanList(
+		  CustID BIGINT UNSIGNED
         , SportGroupID SMALLINT UNSIGNED
         , CategoryID	SMALLINT UNSIGNED    
 		, ID			INT SIGNED AUTO_INCREMENT
-        ,INDEX	IX_temp_scanList_ID(ID)
-        ,INDEX	IX_temp_scanList_CustID(CustID)
+        ,INDEX	IX_Temp_ScanList_ID(ID)
+        ,INDEX	IX_Temp_ScanList_CustID(CustID)
     );
     
-	SET vrScanTime = CURRENT_TIME();
-    SET vrLastScanTime = (SELECT MAX(ScanTime) FROM CTS_DataCenter.CTSCustomerClassification_ScanStatus WHERE ParentCategoryID = ip_ParentCategoryID);
+	SET lv_ScanTime = CURRENT_TIME();
+    SET lv_LastScanTime = (SELECT MAX(ScanTime) FROM CTS_DataCenter.CTSCustomerClassification_ScanStatus WHERE ParentCategoryID = ip_ParentCategoryID);
     
-	SET vrScanDate = DATE(vrScanTime);
-    SET vrLastScanDate = DATE(vrLastScanTime);
+	SET lv_ScanDate = DATE(lv_ScanTime);
+    SET lv_LastScanDate = DATE(lv_LastScanTime);
     
-    IF(vrLastScanDate != vrScanDate)
+    IF(lv_LastScanDate != lv_ScanDate)
     THEN
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_ScanStatus(ScanTime, LastCustID, ScanStatus, ParentCategoryID)
-		VALUES(vrScanTime, 0, 0, ip_ParentCategoryID);
+		VALUES(lv_ScanTime, 0, 0, ip_ParentCategoryID);
 	ELSE	
-		SET vrScanTime = vrLastScanTime;
+		SET lv_ScanTime = lv_LastScanTime;
     END IF;
     
-    SET vrTotalRecord = ip_Batch * ip_NoOfRecord ;
-	    
-	INSERT INTO temp_scanList (CustID, SportGroupID, CategoryID)
+    SET lv_TotalRecord = ip_Batch * ip_NoOfRecord ;
+	
+    -- INSERT CATEGORY TO SCAN
+	INSERT INTO Temp_ScanList (CustID, SportGroupID, CategoryID)
 	SELECT 		ccl.CustID 			AS CustID
 				, ccl.SportGroupID	AS SportGroupID
                 , ccl.CategoryID	AS CategoryID
@@ -87,39 +91,47 @@ BEGIN
 				AND cat.IsUsedManually = 0
                 AND cat.ScanIntervalInSecond > 0
                 AND cat.ParentID = ip_ParentCategoryID
-                AND ccl.LastScannedDate <= DATE_SUB(vrScanDate, INTERVAL cat.ScanIntervalInSecond SECOND)
-	LIMIT		vrTotalRecord;
-    
-	SELECT 		(((tmpList.ID-1) DIV ip_NoOfRecord) + 1) AS BatchID
-				, tmpList.CustID 		
-				, tmpList.SportGroupID	
-				, tmpList.CategoryID
-	FROM 		temp_scanList	AS tmpList;     
+                AND ccl.LastScannedDate <= DATE_SUB(lv_ScanDate, INTERVAL cat.ScanIntervalInSecond SECOND)
+	LIMIT		lv_TotalRecord;
+   
+    -- IGNORE PROBATION LIST
+    DELETE temp
+    FROM Temp_ScanList AS temp
+    INNER JOIN  CTS_DataCenter.ProbationAccountMonitor AS pro on pro.CustID = temp.CustID AND pro.SportGroupID = temp.SportGroupID
+	INNER JOIN	CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = temp.CategoryID
+    WHERE cc.ParentID = ip_ParentCategoryID;
+   
+    -- RETURN RESULT
+	SELECT 		(((temp.ID-1) DIV ip_NoOfRecord) + 1) AS BatchID
+				, temp.CustID 		
+				, temp.SportGroupID	
+				, temp.CategoryID
+	FROM 		Temp_ScanList	AS temp;     
 	
-	IF NOT EXISTS (SELECT 1 FROM temp_scanList LIMIT 1)
+	IF NOT EXISTS (SELECT 1 FROM Temp_ScanList LIMIT 1)
     THEN
-		UPDATE CTS_DataCenter.CTSCustomerClassification_ScanStatus
+		UPDATE  CTS_DataCenter.CTSCustomerClassification_ScanStatus
         SET		ScanStatus = 1
-        WHERE	ScanTime = vrScanTime
+        WHERE	ScanTime = lv_ScanTime
 			AND ParentCategoryID = ip_ParentCategoryID;
     END IF;
 	
 	### PERFORMANCE
-	SET		vrEndTime = CURRENT_TIMESTAMP(4);
+	SET		lv_EndTime = CURRENT_TIMESTAMP(4);
     
-	SELECT 	Count(1), Min(tas.CustID), Max(tas.CustID)
-    INTO	vrLgTotalRecord, vrFromID, vrToID
-    FROM	temp_scanList AS tas;    
+	SELECT 	Count(1), Min(temp.CustID), Max(temp.CustID)
+    INTO	lv_LogTotalRecord, lv_FromID, lv_ToID
+    FROM	Temp_ScanList AS temp;    
     
     UPDATE	DCS_DataCenter.zzTracePerformance AS z
-    SET		z.EndTime = vrEndTime
-			, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
-            , z.TotalRecord = vrLgTotalRecord
-            , z.FromID = vrFromID
-            , z.ToID		= vrToID
-    WHERE	z.ExecKey = vrExecKey AND z.StepID = vrStepID ;    
+    SET		z.EndTime = lv_EndTime
+			, z.Duration = TIMESTAMPDIFF(MICROSECOND, lv_StartTime, lv_EndTime)
+            , z.TotalRecord = lv_LogTotalRecord
+            , z.FromID = lv_FromID
+            , z.ToID		= lv_ToID
+    WHERE	z.ExecKey = lv_ExecKey AND z.StepID = lv_StepID ;     
     
     ### PERFORMANCE: END 
 END$$
-DELIMITER ;
 
+DELIMITER ;

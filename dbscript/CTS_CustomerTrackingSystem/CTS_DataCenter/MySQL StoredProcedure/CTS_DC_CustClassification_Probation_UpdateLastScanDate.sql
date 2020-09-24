@@ -38,7 +38,7 @@ BEGIN
     INNER JOIN 	Temp_CustSport AS tmpCs
 				ON cl.CustID = tmpCs.CustID
 				AND	cl.SportGroupID = tmpCs.SportGroupID
-    SET			cl.LastScannedDate = current_time();
+    SET			cl.LastScannedDate = DATE(current_time());
     
 END$$
 DELIMITER ;

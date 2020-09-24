@@ -18,12 +18,15 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original: 
 		Revisions:
-			- 20200423@Long.Luu [Redmine ID: #132623]: Created 
-            - 20200908@Irena.Vo [Redmine ID: #141020]: Delete VVIP OR All Category has Pin before (Include Customer Class)
+			- [20200423@Long.Luu][132623]: Created 
+            - [20200908@Irena.Vo][141020]: Delete VVIP OR All Category has Pin before (Include Customer Class)
+            - [20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow.
+			- [20200923@Irena.Vo][141755]: Enhance SP
             
 		Param's Explanation:
 	*/ 
-    DECLARE lv_CurrentTime DATETIME DEFAULT CURRENT_TIME();
+	/**********1. PREPARE PARAMS**********/
+    DECLARE lv_CurrentDateTime DATETIME DEFAULT NOW();
     DECLARE lv_SPName VARCHAR(200) DEFAULT 'CTS_DC_RemoveCTSCustomerClassification';
     
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
@@ -46,7 +49,7 @@ BEGIN
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;   
     SET SQL_SAFE_UPDATES = 0;
     
-    -- Insert General Category
+	/**********2. INSERT GENERAL CATEGORY**********/
     INSERT INTO Temp_GeneralCategory
     SELECT cate.CustID, cate.CategoryID
 	FROM CTS_DataCenter.CTSCustomerClassification AS cate
@@ -54,55 +57,77 @@ BEGIN
     LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sc on sc.CustID IS NULL OR (sc.CustID = ip_CustID  AND CreatedFromFunction = 21) -- No get Delete -1 for CreatedFromFunction = 1
 	WHERE cc.ParentID IN (50,200) AND cate.CustID = ip_CustID;
     
-    -- Insert customers removed CustomerClass
+	/**********3. INSERT REMOVED CATEGORY**********/
     INSERT INTO Temp_DeleteCustomerClass
     SELECT ip_CustID, -1
     WHERE  ip_CategoryID IN (3, 213) -- For VVIP
            OR ip_CategoryID = (SELECT GeneralCategory FROM Temp_GeneralCategory); -- For General
     
-    -- Remove data from CTS_DataCenter.SpecialCustomerClass
+   /**********4. ACTION FOR VVIP**********/
     IF (ip_CategoryID IN (3, 213)) THEN
         -- Remove data CTSCustomerClassification
 		DELETE 	cate
 		FROM 	CTS_DataCenter.CTSCustomerClassification AS cate
 		WHERE 	cate.CustID = ip_CustID AND cate.CategoryID IN (3, 213);
         
+        INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
+	    VALUES(12, lv_SPName, CONCAT('Remove all classification: From ip_CustID_', ip_CustID, '; ip_CategoryID_', ip_CategoryID), lv_CurrentDateTime, ip_CreatedBy);
+
 		-- Removed data CustomerClass
 		DELETE 	sc
 		FROM 	CTS_DataCenter.SpecialCustomerClass AS sc
 		WHERE 	sc.CustID = ip_CustID AND sc.CreatedFromFunction = 11; -- For VVIP
         
-        -- Insert log
         INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-	    VALUES(20, lv_SPName, CONCAT('Remove special customer class: ip_CTSCustID_ ', ip_CTSCustID) , lv_CurrentTime, ip_CreatedBy);
+	    VALUES(12, lv_SPName, CONCAT('Remove all special customer class: From ip_CTSCustID_ ', ip_CTSCustID) , lv_CurrentDateTime, ip_CreatedBy);
         
     END IF;
     
-    -- Remove data CTSCustomerClassification
+	/**********5. ACTION FOR PROBATION**********/
+	-- Removed data Probation List
+    IF (ip_CategoryID = 10) THEN
+		  DELETE pro
+		  FROM CTS_DataCenter.ProbationAccountMonitor AS pro
+		  WHERE pro.CustID = ip_CustID AND pro.SportGroupID < 200;
+          
+		  INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
+		  VALUES(12, lv_SPName, CONCAT('Remove all probation list: From ip_CustID_ ', ip_CustID), lv_CurrentDateTime, ip_CreatedBy);
+	END IF;
+    
+	IF (ip_CategoryID = 206) THEN  
+		  DELETE pro
+		  FROM CTS_DataCenter.ProbationAccountMonitor AS pro
+		  WHERE pro.CustID = ip_CustID AND pro.SportGroupID = 200;
+          
+		  INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
+	      VALUES(12, lv_SPName, CONCAT('Remove all probation list: From ip_CustID_ ', ip_CustID), lv_CurrentDateTime, ip_CreatedBy);
+	END IF;
+
+    /**********6. REMOVE CATEGORY AND INSERT HISTORY**********/
     DELETE 	cate
     FROM 	CTS_DataCenter.CTSCustomerClassification AS cate
     WHERE 	cate.CustID = ip_CustID AND cate.CategoryID = ip_CategoryID;
 
-    -- Insert history.
     INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate)
 	SELECT 	ip_CustID
 		, 	ip_CTSCustID
         , 	ip_CategoryID
-        , 	lv_CurrentTime
+        , 	lv_CurrentDateTime
         , 	ip_CreatedBy
         ,   -100 -- -100: Delete
         ,   0 -- IsAuto
-        ,   DATE(lv_CurrentTime);
+        ,   DATE(lv_CurrentDateTime);
    
-    -- Insert log
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-	VALUES(12, lv_SPName, CONCAT('Delete CTSCustomerClassification: ip_CustID_', ip_CustID, ';ip_CategoryID_', ip_CategoryID), lv_CurrentTime, ip_CreatedBy);
+	VALUES(12, lv_SPName, CONCAT('Remove classification: ip_CustID_', ip_CustID, ';ip_CategoryID_', ip_CategoryID), lv_CurrentDateTime, ip_CreatedBy);
 	
-    -- Return customers removed CustomerClass
     SELECT * FROM Temp_DeleteCustomerClass;
     
     SET SQL_SAFE_UPDATES = 1;
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_DeleteCustomerClass;
+	DROP TEMPORARY TABLE IF EXISTS Temp_GeneralCategory;
     
 END$$
 

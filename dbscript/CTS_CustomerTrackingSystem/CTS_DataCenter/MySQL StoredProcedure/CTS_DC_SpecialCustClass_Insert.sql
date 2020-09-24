@@ -19,19 +19,21 @@ sp: BEGIN
 		Original:
 
 		Revisions:
-		   - 20200905@Long.Luu [140996]: Created
-           - 20200908@Irena.Vo [141020]: Error MSG for the customers have VVIP before and Update CreatedFromFunction = 1 for special customer (Normal)
+		   - [20200905@Long.Luu][140996]: Created
+           - [20200908@Irena.Vo][141020]: Error MSG for the customers have VVIP before and Update CreatedFromFunction = 1 for special customer (Normal)
+           - [20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow.
+           - [20200923@Irena.Vo][141755]: Enhance SP
            
 		Param's Explanation (filtered by):
 	*/    
-      
+    
+	/**********1. PREPARE PARAMS**********/
 	DECLARE lv_CTSCustID		BIGINT UNSIGNED;
     DECLARE lv_CustID			INT UNSIGNED;
 	DECLARE lv_SubscriberID 	INT;
     DECLARE	lv_CurrentDateTime	DATETIME DEFAULT NOW();
     DECLARE	lv_SPName 			VARCHAR(100) 	DEFAULT 'CTS_DC_InsertSpecialCustomerClass';        
     
-    # Handle error
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;        
@@ -44,17 +46,17 @@ sp: BEGIN
 			CTSCustID			BIGINT UNSIGNED PRIMARY KEY
     );    
     
-    DROP TABLE IF EXISTS Temp_AffectedDevices;
+    DROP TEMPORARY TABLE IF EXISTS Temp_AffectedDevices;
     CREATE TEMPORARY TABLE Temp_AffectedDevices(
 			DCSDeviceID		BIGINT UNSIGNED PRIMARY KEY
 	);
     
-    DROP TABLE IF EXISTS Temp_AssociationException;
+    DROP TEMPORARY TABLE IF EXISTS Temp_AssociationException;
     CREATE TEMPORARY TABLE Temp_AssociationException(
 			CTSCustID 	BIGINT UNSIGNED PRIMARY KEY
 	);
     
-    DROP TABLE IF EXISTS Temp_NewCustomerClass;
+    DROP TEMPORARY TABLE IF EXISTS Temp_NewCustomerClass;
     CREATE TEMPORARY TABLE Temp_NewCustomerClass(
 			CTSCustID 		BIGINT UNSIGNED PRIMARY KEY
 		,	CustID			INT UNSIGNED
@@ -64,7 +66,8 @@ sp: BEGIN
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     SET SQL_SAFE_UPDATES = 0;
-   
+    
+    /**********2. CHECK VALIDATION CUSTOMER**********/
     -- Check invalid customer in CTS.
     IF NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomer WHERE UserName = ip_Username OR UserName2 = ip_Username) THEN
 		SET op_ErrorMessage = 'This account is not existed in the system!';
@@ -91,6 +94,7 @@ sp: BEGIN
         LEAVE sp;
 	END IF;
     
+	/**********3. GET INFO ASSOCIATION FOR CUSTOMER**********/
 	-- #2: get affected customers
 	INSERT INTO Temp_AffectedCustomers(CTSCustID)
 	VALUES(lv_CTSCustID);
@@ -130,6 +134,12 @@ sp: BEGIN
 	WHERE (s.CTSCustID IS NULL OR (s.CreatedFromFunction = 21)) -- Allow Pin category will insert new CustomerClass
 		AND c.RoleID = 1;
 	
+    /**********4. REMOVE PROBATION LIST BEFORE**********/
+	DELETE pro
+    FROM CTS_DataCenter.ProbationAccountMonitor AS pro
+    WHERE pro.CustID = lv_CustID;
+    
+    /**********5. INSERT VALID SPECIAL CUSTOMER CLASS**********/
 	INSERT INTO CTS_DataCenter.SpecialCustomerClass(CTSCustID, CustID, RootCTSCustID, SubscriberID, CustomerClass, CreatedBy, CreatedDate, LastModifiedBy, LastModifiedDate, CreatedFromFunction)
 	SELECT 	CTSCustID
 		,	CustID
@@ -147,13 +157,17 @@ sp: BEGIN
 		,	CustomerClass
 	FROM Temp_NewCustomerClass;
 	
-	# Logging
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	VALUES(19, lv_SPName, CONCAT('Insert SpecialCustomerClass: ip_CTSCustID = ', lv_CTSCustID, ';ip_CustomerClass = ', ip_CustomerClass), lv_CurrentDateTime, ip_UserID);
 
     SET SQL_SAFE_UPDATES = 1;
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_NewCustomerClass;
+	DROP TEMPORARY TABLE IF EXISTS Temp_AssociationException;
+    DROP TEMPORARY TABLE IF EXISTS Temp_AffectedDevices;
+	DROP TEMPORARY TABLE IF EXISTS Temp_AffectedCustomers;    
+     
 END$$
 
 DELIMITER ;
