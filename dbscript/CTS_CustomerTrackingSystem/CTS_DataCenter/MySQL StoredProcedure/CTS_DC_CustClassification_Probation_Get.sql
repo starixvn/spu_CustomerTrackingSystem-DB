@@ -106,7 +106,8 @@ BEGIN
             , null AS CurrentMargin
             , DaysLeft
     FROM Temp_ProbationCustomer
-    WHERE IFNULL(ip_DaysLeft, -1) < 0 OR DaysLeft = ip_DaysLeft
+    WHERE (IFNULL(ip_DaysLeft, -1) < 0 OR DaysLeft = ip_DaysLeft)
+		AND IFNULL(CTSCustID, 0) > 0
     ORDER BY DaysLeft DESC;
     
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
