@@ -23,6 +23,7 @@ sp: BEGIN
 	*/
     
     DECLARE lv_CurrentTime DATETIME DEFAULT CURRENT_DATE();
+    DECLARE lv_SPName 			VARCHAR(200)	DEFAULT 'CTS_DC_Subscriber_Remove';
     
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
@@ -57,3 +58,4 @@ sp: BEGIN
 END$$
 
 DELIMITER ;
+
