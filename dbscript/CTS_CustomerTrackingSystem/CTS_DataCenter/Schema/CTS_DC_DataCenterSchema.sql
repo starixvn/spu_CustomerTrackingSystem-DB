@@ -621,8 +621,6 @@ DROP COLUMN FromID;
 ALTER TABLE CTS_DataCenter.CTSUserNotificationParameter
 DROP COLUMN ToID;
 
-
-DROP TABLE IF EXISTS CTS_DataCenter.AssociatedAccountNewAssociation;
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociatedAccountNotification (
 		AccountNewAssID			BIGINT UNSIGNED AUTO_INCREMENT
     ,	CTSCustID				INT UNSIGNED NOT NULL
@@ -638,3 +636,8 @@ SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 INSERT INTO AssociatedAccountNotification(AccountNewAssID, CTSCustID, UserName, NewAssCount, CreatedDate, CreatedTime)
 SELECT AccountNewAssID, CTSCustID, UserName, NewAssCount, CreatedDate, CreatedTime
 FROM  CTS_DataCenter.AssociatedAccountNewAssociation;
+DROP TABLE IF EXISTS CTS_DataCenter.AssociatedAccountNewAssociation;
+
+ALTER TABLE CTS_DataCenter.ProbationAccountMonitor DROP PRIMARY KEY;
+ALTER TABLE CTS_DataCenter.ProbationAccountMonitor
+ADD PRIMARY KEY(CustID,SportGroupID);
