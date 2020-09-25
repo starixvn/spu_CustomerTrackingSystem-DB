@@ -23,15 +23,15 @@ BEGIN
     SELECT 	DISTINCT pro.CustID 			  AS CustId
 				   , pro.SportGroupID	      AS SportGroupId
                    , pro.TargetCategoryID     AS CategoryId 
-                      , CASE WHEN pro.CreatedDate = DATE_SUB(CURRENT_DATE(), INTERVAL 60 DAY) THEN 1 -- Scan 2 week & 60 days -> call sp Final
+				   , CASE WHEN pro.CreatedDate = DATE_SUB(CURRENT_DATE(), INTERVAL 60 DAY) THEN 1 -- Scan 2 week & 60 days -> call sp Final
                           ELSE 0 -- Only Scan 2 week -> call sp Loser 
 					 END AS Is60Day
     FROM			CTS_DataCenter.ProbationAccountMonitor AS pro 
-    INNER JOIN		CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = pro.CustID
+    INNER JOIN		CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = pro.CustID AND cate.SportGroupID = pro.SportGroupID  
     INNER JOIN		CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
-	WHERE			cate.CategoryID in (10,206)
+	WHERE			cate.CategoryID in (10, 206)
 					AND cate.LastScannedDate <= DATE_SUB(CURRENT_DATE(), INTERVAL cc.ScanIntervalInSecond SECOND)
-                    AND pro.CreatedDate >= DATE_SUB(CURRENT_DATE(), INTERVAL 60 DAY) 
+                    AND pro.CreatedDate >= DATE_SUB(CURRENT_DATE(), INTERVAL 60 DAY)
 	LIMIT			ip_NoOfRecord; 
      
 	SET SQL_SAFE_UPDATES = 1;
