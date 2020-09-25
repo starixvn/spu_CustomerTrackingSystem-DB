@@ -23,9 +23,9 @@ BEGIN
     SELECT 	DISTINCT pro.CustID 			  AS CustId
 				   , pro.SportGroupID	      AS SportGroupId
                    , pro.TargetCategoryID     AS CategoryId 
-                   , CASE WHEN pro.CreatedDate = DATE_SUB(CURRENT_DATE(), INTERVAL 60 DAY) THEN 1 -- = 60 days
-                          ELSE 0 -- < 60 days
-					 END AS Is60Days
+                   , CASE WHEN pro.CreatedDate = DATE_SUB(CURRENT_DATE(), INTERVAL 60 DAY) THEN 1 -- = 60 days. Scan Final
+                          ELSE 0 -- < 60 days. Scan Loser 
+					 END AS Is60Day
     FROM			CTS_DataCenter.ProbationAccountMonitor AS pro 
     INNER JOIN		CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = pro.CustID
     INNER JOIN		CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
