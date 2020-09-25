@@ -15,7 +15,7 @@ BEGIN
 			- [20200715@Long.Luu][136460]: Created 
             - [20200908@Irena.Vo][141020]: Enhance Exclude VVIP Customers, Pin
             - [20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow.
-			- [20200923@Irena.Vo][141755]: Enhance SP
+			- [20200923@Irena.Vo][141755]: Enhance SP 
              
 		Param's Explanation (filtered by):
              call CTS_DataCenter.CTS_DC_InsertCategorizedProblemAccounts ('[{"CustId": 1, "CategoryId": 27}]');
@@ -57,7 +57,7 @@ BEGIN
     /**********2. IGNORE INVALID PROBLEM ACCOUNT**********/
     DELETE temp
     FROM Temp_ProblemAccounts AS temp
-    WHERE temp.CategoryID = 0; 
+    WHERE temp.MainDBCategoryID = 0; 
     
 	/**********3. IGNORE VVIP - PIN CATEGORY**********/
     DELETE temp
