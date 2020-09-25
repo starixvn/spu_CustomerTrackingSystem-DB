@@ -54,30 +54,35 @@ BEGIN
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;     
     SET SQL_SAFE_UPDATES = 0;
     
-	/**********2. IGNORE VVIP - PIN CATEGORY**********/
+    /**********2. IGNORE INVALID PROBLEM ACCOUNT**********/
+    DELETE temp
+    FROM Temp_ProblemAccounts AS temp
+    WHERE temp.CategoryID = 0; 
+    
+	/**********3. IGNORE VVIP - PIN CATEGORY**********/
     DELETE temp
 	FROM Temp_ProblemAccounts AS temp
 	INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc on sc.CustID = temp.CustID -- is VVIP OR PIN
 	WHERE sc.CreatedFromFunction IN (11, 21);
     
-    /**********3. REMOVE DETAIL & GENERAL CATEGORY BEFORE**********/
+    /**********4. REMOVE DETAIL & GENERAL CATEGORY BEFORE**********/
     DELETE cate
     FROM CTS_DataCenter.CTSCustomerClassification AS cate
 	INNER JOIN Temp_ProblemAccounts AS temp ON temp.CustID = cate.CustID
 	INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = cate.CategoryID 
 	WHERE cc.ParentID IN (1, 200);
     
-    /**********4. REMOVE PROBATION LIST BEFORE**********/
+    /**********5. REMOVE PROBATION LIST BEFORE**********/
     DELETE pro
     FROM CTS_DataCenter.ProbationAccountMonitor AS pro
 	INNER JOIN Temp_ProblemAccounts AS temp ON temp.CustID = pro.CustID;
    
-   /**********5. UPDATE CUST INFO**********/
+   /**********6. UPDATE CUST INFO**********/
     UPDATE 	Temp_ProblemAccounts AS temp 
 	INNER JOIN	CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.CustSubID = 0
 	SET		temp.CTSCustID = cust.CTSCustID, temp.SubscriberID = cust.SubscriberID;
     
-   /**********6. UPDATE CATEGORY INFO**********/
+   /**********7. UPDATE CATEGORY INFO**********/
     UPDATE Temp_ProblemAccounts
     SET CategoryID =   CASE 
 							WHEN MainDBCategoryID = 27 THEN 51
@@ -101,7 +106,7 @@ BEGIN
                             WHEN MainDBCategoryID = 255 THEN 160
 						END;
 
-    /**********7. GET EXISTED CATEGORY**********/
+    /**********8. GET EXISTED CATEGORY**********/
     INSERT INTO Temp_ExistedProblemAccounts
     SELECT cate.CustID, cate.CategoryID
     FROM Temp_ProblemAccounts AS temp
@@ -109,7 +114,7 @@ BEGIN
     INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID= cate.CategoryID 
     WHERE cc.ParentID = 50; 
     
-    /**********8. UPDATE ACTION TYPE**********/
+    /**********9. UPDATE ACTION TYPE**********/
 	UPDATE 	Temp_ProblemAccounts AS temp
 	LEFT JOIN 	Temp_ExistedProblemAccounts AS ex ON ex.CustID = temp.CustID
 	SET 		temp.ActionType =  (CASE 
@@ -122,7 +127,7 @@ BEGIN
 									END)
      WHERE temp.ActionType IS NULL; 
    
-   /**********9. PROCESS FOR ACTION TYPE**********/
+   /**********10. PROCESS FOR ACTION TYPE**********/
     -- Update Category: ActionType = 1
     UPDATE 		CTS_DataCenter.CTSCustomerClassification AS cate
     INNER JOIN 	Temp_ProblemAccounts AS temp ON 	temp.CustID = cate.CustID
