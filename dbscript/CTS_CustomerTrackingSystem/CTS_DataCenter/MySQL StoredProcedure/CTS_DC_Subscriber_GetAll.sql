@@ -30,7 +30,7 @@ BEGIN
         ,	DATE(sub.CreatedDate) AS CreatedDate
         ,	DATE(sub.TerminatedDate) AS TerminatedDate
         ,	sub.IsTest
-        ,	CASE WHEN COUNT(s.SiteID) > 1 THEN 1 ELSE 0 END AS isMultiSite
+        ,	COUNT(s.SiteID) AS SiteCount
     FROM  CTS_Admin.Subscriber AS sub
         INNER JOIN CTS_DataCenter.MappingSubscriberSite AS s
 			ON s.SubscriberID = sub.SubscriberID
@@ -51,4 +51,3 @@ BEGIN
 END$$
 
 DELIMITER ;
-

@@ -21,6 +21,7 @@ CREATE TABLE CTS_Admin.Subscriber (
 	,	IsTest				TINYINT			NULL
     , 	DCSStatus			BOOLEAN			NULL		COMMENT '0: Inactive; 1: Active; -1: Unhandle (sub that not integrate, is insert new from transaction)'
     ,	DCSIntegrationDate	DATETIME		NULL		
+	,	TerminatedDate 		DATETIME		DEFAULT NULL
 	,	PRIMARY KEY	PK_Subscriber_SubscriberID (SubscriberID)
 	,	UNIQUE KEY	IX_Subscriber_SubscriberName_SubScriberPrefix (SubscriberName,SubScriberPrefix)
 	,	INDEX		IX_Subscriber_SubscriberPrefix(SubscriberPrefix)

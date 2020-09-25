@@ -29,8 +29,9 @@ sp: BEGIN
 			- ip_SubscriberType: 0 => Credit, 1 => Licensees
 	*/
     
-    DECLARE lv_CurrentTime		DATETIME	DEFAULT CURRENT_TIME();
-    DECLARE lv_SubscriberID		INT			DEFAULT IFNULL(ip_SubscriberID, 0);
+    DECLARE lv_CurrentTime		DATETIME		DEFAULT CURRENT_TIME();
+    DECLARE lv_SubscriberID		INT				DEFAULT IFNULL(ip_SubscriberID, 0);
+    DECLARE lv_SPName 			VARCHAR(200)	DEFAULT 'CTS_DC_Subscriber_Update';
     
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
@@ -39,6 +40,7 @@ sp: BEGIN
     
     #============================================
     DROP TEMPORARY TABLE IF EXISTS Temp_Sites;
+    DROP TEMPORARY TABLE IF EXISTS Temp_SitesDelete;
     #============================================
     
 	CREATE TEMPORARY TABLE Temp_Sites( 	 
@@ -48,6 +50,16 @@ sp: BEGIN
         ,	CurrentSubID		INT	DEFAULT 0
         , 	INDEX			IX_Temp_Sites_SiteID (SiteID)
         ,	INDEX			IX_Temp_Sites_CurrentSubID (CurrentSubID)
+    );
+    
+	CREATE TEMPORARY TABLE Temp_SitesDelete( 	 
+			SiteID				INT
+		, 	SiteName			VARCHAR(50)
+		, 	RoleMapping 		TINYINT
+		,	SubscriberID		INT
+        ,	SubscriberGroupID	SMALLINT UNSIGNED
+        , 	INDEX			IX_Temp_Sites_SiteID (SiteID)
+        ,	INDEX			IX_Temp_Sites_CurrentSubID (SubscriberID)
     );
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
@@ -115,6 +127,18 @@ sp: BEGIN
 
 	IF lv_SubscriberID <> 0 THEN
 		#========= UPDATE SUBSCRIBER =========
+		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
+		SELECT	27
+		,	lv_SPName
+        ,	CONCAT('Update subscriber: SubID_', SubscriberID, '; SubName_', SubscriberName, '; SubPrefix_', SubscriberPrefix, '; SubType_', SubscriberType, '; IsTest_', IsTest)
+        ,	lv_CurrentTime
+        ,	ip_UserID
+		FROM CTS_Admin.Subscriber
+        WHERE SubscriberID = lv_SubscriberID
+			AND (LOWER(SubscriberName) <> LOWER(IFNULL(ip_SubscriberName, ''))
+				OR LOWER(SubscriberPrefix) <> LOWER(IFNULL(ip_SubscriberPrefix, ''))
+                OR SubscriberType <> ip_SubscriberType);
+        
 		UPDATE CTS_Admin.Subscriber
         SET		SubscriberName = ip_SubscriberName
 			,	SubscriberPrefix = ip_SubscriberPrefix
@@ -139,6 +163,13 @@ sp: BEGIN
 		FROM CTS_Admin.Subscriber
 		WHERE SubscriberName = ip_SubscriberName
 		LIMIT 1;
+        
+		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
+		VALUES	(28
+			,	lv_SPName
+			,	CONCAT('Insert subscriber: SubID_', lv_SubscriberID, '; SubName_', ip_SubscriberName, '; SubPrefix_', ip_SubscriberPrefix, '; SubType_', ip_SubscriberType, '; IsTest_', EXPORT_SET(ip_IsTest, '1', '0', '', 1))
+			,	lv_CurrentTime
+			,	ip_UserID);
 
 	END IF;
 
@@ -157,8 +188,35 @@ sp: BEGIN
 		,	tmp.SiteName
 	FROM Temp_Sites AS tmp
 	WHERE tmp.CurrentSubID = 0;
+    
+    INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
+    SELECT	25
+		,	lv_SPName
+        ,	CONCAT('Add site mapping: SiteID_', SiteID, '; SiteName_', SiteName, '; Role_', RoleMapping, '; SubID_', lv_SubscriberID, '; SubGroupID_',
+			CASE	WHEN ip_SubscriberType = 0 THEN 1 # Credit
+					WHEN ip_SubscriberType = 1 THEN 2 # Licensee
+					ELSE 2
+			END)
+        ,	lv_CurrentTime
+        ,	ip_UserID
+	FROM Temp_Sites
+    WHERE CurrentSubID = 0;
 
 	#========= UPDATE EXISTING SITES =========
+	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
+    SELECT	24
+		,	lv_SPName
+        ,	CONCAT('Update site mapping: SiteID_', site.SiteID, '; SiteName_', site.SiteName, '; Role_', site.RoleMapping, '; SubID_', site.SubscriberID, '; SubGroupID_', site.SubscriberGroupID)
+        ,	lv_CurrentTime
+        ,	ip_UserID
+	FROM CTS_DataCenter.MappingSubscriberSite AS site
+    INNER JOIN Temp_Sites AS tmp
+		ON site.SiteID = tmp.SiteID
+		AND site.SubscriberID = tmp.CurrentSubID
+    WHERE tmp.CurrentSubID = lv_SubscriberID
+		AND (site.SiteName <> tmp.SiteName
+			OR site.RoleMapping <> tmp.RoleMapping);
+    
     UPDATE CTS_DataCenter.MappingSubscriberSite AS site
     INNER JOIN Temp_Sites AS tmp
 		ON site.SiteID = tmp.SiteID
@@ -166,6 +224,34 @@ sp: BEGIN
     SET		site.SiteName = tmp.SiteName
 		,	site.RoleMapping = tmp.RoleMapping
 	WHERE tmp.CurrentSubID = lv_SubscriberID;
+
+	#========= REMOVE UNWANTED SITES =========
+    INSERT INTO Temp_SitesDelete(SiteID, SiteName, RoleMapping, SubscriberID, SubscriberGroupID)
+    SELECT	site.SiteID
+		,	site.SiteName
+        ,	site.RoleMapping
+        ,	site.SubscriberID
+        ,	site.SubscriberGroupID
+    FROM CTS_DataCenter.MappingSubscriberSite AS site
+    LEFT JOIN Temp_Sites AS tmp
+		ON site.SiteID = tmp.SiteID
+	WHERE site.SubscriberID = lv_SubscriberID
+		AND tmp.SiteID IS NULL;
+
+	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
+    SELECT	23
+		,	lv_SPName
+        ,	CONCAT('Remove site mapping: SiteID_', SiteID, '; SiteName_', SiteName, '; Role_', RoleMapping, '; SubID_', SubscriberID, '; SubGroupID_', SubscriberGroupID)
+        ,	lv_CurrentTime
+        ,	ip_UserID
+	FROM Temp_SitesDelete;
+
+	DELETE site
+    FROM CTS_DataCenter.MappingSubscriberSite AS site
+    INNER JOIN Temp_SitesDelete AS del
+		ON site.SiteID = del.SiteID
+        AND site.SubscriberID = del.SubscriberID
+	WHERE site.SubscriberID = lv_SubscriberID;
 
 END$$
 
