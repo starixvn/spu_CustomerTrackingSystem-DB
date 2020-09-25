@@ -1,6 +1,6 @@
 USE [bodb_VR2Model]
 GO
-/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_GetAccummulatedInfo]    Script Date: 9/21/2020 3:40:33 AM ******/
+/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_GetAccummulatedInfo]    Script Date: 9/25/2020 4:36:17 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -82,7 +82,7 @@ BEGIN
 
 	-- Init sportgroups
 	INSERT INTO #tmpSportGroups(SportId, MainDBSportId)
-	VALUES (1,1), (2,2), (4,43), (6,-100), (7,200); -- 7 for general (all sports)
+	VALUES (1,1), (2,2), (4,43), (6,-100);
 
 	INSERT INTO #tmpSportGroups(SportId, MainDBSportId)
 	SELECT DISTINCT 3, s.SportType
@@ -117,16 +117,14 @@ BEGIN
 			,	MAX(a.ActiveDays)
 		FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 			LEFT JOIN #tmpSportGroups AS s WITH(NOLOCK) ON a.SportId = s.MainDBSportId
-		WHERE a.SportId != 200 -- Not General Sport
 		GROUP BY a.CustId, CASE WHEN s.SportId IS NULL THEN 5 ELSE s.SportId END
 		UNION
 		SELECT	s.CustId
 			,	@GENERAL_SPORTID
-			,	SUM(s.TurnoverRM)
-			,	SUM(s.WinlossRM)
+			,	CASE WHEN SUM(s.TurnoverRM) = 0 THEN 0 ELSE SUM(s.WinlossRM)/SUM(s.TurnoverRM)*100 END
 			,	SUM(s.BetCount)
+			,	MAX(s.ActiveDays)
 		FROM #tmpCustomerAccummulatedInfo AS s WITH(NOLOCK)
-		WHERE s.SportId = 200 -- General Sport
 		GROUP BY s.CustId
 	)
 	SELECT	s.CustId

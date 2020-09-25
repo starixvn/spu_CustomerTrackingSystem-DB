@@ -60,9 +60,12 @@ BEGIN
     END IF;
     
     #========= GET DATA BY FILTERS =========
-    INSERT INTO Temp_ProbationCustomer(CTSCustID, CustID, SportGroupID, TargetCategoryID, TargetCategoryName, FirstMargin, CreatedDate, CreatedTime, DaysLeft)
+    INSERT INTO Temp_ProbationCustomer(CTSCustID, CustID, SubscriberID, Username, Site, SportGroupID, TargetCategoryID, TargetCategoryName, FirstMargin, CreatedDate, CreatedTime, DaysLeft)
     SELECT	pam.CTSCustID
 			, pam.CustID
+            , cust.SubscriberID
+            , cust.Username
+            , cust.Site
             , pam.SportGroupID
             , pam.TargetCategoryID
             , cc.CategoryName
@@ -73,6 +76,8 @@ BEGIN
     FROM CTS_DataCenter.ProbationAccountMonitor AS pam
     INNER JOIN CTS_DataCenter.CustomerCategory AS cc
 		ON pam.TargetCategoryID = cc.CategoryID
+	INNER JOIN CTS_DataCenter.CTSCustomer AS cust
+		ON pam.CustID = cust.CustID
     WHERE (lv_CTSCustID = 0 OR lv_CTSCustID = pam.CTSCustID)
         AND	CASE 	WHEN IFNULL(ip_CategoryMode, -1) = 1 THEN 200	# General catergory
 					WHEN IFNULL(ip_CategoryMode, -1) = 2 THEN 1		# Detailed category
@@ -81,14 +86,9 @@ BEGIN
     
     #========= UPDATE MISC INFOR =========
     UPDATE Temp_ProbationCustomer AS tmp
-    INNER JOIN CTS_DataCenter.CTSCustomer AS c
-		ON tmp.CTSCustID = c.CTSCustID
 	LEFT JOIN CTS_DataCenter.SportGroup AS sg
 		ON tmp.SportGroupID = sg.SportGroupID
-	SET tmp.SubscriberID = c.SubscriberID
-		, tmp.Username = c.UserName
-        , tmp.Site = c.Site
-        , tmp.SportGroupName = sg.SportGroupName
+	SET tmp.SportGroupName = sg.SportGroupName
         , tmp.DaysLeft =	CASE	WHEN tmp.DaysLeft < 0 THEN 0
 									ELSE tmp.DaysLeft
 							END;
@@ -107,7 +107,6 @@ BEGIN
             , DaysLeft
     FROM Temp_ProbationCustomer
     WHERE (IFNULL(ip_DaysLeft, -1) < 0 OR DaysLeft = ip_DaysLeft)
-		AND IFNULL(CTSCustID, 0) > 0
     ORDER BY DaysLeft DESC;
     
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
