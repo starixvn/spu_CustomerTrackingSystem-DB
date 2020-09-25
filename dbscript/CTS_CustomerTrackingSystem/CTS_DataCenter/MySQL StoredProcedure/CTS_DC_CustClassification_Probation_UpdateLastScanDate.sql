@@ -1,6 +1,9 @@
+USE `CTS_DataCenter`;
+DROP procedure IF EXISTS `CTS_DC_CustClassification_Probation_UpdateLastScanDate`;
+
 DELIMITER $$
-DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_CustClassification_Probation_UpdateLastScanDate$$
-CREATE DEFINER=ctsService@`%` PROCEDURE CTS_DataCenter.CTS_DC_CustClassification_Probation_UpdateLastScanDate(IN ip_CustSport JSON)
+USE `CTS_DataCenter`$$
+CREATE DEFINER=`ctsService`@`%` PROCEDURE `CTS_DC_CustClassification_Probation_UpdateLastScanDate`(IN ip_CustSport JSON)
 BEGIN
 	/*
 		Created:	20200918@Harvey.Nguyen
@@ -25,7 +28,7 @@ BEGIN
         , PRIMARY KEY	PK_Temp_CustSport_CTSCustID(CustID, SportGroupID)    
     );     
     
-    INSERT INTO Temp_CustSport(CustID, SportGroupID)
+    INSERT INTO Temp_CustSport(CustID, SportGroupID) 
 	SELECT 		tmpTable.CustID
 				, tmpTable.SportGroupID
 	FROM JSON_TABLE(ip_CustSport,
@@ -38,8 +41,8 @@ BEGIN
     INNER JOIN 	Temp_CustSport AS tmpCs
 				ON cl.CustID = tmpCs.CustID
 				AND	cl.SportGroupID = tmpCs.SportGroupID
-    SET			cl.LastScannedDate = DATE(current_time());
+    SET			cl.LastScannedDate = CURRENT_DATE();
     
 END$$
-DELIMITER ;
 
+DELIMITER ;
