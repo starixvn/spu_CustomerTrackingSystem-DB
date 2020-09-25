@@ -142,7 +142,9 @@ BEGIN
 			, temp.CTSCustID
             , temp.SportGroupID
 			, temp.CategoryID
-			, (temp.WinlossRM/ temp.TurnoverRM) * 100
+			, CASE WHEN temp.WinlossRM != 0 THEN (temp.WinlossRM/ temp.TurnoverRM) * 100
+                   ELSE 0
+			  END AS FirstMargin
 			, DATE(temp.LastModifiedDate)
 			, lv_CreatedBy
 			, temp.LastModifiedDate

@@ -176,7 +176,9 @@ BEGIN
 			, temp.CTSCustID
             , temp.SportGroupID
 			, temp.CategoryID
-			, (temp.WinlossRM/ temp.TurnoverRM) * 100
+			, CASE WHEN temp.WinlossRM != 0 THEN (temp.WinlossRM/ temp.TurnoverRM) * 100
+                   ELSE 0
+			  END AS FirstMargin
 			, DATE(temp.LastModifiedDate)
 			, lv_CreatedBy
 			, temp.LastModifiedDate
@@ -222,7 +224,7 @@ BEGIN
     WHERE	temp.ActionType IN (-2, -1, 0, 1, 2);   
    
     SET SQL_SAFE_UPDATES = 1;
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ExistedClassification;    
     DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;    
