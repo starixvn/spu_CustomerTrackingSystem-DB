@@ -1,6 +1,6 @@
 USE [bodb_VR2Model]
 GO
-/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_Probation_CheckLoser]    Script Date: 9/21/2020 3:43:07 AM ******/
+/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_Probation_CheckLoser]    Script Date: 9/25/2020 4:52:28 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -79,7 +79,7 @@ BEGIN
 
 	-- Init sportgroups
 	INSERT INTO #tmpSportGroups(SportId, MainDBSportId)
-	VALUES (1,1), (2,2), (4,43), (6,-100), (200,200); -- 7 for general (all sports)
+	VALUES (1,1), (2,2), (4,43), (6,-100);
 
 	INSERT INTO #tmpSportGroups(SportId, MainDBSportId)
 	SELECT DISTINCT 3, s.SportType
@@ -115,7 +115,6 @@ BEGIN
 		,	SUM(s.Winloss)
 		,	SUM(s.BetCount)
 	FROM #tmpRawData AS s WITH(NOLOCK)
-	WHERE s.SportId = 200 -- General Sport
 	GROUP BY s.CustId;
 
 	-- Sum data for Parlay
@@ -139,7 +138,7 @@ BEGIN
 			,	SUM(a.BetCount)
 		FROM #tmpRawData AS a WITH(NOLOCK)
 			LEFT JOIN #tmpSportGroups AS s WITH(NOLOCK) ON a.SportId = s.MainDBSportId
-		WHERE a.BettypeId NOT IN (9, 29) AND a.SportId != 200 -- Not Parlay, General Sport
+		WHERE a.BettypeId NOT IN (9, 29)
 		GROUP BY a.CustId, CASE WHEN s.SportId IS NULL THEN 5 ELSE s.SportId END
 	)
 	INSERT INTO #tmpSportDailyData(CustId, SportId, Turnover, Winloss, BetCount)
