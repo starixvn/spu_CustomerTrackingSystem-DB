@@ -225,6 +225,10 @@ sp: BEGIN
 		,	site.RoleMapping = tmp.RoleMapping
         ,	site.SubscriberName = ip_SubscriberName
         ,	site.SubscriberType = ip_SubscriberType
+        ,	site.SubscriberGroupID = CASE	WHEN ip_SubscriberType = 0 THEN 1 # Credit
+											WHEN ip_SubscriberType = 1 THEN 2 # Licensee
+											ELSE 2
+									 END
 	WHERE tmp.CurrentSubID = lv_SubscriberID;
 
 	#========= REMOVE UNWANTED SITES =========
