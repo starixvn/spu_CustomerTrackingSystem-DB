@@ -48,11 +48,13 @@ BEGIN
     
     SET 	lv_StartTime = CURRENT_TIMESTAMP(4);	
     
+    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
+	SET SQL_SAFE_UPDATES = 0;
+    
     INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
     VALUES(lv_ExecKey, lv_StepID, lv_SPName,  lv_Notes, lv_StartTime);
 	### PERFORMANCE: END
     
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     DROP TEMPORARY TABLE IF EXISTS Temp_ScanList;
 	CREATE TEMPORARY TABLE Temp_ScanList(
 		  CustID BIGINT UNSIGNED
@@ -130,8 +132,13 @@ BEGIN
             , z.FromID = lv_FromID
             , z.ToID		= lv_ToID
     WHERE	z.ExecKey = lv_ExecKey AND z.StepID = lv_StepID ;     
-    
     ### PERFORMANCE: END 
+    
+    SET SQL_SAFE_UPDATES = 1;
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    
+	DROP TEMPORARY TABLE IF EXISTS Temp_ScanList;
+    
 END$$
 
 DELIMITER ;
