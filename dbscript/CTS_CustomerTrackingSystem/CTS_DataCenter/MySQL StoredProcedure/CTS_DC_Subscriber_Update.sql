@@ -223,6 +223,8 @@ sp: BEGIN
 		AND site.SubscriberID = tmp.CurrentSubID
     SET		site.SiteName = tmp.SiteName
 		,	site.RoleMapping = tmp.RoleMapping
+        ,	site.SubscriberName = ip_SubscriberName
+        ,	site.SubscriberType = ip_SubscriberType
 	WHERE tmp.CurrentSubID = lv_SubscriberID;
 
 	#========= REMOVE UNWANTED SITES =========
