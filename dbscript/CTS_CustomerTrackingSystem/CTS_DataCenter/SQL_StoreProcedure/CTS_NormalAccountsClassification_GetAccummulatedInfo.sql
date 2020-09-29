@@ -1,6 +1,6 @@
 USE [bodb_VR2Model]
 GO
-/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_GetAccummulatedInfo]    Script Date: 9/25/2020 4:36:17 AM ******/
+/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_GetAccummulatedInfo]    Script Date: 9/28/2020 10:35:00 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
