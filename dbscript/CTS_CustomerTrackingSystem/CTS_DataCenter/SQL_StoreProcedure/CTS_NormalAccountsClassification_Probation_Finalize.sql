@@ -1,6 +1,6 @@
 USE [bodb_VR2Model]
 GO
-/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_Probation_Finalize]    Script Date: 9/28/2020 10:34:46 PM ******/
+/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_Probation_Finalize]    Script Date: 9/29/2020 5:12:53 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -288,9 +288,10 @@ BEGIN
 	FROM #tmpCustomers AS c
 		INNER JOIN	(
 						SELECT f.CustId, f.SportId, 
-							CASE WHEN d.Turnover = 0 THEN 0 ELSE (d.Winloss / d.Turnover * 100) END AS Margin
+							CASE WHEN SUM(d.Turnover) = 0 THEN 0 ELSE (SUM(d.Winloss) / SUM(d.Turnover) * 100) END AS Margin
 						FROM #tmpFilteredCustomers AS f WITH(NOLOCK)
-							INNER JOIN #tmpSportDailyData AS d WITH(NOLOCK) ON f.CustId = d.CustId AND d.SportId = @GENERAL_SPORTID
+							INNER JOIN #tmpSportDailyData AS d WITH(NOLOCK) ON f.CustId = d.CustId AND d.SportId = f.SportId
+						GROUP BY f.CustId, f.SportId
 					) AS t ON c.CustId = t.CustId AND c.SportId = t.SportId;
 	
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
