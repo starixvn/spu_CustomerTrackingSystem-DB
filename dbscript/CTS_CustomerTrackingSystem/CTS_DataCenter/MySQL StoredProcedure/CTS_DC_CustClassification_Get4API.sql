@@ -3,9 +3,9 @@ DROP procedure IF EXISTS `CTS_DC_CustClassification_Get4API`;
 
 DELIMITER $$
 USE `CTS_DataCenter`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_CustClassification_Get4API`(
-	IN ip_CustIDs 			VARCHAR(2000),
-    IN ip_ParentCateID		SMALLINT
+CREATE DEFINER=`ctsWeb`@`%` PROCEDURE `CTS_DC_CustClassification_Get4API`(
+	IN ip_CustIDs			VARCHAR(2000),
+    IN ip_ParentCateIDs		VARCHAR(500)
 )
 BEGIN
 	/*
@@ -15,18 +15,30 @@ BEGIN
 		Original: 
 		Revisions:
             - 20200910@Harvey.Nguyen [Redmine ID: #140971]: init sp
+            - 20200929@Lex.Khuat [Redmine ID: #141962]: Support return problem account categories by 
 		Param's Explanation:
 	*/ 
 	DECLARE v_remark VARCHAR(50);
     
     DROP TEMPORARY TABLE IF EXISTS TempCustIDs;
     CREATE TEMPORARY TABLE TempCustIDs (
-			CustID 		BIGINT UNSIGNED PRIMARY KEY
+			CustID 			BIGINT UNSIGNED PRIMARY KEY
+    );
+    
+    DROP TEMPORARY TABLE IF EXISTS TempParentIDs;
+    CREATE TEMPORARY TABLE TempParentIDs (
+			ParentID 		SMALLINT UNSIGNED PRIMARY KEY
     );
     
 	SET @sql = CONCAT("INSERT INTO TempCustIDs (CustID) VALUES ('", REPLACE(ip_CustIDs, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
+    
+    IF IFNULL(ip_ParentCateIDs, '') <> '' THEN
+		SET @sql = CONCAT("INSERT INTO TempParentIDs (ParentID) VALUES ('", REPLACE(ip_ParentCateIDs, ",", "'),('"),"');");
+		PREPARE stmt2 FROM @sql;
+		EXECUTE stmt2;
+	END IF;
 
     DROP TEMPORARY TABLE IF EXISTS tempLatestRecordOfCategory;
     CREATE TEMPORARY TABLE tempLatestRecordOfCategory (
@@ -60,8 +72,8 @@ BEGIN
 		INNER JOIN TempCustIDs AS cust ON cla.CustID = cust.CustID
 		INNER JOIN CTS_DataCenter.CustomerCategory AS a ON cla.CategoryID = a.CategoryID
 		INNER JOIN CTS_DataCenter.CustomerCategory AS b ON a.ParentID = b.CategoryID
-    WHERE (ip_ParentCateID = -1
-			OR a.ParentID IN (ip_ParentCateID,50));    
+    WHERE (IFNULL(ip_ParentCateIDs, '') = ''
+			OR a.ParentID IN (SELECT ParentID FROM TempParentIDs));    
 
     SELECT 	c.CustID AS CustID
 		,	b.CategoryID AS ParentCategoryID
