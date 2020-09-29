@@ -83,7 +83,7 @@ sp: BEGIN
 
     #========= GET DATA TO UPDATE =========
 	INSERT INTO Temp_Sites (SiteID, SiteName, RoleMapping, CurrentSubID)
-	SELECT	DISTINCT
+	SELECT
 			tmpTable.SiteID
 		,	tmpTable.SiteName
         ,	tmpTable.RoleMapping

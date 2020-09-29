@@ -26,7 +26,8 @@ sp: BEGIN
 			- call CTS_DataCenter.CTS_DC_CustClassification_Probation_Update('[{"CustID": 1408, "SportGroupID": 1, "NewCategoryID": 6}, {"CustID": 1408, "SportGroupID": 200, "NewCategoryID": 202}]', '', 8, @aaaa);
 	*/
     
-    DECLARE lv_CurrentTime	DATETIME DEFAULT CURRENT_TIME();
+    DECLARE lv_CurrentTime	DATETIME		DEFAULT CURRENT_TIME();
+    DECLARE lv_SPName 		VARCHAR(200)	DEFAULT 'CTS_DC_CustClassification_Probation_Update';
 
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
@@ -86,14 +87,7 @@ sp: BEGIN
 		ON	cc.CategoryID = cate.CategoryID
 	WHERE temp.ParentID = cate.ParentID
 		AND	cate.ParentID in (1, 200);
-
-    #========= REMOVE PROBATION MONITOR DATA =========
-    DELETE pam
-    FROM CTS_DataCenter.ProbationAccountMonitor AS pam
-    INNER JOIN Temp_TargetCustomerCategory AS temp
-		ON	temp.CustID = pam.CustID
-        AND	temp.SportGroupID = pam.SportGroupID;
-    
+       
     #========= INSERT NEW CUSTOMER CATEGORIES =========
     INSERT INTO CTS_DataCenter.CTSCustomerClassification
     (CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
@@ -127,6 +121,21 @@ sp: BEGIN
             , 0
             , DATE(lv_CurrentTime)
 	FROM 	Temp_TargetCustomerCategory AS temp;
+
+    #========= REMOVE PROBATION MONITOR DATA =========
+    DELETE pam
+    FROM CTS_DataCenter.ProbationAccountMonitor AS pam
+    INNER JOIN Temp_TargetCustomerCategory AS temp
+		ON	temp.CustID = pam.CustID
+        AND	temp.SportGroupID = pam.SportGroupID;
+    
+    INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
+    SELECT	29
+		,	lv_SPName
+        ,	CONCAT('Untag probation: Count_', COUNT(DISTINCT CustID), '; Details_', LEFT(GROUP_CONCAT(DISTINCT CustID ORDER BY CustID ASC SEPARATOR ','), 450))
+        ,	lv_CurrentTime
+        ,	ip_CreatedBy
+	FROM Temp_TargetCustomerCategory;
     
     #========= SKIP SPECIAL + ROBOT FROM SENDING CUSTOMER CLASS TO MAINDB =========
     DELETE temp
