@@ -108,7 +108,8 @@ CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
         , SiteID			INT
         , SiteName			VARCHAR(50)
         , Comments			VARCHAR(200)
-		, PRIMARY KEY	PK_MappingSubscriberSite_SubscriberID(SiteID, SubscriberID)    
+		, PRIMARY KEY	PK_MappingSubscriberSite_SiteIDSubscriberID(SiteID, SubscriberID)
+		, INDEX			IX_MappingSubscriberSite_SubscriberID(SubscriberID)
 	) ENGINE=INNODB;
 
 	# ======SubscriberGroup=============================================
