@@ -3,7 +3,7 @@ DROP procedure IF EXISTS `CTS_DC_CustClassification_Get4API`;
 
 DELIMITER $$
 USE `CTS_DataCenter`$$
-CREATE DEFINER=`ctsWeb`@`%` PROCEDURE `CTS_DC_CustClassification_Get4API`(
+CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_CustClassification_Get4API`(
 	IN ip_CustIDs			VARCHAR(2000),
     IN ip_ParentCateIDs		VARCHAR(500)
 )
@@ -30,9 +30,11 @@ BEGIN
 			ParentID 		SMALLINT UNSIGNED PRIMARY KEY
     );
     
-	SET @sql = CONCAT("INSERT INTO TempCustIDs (CustID) VALUES ('", REPLACE(ip_CustIDs, ",", "'),('"),"');");
-	PREPARE stmt1 FROM @sql;
-	EXECUTE stmt1;
+    IF IFNULL(ip_CustIDs, '') <> '' THEN
+		SET @sql = CONCAT("INSERT INTO TempCustIDs (CustID) VALUES ('", REPLACE(ip_CustIDs, ",", "'),('"),"');");
+		PREPARE stmt1 FROM @sql;
+		EXECUTE stmt1;
+    END IF;
     
     IF IFNULL(ip_ParentCateIDs, '') <> '' THEN
 		SET @sql = CONCAT("INSERT INTO TempParentIDs (ParentID) VALUES ('", REPLACE(ip_ParentCateIDs, ",", "'),('"),"');");
