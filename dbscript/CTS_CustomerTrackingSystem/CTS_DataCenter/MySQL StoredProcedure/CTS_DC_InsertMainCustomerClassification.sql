@@ -15,6 +15,7 @@ BEGIN
 				- [20200908@Irena.Vo][141020]: Enhance Exclude VVIP Customers, Pin category 
 				- [20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow. Have actioned Probation is initial data yet.
                 - [20200923@Irena.Vo][141755]: Enhance SP.
+                - [20200930@Irena.Vo][141755]: Add get parentid for process update category 
                 
 		Param's Explanation (filtered by):
 			call CTS_DataCenter.CTS_DC_InsertMainCustomerClassification
@@ -97,22 +98,23 @@ BEGIN
    
 	/**********6. UPDATE ACTION TYPE**********/
      UPDATE 	Temp_NewClassification AS temp
-	LEFT JOIN 	Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID
-	SET 		temp.ActionType =  (CASE 
+	 LEFT JOIN 	Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID
+     INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID= temp.CategoryID 
+	 SET 		temp.ActionType =  (CASE 
                                          -- No action
                                          WHEN ex.CategoryID = temp.CategoryID THEN 3
-										 -- Insert Category
-										 WHEN ex.CategoryID IS NULL THEN 0 -- NULL to Other Category. Include Probation
 										 -- Update Category to Probation & Insert Probation List
                                          WHEN  (ex.CategoryID NOT IN (203, 204, 206) AND temp.CategoryID IN (203, 204, 206)) -- Normal, VIP to Smart, High Risk, Probation
                                                 OR (ex.CategoryID IN (203, 204) AND temp.CategoryID = 206)  -- Smart, High Risk to Probation
 											   THEN 1
 										-- Update category & Delete Probation if existed Probation before (Scanned is Smart/High Risk)
 										  WHEN (ex.CategoryID = 206 AND temp.CategoryID IN (203, 204)) THEN -2 -- Update category & Delete Probation list
-										-- Only update category
+										 -- Only update category
 										  WHEN ex.CategoryID != temp.CategoryID THEN 2 -- Update category (Not Smart, High Risk, Probation) 
+                                         -- Insert Category
+										 WHEN ex.CategoryID IS NULL THEN 0 -- NULL to Other Category. Include Probation
 									END)
-     WHERE temp.ActionType IS NULL; 
+     WHERE cc.ParentID = 200 AND temp.ActionType IS NULL; 
    
    /**********7. PROCESS FOR ACTION TYPE**********/
    -- Remove Probation Account Monitor: ActionType = -2
@@ -123,8 +125,7 @@ BEGIN
     
     -- Update Category: ActionType = -2, 1, 2
     UPDATE 		CTS_DataCenter.CTSCustomerClassification AS cate
-    INNER JOIN 	Temp_NewClassification AS temp ON 	temp.CustID = cate.CustID
-    INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = cate.CategoryID
+    INNER JOIN 	Temp_NewClassification AS temp ON 	temp.CustID = cate.CustID AND temp.SportGroupID = cate.SportGroupID
  	SET   cate.CTSCustID = temp.CTSCustID
         , cate.SubscriberID  = temp.SubscriberID
         , cate.CategoryID = (CASE WHEN (temp.ActionType = 1 AND temp.CategoryID IN (203, 204)) THEN 206 -- Update category to Smart Punter, High Risk Punter
@@ -133,7 +134,7 @@ BEGIN
         , cate.LastModifiedDate = temp.LastModifiedDate 
         , cate.LastModifiedBy = lv_CreatedBy
         , cate.LastScannedDate = GREATEST(DATE(temp.LastModifiedDate),cate.LastScannedDate)
-	WHERE temp.ActionType IN (-2, 1, 2) AND cc.ParentID = 200 AND cc.IsUsedManually = 0;
+	WHERE temp.ActionType IN (-2, 1, 2);
     
     -- Insert Probation Account Monitor: ActionType = 0, 1
     INSERT  INTO CTS_DataCenter.ProbationAccountMonitor

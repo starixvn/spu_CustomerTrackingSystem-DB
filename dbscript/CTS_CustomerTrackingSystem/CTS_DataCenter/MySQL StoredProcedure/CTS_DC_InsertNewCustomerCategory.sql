@@ -12,9 +12,10 @@ BEGIN
 		Original:
 
 		Revisions:
-			- [20200703@Long.Luu][136903]: created
+			- [20200703@Long.Luu][136903]: created 
             - [20200908@Irena.Vo][141020]: Enhance ignore VVIP & Pin category 
             - [20200923@Irena.Vo][141755]: Enhance SP
+            - [20200930@Irena.Vo][141755]: Covered get Existed Category before. Updated temp table. Updated primary key.
             
 		Param's Explanation (filtered by):
              call CTS_DC_InsertNewCustomerCategory('1,2,3');
@@ -29,12 +30,12 @@ BEGIN
             CustID			BIGINT UNSIGNED PRIMARY KEY
         ,	CTSCustID		BIGINT UNSIGNED
         ,	SubscriberID	INT
-        ,   ActionType		INT-- Insert: 0; Ignore: 1
-		,	INDEX				IX_Temp_NewCustomers_ActionType(ActionType)  
+        ,   ActionType		INT DEFAULT 0 -- Insert: 0; Ignore: 1
+		,	INDEX			IX_Temp_NewCustomers_ActionType(ActionType)  
 	);
 
-	 DROP TEMPORARY TABLE IF EXISTS Temp_ExistedNewCustomers;    
-	 CREATE TEMPORARY TABLE Temp_ExistedNewCustomers 
+	 DROP TEMPORARY TABLE IF EXISTS Temp_ExistedCategory;    
+	 CREATE TEMPORARY TABLE Temp_ExistedCategory 
      (	  
             CustID			BIGINT UNSIGNED
      );
@@ -57,23 +58,16 @@ BEGIN
 	INNER JOIN	CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.CustSubID = 0
 	SET		temp.CTSCustID = cust.CTSCustID, temp.SubscriberID = cust.SubscriberID; 
      
-    /**********4. GET EXISTED NEW CUSTOMER**********/
-    INSERT INTO Temp_ExistedNewCustomers
+    /**********4. GET EXISTED CATEGORY**********/
+    INSERT INTO Temp_ExistedCategory
     SELECT cate.CustID
     FROM Temp_NewCustomers AS temp
-    INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID
-    WHERE cate.CategoryID = 2; 
+    INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID;
     
     /**********5. UPDATE ACTION TYPE**********/
 	UPDATE 	Temp_NewCustomers AS temp
-	LEFT JOIN 	Temp_ExistedNewCustomers AS ex ON ex.CustID = temp.CustID
-	SET 		temp.ActionType =  (CASE 
-                                         -- no action
-                                         WHEN ex.CustID = temp.CustID THEN 1
-										 -- insert Category
-										 WHEN ex.CustID IS NULL THEN 0
-									END)
-     WHERE temp.ActionType IS NULL; 
+	INNER JOIN 	Temp_ExistedCategory AS ex ON ex.CustID = temp.CustID
+	SET 		temp.ActionType = 1;			
     
 	/**********6. PROCESS FOR ACTION TYPE**********/
 	-- Insert Category List: ActionType = 0
@@ -114,7 +108,7 @@ BEGIN
     SET SQL_SAFE_UPDATES = 1;
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
-	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedNewCustomers;    
+	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedCategory;    
     DROP TEMPORARY TABLE IF EXISTS Temp_NewCustomers; 
     
 END$$
