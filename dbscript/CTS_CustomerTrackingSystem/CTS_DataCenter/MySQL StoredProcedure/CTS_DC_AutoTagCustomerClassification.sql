@@ -122,6 +122,12 @@ BEGIN
     INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = cate.CategoryID 
     WHERE cc.ParentID = 1; -- Save existed category before so that insert new probation list with Probation Category from New Member
     
+    /*IGNORE PROBATION TO VIP OR NORMAL*/ 
+	DELETE temp
+    FROM Temp_NewClassification AS temp 
+    INNER JOIN Temp_ExistedClassification AS ex on ex.CustID = temp.CustID AND ex.SportGroupID = temp.SportGroupID 
+	WHERE ex.CategoryID = 10 AND temp.CategoryID IN (4, 5);
+    
     /*DELETE NO CHANGED CATEGORY*/ 
     DELETE temp
     FROM Temp_NewClassification AS temp 
@@ -217,8 +223,8 @@ BEGIN
 			, temp.CTSCustID
             , temp.SportGroupID
 			, temp.CategoryID
-			, CASE WHEN temp.WinlossRM != 0 THEN (temp.WinlossRM/ temp.TurnoverRM) * 100
-                   ELSE 0
+			, CASE WHEN temp.TurnoverRM = 0 THEN 0
+                   ELSE (temp.WinlossRM/temp.TurnoverRM) * 100
 			  END AS FirstMargin
 			, DATE(temp.LastModifiedDate)
 			, lv_CreatedBy
@@ -230,13 +236,13 @@ BEGIN
 						OR (ex.SportGroupID IS NULL AND temp.CategoryID = 10)	); -- New Member & New Category
                 
     INSERT  INTO CTS_DataCenter.ProbationAccountMonitor
-    (CustID, CTSCustID, SportGroupID, TargetCategoryID, FirstMargin, CreatedDate, CreatedBy, CreatedTime)
+    (CustID, CTSCustID, SportGroupID, TargetCategoryID, FirstMargin, CreatedDate, CreatedBy, CreatedTime) 
 	SELECT    temp.CustID
 			, temp.CTSCustID
             , temp.SportGroupID
 			, temp.CategoryID
-			, CASE WHEN temp.WinlossRM != 0 THEN (temp.WinlossRM/ temp.TurnoverRM) * 100
-                   ELSE 0
+			, CASE WHEN temp.TurnoverRM = 0 THEN 0
+                   ELSE (temp.WinlossRM / temp.TurnoverRM) * 100
 			  END AS FirstMargin
 			, DATE(temp.LastModifiedDate)
 			, lv_CreatedBy
@@ -245,7 +251,7 @@ BEGIN
      LEFT JOIN   Temp_ExistedClassification AS ex on ex.CustID = temp.CustID AND ex.SportGroupID = temp.SportGroupID
 	 WHERE  temp.ActionType = 1 
 				AND (  (ex.CategoryID IN (6, 7) AND temp.CategoryID = 10)
-						OR (ex.CategoryID NOT IN (6, 7, 10) AND temp.CategoryID IN (6, 7, 10)) );  -- Old Category
+						OR (ex.CategoryID IN (6, 7, 10) AND temp.CategoryID IN (6, 7, 10)) );  -- Old Category
 	/***************************************************END PROBATION*************************************************/
      
     SET SQL_SAFE_UPDATES = 1;
