@@ -14,7 +14,7 @@ BEGIN
 		Revisions:
 				[20200612@Casey.Huynh][135324]: Enhance SP      
                 [20200618@Casey.Huynh][135324]: Enhance SP  
-                [20200701@Casey.Huynh][135324]: Chagne Flow and Store more Info
+                [20200701@Casey.Huynh][135324]: Change Flow and Store more Info
 				[20200903@Irena.Vo][137550]: Ignore Main category with ActionType = -1. 
                 [20200903@Irena.Vo][141042]: Enhance get IsUsedManually = 0 for update category
                 [20200908@Irena.Vo][141020]: Enhance exclude VVIP Customers, Pin Category
@@ -22,12 +22,12 @@ BEGIN
 				[20200923@Irena.Vo][141755]: Enhance SP. 
                 [20200929@Irena.Vo][141755]: Enhance SP. DELETE TEMP NEW CATEGORY.
 				[20200930@Irena.Vo][141755]: Enhance SP. FIX issue by have not delete TEMP NEW CATEGORY if insert with other category in the same time
+                [20201001@Irena.Vo][141755]: Fix issue duplicate category & enhance logic
                 
 		Param's Explanation (filtered by):
                 call CTS_DataCenter.CTS_DC_AutoTagCustomerClassification
                 ('[{"CustId": "43600890","SportGroupId":1, "CategoryId":"10", "CreatedTime": "2020-09-19", "TurnoverRM":"100", "WinlossRM":"11","BetCount":"11", "ActiveDays":"10"}]');
 	*/   
-    /**********1. PREPARE PARAMS**********/
      DECLARE     lv_CreatedBy INT DEFAULT 10278938;  
  
      DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;    
@@ -42,16 +42,11 @@ BEGIN
 		, ActiveDays		INT	
 		, CTSCustID			BIGINT UNSIGNED DEFAULT 0
         , SubscriberID		INT DEFAULT 0    
-		, ActionType		INT -- Insert: 0; Update Category (Probation): 1; Update Category: 2; Delete New member: -1; Update Category & Delete Probation list: -2; No action: 3
+		, ActionType		SMALLINT DEFAULT 0 -- Insert: 0; Update: 1
         , PRIMARY KEY		PK_Temp_NewClassification_CustID_SportGroupID(CustID, SportGroupID) 
         , INDEX 			IX_Temp_NewClassification_ActionType(ActionType)        
      );     
     
-	 DROP TEMPORARY TABLE IF EXISTS Temp_NewMember;    
-	 CREATE TEMPORARY TABLE Temp_NewMember 
-     (	  CustID			BIGINT UNSIGNED        
-     );
-     
 	 DROP TEMPORARY TABLE IF EXISTS Temp_OtherCategory;    
 	 CREATE TEMPORARY TABLE Temp_OtherCategory 
      (	  CustID			BIGINT UNSIGNED        
@@ -86,34 +81,29 @@ BEGIN
             , ActiveDays		INT					PATH "$.ActiveDays"		
 		 )) AS temp;   
 	
-    
-	 SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
+     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
 	 SET SQL_SAFE_UPDATES = 0;
+     
+	/*******************************************START DATA*********************************************************/ 
+    /*IGNORE DANGEROUS CUSTOMER*/
+    DELETE temp
+    FROM Temp_NewClassification AS temp
+    WHERE temp.CategoryID = 0;
     
-    /**********2. IGNORE VVIP - PIN CATEGORY**********/
+    /*IGNORE VVIP - PIN CATEGORY*/
      DELETE temp
 	 FROM Temp_NewClassification AS temp
 	 INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc on sc.CustID = temp.CustID -- is VVIP OR PIN
 	 WHERE sc.CreatedFromFunction IN (11, 21);
     
-	/**********3. IGNORE PROBLEM CATEGORY**********/
+	/*IGNORE PROBLEM CATEGORY*/
     DELETE temp
     FROM Temp_NewClassification AS temp
 	INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID
 	INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = cate.CategoryID
 	WHERE cc.ParentID = 50;
     
-    /**********4. IGNORE DANGEROUS CUSTOMER**********/
-    DELETE temp
-    FROM Temp_NewClassification AS temp
-    WHERE temp.CategoryID = 0;
-    
-	/**********5. DELETE TEMP NEW CATEGORY**********/ 
-    INSERT INTO Temp_NewMember
-	SELECT CustID
-    FROM Temp_NewClassification 
-    WHERE CategoryID = 2;
-    
+	/*IGNORE NEW MEMBER (IF CUSTOMER HAS BOTH NEW MEMBER & OTHER CATEGORY)*/ 
     INSERT INTO Temp_OtherCategory
 	SELECT CustID, CategoryID
     FROM Temp_NewClassification 
@@ -121,122 +111,79 @@ BEGIN
     
     DELETE temp
     FROM Temp_NewClassification AS temp 
-    INNER JOIN Temp_NewMember AS nm on nm.CustID = temp.CustID
-    INNER JOIN Temp_OtherCategory AS other on other.CustID = nm.CustID
+    INNER JOIN Temp_OtherCategory AS other on other.CustID = temp.CustID
 	WHERE temp.CategoryID = 2;
     
-    /**********6. UPDATE CUST INFO**********/
+    /*GET EXISTED CATEGORY*/ 
+	INSERT INTO Temp_ExistedClassification
+    SELECT DISTINCT cate.CustID, cate.SportGroupID, cate.CategoryID
+    FROM Temp_NewClassification AS temp
+    INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID
+    INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = cate.CategoryID 
+    WHERE cc.ParentID = 1; -- Save existed category before so that insert new probation list with Probation Category from New Member
+    
+    /*DELETE NO CHANGED CATEGORY*/ 
+    DELETE temp
+    FROM Temp_NewClassification AS temp 
+    INNER JOIN Temp_ExistedClassification AS ex on ex.CustID = temp.CustID
+    INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = temp.CategoryID 
+	WHERE cc.ParentID = 1 AND ex.CategoryID != 2 AND temp.CategoryID = 2; 
+    
+    /*DELETE NEW MEMBER IS EXISTED BEFORE (IF CUSTOMER HAS OTHER CATEGORY)*/ 
+	DELETE 		cate
+    FROM 		CTS_DataCenter.CTSCustomerClassification  AS cate
+    LEFT JOIN   Temp_OtherCategory AS o on o.CustID = cate.CustID
+    INNER JOIN  CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = o.CategoryID 
+	WHERE		cc.ParentID = 1 AND cate.CategoryID = 2;
+    
+    /*UPDATE CUST INFO*/
     UPDATE 	Temp_NewClassification AS temp 
 	INNER JOIN	CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.CustSubID = 0
 	SET		temp.CTSCustID = cust.CTSCustID, temp.SubscriberID = cust.SubscriberID;
+	/****************************************************END DATA**********************************************************/
     
-    /**********7. GET EXISTED CATEGORY**********/
-    INSERT INTO Temp_ExistedClassification
-    SELECT cate.CustID, cate.SportGroupID, cate.CategoryID
-    FROM Temp_NewClassification AS temp
-    INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID
-    INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID= cate.CategoryID 
-    WHERE cc.ParentID = 1; 
-    
-    /**********8. UPDATE ACTION TYPE**********/
-   -- For New Member
-    UPDATE 	Temp_NewClassification AS temp
-	LEFT JOIN 	Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID
+    /****************************************************START CATEGORY***************************************************/
+    /*UPDATE CATEGORY*/
+    UPDATE CTS_DataCenter.CTSCustomerClassification AS cate
+    INNER JOIN   Temp_NewClassification AS temp on temp.CustID = cate.CustID AND temp.SportGroupID = cate.SportGroupID
+    INNER JOIN Temp_ExistedClassification AS ex on ex.CustID = temp.CustID AND ex.SportGroupID = temp.SportGroupID
     INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = temp.CategoryID 
-	SET 		temp.ActionType =  (CASE 
-                                         -- No action
-                                         WHEN (ex.CategoryID != 2 AND temp.CategoryID = 2) OR (ex.CategoryID = 2 AND temp.CategoryID = 2) THEN 3
-										 -- Insert Category and delete New Member, Probation List if have IN (6, 7, 10)
-                                         WHEN ex.CategoryID = 2 AND temp.CategoryID != 2 THEN -1 -- New Member to Other Category. Include Smart, High Risk, Probation
-                                          -- Insert Category
-										 WHEN ex.SportGroupID IS NULL AND temp.CategoryID = 2 THEN 0 -- NULL to New Member 
-									END)
-     WHERE cc.ParentID = 1 AND temp.ActionType IS NULL;
-    
-    -- For Other Category
-    UPDATE 	Temp_NewClassification AS temp
-	LEFT JOIN 	Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.SportGroupID = temp.SportGroupID 
-    INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = temp.CategoryID 
-	SET 		temp.ActionType =  (CASE 
-                                         -- No action
-                                         WHEN (ex.SportGroupID = temp.SportGroupID AND ex.CategoryID = temp.CategoryID) THEN 3
-										 -- Update Category to Probation & Insert Probation List
-                                         WHEN ex.SportGroupID = temp.SportGroupID AND (
-                                                  (ex.CategoryID NOT IN (6, 7, 10) AND temp.CategoryID IN (6, 7, 10)) -- Normal, VIP to Smart, High Risk, Probation
-                                               OR (ex.CategoryID IN (6, 7) AND temp.CategoryID = 10)  -- Smart, High Risk to Probation
-											  ) THEN 1
-                                          -- Update category & Delete Probation if existed Probation before (Scanned is Smart/High Risk)
-										  WHEN ex.SportGroupID = temp.SportGroupID AND (ex.CategoryID = 10 AND temp.CategoryID IN (6, 7)) THEN -2 -- Update category & Delete Probation list
-                                          -- Update category
-										  WHEN ex.SportGroupID = temp.SportGroupID AND (ex.CategoryID != temp.CategoryID) THEN 2 -- Update category
-                                           -- Insert Category, Probation List if have
-										  WHEN ex.SportGroupID IS NULL AND temp.CategoryID != 2 THEN 0 -- NULL to Other Category. Include Probation
-									END)
-     WHERE cc.ParentID = 1 AND temp.ActionType IS NULL;
-     
-    /**********9. PROCESS FOR ACTION TYPE**********/
-    -- Delete New Member: ActionType = -1
-    DELETE 		cate
-    FROM 		CTS_DataCenter.CTSCustomerClassification  AS cate
-	INNER JOIN 	Temp_NewClassification AS temp ON temp.CustID = cate.CustID
-	WHERE		cate.CategoryID = 2 AND temp.ActionType = -1;     
-    
-	-- Delete Probation Account Monitor: ActionType = -2
-    DELETE pro
-    FROM CTS_DataCenter.ProbationAccountMonitor AS pro
-	INNER JOIN Temp_NewClassification AS temp on temp.CustID = pro.CustID AND temp.SportGroupID = pro.SportGroupID
-	WHERE 	pro.SportGroupID < 200 AND temp.ActionType = -2;
-            
-    -- Update Category: ActionType = -2, 1, 2
-    UPDATE 		CTS_DataCenter.CTSCustomerClassification AS cate
-    INNER JOIN 	Temp_NewClassification AS temp ON 	temp.CustID = cate.CustID AND temp.SportGroupID = cate.SportGroupID
- 	SET   cate.CTSCustID = temp.CTSCustID
+    SET   cate.CTSCustID = temp.CTSCustID
         , cate.SubscriberID  = temp.SubscriberID
-        , cate.CategoryID = (CASE WHEN (temp.CategoryID IN (6, 7) AND temp.ActionType = 1) THEN 10 -- Update category to Smart Punter, High Risk Punter
+        , cate.CategoryID = (CASE WHEN (ex.CategoryID NOT IN (6, 7, 10) AND temp.CategoryID IN (6, 7)) THEN 10 -- Update category to Smart Punter, High Risk Punter
                                   ELSE temp.CategoryID
                              END)
         , cate.LastModifiedDate = temp.LastModifiedDate 
         , cate.LastModifiedBy = lv_CreatedBy
-        , cate.LastScannedDate = GREATEST(DATE(temp.LastModifiedDate),cate.LastScannedDate)
-	WHERE temp.ActionType IN (-2, 1, 2);
+        , cate.LastScannedDate = GREATEST(DATE(temp.LastModifiedDate), cate.LastScannedDate)
+    WHERE cc.ParentID = 1;
     
-    -- Insert Probation Account Monitor: ActionType = -1, 0, 1
-    INSERT  INTO CTS_DataCenter.ProbationAccountMonitor
-    (CustID, CTSCustID, SportGroupID, TargetCategoryID, FirstMargin, CreatedDate, CreatedBy, CreatedTime)
-	SELECT    temp.CustID
-			, temp.CTSCustID
-            , temp.SportGroupID
-			, temp.CategoryID
-			, CASE WHEN temp.WinlossRM != 0 THEN (temp.WinlossRM/ temp.TurnoverRM) * 100
-                   ELSE 0
-			  END AS FirstMargin
-			, DATE(temp.LastModifiedDate)
-			, lv_CreatedBy
-			, temp.LastModifiedDate
-	 FROM 	Temp_NewClassification 		AS temp
-	 WHERE 	(temp.ActionType = 0 AND temp.CategoryID = 10)  -- Insert new Probation
-            OR (temp.ActionType IN (-1, 1) AND temp.CategoryID IN (6, 7, 10)); -- Update category to Probation, Smart Punter, High Risk Punter
-   
-    -- Insert Category List: ActionType = -1, 0
-     INSERT  INTO CTS_DataCenter.CTSCustomerClassification
+    UPDATE Temp_NewClassification AS temp 
+    INNER JOIN Temp_ExistedClassification AS ex on ex.CustID = temp.CustID AND ex.SportGroupID = temp.SportGroupID
+    SET temp.ActionType = 1;
+    
+    /*INSERT NEW CATEGORY*/
+    INSERT  INTO CTS_DataCenter.CTSCustomerClassification
      (CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
 	 SELECT   temp.CustID
 			, temp.CTSCustID
 			, temp.SubscriberID
 			, temp.SportGroupID
-            , CASE WHEN (temp.ActionType = -1 AND temp.CategoryID IN (6, 7)) THEN 10 -- New Member to Smart Punter, High Risk Punter
-                   ELSE temp.CategoryID
-			 END
+            , (CASE WHEN (ex.CategoryID = 2 AND temp.CategoryID IN (6, 7)) THEN 10 -- New Member to Smart Punter, High Risk Punter
+					ELSE temp.CategoryID 
+              END)
 			, temp.LastModifiedDate
 			, lv_CreatedBy
 			, temp.LastModifiedDate
 			, lv_CreatedBy
             , DATE(temp.LastModifiedDate)
 	 FROM 	Temp_NewClassification 		AS temp
-	 WHERE 	temp.ActionType IN (-1, 0); 
-            
-    -- Insert Category History List: ActionType = -2, -1, 0, 1, 2
-	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
+     LEFT JOIN Temp_ExistedClassification AS ex on ex.CustID = temp.CustID
+     INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = temp.CategoryID 
+     WHERE cc.ParentID = 1 AND ( (ex.CategoryID = 2 AND temp.CategoryID != 2) OR ex.SportGroupID IS NULL);  -- temp.ActionType = 0
+    
+    /*INSERT LOG*/
+    INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
     (CustID, CTSCustID, CategoryID,SportGroupID ,LastModifiedDate,LastModifiedBy,TurnoverRM, WinlossRM, BetCount, ActiveDays, ActionType,  IsAuto, InsertDate)
     SELECT 	  temp.CustID
 			, temp.CTSCustID
@@ -251,15 +198,61 @@ BEGIN
 			, temp.ActionType
             , 1
             , CURRENT_DATE()
-	FROM 	Temp_NewClassification AS temp
-    WHERE	temp.ActionType IN (-2, -1, 0, 1, 2);   
-   
+	FROM 	Temp_NewClassification AS temp;
+    /****************************************************END CATEGORY***************************************************/
+    
+    /***************************************************START PROBATION*************************************************/
+	/*DELETE PROBATION LIST IF PASSED TARGET CATEGORY*/
+    DELETE pro
+    FROM CTS_DataCenter.ProbationAccountMonitor AS pro
+	INNER JOIN Temp_NewClassification AS temp on temp.CustID = pro.CustID AND temp.SportGroupID = pro.SportGroupID
+	INNER JOIN   Temp_ExistedClassification AS ex on ex.CustID = temp.CustID AND ex.SportGroupID = temp.SportGroupID
+	INNER JOIN   CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = temp.CategoryID 
+	WHERE cc.ParentID = 1 AND ex.CategoryID = 10 AND temp.CategoryID IN (6, 7) AND pro.SportGroupID < 200;
+       
+    /*INSERT NEW PROBATION LIST*/
+	INSERT  INTO CTS_DataCenter.ProbationAccountMonitor
+    (CustID, CTSCustID, SportGroupID, TargetCategoryID, FirstMargin, CreatedDate, CreatedBy, CreatedTime)
+	SELECT    temp.CustID
+			, temp.CTSCustID
+            , temp.SportGroupID
+			, temp.CategoryID
+			, CASE WHEN temp.WinlossRM != 0 THEN (temp.WinlossRM/ temp.TurnoverRM) * 100
+                   ELSE 0
+			  END AS FirstMargin
+			, DATE(temp.LastModifiedDate)
+			, lv_CreatedBy
+			, temp.LastModifiedDate
+	 FROM 	Temp_NewClassification 		AS temp
+     LEFT JOIN   Temp_ExistedClassification AS ex on ex.CustID = temp.CustID
+	 WHERE   temp.ActionType = 0 
+				AND (	(ex.CategoryID = 2 AND temp.CategoryID IN (6, 7, 10)) 
+						OR (ex.SportGroupID IS NULL AND temp.CategoryID = 10)	); -- New Member & New Category
+                
+    INSERT  INTO CTS_DataCenter.ProbationAccountMonitor
+    (CustID, CTSCustID, SportGroupID, TargetCategoryID, FirstMargin, CreatedDate, CreatedBy, CreatedTime)
+	SELECT    temp.CustID
+			, temp.CTSCustID
+            , temp.SportGroupID
+			, temp.CategoryID
+			, CASE WHEN temp.WinlossRM != 0 THEN (temp.WinlossRM/ temp.TurnoverRM) * 100
+                   ELSE 0
+			  END AS FirstMargin
+			, DATE(temp.LastModifiedDate)
+			, lv_CreatedBy
+			, temp.LastModifiedDate
+	 FROM 	Temp_NewClassification 		AS temp
+     LEFT JOIN   Temp_ExistedClassification AS ex on ex.CustID = temp.CustID AND ex.SportGroupID = temp.SportGroupID
+	 WHERE  temp.ActionType = 1 
+				AND (  (ex.CategoryID IN (6, 7) AND temp.CategoryID = 10)
+						OR (ex.CategoryID NOT IN (6, 7, 10) AND temp.CategoryID IN (6, 7, 10)) );  -- Old Category
+	/***************************************************END PROBATION*************************************************/
+     
     SET SQL_SAFE_UPDATES = 1;
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ExistedClassification;    
-    DROP TEMPORARY TABLE IF EXISTS Temp_OtherCategory;    
-    DROP TEMPORARY TABLE IF EXISTS Temp_NewMember;         
+    DROP TEMPORARY TABLE IF EXISTS Temp_OtherCategory;        
     DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;    
 
 END$$
