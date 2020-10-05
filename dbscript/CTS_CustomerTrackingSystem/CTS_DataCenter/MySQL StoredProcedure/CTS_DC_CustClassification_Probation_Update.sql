@@ -45,6 +45,8 @@ sp: BEGIN
     ,	SportGroupID		SMALLINT
     ,	NewCategoryID		SMALLINT
     ,	ParentID			SMALLINT
+    ,	PRIMARY KEY	PK_TempTargetCustomerCategory_CustID(CustID, SportGroupID, NewCategoryID) 
+	,	INDEX 		IX_TempTargetCustomerCategory_NewCategoryID(NewCategoryID)
     );
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
@@ -76,33 +78,23 @@ sp: BEGIN
 		,	temp.SportGroupID =		CASE	WHEN cate.ParentID = 200 THEN 200
 											ELSE temp.SportGroupID
 									END;
-            
-    #========= REMOVE OLD GENERAL/DETAIL CATEGORIES =========
-    DELETE cc
-    FROM CTS_DataCenter.CTSCustomerClassification AS cc
+	
+    #========= UPDATE GENERAL/DETAIL CATEGORIES =========
+    UPDATE CTS_DataCenter.CTSCustomerClassification AS cc
     INNER JOIN Temp_TargetCustomerCategory AS temp
 		ON	temp.CustID = cc.CustID
         AND	temp.SportGroupID = cc.SportGroupID
 	INNER JOIN CTS_DataCenter.CustomerCategory AS cate
 		ON	cc.CategoryID = cate.CategoryID
-	WHERE temp.ParentID = cate.ParentID
+	SET		cc.CTSCustID = temp.CTSCustID
+		,	cc.SubscriberID = temp.SubscriberID
+        ,	cc.CategoryID = temp.NewCategoryID
+		,	cc.Remark = ip_Remark
+        ,	cc.LastModifiedDate = lv_CurrentTime
+        ,	cc.LastModifiedBy = ip_CreatedBy
+        ,	cc.LastScannedDate = DATE(lv_CurrentTime)
+	WHERE	temp.ParentID = cate.ParentID
 		AND	cate.ParentID in (1, 200);
-       
-    #========= INSERT NEW CUSTOMER CATEGORIES =========
-    INSERT INTO CTS_DataCenter.CTSCustomerClassification
-    (CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
-	SELECT   temp.CustID
-			, temp.CTSCustID
-			, temp.SubscriberID
-			, temp.SportGroupID
-            , temp.NewCategoryID
-            , ip_Remark
-			, lv_CurrentTime
-			, ip_CreatedBy
-			, lv_CurrentTime
-			, ip_CreatedBy
-            , DATE(lv_CurrentTime)
-	FROM 	Temp_TargetCustomerCategory AS temp;
             
     #========= LOG NEW CUSTOMER CATEGORIES HISTORY =========   
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
@@ -129,6 +121,7 @@ sp: BEGIN
 		ON	temp.CustID = pam.CustID
         AND	temp.SportGroupID = pam.SportGroupID;
     
+    #========= ADD USER LOG =========
     INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
     SELECT	29
 		,	lv_SPName
