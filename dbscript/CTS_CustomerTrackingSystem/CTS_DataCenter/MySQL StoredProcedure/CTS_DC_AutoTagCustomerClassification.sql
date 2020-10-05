@@ -251,7 +251,7 @@ BEGIN
      LEFT JOIN   Temp_ExistedClassification AS ex on ex.CustID = temp.CustID AND ex.SportGroupID = temp.SportGroupID
 	 WHERE  temp.ActionType = 1 
 				AND (  (ex.CategoryID IN (6, 7) AND temp.CategoryID = 10)
-						OR (ex.CategoryID IN (6, 7, 10) AND temp.CategoryID IN (6, 7, 10)) );  -- Old Category
+						OR (ex.CategoryID NOT IN (6, 7, 10) AND temp.CategoryID IN (6, 7, 10)) );  -- Old Category
 	/***************************************************END PROBATION*************************************************/
      
     SET SQL_SAFE_UPDATES = 1;
