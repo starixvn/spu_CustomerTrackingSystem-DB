@@ -24,7 +24,7 @@ BEGIN
             - ip_CategoryMode: 1 for General Category, 2 for Detailed Category
 	*/ 
     DECLARE lv_CurrentDate		DATE DEFAULT CURRENT_DATE();
-    DECLARE	lv_CTSCustID		BIGINT UNSIGNED DEFAULT 0;
+    DECLARE	lv_CustID		BIGINT UNSIGNED DEFAULT 0;
 
 	#============================================
     DROP TEMPORARY TABLE IF EXISTS Temp_ProbationCustomer;
@@ -44,7 +44,7 @@ BEGIN
     ,	CreatedTime			DATETIME
     ,	FirstMargin			DECIMAL(20, 4)
     ,	DaysLeft			SMALLINT
-    ,	PRIMARY KEY	PK_Temp_NewClassification_CTSCustID(CTSCustID, SportGroupID, TargetCategoryID) 
+    ,	PRIMARY KEY	PK_Temp_NewClassification_CTSCustID(CustID, SportGroupID, TargetCategoryID) 
 	,	INDEX 		IX_Temp_NewClassification_TargetCategoryID(TargetCategoryID)   
     );
     
@@ -52,33 +52,34 @@ BEGIN
     
     #========= IF SEARCH FOR SPECIFIC CUSTOMER, GET CTSCUSTID FROM KEYWORD =========
     IF IFNULL(ip_Username, '') <> '' THEN
-		SELECT	CTSCustID
-        INTO lv_CTSCustID
+		SELECT	DISTINCT CustID
+        INTO lv_CustID
         FROM CTS_DataCenter.CTSCustomer
         WHERE UserName = ip_Username
         LIMIT 1;
     END IF;
     
-    #========= GET DATA BY FILTERS =========
+    #========= GET DATA BY FILTERS =========    
     INSERT INTO Temp_ProbationCustomer(CTSCustID, CustID, SubscriberID, Username, Site, SportGroupID, TargetCategoryID, TargetCategoryName, FirstMargin, CreatedDate, CreatedTime, DaysLeft)
-    SELECT	pam.CTSCustID
-			, pam.CustID
-            , cust.SubscriberID
-            , cust.Username
-            , cust.Site
-            , pam.SportGroupID
-            , pam.TargetCategoryID
-            , cc.CategoryName
-            , pam.FirstMargin
-            , pam.CreatedDate
-            , pam.CreatedTime
-            , 60 - DATEDIFF(lv_CurrentDate, pam.CreatedDate)
+    SELECT	DISTINCT
+			pam.CTSCustID
+		,	pam.CustID
+		,	cust.SubscriberID
+		,	cust.Username
+		,	cust.Site
+		,	pam.SportGroupID
+		,	pam.TargetCategoryID
+		,	cc.CategoryName
+		,	pam.FirstMargin
+		,	pam.CreatedDate
+		,	pam.CreatedTime
+		,	60 - DATEDIFF(lv_CurrentDate, pam.CreatedDate)
     FROM CTS_DataCenter.ProbationAccountMonitor AS pam
     INNER JOIN CTS_DataCenter.CustomerCategory AS cc
 		ON pam.TargetCategoryID = cc.CategoryID
 	INNER JOIN CTS_DataCenter.CTSCustomer AS cust
 		ON pam.CustID = cust.CustID
-    WHERE (lv_CTSCustID = 0 OR lv_CTSCustID = pam.CTSCustID)
+    WHERE (lv_CustID = 0 OR lv_CustID = pam.CustID)
         AND	CASE 	WHEN IFNULL(ip_CategoryMode, -1) = 1 THEN 200	# General catergory
 					WHEN IFNULL(ip_CategoryMode, -1) = 2 THEN 1		# Detailed category
 					ELSE -1
@@ -113,4 +114,3 @@ BEGIN
 END$$
 
 DELIMITER ;
-
