@@ -16,7 +16,8 @@ BEGIN
 
 		Revisions:
 			- 20200706@Long.Luu: Created [Redmine ID: #134652]
-			- 20200818@Long.Luu: Get notification based on permission granted time range [Redmine ID: #138575]
+			- 20200818@Long.Luu: Get notifications based on permission granted time range [Redmine ID: #138575]
+            - 20201006@Long.Luu: Get notifications by notification settings [Redmine ID: #142414]
         
 		Param's Explanation (filtered by):
         
@@ -66,7 +67,12 @@ BEGIN
         ,	CASE WHEN a.AccountNewAssID <= lv_UserCurrentFromNotificationID THEN 1 ELSE 0 END AS IsSeen
         , 	a.AccountNewAssID,lv_UserCurrentFromNotificationID
     FROM CTS_DataCenter.AssociatedAccountNotification AS a
-		INNER JOIN CTS_DataCenter.CTSUserPermission AS p ON a.CreatedTime >= p.GrantedFrom AND (a.CreatedTime <= p.GrantedTo OR p.GrantedTo IS NULL)
+		INNER JOIN CTS_DataCenter.CTSUserPermission AS p  ON p.FunctionID = 1
+			AND a.CreatedTime >= p.GrantedFrom 
+            AND (a.CreatedTime <= p.GrantedTo OR p.GrantedTo IS NULL)		
+		INNER JOIN CTS_DataCenter.NotificationSettings AS s ON s.FunctionID = 1
+			AND a.CreatedTime >= s.GrantedFrom 
+            AND (a.CreatedTime <= s.GrantedTo OR s.GrantedTo IS NULL)
 	WHERE a.CreatedDate > @FromScanDate AND a.CreatedDate <= @ToScanDate
 		AND p.UserID = ip_UserID 
     ORDER BY CreatedDate DESC;

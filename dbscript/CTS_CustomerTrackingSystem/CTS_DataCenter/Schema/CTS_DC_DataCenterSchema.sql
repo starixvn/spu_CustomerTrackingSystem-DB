@@ -24,6 +24,7 @@ Revisions:
         - [20200905@Long.Luu][140996]: New table for storing Hardcoded CustomerClass's customers
         - [20200909@Irena.Vo][141020]: Enhance Schema for params CustomerClass's customers
         - [20200917@Long.Luu][141755]: Probation Category Monitoring
+        - [20201006@Long.Luu][142414]: Notification Settings
 Reviewer:
 */
 
@@ -642,3 +643,22 @@ DROP TABLE IF EXISTS CTS_DataCenter.AssociatedAccountNewAssociation;
 ALTER TABLE CTS_DataCenter.ProbationAccountMonitor DROP PRIMARY KEY;
 ALTER TABLE CTS_DataCenter.ProbationAccountMonitor
 ADD PRIMARY KEY(CustID,SportGroupID);
+
+#[20201006@Long.Luu][142414]: Notification Settings
+DROP TABLE IF EXISTS CTS_DataCenter.NotificationSettings;
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.NotificationSettings (
+		UserID					INT UNSIGNED NOT NULL
+	,	FunctionID 				SMALLINT UNSIGNED NOT NULL # 1: Associated Account Monitor, 2: Probation Account
+	,	FunctionName			VARCHAR(50)
+    ,	GrantedFrom				DATETIME DEFAULT NULL
+    ,	GrantedTo				DATETIME DEFAULT NULL
+	, 	CreatedDate				DATETIME DEFAULT NULL
+    , 	LastModifiedDate		DATETIME DEFAULT NULL
+	,	INDEX					IX_NotificationSettings(UserID, FunctionID)
+) ENGINE=INNODB;
+
+#init data
+INSERT INTO NotificationSettings(UserID, FunctionID, FunctionName, GrantedFrom, CreatedDate)
+SELECT p.UserID, p.FunctionID, p.FunctionName, p.GrantedFrom, p.CreatedDate
+FROM CTS_DataCenter.CTSUserPermission AS p
+WHERE p.GrantedTo IS NULL;

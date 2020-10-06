@@ -14,7 +14,7 @@ BEGIN
 		Original:
 
 		Revisions:
-			-
+            - 20201006@Long.Luu: Get notifications by notification settings [Redmine ID: #142414]
         
 		Param's Explanation (filtered by):
         
@@ -65,9 +65,12 @@ BEGIN
         ,	a.NotificationID AS MaxNotificationID
         ,	CASE WHEN a.NotificationID <= lv_UserCurrentFromNotificationID THEN 1 ELSE 0 END AS IsSeen
     FROM CTS_DataCenter.ProbationAccountNotification AS a
-		INNER JOIN CTS_DataCenter.CTSUserPermission AS p ON p.FunctionID =2
+		INNER JOIN CTS_DataCenter.CTSUserPermission AS p ON p.FunctionID = 2
 			AND a.CreatedTime >= p.GrantedFrom 
             AND (a.CreatedTime <= p.GrantedTo OR p.GrantedTo IS NULL)
+		INNER JOIN CTS_DataCenter.NotificationSettings AS s ON s.FunctionID = 2
+			AND a.CreatedTime >= s.GrantedFrom 
+            AND (a.CreatedTime <= s.GrantedTo OR s.GrantedTo IS NULL)
 	WHERE a.CreatedDate > @FromScanDate AND a.CreatedDate <= @ToScanDate
 		AND p.UserID = ip_UserID 
     ORDER BY CreatedDate DESC;
