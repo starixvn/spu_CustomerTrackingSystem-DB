@@ -20,6 +20,7 @@ BEGIN
             - 20200820@Roger.Le [Redmine ID: #139969]: New Column "Next Scan Date" for Customer Category
             - 20200903@Long.Luu [Redmine ID: #137550]: Get for both General & Detailed Categories
             - 20200908@Irena.Vo [Redmine ID: #141020]: Get for VVIP. VVIP -> PA -> Detailed & General. Add VVIP (General)
+            - 20201006@Irena.Vo [Redmine ID: #141930]: Rollback logic get IsUsedManually for lastest category & enhance logic get.
             
 		Param's Explanation:
 	*/ 
@@ -51,16 +52,15 @@ BEGIN
 			, cate.Remark
 			, cate.LastScannedDate
 			, CASE
-				  WHEN b.CategoryID = 50 THEN 2
-				  WHEN b.CategoryID = 1 THEN 0
-				  WHEN b.CategoryID = 200  THEN 1
+				  WHEN a.ParentID = 50 THEN 2
+				  WHEN a.ParentID = 1 THEN 0
+				  WHEN a.ParentID = 200  THEN 1
 			  END AS CategoryType   
 	FROM		CTS_DataCenter.CTSCustomerClassification AS cate
-	INNER JOIN CTS_DataCenter.CustomerCategory AS a ON cate.CategoryID = a.CategoryID
-	INNER JOIN CTS_DataCenter.CustomerCategory AS b ON a.ParentID = b.CategoryID
+	INNER JOIN 	CTS_DataCenter.CustomerCategory AS a ON a.CategoryID = cate.CategoryID
 	WHERE		cate.CustID = ip_CustID;    
 
-    SELECT 	b.CategoryID AS ParentCategoryID
+    SELECT 	a.ParentID
 		,   c.CategoryType
         ,   a.CategoryID
 		,	a.CategoryName
@@ -77,13 +77,12 @@ BEGIN
         , 	 CASE WHEN lv_IsPinCategory = 1  THEN NULL
 				 ELSE DATE_ADD(MAX(c.LastScannedDate), INTERVAL a.ScanIntervalInSecond SECOND) 
 			END AS NextScanToDate
-        ,	1 AS IsEnabledDelete -- all category will be delete
+        ,	a.IsUsedManually AS IsEnabledDelete -- only VVIP can delete
     FROM Temp_LatestRecordOfCategory AS c
-		INNER JOIN CTS_DataCenter.CustomerCategory AS a ON c.CategoryID = a.CategoryID
-        INNER JOIN CTS_DataCenter.CustomerCategory AS b ON a.ParentID = b.CategoryID
-		LEFT JOIN CTS_DataCenter.SportGroup AS s ON c.SportGroupID = s.SportGroupID
-        LEFT JOIN CTS_Admin.CTSUser AS u ON c.LastModifiedBy = u.UserID
-	GROUP BY b.CategoryID
+		INNER JOIN CTS_DataCenter.CustomerCategory AS a ON a.CategoryID = c.CategoryID
+		LEFT JOIN CTS_DataCenter.SportGroup AS s ON s.SportGroupID = c.SportGroupID
+        LEFT JOIN CTS_Admin.CTSUser AS u ON u.UserID = c.LastModifiedBy
+	GROUP BY a.ParentID
 		,   c.CategoryType
         ,   a.CategoryID
 		,	a.CategoryName
