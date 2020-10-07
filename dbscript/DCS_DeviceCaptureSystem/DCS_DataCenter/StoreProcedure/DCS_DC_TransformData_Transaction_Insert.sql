@@ -12,11 +12,13 @@ BEGIN
 
 	Revisions:
 		#1. [20191217@CaseyHuynh][#125530]: Implement LastLoginTime 
-        #2. [20200416@Terry]: Archive Completed RawTransaction to DCS_RawTransaction.ProcessedTransaction.
+        #2. [20200416@Terry]: Archive Completed RawTransaction to DCS_DataCenter.ProcessedTransaction.
 		#3. [20200506@CaseyHuynh][133486]: Not Deposit Account
 				+ Insert Ignore On Duplicate, Update (LastLoginTime, IsCTSTransfromed)
                  + Remove code "INSERT IGNORE INTO DCS_DataCenter.TransactionIP_TransformTemp"
 		#4. [20200515@CaseyHuynh][133263]: Update LastLoginTime
+        #5  [20200918@CaseyHuynh][137963]: Change column TransID to RawTransID
+        #6. [20201006@CaseyHuynh][143011]: Move New Server, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_DataCenter"
     Reviewer:
 		#1 [Name]: New
 	Param's Explanation (filtered by):
@@ -95,7 +97,7 @@ BEGIN
             , rt.CreatedDate
             , rt.FingerprintCode
             , rt.FingerprintMoreInfo
-	FROM		DCS_RawTransaction.RawTransaction AS rt
+	FROM		DCS_DataCenter.RawTransaction AS rt
     INNER JOIN	CTS_Admin.Subscriber AS su
 				ON	rt.SubscriberName = su.SubscriberName
 	INNER JOIN	DCS_DataCenter.ActionResult AS ar
@@ -103,8 +105,7 @@ BEGIN
 					AND IFNULL(rt.ActionResult,'') = ar.ActionResult
 	WHERE		rt.IsProcessed = 0
 				AND rt.TransID BETWEEN ip_FromTransID AND ip_ToTransID;
-
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;    
+ 
     	
     #===INSERT SUBCRIBERURL    
     INSERT IGNORE INTO DCS_DataCenter.URL(URLDetails, SubscriberID, CreatedDate)
@@ -128,9 +129,6 @@ BEGIN
     GROUP BY	trt.SubscriberID, trt.SubscriberType, trt.LoginName
     ON DUPLICATE KEY UPDATE IsCTSTransformed = (CASE WHEN IsCTSTransformed = -3 THEN -1 END );
     
-        
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
-
     # Update AccountID to Temp_Transaction
     UPDATE 		Temp_RawTransaction AS trt
     INNER JOIN	DCS_DataCenter.Account AS ac
@@ -168,7 +166,7 @@ BEGIN
 				ON	acc.AccountID = tac.AccountID
     WHERE		tac.LastLoginTime > acc.LastLoginTime;
     
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;  
+
     INSERT INTO DCS_DataCenter.LastLoginTime_TransformTemp(CTSCustID, LastLoginTime)
     SELECT 		cus.CTSCustID
 				, MAX(lgn.LastLoginTime)
@@ -176,14 +174,15 @@ BEGIN
     INNER JOIN  CTS_DataCenter.CustDCSAccount AS cus
 				ON lgn.AccountID = cus.AccountID
 	GROUP BY 	cus.CTSCustID;    
-    
+	
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;  
     UPDATE		DCS_DataCenter.Account 	AS acc
     INNER JOIN	Temp_LastLoginTime	AS tll
 				ON acc.AccountID = tll.AccountID
 	SET			acc.LastLoginTime = tll.LastLoginTime;
     
 
-    INSERT IGNORE INTO  DCS_DataCenter.Transaction(TransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey
+    INSERT IGNORE INTO  DCS_DataCenter.Transaction(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey
 						, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, FingerprintCode, FingerprintMoreInfo)
    	SELECT 		trt.TransID
 				, trt.LoginName
@@ -207,20 +206,20 @@ BEGIN
 
     #================================================================
      SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-        INSERT IGNORE INTO DCS_RawTransaction.ProcessedTransaction(
+        INSERT IGNORE INTO DCS_DataCenter.ProcessedTransaction(
 					LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, FingerprintMoreInfo, UserAgent
 					, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID)
 		SELECT		rt.LoginName, rt.SubscriberName, rt.TransTime, rt.CreatedDate, rt.DeviceCode, rt.FingerprintCode, rt.FingerprintMoreInfo, rt.UserAgent
 					, rt.IP, rt.IPID, rt.Flagged, rt.PluginID, rt.URL, rt.Action, rt.ActionResult, rt.InvalidDevice, rt.TransStatus, rt.IsProcessed, rt.TransID
-        FROM 		DCS_RawTransaction.RawTransaction AS rt
+        FROM 		DCS_DataCenter.RawTransaction AS rt
         INNER JOIN	Temp_RawTransaction	AS tmp_rm
 					ON	rt.TransID = tmp_rm.TransID;
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
         
-		DELETE		rt
-        FROM 		DCS_RawTransaction.RawTransaction AS rt
-        INNER JOIN	Temp_RawTransaction	AS tmp_rm
-					ON	rt.TransID = tmp_rm.TransID;
+	DELETE		rt
+	FROM 		DCS_DataCenter.RawTransaction AS rt
+	INNER JOIN	Temp_RawTransaction	AS tmp_rm
+				ON	rt.TransID = tmp_rm.TransID;
     
 	#=================================================================	
   
@@ -237,6 +236,7 @@ BEGIN
 		z.ExecKey = vrExecKey
 			AND z.StepID = z.StepID;
     ### PERFORMANCE: END
+    
     
 END$$
 DELIMITER ;

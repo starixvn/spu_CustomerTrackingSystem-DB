@@ -9,8 +9,9 @@ BEGIN
 	Task :	Insert UserAgent
 	DB:		DCS_DataCenter
 	Original:
-
+	
 	Revisions:
+			[20201006@CaseyHuynh][143011]: Move New Server, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_DataCenter"
 	Param's Explanation (filtered by):
 */
     
@@ -50,7 +51,7 @@ BEGIN
     SELECT		MD5(LOWER(rt.UserAgent)) AS UserAgentKey
 				, rt.UserAgent
                 , MIN(rt.CreatedDate)
-	FROM		DCS_RawTransaction.RawTransaction	AS rt
+	FROM		DCS_DataCenter.RawTransaction	AS rt
     LEFT JOIN	DCS_DataCenter.UserAgent 			AS ua
 				ON ua.UserAgentKey = MD5(LOWER(rt.UserAgent))
     WHERE		rt.TransID BETWEEN ip_FromTransID AND ip_ToTransID
