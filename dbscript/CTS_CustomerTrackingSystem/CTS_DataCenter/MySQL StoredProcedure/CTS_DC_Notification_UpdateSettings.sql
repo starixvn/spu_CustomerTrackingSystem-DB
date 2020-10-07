@@ -30,7 +30,7 @@ BEGIN
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
       
-	SET lv_CurrentDateTime			= CURRENT_DATE();    
+	SET lv_CurrentDateTime			= CURRENT_TIME();    
     
 	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
             
@@ -47,8 +47,13 @@ BEGIN
 		WHERE UserID = ip_UserID 
 			AND FunctionID = ip_FunctionID;
 	ELSE
-		INSERT INTO NotificationSettings(UserID, FunctionID, FunctionName, GrantedFrom, CreatedDate)
-		SELECT ip_UserID, ip_FunctionID, CASE WHEN ip_FunctionID = 1 THEN 'AssociatedAccountMonitor' ELSE 'ProbationManagement' END, lv_CurrentDateTime, lv_CurrentDateTime;
+		INSERT INTO NotificationSettings(UserID, FunctionID, FunctionName, GrantedFrom, CreatedDate, LastModifiedDate)
+		SELECT 	ip_UserID
+			, 	ip_FunctionID
+            , 	CASE WHEN ip_FunctionID = 1 THEN 'AssociatedAccountMonitor' ELSE 'ProbationManagement' END
+            , 	lv_CurrentDateTime
+            , 	lv_CurrentDateTime
+            , 	lv_CurrentDateTime;
 
 		UPDATE CTS_DataCenter.CTSUserPermission
 		SET IsTurnedOnNotification = 1
