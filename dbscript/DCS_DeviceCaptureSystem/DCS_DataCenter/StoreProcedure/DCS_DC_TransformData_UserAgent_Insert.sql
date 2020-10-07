@@ -11,7 +11,8 @@ BEGIN
 	Original:
 	
 	Revisions:
-			[20201006@CaseyHuynh][143011]: Move New Server, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_DataCenter"
+			[20201006@CaseyHuynh][143011]: 	Move New Server, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_DataCenter"
+											AND Change UserAgent Data Type From TEXT to VARCHAR(1000)
 	Param's Explanation (filtered by):
 */
     
@@ -43,7 +44,7 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_UserAgent 
     (		
 		UserAgentKey		VARCHAR(32)
-        , UserAgent			TEXT
+        , UserAgent			VARCHAR(1000)
         , CreatedDate		DATETIME
     );    
 	    

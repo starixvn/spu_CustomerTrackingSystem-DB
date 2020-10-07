@@ -24,7 +24,7 @@ BEGIN
 		, TransTime					TIMESTAMP(4)	 					NOT NULL
 		, DeviceCode				VARCHAR(32) 						NULL		COMMENT 'Device Inject Code: 32 characters is auto generated'
 		, FingerprintCode			VARCHAR(640)						NULL		COMMENT 'Device Fingerprint Codes, the hashcode bases on the set attributes'    
-		, FingerprintMoreInfo		VARCHAR(250)
+		, FingerprintMoreInfo		VARCHAR(250)						NULL
 		, UserAgent					VARCHAR(1000)						NULL
 		, IP						VARCHAR(50) 						NULL
         , IPID						DECIMAL(50,0)						NULL
