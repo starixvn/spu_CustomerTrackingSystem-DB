@@ -67,7 +67,7 @@ BEGIN
 		, TransStatus			BIT(16) 			NULL
 		, CreatedDate			DATETIME 			NULL COMMENT 'Date Only' NOT NULL
 		, InsertTime			TIMESTAMP(4) 		NULL
-        , FingerprintCode		VARCHAR(2000)
+        , FingerprintCode		VARCHAR(620)
         , FingerprintMoreInfo	TEXT	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 	);
     # =================================================================

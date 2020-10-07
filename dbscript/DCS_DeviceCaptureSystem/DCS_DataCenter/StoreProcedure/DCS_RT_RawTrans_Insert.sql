@@ -23,7 +23,7 @@ BEGIN
 		, SubscriberName			VARCHAR(50) 						NOT NULL
 		, TransTime					TIMESTAMP(4)	 					NOT NULL
 		, DeviceCode				VARCHAR(32) 						NULL		COMMENT 'Device Inject Code: 32 characters is auto generated'
-		, FingerprintCode			VARCHAR(640)						NULL		COMMENT 'Device Fingerprint Codes, the hashcode bases on the set attributes'    
+		, FingerprintCode			VARCHAR(620)						NULL		COMMENT 'Device Fingerprint Codes, the hashcode bases on the set attributes'    
 		, FingerprintMoreInfo		VARCHAR(250)						NULL
 		, UserAgent					VARCHAR(1000)						NULL
 		, IP						VARCHAR(50) 						NULL
@@ -79,7 +79,7 @@ BEGIN
 							, SubscriberName		VARCHAR(50) 	PATH "$.SubscriberName"   
 							, TransTime				TIMESTAMP(4) 	PATH "$.TransTime"
 							, DeviceCode			VARCHAR(32)		PATH "$.DeviceCode"
-							, FingerprintCode		VARCHAR(640)	PATH "$.FingerprintCode"
+							, FingerprintCode		VARCHAR(620)	PATH "$.FingerprintCode"
 							, FingerprintMoreInfo	VARCHAR(250)	PATH "$.FingerprintMoreInfo"
 							, UserAgent				TEXT 			PATH "$.UserAgent"
 							, IP					VARCHAR(50) 	PATH "$.IP"
