@@ -57,13 +57,19 @@ BEGIN
 		 )) AS tmp;
     
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+	SET SQL_SAFE_UPDATES = 0;
     
     INSERT INTO Temp_NewCTSUserPermission(UserID, FuncID)
     SELECT DISTINCT t.UserID, t.FuncID
     FROM Temp_CTSUserPermission AS t
 		LEFT JOIN CTS_DataCenter.CTSUserPermission AS up ON t.UserID = up.UserID AND t.FuncID = up.FunctionID
 	WHERE up.UserID IS NULL 
-		AND up.FunctionID IS NULL;
+        OR	(up.UserID IS NOT NULL
+			AND NOT EXISTS (SELECT 1 
+							FROM CTS_DataCenter.CTSUserPermission AS tup 
+                            WHERE tup.UserID = up.UserID 
+								AND tup.FunctionID = up.FunctionID
+                                AND tup.GrantedTo IS NULL));
     
     #========= REVOKE PERMISSION ON CURRENT USERS =========
     UPDATE CTS_DataCenter.CTSUserPermission AS up

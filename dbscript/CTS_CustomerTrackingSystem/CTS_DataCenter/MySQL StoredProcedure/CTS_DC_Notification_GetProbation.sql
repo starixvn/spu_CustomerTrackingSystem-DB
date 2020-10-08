@@ -68,7 +68,7 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CTSUserPermission AS p ON p.FunctionID = 2
 			AND a.CreatedTime >= p.GrantedFrom 
             AND (a.CreatedTime <= p.GrantedTo OR p.GrantedTo IS NULL)
-		INNER JOIN CTS_DataCenter.NotificationSettings AS s ON s.FunctionID = 2
+		INNER JOIN CTS_DataCenter.NotificationSettings AS s ON s.FunctionID = 2 AND p.UserID = s.UserID
 			AND a.CreatedTime >= s.GrantedFrom 
             AND (a.CreatedTime <= s.GrantedTo OR s.GrantedTo IS NULL)
 	WHERE a.CreatedDate > @FromScanDate AND a.CreatedDate <= @ToScanDate
