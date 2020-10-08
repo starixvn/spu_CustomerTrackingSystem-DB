@@ -219,7 +219,8 @@ BEGIN
 	DELETE		rt
 	FROM 		DCS_DataCenter.RawTransaction AS rt
 	INNER JOIN	Temp_RawTransaction	AS tmp_rm
-				ON	rt.TransID = tmp_rm.TransID;
+				ON	rt.TransID = tmp_rm.TransID
+					AND rt.TransID = tmp_rm.CreatedDate;
     
 	#=================================================================	
   
