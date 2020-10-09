@@ -14,13 +14,15 @@ BEGIN
 
 	Revisions:
 			[20201006@CaseyHuynh][143011]: Move New Server, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_DataCenter"
+				+ Aplly Partion RawTransaction Select by CreatedDate
+                + Remove "SET SESSION TRANSACTION ISOLATION LEVEL..."
     Reviewer:
 	Param's Explanation (filtered by):
 	*/
 
 	DECLARE		Counter		INT UNSIGNED DEFAULT 0;
     DECLARE		IsStop		INT DEFAULT 0;
-    
+    DECLARE		SysMinCreatedDate	DATETIME;
 	### PERFORMANCE: START
     DECLARE		vrExecKey		BIGINT	UNSIGNED;
 	DECLARE		vrSPName		VARCHAR(200)  DEFAULT 'DCS_RT_TransformData_GetPackage' ;
@@ -42,7 +44,9 @@ BEGIN
     INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
     VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);
 
-	### PERFORMANCE: END
+	### PERFORMANCE: END    
+    
+    SET SysMinCreatedDate = (SELECT DATE(MinCreatedDate) FROM DCS_DataCenter.SystemSetting WHERE VGroup = "DCS_Device_Transform" AND VName = "MinCreatedDate");
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Transaction;
     CREATE TEMPORARY TABLE Temp_Transaction 
@@ -64,6 +68,7 @@ BEGIN
 						FROM 	DCS_DataCenter.RawTransaction AS rt
 						WHERE	rt.IsProcessed = ip_IsProcessed
 									AND TransID > Counter
+                                    AND CreatedDate >= SysMinCreatedDate
 						LIMIT	 ip_NoOfTickets
 					) pk;
                 
@@ -82,9 +87,7 @@ BEGIN
     
     SELECT	tmpTT.MinTransID
 			, tmpTT.MaxTransID
-	FROM	Temp_Transaction AS tmpTT;
-    
-   SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+	FROM	Temp_Transaction AS tmpTT;    
 	
 	### PERFORMANCE
 	SET		vrEndTime = CURRENT_TIMESTAMP(4);

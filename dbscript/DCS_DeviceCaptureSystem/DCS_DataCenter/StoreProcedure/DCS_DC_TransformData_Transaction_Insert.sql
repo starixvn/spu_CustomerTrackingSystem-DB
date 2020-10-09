@@ -23,6 +23,8 @@ BEGIN
 		#1 [Name]: New
 	Param's Explanation (filtered by):
 */
+	DECLARE		SysMinCreatedDate	DATETIME;
+    
 	### PERFORMANCE: START
     DECLARE		vrExecKey		BIGINT	UNSIGNED;
 	DECLARE		vrSPName		VARCHAR(200) DEFAULT 'DCS_DC_TransformData_Transaction_Insert' ;
@@ -77,7 +79,7 @@ BEGIN
 		, SubscriberID			INT NULL
         , SubscriberType		TINYINT	UNSIGNED	NULL
     );
-      
+    SET SysMinCreatedDate = (SELECT DATE(MinCreatedDate) FROM DCS_DataCenter.SystemSetting WHERE VGroup = "DCS_Device_Transform" AND VName = "MinCreatedDate");  
 	INSERT INTO Temp_RawTransaction(TransID, LoginName, TransTime, SubscriberID, SubscriberType, DeviceCode
 			, URLDetails, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, FingerprintCode, FingerprintMoreInfo)
 	SELECT  rt.TransID
@@ -104,7 +106,8 @@ BEGIN
 				ON	rt.Action = ar.Action
 					AND IFNULL(rt.ActionResult,'') = ar.ActionResult
 	WHERE		rt.IsProcessed = 0
-				AND rt.TransID BETWEEN ip_FromTransID AND ip_ToTransID;
+				AND rt.TransID BETWEEN ip_FromTransID AND ip_ToTransID
+                AND rt.CreatedDate 	>=	SysMinCreatedDate;
  
     	
     #===INSERT SUBCRIBERURL    
@@ -213,14 +216,15 @@ BEGIN
 					, rt.IP, rt.IPID, rt.Flagged, rt.PluginID, rt.URL, rt.Action, rt.ActionResult, rt.InvalidDevice, rt.TransStatus, rt.IsProcessed, rt.TransID
         FROM 		DCS_DataCenter.RawTransaction AS rt
         INNER JOIN	Temp_RawTransaction	AS tmp_rm
-					ON	rt.TransID = tmp_rm.TransID;
+					ON	rt.TransID = tmp_rm.TransID
+                    AND rt.CreatedDate = tmp_rm.CreatedDate;
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
         
 	DELETE		rt
 	FROM 		DCS_DataCenter.RawTransaction AS rt
 	INNER JOIN	Temp_RawTransaction	AS tmp_rm
 				ON	rt.TransID = tmp_rm.TransID
-					AND rt.TransID = tmp_rm.CreatedDate;
+					AND rt.CreatedDate = tmp_rm.CreatedDate;
     
 	#=================================================================	
   
