@@ -4,7 +4,7 @@ USE DCS_DataCenter$$
 
 DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_ST_TransformData_GetPackage$$
 
-CREATE PROCEDURE DCS_DataCenter.DCS_ST_TransformData_GetPackage (IN ip_IsProcessed TINYINT, IN ip_NoOfTickets INT, IN ip_NoOfBatch INT)
+CREATE DEFINER=`fps`@`%` PROCEDURE DCS_DataCenter.DCS_ST_TransformData_GetPackage (IN ip_IsProcessed TINYINT, IN ip_NoOfTickets INT, IN ip_NoOfBatch INT)
 BEGIN
 	/*
 	Created: 20190730@Casey.Huynh
@@ -46,7 +46,7 @@ BEGIN
 
 	### PERFORMANCE: END    
     
-    SET SysMinCreatedDate = (SELECT DATE(MinCreatedDate) FROM DCS_DataCenter.SystemSetting WHERE VGroup = "DCS_Device_Transform" AND VName = "MinCreatedDate");
+    SET SysMinCreatedDate = (SELECT DATE(VValue) FROM DCS_DataCenter.SystemSetting WHERE VGroup = "DCS_Device_Transform" AND VName = "MinCreatedDate");
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Transaction;
     CREATE TEMPORARY TABLE Temp_Transaction 

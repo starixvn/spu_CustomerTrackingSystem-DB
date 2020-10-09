@@ -2,7 +2,7 @@ DELIMITER $$
 
 DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformData_Transaction_Insert$$
 
-CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformData_Transaction_Insert(IN ip_FromTransID BIGINT, IN ip_ToTransID BIGINT)
+CREATE DEFINER=`fps`@`%` PROCEDURE DCS_DataCenter.DCS_DC_TransformData_Transaction_Insert(IN ip_FromTransID BIGINT, IN ip_ToTransID BIGINT)
 BEGIN
 /*
 	Created: 20190730@Casey.Huynh
@@ -79,7 +79,7 @@ BEGIN
 		, SubscriberID			INT NULL
         , SubscriberType		TINYINT	UNSIGNED	NULL
     );
-    SET SysMinCreatedDate = (SELECT DATE(MinCreatedDate) FROM DCS_DataCenter.SystemSetting WHERE VGroup = "DCS_Device_Transform" AND VName = "MinCreatedDate");  
+    SET SysMinCreatedDate = (SELECT DATE(VValue) FROM DCS_DataCenter.SystemSetting WHERE VGroup = "DCS_Device_Transform" AND VName = "MinCreatedDate");  
 	INSERT INTO Temp_RawTransaction(TransID, LoginName, TransTime, SubscriberID, SubscriberType, DeviceCode
 			, URLDetails, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, FingerprintCode, FingerprintMoreInfo)
 	SELECT  rt.TransID
