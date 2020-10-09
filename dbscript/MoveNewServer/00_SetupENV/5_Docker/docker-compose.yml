@@ -10,6 +10,8 @@ services:
     image: mysql:${MYSQL_TAG}
     container_name: ${MYSQL_HOST}
     hostname: ${MYSQL_HOST}
+    cap_add:
+      - SYS_NICE  # CAP_SYS_NICE
     #privileged: true
 
     volumes:

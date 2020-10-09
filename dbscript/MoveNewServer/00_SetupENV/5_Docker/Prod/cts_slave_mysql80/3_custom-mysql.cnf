@@ -12,7 +12,7 @@ collation-server            = utf8_unicode_ci
 key_buffer_size             = 16M
 max_allowed_packet          = 32M
 thread_stack                = 192K
-thread_cache_size           = 8
+thread_cache_size           = 12
 max_connections             = 2000
 
 #I/O threads

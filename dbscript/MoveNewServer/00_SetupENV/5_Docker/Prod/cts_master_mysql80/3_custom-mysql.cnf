@@ -12,7 +12,7 @@ collation-server            = utf8_unicode_ci
 key_buffer_size             = 16M
 max_allowed_packet          = 32M
 thread_stack                = 192K
-thread_cache_size           = 8
+thread_cache_size           = 12
 max_connections             = 2000
 
 #I/O threads
@@ -28,6 +28,7 @@ innodb_buffer_pool_size = 32G # (adjust value here, 50%-70% of total RAM)
 innodb_log_file_size = 512M
 innodb_flush_log_at_trx_commit = 1 # may change to 2 or 0
 innodb_flush_method = O_DIRECT
+innodb_buffer_pool_dump_pct = 50
 
 #tmp
 tmpdir = /var/log/mysql/tmp
