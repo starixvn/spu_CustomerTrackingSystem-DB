@@ -25,6 +25,7 @@ Revisions:
         - [20200909@Irena.Vo][141020]: Enhance Schema for params CustomerClass's customers
         - [20200917@Long.Luu][141755]: Probation Category Monitoring
         - [20201006@Long.Luu][142414]: Notification Settings
+        - [20201012@Long.Luu][141756]: Sync Evidence to CTS Category
 Reviewer:
 */
 
@@ -662,3 +663,54 @@ INSERT INTO NotificationSettings(UserID, FunctionID, FunctionName, GrantedFrom, 
 SELECT p.UserID, p.FunctionID, p.FunctionName, p.GrantedFrom, p.CreatedDate
 FROM CTS_DataCenter.CTSUserPermission AS p
 WHERE p.GrantedTo IS NULL;
+
+# [20201012@Long.Luu][141756]: Sync Evidence to CTS Category
+DROP TABLE IF EXISTS CTS_DataCenter.EvidenceToCategory;
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.EvidenceToCategory (
+		EvidenceID			SMALLINT UNSIGNED AUTO_INCREMENT
+	,	CategoryID			SMALLINT UNSIGNED
+	, 	PRIMARY KEY			PK_EvidenceToCategory_EvidenceIDCategoryID(EvidenceID,CategoryID)
+    ,	INDEX				IX_EvidenceToCategory_CategoryID(CategoryID)
+) ENGINE=INNODB;
+
+INSERT INTO CTS_DataCenter.EvidenceToCategory(EvidenceID,CategoryID)
+SELECT EvidenceID, 72 FROM CTS_DataCenter.Evidence WHERE EvidenceCode IN ('6.1','6.11','6.21');
+
+INSERT INTO CTS_DataCenter.EvidenceToCategory(EvidenceID,CategoryID)
+SELECT EvidenceID, 73 FROM CTS_DataCenter.Evidence WHERE EvidenceCode IN ('6.4','6.14','6.24');
+
+INSERT INTO CTS_DataCenter.EvidenceToCategory(EvidenceID,CategoryID)
+SELECT EvidenceID, 74 FROM CTS_DataCenter.Evidence WHERE EvidenceCode IN ('6.3','6.13','6.23');
+
+INSERT INTO CTS_DataCenter.EvidenceToCategory(EvidenceID,CategoryID)
+SELECT EvidenceID, 75 FROM CTS_DataCenter.Evidence WHERE EvidenceCode IN ('6.2','6.12','6.22');
+
+INSERT INTO CTS_DataCenter.EvidenceToCategory(EvidenceID,CategoryID)
+SELECT EvidenceID, 76 FROM CTS_DataCenter.Evidence WHERE EvidenceCode IN ('6.17','6.27');
+
+INSERT INTO CTS_DataCenter.EvidenceToCategory(EvidenceID,CategoryID)
+SELECT EvidenceID, 78 FROM CTS_DataCenter.Evidence WHERE EvidenceCode IN ('6.5','6.15','6.25');
+
+INSERT INTO CTS_DataCenter.EvidenceToCategory(EvidenceID,CategoryID)
+SELECT EvidenceID, 79 FROM CTS_DataCenter.Evidence WHERE EvidenceCode IN ('6.6','6.16','6.26');
+
+INSERT INTO CTS_DataCenter.EvidenceToCategory(EvidenceID,CategoryID)
+SELECT EvidenceID, 80 FROM CTS_DataCenter.Evidence WHERE EvidenceCode IN ('6.18','6.28');
+
+INSERT INTO CTS_DataCenter.CustomerCategory(CategoryID, CategoryName, CategorySpec, ParentID, DisplayOrder, IsActive, CreatedDate, IsUsedManually)
+VALUES (60, 'Bonus Hunter', 'Bonus Hunter', 50, 255, 1, CURRENT_TIME(),0);
+
+INSERT INTO CTS_DataCenter.CustomerCategory(CategoryID, CategoryName, CategorySpec, ParentID, DisplayOrder, IsActive, CreatedDate, IsUsedManually)
+SELECT 	CategoryID + 20
+	,	CONCAT(CategoryName, ' (Evidence)')
+    ,	CONCAT(CategorySpec, ' (Evidence)')
+    ,	ParentID
+    ,	DisplayOrder
+    ,	1
+    ,	CURRENT_TIMESTAMP()
+    ,	0
+FROM CTS_DataCenter.CustomerCategory
+WHERE CategoryID IN (52,53,54,55,56,58,59,60);
+
+INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
+VALUES(6,'IsTurnedOnEvidenceSyncToCategory', 'Is Turned On Evidence Sync To Category', 'BOOLEAN', '1');

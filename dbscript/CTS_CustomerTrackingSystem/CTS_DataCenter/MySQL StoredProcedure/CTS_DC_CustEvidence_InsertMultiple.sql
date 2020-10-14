@@ -17,45 +17,48 @@ sp: BEGIN
 		Original:
 
 		Revisions:
-		   - 20200608@Long.Luu [Redmine ID: 134489]: Created
-           - [20200807@Casey.Huynh]:[138925] Chagne CustEvidence Structure for Cross Subscriber : Remove SubscriberID and IsCreatedByMaster
-		   - 20200824@Roger.Le[Redmine ID: 137551]: Evidence Upload - Overrite the data
+			- 20200608@Long.Luu [Redmine ID: 134489]: Created
+			- 20200807@Casey.Huynh [Redmine ID: #138925]: Chagne CustEvidence Structure for Cross Subscriber : Remove SubscriberID and IsCreatedByMaster
+			- 20200824@Roger.Le [Redmine ID: 137551]: Evidence Upload - Overrite the data
+			- 20201013@Long.Luu [Redmine ID: #141756]: Sync Evidence to Category
 	*/    
   
-    DECLARE	vr_SPName 		VARCHAR(100) DEFAULT 'CTS_DC_CustEvidence_InsertMultiple';  
-    DECLARE	vr_CreatedDate	DATETIME;
+    DECLARE	lv_SPName 			VARCHAR(100) DEFAULT 'CTS_DC_CustEvidence_InsertMultiple'; 
+    DECLARE	lv_CreatedDate		DATETIME;      
+    DECLARE	lv_IsSyncEvi2Cate	VARCHAR(1) DEFAULT '';
 
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
     
-    SET	vr_CreatedDate 		= CURRENT_TIME();
+    SET	lv_CreatedDate 		= CURRENT_TIME();
+    SET @ip_UserID = 1027893;
      
-    DROP TEMPORARY TABLE IF EXISTS tmpMultipleAccountEvidence;    
-	CREATE TEMPORARY TABLE tmpMultipleAccountEvidence 
+    DROP TEMPORARY TABLE IF EXISTS Temp_MultipleAccountEvidence;    
+	CREATE TEMPORARY TABLE Temp_MultipleAccountEvidence 
     (	 
 			CTSCustID		BIGINT UNSIGNED     
         , 	EvidenceID		SMALLINT UNSIGNED
         , 	Remark			VARCHAR(500)  
-        , 	PRIMARY KEY	tmpMultipleAccountEvidence(CTSCustID,EvidenceID) 
+        , 	PRIMARY KEY	Temp_MultipleAccountEvidence(CTSCustID,EvidenceID) 
     );      
     
-	DROP TABLE IF EXISTS tmpAssociationException;
-    CREATE TEMPORARY TABLE tmpAssociationException(
+	DROP TABLE IF EXISTS Temp_AssociationException;
+    CREATE TEMPORARY TABLE Temp_AssociationException(
 			FromCTSCustID 	BIGINT UNSIGNED
         ,	ToCTSCustID 	BIGINT UNSIGNED
-        , 	PRIMARY KEY	tmpAssociationException(FromCTSCustID,ToCTSCustID)
+        , 	PRIMARY KEY	Temp_AssociationException(FromCTSCustID,ToCTSCustID)
 	);
     
-    DROP TABLE IF EXISTS tmpAffectedDevices;
-    CREATE TEMPORARY TABLE tmpAffectedDevices(
+    DROP TABLE IF EXISTS Temp_AffectedDevices;
+    CREATE TEMPORARY TABLE Temp_AffectedDevices(
 			CTSCustID		BIGINT UNSIGNED     
 		,	DCSDeviceID		BIGINT UNSIGNED
-        , 	PRIMARY KEY	tmpAffectedDevices(CTSCustID,DCSDeviceID) 
+        , 	PRIMARY KEY	Temp_AffectedDevices(CTSCustID,DCSDeviceID) 
 	);
     
-    INSERT INTO tmpMultipleAccountEvidence(CTSCustID, EvidenceID, Remark)
+    INSERT INTO Temp_MultipleAccountEvidence(CTSCustID, EvidenceID, Remark)
 	SELECT 	tmpTable.CTSCustID
 		, 	tmpTable.EvidenceID
 		, 	tmpTable.Remark
@@ -68,7 +71,7 @@ sp: BEGIN
          
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 	IF (!ip_IsOverride AND EXISTS (	SELECT 1 
-				FROM tmpMultipleAccountEvidence AS t 
+				FROM Temp_MultipleAccountEvidence AS t 
 					LEFT JOIN CTS_DataCenter.CustEvidence AS ce ON t.CTSCustID = ce.CTSCustID AND t.EvidenceID = ce.EvidenceID
 				WHERE ce.CTSCustID IS NOT NULL
 					AND ce.EvidenceID IS NOT NULL
@@ -83,37 +86,66 @@ sp: BEGIN
         ,	t.Remark
         ,	0 
         ,	t.CTSCustID
-        ,	vr_CreatedDate
+        ,	lv_CreatedDate
         ,	ip_UserID
-    FROM tmpMultipleAccountEvidence AS t;
+    FROM Temp_MultipleAccountEvidence AS t;
 	
-    INSERT INTO tmpAffectedDevices(CTSCustID, DCSDeviceID)
+    INSERT INTO Temp_AffectedDevices(CTSCustID, DCSDeviceID)
     SELECT DISTINCT t.CTSCustID, a.DCSDeviceID
     FROM CTS_DataCenter.AssociationByDevice AS a    
-		INNER JOIN tmpMultipleAccountEvidence AS t ON a.CTSCustID = t.CTSCustID;
+		INNER JOIN Temp_MultipleAccountEvidence AS t ON a.CTSCustID = t.CTSCustID;
 
-    INSERT INTO tmpAssociationException(FromCTSCustID, ToCTSCustID)
+    INSERT INTO Temp_AssociationException(FromCTSCustID, ToCTSCustID)
     SELECT DISTINCT t.CTSCustID
 		,	CASE WHEN e.LeastCTSCustID_Order = t.CTSCustID THEN e.GreatestCTSCustID_Order ELSE e.LeastCTSCustID_Order END
     FROM CTS_DataCenter.CustException AS e
-		INNER JOIN tmpMultipleAccountEvidence AS t ON e.LeastCTSCustID_Order = t.CTSCustID
+		INNER JOIN Temp_MultipleAccountEvidence AS t ON e.LeastCTSCustID_Order = t.CTSCustID
 													OR e.GreatestCTSCustID_Order = t.CTSCustID;
     
 	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
-    SELECT DISTINCT a.CTSCustID, t.EvidenceID, t.Remark, 2, t.CTSCustID, vr_CreatedDate, ip_UserID
-    FROM tmpMultipleAccountEvidence AS t
-		INNER JOIN tmpAffectedDevices AS d ON t.CTSCustID = d.CTSCustID
+    SELECT DISTINCT a.CTSCustID, t.EvidenceID, t.Remark, 2, t.CTSCustID, lv_CreatedDate, ip_UserID
+    FROM Temp_MultipleAccountEvidence AS t
+		INNER JOIN Temp_AffectedDevices AS d ON t.CTSCustID = d.CTSCustID
 		INNER JOIN CTS_DataCenter.AssociationByDevice AS a ON a.DCSDeviceID = d.DCSDeviceID
-        LEFT JOIN tmpAssociationException AS e ON t.CTSCustID = e.FromCTSCustID AND a.CTSCustID = e.ToCTSCustID
+        LEFT JOIN Temp_AssociationException AS e ON t.CTSCustID = e.FromCTSCustID AND a.CTSCustID = e.ToCTSCustID
 	WHERE a.CTSCustID <> d.CTSCustID		
     	AND (e.FromCTSCustID IS NULL OR e.ToCTSCustID IS NULL);
     
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-	VALUES(3, vr_SPName, 'Insert bunch of Customer Evidences', vr_CreatedDate, ip_UserID);
+	VALUES(3, lv_SPName, 'Insert bunch of Customer Evidences', lv_CreatedDate, ip_UserID);
+    
+	# Sync Evidence to Category
+    SELECT ParameterValue
+    INTO lv_IsSyncEvi2Cate
+    FROM CTS_DataCenter.SystemParameter
+    WHERE ParameterID = 6;
+    
+    IF(lv_IsSyncEvi2Cate = '1') THEN
+		DELETE a
+        FROM Temp_MultipleAccountEvidence AS a
+			INNER JOIN CTS_DataCenter.SpecialCustomerClass AS s ON a.CTSCustID = s.CTSCustID;
+        
+		INSERT INTO CTS_DataCenter.CTSCustomerClassification
+		(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
+        SELECT 	c.CustID
+			, 	c.CTSCustID
+			, 	c.SubscriberID
+			, 	ec.CategoryID
+			,   0
+			, 	'Synced from Evidence'
+			, 	CURRENT_TIMESTAMP()
+			,   @ip_UserID
+			,   CURRENT_TIMESTAMP()
+			,   @ip_UserID
+			,   CURRENT_DATE
+		FROM Temp_MultipleAccountEvidence AS t
+			INNER JOIN CTS_DataCenter.EvidenceToCategory AS ec ON t.EvidenceID = ec.EvidenceID
+			INNER JOIN CTS_DataCenter.CTSCustomer AS c ON t.CTSCustID = c.CTSCustID;
+    END IF;
 
-	DROP TEMPORARY TABLE IF EXISTS tmpMultipleAccountEvidence;
-	DROP TEMPORARY TABLE IF EXISTS tmpAssociationException;
-	DROP TEMPORARY TABLE IF EXISTS tmpAffectedDevices;
+	DROP TEMPORARY TABLE IF EXISTS Temp_MultipleAccountEvidence;
+	DROP TEMPORARY TABLE IF EXISTS Temp_AssociationException;
+	DROP TEMPORARY TABLE IF EXISTS Temp_AffectedDevices;
     
 END$$
 DELIMITER ;
