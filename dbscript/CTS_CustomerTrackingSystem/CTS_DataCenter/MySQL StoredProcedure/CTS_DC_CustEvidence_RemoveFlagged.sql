@@ -22,7 +22,7 @@ BEGIN
         
 		Param's Explanation (filtered by):			
         
-        CALL CTS_DC_RemoveFlaggedEvidence (11113, 5, 8)
+        CALL CTS_DataCenter.CTS_DC_CustEvidence_RemoveFlagged(221882500, 41, 8, @op_ErrorMessage);
 	*/    
      
 	DECLARE		lv_CreatedDate		DATETIME;	
