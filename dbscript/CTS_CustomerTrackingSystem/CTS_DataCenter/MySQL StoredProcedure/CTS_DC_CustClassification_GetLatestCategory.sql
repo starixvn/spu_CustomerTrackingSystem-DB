@@ -33,7 +33,7 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_CustLastCategory;
     CREATE TEMPORARY TABLE Temp_CustLastCategory (
         	CustID				BIGINT UNSIGNED
-		,	SportGroupID		SMALLINT UNSIGNED
+		,	SportGroupID		SMALLINT 
 		,	LastModifiedDate	DATETIME
         ,	PRIMARY KEY PK_Temp_CustLastCategory(CustID,SportGroupID,LastModifiedDate)
     );     
@@ -46,7 +46,7 @@ BEGIN
     IF (ip_IsUsingCustID = 1) THEN
 			INSERT INTO Temp_CustLastCategory(CustID, SportGroupID, LastModifiedDate)
 			SELECT  t.CustID, 
-					CASE WHEN c.CustID IS NULL THEN 999
+					CASE WHEN c.CustID IS NULL THEN -1
 						 ELSE c.SportGroupID
 					END AS SportGroupID, 
 					CASE WHEN c.CustID IS NULL THEN '1000-01-01 00:00:00'
@@ -59,18 +59,18 @@ BEGIN
 			
 			SELECT t.CustID, 
 				   t.SportGroupID, 
-				   CASE WHEN t.SportGroupID = 999 THEN -1 
+				   CASE WHEN t.SportGroupID = -1 THEN -1 
 						ELSE MAX(c.CategoryID) 
 				   END AS CategoryID
 			FROM Temp_CustLastCategory AS t
 				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS c 
 					ON t.CustID = c.CustID AND t.SportGroupID = c.SportGroupID
-			WHERE t.SportGroupID = 999 OR t.LastModifiedDate = c.LastModifiedDate
+			WHERE t.SportGroupID = -1 OR t.LastModifiedDate = c.LastModifiedDate
 			GROUP BY  t.CustID, t.SportGroupID;
     ELSE
 		INSERT INTO Temp_CustLastCategory(CustID, SportGroupID, LastModifiedDate)
 			SELECT  t.CustID AS CTSCustID, 
-					CASE WHEN c.CTSCustID IS NULL THEN 999
+					CASE WHEN c.CTSCustID IS NULL THEN -1
 						 ELSE c.SportGroupID
 					END AS SportGroupID, 
 					CASE WHEN c.CTSCustID IS NULL THEN '1000-01-01 00:00:00'
@@ -78,18 +78,18 @@ BEGIN
 					END AS LastModifiedDate
 			FROM CTS_DataCenter.CTSCustomerClassification AS c
 				RIGHT JOIN Temp_CustIDs AS t ON c.CTSCustID = t.CustID
-			WHERE c.CustID IS NULL OR (ip_IsExcludedDetailedCategory = 0 OR (c.CategoryID > 50 AND c.CategoryID < 300))
+			WHERE c.CTSCustID IS NULL OR (ip_IsExcludedDetailedCategory = 0 OR (c.CategoryID > 50 AND c.CategoryID < 300))
 			GROUP BY t.CustID, c.CTSCustID, c.SportGroupID;
 			
 			SELECT t.CustID AS CTSCustID, 
 				   t.SportGroupID, 
-				   CASE WHEN t.SportGroupID = 999 THEN -1 
+				   CASE WHEN t.SportGroupID = -1 THEN -1 
 						ELSE MAX(c.CategoryID) 
 				   END AS CategoryID
 			FROM Temp_CustLastCategory AS t
 				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS c 
 					ON t.CustID = c.CTSCustID AND t.SportGroupID = c.SportGroupID
-			WHERE t.SportGroupID = 999 OR t.LastModifiedDate = c.LastModifiedDate
+			WHERE t.SportGroupID = -1 OR t.LastModifiedDate = c.LastModifiedDate
 			GROUP BY  t.CustID, t.SportGroupID;
     END IF;
     

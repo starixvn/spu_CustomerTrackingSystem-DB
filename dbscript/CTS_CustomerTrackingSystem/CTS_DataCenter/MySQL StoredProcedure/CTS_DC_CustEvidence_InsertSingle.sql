@@ -111,14 +111,14 @@ sp: BEGIN
     WHERE ParameterID = 6;
     
     IF(lv_IsSyncEvi2Cate = '1' AND NOT EXISTS (SELECT 1 FROM CTS_DataCenter.SpecialCustomerClass WHERE CTSCustID = ip_CTSCustID)) THEN
-		INSERT INTO CTS_DataCenter.CTSCustomerClassification
+		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification
 		(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
 		SELECT 	lv_CustID
 			, 	ip_CTSCustID
 			, 	lv_SubscriberID
 			, 	CategoryID
 			,   0
-			, 	'Synced from Evidence'
+			, 	'Synchronized by Evidence'
 			, 	lv_CreatedDateTime
 			,   lv_CreatedBy
 			,   lv_CreatedDateTime

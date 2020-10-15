@@ -139,7 +139,7 @@ sp: BEGIN
 			, 	c.SubscriberID
 			, 	ec.CategoryID
 			,   0
-			, 	'Synced from Evidence'
+			, 	'Synchronized by Evidence'
 			, 	lv_CreatedDateTime
 			,   lv_CreatedBy
 			,   lv_CreatedDateTime

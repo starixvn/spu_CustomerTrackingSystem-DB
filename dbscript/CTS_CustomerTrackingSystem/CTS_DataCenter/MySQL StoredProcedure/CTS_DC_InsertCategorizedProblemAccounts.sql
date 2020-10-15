@@ -3,7 +3,7 @@ DROP procedure IF EXISTS `CTS_DC_InsertCategorizedProblemAccounts`;
 
 DELIMITER $$
 USE `CTS_DataCenter`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_InsertCategorizedProblemAccounts`(IN ip_ProblemAccounts JSON)
+CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_InsertCategorizedProblemAccounts`(IN ip_ProblemAccounts 	JSON)
 BEGIN
 	/*
 		Created:	20200715@Long.Luu
@@ -17,19 +17,18 @@ BEGIN
 			20200908@Irena.Vo [#141020]: Exclude VVIP Customers, Pin 
             20201001-20201014@Irena.Vo [#141930]: 
             - Add Multi Problem Category
-            - Return CC = -1 with remove PA from NapCM if not existed Evd Category before
             - Remove old categoryid from NapCM
             
 		Param's Explanation (filtered by):
 	*/   
     DECLARE lv_CreatedBy 		INT DEFAULT 10278938;
-    DECLARE lv_CurrentDateTime 	DATETIME DEFAULT NOW();
-   
+    DECLARE lv_CurrentDateTime 	DATETIME DEFAULT NOW(); 
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_ProblemAccounts;    
 	CREATE TEMPORARY TABLE Temp_ProblemAccounts 
     (	  
 			CustID				BIGINT UNSIGNED
-        , 	MainDBCategoryID	SMALLINT UNSIGNED
+        , 	MainDBCategoryID	SMALLINT 
         , 	NewCategoryID		SMALLINT UNSIGNED  -- Category is inserted to CTS
         , 	CTSCustID			BIGINT UNSIGNED DEFAULT NULL
         , 	SubscriberID		INT DEFAULT NULL
@@ -51,22 +50,20 @@ BEGIN
   
     INSERT INTO Temp_ProblemAccounts(CustID, MainDBCategoryID)
 	SELECT 	temp.CustID
-		, 	CASE WHEN temp.MainDBCategoryID IS NULL THEN 0 -- will remove PA
-				 ELSE temp.MainDBCategoryID -- will remove old category
-             END AS MainDBCategoryID
+		, 	temp.MainDBCategoryID 
 	FROM JSON_TABLE(ip_ProblemAccounts,
 		 "$[*]" COLUMNS(
 			  CustID 			BIGINT UNSIGNED		PATH "$.CustId"
-			, MainDBCategoryID	SMALLINT UNSIGNED	PATH "$.CategoryId"	
+			, MainDBCategoryID	SMALLINT 			PATH "$.CategoryId"	
 		 )) AS temp;
-	
+    
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-	SET SQL_SAFE_UPDATES =0;
+	SET SQL_SAFE_UPDATES = 0;
     
     /*GET REMOVE PROBLEM ACCOUNTS*/
 	UPDATE Temp_ProblemAccounts
     SET ActionType = 2
-    WHERE MainDBCategoryID = 0; -- return remove PA List from NAP CM
+    WHERE MainDBCategoryID = -1; -- return remove PA List from NAP CM
     
     /*IGNORE VVIP - PIN CATEGORY*/
     DELETE temp
@@ -113,7 +110,8 @@ BEGIN
 								WHEN MainDBCategoryID = 108 THEN 158
 								WHEN MainDBCategoryID = 109 THEN 159
 								WHEN MainDBCategoryID = 255 THEN 160
-							END;
+							END
+	WHERE MainDBCategoryID <> -1;
         
 	/*GET EXISTED CATEGORY*/
 	INSERT INTO Temp_ExistedClassification (CustID, CurrentCategoryID, CreatedDate)

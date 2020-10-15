@@ -1,8 +1,9 @@
-DELIMITER $$
-USE `CTS_DataCenter` $$
-DROP PROCEDURE IF EXISTS CTS_DC_CustEvidence_RemoveFlagged $$
+USE `CTS_DataCenter`;
+DROP procedure IF EXISTS `CTS_DC_CustEvidence_RemoveFlagged`;
 
-CREATE PROCEDURE CTS_DC_CustEvidence_RemoveFlagged (
+DELIMITER $$
+USE `CTS_DataCenter`$$
+CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_CustEvidence_RemoveFlagged`(
 	IN ip_CTSCustID 		BIGINT,        
 	IN ip_EvidenceID 		SMALLINT,	
 	IN ip_UserID 			INT,
@@ -25,24 +26,24 @@ BEGIN
         CALL CTS_DataCenter.CTS_DC_CustEvidence_RemoveFlagged(221882500, 41, 8, @op_ErrorMessage);
 	*/    
      
-	DECLARE		lv_CreatedDate		DATETIME;	
     DECLARE		lv_SPName 			VARCHAR(100) 	DEFAULT 'CTS_DC_CustEvidence_RemoveFlagged';  
+    DECLARE		lv_CreatedDateTime 	DATETIME 		DEFAULT CURRENT_TIME();
+    
     DECLARE		lv_IsSyncEvi2Cate	VARCHAR(1) 		DEFAULT '';  
     
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
-    
-    SET			lv_CreatedDate 		= CURRENT_TIME();
-    	
+  
+	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
 	SET SQL_SAFE_UPDATES = 0;
     
     DELETE FROM CTS_DataCenter.CustEvidence
 	WHERE FromCustID = ip_CTSCustID		
-		AND EvidenceID = ip_EvidenceID;
+	AND EvidenceID = ip_EvidenceID;
         
-	# Sync Evidence to Category
+	/*SYNC EVIDENCE TO CATEGORY*/
     SELECT ParameterValue
     INTO lv_IsSyncEvi2Cate
     FROM CTS_DataCenter.SystemParameter
@@ -51,15 +52,16 @@ BEGIN
     IF(lv_IsSyncEvi2Cate = '1') THEN
 		DELETE c
         FROM CTS_DataCenter.CTSCustomerClassification AS c
-			INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON c.CategoryID = e.CategoryID
-		WHERE c.CTSCustID = ip_CTSCustID		
-			AND e.EvidenceID = ip_EvidenceID;
+		INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON c.CategoryID = e.CategoryID
+		WHERE c.CTSCustID = ip_CTSCustID AND e.EvidenceID = ip_EvidenceID;
     END IF;
-        
-	SET SQL_SAFE_UPDATES = 1;
-        
+  
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-	VALUES(4, lv_SPName, CONCAT('Remove Flagged Evidence: ip_CTSCustID = ', ip_CTSCustID, ';ip_EvidenceID = ', ip_EvidenceID), lv_CreatedDate, ip_UserID);
+	VALUES(4, lv_SPName, CONCAT('Remove Flagged Evidence: ip_CTSCustID = ', ip_CTSCustID, ';ip_EvidenceID = ', ip_EvidenceID), lv_CreatedDateTime, ip_UserID);
+    
+    SET SQL_SAFE_UPDATES = 1;
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
     
 END$$
+
 DELIMITER ;

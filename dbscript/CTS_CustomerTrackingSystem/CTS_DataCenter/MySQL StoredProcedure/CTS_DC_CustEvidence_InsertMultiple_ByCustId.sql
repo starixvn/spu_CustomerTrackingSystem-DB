@@ -128,14 +128,14 @@ sp: BEGIN
         FROM Temp_MultipleAccountEvidence AS a
 		INNER JOIN CTS_DataCenter.SpecialCustomerClass AS s ON a.CTSCustID = s.CTSCustID;
         
-		INSERT INTO CTS_DataCenter.CTSCustomerClassification
+		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification
 		(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
         SELECT 	t.CustID
 			, 	t.CTSCustID
 			, 	t.SubscriberID
 			, 	ec.CategoryID
 			,   0
-			, 	'Synced from Evidence'
+			, 	'Synchronized by Evidence'
 			, 	lv_CreatedDateTime
 			,   lv_CreatedBy
 			,   lv_CreatedDateTime
