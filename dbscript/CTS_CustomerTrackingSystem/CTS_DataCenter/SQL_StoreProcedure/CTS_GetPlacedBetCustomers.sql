@@ -29,7 +29,9 @@ BEGIN
 	FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 	WHERE b.bettype < 19001
 		AND b.transdate BETWEEN @FromDate AND @ToDate
-		AND b.Username NOT LIKE '%Cashout%';
+		AND b.Currency NOT IN (20,27,28)
+		AND b.Username NOT LIKE '%Cashout%'
+		AND b.BetFrom <> 'p';
 END;
 
 /*<info serverAlias="DBCTS-bodb02" executers="bodbAdminNet" isFunction="0" isNested="0"></info>*/
