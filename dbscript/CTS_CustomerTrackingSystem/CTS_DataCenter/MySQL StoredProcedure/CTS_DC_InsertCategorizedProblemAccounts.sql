@@ -179,7 +179,10 @@ BEGIN
 		, 	1
 		, 	CURRENT_DATE() AS InsertDate
 	FROM 	Temp_ProblemAccounts AS temp;            
-  
+	/*GET DISTINCT CUSTID*/
+    SELECT DISTINCT temp.CustID
+    FROM Temp_ProblemAccounts AS temp; -- Get lastest custid for mapping to CC in mainDB
+    
 	SET SQL_SAFE_UPDATES = 1;
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
