@@ -24,6 +24,7 @@ sp: BEGIN
 			- 20200513@Lex: Fix wrong subID mapping of level 2
 			- 20200807@Casey.Huynh [138925]: Chagne CustEvidence Structure for Cross Subscriber : Remove SubscriberID and IsCreatedByMaster
             - 20201013@Long.Luu [Redmine ID: #141756]: Sync Evidence to Category
+			- 20201019@Irena.Vo [Redmine ID: #141756]: Enhance logic Remove all category (Detail & General)
         
 		Param's Explanation (filtered by):			
         call CTS_DataCenter.CTS_DC_CustEvidence_InsertSingle(221882500, 41, 'Na Test', 8, @op_ErrorMessage);
@@ -111,6 +112,11 @@ sp: BEGIN
     WHERE ParameterID = 6;
     
     IF(lv_IsSyncEvi2Cate = '1' AND NOT EXISTS (SELECT 1 FROM CTS_DataCenter.SpecialCustomerClass WHERE CTSCustID = ip_CTSCustID)) THEN
+        DELETE cate
+        FROM CTS_DataCenter.CTSCustomerClassification AS cate
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
+        WHERE cate.CustID = lv_CustID AND cc.ParentID IN (1, 200);
+        
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification
 		(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
 		SELECT 	lv_CustID
@@ -118,14 +124,14 @@ sp: BEGIN
 			, 	lv_SubscriberID
 			, 	CategoryID
 			,   0
-			, 	'Synchronized by Evidence'
+			, 	'Synced by Evidence'
 			, 	lv_CreatedDateTime
 			,   lv_CreatedBy
 			,   lv_CreatedDateTime
 			,   lv_CreatedBy
 			,   DATE(lv_CreatedDateTime)
 		FROM CTS_DataCenter.EvidenceToCategory
-		WHERE EvidenceID = ip_EvidenceID; 
+		WHERE EvidenceID = ip_EvidenceID;  
     END IF;
     
     SET SQL_SAFE_UPDATES = 1;

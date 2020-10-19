@@ -1,8 +1,9 @@
-DELIMITER $$
-USE `CTS_DataCenter` $$
-DROP PROCEDURE IF EXISTS CTS_DC_CustEvidence_InsertMultiple $$
+USE `CTS_DataCenter`;
+DROP procedure IF EXISTS `CTS_DC_CustEvidence_InsertMultiple`;
 
-CREATE PROCEDURE CTS_DC_CustEvidence_InsertMultiple (
+DELIMITER $$
+USE `CTS_DataCenter`$$
+CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_CustEvidence_InsertMultiple`(
 		IN ip_NewAccountEvidences 	JSON    
     ,	IN ip_UserID 				INT
 	, 	IN ip_IsOverride			BOOLEAN
@@ -20,6 +21,7 @@ sp: BEGIN
 			- 20200807@Casey.Huynh [Redmine ID: #138925]: Chagne CustEvidence Structure for Cross Subscriber : Remove SubscriberID and IsCreatedByMaster
 			- 20200824@Roger.Le [Redmine ID: 137551]: Evidence Upload - Overrite the data
 			- 20201013@Long.Luu [Redmine ID: #141756]: Sync Evidence to Category
+            - 20201019@Irena.Vo [Redmine ID: #141756]: Enhance logic Remove all category (Detail & General)
             
             call CTS_DataCenter.CTS_DC_CustEvidence_InsertMultiple
 			('[{"CTSCustID": 221882500, "EvidenceID": 45, "Comment": "na test 1"},{"CTSCustID":221882500, "EvidenceID": 46, "Comment":"na test 2"},
@@ -29,7 +31,7 @@ sp: BEGIN
     DECLARE		lv_CreatedDateTime 	DATETIME DEFAULT CURRENT_TIME();
     DECLARE 	lv_CreatedBy        BIGINT DEFAULT 10278938;
     
-    DECLARE		lv_IsSyncEvi2Cate	VARCHAR(1) DEFAULT '';
+    DECLARE		lv_IsSyncEvi2Cate	VARCHAR(1) DEFAULT ''; 
 
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
@@ -132,6 +134,12 @@ sp: BEGIN
         FROM Temp_MultipleAccountEvidence AS a
 		INNER JOIN CTS_DataCenter.SpecialCustomerClass AS s ON a.CTSCustID = s.CTSCustID;
         
+		DELETE cate
+        FROM CTS_DataCenter.CTSCustomerClassification AS cate
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
+        INNER JOIN Temp_MultipleAccountEvidence AS a ON a.CTSCustID = cate.CTSCustID
+        WHERE cc.ParentID IN (1, 200);
+        
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification
 		(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
         SELECT 	c.CustID
@@ -139,7 +147,7 @@ sp: BEGIN
 			, 	c.SubscriberID
 			, 	ec.CategoryID
 			,   0
-			, 	'Synchronized by Evidence'
+			, 	'Synced by Evidence'
 			, 	lv_CreatedDateTime
 			,   lv_CreatedBy
 			,   lv_CreatedDateTime
@@ -149,13 +157,14 @@ sp: BEGIN
 			INNER JOIN CTS_DataCenter.EvidenceToCategory AS ec ON t.EvidenceID = ec.EvidenceID
 			INNER JOIN CTS_DataCenter.CTSCustomer AS c ON t.CTSCustID = c.CTSCustID;
     END IF;
-
+    
     SET SQL_SAFE_UPDATES = 1;
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_AssociatedException;
 	DROP TEMPORARY TABLE IF EXISTS Temp_AffectedDevices;
     DROP TEMPORARY TABLE IF EXISTS Temp_MultipleAccountEvidence;
     
 END$$
+
 DELIMITER ;

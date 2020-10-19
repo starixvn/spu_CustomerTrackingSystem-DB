@@ -1,8 +1,9 @@
-DELIMITER $$
-USE `CTS_DataCenter` $$
-DROP PROCEDURE IF EXISTS CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers $$
+USE `CTS_DataCenter`;
+DROP procedure IF EXISTS `CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers`;
 
-CREATE PROCEDURE CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers (
+DELIMITER $$
+USE `CTS_DataCenter`$$
+CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers`(
 		IN ip_CustIds 				VARCHAR(4000)
     ,   IN ip_EvidenceCodes 		VARCHAR(4000)
     
@@ -12,13 +13,14 @@ sp: BEGIN
 		Created:	20200610@Long.Luu
 		Task:		Insert multiple evidences for multiple customers [Redmine ID: 135585]
 		DB:			CTS_DataCenter
-		Original:
+		Original: 
 
 		Revisions:
 			- 20200610@Long.Luu: Created [Redmine ID: 135585]
             - 20201013@Long.Luu [Redmine ID: #141756]: Sync Evidence to Category
+            - 20201019@Irena.Vo [Redmine ID: #141756]: Enhance logic Remove all category (Detail & General)
             
-            call CTS_DataCenter.CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers_Na('43600693,43600889', '6.1', @op_ErrorMessage);
+            call CTS_DataCenter.CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers('43600693,43600889', '6.1', @op_ErrorMessage);
 	*/    
    
     DECLARE		lv_SPName 			VARCHAR(100) DEFAULT 'CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers';  
@@ -107,12 +109,12 @@ sp: BEGIN
     /*INSERT NEW AFFECTED EVIDENCES FOR  CUSTOMERS*/
 	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID,EvidenceID, Level, FromCustID, CreatedDate, CreatedBy)
     SELECT DISTINCT a.CTSCustID, ev.EvidenceID, 2, t.CTSCustID, lv_CreatedDateTime, lv_CreatedBy
-    FROM 		Temp_CustomerList AS t
+    FROM 		Temp_CustomerList AS t 
 	INNER JOIN 	Temp_AffectedDevices AS d ON t.CTSCustID = d.CTSCustID
 	INNER JOIN 	CTS_DataCenter.AssociationByDevice AS a ON a.DCSDeviceID = d.DCSDeviceID
 	LEFT JOIN  	CTS_DataCenter.CTSCustomer AS c ON a.CTSCustID = c.CTSCustID AND c.CustSubID = 0
 	LEFT JOIN  	Temp_AssociatedException AS e ON t.CTSCustID = e.FromCTSCustID AND a.CTSCustID = e.ToCTSCustID
-	    CROSS JOIN 	Temp_EvidenceList AS ev
+	CROSS JOIN  Temp_EvidenceList AS ev
 	WHERE 		a.CTSCustID <> d.CTSCustID AND (e.FromCTSCustID IS NULL OR e.ToCTSCustID IS NULL);
     
     /*WRITE LOG*/
@@ -130,6 +132,12 @@ sp: BEGIN
         FROM Temp_CustomerList AS a
 		INNER JOIN CTS_DataCenter.SpecialCustomerClass AS s ON a.CTSCustID = s.CTSCustID;
 		
+        DELETE cate
+        FROM CTS_DataCenter.CTSCustomerClassification AS cate
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
+        INNER JOIN Temp_CustomerList AS a ON a.CustID = cate.CustID
+        WHERE cc.ParentID IN (1, 200);
+        
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification
 		(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
         SELECT 	t.CustID
@@ -137,7 +145,7 @@ sp: BEGIN
 			, 	t.SubscriberID
 			, 	a.CategoryID
 			,   0
-			, 	'Synchronized by Evidence'
+			, 	'Synced by Evidence'
 			, 	lv_CreatedDateTime
 			,   lv_CreatedBy
 			,   lv_CreatedDateTime
@@ -150,11 +158,12 @@ sp: BEGIN
     END IF;
     
     SET SQL_SAFE_UPDATES = 1;
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
     
     DROP TEMPORARY TABLE IF EXISTS Temp_AssociatedException;
 	DROP TEMPORARY TABLE IF EXISTS Temp_AffectedDevices;
     DROP TEMPORARY TABLE IF EXISTS Temp_EvidenceList;
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerList;
 END$$
+
 DELIMITER ;

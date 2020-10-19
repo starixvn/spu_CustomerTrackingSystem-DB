@@ -37,7 +37,7 @@ BEGIN
     , 	LastModifiedDate	DATETIME
     ,	LastModifiedBy		INT UNSIGNED
     , 	LastScannedDate		DATETIME
-	,   CategoryType        SMALLINT UNSIGNED DEFAULT 0 -- 0: ParentID = 1, 1: ParentID = 200, 2: ParentID = 50 OR CategoryID = 3
+	,   CategoryType        SMALLINT UNSIGNED DEFAULT 0 -- 0: ParentID = 1, 1: ParentID = 200, 2: ParentID = 50
     );
    
     DROP TEMPORARY TABLE IF EXISTS Temp_RangeDateCategory;
@@ -88,9 +88,7 @@ BEGIN
     
     -- Choose Lastest Display Category with scan date
     INSERT INTO Temp_RangeDateCategory
-    SELECT  DisplayCategoryID
-		,	MIN(LastModifiedDate)
-        ,   MAX(LastModifiedDate)
+    SELECT  DisplayCategoryID,	MIN(LastModifiedDate),   MAX(LastModifiedDate)
     FROM Temp_LatestRecordOfCategory
     GROUP BY DisplayCategoryID;
 

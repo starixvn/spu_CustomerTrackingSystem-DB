@@ -33,7 +33,7 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_CustLastCategory;
     CREATE TEMPORARY TABLE Temp_CustLastCategory (
         	CustID				BIGINT UNSIGNED
-		,	SportGroupID		SMALLINT 
+		,	SportGroupID		SMALLINT
 		,	LastModifiedDate	DATETIME
         ,	PRIMARY KEY PK_Temp_CustLastCategory(CustID,SportGroupID,LastModifiedDate)
     );     
@@ -43,6 +43,8 @@ BEGIN
 	EXECUTE stmt1;    
     
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
+    SET SQL_SAFE_UPDATES = 0;
+    
     IF (ip_IsUsingCustID = 1) THEN
 			INSERT INTO Temp_CustLastCategory(CustID, SportGroupID, LastModifiedDate)
 			SELECT  t.CustID, 
@@ -57,18 +59,18 @@ BEGIN
 			WHERE c.CustID IS NULL OR (ip_IsExcludedDetailedCategory = 0 OR (c.CategoryID > 50 AND c.CategoryID < 300))
 			GROUP BY t.CustID, c.CustID, c.SportGroupID;
 			
-			SELECT t.CustID, 
+			SELECT t.CustID AS CustId, 
 				   t.SportGroupID, 
 				   CASE WHEN t.SportGroupID = -1 THEN -1 
 						ELSE MAX(c.CategoryID) 
-				   END AS CategoryID
+				   END AS CategoryId
 			FROM Temp_CustLastCategory AS t
 				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS c 
 					ON t.CustID = c.CustID AND t.SportGroupID = c.SportGroupID
 			WHERE t.SportGroupID = -1 OR t.LastModifiedDate = c.LastModifiedDate
 			GROUP BY  t.CustID, t.SportGroupID;
     ELSE
-		INSERT INTO Temp_CustLastCategory(CustID, SportGroupID, LastModifiedDate)
+		    INSERT INTO Temp_CustLastCategory(CustID, SportGroupID, LastModifiedDate)
 			SELECT  t.CustID AS CTSCustID, 
 					CASE WHEN c.CTSCustID IS NULL THEN -1
 						 ELSE c.SportGroupID
@@ -81,18 +83,20 @@ BEGIN
 			WHERE c.CTSCustID IS NULL OR (ip_IsExcludedDetailedCategory = 0 OR (c.CategoryID > 50 AND c.CategoryID < 300))
 			GROUP BY t.CustID, c.CTSCustID, c.SportGroupID;
 			
-			SELECT t.CustID AS CTSCustID, 
+			SELECT cust.CustID AS CustId, 
 				   t.SportGroupID, 
 				   CASE WHEN t.SportGroupID = -1 THEN -1 
 						ELSE MAX(c.CategoryID) 
-				   END AS CategoryID
+				   END AS CategoryId
 			FROM Temp_CustLastCategory AS t
 				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS c 
 					ON t.CustID = c.CTSCustID AND t.SportGroupID = c.SportGroupID
+                INNER JOIN CTS_DataCenter.CTSCustomer AS cust on cust.CTSCustID = t.CustID
 			WHERE t.SportGroupID = -1 OR t.LastModifiedDate = c.LastModifiedDate
-			GROUP BY  t.CustID, t.SportGroupID;
+			GROUP BY  cust.CustID, t.SportGroupID;
     END IF;
     
+    SET SQL_SAFE_UPDATES = 1;
 	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
       
     DROP TEMPORARY TABLE IF EXISTS Temp_CustLastCategory;

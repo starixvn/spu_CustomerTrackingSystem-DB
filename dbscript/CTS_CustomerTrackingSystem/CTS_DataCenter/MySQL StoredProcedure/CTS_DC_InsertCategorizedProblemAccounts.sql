@@ -3,7 +3,9 @@ DROP procedure IF EXISTS `CTS_DC_InsertCategorizedProblemAccounts`;
 
 DELIMITER $$
 USE `CTS_DataCenter`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_InsertCategorizedProblemAccounts`(IN ip_ProblemAccounts 	JSON)
+CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_InsertCategorizedProblemAccounts`(
+		IN  ip_ProblemAccounts 		JSON
+)
 BEGIN
 	/*
 		Created:	20200715@Long.Luu
@@ -18,12 +20,13 @@ BEGIN
             20201001-20201014@Irena.Vo [#141930]: 
             - Add Multi Problem Category
             - Remove old categoryid from NapCM
+             20201019@Irena.Vo [#141930]: Get distinct CustID List for lastest category
             
 		Param's Explanation (filtered by):
 	*/   
     DECLARE lv_CreatedBy 		INT DEFAULT 10278938;
     DECLARE lv_CurrentDateTime 	DATETIME DEFAULT NOW(); 
-    
+   
     DROP TEMPORARY TABLE IF EXISTS Temp_ProblemAccounts;    
 	CREATE TEMPORARY TABLE Temp_ProblemAccounts 
     (	  
@@ -140,9 +143,8 @@ BEGIN
     INNER JOIN   Temp_ProblemAccounts AS temp on temp.CustID = cate.CustID AND temp.NewCategoryID = cate.CategoryID
 	SET   	    cate.CTSCustID = temp.CTSCustID
 			, 	cate.SubscriberID  = temp.SubscriberID
-			, 	cate.LastModifiedDate = lv_CurrentDateTime
 			, 	cate.LastModifiedBy = lv_CreatedBy
-			, 	cate.LastScannedDate = CURRENT_DATE()
+			, 	cate.LastScannedDate = DATE(lv_CurrentDateTime)
 			, 	temp.ActionType = 1
      WHERE 	cc.ParentID = 50;
      
@@ -179,11 +181,12 @@ BEGIN
 		, 	1
 		, 	CURRENT_DATE() AS InsertDate
 	FROM 	Temp_ProblemAccounts AS temp;            
-	/*GET DISTINCT CUSTID*/
-    SELECT DISTINCT temp.CustID
+   
+    /*GET DISTINCT CUSTID FOR LASTEST CATEGORY*/
+    SELECT DISTINCT temp.CustID AS CustId
     FROM Temp_ProblemAccounts AS temp; -- Get lastest custid for mapping to CC in mainDB
     
-	SET SQL_SAFE_UPDATES = 1;
+	SET SQL_SAFE_UPDATES = 1; 
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedClassification;    
