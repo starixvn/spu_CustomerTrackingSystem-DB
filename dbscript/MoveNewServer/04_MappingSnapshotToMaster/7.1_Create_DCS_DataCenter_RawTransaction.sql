@@ -8,11 +8,11 @@ CREATE TABLE DCS_DataCenter.ProcessedTransaction LIKE DCS_RawTransaction.Process
 -- Step 3: Create partition for DCS_DataCenter.RawTransaction
 ALTER  TABLE DCS_DataCenter.RawTransaction  
                 PARTITION BY RANGE (yearweek(CreatedDate,0)) (
-                PARTITION pw202036 VALUES LESS THAN (202036),
-                PARTITION pw202037 VALUES LESS THAN (202037),
-                PARTITION pw202038 VALUES LESS THAN (202038),
-                PARTITION pw202039 VALUES LESS THAN (202039),
-                PARTITION pw202040 VALUES LESS THAN (202040),
+                PARTITION pw202039 VALUES LESS THAN (202040),
+                PARTITION pw202040 VALUES LESS THAN (202041),
+                PARTITION pw202041 VALUES LESS THAN (202042),
+                PARTITION pw202042 VALUES LESS THAN (202043),
+                PARTITION pw202043 VALUES LESS THAN (202044),
                 PARTITION pw999999 VALUES LESS THAN MAXVALUE);
                 
 --Step 4: Set AUTO_INCREMENT for TransID
