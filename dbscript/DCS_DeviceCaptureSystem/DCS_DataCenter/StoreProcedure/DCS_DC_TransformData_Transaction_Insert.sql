@@ -19,6 +19,7 @@ BEGIN
 		#4. [20200515@CaseyHuynh][133263]: Update LastLoginTime
         #5  [20200918@CaseyHuynh][137963]: Change column TransID to RawTransID
         #6. [20201006@CaseyHuynh][143011]: Move New Server, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_DataCenter"
+        #7. [20201019@CaseyHuynh][143011]:	Move Server, Phase 2	
     Reviewer:
 		#1 [Name]: New
 	Param's Explanation (filtered by):
@@ -141,6 +142,11 @@ BEGIN
     SET			trt.AccountID = ac.AccountID
 				, trt.URLID = ur.URLID;   
     
+    #Remove Temp Trans If AccountID Is NULL
+    DELETE 	trt
+    FROM	Temp_RawTransaction AS trt
+    WHERE 	trt.AccountID IS NULL;    
+    
     UPDATE 		DCS_DataCenter.Association AS ass
     INNER JOIN	(SELECT DISTINCT AccountID FROM Temp_RawTransaction trt) AS trtAcc
 				ON ass.AccountID = trtAcc.AccountID
@@ -235,8 +241,6 @@ BEGIN
 	WHERE
 		z.ExecKey = vrExecKey
 			AND z.StepID = z.StepID;
-    ### PERFORMANCE: END
-    
-    
+    ### PERFORMANCE: END    
 END$$
 DELIMITER ;

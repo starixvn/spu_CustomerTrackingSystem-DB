@@ -12,7 +12,7 @@ BEGIN
 		 [20200908@Bobby.Nguyen][137963]: Support multiple threads
          [20200918@CaseyHuynh][137963]: Change column TransID to RawTransID
          [20201006@CaseyHuynh][143011]: Move Server, Get Lastest SP From PRO And Update data length of FingerprintCode from 692 to 620
-			
+		 [20201019@CaseyHuynh][143011]:	Move Server, Phase 2	
 	Revisions:
 	Param's Explanation (filtered by):
 	*/
@@ -484,7 +484,7 @@ BEGIN
 			, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime)
 		SELECT 	ifnull(ts.RawTransID, ts.TransID), ts.LoginName, ts.TransTime, ts.SubscriberID, ts.AccountID, ts.URLID
 			, tmp_rm.DeviceCodeID, tmp_rm.DeviceID, tmp_rm.FirstDeviceCode, tmp_rm.DeviceStatus, tmp_rm.DeviceFingerprintID
-			, ts.UserAgentKey, ts.IP, ts.IPID, ts.ActionResultID, ts.Flagged, ts.PluginID, ts.TransStatus, ts.CreatedDate, ts.InsertTime
+			, ts.UserAgentKey, ts.IP, ts.IPID, ts.ActionResultID, ts.Flagged, ts.PluginID, ts.TransStatus, ts.CreatedDate, InsertTime
 		FROM DCS_DataCenter.Transaction AS ts
 		INNER JOIN Temp_Transaction AS tmp_rm
 			ON	ts.TransID = tmp_rm.TransID

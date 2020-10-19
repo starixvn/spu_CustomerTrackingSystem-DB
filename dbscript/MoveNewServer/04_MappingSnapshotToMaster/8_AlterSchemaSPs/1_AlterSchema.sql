@@ -32,4 +32,4 @@ MODIFY  	FingerprintCode 	VARCHAR(620) NULL
 ;
 
 ALTER TABLE DCS_DataCenter.UserAgent
-MODIFY	UserAgent			VARCHAR(1000) NULL
+MODIFY	UserAgent			VARCHAR(10000) NULL

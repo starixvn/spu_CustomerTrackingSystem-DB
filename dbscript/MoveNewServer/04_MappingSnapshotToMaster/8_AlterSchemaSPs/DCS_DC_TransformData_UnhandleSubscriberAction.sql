@@ -3,7 +3,7 @@ DELIMITER $$
 
 DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformData_UnhandleSubscriberAction$$
 
-CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformData_UnhandleSubscriberAction(IN ip_FromTransID BIGINT, IN ip_ToTransID BIGINT)
+CREATE DEFINER=`fps`@`%` PROCEDURE DCS_DataCenter.DCS_DC_TransformData_UnhandleSubscriberAction(IN ip_FromTransID BIGINT, IN ip_ToTransID BIGINT)
 BEGIN
 	
     /*
@@ -13,7 +13,8 @@ BEGIN
 	Original:
 
 	Revisions:
-			[20201006@CaseyHuynh][143011]: Move New Server, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_DataCenter"
+			#1. [20201006@CaseyHuynh][143011]: Move New Server, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_DataCenter"
+            #2. [20201019@CaseyHuynh][143011]:	Move Server, Phase 2
 	Param's Explanation (filtered by):
 	*/
     
