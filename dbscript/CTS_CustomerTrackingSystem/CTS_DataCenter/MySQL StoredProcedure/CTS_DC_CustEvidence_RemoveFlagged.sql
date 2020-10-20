@@ -20,7 +20,7 @@ BEGIN
 		Revisions:
 			- 20200225@Lex: Fix remove flag evidence also associted evidence (level 2)
 			- 20201013@Long.Luu [Redmine ID: #141756]: Sync Evidence to Category
-			- 20201019@Irena.Vo [Redmine ID: #141756]: Enhance logic remove Evidence Category
+            - 20201020@Irena.Vo [Redmine ID: #141756]: Enhance logic remove Evidence Category
         
 		Param's Explanation (filtered by):			
         
@@ -72,9 +72,8 @@ BEGIN
 		DELETE c
         FROM CTS_DataCenter.CTSCustomerClassification AS c
         INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON e.CategoryID = c.CategoryID
-        WHERE c.CTSCustID = ip_CTSCustID AND NOT EXISTS (	SELECT 1 FROM Temp_ExistedEvidenceCategories AS ex 
-															WHERE ex.CategoryID = c.CategoryID AND ex.CTSCustID = c.CTSCustID
-															GROUP BY ex.CTSCustID, ex.CategoryID);
+        LEFT JOIN Temp_ExistedEvidenceCategories AS ex ON ex.CategoryID = c.CategoryID AND ex.CTSCustID = c.CTSCustID
+        WHERE ex.CategoryID IS NULL AND c.CTSCustID = ip_CTSCustID;
     END IF;
   
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)

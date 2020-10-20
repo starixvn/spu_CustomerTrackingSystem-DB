@@ -18,7 +18,7 @@ sp: BEGIN
 		Revisions:
 			- 20200610@Long.Luu: Created [Redmine ID: 135585]
             - 20201013@Long.Luu [Redmine ID: #141756]: Sync Evidence to Category
-            - 20201019@Irena.Vo [Redmine ID: #141756]: Enhance logic Remove all category (Detail & General)
+            - 20201020@Irena.Vo [Redmine ID: #141756]: Enhance logic Remove all category (Detail & General) 
             
             call CTS_DataCenter.CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers('43600693,43600889', '6.1', @op_ErrorMessage);
 	*/    
@@ -136,6 +136,8 @@ sp: BEGIN
         FROM CTS_DataCenter.CTSCustomerClassification AS cate
         INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
         INNER JOIN Temp_CustomerList AS a ON a.CustID = cate.CustID
+			CROSS JOIN  Temp_EvidenceList AS ev  
+		INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON e.EvidenceID = ev.EvidenceID
         WHERE cc.ParentID IN (1, 200);
         
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification

@@ -15,7 +15,7 @@ sp: BEGIN
 	/*
 		Created:	20200204@Thai
 		Task:		Add a flagged evidence and affected evidences for associated customers[Redmine ID: 127150]
-		DB:			CTS_DataCenter
+		DB:			CTS_DataCenter 
 		Original:
 
 		Revisions:
@@ -24,7 +24,7 @@ sp: BEGIN
 			- 20200513@Lex: Fix wrong subID mapping of level 2
 			- 20200807@Casey.Huynh [138925]: Chagne CustEvidence Structure for Cross Subscriber : Remove SubscriberID and IsCreatedByMaster
             - 20201013@Long.Luu [Redmine ID: #141756]: Sync Evidence to Category
-			- 20201019@Irena.Vo [Redmine ID: #141756]: Enhance logic Remove all category (Detail & General)
+			- 20201020@Irena.Vo [Redmine ID: #141756]: Enhance logic Remove all category (Detail & General) 
         
 		Param's Explanation (filtered by):			
         call CTS_DataCenter.CTS_DC_CustEvidence_InsertSingle(221882500, 41, 'Na Test', 8, @op_ErrorMessage);
@@ -115,6 +115,7 @@ sp: BEGIN
         DELETE cate
         FROM CTS_DataCenter.CTSCustomerClassification AS cate
         INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
+        INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON e.EvidenceID = ip_EvidenceID
         WHERE cate.CustID = lv_CustID AND cc.ParentID IN (1, 200);
         
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification
