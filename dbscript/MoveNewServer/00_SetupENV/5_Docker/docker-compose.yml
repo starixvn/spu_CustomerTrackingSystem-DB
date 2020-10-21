@@ -1,4 +1,4 @@
-version: '3.7'
+version: '2.4'
 networks:
   app_network:
     external: ${EXTERNAL_NETWORK}
@@ -13,6 +13,9 @@ services:
     cap_add:
       - SYS_NICE  # CAP_SYS_NICE
     #privileged: true
+    mem_limit: 40g
+    memswap_limit: 128m
+    mem_reservation: 512m
 
     volumes:
       - app_volume:/var/lib/mysql:rw
