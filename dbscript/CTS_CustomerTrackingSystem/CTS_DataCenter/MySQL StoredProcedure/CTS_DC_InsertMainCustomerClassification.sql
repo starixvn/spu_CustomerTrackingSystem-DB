@@ -19,7 +19,7 @@ BEGIN
                 - Add get parentid for process update category. 
                 [20201003-20201008@Irena.Vo][142546]: Enhance SP & correct logic. 
                 
-		Param's Explanation (filtered by):
+		Param's Explanation (filtered by): 
 			call CTS_DataCenter.CTS_DC_InsertMainCustomerClassification
             ('[{"CustId": 1, "CategoryId": 202, "CreatedTime": "2020-09-13 00:01:00", "TurnoverRM": 100, "WinlossRM": 2056354, "BetCount": 500, "ActiveDays": 8}]');
 	*/ 
@@ -39,7 +39,7 @@ BEGIN
 		, ActiveDays		INT	
 		, CTSCustID			BIGINT UNSIGNED DEFAULT 0
         , SubscriberID		INT DEFAULT 0    
-		, ActionType		SMALLINT DEFAULT 0 -- Insert: 0; Update: 1
+		, ActionType		SMALLINT -- Insert: 0; Update: 1
         , PRIMARY KEY		PK_Temp_NewClassification_CustID(CustID) 
         , INDEX     		IX_Temp_NewClassification_CustID_NewCategoryID(CustID, NewCategoryID) 
         , INDEX 			IX_Temp_NewClassification_ActionType(ActionType)        
@@ -108,13 +108,16 @@ BEGIN
 	/*UPDATE CURRENT & NEW CATEGORY*/ 
     UPDATE 		Temp_NewClassification AS temp 
     LEFT JOIN  	Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID
-	SET			temp.CurrentCategoryID = (CASE  WHEN ex.CurrentCategoryID IS NULL THEN NULL -- New
+	SET			temp.CurrentCategoryID = (CASE  WHEN ex.CurrentCategoryID IS NULL THEN 0 -- New
 												ELSE ex.CurrentCategoryID -- Old
 											END)
 				, temp.NewCategoryID =  (CASE  	WHEN ex.CurrentCategoryID IN (202, 205) AND temp.TargetCategoryID IN (203, 204) THEN 206 -- From Other Category to Smart or High Risk
 												ELSE temp.TargetCategoryID
 											END)
-	WHERE temp.NewCategoryID IS NULL; -- Update Other Category or Insert Other Category
+				, temp.ActionType = (CASE WHEN ex.CurrentCategoryID IS NULL THEN 0 -- New
+										  ELSE 1 -- Old
+									 END)
+	WHERE temp.ActionType IS NULL; -- Update Other Category or Insert Other Category
     
     /*UPDATE CUST INFO*/
     UPDATE 	Temp_NewClassification AS temp 
@@ -127,14 +130,13 @@ BEGIN
     /*UPDATE CATEGORY*/
     UPDATE CTS_DataCenter.CTSCustomerClassification AS cate
     INNER JOIN   Temp_NewClassification AS temp on temp.CustID = cate.CustID AND temp.SportGroupID = cate.SportGroupID
-    SET   	temp.ActionType = 1
-        ,   cate.CTSCustID = temp.CTSCustID
+    SET   	cate.CTSCustID = temp.CTSCustID
         , 	cate.SubscriberID  = temp.SubscriberID
         , 	cate.CategoryID = temp.NewCategoryID
         , 	cate.LastModifiedDate = temp.LastModifiedDate 
         , 	cate.LastModifiedBy = lv_CreatedBy
         , 	cate.LastScannedDate = GREATEST(DATE(temp.LastModifiedDate), cate.LastScannedDate)
-     WHERE 	temp.CurrentCategoryID IS NOT NULL AND cate.SportGroupID = 200; -- sport group = 200
+     WHERE 	temp.ActionType = 1 AND temp.CurrentCategoryID IS NOT NULL AND cate.SportGroupID = 200;
    
     /*INSERT NEW CATEGORY*/
     INSERT  INTO CTS_DataCenter.CTSCustomerClassification
@@ -163,7 +165,7 @@ BEGIN
             , lv_CreatedBy
             , temp.TurnoverRM
             , temp.WinlossRM
-            , temp.BetCount
+            , temp.BetCount 
             , temp.ActiveDays
 			, temp.ActionType
             , 1
@@ -176,7 +178,7 @@ BEGIN
     DELETE pro
     FROM CTS_DataCenter.ProbationAccountMonitor AS pro
 	INNER JOIN Temp_NewClassification AS temp on temp.CustID = pro.CustID
-	WHERE temp.CurrentCategoryID = 206 AND temp.TargetCategoryID IN (203, 204) AND pro.SportGroupID = 200;
+	WHERE temp.ActionType = 1 AND temp.CurrentCategoryID = 206 AND temp.TargetCategoryID IN (203, 204) AND pro.SportGroupID = 200;
     
      /*INSERT NEW PROBATION LIST*/
     INSERT  INTO CTS_DataCenter.ProbationAccountMonitor
@@ -192,8 +194,8 @@ BEGIN
 			, lv_CreatedBy
 			, temp.LastModifiedDate
 	 FROM 	Temp_NewClassification 		AS temp
-	 WHERE  (temp.ActionType = 0 AND temp.NewCategoryID = 206 AND temp.CurrentCategoryID IS NULL)
-         OR (temp.ActionType = 1 AND temp.NewCategoryID = 206 AND temp.CurrentCategoryID IN (202, 203, 204, 205)); 
+	 WHERE  (temp.ActionType = 0 AND temp.CurrentCategoryID IS NULL AND temp.NewCategoryID = 206)
+         OR (temp.ActionType = 1 AND temp.CurrentCategoryID IN (202, 203, 204, 205) AND temp.NewCategoryID = 206); 
     /***************************************************END PROBATION*************************************************/
     /*GET DISTINCT CUSTID*/
     SELECT DISTINCT temp.CustID as CustId, temp.NewCategoryID as CategoryId
