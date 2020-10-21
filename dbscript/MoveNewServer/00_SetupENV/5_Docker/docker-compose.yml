@@ -36,6 +36,31 @@ services:
           - ${MYSQL_HOST}
 
     restart: always
+  neo4j:
+    image: neo4j:3.5.12-enterprise
+    container_name: cts_neo4j_master
+    hostname: cts_neo4j_master
+
+    volumes:
+      - /dev/mapper/volumes/neo4j_master/conf:/var/lib/neo4j/conf
+      - /dev/mapper/volumes/neo4j_master/data:/var/lib/neo4j/data
+      - /dev/mapper/volumes/neo4j_master/import:/var/lib/neo4j/import
+      - /dev/mapper/volumes/neo4j_master/plugins:/var/lib/neo4j/plugins
+      - /dev/mapper/volumes/neo4j_master/logs:/var/lib/neo4j/logs
+      - /dev/mapper/volumes/neo4j_master/metrics:/var/lib/neo4j/metrics
+
+    env_file:
+      - ./neo4j_master.env
+
+    ports:
+      - 7474:7474
+      - 7687:7687
+    networks:
+      app_network:
+        aliases:
+          - ${MYSQL_HOST}
+
+    restart: always
 
 volumes:
   app_volume:
