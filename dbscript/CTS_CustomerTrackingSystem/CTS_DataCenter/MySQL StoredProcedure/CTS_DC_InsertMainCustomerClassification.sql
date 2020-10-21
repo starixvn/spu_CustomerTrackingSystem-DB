@@ -108,7 +108,7 @@ BEGIN
 	/*UPDATE CURRENT & NEW CATEGORY*/ 
     UPDATE 		Temp_NewClassification AS temp 
     LEFT JOIN  	Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID
-	SET			temp.CurrentCategoryID = (CASE  WHEN ex.CurrentCategoryID IS NULL THEN 0 -- New
+	SET			temp.CurrentCategoryID = (CASE  WHEN ex.CurrentCategoryID IS NULL THEN NULL -- New
 												ELSE ex.CurrentCategoryID -- Old
 											END)
 				, temp.NewCategoryID =  (CASE  	WHEN ex.CurrentCategoryID IN (202, 205) AND temp.TargetCategoryID IN (203, 204) THEN 206 -- From Other Category to Smart or High Risk
@@ -127,14 +127,14 @@ BEGIN
     /*UPDATE CATEGORY*/
     UPDATE CTS_DataCenter.CTSCustomerClassification AS cate
     INNER JOIN   Temp_NewClassification AS temp on temp.CustID = cate.CustID AND temp.SportGroupID = cate.SportGroupID
-    SET   	cate.CTSCustID = temp.CTSCustID
+    SET   	temp.ActionType = 1
+        ,   cate.CTSCustID = temp.CTSCustID
         , 	cate.SubscriberID  = temp.SubscriberID
         , 	cate.CategoryID = temp.NewCategoryID
         , 	cate.LastModifiedDate = temp.LastModifiedDate 
         , 	cate.LastModifiedBy = lv_CreatedBy
         , 	cate.LastScannedDate = GREATEST(DATE(temp.LastModifiedDate), cate.LastScannedDate)
-        , 	temp.ActionType = 1
-     WHERE 	temp.CurrentCategoryID <> 0; -- sport group = 200
+     WHERE 	temp.CurrentCategoryID IS NOT NULL AND cate.SportGroupID = 200; -- sport group = 200
    
     /*INSERT NEW CATEGORY*/
     INSERT  INTO CTS_DataCenter.CTSCustomerClassification
@@ -150,7 +150,7 @@ BEGIN
 			, lv_CreatedBy
             , DATE (temp.LastModifiedDate)
 	 FROM 	Temp_NewClassification 		AS temp
-     WHERE temp.CurrentCategoryID = 0;
+     WHERE  temp.ActionType = 0 AND temp.CurrentCategoryID IS NULL;
      
      /*INSERT LOG*/
     INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
@@ -188,14 +188,15 @@ BEGIN
 			, CASE WHEN temp.TurnoverRM = 0 THEN 0
                    ELSE (temp.WinlossRM/temp.TurnoverRM) * 100
 			  END AS FirstMargin
-			, DATE (temp.LastModifiedDate)
+			, DATE (temp.LastModifiedDate) 
 			, lv_CreatedBy
 			, temp.LastModifiedDate
 	 FROM 	Temp_NewClassification 		AS temp
-	 WHERE temp.CurrentCategoryID <> 206 AND temp.NewCategoryID = 206;
+	 WHERE  (temp.ActionType = 0 AND temp.NewCategoryID = 206)
+         OR (temp.ActionType = 1 AND temp.NewCategoryID = 206 AND temp.CurrentCategoryID IN (202, 203, 204, 205)); 
     /***************************************************END PROBATION*************************************************/
     /*GET DISTINCT CUSTID*/
-    SELECT DISTINCT temp.CustID, temp.NewCategoryID
+    SELECT DISTINCT temp.CustID as CustId, temp.NewCategoryID as CategoryId
     FROM Temp_NewClassification AS temp; -- Get lastest custid for mapping to CC in mainDB
     
 	SET SQL_SAFE_UPDATES = 1;
