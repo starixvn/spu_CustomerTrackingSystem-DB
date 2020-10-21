@@ -52,7 +52,7 @@ BEGIN
      );
   
     INSERT INTO Temp_ProblemAccounts(CustID, MainDBCategoryID)
-	SELECT 	temp.CustID
+	SELECT 	DISTINCT temp.CustID
 		, 	temp.MainDBCategoryID 
 	FROM JSON_TABLE(ip_ProblemAccounts,
 		 "$[*]" COLUMNS(
