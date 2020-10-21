@@ -192,7 +192,7 @@ BEGIN
 			, lv_CreatedBy
 			, temp.LastModifiedDate
 	 FROM 	Temp_NewClassification 		AS temp
-	 WHERE  (temp.ActionType = 0 AND temp.NewCategoryID = 206)
+	 WHERE  (temp.ActionType = 0 AND temp.NewCategoryID = 206 AND temp.CurrentCategoryID IS NULL)
          OR (temp.ActionType = 1 AND temp.NewCategoryID = 206 AND temp.CurrentCategoryID IN (202, 203, 204, 205)); 
     /***************************************************END PROBATION*************************************************/
     /*GET DISTINCT CUSTID*/
