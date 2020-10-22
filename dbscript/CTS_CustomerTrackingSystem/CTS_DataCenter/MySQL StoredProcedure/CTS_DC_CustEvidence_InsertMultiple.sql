@@ -141,6 +141,11 @@ sp: BEGIN
         INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON e.EvidenceID = a.EvidenceID
         WHERE cc.ParentID IN (1, 200);
         
+		DELETE pro
+        FROM CTS_DataCenter.ProbationAccountMonitor AS pro 
+        INNER JOIN Temp_MultipleAccountEvidence AS a ON a.CTSCustID = pro.CTSCustID
+		INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON e.EvidenceID = a.EvidenceID;
+		
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification
 		(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
         SELECT 	c.CustID
