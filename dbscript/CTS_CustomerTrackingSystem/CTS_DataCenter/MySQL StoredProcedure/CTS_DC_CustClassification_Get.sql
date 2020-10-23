@@ -21,7 +21,7 @@ BEGIN
             - 20200903@Long.Luu [Redmine ID: #137550]: Get for both General & Detailed Categories
             - 20200908@Irena.Vo [Redmine ID: #141020]: Get for VVIP. VVIP -> PA -> Detailed & General. Add VVIP (General)
             - 20201006@Irena.Vo [Redmine ID: #141930]: Rollback logic get IsUsedManually for lastest category & enhance logic get.
-            - 20201014@Irena.Vo [Redmine ID: #141756]: Enhance logic show Evidence Category & Normal Category
+            - 20201014-20201023@Irena.Vo [Redmine ID: #141756]: Enhance logic show Evidence Category & Normal Category
             
 		Param's Explanation:
 	*/ 
@@ -37,8 +37,13 @@ BEGIN
     , 	LastModifiedDate	DATETIME
     ,	LastModifiedBy		INT UNSIGNED
     , 	LastScannedDate		DATETIME
-	,   CategoryType        SMALLINT UNSIGNED DEFAULT 0 -- 0: ParentID = 1, 1: ParentID = 200, 2: ParentID = 50
+	,   CategoryType        SMALLINT UNSIGNED -- 0: ParentID = 1, 1: ParentID = 200, 2: ParentID = 50, 3: CategoryID = 2
     );
+   
+    DROP TEMPORARY TABLE IF EXISTS Temp_GeneralCategory;
+    CREATE TEMPORARY TABLE Temp_GeneralCategory (
+    	CategoryID			SMALLINT UNSIGNED
+     );
    
     DROP TEMPORARY TABLE IF EXISTS Temp_RangeDateCategory;
     CREATE TEMPORARY TABLE Temp_RangeDateCategory (
@@ -55,28 +60,43 @@ BEGIN
      END IF;
    
     -- Get Lastest category list
-	 INSERT INTO Temp_LatestRecordOfCategory (CategoryID, SportGroupID, LastModifiedBy, LastModifiedDate, Remark, LastScannedDate, CategoryType)
+	 INSERT INTO Temp_LatestRecordOfCategory (CategoryID, SportGroupID, LastModifiedBy, LastModifiedDate, Remark, LastScannedDate)
      SELECT   cate.CategoryID
 			, cate.SportGroupID
 			, cate.LastModifiedBy
 			, cate.LastModifiedDate
 			, cate.Remark
 			, cate.LastScannedDate
-			, CASE
-				  WHEN a.ParentID = 50 THEN 2
-				  WHEN a.ParentID = 1 THEN 0
-				  WHEN a.ParentID = 200  THEN 1
-			  END AS CategoryType   
 	FROM		CTS_DataCenter.CTSCustomerClassification AS cate
-	INNER JOIN 	CTS_DataCenter.CustomerCategory AS a ON a.CategoryID = cate.CategoryID
     WHERE		cate.CustID = ip_CustID;
+    
+    -- Get General Category
+    INSERT INTO Temp_GeneralCategory
+    SELECT DISTINCT temp.CategoryID 
+    FROM Temp_LatestRecordOfCategory AS temp 
+    INNER JOIN 	CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = temp.CategoryID
+    WHERE cc.ParentID = 200;
+    
+    -- Update category type for customer
+    UPDATE Temp_LatestRecordOfCategory AS temp
+    SET temp.CategoryType =	3  -- parse 2 row (detail&general) & green
+    WHERE temp.CategoryID = 2  AND NOT EXISTS (SELECT 1 FROM Temp_GeneralCategory); 
+    
+    UPDATE Temp_LatestRecordOfCategory AS temp
+    INNER JOIN 	CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = temp.CategoryID
+    SET temp.CategoryType =	( CASE
+								  WHEN cc.ParentID = 50 THEN 2 -- parse 2 row (detail&general) & red
+								  WHEN cc.ParentID = 200  THEN 1 -- parse 1 row (general)  & any color 
+								  WHEN cc.ParentID = 1 THEN 0 -- parse 1 row (detail) & any color
+					         END)
+	WHERE temp.CategoryType IS NULL;
     
     -- Update Display Category ID
     UPDATE  Temp_LatestRecordOfCategory
     SET   DisplayCategoryID = (CASE WHEN CategoryID = 151 THEN 51
                                     WHEN CategoryID IN (72, 152) THEN 52
 									WHEN CategoryID IN (73, 153) THEN 53
-                                    WHEN CategoryID IN (74, 154) THEN 54
+                                    WHEN CategoryID IN (74, 154) THEN 54 
                                     WHEN CategoryID IN (75, 155) THEN 55
                                     WHEN CategoryID IN (76, 156) THEN 56
 									WHEN CategoryID IN (77, 157) THEN 57
@@ -133,6 +153,7 @@ BEGIN
 
 	# Begin: Cleanup
     DROP TEMPORARY TABLE IF EXISTS Temp_RangeDateCategory;
+	DROP TEMPORARY TABLE IF EXISTS Temp_GeneralCategory;
     DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory; 
 	# End: Cleanup
     
