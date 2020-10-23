@@ -21,7 +21,7 @@ BEGIN
             - 20200903@Long.Luu [Redmine ID: #137550]: Get for both General & Detailed Categories
             - 20200908@Irena.Vo [Redmine ID: #141020]: Get for VVIP. VVIP -> PA -> Detailed & General. Add VVIP (General)
             - 20201006@Irena.Vo [Redmine ID: #141930]: Rollback logic get IsUsedManually for lastest category & enhance logic get.
-            - 20201014-20201023@Irena.Vo [Redmine ID: #141756]: Enhance logic show Evidence Category & Normal Category
+            - 20201014-20201023@Irena.Vo [Redmine ID: #141756]: Enhance logic show Evidence Category & Normal Category. Add New General 
             
 		Param's Explanation:
 	*/ 
@@ -76,11 +76,14 @@ BEGIN
     FROM Temp_LatestRecordOfCategory AS temp 
     INNER JOIN 	CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = temp.CategoryID
     WHERE cc.ParentID = 200;
-    
-    -- Update category type for customer
-    UPDATE Temp_LatestRecordOfCategory AS temp
-    SET temp.CategoryType =	3  -- parse 2 row (detail&general) & green
-    WHERE temp.CategoryID = 2  AND NOT EXISTS (SELECT 1 FROM Temp_GeneralCategory); 
+     
+    -- Insert new General New Member
+    IF NOT EXISTS (SELECT 1 FROM Temp_GeneralCategory) THEN
+		INSERT INTO Temp_LatestRecordOfCategory (CategoryID, SportGroupID, LastModifiedBy, LastModifiedDate, Remark, LastScannedDate)
+		SELECT   201, 0, cate.LastModifiedBy, cate.LastModifiedDate, cate.Remark, cate.LastScannedDate
+        FROM	CTS_DataCenter.CTSCustomerClassification AS cate
+        WHERE   cate.CategoryID = 2 AND cate.CustID = ip_CustID; 
+    END IF;
     
     UPDATE Temp_LatestRecordOfCategory AS temp
     INNER JOIN 	CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = temp.CategoryID
