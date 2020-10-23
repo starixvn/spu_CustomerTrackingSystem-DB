@@ -80,7 +80,7 @@ BEGIN
     -- Insert new General New Member
     IF NOT EXISTS (SELECT 1 FROM Temp_GeneralCategory) THEN
 		INSERT INTO Temp_LatestRecordOfCategory (CategoryID, SportGroupID, LastModifiedBy, LastModifiedDate, Remark, LastScannedDate)
-		SELECT   201, 0, cate.LastModifiedBy, cate.LastModifiedDate, cate.Remark, cate.LastScannedDate
+		SELECT   201, 0, cate.LastModifiedBy, cate.LastModifiedDate, cate.Remark, NULL
         FROM	CTS_DataCenter.CTSCustomerClassification AS cate
         WHERE   cate.CategoryID = 2 AND cate.CustID = ip_CustID; 
     END IF;
