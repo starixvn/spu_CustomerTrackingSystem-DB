@@ -12,16 +12,18 @@ BEGIN
 		Original:
 
 		Revisions:
-			- [20200703@Long.Luu][136903]: created 
-            - [20200908@Irena.Vo][141020]: Enhance ignore VVIP & Pin category 
-            - [20200923@Irena.Vo][141755]: Enhance SP
-            - [20200930@Irena.Vo][141755]: Covered get Existed Category before. Updated temp table. Updated primary key.
+			[20200703@Long.Luu][136903]: created
+            [20200908@Irena.Vo][141020]: Enhance ignore VVIP & Pin category 
+            [20200923-20201001@Irena.Vo][141755]: 
+            - Enhance SP
+            - Covered get Existed Category before
+            - Fix issue duplicate category
+            [20201003-20201026@Irena.Vo][142546]: Enhance SP & correct logic. 
             
 		Param's Explanation (filtered by):
              call CTS_DC_InsertNewCustomerCategory('1,2,3');
 	*/
-	/**********1. PREPARE PARAMS**********/
-    DECLARE lv_CreatedBy INT DEFAULT 10278938;
+    DECLARE lv_CreatedBy INT DEFAULT 10278938; 
     DECLARE lv_CurrentDateTime 	DATETIME DEFAULT NOW();
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_NewCustomers;
@@ -30,14 +32,13 @@ BEGIN
             CustID			BIGINT UNSIGNED PRIMARY KEY
         ,	CTSCustID		BIGINT UNSIGNED
         ,	SubscriberID	INT
-        ,   ActionType		INT DEFAULT 0 -- Insert: 0; Ignore: 1
-		,	INDEX			IX_Temp_NewCustomers_ActionType(ActionType)  
+        ,   INDEX 			IX_Temp_NewCustomers_CustID(CustID)       
 	);
-
-	 DROP TEMPORARY TABLE IF EXISTS Temp_ExistedCategory;    
-	 CREATE TEMPORARY TABLE Temp_ExistedCategory 
-     (	  
-            CustID			BIGINT UNSIGNED
+     
+	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedClassification;    
+	CREATE TEMPORARY TABLE Temp_ExistedClassification 
+	(	  CustID			BIGINT UNSIGNED        
+        , INDEX 			IX_Temp_ExistedClassification_CustID(CustID)       
      );
      
 	SET @sql = CONCAT("INSERT INTO Temp_NewCustomers(CustID) VALUES ('", REPLACE(ip_CustIds, ",", "'),('"),"');");
@@ -47,30 +48,31 @@ BEGIN
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
     SET SQL_SAFE_UPDATES = 0;
     
-   	/**********2. IGNORE VVIP - PIN CATEGORY**********/
+   	/*IGNORE VVIP - PIN CATEGORY*/
     DELETE temp
 	FROM Temp_NewCustomers AS temp
 	INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc on sc.CustID = temp.CustID -- is VVIP OR PIN
 	WHERE sc.CreatedFromFunction IN (11, 21);
     
-   /**********3. UPDATE CUST INFO**********/
+    /*GET EXISTED CATEGORY*/
+    INSERT INTO Temp_ExistedClassification
+    SELECT cate.CustID
+    FROM Temp_NewCustomers AS temp
+    INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID
+    INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = cate.CategoryID 
+    WHERE cc.ParentID IN (1, 50); 
+    
+	/*IGNORE CUSTOMER HAS CATEGORY BEFORE*/
+    DELETE temp
+    FROM Temp_NewCustomers AS temp
+    INNER JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID;
+    
+   /*UPDATE CUST INFO*/
     UPDATE 	Temp_NewCustomers AS temp 
 	INNER JOIN	CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.CustSubID = 0
 	SET		temp.CTSCustID = cust.CTSCustID, temp.SubscriberID = cust.SubscriberID; 
      
-    /**********4. GET EXISTED CATEGORY**********/
-    INSERT INTO Temp_ExistedCategory
-    SELECT cate.CustID
-    FROM Temp_NewCustomers AS temp
-    INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID;
-    
-    /**********5. UPDATE ACTION TYPE**********/
-	UPDATE 	Temp_NewCustomers AS temp
-	INNER JOIN 	Temp_ExistedCategory AS ex ON ex.CustID = temp.CustID
-	SET 		temp.ActionType = 1;			
-    
-	/**********6. PROCESS FOR ACTION TYPE**********/
-	-- Insert Category List: ActionType = 0
+	/*INSERT NEW MEMBER CATEGORY*/
     INSERT INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, 
 			CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
 	SELECT 	temp.CustID
@@ -83,10 +85,9 @@ BEGIN
 		, 	lv_CurrentDateTime
 		, 	lv_CreatedBy
 		, 	DATE(lv_CurrentDateTime)
-	FROM Temp_NewCustomers AS temp
-	WHERE temp.ActionType = 0; 
+	FROM Temp_NewCustomers AS temp;
             
-	-- Insert History: ActionType = 0
+	/*INSERT LOG*/
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID,
 			LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, ActionType, IsAuto, InsertDate)
     SELECT 	temp.CustID
@@ -102,13 +103,12 @@ BEGIN
 		, 	0
 		, 	1
 		, 	CURRENT_DATE()
-	FROM Temp_NewCustomers AS temp
-    WHERE temp.ActionType = 0; 
+	FROM Temp_NewCustomers AS temp;
     
     SET SQL_SAFE_UPDATES = 1;
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
-	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedCategory;    
+    DROP TEMPORARY TABLE IF EXISTS Temp_ExistedClassification;    
     DROP TEMPORARY TABLE IF EXISTS Temp_NewCustomers; 
     
 END$$
