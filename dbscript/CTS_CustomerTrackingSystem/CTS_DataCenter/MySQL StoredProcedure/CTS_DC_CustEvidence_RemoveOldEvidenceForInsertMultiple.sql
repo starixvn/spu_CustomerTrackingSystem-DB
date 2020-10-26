@@ -1,8 +1,9 @@
-DELIMITER $$
-USE `CTS_DataCenter` $$
-DROP PROCEDURE IF EXISTS CTS_DC_CustEvidence_RemoveOldEvidenceForInsertMultiple $$
+﻿USE `CTS_DataCenter`;
+DROP procedure IF EXISTS `CTS_DC_CustEvidence_RemoveOldEvidenceForInsertMultiple`;
 
-CREATE PROCEDURE `CTS_DC_CustEvidence_RemoveOldEvidenceForInsertMultiple`(
+DELIMITER $$
+USE `CTS_DataCenter`$$
+CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_CustEvidence_RemoveOldEvidenceForInsertMultiple`(
 		IN ip_CTSCustIDs 			JSON    
 	,	IN ip_SessionId 			BIGINT
 	,	IN ip_IsRollback 			BOOLEAN
@@ -112,13 +113,19 @@ sp: BEGIN
     END IF;
     
     # Remove old evidence
+	DELETE c
+    FROM CTS_DataCenter.CTSCustomerClassification AS c
+    INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON e.CategoryID = c.CategoryID
+    INNER JOIN CustEvidence AS cus ON cus.EvidenceID = e.EvidenceID AND c.CTSCustID = cus.FromCustID
+    INNER JOIN tmpMultipleAccount AS tmp ON tmp.CTSCustID = cus.FromCustID;
+    
 	DELETE cus  FROM CTS_DataCenter.CustEvidence cus INNER JOIN tmpMultipleAccount tmp
 	WHERE  cus.CTSCustID = tmp.CTSCustID
 			AND cus.Level = 0;
 			
-	DELETE cus  FROM CTS_DataCenter.CustEvidence cus INNER JOIN tmpCustEvidence tmp
-	WHERE  tmp.CTSCustID = cus.CTSCustID AND cus.FromCustID = tmp.FromCustID;
-            
+	DELETE cus  FROM CTS_DataCenter.CustEvidence cus INNER JOIN tmpCustEvidence tmp 
+	WHERE  tmp.CTSCustID = cus.CTSCustID AND cus.FromCustID = tmp.FromCustID; 
+    
     IF(ip_IsRollback) THEN
 		BEGIN
             # Rollback data
@@ -139,4 +146,5 @@ sp: BEGIN
 	DROP TEMPORARY TABLE IF EXISTS tmpCustEvidence;
      
 END$$
+
 DELIMITER ;
