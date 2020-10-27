@@ -43,7 +43,7 @@ sp: BEGIN
     (	 
 			CustID			BIGINT UNSIGNED    
         ,   CTSCustID		BIGINT UNSIGNED     
-        ,	SubscriberID	SMALLINT UNSIGNED
+        ,	SubscriberID	INT UNSIGNED
         , 	EvidenceID		SMALLINT UNSIGNED
         , 	Remark			VARCHAR(500)  
         , 	PRIMARY KEY	    PK_Temp_MultipleAccountEvidence_CustID_EvidenceID(CustID,EvidenceID) 

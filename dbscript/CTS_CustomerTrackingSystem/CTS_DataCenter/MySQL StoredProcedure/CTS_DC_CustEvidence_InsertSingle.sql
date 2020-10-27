@@ -35,7 +35,7 @@ sp: BEGIN
     DECLARE 	lv_CreatedBy        BIGINT DEFAULT 10278938;
     
     DECLARE		lv_CustID			BIGINT UNSIGNED;
-    DECLARE		lv_SubscriberID		SMALLINT UNSIGNED;
+    DECLARE		lv_SubscriberID		INT UNSIGNED;
     DECLARE		lv_IsSyncEvi2Cate	VARCHAR(1) DEFAULT '';
 
     

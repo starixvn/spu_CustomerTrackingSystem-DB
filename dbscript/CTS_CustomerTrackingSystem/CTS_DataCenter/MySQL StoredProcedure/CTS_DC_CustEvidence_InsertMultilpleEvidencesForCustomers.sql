@@ -38,7 +38,7 @@ sp: BEGIN
     CREATE TEMPORARY TABLE Temp_CustomerList (
 			CustID			BIGINT UNSIGNED 
 		,	CTSCustID		BIGINT UNSIGNED    
-        ,	SubscriberID	SMALLINT
+        ,	SubscriberID	INT
     );
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_EvidenceList;
