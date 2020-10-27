@@ -8,7 +8,7 @@ BEGIN
 	/*
 		Created:	20200505@Terry.Nguyen212121
 		Task:		Auto tag for Customer Classification
-		DB:			CTS_DataCenter 
+		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
@@ -22,7 +22,7 @@ BEGIN
                 - Insert Probation Management flow
                 - Fix issue by have not delete TEMP NEW CATEGORY if insert with other category in the same time
                 [20201003-20201022@Irena.Vo][142546]: Enhance SP & correct logic. 
-                [20201026@Irena.Vo][142546]: Enhance init data for Probation to VIP OR Nomral.
+                [20201027@Irena.Vo][142546]: Enhance init data for Probation to VIP OR Nomral.
                 
 		Param's Explanation (filtered by):
                 call CTS_DataCenter.CTS_DC_AutoTagCustomerClassification
@@ -152,7 +152,7 @@ BEGIN
     INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = cate.CategoryID 
     SET   cate.CTSCustID = temp.CTSCustID
         , cate.SubscriberID  = temp.SubscriberID
-        , cate.CategoryID = (CASE WHEN (ex.CategoryID IN (2, 5) AND temp.CategoryID IN (6, 7)) THEN 10 -- Update category to Smart Punter, High Risk Punter
+        , cate.CategoryID = (CASE WHEN (ex.CategoryID IN (4, 5) AND temp.CategoryID IN (6, 7)) THEN 10 -- Update category to Smart Punter, High Risk Punter
                                   ELSE temp.CategoryID
                              END)
         , cate.LastModifiedDate = temp.LastModifiedDate 
@@ -208,7 +208,7 @@ BEGIN
        
     /*INSERT NEW PROBATION LIST*/
     INSERT  INTO CTS_DataCenter.ProbationAccountMonitor
-		(CustID, CTSCustID, SportGroupID, TargetCategoryID, FirstMargin, CreatedDate, CreatedBy, CreatedTime) 
+		(CustID, CTSCustID, SportGroupID, TargetCategoryID, FirstMargin, CreatedDate, CreatedBy, CreatedTime)  
 	SELECT DISTINCT temp.CustID
 		, 	temp.CTSCustID
         , 	temp.SportGroupID
