@@ -160,7 +160,13 @@ BEGIN
 		,	t.ActiveDays
 	FROM #tmpCustomers AS a WITH(NOLOCK)
 		INNER JOIN #tmpCustomerAccummulatedInfo AS t WITH(NOLOCK) ON a.CustId = t.CustId AND a.SportId = t.SportId
-	WHERE t.WinlossRM < 0;
+	WHERE t.WinlossRM < 0
+	GROUP BY a.CustId
+		,	a.SportId
+		,	t.TurnoverRM
+		,	t.WinlossRM
+		,	t.BetCount
+		,	t.ActiveDays;
 
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT	t.CustId
