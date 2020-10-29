@@ -2,7 +2,7 @@ DELIMITER $$
 USE CTS_DataCenter $$
 DROP PROCEDURE IF EXISTS CTS_DC_Association_GetWithCategory $$
 
-CREATE DEFINER=`ctsService`@`%` PROCEDURE `CTS_DC_Association_GetWithCategory`(IN ip_CustIDList VARCHAR(2000))
+CREATE DEFINER=`ctsService`@`%` PROCEDURE `CTS_DC_Association_GetWithCategory`(IN ip_CustIDList VARCHAR(2000), IN ip_IsDelete BOOLEAN)
 BEGIN
 	/*
 		Created:	20201027@Harvey
@@ -15,7 +15,7 @@ BEGIN
 
 		Param's Explanation (filtered by):
         
-			call CTS_DataCenter.CTS_DC_Association_GetWithCategory('443153');
+			call CTS_DataCenter.CTS_DC_Association_GetWithCategory('40290200,40290201,40290202,43600928,43600929,443153', 0);
 	*/
 	
 	DROP TEMPORARY TABLE IF EXISTS TempCustomers;
@@ -25,7 +25,7 @@ BEGIN
             RegisterName 	VARCHAR(50),
             CategoryName	VARCHAR(50)
     );
- /*   
+    
     DROP TEMPORARY TABLE IF EXISTS Results;
     CREATE TEMPORARY TABLE Results (
             RegisterName 	VARCHAR(50),
@@ -34,7 +34,7 @@ BEGIN
             AssCategoryName	VARCHAR(50),
             IsSoon88		BOOLEAN
     );
-    */
+
     
     DROP TEMPORARY TABLE IF EXISTS DevLv1;
     CREATE TEMPORARY TABLE DevLv1 (
@@ -47,50 +47,64 @@ BEGIN
 	EXECUTE stmt1;
     
     UPDATE TempCustomers tcust
-		INNER JOIN CTS_DataCenter.CTSCustomer cus ON tcust.CustID = cus.CustID
-			AND cus.CustSubID = 0
+		INNER JOIN CTS_DataCenter.CTSCustomer cus ON tcust.CustID = cus.CustID AND cus.CustSubID = 0
+        INNER JOIN CTS_Admin.Subscriber sub ON sub.SubscriberID = cus.SubscriberID AND sub.SubscriberName = 'Soon88'
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification class ON tcust.CustID = class.CustID
 		INNER JOIN CTS_DataCenter.CustomerCategory custCate ON class.CategoryID = custCate.CategoryID
 	SET tcust.CTSCustID = cus.CTSCustID
 		,tcust.RegisterName = TRIM(LEADING 'S88' FROM cus.RegisterName)
-		,tcust.CategoryName = custCate.CategoryName
+		,tcust.CategoryName = CASE 
+								WHEN custCate.CategoryID IN (203,204) THEN custCate.CategoryName
+								WHEN custCate.ParentID = 50 THEN custCate.CategoryName
+								ELSE 'Normal' 
+							END
 	WHERE custCate.ParentID IN (50,200);
     
     DELETE FROM TempCustomers
     WHERE CTSCustID IS NULL;
     
-    INSERT INTO DevLv1 (
-			CTSCustID
-		,	DCSDeviceID
-		)
-	SELECT ass.CTSCustID
-		,ass.DCSDeviceID
-	FROM CTS_DataCenter.AssociationByDevice ass
-	INNER JOIN TempCustomers tcust ON tcust.CTSCustID = ass.CTSCustID;
+    IF ip_IsDelete THEN
+		SELECT RegisterName, CategoryName FROM TempCustomers;
+    ELSE
+		INSERT INTO DevLv1 (CTSCustID, DCSDeviceID)
+		SELECT tcust.CTSCustID
+			,ass.DCSDeviceID
+		FROM CTS_DataCenter.AssociationByDevice ass
+		RIGHT JOIN TempCustomers tcust ON tcust.CTSCustID = ass.CTSCustID;
         
-	SELECT tcust.RegisterName
-		,tcust.CategoryName
-		,TRIM(LEADING 'S88' FROM cust.RegisterName) 'AssRegisterName'
-        ,custCate.CategoryID 'AssCategoryId'
-        ,CASE 
-			WHEN custCate.CategoryID IN (203,204) THEN custCate.CategoryName
-            WHEN custCate.ParentID = 50 THEN custCate.CategoryName
-            ELSE 'Normal' 
-		 END 'AssCategoryName'
-		,CASE 
-			WHEN sub.SubscriberName = 'Soon88'
-				THEN 1
-			ELSE 0
-			END 'IsSoon88'
-	FROM DevLv1 dev
-		INNER JOIN TempCustomers tcust ON tcust.CTSCustID = dev.CTSCustID
-		LEFT JOIN CTS_DataCenter.AssociationByDevice ass ON dev.DCSDeviceID = ass.DCSDeviceID
-		INNER JOIN CTS_DataCenter.CTSCustomer cust ON ass.CTSCustID = cust.CTSCustID
-		INNER JOIN CTS_Admin.Subscriber sub ON cust.SubscriberID = sub.SubscriberID
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification class ON ass.CTSCustID = class.CTSCustID
-		INNER JOIN CTS_DataCenter.CustomerCategory custCate ON class.CategoryID = custCate.CategoryID
-	WHERE dev.CTSCustID <> ass.CTSCustID
-		AND custCate.ParentID IN (50,200);
+        INSERT INTO Results(RegisterName,CategoryName)
+        SELECT tcust.RegisterName, tcust.CategoryName
+        FROM TempCustomers tcust INNER JOIN DevLv1 dev ON tcust.CTSCustID = dev.CTSCustID
+        WHERE dev.DCSDeviceID IS NULL;
+        
+        DELETE FROM DevLv1
+        WHERE DCSDeviceID IS NULL;
+		
+        INSERT INTO Results(RegisterName,CategoryName, AssRegisterName, AssCategoryName, IsSoon88)
+		SELECT tcust.RegisterName
+            ,tcust.CategoryName
+			,TRIM(LEADING 'S88' FROM cust.RegisterName) 'AssRegisterName'
+			,CASE 
+				WHEN custCate.CategoryID IN (203,204) THEN custCate.CategoryName
+				WHEN custCate.ParentID = 50 THEN custCate.CategoryName
+				ELSE 'Normal' 
+			 END 'AssCategoryName'
+			,CASE 
+				WHEN sub.SubscriberName = 'Soon88'
+					THEN 1
+				ELSE 0
+				END 'IsSoon88'
+		FROM TempCustomers tcust
+			INNER JOIN DevLv1 dev ON tcust.CTSCustID = dev.CTSCustID
+			INNER JOIN CTS_DataCenter.AssociationByDevice ass ON dev.DCSDeviceID = ass.DCSDeviceID AND dev.CTSCustID <> ass.CTSCustID
+			INNER JOIN CTS_DataCenter.CTSCustomer cust ON ass.CTSCustID = cust.CTSCustID
+			INNER JOIN CTS_Admin.Subscriber sub ON cust.SubscriberID = sub.SubscriberID
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification class ON ass.CTSCustID = class.CTSCustID
+			INNER JOIN CTS_DataCenter.CustomerCategory custCate ON class.CategoryID = custCate.CategoryID AND custCate.ParentID IN (50,200)
+		WHERE class.CTSCustID IS NOT NULL;
+    END IF;
+    
+    SELECT DISTINCT * FROM Results;
 
 END$$
 DELIMITER ;
