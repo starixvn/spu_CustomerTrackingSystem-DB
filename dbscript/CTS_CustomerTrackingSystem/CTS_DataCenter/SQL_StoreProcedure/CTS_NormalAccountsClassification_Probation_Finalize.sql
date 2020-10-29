@@ -205,7 +205,7 @@ BEGIN
 	FROM #tmpCustomers AS c
 		INNER JOIN #tmpCustomerAccummulatedInfo AS s ON c.CustId = s.CustId AND c.SportId = s.SportId
 	WHERE s.BetCount >= 60
-		OR s.Margin >= 0;
+		AND s.Margin >= 0;
 
 	-- FILTER BY WINNING COUNT
 	-- Get daily raw data for all sports
@@ -284,10 +284,9 @@ BEGIN
 	AS(
 		SELECT	a.CustId
 			,	a.SportId
-			,	COUNT(1)
+			,	SUM(CASE WHEN a.Winloss > 0 THEN 1 ELSE 0 END)
 		FROM #tmpSportDailyData AS a WITH(NOLOCK)
-			INNER JOIN #tmpFilteredCustomers AS c ON c.CustId = a.CustId AND c.SportId = a.SportId
-		WHERE a.Winloss > 0
+			RIGHT JOIN #tmpFilteredCustomers AS c ON c.CustId = a.CustId AND c.SportId = a.SportId
 		GROUP BY a.CustId, a.SportId
 	)
 	DELETE c WITH(ROWLOCK)
@@ -312,7 +311,8 @@ BEGIN
 						FROM #tmpFilteredCustomers AS f WITH(NOLOCK)
 							INNER JOIN #tmpSportDailyData AS d WITH(NOLOCK) ON f.CustId = d.CustId AND d.SportId = f.SportId
 						GROUP BY f.CustId, f.SportId
-					) AS t ON c.CustId = t.CustId AND c.SportId = t.SportId;
+					) AS t ON c.CustId = t.CustId AND c.SportId = t.SportId
+	WHERE t.Margin >= 0;
 	
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT	a.CustId
