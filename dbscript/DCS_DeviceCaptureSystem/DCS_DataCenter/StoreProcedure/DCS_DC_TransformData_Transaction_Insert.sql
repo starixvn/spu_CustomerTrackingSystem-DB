@@ -2,7 +2,7 @@ DELIMITER $$
 
 DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformData_Transaction_Insert$$
 
-CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformData_Transaction_Insert(IN ip_FromTransID BIGINT, IN ip_ToTransID BIGINT)
+CREATE DEFINER=`fps`@`%` PROCEDURE DCS_DataCenter.DCS_DC_TransformData_Transaction_Insert(IN ip_FromTransID BIGINT, IN ip_ToTransID BIGINT)
 BEGIN
 /*
 	Created: 20190730@Casey.Huynh
@@ -12,15 +12,20 @@ BEGIN
 
 	Revisions:
 		#1. [20191217@CaseyHuynh][#125530]: Implement LastLoginTime 
-        #2. [20200416@Terry]: Archive Completed RawTransaction to DCS_RawTransaction.ProcessedTransaction.
+        #2. [20200416@Terry]: Archive Completed RawTransaction to DCS_DataCenter.ProcessedTransaction.
 		#3. [20200506@CaseyHuynh][133486]: Not Deposit Account
 				+ Insert Ignore On Duplicate, Update (LastLoginTime, IsCTSTransfromed)
                  + Remove code "INSERT IGNORE INTO DCS_DataCenter.TransactionIP_TransformTemp"
 		#4. [20200515@CaseyHuynh][133263]: Update LastLoginTime
+        #5  [20200918@CaseyHuynh][137963]: Change column TransID to RawTransID
+        #6. [20201006@CaseyHuynh][143011]: Move New Server, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_DataCenter"
+        #7. [20201019@CaseyHuynh][143011]:	Move Server, Phase 2	
     Reviewer:
 		#1 [Name]: New
 	Param's Explanation (filtered by):
 */
+	DECLARE		SysMinCreatedDate	DATETIME;
+    
 	### PERFORMANCE: START
     DECLARE		vrExecKey		BIGINT	UNSIGNED;
 	DECLARE		vrSPName		VARCHAR(200) DEFAULT 'DCS_DC_TransformData_Transaction_Insert' ;
@@ -42,8 +47,7 @@ BEGIN
     VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime, ip_FromTransID, ip_ToTransID);
 	
 	### PERFORMANCE: END  
-	
-	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
+
     # =================================================================
     DROP TEMPORARY TABLE IF EXISTS Temp_RawTransaction;
 	CREATE TEMPORARY TABLE IF NOT EXISTS Temp_RawTransaction (
@@ -65,7 +69,7 @@ BEGIN
 		, TransStatus			BIT(16) 			NULL
 		, CreatedDate			DATETIME 			NULL COMMENT 'Date Only' NOT NULL
 		, InsertTime			TIMESTAMP(4) 		NULL
-        , FingerprintCode		VARCHAR(2000)
+        , FingerprintCode		VARCHAR(620)
         , FingerprintMoreInfo	TEXT	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 	);
     # =================================================================
@@ -75,7 +79,7 @@ BEGIN
 		, SubscriberID			INT NULL
         , SubscriberType		TINYINT	UNSIGNED	NULL
     );
-      
+    SET SysMinCreatedDate = (SELECT DATE(VValue) FROM DCS_DataCenter.SystemSetting WHERE VGroup = "DCS_Device_Transform" AND VName = "MinCreatedDate");  
 	INSERT INTO Temp_RawTransaction(TransID, LoginName, TransTime, SubscriberID, SubscriberType, DeviceCode
 			, URLDetails, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, FingerprintCode, FingerprintMoreInfo)
 	SELECT  rt.TransID
@@ -95,16 +99,16 @@ BEGIN
             , rt.CreatedDate
             , rt.FingerprintCode
             , rt.FingerprintMoreInfo
-	FROM		DCS_RawTransaction.RawTransaction AS rt
+	FROM		DCS_DataCenter.RawTransaction AS rt
     INNER JOIN	CTS_Admin.Subscriber AS su
 				ON	rt.SubscriberName = su.SubscriberName
 	INNER JOIN	DCS_DataCenter.ActionResult AS ar
 				ON	rt.Action = ar.Action
 					AND IFNULL(rt.ActionResult,'') = ar.ActionResult
 	WHERE		rt.IsProcessed = 0
-				AND rt.TransID BETWEEN ip_FromTransID AND ip_ToTransID;
-
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;    
+				AND rt.TransID BETWEEN ip_FromTransID AND ip_ToTransID
+                AND rt.CreatedDate 	>=	SysMinCreatedDate;
+ 
     	
     #===INSERT SUBCRIBERURL    
     INSERT IGNORE INTO DCS_DataCenter.URL(URLDetails, SubscriberID, CreatedDate)
@@ -128,9 +132,6 @@ BEGIN
     GROUP BY	trt.SubscriberID, trt.SubscriberType, trt.LoginName
     ON DUPLICATE KEY UPDATE IsCTSTransformed = (CASE WHEN IsCTSTransformed = -3 THEN -1 END );
     
-        
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
-
     # Update AccountID to Temp_Transaction
     UPDATE 		Temp_RawTransaction AS trt
     INNER JOIN	DCS_DataCenter.Account AS ac
@@ -140,6 +141,11 @@ BEGIN
 				ON	trt.URLDetails = ur.URLDetails
     SET			trt.AccountID = ac.AccountID
 				, trt.URLID = ur.URLID;   
+    
+    #Remove Temp Trans If AccountID Is NULL
+    DELETE 	trt
+    FROM	Temp_RawTransaction AS trt
+    WHERE 	trt.AccountID IS NULL;    
     
     UPDATE 		DCS_DataCenter.Association AS ass
     INNER JOIN	(SELECT DISTINCT AccountID FROM Temp_RawTransaction trt) AS trtAcc
@@ -166,9 +172,8 @@ BEGIN
 				 FROM		Temp_RawTransaction 	AS trt
                  GROUP BY	trt.AccountID) AS tac
 				ON	acc.AccountID = tac.AccountID
-    WHERE		tac.LastLoginTime > acc.LastLoginTime;
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;  
+    WHERE		tac.LastLoginTime > acc.LastLoginTime;    
+
     INSERT INTO DCS_DataCenter.LastLoginTime_TransformTemp(CTSCustID, LastLoginTime)
     SELECT 		cus.CTSCustID
 				, MAX(lgn.LastLoginTime)
@@ -176,14 +181,13 @@ BEGIN
     INNER JOIN  CTS_DataCenter.CustDCSAccount AS cus
 				ON lgn.AccountID = cus.AccountID
 	GROUP BY 	cus.CTSCustID;    
-    
+	
     UPDATE		DCS_DataCenter.Account 	AS acc
     INNER JOIN	Temp_LastLoginTime	AS tll
 				ON acc.AccountID = tll.AccountID
-	SET			acc.LastLoginTime = tll.LastLoginTime;
-    
+	SET			acc.LastLoginTime = tll.LastLoginTime;    
 
-    INSERT IGNORE INTO  DCS_DataCenter.Transaction(TransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey
+    INSERT IGNORE INTO  DCS_DataCenter.Transaction(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey
 						, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, FingerprintCode, FingerprintMoreInfo)
    	SELECT 		trt.TransID
 				, trt.LoginName
@@ -206,21 +210,22 @@ BEGIN
 	FROM		Temp_RawTransaction AS trt;	
 
     #================================================================
-     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-        INSERT IGNORE INTO DCS_RawTransaction.ProcessedTransaction(
-					LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, FingerprintMoreInfo, UserAgent
-					, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID)
-		SELECT		rt.LoginName, rt.SubscriberName, rt.TransTime, rt.CreatedDate, rt.DeviceCode, rt.FingerprintCode, rt.FingerprintMoreInfo, rt.UserAgent
-					, rt.IP, rt.IPID, rt.Flagged, rt.PluginID, rt.URL, rt.Action, rt.ActionResult, rt.InvalidDevice, rt.TransStatus, rt.IsProcessed, rt.TransID
-        FROM 		DCS_RawTransaction.RawTransaction AS rt
-        INNER JOIN	Temp_RawTransaction	AS tmp_rm
-					ON	rt.TransID = tmp_rm.TransID;
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
+	INSERT IGNORE INTO DCS_DataCenter.ProcessedTransaction(
+				LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, FingerprintMoreInfo, UserAgent
+				, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID)
+	SELECT		rt.LoginName, rt.SubscriberName, rt.TransTime, rt.CreatedDate, rt.DeviceCode, rt.FingerprintCode, rt.FingerprintMoreInfo, rt.UserAgent
+				, rt.IP, rt.IPID, rt.Flagged, rt.PluginID, rt.URL, rt.Action, rt.ActionResult, rt.InvalidDevice, rt.TransStatus, rt.IsProcessed, rt.TransID
+	FROM 		DCS_DataCenter.RawTransaction AS rt
+	INNER JOIN	Temp_RawTransaction	AS tmp_rm
+				ON	rt.TransID = tmp_rm.TransID
+				AND rt.CreatedDate = tmp_rm.CreatedDate;
+
         
-		DELETE		rt
-        FROM 		DCS_RawTransaction.RawTransaction AS rt
-        INNER JOIN	Temp_RawTransaction	AS tmp_rm
-					ON	rt.TransID = tmp_rm.TransID;
+	DELETE		rt
+	FROM 		DCS_DataCenter.RawTransaction AS rt
+	INNER JOIN	Temp_RawTransaction	AS tmp_rm
+				ON	rt.TransID = tmp_rm.TransID
+					AND rt.CreatedDate = tmp_rm.CreatedDate;
     
 	#=================================================================	
   
@@ -236,7 +241,6 @@ BEGIN
 	WHERE
 		z.ExecKey = vrExecKey
 			AND z.StepID = z.StepID;
-    ### PERFORMANCE: END
-    
+    ### PERFORMANCE: END    
 END$$
 DELIMITER ;

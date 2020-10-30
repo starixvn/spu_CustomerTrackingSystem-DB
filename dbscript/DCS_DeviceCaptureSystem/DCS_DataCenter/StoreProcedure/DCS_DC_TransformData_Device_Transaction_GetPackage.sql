@@ -2,11 +2,11 @@ DELIMITER $$
 
 DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformData_Device_Transaction_GetPackage$$
 
-CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformData_Device_Transaction_GetPackage (IN ip_NoOfTickets INT, IN ip_NoOfBatch INT)
+CREATE DEFINER=`dcsService`@`%` PROCEDURE `DCS_DC_TransformData_Device_Transaction_GetPackage`(IN ip_NoOfTickets INT, IN ip_NoOfBatch INT)
 BEGIN
 	/*
-	Created: 20190730@Casey.Huynh
-	Task : Get DeviceID NULL From Table Transaction
+	Created: 202009008@Bobby.Nguyen
+	Task : Get List TransID to process Device Transform
 	DB: DCS_DataCenter
 	Original:
 
@@ -14,102 +14,64 @@ BEGIN
 	Param's Explanation (filtered by):
 	*/
 	
-	DECLARE		TotalRecord		INT UNSIGNED DEFAULT 0;
-	DECLARE		Batch			TINYINT DEFAULT 1;
-    
-	### PERFORMANCE: START
-    DECLARE		vrExecKey		BIGINT	UNSIGNED;
-	DECLARE		vrSPName		VARCHAR(200)  DEFAULT 'DCS_DC_TransformData_Device_Transaction_GetPackage' ;
-    DECLARE		vrStepID		INT;
-	DECLARE 	vrNotes	 		VARCHAR(500);
-	DECLARE 	vrStartTime		TIMESTAMP(4);
-	DECLARE		vrEndTime 		TIMESTAMP(4);
-	DECLARE		vrDuration 		BIGINT;	
-    DECLARE		vrTotalRecord	INT;
-    DECLARE		vrFromID		BIGINT;
-    DECLARE		vrToID			BIGINT;
-
-    SET		vrExecKey = CRC32((UUID_Short()));    
-    SET		vrNotes = CONCAT('Input: ',ip_NoOfTickets,'_', ip_NoOfBatch) ;		
-    SET 	vrStepID = 1;
-    
-    SET 	vrStartTime = CURRENT_TIMESTAMP(4);	
-    
-    INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
-    VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);
-
-	### PERFORMANCE: END
+	DECLARE		totalRecord		INT UNSIGNED DEFAULT 0;
+	DECLARE		rateBatch		DECIMAL(4,2);
+    DECLARE 	fromTransID		BIGINT;
+    DECLARE		fromCreatedDate	DATE;
+    DECLARE		vGroupLookup	varchar(128);
+    DECLARE		vKeyLookup		varchar(128);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Trans;
     CREATE TEMPORARY TABLE Temp_Trans 
     (	
-		BatchID				TINYINT
-		, TransID			BIGINT	UNSIGNED
-        , AccountID			BIGINT	UNSIGNED
-        , SubscriberID		BIGINT
-		, UserAgentKey		VARCHAR(32)
-        , DeviceCode		VARCHAR(32)
-        , FingerprintCode		VARCHAR(2000)
-        , FingerprintMoreInfo	TEXT	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
-        , TransTime				TIMESTAMP(4) 
-        , CreatedDate			DATETIME 
-    ); 
-   
-	SET TotalRecord = ip_NoOfTickets*ip_NoOfBatch;
-
-	INSERT INTO Temp_Trans(TransID, AccountID, SubscriberID, UserAgentKey, DeviceCode,FingerprintCode, FingerprintMoreInfo, CreatedDate, TransTime)
-    SELECT	ts.TransID
-			, ts.AccountID
-            , ts.SubscriberID
-            , ts.UserAgentKey
-            , ts.DeviceCode
-            , ts.FingerprintCode
-			, ts.FingerprintMoreInfo
-			, ts.CreatedDate
-			, ts.TransTime
-	FROM 	DCS_DataCenter.Transaction AS ts
-	#INNER JOIN DCS_RawTransaction.RawTransaction AS rt ON ts.TransId = rt.TransID 
-	WHERE	ts.AccountID 	IS NOT NULL
-			AND ts.DeviceID IS NULL
-	LIMIT	TotalRecord;
+		TransID			BIGINT	UNSIGNED PRIMARY KEY
+		, BatchID		INT
+        , CreatedDate	DATE
+    ) engine=MEMORY; 
     
-    WHILE (EXISTS (SELECT (1) FROM Temp_Trans WHERE BatchID IS NULL LIMIT 1)) DO
-    	  UPDATE 	Temp_Trans
-		  SET		BatchID = Batch
-          WHERE		BatchID IS NULL 
-          LIMIT 	ip_NoOfTickets;    
-		  SET Batch = Batch + 1;
-    END WHILE;
+	SET rateBatch 		= 1;#MonDB.DCS_f_GetRateBatch();	
+    SET ip_NoOfTickets 	= ceil(ip_NoOfTickets*rateBatch);
+	SET totalRecord 	= ip_NoOfTickets*ip_NoOfBatch;
+    SET vGroupLookup 	= 'DCS_Device_Transform';
+    SET vKeyLookup 		= 'MinTransId';
+    SET fromTransID 	= IFNULL((SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE VGroup=vGroupLookup AND VName=vKeyLookup), 0);
     
-    SELECT	ts.BatchID
-			, ts.TransID
-			, ts.AccountID
-            , ts.SubscriberID
-            , ts.UserAgentKey
-            , ts.DeviceCode
-            , ts.FingerprintCode
-			, ts.FingerprintMoreInfo
-			, ts.CreatedDate
-			, ts.TransTime
-	FROM Temp_Trans AS ts;
-    
-   SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+	SET @RowId = 0;
+    INSERT INTO Temp_Trans (TransID, CreatedDate, BatchID)
+    SELECT TransID, CreatedDate, BatchID
+    FROM (
+		SELECT	@RowId := @RowId + 1
+				, ts.TransID
+                , ts.CreatedDate
+				, ceil(@RowId/ip_NoOfTickets) AS BatchID
+		FROM 	DCS_DataCenter.Transaction AS ts
+		WHERE	ts.TransId >= fromTransID
+		LIMIT totalRecord
+    ) AS t;
 	
-	### PERFORMANCE
-	SET		vrEndTime = CURRENT_TIMESTAMP(4);
+    #UPDATE back fromTransID
+    SET fromTransID = IFNULL((SELECT MIN(TransID) FROM Temp_Trans), fromTransID);
+    SET fromCreatedDate = IFNULL((SELECT MIN(CreatedDate) FROM Temp_Trans), date_add(current_timestamp(), interval -2 week));
+    INSERT INTO DCS_DataCenter.SystemSetting (VGroup, VName, VValue, UpdatedTime)
+    SELECT VGroup, VName, VValue, UpdatedTime
+    FROM (
+    SELECT vGroupLookup AS VGroup
+		, vKeyLookup AS VName
+		, CONCAT('', fromTransID) AS VValue
+        , current_timestamp() AS UpdatedTime
+	UNION ALL 
+    SELECT vGroupLookup
+		, 'MinCreatedDate'
+		, CONCAT('', fromCreatedDate)
+        , current_timestamp() AS UpdatedTime
+	) as t
+	ON DUPLICATE KEY UPDATE 
+		VValue = t.VValue
+		,UpdatedTime = t.UpdatedTime
+    ;
     
-    SELECT 	Count(1), Min(TransId), Max(TransId)
-    INTO	vrTotalRecord, vrFromID, vrToID
-    FROM	Temp_Trans AS tts;
-    
-    UPDATE	DCS_DataCenter.zzTracePerformance AS z
-    SET		z.EndTime = vrEndTime
-			, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
-            , z.TotalRecord = vrTotalRecord
-            , z.FromID = vrFromID
-            , z.ToID		= vrToID
-
-    WHERE	z.ExecKey = vrExecKey AND z.StepID = z.StepID;
-    ### PERFORMANCE: END 
+    #RETURN OUTPUT
+    SELECT TransID, BatchID
+    FROM Temp_Trans;
 END$$
 DELIMITER ;

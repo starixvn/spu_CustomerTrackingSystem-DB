@@ -3,7 +3,7 @@ DELIMITER $$
 
 DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformData_UnhandleSubscriberAction$$
 
-CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformData_UnhandleSubscriberAction(IN ip_FromTransID BIGINT, IN ip_ToTransID BIGINT)
+CREATE DEFINER=`fps`@`%` PROCEDURE DCS_DataCenter.DCS_DC_TransformData_UnhandleSubscriberAction(IN ip_FromTransID BIGINT, IN ip_ToTransID BIGINT)
 BEGIN
 	
     /*
@@ -13,6 +13,8 @@ BEGIN
 	Original:
 
 	Revisions:
+			#1. [20201006@CaseyHuynh][143011]: Move New Server, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_DataCenter"
+            #2. [20201019@CaseyHuynh][143011]:	Move Server, Phase 2
 	Param's Explanation (filtered by):
 	*/
     
@@ -76,7 +78,7 @@ BEGIN
             , su.SubscriberStatus
             , ActionResultID
             , ActionResultStatus
-	FROM	DCS_RawTransaction.RawTransaction AS rt
+	FROM	DCS_DataCenter.RawTransaction AS rt
 	LEFT JOIN	CTS_Admin.Subscriber AS su
 				ON rt.SubscriberName = su.SubscriberName
 					AND su.DCSStatus = 1
@@ -85,7 +87,8 @@ BEGIN
 					AND rt.ActionResult = ar.ActionResult
     WHERE	rt.TransID BETWEEN ip_FromTransID AND ip_ToTransID
 				AND rt.IsProcessed = 0;   
-        
+    
+   
     #==UNHANDLE SUBSCRIBER================================================================
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
@@ -131,9 +134,9 @@ BEGIN
     
    # SELECT 		ts.TransID, ts.TransStatus, vrNotTransformedStatus, ts.TransStatus & vrNotTransformedStatus
     #FROM		Temp_Transaction AS ts;
-    
+     SELECT * FROM Temp_Transaction;
    
-    UPDATE		DCS_RawTransaction.RawTransaction AS rt
+    UPDATE		DCS_DataCenter.RawTransaction AS rt
     INNER JOIN	Temp_Transaction AS ts
 				ON rt.TransID = ts.TransID
 	SET			rt.IsProcessed = CASE WHEN (ts.TransStatus & vrNotTransformedStatus) != 0 THEN -1 ELSE rt.IsProcessed END 
