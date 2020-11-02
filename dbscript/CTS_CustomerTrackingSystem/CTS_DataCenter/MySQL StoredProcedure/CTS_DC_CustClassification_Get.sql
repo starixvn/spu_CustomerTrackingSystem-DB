@@ -21,7 +21,7 @@ BEGIN
             - 20200903@Long.Luu [Redmine ID: #137550]: Get for both General & Detailed Categories
             - 20200908@Irena.Vo [Redmine ID: #141020]: Get for VVIP. VVIP -> PA -> Detailed & General. Add VVIP (General)
             - 20201006@Irena.Vo [Redmine ID: #141930]: Rollback logic get IsUsedManually for lastest category & enhance logic get.
-            - 20201014-20201023@Irena.Vo [Redmine ID: #141756]: Enhance logic show Evidence Category & Normal Category. Add New General 
+            - 20201014-20201023@Irena.Vo [Redmine ID: #141756]: Enhance logic show Evidence Category & Normal Category
             
 		Param's Explanation:
 	*/ 
@@ -44,13 +44,6 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_GeneralCategory (
     	CategoryID			SMALLINT UNSIGNED
      );
-   
-    DROP TEMPORARY TABLE IF EXISTS Temp_RangeDateCategory;
-    CREATE TEMPORARY TABLE Temp_RangeDateCategory (
-		DisplayCategoryID   	SMALLINT UNSIGNED 
-	 , 	MinLastModifiedDate   	DATETIME
-     , 	MaxLastModifiedDate   	DATETIME        
-    );
    
      SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
      SET SQL_SAFE_UPDATES = 0;
@@ -85,15 +78,6 @@ BEGIN
         WHERE   cate.CategoryID = 2 AND cate.CustID = ip_CustID; 
     END IF;
     
-    UPDATE Temp_LatestRecordOfCategory AS temp
-    INNER JOIN 	CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = temp.CategoryID
-    SET temp.CategoryType =	( CASE
-								  WHEN cc.ParentID = 50 THEN 2 -- parse 2 row (detail&general) & red
-								  WHEN cc.ParentID = 200  THEN 1 -- parse 1 row (general)  & any color 
-								  WHEN cc.ParentID = 1 THEN 0 -- parse 1 row (detail) & any color
-					         END)
-	WHERE temp.CategoryType IS NULL;
-    
     -- Update Display Category ID
     UPDATE  Temp_LatestRecordOfCategory
     SET   DisplayCategoryID = (CASE WHEN CategoryID = 151 THEN 51
@@ -109,19 +93,17 @@ BEGIN
                                     ELSE CategoryID
 								END);
     
-    -- Choose Lastest Display Category with scan date
-    INSERT INTO Temp_RangeDateCategory
-    SELECT  DisplayCategoryID,	MIN(LastModifiedDate),   MAX(LastModifiedDate)
-    FROM Temp_LatestRecordOfCategory
-    GROUP BY DisplayCategoryID;
+	UPDATE Temp_LatestRecordOfCategory AS temp
+    INNER JOIN 	CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = temp.DisplayCategoryID
+    SET temp.CategoryType =	( CASE
+								  WHEN cc.ParentID = 50 THEN 2 -- parse 2 row (detail&general) & red
+								  WHEN cc.ParentID = 200  THEN 1 -- parse 1 row (general)  & any color 
+								  WHEN cc.ParentID = 1 THEN 0 -- parse 1 row (detail) & any color 
+					         END)
+	WHERE temp.CategoryType IS NULL;
 
-    DELETE temp
-    FROM Temp_LatestRecordOfCategory  AS temp 
-	INNER JOIN Temp_RangeDateCategory AS u ON u.DisplayCategoryID = temp.DisplayCategoryID
-    WHERE temp.LastModifiedDate = u.MinLastModifiedDate AND u.MinLastModifiedDate <> u.MaxLastModifiedDate; 
-
-    -- Show results
-	SELECT  cc.ParentID
+-- Show results
+       SELECT  cc.ParentID
 		,   temp.CategoryType
         ,   temp.DisplayCategoryID AS CategoryID
 		,	cc.CategoryName
@@ -139,29 +121,31 @@ BEGIN
 				 ELSE DATE_ADD(MAX(temp.LastScannedDate), INTERVAL cc.ScanIntervalInSecond SECOND) 
 			END AS NextScanToDate
         ,	cc.IsUsedManually AS IsEnabledDelete -- only VVIP can delete
-     FROM Temp_LatestRecordOfCategory AS temp
+        FROM ( SELECT CategoryType, SportGroupId, DisplayCategoryID, LastScannedDate, LastModifiedBy, Remark, MAX(LastModifiedDate) AS LastModifiedDate
+               FROM Temp_LatestRecordOfCategory 
+               GROUP BY CategoryType, SportGroupId, DisplayCategoryID, LastScannedDate, LastModifiedBy, Remark
+		      ) AS temp
         INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = temp.DisplayCategoryID
 		LEFT JOIN CTS_DataCenter.SportGroup AS s ON s.SportGroupID = temp.SportGroupID
         LEFT JOIN CTS_Admin.CTSUser AS u ON u.UserID = temp.LastModifiedBy
-	 GROUP BY cc.ParentID
-		,   temp.CategoryType
-		,   temp.DisplayCategoryID
-		,	cc.CategoryName
-        ,   temp.Remark
-        ,	temp.LastModifiedBy
-        , 	u.Username
-        ,	cc.IsUsedManually
-	 	,	cc.ScanIntervalInSecond
-    ORDER BY LastModifiedDate DESC;
-
+		 GROUP BY cc.ParentID
+			,   temp.CategoryType
+			,   temp.DisplayCategoryID
+			,	cc.CategoryName
+			,   temp.Remark
+			,	temp.LastModifiedBy
+			, 	u.Username
+			,	cc.IsUsedManually
+			,	cc.ScanIntervalInSecond
+		ORDER BY LastModifiedDate DESC;
+    
 	# Begin: Cleanup
-    DROP TEMPORARY TABLE IF EXISTS Temp_RangeDateCategory;
 	DROP TEMPORARY TABLE IF EXISTS Temp_GeneralCategory;
     DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory; 
 	# End: Cleanup
     
     -- Return isPinCategory for customer
-	SELECT lv_IsPinCategory AS isPinCategory;   
+	SELECT lv_IsPinCategory AS isPinCategory;    
     
 	SET SQL_SAFE_UPDATES = 1;
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
