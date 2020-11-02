@@ -1,0 +1,16 @@
+{
+  "connector.class": "streams.kafka.connect.sink.Neo4jSinkConnector",
+  "errors.retry.timeout": "-1",
+  "errors.log.include.messages": "true",
+  "neo4j.topic.cypher.ctsserver.CTS_DataCenter.CTSCustomer": " call apoc.do.case([ event.op = 'c','MERGE (n:CTSCustomer { CTSCustID: event.after.CTSCustID }) ON CREATE SET n = event.after RETURN n' ,event.op = 'u','MATCH (n:CTSCustomer { CTSCustID: event.before.CTSCustID }) SET n = event.after RETURN n' ,event.op = 'd','MATCH (n:CTSCustomer { CTSCustID: event.before.CTSCustID }) DETACH DELETE n'],'',{event:event}) yield value return value",
+  "neo4j.authentication.basic.password": "vn5PU@N3x6el",
+  "topics": "ctsserver.CTS_DataCenter.CTSCustomer",
+  "tasks.max": "1",
+  "neo4j.server.uri": "bolt://172.18.0.3:7687",
+  "errors.retry.delay.max.ms": "1000",
+  "neo4j.authentication.basic.username": "neo4j",
+  "name": "Neo4jSink-MySQL-CDC-CTSDataCenter-CTSCustomer",
+  "errors.tolerance": "all",
+  "neo4j.encryption.enabled": "false",
+  "errors.log.enable": "true"
+}
