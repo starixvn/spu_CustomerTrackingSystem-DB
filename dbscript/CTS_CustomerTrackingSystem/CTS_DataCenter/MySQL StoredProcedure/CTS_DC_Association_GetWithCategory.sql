@@ -53,12 +53,8 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CustomerCategory custCate ON class.CategoryID = custCate.CategoryID
 	SET tcust.CTSCustID = cus.CTSCustID
 		,tcust.RegisterName = TRIM(LEADING 'S88' FROM cus.RegisterName)
-		,tcust.CategoryName = CASE 
-								WHEN custCate.CategoryID IN (203,204) THEN custCate.CategoryName
-								WHEN custCate.ParentID = 50 THEN custCate.CategoryName
-								ELSE 'Normal' 
-							END
-	WHERE custCate.ParentID IN (50,200);
+		,tcust.CategoryName = custCate.CategoryName
+	WHERE custCate.ParentID = 50 OR custCate.CategoryID IN (203,204) ;
     
     DELETE FROM TempCustomers
     WHERE CTSCustID IS NULL;
