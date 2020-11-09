@@ -31,7 +31,7 @@ BEGIN
 		AND b.transdate BETWEEN @FromDate AND @ToDate
 		AND b.Currency NOT IN (20,27,28)
 		AND b.Username NOT LIKE '%Cashout%'
-		AND b.BetFrom <> 'p';
+		AND b.BetFrom NOT IN ('p','m','w','0','3','6');
 END;
 
 /*<info serverAlias="DBCTS-bodb02" executers="bodbAdminNet" isFunction="0" isNested="0"></info>*/
