@@ -1,7 +1,7 @@
 DELIMITER $$
 USE CTS_DataCenter $$
 DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_CustInfo_CheckCustNotExistedByCustIds $$
-
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsAPI" isFunction="0" isNested="0"></info>*/
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE CTS_DataCenter.CTS_DC_CustInfo_CheckCustNotExistedByCustIds(
 		  IN ip_CustIDList VARCHAR(2000)
 		, IN ip_FromDate DATETIME
