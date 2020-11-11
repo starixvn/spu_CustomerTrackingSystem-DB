@@ -1,12 +1,12 @@
-
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
 DELIMITER $$
 
 DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformData_UnhandleSubscriberAction$$
 
-CREATE DEFINER=`fps`@`%` PROCEDURE DCS_DataCenter.DCS_DC_TransformData_UnhandleSubscriberAction(IN ip_FromTransID BIGINT, IN ip_ToTransID BIGINT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE DCS_DataCenter.DCS_DC_TransformData_UnhandleSubscriberAction(IN ip_FromTransID BIGINT, IN ip_ToTransID BIGINT)
+SQL SECURITY INVOKER
 BEGIN
-	
-    /*
+	/*
 	Created: 20190730@Casey.Huynh
 	Task :  Filter Unhandled Subscriber by IsProcessed = -1, Action Result
 	DB: DCS_RawTransaction(rtaging)
@@ -15,6 +15,7 @@ BEGIN
 	Revisions:
 			#1. [20201006@CaseyHuynh][143011]: Move New Server, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_DataCenter"
             #2. [20201019@CaseyHuynh][143011]:	Move Server, Phase 2
+            #3. [20201111@CaseyHuynh][xxxxx]: Remove code  "Insert New Subscriber To Subscriber table when Subscriber Is Invalid"
 	Param's Explanation (filtered by):
 	*/
     
@@ -62,9 +63,7 @@ BEGIN
         , ActionResultStatus	TINYINT        
         , IsProcessed			BIT	DEFAULT 0
     );
-    
-	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;    
-    
+        
     INSERT	INTO Temp_Transaction(TransID, SubscriberName, Action, ActionResult, URLDetails, TransStatus, CreatedDate, SubscriberID
 									, SubscriberStatus, ActionResultID, ActionResultStatus)
     SELECT 	rt.TransID
@@ -86,22 +85,9 @@ BEGIN
 				ON rt.Action = ar.Action
 					AND rt.ActionResult = ar.ActionResult
     WHERE	rt.TransID BETWEEN ip_FromTransID AND ip_ToTransID
-				AND rt.IsProcessed = 0;   
-    
+				AND rt.IsProcessed = 0;       
    
-    #==UNHANDLE SUBSCRIBER================================================================
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-    
-	INSERT IGNORE INTO CTS_Admin.Subscriber (SubscriberName, SubscriberPrefix,  CreatedDate, SubscriberStatus, IsTest)
-	SELECT 		ts.SubscriberName
-				, ''
-				, MIN(ts.CreatedDate) AS CreatedDate
-				, vrUnhandleStatus	AS Status # vrUnhandleStatus_Subscriber
-                , vrUnhandleIsTest AS IsTest
-    FROM		Temp_Transaction AS ts   
-    WHERE		ts.SubscriberID IS NULL
-    GROUP BY	ts.SubscriberName;
-
+   
     #==UNHANDLE ACTION================================================================    
 	INSERT IGNORE INTO DCS_DataCenter.ActionResult (Action, ActionResult, CreatedDate, ActionResultStatus)
 	SELECT 		Action 
@@ -119,22 +105,13 @@ BEGIN
 	SET			TransStatus = TransStatus | vrUnhandleStatus_Subscriber
     WHERE		ts.SubscriberID IS NULL
 				OR ts.SubscriberStatus = vrUnhandleStatus;
-	    
-   # SELECT 		ts.TransID, ts.TransStatus, vrNotTransformedStatus, ts.TransStatus & vrNotTransformedStatus
-    #FROM		Temp_Transaction AS ts;
+
     
 	#===Update NOT Transform status for the Invalid Action Result(Invalid Action Result)
     UPDATE 		Temp_Transaction AS ts
 	SET			TransStatus = TransStatus | vrUnhandleStatus_Action
     WHERE		ts.ActionResultID IS NULL
 				OR ts.ActionResultStatus = vrUnhandleStatus; 
-
-	
-    #==========================================================================
-    
-   # SELECT 		ts.TransID, ts.TransStatus, vrNotTransformedStatus, ts.TransStatus & vrNotTransformedStatus
-    #FROM		Temp_Transaction AS ts;
-     SELECT * FROM Temp_Transaction;
    
     UPDATE		DCS_DataCenter.RawTransaction AS rt
     INNER JOIN	Temp_Transaction AS ts
@@ -150,6 +127,5 @@ BEGIN
 			, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
     WHERE	z.ExecKey = vrExecKey AND z.StepID = z.StepID;
     ### PERFORMANCE: END
- 
 END$$
 DELIMITER ;
