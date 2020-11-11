@@ -22,7 +22,7 @@ BEGIN
                 - Insert Probation Management flow
                 - Fix issue by have not delete TEMP NEW CATEGORY if insert with other category in the same time
                 [20201003-20201022@Irena.Vo][142546]: Enhance SP & correct logic. 
-                [20201027@Irena.Vo][142546]: Enhance init data for Probation to VIP OR Nomral.
+                [20201027@Irena.Vo][142546]: Enhance init data for Probation to VIP OR Normal.
                 
 		Param's Explanation (filtered by):
                 call CTS_DataCenter.CTS_DC_AutoTagCustomerClassification
