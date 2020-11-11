@@ -18,6 +18,7 @@ AS
 	Revisions:
 		- 20200918@Long.Luu: Created [Redmine ID: #141755]
         - 20200924@Irena.Vo: Updated [Redmine ID: #141755]
+		- 20201026@Long.Luu: Allow to move from Probation back to Normal, VIP [Redmine ID: #142546]
         
 	Param's Explanation:
 */
@@ -28,8 +29,12 @@ BEGIN
 	DECLARE @PARLAY_SPORTID		SMALLINT = -100
 		,	@OTHERS_SPORTID		SMALLINT = -99
 		,	@GENERAL_SPORTID	SMALLINT = 200;
-	DECLARE @GENERALCATEGORY_SMARTPUNTER		INT = 203
+	DECLARE @GENERALCATEGORY_NORMALMEMBER		INT = 202
+		,	@GENERALCATEGORY_SMARTPUNTER		INT = 203
 		,	@GENERALCATEGORY_HIGHRISKPUNTER		INT = 204
+		,	@GENERALCATEGORY_VIP				INT = 205
+		,	@DETAILEDCATEGORY_NORMALMEMBER		INT = 4
+		,	@DETAILEDCATEGORY_VIP				INT = 5
 		,	@DETAILEDCATEGORY_SMARTPUNTER		INT = 6
 		,	@DETAILEDCATEGORY_HIGHRISKPUNTER	INT = 7;
 
@@ -178,6 +183,21 @@ BEGIN
 		,	MAX(s.ActiveDays)
 	FROM #tmpRawData AS s WITH(NOLOCK)
 	GROUP BY s.CustId;
+
+	-- Assign level for customers with margin <0
+	UPDATE c WITH(ROWLOCK, UPDLOCK)
+	SET c.IsPassed = 1,
+		c.TargetCategoryId = CASE 
+								WHEN (s.Margin <= -2 AND s.TurnoverRM > 150000 AND s.BetCount > 300 AND s.ActiveDays >= 8) THEN 
+									CASE WHEN c.TargetCategoryId > 200 THEN @GENERALCATEGORY_VIP
+									ELSE @DETAILEDCATEGORY_VIP END
+								ELSE
+									CASE WHEN c.TargetCategoryId > 200 THEN @GENERALCATEGORY_NORMALMEMBER
+									ELSE @DETAILEDCATEGORY_NORMALMEMBER END
+							 END
+	FROM #tmpCustomers AS c
+		INNER JOIN #tmpCustomerAccummulatedInfo AS s ON c.CustId = s.CustId AND c.SportId = s.SportId
+	WHERE s.Margin < 0;
     
 	-- Filter customers by: Bet count >= 60 tickets (count from beginning) & Margin >= 0
 	INSERT INTO #tmpFilteredCustomers(CustId, SportId, TargetCategoryId)
@@ -185,7 +205,7 @@ BEGIN
 	FROM #tmpCustomers AS c
 		INNER JOIN #tmpCustomerAccummulatedInfo AS s ON c.CustId = s.CustId AND c.SportId = s.SportId
 	WHERE s.BetCount >= 60
-		OR s.Margin >= 0;
+		AND s.Margin >= 0;
 
 	-- FILTER BY WINNING COUNT
 	-- Get daily raw data for all sports
@@ -264,10 +284,9 @@ BEGIN
 	AS(
 		SELECT	a.CustId
 			,	a.SportId
-			,	COUNT(1)
+			,	SUM(CASE WHEN a.Winloss > 0 THEN 1 ELSE 0 END)
 		FROM #tmpSportDailyData AS a WITH(NOLOCK)
-			INNER JOIN #tmpFilteredCustomers AS c ON c.CustId = a.CustId AND c.SportId = a.SportId
-		WHERE a.Winloss > 0
+			RIGHT JOIN #tmpFilteredCustomers AS c ON c.CustId = a.CustId AND c.SportId = a.SportId
 		GROUP BY a.CustId, a.SportId
 	)
 	DELETE c WITH(ROWLOCK)
@@ -292,7 +311,8 @@ BEGIN
 						FROM #tmpFilteredCustomers AS f WITH(NOLOCK)
 							INNER JOIN #tmpSportDailyData AS d WITH(NOLOCK) ON f.CustId = d.CustId AND d.SportId = f.SportId
 						GROUP BY f.CustId, f.SportId
-					) AS t ON c.CustId = t.CustId AND c.SportId = t.SportId;
+					) AS t ON c.CustId = t.CustId AND c.SportId = t.SportId
+	WHERE t.Margin >= 0;
 	
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT	a.CustId
