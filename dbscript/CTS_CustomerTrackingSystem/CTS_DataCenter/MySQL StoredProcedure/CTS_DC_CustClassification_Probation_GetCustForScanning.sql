@@ -3,7 +3,8 @@ DROP procedure IF EXISTS `CTS_DC_CustClassification_Probation_GetCustForScanning
 
 DELIMITER $$
 USE `CTS_DataCenter`$$
-CREATE DEFINER=`ctsService`@`%` PROCEDURE `CTS_DC_CustClassification_Probation_GetCustForScanning`(IN ip_NoOfRecord INT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Probation_GetCustForScanning`(IN ip_NoOfRecord int)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200918@Harvey.Nguyen
@@ -12,6 +13,7 @@ BEGIN
 		Original:
 		Revisions:
 			- [20200923@Irena.Vo][141755]: Enhance SP.
+            - [20201111@Irena.Vo][145028]: Update ScanTime = 20 Last Days
             
 		Param's Explanation (filtered by):
          CALL CTS_DC_CustClassification_Probation_GetCustForScanning (100);
@@ -20,18 +22,18 @@ BEGIN
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
     SET SQL_SAFE_UPDATES = 0;
     
-    SELECT 	DISTINCT pro.CustID 			  AS CustId
-				   , pro.SportGroupID	      AS SportGroupId
-                   , pro.TargetCategoryID     AS CategoryId 
-				   , CASE WHEN cate.CreatedDate = DATE_SUB(CURRENT_DATE(), INTERVAL 60 DAY) THEN 1 -- Scan 2 week & 60 days -> call sp Final
-                          ELSE 0 -- Only Scan 2 week -> call sp Loser 
-					 END AS Is60Day
-    FROM			CTS_DataCenter.ProbationAccountMonitor AS pro 
-    INNER JOIN		CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = pro.CustID AND cate.SportGroupID = pro.SportGroupID  
+    SELECT 			 cate.CustID 			  AS CustId
+				   , cate.SportGroupID	      AS SportGroupId
+				   , CASE WHEN DATE(cate.LastModifiedDate) = DATE_SUB(CURRENT_DATE(), INTERVAL 20 DAY) THEN 1 -- Re-categories -> call sp Final
+                          ELSE 0  -- Update Margin -> call sp Loser
+					 END AS Is20Day
+    FROM			CTS_DataCenter.CTSCustomerClassification AS cate
     INNER JOIN		CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
-	WHERE			cate.CategoryID in (10, 206)
-					AND cate.LastScannedDate <= DATE_SUB(CURRENT_DATE(), INTERVAL cc.ScanIntervalInSecond SECOND)
-                    AND cate.CreatedDate >= DATE_SUB(CURRENT_DATE(), INTERVAL 60 DAY)
+	WHERE			cate.CategoryID in (10, 206)   
+                    AND cate.LastScannedDate <= DATE_SUB(CURRENT_DATE(), INTERVAL cc.ScanIntervalInSecond SECOND) -- only scan after 2 weeks
+                    AND (	DATE(cate.LastModifiedDate) = DATE_SUB(CURRENT_DATE(), INTERVAL 20 DAY) -- = 20 last days
+                            OR	( DATE(cate.LastModifiedDate) > DATE_SUB(CURRENT_DATE(), INTERVAL 20 DAY) 
+                                  AND DATE(cate.LastModifiedDate) < DATE_SUB(CURRENT_DATE(), INTERVAL 3 DAY) ) ) -- > 20 last days and < 3 first days
 	LIMIT			ip_NoOfRecord; 
      
 	SET SQL_SAFE_UPDATES = 1;
