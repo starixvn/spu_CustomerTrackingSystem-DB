@@ -18,26 +18,24 @@ BEGIN
 		Param's Explanation (filtered by):
          CALL CTS_DC_CustClassification_Probation_GetCustForScanning (100);
 	*/
+    DECLARE lv_CurrentDate DATE DEFAULT CURRENT_DATE();
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
     SET SQL_SAFE_UPDATES = 0;
     
-    SELECT 			 cate.CustID 			  AS CustId
-				   , cate.SportGroupID	      AS SportGroupId
-				   , CASE WHEN DATE(cate.LastModifiedDate) = DATE_SUB(CURRENT_DATE(), INTERVAL 20 DAY) THEN 1 -- Re-categories -> call sp Final
-                          ELSE 0  -- Update Margin -> call sp Loser
-					 END AS Is20Day
-    FROM			CTS_DataCenter.CTSCustomerClassification AS cate
-    INNER JOIN		CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
-	WHERE			cate.CategoryID in (10, 206)   
-                    AND cate.LastScannedDate <= DATE_SUB(CURRENT_DATE(), INTERVAL cc.ScanIntervalInSecond SECOND) -- only scan after 2 weeks
-                    AND (	DATE(cate.LastModifiedDate) = DATE_SUB(CURRENT_DATE(), INTERVAL 20 DAY) -- = 20 last days
-                            OR	( DATE(cate.LastModifiedDate) > DATE_SUB(CURRENT_DATE(), INTERVAL 20 DAY) 
-                                  AND DATE(cate.LastModifiedDate) < DATE_SUB(CURRENT_DATE(), INTERVAL 3 DAY) ) ) -- > 20 last days and < 3 first days
+    SELECT 			 pro.CustID 			  AS CustId
+				   , pro.SportGroupID	      AS SportGroupId
+				   , CASE WHEN pro.CreatedDate = DATE_SUB(lv_CurrentDate, INTERVAL 20 DAY) THEN 1 -- Update to Smart, High Risk, VIP & Normal
+                          ELSE 0  -- Update to VIP & Normal
+					 END AS Is20Days
+    FROM			CTS_DataCenter.ProbationAccountMonitor AS pro
+	WHERE			pro.CreatedDate = DATE_SUB(lv_CurrentDate, INTERVAL 20 DAY) -- From Now - CreatedDate = 20 (days)
+                    OR	( pro.CreatedDate > DATE_SUB(lv_CurrentDate, INTERVAL 20 DAY) 
+                          AND pro.CreatedDate < DATE_SUB(lv_CurrentDate, INTERVAL 3 DAY) )   -- From Now - CreatedDate < 20 (days)
 	LIMIT			ip_NoOfRecord; 
      
-	SET SQL_SAFE_UPDATES = 1;
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+	SET SQL_SAFE_UPDATES = 1; 
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
 END$$
 
 DELIMITER ;
