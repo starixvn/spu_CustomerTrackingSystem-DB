@@ -3,27 +3,26 @@ DROP procedure IF EXISTS `CTS_DC_InsertNewCustomerCategory`;
 
 DELIMITER $$
 USE `CTS_DataCenter`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_InsertNewCustomerCategory`(IN ip_CustIds TEXT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_InsertNewCustomerCategory`(IN ip_CustIds text)
+    SQL SECURITY INVOKER
 BEGIN
-	/*
+/**
 		Created:	20200703@Long.Luu
 		Task:		Insert New-Member category for new accounts [Redmine ID: 136903]
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
-			[20200703@Long.Luu][136903]: created
-            [20200908@Irena.Vo][141020]: Enhance ignore VVIP & Pin category 
-            [20200923-20201001@Irena.Vo][141755]: 
-            - Enhance SP
-            - Covered get Existed Category before
-            - Fix issue duplicate category
-            [20201003-20201026@Irena.Vo][142546]: Enhance SP & correct logic. 
+			- [20200703@Long.Luu][136903]: created
+            - [20200908@Irena.Vo][141020]: Enhance ignore VVIP & Pin category 
+            - [20200923@Irena.Vo][141755]: Enhance SP
+            - [20200930@Irena.Vo][141755]: Covered get Existed Category before. Updated temp table. Updated primary key.
+            - [20201001@Irena.Vo][141755]: Fix issue duplicate category & enhance logic
             
 		Param's Explanation (filtered by):
              call CTS_DC_InsertNewCustomerCategory('1,2,3');
 	*/
-    DECLARE lv_CreatedBy INT DEFAULT 10278938; 
+    DECLARE lv_CreatedBy INT DEFAULT 10278938;
     DECLARE lv_CurrentDateTime 	DATETIME DEFAULT NOW();
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_NewCustomers;
@@ -32,13 +31,13 @@ BEGIN
             CustID			BIGINT UNSIGNED PRIMARY KEY
         ,	CTSCustID		BIGINT UNSIGNED
         ,	SubscriberID	INT
-        ,   INDEX 			IX_Temp_NewCustomers_CustID(CustID)       
+		,	PRIMARY KEY		PK_Temp_NewCustomers_CustID(CustID)  
 	);
-     
-	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedClassification;    
-	CREATE TEMPORARY TABLE Temp_ExistedClassification 
-	(	  CustID			BIGINT UNSIGNED        
-        , INDEX 			IX_Temp_ExistedClassification_CustID(CustID)       
+
+	 DROP TEMPORARY TABLE IF EXISTS Temp_ExistedClassification;    
+	 CREATE TEMPORARY TABLE Temp_ExistedClassification 
+     (	  
+            CustID			BIGINT UNSIGNED
      );
      
 	SET @sql = CONCAT("INSERT INTO Temp_NewCustomers(CustID) VALUES ('", REPLACE(ip_CustIds, ",", "'),('"),"');");
@@ -54,23 +53,21 @@ BEGIN
 	INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc on sc.CustID = temp.CustID -- is VVIP OR PIN
 	WHERE sc.CreatedFromFunction IN (11, 21);
     
-    /*GET EXISTED CATEGORY*/
+	/*GET EXISTED CATEGORY*/
     INSERT INTO Temp_ExistedClassification
     SELECT cate.CustID
     FROM Temp_NewCustomers AS temp
-    INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID
-    INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = cate.CategoryID 
-    WHERE cc.ParentID IN (1, 50); 
+    INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID;
     
-	/*IGNORE CUSTOMER HAS CATEGORY BEFORE*/
-    DELETE temp
-    FROM Temp_NewCustomers AS temp
-    INNER JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID;
+	/*IGNORE CUSTOMER HAS CAETEGORY BEFORE*/
+	DELETE 	temp
+    FROM    Temp_NewCustomers AS temp
+	INNER JOIN 	Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID;			
     
    /*UPDATE CUST INFO*/
     UPDATE 	Temp_NewCustomers AS temp 
 	INNER JOIN	CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.CustSubID = 0
-	SET		temp.CTSCustID = cust.CTSCustID, temp.SubscriberID = cust.SubscriberID; 
+	SET		temp.CTSCustID = cust.CTSCustID, temp.SubscriberID = cust.SubscriberID;  
      
 	/*INSERT NEW MEMBER CATEGORY*/
     INSERT INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, 
@@ -108,7 +105,7 @@ BEGIN
     SET SQL_SAFE_UPDATES = 1;
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_ExistedClassification;    
+	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedClassification;    
     DROP TEMPORARY TABLE IF EXISTS Temp_NewCustomers; 
     
 END$$

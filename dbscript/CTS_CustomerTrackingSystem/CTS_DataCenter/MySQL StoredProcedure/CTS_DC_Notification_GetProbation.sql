@@ -73,9 +73,9 @@ BEGIN
             AND (a.CreatedDate <= DATE(s.GrantedTo) OR s.GrantedTo IS NULL)
 	WHERE a.CreatedDate > @FromScanDate AND a.CreatedDate <= @ToScanDate
 		AND p.UserID = ip_UserID 
-    ORDER BY CreatedDate DESC; 
+    ORDER BY CreatedDate DESC;
     
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
 END$$
 
 DELIMITER ;

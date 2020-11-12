@@ -3,7 +3,8 @@ DROP procedure IF EXISTS `CTS_DC_InsertMainCustomerClassification`;
 
 DELIMITER $$
 USE `CTS_DataCenter`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_InsertMainCustomerClassification`(IN ip_NewClassification JSON)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_InsertMainCustomerClassification`(IN ip_NewClassification JSON)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200901@Lex.Khuat
@@ -11,14 +12,14 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original:
 		Revisions:
-				[20200901@Lex.Khuat][137550]: Created  
+				[20200901@Lex.Khuat][137550]: Created 
 				[20200908@Irena.Vo][141020]: Enhance Exclude VVIP Customers, Pin category 
 				[20200921-20201001@Irena.Vo][141755]: 
                 - Enhance SP
                 - Insert Probation Management flow
                 - Add get parentid for process update category. 
                 [20201003-20201022@Irena.Vo][142546]: Enhance SP & correct logic. 
-                [20201026@Irena.Vo][142546]: Enhance init data for Probation to VIP OR Normal. 
+                [20201026@Irena.Vo][142546]: Enhance init data for Probation to VIP OR Normal.
                 [20201111@Irena.Vo][145028]: Only distinct CustID list for general
                 
 		Param's Explanation (filtered by):
@@ -41,7 +42,7 @@ BEGIN
         , SubscriberID		INT DEFAULT 0    
 		, ActionType		SMALLINT DEFAULT 0 -- Insert: 0; Update: 1
         , PRIMARY KEY		PK_Temp_NewClassification_CustID(CustID) 
-        , INDEX				IX_Temp_NewClassification_CustID(CustID) 
+        , INDEX 			IX_Temp_NewClassification_CustID_SportGroupID_CategoryID(CustID, SportGroupID, CategoryID)     
         , INDEX 			IX_Temp_NewClassification_ActionType(ActionType)        
      );     
 
@@ -98,7 +99,7 @@ BEGIN
     FROM Temp_NewClassification AS temp
     INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID
     INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = cate.CategoryID 
-    WHERE cc.ParentID = 200; -- Save existed category before so that insert new probation list with Probation Category from New Member
+    WHERE cc.ParentID = 200; 
     
     /*UPDATE CUST INFO*/
     UPDATE 	Temp_NewClassification AS temp 
@@ -168,7 +169,7 @@ BEGIN
     FROM CTS_DataCenter.ProbationAccountMonitor AS pro
 	INNER JOIN Temp_NewClassification AS temp on temp.CustID = pro.CustID  AND temp.SportGroupID = pro.SportGroupID  
 	INNER JOIN   Temp_ExistedClassification AS ex on ex.CustID = temp.CustID
-	WHERE ex.CategoryID = 206 AND temp.CategoryID IN (202, 205, 203, 204) AND pro.SportGroupID = 200;
+	WHERE ex.CategoryID = 206 AND temp.CategoryID IN (202, 203, 204, 205) AND pro.SportGroupID = 200;
        
     /*INSERT NEW PROBATION LIST*/
     INSERT  INTO CTS_DataCenter.ProbationAccountMonitor
@@ -191,14 +192,14 @@ BEGIN
 	/***************************************************END PROBATION*************************************************/
     
     /*GET DISTINCT CUSTID*/
-    SELECT DISTINCT temp.CustID AS CustId
-    FROM Temp_NewClassification AS temp; 
-     
+    SELECT DISTINCT temp.CustID AS CustId	
+    FROM Temp_NewClassification AS temp;
+      
     SET SQL_SAFE_UPDATES = 1;
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ExistedClassification;     
-    DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;     
+    DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;      
 
 END$$
 

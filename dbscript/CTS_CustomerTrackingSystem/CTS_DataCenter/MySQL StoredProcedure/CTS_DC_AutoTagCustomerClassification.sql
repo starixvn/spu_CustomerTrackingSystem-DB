@@ -3,7 +3,8 @@ DROP procedure IF EXISTS `CTS_DC_AutoTagCustomerClassification`;
 
 DELIMITER $$
 USE `CTS_DataCenter`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_AutoTagCustomerClassification`(IN ip_NewClassification JSON)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AutoTagCustomerClassification`(IN ip_NewClassification JSON)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200505@Terry.Nguyen212121
@@ -22,7 +23,7 @@ BEGIN
                 - Insert Probation Management flow
                 - Fix issue by have not delete TEMP NEW CATEGORY if insert with other category in the same time
                 [20201003-20201022@Irena.Vo][142546]: Enhance SP & correct logic. 
-                [20201027@Irena.Vo][142546]: Enhance init data for Probation to VIP OR Normal.
+                [20201027@Irena.Vo][142546]: Enhance init data for Probation to VIP OR Nomral.
                 
 		Param's Explanation (filtered by):
                 call CTS_DataCenter.CTS_DC_AutoTagCustomerClassification
@@ -44,7 +45,7 @@ BEGIN
         , SubscriberID		INT DEFAULT 0    
 		, ActionType		SMALLINT DEFAULT 0 -- Insert: 0; Update: 1
         , PRIMARY KEY		PK_Temp_NewClassification_CustID_SportGroupID(CustID, SportGroupID) 
-        , INDEX				IX_Temp_NewClassification_CustID_SportGroupID(CustID, SportGroupID) 
+        , INDEX 			IX_Temp_NewClassification_CustID_SportGroupID_CategoryID(CustID, SportGroupID, CategoryID)     
         , INDEX 			IX_Temp_NewClassification_ActionType(ActionType)        
      );     
     
@@ -232,7 +233,7 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ExistedClassification;    
     DROP TEMPORARY TABLE IF EXISTS Temp_OtherCategory;        
-    DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;    
+    DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;     
 
 END$$
 
