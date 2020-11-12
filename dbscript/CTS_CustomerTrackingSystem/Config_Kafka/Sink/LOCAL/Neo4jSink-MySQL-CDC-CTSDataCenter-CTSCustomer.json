@@ -1,0 +1,18 @@
+{ 
+   "name":"Neo4jSink-MySQL-CDC-CTSDataCenter-CTSCustomer",
+   "config":{
+	  "connector.class": "streams.kafka.connect.sink.Neo4jSinkConnector",
+	  "errors.retry.timeout": "-1",
+	  "errors.log.include.messages": "true",
+	  "neo4j.topic.cypher.ctsserver.CTS_DataCenter.CTSCustomer": "call apoc.do.case([ event.op = 'c','MERGE (n:CTSCustomer { CTSCustID: event.after.CTSCustID }) ON CREATE SET n = event.after WITH n MERGE (s:Site {SiteID: n.SiteID}) ON CREATE SET s.Site = n.Site MERGE (n)-[r:BELONG_TO_SITE]->(s) ON CREATE SET r.CreatedDate = datetime() MERGE (n)-[r2:HAS_STATUS]->(st:Static {ItemID: n.CustStatusID}) ON CREATE SET r2.CreatedDate = datetime() RETURN n' ,event.op = 'u','MATCH (n:CTSCustomer { CTSCustID: event.before.CTSCustID }) SET n = event.after WITH n, event MATCH (n)-[ro:BELONG_TO_SITE]->(s:Site {SiteID: event.before.SiteID}) DELETE ro MATCH (n)-[r2o:HAS_STATUS]->(st:Static {ItemID: event.before.CustStatusID}) DELETE r2o MERGE (n)-[rn:BELONG_TO_SITE]->(s:Site {SiteID: event.after.SiteID}) ON CREATE SET r.CreatedDate = datetime() MERGE (n)-[r2n:HAS_STATUS]->(st:Static {ItemID: event.after.CustStatusID}) ON CREATE SET r2n.CreatedDate = datetime()  RETURN n' ,event.op = 'd','MATCH (n:CTSCustomer { CTSCustID: event.before.CTSCustID }) DETACH DELETE n'],'',{event:event}) yield value return value",
+	  "neo4j.authentication.basic.password": "vn5PU@N3x6el",
+	  "topics": "ctsserver.CTS_DataCenter.CTSCustomer",
+	  "tasks.max": "1",
+	  "neo4j.server.uri": "bolt://10.18.200.70:7687",
+	  "errors.retry.delay.max.ms": "1000",
+	  "neo4j.authentication.basic.username": "neo4j",
+	  "errors.tolerance": "all",
+	  "neo4j.encryption.enabled": "false",
+	  "errors.log.enable": "true"
+   }
+}
