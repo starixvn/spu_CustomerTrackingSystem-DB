@@ -1,8 +1,10 @@
+/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
 DELIMITER $$
 
 DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformData_Transaction_Insert$$
 
-CREATE DEFINER=`fps`@`%` PROCEDURE DCS_DataCenter.DCS_DC_TransformData_Transaction_Insert(IN ip_FromTransID BIGINT, IN ip_ToTransID BIGINT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE DCS_DataCenter.DCS_DC_TransformData_Transaction_Insert(IN ip_FromTransID BIGINT, IN ip_ToTransID BIGINT)
+SQL SECURITY INVOKER
 BEGIN
 /*
 	Created: 20190730@Casey.Huynh
@@ -20,6 +22,8 @@ BEGIN
         #5  [20200918@CaseyHuynh][137963]: Change column TransID to RawTransID
         #6. [20201006@CaseyHuynh][143011]: Move New Server, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_DataCenter"
         #7. [20201019@CaseyHuynh][143011]:	Move Server, Phase 2	
+        #8. [20201112@CaseyHuynh][145271]:	
+			+ GET Lastest Code Move Server P3, update Permission and Add Meta data
     Reviewer:
 		#1 [Name]: New
 	Param's Explanation (filtered by):
