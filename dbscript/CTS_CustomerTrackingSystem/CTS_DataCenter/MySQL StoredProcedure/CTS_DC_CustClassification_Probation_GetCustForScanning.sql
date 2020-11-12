@@ -28,7 +28,7 @@ BEGIN
 				   , pro.SportGroupID	      AS SportGroupId
 				   , CASE WHEN pro.CreatedDate = DATE_SUB(lv_CurrentDate, INTERVAL 20 DAY) THEN 1 -- Update to Smart, High Risk, VIP & Normal
                           ELSE 0  -- Update to VIP & Normal
-					 END AS Is20Days
+					 END AS IsProbationLastDay
     FROM			CTS_DataCenter.ProbationAccountMonitor AS pro
 	WHERE			pro.CreatedDate = DATE_SUB(lv_CurrentDate, INTERVAL 20 DAY) -- From Now - CreatedDate = 20 (days)
                     OR	( pro.CreatedDate > DATE_SUB(lv_CurrentDate, INTERVAL 20 DAY) 
