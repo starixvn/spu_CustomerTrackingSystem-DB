@@ -1,4 +1,4 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
 DELIMITER $$
 
 DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformData_UnhandleSubscriberAction$$
@@ -105,7 +105,6 @@ BEGIN
 	SET			TransStatus = TransStatus | vrUnhandleStatus_Subscriber
     WHERE		ts.SubscriberID IS NULL
 				OR ts.SubscriberStatus = vrUnhandleStatus;
-
     
 	#===Update NOT Transform status for the Invalid Action Result(Invalid Action Result)
     UPDATE 		Temp_Transaction AS ts
@@ -127,5 +126,6 @@ BEGIN
 			, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
     WHERE	z.ExecKey = vrExecKey AND z.StepID = z.StepID;
     ### PERFORMANCE: END
+    
 END$$
 DELIMITER ;
