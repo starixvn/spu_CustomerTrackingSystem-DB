@@ -15,7 +15,7 @@ BEGIN
 	Revisions:
 			#1. [20201006@CaseyHuynh][143011]: Move New Server, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_DataCenter"
             #2. [20201019@CaseyHuynh][143011]:	Move Server, Phase 2
-            #3. [20201111@CaseyHuynh][xxxxx]: Remove code  "Insert New Subscriber To Subscriber table when Subscriber Is Invalid"
+            #3. [20201111@CaseyHuynh][144307]: Remove code  "Insert New Subscriber To Subscriber table when Subscriber Is Invalid"
 	Param's Explanation (filtered by):
 	*/
     
