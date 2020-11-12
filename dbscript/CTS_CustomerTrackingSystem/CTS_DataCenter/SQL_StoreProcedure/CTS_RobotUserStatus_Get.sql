@@ -17,6 +17,7 @@ AS
 	Revisions:
 		- 20191225@Harvey:	Initial - [Redmine: #126079]
         - 20200619@Harvey:	change condition for detect robot - [Redmine: 133935]
+        - 20201112@Lex:	Update rule, remove upline from checking - [Redmine: 145006]
 
 	Param's Explanation:
 
@@ -34,8 +35,6 @@ BEGIN
 		,Recommend INT
 		)
 
-	CREATE TABLE #tempCustomerAndUpLines (CustId INT)
-
 	INSERT INTO #tempCustomer (
 		CustId
 		,Srecommend
@@ -49,25 +48,9 @@ BEGIN
 	FROM bodb02.dbo.Customer cust WITH (NOLOCK)
 	WHERE cust.custid = @custId
 
-	INSERT INTO #tempCustomerAndUpLines (CustId)
-	SELECT cust.custid
-	FROM bodb02.dbo.Customer cust WITH (NOLOCK)
-		INNER JOIN #tempCustomer tempCust ON cust.custid = tempCust.Srecommend
-	UNION
-	SELECT cust.custid
-	FROM bodb02.dbo.Customer cust WITH (NOLOCK)
-		INNER JOIN #tempCustomer tempCust ON cust.custid = tempCust.Mrecommend
-	UNION
-	SELECT cust.custid
-	FROM bodb02.dbo.Customer cust WITH (NOLOCK)
-		INNER JOIN #tempCustomer tempCust ON cust.custid = tempCust.Recommend
-	UNION
-	SELECT tempCust.CustId
-	FROM #tempCustomer tempCust
-
 	IF EXISTS (
 			SELECT 1
-			FROM #tempCustomerAndUpLines cau
+			FROM #tempCustomer cau
 				INNER JOIN dbo.RobotUsers ru WITH (NOLOCK) ON cau.CustId = ru.custid
 			WHERE ru.counter >= 10
 			)
@@ -77,7 +60,6 @@ BEGIN
 		,@isRobotUser 'IsRobotUser'
 
 	DROP TABLE #tempCustomer;
-	DROP TABLE #tempCustomerAndUpLines;
 
 
 END;
