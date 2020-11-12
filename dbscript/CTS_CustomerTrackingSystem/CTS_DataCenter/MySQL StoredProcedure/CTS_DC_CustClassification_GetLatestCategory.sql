@@ -1,3 +1,4 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsAPI,ctsService" isFunction="0" isNested="0"></info>*/
 USE `CTS_DataCenter`;
 DROP procedure IF EXISTS `CTS_DC_CustClassification_GetLatestCategory`;
 
