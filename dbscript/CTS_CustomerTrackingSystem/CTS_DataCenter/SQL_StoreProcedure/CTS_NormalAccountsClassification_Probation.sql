@@ -255,21 +255,7 @@ BEGIN
 	FROM #tmpRawDailyData AS a WITH(NOLOCK)
 		LEFT JOIN #tmpSportGroups AS s WITH(NOLOCK) ON a.SportId = s.MainDBSportId
 	GROUP BY a.RptDate, a.CustId, CASE WHEN s.SportId IS NULL THEN 5 ELSE s.SportId END;
-	
-	-- Filter customer by: Last @PROBATION_LATESTDAYSWINTOPASS days' margin >= 0%
-	WITH CTE_CustLoseInLastXDays(CustId, SportId)
-	AS(
-		SELECT	a.CustId
-			,	a.SportId
-		FROM #tmpSportDailyData AS a WITH(NOLOCK)
-		WHERE a.IsLastXDays = 1
-		GROUP BY a.CustId, a.SportId
-		HAVING SUM(a.Winloss) < 0
-	)
-	DELETE c WITH(ROWLOCK)
-	FROM #tmpFilteredCustomers AS c
-		INNER JOIN CTE_CustLoseInLastXDays AS a ON c.CustId = a.CustId AND c.SportId = a.SportId;
-			
+		
 	-- Filter customer by: At least @PROBATION_MINDAYSWINTOPASS/@PROBATION_FULLPERIOD days with margin > 0%
 	WITH CTE_CustWinCounterInProbationFullPeriod(CustId, SportId, DayWinCount)
 	AS(
@@ -284,21 +270,23 @@ BEGIN
 	FROM #tmpFilteredCustomers AS c
 		INNER JOIN CTE_CustWinCounterInProbationFullPeriod AS a ON c.CustId = a.CustId AND c.SportId = a.SportId
 	WHERE a.DayWinCount < @PROBATION_MINDAYSWINTOPASS;
-
+	
 	UPDATE c WITH(ROWLOCK, UPDLOCK)
 	SET c.IsPassed = 1,
 		c.CategoryId = CASE 
-								WHEN (a.Margin <= 1 AND t.TotalWinloss > 10000) THEN 
+								WHEN (a.Margin <= 1 AND (t.TotalWinlossLastXDays >= 0 OR t.TotalWinloss > 10000)) THEN 
 									CASE WHEN c.SportId = 200 THEN @GENERALCATEGORY_SMARTPUNTER
 									ELSE @DETAILEDCATEGORY_SMARTPUNTER END
-								WHEN (a.Margin > 1 AND t.TotalWinloss > 20000) THEN
+								WHEN (a.Margin > 1 AND (t.TotalWinlossLastXDays >= 0 OR t.TotalWinloss > 20000)) THEN
 									CASE WHEN c.SportId = 200 THEN @GENERALCATEGORY_HIGHRISKPUNTER
 									ELSE @DETAILEDCATEGORY_HIGHRISKPUNTER END
 							 END
 	FROM #tmpCustomers AS c
 		INNER JOIN #tmpCustomerAccummulatedInfo AS a ON c.CustId = a.CustId AND c.SportId = a.SportId
 		INNER JOIN	(
-						SELECT f.CustId, f.SportId, SUM(d.Winloss) AS TotalWinloss
+						SELECT	f.CustId, f.SportId
+							,	SUM(d.Winloss) AS TotalWinloss
+							,	SUM(CASE WHEN d.IsLastXDays = 1 THEN d.Winloss ELSE 0 END) AS TotalWinlossLastXDays
 						FROM #tmpFilteredCustomers AS f WITH(NOLOCK)
 							INNER JOIN #tmpSportDailyData AS d WITH(NOLOCK) ON f.CustId = d.CustId AND d.SportId = f.SportId
 						GROUP BY f.CustId, f.SportId
