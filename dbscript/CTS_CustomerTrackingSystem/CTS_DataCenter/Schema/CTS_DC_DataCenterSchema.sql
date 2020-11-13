@@ -26,41 +26,43 @@ Revisions:
         - [20200917@Long.Luu][141755]: Probation Category Monitoring
         - [20201006@Long.Luu][142414]: Notification Settings
         - [20201012@Long.Luu][141756]: Sync Evidence to CTS Category
+		- [20201113@Aries.Nguyen][145271]: Add Column InsertedTime, ModifiedTime columns to table CTSCustomer
 Reviewer:
 */
 
 CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 
-	CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomer (
-		CTSCustID			BIGINT	UNSIGNED	AUTO_INCREMENT
-		, SubscriberID		INT		UNSIGNED
-		, CustID			INT		UNSIGNED
-		, CustSubID			INT		UNSIGNED
-		, UserName			VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
-		, UserName2			VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
-        , RegisterName 		VARCHAR(50)
-        , SiteID			INT
-		, Site				VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
-		, RoleID			TINYINT
-		, Currency			VARCHAR(10)
-		, CurrencyID		INT		
-		, SRecommend		INT		UNSIGNED
-		, MRecommend		INT		UNSIGNED	
-		, Recommend			INT		UNSIGNED
-        , LastLoginTime		TIMESTAMP(4)
-        , CreatedDate		DATETIME
-        , CustStatusID		TINYINT
-        , Danger1			TINYINT
-        , Danger2			TINYINT
-        , Danger3			TINYINT
-		, PRIMARY KEY	PK_CTSCustomer_CTSCustID(CTSCustID)    
-		, UNIQUE KEY	UK_CTSCustomer_04062020_SubID_UserName_UserName2(SubscriberID, UserName, UserName2)
-		, INDEX			IX_CTSCustomer_04062020_UserName(UserName)
-		, INDEX			IX_CTSCustomer_04062020_UserName2(UserName2)
-        , INDEX			IX_CTSCustomer_04062020_RegisterName(RegisterName)
-		, INDEX			IX_CTSCustomer_04062020_CustID_CustSubID(CustID, CustSubID)
-        
-	) ENGINE=INNODB AUTO_INCREMENT=1;
+	CREATE TABLE IF NOT EXISTS DCS_DataCenter.CTSCustomer (
+			CTSCustID bigint unsigned NOT NULL AUTO_INCREMENT
+			,SubscriberID int unsigned DEFAULT NULL
+			,CustID int unsigned DEFAULT NULL
+			,CustSubID int unsigned DEFAULT NULL
+			,UserName varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL
+			,UserName2 varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL
+			,RegisterName varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL
+			,SiteID int DEFAULT NULL
+			,Site varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL
+			,RoleID tinyint DEFAULT NULL
+			,Currency varchar(10) COLLATE utf8_unicode_ci DEFAULT NULL
+			,CurrencyID int DEFAULT NULL
+			,SRecommend int unsigned DEFAULT NULL
+			,MRecommend int unsigned DEFAULT NULL
+			,Recommend int unsigned DEFAULT NULL
+			,LastLoginTime timestamp(4) NULL DEFAULT NULL
+			,CreatedDate datetime DEFAULT NULL
+			,CustStatusID tinyint DEFAULT '1'
+			,Danger1 tinyint DEFAULT '0'
+			,Danger2 tinyint DEFAULT '0'
+			,Danger3 tinyint DEFAULT '0'
+			,InsertedTime datetime(4) DEFAULT NULL
+			,ModifiedTime datetime(4) DEFAULT NULL
+			,PRIMARY KEY (CTSCustID)
+			,UNIQUE KEY UK_CTSCustomer_SubscriberID_UserName_UserName2 (SubscriberID,UserName,UserName2)
+			,KEY IX_CTSCustomer_UserName_UserName2 (UserName,UserName2)
+			,KEY IX_CTSCustomer_UserName2 (UserName2)
+			,KEY IX_CTSCustomer_CustID_CustSubID (CustID,CustSubID)
+			,KEY IX_CTSCustomer_RoleID (RoleID)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 	CREATE TABLE IF NOT EXISTS CTS_DataCenter.AssociationByDevice(
 		CTSAssDevID		BIGINT	UNSIGNED AUTO_INCREMENT
