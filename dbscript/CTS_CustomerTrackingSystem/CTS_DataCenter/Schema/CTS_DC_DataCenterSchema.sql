@@ -32,7 +32,7 @@ Reviewer:
 
 CREATE DATABASE IF NOT EXISTS CTS_DataCenter;
 
-	CREATE TABLE IF NOT EXISTS DCS_DataCenter.CTSCustomer (
+	CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomer (
 			CTSCustID bigint unsigned NOT NULL AUTO_INCREMENT
 			,SubscriberID int unsigned DEFAULT NULL
 			,CustID int unsigned DEFAULT NULL
