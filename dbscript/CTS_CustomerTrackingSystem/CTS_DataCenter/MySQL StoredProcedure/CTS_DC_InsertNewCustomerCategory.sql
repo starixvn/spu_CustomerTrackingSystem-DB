@@ -1,3 +1,4 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
 USE `CTS_DataCenter`;
 DROP procedure IF EXISTS `CTS_DC_InsertNewCustomerCategory`;
 
@@ -18,6 +19,7 @@ BEGIN
             - [20200923@Irena.Vo][141755]: Enhance SP
             - [20200930@Irena.Vo][141755]: Covered get Existed Category before. Updated temp table. Updated primary key.
             - [20201001@Irena.Vo][141755]: Fix issue duplicate category & enhance logic
+			- [20201116@Irena.Vo][145028]: Enhance logic remove existed customers
             
 		Param's Explanation (filtered by):
              call CTS_DC_InsertNewCustomerCategory('1,2,3');
@@ -53,16 +55,10 @@ BEGIN
 	INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc on sc.CustID = temp.CustID -- is VVIP OR PIN
 	WHERE sc.CreatedFromFunction IN (11, 21);
     
-	/*GET EXISTED CATEGORY*/
-    INSERT INTO Temp_ExistedClassification
-    SELECT cate.CustID
-    FROM Temp_NewCustomers AS temp
-    INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID;
-    
-	/*IGNORE CUSTOMER HAS CAETEGORY BEFORE*/
+	/*IGNORE CUSTOMER HAS CATEGORY BEFORE*/
 	DELETE 	temp
     FROM    Temp_NewCustomers AS temp
-	INNER JOIN 	Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID;			
+	INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID;	
     
    /*UPDATE CUST INFO*/
     UPDATE 	Temp_NewCustomers AS temp 

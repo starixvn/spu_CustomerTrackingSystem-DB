@@ -24,7 +24,8 @@ BEGIN
                 - Insert Probation Management flow
                 - Fix issue by have not delete TEMP NEW CATEGORY if insert with other category in the same time
                 [20201003-20201022@Irena.Vo][142546]: Enhance SP & correct logic. 
-                [20201027@Irena.Vo][142546]: Enhance init data for Probation to VIP OR Nomral.
+                [20201027@Irena.Vo][142546]: Enhance init data for Probation to VIP OR Normal.
+                [20201116@Irena.Vo][145028]: Update LastScannedDate for Probation List.
                 
 		Param's Explanation (filtered by):
                 call CTS_DataCenter.CTS_DC_AutoTagCustomerClassification
@@ -209,8 +210,8 @@ BEGIN
 	WHERE ex.CategoryID = 10 AND temp.CategoryID IN (4, 5, 6, 7) AND pro.SportGroupID < 200;
        
     /*INSERT NEW PROBATION LIST*/
-    INSERT  INTO CTS_DataCenter.ProbationAccountMonitor
-		(CustID, CTSCustID, SportGroupID, TargetCategoryID, FirstMargin, CreatedDate, CreatedBy, CreatedTime)  
+   INSERT  INTO CTS_DataCenter.ProbationAccountMonitor
+		(CustID, CTSCustID, SportGroupID, TargetCategoryID, FirstMargin, CreatedDate, CreatedBy, CreatedTime, LastScannedDate)  
 	SELECT DISTINCT temp.CustID
 		, 	temp.CTSCustID
         , 	temp.SportGroupID
@@ -221,6 +222,7 @@ BEGIN
 		, 	DATE(temp.LastModifiedDate)
 		, 	lv_CreatedBy
 		, 	temp.LastModifiedDate
+        ,   DATE(temp.LastModifiedDate)
    FROM   Temp_NewClassification     AS temp
    LEFT JOIN   Temp_ExistedClassification AS ex on ex.CustID = temp.CustID
    WHERE   temp.ActionType = 0 AND (	(ex.CategoryID = 2 AND temp.CategoryID IN (6, 7, 10)) 

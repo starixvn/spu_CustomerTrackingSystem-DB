@@ -58,13 +58,13 @@ BEGIN
     END IF;
     
     # Get available notification
-    SELECT 	a.TotalScanned
-		,	a.TotalFailed 
-        ,	a.TotalGeneralFailed
-        ,	a.NotificationType
+    SELECT 	SUM(a.TotalScanned) AS TotalScanned
+		,	SUM(a.TotalFailed) AS TotalFailed
+        ,	SUM(a.TotalGeneralFailed) AS TotalGeneralFailed
+        ,	1 AS NotificationType
         ,	a.CreatedDate
-        ,	a.NotificationID AS MaxNotificationID
-        ,	CASE WHEN a.NotificationID <= lv_UserCurrentFromNotificationID THEN 1 ELSE 0 END AS IsSeen
+        ,	MAX(a.NotificationID) AS MaxNotificationID
+        ,	CASE WHEN MAX(a.NotificationID) <= lv_UserCurrentFromNotificationID THEN 1 ELSE 0 END AS IsSeen
     FROM CTS_DataCenter.ProbationAccountNotification AS a
 		INNER JOIN CTS_DataCenter.CTSUserPermission AS p ON p.FunctionID = 2
 			AND a.CreatedDate >= DATE(p.GrantedFrom) 

@@ -1,9 +1,11 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
 USE `CTS_DataCenter`;
 DROP procedure IF EXISTS `CTS_DC_CustClassification_Probation_UpdateLastScanDate`;
 
 DELIMITER $$
 USE `CTS_DataCenter`$$
-CREATE DEFINER=`ctsService`@`%` PROCEDURE `CTS_DC_CustClassification_Probation_UpdateLastScanDate`(IN ip_CustSport JSON)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Probation_UpdateLastScanDate`(IN ip_CustSport json)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200918@Harvey.Nguyen
@@ -11,7 +13,7 @@ BEGIN
 		DB:			CTS_DataCenter
         
 		Original:
-
+			- [20201116@Irena.Vo][145028]: Add column LastScannedDate & Enhance logic
 		Revisions:
 			
 		Param's Explanation (filtered by):
@@ -19,30 +21,33 @@ BEGIN
 	*/
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+    SET SQL_SAFE_UPDATES = 0;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustSport;    
 	CREATE TEMPORARY TABLE Temp_CustSport 
     (	  
 		  CustID			BIGINT UNSIGNED        
         , SportGroupID		SMALLINT UNSIGNED        
-        , PRIMARY KEY	PK_Temp_CustSport_CTSCustID(CustID, SportGroupID)    
+        , INDEX				IX_Temp_CustSport_CTSCustID(CustID, SportGroupID)    
     );     
     
     INSERT INTO Temp_CustSport(CustID, SportGroupID) 
-	SELECT 		tmpTable.CustID
-				, tmpTable.SportGroupID
+	SELECT 		DISTINCT temp.CustID, temp.SportGroupID
 	FROM JSON_TABLE(ip_CustSport,
 		 "$[*]" COLUMNS(
 			  CustID 			BIGINT UNSIGNED		PATH "$.CustId"
 			, SportGroupID 		SMALLINT UNSIGNED	PATH "$.SportGroupId"
-		 )) as tmpTable;
+		 )) AS temp;
     
-    UPDATE 		CTS_DataCenter.CTSCustomerClassification AS cl
-    INNER JOIN 	Temp_CustSport AS tmpCs
-				ON cl.CustID = tmpCs.CustID
-				AND	cl.SportGroupID = tmpCs.SportGroupID
-    SET			cl.LastScannedDate = CURRENT_DATE();
+    UPDATE 		CTS_DataCenter.ProbationAccountMonitor AS pro
+    INNER JOIN 	Temp_CustSport AS temp ON pro.CustID = temp.CustID AND pro.SportGroupID = temp.SportGroupID
+    SET			pro.LastScannedDate = CURRENT_DATE();
     
+    SET SQL_SAFE_UPDATES = 1;
+	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+     
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustSport;     
 END$$
 
 DELIMITER ;
+

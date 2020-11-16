@@ -21,7 +21,7 @@ BEGIN
                 - Add get parentid for process update category. 
                 [20201003-20201022@Irena.Vo][142546]: Enhance SP & correct logic. 
                 [20201026@Irena.Vo][142546]: Enhance init data for Probation to VIP OR Normal.
-                [20201116@Irena.Vo][145028]: Only distinct CustID list for general -> Rollback for old logic
+                [20201116@Irena.Vo][145028]: Only distinct CustID list for general & Update LastScannedDate for Probation List.
                 
 		Param's Explanation (filtered by):
 			call CTS_DataCenter.CTS_DC_InsertMainCustomerClassification
@@ -174,7 +174,7 @@ BEGIN
        
     /*INSERT NEW PROBATION LIST*/
     INSERT  INTO CTS_DataCenter.ProbationAccountMonitor
-		(CustID, CTSCustID, SportGroupID, TargetCategoryID, FirstMargin, CreatedDate, CreatedBy, CreatedTime) 
+		(CustID, CTSCustID, SportGroupID, TargetCategoryID, FirstMargin, CreatedDate, CreatedBy, CreatedTime, LastScannedDate) 
 	SELECT  DISTINCT temp.CustID
 		, 	temp.CTSCustID
         , 	temp.SportGroupID
@@ -185,6 +185,7 @@ BEGIN
 		, 	DATE(temp.LastModifiedDate)
 		, 	lv_CreatedBy
 		, 	temp.LastModifiedDate
+		,   DATE(temp.LastModifiedDate)
    FROM   Temp_NewClassification     AS temp
    LEFT JOIN   Temp_ExistedClassification AS ex on ex.CustID = temp.CustID
    WHERE      temp.ActionType = 0 AND (   ex.CategoryID IS NULL AND temp.CategoryID = 206) -- New Category 

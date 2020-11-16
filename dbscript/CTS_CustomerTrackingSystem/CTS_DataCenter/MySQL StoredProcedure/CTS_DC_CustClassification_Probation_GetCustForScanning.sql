@@ -31,8 +31,9 @@ sp: BEGIN
                           ELSE 0  -- Update to VIP & Normal
 					 END AS IsProbationLastDay
     FROM			CTS_DataCenter.ProbationAccountMonitor AS pro
-	WHERE			pro.CreatedDate = lv_ProbationLastDay -- From Now - CreatedDate = 20 (days)
-                    OR	( pro.CreatedDate > lv_ProbationLastDay AND pro.CreatedDate < lv_LimitedDay)   -- From Now - CreatedDate < 20 (days)
+	WHERE			(pro.LastScannedDate IS NULL OR pro.LastScannedDate < CURRENT_DATE())
+                    AND (pro.CreatedDate = lv_ProbationLastDay -- From Now - CreatedDate = 20 (days)
+						 OR	( pro.CreatedDate > lv_ProbationLastDay AND pro.CreatedDate < lv_LimitedDay) )  -- From Now - CreatedDate < 20 (days)
 	LIMIT			ip_NoOfRecord; 
      
 	SET SQL_SAFE_UPDATES = 1;
