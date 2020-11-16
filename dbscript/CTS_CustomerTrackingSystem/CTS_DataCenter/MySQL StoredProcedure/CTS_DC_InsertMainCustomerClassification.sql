@@ -21,7 +21,7 @@ BEGIN
                 - Add get parentid for process update category. 
                 [20201003-20201022@Irena.Vo][142546]: Enhance SP & correct logic. 
                 [20201026@Irena.Vo][142546]: Enhance init data for Probation to VIP OR Normal.
-                [20201111@Irena.Vo][145028]: Only distinct CustID list for general
+                [20201116@Irena.Vo][145028]: Only distinct CustID list for general -> Rollback for old logic
                 
 		Param's Explanation (filtered by):
 			call CTS_DataCenter.CTS_DC_InsertMainCustomerClassification
@@ -191,10 +191,13 @@ BEGIN
           OR (temp.ActionType = 1 AND (  (ex.CategoryID IN (203, 204) AND temp.CategoryID = 206)
 										OR (ex.CategoryID IN (202, 205) AND temp.CategoryID IN (203, 204, 206)) ) );  -- Old Category
 	/***************************************************END PROBATION*************************************************/
-    
-    /*GET DISTINCT CUSTID*/
-    SELECT DISTINCT temp.CustID AS CustId	
-    FROM Temp_NewClassification AS temp;
+     /*GET DISTINCT CUSTID*/
+    SELECT DISTINCT temp.CustID AS CustId
+			, (CASE WHEN (ex.CategoryID IN (202, 205) AND temp.CategoryID IN (203, 204)) THEN 206 -- Update category to Smart Punter, High Risk Punter
+                     ELSE temp.CategoryID
+			   END) AS CategoryId
+    FROM Temp_NewClassification AS temp
+    LEFT JOIN Temp_ExistedClassification AS ex on ex.CustID = temp.CustID; -- Get lastest custid for mapping to CC in mainDB
       
     SET SQL_SAFE_UPDATES = 1;
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;

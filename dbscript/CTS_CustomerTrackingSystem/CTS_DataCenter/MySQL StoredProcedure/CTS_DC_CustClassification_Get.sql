@@ -9,7 +9,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Get`(IN ip_Cu
 BEGIN
 	/*
 		Created:	20200423@Long.Luu	
-		Task :		Get CTSCustomer Category
+		Task :		Get CTSCustomer Category  
 		DB:			CTS_DataCenter
 		Original: 
 		Revisions:
@@ -22,11 +22,12 @@ BEGIN
             - 20200908@Irena.Vo [Redmine ID: #141020]: Get for VVIP. VVIP -> PA -> Detailed & General. Add VVIP (General)
             - 20201006@Irena.Vo [Redmine ID: #141930]: Rollback logic get IsUsedManually for lastest category & enhance logic get.
             - 20201014-20201023@Irena.Vo [Redmine ID: #141756]: Enhance logic show Evidence Category & Normal Category
+            - 20201116@Irena.Vo [Redmine ID: #145028]: Enhance select Category List
             
 		Param's Explanation:
 	*/ 
 	DECLARE lv_Remark VARCHAR(200) DEFAULT 'Auto tag customer classification';
-    DECLARE lv_IsPinCategory BIT DEFAULT 0;
+    DECLARE lv_IsPinCategory BIT DEFAULT 0; 
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory;
     CREATE TEMPORARY TABLE Temp_LatestRecordOfCategory (
@@ -141,7 +142,7 @@ BEGIN
     
 	# Begin: Cleanup
 	DROP TEMPORARY TABLE IF EXISTS Temp_GeneralCategory;
-    DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory;  
+    DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory; 
 	# End: Cleanup
     
     -- Return isPinCategory for customer
