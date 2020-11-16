@@ -24,6 +24,7 @@ BEGIN
         #7. [20201019@CaseyHuynh][143011]:	Move Server, Phase 2	
         #8. [20201112@CaseyHuynh][145271]:	
 			+ GET Lastest Code Move Server P3, update Permission and Add Meta data
+            + Update login Retry for unsuccsess Transform (-1,-2,-3) (SET IsCTSTransformed = 0 instead of -1)
     Reviewer:
 		#1 [Name]: New
 	Param's Explanation (filtered by):
@@ -112,8 +113,7 @@ BEGIN
 	WHERE		rt.IsProcessed = 0
 				AND rt.TransID BETWEEN ip_FromTransID AND ip_ToTransID
                 AND rt.CreatedDate 	>=	SysMinCreatedDate;
- 
-    	
+
     #===INSERT SUBCRIBERURL    
     INSERT IGNORE INTO DCS_DataCenter.URL(URLDetails, SubscriberID, CreatedDate)
 	SELECT		trt.URLDetails
@@ -124,7 +124,7 @@ BEGIN
 
     
 	# Insert New Account
-    INSERT IGNORE INTO DCS_DataCenter.Account(LoginName, SubscriberID, SubscriberType, CreatedDate, InsertTime, CreatedTime, LastLoginTime)
+    INSERT INTO DCS_DataCenter.Account(LoginName, SubscriberID, SubscriberType, CreatedDate, InsertTime, CreatedTime, LastLoginTime)
     SELECT		trt.LoginName
 				, trt.SubscriberID
 				, trt.SubscriberType
@@ -134,7 +134,7 @@ BEGIN
                 , MAX(trt.TransTime)		AS LastLoginTime
     FROM		Temp_RawTransaction AS trt 
     GROUP BY	trt.SubscriberID, trt.SubscriberType, trt.LoginName
-    ON DUPLICATE KEY UPDATE IsCTSTransformed = (CASE WHEN IsCTSTransformed = -3 THEN -1 END );
+    ON DUPLICATE KEY UPDATE IsCTSTransformed = 0;
     
     # Update AccountID to Temp_Transaction
     UPDATE 		Temp_RawTransaction AS trt
@@ -156,8 +156,8 @@ BEGIN
 				ON ass.AccountID = trtAcc.AccountID
     INNER JOIN	DCS_DataCenter.Account AS acc
 				ON ass.AccountID = acc.AccountID
-	SET			ass.IsCTSTransformed = -1
-    WHERE		acc.IsCTSTransformed = -1;		
+	SET			ass.IsCTSTransformed = 0
+    WHERE		ass.IsCTSTransformed < 0;		
     
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_LastLoginTime;
@@ -214,6 +214,7 @@ BEGIN
 	FROM		Temp_RawTransaction AS trt;	
 
     #================================================================
+    
 	INSERT IGNORE INTO DCS_DataCenter.ProcessedTransaction(
 				LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, FingerprintMoreInfo, UserAgent
 				, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID)
@@ -223,7 +224,6 @@ BEGIN
 	INNER JOIN	Temp_RawTransaction	AS tmp_rm
 				ON	rt.TransID = tmp_rm.TransID
 				AND rt.CreatedDate = tmp_rm.CreatedDate;
-
         
 	DELETE		rt
 	FROM 		DCS_DataCenter.RawTransaction AS rt
