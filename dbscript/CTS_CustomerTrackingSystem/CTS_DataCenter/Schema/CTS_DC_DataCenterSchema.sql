@@ -26,6 +26,8 @@ Revisions:
         - [20200917@Long.Luu][141755]: Probation Category Monitoring
         - [20201006@Long.Luu][142414]: Notification Settings
         - [20201012@Long.Luu][141756]: Sync Evidence to CTS Category
+        - [20201016@Irena.Vo][145028]: Add LastScannedDate column
+        
 Reviewer:
 */
 
@@ -714,3 +716,8 @@ WHERE CategoryID IN (52,53,54,55,56,58,59,60);
 
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
 VALUES(6,'IsTurnedOnEvidenceSyncToCategory', 'Is Turned On Evidence Sync To Category', 'BOOLEAN', '1');
+
+# [20201016@Irena.Vo][145028]: Add LastScannedDate column
+ALTER TABLE CTS_DataCenter.ProbationAccountMonitor
+ADD COLUMN LastScannedDate DATE,
+ADD INDEX IX_ProbationAccountMonitor_LastScannedDate(LastScannedDate);
