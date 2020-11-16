@@ -205,8 +205,7 @@ BEGIN
 						END
 	FROM #tmpCustomers AS c
 		INNER JOIN #tmpCustomerAccummulatedInfo AS s ON c.CustId = s.CustId AND c.SportId = s.SportId
-	WHERE s.Margin < 0
-		AND c.IsProbationLastDay <> 1;
+	WHERE s.Margin < 0;
     
 	-- Filter customers by: Bet count >= @PROBATION_MINBETSTOPASS tickets (count from beginning) & Margin >= 0
 	INSERT INTO #tmpFilteredCustomers(CustId, SportId)
