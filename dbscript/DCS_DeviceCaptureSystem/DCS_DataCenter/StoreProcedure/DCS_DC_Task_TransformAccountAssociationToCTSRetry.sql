@@ -1,4 +1,4 @@
-
+/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsOwner" isFunction="0" isNested="0"></info>*/
 DELIMITER $$
 USE DCS_DataCenter $$
 DROP PROCEDURE IF EXISTS `DCS_DataCenter`.`DCS_DC_Task_TransformAccountAssociationToCTSRetry`$$
@@ -11,8 +11,9 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original:
 
-		Revisions:
-        
+		Revisions: 
+        - 20201116@Aries.Nguyen: Update metadata, revision
+
 		Param's Explanation (filtered by):
                 
 	*/    
