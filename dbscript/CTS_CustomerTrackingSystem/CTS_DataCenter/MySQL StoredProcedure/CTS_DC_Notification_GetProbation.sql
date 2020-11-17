@@ -74,6 +74,7 @@ BEGIN
             AND (a.CreatedDate <= DATE(s.GrantedTo) OR s.GrantedTo IS NULL)
 	WHERE a.CreatedDate > @FromScanDate AND a.CreatedDate <= @ToScanDate
 		AND p.UserID = ip_UserID 
+	GROUP BY a.CreatedDate
     ORDER BY CreatedDate DESC;
    
 END$$
