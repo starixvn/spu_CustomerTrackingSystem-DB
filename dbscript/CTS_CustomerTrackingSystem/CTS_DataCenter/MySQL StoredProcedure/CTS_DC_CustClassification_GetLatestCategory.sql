@@ -4,11 +4,8 @@ DROP procedure IF EXISTS `CTS_DC_CustClassification_GetLatestCategory`;
 
 DELIMITER $$
 USE `CTS_DataCenter`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_CustClassification_GetLatestCategory`(
-	IN ip_CustIDList 					VARCHAR(8000),
-	IN ip_IsUsingCustID					BOOL,
-    IN ip_IsExcludedDetailedCategory	BOOL 
-)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_GetLatestCategory`(IN ip_CustIDList VARCHAR(8000),IN ip_IsUsingCustID tinyint,IN ip_IsExcludedDetailedCategory tinyint)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20201013@Long.Luu	
