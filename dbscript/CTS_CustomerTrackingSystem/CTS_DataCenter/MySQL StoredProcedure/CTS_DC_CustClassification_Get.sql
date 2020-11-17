@@ -47,7 +47,6 @@ BEGIN
      );
    
      SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-     SET SQL_SAFE_UPDATES = 0;
      
      IF EXISTS (SELECT 1 FROM CTS_DataCenter.SpecialCustomerClass WHERE CustID = ip_CustID AND CreatedFromFunction = 21) THEN
 		SET lv_IsPinCategory = 1;
@@ -147,10 +146,7 @@ BEGIN
     
     -- Return isPinCategory for customer
 	SELECT lv_IsPinCategory AS isPinCategory;    
-    
-	SET SQL_SAFE_UPDATES = 1;
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
-    
+  
 END$$
 
 DELIMITER ;

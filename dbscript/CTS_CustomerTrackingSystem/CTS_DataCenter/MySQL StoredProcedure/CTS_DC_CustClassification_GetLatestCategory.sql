@@ -41,7 +41,6 @@ BEGIN
 	EXECUTE stmt1;    
     
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
-    SET SQL_SAFE_UPDATES = 0;
     
     IF (ip_IsUsingCustID = 1) THEN
 			INSERT INTO Temp_CustLastCategory(CustID, SportGroupID, LastModifiedDate)
@@ -93,9 +92,6 @@ BEGIN
 			WHERE t.SportGroupID = -1 OR t.LastModifiedDate = c.LastModifiedDate
 			GROUP BY  cust.CustID, t.SportGroupID;
     END IF;
-    
-    SET SQL_SAFE_UPDATES = 1;
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
       
     DROP TEMPORARY TABLE IF EXISTS Temp_CustLastCategory;
     DROP TEMPORARY TABLE IF EXISTS Temp_CustIDs;

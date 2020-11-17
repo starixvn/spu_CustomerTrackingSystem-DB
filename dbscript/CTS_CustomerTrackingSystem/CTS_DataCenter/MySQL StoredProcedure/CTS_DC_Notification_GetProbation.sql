@@ -75,8 +75,7 @@ BEGIN
 	WHERE a.CreatedDate > @FromScanDate AND a.CreatedDate <= @ToScanDate
 		AND p.UserID = ip_UserID 
     ORDER BY CreatedDate DESC;
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
+   
 END$$
 
 DELIMITER ;

@@ -90,7 +90,6 @@ BEGIN
 	 WHERE cc.ParentID = 1 AND temp.CategoryID <> 0;
 	
      SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
-	 SET SQL_SAFE_UPDATES = 0;
      
 	/*******************************************START DATA*********************************************************/ 
     /*IGNORE VVIP - PIN CATEGORY*/
@@ -230,9 +229,6 @@ BEGIN
 		OR temp.ActionType = 1 AND (  (ex.CategoryID IN (6, 7) AND temp.CategoryID = 10)
 								  OR (ex.CategoryID IN (4, 5) AND temp.CategoryID IN (6, 7, 10)) );  -- Old Category
 	/***************************************************END PROBATION*************************************************/
-     
-    SET SQL_SAFE_UPDATES = 1;
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ExistedClassification;    
     DROP TEMPORARY TABLE IF EXISTS Temp_OtherCategory;        

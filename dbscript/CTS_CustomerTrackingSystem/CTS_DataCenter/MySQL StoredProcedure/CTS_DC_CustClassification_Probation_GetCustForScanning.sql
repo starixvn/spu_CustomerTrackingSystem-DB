@@ -23,7 +23,6 @@ sp: BEGIN
     DECLARE lv_ProbationLastDay DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 20 DAY);
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
-    SET SQL_SAFE_UPDATES = 0;
     
     SELECT 			 pro.CustID 			  AS CustId
 				   , pro.SportGroupID	      AS SportGroupId
@@ -35,9 +34,7 @@ sp: BEGIN
                     AND (pro.CreatedDate = lv_ProbationLastDay -- From Now - CreatedDate = 20 (days)
 						 OR	( pro.CreatedDate > lv_ProbationLastDay AND pro.CreatedDate < lv_LimitedDay) )  -- From Now - CreatedDate < 20 (days)
 	LIMIT			ip_NoOfRecord; 
-     
-	SET SQL_SAFE_UPDATES = 1;
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
+    
 END$$
 
 DELIMITER ;

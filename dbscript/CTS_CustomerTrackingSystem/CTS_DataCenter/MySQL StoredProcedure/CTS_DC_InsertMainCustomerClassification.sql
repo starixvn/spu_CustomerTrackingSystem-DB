@@ -78,7 +78,6 @@ BEGIN
 	 WHERE cc.ParentID = 200 AND temp.CategoryID <> 0;
 	
      SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
-	 SET SQL_SAFE_UPDATES = 0;
      
 	/*******************************************START DATA*********************************************************/ 
     /*IGNORE VVIP - PIN CATEGORY*/
@@ -199,10 +198,7 @@ BEGIN
 			   END) AS CategoryId
     FROM Temp_NewClassification AS temp
     LEFT JOIN Temp_ExistedClassification AS ex on ex.CustID = temp.CustID; -- Get lastest custid for mapping to CC in mainDB
-      
-    SET SQL_SAFE_UPDATES = 1;
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-    
+   
     DROP TEMPORARY TABLE IF EXISTS Temp_ExistedClassification;     
     DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;      
 

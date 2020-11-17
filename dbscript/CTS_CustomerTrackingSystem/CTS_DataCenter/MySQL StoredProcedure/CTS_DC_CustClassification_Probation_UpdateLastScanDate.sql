@@ -20,7 +20,6 @@ BEGIN
 	*/
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-    SET SQL_SAFE_UPDATES = 0;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustSport;    
 	CREATE TEMPORARY TABLE Temp_CustSport 
@@ -41,10 +40,7 @@ BEGIN
     UPDATE 		CTS_DataCenter.ProbationAccountMonitor AS pro
     INNER JOIN 	Temp_CustSport AS temp ON pro.CustID = temp.CustID AND pro.SportGroupID = temp.SportGroupID
     SET			pro.LastScannedDate = CURRENT_DATE();
-    
-    SET SQL_SAFE_UPDATES = 1;
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-     
+  
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustSport;     
 END$$
 
