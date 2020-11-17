@@ -33,7 +33,6 @@ BEGIN
             CustID			BIGINT UNSIGNED PRIMARY KEY
         ,	CTSCustID		BIGINT UNSIGNED
         ,	SubscriberID	INT
-		,	PRIMARY KEY		PK_Temp_NewCustomers_CustID(CustID)  
 	);
 
 	 DROP TEMPORARY TABLE IF EXISTS Temp_ExistedClassification;    
