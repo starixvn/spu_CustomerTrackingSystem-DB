@@ -13,9 +13,8 @@ BEGIN
 		DB:			CTS_DataCenter
         
 		Original:
-			- [20201116@Irena.Vo][145028]: Add column LastScannedDate & Enhance logic
 		Revisions:
-			
+			- [20201116@Irena.Vo][145028]: Add column LastScannedDate & Enhance logic
 		Param's Explanation (filtered by):
          ip_CategoryIDList: ex: '1,2,3'       
 	*/
