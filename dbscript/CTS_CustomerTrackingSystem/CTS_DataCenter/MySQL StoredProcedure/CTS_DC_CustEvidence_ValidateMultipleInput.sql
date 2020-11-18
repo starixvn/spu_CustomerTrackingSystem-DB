@@ -1,12 +1,6 @@
-DELIMITER $$
-USE `CTS_DataCenter` $$
-DROP PROCEDURE IF EXISTS CTS_DC_CustEvidence_ValidateMultipleInput $$
-
-CREATE PROCEDURE CTS_DC_CustEvidence_ValidateMultipleInput (
-		IN 	ip_NewAccountEvidences 	JSON
-	,	IN 	ip_IsOverride			BOOLEAN
-)
-    
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_ValidateMultipleInput`(IN ip_NewAccountEvidences json,IN ip_IsOverride tinyint)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200608@Long.Luu
@@ -17,6 +11,7 @@ BEGIN
 		Revisions:
 		   - 20200608@Long.Luu: Created [Redmine ID: 134489]
 		   - 20200824@Roger.Le[Redmine ID: 137551]: Evidence Upload - Overrite the data
+		   - 20201116@Adam.Tran[Redmine ID: 141563]: Implement Cust Evidence from file
         
 		Param's Explanation (filtered by):
 	*/    
@@ -44,6 +39,8 @@ BEGIN
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     SELECT 	RowId
 		,	c.CTSCustID
+		,	c.CustID
+		,	c.SubscriberID
         ,	e.EvidenceID
         ,	CASE 
 				WHEN c.CTSCustID IS NULL AND e.EvidenceID IS NULL THEN 'Both Customer & Evidence do not exist.'
@@ -59,5 +56,4 @@ BEGIN
 
 	DROP TEMPORARY TABLE IF EXISTS tmpMultipleAccountEvidence;
 
-END$$
-DELIMITER ;
+END
