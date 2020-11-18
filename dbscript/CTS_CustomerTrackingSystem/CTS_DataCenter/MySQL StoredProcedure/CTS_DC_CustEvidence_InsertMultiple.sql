@@ -1,7 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_InsertMultiple`(IN ip_NewAccountEvidences json,IN ip_UserID int,IN ip_IsOverride tinyint,OUT op_ErrorMessage varchar(200))
     SQL SECURITY INVOKER
-sp: BEGIN
+BEGIN
 	/*
 		Created:	20200608@Long.Luu
 		Task:		Insert multiple customer-evidences [Redmine ID: 134489]

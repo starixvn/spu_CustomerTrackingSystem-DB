@@ -22,6 +22,10 @@ BEGIN
 
 		Revisions:
 		- 20201106@Adam.Tran [Redmine ID: 141563]: Created
+		
+		Param's Explanation (filtered by):        
+        set @op_ErrorMessage = '0';
+		call CTS_DataCenter.CTS_DC_CustEvidenceFromFile_Insert('[{"CTSCustID":19314,"CustID":1773789,"SubscriberID":130,"EvidenceID":13,"Remark":"test"}]', false, "member17_19314.xlsx", '202011181055428556', 8, @op_ErrorMessage);		
 	*/
 	
 	DECLARE lv_CurrentTime	TIMESTAMP		DEFAULT CURRENT_TIMESTAMP();
