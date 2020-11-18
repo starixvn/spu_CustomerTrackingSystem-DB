@@ -26,6 +26,7 @@ BEGIN
 		,	cus.IsOverwrite
         , 	cus.FileKey
         ,	cus.FileName
+		,	cus.CreatedBy
         ,	cus.CreatedTime
 	FROM CTS_DataCenter.CustEvidenceFromFile as cus
 	WHERE cus.IsProcessed = 0
