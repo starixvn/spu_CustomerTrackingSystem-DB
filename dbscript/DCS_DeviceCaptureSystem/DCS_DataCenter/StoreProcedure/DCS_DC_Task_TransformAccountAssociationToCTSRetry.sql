@@ -101,4 +101,5 @@ BEGIN
             , z.Notes = CONCAT(vrAccountMinutes,'_',vrAssociationMinutes)
     WHERE	z.ExecKey = vrExecKey  AND z.StepID = vrStepID;
     ### PERFORMANCE: END
-END
+END$$
+DELIMITER ;
