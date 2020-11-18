@@ -279,6 +279,7 @@ BEGIN
 								WHEN (a.Margin > 1 AND (t.TotalWinlossLastXDays >= 0 OR t.TotalWinloss > 20000)) THEN
 									CASE WHEN c.SportId = 200 THEN @GENERALCATEGORY_HIGHRISKPUNTER
 									ELSE @DETAILEDCATEGORY_HIGHRISKPUNTER END
+								ELSE -1
 							 END
 	FROM #tmpCustomers AS c
 		INNER JOIN #tmpCustomerAccummulatedInfo AS a ON c.CustId = a.CustId AND c.SportId = a.SportId
@@ -304,7 +305,8 @@ BEGIN
 		,	t.ActiveDays
 	FROM #tmpCustomers AS a WITH(NOLOCK)
 		INNER JOIN #tmpCustomerAccummulatedInfo AS t WITH(NOLOCK) ON a.CustId = t.CustId AND a.SportId = t.SportId
-	WHERE a.IsPassed = 1;
+	WHERE a.IsPassed = 1
+		AND a.CategoryId <> -1;
 	
 	-- Return results
 	SELECT	CustId
