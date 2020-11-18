@@ -38,7 +38,7 @@ BEGIN
     
     SET 	vrStartTime = CURRENT_TIMESTAMP(4);	
     
-    INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
+    INSERT INTO CTS_Log.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
     VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);
 
 	### PERFORMANCE: END
@@ -59,7 +59,7 @@ BEGIN
             , ass.CreatedTime
             , ass.SubscriberID
 	FROM 	DCS_DataCenter.Association AS ass
-	WHERE	ac.IsCTSTransformed = 0
+	WHERE	ass.IsCTSTransformed = 0
 	LIMIT	TotalRecord;
 
     SELECT @RowId,@MinAssociationID,@MaxAssociationID;
@@ -68,7 +68,7 @@ BEGIN
 	### PERFORMANCE
 	SET		vrEndTime = CURRENT_TIMESTAMP(4);
     
-    UPDATE	DCS_DataCenter.zzTracePerformance AS z
+    UPDATE	CTS_Log.zzTracePerformance AS z
     SET		z.EndTime = vrEndTime
 			, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
             , z.TotalRecord = @RowId
