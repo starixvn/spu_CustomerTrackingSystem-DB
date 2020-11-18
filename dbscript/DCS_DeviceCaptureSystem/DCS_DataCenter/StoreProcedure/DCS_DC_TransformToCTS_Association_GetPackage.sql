@@ -44,7 +44,7 @@ BEGIN
 	### PERFORMANCE: END
 	SET TotalRecord = ip_NoOfAssociation*ip_NoOfBatch;
     
-    SET @RowId = 0;
+    SET @RowId = 1;
     SET @MinAssociationID = (SELECT MAX(AssociationID) FROM DCS_DataCenter.Association AS ac) ;
     SET @MaxAssociationID = 0;
     
