@@ -1,9 +1,4 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
-USE `CTS_DataCenter`;
-DROP procedure IF EXISTS `CTS_DC_CustEvidence_InsertMultiple`;
-
-DELIMITER $$
-USE `CTS_DataCenter`$$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_InsertMultiple`(IN ip_NewAccountEvidences json,IN ip_UserID int,IN ip_IsOverride tinyint,OUT op_ErrorMessage varchar(200))
     SQL SECURITY INVOKER
 sp: BEGIN
@@ -13,13 +8,14 @@ sp: BEGIN
 		DB:			CTS_DataCenter
 		Original:
 
-		Revisions: 
+		Revisions:
 			- 20200608@Long.Luu [Redmine ID: 134489]: Created
 			- 20200807@Casey.Huynh [Redmine ID: #138925]: Chagne CustEvidence Structure for Cross Subscriber : Remove SubscriberID and IsCreatedByMaster
 			- 20200824@Roger.Le [Redmine ID: 137551]: Evidence Upload - Overrite the data
 			- 20201013@Long.Luu [Redmine ID: #141756]: Sync Evidence to Category
             - 20201020@Irena.Vo [Redmine ID: #141756]: Enhance logic Remove all category (Detail & General)
             - 20201111@Irena.Vo [Redmine ID: #145027]: Enhance logic Insert History for Evidence Category
+			- 20201116@Adam.Tran[Redmine ID: 141563]: Implement Cust Evidence from file
             
             call CTS_DataCenter.CTS_DC_CustEvidence_InsertMultiple
 			('[{"CTSCustID": 221882500, "EvidenceID": 45, "Comment": "na test 1"},{"CTSCustID":221882500, "EvidenceID": 46, "Comment":"na test 2"},
@@ -40,9 +36,7 @@ sp: BEGIN
 	CREATE TEMPORARY TABLE Temp_MultipleAccountEvidence 
     (	 
 			CTSCustID		BIGINT UNSIGNED     
-        , 	EvidenceID		SMALLINT UNSIGNED
-        ,   CustID			BIGINT UNSIGNED  
-        ,   SubscriberID	INT UNSIGNED
+        , 	EvidenceID		SMALLINT UNSIGNED       
         , 	Remark			VARCHAR(500)  
         , 	PRIMARY KEY		PK_Temp_MultipleAccountEvidence_CTSCustID_EvidenceID(CTSCustID,EvidenceID) 
     );      
@@ -67,26 +61,21 @@ sp: BEGIN
 		, 	tmpTable.Remark
 	FROM JSON_TABLE(ip_NewAccountEvidences,
 		 "$[*]" COLUMNS(
-			  CTSCustID 	BIGINT UNSIGNED		PATH "$.CTSCustID"
+			  CTSCustID 	BIGINT UNSIGNED		PATH "$.CTSCustID"			 
 			, EvidenceID	SMALLINT UNSIGNED	PATH "$.EvidenceID"
 			, Remark		VARCHAR(500)		PATH "$.Comment"
 		 )) AS tmpTable;  
          
-	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
+	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  	
     
     /*IGNORE CUSTOMERS HAS NOT Override AND EXISTED EVIDENCE BEFORE*/
-	IF (!ip_IsOverride AND EXISTS (	SELECT 1 
-				FROM Temp_MultipleAccountEvidence AS t 
-				INNER JOIN CTS_DataCenter.CustEvidence AS ce ON t.CTSCustID = ce.CTSCustID AND t.EvidenceID = ce.EvidenceID
-				WHERE ce.Level = 0)) THEN
-		SET op_ErrorMessage = 'This Customer has already been flagged with this Evidence.';
-		LEAVE sp;
-	END IF;
-    
-    /*GET CUSTOMER INFO*/
-    UPDATE Temp_MultipleAccountEvidence AS t
-	INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON t.CTSCustID = cus.CTSCustID AND cus.CustSubID = 0
-    SET t.CustID = cus.CustID, t.SubscriberID = cus.SubscriberID;
+	
+	IF (!ip_IsOverride) THEN
+		DELETE t
+		FROM Temp_MultipleAccountEvidence AS t
+		INNER JOIN CTS_DataCenter.CustEvidence AS ce ON t.CTSCustID = ce.CTSCustID AND t.EvidenceID = ce.EvidenceID
+		WHERE ce.Level = 0;
+	END IF; 
     
     /*INSERT NEW FLAGGED EVIDENCE HAS Override*/
 	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID,  EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
@@ -123,70 +112,10 @@ sp: BEGIN
     
     /*WRITE LOG*/
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-	VALUES(3, lv_SPName, 'Insert bunch of Customer Evidences', lv_CreatedDateTime, ip_UserID);
-    
-	/*SYNC EVIDENCE TO CATEGORY*/
-    SELECT ParameterValue
-    INTO lv_IsSyncEvi2Cate
-    FROM CTS_DataCenter.SystemParameter
-    WHERE ParameterID = 6;
-    
-    IF(lv_IsSyncEvi2Cate = '1') THEN
-		DELETE a
-        FROM Temp_MultipleAccountEvidence AS a
-		INNER JOIN CTS_DataCenter.SpecialCustomerClass AS s ON a.CTSCustID = s.CTSCustID;
-        
-		DELETE cate
-        FROM CTS_DataCenter.CTSCustomerClassification AS cate
-        INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
-        INNER JOIN Temp_MultipleAccountEvidence AS a ON a.CTSCustID = cate.CTSCustID
-        INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON e.EvidenceID = a.EvidenceID
-        WHERE cc.ParentID IN (1, 200);
-        
-		DELETE pro
-        FROM CTS_DataCenter.ProbationAccountMonitor AS pro 
-        INNER JOIN Temp_MultipleAccountEvidence AS a ON a.CTSCustID = pro.CTSCustID
-		INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON e.EvidenceID = a.EvidenceID;
-		
-		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification
-		(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
-        SELECT 	DISTINCT t.CustID
-			, 	t.CTSCustID
-			, 	t.SubscriberID
-			, 	ec.CategoryID
-			,   0
-			, 	'Synced by Evidence'
-			, 	lv_CreatedDateTime
-			,   lv_CreatedBy
-			,   lv_CreatedDateTime
-			,   lv_CreatedBy
-			,   DATE(lv_CreatedDateTime)
-		FROM Temp_MultipleAccountEvidence AS t
-			INNER JOIN CTS_DataCenter.EvidenceToCategory AS ec ON t.EvidenceID = ec.EvidenceID;
-
-       INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
-		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TurnoverRM, WinlossRM, BetCount, ActiveDays)
-		SELECT 	DISTINCT t.CustID
-			, 	t.CTSCustID
-			, 	ec.CategoryID
-			,   0
-			,   lv_CreatedDateTime
-			,   lv_CreatedBy
-            ,   0
-            ,   1
-			,   DATE(lv_CreatedDateTime)
-            , 0
-            , 0
-            , 0
-            , 0
-		FROM Temp_MultipleAccountEvidence AS t
-			INNER JOIN CTS_DataCenter.EvidenceToCategory AS ec ON t.EvidenceID = ec.EvidenceID;
-    END IF;
+	VALUES(3, lv_SPName, 'Insert bunch of Customer Evidences', lv_CreatedDateTime, ip_UserID);              
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_AssociatedException;
 	DROP TEMPORARY TABLE IF EXISTS Temp_AffectedDevices;
     DROP TEMPORARY TABLE IF EXISTS Temp_MultipleAccountEvidence; 
-    
-END$$
-
-DELIMITER ;
+        
+END
