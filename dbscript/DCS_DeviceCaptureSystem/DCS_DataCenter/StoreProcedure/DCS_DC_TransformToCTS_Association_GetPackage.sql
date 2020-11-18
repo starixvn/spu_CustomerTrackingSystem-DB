@@ -49,20 +49,18 @@ BEGIN
     SET @MaxAssociationID = 0;
     
 	SET TotalRecord = ip_NoOfAssociation*ip_NoOfBatch;  
-	SELECT	@RowId := @RowId+1
-            , ceil(@RowId/ip_NoOfAssociation) AS BatchID
-            , @MinAssociationID := LEAST(@MinAssociationID,AssociationID)
-            , @MaxAssociationID := GREATEST(@MaxAssociationID,AssociationID)
-			, ass.AssociationID
+	SELECT	ceil(@RowId/ip_NoOfAssociation) AS BatchID
+            , ass.AssociationID
 			, ass.AccountID
             , ass.DeviceID
             , ass.CreatedTime
             , ass.SubscriberID
+            , @RowId := @RowId+1
+            , @MinAssociationID := LEAST(@MinAssociationID,AssociationID)
+            , @MaxAssociationID := GREATEST(@MaxAssociationID,AssociationID)
 	FROM 	DCS_DataCenter.Association AS ass
 	WHERE	ass.IsCTSTransformed = 0
 	LIMIT	TotalRecord;
-
-    SELECT @RowId,@MinAssociationID,@MaxAssociationID;
     
       
 	### PERFORMANCE
