@@ -23,10 +23,7 @@ BEGIN
 			{"CTSCustID":221882532, "EvidenceID": 45, "Comment":"na test 3"}]', 8, 1, @op_ErrorMessage);
 	*/    
     DECLARE		lv_SPName 			VARCHAR(100) 	DEFAULT 'CTS_DC_CustEvidence_InsertMultiple';    
-    DECLARE		lv_CreatedDateTime 	DATETIME DEFAULT CURRENT_TIME();
-    DECLARE 	lv_CreatedBy        BIGINT DEFAULT 10278938;
-    
-    DECLARE		lv_IsSyncEvi2Cate	VARCHAR(1) DEFAULT ''; 
+    DECLARE		lv_CreatedDateTime 	DATETIME DEFAULT CURRENT_TIME();   
 
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
@@ -38,7 +35,8 @@ BEGIN
     (	 
 			CTSCustID		BIGINT UNSIGNED     
         , 	EvidenceID		SMALLINT UNSIGNED       
-        , 	Remark			VARCHAR(500)  
+        , 	Remark			VARCHAR(500)
+		,	CreatedBy		INT UNSIGNED
         , 	PRIMARY KEY		PK_Temp_MultipleAccountEvidence_CTSCustID_EvidenceID(CTSCustID,EvidenceID) 
     );      
     
@@ -56,15 +54,17 @@ BEGIN
         , 	PRIMARY KEY		PK_Temp_AssociatedException_FromCTSCustID_ToCTSCustID(FromCTSCustID,ToCTSCustID)
 	);
     
-    INSERT INTO Temp_MultipleAccountEvidence(CTSCustID, EvidenceID, Remark)
+    INSERT INTO Temp_MultipleAccountEvidence(CTSCustID, EvidenceID, Remark, CreatedBy)
 	SELECT 	tmpTable.CTSCustID
 		, 	tmpTable.EvidenceID
 		, 	tmpTable.Remark
+		,	tmpTable.CreatedBy
 	FROM JSON_TABLE(ip_NewAccountEvidences,
 		 "$[*]" COLUMNS(
 			  CTSCustID 	BIGINT UNSIGNED		PATH "$.CTSCustID"			 
 			, EvidenceID	SMALLINT UNSIGNED	PATH "$.EvidenceID"
 			, Remark		VARCHAR(500)		PATH "$.Comment"
+			, CreatedBy		INT	UNSIGNED		PATH "$.CreatedBy"	
 		 )) AS tmpTable;  
          
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  	
@@ -86,7 +86,7 @@ BEGIN
         ,	0 
         ,	t.CTSCustID
         ,	lv_CreatedDateTime
-        ,	ip_UserID
+        ,	t.CreatedBy
     FROM Temp_MultipleAccountEvidence AS t;
 	
     /*GET AFFECTED DEVICES*/
@@ -104,7 +104,7 @@ BEGIN
     
     /*INSERT NEW AFFECTED EVIDENCES*/
 	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
-    SELECT DISTINCT a.CTSCustID, t.EvidenceID, t.Remark, 2, t.CTSCustID, lv_CreatedDateTime, ip_UserID
+    SELECT DISTINCT a.CTSCustID, t.EvidenceID, t.Remark, 2, t.CTSCustID, lv_CreatedDateTime, t.CreatedBy
     FROM Temp_MultipleAccountEvidence AS t
 		INNER JOIN Temp_AffectedDevices AS d ON t.CTSCustID = d.CTSCustID
 		INNER JOIN CTS_DataCenter.AssociationByDevice AS a ON a.DCSDeviceID = d.DCSDeviceID
