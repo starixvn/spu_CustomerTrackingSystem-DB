@@ -1,8 +1,8 @@
+/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
 DELIMITER $$
-
 DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformToCTS_Account_GetPackage$$
-
-CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformToCTS_Account_GetPackage(IN ip_NoOfAccount INT, IN ip_NoOfBatch INT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE DCS_DataCenter.DCS_DC_TransformToCTS_Account_GetPackage(IN ip_NoOfAccount INT, IN ip_NoOfBatch INT)
+SQL SECURITY INVOKER
 BEGIN
 	/*
 	Created: 20190730@Casey.Huynh
@@ -13,10 +13,13 @@ BEGIN
 	Revisions:
 		#1. [20191217@CaseyHuynh][#125530]: Implement LastLoginTime 
 		#2. [20200512@CaseyHuynh]: Add Nolock Statement
+        #3. [20201112@CaseyHuynh][145271]:	
+			+ GET Lastest Code Move Server P3, update Permission and Add Meta data
+            + Enhance  script
 	Param's Explanation (filtered by):
 	*/
 	
-	DECLARE		TotalRecord		INT UNSIGNED DEFAULT 0;
+    DECLARE		TotalRecord		INT UNSIGNED DEFAULT 0;
 	DECLARE		Batch			TINYINT DEFAULT 1;
     
 	### PERFORMANCE: START
@@ -37,64 +40,36 @@ BEGIN
     
     SET 	vrStartTime = CURRENT_TIMESTAMP(4);	
     
-    INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
+    INSERT INTO CTS_Log.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
     VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);
 
 	### PERFORMANCE: END
+    SET @RowId = 0;
+    SET @MinAccountID = (SELECT MAX(AccountID) FROM DCS_DataCenter.Account AS ac) ;
+    SET @MaxAccountID = 0;
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_Account;
-    CREATE TEMPORARY TABLE Temp_Account 
-    (	
-		BatchID					TINYINT
-        , AccountID				BIGINT	UNSIGNED
-        , LoginName				VARCHAR(50)
-        , SubscriberID			INT
-        , LastLoginTime			TIMESTAMP(4)
-    ); 
-   
-	SET TotalRecord = ip_NoOfAccount*ip_NoOfBatch;
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-	INSERT INTO Temp_Account( AccountID, LoginName, SubscriberID, LastLoginTime)
-	SELECT	ac.AccountID
-			, ac.LoginName
-            , ac.SubscriberID
-            , ac.LastLoginTime
-	FROM 	DCS_DataCenter.Account AS ac
-	WHERE	ac.IsCTSTransformed = 0
-	LIMIT	TotalRecord;
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-    
-    WHILE (EXISTS (SELECT (1) FROM Temp_Account WHERE BatchID IS NULL LIMIT 1)) DO
-    	  UPDATE 	Temp_Account
-		  SET		BatchID = Batch
-          WHERE		BatchID IS NULL 
-          LIMIT 	ip_NoOfAccount;    
-		  SET Batch = Batch + 1;
-    END WHILE;
-    
-    SELECT	ac.BatchID
-			, ac.AccountID
+	SET TotalRecord = ip_NoOfAccount*ip_NoOfBatch;  
+	SELECT	ceil(@RowId/ip_NoOfAccount) AS BatchID
+            , ac.AccountID
             , ac.LoginName
             , ac.SubscriberID
             , ac.LastLoginTime
-	FROM Temp_Account AS ac;
+            , @RowId := @RowId+1
+            , @MinAccountID := LEAST(@MinAccountID,AccountID)
+            , @MaxAccountID := GREATEST(@MinAccountID,AccountID)
+	FROM 	DCS_DataCenter.Account AS ac
+	WHERE	ac.IsCTSTransformed = 0
+	LIMIT	TotalRecord;
     
-   SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-	
 	### PERFORMANCE
 	SET		vrEndTime = CURRENT_TIMESTAMP(4);
     
-    SELECT 	Count(1), Min(AccountID), Max(AccountID)
-    INTO	vrTotalRecord, vrFromID, vrToID
-    FROM	Temp_Account AS tts;
-    
-    UPDATE	DCS_DataCenter.zzTracePerformance AS z
+    UPDATE	CTS_Log.zzTracePerformance AS z
     SET		z.EndTime = vrEndTime
 			, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
-            , z.TotalRecord = vrTotalRecord
-            , z.FromID = vrFromID
-            , z.ToID		= vrToID
+            , z.TotalRecord = @RowId
+            , z.FromID 		= @MinAccountID
+            , z.ToID		= @MaxAccountID
 
     WHERE	z.ExecKey = vrExecKey AND z.StepID = z.StepID;
     ### PERFORMANCE: END 

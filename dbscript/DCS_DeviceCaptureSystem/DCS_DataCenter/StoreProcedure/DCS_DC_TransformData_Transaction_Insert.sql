@@ -48,7 +48,7 @@ BEGIN
     SET 	vrStepID = 1;
     SET 	vrStartTime = CURRENT_TIMESTAMP(4);
     
-    INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime, FromID, ToID)
+    INSERT INTO CTS_Log.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime, FromID, ToID)
     VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime, ip_FromTransID, ip_ToTransID);
 	
 	### PERFORMANCE: END  
@@ -121,10 +121,9 @@ BEGIN
                 , MIN(trt.CreatedDate)
 	FROM		Temp_RawTransaction AS trt
 	GROUP BY	trt.SubscriberID, trt.URLDetails;    
-
     
 	# Insert New Account
-    INSERT INTO DCS_DataCenter.Account(LoginName, SubscriberID, SubscriberType, CreatedDate, InsertTime, CreatedTime, LastLoginTime)
+    INSERT IGNORE INTO DCS_DataCenter.Account(LoginName, SubscriberID, SubscriberType, CreatedDate, InsertTime, CreatedTime, LastLoginTime)
     SELECT		trt.LoginName
 				, trt.SubscriberID
 				, trt.SubscriberType
@@ -133,8 +132,7 @@ BEGIN
                 , MIN(trt.TransTime) 		AS CreatedTime
                 , MAX(trt.TransTime)		AS LastLoginTime
     FROM		Temp_RawTransaction AS trt 
-    GROUP BY	trt.SubscriberID, trt.SubscriberType, trt.LoginName
-    ON DUPLICATE KEY UPDATE IsCTSTransformed = 0;
+    GROUP BY	trt.SubscriberID, trt.SubscriberType, trt.LoginName;
     
     # Update AccountID to Temp_Transaction
     UPDATE 		Temp_RawTransaction AS trt
@@ -236,7 +234,7 @@ BEGIN
 	### PERFORMANCE
 	SET	vrEndTime = CURRENT_TIMESTAMP(4);
     
-	UPDATE DCS_DataCenter.zzTracePerformance AS z 
+	UPDATE CTS_Log.zzTracePerformance AS z 
 	SET 
 		z.EndTime = vrEndTime,
 		z.Duration = TIMESTAMPDIFF(MICROSECOND,

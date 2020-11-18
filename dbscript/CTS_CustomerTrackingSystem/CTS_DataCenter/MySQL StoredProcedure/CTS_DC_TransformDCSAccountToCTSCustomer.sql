@@ -1,6 +1,8 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
 DELIMITER $$
 DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_TransformDCSAccountToCTSCustomer$$
-CREATE DEFINER=`fps`@`%` PROCEDURE CTS_DataCenter.CTS_DC_TransformDCSAccountToCTSCustomer(IN ip_AccountList JSON)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE CTS_DataCenter.CTS_DC_TransformDCSAccountToCTSCustomer(IN ip_AccountList JSON)
+SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20191112@Terry
@@ -12,7 +14,10 @@ BEGIN
         	#1. [20191217@CaseyHuynh][#125530]: Implement LastLoginTime
             #2. [20190319@CaseyHuynh][IssueCN88]: Update Join LoginName = UserName
             #3. [20200506@CaseyHuynh][133486]: Remove code "add new CTSCustomer" for Not Deposit Account
-            #4. [20200526@CaseyHuynh][133263]: Update LastLoginTime 
+            #4. [20200526@CaseyHuynh][133263]: Update LastLoginTime
+            #5. [20201112@CaseyHuynh][145271]:
+            + GET Lastest Code Move Server P3, update Permission and Add Meta data
+            + Enhance  Transform Retry
 		Param's Explanation (filtered by):                
 	*/
 	DECLARE vrDepositSubType TINYINT DEFAULT 1;
@@ -35,7 +40,7 @@ BEGIN
     SET 	vrStepID = 1;
 	SET 	vrStartTime = CURRENT_TIMESTAMP(4);  
     
-    INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
+    INSERT INTO CTS_Log.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
     VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);
 	  
 	### PERFORMANCE: END  
@@ -55,8 +60,6 @@ BEGIN
 	, UNIQUE KEY	UK_TempAccount_SubscriberIDLoginName(SubscriberID, LoginName)    
     );       
     
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;     
-
 	INSERT INTO Temp_Account(AccountID, LoginName, SubscriberID, SubscriberType, LastLoginTime, LoginNameWithPrefix)
 	SELECT 	tmpTable.AccountID 
             , tmpTable.LoginName 
@@ -86,7 +89,6 @@ BEGIN
 					AND tmpTable.SubscriberID = cus.SubscriberID)
 	SET 		tmpTable.CTSCustID = cus.CTSCustID
     WHERE		tmpTable.CTSCustID IS NULL;        
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
    
     INSERT IGNORE INTO CTS_DataCenter.CustDCSAccount(CTSCustID, AccountID, SubscriberID, InsertTime)
 	SELECT  acc.CTSCustID
@@ -98,11 +100,14 @@ BEGIN
     
     UPDATE DCS_DataCenter.Account acc
 	INNER JOIN	Temp_Account AS tac 
-				ON acc.AccountID = tac.AccountID
-	SET 	acc.IsCTSTransformed = (CASE WHEN tac.CTSCustID IS NOT NULL THEN 1
-										 WHEN tac.CTSCustID IS NULL AND acc.IsCTSTransformed > -3 THEN  acc.IsCTSTransformed - 1
-                                         ELSE  acc.IsCTSTransformed
-									END);
+				ON acc.AccountID = tac.AccountID			
+	SET 	acc.IsCTSTransformed = (CASE WHEN 	tac.CTSCustID IS NOT NULL THEN 1 ELSE -1 END);
+    
+    UPDATE 		DCS_DataCenter.Association AS ass
+    INNER JOIN	Temp_Account AS tac 
+				ON ass.AccountID = tac.AccountID
+	SET			IsCTSTransformed = 0
+	WHERE		acc.CTSCustID IS NOT NULL;    
 	
     UPDATE 		CTS_DataCenter.CTSCustomer AS cus
     INNER JOIN 	Temp_Account AS acc
@@ -110,8 +115,9 @@ BEGIN
     SET			cus.LastLoginTime = acc.LastLoginTime
     WHERE		cus.LastLoginTime < acc.LastLoginTime
 				OR cus.LastLoginTime IS NULL;
-                
-	#=======================    
+    
+    
+	#===================================================================== 
 	### PERFORMANCE
 	SET	vrEndTime = CURRENT_TIMESTAMP(4);	
     
@@ -119,7 +125,7 @@ BEGIN
     INTO	vrTotalRecord, vrFromID, vrToID
     FROM	Temp_Account AS tas;    
     
-    UPDATE	DCS_DataCenter.zzTracePerformance AS z
+    UPDATE	CTS_Log.zzTracePerformance AS z
     SET		z.EndTime = vrEndTime
 			, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
             , z.TotalRecord = vrTotalRecord
