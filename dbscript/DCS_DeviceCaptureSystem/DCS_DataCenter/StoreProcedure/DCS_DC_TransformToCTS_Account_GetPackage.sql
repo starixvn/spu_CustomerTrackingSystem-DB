@@ -44,7 +44,7 @@ BEGIN
     VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);
 
 	### PERFORMANCE: END
-    SET @RowId = 0;
+    SET @RowId = 1;
     SET @MinAccountID = (SELECT MAX(AccountID) FROM DCS_DataCenter.Account AS ac) ;
     SET @MaxAccountID = 0;
     
