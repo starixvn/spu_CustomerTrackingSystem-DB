@@ -1,4 +1,5 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
+DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_InsertMultiple`(IN ip_NewAccountEvidences json,IN ip_UserID int,IN ip_IsOverride tinyint,OUT op_ErrorMessage varchar(200))
     SQL SECURITY INVOKER
 BEGIN
@@ -118,4 +119,6 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_AffectedDevices;
     DROP TEMPORARY TABLE IF EXISTS Temp_MultipleAccountEvidence; 
         
-END
+END$$
+
+DELIMITER ;

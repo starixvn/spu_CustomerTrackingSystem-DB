@@ -1,4 +1,5 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_ValidateMultipleInput`(IN ip_NewAccountEvidences json,IN ip_IsOverride tinyint)
     SQL SECURITY INVOKER
 BEGIN
@@ -56,4 +57,6 @@ BEGIN
 
 	DROP TEMPORARY TABLE IF EXISTS tmpMultipleAccountEvidence;
 
-END
+END$$
+
+DELIMITER ;
