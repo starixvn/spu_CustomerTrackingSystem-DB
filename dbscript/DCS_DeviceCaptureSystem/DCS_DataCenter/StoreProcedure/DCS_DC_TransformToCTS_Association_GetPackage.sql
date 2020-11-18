@@ -13,7 +13,7 @@ BEGIN
 	Revisions:
 		#1. [20201112@CaseyHuynh][145271]:	
 			+ GET Lastest Code Move Server P3, update Permission and Add Meta data
-            + Enhance  script
+            + Enhance  script1
 	Param's Explanation (filtered by):
 	*/
 	
@@ -48,7 +48,7 @@ BEGIN
     SET @MinAssociationID = (SELECT MAX(AssociationID) FROM DCS_DataCenter.Association AS ac) ;
     SET @MaxAssociationID = 0;
     
-	SET TotalRecord = ip_NoOfAccount*ip_NoOfBatch;  
+	SET TotalRecord = ip_NoOfAssociation*ip_NoOfBatch;  
 	SELECT	@RowId := @RowId+1
             , ceil(@RowId/ip_NoOfAssociation) AS BatchID
             , @MinAssociationID := LEAST(@MinAssociationID,AssociationID)
