@@ -69,8 +69,7 @@ sp: BEGIN
 	EXECUTE stmt1;
     
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
-	SET SQL_SAFE_UPDATES = 0;
-    
+	
     /*GET CUSTOMER INFO*/
     UPDATE 		Temp_CustomerList AS t
 	INNER JOIN 	CTS_DataCenter.CTSCustomer AS c ON t.CustID = c.CustID AND c.CustSubID = 0
@@ -184,9 +183,6 @@ sp: BEGIN
 							INNER JOIN CTS_DataCenter.EvidenceToCategory AS ec ON e.EvidenceID = ec.EvidenceID) AS a;    
                             
     END IF;
-    
-    SET SQL_SAFE_UPDATES = 1;
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
     
     DROP TEMPORARY TABLE IF EXISTS Temp_AssociatedException;
 	DROP TEMPORARY TABLE IF EXISTS Temp_AffectedDevices;
