@@ -9,7 +9,7 @@
 	  "tasks.max": "1",
 	  "neo4j.server.uri": "bolt://10.18.200.70:7687",
 	  "errors.retry.delay.max.ms": "1000",
-	  "neo4j.topic.cypher.ctsserver.CTS_DataCenter.Evidence": "call apoc.do.case([event.op = 'c','MERGE (n:StaticList { ListID: event.after.ListID, ItemID: event.after.ItemID }) ON CREATE SET n = event.after RETURN n',event.op = 'u','MATCH (n:StaticList { ListID: event.before.ListID, ItemID: event.before.ItemID }) SET n = event.after RETURN n',event.op = 'd','MATCH (n:StaticList { ListID: event.before.ListID, ItemID: event.before.ItemID }) DETACH DELETE n'],'',{event:event}) yield value return value",
+	  "neo4j.topic.cypher.ctsserver.CTS_DataCenter.StaticList": "call apoc.do.case([event.op = 'c','MERGE (n:StaticList { ListID: event.after.ListID, ItemID: event.after.ItemID }) ON CREATE SET n = event.after RETURN n',event.op = 'u','MATCH (n:StaticList { ListID: event.before.ListID, ItemID: event.before.ItemID }) SET n = event.after RETURN n',event.op = 'd','MATCH (n:StaticList { ListID: event.before.ListID, ItemID: event.before.ItemID }) DETACH DELETE n'],'',{event:event}) yield value return value",
 	  "neo4j.authentication.basic.username": "neo4j",
 	  "errors.tolerance": "all",
 	  "neo4j.encryption.enabled": "false",
