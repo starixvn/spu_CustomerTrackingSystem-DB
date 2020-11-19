@@ -74,7 +74,6 @@ sp: BEGIN
 		 )) AS tmpTable;  
          
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
-	SET SQL_SAFE_UPDATES = 0;
     
     /*GET CUSTOMER INFO*/
     UPDATE Temp_MultipleAccountEvidence AS t
@@ -175,10 +174,6 @@ sp: BEGIN
 		FROM Temp_MultipleAccountEvidence AS t
 		INNER JOIN CTS_DataCenter.EvidenceToCategory AS ec ON t.EvidenceID = ec.EvidenceID;
     END IF;
-
-    
-    SET SQL_SAFE_UPDATES = 1;
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_AssociatedException;
 	DROP TEMPORARY TABLE IF EXISTS Temp_AffectedDevices;

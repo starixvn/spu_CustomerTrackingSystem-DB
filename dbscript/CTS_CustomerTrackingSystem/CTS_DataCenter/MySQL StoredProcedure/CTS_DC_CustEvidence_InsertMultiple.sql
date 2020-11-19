@@ -73,7 +73,6 @@ sp: BEGIN
 		 )) AS tmpTable;  
          
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
-	SET SQL_SAFE_UPDATES = 0;
     
     /*IGNORE CUSTOMERS HAS NOT Override AND EXISTED EVIDENCE BEFORE*/
 	IF (!ip_IsOverride AND EXISTS (	SELECT 1 
@@ -183,9 +182,6 @@ sp: BEGIN
 		FROM Temp_MultipleAccountEvidence AS t
 			INNER JOIN CTS_DataCenter.EvidenceToCategory AS ec ON t.EvidenceID = ec.EvidenceID;
     END IF;
-    
-    SET SQL_SAFE_UPDATES = 1;
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_AssociatedException;
 	DROP TEMPORARY TABLE IF EXISTS Temp_AffectedDevices;

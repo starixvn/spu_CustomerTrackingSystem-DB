@@ -47,7 +47,6 @@ BEGIN
      );
 
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
-	SET SQL_SAFE_UPDATES = 0;
     
     /*DELETE FLAGGED EVIDENCE*/
     DELETE FROM CTS_DataCenter.CustEvidence
@@ -99,9 +98,6 @@ BEGIN
   
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	VALUES(4, lv_SPName, CONCAT('Remove Flagged Evidence: ip_CTSCustID = ', ip_CTSCustID, ';ip_EvidenceID = ', ip_EvidenceID), lv_CreatedDateTime, ip_UserID); 
-    
-    SET SQL_SAFE_UPDATES = 1;
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 
     DROP TEMPORARY TABLE IF EXISTS Temp_ExistedEvidenceCategories;     
 END$$
