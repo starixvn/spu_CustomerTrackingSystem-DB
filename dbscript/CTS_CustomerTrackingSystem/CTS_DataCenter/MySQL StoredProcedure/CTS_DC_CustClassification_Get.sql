@@ -1,4 +1,3 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="1" isNested="0"></info>*/
 USE `CTS_DataCenter`;
 DROP procedure IF EXISTS `CTS_DC_CustClassification_Get`;
 
