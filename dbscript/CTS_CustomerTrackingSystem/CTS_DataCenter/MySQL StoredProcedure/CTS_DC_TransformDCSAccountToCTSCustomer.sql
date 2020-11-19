@@ -104,9 +104,9 @@ BEGIN
 	SET 	acc.IsCTSTransformed = (CASE WHEN 	tac.CTSCustID IS NOT NULL THEN 1 ELSE -1 END);
     
     UPDATE 		DCS_DataCenter.Association AS ass
-    INNER JOIN	Temp_Account AS tac 
-				ON ass.AccountID = tac.AccountID
-	SET			IsCTSTransformed = 0
+    INNER JOIN	Temp_Account AS acc 
+				ON ass.AccountID = acc.AccountID
+	SET			ass.IsCTSTransformed = 0
 	WHERE		acc.CTSCustID IS NOT NULL;    
 	
     UPDATE 		CTS_DataCenter.CTSCustomer AS cus
@@ -114,24 +114,23 @@ BEGIN
 				ON cus.CTSCustID = acc.CTSCustID
     SET			cus.LastLoginTime = acc.LastLoginTime
     WHERE		cus.LastLoginTime < acc.LastLoginTime
-				OR cus.LastLoginTime IS NULL;
-    
+				OR cus.LastLoginTime IS NULL;    
     
 	#===================================================================== 
 	### PERFORMANCE
 	SET	vrEndTime = CURRENT_TIMESTAMP(4);	
-    
+	
 	SELECT 	Count(1), Min(tas.AccountID), Max(tas.AccountID)
-    INTO	vrTotalRecord, vrFromID, vrToID
-    FROM	Temp_Account AS tas;    
-    
-    UPDATE	CTS_Log.zzTracePerformance AS z
-    SET		z.EndTime = vrEndTime
+	INTO	vrTotalRecord, vrFromID, vrToID
+	FROM	Temp_Account AS tas;    
+	
+	UPDATE	CTS_Log.zzTracePerformance AS z
+	SET		z.EndTime = vrEndTime
 			, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
-            , z.TotalRecord = vrTotalRecord
-            , z.FromID = vrFromID
-            , z.ToID		= vrToID
-    WHERE	z.ExecKey = vrExecKey  AND z.StepID = vrStepID;
+			, z.TotalRecord = vrTotalRecord
+			, z.FromID = vrFromID
+			, z.ToID		= vrToID
+	WHERE	z.ExecKey = vrExecKey  AND z.StepID = vrStepID;
     ### PERFORMANCE: END
 END$$
 DELIMITER ;
