@@ -1,8 +1,8 @@
+/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
 DELIMITER $$
-
 DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformToCTS_Association_GetPackage$$
-
-CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformToCTS_Association_GetPackage(IN ip_NoOfAssociation INT, IN ip_NoOfBatch INT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE DCS_DataCenter.DCS_DC_TransformToCTS_Association_GetPackage(IN ip_NoOfAssociation INT, IN ip_NoOfBatch INT)
+SQL SECURITY INVOKER
 BEGIN
 	/*
 	Created: 20190730@Casey.Huynh
@@ -11,6 +11,9 @@ BEGIN
 	Original:
 
 	Revisions:
+		#1. [20201112@CaseyHuynh][145271]:	
+			+ GET Lastest Code Move Server P3, update Permission and Add Meta data
+            + Enhance  script1
 	Param's Explanation (filtered by):
 	*/
 	
@@ -35,65 +38,40 @@ BEGIN
     
     SET 	vrStartTime = CURRENT_TIMESTAMP(4);	
     
-    INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
+    INSERT INTO CTS_Log.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
     VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);
 
 	### PERFORMANCE: END
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_Association;
-    CREATE TEMPORARY TABLE Temp_Association 
-    (	
-		BatchID				TINYINT
-        , AssociationID		BIGINT	UNSIGNED
-        , AccountID			BIGINT	UNSIGNED
-        , DeviceID			BIGINT	UNSIGNED
-        , CreatedTime		TIMESTAMP(4)
-        , SubscriberID		INT
-    ); 
-   
 	SET TotalRecord = ip_NoOfAssociation*ip_NoOfBatch;
     
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED ;
-	INSERT INTO Temp_Association(AssociationID, AccountID, DeviceID, CreatedTime, SubscriberID)
-	SELECT	ass.AssociationID
+    SET @RowId = 1;
+    SET @MinAssociationID = (SELECT MAX(AssociationID) FROM DCS_DataCenter.Association AS ac) ;
+    SET @MaxAssociationID = 0;
+    
+	SET TotalRecord = ip_NoOfAssociation*ip_NoOfBatch;  
+	SELECT	ceil(@RowId/ip_NoOfAssociation) AS BatchID
+            , ass.AssociationID
 			, ass.AccountID
-			, ass.DeviceID
+            , ass.DeviceID
             , ass.CreatedTime
             , ass.SubscriberID
+            , @RowId := @RowId+1
+            , @MinAssociationID := LEAST(@MinAssociationID,AssociationID)
+            , @MaxAssociationID := GREATEST(@MaxAssociationID,AssociationID)
 	FROM 	DCS_DataCenter.Association AS ass
 	WHERE	ass.IsCTSTransformed = 0
 	LIMIT	TotalRecord;
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-     
-    WHILE (EXISTS (SELECT (1) FROM Temp_Association WHERE BatchID IS NULL LIMIT 1)) DO
-    	  UPDATE 	Temp_Association
-		  SET		BatchID = Batch
-          WHERE		BatchID IS NULL 
-          LIMIT 	ip_NoOfAssociation;    
-		  SET Batch = Batch + 1;
-    END WHILE;
     
-    SELECT	tas.AssociationID
-			, tas.BatchID
-			, tas.AccountID
-            , tas.DeviceID
-            , tas.CreatedTime
-            , tas.SubscriberID
-	FROM Temp_Association AS tas;
-    
+      
 	### PERFORMANCE
 	SET		vrEndTime = CURRENT_TIMESTAMP(4);
     
-    SELECT 	Count(1), Min(tas.AssociationID), Max(tas.AssociationID)
-    INTO	vrTotalRecord, vrFromID, vrToID
-    FROM	Temp_Association AS tas;
-    
-    UPDATE	DCS_DataCenter.zzTracePerformance AS z
+    UPDATE	CTS_Log.zzTracePerformance AS z
     SET		z.EndTime = vrEndTime
 			, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
-            , z.TotalRecord = vrTotalRecord
-            , z.FromID = vrFromID
-            , z.ToID		= vrToID
+            , z.TotalRecord = @RowId
+            , z.FromID 		= @MinAssociationID
+            , z.ToID		= @MaxAssociationID
 
     WHERE	z.ExecKey = vrExecKey AND z.StepID = z.StepID;
     ### PERFORMANCE: END 
