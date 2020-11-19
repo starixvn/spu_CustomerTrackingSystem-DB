@@ -1,19 +1,11 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
 USE `CTS_DataCenter`;
 DROP procedure IF EXISTS `CTS_DC_Subscriber_Update`;
 
 DELIMITER $$
 USE `CTS_DataCenter`$$
-CREATE DEFINER=`ctsWeb`@`%` PROCEDURE `CTS_DC_Subscriber_Update`(
-		IN ip_SubscriberID		INT
-	,	IN ip_SubscriberName	VARCHAR(50)
-	,	IN ip_SubscriberType	TINYINT UNSIGNED
-    ,	IN ip_SubscriberPrefix	VARCHAR(30)
-    ,	IN ip_IsTest			BIT
-	,	IN ip_SiteList			JSON
-	,	IN ip_UserID 			INT
-
-	, 	OUT op_ErrorMessage 	VARCHAR(2000)
-)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Subscriber_Update`(OUT op_ErrorMessage varchar(2000),IN ip_SubscriberID int,IN ip_SubscriberName varchar(50),IN ip_SubscriberType tinyint,IN ip_SubscriberPrefix varchar(30),IN ip_IsTest bit,IN ip_SiteList json,IN ip_UserID int)
+    SQL SECURITY INVOKER
 sp: BEGIN
 	/*
 		Created:	20200911@Roger.Le
@@ -23,10 +15,12 @@ sp: BEGIN
 		Revisions:
             - [20200911@Roger.Le][138102]: Created
             - [20200924@Lex.Khuat][138102]: Support insert/update sub with multiple sites
+            - [20201118@Lex.Khuat][145576]: Fix issue multi site update skip prefix, remove rule validate duplicating site
             
 		Param's Explanation:
 			- ip_SubscriberID: 0 => Insert mode, <> 0 => Update mode, input siteID
 			- ip_SubscriberType: 0 => Credit, 1 => Licensees
+            - ip_SubscriberPrefix: null => skip
 	*/
     
     DECLARE lv_CurrentTime		DATETIME		DEFAULT CURRENT_TIME();
@@ -63,6 +57,7 @@ sp: BEGIN
     );
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+    
     #========= CHECK SUBSCRIBER NAME ALREADY EXISTS =========
     IF (EXISTS (SELECT 1
 				FROM CTS_Admin.Subscriber
@@ -73,9 +68,10 @@ sp: BEGIN
 	END IF;
     
     #========= CHECK PREFIX ALREADY EXISTS =========
-    IF (EXISTS (SELECT 1
+	IF (IFNULL(ip_SubscriberPrefix, '') != ''
+		AND EXISTS (SELECT 1
 				FROM CTS_Admin.Subscriber
-                WHERE SubscriberID <> lv_SubscriberID
+				WHERE SubscriberID <> lv_SubscriberID
 				AND LOWER(SubscriberPrefix) = LOWER(IFNULL(ip_SubscriberPrefix, '')))) THEN
 		SET op_ErrorMessage = 'Subscriber prefix already exists';
 		LEAVE sp;
@@ -83,7 +79,7 @@ sp: BEGIN
 
     #========= GET DATA TO UPDATE =========
 	INSERT INTO Temp_Sites (SiteID, SiteName, RoleMapping, CurrentSubID)
-	SELECT
+	SELECT	DISTINCT
 			tmpTable.SiteID
 		,	tmpTable.SiteName
         ,	tmpTable.RoleMapping
@@ -95,8 +91,9 @@ sp: BEGIN
 		, RoleMapping			TINYINT 		PATH "$.RoleMapping" 
 		 )) as tmpTable
 	LEFT JOIN CTS_DataCenter.MappingSubscriberSite AS site
-		ON tmpTable.SiteID = site.SiteID;
-    
+		ON tmpTable.SiteID = site.SiteID
+        AND site.SubscriberID = lv_SubscriberID;
+
     #========= CHECK IF SITEID DUPLICATED IN PARAM =========
     IF (EXISTS (SELECT 1
 				FROM Temp_Sites
@@ -110,19 +107,6 @@ sp: BEGIN
 		LEAVE sp;
 	END IF;
     
-    #========= CHECK IF SITEID ALREADY EXISTS IN DB =========
-    IF (EXISTS (SELECT 1
-				FROM Temp_Sites
-				WHERE CurrentSubID <> lv_SubscriberID
-				AND CurrentSubID <> 0)) THEN
-        SELECT LEFT(CONCAT('SiteIDs already exists: ', GROUP_CONCAT(DISTINCT SiteID ORDER BY SiteID ASC SEPARATOR ', ')), 2000)
-        INTO op_ErrorMessage
-        FROM Temp_Sites
-        WHERE CurrentSubID <> lv_SubscriberID
-			AND CurrentSubID <> 0;
-		LEAVE sp;
-	END IF;
-
     SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 
 	IF lv_SubscriberID <> 0 THEN
@@ -141,7 +125,7 @@ sp: BEGIN
         
 		UPDATE CTS_Admin.Subscriber
         SET		SubscriberName = ip_SubscriberName
-			,	SubscriberPrefix = ip_SubscriberPrefix
+			,	SubscriberPrefix = CASE WHEN IFNULL(ip_SubscriberPrefix, '') = '' THEN ip_SubscriberPrefix ELSE SubscriberPrefix END
             ,	SubscriberType = ip_SubscriberType
             ,	IsTest = ip_IsTest
 		WHERE SubscriberID = lv_SubscriberID;
