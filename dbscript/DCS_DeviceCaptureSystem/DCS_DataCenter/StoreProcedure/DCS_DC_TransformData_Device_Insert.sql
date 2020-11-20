@@ -9,13 +9,14 @@ BEGIN
 	Task : Transform Device Info
 	DB: DCS_DataCenter
 	Original:
+		 
+	Revisions:
 		 [20200908@Bobby.Nguyen][137963]: Support multiple threads
          [20200918@CaseyHuynh][137963]: Change column TransID to RawTransID
          [20201006@CaseyHuynh][143011]: Move Server, Get Lastest SP From PRO And Update data length of FingerprintCode from 692 to 620
 		 [20201019@CaseyHuynh][143011]:	Move Server, Phase 2	
          [20201020@CaseyHuynh][145271]: 
 					1. Update Owner, metadata
-	Revisions:
 	Param's Explanation (filtered by):
 	*/
 
