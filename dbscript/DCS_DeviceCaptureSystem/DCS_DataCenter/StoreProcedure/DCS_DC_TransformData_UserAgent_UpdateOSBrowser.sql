@@ -1,8 +1,8 @@
+/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
 DELIMITER $$
-
 DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformData_UserAgent_UpdateOSBrowser $$
-
-CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformData_UserAgent_UpdateOSBrowser(IN ip_UserAgentJson JSON)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE DCS_DataCenter.DCS_DC_TransformData_UserAgent_UpdateOSBrowser(IN ip_UserAgentJson JSON)
+SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20190815@Terry.Nguyen
@@ -11,6 +11,8 @@ BEGIN
 		Original:
 
 		Revisions:
+			[20201020@CaseyHuynh][145271]: 
+					1. Update Owner, metadata, remove ISOLATION setting
 		Param's Explanation (filtered by):
 	*/
 	### PERFORMANCE: START
@@ -37,7 +39,7 @@ BEGIN
 	
 	
 
-	DROP TABLE IF EXISTS Temp_UserAgent;
+	DROP TEMPORARY TABLE IF EXISTS Temp_UserAgent;
 
 	CREATE TEMPORARY TABLE Temp_UserAgent
 	( 
@@ -81,7 +83,6 @@ BEGIN
 	FROM 		Temp_UserAgent AS tmpOs 
     GROUP BY 	tmpOs.OSName;
 	
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;     
 	# Update Browser and OS Id into temporary table
 	UPDATE 		Temp_UserAgent as tmpAU 
 	INNER JOIN	DCS_DataCenter.OS AS os
@@ -90,7 +91,7 @@ BEGIN
 				ON tmpAU.BrowserName = br.BrowserName
 	SET  		tmpAU.BrowserID = br.BrowserID
 				, tmpAU.OSID = os.OSID;             
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ ;
+                
 	# Update Browser and OS into User Agent table
 	UPDATE 		DCS_DataCenter.UserAgent AS us 
 	INNER JOIN	Temp_UserAgent AS tmp 
@@ -101,7 +102,7 @@ BEGIN
 				, us.OS = tmp.OSName;
 
 	#=======================
-	DROP TABLE IF EXISTS Temp_UserAgent;
+	DROP TEMPORARY TABLE IF EXISTS Temp_UserAgent;
 	#=======================
     
 	### PERFORMANCE

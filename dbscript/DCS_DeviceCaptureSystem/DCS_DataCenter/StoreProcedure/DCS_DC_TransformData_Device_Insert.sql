@@ -1,8 +1,8 @@
+/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
 DELIMITER $$
-
 DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformData_Device_Insert$$
-
-CREATE DEFINER=`dcsService`@`%` PROCEDURE `DCS_DC_TransformData_Device_Insert`(IN ip_TransJson LONGTEXT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_TransformData_Device_Insert`(IN ip_TransJson LONGTEXT)
+SQL SECURITY INVOKER
 BEGIN
 	/*
 	Created: 20200730@Bobby.Nguyen
@@ -484,7 +484,7 @@ BEGIN
 			, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime)
 		SELECT 	ifnull(ts.RawTransID, ts.TransID), ts.LoginName, ts.TransTime, ts.SubscriberID, ts.AccountID, ts.URLID
 			, tmp_rm.DeviceCodeID, tmp_rm.DeviceID, tmp_rm.FirstDeviceCode, tmp_rm.DeviceStatus, tmp_rm.DeviceFingerprintID
-			, ts.UserAgentKey, ts.IP, ts.IPID, ts.ActionResultID, ts.Flagged, ts.PluginID, ts.TransStatus, ts.CreatedDate, InsertTime
+			, ts.UserAgentKey, ts.IP, ts.IPID, ts.ActionResultID, ts.Flagged, ts.PluginID, ts.TransStatus, ts.CreatedDate, ts.InsertTime
 		FROM DCS_DataCenter.Transaction AS ts
 		INNER JOIN Temp_Transaction AS tmp_rm
 			ON	ts.TransID = tmp_rm.TransID

@@ -53,7 +53,7 @@ BEGIN
             UPDATE 		temp_CTSCustomer AS temp_cus
             INNER JOIN 	CTS_DataCenter.CustDCSAccount	AS cua
 						ON  temp_cus.CTSCustID = cua.CTSCustID
-			SET MapAccountID = AccountID;
+			SET 		MapAccountID = AccountID;
 			/*
 			INSERT INTO temp_CTSCustomer(CTSCustID, MapAccountID, SubscriberID, UserName, UserName2)
             SELECT 		cus.CTSCustID, cua.AccountID, cus.SubscriberID, cus.UserName
