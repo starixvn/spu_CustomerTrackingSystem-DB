@@ -1,4 +1,4 @@
-/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsOwner" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsOwner" isFunction="0" isNested="0"></info>*/ 
 DELIMITER $$
 DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_Task_TransformAccountAssociationToCTSRetry$$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE CTS_DC_Task_TransformAccountAssociationToCTSRetry()
@@ -14,14 +14,16 @@ BEGIN
 			[20201119@CaseyHuynh]: Created
 
 		Param's Explanation (filtered by):
-                
+              
 	*/    
+    # 
     DECLARE vrAccountMinutes TINYINT DEFAULT 60;
 	DECLARE vrAssociationMinutes TINYINT DEFAULT 70;
 	DECLARE vrAccountRow INT DEFAULT 0;
 	DECLARE vrAssociationRow INT DEFAULT 0;
     DECLARE vrMinAccountID INT DEFAULT 0;
 	DECLARE vrMinAssociationID INT DEFAULT 0;
+	DECLARE vrCTSCustID BIGINT;
     ### PERFORMANCE: START
     DECLARE		vrExecKey		BIGINT	UNSIGNED;
 	DECLARE		vrSPName		VARCHAR(200) DEFAULT 'CTS_DC_Task_TransformAccountAssociationToCTSRetry' ;
