@@ -1,7 +1,7 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsOwner" isFunction="0" isNested="0"></info>*/ 
 DELIMITER $$
 DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_Task_TransformAccountAssociationToCTSRetry$$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE CTS_DC_Task_TransformAccountAssociationToCTSRetry()
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE CTS_DataCenter.CTS_DC_Task_TransformAccountAssociationToCTSRetry()
     SQL SECURITY INVOKER
 BEGIN
 /*
@@ -11,7 +11,7 @@ BEGIN
 		Original:
 
 		Revisions: 
-			[20201119@CaseyHuynh]: Created
+			[20201119@CaseyHuynh]: Created New
 
 		Param's Explanation (filtered by):
               
