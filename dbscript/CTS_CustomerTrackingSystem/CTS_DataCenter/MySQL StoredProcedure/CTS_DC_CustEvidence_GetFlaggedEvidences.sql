@@ -2,7 +2,7 @@
 DELIMITER $$
 DROP PROCEDURE IF EXISTS CTS_DC_CustEvidence_GetFlaggedEvidences $$
 
-CREATE PROCEDURE CTS_DC_CustEvidence_GetFlaggedEvidences (IN ip_CTSCustID BIGINT,     IN ip_EvidenceCodes TEXT	)
+CREATE DEFINER=`ctsOwner`@`%`  PROCEDURE CTS_DC_CustEvidence_GetFlaggedEvidences (IN ip_CTSCustID BIGINT,     IN ip_EvidenceCodes TEXT	)
 	SQL SECURITY INVOKER
 BEGIN
 
