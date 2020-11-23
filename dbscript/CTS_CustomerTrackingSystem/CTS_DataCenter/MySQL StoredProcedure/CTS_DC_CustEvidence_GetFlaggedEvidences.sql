@@ -1,12 +1,12 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/ 
 DELIMITER $$
 USE `CTS_DataCenter` $$
 DROP PROCEDURE IF EXISTS CTS_DC_CustEvidence_GetFlaggedEvidences $$
 
-CREATE PROCEDURE CTS_DC_CustEvidence_GetFlaggedEvidences (
-	IN ip_CTSCustID BIGINT,    
-    IN ip_EvidenceCodes TEXT	
-)
+CREATE PROCEDURE CTS_DC_CustEvidence_GetFlaggedEvidences (IN ip_CTSCustID BIGINT,     IN ip_EvidenceCodes TEXT	)
+	SQL SECURITY INVOKER
 BEGIN
+
 	/*
 		Created:	20200123@Thai
 		Task:		Get flagged evidences by CustID and evidence codes [Redmine ID: 127150]
@@ -24,7 +24,7 @@ BEGIN
 	DECLARE str VARCHAR(255);
    	    
     /* Get evidence codes to table  */
-    DROP TABLE IF EXISTS tmpEvidenceCodes;
+    DROP TEMPORARY TABLE IF EXISTS tmpEvidenceCodes;
     CREATE TEMPORARY TABLE tmpEvidenceCodes(
 		EviCode VARCHAR(10) PRIMARY KEY    
 	);
@@ -40,7 +40,6 @@ BEGIN
 		END LOOP Evidence_loop;
     END IF;
       
-   
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;   
 	SELECT e.EvidenceID
 		   ,e.EvidenceCode           
@@ -60,8 +59,6 @@ BEGIN
 	WHERE e.IsActive = True
 		  AND ce.Level = 0
 		  AND ce.CTSCustID = ip_CTSCustID;          
-    
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-    	
+ 
 END$$
 DELIMITER ;
