@@ -14,7 +14,7 @@ BEGIN
 		Original:
 
 		Revisions:
-        
+           [20200123][127150][Thai]: Created    
 		Param's Explanation (filtered by):			
         
         CALL CTS_DC_GetFlaggedEvidence (11113, '1.2,6.1,6.2')
