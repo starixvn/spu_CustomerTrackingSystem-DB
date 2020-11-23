@@ -1,5 +1,6 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/ 
-DROP PROCEDURE IF EXISTS CTS_DC_CustEvidence_GetFlaggedEvidences $$
+DROP procedure IF EXISTS `CTS_DC_CustEvidence_GetFlaggedEvidences`;
+
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%`  PROCEDURE CTS_DC_CustEvidence_GetFlaggedEvidences (IN ip_CTSCustID BIGINT,     IN ip_EvidenceCodes TEXT	)
 	SQL SECURITY INVOKER
