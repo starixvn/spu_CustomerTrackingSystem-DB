@@ -3,7 +3,6 @@ USE `CTS_DataCenter`;
 DROP procedure IF EXISTS `CTS_DC_CustClassification_Get`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Get`(IN ip_CustID 	INT UNSIGNED)
     SQL SECURITY INVOKER
 BEGIN

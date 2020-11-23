@@ -3,7 +3,6 @@ USE `CTS_DataCenter`;
 DROP procedure IF EXISTS `CTS_DC_CustEvidence_GetAffectedEvidences`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_GetAffectedEvidences`(IN ip_CTSCustID bigint,IN ip_EvidenceCodes text)
     SQL SECURITY INVOKER
 BEGIN

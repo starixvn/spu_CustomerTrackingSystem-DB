@@ -3,7 +3,6 @@ USE `CTS_DataCenter`;
 DROP procedure IF EXISTS `CTS_DC_Report_GetAssociatedAccount`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Report_GetAssociatedAccount`(IN ip_CTSCustIDList VARCHAR(4000))
     SQL SECURITY INVOKER
 BEGIN
