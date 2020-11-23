@@ -14,7 +14,7 @@ BEGIN
 		Original:
 
 		Revisions:
-             [20200123][127150][Thai]: Created    
+             - 20200123@Thai.Tran [Redmine ID: #127150]: Created 
 		Param's Explanation (filtered by):			
         
         CALL CTS_DC_GetAffectedEvidence (10515, '6.9') 
