@@ -1,9 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/ 
-DELIMITER $$
-USE `CTS_DataCenter` $$
 DROP PROCEDURE IF EXISTS CTS_DC_CustEvidence_GetFlaggedEvidences $$
-
-CREATE PROCEDURE CTS_DC_CustEvidence_GetFlaggedEvidences (IN ip_CTSCustID BIGINT,     IN ip_EvidenceCodes TEXT	)
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%`  PROCEDURE CTS_DC_CustEvidence_GetFlaggedEvidences (IN ip_CTSCustID BIGINT,     IN ip_EvidenceCodes TEXT	)
 	SQL SECURITY INVOKER
 BEGIN
 
@@ -14,7 +12,7 @@ BEGIN
 		Original:
 
 		Revisions:
-           [20200123][127150][Thai]: Created    
+           - 20200123@Thai.Tran [Redmine ID: #127150]: Created 
 		Param's Explanation (filtered by):			
         
         CALL CTS_DC_GetFlaggedEvidence (11113, '1.2,6.1,6.2')

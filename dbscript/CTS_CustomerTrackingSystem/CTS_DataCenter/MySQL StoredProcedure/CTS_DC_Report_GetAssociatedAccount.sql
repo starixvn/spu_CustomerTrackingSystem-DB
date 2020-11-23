@@ -1,9 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-USE `CTS_DataCenter`;
 DROP procedure IF EXISTS `CTS_DC_Report_GetAssociatedAccount`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Report_GetAssociatedAccount`(IN ip_CTSCustIDList VARCHAR(4000))
     SQL SECURITY INVOKER
 BEGIN

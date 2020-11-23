@@ -1,9 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-USE `CTS_DataCenter`;
 DROP procedure IF EXISTS `CTS_DC_CustClassification_Get`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Get`(IN ip_CustID 	INT UNSIGNED)
     SQL SECURITY INVOKER
 BEGIN

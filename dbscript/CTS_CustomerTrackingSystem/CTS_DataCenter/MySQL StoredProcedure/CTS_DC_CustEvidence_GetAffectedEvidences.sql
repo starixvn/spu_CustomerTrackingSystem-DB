@@ -1,9 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/ 
-USE `CTS_DataCenter`;
 DROP procedure IF EXISTS `CTS_DC_CustEvidence_GetAffectedEvidences`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_GetAffectedEvidences`(IN ip_CTSCustID bigint,IN ip_EvidenceCodes text)
     SQL SECURITY INVOKER
 BEGIN
@@ -14,7 +12,7 @@ BEGIN
 		Original:
 
 		Revisions:
-             [20200123][127150][Thai]: Created    
+             - 20200123@Thai.Tran [Redmine ID: #127150]: Created 
 		Param's Explanation (filtered by):			
         
         CALL CTS_DC_GetAffectedEvidence (10515, '6.9') 
