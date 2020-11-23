@@ -27,7 +27,8 @@ BEGIN
 
 	SELECT DISTINCT b.custid, b.Username
 	FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
-	WHERE b.bettype < 19001
+	WHERE b.custid <> 0
+		AND b.bettype < 19001
 		AND b.transdate BETWEEN @FromDate AND @ToDate
 		AND b.Currency NOT IN (20,27,28)
 		AND b.Username NOT LIKE '%Cashout%'
