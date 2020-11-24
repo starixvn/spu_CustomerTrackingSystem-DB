@@ -1,4 +1,4 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter,DCS_DataCenter" databaseType="2"></info>*/
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
 DELIMITER $$
 DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_TransformCTSCustomerRetryManual$$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE CTS_DataCenter.CTS_DC_TransformCTSCustomerRetryManual(IN ip_fromCTSCustID BIGINT, IN ip_toCTSCustID BIGINT, IN ip_Batch INT)
