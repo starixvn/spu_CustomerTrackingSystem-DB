@@ -1,5 +1,9 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter,DCS_DataCenter" databaseType="2"></info>*/
-
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
+/*
+Created: 20201124@CaseyHuynh
+Task: 	 Enhance Transform Account/Association flow retry for New CTSCustomer
+DB: 	 CTS_DataCenter
+*/
 #*******2.1: UPDATE PARAMETER FROM SystemParameter******
 USE CTS_DataCenter;
 UPDATE 	CTS_DataCenter.SystemParameter
