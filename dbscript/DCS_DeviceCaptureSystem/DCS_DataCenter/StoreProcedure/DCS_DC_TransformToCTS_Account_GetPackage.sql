@@ -44,17 +44,17 @@ BEGIN
     VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);
 
 	### PERFORMANCE: END
-    SET @RowId = 1;
+    SET @RowID = 1;
     SET @MinAccountID = (SELECT IFNULL(MIN(AccountID),0) FROM DCS_DataCenter.Account AS ac WHERE ac.IsCTSTransformed = 0) ;
     SET @MaxAccountID = 0;
     
 	SET TotalRecord = ip_NoOfAccount*ip_NoOfBatch;  
-	SELECT	ceil(@RowId/ip_NoOfAccount) AS BatchID
+	SELECT	ceil(@RowID/ip_NoOfAccount) AS BatchID
             , ac.AccountID
             , ac.LoginName
             , ac.SubscriberID
             , ac.LastLoginTime
-            , @RowId := @RowId + 1
+            , @RowID := @RowID + 1
             , @MaxAccountID := GREATEST(@MinAccountID,AccountID)
 	FROM 	DCS_DataCenter.Account AS ac
 	WHERE	ac.IsCTSTransformed = 0
@@ -66,7 +66,7 @@ BEGIN
     UPDATE	CTS_Log.zzTracePerformance AS z
     SET		z.EndTime = vrEndTime
 			, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
-            , z.TotalRecord = @RowId
+            , z.TotalRecord = @RowID - 1
             , z.FromID 		= @MinAccountID
             , z.ToID		= @MaxAccountID
 

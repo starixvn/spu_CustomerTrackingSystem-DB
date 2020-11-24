@@ -17,13 +17,11 @@ BEGIN
               
 	*/    
     # 
-    DECLARE vrAccountMinutes TINYINT DEFAULT 60;
-	DECLARE vrAssociationMinutes TINYINT DEFAULT 70;
-	DECLARE vrAccountRow INT DEFAULT 0;
-	DECLARE vrAssociationRow INT DEFAULT 0;
-    DECLARE vrMinAccountID INT DEFAULT 0;
-	DECLARE vrMinAssociationID INT DEFAULT 0;
+
 	DECLARE vrCTSCustID BIGINT;
+    DECLARE vrMinCTSCustID BIGINT;
+    DECLARE vrMaxCTSCustID BIGINT;
+    DECLARE vrTotalCTSCustID BIGINT;
     ### PERFORMANCE: START
     DECLARE		vrExecKey		BIGINT	UNSIGNED;
 	DECLARE		vrSPName		VARCHAR(200) DEFAULT 'CTS_DC_Task_TransformAccountAssociationToCTSRetry' ;
@@ -41,12 +39,13 @@ BEGIN
     SET 	vrStepID = 1;
 	SET 	vrStartTime = CURRENT_TIMESTAMP(4);  
     
-    INSERT INTO CTS_DBLog.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
+    INSERT INTO CTS_Log.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
     VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);
 	  
 	### PERFORMANCE: END  
     SET vrCTSCustID = (SELECT ParameterValue FROM CTS_DataCenter.SystemParameter WHERE ParameterID = 4);
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomer;
     CREATE TEMPORARY TABLE Temp_CTSCustomer (
 			CTSCustID bigint unsigned NOT NULL AUTO_INCREMENT
             , MapAccountID BIGINT
@@ -75,16 +74,17 @@ BEGIN
 	SET 		MapAccountID = AccountID;      
     
 	# Turn on Transformed Account if matching 
-		
+
 	UPDATE		DCS_DataCenter.Account	AS acc
-	INNER JOIN	temp_CTSCustomer AS tmp_cus
+	INNER JOIN	Temp_CTSCustomer AS tmp_cus
 				ON tmp_cus.SubscriberID = acc.SubscriberID
 					AND tmp_cus.UserName = acc.LoginName
 	SET			acc.IsCTSTransformed = 0		
 	WHERE		tmp_cus.MapAccountID IS NULL;
-        
+
+
 	UPDATE		DCS_DataCenter.Account	AS acc
-	INNER JOIN	temp_CTSCustomer AS tmp_cus
+	INNER JOIN	Temp_CTSCustomer AS tmp_cus
 				ON tmp_cus.SubscriberID = acc.SubscriberID
 					AND tmp_cus.UserName2 = acc.LoginName
 	SET			acc.IsCTSTransformed = 0		
@@ -93,18 +93,21 @@ BEGIN
     UPDATE 	CTS_DataCenter.SystemParameter
     SET 	ParameterValue = (SELECT IFNULL(MAX(CTSCustID),ParameterValue) FROM Temp_CTSCustomer)
     WHERE 	ParameterID = 4;
-    
+
     #=======================    
 	### PERFORMANCE
 	SET	vrEndTime = CURRENT_TIMESTAMP(4);	
     
-    UPDATE	DCS_DataCenter.zzTracePerformance AS z
+    SELECT 	Min(CTSCustID), Max(CTSCustID), COUNT(1)
+    INTO 	vrMinCTSCustID, vrMaxCTSCustID, vrTotalCTSCustID
+    FROM	Temp_CTSCustomer;
+    
+    UPDATE	CTS_Log.zzTracePerformance AS z
     SET		z.EndTime = vrEndTime
 			, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
-            , z.TotalRecord = vrTotalRecord
-            , z.FromID = vrAccountRow
-            , z.ToID		= vrAssociationRow
-            , z.Notes = CONCAT(vrAccountMinutes,'_',vrAssociationMinutes)
+            , z.TotalRecord = vrTotalCTSCustID
+            , z.FromID 		= vrMinCTSCustID
+            , z.ToID		= vrMaxCTSCustID
     WHERE	z.ExecKey = vrExecKey  AND z.StepID = vrStepID;
     ### PERFORMANCE: END
 END$$

@@ -1,4 +1,4 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="CTSMain-CTS_DataCenter,DCS_DataCenter" databaseType="2"></info>*/
 DELIMITER $$
 DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_TransformCTSCustomerRetryManual$$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE CTS_DataCenter.CTS_DC_TransformCTSCustomerRetryManual(IN ip_fromCTSCustID BIGINT, IN ip_toCTSCustID BIGINT, IN ip_Batch INT)
@@ -39,7 +39,7 @@ BEGIN
 	
     WHILE vrCTSCustID <= ip_toCTSCustID
     DO
-			SELECT 'Start', vrCTSCustID,  CURRENT_TIMESTAMP();
+		
             INSERT INTO temp_CTSCustomer(CTSCustID, SubscriberID, UserName, UserName2)
             SELECT 		cus.CTSCustID, cus.SubscriberID, cus.UserName
 						, TRIM(LEADING sub.SubscriberPrefix FROM cus.UserName2 ) AS UserName2
@@ -54,23 +54,11 @@ BEGIN
             INNER JOIN 	CTS_DataCenter.CustDCSAccount	AS cua
 						ON  temp_cus.CTSCustID = cua.CTSCustID
 			SET 		MapAccountID = AccountID;
-			/*
-			INSERT INTO temp_CTSCustomer(CTSCustID, MapAccountID, SubscriberID, UserName, UserName2)
-            SELECT 		cus.CTSCustID, cua.AccountID, cus.SubscriberID, cus.UserName
-						, TRIM(LEADING sub.SubscriberPrefix FROM cus.UserName2 ) AS UserName2
-            FROM 		CTS_DataCenter.CTSCustomer		AS cus
-            LEFT JOIN	CTS_Admin.Subscriber			AS sub
-						ON sub.SubscriberID = cus.SubscriberID
-            LEFT JOIN	CTS_DataCenter.CustDCSAccount	AS cua
-						ON cus.CTSCustID = cua.CTSCustID
-            WHERE		cus.CTSCustID > vrCTSCustID
-            ORDER BY 	cus.CTSCustID
-            LIMIT		ip_Batch;            
-			*/
+
 			SET vrCTSCustID = (SELECT MAX(CTSCustID) FROM temp_CTSCustomer);
             
             # Update LastLoginTime
-            SELECT 'Update LastLoginTime', CURRENT_TIMESTAMP();
+           
             UPDATE		CTS_DataCenter.CTSCustomer AS cus
             INNER JOIN	temp_CTSCustomer AS tmp_cus
 						ON cus.CTSCustID = tmp_cus.CTSCustID
@@ -81,14 +69,14 @@ BEGIN
 						AND tmp_cus.MapAccountID > 0;
 			
             # Turn on Transformed Account if matching 
-             SELECT 'Update LastLoginTime_UserName',  CURRENT_TIMESTAMP();
+          
             UPDATE		DCS_DataCenter.Account	AS acc
             INNER JOIN	temp_CTSCustomer AS tmp_cus
 						ON tmp_cus.SubscriberID = acc.SubscriberID
 							AND tmp_cus.UserName = acc.LoginName
 			SET			acc.IsCTSTransformed = 0		
             WHERE		tmp_cus.MapAccountID IS NULL;
-              SELECT 'Update LastLoginTime_UserName2',  CURRENT_TIMESTAMP();
+          
             UPDATE		DCS_DataCenter.Account	AS acc
             INNER JOIN	temp_CTSCustomer AS tmp_cus
 						ON tmp_cus.SubscriberID = acc.SubscriberID

@@ -85,6 +85,23 @@ BEGIN
 		, SubscriberID			INT NULL
         , SubscriberType		TINYINT	UNSIGNED	NULL
     );
+    
+	DROP TEMPORARY TABLE IF EXISTS Temp_LastLoginTime;
+    CREATE TEMPORARY TABLE Temp_LastLoginTime
+    (
+		SubscriberID	INT
+        , AccountID		BIGINT UNSIGNED
+        , LastLoginTime	TIMESTAMP(4)
+    );
+   
+    DROP TEMPORARY TABLE IF EXISTS Temp_LastLoginTimeCTSCust;
+    CREATE TEMPORARY TABLE Temp_LastLoginTimeCTSCust
+    (
+		CTSCustID		BIGINT UNSIGNED
+        , LastLoginTime	TIMESTAMP(4)
+    );
+   
+    
     SET SysMinCreatedDate = (SELECT DATE(VValue) FROM DCS_DataCenter.SystemSetting WHERE VGroup = "DCS_Device_Transform" AND VName = "MinCreatedDate");  
 	INSERT INTO Temp_RawTransaction(TransID, LoginName, TransTime, SubscriberID, SubscriberType, DeviceCode
 			, URLDetails, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, FingerprintCode, FingerprintMoreInfo)
@@ -153,20 +170,11 @@ BEGIN
     UPDATE 		DCS_DataCenter.Association AS ass
     INNER JOIN	(SELECT DISTINCT AccountID FROM Temp_RawTransaction trt) AS trtAcc
 				ON ass.AccountID = trtAcc.AccountID
-    INNER JOIN	DCS_DataCenter.CustDCSAccount AS acc
+    INNER JOIN	CTS_DataCenter.CustDCSAccount AS acc
 				ON ass.AccountID = acc.AccountID
 	SET			ass.IsCTSTransformed = 0
-    WHERE		ass.IsCTSTransformed < 0;		
- 
-	
-    DROP TEMPORARY TABLE IF EXISTS Temp_LastLoginTime;
-    CREATE TEMPORARY TABLE Temp_LastLoginTime
-    (
-		SubscriberID	INT
-        , AccountID		BIGINT UNSIGNED
-        , LastLoginTime	TIMESTAMP(4)
-    );
-   
+    WHERE		ass.IsCTSTransformed < 0;			
+  
     INSERT INTO Temp_LastLoginTime(SubscriberID, AccountID, LastLoginTime)   
     SELECT 		acc.SubscriberID, acc.AccountID, tac.LastLoginTime
     FROM		DCS_DataCenter.Account 	AS acc
@@ -177,7 +185,7 @@ BEGIN
 				ON	acc.AccountID = tac.AccountID
     WHERE		tac.LastLoginTime > acc.LastLoginTime;    
 
-    INSERT INTO DCS_DataCenter.LastLoginTime_TransformTemp(CTSCustID, LastLoginTime)
+    INSERT INTO Temp_LastLoginTimeCTSCust(CTSCustID, LastLoginTime)
     SELECT 		cus.CTSCustID
 				, MAX(lgn.LastLoginTime)
     FROM		Temp_LastLoginTime AS lgn
@@ -188,7 +196,13 @@ BEGIN
     UPDATE		DCS_DataCenter.Account 	AS acc
     INNER JOIN	Temp_LastLoginTime	AS tll
 				ON acc.AccountID = tll.AccountID
-	SET			acc.LastLoginTime = tll.LastLoginTime;    
+	SET			acc.LastLoginTime = tll.LastLoginTime; 
+    
+    UPDATE 		CTS_DataCenter.CTSCustomer  cus
+    INNER JOIN 	Temp_LastLoginTimeCTSCust AS tmp_cus
+				ON cus.CTSCustID = tmp_cus.CTSCustID
+	SET			cus.LastLoginTime = tmp_cus.LastLoginTime
+    WHERE		cus.LastLoginTime < tmp_cus.LastLoginTime;
 
     INSERT IGNORE INTO  DCS_DataCenter.Transaction(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey
 						, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, FingerprintCode, FingerprintMoreInfo)
@@ -237,10 +251,9 @@ BEGIN
     
 	UPDATE CTS_Log.zzTracePerformance AS z 
 	SET 
-		z.EndTime = vrEndTime,
-		z.Duration = TIMESTAMPDIFF(MICROSECOND,
-			vrStartTime,
-			vrEndTime)
+		z.EndTime = vrEndTime
+		, z.Duration = TIMESTAMPDIFF(MICROSECOND,	vrStartTime, vrEndTime)
+        , z.TotalRecord = (SELECT COUNT(1) FROM Temp_RawTransaction)
 	WHERE
 		z.ExecKey = vrExecKey
 			AND z.StepID = z.StepID;

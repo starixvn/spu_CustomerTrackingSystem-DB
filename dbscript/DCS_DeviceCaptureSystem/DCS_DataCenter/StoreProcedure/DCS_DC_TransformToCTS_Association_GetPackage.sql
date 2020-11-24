@@ -44,19 +44,18 @@ BEGIN
 	### PERFORMANCE: END
 	SET TotalRecord = ip_NoOfAssociation*ip_NoOfBatch;
     
-    SET @RowId = 1;
-    SET @MinAssociationID = (SELECT MAX(AssociationID) FROM DCS_DataCenter.Association AS ac) ;
+    SET @RowID = 1;
+    SET @MinAssociationID = (SELECT IFNULL(MAX(AssociationID),0) FROM DCS_DataCenter.Association AS ac WHERE IsCTSTransformed = 0) ;
     SET @MaxAssociationID = 0;
     
 	SET TotalRecord = ip_NoOfAssociation*ip_NoOfBatch;  
-	SELECT	ceil(@RowId/ip_NoOfAssociation) AS BatchID
+	SELECT	ceil(@RowID/ip_NoOfAssociation) AS BatchID
             , ass.AssociationID
 			, ass.AccountID
             , ass.DeviceID
             , ass.CreatedTime
             , ass.SubscriberID
-            , @RowId := @RowId+1
-            , @MinAssociationID := LEAST(@MinAssociationID,AssociationID)
+            , @RowID := @RowID+1
             , @MaxAssociationID := GREATEST(@MaxAssociationID,AssociationID)
 	FROM 	DCS_DataCenter.Association AS ass
 	WHERE	ass.IsCTSTransformed = 0
@@ -69,11 +68,12 @@ BEGIN
     UPDATE	CTS_Log.zzTracePerformance AS z
     SET		z.EndTime = vrEndTime
 			, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
-            , z.TotalRecord = @RowId
+            , z.TotalRecord = @RowID - 1
             , z.FromID 		= @MinAssociationID
             , z.ToID		= @MaxAssociationID
 
     WHERE	z.ExecKey = vrExecKey AND z.StepID = z.StepID;
     ### PERFORMANCE: END 
+    #GRANT EXECUTE ON PROCEDURE DCS_DataCenter.DCS_DC_TransformToCTS_Association_GetPackage TO `ctsService`@`%`;
 END$$
 DELIMITER ;

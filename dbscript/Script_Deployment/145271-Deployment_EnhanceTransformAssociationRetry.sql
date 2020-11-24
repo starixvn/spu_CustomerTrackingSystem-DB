@@ -26,6 +26,6 @@ ALTER EVENT  CTS_DataCenter.CTS_DC_JOB_TransformAccountAssociationToCTS_Retry
 ENABLE;
 
 #******2.3: Fix for Old Data*******
-
+CALL CTS_DataCenter.CTS_DC_TransformCTSCustomerRetryManual(IN ip_fromCTSCustID BIGINT, IN ip_toCTSCustID BIGINT, IN ip_Batch INT);
 
 
