@@ -45,7 +45,7 @@ BEGIN
 
 	### PERFORMANCE: END
     SET @RowId = 1;
-    SET @MinAccountID = (SELECT MAX(AccountID) FROM DCS_DataCenter.Account AS ac) ;
+    SET @MinAccountID = (SELECT IFNULL(MIN(AccountID),0) FROM DCS_DataCenter.Account AS ac WHERE ac.IsCTSTransformed = 0) ;
     SET @MaxAccountID = 0;
     
 	SET TotalRecord = ip_NoOfAccount*ip_NoOfBatch;  
@@ -54,8 +54,7 @@ BEGIN
             , ac.LoginName
             , ac.SubscriberID
             , ac.LastLoginTime
-            , @RowId := @RowId+1
-            , @MinAccountID := LEAST(@MinAccountID,AccountID)
+            , @RowId := @RowId + 1
             , @MaxAccountID := GREATEST(@MinAccountID,AccountID)
 	FROM 	DCS_DataCenter.Account AS ac
 	WHERE	ac.IsCTSTransformed = 0
