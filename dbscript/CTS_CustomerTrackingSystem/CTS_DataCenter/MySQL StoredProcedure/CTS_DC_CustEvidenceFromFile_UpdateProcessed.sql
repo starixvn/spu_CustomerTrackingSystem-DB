@@ -4,9 +4,9 @@ DROP PROCEDURE IF EXISTS `CTS_DC_CustEvidenceFromFile_UpdateProcessed`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidenceFromFile_UpdateProcessed`(
-		IN ip_IDList		JSON
-	,	IN ip_UpdatedBy				INT
-	,	OUT op_ErrorMessage			VARCHAR(200)
+		IN ip_IDList			VARCHAR(2000)
+	,	IN ip_UpdatedBy			INT
+	,	OUT op_ErrorMessage		VARCHAR(200)
 )
 SQL SECURITY INVOKER
 
@@ -32,13 +32,11 @@ BEGIN
 	(
 		ID	BIGINT UNSIGNED		
 		,	PRIMARY KEY		PK_Temp_CustomerEvidence_ID(ID) 
-	);
-	
-	INSERT INTO Temp_CustomerEvidence(ID)
-	SELECT	tmpTable.ID
-	FROM JSON_TABLE(ip_IDList, "$[*]" COLUMNS(
-			  ID 	BIGINT UNSIGNED		PATH "$.ID"
-		)) AS tmpTable;
+	);	
+		
+	SET @sql = CONCAT("INSERT INTO Temp_CustomerEvidence (ID) VALUES ('", REPLACE(ip_IDList, ",", "'),('"),"');");
+	PREPARE stmt1 FROM @sql;
+	EXECUTE stmt1;
 	
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;	
 	
