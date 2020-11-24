@@ -11,7 +11,7 @@ BEGIN
 		Original:
 
 		Revisions: 
-			[20201119@CaseyHuynh]: Created New
+			[20201119@CaseyHuynh]: Created
 
 		Param's Explanation (filtered by):
               

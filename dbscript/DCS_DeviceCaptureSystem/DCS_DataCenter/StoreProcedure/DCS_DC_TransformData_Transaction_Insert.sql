@@ -25,6 +25,7 @@ BEGIN
         #8. [20201112@CaseyHuynh][145271]:	
 			+ GET Lastest Code Move Server P3, update Permission and Add Meta data
             + Update login Retry for unsuccsess Transform (-1,-2,-3) (SET IsCTSTransformed = 0 instead of -1)
+			
     Reviewer:
 		#1 [Name]: New
 	Param's Explanation (filtered by):
@@ -147,16 +148,16 @@ BEGIN
     #Remove Temp Trans If AccountID Is NULL
     DELETE 	trt
     FROM	Temp_RawTransaction AS trt
-    WHERE 	trt.AccountID IS NULL;    
+    WHERE 	trt.AccountID IS NULL;       
     
     UPDATE 		DCS_DataCenter.Association AS ass
     INNER JOIN	(SELECT DISTINCT AccountID FROM Temp_RawTransaction trt) AS trtAcc
 				ON ass.AccountID = trtAcc.AccountID
-    INNER JOIN	DCS_DataCenter.Account AS acc
+    INNER JOIN	DCS_DataCenter.CustDCSAccount AS acc
 				ON ass.AccountID = acc.AccountID
 	SET			ass.IsCTSTransformed = 0
     WHERE		ass.IsCTSTransformed < 0;		
-    
+ 
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_LastLoginTime;
     CREATE TEMPORARY TABLE Temp_LastLoginTime
