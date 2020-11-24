@@ -1,13 +1,11 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsAPIAdmin" isFunction="0" isNested="0"></info>*/
 USE `CTS_DataCenter`;
 DROP procedure IF EXISTS `CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers`;
 
 DELIMITER $$
 USE `CTS_DataCenter`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers`(
-		IN ip_CustIds 				VARCHAR(4000)
-    ,   IN ip_EvidenceCodes 		VARCHAR(4000)
-    
-    , 	OUT op_ErrorMessage 		VARCHAR(200))
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers`(IN ip_CustIds varchar(4000),IN ip_EvidenceCodes varchar(4000),OUT op_ErrorMessage varchar(200))
+    SQL SECURITY INVOKER
 sp: BEGIN
 	/*
 		Created:	20200610@Long.Luu
@@ -16,9 +14,10 @@ sp: BEGIN
 		Original: 
 
 		Revisions:
-			- 20200610@Long.Luu: Created [Redmine ID: 135585]
+			- 20200610@Long.Luu: Created [Redmine ID: 135585] 
             - 20201013@Long.Luu [Redmine ID: #141756]: Sync Evidence to Category
             - 20201020@Irena.Vo [Redmine ID: #141756]: Enhance logic Remove all category (Detail & General) 
+            - 20201111@Irena.Vo [Redmine ID: #145027]: Enhance logic Insert History for Evidence Category
             
             call CTS_DataCenter.CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers('43600693,43600889', '6.1', @op_ErrorMessage);
 	*/    
@@ -38,7 +37,7 @@ sp: BEGIN
     CREATE TEMPORARY TABLE Temp_CustomerList (
 			CustID			BIGINT UNSIGNED 
 		,	CTSCustID		BIGINT UNSIGNED    
-        ,	SubscriberID	SMALLINT
+        ,	SubscriberID	INT
     );
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_EvidenceList;
@@ -70,8 +69,7 @@ sp: BEGIN
 	EXECUTE stmt1;
     
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
-	SET SQL_SAFE_UPDATES = 0;
-    
+	
     /*GET CUSTOMER INFO*/
     UPDATE 		Temp_CustomerList AS t
 	INNER JOIN 	CTS_DataCenter.CTSCustomer AS c ON t.CustID = c.CustID AND c.CustSubID = 0
@@ -148,7 +146,7 @@ sp: BEGIN
 		
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification
 		(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
-        SELECT 	t.CustID
+        SELECT 	DISTINCT t.CustID
 			, 	t.CTSCustID
 			, 	t.SubscriberID
 			, 	a.CategoryID
@@ -163,10 +161,28 @@ sp: BEGIN
 			CROSS JOIN (	SELECT DISTINCT ec.CategoryID
 							FROM Temp_EvidenceList AS e
 							INNER JOIN CTS_DataCenter.EvidenceToCategory AS ec ON e.EvidenceID = ec.EvidenceID) AS a;
+                            
+		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
+		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TurnoverRM, WinlossRM, BetCount, ActiveDays)
+		SELECT 	DISTINCT t.CustID
+			, 	t.CTSCustID
+			, 	a.CategoryID
+			,   0
+			,   lv_CreatedDateTime
+			,   lv_CreatedBy
+            ,   0
+            ,   1
+			,   DATE(lv_CreatedDateTime)
+            , 0
+            , 0
+            , 0
+            , 0
+		FROM Temp_CustomerList AS t
+			CROSS JOIN (	SELECT DISTINCT ec.CategoryID
+							FROM Temp_EvidenceList AS e
+							INNER JOIN CTS_DataCenter.EvidenceToCategory AS ec ON e.EvidenceID = ec.EvidenceID) AS a;    
+                            
     END IF;
-    
-    SET SQL_SAFE_UPDATES = 1;
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
     
     DROP TEMPORARY TABLE IF EXISTS Temp_AssociatedException;
 	DROP TEMPORARY TABLE IF EXISTS Temp_AffectedDevices;

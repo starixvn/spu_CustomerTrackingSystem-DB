@@ -1,11 +1,9 @@
-USE `CTS_DataCenter`;
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
 DROP procedure IF EXISTS `CTS_DC_CustClassification_Get`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_CustClassification_Get`(
-	IN ip_CustID 	INT UNSIGNED
-)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Get`(IN ip_CustID 	INT UNSIGNED)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200423@Long.Luu	
@@ -21,7 +19,7 @@ BEGIN
             - 20200903@Long.Luu [Redmine ID: #137550]: Get for both General & Detailed Categories
             - 20200908@Irena.Vo [Redmine ID: #141020]: Get for VVIP. VVIP -> PA -> Detailed & General. Add VVIP (General)
             - 20201006@Irena.Vo [Redmine ID: #141930]: Rollback logic get IsUsedManually for lastest category & enhance logic get.
-            - 20201014-20201023@Irena.Vo [Redmine ID: #141756]: Enhance logic show Evidence Category & Normal Category. Add New General 
+            - 20201014-20201023@Irena.Vo [Redmine ID: #141756]: Enhance logic show Evidence Category & Normal Category. Add New General  
             
 		Param's Explanation:
 	*/ 
@@ -53,7 +51,6 @@ BEGIN
     );
    
      SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-     SET SQL_SAFE_UPDATES = 0;
      
      IF EXISTS (SELECT 1 FROM CTS_DataCenter.SpecialCustomerClass WHERE CustID = ip_CustID AND CreatedFromFunction = 21) THEN
 		SET lv_IsPinCategory = 1;
@@ -162,9 +159,6 @@ BEGIN
     
     -- Return isPinCategory for customer
 	SELECT lv_IsPinCategory AS isPinCategory;   
-    
-	SET SQL_SAFE_UPDATES = 1;
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
     
 END$$
 

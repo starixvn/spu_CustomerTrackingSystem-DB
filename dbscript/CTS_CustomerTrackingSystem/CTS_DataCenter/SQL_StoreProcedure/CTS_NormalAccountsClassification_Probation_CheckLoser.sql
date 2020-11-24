@@ -18,42 +18,67 @@ AS
 	Revisions:
 		- 20200918@Long.Luu: Created [Redmine ID: #141755]
         - 20200924@Irena.Vo: Updated [Redmine ID: #141755]
+		- 20201026@Long.Luu: Allow to move from Probation back to Normal, VIP [Redmine ID: #142546]
          
 	Param's Explanation:
 */
 BEGIN
 	
 	SET NOCOUNT ON;
-	
-	DECLARE @PARLAY_SPORTID		SMALLINT = -100;
-	DECLARE @OTHERS_SPORTID		SMALLINT = -99;
+
 	DECLARE @GENERAL_SPORTID	SMALLINT = 200;
-	DECLARE	@RptDate			DATE = DATEADD(DAY, -1, GETDATE());
-	
+
+	DECLARE @GENERALCATEGORY_NORMALMEMBER		INT = 202
+		,	@GENERALCATEGORY_SMARTPUNTER		INT = 203
+		,	@GENERALCATEGORY_HIGHRISKPUNTER		INT = 204
+		,	@GENERALCATEGORY_VIP				INT = 205
+		,	@DETAILEDCATEGORY_NORMALMEMBER		INT = 4
+		,	@DETAILEDCATEGORY_VIP				INT = 5
+		,	@DETAILEDCATEGORY_SMARTPUNTER		INT = 6
+		,	@DETAILEDCATEGORY_HIGHRISKPUNTER	INT = 7;
+
+	DECLARE	@CustIdList			VARCHAR(MAX)	
+		,	@CurrentDateTime	DATETIME = GETDATE()
+		,	@CurrentDate		DATE = GETDATE();
 	
 	IF	OBJECT_ID('tempdb..#tmpRawData') IS NOT NULL
 		DROP TABLE	#tmpRawData;
 
 	CREATE TABLE #tmpRawData(
-		[CustId]			BIGINT NOT NULL,
-		[SportId]			SMALLINT NOT NULL,
-		[BettypeId]			SMALLINT NOT NULL,
-		[Turnover]			MONEY NULL,
-		[Winloss]			MONEY NULL,
-		[BetCount]			BIGINT NULL
-		PRIMARY KEY (CustId, SportId, BettypeId)
+		[CustId]			INT NOT NULL,
+		[SportId]			INT NOT NULL,
+		[TurnoverRM]		MONEY NULL,
+		[WinlossRM]			MONEY NULL,
+		[TurnoverORG]		MONEY NULL,
+		[WinlossORG]		MONEY NULL,
+		[BetCount]			BIGINT NULL,
+		[ActiveDays]		INT NULL
 	);
 
-	IF	OBJECT_ID('tempdb..#tmpSportDailyData') IS NOT NULL
-		DROP TABLE	#tmpSportDailyData;
+	IF	OBJECT_ID('tempdb..#tmpLoser') IS NOT NULL
+		DROP TABLE	#tmpLoser;
 
-	CREATE TABLE #tmpSportDailyData(
-		[CustId]			BIGINT NOT NULL,
-		[SportId]			SMALLINT NOT NULL,
-		[Turnover]			MONEY NULL,
-		[Winloss]			MONEY NULL,
-		[BetCount]			BIGINT NULL
-		PRIMARY KEY (CustId, SportId)
+	CREATE TABLE #tmpLoser(
+		[CustId]			INT NOT NULL,
+		[SportId]			INT NOT NULL,
+		[TurnoverRM]		MONEY NULL,
+		[WinlossRM]			MONEY NULL,
+		[Margin]			MONEY NULL,
+		[BetCount]			BIGINT NULL,
+		[ActiveDays]		INT NULL
+	);
+
+	IF	OBJECT_ID('tempdb..#tmpCustomerAccummulatedInfo') IS NOT NULL
+		DROP TABLE	#tmpCustomerAccummulatedInfo;
+
+	CREATE TABLE #tmpCustomerAccummulatedInfo(
+		[CustId]			INT NOT NULL,
+		[SportId]			INT NOT NULL,
+		[TurnoverRM]		MONEY NULL,
+		[WinlossRM]			MONEY NULL,
+		[Margin]			MONEY NULL,
+		[BetCount]			BIGINT NULL,
+		[ActiveDays]		INT NULL
 	);
 
 	IF OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
@@ -62,11 +87,11 @@ BEGIN
 	END
 	
 	CREATE TABLE #tmpCustomers(
-			CustId			INT
-		,	SportId			SMALLINT
-		,	CategoryId		SMALLINT
-		,	PRIMARY KEY (CustId, SportId)
+		[CustId]			INT,
+		[SportId]			SMALLINT,
+		PRIMARY KEY (CustId, SportId)
 	);
+
 
 	IF	OBJECT_ID('tempdb..#tmpSportGroups') IS NOT NULL
 		DROP TABLE	#tmpSportGroups;
@@ -94,65 +119,76 @@ BEGIN
 	FROM @CustomersXML.nodes('//ProbationModel') AS T(C)
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 
-	-- Get raw data for all sports
-	INSERT INTO #tmpRawData(CustId, SportId, BettypeId, Turnover, Winloss, BetCount)
-	SELECT	s.CustId
-		,	s.SportType
-		,	s.BetType
-		,	SUM(s.MemberTurnover)
-		,	SUM(s.MemberWinloss)
-		,	SUM(s.BetCount)
-	FROM bodb_Account.dbo.[FactCustProductStatsDetail] AS s WITH(NOLOCK)
-		INNER JOIN #tmpCustomers AS t ON s.CustID = t.CustId
-	WHERE s.RptFromDate = @RptDate
-	GROUP BY s.CustId, s.SportType, s.BetType;
+	-- Get Customer's ID List
+	SELECT @CustIdList = STUFF((SELECT DISTINCT ',' + CAST(CustId AS VARCHAR(10))
+			  FROM #tmpCustomers
+			  FOR XML PATH ('')), 1, 1, '');
 
-	-- Sum all for General Sport
-	INSERT INTO #tmpSportDailyData(CustId, SportId, Turnover, Winloss, BetCount)
+	-- Get Customer's Accummulated data
+	INSERT INTO #tmpRawData(CustId, SportId, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDays)
+	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @CustIdList;
+
+	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, SportId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
+	SELECT	a.CustId
+		,	CASE WHEN s.SportId IS NULL THEN 5 ELSE s.SportId END
+		,	SUM(a.TurnoverRM)
+		,	SUM(a.WinlossRM)
+		,	CASE WHEN SUM(a.TurnoverRM) = 0 THEN 0 ELSE SUM(a.WinlossRM) / SUM(a.TurnoverRM) * 100 END
+		,	SUM(a.BetCount)
+		,	MAX(a.ActiveDays)
+	FROM #tmpRawData AS a WITH(NOLOCK)
+		LEFT JOIN #tmpSportGroups AS s WITH(NOLOCK) ON a.SportId = s.MainDBSportId
+	GROUP BY a.CustId, CASE WHEN s.SportId IS NULL THEN 5 ELSE s.SportId END
+	UNION
 	SELECT	s.CustId
 		,	@GENERAL_SPORTID
-		,	SUM(s.Turnover)
-		,	SUM(s.Winloss)
+		,	SUM(s.TurnoverRM)
+		,	SUM(s.WinlossRM)
+		,	CASE WHEN SUM(s.TurnoverRM) = 0 THEN 0 ELSE SUM(s.WinlossRM) / SUM(s.TurnoverRM) * 100 END
 		,	SUM(s.BetCount)
+		,	MAX(s.ActiveDays)
 	FROM #tmpRawData AS s WITH(NOLOCK)
 	GROUP BY s.CustId;
+	
+	INSERT INTO #tmpLoser(CustId, SportId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
+	SELECT	a.CustId
+		,	a.SportId
+		,	t.TurnoverRM
+		,	t.WinlossRM
+		,	CASE WHEN SUM(t.TurnoverRM) = 0 THEN 0 ELSE SUM(t.WinlossRM) / SUM(t.TurnoverRM) * 100 END
+		,	t.BetCount
+		,	t.ActiveDays
+	FROM #tmpCustomers AS a WITH(NOLOCK)
+		INNER JOIN #tmpCustomerAccummulatedInfo AS t WITH(NOLOCK) ON a.CustId = t.CustId AND a.SportId = t.SportId
+	WHERE t.WinlossRM < 0
+	GROUP BY a.CustId
+		,	a.SportId
+		,	t.TurnoverRM
+		,	t.WinlossRM
+		,	t.BetCount
+		,	t.ActiveDays;
 
-	-- Sum data for Parlay
-	INSERT INTO #tmpSportDailyData(CustId, SportId, Turnover, Winloss, BetCount)
-	SELECT	s.CustId
-		,	@PARLAY_SPORTID
-		,	SUM(s.Turnover)
-		,	SUM(s.Winloss)
-		,	SUM(s.BetCount)
-	FROM #tmpRawData AS s WITH(NOLOCK)
-	WHERE s.BettypeId IN (9, 29)
-	GROUP BY s.CustId;
-
-	-- Sum data for all sports except Parlay, General Sport
-	WITH CTE_CustSportGroups(CustId, SportId, Turnover, Winloss, BetCount)
-	AS(
-		SELECT	a.CustId
-			,	CASE WHEN s.SportId IS NULL THEN 5 ELSE s.SportId END
-			,	SUM(a.Turnover)
-			,	SUM(a.Winloss)
-			,	SUM(a.BetCount)
-		FROM #tmpRawData AS a WITH(NOLOCK)
-			LEFT JOIN #tmpSportGroups AS s WITH(NOLOCK) ON a.SportId = s.MainDBSportId
-		WHERE a.BettypeId NOT IN (9, 29)
-		GROUP BY a.CustId, CASE WHEN s.SportId IS NULL THEN 5 ELSE s.SportId END
-	)
-	INSERT INTO #tmpSportDailyData(CustId, SportId, Turnover, Winloss, BetCount)
-	SELECT	CustId
-		,	SportId
-		,	Turnover
-		,	Winloss
-		,	BetCount
-	FROM CTE_CustSportGroups;
+	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
+	SELECT	t.CustId
+		,	t.SportId
+		,	CASE 
+				WHEN (t.Margin <= -2 AND t.TurnoverRM > 150000 AND t.BetCount > 300 AND t.ActiveDays >= 8) THEN 
+					CASE WHEN t.SportId = 200 THEN @GENERALCATEGORY_VIP
+					ELSE @DETAILEDCATEGORY_VIP END
+				ELSE
+					CASE WHEN t.SportId = 200 THEN @GENERALCATEGORY_NORMALMEMBER
+					ELSE @DETAILEDCATEGORY_NORMALMEMBER END
+			END
+		,	@CurrentDate AS CreatedDate
+		,	@CurrentDateTime AS CreatedTime
+		,	t.TurnoverRM
+		,	t.WinlossRM
+		,	t.BetCount
+		,	t.ActiveDays
+	FROM #tmpLoser AS t WITH(NOLOCK);
 						
 	-- Return results
-	SELECT	s.CustId
-		,	s.SportId AS 'SportGroupId'
-	FROM #tmpSportDailyData AS s WITH(NOLOCK)
-		INNER JOIN #tmpCustomers AS a WITH(NOLOCK) ON s.CustId = a.CustId AND s.SportId = a.SportId
-	WHERE s.Winloss < 0;
+	SELECT	t.CustId
+		,	t.SportId AS 'SportGroupId'
+	FROM #tmpLoser AS t WITH(NOLOCK);
 END;

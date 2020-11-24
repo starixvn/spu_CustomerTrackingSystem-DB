@@ -1,11 +1,9 @@
-DELIMITER $$
-USE `CTS_DataCenter` $$
-DROP PROCEDURE IF EXISTS CTS_DC_CustEvidence_GetAffectedEvidences $$
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/ 
+DROP procedure IF EXISTS `CTS_DC_CustEvidence_GetAffectedEvidences`;
 
-CREATE PROCEDURE CTS_DC_CustEvidence_GetAffectedEvidences (
-	IN ip_CTSCustID BIGINT,    
-    IN ip_EvidenceCodes TEXT
-)
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_GetAffectedEvidences`(IN ip_CTSCustID bigint,IN ip_EvidenceCodes text)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200123@Thai
@@ -14,17 +12,17 @@ BEGIN
 		Original:
 
 		Revisions:
-        
+             - 20200123@Thai.Tran [Redmine ID: #127150]: Created 
 		Param's Explanation (filtered by):			
         
-        CALL CTS_DC_GetAffectedEvidence (10515, '6.9')
+        CALL CTS_DC_GetAffectedEvidence (10515, '6.9') 
 	*/        
            
 	DECLARE a INT Default 0 ;
 	DECLARE str VARCHAR(255);
    	    
     /* Get evidence codes to table  */
-    DROP TABLE IF EXISTS tmpEvidenceCodes;
+    DROP TEMPORARY TABLE IF EXISTS tmpEvidenceCodes;
     CREATE TEMPORARY TABLE tmpEvidenceCodes(
 		EviCode VARCHAR(10) PRIMARY KEY    
 	);
@@ -44,7 +42,7 @@ BEGIN
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;   
     
     
-    DROP TABLE IF EXISTS tmpAffectedEvidences;
+    DROP TEMPORARY TABLE IF EXISTS tmpAffectedEvidences;
     CREATE TEMPORARY TABLE tmpAffectedEvidences(
         CustEvidID BIGINT,
         CTSCustID BIGINT,
@@ -78,7 +76,7 @@ BEGIN
                                                                  
 	#=====DISPLAY EVIDENCES CREATED BY==========================
     
-    DROP TABLE IF EXISTS tmpEvidences;
+    DROP TEMPORARY TABLE IF EXISTS tmpEvidences;
     CREATE TEMPORARY TABLE tmpEvidences( 
 		CTSCustID BIGINT,
 		EvidenceID SMALLINT,
@@ -155,8 +153,7 @@ BEGIN
 		   ON (user.UserID = cre.CreatedBy)
 	WHERE e.IsActive = True		  
 		  AND cre.CTSCustID = ip_CTSCustID;
-    
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     	
 END$$
+
 DELIMITER ;

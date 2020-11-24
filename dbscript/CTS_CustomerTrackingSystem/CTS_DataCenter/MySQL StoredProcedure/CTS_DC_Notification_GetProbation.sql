@@ -1,11 +1,11 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
 USE `CTS_DataCenter`;
-DROP PROCEDURE IF EXISTS `CTS_DC_Notification_GetProbation`;
+DROP procedure IF EXISTS `CTS_DC_Notification_GetProbation`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsWeb`@`%` PROCEDURE `CTS_DC_Notification_GetProbation`(
-		IN 	ip_UserID 					INT UNSIGNED
-    ,	IN 	ip_ReadNotificationID 		BIGINT
-)
+USE `CTS_DataCenter`$$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Notification_GetProbation`(IN ip_UserID int,IN ip_ReadNotificationID bigint)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200922@Harvey.Nguyen
@@ -14,8 +14,9 @@ BEGIN
 		Original:
 
 		Revisions:
-            - 20201006@Long.Luu: Get notifications by notification settings [Redmine ID: #142414]
-        
+            - [20201006@Long.Luu][142414]: Get notifications by notification settings
+            - [20201111@Irena.Vo][145028]: Enhance logic for display 1 scan time/day
+            
 		Param's Explanation (filtered by):
         
         call CTS_DC_Notification_GetProbation(8,1);
@@ -56,26 +57,26 @@ BEGIN
 		END;
     END IF;
     
-	# Get available notification
-    SELECT 	a.TotalScanned
-		,	a.TotalFailed
-        ,	a.TotalGeneralFailed
-        ,	a.NotificationType
-        ,	a.CreatedTime AS CreatedDate
-        ,	a.NotificationID AS MaxNotificationID
-        ,	CASE WHEN a.NotificationID <= lv_UserCurrentFromNotificationID THEN 1 ELSE 0 END AS IsSeen
+    # Get available notification
+    SELECT 	SUM(a.TotalScanned) AS TotalScanned
+		,	SUM(a.TotalFailed) AS TotalFailed
+        ,	SUM(a.TotalGeneralFailed) AS TotalGeneralFailed
+        ,	1 AS NotificationType
+        ,	a.CreatedDate
+        ,	MAX(a.NotificationID) AS MaxNotificationID
+        ,	CASE WHEN MAX(a.NotificationID) <= lv_UserCurrentFromNotificationID THEN 1 ELSE 0 END AS IsSeen
     FROM CTS_DataCenter.ProbationAccountNotification AS a
 		INNER JOIN CTS_DataCenter.CTSUserPermission AS p ON p.FunctionID = 2
-			AND a.CreatedTime >= p.GrantedFrom 
-            AND (a.CreatedTime <= p.GrantedTo OR p.GrantedTo IS NULL)
+			AND a.CreatedDate >= DATE(p.GrantedFrom) 
+            AND (a.CreatedDate <= DATE(p.GrantedTo) OR p.GrantedTo IS NULL)
 		INNER JOIN CTS_DataCenter.NotificationSettings AS s ON s.FunctionID = 2 AND p.UserID = s.UserID
-			AND a.CreatedTime >= s.GrantedFrom 
-            AND (a.CreatedTime <= s.GrantedTo OR s.GrantedTo IS NULL)
+			AND a.CreatedDate >= DATE(s.GrantedFrom) 
+            AND (a.CreatedDate <= DATE(s.GrantedTo) OR s.GrantedTo IS NULL)
 	WHERE a.CreatedDate > @FromScanDate AND a.CreatedDate <= @ToScanDate
 		AND p.UserID = ip_UserID 
+	GROUP BY a.CreatedDate
     ORDER BY CreatedDate DESC;
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+   
 END$$
 
 DELIMITER ;

@@ -1,13 +1,11 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb,ctsAPI,ctsService" isFunction="0" isNested="0"></info>*/
 USE `CTS_DataCenter`;
 DROP procedure IF EXISTS `CTS_DC_CustClassification_GetLatestCategory`;
 
 DELIMITER $$
 USE `CTS_DataCenter`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_CustClassification_GetLatestCategory`(
-	IN ip_CustIDList 					VARCHAR(8000),
-	IN ip_IsUsingCustID					BOOL,
-    IN ip_IsExcludedDetailedCategory	BOOL 
-)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_GetLatestCategory`(IN ip_CustIDList VARCHAR(8000),IN ip_IsUsingCustID tinyint,IN ip_IsExcludedDetailedCategory tinyint)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20201013@Long.Luu	
@@ -43,7 +41,6 @@ BEGIN
 	EXECUTE stmt1;    
     
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
-    SET SQL_SAFE_UPDATES = 0;
     
     IF (ip_IsUsingCustID = 1) THEN
 			INSERT INTO Temp_CustLastCategory(CustID, SportGroupID, LastModifiedDate)
@@ -95,9 +92,6 @@ BEGIN
 			WHERE t.SportGroupID = -1 OR t.LastModifiedDate = c.LastModifiedDate
 			GROUP BY  cust.CustID, t.SportGroupID;
     END IF;
-    
-    SET SQL_SAFE_UPDATES = 1;
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
       
     DROP TEMPORARY TABLE IF EXISTS Temp_CustLastCategory;
     DROP TEMPORARY TABLE IF EXISTS Temp_CustIDs;
