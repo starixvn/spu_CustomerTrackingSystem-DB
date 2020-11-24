@@ -27,7 +27,7 @@ BEGIN
 	*/ 
     
 	DECLARE	lv_CustID			BIGINT UNSIGNED		DEFAULT 0;
-    DECLARE lv_DayLefts			SMALLINT 			DEFAULT 20;
+    DECLARE lv_DayLefts			SMALLINT 			DEFAULT 20; 
     DECLARE lv_CurrentDate		DATE 				DEFAULT CURRENT_DATE();
     DECLARE lv_FromDate			DATE				DEFAULT	DATE_ADD(lv_CurrentDate, INTERVAL IFNULL(ip_FromDaysLeft, 0) - lv_DayLefts DAY);
     DECLARE lv_ToDate			DATE				DEFAULT	DATE_ADD(lv_CurrentDate, INTERVAL IFNULL(ip_ToDaysLeft, 0) - lv_DayLefts DAY);
