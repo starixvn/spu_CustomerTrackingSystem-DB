@@ -1,8 +1,6 @@
-USE `CTS_DataCenter`;
 DROP procedure IF EXISTS `CTS_DC_CustClassification_Probation_Get`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Probation_Get`(IN ip_Username varchar(50),IN ip_FromDaysLeft smallint,IN ip_ToDaysLeft smallint,IN ip_SubscriberID int,IN ip_StatusIDs varchar(500),IN ip_isAssociatedPA tinyint,IN ip_CategoryMode tinyint)
     SQL SECURITY INVOKER
 BEGIN
@@ -91,8 +89,7 @@ BEGIN
 	);
     
     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
-	SET SQL_SAFE_UPDATES = 0;
-    
+	
     #========= IF SEARCH FOR SPECIFIC CUSTOMER, GET CTSCUSTID FROM KEYWORD =========
     IF IFNULL(ip_Username, '') <> '' THEN
 		SELECT	DISTINCT CustID
@@ -192,9 +189,6 @@ BEGIN
 					ELSE tmp.DaysLeft
 			END DESC;
 
-	SET SQL_SAFE_UPDATES = 1;
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-    
 END$$
 
 DELIMITER ;

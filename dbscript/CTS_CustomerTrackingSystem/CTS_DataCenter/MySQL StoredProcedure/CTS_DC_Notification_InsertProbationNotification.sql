@@ -1,9 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-USE `CTS_DataCenter`;
 DROP procedure IF EXISTS `CTS_DC_Notification_InsertProbationNotification`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Notification_InsertProbationNotification`(IN ip_TotalScanned smallint,IN ip_TotalFailed smallint,IN ip_TotalGeneralFailed smallint)
     SQL SECURITY INVOKER
 sp: BEGIN
