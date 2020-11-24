@@ -120,7 +120,7 @@ BEGIN
 						OR (mss.RoleMapping = 0))
 		SET 		cust.SubscriberID 	= 	mss.SubscriberID;
         
-	UPDATE 		CTS_DataCenter.CTSCustomer ctsCust
+	UPDATE IGNORE	CTS_DataCenter.CTSCustomer ctsCust
 	INNER JOIN	TempCTSCustomer tempCust 
 				ON ctsCust.CustID = tempCust.CustID
 				AND ctsCust.CustSubID = tempCust.CustSubID 
