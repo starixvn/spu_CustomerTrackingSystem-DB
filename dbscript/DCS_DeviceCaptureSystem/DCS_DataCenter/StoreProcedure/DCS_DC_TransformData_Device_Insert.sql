@@ -1,4 +1,3 @@
-/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
 DELIMITER $$
 DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformData_Device_Insert$$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_TransformData_Device_Insert`(IN ip_TransJson LONGTEXT)
