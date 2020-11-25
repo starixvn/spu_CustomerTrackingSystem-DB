@@ -21,12 +21,12 @@ SET		ParameterName = 'RetryTransformAccount_LastTime'
 WHERE ParameterID = 5;
 
 #*******2.2: ALTER EVENT******
-ALTER EVENT  CTS_DataCenter.CTS_DC_JOB_TransformAccountAssociationToCTS_Retry
+ALTER EVENT  CTS_DataCenter.DCS_DC_JOB_TransformAccountAssociationToCTS_Retry
 DISABLE
 DO
 	CALL CTS_DataCenter.CTS_DC_Task_TransformAccountAssociationToCTSRetry();
 ;
-ALTER EVENT  CTS_DataCenter.CTS_DC_JOB_TransformAccountAssociationToCTS_Retry
+ALTER EVENT  CTS_DataCenter.DCS_DC_JOB_TransformAccountAssociationToCTS_Retry
 ENABLE;
 
 
