@@ -1,7 +1,7 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsOwner" isFunction="0" isNested="0"></info>*/
+DROP procedure IF EXISTS `DCS_DC_Task_TransformAccountAssociationToCTSRetry`;
+
 DELIMITER $$
-USE DCS_DataCenter $$
-DROP PROCEDURE IF EXISTS `DCS_DataCenter`.`DCS_DC_Task_TransformAccountAssociationToCTSRetry`$$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Task_TransformAccountAssociationToCTSRetry`()
     SQL SECURITY INVOKER
 BEGIN
@@ -17,7 +17,7 @@ BEGIN
 		Param's Explanation (filtered by):
                 
 	*/    
-    DECLARE vrAccountMinutes TINYINT DEFAULT 60;
+   DECLARE vrAccountMinutes TINYINT DEFAULT 60;
 	DECLARE vrAssociationMinutes TINYINT DEFAULT 70;
 	DECLARE vrAccountRow INT DEFAULT 0;
 	DECLARE vrAssociationRow INT DEFAULT 0;
@@ -102,4 +102,5 @@ BEGIN
     WHERE	z.ExecKey = vrExecKey  AND z.StepID = vrStepID;
     ### PERFORMANCE: END
 END$$
+
 DELIMITER ;
