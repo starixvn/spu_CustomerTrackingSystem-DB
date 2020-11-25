@@ -1,9 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `DCS_DC_TransformData_Transaction_Insert`;
+
 DELIMITER $$
-
-DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformData_Transaction_Insert$$
-
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE DCS_DataCenter.DCS_DC_TransformData_Transaction_Insert(IN ip_FromTransID BIGINT, IN ip_ToTransID BIGINT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_TransformData_Transaction_Insert`(IN ip_FromTransID BIGINT, IN ip_ToTransID BIGINT)
 SQL SECURITY INVOKER
 BEGIN
 /*
@@ -25,6 +24,7 @@ BEGIN
         #8. [20201112@CaseyHuynh][145271]:	
 			+ GET Lastest Code Move Server P3, update Permission and Add Meta data
             + Update login Retry for unsuccsess Transform (-1,-2,-3) (SET IsCTSTransformed = 0 instead of -1)
+		#9. [20201119@CaseyHuynh][145271]: Enhance New Retry transform association/account Flow, change log to CTS_Log DB
 			
     Reviewer:
 		#1 [Name]: New

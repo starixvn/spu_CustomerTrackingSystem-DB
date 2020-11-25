@@ -1,7 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `DCS_DC_TransformToCTS_Account_GetPackage`;
+
 DELIMITER $$
-DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformToCTS_Account_GetPackage$$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE DCS_DataCenter.DCS_DC_TransformToCTS_Account_GetPackage(IN ip_NoOfAccount INT, IN ip_NoOfBatch INT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_TransformToCTS_Account_GetPackage`(IN ip_NoOfAccount INT, IN ip_NoOfBatch INT)
 SQL SECURITY INVOKER
 BEGIN
 	/*

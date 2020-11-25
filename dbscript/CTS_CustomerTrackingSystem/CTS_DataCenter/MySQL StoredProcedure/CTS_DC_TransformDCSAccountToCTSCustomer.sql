@@ -1,7 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_TransformDCSAccountToCTSCustomer`;
+
 DELIMITER $$
-DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_TransformDCSAccountToCTSCustomer$$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE CTS_DataCenter.CTS_DC_TransformDCSAccountToCTSCustomer(IN ip_AccountList JSON)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_TransformDCSAccountToCTSCustomer`(IN ip_AccountList JSON)
 SQL SECURITY INVOKER
 BEGIN
 	/*

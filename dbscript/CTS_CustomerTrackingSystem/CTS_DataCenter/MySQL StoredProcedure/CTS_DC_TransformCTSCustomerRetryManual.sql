@@ -1,7 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_TransformCTSCustomerRetryManual`;
+
 DELIMITER $$
-DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_TransformCTSCustomerRetryManual$$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE CTS_DataCenter.CTS_DC_TransformCTSCustomerRetryManual(IN ip_fromCTSCustID BIGINT, IN ip_toCTSCustID BIGINT, IN ip_Batch INT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_TransformCTSCustomerRetryManual`(IN ip_fromCTSCustID BIGINT, IN ip_toCTSCustID BIGINT, IN ip_Batch INT)
 SQL SECURITY INVOKER
 BEGIN
 /*

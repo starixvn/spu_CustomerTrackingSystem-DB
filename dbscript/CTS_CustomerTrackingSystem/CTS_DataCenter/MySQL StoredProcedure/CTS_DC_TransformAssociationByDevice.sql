@@ -1,7 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_TransformAssociationByDevice`;
+
 DELIMITER $$
-DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_TransformAssociationByDevice$$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE CTS_DataCenter.CTS_DC_TransformAssociationByDevice(IN ip_AssociationList JSON)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_TransformAssociationByDevice`(IN ip_AssociationList JSON)
 SQL SECURITY INVOKER
 BEGIN
 /*

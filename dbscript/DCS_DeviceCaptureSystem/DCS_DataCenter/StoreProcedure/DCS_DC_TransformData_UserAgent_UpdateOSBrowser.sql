@@ -1,7 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `DCS_DC_TransformData_UserAgent_UpdateOSBrowser`;
+
 DELIMITER $$
-DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformData_UserAgent_UpdateOSBrowser $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE DCS_DataCenter.DCS_DC_TransformData_UserAgent_UpdateOSBrowser(IN ip_UserAgentJson JSON)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_TransformData_UserAgent_UpdateOSBrowser`(IN ip_UserAgentJson JSON)
 SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -12,7 +13,7 @@ BEGIN
 
 		Revisions:
 			[20201020@CaseyHuynh][145271]: 
-					1. Update Owner, metadata, remove ISOLATION setting
+					1. Update Owner, metadata, remove ISOLATION setting, Change DB log to CTS_Log
 		Param's Explanation (filtered by):
 	*/
 	### PERFORMANCE: START
@@ -32,7 +33,7 @@ BEGIN
     SET 	vrStepID = 1;
 	SET 	vrStartTime = CURRENT_TIMESTAMP(4);  
     
-    INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
+    INSERT INTO CTS_Log.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
     VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);
 	  
 	### PERFORMANCE: END  
@@ -108,7 +109,7 @@ BEGIN
 	### PERFORMANCE
 	SET	vrEndTime = CURRENT_TIMESTAMP(4);	
     
-    UPDATE	DCS_DataCenter.zzTracePerformance AS z
+    UPDATE	CTS_Log.zzTracePerformance AS z
     SET		z.EndTime = vrEndTime
 			, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
     WHERE	z.ExecKey = vrExecKey AND z.StepID = z.StepID;
