@@ -1,8 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DELIMITER $$
-USE CTS_DataCenter $$
-DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_InsertCTSCustomer $$
+DROP PROCEDURE IF EXISTS `CTS_DC_InsertCTSCustomer`;
 
+DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_InsertCTSCustomer`(IN ip_CustomerList json)
     SQL SECURITY INVOKER
 BEGIN
