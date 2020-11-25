@@ -16,7 +16,7 @@ BEGIN
             - 20200603@Harvey: add column RegisterName for search nick name
             - 20200618@Harvey: use CustId as a key when update data (do not have new deposit in our db from now)
             - 20200625@Long.Luu: insert more customer info [Redmine ID: #136046]
-            - 20201118@Aries.Nguyen: Add columns InsertedTime, ModifiedTime
+            - 20201118@Aries.Nguyen: Add columns InsertedTime, ModifiedTime [RedmineID : #145271]
         
 		Param's Explanation (filtered by):
         

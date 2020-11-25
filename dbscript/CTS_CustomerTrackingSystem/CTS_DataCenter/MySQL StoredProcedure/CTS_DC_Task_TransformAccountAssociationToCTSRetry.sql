@@ -12,7 +12,7 @@ BEGIN
 		Original:
 
 		Revisions: 
-			[20201119@CaseyHuynh]: Created
+			- 20201119@CaseyHuynh: Created [RedmineID : #145277] 
 
 		Param's Explanation (filtered by):
               

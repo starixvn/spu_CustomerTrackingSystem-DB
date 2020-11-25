@@ -12,8 +12,7 @@ BEGIN
 		Original:
 
 		Revisions:
-			[20201020@CaseyHuynh][145271]: 
-					1. Update Owner, metadata, remove ISOLATION setting, Change DB log to CTS_Log
+			- 20201020@CaseyHuynh: Update Owner, metadata, remove ISOLATION setting, Change DB log to CTS_Log [RedmineID: #145271]
 		Param's Explanation (filtered by):
 	*/
 	### PERFORMANCE: START

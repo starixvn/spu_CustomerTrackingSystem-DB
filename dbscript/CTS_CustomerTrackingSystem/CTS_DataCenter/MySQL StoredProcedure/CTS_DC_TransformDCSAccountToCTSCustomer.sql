@@ -12,13 +12,11 @@ BEGIN
 		Original:
 
 		Revisions:
-        	#1. [20191217@CaseyHuynh][#125530]: Implement LastLoginTime
-            #2. [20190319@CaseyHuynh][IssueCN88]: Update Join LoginName = UserName
-            #3. [20200506@CaseyHuynh][133486]: Remove code "add new CTSCustomer" for Not Deposit Account
-            #4. [20200526@CaseyHuynh][133263]: Update LastLoginTime
-            #5. [20201112@CaseyHuynh][145271]:
-            + GET Lastest Code Move Server P3, update Permission and Add Meta data
-            + Enhance  Transform Retry
+        	- 20191217@CaseyHuynh: Implement LastLoginTime [RedmineID: #125530]
+            - 20190319@CaseyHuynh: Update Join LoginName = UserName
+            - 20200506@CaseyHuynh: Remove code "add new CTSCustomer" for Not Deposit Account [RedmineID: #133486]
+            - 20200526@CaseyHuynh: Update LastLoginTime [RedmineID: #133263]
+            - 20201112@CaseyHuynh: GET Lastest Code Move Server P3, update Permission and Add Meta data. Enhance  Transform Retry [RedmineID: #145271]
 		Param's Explanation (filtered by):                
 	*/
 	DECLARE vrDepositSubType TINYINT DEFAULT 1;

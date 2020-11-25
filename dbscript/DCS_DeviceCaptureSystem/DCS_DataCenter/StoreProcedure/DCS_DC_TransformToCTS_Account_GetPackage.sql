@@ -12,11 +12,9 @@ BEGIN
 	Original:
 
 	Revisions:
-		#1. [20191217@CaseyHuynh][#125530]: Implement LastLoginTime 
-		#2. [20200512@CaseyHuynh]: Add Nolock Statement
-        #3. [20201112@CaseyHuynh][145271]:	
-			+ GET Lastest Code Move Server P3, update Permission and Add Meta data
-            + Enhance  script
+		- 20191217@CaseyHuynh: Implement LastLoginTime [RedmineID: #125530]
+		- 20200512@CaseyHuynh: Add Nolock Statement
+        - 20201112@CaseyHuynh: GET Lastest Code Move Server P3, update Permission and Add Meta data. Enhance  script [RedmineID: #145271]
 	Param's Explanation (filtered by):
 	*/
 	

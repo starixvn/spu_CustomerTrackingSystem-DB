@@ -12,9 +12,7 @@ BEGIN
 	Original:
 
 	Revisions:
-		#1. [20201112@CaseyHuynh][145271]:	
-			+ GET Lastest Code Move Server P3, update Permission and Add Meta data
-            + Enhance  script1
+		- 20201112@CaseyHuynh: GET Lastest Code Move Server P3, update Permission and Add Meta data. Enhance  script1 [RedmineID: #145271]
 	Param's Explanation (filtered by):
 	*/
 	

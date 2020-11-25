@@ -12,7 +12,7 @@ BEGIN
 		Original:
 
 		Revisions: 
-        - 20201116@Aries.Nguyen: Update metadata, revision
+            - 20201116@Aries.Nguyen: Update metadata, revision [RedmineID : #145277]
 
 		Param's Explanation (filtered by):
                 

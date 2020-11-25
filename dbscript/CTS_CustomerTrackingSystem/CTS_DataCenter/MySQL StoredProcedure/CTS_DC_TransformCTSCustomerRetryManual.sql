@@ -14,7 +14,7 @@ BEGIN
 		Original:
 
 		Revisions:
-				[20201117@CaseyHuynh][145271]: Created
+			- 20201117@CaseyHuynh: Created  [RedmineID : #145277]
                 
 	*/    
 	

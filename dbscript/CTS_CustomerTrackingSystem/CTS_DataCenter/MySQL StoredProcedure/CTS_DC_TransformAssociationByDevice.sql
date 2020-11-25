@@ -12,14 +12,11 @@ BEGIN
 		Original:
 
 		Revisions:
-        #1. [20200506@CaseyHuynh][133486]: Retry Transform If > -4
-        #2. [20200518@CaseyHuynh][133486]: Remove  code update IsCTSTransformed = -2 ELSE -1
-        #3. [202010018@CaseyHuynh] LOG INSSUE
-		#4. [20200518@CaseyHuynh] Remove Log Issue
-        #5. [20201112@CaseyHuynh][145271]:
-            + GET Lastest Code Move Server P3, update Permission and Add Meta data
-            + Change Log table to DB Log
-            + Enhance  Transform Retry
+            - 20200506@CaseyHuynh: Retry Transform If > -4 [RedmineID: #133486]
+            - 20200518@CaseyHuynh: Remove  code update IsCTSTransformed = -2 ELSE -1 [RedmineID: #133486]
+            - 20201018@CaseyHuynh: LOG INSSUE
+		    - 20200518@CaseyHuynh: Remove Log Issue
+            - 20201112@CaseyHuynh: GET Lastest Code Move Server P3, update Permission and Add Meta data. Change Log table to DB Log. Enhance  Transform Retry [RedmineID: #145271]
 		Param's Explanation (filtered by):
                 
 	*/    

@@ -12,19 +12,15 @@ BEGIN
 	Original:
 
 	Revisions:
-		#1. [20191217@CaseyHuynh][#125530]: Implement LastLoginTime 
-        #2. [20200416@Terry]: Archive Completed RawTransaction to DCS_DataCenter.ProcessedTransaction.
-		#3. [20200506@CaseyHuynh][133486]: Not Deposit Account
-				+ Insert Ignore On Duplicate, Update (LastLoginTime, IsCTSTransfromed)
-                 + Remove code "INSERT IGNORE INTO DCS_DataCenter.TransactionIP_TransformTemp"
-		#4. [20200515@CaseyHuynh][133263]: Update LastLoginTime
-        #5  [20200918@CaseyHuynh][137963]: Change column TransID to RawTransID
-        #6. [20201006@CaseyHuynh][143011]: Move New Server, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_DataCenter"
-        #7. [20201019@CaseyHuynh][143011]:	Move Server, Phase 2	
-        #8. [20201112@CaseyHuynh][145271]:	
-			+ GET Lastest Code Move Server P3, update Permission and Add Meta data
-            + Update login Retry for unsuccsess Transform (-1,-2,-3) (SET IsCTSTransformed = 0 instead of -1)
-		#9. [20201119@CaseyHuynh][145271]: Enhance New Retry transform association/account Flow, change log to CTS_Log DB
+		- 20191217@CaseyHuynh: Implement LastLoginTime [RedmineID: #125530]
+        - 20200416@Terry: Archive Completed RawTransaction to DCS_DataCenter.ProcessedTransaction.
+		- 20200506@CaseyHuynh: Not Deposit Account. Insert Ignore On Duplicate, Update (LastLoginTime, IsCTSTransfromed). Remove code "INSERT IGNORE INTO DCS_DataCenter.TransactionIP_TransformTemp" [RedmineID: #133486]
+		- 20200515@CaseyHuynh: Update LastLoginTime [RedmineID: #133263]
+        - 20200918@CaseyHuynh: Change column TransID to RawTransID [RedmineID: #137963]
+        - 20201006@CaseyHuynh: Move New Server, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_DataCenter" [RedmineID: #143011]
+        - 20201019@CaseyHuynh: Move Server, Phase 2	 [RedmineID: #143011]
+        - 20201112@CaseyHuynh: GET Lastest Code Move Server P3, update Permission and Add Meta data, Update login Retry for unsuccsess Transform (-1,-2,-3) (SET IsCTSTransformed = 0 instead of -1) [RedmineID: #145271]
+		- 20201119@CaseyHuynh: Enhance New Retry transform association/account Flow, change log to CTS_Log DB [RedmineID: #145271]
 			
     Reviewer:
 		#1 [Name]: New
