@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustEvidenceFromFile(
 	,	LastModifiedBy		INT	UNSIGNED
 	, 	LastModifiedTime	DATETIME	
     ,	PRIMARY KEY			PK_CustEvidenceFromFile_ID(ID)
+	,	INDEX 		 		IX_CustEvidenceFromFile_FileKey(FileKey)
 	,	INDEX 		 		IX_CustEvidenceFromFile_IsProcessed(IsProcessed)
 	,	INDEX 		 		IX_CustEvidenceFromFile_CreatedTime(CreatedTime)
 ) ENGINE=INNODB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
