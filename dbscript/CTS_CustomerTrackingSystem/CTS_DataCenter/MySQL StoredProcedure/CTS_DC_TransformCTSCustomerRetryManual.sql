@@ -15,11 +15,31 @@ BEGIN
 
 		Revisions:
 			- 20201117@CaseyHuynh: Created  [RedmineID : #145277]
-                
+            - 20201117@CaseyHuynh: Write Log [RedmineID : #145277]
 	*/    
 	
     DECLARE vrCTSCustID BIGINT;
+     ### PERFORMANCE: START
+    DECLARE		vrExecKey		BIGINT	UNSIGNED;
+	DECLARE		vrSPName		VARCHAR(200) DEFAULT 'CTS_DC_TransformCTSCustomerRetryManual' ;
+    DECLARE		vrStepID		INT;
+	DECLARE 	vrNotes	 		VARCHAR(500);
+	DECLARE 	vrStartTime		TIMESTAMP(4);
+	DECLARE		vrEndTime 		TIMESTAMP(4);
+	DECLARE		vrDuration 		BIGINT;	
+    DECLARE		vrTotalRecord	INT;
+    DECLARE		vrFromID		BIGINT;
+    DECLARE		vrToID			BIGINT;
+
+    SET		vrExecKey = CRC32((UUID_Short()));    
+    SET		vrNotes = CONCAT(ip_fromCTSCustID,'_',ip_toCTSCustID);		
+    SET 	vrStepID = 1;
+	SET 	vrStartTime = CURRENT_TIMESTAMP(4);  
     
+    INSERT INTO CTS_Log.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime, FromID)
+    VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime, ip_fromCTSCustID);
+	  
+	### PERFORMANCE: END  	
     SET vrCTSCustID = ip_fromCTSCustID;
     
     DROP TEMPORARY TABLE IF EXISTS temp_CTSCustomer;
@@ -38,9 +58,9 @@ BEGIN
 			, INDEX  IX_CTSCustomer_UserName2 (SubscriberID, UserName2)
 	) ENGINE=InnoDB;    
 	
-    WHILE vrCTSCustID <= ip_toCTSCustID
+    WHILE vrCTSCustID < ip_toCTSCustID
     DO
-		
+			TRUNCATE TABLE temp_CTSCustomer;
             INSERT INTO temp_CTSCustomer(CTSCustID, SubscriberID, UserName, UserName2)
             SELECT 		cus.CTSCustID, cus.SubscriberID, cus.UserName
 						, TRIM(LEADING sub.SubscriberPrefix FROM cus.UserName2 ) AS UserName2
@@ -55,8 +75,6 @@ BEGIN
             INNER JOIN 	CTS_DataCenter.CustDCSAccount	AS cua
 						ON  temp_cus.CTSCustID = cua.CTSCustID
 			SET 		MapAccountID = AccountID;
-
-			SET vrCTSCustID = (SELECT MAX(CTSCustID) FROM temp_CTSCustomer);
             
             # Update LastLoginTime
            
@@ -85,9 +103,25 @@ BEGIN
 			SET			acc.IsCTSTransformed = 0		
             WHERE		tmp_cus.MapAccountID IS NULL;            
             
-    SET  vrCTSCustID =  (SELECT MAX(CTSCustID) FROM  temp_CTSCustomer);  
-    TRUNCATE TABLE temp_CTSCustomer;
+    SET  vrCTSCustID =  (SELECT MAX(CTSCustID) FROM  temp_CTSCustomer);    
+   
+    
+    ### PERFORMANCE
+	SET	vrEndTime = CURRENT_TIMESTAMP(4);	
+    
+	SELECT 	Count(1), Max(tas.CTSCustID)
+    INTO	vrTotalRecord,  vrToID
+    FROM	temp_CTSCustomer AS tas;    
+    
+    UPDATE	CTS_Log.zzTracePerformance AS z
+    SET		z.EndTime = vrEndTime
+			, z.Duration = TIMESTAMPDIFF(SECOND, vrStartTime, vrEndTime)
+            , z.TotalRecord = vrTotalRecord
+            , z.ToID		= vrToID
+    WHERE	z.ExecKey = vrExecKey  AND z.StepID = vrStepID;
+    ### PERFORMANCE: END
+    
     END WHILE;
-                          
+
 END$$
 DELIMITER ;
