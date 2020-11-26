@@ -15,10 +15,11 @@ BEGIN
 
 		Revisions:
 			- 20201117@CaseyHuynh: Created  [RedmineID : #145277]
-            - 20201117@CaseyHuynh: Write Log [RedmineID : #145277]
+            - 20201126@CaseyHuynh: Write Log [RedmineID : #145277]
 	*/    
 	
     DECLARE vrCTSCustID BIGINT;
+    
      ### PERFORMANCE: START
     DECLARE		vrExecKey		BIGINT	UNSIGNED;
 	DECLARE		vrSPName		VARCHAR(200) DEFAULT 'CTS_DC_TransformCTSCustomerRetryManual' ;
@@ -103,8 +104,7 @@ BEGIN
 			SET			acc.IsCTSTransformed = 0		
             WHERE		tmp_cus.MapAccountID IS NULL;            
             
-    SET  vrCTSCustID =  (SELECT MAX(CTSCustID) FROM  temp_CTSCustomer);    
-   
+    SET  vrCTSCustID =  (SELECT MAX(CTSCustID) FROM  temp_CTSCustomer);      
     
     ### PERFORMANCE
 	SET	vrEndTime = CURRENT_TIMESTAMP(4);	
