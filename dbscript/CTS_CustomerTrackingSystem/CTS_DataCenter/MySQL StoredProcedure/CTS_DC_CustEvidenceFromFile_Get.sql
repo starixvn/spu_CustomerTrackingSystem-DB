@@ -16,7 +16,19 @@ BEGIN
 		Revisions:
 		- 20201106@Adam.Tran [Redmine ID: 141563]: Created
 	*/    
-
+	
+	DECLARE		vrFileKey	varchar(50);
+	
+	SELECT cus.FileKey
+	INTO vrFileKey
+	FROM CTS_DataCenter.CustEvidenceFromFile as cus
+	WHERE cus.CreatedTime IN (
+		SELECT MIN(CreatedTime)
+		FROM CTS_DataCenter.CustEvidenceFromFile
+		WHERE IsProcessed = 0
+	)
+	LIMIT 1;
+	
 	SELECT	cus.ID
 		,	cus.CTSCustID
 		,	cus.CustID
@@ -29,7 +41,7 @@ BEGIN
 		,	cus.CreatedBy
         ,	cus.CreatedTime
 	FROM CTS_DataCenter.CustEvidenceFromFile as cus
-	WHERE cus.IsProcessed = 0
+	WHERE cus.IsProcessed = 0 AND cus.FileKey = vrFileKey
 	ORDER BY cus.CreatedTime ASC;
 	
 END$$

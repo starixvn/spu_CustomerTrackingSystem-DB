@@ -63,7 +63,7 @@ BEGIN
 		 "$[*]" COLUMNS(
 			  CTSCustID 	BIGINT UNSIGNED		PATH "$.CTSCustID"			 
 			, EvidenceID	SMALLINT UNSIGNED	PATH "$.EvidenceID"
-			, Remark		VARCHAR(500)		PATH "$.Comment"
+			, Remark		VARCHAR(500)		PATH "$.Remark"
 			, CreatedBy		INT	UNSIGNED		PATH "$.CreatedBy"	
 		 )) AS tmpTable;  
          

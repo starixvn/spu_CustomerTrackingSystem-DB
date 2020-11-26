@@ -1,7 +1,11 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_ValidateMultipleInput`(IN ip_NewAccountEvidences json,IN ip_IsOverride tinyint)
-    SQL SECURITY INVOKER
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_ValidateMultipleInput`(
+		IN ip_NewAccountEvidences 	JSON
+	,	IN ip_IsOverride 			BOOLEAN
+)
+SQL SECURITY INVOKER
+
 BEGIN
 	/*
 		Created:	20200608@Long.Luu
@@ -53,9 +57,7 @@ BEGIN
     FROM tmpMultipleAccountEvidence AS t
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS c ON t.Username = c.Username
         LEFT JOIN CTS_DataCenter.Evidence AS e ON t.EvidenceCode = e.EvidenceCode
-        LEFT JOIN CTS_DataCenter.CustEvidence AS ce ON c.CTSCustID = ce.CTSCustID AND e.EvidenceID = ce.EvidenceID AND ce.Level = 0;
-
-	DROP TEMPORARY TABLE IF EXISTS tmpMultipleAccountEvidence;
+        LEFT JOIN CTS_DataCenter.CustEvidence AS ce ON c.CTSCustID = ce.CTSCustID AND e.EvidenceID = ce.EvidenceID AND ce.Level = 0;	
 
 END$$
 
