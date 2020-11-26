@@ -12,7 +12,7 @@ BEGIN
 		Original:
 		Revisions:
            [20201112][Irena.Vo][#141563]: Created 
-           [20201126][Irena.Vo][#141563]: Enhance logic remove Evdidence to category 
+           [20201126][Irena.Vo][#141563]: Enhance logic remove Evidence to category 
 		Param's Explanation (filtered by):			
 	*/   
     DECLARE		lv_SPName 			VARCHAR(100) 		DEFAULT 'CTS_DC_CustEvidence_SyncToCategory';  
@@ -40,10 +40,10 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedEviCategories;    
 	CREATE TEMPORARY TABLE Temp_ExistedEviCategories 
     (	  
-			CustID			BIGINT UNSIGNED
+			CTSCustID		BIGINT UNSIGNED
         ,   CategoryID      SMALLINT UNSIGNED
         ,   EvidenceID      SMALLINT UNSIGNED
-        , 	INDEX 			IX_Temp_ExistedEviCategories_CustID_CategoryID_EvidenceID(CustID,CategoryID,EvidenceID)    
+        , 	INDEX 			IX_Temp_ExistedEviCategories_CTSCustID_CategoryID_EvidenceID(CTSCustID,CategoryID,EvidenceID)    
      );
     
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
@@ -63,7 +63,9 @@ BEGIN
             , EvidenceID 		SMALLINT UNSIGNED	PATH "$.EvidenceId"
             , ActionType		SMALLINT UNSIGNED	PATH "$.ActionType"
 		 )) AS temp
-	INNER JOIN CTS_DataCenter.EvidenceToCategory AS ec on ec.EvidenceID = temp.EvidenceID;
+	LEFT JOIN CTS_DataCenter.EvidenceToCategory AS ec on ec.EvidenceID = temp.EvidenceID;
+    
+    select * from Temp_CustomerEvidences;
     
     /*SYNC EVIDENCE TO CATEGORY*/
     SELECT ParameterValue
@@ -89,19 +91,25 @@ BEGIN
         FROM CTS_DataCenter.ProbationAccountMonitor AS pro 
         INNER JOIN Temp_CustomerEvidences AS temp ON temp.CustID = pro.CustID;
 		
-        -- Get existed Evidence Category after Remove
-		INSERT INTO Temp_ExistedEviCategories
-		SELECT DISTINCT temp.CustID, e.CategoryID, evd.EvidenceID
-		FROM Temp_CustomerEvidences AS temp
-		INNER JOIN CTS_DataCenter.CustEvidence AS evd ON evd.FromCustID = temp.CTSCustID AND evd.Level = 0 AND evd.EvidenceID <> temp.EvidenceID
-        INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON e.EvidenceID = evd.EvidenceID
-		WHERE temp.ActionType = 2;
-	
-        -- Remove all evd category (not existed Evidence to Category)
+        -- Get existed Cust Evidences for Action Remove
+        INSERT INTO Temp_ExistedEviCategories(CTSCustID,EvidenceID,CategoryID)
+        SELECT DISTINCT ce.FromCustID, ce.EvidenceID, e.CategoryID
+        FROM CTS_DataCenter.CustEvidence AS ce
+        INNER JOIN Temp_CustomerEvidences AS temp ON temp.CTSCustID = ce.FromCustID AND ce.Level = 0
+        INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON e.EvidenceID = ce.EvidenceID;
+        
+        -- Remove All category with Is Override
+        DELETE cate
+        FROM CTS_DataCenter.CTSCustomerClassification AS cate
+        INNER JOIN Temp_CustomerEvidences AS temp ON temp.CustID = cate.CustID
+        LEFT JOIN Temp_ExistedEviCategories AS ex ON ex.CTSCustID = temp.CTSCustID 
+        WHERE temp.ActionType = 2 AND ex.CTSCustID IS NULL;
+        
+        -- Remove Category with corresponding mapping.
 		DELETE cate
         FROM CTS_DataCenter.CTSCustomerClassification AS cate
         INNER JOIN Temp_CustomerEvidences AS temp ON temp.CustID = cate.CustID AND temp.CategoryID = cate.CategoryID 
-        LEFT JOIN Temp_ExistedEviCategories AS ex ON ex.CustID = temp.CustID AND ex.CategoryID = temp.CategoryID
+        LEFT JOIN Temp_ExistedEviCategories AS ex ON ex.CategoryID = temp.CategoryID AND ex.EvidenceID <> temp.EvidenceID 
         WHERE temp.ActionType = 2 AND ex.CategoryID IS NULL;
         
         -- Insert evidence Category
@@ -140,15 +148,16 @@ BEGIN
             ,	0
             ,	0
 		FROM Temp_CustomerEvidences AS temp
-        LEFT JOIN Temp_ExistedEviCategories AS ex ON ex.CustID = temp.CustID AND ex.CategoryID = temp.CategoryID
-        WHERE temp.ActionType = 0 OR (temp.ActionType = 2 AND ex.CategoryID IS NULL);
+        LEFT JOIN Temp_ExistedEviCategories AS ex ON ex.CTSCustID = temp.CTSCustID AND ex.CategoryID = temp.CategoryID
+        WHERE temp.ActionType = 0 OR (temp.ActionType = 2 AND ex.CTSCustID IS NULL);
     END IF;
      
     -- Return distinct CustID mapping CC to mainDB
     SELECT DISTINCT temp.CustId FROM Temp_CustomerEvidences AS temp;
-
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_ExistedEviCategories;    
-    DROP TEMPORARY TABLE IF EXISTS Temp_CustomerEvidences;  
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustomerEvidences;   
+
 END$$
 
 DELIMITER ;
