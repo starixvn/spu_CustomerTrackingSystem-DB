@@ -1,8 +1,8 @@
-DELIMITER $$
-USE CTS_DataCenter $$
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_Association_UpdateAssociationRemove`$$
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_Association_UpdateAssociationRemove`;
 
-CREATE PROCEDURE `CTS_DataCenter`.`CTS_DC_Association_UpdateAssociationRemove`(
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_Association_UpdateAssociationRemove`(
 		IN ip_FromSubscriberID 	INT
     , 	IN ip_FromCTSCustID 	BIGINT
     ,	IN ip_ToSubscriberID 	INT
@@ -13,6 +13,7 @@ CREATE PROCEDURE `CTS_DataCenter`.`CTS_DC_Association_UpdateAssociationRemove`(
     
     , 	OUT op_ErrorMessage 	VARCHAR(200)
 )
+SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200416@Long.Luu	
@@ -71,5 +72,6 @@ BEGIN
 					SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 			END IF;
     END IF;
-END$$	
+END$$
+
 DELIMITER ;
