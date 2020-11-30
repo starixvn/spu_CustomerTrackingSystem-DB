@@ -1,30 +1,32 @@
-USE `CTS_DataCenter`;
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
 DROP procedure IF EXISTS `CTS_DC_CustClassification_Remove`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_CustClassification_Remove`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Remove`(
 		IN ip_CustID			BIGINT UNSIGNED
 	,   IN ip_CTSCustID			BIGINT UNSIGNED 
 	,	IN ip_CategoryID		SMALLINT
 	,	IN ip_CreatedBy 		INT
-    
     , 	OUT op_ErrorMessage 	VARCHAR(200)
 )
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200423@Long.Luu	
 		Task :		Insert CTSCustomer Category
 		DB:			CTS_DataCenter
 		Original: 
+
 		Revisions:
-			- [20200423@Long.Luu][132623]: Created 
-            - [20200908@Irena.Vo][141020]: Delete VVIP OR All Category has Pin before (Include Customer Class)
-            - [20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow.
-			- [20200923@Irena.Vo][141755]: Enhance SP
+			- 20200423@Long.Luu: Created [Redmine ID: #132623]
+            - 20200908@Irena.Vo: Delete VVIP OR All Category has Pin before (Include Customer Class) [Redmine ID: #141020]
+            - 20200921@Irena.Vo: Enhance SP & insert Probation Management flow [Redmine ID: #141755]
+			- 20200923@Irena.Vo: Enhance SP [Redmine ID: #141755]
+            - 20201201@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. Remove logic detail category. [Redmine ID: #145954]
             
 		Param's Explanation:
 	*/ 
+
 	/**********1. PREPARE PARAMS**********/
     DECLARE lv_CurrentDateTime DATETIME DEFAULT NOW();
     DECLARE lv_SPName VARCHAR(200) DEFAULT 'CTS_DC_RemoveCTSCustomerClassification';
@@ -46,8 +48,6 @@ BEGIN
         ,	CustomerClass		INT
 	);
     
-    SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;   
-    SET SQL_SAFE_UPDATES = 0;
     
 	/**********2. INSERT GENERAL CATEGORY**********/
     INSERT INTO Temp_GeneralCategory
@@ -60,15 +60,15 @@ BEGIN
 	/**********3. INSERT REMOVED CATEGORY**********/
     INSERT INTO Temp_DeleteCustomerClass
     SELECT ip_CustID, -1
-    WHERE  ip_CategoryID IN (3, 213) -- For VVIP
+    WHERE  ip_CategoryID = 213 -- For VVIP
            OR ip_CategoryID = (SELECT GeneralCategory FROM Temp_GeneralCategory); -- For General
     
    /**********4. ACTION FOR VVIP**********/
-    IF (ip_CategoryID IN (3, 213)) THEN
+    IF (ip_CategoryID = 213) THEN
         -- Remove data CTSCustomerClassification
 		DELETE 	cate
 		FROM 	CTS_DataCenter.CTSCustomerClassification AS cate
-		WHERE 	cate.CustID = ip_CustID AND cate.CategoryID IN (3, 213);
+		WHERE 	cate.CustID = ip_CustID AND cate.CategoryID  = 213;
         
         INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	    VALUES(12, lv_SPName, CONCAT('Remove all classification: From ip_CustID_', ip_CustID, '; ip_CategoryID_', ip_CategoryID), lv_CurrentDateTime, ip_CreatedBy);
@@ -122,9 +122,6 @@ BEGIN
 	VALUES(12, lv_SPName, CONCAT('Remove classification: ip_CustID_', ip_CustID, ';ip_CategoryID_', ip_CategoryID), lv_CurrentDateTime, ip_CreatedBy);
 	
     SELECT * FROM Temp_DeleteCustomerClass;
-    
-    SET SQL_SAFE_UPDATES = 1;
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_DeleteCustomerClass;
 	DROP TEMPORARY TABLE IF EXISTS Temp_GeneralCategory;

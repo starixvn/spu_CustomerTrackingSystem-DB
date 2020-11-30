@@ -13,7 +13,7 @@ BEGIN
 		Revisions:
             - 20200910@Harvey.Nguyen: init sp [Redmine ID: #140971]
             - 20200929@Lex.Khuat: Support return problem account categories by [Redmine ID: #141962]
-            - 20201130@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. Remove logic get category detail.
+            - 20201130@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. Remove logic detail category. [Redmine ID: #145954]
 
 		Param's Explanation:
 	*/ 

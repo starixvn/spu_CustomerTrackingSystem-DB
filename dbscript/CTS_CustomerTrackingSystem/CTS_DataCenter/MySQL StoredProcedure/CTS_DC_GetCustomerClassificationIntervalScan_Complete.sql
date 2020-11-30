@@ -1,18 +1,23 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_GetCustomerClassificationIntervalScan_Complete`;
+
 DELIMITER $$
-DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_GetCustomerClassificationIntervalScan_Complete$$
-CREATE DEFINER=fps@`%` PROCEDURE CTS_DataCenter.CTS_DC_GetCustomerClassificationIntervalScan_Complete(IN ip_CustSport JSON, IN ip_ParentCategoryID INT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_GetCustomerClassificationIntervalScan_Complete`(IN ip_CustSport JSON, IN ip_ParentCategoryID INT)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
-		Created:	[20200625@Casey.Huynh][135324]
+		Created:	20200625@Casey.Huynh [Redmine ID: #135324]
 		Task:		Update Last Scanned If completed
 		DB:			CTS_DataCenter
         
 		Original:
 
 		Revisions:
-			[20200701@Casey.Huynh]135324]: Chagne Flow and Store more Info
+			- 20200701@Casey.Huynh: Chagne Flow and Store more Info [Redmine ID: #135324]
+            - 20201201@Casey.Huynh: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED [Redmine ID: #145954]
+
 		Param's Explanation (filtered by):
-         ip_CategoryIDList: ex: '1,2,3'       
+            - ip_CategoryIDList: ex: '1,2,3'       
 	*/
     DECLARE vrScanTime DATETIME;
     DECLARE vrScanDate DATETIME;    
@@ -40,7 +45,6 @@ BEGIN
 
 	### PERFORMANCE: END
     
-    SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 	SET vrScanTime = (SELECT MAX(ScanTime) FROM CTS_DataCenter.CTSCustomerClassification_ScanStatus WHERE ParentCategoryID = ip_ParentCategoryID);
 	SET vrScanDate = DATE(vrScanTime);
     

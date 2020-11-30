@@ -11,12 +11,16 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original: 
 		Revisions:
-			- 20201028@Lex.Khuat [Redmine ID: #131499]: Created
-            - 20201102@Irena.Vo [Redmine ID: #131499]: Update logic for New Member
+			- 20201028@Lex.Khuat: Created [Redmine ID: #131499]
+            - 20201102@Irena.Vo: Update logic for New Member [Redmine ID: #131499]
+            - 20201201@Aries.Nguyen:Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. Remove logic detail category . [Redmine ID: #145954]
             
 		Param's Explanation:
-			Sample: call CTS_DataCenter.CTS_DC_AssociatedAccountReport_Get('1,2,3,4,5,6,7,8,9,10');
             - ip_CTSCustIDList: list of ctscustid to get
+
+		Example: 
+            -CALL CTS_DataCenter.CTS_DC_AssociatedAccountReport_Get('1,2,3,4,5,6,7,8,9,10');
+            
 	*/ 
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustIDList;
@@ -39,8 +43,6 @@ BEGIN
     ,   LastModifiedDate    DATETIME
     ,   INDEX IX_Temp_LatestRecordOfCategory_CTSCustID_DisplayCategoryID(CTSCustID,DisplayCategoryID)
     );
-   
-     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
      
     -- Get Customer List
     IF IFNULL(ip_CTSCustIDList, '') <> '' THEN
@@ -55,7 +57,7 @@ BEGIN
 	FROM	CTS_DataCenter.CTSCustomerClassification AS cate
     INNER JOIN 	CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
     INNER JOIN Temp_CTSCustIDList AS cust ON cust.CTSCustID = cate.CTSCustID
-    WHERE	cc.ParentID IN (50, 200) OR cate.CategoryID = 2;
+    WHERE	cc.ParentID IN (50, 200); -- OR cate.CategoryID = 2
     
      -- Get General Category
     INSERT INTO Temp_GeneralCategory
@@ -64,10 +66,10 @@ BEGIN
     WHERE temp.CategoryID  > 200;
     
     -- Detele Detail New Member
-    DELETE temp
+    /*DELETE temp
     FROM Temp_LatestRecordOfCategory AS temp
     INNER JOIN Temp_GeneralCategory AS ger ON ger.CTSCustID = temp.CTSCustID
-    WHERE   temp.CategoryID = 2;
+    WHERE   temp.CategoryID = 2;*/
         
     -- Update Display Category ID
     UPDATE  Temp_LatestRecordOfCategory
@@ -81,7 +83,7 @@ BEGIN
 									WHEN CategoryID IN (78, 158) THEN 58
 									WHEN CategoryID IN (79, 159) THEN 59
 									WHEN CategoryID = 80 THEN 60
-                                    WHEN CategoryID = 2 THEN 201
+                                    -- WHEN CategoryID = 2 THEN 201
                                     ELSE CategoryID
 								END);
 

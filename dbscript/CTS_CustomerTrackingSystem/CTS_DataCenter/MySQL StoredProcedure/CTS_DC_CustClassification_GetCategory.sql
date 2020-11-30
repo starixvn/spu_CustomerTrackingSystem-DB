@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_GetCategory`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_GetCategory`(
-	IN ip_CTSCustID 	BIGINT UNSIGNED
+	IN ip_CTSCustID BIGINT UNSIGNED
 )
 	SQL SECURITY INVOKER
 BEGIN
@@ -12,11 +12,15 @@ BEGIN
 		Task :		Get Customer Category by CTSCustId
 		DB:			CTS_DataCenter
 		Original: 
+
 		Revisions:
 			- 20200423@Long.Luu: Created [Redmine ID: #132623]
-			- 20201201@Aries.Nguyen: 
+			- 20201201@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. [Redmine ID: #145954]
             
 		Param's Explanation:
+
+		Example:  
+			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetCategory(1);
 	*/ 
 
     SELECT DISTINCT a.CategoryID, a.CategoryName, a.ParentID, a.DisplayOrder

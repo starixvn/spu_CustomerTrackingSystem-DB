@@ -1,9 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-USE `CTS_DataCenter`;
 DROP procedure IF EXISTS `CTS_DC_InsertMainCustomerClassification`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_InsertMainCustomerClassification`(IN ip_NewClassification JSON)
     SQL SECURITY INVOKER
 BEGIN
@@ -12,20 +10,23 @@ BEGIN
 		Task:		Auto insert main customer categories for Customer Classification
 		DB:			CTS_DataCenter
 		Original:
-		Revisions:
-				[20200901@Lex.Khuat][137550]: Created 
-				[20200908@Irena.Vo][141020]: Enhance Exclude VVIP Customers, Pin category 
-				[20200921-20201001@Irena.Vo][141755]: 
-                - Enhance SP
-                - Insert Probation Management flow
-                - Add get parentid for process update category. 
-                [20201003-20201022@Irena.Vo][142546]: Enhance SP & correct logic. 
-                [20201026@Irena.Vo][142546]: Enhance init data for Probation to VIP OR Normal.
-                [20201116@Irena.Vo][145028]: Only distinct CustID list for general & Update LastScannedDate for Probation List.
+		Revisions: 
+				-20200901@Lex.Khuat: Created [Redmine ID: #137550]
+				-20200908@Irena.Vo: Enhance Exclude VVIP Customers, Pin category  [Redmine ID: #141020]
+				-20200921-20201001@Irena.Vo:  [Redmine ID: #145954]
+                    -Enhance SP
+                    -Insert Probation Management flow
+                    -Add get parentid for process update category. 
+                -20201003-20201022@Irena.Vo: Enhance SP & correct logic. [Redmine ID: #142546]
+                -20201026@Irena.Vo: Enhance init data for Probation to VIP OR Normal. [Redmine ID: #142546]
+                -20201116@Irena.Vo: Only distinct CustID list for general & Update LastScannedDate for Probation List. [Redmine ID: #145028]
+                -20201201@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. [Redmine ID: #145954]
+
                 
 		Param's Explanation (filtered by):
-			call CTS_DataCenter.CTS_DC_InsertMainCustomerClassification
-            ('[{"CustId": 1, "CategoryId": 202, "CreatedTime": "2020-09-13 00:01:00", "TurnoverRM": 100, "WinlossRM": 2056354, "BetCount": 500, "ActiveDays": 8}]');
+
+        Example: 
+			-CALL CTS_DataCenter.CTS_DC_InsertMainCustomerClassification('[{"CustId": 1, "CategoryId": 202, "CreatedTime": "2020-09-13 00:01:00", "TurnoverRM": 100, "WinlossRM": 2056354, "BetCount": 500, "ActiveDays": 8}]');
 	*/ 
      DECLARE  lv_CreatedBy			INT	DEFAULT 10278938;
 
@@ -76,8 +77,7 @@ BEGIN
 		 )) AS temp
 	 INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = temp.CategoryID 
 	 WHERE cc.ParentID = 200 AND temp.CategoryID <> 0;
-	
-     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
+
      
 	/*******************************************START DATA*********************************************************/ 
     /*IGNORE VVIP - PIN CATEGORY*/
