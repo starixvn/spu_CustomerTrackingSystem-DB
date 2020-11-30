@@ -13,8 +13,8 @@ sp: BEGIN
 
 		Revisions: 
 		   - 20200825@Roger.Le [Redmine ID: 137551]: Created
-		   - 20201111@Irena.Vo [Redmine ID: #145027]: Enhance logic Insert History for Evidence Category
-           - 20201125@Irena.Vo [Redmine ID: #141563]: Move flow sync Evidence to Category
+		    - 20201111@Irena.Vo [Redmine ID: #145027]: Enhance logic Insert History for Evidence Category
+		   - 20201125@Irena.Vo [Redmine ID: #141563]: Move flow sync Evidence to Category
 		   - 20201130@Irena.Vo [Redmine ID: #141563]: Enhance logic Insert new evidence (remove existed evidence category before)
 	*/
     
@@ -157,6 +157,7 @@ sp: BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_AssociationException;
 	DROP TEMPORARY TABLE IF EXISTS Temp_AffectedDevices;
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustEvidence; 
+    
 END$$
 
 DELIMITER ;
