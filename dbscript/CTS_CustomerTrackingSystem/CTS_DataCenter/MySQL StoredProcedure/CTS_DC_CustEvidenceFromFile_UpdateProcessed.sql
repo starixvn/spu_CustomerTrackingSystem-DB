@@ -36,9 +36,7 @@ BEGIN
 		
 	SET @sql = CONCAT("INSERT INTO Temp_CustomerEvidence (ID) VALUES ('", REPLACE(ip_IDList, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
-	EXECUTE stmt1;
-	
-	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;	
+	EXECUTE stmt1;	
 	
 	UPDATE CTS_DataCenter.CustEvidenceFromFile AS ce
 	INNER JOIN Temp_CustomerEvidence as temp
