@@ -15,8 +15,10 @@ sp: BEGIN
 		   - 20200825@Roger.Le [Redmine ID: 137551]: Created
 		   - 20201111@Irena.Vo [Redmine ID: #145027]: Enhance logic Insert History for Evidence Category
            - 20201125@Irena.Vo [Redmine ID: #141563]: Move flow sync Evidence to Category
+		   - 20201130@Irena.Vo [Redmine ID: #141563]: Enhance logic Insert new evidence (remove existed evidence category before)
 	*/
-	# Handle error
+    
+    # Handle error
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
@@ -32,62 +34,71 @@ sp: BEGIN
         END;
     END IF;
     
-    DROP TEMPORARY TABLE IF EXISTS tmpMultipleAccount;    
-	CREATE TEMPORARY TABLE tmpMultipleAccount 
+    DROP TEMPORARY TABLE IF EXISTS Temp_MultipleAccount;    
+	CREATE TEMPORARY TABLE Temp_MultipleAccount 
 	(	 
 			CTSCustID		BIGINT UNSIGNED
-		, 	PRIMARY KEY	tmpMultipleAccount(CTSCustID) 
+		,   CustID          BIGINT UNSIGNED
+        ,   SubscriberID    BIGINT UNSIGNED
+        ,   EvidenceID      SMALLINT 
+		, 	PRIMARY KEY	Temp_MultipleAccount_CTSCustID(CTSCustID) 
 	);      
 	
-	DROP TEMPORARY TABLE IF EXISTS tmpAssociationException;
-	CREATE TEMPORARY TABLE tmpAssociationException(
+	DROP TEMPORARY TABLE IF EXISTS Temp_AssociationException;
+	CREATE TEMPORARY TABLE Temp_AssociationException(
 			FromCTSCustID 	BIGINT UNSIGNED
 		,	ToCTSCustID 	BIGINT UNSIGNED
-		, 	PRIMARY KEY	tmpAssociationException(FromCTSCustID,ToCTSCustID)
+		, 	PRIMARY KEY	Temp_AssociationException_FromCTSCustID_ToCTSCustID(FromCTSCustID,ToCTSCustID)
 	);
 	
-	DROP  TEMPORARY TABLE IF EXISTS tmpAffectedDevices;
-	CREATE TEMPORARY TABLE tmpAffectedDevices(
+	DROP  TEMPORARY TABLE IF EXISTS Temp_AffectedDevices;
+	CREATE TEMPORARY TABLE Temp_AffectedDevices(
 			CTSCustID		BIGINT UNSIGNED     
 		,	DCSDeviceID		BIGINT UNSIGNED
-		, 	PRIMARY KEY	tmpAffectedDevices(CTSCustID,DCSDeviceID) 
+		, 	PRIMARY KEY	Temp_AffectedDevices_CTSCustID_DCSDeviceID(CTSCustID,DCSDeviceID) 
 	);
 	
-	DROP TEMPORARY TABLE IF EXISTS tmpCustEvidence;
-	CREATE TEMPORARY TABLE tmpCustEvidence(
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustEvidence;
+	CREATE TEMPORARY TABLE Temp_CustEvidence(
 			CTSCustID 	BIGINT UNSIGNED
 		,	FromCustID 	BIGINT UNSIGNED
-		, INDEX		IX_CustEvidence(CTSCustID, FromCustID)
+		,   INDEX		IX_Temp_CustEvidence_CTSCustID_FromCustID(CTSCustID, FromCustID)
 	);
 	
-	INSERT INTO tmpMultipleAccount(CTSCustID)
-	SELECT 	tmpTable.CTSCustID
+	INSERT INTO Temp_MultipleAccount(CTSCustID)
+	SELECT 	temp.CTSCustID
 	FROM JSON_TABLE(ip_CTSCustIDs,
 		 "$[*]" COLUMNS(
 			  CTSCustID 	BIGINT UNSIGNED		PATH "$.CTSCustID"
-		 )) AS tmpTable;
+		 )) AS temp;
  
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-	INSERT INTO tmpAffectedDevices(CTSCustID, DCSDeviceID)
+	/*GET CUSTOMER INFO*/
+    UPDATE 		Temp_MultipleAccount AS t
+	INNER JOIN 	CTS_DataCenter.CTSCustomer AS c ON t.CustID = c.CustID AND c.CustSubID = 0
+    SET 		t.CustID = c.CustID
+			,	t.SubscriberID = c.SubscriberID;
+    
+	INSERT INTO Temp_AffectedDevices(CTSCustID, DCSDeviceID)
 	SELECT DISTINCT t.CTSCustID, a.DCSDeviceID
 	FROM CTS_DataCenter.AssociationByDevice AS a    
-		INNER JOIN tmpMultipleAccount AS t ON a.CTSCustID = t.CTSCustID;
+		INNER JOIN Temp_MultipleAccount AS t ON a.CTSCustID = t.CTSCustID;
 	 
-	INSERT INTO tmpAssociationException(FromCTSCustID, ToCTSCustID)
+	INSERT INTO Temp_AssociationException(FromCTSCustID, ToCTSCustID)
 	SELECT DISTINCT t.CTSCustID
 		,	CASE WHEN e.LeastCTSCustID_Order = t.CTSCustID THEN e.GreatestCTSCustID_Order ELSE e.LeastCTSCustID_Order END
 	FROM CTS_DataCenter.CustException AS e
-		INNER JOIN tmpMultipleAccount AS t ON e.LeastCTSCustID_Order = t.CTSCustID
+		INNER JOIN Temp_MultipleAccount AS t ON e.LeastCTSCustID_Order = t.CTSCustID
 													OR e.GreatestCTSCustID_Order = t.CTSCustID;
 	
    # Get all association follow devices
-	INSERT INTO tmpCustEvidence(CTSCustID, FromCustID)
+	INSERT INTO Temp_CustEvidence(CTSCustID, FromCustID)
 		SELECT 	DISTINCT a.CTSCustID
 						, t.CTSCustID
-				FROM tmpMultipleAccount AS t
-					INNER JOIN tmpAffectedDevices AS d ON t.CTSCustID = d.CTSCustID
+				FROM Temp_MultipleAccount AS t
+					INNER JOIN Temp_AffectedDevices AS d ON t.CTSCustID = d.CTSCustID
 					INNER JOIN CTS_DataCenter.AssociationByDevice AS a ON a.DCSDeviceID = d.DCSDeviceID
-					LEFT JOIN tmpAssociationException AS e ON t.CTSCustID = e.FromCTSCustID AND a.CTSCustID = e.ToCTSCustID
+					LEFT JOIN Temp_AssociationException AS e ON t.CTSCustID = e.FromCTSCustID AND a.CTSCustID = e.ToCTSCustID
 	WHERE a.CTSCustID <> d.CTSCustID		
     	AND (e.FromCTSCustID IS NULL OR e.ToCTSCustID IS NULL);
     
@@ -97,22 +108,28 @@ sp: BEGIN
 			 # Save log
             INSERT IGNORE INTO CTS_DataCenter.CustEvidenceLog(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, SessionId)
 				SELECT cus.CTSCustID, cus.EvidenceID, cus.Remark, cus.Level, cus.FromCustID, cus.CreatedDate, cus.CreatedBy, ip_SessionId
-				FROM tmpMultipleAccount tmp
+				FROM Temp_MultipleAccount AS tmp
 					INNER JOIN CTS_DataCenter.CustEvidence as cus ON tmp.CTSCustID = cus.CTSCustID AND cus.Level = 0;
                     
             INSERT IGNORE INTO CTS_DataCenter.CustEvidenceLog(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, SessionId)
 				SELECT cus.CTSCustID, cus.EvidenceID, cus.Remark, cus.Level, cus.FromCustID, cus.CreatedDate, cus.CreatedBy, ip_SessionId
-				FROM tmpCustEvidence tmp
+				FROM Temp_CustEvidence AS tmp
 					INNER JOIN CTS_DataCenter.CustEvidence as cus ON tmp.CTSCustID = cus.CTSCustID AND cus.FromCustID = tmp.FromCustID;
         END;
     END IF;
     
-	DELETE cus  FROM CTS_DataCenter.CustEvidence cus INNER JOIN tmpMultipleAccount tmp
-	WHERE  cus.CTSCustID = tmp.CTSCustID
-			AND cus.Level = 0;
-			
-	DELETE cus  FROM CTS_DataCenter.CustEvidence cus INNER JOIN tmpCustEvidence tmp 
-	WHERE  tmp.CTSCustID = cus.CTSCustID AND cus.FromCustID = tmp.FromCustID; 
+    -- Get Evidence List for customers before remove
+	UPDATE Temp_MultipleAccount AS temp1
+    INNER JOIN Temp_CustEvidence AS temp2 ON temp1.CTSCustID = temp2.CTSCustID
+    INNER JOIN CTS_DataCenter.CustEvidence AS cus ON (cus.CTSCustID = temp1.CTSCustID AND cus.Level = 0) 
+													OR (cus.CTSCustID = temp2.CTSCustID AND cus.FromCustID = temp2.FromCustID)
+    SET temp1.EvidenceID = cus.EvidenceID;
+    
+	DELETE cus  
+    FROM CTS_DataCenter.CustEvidence AS cus 
+    INNER JOIN Temp_MultipleAccount AS temp1 ON (cus.CTSCustID = temp1.CTSCustID AND cus.Level = 0) 
+	INNER JOIN Temp_CustEvidence AS temp2 ON temp1.CTSCustID = temp2.CTSCustID
+                                              AND (cus.CTSCustID = temp2.CTSCustID AND cus.FromCustID = temp2.FromCustID);
     
     IF(ip_IsRollback) THEN
 		BEGIN
@@ -128,12 +145,18 @@ sp: BEGIN
         END;
     END IF;
     
-	-- Web will return CTSCustID, CustID, SubscriberID, EvidenceID, 2 (ActionType) from sp ValidateInput file
+	-- Return CTSCustID, CustID, SubscriberID, EvidenceID, 2 (ActionType)
+    SELECT DISTINCT temp.CTSCustId
+           , temp.CustId
+           , temp.SubscriberId
+           , temp.EvidenceId
+           , 2 -- remove
+	FROM Temp_MultipleAccount AS temp;
     
-	DROP TEMPORARY TABLE IF EXISTS tmpMultipleAccount;
-	DROP TEMPORARY TABLE IF EXISTS tmpAssociationException;
-	DROP TEMPORARY TABLE IF EXISTS tmpAffectedDevices;
-	DROP TEMPORARY TABLE IF EXISTS tmpCustEvidence;
+	DROP TEMPORARY TABLE IF EXISTS Temp_MultipleAccount;
+	DROP TEMPORARY TABLE IF EXISTS Temp_AssociationException;
+	DROP TEMPORARY TABLE IF EXISTS Temp_AffectedDevices;
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustEvidence; 
 END$$
 
 DELIMITER ;
