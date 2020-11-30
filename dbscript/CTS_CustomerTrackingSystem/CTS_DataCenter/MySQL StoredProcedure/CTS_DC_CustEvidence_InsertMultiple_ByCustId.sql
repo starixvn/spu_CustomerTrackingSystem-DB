@@ -1,9 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsAPIAdmin" isFunction="0" isNested="0"></info>*/
-USE `CTS_DataCenter`;
 DROP procedure IF EXISTS `CTS_DC_CustEvidence_InsertMultiple_ByCustId`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_InsertMultiple_ByCustId`(IN ip_NewAccountEvidences json,IN ip_UserID int,OUT op_ErrorMessage varchar(200))
     SQL SECURITY INVOKER
 sp: BEGIN
@@ -20,6 +18,7 @@ sp: BEGIN
 			- 20201013@Long.Luu [Redmine ID: #141756]: Sync Evidence to Category
             - 20201020@Irena.Vo [Redmine ID: #141756]: Enhance logic Remove all category (Detail & General) 
             - 20201111@Irena.Vo [Redmine ID: #145027]: Enhance logic Insert History for Evidence Category
+			- 20201130@Irena.Vo [Redmine ID: #141563]: Enhance logic Insert new evidence (remove existed evidence category before)
             
         call CTS_DataCenter.CTS_DC_CustEvidence_InsertMultiple_ByCustId
 			('[{"CustID": 43600693, "EvidenceID": 45, "Comment": "na test 1"},{"CustID":43600693, "EvidenceID": 46, "Comment":"na test 2"},
@@ -62,6 +61,15 @@ sp: BEGIN
         , 	PRIMARY KEY	    PK_Temp_AssociatedException_FromCTSCustID_ToCTSCustID(FromCTSCustID,ToCTSCustID)
 	);
     
+	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedEviCategories;    
+	CREATE TEMPORARY TABLE Temp_ExistedEviCategories 
+    (	  
+			CustID		    BIGINT UNSIGNED
+        ,   CategoryID      SMALLINT UNSIGNED
+        ,   EvidenceID      SMALLINT UNSIGNED
+        , 	INDEX 			IX_Temp_ExistedEviCategories_CustID_CategoryID_EvidenceID(CustID,CategoryID,EvidenceID)    
+     );
+	
     INSERT INTO Temp_MultipleAccountEvidence(CustID, EvidenceID, Remark)
 	SELECT 	tmpTable.CustID
 		, 	tmpTable.EvidenceID
@@ -140,6 +148,21 @@ sp: BEGIN
         INNER JOIN Temp_MultipleAccountEvidence AS a ON a.CustID = pro.CustID
 		INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON e.EvidenceID = a.EvidenceID;
 		
+         -- Get existed Cust Category Evidences
+        INSERT INTO Temp_ExistedEviCategories(CustID,EvidenceID,CategoryID)
+        SELECT DISTINCT cate.CustID, ce.EvidenceID, cate.CategoryID
+        FROM CTS_DataCenter.CustEvidence AS ce
+        INNER JOIN Temp_MultipleAccountEvidence AS t ON t.CTSCustID = ce.FromCustID AND ce.Level = 0 AND ce.EvidenceID <> t.EvidenceID
+        INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = t.CustID
+        INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON e.EvidenceID = ce.EvidenceID AND e.CategoryID = cate.CategoryID;
+        
+        -- Remove old Evidence Category
+        DELETE cate
+        FROM CTS_DataCenter.CTSCustomerClassification AS cate
+        INNER JOIN Temp_MultipleAccountEvidence AS t ON t.CustID = cate.CustID
+		INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON cate.CategoryID = e.CategoryID AND t.EvidenceID = e.EvidenceID
+        INNER JOIN Temp_ExistedEviCategories AS ex ON ex.CustID = cate.CustID AND cate.CategoryID = ex.CategoryID;
+       
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification
 		(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
         SELECT 	DISTINCT t.CustID
@@ -157,7 +180,7 @@ sp: BEGIN
 		INNER JOIN CTS_DataCenter.EvidenceToCategory AS ec ON t.EvidenceID = ec.EvidenceID;
         
         INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
-		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TurnoverRM, WinlossRM, BetCount, ActiveDays)
+		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate)
 		SELECT 	DISTINCT t.CustID
 			, 	t.CTSCustID
 			, 	ec.CategoryID
@@ -167,14 +190,14 @@ sp: BEGIN
             ,   0
             ,   1
 			,   DATE(lv_CreatedDateTime)
-            , 0
-            , 0
-            , 0
-            , 0
 		FROM Temp_MultipleAccountEvidence AS t
 		INNER JOIN CTS_DataCenter.EvidenceToCategory AS ec ON t.EvidenceID = ec.EvidenceID;
     END IF;
     
+    -- Return distinct CustID mapping CC to mainDB
+    SELECT DISTINCT temp.CustId FROM  Temp_MultipleAccountEvidence AS temp;
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_ExistedEviCategories;    
 	DROP TEMPORARY TABLE IF EXISTS Temp_AssociatedException;
 	DROP TEMPORARY TABLE IF EXISTS Temp_AffectedDevices;
     DROP TEMPORARY TABLE IF EXISTS Temp_MultipleAccountEvidence; 
