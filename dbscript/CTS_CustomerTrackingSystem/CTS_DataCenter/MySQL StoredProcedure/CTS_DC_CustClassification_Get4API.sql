@@ -1,12 +1,9 @@
-USE `CTS_DataCenter`;
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsAPI" isFunction="0" isNested="0"></info>*/
 DROP procedure IF EXISTS `CTS_DC_CustClassification_Get4API`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_CustClassification_Get4API`(
-	IN ip_CustIDs			VARCHAR(2000),
-    IN ip_ParentCateIDs		VARCHAR(500)
-)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Get4API`(IN ip_CustIDs			VARCHAR(2000), IN ip_ParentCateIDs		VARCHAR(500))
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200914@Harvey.Nguyen
@@ -14,8 +11,10 @@ BEGIN
 		DB:			CTS_DataCenter.
 		Original: 
 		Revisions:
-            - 20200910@Harvey.Nguyen [Redmine ID: #140971]: init sp
-            - 20200929@Lex.Khuat [Redmine ID: #141962]: Support return problem account categories by 
+            - 20200910@Harvey.Nguyen: init sp [Redmine ID: #140971]
+            - 20200929@Lex.Khuat: Support return problem account categories by [Redmine ID: #141962]
+            - 20201130@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. Remove logic get category detail.
+
 		Param's Explanation:
 	*/ 
 	DECLARE v_remark VARCHAR(50);
@@ -55,7 +54,6 @@ BEGIN
     );
     
     SET v_remark = 'Auto tag customer classification';
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     
     INSERT INTO tempLatestRecordOfCategory(CustID, CategoryID, SportGroupID, LastModifiedBy, LastModifiedDate, Remark, LastScannedDate, CategoryType)
     SELECT 		cla.CustID
@@ -66,7 +64,7 @@ BEGIN
                 , cla.Remark
                 , cla.LastScannedDate
                  , CASE
-					  WHEN b.CategoryID = 1 THEN 0
+					  -- WHEN b.CategoryID = 1 THEN 0
 			          WHEN b.CategoryID = 200  THEN 1
 					  WHEN b.CategoryID = 50  THEN 2
                   END AS CategoryType   
@@ -109,7 +107,6 @@ BEGIN
 		,	a.ScanIntervalInSecond
     ORDER BY LastModifiedDate DESC;
    
-   SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 	
 	# Begin: Cleanup
 	DROP TEMPORARY TABLE tempLatestRecordOfCategory;
