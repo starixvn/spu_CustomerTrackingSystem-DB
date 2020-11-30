@@ -40,8 +40,7 @@ BEGIN
 			, Username			VARCHAR(50)			PATH "$.Username"
 			, EvidenceCode		VARCHAR(10)			PATH "$.EvidenceCode"
 		 )) AS tmpTable;  
-    
-    SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+        
     SELECT 	RowId
 		,	c.CTSCustID
 		,	c.CustID
