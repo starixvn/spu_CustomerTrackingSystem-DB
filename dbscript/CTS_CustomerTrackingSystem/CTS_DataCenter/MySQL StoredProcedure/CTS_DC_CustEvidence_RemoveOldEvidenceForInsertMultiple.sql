@@ -34,13 +34,12 @@ sp: BEGIN
         END;
     END IF;
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_MultipleAccount;    
+     DROP TEMPORARY TABLE IF EXISTS Temp_MultipleAccount;    
 	CREATE TEMPORARY TABLE Temp_MultipleAccount 
 	(	 
 			CTSCustID		BIGINT UNSIGNED
 		,   CustID          BIGINT UNSIGNED
-        ,   SubscriberID    BIGINT UNSIGNED
-        ,   EvidenceID      SMALLINT 
+        ,   SubscriberID    INT UNSIGNED
 		, 	PRIMARY KEY	Temp_MultipleAccount_CTSCustID(CTSCustID) 
 	);      
 	
@@ -64,6 +63,14 @@ sp: BEGIN
 		,	FromCustID 	BIGINT UNSIGNED
 		,   INDEX		IX_Temp_CustEvidence_CTSCustID_FromCustID(CTSCustID, FromCustID)
 	);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustEvidenceList;
+	CREATE TEMPORARY TABLE Temp_CustEvidenceList(
+			CTSCustID 	BIGINT UNSIGNED
+		,	EvidenceID 	BIGINT UNSIGNED
+		,   INDEX		IX_Temp_CustEvidenceList_CTSCustID_EvidenceID(CTSCustID,EvidenceID)
+	);
+	
 	
 	INSERT INTO Temp_MultipleAccount(CTSCustID)
 	SELECT 	temp.CTSCustID
@@ -75,7 +82,7 @@ sp: BEGIN
 	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 	/*GET CUSTOMER INFO*/
     UPDATE 		Temp_MultipleAccount AS t
-	INNER JOIN 	CTS_DataCenter.CTSCustomer AS c ON t.CustID = c.CustID AND c.CustSubID = 0
+	INNER JOIN 	CTS_DataCenter.CTSCustomer AS c ON t.CTSCustID = c.CTSCustID AND c.CustSubID = 0
     SET 		t.CustID = c.CustID
 			,	t.SubscriberID = c.SubscriberID;
     
@@ -119,17 +126,14 @@ sp: BEGIN
     END IF;
     
     -- Get Evidence List for customers before remove
-	UPDATE Temp_MultipleAccount AS temp1
-    INNER JOIN Temp_CustEvidence AS temp2 ON temp1.CTSCustID = temp2.CTSCustID
-    INNER JOIN CTS_DataCenter.CustEvidence AS cus ON (cus.CTSCustID = temp1.CTSCustID AND cus.Level = 0) 
-													OR (cus.CTSCustID = temp2.CTSCustID AND cus.FromCustID = temp2.FromCustID)
-    SET temp1.EvidenceID = cus.EvidenceID;
+	INSERT INTO Temp_CustEvidenceList
+    SELECT DISTINCT temp.CTSCustID, evd.EvidenceID
+    FROM Temp_MultipleAccount AS temp 
+    INNER JOIN CustEvidence AS evd ON temp.CTSCustID = evd.FromCustID;
     
-	DELETE cus  
-    FROM CTS_DataCenter.CustEvidence AS cus 
-    INNER JOIN Temp_MultipleAccount AS temp1 ON (cus.CTSCustID = temp1.CTSCustID AND cus.Level = 0) 
-	INNER JOIN Temp_CustEvidence AS temp2 ON temp1.CTSCustID = temp2.CTSCustID
-                                              AND (cus.CTSCustID = temp2.CTSCustID AND cus.FromCustID = temp2.FromCustID);
+	DELETE evd
+    FROM  CustEvidence AS evd
+    INNER JOIN  Temp_MultipleAccount AS temp ON temp.CTSCustID = evd.FromCustID;
     
     IF(ip_IsRollback) THEN
 		BEGIN
@@ -149,10 +153,12 @@ sp: BEGIN
     SELECT DISTINCT temp.CTSCustId
            , temp.CustId
            , temp.SubscriberId
-           , temp.EvidenceId
+           , evd.EvidenceId
            , 2 -- remove
-	FROM Temp_MultipleAccount AS temp;
+	FROM Temp_MultipleAccount AS temp
+    INNER JOIN Temp_CustEvidenceList AS evd ON evd.CTSCustID = temp.CTSCustID;
     
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustEvidenceList;
 	DROP TEMPORARY TABLE IF EXISTS Temp_MultipleAccount;
 	DROP TEMPORARY TABLE IF EXISTS Temp_AssociationException;
 	DROP TEMPORARY TABLE IF EXISTS Temp_AffectedDevices;
