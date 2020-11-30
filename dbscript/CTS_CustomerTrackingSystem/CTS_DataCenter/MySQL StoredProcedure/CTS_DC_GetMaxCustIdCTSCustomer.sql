@@ -15,8 +15,9 @@ BEGIN
 			- 20201130@Aries.Nguyen: Remove transaction isolation level UNCOMMITTED, REPEATABLE READ [Redmine ID: 145361]
         
 		Param's Explanation (filtered by):
-        
-        CALL CTS_DataCenter.CTS_DC_GetMaxCustIdCTSCustomer (0)
+
+		Example:
+			- CALL CTS_DataCenter.CTS_DC_GetMaxCustIdCTSCustomer (0)
 	*/
 IF ip_IsCustSub = 0 THEN
 	SELECT 
