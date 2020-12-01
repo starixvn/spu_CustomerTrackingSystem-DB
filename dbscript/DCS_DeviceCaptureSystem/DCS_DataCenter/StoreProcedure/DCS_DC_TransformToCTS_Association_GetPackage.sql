@@ -61,7 +61,7 @@ BEGIN
     INNER JOIN	DCS_DataCenter.Account AS acc
 				ON ass.AccountID = acc.AccountID
 	WHERE	ass.IsCTSTransformed = 0
-			AND acc.AccountID != 0
+			AND acc.IsCTSTransformed != 0
 	LIMIT	TotalRecord;    
       
 	### PERFORMANCE
@@ -76,6 +76,5 @@ BEGIN
 
     WHERE	z.ExecKey = vrExecKey AND z.StepID = z.StepID;
     ### PERFORMANCE: END 
-    #GRANT EXECUTE ON PROCEDURE DCS_DataCenter.DCS_DC_TransformToCTS_Association_GetPackage TO `ctsService`@`%`;
 END$$
 DELIMITER ;
