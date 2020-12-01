@@ -80,9 +80,7 @@ sp: BEGIN
 			, EvidenceID	SMALLINT UNSIGNED	PATH "$.EvidenceID"
 			, Remark		VARCHAR(500)		PATH "$.Comment"
 		 )) AS tmpTable;  
-         
-	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
-    
+  
     /*GET CUSTOMER INFO*/
     UPDATE Temp_MultipleAccountEvidence AS t
 	INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON t.CustID = cus.CustID AND cus.CustSubID = 0

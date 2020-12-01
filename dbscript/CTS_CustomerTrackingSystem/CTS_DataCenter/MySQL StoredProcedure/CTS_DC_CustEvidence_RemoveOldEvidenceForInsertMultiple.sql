@@ -13,7 +13,7 @@ sp: BEGIN
 
 		Revisions: 
 		   - 20200825@Roger.Le [Redmine ID: 137551]: Created
-		    - 20201111@Irena.Vo [Redmine ID: #145027]: Enhance logic Insert History for Evidence Category
+		   - 20201111@Irena.Vo [Redmine ID: #145027]: Enhance logic Insert History for Evidence Category
 		   - 20201125@Irena.Vo [Redmine ID: #141563]: Move flow sync Evidence to Category
 		   - 20201130@Irena.Vo [Redmine ID: #141563]: Enhance logic Insert new evidence (remove existed evidence category before)
 	*/
@@ -78,8 +78,7 @@ sp: BEGIN
 		 "$[*]" COLUMNS(
 			  CTSCustID 	BIGINT UNSIGNED		PATH "$.CTSCustID"
 		 )) AS temp;
- 
-	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
 	/*GET CUSTOMER INFO*/
     UPDATE 		Temp_MultipleAccount AS t
 	INNER JOIN 	CTS_DataCenter.CTSCustomer AS c ON t.CTSCustID = c.CTSCustID AND c.CustSubID = 0
@@ -154,7 +153,7 @@ sp: BEGIN
            , temp.CustId
            , temp.SubscriberId
            , evd.EvidenceId
-           , 2 -- remove
+           , 2 AS ActionType-- remove
 	FROM Temp_MultipleAccount AS temp
     INNER JOIN Temp_CustEvidenceList AS evd ON evd.CTSCustID = temp.CTSCustID;
     
