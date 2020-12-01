@@ -17,6 +17,7 @@ BEGIN
             - 20200506@CaseyHuynh: Remove code "add new CTSCustomer" for Not Deposit Account [RedmineID: #133486]
             - 20200526@CaseyHuynh: Update LastLoginTime [RedmineID: #133263]
             - 20201112@CaseyHuynh: GET Lastest Code Move Server P3, update Permission and Add Meta data. Enhance  Transform Retry [RedmineID: #145271]
+			- 20201127@CaseyHuynh: Move statement update IsCTSTransformed to the End[RedmineID: #145277]
 		Param's Explanation (filtered by):                
 	*/
 	DECLARE vrDepositSubType TINYINT DEFAULT 1;
@@ -95,12 +96,7 @@ BEGIN
 			, acc.SubscriberID 
             , CURRENT_TIMESTAMP(4) AS InsertTime
     FROM 	Temp_Account AS acc
-	WHERE 	acc.CTSCustID IS NOT NULL;      
-    
-    UPDATE DCS_DataCenter.Account acc
-	INNER JOIN	Temp_Account AS tac 
-				ON acc.AccountID = tac.AccountID			
-	SET 	acc.IsCTSTransformed = (CASE WHEN 	tac.CTSCustID IS NOT NULL THEN 1 ELSE -1 END);
+	WHERE 	acc.CTSCustID IS NOT NULL;     
     
     UPDATE 		DCS_DataCenter.Association AS ass
     INNER JOIN	Temp_Account AS acc 
@@ -115,6 +111,10 @@ BEGIN
     WHERE		cus.LastLoginTime < acc.LastLoginTime
 				OR cus.LastLoginTime IS NULL;    
     
+    UPDATE DCS_DataCenter.Account acc
+	INNER JOIN	Temp_Account AS tac 
+				ON acc.AccountID = tac.AccountID			
+	SET 	acc.IsCTSTransformed = (CASE WHEN 	tac.CTSCustID IS NOT NULL THEN 1 ELSE -1 END);
 	#===================================================================== 
 	### PERFORMANCE
 	SET	vrEndTime = CURRENT_TIMESTAMP(4);	

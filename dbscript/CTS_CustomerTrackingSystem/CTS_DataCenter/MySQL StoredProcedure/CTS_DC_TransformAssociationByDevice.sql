@@ -17,6 +17,7 @@ BEGIN
             - 20201018@CaseyHuynh: LOG INSSUE
 		    - 20200518@CaseyHuynh: Remove Log Issue
             - 20201112@CaseyHuynh: GET Lastest Code Move Server P3, update Permission and Add Meta data. Change Log table to DB Log. Enhance  Transform Retry [RedmineID: #145271]
+            - 20201130@CaseyHuynh: add more condition when update Association.IsCTSTransformed = -1."WHEN asd.CTSCustID IS NULL AND  tmp_ass.CTSCustID IS NULL THEN -1 END)"
 		Param's Explanation (filtered by):
                 
 	*/    
@@ -192,7 +193,8 @@ BEGIN
 	LEFT JOIN 	CTS_DataCenter.AssociationByDevice AS asd
 				ON asd.CTSCustID 	= tmp_ass.CTSCustID  
                 AND asd.DCSDeviceID = ass.DeviceID
-	SET			ass.IsCTSTransformed =	(CASE WHEN asd.CTSCustID IS NOT NULL THEN 1 ELSE -1 END);
+	SET			ass.IsCTSTransformed =	(CASE WHEN asd.CTSCustID IS NOT NULL THEN 1
+										 WHEN asd.CTSCustID IS NULL AND  tmp_ass.CTSCustID IS NULL THEN -1 END);
     
 	GET DIAGNOSTICS rowCount = ROW_COUNT;
     INSERT INTO Temp_PerformanceStats(step_name, start_time, diff_time, stats)
