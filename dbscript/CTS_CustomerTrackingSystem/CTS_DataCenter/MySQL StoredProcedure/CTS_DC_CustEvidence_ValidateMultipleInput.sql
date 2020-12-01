@@ -1,4 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+USE `CTS_DataCenter`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustEvidence_ValidateMultipleInput`;
+
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_ValidateMultipleInput`(
 		IN ip_NewAccountEvidences 	JSON
