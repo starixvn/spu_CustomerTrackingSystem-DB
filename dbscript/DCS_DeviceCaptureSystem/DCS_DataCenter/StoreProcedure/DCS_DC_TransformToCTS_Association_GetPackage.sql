@@ -13,6 +13,7 @@ BEGIN
 
 	Revisions:
 		- 20201112@CaseyHuynh: GET Lastest Code Move Server P3, update Permission and Add Meta data. Enhance  script1 [RedmineID: #145271]
+        - 20201201@CaseyHuynh: Get Association if it completed Trasformed Account (Account.IsCTSTransformed !=0)
 	Param's Explanation (filtered by):
 	*/
 	
@@ -55,11 +56,13 @@ BEGIN
             , ass.CreatedTime
             , ass.SubscriberID
             , @RowID := @RowID+1
-            , @MaxAssociationID := GREATEST(@MaxAssociationID,AssociationID)
+            , @MaxAssociationID := GREATEST(@MaxAssociationID,ass.AssociationID)
 	FROM 	DCS_DataCenter.Association AS ass
+    INNER JOIN	DCS_DataCenter.Account AS acc
+				ON ass.AccountID = acc.AccountID
 	WHERE	ass.IsCTSTransformed = 0
-	LIMIT	TotalRecord;
-    
+			AND acc.AccountID != 0
+	LIMIT	TotalRecord;    
       
 	### PERFORMANCE
 	SET		vrEndTime = CURRENT_TIMESTAMP(4);
