@@ -44,9 +44,7 @@ BEGIN
 	SET @sql = CONCAT("INSERT INTO Temp_NewCustomers(CustID) VALUES ('", REPLACE(ip_CustIds, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
-    
+
    	/*IGNORE VVIP - PIN CATEGORY*/
     DELETE temp
 	FROM Temp_NewCustomers AS temp
@@ -69,8 +67,8 @@ BEGIN
 	SELECT 	temp.CustID
 		, 	temp.CTSCustID
 		, 	temp.SubscriberID
-		, 	2
-		, 	0
+		, 	201
+		, 	200
 		, 	lv_CurrentDateTime
 		, 	lv_CreatedBy
 		, 	lv_CurrentDateTime
@@ -83,8 +81,8 @@ BEGIN
 			LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, ActionType, IsAuto, InsertDate)
     SELECT 	temp.CustID
 		, 	temp.CTSCustID
-		, 	2
-		, 	0
+		, 	201
+		, 	200
 		, 	lv_CurrentDateTime
 		, 	lv_CreatedBy
 		, 	0

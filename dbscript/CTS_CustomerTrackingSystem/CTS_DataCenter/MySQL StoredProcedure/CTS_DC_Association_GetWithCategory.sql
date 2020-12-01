@@ -1,8 +1,9 @@
-DELIMITER $$
-USE CTS_DataCenter $$
-DROP PROCEDURE IF EXISTS CTS_DC_Association_GetWithCategory $$
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_Association_GetWithCategory`;
 
-CREATE DEFINER=`ctsService`@`%` PROCEDURE `CTS_DC_Association_GetWithCategory`(IN ip_CustIDList VARCHAR(2000), IN ip_IsDelete BOOLEAN)
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_GetWithCategory`(IN ip_CustIDList VARCHAR(2000), IN ip_IsDelete BOOLEAN)
+	SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20201027@Harvey

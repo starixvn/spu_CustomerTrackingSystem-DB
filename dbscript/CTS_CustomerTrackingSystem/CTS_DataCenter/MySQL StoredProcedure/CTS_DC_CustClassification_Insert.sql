@@ -1,19 +1,18 @@
-USE `CTS_DataCenter`;
-DROP procedure IF EXISTS `CTS_DC_CustClassification_Insert`;
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_Insert`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_CustClassification_Insert`(
-	    IN ip_CustID			BIGINT UNSIGNED
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Insert`(
+		IN ip_CustID			BIGINT UNSIGNED
     , 	IN ip_CTSCustID			BIGINT UNSIGNED	
     ,	IN ip_SubscriberID		INT
-	, 	IN ip_SportGroupIDList 	VARCHAR(50)
 	,	IN ip_CategoryID		SMALLINT
     , 	IN ip_Remark 			VARCHAR(300)
 	,	IN ip_CreatedBy 		INT
     
     , 	OUT op_ErrorMessage 	VARCHAR(200)
 )
+	SQL SECURITY INVOKER
 sp: BEGIN
 	/*
 		Created:	20200423@Long.Luu	
@@ -43,30 +42,14 @@ sp: BEGIN
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
     
-	DROP TEMPORARY TABLE IF EXISTS Temp_SportGroupID;
-    CREATE TEMPORARY TABLE Temp_SportGroupID (
-		SportGroupID INT PRIMARY KEY
-    );
-    
-    IF(ip_SportGroupIDList = '') THEN
-       INSERT INTO Temp_SportGroupID (SportGroupID) VALUES (0); -- For VVIP
-	ELSE
-		SET @sql = CONCAT("INSERT INTO Temp_SportGroupID (SportGroupID) VALUES ('", REPLACE(ip_SportGroupIDList, ",", "'),('"),"');");
-		PREPARE stmt1 FROM @sql;
-		EXECUTE stmt1;
-	END IF;
-    
 	IF (SELECT COUNT(1) FROM CTS_DataCenter.CustomerCategory WHERE CategoryID = ip_CategoryID AND IsUsedManually = 0) > 0 THEN		
 		SET op_ErrorMessage = 'This Category is not allowed for manually update!!!!'; 
         LEAVE sp;
     END IF;   
     
-	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-	SET SQL_SAFE_UPDATES = 0;
-    
 	/**********2. ACTION FOR VVIP**********/
-    IF (ip_CategoryID = 3) THEN
-        -- Remove all category before: General & Detailed, Problem.
+    IF (ip_CategoryID = 213) THEN
+        -- Remove all categories before
 	    DELETE cate
 		FROM CTS_DataCenter.CTSCustomerClassification AS cate
 		WHERE cate.CustID = ip_CustID; 
@@ -147,14 +130,13 @@ sp: BEGIN
 		, 	ip_CTSCustID
 		, 	ip_SubscriberID
         , 	ip_CategoryID
-        ,   s.SportGroupID
+        ,   200
         , 	ip_Remark
         , 	lv_CurrentDateTime
         ,   ip_CreatedBy
         ,   lv_CurrentDateTime
         ,   ip_CreatedBy
-        ,   DATE(lv_CurrentDateTime)
-	FROM Temp_SportGroupID AS s;
+        ,   DATE(lv_CurrentDateTime);
 
    -- Insert history
    INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
@@ -162,21 +144,16 @@ sp: BEGIN
 	SELECT 	ip_CustID
 		, 	ip_CTSCustID
         , 	ip_CategoryID
-        , 	s.SportGroupID 
+        , 	200
         , 	lv_CurrentDateTime
         , 	ip_CreatedBy
         ,	0 -- Add new
         ,	0 -- IsAuto
-        ,   CURRENT_DATE()
-	FROM Temp_SportGroupID AS s;
+        ,   CURRENT_DATE();
     
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	VALUES(10, lv_SPName, CONCAT('Insert classification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID,';ip_SportGroupIDList_', ip_SportGroupIDList,  ';ip_CategoryID_', ip_CategoryID, ';ip_Remark_', ip_Remark), lv_CurrentDateTime, ip_CreatedBy);
-    
-    SET SQL_SAFE_UPDATES = 1;
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
 
-    DROP TEMPORARY TABLE IF EXISTS Temp_SportGroupID;
 END$$
 
 DELIMITER ;

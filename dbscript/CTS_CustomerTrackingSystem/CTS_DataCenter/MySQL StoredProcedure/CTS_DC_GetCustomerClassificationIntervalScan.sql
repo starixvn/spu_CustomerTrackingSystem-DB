@@ -1,9 +1,9 @@
-USE `CTS_DataCenter`;
-DROP procedure IF EXISTS `CTS_DC_GetCustomerClassificationIntervalScan`;
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_GetCustomerClassificationIntervalScan`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_GetCustomerClassificationIntervalScan`(IN ip_NoOfRecord INT, IN ip_Batch INT, IN ip_ParentCategoryID INT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_GetCustomerClassificationIntervalScan`(IN ip_NoOfRecord INT, IN ip_Batch INT, IN ip_ParentCategoryID INT)
+	SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	[20200612@Casey.Huynh][135324]
@@ -47,9 +47,6 @@ BEGIN
     SET 	lv_StepID = 1;
     
     SET 	lv_StartTime = CURRENT_TIMESTAMP(4);	
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
-	SET SQL_SAFE_UPDATES = 0;
     
     INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
     VALUES(lv_ExecKey, lv_StepID, lv_SPName,  lv_Notes, lv_StartTime);
@@ -132,10 +129,7 @@ BEGIN
             , z.FromID = lv_FromID
             , z.ToID		= lv_ToID
     WHERE	z.ExecKey = lv_ExecKey AND z.StepID = lv_StepID ;     
-    ### PERFORMANCE: END 
-    
-    SET SQL_SAFE_UPDATES = 1;
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    ### PERFORMANCE: END
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_ScanList;
     

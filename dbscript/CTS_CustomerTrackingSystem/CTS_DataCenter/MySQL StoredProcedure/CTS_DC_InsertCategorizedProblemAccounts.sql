@@ -1,11 +1,9 @@
-USE `CTS_DataCenter`;
-DROP procedure IF EXISTS `CTS_DC_InsertCategorizedProblemAccounts`;
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_InsertCategorizedProblemAccounts`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_InsertCategorizedProblemAccounts`(
-		IN  ip_ProblemAccounts 		JSON
-)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_InsertCategorizedProblemAccounts`(IN  ip_ProblemAccounts	JSON)
+	SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200715@Long.Luu
@@ -59,9 +57,6 @@ BEGIN
 			  CustID 			BIGINT UNSIGNED		PATH "$.CustId"
 			, MainDBCategoryID	SMALLINT 			PATH "$.CategoryId"	
 		 )) AS temp;
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-	SET SQL_SAFE_UPDATES = 0;
     
     /*GET REMOVE PROBLEM ACCOUNTS*/
 	UPDATE Temp_ProblemAccounts
@@ -185,9 +180,6 @@ BEGIN
     /*GET DISTINCT CUSTID FOR LASTEST CATEGORY*/
     SELECT DISTINCT temp.CustID AS CustId
     FROM Temp_ProblemAccounts AS temp; -- Get lastest custid for mapping to CC in mainDB
-    
-	SET SQL_SAFE_UPDATES = 1; 
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedClassification;    
     DROP TEMPORARY TABLE IF EXISTS Temp_ProblemAccounts;     

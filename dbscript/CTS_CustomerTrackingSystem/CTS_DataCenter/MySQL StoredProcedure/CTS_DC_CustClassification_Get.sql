@@ -38,19 +38,12 @@ BEGIN
 	,   CategoryType        SMALLINT UNSIGNED -- 0: ParentID = 1, 1: ParentID = 200, 2: ParentID = 50, 3: CategoryID = 2
     );
    
-    DROP TEMPORARY TABLE IF EXISTS Temp_GeneralCategory;
-    CREATE TEMPORARY TABLE Temp_GeneralCategory (
-    	CategoryID			SMALLINT UNSIGNED
-     );
-   
     DROP TEMPORARY TABLE IF EXISTS Temp_RangeDateCategory;
     CREATE TEMPORARY TABLE Temp_RangeDateCategory (
 		DisplayCategoryID   	SMALLINT UNSIGNED 
 	 , 	MinLastModifiedDate   	DATETIME
      , 	MaxLastModifiedDate   	DATETIME        
     );
-   
-     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
      
      IF EXISTS (SELECT 1 FROM CTS_DataCenter.SpecialCustomerClass WHERE CustID = ip_CustID AND CreatedFromFunction = 21) THEN
 		SET lv_IsPinCategory = 1;
@@ -66,28 +59,12 @@ BEGIN
 			, cate.LastScannedDate
 	FROM		CTS_DataCenter.CTSCustomerClassification AS cate
     WHERE		cate.CustID = ip_CustID;
-    
-    -- Get General Category
-    INSERT INTO Temp_GeneralCategory
-    SELECT DISTINCT temp.CategoryID 
-    FROM Temp_LatestRecordOfCategory AS temp 
-    INNER JOIN 	CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = temp.CategoryID
-    WHERE cc.ParentID = 200;
-     
-    -- Insert new General New Member
-    IF NOT EXISTS (SELECT 1 FROM Temp_GeneralCategory) THEN
-		INSERT INTO Temp_LatestRecordOfCategory (CategoryID, SportGroupID, LastModifiedBy, LastModifiedDate, Remark, LastScannedDate)
-		SELECT   201, 0, cate.LastModifiedBy, cate.LastModifiedDate, cate.Remark, NULL
-        FROM	CTS_DataCenter.CTSCustomerClassification AS cate
-        WHERE   cate.CategoryID = 2 AND cate.CustID = ip_CustID; 
-    END IF;
-    
+
     UPDATE Temp_LatestRecordOfCategory AS temp
     INNER JOIN 	CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = temp.CategoryID
     SET temp.CategoryType =	( CASE
-								  WHEN cc.ParentID = 50 THEN 2 -- parse 2 row (detail&general) & red
-								  WHEN cc.ParentID = 200  THEN 1 -- parse 1 row (general)  & any color 
-								  WHEN cc.ParentID = 1 THEN 0 -- parse 1 row (detail) & any color
+								  WHEN cc.ParentID = 50 THEN 2 -- red
+								  WHEN cc.ParentID = 200  THEN 1 -- any color 
 					         END)
 	WHERE temp.CategoryType IS NULL;
     
@@ -122,9 +99,9 @@ BEGIN
 		,   temp.CategoryType
         ,   temp.DisplayCategoryID AS CategoryID
 		,	cc.CategoryName
-        , 	LEFT(GROUP_CONCAT(s.SportGroupID ORDER BY s.SportGroupID ASC SEPARATOR ', '),255) AS SportGroupIDList
-        , 	LEFT(GROUP_CONCAT(s.SportGroupName ORDER BY s.SportGroupID ASC SEPARATOR ', '),255) AS SportGroupNameList
-        ,	CASE  WHEN cc.CategoryID IN (3, 213) THEN temp.Remark
+        , 	LEFT(GROUP_CONCAT(s.SportGroupID ORDER BY s.SportGroupID ASC SEPARATOR ', '), 255) AS SportGroupIDList
+        , 	LEFT(GROUP_CONCAT(s.SportGroupName ORDER BY s.SportGroupID ASC SEPARATOR ', '), 255) AS SportGroupNameList
+        ,	CASE  WHEN cc.CategoryID = 213 THEN temp.Remark
                   WHEN cc.IsUsedManually = 0 THEN lv_Remark
 			END AS Remark
         ,	u.UserName AS LastModifiedBy
@@ -150,12 +127,6 @@ BEGIN
         ,	cc.IsUsedManually
 	 	,	cc.ScanIntervalInSecond
     ORDER BY LastModifiedDate DESC;
-
-	# Begin: Cleanup
-    DROP TEMPORARY TABLE IF EXISTS Temp_RangeDateCategory;
-	DROP TEMPORARY TABLE IF EXISTS Temp_GeneralCategory;
-    DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory; 
-	# End: Cleanup
     
     -- Return isPinCategory for customer
 	SELECT lv_IsPinCategory AS isPinCategory;   

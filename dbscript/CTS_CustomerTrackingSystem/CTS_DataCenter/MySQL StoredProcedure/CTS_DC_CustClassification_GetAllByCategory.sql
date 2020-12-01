@@ -1,10 +1,9 @@
-DELIMITER $$
-USE CTS_DataCenter $$
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_GetAllByCategory` $$
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_GetAllByCategory`;
 
-CREATE PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_GetAllByCategory`(
-	IN ip_CategoryIDList 	VARCHAR(200)
-)
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_GetAllByCategory`(IN ip_CategoryIDList 	VARCHAR(200))
+	SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200924@Long.Luu	
@@ -27,8 +26,6 @@ BEGIN
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
     
-	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
-    
     SELECT DISTINCT c.CustID, c.SportGroupID, s.SportGroupName, c.CategoryID, a.CategoryName
     FROM Temp_CategoryIDs AS t
 		INNER JOIN CTS_DataCenter.CustomerCategory AS a ON t.CategoryID = a.CategoryID
@@ -36,8 +33,6 @@ BEGIN
         INNER JOIN CTS_DataCenter.SportGroup AS s ON c.SportGroupID = s.SportGroupID
     WHERE a.IsActive = 1
     ORDER BY c.CustID ASC; 
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ; 
     
 END$$
 DELIMITER ;
