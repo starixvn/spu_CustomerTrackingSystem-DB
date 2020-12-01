@@ -12,10 +12,10 @@ sp: BEGIN
 		Original:
 
 		Revisions: 
-		   - 20200825@Roger.Le [Redmine ID: 137551]: Created
-		   - 20201111@Irena.Vo [Redmine ID: #145027]: Enhance logic Insert History for Evidence Category
-		   - 20201125@Irena.Vo [Redmine ID: #141563]: Move flow sync Evidence to Category
-		   - 20201130@Irena.Vo [Redmine ID: #141563]: Enhance logic Insert new evidence (remove existed evidence category before)
+		   - 20200825@Roger.Le: Created [Redmine ID: #137551]
+		   - 20201111@Irena.Vo: Enhance logic Insert History for Evidence Category [Redmine ID: #145027]
+		   - 20201125@Irena.Vo: Move flow sync Evidence to Category [Redmine ID: #141563]
+		   - 20201130@Irena.Vo: Enhance logic Insert new evidence (remove existed evidence category before) [Redmine ID: #141563]
 	*/
     
     # Handle error
@@ -107,8 +107,7 @@ sp: BEGIN
 					LEFT JOIN Temp_AssociationException AS e ON t.CTSCustID = e.FromCTSCustID AND a.CTSCustID = e.ToCTSCustID
 	WHERE a.CTSCustID <> d.CTSCustID		
     	AND (e.FromCTSCustID IS NULL OR e.ToCTSCustID IS NULL);
-    
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    	
     IF(!ip_IsRollback) THEN
 		BEGIN
 			 # Save log

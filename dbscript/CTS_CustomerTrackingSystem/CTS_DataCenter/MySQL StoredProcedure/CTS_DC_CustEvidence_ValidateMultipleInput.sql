@@ -1,5 +1,4 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-USE `CTS_DataCenter`;
 DROP PROCEDURE IF EXISTS `CTS_DC_CustEvidence_ValidateMultipleInput`;
 
 DELIMITER $$
@@ -12,14 +11,14 @@ SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200608@Long.Luu
-		Task:		Check whether multiple account-evidence is valid [Redmine ID: 134489]
+		Task:		Check whether multiple account-evidence is valid [Redmine ID: #134489]
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
-		   - 20200608@Long.Luu: Created [Redmine ID: 134489]
-		   - 20200824@Roger.Le[Redmine ID: 137551]: Evidence Upload - Overrite the data
-		   - 20201116@Adam.Tran[Redmine ID: 141563]: Implement Cust Evidence from file
+		   - 20200608@Long.Luu: Created [Redmine ID: #134489]
+		   - 20200824@Roger.Le: Evidence Upload - Overrite the data [Redmine ID: #137551]
+		   - 20201116@Adam.Tran: Implement Cust Evidence from file [Redmine ID: #141563]
         
 		Param's Explanation (filtered by):
 	*/    

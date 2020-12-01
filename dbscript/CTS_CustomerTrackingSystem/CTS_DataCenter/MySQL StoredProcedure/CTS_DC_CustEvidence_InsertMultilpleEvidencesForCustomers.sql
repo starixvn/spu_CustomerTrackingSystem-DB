@@ -7,18 +7,21 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_InsertMultilpleEvid
 sp: BEGIN
 	/*
 		Created:	20200610@Long.Luu
-		Task:		Insert multiple evidences for multiple customers [Redmine ID: 135585]
+		Task:		Insert multiple evidences for multiple customers [Redmine ID: #135585]
 		DB:			CTS_DataCenter
 		Original: 
 
 		Revisions:
-			- 20200610@Long.Luu: Created [Redmine ID: 135585] 
-            - 20201013@Long.Luu [Redmine ID: #141756]: Sync Evidence to Category
-            - 20201020@Irena.Vo [Redmine ID: #141756]: Enhance logic Remove all category (Detail & General) 
-            - 20201111@Irena.Vo [Redmine ID: #145027]: Enhance logic Insert History for Evidence Category
-            - 20201130@Irena.Vo [Redmine ID: #141563]: Enhance logic Insert new evidence (remove existed evidence category before)
+			- 20200610@Long.Luu: Created [Redmine ID: #135585] 
+            - 20201013@Long.Luu: Sync Evidence to Category [Redmine ID: #141756]
+            - 20201020@Irena.Vo: Enhance logic Remove all category (Detail & General) [Redmine ID: #141756]
+            - 20201111@Irena.Vo: Enhance logic Insert History for Evidence Category [Redmine ID: #145027]
+            - 20201130@Irena.Vo: Enhance logic Insert new evidence (remove existed evidence category before) [Redmine ID: #141563]
               
-            call CTS_DataCenter.CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers('43600693,43600889', '6.1', @op_ErrorMessage);
+		Param's Explanation(filered by):
+		
+		Example:
+            -call CTS_DataCenter.CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers('43600693,43600889', '6.1', @op_ErrorMessage);
 	*/    
    
     DECLARE		lv_SPName 			VARCHAR(100) DEFAULT 'CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers';  
