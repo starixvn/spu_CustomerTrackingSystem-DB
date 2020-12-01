@@ -75,8 +75,6 @@ sp: BEGIN
 	SET @sql = CONCAT("INSERT INTO Temp_EvidenceList (EvidenceCode) VALUES ('", REPLACE(ip_EvidenceCodes, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
-    
-	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
 	
     /*GET CUSTOMER INFO*/
     UPDATE 		Temp_CustomerList AS t

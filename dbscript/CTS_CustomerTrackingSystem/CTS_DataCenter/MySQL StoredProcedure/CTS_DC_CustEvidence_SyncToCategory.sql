@@ -47,8 +47,6 @@ BEGIN
         ,   CreatedTime     DATETIME
         , 	INDEX 			IX_Temp_ExistedEviCategories_CustID_CategoryID_EvidenceID(CustID,CategoryID,EvidenceID)    
      );
-    
-	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
 	
     INSERT INTO Temp_CustomerEvidences(CustID, CTSCustID, SubscriberID, EvidenceID, CategoryID, ActionType)
 	SELECT DISTINCT temp.CustID

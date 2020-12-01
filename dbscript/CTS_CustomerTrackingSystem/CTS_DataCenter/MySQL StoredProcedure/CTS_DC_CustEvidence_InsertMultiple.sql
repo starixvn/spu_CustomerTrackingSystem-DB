@@ -1,4 +1,6 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
+DROP procedure IF EXISTS `CTS_DC_CustEvidence_InsertMultiple`;
+
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_InsertMultiple`(IN ip_NewAccountEvidences json,IN ip_UserID int,IN ip_IsOverride tinyint,OUT op_ErrorMessage varchar(200))
     SQL SECURITY INVOKER
@@ -66,9 +68,7 @@ BEGIN
 			, Remark		VARCHAR(500)		PATH "$.Remark"
 			, CreatedBy		INT	UNSIGNED		PATH "$.CreatedBy"	
 		 )) AS tmpTable;  
-         
-	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  	
-    
+   
     /*IGNORE CUSTOMERS HAS NOT Override AND EXISTED EVIDENCE BEFORE*/
 	
 	IF (!ip_IsOverride) THEN

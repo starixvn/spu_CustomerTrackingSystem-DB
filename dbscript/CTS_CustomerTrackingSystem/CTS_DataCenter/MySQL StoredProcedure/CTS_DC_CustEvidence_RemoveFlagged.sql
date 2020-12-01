@@ -1,5 +1,4 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
-USE `CTS_DataCenter`;
 DROP procedure IF EXISTS `CTS_DC_CustEvidence_RemoveFlagged`;
 
 DELIMITER $$
@@ -31,8 +30,6 @@ BEGIN
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
-    
-	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
 	
     /*DELETE FLAGGED EVIDENCE*/
     DELETE FROM CTS_DataCenter.CustEvidence
