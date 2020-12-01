@@ -16,13 +16,15 @@ sp: BEGIN
 			- 20200227@Lex: Fix exclude exception
 			- 20200513@Lex: Fix wrong subID mapping of level 2
 			- 20200807@Casey.Huynh [138925]: Chagne CustEvidence Structure for Cross Subscriber : Remove SubscriberID and IsCreatedByMaster
-            - 20201013@Long.Luu [Redmine ID: #141756]: Sync Evidence to Category
-			- 20201020@Irena.Vo [Redmine ID: #141756]: Enhance logic Remove all category (Detail & General) 
-            - 20201111@Irena.Vo [Redmine ID: #145027]: Enhance logic Insert History for Evidence Category
-            - 20201125@Irena.Vo [Redmine ID: #141563]: Move flow sync Evidence to Category
+            - 20201013@Long.Luu: Sync Evidence to Category [Redmine ID: #141756]
+			- 20201020@Irena.Vo: Enhance logic Remove all category (Detail & General) [Redmine ID: #141756]
+            - 20201111@Irena.Vo: Enhance logic Insert History for Evidence Category [Redmine ID: #145027]
+            - 20201125@Irena.Vo: Move flow sync Evidence to Category [Redmine ID: #141563]
         
-		Param's Explanation (filtered by):			
-        call CTS_DataCenter.CTS_DC_CustEvidence_InsertSingle(221882500, 41, 'Na Test', 8, @op_ErrorMessage);
+		Param's Explanation (filtered by):		
+
+		Example: 
+			-call CTS_DataCenter.CTS_DC_CustEvidence_InsertSingle(221882500, 41, 'Na Test', 8, @op_ErrorMessage);
 	*/    
       
    DECLARE		lv_SPName 			VARCHAR(100) 	DEFAULT 'CTS_DC_CustEvidence_InsertSingle';    

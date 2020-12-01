@@ -1,5 +1,4 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-USE `CTS_DataCenter`;
 DROP PROCEDURE IF EXISTS `CTS_DC_CustEvidenceFromFile_Insert`;
 
 DELIMITER $$
@@ -16,16 +15,17 @@ SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20201106@Adam.Tran
-		Task:		Insert customer evidences [Redmine ID: 141563]
+		Task:		Insert customer evidences [Redmine ID: #141563]
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
-		- 20201106@Adam.Tran [Redmine ID: 141563]: Created
+			- 20201106@Adam.Tran: Created [Redmine ID: #141563]
 		
-		Param's Explanation (filtered by):        
-        set @op_ErrorMessage = '0';
-		call CTS_DataCenter.CTS_DC_CustEvidenceFromFile_Insert('[{"CTSCustID":19314,"CustID":1773789,"SubscriberID":130,"EvidenceID":13,"Remark":"test"}]', false, "member17_19314.xlsx", '202011181055428556', 8, @op_ErrorMessage);		
+		Param's Explanation (filtered by):   
+		
+		Example:			
+			- call CTS_DataCenter.CTS_DC_CustEvidenceFromFile_Insert('[{"CTSCustID":19314,"CustID":1773789,"SubscriberID":130,"EvidenceID":13,"Remark":"test"}]', false, "member17_19314.xlsx", '202011181055428556', 8, @op_ErrorMessage);
 	*/
 	
 	DECLARE lv_CurrentTime	TIMESTAMP		DEFAULT CURRENT_TIMESTAMP();

@@ -1,5 +1,4 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-USE `CTS_DataCenter`;
 DROP PROCEDURE IF EXISTS `CTS_DC_CustEvidenceFromFile_UpdateProcessed`;
 
 DELIMITER $$
@@ -8,17 +7,17 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidenceFromFile_UpdateProce
 	,	IN ip_UpdatedBy			INT
 	,	OUT op_ErrorMessage		VARCHAR(200)
 )
-SQL SECURITY INVOKER
-
+	SQL SECURITY INVOKER
+	
 BEGIN
 	/*
 		Created:	20201106@Adam.Tran
-		Task:		Update customer evidences [Redmine ID: 141563]
+		Task:		Update customer evidences [Redmine ID: #141563]
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
-		- 20201106@Adam.Tran [Redmine ID: 141563]: Created
+			- 20201106@Adam.Tran: Created [Redmine ID: #141563]
 	*/
 	
 	DECLARE lv_CurrentTime	TIMESTAMP DEFAULT CURRENT_TIMESTAMP();

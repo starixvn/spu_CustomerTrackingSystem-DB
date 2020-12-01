@@ -1,7 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
 /*
 	Created: 20201106@Adam.Tran
-	Task: [141563] Import Customer Evidences
+	Task: Import Customer Evidences [Redmine ID: #141563] 
 	DB: CTS_DataCenter
 */
 DROP TABLE IF EXISTS CTS_DataCenter.CustEvidenceFromFile;
@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustEvidenceFromFile(
 	,	FileKey				VARCHAR(50) NOT NULL
 	,	FileName			VARCHAR (200)
 	,	IsProcessed			BIT	DEFAULT 0	
-	,	CreatedBy			INT	NOT NULL
+	,	CreatedBy			INT	UNSIGNED NOT NULL
 	, 	CreatedTime			TIMESTAMP(4) NOT NULL
 	,	LastModifiedBy		INT	UNSIGNED
 	, 	LastModifiedTime	DATETIME	

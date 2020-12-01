@@ -7,16 +7,16 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_RemoveFlagged`(IN i
 BEGIN
 	/*
 		Created:	20200204@Thai
-		Task:		Remove a flagged evidence [Redmine ID: 127150]
+		Task:		Remove a flagged evidence [Redmine ID: #127150]
 		DB:			CTS_DataCenter
 		Original: 
 
 		Revisions:
 			- 20200225@Lex: Fix remove flag evidence also associted evidence (level 2)
-			- 20201013@Long.Luu [Redmine ID: #141756]: Sync Evidence to Category
-            - 20201020@Irena.Vo [Redmine ID: #141756]: Enhance logic remove Evidence Category
-            - 20201111@Irena.Vo [Redmine ID: #145027]: Enhance logic Insert History for Evidence Category
-            - 20201125@Irena.Vo [Redmine ID: #141563]: Move flow sync Evidence to Category
+			- 20201013@Long.Luu: Sync Evidence to Category [Redmine ID: #141756]
+            - 20201020@Irena.Vo: Enhance logic remove Evidence Category [Redmine ID: #141756]
+            - 20201111@Irena.Vo: Enhance logic Insert History for Evidence Category [Redmine ID: #145027]
+            - 20201125@Irena.Vo: Move flow sync Evidence to Category [Redmine ID: #141563]
         
 		Param's Explanation (filtered by):			
         

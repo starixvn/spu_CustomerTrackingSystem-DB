@@ -11,9 +11,9 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original:
 		Revisions:
-           [20201112][Irena.Vo][#141563]: Created 
-           [20201126][Irena.Vo][#141563]: Enhance logic remove Evidence to category 
-           [20201127][Irena.Vo][#141563]: Enhance logic update LastModifiedDate for category 
+           - 20201112@Irena.Vo: Created [RedmineID: #141563]
+           - 20201126@Irena.Vo: Enhance logic remove Evidence to category [RedmineID: #141563]
+           - 20201127@Irena.Vo: Enhance logic update LastModifiedDate for category [RedmineID: #141563]
 		Param's Explanation (filtered by):			
 	*/   
     DECLARE		lv_SPName 			VARCHAR(100) 		DEFAULT 'CTS_DC_CustEvidence_SyncToCategory';  
