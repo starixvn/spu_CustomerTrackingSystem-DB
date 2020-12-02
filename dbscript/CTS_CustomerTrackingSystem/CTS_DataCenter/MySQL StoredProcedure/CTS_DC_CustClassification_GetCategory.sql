@@ -29,7 +29,7 @@ BEGIN
     WHERE a.IsUsedManually = 1
 		AND b.CategoryID IS NULL
 		AND a.IsActive = 1
-		AND a.CategoryID < 50
+		AND a.ParentID = 200
     ORDER BY a.DisplayOrder ASC; 
    
 END$$
