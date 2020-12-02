@@ -11,9 +11,10 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original:
 		Revisions:
-           - 20201112@Irena.Vo: Created [RedmineID: #141563]
-           - 20201126@Irena.Vo: Enhance logic remove Evidence to category [RedmineID: #141563]
-           - 20201127@Irena.Vo: Enhance logic update LastModifiedDate for category [RedmineID: #141563]
+			- 20201112@Irena.Vo: Created [RedmineID: #141563]
+			- 20201126@Irena.Vo: Enhance logic remove Evidence to category [RedmineID: #141563]
+			- 20201127@Irena.Vo: Enhance logic update LastModifiedDate for category [RedmineID: #141563]
+			- 20201201@Irena.Vo: Enhance logic Remove old category [RedmineID: #141563]
 		Param's Explanation (filtered by):			
 	*/   
     DECLARE		lv_SPName 			VARCHAR(100) 		DEFAULT 'CTS_DC_CustEvidence_SyncToCategory';  
@@ -64,7 +65,7 @@ BEGIN
             , ActionType		SMALLINT UNSIGNED	PATH "$.ActionType"
 		 )) AS temp
 	LEFT JOIN CTS_DataCenter.EvidenceToCategory AS ec on ec.EvidenceID = temp.EvidenceID;
-    
+  
     /*SYNC EVIDENCE TO CATEGORY*/
     SELECT ParameterValue
     INTO lv_IsSyncEvi2Cate
@@ -91,16 +92,15 @@ BEGIN
 	
         -- Get existed Cust Category Evidences
         INSERT INTO Temp_ExistedEviCategories(CustID,EvidenceID,CategoryID,CreatedTime)
-        SELECT DISTINCT cate.CustID, ce.EvidenceID, cate.CategoryID, ce.CreatedDate
+        SELECT DISTINCT temp.CustID, ce.EvidenceID, e.CategoryID, ce.CreatedDate
         FROM CTS_DataCenter.CustEvidence AS ce
         INNER JOIN Temp_CustomerEvidences AS temp ON temp.CTSCustID = ce.FromCustID AND ce.Level = 0  AND ce.EvidenceID <> temp.EvidenceID
-        INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID
-        INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON e.EvidenceID = ce.EvidenceID AND e.CategoryID = cate.CategoryID;
-        
+        INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON e.EvidenceID = ce.EvidenceID AND e.CategoryID = temp.CategoryID;
+  
         -- Remove old Evidence Category
         DELETE cate
         FROM CTS_DataCenter.CTSCustomerClassification AS cate
-        INNER JOIN Temp_CustomerEvidences AS temp ON temp.CustID = cate.CustID
+        INNER JOIN Temp_CustomerEvidences AS temp ON temp.CustID = cate.CustID AND cate.CategoryID = temp.CategoryID
         LEFT JOIN Temp_ExistedEviCategories AS ex ON ex.CustID = cate.CustID AND (ex.CategoryID IS NULL OR cate.CategoryID = ex.CategoryID)
 		WHERE (temp.ActionType = 2 AND ex.CustID IS NULL )
               OR (temp.ActionType = 0 AND cate.CategoryID = ex.CategoryID);
@@ -111,7 +111,7 @@ BEGIN
 	   INNER JOIN Temp_ExistedEviCategories AS ex ON ex.CustID = cate.CustID AND cate.CategoryID = ex.CategoryID
        SET cate.CreatedDate = ex.CreatedTime
            , cate.LastModifiedDate = ex.CreatedTime
-           , cate.LastScannedDate = CURRENT_DATE()
+           , cate.LastScannedDate = DATE(lv_CreatedDateTime)
        WHERE temp.ActionType = 2;
        
         -- Insert new Evidence Category
