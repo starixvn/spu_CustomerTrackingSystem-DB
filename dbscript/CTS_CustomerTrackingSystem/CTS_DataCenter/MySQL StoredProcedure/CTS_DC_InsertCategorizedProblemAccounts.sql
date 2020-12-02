@@ -19,6 +19,7 @@ BEGIN
             - Add Multi Problem Category
             - Remove old categoryid from NapCM
              20201019@Irena.Vo [#141930]: Get distinct CustID List for lastest category
+			- 20201202@Lex.Khuat: Disable detail categories & clean up wrong syntax [Redmine ID: #145954]
             
 		Param's Explanation (filtered by):
 	*/   

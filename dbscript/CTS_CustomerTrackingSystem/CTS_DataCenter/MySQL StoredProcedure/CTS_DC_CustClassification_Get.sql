@@ -20,6 +20,7 @@ BEGIN
             - 20200908@Irena.Vo [Redmine ID: #141020]: Get for VVIP. VVIP -> PA -> Detailed & General. Add VVIP (General)
             - 20201006@Irena.Vo [Redmine ID: #141930]: Rollback logic get IsUsedManually for lastest category & enhance logic get.
             - 20201014-20201023@Irena.Vo [Redmine ID: #141756]: Enhance logic show Evidence Category & Normal Category. Add New General  
+			- 20201202@Lex.Khuat: Disable detail categories & clean up wrong syntax [Redmine ID: #145954]
             
 		Param's Explanation:
 	*/ 
@@ -50,23 +51,21 @@ BEGIN
      END IF;
    
     -- Get Lastest category list
-	 INSERT INTO Temp_LatestRecordOfCategory (CategoryID, SportGroupID, LastModifiedBy, LastModifiedDate, Remark, LastScannedDate)
-     SELECT   cate.CategoryID
-			, cate.SportGroupID
-			, cate.LastModifiedBy
-			, cate.LastModifiedDate
-			, cate.Remark
-			, cate.LastScannedDate
-	FROM		CTS_DataCenter.CTSCustomerClassification AS cate
-    WHERE		cate.CustID = ip_CustID;
-
-    UPDATE Temp_LatestRecordOfCategory AS temp
-    INNER JOIN 	CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = temp.CategoryID
-    SET temp.CategoryType =	( CASE
-								  WHEN cc.ParentID = 50 THEN 2 -- red
-								  WHEN cc.ParentID = 200  THEN 1 -- any color 
-					         END)
-	WHERE temp.CategoryType IS NULL;
+	 INSERT INTO Temp_LatestRecordOfCategory (CategoryID, SportGroupID, LastModifiedBy, LastModifiedDate, Remark, LastScannedDate, CategoryType)
+     SELECT   cc.CategoryID
+			, cc.SportGroupID
+			, cc.LastModifiedBy
+			, cc.LastModifiedDate
+			, cc.Remark
+			, cc.LastScannedDate
+            ,	CASE	WHEN cate.ParentID = 50 THEN 2 -- red
+						WHEN cate.ParentID = 200  THEN 1 -- any color 
+				END
+	FROM	CTS_DataCenter.CTSCustomerClassification AS cc
+    INNER JOIN 	CTS_DataCenter.CustomerCategory AS cate
+		ON cc.CategoryID = cate.CategoryID
+    WHERE	cc.CustID = ip_CustID
+		AND		cate.ParentID IN (50, 200);
     
     -- Update Display Category ID
     UPDATE  Temp_LatestRecordOfCategory

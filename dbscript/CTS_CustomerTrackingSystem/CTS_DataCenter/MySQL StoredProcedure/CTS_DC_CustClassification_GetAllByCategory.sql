@@ -12,6 +12,7 @@ BEGIN
 		Original: 
 		Revisions:
 			- 20200924@Long.Luu: Created [Redmine ID: #141755]
+            - 20201202@Lex.Khuat: Disable detail categories & clean up wrong syntax [Redmine ID: #145954]
             
 		Param's Explanation:
 			- call CTS_DC_CustClassification_GetAllByCategory('3,5,205');

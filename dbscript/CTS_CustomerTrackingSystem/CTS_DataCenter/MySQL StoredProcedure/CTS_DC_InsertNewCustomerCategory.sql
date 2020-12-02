@@ -20,6 +20,7 @@ BEGIN
             - [20200930@Irena.Vo][141755]: Covered get Existed Category before. Updated temp table. Updated primary key.
             - [20201001@Irena.Vo][141755]: Fix issue duplicate category & enhance logic
 			- [20201116@Irena.Vo][145028]: Enhance logic remove existed customers
+            - 20201202@Lex.Khuat: Disable detail categories & clean up wrong syntax [Redmine ID: #145954]
             
 		Param's Explanation (filtered by):
              call CTS_DC_InsertNewCustomerCategory('1,2,3');

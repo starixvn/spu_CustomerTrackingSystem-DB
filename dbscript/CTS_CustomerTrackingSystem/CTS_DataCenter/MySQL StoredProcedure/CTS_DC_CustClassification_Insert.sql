@@ -30,6 +30,7 @@ sp: BEGIN
 			- [20200908@Irena.Vo][141020]: Enhance insert manual for VVIP (include CustomerClass) . Add categoryid = 207 for VVIP (general)
             - [20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow.
             - [20200923@Irena.Vo][141755]: Enhance SP
+            - 20201202@Lex.Khuat: Disable detail categories & clean up wrong syntax [Redmine ID: #145954]
             
 		Param's Explanation:
 	*/ 
