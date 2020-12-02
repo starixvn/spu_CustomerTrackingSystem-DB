@@ -87,7 +87,7 @@ sp: BEGIN
 			,   DATE(lv_CurrentDateTime);
 
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-		VALUES(10, lv_SPName, CONCAT('Insert classification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID,';ip_SportGroupIDList_', ip_SportGroupIDList,  ';ip_CategoryID_', 213, ';ip_Remark_', ip_Remark), lv_CurrentDateTime, ip_CreatedBy);
+		VALUES(10, lv_SPName, CONCAT('Insert classification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID,';ip_SportGroupIDList_', 200,  ';ip_CategoryID_', 213, ';ip_Remark_', ip_Remark), lv_CurrentDateTime, ip_CreatedBy);
     
         -- Remove all probation list before
 		DELETE pro
@@ -121,39 +121,39 @@ sp: BEGIN
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	    VALUES(19, lv_SPName, CONCAT('Insert special customer class: ip_CTSCustID = ', ip_CTSCustID, ';ip_CustomerClass = ', 100), lv_CurrentDateTime, ip_CreatedBy);
    
-    END IF;
-    
-    /**********3. ACTION FOR OTHER CATEGORY**********/
-    -- Insert for CTSCustomerClassification
-	INSERT INTO CTS_DataCenter.CTSCustomerClassification
-    (CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
-	SELECT 	ip_CustID
-		, 	ip_CTSCustID
-		, 	ip_SubscriberID
-        , 	ip_CategoryID
-        ,   200
-        , 	ip_Remark
-        , 	lv_CurrentDateTime
-        ,   ip_CreatedBy
-        ,   lv_CurrentDateTime
-        ,   ip_CreatedBy
-        ,   DATE(lv_CurrentDateTime);
+    ELSE
+		/**********3. ACTION FOR OTHER CATEGORY**********/
+		-- Insert for CTSCustomerClassification
+		INSERT INTO CTS_DataCenter.CTSCustomerClassification
+		(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
+		SELECT 	ip_CustID
+			, 	ip_CTSCustID
+			, 	ip_SubscriberID
+			, 	ip_CategoryID
+			,   200
+			, 	ip_Remark
+			, 	lv_CurrentDateTime
+			,   ip_CreatedBy
+			,   lv_CurrentDateTime
+			,   ip_CreatedBy
+			,   DATE(lv_CurrentDateTime);
 
-   -- Insert history
-   INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
-    (CustID, CTSCustID, CategoryID,SportGroupID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate)
-	SELECT 	ip_CustID
-		, 	ip_CTSCustID
-        , 	ip_CategoryID
-        , 	200
-        , 	lv_CurrentDateTime
-        , 	ip_CreatedBy
-        ,	0 -- Add new
-        ,	0 -- IsAuto
-        ,   CURRENT_DATE();
-    
-	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-	VALUES(10, lv_SPName, CONCAT('Insert classification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID,';ip_SportGroupIDList_', ip_SportGroupIDList,  ';ip_CategoryID_', ip_CategoryID, ';ip_Remark_', ip_Remark), lv_CurrentDateTime, ip_CreatedBy);
+	   -- Insert history
+	   INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
+		(CustID, CTSCustID, CategoryID,SportGroupID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate)
+		SELECT 	ip_CustID
+			, 	ip_CTSCustID
+			, 	ip_CategoryID
+			, 	200
+			, 	lv_CurrentDateTime
+			, 	ip_CreatedBy
+			,	0 -- Add new
+			,	0 -- IsAuto
+			,   CURRENT_DATE();
+		
+		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
+		VALUES(10, lv_SPName, CONCAT('Insert classification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID,';ip_SportGroupIDList_', 200,  ';ip_CategoryID_', ip_CategoryID, ';ip_Remark_', ip_Remark), lv_CurrentDateTime, ip_CreatedBy);
+	END IF;
 
 END$$
 
