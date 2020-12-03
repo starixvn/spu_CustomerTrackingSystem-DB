@@ -15,6 +15,7 @@ BEGIN
 			- 20201126@Irena.Vo: Enhance logic remove Evidence to category [RedmineID: #141563]
 			- 20201127@Irena.Vo: Enhance logic update LastModifiedDate for category [RedmineID: #141563]
 			- 20201201@Irena.Vo: Enhance logic Remove old category [RedmineID: #141563]
+		    - 20201203@Irena.Vo: Enhance logic Category is NULL [RedmineID: #141563]
 		Param's Explanation (filtered by):			
 	*/   
     DECLARE		lv_SPName 			VARCHAR(100) 		DEFAULT 'CTS_DC_CustEvidence_SyncToCategory';  
@@ -95,14 +96,16 @@ BEGIN
         SELECT DISTINCT temp.CustID, ce.EvidenceID, e.CategoryID, ce.CreatedDate
         FROM CTS_DataCenter.CustEvidence AS ce
         INNER JOIN Temp_CustomerEvidences AS temp ON temp.CTSCustID = ce.FromCustID AND ce.Level = 0  AND ce.EvidenceID <> temp.EvidenceID
-        INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON e.EvidenceID = ce.EvidenceID AND e.CategoryID = temp.CategoryID;
+        INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON e.EvidenceID = ce.EvidenceID AND e.CategoryID = temp.CategoryID
+        WHERE temp.CategoryID IS NOT NULL;
   
         -- Remove old Evidence Category
         DELETE cate
         FROM CTS_DataCenter.CTSCustomerClassification AS cate
         INNER JOIN Temp_CustomerEvidences AS temp ON temp.CustID = cate.CustID AND cate.CategoryID = temp.CategoryID
         LEFT JOIN Temp_ExistedEviCategories AS ex ON ex.CustID = cate.CustID AND (ex.CategoryID IS NULL OR cate.CategoryID = ex.CategoryID)
-		WHERE (temp.ActionType = 2 AND ex.CustID IS NULL )
+		WHERE temp.CategoryID IS NOT NULL AND
+              (temp.ActionType = 2 AND ex.CustID IS NULL)
               OR (temp.ActionType = 0 AND cate.CategoryID = ex.CategoryID);
        
        -- Update Time for old Evidence Category
@@ -112,7 +115,7 @@ BEGIN
        SET cate.CreatedDate = ex.CreatedTime
            , cate.LastModifiedDate = ex.CreatedTime
            , cate.LastScannedDate = DATE(lv_CreatedDateTime)
-       WHERE temp.ActionType = 2;
+       WHERE temp.CategoryID IS NOT NULL AND temp.ActionType = 2;
        
         -- Insert new Evidence Category
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification
@@ -129,7 +132,7 @@ BEGIN
 			,   lv_CreatedBy
 			, 	DATE(lv_CreatedDateTime)
 		FROM Temp_CustomerEvidences AS temp
-        WHERE temp.ActionType = 0;
+        WHERE temp.CategoryID IS NOT NULL AND temp.ActionType = 0;
 	
         -- Insert log
         INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
@@ -147,7 +150,8 @@ BEGIN
 			,   DATE(lv_CreatedDateTime)
 		FROM Temp_CustomerEvidences AS temp
         LEFT JOIN Temp_ExistedEviCategories AS ex ON ex.CustID = temp.CustID AND (ex.CategoryID IS NULL OR temp.CategoryID = ex.CategoryID)
-        WHERE temp.ActionType = 0 
+        WHERE temp.CategoryID IS NOT NULL AND
+                 temp.ActionType = 0
               OR (temp.ActionType = 2 AND (ex.CustID IS NULL OR ex.CategoryID IS NULL));
     END IF;
      
