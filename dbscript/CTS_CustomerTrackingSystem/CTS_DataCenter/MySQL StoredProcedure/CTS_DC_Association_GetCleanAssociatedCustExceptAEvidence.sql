@@ -60,8 +60,6 @@ BEGIN
 		INNER JOIN TempAssociations AS t ON c.CTSCustID = t.CTSCustID
 	WHERE c.EvidenceID <> ip_EvidenceID;
         
-	SET SQL_SAFE_UPDATES = 0;
-    
     DELETE c
     FROM TempCustEvidence AS c
 		INNER JOIN CTS_DataCenter.CustRetractEvidence AS r ON c.CTSCustID = r.CTSCustID AND c.EvidenceID = r.EvidenceID;
