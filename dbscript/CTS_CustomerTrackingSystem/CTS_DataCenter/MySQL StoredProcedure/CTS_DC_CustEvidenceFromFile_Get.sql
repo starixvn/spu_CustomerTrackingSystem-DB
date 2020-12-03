@@ -15,14 +15,16 @@ BEGIN
 
 		Revisions:
 		- 20201106@Adam.Tran [Redmine ID: 141563]: Created
+		- 20201203@Adam.Tran [Redmine ID: 141563]: add where LastModifiedBy is null
 	*/    
 	
 	DECLARE		vrFileKey	varchar(50);
 	
 	SELECT cus.FileKey 
 	INTO vrFileKey
-    FROM CTS_DataCenter.CustEvidenceFromFile as cus
+    FROM CTS_DataCenter.CustEvidenceFromFile AS cus
     WHERE cus.IsProcessed = 0 
+		AND LastModifiedBy IS NULL
 	ORDER BY cus.CreatedTime ASC
 	LIMIT 1;
 		
@@ -37,8 +39,10 @@ BEGIN
         ,	cus.FileName
 		,	cus.CreatedBy
         ,	cus.CreatedTime
-	FROM CTS_DataCenter.CustEvidenceFromFile as cus
-	WHERE cus.IsProcessed = 0 AND cus.FileKey = vrFileKey
+	FROM CTS_DataCenter.CustEvidenceFromFile AS cus
+	WHERE cus.IsProcessed = 0 
+		AND cus.FileKey = vrFileKey 
+		AND LastModifiedBy IS NULL
 	ORDER BY cus.CreatedTime ASC;
 	
 END$$
