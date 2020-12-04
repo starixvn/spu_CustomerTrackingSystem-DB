@@ -5,6 +5,7 @@ Server:
 DBName:	CTS_Admin
 
 Revisions: 
+			- 20190521@CaseyHuynh: SubscriberPrefix HotFix, Update Subscriber Schema. Not allow SubscriberPrefix NULL [146563]
 Reviewer:
 */
 
@@ -58,3 +59,7 @@ CREATE TABLE CTS_Admin.CTSUser (
     ,	IsMaster			BOOL
 	,	PRIMARY KEY	PK_CTSUser_UserID (UserID)
 ) ENGINE=InnoDB;
+
+/*146563-SubscriberPrefix Hot Fix, Update Subscriber Schema. Not allow SubscriberPrefix NULL*/
+ALTER TABLE 	CTS_DataCenter.Subscriber
+MODIFY COLUMN 	SubscriberPrefix VARCHAR(30) NOT NULL;
