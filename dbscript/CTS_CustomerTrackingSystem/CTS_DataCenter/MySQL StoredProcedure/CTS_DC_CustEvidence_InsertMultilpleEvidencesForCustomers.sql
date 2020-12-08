@@ -17,7 +17,8 @@ sp: BEGIN
             - 20201020@Irena.Vo: Enhance logic Remove all category (Detail & General) [Redmine ID: #141756]
             - 20201111@Irena.Vo: Enhance logic Insert History for Evidence Category [Redmine ID: #145027]
             - 20201130@Irena.Vo: Enhance logic Insert new evidence (remove existed evidence category before) [Redmine ID: #141563]
-              
+            - 20201207@Irena.Vo: Update History Log  & Enhance logic  [Redmine ID: #145951]
+            
 		Param's Explanation(filered by):
 		
 		Example:
@@ -62,15 +63,25 @@ sp: BEGIN
         , 	PRIMARY KEY		PK_Temp_AssociatedException_FromCTSCustID_ToCTSCustID(FromCTSCustID,ToCTSCustID)
 	);
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_ExistedEviCategories;    
-	CREATE TEMPORARY TABLE Temp_ExistedEviCategories 
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustCategoryMapping;    
+	CREATE TEMPORARY TABLE Temp_CustCategoryMapping 
     (	  
 			CustID		    BIGINT UNSIGNED
         ,   CategoryID      SMALLINT UNSIGNED
         ,   EvidenceID      SMALLINT UNSIGNED
-        , 	INDEX 			IX_Temp_ExistedEviCategories_CustID_CategoryID_EvidenceID(CustID,CategoryID,EvidenceID)    
+        , 	INDEX 			IX_Temp_CustCategoryMapping_CustID_CategoryID_EvidenceID(CustID,CategoryID,EvidenceID)    
      );
 	
+	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedHistoryOfRecords;    
+	CREATE TEMPORARY TABLE Temp_ExistedHistoryOfRecords 
+    (	  
+			CustID				BIGINT UNSIGNED
+        , 	CategoryID	        SMALLINT UNSIGNED 
+        ,   TargetCC            TINYINT
+        , 	INDEX 				IX_Temp_ExistedHistoryOfRecords_CustID(CustID)
+        , 	INDEX 				IX_Temp_ExistedHistoryOfRecords_CategoryID_TargetCC(CategoryID,TargetCC)    
+     );
+     
 	SET @sql = CONCAT("INSERT INTO Temp_CustomerList (CustID) VALUES ('", REPLACE(ip_CustIds, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
@@ -79,18 +90,18 @@ sp: BEGIN
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
 	
-    /*GET CUSTOMER INFO*/
+    /*	GET CUSTOMER INFO	*/
     UPDATE 		Temp_CustomerList AS t
 	INNER JOIN 	CTS_DataCenter.CTSCustomer AS c ON t.CustID = c.CustID AND c.CustSubID = 0
     SET 		t.CTSCustID = c.CTSCustID
 			,	t.SubscriberID = c.SubscriberID;
     
-	/*GET EVIDENCE INFO*/
+	/*	GET EVIDENCE INFO	*/
 	UPDATE 		Temp_EvidenceList AS t
 	INNER JOIN 	CTS_DataCenter.Evidence AS c ON t.EvidenceCode = c.EvidenceCode
     SET 		t.EvidenceID = c.EvidenceID;    
     
-    /*INSERT NEW FLAGGED EVIDENCE FOR CUSTOMERS*/
+    /*	INSERT NEW FLAGGED EVIDENCE FOR CUSTOMERS	*/
     INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Level, FromCustID, CreatedDate, CreatedBy)
 	SELECT 	t.CTSCustID
 		,	e.EvidenceID
@@ -100,20 +111,20 @@ sp: BEGIN
         ,	lv_CreatedBy
     FROM 	Temp_CustomerList AS t CROSS JOIN Temp_EvidenceList AS e;
     
-    /*GET AFFECTED EVIDENCES FOR CUSTOMERS*/
+    /*	GET AFFECTED EVIDENCES FOR CUSTOMERS	*/
     INSERT INTO Temp_AffectedDevices(CTSCustID, DCSDeviceID)
     SELECT DISTINCT t.CTSCustID, a.DCSDeviceID
     FROM 		CTS_DataCenter.AssociationByDevice AS a    
 	INNER JOIN Temp_CustomerList AS t ON a.CTSCustID = t.CTSCustID;
     
-    /*GET ASSOCIATED EXCEPTIONS FOR CUSTOMERS*/
+    /*	GET ASSOCIATED EXCEPTIONS FOR CUSTOMERS	*/
     INSERT INTO Temp_AssociatedException(FromCTSCustID, ToCTSCustID)
     SELECT DISTINCT t.CTSCustID
 		,	CASE WHEN e.LeastCTSCustID_Order = t.CTSCustID THEN e.GreatestCTSCustID_Order ELSE e.LeastCTSCustID_Order END
     FROM CTS_DataCenter.CustException AS e
 	INNER JOIN Temp_CustomerList AS t ON e.LeastCTSCustID_Order = t.CTSCustID OR e.GreatestCTSCustID_Order = t.CTSCustID;
     
-    /*INSERT NEW AFFECTED EVIDENCES FOR  CUSTOMERS*/
+    /*	INSERT NEW AFFECTED EVIDENCES FOR  CUSTOMERS	*/
 	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID,EvidenceID, Level, FromCustID, CreatedDate, CreatedBy)
     SELECT DISTINCT a.CTSCustID, ev.EvidenceID, 2, t.CTSCustID, lv_CreatedDateTime, lv_CreatedBy
     FROM 		Temp_CustomerList AS t 
@@ -124,52 +135,55 @@ sp: BEGIN
 	CROSS JOIN  Temp_EvidenceList AS ev
 	WHERE 		a.CTSCustID <> d.CTSCustID AND (e.FromCTSCustID IS NULL OR e.ToCTSCustID IS NULL);
     
-    /*WRITE LOG*/
+    /*	WRITE LOG	*/
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	VALUES(3, lv_SPName, 'Insert bunch of Customers - Evidences', lv_CreatedDateTime, lv_CreatedBy);
     
-    /*SYNC EVIDENCE TO CATEGORY*/
+     /*	GET EXISTED CATEGORY FROM NAP CM	*/
+	INSERT INTO Temp_ExistedHistoryOfRecords (CustID, CategoryID, TargetCC)
+	SELECT DISTINCT cate.CustID, cate.CategoryID, map.CustomerClass
+    FROM Temp_CustomerList AS t
+    INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = t.CustID
+    INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = cate.CategoryID 
+    INNER JOIN CTS_DataCenter.CategoryToCustomerClass AS map ON map.CategoryID = cate.CategoryID
+    WHERE cc.ParentID = 50 AND cate.CategoryID NOT BETWEEN 72 AND 80; 
+    
+    /*	SYNC EVIDENCE TO CATEGORY	*/
     SELECT ParameterValue
     INTO lv_IsSyncEvi2Cate
     FROM CTS_DataCenter.SystemParameter
     WHERE ParameterID = 6;
     
     IF(lv_IsSyncEvi2Cate = '1') THEN
-		DELETE a
-        FROM Temp_CustomerList AS a
-		INNER JOIN CTS_DataCenter.SpecialCustomerClass AS s ON a.CTSCustID = s.CTSCustID;
+		-- Ignore Pin category
+        DELETE t
+        FROM  Temp_CustomerList AS t
+        INNER JOIN CTS_DataCenter.PinCustomerCategory AS pin ON t.CustID = pin.CustID;
 		
+        -- Remove old General category
         DELETE cate
         FROM CTS_DataCenter.CTSCustomerClassification AS cate
         INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
-        INNER JOIN Temp_CustomerList AS a ON a.CustID = cate.CustID
-			CROSS JOIN  Temp_EvidenceList AS ev  
-		INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON e.EvidenceID = ev.EvidenceID
-        WHERE cc.ParentID IN (1, 200);
+        INNER JOIN Temp_CustomerList AS t ON t.CustID = cate.CustID
+        WHERE cc.ParentID = 200;
         
+        -- Remove old Probation List
 		DELETE pro
         FROM CTS_DataCenter.ProbationAccountMonitor AS pro 
-        INNER JOIN Temp_CustomerList AS a ON pro.CustID = a.CustID 
-			CROSS JOIN Temp_EvidenceList AS ev 
-		INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON e.EvidenceID = ev.EvidenceID;
+        INNER JOIN Temp_CustomerList AS t ON pro.CustID = t.CustID;
 		
-        -- Get existed Cust Category Evidences
-        INSERT INTO Temp_ExistedEviCategories(CustID,EvidenceID,CategoryID)
-        SELECT DISTINCT cate.CustID, ce.EvidenceID, cate.CategoryID
-        FROM CTS_DataCenter.CustEvidence AS ce
-        INNER JOIN Temp_CustomerList AS a ON a.CTSCustID = ce.FromCustID AND ce.Level = 0
-			CROSS JOIN  Temp_EvidenceList AS ev ON ce.EvidenceID <> ev.EvidenceID
-        INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = a.CustID
-        INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON e.EvidenceID = ce.EvidenceID AND e.CategoryID = cate.CategoryID;
+        -- Get category mapping by evidence
+        INSERT INTO Temp_CustCategoryMapping(CustID,EvidenceID,CategoryID)
+        SELECT DISTINCT t.CustID, ev.EvidenceID, e.CategoryID
+        FROM Temp_CustomerList AS t CROSS JOIN  Temp_EvidenceList AS ev
+        INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON e.EvidenceID = ev.EvidenceID;
         
         -- Remove old Evidence Category
         DELETE cate
         FROM CTS_DataCenter.CTSCustomerClassification AS cate
-        INNER JOIN Temp_CustomerList AS t ON t.CustID = cate.CustID
-              CROSS JOIN  Temp_EvidenceList AS ev
-		INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON e.EvidenceID = ev.EvidenceID AND e.CategoryID = cate.CategoryID
-        INNER JOIN Temp_ExistedEviCategories AS ex ON ex.CustID = cate.CustID AND cate.CategoryID = ex.CategoryID;
-	
+        INNER JOIN Temp_CustCategoryMapping AS temp ON temp.CustID = cate.CustID AND temp.CategoryID = cate.CategoryID;
+	    
+        -- Insert new evidence category
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification
 		(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
         SELECT 	DISTINCT t.CustID
@@ -184,37 +198,41 @@ sp: BEGIN
 			,   lv_CreatedBy
 			,   DATE(lv_CreatedDateTime)
 		FROM Temp_CustomerList AS t
-			CROSS JOIN (	SELECT DISTINCT ec.CategoryID
-							FROM Temp_EvidenceList AS e
-							INNER JOIN CTS_DataCenter.EvidenceToCategory AS ec ON e.EvidenceID = ec.EvidenceID) AS a;
+			CROSS JOIN (	SELECT DISTINCT temp.CustID, temp.CategoryID
+							FROM Temp_EvidenceList AS ev
+							INNER JOIN Temp_CustCategoryMapping AS temp ON temp.EvidenceID = ev.EvidenceID) AS a ON a.CustID = t.CustID;
                             
-		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
-		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate)
+        -- Insert log                    
+		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
+		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID)
 		SELECT 	DISTINCT t.CustID
 			, 	t.CTSCustID
 			, 	a.CategoryID
 			,   0
 			,   lv_CreatedDateTime
 			,   lv_CreatedBy
-            ,   0
-            ,   1
+            ,   0 -- insert
+            ,   1 
 			,   DATE(lv_CreatedDateTime)
+            , 	CASE WHEN sp.CustID IS NOT NULL THEN sp.CustomerClass 
+					 WHEN map.CategoryID IS NOT NULL THEN map.CustomerClass
+					 ELSE -1 -- no mapping CC
+				END
+            ,   7 -- item name = Add from Evidence
 		FROM Temp_CustomerList AS t
-			CROSS JOIN (	SELECT DISTINCT ec.CategoryID
-							FROM Temp_EvidenceList AS e
-							INNER JOIN CTS_DataCenter.EvidenceToCategory AS ec ON e.EvidenceID = ec.EvidenceID) AS a;    
+			CROSS JOIN (	SELECT DISTINCT temp.CustID, temp.CategoryID
+							FROM Temp_EvidenceList AS ev
+							INNER JOIN Temp_CustCategoryMapping AS temp ON temp.EvidenceID = ev.EvidenceID) AS a ON a.CustID = t.CustID
+		INNER JOIN CTS_DataCenter.CategoryToCustomerClass AS map ON a.CategoryID = map.CategoryID
+        LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = t.CustID
+        LEFT JOIN Temp_ExistedHistoryOfRecords AS e ON e.CustID = t.CustID AND e.TargetCC = map.CustomerClass
+        WHERE e.TargetCC IS NULL;  
                             
     END IF;
     
-	-- Return distinct CustID mapping CC to mainDB
-    SELECT DISTINCT temp.CustId FROM  Temp_CustomerList AS temp;
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_ExistedEviCategories;    
-    DROP TEMPORARY TABLE IF EXISTS Temp_AssociatedException;
-	DROP TEMPORARY TABLE IF EXISTS Temp_AffectedDevices;
-    DROP TEMPORARY TABLE IF EXISTS Temp_EvidenceList;
-    DROP TEMPORARY TABLE IF EXISTS Temp_CustomerList;
-    
+    /*	GET LASTEST CUSTID LIST	*/
+    SELECT DISTINCT t.CustId FROM Temp_CustomerList AS t;
+ 
 END$$
 
 DELIMITER ;

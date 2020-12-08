@@ -1,16 +1,9 @@
-USE `CTS_DataCenter`;
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
 DROP procedure IF EXISTS `CTS_DC_SpecialCustClass_Insert`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_SpecialCustClass_Insert`(
-		IN ip_Username 					VARCHAR(50)     
-    ,	IN ip_CustomerClass 			TINYINT 
-    ,	IN ip_IsAffectedToAssociation	BIT
-    ,	IN ip_UserID 					INT
-    
-    , 	OUT op_ErrorMessage 			VARCHAR(200)
-)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_SpecialCustClass_Insert`(IN ip_Username varchar(50),IN ip_CustomerClass tinyint,IN ip_IsAffectedToAssociation bit,IN ip_UserID int,OUT op_ErrorMessage varchar(200))
+    SQL SECURITY INVOKER
 sp: BEGIN
 	/*
 		Created:	20200905@Long.Luu
@@ -23,11 +16,11 @@ sp: BEGIN
            - [20200908@Irena.Vo][141020]: Error MSG for the customers have VVIP before and Update CreatedFromFunction = 1 for special customer (Normal)
            - [20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow.
            - [20200923@Irena.Vo][141755]: Enhance SP
+		   - 20201207@Irena.Vo: Remove logic delete Probation List. Enhance logic get VVIP & Update History Log [RedmineID: #145951]
            
 		Param's Explanation (filtered by):
 	*/    
     
-	/**********1. PREPARE PARAMS**********/
 	DECLARE lv_CTSCustID		BIGINT UNSIGNED;
     DECLARE lv_CustID			INT UNSIGNED;
 	DECLARE lv_SubscriberID 	INT;
@@ -64,10 +57,8 @@ sp: BEGIN
         ,	CustomerClass	SMALLINT
 	);
     
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-    SET SQL_SAFE_UPDATES = 0;
     
-    /**********2. CHECK VALIDATION CUSTOMER**********/
+    /*	CHECK VALIDATION CUSTOMER	*/
     -- Check invalid customer in CTS.
     IF NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomer WHERE UserName = ip_Username OR UserName2 = ip_Username) THEN
 		SET op_ErrorMessage = 'This account is not existed in the system!';
@@ -82,7 +73,7 @@ sp: BEGIN
     WHERE UserName = ip_Username OR UserName2 = ip_Username;    
     
      -- Existed VVIP CustomerClass before -> Display error message
-	IF EXISTS (SELECT 1 FROM CTS_DataCenter.SpecialCustomerClass WHERE CTSCustID = lv_CTSCustID AND CreatedFromFunction = 11) THEN
+	IF EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification WHERE CTSCustID = lv_CTSCustID AND CategoryID = 213) THEN
 		SET op_ErrorMessage = 'This account has already been marked with VVIP CustomerClass!';
 		SELECT NULL AS CustID,	NULL AS CustomerClass;
         LEAVE sp;
@@ -94,7 +85,7 @@ sp: BEGIN
         LEAVE sp;
 	END IF;
     
-	/**********3. GET INFO ASSOCIATION FOR CUSTOMER**********/
+	/*	GET INFO ASSOCIATION FOR CUSTOMER	*/
 	-- #2: get affected customers
 	INSERT INTO Temp_AffectedCustomers(CTSCustID)
 	VALUES(lv_CTSCustID);
@@ -133,13 +124,8 @@ sp: BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON t.CTSCustID = c.CTSCustID
 	WHERE (s.CTSCustID IS NULL OR (s.CreatedFromFunction = 21)) -- Allow Pin category will insert new CustomerClass
 		AND c.RoleID = 1;
-	
-    /**********4. REMOVE PROBATION LIST BEFORE**********/
-	DELETE pro
-    FROM CTS_DataCenter.ProbationAccountMonitor AS pro
-    WHERE pro.CustID = lv_CustID;
-    
-    /**********5. INSERT VALID SPECIAL CUSTOMER CLASS**********/
+
+    /*	INSERT VALID SPECIAL CUSTOMER CLASS	*/
 	INSERT INTO CTS_DataCenter.SpecialCustomerClass(CTSCustID, CustID, RootCTSCustID, SubscriberID, CustomerClass, CreatedBy, CreatedDate, LastModifiedBy, LastModifiedDate, CreatedFromFunction)
 	SELECT 	CTSCustID
 		,	CustID
@@ -152,22 +138,36 @@ sp: BEGIN
 		,	lv_CurrentDateTime
 		,   1 -- for Special Customer
 	FROM Temp_NewCustomerClass;
-	
-	SELECT 	DISTINCT CustID
-		,	CustomerClass
-	FROM Temp_NewCustomerClass;
-	
+
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	VALUES(19, lv_SPName, CONCAT('Insert SpecialCustomerClass: ip_CTSCustID = ', lv_CTSCustID, ';ip_CustomerClass = ', ip_CustomerClass), lv_CurrentDateTime, ip_UserID);
 
-    SET SQL_SAFE_UPDATES = 1;
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    /*	INSERT LOG	*/
+	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
+    (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID)
+    SELECT DISTINCT   lv_CustID
+			, lv_CTSCustID
+            , CASE WHEN cate.CategoryID IS NULL THEN 201
+                   ELSE cate.CategoryID
+			  END 
+            , CASE WHEN cate.CategoryID IS NULL THEN 200
+                   ELSE cate.SportGroupID
+			  END
+            , lv_CurrentDateTime
+            , ip_UserID
+			, 0  -- insert
+            , 0  -- manual
+            , DATE(lv_CurrentDateTime)
+            , sp.CustomerClass
+            , 9 -- item name = Add Customer Class
+	FROM Temp_NewCustomerClass AS sp
+	LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CTSCustID = lv_CTSCustID;
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_NewCustomerClass;
-	DROP TEMPORARY TABLE IF EXISTS Temp_AssociationException;
-    DROP TEMPORARY TABLE IF EXISTS Temp_AffectedDevices;
-	DROP TEMPORARY TABLE IF EXISTS Temp_AffectedCustomers;    
-     
+    
+	SELECT 	DISTINCT temp.CustId
+		,	temp.CustomerClass
+	FROM Temp_NewCustomerClass AS temp;
+	
 END$$
 
 DELIMITER ;

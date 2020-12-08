@@ -1,9 +1,9 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_InsertCategorizedProblemAccounts`;
+DROP procedure IF EXISTS `CTS_DataCenter`.`CTS_DC_InsertCategorizedProblemAccounts`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_InsertCategorizedProblemAccounts`(IN  ip_ProblemAccounts	JSON)
-	SQL SECURITY INVOKER
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_InsertCategorizedProblemAccounts`(IN ip_ProblemAccounts json)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200715@Long.Luu
@@ -18,8 +18,9 @@ BEGIN
             20201001-20201014@Irena.Vo [#141930]: 
             - Add Multi Problem Category
             - Remove old categoryid from NapCM
-             20201019@Irena.Vo [#141930]: Get distinct CustID List for lastest category
-			- 20201202@Lex.Khuat: Disable detail categories & clean up wrong syntax [Redmine ID: #145954]
+            20201019@Irena.Vo  [#141930]: Get distinct CustID List for lastest category
+            - 20201202@Lex.Khuat: Disable detail categories & clean up wrong syntax [Redmine ID: #145954]
+			- 20201207@Irena.Vo: Update History Log & Enhance logic SP  [RedmineID: #145951]
             
 		Param's Explanation (filtered by):
 	*/   
@@ -31,25 +32,36 @@ BEGIN
     (	  
 			CustID				BIGINT UNSIGNED
         , 	MainDBCategoryID	SMALLINT 
-        , 	NewCategoryID		SMALLINT UNSIGNED  -- Category is inserted to CTS
-        , 	CTSCustID			BIGINT UNSIGNED DEFAULT NULL
+        , 	CategoryID		    SMALLINT UNSIGNED
+        , 	CTSCustID			BIGINT UNSIGNED
         , 	SubscriberID		INT DEFAULT NULL
-		, 	ActionType		    SMALLINT DEFAULT 0 -- Insert: 0; Update: 1, Remove: 2
+		, 	ActionType		    SMALLINT DEFAULT 0 -- Insert: 0, Update: 1, Remove: 2
+        ,   TargetCC            TINYINT
         , 	PRIMARY KEY			PK_Temp_ProblemAccounts_CustID_MainDBCategoryID(CustID, MainDBCategoryID) 
-        , 	INDEX     			IX_Temp_ProblemAccounts_CustID_NewCategoryID(CustID, NewCategoryID) 
+        , 	INDEX     			IX_Temp_ProblemAccounts_CategoryID_TargetCC(CategoryID,TargetCC) 
         ,   INDEX				IX_Temp_ProblemAccounts_ActionType(ActionType)  
     );  
-  
-    DROP TEMPORARY TABLE IF EXISTS Temp_ExistedClassification;    
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_ExistedHistoryOfRecords;    
+	CREATE TEMPORARY TABLE Temp_ExistedHistoryOfRecords 
+    (	  
+			CustID				BIGINT UNSIGNED
+        , 	CategoryID	        SMALLINT UNSIGNED 
+        ,   TargetCC            TINYINT
+        , 	INDEX 				IX_Temp_ExistedHistoryOfRecords_CustID(CustID)
+        , 	INDEX 				IX_Temp_ExistedHistoryOfRecords_CategoryID_TargetCC(CategoryID,TargetCC)    
+     );
+     
+	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedClassification;    
 	CREATE TEMPORARY TABLE Temp_ExistedClassification 
     (	  
 			CustID				BIGINT UNSIGNED
-        , 	CurrentCategoryID	SMALLINT UNSIGNED -- Category is existed
-        ,   CreatedDate         DATETIME
-        ,   IsRemove            BIT DEFAULT 0 -- 1: Remove Category, 0: No change
-        , 	INDEX 				IX_Temp_ExistedClassification_CustID_CurrentCategoryID(CustID, CurrentCategoryID)       
+        , 	CategoryID	        SMALLINT UNSIGNED
+        ,   IsRemove            BIT DEFAULT 0 -- 1: Remove Category, 0: No Action
+        , 	INDEX 				IX_Temp_ExistedClassification_CustID_CategoryID(CustID, CategoryID)       
+        , 	INDEX 				IX_Temp_ExistedClassification_IsRemove(IsRemove)       
      );
-  
+     
     INSERT INTO Temp_ProblemAccounts(CustID, MainDBCategoryID)
 	SELECT 	DISTINCT temp.CustID
 		, 	temp.MainDBCategoryID 
@@ -59,37 +71,36 @@ BEGIN
 			, MainDBCategoryID	SMALLINT 			PATH "$.CategoryId"	
 		 )) AS temp;
     
-    /*GET REMOVE PROBLEM ACCOUNTS*/
+    /*	GET REMOVE PROBLEM ACCOUNTS	*/
 	UPDATE Temp_ProblemAccounts
     SET ActionType = 2
     WHERE MainDBCategoryID = -1; -- return remove PA List from NAP CM
     
-    /*IGNORE VVIP - PIN CATEGORY*/
+    /*	IGNORE PIN CATEGORY	*/
     DELETE temp
     FROM Temp_ProblemAccounts AS temp
-    INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc on sc.CustID = temp.CustID
-	WHERE sc.CreatedFromFunction IN (11, 21);
+    INNER JOIN CTS_DataCenter.PinCustomerCategory AS pin on pin.CustID = temp.CustID;
     
-    /*REMOVE DETAIL & GENERAL CATEGORY BEFORE*/
+    /*	REMOVE GENERAL CATEGORY BEFORE	*/
     DELETE cate
     FROM CTS_DataCenter.CTSCustomerClassification AS cate
 	INNER JOIN Temp_ProblemAccounts AS temp ON temp.CustID = cate.CustID
 	INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = cate.CategoryID 
-	WHERE cc.ParentID IN (1, 200);
+	WHERE cc.ParentID = 200;
   
-	/*REMOVE PROBATION LIST BEFORE*/
+	/*	REMOVE PROBATION LIST BEFORE	*/
     DELETE pro
     FROM CTS_DataCenter.ProbationAccountMonitor AS pro
 	INNER JOIN Temp_ProblemAccounts AS temp ON temp.CustID = pro.CustID;
    
-    /*UPDATE CUST INFO*/
+    /*	UPDATE CUST INFO	*/
     UPDATE 	Temp_ProblemAccounts AS temp 
 	INNER JOIN	CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.CustSubID = 0
 	SET		temp.CTSCustID = cust.CTSCustID, temp.SubscriberID = cust.SubscriberID;
   
-	/*UPDATE CATEGORY INFO*/
+	/*	UPDATE CATEGORY INFO	*/
     UPDATE 	Temp_ProblemAccounts
-    SET 	NewCategoryID = CASE 
+    SET 	CategoryID = CASE 
 								WHEN MainDBCategoryID = 27 THEN 51
 								WHEN MainDBCategoryID = 28 THEN 52
 								WHEN MainDBCategoryID = 29 THEN 53
@@ -112,78 +123,108 @@ BEGIN
 							END
 	WHERE MainDBCategoryID <> -1;
         
-	/*GET EXISTED CATEGORY*/
-	INSERT INTO Temp_ExistedClassification (CustID, CurrentCategoryID, CreatedDate)
-	SELECT DISTINCT cate.CustID, cate.CategoryID, cate.CreatedDate
+	/*	GET EXISTED CATEGORY RECORDS	*/
+	INSERT INTO Temp_ExistedHistoryOfRecords (CustID, CategoryID)
+	SELECT DISTINCT cate.CustID, cate.CategoryID
     FROM Temp_ProblemAccounts AS temp
     INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID
     INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = cate.CategoryID 
-    WHERE cc.ParentID = 50 AND (cate.CategoryID NOT BETWEEN 72 AND 80); 
+    WHERE cc.ParentID = 50; 
     
-	/*REMOVE PROBLEM ACCOUNTS OR OLD CATEGORY*/
-	UPDATE Temp_ExistedClassification AS ex
-    LEFT JOIN 	 Temp_ProblemAccounts AS temp ON temp.CustID = ex.CustID AND temp.NewCategoryID = ex.CurrentCategoryID
+    /*	GET EXISTED CATEGORY NOT FROM EVIDENCE	*/
+    INSERT INTO  Temp_ExistedClassification (CustID, CategoryID)
+    SELECT DISTINCT e.CustID, e.CategoryID
+    FROM Temp_ExistedHistoryOfRecords AS e
+    WHERE e.CategoryID NOT BETWEEN 72 AND 80;
+    
+	/*	REMOVE PROBLEM ACCOUNTS OR OLD CATEGORY	*/
+	UPDATE       Temp_ExistedClassification AS ex
+    LEFT JOIN 	 Temp_ProblemAccounts AS temp ON temp.CustID = ex.CustID AND temp.CategoryID = ex.CategoryID
     SET 		 ex.IsRemove = 1
     WHERE  		 temp.ActionType = 2 -- remove PA.
-                 OR temp.NewCategoryID IS NULL; -- remove old category.
+                 OR temp.CategoryID IS NULL; -- remove old category.
     
 	DELETE 		 cate
     FROM 		 CTS_DataCenter.CTSCustomerClassification cate
     INNER JOIN   CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = cate.CategoryID
-    INNER JOIN 	 Temp_ExistedClassification AS ex ON ex.CustID = cate.CustID AND ex.CurrentCategoryID = cate.CategoryID
+    INNER JOIN 	 Temp_ExistedClassification AS ex ON ex.CustID = cate.CustID AND ex.CategoryID = cate.CategoryID
 	WHERE 		 cc.ParentID = 50 AND ex.IsRemove = 1;
     
-	/*UPDATE PROBLEM ACCOUNT*/
+	/*	UPDATE PROBLEM ACCOUNT	*/
+    UPDATE       Temp_ProblemAccounts AS temp 
+    INNER JOIN 	 Temp_ExistedClassification AS ex ON temp.CustID = ex.CustID AND temp.CategoryID = ex.CategoryID
+    SET 		 temp.ActionType = 1;
+    
     UPDATE 		 CTS_DataCenter.CTSCustomerClassification AS cate
     INNER JOIN   CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = cate.CategoryID
-    INNER JOIN   Temp_ProblemAccounts AS temp on temp.CustID = cate.CustID AND temp.NewCategoryID = cate.CategoryID
+    INNER JOIN   Temp_ProblemAccounts AS temp on temp.CustID = cate.CustID AND temp.CategoryID = cate.CategoryID
 	SET   	    cate.CTSCustID = temp.CTSCustID
 			, 	cate.SubscriberID  = temp.SubscriberID
 			, 	cate.LastModifiedBy = lv_CreatedBy
+            ,   cate.LastModifiedDate = lv_CurrentDateTime
 			, 	cate.LastScannedDate = DATE(lv_CurrentDateTime)
-			, 	temp.ActionType = 1
-     WHERE 	cc.ParentID = 50;
+     WHERE 	cc.ParentID = 50 AND temp.ActionType = 1;
      
-    /*INSERT NEW PROBLEM ACCOUNT*/
+    /*	INSERT NEW PROBLEM ACCOUNT	*/
     INSERT  INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, 
 		 CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
 	SELECT 	temp.CustID
 		, 	temp.CTSCustID
 		, 	temp.SubscriberID
-		, 	temp.NewCategoryID
-		, 	0
+		, 	temp.CategoryID
+		, 	0 
 		, 	lv_CurrentDateTime
 		, 	lv_CreatedBy
 		, 	lv_CurrentDateTime
 		, 	lv_CreatedBy
-		, 	CURRENT_DATE() AS LastScannedDate
+		, 	DATE(lv_CurrentDateTime)
 	FROM 	Temp_ProblemAccounts AS temp
     WHERE 	temp.ActionType = 0;           
     
-	/*INSERT LOG*/
-	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID,
-		LastModifiedDate, LastModifiedBy,TurnoverRM, WinlossRM, BetCount, ActiveDays, ActionType, IsAuto, InsertDate)
-    SELECT 	temp.CustID
+    /* GET EXISTED CATEGORY FROM EVIDENCE (REMAIN) */
+    DELETE e
+    FROM Temp_ExistedHistoryOfRecords e
+    WHERE e.CategoryID NOT BETWEEN 72 AND 80;
+    
+	/*	UPDATE TARGET CUSTOMER CLASS	*/   
+   UPDATE Temp_ProblemAccounts AS temp
+   INNER JOIN CTS_DataCenter.CategoryToCustomerClass AS map ON temp.CategoryID = map.CategoryID
+   SET temp.TargetCC = map.CustomerClass;
+   
+   UPDATE Temp_ExistedHistoryOfRecords AS e
+   INNER JOIN CTS_DataCenter.CategoryToCustomerClass AS map ON e.CategoryID = map.CategoryID
+   SET e.TargetCC = map.CustomerClass;
+    
+    /* INSERT LOG */
+	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
+    (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID)
+    SELECT 	DISTINCT temp.CustID
 		, 	temp.CTSCustID
-		, 	temp.NewCategoryID
-		, 	0
+		, 	CASE WHEN temp.ActionType = 2 THEN ex.CategoryID -- remove PA
+				 ELSE temp.CategoryID
+			END
+		, 	0 
 		, 	lv_CurrentDateTime
 		, 	lv_CreatedBy
-		, 	0
-		, 	0
-		, 	0
-		, 	0
 		, 	temp.ActionType
-		, 	1
-		, 	CURRENT_DATE() AS InsertDate
-	FROM 	Temp_ProblemAccounts AS temp;            
+		, 	1 -- auto
+		, 	DATE(lv_CurrentDateTime)
+		, 	CASE WHEN sp.CustID IS NOT NULL THEN sp.CustomerClass 
+				 WHEN temp.TargetCC IS NULL THEN -1 -- no mapping CC
+                 ELSE temp.TargetCC
+			END
+		, 	CASE WHEN temp.ActionType = 2 THEN 8 -- item name = Remove from NAP CM 
+                 ELSE 6 -- item name = Add from NAP CM
+			END
+	FROM 	Temp_ProblemAccounts AS temp
+    LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID
+    LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID
+    LEFT JOIN Temp_ExistedHistoryOfRecords AS e ON (temp.ActionType = 2 AND e.CustID = temp.CustID)
+												OR (temp.ActionType = 0 AND e.CustID = temp.CustID AND e.TargetCC = temp.TargetCC)
+    WHERE (temp.ActionType = 2 AND e.CustID IS NULL) OR (temp.ActionType = 0 AND e.TargetCC IS NULL);          
    
-    /*GET DISTINCT CUSTID FOR LASTEST CATEGORY*/
-    SELECT DISTINCT temp.CustID AS CustId
-    FROM Temp_ProblemAccounts AS temp; -- Get lastest custid for mapping to CC in mainDB
-    
-	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedClassification;    
-    DROP TEMPORARY TABLE IF EXISTS Temp_ProblemAccounts;     
+	/*	GET LASTEST CUSTID LIST	*/
+    SELECT DISTINCT temp.CustId FROM Temp_ProblemAccounts AS temp;
    
 END$$
 
