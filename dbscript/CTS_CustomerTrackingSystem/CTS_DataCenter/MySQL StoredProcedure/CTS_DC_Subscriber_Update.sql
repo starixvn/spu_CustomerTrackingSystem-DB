@@ -4,7 +4,7 @@ DROP procedure IF EXISTS `CTS_DC_Subscriber_Update`;
 
 DELIMITER $$
 USE `CTS_DataCenter`$$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Subscriber_Update`(OUT op_ErrorMessage varchar(2000),IN ip_SubscriberID int,IN ip_SubscriberName varchar(50),IN ip_SubscriberType tinyint,IN ip_SubscriberPrefix varchar(30),IN ip_IsTest bit,IN ip_SiteList json,IN ip_UserID int)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Subscriber_Update`(OUT op_ErrorMessage varchar(2000), IN ip_SubscriberID int, IN ip_SubscriberName varchar(50), IN ip_SubscriberType tinyint, IN ip_SubscriberPrefix varchar(30), IN ip_IsTest bit, IN ip_SiteList json, IN ip_UserID int)
     SQL SECURITY INVOKER
 sp: BEGIN
 	/*
@@ -16,6 +16,7 @@ sp: BEGIN
             - [20200911@Roger.Le][138102]: Created
             - [20200924@Lex.Khuat][138102]: Support insert/update sub with multiple sites
             - [20201118@Lex.Khuat][145576]: Fix issue multi site update skip prefix, remove rule validate duplicating site
+            - [20200912@Lex.Khuat][146563]: Rollback code to #138102, no validating for updating multi sites sub
             
 		Param's Explanation:
 			- ip_SubscriberID: 0 => Insert mode, <> 0 => Update mode, input siteID
@@ -55,8 +56,6 @@ sp: BEGIN
         , 	INDEX			IX_Temp_Sites_SiteID (SiteID)
         ,	INDEX			IX_Temp_Sites_CurrentSubID (SubscriberID)
     );
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     
     #========= CHECK SUBSCRIBER NAME ALREADY EXISTS =========
     IF (EXISTS (SELECT 1
@@ -99,15 +98,15 @@ sp: BEGIN
 				FROM Temp_Sites
                 GROUP BY SiteID
                 HAVING COUNT(*) > 1)) THEN
+		
 		SELECT LEFT(CONCAT('SiteID duplicating: ', GROUP_CONCAT(DISTINCT SiteID ORDER BY SiteID ASC SEPARATOR ', ')), 2000)
         INTO op_ErrorMessage
         FROM Temp_Sites
         GROUP BY SiteID
 		HAVING COUNT(*) > 1;
 		LEAVE sp;
-	END IF;
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+	
+    END IF;
 
 	IF lv_SubscriberID <> 0 THEN
 		#========= UPDATE SUBSCRIBER =========
@@ -125,7 +124,7 @@ sp: BEGIN
         
 		UPDATE CTS_Admin.Subscriber
         SET		SubscriberName = ip_SubscriberName
-			,	SubscriberPrefix = CASE WHEN IFNULL(ip_SubscriberPrefix, '') = '' THEN ip_SubscriberPrefix ELSE SubscriberPrefix END
+			,	SubscriberPrefix = ip_SubscriberPrefix
             ,	SubscriberType = ip_SubscriberType
             ,	IsTest = ip_IsTest
 		WHERE SubscriberID = lv_SubscriberID;
