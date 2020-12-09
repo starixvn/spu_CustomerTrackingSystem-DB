@@ -1,3 +1,10 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
+/*
+Created: 202012090@CaseyHuynh
+Task: 	 Fix Data CTSCustomer Duplicate
+DB: 	 CTS_DataCenter
+*/
+/***
 /************************ STEP02 UPDATE DATA CTS_DATACENTER****************************************/
 USE CTS_DataCenter;
 
