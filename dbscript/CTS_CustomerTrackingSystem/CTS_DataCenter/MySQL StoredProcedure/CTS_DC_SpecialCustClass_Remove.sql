@@ -14,6 +14,7 @@ BEGIN
 		Revisions:
 			- 20200908@Long.Luu [Redmine ID: #140996]: Created 
 			- 20201207@Irena.Vo: Update History Log  [Redmine ID: #145951]
+            - 20201211@Irena.Vo: Enhance logic select data from CTSCustID to CustID  [Redmine ID: #145951]
         
 		Param's Explanation (filtered by):
 	*/
@@ -46,7 +47,7 @@ BEGIN
 	VALUES(20, lv_SPName, CONCAT('Remove special customer class: ip_CTSCustID_ ', ip_CTSCustID) , DATE(lv_CurrentDateTime), ip_UserID);
     
     -- Insert Log
-    IF NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification AS cate  WHERE cate.CTSCustID = ip_CTSCustID) THEN
+    IF NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification AS cate  WHERE cate.CustID = lv_CustID) THEN
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
 		(CustID, CTSCustID, CategoryID, SportGroupID,  LastModifiedDate,LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID)
 		SELECT    lv_CustID
@@ -75,11 +76,11 @@ BEGIN
 				, -1
 				, 11 -- item name = Remove Customer Class
 		FROM CTS_DataCenter.CTSCustomerClassification AS cate 
-		WHERE cate.CTSCustID = ip_CTSCustID;
+		WHERE cate.CustID = lv_CustID;
 	END IF;
     
     /*	GET LASTEST CUSTID LIST	*/
-    SELECT DISTINCT lv_CustID;
+    SELECT DISTINCT lv_CustID AS CustId;
     
 END$$
 

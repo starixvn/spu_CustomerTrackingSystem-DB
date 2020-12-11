@@ -16,6 +16,7 @@ BEGIN
             - [20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow.    
 			- [20200923@Irena.Vo][141755]: Enhance SP
 			- 20201207@Irena.Vo: Remove logic delete Probation List. Enhance logic get VVIP & Update History Log [RedmineID: #145951]
+            - 20201211@Irena.Vo: Enhance logic join table [RedmineID: #145951]
             
 		Param's Explanation (filtered by):
         ip_CustIDs = 1,2,3
@@ -96,7 +97,7 @@ BEGIN
             , 13 -- is Robot
             , 10 -- item name = Change by Robot icon
 	FROM Temp_RobotUsers AS temp
-    INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID;
+    LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID;
     
       
     SELECT 	DISTINCT temp.CustId
