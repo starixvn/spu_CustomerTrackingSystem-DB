@@ -7,23 +7,25 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Probation_Get
 BEGIN
 	/*
 		Created:	20200918@Lex.Khuat
-		Task :		Implement Probation Monitor page
+		Task :		Implement Probation Monitor page [Redmine ID: #141755]
 		DB:			CTS_DataCenter
-		Original: 
+
 		Revisions:
-			- 20200918@Lex.Khuat [Redmine ID: #141755]: Created
-            - 20201006@Lex.Khuat [Redmine ID: #142546]: Enhance Probation Management
-            - 20201010@Long.Luu [Redmine ID: #142546]: Tune the performance
-            - 20201118@Lex.Khuat [Redmine ID: #145028]: Update probation rule to 20 days left
-            - 20201208@Lex.Khuat [Redmine ID: #145950]: Remove isAssPA from result set
+			- 20200918@Lex.Khuat: Created [Redmine ID: #141755]
+            - 20201006@Lex.Khuat: Enhance Probation Management [Redmine ID: #142546]
+            - 20201010@Long.Luu: Tune the performance [Redmine ID: #142546]
+            - 20201118@Lex.Khuat: Update probation rule to 20 days left [Redmine ID: #145028]
+            - 20201208@Lex.Khuat: Remove isAssPA from result set [Redmine ID: #145950]
             
-		Param's Explanation:
-			Sample: call call CTS_DataCenter.CTS_DC_CustClassification_Probation_Get('', -1, -1, 130, '1,2,3,4,5,6,7,8,9,10');
+		Param's Explanation (filtered by):
             - ip_Username: null or '' to skip filter
             - ip_FromDaysLeft: null or negative number to skip filter
             - ip_ToDaysLeft: null or negative number to skip filter
             - ip_SubscriberID: null or number
             - ip_StatusIDs: null or '' to skip filter
+            
+		Example:  
+			- CALL CTS_DataCenter.CTS_DC_CustClassification_Probation_Get('', -1, -1, 130, '1,2,3,4,5,6,7,8,9,10');
 	*/ 
     
 	DECLARE	lv_CustID			BIGINT UNSIGNED		DEFAULT 0;
