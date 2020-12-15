@@ -12,7 +12,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Insert`(
     
     , 	OUT op_ErrorMessage 	VARCHAR(200)
 )
-    SQL SECURITY INVOKER
+    SQL SECURITY INVOKER 
 sp: BEGIN
 	/*
 		Created:	20200423@Long.Luu	
@@ -31,9 +31,9 @@ sp: BEGIN
             - [20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow.
             - [20200923@Irena.Vo][141755]: Enhance SP
             - 20201202@Lex.Khuat: Disable detail categories & clean up wrong syntax [Redmine ID: #145954]
-            - 20201207@Irena.Vo: Update History Log [RedmineID: #145951]
+            - 20201214@Irena.Vo: Update History Log & Auto Pin [RedmineID: #145951]
 	*/
-    DECLARE lv_CurrentDateTime DATETIME DEFAULT NOW();
+    DECLARE lv_CurrentDateTime DATETIME DEFAULT CURRENT_TIME();
 	DECLARE lv_SPName VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_Insert';
     
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
@@ -45,16 +45,28 @@ sp: BEGIN
 		SET op_ErrorMessage = 'This Category is not allowed for manually update!!!!'; 
         LEAVE sp;
     END IF;   
-    
-    /*	ACTION FOR VVIP	*/
+   
     IF (ip_CategoryID = 213) THEN
         -- Remove all category before: General, Problem.
 	    DELETE cate
 		FROM CTS_DataCenter.CTSCustomerClassification AS cate
 		WHERE cate.CustID = ip_CustID; 
         
-	    INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-	    VALUES(12, lv_SPName, CONCAT('Remove all classification: From ip_CustID_', ip_CustID, '; ip_CategoryID_', ip_CategoryID), lv_CurrentDateTime, ip_CreatedBy);
+		-- Remove all probation list before
+		DELETE pro
+        FROM CTS_DataCenter.ProbationAccountMonitor AS pro
+	    WHERE pro.CustID = ip_CustID;
+        
+        -- Remove old customer class before
+        DELETE sc
+		FROM CTS_DataCenter.SpecialCustomerClass AS sc
+		WHERE sc.CTSCustID = ip_CTSCustID AND sc.CreatedFromFunction = 1; 
+        
+ 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
+	    VALUES(12, lv_SPName, CONCAT('Remove all category and probation list: From ip_CustID_', ip_CustID), lv_CurrentDateTime, ip_CreatedBy);
+        
+        INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
+	    VALUES(20, lv_SPName, CONCAT('Remove all special customer class: From ip_CustID_', ip_CustID), lv_CurrentDateTime, ip_CreatedBy);
 
         -- Insert for CTSCustomerClassification
         INSERT INTO CTS_DataCenter.CTSCustomerClassification
@@ -71,7 +83,7 @@ sp: BEGIN
 			,   ip_CreatedBy
 			,   DATE(lv_CurrentDateTime);
         
-	   -- Insert history
+	    -- Insert history
         INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
 		(CustID, CTSCustID, CategoryID, SportGroupID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID)
 		SELECT 	ip_CustID
@@ -84,31 +96,21 @@ sp: BEGIN
 			,	0  -- manual
 			,   DATE(lv_CurrentDateTime)
             ,   100 -- is VVIP
-            ,   12 -- item = Add VVIP
+            ,   13 -- item = Add VVIP
             ;
 
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-		VALUES(10, lv_SPName, CONCAT('Insert classification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID,';ip_SportGroupIDList_', 200,  ';ip_CategoryID_', ip_CategoryID, ';ip_Remark_', ip_Remark), lv_CurrentDateTime, ip_CreatedBy);
+		VALUES(10, lv_SPName, CONCAT('Insert VVIP: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID,';ip_SportGroupIDList_', 200,  ';ip_CategoryID_', ip_CategoryID, ';ip_Remark_', ip_Remark), lv_CurrentDateTime, ip_CreatedBy);
     
-        -- Remove all probation list before
-		DELETE pro
-        FROM CTS_DataCenter.ProbationAccountMonitor AS pro
-	    WHERE pro.CustID = ip_CustID;
-        
-        INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-	    VALUES(12, lv_SPName, CONCAT('Remove all probation list: From ip_CustID_', ip_CustID), lv_CurrentDateTime, ip_CreatedBy);
-
-        -- Remove old customer class before
-        DELETE sc
-		FROM CTS_DataCenter.SpecialCustomerClass AS sc
-		WHERE sc.CTSCustID = ip_CTSCustID AND sc.CreatedFromFunction = 1; 
-        
-       -- Auto Pin Category
-       INSERT INTO CTS_DataCenter.PinCustomerCategory(CustID, CreatedTime)
+       -- Auto Pin Category (have not Pin before)
+       INSERT IGNORE INTO CTS_DataCenter.PinCustomerCategory(CustID, CreatedTime)
 	   SELECT 	    ip_CustID,	lv_CurrentDateTime;
    
     END IF;
-
+    
+    -- GET LATEST CC
+    SELECT ip_CustID AS CustId, 100 AS CustomerClass, lv_CurrentDateTime AS ScannedTime;
+    
 END$$
 
 DELIMITER ;

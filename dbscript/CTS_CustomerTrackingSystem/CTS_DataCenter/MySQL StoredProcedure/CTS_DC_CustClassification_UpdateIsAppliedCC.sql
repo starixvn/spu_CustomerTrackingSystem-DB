@@ -6,12 +6,12 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_UpdateIsAppli
     SQL SECURITY INVOKER
 BEGIN
 	/*
-		Created:	20201207@Irena.Vo
+		Created:	20201214@Irena.Vo 
 		Task:		Update IsAppliedCC = 1 from Customer List are updated CustomerClass in mainDB successfully (VVIP, Robot, Special CC, PA, Normal)
 		DB:			CTS_DataCenter
 		Original:
 		Revisions:
-           - 20201207@Irena.Vo: Created [RedmineID: #145951]
+           - 20201214@Irena.Vo: Created [RedmineID: #145951]
            
 		Param's Explanation (filtered by):		
 			set @op_ErrorMessage = '0';
@@ -27,14 +27,14 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_ProcessedCustList;    
 	CREATE TEMPORARY TABLE Temp_ProcessedCustList 
     (	  
-			CustID              BIGINT UNSIGNED PRIMARY KEY
+			CustID              BIGINT UNSIGNED PRIMARY KEY 
         ,   ScannedTime         DATETIME
         , 	INDEX 				IX_Temp_ProcessedCustList_ScannedTime(ScannedTime)       
      );
     
     INSERT INTO Temp_ProcessedCustList(CustID, ScannedTime)
-	SELECT DISTINCT temp.CustID
-					, temp.ScannedTime
+	SELECT DISTINCT 	temp.CustID
+					, 	temp.ScannedTime
 	FROM JSON_TABLE(ip_ProcessedCustList,
 		 "$[*]" COLUMNS(
 			  CustID 			BIGINT UNSIGNED		PATH "$.CustId"
@@ -42,8 +42,9 @@ BEGIN
 		 )) AS temp;
      
     UPDATE CTS_DataCenter.CTSCustomerClassification_History AS his
-    INNER JOIN Temp_ProcessedCustList AS temp ON temp.CustID = his.CustID AND temp.ScannedTime >= his.LastModifiedDate 
-    SET his.IsAppliedCC = 1;
+    INNER JOIN Temp_ProcessedCustList AS temp ON temp.CustID = his.CustID
+    SET his.IsAppliedCC = 1
+    WHERE his.IsAppliedCC = 0 AND his.LastModifiedDate <= temp.ScannedTime;
    
 END$$
 

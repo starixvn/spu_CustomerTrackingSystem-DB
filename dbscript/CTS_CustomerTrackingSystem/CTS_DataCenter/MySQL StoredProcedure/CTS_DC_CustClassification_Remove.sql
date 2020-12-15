@@ -9,7 +9,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Remove`(
 	,	IN ip_CreatedBy 		INT
     , 	OUT op_ErrorMessage 	VARCHAR(200)
 )
-    SQL SECURITY INVOKER
+    SQL SECURITY INVOKER 
 BEGIN
 	/*
 		Created:	20200423@Long.Luu	
@@ -23,7 +23,7 @@ BEGIN
             - 20200921@Irena.Vo: Enhance SP & insert Probation Management flow [Redmine ID: #141755]
 			- 20200923@Irena.Vo: Enhance SP [Redmine ID: #141755]
             - 20201201@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. Remove logic detail category. [Redmine ID: #145954]
-            - 20201207@Irena.Vo: Update History Log [RedmineID: #145951]
+            - 20201214@Irena.Vo: Update History Log & Auto Unpin category & Return CustID with TypeID = 1 [RedmineID: #145951]
             
 		Param's Explanation:
 	*/ 
@@ -58,7 +58,7 @@ BEGIN
 			,   0  -- Manual
 			,   DATE(lv_CurrentDateTime)
             ,   -1 -- is Remove VVIP
-			,   13 -- item name = Remove VVIP
+			,   14 -- item name = Remove VVIP
 			;
             
         -- Auto Unpin
@@ -69,7 +69,7 @@ BEGIN
     END IF;
     
 	/*	GET LASTEST CUSTID LIST	*/
-    SELECT ip_CustID AS CustId;
+    SELECT 	ip_CustID AS CustId,	1 AS TypeId;
     
 END$$
 

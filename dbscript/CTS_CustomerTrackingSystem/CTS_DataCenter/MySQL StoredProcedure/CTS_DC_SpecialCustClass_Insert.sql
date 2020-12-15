@@ -5,7 +5,7 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_SpecialCustClass_Insert`(IN ip_Username varchar(50),IN ip_CustomerClass tinyint,IN ip_IsAffectedToAssociation bit,IN ip_UserID int,OUT op_ErrorMessage varchar(200))
     SQL SECURITY INVOKER
 sp: BEGIN
-	/*
+		/*
 		Created:	20200905@Long.Luu
 		Task:		Insert special customer class 
 		DB:			CTS_DataCenter
@@ -16,7 +16,7 @@ sp: BEGIN
            - [20200908@Irena.Vo][141020]: Error MSG for the customers have VVIP before and Update CreatedFromFunction = 1 for special customer (Normal)
            - [20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow.
            - [20200923@Irena.Vo][141755]: Enhance SP
-		   - 20201207@Irena.Vo: Remove logic delete Probation List. Enhance logic get VVIP & Update History Log [RedmineID: #145951]
+		   - 20201214@Irena.Vo: Remove logic delete Probation List. Enhance logic get VVIP & Update History Log. Return ScannedTime [RedmineID: #145951]
            
 		Param's Explanation (filtered by):
 	*/    
@@ -56,7 +56,6 @@ sp: BEGIN
         ,	SubscriberID	INT
         ,	CustomerClass	SMALLINT
 	);
-    
     
     /*	CHECK VALIDATION CUSTOMER	*/
     -- Check invalid customer in CTS.
@@ -159,14 +158,14 @@ sp: BEGIN
             , 0  -- manual
             , DATE(lv_CurrentDateTime)
             , sp.CustomerClass
-            , 9 -- item name = Add Customer Class
+            , 10 -- item name = Add Customer Class
 	FROM Temp_NewCustomerClass AS sp
 	LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CTSCustID = lv_CTSCustID;
     
-    
-	SELECT 	DISTINCT temp.CustId
-		,	temp.CustomerClass
-	FROM Temp_NewCustomerClass AS temp;
+    SELECT 	DISTINCT CustId
+		,	CustomerClass
+        ,   lv_CurrentDateTime AS ScannedTime
+	FROM Temp_NewCustomerClass;
 	
 END$$
 

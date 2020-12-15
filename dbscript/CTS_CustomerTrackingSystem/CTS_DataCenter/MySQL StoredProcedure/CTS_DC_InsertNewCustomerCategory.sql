@@ -19,13 +19,13 @@ BEGIN
             - [20201001@Irena.Vo][141755]: Fix issue duplicate category & enhance logic
 			- [20201116@Irena.Vo][145028]: Enhance logic remove existed customers
             - 20201202@Lex.Khuat: Disable detail categories & clean up wrong syntax [Redmine ID: #145954]
-            - 20201207@Irena.Vo: Update History Log [Redmine ID: #145951]
+            - 20201214@Irena.Vo: Update History Log. Get CustId. Return TypeID = 4 [Redmine ID: #145951]
             
 		Param's Explanation (filtered by):
              call CTS_DC_InsertNewCustomerCategory('1,2,3');
 	*/
     DECLARE lv_CreatedBy INT DEFAULT 10278938;
-    DECLARE lv_CurrentDateTime 	DATETIME DEFAULT NOW();
+    DECLARE lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_NewCustomers;
 	CREATE TEMPORARY TABLE Temp_NewCustomers
@@ -95,7 +95,7 @@ BEGIN
 	LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID;
    
     /*	GET LASTEST CUSTID LIST	*/
-    SELECT DISTINCT temp.CustId FROM Temp_NewCustomers AS temp;
+    SELECT DISTINCT temp.CustId, 4 AS TypeId FROM Temp_NewCustomers AS temp;
     
 END$$
 

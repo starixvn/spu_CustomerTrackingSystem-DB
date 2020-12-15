@@ -5,7 +5,7 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_SpecialCustClass_Remove`(IN ip_CTSCustID int,IN ip_UserID int,OUT op_ErrorMessage varchar(200))
     SQL SECURITY INVOKER
 BEGIN
-	/*
+		/*
 		Created:	20200908@Long.Luu
 		Task:		Remove special customer class [Redmine ID: #140996]
 		DB:			CTS_DataCenter
@@ -13,8 +13,7 @@ BEGIN
 
 		Revisions:
 			- 20200908@Long.Luu [Redmine ID: #140996]: Created 
-			- 20201207@Irena.Vo: Update History Log  [Redmine ID: #145951]
-            - 20201211@Irena.Vo: Enhance logic select data from CTSCustID to CustID  [Redmine ID: #145951]
+			- 20201214@Irena.Vo: Update History Log & Return CustID with TypeID = 2 [Redmine ID: #145951]
         
 		Param's Explanation (filtered by):
 	*/
@@ -60,7 +59,7 @@ BEGIN
 				, 0 -- manual
 				, DATE(lv_CurrentDateTime)
 				, -1
-				, 11; -- item name = Remove Customer Class;
+				, 12; -- item name = Remove Customer Class;
     ELSE            
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
 		(CustID, CTSCustID, CategoryID, SportGroupID,  LastModifiedDate,LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID)
@@ -74,13 +73,13 @@ BEGIN
 				, 0 -- manual
 				, DATE(lv_CurrentDateTime)
 				, -1
-				, 11 -- item name = Remove Customer Class
+				, 12 -- item name = Remove Customer Class
 		FROM CTS_DataCenter.CTSCustomerClassification AS cate 
 		WHERE cate.CustID = lv_CustID;
 	END IF;
     
     /*	GET LASTEST CUSTID LIST	*/
-    SELECT DISTINCT lv_CustID AS CustId;
+    SELECT DISTINCT lv_CustID AS CustId,	2 AS TypeId;
     
 END$$
 

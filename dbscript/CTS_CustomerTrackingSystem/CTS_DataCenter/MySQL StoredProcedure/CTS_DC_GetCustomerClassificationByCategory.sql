@@ -1,6 +1,9 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
+DROP procedure IF EXISTS `CTS_DC_GetCustomerClassificationByCategory`;
+
 DELIMITER $$
-DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_GetCustomerClassificationByCategory$$
-CREATE DEFINER=fps@`%` PROCEDURE CTS_DataCenter.CTS_DC_GetCustomerClassificationByCategory(IN ip_CategoryIDList VARCHAR(1000), IN ip_CustSport JSON)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_GetCustomerClassificationByCategory`(IN ip_CategoryIDList varchar(1000),IN ip_CustSport json)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	[20200612@Casey.Huynh][135324]
@@ -12,6 +15,8 @@ BEGIN
 		Revisions:
 			[20200701@Casey.Huynh][135324]: Chagne Flow and Store more Info
             [20200826@Casey.Huynh][137693]: Add Trace Performance
+            - 20201214@Irena.Vo: Enhance logic ignore Pin category & Probation List  [RedmineID: #145951] 
+            
 		Param's Explanation (filtered by):
          ip_CategoryIDList: ex: '1,2,3'       
 	*/     
@@ -64,9 +69,6 @@ BEGIN
 			, SportGroupID 		SMALLINT UNSIGNED	PATH "$.SportGroupId"
 		 )) as tmpTable;       
     
-
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-
     SELECT		tmpCusCat.CustID
 				, tmpCusCat.SportGroupID AS SportGroupID
                 , tmpCusCat.CategoryID
@@ -82,10 +84,11 @@ BEGIN
 				LEFT JOIN	Temp_inputCategory AS ctg
 							ON ccl.CategoryID = ctg.CategoryID
 			) AS tmpCusCat
-	WHERE	tmpCusCat.CurrentSportGroupID IS NULL 
-			OR tmpCusCat.CategoryID IS NOT NULL;
-
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+	LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin ON pin.CustID = tmpCusCat.CustID
+    LEFT JOIN CTS_DataCenter.ProbationAccountMonitor AS pro ON pro.CustID = tmpCusCat.CustID AND pro.SportGroupID = tmpCusCat.SportGroupID
+	WHERE	pin.CustID IS NULL 
+            AND pro.SportGroupID IS NULL
+            AND (tmpCusCat.CurrentSportGroupID IS NULL OR tmpCusCat.CategoryID IS NOT NULL);
     
     ### PERFORMANCE
 	SET		vrEndTime = CURRENT_TIMESTAMP(4);
@@ -105,4 +108,5 @@ BEGIN
     ### PERFORMANCE: END 
     
 END$$
+
 DELIMITER ;

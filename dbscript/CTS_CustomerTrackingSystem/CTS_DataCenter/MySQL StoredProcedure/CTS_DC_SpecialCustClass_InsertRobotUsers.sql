@@ -5,7 +5,7 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_SpecialCustClass_InsertRobotUsers`(IN ip_CustIDs text)
     SQL SECURITY INVOKER
 BEGIN
-    /*
+     /*
 		Created:	Irena.Vo@20200911
 		Task:		Insert Robot Customer Class 
 		DB:			CTS_DataCenter
@@ -15,8 +15,7 @@ BEGIN
 			- [20200911@Irena.Vo][141416]: Created. Support for Licensee & 611111 sites 
             - [20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow.    
 			- [20200923@Irena.Vo][141755]: Enhance SP
-			- 20201207@Irena.Vo: Remove logic delete Probation List. Enhance logic get VVIP & Update History Log [RedmineID: #145951]
-            - 20201211@Irena.Vo: Enhance logic join table [RedmineID: #145951]
+			- 20201214@Irena.Vo: Remove logic delete Probation List. Enhance logic get VVIP & Update History Log. Return ScannedTime [RedmineID: #145951]
             
 		Param's Explanation (filtered by):
         ip_CustIDs = 1,2,3
@@ -95,14 +94,14 @@ BEGIN
             , 1 -- auto
             , DATE(lv_CurrentDateTime)
             , 13 -- is Robot
-            , 10 -- item name = Change by Robot icon
+            , 11 -- item name = Change by Robot icon
 	FROM Temp_RobotUsers AS temp
     LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID;
     
-      
-    SELECT 	DISTINCT temp.CustId
+    SELECT 	DISTINCT CustId
 		,	13 AS CustomerClass
-	FROM Temp_RobotUsers AS temp;
+        ,   lv_CurrentDateTime AS ScannedTime
+	FROM Temp_RobotUsers;
     
 END$$
 

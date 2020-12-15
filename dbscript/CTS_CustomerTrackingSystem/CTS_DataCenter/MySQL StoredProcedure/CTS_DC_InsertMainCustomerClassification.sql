@@ -21,7 +21,7 @@ BEGIN
                 -20201026@Irena.Vo: Enhance init data for Probation to VIP OR Normal. [Redmine ID: #142546]
                 -20201116@Irena.Vo: Only distinct CustID list for general & Update LastScannedDate for Probation List. [Redmine ID: #145028]
                 -20201201@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. [Redmine ID: #145954]
-				-20201207@Irena.Vo: Update History Log [RedmineID: #145951]
+				-20201214@Irena.Vo: Update History Log. Get CustId. Return TypeId = 4 [RedmineID: #145951]
                 
 		Param's Explanation (filtered by):
 
@@ -214,11 +214,10 @@ BEGIN
 	FROM 	Temp_NewClassification AS temp
     INNER JOIN CTS_DataCenter.CategoryToCustomerClass AS map ON temp.CategoryID = map.CategoryID
     LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID
-    LEFT JOIN Temp_ExistedClassification AS ex on ex.CustID = temp.CustID
-    WHERE temp.ActionType = 0 OR (temp.ActionType = 1 AND ex.CustID = temp.CustID AND ex.CategoryID <> temp.CategoryID);
+    LEFT JOIN Temp_ExistedClassification AS ex on ex.CustID = temp.CustID;
    
    /*	GET LASTEST CUSTID LIST	*/
-    SELECT DISTINCT temp.CustId FROM Temp_NewClassification AS temp; 
+    SELECT DISTINCT temp.CustId, 4 AS TypeId FROM Temp_NewClassification AS temp; 
 
 END$$
 

@@ -1,16 +1,16 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_GetCustomerClassificationIntervalScan`;
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
+DROP procedure IF EXISTS `CTS_DC_GetCustomerClassificationIntervalScan`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_GetCustomerClassificationIntervalScan`(IN ip_NoOfRecord INT, IN ip_Batch INT, IN ip_ParentCategoryID INT)
-	SQL SECURITY INVOKER
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	[20200612@Casey.Huynh][135324]
 		Task:		Return the auto tag customer list that reach to scanning schedule (interval refer to CTS_DataCenter.CustomerCategory.IntervalScan
 		DB:			CTS_DataCenter
         
-		Original:
+		Original: 
 
 		Revisions:
 			[20200701@Casey.Huynh]		[135324]: Chagne Flow and Store more Info
@@ -18,6 +18,7 @@ BEGIN
             [20200903@Harvey.Nguyen]	[140869]: Add ParentID 
 			[20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow.
             [20200923@Irena.Vo][141755]: Enhance SP
+			 - 20201214@Irena.Vo: Enhance logic ignore Pin category & Probation List [RedmineID: #145951]
             
 		Param's Explanation (filtered by):
          ip_CategoryIDList: ex: '1,2,3'       
@@ -84,22 +85,18 @@ BEGIN
 				, ccl.SportGroupID	AS SportGroupID
                 , ccl.CategoryID	AS CategoryID
     FROM		CTS_DataCenter.CTSCustomerClassification AS ccl
-    INNER JOIN	CTS_DataCenter.CustomerCategory AS cat
-				ON ccl.CategoryID = cat.CategoryID
-	WHERE		cat.IsActive = 1
+    LEFT JOIN   CTS_DataCenter.PinCustomerCategory AS pin ON pin.CustID = ccl.CustID
+    LEFT JOIN   CTS_DataCenter.ProbationAccountMonitor AS pro on pro.CustID = ccl.CustID AND pro.SportGroupID = ccl.SportGroupID
+    INNER JOIN	CTS_DataCenter.CustomerCategory AS cat ON ccl.CategoryID = cat.CategoryID
+	WHERE		pin.CustID IS NULL 
+				AND pro.SportGroupID IS NULL
+                AND cat.IsActive = 1
 				AND cat.IsUsedManually = 0
                 AND cat.ScanIntervalInSecond > 0
                 AND cat.ParentID = ip_ParentCategoryID
                 AND ccl.LastScannedDate <= DATE_SUB(lv_ScanDate, INTERVAL cat.ScanIntervalInSecond SECOND)
 	LIMIT		lv_TotalRecord;
-   
-    -- IGNORE PROBATION LIST
-    DELETE temp
-    FROM Temp_ScanList AS temp
-    INNER JOIN  CTS_DataCenter.ProbationAccountMonitor AS pro on pro.CustID = temp.CustID AND pro.SportGroupID = temp.SportGroupID
-	INNER JOIN	CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = temp.CategoryID
-    WHERE cc.ParentID = ip_ParentCategoryID;
-   
+      
     -- RETURN RESULT
 	SELECT 		(((temp.ID-1) DIV ip_NoOfRecord) + 1) AS BatchID
 				, temp.CustID 		
@@ -130,9 +127,7 @@ BEGIN
             , z.ToID		= lv_ToID
     WHERE	z.ExecKey = lv_ExecKey AND z.StepID = lv_StepID ;     
     ### PERFORMANCE: END
-    
-	DROP TEMPORARY TABLE IF EXISTS Temp_ScanList;
-    
+  
 END$$
 
 DELIMITER ;

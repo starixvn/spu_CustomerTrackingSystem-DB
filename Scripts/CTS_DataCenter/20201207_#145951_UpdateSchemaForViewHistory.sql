@@ -10,12 +10,13 @@ VALUES
 (4,5, 'Classification Source Type','Classification Source Type','Cannot pass Probation','Cannot pass Probation',5,1,'Probation: From Probation To Probation',CURRENT_TIME()),
 (4,6, 'Classification Source Type','Classification Source Type','Add from NAP CM','Add from NAP CM',6,1,'From NapCM',CURRENT_TIME()),
 (4,7, 'Classification Source Type','Classification Source Type','Add from Evidence','Add from Evidence',7,1,'From Evidence',CURRENT_TIME()),
-(4,8, 'Classification Source Type','Classification Source Type','Manual Remove Problem Account','Manual Remove Problem Account',8,1,'From PA',CURRENT_TIME()),
-(4,9, 'Classification Source Type','Classification Source Type','Manual Add Customer Class','Manual Add Customer Class',9,1,'From Special CC',CURRENT_TIME()),
-(4,10, 'Classification Source Type','Classification Source Type','Change Customer Class by Robot Icon','Change Customer Class by Robot Icon',10,1,'From Robot',CURRENT_TIME()),
-(4,11, 'Classification Source Type','Classification Source Type','Manual Remove Customer Class','Manual Remove Customer Class',11,1,'From CC',CURRENT_TIME()),
-(4,12, 'Classification Source Type','Classification Source Type','Manual Add VVIP','Manual Add VVIP',12,1,'From VVIP',CURRENT_TIME()),
-(4,13, 'Classification Source Type','Classification Source Type','Manual Remove VVIP','Manual Remove VVIP',13,1,'From VVIP',CURRENT_TIME())
+(4,8, 'Classification Source Type','Classification Source Type','Manual Remove from NAP CM','Manual Remove from NAP CM',8,1,'From PA',CURRENT_TIME()),
+(4,9, 'Classification Source Type','Classification Source Type','Manual Remove from Evidence','Manual Remove from Evidence',9,1,'From Evidence',CURRENT_TIME()),
+(4,10, 'Classification Source Type','Classification Source Type','Manual Add Customer Class','Manual Add Customer Class',10,1,'From Special CC',CURRENT_TIME()),
+(4,11, 'Classification Source Type','Classification Source Type','Change Customer Class by Robot Icon','Change Customer Class by Robot Icon',11,1,'From Robot',CURRENT_TIME()),
+(4,12, 'Classification Source Type','Classification Source Type','Manual Remove Customer Class','Manual Remove Customer Class',12,1,'From CC',CURRENT_TIME()),
+(4,13, 'Classification Source Type','Classification Source Type','Manual Add VVIP','Manual Add VVIP',13,1,'From VVIP',CURRENT_TIME()),
+(4,14, 'Classification Source Type','Classification Source Type','Manual Remove VVIP','Manual Remove VVIP',14,1,'From VVIP',CURRENT_TIME())
 ;
 
 -- Insert new table PinCustomerCategory
@@ -77,3 +78,9 @@ ADD COLUMN ToCategoryID SMALLINT UNSIGNED, ALGORITHM=INSTANT;
 
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
 ADD COLUMN IsAppliedCC BIT DEFAULT 0, ALGORITHM=INSTANT;
+
+ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
+ADD INDEX IX_CTSCustomerClassification_History_TargetCC_SourceTypeID(TargetCC,SourceTypeID), ALGORITHM=INPLACE, LOCK=NONE;
+
+ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
+ADD INDEX IX_CTSCustomerClassification_History_IsAppliedCC(IsAppliedCC), ALGORITHM=INPLACE, LOCK=NONE;

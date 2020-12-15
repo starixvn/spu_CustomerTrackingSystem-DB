@@ -5,22 +5,20 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_ViewHistory`(IN ip_CustID BIGINT, OUT op_ErrorMessage VARCHAR(200))
     SQL SECURITY INVOKER
 BEGIN
-  /*
-		Created:	20201207@Irena.Vo
+   /*
+		Created:	20201214@Irena.Vo
 		Task:		View History for customer category in CTS
 		DB:			CTS_DataCenter
 		Original:
 		Revisions:
-           - 20201207@Irena.Vo: Created [RedmineID: #145951]
-	    - 20201211@Irena.Vo: Enhance logic select data [RedmineID: #145951]
+           - 20201214@Irena.Vo: Created [RedmineID: #145951]
+           
 		Param's Explanation (filtered by):		
 			set @op_ErrorMessage = '0';
 				call CTS_DataCenter.CTS_DC_CustClassification_ViewHistory(43600889, @op_ErrorMessage);
 			select @op_ErrorMessage;
 
 	*/   
-        DECLARE lv_IsPinCategory BIT DEFAULT 0;
-        
 		DECLARE EXIT HANDLER FOR SQLEXCEPTION 
 		BEGIN         
 			GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
@@ -29,7 +27,8 @@ BEGIN
 		DROP TEMPORARY TABLE IF EXISTS Temp_ClassificationHistory;    
 		CREATE TEMPORARY TABLE Temp_ClassificationHistory 
 		(	  
-				LastModifiedDate    	DATETIME
+				RowOrder                SMALLINT UNSIGNED 
+            ,	LastModifiedDate    	DATETIME
 			,   CategoryID          	SMALLINT UNSIGNED
 			,   TargetCC            	TINYINT
 			,   SourceTypeID        	SMALLINT UNSIGNED
@@ -43,33 +42,29 @@ BEGIN
 			,   LastXDaysMargin         DECIMAL(20,4)
 			,   ProbationPeriodWinloss  DECIMAL(20,4)
 			,   LastModifiedBy      	INT UNSIGNED
-			, 	INDEX 					IX_Temp_ClassificationHistory_LastModifiedDate(LastModifiedDate)       
+			, 	INDEX 					IX_Temp_ClassificationHistory_RowOrder_LastModifiedDate(RowOrder, LastModifiedDate)       
 		 );
-         
-		-- Get Pin category
-		IF EXISTS (SELECT 1 FROM CTS_DataCenter.PinCustomerCategory WHERE CustID = ip_CustID) THEN
-			SET lv_IsPinCategory = 1;
-		END IF;
-        
+  
         -- Get History List
         INSERT INTO Temp_ClassificationHistory
-        (TargetCC, SourceTypeID, LastModifiedDate, CategoryID, FromCategoryID, ToCategoryID
+        (RowOrder, TargetCC, CategoryID, SourceTypeID, LastModifiedDate, FromCategoryID, ToCategoryID
         , TurnOverRM, WinlossRM, Margin, BetCount, ActiveDays, LastXDaysMargin, ProbationPeriodWinloss, LastModifiedBy)
-        SELECT  his.TargetCC
-				,  his.SourceTypeID
-				,  	his.LastModifiedDate
-				,	CASE WHEN  his.CategoryID = 151 THEN 51
-						WHEN  his.CategoryID IN (72, 152) THEN 52
-						WHEN  his.CategoryID IN (73, 153) THEN 53
-						WHEN  his.CategoryID IN (74, 154) THEN 54 
-						WHEN  his.CategoryID IN (75, 155) THEN 55
-						WHEN  his.CategoryID IN (76, 156) THEN 56
-						WHEN  his.CategoryID IN (77, 157) THEN 57
-						WHEN  his.CategoryID IN (78, 158) THEN 58
-						WHEN  his.CategoryID IN (79, 159) THEN 59
-						WHEN  his.CategoryID = 80 THEN 60
-						ELSE  his.CategoryID   
-					END
+        SELECT  @row_no := IF(@prev_val1 = his.TargetCC AND @prev_val2 = his.CategoryID, @row_no + 1, 1) AS RowOrder
+				,  	@prev_val1 := his.TargetCC AS TargetCC
+				,	@prev_val2 := CASE  WHEN  his.CategoryID = 151 THEN 51
+										WHEN  his.CategoryID IN (72, 152) THEN 52
+										WHEN  his.CategoryID IN (73, 153) THEN 53
+										WHEN  his.CategoryID IN (74, 154) THEN 54 
+										WHEN  his.CategoryID IN (75, 155) THEN 55
+										WHEN  his.CategoryID IN (76, 156) THEN 56
+										WHEN  his.CategoryID IN (77, 157) THEN 57
+										WHEN  his.CategoryID IN (78, 158) THEN 58
+										WHEN  his.CategoryID IN (79, 159) THEN 59
+										WHEN  his.CategoryID = 80 THEN 60
+										ELSE  his.CategoryID   
+									END
+				,  	his.SourceTypeID
+                ,  	his.LastModifiedDate
 				,	his.FromCategoryID	
 				,	his.ToCategoryID	
 				,	his.TurnOverRM  
@@ -83,11 +78,25 @@ BEGIN
 				,	his.ProbationPeriodWinloss
 				,	his.LastModifiedBy   
 		FROM CTS_DataCenter.CTSCustomerClassification_History AS his
-        LEFT JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.ParentID IN (50, 200) AND his.CategoryID = cc.CategoryID
+        LEFT JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.ParentID IN (50, 200) AND his.CategoryID = cc.CategoryID,
+		  (SELECT @row_no := 0) x,
+		  (SELECT @prev_val1 := 0) y1,
+          (SELECT @prev_val2 := 0) y2
 		WHERE his.CustID = ip_CustID
 		ORDER BY his.LastModifiedDate ASC;
-        
+       
+        -- Only get Records in the first created
+        DELETE temp
+        FROM Temp_ClassificationHistory AS temp
+        WHERE temp.RowOrder > 1;
+    
         -- Return results
+        IF EXISTS (SELECT 1 FROM CTS_DataCenter.PinCustomerCategory WHERE CustID = ip_CustID) THEN
+			SELECT 1 AS IsPinCategory;
+		ELSE 
+            SELECT 0 AS IsPinCategory;
+	    END IF;
+        
       	SELECT         temp.LastModifiedDate AS CreatedTime
 					,   CASE WHEN temp.CategoryID = 0 THEN '-'
                              ELSE cc1.CategoryName
@@ -114,9 +123,6 @@ BEGIN
         INNER JOIN CTS_DataCenter.StaticList AS s ON s.ListID = 4 AND temp.SourceTypeID = s.ItemID
         INNER JOIN CTS_Admin.CTSUser AS u ON temp.LastModifiedBy = u.UserID
 		ORDER BY temp.LastModifiedDate DESC, temp.CategoryID DESC;
-      
-      -- Return IsPin
-       	SELECT          lv_IsPinCategory AS isPinCategory; 
 END$$
 
 DELIMITER ;
