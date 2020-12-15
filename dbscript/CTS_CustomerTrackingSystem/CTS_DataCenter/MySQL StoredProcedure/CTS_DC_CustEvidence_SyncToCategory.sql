@@ -45,14 +45,6 @@ BEGIN
 		, 	INDEX 				IX_Temp_CustomerEvidences_ActionType(ActionType)       
      );
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_ExistedClassification;    -- from Evidence
-	CREATE TEMPORARY TABLE Temp_ExistedClassification 
-    (	  
-			CustID				BIGINT UNSIGNED
-        , 	CategoryID	        SMALLINT UNSIGNED
-        , 	INDEX 				IX_Temp_ExistedClassification_CustID_CategoryID(CustID,CategoryID)            
-     );
-    
     INSERT INTO Temp_CustomerEvidences(CustID, CTSCustID, SubscriberID, EvidenceID, CategoryID, ActionType)
 	SELECT DISTINCT temp.CustID
 				, temp.CTSCustID
@@ -134,9 +126,7 @@ BEGIN
 		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID)
 		SELECT 	DISTINCT temp.CustID
 			, 	temp.CTSCustID
-			, 	CASE WHEN temp.ActionType = 2 AND ex.CategoryID IS NOT NULL THEN ex.CategoryID 
-					 ELSE temp.CategoryID
-				END
+			, 	temp.CategoryID
 			,   0
 			,   lv_CreatedDateTime
 			,   lv_CreatedBy
@@ -151,7 +141,6 @@ BEGIN
 					 ELSE 7 -- item name = Add from Evidence
 				END
 		FROM Temp_CustomerEvidences AS temp
-        LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID
         LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID;
         
     END IF;
