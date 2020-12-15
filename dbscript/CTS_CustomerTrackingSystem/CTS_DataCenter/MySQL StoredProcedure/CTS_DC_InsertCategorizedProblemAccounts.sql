@@ -190,7 +190,8 @@ BEGIN
 			END
 	FROM 	Temp_ProblemAccounts AS temp
     LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID
-    LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID;
+    LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID
+    WHERE temp.ActionType IN (0, 2);
    
 	/*	GET LASTEST CUSTID LIST	*/
     SELECT DISTINCT temp.CustId
