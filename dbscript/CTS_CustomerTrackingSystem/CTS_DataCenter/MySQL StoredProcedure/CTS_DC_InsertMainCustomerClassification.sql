@@ -22,6 +22,7 @@ BEGIN
                 -20201116@Irena.Vo: Only distinct CustID list for general & Update LastScannedDate for Probation List. [Redmine ID: #145028]
                 -20201201@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. [Redmine ID: #145954]
 				-20201214@Irena.Vo: Update History Log. Get CustId. Return TypeId = 4 [RedmineID: #145951]
+               - 20201215@Irena.Vo: Enhance logic join with CategoryID [RedmineID: #145951]
                 
 		Param's Explanation (filtered by):
 
@@ -82,8 +83,7 @@ BEGIN
 			, LastXDaysMargin			DECIMAL(20,4)		PATH "$.LastXDaysMargin"		
 			, ProbationPeriodWinloss	DECIMAL(20,4)		PATH "$.ProbationPeriodWinloss"		
 		 )) AS temp
-	 INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = temp.CategoryID 
-	 WHERE cc.ParentID = 200 AND temp.CategoryID <> 0;
+	 WHERE temp.CategoryID <> 0;
      
     /*	IGNORE PIN CATEGORY	*/
      DELETE temp
@@ -94,16 +94,14 @@ BEGIN
     DELETE temp
     FROM Temp_NewClassification AS temp
 	INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID
-	INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = cate.CategoryID
-	WHERE cc.ParentID = 50;
+	WHERE cate.CategoryID > 50 AND cate.CategoryID < 200;
     
     /*	GET EXISTED CATEGORY	*/ 
 	INSERT INTO Temp_ExistedClassification
     SELECT DISTINCT cate.CustID, cate.CategoryID
     FROM Temp_NewClassification AS temp
     INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID
-    INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = cate.CategoryID 
-    WHERE cc.ParentID = 200; 
+    WHERE cate.CategoryID > 200 AND cate.CategoryID < 300; 
     
     /*	UPDATE CUST INFO	*/
     UPDATE 	Temp_NewClassification AS temp 
@@ -118,7 +116,6 @@ BEGIN
     UPDATE CTS_DataCenter.CTSCustomerClassification AS cate
     INNER JOIN  Temp_NewClassification AS temp on temp.CustID = cate.CustID AND temp.SportGroupID = cate.SportGroupID  
     INNER JOIN  Temp_ExistedClassification AS ex on ex.CustID = temp.CustID
-    INNER JOIN  CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = cate.CategoryID 
     SET   cate.CTSCustID = temp.CTSCustID
         , cate.SubscriberID  = temp.SubscriberID
         , cate.CategoryID = (CASE WHEN (ex.CategoryID IN (202, 205) AND temp.CategoryID IN (203, 204)) THEN 206 -- Update New, Normal, VIP to Smart Punter, High Risk Punter
@@ -127,7 +124,7 @@ BEGIN
         , cate.LastModifiedDate = temp.LastModifiedDate 
         , cate.LastModifiedBy = lv_CreatedBy
         , cate.LastScannedDate = DATE(lv_CurrentDateTime)
-    WHERE cc.ParentID = 200;
+    WHERE cate.CategoryID > 200 AND cate.CategoryID < 300;
     
     /*	INSERT NEW CATEGORY	*/
     INSERT  INTO CTS_DataCenter.CTSCustomerClassification

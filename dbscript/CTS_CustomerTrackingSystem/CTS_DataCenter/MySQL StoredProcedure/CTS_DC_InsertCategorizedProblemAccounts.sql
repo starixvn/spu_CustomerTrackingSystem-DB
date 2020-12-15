@@ -21,6 +21,7 @@ BEGIN
             20201019@Irena.Vo  [#141930]: Get distinct CustID List for lastest category
             - 20201202@Lex.Khuat: Disable detail categories & clean up wrong syntax [Redmine ID: #145954]
 			- 20201214@Irena.Vo: Update History Log & Return list CustID with TypeID IN (3, 4) [RedmineID: #145951]
+           - 20201215@Irena.Vo: Enhance logic join with CategoryID [RedmineID: #145951]
             
 		Param's Explanation (filtered by):
 	*/   
@@ -75,8 +76,7 @@ BEGIN
     DELETE cate
     FROM CTS_DataCenter.CTSCustomerClassification AS cate
 	INNER JOIN Temp_ProblemAccounts AS temp ON temp.CustID = cate.CustID
-	INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = cate.CategoryID 
-	WHERE cc.ParentID = 200;
+	WHERE cate.CategoryID > 200 AND cate.CategoryID < 300;
   
 	/*	REMOVE PROBATION LIST BEFORE	*/
     DELETE pro
@@ -113,13 +113,12 @@ BEGIN
 							END
 	WHERE MainDBCategoryID <> -1;
    
-   /*GET EXISTED CATEGORY*/
+    /*GET EXISTED CATEGORY*/
 	INSERT INTO Temp_ExistedClassification (CustID, CategoryID)
 	SELECT DISTINCT cate.CustID, cate.CategoryID
     FROM Temp_ProblemAccounts AS temp
     INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID
-    INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = cate.CategoryID 
-    WHERE cc.ParentID = 50 AND (cate.CategoryID NOT BETWEEN 72 AND 80); 
+    WHERE cate.CategoryID > 50 AND cate.CategoryID < 200 AND (cate.CategoryID NOT BETWEEN 72 AND 80); 
     
 	/*	REMOVE PROBLEM ACCOUNTS OR OLD CATEGORY	*/
 	UPDATE       Temp_ExistedClassification AS ex
@@ -130,9 +129,8 @@ BEGIN
     
 	DELETE 		 cate
     FROM 		 CTS_DataCenter.CTSCustomerClassification cate
-    INNER JOIN   CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = cate.CategoryID
     INNER JOIN 	 Temp_ExistedClassification AS ex ON ex.CustID = cate.CustID AND ex.CategoryID = cate.CategoryID
-	WHERE 		 cc.ParentID = 50 AND ex.IsRemove = 1;
+	WHERE 		 cate.CategoryID > 50 AND cate.CategoryID < 200 AND (cate.CategoryID NOT BETWEEN 72 AND 80) AND ex.IsRemove = 1;
     
 	/*	UPDATE PROBLEM ACCOUNT	*/
     UPDATE       Temp_ProblemAccounts AS temp 
@@ -140,14 +138,13 @@ BEGIN
     SET 		 temp.ActionType = 1;
     
     UPDATE 		 CTS_DataCenter.CTSCustomerClassification AS cate
-    INNER JOIN   CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = cate.CategoryID
     INNER JOIN   Temp_ProblemAccounts AS temp on temp.CustID = cate.CustID AND temp.CategoryID = cate.CategoryID
 	SET   	    cate.CTSCustID = temp.CTSCustID
 			, 	cate.SubscriberID  = temp.SubscriberID
 			, 	cate.LastModifiedBy = lv_CreatedBy
             ,   cate.LastModifiedDate = lv_CurrentDateTime
 			, 	cate.LastScannedDate = DATE(lv_CurrentDateTime)
-     WHERE 	cc.ParentID = 50 AND temp.ActionType = 1;
+     WHERE 	cate.CategoryID > 50 AND cate.CategoryID < 200 AND (cate.CategoryID NOT BETWEEN 72 AND 80) AND temp.ActionType = 1;
      
     /*	INSERT NEW PROBLEM ACCOUNT	*/
     INSERT  INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, 
@@ -201,7 +198,7 @@ BEGIN
 							 ELSE 4
 						END AS TypeId
     FROM Temp_ProblemAccounts AS temp;
-   
+    
 END$$
 
 DELIMITER ;

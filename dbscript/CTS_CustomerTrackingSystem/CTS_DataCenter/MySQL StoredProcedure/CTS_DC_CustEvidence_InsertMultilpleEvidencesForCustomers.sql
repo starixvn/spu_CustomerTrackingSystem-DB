@@ -17,7 +17,6 @@ sp: BEGIN
             - 20201020@Irena.Vo: Enhance logic Remove all category (Detail & General) [Redmine ID: #141756]
             - 20201111@Irena.Vo: Enhance logic Insert History for Evidence Category [Redmine ID: #145027]
             - 20201130@Irena.Vo: Enhance logic Insert new evidence (remove existed evidence category before) [Redmine ID: #141563]
-            - 20201207@Irena.Vo: Update History Log  & Enhance logic  [Redmine ID: #145951]
 			- 20201214@Irena.Vo: Move logic Sync to Category by new sp: SyncToCategory [RedmineID: #145951] 
             
 		Param's Explanation(filered by):

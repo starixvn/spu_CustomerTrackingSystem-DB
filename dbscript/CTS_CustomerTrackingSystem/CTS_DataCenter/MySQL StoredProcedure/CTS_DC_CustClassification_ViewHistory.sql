@@ -12,6 +12,7 @@ BEGIN
 		Original:
 		Revisions:
            - 20201214@Irena.Vo: Created [RedmineID: #145951]
+           - 20201215@Irena.Vo: Enhance logic join with CategoryID [RedmineID: #145951]
            
 		Param's Explanation (filtered by):		
 			set @op_ErrorMessage = '0';
@@ -77,12 +78,11 @@ BEGIN
 				,	his.LastXDaysMargin
 				,	his.ProbationPeriodWinloss
 				,	his.LastModifiedBy   
-		FROM CTS_DataCenter.CTSCustomerClassification_History AS his
-        LEFT JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.ParentID IN (50, 200) AND his.CategoryID = cc.CategoryID,
+		FROM CTS_DataCenter.CTSCustomerClassification_History AS his,
 		  (SELECT @row_no := 0) x,
 		  (SELECT @prev_val1 := 0) y1,
           (SELECT @prev_val2 := 0) y2
-		WHERE his.CustID = ip_CustID
+		WHERE his.CustID = ip_CustID AND his.CategoryID > 50 AND his.CategoryID < 300
 		ORDER BY his.LastModifiedDate ASC;
        
         -- Only get Records in the first created
@@ -117,11 +117,12 @@ BEGIN
 					,   temp.ProbationPeriodWinloss
 					,   u.UserName AS CreatedBy
 		FROM Temp_ClassificationHistory AS temp
-        LEFT JOIN CTS_DataCenter.CustomerCategory AS cc1 ON cc1.ParentID IN (50, 200) AND temp.CategoryID = cc1.CategoryID
-	    LEFT JOIN CTS_DataCenter.CustomerCategory AS cc2 ON cc2.ParentID IN (50, 200) AND temp.FromCategoryID = cc2.CategoryID
-        LEFT JOIN CTS_DataCenter.CustomerCategory AS cc3 ON cc3.ParentID IN (50, 200) AND temp.ToCategoryID = cc3.CategoryID
+        LEFT JOIN CTS_DataCenter.CustomerCategory AS cc1 ON temp.CategoryID = cc1.CategoryID
+	    LEFT JOIN CTS_DataCenter.CustomerCategory AS cc2 ON temp.FromCategoryID = cc2.CategoryID
+        LEFT JOIN CTS_DataCenter.CustomerCategory AS cc3 ON temp.ToCategoryID = cc3.CategoryID
         INNER JOIN CTS_DataCenter.StaticList AS s ON s.ListID = 4 AND temp.SourceTypeID = s.ItemID
         INNER JOIN CTS_Admin.CTSUser AS u ON temp.LastModifiedBy = u.UserID
+        WHERE temp.CategoryID > 50 AND temp.CategoryID < 300
 		ORDER BY temp.LastModifiedDate DESC, temp.CategoryID DESC;
 END$$
 

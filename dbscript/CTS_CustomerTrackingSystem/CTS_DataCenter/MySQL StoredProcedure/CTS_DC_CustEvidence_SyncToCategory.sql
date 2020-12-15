@@ -17,6 +17,7 @@ BEGIN
            - 20201201@Irena.Vo: Enhance logic Remove old category [RedmineID: #141563]
            - 20201203@Irena.Vo: Enhance logic Category is NULL [RedmineID: #141563]
 		   - 20201214@Irena.Vo: Insert History & Return list CustID with TypeID IN (3, 4) [RedmineID: #145951]
+		   - 20201215@Irena.Vo: Enhance logic join with CategoryID [RedmineID: #145951]
            
 		Param's Explanation (filtered by):		 	
 	*/   
@@ -77,9 +78,8 @@ BEGIN
         -- Remove all Normal Category
 		DELETE cate
         FROM CTS_DataCenter.CTSCustomerClassification AS cate
-        INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
         INNER JOIN Temp_CustomerEvidences AS temp ON temp.CustID = cate.CustID
-        WHERE cc.ParentID = 200;
+        WHERE cate.CategoryID > 200 AND cate.CategoryID < 300;
         
         -- Remove all Probation List
 		DELETE pro
