@@ -46,6 +46,15 @@ BEGIN
 		, 	INDEX 				IX_Temp_CustomerEvidences_ActionType(ActionType)       
      );
     
+     DROP TEMPORARY TABLE IF EXISTS Temp_ExistedOldEviCategories;    
+	CREATE TEMPORARY TABLE Temp_ExistedOldEviCategories 
+    (	  
+			CTSCustID           BIGINT UNSIGNED
+        ,   CategoryID			BIGINT UNSIGNED
+		,   CreatedTime         DATETIME
+        , 	INDEX 				IX_Temp_ExistedOldEviCategories_CTSCustID_CategoryID(CTSCustID,CategoryID)       
+     );
+     
     INSERT INTO Temp_CustomerEvidences(CustID, CTSCustID, SubscriberID, EvidenceID, CategoryID, ActionType)
 	SELECT DISTINCT temp.CustID
 				, temp.CTSCustID
@@ -91,6 +100,14 @@ BEGIN
 		FROM CTS_DataCenter.CTSCustomerClassification AS cate
 		INNER JOIN Temp_CustomerEvidences AS temp ON temp.CustID = cate.CustID AND cate.CategoryID = temp.CategoryID;
         
+        -- GET EXISTED OLD EVIDENCE TO SYNC CATEGORY IF HAVE (ActionType = 2)
+        INSERT INTO Temp_ExistedOldEviCategories (CTSCustID,CategoryID,CreatedTime)
+		SELECT ce.FromCustID, e.CategoryID, MAX(ce.CreatedDate) AS CreatedTime
+		FROM CTS_DataCenter.CustEvidence AS ce 
+		INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON e.EvidenceID = ce.EvidenceID AND ce.Level = 0
+		INNER JOIN Temp_CustomerEvidences AS temp ON temp.CTSCustID = ce.CTSCustID AND e.CategoryID = temp.CategoryID
+		GROUP BY ce.FromCustID, e.CategoryID;
+        
         -- Insert new Evidence Category
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification
 		(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
@@ -101,20 +118,17 @@ BEGIN
 			,   0
 			, 	'Synced by Evidence'
 			, 	CASE WHEN temp.ActionType = 0 THEN lv_CreatedDateTime
-                     ELSE m.CreatedTime
+                     ELSE ex.CreatedTime
 				END
 			,   lv_CreatedBy
 			, 	CASE WHEN temp.ActionType = 0 THEN lv_CreatedDateTime
-                     ELSE m.CreatedTime
+                     ELSE ex.CreatedTime
 				END
 			,   lv_CreatedBy
 			, 	DATE(lv_CreatedDateTime)
 		FROM Temp_CustomerEvidences AS temp
-        LEFT JOIN (SELECT ce.FromCustID AS CTSCustID, e.CategoryID, MAX(ce.CreatedDate) AS CreatedTime
-                   FROM CTS_DataCenter.CustEvidence AS ce 
-                   INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON e.EvidenceID = ce.EvidenceID AND ce.Level = 0
-                   GROUP BY ce.FromCustID, e.CategoryID) AS m ON m.CTSCustID = temp.CTSCustID AND m.CategoryID = temp.CategoryID
-        WHERE temp.ActionType = 0 OR (temp.ActionType = 2 AND m.CTSCustID IS NOT NULL);
+        LEFT JOIN Temp_ExistedOldEviCategories AS ex ON ex.CTSCustID = temp.CTSCustID
+        WHERE temp.ActionType = 0 OR (temp.ActionType = 2 AND ex.CTSCustID IS NOT NULL);
    
    	    -- UPDATE CUSTOMER CLASS
 		UPDATE Temp_CustomerEvidences AS temp
@@ -141,7 +155,9 @@ BEGIN
 					 ELSE 7 -- item name = Add from Evidence
 				END
 		FROM Temp_CustomerEvidences AS temp
-        LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID;
+        LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID
+		LEFT JOIN Temp_ExistedOldEviCategories AS ex ON ex.CTSCustID = temp.CTSCustID
+        WHERE temp.ActionType = 0 OR (temp.ActionType = 2 AND ex.CTSCustID IS NULL);
         
     END IF;
      
@@ -150,7 +166,9 @@ BEGIN
 					,	CASE WHEN temp.ActionType = 2 THEN 3
 							 ELSE 4
 						END AS TypeId
-   FROM Temp_CustomerEvidences AS temp;
+   FROM Temp_CustomerEvidences AS temp
+   LEFT JOIN Temp_ExistedOldEviCategories AS ex ON ex.CTSCustID = temp.CTSCustID
+   WHERE temp.ActionType = 0 OR (temp.ActionType = 2 AND ex.CTSCustID IS NULL);
 
 END$$
 

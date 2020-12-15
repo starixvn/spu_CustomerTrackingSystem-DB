@@ -2,7 +2,7 @@
 DROP procedure IF EXISTS `CTS_DC_GetCustomerClassificationIntervalScan`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_GetCustomerClassificationIntervalScan`(IN ip_NoOfRecord INT, IN ip_Batch INT, IN ip_ParentCategoryID INT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_GetCustomerClassificationIntervalScan`(IN ip_NoOfRecord INT, IN ip_Batch INT)
     SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -18,7 +18,7 @@ BEGIN
             [20200903@Harvey.Nguyen]	[140869]: Add ParentID 
 			[20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow.
             [20200923@Irena.Vo][141755]: Enhance SP
-			 - 20201214@Irena.Vo: Enhance logic ignore Pin category & Probation List [RedmineID: #145951]
+			 - 20201214@Irena.Vo: Enhance logic ignore Pin category & Probation List. Ignore select data by ParentID (ScanStatus) [RedmineID: #145951]
             
 		Param's Explanation (filtered by):
          ip_CategoryIDList: ex: '1,2,3'       
@@ -64,7 +64,7 @@ BEGIN
     );
     
 	SET lv_ScanTime = CURRENT_TIME();
-    SET lv_LastScanTime = (SELECT MAX(ScanTime) FROM CTS_DataCenter.CTSCustomerClassification_ScanStatus WHERE ParentCategoryID = ip_ParentCategoryID);
+    SET lv_LastScanTime = (SELECT MAX(ScanTime) FROM CTS_DataCenter.CTSCustomerClassification_ScanStatus);
     
 	SET lv_ScanDate = DATE(lv_ScanTime);
     SET lv_LastScanDate = DATE(lv_LastScanTime);
@@ -72,7 +72,7 @@ BEGIN
     IF(lv_LastScanDate != lv_ScanDate)
     THEN
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_ScanStatus(ScanTime, LastCustID, ScanStatus, ParentCategoryID)
-		VALUES(lv_ScanTime, 0, 0, ip_ParentCategoryID);
+		VALUES(lv_ScanTime, 0, 0, 200);
 	ELSE	
 		SET lv_ScanTime = lv_LastScanTime;
     END IF;
@@ -93,7 +93,7 @@ BEGIN
                 AND cat.IsActive = 1
 				AND cat.IsUsedManually = 0
                 AND cat.ScanIntervalInSecond > 0
-                AND cat.ParentID = ip_ParentCategoryID
+                AND ccl.CategoryID > 200 AND ccl.CategoryID < 300
                 AND ccl.LastScannedDate <= DATE_SUB(lv_ScanDate, INTERVAL cat.ScanIntervalInSecond SECOND)
 	LIMIT		lv_TotalRecord;
       
@@ -108,8 +108,7 @@ BEGIN
     THEN
 		UPDATE  CTS_DataCenter.CTSCustomerClassification_ScanStatus
         SET		ScanStatus = 1
-        WHERE	ScanTime = lv_ScanTime
-			AND ParentCategoryID = ip_ParentCategoryID;
+        WHERE	ScanTime = lv_ScanTime;
     END IF;
 	
 	### PERFORMANCE

@@ -52,18 +52,7 @@ BEGIN
         , TurnOverRM, WinlossRM, Margin, BetCount, ActiveDays, LastXDaysMargin, ProbationPeriodWinloss, LastModifiedBy)
         SELECT  @row_no := IF(@prev_val1 = his.TargetCC AND @prev_val2 = his.CategoryID, @row_no + 1, 1) AS RowOrder
 				,  	@prev_val1 := his.TargetCC AS TargetCC
-				,	@prev_val2 := CASE  WHEN  his.CategoryID = 151 THEN 51
-										WHEN  his.CategoryID IN (72, 152) THEN 52
-										WHEN  his.CategoryID IN (73, 153) THEN 53
-										WHEN  his.CategoryID IN (74, 154) THEN 54 
-										WHEN  his.CategoryID IN (75, 155) THEN 55
-										WHEN  his.CategoryID IN (76, 156) THEN 56
-										WHEN  his.CategoryID IN (77, 157) THEN 57
-										WHEN  his.CategoryID IN (78, 158) THEN 58
-										WHEN  his.CategoryID IN (79, 159) THEN 59
-										WHEN  his.CategoryID = 80 THEN 60
-										ELSE  his.CategoryID   
-									END
+				,	@prev_val2 := his.CategoryID AS CategoryID
 				,  	his.SourceTypeID
                 ,  	his.LastModifiedDate
 				,	his.FromCategoryID	

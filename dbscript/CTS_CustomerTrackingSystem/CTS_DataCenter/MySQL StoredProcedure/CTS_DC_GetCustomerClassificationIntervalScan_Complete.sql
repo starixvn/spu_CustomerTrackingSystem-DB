@@ -1,20 +1,20 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_GetCustomerClassificationIntervalScan_Complete`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter.CTS_DC_GetCustomerClassificationIntervalScan_Complete`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_GetCustomerClassificationIntervalScan_Complete`(IN ip_CustSport JSON, IN ip_ParentCategoryID INT)
-    SQL SECURITY INVOKER
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE CTS_DataCenter.CTS_DC_GetCustomerClassificationIntervalScan_Complete(IN ip_CustSport JSON)
+	SQL SECURITY INVOKER
 BEGIN
 	/*
-		Created:	20200625@Casey.Huynh [Redmine ID: #135324]
+		Created:	[20200625@Casey.Huynh][135324]
 		Task:		Update Last Scanned If completed
 		DB:			CTS_DataCenter
         
 		Original:
 
 		Revisions:
-			- 20200701@Casey.Huynh: Chagne Flow and Store more Info [Redmine ID: #135324]
-            - 20201201@Casey.Huynh: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED [Redmine ID: #145954]
+			[20200701@Casey.Huynh]135324]: Chagne Flow and Store more Info
+			- 20201214@Irena.Vo: Ignore select data by ParentID (ScanStatus) [RedmineID: #145951]
 
 		Param's Explanation (filtered by):
             - ip_CategoryIDList: ex: '1,2,3'       
@@ -45,7 +45,7 @@ BEGIN
 
 	### PERFORMANCE: END
     
-	SET vrScanTime = (SELECT MAX(ScanTime) FROM CTS_DataCenter.CTSCustomerClassification_ScanStatus WHERE ParentCategoryID = ip_ParentCategoryID);
+	SET vrScanTime = (SELECT MAX(ScanTime) FROM CTS_DataCenter.CTSCustomerClassification_ScanStatus);
 	SET vrScanDate = DATE(vrScanTime);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustSport;    
@@ -69,9 +69,8 @@ BEGIN
     INNER JOIN 	Temp_CustSport AS tmpCs
 				ON cl.CustID = tmpCs.CustID
 				AND	cl.SportGroupID = tmpCs.SportGroupID
-	INNER JOIN	CustomerCategory cusCate ON cl.CategoryID = cusCate.CategoryID
     SET			cl.LastScannedDate = GREATEST(vrScanDate, cl.LastScannedDate)
-    WHERE 		cusCate.ParentID = ip_ParentCategoryID;
+    WHERE 		cl.CategoryID > 200 AND cl.CategoryID < 300;
     
     UPDATE 		CTS_DataCenter.CTSCustomerClassification_ScanStatus
     SET			LastCustID = (SELECT MAX(CustID) FROM Temp_CustSport)
