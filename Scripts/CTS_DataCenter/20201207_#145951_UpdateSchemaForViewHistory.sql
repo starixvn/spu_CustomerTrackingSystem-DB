@@ -4,7 +4,7 @@ INSERT INTO CTS_DataCenter.StaticList
 (ListID,ItemID,ListName,ListNameDisplay,ItemName,ItemNameDisplay,PriorityOrder,Status,Description,CreatedDate)
 VALUES
 (4,1, 'Classification Source Type','Classification Source Type','Account has less than 10 bets for first time scan','Account has less than 10 bets for first time scan',1,1,'New: New Customer',CURRENT_TIME()),
-(4,2, 'Classification Source Type','Classification Source Type','Re-scan after first 10 bets','Re-scan after first 10 bets',2,1,'Other: From New To Normal,VIP/VIP,Normal,Probation,Smart,High Risk...Probation: From New To Probation,Smart,High Risk',CURRENT_TIME()),
+(4,2, 'Classification Source Type','Classification Source Type','Re-scan after 10 bets','Re-scan after 10 bets',2,1,'Other: From New To Normal,VIP/VIP,Normal,Probation,Smart,High Risk...Probation: From New To Probation,Smart,High Risk',CURRENT_TIME()),
 (4,3, 'Classification Source Type','Classification Source Type','Re-scan on Schedule Date','Re-scan on Schedule Date',3,1,'Other: From Normal,VIP To VIP,Normal/ From Probation To Normal,VIP/ From Smart,High Risk To High Risk,Smart...Probation: From Normal,VIP To Probation,Smart,High Risk',CURRENT_TIME()),
 (4,4, 'Classification Source Type','Classification Source Type','Pass 20 days Probation','Pass 20 days Probation',4,1,'Other: From Probation To Smart,High Risk',CURRENT_TIME()),
 (4,5, 'Classification Source Type','Classification Source Type','Cannot pass Probation','Cannot pass Probation',5,1,'Probation: From Probation To Probation',CURRENT_TIME()),
