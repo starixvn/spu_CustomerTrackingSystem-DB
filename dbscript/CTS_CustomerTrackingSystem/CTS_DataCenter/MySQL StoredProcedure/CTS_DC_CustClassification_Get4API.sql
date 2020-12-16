@@ -14,6 +14,7 @@ BEGIN
             - 20200910@Harvey.Nguyen: init sp [Redmine ID: #140971]
             - 20200929@Lex.Khuat: Support return problem account categories by [Redmine ID: #141962]
             - 20201130@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. Remove logic detail category. [Redmine ID: #145954]
+            - 20201216@Harvey.Nguyen: grouping category [Redmine ID: #147299]
 
 		Param's Explanation:
 	*/ 
@@ -45,68 +46,39 @@ BEGIN
     CREATE TEMPORARY TABLE tempLatestRecordOfCategory (
 		CustID				BIGINT UNSIGNED
 	,	CategoryID			SMALLINT UNSIGNED
-	,	SportGroupID		SMALLINT UNSIGNED
-	, 	Remark				VARCHAR(500) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
     , 	LastModifiedDate	DATETIME
-    ,	LastModifiedBy		INT UNSIGNED
-    , 	LastScannedDate		DATETIME
-	,   CategoryType        SMALLINT UNSIGNED DEFAULT 0 -- 0: ParentID = 1, 1: ParentID = 200, 2: ParentID = 50
     );
     
     SET v_remark = 'Auto tag customer classification';
     
-    INSERT INTO tempLatestRecordOfCategory(CustID, CategoryID, SportGroupID, LastModifiedBy, LastModifiedDate, Remark, LastScannedDate, CategoryType)
+    INSERT INTO tempLatestRecordOfCategory(CustID, CategoryID, LastModifiedDate)
     SELECT 		cla.CustID
-				, cla.CategoryID
-				, cla.SportGroupID
-				, cla.LastModifiedBy
-                , cla.LastModifiedDate
-                , cla.Remark
-                , cla.LastScannedDate
-                 , CASE
-					  -- WHEN b.CategoryID = 1 THEN 0
-			          WHEN b.CategoryID = 200  THEN 1
-					  WHEN b.CategoryID = 50  THEN 2
-                  END AS CategoryType   
+                ,(CASE WHEN cla.CategoryID = 151 THEN 51
+                                    WHEN cla.CategoryID IN (72, 152) THEN 52
+									WHEN cla.CategoryID IN (73, 153) THEN 53
+                                    WHEN cla.CategoryID IN (74, 154) THEN 54 
+                                    WHEN cla.CategoryID IN (75, 155) THEN 55
+                                    WHEN cla.CategoryID IN (76, 156) THEN 56
+									WHEN cla.CategoryID IN (77, 157) THEN 57
+									WHEN cla.CategoryID IN (78, 158) THEN 58
+									WHEN cla.CategoryID IN (79, 159) THEN 59
+									WHEN cla.CategoryID = 80 THEN 60
+                                    ELSE cla.CategoryID
+								END) AS 'CategoryID'
+                , MAX(cla.LastModifiedDate) AS 'LastModifiedDate'
     FROM		CTS_DataCenter.CTSCustomerClassification AS cla
 		INNER JOIN TempCustIDs AS cust ON cla.CustID = cust.CustID
 		INNER JOIN CTS_DataCenter.CustomerCategory AS a ON cla.CategoryID = a.CategoryID
-		INNER JOIN CTS_DataCenter.CustomerCategory AS b ON a.ParentID = b.CategoryID
     WHERE (IFNULL(ip_ParentCateIDs, '') = ''
-			OR a.ParentID IN (SELECT ParentID FROM TempParentIDs));    
+			OR a.ParentID IN (SELECT ParentID FROM TempParentIDs))
+	GROUP BY cla.CustID, CategoryID;
 
     SELECT 	c.CustID AS CustID
-		,	b.CategoryID AS ParentCategoryID
 		,	b.CategoryName AS ParentCategoryName
-		,   c.CategoryType
-        ,   a.CategoryID
 		,	a.CategoryName
-        , 	LEFT(GROUP_CONCAT(s.SportGroupID ORDER BY s.SportGroupID ASC SEPARATOR ', '), 255) AS SportGroupIDList
-        , 	LEFT(GROUP_CONCAT(s.SportGroupName ORDER BY s.SportGroupID ASC SEPARATOR ', '), 255) AS SportGroupNameList
-        ,	(CASE WHEN a.IsUsedManually = 0 THEN v_remark ELSE  c.Remark END ) AS Remark
-        ,	u.UserName AS LastModifiedBy
-        ,	MAX(c.LastModifiedDate) AS LastModifiedDate
-        ,	DATE_ADD(MIN(c.LastScannedDate), INTERVAL a.ScanIntervalInSecond SECOND) AS NextScanFromDate
-        , 	DATE_ADD(MAX(c.LastScannedDate), INTERVAL a.ScanIntervalInSecond SECOND) AS NextScanToDate
-        ,	a.IsUsedManually AS IsEnabledDelete 
     FROM tempLatestRecordOfCategory AS c
 		INNER JOIN CTS_DataCenter.CustomerCategory AS a ON c.CategoryID = a.CategoryID
-        INNER JOIN CTS_DataCenter.CustomerCategory AS b ON a.ParentID = b.CategoryID
-		LEFT JOIN CTS_DataCenter.SportGroup AS s ON c.SportGroupID = s.SportGroupID
-        LEFT JOIN CTS_Admin.CTSUser AS u ON c.LastModifiedBy = u.UserID
-	GROUP BY c.CustID
-		,	b.CategoryID
-		,	b.CategoryName
-		,   c.CategoryType
-        ,   a.CategoryID
-		,	a.CategoryName
-        ,	c.Remark
-        ,	c.LastModifiedBy
-        , 	u.Username
-        ,	a.IsUsedManually
-		,	a.ScanIntervalInSecond
-    ORDER BY LastModifiedDate DESC;
-   
+        INNER JOIN CTS_DataCenter.CustomerCategory AS b ON a.ParentID = b.CategoryID;  
 	
 	# Begin: Cleanup
 	DROP TEMPORARY TABLE tempLatestRecordOfCategory;
