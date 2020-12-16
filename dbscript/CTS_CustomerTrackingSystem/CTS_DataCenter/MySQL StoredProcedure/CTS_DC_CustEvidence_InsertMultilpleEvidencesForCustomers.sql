@@ -1,25 +1,27 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsAPIAdmin" isFunction="0" isNested="0"></info>*/
-USE `CTS_DataCenter`;
 DROP procedure IF EXISTS `CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers`(IN ip_CustIds varchar(4000),IN ip_EvidenceCodes varchar(4000),OUT op_ErrorMessage varchar(200))
     SQL SECURITY INVOKER
 sp: BEGIN
 	/*
 		Created:	20200610@Long.Luu
-		Task:		Insert multiple evidences for multiple customers [Redmine ID: 135585]
+		Task:		Insert multiple evidences for multiple customers [Redmine ID: #135585]
 		DB:			CTS_DataCenter
 		Original: 
 
 		Revisions:
-			- 20200610@Long.Luu: Created [Redmine ID: 135585] 
-            - 20201013@Long.Luu [Redmine ID: #141756]: Sync Evidence to Category
-            - 20201020@Irena.Vo [Redmine ID: #141756]: Enhance logic Remove all category (Detail & General) 
-            - 20201111@Irena.Vo [Redmine ID: #145027]: Enhance logic Insert History for Evidence Category
-            
-            call CTS_DataCenter.CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers('43600693,43600889', '6.1', @op_ErrorMessage);
+			- 20200610@Long.Luu: Created [Redmine ID: #135585] 
+            - 20201013@Long.Luu: Sync Evidence to Category [Redmine ID: #141756]
+            - 20201020@Irena.Vo: Enhance logic Remove all category (Detail & General) [Redmine ID: #141756]
+            - 20201111@Irena.Vo: Enhance logic Insert History for Evidence Category [Redmine ID: #145027]
+            - 20201130@Irena.Vo: Enhance logic Insert new evidence (remove existed evidence category before) [Redmine ID: #141563]
+              
+		Param's Explanation(filered by):
+		
+		Example:
+            -call CTS_DataCenter.CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers('43600693,43600889', '6.1', @op_ErrorMessage);
 	*/    
    
     DECLARE		lv_SPName 			VARCHAR(100) DEFAULT 'CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers';  
@@ -60,6 +62,15 @@ sp: BEGIN
         , 	PRIMARY KEY		PK_Temp_AssociatedException_FromCTSCustID_ToCTSCustID(FromCTSCustID,ToCTSCustID)
 	);
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_ExistedEviCategories;    
+	CREATE TEMPORARY TABLE Temp_ExistedEviCategories 
+    (	  
+			CustID		    BIGINT UNSIGNED
+        ,   CategoryID      SMALLINT UNSIGNED
+        ,   EvidenceID      SMALLINT UNSIGNED
+        , 	INDEX 			IX_Temp_ExistedEviCategories_CustID_CategoryID_EvidenceID(CustID,CategoryID,EvidenceID)    
+     );
+	
 	SET @sql = CONCAT("INSERT INTO Temp_CustomerList (CustID) VALUES ('", REPLACE(ip_CustIds, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
@@ -67,8 +78,6 @@ sp: BEGIN
 	SET @sql = CONCAT("INSERT INTO Temp_EvidenceList (EvidenceCode) VALUES ('", REPLACE(ip_EvidenceCodes, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
-    
-	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
 	
     /*GET CUSTOMER INFO*/
     UPDATE 		Temp_CustomerList AS t
@@ -144,7 +153,24 @@ sp: BEGIN
 			CROSS JOIN Temp_EvidenceList AS ev 
 		INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON e.EvidenceID = ev.EvidenceID;
 		
-		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification
+        -- Get existed Cust Category Evidences
+        INSERT INTO Temp_ExistedEviCategories(CustID,EvidenceID,CategoryID)
+        SELECT DISTINCT cate.CustID, ce.EvidenceID, cate.CategoryID
+        FROM CTS_DataCenter.CustEvidence AS ce
+        INNER JOIN Temp_CustomerList AS a ON a.CTSCustID = ce.FromCustID AND ce.Level = 0
+			CROSS JOIN  Temp_EvidenceList AS ev ON ce.EvidenceID <> ev.EvidenceID
+        INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = a.CustID
+        INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON e.EvidenceID = ce.EvidenceID AND e.CategoryID = cate.CategoryID;
+        
+        -- Remove old Evidence Category
+        DELETE cate
+        FROM CTS_DataCenter.CTSCustomerClassification AS cate
+        INNER JOIN Temp_CustomerList AS t ON t.CustID = cate.CustID
+              CROSS JOIN  Temp_EvidenceList AS ev
+		INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON e.EvidenceID = ev.EvidenceID AND e.CategoryID = cate.CategoryID
+        INNER JOIN Temp_ExistedEviCategories AS ex ON ex.CustID = cate.CustID AND cate.CategoryID = ex.CategoryID;
+	
+		INSERT INTO CTS_DataCenter.CTSCustomerClassification
 		(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
         SELECT 	DISTINCT t.CustID
 			, 	t.CTSCustID
@@ -163,7 +189,7 @@ sp: BEGIN
 							INNER JOIN CTS_DataCenter.EvidenceToCategory AS ec ON e.EvidenceID = ec.EvidenceID) AS a;
                             
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
-		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TurnoverRM, WinlossRM, BetCount, ActiveDays)
+		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate)
 		SELECT 	DISTINCT t.CustID
 			, 	t.CTSCustID
 			, 	a.CategoryID
@@ -173,10 +199,6 @@ sp: BEGIN
             ,   0
             ,   1
 			,   DATE(lv_CreatedDateTime)
-            , 0
-            , 0
-            , 0
-            , 0
 		FROM Temp_CustomerList AS t
 			CROSS JOIN (	SELECT DISTINCT ec.CategoryID
 							FROM Temp_EvidenceList AS e
@@ -184,10 +206,15 @@ sp: BEGIN
                             
     END IF;
     
+	-- Return distinct CustID mapping CC to mainDB
+    SELECT DISTINCT temp.CustId FROM  Temp_CustomerList AS temp;
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_ExistedEviCategories;    
     DROP TEMPORARY TABLE IF EXISTS Temp_AssociatedException;
 	DROP TEMPORARY TABLE IF EXISTS Temp_AffectedDevices;
     DROP TEMPORARY TABLE IF EXISTS Temp_EvidenceList;
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerList;
+    
 END$$
 
 DELIMITER ;

@@ -1,22 +1,24 @@
-DELIMITER $$
-USE `CTS_DataCenter` $$
-DROP PROCEDURE IF EXISTS CTS_DC_CustEvidence_ValidateMultipleInput $$
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_CustEvidence_ValidateMultipleInput`;
 
-CREATE PROCEDURE CTS_DC_CustEvidence_ValidateMultipleInput (
-		IN 	ip_NewAccountEvidences 	JSON
-	,	IN 	ip_IsOverride			BOOLEAN
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_ValidateMultipleInput`(
+		IN ip_NewAccountEvidences 	JSON
+	,	IN ip_IsOverride 			BOOLEAN
 )
-    
+SQL SECURITY INVOKER
+
 BEGIN
 	/*
 		Created:	20200608@Long.Luu
-		Task:		Check whether multiple account-evidence is valid [Redmine ID: 134489]
+		Task:		Check whether multiple account-evidence is valid [Redmine ID: #134489]
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
-		   - 20200608@Long.Luu: Created [Redmine ID: 134489]
-		   - 20200824@Roger.Le[Redmine ID: 137551]: Evidence Upload - Overrite the data
+		   - 20200608@Long.Luu: Created [Redmine ID: #134489]
+		   - 20200824@Roger.Le: Evidence Upload - Overrite the data [Redmine ID: #137551]
+		   - 20201116@Adam.Tran: Implement Cust Evidence from file [Redmine ID: #141563]
         
 		Param's Explanation (filtered by):
 	*/    
@@ -40,10 +42,11 @@ BEGIN
 			, Username			VARCHAR(50)			PATH "$.Username"
 			, EvidenceCode		VARCHAR(10)			PATH "$.EvidenceCode"
 		 )) AS tmpTable;  
-    
-    SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+        
     SELECT 	RowId
 		,	c.CTSCustID
+		,	c.CustID
+		,	c.SubscriberID
         ,	e.EvidenceID
         ,	CASE 
 				WHEN c.CTSCustID IS NULL AND e.EvidenceID IS NULL THEN 'Both Customer & Evidence do not exist.'
@@ -55,9 +58,8 @@ BEGIN
     FROM tmpMultipleAccountEvidence AS t
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS c ON t.Username = c.Username
         LEFT JOIN CTS_DataCenter.Evidence AS e ON t.EvidenceCode = e.EvidenceCode
-        LEFT JOIN CTS_DataCenter.CustEvidence AS ce ON c.CTSCustID = ce.CTSCustID AND e.EvidenceID = ce.EvidenceID AND ce.Level = 0;
-
-	DROP TEMPORARY TABLE IF EXISTS tmpMultipleAccountEvidence;
+        LEFT JOIN CTS_DataCenter.CustEvidence AS ce ON c.CTSCustID = ce.CTSCustID AND e.EvidenceID = ce.EvidenceID AND ce.Level = 0;	
 
 END$$
+
 DELIMITER ;

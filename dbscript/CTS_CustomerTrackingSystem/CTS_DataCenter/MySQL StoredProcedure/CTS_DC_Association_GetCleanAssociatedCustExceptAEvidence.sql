@@ -1,11 +1,9 @@
-DELIMITER $$
-USE `CTS_DataCenter`$$
-DROP PROCEDURE IF EXISTS `CTS_DC_Association_GetCleanAssociatedCustExceptAEvidence`;
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+DROP procedure IF EXISTS `CTS_DC_Association_GetCleanAssociatedCustExceptAEvidence`;
 
-CREATE PROCEDURE `CTS_DC_Association_GetCleanAssociatedCustExceptAEvidence`(
-		IN ip_CTSCustID 		BIGINT
-	,	IN ip_EvidenceID 		SMALLINT
-)
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_GetCleanAssociatedCustExceptAEvidence`(IN ip_CTSCustID bigint,IN ip_EvidenceID smallint)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200820@Aries.Nguyen
@@ -18,10 +16,10 @@ BEGIN
         
 		Param's Explanation (filtered by):
         
-        CALL CTS_DC_Association_GetCleanAssociatedCustExceptAEvidence(9522,1);
+        CALL CTS_DC_Association_GetCleanAssociatedCustExceptAEvidence(9522,1); 
 	*/
     
-    DROP TABLE IF EXISTS TempAffectedDevices;
+    DROP TEMPORARY TABLE IF EXISTS TempAffectedDevices;
     CREATE TEMPORARY TABLE TempAffectedDevices(
 		DCSDeviceID 	BIGINT PRIMARY KEY
 	);
@@ -42,9 +40,7 @@ BEGIN
     CREATE TEMPORARY TABLE TempCleanCustID (
 			CTSCustID 		BIGINT UNSIGNED PRIMARY KEY
     );
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-    
+  
     # Get devices list for root account
 	INSERT INTO TempAffectedDevices(DCSDeviceID)
 	SELECT DISTINCT a.DCSDeviceID
@@ -64,8 +60,6 @@ BEGIN
 		INNER JOIN TempAssociations AS t ON c.CTSCustID = t.CTSCustID
 	WHERE c.EvidenceID <> ip_EvidenceID;
         
-	SET SQL_SAFE_UPDATES = 0;
-    
     DELETE c
     FROM TempCustEvidence AS c
 		INNER JOIN CTS_DataCenter.CustRetractEvidence AS r ON c.CTSCustID = r.CTSCustID AND c.EvidenceID = r.EvidenceID;
@@ -81,8 +75,6 @@ BEGIN
     SELECT DISTINCT	c.CustID
     FROM TempCleanCustID AS a
 		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON a.CTSCustID = c.CTSCustID;
-        
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
     DROP TEMPORARY TABLE IF EXISTS TempAffectedDevices;
     DROP TEMPORARY TABLE IF EXISTS TempAssociations;
@@ -92,4 +84,3 @@ BEGIN
 END$$
 
 DELIMITER ;
-

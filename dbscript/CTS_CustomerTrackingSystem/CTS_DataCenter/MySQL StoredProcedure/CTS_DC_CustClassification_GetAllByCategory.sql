@@ -12,7 +12,7 @@ BEGIN
 		Original: 
 		Revisions:
 			- 20200924@Long.Luu: Created [Redmine ID: #141755]
-            - 20201202@Lex.Khuat: Disable detail categories & clean up wrong syntax [Redmine ID: #145954]
+            - 20201202@Lex.Khuat: Hotfix remove sportgroup, no use sportgroup table [Redmine ID: #146819]
             
 		Param's Explanation:
 			- call CTS_DC_CustClassification_GetAllByCategory('3,5,205');
@@ -27,11 +27,10 @@ BEGIN
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
     
-    SELECT DISTINCT c.CustID, c.SportGroupID, s.SportGroupName, c.CategoryID, a.CategoryName
+    SELECT DISTINCT c.CustID, c.SportGroupID, 'All Sports', c.CategoryID, a.CategoryName
     FROM Temp_CategoryIDs AS t
 		INNER JOIN CTS_DataCenter.CustomerCategory AS a ON t.CategoryID = a.CategoryID
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS c ON t.CategoryID = c.CategoryID
-        INNER JOIN CTS_DataCenter.SportGroup AS s ON c.SportGroupID = s.SportGroupID
     WHERE a.IsActive = 1
     ORDER BY c.CustID ASC; 
     
