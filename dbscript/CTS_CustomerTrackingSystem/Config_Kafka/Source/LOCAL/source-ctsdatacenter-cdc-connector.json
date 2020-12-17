@@ -10,7 +10,7 @@
 	"database.server.name": "ctsserver",
 	"database.port": "3307",
 	"include.schema.changes": "true",
-	"table.whitelist": "CTS_DataCenter.CTSCustomer,CTS_DataCenter.AssociationByDevice,CTS_DataCenter.AssociationByManual,CTS_DataCenter.AssociationRemove,CTS_DataCenter.StaticList",
+	"table.whitelist": "CTS_DataCenter.CTSCustomer,CTS_DataCenter.AssociationByDevice,CTS_DataCenter.AssociationByManual,CTS_DataCenter.AssociationRemove",
 	"database.serverTimezone": "America/La_Paz",
 	"database.user": "repDeb",
 	"database.hostname": "10.18.200.70",
