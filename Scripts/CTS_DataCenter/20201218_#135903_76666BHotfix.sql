@@ -216,8 +216,10 @@ INNER JOIN  CTS_Adhoc.Iss135903_76666B_DCS_Account AS iacc
 WHERE		iacc.ActType = -1
 ORDER BY 	TransID DESC;
                 ; #1235
-=d=d=fdkffkfkdfkfkfkf 
+
 ;
+'Casey Note': Found issue has not been fixed from Main. Stop here
+
 SELECT 		 tss.TransID, tss.TransTime ,acc.LoginName, SiteID, SiteName, urlDetails AS URL, tss.IP
 FROM 		DCS_DataCenter.Transaction07 AS tss
 INNER JOIN 	CTS_DataCenter.MappingSubscriberSite mss
