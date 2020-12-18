@@ -98,7 +98,7 @@ WHERE		iacc.ActType = -1
 USE 		DCS_DataCenter;
 UPDATE 		DCS_DataCenter.Account AS acc
 INNER JOIN 	CTS_Adhoc.Iss135903_IBCIndo_DCS_Account AS iacc
-			ON iacc.CorrectedAccountID = iacc.AccountID
+			ON iacc.CorrectedAccountID = acc.AccountID
 SET 		acc.CreatedDate = iacc.CreatedDate       
 WHERE		iacc.ActType = -1
 			AND acc.CreatedDate > iacc.CreatedDate;            
@@ -296,14 +296,6 @@ INNER JOIN  (	SELECT 	CTSCustID, MAX(acc.LastLoginTime) 	AS LastLoginTime
 				GROUP BY	cda.CTSCustID) AS grp
 			ON cus.CTSCustID = grp.CTSCustID
 SET			cus.LastLoginTime = grp.LastLoginTime;
-
-
-
-/*
-DELETE		CTS_DataCenter.CustDCSAccount 	AS cda
-INNER JOIN 	CTS_Adhoc.Iss135903_IBCIndo_DCS_Account AS iacc
-			ON cda.AccountID = iacc.AccountID;
-*/
 
 /*
 SELECT 		cus.*, '---', cda.*, '---', iacc.*
