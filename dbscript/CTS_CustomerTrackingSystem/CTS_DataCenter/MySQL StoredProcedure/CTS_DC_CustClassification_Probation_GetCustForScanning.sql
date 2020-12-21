@@ -13,13 +13,15 @@ sp: BEGIN
 		Revisions:
 			- [20200923@Irena.Vo][141755]: Enhance SP.
             - [20201111@Irena.Vo][145028]: Update ScanTime = 20 Last Days
-			- 20201214@Irena.Vo: Ignore Pin category [RedmineID: #145951] 
+			- 20201214@Irena.Vo: Ignore Pin category [RedmineID: #145951]
+			- 20201221@Irena.Vo: Declare lv_CurrentDate & Enhance logic SP. [RedmineID: #145951]
             
 		Param's Explanation (filtered by):
          CALL CTS_DC_CustClassification_Probation_GetCustForScanning (100);
 	*/
-    DECLARE lv_LimitedDay DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 3 DAY);
-    DECLARE lv_ProbationLastDay DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 20 DAY);
+    DECLARE lv_Current_Date DATE DEFAULT CURRENT_DATE();
+    DECLARE lv_LimitedDay DATE DEFAULT DATE_SUB(lv_Current_Date, INTERVAL 3 DAY);
+    DECLARE lv_ProbationLastDay DATE DEFAULT DATE_SUB(lv_Current_Date, INTERVAL 20 DAY);
     
     SELECT 			 pro.CustID 			  AS CustId
 				   , pro.SportGroupID	      AS SportGroupId
@@ -29,7 +31,8 @@ sp: BEGIN
     FROM			CTS_DataCenter.ProbationAccountMonitor AS pro
     LEFT JOIN       CTS_DataCenter.PinCustomerCategory AS pin ON pin.CustID = pro.CustID
 	WHERE			pin.CustID IS NULL 
-                    AND (pro.LastScannedDate IS NULL OR pro.LastScannedDate < CURRENT_DATE())
+					AND pro.SportGroupID = 200
+                    AND (pro.LastScannedDate IS NULL OR pro.LastScannedDate < lv_Current_Date)
                     AND (pro.CreatedDate = lv_ProbationLastDay -- From Now - CreatedDate = 20 (days)
 						 OR	( pro.CreatedDate > lv_ProbationLastDay AND pro.CreatedDate < lv_LimitedDay) )  -- From Now - CreatedDate < 20 (days)
 	LIMIT			ip_NoOfRecord; 

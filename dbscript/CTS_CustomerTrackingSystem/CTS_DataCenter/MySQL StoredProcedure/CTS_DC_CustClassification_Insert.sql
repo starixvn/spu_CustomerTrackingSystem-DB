@@ -14,7 +14,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Insert`(
 )
     SQL SECURITY INVOKER 
 sp: BEGIN
-	/*
+		/*
 		Created:	20200423@Long.Luu	
 		Task :		Insert CTSCustomer Category
 		DB:			CTS_DataCenter
@@ -32,6 +32,7 @@ sp: BEGIN
             - [20200923@Irena.Vo][141755]: Enhance SP
             - 20201202@Lex.Khuat: Disable detail categories & clean up wrong syntax [Redmine ID: #145954]
             - 20201214@Irena.Vo: Update History Log & Auto Pin [RedmineID: #145951]
+            - 20201221@Irena.Vo: Update Logic Insert Log [RedmineID: #145951]
 	*/
     DECLARE lv_CurrentDateTime DATETIME DEFAULT CURRENT_TIME();
 	DECLARE lv_SPName VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_Insert';
@@ -40,11 +41,6 @@ sp: BEGIN
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
-    
-	IF (SELECT COUNT(1) FROM CTS_DataCenter.CustomerCategory WHERE CategoryID = ip_CategoryID AND IsUsedManually = 0) > 0 THEN		
-		SET op_ErrorMessage = 'This Category is not allowed for manually update!!!!'; 
-        LEAVE sp;
-    END IF;   
    
     IF (ip_CategoryID = 213) THEN
         -- Remove all category before: General, Problem.
@@ -100,7 +96,7 @@ sp: BEGIN
             ;
 
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-		VALUES(10, lv_SPName, CONCAT('Insert VVIP: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID,';ip_SportGroupIDList_', 200,  ';ip_CategoryID_', ip_CategoryID, ';ip_Remark_', ip_Remark), lv_CurrentDateTime, ip_CreatedBy);
+		VALUES(10, lv_SPName, CONCAT('Insert VVIP: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID, ';ip_Remark_', ip_Remark), lv_CurrentDateTime, ip_CreatedBy);
     
        -- Auto Pin Category (have not Pin before)
        INSERT IGNORE INTO CTS_DataCenter.PinCustomerCategory(CustID, CreatedTime)

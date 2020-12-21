@@ -5,14 +5,15 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_ViewHistory`(IN ip_CustID BIGINT, OUT op_ErrorMessage VARCHAR(200))
     SQL SECURITY INVOKER
 BEGIN
-   /*
+  /*
 		Created:	20201214@Irena.Vo
 		Task:		View History for customer category in CTS
 		DB:			CTS_DataCenter
 		Original:
 		Revisions:
            - 20201214@Irena.Vo: Created [RedmineID: #145951]
-           - 20201215@Irena.Vo: Enhance logic join with CategoryID [RedmineID: #145951]
+		   - 20201215@Irena.Vo: Enhance logic join with CategoryID [RedmineID: #145951]
+		   - 20201221@Irena.Vo: Update logic SP [RedmineID: #145951]
            
 		Param's Explanation (filtered by):		
 			set @op_ErrorMessage = '0';
@@ -50,10 +51,10 @@ BEGIN
         INSERT INTO Temp_ClassificationHistory
         (RowOrder, TargetCC, CategoryID, SourceTypeID, LastModifiedDate, FromCategoryID, ToCategoryID
         , TurnOverRM, WinlossRM, Margin, BetCount, ActiveDays, LastXDaysMargin, ProbationPeriodWinloss, LastModifiedBy)
-        SELECT  @row_no := IF(@prev_val1 = his.TargetCC AND @prev_val2 = his.CategoryID, @row_no + 1, 1) AS RowOrder
+        SELECT  @row_no := IF(@prev_val1 = his.TargetCC AND @prev_val2 = his.CategoryID AND @prev_val3 = his.SourceTypeID, @row_no + 1, 1) AS RowOrder
 				,  	@prev_val1 := his.TargetCC AS TargetCC
 				,	@prev_val2 := his.CategoryID AS CategoryID
-				,  	his.SourceTypeID
+				,  	@prev_val3 := his.SourceTypeID AS SourceTypeID
                 ,  	his.LastModifiedDate
 				,	his.FromCategoryID	
 				,	his.ToCategoryID	
@@ -70,7 +71,8 @@ BEGIN
 		FROM CTS_DataCenter.CTSCustomerClassification_History AS his,
 		  (SELECT @row_no := 0) x,
 		  (SELECT @prev_val1 := 0) y1,
-          (SELECT @prev_val2 := 0) y2
+          (SELECT @prev_val2 := 0) y2,
+		  (SELECT @prev_val3 := 0) y3
 		WHERE his.CustID = ip_CustID AND his.CategoryID > 50 AND his.CategoryID < 300
 		ORDER BY his.LastModifiedDate ASC;
        
@@ -93,10 +95,12 @@ BEGIN
                     ,   CASE WHEN temp.TargetCC = -1 THEN '-'
 							 ELSE temp.TargetCC
 					    END AS CustomerClass
+					,	temp.CategoryID
                     ,   CASE WHEN temp.FromCategoryID IN (201, 202, 205) AND temp.ToCategoryID IN (203, 204, 206) THEN CONCAT(s.ItemName,' - ',cc2.CategoryName,' to ',cc3.CategoryName)
                              WHEN temp.FromCategoryID IN (203, 204) AND temp.ToCategoryID = 206 THEN CONCAT(s.ItemName,' - ',cc2.CategoryName,' to ',cc3.CategoryName)
                              ELSE s.ItemName
 						END AS SourceTypeName
+					, 	s.ItemID
 					,   temp.TurnOverRM AS TurnOver
 					,   temp.WinlossRM AS Winloss
                     ,   temp.Margin

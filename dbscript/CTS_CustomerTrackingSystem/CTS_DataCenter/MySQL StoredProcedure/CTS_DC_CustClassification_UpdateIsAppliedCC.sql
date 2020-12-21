@@ -5,8 +5,8 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_UpdateIsAppliedCC`(IN ip_ProcessedCustList JSON, OUT op_ErrorMessage VARCHAR(200))
     SQL SECURITY INVOKER
 BEGIN
-	/*
-		Created:	20201214@Irena.Vo 
+/*
+		Created:	20201214@Irena.Vo
 		Task:		Update IsAppliedCC = 1 from Customer List are updated CustomerClass in mainDB successfully (VVIP, Robot, Special CC, PA, Normal)
 		DB:			CTS_DataCenter
 		Original:
@@ -45,6 +45,7 @@ BEGIN
     INNER JOIN Temp_ProcessedCustList AS temp ON temp.CustID = his.CustID
     SET his.IsAppliedCC = 1
     WHERE his.IsAppliedCC = 0 AND his.LastModifiedDate <= temp.ScannedTime;
+   
    
 END$$
 

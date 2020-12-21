@@ -14,13 +14,14 @@ BEGIN
 		Revisions:
 			- 20200908@Long.Luu [Redmine ID: #140996]: Created 
 			- 20201214@Irena.Vo: Update History Log & Return CustID with TypeID = 2 [Redmine ID: #145951]
+            - 20201221@Irena.Vo: Rollback old logic & update logic SP [Redmine ID: #145951]
         
 		Param's Explanation (filtered by):
 	*/
     DECLARE lv_CustID BIGINT UNSIGNED;
     DECLARE lv_CustomerClass TINYINT;
     
-    DECLARE lv_CurrentDateTime DATETIME DEFAULT NOW();
+    DECLARE lv_CurrentDateTime DATETIME DEFAULT CURRENT_TIME();
     DECLARE lv_SPName VARCHAR(200) DEFAULT 'CTS_DC_SpecialCustClass_Remove'; 
     
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
@@ -77,9 +78,6 @@ BEGIN
 		FROM CTS_DataCenter.CTSCustomerClassification AS cate 
 		WHERE cate.CustID = lv_CustID;
 	END IF;
-    
-    /*	GET LASTEST CUSTID LIST	*/
-    SELECT DISTINCT lv_CustID AS CustId,	2 AS TypeId;
     
 END$$
 

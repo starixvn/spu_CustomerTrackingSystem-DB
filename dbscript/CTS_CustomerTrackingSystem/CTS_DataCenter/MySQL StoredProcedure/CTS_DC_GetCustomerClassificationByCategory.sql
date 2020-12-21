@@ -15,7 +15,8 @@ BEGIN
 		Revisions:
 			[20200701@Casey.Huynh][135324]: Chagne Flow and Store more Info
             [20200826@Casey.Huynh][137693]: Add Trace Performance
-            - 20201214@Irena.Vo: Enhance logic ignore Pin category & Probation List  [RedmineID: #145951] 
+            - 20201214@Irena.Vo: Enhance logic ignore Pin category & Probation List  [RedmineID: #145951]
+			- 202012121@Irena.Vo: Update logic SP [RedmineID: #145951]
             
 		Param's Explanation (filtered by):
          ip_CategoryIDList: ex: '1,2,3'       
@@ -85,7 +86,7 @@ BEGIN
 							ON ccl.CategoryID = ctg.CategoryID
 			) AS tmpCusCat
 	LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin ON pin.CustID = tmpCusCat.CustID
-    LEFT JOIN CTS_DataCenter.ProbationAccountMonitor AS pro ON pro.CustID = tmpCusCat.CustID AND pro.SportGroupID = tmpCusCat.SportGroupID
+    LEFT JOIN CTS_DataCenter.ProbationAccountMonitor AS pro ON pro.CustID = tmpCusCat.CustID AND pro.SportGroupID = 200
 	WHERE	pin.CustID IS NULL 
             AND pro.SportGroupID IS NULL
             AND (tmpCusCat.CurrentSportGroupID IS NULL OR tmpCusCat.CategoryID IS NOT NULL);

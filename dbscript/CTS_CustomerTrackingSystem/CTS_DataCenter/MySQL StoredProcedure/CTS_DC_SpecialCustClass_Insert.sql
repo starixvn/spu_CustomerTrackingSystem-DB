@@ -17,6 +17,7 @@ sp: BEGIN
            - [20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow.
            - [20200923@Irena.Vo][141755]: Enhance SP
 		   - 20201214@Irena.Vo: Remove logic delete Probation List. Enhance logic get VVIP & Update History Log. Return ScannedTime [RedmineID: #145951]
+           - 20201221@Irena.Vo: Update logic SP [RedmineID: #145951]
            
 		Param's Explanation (filtered by):
 	*/    
@@ -24,8 +25,8 @@ sp: BEGIN
 	DECLARE lv_CTSCustID		BIGINT UNSIGNED;
     DECLARE lv_CustID			INT UNSIGNED;
 	DECLARE lv_SubscriberID 	INT;
-    DECLARE	lv_CurrentDateTime	DATETIME DEFAULT NOW();
-    DECLARE	lv_SPName 			VARCHAR(100) 	DEFAULT 'CTS_DC_InsertSpecialCustomerClass';        
+    DECLARE	lv_CurrentDateTime	DATETIME DEFAULT CURRENT_TIME();
+    DECLARE	lv_SPName 			VARCHAR(100) 	DEFAULT 'CTS_DC_SpecialCustClass_Insert';        
     
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
@@ -72,7 +73,7 @@ sp: BEGIN
     WHERE UserName = ip_Username OR UserName2 = ip_Username;    
     
      -- Existed VVIP CustomerClass before -> Display error message
-	IF EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification WHERE CTSCustID = lv_CTSCustID AND CategoryID = 213) THEN
+	IF EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification WHERE CustID = lv_CustID AND SportGroupID = 200 AND CategoryID = 213) THEN
 		SET op_ErrorMessage = 'This account has already been marked with VVIP CustomerClass!';
 		SELECT NULL AS CustID,	NULL AS CustomerClass;
         LEAVE sp;
@@ -120,9 +121,8 @@ sp: BEGIN
 		,	ip_CustomerClass
 	FROM Temp_AffectedCustomers AS t
 		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS s ON t.CTSCustID = s.CTSCustID
-		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON t.CTSCustID = c.CTSCustID
-	WHERE (s.CTSCustID IS NULL OR (s.CreatedFromFunction = 21)) -- Allow Pin category will insert new CustomerClass
-		AND c.RoleID = 1;
+		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON t.CTSCustID = c.CTSCustID AND c.RoleID = 1
+	WHERE s.CTSCustID IS NULL;
 
     /*	INSERT VALID SPECIAL CUSTOMER CLASS	*/
 	INSERT INTO CTS_DataCenter.SpecialCustomerClass(CTSCustID, CustID, RootCTSCustID, SubscriberID, CustomerClass, CreatedBy, CreatedDate, LastModifiedBy, LastModifiedDate, CreatedFromFunction)

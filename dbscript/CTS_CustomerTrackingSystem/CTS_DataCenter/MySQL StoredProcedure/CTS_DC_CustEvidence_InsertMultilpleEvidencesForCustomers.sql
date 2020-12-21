@@ -18,6 +18,7 @@ sp: BEGIN
             - 20201111@Irena.Vo: Enhance logic Insert History for Evidence Category [Redmine ID: #145027]
             - 20201130@Irena.Vo: Enhance logic Insert new evidence (remove existed evidence category before) [Redmine ID: #141563]
 			- 20201214@Irena.Vo: Move logic Sync to Category by new sp: SyncToCategory [RedmineID: #145951] 
+            - 20201221@Irena.Vo: Update logic SP [RedmineID: #145951] 
             
 		Param's Explanation(filered by):
 		
@@ -28,9 +29,7 @@ sp: BEGIN
     DECLARE		lv_SPName 			VARCHAR(100) DEFAULT 'CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers';  
 	DECLARE		lv_CreatedDateTime 	DATETIME DEFAULT CURRENT_TIME();
     DECLARE 	lv_CreatedBy        BIGINT DEFAULT 10278938;
-    
-    DECLARE		lv_IsSyncEvi2Cate	VARCHAR(1) DEFAULT '';
-    
+  
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
@@ -74,8 +73,7 @@ sp: BEGIN
     /*	GET CUSTOMER INFO	*/
     UPDATE 		Temp_CustomerList AS t
 	INNER JOIN 	CTS_DataCenter.CTSCustomer AS c ON t.CustID = c.CustID AND c.CustSubID = 0
-    SET 		t.CTSCustID = c.CTSCustID
-			,	t.SubscriberID = c.SubscriberID;
+    SET 		t.CTSCustID = c.CTSCustID,	t.SubscriberID = c.SubscriberID;
     
 	/*	GET EVIDENCE INFO	*/
 	UPDATE 		Temp_EvidenceList AS t

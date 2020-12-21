@@ -24,27 +24,27 @@ BEGIN
 			- 20200923@Irena.Vo: Enhance SP [Redmine ID: #141755]
             - 20201201@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. Remove logic detail category. [Redmine ID: #145954]
             - 20201214@Irena.Vo: Update History Log & Auto Unpin category & Return CustID with TypeID = 1 [RedmineID: #145951]
+			- 20201221@Irena.Vo: Rollback old logic & Update Logic SP & Insert Notes [RedmineID: #145951]
             
 		Param's Explanation:
 	*/ 
 
-    DECLARE lv_CurrentDateTime DATETIME DEFAULT NOW();
-    DECLARE lv_SPName VARCHAR(200) DEFAULT 'CTS_DC_RemoveCTSCustomerClassification';
+    DECLARE lv_CurrentDateTime DATETIME DEFAULT CURRENT_TIME();
+    DECLARE lv_SPName VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_Remove';
     
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
   
-   /*	ACTION FOR VVIP	*/
     IF (ip_CategoryID = 213) THEN
         -- Remove data CTSCustomerClassification
 		DELETE 	cate
 		FROM 	CTS_DataCenter.CTSCustomerClassification AS cate
-		WHERE 	cate.CustID = ip_CustID AND cate.CategoryID  = 213;
+		WHERE 	cate.CustID = ip_CustID AND cate.SportGroupID = 200 AND cate.CategoryID  = 213;
         
         INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-	    VALUES(12, lv_SPName, CONCAT('Remove all classification: From ip_CustID_', ip_CustID, '; ip_CategoryID_', ip_CategoryID), lv_CurrentDateTime, ip_CreatedBy);
+	    VALUES(12, lv_SPName, CONCAT('Remove VVIP: From ip_CustID_', ip_CustID), lv_CurrentDateTime, ip_CreatedBy);
 	
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
         (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID)
@@ -67,10 +67,7 @@ BEGIN
 		WHERE pin.CustID = ip_CustID;
         
     END IF;
-    
-	/*	GET LASTEST CUSTID LIST	*/
-    SELECT 	ip_CustID AS CustId,	1 AS TypeId;
-    
+  
 END$$
 
 DELIMITER ;

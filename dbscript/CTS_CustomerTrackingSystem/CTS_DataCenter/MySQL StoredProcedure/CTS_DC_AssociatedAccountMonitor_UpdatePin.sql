@@ -12,10 +12,11 @@ sp: BEGIN
 		Original: 
 		Revisions:
             - 20201214@Irena.Vo: Add logic insert Pin/Unpin  [RedmineID: #145951]
+            - 20201221@Irena.Vo: Update logic SP  [RedmineID: #145951]
             
 		Param's Explanation:
 	*/ 
-    DECLARE lv_CurrentTime DATETIME DEFAULT NOW();
+    DECLARE lv_CurrentTime DATETIME DEFAULT CURRENT_TIME();
     DECLARE lv_SPName VARCHAR(200) DEFAULT 'CTS_DC_AssociatedAccountMonitor_UpdatePin'; 
     
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 

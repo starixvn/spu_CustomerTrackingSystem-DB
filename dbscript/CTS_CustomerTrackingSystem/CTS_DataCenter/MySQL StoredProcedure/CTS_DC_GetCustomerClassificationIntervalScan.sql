@@ -10,7 +10,7 @@ BEGIN
 		Task:		Return the auto tag customer list that reach to scanning schedule (interval refer to CTS_DataCenter.CustomerCategory.IntervalScan
 		DB:			CTS_DataCenter
         
-		Original: 
+		Original:
 
 		Revisions:
 			[20200701@Casey.Huynh]		[135324]: Chagne Flow and Store more Info
@@ -18,13 +18,14 @@ BEGIN
             [20200903@Harvey.Nguyen]	[140869]: Add ParentID 
 			[20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow.
             [20200923@Irena.Vo][141755]: Enhance SP
-			 - 20201214@Irena.Vo: Enhance logic ignore Pin category & Probation List. Ignore select data by ParentID (ScanStatus) [RedmineID: #145951]
+			- 20201214@Irena.Vo: Enhance logic ignore Pin category & Probation List [RedmineID: #145951]
+			- 20201221@Irena.Vo: Remove input ip_ParentID & Update logic SP [RedmineID: #145951]
             
 		Param's Explanation (filtered by):
          ip_CategoryIDList: ex: '1,2,3'       
          CALL CTS_DC_GetCustomerClassificationIntervalScan (100,1,200);
 	*/
-    DECLARE lv_ScanTime DATETIME;
+	DECLARE lv_ScanTime DATETIME;
     DECLARE lv_ScanDate DATETIME;    
     DECLARE lv_LastScanTime DATETIME;
     DECLARE lv_LastScanDate DATETIME;
@@ -86,7 +87,7 @@ BEGIN
                 , ccl.CategoryID	AS CategoryID
     FROM		CTS_DataCenter.CTSCustomerClassification AS ccl
     LEFT JOIN   CTS_DataCenter.PinCustomerCategory AS pin ON pin.CustID = ccl.CustID
-    LEFT JOIN   CTS_DataCenter.ProbationAccountMonitor AS pro on pro.CustID = ccl.CustID AND pro.SportGroupID = ccl.SportGroupID
+    LEFT JOIN   CTS_DataCenter.ProbationAccountMonitor AS pro on pro.CustID = ccl.CustID AND pro.SportGroupID = 200
     INNER JOIN	CTS_DataCenter.CustomerCategory AS cat ON ccl.CategoryID = cat.CategoryID
 	WHERE		pin.CustID IS NULL 
 				AND pro.SportGroupID IS NULL

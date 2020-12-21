@@ -20,6 +20,7 @@ sp: BEGIN
             - 20201111@Irena.Vo: Enhance logic Insert History for Evidence Category [Redmine ID: #145027]
 			- 20201130@Irena.Vo: Enhance logic Insert new evidence (remove existed evidence category before) [Redmine ID: #141563]
 			- 20201214@Irena.Vo: Move logic Sync to Category by new sp: SyncToCategory [RedmineID: #145951]
+            - 20201221@Irena.Vo: Update logic SP [RedmineID: #145951]
             
         call CTS_DataCenter.CTS_DC_CustEvidence_InsertMultiple_ByCustId
 			('[{"CustID": 43600693, "EvidenceID": 45, "Comment": "na test 1"},{"CustID":43600693, "EvidenceID": 46, "Comment":"na test 2"},
@@ -29,9 +30,7 @@ sp: BEGIN
     DECLARE		lv_SPName 			VARCHAR(100) DEFAULT 'CTS_DC_CustEvidence_InsertMultiple_ByCustId';  
 	DECLARE		lv_CreatedDateTime 	DATETIME DEFAULT CURRENT_TIME();
     DECLARE 	lv_CreatedBy        BIGINT DEFAULT 10278938;
-    
-    DECLARE		lv_IsSyncEvi2Cate	VARCHAR(1) DEFAULT '';
-
+  
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
