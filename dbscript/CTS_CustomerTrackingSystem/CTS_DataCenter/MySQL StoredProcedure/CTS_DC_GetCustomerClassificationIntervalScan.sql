@@ -94,7 +94,7 @@ BEGIN
                 AND cat.IsActive = 1
 				AND cat.IsUsedManually = 0
                 AND cat.ScanIntervalInSecond > 0
-                AND ccl.CategoryID > 200 AND ccl.CategoryID < 300
+                AND ccl.SportGroupID = 200
                 AND ccl.LastScannedDate <= DATE_SUB(lv_ScanDate, INTERVAL cat.ScanIntervalInSecond SECOND)
 	LIMIT		lv_TotalRecord;
       

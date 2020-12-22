@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter.CTS_DC_GetCustomerClassificationIntervalScan_Complete`;
+DROP PROCEDURE IF EXISTS `CTS_DC_GetCustomerClassificationIntervalScan_Complete`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE CTS_DataCenter.CTS_DC_GetCustomerClassificationIntervalScan_Complete(IN ip_CustSport JSON)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_GetCustomerClassificationIntervalScan_Complete`(IN ip_CustSport JSON)
 	SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -70,7 +70,7 @@ BEGIN
 				ON cl.CustID = tmpCs.CustID
 				AND	cl.SportGroupID = tmpCs.SportGroupID
     SET			cl.LastScannedDate = GREATEST(vrScanDate, cl.LastScannedDate)
-    WHERE 		cl.CategoryID > 200 AND cl.CategoryID < 300;
+    WHERE 		cl.SportGroupID = 200;
     
     UPDATE 		CTS_DataCenter.CTSCustomerClassification_ScanStatus
     SET			LastCustID = (SELECT MAX(CustID) FROM Temp_CustSport)
