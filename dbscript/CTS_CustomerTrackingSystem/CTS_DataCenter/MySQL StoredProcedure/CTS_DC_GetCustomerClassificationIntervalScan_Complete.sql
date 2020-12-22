@@ -13,7 +13,7 @@ BEGIN
 		Original:
 
 		Revisions:
-			[20200701@Casey.Huynh]135324]: Chagne Flow and Store more Info
+			[20200701@Casey.Huynh][135324]: Chagne Flow and Store more Info
 			- 20201214@Irena.Vo: Ignore select data by ParentID (ScanStatus) [RedmineID: #145951]
 
 		Param's Explanation (filtered by):
