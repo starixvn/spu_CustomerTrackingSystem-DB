@@ -11,7 +11,7 @@
 	  "database.server.name": "ctsserver",
 	  "database.port": "3306",
 	  "include.schema.changes": "true",
-	  "table.whitelist": "CTS_DataCenter.CTSCustomer,CTS_DataCenter.AssociationByDevice,CTS_DataCenter.AssociationByManual,CTS_DataCenter.AssociationRemove",
+	  "table.whitelist": "CTS_DataCenter.CTSCustomer,CTS_DataCenter.AssociationByDevice,CTS_DataCenter.AssociationByManual,CTS_DataCenter.AssociationRemove,CTS_DataCenter.Evidence,CTS_DataCenter.CustEvidence,CTS_DataCenter.StaticList,CTS_DataCenter.CTSCustomerClassification,CTS_DataCenter.CustomerCategory",
 	  "database.serverTimezone": "America/Anguilla",
 	  "database.hostname": "172.18.0.2",
 	  "database.password": "replication",
