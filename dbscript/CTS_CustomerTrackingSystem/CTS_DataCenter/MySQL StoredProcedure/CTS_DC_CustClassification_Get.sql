@@ -21,22 +21,16 @@ BEGIN
             - 20201006@Irena.Vo [Redmine ID: #141930]: Rollback logic get IsUsedManually for lastest category & enhance logic get.
             - 20201014-20201023@Irena.Vo [Redmine ID: #141756]: Enhance logic show Evidence Category & Normal Category. Add New General  
 			- 20201202@Lex.Khuat: Disable detail categories & clean up wrong syntax [Redmine ID: #145954]
+               - 20201222@Irena.Vo: Update logic SP for Get Category List & PIN [RedmineID: #145951]
             
 		Param's Explanation:
 	*/ 
-	DECLARE lv_Remark VARCHAR(200) DEFAULT 'Auto tag customer classification';
-    DECLARE lv_IsPinCategory BIT DEFAULT 0;
-    
 	DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory;
     CREATE TEMPORARY TABLE Temp_LatestRecordOfCategory (
     	CategoryID			SMALLINT UNSIGNED
 	,   DisplayCategoryID   SMALLINT UNSIGNED 
-    ,   SportGroupID		SMALLINT UNSIGNED
-	, 	Remark				VARCHAR(500) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
     , 	LastModifiedDate	DATETIME
-    ,	LastModifiedBy		INT UNSIGNED
-    , 	LastScannedDate		DATETIME
-	,   CategoryType        SMALLINT UNSIGNED -- 0: ParentID = 1, 1: ParentID = 200, 2: ParentID = 50, 3: CategoryID = 2
+	,   CategoryType        SMALLINT UNSIGNED -- 1: ParentID = 200, 2: ParentID = 50
     );
    
     DROP TEMPORARY TABLE IF EXISTS Temp_RangeDateCategory;
@@ -46,26 +40,15 @@ BEGIN
      , 	MaxLastModifiedDate   	DATETIME        
     );
      
-     IF EXISTS (SELECT 1 FROM CTS_DataCenter.SpecialCustomerClass WHERE CustID = ip_CustID AND CreatedFromFunction = 21) THEN
-		SET lv_IsPinCategory = 1;
-     END IF;
-   
     -- Get Lastest category list
-	 INSERT INTO Temp_LatestRecordOfCategory (CategoryID, SportGroupID, LastModifiedBy, LastModifiedDate, Remark, LastScannedDate, CategoryType)
+	 INSERT INTO Temp_LatestRecordOfCategory (CategoryID, CategoryType)
      SELECT   cc.CategoryID
-			, cc.SportGroupID
-			, cc.LastModifiedBy
-			, cc.LastModifiedDate
-			, cc.Remark
-			, cc.LastScannedDate
             ,	CASE	WHEN cate.ParentID = 50 THEN 2 -- red
 						WHEN cate.ParentID = 200  THEN 1 -- any color 
 				END
 	FROM	CTS_DataCenter.CTSCustomerClassification AS cc
-    INNER JOIN 	CTS_DataCenter.CustomerCategory AS cate
-		ON cc.CategoryID = cate.CategoryID
-    WHERE	cc.CustID = ip_CustID
-		AND		cate.ParentID IN (50, 200);
+    INNER JOIN 	CTS_DataCenter.CustomerCategory AS cate ON cc.CategoryID = cate.CategoryID
+    WHERE	cc.CustID = ip_CustID AND cate.ParentID IN (50, 200);
     
     -- Update Display Category ID
     UPDATE  Temp_LatestRecordOfCategory
@@ -94,42 +77,16 @@ BEGIN
     WHERE temp.LastModifiedDate = u.MinLastModifiedDate AND u.MinLastModifiedDate <> u.MaxLastModifiedDate; 
 
     -- Show results
-	SELECT  cc.ParentID
-		,   temp.CategoryType
-        ,   temp.DisplayCategoryID AS CategoryID
-		,	cc.CategoryName
-        , 	LEFT(GROUP_CONCAT(s.SportGroupID ORDER BY s.SportGroupID ASC SEPARATOR ', '), 255) AS SportGroupIDList
-        , 	LEFT(GROUP_CONCAT(s.SportGroupName ORDER BY s.SportGroupID ASC SEPARATOR ', '), 255) AS SportGroupNameList
-        ,	CASE  WHEN cc.CategoryID = 213 THEN temp.Remark
-                  WHEN cc.IsUsedManually = 0 THEN lv_Remark
-			END AS Remark
-        ,	u.UserName AS LastModifiedBy
-        ,	MAX(temp.LastModifiedDate) AS LastModifiedDate
-        ,   CASE WHEN lv_IsPinCategory = 1  THEN NULL
-				 ELSE DATE_ADD(MIN(temp.LastScannedDate), INTERVAL cc.ScanIntervalInSecond SECOND) 
-			END AS NextScanFromDate
-        , 	 CASE WHEN lv_IsPinCategory = 1  THEN NULL
-				 ELSE DATE_ADD(MAX(temp.LastScannedDate), INTERVAL cc.ScanIntervalInSecond SECOND) 
-			END AS NextScanToDate
-        ,	cc.IsUsedManually AS IsEnabledDelete -- only VVIP can delete
+     IF EXISTS (SELECT 1 FROM CTS_DataCenter.PinCustomerCategory WHERE CustID = ip_CustID) THEN
+			SELECT 1 AS IsPinCategory;
+	 ELSE 
+            SELECT 0 AS IsPinCategory;
+	 END IF;
+        
+	 SELECT  temp.CategoryType,   cc.CategoryName
      FROM Temp_LatestRecordOfCategory AS temp
-        INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = temp.DisplayCategoryID
-		LEFT JOIN CTS_DataCenter.SportGroup AS s ON s.SportGroupID = temp.SportGroupID
-        LEFT JOIN CTS_Admin.CTSUser AS u ON u.UserID = temp.LastModifiedBy
-	 GROUP BY cc.ParentID
-		,   temp.CategoryType
-		,   temp.DisplayCategoryID
-		,	cc.CategoryName
-        ,   temp.Remark
-        ,	temp.LastModifiedBy
-        , 	u.Username
-        ,	cc.IsUsedManually
-	 	,	cc.ScanIntervalInSecond
-    ORDER BY LastModifiedDate DESC;
-    
-    -- Return isPinCategory for customer
-	SELECT lv_IsPinCategory AS isPinCategory;   
-    
+	 INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = temp.DisplayCategoryID
+	 GROUP BY temp.CategoryType,   cc.CategoryName;
 END$$
 
 DELIMITER ;

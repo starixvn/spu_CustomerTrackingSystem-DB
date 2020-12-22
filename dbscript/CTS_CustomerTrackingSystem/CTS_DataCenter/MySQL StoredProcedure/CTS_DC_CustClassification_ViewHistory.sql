@@ -18,13 +18,7 @@ BEGIN
 		Param's Explanation (filtered by):		
 			call CTS_DataCenter.CTS_DC_CustClassification_ViewHistory(43600889);
 	*/   
-        IF EXISTS (SELECT 1 FROM CTS_DataCenter.PinCustomerCategory WHERE CustID = ip_CustID) THEN
-			SELECT 1 AS IsPinCategory;
-		ELSE 
-            SELECT 0 AS IsPinCategory;
-	    END IF;
-        
-      	SELECT         temp.LastModifiedDate AS CreatedTime
+       SELECT         temp.LastModifiedDate AS CreatedTime
 					,   CASE WHEN temp.CategoryID = 0 THEN '-'
                              ELSE cc1.CategoryName
 						END CategoryName

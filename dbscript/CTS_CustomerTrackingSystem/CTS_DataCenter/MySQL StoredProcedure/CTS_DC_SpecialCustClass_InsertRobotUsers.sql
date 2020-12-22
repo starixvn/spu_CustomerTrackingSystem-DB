@@ -33,7 +33,7 @@ BEGIN
     BEGIN   
 		GET DIAGNOSTICS CONDITION 1 
         	op_ErrorMessage 	= 	MESSAGE_TEXT	
-			op_ErrorNo 			= 	MYSQL_ERRNO
+		,	op_ErrorNo 			= 	MYSQL_ERRNO
 		,	op_CodName 			= 	RETURNED_SQLSTATE;
     
         INSERT INTO CTS_Log.ErrorLog(EventName, InsertedTime, Message, Err_No, Description)
