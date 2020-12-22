@@ -2,7 +2,7 @@
 DROP procedure IF EXISTS `CTS_DC_CustClassification_GetLatestClassification`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_GetLatestClassification`(IN ip_CustomerCategorizes JSON)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_GetLatestClassification`(IN ip_CustomerIDs TEXT)
     SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -12,16 +12,27 @@ BEGIN
 		Original: 
 		Revisions:
 			- 20201214@Irena.Vo: Created [RedmineID: #145951]
-            - 20201221@Irena.Vo: Update Input & Output params. Enhance logic get data CC [RedmineID: #145951]
+            - 20201222@Irena.Vo: Update Input & Output params. Insert Error Log [RedmineID: #145951]
             
 		Param's Explanation:
 			call CTS_DataCenter.CTS_DC_CustClassification_GetLatestClassification('1,2,1277,555555');
 	*/ 
-    DECLARE lv_CurrentDateTime DATETIME DEFAULT CURRENT_TIME();
+	DECLARE lv_SPName 			VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_GetLatestClassification'; 
+    DECLARE lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();
     
+	DECLARE op_ErrorNo 			INT DEFAULT 0;
+    DECLARE op_ErrorMessage 	VARCHAR(200)  DEFAULT '0';
+    DECLARE op_CodName 			VARCHAR(200)  DEFAULT '0';
+
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
-    BEGIN         
-        GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
+    BEGIN   
+		GET DIAGNOSTICS CONDITION 1 
+			op_ErrorNo 			= 	MYSQL_ERRNO
+        ,	op_ErrorMessage 	= 	MESSAGE_TEXT	
+		,	op_CodName 			= 	RETURNED_SQLSTATE;
+    
+        INSERT INTO CTS_Log.ErrorLog(EventName, InsertedTime, Message, Err_No, Description)
+        VALUES(lv_SPName, lv_CurrentDateTime, op_ErrorMessage, op_ErrorNo, 	JSON_OBJECT('err_no',op_ErrorNo,'cod_name',op_CodName,'parameter',ip_CustomerIDs));
     END;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Customers;
@@ -104,9 +115,7 @@ BEGIN
     INNER JOIN 		CTS_DataCenter.CategoryToCustomerClass AS map ON map.CategoryID = temp.CategoryID; -- CC <> -1
     
     -- Get Lastest Customer Class to sync in mainDB
-    SELECT DISTINCT	cc.CustId, cc.CustomerClass, lv_CurrentDateTime AS ScannedTime
-    FROM 			Temp_CustomerClass AS cc;
-  
+    SELECT DISTINCT	cc.CustId, cc.CustomerClass, lv_CurrentDateTime AS ScannedTime FROM Temp_CustomerClass AS cc;
 END$$
 
 DELIMITER ;

@@ -12,23 +12,36 @@ BEGIN
 		Original:
 		Revisions:
            - 20201214@Irena.Vo: Created [RedmineID: #145951]
+           - 20201222@Irena.Vo: Update logic SP & Insert Error Log [RedmineID: #145951]
            
 		Param's Explanation (filtered by):		
 			set @op_ErrorMessage = '0';
 				call CTS_DataCenter.CTS_DC_CustClassification_UpdateIsAppliedCC('[{"CustId":"43600895","ScannedTime":"2020-10-02 00:00:00"}]', @op_ErrorMessage);
 			select @op_ErrorMessage;
 	*/   
-   
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION 
-    BEGIN         
-        GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
+    DECLARE lv_SPName 			VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_UpdateIsAppliedCC';
+    DECLARE lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();
+    
+    DECLARE op_ErrorNo 			INT DEFAULT 0;
+    DECLARE op_CodName 			VARCHAR(200) DEFAULT '0';
+
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
+    BEGIN   
+		GET DIAGNOSTICS CONDITION 1 
+         	op_ErrorMessage 	= 	MESSAGE_TEXT	
+		,	op_ErrorNo 			= 	MYSQL_ERRNO
+		,	op_CodName 			= 	RETURNED_SQLSTATE;
+    
+        INSERT INTO CTS_Log.ErrorLog(EventName, InsertedTime, Message, Err_No, Description)
+        VALUES(lv_SPName, lv_CurrentDateTime, op_ErrorMessage, op_ErrorNo, 	JSON_OBJECT('err_no',op_ErrorNo,'cod_name',op_CodName,'parameter',ip_ProcessedCustList));
     END;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_ProcessedCustList;    
 	CREATE TEMPORARY TABLE Temp_ProcessedCustList 
     (	  
-			CustID              BIGINT UNSIGNED PRIMARY KEY 
+			CustID              BIGINT UNSIGNED 
         ,   ScannedTime         DATETIME
+        ,   PRIMARY KEY 		PK_Temp_ProcessedCustList_CustID_ScannedTime(CustID,ScannedTime)
         , 	INDEX 				IX_Temp_ProcessedCustList_ScannedTime(ScannedTime)       
      );
     
@@ -42,11 +55,9 @@ BEGIN
 		 )) AS temp;
      
     UPDATE CTS_DataCenter.CTSCustomerClassification_History AS his
-    INNER JOIN Temp_ProcessedCustList AS temp ON temp.CustID = his.CustID
+    INNER JOIN Temp_ProcessedCustList AS temp ON temp.CustID = his.CustID AND his.IsAppliedCC = 0
     SET his.IsAppliedCC = 1
-    WHERE his.IsAppliedCC = 0 AND his.LastModifiedDate <= temp.ScannedTime;
-   
-   
+    WHERE his.LastModifiedDate <= temp.ScannedTime;
 END$$
 
 DELIMITER ;

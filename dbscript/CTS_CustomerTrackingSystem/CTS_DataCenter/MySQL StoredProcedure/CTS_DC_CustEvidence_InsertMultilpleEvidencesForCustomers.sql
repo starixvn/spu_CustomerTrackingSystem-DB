@@ -2,7 +2,7 @@
 DROP procedure IF EXISTS `CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers`(IN ip_CustIds varchar(4000),IN ip_EvidenceCodes varchar(4000),OUT op_ErrorMessage varchar(200))
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers`(IN ip_CustIds varchar(4000),IN ip_EvidenceCodes varchar(4000),OUT op_ErrorMessage VARCHAR(200))
     SQL SECURITY INVOKER
 sp: BEGIN
 	/*
@@ -18,7 +18,7 @@ sp: BEGIN
             - 20201111@Irena.Vo: Enhance logic Insert History for Evidence Category [Redmine ID: #145027]
             - 20201130@Irena.Vo: Enhance logic Insert new evidence (remove existed evidence category before) [Redmine ID: #141563]
 			- 20201214@Irena.Vo: Move logic Sync to Category by new sp: SyncToCategory [RedmineID: #145951] 
-            - 20201221@Irena.Vo: Update logic SP [RedmineID: #145951] 
+            - 20201222@Irena.Vo: Insert Error Log [RedmineID: #145951] 
             
 		Param's Explanation(filered by):
 		
@@ -27,12 +27,21 @@ sp: BEGIN
 	*/    
    
     DECLARE		lv_SPName 			VARCHAR(100) DEFAULT 'CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers';  
-	DECLARE		lv_CreatedDateTime 	DATETIME DEFAULT CURRENT_TIME();
+	DECLARE		lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();
     DECLARE 	lv_CreatedBy        BIGINT DEFAULT 10278938;
   
+	DECLARE 	op_ErrorNo 			INT DEFAULT 0;
+    DECLARE 	op_CodName 			VARCHAR(200) DEFAULT '0';
+
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
-    BEGIN         
-        GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
+    BEGIN   
+		GET DIAGNOSTICS CONDITION 1 
+         	op_ErrorMessage 	= 	MESSAGE_TEXT	
+		,	op_ErrorNo 			= 	MYSQL_ERRNO
+		,	op_CodName 			= 	RETURNED_SQLSTATE;
+    
+        INSERT INTO CTS_Log.ErrorLog(EventName, InsertedTime, Message, Err_No, Description)
+        VALUES(lv_SPName, lv_CurrentDateTime, op_ErrorMessage, op_ErrorNo, 	JSON_OBJECT('err_no',op_ErrorNo,'cod_name',op_CodName,'parameter1',ip_CustIds,'parameter2',ip_EvidenceCodes));
     END;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerList;
@@ -86,7 +95,7 @@ sp: BEGIN
 		,	e.EvidenceID
         ,	0 
         ,	t.CTSCustID
-        ,	lv_CreatedDateTime
+        ,	lv_CurrentDateTime
         ,	lv_CreatedBy
     FROM 	Temp_CustomerList AS t CROSS JOIN Temp_EvidenceList AS e;
     
@@ -105,7 +114,7 @@ sp: BEGIN
     
     /*	INSERT NEW AFFECTED EVIDENCES FOR  CUSTOMERS	*/
 	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID,EvidenceID, Level, FromCustID, CreatedDate, CreatedBy)
-    SELECT DISTINCT a.CTSCustID, ev.EvidenceID, 2, t.CTSCustID, lv_CreatedDateTime, lv_CreatedBy
+    SELECT DISTINCT a.CTSCustID, ev.EvidenceID, 2, t.CTSCustID, lv_CurrentDateTime, lv_CreatedBy
     FROM 		Temp_CustomerList AS t 
 	INNER JOIN 	Temp_AffectedDevices AS d ON t.CTSCustID = d.CTSCustID
 	INNER JOIN 	CTS_DataCenter.AssociationByDevice AS a ON a.DCSDeviceID = d.DCSDeviceID
@@ -116,7 +125,7 @@ sp: BEGIN
     
     /*	WRITE LOG	*/
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-	VALUES(3, lv_SPName, 'Insert bunch of Customers - Evidences', lv_CreatedDateTime, lv_CreatedBy);
+	VALUES(3, lv_SPName, 'Insert bunch of Customers - Evidences', lv_CurrentDateTime, lv_CreatedBy);
    
     -- Return CTSCustID, CustID, SubscriberID, EvidenceID, 0 (ActionType)
     SELECT DISTINCT cust.CustId
@@ -125,7 +134,6 @@ sp: BEGIN
                 ,	evi.EvidenceId
                 ,	0 AS ActionType
     FROM Temp_CustomerList AS cust CROSS JOIN  Temp_EvidenceList AS ev;
-  
 END$$
 
 DELIMITER ;

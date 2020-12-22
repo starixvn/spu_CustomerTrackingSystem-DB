@@ -14,7 +14,7 @@ BEGIN
 		Revisions:
 			- 20200908@Long.Luu [Redmine ID: #140996]: Created 
 			- 20201214@Irena.Vo: Update History Log & Return CustID with TypeID = 2 [Redmine ID: #145951]
-            - 20201221@Irena.Vo: Rollback old logic & update logic SP [Redmine ID: #145951]
+            - 20201222@Irena.Vo: Rollback old logic & update logic SP for View History [Redmine ID: #145951]
         
 		Param's Explanation (filtered by):
 	*/
@@ -49,7 +49,7 @@ BEGIN
     -- Insert Log
     IF NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification AS cate  WHERE cate.CustID = lv_CustID) THEN
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
-		(CustID, CTSCustID, CategoryID, SportGroupID,  LastModifiedDate,LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID)
+		(CustID, CTSCustID, CategoryID, SportGroupID,  LastModifiedDate,LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID, IsView)
 		SELECT    lv_CustID
 				, ip_CTSCustID
 				, 201
@@ -60,10 +60,12 @@ BEGIN
 				, 0 -- manual
 				, DATE(lv_CurrentDateTime)
 				, -1
-				, 12; -- item name = Remove Customer Class;
+				, 12 -- item name = Remove Customer Class
+                , 1 -- View History
+                ; 
     ELSE            
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
-		(CustID, CTSCustID, CategoryID, SportGroupID,  LastModifiedDate,LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID)
+		(CustID, CTSCustID, CategoryID, SportGroupID,  LastModifiedDate,LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID, IsView)
 		SELECT    lv_CustID
 				, ip_CTSCustID
 				, cate.CategoryID
@@ -75,10 +77,10 @@ BEGIN
 				, DATE(lv_CurrentDateTime)
 				, -1
 				, 12 -- item name = Remove Customer Class
+                , 1 -- View History
 		FROM CTS_DataCenter.CTSCustomerClassification AS cate 
 		WHERE cate.CustID = lv_CustID;
 	END IF;
-    
 END$$
 
 DELIMITER ;

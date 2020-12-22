@@ -24,7 +24,7 @@ BEGIN
 			- 20200923@Irena.Vo: Enhance SP [Redmine ID: #141755]
             - 20201201@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. Remove logic detail category. [Redmine ID: #145954]
             - 20201214@Irena.Vo: Update History Log & Auto Unpin category & Return CustID with TypeID = 1 [RedmineID: #145951]
-			- 20201221@Irena.Vo: Rollback old logic & Update Logic SP & Insert Notes [RedmineID: #145951]
+			- 20201222@Irena.Vo: Rollback old logic & Update Logic SP & Insert Notes [RedmineID: #145951]
             
 		Param's Explanation:
 	*/ 
@@ -47,7 +47,7 @@ BEGIN
 	    VALUES(12, lv_SPName, CONCAT('Remove VVIP: From ip_CustID_', ip_CustID), lv_CurrentDateTime, ip_CreatedBy);
 	
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
-        (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID)
+        (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsView)
 		SELECT 	ip_CustID
 			, 	ip_CTSCustID
             ,   213
@@ -59,15 +59,14 @@ BEGIN
 			,   DATE(lv_CurrentDateTime)
             ,   -1 -- is Remove VVIP
 			,   14 -- item name = Remove VVIP
+			,	1 -- View History
 			;
             
         -- Auto Unpin
         DELETE pin
 		FROM CTS_DataCenter.PinCustomerCategory AS pin
 		WHERE pin.CustID = ip_CustID;
-        
     END IF;
-  
 END$$
 
 DELIMITER ;

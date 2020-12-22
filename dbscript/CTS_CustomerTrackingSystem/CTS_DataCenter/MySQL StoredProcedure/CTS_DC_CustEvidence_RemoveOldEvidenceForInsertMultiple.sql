@@ -16,12 +16,24 @@ sp: BEGIN
 		   - 20201111@Irena.Vo: Enhance logic Insert History for Evidence Category [Redmine ID: #145027]
 		   - 20201125@Irena.Vo: Move flow sync Evidence to Category [Redmine ID: #141563]
 		   - 20201130@Irena.Vo: Enhance logic Insert new evidence (remove existed evidence category before) [Redmine ID: #141563]
+           - 20201222@Irena.Vo: Insert Error Log [RedmineID: #145951]
 	*/
+    DECLARE lv_SPName 			VARCHAR(200) DEFAULT 'CTS_DC_CustEvidence_RemoveOldEvidenceForInsertMultiple';
+    DECLARE lv_CurrentDateTime	DATETIME DEFAULT CURRENT_TIME();
     
     # Handle error
+	DECLARE op_ErrorNo 			INT DEFAULT 0;
+    DECLARE op_CodName 			VARCHAR(200) DEFAULT '0';
+
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
-    BEGIN         
-        GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
+    BEGIN   
+		GET DIAGNOSTICS CONDITION 1 
+         	op_ErrorMessage 	= 	MESSAGE_TEXT	
+		,	op_ErrorNo 			= 	MYSQL_ERRNO
+		,	op_CodName 			= 	RETURNED_SQLSTATE;
+    
+        INSERT INTO CTS_Log.ErrorLog(EventName, InsertedTime, Message, Err_No, Description)
+        VALUES(lv_SPName, lv_CurrentDateTime, op_ErrorMessage, op_ErrorNo, 	JSON_OBJECT('err_no',op_ErrorNo,'cod_name',op_CodName,'parameter',ip_CTSCustIDs));
     END;
     
     IF(ip_IsClearLog) THEN
@@ -155,13 +167,6 @@ sp: BEGIN
            , 2 AS ActionType-- remove
 	FROM Temp_MultipleAccount AS temp
     INNER JOIN Temp_CustEvidenceList AS evd ON evd.CTSCustID = temp.CTSCustID;
-    
-	DROP TEMPORARY TABLE IF EXISTS Temp_CustEvidenceList;
-	DROP TEMPORARY TABLE IF EXISTS Temp_MultipleAccount;
-	DROP TEMPORARY TABLE IF EXISTS Temp_AssociationException;
-	DROP TEMPORARY TABLE IF EXISTS Temp_AffectedDevices;
-	DROP TEMPORARY TABLE IF EXISTS Temp_CustEvidence; 
-    
 END$$
 
 DELIMITER ;

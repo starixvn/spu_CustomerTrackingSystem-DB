@@ -2,7 +2,7 @@
 DROP procedure IF EXISTS `CTS_DC_InsertMainCustomerClassification`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_InsertMainCustomerClassification`(IN ip_NewClassification JSON)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_InsertMainCustomerClassification`(IN ip_NewClassification JSON, OUT op_ErrorMessage VARCHAR(200))
     SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -22,22 +22,36 @@ BEGIN
                 -20201116@Irena.Vo: Only distinct CustID list for general & Update LastScannedDate for Probation List. [Redmine ID: #145028]
                 -20201201@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. [Redmine ID: #145954]
 				- 20201214@Irena.Vo: Update History Log. Get CustId. Return TypeId = 4 [RedmineID: #145951]
-                - 20201221@Irena.Vo: Update logic SP & enhance select data [RedmineID: #145951]
+                - 20201222@Irena.Vo: Update Logic SP for View History. Insert Error Log [RedmineID: #145951]
                
 		Param's Explanation (filtered by):
 
         Example: 
 			-  CALL CTS_DataCenter.CTS_DC_InsertMainCustomerClassification('[{"CustId": 1, "CategoryId": 202, "CreatedTime": "2020-09-13 00:01:00", "TurnoverRM": 100, "WinlossRM": 2056354, "BetCount": 500, "ActiveDays": 8}]');
 	*/ 
-     DECLARE  lv_CreatedBy			INT	DEFAULT 10278938;
-	 DECLARE  lv_CurrentDateTime    DATETIME DEFAULT CURRENT_TIME();
+	DECLARE	lv_SPName 			VARCHAR(100) 	DEFAULT 'CTS_DC_InsertMainCustomerClassification';  
+	DECLARE lv_CreatedBy		INT	DEFAULT 10278938;
+	DECLARE lv_CurrentDateTime  DATETIME DEFAULT CURRENT_TIME();
+
+	DECLARE op_ErrorNo 			INT DEFAULT 0;
+    DECLARE op_CodName 			VARCHAR(200) DEFAULT '0';
+
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
+    BEGIN   
+		GET DIAGNOSTICS CONDITION 1 
+         	op_ErrorMessage 	= 	MESSAGE_TEXT	
+		,	op_ErrorNo 			= 	MYSQL_ERRNO
+		,	op_CodName 			= 	RETURNED_SQLSTATE;
+    
+        INSERT INTO CTS_Log.ErrorLog(EventName, InsertedTime, Message, Err_No, Description)
+        VALUES(lv_SPName, lv_CurrentDateTime, op_ErrorMessage, op_ErrorNo, 	JSON_OBJECT('err_no',op_ErrorNo,'cod_name',op_CodName,'parameter',ip_NewClassification));
+    END;
 
      DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;    
 	 CREATE TEMPORARY TABLE Temp_NewClassification 
      (	  	CustID					BIGINT UNSIGNED	PRIMARY KEY       
      	, 	CTSCustID				BIGINT UNSIGNED DEFAULT 0
         , 	SubscriberID			INT DEFAULT 0    
-        , 	SportGroupID			SMALLINT UNSIGNED
         ,	ExistCategoryID 		SMALLINT UNSIGNED -- existed
 		, 	NewCategoryID			SMALLINT UNSIGNED -- new
         , 	LastCategoryID		    SMALLINT UNSIGNED -- lastest
@@ -61,9 +75,8 @@ BEGIN
         , 	INDEX 					IX_Temp_ExistedClassification_CategoryID(CategoryID)       
      );
      
-     INSERT INTO Temp_NewClassification(CustID, SportGroupID, NewCategoryID, LastModifiedDate, TurnoverRM, WinlossRM, BetCount, ActiveDays, LastXDaysMargin, ProbationPeriodWinloss)
+     INSERT INTO Temp_NewClassification(CustID, NewCategoryID, LastModifiedDate, TurnoverRM, WinlossRM, BetCount, ActiveDays, LastXDaysMargin, ProbationPeriodWinloss)
 	 SELECT DISTINCT temp.CustID
-				, 	200
 				, 	temp.NewCategoryID
 				, 	temp.LastModifiedDate
                 , 	temp.TurnoverRM
@@ -94,8 +107,7 @@ BEGIN
 	/*	IGNORE PROBLEM CATEGORY	(MULTI)*/
     DELETE 		temp
     FROM 		Temp_NewClassification AS temp
-	INNER JOIN 	CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID
-    WHERE 		cate.SportGroupID = 0 AND (cate.CategoryID > 50 AND cate.CategoryID < 200);
+	INNER JOIN 	CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID AND cate.SportGroupID = 0;
     
     /*	UPDATE CUST INFO	*/
     UPDATE 		Temp_NewClassification AS temp 
@@ -106,7 +118,7 @@ BEGIN
 	INSERT INTO Temp_ExistedClassification (CustID, CategoryID)
     SELECT DISTINCT cate.CustID, cate.CategoryID
     FROM 		Temp_NewClassification AS temp
-    INNER JOIN 	CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID AND cate.SportGroupID = 200 AND (cate.CategoryID > 200 AND cate.CategoryID < 300); 
+    INNER JOIN 	CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID AND cate.SportGroupID = 200; 
     
     /*	UPDATE INFO ExistCategoryID, LastCategoryID	FOR TEMP	*/
     UPDATE 		Temp_NewClassification AS temp 
@@ -120,12 +132,12 @@ BEGIN
 
     /*	UPDATE INFO FOR EXISTED CATEGORY	*/
     UPDATE 		CTS_DataCenter.CTSCustomerClassification AS cate
-    INNER JOIN  Temp_NewClassification AS temp on temp.CustID = cate.CustID AND cate.SportGroupID = 200 AND (cate.CategoryID > 200 AND cate.CategoryID < 300)
-	SET   		cate.CTSCustID = temp.CTSCustID
-			, 	cate.SubscriberID  = temp.SubscriberID
-			, 	cate.CategoryID = temp.LastCategoryID
-			, 	cate.LastModifiedDate = temp.LastModifiedDate 
-			, 	cate.LastScannedDate = DATE(lv_CurrentDateTime)
+    INNER JOIN  Temp_NewClassification AS temp on temp.CustID = cate.CustID AND cate.SportGroupID = 200
+	SET   		cate.CTSCustID 			= temp.CTSCustID
+			, 	cate.SubscriberID  		= temp.SubscriberID
+			, 	cate.CategoryID 		= temp.LastCategoryID
+			, 	cate.LastModifiedDate 	= temp.LastModifiedDate 
+			, 	cate.LastScannedDate 	= DATE(lv_CurrentDateTime)
     WHERE 	temp.ActionType = 1;
     
     /*	INSERT NEW CATEGORY	*/
@@ -134,14 +146,14 @@ BEGIN
 	SELECT DISTINCT temp.CustID
 				, 	temp.CTSCustID
 				, 	temp.SubscriberID
-				, 	temp.SportGroupID
+				, 	200
 				, 	temp.LastCategoryID
 				, 	temp.LastModifiedDate
 				, 	lv_CreatedBy
 				, 	temp.LastModifiedDate
 				, 	lv_CreatedBy
 				, 	DATE(lv_CurrentDateTime)
-	 FROM 		Temp_NewClassification 		AS temp
+	 FROM 		Temp_NewClassification 	AS temp
      WHERE 		temp.ActionType = 0;
    
 	/*	DELETE PROBATION LIST IF PASSED TARGET CATEGORY	*/
@@ -155,7 +167,7 @@ BEGIN
 	(CustID, CTSCustID, SportGroupID, TargetCategoryID, FirstMargin, CreatedDate, CreatedBy, CreatedTime, LastScannedDate) 
 	SELECT  DISTINCT temp.CustID
 				, 	temp.CTSCustID
-				, 	temp.SportGroupID
+				, 	200
 				, 	temp.LastCategoryID
 				, 	CASE WHEN temp.TurnoverRM = 0 THEN 0
 						ELSE (temp.WinlossRM / temp.TurnoverRM) * 100
@@ -167,14 +179,14 @@ BEGIN
 	FROM  		Temp_NewClassification     AS temp
 	WHERE      	(temp.ExistCategoryID IS NULL OR temp.ExistCategoryID <> 206) AND temp.LastCategoryID = 206;
 	
-    /*	INSERT LOG. ONLY ADD NEW, HAS CHANGE AND FAIL PROBATION	*/
+    /*	INSERT HISTORY	*/
     INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
     (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy,TurnoverRM, WinlossRM, BetCount, ActiveDays
-    , ActionType,  IsAuto, InsertDate, LastXDaysMargin, ProbationPeriodWinloss, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID)
+    , ActionType,  IsAuto, InsertDate, LastXDaysMargin, ProbationPeriodWinloss, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsView)
     SELECT DISTINCT	 temp.CustID
 				, 	temp.CTSCustID
 				, 	temp.LastCategoryID
-				, 	temp.SportGroupID
+				, 	200
 				, 	temp.LastModifiedDate
 				, 	lv_CreatedBy
 				, 	temp.TurnoverRM
@@ -186,7 +198,7 @@ BEGIN
 				, 	DATE(lv_CurrentDateTime)
 				, 	temp.LastXDaysMargin
 				, 	temp.ProbationPeriodWinloss
-				, 	CASE 	WHEN sp.CustID IS NOT NULL THEN sp.CustomerClass
+				, 	CASE 	WHEN sp.CustID IS NOT NULL THEN sp.CustomerClass -- Existed CC
 							ELSE map.CustomerClass
 					END
 				, 	CASE   WHEN temp.ExistCategoryID IS NULL AND temp.LastCategoryID = 201 THEN 1 -- item name = Less than 10 bets
@@ -199,17 +211,17 @@ BEGIN
 					END AS SourceTypeID
 				, 	temp.ExistCategoryID
 				, 	temp.NewCategoryID
+                ,	CASE WHEN temp.ActionType = 0 THEN 1 -- View History
+                         WHEN temp.ActionType = 1 AND (	(temp.LastCategoryID <> temp.ExistCategoryID) 
+														OR (temp.LastCategoryID = 206 AND temp.ExistCategoryID = 206)	) THEN 1 -- View History
+						 ELSE 0
+					END
 	FROM 		Temp_NewClassification AS temp
-    INNER JOIN 	CTS_DataCenter.CategoryToCustomerClass AS map ON temp.LastCategoryID = map.CategoryID
     LEFT JOIN 	CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID
-	WHERE 		temp.ActionType = 0 OR (temp.ActionType = 1 AND (	(temp.LastCategoryID <> temp.ExistCategoryID) 
-																	OR (temp.LastCategoryID = 206 AND temp.ExistCategoryID = 206)	));
+    INNER JOIN 	CTS_DataCenter.CategoryToCustomerClass AS map ON temp.LastCategoryID = map.CategoryID;
    
-	/*	GET LASTEST CUSTID LIST. ONLY ADD NEW, HAS CHANGE AND FAIL PROBATION*/
-    SELECT DISTINCT 	temp.CustId
-    FROM 		Temp_NewClassification AS temp
-	WHERE 		temp.ActionType = 0 OR (temp.ActionType = 1 AND temp.LastCategoryID <> temp.ExistCategoryID);
-
+	/*	GET LASTEST CUSTID LIST	*/
+    SELECT DISTINCT temp.CustId FROM Temp_NewClassification AS temp;
 END$$
 
 DELIMITER ;

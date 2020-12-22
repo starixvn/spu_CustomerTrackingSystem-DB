@@ -32,7 +32,7 @@ sp: BEGIN
             - [20200923@Irena.Vo][141755]: Enhance SP
             - 20201202@Lex.Khuat: Disable detail categories & clean up wrong syntax [Redmine ID: #145954]
             - 20201214@Irena.Vo: Update History Log & Auto Pin [RedmineID: #145951]
-            - 20201221@Irena.Vo: Update Logic Insert Log [RedmineID: #145951]
+            - 20201222@Irena.Vo: Update Logic for View History & Log [RedmineID: #145951]
 	*/
     DECLARE lv_CurrentDateTime DATETIME DEFAULT CURRENT_TIME();
 	DECLARE lv_SPName VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_Insert';
@@ -57,12 +57,6 @@ sp: BEGIN
         DELETE sc
 		FROM CTS_DataCenter.SpecialCustomerClass AS sc
 		WHERE sc.CTSCustID = ip_CTSCustID AND sc.CreatedFromFunction = 1; 
-        
- 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-	    VALUES(12, lv_SPName, CONCAT('Remove all category and probation list: From ip_CustID_', ip_CustID), lv_CurrentDateTime, ip_CreatedBy);
-        
-        INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-	    VALUES(20, lv_SPName, CONCAT('Remove all special customer class: From ip_CustID_', ip_CustID), lv_CurrentDateTime, ip_CreatedBy);
 
         -- Insert for CTSCustomerClassification
         INSERT INTO CTS_DataCenter.CTSCustomerClassification
@@ -81,7 +75,7 @@ sp: BEGIN
         
 	    -- Insert history
         INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
-		(CustID, CTSCustID, CategoryID, SportGroupID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID)
+		(CustID, CTSCustID, CategoryID, SportGroupID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsView)
 		SELECT 	ip_CustID
 			, 	ip_CTSCustID
 			, 	ip_CategoryID
@@ -93,6 +87,7 @@ sp: BEGIN
 			,   DATE(lv_CurrentDateTime)
             ,   100 -- is VVIP
             ,   13 -- item = Add VVIP
+            ,	1 -- View History
             ;
 
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
@@ -101,12 +96,10 @@ sp: BEGIN
        -- Auto Pin Category (have not Pin before)
        INSERT IGNORE INTO CTS_DataCenter.PinCustomerCategory(CustID, CreatedTime)
 	   SELECT 	    ip_CustID,	lv_CurrentDateTime;
-   
     END IF;
     
     -- GET LATEST CC
     SELECT ip_CustID AS CustId, 100 AS CustomerClass, lv_CurrentDateTime AS ScannedTime;
-    
 END$$
 
 DELIMITER ;

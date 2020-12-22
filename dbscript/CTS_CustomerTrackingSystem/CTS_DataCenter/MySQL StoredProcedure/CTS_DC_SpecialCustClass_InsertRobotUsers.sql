@@ -2,7 +2,7 @@
 DROP procedure IF EXISTS `CTS_DC_SpecialCustClass_InsertRobotUsers`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_SpecialCustClass_InsertRobotUsers`(IN ip_CustIDs text)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_SpecialCustClass_InsertRobotUsers`(IN ip_CustIDs TEXT,OUT op_ErrorMessage varchar(200))
     SQL SECURITY INVOKER
 BEGIN
   /*
@@ -16,15 +16,29 @@ BEGIN
             - [20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow.    
 			- [20200923@Irena.Vo][141755]: Enhance SP
 			- 20201214@Irena.Vo: Remove logic delete Probation List. Enhance logic get VVIP & Update History Log. Return ScannedTime [RedmineID: #145951]
-            - 20201221@Irena.Vo: Update logic SP [RedmineID: #145951]
+            - 20201222@Irena.Vo: Update logic SP for View History. Insert Error Log [RedmineID: #145951]
             
 		Param's Explanation (filtered by):
         ip_CustIDs = 1,2,3
                 
 	*/
     DECLARE lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();
-    DECLARE lv_CreatedBy INT DEFAULT 10278938;
-    DECLARE lv_SPName VARCHAR(200) DEFAULT 'CTS_DC_SpecialCustClass_InsertRobotUsers';
+    DECLARE lv_CreatedBy 		INT DEFAULT 10278938;
+    DECLARE lv_SPName 			VARCHAR(200) DEFAULT 'CTS_DC_SpecialCustClass_InsertRobotUsers';
+    
+    DECLARE op_ErrorNo 			INT DEFAULT 0;
+    DECLARE op_CodName 			TEXT DEFAULT '0';
+
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
+    BEGIN   
+		GET DIAGNOSTICS CONDITION 1 
+        	op_ErrorMessage 	= 	MESSAGE_TEXT	
+			op_ErrorNo 			= 	MYSQL_ERRNO
+		,	op_CodName 			= 	RETURNED_SQLSTATE;
+    
+        INSERT INTO CTS_Log.ErrorLog(EventName, InsertedTime, Message, Err_No, Description)
+        VALUES(lv_SPName, lv_CurrentDateTime, op_ErrorMessage, op_ErrorNo, 	JSON_OBJECT('err_no',op_ErrorNo,'cod_name',op_CodName,'parameter',ip_CustIDs));
+    END;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_RobotUsers;
     CREATE TEMPORARY TABLE Temp_RobotUsers(
@@ -72,7 +86,7 @@ BEGIN
     
     /*	INSERT LOG	*/
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
-    (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID)
+    (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID, IsView)
     SELECT    temp.CustID
 			, temp.CTSCustID
 			, CASE WHEN cate.CategoryID IS NULL THEN 201
@@ -88,15 +102,12 @@ BEGIN
             , DATE(lv_CurrentDateTime)
             , 13 -- is Robot
             , 11 -- item name = Change by Robot icon
+            , 1 -- View History
 	FROM Temp_RobotUsers AS temp
     LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID;
     
-    SELECT 	DISTINCT CustId
-		,	13 AS CustomerClass
-        ,   lv_CurrentDateTime AS ScannedTime
-	FROM Temp_RobotUsers;
-    
-    
+    /* GET LATEST CC*/
+    SELECT 	DISTINCT CustId,	13 AS CustomerClass,   lv_CurrentDateTime AS ScannedTime FROM Temp_RobotUsers; 
 END$$
 
 DELIMITER ;
