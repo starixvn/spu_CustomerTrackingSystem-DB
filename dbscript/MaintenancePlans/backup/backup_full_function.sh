@@ -18,7 +18,7 @@ function process_full_backup()
     then
         ##### log start process
         docker exec ${from_container} mysql --login-path=${login_log_path} -D${log_dbname} -e "
-            INSERT INTO dba_BackupTask_Log(db_name,file_name,run_date) value ('$dbname','$backup_path','$run_date');
+            INSERT INTO dba_BackupTask_Log(db_name,file_name,run_date) value ('$backup_dbname','$backup_path','$run_date');
         "
 
         ##### do backup process
