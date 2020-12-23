@@ -15,6 +15,7 @@ BEGIN
 			- 20200908@Long.Luu [Redmine ID: #140996]: Created 
 			- 20201214@Irena.Vo: Update History Log & Return CustID with TypeID = 2 [Redmine ID: #145951]
             - 20201222@Irena.Vo: Rollback old logic & update logic SP for View History [Redmine ID: #145951]
+            - 20201223@Irena.Vo: Remove get CategoryID for insert history [Redmine ID: #145951]
         
 		Param's Explanation (filtered by):
 	*/
@@ -47,40 +48,18 @@ BEGIN
 	VALUES(20, lv_SPName, CONCAT('Remove special customer class: ip_CTSCustID_ ', ip_CTSCustID) , DATE(lv_CurrentDateTime), ip_UserID);
     
     -- Insert Log
-    IF NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification AS cate  WHERE cate.CustID = lv_CustID) THEN
-		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
-		(CustID, CTSCustID, CategoryID, SportGroupID,  LastModifiedDate,LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID, IsView)
-		SELECT    lv_CustID
-				, ip_CTSCustID
-				, 201
-				, 200
-				, lv_CurrentDateTime
-				, ip_UserID
-				, 2 -- remove
-				, 0 -- manual
-				, DATE(lv_CurrentDateTime)
-				, -1
-				, 12 -- item name = Remove Customer Class
-                , 1 -- View History
-                ; 
-    ELSE            
-		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
-		(CustID, CTSCustID, CategoryID, SportGroupID,  LastModifiedDate,LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID, IsView)
-		SELECT    lv_CustID
-				, ip_CTSCustID
-				, cate.CategoryID
-				, cate.SportGroupID
-				, lv_CurrentDateTime
-				, ip_UserID
-				, 2 -- remove
-				, 0 -- manual
-				, DATE(lv_CurrentDateTime)
-				, -1
-				, 12 -- item name = Remove Customer Class
-                , 1 -- View History
-		FROM CTS_DataCenter.CTSCustomerClassification AS cate 
-		WHERE cate.CustID = lv_CustID;
-	END IF;
+	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
+	(CustID, CTSCustID, LastModifiedDate,LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID, IsView)
+	SELECT  DISTINCT  lv_CustID
+			, ip_CTSCustID
+			, lv_CurrentDateTime
+			, ip_UserID
+			, 2 -- remove
+			, 0 -- manual
+			, DATE(lv_CurrentDateTime)
+			, -1
+			, 12 -- item name = Remove Customer Class
+			, 1; -- View History
 END$$
 
 DELIMITER ;

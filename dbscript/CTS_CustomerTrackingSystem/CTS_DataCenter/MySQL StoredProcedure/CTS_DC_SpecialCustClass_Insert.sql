@@ -18,6 +18,7 @@ sp: BEGIN
            - [20200923@Irena.Vo][141755]: Enhance SP
 		   - 20201214@Irena.Vo: Remove logic delete Probation List. Enhance logic get VVIP & Update History Log. Return ScannedTime [RedmineID: #145951]
            - 20201222@Irena.Vo: Update logic SP for View History [RedmineID: #145951]
+           - 20201223@Irena.Vo: Remove get CategoryID for insert history [Redmine ID: #145951]
            
 		Param's Explanation (filtered by):
 	*/    
@@ -143,15 +144,9 @@ sp: BEGIN
 
     /*	INSERT LOG	*/
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
-    (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID, IsView)
-    SELECT DISTINCT   lv_CustID
-			, lv_CTSCustID
-            , CASE WHEN cate.CategoryID IS NULL THEN 201
-                   ELSE cate.CategoryID
-			  END 
-            , CASE WHEN cate.CategoryID IS NULL THEN 200
-                   ELSE cate.SportGroupID
-			  END
+    (CustID, CTSCustID, LastModifiedDate, LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID, IsView)
+    SELECT    sp.CustID
+			, sp.CTSCustID
             , lv_CurrentDateTime
             , ip_UserID
 			, 0  -- insert
@@ -160,8 +155,7 @@ sp: BEGIN
             , sp.CustomerClass
             , 10 -- item name = Add Customer Class
             , 1 -- View History
-	FROM Temp_NewCustomerClass AS sp
-	LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CTSCustID = lv_CTSCustID;
+	FROM Temp_NewCustomerClass AS sp;
     
     /* GET LATEST CC */
     SELECT 	DISTINCT CustId,	CustomerClass,   lv_CurrentDateTime AS ScannedTime FROM Temp_NewCustomerClass;

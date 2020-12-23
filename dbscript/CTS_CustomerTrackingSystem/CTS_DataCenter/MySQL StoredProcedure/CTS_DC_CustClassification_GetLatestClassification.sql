@@ -13,6 +13,7 @@ BEGIN
 		Revisions:
 			- 20201214@Irena.Vo: Created [RedmineID: #145951]
             - 20201222@Irena.Vo: Update Input & Output params. Insert Error Log [RedmineID: #145951]
+             - 20201223@Irena.Vo: Update Get LastModifiedDate [RedmineID: #145951]
             
 		Param's Explanation:
 			call CTS_DataCenter.CTS_DC_CustClassification_GetLatestClassification('1,2,1277,555555');
@@ -53,13 +54,15 @@ BEGIN
     CREATE TEMPORARY TABLE 		Temp_LastestCategories (
         	CustID				BIGINT UNSIGNED PRIMARY KEY 
 		,	CategoryID		    SMALLINT
-        ,   INDEX               IX_Temp_LastestCategories_CategoryID(CategoryID)
+        ,	LastModifiedDate	DATETIME
+        ,   INDEX               IX_Temp_LastestCategories_LastModifiedDate_CategoryID(LastModifiedDate,CategoryID)
     );     
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustomerClass;
     CREATE TEMPORARY TABLE 		Temp_CustomerClass (
         	CustID				BIGINT UNSIGNED PRIMARY KEY 
 		,   CustomerClass       SMALLINT
+        ,	LastModifiedDate	DATETIME
     );    
     
     -- Insert CustIDs
@@ -97,25 +100,25 @@ BEGIN
 	GROUP BY 	temp.CustID;
 	
     -- Insert lastest customer category
-	INSERT INTO Temp_LastestCategories(CustID, CategoryID)
-	SELECT 	DISTINCT temp.CustID,	MAX(cate.CategoryID) 
+	INSERT INTO Temp_LastestCategories(CustID, CategoryID, LastModifiedDate)
+	SELECT 	DISTINCT temp.CustID,	MAX(cate.CategoryID), temp.LastModifiedDate 
 	FROM 		Temp_LatestRecords AS temp
 	INNER JOIN 	CTS_DataCenter.CTSCustomerClassification AS cate ON temp.CustID = cate.CustID
 	WHERE 		temp.LastModifiedDate = cate.LastModifiedDate
-	GROUP BY  	temp.CustID;
+	GROUP BY  	temp.CustID, temp.LastModifiedDate;
     
     -- Insert Customer Class
-    INSERT INTO Temp_CustomerClass (CustID, CustomerClass)
-    SELECT DISTINCT	temp.CustID,	-1	AS CustomerClass
+    INSERT INTO Temp_CustomerClass (CustID, CustomerClass, LastModifiedDate)
+    SELECT DISTINCT	temp.CustID,	-1	AS CustomerClass, '1001-01-01 00:00:00'
     FROM 			Temp_Customers AS temp
     WHERE 			temp.IsExistedCate = 0 -- CC = -1
     UNION ALL
-    SELECT DISTINCT temp.CustID,  map.CustomerClass
+    SELECT DISTINCT temp.CustID,  map.CustomerClass, temp.LastModifiedDate
     FROM 			Temp_LastestCategories AS temp
     INNER JOIN 		CTS_DataCenter.CategoryToCustomerClass AS map ON map.CategoryID = temp.CategoryID; -- CC <> -1
     
     -- Get Lastest Customer Class to sync in mainDB
-    SELECT DISTINCT	cc.CustId, cc.CustomerClass, lv_CurrentDateTime AS ScannedTime FROM Temp_CustomerClass AS cc;
+    SELECT DISTINCT	cc.CustId, cc.CustomerClass, cc.LastModifiedDate AS ScannedTime FROM Temp_CustomerClass AS cc;
 END$$
 
 DELIMITER ;

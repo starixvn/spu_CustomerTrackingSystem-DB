@@ -23,6 +23,7 @@ BEGIN
                 -20201201@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. [Redmine ID: #145954]
 				- 20201214@Irena.Vo: Update History Log. Get CustId. Return TypeId = 4 [RedmineID: #145951]
                 - 20201222@Irena.Vo: Update Logic SP for View History. Insert Error Log [RedmineID: #145951]
+                  - 20201223@Irena.Vo: Update view log for Rescan Normal [RedmineID: #145951]
                
 		Param's Explanation (filtered by):
 
@@ -73,6 +74,14 @@ BEGIN
      (	  	CustID					BIGINT UNSIGNED PRIMARY KEY       
         , 	CategoryID				SMALLINT UNSIGNED
         , 	INDEX 					IX_Temp_ExistedClassification_CategoryID(CategoryID)       
+     );
+     
+	DROP TEMPORARY TABLE IF EXISTS Temp_LastSourceType;    -- For Remove Special -> Rescan Normal
+	CREATE TEMPORARY TABLE Temp_LastSourceType 
+    (	  
+			CustID				BIGINT UNSIGNED 
+		,	SourceTypeID     	SMALLINT UNSIGNED    
+        ,	INDEX				IX_Temp_LastSourceType_CustID_SourceTypeID(CustID,SourceTypeID)
      );
      
      INSERT INTO Temp_NewClassification(CustID, NewCategoryID, LastModifiedDate, TurnoverRM, WinlossRM, BetCount, ActiveDays, LastXDaysMargin, ProbationPeriodWinloss)
@@ -126,7 +135,7 @@ BEGIN
 	SET			temp.ExistCategoryID = ex.CategoryID,	temp.ActionType = 1;
     
 	UPDATE 		Temp_NewClassification AS temp 
-	SET 		temp.LastCategoryID = CASE WHEN (temp.ExistCategoryID IN (202, 205) AND temp.NewCategoryID IN (203, 204)) THEN 206 -- Update New, Normal, VIP to Smart Punter, High Risk Punter
+	SET 		temp.LastCategoryID = CASE WHEN (temp.ExistCategoryID IN (201, 202, 205) AND temp.NewCategoryID IN (203, 204)) THEN 206 -- Update New, Normal, VIP to Smart Punter, High Risk Punter
 										   ELSE temp.NewCategoryID
 									  END;
 
@@ -160,7 +169,7 @@ BEGIN
     DELETE 		pro
     FROM 		CTS_DataCenter.ProbationAccountMonitor AS pro
 	INNER JOIN 	Temp_NewClassification AS temp on temp.CustID = pro.CustID AND pro.SportGroupID = 200
-	WHERE 		temp.ExistCategoryID = 206 AND temp.LastCategoryID IN (202, 203, 204, 205);
+	WHERE 		temp.ExistCategoryID = 206 AND temp.LastCategoryID IN (201, 202, 203, 204, 205);
        
     /*	INSERT NEW PROBATION LIST	*/
     INSERT  INTO CTS_DataCenter.ProbationAccountMonitor
@@ -180,6 +189,13 @@ BEGIN
 	WHERE      	(temp.ExistCategoryID IS NULL OR temp.ExistCategoryID <> 206) AND temp.LastCategoryID = 206;
 	
     /*	INSERT HISTORY	*/
+    INSERT INTO Temp_LastSourceType (CustID, SourceTypeID)
+    SELECT his.CustID, his.SourceTypeID
+	FROM CTS_DataCenter.CTSCustomerClassification_History AS his
+	INNER JOIN Temp_NewClassification AS temp ON temp.CustID = his.CustID
+	ORDER BY his.LastModifiedDate DESC
+	LIMIT 1;
+    
     INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
     (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy,TurnoverRM, WinlossRM, BetCount, ActiveDays
     , ActionType,  IsAuto, InsertDate, LastXDaysMargin, ProbationPeriodWinloss, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsView)
@@ -204,20 +220,21 @@ BEGIN
 				, 	CASE   WHEN temp.ExistCategoryID IS NULL AND temp.LastCategoryID = 201 THEN 1 -- item name = Less than 10 bets
 						   WHEN temp.ExistCategoryID IS NULL AND temp.LastCategoryID IN (202, 203, 204, 205, 206) THEN 2 -- item name = After 10 bets
 						   WHEN temp.ExistCategoryID = 201 AND temp.LastCategoryID IN (202, 203, 204, 205, 206) THEN 2 -- item name = After 10 bets To Probation (if have)
-						   WHEN temp.ExistCategoryID IN (202, 203, 204, 205) AND temp.LastCategoryID IN (202, 203, 204, 205, 206) THEN 3 -- item name = Scan Schedule Date To Probation (if have)
-						   WHEN temp.ExistCategoryID = 206 AND temp.LastCategoryID IN (202, 205) THEN 3 -- item name = Scan Schedule Date
 						   WHEN temp.ExistCategoryID = 206 AND temp.LastCategoryID IN (203, 204) THEN 4 -- item name = Pass Probation
 						   WHEN temp.ExistCategoryID = 206 AND temp.LastCategoryID = 206 THEN 5 -- item name = Fail Probation
+                           ELSE 3 -- item name = Scan Schedute Date
 					END AS SourceTypeID
 				, 	temp.ExistCategoryID
 				, 	temp.NewCategoryID
-                ,	CASE WHEN temp.ActionType = 0 THEN 1 -- View History
-                         WHEN temp.ActionType = 1 AND (	(temp.LastCategoryID <> temp.ExistCategoryID) 
-														OR (temp.LastCategoryID = 206 AND temp.ExistCategoryID = 206)	) THEN 1 -- View History
+                ,	CASE WHEN s.CustID IS NOT NULL THEN 1 -- View History
+						 WHEN temp.ActionType = 0 THEN 1 -- View History
+                         WHEN temp.ActionType = 1 AND (temp.LastCategoryID <> temp.ExistCategoryID) THEN 1 -- View History
+						 WHEN temp.ActionType = 1 AND (temp.LastCategoryID = 206 AND temp.ExistCategoryID = 206) THEN 1 -- View History
 						 ELSE 0
 					END
 	FROM 		Temp_NewClassification AS temp
-    LEFT JOIN 	CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID
+    LEFT JOIN   Temp_LastSourceType AS s ON temp.CustID = s.CustID AND s.SourceTypeID = 12 -- After remove Special CC, need to Rescan Normal
+	LEFT JOIN 	CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID
     INNER JOIN 	CTS_DataCenter.CategoryToCustomerClass AS map ON temp.LastCategoryID = map.CategoryID;
    
 	/*	GET LASTEST CUSTID LIST	*/

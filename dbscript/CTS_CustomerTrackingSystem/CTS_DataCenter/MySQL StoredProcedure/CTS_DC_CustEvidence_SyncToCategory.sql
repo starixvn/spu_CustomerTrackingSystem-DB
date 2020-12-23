@@ -19,6 +19,7 @@ BEGIN
 		   - 20201214@Irena.Vo: Insert History & Return list CustID with TypeID IN (3, 4) [RedmineID: #145951]
 			- 20201215@Irena.Vo: Enhance logic join with CategoryID [RedmineID: #145951]
 			- 20201222@Irena.Vo: Update Logic SP for View History. Insert Error Log [RedmineID: #145951]
+          - 20201223@Irena.Vo: Update view log [RedmineID: #145951]
            
 		Param's Explanation (filtered by):		 	
 	*/   
@@ -82,7 +83,7 @@ BEGIN
         ,   CategoryID			BIGINT UNSIGNED
         , 	INDEX 				IX_Temp_ExistedOldEviCategories_CTSCustID_CategoryID(CTSCustID,CategoryID)       
      );
-    
+ 
     INSERT INTO Temp_CustomerEvidences(CTSCustID, CustID, SubscriberID, EvidenceID, CategoryID, NapCMCategoryID, ActionType)
 	SELECT DISTINCT temp.CTSCustID
 				, temp.CustID
@@ -197,7 +198,7 @@ BEGIN
 		SELECT DISTINCT ex.CTSCustID, ex.NapCMCategoryID, COUNT(ex.NapCMCategoryID)
 		FROM Temp_ExistedClassification AS ex
 		GROUP BY ex.CTSCustID, ex.NapCMCategoryID;
-        
+     
         INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
 		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsView)
 		SELECT 	DISTINCT temp.CustID
@@ -228,7 +229,7 @@ BEGIN
 													   END)
         LEFT JOIN Temp_CountNapCMCategory AS c ON c.CountValue = 2 AND c.CTSCustID = ex.CTSCustID AND c.NapCMCategoryID = ex.NapCMCategoryID -- Ignore if existed Evd Category for View History. Count NAPCM Category = 2
 		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID
-        LEFT JOIN CTS_DataCenter.CategoryToCustomerClass AS map ON (CASE WHEN temp.ActionType = 0 THEN  map.CategoryID = temp.NapCMCategoryID  -- Mapping from temp Category
+        LEFT JOIN CTS_DataCenter.CategoryToCustomerClass AS map ON (CASE WHEN temp.ActionType IN (0, 1) THEN  map.CategoryID = temp.NapCMCategoryID  -- Mapping from temp Category
 																		 WHEN temp.ActionType = 2 THEN  map.CategoryID = ex.NapCMCategoryID  -- Mapping from existed Category
 																	END);
     END IF;
