@@ -16,3 +16,10 @@ ADD CategoryGroup SMALLINT UNSIGNED AFTER ParentID;
 
 ALTER TABLE CTS_DataCenter.CustomerCategory
 ADD INDEX IX_CustomerCategory_CategoryGroup (CategoryGroup);
+
+DROP TABLE IF EXISTS CTS_DataCenter.CategoryToCustomerClass;
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.CategoryToCustomerClass(
+		CategoryID			SMALLINT UNSIGNED
+	, 	CustomerClass		SMALLINT UNSIGNED
+	, 	PRIMARY KEY			PK_CategoryToCustomerClass_CategoryID_CustomerClass(CategoryID,CustomerClass)
+) ENGINE=INNODB;
