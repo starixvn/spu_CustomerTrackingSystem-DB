@@ -11,8 +11,8 @@ Reviewer:
 */
 
 ALTER TABLE CTS_DataCenter.CustomerCategory
-ADD CategoryNameCN NVARCHAR(50) AFTER CategoryName,
-ADD CategoryGroup SMALLINT UNSIGNED AFTER ParentID;
+ADD CategoryNameCN NVARCHAR(50),
+ADD CategoryGroup SMALLINT UNSIGNED, ALGORITHM=INSTANT;
 
 ALTER TABLE CTS_DataCenter.CustomerCategory
 ADD INDEX IX_CustomerCategory_CategoryGroup (CategoryGroup);
@@ -23,3 +23,4 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CategoryToCustomerClass(
 	, 	CustomerClass		SMALLINT UNSIGNED
 	, 	PRIMARY KEY			PK_CategoryToCustomerClass_CategoryID_CustomerClass(CategoryID,CustomerClass)
 ) ENGINE=INNODB;
+
