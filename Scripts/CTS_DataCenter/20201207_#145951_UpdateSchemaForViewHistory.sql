@@ -8,10 +8,10 @@ VALUES
 (4,3, 'Classification Source Type','Classification Source Type','Re-scan on Schedule Date','Re-scan on Schedule Date',3,1,'Other: From Normal,VIP To VIP,Normal/ From Probation To Normal,VIP/ From Smart,High Risk To High Risk,Smart...Probation: From Normal,VIP To Probation,Smart,High Risk',CURRENT_TIME()),
 (4,4, 'Classification Source Type','Classification Source Type','Pass 20 days Probation','Pass 20 days Probation',4,1,'Other: From Probation To Smart,High Risk',CURRENT_TIME()),
 (4,5, 'Classification Source Type','Classification Source Type','Cannot pass Probation','Cannot pass Probation',5,1,'Probation: From Probation To Probation',CURRENT_TIME()),
-(4,6, 'Classification Source Type','Classification Source Type','Add from NAP CM','Add from NAP CM',6,1,'From NapCM',CURRENT_TIME()),
-(4,7, 'Classification Source Type','Classification Source Type','Add from Evidence','Add from Evidence',7,1,'From Evidence',CURRENT_TIME()),
-(4,8, 'Classification Source Type','Classification Source Type','Manual Remove from NAP CM','Manual Remove from NAP CM',8,1,'From PA',CURRENT_TIME()),
-(4,9, 'Classification Source Type','Classification Source Type','Manual Remove from Evidence','Manual Remove from Evidence',9,1,'From Evidence',CURRENT_TIME()),
+(4,6, 'Classification Source Type','Classification Source Type','Manual Add from NAP CM','Manual Add from NAP CM',6,1,'From NapCM',CURRENT_TIME()),
+(4,7, 'Classification Source Type','Classification Source Type','Manual Add from Evidence','Add from Evidence',7,1,'From Evidence',CURRENT_TIME()),
+(4,8, 'Classification Source Type','Classification Source Type','Manual Remove from NAP CM','Manual Remove Problem Account',8,1,'From PA',CURRENT_TIME()),
+(4,9, 'Classification Source Type','Classification Source Type','Manual Remove from Evidence','Manual Remove Problem Account',9,1,'From Evidence',CURRENT_TIME()),
 (4,10, 'Classification Source Type','Classification Source Type','Manual Add Customer Class','Manual Add Customer Class',10,1,'From Special CC',CURRENT_TIME()),
 (4,11, 'Classification Source Type','Classification Source Type','Change Customer Class by Robot Icon','Change Customer Class by Robot Icon',11,1,'From Robot',CURRENT_TIME()),
 (4,12, 'Classification Source Type','Classification Source Type','Manual Remove Customer Class','Manual Remove Customer Class',12,1,'From CC',CURRENT_TIME()),
@@ -32,7 +32,6 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CategoryToCustomerClass(
 			CategoryID			SMALLINT UNSIGNED
 		, 	CustomerClass		SMALLINT UNSIGNED
         , 	PRIMARY KEY			PK_CategoryToCustomerClass_CategoryID_CustomerClass(CategoryID,CustomerClass)
-        , 	INDEX				IX_CategoryToCustomerClass_CategoryID_CustomerClass(CategoryID,CustomerClass)
 ) ENGINE=INNODB;
 
 INSERT INTO CTS_DataCenter.CategoryToCustomerClass(CategoryID,CustomerClass)
@@ -65,6 +64,9 @@ ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
 ADD COLUMN SourceTypeID SMALLINT UNSIGNED, ALGORITHM=INSTANT;
 
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
+ADD COLUMN IsAppliedCC BIT DEFAULT 0, ALGORITHM=INSTANT;
+
+ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
 ADD COLUMN LastXDaysMargin DECIMAL(20,4), ALGORITHM=INSTANT;
 
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
@@ -77,10 +79,10 @@ ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
 ADD COLUMN ToCategoryID SMALLINT UNSIGNED, ALGORITHM=INSTANT;
 
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
-ADD COLUMN IsAppliedCC BIT DEFAULT 0, ALGORITHM=INSTANT;
+ADD COLUMN IsView BIT DEFAULT 0, ALGORITHM=INSTANT;
 
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
-ADD INDEX IX_CTSCustomerClassification_History_TargetCC_SourceTypeID(TargetCC,SourceTypeID), ALGORITHM=INPLACE, LOCK=NONE;
+ADD INDEX IX_CTSCustomerClassification_History_SourceTypeID(SourceTypeID), ALGORITHM=INPLACE, LOCK=NONE;
 
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
-ADD INDEX IX_CTSCustomerClassification_History_IsAppliedCC(IsAppliedCC), ALGORITHM=INPLACE, LOCK=NONE;
+ADD INDEX IX_CTSCustomerClassification_History_CustID_IsAppliedCC(CustID,IsAppliedCC), ALGORITHM=INPLACE, LOCK=NONE;
