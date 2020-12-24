@@ -2,7 +2,7 @@
 DROP procedure IF EXISTS `CTS_DC_CustClassification_GetLatestClassification`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_GetLatestClassification`(IN ip_CustomerIDs TEXT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_GetLatestClassification`(IN ip_CustIDs TEXT)
     SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -14,6 +14,7 @@ BEGIN
 			- 20201214@Irena.Vo: Created [RedmineID: #145951]
             - 20201222@Irena.Vo: Update Input & Output params. Insert Error Log [RedmineID: #145951]
              - 20201223@Irena.Vo: Update Get LastModifiedDate [RedmineID: #145951]
+           - 20201224@Irena.Vo: Update Input param [RedmineID: #145951]
             
 		Param's Explanation:
 			call CTS_DataCenter.CTS_DC_CustClassification_GetLatestClassification('1,2,1277,555555');
@@ -33,7 +34,7 @@ BEGIN
 		,	op_CodName 			= 	RETURNED_SQLSTATE;
     
         INSERT INTO CTS_Log.ErrorLog(EventName, InsertedTime, Message, Err_No, Description)
-        VALUES(lv_SPName, lv_CurrentDateTime, op_ErrorMessage, op_ErrorNo, 	JSON_OBJECT('err_no',op_ErrorNo,'cod_name',op_CodName,'parameter',ip_CustomerIDs));
+        VALUES(lv_SPName, lv_CurrentDateTime, op_ErrorMessage, op_ErrorNo, 	JSON_OBJECT('err_no',op_ErrorNo,'cod_name',op_CodName,'parameter',ip_CustIDs));
     END;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Customers;
@@ -66,14 +67,9 @@ BEGIN
     );    
     
     -- Insert CustIDs
-	SET @sql = 	CONCAT("INSERT INTO Temp_Customers (CustID) VALUES ('", REPLACE(ip_CustomerIDs, ",", "'),('"),"');");
+	SET @sql = 	CONCAT("INSERT INTO Temp_Customers (CustID) VALUES ('", REPLACE(ip_CustIDs, ",", "'),('"),"');");
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1;    
-   
-    -- Update CustIDs if Input = CTSCustIDs
-    UPDATE 		Temp_Customers AS temp
-    INNER JOIN  CTS_DataCenter.CTSCustomer AS cust on cust.CTSCustID = temp.CustID
-    SET 		temp.CustID 	= 	cust.CustID;
    
     -- Update info: IsExistedCC & IsExistedCate
 	UPDATE 		Temp_Customers AS temp

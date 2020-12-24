@@ -19,8 +19,10 @@ sp: BEGIN
 		   - 20201214@Irena.Vo: Remove logic delete Probation List. Enhance logic get VVIP & Update History Log. Return ScannedTime [RedmineID: #145951]
            - 20201222@Irena.Vo: Update logic SP for View History [RedmineID: #145951]
            - 20201223@Irena.Vo: Remove get CategoryID for insert history [Redmine ID: #145951]
+             - 20201224@Irena.Vo: Enhance logic validate for RoleID = 1 [Redmine ID: #145951]
            
 		Param's Explanation (filtered by):
+			Maximum Customer Class number for input param = 127 
 	*/    
     
 	DECLARE lv_CTSCustID		BIGINT UNSIGNED;
@@ -32,7 +34,6 @@ sp: BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;        
-        SELECT NULL AS CustID,	NULL AS CustomerClass;
     END;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_AffectedCustomers;    
@@ -60,10 +61,9 @@ sp: BEGIN
 	);
     
     /*	CHECK VALIDATION CUSTOMER	*/
-    -- Check invalid customer in CTS.
+    -- Check invalid Username for customer in CTS.
     IF NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomer WHERE UserName = ip_Username OR UserName2 = ip_Username) THEN
 		SET op_ErrorMessage = 'This account is not existed in the system!';
-        SELECT NULL AS CustID,	NULL AS CustomerClass;
         LEAVE sp;
 	END IF;
     
@@ -73,16 +73,21 @@ sp: BEGIN
     FROM CTS_DataCenter.CTSCustomer 
     WHERE UserName = ip_Username OR UserName2 = ip_Username;    
     
+	-- Check invalid RoleID for customer in CTS.
+    IF NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomer WHERE CTSCustID = lv_CTSCustID AND RoleID = 1) THEN
+		SET op_ErrorMessage = 'This account is not Member';
+        LEAVE sp;
+	END IF;
+    
      -- Existed VVIP CustomerClass before -> Display error message
 	IF EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification WHERE CustID = lv_CustID AND SportGroupID = 200 AND CategoryID = 213) THEN
 		SET op_ErrorMessage = 'This account has already been marked with VVIP CustomerClass!';
-		SELECT NULL AS CustID,	NULL AS CustomerClass;
         LEAVE sp;
 	END IF;
+    
 	-- Existed CustomerClass before
 	IF EXISTS (SELECT 1 FROM CTS_DataCenter.SpecialCustomerClass WHERE CTSCustID = lv_CTSCustID AND CreatedFromFunction = 1) THEN
 		SET op_ErrorMessage = 'This account has already been marked with a CustomerClass!';    
-        SELECT NULL AS CustID,	NULL AS CustomerClass;
         LEAVE sp;
 	END IF;
     

@@ -19,7 +19,8 @@ BEGIN
 		   - 20201214@Irena.Vo: Insert History & Return list CustID with TypeID IN (3, 4) [RedmineID: #145951]
 			- 20201215@Irena.Vo: Enhance logic join with CategoryID [RedmineID: #145951]
 			- 20201222@Irena.Vo: Update Logic SP for View History. Insert Error Log [RedmineID: #145951]
-          - 20201223@Irena.Vo: Update view log [RedmineID: #145951]
+            - 20201223@Irena.Vo: Update view log [RedmineID: #145951]
+         - 20201224@Irena.Vo: Update view log for Manual Removed list to rescan PA [RedmineID: #145951]
            
 		Param's Explanation (filtered by):		 	
 	*/   
@@ -83,7 +84,13 @@ BEGIN
         ,   CategoryID			BIGINT UNSIGNED
         , 	INDEX 				IX_Temp_ExistedOldEviCategories_CTSCustID_CategoryID(CTSCustID,CategoryID)       
      );
- 
+    
+     DROP TEMPORARY TABLE IF EXISTS Temp_ManualRemovedList;    -- For Rescan PA
+	 CREATE TEMPORARY TABLE Temp_ManualRemovedList 
+     (	  
+			CustID				BIGINT UNSIGNED PRIMARY KEY    
+      );
+    
     INSERT INTO Temp_CustomerEvidences(CTSCustID, CustID, SubscriberID, EvidenceID, CategoryID, NapCMCategoryID, ActionType)
 	SELECT DISTINCT temp.CTSCustID
 				, temp.CustID
@@ -126,7 +133,7 @@ BEGIN
         -- Remove all Normal Category
 		DELETE cate
         FROM CTS_DataCenter.CTSCustomerClassification AS cate
-        INNER JOIN Temp_CustomerEvidences AS temp ON temp.CustID = cate.CustID AND cate.SportGroupID = 200 AND (cate.CategoryID > 200 AND cate.CategoryID < 300);
+        INNER JOIN Temp_CustomerEvidences AS temp ON temp.CustID = cate.CustID AND cate.SportGroupID = 200;
         
         -- Remove all Probation List
 		DELETE pro
@@ -150,7 +157,7 @@ BEGIN
 									ELSE cate.CategoryID
 							 END AS NapCMCategoryID
 		FROM Temp_CustomerEvidences AS temp
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID AND cate.SportGroupID = 0; -- both NapCM & Evidence.
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID AND cate.SportGroupID = 0; -- Both NapCM & Evidence.
         
         -- Remove Problem Accounts in CTS
 		INSERT INTO Temp_ExistedOldEviCategories (CTSCustID,CategoryID)
@@ -163,7 +170,7 @@ BEGIN
 		FROM 		 CTS_DataCenter.CTSCustomerClassification cate
 		INNER JOIN 	 Temp_CustomerEvidences AS temp ON temp.CustID = cate.CustID AND cate.SportGroupID = 0 AND temp.CategoryID = cate.CategoryID 
         LEFT JOIN    Temp_ExistedOldEviCategories AS exEvi ON exEvi.CTSCustID = cate.CTSCustID AND cate.SportGroupID = 0 AND exEvi.CategoryID = cate.CategoryID 
-		WHERE 		 temp.ActionType = 2 AND exEvi.CategoryID IS NULL AND (cate.CategoryID BETWEEN 72 AND 80);
+		WHERE 		 temp.ActionType = 2 AND exEvi.CategoryID IS NULL AND (cate.CategoryID BETWEEN 72 AND 80); -- Only remove PA from Evidence
     
 		-- Update Problem Accounts in CTS
 		UPDATE 		 CTS_DataCenter.CTSCustomerClassification AS cate
@@ -174,7 +181,7 @@ BEGIN
 				,   cate.LastModifiedDate = lv_CurrentDateTime
 				, 	cate.LastScannedDate = DATE(lv_CurrentDateTime)
 				,	temp.ActionType = 1
-		 WHERE 	cate.CategoryID BETWEEN 72 AND 80;
+		 WHERE 	cate.CategoryID BETWEEN 72 AND 80; -- Only update PA from Evidence
         
         -- Insert New Problem Accounts
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification
@@ -194,11 +201,20 @@ BEGIN
 		WHERE temp.ActionType = 0;
    
         -- Insert history
-		INSERT INTO Temp_CountNapCMCategory (CTSCustID, NapCMCategoryID, CountValue)  -- Count NapCMCategory
+		INSERT INTO Temp_CountNapCMCategory (CTSCustID, NapCMCategoryID, CountValue)  -- Count NapCMCategory so that compare with NAP CM
 		SELECT DISTINCT ex.CTSCustID, ex.NapCMCategoryID, COUNT(ex.NapCMCategoryID)
 		FROM Temp_ExistedClassification AS ex
 		GROUP BY ex.CTSCustID, ex.NapCMCategoryID;
-     
+        
+        INSERT INTO Temp_ManualRemovedList (CustID)
+		SELECT DISTINCT t1.CustID
+		FROM (  SELECT DISTINCT his.CustID, MAX(his.ID) AS HistoryID
+				FROM CTS_DataCenter.CTSCustomerClassification_History AS his
+				INNER JOIN Temp_CustomerEvidences AS temp ON temp.CustID = his.CustID
+				GROUP BY his.CustID) AS t1
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS t2 ON t2.CustID = t1.CustID AND t2.ID = t1.HistoryID 
+        WHERE t2.SourceTypeID IN (8, 9, 12, 14); -- 8: Remove PA by NAP CM, 9: Remove PA by Evd, 12: Remove Special CC, 14: Remove VVIP
+    
         INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
 		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsView)
 		SELECT 	DISTINCT temp.CustID
@@ -219,22 +235,24 @@ BEGIN
             , 	CASE WHEN temp.ActionType = 2 THEN 9 -- item name = Remove PA from Evidence
 					 ELSE 7 -- item name = Add from Evidence
 				END
-			,	CASE WHEN (temp.ActionType = 0 AND ex.NapCMCategoryID IS NULL) THEN 1 -- View History
+			,	CASE WHEN s.CustID IS NOT NULL THEN 1 -- View History
+					 WHEN (temp.ActionType = 0 AND ex.NapCMCategoryID IS NULL) THEN 1 -- View History
 					 WHEN (temp.ActionType = 2 AND c.NapCMCategoryID IS NULL) THEN 1 -- View History
                      ELSE 0
 				END
 		FROM Temp_CustomerEvidences AS temp
-		LEFT JOIN Temp_ExistedClassification AS ex ON (CASE WHEN temp.ActionType = 2 THEN ex.CTSCustID = temp.CTSCustID AND ex.CategoryID = temp.CategoryID -- Get existed PA from NAP CM for View History
+		LEFT JOIN   Temp_ManualRemovedList AS s ON temp.CustID = s.CustID -- Need to Rescan PA
+		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID
+        LEFT JOIN Temp_ExistedClassification AS ex ON (CASE WHEN temp.ActionType = 2 THEN ex.CTSCustID = temp.CTSCustID AND ex.CategoryID = temp.CategoryID -- Get existed PA from NAP CM for View History
 															WHEN temp.ActionType = 0 THEN ex.CTSCustID = temp.CTSCustID AND ex.NapCMCategoryID = temp.NapCMCategoryID -- Ignore if existed Evd Category for View History
 													   END)
         LEFT JOIN Temp_CountNapCMCategory AS c ON c.CountValue = 2 AND c.CTSCustID = ex.CTSCustID AND c.NapCMCategoryID = ex.NapCMCategoryID -- Ignore if existed Evd Category for View History. Count NAPCM Category = 2
-		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID
         LEFT JOIN CTS_DataCenter.CategoryToCustomerClass AS map ON (CASE WHEN temp.ActionType IN (0, 1) THEN  map.CategoryID = temp.NapCMCategoryID  -- Mapping from temp Category
 																		 WHEN temp.ActionType = 2 THEN  map.CategoryID = ex.NapCMCategoryID  -- Mapping from existed Category
 																	END);
     END IF;
      
-	/*	GET LASTEST CUSTID LIST	*/
+	/*	GET LASTEST CUSTID LIST	-> GET LATEST CLASSICATION -> SYNC CC IN MAINDB */
 	SELECT DISTINCT temp.CustId FROM Temp_CustomerEvidences AS temp;
 END$$
 

@@ -23,12 +23,11 @@ BEGIN
                 -20201201@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. [Redmine ID: #145954]
 				- 20201214@Irena.Vo: Update History Log. Get CustId. Return TypeId = 4 [RedmineID: #145951]
                 - 20201222@Irena.Vo: Update Logic SP for View History. Insert Error Log [RedmineID: #145951]
-                  - 20201223@Irena.Vo: Update view log for Rescan Normal [RedmineID: #145951]
+				- 20201223@Irena.Vo: Update view log for Rescan Normal [RedmineID: #145951]
+                  - 20201224@Irena.Vo: Update view log for Manual Removed list to rescan Normal [RedmineID: #145951]
                
 		Param's Explanation (filtered by):
-
-        Example: 
-			-  CALL CTS_DataCenter.CTS_DC_InsertMainCustomerClassification('[{"CustId": 1, "CategoryId": 202, "CreatedTime": "2020-09-13 00:01:00", "TurnoverRM": 100, "WinlossRM": 2056354, "BetCount": 500, "ActiveDays": 8}]');
+			  CALL CTS_DataCenter.CTS_DC_InsertMainCustomerClassification('[{"CustId": 1, "CategoryId": 202, "CreatedTime": "2020-09-13 00:01:00", "TurnoverRM": 100, "WinlossRM": 2056354, "BetCount": 500, "ActiveDays": 8}]');
 	*/ 
 	DECLARE	lv_SPName 			VARCHAR(100) 	DEFAULT 'CTS_DC_InsertMainCustomerClassification';  
 	DECLARE lv_CreatedBy		INT	DEFAULT 10278938;
@@ -76,13 +75,11 @@ BEGIN
         , 	INDEX 					IX_Temp_ExistedClassification_CategoryID(CategoryID)       
      );
      
-	DROP TEMPORARY TABLE IF EXISTS Temp_LastSourceType;    -- For Remove Special -> Rescan Normal
-	CREATE TEMPORARY TABLE Temp_LastSourceType 
-    (	  
-			CustID				BIGINT UNSIGNED 
-		,	SourceTypeID     	SMALLINT UNSIGNED    
-        ,	INDEX				IX_Temp_LastSourceType_CustID_SourceTypeID(CustID,SourceTypeID)
-     );
+	 DROP TEMPORARY TABLE IF EXISTS Temp_ManualRemovedList;    -- Rescan Normal
+	 CREATE TEMPORARY TABLE Temp_ManualRemovedList 
+     (	  
+			CustID				BIGINT UNSIGNED PRIMARY KEY    
+      );
      
      INSERT INTO Temp_NewClassification(CustID, NewCategoryID, LastModifiedDate, TurnoverRM, WinlossRM, BetCount, ActiveDays, LastXDaysMargin, ProbationPeriodWinloss)
 	 SELECT DISTINCT temp.CustID
@@ -132,12 +129,12 @@ BEGIN
     /*	UPDATE INFO ExistCategoryID, LastCategoryID	FOR TEMP	*/
     UPDATE 		Temp_NewClassification AS temp 
 	INNER JOIN	Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID
-	SET			temp.ExistCategoryID = ex.CategoryID,	temp.ActionType = 1;
+	SET			temp.ExistCategoryID = ex.CategoryID,	temp.ActionType = 1; -- Only Update PA
     
 	UPDATE 		Temp_NewClassification AS temp 
 	SET 		temp.LastCategoryID = CASE WHEN (temp.ExistCategoryID IN (201, 202, 205) AND temp.NewCategoryID IN (203, 204)) THEN 206 -- Update New, Normal, VIP to Smart Punter, High Risk Punter
 										   ELSE temp.NewCategoryID
-									  END;
+									  END; -- Both Insert New & Update PA
 
     /*	UPDATE INFO FOR EXISTED CATEGORY	*/
     UPDATE 		CTS_DataCenter.CTSCustomerClassification AS cate
@@ -189,12 +186,14 @@ BEGIN
 	WHERE      	(temp.ExistCategoryID IS NULL OR temp.ExistCategoryID <> 206) AND temp.LastCategoryID = 206;
 	
     /*	INSERT HISTORY	*/
-    INSERT INTO Temp_LastSourceType (CustID, SourceTypeID)
-    SELECT his.CustID, his.SourceTypeID
-	FROM CTS_DataCenter.CTSCustomerClassification_History AS his
-	INNER JOIN Temp_NewClassification AS temp ON temp.CustID = his.CustID
-	ORDER BY his.LastModifiedDate DESC
-	LIMIT 1;
+	INSERT INTO Temp_ManualRemovedList (CustID)
+    SELECT DISTINCT t1.CustID
+    FROM (  SELECT DISTINCT his.CustID, MAX(his.ID) AS HistoryID
+			FROM CTS_DataCenter.CTSCustomerClassification_History AS his
+			INNER JOIN Temp_NewClassification AS temp ON temp.CustID = his.CustID
+			GROUP BY his.CustID) AS t1
+	INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS t2 ON t2.CustID = t1.CustID AND t2.ID = t1.HistoryID 
+    WHERE t2.SourceTypeID IN (8, 9, 12, 14); -- 8: Remove PA by NAP CM, 9: Remove: PA by Evd, 12: Remove Special CC, 14: Remove VVIP
     
     INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
     (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy,TurnoverRM, WinlossRM, BetCount, ActiveDays
@@ -233,11 +232,11 @@ BEGIN
 						 ELSE 0
 					END
 	FROM 		Temp_NewClassification AS temp
-    LEFT JOIN   Temp_LastSourceType AS s ON temp.CustID = s.CustID AND s.SourceTypeID = 12 -- After remove Special CC, need to Rescan Normal
+    LEFT JOIN   Temp_ManualRemovedList AS s ON temp.CustID = s.CustID -- Need to View for Rescan Normal
 	LEFT JOIN 	CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID
     INNER JOIN 	CTS_DataCenter.CategoryToCustomerClass AS map ON temp.LastCategoryID = map.CategoryID;
    
-	/*	GET LASTEST CUSTID LIST	*/
+	/*	GET LASTEST CUSTID LIST	-> GET LATEST CLASSICATION -> SYNC CC IN MAINDB */
     SELECT DISTINCT temp.CustId FROM Temp_NewClassification AS temp;
 END$$
 
