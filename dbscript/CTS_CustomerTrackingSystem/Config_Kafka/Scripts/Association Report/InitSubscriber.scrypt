@@ -1,0 +1,14 @@
+﻿//
+// Remove Site
+//
+
+1 - Mark InitSub
+CALL apoc.periodic.commit("
+match (c:CTSCustomer)
+where not c:InitSub
+with c limit 500
+set c:InitSub
+RETURN COUNT(*)", {size: 500})
+
+
+2 - Init data Sub
