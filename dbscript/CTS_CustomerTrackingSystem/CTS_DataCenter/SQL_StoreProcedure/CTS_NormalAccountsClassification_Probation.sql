@@ -17,6 +17,7 @@ AS
 
 	Revisions:
 		- 20201111@Long.Luu: Created [Redmine ID: #145028]
+		- 20201224@Long.Luu: Return more data [Redmine ID: #145951]
         
 	Param's Explanation:
 
@@ -51,7 +52,7 @@ BEGIN
 		DROP TABLE	#tmpRawData;
 
 	CREATE TABLE #tmpRawData(
-		[CustId]			INT NOT NULL,
+		[CustId]			INT NOT NULL PRIMARY KEY,
 		[SportId]			INT NOT NULL,
 		[TurnoverRM]		MONEY NULL,
 		[WinlossRM]			MONEY NULL,
@@ -65,8 +66,7 @@ BEGIN
 		DROP TABLE	#tmpCustomerAccummulatedInfo;
 
 	CREATE TABLE #tmpCustomerAccummulatedInfo(
-		[CustId]			INT NOT NULL,
-		[SportId]			INT NOT NULL,
+		[CustId]			INT NOT NULL PRIMARY KEY,
 		[TurnoverRM]		MONEY NULL,
 		[WinlossRM]			MONEY NULL,
 		[Margin]			MONEY NULL,
@@ -80,25 +80,11 @@ BEGIN
 	CREATE TABLE #tmpRawDailyData(
 		[RptDate]			DATE NOT NULL,
 		[CustId]			BIGINT NOT NULL,
-		[SportId]			SMALLINT NOT NULL,
-		[BettypeId]			SMALLINT NOT NULL,
 		[Turnover]			MONEY NULL,
 		[Winloss]			MONEY NULL,
-		[BetCount]			BIGINT NULL
-		PRIMARY KEY (RptDate, CustId, SportId, BettypeId)
-	);
-
-	IF	OBJECT_ID('tempdb..#tmpSportDailyData') IS NOT NULL
-		DROP TABLE	#tmpSportDailyData;
-
-	CREATE TABLE #tmpSportDailyData(
-		[RptDate]			DATE NOT NULL,
-		[CustId]			BIGINT NOT NULL,
-		[SportId]			SMALLINT NOT NULL,
-		[Turnover]			MONEY,
-		[Winloss]			MONEY,
-		[IsLastXDays]		BIT DEFAULT 0
-		PRIMARY KEY (RptDate, CustId, SportId)
+		[BetCount]			BIGINT NULL,
+		[IsLastXDays]		BIT,
+		PRIMARY KEY (RptDate, CustId)
 	);
 
 	IF OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
@@ -107,12 +93,12 @@ BEGIN
 	END
 	
 	CREATE TABLE #tmpCustomers(
-		[CustId]				INT,
-		[SportId]				SMALLINT,
-		[CategoryId]			SMALLINT,
-		[IsProbationLastDay]	BIT DEFAULT 0,
-		[IsPassed]				BIT DEFAULT 0,
-		PRIMARY KEY (CustId, SportId)
+		[CustId]					INT PRIMARY KEY,
+		[CategoryId]				SMALLINT,
+		[IsProbationLastDay]		BIT DEFAULT 0,
+		[IsPassed]					BIT DEFAULT 0,
+		[LastXDaysMargin]			MONEY,
+		[ProbationPeriodWinloss]	MONEY
 	);
 	
 	IF OBJECT_ID('tempdb..#tmpFilteredCustomers') IS NOT NULL
@@ -121,41 +107,15 @@ BEGIN
 	END
 	
 	CREATE TABLE #tmpFilteredCustomers(
-		[CustId]			INT,
-		[SportId]			SMALLINT,
-		PRIMARY KEY (CustId, SportId)
+		[CustId]			INT PRIMARY KEY
 	);
-
-
-	IF	OBJECT_ID('tempdb..#tmpSportGroups') IS NOT NULL
-		DROP TABLE	#tmpSportGroups;
-
-	CREATE TABLE #tmpSportGroups(
-		[SportId]			INT NOT NULL, --1 soccer, 2 basketball, 3 othersports, 4 esports, 5 nonsports
-		[MainDBSportId]		INT NOT NULL,
-		PRIMARY KEY (SportId, MainDBSportId)
-	);
-
-	-- Init sportgroups
-	INSERT INTO #tmpSportGroups(SportId, MainDBSportId)
-	VALUES (1,1), (2,2), (4,43);
-
-	INSERT INTO #tmpSportGroups(SportId, MainDBSportId)
-	SELECT DISTINCT 3, s.SportType
-	FROM bodb02.dbo.SportBettypeMatrix AS s WITH(NOLOCK)
-	WHERE s.ProductID = 1
-		AND s.SportType NOT IN (1,2,43);
-
+	
 	-- Parse customers info
-	INSERT INTO #tmpCustomers(CustId, SportId, IsProbationLastDay)
+	INSERT INTO #tmpCustomers(CustId, IsProbationLastDay)
 	SELECT	T.C.value('./@CustId', 'INT') AS CustId
-		,	T.C.value('./@SportGroupId', 'SMALLINT') AS SportId
-		,	T.C.value('./@IsProbationLastDay', 'SMALLINT') AS IsProbationLastDay
+		,	T.C.value('./@IsProbationLastDay', 'BIT') AS IsProbationLastDay
 	FROM @CustomersXML.nodes('//ProbationModel') AS T(C)
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
-
-	DELETE FROM #tmpCustomers WITH(ROWLOCK)
-	WHERE SportId <> 200;
 
 	-- FILTER BY MARGIN AND BETCOUNT
 	-- Get Customer's ID List
@@ -172,20 +132,8 @@ BEGIN
 	WHERE SportId = @PARLAY_SPORTID;
 
 	-- Sum data by sport
-	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, SportId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
-	SELECT	a.CustId
-		,	CASE WHEN s.SportId IS NULL THEN 5 ELSE s.SportId END
-		,	SUM(a.TurnoverRM)
-		,	SUM(a.WinlossRM)
-		,	CASE WHEN SUM(a.TurnoverRM) = 0 THEN 0 ELSE SUM(a.WinlossRM) / SUM(a.TurnoverRM) * 100 END
-		,	SUM(a.BetCount)
-		,	MAX(a.ActiveDays)
-	FROM #tmpRawData AS a WITH(NOLOCK)
-		LEFT JOIN #tmpSportGroups AS s WITH(NOLOCK) ON a.SportId = s.MainDBSportId
-	GROUP BY a.CustId, CASE WHEN s.SportId IS NULL THEN 5 ELSE s.SportId END
-	UNION
+	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
 	SELECT	s.CustId
-		,	@GENERAL_SPORTID
 		,	SUM(s.TurnoverRM)
 		,	SUM(s.WinlossRM)
 		,	CASE WHEN SUM(s.TurnoverRM) = 0 THEN 0 ELSE SUM(s.WinlossRM) / SUM(s.TurnoverRM) * 100 END
@@ -202,72 +150,51 @@ BEGIN
 								@GENERALCATEGORY_VIP
 							ELSE
 								@GENERALCATEGORY_NORMALMEMBER
-						END
+						END,
+		c.LastXDaysMargin = s.Margin,
+		c.ProbationPeriodWinloss = s.WinlossRM
 	FROM #tmpCustomers AS c
-		INNER JOIN #tmpCustomerAccummulatedInfo AS s ON c.CustId = s.CustId AND c.SportId = s.SportId
+		INNER JOIN #tmpCustomerAccummulatedInfo AS s ON c.CustId = s.CustId
 	WHERE s.Margin < 0;
     
 	-- Filter customers by: Bet count >= @PROBATION_MINBETSTOPASS tickets (count from beginning) & Margin >= 0
-	INSERT INTO #tmpFilteredCustomers(CustId, SportId)
-	SELECT c.CustId, c.SportId
+	INSERT INTO #tmpFilteredCustomers(CustId)
+	SELECT c.CustId
 	FROM #tmpCustomers AS c
-		INNER JOIN #tmpCustomerAccummulatedInfo AS s ON c.CustId = s.CustId AND c.SportId = s.SportId
+		INNER JOIN #tmpCustomerAccummulatedInfo AS s ON c.CustId = s.CustId
 	WHERE	c.IsProbationLastDay = 1
 		AND s.BetCount >= @PROBATION_MINBETSTOPASS
 		AND s.Margin >= 0;
 
 	-- FILTER BY WINNING COUNT
 	-- Get daily raw data for all sports (exclude Parlay)
-	INSERT INTO #tmpRawDailyData(RptDate, CustId, SportId, BettypeId, Turnover, Winloss, BetCount)
+	INSERT INTO #tmpRawDailyData(RptDate, CustId, Turnover, Winloss, BetCount, IsLastXDays)
 	SELECT	s.RptFromDate
 		,	s.CustId
-		,	s.SportType
-		,	s.BetType
 		,	SUM(s.MemberTurnover)
 		,	SUM(s.MemberWinloss)
-		,	SUM(s.BetCount)
+		,	SUM(s.BetCount)		
+		,	CASE WHEN s.RptFromDate >= @LastXDays THEN 1 ELSE 0 END
 	FROM bodb_Account.dbo.[FactCustProductStatsDetail] AS s WITH(NOLOCK)
 		INNER JOIN #tmpFilteredCustomers AS t ON s.CustID = t.CustId
 	WHERE s.RptFromDate >= @RptFromDate AND s.RptFromDate <= @RptToDate
 		AND s.BetType NOT IN (9, 29)
-	GROUP BY s.RptFromDate, s.CustId, s.SportType, s.BetType;
-
-	-- Sum all for General Sport
-	INSERT INTO #tmpSportDailyData(RptDate, CustId, SportId, Turnover, Winloss, IsLastXDays)
-	SELECT	s.RptDate
+	GROUP BY s.RptFromDate
 		,	s.CustId
-		,	@GENERAL_SPORTID
-		,	SUM(s.Turnover)
-		,	SUM(s.Winloss)
-		,	CASE WHEN s.RptDate >= @LastXDays THEN 1 ELSE 0 END
-	FROM #tmpRawDailyData AS s WITH(NOLOCK)
-	GROUP BY s.RptDate, s.CustId;
+		,	CASE WHEN s.RptFromDate >= @LastXDays THEN 1 ELSE 0 END;
 
-	-- Sum data for each sport
-	INSERT INTO #tmpSportDailyData(RptDate, CustId, SportId, Turnover, Winloss, IsLastXDays)
-	SELECT	a.RptDate
-		,	a.CustId
-		,	CASE WHEN s.SportId IS NULL THEN 5 ELSE s.SportId END AS SportId
-		,	SUM(a.Turnover) AS Turnover
-		,	SUM(a.Winloss) AS Winloss
-		,	CASE WHEN a.RptDate >= @LastXDays THEN 1 ELSE 0 END
-	FROM #tmpRawDailyData AS a WITH(NOLOCK)
-		LEFT JOIN #tmpSportGroups AS s WITH(NOLOCK) ON a.SportId = s.MainDBSportId
-	GROUP BY a.RptDate, a.CustId, CASE WHEN s.SportId IS NULL THEN 5 ELSE s.SportId END;
-		
 	-- Filter customer by: At least @PROBATION_MINDAYSWINTOPASS/@PROBATION_FULLPERIOD days with margin > 0%
-	WITH CTE_CustWinCounterInProbationFullPeriod(CustId, SportId, DayWinCount)
+	WITH CTE_CustWinCounterInProbationFullPeriod(CustId, DayWinCount)
 	AS(
 		SELECT	a.CustId
-			,	a.SportId
 			,	SUM(CASE WHEN a.Winloss > 0 THEN 1 ELSE 0 END)
-		FROM #tmpSportDailyData AS a WITH(NOLOCK)
-			RIGHT JOIN #tmpFilteredCustomers AS c ON c.CustId = a.CustId AND c.SportId = a.SportId
-		GROUP BY a.CustId, a.SportId
+		FROM #tmpRawDailyData AS a WITH(NOLOCK)
+			RIGHT JOIN #tmpFilteredCustomers AS c ON c.CustId = a.CustId
+		GROUP BY a.CustId
 	)
 	DELETE c WITH(ROWLOCK)
 	FROM #tmpFilteredCustomers AS c
-		INNER JOIN CTE_CustWinCounterInProbationFullPeriod AS a ON c.CustId = a.CustId AND c.SportId = a.SportId
+		INNER JOIN CTE_CustWinCounterInProbationFullPeriod AS a ON c.CustId = a.CustId
 	WHERE a.DayWinCount < @PROBATION_MINDAYSWINTOPASS;
 	
 	UPDATE c WITH(ROWLOCK, UPDLOCK)
@@ -278,22 +205,25 @@ BEGIN
 								WHEN (a.Margin > 1 AND (t.TotalWinlossLastXDays >= 0 OR t.TotalWinloss > 20000)) THEN
 									@GENERALCATEGORY_HIGHRISKPUNTER
 								ELSE -1
-							 END
+							 END,
+		c.LastXDaysMargin = CASE WHEN t.TotalTurnoverLastXDays <> 0 THEN t.TotalWinlossLastXDays/t.TotalTurnoverLastXDays*100 ELSE 0 END,
+		c.ProbationPeriodWinloss = t.TotalWinloss
 	FROM #tmpCustomers AS c
-		INNER JOIN #tmpCustomerAccummulatedInfo AS a ON c.CustId = a.CustId AND c.SportId = a.SportId
+		INNER JOIN #tmpCustomerAccummulatedInfo AS a ON c.CustId = a.CustId
 		INNER JOIN	(
-						SELECT	f.CustId, f.SportId
+						SELECT	f.CustId
 							,	SUM(d.Winloss) AS TotalWinloss
 							,	SUM(CASE WHEN d.IsLastXDays = 1 THEN d.Winloss ELSE 0 END) AS TotalWinlossLastXDays
+							,	SUM(CASE WHEN d.IsLastXDays = 1 THEN d.Turnover ELSE 0 END) AS TotalTurnoverLastXDays
 						FROM #tmpFilteredCustomers AS f WITH(NOLOCK)
-							INNER JOIN #tmpSportDailyData AS d WITH(NOLOCK) ON f.CustId = d.CustId AND d.SportId = f.SportId
-						GROUP BY f.CustId, f.SportId
-					) AS t ON c.CustId = t.CustId AND c.SportId = t.SportId
+							INNER JOIN #tmpRawDailyData AS d WITH(NOLOCK) ON f.CustId = d.CustId
+						GROUP BY f.CustId
+					) AS t ON c.CustId = t.CustId
 	WHERE a.Margin >= 0;
 	
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT	a.CustId
-		,	a.SportId
+		,	@GENERAL_SPORTID
 		,	a.CategoryId
 		,	@CurrentDate AS CreatedDate
 		,	@CurrentDateTime AS CreatedTime
@@ -302,23 +232,23 @@ BEGIN
 		,	t.BetCount
 		,	t.ActiveDays
 	FROM #tmpCustomers AS a WITH(NOLOCK)
-		INNER JOIN #tmpCustomerAccummulatedInfo AS t WITH(NOLOCK) ON a.CustId = t.CustId AND a.SportId = t.SportId
+		INNER JOIN #tmpCustomerAccummulatedInfo AS t WITH(NOLOCK) ON a.CustId = t.CustId
 	WHERE a.IsPassed = 1
 		AND a.CategoryId <> -1;
 	
 	-- Return results
 	SELECT	CustId
-		,	SportId AS 'SportGroupId'
+		,	@GENERAL_SPORTID AS 'SportGroupId'
 		,	IsProbationLastDay
 		,	CategoryId
+		,	LastXDaysMargin
+		,	ProbationPeriodWinloss
 		,	IsPassed
 	FROM #tmpCustomers WITH(NOLOCK);
 
 	DROP TABLE #tmpRawData;
 	DROP TABLE #tmpCustomerAccummulatedInfo;
 	DROP TABLE #tmpRawDailyData;
-	DROP TABLE #tmpSportDailyData;
 	DROP TABLE #tmpCustomers;
 	DROP TABLE #tmpFilteredCustomers;
-	DROP TABLE #tmpSportGroups;
 END;
