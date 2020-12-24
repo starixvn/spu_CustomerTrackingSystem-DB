@@ -3,7 +3,7 @@
 //
 CALL apoc.periodic.repeat('cookFirstAssociatedDate',"MATCH (c:CookFAD) WITH c LIMIT 100
 OPTIONAL MATCH (c)-[r:USED_DEVICE]->(d:Device)<-[r1:USED_DEVICE]-(c1:CTSCustomer)
-WHERE NOT EXISTS((c)<-[:ASSOCIATE]-(c1))
+WHERE NOT EXISTS((c)-[:ASSOCIATE]-(c1))
 UNWIND [r.CreatedTime, r1.CreatedTime] as val
 WITH DISTINCT c,d,c1, Max(val) as assDate
 WITH DISTINCT c,c1,MIN(assDate) as firstAssociatedDate
