@@ -15,9 +15,7 @@ BEGIN
 			- [20200911@Irena.Vo][141416]: Created. Support for Licensee & 611111 sites 
             - [20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow.    
 			- [20200923@Irena.Vo][141755]: Enhance SP
-			- 20201214@Irena.Vo: Remove logic delete Probation List. Enhance logic get VVIP & Update History Log. Return ScannedTime [RedmineID: #145951]
-            - 20201222@Irena.Vo: Update logic SP for View History. Insert Error Log [RedmineID: #145951]
-           - 20201223@Irena.Vo: Remove get CategoryID for insert history [Redmine ID: #145951]
+			- 20201214-20201229@Irena.Vo: Remove logic delete Probation List. Enhance logic get VVIP & Insert History Log. Insert Error Log [RedmineID: #145951]
             
 		Param's Explanation (filtered by):
         ip_CustIDs = 1,2,3
@@ -32,7 +30,8 @@ BEGIN
 
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN   
-		GET DIAGNOSTICS CONDITION 1 
+		GET DIAGNOSTICS @op_No = NUMBER;
+		GET DIAGNOSTICS CONDITION @op_No 
         	op_ErrorMessage 	= 	MESSAGE_TEXT	
 		,	op_ErrorNo 			= 	MYSQL_ERRNO
 		,	op_CodName 			= 	RETURNED_SQLSTATE;
@@ -87,7 +86,7 @@ BEGIN
     
     /*	INSERT LOG	*/
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
-    (CustID, CTSCustID, LastModifiedDate, LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID, IsView)
+    (CustID, CTSCustID, LastModifiedDate, LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
     SELECT    temp.CustID
 			, temp.CTSCustID
             , lv_CurrentDateTime

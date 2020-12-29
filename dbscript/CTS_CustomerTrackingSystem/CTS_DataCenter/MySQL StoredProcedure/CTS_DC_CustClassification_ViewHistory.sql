@@ -11,10 +11,7 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original:
 		Revisions:
-           - 20201214@Irena.Vo: Created [RedmineID: #145951]
-		   - 20201215@Irena.Vo: Enhance logic join with CategoryID [RedmineID: #145951]
-		   - 20201222@Irena.Vo: Update logic SP [RedmineID: #145951]
-        	   - 20201223@Irena.Vo: Update logic Order By ID History [RedmineID: #145951]
+           - 20201214-20201229@Irena.Vo: Created. Update logic SP [RedmineID: #145951]
            
 		Param's Explanation (filtered by):		
 			call CTS_DataCenter.CTS_DC_CustClassification_ViewHistory(43600889);
@@ -49,7 +46,7 @@ BEGIN
         LEFT JOIN CTS_DataCenter.CustomerCategory AS cc3 ON temp.ToCategoryID = cc3.CategoryID
         INNER JOIN CTS_DataCenter.StaticList AS s ON s.ListID = 4 AND temp.SourceTypeID = s.ItemID
         INNER JOIN CTS_Admin.CTSUser AS u ON temp.LastModifiedBy = u.UserID
-        WHERE temp.CustID = ip_CustID AND temp.IsView = 1
+        WHERE temp.CustID = ip_CustID AND temp.IsDataChanged = 1
 		ORDER BY temp.ID DESC;
 END$$
 

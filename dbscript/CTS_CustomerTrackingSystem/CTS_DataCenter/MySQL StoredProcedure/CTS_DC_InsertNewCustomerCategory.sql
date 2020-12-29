@@ -19,7 +19,7 @@ BEGIN
             - [20201001@Irena.Vo][141755]: Fix issue duplicate category & enhance logic
 			- [20201116@Irena.Vo][145028]: Enhance logic remove existed customers
             - 20201202@Lex.Khuat: Disable detail categories & clean up wrong syntax [Redmine ID: #145954]
-            - 20201224@Irena.Vo: Update Logic SP for View History. Insert Error Log [RedmineID: #145951]
+            - 20201224-20201229@Irena.Vo: Insert log History. Insert Error Log. Return All List CustID [RedmineID: #145951]
             
 		Param's Explanation (filtered by):
              call CTS_DC_InsertNewCustomerCategory('1,2,3');
@@ -33,7 +33,8 @@ BEGIN
 
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN   
-		GET DIAGNOSTICS CONDITION 1 
+		GET DIAGNOSTICS @op_No = NUMBER;
+		GET DIAGNOSTICS CONDITION @op_No 
          	op_ErrorMessage 	= 	MESSAGE_TEXT	
 		,	op_ErrorNo 			= 	MYSQL_ERRNO
 		,	op_CodName 			= 	RETURNED_SQLSTATE;
@@ -48,6 +49,7 @@ BEGIN
             CustID			    BIGINT UNSIGNED PRIMARY KEY
 		, 	CTSCustID			BIGINT UNSIGNED DEFAULT 0
         , 	SubscriberID		INT DEFAULT 0 
+        ,	ActionType			SMALLINT DEFAULT 0 -- 0: Insert, 3: Ignore
 	);
 
 	 DROP TEMPORARY TABLE IF EXISTS Temp_ExistedClassification;    
@@ -61,19 +63,20 @@ BEGIN
 	EXECUTE stmt1;
 
    /*	IGNORE PIN CATEGORY	*/
-    DELETE temp
-	FROM Temp_NewCustomers AS temp
-	INNER JOIN CTS_DataCenter.PinCustomerCategory AS pin on pin.CustID = temp.CustID;
+    UPDATE Temp_NewCustomers AS temp
+	INNER JOIN CTS_DataCenter.PinCustomerCategory AS pin on pin.CustID = temp.CustID
+    SET         temp.ActionType = 3; 
     
 	/*	IGNORE CUSTOMER HAS CATEGORY BEFORE	*/
-	DELETE 	temp
-    FROM    Temp_NewCustomers AS temp
-	INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID;	
+	UPDATE 		Temp_NewCustomers AS temp
+	INNER JOIN 	CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID
+    SET 		temp.ActionType = 3;	
     
     /*	UPDATE CUST INFO	*/
-    UPDATE 	Temp_NewCustomers AS temp 
+    UPDATE 	    Temp_NewCustomers AS temp 
 	INNER JOIN	CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.CustSubID = 0
-	SET		temp.CTSCustID = cust.CTSCustID, temp.SubscriberID = cust.SubscriberID;  
+	SET		    temp.CTSCustID = cust.CTSCustID, temp.SubscriberID = cust.SubscriberID
+    WHERE       temp.ActionType = 0;  
      
 	/*	INSERT NEW MEMBER CATEGORY	*/
     INSERT INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, 
@@ -88,18 +91,19 @@ BEGIN
 		, 	lv_CurrentDateTime
 		, 	lv_CreatedBy
 		, 	DATE(lv_CurrentDateTime)
-	FROM Temp_NewCustomers AS temp;
+	FROM  Temp_NewCustomers AS temp
+    WHERE temp.ActionType = 0;  
             
 	/*	INSERT LOG	*/
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
-    (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsView)
+    (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
     SELECT 	temp.CustID
 		, 	temp.CTSCustID
 		, 	201 
-		, 	0 
+		, 	200 
 		, 	lv_CurrentDateTime
 		, 	lv_CreatedBy
-		, 	0 -- insert
+		, 	temp.ActionType
 		, 	1 -- auto
 		, 	DATE(lv_CurrentDateTime)
         ,   CASE WHEN sp.CustID IS NOT NULL THEN sp.CustomerClass 
@@ -108,7 +112,8 @@ BEGIN
         ,   1 -- item name = Less than 10 bets
         ,	1 -- View History
 	FROM Temp_NewCustomers AS temp
-	LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID;
+	LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID
+	WHERE temp.ActionType = 0;  
    
     /*	GET LASTEST CUSTID LIST	-> GET LATEST CLASSICATION -> SYNC CC IN MAINDB */
     SELECT DISTINCT temp.CustId FROM Temp_NewCustomers AS temp;

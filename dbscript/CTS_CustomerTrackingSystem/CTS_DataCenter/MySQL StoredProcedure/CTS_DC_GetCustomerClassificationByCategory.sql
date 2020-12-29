@@ -15,8 +15,7 @@ BEGIN
 		Revisions:
 			[20200701@Casey.Huynh][135324]: Chagne Flow and Store more Info
             [20200826@Casey.Huynh][137693]: Add Trace Performance
-            - 20201214@Irena.Vo: Enhance logic ignore Pin category & Probation List  [RedmineID: #145951]
-			- 202012121@Irena.Vo: Update logic SP [RedmineID: #145951]
+            - 20201214-202012121@Irena.Vo: Enhance logic ignore Pin category & Probation List  [RedmineID: #145951]
             
 		Param's Explanation (filtered by):
          ip_CategoryIDList: ex: '1,2,3'       

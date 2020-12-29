@@ -11,12 +11,11 @@ sp: BEGIN
 		DB:			CTS_DataCenter
 		Original: 
 		Revisions:
-            - 20201214@Irena.Vo: Add logic insert Pin/Unpin  [RedmineID: #145951]
-            - 20201221@Irena.Vo: Update logic SP  [RedmineID: #145951]
-            
+            - 20201214-20201229@Irena.Vo: Add logic insert Pin/Unpin. Update logic SP. Update param name  [RedmineID: #145951]
+           
 		Param's Explanation:
 	*/ 
-    DECLARE lv_CurrentTime DATETIME DEFAULT CURRENT_TIME();
+    DECLARE lv_CurrentDateTime DATETIME DEFAULT CURRENT_TIME();
     DECLARE lv_SPName VARCHAR(200) DEFAULT 'CTS_DC_AssociatedAccountMonitor_UpdatePin'; 
     
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
@@ -27,10 +26,10 @@ sp: BEGIN
     -- Verify Pin category.
     IF (ip_IsPinCategory = 1) THEN
 		INSERT INTO CTS_DataCenter.PinCustomerCategory(CustID, CreatedTime) 
-		SELECT 	    ip_CustID,	lv_CurrentTime;
+		SELECT 	    ip_CustID,	lv_CurrentDateTime;
 		 
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-		VALUES(21, lv_SPName, CONCAT('Pin CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID), lv_CurrentTime, ip_CreatedBy);
+		VALUES(21, lv_SPName, CONCAT('Pin CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID), lv_CurrentDateTime, ip_CreatedBy);
     END IF;   
     
     -- Verify Unpin category.
@@ -40,7 +39,7 @@ sp: BEGIN
 		WHERE pin.CustID = ip_CustID;
 		
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-		VALUES(22, lv_SPName, CONCAT('Unpin CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID), lv_CurrentTime, ip_CreatedBy);
+		VALUES(22, lv_SPName, CONCAT('Unpin CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID), lv_CurrentDateTime, ip_CreatedBy);
     END IF; 
     
 END$$

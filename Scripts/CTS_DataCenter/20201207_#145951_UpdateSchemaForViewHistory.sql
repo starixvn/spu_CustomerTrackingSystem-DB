@@ -9,7 +9,7 @@ VALUES
 (4,4, 'Classification Source Type','Classification Source Type','Pass 20 days Probation','Pass 20 days Probation',4,1,'Other: From Probation To Smart,High Risk',CURRENT_TIME()),
 (4,5, 'Classification Source Type','Classification Source Type','Cannot pass Probation','Cannot pass Probation',5,1,'Probation: From Probation To Probation',CURRENT_TIME()),
 (4,6, 'Classification Source Type','Classification Source Type','Manual Add from NAP CM','Manual Add from NAP CM',6,1,'From NapCM',CURRENT_TIME()),
-(4,7, 'Classification Source Type','Classification Source Type','Manual Add from Evidence','Add from Evidence',7,1,'From Evidence',CURRENT_TIME()),
+(4,7, 'Classification Source Type','Classification Source Type','Manual Add from Evidence','Manual Add from Evidence',7,1,'From Evidence',CURRENT_TIME()),
 (4,8, 'Classification Source Type','Classification Source Type','Manual Remove from NAP CM','Manual Remove Problem Account',8,1,'From PA',CURRENT_TIME()),
 (4,9, 'Classification Source Type','Classification Source Type','Manual Remove from Evidence','Manual Remove Problem Account',9,1,'From Evidence',CURRENT_TIME()),
 (4,10, 'Classification Source Type','Classification Source Type','Manual Add Customer Class','Manual Add Customer Class',10,1,'From Special CC',CURRENT_TIME()),
@@ -56,7 +56,26 @@ SELECT cc.CategoryID
 FROM CTS_DataCenter.CustomerCategory AS cc
 WHERE cc.ParentID IN (50, 200) AND cc.CategoryID NOT IN (51, 151, 160);
 
--- Insert new column in History
+-- Update index in Classification
+ALTER TABLE CTS_DataCenter.CTSCustomerClassification
+DROP INDEX IX_CTSCustomerClassification_CategoryIDLastScannedDate;
+
+ALTER TABLE CTS_DataCenter.CTSCustomerClassification
+DROP INDEX IX_CTSCustomerClassification_CTSCustID;
+
+ALTER TABLE CTS_DataCenter.CTSCustomerClassification
+DROP INDEX IX_CTSCustomerClassification_CustSportGroup;
+
+ALTER TABLE CTS_DataCenter.CTSCustomerClassification
+ADD INDEX IX_CTSCustomerClassification_CustID_SportGroupID(CustID,SportGroupID), ALGORITHM=INPLACE, LOCK=NONE;
+
+ALTER TABLE CTS_DataCenter.CTSCustomerClassification
+ADD INDEX IX_CTSCustomerClassification_CustID_LastModifiedDate(CustID,LastModifiedDate), ALGORITHM=INPLACE, LOCK=NONE;
+
+ALTER TABLE CTS_DataCenter.CTSCustomerClassification
+ADD INDEX IX_CTSCustomerClassification_LastScannedDate(LastScannedDate), ALGORITHM=INPLACE, LOCK=NONE;
+
+-- Insert new column in Classification History
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
 ADD COLUMN TargetCC TINYINT, ALGORITHM=INSTANT;
 
@@ -79,10 +98,22 @@ ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
 ADD COLUMN ToCategoryID SMALLINT UNSIGNED, ALGORITHM=INSTANT;
 
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
-ADD COLUMN IsView BIT DEFAULT 0, ALGORITHM=INSTANT;
+ADD COLUMN IsDataChanged BIT DEFAULT 0, ALGORITHM=INSTANT;
 
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
-ADD INDEX IX_CTSCustomerClassification_History_SourceTypeID(SourceTypeID), ALGORITHM=INPLACE, LOCK=NONE;
+DROP INDEX IX_CTSCustomerClassification_History_LastModifiedDate;
+
+ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
+ADD INDEX IX_CTSCustomerClassification_History_CustID_SourceTypeID(CustID,SourceTypeID), ALGORITHM=INPLACE, LOCK=NONE;
 
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
 ADD INDEX IX_CTSCustomerClassification_History_CustID_IsAppliedCC(CustID,IsAppliedCC), ALGORITHM=INPLACE, LOCK=NONE;
+
+ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
+ADD INDEX IX_CTSCustomerClassification_History_CustID_IsDataChanged(CustID,IsDataChanged), ALGORITHM=INPLACE, LOCK=NONE;
+
+ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
+ADD INDEX IX_CTSCustomerClassification_History_CustID_LastModifiedDate(CustID,LastModifiedDate), ALGORITHM=INPLACE, LOCK=NONE;
+
+ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
+ADD INDEX IX_CTSCustomerClassification_History_InsertDate(InsertDate), ALGORITHM=INPLACE, LOCK=NONE;

@@ -13,8 +13,7 @@ sp: BEGIN
 		Revisions:
 			- [20200923@Irena.Vo][141755]: Enhance SP.
             - [20201111@Irena.Vo][145028]: Update ScanTime = 20 Last Days
-			- 20201214@Irena.Vo: Ignore Pin category [RedmineID: #145951]
-			- 20201221@Irena.Vo: Declare lv_CurrentDate & Enhance logic SP. [RedmineID: #145951]
+			- 20201214-20201221@Irena.Vo: Ignore Pin category. Declare lv_CurrentDate & Enhance logic SP [RedmineID: #145951]
             
 		Param's Explanation (filtered by):
          CALL CTS_DC_CustClassification_Probation_GetCustForScanning (100);

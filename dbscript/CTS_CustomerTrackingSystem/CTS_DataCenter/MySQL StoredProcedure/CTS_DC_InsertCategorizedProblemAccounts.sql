@@ -20,11 +20,7 @@ BEGIN
             - Remove old categoryid from NapCM
             20201019@Irena.Vo  [#141930]: Get distinct CustID List for lastest category
             - 20201202@Lex.Khuat: Disable detail categories & clean up wrong syntax [Redmine ID: #145954]
-			- 20201214@Irena.Vo: Update History Log & Return list CustID with TypeID IN (3, 4) [RedmineID: #145951]
-			- 20201215@Irena.Vo: Enhance logic join with CategoryID [RedmineID: #145951]
-			- 20201222@Irena.Vo: Update Logic SP for View History. Insert Error Log [RedmineID: #145951]
-          	- 20201223@Irena.Vo: Update view log for Rescan PA [RedmineID: #145951]
-              - 20201224@Irena.Vo: Update view log for Manual Removed list to rescan PA [RedmineID: #145951]
+			- 20201214-20201229@Irena.Vo: Insert History Log. Insert Error Log & update logic SP. Return All List CustID  [RedmineID: #145951]
             
 		Param's Explanation (filtered by):
 	*/   
@@ -37,7 +33,8 @@ BEGIN
 
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN   
-		GET DIAGNOSTICS CONDITION 1 
+		GET DIAGNOSTICS @op_No = NUMBER;
+		GET DIAGNOSTICS CONDITION @op_No 
          	op_ErrorMessage 	= 	MESSAGE_TEXT	
 		,	op_ErrorNo 			= 	MYSQL_ERRNO
 		,	op_CodName 			= 	RETURNED_SQLSTATE;
@@ -55,7 +52,7 @@ BEGIN
         , 	MainDBCategoryID	SMALLINT 
         , 	CategoryID		    SMALLINT
         ,	NapCMCategoryID     SMALLINT    
-		, 	ActionType		    SMALLINT DEFAULT 0 -- Insert: 0, Update: 1, Remove: 2
+		, 	ActionType		    SMALLINT DEFAULT 0 -- Insert: 0, Update: 1, Remove: 2, Ignore: 3
         , 	PRIMARY KEY     	PK_Temp_ProblemAccounts_CustID_MainDBCategoryID(CustID,MainDBCategoryID) 
         ,	INDEX				IX_Temp_ProblemAccounts_MainDBCategoryID(MainDBCategoryID)
         ,   INDEX				IX_Temp_ProblemAccounts_ActionType(ActionType)  
@@ -120,19 +117,21 @@ BEGIN
 	WHERE temp.MainDBCategoryID <> 0;
          
     /*	IGNORE PIN CATEGORY	*/
-    DELETE temp
-    FROM Temp_ProblemAccounts AS temp
-    INNER JOIN CTS_DataCenter.PinCustomerCategory AS pin on pin.CustID = temp.CustID;
+    UPDATE     Temp_ProblemAccounts AS temp
+    INNER JOIN CTS_DataCenter.PinCustomerCategory AS pin on pin.CustID = temp.CustID
+    SET        temp.ActionType = 3; 
     
     /*	REMOVE GENERAL CATEGORY BEFORE	*/
     DELETE cate
     FROM CTS_DataCenter.CTSCustomerClassification AS cate
-	INNER JOIN Temp_ProblemAccounts AS temp ON temp.CustID = cate.CustID AND cate.SportGroupID = 200;
+	INNER JOIN Temp_ProblemAccounts AS temp ON temp.CustID = cate.CustID AND cate.SportGroupID = 200
+    WHERE temp.ActionType = 0;
   
 	/*	REMOVE PROBATION LIST BEFORE	*/
     DELETE pro
     FROM CTS_DataCenter.ProbationAccountMonitor AS pro
-	INNER JOIN Temp_ProblemAccounts AS temp ON temp.CustID = pro.CustID;
+	INNER JOIN Temp_ProblemAccounts AS temp ON temp.CustID = pro.CustID
+    WHERE temp.ActionType = 0;
     
     /*	UPDATE CUST INFO & NAP CM CATEGORYID	*/
     UPDATE 	Temp_ProblemAccounts AS temp 
@@ -149,7 +148,8 @@ BEGIN
 											WHEN temp.CategoryID = 158 THEN 58
 											WHEN temp.CategoryID = 159 THEN 59
 											ELSE temp.CategoryID
-									END;
+									END
+	WHERE temp.ActionType = 0;
     
     /*	GET EXISTED CATEGORY	*/
 	INSERT INTO Temp_ExistedClassification (CustID, CategoryID, NapCMCategoryID)
@@ -168,7 +168,8 @@ BEGIN
 								ELSE cate.CategoryID
 						 END AS NapCMCategoryID
     FROM Temp_ProblemAccounts AS temp
-    INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID AND cate.SportGroupID = 0; -- both NapCM & Evidence.
+    INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID AND cate.SportGroupID = 0 -- both NapCM & Evidence.
+    WHERE temp.ActionType = 0;
     
 	/*	REMOVE PROBLEM ACCOUNTS IN CTS */
     UPDATE Temp_ProblemAccounts AS temp
@@ -189,7 +190,7 @@ BEGIN
 			,   cate.LastModifiedDate = lv_CurrentDateTime
 			, 	cate.LastScannedDate = DATE(lv_CurrentDateTime)
             ,	temp.ActionType = 1
-     WHERE 	 cate.CategoryID NOT BETWEEN 72 AND 80; -- Only update PA from NAP CM
+     WHERE 	temp.ActionType = 0 AND cate.CategoryID NOT BETWEEN 72 AND 80; -- Only update PA from NAP CM
      
     /*	INSERT NEW PROBLEM ACCOUNT IN CTS	*/
     INSERT  INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, 
@@ -218,12 +219,13 @@ BEGIN
     FROM (  SELECT DISTINCT his.CustID, MAX(his.ID) AS HistoryID
 			FROM CTS_DataCenter.CTSCustomerClassification_History AS his
 			INNER JOIN Temp_ProblemAccounts AS temp ON temp.CustID = his.CustID
+            WHERE temp.ActionType IN (0, 1)
 			GROUP BY his.CustID) AS t1
 	INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS t2 ON t2.CustID = t1.CustID AND t2.ID = t1.HistoryID 
     WHERE t2.SourceTypeID IN (8, 9, 12, 14); -- 8: Remove PA by NAP CM, 9: Remove: PA by Evd, 12: Remove Special CC, 14: Remove VVIP
     
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
-    (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsView)
+    (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
     SELECT  DISTINCT temp.CustID
 		, 	temp.CTSCustID
 		, 	CASE WHEN temp.ActionType = 2 THEN ex.CategoryID  -- Remove PA
@@ -256,7 +258,8 @@ BEGIN
     LEFT JOIN Temp_CountNapCMCategory AS c ON c.CountValue = 2 AND c.CustID = ex.CustID AND c.NapCMCategoryID = ex.NapCMCategoryID -- Ignore if existed Evd Category for View History. Count NAPCM Category = 2
     LEFT JOIN CTS_DataCenter.CategoryToCustomerClass AS map ON (CASE WHEN temp.ActionType IN (0, 1) THEN  map.CategoryID = temp.NapCMCategoryID -- Mapping from temp Category
 																	 WHEN temp.ActionType = 2 THEN  map.CategoryID = ex.NapCMCategoryID -- Mapping from existed Category
-																END);
+																END)
+	 WHERE temp.ActionType IN (0, 1, 2);
    
 	/*	GET LASTEST CUSTID LIST	-> GET LATEST CLASSICATION -> SYNC CC IN MAINDB */
 	SELECT DISTINCT temp.CustId FROM Temp_ProblemAccounts AS temp;

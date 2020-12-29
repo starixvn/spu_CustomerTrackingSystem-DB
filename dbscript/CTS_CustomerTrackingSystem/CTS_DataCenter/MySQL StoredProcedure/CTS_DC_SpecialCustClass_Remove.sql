@@ -13,9 +13,7 @@ BEGIN
 
 		Revisions:
 			- 20200908@Long.Luu [Redmine ID: #140996]: Created 
-			- 20201214@Irena.Vo: Update History Log & Return CustID with TypeID = 2 [Redmine ID: #145951]
-            - 20201222@Irena.Vo: Rollback old logic & update logic SP for View History [Redmine ID: #145951]
-            - 20201223@Irena.Vo: Remove get CategoryID for insert history [Redmine ID: #145951]
+			- 20201214-20201229@Irena.Vo: Insert History Log.  [Redmine ID: #145951]
         
 		Param's Explanation (filtered by):
 	*/
@@ -38,18 +36,18 @@ BEGIN
     -- Get CC
     SELECT CustomerClass
     INTO lv_CustomerClass
-    FROM CTS_DataCenter.SpecialCustomerClass WHERE CustID = lv_CustID;
+    FROM CTS_DataCenter.SpecialCustomerClass WHERE CTSCustID = ip_CTSCustID AND CreatedFromFunction = 1;
     
     -- Remove old CC
 	DELETE	s
-    FROM	CTS_DataCenter.SpecialCustomerClass AS s WHERE s.CustID = lv_CustID;
+    FROM	CTS_DataCenter.SpecialCustomerClass AS s WHERE s.CTSCustID = ip_CTSCustID AND s.CreatedFromFunction = 1;
     
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	VALUES(20, lv_SPName, CONCAT('Remove special customer class: ip_CTSCustID_ ', ip_CTSCustID) , DATE(lv_CurrentDateTime), ip_UserID);
     
     -- Insert Log
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
-	(CustID, CTSCustID, LastModifiedDate,LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID, IsView)
+	(CustID, CTSCustID, LastModifiedDate,LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
 	SELECT  DISTINCT  lv_CustID
 			, ip_CTSCustID
 			, lv_CurrentDateTime

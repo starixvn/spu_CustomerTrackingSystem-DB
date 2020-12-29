@@ -17,8 +17,7 @@ sp: BEGIN
             - 20201020@Irena.Vo: Enhance logic Remove all category (Detail & General) [Redmine ID: #141756]
             - 20201111@Irena.Vo: Enhance logic Insert History for Evidence Category [Redmine ID: #145027]
             - 20201130@Irena.Vo: Enhance logic Insert new evidence (remove existed evidence category before) [Redmine ID: #141563]
-			- 20201214@Irena.Vo: Move logic Sync to Category by new sp: SyncToCategory [RedmineID: #145951] 
-            - 20201222@Irena.Vo: Insert Error Log [RedmineID: #145951] 
+			- 20201214-20201229@Irena.Vo: Move logic Sync to Category by new sp: SyncToCategory. Insert Error Log [RedmineID: #145951] 
             
 		Param's Explanation(filered by):
 		
@@ -35,7 +34,8 @@ sp: BEGIN
 
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN   
-		GET DIAGNOSTICS CONDITION 1 
+		GET DIAGNOSTICS @op_No = NUMBER;
+		GET DIAGNOSTICS CONDITION @op_No 
          	op_ErrorMessage 	= 	MESSAGE_TEXT	
 		,	op_ErrorNo 			= 	MYSQL_ERRNO
 		,	op_CodName 			= 	RETURNED_SQLSTATE;
@@ -131,7 +131,7 @@ sp: BEGIN
     SELECT DISTINCT cust.CustId
 				,	cust.CTSCustId
                 ,	cust.SubscriberId
-                ,	evi.EvidenceId
+                ,	ev.EvidenceId
                 ,	0 AS ActionType
     FROM Temp_CustomerList AS cust CROSS JOIN  Temp_EvidenceList AS ev;
 END$$

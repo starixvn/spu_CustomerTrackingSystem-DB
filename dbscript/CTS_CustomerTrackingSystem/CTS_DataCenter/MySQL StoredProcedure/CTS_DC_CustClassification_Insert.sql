@@ -31,8 +31,8 @@ sp: BEGIN
             - [20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow.
             - [20200923@Irena.Vo][141755]: Enhance SP
             - 20201202@Lex.Khuat: Disable detail categories & clean up wrong syntax [Redmine ID: #145954]
-            - 20201214@Irena.Vo: Update History Log & Auto Pin [RedmineID: #145951]
-            - 20201222@Irena.Vo: Update Logic for View History & Log [RedmineID: #145951]
+            - 20201214-20201229@Irena.Vo: Insert History Log & Auto Pin [RedmineID: #145951]
+            
 	*/
     DECLARE lv_CurrentDateTime DATETIME DEFAULT CURRENT_TIME();
 	DECLARE lv_SPName VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_Insert';
@@ -75,7 +75,7 @@ sp: BEGIN
         
 	    -- Insert history
         INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
-		(CustID, CTSCustID, CategoryID, SportGroupID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsView)
+		(CustID, CTSCustID, CategoryID, SportGroupID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
 		SELECT 	ip_CustID
 			, 	ip_CTSCustID
 			, 	ip_CategoryID

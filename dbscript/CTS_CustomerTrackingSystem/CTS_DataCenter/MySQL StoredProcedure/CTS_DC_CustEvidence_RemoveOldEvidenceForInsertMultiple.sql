@@ -16,7 +16,8 @@ sp: BEGIN
 		   - 20201111@Irena.Vo: Enhance logic Insert History for Evidence Category [Redmine ID: #145027]
 		   - 20201125@Irena.Vo: Move flow sync Evidence to Category [Redmine ID: #141563]
 		   - 20201130@Irena.Vo: Enhance logic Insert new evidence (remove existed evidence category before) [Redmine ID: #141563]
-           - 20201222@Irena.Vo: Insert Error Log [RedmineID: #145951]
+           - 20201222-20201229@Irena.Vo: Insert Error Log [RedmineID: #145951]
+           
 	*/
     DECLARE lv_SPName 			VARCHAR(200) DEFAULT 'CTS_DC_CustEvidence_RemoveOldEvidenceForInsertMultiple';
     DECLARE lv_CurrentDateTime	DATETIME DEFAULT CURRENT_TIME();
@@ -27,7 +28,8 @@ sp: BEGIN
 
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN   
-		GET DIAGNOSTICS CONDITION 1 
+		GET DIAGNOSTICS @op_No = NUMBER;
+		GET DIAGNOSTICS CONDITION @op_No 
          	op_ErrorMessage 	= 	MESSAGE_TEXT	
 		,	op_ErrorNo 			= 	MYSQL_ERRNO
 		,	op_CodName 			= 	RETURNED_SQLSTATE;

@@ -23,8 +23,7 @@ BEGIN
             - 20200921@Irena.Vo: Enhance SP & insert Probation Management flow [Redmine ID: #141755]
 			- 20200923@Irena.Vo: Enhance SP [Redmine ID: #141755]
             - 20201201@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. Remove logic detail category. [Redmine ID: #145954]
-            - 20201214@Irena.Vo: Update History Log & Auto Unpin category & Return CustID with TypeID = 1 [RedmineID: #145951]
-			- 20201222@Irena.Vo: Rollback old logic & Update Logic SP & Insert Notes [RedmineID: #145951]
+            - 20201214-20201229@Irena.Vo: Insert History Log & Auto Unpin category. Insert Error Log [RedmineID: #145951]
             
 		Param's Explanation:
 	*/ 
@@ -47,7 +46,7 @@ BEGIN
 	    VALUES(12, lv_SPName, CONCAT('Remove VVIP: From ip_CustID_', ip_CustID), lv_CurrentDateTime, ip_CreatedBy);
 	
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
-        (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsView)
+        (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
 		SELECT 	ip_CustID
 			, 	ip_CTSCustID
             ,   213

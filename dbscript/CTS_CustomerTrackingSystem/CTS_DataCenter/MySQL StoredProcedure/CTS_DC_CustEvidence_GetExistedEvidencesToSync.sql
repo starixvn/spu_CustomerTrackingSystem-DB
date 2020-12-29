@@ -11,7 +11,7 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original:
 		Revisions:
-            - 20201224@Irena.Vo: Created [RedmineID: #145951]
+            - 20201224-20201229@Irena.Vo: Created. Insert Error Log [RedmineID: #145951]
            
 		Param's Explanation (filtered by):		 	
 	*/   
@@ -24,7 +24,8 @@ BEGIN
 
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN   
-		GET DIAGNOSTICS CONDITION 1 
+		GET DIAGNOSTICS @op_No = NUMBER;
+		GET DIAGNOSTICS CONDITION @op_No  
          	op_ErrorMessage 	= 	MESSAGE_TEXT	
 		,	op_ErrorNo 			= 	MYSQL_ERRNO
 		,	op_CodName 			= 	RETURNED_SQLSTATE;

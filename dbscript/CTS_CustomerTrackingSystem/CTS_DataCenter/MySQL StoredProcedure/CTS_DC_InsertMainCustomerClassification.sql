@@ -21,10 +21,7 @@ BEGIN
                 -20201026@Irena.Vo: Enhance init data for Probation to VIP OR Normal. [Redmine ID: #142546]
                 -20201116@Irena.Vo: Only distinct CustID list for general & Update LastScannedDate for Probation List. [Redmine ID: #145028]
                 -20201201@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. [Redmine ID: #145954]
-				- 20201214@Irena.Vo: Update History Log. Get CustId. Return TypeId = 4 [RedmineID: #145951]
-                - 20201222@Irena.Vo: Update Logic SP for View History. Insert Error Log [RedmineID: #145951]
-				- 20201223@Irena.Vo: Update view log for Rescan Normal [RedmineID: #145951]
-                  - 20201224@Irena.Vo: Update view log for Manual Removed list to rescan Normal [RedmineID: #145951]
+				- 20201214-20201229@Irena.Vo: Insert History Log. Insert Error Log & update logic SP. Return all list CustID [RedmineID: #145951]
                
 		Param's Explanation (filtered by):
 			  CALL CTS_DataCenter.CTS_DC_InsertMainCustomerClassification('[{"CustId": 1, "CategoryId": 202, "CreatedTime": "2020-09-13 00:01:00", "TurnoverRM": 100, "WinlossRM": 2056354, "BetCount": 500, "ActiveDays": 8}]');
@@ -38,7 +35,8 @@ BEGIN
 
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN   
-		GET DIAGNOSTICS CONDITION 1 
+		GET DIAGNOSTICS @op_No = NUMBER;
+		GET DIAGNOSTICS CONDITION @op_No 
          	op_ErrorMessage 	= 	MESSAGE_TEXT	
 		,	op_ErrorNo 			= 	MYSQL_ERRNO
 		,	op_CodName 			= 	RETURNED_SQLSTATE;
@@ -62,7 +60,7 @@ BEGIN
 		, 	ActiveDays				INT	
         , 	LastXDaysMargin   		DECIMAL(20,4)
         , 	ProbationPeriodWinloss 	DECIMAL(20,4)
-        , 	ActionType				SMALLINT DEFAULT 0 -- Insert: 0; Update: 1
+        , 	ActionType				SMALLINT DEFAULT 0 -- Insert: 0; Update: 1, Ignore: 3
 		, 	INDEX 					IX_Temp_NewClassification_ExistCategoryID(ExistCategoryID)     
         , 	INDEX 					IX_Temp_NewClassification_LastCategoryID(LastCategoryID)     
         , 	INDEX 					IX_Temp_NewClassification_ActionType(ActionType)        
@@ -106,35 +104,40 @@ BEGIN
 	 WHERE 		temp.NewCategoryID <> 0;
      
     /*	IGNORE PIN CATEGORY	*/
-	DELETE 		temp
-	FROM 		Temp_NewClassification AS temp
-	INNER JOIN 	CTS_DataCenter.PinCustomerCategory AS pin on pin.CustID = temp.CustID;
+	UPDATE      Temp_NewClassification AS temp
+	INNER JOIN 	CTS_DataCenter.PinCustomerCategory AS pin on pin.CustID = temp.CustID
+    SET         temp.ActionType = 3; 
     
 	/*	IGNORE PROBLEM CATEGORY	(MULTI)*/
     DELETE 		temp
     FROM 		Temp_NewClassification AS temp
-	INNER JOIN 	CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID AND cate.SportGroupID = 0;
+	INNER JOIN 	CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID AND cate.SportGroupID = 0
+	WHERE temp.ActionType = 0;
     
     /*	UPDATE CUST INFO	*/
     UPDATE 		Temp_NewClassification AS temp 
 	INNER JOIN	CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.CustSubID = 0
-	SET			temp.CTSCustID = cust.CTSCustID, 	temp.SubscriberID = cust.SubscriberID;
+	SET			temp.CTSCustID = cust.CTSCustID, 	temp.SubscriberID = cust.SubscriberID
+	WHERE 		temp.ActionType = 0;
 
 	/*	GET EXISTED CATEGORY	*/ 
 	INSERT INTO Temp_ExistedClassification (CustID, CategoryID)
     SELECT DISTINCT cate.CustID, cate.CategoryID
     FROM 		Temp_NewClassification AS temp
-    INNER JOIN 	CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID AND cate.SportGroupID = 200; 
+    INNER JOIN 	CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID AND cate.SportGroupID = 200
+	WHERE 		temp.ActionType = 0;
     
     /*	UPDATE INFO ExistCategoryID, LastCategoryID	FOR TEMP	*/
     UPDATE 		Temp_NewClassification AS temp 
 	INNER JOIN	Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID
-	SET			temp.ExistCategoryID = ex.CategoryID,	temp.ActionType = 1; -- Only Update PA
+	SET			temp.ExistCategoryID = ex.CategoryID,	temp.ActionType = 1
+    WHERE 		temp.ActionType = 0; -- Only Update Normal
     
 	UPDATE 		Temp_NewClassification AS temp 
 	SET 		temp.LastCategoryID = CASE WHEN (temp.ExistCategoryID IN (201, 202, 205) AND temp.NewCategoryID IN (203, 204)) THEN 206 -- Update New, Normal, VIP to Smart Punter, High Risk Punter
 										   ELSE temp.NewCategoryID
-									  END; -- Both Insert New & Update PA
+									  END
+	WHERE 		temp.ActionType IN (0, 1); -- Both Insert New & Update Normal
 
     /*	UPDATE INFO FOR EXISTED CATEGORY	*/
     UPDATE 		CTS_DataCenter.CTSCustomerClassification AS cate
@@ -166,7 +169,7 @@ BEGIN
     DELETE 		pro
     FROM 		CTS_DataCenter.ProbationAccountMonitor AS pro
 	INNER JOIN 	Temp_NewClassification AS temp on temp.CustID = pro.CustID AND pro.SportGroupID = 200
-	WHERE 		temp.ExistCategoryID = 206 AND temp.LastCategoryID IN (201, 202, 203, 204, 205);
+	WHERE 		temp.ActionType IN (0, 1) AND temp.ExistCategoryID = 206 AND temp.LastCategoryID IN (201, 202, 203, 204, 205);
        
     /*	INSERT NEW PROBATION LIST	*/
     INSERT  INTO CTS_DataCenter.ProbationAccountMonitor
@@ -183,21 +186,23 @@ BEGIN
 				, 	temp.LastModifiedDate
 				,   DATE(lv_CurrentDateTime)
 	FROM  		Temp_NewClassification     AS temp
-	WHERE      	(temp.ExistCategoryID IS NULL OR temp.ExistCategoryID <> 206) AND temp.LastCategoryID = 206;
-	
+	WHERE      	temp.ActionType IN (0, 1)
+                AND (temp.ExistCategoryID IS NULL OR temp.ExistCategoryID <> 206) AND temp.LastCategoryID = 206;
+  
     /*	INSERT HISTORY	*/
 	INSERT INTO Temp_ManualRemovedList (CustID)
     SELECT DISTINCT t1.CustID
     FROM (  SELECT DISTINCT his.CustID, MAX(his.ID) AS HistoryID
 			FROM CTS_DataCenter.CTSCustomerClassification_History AS his
 			INNER JOIN Temp_NewClassification AS temp ON temp.CustID = his.CustID
+            WHERE temp.ActionType IN (0, 1)
 			GROUP BY his.CustID) AS t1
 	INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS t2 ON t2.CustID = t1.CustID AND t2.ID = t1.HistoryID 
     WHERE t2.SourceTypeID IN (8, 9, 12, 14); -- 8: Remove PA by NAP CM, 9: Remove: PA by Evd, 12: Remove Special CC, 14: Remove VVIP
     
     INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
     (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy,TurnoverRM, WinlossRM, BetCount, ActiveDays
-    , ActionType,  IsAuto, InsertDate, LastXDaysMargin, ProbationPeriodWinloss, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsView)
+    , ActionType,  IsAuto, InsertDate, LastXDaysMargin, ProbationPeriodWinloss, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsDataChanged)
     SELECT DISTINCT	 temp.CustID
 				, 	temp.CTSCustID
 				, 	temp.LastCategoryID
@@ -217,11 +222,10 @@ BEGIN
 							ELSE map.CustomerClass
 					END
 				, 	CASE   WHEN temp.ExistCategoryID IS NULL AND temp.LastCategoryID = 201 THEN 1 -- item name = Less than 10 bets
-						   WHEN temp.ExistCategoryID IS NULL AND temp.LastCategoryID IN (202, 203, 204, 205, 206) THEN 2 -- item name = After 10 bets
 						   WHEN temp.ExistCategoryID = 201 AND temp.LastCategoryID IN (202, 203, 204, 205, 206) THEN 2 -- item name = After 10 bets To Probation (if have)
 						   WHEN temp.ExistCategoryID = 206 AND temp.LastCategoryID IN (203, 204) THEN 4 -- item name = Pass Probation
 						   WHEN temp.ExistCategoryID = 206 AND temp.LastCategoryID = 206 THEN 5 -- item name = Fail Probation
-                           ELSE 3 -- item name = Scan Schedute Date
+                           WHEN temp.ExistCategoryID IS NOT NULL THEN 3 -- item name = Scan Schedute Date
 					END AS SourceTypeID
 				, 	temp.ExistCategoryID
 				, 	temp.NewCategoryID
@@ -234,7 +238,8 @@ BEGIN
 	FROM 		Temp_NewClassification AS temp
     LEFT JOIN   Temp_ManualRemovedList AS s ON temp.CustID = s.CustID -- Need to View for Rescan Normal
 	LEFT JOIN 	CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID
-    INNER JOIN 	CTS_DataCenter.CategoryToCustomerClass AS map ON temp.LastCategoryID = map.CategoryID;
+    INNER JOIN 	CTS_DataCenter.CategoryToCustomerClass AS map ON temp.LastCategoryID = map.CategoryID
+    WHERE temp.ActionType IN (0, 1);
    
 	/*	GET LASTEST CUSTID LIST	-> GET LATEST CLASSICATION -> SYNC CC IN MAINDB */
     SELECT DISTINCT temp.CustId FROM Temp_NewClassification AS temp;

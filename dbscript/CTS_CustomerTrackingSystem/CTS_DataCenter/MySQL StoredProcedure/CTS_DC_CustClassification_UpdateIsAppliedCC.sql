@@ -11,9 +11,8 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original:
 		Revisions:
-           - 20201214@Irena.Vo: Created [RedmineID: #145951]
-           - 20201222@Irena.Vo: Update logic SP & Insert Error Log [RedmineID: #145951]
-           
+           - 20201214-20201229@Irena.Vo: Created. Update logic & Insert Error Log [RedmineID: #145951]
+		
 		Param's Explanation (filtered by):		
 			set @op_ErrorMessage = '0';
 				call CTS_DataCenter.CTS_DC_CustClassification_UpdateIsAppliedCC('[{"CustId":"43600895","ScannedTime":"2020-10-02 00:00:00"}]', @op_ErrorMessage);
@@ -27,7 +26,8 @@ BEGIN
 
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN   
-		GET DIAGNOSTICS CONDITION 1 
+		GET DIAGNOSTICS @op_No = NUMBER;
+		GET DIAGNOSTICS CONDITION @op_No 
          	op_ErrorMessage 	= 	MESSAGE_TEXT	
 		,	op_ErrorNo 			= 	MYSQL_ERRNO
 		,	op_CodName 			= 	RETURNED_SQLSTATE;

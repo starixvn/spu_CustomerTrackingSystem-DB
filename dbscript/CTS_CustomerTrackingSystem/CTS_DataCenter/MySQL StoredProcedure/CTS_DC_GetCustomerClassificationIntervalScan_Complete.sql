@@ -14,7 +14,7 @@ BEGIN
 
 		Revisions:
 			[20200701@Casey.Huynh][135324]: Chagne Flow and Store more Info
-			- 20201214@Irena.Vo: Ignore select data by ParentID (ScanStatus) [RedmineID: #145951]
+			- 20201214-20201229@Irena.Vo: Ignore select data by ParentID. Remove logic update LastScannedDate [RedmineID: #145951]
 
 		Param's Explanation (filtered by):
             - ip_CategoryIDList: ex: '1,2,3'       
@@ -64,13 +64,6 @@ BEGIN
 			  CustID 			BIGINT UNSIGNED		PATH "$.CustId"
 			, SportGroupID 		SMALLINT UNSIGNED	PATH "$.SportGroupId"
 		 )) as tmpTable;
-    
-    UPDATE 		CTS_DataCenter.CTSCustomerClassification AS cl
-    INNER JOIN 	Temp_CustSport AS tmpCs
-				ON cl.CustID = tmpCs.CustID
-				AND	cl.SportGroupID = tmpCs.SportGroupID
-    SET			cl.LastScannedDate = GREATEST(vrScanDate, cl.LastScannedDate)
-    WHERE 		cl.SportGroupID = 200;
     
     UPDATE 		CTS_DataCenter.CTSCustomerClassification_ScanStatus
     SET			LastCustID = (SELECT MAX(CustID) FROM Temp_CustSport)

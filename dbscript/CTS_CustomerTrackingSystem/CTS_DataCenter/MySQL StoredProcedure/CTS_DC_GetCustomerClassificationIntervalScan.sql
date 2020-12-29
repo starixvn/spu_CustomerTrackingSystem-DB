@@ -18,9 +18,8 @@ BEGIN
             [20200903@Harvey.Nguyen]	[140869]: Add ParentID 
 			[20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow.
             [20200923@Irena.Vo][141755]: Enhance SP
-			- 20201214@Irena.Vo: Enhance logic ignore Pin category & Probation List [RedmineID: #145951]
-			- 20201221@Irena.Vo: Remove input ip_ParentID & Update logic SP [RedmineID: #145951]
-            
+			- 20201214-20201221@Irena.Vo: Enhance logic ignore Pin category & Probation List. Remove input ip_ParentID & Update logic SP [RedmineID: #145951]
+           
 		Param's Explanation (filtered by):
          ip_CategoryIDList: ex: '1,2,3'       
          CALL CTS_DC_GetCustomerClassificationIntervalScan (100,1,200);

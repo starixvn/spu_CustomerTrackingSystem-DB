@@ -16,11 +16,8 @@ sp: BEGIN
            - [20200908@Irena.Vo][141020]: Error MSG for the customers have VVIP before and Update CreatedFromFunction = 1 for special customer (Normal)
            - [20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow.
            - [20200923@Irena.Vo][141755]: Enhance SP
-		   - 20201214@Irena.Vo: Remove logic delete Probation List. Enhance logic get VVIP & Update History Log. Return ScannedTime [RedmineID: #145951]
-           - 20201222@Irena.Vo: Update logic SP for View History [RedmineID: #145951]
-           - 20201223@Irena.Vo: Remove get CategoryID for insert history [Redmine ID: #145951]
-             - 20201224@Irena.Vo: Enhance logic validate for RoleID = 1 [Redmine ID: #145951]
-           
+		   - 20201214-20201229@Irena.Vo: Remove logic delete Probation List. Enhance logic get VVIP & Insert History Log. Enhance logic validate for RoleID = 1 [RedmineID: #145951]
+       
 		Param's Explanation (filtered by):
 			Maximum Customer Class number for input param = 127 
 	*/    
@@ -149,7 +146,7 @@ sp: BEGIN
 
     /*	INSERT LOG	*/
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
-    (CustID, CTSCustID, LastModifiedDate, LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID, IsView)
+    (CustID, CTSCustID, LastModifiedDate, LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
     SELECT    sp.CustID
 			, sp.CTSCustID
             , lv_CurrentDateTime
