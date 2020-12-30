@@ -11,7 +11,7 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original: 
 		Revisions:
-			- 20201214-20201229@Irena.Vo: Created. Update Input & Output params. Insert Error Log. Return All List CustID [RedmineID: #145951]
+			- 20201214-20201230@Irena.Vo: Created. Update Input & Output params. Insert Error Log. Return All List CustID. For CC = -1 (Only get from existed CTSCustID) [RedmineID: #145951]
             
 		Param's Explanation:
 			call CTS_DataCenter.CTS_DC_CustClassification_GetLatestClassification('1,2,1277,555555');
@@ -76,6 +76,7 @@ BEGIN
 	INSERT INTO     Temp_CustomerClass (CustID, CustomerClass, ScannedTime)
     SELECT DISTINCT	temp.CustID,	-1	AS CustomerClass, '1001-01-01 00:00:00'
     FROM 			Temp_Customers AS temp
+    INNER JOIN 		CTS_DataCenter.CTSCustomer AS cust ON cust.CustID = temp.CustID -- Existed CustID
     LEFT JOIN 	    CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID
     LEFT JOIN 	    CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID AND cate.SportGroupID IN (0, 200) -- PA & Normal
     WHERE 			sp.CustID IS NULL AND cate.CustID IS NULL;
