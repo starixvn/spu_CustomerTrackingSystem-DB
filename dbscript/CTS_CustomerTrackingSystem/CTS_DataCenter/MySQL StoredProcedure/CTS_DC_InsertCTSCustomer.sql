@@ -1,8 +1,7 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_InsertCTSCustomer`;
-
-DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_InsertCTSCustomer`(IN ip_CustomerList json)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_InsertCTSCustomer`(
+				IN ip_CustomerList json
+                
+			   ,OUT op_ErrorMessage VARCHAR(300))
     SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -17,25 +16,26 @@ BEGIN
             - 20200618@Harvey: use CustId as a key when update data (do not have new deposit in our db from now)
             - 20200625@Long.Luu: insert more customer info [Redmine ID: #136046]
             - 20201118@Aries.Nguyen: Add columns InsertedTime, ModifiedTime [RedmineID : #145271]
+            - 20201230@Aries.Nguyen: Return list custId are inserted [RedmineID: #145951]
         
 		Param's Explanation (filtered by):
         
         CALL CTS_DataCenter.CTS_DC_InsertCTSCustomer ('[{"BatchId":1,"CustId":1,"CustSubId":0,"Username":"SA-SD$","Username2":null,"Site":"BEST-ODDS","SiteId":1,"RoleId":4,"CurrencyId":1,"Currency":"SD$","Srecommend":1,"Mrecommend":0,"Recommend":0,"CreatedDate":"2020-04-24T03:18:00"},{"BatchId":1,"CustId":2,"CustSubId":0,"Username":"SA-RM","Username2":null,"Site":"BEST-ODDS","SiteId":1,"RoleId":4,"CurrencyId":2,"Currency":"RM","Srecommend":2,"Mrecommend":0,"Recommend":0,"CreatedDate":"2020-04-24T03:18:00"}]')
 	*/
-    DECLARE err_message text DEFAULT '';
 	DECLARE err_no int DEFAULT 0;
     DECLARE cod_name varchar(10) DEFAULT '';
 	
     
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
-		GET DIAGNOSTICS CONDITION 1	
-			err_message = MESSAGE_TEXT
+		GET DIAGNOSTICS @op_No = NUMBER;
+		GET DIAGNOSTICS CONDITION @op_No 
+			 op_ErrorMessage = MESSAGE_TEXT
             ,err_no = MYSQL_ERRNO
             ,cod_name = RETURNED_SQLSTATE;
 		
         INSERT INTO CTS_Log.ErrorLog(EventName, InsertedTime, Message, Err_No, Description)
-        VALUES('CTS_DC_InsertCTSCustomer', NOW(), err_message, err_no, JSON_OBJECT('err_message', err_message, 'err_no', err_no, 'cod_name', cod_name, 'parameter', ip_CustomerList));
+        VALUES('CTS_DC_InsertCTSCustomer', NOW(), op_ErrorMessage, err_no, JSON_OBJECT('err_message', op_ErrorMessage, 'err_no', err_no, 'cod_name', cod_name, 'parameter', ip_CustomerList));
         
 	END;
     
@@ -62,6 +62,7 @@ BEGIN
 		, MRecommend	INT	 UNSIGNED 			
 		, Recommend		INT	 UNSIGNED
         , CreatedDate	DATETIME
+        , IsExisted     BIT DEFAULT 0
         , INDEX			IX_TempCTSCustomer_UserName2(UserName2)
         );
     
@@ -85,6 +86,7 @@ BEGIN
 		, MRecommend	
 		, Recommend	
         , CreatedDate
+        , 0
 	FROM JSON_TABLE(ip_CustomerList,
 		 "$[*]" COLUMNS(
 		  SubscriberID 	INT 			PATH "$.SubscriberId"
@@ -110,14 +112,14 @@ BEGIN
 	 UPDATE	TempCTSCustomer
      SET	RegisterName = SUBSTRING(UserName2, LOCATE('$',UserName2) + 1);
 
-	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-		UPDATE 		TempCTSCustomer cust
-		INNER JOIN	CTS_DataCenter.MappingSubscriberSite mss 
-					ON cust.SiteID = mss.SiteID 
-                    AND ((mss.RoleMapping = 1 AND cust.RoleID = 1)
-						OR (mss.RoleMapping = 2 AND cust.RoleID > 1)
-						OR (mss.RoleMapping = 0))
-		SET 		cust.SubscriberID 	= 	mss.SubscriberID;
+
+	UPDATE 		TempCTSCustomer cust
+	INNER JOIN	CTS_DataCenter.MappingSubscriberSite mss 
+			ON cust.SiteID = mss.SiteID 
+			AND ((mss.RoleMapping = 1 AND cust.RoleID = 1)
+				 OR (mss.RoleMapping = 2 AND cust.RoleID > 1)
+				 OR (mss.RoleMapping = 0))
+	SET 		cust.SubscriberID 	= 	mss.SubscriberID;
         
 	UPDATE IGNORE	CTS_DataCenter.CTSCustomer ctsCust
 	INNER JOIN	TempCTSCustomer tempCust 
@@ -141,7 +143,8 @@ BEGIN
         , ctsCust.Danger1 		= tempCust.Danger1
         , ctsCust.Danger2 		= tempCust.Danger2
         , ctsCust.Danger3 		= tempCust.Danger3
-        , ctsCust.ModifiedTime  = NOW();
+        , ctsCust.ModifiedTime  = NOW()
+        , tempCust.IsExisted    = 1;
 
 	INSERT INTO CTS_DataCenter.CTSCustomer(SubscriberID, CustID, CustSubID, UserName, UserName2, SiteID, Site, RoleID, Currency, CurrencyID, SRecommend, MRecommend, Recommend, CreatedDate,RegisterName,CustStatusID,Danger1,Danger2,Danger3,InsertedTime,ModifiedTime)
 	SELECT    tempCust.SubscriberID
@@ -166,10 +169,10 @@ BEGIN
             , NOW()
             , NOW()
     FROM TempCTSCustomer tempCust
-		LEFT JOIN CTS_DataCenter.CTSCustomer ctsCust 
-			ON tempCust.CustID = ctsCust.CustID 
-				AND tempCust.CustSubID = ctsCust.CustSubID
-	WHERE ctsCust.CustID IS NULL;
+	WHERE tempCust = 0;
+    
+    SELECT CustID
+    FROM   TempCTSCustomer
+    WHERE  tempCust = 0;
 
-END$$
-DELIMITER ;
+END
