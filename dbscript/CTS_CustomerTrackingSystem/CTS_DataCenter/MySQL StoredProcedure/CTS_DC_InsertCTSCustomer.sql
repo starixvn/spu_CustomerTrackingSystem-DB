@@ -169,10 +169,10 @@ BEGIN
             , NOW()
             , NOW()
     FROM TempCTSCustomer tempCust
-	WHERE tempCust = 0;
+	WHERE tempCust.IsExisted = 0;
     
     SELECT CustID
     FROM   TempCTSCustomer
-    WHERE  tempCust = 0;
+    WHERE  IsExisted = 0;
 
 END
