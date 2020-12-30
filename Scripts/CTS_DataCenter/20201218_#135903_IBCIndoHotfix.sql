@@ -1,4 +1,4 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
+
 /*
 Created: 202012090@CaseyHuynh
 Task: 	#135903, Update Data for IBCIndo (MainDB Issue, allow customer of (IBCIndo, AlphaIBCIndo) Site login to MaxBet, Alpha login(130,2) 
