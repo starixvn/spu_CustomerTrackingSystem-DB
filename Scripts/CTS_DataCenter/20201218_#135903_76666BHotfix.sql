@@ -1,3 +1,4 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
 /*
 Created: 20201230@CaseyHuynh
 Task: 	#135903, Update Data for MaxBet, Alpha (MainDB Issue, allow customer of (IBCIndo, AlphaIBCIndo) Site login to IBCIndo, AlphaIBCIndo)
@@ -63,8 +64,8 @@ SELECT acc.*
 FROM DCS_DataCenter.Account AS acc
 INNER JOIN CTS_Adhoc.Iss135903_76666B_00CTSCustomer AS icus
  ON acc.LoginName = icus.UserName
- AND acc.SubscriberID IN (13658,13659)
-; #186 row(s) affected Records: 186 Duplicates: 0 Warnings: 0
+ AND acc.SubscriberID IN (13658,13659);
+ #186 row(s) affected Records: 186 Duplicates: 0 Warnings: 0
 
 # Step 1b: Get Wrong Account Mapping by username2
 #=======================================================================
@@ -291,21 +292,22 @@ INNER JOIN CTS_Adhoc.Iss135903_76666B_DCS_Account AS iacc
 WHERE iacc.ActType = -1 
 ;
 
-#======================================================================
+# Step 3b: =================================================================
 SELECT 'ESTIMATE', COUNT(1)
 FROM CTS_DataCenter.CustDCSAccount AS cda
 INNER JOIN CTS_Adhoc.Iss135903_76666B_DCS_Account AS iacc
  ON cda.AccountID = iacc.AccountID #10545
 WHERE iacc.ActType = 0 AND cda.SubscriberID IN (13659, 13658) ; #0
 
-
+/*
 USE CTS_DataCenter;
 UPDATE CTS_DataCenter.CustDCSAccount AS cda
 INNER JOIN CTS_Adhoc.Iss135903_76666B_DCS_Account AS iacc
  ON cda.AccountID = iacc.AccountID #10545
 SET cda.SubscriberID = (CASE WHEN cda.SubscriberID =13659 THEN 2 ELSE 130 END)
 WHERE iacc.ActType = 0 AND cda.SubscriberID IN (13659, 13658) ;
-/*
+
+
 SELECT 'ESTIMATE', COUNT(1)
 FROM CTS_Adhoc.Iss135903_76666B_DCS_Account AS iacc
 INNER JOIN CTS_DataCenter.CustDCSAccount AS cda
