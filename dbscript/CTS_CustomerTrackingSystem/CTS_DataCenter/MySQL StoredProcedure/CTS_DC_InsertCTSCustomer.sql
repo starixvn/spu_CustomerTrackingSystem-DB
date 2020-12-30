@@ -172,7 +172,6 @@ BEGIN
 	WHERE tempCust.IsExisted = 0;
     
     SELECT CustID
-    FROM   TempCTSCustomer
-    WHERE  IsExisted = 0;
+    FROM   TempCTSCustomer;
 
 END
