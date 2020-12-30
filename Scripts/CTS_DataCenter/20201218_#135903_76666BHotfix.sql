@@ -1,3 +1,9 @@
+/*
+Created: 20201230@CaseyHuynh
+Task: 	#135903, Update Data for MaxBet, Alpha (MainDB Issue, allow customer of (IBCIndo, AlphaIBCIndo) Site login to IBCIndo, AlphaIBCIndo)
+DB: 	DCS_DataCenter, CTS_DataCenter
+*/
+
 ###########################################################
 USE CTS_Adhoc;
 /*
