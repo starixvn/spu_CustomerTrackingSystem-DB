@@ -245,7 +245,7 @@ UPDATE		CTS_DataCenter.CustDCSAccount 	AS cda
 INNER JOIN 	CTS_Adhoc.Iss135903_IBCIndo_DCS_Account AS iacc
 			ON cda.AccountID = iacc.AccountID #10545
 SET			cda.SubscriberID = (CASE WHEN cda.SubscriberID = 2 THEN 13659 ELSE 13658 END)
-WHERE		iacc.ActType = 0 AND abd.SubscriberID IN (2, 130) ;
+WHERE		iacc.ActType = 0 AND cda.SubscriberID IN (2, 130) ;
 #===========================================================
 	
 /*
@@ -267,7 +267,7 @@ USE				CTS_DataCenter;
 UPDATE 			CTS_DataCenter.AssociationByDevice 	AS abd 
 INNER JOIN		CTS_Adhoc.Iss135903_IBCIndo_CTS_CTSCustUpdate cus
 				ON cus.CTSCustID = abd.CTSCustID
-SET				abd.SubscriberID = (CASE WHEN cda.SubscriberID = 2 THEN 13659 ELSE 13658 END)
+SET				abd.SubscriberID = (CASE WHEN abd.SubscriberID = 2 THEN 13659 ELSE 13658 END)
 WHERE			abd.SubscriberID IN (2, 130) 
                 ;
 
@@ -349,8 +349,8 @@ USE 		DCS_DataCenter;
 UPDATE  	DCS_DataCenter.Account AS acc
 INNER JOIN 	CTS_Adhoc.Iss135903_IBCIndo_DCS_Account AS iacc
 			ON acc.AccountID = iacc.AccountID
-SET 		IsCTSTransformed = 0
-WHERE		IsCTSTransformed < 0
+SET 		acc.IsCTSTransformed = 0
+WHERE		acc.IsCTSTransformed < 0
 
 
 
