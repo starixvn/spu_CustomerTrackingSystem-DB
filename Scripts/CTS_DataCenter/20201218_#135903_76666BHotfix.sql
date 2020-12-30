@@ -292,14 +292,14 @@ INNER JOIN CTS_Adhoc.Iss135903_76666B_DCS_Account AS iacc
 WHERE iacc.ActType = -1 
 ;
 
-# Step 3b: =================================================================
+# Step 3b =================================================================
 SELECT 'ESTIMATE', COUNT(1)
 FROM CTS_DataCenter.CustDCSAccount AS cda
 INNER JOIN CTS_Adhoc.Iss135903_76666B_DCS_Account AS iacc
  ON cda.AccountID = iacc.AccountID #10545
 WHERE iacc.ActType = 0 AND cda.SubscriberID IN (13659, 13658) ; #0
-
 /*
+
 USE CTS_DataCenter;
 UPDATE CTS_DataCenter.CustDCSAccount AS cda
 INNER JOIN CTS_Adhoc.Iss135903_76666B_DCS_Account AS iacc
@@ -339,7 +339,7 @@ WHERE abd.SubscriberID IN (2, 130) )a; #31467
 UPDATE CTS_DataCenter.AssociationByDevice AS abd 
 INNER JOIN CTS_Adhoc.Iss135903_76666B_CTS_CTSCustUpdate cus
  ON cus.CTSCustID = abd.CTSCustID
-SET abd.SubscriberID = (CASE WHEN cda.SubscriberID = 2 THEN 13659 ELSE 13658 END)
+SET abd.SubscriberID = (CASE WHEN abd.SubscriberID = 2 THEN 13659 ELSE 13658 END)
 WHERE abd.SubscriberID IN (2, 130) 
  ;
 */
