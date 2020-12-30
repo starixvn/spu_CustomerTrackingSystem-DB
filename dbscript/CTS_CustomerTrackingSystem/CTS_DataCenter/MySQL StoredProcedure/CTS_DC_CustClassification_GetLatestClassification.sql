@@ -71,16 +71,7 @@ BEGIN
     SELECT DISTINCT	temp.CustID,	sp.CustomerClass, sp.LastModifiedDate
     FROM 			Temp_Customers AS temp
     INNER JOIN 	    CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID;
-    
-    /*  Insert not existed Special CC or Category before */
-	INSERT INTO     Temp_CustomerClass (CustID, CustomerClass, ScannedTime)
-    SELECT DISTINCT	temp.CustID,	-1	AS CustomerClass, '1001-01-01 00:00:00'
-    FROM 			Temp_Customers AS temp
-    INNER JOIN 		CTS_DataCenter.CTSCustomer AS cust ON cust.CustID = temp.CustID -- Existed CustID
-    LEFT JOIN 	    CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID
-    LEFT JOIN 	    CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID AND cate.SportGroupID IN (0, 200) -- PA & Normal
-    WHERE 			sp.CustID IS NULL AND cate.CustID IS NULL;
-    
+  
     /* Insert not existed Special CC but have Category before*/
 	-- Insert lastest of records
 	INSERT INTO Temp_LatestRecords(CustID, ScannedTime)
@@ -104,6 +95,15 @@ BEGIN
     SELECT DISTINCT temp.CustID,  map.CustomerClass, temp.ScannedTime
     FROM 			Temp_LastestCategories AS temp
     INNER JOIN 		CTS_DataCenter.CategoryToCustomerClass AS map ON map.CategoryID = temp.CategoryID;
+    
+    /*  Insert not existed Special CC or Category before */
+	INSERT INTO     Temp_CustomerClass (CustID, CustomerClass, ScannedTime)
+    SELECT DISTINCT	temp.CustID,	-1	AS CustomerClass, '1001-01-01 00:00:00'
+    FROM 			Temp_Customers AS temp
+    INNER JOIN 		CTS_DataCenter.CTSCustomer AS cust ON cust.CustID = temp.CustID -- Existed CustID
+    LEFT JOIN 	    CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID
+    LEFT JOIN 	    CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID AND cate.SportGroupID IN (0, 200) -- PA & Normal
+    WHERE 			sp.CustID IS NULL AND cate.CustID IS NULL;
     
     /* Get Lastest Customer Class to sync in mainDB */
     SELECT DISTINCT	cc.CustId, cc.CustomerClass, cc.ScannedTime FROM Temp_CustomerClass AS cc;
