@@ -1,7 +1,12 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_InsertCTSCustomer`;
+
+DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_InsertCTSCustomer`(
-				IN ip_CustomerList json
+        IN ip_CustomerList json
                 
-			   ,OUT op_ErrorMessage VARCHAR(300))
+    ,   OUT op_ErrorMessage VARCHAR(300)
+)
     SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -174,4 +179,5 @@ BEGIN
     SELECT CustID
     FROM   TempCTSCustomer;
 
-END
+END$$
+DELIMITER ;
