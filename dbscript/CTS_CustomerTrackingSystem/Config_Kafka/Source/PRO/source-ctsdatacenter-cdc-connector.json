@@ -11,13 +11,13 @@
 	  "database.server.name": "ctsserver",
 	  "database.port": "3306",
 	  "include.schema.changes": "true",
-	  "table.whitelist": "CTS_DataCenter.CTSCustomer,CTS_DataCenter.AssociationByDevice,CTS_DataCenter.AssociationByManual,CTS_DataCenter.AssociationRemove,CTS_DataCenter.Evidence,CTS_DataCenter.CustEvidence,CTS_DataCenter.StaticList,CTS_DataCenter.CTSCustomerClassification,CTS_DataCenter.CustomerCategory",
+	  "table.whitelist": "CTS_DataCenter.CTSCustomer,CTS_DataCenter.StaticList,CTS_DataCenter.CustomerCategory,CTS_DataCenter.Evidence,CTS_Admin.Subscriber,CTS_DataCenter.AssociationByDevice,CTS_DataCenter.AssociationByManual,CTS_DataCenter.AssociationRemove,CTS_DataCenter.CTSCustomerClassification,CTS_DataCenter.CustEvidence",
 	  "database.serverTimezone": "America/Anguilla",
 	  "database.hostname": "172.18.0.2",
 	  "database.password": "replication",
 	  "database.history.store.only.monitored.tables.ddl": "true",
 	  "database.history.skip.unparseable.ddl": "true",
-	  "database.whitelist": "CTS_DataCenter",
+	  "database.whitelist": "CTS_DataCenter,CTS_Admin",
 	  "snapshot.mode": "when_needed"
    }
 }

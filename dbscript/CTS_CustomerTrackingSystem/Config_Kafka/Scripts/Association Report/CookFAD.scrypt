@@ -1,7 +1,7 @@
 ﻿//
 // Cook first associated Date
 //
-CALL apoc.periodic.repeat('cookFirstAssociatedDate',"MATCH (c:CookFAD) WITH c LIMIT 100
+CALL apoc.periodic.repeat('cookFirstAssociatedDate',"MATCH (c:CookFAD) WITH c LIMIT 10
 OPTIONAL MATCH (c)-[r:USED_DEVICE]->(d:Device)<-[r1:USED_DEVICE]-(c1:CTSCustomer)
 WHERE NOT EXISTS((c)-[:ASSOCIATE]-(c1))
 UNWIND [r.CreatedTime, r1.CreatedTime] as val
@@ -10,10 +10,3 @@ WITH DISTINCT c,c1,MIN(assDate) as firstAssociatedDate
 CALL apoc.do.when(c1 is not null,'MERGE (c)-[relAss:ASSOCIATE]->(c1) SET relAss.FirstDateByDevice = firstAssociatedDate RETURN c','', {c:c,c1:c1,firstAssociatedDate:firstAssociatedDate}) YIELD value
 WITH DISTINCT c
 REMOVE c:CookFAD", 10,{})
-
-
-CALL apoc.periodic.commit("
-match (c:CTSCustomer)-[r:BELONG_TO_SITE]->(s:Site)
-with r limit 500
-delete r
-RETURN COUNT(*)", {size: 500})
