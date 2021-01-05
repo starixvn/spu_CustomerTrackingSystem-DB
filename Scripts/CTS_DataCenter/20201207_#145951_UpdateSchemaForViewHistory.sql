@@ -16,8 +16,20 @@ VALUES
 (4,11, 'Classification Source Type','Classification Source Type','Change Customer Class by Robot Icon','Change Customer Class by Robot Icon',11,1,'From Robot',CURRENT_TIME()),
 (4,12, 'Classification Source Type','Classification Source Type','Manual Remove Customer Class','Manual Remove Customer Class',12,1,'From CC',CURRENT_TIME()),
 (4,13, 'Classification Source Type','Classification Source Type','Manual Add VVIP','Manual Add VVIP',13,1,'From VVIP',CURRENT_TIME()),
-(4,14, 'Classification Source Type','Classification Source Type','Manual Remove VVIP','Manual Remove VVIP',14,1,'From VVIP',CURRENT_TIME())
-;
+(4,14, 'Classification Source Type','Classification Source Type','Manual Remove VVIP','Manual Remove VVIP',14,1,'From VVIP',CURRENT_TIME()),
+(4,15, 'Classification Source Type','Classification Source Type','Re-scan from NAP CM by Customer','Re-scan Problem Account by Customer',15,1,'From PA',CURRENT_TIME()),
+(4,16, 'Classification Source Type','Classification Source Type','Re-scan from Evidence by Customer','Re-scan Problem Account by Customer',16,1,'From Evidence',CURRENT_TIME()),
+(4,17, 'Classification Source Type','Classification Source Type','Re-scan Normal Account by Customer','Re-scan Normal Account by Customer',17,1,'From Normal',CURRENT_TIME());
+
+-- Insert item list for Action Type for category
+INSERT INTO CTS_DataCenter.StaticList 
+(ListID, ItemID, ListName, ListNameDisplay, ItemName, ItemNameDisplay, PriorityOrder, Status, CreatedDate) 
+VALUES 
+(5, 0, 'Classification Action Type', 'Classification Action Type', 'Insert New Classification', 'Insert New Classification', 0, 1,CURRENT_TIME()),
+(5, 1, 'Classification Action Type', 'Classification Action Type', 'Update Classification', 'Update Classification', 1, 1,CURRENT_TIME()),
+(5, 2, 'Classification Action Type', 'Classification Action Type', 'Remove Problem Accounts', 'Remove Problem Accounts', 2, 1,CURRENT_TIME()),
+(5, 3, 'Classification Action Type', 'Classification Action Type', 'Ignore Existed Category', 'Ignore Existed Category', 3, 1,CURRENT_TIME()),
+(5, 4, 'Classification Action Type', 'Classification Action Type', 'Ignore PIN Category', 'Ignore PIN Category', 4, 1,CURRENT_TIME());
 
 -- Insert new table PinCustomerCategory
     DROP TABLE IF EXISTS CTS_DataCenter.PinCustomerCategory;

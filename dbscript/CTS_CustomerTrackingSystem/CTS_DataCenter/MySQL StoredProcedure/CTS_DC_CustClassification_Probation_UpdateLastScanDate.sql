@@ -4,7 +4,7 @@ DROP procedure IF EXISTS `CTS_DC_CustClassification_Probation_UpdateLastScanDate
 
 DELIMITER $$
 USE `CTS_DataCenter`$$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Probation_UpdateLastScanDate`(IN ip_CustSport json)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Probation_UpdateLastScanDate`(IN ip_CustSport json, OUT op_ErrorMessage VARCHAR(200))
     SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -15,11 +15,27 @@ BEGIN
 		Original:
 		Revisions:
 			- [20201116@Irena.Vo][145028]: Add column LastScannedDate & Enhance logic
+	        - 20210105@Irena.Vo: Created. Insert Error Log [RedmineID: #145951]
+            
 		Param's Explanation (filtered by):
          ip_CategoryIDList: ex: '1,2,3'       
 	*/
+    DECLARE lv_CurrentDateTime  DATETIME DEFAULT CURRENT_TIME();
     
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+    DECLARE op_ErrorNo 			INT DEFAULT 0;
+    DECLARE op_CodName 			VARCHAR(200)  DEFAULT '0';
+
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
+    BEGIN   
+		GET DIAGNOSTICS @op_No = NUMBER;
+		GET DIAGNOSTICS CONDITION @op_No 
+			op_ErrorNo 			= 	MYSQL_ERRNO
+        ,	op_ErrorMessage 	= 	MESSAGE_TEXT	
+		,	op_CodName 			= 	RETURNED_SQLSTATE;
+    
+        INSERT INTO CTS_Log.CTSErrorLog(EventID, Message, Description, CreatedDate)
+        VALUES(2, op_ErrorMessage, JSON_OBJECT('err_no',op_ErrorNo,'cod_name',op_CodName,'parameter',ip_CustSport),lv_CurrentDateTime);
+    END;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustSport;    
 	CREATE TEMPORARY TABLE Temp_CustSport 
@@ -39,9 +55,8 @@ BEGIN
     
     UPDATE 		CTS_DataCenter.ProbationAccountMonitor AS pro
     INNER JOIN 	Temp_CustSport AS temp ON pro.CustID = temp.CustID AND pro.SportGroupID = temp.SportGroupID
-    SET			pro.LastScannedDate = CURRENT_DATE();
-  
-	DROP TEMPORARY TABLE IF EXISTS Temp_CustSport;     
+    SET			pro.LastScannedDate = DATE(lv_CurrentDateTime);
+    
 END$$
 
 DELIMITER ;

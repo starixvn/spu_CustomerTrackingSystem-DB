@@ -11,11 +11,10 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original:
 		Revisions:
-            - 20201224-20201229@Irena.Vo: Created. Insert Error Log [RedmineID: #145951]
+             - 20201224-20210105@Irena.Vo: Created. Insert Error Log [RedmineID: #145951]
            
 		Param's Explanation (filtered by):		 	
 	*/   
-	DECLARE	lv_SPName 			VARCHAR(100) 	DEFAULT 'CTS_DC_CustEvidence_GetExistedEvidencesToSync';   
     DECLARE	lv_CurrentDateTime 	DATETIME 		DEFAULT CURRENT_TIME();
 	
     DECLARE op_ErrorMessage 	VARCHAR(200) DEFAULT '0';
@@ -25,13 +24,13 @@ BEGIN
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN   
 		GET DIAGNOSTICS @op_No = NUMBER;
-		GET DIAGNOSTICS CONDITION @op_No  
-         	op_ErrorMessage 	= 	MESSAGE_TEXT	
-		,	op_ErrorNo 			= 	MYSQL_ERRNO
+		GET DIAGNOSTICS CONDITION @op_No 
+			op_ErrorNo 			= 	MYSQL_ERRNO
+        ,	op_ErrorMessage 	= 	MESSAGE_TEXT	
 		,	op_CodName 			= 	RETURNED_SQLSTATE;
     
-        INSERT INTO CTS_Log.ErrorLog(EventName, InsertedTime, Message, Err_No, Description)
-        VALUES(lv_SPName, lv_CurrentDateTime, op_ErrorMessage, op_ErrorNo, 	JSON_OBJECT('err_no',op_ErrorNo,'cod_name',op_CodName,'parameter',ip_CustIDs));
+        INSERT INTO CTS_Log.CTSErrorLog(EventID, Message, Description, CreatedDate)
+        VALUES(4, op_ErrorMessage, JSON_OBJECT('err_no',op_ErrorNo,'cod_name',op_CodName,'parameter',ip_CustIDs),lv_CurrentDateTime);
     END;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customers;    

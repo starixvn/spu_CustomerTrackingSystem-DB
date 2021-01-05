@@ -11,7 +11,7 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original:
 		Revisions:
-           - 20201214-20201229@Irena.Vo: Created. Update logic SP [RedmineID: #145951]
+            - 20201214-20210105@Irena.Vo: Created. Update logic SP [RedmineID: #145951]
            
 		Param's Explanation (filtered by):		
 			call CTS_DataCenter.CTS_DC_CustClassification_ViewHistory(43600889);
@@ -21,7 +21,7 @@ BEGIN
 					,   CASE WHEN temp.CategoryID IS NULL THEN '-'
                              ELSE cc1.CategoryName
 						END CategoryName
-                    ,   CASE WHEN temp.TargetCC = -1 THEN '-'
+                    ,   CASE WHEN temp.TargetCC IN (-1, -99) THEN '-' -- -1: Remove, -99: No mapping CC
 							 ELSE temp.TargetCC
 					    END AS CustomerClass
 					,	temp.CategoryID

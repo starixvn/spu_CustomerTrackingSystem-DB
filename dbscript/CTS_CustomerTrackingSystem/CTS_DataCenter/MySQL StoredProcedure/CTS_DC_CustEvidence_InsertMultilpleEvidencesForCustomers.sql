@@ -17,15 +17,13 @@ sp: BEGIN
             - 20201020@Irena.Vo: Enhance logic Remove all category (Detail & General) [Redmine ID: #141756]
             - 20201111@Irena.Vo: Enhance logic Insert History for Evidence Category [Redmine ID: #145027]
             - 20201130@Irena.Vo: Enhance logic Insert new evidence (remove existed evidence category before) [Redmine ID: #141563]
-			- 20201214-20201229@Irena.Vo: Move logic Sync to Category by new sp: SyncToCategory. Insert Error Log [RedmineID: #145951] 
+			- 20201214-20210105@Irena.Vo: Move logic Sync to Category by new sp: SyncToCategory. Insert Error Log. Remove User Log [RedmineID: #145951] 
             
 		Param's Explanation(filered by):
 		
 		Example:
             -call CTS_DataCenter.CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers('43600693,43600889', '6.1', @op_ErrorMessage);
 	*/    
-   
-    DECLARE		lv_SPName 			VARCHAR(100) DEFAULT 'CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers';  
 	DECLARE		lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();
     DECLARE 	lv_CreatedBy        BIGINT DEFAULT 10278938;
   
@@ -36,12 +34,12 @@ sp: BEGIN
     BEGIN   
 		GET DIAGNOSTICS @op_No = NUMBER;
 		GET DIAGNOSTICS CONDITION @op_No 
-         	op_ErrorMessage 	= 	MESSAGE_TEXT	
-		,	op_ErrorNo 			= 	MYSQL_ERRNO
+			op_ErrorNo 			= 	MYSQL_ERRNO
+        ,	op_ErrorMessage 	= 	MESSAGE_TEXT	
 		,	op_CodName 			= 	RETURNED_SQLSTATE;
     
-        INSERT INTO CTS_Log.ErrorLog(EventName, InsertedTime, Message, Err_No, Description)
-        VALUES(lv_SPName, lv_CurrentDateTime, op_ErrorMessage, op_ErrorNo, 	JSON_OBJECT('err_no',op_ErrorNo,'cod_name',op_CodName,'parameter1',ip_CustIds,'parameter2',ip_EvidenceCodes));
+        INSERT INTO CTS_Log.CTSErrorLog(EventID, Message, Description, CreatedDate)
+        VALUES(5, op_ErrorMessage, JSON_OBJECT('err_no',op_ErrorNo,'cod_name',op_CodName,'parameter1',ip_CustIds,'parameter2',ip_EvidenceCodes),lv_CurrentDateTime);
     END;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerList;
@@ -122,10 +120,6 @@ sp: BEGIN
 	LEFT JOIN  	Temp_AssociatedException AS e ON t.CTSCustID = e.FromCTSCustID AND a.CTSCustID = e.ToCTSCustID
 	CROSS JOIN  Temp_EvidenceList AS ev
 	WHERE 		a.CTSCustID <> d.CTSCustID AND (e.FromCTSCustID IS NULL OR e.ToCTSCustID IS NULL);
-    
-    /*	WRITE LOG	*/
-	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-	VALUES(3, lv_SPName, 'Insert bunch of Customers - Evidences', lv_CurrentDateTime, lv_CreatedBy);
    
     -- Return CTSCustID, CustID, SubscriberID, EvidenceID, 0 (ActionType)
     SELECT DISTINCT cust.CustId

@@ -11,13 +11,12 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original: 
 		Revisions:
-			- 20201214-20201230@Irena.Vo: Created. Update Input & Output params. Insert Error Log. Return All List CustID. For CC = -1 (Only get from existed CTSCustID) [RedmineID: #145951]
+				- 20201214-20210105@Irena.Vo: Created. Update Input & Output params. Insert Error Log. Return All List CustID. For CC = -1 (Only get from existed CTSCustID). Update logic get CC [RedmineID: #145951]
             
 		Param's Explanation:
 			call CTS_DataCenter.CTS_DC_CustClassification_GetLatestClassification('1,2,1277,555555');
 	*/ 
-	DECLARE lv_SPName 			VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_GetLatestClassification'; 
-    DECLARE lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();
+    DECLARE lv_CurrentDateTime  DATETIME DEFAULT CURRENT_TIME();
     
 	DECLARE op_ErrorNo 			INT DEFAULT 0;
     DECLARE op_ErrorMessage 	VARCHAR(200)  DEFAULT '0';
@@ -31,8 +30,8 @@ BEGIN
         ,	op_ErrorMessage 	= 	MESSAGE_TEXT	
 		,	op_CodName 			= 	RETURNED_SQLSTATE;
     
-        INSERT INTO CTS_Log.ErrorLog(EventName, InsertedTime, Message, Err_No, Description)
-        VALUES(lv_SPName, lv_CurrentDateTime, op_ErrorMessage, op_ErrorNo, 	JSON_OBJECT('err_no',op_ErrorNo,'cod_name',op_CodName,'parameter',ip_CustIDs));
+        INSERT INTO CTS_Log.CTSErrorLog(EventID, Message, Description, CreatedDate)
+        VALUES(1, op_ErrorMessage, JSON_OBJECT('err_no',op_ErrorNo,'cod_name',op_CodName,'parameter',ip_CustIDs),lv_CurrentDateTime);
     END;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Customers;
@@ -40,19 +39,26 @@ BEGIN
 			CustID              BIGINT UNSIGNED PRIMARY KEY 
     );  
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecords;
-    CREATE TEMPORARY TABLE 		Temp_LatestRecords (
+    DROP TEMPORARY TABLE IF EXISTS Temp_ExistedSpecialCC;
+    CREATE TEMPORARY TABLE 		Temp_ExistedSpecialCC (
+			CustID              BIGINT UNSIGNED PRIMARY KEY 
+        ,   CustomerClass       SMALLINT
+        ,	ScannedTime			DATETIME
+    );  
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_LatestScannedCategory;
+    CREATE TEMPORARY TABLE 		Temp_LatestScannedCategory (
         	CustID			    BIGINT UNSIGNED PRIMARY KEY 
 		,	ScannedTime			DATETIME
-        ,	INDEX				IX_Temp_LatestRecords_ScannedTime(ScannedTime)
+        ,	INDEX				IX_Temp_LatestScannedCategory_ScannedTime(ScannedTime)
     );    
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_LastestCategories;
-    CREATE TEMPORARY TABLE 		Temp_LastestCategories (
+    DROP TEMPORARY TABLE IF EXISTS Temp_ExistedLastestCategory;
+    CREATE TEMPORARY TABLE 		Temp_ExistedLastestCategory (
         	CustID				BIGINT UNSIGNED PRIMARY KEY 
 		,	CategoryID		    SMALLINT
         ,	ScannedTime			DATETIME
-        ,   INDEX               IX_Temp_LastestCategories_ScannedTime_CategoryID(ScannedTime,CategoryID)
+        ,   INDEX               IX_Temp_ExistedLastestCategory_ScannedTime_CategoryID(ScannedTime,CategoryID)
     );     
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustomerClass;
@@ -61,49 +67,57 @@ BEGIN
 		,   CustomerClass       SMALLINT
         ,	ScannedTime			DATETIME
     );    
+    
     -- Insert CustIDs
-	SET @sql = 	CONCAT("INSERT INTO Temp_Customers (CustID) VALUES ('", REPLACE(ip_CustIDs, ",", "'),('"),"');");
+	SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_Customers (CustID) VALUES ('", REPLACE(ip_CustIDs, ",", "'),('"),"');");
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1;    
     
-    /* Insert existed Special CC before */
-	INSERT INTO     Temp_CustomerClass (CustID, CustomerClass, ScannedTime)
-    SELECT DISTINCT	temp.CustID,	sp.CustomerClass, sp.LastModifiedDate
-    FROM 			Temp_Customers AS temp
-    INNER JOIN 	    CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID;
-  
-    /* Insert not existed Special CC but have Category before*/
-	-- Insert lastest of records
-	INSERT INTO Temp_LatestRecords(CustID, ScannedTime)
-	SELECT  DISTINCT temp.CustID,	MAX(cate.LastModifiedDate)
-	FROM 		CTS_DataCenter.CTSCustomerClassification AS cate 
-	INNER JOIN 	Temp_Customers AS temp ON temp.CustID = cate.CustID AND cate.SportGroupID IN (0, 200) -- PA & Normal
-    LEFT JOIN 	CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID
-	WHERE 		sp.CustID IS NULL
-	GROUP BY 	temp.CustID; 
-	
-    -- Insert lastest customer category
-	INSERT INTO Temp_LastestCategories(CustID, ScannedTime, CategoryID)
-	SELECT 	DISTINCT temp.CustID,	temp.ScannedTime, MAX(cate.CategoryID) 
-	FROM 		Temp_LatestRecords AS temp
-	INNER JOIN 	CTS_DataCenter.CTSCustomerClassification AS cate ON temp.CustID = cate.CustID
-	WHERE 		temp.ScannedTime = cate.LastModifiedDate
-	GROUP BY  	temp.CustID, temp.ScannedTime;
+	/* Insert Existed Special CC */
+	INSERT INTO  	Temp_ExistedSpecialCC (CustID, CustomerClass, ScannedTime)
+    SELECT 			c.CustID,	sp.CustomerClass, sp.LastModifiedDate
+    FROM 			Temp_Customers AS c
+    INNER JOIN 	    CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = c.CustID;
     
-    -- Insert Customer Class
-    INSERT INTO Temp_CustomerClass (CustID, CustomerClass, ScannedTime)
-    SELECT DISTINCT temp.CustID,  map.CustomerClass, temp.ScannedTime
-    FROM 			Temp_LastestCategories AS temp
-    INNER JOIN 		CTS_DataCenter.CategoryToCustomerClass AS map ON map.CategoryID = temp.CategoryID;
+    /* Insert Lastest Scanned Time for Category (if have) */
+	INSERT INTO     Temp_LatestScannedCategory(CustID, ScannedTime)
+	SELECT 			c.CustID,	MAX(cate.LastModifiedDate)
+	FROM 			CTS_DataCenter.CTSCustomerClassification AS cate 
+	INNER JOIN 		Temp_Customers AS c ON c.CustID = cate.CustID AND cate.SportGroupID IN (0, 200) -- PA & Normal
+	GROUP BY 		c.CustID; 
     
-    /*  Insert not existed Special CC or Category before */
+    /* Update ScannedTime for Special CC (if have) and Insert Customer Class*/
+    UPDATE     		Temp_ExistedSpecialCC AS es
+    INNER JOIN 		Temp_LatestScannedCategory AS ls ON ls.CustID = es.CustID
+    SET 	   		es.ScannedTime = GREATEST(es.ScannedTime,ls.ScannedTime);
+    
+    INSERT INTO 	Temp_CustomerClass (CustID, CustomerClass, ScannedTime)
+    SELECT 			es.CustID, es.CustomerClass, es.ScannedTime
+    FROM 			Temp_ExistedSpecialCC AS es;
+    
+    /* Insert Existed Lastest Category */
+	INSERT INTO Temp_ExistedLastestCategory(CustID, ScannedTime, CategoryID)
+	SELECT      ls.CustID,	ls.ScannedTime, MAX(cate.CategoryID) 
+	FROM 		Temp_LatestScannedCategory AS ls
+	INNER JOIN 	CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = ls.CustID AND cate.SportGroupID IN (0, 200) -- PA & Normal
+    LEFT JOIN	Temp_CustomerClass AS cc ON cc.CustID = ls.CustID
+	WHERE 		cc.CustID IS NULL AND ls.ScannedTime = cate.LastModifiedDate -- Not existed Special CC
+	GROUP BY  	ls.CustID, ls.ScannedTime;
+    
+    /* Mapping & Insert Customer Class */
+    INSERT INTO    	Temp_CustomerClass (CustID, CustomerClass, ScannedTime)
+    SELECT			ec.CustID,  map.CustomerClass, ec.ScannedTime
+    FROM 			Temp_ExistedLastestCategory AS ec
+    INNER JOIN 		CTS_DataCenter.CategoryToCustomerClass AS map ON map.CategoryID = ec.CategoryID;
+    
+    /* Insert Customer Class = -1 */
 	INSERT INTO     Temp_CustomerClass (CustID, CustomerClass, ScannedTime)
-    SELECT DISTINCT	temp.CustID,	-1	AS CustomerClass, '1001-01-01 00:00:00'
+    SELECT 			temp.CustID,	-1	AS CustomerClass, lv_CurrentDateTime
     FROM 			Temp_Customers AS temp
     INNER JOIN 		CTS_DataCenter.CTSCustomer AS cust ON cust.CustID = temp.CustID -- Existed CustID
-    LEFT JOIN 	    CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID
-    LEFT JOIN 	    CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID AND cate.SportGroupID IN (0, 200) -- PA & Normal
-    WHERE 			sp.CustID IS NULL AND cate.CustID IS NULL;
+    LEFT JOIN 	    Temp_ExistedSpecialCC AS es ON es.CustID = temp.CustID -- Not existed Special CC
+    LEFT JOIN 	    Temp_ExistedLastestCategory AS ec ON ec.CustID = temp.CustID -- Not existed Category
+    WHERE 			es.CustID IS NULL AND ec.CustID IS NULL;
     
     /* Get Lastest Customer Class to sync in mainDB */
     SELECT DISTINCT	cc.CustId, cc.CustomerClass, cc.ScannedTime FROM Temp_CustomerClass AS cc;

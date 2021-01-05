@@ -15,7 +15,7 @@ BEGIN
 			- [20200911@Irena.Vo][141416]: Created. Support for Licensee & 611111 sites 
             - [20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow.    
 			- [20200923@Irena.Vo][141755]: Enhance SP
-			- 20201214-20201229@Irena.Vo: Remove logic delete Probation List. Enhance logic get VVIP & Insert History Log. Insert Error Log [RedmineID: #145951]
+			- 20201214-20210105@Irena.Vo: Remove logic delete Probation List. Enhance logic get VVIP & Insert History Log. Insert Error Log. Remove User Log [RedmineID: #145951]
             
 		Param's Explanation (filtered by):
         ip_CustIDs = 1,2,3
@@ -23,7 +23,6 @@ BEGIN
 	*/
     DECLARE lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();
     DECLARE lv_CreatedBy 		INT DEFAULT 10278938;
-    DECLARE lv_SPName 			VARCHAR(200) DEFAULT 'CTS_DC_SpecialCustClass_InsertRobotUsers';
     
     DECLARE op_ErrorNo 			INT DEFAULT 0;
     DECLARE op_CodName 			TEXT DEFAULT '0';
@@ -32,12 +31,12 @@ BEGIN
     BEGIN   
 		GET DIAGNOSTICS @op_No = NUMBER;
 		GET DIAGNOSTICS CONDITION @op_No 
-        	op_ErrorMessage 	= 	MESSAGE_TEXT	
-		,	op_ErrorNo 			= 	MYSQL_ERRNO
+			op_ErrorNo 			= 	MYSQL_ERRNO
+        ,	op_ErrorMessage 	= 	MESSAGE_TEXT	
 		,	op_CodName 			= 	RETURNED_SQLSTATE;
     
-        INSERT INTO CTS_Log.ErrorLog(EventName, InsertedTime, Message, Err_No, Description)
-        VALUES(lv_SPName, lv_CurrentDateTime, op_ErrorMessage, op_ErrorNo, 	JSON_OBJECT('err_no',op_ErrorNo,'cod_name',op_CodName,'parameter',ip_CustIDs));
+        INSERT INTO CTS_Log.CTSErrorLog(EventID, Message, Description, CreatedDate)
+        VALUES(12, op_ErrorMessage, JSON_OBJECT('err_no',op_ErrorNo,'cod_name',op_CodName,'parameter',ip_CustIDs),lv_CurrentDateTime);
     END;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_RobotUsers;
@@ -80,10 +79,6 @@ BEGIN
 		,   1 -- For Special Customer
 	FROM Temp_RobotUsers AS temp;
   
-	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-    SELECT 19, lv_SPName, CONCAT('Insert Robot User: ip_CustID = ', temp.CustID, ';ip_CustomerClass = ', 13), lv_CurrentDateTime, lv_CreatedBy
-    FROM Temp_RobotUsers AS temp;
-    
     /*	INSERT LOG	*/
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
     (CustID, CTSCustID, LastModifiedDate, LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
