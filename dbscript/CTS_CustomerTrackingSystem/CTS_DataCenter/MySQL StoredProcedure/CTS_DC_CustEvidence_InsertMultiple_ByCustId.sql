@@ -19,7 +19,7 @@ sp: BEGIN
             - 20201020@Irena.Vo: Enhance logic Remove all category (Detail & General) [Redmine ID: #141756]
             - 20201111@Irena.Vo: Enhance logic Insert History for Evidence Category [Redmine ID: #145027]
 			- 20201130@Irena.Vo: Enhance logic Insert new evidence (remove existed evidence category before) [Redmine ID: #141563]
-			- 20201214-20210105@Irena.Vo: Move logic Sync to Category by new sp: SyncToCategory. Insert Error Log [RedmineID: #145951]
+			- 20201214-20210107@Irena.Vo: Move logic Sync to Category by new sp: SyncToCategory. Insert Error Log [RedmineID: #145951]
             
         call CTS_DataCenter.CTS_DC_CustEvidence_InsertMultiple_ByCustId
 			('[{"CustID": 43600693, "EvidenceID": 45, "Comment": "na test 1"},{"CustID":43600693, "EvidenceID": 46, "Comment":"na test 2"},
@@ -29,20 +29,21 @@ sp: BEGIN
     DECLARE		lv_SPName 			VARCHAR(100) DEFAULT 'CTS_DC_CustEvidence_InsertMultiple_ByCustId';  
 	DECLARE		lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();
     DECLARE 	lv_CreatedBy        BIGINT DEFAULT 10278938;
-  
-    DECLARE op_ErrorNo 			INT DEFAULT 0;
-    DECLARE op_CodName 			VARCHAR(200)  DEFAULT '0';
+    
+	DECLARE	lv_No				INT			 DEFAULT 0;
+    DECLARE lv_ErrorNo 			INT          DEFAULT 0;
+    DECLARE lv_CodName 			TEXT         DEFAULT '0';
 
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN   
-		GET DIAGNOSTICS @op_No = NUMBER;
-		GET DIAGNOSTICS CONDITION @op_No 
-			op_ErrorNo 			= 	MYSQL_ERRNO
-        ,	op_ErrorMessage 	= 	MESSAGE_TEXT	
-		,	op_CodName 			= 	RETURNED_SQLSTATE;
+		GET DIAGNOSTICS lv_No 	= 	NUMBER;
+		GET DIAGNOSTICS CONDITION lv_No 
+            op_ErrorMessage 	= 	MESSAGE_TEXT	
+		,	lv_ErrorNo 			= 	MYSQL_ERRNO
+		,	lv_CodName 			= 	RETURNED_SQLSTATE;
     
-        INSERT INTO CTS_Log.CTSErrorLog(EventID, Message, Description, CreatedDate)
-        VALUES(7, op_ErrorMessage, JSON_OBJECT('err_no',op_ErrorNo,'cod_name',op_CodName,'parameter',ip_NewAccountEvidences),lv_CurrentDateTime);
+        INSERT INTO CTS_Log.CTSErrorLog(EventID, Message, Description)
+        VALUES(7, op_ErrorMessage, JSON_OBJECT('err_no',lv_ErrorNo,'cod_name',lv_CodName,'parameter',ip_NewAccountEvidences));
     END;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_MultipleAccountEvidence;    

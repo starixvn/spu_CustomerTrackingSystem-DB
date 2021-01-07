@@ -19,7 +19,7 @@ BEGIN
             - 20201020@Irena.Vo: Enhance logic Remove all category (Detail & General) [Redmine ID: #141756]
             - 20201111@Irena.Vo: Enhance logic Insert History for Evidence Category [Redmine ID: #145027]
 			- 20201116@Adam.Tran: Implement Cust Evidence from file [Redmine ID: #141563]
-			- 20210105@Irena.Vo: Insert Error Log [RedmineID: #145951] 
+			- 20210107@Irena.Vo: Insert Error Log [RedmineID: #145951] 
             
 		Param's Explanation (filtered by):
 		
@@ -28,20 +28,21 @@ BEGIN
 	*/    
     DECLARE		lv_SPName 			VARCHAR(100) 	DEFAULT 'CTS_DC_CustEvidence_InsertMultiple';    
     DECLARE		lv_CreatedDateTime 	DATETIME DEFAULT CURRENT_TIME();   
-
-    DECLARE op_ErrorNo 			INT DEFAULT 0;
-    DECLARE op_CodName 			VARCHAR(200)  DEFAULT '0';
+    
+	DECLARE	lv_No				INT			 DEFAULT 0;
+    DECLARE lv_ErrorNo 			INT          DEFAULT 0;
+    DECLARE lv_CodName 			TEXT         DEFAULT '0';
 
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN   
-		GET DIAGNOSTICS @op_No = NUMBER;
-		GET DIAGNOSTICS CONDITION @op_No 
-			op_ErrorNo 			= 	MYSQL_ERRNO
-        ,	op_ErrorMessage 	= 	MESSAGE_TEXT	
-		,	op_CodName 			= 	RETURNED_SQLSTATE;
+		GET DIAGNOSTICS lv_No 	= 	NUMBER;
+		GET DIAGNOSTICS CONDITION lv_No 
+            op_ErrorMessage 	= 	MESSAGE_TEXT	
+		,	lv_ErrorNo 			= 	MYSQL_ERRNO
+		,	lv_CodName 			= 	RETURNED_SQLSTATE;
     
-        INSERT INTO CTS_Log.CTSErrorLog(EventID, Message, Description, CreatedDate)
-        VALUES(6, op_ErrorMessage, JSON_OBJECT('err_no',op_ErrorNo,'cod_name',op_CodName,'parameter',ip_NewAccountEvidences),lv_CurrentDateTime);
+        INSERT INTO CTS_Log.CTSErrorLog(EventID, Message, Description)
+        VALUES(6, op_ErrorMessage, JSON_OBJECT('err_no',lv_ErrorNo,'cod_name',lv_CodName,'parameter',ip_NewAccountEvidences));
     END;
      
     DROP TEMPORARY TABLE IF EXISTS Temp_MultipleAccountEvidence;    

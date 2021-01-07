@@ -15,26 +15,25 @@ BEGIN
 		Original:
 		Revisions:
 			- [20201116@Irena.Vo][145028]: Add column LastScannedDate & Enhance logic
-	        - 20210105@Irena.Vo: Created. Insert Error Log [RedmineID: #145951]
+	        - 20210107@Irena.Vo: Insert Error Log [RedmineID: #145951]
             
 		Param's Explanation (filtered by):
          ip_CategoryIDList: ex: '1,2,3'       
 	*/
-    DECLARE lv_CurrentDateTime  DATETIME DEFAULT CURRENT_TIME();
-    
-    DECLARE op_ErrorNo 			INT DEFAULT 0;
-    DECLARE op_CodName 			VARCHAR(200)  DEFAULT '0';
+	DECLARE	lv_No				INT				DEFAULT 0;
+    DECLARE lv_ErrorNo 			INT 			DEFAULT 0;
+    DECLARE lv_CodName 			VARCHAR(200)  	DEFAULT '0';
 
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN   
-		GET DIAGNOSTICS @op_No = NUMBER;
-		GET DIAGNOSTICS CONDITION @op_No 
-			op_ErrorNo 			= 	MYSQL_ERRNO
-        ,	op_ErrorMessage 	= 	MESSAGE_TEXT	
-		,	op_CodName 			= 	RETURNED_SQLSTATE;
+		GET DIAGNOSTICS lv_No 	= 	NUMBER;
+		GET DIAGNOSTICS CONDITION lv_No 
+        	op_ErrorMessage 	= 	MESSAGE_TEXT	
+		,	lv_ErrorNo 			= 	MYSQL_ERRNO
+		,	lv_CodName 			= 	RETURNED_SQLSTATE;
     
-        INSERT INTO CTS_Log.CTSErrorLog(EventID, Message, Description, CreatedDate)
-        VALUES(2, op_ErrorMessage, JSON_OBJECT('err_no',op_ErrorNo,'cod_name',op_CodName,'parameter',ip_CustSport),lv_CurrentDateTime);
+        INSERT INTO CTS_Log.CTSErrorLog(EventID, Message, Description)
+        VALUES(2, op_ErrorMessage, JSON_OBJECT('err_no',lv_ErrorNo,'cod_name',lv_CodName,'parameter',ip_CustSport));
     END;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustSport;    
@@ -55,9 +54,7 @@ BEGIN
     
     UPDATE 		CTS_DataCenter.ProbationAccountMonitor AS pro
     INNER JOIN 	Temp_CustSport AS temp ON pro.CustID = temp.CustID AND pro.SportGroupID = temp.SportGroupID
-    SET			pro.LastScannedDate = DATE(lv_CurrentDateTime);
+    SET			pro.LastScannedDate = CURRENT_DATE();
     
 END$$
-
 DELIMITER ;
-

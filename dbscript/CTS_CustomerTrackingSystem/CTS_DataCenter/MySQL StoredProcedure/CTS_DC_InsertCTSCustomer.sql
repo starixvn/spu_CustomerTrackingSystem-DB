@@ -21,32 +21,28 @@ BEGIN
             - 20200618@Harvey: use CustId as a key when update data (do not have new deposit in our db from now)
             - 20200625@Long.Luu: insert more customer info [Redmine ID: #136046]
             - 20201118@Aries.Nguyen: Add columns InsertedTime, ModifiedTime [RedmineID : #145271]
-            - 20201230@Aries.Nguyen: Return list custId are inserted [RedmineID: #145951]
+            - 20201230-20210107@Aries.Nguyen: Return list custId are inserted. Update Error Log. [RedmineID: #145951]
         
 		Param's Explanation (filtered by):
-        
-        CALL CTS_DataCenter.CTS_DC_InsertCTSCustomer ('[{"BatchId":1,"CustId":1,"CustSubId":0,"Username":"SA-SD$","Username2":null,"Site":"BEST-ODDS","SiteId":1,"RoleId":4,"CurrencyId":1,"Currency":"SD$","Srecommend":1,"Mrecommend":0,"Recommend":0,"CreatedDate":"2020-04-24T03:18:00"},{"BatchId":1,"CustId":2,"CustSubId":0,"Username":"SA-RM","Username2":null,"Site":"BEST-ODDS","SiteId":1,"RoleId":4,"CurrencyId":2,"Currency":"RM","Srecommend":2,"Mrecommend":0,"Recommend":0,"CreatedDate":"2020-04-24T03:18:00"}]')
+			CALL CTS_DataCenter.CTS_DC_InsertCTSCustomer ('[{"BatchId":1,"CustId":1,"CustSubId":0,"Username":"SA-SD$","Username2":null,"Site":"BEST-ODDS","SiteId":1,"RoleId":4,"CurrencyId":1,"Currency":"SD$","Srecommend":1,"Mrecommend":0,"Recommend":0,"CreatedDate":"2020-04-24T03:18:00"},{"BatchId":1,"CustId":2,"CustSubId":0,"Username":"SA-RM","Username2":null,"Site":"BEST-ODDS","SiteId":1,"RoleId":4,"CurrencyId":2,"Currency":"RM","Srecommend":2,"Mrecommend":0,"Recommend":0,"CreatedDate":"2020-04-24T03:18:00"}]')
 	*/
-	DECLARE err_no int DEFAULT 0;
-    DECLARE cod_name varchar(10) DEFAULT '';
-	
+	DECLARE	lv_No				INT			 DEFAULT 0;
+    DECLARE lv_ErrorNo 			INT          DEFAULT 0;
+    DECLARE lv_CodName 			VARCHAR(200) DEFAULT '0';
+
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
+    BEGIN   
+		GET DIAGNOSTICS lv_No 	= 	NUMBER;
+		GET DIAGNOSTICS CONDITION lv_No 
+            op_ErrorMessage 	= 	MESSAGE_TEXT	
+		,	lv_ErrorNo 			= 	MYSQL_ERRNO
+		,	lv_CodName 			= 	RETURNED_SQLSTATE;
     
-	DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    BEGIN
-		GET DIAGNOSTICS @op_No = NUMBER;
-		GET DIAGNOSTICS CONDITION @op_No 
-			 op_ErrorMessage = MESSAGE_TEXT
-            ,err_no = MYSQL_ERRNO
-            ,cod_name = RETURNED_SQLSTATE;
-		
-        INSERT INTO CTS_Log.ErrorLog(EventName, InsertedTime, Message, Err_No, Description)
-        VALUES('CTS_DC_InsertCTSCustomer', NOW(), op_ErrorMessage, err_no, JSON_OBJECT('err_message', op_ErrorMessage, 'err_no', err_no, 'cod_name', cod_name, 'parameter', ip_CustomerList));
-        
-	END;
-    
+        INSERT INTO CTS_Log.CTSErrorLog(EventID, Message, Description)
+        VALUES(13, op_ErrorMessage, JSON_OBJECT('err_no',lv_ErrorNo,'cod_name',lv_CodName,'parameter',ip_CustomerList));
+    END;
     
 	DROP TEMPORARY TABLE IF EXISTS TempCTSCustomer;
-    
 	CREATE TEMPORARY TABLE TempCTSCustomer
 	( 	  SubscriberID 	INT 			
 		, CustID		INT	 UNSIGNED	
