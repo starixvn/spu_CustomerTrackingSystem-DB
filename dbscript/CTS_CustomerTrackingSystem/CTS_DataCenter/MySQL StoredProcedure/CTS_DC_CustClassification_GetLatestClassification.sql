@@ -111,7 +111,7 @@ BEGIN
     
     /* Insert Customer Class = -1 */
 	INSERT INTO     Temp_CustomerClass (CustID, CustomerClass, ScannedTime)
-    SELECT 			temp.CustID,	-1	AS CustomerClass, lv_CurrentDateTime
+    SELECT 			temp.CustID,	-1	AS CustomerClass, CURRENT_TIME()
     FROM 			Temp_Customers AS temp
     INNER JOIN 		CTS_DataCenter.CTSCustomer AS cust ON cust.CustID = temp.CustID -- Existed CustID
     LEFT JOIN 	    Temp_ExistedSpecialCC AS es ON es.CustID = temp.CustID -- Not existed Special CC
