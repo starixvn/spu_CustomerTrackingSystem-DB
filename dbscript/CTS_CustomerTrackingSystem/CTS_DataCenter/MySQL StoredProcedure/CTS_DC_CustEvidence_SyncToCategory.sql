@@ -16,7 +16,7 @@ BEGIN
            - 20201127@Irena.Vo: Enhance logic update LastModifiedDate for category [RedmineID: #141563]
            - 20201201@Irena.Vo: Enhance logic Remove old category [RedmineID: #141563]
            - 20201203@Irena.Vo: Enhance logic Category is NULL [RedmineID: #141563]
-	       - 20201214-20210107@Irena.Vo: Insert History Log. Insert Error Log & update logic SP. Return All List CustID. Update logic SP.  [RedmineID: #145951]
+	        - 20210107@Irena.Vo: Insert History Log. Insert Error Log & update logic SP. Return All List CustID. Update logic SP.  [RedmineID: #145951]
            
 		Param's Explanation (filtered by):		 	
 	*/   
@@ -53,6 +53,7 @@ BEGIN
         ,	SourceTypeID		SMALLINT
 		, 	ActionType		    SMALLINT DEFAULT 0 -- 0: Insert, 1: Update, 2: Remove, 4: Ignore PIN
         ,	IsExistedEvi		BIT DEFAULT 0 -- 1: Not existed Evi Cate => No action remove PA
+        ,	MaxInsertDateEvi    DATETIME -- Will compare with lv_CurrentDateTime. > 10s: Rescan, <= 10s: New
         ,   IsNeedToRescan      BIT DEFAULT 0 -- 1: After action Manual Remove => Insert any data
         , 	PRIMARY KEY     	PK_Temp_CustomerEvidences_CustID_EvidenceID(CustID,EvidenceID) 
         , 	INDEX 				IX_Temp_CustomerEvidences_CustID(CustID) 
@@ -71,8 +72,8 @@ BEGIN
         ,	INDEX				IX_Temp_ExistedClassification_CustID_CategoryGroupID(CustID,CategoryGroupID)
      );
     
-    INSERT INTO 	Temp_CustomerEvidences(CTSCustID, CustID, SubscriberID, EvidenceID, CategoryID, ActionType)
-	SELECT DISTINCT temp.CTSCustID
+    INSERT IGNORE INTO 	Temp_CustomerEvidences(CTSCustID, CustID, SubscriberID, EvidenceID, CategoryID, ActionType)
+	SELECT 			temp.CTSCustID
 				, 	temp.CustID
 				, 	temp.SubscriberID
                 , 	temp.EvidenceID
@@ -117,11 +118,11 @@ BEGIN
 		
         #=========================================ACTION TYPE = 0, 1, 2=========================================================
 		/*	GET EXISTED CATEGORY	*/
-		INSERT INTO Temp_ExistedClassification (CustID, CategoryGroupID, CategoryID, RowOrder)
+		INSERT IGNORE INTO Temp_ExistedClassification (CustID, CategoryGroupID, CategoryID, RowOrder)
         SELECT 		cate.CustID
 				, 	cc.CategoryGroup
                 , 	cate.CategoryID  
-				, 	ROW_NUMBER() OVER (PARTITION BY CustID, CategoryGroupID 
+				, 	ROW_NUMBER() OVER (PARTITION BY cate.CustID, cc.CategoryGroup
                                        ORDER BY (CASE WHEN cate.CategoryID BETWEEN 72 AND 80 THEN 1 -- From Evd will lastest records
 													  ELSE 0
 												 END) ) AS RowOrder
@@ -162,9 +163,12 @@ BEGIN
 		#===========================================CLASSIFICATION DATA==================================================================
 		/*	REMOVE PROBLEM ACCOUNTS */
 		UPDATE 		Temp_CustomerEvidences AS temp
-        INNER JOIN 	CTS_DataCenter.CustEvidence AS ce ON ce.CTSCustID = temp.CTSCustID
-		INNER JOIN 	CTS_DataCenter.EvidenceToCategory AS e ON e.EvidenceID = ce.EvidenceID AND ce.Level = 0 AND e.CategoryID = temp.CategoryID
-	    SET        	temp.IsExistedEvi = 1;
+        INNER JOIN 	(SELECT ce.CTSCustID, e.CategoryID, MAX(CreatedDate) AS MaxInsertDate
+					 FROM CTS_DataCenter.CustEvidence AS ce
+					 INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON e.EvidenceID = ce.EvidenceID AND ce.Level = 0
+                     GROUP BY ce.CTSCustID, e.CategoryID) AS t ON t.CTSCustID = temp.CTSCustID AND t.CategoryID = temp.CategoryID
+	    SET        	temp.IsExistedEvi = 1
+				,	temp.MaxInsertDateEvi = t.MaxInsertDate;
         
         -- Only remove PA from Evidence
 		DELETE 		 cate
@@ -200,15 +204,23 @@ BEGIN
 		WHERE 	temp.ActionType = 0;
    
 		#===========================================WRITE LOG==================================================================
-	    /* INSERT LOG RE-SCAN PA */    
+        /* UPDATE IsNeedToRescan */
         UPDATE 	Temp_CustomerEvidences AS temp 
-	    INNER JOIN ( SELECT his.CustID, MAX(his.ID) AS HistoryID
-					 FROM CTS_DataCenter.CTSCustomerClassification_History AS his
-					 WHERE his.SourceTypeID IN (8, 9, 12, 14) and his.IsDataChanged = 1
-					 GROUP BY his.CustID) AS t ON t.CustID = temp.CustID
-		SET 	temp.IsNeedToRescan = 1;  -- 8: Remove PA by NAP CM, 9: Remove: PA by Evd, 12: Remove Special CC, 14: Remove VVIP ok
-        
-        INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
+	    INNER JOIN ( SELECT CustID, MAX(ID) AS HistoryID
+					 FROM CTS_DataCenter.CTSCustomerClassification_History
+					 WHERE IsDataChanged = 1
+					 GROUP BY CustID) AS t ON t.CustID = temp.CustID
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS his ON his.CustID = temp.CustID AND his.ID = t.HistoryID
+		SET 	temp.IsNeedToRescan = CASE WHEN his.SourceTypeID = 14 THEN 1
+										   WHEN his.SourceTypeID IN (8, 9, 12) AND temp.ActionType = 1 THEN 1	
+                                           WHEN his.SourceTypeID IN (8, 9, 12) 
+												AND temp.ActionType = 0
+                                                AND (TIMESTAMPDIFF(SECOND, temp.MaxInsertDateEvi, lv_CurrentDateTime) > 10) THEN 1	
+									  END
+        WHERE temp.ActionType IN (0, 1) AND his.SourceTypeID IN (8, 9, 12, 14);  -- 8: Remove PA by NAP CM, 9: Remove: PA by Evd, 12: Remove Special CC, 14: Remove VVIP
+       
+	    /* INSERT LOG RE-SCAN PA */    
+        INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
 		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
 		SELECT 	DISTINCT temp.CustID
 			, 	temp.CTSCustID
@@ -223,8 +235,8 @@ BEGIN
             , 	16 -- Rescan Problem Account
 			,	1 -- View History
 		FROM 	Temp_CustomerEvidences AS temp
-		WHERE 	temp.IsNeedToRescan = 1 AND temp.ActionType IN (0, 1);
-        
+		WHERE 	temp.IsNeedToRescan = 1; -- Re-scan existed Evidence. Insert Time > 10s
+                                 
        /*	INSERT LOG INSERT NEW/ UPDATE PA */
         INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
 		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
@@ -251,7 +263,7 @@ BEGIN
 		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
 		SELECT  DISTINCT temp.CustID
 			, 	temp.CTSCustID
-			, 	ex.CategoryID
+			, 	temp.CategoryID
 			, 	0 
 			, 	lv_CurrentDateTime
 			, 	lv_CreatedBy
@@ -264,8 +276,8 @@ BEGIN
 					 ELSE 0
 				END
 		FROM 	  Temp_CustomerEvidences AS temp
-		LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryGroupID = temp.CategoryGroupID AND ex.RowOrder = 1 -- Not existed NAP CM Cate.
-		WHERE     temp.IsNeedToRescan = 0 AND temp.ActionType = 2;
+		LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryID BETWEEN 72 AND 80 AND ex.RowOrder = 1 -- Only existed Evd Cate.
+		WHERE     temp.ActionType = 2 AND temp.IsExistedEvi = 0;
 	  
 		/*	INSERT LOG IGNORE PIN */
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
@@ -280,7 +292,7 @@ BEGIN
 			, 	1 -- auto
 			, 	DATE(lv_CurrentDateTime)
 		FROM 	Temp_CustomerEvidences AS temp
-		WHERE   temp.IsNeedToRescan = 0 AND temp.ActionType = 4;
+		WHERE   temp.ActionType = 4;
 		
 		#=========================================GET LASTEST RESULTS=========================================================
 		/*	GET LASTEST CUSTID LIST	-> GET LATEST CLASSICATION -> SYNC CC IN MAINDB */

@@ -21,7 +21,7 @@ BEGIN
                 -20201026@Irena.Vo: Enhance init data for Probation to VIP OR Normal. [Redmine ID: #142546]
                 -20201116@Irena.Vo: Only distinct CustID list for general & Update LastScannedDate for Probation List. [Redmine ID: #145028]
                 -20201201@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. [Redmine ID: #145954]
-			    - 20201214-20210107@Irena.Vo: Insert History Log. Insert Error Log & update logic SP. Return All List CustID. Update logic SP.  [RedmineID: #145951]
+					    - 20210107@Irena.Vo: Insert History Log. Insert Error Log & update logic SP. Return All List CustID. Update logic SP.  [RedmineID: #145951]
                
 		Param's Explanation (filtered by):
 			  CALL CTS_DataCenter.CTS_DC_InsertMainCustomerClassification('[{"CustId": 1, "CategoryId": 202, "CreatedTime": "2020-09-13 00:01:00", "TurnoverRM": 100, "WinlossRM": 2056354, "BetCount": 500, "ActiveDays": 8}]');
@@ -65,7 +65,7 @@ BEGIN
         ,	SourceTypeID            SMALLINT
         , 	ActionType				SMALLINT DEFAULT 0 -- 0: Insert; 1: Update, 3: Ignore Existed PA, 4: Ignore PIN
         ,   IsNeedToRescan      	BIT DEFAULT 0 -- 1: After action Manual Remove => Insert any data
-        , 	INDEX    			    IX_Temp_NewClassification_CustID_CategoryID(CustID,CategoryID)     
+        , 	INDEX    			    IX_Temp_NewClassification_CustID_NewCategoryID(CustID,NewCategoryID)     
 		, 	INDEX 					IX_Temp_NewClassification_ExistCategoryID_LastCategoryID(ExistCategoryID,LastCategoryID)        
      );     
 
@@ -161,6 +161,17 @@ BEGIN
 	WHERE 		temp.ActionType IN (0, 1);
     
     #========================================CLASSIFICATION DATA==========================================================
+	/* UPDATE IsNeedToRescan */
+    UPDATE Temp_NewClassification AS temp 
+	INNER JOIN ( SELECT CustID, MAX(ID) AS HistoryID
+				 FROM CTS_DataCenter.CTSCustomerClassification_History
+				 WHERE IsDataChanged = 1
+				 GROUP BY CustID) AS t ON t.CustID = temp.CustID
+	INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS his ON his.CustID = temp.CustID AND his.ID = t.HistoryID
+	SET 	temp.IsNeedToRescan = 1
+		, 	temp.LastModifiedDate = lv_CurrentDateTime
+	WHERE   temp.ActionType IN (0, 1) AND his.SourceTypeID IN (8, 9, 12, 14);  -- 8: Remove PA by NAP CM, 9: Remove: PA by Evd, 12: Remove Special CC, 14: Remove VVIP
+   
     /*	UPDATE EXISTED CATEGORY */
     UPDATE 		CTS_DataCenter.CTSCustomerClassification AS cate
     INNER JOIN  Temp_NewClassification AS temp on temp.CustID = cate.CustID AND cate.SportGroupID = 200
@@ -229,21 +240,14 @@ BEGIN
     
     #==========================================WRITE LOG========================================================
     /* INSERT LOG RE-SCAN NORMAL */    
-    UPDATE Temp_NewClassification AS temp 
-	INNER JOIN ( SELECT his.CustID, MAX(his.ID) AS HistoryID
-				 FROM CTS_DataCenter.CTSCustomerClassification_History AS his
-				 WHERE his.SourceTypeID IN (8, 9, 12, 14) and his.IsDataChanged = 1
-				 GROUP BY his.CustID) AS t ON t.CustID = temp.CustID
-	SET temp.IsNeedToRescan = 1;  -- 8: Remove PA by NAP CM, 9: Remove: PA by Evd, 12: Remove Special CC, 14: Remove VVIP ok
-    
-    INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
      (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy,TurnoverRM, WinlossRM, BetCount, ActiveDays
     , ActionType,  IsAuto, InsertDate, LastXDaysMargin, ProbationPeriodWinloss, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsDataChanged)
     SELECT DISTINCT	 temp.CustID
 				, 	temp.CTSCustID
 				, 	temp.LastCategoryID
 				, 	200
-				, 	lv_CurrentDateTime
+				, 	temp.LastModifiedDate
 				, 	lv_CreatedBy
 				, 	temp.TurnoverRM
 				, 	temp.WinlossRM
@@ -258,9 +262,9 @@ BEGIN
                 ,   17 -- Rescan Normal Account
 				, 	temp.ExistCategoryID
 				, 	temp.NewCategoryID
-                ,	1 -- View History
+                ,	1
 	FROM 	    Temp_NewClassification AS temp
-	WHERE       temp.IsNeedToRescan = 1 AND temp.ActionType IN (0, 1);
+	WHERE       temp.IsNeedToRescan = 1;
     
     /* INSERT LOG NEW CATEGORY */    
     INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
@@ -287,7 +291,7 @@ BEGIN
 				, 	temp.NewCategoryID
                 ,	1 -- View History
 	FROM 		Temp_NewClassification AS temp
-	WHERE       temp.IsNeedToRescan = 0 AND temp.ActionType = 0;
+	WHERE       temp.IsNeedToRescan = 0 AND  temp.ActionType = 0;
     
 	/* INSERT LOG EXISTED CATEGORY */    
     INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
@@ -339,7 +343,7 @@ BEGIN
 				, 	temp.LastXDaysMargin
 				, 	temp.ProbationPeriodWinloss
 	FROM 	Temp_NewClassification AS temp
-	WHERE   temp.IsNeedToRescan = 0 AND temp.ActionType IN (3, 4);
+	WHERE   temp.ActionType IN (3, 4);
     
     #==========================================GET LASTEST RESULTS========================================================
 	/*	GET LASTEST CUSTID LIST	-> GET LATEST CLASSICATION -> SYNC CC IN MAINDB */

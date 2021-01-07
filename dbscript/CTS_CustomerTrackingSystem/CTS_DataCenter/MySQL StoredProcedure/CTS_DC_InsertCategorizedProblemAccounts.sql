@@ -20,7 +20,7 @@ BEGIN
             - Remove old categoryid from NapCM
             20201019@Irena.Vo  [#141930]: Get distinct CustID List for lastest category
             - 20201202@Lex.Khuat: Disable detail categories & clean up wrong syntax [Redmine ID: #145954]
-			- 20201214-20210107@Irena.Vo: Insert History Log. Insert Error Log & update logic SP. Return All List CustID. Update logic SP.  [RedmineID: #145951]
+			- 20210107@Irena.Vo: Insert History Log. Insert Error Log & update logic SP. Return All List CustID. Update logic SP.  [RedmineID: #145951]
             
 		Param's Explanation (filtered by):
 	*/   
@@ -197,15 +197,18 @@ BEGIN
     WHERE 	temp.ActionType = 0;           
     
     #===========================================WRITE LOG==================================================================
+	/* UPDATE IsNeedToRescan */
+    UPDATE Temp_ProblemAccounts AS temp 
+	INNER JOIN ( SELECT CustID, MAX(ID) AS HistoryID
+					 FROM CTS_DataCenter.CTSCustomerClassification_History
+					 WHERE IsDataChanged = 1
+					 GROUP BY CustID) AS t ON t.CustID = temp.CustID
+	INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS his ON his.CustID = temp.CustID AND his.ID = t.HistoryID
+	SET 	temp.IsNeedToRescan = 1
+	WHERE   temp.ActionType IN (0, 1) AND his.SourceTypeID IN (9, 12, 14);  -- 9: Remove: PA by Evd, 12: Remove Special CC, 14: Remove VVIP
+ 
 	/* INSERT LOG RE-SCAN PA */    
-	UPDATE Temp_ProblemAccounts AS temp 
-	INNER JOIN ( SELECT his.CustID, MAX(his.ID) AS HistoryID
-				 FROM CTS_DataCenter.CTSCustomerClassification_History AS his
-				 WHERE his.SourceTypeID IN (8, 9, 12, 14) and his.IsDataChanged = 1
-				 GROUP BY his.CustID) AS t ON t.CustID = temp.CustID
-	SET temp.IsNeedToRescan = 1;  -- 8: Remove PA by NAP CM, 9: Remove: PA by Evd, 12: Remove Special CC, 14: Remove VVIP ok
-   
-    INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
     (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
     SELECT  DISTINCT temp.CustID
 		, 	temp.CTSCustID
@@ -220,7 +223,7 @@ BEGIN
 		, 	15 -- Rescan Problem Account
 		,   1
 	FROM 	Temp_ProblemAccounts AS temp
-	WHERE 	temp.IsNeedToRescan = 1 AND temp.ActionType IN (0, 1);
+	WHERE 	temp.IsNeedToRescan = 1;
    
     /*	INSERT LOG INSERT NEW/ UPDATE PA */
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
@@ -257,11 +260,11 @@ BEGIN
 		, 	DATE(lv_CurrentDateTime)
 		, 	temp.TargetCC
 		, 	temp.SourceTypeID
-		,   CASE WHEN c.CategoryGroupID IS NOT NULL THEN 1 -- View History
+		,   CASE WHEN ex.CategoryGroupID IS NOT NULL THEN 1 -- View History
                  ELSE 0
 			END
 	FROM 		Temp_ProblemAccounts AS temp
-    LEFT JOIN 	Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryGroupID = temp.CategoryGroupID AND ex.RowOrder = 1 -- Not existed Evd Cate.
+    LEFT JOIN 	Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryID NOT BETWEEN 72 AND 80 AND ex.RowOrder = 1 -- Only existed NAP CM Cate.
 	WHERE     	temp.ActionType = 2;
         
     /*	INSERT LOG IGNORE PIN */
