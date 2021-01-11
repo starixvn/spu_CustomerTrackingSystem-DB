@@ -19,8 +19,7 @@ AS
 		- 20202005@Harvey:		only get SMAP (roleid 4321) 	- [Redmine: #133934]
 		- 20200623@Long.Luu:	Sync more Customer Info [Redmine: #136046]
 		- 20200827@Long.Luu:	Fix CN88 account status checking condition [Redmine: #137647]
-		- 20200107@Casey.Huynh:	Remove Code Isdangerous [Redmine: #145951]
-
+		
 	Developer's Notes:
 		- @Example:			NULL		- Explaination [DEFAULT]
 
@@ -66,6 +65,19 @@ BEGIN;
 		,	Mrecommend		INT
 		,	Recommend		INT
 		,	CreatedDate		DATETIME
+	);
+
+			
+	-- Get Dangerous Customers
+	IF	OBJECT_ID('tempdb..#tmpDangerousCustomer') IS NOT NULL
+		DROP TABLE	#tmpDangerousCustomer;
+
+	CREATE TABLE #tmpDangerousCustomer(
+		[CustId]			INT NOT NULL
+	);
+
+	CREATE CLUSTERED INDEX IX_tmpDangerousCustomer_CustId ON #tmpDangerousCustomer(
+		[CustId]			ASC
 	);
 
 	INSERT INTO #tmpCustomers
@@ -127,6 +139,33 @@ BEGIN;
 	FROM #tmpCustomers AS a
 		INNER JOIN bodb02.dbo.CS_CustomerStatus AS c WITH(NOLOCK) ON a.CustId = c.custid;
 
+	-- Get Robot customers for MBC
+	INSERT INTO #tmpDangerousCustomer(CustId)
+	SELECT DISTINCT r.CustId
+	FROM DBONUSER.ON_USER.dbo.RobotUsers r WITH (NOLOCK)
+	WHERE r.[counter] >= 10;
+
+	-- Get Robot customers for CN88
+	INSERT INTO #tmpDangerousCustomer(CustId)
+	SELECT p.CustId
+	FROM bodb02.dbo.CS_ProblemAccount AS p WITH (NOLOCK);
+
+	-- Get Abnormal Customers
+	INSERT INTO #tmpDangerousCustomer(CustId)
+	SELECT a.CustId
+	FROM DBONUSER.ON_USER.dbo.AbnormalUsers AS a WITH(NOLOCK)
+	WHERE (flags & 4) = 4;
+	
+	-- Remove duplicated accounts
+	DELETE c WITH(ROWLOCK)
+	FROM #tmpDangerousCustomer AS c
+		INNER JOIN (
+				SELECT	cc.CustId
+					,	ROW_NUMBER() OVER(PARTITION BY cc.CustId ORDER BY cc.CustId) AS RowNum
+				FROM #tmpDangerousCustomer AS cc
+			) AS cc ON c.CustId = cc.CustId
+	WHERE cc.RowNum > 1;
+
 
 	SELECT	(RowNo/(@rowSize+1)) AS 'BatchId'
 		,	a.CustId
@@ -145,6 +184,8 @@ BEGIN;
 		,	a.Mrecommend
 		,	a.Recommend
 		,	a.CreatedDate
-	FROM #tmpCustomers AS a WITH(NOLOCK);
+		,	CASE WHEN d.CustId IS NULL THEN 0 ELSE 1 END AS IsDangerous
+	FROM #tmpCustomers AS a WITH(NOLOCK)
+		LEFT JOIN #tmpDangerousCustomer AS d WITH(NOLOCK) ON a.CustId = d.CustId;
 END;
 GO
