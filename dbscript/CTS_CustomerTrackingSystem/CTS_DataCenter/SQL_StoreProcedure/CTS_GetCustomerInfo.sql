@@ -19,6 +19,7 @@ AS
 		- 20202005@Harvey:		only get SMAP (roleid 4321) 	- [Redmine: #133934]
 		- 20200623@Long.Luu:	Sync more Customer Info [Redmine: #136046]
 		- 20200827@Long.Luu:	Fix CN88 account status checking condition [Redmine: #137647]
+		- 20210112@Long.Luu:	Fix Customer Status Issue & Remove Robot checking [Redmine: #148541]
 		
 	Developer's Notes:
 		- @Example:			NULL		- Explaination [DEFAULT]
@@ -122,7 +123,7 @@ BEGIN;
 							WHEN c.[Enabled] <> 1 THEN @MBC_ACCOUNTSTATUS_DISABLED
 							WHEN c.closed = 1 THEN @MBC_ACCOUNTSTATUS_CLOSED
 							WHEN c.reject = 1 THEN @MBC_ACCOUNTSTATUS_SUSPENDED
-							WHEN c.reject <> 1 THEN @MBC_ACCOUNTSTATUS_OPEN END)
+							ELSE @MBC_ACCOUNTSTATUS_OPEN END)
 		,	a.Danger1 = c.danger
 		,	a.Danger2 = c.danger2
 		,	a.Danger3 = c.danger3
@@ -138,23 +139,6 @@ BEGIN;
 							ELSE @CN88_ACCOUNTSTATUS_ACTIVE END)/*WHEN (c.InactiveInfo = 0 AND c.SuspendedInfo = 0 AND c.ViewOnlyInfo = 0)*/ 
 	FROM #tmpCustomers AS a
 		INNER JOIN bodb02.dbo.CS_CustomerStatus AS c WITH(NOLOCK) ON a.CustId = c.custid;
-
-	-- Get Robot customers for MBC
-	INSERT INTO #tmpDangerousCustomer(CustId)
-	SELECT DISTINCT r.CustId
-	FROM DBONUSER.ON_USER.dbo.RobotUsers r WITH (NOLOCK)
-	WHERE r.[counter] >= 10;
-
-	-- Get Robot customers for CN88
-	INSERT INTO #tmpDangerousCustomer(CustId)
-	SELECT p.CustId
-	FROM bodb02.dbo.CS_ProblemAccount AS p WITH (NOLOCK);
-
-	-- Get Abnormal Customers
-	INSERT INTO #tmpDangerousCustomer(CustId)
-	SELECT a.CustId
-	FROM DBONUSER.ON_USER.dbo.AbnormalUsers AS a WITH(NOLOCK)
-	WHERE (flags & 4) = 4;
 	
 	-- Remove duplicated accounts
 	DELETE c WITH(ROWLOCK)
@@ -184,7 +168,6 @@ BEGIN;
 		,	a.Mrecommend
 		,	a.Recommend
 		,	a.CreatedDate
-		,	CASE WHEN d.CustId IS NULL THEN 0 ELSE 1 END AS IsDangerous
 	FROM #tmpCustomers AS a WITH(NOLOCK)
 		LEFT JOIN #tmpDangerousCustomer AS d WITH(NOLOCK) ON a.CustId = d.CustId;
 END;
