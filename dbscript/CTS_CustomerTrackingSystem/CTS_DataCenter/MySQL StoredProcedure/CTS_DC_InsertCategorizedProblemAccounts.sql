@@ -24,8 +24,7 @@ BEGIN
             - Add Multi Problem Category
             - Remove old categoryid from NapCM
             20201019@Irena.Vo  [#141930]: Get distinct CustID List for lastest category
-            - 20201202@Lex.Khuat: Disable detail categories & clean up wrong syntax [Redmine ID: #145954]
-			- 20210108@Irena.Vo: Insert History Log. Insert Error Log & update logic SP. Return All List CustID. Update logic SP.  [RedmineID: #145951]
+            - 2020120211@Irena.Vo: Insert History Log. Insert Error Log & update logic SP. Return All List CustID. Update logic SP.  [RedmineID: #145951]
             
 		Param's Explanation (filtered by):
 			CALL CTS_DataCenter.CTS_DC_InsertCategorizedProblemAccounts('[{"CustId": 123, "CategoryId": 27}]',0,@op_ErrorMessage);
@@ -91,12 +90,14 @@ BEGIN
     /*	REMOVE GENERAL CATEGORY BEFORE	*/
     DELETE cate
     FROM CTS_DataCenter.CTSCustomerClassification AS cate
-		INNER JOIN Temp_ProblemAccounts AS temp ON temp.CustID = cate.CustID AND cate.SportGroupID = 200;
+		INNER JOIN Temp_ProblemAccounts AS temp ON temp.CustID = cate.CustID AND cate.SportGroupID = 200
+	WHERE temp.ActionType = 0;
   
 	/*	REMOVE PROBATION LIST BEFORE	*/
     DELETE pro
     FROM CTS_DataCenter.ProbationAccountMonitor AS pro
-		INNER JOIN Temp_ProblemAccounts AS temp ON temp.CustID = pro.CustID;
+		INNER JOIN Temp_ProblemAccounts AS temp ON temp.CustID = pro.CustID
+	WHERE temp.ActionType = 0;
     
     /*  UPDATE CATEGORY ID, CATEGORY GROUP ID INFO */
     UPDATE Temp_ProblemAccounts AS temp 
@@ -106,7 +107,8 @@ BEGIN
 								END)
 		,	temp.CategoryGroupID = (CASE WHEN cc.DisplayOrder IS NOT NULL THEN cc.CategoryGroup
 										 ELSE temp.MainDBCategoryID
-									END);
+									END)
+	WHERE temp.ActionType = 0;
     
     /*	UPDATE CUST INFO */
     UPDATE Temp_ProblemAccounts AS temp 
@@ -139,23 +141,17 @@ BEGIN
     WHERE temp.CategoryID = -1;
     
     /*	UPDATE TARGET CC INFO */
-    /*	For Insert New & Update */
 	UPDATE Temp_ProblemAccounts AS temp 
 		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID 
 		LEFT JOIN CTS_DataCenter.CategoryToCustomerClass AS map ON map.CategoryID = temp.CategoryID
-    SET	temp.TargetCC = (CASE WHEN sp.CustID IS NOT NULL THEN sp.CustomerClass /* Existed CC */
+	SET	temp.TargetCC = (CASE WHEN sp.CustID IS NOT NULL THEN sp.CustomerClass /* Existed CC */
 							  WHEN map.CategoryID IS NOT NULL THEN map.CustomerClass  /* Mapping CC */
-							  ELSE -99 /* No mapping CC */
-						 END)
-	WHERE temp.ActionType IN (0, 1);
-    
-    /* For Remove */
-    UPDATE Temp_ProblemAccounts AS temp 
-		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID 
-    SET	temp.TargetCC = (CASE WHEN sp.CustID IS NOT NULL THEN sp.CustomerClass /* Existed CC */
-							  ELSE -1 /* Remove PA */
-						 END)
-	WHERE temp.ActionType = 2;
+							  ELSE 
+								   CASE WHEN temp.ActionType IN (0, 1) THEN -99 /* No mapping CC */
+										WHEN temp.ActionType = 2 THEN -1  /* Remove PA */
+								   END
+						END)
+	WHERE temp.ActionType IN (0, 1, 2);
     
     /*	UPDATE SOURCE TYPE ID INFO */
 	UPDATE Temp_ProblemAccounts AS temp 
@@ -205,15 +201,15 @@ BEGIN
 		SELECT DISTINCT temp.CustID
 			, 	temp.CTSCustID
 			, 	temp.CategoryID
-			, 	0 AS SportGroupID
-			, 	lv_CurrentDateTime AS LastModifiedDate
-			, 	lv_CreatedBy AS LastModifiedBy
+			, 	0
+			, 	lv_CurrentDateTime
+			, 	lv_CreatedBy
 			, 	temp.ActionType
-			, 	1 AS IsAuto
-			, 	DATE(lv_CurrentDateTime) AS InsertDate
+			, 	1
+			, 	DATE(lv_CurrentDateTime)
 			, 	temp.TargetCC
-			, 	15 AS SourceTypeID /* Rescan PA */
-			,   1 AS IsDataChanged
+			, 	15 /* Rescan PA */
+			,   1
 		FROM Temp_ProblemAccounts AS temp;
 	ELSE 
 		/*	INSERT LOG NEW & UPDATE PA FROM NAP CM */
@@ -222,17 +218,17 @@ BEGIN
 		SELECT DISTINCT temp.CustID
 			, 	temp.CTSCustID
 			, 	temp.CategoryID
-			, 	0 AS SportGroupID
-			, 	lv_CurrentDateTime AS LastModifiedDate
-			, 	lv_CreatedBy AS LastModifiedBy
+			, 	0
+			, 	lv_CurrentDateTime
+			, 	lv_CreatedBy
 			, 	temp.ActionType
-			, 	1 AS IsAuto
-			, 	DATE(lv_CurrentDateTime) AS InsertDate
+			, 	1
+			, 	DATE(lv_CurrentDateTime)
 			, 	temp.TargetCC
 			, 	temp.SourceTypeID
 			,   CASE WHEN ex.CategoryGroupID IS NULL THEN 1
 					 ELSE 0
-				END AS IsDataChanged
+				END
 		FROM Temp_ProblemAccounts AS temp
 			LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryGroupID = temp.CategoryGroupID /* Not existed Evd Cate. */
 		WHERE temp.ActionType IN (0, 1);
@@ -243,17 +239,17 @@ BEGIN
 		SELECT DISTINCT temp.CustID
 			, 	temp.CTSCustID
 			, 	ex.CategoryID
-			, 	0 AS SportGroupID
-			, 	lv_CurrentDateTime AS LastModifiedDate
-			, 	lv_CreatedBy AS LastModifiedBy
+			, 	0
+			, 	lv_CurrentDateTime
+			, 	lv_CreatedBy
 			, 	temp.ActionType
-			, 	1 AS IsAuto
-			, 	DATE(lv_CurrentDateTime) AS InsertDate
+			, 	1
+			, 	DATE(lv_CurrentDateTime)
 			, 	temp.TargetCC
 			, 	temp.SourceTypeID
 			,   CASE WHEN ex.CategoryGroupID IS NOT NULL THEN 1
 					 ELSE 0
-				END AS IsDataChanged
+				END
 		FROM Temp_ProblemAccounts AS temp
 			LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryID NOT BETWEEN 72 AND 80 AND ex.RowOrder = 1
 		WHERE temp.ActionType = 2;
@@ -264,12 +260,12 @@ BEGIN
 		SELECT DISTINCT temp.CustID
 			, 	temp.CTSCustID
 			, 	temp.CategoryID
-			, 	0 AS SportGroupID
-			, 	lv_CurrentDateTime AS LastModifiedDate
-			, 	lv_CreatedBy AS LastModifiedBy
+			, 	0
+			, 	lv_CurrentDateTime
+			, 	lv_CreatedBy
 			, 	temp.ActionType
-			, 	1 AS IsAuto
-			, 	DATE(lv_CurrentDateTime) AS InsertDate
+			, 	1
+			, 	DATE(lv_CurrentDateTime)
 		FROM Temp_ProblemAccounts AS temp
 		WHERE temp.ActionType = 4;
     END IF;

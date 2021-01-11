@@ -26,7 +26,7 @@ BEGIN
                 -20201026@Irena.Vo: Enhance init data for Probation to VIP OR Normal. [Redmine ID: #142546]
                 -20201116@Irena.Vo: Only distinct CustID list for general & Update LastScannedDate for Probation List. [Redmine ID: #145028]
                 -20201201@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. [Redmine ID: #145954]
-			    - 20210108@Irena.Vo: Insert History Log. Insert Error Log & update logic SP. Return All List CustID. Update logic SP.  [RedmineID: #145951]
+			    - 20210111@Irena.Vo: Insert History Log. Insert Error Log & update logic SP. Return All List CustID. Update logic SP.  [RedmineID: #145951]
                
 		Param's Explanation (filtered by):
 			  CALL CTS_DataCenter.CTS_DC_InsertMainCustomerClassification('[{"CustId": 1, "CategoryId": 202, "CreatedTime": "2020-09-13 00:01:00", "TurnoverRM": 100, "WinlossRM": 2056354, "BetCount": 500, "ActiveDays": 8}]');
@@ -182,13 +182,13 @@ BEGIN
 	SELECT DISTINCT temp.CustID
 		, 	temp.CTSCustID
 		, 	temp.SubscriberID
-		, 	200 AS SportGroupID
+		, 	200
 		, 	temp.LastCategoryID
 		, 	temp.LastModifiedDate
-		, 	lv_CreatedBy AS CreatedBy
+		, 	lv_CreatedBy
 		, 	temp.LastModifiedDate
-		, 	lv_CreatedBy AS LastModifiedBy
-		, 	DATE(lv_CurrentDateTime) AS LastScannedDate
+		, 	lv_CreatedBy
+		, 	DATE(lv_CurrentDateTime)
 	 FROM Temp_NewClassification AS temp
      WHERE temp.ActionType = 0;
     
@@ -204,15 +204,15 @@ BEGIN
 	(CustID, CTSCustID, SportGroupID, TargetCategoryID, FirstMargin, CreatedDate, CreatedBy, CreatedTime, LastScannedDate) 
 	SELECT DISTINCT temp.CustID
 		, 	temp.CTSCustID
-		, 	200 AS SportGroupID
+		, 	200
 		, 	temp.LastCategoryID
 		, 	CASE WHEN temp.TurnoverRM = 0 THEN 0
 				 ELSE (temp.WinlossRM / temp.TurnoverRM) * 100
-			END AS FirstMargin
-		, 	DATE(temp.LastModifiedDate) AS CreatedDate
-		, 	lv_CreatedBy AS CreatedBy
+			END
+		, 	DATE(temp.LastModifiedDate)
+		, 	lv_CreatedBy
 		, 	temp.LastModifiedDate
-		,   DATE(lv_CurrentDateTime) AS LastScannedDate
+		,   DATE(lv_CurrentDateTime)
 	FROM Temp_NewClassification AS temp
 	WHERE (temp.ActionType = 0 AND temp.LastCategoryID = 206);
     
@@ -220,15 +220,15 @@ BEGIN
 	(CustID, CTSCustID, SportGroupID, TargetCategoryID, FirstMargin, CreatedDate, CreatedBy, CreatedTime, LastScannedDate) 
 	SELECT DISTINCT temp.CustID
 		, 	temp.CTSCustID
-		, 	200 AS SportGroupID
+		, 	200
 		, 	temp.LastCategoryID
 		, 	CASE WHEN temp.TurnoverRM = 0 THEN 0
 				 ELSE (temp.WinlossRM / temp.TurnoverRM) * 100
-			END AS FirstMargin
-		, 	DATE(temp.LastModifiedDate) AS CreatedDate
-		, 	lv_CreatedBy AS CreatedBy
+			END
+		, 	DATE(temp.LastModifiedDate)
+		, 	lv_CreatedBy
 		, 	temp.LastModifiedDate
-		,   DATE(lv_CurrentDateTime) AS LastScannedDate
+		,   DATE(lv_CurrentDateTime)
 	FROM Temp_NewClassification AS temp
 	WHERE (temp.ActionType = 1 AND temp.ExistCategoryID <> 206 AND temp.LastCategoryID = 206);
     
@@ -241,23 +241,23 @@ BEGIN
 		SELECT DISTINCT	temp.CustID
 			, 	temp.CTSCustID
 			, 	temp.LastCategoryID
-			, 	200 AS SportGroupID
+			, 	200
 			, 	temp.LastModifiedDate
-			, 	lv_CreatedBy AS LastModifiedBy
+			, 	lv_CreatedBy
 			, 	temp.TurnoverRM
 			, 	temp.WinlossRM
 			, 	temp.BetCount
 			, 	temp.ActiveDays
 			, 	temp.ActionType
-			, 	1 AS IsAuto
-			, 	DATE(lv_CurrentDateTime) AS InsertDate
+			, 	1
+			, 	DATE(lv_CurrentDateTime)
 			, 	temp.LastXDaysMargin
 			, 	temp.ProbationPeriodWinloss
 			,	temp.TargetCC
-			,   17 AS SourceTypeID /* Rescan Normal Account */
+			,   17 /* Rescan Normal Account */
 			, 	temp.ExistCategoryID
 			, 	temp.NewCategoryID
-			,	1 AS IsDataChanged
+			,	1
 		FROM Temp_NewClassification AS temp;
     ELSE
 		/* INSERT LOG NEW CATEGORY */    
@@ -267,23 +267,23 @@ BEGIN
 		SELECT DISTINCT	temp.CustID
 			, 	temp.CTSCustID
 			, 	temp.LastCategoryID
-			, 	200 AS SportGroupID
+			, 	200
 			, 	temp.LastModifiedDate
-			, 	lv_CreatedBy AS LastModifiedBy
+			, 	lv_CreatedBy
 			, 	temp.TurnoverRM
 			, 	temp.WinlossRM
 			, 	temp.BetCount
 			, 	temp.ActiveDays
 			, 	temp.ActionType
-			, 	1 AS IsAuto
-			, 	DATE(lv_CurrentDateTime) AS InsertDate
+			, 	1
+			, 	DATE(lv_CurrentDateTime)
 			, 	temp.LastXDaysMargin
 			, 	temp.ProbationPeriodWinloss
 			,	temp.TargetCC
 			,   temp.SourceTypeID
 			, 	temp.ExistCategoryID
 			, 	temp.NewCategoryID
-			,	1 AS IsDataChanged
+			,	1
 		FROM Temp_NewClassification AS temp
 		WHERE temp.ActionType = 0;
 		
@@ -294,16 +294,16 @@ BEGIN
 		SELECT DISTINCT	temp.CustID
 			, 	temp.CTSCustID
 			, 	temp.LastCategoryID
-			, 	200 AS SportGroupID
+			, 	200
 			, 	temp.LastModifiedDate
-			, 	lv_CreatedBy AS LastModifiedBy
+			, 	lv_CreatedBy
 			, 	temp.TurnoverRM
 			, 	temp.WinlossRM
 			, 	temp.BetCount
 			, 	temp.ActiveDays
 			, 	temp.ActionType
-			, 	1 AS IsAuto
-			, 	DATE(lv_CurrentDateTime) AS InsertDate
+			, 	1
+			, 	DATE(lv_CurrentDateTime)
 			, 	temp.LastXDaysMargin
 			, 	temp.ProbationPeriodWinloss
 			, 	temp.TargetCC
@@ -313,7 +313,7 @@ BEGIN
 			,	CASE WHEN temp.LastCategoryID <> temp.ExistCategoryID THEN 1
 					 WHEN temp.SourceTypeID = 5 THEN 1
 					 ELSE 0 
-				END AS IsDataChanged
+				END
 		FROM Temp_NewClassification AS temp
 		WHERE temp.ActionType = 1;
 	   
@@ -324,16 +324,16 @@ BEGIN
 		SELECT DISTINCT	temp.CustID
 			, 	temp.CTSCustID
 			, 	temp.NewCategoryID
-			, 	200 AS SportGroupID
-			, 	temp.LastModifiedDate AS LastModifiedDate
-			, 	lv_CreatedBy AS LastModifiedBy
+			, 	200
+			, 	temp.LastModifiedDate
+			, 	lv_CreatedBy
 			, 	temp.TurnoverRM
 			, 	temp.WinlossRM
 			, 	temp.BetCount
 			, 	temp.ActiveDays
 			, 	temp.ActionType
-			, 	1 AS IsAuto
-			, 	DATE(lv_CurrentDateTime) AS InsertDate
+			, 	1
+			, 	DATE(lv_CurrentDateTime)
 			, 	temp.LastXDaysMargin
 			, 	temp.ProbationPeriodWinloss
 		FROM Temp_NewClassification AS temp

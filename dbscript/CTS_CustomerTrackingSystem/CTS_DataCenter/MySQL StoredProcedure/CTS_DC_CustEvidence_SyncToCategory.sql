@@ -21,7 +21,7 @@ BEGIN
            - 20201127@Irena.Vo: Enhance logic update LastModifiedDate for category [RedmineID: #141563]
            - 20201201@Irena.Vo: Enhance logic Remove old category [RedmineID: #141563]
            - 20201203@Irena.Vo: Enhance logic Category is NULL [RedmineID: #141563]
-	       - 20210108@Irena.Vo: Insert History Log. Insert Error Log & update logic SP. Return All List CustID. Update logic SP.  [RedmineID: #145951]
+	       - 20210111@Irena.Vo: Insert History Log. Insert Error Log & update logic SP. Return All List CustID. Update logic SP.  [RedmineID: #145951]
            
 		Param's Explanation (filtered by):	
 			CALL CTS_DataCenter.CTS_DC_CustEvidence_SyncToCategory('[{"CustId":43600693, "CTSCustId": 221882500, "SubscriberId": 130, "EvidenceId": 41, "ActionType": 0}]',0,@op_ErrorMessage);
@@ -104,17 +104,20 @@ BEGIN
         /*	REMOVE GENERAL CATEGORY BEFORE	*/
 		DELETE cate
         FROM CTS_DataCenter.CTSCustomerClassification AS cate
-			INNER JOIN Temp_CustomerEvidences AS temp ON temp.CustID = cate.CustID AND cate.SportGroupID = 200;
+			INNER JOIN Temp_CustomerEvidences AS temp ON temp.CustID = cate.CustID AND cate.SportGroupID = 200
+		WHERE temp.ActionType IN (0, 2);
         
         /*	REMOVE PROBATION LIST BEFORE	*/
 		DELETE pro
         FROM CTS_DataCenter.ProbationAccountMonitor AS pro 
-			INNER JOIN Temp_CustomerEvidences AS temp ON temp.CustID = pro.CustID;
+			INNER JOIN Temp_CustomerEvidences AS temp ON temp.CustID = pro.CustID
+		WHERE temp.ActionType IN (0, 2);
         
         /* UPDATE CATEGORY GROUP ID INFO */
 		UPDATE 	Temp_CustomerEvidences AS temp 
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = temp.CategoryID
-		SET	temp.CategoryGroupID = cc.CategoryGroup;
+		SET	temp.CategoryGroupID = cc.CategoryGroup
+        WHERE temp.ActionType IN (0, 2);
 		
 		/*	GET EXISTED CATEGORY */
 		INSERT IGNORE INTO Temp_ExistedClassification (CustID, CategoryGroupID, CategoryID, RowOrder)
@@ -122,7 +125,7 @@ BEGIN
 			, 	cc.CategoryGroup
 			, 	cate.CategoryID  
 			, 	ROW_NUMBER() OVER (PARTITION BY cate.CustID, cc.CategoryGroup
-								   ORDER BY (CASE WHEN cate.CategoryID BETWEEN 72 AND 80 THEN 1 -- From Evd will lastest records
+								   ORDER BY (CASE WHEN cate.CategoryID BETWEEN 72 AND 80 THEN 1 /* From Evd will lastest records */
 												  ELSE 0
 											 END) ) AS RowOrder
 		FROM CTS_DataCenter.CTSCustomerClassification AS cate
@@ -136,28 +139,22 @@ BEGIN
         WHERE temp.ActionType = 0;
         
 		/*	UPDATE TARGET CC INFO */
-		/*	For Insert New & Update */
 		UPDATE Temp_CustomerEvidences AS temp 
 			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID 
 			LEFT JOIN CTS_DataCenter.CategoryToCustomerClass AS map ON map.CategoryID = temp.CategoryID
 		SET	temp.TargetCC = (CASE WHEN sp.CustID IS NOT NULL THEN sp.CustomerClass /* Existed CC */
 								  WHEN map.CategoryID IS NOT NULL THEN map.CustomerClass  /* Mapping CC */
-								  ELSE -99 /* No mapping CC */
+								  ELSE 
+								      CASE WHEN temp.ActionType IN (0, 1) THEN -99 /* No mapping CC */
+										   WHEN temp.ActionType = 2 THEN -1  /* Remove PA */
+									  END
 							 END)
-		WHERE temp.ActionType IN (0, 1);
-        
-        /* For Remove */
-        UPDATE Temp_CustomerEvidences AS temp 
-			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID 
-		SET	temp.TargetCC = (CASE WHEN sp.CustID IS NOT NULL THEN sp.CustomerClass /* Existed CC */
-								  ELSE -1 -- Remove PA
-							 END)
-		WHERE temp.ActionType = 2;
+		WHERE temp.ActionType IN (0, 1, 2);
     
 		/*	UPDATE SOURCE TYPE ID INFO */
 		UPDATE Temp_CustomerEvidences AS temp 
-		SET	temp.SourceTypeID = (CASE WHEN temp.ActionType IN (0, 1) THEN 7
-									  ELSE 9
+		SET	temp.SourceTypeID = (CASE WHEN temp.ActionType IN (0, 1) THEN 7 /* Insert & Update */
+									  WHEN temp.ActionType = 2 THEN 9 /* Remove */
 								  END)
 		WHERE temp.ActionType IN (0, 1, 2);
     
@@ -167,7 +164,7 @@ BEGIN
 			INNER JOIN CTS_DataCenter.CustEvidence AS ce ON ce.CTSCustID = temp.CTSCustID
 			INNER JOIN CTS_DataCenter.EvidenceToCategory AS e ON e.EvidenceID = ce.EvidenceID AND ce.Level = 0 AND e.CategoryID = temp.CategoryID
 	    SET temp.IsExistedEvi = 1;
-       
+        
 		DELETE cate
 		FROM CTS_DataCenter.CTSCustomerClassification cate
 			INNER JOIN Temp_CustomerEvidences AS temp ON temp.CustID = cate.CustID AND cate.SportGroupID = 0 AND temp.CategoryID = cate.CategoryID 
@@ -181,7 +178,7 @@ BEGIN
 			, 	cate.LastModifiedBy = lv_CreatedBy
 			,   cate.LastModifiedDate = lv_CurrentDateTime
 			, 	cate.LastScannedDate = DATE(lv_CurrentDateTime)
-		WHERE temp.ActionType = 1; 
+		 WHERE temp.ActionType = 1; 
           
         /*	INSERT NEW PA FROM EVIDENCE */
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification
@@ -208,15 +205,15 @@ BEGIN
 			SELECT DISTINCT temp.CustID
 				, 	temp.CTSCustID
 				, 	temp.CategoryID
-				,   0 AS SportGroupID
-				,   lv_CurrentDateTime AS LastModifiedDate
-				,   lv_CreatedBy AS LastModifiedBy
+				,   0
+				,   lv_CurrentDateTime
+				,   lv_CreatedBy
 				,   temp.ActionType
-				,   1 AS IsAuto
-				,   DATE(lv_CurrentDateTime) AS InsertDate
+				,   1
+				,   DATE(lv_CurrentDateTime)
 				, 	temp.TargetCC
 				, 	16 /* Rescan PA */
-				,	1 AS IsDataChanged
+				,	1
 			FROM Temp_CustomerEvidences AS temp;
 		ELSE                         
 			/*	INSERT LOG NEW & UPDATE PA FROM EVIDENCE */
@@ -225,17 +222,17 @@ BEGIN
 			SELECT DISTINCT temp.CustID
 				, 	temp.CTSCustID
 				, 	temp.CategoryID
-				, 	0 AS SportGroupID 
-				, 	lv_CurrentDateTime AS LastModifiedDate
-				, 	lv_CreatedBy AS LastModifiedBy
+				, 	0
+				, 	lv_CurrentDateTime
+				, 	lv_CreatedBy
 				, 	temp.ActionType
-				, 	1 AS ActionType
-				, 	DATE(lv_CurrentDateTime) AS InsertDate
+				, 	1
+				, 	DATE(lv_CurrentDateTime)
 				, 	temp.TargetCC
 				, 	temp.SourceTypeID
 				,   CASE WHEN ex.CategoryGroupID IS NULL THEN 1
 						 ELSE 0
-					END AS IsDataChanged
+					END
 			FROM Temp_CustomerEvidences AS temp
 				LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryGroupID = temp.CategoryGroupID  /* Not existed NAP CM Cate. */
 			WHERE temp.ActionType IN (0, 1);
@@ -246,17 +243,17 @@ BEGIN
 			SELECT DISTINCT temp.CustID
 				, 	temp.CTSCustID
 				, 	temp.CategoryID
-				, 	0 AS SportGroupID
-				, 	lv_CurrentDateTime AS LastModifiedDate
-				, 	lv_CreatedBy AS LastModifiedBy
+				, 	0
+				, 	lv_CurrentDateTime
+				, 	lv_CreatedBy
 				, 	temp.ActionType
-				, 	1 AS IsAuto
-				, 	DATE(lv_CurrentDateTime) AS InsertDate
+				, 	1
+				, 	DATE(lv_CurrentDateTime)
 				, 	temp.TargetCC
 				, 	temp.SourceTypeID
 				,   CASE WHEN ex.CategoryGroupID IS NOT NULL THEN 1
 						 ELSE 0
-					END AS IsDataChanged
+					END
 			FROM Temp_CustomerEvidences AS temp
 				LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryID BETWEEN 72 AND 80 AND ex.RowOrder = 1 /* Only existed Evd Cate. */
 			WHERE temp.ActionType = 2 AND temp.IsExistedEvi = 0;
@@ -267,12 +264,12 @@ BEGIN
 			SELECT DISTINCT temp.CustID
 				, 	temp.CTSCustID
 				, 	temp.CategoryID
-				, 	0 AS SportGroupID
-				, 	lv_CurrentDateTime AS LastModifiedDate
-				, 	lv_CreatedBy AS LastModifiedBy
+				, 	0 
+				, 	lv_CurrentDateTime
+				, 	lv_CreatedBy
 				, 	temp.ActionType
-				, 	1 AS IsAuto
-				, 	DATE(lv_CurrentDateTime) AS InsertDate
+				, 	1
+				, 	DATE(lv_CurrentDateTime)
 			FROM Temp_CustomerEvidences AS temp
 			WHERE temp.ActionType = 4;
 		END IF;
