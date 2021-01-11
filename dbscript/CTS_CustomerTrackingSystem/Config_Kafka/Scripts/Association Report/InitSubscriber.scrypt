@@ -15,9 +15,9 @@ RETURN COUNT(*)", {size: 500})
 CALL apoc.periodic.commit("
 match (c:InitSub)
 where exists(c.SubscriberID)
-with c, c.SubscriberID as subId limit 500
+with c, c.SubscriberID as subId limit {size}
 merge (s:Subscriber {SubscriberID: subId})
 merge (c)-[r:BELONG_TO_SUB]->(s)
 on create set r.CreatedDate = datetime()
 remove c:InitSub
-RETURN COUNT(*)", {size: 500})
+RETURN COUNT(*)", {size: 5000})
