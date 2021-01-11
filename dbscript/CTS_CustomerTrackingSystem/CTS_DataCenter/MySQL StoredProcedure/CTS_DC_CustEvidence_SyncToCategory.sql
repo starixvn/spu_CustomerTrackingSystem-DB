@@ -142,10 +142,10 @@ BEGIN
 		UPDATE Temp_CustomerEvidences AS temp 
 			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID 
 			LEFT JOIN CTS_DataCenter.CategoryToCustomerClass AS map ON map.CategoryID = temp.CategoryID
-		SET	temp.TargetCC = (CASE WHEN sp.CustID IS NOT NULL THEN sp.CustomerClass /* Existed CC */
-								  WHEN map.CategoryID IS NOT NULL THEN map.CustomerClass  /* Mapping CC */
-								  WHEN sp.CustID IS NULL AND map.CategoryID IS NULL AND temp.ActionType IN (0, 1) THEN -99 /* No mapping CC */
-							      WHEN sp.CustID IS NULL AND map.CategoryID IS NULL AND temp.ActionType = 2 THEN -1  /* Remove PA */
+		SET	temp.TargetCC = (CASE WHEN temp.ActionType IN (0, 1) AND sp.CustID IS NOT NULL THEN sp.CustomerClass /* Existed CC */
+								  WHEN temp.ActionType IN (0, 1) AND map.CategoryID IS NOT NULL THEN map.CustomerClass  /* Mapping CC */
+								  WHEN temp.ActionType IN (0, 1) AND sp.CustID IS NULL AND map.CategoryID IS NULL THEN -99 /* No mapping CC */
+								  WHEN temp.ActionType = 2 THEN -1  /* Remove PA */
 							 END)
 		WHERE temp.ActionType IN (0, 1, 2);
     
