@@ -144,10 +144,8 @@ BEGIN
 			LEFT JOIN CTS_DataCenter.CategoryToCustomerClass AS map ON map.CategoryID = temp.CategoryID
 		SET	temp.TargetCC = (CASE WHEN sp.CustID IS NOT NULL THEN sp.CustomerClass /* Existed CC */
 								  WHEN map.CategoryID IS NOT NULL THEN map.CustomerClass  /* Mapping CC */
-								  ELSE 
-								      CASE WHEN temp.ActionType IN (0, 1) THEN -99 /* No mapping CC */
-										   WHEN temp.ActionType = 2 THEN -1  /* Remove PA */
-									  END
+								  WHEN sp.CustID IS NULL AND map.CategoryID IS NULL AND temp.ActionType IN (0, 1) THEN -99 /* No mapping CC */
+							      WHEN sp.CustID IS NULL AND map.CategoryID IS NULL AND temp.ActionType = 2 THEN -1  /* Remove PA */
 							 END)
 		WHERE temp.ActionType IN (0, 1, 2);
     
