@@ -31,6 +31,20 @@ VALUES
 (5, 3, 'Classification Action Type', 'Classification Action Type', 'Ignore Existed Category', 'Ignore Existed Category', 3, 1,CURRENT_TIME()),
 (5, 4, 'Classification Action Type', 'Classification Action Type', 'Ignore PIN Category', 'Ignore PIN Category', 4, 1,CURRENT_TIME());
 
+-- Insert item list for Sport Group for category
+INSERT INTO CTS_DataCenter.StaticList 
+(ListID, ItemID, ListName, ListNameDisplay, ItemName, ItemNameDisplay, PriorityOrder, Status, CreatedDate) 
+VALUES 
+(6, 0, 'Classification Sport Group', 'Classification Sport Group', 'Problem Account Sport', 'Problem Account Sport', 0, 1,CURRENT_TIME()),
+(6, 200, 'Classification Sport Group', 'Classification Sport Group', 'Normal Account Sport', 'Normal Account Sport', 200, 1,CURRENT_TIME());
+
+-- Insert item list for Customer for category
+INSERT INTO CTS_DataCenter.StaticList 
+(ListID, ItemID, ListName, ListNameDisplay, ItemName, ItemNameDisplay, PriorityOrder, Status, CreatedDate) 
+VALUES 
+(7, -99, 'Classification Customer', 'Classification Customer', 'For No mapping Customer Class', 'For No mapping Customer Class', -99, 1,CURRENT_TIME()),
+(7, -1, 'Classification Customer', 'Classification Customer', 'For Removed Problem Account', 'For Removed Problem Account', -1, 1,CURRENT_TIME());
+
 -- Insert new table PinCustomerCategory
     DROP TABLE IF EXISTS CTS_DataCenter.PinCustomerCategory;
 	CREATE TABLE IF NOT EXISTS CTS_DataCenter.PinCustomerCategory (
@@ -38,56 +52,12 @@ VALUES
 		, 	CreatedTime 		DATETIME    NOT NULL
 	) ENGINE=INNODB;
 
--- Insert new table for mapping Category to CC
-DROP TABLE IF EXISTS CTS_DataCenter.CategoryToCustomerClass;
-CREATE TABLE IF NOT EXISTS CTS_DataCenter.CategoryToCustomerClass(
-			CategoryID			SMALLINT UNSIGNED
-		, 	CustomerClass		SMALLINT UNSIGNED
-        , 	PRIMARY KEY			PK_CategoryToCustomerClass_CategoryID_CustomerClass(CategoryID,CustomerClass)
-) ENGINE=INNODB;
-
-INSERT INTO CTS_DataCenter.CategoryToCustomerClass(CategoryID,CustomerClass)
-SELECT cc.CategoryID
-       , CASE     -- New Member
-                  WHEN cc.CategoryID = 201 THEN 3
-				  -- VVIP
-                  WHEN cc.CategoryID = 213 THEN 100
-                  -- Problem Accounts
-				  WHEN cc.CategoryID IN (52, 72, 152) THEN 8
-                  WHEN cc.CategoryID IN (54, 58, 74, 78, 154, 158) THEN 9
-                  WHEN cc.CategoryID IN (53, 55, 59, 73, 75, 79, 153, 155, 159) THEN 10
-                  WHEN cc.CategoryID IN (56, 60, 76, 80, 156) THEN 11
-				  WHEN cc.CategoryID IN (57, 157) THEN 13
-                  -- Normal Accounts
-                  WHEN cc.CategoryID = 205 THEN 1
-                  WHEN cc.CategoryID = 202 THEN 2
-                  WHEN cc.CategoryID = 206 THEN 5
-                  WHEN cc.CategoryID = 203 THEN 6
-                  WHEN cc.CategoryID = 204 THEN 7
-		  END AS CustomerClass
-FROM CTS_DataCenter.CustomerCategory AS cc
-WHERE cc.ParentID IN (50, 200) AND cc.CategoryID NOT IN (51, 151, 160);
-
 -- Update index in Classification
-ALTER TABLE CTS_DataCenter.CTSCustomerClassification
-DROP INDEX IX_CTSCustomerClassification_CategoryIDLastScannedDate;
-
-ALTER TABLE CTS_DataCenter.CTSCustomerClassification
-DROP INDEX IX_CTSCustomerClassification_CTSCustID;
-
-ALTER TABLE CTS_DataCenter.CTSCustomerClassification
-DROP INDEX IX_CTSCustomerClassification_CustSportGroup;
-
-ALTER TABLE CTS_DataCenter.CTSCustomerClassification
-ADD INDEX IX_CTSCustomerClassification_CustID_SportGroupID(CustID,SportGroupID), ALGORITHM=INPLACE, LOCK=NONE;
-
-ALTER TABLE CTS_DataCenter.CTSCustomerClassification
-ADD INDEX IX_CTSCustomerClassification_CustID_LastModifiedDate(CustID,LastModifiedDate), ALGORITHM=INPLACE, LOCK=NONE;
-
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification
 ADD INDEX IX_CTSCustomerClassification_LastScannedDate(LastScannedDate), ALGORITHM=INPLACE, LOCK=NONE;
 
 -- Insert new column in Classification History
+-- Column
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
 ADD COLUMN TargetCC TINYINT, ALGORITHM=INSTANT;
 
@@ -112,20 +82,12 @@ ADD COLUMN ToCategoryID SMALLINT UNSIGNED, ALGORITHM=INSTANT;
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
 ADD COLUMN IsDataChanged BIT DEFAULT 0, ALGORITHM=INSTANT;
 
+-- Index
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
 DROP INDEX IX_CTSCustomerClassification_History_LastModifiedDate;
 
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
-ADD INDEX IX_CTSCustomerClassification_History_CustID_SourceTypeID(CustID,SourceTypeID), ALGORITHM=INPLACE, LOCK=NONE;
-
-ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
-ADD INDEX IX_CTSCustomerClassification_History_CustID_IsAppliedCC(CustID,IsAppliedCC), ALGORITHM=INPLACE, LOCK=NONE;
-
-ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
-ADD INDEX IX_CTSCustomerClassification_History_CustID_IsDataChanged(CustID,IsDataChanged), ALGORITHM=INPLACE, LOCK=NONE;
-
-ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
-ADD INDEX IX_CTSCustomerClassification_History_CustID_LastModifiedDate(CustID,LastModifiedDate), ALGORITHM=INPLACE, LOCK=NONE;
+ADD INDEX IX_CTSCustomerClassification_CTSCustID(CTSCustID), ALGORITHM=INPLACE, LOCK=NONE;
 
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
 ADD INDEX IX_CTSCustomerClassification_History_InsertDate(InsertDate), ALGORITHM=INPLACE, LOCK=NONE;
