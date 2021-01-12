@@ -221,7 +221,7 @@ BEGIN
 					) AS t ON c.CustId = t.CustId
 	WHERE a.Margin >= 0;
 	
-	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
+	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, LastXDaysMargin, ProbationPeriodWinloss)
 	SELECT	a.CustId
 		,	@GENERAL_SPORTID
 		,	a.CategoryId
@@ -231,6 +231,8 @@ BEGIN
 		,	t.WinlossRM
 		,	t.BetCount
 		,	t.ActiveDays
+		,	a.LastXDaysMargin
+		,	a.ProbationPeriodWinloss
 	FROM #tmpCustomers AS a WITH(NOLOCK)
 		INNER JOIN #tmpCustomerAccummulatedInfo AS t WITH(NOLOCK) ON a.CustId = t.CustId
 	WHERE a.IsPassed = 1
@@ -241,8 +243,6 @@ BEGIN
 		,	@GENERAL_SPORTID AS 'SportGroupId'
 		,	IsProbationLastDay
 		,	CategoryId
-		,	LastXDaysMargin
-		,	ProbationPeriodWinloss
 		,	IsPassed
 	FROM #tmpCustomers WITH(NOLOCK);
 
