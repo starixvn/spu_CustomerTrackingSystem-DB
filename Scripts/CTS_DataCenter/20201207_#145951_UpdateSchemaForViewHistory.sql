@@ -1,10 +1,12 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2"></info>*/
 /*
 	Created: 20201207@Irena.Vo
-	Task: 	 145951-Update schema for View History
+	Task: 	 145951-Update schema for View History  [Redmine ID: #145951]
 	DB: 	 CTS_DataCenter
+    
+    Revisions: 
+	-	[20201207@Irena.Vo]: Update index in table: CTSCustomerClassification_History & Insert new columns
 */
-# [20201207@Irena.Vo][145951]: 
 USE CTS_DataCenter;
 -- Insert new column in Classification History
 -- Column

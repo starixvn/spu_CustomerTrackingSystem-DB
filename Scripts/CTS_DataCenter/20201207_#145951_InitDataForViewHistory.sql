@@ -1,10 +1,12 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2"></info>*/
 /*
 	Created: 20201207@Irena.Vo
-	Task: 	 145951-Update schema for View History
+	Task: 	 145951-Init data for View History  [Redmine ID: #145951]
 	DB: 	 CTS_DataCenter
+    
+     Revisions: 
+	 -	[20201207@Irena.Vo]: Insert data in table: Static List for View History
 */
-# [20201207@Irena.Vo][145951]: 
 -- Insert item list for Source Type for category
 INSERT INTO CTS_DataCenter.StaticList
 (ListID,ItemID,ListName,ListNameDisplay,ItemName,ItemNameDisplay,PriorityOrder,Status,Description,CreatedDate)
