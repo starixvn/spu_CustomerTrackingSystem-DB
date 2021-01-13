@@ -1,6 +1,6 @@
 USE [bodb_VR2Model]
 GO
-/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_Daily]    Script Date: 9/3/2020 2:10:57 AM ******/
+
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -34,8 +34,9 @@ BEGIN
 		,	@GENERALCATEGORY_PROBATION			INT = 206;
 
 	DECLARE @CurrentDateTime			DATETIME = GETDATE();
-	DECLARE @CurrentDate				DATE = GETDATE();
-	DECLARE @Back14DaysFromToday		DATE = DATEADD(DAY, -14, @CurrentDate);
+	DECLARE @CurrentDate				DATE	 = GETDATE();
+	DECLARE @Back14DaysFromToday		DATE	 = DATEADD(DAY, -14, @CurrentDate);
+	DECLARE @Back3DaysFromToday			DATE	 = DATEADD(DAY, -3, @CurrentDate);
 
 	IF	OBJECT_ID('tempdb..#tmpRawData') IS NOT NULL
 		DROP TABLE	#tmpRawData;
@@ -178,4 +179,9 @@ BEGIN
 		,	a.BetCount
 		,	a.ActiveDays
 	FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK);
+
+	-- #8: Delete old data
+	DELETE cc FROM dbo.CustomerClassification AS cc WITH(ROWLOCK)
+	WHERE cc.CreatedDate < @Back3DaysFromToday;
+
 END;
