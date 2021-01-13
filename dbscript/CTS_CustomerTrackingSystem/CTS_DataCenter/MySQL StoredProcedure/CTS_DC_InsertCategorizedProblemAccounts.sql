@@ -24,7 +24,7 @@ BEGIN
             - Add Multi Problem Category
             - Remove old categoryid from NapCM
             20201019@Irena.Vo  [#141930]: Get distinct CustID List for lastest category
-            - 2020120211@Irena.Vo: Insert History Log. Insert Error Log & update logic SP. Return All List CustID. Update logic SP.  [RedmineID: #145951]
+            - 20210113@Irena.Vo: Insert History Log. Insert Error Log & update logic SP. Return All List CustID. Update logic SP.  [RedmineID: #145951]
             
 		Param's Explanation (filtered by):
 			CALL CTS_DataCenter.CTS_DC_InsertCategorizedProblemAccounts('[{"CustId": 123, "CategoryId": 27}]',0,@op_ErrorMessage);
@@ -56,6 +56,7 @@ BEGIN
         ,	TargetCC			SMALLINT
         ,	SourceTypeID		SMALLINT
 		, 	ActionType		    SMALLINT DEFAULT 0 /* 0: Insert, 1: Update, 2: Remove, 4: Ignore PIN */
+        , 	IsLastDataChanged   BIT DEFAULT 0
         , 	PRIMARY KEY     	PK_Temp_ProblemAccounts_CustID_MainDBCategoryID(CustID,MainDBCategoryID) 
         ,   INDEX				IX_Temp_ProblemAccounts_CustID(CustID)  
         ,   INDEX				IX_Temp_ProblemAccounts_CustID_CategoryGroupID(CustID,CategoryGroupID)  
@@ -117,7 +118,7 @@ BEGIN
 		, 	temp.SubscriberID = cust.SubscriberID;
     
     /*	GET EXISTED CATEGORY	*/
-	INSERT INTO Temp_ExistedClassification (CustID, CategoryGroupID, CategoryID, RowOrder)
+	INSERT IGNORE INTO Temp_ExistedClassification (CustID, CategoryGroupID, CategoryID, RowOrder)
 	SELECT 	cate.CustID
 		, 	cc.CategoryGroup
         , 	cate.CategoryID  
@@ -193,6 +194,17 @@ BEGIN
     
     #===========================================WRITE LOG==================================================================
     IF (ip_IsRescan = 1) THEN
+        /* UPDATE IsLastDataChanged */
+        WITH CTE_LastHistory AS (
+			SELECT CustID, MAX(ID) AS HistoryID
+			FROM CTS_DataCenter.CTSCustomerClassification_History
+			GROUP BY CustID
+        )
+        UPDATE Temp_ProblemAccounts AS temp
+			INNER JOIN CTE_LastHistory AS l ON temp.CustID = l.CustID
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS his ON his.CustID = temp.CustID AND his.ID = l.HistoryID
+        SET temp.IsLastDataChanged = his.IsDataChanged;
+        
 		/* INSERT LOG RE-SCAN PA FROM NAP CM */    
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
 		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
@@ -207,8 +219,11 @@ BEGIN
 			, 	DATE(lv_CurrentDateTime)
 			, 	temp.TargetCC
 			, 	15 /* Rescan PA */
-			,   1
-		FROM Temp_ProblemAccounts AS temp;
+			,   CASE WHEN temp.IsLastDataChanged = 1 AND ex.CategoryGroupID IS NULL THEN 1
+					 ELSE 0
+				END
+		FROM Temp_ProblemAccounts AS temp
+			LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryGroupID = temp.CategoryGroupID AND ex.CategoryID BETWEEN 72 AND 80; /* Not existed Evd Cate (Rescan)*/
 	ELSE 
 		/*	INSERT LOG NEW & UPDATE PA FROM NAP CM */
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
@@ -228,7 +243,7 @@ BEGIN
 					 ELSE 0
 				END
 		FROM Temp_ProblemAccounts AS temp
-			LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryGroupID = temp.CategoryGroupID /* Not existed Evd Cate. */
+			LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryGroupID = temp.CategoryGroupID AND ex.CategoryID BETWEEN 72 AND 80 /* Not existed Evd Cate. */
 		WHERE temp.ActionType IN (0, 1);
 		
 		/*	INSERT LOG REMOVE PA FROM NAP CM */

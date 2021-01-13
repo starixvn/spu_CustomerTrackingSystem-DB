@@ -64,6 +64,7 @@ BEGIN
         ,	TargetCC				SMALLINT
         ,	SourceTypeID            SMALLINT
         , 	ActionType				SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Existed PA, 4: Ignore PIN */
+        , 	IsLastDataChanged   	BIT DEFAULT 0
         , 	INDEX    			    IX_Temp_NewClassification_CustID_NewCategoryID(CustID,NewCategoryID)     
 		, 	INDEX 					IX_Temp_NewClassification_ExistCategoryID_LastCategoryID(ExistCategoryID,LastCategoryID)        
      );     
@@ -225,6 +226,17 @@ BEGIN
     
     #==========================================WRITE LOG========================================================
     IF (ip_IsRescan = 1) THEN 
+		/* UPDATE IsLastDataChanged */
+        WITH CTE_LastHistory AS (
+			SELECT CustID, MAX(ID) AS HistoryID
+			FROM CTS_DataCenter.CTSCustomerClassification_History
+			GROUP BY CustID
+        )
+        UPDATE Temp_NewClassification AS temp
+			INNER JOIN CTE_LastHistory AS l ON temp.CustID = l.CustID
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS his ON his.CustID = temp.CustID AND his.ID = l.HistoryID
+        SET temp.IsLastDataChanged = his.IsDataChanged;
+        
 		/* INSERT LOG RE-SCAN NORMAL */    
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
 		 (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy,TurnoverRM, WinlossRM, BetCount, ActiveDays
@@ -248,7 +260,9 @@ BEGIN
 			,   17 /* Rescan Normal Account */
 			, 	temp.ExistCategoryID
 			, 	temp.NewCategoryID
-			,	1
+			,   CASE WHEN temp.IsLastDataChanged = 1 THEN 1
+					 ELSE 0
+				END
 		FROM Temp_NewClassification AS temp;
     ELSE
 		/* INSERT LOG NEW CATEGORY */    
