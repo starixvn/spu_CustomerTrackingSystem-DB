@@ -148,7 +148,7 @@ BEGIN
 							  WHEN temp.ActionType IN (0, 1) AND map.CategoryID IS NOT NULL THEN map.CustomerClass  /* Mapping CC */
 							  WHEN temp.ActionType IN (0, 1) AND sp.CustID IS NULL AND map.CategoryID IS NULL THEN -99 /* No mapping CC */
 							  WHEN temp.ActionType = 2 THEN -1  /* Remove PA */
-						 END)
+						END)
 	WHERE temp.ActionType IN (0, 1, 2);
     
     /*	UPDATE SOURCE TYPE ID INFO */

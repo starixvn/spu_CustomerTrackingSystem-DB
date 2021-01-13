@@ -26,7 +26,7 @@ BEGIN
                 -20201026@Irena.Vo: Enhance init data for Probation to VIP OR Normal. [Redmine ID: #142546]
                 -20201116@Irena.Vo: Only distinct CustID list for general & Update LastScannedDate for Probation List. [Redmine ID: #145028]
                 -20201201@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. [Redmine ID: #145954]
-			    - 20210111@Irena.Vo: Insert History Log. Insert Error Log & update logic SP. Return All List CustID. Update logic SP.  [RedmineID: #145951]
+			    - 20210112@Irena.Vo: Insert History Log. Insert Error Log & update logic SP. Return All List CustID. Update logic SP. Update Current Time  [RedmineID: #145951]
                
 		Param's Explanation (filtered by):
 			  CALL CTS_DataCenter.CTS_DC_InsertMainCustomerClassification('[{"CustId": 1, "CategoryId": 202, "CreatedTime": "2020-09-13 00:01:00", "TurnoverRM": 100, "WinlossRM": 2056354, "BetCount": 500, "ActiveDays": 8}]');
@@ -55,7 +55,6 @@ BEGIN
         ,	ExistCategoryID 		SMALLINT -- existed
 		, 	NewCategoryID			SMALLINT -- new
         , 	LastCategoryID		    SMALLINT -- lastest
-		, 	LastModifiedDate		DATETIME
 		, 	TurnoverRM				DECIMAL(20,4)
 		, 	WinlossRM				DECIMAL(20,4)
 		, 	BetCount				BIGINT
@@ -76,10 +75,9 @@ BEGIN
         , 	INDEX    			    IX_Temp_ExistedClassification_CustID_CategoryID(CustID,CategoryID)       
      );
  
-     INSERT INTO Temp_NewClassification(CustID, NewCategoryID, LastModifiedDate, TurnoverRM, WinlossRM, BetCount, ActiveDays, LastXDaysMargin, ProbationPeriodWinloss)
+     INSERT INTO Temp_NewClassification(CustID, NewCategoryID, TurnoverRM, WinlossRM, BetCount, ActiveDays, LastXDaysMargin, ProbationPeriodWinloss)
 	 SELECT DISTINCT temp.CustID
 				, 	temp.NewCategoryID
-				, 	temp.LastModifiedDate
                 , 	temp.TurnoverRM
                 , 	temp.WinlossRM
                 , 	temp.BetCount
@@ -90,7 +88,6 @@ BEGIN
 		"$[*]" COLUMNS(
 				CustID 					BIGINT UNSIGNED		PATH "$.CustId"
 			, 	NewCategoryID			SMALLINT UNSIGNED	PATH "$.CategoryId"
-			, 	LastModifiedDate		DATETIME			PATH "$.CreatedTime"
             , 	TurnoverRM				DECIMAL(20,4)		PATH "$.TurnoverRM"
             , 	WinlossRM				DECIMAL(20,4)		PATH "$.WinlossRM"
             , 	BetCount				BIGINT				PATH "$.BetCount"
@@ -160,19 +157,13 @@ BEGIN
 	WHERE temp.ActionType IN (0, 1);
     
     #========================================CLASSIFY DATA==========================================================
-    /* UPDATE LASTMODIFIED DATE */
-    IF (ip_IsRescan = 1) THEN
-		UPDATE Temp_NewClassification AS temp
-        SET temp.LastModifiedDate = lv_CurrentDateTime;
-    END IF;
-    
     /*	UPDATE EXISTED CATEGORY */
     UPDATE CTS_DataCenter.CTSCustomerClassification AS cate
 		INNER JOIN Temp_NewClassification AS temp on temp.CustID = cate.CustID AND cate.SportGroupID = 200
 	SET   	cate.CTSCustID = temp.CTSCustID
 		, 	cate.SubscriberID = temp.SubscriberID
 		, 	cate.CategoryID = temp.LastCategoryID
-		, 	cate.LastModifiedDate = temp.LastModifiedDate 
+		, 	cate.LastModifiedDate = lv_CurrentDateTime
 		, 	cate.LastScannedDate = DATE(lv_CurrentDateTime)
     WHERE temp.ActionType = 1;
     
@@ -184,9 +175,9 @@ BEGIN
 		, 	temp.SubscriberID
 		, 	200
 		, 	temp.LastCategoryID
-		, 	temp.LastModifiedDate
+		, 	lv_CurrentDateTime
 		, 	lv_CreatedBy
-		, 	temp.LastModifiedDate
+		, 	lv_CurrentDateTime
 		, 	lv_CreatedBy
 		, 	DATE(lv_CurrentDateTime)
 	 FROM Temp_NewClassification AS temp
@@ -209,9 +200,9 @@ BEGIN
 		, 	CASE WHEN temp.TurnoverRM = 0 THEN 0
 				 ELSE (temp.WinlossRM / temp.TurnoverRM) * 100
 			END
-		, 	DATE(temp.LastModifiedDate)
+		, 	DATE(lv_CurrentDateTime)
 		, 	lv_CreatedBy
-		, 	temp.LastModifiedDate
+		, 	lv_CurrentDateTime
 		,   DATE(lv_CurrentDateTime)
 	FROM Temp_NewClassification AS temp
 	WHERE (temp.ActionType = 0 AND temp.LastCategoryID = 206);
@@ -225,9 +216,9 @@ BEGIN
 		, 	CASE WHEN temp.TurnoverRM = 0 THEN 0
 				 ELSE (temp.WinlossRM / temp.TurnoverRM) * 100
 			END
-		, 	DATE(temp.LastModifiedDate)
+		, 	DATE(lv_CurrentDateTime)
 		, 	lv_CreatedBy
-		, 	temp.LastModifiedDate
+		, 	lv_CurrentDateTime
 		,   DATE(lv_CurrentDateTime)
 	FROM Temp_NewClassification AS temp
 	WHERE (temp.ActionType = 1 AND temp.ExistCategoryID <> 206 AND temp.LastCategoryID = 206);
@@ -242,7 +233,7 @@ BEGIN
 			, 	temp.CTSCustID
 			, 	temp.LastCategoryID
 			, 	200
-			, 	temp.LastModifiedDate
+			, 	lv_CurrentDateTime
 			, 	lv_CreatedBy
 			, 	temp.TurnoverRM
 			, 	temp.WinlossRM
@@ -268,7 +259,7 @@ BEGIN
 			, 	temp.CTSCustID
 			, 	temp.LastCategoryID
 			, 	200
-			, 	temp.LastModifiedDate
+			, 	lv_CurrentDateTime
 			, 	lv_CreatedBy
 			, 	temp.TurnoverRM
 			, 	temp.WinlossRM
@@ -295,7 +286,7 @@ BEGIN
 			, 	temp.CTSCustID
 			, 	temp.LastCategoryID
 			, 	200
-			, 	temp.LastModifiedDate
+			, 	lv_CurrentDateTime
 			, 	lv_CreatedBy
 			, 	temp.TurnoverRM
 			, 	temp.WinlossRM
@@ -325,7 +316,7 @@ BEGIN
 			, 	temp.CTSCustID
 			, 	temp.NewCategoryID
 			, 	200
-			, 	temp.LastModifiedDate
+			, 	lv_CurrentDateTime
 			, 	lv_CreatedBy
 			, 	temp.TurnoverRM
 			, 	temp.WinlossRM
