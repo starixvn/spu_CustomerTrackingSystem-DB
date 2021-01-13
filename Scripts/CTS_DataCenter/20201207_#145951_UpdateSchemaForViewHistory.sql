@@ -8,38 +8,31 @@
 	-	[20201207@Irena.Vo]: Update index in table: CTSCustomerClassification_History & Insert new columns
 */
 USE CTS_DataCenter;
--- Insert new column in Classification History
--- Column
-ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
-ADD COLUMN TargetCC TINYINT, ALGORITHM=INSTANT;
-
-ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
-ADD COLUMN SourceTypeID SMALLINT UNSIGNED, ALGORITHM=INSTANT;
-
-ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
-ADD COLUMN IsAppliedCC BIT DEFAULT 0, ALGORITHM=INSTANT;
-
-ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
-ADD COLUMN LastXDaysMargin DECIMAL(20,4), ALGORITHM=INSTANT;
-
-ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
-ADD COLUMN ProbationPeriodWinloss DECIMAL(20,4), ALGORITHM=INSTANT;
-
-ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
-ADD COLUMN FromCategoryID SMALLINT UNSIGNED, ALGORITHM=INSTANT;
-
-ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
-ADD COLUMN ToCategoryID SMALLINT UNSIGNED, ALGORITHM=INSTANT;
-
-ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
-ADD COLUMN IsDataChanged BIT DEFAULT 0, ALGORITHM=INSTANT;
-
--- Index
-ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
-DROP INDEX IX_CTSCustomerClassification_History_LastModifiedDate;
-
-ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
-ADD INDEX IX_CTSCustomerClassification_CTSCustID(CTSCustID), ALGORITHM=INPLACE, LOCK=NONE;
-
-ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
-ADD INDEX IX_CTSCustomerClassification_History_InsertDate(InsertDate), ALGORITHM=INPLACE, LOCK=NONE;
+CREATE TABLE `CTSCustomerClassification_History` (
+	`ID` bigint unsigned NOT NULL AUTO_INCREMENT,
+	`CustID` bigint unsigned DEFAULT NULL,
+	`CTSCustID` bigint unsigned DEFAULT NULL,
+	`SportGroupID` smallint unsigned DEFAULT NULL,
+	`CategoryID` smallint unsigned DEFAULT NULL,
+	`TurnoverRM` decimal(20,4) DEFAULT NULL,
+	`WinlossRM` decimal(20,4) DEFAULT NULL,
+	`BetCount` bigint DEFAULT NULL,
+	`ActiveDays` int DEFAULT NULL,
+	`LastXDaysMargin` decimal(20,4) DEFAULT NULL,
+	`ProbationPeriodWinloss` decimal(20,4) DEFAULT NULL,
+	`TargetCC` tinyint DEFAULT NULL,
+	`SourceTypeID` smallint unsigned DEFAULT NULL,
+	`FromCategoryID` smallint unsigned DEFAULT NULL,
+	`ToCategoryID` smallint unsigned DEFAULT NULL,
+	`IsAppliedCC` bit(1) DEFAULT b'0',
+	`IsDataChanged` bit(1) DEFAULT b'0',
+	`ActionType` tinyint DEFAULT NULL,
+    `IsAuto` bit(1) DEFAULT NULL,
+	`LastModifiedDate` datetime DEFAULT NULL,
+	`LastModifiedBy` int unsigned DEFAULT NULL,
+	`InsertDate` datetime DEFAULT NULL,
+   PRIMARY KEY (`ID`),
+   KEY `IX_CTSCustomerClassification_History_CustID_SportGroupID` (`CustID`,`SportGroupID`),
+   KEY `IX_CTSCustomerClassification_History_InsertDate` (`InsertDate`),
+   KEY `IX_CTSCustomerClassification_History_CTSCustID` (`CTSCustID`)
+ ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
