@@ -8,6 +8,12 @@
 	-	[20201207@Irena.Vo]: Update index in table: CTSCustomerClassification_History & Insert new columns
 */
 USE CTS_DataCenter;
+
+CREATE TABLE `CTS_DataCenter.PinCustomerCategory` (
+	`CustID` BIGINT	UNSIGNED NOT NULL PRIMARY KEY,
+ 	`CreatedTime` DATETIME NOT NULL
+) ENGINE=INNODB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+    
 CREATE TABLE `CTSCustomerClassification_History` (
 	`ID` bigint unsigned NOT NULL AUTO_INCREMENT,
 	`CustID` bigint unsigned DEFAULT NULL,
