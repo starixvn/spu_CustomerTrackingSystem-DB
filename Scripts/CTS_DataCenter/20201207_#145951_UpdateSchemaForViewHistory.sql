@@ -1,3 +1,9 @@
+/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2"></info>*/
+/*
+	Created: 202012070@Irena.Vo
+	Task: 	 145951-Update schema for View History
+	DB: 	 CTS_DataCenter
+*/
 # [20201207@Irena.Vo][145951]: 
 -- Insert item list for Source Type for category
 INSERT INTO CTS_DataCenter.StaticList
