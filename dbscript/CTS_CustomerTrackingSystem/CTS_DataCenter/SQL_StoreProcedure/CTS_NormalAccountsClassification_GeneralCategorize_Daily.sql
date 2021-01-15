@@ -181,7 +181,15 @@ BEGIN
 	FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK);
 
 	-- #8: Delete old data
-	DELETE cc FROM dbo.CustomerClassification AS cc WITH(ROWLOCK)
-	WHERE cc.CreatedDate < @Back3DaysFromToday;
+	WHILE(1 = 1)
+	BEGIN
+		DELETE TOP (5000)
+		FROM dbo.CustomerClassification WITH(ROWLOCK)
+		WHERE CreatedDate < @Back3DaysFromToday
+			AND IsApplied = 1;
+
+	IF (@@ROWCOUNT = 0)
+		BREAK;
+	END;
 
 END;
