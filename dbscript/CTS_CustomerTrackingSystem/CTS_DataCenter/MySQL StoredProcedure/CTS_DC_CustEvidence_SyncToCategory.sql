@@ -10,7 +10,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_SyncToCategory`(
 )
     SQL SECURITY INVOKER
 BEGIN
-     /*
+   /*
 		Created:	20201112@Irena.Vo
 		Task:		Sync Evidence to Category
 		DB:			CTS_DataCenter
@@ -21,7 +21,7 @@ BEGIN
            - 20201127@Irena.Vo: Enhance logic update LastModifiedDate for category [RedmineID: #141563]
            - 20201201@Irena.Vo: Enhance logic Remove old category [RedmineID: #141563]
            - 20201203@Irena.Vo: Enhance logic Category is NULL [RedmineID: #141563]
-	       - 20210113@Irena.Vo: Insert History Log. Insert Error Log & update logic SP. Return All List CustID. Update logic SP.  [RedmineID: #145951]
+	       - 20210115@Irena.Vo: Insert History Log  [RedmineID: #145951]
            
 		Param's Explanation (filtered by):	
 			CALL CTS_DataCenter.CTS_DC_CustEvidence_SyncToCategory('[{"CustId":43600693, "CTSCustId": 221882500, "SubscriberId": 130, "EvidenceId": 41, "ActionType": 0}]',0,@op_ErrorMessage);
@@ -71,6 +71,13 @@ BEGIN
 		, 	INDEX 				IX_Temp_ExistedClassification_CustID(CustID) 
         ,	INDEX				IX_Temp_ExistedClassification_CustID_CategoryGroupID(CustID,CategoryGroupID)
      );
+    
+	DROP TEMPORARY TABLE IF EXISTS Temp_LastHistory;    
+	CREATE TEMPORARY TABLE Temp_LastHistory(	  
+			CustID				BIGINT UNSIGNED PRIMARY KEY
+        , 	HistoryID	        SMALLINT UNSIGNED
+        ,	INDEX				IX_Temp_LastHistory_HistoryID(HistoryID)
+    );
     
     INSERT IGNORE INTO Temp_CustomerEvidences(CTSCustID, CustID, SubscriberID, EvidenceID, CategoryID, ActionType)
     SELECT 		temp.CTSCustID
@@ -198,15 +205,17 @@ BEGIN
    
 		#===========================================WRITE LOG==================================================================
 		IF (ip_IsRescan = 1) THEN
-            /* UPDATE IsLastDataChanged */
-			WITH CTE_LastHistory AS (
-				SELECT CustID, MAX(ID) AS HistoryID
-				FROM CTS_DataCenter.CTSCustomerClassification_History
-				GROUP BY CustID
-			)
+            /* Insert Last History */
+			INSERT INTO Temp_LastHistory (CustID, HistoryID)
+			SELECT  his.CustID
+				,	MAX(his.ID)
+			FROM CTS_DataCenter.CTSCustomerClassification_History AS his
+				INNER JOIN Temp_CustomerEvidences AS temp ON temp.CustID = his.CustID
+			GROUP BY his.CustID;
+
 			UPDATE Temp_CustomerEvidences AS temp
-				INNER JOIN CTE_LastHistory AS l ON temp.CustID = l.CustID
-				INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS his ON his.CustID = temp.CustID AND his.ID = l.HistoryID
+				INNER JOIN Temp_LastHistory AS l ON temp.CustID = l.CustID
+				INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS his ON his.ID = l.HistoryID
 			SET temp.IsLastDataChanged = his.IsDataChanged;
         
 			/* INSERT LOG RE-SCAN PA FROM EVIDENCE */    

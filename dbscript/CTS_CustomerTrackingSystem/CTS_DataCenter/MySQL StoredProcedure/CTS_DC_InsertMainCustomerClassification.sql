@@ -10,7 +10,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_InsertMainCustomerClassification
 )
     SQL SECURITY INVOKER
 BEGIN
-	/*
+/*
 		Created:	20200901@Lex.Khuat
 		Task:		Auto insert main customer categories for Customer Classification
 		DB:			CTS_DataCenter
@@ -26,7 +26,7 @@ BEGIN
                 -20201026@Irena.Vo: Enhance init data for Probation to VIP OR Normal. [Redmine ID: #142546]
                 -20201116@Irena.Vo: Only distinct CustID list for general & Update LastScannedDate for Probation List. [Redmine ID: #145028]
                 -20201201@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. [Redmine ID: #145954]
-			    - 20210112@Irena.Vo: Insert History Log. Insert Error Log & update logic SP. Return All List CustID. Update logic SP. Update Current Time  [RedmineID: #145951]
+			    - 20210115@Irena.Vo: Insert History Log  [RedmineID: #145951]
                
 		Param's Explanation (filtered by):
 			  CALL CTS_DataCenter.CTS_DC_InsertMainCustomerClassification('[{"CustId": 1, "CategoryId": 202, "CreatedTime": "2020-09-13 00:01:00", "TurnoverRM": 100, "WinlossRM": 2056354, "BetCount": 500, "ActiveDays": 8}]');
@@ -45,10 +45,10 @@ BEGIN
 		CALL CTS_Log.CTS_Log_ErrorLog_Insert('CTS_DC_InsertMainCustomerClassification',op_ErrorMessage, JSON_OBJECT('parameter', ip_NewClassification));
     
 		SIGNAL SQLSTATE '99999' SET MESSAGE_TEXT = op_ErrorMessage;
-    END;
+	END;
     
-     DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;    
-	 CREATE TEMPORARY TABLE Temp_NewClassification(	  	
+	DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;    
+	CREATE TEMPORARY TABLE Temp_NewClassification(	  	
 			CustID					BIGINT UNSIGNED	PRIMARY KEY       
      	, 	CTSCustID				BIGINT DEFAULT 0
         , 	SubscriberID			INT DEFAULT 0    
@@ -67,17 +67,24 @@ BEGIN
         , 	IsLastDataChanged   	BIT DEFAULT 0
         , 	INDEX    			    IX_Temp_NewClassification_CustID_NewCategoryID(CustID,NewCategoryID)     
 		, 	INDEX 					IX_Temp_NewClassification_ExistCategoryID_LastCategoryID(ExistCategoryID,LastCategoryID)        
-     );     
+	);     
 
-     DROP TEMPORARY TABLE IF EXISTS Temp_ExistedClassification;    
-	 CREATE TEMPORARY TABLE Temp_ExistedClassification(	  	
+	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedClassification;    
+	CREATE TEMPORARY TABLE Temp_ExistedClassification(	  	
 			CustID					BIGINT UNSIGNED     
-        , 	CategoryID				SMALLINT
-        , 	INDEX    			    IX_Temp_ExistedClassification_CustID_CategoryID(CustID,CategoryID)       
-     );
+		, 	CategoryID				SMALLINT
+		, 	INDEX    			    IX_Temp_ExistedClassification_CustID_CategoryID(CustID,CategoryID)       
+	);
  
-     INSERT INTO Temp_NewClassification(CustID, NewCategoryID, TurnoverRM, WinlossRM, BetCount, ActiveDays, LastXDaysMargin, ProbationPeriodWinloss)
-	 SELECT DISTINCT temp.CustID
+	DROP TEMPORARY TABLE IF EXISTS Temp_LastHistory;    
+	CREATE TEMPORARY TABLE Temp_LastHistory(	  
+			CustID				BIGINT UNSIGNED PRIMARY KEY
+        , 	HistoryID	        SMALLINT UNSIGNED
+        ,	INDEX				IX_Temp_LastHistory_HistoryID(HistoryID)
+    );
+    
+	INSERT INTO Temp_NewClassification(CustID, NewCategoryID, TurnoverRM, WinlossRM, BetCount, ActiveDays, LastXDaysMargin, ProbationPeriodWinloss)
+	SELECT DISTINCT temp.CustID
 				, 	temp.NewCategoryID
                 , 	temp.TurnoverRM
                 , 	temp.WinlossRM
@@ -226,16 +233,18 @@ BEGIN
     
     #==========================================WRITE LOG========================================================
     IF (ip_IsRescan = 1) THEN 
-		/* UPDATE IsLastDataChanged */
-        WITH CTE_LastHistory AS (
-			SELECT CustID, MAX(ID) AS HistoryID
-			FROM CTS_DataCenter.CTSCustomerClassification_History
-			GROUP BY CustID
-        )
-        UPDATE Temp_NewClassification AS temp
-			INNER JOIN CTE_LastHistory AS l ON temp.CustID = l.CustID
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS his ON his.CustID = temp.CustID AND his.ID = l.HistoryID
-        SET temp.IsLastDataChanged = his.IsDataChanged;
+		/* Insert Last History */
+		INSERT INTO Temp_LastHistory (CustID, HistoryID)
+		SELECT  his.CustID
+			,	MAX(his.ID)
+		FROM CTS_DataCenter.CTSCustomerClassification_History AS his
+			INNER JOIN Temp_NewClassification AS temp ON temp.CustID = his.CustID
+		GROUP BY his.CustID;
+
+		UPDATE Temp_NewClassification AS temp
+			INNER JOIN Temp_LastHistory AS l ON temp.CustID = l.CustID
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS his ON his.ID = l.HistoryID
+		SET temp.IsLastDataChanged = his.IsDataChanged;
         
 		/* INSERT LOG RE-SCAN NORMAL */    
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
