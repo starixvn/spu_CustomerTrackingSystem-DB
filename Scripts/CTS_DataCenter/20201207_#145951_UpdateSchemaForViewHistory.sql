@@ -9,7 +9,7 @@
 */
 USE CTS_DataCenter;
 
-CREATE TABLE `CTS_DataCenter.PinCustomerCategory` (
+CREATE TABLE `PinCustomerCategory` (
 	`CustID` BIGINT	UNSIGNED NOT NULL PRIMARY KEY,
  	`CreatedTime` DATETIME NOT NULL
 ) ENGINE=INNODB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
