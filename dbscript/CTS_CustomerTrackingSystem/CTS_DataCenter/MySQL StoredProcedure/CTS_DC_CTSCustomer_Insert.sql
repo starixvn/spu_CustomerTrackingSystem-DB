@@ -26,11 +26,7 @@ BEGIN
    
     DECLARE err_message text DEFAULT '';
 	DECLARE err_no int DEFAULT 0;
-    DECLARE cod_name varchar(10) DEFAULT '';
-	DECLARE lv_LastInsertCustID INT;
-    DECLARE lv_LastInsertCustSubID INT;
-   
-    
+    DECLARE cod_name varchar(10) DEFAULT '';    
     
 	DROP TEMPORARY TABLE IF EXISTS TempCTSCustomer;
     
@@ -138,40 +134,6 @@ BEGIN
     FROM	TempCTSCustomer AS tmpCus;
     
     SELECT 	tmpCust.CustID, tmpCust.CustSubID, tmpCus.IsExisting
-    FROM	TempCTSCustomer AS tmpCus;
-   
-    CALL Casey_Test();
-    #=====ReTransform==============================
-    UPDATE		DCS_DataCenter.Account AS acc	
-    INNER JOIN	TempCTSCustomer AS tmpCus
-				ON acc.LoginName = tmpCus.RegisterName
-				AND	acc.SubscriberID = tmpCus.SubscriberID
-	SET			acc.IsCTSTransformed = 0
-	WHERE		acc.IsCTSTransformed = -1;    
-    
-	UPDATE		DCS_DataCenter.Account AS acc	
-    INNER JOIN	TempCTSCustomer AS tmpCus
-				ON acc.LoginName = tmpCus.UserName
-                AND acc.SubscriberID = tmpCus.SubscriberID
-	SET			acc.IsCTSTransformed = 0
-	WHERE		acc.IsCTSTransformed = -1;    	
-    
-    #=====Update Scan System Parameter;
-    SET lv_LastInsertCustID = (SELECT MAX(tmpCus.CustID) FROM TempCTSCustomer AS tmpCus);
-    IF lv_LastInsertCustID > 0
-    THEN
-		UPDATE 	CTS_DataCenter.SystemParameter AS s
-        SET		s.ParamaterValue = (SELECT MAX(tmpCus.CustID) FROM TempCTSCustomer AS tmpCus)
-		WHERE	s.ParameterID = 7 AND s.ParameterName = 'CTSCustomer_LastInsertCustID';
-	END IF;
-    
-	SET lv_LastInsertCustSubID = (SELECT MAX(tmpCus.CustSubID) FROM TempCTSCustomer AS tmpCus);
-    IF lv_LastInsertCustSubID > 0
-    THEN
-		UPDATE 	CTS_DataCenter.SystemParameter AS s
-        SET		s.ParamaterValue = (SELECT MAX(tmpCus.CustID) FROM TempCTSCustomer AS tmpCus)
-		WHERE	s.ParameterID = 8 AND s.ParameterName = 'CTSCustomer_LastInsertCustID';
-	END IF;
-    
+    FROM	TempCTSCustomer AS tmpCus;   
 END$$
 DELIMITER ;
