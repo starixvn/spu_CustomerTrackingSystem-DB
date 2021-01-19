@@ -241,7 +241,13 @@ sp: BEGIN
 		ON site.SiteID = del.SiteID
         AND site.SubscriberID = del.SubscriberID
 	WHERE site.SubscriberID = lv_SubscriberID;
-
+    
+	#======Return New SubID/SiteID for Update CTSCustomer
+    SELECT	lv_SubscriberID
+		,	tmp.SiteID
+        ,	tmp.RoleMapping
+	FROM 	Temp_Sites AS tmp;
+    
 END$$
 
 DELIMITER ;
