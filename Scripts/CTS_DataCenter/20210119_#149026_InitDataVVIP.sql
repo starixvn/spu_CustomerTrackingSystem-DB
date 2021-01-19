@@ -30,7 +30,7 @@ USE CTS_DataCenter;
 /* Init VVIP Data */
 INSERT IGNORE INTO CTS_DataCenter.PinCustomerCategory (CustID,CreatedTime)
 SELECT 	CustID
-	,	CURRENT_TIME() AS CreatedTime
+	,	NOW() AS CreatedTime
 FROM CTS_Adhoc.BK_149026_VVIPCustomerClass;
 
 /* Remove Old VVIP Data */
