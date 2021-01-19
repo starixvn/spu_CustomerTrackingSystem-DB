@@ -17,14 +17,13 @@ BEGIN
 		Original:
 
 		Revisions:
-			20200715@Long.Luu [#136460]: Created
-			20200828@Roger.Le [#140211]: Enhance Problem Account Category - Multiple Reason 
-			20200908@Irena.Vo [#141020]: Exclude VVIP Customers, Pin 
-            20201001-20201014@Irena.Vo [#141930]: 
-            - Add Multi Problem Category
-            - Remove old categoryid from NapCM
-            20201019@Irena.Vo  [#141930]: Get distinct CustID List for lastest category
+			- 20200715@Long.Luu [#136460]: Created
+			- 20200828@Roger.Le [#140211]: Enhance Problem Account Category - Multiple Reason 
+			- 20200908@Irena.Vo [#141020]: Exclude VVIP Customers, Pin 
+            - 20201014@Irena.Vo [#141930]: Add Multi Problem Category, Remove old categoryid from NapCM
+            - 20201019@Irena.Vo  [#141930]: Get distinct CustID List for lastest category
             - 20210115@Irena.Vo: Insert History Log [RedmineID: #145951]
+			- 20210119@Aries.Nguyen: Write main error log - Rescan  [RedmineID: #149026]
             
 		Param's Explanation (filtered by):
 			CALL CTS_DataCenter.CTS_DC_InsertCategorizedProblemAccounts('[{"CustId": 123, "CategoryId": 27}]',0,@op_ErrorMessage);
@@ -33,13 +32,22 @@ BEGIN
     DECLARE lv_CurrentDateTime DATETIME DEFAULT CURRENT_TIME(); 
     
     DECLARE	lv_No INT DEFAULT 1;
+	DECLARE op_ErrorMessage2 VARCHAR(200) DEFAULT '';
 
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN   
 		GET DIAGNOSTICS lv_No = NUMBER;
 		GET DIAGNOSTICS CONDITION lv_No 
             op_ErrorMessage = MESSAGE_TEXT;	
-	
+		
+		IF(lv_No > 1) THEN
+			SET lv_No = lv_No - 1;
+			GET STACKED  DIAGNOSTICS CONDITION lv_No
+				op_ErrorMessage2 = MESSAGE_TEXT;	
+        END IF;
+			
+		SET op_ErrorMessage = CONCAT(op_ErrorMessage,'; ',op_ErrorMessage2);
+
 		CALL CTS_Log.CTS_Log_ErrorLog_Insert('CTS_DC_InsertCategorizedProblemAccounts',op_ErrorMessage, JSON_OBJECT('parameter', ip_ProblemAccounts));
     
 		SIGNAL SQLSTATE '99999' SET MESSAGE_TEXT = op_ErrorMessage;
@@ -57,9 +65,7 @@ BEGIN
         ,	SourceTypeID		SMALLINT
 		, 	ActionType		    SMALLINT DEFAULT 0 /* 0: Insert, 1: Update, 2: Remove, 4: Ignore PIN */
         , 	IsLastDataChanged   BIT DEFAULT 0
-        , 	PRIMARY KEY     	PK_Temp_ProblemAccounts_CustID_MainDBCategoryID(CustID,MainDBCategoryID) 
-        ,   INDEX				IX_Temp_ProblemAccounts_CustID(CustID)  
-        ,   INDEX				IX_Temp_ProblemAccounts_CustID_CategoryGroupID(CustID,CategoryGroupID)  
+        , 	PRIMARY KEY     	PK_Temp_ProblemAccounts_CustID_MainDBCategoryID(CustID,MainDBCategoryID)  
     );  
      
 	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedClassification;    
@@ -69,15 +75,12 @@ BEGIN
         ,	CategoryGroupID     SMALLINT UNSIGNED    
         ,	RowOrder			SMALLINT
         , 	PRIMARY KEY 		PK_Temp_ExistedClassification_CustID_CategoryID(CustID, CategoryID)     
-		,   INDEX				IX_Temp_ExistedClassification_CustID(CustID)  
-        ,   INDEX				IX_Temp_ExistedClassification_CustID_CategoryGroupID(CustID,CategoryGroupID)  
      );
    
 	DROP TEMPORARY TABLE IF EXISTS Temp_LastHistory;    
 	CREATE TEMPORARY TABLE Temp_LastHistory(	  
 			CustID				BIGINT UNSIGNED PRIMARY KEY
-        , 	HistoryID	        SMALLINT UNSIGNED
-        ,	INDEX				IX_Temp_LastHistory_HistoryID(HistoryID)
+        , 	HistoryID	        BIGINT UNSIGNED
     );
    
     INSERT INTO Temp_ProblemAccounts(CustID, MainDBCategoryID)

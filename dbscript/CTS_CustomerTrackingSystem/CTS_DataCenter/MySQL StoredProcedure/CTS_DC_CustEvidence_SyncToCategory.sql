@@ -21,7 +21,8 @@ BEGIN
            - 20201127@Irena.Vo: Enhance logic update LastModifiedDate for category [RedmineID: #141563]
            - 20201201@Irena.Vo: Enhance logic Remove old category [RedmineID: #141563]
            - 20201203@Irena.Vo: Enhance logic Category is NULL [RedmineID: #141563]
-	       - 20210115@Irena.Vo: Insert History Log  [RedmineID: #145951]
+	       - 20210115@Irena.Vo: Insert History Log. [RedmineID: #145951]
+		   - 20210119@Aries.Nguyen: Write main error log - rescan [RedmineID: #149026]
            
 		Param's Explanation (filtered by):	
 			CALL CTS_DataCenter.CTS_DC_CustEvidence_SyncToCategory('[{"CustId":43600693, "CTSCustId": 221882500, "SubscriberId": 130, "EvidenceId": 41, "ActionType": 0}]',0,@op_ErrorMessage);
@@ -31,13 +32,22 @@ BEGIN
     DECLARE	lv_IsSyncEvi2Cate VARCHAR(1) DEFAULT '';  
     
     DECLARE	lv_No INT DEFAULT 1;
+	DECLARE op_ErrorMessage2 VARCHAR(200) DEFAULT '';
 
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN   
 		GET DIAGNOSTICS lv_No = NUMBER;
-		GET DIAGNOSTICS CONDITION lv_No 
+		GET STACKED DIAGNOSTICS CONDITION lv_No 
 			op_ErrorMessage = MESSAGE_TEXT;	
-	
+		
+		IF(lv_No > 1) THEN
+				SET lv_No = lv_No - 1;
+				GET STACKED  DIAGNOSTICS CONDITION lv_No
+					op_ErrorMessage2 = MESSAGE_TEXT;	
+        END IF;
+
+		SET op_ErrorMessage = CONCAT(op_ErrorMessage,'; ',op_ErrorMessage2);
+
 		CALL CTS_Log.CTS_Log_ErrorLog_Insert('CTS_DC_CustEvidence_SyncToCategory',op_ErrorMessage, JSON_OBJECT('parameter', ip_CustEvidences));
     
 		SIGNAL SQLSTATE '99999' SET MESSAGE_TEXT = op_ErrorMessage;
@@ -56,9 +66,7 @@ BEGIN
 		, 	ActionType		    SMALLINT DEFAULT 0 /* 0: Insert, 1: Update, 2: Remove, 4: Ignore PIN */
         ,	IsExistedEvi		BIT DEFAULT 0 /* 1: Not existed Evi Cate => No action remove PA */
         ,	IsLastDataChanged	BIT DEFAULT 0
-        , 	PRIMARY KEY     	PK_Temp_CustomerEvidences_CustID_EvidenceID(CustID,EvidenceID) 
-        , 	INDEX 				IX_Temp_CustomerEvidences_CustID(CustID) 
-        , 	INDEX 				IX_Temp_CustomerEvidences_CustID_CategoryGroupID(CustID,CategoryGroupID)          
+        , 	PRIMARY KEY     	PK_Temp_CustomerEvidences_CustID_EvidenceID(CustID,EvidenceID)      
      );
      
     DROP TEMPORARY TABLE IF EXISTS Temp_ExistedClassification;    
@@ -68,15 +76,12 @@ BEGIN
         ,	CategoryGroupID     SMALLINT UNSIGNED  
         ,	RowOrder			SMALLINT
         , 	PRIMARY KEY 		PK_Temp_ExistedClassification_CustID_CategoryID(CustID, CategoryID)   
-		, 	INDEX 				IX_Temp_ExistedClassification_CustID(CustID) 
-        ,	INDEX				IX_Temp_ExistedClassification_CustID_CategoryGroupID(CustID,CategoryGroupID)
      );
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_LastHistory;    
 	CREATE TEMPORARY TABLE Temp_LastHistory(	  
 			CustID				BIGINT UNSIGNED PRIMARY KEY
-        , 	HistoryID	        SMALLINT UNSIGNED
-        ,	INDEX				IX_Temp_LastHistory_HistoryID(HistoryID)
+        , 	HistoryID	        BIGINT UNSIGNED
     );
     
     INSERT IGNORE INTO Temp_CustomerEvidences(CTSCustID, CustID, SubscriberID, EvidenceID, CategoryID, ActionType)
@@ -255,7 +260,7 @@ BEGIN
 						 ELSE 0
 					END
 			FROM Temp_CustomerEvidences AS temp
-				LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryGroupID = temp.CategoryGroupID AND ex.CategoryID NOT BETWEEN 72 AND 80 /* Not existed NAP CM Cate. */
+				LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryGroupID = temp.CategoryGroupID /* Not existed NAP CM Cate. */
 			WHERE temp.ActionType IN (0, 1);
         
 			/*	INSERT LOG REMOVE PA FROM EVIDENCE */
