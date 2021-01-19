@@ -1,4 +1,4 @@
-
+/*<info serverAlias="DBCTSC-bodb_CustHistory" executers="bodbSPUNet" viewers="" isFunction="0" isNested="0"></info>*/
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
 GO
@@ -14,6 +14,7 @@ AS
 	
 	Revisions:
 		- 20210104@CaseyHuynh: Created [Redmine ID: 148849]
+
 	Developer's Notes:
 		- @Example:			NULL		- Explaination [DEFAULT]
 

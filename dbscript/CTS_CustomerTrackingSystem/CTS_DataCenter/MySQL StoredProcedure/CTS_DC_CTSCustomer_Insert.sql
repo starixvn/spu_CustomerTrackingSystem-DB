@@ -54,7 +54,8 @@ BEGIN
         , INDEX			IX_TempCTSCustomer_SiteIDRoleID(RoleID, SiteID)
 	);
     
-    INSERT INTO TempCTSCustomer
+    INSERT INTO TempCTSCustomer(CustID, CustStatusID, Danger1, Danger2, Danger3, CustSubID, UserName, UserName2, SiteID
+    , Site, RoleID, Currency, CurrencyID, SRecommend, MRecommend, Recommend, CreatedDate)
 	SELECT		CustID	
 			,	CustStatusID
 			,	Danger1
@@ -132,7 +133,7 @@ BEGIN
             , NOW() AS ModifiedTime
     FROM	TempCTSCustomer AS tmpCus;
     
-    SELECT 	tmpCus.SubscriberID, tmpCust.CustID, tmpCus.UserName, tmpCus.RegisterName, tmpCust.CustSubID, tmpCus.IsExisting
+    SELECT 	tmpCus.SubscriberID, tmpCus.CustID, tmpCus.UserName, tmpCus.RegisterName, tmpCus.CustSubID, tmpCus.IsExisting
     FROM	TempCTSCustomer AS tmpCus;   
 END$$
 DELIMITER ;
