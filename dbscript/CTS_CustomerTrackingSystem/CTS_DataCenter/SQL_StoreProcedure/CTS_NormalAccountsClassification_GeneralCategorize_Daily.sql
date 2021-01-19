@@ -98,12 +98,13 @@ BEGIN
 	SELECT val FROM dbo.SPU_StrSplit(@ListCustIds, ',');
 
 	-- START
-	-- #0: Get active customers in last 14 days
-	INSERT INTO #tmpActiveCustomers(CustId)
-	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustIDList_ByModifiedDate  @LastModifiedDatetime = @Back14DaysFromToday;
 
 	IF(@IsCheckLast14Days = 1)
-	BEGIN
+	BEGIN		
+		-- #0: Get active customers in last 14 days
+		INSERT INTO #tmpActiveCustomers(CustId)
+		EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustIDList_ByModifiedDate  @LastModifiedDatetime = @Back14DaysFromToday;
+	
 		-- #1: Remove inactive customers to be scanned
 		DELETE r WITH(ROWLOCK)
 		FROM #tmpCustomers AS r
