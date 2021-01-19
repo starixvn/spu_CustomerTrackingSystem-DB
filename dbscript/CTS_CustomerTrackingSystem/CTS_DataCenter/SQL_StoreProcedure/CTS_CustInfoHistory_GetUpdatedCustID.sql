@@ -18,7 +18,7 @@ AS
 		- @Example:			NULL		- Explaination [DEFAULT]
 
 	exec CTS_GetCustomerInfo 0,500,2
-		/*<info serverAlias="DBCTSC-bodb_CustHistory" executers="bodbSPUNet" viewers="" isFunction="0" isNested="0"></info>*/
+		
 
 */
 BEGIN;
