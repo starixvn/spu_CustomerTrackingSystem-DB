@@ -12,6 +12,8 @@ BEGIN
 		Original:
 
 		Revisions:
+			- 20210115@Casey.Huynh: Created [Redmine ID: 148849]
+            
 		Param's Explanation (filtered by):
 			ip_CTSCustIDList: String (custid01,custid02, custid03)
 		Example:

@@ -1,4 +1,3 @@
-/*<info serverAlias="DBCTSC-bodb_CustHistory" executers="bodbSPUNet" viewers="" isFunction="0" isNested="0"></info>*/
 
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
@@ -19,7 +18,8 @@ AS
 		- @Example:			NULL		- Explaination [DEFAULT]
 
 	exec CTS_GetCustomerInfo 0,500,2
-		
+		/*<info serverAlias="DBCTSC-bodb_CustHistory" executers="bodbSPUNet" viewers="" isFunction="0" isNested="0"></info>*/
+
 */
 BEGIN;
 	SET NOCOUNT ON;
