@@ -13,7 +13,8 @@ AS
 	Database:	DBCTS.bodb02
 	
 	Revisions:
-		
+		-20210115@Casey.Huynh: Created [Redmine ID: 148849]
+
 	Developer's Notes:
 		- @Example:			NULL		- Explaination [DEFAULT]
 

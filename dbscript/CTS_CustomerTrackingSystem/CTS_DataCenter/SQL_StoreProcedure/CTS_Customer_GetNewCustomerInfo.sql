@@ -13,7 +13,7 @@ AS
 	Database:	DBCTS.bodb02
 	
 	Revisions:
-		-20191128@Casey.Huynh [Redmine ID: 148849]
+		-20191128@Casey.Huynh:Created [Redmine ID: 148849]
 
 	Developer's Notes:
 		
