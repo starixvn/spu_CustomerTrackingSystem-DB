@@ -14,7 +14,7 @@ AS
 	Database:	bodb_CustHistory
 	
 	Revisions:
-		
+		- 20210104@CaseyHuynh: Created [Redmine ID: 148849]
 	Developer's Notes:
 		- @Example:			NULL		- Explaination [DEFAULT]
 
