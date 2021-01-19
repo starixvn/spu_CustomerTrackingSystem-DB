@@ -56,12 +56,6 @@ BEGIN
 				AND	acc.SubscriberID = tmpCus.SubscriberID
 	SET			acc.IsCTSTransformed = 0
 	WHERE		acc.IsCTSTransformed = -1;    
-    
-	UPDATE		DCS_DataCenter.Account AS acc	
-    INNER JOIN	TempCTSCustomer AS tmpCus
-				ON acc.LoginName = tmpCus.UserName
-                AND acc.SubscriberID = tmpCus.SubscriberID
-	SET			acc.IsCTSTransformed = 0
-	WHERE		acc.IsCTSTransformed = -1;    
+
 END$$
 DELIMITER ;
