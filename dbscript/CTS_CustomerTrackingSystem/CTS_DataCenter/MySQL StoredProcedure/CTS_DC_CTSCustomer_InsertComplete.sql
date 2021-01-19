@@ -12,7 +12,7 @@ BEGIN
 		Original:
 
 		Revisions:
-			
+			-	20210115@Casey.Huynh: Created [Redmine ID: 148849]
 		Param's Explanation (filtered by):
         
         CALL CTS_DataCenterCTS_DC_CTSCustomer_InsertComplete ('[{"CustId":1,"Username":"SA-SD$","RegisterName":null,"Site":"BEST-ODDS","SubscriberID":1}]'))

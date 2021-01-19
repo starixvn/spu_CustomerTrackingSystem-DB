@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CTS_DC_CTSCustomer_UpdateInfoComplete`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CTSCustomer_UpdateInfoComplete`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTS_DC_CTSCustomer_UpdateInfoComplete`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTSCustomer_UpdateInfoComplete`(
 		ip_LastUpdateTime	DATETIME
 	,	ip_LastUpdateCustID	INT
 	,	IN ip_CustIDList	TEXT
@@ -16,7 +16,7 @@ BEGIN
 		Original:
 
 		Revisions:
-	 
+			-	20210115@Casey.Huynh: Created [Redmine ID: 148849]
 		Param's Explanation (filtered by):
 		
   Exampele: CALL CTS_DataCenter.CTS_DC_InsertCTSCustomer ('[{"BatchId":1,"CustId":1,"CustSubId":0,"Username":"SA-SD$","Username2":null,"Site":"BEST-ODDS","SiteId":1,"RoleId":4,"CurrencyId":1,"Currency":"SD$","Srecommend":1,"Mrecommend":0,"Recommend":0,"CreatedDate":"2020-04-24T03:18:00"},{"BatchId":1,"CustId":2,"CustSubId":0,"Username":"SA-RM","Username2":null,"Site":"BEST-ODDS","SiteId":1,"RoleId":4,"CurrencyId":2,"Currency":"RM","Srecommend":2,"Mrecommend":0,"Recommend":0,"CreatedDate":"2020-04-24T03:18:00"}]')
