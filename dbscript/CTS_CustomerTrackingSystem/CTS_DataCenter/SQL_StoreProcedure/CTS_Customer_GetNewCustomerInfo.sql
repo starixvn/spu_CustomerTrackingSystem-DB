@@ -3,7 +3,7 @@
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
 GO
-ALTER PROCEDURE	CTS_Customer_GetNewCustomerInfo
+CREATE PROCEDURE	CTS_Customer_GetNewCustomerInfo
 		@LastCustId INT = 0
 	,	@rowSize INT = 500
 AS
@@ -14,7 +14,7 @@ AS
 	
 	Revisions:
 	Developer's Notes:
-		- @Example:			NULL		- Explaination [DEFAULT]
+		
 
 	exec CTS_Customer_GetNewCustomerInfo 10, 10
 		

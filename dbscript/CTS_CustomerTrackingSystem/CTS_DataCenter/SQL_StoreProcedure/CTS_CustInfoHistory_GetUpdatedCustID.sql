@@ -11,7 +11,7 @@ AS
 /*
 	Creator:	20210104@CaseyHuynh
 	Task:		Get updated customer
-	Database:	DBACC.bodb_CustHistory
+	Database:	bodb_CustHistory
 	
 	Revisions:
 		
