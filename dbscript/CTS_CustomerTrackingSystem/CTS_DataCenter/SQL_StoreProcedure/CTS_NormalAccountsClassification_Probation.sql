@@ -52,14 +52,17 @@ BEGIN
 		DROP TABLE	#tmpRawData;
 
 	CREATE TABLE #tmpRawData(
-		[CustId]			INT NOT NULL PRIMARY KEY,
+		[CustId]			INT NOT NULL,
 		[SportId]			INT NOT NULL,
 		[TurnoverRM]		MONEY NULL,
 		[WinlossRM]			MONEY NULL,
 		[TurnoverORG]		MONEY NULL,
 		[WinlossORG]		MONEY NULL,
 		[BetCount]			BIGINT NULL,
-		[ActiveDays]		INT NULL
+		[ActiveDays]		INT NULL,
+		PRIMARY KEY (	[CustId]
+					,	[SportId]
+		)
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpCustomerAccummulatedInfo') IS NOT NULL
