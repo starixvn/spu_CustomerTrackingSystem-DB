@@ -63,7 +63,6 @@ BEGIN
 			,	CustSubID		
 			,	UserName		
 			,	(CASE WHEN UserName2 = 'null' THEN NULL ELSE UserName2 END) AS UserName2
-			,	NULL AS RegisterName
 			,	SiteID
 			,	(CASE WHEN Site = 'null' THEN NULL ELSE Site END) AS Site
 			,	RoleID		
@@ -133,7 +132,7 @@ BEGIN
             , NOW() AS ModifiedTime
     FROM	TempCTSCustomer AS tmpCus;
     
-    SELECT 	tmpCust.CustID, tmpCust.CustSubID, tmpCus.IsExisting
+    SELECT 	tmpCus.SubscriberID, tmpCust.CustID, tmpCus.UserName, tmpCus.RegisterName, tmpCust.CustSubID, tmpCus.IsExisting
     FROM	TempCTSCustomer AS tmpCus;   
 END$$
 DELIMITER ;

@@ -1,12 +1,14 @@
 DELIMITER $$
 USE `CTS_DataCenter` $$
-DROP PROCEDURE IF EXISTS CTS_DC_GetCustomerForUpdateUsername2 $$
+DROP PROCEDURE IF EXISTS CTS_DC_CTSCustomer_GetNULLUserName2 $$
 
-CREATE PROCEDURE `CTS_DC_GetCustomerForUpdateUsername2`(IN ip_Size INT, IN ip_CustID BIGINT, IN ip_IsUpdateCustsub BOOLEAN)
+CREATE PROCEDURE `CTS_DC_CTSCustomer_GetNULLUserName2`(
+	IN ip_PreCTSCustID JSON
+    , IN ip_Size INT DEFAULT 500)
 BEGIN
 	/*
-		Created:	20200112@Harvey
-		Task:		Get customer from CTS Customer for updating username2
+		Created:	20200118@CaseyHuynh
+		Task:		GET CTSCustID NULL
 		DB:			CTS_DataCenter
 		Original:
 
@@ -17,28 +19,16 @@ BEGIN
         
         CALL CTS_DC_GetCustomerForUpdateUsername2 (500,0,1)
 	*/	  
-	IF ip_IsUpdateCustsub = 0 THEN
-		SELECT CTSCustID
-			,CustID
-			,CustSubID
-		FROM CTSCustomer
-		WHERE (UserName2 IS NULL OR SubscriberID IS NULL)
-			AND CustID > ip_CustID
-			AND CustSubID = 0
-		ORDER BY CustID
-		LIMIT ip_Size;
-	ELSE
-		SELECT CTSCustID
-			,CustID
-			,CustSubID
-		FROM CTSCustomer
-		WHERE (UserName2 IS NULL OR SubscriberID IS NULL)
-			AND CustID > 0
-			AND CustSubID > ip_CustID
-		ORDER BY CustSubID
-		LIMIT ip_Size;
-	END IF;
-
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+	
+	SELECT 		cus.CustID
+			,	cus.CustSubID
+	FROM 		CTS_DataCenter.CTSCustomer AS cus
+	WHERE 		cus.UserName2 IS NULL
+				AND cus.CTSCustID > ip_PreCTSCustID
+    ORDER BY	cus.CTSCustID 
+    LIMIT 		ip_Size;
+    
+    
+    
 END$$
 DELIMITER ;
