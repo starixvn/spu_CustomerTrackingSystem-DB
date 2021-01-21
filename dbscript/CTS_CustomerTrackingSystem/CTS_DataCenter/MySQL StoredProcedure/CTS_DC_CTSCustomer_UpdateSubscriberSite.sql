@@ -1,21 +1,24 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
 DELIMITER $$
 
-USE CTS_DataCenter$$
+USE CTS_DataCenter $$
 
-DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_CTSCustomer_UpdateSubscriberSite_01 $$
+DROP PROCEDURE IF EXISTS CTS_DC_CTSCustomer_UpdateSubscriberSite$$
 
-CREATE PROCEDURE CTS_DataCenter.CTS_DC_CTSCustomer_UpdateSubscriberSite_01()
+CREATE PROCEDURE CTS_DC_CTSCustomer_UpdateSubscriberSite(IN ip_SubscriberSite JSON)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20191220@CaseyHuynh
-		Task :		Update SubscriberID Mapping
+		Task :		Update SubscriberID Mapping by Subsc
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
+			- 20200911@Casey.Huynh: Created [Redmine ID: 148849]
 		Param's Explanation (filtered by):
 	*/
-     DECLARE vr_i INT DEFAULT 1;
+     DECLARE vl_flag INT DEFAULT 1;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustSub;
     CREATE TEMPORARY TABLE Temp_CustSub
@@ -24,10 +27,11 @@ BEGIN
         , SiteName 			VARCHAR(50)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
         , RoleMapping			TINYINT
     );   
-
-   WHILE vr_i = 1 DO		
-        TRUNCATE TABLE Temp_CustSub;
-        
+	
+  
+   WHILE vl_flag = 1 
+   DO		
+        TRUNCATE TABLE Temp_CustSub;        
         
         INSERT INTO Temp_CustSub(CTSCustID, SiteName, RoleMapping)
         SELECT		c.CTSCustID
@@ -49,8 +53,8 @@ BEGIN
 								OR ms.MappingType IN (0,-1)
 							)
 			SET			c.SubscriberID = ms.SubscriberID;
-			ELSE 
-				SET vr_i = 0;
+		ELSE 
+			SET vl_flag = 0;
 		END IF;
 
   END WHILE;

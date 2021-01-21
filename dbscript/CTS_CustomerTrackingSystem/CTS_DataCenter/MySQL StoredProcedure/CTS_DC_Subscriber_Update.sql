@@ -17,7 +17,7 @@ sp: BEGIN
             - [20200924@Lex.Khuat][138102]: Support insert/update sub with multiple sites
             - [20201118@Lex.Khuat][145576]: Fix issue multi site update skip prefix, remove rule validate duplicating site
             - [20200912@Lex.Khuat][146563]: Rollback code to #138102, no validating for updating multi sites sub
-            
+            - 20200911@Casey.Huynh: Return Subscriber is updated or Add New [Redmine ID: 148849]
 		Param's Explanation:
 			- ip_SubscriberID: 0 => Insert mode, <> 0 => Update mode, input siteID
 			- ip_SubscriberType: 0 => Credit, 1 => Licensees

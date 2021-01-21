@@ -2,7 +2,7 @@
 DROP PROCEDURE IF EXISTS `CTS_DC_CTSCustomer_GetLastInsertCust`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTSCustomer_GetLastInsertCust` (IN ip_IsCustSub BOOLEAN)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTSCustomer_GetLastInsertCust` ()
 	SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -18,15 +18,15 @@ BEGIN
 		Example:
 			- CALL CTS_DC_CTSCustomer_GetLastInsertCust(0)
 	*/
-	IF ip_IsCustSub = 0 THEN
+	
 		SELECT	s.ParameterValue AS LastCustID
 		FROM	CTS_DataCenter.SystemParameter AS s
 		WHERE	s.ParameterID = 7 AND s.ParameterName = 'CTSCustomer_LastInsertCustID';
-	ELSE
-		SELECT	s.ParameterValue AS LastCustID
+
+		SELECT	s.ParameterValue AS LastCustSubID
 		FROM	CTS_DataCenter.SystemParameter AS s
 		WHERE	s.ParameterID = 8 AND s.ParameterName = 'CTSCustomer_LastInsertCustSubID';
-	END IF;
+
     
 END$$
 DELIMITER ;

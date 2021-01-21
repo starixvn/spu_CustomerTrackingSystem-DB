@@ -3,7 +3,7 @@
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
 GO
-CREATE PROCEDURE	CTS_Customer_GetNotNULLUserName2ByXML
+ALTER PROCEDURE	CTS_Customer_GetNotNULLUserName2ByXML
 	@custXML	XML
 AS
 /*
@@ -38,6 +38,7 @@ BEGIN;
 	FROM @custXML.nodes('//Customer') AS T(C)
 	OPTION (OPTIMIZE FOR (@custXML = NULL));
 
+	SELECT * FROM #tmpInputCust;
 	SELECT	tmpCus.CustID
 		,	tmpCus.CustSubID
 		,	cus.UserName2

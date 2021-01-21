@@ -5,7 +5,7 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTSCustomer_UpdateInfoComplete`(
 		ip_LastUpdateTime	DATETIME
 	,	ip_LastUpdateCustID	INT
-	,	IN ip_CustIDList	TEXT
+	,	IN ip_CustomerInfo	JSON
 )
  SQL SECURITY INVOKER
 BEGIN
@@ -66,7 +66,7 @@ BEGIN
 		,	js.Danger2		
 		,	js.Danger3
 		
-	FROM JSON_TABLE(ip_CustomerList, 
+	FROM JSON_TABLE(ip_CustomerInfo, 
 		"$[*]" COLUMNS(	
 				CTSCustID		BIGINT			PATH "$.CTSCustId"
 			,	CustID			INT UNSIGNED	PATH "$.CustId"            
