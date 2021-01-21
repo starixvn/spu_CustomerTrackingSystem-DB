@@ -1,9 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-USE `CTS_DataCenter`;
 DROP procedure IF EXISTS `CTS_DC_AutoTagCustomerClassification`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AutoTagCustomerClassification`(IN ip_NewClassification JSON)
     SQL SECURITY INVOKER
 BEGIN
@@ -14,18 +12,19 @@ BEGIN
 		Original:
 
 		Revisions:
-				[20200612-20200618@Casey.Huynh][135324]: Enhance SP      
-                [20200701@Casey.Huynh][135324]: Change Flow and Store more Info
-				[20200903@Irena.Vo][137550]: Ignore Main category with ActionType = -1. 
-                [20200903@Irena.Vo][141042]: Enhance get IsUsedManually = 0 for update category
-                [20200908@Irena.Vo][141020]: Enhance exclude VVIP Customers, Pin Category
-				[20200921-20201022@Irena.Vo][141755]: 
-                - Enhance SP
-                - Insert Probation Management flow
-                - Fix issue by have not delete TEMP NEW CATEGORY if insert with other category in the same time
-                [20201003-20201022@Irena.Vo][142546]: Enhance SP & correct logic. 
-                [20201027@Irena.Vo][142546]: Enhance init data for Probation to VIP OR Normal.
-                [20201116@Irena.Vo][145028]: Update LastScannedDate for Probation List.
+				- [20200612-20200618@Casey.Huynh][135324]: Enhance SP      
+                - [20200701@Casey.Huynh][135324]: Change Flow and Store more Info
+				- [20200903@Irena.Vo][137550]: Ignore Main category with ActionType = -1. 
+                - [20200903@Irena.Vo][141042]: Enhance get IsUsedManually = 0 for update category
+                - [20200908@Irena.Vo][141020]: Enhance exclude VVIP Customers, Pin Category
+				- [20200921-20201022@Irena.Vo][141755]: 
+					+ Enhance SP
+					+ Insert Probation Management flow
+					+ Fix issue by have not delete TEMP NEW CATEGORY if insert with other category in the same time
+                - [20201003-20201022@Irena.Vo][142546]: Enhance SP & correct logic. 
+                - [20201027@Irena.Vo][142546]: Enhance init data for Probation to VIP OR Normal.
+                - [20201116@Irena.Vo][145028]: Update LastScannedDate for Probation List.
+				- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
                 
 		Param's Explanation (filtered by):
                 call CTS_DataCenter.CTS_DC_AutoTagCustomerClassification
@@ -88,8 +87,6 @@ BEGIN
 		 )) AS temp
 	 INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = temp.CategoryID 
 	 WHERE cc.ParentID = 1 AND temp.CategoryID <> 0;
-	
-     SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
      
 	/*******************************************START DATA*********************************************************/ 
     /*IGNORE VVIP - PIN CATEGORY*/

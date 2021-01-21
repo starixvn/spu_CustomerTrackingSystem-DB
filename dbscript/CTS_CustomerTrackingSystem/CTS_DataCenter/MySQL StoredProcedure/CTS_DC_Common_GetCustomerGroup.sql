@@ -1,10 +1,9 @@
-DELIMITER $$
-USE CTS_DataCenter $$
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_Common_GetCustomerGroup`$$
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_Common_GetCustomerGroup`;
 
-CREATE PROCEDURE `CTS_DataCenter`.`CTS_DC_Common_GetCustomerGroup`(
-		IN ip_CustomerTransDateList 	JSON
-)
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Common_GetCustomerGroup`(IN ip_CustomerTransDateList json)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200423@Long.Luu	
@@ -13,6 +12,7 @@ BEGIN
 		Original: 
 		Revisions:
 			- 20200423@Long.Luu: Created [Redmine ID: #132623]
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
             
 		Param's Explanation:
 	*/ 
@@ -35,13 +35,11 @@ BEGIN
         , TransDate		DATE			PATH "$.TransDate"
 	)) AS tmpTable;
     
-    SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
 	SELECT 	c.CustID
 		,	c.TransID
 		,	g.GroupID
     FROM tmpCustomerTransDate AS c
-		LEFT JOIN CTS_DataCenter.SmartGroupHistory AS g ON c.CustID = g.CustID AND c.TransDate = g.CreatedDate;   
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+		LEFT JOIN CTS_DataCenter.SmartGroupHistory AS g ON c.CustID = g.CustID AND c.TransDate = g.CreatedDate;
     
 END$$	
 DELIMITER ;

@@ -1,5 +1,5 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/ 
-DROP procedure IF EXISTS `CTS_DC_CustEvidence_GetAffectedEvidences`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustEvidence_GetAffectedEvidences`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_GetAffectedEvidences`(IN ip_CTSCustID bigint,IN ip_EvidenceCodes text)
@@ -12,7 +12,9 @@ BEGIN
 		Original:
 
 		Revisions:
-             - 20200123@Thai.Tran [Redmine ID: #127150]: Created 
+             - 20200123@Thai.Tran [Redmine ID: #127150]: Created
+			 - 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+			 
 		Param's Explanation (filtered by):			
         
         CALL CTS_DC_GetAffectedEvidence (10515, '6.9') 
@@ -36,11 +38,7 @@ BEGIN
 			 END IF;         
 			 INSERT INTO tmpEvidenceCodes VALUES (str);
 		END LOOP Evidence_loop;
-    END IF;
-      
-   
-    SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;   
-    
+    END IF;    
     
     DROP TEMPORARY TABLE IF EXISTS tmpAffectedEvidences;
     CREATE TEMPORARY TABLE tmpAffectedEvidences(

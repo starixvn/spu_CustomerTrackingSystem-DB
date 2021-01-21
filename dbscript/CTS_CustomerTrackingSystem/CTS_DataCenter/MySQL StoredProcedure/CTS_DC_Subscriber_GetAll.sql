@@ -1,9 +1,9 @@
-USE `CTS_DataCenter`;
-DROP procedure IF EXISTS `CTS_DC_Subscriber_GetAll`;
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_Subscriber_GetAll`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
-CREATE DEFINER=`ctsWeb`@`%` PROCEDURE `CTS_DC_Subscriber_GetAll`()
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Subscriber_GetAll`()
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200911@Roger.Le
@@ -11,13 +11,12 @@ BEGIN
 		DB:			CTS_DataCenter && CTS_Admin
 		Original: 
 		Revisions:
-            - [20200911@Roger.Le][138102]: Created
-            - [20200924@Lex.Khuat][138102]: Support return sub with multi sites
+            - 20200911@Roger.Le[138102]: Created
+            - 20200924@Lex.Khuat[138102]: Support return sub with multi sites
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
             
 		Param's Explanation:
-	*/ 
-    
-    SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+	*/
     
 	SELECT	sub.SubscriberID
 		,	sub.SubscriberName
@@ -45,8 +44,6 @@ BEGIN
             ,	sub.IsTest
 	ORDER BY	sub.TerminatedDate ASC
 			,	sub.SubscriberID ASC;
-    
-    SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;  
 
 END$$
 

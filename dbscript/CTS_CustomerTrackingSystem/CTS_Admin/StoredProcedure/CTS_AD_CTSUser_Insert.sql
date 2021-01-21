@@ -1,9 +1,9 @@
-USE `CTS_Admin`;
-DROP procedure IF EXISTS `CTS_AD_CTSUser_Insert`;
+/*<info serverAlias="CTSMain-CTS_Admin" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_AD_CTSUser_Insert`;
 
 DELIMITER $$
-USE `CTS_Admin`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_AD_CTSUser_Insert`(IN ip_userId INT, IN ip_userName VARCHAR(50))
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_AD_CTSUser_Insert`(IN ip_userId int,IN ip_userName varchar(50))
+    SQL SECURITY INVOKER
 BEGIN
 
 	/*
@@ -13,6 +13,8 @@ BEGIN
 		Original:
         
 		Revisions:
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+			
 		Param's Explanation (filtered by):
 			- ip_userId: custID of user to insert
             - ip_userName: username to insert
@@ -23,8 +25,6 @@ BEGIN
     DECLARE vr_CreatedDate DATETIME DEFAULT current_time();
     DECLARE vr_SPName VARCHAR(100) 	DEFAULT 'CTS_AD_InsertCTSUser';
     
-	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-    
     # Check exists in database
     SELECT 1, UserName
     INTO vr_isAdded, vr_currName
@@ -34,7 +34,6 @@ BEGIN
     IF vr_isAdded = 1 AND vr_currName <> ip_userName THEN
     
 		######## if username is outdated, update new username ########
-        SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
         UPDATE CTS_Admin.CTSUser
         SET UserName = ip_userName
         WHERE UserID = ip_userId;
@@ -45,7 +44,6 @@ BEGIN
 	ELSEIF vr_isAdded = 0 THEN
         
         ######## if username does not exists, insert new user ########
-        SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
         INSERT IGNORE INTO CTS_Admin.CTSUser(UserID, UserName, CreatedDate, IsMaster)
 			VALUES (ip_userId, ip_userName, vr_CreatedDate, 0);
         

@@ -1,11 +1,12 @@
-USE `CTS_DataCenter`;
-DROP procedure IF EXISTS `CTS_DC_SpecialCustClass_GetAll`;
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_SpecialCustClass_GetAll`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_SpecialCustClass_GetAll`(
-	IN		ip_IsGetAllInfo		BIT
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_SpecialCustClass_GetAll`(
+	IN ip_IsGetAllInfo 		BIT,
+    IN ip_Username 			VARCHAR(50)
 )
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200905@Long.Luu
@@ -16,11 +17,11 @@ BEGIN
 		Revisions:
 		   - 20200905@Long.Luu [140996]: Created
            - 20200908@Irena.Vo [141020]: Exclude VVIP, Pin category in list
-           - 20020915@Irena.Vo [141020]: Enhance sort data
+		   - 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
            
 		Param's Explanation (filtered by):
 	*/        
-	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
+
     IF (ip_IsGetAllInfo = 1) THEN
 		SELECT 	s.CTSCustID
 			,	s.CustID
@@ -35,14 +36,13 @@ BEGIN
 			INNER JOIN CTS_Admin.Subscriber AS sub ON s.SubscriberID = sub.SubscriberID
 			INNER JOIN CTS_Admin.CTSUser AS u ON s.CreatedBy = u.UserID
 		WHERE s.CreatedFromFunction = 1
+			AND (ip_Username = "" OR c.UserName = ip_Username)
 		ORDER BY s.CreatedDate DESC; -- Enhance sort data
     ELSE
 		SELECT CustID
 		FROM CTS_DataCenter.SpecialCustomerClass
         WHERE CreatedFromFunction IN (1, 11, 21); -- Exclude Normal, VVIP, Pin Category customer class.
     END IF;
-    
-	SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     	 
 END$$
 

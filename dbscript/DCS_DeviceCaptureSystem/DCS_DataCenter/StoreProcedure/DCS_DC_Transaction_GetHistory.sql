@@ -1,13 +1,9 @@
-DELIMITER $$
-DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_Transaction_GetHistory$$
+/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `DCS_DC_Transaction_GetHistory`;
 
-CREATE DEFINER=`fps`@`%` PROCEDURE `DCS_DC_Transaction_GetHistory`(
-	IN 	ip_DateRange 		INT, 	
-	IN 	ip_SubscriberId 	INT, 
-    IN 	ip_CTSCustId 		BIGINT,
-    IN 	ip_PageSize 		INT,
-    IN 	ip_PageNumber 		INT,
-    OUT op_TotalItem 		INT)
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transaction_GetHistory`(IN ip_DateRange int,IN ip_SubscriberId int,IN ip_CTSCustId bigint,IN ip_PageSize int,IN ip_PageNumber int,OUT op_TotalItem int)
+    SQL SECURITY INVOKER
 proc_label: BEGIN
 	/*
 		Created:	20200311@Terry
@@ -16,11 +12,10 @@ proc_label: BEGIN
 		Original:
 
 		Revisions:
-			20200518@lex.khuat: Update robot description from Green to Human [Redmine ID: #133934]
-        
-		Param's Explanation (filtered by):			
-        
-        CALL DCS_DC_Get_History_Transaction ()
+			- 20200518@lex.khuat: Update robot description from Green to Human [Redmine ID: #133934]
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+			
+		Param's Explanation (filtered by):
 	*/ 
    
     DROP TEMPORARY TABLE IF EXISTS Temp_History_Transaction;  
@@ -45,8 +40,6 @@ proc_label: BEGIN
 	(
 			AccountID	 	BIGINT(20)      
     );
-    
-	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED ; 
 	    
     IF ISNULL(ip_DateRange) OR ip_DateRange < 0 THEN
 		SELECT Count(TransID) INTO op_TotalItem FROM Temp_History_Transaction;
@@ -168,8 +161,7 @@ proc_label: BEGIN
 			WHERE trs.AccountID IN (SELECT AccountID FROM Temp_Account)
 				AND trs.SubscriberID=ip_SubscriberId 
 				AND trs.CreatedDate BETWEEN DATE_ADD(@MoveDate, INTERVAL 1 DAY) And @ToDate;         
-		
-        
+
         INSERT INTO Temp_History_Transaction(TransID, TransTime, DeviceID, IP, IPID, Flagged, Action, ActionResult, OSName, BrowserName, URL)   
 			SELECT 	trs.TransID,
 					trs.TransTime,  
@@ -192,9 +184,7 @@ proc_label: BEGIN
 			WHERE trs.AccountID IN (SELECT AccountID FROM Temp_Account)
 				AND trs.SubscriberID=ip_SubscriberId 
 				AND trs.CreatedDate BETWEEN @FromDate And @MoveDate;        
-	END IF; 
-     
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+	END IF;
     
     SELECT Count(TransID) INTO op_TotalItem FROM Temp_History_Transaction;
     
@@ -222,4 +212,5 @@ proc_label: BEGIN
     LIMIT ip_PageNumber, ip_PageSize;  
     
 END$$
+
 DELIMITER ;

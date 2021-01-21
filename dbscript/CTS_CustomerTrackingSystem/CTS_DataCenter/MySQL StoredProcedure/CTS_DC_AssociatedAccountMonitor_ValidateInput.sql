@@ -1,10 +1,9 @@
-DELIMITER $$
-USE CTS_DataCenter $$
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_AssociatedAccountMonitor_ValidateInput`$$
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_AssociatedAccountMonitor_ValidateInput`;
 
-CREATE PROCEDURE `CTS_DataCenter`.`CTS_DC_AssociatedAccountMonitor_ValidateInput`(
-		IN ip_UsernameList 		VARCHAR(2600)
-)
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedAccountMonitor_ValidateInput`(IN ip_UsernameList varchar(2600))
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created: 20200706@Long.Luu
@@ -13,12 +12,13 @@ BEGIN
 	  
 		Revisions:
 			- 20200706@Long.Luu: created  [Redmine ID: #134652]
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723] 
 
 		Param's Explanation:  
 		
 	*/
 
-	DROP TABLE IF EXISTS TmpUsernames;
+	DROP TEMPORARY TABLE IF EXISTS TmpUsernames;
     
 	CREATE TEMPORARY TABLE TmpUsernames( 	 
 			UserName		VARCHAR(50)
@@ -26,7 +26,7 @@ BEGIN
         ,	INDEX 			IX_TmpUsernames_UserName (UserName)
 	);
     
-    DROP TABLE IF EXISTS TmpDuplicatedUsernames;
+    DROP TEMPORARY TABLE IF EXISTS TmpDuplicatedUsernames;
     
 	CREATE TEMPORARY TABLE TmpDuplicatedUsernames( 	 
 			UserName		VARCHAR(50) PRIMARY KEY
@@ -46,8 +46,7 @@ BEGIN
     UPDATE TmpUsernames
 		INNER JOIN TmpDuplicatedUsernames ON TmpUsernames.UserName = TmpDuplicatedUsernames.UserName
 	SET TmpUsernames.IsDuplicated = 1;
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
     SELECT 	c.CTSCustID
 		,	u.UserName
 		,	CASE 

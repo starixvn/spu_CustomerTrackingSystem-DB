@@ -1,9 +1,9 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/ 
-DROP procedure IF EXISTS `CTS_DC_CustEvidence_GetFlaggedEvidences`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustEvidence_GetFlaggedEvidences`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%`  PROCEDURE CTS_DC_CustEvidence_GetFlaggedEvidences (IN ip_CTSCustID BIGINT,     IN ip_EvidenceCodes TEXT	)
-	SQL SECURITY INVOKER
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_GetFlaggedEvidences`(IN ip_CTSCustID BIGINT,     IN ip_EvidenceCodes TEXT	)
+    SQL SECURITY INVOKER
 BEGIN
 
 	/*
@@ -13,7 +13,9 @@ BEGIN
 		Original:
 
 		Revisions:
-           - 20200123@Thai.Tran [Redmine ID: #127150]: Created 
+           - 20200123@Thai.Tran [Redmine ID: #127150]: Created
+		   - 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+		   
 		Param's Explanation (filtered by):			
         
         CALL CTS_DC_GetFlaggedEvidence (11113, '1.2,6.1,6.2')
@@ -38,8 +40,7 @@ BEGIN
 			 INSERT INTO tmpEvidenceCodes VALUES (str);
 		END LOOP Evidence_loop;
     END IF;
-      
-    SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;   
+ 
 	SELECT e.EvidenceID
 		   ,e.EvidenceCode           
 		   ,e.EvidenceName
@@ -60,4 +61,5 @@ BEGIN
 		  AND ce.CTSCustID = ip_CTSCustID;          
  
 END$$
+
 DELIMITER ;

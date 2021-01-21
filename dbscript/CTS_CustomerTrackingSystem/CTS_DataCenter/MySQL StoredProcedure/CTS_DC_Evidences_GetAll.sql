@@ -1,18 +1,23 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_Evidences_GetAll`;
+
 DELIMITER $$
-DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_Evidences_GetAll$$
-CREATE PROCEDURE CTS_DataCenter.CTS_DC_Evidences_GetAll()
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Evidences_GetAll`()
+    SQL SECURITY INVOKER
 BEGIN
 /*
-		Created:	20200203@Adam.Tran
-		Task :		Chain To Evidence
-		DB:			CTS_DataCenter
-		Original:
+	Created:	20200203@Adam.Tran
+	Task :		Chain To Evidence
+	DB:			CTS_DataCenter
+	Original:
 
-		Revisions:
-		Param's Explanation (filtered by):
-	*/
+	Revisions:
+		- 20200203@Adam.Tran: Created
+		- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+		
+	Param's Explanation (filtered by):
+*/
     
-	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;   
 	SELECT e.EvidenceID
 			,e.EvidenceCode
 		    ,e.EvidenceName
@@ -20,7 +25,7 @@ BEGIN
 	FROM   Evidence AS e
     WHERE e.IsActive = 1
     ORDER BY e.EvidenceGroupID, e.OrderNo;
-          
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;   
+
 END$$
+
 DELIMITER ;

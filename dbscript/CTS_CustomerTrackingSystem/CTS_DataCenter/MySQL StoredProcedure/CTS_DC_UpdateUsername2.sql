@@ -1,8 +1,9 @@
-DELIMITER $$
-USE `CTS_DataCenter` $$
-DROP PROCEDURE IF EXISTS CTS_DC_UpdateUsername2 $$
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_UpdateUsername2`;
 
-CREATE PROCEDURE `CTS_DC_UpdateUsername2`(IN ip_CustomerList JSON)
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_UpdateUsername2`(IN ip_CustomerList json)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200112@Harvey
@@ -12,6 +13,7 @@ BEGIN
 
 		Revisions:
 			- 20200421@Harvey:	Update SubscriberID - [Redmine: #132705]
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
         
 		Param's Explanation (filtered by):         
         
@@ -47,7 +49,6 @@ BEGIN
 		, RoleID		TINYINT			PATH "$.RoleId" 
 		 )) as tmpTable;
 		 
-	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 		UPDATE 		TempCTSCustomer cust
 		INNER JOIN	CTS_DataCenter.MappingSubscriberSite mss 
 					ON cust.SiteID = mss.SiteID 
@@ -55,11 +56,11 @@ BEGIN
 						OR (mss.RoleMapping = 2 AND cust.RoleID > 1)
 						OR (mss.RoleMapping = 0))
 		SET 		cust.SubscriberID 	= 	mss.SubscriberID;
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
     UPDATE CTSCustomer cust
 		INNER JOIN TempCTSCustomer tmpCust ON cust.CustID = tmpCust.CustID AND cust.CustSubID = tmpCust.CustSubID
 	SET cust.UserName2 = tmpCust.UserName2
 		,cust.SubscriberID = tmpCust.SubscriberID;    
 END$$
+
 DELIMITER ;

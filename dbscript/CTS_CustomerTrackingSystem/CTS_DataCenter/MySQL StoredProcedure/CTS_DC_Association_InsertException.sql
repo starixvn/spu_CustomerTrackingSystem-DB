@@ -1,13 +1,9 @@
-DELIMITER $$
-DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_Association_InsertException$$
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_Association_InsertException`;
 
-CREATE PROCEDURE CTS_DataCenter.CTS_DC_Association_InsertException(
-	IN ip_UserID 			INT, 
-    IN ip_FromCTSCustID 	BIGINT, 
-    IN ip_ToUserName 		VARCHAR(50), 
-    IN ip_Comment 			VARCHAR(500), 
-    
-    OUT op_Error 			INT)
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_InsertException`(IN ip_UserID int,IN ip_FromCTSCustID bigint,IN ip_ToUserName varchar(50),IN ip_Comment varchar(500),OUT op_Error int)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200123@Casey.Huynh	
@@ -15,7 +11,9 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original: 
 		Revisions:
-			[20200807@Casey.Huynh]:[138925]: Change ip_Comment VARCHAR(200) To ip_Comment VARCHAR(500)
+			- 20200807@Casey.Huynh:[138925]: Change ip_Comment VARCHAR(200) To ip_Comment VARCHAR(500)
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+			
 		Param's Explanation (filtered by):
 			OutPut: vr_Error (1: User Is not Existing, 0: Add Successfully)
 	*/ 
@@ -24,16 +22,13 @@ BEGIN
     DECLARE		vr_CreatedDate	DATETIME;
     DECLARE		vr_SPName 		VARCHAR(100) 	DEFAULT 'CTS_DC_Association_InsertException';
     DECLARE		vr_Error		INT DEFAULT 0;
-    
-    SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
+
     SET SESSION default_collation_for_utf8mb4 = utf8mb4_0900_ai_ci;
     
     SET vr_ToCTSCustID = (	SELECT	CTSCustID 
 							FROM	CTS_DataCenter.CTSCustomer AS ct 
                             WHERE	ct.UserName 	= ip_ToUserName 
 									OR ct.UserName2 = ip_ToUserName);    
-                                    
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
     IF(vr_ToCTSCustID IS NULL) THEN
 		 SET	vr_Error = 1;
@@ -63,5 +58,7 @@ BEGIN
     
     SET op_Error = vr_Error;
     SET SESSION default_collation_for_utf8mb4 = utf8mb4_general_ci;
-END$$	
+	
+END$$
+
 DELIMITER ;

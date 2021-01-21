@@ -1,8 +1,9 @@
-USE `CTS_DataCenter`;
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
 DROP PROCEDURE IF EXISTS `CTS_DC_AssociatedAccountMonitor_Get`;
 
 DELIMITER $$
-CREATE PROCEDURE `CTS_DC_AssociatedAccountMonitor_Get`()
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedAccountMonitor_Get`()
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200706@Long.Luu
@@ -12,11 +13,10 @@ BEGIN
 
 		Revisions:
 			- 20200706@Long.Luu: Created [Redmine ID: #134652]
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723] 
         
 		Param's Explanation (filtered by):
 	*/
-
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     
     SELECT 	c.CTSCustID
 		,	c.CustID
@@ -40,8 +40,6 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON a.CTSCustID = c.CTSCustID
         INNER JOIN CTS_Admin.Subscriber AS s ON c.SubscriberID = s.SubscriberID
         INNER JOIN CTS_Admin.CTSUser AS l ON a.CreatedBy = l.UserID;
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;  
 
 END$$
 

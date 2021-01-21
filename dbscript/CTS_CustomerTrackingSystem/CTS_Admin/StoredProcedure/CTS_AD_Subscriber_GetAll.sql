@@ -1,8 +1,9 @@
-DELIMITER $$
-USE CTS_Admin $$
-DROP PROCEDURE IF EXISTS CTS_Admin.CTS_AD_Subscriber_GetAll $$
+/*<info serverAlias="CTSMain-CTS_Admin" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_AD_Subscriber_GetAll`;
 
-CREATE PROCEDURE CTS_Admin.CTS_AD_Subscriber_GetAll (IN ip_userId INT)
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_AD_Subscriber_GetAll`(IN ip_userId INT)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20190715@Harvey
@@ -10,12 +11,12 @@ BEGIN
 		DB:			CTS_Admin
 		Original:
 
-		Revisions:
-        
+		Revisions: 
+			- 20190715@Harvey:   Created
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+			
 		Param's Explanation (filtered by):
 	*/
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;        
 
     SELECT	sub.SubscriberID
 			,	sub.SubscriberName
@@ -29,8 +30,7 @@ BEGIN
 	WHERE 	(us.UserID IS NULL OR us.UserID = ip_userId)
 			AND sub.IsTest = 0 
 			AND sub.SubscriberStatus IN (1,-1);
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+
 END$$
 
 DELIMITER ;

@@ -1,9 +1,9 @@
-USE `CTS_DataCenter`;
-DROP procedure IF EXISTS `CTS_DC_CustInfo_GetFlagged`;
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_CustInfo_GetFlagged`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_CustInfo_GetFlagged`(IN ip_CTSCustID INT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustInfo_GetFlagged`(IN ip_CTSCustID INT)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20191225@Casey.Huynh	
@@ -13,6 +13,7 @@ BEGIN
 					IF account has 
 		Revisions:
 			- 20200706@Lex: Fix logic return flag and affected evidence for root account [Redmine ID: #137055]
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
 
 		Param's Explanation (filtered by):
 	*/
@@ -20,8 +21,6 @@ BEGIN
     DECLARE		vrIsFlagged			BIT DEFAULT 0 ;  # 0: NOT Flagged, 1: Flagged; 
     DECLARE		vrIsAffected		BIT DEFAULT 0 ;  # 0: NOT Affected, 1: Affected; 
  
-    
-	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;   
 	 /*Check If Account IS IS  FLAG*/
 		SET vrIsFlagged = IFNULL((SELECT	1
 							FROM	CTS_DataCenter.CustEvidence AS ced
@@ -44,10 +43,9 @@ BEGIN
                                 AND crev.CTSCustID IS NULL
 							LIMIT 1), 0);
     
-    SELECT vrIsFlagged AS Flagged, vrIsAffected AS Affected; 
-	 
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    SELECT vrIsFlagged AS Flagged, vrIsAffected AS Affected;
     
 END$$
+
 DELIMITER ;
 

@@ -1,7 +1,9 @@
-DELIMITER $$
-DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_Association_GetException$$
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_Association_GetException`;
 
-CREATE PROCEDURE CTS_DataCenter.CTS_DC_Association_GetException(IN ip_CTSCustID BIGINT)
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_GetException`(IN ip_CTSCustID BIGINT)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20191225@Casey.Huynh	
@@ -9,6 +11,9 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original: 
 		Revisions:
+			- 20191225@Casey.Huynh: Created
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+			
 		Param's Explanation (filtered by):
 	*/
 	
@@ -20,8 +25,6 @@ BEGIN
         , 	Comment				VARCHAR(200)
         , 	CreatedBy			INT
     );
-    
-	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
     
     INSERT INTO Temp_CustException(ExceptionCTSCustID, ExceptionDate, Comment, CreatedBy)
 	SELECT 	(CASE WHEN ce.FromCTSCustID != ip_CTSCustID THEN ce.FromCTSCustID 
@@ -44,7 +47,6 @@ BEGIN
 				ON ce_temp.ExceptionCTSCustID = ct.CTSCustID
 	INNER JOIN	CTS_Admin.CTSUser AS us
 				ON ce_temp.CreatedBy = us.UserID;    
-		
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+
 END$$
 DELIMITER ;

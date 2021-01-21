@@ -1,17 +1,19 @@
-DELIMITER $$
-DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_Association_RemoveException$$
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_Association_RemoveException`;
 
-CREATE PROCEDURE CTS_DataCenter.CTS_DC_Association_RemoveException(
-	IN ip_UserID 			INT, 
-    IN ip_FromCTSCustID 	BIGINT, 
-    IN ip_ToCTSCustID 		BIGINT)
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_RemoveException`(IN ip_UserID int,IN ip_FromCTSCustID bigint,IN ip_ToCTSCustID bigint)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200123@Casey.Huynh	
 		Task :		Remove Exception
 		DB:			CTS_DataCenter
 		Original: 
+		
 		Revisions:
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+			
 		Param's Explanation (filtered by):
 	*/ 
 	DECLARE		vr_LeastCTSCustID 	BIGINT;
@@ -45,8 +47,7 @@ BEGIN
     INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	VALUES(2,vr_SPName, CONCAT('Remove Exception: ip_FromCTSCustID_', ip_FromCTSCustID, ';ip_ToCTSCustID', ip_ToCTSCustID), vr_CreatedDate, ip_UserID);
     
-    #=====Insert Affected Evidence: GET Device And Association into Temp Table    
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+    #=====Insert Affected Evidence: GET Device And Association into Temp Table
     INSERT INTO Temp_CustDevice(CTSCustID, DCSDeviceID)
     SELECT 		ad.CTSCustID
 				, ad.DCSDeviceID
@@ -65,8 +66,6 @@ BEGIN
 					ON	tcd.DCSDeviceID			= ad.DCSDeviceID
 		WHERE		ad.CTSCustID IN (ip_FromCTSCustID,ip_ToCTSCustID);
 		
-		SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-		
 		DELETE	tca
 		FROM	Temp_CustAssociation AS tca
 		WHERE	tca.FromCTSCustID = tca.ToCTSCustID;
@@ -74,8 +73,7 @@ BEGIN
 		# If ip_FromCTSCustID Association with ip_ToCTSCustID
 		IF EXISTS (SELECT 1 FROM Temp_CustAssociation LIMIT 1) THEN 
         
-			#=====Insert Affected Evidence: GET Device And Association into Temp Table
-			SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;           
+			#=====Insert Affected Evidence: GET Device And Association into Temp Table         
             
 			INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
 			SELECT	tca.ToCTSCustID
@@ -104,14 +102,13 @@ BEGIN
 						ON ce.CTSCustID = tca.FromCTSCustID
 			WHERE		ce.CTSCustID	= ip_ToCTSCustID			
 						AND ce.Level = 0;
-						
-			SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 			
 			INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 			VALUES(3, vr_SPName, CONCAT('Auto Add by Remove Exception Function: ip_FromCTSCustID_ ', ip_FromCTSCustID, ';ip_ToCTSCustID', ip_ToCTSCustID) , vr_CreatedDate, ip_UserID);
 			
-			SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
         END IF;
 	END IF;
-END$$	
+
+END$$
+
 DELIMITER ;

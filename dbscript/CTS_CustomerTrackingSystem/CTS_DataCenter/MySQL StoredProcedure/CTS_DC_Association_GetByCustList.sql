@@ -1,8 +1,9 @@
-DELIMITER $$
-USE CTS_DataCenter $$
-DROP PROCEDURE IF EXISTS CTS_DC_Association_GetByCustList $$
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_Association_GetByCustList`;
 
-CREATE PROCEDURE `CTS_DC_Association_GetByCustList`(IN ip_CTSCustIDList VARCHAR(2000))
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_GetByCustList`(IN ip_CTSCustIDList varchar(2000))
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200820@Long.Luu
@@ -12,11 +13,12 @@ BEGIN
 
 		Revisions:
 			- 20200820@Long.Luu: Created [Redmine ID: 139701]
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
 		
 		Param's Explanation (filtered by):
 	*/
     
-    DROP TABLE IF EXISTS TempAffectedDevices;
+    DROP TEMPORARY TABLE IF EXISTS TempAffectedDevices;
     CREATE TEMPORARY TABLE TempAffectedDevices(
 			DCSDeviceID 	BIGINT PRIMARY KEY
 	);
@@ -30,8 +32,6 @@ BEGIN
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
     
-	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
- 
 	# Get devices list for root account
 	INSERT INTO TempAffectedDevices(DCSDeviceID)
 	SELECT DISTINCT a.DCSDeviceID
@@ -43,8 +43,6 @@ BEGIN
 	FROM CTS_DataCenter.AssociationByDevice AS a
 		INNER JOIN TempAffectedDevices AS t ON a.DCSDeviceID = t.DCSDeviceID        
         INNER JOIN CTS_DataCenter.CTSCustomer AS c ON a.CTSCustID = c.CTSCustID;
-        
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
 END$$
 DELIMITER ;
