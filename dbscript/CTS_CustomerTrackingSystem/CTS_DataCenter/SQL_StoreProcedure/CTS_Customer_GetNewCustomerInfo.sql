@@ -3,17 +3,17 @@
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
 GO
-CREATE PROCEDURE	CTS_Customer_GetNewCustomerInfo
+ALTER PROCEDURE	CTS_Customer_GetNewCustomerInfo
 		@LastCustId INT = 0
 	,	@rowSize INT = 500
 AS
 /*
-	Creator:	20191128@Casey.Huynh
+	Creator:	20200118@Casey.Huynh
 	Task:		Get New customer - [Redmine: #148849]
 	Database:	DBCTS.bodb02
 	
 	Revisions:
-		-20191128@Casey.Huynh:Created [Redmine ID: 148849]
+		-2020018@Casey.Huynh:Created [Redmine ID: 148849]
 
 	Developer's Notes:
 		
