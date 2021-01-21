@@ -50,7 +50,7 @@ BEGIN
 		, MRecommend	INT	 UNSIGNED 			
 		, Recommend		INT	 UNSIGNED
         , CreatedDate	DATETIME
-        , IsExisting 	BOOLEAN
+        , IsExisting 	BOOLEAN DEFAULT 0
         , INDEX			IX_TempCTSCustomer_SiteIDRoleID(RoleID, SiteID)
 	);
     
