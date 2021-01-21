@@ -6,25 +6,24 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTSCustomer_GetLastUpdateTime`()
 	SQL SECURITY INVOKER
 BEGIN
 	/*
-		Created:	20191107@Harvey
-		Task:		Insert Customer [Redmine ID: 116528]
+		Created:	20210115@Casey.Huynh
+		Task:		GET SystemParameter 
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions: 
-			- 20201130@Aries.Nguyen: Remove transaction isolation level UNCOMMITTED, REPEATABLE READ [Redmine ID: 145361]
-			- 20200111@Casey.Huynh: Enhance CTSCustomer Flow [145271]
+			-	20210115@Casey.Huynh: Created [Redmine ID: 148849]
 		Param's Explanation (filtered by):
 
 		Example:
-			- CALL CTS_DataCenter.CTS_DC_GetMaxCustIdCTSCustomer (0)
+			- CALL `CTS_DC_CTSCustomer_GetLastUpdateTime`()
 
 	*/    
-		SELECT	s.ParamaterValue AS LastUpdateTime
+		SELECT	s.ParameterValue AS LastUpdateTime
 		FROM	CTS_DataCenter.SystemParameter AS s
 		WHERE	s.ParameterID = 9 AND s.ParameterName = 'CTSCustomer_LastUpdateTime';
 
-		SELECT	s.ParamaterValue AS LastUpdateCustID
+		SELECT	s.ParameterValue AS LastUpdateCustID
 		FROM	CTS_DataCenter.SystemParameter AS s
 		WHERE	s.ParameterID = 10 AND s.ParameterName = 'CTSCustomer_LastUpdateCustID';
     

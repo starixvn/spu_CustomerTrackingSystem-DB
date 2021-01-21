@@ -14,8 +14,8 @@ BEGIN
 		Revisions:
 			-	20210115@Casey.Huynh: Created [Redmine ID: 148849]
 		Param's Explanation (filtered by):
-        
-        CALL CTS_DataCenterCTS_DC_CTSCustomer_InsertComplete ('[{"CustId":1,"Username":"SA-SD$","RegisterName":null,"Site":"BEST-ODDS","SubscriberID":1}]'))
+        30	130	1284	0	305RM		
+        CALL CTS_DataCenterCTS_DC_CTSCustomer_InsertComplete ('[{"CTSCustId":30, "CustID:"1284,"Username":"305RM","RegisterName":null,"SubscriberID":130}]'))
 	*/
     DECLARE lv_LastInsertCustID INT;
     DECLARE lv_LastInsertCustSubID INT;
@@ -23,20 +23,26 @@ BEGIN
    DROP TEMPORARY TABLE IF EXISTS TempCTSCustomer;
     
 	CREATE TEMPORARY TABLE TempCTSCustomer
-	( 		CTSCustID		INT UNSIGNED NOT NULL
+	( 		CTSCustID		BIGINT UNSIGNED NOT NULL
+		, 	CustID			BIGINT
+        ,	CustSubID		BIGINT
 		,	UserName		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
         ,	RegisterName	VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
         ,	SubscriberID	INT
     );
     
     INSERT INTO TempCTSCustomer
-	SELECT		js.CTSCustID	
+	SELECT		js.CTSCustID
+			, 	js.CustID
+			,	js.CustSubID
 			,	js.UserName
             ,	js.RegisterName
             ,	js.SubscriberID
-	FROM JSON_TABLE(ip_CustomerList,
+	FROM JSON_TABLE(ip_Customer,
 		 "$[*]" COLUMNS(
-				CTSCustID		INT	 UNSIGNED	PATH "$.CTSCustID" 
+				CTSCustID		BIGINT	UNSIGNED PATH "$.CTSCustID" 
+			, 	CustID			BIGINT UNSIGNED	PATH "$.CustID"  
+			,	CustSubID		BIGINT UNSIGNED	PATH "$.CustSubID"  
 			,	UserName		VARCHAR(50)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	PATH "$.Username"
 			,	RegisterName	VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	PATH "$.RegisterName"
             ,	SubscriberID	INT 			PATH "$.SubscriberID" 
@@ -60,19 +66,19 @@ BEGIN
 	WHERE		acc.IsCTSTransformed = -1;    
   
     #=====Update Scan System Parameter;
-    SET lv_LastInsertCustID = (SELECT MAX(tmpCus.CustID) FROM TempItemTable AS tmpCus);
+    SET lv_LastInsertCustID = (SELECT MAX(tmpCus.CustID) FROM TempCTSCustomer AS tmpCus WHERE CustSubID = 0);
     IF lv_LastInsertCustID > 0
     THEN
 		UPDATE 	CTS_DataCenter.SystemParameter AS s
-        SET		s.ParamaterValue = lv_LastInsertCustID
+        SET		s.ParameterValue = lv_LastInsertCustID
 		WHERE	s.ParameterID = 7 AND s.ParameterName = 'CTSCustomer_LastInsertCustID';
 	END IF;
     
-	SET lv_LastInsertCustSubID = (SELECT MAX(tmpCus.CustSubID) FROM TempItemTable AS tmpCus);
+	SET lv_LastInsertCustSubID = (SELECT MAX(tmpCus.CustSubID) FROM TempCTSCustomer AS tmpCus);
     IF lv_LastInsertCustSubID > 0
     THEN
 		UPDATE 	CTS_DataCenter.SystemParameter AS s
-        SET		s.ParamaterValue = lv_LastInsertCustSubID
+        SET		s.ParameterValue = lv_LastInsertCustSubID
 		WHERE	s.ParameterID = 8 AND s.ParameterName = 'CTSCustomer_LastInsertCustSubID';
 	END IF;
 END$$
