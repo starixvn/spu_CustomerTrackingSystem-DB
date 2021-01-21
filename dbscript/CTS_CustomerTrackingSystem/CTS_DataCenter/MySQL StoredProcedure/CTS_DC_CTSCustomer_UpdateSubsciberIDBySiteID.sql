@@ -20,7 +20,7 @@ BEGIN
   Exampele: CALL CTS_DC_CTSCustomer_UpdateInfoComplete(1000,500)
 	*/
 	
-    DECLARE vl_size BIGINT DEFAULT 200;
+    DECLARE vl_size BIGINT DEFAULT 20;
     DECLARE vl_PreCTSCustID BIGINT DEFAULT 0;
     
     DROP TEMPORARY TABLE IF EXISTS TempSubSite;
@@ -37,7 +37,7 @@ BEGIN
     CREATE TEMPORARY TABLE TempCTSCustomer
     (
 		CTSCustID	BIGINT UNSIGNED
-        
+
         ,	PRIMARY KEY TempCTSCustomer(CTSCustID)
     );
       
@@ -45,30 +45,24 @@ BEGIN
 	SELECT		js.SubscriberID	
 			,	js.SiteID
 			,	js.RoleMapping
-	FROM JSON_TABLE(ip_CustomerList,
+	FROM JSON_TABLE(ip_SubsSiteJson,
 		 "$[*]" COLUMNS(
 				SubscriberID	INT	 PATH "$.SubscriberID"
 			,	SiteID			INT	 PATH "$.SiteID" 
             ,	RoleMapping		TINYINT	 PATH "$.RoleMapping" 
 			)
 	) AS js;
-    
-	UPDATE 		TempCTSCustomer AS tmpCus
-	INNER JOIN	TempSubSite mss 
-				ON tmpCus.SiteID = mss.SiteID 
-				AND ((mss.RoleMapping = 1 AND tmpCus.RoleID = 1)
-					OR (mss.RoleMapping = 2 AND tmpCus.RoleID > 1)
-					OR (mss.RoleMapping = 0))
-	SET 		tmpCus.SubscriberID = mss.SubscriberID;   
-     
-        
+
 	WHILE (vl_PreCTSCustID IS NOT NULL)
-    DO        
+    DO      
+		SELECT vl_PreCTSCustID;
+        TRUNCATE TABLE TempCTSCustomer;
 		INSERT INTO TempCTSCustomer(CTSCustID)
-        SELECT 	cus.CTSCustID
-		FROM 	CTS_DataCenter.CTSCustomer AS cus 
-		WHERE 	cus.SubsciberID IS NULL
-				AND cus.SiteID = ip_SiteID
+        SELECT 		cus.CTSCustID
+		FROM 		CTS_DataCenter.CTSCustomer AS cus 
+        INNER JOIN	TempSubSite AS tmpSub
+		WHERE 	cus.SubscriberID IS NULL
+				AND cus.SiteID = tmpSub.SiteID
 				AND cus.CTSCustID > vl_PreCTSCustID
 		ORDER BY	cus.CTSCustID
 		LIMIT		vl_size;
@@ -80,10 +74,10 @@ BEGIN
 					AND ((mss.RoleMapping = 1 AND cus.RoleID = 1)
 						OR (mss.RoleMapping = 2 AND cus.RoleID > 1)
 						OR (mss.RoleMapping = 0))
-        SET			cus.SubscriberID = tmpCus.SubscriberID;
+        SET			cus.SubscriberID = mss.SubscriberID;
         
         SET vl_PreCTSCustID = (SELECT MAX(tmpCus.CTSCustID) FROM TempCTSCustomer AS tmpCus);
-        
+
     END WHILE;
 END$$
 DELIMITER ;
