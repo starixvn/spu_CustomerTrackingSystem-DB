@@ -136,6 +136,6 @@ BEGIN
     
 	SELECT 		cus.CTSCustID, cus.SubscriberID,  cus.CustID, cus.UserName, cus.RegisterName, cus.CustSubID, tmpCus.IsExisting
     FROM		TempCTSCustomer AS tmpCus
-    INNER JOIN 	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cts.CustID;    
+    INNER JOIN 	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID;    
 END$$
 DELIMITER ;
