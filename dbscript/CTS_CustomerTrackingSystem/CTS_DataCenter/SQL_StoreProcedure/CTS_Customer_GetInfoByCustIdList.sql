@@ -17,7 +17,7 @@ AS
 		- 20202005@Harvey:		only get SMAP (roleid 4321) 	- [Redmine: #133934]
 		- 20200623@Long.Luu:	Sync more Customer Info [Redmine: #136046]
 		- 20200827@Long.Luu:	Fix CN88 account status checking condition [Redmine: #137647]
-		
+		- 20191128@Casey.Huynh:	Enhance CTSCustomerFlow [Redmine ID: 148849]
 	Developer's Notes:
 		- @Example:			NULL		- Explaination [DEFAULT]
 
@@ -133,15 +133,6 @@ BEGIN;
 	FROM #tmpCustomers AS a
 		INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON a.custid = c.custid;
 
-	-- Get CN88's Customer Status
-	UPDATE a WITH(ROWLOCK, UPDLOCK)
-	SET a.CustStatusID = (CASE 
-							WHEN c.InactiveInfo > 0 THEN @CN88_ACCOUNTSTATUS_INACTIVE
-							WHEN (c.InactiveInfo = 0 AND c.SuspendedInfo > 0) THEN @CN88_ACCOUNTSTATUS_SUSPENDED
-							WHEN (c.InactiveInfo = 0 AND c.SuspendedInfo = 0 AND c.ViewOnlyInfo > 0) THEN @CN88_ACCOUNTSTATUS_VIEWONLY
-							ELSE @CN88_ACCOUNTSTATUS_ACTIVE END)/*WHEN (c.InactiveInfo = 0 AND c.SuspendedInfo = 0 AND c.ViewOnlyInfo = 0)*/ 
-	FROM #tmpCustomers AS a
-		INNER JOIN bodb02.dbo.CS_CustomerStatus AS c WITH(NOLOCK) ON a.CustId = c.custid;
 	
 	SELECT	a.CustId AS CustID
 		,	a.Username AS UserName
