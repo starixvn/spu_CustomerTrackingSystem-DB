@@ -97,7 +97,7 @@ BEGIN
 	
     UPDATE 		TempCTSCustomer AS tmpCus
     INNER JOIN	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID
-    SET			IsExisting = 1;
+    SET			tmpCus.IsExisting = 1;
     
 	UPDATE 		TempCTSCustomer AS tmpCus
 	INNER JOIN	CTS_DataCenter.MappingSubscriberSite mss 
@@ -131,9 +131,11 @@ BEGIN
             , tmpCus.Danger3
             , NOW() AS InsertedTime
             , NOW() AS ModifiedTime
-    FROM	TempCTSCustomer AS tmpCus;
+    FROM	TempCTSCustomer AS tmpCus
+    WHERE	tmpCus.IsExisting = 0;
     
-    SELECT 	tmpCus.SubscriberID, tmpCus.CustID, tmpCus.UserName, tmpCus.RegisterName, tmpCus.CustSubID, tmpCus.IsExisting
-    FROM	TempCTSCustomer AS tmpCus;   
+	SELECT 		cus.CTSCustID, cus.SubscriberID,  cus.CustID, cus.UserName, cus.RegisterName, cus.CustSubID, tmpCus.IsExisting
+    FROM		TempCTSCustomer AS tmpCus
+    INNER JOIN 	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cts.CustID;    
 END$$
 DELIMITER ;
