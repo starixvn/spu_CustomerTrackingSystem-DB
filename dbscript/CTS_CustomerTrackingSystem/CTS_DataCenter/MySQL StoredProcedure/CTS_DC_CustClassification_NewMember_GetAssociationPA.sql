@@ -40,7 +40,7 @@ BEGIN
 			
 		SET op_ErrorMessage = CONCAT(op_ErrorMessage,'; ',op_ErrorMessage2);
 
-		CALL CTS_Log.CTS_Log_ErrorLog_Insert('CTS_DC_CustClassification_NewMember_GetAssociationPA',op_ErrorMessage, JSON_OBJECT('parameter', ip_CustIDList));
+		CALL CTS_Log.CTS_Log_ErrorLog_Insert('CTS_DC_CustClassification_NewMember_GetAssociationPA',op_ErrorMessage, JSON_OBJECT('parameter', ip_ListCustID));
     
 		SIGNAL SQLSTATE '99999' SET MESSAGE_TEXT = op_ErrorMessage;
     END;
@@ -85,11 +85,9 @@ BEGIN
 				INNER JOIN CTS_DataCenter.AssociationByDevice AS asCus ON asCus.DCSDeviceID =  asDv.DCSDeviceID  and asCus.CTSCustID  !=   asDv.CTSCustID
 				LEFT JOIN  CTS_DataCenter.AssociationRemove AS asRe ON asRe.FromCTSCustID = asDv.CTSCustID and  asRe.ToCTSCustID =  asCus.CTSCustID
 				LEFT JOIN  CTS_DataCenter.AssociationRemove AS asRe1 ON asRe1.FromCTSCustID =  asCus.CTSCustID and asRe1.ToCTSCustID = asDv.CTSCustID 
-				LEFT JOIN  CTS_DataCenter.CustException AS cuEx ON (cuEx.FromCTSCustID = asDv.CTSCustID AND cuEx.ToCTSCustID =  asCus.CTSCustID)
-				LEFT JOIN  CTS_DataCenter.CustException AS cuEx1 ON (cuEx1.FromCTSCustID = asCus.CTSCustID AND cuEx1.ToCTSCustID =  asDv.CTSCustID)
 				INNER JOIN CTS_DataCenter.CTSCustomerClassification as cc on cc.CTSCustID = asCus.CTSCustID and SportGroupID = 0
 				INNER JOIN CTS_DataCenter.CategoryToCustomerClass as class on class.CategoryID =  cc.CategoryID and class.CustomerClass in (8,10,13)
-			WHERE asRe.FromCTSCustID IS NULL AND cuEx.FromCTSCustID IS  NULL AND   asRe1.FromCTSCustID IS NULL AND cuEx1.FromCTSCustID  IS NULL
+			WHERE asRe.FromCTSCustID IS NULL AND   asRe1.FromCTSCustID IS NULL 
         
 			UNION
     
@@ -98,11 +96,9 @@ BEGIN
 				INNER JOIN CTS_DataCenter.AssociationByManual AS asMa ON asMa.FromCTSCustID =  cus.CTSCustID
 				LEFT JOIN  CTS_DataCenter.AssociationRemove AS asRe ON asRe.FromCTSCustID = asMa.FromCTSCustID and  asRe.ToCTSCustID =  asMa.ToCTSCustID
 				LEFT JOIN  CTS_DataCenter.AssociationRemove AS asRe1 ON asRe1.FromCTSCustID =  asMa.ToCTSCustID and asRe1.ToCTSCustID = asMa.FromCTSCustID 
-				LEFT JOIN  CTS_DataCenter.CustException AS cuEx ON (cuEx.FromCTSCustID = asMa.FromCTSCustID AND cuEx.ToCTSCustID =  asMa.ToCTSCustID)
-				LEFT JOIN  CTS_DataCenter.CustException AS cuEx1 ON (cuEx1.FromCTSCustID =   asMa.ToCTSCustID AND cuEx1.ToCTSCustID =  asMa.FromCTSCustID)
 				INNER JOIN CTS_DataCenter.CTSCustomerClassification as cc on cc.CTSCustID = asMa.ToCTSCustID and SportGroupID = 0
 				INNER JOIN CTS_DataCenter.CategoryToCustomerClass as class on class.CategoryID =  cc.CategoryID and class.CustomerClass in (8,10,13)
-			WHERE asRe.FromCTSCustID IS  NULL AND cuEx.FromCTSCustID IS  NULL AND  cuEx1.FromCTSCustID IS NULL AND cuEx1.FromCTSCustID  IS NULL
+			WHERE asRe.FromCTSCustID IS  NULL AND  asRe1.FromCTSCustID  IS NULL
 		) AS tbl
 		GROUP BY tbl.CustID, tbl.CTSCustID
 	)
