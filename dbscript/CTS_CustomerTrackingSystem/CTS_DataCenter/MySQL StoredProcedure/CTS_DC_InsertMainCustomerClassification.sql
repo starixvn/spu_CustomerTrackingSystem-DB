@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP procedure IF EXISTS `CTS_DC_InsertMainCustomerClassification_SeftTest`;
+DROP procedure IF EXISTS `CTS_DC_InsertMainCustomerClassification`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_InsertMainCustomerClassification_SeftTest`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_InsertMainCustomerClassification`(
 		IN ip_NewClassification JSON
 	,	IN ip_AssociationPA JSON
     ,	IN ip_IsRescan BIT
@@ -28,7 +28,7 @@ BEGIN
                 -20201116@Irena.Vo: Only distinct CustID list for general & Update LastScannedDate for Probation List. [Redmine ID: #145028]
                 -20201201@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. [Redmine ID: #145954]
 			    - 20210115@Irena.Vo: Insert History Log  [RedmineID: #145951]
-				- 20210118@Casey.Huynh: Add New PA Rule NewMember(31,32,33)
+				- 20210118@Casey.Huynh: Add New PA Rule NewMember(231,232,233)[RedmineID: #148908]
                
 		Param's Explanation (filtered by):
 			  
@@ -174,7 +174,7 @@ BEGIN
 							  ELSE -99 /* No mapping CC */
 						  END)
 	WHERE temp.ActionType IN (0, 1);
-	  SELECT 'Debug', t.* FROM Temp_NewClassification t;
+	SELECT 'Debug', t.* FROM Temp_NewClassification t;
     /*	UPDATE SOURCE TYPE ID INFO */
     UPDATE Temp_NewClassification AS temp 
 	SET temp.SourceTypeID = (CASE WHEN temp.ExistCategoryID IS NULL AND temp.LastCategoryID IN (201, 231, 232, 233) THEN 1 /* Less than 10 bets */
