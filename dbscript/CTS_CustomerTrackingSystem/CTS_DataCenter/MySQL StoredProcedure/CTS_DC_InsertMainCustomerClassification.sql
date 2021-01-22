@@ -1,9 +1,10 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP procedure IF EXISTS `CTS_DC_InsertMainCustomerClassification`;
+DROP procedure IF EXISTS `CTS_DC_InsertMainCustomerClassification_SeftTest`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_InsertMainCustomerClassification`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_InsertMainCustomerClassification_SeftTest`(
 		IN ip_NewClassification JSON
+	,	IN ip_AssociationPA JSON
     ,	IN ip_IsRescan BIT
     
     ,	OUT op_ErrorMessage VARCHAR(200)
@@ -27,9 +28,10 @@ BEGIN
                 -20201116@Irena.Vo: Only distinct CustID list for general & Update LastScannedDate for Probation List. [Redmine ID: #145028]
                 -20201201@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. [Redmine ID: #145954]
 			    - 20210115@Irena.Vo: Insert History Log  [RedmineID: #145951]
+				- 20210118@Casey.Huynh: Add New PA Rule NewMember(31,32,33)
                
 		Param's Explanation (filtered by):
-			  CALL CTS_DataCenter.CTS_DC_InsertMainCustomerClassification('[{"CustId": 1, "CategoryId": 202, "CreatedTime": "2020-09-13 00:01:00", "TurnoverRM": 100, "WinlossRM": 2056354, "BetCount": 500, "ActiveDays": 8}]');
+			  
 	*/ 
 	DECLARE lv_CreatedBy INT DEFAULT 10278938;
 	DECLARE lv_CurrentDateTime DATETIME DEFAULT CURRENT_TIME();
@@ -83,6 +85,12 @@ BEGIN
         ,	INDEX				IX_Temp_LastHistory_HistoryID(HistoryID)
     );
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_AssociationPA;    
+	CREATE TEMPORARY TABLE Temp_AssociationPA(	  
+			CustID			BIGINT UNSIGNED PRIMARY KEY
+        , 	AssPAID	        SMALLINT 	/*231,232,233*/        
+    );
+        
 	INSERT INTO Temp_NewClassification(CustID, NewCategoryID, TurnoverRM, WinlossRM, BetCount, ActiveDays, LastXDaysMargin, ProbationPeriodWinloss)
 	SELECT DISTINCT temp.CustID
 				, 	temp.NewCategoryID
@@ -105,7 +113,22 @@ BEGIN
 		 )) AS 	temp
 	 WHERE temp.NewCategoryID <> 0;
      
+    INSERT INTO Temp_AssociationPA(CustID, AssPAID)
+	SELECT 		 js.CustID
+				, 	js.AssPAID
+	 FROM JSON_TABLE(ip_AssociationPA,
+		"$[*]" COLUMNS(
+				CustID 					BIGINT UNSIGNED		PATH "$.CustId"
+			, 	AssPAID					SMALLINT			PATH "$.AssPAID"
+                
+		 )) AS 	js;
+     
     #================================================PREPARE DATA================================================== 
+    /* UPDATE NEW MEMBER BY ASSOCIATION PA CATEGORY */
+    UPDATE		Temp_NewClassification AS tmpNcc
+    INNER JOIN	Temp_AssociationPA AS tmpAssPa ON tmpAssPa.CustID = tmpNcc.CustID
+    SET			tmpNcc.NewCategoryID = tmpAssPa.AssPAID;
+  
     /*	IGNORE PIN CATEGORY	*/
 	UPDATE Temp_NewClassification AS temp
 		INNER JOIN CTS_DataCenter.PinCustomerCategory AS pin on pin.CustID = temp.CustID
@@ -137,11 +160,11 @@ BEGIN
     
 	/*	UPDATE LAST CATEGORY ID INFO */
 	UPDATE Temp_NewClassification AS temp 
-	SET temp.LastCategoryID = (CASE WHEN temp.ExistCategoryID IN (201, 202, 205) AND temp.NewCategoryID IN (203, 204) THEN 206 /* Update New, Normal, VIP to Smart Punter, High Risk Punter */
+	SET temp.LastCategoryID = (CASE WHEN temp.ExistCategoryID IN (201, 231, 232, 233, 202, 205) AND temp.NewCategoryID IN (203, 204) THEN 206 /* Update New, Normal, VIP to Smart Punter, High Risk Punter */
 									ELSE temp.NewCategoryID
 								END)
 	WHERE temp.ActionType IN (0, 1);
-
+	
      /*	UPDATE TARGET CC INFO */
     UPDATE Temp_NewClassification AS temp 
 		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID
@@ -151,10 +174,10 @@ BEGIN
 							  ELSE -99 /* No mapping CC */
 						  END)
 	WHERE temp.ActionType IN (0, 1);
-
+	  SELECT 'Debug', t.* FROM Temp_NewClassification t;
     /*	UPDATE SOURCE TYPE ID INFO */
     UPDATE Temp_NewClassification AS temp 
-	SET temp.SourceTypeID = (CASE WHEN temp.ExistCategoryID IS NULL AND temp.LastCategoryID = 201 THEN 1 /* Less than 10 bets */
+	SET temp.SourceTypeID = (CASE WHEN temp.ExistCategoryID IS NULL AND temp.LastCategoryID IN (201, 231, 232, 233) THEN 1 /* Less than 10 bets */
                                   WHEN temp.ExistCategoryID IS NULL AND temp.LastCategoryID IN (202, 203, 204, 205, 206) THEN 2 /* After 10 bets */
 								  WHEN temp.ExistCategoryID = 201 AND temp.LastCategoryID IN (202, 203, 204, 205, 206) THEN 2 /* After 10 bets To Probation (if have) */
 								  WHEN temp.ExistCategoryID = 206 AND temp.LastCategoryID IN (203, 204) THEN 4 /* Pass Probation */
@@ -196,7 +219,7 @@ BEGIN
     DELETE pro
     FROM CTS_DataCenter.ProbationAccountMonitor AS pro
 		INNER JOIN Temp_NewClassification AS temp on temp.CustID = pro.CustID AND pro.SportGroupID = 200
-	WHERE temp.ActionType = 1 AND temp.ExistCategoryID = 206 AND temp.LastCategoryID IN (201, 202, 203, 204, 205);
+	WHERE temp.ActionType = 1 AND temp.ExistCategoryID = 206 AND temp.LastCategoryID IN (201, 231, 232, 233, 202, 203, 204, 205);
        
     /*	INSERT NEW PROBATION LIST	*/
     INSERT INTO CTS_DataCenter.ProbationAccountMonitor
