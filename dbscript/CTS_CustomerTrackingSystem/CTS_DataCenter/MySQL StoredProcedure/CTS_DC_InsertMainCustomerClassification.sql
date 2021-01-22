@@ -174,7 +174,7 @@ BEGIN
 							  ELSE -99 /* No mapping CC */
 						  END)
 	WHERE temp.ActionType IN (0, 1);
-	SELECT 'Debug', t.* FROM Temp_NewClassification t;
+	
     /*	UPDATE SOURCE TYPE ID INFO */
     UPDATE Temp_NewClassification AS temp 
 	SET temp.SourceTypeID = (CASE WHEN temp.ExistCategoryID IS NULL AND temp.LastCategoryID IN (201, 231, 232, 233) THEN 1 /* Less than 10 bets */
