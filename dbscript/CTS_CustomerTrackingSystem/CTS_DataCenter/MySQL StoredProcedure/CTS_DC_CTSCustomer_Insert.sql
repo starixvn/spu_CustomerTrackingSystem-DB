@@ -96,7 +96,7 @@ BEGIN
 	) AS js;
 	
     UPDATE 		TempCTSCustomer AS tmpCus
-    INNER JOIN	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID
+    INNER JOIN	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID AND tmpCus.CustSubID = cus.CustSubID 
     SET			tmpCus.IsExisting = 1;
     
 	UPDATE 		TempCTSCustomer AS tmpCus
