@@ -2,7 +2,7 @@
 DROP PROCEDURE IF EXISTS `CTS_DC_CTSCustomer_UpdateSubsciberIDBySiteID`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTSCustomer_UpdateSubsciberIDBySiteID`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTSCustomer_UpdateSubscriberIDBySiteID`(
 		IN ip_SubsSiteJson JSON
 )
  SQL SECURITY INVOKER
@@ -55,7 +55,7 @@ BEGIN
 
 	WHILE (vl_PreCTSCustID IS NOT NULL)
     DO      
-		SELECT vl_PreCTSCustID;
+		
         TRUNCATE TABLE TempCTSCustomer;
 		INSERT INTO TempCTSCustomer(CTSCustID)
         SELECT 		cus.CTSCustID
