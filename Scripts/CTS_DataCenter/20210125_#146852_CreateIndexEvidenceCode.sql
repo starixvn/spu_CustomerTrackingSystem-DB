@@ -1,6 +1,6 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
 /*
-	Created: 202110125@Aries.Nguyen
+	Created: 20210125@Aries.Nguyen
 	Task: 	 Create index EvidenceCode for Evidence table [Redmine ID: #146852]
 	DB: 	 CTS_DataCenter
 */
