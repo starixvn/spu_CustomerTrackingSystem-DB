@@ -88,7 +88,7 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_AssociationPA;    
 	CREATE TEMPORARY TABLE Temp_AssociationPA(	  
 			CustID			BIGINT UNSIGNED PRIMARY KEY
-        , 	AssPAID	        SMALLINT 	/*231,232,233*/        
+        , 	CategoryID	        SMALLINT 	/*231,232,233*/        
     );
         
 	INSERT INTO Temp_NewClassification(CustID, NewCategoryID, TurnoverRM, WinlossRM, BetCount, ActiveDays, LastXDaysMargin, ProbationPeriodWinloss)
@@ -113,13 +113,13 @@ BEGIN
 		 )) AS 	temp
 	 WHERE temp.NewCategoryID <> 0;
      
-    INSERT INTO Temp_AssociationPA(CustID, AssPAID)
+    INSERT INTO Temp_AssociationPA(CustID, CategoryID)
 	SELECT 		 js.CustID
-				, 	js.AssPAID
+				, 	js.CategoryID
 	 FROM JSON_TABLE(ip_AssociationPA,
 		"$[*]" COLUMNS(
 				CustID 					BIGINT UNSIGNED		PATH "$.CustId"
-			, 	AssPAID					SMALLINT			PATH "$.AssPAID"
+			, 	CategoryID					SMALLINT			PATH "$.CategoryId"
                 
 		 )) AS 	js;
      
@@ -127,7 +127,7 @@ BEGIN
     /* UPDATE NEW MEMBER BY ASSOCIATION PA CATEGORY */
     UPDATE		Temp_NewClassification AS tmpNcc
     INNER JOIN	Temp_AssociationPA AS tmpAssPa ON tmpAssPa.CustID = tmpNcc.CustID
-    SET			tmpNcc.NewCategoryID = tmpAssPa.AssPAID;
+    SET			tmpNcc.NewCategoryID = tmpAssPa.CategoryID;
   
     /*	IGNORE PIN CATEGORY	*/
 	UPDATE Temp_NewClassification AS temp
