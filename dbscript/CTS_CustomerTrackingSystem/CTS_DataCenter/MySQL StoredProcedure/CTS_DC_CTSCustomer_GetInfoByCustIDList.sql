@@ -34,7 +34,8 @@ BEGIN
                 ,	Danger2
                 ,	Danger3
         FROM		CTS_DataCenter.CTSCustomer AS cus
-        INNER JOIN	TempItemTable AS tmpCus ON cus.CustID = tmpCus.CustID;		
+        INNER JOIN	TempItemTable AS tmpCus ON cus.CustID = tmpCus.Item
+        WHERE		CustSubID = 0;		
     
 END$$
 DELIMITER ;
