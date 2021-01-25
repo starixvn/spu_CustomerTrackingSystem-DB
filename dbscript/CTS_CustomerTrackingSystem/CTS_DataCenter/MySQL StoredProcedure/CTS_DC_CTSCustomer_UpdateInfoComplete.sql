@@ -11,7 +11,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTSCustomer_UpdateInfoComplete`(
 BEGIN
 	/*
 		Created:	20200111@Casey.Huynh
-		Task:		Update CTSCustomer
+		Task:		Update CTSCustomer Info Complete
 		DB:			CTS_DataCenter
 		Original:
 
@@ -33,13 +33,12 @@ BEGIN
 			,cod_name = RETURNED_SQLSTATE;
 			
 		INSERT INTO CTS_Log.ErrorLog(EventName, InsertedTime, Message, Err_No, Description)
-		VALUES('CTS_DC_CTS_DC_CTSCustomer_Update', NOW(), err_message, err_no, JSON_OBJECT('err_message', err_message, 'err_no', err_no, 'cod_name', cod_name, 'parameter', ip_CustomerList));
+		VALUES('CTS_DC_CTSCustomer_UpdateInfoComplete', NOW(), err_message, err_no, JSON_OBJECT('err_message', err_message, 'err_no', err_no, 'cod_name', cod_name, 'parameter', ip_CustomerList));
 	END;
  
 	DROP TEMPORARY TABLE IF EXISTS TempCTSCustomer;
 	CREATE TEMPORARY TABLE TempCTSCustomer(
-			CTSCustID		BIGINT UNSIGNED
-		,	CustID			INT UNSIGNED        	
+			CustID			INT UNSIGNED        	
 		,	SRecommend		INT UNSIGNED	 	
 		,	MRecommend		INT UNSIGNED 			
 		,	Recommend		INT UNSIGNED
@@ -50,12 +49,11 @@ BEGIN
 		,	Danger2			TINYINT
 		,	Danger3			TINYINT
   
-		,	INDEX IX_TempCTSCustomer_CustID(CTSCustID)
+		,	INDEX IX_TempCTSCustomer_CustID(CustID)
 	);	
  
-	INSERT INTO TempCTSCustomer(CTSCustID, CustID, SRecommend, MRecommend, Recommend, Currency, CurrencyID, CustStatusID, Danger1, Danger2, Danger3)
-	SELECT	js.CTSCustID	
-		,	js.CustID	
+	INSERT INTO TempCTSCustomer(CustID, SRecommend, MRecommend, Recommend, Currency, CurrencyID, CustStatusID, Danger1, Danger2, Danger3)
+	SELECT	js.CustID	
 		,	js.SRecommend		
 		,	js.MRecommend
 		,	js.Recommend
@@ -67,9 +65,8 @@ BEGIN
 		,	js.Danger3
 		
 	FROM JSON_TABLE(ip_CustomerInfo, 
-		"$[*]" COLUMNS(	
-				CTSCustID		BIGINT			PATH "$.CTSCustId"
-			,	CustID			INT UNSIGNED	PATH "$.CustId"            
+		"$[*]" COLUMNS(
+				CustID			INT UNSIGNED	PATH "$.CustId"            
             ,	SRecommend		INT UNSIGNED	PATH "$.Srecommend" 
 			,	MRecommend		INT UNSIGNED 	PATH "$.Mrecommend" 
 			,	Recommend		INT UNSIGNED 	PATH "$.Recommend"
@@ -84,7 +81,7 @@ BEGIN
 	) AS js;	
        
 	UPDATE 		CTS_DataCenter.CTSCustomer AS ctsCust
-	INNER JOIN 	TempCTSCustomer AS tempCust ON ctsCust.CTSCustID = tempCust.CTSCustID
+	INNER JOIN 	TempCTSCustomer AS tempCust ON ctsCust.CustID = tempCust.CustID
 	SET		ctsCust.SRecommend = tempCust.SRecommend
 		,	ctsCust.MRecommend = tempCust.MRecommend
 		, 	ctsCust.Recommend = tempCust.Recommend
@@ -94,7 +91,8 @@ BEGIN
 		,	ctsCust.Danger1 = tempCust.Danger1
 		,	ctsCust.Danger2 = tempCust.Danger2
 		,	ctsCust.Danger3 = tempCust.Danger3
-		,	ctsCust.ModifiedTime = NOW();
+		,	ctsCust.ModifiedTime = NOW()
+	WHERE	ctsCust.CustSubID = 0;
     
     #==================================================    	
 	UPDATE	CTS_DataCenter.SystemParameter AS s

@@ -22,8 +22,7 @@ BEGIN
 	*/  
 		CALL CTS_DC_Sys_SplitStringToTempItemTable(ip_CustIDList,',','BIGINT');
         
-        SELECT 		CTSCustID
-				,	CustID
+        SELECT 		CustID
                 ,	Currency
                 ,	CurrencyID
                 ,	SRecommend
