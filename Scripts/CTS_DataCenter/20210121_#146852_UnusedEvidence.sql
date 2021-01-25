@@ -21,11 +21,11 @@ WHERE	evd.EvidenceGroupID != 6 ;
 /*DETELE CTS_DataCenter.CustEvidence*/
 SELECT 		'ESTIMATE', COUNT(1)  /*54*/
 FROM 		CTS_DataCenter.CustEvidence AS del
-INNER JOIN	CTS_DataCenter.CustEvidenceFromFile AS tmpRev ON tmpRev.EvidenceID = del.EvidenceID;
+INNER JOIN	CTS_DataCenter.Temp_RemoveEvidence AS tmpRev ON tmpRev.EvidenceID = del.EvidenceID;
 
 DELETE		del
 FROM 		CTS_DataCenter.CustEvidence AS del
-INNER JOIN	CTS_DataCenter.CustEvidenceFromFile AS tmpRev ON tmpRev.EvidenceID = del.EvidenceID;
+INNER JOIN	CTS_DataCenter.Temp_RemoveEvidence AS tmpRev ON tmpRev.EvidenceID = del.EvidenceID;
 
 /*DETELE CTS_DataCenter.CustRetractEvidence*/
 SELECT 		'ESTIMATE', COUNT(1)  /*10*/
