@@ -17,6 +17,7 @@ AS
 		- 20202005@Harvey:		only get SMAP (roleid 4321) 	- [Redmine: #133934]
 		- 20200623@Long.Luu:	Sync more Customer Info [Redmine: #136046]
 		- 20200827@Long.Luu:	Fix CN88 account status checking condition [Redmine: #137647]
+		- 20210112@Long.Luu:	Fix Customer Status Issue & Remove Robot checking [Redmine: #148541]
 		- 20191128@Casey.Huynh:	Enhance CTSCustomerFlow [Redmine ID: 148849]
 	Developer's Notes:
 		- @Example:			NULL		- Explaination [DEFAULT]
@@ -32,10 +33,6 @@ BEGIN;
 		,	@MBC_ACCOUNTSTATUS_CLOSED INT = 3
 		,	@MBC_ACCOUNTSTATUS_SUSPENDED INT = 4
 
-		,	@CN88_ACCOUNTSTATUS_ACTIVE INT = 11
-		,	@CN88_ACCOUNTSTATUS_INACTIVE INT = 12
-		,	@CN88_ACCOUNTSTATUS_VIEWONLY INT = 13
-		,	@CN88_ACCOUNTSTATUS_SUSPENDED INT = 14;
 	IF OBJECT_ID('tempdb..#tmpInputCustId') IS NOT NULL
 	BEGIN
 		DROP TABLE	#tmpInputCustId;
@@ -126,7 +123,7 @@ BEGIN;
 							WHEN c.[Enabled] <> 1 THEN @MBC_ACCOUNTSTATUS_DISABLED
 							WHEN c.closed = 1 THEN @MBC_ACCOUNTSTATUS_CLOSED
 							WHEN c.reject = 1 THEN @MBC_ACCOUNTSTATUS_SUSPENDED
-							WHEN c.reject <> 1 THEN @MBC_ACCOUNTSTATUS_OPEN END)
+							ELSE @MBC_ACCOUNTSTATUS_OPEN END)
 		,	a.Danger1 = c.danger
 		,	a.Danger2 = c.danger2
 		,	a.Danger3 = c.danger3
