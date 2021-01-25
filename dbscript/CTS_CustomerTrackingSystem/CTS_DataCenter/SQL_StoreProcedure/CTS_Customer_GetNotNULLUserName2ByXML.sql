@@ -30,11 +30,13 @@ BEGIN;
 	CREATE TABLE #tmpInputCust (
 		CustID		INT
 		,	CustSubID	INT
+		,	CTSCustID	BIGINT
 	);
 
-	INSERT INTO #tmpInputCust(CustID, CustSubID)
-	SELECT	T.C.value('./@CustId', 'INT') AS CustId
+	INSERT INTO #tmpInputCust(CustID, CustSubID, CTSCustID)
+	SELECT	T.C.value('./@CustID', 'INT') AS CustId
 			, T.C.value('./@CustSubID', 'INT') AS CustSubID
+			, T.C.value('./@CTSCustID', 'BIGINT') AS CTSCustID
 	FROM @custXML.nodes('//Customer') AS T(C)
 	OPTION (OPTIMIZE FOR (@custXML = NULL));
 
@@ -42,6 +44,7 @@ BEGIN;
 	SELECT	tmpCus.CustID
 		,	tmpCus.CustSubID
 		,	cus.UserName2
+		,	tmpCus.CTSCustID
 	FROM	dbo.Customer AS cus WITH (NOLOCK)
 	INNER JOIN #tmpInputCust AS tmpCus WITH(NOLOCK) ON cus.CustID = tmpCus.CustID
 	WHERE	cus.username2 IS NOT NULL AND tmpCus.CustSubID = 0
@@ -49,6 +52,7 @@ BEGIN;
 	SELECT	tmpCus.CustID
 		,	tmpCus.CustSubID
 		,	cusSub.UserName2
+		,	tmpCus.CTSCustID
 	FROM	dbo.CustSub AS cusSub WITH (NOLOCK)
 	INNER JOIN #tmpInputCust AS tmpCus WITH(NOLOCK) ON cusSub.subaccid = tmpCus.CustSubID
 	WHERE	cusSub.username2 IS NOT NULL AND tmpCus.CustSubID > 0
