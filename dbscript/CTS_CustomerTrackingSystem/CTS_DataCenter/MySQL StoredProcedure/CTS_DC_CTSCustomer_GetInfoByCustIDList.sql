@@ -2,7 +2,7 @@
 DROP PROCEDURE IF EXISTS `CTS_DC_CTSCustomer_GetInfoByCustIDList`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTSCustomer_GetInfoByCustIDList`(IN ip_CTSCustIDList TEXT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTSCustomer_GetInfoByCustIDList`(IN ip_CustIDList TEXT)
 	SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -15,7 +15,7 @@ BEGIN
 			- 20210115@Casey.Huynh: Created [Redmine ID: 148849]
             
 		Param's Explanation (filtered by):
-			ip_CTSCustIDList: String (custid01,custid02, custid03)
+			ip_CustIDList: String (custid01,custid02, custid03)
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CTSCustomer_GetInfoByCustIDList ('123,124,125')
 
