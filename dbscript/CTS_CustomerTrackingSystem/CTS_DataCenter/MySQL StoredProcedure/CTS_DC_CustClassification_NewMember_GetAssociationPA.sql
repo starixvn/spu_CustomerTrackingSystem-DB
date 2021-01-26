@@ -20,8 +20,7 @@ BEGIN
             
 		Param's Explanation (filtered by):
         Example:
-			- CALL CTS_DataCenter.CTS_DC_CustClassification_NewMember_GetAssociationPA('2010792,26722833,26722689,26722424,42612948,43600693', @err);
-
+			- CALL CTS_DataCenter.CTS_DC_CustClassification_NewMember_GetAssociationPA('1268,38665541,17004', @error);
 	*/
 	DECLARE	lv_No INT DEFAULT 1;
 	DECLARE op_ErrorMessage2 VARCHAR(200) DEFAULT '';
@@ -79,26 +78,50 @@ BEGIN
 			,   COUNT(*) AS Total
 			,	GROUP_CONCAT( DISTINCT CustomerClass SEPARATOR  ',') AS CustClass
 		FROM(
-			SELECT cus.CustID, cus.CTSCustID, asCus.CTSCustID AS CTSCustID_Aff, class.CustomerClass
-			FROM Temp_ListCustDev as cus 
+			SELECT 
+					cus.CustID
+				, 	cus.CTSCustID
+                , 	asCus.CTSCustID AS CTSCustID_Aff
+                , 	CASE	WHEN class.CustomerClass IS NOT NULL THEN class.CustomerClass
+							ELSE  spCu.CustomerClass
+					END CustomerClass
+			FROM Temp_ListCustDev AS cus 
 				INNER JOIN CTS_DataCenter.AssociationByDevice AS asDv ON asDv .CTSCustID =  cus.CTSCustID
-				INNER JOIN CTS_DataCenter.AssociationByDevice AS asCus ON asCus.DCSDeviceID =  asDv.DCSDeviceID  and asCus.CTSCustID  !=   asDv.CTSCustID
-				LEFT JOIN  CTS_DataCenter.AssociationRemove AS asRe ON asRe.FromCTSCustID = asDv.CTSCustID and  asRe.ToCTSCustID =  asCus.CTSCustID
-				LEFT JOIN  CTS_DataCenter.AssociationRemove AS asRe1 ON asRe1.FromCTSCustID =  asCus.CTSCustID and asRe1.ToCTSCustID = asDv.CTSCustID 
-				INNER JOIN CTS_DataCenter.CTSCustomerClassification as cc on cc.CTSCustID = asCus.CTSCustID and SportGroupID = 0
-				INNER JOIN CTS_DataCenter.CategoryToCustomerClass as class on class.CategoryID =  cc.CategoryID and class.CustomerClass in (8,10,13)
-			WHERE asRe.FromCTSCustID IS NULL AND   asRe1.FromCTSCustID IS NULL 
+				INNER JOIN CTS_DataCenter.AssociationByDevice AS asCus ON asCus.DCSDeviceID =  asDv.DCSDeviceID  AND asCus.CTSCustID  !=   asDv.CTSCustID
+				LEFT JOIN  CTS_DataCenter.AssociationRemove AS asRe ON asRe.FromCTSCustID = asDv.CTSCustID AND  asRe.ToCTSCustID =  asCus.CTSCustID
+				LEFT JOIN  CTS_DataCenter.AssociationRemove AS asRe1 ON asRe1.FromCTSCustID =  asCus.CTSCustID AND asRe1.ToCTSCustID = asDv.CTSCustID 
+                LEFT JOIN  CTS_DataCenter.SpecialCustomerClass AS spCu ON spCu.CTSCustID =  asCus.CTSCustID AND spCu.CustomerClass = 13
+				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CTSCustID = asCus.CTSCustID AND SportGroupID = 0
+				LEFT JOIN CTS_DataCenter.CategoryToCustomerClass AS class ON class.CategoryID =  cc.CategoryID 
+			WHERE 	asRe.FromCTSCustID IS NULL 
+				AND asRe1.FromCTSCustID IS NULL 
+                AND (	class.CustomerClass = 8 
+					OR 	class.CustomerClass = 10 
+                    OR 	spCu.CTSCustID IS NOT NULL
+				)
         
 			UNION
     
-			SELECT cus.CustID, cus.CTSCustID, asMa.ToCTSCustID AS CTSCustID_Aff, class.CustomerClass
-			FROM Temp_ListCustManual as cus
+			SELECT 
+					cus.CustID
+				, 	cus.CTSCustID
+                , 	asMa.ToCTSCustID AS CTSCustID_Aff
+                , 	CASE	WHEN class.CustomerClass IS NOT NULL THEN class.CustomerClass
+							ELSE  spCu.CustomerClass
+					END CustomerClass
+			FROM Temp_ListCustManual AS cus
 				INNER JOIN CTS_DataCenter.AssociationByManual AS asMa ON asMa.FromCTSCustID =  cus.CTSCustID
-				LEFT JOIN  CTS_DataCenter.AssociationRemove AS asRe ON asRe.FromCTSCustID = asMa.FromCTSCustID and  asRe.ToCTSCustID =  asMa.ToCTSCustID
-				LEFT JOIN  CTS_DataCenter.AssociationRemove AS asRe1 ON asRe1.FromCTSCustID =  asMa.ToCTSCustID and asRe1.ToCTSCustID = asMa.FromCTSCustID 
-				INNER JOIN CTS_DataCenter.CTSCustomerClassification as cc on cc.CTSCustID = asMa.ToCTSCustID and SportGroupID = 0
-				INNER JOIN CTS_DataCenter.CategoryToCustomerClass as class on class.CategoryID =  cc.CategoryID and class.CustomerClass in (8,10,13)
-			WHERE asRe.FromCTSCustID IS  NULL AND  asRe1.FromCTSCustID  IS NULL
+				LEFT JOIN  CTS_DataCenter.AssociationRemove AS asRe ON asRe.FromCTSCustID = asMa.FromCTSCustID AND  asRe.ToCTSCustID =  asMa.ToCTSCustID
+				LEFT JOIN  CTS_DataCenter.AssociationRemove AS asRe1 ON asRe1.FromCTSCustID =  asMa.ToCTSCustID AND asRe1.ToCTSCustID = asMa.FromCTSCustID
+                LEFT JOIN  CTS_DataCenter.SpecialCustomerClass AS spCu ON spCu.CTSCustID =  asMa.FromCTSCustID AND spCu.CustomerClass = 13
+				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CTSCustID = asMa.ToCTSCustID AND SportGroupID = 0
+				LEFT JOIN CTS_DataCenter.CategoryToCustomerClass AS class ON class.CategoryID =  cc.CategoryID
+			WHERE 	asRe.FromCTSCustID IS NULL 
+				AND asRe1.FromCTSCustID IS NULL
+                AND (	class.CustomerClass = 8 
+					OR 	class.CustomerClass = 10 
+                    OR 	spCu.CTSCustID IS NOT NULL
+				)
 		) AS tbl
 		GROUP BY tbl.CustID, tbl.CTSCustID
 	)
