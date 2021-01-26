@@ -17,12 +17,18 @@ AS
 	Developer's Notes:
 		- @Example:			NULL		- Explaination [DEFAULT]
 
-	exec CTS_Customer_GetNewCustSubInfo 10,10
+	exec EXEC  @return_value = [dbo].[CTS_Customer_GetNotNULLUserName2ByXML]
+			@custXML = N'<Root>
+            <Customer CustID="47354248" CustSubID="0" CTSCustID = "222356895"/>    
+            <Customer CustID="47354247" CustSubID="0" CTSCustID = "222356894"/>  
+            <Customer CustID="47087783" CustSubID="1441102" CTSCustID = "222294242"/>      
+          </Root>'
+
 		
 */
 BEGIN;
 	SET NOCOUNT ON;
-	IF OBJECT_ID('tempdb..#tmpInputCustId') IS NOT NULL
+	IF OBJECT_ID('tempdb..#tmpInputCust') IS NOT NULL
 	BEGIN
 		DROP TABLE	#tmpInputCust;
 	END;

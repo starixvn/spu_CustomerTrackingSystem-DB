@@ -1,8 +1,9 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
 DELIMITER $$
 USE `CTS_DataCenter` $$
 DROP PROCEDURE IF EXISTS CTS_DC_CTSCustomer_UpdateUserName2 $$
 
-CREATE PROCEDURE `CTS_DC_CTSCustomer_UpdateUserName2`(IN ip_Size INT, IN ip_Customer JSON)
+CREATE PROCEDURE CTS_DC_CTSCustomer_UpdateUserName2(IN ip_Customer JSON)
 BEGIN
 	/*
 		Created:	20200118@CaseyHuynh
@@ -34,15 +35,14 @@ BEGIN
 			,	js.CustSubID            
 			,	(CASE WHEN js.UserName2 = 'null' THEN NULL ELSE js.UserName2 END) AS UserName2
             ,	js.CTSCustID
-	FROM JSON_TABLE(ip_CustomerList,
+	FROM JSON_TABLE(ip_Customer,
 		 "$[*]" COLUMNS(
 				CustID			INT	 UNSIGNED	PATH "$.CustID" 
 			,	CustSubID		BIGINT			PATH "$.CustSubID"
 			,	UserName2		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	PATH "$.UserName2" 
             ,	CTSCustID		BIGINT			PATH "$.CTSCustID"
 			)
-	) AS js;
-    
+	) AS js;    
    
     UPDATE 		TempCTSCustomer AS tmpCus
     INNER JOIN 	CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = tmpCus.CTSCustID 
@@ -53,12 +53,12 @@ BEGIN
 					OR (mss.RoleMapping = 0))
 	SET 		tmpCus.SubscriberID = cus.SubscriberID
 				, tmpCus.RegisterName = SUBSTRING(tmpCus.UserName2, LOCATE('$',tmpCus.UserName2) + 1);       
-                
+   
 	UPDATE		CTS_DataCenter.CTSCustomer AS cus
     INNER JOIN	CTS_DataCenter.TempCTSCustomer AS tmpCus ON cus.CTSCustID = tmpCus.CTSCustID 
     SET			cus.UserName2 = tmpCus.UserName2
-				AND cus.RegisterName = tmpCus.RegisterName;
-                
+				, cus.RegisterName = tmpCus.RegisterName;
+
    #=====ReTransform==============================
     UPDATE		DCS_DataCenter.Account AS acc	
     INNER JOIN	TempCTSCustomer AS tmpCus
