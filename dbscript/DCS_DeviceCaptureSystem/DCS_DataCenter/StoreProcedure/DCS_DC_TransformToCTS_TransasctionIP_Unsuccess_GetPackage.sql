@@ -1,10 +1,9 @@
+/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `DCS_DC_TransformToCTS_TransactionIP_Unsuccess_GetPackage`;
+
 DELIMITER $$
-
-USE DCS_DataCenter$$
-
-DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformToCTS_TransactionIP_Unsuccess_GetPackage$$
-
-CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformToCTS_TransactionIP_Unsuccess_GetPackage(IN ip_NoOfTransaction INT, IN ip_NoOfBatch INT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_TransformToCTS_TransactionIP_Unsuccess_GetPackage`(IN ip_NoOfTransaction int,IN ip_NoOfBatch int)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 	Created: 20190730@Casey.Huynh
@@ -13,6 +12,8 @@ BEGIN
 	Original:
 
 	Revisions:
+		- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+		
 	Param's Explanation (filtered by):
 	*/
 	
@@ -55,8 +56,6 @@ BEGIN
     ); 
    
 	SET TotalRecord = ip_NoOfTransaction*ip_NoOfBatch;
- 
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     
 	INSERT INTO Temp_TransactionIP(TransID, AccountID, SubscriberID, IP, IPID, TransTime)
 	SELECT	tip.TransID
@@ -69,8 +68,6 @@ BEGIN
 	WHERE	tip.IsCTSTransformed < 0
     ORDER BY tip.IsCTSTransformed DESC
 	LIMIT	TotalRecord;
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
     WHILE (EXISTS (SELECT (1) FROM Temp_TransactionIP WHERE BatchID IS NULL LIMIT 1)) DO
     	  UPDATE 	Temp_TransactionIP
@@ -104,6 +101,8 @@ BEGIN
             , z.ToID		= vrToID
 
     WHERE	z.ExecKey = vrExecKey AND z.StepID = z.StepID;
-    ### PERFORMANCE: END 
+    ### PERFORMANCE: END
+	
 END$$
+
 DELIMITER ;

@@ -1,13 +1,9 @@
-DELIMITER $$
-USE CTS_DataCenter $$
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_AssociatedAccountMonitor_Insert` $$
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_AssociatedAccountMonitor_Insert`;
 
-CREATE PROCEDURE `CTS_DataCenter`.`CTS_DC_AssociatedAccountMonitor_Insert` (
-		IN ip_CTSCustIDs 		TEXT
-	, 	IN ip_Remark			VARCHAR(200)
-    ,	IN ip_UserID 			INT
-    
-    , 	OUT op_ErrorMessage 	VARCHAR(200))
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedAccountMonitor_Insert`(IN ip_CTSCustIDs text,IN ip_Remark varchar(200),IN ip_UserID int,OUT op_ErrorMessage varchar(200))
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200706@Long.Luu
@@ -17,6 +13,7 @@ BEGIN
 
 		Revisions:
 			- 20200706@Long.Luu: Created [Redmine ID: #134652]
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]  
         
 		Param's Explanation (filtered by):
 	*/
@@ -45,12 +42,10 @@ BEGIN
         ,	ip_UserID
         ,	@lv_CurrentDateTime
 	FROM TmpCTSCustIDsList AS c;
-
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 	
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	VALUES(17, @lv_SPName, CONCAT('Add Associated Account Monitor: ip_CTSCustIDs_ ', ip_CTSCustIDs, ';Remark_', ip_Remark) , @lv_CurrentDateTime, ip_UserID);
-	
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+
 END$$
+
 DELIMITER ;

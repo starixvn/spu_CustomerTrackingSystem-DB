@@ -1,6 +1,9 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_Common_GetStaticList`;
+
 DELIMITER $$
-DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_Common_GetStaticList$$
-CREATE PROCEDURE CTS_DataCenter.CTS_DC_Common_GetStaticList(IN ip_ListID INT, IN ip_Status BOOL)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Common_GetStaticList`(IN ip_ListID INT, IN ip_Status BOOL)
+    SQL SECURITY INVOKER
 BEGIN
 /*
 		Created:	20191219@CaseyHuynh	
@@ -9,11 +12,12 @@ BEGIN
 		Original:
 
 		Revisions:
-        
+			- 20191219@Casey.Huynh: Created
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+			
 		Param's Explanation (filtered by):
                 
-	*/    
-   SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+	*/
    
    SELECT	sl.ListID
 			, sl.ItemID
@@ -28,8 +32,6 @@ BEGIN
 	FROM	CTS_DataCenter.StaticList	AS sl
     WHERE	sl.ListID = ip_ListID
 			AND sl.Status = ip_Status;
-	
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
     
 END$$
 DELIMITER ;

@@ -1,9 +1,9 @@
-USE `CTS_DataCenter`;
-DROP procedure IF EXISTS `CTS_DC_CustEvidence_GetFlaggedStatus`;
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_CustEvidence_GetFlaggedStatus`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
-CREATE PROCEDURE `CTS_DC_CustEvidence_GetFlaggedStatus`(IN ip_CTSCustJson LONGTEXT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_GetFlaggedStatus`(IN ip_CTSCustJson longtext)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20191225@Casey.Huynh	
@@ -13,6 +13,7 @@ BEGIN
 		Revisions:
 			- 20200619@Harvey: remove BLACKFLAGGED for evidence 100
             - 20200707@Lex: fix wrong tagged info return [Redmine ID: #137055]
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
 		
 		Param's Explanation (filtered by):
 	*/
@@ -32,9 +33,7 @@ BEGIN
 	FROM JSON_TABLE(ip_CTSCustJson, "$[*]" COLUMNS(
 							CTSCustID		BIGINT UNSIGNED PATH "$.CTSCustId"         
 						,	SubscriberID	INT PATH "$.SubscriberId"
-					)) AS  tmpCust;    
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;   
+					)) AS  tmpCust;
     
 	/* Mark flagged tag for each associated account */
     UPDATE Temp_CTSCustomer AS tmpCust, 
@@ -57,8 +56,7 @@ BEGIN
         ,	IsFlagged
         ,	IsAffected
 	FROM Temp_CTSCustomer;
-    
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+
 END$$
 
 DELIMITER ;

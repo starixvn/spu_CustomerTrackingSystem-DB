@@ -1,14 +1,19 @@
-DELIMITER $$
-DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_GetCustEvidenceByEvidenceID $$
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_GetCustEvidenceByEvidenceID`;
 
-CREATE PROCEDURE CTS_DataCenter.CTS_DC_GetCustEvidenceByEvidenceID (IN ip_EvidenceID VARCHAR(200))
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_GetCustEvidenceByEvidenceID`(IN ip_EvidenceID varchar(200))
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20202105@Harvey.Nguyen
 		Task :		Get CustEvidence by EvidenceID - [Redmine: 134591]
 		DB:			CTS_DataCenter
-		Original: 
+		Original:
+		
 		Revisions:
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+			
 		Param's Explanation (filtered by):
 	*/ 
     
@@ -20,15 +25,13 @@ BEGIN
 	SET @sql = CONCAT("INSERT INTO tempEviID (EvidenceID) VALUES ('", REPLACE(ip_EvidenceID, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
-
-    SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     
 	SELECT DISTINCT cust.CustID
 	FROM CTS_DataCenter.CustEvidence ce
 		INNER JOIN CTS_DataCenter.CTSCustomer cust ON ce.CTSCustID = cust.CTSCustID
         INNER JOIN tempEviID te ON te.EvidenceID = ce.EvidenceID
-	WHERE cust.CustID IS NOT NULL;
-				
+	WHERE cust.CustID IS NOT NULL;			
 
-END$$	
+END$$
+
 DELIMITER ;

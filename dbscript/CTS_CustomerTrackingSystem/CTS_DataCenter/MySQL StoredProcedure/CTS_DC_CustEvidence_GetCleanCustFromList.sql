@@ -1,8 +1,9 @@
-DELIMITER $$
-USE CTS_DataCenter $$
-DROP PROCEDURE IF EXISTS CTS_DC_CustEvidence_GetCleanCustFromList $$
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_CustEvidence_GetCleanCustFromList`;
 
-CREATE PROCEDURE `CTS_DC_CustEvidence_GetCleanCustFromList`(IN ip_CTSCustIDList VARCHAR(2000))
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_GetCleanCustFromList`(IN ip_CTSCustIDList varchar(2000))
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200820@Long.Luu
@@ -12,6 +13,7 @@ BEGIN
 
 		Revisions:
 			- 20200820@Long.Luu: Created [Redmine ID: 139701]
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
 		
 		Param's Explanation (filtered by):
 	*/
@@ -37,8 +39,6 @@ BEGIN
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
     
-	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;    
-    
     INSERT INTO TempCustEvidence(CTSCustID, EvidenceID)
     SELECT c.CTSCustID, c.EvidenceID
     FROM CTS_DataCenter.CustEvidence AS c
@@ -60,12 +60,11 @@ BEGIN
     SELECT DISTINCT	c.CustID
     FROM TempCleanCustID AS a
 		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON a.CTSCustID = c.CTSCustID;
-        
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-    
+ 
     DROP TEMPORARY TABLE IF EXISTS TempCTSCustIDs;  
     DROP TEMPORARY TABLE IF EXISTS TempCustEvidence;  
     DROP TEMPORARY TABLE IF EXISTS TempCleanCustID;  
     
 END$$
+
 DELIMITER ;

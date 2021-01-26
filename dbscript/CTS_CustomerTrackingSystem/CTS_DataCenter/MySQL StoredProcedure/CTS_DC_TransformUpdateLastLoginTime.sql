@@ -1,10 +1,9 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_TransformUpdateLastLoginTime`;
+
 DELIMITER $$
-
-USE CTS_DataCenter$$
-
-DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_TransformUpdateLastLoginTime $$
-
-CREATE PROCEDURE CTS_DataCenter.CTS_DC_TransformUpdateLastLoginTime(IN ip_Batch INT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_TransformUpdateLastLoginTime`(IN ip_Batch int)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20190815@Terry.Nguyen
@@ -13,8 +12,11 @@ BEGIN
 		Original:
 
 		Revisions:
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+			
 		Param's Explanation (filtered by):
 	*/
+	
 	### PERFORMANCE: START
     DECLARE		vrExecKey		BIGINT	UNSIGNED;
 	DECLARE		vrSPName		VARCHAR(200) DEFAULT 'CTS_DC_TransformUpdateLastLoginTime' ;
@@ -47,8 +49,7 @@ BEGIN
             , CTSCustID 	BIGINT UNSIGNED
             , LastLoginTime	TIMESTAMP(4)
     );
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
 	# --===GET Association which has CTSCustID
     INSERT INTO Temp_CustLastLogin(ID, CTSCustID, LastLoginTime)
     SELECT		lt.ID
@@ -57,8 +58,6 @@ BEGIN
     FROM		DCS_DataCenter.LastLoginTime_TransformTemp AS lt
     ORDER BY 	ID ASC
     LIMIT		ip_Batch;
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 
     # --===Update CTSCustomer.LastLoginTime
     UPDATE 		CTS_DataCenter.CTSCustomer AS ct
@@ -84,6 +83,7 @@ BEGIN
     WHERE	z.ExecKey = vrExecKey AND z.StepID = z.StepID;
     
     ### PERFORMANCE: END
+	
 END$$
 
 DELIMITER ;

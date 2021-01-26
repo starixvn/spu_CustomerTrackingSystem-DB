@@ -1,18 +1,9 @@
-DELIMITER $$
-USE CTS_DataCenter $$
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_Update`$$
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_Update`;
 
-CREATE PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_Update`(
-		IN ip_CTSCustID			BIGINT UNSIGNED
-    ,   IN ip_CustID			BIGINT UNSIGNED
-    ,	IN ip_SubscriberID		INT
-	,	IN ip_CategoryID		SMALLINT
-    , 	IN ip_SportGroupIDList 	VARCHAR(50)
-    , 	IN ip_Remark 			VARCHAR(300)
-	,	IN ip_CreatedBy 		INT
-    
-    , 	OUT op_ErrorMessage 	VARCHAR(200)
-)
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Update`(OUT op_ErrorMessage varchar(200),IN ip_CTSCustID bigint,IN ip_CustID bigint,IN ip_SubscriberID int,IN ip_CategoryID smallint,IN ip_SportGroupIDList varchar(50),IN ip_Remark varchar(300),IN ip_CreatedBy int)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200423@Long.Luu	
@@ -21,6 +12,7 @@ BEGIN
 		Original: 
 		Revisions:
 			- 20200423@Long.Luu: Created [Redmine ID: #132623]
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
             
 		Param's Explanation:
 	*/ 
@@ -63,8 +55,6 @@ BEGIN
 	WHERE t.CustID = ip_CustID
 		AND s.ActionStatus = 1;
     
-    SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
-    
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification(CTSCustID, CustID, SubscriberID, CategoryID, SportGroupID
 		, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy)
 	SELECT 	ip_CTSCustID
@@ -79,7 +69,7 @@ BEGIN
    
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	VALUES(11, 'CTS_DC_CustClassification_Update', CONCAT('Update CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID, ';ip_CategoryID_', ip_CategoryID, ';ip_SportGroupIDList_', ip_SportGroupIDList, ';ip_Remark_', ip_Remark,')'), vr_CurrentTime, ip_CreatedBy);
-	
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+
 END$$	
+
 DELIMITER ;

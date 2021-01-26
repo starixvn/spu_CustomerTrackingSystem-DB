@@ -1,14 +1,14 @@
-USE `CTS_DataCenter`;
-DROP procedure IF EXISTS `CTS_DC_CustClassification_Probation_Update`;
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_Probation_Update`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
-CREATE DEFINER=`ctsWeb`@`%` PROCEDURE `CTS_DC_CustClassification_Probation_Update`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Probation_Update`(
 		IN ip_CustidList		JSON
 	,	IN ip_Remark 			VARCHAR(300)
 	,	IN ip_CreatedBy 		INT
     , 	OUT op_ErrorMessage 	VARCHAR(200)
 )
+    SQL SECURITY INVOKER
 sp: BEGIN
 	/*
 		Created:	20200918@Lex.Khuat
@@ -17,6 +17,7 @@ sp: BEGIN
 		Original: 
 		Revisions:
 			- 20200918@Lex.Khuat [Redmine ID: #141755]: Created
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
 		
         Param's Explanation:
 			- ip_CustidList: Json list with CustID, SportGroupID, NewCategoryID
@@ -48,8 +49,6 @@ sp: BEGIN
     ,	PRIMARY KEY	PK_TempTargetCustomerCategory_CustID(CustID, SportGroupID, NewCategoryID) 
 	,	INDEX 		IX_TempTargetCustomerCategory_NewCategoryID(NewCategoryID)
     );
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     
     #========= GET DATA TO UPDATE =========
 	INSERT INTO Temp_TargetCustomerCategory(CustID, SportGroupID, NewCategoryID)
@@ -147,8 +146,7 @@ sp: BEGIN
 	END AS CustomerClass
     FROM Temp_TargetCustomerCategory
     WHERE ParentID = 200;
-    
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+
 END$$
 
 DELIMITER ;

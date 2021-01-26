@@ -1,9 +1,9 @@
-USE `CTS_DataCenter`;
-DROP procedure IF EXISTS `CTS_DC_Common_GetAllSubscriberGroups`;
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_Common_GetAllSubscriberGroups`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_Common_GetAllSubscriberGroups`()
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Common_GetAllSubscriberGroups`()
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200622@Lex.Khuat
@@ -12,11 +12,10 @@ BEGIN
 		Original: 
 		Revisions:
 			- 20200622@Lex.Khuat: Created [Redmine ID: #133934]
-            
+            - 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+			
 		Param's Explanation:
-	*/ 
-
-    SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+	*/
     
     SELECT DISTINCT s.SiteID
 		, 	s.SiteName
@@ -33,8 +32,6 @@ BEGIN
         AND sub.SubscriberStatus = 1
     ORDER BY sg.DisplayOrder ASC, s.SiteName ASC;
     
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;  
-
 END$$
 
 DELIMITER ;

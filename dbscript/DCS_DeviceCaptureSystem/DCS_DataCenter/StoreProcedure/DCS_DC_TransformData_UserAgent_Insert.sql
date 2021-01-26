@@ -1,8 +1,9 @@
+/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `DCS_DC_TransformData_UserAgent_Insert`;
+
 DELIMITER $$
-
-DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformData_UserAgent_Insert$$
-
-CREATE DEFINER=`fps`@`%` PROCEDURE DCS_DataCenter.DCS_DC_TransformData_UserAgent_Insert(IN ip_FromTransID BIGINT, IN ip_ToTransID BIGINT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_TransformData_UserAgent_Insert`(IN ip_FromTransID BIGINT, IN ip_ToTransID BIGINT)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 	Created: 20190730@Casey.Huynh
@@ -14,6 +15,8 @@ BEGIN
 			#1. [20201006@CaseyHuynh][143011]: 	Move New Server, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_DataCenter"
 											AND Change UserAgent Data Type From TEXT to VARCHAR(1000)
 			#2. [20201019@CaseyHuynh][143011]:	Move Server, Phase 2
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+			
 	Param's Explanation (filtered by):
 */
     
@@ -37,9 +40,7 @@ BEGIN
     INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime, FromID, ToID)
     VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime, ip_FromTransID, ip_ToTransID);
 	 
-	### PERFORMANCE: END  
-	
-	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
+	### PERFORMANCE: END
     
     DROP TEMPORARY TABLE IF EXISTS Temp_UserAgent;
     CREATE TEMPORARY TABLE Temp_UserAgent 
@@ -60,9 +61,7 @@ BEGIN
 				AND rt.IsProcessed = 0
                 AND ua.UserAgentKey IS NULL
                 AND rt.UserAgent IS NOT NULL
-    GROUP BY	rt.UserAgent;  
-    
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    GROUP BY	rt.UserAgent;
     
 	#========INSERT: Subscriber which are unhandled interagtion=====================================================
 	INSERT IGNORE INTO DCS_DataCenter.UserAgent (UserAgentKey, UserAgent, CreatedDate )
@@ -84,4 +83,5 @@ BEGIN
     ### PERFORMANCE: END
     
 END$$
+
 DELIMITER ;

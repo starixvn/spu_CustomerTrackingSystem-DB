@@ -1,17 +1,23 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_TransformAssociation_AffectedEvidence`;
+
 DELIMITER $$
-DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_TransformAssociation_AffectedEvidence$$
-CREATE PROCEDURE CTS_DataCenter.CTS_DC_TransformAssociation_AffectedEvidence(IN ip_Batch INT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_TransformAssociation_AffectedEvidence`(IN ip_Batch INT)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200123@Casey.Huynh	
 		Task :		Place Affected Evidence for New AssociationByDevice
 		DB:			CTS_DataCenter
-		Original: 
+		Original:
+		
 		Revisions:	
-					[20200303@Casey.Huynh]. Update Affected CreateBy = Root CreatedBy
-                    [20200805@Casey.Huynh]: Update Bussiness affect Crosssub and correct update value LastCTSAssDevID
-					[20200807@Casey.Huynh]:[138925] Chagne CustEvidence Structure for Cross Subscriber : Remove SubscriberID and IsCreatedByMaster
-                    [20200821@Casey.Huynh]:[140100]: Return CustID is added affected evidence
+			- 20200303@Casey.Huynh: Update Affected CreateBy = Root CreatedBy
+			- 20200805@Casey.Huynh: Update Bussiness affect Crosssub and correct update value LastCTSAssDevID
+			- 20200807@Casey.Huynh:[138925] Chagne CustEvidence Structure for Cross Subscriber : Remove SubscriberID and IsCreatedByMaster
+			- 20200821@Casey.Huynh:[140100]: Return CustID is added affected evidence
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+					
 		Param's Explanation (filtered by):
 	*/
     
@@ -72,8 +78,6 @@ BEGIN
 	);
     
 	#===1. GET List of New Association=====================================================================
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED ;
-
     SET vr_LastCTSAssDevID = (SELECT LastCTSAssDevID FROM CTS_DataCenter.ProcessAffectedEvidence LIMIT 1);
     
     INSERT INTO TempAssociationByDevice(CTSAssDevID, FromCTSCustID, DCSDeviceID)
@@ -177,6 +181,7 @@ BEGIN
             , z.ToID		= vrToID
     WHERE	z.ExecKey = vrExecKey AND z.StepID = vrStepID;
     ### PERFORMANCE: END
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ ;
-END$$	
+
+END$$
+
 DELIMITER ;

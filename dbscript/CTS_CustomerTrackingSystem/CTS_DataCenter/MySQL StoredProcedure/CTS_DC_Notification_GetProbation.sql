@@ -1,9 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
-USE `CTS_DataCenter`;
-DROP procedure IF EXISTS `CTS_DC_Notification_GetProbation`;
+DROP PROCEDURE IF EXISTS `CTS_DC_Notification_GetProbation`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Notification_GetProbation`(IN ip_UserID int,IN ip_ReadNotificationID bigint)
     SQL SECURITY INVOKER
 BEGIN
@@ -14,22 +12,21 @@ BEGIN
 		Original:
 
 		Revisions:
-            - [20201006@Long.Luu][142414]: Get notifications by notification settings
-            - [20201111@Irena.Vo][145028]: Enhance logic for display 1 scan time/day
+            - 20201006@Long.Luu[142414]: Get notifications by notification settings
+            - 20201111@Irena.Vo[145028]: Enhance logic for display 1 scan time/day
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
             
 		Param's Explanation (filtered by):
         
         call CTS_DC_Notification_GetProbation(8,1);
 	*/
-    
+
     DECLARE lv_UserCurrentFromNotificationID 	BIGINT;
     DECLARE lv_UserCurrentToNotificationID 		BIGINT;
     DECLARE lv_MaxNotificationID 				BIGINT;
     
 	SET @ToScanDate						= CURRENT_DATE();
 	SET @FromScanDate					= DATE(DATE_ADD(CURRENT_DATE(), INTERVAL -3 DAY));
-    
-	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     
     SELECT MAX(a.NotificationID)
     INTO lv_MaxNotificationID

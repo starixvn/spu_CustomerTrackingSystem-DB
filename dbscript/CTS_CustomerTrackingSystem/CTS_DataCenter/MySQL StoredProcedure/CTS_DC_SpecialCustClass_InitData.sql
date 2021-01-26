@@ -1,8 +1,9 @@
-DELIMITER $$
-USE CTS_DataCenter $$
-DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_SpecialCustomerClass_InitData $$
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_SpecialCustClass_InitData`;
 
-CREATE PROCEDURE CTS_DC_SpecialCustomerClass_InitData ()
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_SpecialCustClass_InitData`()
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200905@Long.Luu
@@ -11,13 +12,14 @@ BEGIN
 		Original:
 
 		Revisions:
-		   - 20200905@Long.Luu [140996]: created
-           
+		   - 20200905@Long.Luu [140996]: Created
+           - 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+		   
 		Param's Explanation (filtered by):
 	*/    
     
     DECLARE lv_CustomerClass 	SMALLINT;
-    DECLARE lv_UsernameList  	VARCHAR(4000);
+    DECLARE lv_UsernameList  	VARCHAR(8000);
     DECLARE lv_CreatedBy 		INT;
 	DECLARE lv_CurrentDateTime  DATETIME;
     
@@ -55,8 +57,6 @@ BEGIN
     SET @sql = CONCAT("INSERT INTO Temp_Username (Username) VALUES ('", REPLACE(lv_UsernameList, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
-
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;    
     
 	INSERT INTO Temp_RootCTSCustIDs(CTSCustId, SubscriberID)
     SELECT DISTINCT c.CTSCustID, c.SubscriberID
@@ -74,7 +74,7 @@ BEGIN
     FROM CTS_DataCenter.CustException AS e
 		INNER JOIN Temp_RootCTSCustIDs AS t ON e.LeastCTSCustID_Order = t.CTSCustID OR e.GreatestCTSCustID_Order = t.CTSCustID;
     
-    INSERT INTO CTS_DataCenter.SpecialCustomerClass(CTSCustID, CustID, RootCTSCustID, SubscriberID, CustomerClass, CreatedBy, CreatedDate)
+    INSERT IGNORE INTO CTS_DataCenter.SpecialCustomerClass(CTSCustID, CustID, RootCTSCustID, SubscriberID, CustomerClass, CreatedBy, CreatedDate)
 	SELECT DISTINCT a.CTSCustID, 0, t.CTSCustID, t.SubscriberID, lv_CustomerClass, lv_CreatedBy, lv_CurrentDateTime
     FROM Temp_RootCTSCustIDs AS t
 		INNER JOIN Temp_AffectedDevices AS d ON t.CTSCustID = d.CTSCustID
@@ -87,7 +87,7 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON s.CTSCustID = c.CTSCustID
 	SET s.CustID = c.CustID
     WHERE s.CustID = 0;  
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+
 END$$
+
 DELIMITER ;

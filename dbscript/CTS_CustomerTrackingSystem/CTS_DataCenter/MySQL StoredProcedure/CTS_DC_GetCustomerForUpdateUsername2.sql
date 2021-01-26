@@ -1,8 +1,9 @@
-DELIMITER $$
-USE `CTS_DataCenter` $$
-DROP PROCEDURE IF EXISTS CTS_DC_GetCustomerForUpdateUsername2 $$
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_GetCustomerForUpdateUsername2`;
 
-CREATE PROCEDURE `CTS_DC_GetCustomerForUpdateUsername2`(IN ip_Size INT, IN ip_CustID BIGINT, IN ip_IsUpdateCustsub BOOLEAN)
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_GetCustomerForUpdateUsername2`(IN ip_Size int,IN ip_CustID bigint,IN ip_IsUpdateCustsub tinyint)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200112@Harvey
@@ -12,12 +13,12 @@ BEGIN
 
 		Revisions:
 			- 20200421@Harvey:	Get customer for update SubscriberID - [Redmine: #132705]
-        
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+			
 		Param's Explanation (filtered by):         
         
         CALL CTS_DC_GetCustomerForUpdateUsername2 (500,0,1)
-	*/	   
-	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+	*/
 
 	IF ip_IsUpdateCustsub = 0 THEN
 		SELECT CTSCustID
@@ -41,6 +42,6 @@ BEGIN
 		LIMIT ip_Size;
 	END IF;
 
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 END$$
+
 DELIMITER ;

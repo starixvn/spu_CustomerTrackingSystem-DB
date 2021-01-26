@@ -1,12 +1,9 @@
-DELIMITER $$
-USE CTS_DataCenter $$
-DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_AssociatedAccountMonitor_Remove $$
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_AssociatedAccountMonitor_Remove`;
 
-CREATE PROCEDURE CTS_DC_AssociatedAccountMonitor_Remove (
-		IN ip_CTSCustID 		INT UNSIGNED
-    ,	IN ip_UserID 			INT    
-    
-    , 	OUT op_ErrorMessage 	VARCHAR(200))
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedAccountMonitor_Remove`(IN ip_CTSCustID int,IN ip_UserID int,OUT op_ErrorMessage varchar(200))
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200706@Long.Luu
@@ -16,6 +13,7 @@ BEGIN
 
 		Revisions:
 			- 20200706@Long.Luu: Created [Redmine ID: #134652]
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723] 
         
 		Param's Explanation (filtered by):
 	*/
@@ -31,12 +29,9 @@ BEGIN
 	DELETE	a
     FROM	CTS_DataCenter.AssociatedAccountMonitor AS a
     WHERE	a.CTSCustID = ip_CTSCustID;
-
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 	
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	VALUES(18, @lv_SPName, CONCAT('Remove Associated Account Monitor: ip_CTSCustID_ ', ip_CTSCustID) , @lv_CurrentDate, ip_UserID);
 	
-	SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 END$$
 DELIMITER ;

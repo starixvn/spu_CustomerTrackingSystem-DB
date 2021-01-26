@@ -1,12 +1,12 @@
-USE `CTS_DataCenter`;
-DROP procedure IF EXISTS `CTS_DC_Notification_GetNewAssociation`;
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_Notification_GetNewAssociation`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
-CREATE DEFINER=`ctsWeb`@`%` PROCEDURE `CTS_DC_Notification_GetNewAssociation`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Notification_GetNewAssociation`(
 		IN 	ip_UserID 			INT UNSIGNED
     ,	IN 	ip_MaxNewAssID 		BIGINT
 )
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200706@Long.Luu
@@ -18,6 +18,7 @@ BEGIN
 			- 20200706@Long.Luu: Created [Redmine ID: #134652]
 			- 20200818@Long.Luu: Get notifications based on permission granted time range [Redmine ID: #138575]
             - 20201006@Long.Luu: Get notifications by notification settings [Redmine ID: #142414]
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
         
 		Param's Explanation (filtered by):
         
@@ -30,8 +31,6 @@ BEGIN
     
 	SET @ToScanDate						= CURRENT_DATE();
 	SET @FromScanDate					= DATE(DATE_ADD(CURRENT_DATE(), INTERVAL -3 DAY));
-    
-	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     
     SELECT MAX(a.AccountNewAssID)
     INTO lv_MaxNotificationID
@@ -76,8 +75,7 @@ BEGIN
 	WHERE a.CreatedDate > @FromScanDate AND a.CreatedDate <= @ToScanDate
 		AND p.UserID = ip_UserID 
     ORDER BY CreatedDate DESC;
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+
 END$$
 
 DELIMITER ;

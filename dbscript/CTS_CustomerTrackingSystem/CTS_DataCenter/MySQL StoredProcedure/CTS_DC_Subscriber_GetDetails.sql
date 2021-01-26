@@ -1,11 +1,9 @@
-USE `CTS_DataCenter`;
-DROP procedure IF EXISTS `CTS_DC_Subscriber_GetDetails`;
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_Subscriber_GetDetails`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
-CREATE DEFINER=`ctsWeb`@`%` PROCEDURE `CTS_DC_Subscriber_GetDetails`(
-		IN ip_SubscriberID		INT
-)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Subscriber_GetDetails`(IN ip_SubscriberID int)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200924@Lex.Khuat
@@ -13,12 +11,11 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original: 
 		Revisions:
-            - [20200924@Lex.Khuat][138102]: Created
+            - 20200924@Lex.Khuat[138102]: Created
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
             
 		Param's Explanation:
 	*/
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 
     SELECT	RoleMapping
 		,	SiteID
@@ -27,8 +24,6 @@ BEGIN
     WHERE SubscriberID = IFNULL(ip_SubscriberID, 0)
     ORDER BY	RoleMapping ASC
 			,	SiteID ASC;
-
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 
 END$$
 

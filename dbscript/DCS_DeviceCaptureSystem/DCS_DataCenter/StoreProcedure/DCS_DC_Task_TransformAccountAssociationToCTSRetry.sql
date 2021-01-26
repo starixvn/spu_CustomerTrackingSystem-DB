@@ -1,5 +1,5 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsOwner" isFunction="0" isNested="0"></info>*/
-DROP procedure IF EXISTS `DCS_DC_Task_TransformAccountAssociationToCTSRetry`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Task_TransformAccountAssociationToCTSRetry`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Task_TransformAccountAssociationToCTSRetry`()
@@ -13,11 +13,12 @@ BEGIN
 
 		Revisions: 
             - 20201116@Aries.Nguyen: Update metadata, revision [RedmineID : #145277]
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
 
 		Param's Explanation (filtered by):
                 
 	*/    
-   DECLARE vrAccountMinutes TINYINT DEFAULT 60;
+	DECLARE vrAccountMinutes TINYINT DEFAULT 60;
 	DECLARE vrAssociationMinutes TINYINT DEFAULT 70;
 	DECLARE vrAccountRow INT DEFAULT 0;
 	DECLARE vrAssociationRow INT DEFAULT 0;
@@ -43,8 +44,7 @@ BEGIN
     INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
     VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);
 	  
-	### PERFORMANCE: END  
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+	### PERFORMANCE: END
 	SET vrMinAccountID = (SELECT ParameterValue FROM CTS_DataCenter.SystemParameter WHERE ParameterID = 4);
     SET vrMinAssociationID = (SELECT ParameterValue FROM CTS_DataCenter.SystemParameter WHERE ParameterID = 5);
 
@@ -57,7 +57,6 @@ BEGIN
     INTO	vrMinAssociationID
     FROM	DCS_DataCenter.Association AS ass
     WHERE   TIMESTAMPDIFF(MINUTE, inserttime, CURRENT_TIMESTAMP()) < vrAssociationMinutes AND ass.ISCTSTransformed = -1 AND ass.AssociationID  > vrMinAssociationID;
-    
     
     UPDATE 	DCS_DataCenter.Account AS acc
 	SET 	acc.ISCTSTransformed = 0
@@ -72,7 +71,6 @@ BEGIN
 	SET ass.ISCTSTransformed = 0
 	WHERE ass.ISCTSTransformed = -1 AND ass.AssociationID > vrMinAssociationID;
 
-    
     SET vrAssociationRow = ROW_COUNT();
     
     IF (vrMinAccountID IS NOT NULL)
@@ -101,6 +99,7 @@ BEGIN
             , z.Notes = CONCAT(vrAccountMinutes,'_',vrAssociationMinutes)
     WHERE	z.ExecKey = vrExecKey  AND z.StepID = vrStepID;
     ### PERFORMANCE: END
+	
 END$$
 
 DELIMITER ;

@@ -1,8 +1,9 @@
-DELIMITER $$
-USE CTS_DataCenter $$
-DROP PROCEDURE IF EXISTS CTS_DC_Association_Get $$
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_Association_Get`;
 
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_Association_Get`(IN ip_CTSCustID BIGINT)
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_Get`(IN ip_CTSCustID bigint)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20191217@Marcus
@@ -15,6 +16,7 @@ BEGIN
 		- 20200226@Lex: Enhance performance
 		- 20200228@Lex: Exclude IP from counter
 		- 20200302@Lex: Include IP from counter again
+		- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
 		
 		Param's Explanation (filtered by):
 	*/
@@ -23,22 +25,20 @@ BEGIN
 	DECLARE		totalDevices			INT		DEFAULT 0;
     DECLARE		totalIPs		    	INT		DEFAULT 0;
 
-	DROP TABLE IF EXISTS tmpAffectedAss;
+	DROP TEMPORARY TABLE IF EXISTS tmpAffectedAss;
     CREATE TEMPORARY TABLE tmpAffectedAss(
 		CTSCustID bigint UNSIGNED
 	);
     
-    DROP TABLE IF EXISTS tmpAffectedDev;
+    DROP TEMPORARY TABLE IF EXISTS tmpAffectedDev;
     CREATE TEMPORARY TABLE tmpAffectedDev(
 		DCSDeviceID bigint
 	);
  
-    DROP TABLE IF EXISTS tmpAffectedIP;
+    DROP TEMPORARY TABLE IF EXISTS tmpAffectedIP;
     CREATE TEMPORARY TABLE tmpAffectedIP(
 		IPID decimal(50,0)
 	);
- 
-	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
  
 	# Get devices list for root
 	INSERT INTO tmpAffectedDev(DCSDeviceID)
@@ -68,8 +68,6 @@ BEGIN
     SELECT COUNT(1) INTO totalDevices FROM tmpAffectedDev;
     SELECT COUNT(1) INTO totalIPs	 FROM tmpAffectedIP;
     SELECT COUNT(DISTINCT CTSCustID) INTO totalAccounts FROM tmpAffectedAss;
-	
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
    
 	SELECT	totalAccounts, totalDevices, totalIPs;    
     

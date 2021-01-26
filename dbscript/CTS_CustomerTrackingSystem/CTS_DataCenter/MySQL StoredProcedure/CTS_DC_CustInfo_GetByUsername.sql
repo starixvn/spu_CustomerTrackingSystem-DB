@@ -1,7 +1,9 @@
-DELIMITER $$
-DROP procedure IF EXISTS `CTS_DC_CustInfo_GetByUsername`;
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_CustInfo_GetByUsername`;
 
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_CustInfo_GetByUsername`(IN ip_username VARCHAR(50))
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustInfo_GetByUsername`(IN ip_username VARCHAR(50))
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20191112@Terry
@@ -11,11 +13,11 @@ BEGIN
 
 		Revisions:
 			- 20200604@Harvey: search by RegisterName
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
         
 		Param's Explanation (filtered by):                
 	*/	 
-  
-	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
+
        SELECT 
 			ctsCus.CTSCustID
             , ctsCus.CustId
@@ -37,4 +39,5 @@ BEGIN
 			INNER JOIN CTS_Admin.Subscriber AS sub on ctsCus.SubscriberID = sub.SubscriberID
         WHERE ctsCus.Username = ip_username OR ctsCus.RegisterName = ip_username;
 END$$
+
 DELIMITER ;

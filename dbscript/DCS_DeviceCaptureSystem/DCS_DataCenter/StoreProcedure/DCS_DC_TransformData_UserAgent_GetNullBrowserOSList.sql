@@ -1,8 +1,9 @@
+/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `DCS_DC_TransformData_UserAgent_GetNullBrowserOSList`;
+
 DELIMITER $$
-
-DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformData_UserAgent_GetNullBrowserOSList $$
-
-CREATE PROCEDURE DCS_DataCenter.DCS_DC_TransformData_UserAgent_GetNullBrowserOSList(IN ip_size INT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_TransformData_UserAgent_GetNullBrowserOSList`(IN ip_size INT)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20190815@Terry.Nguyen
@@ -11,8 +12,11 @@ BEGIN
 		Original:
 
 		Revisions:
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+			
 		Param's Explanation (filtered by):
 	*/
+	
     ### PERFORMANCE: START
     DECLARE		vrExecKey		BIGINT	UNSIGNED;
 	DECLARE		vrSPName		VARCHAR(200) DEFAULT 'DCS_DC_TransformData_UserAgent_GetNullBrowserOSList' ;
@@ -33,9 +37,7 @@ BEGIN
     INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime, TotalRecord)
     VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime, ip_Size);	
 	    
-	### PERFORMANCE: END  
-	
-	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
+	### PERFORMANCE: END
 
 	SELECT 		ua.UserAgentKey
 				, ua.UserAgent
@@ -43,9 +45,7 @@ BEGIN
 	FROM		DCS_DataCenter.UserAgent AS ua
     WHERE 		BrowserID IS NULL 
 				AND OSID IS NULL
-    LIMIT ip_size; 
-	
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+    LIMIT ip_size;
 	
 	### PERFORMANCE
 	SET	vrEndTime = CURRENT_TIMESTAMP(4);
@@ -55,6 +55,7 @@ BEGIN
 			, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
     WHERE	z.ExecKey = vrExecKey AND z.StepID = z.StepID;
     ### PERFORMANCE: END
+	
 END$$
 
 DELIMITER ;

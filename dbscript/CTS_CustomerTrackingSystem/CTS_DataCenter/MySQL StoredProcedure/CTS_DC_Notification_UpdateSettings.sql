@@ -1,14 +1,9 @@
-DELIMITER $$
-USE `CTS_DataCenter`$$
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
 DROP PROCEDURE IF EXISTS `CTS_DC_Notification_UpdateSettings`;
 
-CREATE DEFINER=`ctsWeb`@`%` PROCEDURE `CTS_DC_Notification_UpdateSettings`(
-		IN 	ip_UserID 			INT UNSIGNED
-    ,	IN 	ip_FunctionID 		SMALLINT UNSIGNED
-    ,	IN 	ip_IsTurningOn		BIT
-    
-    , 	OUT op_ErrorMessage 	VARCHAR(200)
-)
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Notification_UpdateSettings`(IN ip_UserID int,IN ip_FunctionID smallint,IN ip_IsTurningOn bit,OUT op_ErrorMessage varchar(200))
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	2020106@Long.Luu
@@ -18,10 +13,9 @@ BEGIN
 
 		Revisions:
 			- 2020106@Long.Luu: Created [Redmine ID: #142414]
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
         
 		Param's Explanation (filtered by):
-        
-			call CTS_DC_Notification_GetNewAssociation(8,1);
 	*/
     
     DECLARE lv_CurrentDateTime	 	DATETIME;  
@@ -31,8 +25,6 @@ BEGIN
     END;
       
 	SET lv_CurrentDateTime			= CURRENT_TIME();    
-    
-	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
             
     IF (ip_IsTurningOn = 0) THEN		
 		UPDATE CTS_DataCenter.NotificationSettings
@@ -60,8 +52,7 @@ BEGIN
 		WHERE UserID = ip_UserID 
 			AND FunctionID = ip_FunctionID;
 	END IF;
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+	
 END$$
 
 DELIMITER ;

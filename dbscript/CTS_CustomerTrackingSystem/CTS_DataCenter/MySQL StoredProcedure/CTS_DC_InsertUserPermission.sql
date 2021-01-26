@@ -1,12 +1,9 @@
-DELIMITER $$
-USE `CTS_DataCenter`$$
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
 DROP PROCEDURE IF EXISTS `CTS_DC_InsertUserPermission`;
 
-CREATE DEFINER=`fps`@`%` PROCEDURE `CTS_DC_InsertUserPermission`(
-		IN ip_UserIDList		JSON
-    
-    ,	OUT op_ErrorMessage 	VARCHAR(200)
-)
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_InsertUserPermission`(IN ip_UserIDList json,OUT op_ErrorMessage varchar(200))
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200818@Roger.Le
@@ -17,6 +14,7 @@ BEGIN
         Revision:
 			- 20200818@Roger.Le: [Redmine ID: 138575] Created
             - 20200918@Lex.Khuat: [Redmine ID: 141755] Support new probation notification
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
                 
 		Param's Explanation (filtered by):
                 call CTS_DataCenter.CTS_DC_InsertUserPermission('[{"UserID": 1111, "FuncID": 1}, {"UserID": 1112, "FuncID": 2}], @error)';
@@ -43,8 +41,6 @@ BEGIN
 		,	FuncID			SMALLINT	UNSIGNED
 		,	PRIMARY KEY		Temp_NewCTSUserPermission(UserID, FuncID)
     );
-	
-    SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
     
     #========= GET DATA TO UPDATE =========
 	INSERT INTO Temp_CTSUserPermission(UserID, FuncID)
@@ -55,8 +51,7 @@ BEGIN
 			  UserID 	INT UNSIGNED		PATH "$.UserID"
 			, FuncID	SMALLINT UNSIGNED	PATH "$.FuncID"
 		 )) AS tmp;
-    
-    SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+
 	SET SQL_SAFE_UPDATES = 0;
     
     INSERT INTO Temp_NewCTSUserPermission(UserID, FuncID)

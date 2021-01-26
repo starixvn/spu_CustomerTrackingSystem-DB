@@ -1,9 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb,ctsAPI,ctsService" isFunction="0" isNested="0"></info>*/
-USE `CTS_DataCenter`;
-DROP procedure IF EXISTS `CTS_DC_CustClassification_GetLatestCategory`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_GetLatestCategory`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_GetLatestCategory`(IN ip_CustIDList VARCHAR(8000),IN ip_IsUsingCustID tinyint,IN ip_IsExcludedDetailedCategory tinyint)
     SQL SECURITY INVOKER
 BEGIN
@@ -14,7 +12,8 @@ BEGIN
 		Original: 
 		Revisions:
 			- 20201013@Long.Luu [Redmine ID: #141756]: Created 
-            - 20201014@Irena.Vo [Redmine ID: #141756]: Updated logic SP. 
+            - 20201014@Irena.Vo [Redmine ID: #141756]: Updated logic SP
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]			
             
 		Param's Explanation:
 			- From CTSCustID & exclude Detail Category: call CTS_DataCenter.CTS_DC_CustClassification_GetLatestCategory('221882500', 0, 1);
@@ -38,9 +37,7 @@ BEGIN
     
     SET @sql = CONCAT("INSERT INTO Temp_CustIDs (CustID) VALUES ('", REPLACE(ip_CustIDList, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
-	EXECUTE stmt1;    
-    
-	SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;  
+	EXECUTE stmt1;
     
     IF (ip_IsUsingCustID = 1) THEN
 			INSERT INTO Temp_CustLastCategory(CustID, SportGroupID, LastModifiedDate)
