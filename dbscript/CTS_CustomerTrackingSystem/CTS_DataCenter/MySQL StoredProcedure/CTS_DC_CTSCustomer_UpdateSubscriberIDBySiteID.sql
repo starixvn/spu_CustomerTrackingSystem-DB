@@ -1,15 +1,15 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CTSCustomer_UpdateSubsciberIDBySiteID`;
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_CTSCustomer_UpdateSubscriberIDBySiteID`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTSCustomer_UpdateSubscriberIDBySiteID`(
 		IN ip_SubsSiteJson JSON
 )
- SQL SECURITY INVOKER
+	SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200111@Casey.Huynh
-		Task:		Update CTSCustomer
+		Task:		Update CTSCustomer for SubscriberID NULL
 		DB:			CTS_DataCenter
 		Original:
 
