@@ -33,7 +33,7 @@ BEGIN
 			,cod_name = RETURNED_SQLSTATE;
 			
 		INSERT INTO CTS_Log.ErrorLog(EventName, InsertedTime, Message, Err_No, Description)
-		VALUES('CTS_DC_CTSCustomer_UpdateInfoComplete', NOW(), err_message, err_no, JSON_OBJECT('err_message', err_message, 'err_no', err_no, 'cod_name', cod_name, 'parameter', ip_CustomerList));
+		VALUES('CTS_DC_CTSCustomer_UpdateInfoComplete', NOW(), err_message, err_no, JSON_OBJECT('err_message', err_message, 'err_no', err_no, 'cod_name', cod_name, 'parameter', ip_CustomerInfo));
 	END;
  
 	DROP TEMPORARY TABLE IF EXISTS TempCTSCustomer;
