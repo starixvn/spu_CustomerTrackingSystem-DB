@@ -48,14 +48,14 @@ BEGIN
     CREATE TEMPORARY TABLE 		Temp_ListCustDev (
 			CustID 		BIGINT UNSIGNED
 		,	CTSCustID	BIGINT UNSIGNED 
-        KEY
+        , 	PRIMARY KEY     	PK_Temp_Dev_CTSCustID_CustID(CTSCustID,CustID)
 	);   
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_ListCustManual;
     CREATE TEMPORARY TABLE 		Temp_ListCustManual (
 			CustID 		BIGINT UNSIGNED
 		,	CTSCustID	BIGINT UNSIGNED 
-		, 	PRIMARY KEY     	PK_Temp_CTSCustID_CustID(CTSCustID,CustID)      
+		, 	PRIMARY KEY     	PK_Temp_Man_CTSCustID_CustID(CTSCustID,CustID)      
 	);  
 
     
