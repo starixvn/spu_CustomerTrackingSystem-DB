@@ -40,12 +40,12 @@ BEGIN
             ,	js.SubscriberID
 	FROM JSON_TABLE(ip_Customer,
 		 "$[*]" COLUMNS(
-				CTSCustID		BIGINT	UNSIGNED PATH "$.CTSCustID" 
-			, 	CustID			BIGINT UNSIGNED	PATH "$.CustID"  
-			,	CustSubID		BIGINT UNSIGNED	PATH "$.CustSubID"  
+				CTSCustID		BIGINT	UNSIGNED	PATH "$.CTSCustID" 
+			, 	CustID			BIGINT UNSIGNED		PATH "$.CustID"  
+			,	CustSubID		BIGINT UNSIGNED		PATH "$.CustSubID"  
 			,	UserName		VARCHAR(50)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	PATH "$.UserName"
 			,	RegisterName	VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	PATH "$.RegisterName"
-            ,	SubscriberID	INT 			PATH "$.SubscriberID" 
+            ,	SubscriberID	INT	PATH "$.SubscriberID" 
 			)
 	) AS js;
     

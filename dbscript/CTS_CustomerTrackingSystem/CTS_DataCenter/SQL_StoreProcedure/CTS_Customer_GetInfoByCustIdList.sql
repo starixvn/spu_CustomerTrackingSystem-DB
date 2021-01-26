@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" viewers="" isFunction="0" isNested="1"></info>*/
 
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
@@ -131,22 +131,23 @@ BEGIN;
 		INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON a.custid = c.custid;
 
 	
-	SELECT	a.CustId AS CustID
-		,	a.Username AS UserName
-		,	a.Username2 AS UserName2
-		,	a.SiteId AS SiteID
-		,	a.Site AS 'Site'
-		,	a.RoleId AS RoleID
-		,	a.CurrencyId AS CurrencyID
-		,	a.Currency AS Currency
-		,	a.Srecommend AS Srecommend
-		,	a.Mrecommend AS Mrecommend
-		,	a.Recommend AS Recommend
-        ,	a.CreatedDate AS CreatedDate
-        ,	a.CustStatusID AS CustStatusID
-		,	a.Danger1 AS Danger1
-		,	a.Danger2 AS Danger2
-		,	a.Danger3 AS Danger3
+	SELECT	a.CustId		AS CustID
+		,	a.Username		AS UserName
+		,	a.Username2		AS UserName2
+		,	a.SiteId		AS SiteID
+		,	a.Site			AS 'Site'
+		,	a.RoleId		AS RoleID
+		,	a.CurrencyId	AS CurrencyID
+		,	a.Currency		AS Currency
+		,	a.Srecommend	AS SRecommend
+		,	a.Mrecommend	AS MRecommend
+		,	a.Recommend		AS Recommend
+        ,	a.CreatedDate	AS CreatedDate
+        ,	a.CustStatusID	AS CustStatusID
+		,	a.Danger1		AS Danger1
+		,	a.Danger2		AS Danger2
+		,	a.Danger3		AS Danger3
 	FROM #tmpCustomers AS a WITH(NOLOCK);
+
 END;
 GO

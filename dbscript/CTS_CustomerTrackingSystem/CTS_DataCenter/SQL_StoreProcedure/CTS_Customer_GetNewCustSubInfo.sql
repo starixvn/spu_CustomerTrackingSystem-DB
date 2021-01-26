@@ -25,19 +25,19 @@ BEGIN;
 	SET NOCOUNT ON;
 
 	SELECT TOP (@rowSize) 
-			sub.custid AS CustID
-		,	sub.subaccid AS CustSubID
-		,	sub.username AS UserName
-		,	sub.username2 AS UserName2
-		,	st.siteid AS SiteID
-		,	cust.site AS 'Site'
-		,	cust.roleid AS RoleID
-		,	cust.currency AS 'CurrencyID'
-		,	ex.currency AS Currency
-		,	cust.srecommend AS Srecommend
-		,	cust.mrecommend AS Mrecommend
-		,	cust.recommend AS Recommend
-		,	sub.createdate AS CreatedDate
+			sub.custid		AS CustID
+		,	sub.subaccid	AS CustSubID
+		,	sub.username	AS UserName
+		,	sub.username2	AS UserName2
+		,	st.siteid		AS SiteID
+		,	cust.site		AS 'Site'
+		,	cust.roleid		AS RoleID
+		,	cust.currency	AS 'CurrencyID'
+		,	ex.currency		AS Currency
+		,	cust.srecommend AS SRecommend
+		,	cust.mrecommend AS MRecommend
+		,	cust.recommend	AS Recommend
+		,	sub.createdate	AS CreatedDate
 	FROM dbo.custSub sub WITH (NOLOCK)
 		INNER JOIN dbo.Customer cust WITH (NOLOCK) ON sub.custid = cust.custid
 		INNER JOIN dbo.Exchange ex WITH (NOLOCK) ON cust.currency = ex.exchangeid

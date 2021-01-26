@@ -75,21 +75,21 @@ BEGIN
 			,	CreatedDate
 	FROM JSON_TABLE(ip_CustomerList,
 		 "$[*]" COLUMNS(
-				CustID			INT	 UNSIGNED	PATH "$.CustId" 
+				CustID			INT	 UNSIGNED	PATH "$.CustID" 
 			,	CustStatusID	TINYINT			PATH "$.CustStatusID" 
 			,	Danger1			TINYINT		 	PATH "$.Danger1" 
 			,	Danger2			TINYINT		 	PATH "$.Danger2" 
 			,	Danger3			TINYINT		 	PATH "$.Danger3" 
-			,	CustSubID		BIGINT			PATH "$.CustSubId" 
-			,	UserName		VARCHAR(50)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	PATH "$.Username"
-			,	UserName2		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	PATH "$.Username2" 
-			,	SiteID			INT 			PATH "$.SiteId" 
+			,	CustSubID		BIGINT			PATH "$.CustSubID" 
+			,	UserName		VARCHAR(50)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	PATH "$.UserName"
+			,	UserName2		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	PATH "$.UserName2" 
+			,	SiteID			INT 			PATH "$.SiteID" 
 			,	Site			VARCHAR(20)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' 	PATH "$.Site" 
-			,	RoleID			TINYINT		 	PATH "$.RoleId" 
+			,	RoleID			TINYINT		 	PATH "$.RoleID" 
 			,	Currency		VARCHAR(50) 	PATH "$.Currency" 
-			,	CurrencyID		INT			 	PATH "$.CurrencyId" 
-			,	SRecommend		INT	 UNSIGNED	PATH "$.Srecommend" 
-			,	MRecommend		INT	 UNSIGNED 	PATH "$.Mrecommend" 
+			,	CurrencyID		INT			 	PATH "$.CurrencyID" 
+			,	SRecommend		INT	 UNSIGNED	PATH "$.SRecommend" 
+			,	MRecommend		INT	 UNSIGNED 	PATH "$.MRecommend" 
 			,	Recommend		INT	 UNSIGNED 	PATH "$.Recommend" 
 			,	CreatedDate		DATETIME	 	PATH "$.CreatedDate" 
 			)
@@ -134,8 +134,14 @@ BEGIN
     FROM	TempCTSCustomer AS tmpCus
     WHERE	tmpCus.IsExisting = 0;
     
-	SELECT 		cus.CTSCustID, cus.SubscriberID,  cus.CustID, cus.UserName, cus.RegisterName, cus.CustSubID, tmpCus.IsExisting
-    FROM		TempCTSCustomer AS tmpCus
+	SELECT	cus.CTSCustID
+		,	cus.SubscriberID
+    	,	cus.CustID
+		,	cus.UserName
+    	,	cus.RegisterName
+    	,	cus.CustSubID
+		,	tmpCus.IsExisting
+    FROM	TempCTSCustomer AS tmpCus
 		INNER JOIN 	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID AND tmpCus.CustSubID = cus.CustSubID;    
 END$$
 DELIMITER ;

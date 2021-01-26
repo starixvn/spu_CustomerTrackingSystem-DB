@@ -66,9 +66,9 @@ BEGIN
 		
 	FROM JSON_TABLE(ip_CustomerInfo, 
 		"$[*]" COLUMNS(
-				CustID			INT UNSIGNED	PATH "$.CustId"            
-            ,	SRecommend		INT UNSIGNED	PATH "$.Srecommend" 
-			,	MRecommend		INT UNSIGNED 	PATH "$.Mrecommend" 
+				CustID			INT UNSIGNED	PATH "$.CustID"            
+            ,	SRecommend		INT UNSIGNED	PATH "$.SRecommend" 
+			,	MRecommend		INT UNSIGNED 	PATH "$.MRecommend" 
 			,	Recommend		INT UNSIGNED 	PATH "$.Recommend"
             ,	Currency		VARCHAR(50) 	PATH "$.Currency" 
 			,	CurrencyID		INT		 		PATH "$.CurrencyID"
@@ -96,11 +96,11 @@ BEGIN
     
     #==================================================    	
 	UPDATE	CTS_DataCenter.SystemParameter AS s
-	SET		s.ParamaterValue = ip_LastUpdateTime
+	SET		s.ParameterValue = ip_LastUpdateTime
 	WHERE	s.ParameterID = 9 AND s.ParameterName = 'CTSCustomer_LastUpdateTime';
 	
 	UPDATE	CTS_DataCenter.SystemParameter AS s
-	SET		s.ParamaterValue = ip_LastUpdateCustID
+	SET		s.ParameterValue = ip_LastUpdateCustID
 	WHERE	s.ParameterID = 10 AND s.ParameterName = 'CTSCustomer_LastUpdateCustID';
 
 END$$
