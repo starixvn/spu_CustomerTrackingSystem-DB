@@ -1,13 +1,14 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
 /*
 Creator: 	20200107@Casey.Huynh
-Task:	 	Init Data CTSCustomer Data Flow
+Task:	 	Init Data for CTSCustomer Data Flow
 Server:  	Slave
 DBName:		CTS_DataCenter
 
 Revisions: 
 Reviewer:
 */
+USE CTS_DataCenter;
 
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
 VALUES	(7,'CTSCustomer_LastInsertCustID', 'Keep the Last CustID in CTSCustomer table', 'BIGINT UNSIGNED', 0)
