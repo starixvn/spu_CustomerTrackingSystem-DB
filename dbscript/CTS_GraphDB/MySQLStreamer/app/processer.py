@@ -64,7 +64,7 @@ class BinlogServer(object):
 		slave_heartbeat_conf = int(self.repl['slave_heartbeat'])
 		only_schemas_conf = str(self.repl['only_schemas'])
 		only_tables_conf = str(self.repl['only_tables'])
-		only_events_conf = str(self.repl['only_events']).split(',')
+		#only_events_conf = str(self.repl['only_events']).split(',')
 
 		hostname = socket.gethostname()
 		slave_conf = dict({'hostname': hostname, 'username': self.mysql['user'], 'password': self.mysql['passwd'], 'port': int(self.mysql['port'])})
@@ -88,8 +88,8 @@ class BinlogServer(object):
 								, auto_position=auto_position_conf
 								, only_schemas=only_schemas_conf
 								, only_tables = only_tables_conf
-								#, only_events = [StopEvent,GtidEvent,DeleteRowsEvent,WriteRowsEvent,UpdateRowsEvent,HeartbeatLogEvent,RotateEvent]
-								, only_events = only_events_conf
+								, only_events = [StopEvent,GtidEvent,DeleteRowsEvent,WriteRowsEvent,UpdateRowsEvent,HeartbeatLogEvent,RotateEvent]
+								#, only_events = only_events_conf
 								, slave_heartbeat = slave_heartbeat_conf
 								, report_slave = slave_conf
 								, slave_uuid = slave_uuid_conf
@@ -104,10 +104,10 @@ class BinlogServer(object):
 										, value_serializer=lambda v: json.dumps(obj=v,default=str).encode('utf-8')
 										, retries = broker_retries_conf)
 
-			print("connected. Listening for changes... %s" %str(only_schemas_conf))
-			print("connected. Listening for tables... %s" %str(only_tables_conf))
-			print("connected. Listening for events... %s" %str(''.join(only_events_conf)))
-			print("starting at auto_position: {0}".format(auto_position_conf))
+			print("Connected. Listening for databases... %s" %str(only_schemas_conf))
+			print("Connected. Listening for tables... %s" %str(only_tables_conf))
+			#print("connected. Listening for events... %s" %str(''.join(only_events_conf)))
+			print("Starting at auto_position: {0}".format(auto_position_conf))
 
 			for evt in self.binlog_stream:
 				payload = build_message(evt)
@@ -121,14 +121,14 @@ class BinlogServer(object):
 						
 						# FORMAT message
 						message = {'schema': payload.message.schema, 'table': payload.message.table, 'op': payload.message.op, 'rows': payload.data}
-						print (json.dumps(obj=message, default=str))
+						#print (json.dumps(obj=message, default=str))
 
 						response = self.kafka_producer.send(topic = send_topic
 							, value = message
 							, key = table_key.encode('utf-8')
 						)
-						log.info('send_topic: %s at %s' %(send_topic, datetime.fromtimestamp(payload.timestamp)))
 						replicator.commit_auto_position(payload.timestamp, payload.position)
+						log.info('send_topic: %s at %s' %(send_topic, datetime.fromtimestamp(payload.timestamp)))
 
 					except BufferError as bex:
 						log.error('%% Local producer queue is full (%s messages awaiting delivery): try again\n' %str(bex))
