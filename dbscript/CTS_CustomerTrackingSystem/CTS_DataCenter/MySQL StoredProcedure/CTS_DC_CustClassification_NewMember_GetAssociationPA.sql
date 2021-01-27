@@ -44,32 +44,52 @@ BEGIN
 		SIGNAL SQLSTATE '99999' SET MESSAGE_TEXT = op_ErrorMessage;
     END;
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_ListCustDev;
-    CREATE TEMPORARY TABLE 		Temp_ListCustDev (
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustomerIDs;
+    CREATE TEMPORARY TABLE 		Temp_CustomerIDs (
 			CustID 		BIGINT UNSIGNED
-		,	CTSCustID	BIGINT UNSIGNED 
+		,	CTSCustID	BIGINT UNSIGNED DEFAULT 0
         , 	PRIMARY KEY     	PK_Temp_Dev_CTSCustID_CustID(CTSCustID,CustID)
 	);   
 	
-    DROP TEMPORARY TABLE IF EXISTS Temp_ListCustManual;
-    CREATE TEMPORARY TABLE 		Temp_ListCustManual (
-			CustID 		BIGINT UNSIGNED
-		,	CTSCustID	BIGINT UNSIGNED 
-		, 	PRIMARY KEY     	PK_Temp_Man_CTSCustID_CustID(CTSCustID,CustID)      
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustAssociation;
+    CREATE TEMPORARY TABLE 		Temp_CustAssociation (
+			CustID 			BIGINT UNSIGNED
+		,	CTSCustID		BIGINT UNSIGNED 
+        ,   CTSCustID_Aff 	BIGINT UNSIGNED 
+        , 	PRIMARY KEY 	PK_Temp_Dev_CTSCustID_CustID(CTSCustID_Aff, CustID, CTSCustID)
 	);  
 
     
-    SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_ListCustDev (CustID) VALUES ('", REPLACE(ip_ListCustID, ",", "'),('"),"');");
+    SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_CustomerIDs (CustID) VALUES ('", REPLACE(ip_ListCustID, ",", "'),('"),"');");
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1; 
     
-    UPDATE Temp_ListCustDev  AS tbl 
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tbl.CustID = cus.CustID
+    UPDATE Temp_CustomerIDs  AS tbl 
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tbl.CustID = cus.CustID AND cus.CustSubID = 0
 	SET tbl.CTSCustID = cus.CTSCustID;
     
-    INSERT INTO Temp_ListCustManual(CTSCustID, CustID)
-    SELECT CTSCustID, CustID 
-    FROM Temp_ListCustDev;
+    
+	INSERT IGNORE INTO Temp_CustAssociation(CustID, CTSCustID, CTSCustID_Aff)
+	SELECT 
+			cus.CustID
+        , 	cus.CTSCustID
+        , 	asCus.CTSCustID  
+	FROM Temp_CustomerIDs AS cus 
+		INNER JOIN CTS_DataCenter.AssociationByDevice AS asDv ON asDv .CTSCustID =  cus.CTSCustID
+		INNER JOIN CTS_DataCenter.AssociationByDevice AS asCus ON asCus.DCSDeviceID =  asDv.DCSDeviceID  AND asCus.CTSCustID  !=   asDv.CTSCustID;
+    
+    
+	INSERT IGNORE INTO Temp_CustAssociation(CustID, CTSCustID, CTSCustID_Aff)
+	SELECT 
+			cus.CustID
+        , 	cus.CTSCustID
+        , 	asMa.ToCTSCustID  
+	FROM Temp_CustomerIDs AS cus 
+		INNER JOIN CTS_DataCenter.AssociationByManual AS asMa ON asMa.FromCTSCustID =  cus.CTSCustID;
+    
+    DELETE cuAs FROM Temp_CustAssociation AS cuAs
+		INNER JOIN CTS_DataCenter.AssociationRemove AS asRe 
+			ON (cuAs.CTSCustID = asRe.FromCTSCustID AND cuAs.CTSCustID_Aff = asRe.ToCTSCustID) OR (cuAs.CTSCustID_Aff = asRe.ToCTSCustID AND cuAs.CTSCustID = asRe.FromCTSCustID);
     
 	WITH CTE_Result AS (      
 		SELECT
@@ -90,47 +110,17 @@ BEGIN
 					SELECT 
 							cus.CustID
 						, 	cus.CTSCustID
-						, 	asCus.CTSCustID AS CTSCustID_Aff
+						, 	cus.CTSCustID_Aff 
 						, 	CASE	WHEN class.CustomerClass IS NOT NULL THEN class.CustomerClass
 									ELSE  spCu.CustomerClass
-							END CustomerClass
-					FROM Temp_ListCustDev AS cus 
-						INNER JOIN CTS_DataCenter.AssociationByDevice AS asDv ON asDv .CTSCustID =  cus.CTSCustID
-						INNER JOIN CTS_DataCenter.AssociationByDevice AS asCus ON asCus.DCSDeviceID =  asDv.DCSDeviceID  AND asCus.CTSCustID  !=   asDv.CTSCustID
-						LEFT JOIN  CTS_DataCenter.AssociationRemove AS asRe ON asRe.FromCTSCustID = asDv.CTSCustID AND  asRe.ToCTSCustID =  asCus.CTSCustID
-						LEFT JOIN  CTS_DataCenter.AssociationRemove AS asRe1 ON asRe1.FromCTSCustID =  asCus.CTSCustID AND asRe1.ToCTSCustID = asDv.CTSCustID 
-						LEFT JOIN  CTS_DataCenter.SpecialCustomerClass AS spCu ON spCu.CTSCustID =  asCus.CTSCustID AND spCu.CustomerClass = 13
-						LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CTSCustID = asCus.CTSCustID AND SportGroupID = 0
+							END CustomerClass 
+					FROM Temp_CustAssociation AS cus 
+						LEFT JOIN  CTS_DataCenter.SpecialCustomerClass AS spCu ON spCu.CTSCustID  =  cus.CTSCustID_Aff AND spCu.CustomerClass = 13
+						LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CTSCustID = cus.CTSCustID_Aff AND SportGroupID = 0
 						LEFT JOIN CTS_DataCenter.CategoryToCustomerClass AS class ON class.CategoryID =  cc.CategoryID 
-					WHERE 	asRe.FromCTSCustID IS NULL 
-						AND asRe1.FromCTSCustID IS NULL 
-						AND (	class.CustomerClass = 8 
+					WHERE 	class.CustomerClass = 8 
 							OR 	class.CustomerClass = 10 
-							OR 	spCu.CTSCustID IS NOT NULL
-						)
-				
-					UNION
-			
-					SELECT 
-							cus.CustID
-						, 	cus.CTSCustID
-						, 	asMa.ToCTSCustID AS CTSCustID_Aff
-						, 	CASE	WHEN class.CustomerClass IS NOT NULL THEN class.CustomerClass
-									ELSE  spCu.CustomerClass
-							END CustomerClass
-					FROM Temp_ListCustManual AS cus
-						INNER JOIN CTS_DataCenter.AssociationByManual AS asMa ON asMa.FromCTSCustID =  cus.CTSCustID
-						LEFT JOIN  CTS_DataCenter.AssociationRemove AS asRe ON asRe.FromCTSCustID = asMa.FromCTSCustID AND  asRe.ToCTSCustID =  asMa.ToCTSCustID
-						LEFT JOIN  CTS_DataCenter.AssociationRemove AS asRe1 ON asRe1.FromCTSCustID =  asMa.ToCTSCustID AND asRe1.ToCTSCustID = asMa.FromCTSCustID
-						LEFT JOIN  CTS_DataCenter.SpecialCustomerClass AS spCu ON spCu.CTSCustID =  asMa.FromCTSCustID AND spCu.CustomerClass = 13
-						LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CTSCustID = asMa.ToCTSCustID AND SportGroupID = 0
-						LEFT JOIN CTS_DataCenter.CategoryToCustomerClass AS class ON class.CategoryID =  cc.CategoryID
-					WHERE 	asRe.FromCTSCustID IS NULL 
-						AND asRe1.FromCTSCustID IS NULL
-						AND (	class.CustomerClass = 8 
-							OR 	class.CustomerClass = 10 
-							OR 	spCu.CTSCustID IS NOT NULL
-						)
+							OR 	spCu.CTSCustID IS NOT NULL			
 				) AS tbl
 				GROUP BY tbl.CustID, tbl.CTSCustID, tbl.CTSCustID_Aff
         ) AS tbl2
