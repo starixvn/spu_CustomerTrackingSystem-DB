@@ -57,7 +57,8 @@ BEGIN
 	UPDATE		CTS_DataCenter.CTSCustomer AS cus
     INNER JOIN	CTS_DataCenter.TempCTSCustomer AS tmpCus ON cus.CTSCustID = tmpCus.CTSCustID 
     SET			cus.UserName2 = tmpCus.UserName2
-				, cus.RegisterName = tmpCus.RegisterName;
+				, cus.RegisterName = tmpCus.RegisterName
+                , cus.ModifiedTime = NOW();
 
    #=====ReTransform==============================
     UPDATE		DCS_DataCenter.Account AS acc	

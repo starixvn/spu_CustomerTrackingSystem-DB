@@ -74,7 +74,8 @@ BEGIN
 					AND ((mss.RoleMapping = 1 AND cus.RoleID = 1)
 						OR (mss.RoleMapping = 2 AND cus.RoleID > 1)
 						OR (mss.RoleMapping = 0))
-        SET			cus.SubscriberID = mss.SubscriberID;
+        SET			cus.SubscriberID = mss.SubscriberID
+					, cus.ModifiedTime = NOW();
         
         SET vl_PreCTSCustID = (SELECT MAX(tmpCus.CTSCustID) FROM TempCTSCustomer AS tmpCus);
 
