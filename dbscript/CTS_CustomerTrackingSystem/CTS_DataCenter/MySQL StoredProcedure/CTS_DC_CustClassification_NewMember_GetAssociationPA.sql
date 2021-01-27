@@ -72,67 +72,79 @@ BEGIN
     FROM Temp_ListCustDev;
     
 	WITH CTE_Result AS (      
-		SELECT 
-				tbl.CustID
-			, 	tbl.CTSCustID
-			,   COUNT(*) AS Total
-			,	GROUP_CONCAT( DISTINCT CustomerClass SEPARATOR  ',') AS CustClass
-		FROM(
-			SELECT 
-					cus.CustID
-				, 	cus.CTSCustID
-                , 	asCus.CTSCustID AS CTSCustID_Aff
-                , 	CASE	WHEN class.CustomerClass IS NOT NULL THEN class.CustomerClass
-							ELSE  spCu.CustomerClass
-					END CustomerClass
-			FROM Temp_ListCustDev AS cus 
-				INNER JOIN CTS_DataCenter.AssociationByDevice AS asDv ON asDv .CTSCustID =  cus.CTSCustID
-				INNER JOIN CTS_DataCenter.AssociationByDevice AS asCus ON asCus.DCSDeviceID =  asDv.DCSDeviceID  AND asCus.CTSCustID  !=   asDv.CTSCustID
-				LEFT JOIN  CTS_DataCenter.AssociationRemove AS asRe ON asRe.FromCTSCustID = asDv.CTSCustID AND  asRe.ToCTSCustID =  asCus.CTSCustID
-				LEFT JOIN  CTS_DataCenter.AssociationRemove AS asRe1 ON asRe1.FromCTSCustID =  asCus.CTSCustID AND asRe1.ToCTSCustID = asDv.CTSCustID 
-                LEFT JOIN  CTS_DataCenter.SpecialCustomerClass AS spCu ON spCu.CTSCustID =  asCus.CTSCustID AND spCu.CustomerClass = 13
-				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CTSCustID = asCus.CTSCustID AND SportGroupID = 0
-				LEFT JOIN CTS_DataCenter.CategoryToCustomerClass AS class ON class.CategoryID =  cc.CategoryID 
-			WHERE 	asRe.FromCTSCustID IS NULL 
-				AND asRe1.FromCTSCustID IS NULL 
-                AND (	class.CustomerClass = 8 
-					OR 	class.CustomerClass = 10 
-                    OR 	spCu.CTSCustID IS NOT NULL
-				)
-        
-			UNION
-    
-			SELECT 
-					cus.CustID
-				, 	cus.CTSCustID
-                , 	asMa.ToCTSCustID AS CTSCustID_Aff
-                , 	CASE	WHEN class.CustomerClass IS NOT NULL THEN class.CustomerClass
-							ELSE  spCu.CustomerClass
-					END CustomerClass
-			FROM Temp_ListCustManual AS cus
-				INNER JOIN CTS_DataCenter.AssociationByManual AS asMa ON asMa.FromCTSCustID =  cus.CTSCustID
-				LEFT JOIN  CTS_DataCenter.AssociationRemove AS asRe ON asRe.FromCTSCustID = asMa.FromCTSCustID AND  asRe.ToCTSCustID =  asMa.ToCTSCustID
-				LEFT JOIN  CTS_DataCenter.AssociationRemove AS asRe1 ON asRe1.FromCTSCustID =  asMa.ToCTSCustID AND asRe1.ToCTSCustID = asMa.FromCTSCustID
-                LEFT JOIN  CTS_DataCenter.SpecialCustomerClass AS spCu ON spCu.CTSCustID =  asMa.FromCTSCustID AND spCu.CustomerClass = 13
-				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CTSCustID = asMa.ToCTSCustID AND SportGroupID = 0
-				LEFT JOIN CTS_DataCenter.CategoryToCustomerClass AS class ON class.CategoryID =  cc.CategoryID
-			WHERE 	asRe.FromCTSCustID IS NULL 
-				AND asRe1.FromCTSCustID IS NULL
-                AND (	class.CustomerClass = 8 
-					OR 	class.CustomerClass = 10 
-                    OR 	spCu.CTSCustID IS NOT NULL
-				)
-		) AS tbl
-		GROUP BY tbl.CustID, tbl.CTSCustID
+		SELECT
+			tbl2.CustID
+		, 	tbl2.CTSCustID
+		,   COUNT(*) AS Total
+		,	GROUP_CONCAT( DISTINCT tbl2.CategoryID SEPARATOR  ',') AS CategoryStr
+        FROM (
+				SELECT 
+						tbl.CustID
+					, 	tbl.CTSCustID
+					,	tbl.CTSCustID_Aff
+					,	CASE	WHEN GROUP_CONCAT(CustomerClass SEPARATOR  ',') LIKE '%10%' THEN 232
+								WHEN GROUP_CONCAT(CustomerClass SEPARATOR  ',') LIKE '%8%' THEN 231
+								WHEN GROUP_CONCAT(CustomerClass SEPARATOR  ',') LIKE '%13%' THEN 233
+						END AS 	CategoryID 
+				FROM(
+					SELECT 
+							cus.CustID
+						, 	cus.CTSCustID
+						, 	asCus.CTSCustID AS CTSCustID_Aff
+						, 	CASE	WHEN class.CustomerClass IS NOT NULL THEN class.CustomerClass
+									ELSE  spCu.CustomerClass
+							END CustomerClass
+					FROM Temp_ListCustDev AS cus 
+						INNER JOIN CTS_DataCenter.AssociationByDevice AS asDv ON asDv .CTSCustID =  cus.CTSCustID
+						INNER JOIN CTS_DataCenter.AssociationByDevice AS asCus ON asCus.DCSDeviceID =  asDv.DCSDeviceID  AND asCus.CTSCustID  !=   asDv.CTSCustID
+						LEFT JOIN  CTS_DataCenter.AssociationRemove AS asRe ON asRe.FromCTSCustID = asDv.CTSCustID AND  asRe.ToCTSCustID =  asCus.CTSCustID
+						LEFT JOIN  CTS_DataCenter.AssociationRemove AS asRe1 ON asRe1.FromCTSCustID =  asCus.CTSCustID AND asRe1.ToCTSCustID = asDv.CTSCustID 
+						LEFT JOIN  CTS_DataCenter.SpecialCustomerClass AS spCu ON spCu.CTSCustID =  asCus.CTSCustID AND spCu.CustomerClass = 13
+						LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CTSCustID = asCus.CTSCustID AND SportGroupID = 0
+						LEFT JOIN CTS_DataCenter.CategoryToCustomerClass AS class ON class.CategoryID =  cc.CategoryID 
+					WHERE 	asRe.FromCTSCustID IS NULL 
+						AND asRe1.FromCTSCustID IS NULL 
+						AND (	class.CustomerClass = 8 
+							OR 	class.CustomerClass = 10 
+							OR 	spCu.CTSCustID IS NOT NULL
+						)
+				
+					UNION
+			
+					SELECT 
+							cus.CustID
+						, 	cus.CTSCustID
+						, 	asMa.ToCTSCustID AS CTSCustID_Aff
+						, 	CASE	WHEN class.CustomerClass IS NOT NULL THEN class.CustomerClass
+									ELSE  spCu.CustomerClass
+							END CustomerClass
+					FROM Temp_ListCustManual AS cus
+						INNER JOIN CTS_DataCenter.AssociationByManual AS asMa ON asMa.FromCTSCustID =  cus.CTSCustID
+						LEFT JOIN  CTS_DataCenter.AssociationRemove AS asRe ON asRe.FromCTSCustID = asMa.FromCTSCustID AND  asRe.ToCTSCustID =  asMa.ToCTSCustID
+						LEFT JOIN  CTS_DataCenter.AssociationRemove AS asRe1 ON asRe1.FromCTSCustID =  asMa.ToCTSCustID AND asRe1.ToCTSCustID = asMa.FromCTSCustID
+						LEFT JOIN  CTS_DataCenter.SpecialCustomerClass AS spCu ON spCu.CTSCustID =  asMa.FromCTSCustID AND spCu.CustomerClass = 13
+						LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CTSCustID = asMa.ToCTSCustID AND SportGroupID = 0
+						LEFT JOIN CTS_DataCenter.CategoryToCustomerClass AS class ON class.CategoryID =  cc.CategoryID
+					WHERE 	asRe.FromCTSCustID IS NULL 
+						AND asRe1.FromCTSCustID IS NULL
+						AND (	class.CustomerClass = 8 
+							OR 	class.CustomerClass = 10 
+							OR 	spCu.CTSCustID IS NOT NULL
+						)
+				) AS tbl
+				GROUP BY tbl.CustID, tbl.CTSCustID, tbl.CTSCustID_Aff
+        ) AS tbl2
+        GROUP BY tbl2.CustID, tbl2.CTSCustID
 	)
-	SELECT 	CustID
+    SELECT 	CustID
 		,	CTSCustID
-		,	CASE	WHEN CustClass LIKE '%10%' THEN 232
-					WHEN CustClass LIKE '%8%' THEN 231
-					WHEN CustClass LIKE '%13%' THEN 233
+		,	CASE	WHEN CategoryStr LIKE '%232%' THEN 232
+					WHEN CategoryStr LIKE '%231%' THEN 231
+					WHEN CategoryStr LIKE '%233%' THEN 233
 			END AS 	CategoryID
 	FROM CTE_Result 
 	WHERE CTE_Result.Total > 2;
+
 END$$
 
 DELIMITER ;
