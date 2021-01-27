@@ -243,7 +243,7 @@ sp: BEGIN
 	WHERE site.SubscriberID = lv_SubscriberID;
     
 	#======Return New SubID/SiteID for Update CTSCustomer
-    SELECT	lv_SubscriberID
+    SELECT	lv_SubscriberID AS SubscriberID
 		,	tmp.SiteID
         ,	tmp.RoleMapping
 	FROM 	Temp_Sites AS tmp;
