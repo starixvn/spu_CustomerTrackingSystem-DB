@@ -37,7 +37,7 @@ BEGIN
     CREATE TEMPORARY TABLE TempCTSCustomer
     (
 		CTSCustID	BIGINT UNSIGNED
-
+        ,	RegisterName	VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
         ,	PRIMARY KEY TempCTSCustomer(CTSCustID)
     );
       
@@ -57,8 +57,10 @@ BEGIN
     DO      
 		
         TRUNCATE TABLE TempCTSCustomer;
-		INSERT INTO TempCTSCustomer(CTSCustID)
+        
+		INSERT INTO TempCTSCustomer(CTSCustID, RegisterName)
         SELECT 		cus.CTSCustID
+					,	SUBSTRING(cus.UserName2, LOCATE('$',cus.UserName2) + 1) AS RegisterName
 		FROM 		CTS_DataCenter.CTSCustomer AS cus 
         INNER JOIN	TempSubSite AS tmpSub
 		WHERE 	cus.SubscriberID IS NULL
@@ -75,10 +77,26 @@ BEGIN
 						OR (mss.RoleMapping = 2 AND cus.RoleID > 1)
 						OR (mss.RoleMapping = 0))
         SET			cus.SubscriberID = mss.SubscriberID
-					, cus.ModifiedTime = NOW();
+					,	cus.RegisterName = tmpCus.RegisterName
+					,	cus.ModifiedTime = NOW();
         
         SET vl_PreCTSCustID = (SELECT MAX(tmpCus.CTSCustID) FROM TempCTSCustomer AS tmpCus);
-
+		
+        #=====ReTransform==============================
+		UPDATE		DCS_DataCenter.Account AS acc	
+		INNER JOIN	TempCTSCustomer AS tmpCus
+					ON acc.LoginName = tmpCus.RegisterName
+					AND	acc.SubscriberID = tmpCus.SubscriberID
+		SET			acc.IsCTSTransformed = 0
+		WHERE		acc.IsCTSTransformed = -1;    
+		
+		UPDATE		DCS_DataCenter.Account AS acc	
+		INNER JOIN	TempCTSCustomer AS tmpCus
+					ON acc.LoginName = tmpCus.UserName
+					AND acc.SubscriberID = tmpCus.SubscriberID
+		SET			acc.IsCTSTransformed = 0
+		WHERE		acc.IsCTSTransformed = -1;    
+  
     END WHILE;
 END$$
 DELIMITER ;
