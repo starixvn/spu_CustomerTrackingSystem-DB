@@ -7,7 +7,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTSCustomer_GetInfoByCustIDList`
 BEGIN
 	/*
 		Created:	20210115@Casey.Huynh
-		Task:		Insert Customer Complte [Redmine ID: 148849]. Re-Transfrom DCS Account and update LastInsertedCustID System Parameter
+		Task:		CTSCustomer Flow [Redmine ID: 148849]
 		DB:			CTS_DataCenter
 		Original:
 

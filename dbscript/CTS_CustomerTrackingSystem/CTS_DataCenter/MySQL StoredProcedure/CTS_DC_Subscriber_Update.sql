@@ -1,9 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
-USE `CTS_DataCenter`;
-DROP procedure IF EXISTS `CTS_DC_Subscriber_Update`;
+DROP PROCEDURE IF EXISTS `CTS_DC_Subscriber_Update`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Subscriber_Update`(OUT op_ErrorMessage varchar(2000), IN ip_SubscriberID int, IN ip_SubscriberName varchar(50), IN ip_SubscriberType tinyint, IN ip_SubscriberPrefix varchar(30), IN ip_IsTest bit, IN ip_SiteList json, IN ip_UserID int)
     SQL SECURITY INVOKER
 sp: BEGIN
