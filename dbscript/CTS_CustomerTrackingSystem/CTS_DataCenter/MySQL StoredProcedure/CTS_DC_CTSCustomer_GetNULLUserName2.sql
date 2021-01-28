@@ -1,11 +1,9 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_CTSCustomer_GetNULLUserName2`;
 DELIMITER $$
-USE `CTS_DataCenter` $$
-DROP PROCEDURE IF EXISTS CTS_DC_CTSCustomer_GetNULLUserName2 $$
-
 CREATE PROCEDURE `CTS_DC_CTSCustomer_GetNULLUserName2`(
-	IN ip_PreCTSCustID INT
-    , IN ip_Size INT)
+		IN ip_PreCTSCustID INT
+    ,	IN ip_Size INT)
 SQL SECURITY INVOKER
 BEGIN
 	/*

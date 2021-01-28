@@ -2,7 +2,9 @@
 DROP PROCEDURE IF EXISTS `CTS_DC_CTSCustomer_GetInfoByCustIDList`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTSCustomer_GetInfoByCustIDList`(IN ip_CustIDList TEXT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTSCustomer_GetInfoByCustIDList`(
+	IN ip_CustIDList TEXT
+)
 	SQL SECURITY INVOKER
 BEGIN
 	/*
