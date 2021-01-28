@@ -1,18 +1,17 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DELIMITER $$
-USE `CTS_DataCenter` $$
-DROP PROCEDURE IF EXISTS CTS_DC_CTSCustomer_UpdateUserName2 $$
+DROP PROCEDURE IF EXISTS `CTS_DC_CTSCustomer_UpdateUserName2`;
 
-CREATE PROCEDURE CTS_DC_CTSCustomer_UpdateUserName2(IN ip_Customer JSON)
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTSCustomer_UpdateUserName2`(IN ip_Customer JSON)
 BEGIN
 	/*
 		Created:	20200118@CaseyHuynh
-		Task:		GET CTSCustID NULL
+		Task:		Update UserName2 [Redmine ID: 148849]
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
-			- 20200421@Harvey:	Get customer for update SubscriberID - [Redmine: #132705]
+			- -	20210115@Casey.Huynh: Created [Redmine ID: 148849]
         
 		Param's Explanation (filtered by):         
         
@@ -49,6 +48,8 @@ BEGIN
 		,	UserName2		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
         ,	RegisterName	VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
         ,	SubscriberID	INT
+        
+        ,	INDEX Temp_CTSCustomer_CTSCustID(CTSCustID)
     );
     
     INSERT INTO Temp_CTSCustomer(CustID, CustSubID, UserName2, CTSCustID)
