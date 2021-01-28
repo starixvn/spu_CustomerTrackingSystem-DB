@@ -20,8 +20,30 @@ BEGIN
   Exampele: CALL CTS_DC_CTSCustomer_UpdateSubscriberIDBySiteID ('[{"SubscriberID":898294,"SiteID":43534235,"RoleMapping":1}]');
 	*/
 	
-    DECLARE vl_size BIGINT DEFAULT 200;
-    DECLARE vl_PreCTSCustID BIGINT DEFAULT 0;
+    DECLARE lv_size BIGINT DEFAULT 200;
+    DECLARE lv_PreCTSCustID BIGINT DEFAULT 0;
+	DECLARE lv_No    INT    DEFAULT 1;
+    DECLARE lv_ErrorMessage2 VARCHAR(200) DEFAULT '';
+    DECLARE	lv_ErrorMessage	VARCHAR(200) DEFAULT '';
+ 
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
+    BEGIN   
+		GET DIAGNOSTICS lv_No = NUMBER;
+		GET DIAGNOSTICS CONDITION lv_No 
+            lv_ErrorMessage = MESSAGE_TEXT;	
+		
+		IF(lv_No > 1) THEN
+			SET lv_No = lv_No - 1;
+			GET STACKED  DIAGNOSTICS CONDITION lv_No
+				lv_ErrorMessage2 = MESSAGE_TEXT;	
+        END IF;
+			
+		SET lv_ErrorMessage = CONCAT(lv_ErrorMessage,'; ',lv_ErrorMessage2);
+
+		CALL CTS_Log.CTS_Log_ErrorLog_Insert('CTS_DC_CTSCustomer_Insert',lv_ErrorMessage, JSON_OBJECT('parameter', ip_CustomerList));
+    
+		SIGNAL SQLSTATE '99999' SET MESSAGE_TEXT = lv_ErrorMessage;
+    END;
     
     DROP TEMPORARY TABLE IF EXISTS TempSubSite;
     
@@ -55,7 +77,7 @@ BEGIN
 			)
 	) AS js;
 
-	WHILE (vl_PreCTSCustID IS NOT NULL)
+	WHILE (lv_PreCTSCustID IS NOT NULL)
     DO      
 		
         TRUNCATE TABLE TempCTSCustomer;
@@ -72,9 +94,9 @@ BEGIN
 					OR (mss.RoleMapping = 0))
 		WHERE 	cus.SubscriberID IS NULL
 				AND cus.SiteID = mss.SiteID
-				AND cus.CTSCustID > vl_PreCTSCustID
+				AND cus.CTSCustID > lv_PreCTSCustID
 		ORDER BY	cus.CTSCustID
-		LIMIT		vl_size;
+		LIMIT		lv_size;
         
         UPDATE		CTS_DataCenter.CTSCustomer AS cus 
         INNER JOIN	TempCTSCustomer AS tmpCus ON cus.CTSCustID = tmpCus.CTSCustID
@@ -82,7 +104,7 @@ BEGIN
 					,	cus.RegisterName = tmpCus.RegisterName
 					,	cus.ModifiedTime = NOW();
         
-        SET vl_PreCTSCustID = (SELECT MAX(tmpCus.CTSCustID) FROM TempCTSCustomer AS tmpCus);
+        SET lv_PreCTSCustID = (SELECT MAX(tmpCus.CTSCustID) FROM TempCTSCustomer AS tmpCus);
 		
         #=====ReTransform==============================
 		UPDATE		DCS_DataCenter.Account AS acc	

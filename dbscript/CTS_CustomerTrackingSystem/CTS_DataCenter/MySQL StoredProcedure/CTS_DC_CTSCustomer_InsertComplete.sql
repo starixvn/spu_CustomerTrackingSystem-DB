@@ -18,7 +18,29 @@ BEGIN
         CALL CTS_DataCenterCTS_DC_CTSCustomer_InsertComplete ('[{"CTSCustId":30, "CustID:"1284,"Username":"305RM","RegisterName":null,"SubscriberID":130}]'))
 	*/
     DECLARE lv_LastInsertCustID INT;
-    DECLARE lv_LastInsertCustSubID INT;
+    DECLARE lv_LastInsertCustSubID INT;    
+    DECLARE lv_No    INT    DEFAULT 1;
+    DECLARE lv_ErrorMessage2 VARCHAR(200) DEFAULT '';
+    DECLARE	lv_ErrorMessage	VARCHAR(200) DEFAULT '';
+ 
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
+    BEGIN   
+		GET DIAGNOSTICS lv_No = NUMBER;
+		GET DIAGNOSTICS CONDITION lv_No 
+            lv_ErrorMessage = MESSAGE_TEXT;	
+		
+		IF(lv_No > 1) THEN
+			SET lv_No = lv_No - 1;
+			GET STACKED  DIAGNOSTICS CONDITION lv_No
+				lv_ErrorMessage2 = MESSAGE_TEXT;	
+        END IF;
+			
+		SET lv_ErrorMessage = CONCAT(lv_ErrorMessage,'; ',lv_ErrorMessage2);
+
+		CALL CTS_Log.CTS_Log_ErrorLog_Insert('CTS_DC_CTSCustomer_InsertComplete',lv_ErrorMessage, JSON_OBJECT('parameter', ip_Customer));
+    
+		SIGNAL SQLSTATE '99999' SET MESSAGE_TEXT = lv_ErrorMessage;
+    END;
     
    DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomer;
     

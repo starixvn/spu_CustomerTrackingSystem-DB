@@ -1,5 +1,6 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
 DROP PROCEDURE IF EXISTS `CTS_DC_CTSCustomer_GetNULLUserName2`;
+
 DELIMITER $$
 CREATE PROCEDURE `CTS_DC_CTSCustomer_GetNULLUserName2`(
 		IN ip_PreCTSCustID INT

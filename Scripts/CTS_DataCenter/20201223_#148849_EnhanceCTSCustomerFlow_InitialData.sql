@@ -13,11 +13,16 @@ VALUES	(7,'CTSCustomer_LastInsertCustID', 'Keep the Last CustID in CTSCustomer t
     ,	(9,'CTSCustomer_LastUpdateTime', 'Keep the Last CustInfo_History.UpdateTime', 'DATETIME', NOW())
     ,	(10,'CTSCustomer_LastUpdateCustID', 'Keep the Last CustInfo_History.CustId', 'BIGINT UNSIGNED', 0);
     
+  
 UPDATE 	CTS_DataCenter.SystemParameter AS s
 SET 	s.ParameterValue = (SELECT MAX(c.CustID) FROM CTS_DataCenter.CTSCustomer AS c)
 WHERE	s.ParameterID = 7 AND s.ParameterName = 'CTSCustomer_LastInsertCustID';
 
+/* GET @LastInsertCustSubID FROM Slave Sever because  CTS_DataCenter.CTSCustomer doesn't have Index on CustSubID*/
+SET @LastInsertCustSubID = (SELECT MAX(c.CustSubID) FROM CTS_DataCenter.CTSCustomer AS c);
+
+USE CTS_DataCenter;
 UPDATE 	CTS_DataCenter.SystemParameter AS s
-SET 	s.ParameterValue = (SELECT MAX(c.CustSubID) FROM CTS_DataCenter.CTSCustomer AS c)
+SET 	s.ParameterValue = @LastInsertCustSubID
 WHERE	s.ParameterID = 8 AND s.ParameterName = 'CTSCustomer_LastInsertCustSubID';
 

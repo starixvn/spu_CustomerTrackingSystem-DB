@@ -2,7 +2,7 @@
 DROP PROCEDURE IF EXISTS `CTS_DC_CTSCustomer_GetLastInsertCust`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTSCustomer_GetLastInsertCust` ()
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTSCustomer_GetLastInsertCust`()
 	SQL SECURITY INVOKER
 BEGIN
 	/*

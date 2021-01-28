@@ -2,7 +2,9 @@
 DROP PROCEDURE IF EXISTS `CTS_DC_CTSCustomer_Insert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTSCustomer_Insert`(IN ip_CustomerList json)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTSCustomer_Insert`(
+	IN ip_CustomerList JSON
+)
     SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -23,10 +25,28 @@ BEGIN
         
         CALL CTS_DataCenter.CTS_DC_InsertCTSCustomer ('[{"BatchId":1,"CustId":1,"CustSubId":0,"Username":"SA-SD$","Username2":null,"Site":"BEST-ODDS","SiteId":1,"RoleId":4,"CurrencyId":1,"Currency":"SD$","Srecommend":1,"Mrecommend":0,"Recommend":0,"CreatedDate":"2020-04-24T03:18:00"},{"BatchId":1,"CustId":2,"CustSubId":0,"Username":"SA-RM","Username2":null,"Site":"BEST-ODDS","SiteId":1,"RoleId":4,"CurrencyId":2,"Currency":"RM","Srecommend":2,"Mrecommend":0,"Recommend":0,"CreatedDate":"2020-04-24T03:18:00"}]')
 	*/
-   
-    DECLARE err_message text DEFAULT '';
-	DECLARE err_no int DEFAULT 0;
-    DECLARE cod_name varchar(10) DEFAULT '';    
+    DECLARE     lv_No    INT    DEFAULT 1;
+    DECLARE     lv_ErrorMessage2 VARCHAR(200) DEFAULT '';
+    DECLARE		lv_ErrorMessage	VARCHAR(200) DEFAULT '';
+ 
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
+    BEGIN   
+		GET DIAGNOSTICS lv_No = NUMBER;
+		GET DIAGNOSTICS CONDITION lv_No 
+            lv_ErrorMessage = MESSAGE_TEXT;	
+		
+		IF(lv_No > 1) THEN
+			SET lv_No = lv_No - 1;
+			GET STACKED  DIAGNOSTICS CONDITION lv_No
+				lv_ErrorMessage2 = MESSAGE_TEXT;	
+        END IF;
+			
+		SET lv_ErrorMessage = CONCAT(lv_ErrorMessage,'; ',lv_ErrorMessage2);
+
+		CALL CTS_Log.CTS_Log_ErrorLog_Insert('CTS_DC_CTSCustomer_Insert',lv_ErrorMessage, JSON_OBJECT('parameter', ip_CustomerList));
+    
+		SIGNAL SQLSTATE '99999' SET MESSAGE_TEXT = lv_ErrorMessage;
+    END;
     
 	DROP TEMPORARY TABLE IF EXISTS TempCTSCustomer;
     
