@@ -3,6 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_CTSCustomer_UpdateUserName2`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTSCustomer_UpdateUserName2`(IN ip_Customer JSON)
+SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200118@CaseyHuynh
