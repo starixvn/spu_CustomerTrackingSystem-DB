@@ -53,6 +53,7 @@ BEGIN
         ,	SubscriberID	INT
         
         ,	INDEX IX_Temp_CTSCustomer_CustID(CustID)
+        ,	INDEX IX_Temp_CTSCustomer_CustSubID(CustSubID)
     );
     
     INSERT INTO Temp_CTSCustomer

@@ -94,8 +94,6 @@ BEGIN
 					OR (mss.RoleMapping = 0))
 		WHERE 	cus.SubscriberID IS NULL
 				AND cus.SiteID = mss.SiteID
-				AND cus.CTSCustID > lv_PreCTSCustID
-		ORDER BY	cus.CTSCustID
 		LIMIT		lv_size;
         
         UPDATE		CTS_DataCenter.CTSCustomer AS cus 

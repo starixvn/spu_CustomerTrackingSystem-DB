@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_CTSCustomer_UpdateInfoComplete`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTSCustomer_UpdateInfoComplete`(
-		IN ip_LastUpdateTime	DATETIME
+		IN ip_LastUpdateTime	DATETIME(3)
 	,	IN ip_LastUpdateCustID	INT
 	,	IN ip_CustomerInfo	JSON
 )
