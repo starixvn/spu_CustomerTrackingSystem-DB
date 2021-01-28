@@ -102,7 +102,7 @@ BEGIN
 					,	cus.RegisterName = tmpCus.RegisterName
 					,	cus.ModifiedTime = NOW();
         
-        SET lv_PreCTSCustID = (SELECT MAX(tmpCus.CTSCustID) FROM TempCTSCustomer AS tmpCus);
+        SET lv_PreCTSCustID = (SELECT 1 FROM TempCTSCustomer AS tmpCus LIMIT 1);
 		
         #=====ReTransform==============================
 		UPDATE		DCS_DataCenter.Account AS acc	
