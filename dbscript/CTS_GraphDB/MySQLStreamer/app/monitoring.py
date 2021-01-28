@@ -3,7 +3,6 @@ import schedule
 from datetime import datetime
 import time
 import json
-sys.path.append('/app/neo4j/')
 from configuration import util_get_config
 from pymysql import connect
 from replication import StreamReplicator
