@@ -1,12 +1,10 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
 /*
 	Created: 20200121@Casey.Huynh
-	Task: 	Initial New PA Category
+	Task: 	Initial New PA Category [Redmine ID: 148908]
 	DB: 	 CTS_DataCenter
-    
-    Revisions: 
-	- 20200121@Casey.Huynh: Created [148908]
 */
+USE CTS_DataCenter;
 INSERT INTO `CTS_DataCenter`.`CustomerCategory`
 		(CategoryID, CategoryName, CategorySpec, CategorySpecCN, ParentID, DisplayOrder, IsActive, CreatedDate, CreatedBy
         , LastModifiedDate, LastModifiedBy, IsUsedManually, ScanIntervalInSecond, CategoryNameCN, CategoryGroup)
