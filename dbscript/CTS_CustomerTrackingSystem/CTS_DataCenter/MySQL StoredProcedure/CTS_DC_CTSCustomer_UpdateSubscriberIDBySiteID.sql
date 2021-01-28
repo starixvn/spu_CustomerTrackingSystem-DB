@@ -61,10 +61,10 @@ BEGIN
         TRUNCATE TABLE TempCTSCustomer;
         
 		INSERT INTO TempCTSCustomer(CTSCustID, RegisterName, SubscriberID, UserName)
-        SELECT 		cus.CTSCustID
-					,	cus.UserName
+        SELECT 		cus.CTSCustID					
 					,	SUBSTRING(cus.UserName2, LOCATE('$',cus.UserName2) + 1) AS RegisterName
                     ,	tmpSub.SubscriberID
+                    ,	cus.UserName
 		FROM 		CTS_DataCenter.CTSCustomer AS cus 
         INNER JOIN	TempSubSite AS tmpSub
 		WHERE 	cus.SubscriberID IS NULL
