@@ -20,7 +20,7 @@ BEGIN
             - 20200625@Long.Luu: insert more customer info [Redmine ID: #136046]
             - 20201118@Aries.Nguyen: Add columns InsertedTime, ModifiedTime [RedmineID : #145271]
             - 20200111@Casey.Huynh: Remove SubscriberID from Json, Move Update Customer Info to other SP
-        
+			- 20200118@CaseyHuynh: Enhance CTSCustomer Flow - [Redmine: #148849]
 		Param's Explanation (filtered by):
         
         CALL CTS_DataCenter.CTS_DC_InsertCTSCustomer ('[{"BatchId":1,"CustId":1,"CustSubId":0,"Username":"SA-SD$","Username2":null,"Site":"BEST-ODDS","SiteId":1,"RoleId":4,"CurrencyId":1,"Currency":"SD$","Srecommend":1,"Mrecommend":0,"Recommend":0,"CreatedDate":"2020-04-24T03:18:00"},{"BatchId":1,"CustId":2,"CustSubId":0,"Username":"SA-RM","Username2":null,"Site":"BEST-ODDS","SiteId":1,"RoleId":4,"CurrencyId":2,"Currency":"RM","Srecommend":2,"Mrecommend":0,"Recommend":0,"CreatedDate":"2020-04-24T03:18:00"}]')
