@@ -37,7 +37,9 @@ BEGIN
     CREATE TEMPORARY TABLE TempCTSCustomer
     (
 		CTSCustID	BIGINT UNSIGNED
+        ,	UserName		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
         ,	RegisterName	VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+        ,	SubscriberID	INT
         ,	PRIMARY KEY TempCTSCustomer(CTSCustID)
     );
       
@@ -58,9 +60,11 @@ BEGIN
 		
         TRUNCATE TABLE TempCTSCustomer;
         
-		INSERT INTO TempCTSCustomer(CTSCustID, RegisterName)
+		INSERT INTO TempCTSCustomer(CTSCustID, RegisterName, SubscriberID, UserName)
         SELECT 		cus.CTSCustID
+					,	cus.UserName
 					,	SUBSTRING(cus.UserName2, LOCATE('$',cus.UserName2) + 1) AS RegisterName
+                    ,	tmpSub.SubscriberID
 		FROM 		CTS_DataCenter.CTSCustomer AS cus 
         INNER JOIN	TempSubSite AS tmpSub
 		WHERE 	cus.SubscriberID IS NULL
