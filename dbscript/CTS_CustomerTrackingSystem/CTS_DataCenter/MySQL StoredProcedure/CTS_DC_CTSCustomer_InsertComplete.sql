@@ -20,18 +20,20 @@ BEGIN
     DECLARE lv_LastInsertCustID INT;
     DECLARE lv_LastInsertCustSubID INT;
     
-   DROP TEMPORARY TABLE IF EXISTS TempCTSCustomer;
+   DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomer;
     
-	CREATE TEMPORARY TABLE TempCTSCustomer
+	CREATE TEMPORARY TABLE Temp_CTSCustomer
 	( 		CTSCustID		BIGINT UNSIGNED NOT NULL
 		, 	CustID			BIGINT
         ,	CustSubID		BIGINT
 		,	UserName		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
         ,	RegisterName	VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
         ,	SubscriberID	INT
+        
+        ,	INDEX IX_Temp_CTSCustomer_CustID(CustID)
     );
     
-    INSERT INTO TempCTSCustomer
+    INSERT INTO Temp_CTSCustomer
 	SELECT		js.CTSCustID
 			, 	js.CustID
 			,	js.CustSubID
@@ -52,21 +54,21 @@ BEGIN
     
    #=====ReTransform==============================
     UPDATE		DCS_DataCenter.Account AS acc	
-    INNER JOIN	TempCTSCustomer AS tmpCus
+    INNER JOIN	Temp_CTSCustomer AS tmpCus
 				ON acc.LoginName = tmpCus.RegisterName
 				AND	acc.SubscriberID = tmpCus.SubscriberID
 	SET			acc.IsCTSTransformed = 0
 	WHERE		acc.IsCTSTransformed = -1;    
     
 	UPDATE		DCS_DataCenter.Account AS acc	
-    INNER JOIN	TempCTSCustomer AS tmpCus
+    INNER JOIN	Temp_CTSCustomer AS tmpCus
 				ON acc.LoginName = tmpCus.UserName
                 AND acc.SubscriberID = tmpCus.SubscriberID
 	SET			acc.IsCTSTransformed = 0
 	WHERE		acc.IsCTSTransformed = -1;    
   
     #=====Update Scan System Parameter;
-    SET lv_LastInsertCustID = (SELECT MAX(tmpCus.CustID) FROM TempCTSCustomer AS tmpCus WHERE CustSubID = 0);
+    SET lv_LastInsertCustID = (SELECT MAX(tmpCus.CustID) FROM Temp_CTSCustomer AS tmpCus WHERE CustSubID = 0);
     IF lv_LastInsertCustID > 0
     THEN
 		UPDATE 	CTS_DataCenter.SystemParameter AS s
@@ -74,7 +76,7 @@ BEGIN
 		WHERE	s.ParameterID = 7 AND s.ParameterName = 'CTSCustomer_LastInsertCustID';
 	END IF;
     
-	SET lv_LastInsertCustSubID = (SELECT MAX(tmpCus.CustSubID) FROM TempCTSCustomer AS tmpCus);
+	SET lv_LastInsertCustSubID = (SELECT MAX(tmpCus.CustSubID) FROM Temp_CTSCustomer AS tmpCus);
     IF lv_LastInsertCustSubID > 0
     THEN
 		UPDATE 	CTS_DataCenter.SystemParameter AS s
