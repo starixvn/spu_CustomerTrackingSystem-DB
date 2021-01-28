@@ -9,7 +9,7 @@ ALTER PROCEDURE	CTS_Customer_GetNewCustomerInfo
 AS
 /*
 	Creator:	20200118@Casey.Huynh
-	Task:		Get New customer - [Redmine: #148849]
+	Task:		Get New customer - [Redmine ID: #148849]
 	Database:	DBCTS.bodb02
 	
 	Revisions:

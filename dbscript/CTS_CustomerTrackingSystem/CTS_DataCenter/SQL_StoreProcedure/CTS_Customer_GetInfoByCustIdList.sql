@@ -22,7 +22,7 @@ AS
 	Developer's Notes:
 		- @Example:			NULL		- Explaination [DEFAULT]
 
-	exec CTS_GetCustomerInfo 0,500,2
+	exec CTS_Customer_GetInfoByCustIdList 1,2,3
 		
 */
 BEGIN;

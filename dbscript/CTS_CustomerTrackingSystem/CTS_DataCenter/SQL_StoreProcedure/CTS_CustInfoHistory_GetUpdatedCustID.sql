@@ -9,7 +9,7 @@ CREATE PROCEDURE	CTS_CustInfoHistory_GetUpdatedCustID
 AS
 /*
 	Creator:	20210104@CaseyHuynh
-	Task:		Get updated customer
+	Task:		Get updated customer [Redmine ID: 148849]
 	Database:	bodb_CustHistory
 	
 	Revisions:
@@ -70,8 +70,6 @@ BEGIN;
 	FROM	#tmpUpdatedCustomers AS tmpCus
 	WHERE	tmpCus.UpdateTime = @maxUpdateTime;
 
-	--SELECT	@custIdList = COALESCE(@custIdList + ',', '') +  CONVERT(VARCHAR(12),CustId)
-	--FROM	#tmpUpdatedCustomers AS tmpCus;
 	SELECT	@custIdList = COALESCE(@custIdList + ',', '') +  CONVERT(VARCHAR(12), tmp.CustId)
 	FROM	(SELECT DISTINCT tmpCus.CustId
 			FROM  #tmpUpdatedCustomers AS tmpCus) AS tmp;
