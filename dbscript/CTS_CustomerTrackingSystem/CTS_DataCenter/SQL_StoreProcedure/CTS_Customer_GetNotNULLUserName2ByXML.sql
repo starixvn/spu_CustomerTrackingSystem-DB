@@ -45,8 +45,7 @@ BEGIN;
 			, T.C.value('./@CTSCustID', 'BIGINT') AS CTSCustID
 	FROM @custXML.nodes('//Customer') AS T(C)
 	OPTION (OPTIMIZE FOR (@custXML = NULL));
-
-	SELECT * FROM #tmpInputCust;
+	
 	SELECT	tmpCus.CustID
 		,	tmpCus.CustSubID
 		,	cus.UserName2
