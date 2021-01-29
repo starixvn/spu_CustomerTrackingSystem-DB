@@ -78,7 +78,7 @@ BEGIN
 	SET 		tmpCus.SubscriberID = cus.SubscriberID
 				, tmpCus.RegisterName = SUBSTRING(tmpCus.UserName2, LOCATE('$',tmpCus.UserName2) + 1);       
    
-	UPDATE		CTS_DataCenter.CTSCustomer AS cus
+	UPDATE IGNORE CTS_DataCenter.CTSCustomer AS cus
     INNER JOIN	CTS_DataCenter.Temp_CTSCustomer AS tmpCus ON cus.CTSCustID = tmpCus.CTSCustID 
     SET			cus.UserName2 = tmpCus.UserName2
 				, cus.RegisterName = tmpCus.RegisterName
