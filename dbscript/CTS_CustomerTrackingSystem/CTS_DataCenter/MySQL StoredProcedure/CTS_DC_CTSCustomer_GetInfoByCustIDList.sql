@@ -18,8 +18,8 @@ BEGIN
             
 		Param's Explanation (filtered by):
 			ip_CustIDList: String (custid01,custid02, custid03)
-		Example:
-			- CALL CTS_DataCenter.CTS_DC_CTSCustomer_GetInfoByCustIDList ('123,124,125')
+            
+		Example: CALL CTS_DataCenter.CTS_DC_CTSCustomer_GetInfoByCustIDList ('123,124,125')
 
 	*/  
 		CALL CTS_DC_Sys_SplitStringToTempItemTable(ip_CustIDList,',','BIGINT');

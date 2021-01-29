@@ -14,7 +14,7 @@ BEGIN
 		Revisions:
 			-	20210115@Casey.Huynh: Created [Redmine ID: 148849]
 		Param's Explanation (filtered by):
-        30	130	1284	0	305RM		
+        
         CALL CTS_DataCenterCTS_DC_CTSCustomer_InsertComplete ('[{"CTSCustId":30, "CustID:"1284,"Username":"305RM","RegisterName":null,"SubscriberID":130}]'))
 	*/
     DECLARE lv_LastInsertCustID INT;

@@ -16,7 +16,8 @@ BEGIN
         
 		Param's Explanation (filtered by):         
         
-        CALL CTS_DC_GetCustomerForUpdateUsername2 (500,0,1)
+        Example:
+       
 	*/	  
 	DECLARE     lv_No    INT    DEFAULT 1;
     DECLARE     lv_ErrorMessage2 VARCHAR(200) DEFAULT '';

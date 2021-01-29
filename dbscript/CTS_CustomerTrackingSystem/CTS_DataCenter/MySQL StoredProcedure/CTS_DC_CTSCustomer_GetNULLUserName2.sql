@@ -16,9 +16,9 @@ BEGIN
 		Revisions:
 			- 20200118@CaseyHuynh:	Get customer for update SubscriberID - [Redmine: #148849]
         
-		Param's Explanation (filtered by):         
+		Param's Explanation (filtered by):   
         
-        CALL CTS_DC_CTSCustomer_GetNULLUserName2 (500,0,1)
+        Example: CALL CTS_DC_CTSCustomer_GetNULLUserName2 (500,0)
 	*/	  
 	
 	SELECT 		cus.CTSCustID

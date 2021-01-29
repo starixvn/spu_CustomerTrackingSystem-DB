@@ -17,7 +17,7 @@ BEGIN
 			-	20210115@Casey.Huynh: Created [Redmine ID: 148849]
 		Param's Explanation (filtered by):
 		
-  Exampele: CALL CTS_DC_CTSCustomer_UpdateSubscriberIDBySiteID ('[{"SubscriberID":898294,"SiteID":43534235,"RoleMapping":1}]');
+		Exampele: CALL CTS_DC_CTSCustomer_UpdateSubscriberIDBySiteID ('[{"SubscriberID":898294,"SiteID":43534235,"RoleMapping":1}]');
 	*/
 	
     DECLARE lv_size BIGINT DEFAULT 200;
@@ -89,11 +89,11 @@ BEGIN
                     ,	cus.UserName
 		FROM 		CTS_DataCenter.CTSCustomer AS cus 
 		INNER JOIN	TempSubSite AS mss ON cus.SiteID = mss.SiteID 
-				AND ((mss.RoleMapping = 1 AND cus.RoleID = 1)
+					AND ((mss.RoleMapping = 1 AND cus.RoleID = 1)
 					OR (mss.RoleMapping = 2 AND cus.RoleID > 1)
 					OR (mss.RoleMapping = 0))
-		WHERE 	cus.SubscriberID IS NULL
-				AND cus.SiteID = mss.SiteID
+		WHERE 		cus.SubscriberID IS NULL
+					AND cus.SiteID = mss.SiteID
 		LIMIT		lv_size;
         
         UPDATE		CTS_DataCenter.CTSCustomer AS cus 
