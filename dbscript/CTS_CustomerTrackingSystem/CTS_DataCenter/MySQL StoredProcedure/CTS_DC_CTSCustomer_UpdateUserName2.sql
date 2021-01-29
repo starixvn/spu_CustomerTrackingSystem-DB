@@ -12,8 +12,8 @@ BEGIN
 		Original:
 
 		Revisions:
-			- -	20210115@Casey.Huynh: Created [Redmine ID: 148849]
-        
+			- 20210115@Casey.Huynh: Created [Redmine ID: 148849]
+			- 202101295@Casey.Huynh: Add Ignore to Update statement [Redmine ID: 149639]
 		Param's Explanation (filtered by):         
         
         Example:

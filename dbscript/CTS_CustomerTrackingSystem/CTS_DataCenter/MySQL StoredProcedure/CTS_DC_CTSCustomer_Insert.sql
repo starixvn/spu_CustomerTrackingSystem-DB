@@ -21,6 +21,7 @@ BEGIN
             - 20201118@Aries.Nguyen: Add columns InsertedTime, ModifiedTime [RedmineID : #145271]
             - 20200111@Casey.Huynh: Remove SubscriberID from Json, Move Update Customer Info to other SP
 			- 20200118@CaseyHuynh: Enhance CTSCustomer Flow - [Redmine: #148849]
+            - 202101295@Casey.Huynh: Add Ignore to Update statement [Redmine ID: 149639]
             
 		Param's Explanation (filtered by):
         
