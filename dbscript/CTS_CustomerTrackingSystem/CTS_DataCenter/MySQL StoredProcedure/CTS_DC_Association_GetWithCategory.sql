@@ -93,12 +93,11 @@ BEGIN
 				END 'IsSoon88'
 		FROM TempCustomers tcust
 			INNER JOIN DevLv1 dev ON tcust.CTSCustID = dev.CTSCustID
-			INNER JOIN CTS_DataCenter.AssociationByDevice ass ON dev.DCSDeviceID = ass.DCSDeviceID AND dev.CTSCustID <> ass.CTSCustID
-			INNER JOIN CTS_DataCenter.CTSCustomer cust ON ass.CTSCustID = cust.CTSCustID
-			INNER JOIN CTS_Admin.Subscriber sub ON cust.SubscriberID = sub.SubscriberID
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification class ON ass.CTSCustID = class.CTSCustID
-			INNER JOIN CTS_DataCenter.CustomerCategory custCate ON class.CategoryID = custCate.CategoryID AND custCate.ParentID IN (50,200)
-		WHERE class.CTSCustID IS NOT NULL;
+			LEFT JOIN CTS_DataCenter.AssociationByDevice ass ON dev.DCSDeviceID = ass.DCSDeviceID AND dev.CTSCustID <> ass.CTSCustID
+			LEFT JOIN CTS_DataCenter.CTSCustomer cust ON ass.CTSCustID = cust.CTSCustID
+			LEFT JOIN CTS_Admin.Subscriber sub ON cust.SubscriberID = sub.SubscriberID
+			LEFT JOIN CTS_DataCenter.CTSCustomerClassification class ON ass.CTSCustID = class.CTSCustID
+			LEFT JOIN CTS_DataCenter.CustomerCategory custCate ON class.CategoryID = custCate.CategoryID AND custCate.ParentID IN (50,200);
     END IF;
     
     SELECT DISTINCT * FROM Results;
