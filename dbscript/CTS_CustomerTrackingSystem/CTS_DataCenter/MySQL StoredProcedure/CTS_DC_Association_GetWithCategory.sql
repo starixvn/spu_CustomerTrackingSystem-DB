@@ -72,7 +72,8 @@ BEGIN
         INSERT INTO Results(RegisterName,CategoryName)
         SELECT tcust.RegisterName, tcust.CategoryName
         FROM TempCustomers tcust INNER JOIN DevLv1 dev ON tcust.CTSCustID = dev.CTSCustID
-        WHERE dev.DCSDeviceID IS NULL;
+        WHERE dev.DCSDeviceID IS NULL
+			AND tcust.RegisterName IS NOT NULL;
         
         DELETE FROM DevLv1
         WHERE DCSDeviceID IS NULL;
