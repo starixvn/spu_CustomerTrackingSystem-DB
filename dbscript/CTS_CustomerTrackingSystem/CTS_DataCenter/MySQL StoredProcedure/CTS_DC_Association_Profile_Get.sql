@@ -124,8 +124,8 @@ BEGIN
 			,	asMa.CreatedDate
 		FROM CTS_DataCenter.AssociationByManual AS asMa 
 		WHERE	asMa.FromCTSCustID =  ip_CTSCustID;
+       
         
-        /*
         INSERT IGNORE INTO Temp_CustAssociation(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
 		SELECT 
 				asMa.FromCTSCustID
@@ -134,7 +134,7 @@ BEGIN
 			,	asMa.CreatedDate
 		FROM CTS_DataCenter.AssociationByManual AS asMa 
 		WHERE	asMa.ToCTSCustID =  ip_CTSCustID;
-        */
+        
     END IF;
     
     # ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual
@@ -166,7 +166,7 @@ BEGIN
         FROM CTE_AssociationRemove AS cte
             INNER JOIN Temp_CustAssociation AS tmp ON cte.CTSCustID_Aff = tmp.CTSCustID_Aff;
         
-        /*
+        
         INSERT INTO Temp_CustAssociationUnlinked (CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
 		WITH CTE_AssociationRemove AS (
 			SELECT asRe.FromCTSCustID AS CTSCustID_Aff
@@ -180,7 +180,7 @@ BEGIN
             ,	cte.CreatedDate
         FROM CTE_AssociationRemove AS cte
         INNER JOIN Temp_CustAssociation AS tmp ON cte.CTSCustID_Aff = tmp.CTSCustID_Aff;
-        */
+        
         
         INSERT IGNORE INTO Temp_CustAssociation(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
         SELECT CTSCustID_Aff
