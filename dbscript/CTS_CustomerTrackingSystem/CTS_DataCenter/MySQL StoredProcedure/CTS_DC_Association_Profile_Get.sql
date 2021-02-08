@@ -181,6 +181,9 @@ BEGIN
         FROM CTE_AssociationRemove AS cte
         INNER JOIN Temp_CustAssociation AS tmp ON cte.CTSCustID_Aff = tmp.CTSCustID_Aff;
         
+        DELETE cuAs 
+        FROM Temp_CustAssociation AS cuAs 
+        WHERE cuAs.CTSCustID_Aff IN (SELECT CTSCustID_Aff FROM Temp_CustAssociationUnlinked);
         
         INSERT IGNORE INTO Temp_CustAssociation(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
         SELECT CTSCustID_Aff
