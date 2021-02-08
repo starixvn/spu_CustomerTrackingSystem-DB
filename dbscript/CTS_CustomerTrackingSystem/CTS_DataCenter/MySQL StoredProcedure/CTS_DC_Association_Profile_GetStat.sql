@@ -21,6 +21,13 @@ BEGIN
 	*/
     DECLARE lv_TotalAccounts INT;
     DECLARE lv_TotalDevices INT;
+    DECLARE lv_CustID INT;
+    
+    SELECT CustID 
+    INTO lv_CustID
+    FROM CTS_DataCenter.CTSCustomer 
+    WHERE CTSCustID = ip_CTSCustID;
+    
     
 	SELECT  COUNT(1)
 		INTO lv_TotalDevices
@@ -38,6 +45,26 @@ BEGIN
 		SELECT  asMa.ToCTSCustID  
 		FROM  CTS_DataCenter.AssociationByManual AS asMa  
 		WHERE asMa.FromCTSCustID =  ip_CTSCustID
+        
+        UNION
+        
+        SELECT  asMa.FromCTSCustID
+		FROM  CTS_DataCenter.AssociationByManual AS asMa  
+		WHERE asMa.ToCTSCustID =  ip_CTSCustID
+        
+        UNION
+        
+        SELECT  cust.CTSCustID
+		FROM  CTS_DataCenter.AssociationByAI AS asAI
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asAI.ToCustID AND cust.CustSubID = 0
+		WHERE asAI.FromCustID =  lv_CustID
+        
+        UNION
+        
+        SELECT  cust.CTSCustID
+		FROM  CTS_DataCenter.AssociationByAI AS asAI 
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asAI.FromCustID AND cust.CustSubID = 0
+		WHERE asAI.ToCustID =  lv_CustID
 	)
 	SELECT COUNT(1)
 		INTO lv_TotalAccounts

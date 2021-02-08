@@ -14,7 +14,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_Profile_Get`(
     ,	OUT op_TotalItems		INT
 )
     SQL SECURITY INVOKER
-BEGIN
+sp : BEGIN
 	/*
 		Created:	20210202@Aries.Nguyen
 		Task:		Get association account 
@@ -31,6 +31,11 @@ BEGIN
 			- CALL CTS_DataCenter.CTS_DC_Association_Profile_Get(9523,0,1,'1,11','11111,111111,111112,11111111',0,100 );
 	*/
 	DECLARE lv_CustID INT;
+    
+    IF ip_SiteIDs IS NULL OR ip_SiteIDs = '' OR ip_AccountStatusIDs IS NULL OR ip_AccountStatusIDs = '' THEN
+		LEAVE sp;
+    END IF;
+    
 
     DROP TEMPORARY TABLE IF EXISTS Temp_Accounts;
     CREATE TEMPORARY TABLE 		Temp_Accounts (
@@ -73,7 +78,7 @@ BEGIN
         , 	AssociationType		INT
         , 	AssociationStatus	INT
         ,	AssociationDate		DaTETIME
-        , 	PRIMARY KEY (CTSCustID_Aff)
+        , 	PRIMARY KEY (CTSCustID_Aff,AssociationType, AssociationStatus)
 	);  
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_SiteID;
@@ -146,13 +151,23 @@ BEGIN
             ,	1 AS AssociationStatus
 			,	asAI.CreatedDate
 		FROM CTS_DataCenter.AssociationByAI AS asAI 
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asAI.ToCustID
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asAI.ToCustID AND cust.CustSubID = 0
 		WHERE	asAI.FromCustID =  lv_CustID;
+        
+        INSERT IGNORE INTO Temp_CustAssociation(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
+		SELECT 
+				cust.CTSCustID 
+			,	2 AS AssociationType
+            ,	1 AS AssociationStatus
+			,	asAI.CreatedDate
+		FROM CTS_DataCenter.AssociationByAI AS asAI 
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asAI.FromCustID AND cust.CustSubID = 0
+		WHERE	asAI.ToCustID =  lv_CustID;
     END IF;
     
     #ip_AssociationStatus: 0 - All, 1 - Linked, 2 - UnLinked
 
-	INSERT INTO Temp_CustAssociationUnlinked (CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
+	INSERT IGNORE INTO Temp_CustAssociationUnlinked (CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
 	WITH CTE_AssociationRemove AS (
 		SELECT asRe.ToCTSCustID AS CTSCustID_Aff
 			,  asRe.CreatedDate
@@ -167,7 +182,7 @@ BEGIN
 	INNER JOIN Temp_CustAssociation AS tmp ON cte.CTSCustID_Aff = tmp.CTSCustID_Aff;
         
         
-	INSERT INTO Temp_CustAssociationUnlinked (CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
+	INSERT IGNORE INTO Temp_CustAssociationUnlinked (CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
 	WITH CTE_AssociationRemove AS (
 		SELECT asRe.FromCTSCustID AS CTSCustID_Aff
 			,  asRe.CreatedDate
@@ -252,7 +267,7 @@ BEGIN
     LIMIT ip_Take
     OFFSET ip_Skip; 
     
-    SELECT COUNT(1) 
+    SELECT COUNT(DISTINCT(CTSCustID)) 
     INTO op_TotalItems
 	FROM Temp_Accounts
 	WHERE SiteID IN (SELECT SiteID FROM Temp_SiteID) 
