@@ -40,7 +40,7 @@ BEGIN
 		,	SiteID				INT UNSIGNED
         ,	SiteName			VARCHAR(50)
         ,	SubscriberID 		INT UNSIGNED
-        ,	SubscriberName			VARCHAR(50)
+        ,	SubscriberName		VARCHAR(50)
         ,	Username			VARCHAR(50)
         ,	Username2			VARCHAR(50)
         ,	AssociationType 	INT
@@ -151,48 +151,47 @@ BEGIN
     END IF;
     
     #ip_AssociationStatus: 0 - All, 1 - Linked, 2 - UnLinked
-    IF ip_AssociationStatus = 0 OR ip_AssociationStatus = 2 THEN
-		INSERT INTO Temp_CustAssociationUnlinked (CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
-		WITH CTE_AssociationRemove AS (
-			SELECT asRe.ToCTSCustID AS CTSCustID_Aff
-				,  asRe.CreatedDate
-			FROM CTS_DataCenter.AssociationRemove AS asRe 
-            WHERE asRe.FromCTSCustID = ip_CTSCustID
-        )
-        SELECT 	cte.CTSCustID_Aff
-			,	tmp.AssociationType
-            ,	2 AS AssociationStatus
-            ,	cte.CreatedDate
-        FROM CTE_AssociationRemove AS cte
-            INNER JOIN Temp_CustAssociation AS tmp ON cte.CTSCustID_Aff = tmp.CTSCustID_Aff;
+
+	INSERT INTO Temp_CustAssociationUnlinked (CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
+	WITH CTE_AssociationRemove AS (
+		SELECT asRe.ToCTSCustID AS CTSCustID_Aff
+			,  asRe.CreatedDate
+		FROM CTS_DataCenter.AssociationRemove AS asRe 
+		WHERE asRe.FromCTSCustID = ip_CTSCustID
+	)
+	SELECT 	cte.CTSCustID_Aff
+		,	tmp.AssociationType
+		,	2 AS AssociationStatus
+		,	cte.CreatedDate
+	FROM CTE_AssociationRemove AS cte
+	INNER JOIN Temp_CustAssociation AS tmp ON cte.CTSCustID_Aff = tmp.CTSCustID_Aff;
         
         
-        INSERT INTO Temp_CustAssociationUnlinked (CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
-		WITH CTE_AssociationRemove AS (
-			SELECT asRe.FromCTSCustID AS CTSCustID_Aff
-				,  asRe.CreatedDate
-			FROM CTS_DataCenter.AssociationRemove AS asRe 
-            WHERE asRe.ToCTSCustID = ip_CTSCustID
-        )
-        SELECT 	cte.CTSCustID_Aff
-			,	tmp.AssociationType
-            ,	2 AS AssociationStatus
-            ,	cte.CreatedDate
-        FROM CTE_AssociationRemove AS cte
-        INNER JOIN Temp_CustAssociation AS tmp ON cte.CTSCustID_Aff = tmp.CTSCustID_Aff;
+	INSERT INTO Temp_CustAssociationUnlinked (CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
+	WITH CTE_AssociationRemove AS (
+		SELECT asRe.FromCTSCustID AS CTSCustID_Aff
+			,  asRe.CreatedDate
+		FROM CTS_DataCenter.AssociationRemove AS asRe 
+		WHERE asRe.ToCTSCustID = ip_CTSCustID
+	)
+	SELECT 	cte.CTSCustID_Aff
+		,	tmp.AssociationType
+		,	2 AS AssociationStatus
+		,	cte.CreatedDate
+	FROM CTE_AssociationRemove AS cte
+	INNER JOIN Temp_CustAssociation AS tmp ON cte.CTSCustID_Aff = tmp.CTSCustID_Aff;
         
-        DELETE cuAs 
-        FROM Temp_CustAssociation AS cuAs 
-        WHERE cuAs.CTSCustID_Aff IN (SELECT CTSCustID_Aff FROM Temp_CustAssociationUnlinked);
+	DELETE cuAs 
+	FROM Temp_CustAssociation AS cuAs 
+	WHERE cuAs.CTSCustID_Aff IN (SELECT CTSCustID_Aff FROM Temp_CustAssociationUnlinked);
         
-        INSERT IGNORE INTO Temp_CustAssociation(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
-        SELECT CTSCustID_Aff
-			,	AssociationType
-            ,	AssociationStatus
-            ,	AssociationDate
-		FROM Temp_CustAssociationUnlinked;
-    END IF;
-    
+	INSERT IGNORE INTO Temp_CustAssociation(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
+	SELECT CTSCustID_Aff
+		,	AssociationType
+		,	AssociationStatus
+		,	AssociationDate
+	FROM Temp_CustAssociationUnlinked;
+
      IF ip_AssociationStatus = 2 THEN
 		DELETE 
         FROM Temp_CustAssociation 
@@ -202,7 +201,7 @@ BEGIN
      IF ip_AssociationStatus = 1 THEN
 		DELETE cuAs
         FROM Temp_CustAssociation  AS cuAs
-            INNER JOIN Temp_CustAssociationUnlinked AS un ON 	un.CTSCustID_Aff = cuAs.CTSCustID_Aff AND un.AssociationType = cuAs.AssociationType;
+            INNER JOIN Temp_CustAssociationUnlinked AS un ON 	un.CTSCustID_Aff = cuAs.CTSCustID_Aff AND un.AssociationStatus = cuAs.AssociationStatus;
      END IF;
      
      
