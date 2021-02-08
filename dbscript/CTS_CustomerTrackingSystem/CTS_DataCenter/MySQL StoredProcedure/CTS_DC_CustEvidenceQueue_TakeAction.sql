@@ -1,4 +1,4 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
 USE CTS_DataCenter;
 DROP PROCEDURE IF EXISTS `CTS_DC_CustEvidenceQueue_TakeAction`;
 
@@ -7,7 +7,8 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidenceQueue_TakeAction`(
 		IN 	ip_CustEvidence 		JSON
 	,	IN	ip_ActionID				TINYINT UNSIGNED
     
-    ,	OUT op_ErrorMessage 		VARCHAR(200)
+    ,	OUT op_ErrorMessage 		VARCHAR(200)    
+    ,	OUT op_Result 				VARCHAR(2000)
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -48,7 +49,7 @@ BEGIN
 		,	tmpTable.CreatedBy
 	FROM JSON_TABLE(ip_CustEvidence, 
 		"$[*]" COLUMNS(
-			  CTSCustID 	INT UNSIGNED		PATH "$.CTSCustID"
+			  CTSCustID 	BIGINT UNSIGNED		PATH "$.CTSCustID"
 			, EvidenceID	SMALLINT UNSIGNED	PATH "$.EvidenceID"
 			, Remark		VARCHAR(500)		PATH "$.Remark"
             , CreatedBy		INT UNSIGNED		PATH "$.CreatedBy"
@@ -63,7 +64,7 @@ BEGIN
         INTO lv_CustIDList
 		FROM Temp_CustomerEvidences AS t;
         
-		CALL CTS_DC_CustEvidence_ClearEvidence(lv_CustIDList, op_ErrorMessage);
+		CALL CTS_DC_CustEvidence_ClearEvidence(lv_CustIDList, op_ErrorMessage, op_Result);
     END IF;
     
 END$$

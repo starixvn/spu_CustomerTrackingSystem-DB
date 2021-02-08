@@ -50,7 +50,7 @@ BEGIN
 		,	ip_ActionID
 	FROM JSON_TABLE(ip_CustomerEvidences, 
 		"$[*]" COLUMNS(
-			  CTSCustID 	INT UNSIGNED		PATH "$.CTSCustID"
+			  CTSCustID 	BIGINT UNSIGNED		PATH "$.CTSCustID"
 			, CustID		INT UNSIGNED		PATH "$.CustID"
 			, SubscriberID	INT UNSIGNED		PATH "$.SubscriberID"
 			, EvidenceID	SMALLINT UNSIGNED	PATH "$.EvidenceID"

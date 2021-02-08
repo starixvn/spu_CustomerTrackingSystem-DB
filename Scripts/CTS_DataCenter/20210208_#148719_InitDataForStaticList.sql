@@ -1,12 +1,8 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
 /*
-Creator: 20210204@Long.Luu
-Task:	 	CTS_Schema
-Server:  	Master
+Creator: 	20210204@Long.Luu
+Task:	 	Init data for table StaticList [Redmine ID: #148719]
 DBName:		CTS_DataCenter
-
-Revisions: 
-		- 20210204@Long.Luu: Create [Redmine ID: #148719]
-Reviewer:
 */
 
 USE CTS_DataCenter;

@@ -29,7 +29,7 @@ BEGIN
     INTO lv_FileKey
 	FROM CTS_DataCenter.CustEvidenceQueue AS q
 	WHERE q.IsProcessed = 0
-	ORDER BY q.CreatedTime ASC
+	ORDER BY q.ID ASC
 	LIMIT 1;
 		
 	SELECT	q.ID
