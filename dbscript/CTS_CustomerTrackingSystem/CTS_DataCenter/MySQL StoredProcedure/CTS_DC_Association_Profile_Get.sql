@@ -108,7 +108,7 @@ sp : BEGIN
     
     # ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual
     IF ip_AssociationType = 0 OR ip_AssociationType = 1 THEN
-		INSERT IGNORE INTO Temp_CustAssociation(CTSCustID_Aff, AssociationType, AssociationStatus,  AssociationDate)
+		INSERT INTO Temp_CustAssociation(CTSCustID_Aff, AssociationType, AssociationStatus,  AssociationDate)
 		SELECT 
 				asCus.CTSCustID  
 			,	1 AS AssociationType
@@ -116,7 +116,8 @@ sp : BEGIN
 			,	asDv.CreatedTime
 		FROM CTS_DataCenter.AssociationByDevice AS asDv 
 			INNER JOIN CTS_DataCenter.AssociationByDevice AS asCus ON asCus.DCSDeviceID =  asDv.DCSDeviceID  AND asCus.CTSCustID  !=   ip_CTSCustID
-		WHERE asDv.CTSCustID = ip_CTSCustID;
+		WHERE asDv.CTSCustID = ip_CTSCustID
+        ON DUPLICATE KEY UPDATE AssociationDate = LEAST(Temp_CustAssociation.AssociationDate, asDv.CreatedTime); 
     END IF;
     
     # ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual
