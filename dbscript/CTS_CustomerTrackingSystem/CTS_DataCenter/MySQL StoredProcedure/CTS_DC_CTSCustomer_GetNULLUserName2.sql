@@ -15,6 +15,7 @@ BEGIN
 
 		Revisions:
 			- 20200118@CaseyHuynh:	Get customer for update SubscriberID - [Redmine: #148849]
+            - 20210205@CaseyHuynh:	Update Get for CusSubID only - [Redmine: #148849]
         
 		Param's Explanation (filtered by):   
         
@@ -27,6 +28,7 @@ BEGIN
 	FROM 		CTS_DataCenter.CTSCustomer AS cus
 	WHERE 		cus.UserName2 IS NULL
 				AND cus.CTSCustID > ip_PreCTSCustID
+                AND cus.CustSubID > 0
     ORDER BY	cus.CTSCustID 
     LIMIT 		ip_Size;   
     

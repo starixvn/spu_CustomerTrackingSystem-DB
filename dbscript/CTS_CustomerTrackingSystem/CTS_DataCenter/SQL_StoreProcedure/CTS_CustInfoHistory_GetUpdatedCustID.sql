@@ -2,7 +2,7 @@
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
 GO
-CREATE PROCEDURE	CTS_CustInfoHistory_GetUpdatedCustID
+ALTER PROCEDURE	CTS_CustInfoHistory_GetUpdatedCustID
 		@lastUpdateTime		DATETIME
 	,	@lastCustId			INT
 	,	@rowSize			INT = 500
@@ -14,7 +14,7 @@ AS
 	
 	Revisions:
 		- 20210104@CaseyHuynh: Created [Redmine ID: 148849]
-
+		- 20210205@CaseyHuynh: Add condition GET for RoleID (1,2,3,4) [Redmine ID: 148849]
 	Developer's Notes:
 		- @Example:			NULL		- Explaination [DEFAULT]
 
@@ -48,6 +48,7 @@ BEGIN;
 	FROM		bodb_CustHistory.dbo.CustInfo_History AS cih WITH(NOLOCK)
 	WHERE		cih.UpdateTime = @lastUpdateTime
 				AND cih.CustId > @lastCustId
+				AND cih.RoleID IN (1,2,3,4)
 	ORDER BY	cih.UpdateTime ASC, cih.CustID ASC;
 
 	SET @rowCount = (SELECT COUNT(1) FROM #tmpUpdatedCustomers AS tmpCus)

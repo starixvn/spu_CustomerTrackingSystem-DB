@@ -5,6 +5,7 @@ SET ANSI_NULLS ON;
 GO
 ALTER PROCEDURE	CTS_Customer_GetInfoByCustIdList
 		@custIdList			VARCHAR(MAX) = ''
+		, @sourceType			TINYINT	= 0
 AS
 /*
 	Creator:	20191128@Harvey
@@ -19,8 +20,10 @@ AS
 		- 20200827@Long.Luu:	Fix CN88 account status checking condition [Redmine: #137647]
 		- 20210112@Long.Luu:	Fix Customer Status Issue & Remove Robot checking [Redmine: #148541]
 		- 20191128@Casey.Huynh:	Enhance CTSCustomerFlow [Redmine ID: 148849]
+		- 20210205@Casey.Huynh:	Return  Customer Info [Redmine ID: 148849]
+
 	Developer's Notes:
-		- @Example:			NULL		- Explaination [DEFAULT]
+		- @sourceType: 0-Get All, 1- Get Customer table Info, 2-Get CustInfo
 
 	exec CTS_Customer_GetInfoByCustIdList 1,2,3
 		
@@ -33,18 +36,7 @@ BEGIN;
 		,	@MBC_ACCOUNTSTATUS_CLOSED INT = 3
 		,	@MBC_ACCOUNTSTATUS_SUSPENDED INT = 4
 
-	IF OBJECT_ID('tempdb..#tmpInputCustId') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpInputCustId;
-	END;
 
-	CREATE TABLE #tmpInputCustId (
-		CustId			INT NOT NULL PRIMARY KEY
-	);
-
-	INSERT INTO #tmpInputCustId
-	SELECT	val AS CustId
-	FROM	bodb02.dbo.strSplit(@custIdList, ',');
 
 	IF OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
 	BEGIN
@@ -52,7 +44,7 @@ BEGIN;
 	END;
 
 	CREATE TABLE #tmpCustomers (
-			CustId			INT NOT NULL PRIMARY KEY
+			CustId			INT NOT NULL PRIMARY KEY		
 		,	CustStatusID	TINYINT NULL
 		,	Danger1			TINYINT NULL
 		,	Danger2			TINYINT NULL
@@ -70,68 +62,52 @@ BEGIN;
 		,	CreatedDate		DATETIME
 	);
 
-			
-	-- Get Dangerous Customers
-	IF	OBJECT_ID('tempdb..#tmpDangerousCustomer') IS NOT NULL
-		DROP TABLE	#tmpDangerousCustomer;
+	INSERT INTO #tmpCustomers(CustId)
+	SELECT	val AS CustId
+	FROM	bodb02.dbo.strSplit(@custIdList, ',');
 
-	CREATE TABLE #tmpDangerousCustomer(
-		[CustId]			INT NOT NULL
-	);
 
-	CREATE CLUSTERED INDEX IX_tmpDangerousCustomer_CustId ON #tmpDangerousCustomer(
-		[CustId]			ASC
-	);
+	IF (@sourceType = 0 OR @sourceType = 1)
+	BEGIN
+		UPDATE tmpCust 
+		SET		Username = 	cust.username
+			,	Username2 = cust.username2	
+			,	SiteId = (CASE WHEN cust.roleid = 1 THEN st.siteid ELSE st2.siteid END)
+			,	Site = (CASE WHEN cust.roleid = 1 THEN upl.site ELSE cust.site END)	
+			,	RoleId = cust.roleid		
+			,	CurrencyId = cust.currency
+			,	Currency = ex.currency
+			,	Srecommend = cust.srecommend
+			,	Mrecommend = cust.mrecommend 
+			,	Recommend = cust.recommend	
+			,	CreatedDate = cust.creatdate		
+		FROM dbo.Customer AS cust WITH (NOLOCK)
+			INNER JOIN #tmpCustomers AS tmpCust ON cust.custid = tmpCust.CustId
+			INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON cust.currency = ex.exchangeid
+			LEFT JOIN dbo.Customer AS upl WITH (NOLOCK) ON cust.recommend = upl.custid
+			LEFT JOIN dbo.Site AS st WITH (NOLOCK) ON upl.site = st.site
+			LEFT JOIN dbo.Site AS st2 WITH (NOLOCK) ON cust.site = st2.site;
+	END;
 
-	INSERT INTO #tmpCustomers
-	(	 
-			CustId		
-		,	Username	
-		,	Username2	
-		,	SiteId
-		,	Site		
-		,	RoleId		
-		,	CurrencyId 
-		,	Currency	
-		,	Srecommend 
-		,	Mrecommend 
-		,	Recommend	
-		,	CreatedDate
-	)
-	SELECT	cust.custid
-		,	cust.username
-		,	cust.username2
-		,	CASE WHEN cust.roleid = 1 THEN st.siteid ELSE st2.siteid END 'siteid'
-		,	CASE WHEN cust.roleid = 1 THEN upl.site ELSE cust.site END 'site'
-		,	cust.roleid
-		,	cust.currency 'currencyid'
-		,	ex.currency
-		,	cust.srecommend
-		,	cust.mrecommend
-		,	cust.recommend
-		,	cust.creatdate
-	FROM dbo.Customer AS cust WITH (NOLOCK)
-		INNER JOIN #tmpInputCustId AS tmpCust ON cust.custid = tmpCust.CustId
-		INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON cust.currency = ex.exchangeid
-		LEFT JOIN dbo.Customer AS upl WITH (NOLOCK) ON cust.recommend = upl.custid
-		LEFT JOIN dbo.Site AS st WITH (NOLOCK) ON upl.site = st.site
-		LEFT JOIN dbo.Site AS st2 WITH (NOLOCK) ON cust.site = st2.site;
+	IF (@sourceType = 0 OR @sourceType = 2)
+	BEGIN
+		-- Get MBC's Customer Status
+		UPDATE a WITH(ROWLOCK, UPDLOCK)
+		SET a.CustStatusID = (CASE 
+								WHEN c.[Enabled] <> 1 THEN @MBC_ACCOUNTSTATUS_DISABLED
+								WHEN c.closed = 1 THEN @MBC_ACCOUNTSTATUS_CLOSED
+								WHEN c.reject = 1 THEN @MBC_ACCOUNTSTATUS_SUSPENDED
+								ELSE @MBC_ACCOUNTSTATUS_OPEN END)
+			,	a.Danger1 = c.danger
+			,	a.Danger2 = c.danger2
+			,	a.Danger3 = c.danger3
+		FROM #tmpCustomers AS a
+			INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON a.custid = c.custid;
+	END;
 
-	-- Get MBC's Customer Status
-	UPDATE a WITH(ROWLOCK, UPDLOCK)
-	SET a.CustStatusID = (CASE 
-							WHEN c.[Enabled] <> 1 THEN @MBC_ACCOUNTSTATUS_DISABLED
-							WHEN c.closed = 1 THEN @MBC_ACCOUNTSTATUS_CLOSED
-							WHEN c.reject = 1 THEN @MBC_ACCOUNTSTATUS_SUSPENDED
-							ELSE @MBC_ACCOUNTSTATUS_OPEN END)
-		,	a.Danger1 = c.danger
-		,	a.Danger2 = c.danger2
-		,	a.Danger3 = c.danger3
-	FROM #tmpCustomers AS a
-		INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON a.custid = c.custid;
-
-	
-	SELECT	a.CustId		AS CustID
+	IF (@sourceType = 0)
+	BEGIN
+		SELECT	a.CustId		AS CustID
 		,	a.Username		AS UserName
 		,	a.Username2		AS UserName2
 		,	a.SiteId		AS SiteID
@@ -148,6 +124,37 @@ BEGIN;
 		,	a.Danger2		AS Danger2
 		,	a.Danger3		AS Danger3
 	FROM #tmpCustomers AS a WITH(NOLOCK);
+	END
+	
+
+	IF (@sourceType = 1)
+	BEGIN
+		SELECT	a.CustId		AS CustID
+		,	a.Username		AS UserName
+		,	a.Username2		AS UserName2
+		,	a.SiteId		AS SiteID
+		,	a.Site			AS 'Site'
+		,	a.RoleId		AS RoleID
+		,	a.CurrencyId	AS CurrencyID
+		,	a.Currency		AS Currency
+		,	a.Srecommend	AS SRecommend
+		,	a.Mrecommend	AS MRecommend
+		,	a.Recommend		AS Recommend
+        ,	a.CreatedDate	AS CreatedDate
+	FROM #tmpCustomers AS a WITH(NOLOCK)
+	END;
+
+	IF (@sourceType = 2)
+	BEGIN
+		SELECT
+			a.CustID		AS CustID
+        ,	a.CustStatusID	AS CustStatusID
+		,	a.Danger1		AS Danger1
+		,	a.Danger2		AS Danger2
+		,	a.Danger3		AS Danger3
+	FROM #tmpCustomers AS a WITH(NOLOCK);
+	END;
+	
 
 END;
 GO
