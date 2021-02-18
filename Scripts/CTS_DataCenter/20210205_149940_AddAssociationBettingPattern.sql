@@ -1,7 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
 /*
 	Created: 20210105@Aries.Nguyen
-	Task: 	 Add association type Betting Pattern [Redmine ID: #146852]
+	Task: 	 Add association type Betting Pattern [Redmine ID: #149940]
 	DB: 	 CTS_DataCenter
 */
 
