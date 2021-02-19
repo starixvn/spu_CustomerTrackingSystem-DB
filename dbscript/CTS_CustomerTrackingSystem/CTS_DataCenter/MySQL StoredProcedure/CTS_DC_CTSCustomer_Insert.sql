@@ -151,8 +151,8 @@ BEGIN
             , tmpCus.Danger1
             , tmpCus.Danger2
             , tmpCus.Danger3
-            , NOW() AS InsertedTime
-            , NOW() AS ModifiedTime
+            , CURRENT_TIMESTAMP(4) AS InsertedTime
+            , CURRENT_TIMESTAMP(4) AS ModifiedTime
     FROM	TempCTSCustomer AS tmpCus
     WHERE	tmpCus.IsExisting = 0;
     

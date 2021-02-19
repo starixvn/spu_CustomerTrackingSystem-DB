@@ -100,7 +100,7 @@ BEGIN
         INNER JOIN	TempCTSCustomer AS tmpCus ON cus.CTSCustID = tmpCus.CTSCustID
         SET			cus.SubscriberID = tmpCus.SubscriberID
 					,	cus.RegisterName = tmpCus.RegisterName
-					,	cus.ModifiedTime = NOW();
+					,	cus.ModifiedTime = CURRENT_TIMESTAMP(4);
         
         SET lv_PreCTSCustID = (SELECT 1 FROM TempCTSCustomer AS tmpCus LIMIT 1);
 		

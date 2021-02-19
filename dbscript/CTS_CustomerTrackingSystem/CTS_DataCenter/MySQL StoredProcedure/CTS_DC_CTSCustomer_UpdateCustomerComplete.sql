@@ -133,7 +133,7 @@ BEGIN
 		, 	ctsCust.Recommend = tempCust.Recommend
         ,	ctsCust.Currency = tempCust.Currency
 		,	ctsCust.CurrencyID = tempCust.CurrencyID
-		,	ctsCust.ModifiedTime = NOW()
+		,	ctsCust.ModifiedTime = CURRENT_TIMESTAMP(4)
 	WHERE	ctsCust.CustSubID = 0;    
    
 	IF EXISTS (SELECT 1 FROM Temp_CTSCustomer AS tmpCus WHERE  tmpCus.UpdateType = 1 )
@@ -157,7 +157,8 @@ BEGIN
         INNER JOIN	Temp_CTSCustomerCustSub AS tmpCus ON ctsCust.CTSCustID = tmpCus.CTSCustID
         SET		ctsCust.SubscriberID = tmpCus.SubscriberID
 			,	ctsCust.SiteID = tmpCus.SiteID
-			,	ctsCust.Site = tmpCus.Site
+			,	ctsCust.Site = tmpCus.Site            
+            ,	ctsCust.ModifiedTime = CURRENT_TIMESTAMP(4)
         WHERE	ctsCust.CustSubID > 0;
 
 		#========Retry Transform Cust Sub==========================================
