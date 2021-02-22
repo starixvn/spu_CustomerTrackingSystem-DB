@@ -50,15 +50,14 @@ sp : BEGIN
         ,	Username2			VARCHAR(50)
         ,	AssociationType 	INT
         , 	AssociationStatus	INT
-        ,	AssociationTypeName	VARCHAR(20)
+        ,	AssociationTypeName	VARCHAR(50)
         ,	AssociationDate		DATETIME
-        ,	AssociationDateGMT0	DATETIME
 		,	SharedDevices		INT DEFAULT 0
         ,	SharedIPs			INT DEFAULT 0
         ,	StatusId			INT
 		,	StatusName			VARCHAR(20)
         ,	CustStatusID		INT
-        , 	PRIMARY KEY(CTSCustID, AssociationType, AssociationStatus)
+        , 	PRIMARY KEY(CTSCustID)
         ,	INDEX IX_Temp_Accounts_SiteID(SiteID)
         ,	INDEX IX_Temp_Accounts_CustStatusID(CustStatusID)
 	);   
@@ -222,7 +221,7 @@ sp : BEGIN
      
      
         
-     INSERT IGNORE INTO Temp_Accounts(CTSCustID, CustId, CustSubID, SubscriberID, SubscriberName, UserName, UserName2, AssociationType, AssociationTypeName, AssociationDate,AssociationDateGMT0, StatusId, StatusName, AssociationStatus, SiteID, SiteName)
+     INSERT IGNORE INTO Temp_Accounts(CTSCustID, CustId, CustSubID, SubscriberID, SubscriberName, UserName, UserName2, AssociationType, AssociationTypeName, AssociationDate, StatusId, StatusName, AssociationStatus, SiteID, SiteName)
      SELECT cust.CTSCustID
 		,	cust.CustId
         ,	cust.CustSubID
@@ -233,7 +232,6 @@ sp : BEGIN
         ,	cuAs.AssociationType
         ,	sta.ItemName AS AssociationTypeName
         ,	cuAs.AssociationDate
-        ,	DATE_ADD(cuAs.AssociationDate, INTERVAL 4 HOUR) AS AssociationDateGMT0
         ,	cust.CustStatusID AS StatusId
 		,   sta1.ItemName AS StatusName
         ,	cuAs.AssociationStatus
@@ -243,8 +241,10 @@ sp : BEGIN
         INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cuAs.CTSCustID_Aff = cust.CTSCustID
         LEFT JOIN  CTS_DataCenter.StaticList AS sta ON sta.ListID = 2 AND sta.ItemID = cuAs.AssociationType
 	    LEFT JOIN  CTS_DataCenter.StaticList AS sta1 ON sta1.ListID = 1 AND sta1.ItemID = cust.CustStatusID
-        LEFT JOIN  CTS_DataCenter.MappingSubscriberSite AS maSu ON maSu.SubscriberID = cust.SubscriberID AND maSu.SiteID = cust.SiteID;
-
+        LEFT JOIN  CTS_DataCenter.MappingSubscriberSite AS maSu ON maSu.SubscriberID = cust.SubscriberID AND maSu.SiteID = cust.SiteID
+     ON DUPLICATE KEY UPDATE AssociationTypeName =  CONCAT(Temp_Accounts.AssociationTypeName, ', ', sta.ItemName),
+							 AssociationDate = LEAST(Temp_Accounts.AssociationDate, cuAs.AssociationDate); 
+     
      SELECT CTSCustID
 		, 	CustId
         , 	CustSubID
@@ -252,10 +252,8 @@ sp : BEGIN
         , 	SubscriberName
         , 	UserName
         , 	UserName2
-        , 	AssociationType
         , 	AssociationTypeName
         , 	AssociationDate
-        ,	AssociationDateGMT0
         , 	StatusId
         , 	StatusName
         , 	AssociationStatus
@@ -268,7 +266,7 @@ sp : BEGIN
     LIMIT ip_Take
     OFFSET ip_Skip; 
     
-    SELECT COUNT(DISTINCT(CTSCustID)) 
+    SELECT COUNT(1) 
     INTO op_TotalItems
 	FROM Temp_Accounts
 	WHERE SiteID IN (SELECT SiteID FROM Temp_SiteID) 
