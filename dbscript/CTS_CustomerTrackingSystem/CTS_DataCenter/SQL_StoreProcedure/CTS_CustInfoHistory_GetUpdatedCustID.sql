@@ -38,7 +38,7 @@ BEGIN;
 		,	RoleID		TINYINT
 	);
 
-	INSERT INTO #tmpUpdatedCustomers(UpdateTime, CustID)
+	INSERT INTO #tmpUpdatedCustomers(UpdateTime, CustID, RoleID)
 	SELECT		TOP(@rowSize) cih.UpdateTime
 				, cih.CustID
 				, cih.RoleID
@@ -51,7 +51,7 @@ BEGIN;
 
 	IF(@rowCount < @rowSize)
 	BEGIN
-		INSERT INTO #tmpUpdatedCustomers(UpdateTime, CustID)
+		INSERT INTO #tmpUpdatedCustomers(UpdateTime, CustID, RoleID)
 		SELECT		TOP(@rowSize - @rowCount) cih.UpdateTime
 				,	cih.CustID
 				,	cih.RoleID

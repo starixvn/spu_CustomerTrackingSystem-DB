@@ -42,9 +42,10 @@ BEGIN;
 		,	CustId			ASC
 	);
 
-	INSERT INTO #tmpUpdatedCustomers(UpdateTime, CustID)
+	INSERT INTO #tmpUpdatedCustomers(UpdateTime, CustID, RoleID)
 	SELECT		TOP(@rowSize) cih.UpdateTime
 				, cih.CustID
+				, cih.RoleID
 	FROM		bodb_CustHistory.dbo.Customer_History AS cih WITH(NOLOCK)
 	WHERE		cih.UpdateTime = @lastUpdateTime
 				AND cih.CustId > @lastCustId
@@ -54,7 +55,7 @@ BEGIN;
 
 	IF(@rowCount < @rowSize)
 	BEGIN
-		INSERT INTO #tmpUpdatedCustomers(UpdateTime, CustID)
+		INSERT INTO #tmpUpdatedCustomers(UpdateTime, CustID, RoleID)
 		SELECT		TOP(@rowSize - @rowCount) cih.UpdateTime
 				,	cih.CustID
 				,	cih.RoleID
