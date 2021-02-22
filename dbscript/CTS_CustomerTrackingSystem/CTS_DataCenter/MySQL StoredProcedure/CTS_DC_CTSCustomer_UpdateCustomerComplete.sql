@@ -167,16 +167,14 @@ BEGIN
 					ON acc.LoginName = tmpCus.RegisterName
 					AND	acc.SubscriberID = tmpCus.SubscriberID
 		SET			acc.IsCTSTransformed = 0
-		WHERE		acc.IsCTSTransformed = -1
-					AND tmpCus.CustSubID > 0;
+		WHERE		acc.IsCTSTransformed = -1;
         
         UPDATE		DCS_DataCenter.Account AS acc	
 		INNER JOIN	Temp_CTSCustomerCustSub AS tmpCus
 					ON acc.LoginName = tmpCus.UserName
 					AND acc.SubscriberID = tmpCus.SubscriberID
 		SET			acc.IsCTSTransformed = 0
-		WHERE		acc.IsCTSTransformed = -1
-					AND tmpCus.CustSubID > 0;
+		WHERE		acc.IsCTSTransformed = -1;
 		
         #========Retry Transform Account By tmpCus.UpdateType = 1==========================================
 		UPDATE		DCS_DataCenter.Account AS acc	
