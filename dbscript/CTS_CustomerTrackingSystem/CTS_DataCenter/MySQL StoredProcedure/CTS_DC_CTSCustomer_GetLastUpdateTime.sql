@@ -13,7 +13,7 @@ BEGIN
 
 		Revisions: 
 			-	20210115@Casey.Huynh: Created [Redmine ID: 148849]
-            -	20210205@Casey.Huynh: Implement Update CTSCustomer by Customer_History
+            -	20210205@Casey.Huynh: Implement Update CTSCustomer by Customer_History [Redmine ID: 149941]
 		Param's Explanation (filtered by):
 
 		Example:

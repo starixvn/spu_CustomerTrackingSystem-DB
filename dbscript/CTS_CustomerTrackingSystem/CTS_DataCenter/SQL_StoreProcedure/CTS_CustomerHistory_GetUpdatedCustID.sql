@@ -9,11 +9,11 @@ ALTER PROCEDURE	CTS_CustomerHistory_GetUpdatedCustID
 AS
 /*
 	Creator:	20210205@CaseyHuynh
-	Task:		Get updated Customer_History [Redmine ID: 148849]
+	Task:		Get updated Customer_History [Redmine ID: 149941]
 	Database:	bodb_CustHistory
 	
 	Revisions:
-		- 20210205@CaseyHuynh: Created [Redmine ID: 148849]
+		- 20210205@CaseyHuynh: Created [Redmine ID: 149941]
 
 	Developer's Notes:
 		- @Example:			NULL		- Explaination [DEFAULT]
@@ -34,6 +34,7 @@ BEGIN;
 	CREATE TABLE #tmpUpdatedCustomers (
 			UpdateTime	DATETIME
 		,	CustId		INT
+		,	RoleID		TINYINT
 	);
 	
 	CREATE CLUSTERED INDEX IX_tmpUpdatedCustomers_UpdateTimeCustId ON #tmpUpdatedCustomers(
@@ -47,7 +48,6 @@ BEGIN;
 	FROM		bodb_CustHistory.dbo.Customer_History AS cih WITH(NOLOCK)
 	WHERE		cih.UpdateTime = @lastUpdateTime
 				AND cih.CustId > @lastCustId
-				AND cih.RoleID IN (1,2,3,4)
 	ORDER BY	cih.UpdateTime ASC, cih.CustID ASC;
 
 	SET @rowCount = (SELECT COUNT(1) FROM #tmpUpdatedCustomers AS tmpCus)
@@ -57,9 +57,9 @@ BEGIN;
 		INSERT INTO #tmpUpdatedCustomers(UpdateTime, CustID)
 		SELECT		TOP(@rowSize - @rowCount) cih.UpdateTime
 				,	cih.CustID
+				,	cih.RoleID
 		FROM		bodb_CustHistory.dbo.Customer_History AS cih WITH(NOLOCK)
 		WHERE		cih.UpdateTime > @lastUpdateTime
-					AND cih.RoleID IN (1,2,3,4)
 		ORDER BY	cih.UpdateTime, cih.CustID;
 	END;
 
@@ -72,7 +72,8 @@ BEGIN;
 
 	SELECT	@custIdList = COALESCE(@custIdList + ',', '') +  CONVERT(VARCHAR(12), tmp.CustId)
 	FROM	(SELECT DISTINCT tmpCus.CustId
-			FROM  #tmpUpdatedCustomers AS tmpCus) AS tmp;
+			FROM  #tmpUpdatedCustomers AS tmpCus
+			WHERE tmpCus.RoleID IN (1,2,3,4)) AS tmp;
 
 	SELECT	@custIdList AS CustIdList;
 END;

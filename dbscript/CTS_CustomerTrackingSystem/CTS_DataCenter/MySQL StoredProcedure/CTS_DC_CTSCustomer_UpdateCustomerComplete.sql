@@ -11,12 +11,12 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTSCustomer_UpdateCustomerComple
 BEGIN
 	/*
 		Created:	20210208@Casey.Huynh
-		Task:		Update CTSCustomer Info Complete
+		Task:		Update CTSCustomer Info Complete [Redmine ID: 149941]
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
-			-	20210208@Casey.Huynh: Created [Redmine ID: 148849]
+			-	20210208@Casey.Huynh: Created [Redmine ID: 149941]
 		Param's Explanation (filtered by):
 		
 		Exampele: 
@@ -167,16 +167,18 @@ BEGIN
 					ON acc.LoginName = tmpCus.RegisterName
 					AND	acc.SubscriberID = tmpCus.SubscriberID
 		SET			acc.IsCTSTransformed = 0
-		WHERE		acc.IsCTSTransformed = -1;
+		WHERE		acc.IsCTSTransformed = -1
+					AND tmpCus.CustSubID > 0;
         
         UPDATE		DCS_DataCenter.Account AS acc	
 		INNER JOIN	Temp_CTSCustomerCustSub AS tmpCus
 					ON acc.LoginName = tmpCus.UserName
 					AND acc.SubscriberID = tmpCus.SubscriberID
 		SET			acc.IsCTSTransformed = 0
-		WHERE		acc.IsCTSTransformed = -1; 
+		WHERE		acc.IsCTSTransformed = -1
+					AND tmpCus.CustSubID > 0;
 		
-        #========Retry Transform Cust Sub==========================================
+        #========Retry Transform Account By tmpCus.UpdateType = 1==========================================
 		UPDATE		DCS_DataCenter.Account AS acc	
 		INNER JOIN	Temp_CTSCustomer AS tmpCus
 					ON acc.LoginName = tmpCus.RegisterName

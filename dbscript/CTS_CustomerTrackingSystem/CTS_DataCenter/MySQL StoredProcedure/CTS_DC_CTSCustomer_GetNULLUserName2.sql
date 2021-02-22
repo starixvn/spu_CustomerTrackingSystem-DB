@@ -21,11 +21,15 @@ BEGIN
         
         Example: CALL CTS_DC_CTSCustomer_GetNULLUserName2 (500,0)
 	*/	  
-	
+	IF (ip_PreCTSCustID = 0)
+    THEN
+		SET	ip_PreCTSCustID = 35314000; # ON PRO The First CustSubID > 0 and UserName2 IS NULL 
+    END IF;
+
 	SELECT 		cus.CTSCustID
 			,	cus.CustID
 			,	cus.CustSubID
-	FROM 		CTS_DataCenter.CTSCustomer AS cus
+	FROM 		CTS_DataCenter.CTSCustomer AS cus USE INDEX(IX_CTSCustomer_04062020_UserName2)
 	WHERE 		cus.UserName2 IS NULL
 				AND cus.CTSCustID > ip_PreCTSCustID
                 AND cus.CustSubID > 0

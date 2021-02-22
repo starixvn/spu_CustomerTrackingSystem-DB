@@ -13,14 +13,13 @@ AS
 	
 	Revisions:
 		-20210115@Casey.Huynh: Created [Redmine ID: 148849]
+        -20210222@Casey.Huynh: Remove Get UserName2 Info from Customer [149941]
 
 	Developer's Notes:
 		- @Example:			NULL		- Explaination [DEFAULT]
 
 	exec EXEC  @return_value = [dbo].[CTS_Customer_GetNotNULLUserName2ByXML]
 			@custXML = N'<Root>
-            <Customer CustID="47354248" CustSubID="0" CTSCustID = "222356895"/>    
-            <Customer CustID="47354247" CustSubID="0" CTSCustID = "222356894"/>  
             <Customer CustID="47087783" CustSubID="1441102" CTSCustID = "222294242"/>      
           </Root>'
 
@@ -46,14 +45,6 @@ BEGIN;
 	FROM @custXML.nodes('//Customer') AS T(C)
 	OPTION (OPTIMIZE FOR (@custXML = NULL));
 	
-	SELECT	tmpCus.CustID
-		,	tmpCus.CustSubID
-		,	cus.UserName2
-		,	tmpCus.CTSCustID
-	FROM	dbo.Customer AS cus WITH (NOLOCK)
-	INNER JOIN #tmpInputCust AS tmpCus WITH(NOLOCK) ON cus.CustID = tmpCus.CustID
-	WHERE	cus.username2 IS NOT NULL AND tmpCus.CustSubID = 0
-	UNION
 	SELECT	tmpCus.CustID
 		,	tmpCus.CustSubID
 		,	cusSub.UserName2

@@ -20,7 +20,7 @@ AS
 		- 20200827@Long.Luu:	Fix CN88 account status checking condition [Redmine: #137647]
 		- 20210112@Long.Luu:	Fix Customer Status Issue & Remove Robot checking [Redmine: #148541]
 		- 20191128@Casey.Huynh:	Enhance CTSCustomerFlow [Redmine ID: 148849]
-		- 20210205@Casey.Huynh:	Return  Customer Info [Redmine ID: 148849]
+		- 20210205@Casey.Huynh:	Return  Customer Info [Redmine ID: 149941]
 
 	Developer's Notes:
 		- @sourceType: 0-Get All, 1- Get Customer table Info, 2-Get CustInfo

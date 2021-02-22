@@ -16,7 +16,7 @@ BEGIN
 
 		Revisions:
 			- 20210115@Casey.Huynh: Created [Redmine ID: 148849]
-            - 20210208@Casey.Huynh: Implement Get info by Update from Customer_History
+            - 20210208@Casey.Huynh: Implement Get info by Update from Customer_History [Redmine ID: 149941]
             
 		Param's Explanation (filtered by):
 			ip_CustIDList: String (custid01,custid02, custid03)

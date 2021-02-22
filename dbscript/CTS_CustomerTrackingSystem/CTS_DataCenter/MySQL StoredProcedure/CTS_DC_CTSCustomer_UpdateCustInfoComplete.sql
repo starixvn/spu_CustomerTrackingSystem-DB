@@ -11,12 +11,12 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTSCustomer_UpdateCustInfoComple
 BEGIN
 	/*
 		Created:	20210208@Casey.Huynh
-		Task:		Update CTSCustomer Info Complete
+		Task:		Update CTSCustomer Info Complete [Redmine ID: 149941]
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
-			-	20210208@Casey.Huynh: Created [Redmine ID: 148849]
+			-	20210208@Casey.Huynh: Created [Redmine ID: 149941]
 		Param's Explanation (filtered by):
 		
 		Example: 
