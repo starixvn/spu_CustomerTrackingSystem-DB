@@ -232,7 +232,9 @@ sp : BEGIN
         ,	cuAs.AssociationType
         ,	sta.ItemName AS AssociationTypeName
         ,	cuAs.AssociationDate
-        ,	cust.CustStatusID AS StatusId
+        ,	CASE WHEN cust.CustStatusID IN (1,11) THEN 1
+				 WHEN cust.CustStatusID IN (2,3,4,12,13,14) THEN 2
+                 ELSE cust.CustStatusID END AS StatusId
 		,   sta1.ItemName AS StatusName
         ,	cuAs.AssociationStatus
         ,	cust.SiteID
@@ -262,7 +264,7 @@ sp : BEGIN
      FROM Temp_Accounts
      WHERE SiteID IN (SELECT SiteID FROM Temp_SiteID) 
 		AND StatusId IN (SELECT AccountStatusID FROM Temp_AccountStatusID)
-	ORDER BY AssociationDate DESC
+	ORDER BY  SiteName ASC, AssociationStatus ASC , StatusId ASC,  AssociationDate DESC
     LIMIT ip_Take
     OFFSET ip_Skip; 
     
