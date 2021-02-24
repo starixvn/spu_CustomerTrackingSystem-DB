@@ -115,30 +115,8 @@ BEGIN
 					OR (mss.RoleMapping = 0))
 		SET 	tmpCus.SubscriberID = mss.SubscriberID
 				, tmpCus.RegisterName = SUBSTRING(tmpCus.UserName2, LOCATE('$',tmpCus.UserName2) + 1)
-		WHERE	tmpCus.UpdateType = 1;
-
-	END IF;     
-    
-	UPDATE 		CTS_DataCenter.CTSCustomer AS ctsCust
-	INNER JOIN 	Temp_CTSCustomer AS tempCust ON ctsCust.CustID = tempCust.CustID
-	SET		
-			ctsCust.UserName = tempCust.UserName
-        ,	ctsCust.UserName2 = tempCust.UserName2
-        ,	ctsCust.RegisterName = tempCust.RegisterName
-        ,	ctsCust.SiteID = tempCust.SiteID
-        ,	ctsCust.Site = tempCust.Site
-        ,	ctsCust.RoleID = tempCust.RoleID
-		,	ctsCust.SRecommend = tempCust.SRecommend
-		,	ctsCust.MRecommend = tempCust.MRecommend
-		, 	ctsCust.Recommend = tempCust.Recommend
-        ,	ctsCust.Currency = tempCust.Currency
-		,	ctsCust.CurrencyID = tempCust.CurrencyID
-		,	ctsCust.ModifiedTime = CURRENT_TIMESTAMP(4)
-	WHERE	ctsCust.CustSubID = 0;    
-   
-	IF EXISTS (SELECT 1 FROM Temp_CTSCustomer AS tmpCus WHERE  tmpCus.UpdateType = 1 )
-    THEN
-		
+		WHERE	tmpCus.UpdateType = 1;        
+        	
 		INSERT INTO Temp_CTSCustomerCustSub(CustID, CTSCustID, SubscriberID, SiteID, Site,  UserName, RegisterName)
         SELECT 			ctsCust.CustID
 					,	ctsCust.CTSCustID
@@ -151,48 +129,67 @@ BEGIN
         INNER JOIN	Temp_CTSCustomer AS tmpCus ON ctsCust.CustID = tmpCus.CustID        
         WHERE		ctsCust.CustSubID > 0
 					AND tmpCus.UpdateType = 1
-                    AND ctsCust.SiteID != tmpCus.SiteID;         
-
-		UPDATE 		CTS_DataCenter.CTSCustomer AS ctsCust
-        INNER JOIN	Temp_CTSCustomerCustSub AS tmpCus ON ctsCust.CTSCustID = tmpCus.CTSCustID
+                    AND ctsCust.SiteID != tmpCus.SiteID;      
+	END IF;     
+    
+	UPDATE 		CTS_DataCenter.CTSCustomer AS ctsCust
+	INNER JOIN 	Temp_CTSCustomer AS tempCust ON ctsCust.CustID = tempCust.CustID
+	SET		
+			ctsCust.UserName = tempCust.UserName
+        ,	ctsCust.UserName2 = tempCust.UserName2
+        ,	ctsCust.RegisterName = IFNULL(tempCust.RegisterName,ctsCust.RegisterName)
+		,	ctsCust.SubscriberID = IFNULL(tempCust.SubscriberID,ctsCust.SubscriberID)
+        ,	ctsCust.SiteID = tempCust.SiteID
+        ,	ctsCust.Site = tempCust.Site
+        ,	ctsCust.RoleID = tempCust.RoleID
+		,	ctsCust.SRecommend = tempCust.SRecommend
+		,	ctsCust.MRecommend = tempCust.MRecommend
+		, 	ctsCust.Recommend = tempCust.Recommend
+        ,	ctsCust.Currency = tempCust.Currency
+		,	ctsCust.CurrencyID = tempCust.CurrencyID
+		,	ctsCust.ModifiedTime = CURRENT_TIMESTAMP(4)
+	WHERE	ctsCust.CustSubID = 0;    
+   
+	UPDATE 		CTS_DataCenter.CTSCustomer AS ctsCust
+	INNER JOIN	Temp_CTSCustomerCustSub AS tmpCus ON ctsCust.CTSCustID = tmpCus.CTSCustID
         SET		ctsCust.SubscriberID = tmpCus.SubscriberID
 			,	ctsCust.SiteID = tmpCus.SiteID
 			,	ctsCust.Site = tmpCus.Site            
             ,	ctsCust.ModifiedTime = CURRENT_TIMESTAMP(4)
-        WHERE	ctsCust.CustSubID > 0;
-
-		#========Retry Transform Cust Sub==========================================
-        UPDATE		DCS_DataCenter.Account AS acc	
-		INNER JOIN	Temp_CTSCustomerCustSub AS tmpCus
-					ON acc.LoginName = tmpCus.RegisterName
-					AND	acc.SubscriberID = tmpCus.SubscriberID
-		SET			acc.IsCTSTransformed = 0
-		WHERE		acc.IsCTSTransformed = -1;
-        
-        UPDATE		DCS_DataCenter.Account AS acc	
-		INNER JOIN	Temp_CTSCustomerCustSub AS tmpCus
-					ON acc.LoginName = tmpCus.UserName
-					AND acc.SubscriberID = tmpCus.SubscriberID
-		SET			acc.IsCTSTransformed = 0
-		WHERE		acc.IsCTSTransformed = -1;
+	WHERE	ctsCust.CustSubID > 0;
+   
+	#========Retry Transform Cust Sub==========================================
+	UPDATE		DCS_DataCenter.Account AS acc	
+	INNER JOIN	Temp_CTSCustomerCustSub AS tmpCus
+				ON acc.LoginName = tmpCus.RegisterName
+				AND	acc.SubscriberID = tmpCus.SubscriberID
+	SET			acc.IsCTSTransformed = 0
+	WHERE		acc.IsCTSTransformed = -1;
+	
+	UPDATE		DCS_DataCenter.Account AS acc	
+	INNER JOIN	Temp_CTSCustomerCustSub AS tmpCus
+				ON acc.LoginName = tmpCus.UserName
+				AND acc.SubscriberID = tmpCus.SubscriberID
+	SET			acc.IsCTSTransformed = 0
+	WHERE		acc.IsCTSTransformed = -1;
 		
-        #========Retry Transform Account By tmpCus.UpdateType = 1==========================================
-		UPDATE		DCS_DataCenter.Account AS acc	
-		INNER JOIN	Temp_CTSCustomer AS tmpCus
-					ON acc.LoginName = tmpCus.RegisterName
-					AND	acc.SubscriberID = tmpCus.SubscriberID
-		SET			acc.IsCTSTransformed = 0
-		WHERE		acc.IsCTSTransformed = -1
-					AND tmpCus.UpdateType = 1;    
+	#========Retry Transform Account By tmpCus.UpdateType = 1==========================================
+	UPDATE		DCS_DataCenter.Account AS acc	
+	INNER JOIN	Temp_CTSCustomer AS tmpCus
+				ON acc.LoginName = tmpCus.RegisterName
+				AND	acc.SubscriberID = tmpCus.SubscriberID
+	SET			acc.IsCTSTransformed = 0
+	WHERE		acc.IsCTSTransformed = -1
+				AND tmpCus.UpdateType = 1;    
 		
-		UPDATE		DCS_DataCenter.Account AS acc	
-		INNER JOIN	Temp_CTSCustomer AS tmpCus
-					ON acc.LoginName = tmpCus.UserName
-					AND acc.SubscriberID = tmpCus.SubscriberID
-		SET			acc.IsCTSTransformed = 0
-		WHERE		acc.IsCTSTransformed = -1
-					AND tmpCus.UpdateType = 1;    	
-    END IF;    
+	UPDATE		DCS_DataCenter.Account AS acc	
+	INNER JOIN	Temp_CTSCustomer AS tmpCus
+				ON acc.LoginName = tmpCus.UserName
+				AND acc.SubscriberID = tmpCus.SubscriberID
+	SET			acc.IsCTSTransformed = 0
+	WHERE		acc.IsCTSTransformed = -1
+				AND tmpCus.UpdateType = 1;    	
+    
     #=========Update System Parameter=====================
     UPDATE	CTS_DataCenter.SystemParameter AS s
 	SET		s.ParameterValue = ip_LastUpdateTime
