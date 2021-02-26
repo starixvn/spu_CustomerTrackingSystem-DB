@@ -16,6 +16,7 @@ BEGIN
             - [20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow.    
 			- [20200923@Irena.Vo][141755]: Enhance SP
 			- 20201214-20210107@Irena.Vo: Remove logic delete Probation List. Enhance logic get VVIP & Insert History Log. Insert Error Log. Remove User Log [RedmineID: #145951]
+            - 20210226@Irena.Vo: Update CategoryID from VVIP [RedmineID: #150454]
             
 		Param's Explanation (filtered by):
         ip_CustIDs = 1,2,3
@@ -54,7 +55,7 @@ BEGIN
     /*	IGNORE VVIP BEFORE	*/
     DELETE temp
     FROM Temp_RobotUsers AS temp 
-    INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID AND cate.SportGroupID = 200 AND cate.CategoryID = 213;
+    INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID AND cate.SportGroupID = 200 AND cate.CategoryID = 210;
 
 	/*	DELETE SPECIAL CUSTOMER CLASS BEFORE (INCLUDE ROBOT) */
     DELETE sc

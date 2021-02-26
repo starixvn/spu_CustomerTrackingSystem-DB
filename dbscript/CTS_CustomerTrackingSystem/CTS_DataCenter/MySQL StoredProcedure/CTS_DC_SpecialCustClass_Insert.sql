@@ -17,6 +17,7 @@ sp: BEGIN
            - [20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow.
            - [20200923@Irena.Vo][141755]: Enhance SP
 		   - 20201214-20201229@Irena.Vo: Remove logic delete Probation List. Enhance logic get VVIP & Insert History Log. Enhance logic validate for RoleID = 1 [RedmineID: #145951]
+           - 20210226@Irena.Vo: Update CategoryID from VVIP [RedmineID: #150454]
        
 		Param's Explanation (filtered by):
 			Maximum Customer Class number for input param = 127 
@@ -77,7 +78,7 @@ sp: BEGIN
 	END IF;
     
      -- Existed VVIP CustomerClass before -> Display error message
-	IF EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification WHERE CustID = lv_CustID AND SportGroupID = 200 AND CategoryID = 213) THEN
+	IF EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification WHERE CustID = lv_CustID AND SportGroupID = 200 AND CategoryID = 210) THEN
 		SET op_ErrorMessage = 'This account has already been marked with VVIP CustomerClass!';
         LEAVE sp;
 	END IF;

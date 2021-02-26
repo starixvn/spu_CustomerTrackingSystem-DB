@@ -24,6 +24,7 @@ BEGIN
 			- 20200923@Irena.Vo: Enhance SP [Redmine ID: #141755]
             - 20201201@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. Remove logic detail category. [Redmine ID: #145954]
             - 20201214-20201229@Irena.Vo: Insert History Log & Auto Unpin category. Insert Error Log [RedmineID: #145951]
+            - 20210226@Irena.Vo: Update CategoryID from VVIP [RedmineID: #150454]
             
 		Param's Explanation:
 	*/ 
@@ -36,11 +37,11 @@ BEGIN
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
   
-    IF (ip_CategoryID = 213) THEN
+    IF (ip_CategoryID = 210) THEN
         -- Remove data CTSCustomerClassification
 		DELETE 	cate
 		FROM 	CTS_DataCenter.CTSCustomerClassification AS cate
-		WHERE 	cate.CustID = ip_CustID AND cate.SportGroupID = 200 AND cate.CategoryID  = 213;
+		WHERE 	cate.CustID = ip_CustID AND cate.SportGroupID = 200 AND cate.CategoryID  = 210;
         
         INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	    VALUES(12, lv_SPName, CONCAT('Remove VVIP: From ip_CustID_', ip_CustID), lv_CurrentDateTime, ip_CreatedBy);
@@ -49,7 +50,7 @@ BEGIN
         (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
 		SELECT 	ip_CustID
 			, 	ip_CTSCustID
-            ,   213
+            ,   210
             ,   200
 			, 	lv_CurrentDateTime
 			, 	ip_CreatedBy

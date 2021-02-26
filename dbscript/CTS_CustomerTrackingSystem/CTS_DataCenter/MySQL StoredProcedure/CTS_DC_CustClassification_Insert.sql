@@ -32,6 +32,7 @@ sp: BEGIN
             - [20200923@Irena.Vo][141755]: Enhance SP
             - 20201202@Lex.Khuat: Disable detail categories & clean up wrong syntax [Redmine ID: #145954]
             - 20201214-20201229@Irena.Vo: Insert History Log & Auto Pin [RedmineID: #145951]
+            - 20210226@Irena.Vo: Update CategoryID from VVIP [RedmineID: #150454]
             
 	*/
     DECLARE lv_CurrentDateTime DATETIME DEFAULT CURRENT_TIME();
@@ -42,7 +43,7 @@ sp: BEGIN
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
    
-    IF (ip_CategoryID = 213) THEN
+    IF (ip_CategoryID = 210) THEN
         -- Remove all category before: General, Problem.
 	    DELETE cate
 		FROM CTS_DataCenter.CTSCustomerClassification AS cate
