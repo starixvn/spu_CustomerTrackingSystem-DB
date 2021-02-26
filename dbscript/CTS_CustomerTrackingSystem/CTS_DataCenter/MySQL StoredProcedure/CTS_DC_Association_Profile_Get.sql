@@ -22,6 +22,7 @@ sp : BEGIN
         
 		Revisions:
 			- 20210202@Aries.Nguyen: Created [Redmine ID: #148908]
+            - 20210221@Aries.Nguyen: Fix get wrong first association date by device [Redmine ID: #150223]
             
 		Param's Explanation (filtered by):
 			- ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual
