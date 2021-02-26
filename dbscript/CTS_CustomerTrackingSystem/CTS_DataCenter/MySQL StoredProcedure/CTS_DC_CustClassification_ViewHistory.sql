@@ -12,6 +12,7 @@ BEGIN
 		Original:
 		Revisions:
             - 20201214-20210105@Irena.Vo: Created. Update logic SP [RedmineID: #145951]
+             - 20210226@Irena.Vo: Get IsNormalCategory flag for log [RedmineID: #150454]
            
 		Param's Explanation (filtered by):		
 			call CTS_DataCenter.CTS_DC_CustClassification_ViewHistory(43600889);
@@ -29,7 +30,8 @@ BEGIN
                              WHEN temp.FromCategoryID IN (203, 204) AND temp.ToCategoryID = 206 THEN CONCAT(s.ItemName,' - ',cc2.CategoryName,' to ',cc3.CategoryName)
                              ELSE s.ItemNameDisplay
 						END AS SourceTypeName
-					, 	s.ItemID
+					, 	s.ItemID AS SourceTypeID
+                    ,   temp.IsNormalCategory -- 1: Display on web, 0: No display
 					,   temp.TurnOverRM AS TurnOver
                     ,   temp.WinlossRM AS WinLoss
                     ,	 CASE WHEN temp.TurnOverRM = 0 THEN 0
