@@ -112,11 +112,11 @@ sp : BEGIN
 				asCus.CTSCustID  
 			,	1 AS AssociationType
             , 	1 AS AssociationStatus
-			,	asDv.CreatedTime
+			,	GREATEST(asDv.CreatedTime, asCus.CreatedTime)
 		FROM CTS_DataCenter.AssociationByDevice AS asDv 
 			INNER JOIN CTS_DataCenter.AssociationByDevice AS asCus ON asCus.DCSDeviceID =  asDv.DCSDeviceID  AND asCus.CTSCustID  !=   ip_CTSCustID
 		WHERE asDv.CTSCustID = ip_CTSCustID
-        ON DUPLICATE KEY UPDATE AssociationDate = LEAST(Temp_CustAssociation.AssociationDate, asDv.CreatedTime); 
+        ON DUPLICATE KEY UPDATE AssociationDate = LEAST(Temp_CustAssociation.AssociationDate, GREATEST(asDv.CreatedTime, asCus.CreatedTime)); 
     END IF;
     
     # ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual
