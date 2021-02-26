@@ -15,7 +15,7 @@ INSERT INTO CTS_DataCenter.CustomerCategory
 (CategoryID, CategoryName, CategorySpec, ParentID, DisplayOrder, IsActive, CreatedDate, CreatedBy
 , LastModifiedDate, LastModifiedBy, IsUsedManually, ScanIntervalInSecond, CategoryNameCN, CategoryGroup)
 VALUES	
-(210, 'VVIP', 'VVIP', 200, 10, 1, NOW(), NULL, NULL, NULL, 0, NULL, NULL, 210);
+(210, 'VVIP', 'VVIP', 200, 10, 1, NOW(), NULL, NULL, NULL, 1, 0, NULL, 210);
 
 -- VIP
 INSERT INTO CTS_DataCenter.CustomerCategory
