@@ -24,7 +24,8 @@ BEGIN
             - 20201014-20201023@Irena.Vo [Redmine ID: #141756]: Enhance logic show Evidence Category & Normal Category. Add New General  
 			- 20201202@Lex.Khuat: Disable detail categories & clean up wrong syntax [Redmine ID: #145954]
             - 20210114@Irena.Vo: Update logic SP for Get Category List & PIN. Return CategoryID [RedmineID: #145951]
-            
+            - 20210226@Jonas.Huynh: Update for Get status for tagging by association with PA [RedmineID: #150454]
+
 		Param's Explanation:
 			CALL CTS_DataCenter.CTS_DC_CustClassification_Get('1');
 	*/ 
@@ -53,6 +54,12 @@ BEGIN
             SELECT 0 AS IsPinCategory;
 	 END IF;
         
+	IF EXISTS (SELECT 1 FROM CTS_DataCenter.TaggingExclusion WHERE CustID = ip_CustID) THEN
+			SELECT 1 AS IsTagAssociationPA;
+	 ELSE 
+            SELECT 0 AS IsTagAssociationPA;
+	 END IF;
+
 	 SELECT  temp.CategoryType, temp.CategoryID,  temp.CategoryName
      FROM Temp_LatestRecordOfCategory AS temp;
 END$$
