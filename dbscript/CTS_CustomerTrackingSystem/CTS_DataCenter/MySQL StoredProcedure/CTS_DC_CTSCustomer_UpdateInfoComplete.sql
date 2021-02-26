@@ -99,7 +99,7 @@ BEGIN
 		,	ctsCust.Danger1 = tempCust.Danger1
 		,	ctsCust.Danger2 = tempCust.Danger2
 		,	ctsCust.Danger3 = tempCust.Danger3
-		,	ctsCust.ModifiedTime = NOW()
+		,	ctsCust.ModifiedTime = CURRENT_TIMESTAMP(4)
 	WHERE	ctsCust.CustSubID = 0;
     
     #==================================================    	

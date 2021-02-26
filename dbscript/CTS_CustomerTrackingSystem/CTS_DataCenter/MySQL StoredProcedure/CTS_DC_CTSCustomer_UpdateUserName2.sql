@@ -14,6 +14,7 @@ BEGIN
 		Revisions:
 			- 20210115@Casey.Huynh: Created [Redmine ID: 148849]
 			- 202101295@Casey.Huynh: Add Ignore to Update statement [Redmine ID: 149639]
+            - 20210208@Casey.Huynh: Created [Redmine ID: 149941]
 		Param's Explanation (filtered by):         
         
         Example:
@@ -82,7 +83,7 @@ BEGIN
     INNER JOIN	CTS_DataCenter.Temp_CTSCustomer AS tmpCus ON cus.CTSCustID = tmpCus.CTSCustID 
     SET			cus.UserName2 = tmpCus.UserName2
 				, cus.RegisterName = tmpCus.RegisterName
-                , cus.ModifiedTime = NOW();
+                , cus.ModifiedTime = CURRENT_TIMESTAMP(4);
 
    #=====ReTransform==============================
     UPDATE		DCS_DataCenter.Account AS acc	
