@@ -55,9 +55,9 @@ BEGIN
 	 END IF;
         
 	IF EXISTS (SELECT 1 FROM CTS_DataCenter.TaggingExclusion WHERE CustID = ip_CustID) THEN
-			SELECT 1 AS IsTagAssociationPA;
+			SELECT 1 AS IsExcludedTagAssPA;
 	 ELSE 
-            SELECT 0 AS IsTagAssociationPA;
+            SELECT 0 AS IsExcludedTagAssPA;
 	 END IF;
 
 	 SELECT  temp.CategoryType, temp.CategoryID,  temp.CategoryName
