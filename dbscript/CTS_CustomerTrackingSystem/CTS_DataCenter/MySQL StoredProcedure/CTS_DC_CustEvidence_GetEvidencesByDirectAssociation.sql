@@ -28,15 +28,13 @@ BEGIN
 		,	CTSCustID           BIGINT UNSIGNED
 		,	INDEX 				 IX_Temp_Customer_CTSCustID (CTSCustID)
 	);
-	
-   	DROP TEMPORARY TABLE IF EXISTS   Temp_EvidencesResult;
-    CREATE TEMPORARY TABLE Temp_EvidencesResult(
-			CustID			BIGINT UNSIGNED
-		,	EvidenceCode	VARCHAR(10)
-		,	EvidenceName	VARCHAR(50)
-		,	FromCustID		BIGINT
-		,	CreatedDate		DATETIME
-		,	Level			SMALLINT
+	    
+	DROP TEMPORARY TABLE IF EXISTS Temp_DirectAssociation;    
+	CREATE TEMPORARY TABLE Temp_DirectAssociation (	  
+			 RootCustID		INT UNSIGNED  
+		 ,	 CustID			INT UNSIGNED  
+         ,   CTSCustID 		BIGINT UNSIGNED
+         ,	 PRIMARY KEY 	PK_Temp_DirectedAssociation (RootCustID, CustID)
 	);
     
     DROP TEMPORARY TABLE IF EXISTS   Temp_FlaggedEvidence;
@@ -50,39 +48,38 @@ BEGIN
 		, 	Level			SMALLINT
 	);
         
-     -- Insert CustIDs
+	/* Insert CustIDs  */
 	SET @sql = 	CONCAT("INSERT INTO Temp_Customer (CustID) VALUES ('", REPLACE(ip_CustIDs, ",", "'),('"),"');");
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1;   
     
-     -- Update CTSCustID, SubscriberID
+	/* Update CTSCustID */
     UPDATE      Temp_Customer AS temp
     INNER JOIN  CTS_DataCenter.CTSCustomer AS cust ON cust.CustID = temp.CustID AND cust.CustSubID = 0
     SET         temp.CTSCustID = cust.CTSCustID;
     
-    /* Get Evidence By Customers*/
-	INSERT INTO Temp_FlaggedEvidence(CustID, CTSCustID, EvidenceCode, EvidenceName, FromCustID, CreatedDate, Level)
-	SELECT c.CustID, ce.CTSCustID, e.EvidenceCode, e.EvidenceName, c.CustID, ce.CreatedDate, ce.Level	   
+    /* Get Direct Association */
+    INSERT IGNORE INTO Temp_DirectAssociation(RootCustID, CustID, CTSCustID)
+	SELECT root.CustID, cust.CustID, ce.CTSCustID 
 	FROM CTS_DataCenter.CustEvidence AS ce	
-		INNER JOIN Temp_Customer AS c ON ce.FromCustID = c.CTSCustID
-		INNER JOIN CTS_DataCenter.Evidence AS e ON e.EvidenceID = ce.EvidenceID
-	WHERE e.IsActive = True;
+		INNER JOIN Temp_Customer AS root ON root.CTSCustID = ce.FromCustID AND ce.Level = 2
+		INNER JOIN  CTS_DataCenter.CTSCustomer AS cust ON cust.CTSCustID = ce.CTSCustID;
     
-    /* Get Flagged Evidence (Level 0)*/
-	INSERT INTO Temp_EvidencesResult(CustID, EvidenceCode, EvidenceName, FromCustID, CreatedDate, Level)
-	SELECT CustID, EvidenceCode, EvidenceName, FromCustID, CreatedDate, Level
-	FROM Temp_FlaggedEvidence
-	WHERE Level = 0;
+	/* Get Flagged Evidence (Level 0)*/
+	INSERT INTO Temp_FlaggedEvidence(CustID, EvidenceCode, EvidenceName, FromCustID, CreatedDate, Level)
+	SELECT c.CustID, e.EvidenceCode, e.EvidenceName, c.CustID as FromCustID, ce.CreatedDate, ce.Level	   
+	FROM CTS_DataCenter.CustEvidence AS ce	
+		INNER JOIN Temp_Customer AS c ON ce.FromCustID = c.CTSCustID AND ce.Level = 0
+		INNER JOIN CTS_DataCenter.Evidence AS e ON e.EvidenceID = ce.EvidenceID AND e.IsActive = True;
+
     
 	/* Get Flagged Evidence (Level 1)*/    
-	INSERT INTO Temp_EvidencesResult(CustID, EvidenceCode, EvidenceName, FromCustID, CreatedDate, Level)
-	SELECT cust.CustID, e.EvidenceCode, e.EvidenceName, root.FromCustID AS FromCustID, ce.CreatedDate AS CreatedDate, 1 as Level
-	FROM Temp_FlaggedEvidence AS root
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CTSCustID = root.CTSCustID AND cust.CustSubID = 0
-		INNER JOIN CTS_DataCenter.CustEvidence AS ce ON ce.FromCustID = root.CTSCustID AND root.Level = 2
-		INNER JOIN CTS_DataCenter.Evidence AS e ON e.EvidenceID = ce.EvidenceID
-	WHERE e.IsActive = True AND ce.Level = 0;
-  
+	INSERT INTO Temp_FlaggedEvidence(CustID, EvidenceCode, EvidenceName, FromCustID, CreatedDate, Level)
+	SELECT rootAss.CustID, e.EvidenceCode, e.EvidenceName, rootAss.RootCustID AS FromCustID, ce.CreatedDate AS CreatedDate, 1 as Level
+	FROM Temp_DirectAssociation AS rootAss
+		INNER JOIN CTS_DataCenter.CustEvidence AS ce ON ce.FromCustID = rootAss.CTSCustID AND ce.Level = 0
+		INNER JOIN CTS_DataCenter.Evidence AS e ON e.EvidenceID = ce.EvidenceID AND e.IsActive = True;
+	  
 	 -- Return CustId, Level0CustId, EvidenceCode, EvidenceName, CreatedDate, AssociatedLevel
     SELECT DISTINCT temp.CustID			AS CustId
 				,	temp.EvidenceCode	AS EvidenceCode
@@ -90,7 +87,7 @@ BEGIN
                 ,	temp.FromCustID 	AS Level0CustId
                 ,	temp.CreatedDate	AS CreatedDate
                 ,	temp.Level			AS AssociatedLevel
-    FROM Temp_EvidencesResult AS temp;
+    FROM Temp_FlaggedEvidence AS temp;
   
 END$$
 
