@@ -2,7 +2,7 @@
 DROP PROCEDURE IF EXISTS `CTS_DC_CustEvidence_GetAllEvidencesByCusts`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_GetAllEvidencesByCusts`(IN ip_CustIDs TEXT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_GetEvidencesByDirectAssociation`(IN ip_CustIDs TEXT)
     SQL SECURITY INVOKER
 BEGIN
 
