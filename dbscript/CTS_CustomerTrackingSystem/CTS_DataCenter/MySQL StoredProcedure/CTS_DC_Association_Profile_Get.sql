@@ -142,7 +142,7 @@ sp : BEGIN
 		WHERE	asMa.ToCTSCustID =  ip_CTSCustID;
         
     END IF;
-    
+    /*
     # ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual
     IF ip_AssociationType = 0 OR ip_AssociationType = 2 THEN
 		INSERT IGNORE INTO Temp_CustAssociation(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
@@ -165,7 +165,7 @@ sp : BEGIN
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asAI.FromCustID AND cust.CustSubID = 0
 		WHERE	asAI.ToCustID =  lv_CustID;
     END IF;
-    
+    */
     #ip_AssociationStatus: 0 - All, 1 - Linked, 2 - UnLinked
 
 	INSERT IGNORE INTO Temp_CustAssociationUnlinked (CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
