@@ -4,7 +4,6 @@ DROP procedure IF EXISTS `CTS_DC_InsertMainCustomerClassification`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_InsertMainCustomerClassification`(
 		IN ip_NewClassification JSON
-	,	IN ip_AssociationPA JSON
     ,	IN ip_IsRescan BIT
     
     ,	OUT op_ErrorMessage VARCHAR(200)
@@ -29,7 +28,7 @@ BEGIN
                 -20201201@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. [Redmine ID: #145954]
 			    - 20210115@Irena.Vo: Insert History Log  [RedmineID: #145951]
 				- 20210118@Casey.Huynh: Add New PA Rule NewMember(231,232,233)[RedmineID: #148908]
-               
+				- 20210226@Casey.Huynh: Add New PA Rule NewMember(231,232,233)[RedmineID: #150454, 150455]
 		Param's Explanation (filtered by):
 			  
 	*/ 
@@ -67,6 +66,8 @@ BEGIN
         ,	SourceTypeID            SMALLINT
         , 	ActionType				SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Existed PA, 4: Ignore PIN */
         , 	IsLastDataChanged   	BIT DEFAULT 0
+        ,	TaggingID				INT
+        ,	TaggingType				SMALLINT
         , 	INDEX    			    IX_Temp_NewClassification_CustID_NewCategoryID(CustID,NewCategoryID)     
 		, 	INDEX 					IX_Temp_NewClassification_ExistCategoryID_LastCategoryID(ExistCategoryID,LastCategoryID)        
 	);     
@@ -91,7 +92,7 @@ BEGIN
         , 	CategoryID	        SMALLINT 	/*231,232,233*/        
     );
         
-	INSERT INTO Temp_NewClassification(CustID, NewCategoryID, TurnoverRM, WinlossRM, BetCount, ActiveDays, LastXDaysMargin, ProbationPeriodWinloss)
+	INSERT INTO Temp_NewClassification(CustID, NewCategoryID, TurnoverRM, WinlossRM, BetCount, ActiveDays, LastXDaysMargin, ProbationPeriodWinloss, TaggingID, TaggingID)
 	SELECT DISTINCT temp.CustID
 				, 	temp.NewCategoryID
                 , 	temp.TurnoverRM
@@ -100,6 +101,8 @@ BEGIN
                 , 	temp.ActiveDays
                 , 	temp.LastXDaysMargin
                 , 	temp.ProbationPeriodWinloss
+                ,	TaggingID
+                , 	TaggingType
 	 FROM JSON_TABLE(ip_NewClassification,
 		"$[*]" COLUMNS(
 				CustID 					BIGINT UNSIGNED		PATH "$.CustId"
@@ -109,20 +112,12 @@ BEGIN
             , 	BetCount				BIGINT				PATH "$.BetCount"
             , 	ActiveDays				INT					PATH "$.ActiveDays"		
 			, 	LastXDaysMargin			DECIMAL(20,4)		PATH "$.LastXDaysMargin"		
-			, 	ProbationPeriodWinloss	DECIMAL(20,4)		PATH "$.ProbationPeriodWinloss"		
+			, 	ProbationPeriodWinloss	DECIMAL(20,4)		PATH "$.ProbationPeriodWinloss"
+            , 	TaggingID				INT					PATH "$.TaggingID"
+            , 	TaggingType				SMALLINT			PATH "$.TaggingType"		
 		 )) AS 	temp
 	 WHERE temp.NewCategoryID <> 0;
-     
-    INSERT INTO Temp_AssociationPA(CustID, CategoryID)
-	SELECT 		 js.CustID
-				, 	js.CategoryID
-	 FROM JSON_TABLE(ip_AssociationPA,
-		"$[*]" COLUMNS(
-				CustID 					BIGINT UNSIGNED		PATH "$.CustId"
-			, 	CategoryID					SMALLINT			PATH "$.CategoryId"
-                
-		 )) AS 	js;
-     
+
     #================================================PREPARE DATA================================================== 
     /* UPDATE NEW MEMBER BY ASSOCIATION PA CATEGORY */
     UPDATE		Temp_NewClassification AS tmpNcc
