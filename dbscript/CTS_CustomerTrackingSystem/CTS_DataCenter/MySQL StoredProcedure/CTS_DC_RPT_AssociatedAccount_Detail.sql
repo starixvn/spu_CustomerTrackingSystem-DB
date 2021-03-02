@@ -23,7 +23,7 @@ sp : BEGIN
 			- 20210226@Harvey.Nguyen: Created [Redmine ID: #150891]
             
 		Param's Explanation (filtered by):
-            - ip_AssociationType: 0 - ALL, 1 - Device, 2 - Manual
+            - ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual
         Example:
 			set @op_TotalItems = 0;
 			call CTS_DataCenter.CTS_DC_RPT_AssociatedAccount_Detail(107,0,'2021-01-28','2021-01-30',0,10, @op_TotalItems);
@@ -44,18 +44,20 @@ sp : BEGIN
             , CASE WHEN assRemove.FromCTSCustID IS NULL THEN 1 ELSE 0 END
 		FROM CTS_DataCenter.Association ass
             LEFT JOIN CTS_DataCenter.AssociationRemove assRemove ON assRemove.FromCTSCustID = ass.FromCTSCustID AND assRemove.ToCTSCustID = ass.ToCTSCustID
-		WHERE ass.FromCTSCustID = ip_CTSCustID OR ass.ToCTSCustID = ip_CTSCustID
+		WHERE ass.CreatedDate BETWEEN ip_FromAssDate AND ip_ToAssDate
+			AND (ass.FromCTSCustID = ip_CTSCustID OR ass.ToCTSCustID = ip_CTSCustID)
 		ON DUPLICATE KEY UPDATE AssociationDate = LEAST(Temp_Associations.AssociationDate, ass.CreatedDate);
 	END IF;
     
-    IF ip_AssociationType = 0 OR ip_AssociationType = 2 THEN
+    IF ip_AssociationType = 0 OR ip_AssociationType = 3 THEN
 		INSERT INTO Temp_Associations (CTSCustID, AssociationDate, AssociationStatus)
 		SELECT CASE WHEN ass.FromCTSCustID = ip_CTSCustID THEN ass.ToCTSCustID ELSE ass.FromCTSCustID END
 			, ass.CreatedDate
             , CASE WHEN assRemove.FromCTSCustID IS NULL THEN 1 ELSE 0 END
 		FROM CTS_DataCenter.AssociationByManual ass
             LEFT JOIN CTS_DataCenter.AssociationRemove assRemove ON assRemove.FromCTSCustID = ass.FromCTSCustID AND assRemove.ToCTSCustID = ass.ToCTSCustID
-		WHERE ass.FromCTSCustID = ip_CTSCustID OR ass.ToCTSCustID = ip_CTSCustID
+		WHERE ass.CreatedDate BETWEEN ip_FromAssDate AND ip_ToAssDate
+			AND (ass.FromCTSCustID = ip_CTSCustID OR ass.ToCTSCustID = ip_CTSCustID)
 		ON DUPLICATE KEY UPDATE AssociationDate = LEAST(Temp_Associations.AssociationDate, ass.CreatedDate);
 	END IF;
     
