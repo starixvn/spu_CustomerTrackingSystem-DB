@@ -4,7 +4,6 @@ DROP procedure IF EXISTS `CTS_DC_InsertMainCustomerClassification`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_InsertMainCustomerClassification`(
 		IN ip_NewClassification JSON
-    ,	IN ip_IsRescan BIT
     
     ,	OUT op_ErrorMessage VARCHAR(200)
 )
@@ -119,7 +118,7 @@ BEGIN
     /*	IGNORE PIN CATEGORY	*/
 	UPDATE Temp_NewClassification AS temp
 		INNER JOIN CTS_DataCenter.PinCustomerCategory AS pin on pin.CustID = temp.CustID
-    SET temp.ActionType = 4; 
+    SET temp.ActionType = 4;     
     
 	/*	IGNORE PROBLEM ACCOUNT	*/
     UPDATE Temp_NewClassification AS temp
@@ -166,7 +165,7 @@ BEGIN
 		LEFT JOIN  CTS_DataCenter.TaggingToCategory AS ttc ON ttc.CategoryGroup = temp.NewCategoryGroup AND ttc.TaggingType = temp.TaggingType AND ttc.TaggingID = temp.TaggingID
     SET		temp.NewCategoryID = IFNULL(ttc.CategoryID,temp.NewCategoryGroup);	
 
-    /*	UPDATE TARGET CC INFO */
+    /*UPDATE TARGET CC INFO */
     UPDATE Temp_NewClassification AS temp 
 		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID
 		LEFT JOIN CTS_DataCenter.CategoryToCustomerClass AS map ON map.CategoryID = temp.NewCategoryID
@@ -241,132 +240,33 @@ BEGIN
 	FROM Temp_NewClassification AS temp
 	WHERE (temp.ActionType = 1 AND temp.ExistCategoryGroup <> 206 AND temp.NewCategoryGroup = 206);
     
-    #==========================================WRITE LOG========================================================
-    IF (ip_IsRescan = 1) THEN 
-		/* Insert Last History */
-		INSERT INTO Temp_LastHistory (CustID, HistoryID)
-		SELECT  his.CustID
-			,	MAX(his.ID)
-		FROM CTS_DataCenter.CTSCustomerClassification_History AS his
-			INNER JOIN Temp_NewClassification AS temp ON temp.CustID = his.CustID
-		GROUP BY his.CustID;
-
-		UPDATE Temp_NewClassification AS temp
-			INNER JOIN Temp_LastHistory AS l ON temp.CustID = l.CustID
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS his ON his.ID = l.HistoryID
-		SET temp.IsLastDataChanged = his.IsDataChanged;
-        
-		/* INSERT LOG RE-SCAN NORMAL */    
-		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
-		 (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy,TurnoverRM, WinlossRM, BetCount, ActiveDays
-		 , ActionType,  IsAuto, InsertDate, LastXDaysMargin, ProbationPeriodWinloss, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsDataChanged, TaggingType)
-		SELECT DISTINCT	temp.CustID
-			, 	temp.CTSCustID
-			, 	temp.NewCategoryID
-			, 	200 AS SportGroupID
-			, 	lv_CurrentDateTime
-			, 	lv_CreatedBy
-			, 	temp.TurnoverRM
-			, 	temp.WinlossRM
-			, 	temp.BetCount
-			, 	temp.ActiveDays
-			, 	temp.ActionType
-			, 	1 AS IsAuto
-			, 	DATE(lv_CurrentDateTime)
-			, 	temp.LastXDaysMargin
-			, 	temp.ProbationPeriodWinloss
-			,	temp.TargetCC
-			,   17 AS  SourceTypeID /* Rescan Normal Account */
-			, 	temp.ExistCategoryID
-			, 	temp.NewCategoryID
-			,   (CASE WHEN temp.IsLastDataChanged = 1 THEN 1
-					 ELSE 0
-				END) AS IsDataChanged
-			,	temp.TaggingType
-		FROM Temp_NewClassification AS temp;
-    ELSE
-		/* INSERT LOG NEW CATEGORY */    
-		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
-		 (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy,TurnoverRM, WinlossRM, BetCount, ActiveDays
-		, ActionType,  IsAuto, InsertDate, LastXDaysMargin, ProbationPeriodWinloss, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsDataChanged, TaggingType)
-		SELECT DISTINCT	temp.CustID
-			, 	temp.CTSCustID
-			, 	temp.NewCategoryID
-			, 	200 AS SportGroupID
-			, 	lv_CurrentDateTime
-			, 	lv_CreatedBy
-			, 	temp.TurnoverRM
-			, 	temp.WinlossRM
-			, 	temp.BetCount
-			, 	temp.ActiveDays
-			, 	temp.ActionType
-			, 	1 AS IsAuto
-			, 	DATE(lv_CurrentDateTime)
-			, 	temp.LastXDaysMargin
-			, 	temp.ProbationPeriodWinloss
-			,	temp.TargetCC
-			,   temp.SourceTypeID
-			, 	temp.ExistCategoryID
-			, 	temp.NewCategoryID
-			,	1 AS IsDataChanged
-            ,	temp.TaggingType
-		FROM Temp_NewClassification AS temp
-		WHERE temp.ActionType = 0;
-		
-		/* INSERT LOG Exist CATEGORY */    
-		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
-		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy,TurnoverRM, WinlossRM, BetCount, ActiveDays
-		, ActionType,  IsAuto, InsertDate, LastXDaysMargin, ProbationPeriodWinloss, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsDataChanged, TaggingType)
-		SELECT DISTINCT	temp.CustID
-			, 	temp.CTSCustID
-			, 	temp.NewCategoryID
-			, 	200 AS SportGroupID
-			, 	lv_CurrentDateTime
-			, 	lv_CreatedBy
-			, 	temp.TurnoverRM
-			, 	temp.WinlossRM
-			, 	temp.BetCount
-			, 	temp.ActiveDays
-			, 	temp.ActionType
-			, 	1 AS IsAuto
-			, 	DATE(lv_CurrentDateTime)
-			, 	temp.LastXDaysMargin
-			, 	temp.ProbationPeriodWinloss
-			, 	temp.TargetCC
-			, 	temp.SourceTypeID
-			, 	temp.ExistCategoryID
-			, 	temp.NewCategoryID
-			,	(CASE WHEN temp.NewCategoryID <> temp.ExistCategoryID THEN 1
-					 WHEN temp.SourceTypeID = 5 THEN 1
-					 ELSE 0 
-				END) AS IsDataChanged
-			,	temp.TaggingType
-		FROM Temp_NewClassification AS temp
-		WHERE temp.ActionType = 1;
-	   
-		/*	INSERT LOG IGNORE PIN & Exist PA */
-		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
-		 (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy,TurnoverRM, WinlossRM, BetCount, ActiveDays
-		, ActionType,  IsAuto, InsertDate, LastXDaysMargin, ProbationPeriodWinloss, TaggingType)
-		SELECT DISTINCT	temp.CustID
-			, 	temp.CTSCustID
-			, 	temp.NewCategoryID
-			, 	200
-			, 	lv_CurrentDateTime
-			, 	lv_CreatedBy
-			, 	temp.TurnoverRM
-			, 	temp.WinlossRM
-			, 	temp.BetCount
-			, 	temp.ActiveDays
-			, 	temp.ActionType
-			, 	1
-			, 	DATE(lv_CurrentDateTime)
-			, 	temp.LastXDaysMargin
-			, 	temp.ProbationPeriodWinloss
-            ,	temp.TaggingType
-		FROM Temp_NewClassification AS temp
-		WHERE temp.ActionType IN (3, 4);
-	END IF;	
+    #==========================================WRITE LOG======================================================== 
+    
+	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
+	 (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy,TurnoverRM, WinlossRM, BetCount, ActiveDays
+	 , ActionType,  IsAuto, InsertDate, LastXDaysMargin, ProbationPeriodWinloss, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsDataChanged, TaggingType)
+	SELECT DISTINCT	temp.CustID
+		, 	temp.CTSCustID
+		, 	temp.NewCategoryID
+		, 	200 AS SportGroupID
+		, 	lv_CurrentDateTime
+		, 	lv_CreatedBy
+		, 	temp.TurnoverRM
+		, 	temp.WinlossRM
+		, 	temp.BetCount
+		, 	temp.ActiveDays
+		, 	temp.ActionType
+		, 	1 AS IsAuto
+		, 	DATE(lv_CurrentDateTime) AS InsertDate
+		, 	temp.LastXDaysMargin
+		, 	temp.ProbationPeriodWinloss
+		,	temp.TargetCC
+		,   temp.SourceTypeID
+		, 	temp.ExistCategoryID
+		, 	temp.NewCategoryID
+		,   (CASE WHEN temp.SourceTypeID = 5 OR (temp.NewCategoryID <> IFNULL(temp.ExistCategoryID,0)) THEN 1 ELSE 0 END) AS IsDataChanged
+		,	temp.TaggingType
+	FROM Temp_NewClassification AS temp;
    
 	#=========================================GET LASTEST CUSTOMERS FOR CLASSICATION=========================================================
     SELECT DISTINCT temp.CustId FROM Temp_NewClassification AS temp
