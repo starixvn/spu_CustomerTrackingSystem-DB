@@ -65,7 +65,8 @@ BEGIN
         , 	asCus.CTSCustID  
 	FROM Temp_Customer AS cus 
 		INNER JOIN CTS_DataCenter.AssociationByDevice AS asDv ON asDv .CTSCustID =  cus.CTSCustID
-		INNER JOIN CTS_DataCenter.AssociationByDevice AS asCus ON asCus.DCSDeviceID =  asDv.DCSDeviceID  AND asCus.CTSCustID  !=   asDv.CTSCustID;
+		INNER JOIN CTS_DataCenter.AssociationByDevice AS asCus ON asCus.DCSDeviceID =  asDv.DCSDeviceID  AND asCus.CTSCustID  !=   asDv.CTSCustID
+	WHERE cus.TaggingType = 1;
     
 	INSERT IGNORE INTO Temp_CustAssociation(CustID, CTSCustID, CTSCustID_Aff)
 	SELECT 
@@ -73,7 +74,8 @@ BEGIN
         , 	cus.CTSCustID
         , 	asMa.ToCTSCustID  
 	FROM Temp_Customer AS cus 
-		INNER JOIN CTS_DataCenter.AssociationByManual AS asMa ON asMa.FromCTSCustID =  cus.CTSCustID;
+		INNER JOIN CTS_DataCenter.AssociationByManual AS asMa ON asMa.FromCTSCustID =  cus.CTSCustID
+	WHERE cus.TaggingType = 1;
     
     DELETE cuAs FROM Temp_CustAssociation AS cuAs
 		INNER JOIN CTS_DataCenter.AssociationRemove AS asRe 
