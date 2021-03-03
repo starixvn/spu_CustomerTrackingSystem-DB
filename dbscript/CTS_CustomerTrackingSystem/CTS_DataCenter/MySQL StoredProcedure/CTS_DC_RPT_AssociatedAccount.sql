@@ -161,7 +161,14 @@ sp : BEGIN
         LEFT JOIN CTS_DataCenter.CTSCustomerClassification custClass ON custClass.CTSCustID = tce.CTSCustID
         LEFT JOIN CTS_DataCenter.CustomerCategory cc ON cc.CategoryID = custClass.CategoryID AND custClass.SportGroupID = 200;
     
-    SELECT *
+    SELECT CTSCustID
+		,	UserName
+        ,	SubscriberID	
+        ,	SubscriberName	
+        ,	AccountStatus	
+        ,	EvidenceCode	
+        , 	CategoryName	
+        ,	AssociationDate
     FROM Temp_Result
     ORDER BY AssociationDate DESC
     LIMIT ip_Take

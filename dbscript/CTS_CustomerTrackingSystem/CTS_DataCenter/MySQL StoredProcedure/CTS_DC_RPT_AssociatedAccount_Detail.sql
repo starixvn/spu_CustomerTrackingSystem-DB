@@ -73,7 +73,9 @@ sp : BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomer cus ON cus.CTSCustID = tass.CTSCustID
         INNER JOIN CTS_Admin.Subscriber sub ON cus.SubscriberID = sub.SubscriberID
         INNER JOIN CTS_DataCenter.StaticList stl ON stl.ItemID = cus.CustStatusID AND stl.ListID = 1
-	;
+	ORDER BY tass.AssociationDate DESC
+	LIMIT ip_Take
+    OFFSET ip_Skip;
 	
     SELECT COUNT(1) 
     INTO op_TotalItems
