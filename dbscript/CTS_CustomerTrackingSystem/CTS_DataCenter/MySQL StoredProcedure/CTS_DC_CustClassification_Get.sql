@@ -29,20 +29,22 @@ BEGIN
 		Param's Explanation:
 			CALL CTS_DataCenter.CTS_DC_CustClassification_Get('1');
 	*/ 
-	DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory;
+		DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory;
     CREATE TEMPORARY TABLE Temp_LatestRecordOfCategory(
     	CategoryID		SMALLINT UNSIGNED
 	,   CategoryName   	VARCHAR(200) 
 	,   CategoryType    SMALLINT UNSIGNED -- 1: ParentID = 200, 2: ParentID = 50
+    ,	ParentID		SMALLINT UNSIGNED
     );
    
     -- Get Lastest category list
-	INSERT INTO Temp_LatestRecordOfCategory (CategoryID, CategoryName, CategoryType)
+	INSERT INTO Temp_LatestRecordOfCategory (CategoryID, CategoryName, CategoryType, ParentID)
 	SELECT DISTINCT  cc.CategoryGroup
 			,	cc.CategoryName
             ,	CASE	WHEN cc.ParentID = 50 THEN 2 -- red
 						WHEN cc.ParentID = 200  THEN 1 -- any color 
 				END 
+			,	cc.ParentID
 	FROM	CTS_DataCenter.CTSCustomerClassification AS cate
 		INNER JOIN 	CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
     WHERE	cate.CustID = ip_CustID AND cc.ParentID IN (50, 200);
@@ -60,7 +62,7 @@ BEGIN
             SELECT 0 AS IsExcludedTagAssPA;
 	 END IF;
 
-	 SELECT  temp.CategoryType, temp.CategoryID,  temp.CategoryName
+	 SELECT  temp.CategoryType, temp.CategoryID,  temp.CategoryName, temp.ParentID
      FROM Temp_LatestRecordOfCategory AS temp;
 END$$
 
