@@ -31,7 +31,11 @@ BEGIN
                              ELSE s.ItemNameDisplay
 						END AS SourceTypeName
 					, 	s.ItemID AS SourceTypeID
-                    ,   temp.TaggingType -- 0: Display on web, 1: No display
+                    ,   CASE WHEN tag.CategoryID IS NULL THEN '' -- no display
+							 ELSE CASE WHEN temp.TaggingType = 0 THEN 'Yes'-- 0: display Yes
+									   ELSE 'No'-- 1: display No
+								  END
+						END AS TaggingType
 					,   temp.TurnOverRM AS TurnOver
                     ,   temp.WinlossRM AS WinLoss
                     ,	 CASE WHEN temp.TurnOverRM = 0 THEN 0
@@ -43,6 +47,7 @@ BEGIN
 					,   temp.ProbationPeriodWinloss
 					,   u.UserName AS CreatedBy
 		FROM CTS_DataCenter.CTSCustomerClassification_History AS temp
+        LEFT JOIN CTS_DataCenter.TaggingToCategory AS tag ON tag.CategoryID = temp.CategoryID
         LEFT JOIN CTS_DataCenter.CustomerCategory AS cc1 ON temp.CategoryID = cc1.CategoryID
 	    LEFT JOIN CTS_DataCenter.CustomerCategory AS cc2 ON temp.FromCategoryID = cc2.CategoryID
         LEFT JOIN CTS_DataCenter.CustomerCategory AS cc3 ON temp.ToCategoryID = cc3.CategoryID
