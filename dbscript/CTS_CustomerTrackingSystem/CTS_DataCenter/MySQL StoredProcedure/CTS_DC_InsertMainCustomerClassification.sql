@@ -27,7 +27,7 @@ BEGIN
                 -20201201@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. [Redmine ID: #145954]
 			    - 20210115@Irena.Vo: Insert History Log  [RedmineID: #145951]
 				- 20210118@Casey.Huynh: Add New PA Rule NewMember(231,232,233)[RedmineID: #148908]
-				- 20210226@Casey.Huynh: Add New PA Rule NewMember(231,232,233)[RedmineID: #150454, 150455]
+				- 20210226@Casey.Huynh: Add New PA Rule [RedmineID: #150454, 150455]
 		Param's Explanation (filtered by):
 			  
 	*/ 
@@ -71,23 +71,8 @@ BEGIN
         ,	NewCategoryID			SMALLINT
         , 	INDEX    			    IX_Temp_NewClassification_CustID_NewCategoryID(CustID,NewCategoryGroup)     
 		, 	INDEX 					IX_Temp_NewClassification_ExistCategoryID_LastCategoryGroup(ExistCategoryID,NewCategoryID)        
-	);     
-
-	DROP TEMPORARY TABLE IF EXISTS Temp_ExistClassification;    
-	CREATE TEMPORARY TABLE Temp_ExistClassification(	  	
-			CustID					BIGINT UNSIGNED     
-		, 	ExistCategoryID		SMALLINT
-        ,	ExistCategoryGroup	SMALLINT
-		, 	INDEX IX_Temp_ExistClassification_CustID_CategoryID(CustID,ExistCategoryGroup)       
-	);
-
-	DROP TEMPORARY TABLE IF EXISTS Temp_LastHistory;    
-	CREATE TEMPORARY TABLE Temp_LastHistory(	  
-			CustID				BIGINT UNSIGNED PRIMARY KEY
-        , 	HistoryID	        SMALLINT UNSIGNED
-        ,	INDEX IX_Temp_LastHistory_HistoryID(HistoryID)
-    );
-    
+	); 
+	  
 	INSERT INTO Temp_NewClassification(CustID, NewCategoryGroup, TurnoverRM, WinlossRM, BetCount, ActiveDays, LastXDaysMargin, ProbationPeriodWinloss, TaggingID, TaggingType)
 	SELECT DISTINCT temp.CustID
 				, 	temp.NewCategoryGroup
@@ -97,7 +82,7 @@ BEGIN
                 , 	temp.ActiveDays
                 , 	temp.LastXDaysMargin
                 , 	temp.ProbationPeriodWinloss
-                ,	temp.TaggingID
+                ,	IFNULL(temp.TaggingID,0)
                 , 	temp.TaggingType
 	 FROM JSON_TABLE(ip_NewClassification,
 		"$[*]" COLUMNS(
@@ -109,7 +94,7 @@ BEGIN
             , 	ActiveDays				INT					PATH "$.ActiveDays"		
 			, 	LastXDaysMargin			DECIMAL(20,4)		PATH "$.LastXDaysMargin"		
 			, 	ProbationPeriodWinloss	DECIMAL(20,4)		PATH "$.ProbationPeriodWinloss"
-            , 	TaggingID				INT					PATH "$.TaggingID"
+            , 	TaggingID				SMALLINT			PATH "$.TaggingID"
             , 	TaggingType				SMALLINT			PATH "$.TaggingType"		
 		 )) AS 	temp
 	 WHERE temp.NewCategoryGroup <> 0;
@@ -196,7 +181,7 @@ BEGIN
 		, 	lv_CreatedBy
 		, 	lv_CurrentDateTime
 		, 	lv_CreatedBy
-		, 	DATE(lv_CurrentDateTime)
+		, 	DATE(lv_CurrentDateTime) AS LastScannedDate
 	 FROM Temp_NewClassification AS temp
      WHERE temp.ActionType = 0;
 

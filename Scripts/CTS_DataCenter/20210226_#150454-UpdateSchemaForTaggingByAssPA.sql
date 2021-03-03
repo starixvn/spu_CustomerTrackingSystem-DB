@@ -16,7 +16,16 @@ CREATE TABLE `TaggingExclusion` (
 ) ENGINE=INNODB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 /* Add new table TaggingToCategory */
-
+USE CTS_DataCenter;
+CREATE TABLE TaggingToCategory(
+	CategoryID SMALLINT
+    , TaggingID		SMALLINT
+    , TaggingType 	SMALLINT
+    , CategoryGroup SMALLINT
+	
+    , PRIMARY KEY PK_TaggingToCategory(CategoryID)
+    , INDEX  IX_TaggingToCategory(CategoryGroup)
+);
 
 /* Add new column TaggingType */
 ALTER TABLE `CTSCustomerClassification_History`

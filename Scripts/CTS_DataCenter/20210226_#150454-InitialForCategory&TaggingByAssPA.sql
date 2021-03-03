@@ -74,5 +74,30 @@ INSERT INTO CTS_DataCenter.CategoryToCustomerClass (CategoryID, CustomerClass) V
 INSERT INTO CTS_DataCenter.CategoryToCustomerClass (CategoryID, CustomerClass) VALUES (271, 71), (272, 72), (273, 73);
         
 /* Init TaggingToCategory */        
-        
+USE CTS_DataCenter;
+INSERT INTO TaggingToCategory(CategoryID, TaggingID, TaggingType, CategoryGroup)
+VALUES	(205, 0, 0, 205) 
+        , (211, 8, 1, 205)
+        , (212, 10, 1, 205)
+        , (213, 13, 1, 205)
+        , (202, 0, 0, 202)
+        , (221, 8, 1, 202)
+        , (222, 10, 1, 202)
+        , (223, 13, 1, 202)
+        , (201, 0, 0, 201)
+        , (231, 8, 1, 201)
+        , (232, 10, 1, 201)
+        , (233, 13, 1, 201)
+        , (206, 0, 0, 206)
+        , (251, 8, 1, 206)
+        , (252, 10, 1, 206)
+        , (253, 13, 1, 206)
+        , (203, 0, 0, 203)
+        , (261, 8, 1, 203)
+        , (262, 10, 1, 203)
+        , (263, 13, 1, 203)
+        , (204, 0, 0, 204)
+        , (271, 8, 1, 204)
+        , (272, 10, 1, 204)
+        , (273, 13, 1, 204);        
         
