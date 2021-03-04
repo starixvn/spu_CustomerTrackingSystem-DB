@@ -2,7 +2,13 @@
 DROP procedure IF EXISTS `CTS_DC_SpecialCustClass_Insert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_SpecialCustClass_Insert`(IN ip_Username varchar(50),IN ip_CustomerClass tinyint,IN ip_IsAffectedToAssociation bit,IN ip_UserID int,OUT op_ErrorMessage varchar(200))
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_SpecialCustClass_Insert`(
+		IN ip_Username varchar(50)
+    ,	IN ip_CustomerClass tinyint
+    ,	IN ip_IsAffectedToAssociation bit
+    ,	IN ip_UserID int
+    ,	OUT op_ErrorMessage varchar(200)
+)
     SQL SECURITY INVOKER
 sp: BEGIN
 		/*
