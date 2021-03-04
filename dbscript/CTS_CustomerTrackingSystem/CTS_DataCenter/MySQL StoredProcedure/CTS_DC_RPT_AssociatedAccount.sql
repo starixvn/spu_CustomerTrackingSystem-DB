@@ -159,7 +159,7 @@ sp : BEGIN
 		INNER JOIN Temp_CustEvidence tce ON tass.CTSCustID = tce.CTSCustID
         INNER JOIN CTS_DataCenter.StaticList stl ON tce.CustStatusID = stl.ItemID AND stl.ListID = 1
         LEFT JOIN CTS_DataCenter.CTSCustomerClassification custClass ON custClass.CTSCustID = tce.CTSCustID
-        LEFT JOIN CTS_DataCenter.CustomerCategory cc ON cc.CategoryID = custClass.CategoryID AND custClass.SportGroupID = 200;
+        LEFT JOIN CTS_DataCenter.CustomerCategory cc ON cc.CategoryID = custClass.CategoryID AND cc.ParentID IN (200,50);
     
     SELECT CTSCustID
 		,	UserName
