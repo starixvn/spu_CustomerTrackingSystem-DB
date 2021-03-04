@@ -2,7 +2,15 @@
 DROP procedure IF EXISTS `CTS_DC_AssociatedAccountMonitor_UpdateTaggingAssWithPA`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedAccountMonitor_UpdateTaggingAssWithPA`(IN ip_CustID int,IN ip_CTSCustID bigint,IN ip_SubscriberID int,IN ip_CreatedBy int,IN ip_IsExcludedTagAssPA bit,OUT op_ErrorMessage varchar(200))
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedAccountMonitor_UpdateTaggingAssWithPA`(
+		IN ip_CustID 				BIGINT
+    ,	IN ip_CTSCustID 			BIGINT
+    ,	IN ip_SubscriberID 			INT
+    ,	IN ip_CreatedBy 			BIGINT
+    ,	IN ip_IsExcludedTagAssPA 	BIT
+    
+    ,	OUT op_ErrorMessage 		VARCHAR(200)
+)
     SQL SECURITY INVOKER
 sp: BEGIN
 	/*
@@ -14,6 +22,8 @@ sp: BEGIN
             - 20210226@Jonas.Huynh: Created  [RedmineID: #150454]
            
 		Param's Explanation:
+		Example:
+			- CALL CTS_DataCenter.CTS_DC_AssociatedAccountMonitor_UpdateTaggingAssWithPA(1, 1, 1, 1, TRUE, @op_ErrorMessage);
 	*/ 
     DECLARE lv_CurrentDateTime DATETIME DEFAULT CURRENT_TIME();
     DECLARE lv_SPName VARCHAR(200) DEFAULT 'CTS_DC_AssociatedAccountMonitor_UpdateTaggingAssWithPA'; 
