@@ -77,6 +77,15 @@ BEGIN
 		INNER JOIN CTS_DataCenter.AssociationByManual AS asMa ON asMa.FromCTSCustID =  cus.CTSCustID
 	WHERE cus.TaggingType = 1;
     
+    INSERT IGNORE INTO Temp_CustAssociation(CustID, CTSCustID, CTSCustID_Aff)
+    SELECT 
+		    cus.CustID
+        ,   cus.CTSCustID
+        ,   asMa.FromCTSCustID  
+    FROM Temp_Customer AS cus 
+		INNER JOIN CTS_DataCenter.AssociationByManual AS asMa ON asMa.ToCTSCustID =  cus.CTSCustID
+    WHERE cus.TaggingType = 1;
+  
     DELETE cuAs FROM Temp_CustAssociation AS cuAs
 		INNER JOIN CTS_DataCenter.AssociationRemove AS asRe 
 			ON (cuAs.CTSCustID = asRe.FromCTSCustID AND cuAs.CTSCustID_Aff = asRe.ToCTSCustID) OR (cuAs.CTSCustID_Aff = asRe.ToCTSCustID AND cuAs.CTSCustID = asRe.FromCTSCustID);
