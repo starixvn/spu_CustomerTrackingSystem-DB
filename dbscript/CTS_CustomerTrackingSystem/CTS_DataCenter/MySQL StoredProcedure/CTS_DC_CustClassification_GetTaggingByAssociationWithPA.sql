@@ -111,7 +111,7 @@ BEGIN
 							cus.CustID
 						, 	cus.CTSCustID
 						, 	cus.CTSCustID_Aff 
-						, 	CASE	WHEN class.CustomerClass IS NOT NULL THEN class.CustomerClass
+						, 	CASE	WHEN class.CustomerClass IS NOT NULL AND class.CustomerClass IN (8,10) THEN class.CustomerClass
 									ELSE  spCu.CustomerClass
 							END CustomerClass 
 					FROM Temp_CustAssociation AS cus 
