@@ -17,7 +17,7 @@ BEGIN
 		   
 		Param's Explanation (filtered by):			
         
-        CALL CTS_DataCenter.CTS_DC_CustEvidence_GetEvidencesByLevel2Association('443153');
+        CALL CTS_DataCenter.CTS_DC_CustEvidence_GetEvidencesByLevel2Association('17004');
 	*/
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_RootCustomer;
@@ -49,21 +49,23 @@ BEGIN
     SET         temp.CTSCustID = tcust.CTSCustID;
     
     INSERT INTO Temp_AssociationLevel1 (CTSCustID, RootCTSCustID, RootCustID)
-    SELECT CASE WHEN ass.FromCTSCustID = tcust.CTSCustID THEN ass.ToCTSCustID ELSE ass.FromCTSCustID END
+    SELECT DISTINCT
+		CASE WHEN ass.FromCTSCustID = tcust.CTSCustID THEN ass.ToCTSCustID ELSE ass.FromCTSCustID END
 		, tcust.CTSCustID
 		, tcust.CustID
     FROM Temp_RootCustomer tcust
 		INNER JOIN CTS_DataCenter.Association ass ON ass.FromCTSCustID = tcust.CTSCustID
 			OR ass.ToCTSCustID = tcust.CTSCustID;
-	
+    
     INSERT INTO Temp_AssociationLevel2 (CTSCustID, RootCTSCustID, RootCustID)
-	SELECT CASE WHEN ass2.FromCTSCustID = ass1.CTSCustID THEN ass2.ToCTSCustID ELSE ass2.FromCTSCustID END
+	SELECT DISTINCT
+		CASE WHEN ass2.FromCTSCustID = ass1.CTSCustID THEN ass2.ToCTSCustID ELSE ass2.FromCTSCustID END AS 'AssLv2'
 		,	ass1.RootCTSCustID
 		,	ass1.RootCustID
     FROM Temp_AssociationLevel1 ass1
 		INNER JOIN CTS_DataCenter.Association ass2 ON ass2.FromCTSCustID = ass1.CTSCustID
 			OR ass2.ToCTSCustID = ass1.CTSCustID;
-	
+    
     SELECT ass2.RootCustID AS 'Level0CustId'
 		, cus.CustID
         , evi.EvidenceCode
@@ -75,8 +77,7 @@ BEGIN
         INNER JOIN CTS_DataCenter.Evidence evi ON ce.EvidenceID = evi.EvidenceID
         INNER JOIN CTS_DataCenter.CTSCustomer cus ON cus.CTSCustID = ass2.CTSCustID
         LEFT JOIN Temp_RootCustomer tcust ON tcust.CTSCustID = ass2.CTSCustID
-        LEFT JOIN Temp_AssociationLevel1 ass1 ON ass1.CTSCustID = ass2.CTSCustID
-	WHERE tcust.CTSCustID IS NULL AND ass1.CTSCustID IS NULL;
+	WHERE tcust.CTSCustID IS NULL;
   
 END$$
 
