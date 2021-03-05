@@ -60,8 +60,8 @@ BEGIN
 	FROM  	performance_schema.events_statements_summary_by_program AS suPro;
 	
     UPDATE Temp_SummaryProgram AS suPr
-		INNER JOIN  MonDB.DBA_CTS_DataFlow_Monitor AS flow ON suPr.`Name` = flow.SPName
-	SET suPr.GroupID = flow.GroupID;
+		LEFT JOIN  MonDB.DBA_CTS_DataFlow_Monitor AS flow ON suPr.`Name` = flow.SPName
+	SET suPr.GroupID = IFNULL(flow.GroupID,0);
     
 	INSERT IGNORE INTO Temp_SPStar( `Database`, `Name`, `Count_Star`, `Sum_Errors`, `Sum_Warnings`, `Sum_Rows_Affected`, `Sum_Rows_Sent`)
 	SELECT

@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 47,
+  "id": 76,
   "links": [],
   "panels": [
     {
@@ -213,6 +213,7 @@
       },
       "hiddenSeries": false,
       "id": 2,
+      "interval": "30m",
       "legend": {
         "alignAsTable": false,
         "avg": false,
@@ -431,6 +432,78 @@
                 "value": 265
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ThreadID"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 89
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "User"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 134
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Host"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 103
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Latency"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 78
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Table Locked"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 78
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Row Locked"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 91
+              }
+            ]
           }
         ]
       },
@@ -444,7 +517,12 @@
       "interval": "2s",
       "options": {
         "showHeader": true,
-        "sortBy": []
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Query"
+          }
+        ]
       },
       "pluginVersion": "7.0.6",
       "targets": [
@@ -453,7 +531,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT  \n\t\ttrx.trx_mysql_thread_id AS 'ThreadID'\n\t,\tth.PROCESSLIST_USER AS 'User'\n    ,\tth.PROCESSLIST_HOST AS 'Host'\n    ,\tCASE\tWHEN trx.trx_query IS NOT NULL  THEN trx.trx_query\n\t\t\t\tELSE th.PROCESSLIST_INFO\n\t\tEND AS \t'Query' \n\t,\ttrx.trx_state AS 'State'\n    ,\ttrx.trx_started AS 'Start Time'\n    ,\tFORMAT_PICO_TIME(TIMESTAMPDIFF(SECOND, trx.trx_started, NOW())*1000000000000) AS 'Latency'\n    ,\ttrx.trx_isolation_level AS 'Isolation'\n    ,\ttrx.trx_tables_locked AS 'Table Locked'\n    ,\ttrx.trx_rows_locked AS 'Row Locked'\nFROM  INFORMATION_SCHEMA.INNODB_TRX AS trx\nLEFT JOIN performance_schema.threads AS th ON trx.trx_mysql_thread_id =  th.PROCESSLIST_ID;",
+          "rawSql": "SELECT  \n\t\ttrx.trx_mysql_thread_id AS 'ThreadID'\n\t,\tth.PROCESSLIST_USER AS 'User'\n    ,\tth.PROCESSLIST_HOST AS 'Host'\n    ,\tCASE\tWHEN trx.trx_query IS NOT NULL  THEN trx.trx_query\n\t\t\t\tELSE th.PROCESSLIST_INFO\n\t\tEND AS \t'Query' \n\t,\tFORMAT_PICO_TIME(TIMESTAMPDIFF(SECOND, trx.trx_started, NOW())*1000000000000) AS 'Latency'\n\t,\ttrx.trx_tables_locked AS 'Table Locked'\n    ,\ttrx.trx_rows_locked AS 'Row Locked'\n    ,\ttrx.trx_isolation_level AS 'Isolation'\n\t,\ttrx.trx_state AS 'State'\n    ,\ttrx.trx_started AS 'Start Time'\nFROM  INFORMATION_SCHEMA.INNODB_TRX AS trx\nLEFT JOIN performance_schema.threads AS th ON trx.trx_mysql_thread_id =  th.PROCESSLIST_ID;",
           "refId": "A",
           "select": [
             [
@@ -516,6 +594,7 @@
       },
       "hiddenSeries": false,
       "id": 32,
+      "interval": "30m",
       "legend": {
         "alignAsTable": true,
         "avg": false,
@@ -549,7 +628,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "WITH CTE_Metric AS (\r\nSELECT\r\n  Created AS \"time\",\r\n  GroupID,\r\n  SUM(Count_Star) AS Count\r\nFROM MonDB.DBA_SPMonitor\r\nWHERE\r\n  $__timeFilter(Created)  AND\r\n  Count_Star > 0\r\nGROUP BY GroupID, Created\r\n) \r\nSELECT \ttbl.`time`\r\n\t,\tflow.GroupName AS metric\r\n    ,\ttbl.Count\r\nFROM CTE_Metric AS tbl\r\n\tINNER JOIN MonDB.DBA_CTS_DataFlow_Monitor AS flow ON tbl.GroupID = flow.GroupID\r\nORDER BY tbl.`time` DESC;",
+          "rawSql": "WITH CTE_Metric AS (\r\nSELECT\r\n  UNIX_TIMESTAMP(Created) AS \"time\",\r\n  GroupID,\r\n  SUM(Count_Star) AS Count\r\nFROM MonDB.DBA_SPMonitor\r\nWHERE\r\n  $__timeFilter(Created)  AND\r\n  Count_Star > 0\r\nGROUP BY GroupID, Created\r\n) \r\nSELECT \ttbl.`time`\r\n\t,\tflow.GroupName AS metric\r\n    ,\ttbl.Count\r\nFROM CTE_Metric AS tbl\r\n\tINNER JOIN MonDB.DBA_CTS_DataFlow_Monitor AS flow ON tbl.GroupID = flow.GroupID\r\nORDER BY tbl.`time` DESC;",
           "refId": "A",
           "select": [
             [
@@ -636,6 +715,7 @@
       },
       "hiddenSeries": false,
       "id": 34,
+      "interval": "30m",
       "legend": {
         "alignAsTable": true,
         "avg": false,
@@ -669,7 +749,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "WITH CTE_Metric AS (\r\nSELECT\r\n  Created AS \"time\",\r\n  GroupID,\r\n  SUM(Sum_Rows_Affected) AS Count\r\nFROM MonDB.DBA_SPMonitor\r\nWHERE\r\n  $__timeFilter(Created)  AND\r\n  Sum_Rows_Affected > 0\r\nGROUP BY GroupID, Created\r\n) \r\nSELECT \ttbl.`time`\r\n\t,\tflow.GroupName AS metric\r\n    ,\ttbl.Count\r\nFROM CTE_Metric AS tbl\r\n\tINNER JOIN MonDB.DBA_CTS_DataFlow_Monitor AS flow ON tbl.GroupID = flow.GroupID\r\nORDER BY tbl.`time` DESC;",
+          "rawSql": "WITH CTE_Metric AS (\r\nSELECT\r\n  UNIX_TIMESTAMP(Created) AS \"time\",\r\n  GroupID,\r\n  SUM(Sum_Rows_Affected) AS Count\r\nFROM MonDB.DBA_SPMonitor\r\nWHERE\r\n  $__timeFilter(Created)  AND\r\n  Sum_Rows_Affected > 0\r\nGROUP BY GroupID, Created\r\n) \r\nSELECT \ttbl.`time`\r\n\t,\tflow.GroupName AS metric\r\n    ,\ttbl.Count\r\nFROM CTE_Metric AS tbl\r\n\tINNER JOIN MonDB.DBA_CTS_DataFlow_Monitor AS flow ON tbl.GroupID = flow.GroupID\r\nORDER BY tbl.`time` DESC;",
           "refId": "A",
           "select": [
             [
@@ -756,6 +836,7 @@
       },
       "hiddenSeries": false,
       "id": 36,
+      "interval": "30m",
       "legend": {
         "alignAsTable": true,
         "avg": false,
@@ -789,7 +870,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "WITH CTE_Metric AS (\r\nSELECT\r\n  Created AS \"time\",\r\n  GroupID,\r\n  SUM(Sum_Rows_Sent) AS Count\r\nFROM MonDB.DBA_SPMonitor\r\nWHERE\r\n  $__timeFilter(Created)  AND\r\n  Sum_Rows_Sent > 0\r\nGROUP BY GroupID, Created\r\n) \r\nSELECT \ttbl.`time`\r\n\t,\tflow.GroupName AS metric\r\n    ,\ttbl.Count\r\nFROM CTE_Metric AS tbl\r\n\tINNER JOIN MonDB.DBA_CTS_DataFlow_Monitor AS flow ON tbl.GroupID = flow.GroupID\r\nORDER BY tbl.`time` DESC;",
+          "rawSql": "WITH CTE_Metric AS (\r\nSELECT\r\n  UNIX_TIMESTAMP(Created) AS \"time\",\r\n  GroupID,\r\n  SUM(Sum_Rows_Sent) AS Count\r\nFROM MonDB.DBA_SPMonitor\r\nWHERE\r\n  $__timeFilter(Created)  AND\r\n  Sum_Rows_Sent > 0\r\nGROUP BY GroupID, Created\r\n) \r\nSELECT \ttbl.`time`\r\n\t,\tflow.GroupName AS metric\r\n    ,\ttbl.Count\r\nFROM CTE_Metric AS tbl\r\n\tINNER JOIN MonDB.DBA_CTS_DataFlow_Monitor AS flow ON tbl.GroupID = flow.GroupID\r\nORDER BY tbl.`time` DESC;",
           "refId": "A",
           "select": [
             [
@@ -893,6 +974,7 @@
       },
       "hiddenSeries": false,
       "id": 4,
+      "interval": "30m",
       "legend": {
         "alignAsTable": true,
         "avg": false,
@@ -903,6 +985,7 @@
         "min": false,
         "rightSide": true,
         "show": true,
+        "sideWidth": 300,
         "total": false,
         "values": false
       },
@@ -928,7 +1011,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  Created AS \"time\",\n  Name AS metric,\n  Count_Star\nFROM MonDB.DBA_SPMonitor\nWHERE\n  $__timeFilter(Created) AND\n  Count_Star > 0\nORDER BY Created;",
+          "rawSql": " SELECT\n  UNIX_TIMESTAMP(Created) AS \"time\",\n  Name AS metric,\n  Count_Star\nFROM MonDB.DBA_SPMonitor\nWHERE\n  $__timeFilter(Created) AND\n  Count_Star > 0 AND\n  Name NOT IN ('dcs_dc_islistsmatchbyitem')\nORDER BY Created;",
           "refId": "A",
           "select": [
             [
@@ -1017,6 +1100,7 @@
       },
       "hiddenSeries": false,
       "id": 16,
+      "interval": "30m",
       "legend": {
         "avg": false,
         "current": false,
@@ -1024,6 +1108,7 @@
         "min": false,
         "rightSide": true,
         "show": true,
+        "sideWidth": 300,
         "total": false,
         "values": false
       },
@@ -1049,7 +1134,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  Created AS \"time\",\n  Name AS metric,\n  Sum_Rows_Sent\nFROM MonDB.DBA_SPMonitor\nWHERE\n  $__timeFilter(Created) AND\n  Sum_Rows_Sent > 0\nORDER BY Created;",
+          "rawSql": "SELECT\n  UNIX_TIMESTAMP(Created) AS \"time\",\n  Name AS metric,\n  Sum_Rows_Sent\nFROM MonDB.DBA_SPMonitor\nWHERE\n  $__timeFilter(Created) AND\n  Sum_Rows_Sent > 0\nORDER BY Created;",
           "refId": "A",
           "select": [
             [
@@ -1137,6 +1222,7 @@
       },
       "hiddenSeries": false,
       "id": 14,
+      "interval": "30m",
       "legend": {
         "avg": false,
         "current": false,
@@ -1169,7 +1255,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  Created AS \"time\",\n  Name AS metric,\n  Sum_Rows_Affected\nFROM MonDB.DBA_SPMonitor\nWHERE\n  $__timeFilter(Created) AND\n  Sum_Rows_Affected > 0\nORDER BY Created",
+          "rawSql": "SELECT\n  UNIX_TIMESTAMP(Created) AS \"time\",\n  Name AS metric,\n  Sum_Rows_Affected\nFROM MonDB.DBA_SPMonitor\nWHERE\n  $__timeFilter(Created) AND\n  Sum_Rows_Affected > 0\nORDER BY Created",
           "refId": "A",
           "select": [
             [
@@ -1256,6 +1342,7 @@
       },
       "hiddenSeries": false,
       "id": 18,
+      "interval": "30m",
       "legend": {
         "avg": false,
         "current": false,
@@ -1288,7 +1375,7 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": true,
-          "rawSql": "SELECT\n  Created AS \"time\",\n  Name AS metric,\n  Sum_Errors\nFROM MonDB.DBA_SPMonitor\nWHERE\n  $__timeFilter(Created) AND\n  Sum_Errors > 0\nORDER BY Created;",
+          "rawSql": "SELECT\n  UNIX_TIMESTAMP(Created) AS \"time\",\n  Name AS metric,\n  Sum_Errors\nFROM MonDB.DBA_SPMonitor\nWHERE\n  $__timeFilter(Created) AND\n  Sum_Errors > 0\nORDER BY Created;",
           "refId": "A",
           "select": [
             [
@@ -1519,7 +1606,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 326
+                "value": 596
               }
             ]
           }
@@ -1732,7 +1819,7 @@
       "type": "table"
     }
   ],
-  "refresh": "5m",
+  "refresh": "30m",
   "schemaVersion": 25,
   "style": "dark",
   "tags": [],
@@ -1757,8 +1844,8 @@
       "1d"
     ]
   },
-  "timezone": "",
+  "timezone": "browser",
   "title": "SP Workload Monitor",
   "uid": "4uuciVYGz",
-  "version": 17
+  "version": 11
 }
