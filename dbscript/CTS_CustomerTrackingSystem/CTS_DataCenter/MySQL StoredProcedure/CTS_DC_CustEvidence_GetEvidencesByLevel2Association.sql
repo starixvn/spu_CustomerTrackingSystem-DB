@@ -14,7 +14,8 @@ BEGIN
 
 		Revisions:
            - 20210301@Harvey.Nguyen [Redmine ID: #150917]: Created
-		   
+		   - 20210308@Jonas.Huynh [Redmine ID: #150917]: Update logic SP
+           
 		Param's Explanation (filtered by):			
         
         CALL CTS_DataCenter.CTS_DC_CustEvidence_GetEvidencesByLevel2Association('17004');
@@ -33,11 +34,13 @@ BEGIN
         ,	RootCustID		BIGINT UNSIGNED  
 	);
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_AssociationLevel2;
+	DROP TEMPORARY TABLE IF EXISTS   Temp_AssociationLevel2;
     CREATE TEMPORARY TABLE Temp_AssociationLevel2(
-		 	CTSCustID		BIGINT UNSIGNED  
-		,	RootCTSCustID	BIGINT UNSIGNED  
-        ,	RootCustID		BIGINT UNSIGNED  
+		 	AssCTSCustID		BIGINT UNSIGNED  
+		,	RootCustID			BIGINT UNSIGNED
+        ,	EvidenceID			INT
+		,	CreatedDate			DATETIME
+		, 	AssociationLevel	SMALLINT
 	);
     
     SET @sql = 	CONCAT("INSERT INTO Temp_RootCustomer (CustID) VALUES ('", REPLACE(ip_CustIDs, ",", "'),('"),"');");
@@ -48,37 +51,43 @@ BEGIN
 		INNER JOIN  CTS_DataCenter.CTSCustomer AS tcust ON tcust.CustID = temp.CustID AND tcust.CustSubID = 0
     SET         temp.CTSCustID = tcust.CTSCustID;
     
+	/* Get Direct Association */
     INSERT INTO Temp_AssociationLevel1 (CTSCustID, RootCTSCustID, RootCustID)
     SELECT DISTINCT
-		CASE WHEN ass.FromCTSCustID = tcust.CTSCustID THEN ass.ToCTSCustID ELSE ass.FromCTSCustID END
-		, tcust.CTSCustID
-		, tcust.CustID
-    FROM Temp_RootCustomer tcust
-		INNER JOIN CTS_DataCenter.Association ass ON ass.FromCTSCustID = tcust.CTSCustID
-			OR ass.ToCTSCustID = tcust.CTSCustID;
+			ass.ToCTSCustID
+		,	cust.CTSCustID
+		, 	cust.CustID
+    FROM Temp_RootCustomer cust INNER JOIN CTS_DataCenter.Association ass ON ass.FromCTSCustID = cust.CTSCustID;
     
-    INSERT INTO Temp_AssociationLevel2 (CTSCustID, RootCTSCustID, RootCustID)
-	SELECT DISTINCT
-		CASE WHEN ass2.FromCTSCustID = ass1.CTSCustID THEN ass2.ToCTSCustID ELSE ass2.FromCTSCustID END AS 'AssLv2'
-		,	ass1.RootCTSCustID
-		,	ass1.RootCustID
-    FROM Temp_AssociationLevel1 ass1
-		INNER JOIN CTS_DataCenter.Association ass2 ON ass2.FromCTSCustID = ass1.CTSCustID
-			OR ass2.ToCTSCustID = ass1.CTSCustID;
-    
-    SELECT ass2.RootCustID AS 'Level0CustId'
-		, cus.CustID
-        , evi.EvidenceCode
-        , evi.EvidenceName
-        , ce.CreatedDate
-        , 2 AS 'AssociatedLevel'
-    FROM Temp_AssociationLevel2 ass2
-		INNER JOIN CTS_DataCenter.CustEvidence ce ON ass2.CTSCustID = ce.CTSCustID AND ass2.CTSCustID = ce.FromCustID
-        INNER JOIN CTS_DataCenter.Evidence evi ON ce.EvidenceID = evi.EvidenceID
-        INNER JOIN CTS_DataCenter.CTSCustomer cus ON cus.CTSCustID = ass2.CTSCustID
-        LEFT JOIN Temp_RootCustomer tcust ON tcust.CTSCustID = ass2.CTSCustID
-	WHERE tcust.CTSCustID IS NULL;
-  
+    INSERT INTO Temp_AssociationLevel1 (CTSCustID, RootCTSCustID, RootCustID)
+    SELECT DISTINCT
+			ass.FromCTSCustID
+		,	cust.CTSCustID
+		, 	cust.CustID
+    FROM Temp_RootCustomer cust INNER JOIN CTS_DataCenter.Association ass ON ass.ToCTSCustID = cust.CTSCustID;
+	
+    /* Get Association Lv2*/
+    INSERT INTO Temp_AssociationLevel2 (AssCTSCustID, RootCustID, EvidenceID, CreatedDate, AssociationLevel)
+	SELECT  ce.FromCustID 	AS AssCTSCustID
+		,	c.RootCustID 	AS RootCustID
+        , 	ce.EvidenceID
+        , 	ce.CreatedDate
+        ,	2 AS AssociationLevel	   
+	FROM Temp_AssociationLevel1 AS c 
+		INNER JOIN CTS_DataCenter.CustEvidence AS ce ON ce.CTSCustID = c.CTSCustID AND ce.Level = 2
+	WHERE ce.FromCustID <> c.RootCTSCustID;
+
+    -- Return CustId, Level0CustId, EvidenceCode, EvidenceName, CreatedDate, AssociatedLevel
+    SELECT DISTINCT cust.CustID				AS CustId
+				,	e.EvidenceCode			AS EvidenceCode
+                ,	e.EvidenceName			AS EvidenceName
+                ,	temp.RootCustID 		AS Level0CustId
+                ,	temp.CreatedDate		AS CreatedDate
+                ,	temp.AssociationLevel	AS AssociatedLevel
+    FROM Temp_AssociationLevel2 AS temp
+  		INNER JOIN CTS_DataCenter.Evidence AS e ON e.EvidenceID = temp.EvidenceID AND e.IsActive = True
+        INNER JOIN CTS_DataCenter.CTSCustomer cust ON cust.CTSCustID = temp.AssCTSCustID;
+        
 END$$
 
 DELIMITER ;
