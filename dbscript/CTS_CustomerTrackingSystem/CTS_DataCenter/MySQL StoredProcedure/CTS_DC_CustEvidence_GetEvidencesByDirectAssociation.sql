@@ -34,7 +34,6 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_DirectAssociation;    
 	CREATE TEMPORARY TABLE Temp_DirectAssociation (	  
 			 RootCustID			INT UNSIGNED  
-		 ,	 CustID				INT UNSIGNED  
          ,   CTSCustID 			BIGINT UNSIGNED
          ,	 PRIMARY KEY 		PK_Temp_DirectedAssociation (CTSCustID)
 	);
@@ -61,26 +60,25 @@ BEGIN
 			,	temp.CTSCustID = cust.CTSCustID;
 		
     /* Get Direct Association */
-    INSERT IGNORE INTO Temp_DirectAssociation(RootCustID, CustID, CTSCustID)
-	SELECT rootCust.CustID AS RootCustID
-		, cust.CustID
-		, cust.CTSCustID
-	FROM Temp_RootCustomer as rootCust
-		INNER JOIN CTS_DataCenter.Association ass ON ass.FromCTSCustID = rootCust.CTSCustID	OR ass.ToCTSCustID = rootCust.CTSCustID
-		INNER JOIN CTS_DataCenter.CTSCustomer cust ON cust.CTSCustID = CASE WHEN ass.FromCTSCustID = rootCust.CTSCustID THEN ass.ToCTSCustID ELSE ass.FromCTSCustID END 
-	WHERE ass.FromCTSCustID <> ass.ToCTSCustID;
+    INSERT IGNORE INTO Temp_DirectAssociation(RootCustID, CTSCustID)
+	SELECT rootCust.CustID 	AS RootCustID, ass.ToCTSCustID	AS CTSCustID
+	FROM Temp_RootCustomer as rootCust INNER JOIN CTS_DataCenter.Association ass ON ass.FromCTSCustID = rootCust.CTSCustID;
+    
+    INSERT IGNORE INTO Temp_DirectAssociation(RootCustID, CTSCustID)
+	SELECT rootCust.CustID 	AS RootCustID, ass.FromCTSCustID	AS CTSCustID
+	FROM Temp_RootCustomer as rootCust INNER JOIN CTS_DataCenter.Association ass ON ass.ToCTSCustID = rootCust.CTSCustID;
     
 	/* Get Flagged Evidence (Level 0)*/
 	INSERT INTO Temp_FlaggedEvidence(CustID, FromCustID, EvidenceID, CreatedDate, AssociationLevel)
 	SELECT c.CustID, c.RootCustID AS FromCustID, ce.EvidenceID, ce.CreatedDate, 0 as AssociationLevel	   
-	FROM CTS_DataCenter.CustEvidence AS ce	
-		INNER JOIN Temp_RootCustomer AS c ON ce.FromCustID = c.CTSCustID AND ce.Level = 0;
+	FROM CTS_DataCenter.CustEvidence AS ce INNER JOIN Temp_RootCustomer AS c ON ce.FromCustID = c.CTSCustID AND ce.Level = 0;
 	  
 	/* Get Flagged Evidence (Level 1)*/
 	INSERT INTO Temp_FlaggedEvidence(CustID, FromCustID, EvidenceID, CreatedDate, AssociationLevel)
-	SELECT c.CustID, c.RootCustID AS FromCustID, ce.EvidenceID, ce.CreatedDate, 1 as AssociationLevel	  
+	SELECT cust.CustID, c.RootCustID AS FromCustID, ce.EvidenceID, ce.CreatedDate, 1 as AssociationLevel	  
 	FROM CTS_DataCenter.CustEvidence AS ce	
-		INNER JOIN Temp_DirectAssociation AS c ON ce.FromCustID = c.CTSCustID AND ce.Level = 0;
+		INNER JOIN Temp_DirectAssociation AS c ON ce.FromCustID = c.CTSCustID AND ce.Level = 0
+		INNER JOIN CTS_DataCenter.CTSCustomer cust ON cust.CTSCustID = c.CTSCustID;
         
 	-- Return CustId, Level0CustId, EvidenceCode, EvidenceName, CreatedDate, AssociatedLevel
     SELECT DISTINCT temp.CustID				AS CustId
