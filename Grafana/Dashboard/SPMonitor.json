@@ -223,12 +223,13 @@
         "min": false,
         "rightSide": true,
         "show": true,
-        "sideWidth": null,
+        "sideWidth": 100,
         "total": false,
         "values": false
       },
       "lines": true,
       "linewidth": 2,
+      "maxDataPoints": 2000,
       "nullPointMode": "null as zero",
       "options": {
         "alertThreshold": true,
@@ -259,7 +260,7 @@
           "metricColumn": "none",
           "queryType": "randomWalk",
           "rawQuery": true,
-          "rawSql": "SELECT\n  $__timeGroupAlias(Created,$__interval),\n  SUM(Count_Star) AS \"Count\",\n  SUM(Sum_Errors) AS \"Error\",\n  SUM(Sum_Warnings) AS \"Warning\",\n  SUM(Sum_Rows_Affected) AS \"Row Affected\",\n  SUM(Sum_Rows_Sent) AS \"Row Sent\"\nFROM MonDB.DBA_SPMonitor\nWHERE\n  $__timeFilter(Created)\nGROUP BY Created\nORDER BY Created DESC;",
+          "rawSql": "SELECT\n  UNIX_TIMESTAMP(Created) AS \"time\",\n  SUM(Count_Star) AS \"Count\",\n  SUM(Sum_Errors) AS \"Error\",\n  SUM(Sum_Warnings) AS \"Warning\",\n  SUM(Sum_Rows_Affected) AS \"Row Affected\",\n  SUM(Sum_Rows_Sent) AS \"Row Sent\"\nFROM MonDB.DBA_SPMonitor\nWHERE\n  $__timeFilter(Created)\nGROUP BY Created\nORDER BY Created DESC;",
           "refId": "A",
           "select": [
             [
@@ -429,7 +430,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 265
+                "value": null
               }
             ]
           },
@@ -1819,7 +1820,7 @@
       "type": "table"
     }
   ],
-  "refresh": "30m",
+  "refresh": false,
   "schemaVersion": 25,
   "style": "dark",
   "tags": [],
@@ -1847,5 +1848,5 @@
   "timezone": "browser",
   "title": "SP Workload Monitor",
   "uid": "4uuciVYGz",
-  "version": 11
+  "version": 18
 }
