@@ -16,6 +16,7 @@ BEGIN
 
 		Revisions:
            - 20210226@JonasHuynh [Redmine ID: #150456]: Created
+           - 20210308@JonasHuynh [Redmine ID: #150456]: Update logic SP
 		   
 		Param's Explanation (filtered by):			
         Example:
