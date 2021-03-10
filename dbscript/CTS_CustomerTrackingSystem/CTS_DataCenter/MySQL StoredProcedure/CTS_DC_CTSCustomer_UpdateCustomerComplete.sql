@@ -132,7 +132,7 @@ BEGIN
                     AND ctsCust.SiteID != tmpCus.SiteID;      
 	END IF;     
     
-	UPDATE 		CTS_DataCenter.CTSCustomer AS ctsCust
+	UPDATE 	IGNORE	CTS_DataCenter.CTSCustomer AS ctsCust
 	INNER JOIN 	Temp_CTSCustomer AS tempCust ON ctsCust.CustID = tempCust.CustID
 	SET		
 			ctsCust.UserName = tempCust.UserName
@@ -150,7 +150,7 @@ BEGIN
 		,	ctsCust.ModifiedTime = CURRENT_TIMESTAMP(4)
 	WHERE	ctsCust.CustSubID = 0;    
    
-	UPDATE 		CTS_DataCenter.CTSCustomer AS ctsCust
+	UPDATE 	IGNORE CTS_DataCenter.CTSCustomer AS ctsCust
 	INNER JOIN	Temp_CTSCustomerCustSub AS tmpCus ON ctsCust.CTSCustID = tmpCus.CTSCustID
         SET		ctsCust.SubscriberID = tmpCus.SubscriberID
 			,	ctsCust.SiteID = tmpCus.SiteID
