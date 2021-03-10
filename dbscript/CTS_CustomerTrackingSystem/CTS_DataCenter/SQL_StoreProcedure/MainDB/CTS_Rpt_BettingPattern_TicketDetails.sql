@@ -1,24 +1,25 @@
 CREATE PROCEDURE [dbo].[CTS_Rpt_BettingPattern_TicketDetails]
 		@EventDate			DATETIME
-	,	@CustIds			VARCHAR(200)  = ''
 	,	@MatchId			INT
+	,	@CustId1			INT
+	,	@CustId2			INT
 	,	@Bettypes			VARCHAR(2000) = ''
 
 AS
 /*
 	Created: 20210304@John.Ngo
 	Task : Match List Betting Pattern - Match Details
-	DB	 : bodb_FraudSensor
+	DB	 : bodb02
 
 	Revisions:
 		- 20210304@John.Ngo: Display betting pattern details [Redmine ID: #151156]
 
 	Params Explaination:
-		EXECUTE [dbo].[CTS_Rpt_BettingPattern_TicketDetails] @EventDate = '2021-02-23 00:00:00.000',@CustIds = '46777100,47717138',	@MatchId = 40391219, @Bettypes = '1,3'
+		EXECUTE [dbo].[CTS_Rpt_BettingPattern_TicketDetails] @EventDate = '2021-02-23 00:00:00.000', @MatchId = 40391219, @CustId1 = 46777100, @CustId2 = 47717138, @Bettypes = '1,3'
 */
 BEGIN
 	SET NOCOUNT ON;
-	
+
 	DECLARE @BalanceUpDay			SMALLDATETIME
 		,	@MoveBetsDay			SMALLDATETIME;
 
@@ -98,17 +99,11 @@ BEGIN
 	CREATE CLUSTERED INDEX #CIX_tmpMatchDetailsIdx ON #tmpMatchDetails (
 			EventDate			DESC
 	);
-	
-	IF @CustIds <> ''
-	BEGIN
-		INSERT INTO #tmpCustIds (CustId)
-		SELECT ssk.val FROM dbo.SPU_StrSplit(@CustIds, ',') ssk;
-	END;
 
 	IF @Bettypes <> ''
 	BEGIN
 		INSERT INTO #tmpBettypes (BettypeId)
-		SELECT ssk.val FROM dbo.SPU_StrSplit(@Bettypes, ',') ssk;
+		SELECT ssk.val FROM dbo.f_SplitString(@Bettypes, ',') ssk;
 	END;
 
 	-- START --
@@ -138,11 +133,10 @@ BEGIN
 			,	b.livehomescore
 			,	b.liveawayscore
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH(NOLOCK)
-			LEFT JOIN #tmpCustIds AS tc WITH(NOLOCK) ON tc.CustId = b.custid
 			LEFT JOIN #tmpBettypes AS tbt WITH(NOLOCK) ON tbt.BettypeId = b.bettype
 		WHERE	b.winlostdate = @EventDate
 			AND b.matchid = @MatchId
-			AND (@CustIds = '' OR tc.CustId IS NOT NULL)
+			AND (b.custid = @CustId1 OR b.custid = @CustId2)
 			AND (@Bettypes = '' OR tbt.BettypeId IS NOT NULL);
 	END;
 
@@ -172,11 +166,10 @@ BEGIN
 			,	b.livehomescore
 			,	b.liveawayscore
 		FROM bodb02.dbo.bettrans14 AS b WITH(NOLOCK)
-			LEFT JOIN #tmpCustIds AS tc WITH(NOLOCK) ON tc.CustId = b.custid
 			LEFT JOIN #tmpBettypes AS tbt WITH(NOLOCK) ON tbt.BettypeId = b.bettype
 		WHERE	b.winlostdate = @EventDate
 			AND b.matchid = @MatchId
-			AND (@CustIds = '' OR tc.CustId IS NOT NULL)
+			AND (b.custid = @CustId1 OR b.custid = @CustId2)
 			AND (@Bettypes = '' OR tbt.BettypeId IS NOT NULL);
 	END;
 
@@ -206,11 +199,10 @@ BEGIN
 			,	b.livehomescore
 			,	b.liveawayscore
 		FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
-			LEFT JOIN #tmpCustIds AS tc WITH(NOLOCK) ON tc.CustId = b.custid
 			LEFT JOIN #tmpBettypes AS tbt WITH(NOLOCK) ON tbt.BettypeId = b.bettype
 		WHERE	b.winlostdate = @EventDate
 			AND b.matchid = @MatchId
-			AND (@CustIds = '' OR tc.CustId IS NOT NULL)
+			AND (b.custid = @CustId1 OR b.custid = @CustId2)
 			AND (@Bettypes = '' OR tbt.BettypeId IS NOT NULL);
 	END;
 
@@ -234,4 +226,4 @@ BEGIN
 END;
 
 GO
-/*<info serverAlias="DBFS-bodb_FraudSensor" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/

@@ -4,7 +4,7 @@ AS
 /*
 	Created: 20210304@John.Ngo
 	Task : Match List Betting Pattern
-	DB	 : bodb_FraudSensor
+	DB	 : bodb02
 
 	Revisions:
 		- 20210304@John.Ngo: Display betting pattern details [Redmine ID: #151156]
@@ -38,7 +38,7 @@ IF	OBJECT_ID('tempdb..#tmpMatches') IS NOT NULL
 	);
 
 	INSERT INTO #tmpMatches (MatchId)
-	SELECT ssk.val FROM dbo.SPU_StrSplit(@MatchIds, ',') ssk;
+	SELECT ssk.val FROM dbo.f_SplitString(@MatchIds, ',') ssk;
 
 	INSERT INTO #tmpMatchesInfo (MatchId, EventDate, HomeId, AwayId, LeagueId)
 	SELECT	tm.MatchId
@@ -96,4 +96,4 @@ IF	OBJECT_ID('tempdb..#tmpMatches') IS NOT NULL
 END;
 
 GO
-/*<info serverAlias="DBFS-bodb_FraudSensor" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
