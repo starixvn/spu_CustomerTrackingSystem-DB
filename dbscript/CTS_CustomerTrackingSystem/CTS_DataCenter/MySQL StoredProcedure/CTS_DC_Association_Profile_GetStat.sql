@@ -51,7 +51,7 @@ BEGIN
         SELECT  asMa.FromCTSCustID
 		FROM  CTS_DataCenter.AssociationByManual AS asMa  
 		WHERE asMa.ToCTSCustID =  ip_CTSCustID
-        /*
+
         UNION
         
         SELECT  cust.CTSCustID
@@ -64,7 +64,7 @@ BEGIN
         SELECT  cust.CTSCustID
 		FROM  CTS_DataCenter.AssociationByAI AS asAI 
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asAI.FromCustID AND cust.CustSubID = 0
-		WHERE asAI.ToCustID =  lv_CustID*/
+		WHERE asAI.ToCustID =  lv_CustID
 	)
 	SELECT COUNT(1)
 		INTO lv_TotalAccounts
