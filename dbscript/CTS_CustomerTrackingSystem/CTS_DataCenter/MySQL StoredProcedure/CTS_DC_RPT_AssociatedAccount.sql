@@ -282,7 +282,9 @@ sp : BEGIN
         LEFT JOIN CTS_Admin.Subscriber sub ON sub.SubscriberID = ev.SubscriberID
 	 WHERE ev.CustStatusID IN (SELECT CustStatusID FROM Temp_CustStatusID)
 		   AND ev.SubscriberID IN (SELECT SubscriberID FROM Temp_SubscriberID)
-	 ON DUPLICATE KEY UPDATE Temp_Result.CategoryName = CONCAT(Temp_Result.CategoryName, ', ', cc.CategoryName);
+	 ON DUPLICATE KEY UPDATE Temp_Result.CategoryName = CASE WHEN Temp_Result.CategoryName LIKE CONCAT('%',cc.CategoryName,'%') THEN Temp_Result.CategoryName
+															 ELSE CONCAT(Temp_Result.CategoryName, ', ', cc.CategoryName)
+														END;
     
     SELECT CTSCustID
 		,	UserName
