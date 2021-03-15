@@ -12,7 +12,7 @@ USE CTS_DataCenter;
 /*  Init CustomerCategory */
 INSERT INTO CTS_DataCenter.CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,CreatedDate,IsUsedManually,ScanIntervalInSecond,CategoryNameCN,CategoryGroup)
 VALUES	
-(61, 'Robot User', 'Robot User', 50, 13, 1, NOW(), 0, 0, NULL, 61);
+(61, 'Robot User', 'Robot User', 50, 61, 1, NOW(), 0, 0, NULL, 61);
 
 /* Init CategoryToCustomerClass */
 INSERT INTO CTS_DataCenter.CategoryToCustomerClass (CategoryID, CustomerClass) VALUES (61,13);
