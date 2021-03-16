@@ -102,8 +102,8 @@ BEGIN
         ,	lv_UserCurrentFromNotificationID
     FROM CTS_DataCenter.AssociatedAccountNotification AS a
 	WHERE a.CreatedDate BETWEEN  lv_FromScanDate AND lv_ToScanDate 
-		AND (SELECT 1 FROM Temp_UserPermissionGrantTime WHERE a.CreatedTime BETWEEN FromDate AND ToDate) IS NOT NULL
-		AND (SELECT 1 FROM Temp_NotificationGrantTime WHERE a.CreatedTime BETWEEN FromDate AND ToDate) IS NOT NULL
+		AND EXISTS (SELECT 1 FROM Temp_UserPermissionGrantTime WHERE a.CreatedTime BETWEEN FromDate AND ToDate)
+		AND EXISTS (SELECT 1 FROM Temp_NotificationGrantTime WHERE a.CreatedTime BETWEEN FromDate AND ToDate)
     ORDER BY CreatedDate DESC;
 
 END$$

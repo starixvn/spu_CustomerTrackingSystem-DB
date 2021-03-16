@@ -102,8 +102,8 @@ BEGIN
         ,	CASE WHEN MAX(prAc.NotificationID) <= lv_UserCurrentFromNotificationID THEN 1 ELSE 0 END AS IsSeen
 	FROM CTS_DataCenter.ProbationAccountNotification AS prAc
     WHERE prAc.CreatedDate BETWEEN  lv_FromScanDate AND  lv_ToScanDate
-		AND (SELECT 1 FROM Temp_UserPermissionGrantTime WHERE prAc.CreatedTime BETWEEN FromDate AND ToDate LIMIT 1) IS NOT NULL
-		AND (SELECT 1 FROM Temp_NotificationGrantTime WHERE prAc.CreatedTime BETWEEN FromDate AND ToDate  LIMIT 1) IS NOT NULL
+		AND EXISTS (SELECT 1 FROM Temp_UserPermissionGrantTime WHERE prAc.CreatedTime BETWEEN FromDate AND ToDate)
+		AND EXISTS (SELECT 1 FROM Temp_NotificationGrantTime WHERE prAc.CreatedTime BETWEEN FromDate AND ToDate)
     GROUP BY prAc.CreatedDate
     ORDER BY prAc.CreatedDate DESC;
 
