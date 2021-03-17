@@ -30,10 +30,9 @@ sp : BEGIN
 			- ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual
             - ip_AssociationStatus: 0 - All, 1 - Linked, 2 - UnLinked
             - ip_AccountStatusIds: 1,11,2,3,4,12,13,14 - All,    1,11 - Open(1:Open, 11:Active),  2,3,4,12,13,14 - Closed (2:Disabled, 3:Closed, 4:Suspended, 12:Inactive, 13:View Only, 14:Suspended)
-            - ip_CategoryIDs: 0 , 51,205,206,...-Selected CategoryIDs (0-No Category) Options
+            - ip_CategoryIDs: 0, 51,205,206,...-Selected CategoryIDs (0-No Category Options)
         Example:
-			- CALL CTS_DataCenter.CTS_DC_Association_Profile_Get_Test(9523,0,1,'1,11','11111,111111,111112,11111111',0,100 );
-            CALL CTS_DataCenter.CTS_DC_Association_Profile_Get_Test(,0,0,1,'11111,111111,111112,11111111','11,2,3,4,12,13,14',0,100);
+			- CALL CTS_DataCenter.CTS_DC_Association_Profile_Get(33,0,0,'1,11,2,3,4,12,13,14',' 1,13','0,56,61,154,156,153,202,153,51,211,222,153,231',0,100, @a);
 	*/
 	DECLARE lv_CustID INT;
     DECLARE	lv_NoCategoryFilter BOOLEAN;
