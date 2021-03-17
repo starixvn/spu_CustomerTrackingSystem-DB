@@ -10,6 +10,8 @@
 USE CTS_DataCenter;
 
 /*  Init CustomerCategory */
+UPDATE CTS_DataCenter.CustomerCategory SET DisplayOrder = 0 WHERE CategoryID IN (60, 80); -- No mapping to Bonus Hunter in NAP CM
+
 INSERT INTO CTS_DataCenter.CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,CreatedDate,IsUsedManually,ScanIntervalInSecond,CategoryNameCN,CategoryGroup)
 VALUES	
 (61, 'Robot User', 'Robot User', 50, 61, 1, NOW(), 0, 0, NULL, 61);
