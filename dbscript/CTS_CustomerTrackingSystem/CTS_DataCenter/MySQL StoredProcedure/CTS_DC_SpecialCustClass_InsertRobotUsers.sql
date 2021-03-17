@@ -20,6 +20,7 @@ BEGIN
 			- [20200923@Irena.Vo][141755]: Enhance SP
 			- 20201214-20210107@Irena.Vo: Remove logic delete Probation List. Enhance logic get VVIP & Insert History Log. Insert Error Log. Remove User Log [RedmineID: #145951]
             - 20210226@Irena.Vo: Update CategoryID from VVIP [RedmineID: #150454]
+           - 20210316@Irena.Vo: Remove log. Get Robot User category more. [RedmineID: #151374]
             
 		Param's Explanation (filtered by):
         ip_CustIDs = 1,2,3
@@ -84,23 +85,8 @@ BEGIN
 		,   1 -- For Special Customer
 	FROM Temp_RobotUsers AS temp;
   
-    /*	INSERT LOG	*/
-	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
-    (CustID, CTSCustID, LastModifiedDate, LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
-    SELECT    temp.CustID
-			, temp.CTSCustID
-            , lv_CurrentDateTime
-            , lv_CreatedBy
-			, 0 -- insert
-            , 1 -- auto
-            , DATE(lv_CurrentDateTime)
-            , 13 -- is Robot
-            , 11 -- item name = Change by Robot icon
-            , 1 -- View History
-	FROM Temp_RobotUsers AS temp;
-    
-    /* GET LATEST CC*/
-    SELECT 	DISTINCT CustId,	13 AS CustomerClass,   lv_CurrentDateTime AS ScannedTime FROM Temp_RobotUsers; 
+    /* GET Robot User Category*/
+    SELECT 	DISTINCT CustId,	61 AS CategoryId FROM Temp_RobotUsers; 
 END$$
 
 DELIMITER ;

@@ -24,6 +24,7 @@ BEGIN
             - 20201019@Irena.Vo  [#141930]: Get distinct CustID List for lastest category
             - 20210115@Irena.Vo: Insert History Log [RedmineID: #145951]
 			- 20210119@Aries.Nguyen: Write main error log - Rescan  [RedmineID: #149026]
+          - 20210316@Irena.Vo: Write Robot User log more.  [RedmineID: #151374]
             
 		Param's Explanation (filtered by):
 			CALL CTS_DataCenter.CTS_DC_InsertCategorizedProblemAccounts('[{"CustId": 123, "CategoryId": 27}]',0,@op_ErrorMessage);
@@ -256,7 +257,7 @@ BEGIN
 				END
 		FROM Temp_ProblemAccounts AS temp
 			LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryGroupID = temp.CategoryGroupID AND ex.CategoryID BETWEEN 72 AND 80 /* Not existed Evd Cate. */
-		WHERE temp.ActionType IN (0, 1);
+		WHERE temp.ActionType IN (0, 1) AND temp.CategoryID <> 61;
 		
 		/*	INSERT LOG REMOVE PA FROM NAP CM */
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
@@ -277,7 +278,7 @@ BEGIN
 				END
 		FROM Temp_ProblemAccounts AS temp
 			LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryID NOT BETWEEN 72 AND 80 AND ex.RowOrder = 1
-		WHERE temp.ActionType = 2;
+		WHERE temp.ActionType = 2 AND temp.CategoryID <> 61;
 			
 		/*	INSERT LOG IGNORE PIN */
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
@@ -292,11 +293,32 @@ BEGIN
 			, 	1
 			, 	DATE(lv_CurrentDateTime)
 		FROM Temp_ProblemAccounts AS temp
-		WHERE temp.ActionType = 4;
+		WHERE temp.ActionType = 4 AND temp.CategoryID <> 61;
+        
+        /*	INSERT LOG ROBOT USER */
+		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
+		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
+		SELECT DISTINCT temp.CustID
+			, 	temp.CTSCustID
+			, 	CASE WHEN temp.ActionType = 4 THEN NULL
+					 ELSE temp.CategoryID
+				END
+			, 	0
+			, 	lv_CurrentDateTime
+			, 	lv_CreatedBy
+			, 	temp.ActionType
+			, 	1
+			, 	DATE(lv_CurrentDateTime)
+            ,	13
+            ,	11
+            ,	1
+		FROM Temp_ProblemAccounts AS temp
+		WHERE temp.CategoryID = 61; -- Robot User
     END IF;
     
 	#=========================================GET LASTEST CUSTOMERS FOR CLASSICATION=========================================================
 	SELECT DISTINCT temp.CustId FROM Temp_ProblemAccounts AS temp 
-    WHERE temp.ActionType IN (0, 1, 2);
+    WHERE (temp.ActionType IN (0, 1, 2) AND temp.CategoryID <> 61) /*Is not Robot User*/ 
+		OR temp.CategoryID = 61 /*Is Robot User*/;
 END$$
 DELIMITER ;
