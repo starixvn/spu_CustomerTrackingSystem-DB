@@ -8,6 +8,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_Profile_Get`(
 	,	IN ip_AssociationStatus INT 
     ,	IN ip_AccountStatusIDs	VARCHAR(100)
 	, 	IN ip_SiteIDs 			TEXT
+    ,	IN ip_CategoryIDs		TEXT
     ,	IN ip_Skip 				INT
     ,	IN ip_Take 				INT
     
@@ -23,15 +24,19 @@ sp : BEGIN
 		Revisions:
 			- 20210202@Aries.Nguyen: Created [Redmine ID: #148908]
             - 20210221@Aries.Nguyen: Fix get wrong first association date by device [Redmine ID: #150223]
+            - 20210316@Casey.Huynh: Get Customer Category Info [Redmine ID: #150457]
             
 		Param's Explanation (filtered by):
 			- ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual
             - ip_AssociationStatus: 0 - All, 1 - Linked, 2 - UnLinked
             - ip_AccountStatusIds: 1,11,2,3,4,12,13,14 - All,    1,11 - Open(1:Open, 11:Active),  2,3,4,12,13,14 - Closed (2:Disabled, 3:Closed, 4:Suspended, 12:Inactive, 13:View Only, 14:Suspended)
+            - ip_CategoryIDs: 0 , 51,205,206,...-Selected CategoryIDs (0-No Category) Options
         Example:
-			- CALL CTS_DataCenter.CTS_DC_Association_Profile_Get(9523,0,1,'1,11','11111,111111,111112,11111111',0,100 );
+			- CALL CTS_DataCenter.CTS_DC_Association_Profile_Get_Test(9523,0,1,'1,11','11111,111111,111112,11111111',0,100 );
+            CALL CTS_DataCenter.CTS_DC_Association_Profile_Get_Test(,0,0,1,'11111,111111,111112,11111111','11,2,3,4,12,13,14',0,100);
 	*/
 	DECLARE lv_CustID INT;
+    DECLARE	lv_NoCategoryFilter BOOLEAN;
     
     IF ip_SiteIDs IS NULL OR ip_SiteIDs = '' OR ip_AccountStatusIDs IS NULL OR ip_AccountStatusIDs = '' THEN
 		LEAVE sp;
@@ -58,6 +63,9 @@ sp : BEGIN
         ,	StatusId			INT
 		,	StatusName			VARCHAR(20)
         ,	CustStatusID		INT
+        ,	CategoryIDs			VARCHAR(1000)
+		,	CategoryNames		VARCHAR(5000)
+		,	CustomerClasses		VARCHAR(1000)
         , 	PRIMARY KEY(CTSCustID)
         ,	INDEX IX_Temp_Accounts_SiteID(SiteID)
         ,	INDEX IX_Temp_Accounts_CustStatusID(CustStatusID)
@@ -92,7 +100,24 @@ sp : BEGIN
 			AccountStatusID 		INT UNSIGNED
         , 	PRIMARY KEY  (AccountStatusID)
 	);
-
+	
+	DROP TEMPORARY TABLE IF EXISTS Temp_Category;
+    CREATE TEMPORARY TABLE 	Temp_Category (
+			CategoryID 		SMALLINT UNSIGNED
+		,	CategoryName	VARCHAR(50)
+		,	CustomerClass	SMALLINT UNSIGNED
+        , 	PRIMARY KEY  (CategoryID)
+	);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustomerCategory;
+    CREATE TEMPORARY TABLE 	Temp_CustomerCategory (
+			CustID 			SMALLINT UNSIGNED
+		,	CategoryIDs		VARCHAR(1000)
+		,	CategoryNames	VARCHAR(5000)
+		,	CustomerClasses	VARCHAR(1000)
+        , 	PRIMARY KEY  (CustID)
+	);
+    
 	SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_SiteID (SiteID) VALUES ('", REPLACE(ip_SiteIDs, ",", "'),('"),"');");
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1; 
@@ -101,6 +126,23 @@ sp : BEGIN
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1;
     
+    /*Customer Category:*/
+    SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_Category (CategoryID) VALUES ('", REPLACE(ip_CategoryIDs, ",", "'),('"),"');");
+	PREPARE 	stmt1 FROM @sql;
+	EXECUTE 	stmt1;
+    
+    SET lv_NoCategoryFilter = (SELECT 1 FROM Temp_Category WHERE CategoryID = 0);
+    
+    DELETE	tmpCat
+    FROM 	Temp_Category AS tmpCat
+    WHERE 	tmpCat.CategoryID = -1;
+    
+    UPDATE Temp_Category AS tmpCat
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON tmpCat.CategoryID = cc.CategoryID
+		LEFT JOIN CTS_DataCenter.CategoryToCustomerClass AS ctc ON tmpCat.CategoryID = ctc.CategoryID
+    SET tmpCat.CustomerClass = ctc.CustomerClass
+		, tmpCat.CategoryName = cc.CategoryName;
+    /*<Customer Category Rule/>*/    
     SELECT CustID 
     INTO lv_CustID
     FROM CTS_DataCenter.CTSCustomer 
@@ -180,8 +222,7 @@ sp : BEGIN
 		,	2 AS AssociationStatus
 		,	cte.CreatedDate
 	FROM CTE_AssociationRemove AS cte
-	INNER JOIN Temp_CustAssociation AS tmp ON cte.CTSCustID_Aff = tmp.CTSCustID_Aff;
-        
+	INNER JOIN Temp_CustAssociation AS tmp ON cte.CTSCustID_Aff = tmp.CTSCustID_Aff;        
         
 	INSERT IGNORE INTO Temp_CustAssociationUnlinked (CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
 	WITH CTE_AssociationRemove AS (
@@ -217,11 +258,9 @@ sp : BEGIN
      IF ip_AssociationStatus = 1 THEN
 		DELETE cuAs
         FROM Temp_CustAssociation  AS cuAs
-            INNER JOIN Temp_CustAssociationUnlinked AS un ON 	un.CTSCustID_Aff = cuAs.CTSCustID_Aff AND un.AssociationStatus = cuAs.AssociationStatus;
-     END IF;
+            INNER JOIN Temp_CustAssociationUnlinked AS un ON un.CTSCustID_Aff = cuAs.CTSCustID_Aff AND un.AssociationStatus = cuAs.AssociationStatus;
+     END IF;     
      
-     
-        
      INSERT IGNORE INTO Temp_Accounts(CTSCustID, CustId, CustSubID, SubscriberID, SubscriberName, UserName, UserName2, AssociationType, AssociationTypeName, AssociationDate, StatusId, StatusName, AssociationStatus, SiteID, SiteName)
      SELECT cust.CTSCustID
 		,	cust.CustId
@@ -246,34 +285,72 @@ sp : BEGIN
 	    LEFT JOIN  CTS_DataCenter.StaticList AS sta1 ON sta1.ListID = 1 AND sta1.ItemID = cust.CustStatusID
         LEFT JOIN  CTS_DataCenter.MappingSubscriberSite AS maSu ON maSu.SubscriberID = cust.SubscriberID AND maSu.SiteID = cust.SiteID
      ON DUPLICATE KEY UPDATE AssociationTypeName =  CONCAT(Temp_Accounts.AssociationTypeName, ', ', sta.ItemName),
-							 AssociationDate = LEAST(Temp_Accounts.AssociationDate, cuAs.AssociationDate); 
-     
-     SELECT CTSCustID
-		, 	CustId
-        , 	CustSubID
-        ,	SubscriberID
-        , 	SubscriberName
-        , 	UserName
-        , 	UserName2
-        , 	AssociationTypeName
-        , 	AssociationDate
-        , 	StatusId
-        , 	StatusName
-        , 	AssociationStatus
-        , 	SiteID
-        , 	SiteName
-     FROM Temp_Accounts
-     WHERE SiteID IN (SELECT SiteID FROM Temp_SiteID) 
+							 AssociationDate = LEAST(Temp_Accounts.AssociationDate, cuAs.AssociationDate);
+                             
+    /*Customer Category: Get Customer Category Infor by Input Info*/                         
+    INSERT INTO Temp_CustomerCategory(CustID, CategoryIDs, CategoryNames, CustomerClasses)
+	SELECT	tmpAcc.CustID
+		,	GROUP_CONCAT(DISTINCT tmpCat.CategoryID SEPARATOR ',')  AS CategoryIDs  
+        ,	GROUP_CONCAT(DISTINCT tmpCat.CategoryName SEPARATOR ',')  AS CategoryNames  
+		,	GROUP_CONCAT(DISTINCT tmpCat.CustomerClass SEPARATOR ',') AS CustomerClasses		
+	FROM	Temp_Accounts AS tmpAcc
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON tmpAcc.CustID = cc.CustID	AND CustSubID = 0	
+		INNER JOIN Temp_Category AS	tmpCat ON tmpCat.CategoryID = cc.CategoryID
+	GROUP BY tmpAcc.CustID;
+    
+    UPDATE Temp_Accounts AS tmpAcc
+		INNER JOIN Temp_CustomerCategory AS tmpCC ON tmpAcc.CustID = tmpCC.CustID	AND CustSubID = 0
+	SET	tmpAcc.CategoryIDs = tmpCC.CategoryIDs
+		, tmpAcc.CategoryNames = tmpCC.CategoryNames
+        , tmpAcc.CustomerClasses = tmpCC.CustomerClasses;
+	
+    /*Customer Category: Remove Cust that Category is not in Input CategoryIDs*/
+    DELETE 	tmpAcc
+    FROM	Temp_Accounts AS tmpAcc,
+	LATERAL (
+		SELECT CustID
+		FROM CTSCustomerClassification AS cc
+		WHERE cc.CustID = tmpAcc.CustID
+		LIMIT 1
+	) AS ltr
+    WHERE tmpAcc.CategoryIDs IS NULL;
+	
+    # Customer Category: WHEN ip_CategoryIDs Include item '0' - Remove Cust that NOT has Categroy Where Fitter Cat
+	IF lv_NoCategoryFilter IS NULL THEN 
+		DELETE 	tmpAcc
+		FROM	Temp_Accounts AS tmpAcc
+		WHERE	tmpAcc.CategoryIDs IS NULL;
+    END IF;
+
+	SELECT CTSCustID
+	, 	CustId
+	, 	CustSubID
+	,	SubscriberID
+	, 	SubscriberName
+	, 	UserName
+	, 	UserName2
+	, 	AssociationTypeName
+	, 	AssociationDate
+	, 	StatusId
+	, 	StatusName
+	, 	AssociationStatus
+	, 	SiteID
+	, 	SiteName
+	,	tmpAcc.CategoryIDs
+	,	tmpAcc.CategoryNames
+	,	tmpAcc.CustomerClasses
+	FROM Temp_Accounts AS tmpAcc
+	WHERE SiteID IN (SELECT SiteID FROM Temp_SiteID) 
 		AND StatusId IN (SELECT AccountStatusID FROM Temp_AccountStatusID)
 	ORDER BY  SiteName ASC, AssociationStatus ASC , StatusId ASC,  AssociationDate DESC
-    LIMIT ip_Take
-    OFFSET ip_Skip; 
-    
-    SELECT COUNT(1) 
-    INTO op_TotalItems
+	LIMIT ip_Take
+	OFFSET ip_Skip; 
+
+	SELECT COUNT(1) 
+	INTO op_TotalItems
 	FROM Temp_Accounts
 	WHERE SiteID IN (SELECT SiteID FROM Temp_SiteID) 
-		AND StatusId IN (SELECT AccountStatusID FROM Temp_AccountStatusID);
+	AND StatusId IN (SELECT AccountStatusID FROM Temp_AccountStatusID);
     
 END$$
 
