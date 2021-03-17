@@ -119,8 +119,7 @@ BEGIN
 								END)
 		,	temp.CategoryGroupID = (CASE WHEN cc.DisplayOrder IS NOT NULL THEN cc.CategoryGroup
 										 ELSE temp.MainDBCategoryID
-									END)
-	WHERE temp.ActionType = 0;
+									END);
     
     /*	UPDATE CUST INFO */
     UPDATE Temp_ProblemAccounts AS temp 
