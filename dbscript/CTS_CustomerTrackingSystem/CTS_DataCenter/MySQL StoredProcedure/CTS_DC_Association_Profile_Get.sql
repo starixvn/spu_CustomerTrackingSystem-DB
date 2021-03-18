@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_Association_Profile_Get`;
+DROP PROCEDURE IF EXISTS `CTS_DC_Association_Profile_Get_IPTest`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_Profile_Get`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_Profile_Get_IPTest`(
 		IN ip_CTSCustID 		BIGINT UNSIGNED
 	,	IN ip_AssociationType	INT
 	,	IN ip_AssociationStatus INT 
@@ -25,9 +25,10 @@ sp : BEGIN
 			- 20210202@Aries.Nguyen: Created [Redmine ID: #148908]
             - 20210221@Aries.Nguyen: Fix get wrong first association date by device [Redmine ID: #150223]
             - 20210316@Casey.Huynh: Get Customer Category Info [Redmine ID: #150457]
+            - 20210317@Casey.Huynh: Count AssociationByIP to lv_TotalAccounts [Redmine ID: #131662]
             
 		Param's Explanation (filtered by):
-			- ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual
+			- ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual, 4 - IP
             - ip_AssociationStatus: 0 - All, 1 - Linked, 2 - UnLinked
             - ip_AccountStatusIds: 1,11,2,3,4,12,13,14 - All,    1,11 - Open(1:Open, 11:Active),  2,3,4,12,13,14 - Closed (2:Disabled, 3:Closed, 4:Suspended, 12:Inactive, 13:View Only, 14:Suspended)
             - ip_CategoryIDs: 0, 51,205,206,...-Selected CategoryIDs (0-'No Category' Option)
@@ -152,7 +153,7 @@ sp : BEGIN
     FROM CTS_DataCenter.CTSCustomer 
     WHERE CTSCustID = ip_CTSCustID;
     
-    # ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual
+    # ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual, 4 - IP
     IF ip_AssociationType = 0 OR ip_AssociationType = 1 THEN
 		INSERT INTO Temp_CustAssociation(CTSCustID_Aff, AssociationType, AssociationStatus,  AssociationDate)
 		SELECT 
@@ -166,7 +167,7 @@ sp : BEGIN
         ON DUPLICATE KEY UPDATE AssociationDate = LEAST(Temp_CustAssociation.AssociationDate, GREATEST(asDv.CreatedTime, asCus.CreatedTime)); 
     END IF;
     
-    # ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual
+    # ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual, 4 - IP
     IF ip_AssociationType = 0 OR ip_AssociationType = 3 THEN
 		INSERT IGNORE INTO Temp_CustAssociation(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
 		SELECT 
@@ -189,7 +190,7 @@ sp : BEGIN
         
     END IF;
 
-    # ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual
+    # ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual, 4 - IP
     IF ip_AssociationType = 0 OR ip_AssociationType = 2 THEN
 		INSERT IGNORE INTO Temp_CustAssociation(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
 		SELECT 
@@ -211,6 +212,30 @@ sp : BEGIN
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asAI.FromCustID AND cust.CustSubID = 0
 		WHERE	asAI.ToCustID =  lv_CustID;
     END IF;
+    
+	IF ip_AssociationType = 0 OR ip_AssociationType = 4 THEN
+    SELECT lv_CustID;
+		INSERT IGNORE INTO Temp_CustAssociation(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
+		SELECT 
+				cust.CTSCustID 
+			,	4 AS AssociationType
+            ,	1 AS AssociationStatus
+			,	asIP.CreatedDate
+		FROM CTS_DataCenter.AssociationByIP AS asIP 
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asIP.ToCustID AND cust.CustSubID = 0
+		WHERE	asIP.FromCustID =  lv_CustID;
+        
+        INSERT IGNORE INTO Temp_CustAssociation(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
+		SELECT 
+				cust.CTSCustID 
+			,	4 AS AssociationType
+            ,	1 AS AssociationStatus
+			,	asIP.CreatedDate
+		FROM CTS_DataCenter.AssociationByIP AS asIP 
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asIP.FromCustID AND cust.CustSubID = 0
+		WHERE	asIP.ToCustID =  lv_CustID;
+    END IF;
+    
 
     #ip_AssociationStatus: 0 - All, 1 - Linked, 2 - UnLinked
 
