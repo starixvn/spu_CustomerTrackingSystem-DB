@@ -30,7 +30,7 @@ sp : BEGIN
 			- ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual
             - ip_AssociationStatus: 0 - All, 1 - Linked, 2 - UnLinked
             - ip_AccountStatusIds: 1,11,2,3,4,12,13,14 - All,    1,11 - Open(1:Open, 11:Active),  2,3,4,12,13,14 - Closed (2:Disabled, 3:Closed, 4:Suspended, 12:Inactive, 13:View Only, 14:Suspended)
-            - ip_CategoryIDs: 0, 51,205,206,...-Selected CategoryIDs (0-No Category Options)
+            - ip_CategoryIDs: 0, 51,205,206,...-Selected CategoryIDs (0-'No Category' Option)
         Example:
 			- CALL CTS_DataCenter.CTS_DC_Association_Profile_Get(33,0,0,'1,11,2,3,4,12,13,14',' 1,13','0,56,61,154,156,153,202,153,51,211,222,153,231',0,100, @a);
 	*/
@@ -62,6 +62,7 @@ sp : BEGIN
         ,	StatusId			INT
 		,	StatusName			VARCHAR(20)
         ,	CustStatusID		INT
+        ,	ParentIDs			VARCHAR(1000)
         ,	CategoryIDs			VARCHAR(1000)
 		,	CategoryNames		VARCHAR(5000)
 		,	CustomerClasses		VARCHAR(1000)
@@ -103,6 +104,7 @@ sp : BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_Category;
     CREATE TEMPORARY TABLE 	Temp_Category (
 			CategoryID 		SMALLINT UNSIGNED
+		,	ParentID		SMALLINT UNSIGNED
 		,	CategoryName	VARCHAR(50)
 		,	CustomerClass	SMALLINT UNSIGNED
         , 	PRIMARY KEY  (CategoryID)
@@ -111,6 +113,7 @@ sp : BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerCategory;
     CREATE TEMPORARY TABLE 	Temp_CustomerCategory (
 			CustID 			SMALLINT UNSIGNED
+		,	ParentID		SMALLINT UNSIGNED
 		,	CategoryIDs		VARCHAR(1000)
 		,	CategoryNames	VARCHAR(5000)
 		,	CustomerClasses	VARCHAR(1000)
@@ -140,7 +143,9 @@ sp : BEGIN
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON tmpCat.CategoryID = cc.CategoryID
 		LEFT JOIN CTS_DataCenter.CategoryToCustomerClass AS ctc ON tmpCat.CategoryID = ctc.CategoryID
     SET tmpCat.CustomerClass = ctc.CustomerClass
-		, tmpCat.CategoryName = cc.CategoryName;
+		, tmpCat.CategoryName = cc.CategoryName
+        , tmpCat.ParentID = cc.ParentID;
+        
     /*<Customer Category Rule/>*/    
     SELECT CustID 
     INTO lv_CustID
@@ -287,8 +292,9 @@ sp : BEGIN
 							 AssociationDate = LEAST(Temp_Accounts.AssociationDate, cuAs.AssociationDate);
                              
     /*Customer Category: Get Customer Category Infor by Input Info*/                         
-    INSERT INTO Temp_CustomerCategory(CustID, CategoryIDs, CategoryNames, CustomerClasses)
+    INSERT INTO Temp_CustomerCategory(CustID, ParentID, CategoryIDs, CategoryNames, CustomerClasses)
 	SELECT	tmpAcc.CustID
+		,	GROUP_CONCAT(DISTINCT tmpCat.ParentID SEPARATOR ',')  AS CategoryIDs  
 		,	GROUP_CONCAT(DISTINCT tmpCat.CategoryID SEPARATOR ',')  AS CategoryIDs  
         ,	GROUP_CONCAT(DISTINCT tmpCat.CategoryName SEPARATOR ',')  AS CategoryNames  
 		,	GROUP_CONCAT(DISTINCT tmpCat.CustomerClass SEPARATOR ',') AS CustomerClasses		
@@ -301,7 +307,8 @@ sp : BEGIN
 		INNER JOIN Temp_CustomerCategory AS tmpCC ON tmpAcc.CustID = tmpCC.CustID	AND CustSubID = 0
 	SET	tmpAcc.CategoryIDs = tmpCC.CategoryIDs
 		, tmpAcc.CategoryNames = tmpCC.CategoryNames
-        , tmpAcc.CustomerClasses = tmpCC.CustomerClasses;
+        , tmpAcc.CustomerClasses = tmpCC.CustomerClasses
+        , tmpAcc.ParentIDs = tmpCC.ParentID;
 	
     /*Customer Category: Remove Cust that Category is not in Input CategoryIDs*/
     DELETE 	tmpAcc
@@ -335,6 +342,7 @@ sp : BEGIN
 	, 	AssociationStatus
 	, 	SiteID
 	, 	SiteName
+    ,	tmpAcc.ParentIDs
 	,	tmpAcc.CategoryIDs
 	,	tmpAcc.CategoryNames
 	,	tmpAcc.CustomerClasses
