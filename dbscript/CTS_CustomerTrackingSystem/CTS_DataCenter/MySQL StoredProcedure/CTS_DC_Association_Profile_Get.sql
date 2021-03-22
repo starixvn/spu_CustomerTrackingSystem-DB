@@ -112,7 +112,7 @@ sp : BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerCategory;
     CREATE TEMPORARY TABLE 	Temp_CustomerCategory (
-			CustID 			SMALLINT UNSIGNED
+			CustID 			BIGINT UNSIGNED
 		,	ParentID		SMALLINT UNSIGNED
 		,	CategoryIDs		VARCHAR(1000)
 		,	CategoryNames	VARCHAR(5000)
