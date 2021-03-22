@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_Association_Profile_GetStat_IPTest`;
+DROP PROCEDURE IF EXISTS `CTS_DC_Association_Profile_GetStat`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_Profile_GetStat_IPTest`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_Profile_GetStat`(
 		IN ip_CTSCustID BIGINT
 )
     SQL SECURITY INVOKER

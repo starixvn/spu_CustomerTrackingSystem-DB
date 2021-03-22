@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_Association_Profile_Get_IPTest`;
+DROP PROCEDURE IF EXISTS `CTS_DC_Association_Profile_Get`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_Profile_Get_IPTest`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_Profile_Get`(
 		IN ip_CTSCustID 		BIGINT UNSIGNED
 	,	IN ip_AssociationType	INT
 	,	IN ip_AssociationStatus INT 
@@ -214,7 +214,7 @@ sp : BEGIN
     END IF;
     
 	IF ip_AssociationType = 0 OR ip_AssociationType = 4 THEN
-    SELECT lv_CustID;
+   
 		INSERT IGNORE INTO Temp_CustAssociation(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
 		SELECT 
 				cust.CTSCustID 
