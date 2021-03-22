@@ -23,7 +23,7 @@ BEGIN
 		,	cat.CategoryName
 		,	GROUP_CONCAT(cat.CategoryID SEPARATOR ',')  AS CategoryIDs  
 	FROM	CTS_DataCenter.CustomerCategory AS cat
-	WHERE 	cat.CategoryGroup IN (52,53,54,55,56,58,59,60,61)
+	WHERE 	cat.ParentID = 50
 	GROUP BY cat.CategoryName 
 			 , cat.CategoryGroup
 	UNION ALL
