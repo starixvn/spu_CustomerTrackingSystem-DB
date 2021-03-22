@@ -312,15 +312,9 @@ sp : BEGIN
 	
     /*Customer Category: Remove Cust that Category is not in Input CategoryIDs*/
     DELETE 	tmpAcc
-    FROM	Temp_Accounts AS tmpAcc,
-	LATERAL (
-		SELECT CustID
-		FROM CTSCustomerClassification AS cc
-		WHERE cc.CustID = tmpAcc.CustID
-		LIMIT 1
-	) AS ltr
-    WHERE tmpAcc.CategoryIDs IS NULL;
-	
+    FROM	Temp_Accounts AS tmpAcc
+    WHERE	EXISTS (SELECT 1 FROM CTSCustomerClassification AS cc WHERE tmpAcc.CustID = cc.CustID);
+
     # Customer Category: WHEN ip_CategoryIDs Include item '0' - Remove Cust that NOT has Categroy Where Fitter Cat
 	IF lv_NoCategoryFilter IS NULL THEN 
 		DELETE 	tmpAcc
