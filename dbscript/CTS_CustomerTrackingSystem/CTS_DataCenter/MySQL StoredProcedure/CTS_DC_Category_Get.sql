@@ -26,14 +26,14 @@ BEGIN
 	WHERE 	cat.CategoryGroup IN (52,53,54,55,56,58,59,60,61)
 	GROUP BY cat.CategoryName 
 			 , cat.CategoryGroup
-	UNION
+	UNION ALL
 	SELECT	'PA Associated Category'  AS CategoryGroup
 		,	cat.CategoryName
 		,	cat.CategoryID AS CategoryIDs
 	FROM	CTS_DataCenter.CustomerCategory AS cat
 		INNER JOIN CTS_DataCenter.TaggingToCategory AS ttc ON ttc.CategoryID = cat.CategoryID
 	WHERE 	ttc.TaggingType = 1
-	UNION
+	UNION ALL
 	SELECT	'Normal Account Category'  AS CategoryGroup
 		,	cat.CategoryName, cat.CategoryID AS CategoryIDs
 	FROM	CTS_DataCenter.CustomerCategory AS cat
