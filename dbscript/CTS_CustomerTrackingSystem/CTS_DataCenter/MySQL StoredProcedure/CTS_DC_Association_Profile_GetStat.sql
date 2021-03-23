@@ -84,8 +84,7 @@ BEGIN
 	FROM CTS_Stat;
     
     SELECT 	lv_TotalAccounts AS TotalAccounts
-		,	lv_TotalDevices AS TotalDevices
-        ,	0 AS TotalIps;
+		,	lv_TotalDevices AS TotalDevices;
 END$$
 
 DELIMITER ;
