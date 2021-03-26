@@ -28,15 +28,16 @@ BEGIN
 			    - 20210115@Irena.Vo: Insert History Log  [RedmineID: #145951]
 				- 20210118@Casey.Huynh: Add New PA Rule NewMember(231,232,233)[RedmineID: #148908]
 				- 20210226@Casey.Huynh: Add New PA Rule [RedmineID: #150454, 150455]
+                - 20210326@Irena.Vo: Save Additional IsCateChanged [RedmineID: #152249]
+                
 		Param's Explanation (filtered by):
-			  
+			  call CTS_DataCenter.CTS_DC_InsertMainCustomerClassification
+('[{"CustId": "43600693","CategoryId":"202","CreatedTime":"2020-10-01 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10", "TaggingID":10, "TaggingType":1}]', @err);
 	*/ 
 	DECLARE lv_CreatedBy INT DEFAULT 10278938;
 	DECLARE lv_CurrentDateTime DATETIME DEFAULT CURRENT_TIME();
-
 	DECLARE	lv_No INT DEFAULT 1;
 	
-  
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN   
 		GET DIAGNOSTICS lv_No = NUMBER;
@@ -63,14 +64,13 @@ BEGIN
         ,	TargetCC				SMALLINT
         ,	SourceTypeID            SMALLINT
         , 	ActionType				SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN */
-        , 	IsLastDataChanged   	BIT DEFAULT 0
 		, 	CTSCustID				BIGINT DEFAULT 0
         , 	SubscriberID			INT DEFAULT 0        
         ,	ExistCategoryID 		SMALLINT -- Exist
         ,	ExistCategoryGroup		SMALLINT
         ,	NewCategoryID			SMALLINT
         , 	INDEX    			    IX_Temp_NewClassification_CustID_NewCategoryID(CustID,NewCategoryGroup)     
-		, 	INDEX 					IX_Temp_NewClassification_ExistCategoryID_LastCategoryGroup(ExistCategoryID,NewCategoryID)        
+		, 	INDEX 					IX_Temp_NewClassification_ExistCategoryID_NewCategoryID(ExistCategoryID,NewCategoryID)        
 	); 
 	  
 	INSERT INTO Temp_NewClassification(CustID, NewCategoryGroup, TurnoverRM, WinlossRM, BetCount, ActiveDays, LastXDaysMargin, ProbationPeriodWinloss, TaggingID, TaggingType)
@@ -229,7 +229,7 @@ BEGIN
     
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
 	 (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy,TurnoverRM, WinlossRM, BetCount, ActiveDays
-	 , ActionType,  IsAuto, InsertDate, LastXDaysMargin, ProbationPeriodWinloss, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsDataChanged, TaggingType)
+	 , ActionType,  IsAuto, InsertDate, LastXDaysMargin, ProbationPeriodWinloss, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsDataChanged, TaggingType, IsCateChanged)
 	SELECT DISTINCT	temp.CustID
 		, 	temp.CTSCustID
 		, 	temp.NewCategoryID
@@ -251,10 +251,10 @@ BEGIN
 		, 	temp.NewCategoryID
 		,   (CASE WHEN temp.SourceTypeID = 5 OR (temp.NewCategoryID <> IFNULL(temp.ExistCategoryID,0)) THEN 1 ELSE 0 END) AS IsDataChanged
 		,	temp.TaggingType
+		,   (CASE WHEN temp.NewCategoryID <> IFNULL(temp.ExistCategoryID,0) THEN 1 ELSE 0 END) AS IsCateChanged
 	FROM Temp_NewClassification AS temp;
    
 	#=========================================GET LASTEST CUSTOMERS FOR CLASSICATION=========================================================
-    SELECT DISTINCT temp.CustId FROM Temp_NewClassification AS temp
-    WHERE temp.ActionType IN (0, 1);
+    SELECT DISTINCT temp.CustId FROM Temp_NewClassification AS temp WHERE temp.ActionType IN (0, 1);
 END$$
 DELIMITER ;

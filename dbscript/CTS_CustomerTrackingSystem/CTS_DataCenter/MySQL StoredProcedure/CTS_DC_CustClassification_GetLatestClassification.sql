@@ -11,8 +11,8 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original: 
 		Revisions:
-				- 20201214-20210107@Irena.Vo: Created. Update Input & Output params. Insert Error Log. Return All List CustID. For CC = -1 (Only get from existed CTSCustID). Update logic get CC [RedmineID: #145951]
-            
+				- 20201214@Irena.Vo: Created. [RedmineID: #145951]
+				- 20210326@Irena.Vo: Get Additional IsCateChanged, IsLicensee [RedmineID: #152249]
 		Param's Explanation:
 			call CTS_DataCenter.CTS_DC_CustClassification_GetLatestClassification('1,2,1277,555555');
 	*/ 
@@ -65,6 +65,8 @@ BEGIN
         	CustID				BIGINT UNSIGNED PRIMARY KEY 
 		,   CustomerClass       SMALLINT
         ,	ScannedTime			DATETIME
+		,	IsCateChanged		BIT
+		,	IsLicensee 			BIT
     );    
     
     -- Insert CustIDs
@@ -118,8 +120,22 @@ BEGIN
     LEFT JOIN 	    Temp_ExistedLastestCategory AS ec ON ec.CustID = temp.CustID -- Not existed Category
     WHERE 			es.CustID IS NULL AND ec.CustID IS NULL;
     
+    /* Get Customer Category changed. */
+	UPDATE Temp_CustomerClass AS temp
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS his ON his.CustID = temp.CustID AND his.SportGroupID = 200 AND his.LastModifiedDate = temp.ScannedTime AND his.IsCateChanged = 1
+	SET temp.IsCateChanged = 1;
+
+	/*  Get Licensee Customers. */
+	UPDATE Temp_CustomerClass AS temp
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID = temp.CustID AND cust.CustSubID = 0 -- get SubscriberID
+		INNER JOIN CTS_DataCenter.MappingSubscriberSite AS map ON map.SubscriberID = cust.SubscriberID
+	SET temp.IsLicensee = (CASE WHEN map.SubscriberGroupID = 2 THEN 1 -- Licensee
+								ELSE 0 -- Credit, CN88
+							END)
+    WHERE temp.IsCateChanged = 1;
+    
     /* Get Lastest Customer Class to sync in mainDB */
-    SELECT DISTINCT	cc.CustId, cc.CustomerClass, cc.ScannedTime FROM Temp_CustomerClass AS cc;
+    SELECT DISTINCT	cc.CustId, cc.CustomerClass, cc.ScannedTime, cc.IsCateChanged, cc.IsLicensee FROM Temp_CustomerClass AS cc;
 END$$
 
 DELIMITER ;
