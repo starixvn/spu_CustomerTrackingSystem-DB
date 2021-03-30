@@ -7,7 +7,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_Profile_Get`(
 	,	IN ip_AssociationType	INT
 	,	IN ip_AssociationStatus INT 
     ,	IN ip_AccountStatusIDs	VARCHAR(100)
-	, 	IN ip_SiteIDs 			TEXT
+	, 	IN ip_SubscriberIDs		TEXT
     ,	IN ip_CategoryIDs		TEXT
     ,	IN ip_Skip 				INT
     ,	IN ip_Take 				INT
@@ -26,6 +26,7 @@ sp : BEGIN
             - 20210221@Aries.Nguyen: Fix get wrong first association date by device [Redmine ID: #150223]
             - 20210316@Casey.Huynh: Get Customer Category Info [Redmine ID: #150457]
             - 20210317@Casey.Huynh: Count AssociationByIP to lv_TotalAccounts [Redmine ID: #131662]
+            - 20210330@Jonas.Huynh: Replace Site filter by Subscriber [Redmine ID: #152252]
             
 		Param's Explanation (filtered by):
 			- ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual, 4 - IP
@@ -38,7 +39,7 @@ sp : BEGIN
 	DECLARE lv_CustID INT;
     DECLARE	lv_NoCategoryFilter BOOLEAN;
     
-    IF ip_SiteIDs IS NULL OR ip_SiteIDs = '' OR ip_AccountStatusIDs IS NULL OR ip_AccountStatusIDs = '' THEN
+    IF ip_SubscriberIDs IS NULL OR ip_SubscriberIDs = '' OR ip_AccountStatusIDs IS NULL OR ip_AccountStatusIDs = '' THEN
 		LEAVE sp;
     END IF;
     
@@ -68,7 +69,7 @@ sp : BEGIN
 		,	CategoryNames		VARCHAR(5000)
 		,	CustomerClasses		VARCHAR(1000)
         , 	PRIMARY KEY(CTSCustID)
-        ,	INDEX IX_Temp_Accounts_SiteID(SiteID)
+        ,	INDEX IX_Temp_Accounts_SubscriberID(SubscriberID)
         ,	INDEX IX_Temp_Accounts_CustStatusID(CustStatusID)
 	);   
 	
@@ -90,10 +91,10 @@ sp : BEGIN
         , 	PRIMARY KEY (CTSCustID_Aff,AssociationType, AssociationStatus)
 	);  
 	
-    DROP TEMPORARY TABLE IF EXISTS Temp_SiteID;
-    CREATE TEMPORARY TABLE 		Temp_SiteID (
-			SiteID 		INT UNSIGNED
-        , 	PRIMARY KEY  (SiteID)
+    DROP TEMPORARY TABLE IF EXISTS Temp_SubscriberID;
+    CREATE TEMPORARY TABLE 		Temp_SubscriberID (
+			SubscriberID 		INT UNSIGNED
+        , 	PRIMARY KEY  (SubscriberID)
 	);   
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_AccountStatusID;
@@ -121,7 +122,7 @@ sp : BEGIN
         , 	PRIMARY KEY  (CustID)
 	);
     
-	SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_SiteID (SiteID) VALUES ('", REPLACE(ip_SiteIDs, ",", "'),('"),"');");
+	SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_SubscriberID (SubscriberID) VALUES ('", REPLACE(ip_SubscriberIDs, ",", "'),('"),"');");
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1; 
     
@@ -367,16 +368,16 @@ sp : BEGIN
 	,	tmpAcc.CategoryNames
 	,	tmpAcc.CustomerClasses
 	FROM Temp_Accounts AS tmpAcc
-	WHERE SiteID IN (SELECT SiteID FROM Temp_SiteID) 
+	WHERE SubscriberID IN (SELECT SubscriberID FROM Temp_SubscriberID) 
 		AND StatusId IN (SELECT AccountStatusID FROM Temp_AccountStatusID)
-	ORDER BY  SiteName ASC, AssociationStatus ASC , StatusId ASC,  AssociationDate DESC
+	ORDER BY  SubscriberName ASC, AssociationStatus ASC , StatusId ASC,  AssociationDate DESC
 	LIMIT ip_Take
 	OFFSET ip_Skip; 
 
 	SELECT COUNT(1) 
 	INTO op_TotalItems
 	FROM Temp_Accounts
-	WHERE SiteID IN (SELECT SiteID FROM Temp_SiteID) 
+	WHERE SubscriberID IN (SELECT SubscriberID FROM Temp_SubscriberID) 
 	AND StatusId IN (SELECT AccountStatusID FROM Temp_AccountStatusID);
     
 END$$
