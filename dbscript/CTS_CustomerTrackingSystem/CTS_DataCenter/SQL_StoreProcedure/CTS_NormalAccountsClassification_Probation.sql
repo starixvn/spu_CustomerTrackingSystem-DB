@@ -39,7 +39,8 @@ BEGIN
 	DECLARE @GENERALCATEGORY_NORMALMEMBER		INT = 202
 		,	@GENERALCATEGORY_SMARTPUNTER		INT = 203
 		,	@GENERALCATEGORY_HIGHRISKPUNTER		INT = 204
-		,	@GENERALCATEGORY_VIP				INT = 205;
+		,	@GENERALCATEGORY_VIP				INT = 205
+		,	@GENERALCATEGORY_PROBATION			INT = 206;
 
 	DECLARE	@RptToDate			DATE = DATEADD(DAY, -1, GETDATE())
 	DECLARE	@RptFromDate		DATE = DATEADD(DAY, -(@PROBATION_FULLPERIOD), @RptToDate)
@@ -52,17 +53,14 @@ BEGIN
 		DROP TABLE	#tmpRawData;
 
 	CREATE TABLE #tmpRawData(
-		[CustId]			INT NOT NULL,
+		[CustId]			INT NOT NULL PRIMARY KEY,
 		[SportId]			INT NOT NULL,
 		[TurnoverRM]		MONEY NULL,
 		[WinlossRM]			MONEY NULL,
 		[TurnoverORG]		MONEY NULL,
 		[WinlossORG]		MONEY NULL,
 		[BetCount]			BIGINT NULL,
-		[ActiveDays]		INT NULL,
-		PRIMARY KEY (	[CustId]
-					,	[SportId]
-		)
+		[ActiveDays]		INT NULL
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpCustomerAccummulatedInfo') IS NOT NULL
@@ -207,7 +205,7 @@ BEGIN
 									@GENERALCATEGORY_SMARTPUNTER
 								WHEN (a.Margin > 1 AND (t.TotalWinlossLastXDays >= 0 OR t.TotalWinloss > 20000)) THEN
 									@GENERALCATEGORY_HIGHRISKPUNTER
-								ELSE -1
+								ELSE @GENERALCATEGORY_PROBATION
 							 END,
 		c.LastXDaysMargin = CASE WHEN t.TotalTurnoverLastXDays <> 0 THEN t.TotalWinlossLastXDays/t.TotalTurnoverLastXDays*100 ELSE 0 END,
 		c.ProbationPeriodWinloss = t.TotalWinloss
@@ -224,7 +222,7 @@ BEGIN
 					) AS t ON c.CustId = t.CustId
 	WHERE a.Margin >= 0;
 	
-	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, LastXDaysMargin, ProbationPeriodWinloss)
+	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT	a.CustId
 		,	@GENERAL_SPORTID
 		,	a.CategoryId
@@ -234,18 +232,31 @@ BEGIN
 		,	t.WinlossRM
 		,	t.BetCount
 		,	t.ActiveDays
-		,	a.LastXDaysMargin
-		,	a.ProbationPeriodWinloss
 	FROM #tmpCustomers AS a WITH(NOLOCK)
 		INNER JOIN #tmpCustomerAccummulatedInfo AS t WITH(NOLOCK) ON a.CustId = t.CustId
-	WHERE a.IsPassed = 1
-		AND a.CategoryId <> -1;
+	WHERE a.IsPassed = 1;
+
+	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
+	SELECT	a.CustId
+		,	@GENERAL_SPORTID
+		,	@GENERALCATEGORY_PROBATION
+		,	@CurrentDate AS CreatedDate
+		,	@CurrentDateTime AS CreatedTime
+		,	t.TurnoverRM
+		,	t.WinlossRM
+		,	t.BetCount
+		,	t.ActiveDays
+	FROM #tmpCustomers AS a WITH(NOLOCK)
+		INNER JOIN #tmpCustomerAccummulatedInfo AS t WITH(NOLOCK) ON a.CustId = t.CustId
+	WHERE a.IsPassed = 0;
 	
 	-- Return results
 	SELECT	CustId
 		,	@GENERAL_SPORTID AS 'SportGroupId'
 		,	IsProbationLastDay
 		,	CategoryId
+		,	LastXDaysMargin
+		,	ProbationPeriodWinloss
 		,	IsPassed
 	FROM #tmpCustomers WITH(NOLOCK);
 
