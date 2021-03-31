@@ -70,7 +70,6 @@ sp : BEGIN
 		,	CustomerClasses		VARCHAR(1000)
         , 	PRIMARY KEY(CTSCustID)
         ,	INDEX IX_Temp_Accounts_SubscriberID(SubscriberID)
-        ,	INDEX IX_Temp_Accounts_CustStatusID(CustStatusID)
 	);   
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_CustAssociation;
