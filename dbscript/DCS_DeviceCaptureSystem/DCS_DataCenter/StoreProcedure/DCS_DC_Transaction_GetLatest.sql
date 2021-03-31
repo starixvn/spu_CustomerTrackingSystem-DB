@@ -1,4 +1,11 @@
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transaction_GetLatest`(IN ip_SubscriberId int, IN ip_Length int)
+/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `DCS_DC_Transaction_GetLatest`;
+
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transaction_GetLatest`(
+		IN ip_SubscriberId INT
+	, 	IN ip_Length INT
+)
     SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -44,4 +51,6 @@ BEGIN
 		ORDER BY trans.TransID DESC
 		LIMIT ip_Length;
 	
-END
+END$$
+
+DELIMITER ;
