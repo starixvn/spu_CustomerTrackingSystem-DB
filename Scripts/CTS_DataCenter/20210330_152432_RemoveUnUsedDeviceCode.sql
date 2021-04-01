@@ -1,17 +1,12 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
 /*
-Creator: 	20210322@CaseyHuynh
-Task:	 	Init New Association 'IP' [Redmine ID: 131662] 	
+Creator: 	202104012@CaseyHuynh
+Task:	 	Init for Archive Un-used Device Code [Redmine ID: #152454]
 DBName:		CTS_DataCenter
 */
-SELECT * FROM DCS_DataCenter.SystemSetting;
-USE DCS_DataCenter;
-
-INSERT INTO DCS_DataCenter.SystemSetting(ID,VGroup,VName,VValue,UpdatedTime)
-VALUES(8,'DCS_Arvhive','DCSArc_DeviceCode_LastDeviceCodeID',0,NOW());
 
 USE DCS_DataCenter;
-CREATE TABLE ArchiveDeviceCode (
+CREATE TABLE zzArchiveDeviceCode (
   DeviceCodeID 	BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
   ,	DeviceCode 	VARCHAR(32) COLLATE utf8_unicode_ci NOT NULL COMMENT ' DeviceCode Captured From DI'
   ,	DeviceID 		BIGINT UNSIGNED DEFAULT NULL
@@ -23,5 +18,8 @@ CREATE TABLE ArchiveDeviceCode (
   ,	UNIQUE KEY UK_DeviceCode_DeviceID (DeviceCode,DeviceID)
   ,	INDEX IX_DeviceCode_CreatedDate (CreatedDate)
   ,	INDEX IX_DeviceCode_DeviceID (DeviceID)
-)ENGINE=InnoDB;
+) ENGINE=InnoDB;
 
+USE DCS_DataCenter;
+INSERT INTO DCS_DataCenter.SystemSetting(ID,VGroup,VName,VValue,UpdatedTime)
+VALUES(8,'DCS_Arvhive','DCSArc_DeviceCode_LastDeviceCodeID',0,NOW());
