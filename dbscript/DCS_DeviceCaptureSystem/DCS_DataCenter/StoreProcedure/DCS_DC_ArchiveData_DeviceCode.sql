@@ -9,7 +9,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_ArchiveData_DeviceCode`(
 BEGIN
 	/*
 		Created:	20210330@Casey.Huynh
-		Task:		Archive DeviceCode
+		Task:		Archive Unused DeviceCode
 		DB:			DCS_DataCenter
 		Original:
 
@@ -19,10 +19,9 @@ BEGIN
 	*/ 
 	
     DECLARE	lv_LastDeviceCodeID	BIGINT; # The Last DeviceCodeID
-    DECLARE	lv_ToDeviceCodeID	BIGINT; # The Last DeviceCodeID
-    DECLARE	lv_MaxDeviceCodeID	BIGINT; # The Max DeviceCodeID BY 
+    #DECLARE	lv_ToDeviceCodeID	BIGINT; # The Last DeviceCodeID   
 	DECLARE	lv_ToDate			DATE; # The DeviceCode.CreatedDate < lv_ToDate 
-    
+    DECLARE	lv_MaxDeviceCodeID	BIGINT; # The Max DeviceCodeID BY 
    
     DROP TEMPORARY TABLE IF EXISTS Temp_Device;
     CREATE TEMPORARY TABLE Temp_Device(
@@ -48,11 +47,11 @@ BEGIN
     
     SET lv_ToDate = DATE_SUB(CURRENT_DATE(), INTERVAL 6 DAY);
     SET @lv_ToDeviceCodeID = lv_LastDeviceCodeID;
+    
+    SET lv_MaxDeviceCodeID = (SELECT DeviceCodeID FROM DCS_DataCenter.DeviceCode WHERE CreatedDate = lv_ToDate LIMIT 1);
 
     WHILE (@lv_ToDeviceCodeID != -1)
     DO
-	#	SELECT 'Debug1', NOW(),@lv_ToDeviceCodeID,lv_LastDeviceCodeID;
-        
         INSERT  INTO	Temp_DeviceCode(DeviceID, CreatedTime, DeviceCodeID)
         WITH CTE_Device AS
         (
@@ -63,13 +62,12 @@ BEGIN
 					AND dc.CreatedDate < lv_ToDate
 			LIMIT	ip_Size
         )
-        SELECT			dc.DeviceID
-					,	dc.CreatedTime
-                    ,	dc.DeviceCodeID
-        FROM		DCS_DataCenter.DeviceCode AS dc					
-        WHERE	dc.CreatedDate < lv_ToDate AND EXISTS (SELECT 1 FROM CTE_Device AS cte WHERE dc.DeviceID  = cte.DeviceID); 	         
-	
-       # SELECT 'Debug2', NOW(),@lv_ToDeviceCodeID,lv_LastDeviceCodeID;
+        SELECT	dc.DeviceID
+			,	dc.CreatedTime
+            ,	dc.DeviceCodeID
+        FROM	DCS_DataCenter.DeviceCode AS dc					
+        WHERE	dc.DeviceCodeID < lv_MaxDeviceCodeID
+				AND EXISTS (SELECT 1 FROM CTE_Device AS cte WHERE dc.DeviceID  = cte.DeviceID); 	         
         
         IF(lv_LastDeviceCodeID = @lv_ToDeviceCodeID)
         THEN
@@ -91,9 +89,9 @@ BEGIN
 				INNER JOIN Temp_Device AS tmpDv ON tmpDc.DeviceID = tmpDv.DeviceID AND tmpDc.CreatedTime = tmpDv.MaxCreatedTime;
 			
 			INSERT IGNORE INTO DCS_DataCenter.zzArchiveDeviceCode(DeviceCodeID, DeviceCode, DeviceID, FirstTransID, CreatedTime, CreatedDate, InsertTime)
-			SELECT 	dc.DeviceCodeID, dc.DeviceCode, dc.DeviceID, dc.FirstTransID, dc.CreatedTime, dc.CreatedDate, dc.InsertTime
+			SELECT	dc.DeviceCodeID, dc.DeviceCode, dc.DeviceID, dc.FirstTransID, dc.CreatedTime, dc.CreatedDate, dc.InsertTime
 			FROM	DCS_DataCenter.DeviceCode AS dc
-			INNER JOIN Temp_DeviceCode AS tmpDc ON dc.DeviceCodeID = tmpDc.DeviceCodeID;
+				INNER JOIN	Temp_DeviceCode AS tmpDc ON dc.DeviceCodeID = tmpDc.DeviceCodeID;
 		 
 			DELETE	dc
 			FROM	DCS_DataCenter.DeviceCode AS dc
@@ -105,17 +103,13 @@ BEGIN
 			SET		 VValue = lv_LastDeviceCodeID
 			WHERE	 ID = 8; 
             
-        END IF;       
-        
-        
+        END IF;
         
         TRUNCATE TABLE Temp_DeviceCode;
         TRUNCATE TABLE Temp_Device;
-
-       # SELECT 'Debug3', NOW(),@lv_ToDeviceCodeID,lv_LastDeviceCodeID;
+        
+        DO SLEEP(0.5);
     END WHILE;
-    SELECT 'DebugN', NOW(),@lv_ToDeviceCodeID,lv_LastDeviceCodeID;
-    SELECT NOW();
     
 END$$
 
