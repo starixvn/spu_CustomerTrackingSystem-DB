@@ -19,7 +19,6 @@ BEGIN
 	*/ 
 	
     DECLARE	lv_LastDeviceCodeID	BIGINT; # The Last DeviceCodeID
-    #DECLARE	lv_ToDeviceCodeID	BIGINT; # The Last DeviceCodeID   
 	DECLARE	lv_ToDate			DATE; # The DeviceCode.CreatedDate < lv_ToDate 
     DECLARE	lv_MaxDeviceCodeID	BIGINT; #The Fisrt DeviceCode of lv_ToDate 
    
