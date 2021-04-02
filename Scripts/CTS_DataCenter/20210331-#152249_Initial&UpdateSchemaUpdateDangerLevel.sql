@@ -49,4 +49,4 @@ VALUES
 /* 4. Initial Log */
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
 ADD COLUMN TargetDangerLevel1 SMALLINT, -- Original
-ADD COLUMN IsAppliedDangerLevel1 BIT; -- Original
+ADD COLUMN IsAppliedDangerLevel1 BIT DEFAULT b'0'; -- Original
