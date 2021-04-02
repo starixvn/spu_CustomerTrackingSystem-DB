@@ -24,9 +24,9 @@ BEGIN
    
     DROP TEMPORARY TABLE IF EXISTS Temp_Device;
     CREATE TEMPORARY TABLE Temp_Device(
-			DeviceID	BIGINT UNSIGNED
-        ,	MinCreatedTime	BIGINT UNSIGNED
-        ,	MaxCreatedTime	BIGINT UNSIGNED
+			DeviceID		BIGINT UNSIGNED
+        ,	MinCreatedTime	DATETIME
+        ,	MaxCreatedTime	DATETIME
         
         ,	PRIMARY KEY PK_Temp_Device_DeviceID(DeviceID)
     );
@@ -34,7 +34,7 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_DeviceCode;
     CREATE TEMPORARY TABLE Temp_DeviceCode(
 			DeviceID		BIGINT UNSIGNED        
-        ,	CreatedTime		BIGINT UNSIGNED
+        ,	CreatedTime		DATETIME 
         ,	DeviceCodeID	BIGINT UNSIGNED
         ,	PRIMARY KEY PK_Temp_DeviceCode_DeviceCodeID(DeviceID,DeviceCodeID)
     );
