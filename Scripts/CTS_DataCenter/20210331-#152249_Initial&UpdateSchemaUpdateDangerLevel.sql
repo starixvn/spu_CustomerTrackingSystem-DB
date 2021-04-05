@@ -48,5 +48,6 @@ VALUES
 
 /* 4. Initial Log */
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
-ADD COLUMN TargetDangerLevel1 SMALLINT, -- Original
-ADD COLUMN IsAppliedDangerLevel1 BIT DEFAULT b'0'; -- Original
+ADD COLUMN TargetDangerLevel1 SMALLINT, ALGORITHM = INSTANT; -- Original
+ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
+ADD COLUMN IsAppliedDangerLevel1 BIT DEFAULT b'0', ALGORITHM = INSTANT; -- Original

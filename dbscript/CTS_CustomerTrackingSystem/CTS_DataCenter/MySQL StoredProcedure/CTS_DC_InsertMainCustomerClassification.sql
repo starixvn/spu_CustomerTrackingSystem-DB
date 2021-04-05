@@ -26,20 +26,11 @@ BEGIN
 				- 20210226@Casey.Huynh: Add New PA Rule [RedmineID: 150455]
                 - 20210401@Irena.Vo: Write log for Update Danger Level. Enhance logic SP. [RedmineID: #152249]
 		Param's Explanation (filtered by):
-			 call CTS_DataCenter.CTS_DC_InsertMainCustomerClassification('[{"CustId": "2324948","CategoryId":"206","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","LastXDaysMargin":100,"ProbationPeriodWinloss":100,"TaggingID":13,"TaggingType":1}]',@opp);
+        Example:
+				- CALL CTS_DataCenter.CTS_DC_InsertMainCustomerClassification('[{"CustId": "2324948","CategoryId":"206","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","LastXDaysMargin":100,"ProbationPeriodWinloss":100,"TaggingID":13,"TaggingType":1}]',@opp);
 	*/ 
 	DECLARE lv_CreatedBy INT DEFAULT 10278938;
 	DECLARE lv_CurrentDateTime DATETIME DEFAULT CURRENT_TIME();
-	DECLARE	lv_No INT DEFAULT 1;
-  
-	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
-    BEGIN   
-		GET DIAGNOSTICS lv_No = NUMBER;
-		GET DIAGNOSTICS CONDITION lv_No 
-            op_ErrorMessage = MESSAGE_TEXT;	
-		CALL CTS_Log.CTS_Log_ErrorLog_Insert('CTS_DC_InsertMainCustomerClassification',op_ErrorMessage, JSON_OBJECT('parameter', ip_NewClassification));
-		SIGNAL SQLSTATE '99999' SET MESSAGE_TEXT = op_ErrorMessage;
-	END;
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;    
 	CREATE TEMPORARY TABLE Temp_NewClassification(	  	

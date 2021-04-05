@@ -13,13 +13,12 @@ BEGIN
 		Task:		Get Danger Level for customers
 		DB:			CTS_DataCenter 
 		Original:
-
 		Revisions:
 			- 20210401@Irena.Vo: Created [Redmine ID: #152249]
-        
 		Param's Explanation (filtered by):
-        ip_CustIDs ; ip_TypeID: 1(Original) / 2(ABI) / 3(Other)
-			call CTS_DataCenter.CTS_DC_CustClassification_DangerLevel_Get('36266996,27852979,2324948',1);
+			- ip_CustIDs ; ip_TypeID: 1(Original) / 2(ABI) / 3(Other)
+		Example:
+			- CALL CTS_DataCenter.CTS_DC_CustClassification_DangerLevel_Get('36266996,27852979,2324948',1);
 	*/
     DROP TEMPORARY TABLE IF EXISTS Temp_Customers;
     CREATE TEMPORARY TABLE Temp_Customers (
@@ -42,19 +41,19 @@ BEGIN
     
     -- Get Results.
     IF (ip_TypeID = 1) THEN -- Original
-		SELECT DISTINCT temp.CustId, his.LastModifiedDate AS ScannedTime, his.TargetDangerLevel1 AS DangerLevel
+		SELECT temp.CustId, his.LastModifiedDate AS ScannedTime, his.TargetDangerLevel1 AS DangerLevel
 		FROM Temp_Customers AS temp
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS his ON his.ID = temp.HistoryID
         WHERE his.TargetDangerLevel1 IS NOT NULL;
 	END IF;
    /* IF (ip_TypeID = 2) THEN -- ABI
-		SELECT DISTINCT temp.CustId, his.LastModifiedDate AS ScannedTime, his.TargetDangerLevel2 AS DangerLevel
+		SELECT temp.CustId, his.LastModifiedDate AS ScannedTime, his.TargetDangerLevel2 AS DangerLevel
 		FROM Temp_Customers AS temp
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS his ON his.ID = temp.HistoryID
         WHERE his.TargetDangerLevel2 IS NOT NULL;
 	END IF;
     IF (ip_TypeID = 3) THEN -- Other
-		SELECT DISTINCT temp.CustId, his.LastModifiedDate AS ScannedTime, his.TargetDangerLevel3 AS DangerLevel
+		SELECT temp.CustId, his.LastModifiedDate AS ScannedTime, his.TargetDangerLevel3 AS DangerLevel
 		FROM Temp_Customers AS temp
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS his ON his.ID = temp.HistoryID
         WHERE his.TargetDangerLevel3 IS NOT NULL;
