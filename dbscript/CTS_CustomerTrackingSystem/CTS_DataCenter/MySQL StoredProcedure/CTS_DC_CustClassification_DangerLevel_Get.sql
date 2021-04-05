@@ -37,7 +37,7 @@ BEGIN
 		INNER JOIN CTS_DataCenter.TaggingToCategory AS tag ON tag.CategoryID = cate.CategoryID
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS his ON his.CustID = temp.CustID AND his.SportGroupID = 200 AND his.LastModifiedDate = cate.LastModifiedDate
 	SET 	temp.HistoryID = his.ID
-    WHERE 	tag.TaggingID <> 0 AND his.IsDataChanged = 1 AND his.FromCategoryID <> his.ToCategoryID;
+	WHERE 	tag.TaggingID <> 0 AND his.IsDataChanged = 1 AND his.ToCategoryID <> IFNULL(his.FromCategoryID,0);
     
     -- Get Results.
     IF (ip_TypeID = 1) THEN -- Original
