@@ -14,9 +14,9 @@ BEGIN
             - 20210105@Irena.Vo: Created. Update logic SP [RedmineID: #145951]
 			- 20210226@Irena.Vo: Get TaggingType flag for log [RedmineID: #150454]
             - 20210401@Irena.Vo: Update View Log [RedmineID: #152249]
-           
 		Param's Explanation (filtered by):		
-			call CTS_DataCenter.CTS_DC_CustClassification_ViewHistory(43600889);
+        Example:
+			- CALL CTS_DataCenter.CTS_DC_CustClassification_ViewHistory(43600889);
 	*/   
        SELECT        temp.ID
 					,	temp.LastModifiedDate AS CreatedTime
