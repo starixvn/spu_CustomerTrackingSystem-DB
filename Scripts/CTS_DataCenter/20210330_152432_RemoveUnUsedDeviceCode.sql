@@ -21,7 +21,7 @@ CREATE TABLE zzArchiveDeviceCode (
 
 USE DCS_DataCenter;
 INSERT INTO DCS_DataCenter.SystemSetting(ID,VGroup,VName,VValue,UpdatedTime)
-VALUES(8,'DCS_Arvhive','DCSArc_DeviceCode_LastDeviceCodeID',0,NOW());
+VALUES(8,'DCS_Archive','DCSArc_DeviceCode_LastDeviceCodeID',0,NOW());
 
 /*2. EXECUTE*/
 USE DCS_DataCenter;

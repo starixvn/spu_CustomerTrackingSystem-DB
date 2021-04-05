@@ -45,6 +45,7 @@ BEGIN
     WHERE	ID = 8; 
     
     SET lv_ToDate = DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY);
+    
     SET @lv_ToDeviceCodeID = lv_LastDeviceCodeID;
     
     SET lv_MaxDeviceCodeID = (SELECT DeviceCodeID FROM DCS_DataCenter.DeviceCode WHERE CreatedDate = lv_ToDate LIMIT 1);
