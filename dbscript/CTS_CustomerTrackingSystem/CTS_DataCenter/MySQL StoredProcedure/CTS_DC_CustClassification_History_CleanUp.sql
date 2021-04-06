@@ -16,6 +16,7 @@ sp:BEGIN
 		
 		Revisions:	
 			- 20210324@Irena.Vo: Created [RedmineID: #148997]
+            - 20210406@Irena.Vo: Fix bug Clean ID is NULL [RedmineID: #152938]
 					
 		Param's Explanation (filtered by):
 			call CTS_DataCenter.CTS_DC_CustClassification_History_CleanUp(30,200);
