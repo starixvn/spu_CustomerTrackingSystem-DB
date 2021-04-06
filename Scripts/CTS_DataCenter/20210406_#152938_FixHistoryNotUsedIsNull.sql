@@ -1,4 +1,4 @@
-/*<info serverAlias="CTSMain-CTS_Adhoc" databaseType="2"></info>*/
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
 /*
 	Created: 20210406@Irena.Vo
 	Task: Initial Clean ID [Redmine ID: #152938] 
