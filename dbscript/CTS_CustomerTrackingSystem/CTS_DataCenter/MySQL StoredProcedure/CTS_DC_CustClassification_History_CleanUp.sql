@@ -36,11 +36,6 @@ sp:BEGIN
                             
     IF (lv_EndID IS NULL) THEN LEAVE sp; END IF;
     
-    INSERT INTO CTS_Adhoc.BK152938_ClassHistoryNotUsed
-    SELECT *
-    FROM CTS_DataCenter.CTSCustomerClassification_History
-	WHERE ID > lv_CleanedID AND ID <= lv_EndID AND InsertDate <= lv_MaxDate AND IsDataChanged = 0;
-    
 	DELETE 
 	FROM CTS_DataCenter.CTSCustomerClassification_History
 	WHERE ID > lv_CleanedID AND ID <= lv_EndID AND InsertDate <= lv_MaxDate AND IsDataChanged = 0;
