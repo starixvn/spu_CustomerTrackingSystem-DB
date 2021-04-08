@@ -45,12 +45,12 @@ BEGIN
 		,	trans.TransID
 		FROM DCS_DataCenter.Transaction07 AS trans
 			INNER JOIN CTS_DataCenter.CustDCSAccount AS cAcc ON trans.AccountID = cAcc.AccountID
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cAcc.CTSCustID = cust.CTSCustID
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cAcc.CTSCustID = cust.CTSCustID AND cust.SubscriberID = trans.SubscriberID
 			LEFT JOIN DCS_DataCenter.UserAgent AS uAgent ON trans.UserAgentKey = uAgent.UserAgentKey
 			LEFT JOIN DCS_DataCenter.ActionResult AS aResult ON trans.ActionResultID = aResult.ActionResultID
 			LEFT JOIN DCS_DataCenter.URL AS url ON trans.URLID = url.URLID AND trans.SubscriberID = url.SubscriberID
 			LEFT JOIN CTS_Admin.Subscriber AS subs ON cust.SubscriberID = subs.SubscriberID			
-		WHERE ip_SubscriberId = -1 OR (trans.SubscriberID = ip_SubscriberId AND cust.SubscriberID = ip_SubscriberId)
+		WHERE ip_SubscriberId = -1 OR trans.SubscriberID = ip_SubscriberId
 		ORDER BY trans.TransTime DESC
 		LIMIT ip_Length;
 	
