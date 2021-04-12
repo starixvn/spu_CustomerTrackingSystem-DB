@@ -90,14 +90,22 @@ BEGIN
 	CREATE TABLE #tmpActiveCustomers(
 			CustId			INT PRIMARY KEY
 	);
-
+	
+	IF OBJECT_ID('tempdb..#tmpDeletedCustomers') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpDeletedCustomers;
+	END
+	
+	CREATE TABLE #tmpDeletedCustomers(
+			CustId			INT PRIMARY KEY
+	);
+	
 	-- GET LIST CUSTOMER-SPORT
 	INSERT INTO #tmpCustomers(CustId)
 	SELECT val FROM dbo.SPU_StrSplit(@ListCustIds, ',');
 
 	-- START
-
-	IF(@IsCheckLast14Days = 1)
+/*	IF(@IsCheckLast14Days = 1)
 	BEGIN		
 		-- #0: Get active customers in last 14 days
 		INSERT INTO #tmpActiveCustomers(CustId)
@@ -109,7 +117,7 @@ BEGIN
 			LEFT JOIN #tmpActiveCustomers AS a ON a.CustId = r.CustId
 		WHERE a.CustId IS NULL;
 	END;
-
+*/
 	-- #2: GetCustomer Accummulated data
 	SELECT @ListCustIds = STUFF((SELECT ',', CONVERT(VARCHAR(15), CustId) 
 								FROM #tmpCustomers WITH (NOLOCK)
@@ -118,7 +126,19 @@ BEGIN
 	INSERT INTO #tmpRawData(CustId, MainDBSportId, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDays)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @ListCustIds;	
 
-	-- #3: Remove closed & disabled accounts & SMA account
+	INSERT INTO #tmpDeletedCustomers(CustId)
+	SELECT DISTINCT r.CustId FROM #tmpRawData AS r
+		LEFT JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON r.CustId = c.custid
+	WHERE c.closed = 1 OR c.[Enabled] = 0
+		AND c.roleid = 1;
+
+	INSERT INTO #tmpDeletedCustomers(CustId)
+	SELECT DISTINCT r.CustId FROM #tmpRawData AS r
+		LEFT JOIN bodb02.dbo.CS_CustomerStatus AS c WITH(NOLOCK) ON r.CustId = c.custid
+	WHERE (c.InactiveInfo > 0)
+		OR (c.InactiveInfo = 0 AND c.SuspendedInfo > 0);
+	
+	-- #3: Remove closed & disabled accounts & SMA account	
 	DELETE r WITH(ROWLOCK)
 	FROM #tmpRawData AS r
 		LEFT JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON r.CustId = c.custid
@@ -158,7 +178,9 @@ BEGIN
 		,	0
 	FROM #tmpCustomers AS c WITH(NOLOCK)
 		LEFT JOIN #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK) ON c.CustId = a.CustId
-	WHERE a.CustId IS NULL;
+		LEFT JOIN #tmpDeletedCustomers AS dc WITH(NOLOCK) ON c.CustId = dc.CustId
+	WHERE a.CustId IS NULL
+		AND dc.CustId IS NULL;
 
 	-- #7: Classify customers by General Category
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
