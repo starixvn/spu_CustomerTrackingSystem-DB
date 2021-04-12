@@ -3,8 +3,8 @@ DROP PROCEDURE IF EXISTS `DCS_DC_Transaction_GetLatest`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transaction_GetLatest`(
-		IN ip_SubscriberId INT
-	, 	IN ip_Length INT
+		IN ip_SubscriberId	INT
+	, 	IN ip_Length		INT
 )
     SQL SECURITY INVOKER
 BEGIN
