@@ -14,8 +14,11 @@ BEGIN
 		DB:			DCS_DataCenter
         
 		Revisions:
-			- 20210330@Adam.Tran: Created [Redmine ID: #140348]            
+			- 20210330@Adam.Tran: Created [Redmine ID: #140348]  
+			- 20210412@Aries.Nguyen: Fix issue performance when filter all  [Redmine ID: #153009]
+
 		Param's Explanation (filtered by):
+
         Example:
 			- CALL CTS_DataCenter.DCS_DC_Transaction_GetLatest(1, 100);
 	*/
