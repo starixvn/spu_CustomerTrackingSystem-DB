@@ -3,8 +3,8 @@ DROP PROCEDURE IF EXISTS `DCS_DC_Transaction_GetLatest`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transaction_GetLatest`(
-		IN ip_SubscriberId INT
-	, 	IN ip_Length INT
+		IN ip_SubscriberId	INT
+	, 	IN ip_Length		INT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -14,8 +14,11 @@ BEGIN
 		DB:			DCS_DataCenter
         
 		Revisions:
-			- 20210330@Adam.Tran: Created [Redmine ID: #140348]            
+			- 20210330@Adam.Tran: Created [Redmine ID: #140348]  
+			- 20210412@Aries.Nguyen: Fix issue performance when filter all  [Redmine ID: #153009]
+
 		Param's Explanation (filtered by):
+
         Example:
 			- CALL CTS_DataCenter.DCS_DC_Transaction_GetLatest(1, 100);
 	*/
@@ -44,13 +47,13 @@ BEGIN
 		,	trans.AccountID
 		,	trans.TransID
 		FROM DCS_DataCenter.Transaction07 AS trans
-			INNER JOIN CTS_DataCenter.CustDCSAccount AS cAcc ON trans.AccountID = cAcc.AccountID
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cAcc.CTSCustID = cust.CTSCustID AND cust.SubscriberID = trans.SubscriberID
+			LEFT JOIN CTS_DataCenter.CustDCSAccount AS cAcc ON trans.AccountID = cAcc.AccountID
+			LEFT JOIN CTS_DataCenter.CTSCustomer AS cust ON cAcc.CTSCustID = cust.CTSCustID AND cust.SubscriberID = trans.SubscriberID
 			LEFT JOIN DCS_DataCenter.UserAgent AS uAgent ON trans.UserAgentKey = uAgent.UserAgentKey
 			LEFT JOIN DCS_DataCenter.ActionResult AS aResult ON trans.ActionResultID = aResult.ActionResultID
 			LEFT JOIN DCS_DataCenter.URL AS url ON trans.URLID = url.URLID AND trans.SubscriberID = url.SubscriberID
 			LEFT JOIN CTS_Admin.Subscriber AS subs ON cust.SubscriberID = subs.SubscriberID			
-		WHERE ip_SubscriberId = -1 OR trans.SubscriberID = ip_SubscriberId
+		WHERE (ip_SubscriberId = -1 OR trans.SubscriberID = ip_SubscriberId) AND  cAcc.AccountID IS NOT NULL AND cust.CTSCustID IS NOT NULL
 		ORDER BY trans.TransTime DESC
 		LIMIT ip_Length;
 	
