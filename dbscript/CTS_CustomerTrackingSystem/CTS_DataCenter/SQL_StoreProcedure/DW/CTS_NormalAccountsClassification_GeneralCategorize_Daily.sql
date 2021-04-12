@@ -19,6 +19,7 @@ AS
 	Revisions:
 		- 20200901@Long.Luu: Created [Redmine ID: #137550]
         - 20201224@Long.Luu: Update insert data [Redmine ID: #145951]
+        - 20210412
 
 	Param's Explanation:
 */
