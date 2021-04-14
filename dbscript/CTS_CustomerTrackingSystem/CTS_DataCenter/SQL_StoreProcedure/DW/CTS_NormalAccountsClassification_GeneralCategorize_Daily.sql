@@ -142,7 +142,7 @@ BEGIN
 	DELETE r WITH(ROWLOCK)
 	FROM #tmpRawData AS r
 		LEFT JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON r.CustId = c.custid
-	WHERE (c.closed = 1 OR c.[Enabled] = 0)
+	WHERE c.closed = 1 OR c.[Enabled] = 0
 		OR c.roleid <> 1;
 
 	-- #4: Remove closed & disabled of CN88
@@ -181,6 +181,11 @@ BEGIN
 		LEFT JOIN #tmpDeletedCustomers AS dc WITH(NOLOCK) ON c.CustId = dc.CustId
 	WHERE a.CustId IS NULL
 		AND dc.CustId IS NULL;
+		
+	-- Remove 'haifa doesn't change category'
+	DELETE a
+	FROM  #tmpCustomerAccummulatedInfo AS a WITH(ROWLOCK)
+	WHERE (a.Margin < 0 AND a.Site = 'haifa' AND a.WinlossRM < -20000);
 
 	-- #7: Classify customers by General Category
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
@@ -193,7 +198,7 @@ BEGIN
 				WHEN (a.Margin > 1 AND a.BetCount >= 20 AND a.WinlossRM > 15000) THEN @GENERALCATEGORY_HIGHRISKPUNTER
 				WHEN (a.Margin >= 0) THEN @GENERALCATEGORY_PROBATION
 				WHEN (a.Margin < 0 AND a.Site <> 'haifa') THEN @GENERALCATEGORY_NORMALMEMBER
-				WHEN (a.Margin < 0 AND a.Site = 'haifa' AND a.TurnoverRM >= -20000) THEN @GENERALCATEGORY_NORMALMEMBER
+				WHEN (a.Margin < 0 AND a.Site = 'haifa' AND a.WinlossRM >= -20000) THEN @GENERALCATEGORY_NORMALMEMBER
 			END AS CategoryId
 		,	@CurrentDate AS CreatedDate
 		,	@CurrentDateTime AS CreatedTime
@@ -204,7 +209,7 @@ BEGIN
 	FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK);
 
 	-- #8: Delete old data
-	WHILE(1 = 1)
+/*	WHILE(1 = 1)
 	BEGIN
 		DELETE TOP (5000)
 		FROM dbo.CustomerClassification WITH(ROWLOCK)
@@ -214,5 +219,5 @@ BEGIN
 	IF (@@ROWCOUNT = 0)
 		BREAK;
 	END;
-
+*/
 END;

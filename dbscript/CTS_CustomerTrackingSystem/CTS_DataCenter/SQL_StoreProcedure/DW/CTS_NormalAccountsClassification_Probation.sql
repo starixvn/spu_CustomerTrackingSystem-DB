@@ -157,7 +157,7 @@ BEGIN
 							WHEN (s.Margin <= -2 AND s.TurnoverRM > 150000 AND s.BetCount > 300 AND s.ActiveDays >= 8) THEN 
 								@GENERALCATEGORY_VIP
 							WHEN (s.Site <> 'haifa') THEN @GENERALCATEGORY_NORMALMEMBER
-							WHEN (s.Site = 'haifa' AND s.TurnoverRM >= -20000) THEN @GENERALCATEGORY_NORMALMEMBER
+							WHEN (s.Site = 'haifa' AND s.WinlossRM >= -20000) THEN @GENERALCATEGORY_NORMALMEMBER
 							ELSE
 								@GENERALCATEGORY_PROBATION
 						END,
@@ -230,6 +230,11 @@ BEGIN
 						GROUP BY f.CustId
 					) AS t ON c.CustId = t.CustId
 	WHERE a.Margin >= 0;
+	
+	UPDATE c WITH(ROWLOCK, UPDLOCK)
+	SET c.IsPassed = 0
+	FROM #tmpCustomers AS c
+	WHERE c.CategoryId = @GENERALCATEGORY_PROBATION;
 	
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT	a.CustId
