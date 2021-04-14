@@ -10,6 +10,7 @@ from neo4j_collection import Neo4jCollector
 import threading
 from multiprocessing import shared_memory
 from app_logging import logging as log
+from app_const import CONF_PATH
 
 def binlog_job():
     conf = util_get_config('mysql')
@@ -38,45 +39,47 @@ def binlog_job():
     slave_gtid_executed = cts_shm[0]
     last_commit_time = datetime.strptime(cts_shm[1], '%Y-%m-%d %H:%M:%S')
     last_position = int(cts_shm[2])
-
-    if master_position != -1:
-        bytes_behind_master = master_position-last_position
-
-    if bytes_behind_master != 0:
-        second_behind_master = (datetime.now().replace(microsecond=0) - last_commit_time).total_seconds()
-
-    # write file
-    with open('/app/conf/auto-gtid.txt','w+') as auto_file:
-        auto_file.write('{0}\t{1}\t{2}'.format(slave_gtid_executed, last_commit_time, last_position))
-        auto_file.close()
-
-    # detect heartbeat
-    heartbeat = 1
-    slave_heartbeat_interval = 0
-    repl_conf = util_get_config('replication')
-    if 'slave_heartbeat' in repl_conf:
-        slave_heartbeat_interval = int(repl_conf['slave_heartbeat'])
     
-    if master_position == -1 or (bytes_behind_master == 0 and second_behind_master > slave_heartbeat_interval):
-        heartbeat = 0
-
-    log.info('------------Binlog monitoring -----------------')
-    #print('------> master_position: {0}, python_position: {1}'.format(master_position, last_position))
-    #print('-----------------------------------------------------')
-    
-    try:
-        monitor = util_get_config('monitoring')
-        monitor_settings = {'host': monitor['host'],'port': int(monitor['port']),'user': monitor['user'],'passwd': monitor['passwd'], 'autocommit': True}
-        conn_m = connect(**monitor_settings)
-        insert_heartbeat = "insert into MonDB.neo4j_replication_status(heartbeat,insert_time,bytes_behind_master,gtid_executed,last_commit_time, event_type, second_behind_master)\
-	        values({0}, current_timestamp(4), {1}, '{2}', '{3}', 'latency', {4})".format(heartbeat,bytes_behind_master, slave_gtid_executed, last_commit_time, second_behind_master)
-    
-        cur_m = conn_m.cursor()
-        cur_m.execute(insert_heartbeat)
-        cur_m.close()
-        conn_m.close()
-    except Exception as ex:
-        log.exception('%% Unhandle exception (%s mysql-monitoring connect failed): try again\n' %str(ex))
+    if last_position > 0:
+      if master_position != -1:
+          bytes_behind_master = master_position-last_position
+  
+      if bytes_behind_master != 0:
+          second_behind_master = (datetime.now().replace(microsecond=0) - last_commit_time).total_seconds()
+  
+      # write file
+      write_gtid_file='{0}/auto-gtid.txt'.format(CONF_PATH)
+      with open(write_gtid_file,'w+') as auto_file:
+          auto_file.write('{0}\t{1}\t{2}'.format(slave_gtid_executed, last_commit_time, last_position))
+          auto_file.close()
+  
+      # detect heartbeat
+      heartbeat = 1
+      slave_heartbeat_interval = 0
+      repl_conf = util_get_config('replication')
+      if 'slave_heartbeat' in repl_conf:
+          slave_heartbeat_interval = int(repl_conf['slave_heartbeat'])
+      
+      if master_position == -1 or (bytes_behind_master == 0 and second_behind_master > slave_heartbeat_interval):
+          heartbeat = 0
+  
+      log.info('------------Binlog monitoring -----------------')
+      #print('------> master_position: {0}, python_position: {1}'.format(master_position, last_position))
+      #print('-----------------------------------------------------')
+      
+      try:
+          monitor = util_get_config('monitoring')
+          monitor_settings = {'host': monitor['host'],'port': int(monitor['port']),'user': monitor['user'],'passwd': monitor['passwd'], 'autocommit': True}
+          conn_m = connect(**monitor_settings)
+          insert_heartbeat = "insert into MonDB.neo4j_replication_status(heartbeat,insert_time,bytes_behind_master,gtid_executed,last_commit_time, event_type, second_behind_master)\
+  	        values({0}, current_timestamp(4), {1}, '{2}', '{3}', 'latency', {4})".format(heartbeat,bytes_behind_master, slave_gtid_executed, last_commit_time, second_behind_master)
+      
+          cur_m = conn_m.cursor()
+          cur_m.execute(insert_heartbeat)
+          cur_m.close()
+          conn_m.close()
+      except Exception as ex:
+          log.exception('%% Unhandle exception (%s mysql-monitoring connect failed): try again\n' %str(ex))
 
 def neo4j_mode(mode:str='source'):
     result = {}
@@ -150,8 +153,8 @@ def neo4j_job():
 
 
 
-schedule.every(1).minutes.do(binlog_job)
-schedule.every(1).minutes.do(neo4j_job)
+schedule.every(5).minutes.do(binlog_job)
+#chedule.every(1).minutes.do(neo4j_job)
 #schedule.every().hour.do(job)
 #schedule.every().day.at("10:30").do(job)
 #schedule.every(5).to(10).minutes.do(job)

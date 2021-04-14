@@ -44,6 +44,8 @@ from replication import (
 from messaging import build_message
 from app_logging import logging as log
 
+from replicate_to_neo4j import Neo4jMessageMapper
+
 class BinlogServer(object):
 	def __init__(self, mysql_conf, repl_conf, kafka_conf):
 		self.mysql = mysql_conf
@@ -63,13 +65,13 @@ class BinlogServer(object):
 		auto_position_conf = replicator.get_auto_position(self.repl)
 		slave_heartbeat_conf = int(self.repl['slave_heartbeat'])
 		only_schemas_conf = list(str(self.repl['only_schemas']).split(','))
-		only_tables_conf = list(str(self.repl['only_tables']).split(','))
+		only_tables_conf = list(str(self.
+                    repl['only_tables']).split(','))
 		only_events_conf = list([eval(cls_name) for cls_name in str(self.repl['only_events']).split(',')])
 
 		hostname = socket.gethostname()
 		slave_conf = dict({'hostname': hostname, 'username': self.mysql['user'], 'password': self.mysql['passwd'], 'port': int(self.mysql['port'])})
 		#print(slave_conf)
-
 		replicator.set_heartbeat_interval(slave_heartbeat_conf)
 		# INIT: BinLogStreamReader
 		mysql_settings = {
@@ -95,13 +97,13 @@ class BinlogServer(object):
 							)
 
 			# INIT: KafkaProducer
-			broker_server_conf = self.kafka['broker_server']
-			broker_port_conf = int(self.kafka['broker_port'])
-			broker_retries_conf = int(self.kafka['retries'])
-			bootstrap_servers_conf = '{host}:{port}'.format(host=broker_server_conf,port=broker_port_conf)
-			self.kafka_producer = KafkaProducer(bootstrap_servers=bootstrap_servers_conf
-										, value_serializer=lambda v: json.dumps(obj=v,default=str).encode('utf-8')
-										, retries = broker_retries_conf)
+			#broker_server_conf = self.kafka['broker_server']
+			#broker_port_conf = int(self.kafka['broker_port'])
+			#broker_retries_conf = int(self.kafka['retries'])
+			#bootstrap_servers_conf = '{host}:{port}'.format(host=broker_server_conf,port=broker_port_conf)
+			#self.kafka_producer = KafkaProducer(bootstrap_servers=bootstrap_servers_conf
+			#							, value_serializer=lambda v: json.dumps(obj=v,default=str).encode('utf-8')
+			#							, retries = broker_retries_conf)
 
 			print("Connected. Listening for databases... %s" %str(only_schemas_conf))
 			print("Connected. Listening for tables... %s" %str(only_tables_conf))
@@ -118,26 +120,29 @@ class BinlogServer(object):
 						send_topic = '{0}{1}'.format('',payload.message.table).lower()
 						table_key = payload.message.table.lower()
 						
-						# FORMAT message
-						message = {'schema': payload.message.schema, 'table': payload.message.table, 'op': payload.message.op, 'rows': payload.data}
-						#print (json.dumps(obj=message, default=str))
+						# FORMAT message to Kafka
+						# message = {'schema': payload.message.schema, 'table': payload.message.table, 'op': payload.message.op, 'rows': payload.data}
+						#response = self.kafka_producer.send(topic = send_topic
+						#	, value = payload.data
+						#	, key = table_key.encode('utf-8')
+						#)
+						
+						# FORMAT message to Neo4j
+						mapper = Neo4jMessageMapper(payload)
+						mapper.sync()
 
-						response = self.kafka_producer.send(topic = send_topic
-							, value = message
-							, key = table_key.encode('utf-8')
-						)
 						replicator.commit_auto_position(payload.timestamp, payload.position)
 						log.info('send_topic: %s at %s' %(send_topic, datetime.fromtimestamp(payload.timestamp)))
 
 					except BufferError as bex:
 						log.error('%% Local producer queue is full (%s messages awaiting delivery): try again\n' %str(bex))
 
-					except KafkaTimeoutError as kex:
-						log.error('%% KafkaTimeoutError (%s messages awaiting delivery): try again\n' %str(kex))
+					#except KafkaTimeoutError as kex:
+					#	log.error('%% KafkaTimeoutError (%s messages awaiting delivery): try again\n' %str(kex))
 
 					except Exception as ex:
 						log.exception('%% Unhandle exception (%s messages failed delivery): try again\n' %str(ex))
-						time.sleep(1)
+						#time.sleep(1)
 
 				elif payload.evt_type == BINLOG.GTID_LOG_EVENT:
 					replicator.set_gtid_executed(payload.gtid)
@@ -148,6 +153,7 @@ class BinlogServer(object):
 					replicator.commit_auto_position(payload.timestamp, payload.position)
 				
 			self.binlog_stream.close()
+			#self.kafka_producer.close()
 
 		except Exception as ex:
 			sys.stderr.write('%% Unhandle exception (%s MySQL Streamer connect failed): try again\n' %str(ex))
@@ -156,5 +162,5 @@ class BinlogServer(object):
 		if self.binlog_stream:
 			self.binlog_stream.close()
 
-		if self.kafka_producer:
-			self.kafka_producer.close()
+		#if self.kafka_producer:
+			#self.kafka_producer.close()

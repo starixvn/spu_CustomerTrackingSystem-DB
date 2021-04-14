@@ -3,7 +3,7 @@ from datetime import datetime
 import json
 from multiprocessing import shared_memory
 from app_logging import logging as log
-
+from app_const import CONF_PATH
 
 def datetime_handler(x):
     if isinstance(x, datetime):
@@ -52,7 +52,7 @@ class StreamReplicator(object):
 	def __init__(self, options, **kwargs):
 		self.options = options
 		self.auto_position = None
-		self.auto_path = '/app/conf/auto-gtid.txt'
+		self.auto_path = '{0}/auto-gtid.txt'.format(CONF_PATH)
 		self.cts_shm = shared_memory.ShareableList(name='cts_shm')
 
 	def get_auto_position(self, repl_conf=None):

@@ -1,5 +1,5 @@
 from configuration import util_get_config
-from processer import BinlogServer
+from binlog_mapper_run import BinlogServer
 
 
 # replicator

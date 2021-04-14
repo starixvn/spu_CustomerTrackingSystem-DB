@@ -5,7 +5,10 @@ from server import BinlogFactory
 from monitoring import run_monitoring
 from multiprocessing import shared_memory
 
-act=str(sys.argv[1])
+act=None
+if len(sys.argv) > 1:
+    act=str(sys.argv[1])
+
 if not act:
     act = 'start'
 
