@@ -27,6 +27,7 @@ sp : BEGIN
             - 20210316@Casey.Huynh: Get Customer Category Info [Redmine ID: #150457]
             - 20210317@Casey.Huynh: Count AssociationByIP to lv_TotalAccounts [Redmine ID: #131662]
             - 20210330@Jonas.Huynh: Replace Site filter by Subscriber [Redmine ID: #152252]
+			- 20210415@Aries.Nguyen: Fix show duplicated records at Associated Accounts [Redmine ID: #153511]
             
 		Param's Explanation (filtered by):
 			- ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual, 4 - IP
@@ -348,28 +349,28 @@ sp : BEGIN
 		WHERE	tmpAcc.CategoryIDs IS NULL;
     END IF;
 
-	SELECT CTSCustID
-	, 	CustId
-	, 	CustSubID
-	,	SubscriberID
-	, 	SubscriberName
-	, 	UserName
-	, 	UserName2
-	, 	AssociationTypeName
-	, 	AssociationDate
-	, 	StatusId
-	, 	StatusName
-	, 	AssociationStatus
-	, 	SiteID
-	, 	SiteName
-    ,	tmpAcc.ParentIDs
-	,	tmpAcc.CategoryIDs
-	,	tmpAcc.CategoryNames
-	,	tmpAcc.CustomerClasses
+	SELECT	CTSCustID
+		, 	CustId
+		, 	CustSubID
+		,	SubscriberID
+		, 	SubscriberName
+		, 	UserName
+		, 	UserName2
+		, 	AssociationTypeName
+		, 	AssociationDate
+		, 	StatusId
+		, 	StatusName
+		, 	AssociationStatus
+		, 	SiteID
+		, 	SiteName
+		,	tmpAcc.ParentIDs
+		,	tmpAcc.CategoryIDs
+		,	tmpAcc.CategoryNames
+		,	tmpAcc.CustomerClasses
 	FROM Temp_Accounts AS tmpAcc
 	WHERE SubscriberID IN (SELECT SubscriberID FROM Temp_SubscriberID) 
 		AND StatusId IN (SELECT AccountStatusID FROM Temp_AccountStatusID)
-	ORDER BY  SubscriberName ASC, AssociationStatus ASC , StatusId ASC,  AssociationDate DESC
+	ORDER BY  SubscriberName ASC, AssociationStatus ASC , StatusId ASC,  AssociationDate DESC, CTSCustID
 	LIMIT ip_Take
 	OFFSET ip_Skip; 
 
