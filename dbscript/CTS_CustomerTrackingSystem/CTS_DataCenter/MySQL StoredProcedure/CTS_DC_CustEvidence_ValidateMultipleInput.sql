@@ -19,8 +19,9 @@ BEGIN
 		   - 20200608@Long.Luu: Created [Redmine ID: #134489]
 		   - 20200824@Roger.Le: Evidence Upload - Overrite the data [Redmine ID: #137551]
 		   - 20201116@Adam.Tran: Implement Cust Evidence from file [Redmine ID: #141563]
-        
+		   - 20210407@Adam.Tran: Prevent Adding Evidence for Sub Account [Redmine ID: #153007]
 		Param's Explanation (filtered by):
+			call CTS_DataCenter.CTS_DC_CustEvidence_ValidateMultipleInput('[{"RowId":1,"Username":"member17","EvidenceCode":"2.1"},{"RowId":3,"Username":"M9D2CSub01","EvidenceCode":"6.1"}]', 0);
 	*/    
     
 	DROP TEMPORARY TABLE IF EXISTS tmpMultipleAccountEvidence;    
@@ -53,6 +54,7 @@ BEGIN
                 WHEN c.CTSCustID IS NULL THEN 'This Customer does not exist.'
                 WHEN e.EvidenceID IS NULL THEN 'This Evidence does not exist.'
                 WHEN ce.CTSCustID IS NOT NULL AND ce.EvidenceID IS NOT NULL AND ip_IsOverride = false THEN 'This Customer has already been flagged with this Evidence.'
+				WHEN c.CustSubID IS NOT NULL AND c.CustSubID <> 0 THEN 'This Customer cannot be added evidence.'
                 ELSE ''
 			END AS RowStatus
     FROM tmpMultipleAccountEvidence AS t
