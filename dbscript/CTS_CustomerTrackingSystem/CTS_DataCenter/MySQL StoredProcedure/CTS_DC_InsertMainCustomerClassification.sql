@@ -25,6 +25,7 @@ BEGIN
 				- 20210118@Casey.Huynh: Add New PA Rule NewMember(231,232,233) [RedmineID: #148908]
 				- 20210226@Casey.Huynh: Add New PA Rule [RedmineID: 150455]
                 - 20210401@Irena.Vo: Write log for Update Danger Level. Enhance logic SP. [RedmineID: #152249]
+                - 20210415@Casey.Huynh: Ignore Probation Account Monitor if not meet the scan schedule [RedmineID: #153491]
 		Param's Explanation (filtered by):
         Example:
 				- CALL CTS_DataCenter.CTS_DC_InsertMainCustomerClassification('[{"CustId": "2324948","CategoryId":"206","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","LastXDaysMargin":100,"ProbationPeriodWinloss":100,"TaggingID":13,"TaggingType":1}]',@opp);
@@ -54,7 +55,7 @@ BEGIN
         ,	TargetCC				SMALLINT
         ,	TargetDangerLevel1		SMALLINT
         ,	SourceTypeID      		SMALLINT
-        , 	ActionType				SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN */
+        , 	ActionType				SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN , 5: Ignore ProbationAccountMonitor if NOT MEET the Scan Schedule*/
         -- Customer info
         , 	CTSCustID				BIGINT DEFAULT 0
         , 	SubscriberID			INT DEFAULT 0        
@@ -98,6 +99,13 @@ BEGIN
     UPDATE Temp_NewClassification AS temp
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID AND cate.SportGroupID = 0
 	SET temp.ActionType = 3;
+    
+    /*	IGNORE PROPATION ACCOUNT MONITOR IF NOT MEET THE SCAN SCHEDULE*/
+	UPDATE 	Temp_NewClassification AS temp
+		INNER JOIN 	ProbationAccountMonitor AS pro ON temp.CustID = pro.CustID
+    SET		temp.ActionType = 5
+    WHERE 	pro.CreatedDate != DATE_SUB(DATE(lv_CurrentDateTime), INTERVAL 20 DAY)
+		AND	pro.CreatedDate <  DATE_SUB(DATE(lv_CurrentDateTime), INTERVAL 3 DAY);  
     
     /*	UPDATE CUSTOMER INFO */
     UPDATE Temp_NewClassification AS temp 
@@ -143,7 +151,8 @@ BEGIN
 	SET 	temp.NewCateID = IFNULL(tag.CategoryID,temp.NewCateGroup)
     WHERE 	temp.ActionType IN (0,1);
     
-    /*	UPDATE SOURCE TYPE */
+    /*	UPDATE SOURCE TYPE */   
+    
     UPDATE Temp_NewClassification AS temp 
 	SET 	temp.SourceTypeID = CASE WHEN temp.ExistedCateGroup IS NULL AND temp.NewCateGroup IN (201) THEN 1 /* Less than 10 bets */
 									 WHEN temp.ExistedCateGroup = 201 AND temp.NewCateGroup <> 201 THEN 2 /* After 10 bets To Probation (if have) */
@@ -151,8 +160,8 @@ BEGIN
 									 WHEN (temp.ExistedCateGroup = 206 AND temp.NewCateGroup = 206) AND (temp.LastXDaysMargin IS NOT NULL AND temp.ProbationPeriodWinloss IS NOT NULL) THEN 5 /* Fail Probation */
 									 WHEN temp.ExistedCateGroup IS NOT NULL AND temp.SourceTypeID IS NULL THEN 3 /* Scan Schedute Date */
 								END
-	WHERE 	temp.ActionType IN (0,1);
-     
+	WHERE 	temp.ActionType IN (0,1);     
+    
     /* UPDATE TARGET CC */
     UPDATE Temp_NewClassification AS temp 
 		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID
