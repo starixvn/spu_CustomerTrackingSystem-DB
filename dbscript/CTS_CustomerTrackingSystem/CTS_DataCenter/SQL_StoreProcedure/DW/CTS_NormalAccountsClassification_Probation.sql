@@ -236,18 +236,20 @@ BEGIN
 	FROM #tmpCustomers AS c
 	WHERE c.CategoryId = @GENERALCATEGORY_PROBATION;
 	
-	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
-	SELECT	a.CustId
-		,	@GENERAL_SPORTID
-		,	a.CategoryId
-		,	@CurrentDate AS CreatedDate
-		,	@CurrentDateTime AS CreatedTime
-		,	t.TurnoverRM
-		,	t.WinlossRM
-		,	t.BetCount
-		,	t.ActiveDays
+	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, LastXDaysMargin, ProbationPeriodWinloss)
+	SELECT  a.CustId
+		,  @GENERAL_SPORTID
+		,  a.CategoryId
+		,  @CurrentDate AS CreatedDate
+		,  @CurrentDateTime AS CreatedTime
+		,  t.TurnoverRM
+		,  t.WinlossRM
+		,  t.BetCount
+		,  t.ActiveDays
+		,  a.LastXDaysMargin
+		,  a.ProbationPeriodWinloss
 	FROM #tmpCustomers AS a WITH(NOLOCK)
-		INNER JOIN #tmpCustomerAccummulatedInfo AS t WITH(NOLOCK) ON a.CustId = t.CustId
+	INNER JOIN #tmpCustomerAccummulatedInfo AS t WITH(NOLOCK) ON a.CustId = t.CustId
 	WHERE a.IsPassed = 1;
 
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
