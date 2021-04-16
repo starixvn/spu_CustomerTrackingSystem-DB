@@ -104,9 +104,9 @@ BEGIN
 	UPDATE 	Temp_NewClassification AS temp
 		INNER JOIN 	ProbationAccountMonitor AS pro ON temp.CustID = pro.CustID
     SET		temp.ActionType = 5
-    WHERE 	pro.CreatedDate != DATE_SUB(DATE(lv_CurrentDateTime), INTERVAL 20 DAY)
-		AND	pro.CreatedDate <  DATE_SUB(DATE(lv_CurrentDateTime), INTERVAL 3 DAY);  
-    
+    WHERE 	(pro.CreatedDate NOT BETWEEN DATE_SUB(DATE(lv_CurrentDateTime), INTERVAL 19 DAY) AND  DATE_SUB(DATE(lv_CurrentDateTime), INTERVAL 3 DAY))
+			OR (temp.DWCateGroup IN (203,204,206) AND pro.CreatedDate != DATE_SUB(DATE(lv_CurrentDateTime), INTERVAL 19 DAY));
+
     /*	UPDATE CUSTOMER INFO */
     UPDATE Temp_NewClassification AS temp 
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.CustSubID = 0
@@ -224,7 +224,8 @@ BEGIN
     
     #==========================================WRITE LOG======================================================== 
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History  -- fix issue concurrence.
-	(CustID,CTSCustID,CategoryID,SportGroupID,LastModifiedDate,LastModifiedBy,TurnoverRM,WinlossRM,BetCount,ActiveDays,ActionType,IsAuto,InsertDate,TargetCC,SourceTypeID,ToCategoryID,IsDataChanged,TargetDangerLevel1)
+	(CustID,CTSCustID,CategoryID,SportGroupID,LastModifiedDate,LastModifiedBy,TurnoverRM,WinlossRM,BetCount,ActiveDays,ActionType,IsAuto
+    ,InsertDate,TargetCC,SourceTypeID,ToCategoryID,IsDataChanged,TargetDangerLevel1)
 	SELECT DISTINCT	temp.CustID
 		, 	temp.CTSCustID
 		, 	temp.ExistedCateID
@@ -245,9 +246,10 @@ BEGIN
         ,   temp.TargetDangerLevel1
 	FROM Temp_NewClassification AS temp
     WHERE temp.ActionType = 0 AND temp.ExistedCateGroup = 201; 
-    
+
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
-	(CustID,CTSCustID,CategoryID,SportGroupID,LastModifiedDate,LastModifiedBy,TurnoverRM,WinlossRM,BetCount,ActiveDays,ActionType,IsAuto,InsertDate,LastXDaysMargin,ProbationPeriodWinloss,TargetCC,SourceTypeID,FromCategoryID,ToCategoryID,IsDataChanged,TaggingType,TargetDangerLevel1)
+	(CustID,CTSCustID,CategoryID,SportGroupID,LastModifiedDate,LastModifiedBy,TurnoverRM,WinlossRM,BetCount,ActiveDays,ActionType,IsAuto
+    ,InsertDate,LastXDaysMargin,ProbationPeriodWinloss,TargetCC,SourceTypeID,FromCategoryID,ToCategoryID,IsDataChanged,TaggingType,TargetDangerLevel1)
 	SELECT DISTINCT	temp.CustID
 		, 	temp.CTSCustID
 		, 	temp.NewCateID
@@ -265,8 +267,8 @@ BEGIN
 		, 	temp.ProbationPeriodWinloss
 		,	temp.TargetCC 
 		,   temp.SourceTypeID
-		, 	temp.ExistedCateID
-		, 	temp.DWCateID 
+		, 	temp.ExistedCateID 
+		, 	IFNULL(temp.DWCateID,temp.DWCateGroup)
 		,   CASE WHEN temp.ActionType IN (0,1) AND (temp.SourceTypeID = 5 OR (temp.NewCateID <> IFNULL(temp.ExistedCateID,0))) THEN 1 ELSE 0 END
 		,	temp.TaggingType
         ,	temp.TargetDangerLevel1
