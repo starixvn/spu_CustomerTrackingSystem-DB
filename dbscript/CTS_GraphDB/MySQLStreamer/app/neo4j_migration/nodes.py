@@ -42,7 +42,7 @@ class Subscriber(BaseNode):
         self.SubscriberName=subscriberName
 
 class Category(BaseNode):
-    def __init__(self, categoryID, categoryName):
+    def __init__(self, categoryID, categoryName:None):
         self.CategoryID=categoryID
         self.CategoryName=categoryName
 

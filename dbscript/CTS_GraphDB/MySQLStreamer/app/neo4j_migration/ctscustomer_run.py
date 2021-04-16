@@ -63,8 +63,8 @@ class CTSCustomerRun(Neo4jContext):
         remove_belong_to_sub = """
             UNWIND $batch as row
             MATCH (n:CTSCustomer {CTSCustID:toInteger(row.after.CTSCustID)})
-            MATCH (n)-[r:BELONG_TO_SUB]-()
-            WHERE row.after.SubscriberID <> row.before.SubscriberID
+            MATCH (n)-[r:BELONG_TO_SUB]-(s:Subscriber)
+            WHERE toInteger(row.after.SubscriberID) <> toInteger(row.before.SubscriberID) OR NOT EXISTS(row.after.SubscriberID)
             DELETE r
             RETURN ID(r) AS RID
             """
@@ -75,8 +75,8 @@ class CTSCustomerRun(Neo4jContext):
         remove_has_status = """
             UNWIND $batch as row
             MATCH (n:CTSCustomer {CTSCustID:toInteger(row.after.CTSCustID)})
-            MATCH (n)-[r:HAS_STATUS]-()
-            WHERE row.after.CustStatusID <> row.before.CustStatusID
+            MATCH (n)-[r:HAS_STATUS]-(s:StaticList)
+            WHERE toInteger(row.after.CustStatusID) <> toInteger(row.before.CustStatusID) OR NOT EXISTS(row.after.CustStatusID)
             DELETE r
             RETURN ID(r) AS RID
             """
@@ -108,6 +108,7 @@ class CTSCustomerRun(Neo4jContext):
                 UNWIND $batch as row
                 MATCH (n:CTSCustomer {CTSCustID:toInteger(row.CTSCustID)})
                 MATCH (s:Subscriber {SubscriberID:row.SubscriberID})
+                WHERE row.SubscriberID > 0
                 MERGE (n)-[r:BELONG_TO_SUB]-(s)
                 ON CREATE SET r.CreatedDate=datetime(row.CreatedDate)
                 RETURN ID(r) AS RID
@@ -119,6 +120,7 @@ class CTSCustomerRun(Neo4jContext):
                 UNWIND $batch as row
                 MATCH (n:CTSCustomer {CTSCustID:toInteger(row.CTSCustID)})
                 MATCH (s:StaticList {ItemID:row.CustStatusID, ListID: 1})
+                WHERE row.CustStatusID > 0
                 MERGE (n)-[r:HAS_STATUS]-(s)
                 ON CREATE SET r.CreatedDate=datetime(row.CreatedDate)
                 RETURN ID(r) AS RID

@@ -86,5 +86,5 @@ class CustomerCategoryRun(Neo4jContext):
 
     @classmethod
     def delete_binlog(cls, tx, raws:list):
-        batch = [Category(r["before"]["CategoryID"]) for r in raws]
+        batch = [Category(r["before"]["CategoryID"], None) for r in raws]
         cls.delete_batch(tx, batch)

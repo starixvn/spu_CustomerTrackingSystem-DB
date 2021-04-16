@@ -84,22 +84,24 @@ class AssociationByDeviceRun(Neo4jContext):
         remove_all = """
             UNWIND $batch as row
             MATCH (n:Device {DeviceID:toInteger(row.DeviceID)})
-            DETACH DELETE n
+            MATCH (c:CTSCustomer {CTSCustID:toInteger(row.CTSCustID)})
+            MATCH (c)-[r:USED_DEVICE]-(n)
+            DELETE r
             """
         tx.run(remove_all,batch=batch)
 
     #binlog processing
     @classmethod
     def create_binlog(cls, tx, raws:list):
-        batch = [Device(r["after"]["DCSDeviceID"],r["after"]["CTSCustID"],r["after"]["CreatedTime"]) for r in rows]
+        batch = [Device(r["after"]["DCSDeviceID"],r["after"]["CTSCustID"],r["after"]["CreatedTime"]) for r in raws]
         cls.create_batch(tx, batch)
 
     @classmethod
     def update_binlog(cls, tx, raws:list):
-        batch = [Device(r["after"]["DCSDeviceID"],r["after"]["CTSCustID"],r["after"]["CreatedTime"]) for r in rows]
+        batch = [Device(r["after"]["DCSDeviceID"],r["after"]["CTSCustID"],r["after"]["CreatedTime"]) for r in raws]
         cls.update_batch(tx, batch)
 
     @classmethod
     def delete_binlog(cls, tx, raws:list):
-        batch = [Device(r["before"]["DCSDeviceID"]) for r in rows]
+        batch = [Device(r["before"]["DCSDeviceID"], r["before"]["CTSCustID"]) for r in raws]
         cls.delete_batch(tx, batch)

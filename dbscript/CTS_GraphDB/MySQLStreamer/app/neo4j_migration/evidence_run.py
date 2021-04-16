@@ -90,5 +90,5 @@ class EvidenceRun(Neo4jContext):
 
     @classmethod
     def delete_binlog(cls, tx, raws:list):
-        batch = [Evidence(r["before"]["EvidenceID"]) for r in raws]
+        batch = [Evidence(r["before"]["EvidenceID"], None, None) for r in raws]
         cls.delete_batch(tx, batch)

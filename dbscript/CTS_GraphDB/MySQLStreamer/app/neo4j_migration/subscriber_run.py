@@ -85,5 +85,5 @@ class SubscriberRun(Neo4jContext):
 
     @classmethod
     def delete_binlog(cls, tx, raws:list):
-        batch = [Subscriber(r["before"]["SubscriberID"]) for r in raws]
+        batch = [Subscriber(r["before"]["SubscriberID"], None) for r in raws]
         cls.delete_batch(tx, batch)
