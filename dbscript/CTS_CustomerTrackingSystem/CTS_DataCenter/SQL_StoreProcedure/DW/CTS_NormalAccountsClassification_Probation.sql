@@ -138,25 +138,28 @@ BEGIN
 	WHERE c.roleid <> 1;
 
 	-- Sum data by sport
-	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, Site, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
+	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
 	SELECT	s.CustId
-		,	c.site
 		,	SUM(s.TurnoverRM)
 		,	SUM(s.WinlossRM)
 		,	CASE WHEN SUM(s.TurnoverRM) = 0 THEN 0 ELSE SUM(s.WinlossRM) / SUM(s.TurnoverRM) * 100 END
 		,	SUM(s.BetCount)
 		,	MAX(s.ActiveDays)
 	FROM #tmpRawData AS s WITH(NOLOCK)
-		LEFT JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON s.CustId = c.custid
-	GROUP BY s.CustId, c.site;
+	GROUP BY s.CustId;
 
+	UPDATE a WITH(ROWLOCK, UPDLOCK)
+	SET a.site = c.site
+	FROM #tmpCustomerAccummulatedInfo AS a
+		LEFT JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON a.CustId = c.custid;
+		
 	-- Assign level for customers with margin <0 (to Normal or VIP)
 	UPDATE c WITH(ROWLOCK, UPDLOCK)
 	SET c.IsPassed = 1,
 		c.CategoryId = CASE 
 							WHEN (s.Margin <= -2 AND s.TurnoverRM > 150000 AND s.BetCount > 300 AND s.ActiveDays >= 8) THEN 
 								@GENERALCATEGORY_VIP
-							WHEN (s.Site <> 'haifa') THEN @GENERALCATEGORY_NORMALMEMBER
+							WHEN (s.Site <> 'haifa' OR s.Site IS NULL) THEN @GENERALCATEGORY_NORMALMEMBER
 							WHEN (s.Site = 'haifa' AND s.WinlossRM >= -20000) THEN @GENERALCATEGORY_NORMALMEMBER
 							ELSE
 								@GENERALCATEGORY_PROBATION

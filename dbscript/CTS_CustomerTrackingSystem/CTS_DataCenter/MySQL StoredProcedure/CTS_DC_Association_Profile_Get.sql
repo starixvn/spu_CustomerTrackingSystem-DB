@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_Association_Profile_Get`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_Association_Profile_Get`;
 
-DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_Profile_Get`(
+DELIMITER $$ 
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_Association_Profile_Get`(
 		IN ip_CTSCustID 		BIGINT UNSIGNED
 	,	IN ip_AssociationType	INT
 	,	IN ip_AssociationStatus INT 
@@ -20,7 +20,6 @@ sp : BEGIN
 		Created:	20210202@Aries.Nguyen
 		Task:		Get association account 
 		DB:			CTS_DataCenter
-        
 		Revisions:
 			- 20210202@Aries.Nguyen: Created [Redmine ID: #148908]
             - 20210221@Aries.Nguyen: Fix get wrong first association date by device [Redmine ID: #150223]
@@ -28,7 +27,7 @@ sp : BEGIN
             - 20210317@Casey.Huynh: Count AssociationByIP to lv_TotalAccounts [Redmine ID: #131662]
             - 20210330@Jonas.Huynh: Replace Site filter by Subscriber [Redmine ID: #152252]
 			- 20210415@Aries.Nguyen: Fix show duplicated records at Associated Accounts [Redmine ID: #153511]
-            
+	        - 20210419@Irena.Vo: Ignore get CC on Associated Accounts tab [Redmine ID: #152250]
 		Param's Explanation (filtered by):
 			- ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual, 4 - IP
             - ip_AssociationStatus: 0 - All, 1 - Linked, 2 - UnLinked
@@ -43,32 +42,30 @@ sp : BEGIN
     IF ip_SubscriberIDs IS NULL OR ip_SubscriberIDs = '' OR ip_AccountStatusIDs IS NULL OR ip_AccountStatusIDs = '' THEN
 		LEAVE sp;
     END IF;
-    
 
     DROP TEMPORARY TABLE IF EXISTS Temp_Accounts;
     CREATE TEMPORARY TABLE 		Temp_Accounts (
 			CustID 				BIGINT UNSIGNED
 		,	CTSCustID			BIGINT UNSIGNED
-        ,	CustSubId			INT UNSIGNED
+        ,	CustSubID			INT UNSIGNED
 		,	SiteID				INT UNSIGNED
         ,	SiteName			VARCHAR(50)
         ,	SubscriberID 		INT UNSIGNED
         ,	SubscriberName		VARCHAR(50)
-        ,	Username			VARCHAR(50)
-        ,	Username2			VARCHAR(50)
+        ,	UserName			VARCHAR(50)
+        ,	UserName2			VARCHAR(50)
         ,	AssociationType 	INT
         , 	AssociationStatus	INT
         ,	AssociationTypeName	VARCHAR(50)
         ,	AssociationDate		DATETIME
 		,	SharedDevices		INT DEFAULT 0
         ,	SharedIPs			INT DEFAULT 0
-        ,	StatusId			INT
+        ,	StatusID			INT
 		,	StatusName			VARCHAR(20)
         ,	CustStatusID		INT
-        ,	ParentIDs			VARCHAR(1000)
+        ,	ParentID			SMALLINT UNSIGNED
         ,	CategoryIDs			VARCHAR(1000)
 		,	CategoryNames		VARCHAR(5000)
-		,	CustomerClasses		VARCHAR(1000)
         , 	PRIMARY KEY(CTSCustID)
         ,	INDEX IX_Temp_Accounts_SubscriberID(SubscriberID)
 	);   
@@ -79,7 +76,7 @@ sp : BEGIN
         , 	AssociationType		INT
 		, 	AssociationStatus	INT
         ,	AssociationDate		DATETIME
-        , 	PRIMARY KEY (CTSCustID_Aff,AssociationType, AssociationStatus)
+        , 	PRIMARY KEY (CTSCustID_Aff,AssociationType,AssociationStatus)
 	);  
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustAssociationUnlinked;
@@ -88,19 +85,19 @@ sp : BEGIN
         , 	AssociationType		INT
         , 	AssociationStatus	INT
         ,	AssociationDate		DaTETIME
-        , 	PRIMARY KEY (CTSCustID_Aff,AssociationType, AssociationStatus)
+        , 	PRIMARY KEY (CTSCustID_Aff,AssociationType,AssociationStatus)
 	);  
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_SubscriberID;
     CREATE TEMPORARY TABLE 		Temp_SubscriberID (
 			SubscriberID 		INT UNSIGNED
-        , 	PRIMARY KEY  (SubscriberID)
+        , 	PRIMARY KEY (SubscriberID)
 	);   
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_AccountStatusID;
     CREATE TEMPORARY TABLE 		Temp_AccountStatusID (
-			AccountStatusID 		INT UNSIGNED
-        , 	PRIMARY KEY  (AccountStatusID)
+			AccountStatusID 	INT UNSIGNED
+        , 	PRIMARY KEY (AccountStatusID)
 	);
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Category;
@@ -108,8 +105,7 @@ sp : BEGIN
 			CategoryID 		SMALLINT UNSIGNED
 		,	ParentID		SMALLINT UNSIGNED
 		,	CategoryName	VARCHAR(50)
-		,	CustomerClass	SMALLINT UNSIGNED
-        , 	PRIMARY KEY  (CategoryID)
+        , 	PRIMARY KEY (CategoryID)
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerCategory;
@@ -118,8 +114,7 @@ sp : BEGIN
 		,	ParentID		SMALLINT UNSIGNED
 		,	CategoryIDs		VARCHAR(1000)
 		,	CategoryNames	VARCHAR(5000)
-		,	CustomerClasses	VARCHAR(1000)
-        , 	PRIMARY KEY  (CustID)
+        , 	PRIMARY KEY (CustID)
 	);
     
 	SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_SubscriberID (SubscriberID) VALUES ('", REPLACE(ip_SubscriberIDs, ",", "'),('"),"');");
@@ -130,7 +125,7 @@ sp : BEGIN
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1;
     
-    /*Customer Category:*/
+    /* Customer Category */
     SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_Category (CategoryID) VALUES ('", REPLACE(ip_CategoryIDs, ",", "'),('"),"');");
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1;
@@ -143,12 +138,10 @@ sp : BEGIN
     
     UPDATE Temp_Category AS tmpCat
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON tmpCat.CategoryID = cc.CategoryID
-		LEFT JOIN CTS_DataCenter.CategoryToCustomerClass AS ctc ON tmpCat.CategoryID = ctc.CategoryID
-    SET tmpCat.CustomerClass = ctc.CustomerClass
-		, tmpCat.CategoryName = cc.CategoryName
-        , tmpCat.ParentID = cc.ParentID;
+    SET 	tmpCat.CategoryName = cc.CategoryName
+        , 	tmpCat.ParentID = cc.ParentID;
         
-    /*<Customer Category Rule/>*/    
+    /* Customer Category Rule */    
     SELECT CustID 
     INTO lv_CustID
     FROM CTS_DataCenter.CTSCustomer 
@@ -157,13 +150,12 @@ sp : BEGIN
     # ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual, 4 - IP
     IF ip_AssociationType = 0 OR ip_AssociationType = 1 THEN
 		INSERT INTO Temp_CustAssociation(CTSCustID_Aff, AssociationType, AssociationStatus,  AssociationDate)
-		SELECT 
-				asCus.CTSCustID  
+		SELECT  asCus.CTSCustID  
 			,	1 AS AssociationType
             , 	1 AS AssociationStatus
 			,	GREATEST(asDv.CreatedTime, asCus.CreatedTime)
 		FROM CTS_DataCenter.AssociationByDevice AS asDv 
-			INNER JOIN CTS_DataCenter.AssociationByDevice AS asCus ON asCus.DCSDeviceID =  asDv.DCSDeviceID  AND asCus.CTSCustID  !=   ip_CTSCustID
+			INNER JOIN CTS_DataCenter.AssociationByDevice AS asCus ON asCus.DCSDeviceID = asDv.DCSDeviceID AND asCus.CTSCustID <> ip_CTSCustID
 		WHERE asDv.CTSCustID = ip_CTSCustID
         ON DUPLICATE KEY UPDATE AssociationDate = LEAST(Temp_CustAssociation.AssociationDate, GREATEST(asDv.CreatedTime, asCus.CreatedTime)); 
     END IF;
@@ -171,31 +163,26 @@ sp : BEGIN
     # ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual, 4 - IP
     IF ip_AssociationType = 0 OR ip_AssociationType = 3 THEN
 		INSERT IGNORE INTO Temp_CustAssociation(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
-		SELECT 
-				asMa.ToCTSCustID 
+		SELECT  asMa.ToCTSCustID 
 			,	3 AS AssociationType
             ,   1 AS AssociationStatus
 			,	asMa.CreatedDate
 		FROM CTS_DataCenter.AssociationByManual AS asMa 
-		WHERE	asMa.FromCTSCustID =  ip_CTSCustID;
+		WHERE	asMa.FromCTSCustID = ip_CTSCustID;
        
-        
         INSERT IGNORE INTO Temp_CustAssociation(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
-		SELECT 
-				asMa.FromCTSCustID
+		SELECT  asMa.FromCTSCustID
 			,	3 AS AssociationType
             ,   1 AS AssociationStatus
 			,	asMa.CreatedDate
 		FROM CTS_DataCenter.AssociationByManual AS asMa 
 		WHERE	asMa.ToCTSCustID =  ip_CTSCustID;
-        
     END IF;
 
     # ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual, 4 - IP
     IF ip_AssociationType = 0 OR ip_AssociationType = 2 THEN
 		INSERT IGNORE INTO Temp_CustAssociation(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
-		SELECT 
-				cust.CTSCustID 
+		SELECT  cust.CTSCustID 
 			,	2 AS AssociationType
             ,	1 AS AssociationStatus
 			,	asAI.CreatedDate
@@ -204,8 +191,7 @@ sp : BEGIN
 		WHERE	asAI.FromCustID =  lv_CustID;
         
         INSERT IGNORE INTO Temp_CustAssociation(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
-		SELECT 
-				cust.CTSCustID 
+		SELECT  cust.CTSCustID 
 			,	2 AS AssociationType
             ,	1 AS AssociationStatus
 			,	asAI.CreatedDate
@@ -215,10 +201,8 @@ sp : BEGIN
     END IF;
     
 	IF ip_AssociationType = 0 OR ip_AssociationType = 4 THEN
-   
 		INSERT IGNORE INTO Temp_CustAssociation(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
-		SELECT 
-				cust.CTSCustID 
+		SELECT  cust.CTSCustID 
 			,	4 AS AssociationType
             ,	1 AS AssociationStatus
 			,	asIP.CreatedDate
@@ -227,8 +211,7 @@ sp : BEGIN
 		WHERE	asIP.FromCustID =  lv_CustID;
         
         INSERT IGNORE INTO Temp_CustAssociation(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
-		SELECT 
-				cust.CTSCustID 
+		SELECT  cust.CTSCustID 
 			,	4 AS AssociationType
             ,	1 AS AssociationStatus
 			,	asIP.CreatedDate
@@ -237,9 +220,7 @@ sp : BEGIN
 		WHERE	asIP.ToCustID =  lv_CustID;
     END IF;
     
-
     #ip_AssociationStatus: 0 - All, 1 - Linked, 2 - UnLinked
-
 	INSERT IGNORE INTO Temp_CustAssociationUnlinked (CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
 	WITH CTE_AssociationRemove AS (
 		SELECT asRe.ToCTSCustID AS CTSCustID_Aff
@@ -252,7 +233,7 @@ sp : BEGIN
 		,	2 AS AssociationStatus
 		,	cte.CreatedDate
 	FROM CTE_AssociationRemove AS cte
-	INNER JOIN Temp_CustAssociation AS tmp ON cte.CTSCustID_Aff = tmp.CTSCustID_Aff;        
+		INNER JOIN Temp_CustAssociation AS tmp ON cte.CTSCustID_Aff = tmp.CTSCustID_Aff;        
         
 	INSERT IGNORE INTO Temp_CustAssociationUnlinked (CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
 	WITH CTE_AssociationRemove AS (
@@ -266,14 +247,14 @@ sp : BEGIN
 		,	2 AS AssociationStatus
 		,	cte.CreatedDate
 	FROM CTE_AssociationRemove AS cte
-	INNER JOIN Temp_CustAssociation AS tmp ON cte.CTSCustID_Aff = tmp.CTSCustID_Aff;
+		INNER JOIN Temp_CustAssociation AS tmp ON cte.CTSCustID_Aff = tmp.CTSCustID_Aff;
         
 	DELETE cuAs 
 	FROM Temp_CustAssociation AS cuAs 
 	WHERE cuAs.CTSCustID_Aff IN (SELECT CTSCustID_Aff FROM Temp_CustAssociationUnlinked);
         
 	INSERT IGNORE INTO Temp_CustAssociation(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
-	SELECT CTSCustID_Aff
+	SELECT 	CTSCustID_Aff
 		,	AssociationType
 		,	AssociationStatus
 		,	AssociationDate
@@ -282,7 +263,7 @@ sp : BEGIN
      IF ip_AssociationStatus = 2 THEN
 		DELETE 
         FROM Temp_CustAssociation 
-        WHERE Temp_CustAssociation.AssociationStatus != 2;
+        WHERE Temp_CustAssociation.AssociationStatus <> 2;
      END IF;
      
      IF ip_AssociationStatus = 1 THEN
@@ -291,9 +272,9 @@ sp : BEGIN
             INNER JOIN Temp_CustAssociationUnlinked AS un ON un.CTSCustID_Aff = cuAs.CTSCustID_Aff AND un.AssociationStatus = cuAs.AssociationStatus;
      END IF;     
      
-     INSERT IGNORE INTO Temp_Accounts(CTSCustID, CustId, CustSubID, SubscriberID, SubscriberName, UserName, UserName2, AssociationType, AssociationTypeName, AssociationDate, StatusId, StatusName, AssociationStatus, SiteID, SiteName)
+     INSERT IGNORE INTO Temp_Accounts(CTSCustID, CustID, CustSubID, SubscriberID, SubscriberName, UserName, UserName2, AssociationType, AssociationTypeName, AssociationDate, StatusID, StatusName, AssociationStatus, SiteID, SiteName)
      SELECT cust.CTSCustID
-		,	cust.CustId
+		,	cust.CustID
         ,	cust.CustSubID
 		,	cust.SubscriberID
         ,	maSu.SubscriberName
@@ -314,27 +295,25 @@ sp : BEGIN
         LEFT JOIN  CTS_DataCenter.StaticList AS sta ON sta.ListID = 2 AND sta.ItemID = cuAs.AssociationType
 	    LEFT JOIN  CTS_DataCenter.StaticList AS sta1 ON sta1.ListID = 1 AND sta1.ItemID = cust.CustStatusID
         LEFT JOIN  CTS_DataCenter.MappingSubscriberSite AS maSu ON maSu.SubscriberID = cust.SubscriberID AND maSu.SiteID = cust.SiteID
-     ON DUPLICATE KEY UPDATE AssociationTypeName =  CONCAT(Temp_Accounts.AssociationTypeName, ', ', sta.ItemName),
-							 AssociationDate = LEAST(Temp_Accounts.AssociationDate, cuAs.AssociationDate);
-                             
+    ON DUPLICATE KEY UPDATE AssociationTypeName =  CONCAT(Temp_Accounts.AssociationTypeName, ', ', sta.ItemName),
+							AssociationDate = LEAST(Temp_Accounts.AssociationDate, cuAs.AssociationDate);
+                     
     /*Customer Category: Get Customer Category Infor by Input Info*/                         
-    INSERT INTO Temp_CustomerCategory(CustID, ParentID, CategoryIDs, CategoryNames, CustomerClasses)
+    INSERT IGNORE INTO Temp_CustomerCategory(CustID, ParentID, CategoryIDs, CategoryNames)
 	SELECT	tmpAcc.CustID
-		,	GROUP_CONCAT(DISTINCT tmpCat.ParentID SEPARATOR ',')  AS CategoryIDs  
+		,	tmpCat.ParentID -- Each Customer has only 1 ParentID
 		,	GROUP_CONCAT(DISTINCT tmpCat.CategoryID SEPARATOR ',')  AS CategoryIDs  
-        ,	GROUP_CONCAT(DISTINCT tmpCat.CategoryName SEPARATOR ',')  AS CategoryNames  
-		,	GROUP_CONCAT(DISTINCT tmpCat.CustomerClass SEPARATOR ',') AS CustomerClasses		
+        ,	GROUP_CONCAT(DISTINCT tmpCat.CategoryName SEPARATOR ',')  AS CategoryNames  	
 	FROM	Temp_Accounts AS tmpAcc
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON tmpAcc.CustID = cc.CustID	AND CustSubID = 0	
 		INNER JOIN Temp_Category AS	tmpCat ON tmpCat.CategoryID = cc.CategoryID
-	GROUP BY tmpAcc.CustID;
+	GROUP BY tmpAcc.CustID, tmpCat.ParentID;
     
     UPDATE Temp_Accounts AS tmpAcc
-		INNER JOIN Temp_CustomerCategory AS tmpCC ON tmpAcc.CustID = tmpCC.CustID	AND CustSubID = 0
-	SET	tmpAcc.CategoryIDs = tmpCC.CategoryIDs
-		, tmpAcc.CategoryNames = tmpCC.CategoryNames
-        , tmpAcc.CustomerClasses = tmpCC.CustomerClasses
-        , tmpAcc.ParentIDs = tmpCC.ParentID;
+		INNER JOIN Temp_CustomerCategory AS tmpCC ON tmpAcc.CustID = tmpCC.CustID AND CustSubID = 0
+	SET		tmpAcc.CategoryIDs = tmpCC.CategoryIDs
+		, 	tmpAcc.CategoryNames = tmpCC.CategoryNames
+        , 	tmpAcc.ParentID = tmpCC.ParentID;
 	
     /*Customer Category: Remove Cust that Category is not in Input CategoryIDs*/
     DELETE 	tmpAcc
@@ -350,7 +329,7 @@ sp : BEGIN
     END IF;
 
 	SELECT	CTSCustID
-		, 	CustId
+		, 	CustID
 		, 	CustSubID
 		,	SubscriberID
 		, 	SubscriberName
@@ -358,19 +337,18 @@ sp : BEGIN
 		, 	UserName2
 		, 	AssociationTypeName
 		, 	AssociationDate
-		, 	StatusId
+		, 	StatusID
 		, 	StatusName
 		, 	AssociationStatus
 		, 	SiteID
 		, 	SiteName
-		,	tmpAcc.ParentIDs
+		,	tmpAcc.ParentID AS ParentIDs
 		,	tmpAcc.CategoryIDs
 		,	tmpAcc.CategoryNames
-		,	tmpAcc.CustomerClasses
 	FROM Temp_Accounts AS tmpAcc
 	WHERE SubscriberID IN (SELECT SubscriberID FROM Temp_SubscriberID) 
-		AND StatusId IN (SELECT AccountStatusID FROM Temp_AccountStatusID)
-	ORDER BY  SubscriberName ASC, AssociationStatus ASC , StatusId ASC,  AssociationDate DESC, CTSCustID
+		AND StatusID IN (SELECT AccountStatusID FROM Temp_AccountStatusID)
+	ORDER BY  SubscriberName ASC, AssociationStatus ASC , StatusID ASC,  AssociationDate DESC, CTSCustID
 	LIMIT ip_Take
 	OFFSET ip_Skip; 
 
@@ -378,8 +356,6 @@ sp : BEGIN
 	INTO op_TotalItems
 	FROM Temp_Accounts
 	WHERE SubscriberID IN (SELECT SubscriberID FROM Temp_SubscriberID) 
-	AND StatusId IN (SELECT AccountStatusID FROM Temp_AccountStatusID);
-    
+	AND StatusID IN (SELECT AccountStatusID FROM Temp_AccountStatusID);
 END$$
-
 DELIMITER ;

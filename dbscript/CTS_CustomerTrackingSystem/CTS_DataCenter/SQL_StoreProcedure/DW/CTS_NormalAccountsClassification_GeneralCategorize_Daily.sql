@@ -97,7 +97,11 @@ BEGIN
 	END
 	
 	CREATE TABLE #tmpDeletedCustomers(
-			CustId			INT PRIMARY KEY
+			CustId			INT
+	);
+	
+	CREATE CLUSTERED INDEX IX_tmpDeletedCustomers_CustId ON #tmpDeletedCustomers(
+		[CustId]			ASC
 	);
 	
 	-- GET LIST CUSTOMER-SPORT
@@ -125,45 +129,37 @@ BEGIN
 
 	INSERT INTO #tmpRawData(CustId, MainDBSportId, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDays)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @ListCustIds;	
-
-	INSERT INTO #tmpDeletedCustomers(CustId)
-	SELECT DISTINCT r.CustId FROM #tmpRawData AS r
-		LEFT JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON r.CustId = c.custid
-	WHERE c.closed = 1 OR c.[Enabled] = 0
-		AND c.roleid = 1;
-
-	INSERT INTO #tmpDeletedCustomers(CustId)
-	SELECT DISTINCT r.CustId FROM #tmpRawData AS r
-		LEFT JOIN bodb02.dbo.CS_CustomerStatus AS c WITH(NOLOCK) ON r.CustId = c.custid
-	WHERE (c.InactiveInfo > 0)
-		OR (c.InactiveInfo = 0 AND c.SuspendedInfo > 0);
 	
 	-- #3: Remove closed & disabled accounts & SMA account	
 	DELETE r WITH(ROWLOCK)
+		OUTPUT DELETED.CustId INTO #tmpDeletedCustomers(CustId)
 	FROM #tmpRawData AS r
 		LEFT JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON r.CustId = c.custid
-	WHERE c.closed = 1 OR c.[Enabled] = 0
-		OR c.roleid <> 1;
+	WHERE c.closed = 1 OR c.[Enabled] = 0;
 
 	-- #4: Remove closed & disabled of CN88
 	DELETE r WITH(ROWLOCK)
+		OUTPUT DELETED.CustId INTO #tmpDeletedCustomers(CustId)
 	FROM #tmpRawData AS r
 		LEFT JOIN bodb02.dbo.CS_CustomerStatus AS c WITH(NOLOCK) ON r.CustId = c.custid
 	WHERE (c.InactiveInfo > 0)
 		OR (c.InactiveInfo = 0 AND c.SuspendedInfo > 0);
 
 	-- #5: Sum data by custid
-	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, Site, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
+	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
 	SELECT	a.CustId
-		,	c.site
 		,	SUM(a.TurnoverRM)
 		,	SUM(a.WinlossRM)
 		,	CASE WHEN SUM(a.TurnoverRM) = 0 THEN 0 ELSE SUM(a.WinlossRM) / SUM(a.TurnoverRM) * 100 END
 		,	SUM(a.BetCount)
 		,	MAX(a.ActiveDays)
 	FROM #tmpRawData AS a WITH(NOLOCK)
-		LEFT JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON a.CustId = c.custid
-	GROUP BY a.CustId, c.site;
+	GROUP BY a.CustId;
+	
+	UPDATE a WITH(ROWLOCK, UPDLOCK)
+	SET a.site = c.site
+	FROM #tmpCustomerAccummulatedInfo AS a
+		LEFT JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON a.CustId = c.custid;
 	
 	-- #6: Classify new members
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
@@ -185,7 +181,7 @@ BEGIN
 	-- Remove 'haifa doesn't change category'
 	DELETE a
 	FROM  #tmpCustomerAccummulatedInfo AS a WITH(ROWLOCK)
-	WHERE (a.Margin < 0 AND a.Site = 'haifa' AND a.WinlossRM < -20000);
+	WHERE (a.Site = 'haifa' AND a.Margin < 0 AND a.WinlossRM < -20000);
 
 	-- #7: Classify customers by General Category
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
@@ -197,7 +193,7 @@ BEGIN
 				WHEN (a.Margin >= 0.1 AND a.Margin <= 1 AND a.BetCount >= 20 AND a.WinlossRM > 15000) THEN @GENERALCATEGORY_SMARTPUNTER
 				WHEN (a.Margin > 1 AND a.BetCount >= 20 AND a.WinlossRM > 15000) THEN @GENERALCATEGORY_HIGHRISKPUNTER
 				WHEN (a.Margin >= 0) THEN @GENERALCATEGORY_PROBATION
-				WHEN (a.Margin < 0 AND a.Site <> 'haifa') THEN @GENERALCATEGORY_NORMALMEMBER
+				WHEN (a.Margin < 0 AND (a.Site <> 'haifa' OR a.Site IS NULL)) THEN @GENERALCATEGORY_NORMALMEMBER
 				WHEN (a.Margin < 0 AND a.Site = 'haifa' AND a.WinlossRM >= -20000) THEN @GENERALCATEGORY_NORMALMEMBER
 			END AS CategoryId
 		,	@CurrentDate AS CreatedDate
