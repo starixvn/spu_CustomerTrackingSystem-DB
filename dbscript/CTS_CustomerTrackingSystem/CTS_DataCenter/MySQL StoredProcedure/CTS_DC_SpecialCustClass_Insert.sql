@@ -24,9 +24,9 @@ sp: BEGIN
            - [20200923@Irena.Vo][141755]: Enhance SP
 		   - 20201214-20201229@Irena.Vo: Remove logic delete Probation List. Enhance logic get VVIP & Insert History Log. Enhance logic validate for RoleID = 1 [RedmineID: #145951]
            - 20210226@Irena.Vo: Update CategoryID from VVIP [RedmineID: #150454]
-       
+		   - 20210419@Irena.Vo: Get Category more [RedmineID: #153617]
 		Param's Explanation (filtered by):
-			Maximum Customer Class number for input param = 127 
+			- Maximum Customer Class number for input param = 127 
 	*/    
     
 	DECLARE lv_CTSCustID		BIGINT UNSIGNED;
@@ -167,7 +167,6 @@ sp: BEGIN
 	FROM Temp_NewCustomerClass AS sp;
     
     /* GET LATEST CC */
-    SELECT 	DISTINCT CustId,	CustomerClass,   lv_CurrentDateTime AS ScannedTime FROM Temp_NewCustomerClass;
+    SELECT 	DISTINCT CustId, CustomerClass, -1 AS Category, lv_CurrentDateTime AS ScannedTime FROM Temp_NewCustomerClass;
 END$$
-
 DELIMITER ;

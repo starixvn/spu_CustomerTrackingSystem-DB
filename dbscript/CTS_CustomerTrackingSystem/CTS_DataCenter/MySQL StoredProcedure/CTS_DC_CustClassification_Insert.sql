@@ -33,7 +33,7 @@ sp: BEGIN
             - 20201202@Lex.Khuat: Disable detail categories & clean up wrong syntax [Redmine ID: #145954]
             - 20201214-20201229@Irena.Vo: Insert History Log & Auto Pin [RedmineID: #145951]
             - 20210226@Irena.Vo: Update CategoryID from VVIP [RedmineID: #150454]
-            
+            - 20210419@Irena.Vo: Get Category more [RedmineID: #153617]
 	*/
     DECLARE lv_CurrentDateTime DATETIME DEFAULT CURRENT_TIME();
 	DECLARE lv_SPName VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_Insert';
@@ -100,7 +100,7 @@ sp: BEGIN
     END IF;
     
     -- GET LATEST CC
-    SELECT ip_CustID AS CustId, 100 AS CustomerClass, lv_CurrentDateTime AS ScannedTime;
+    SELECT ip_CustID AS CustId, 100 AS CustomerClass, 210 AS Category, lv_CurrentDateTime AS ScannedTime;
 END$$
 
 DELIMITER ;

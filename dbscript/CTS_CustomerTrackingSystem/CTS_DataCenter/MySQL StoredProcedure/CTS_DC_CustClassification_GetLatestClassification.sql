@@ -15,6 +15,7 @@ BEGIN
 		Revisions:
 			- 20201214@Irena.Vo: Created [RedmineID: #145951]
             - 20210413@Irena.Vo: Get Reason. Ignore sub account for case CC = -1 [RedmineID: #141931]
+			- 20210419@Irena.Vo: Get Category more [RedmineID: #153617]
 		Param's Explanation:
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetLatestClassification('1,2,1277,555555');
@@ -43,7 +44,7 @@ BEGIN
     CREATE TEMPORARY TABLE 		Temp_CustomerClass (
         	CustID				BIGINT UNSIGNED PRIMARY KEY 
 		,   CustomerClass       SMALLINT	
-        ,	Reason				TEXT
+        ,	Category			TEXT
         ,	ScannedTime			DATETIME
     );    
     
@@ -80,21 +81,19 @@ BEGIN
     INNER JOIN  Temp_ExistedSpecialCC AS es ON es.CustID = ec.CustID;
     
     /* Mapping Customer Class */
-    INSERT INTO Temp_CustomerClass (CustID, CustomerClass, Reason, ScannedTime)
-    SELECT 		t.CustID,	t.CustomerClass, cc.CategoryName, t.ScannedTime
-    FROM 		(SELECT a.CustID, a.CustomerClass, cc.CategoryGroup, a.ScannedTime
-				 FROM (SELECT es.CustID,  es.CustomerClass, es.CategoryID, es.ScannedTime
-						FROM Temp_ExistedSpecialCC AS es
-						UNION ALL
-						SELECT ec.CustID,  map.CustomerClass, ec.CategoryID, ec.ScannedTime
-						FROM Temp_ExistedLastestCategory AS ec 
-							INNER JOIN CTS_DataCenter.CategoryToCustomerClass AS map ON map.CategoryID = ec.CategoryID) AS a
-					INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = a.CategoryID	) AS t
-		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = t.CategoryGroup;
+    INSERT INTO Temp_CustomerClass (CustID, CustomerClass, Category, ScannedTime)
+    SELECT a.CustID, a.CustomerClass, cc.CategoryGroup, a.ScannedTime
+	FROM (	SELECT es.CustID,  es.CustomerClass, es.CategoryID, es.ScannedTime
+			FROM Temp_ExistedSpecialCC AS es
+			UNION ALL
+			SELECT ec.CustID,  map.CustomerClass, ec.CategoryID, ec.ScannedTime
+			FROM Temp_ExistedLastestCategory AS ec 
+				INNER JOIN CTS_DataCenter.CategoryToCustomerClass AS map ON map.CategoryID = ec.CategoryID) AS a
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = a.CategoryID;
     
     /* Insert Customer Class = -1 */
-	INSERT INTO Temp_CustomerClass (CustID, CustomerClass, ScannedTime)
-    SELECT 		temp.CustID, -1	AS CustomerClass, CURRENT_TIME()
+	INSERT INTO Temp_CustomerClass (CustID, CustomerClass, Category, ScannedTime)
+    SELECT 		temp.CustID, -1	AS CustomerClass, -1 AS Category, CURRENT_TIME()
     FROM 		Temp_Customers AS temp
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID = temp.CustID AND cust.CustSubID = 0 -- Existed CustID
 		LEFT JOIN Temp_ExistedSpecialCC AS es ON es.CustID = temp.CustID -- Not existed Special CC
@@ -102,6 +101,6 @@ BEGIN
     WHERE 		es.CustID IS NULL AND ec.CustID IS NULL;
     
     /* Get Lastest Customer Class to sync in mainDB */
-    SELECT DISTINCT	c.CustId, c.CustomerClass, c.ScannedTime FROM Temp_CustomerClass AS c;
+    SELECT DISTINCT	c.CustID, c.CustomerClass, c.Category, c.ScannedTime FROM Temp_CustomerClass AS c;
 END$$
 DELIMITER ;
