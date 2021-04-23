@@ -6,7 +6,7 @@ DBName:		CTS_DataCenter
 */
 
 /****Init Data****/
-
+USE CTS_DataCenter;
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
 VALUES	(18,'CTSCustomer_LastUpdateTimeCustProductStatus', 'Keep the Last CustProductStatus_History.UpdateTime', 'DATETIME(3)', NOW())
     ,	(19,'CTSCustomer_LastUpdateCustIDCustProductStatus', 'Keep the Last CustProductStatus_History.CustId', 'BIGINT UNSIGNED', 0);

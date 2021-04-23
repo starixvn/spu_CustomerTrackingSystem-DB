@@ -30,7 +30,7 @@ BEGIN
 		,	INDEX IX_TempCTSCustomer_CustID(CustID)
 	);	
  
-	INSERT INTO TempCTSCustomer(CustID, CustStatusID, Danger1, Danger2, Danger3)
+	INSERT INTO TempCTSCustomer(CustID, CustStatusID)
 	SELECT	js.CustID
 		,	js.CustStatusID
 		
@@ -42,7 +42,7 @@ BEGIN
 	) AS js;	
        
 	UPDATE 		CTS_DataCenter.CTSCustomer AS ctsCust
-	INNER JOIN 	TempCTSCustomer AS tempCust ON ctsCust.CustID = tempCust.CustID
+		INNER JOIN 	TempCTSCustomer AS tempCust ON ctsCust.CustID = tempCust.CustID
 	SET		ctsCust.CustStatusID = tempCust.CustStatusID
 		,	ctsCust.ModifiedTime = CURRENT_TIMESTAMP(4)
 	WHERE	ctsCust.CustSubID = 0;

@@ -21,7 +21,7 @@ AS
 		-	20190917@Terry:  Remove Customer Suspiciouses						[Redmine: #125693]
 		-	20191223@Harvey: Get Bet Restriction, smart punter information		[Redmine: #125693]
 		-	20200619@Harvey: Remove unused information							[Redmine: #133935]
-		-	20210423@Casey.Huynh:	Enhance Get Closed and Suspended Status of Credit Customer from table bodb02.dbo.CustProductStatus [Redmine ID: #152259] 
+		-	20210423@Casey.Huynh: Get cust status and Danger from CTS instead of MainDB [Redmine ID: #152259] 
 
 	Param's Explanation:
 

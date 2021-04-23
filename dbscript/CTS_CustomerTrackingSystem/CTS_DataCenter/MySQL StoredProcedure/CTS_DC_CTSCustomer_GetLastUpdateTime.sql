@@ -37,12 +37,12 @@ BEGIN
 		FROM	CTS_DataCenter.SystemParameter AS s
 		WHERE	s.ParameterID = 12;
         
-		SELECT	s.ParameterValue AS LastUpdateTimeCustomer
+		SELECT	s.ParameterValue AS LastUpdateTimeCustProductStatus
 		FROM	CTS_DataCenter.SystemParameter AS s
-		WHERE	s.ParameterID = 13;
+		WHERE	s.ParameterID = 18;
 
-		SELECT	s.ParameterValue AS LastUpdateCustIDCustomer
+		SELECT	s.ParameterValue AS LastUpdateCustIDCustProductStatus
 		FROM	CTS_DataCenter.SystemParameter AS s
-		WHERE	s.ParameterID = 14;
+		WHERE	s.ParameterID = 19;
 END$$
 DELIMITER ;

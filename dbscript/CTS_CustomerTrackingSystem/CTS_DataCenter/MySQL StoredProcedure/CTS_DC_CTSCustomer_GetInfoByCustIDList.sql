@@ -3,8 +3,8 @@ DROP PROCEDURE IF EXISTS `CTS_DC_CTSCustomer_GetInfoByCustIDList`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTSCustomer_GetInfoByCustIDList`(
-	IN ip_CustIDList TEXT
-    , IN ip_SourceType TINYINT
+		IN ip_CustIDList TEXT
+    ,	IN ip_SourceType TINYINT
 )
 	SQL SECURITY INVOKER
 BEGIN
@@ -29,41 +29,41 @@ BEGIN
         
         IF ip_SourceType = 3
         THEN
-			SELECT 		CustID
-					,	CustStatusID
+			SELECT 	CustID
+				,	CustStatusID
 			FROM		CTS_DataCenter.CTSCustomer AS cus
-			INNER JOIN	TempItemTable AS tmpCus ON cus.CustID = tmpCus.Item
+				INNER JOIN	TempItemTable AS tmpCus ON cus.CustID = tmpCus.Item
 			WHERE		CustSubID = 0;
         END IF;
         
         IF ip_SourceType = 2
         THEN      
-			SELECT 		CustID
-					,	CustStatusID
-					,	Danger1
-					,	Danger2
-					,	Danger3
+			SELECT 	CustID
+				,	CustStatusID
+				,	Danger1
+				,	Danger2
+				,	Danger3
 			FROM		CTS_DataCenter.CTSCustomer AS cus
-			INNER JOIN	TempItemTable AS tmpCus ON cus.CustID = tmpCus.Item
+				INNER JOIN	TempItemTable AS tmpCus ON cus.CustID = tmpCus.Item
 			WHERE		CustSubID = 0;
 		END IF;
 		
 		IF ip_SourceType = 1
         THEN      
-			SELECT 		CustID
-					,	Username
-                    ,   UserName2
-					,	SiteID
-					,	Site
-					,	RoleID
-                    ,	CurrencyID
-                    ,	Currency
-                    ,	Srecommend
-                    ,	Mrecommend
-                    ,	Recommend
-                    ,	CreatedDate
+			SELECT 	CustID
+				,	Username
+				,   UserName2
+				,	SiteID
+				,	Site
+				,	RoleID
+				,	CurrencyID
+				,	Currency
+				,	Srecommend
+				,	Mrecommend
+				,	Recommend
+				,	CreatedDate
 			FROM		CTS_DataCenter.CTSCustomer AS cus
-			INNER JOIN	TempItemTable AS tmpCus ON cus.CustID = tmpCus.Item
+				INNER JOIN	TempItemTable AS tmpCus ON cus.CustID = tmpCus.Item
 			WHERE		CustSubID = 0;
 		END IF;
         

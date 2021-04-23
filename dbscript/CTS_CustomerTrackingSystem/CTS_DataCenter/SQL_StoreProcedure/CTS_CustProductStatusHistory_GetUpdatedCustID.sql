@@ -2,7 +2,7 @@
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
 GO
-ALTER PROCEDURE	CTS_CustProductStatus_GetUpdatedCustID
+ALTER PROCEDURE	CTS_CustProductStatusHistory_GetUpdatedCustID
 		@lastUpdateTime		DATETIME
 	,	@lastCustId			INT
 	,	@rowSize			INT = 500

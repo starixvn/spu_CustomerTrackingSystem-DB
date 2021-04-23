@@ -24,9 +24,9 @@ AS
 		- 20210423@Casey.Huynh:	Enhance Get Closed and Suspended Status of Credit Customer from table bodb02.dbo.CustProductStatus [Redmine ID: #152259]
 
 	Developer's Notes:
-		- @sourceType: 0-Get All, 1- Get Customer table Info, 2-Get CustInfo
+		- @sourceType: 0- GET New Customer Info, 1- Get Info Customer table, 2-Get CustInfo table, 3 GET Info CustProductStatus table
 
-	exec CTS_Customer_GetInfoByCustIdList 1,2,3
+	EXEC CTS_Customer_GetInfoByCustIdList '1,2,3', 0
 		
 */
 BEGIN;
@@ -59,7 +59,7 @@ BEGIN;
 		,	Mrecommend		INT
 		,	Recommend		INT
 		,	CreatedDate		DATETIME
-		,	IsDeposit		BIT
+		
 	);
 
 	INSERT INTO #tmpCustomers(CustId)
@@ -67,7 +67,7 @@ BEGIN;
 	FROM	bodb02.dbo.strSplit(@custIdList, ',');
 
 
-	IF (@sourceType = 0 OR @sourceType = 1)
+	IF (@sourceType = 0 OR @sourceType = 1 OR @sourceType = 2)
 	BEGIN
 		UPDATE tmpCust 
 		SET		Username = 	cust.username
@@ -80,8 +80,7 @@ BEGIN;
 			,	Srecommend = cust.srecommend
 			,	Mrecommend = cust.mrecommend 
 			,	Recommend = cust.recommend	
-			,	CreatedDate = cust.creatdate
-			,	IsDeposit = (CASE WHEN cust.roleid = 1 THEN st.IsDeposit ELSE st2.IsDeposit END)		
+			,	CreatedDate = cust.creatdate	
 		FROM dbo.Customer AS cust WITH (NOLOCK)
 			INNER JOIN #tmpCustomers AS tmpCust ON cust.custid = tmpCust.CustId
 			INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON cust.currency = ex.exchangeid
@@ -104,7 +103,8 @@ BEGIN;
 			,	a.Danger3 = c.danger3
 		FROM #tmpCustomers AS a
 			INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON a.custid = c.custid
-		WHERE	a.IsDeposit = 0;
+			INNER JOIN bodb02.dbo.CustSuper AS cs WITH(NOLOCK) ON a.Srecommend = cs.custid;
+
 
 		UPDATE a WITH(ROWLOCK, UPDLOCK)
 		SET a.CustStatusID = (CASE 
@@ -118,10 +118,10 @@ BEGIN;
 		FROM #tmpCustomers AS a
 			INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON a.custid = c.custid
 			INNER JOIN bodb02.dbo.CustProductStatus AS s WITH(NOLOCK) ON a.custid = s.custid
-		WHERE	a.IsDeposit = 1;
+		WHERE	a.CustStatusID IS NULL;
 	END;
 
-	IF (@sourceType = 0 OR @sourceType = 3)
+	IF (@sourceType = 3)
 	BEGIN
 
 		UPDATE a WITH(ROWLOCK, UPDLOCK)
@@ -132,8 +132,8 @@ BEGIN;
 								ELSE @MBC_ACCOUNTSTATUS_OPEN END)
 		FROM #tmpCustomers AS a
 			INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON a.custid = c.custid
-			INNER JOIN bodb02.dbo.CustProductStatus AS s WITH(NOLOCK) ON a.custid = s.custid
-		WHERE	a.IsDeposit = 1;
+			INNER JOIN bodb02.dbo.CustProductStatus AS s WITH(NOLOCK) ON a.custid = s.custid;
+
 	END;
 
 	IF (@sourceType = 0)
