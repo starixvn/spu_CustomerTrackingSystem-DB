@@ -21,7 +21,7 @@ AS
 		-	20190917@Terry:  Remove Customer Suspiciouses						[Redmine: #125693]
 		-	20191223@Harvey: Get Bet Restriction, smart punter information		[Redmine: #125693]
 		-	20200619@Harvey: Remove unused information							[Redmine: #133935]
-		 
+		-	20210423@Casey.Huynh:	Enhance Get Closed and Suspended Status of Credit Customer from table bodb02.dbo.CustProductStatus [Redmine ID: #152259] 
 
 	Param's Explanation:
 
@@ -39,26 +39,6 @@ BEGIN
 	SELECT	ci.custid
 			,ci.username
 			,cusSite.isLicensee
-			,CASE 
-				WHEN cs.custid IS NULL
-					THEN -1
-				WHEN cs.InactiveInfo > 0
-					THEN 1 --Inactive
-				WHEN cs.InactiveInfo = 0
-					AND cs.SuspendedInfo > 0
-					THEN 2 --Suspended
-				WHEN cs.InactiveInfo = 0
-					AND cs.SuspendedInfo = 0
-					AND cs.ViewOnlyInfo > 0
-					THEN 3 --ViewOnly
-				ELSE 4 --Active
-				END AS [cn88status] 
-			,reject -- suspend (reject=1) only for MBC
-			,closed -- CN88: locked (closed=1) || MBC: closed (closed=1) Open (closed=0)
-			,ci.Enabled -- MBC: = 0 Disabled
-			,danger -- original
-			,danger2 -- Non live
-			,danger3 -- Other sports
 			,autosuspend -- Auto Suspend Soccer
 			,autosuspend2 -- Auto Suspend Other Sports
 	FROM dbo.custInfo ci WITH (NOLOCK)

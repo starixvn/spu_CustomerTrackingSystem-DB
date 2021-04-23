@@ -17,6 +17,7 @@ BEGIN
 		Revisions:
 			- 20210115@Casey.Huynh: Created [Redmine ID: 148849]
             - 20210208@Casey.Huynh: Implement Get info by Update from Customer_History [Redmine ID: 149941]
+            - 20210423@CaseyHuynh: Update CTSCustomer (Credit Cust Status) by CustProductStatus_History [Redmine ID: #152259]
             
 		Param's Explanation (filtered by):
 			ip_CustIDList: String (custid01,custid02, custid03)
@@ -25,6 +26,15 @@ BEGIN
 
 	*/  
 		CALL CTS_DC_Sys_SplitStringToTempItemTable(ip_CustIDList,',','BIGINT');
+        
+        IF ip_SourceType = 3
+        THEN
+			SELECT 		CustID
+					,	CustStatusID
+			FROM		CTS_DataCenter.CTSCustomer AS cus
+			INNER JOIN	TempItemTable AS tmpCus ON cus.CustID = tmpCus.Item
+			WHERE		CustSubID = 0;
+        END IF;
         
         IF ip_SourceType = 2
         THEN      

@@ -14,6 +14,7 @@ BEGIN
 		Revisions: 
 			-	20210115@Casey.Huynh: Created [Redmine ID: 148849]
             -	20210205@Casey.Huynh: Implement Update CTSCustomer by Customer_History [Redmine ID: 149941]
+            -	20210423@CaseyHuynh: Update CTSCustomer (Credit Cust Status) by CustProductStatus_History [Redmine ID: #152259]
 		Param's Explanation (filtered by):
 
 		Example:
@@ -35,5 +36,13 @@ BEGIN
 		SELECT	s.ParameterValue AS LastUpdateCustIDCustomer
 		FROM	CTS_DataCenter.SystemParameter AS s
 		WHERE	s.ParameterID = 12;
+        
+		SELECT	s.ParameterValue AS LastUpdateTimeCustomer
+		FROM	CTS_DataCenter.SystemParameter AS s
+		WHERE	s.ParameterID = 13;
+
+		SELECT	s.ParameterValue AS LastUpdateCustIDCustomer
+		FROM	CTS_DataCenter.SystemParameter AS s
+		WHERE	s.ParameterID = 14;
 END$$
 DELIMITER ;

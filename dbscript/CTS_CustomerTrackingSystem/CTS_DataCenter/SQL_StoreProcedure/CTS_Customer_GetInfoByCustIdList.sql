@@ -21,6 +21,7 @@ AS
 		- 20210112@Long.Luu:	Fix Customer Status Issue & Remove Robot checking [Redmine: #148541]
 		- 20191128@Casey.Huynh:	Enhance CTSCustomerFlow [Redmine ID: 148849]
 		- 20210205@Casey.Huynh:	Return  Customer Info [Redmine ID: 149941]
+		- 20210423@Casey.Huynh:	Enhance Get Closed and Suspended Status of Credit Customer from table bodb02.dbo.CustProductStatus [Redmine ID: #152259]
 
 	Developer's Notes:
 		- @sourceType: 0-Get All, 1- Get Customer table Info, 2-Get CustInfo
@@ -35,8 +36,6 @@ BEGIN;
 		,	@MBC_ACCOUNTSTATUS_DISABLED INT = 2
 		,	@MBC_ACCOUNTSTATUS_CLOSED INT = 3
 		,	@MBC_ACCOUNTSTATUS_SUSPENDED INT = 4
-
-
 
 	IF OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
 	BEGIN
@@ -60,6 +59,7 @@ BEGIN;
 		,	Mrecommend		INT
 		,	Recommend		INT
 		,	CreatedDate		DATETIME
+		,	IsDeposit		BIT
 	);
 
 	INSERT INTO #tmpCustomers(CustId)
@@ -80,7 +80,8 @@ BEGIN;
 			,	Srecommend = cust.srecommend
 			,	Mrecommend = cust.mrecommend 
 			,	Recommend = cust.recommend	
-			,	CreatedDate = cust.creatdate		
+			,	CreatedDate = cust.creatdate
+			,	IsDeposit = (CASE WHEN cust.roleid = 1 THEN st.IsDeposit ELSE st2.IsDeposit END)		
 		FROM dbo.Customer AS cust WITH (NOLOCK)
 			INNER JOIN #tmpCustomers AS tmpCust ON cust.custid = tmpCust.CustId
 			INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON cust.currency = ex.exchangeid
@@ -102,7 +103,37 @@ BEGIN;
 			,	a.Danger2 = c.danger2
 			,	a.Danger3 = c.danger3
 		FROM #tmpCustomers AS a
-			INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON a.custid = c.custid;
+			INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON a.custid = c.custid
+		WHERE	a.IsDeposit = 0;
+
+		UPDATE a WITH(ROWLOCK, UPDLOCK)
+		SET a.CustStatusID = (CASE 
+								WHEN c.[Enabled] <> 1 THEN @MBC_ACCOUNTSTATUS_DISABLED
+								WHEN s.CloseInfo <> 0 THEN @MBC_ACCOUNTSTATUS_CLOSED
+								WHEN s.SuspendInfo <> 0 THEN @MBC_ACCOUNTSTATUS_SUSPENDED
+								ELSE @MBC_ACCOUNTSTATUS_OPEN END)
+			,	a.Danger1 = c.danger
+			,	a.Danger2 = c.danger2
+			,	a.Danger3 = c.danger3
+		FROM #tmpCustomers AS a
+			INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON a.custid = c.custid
+			INNER JOIN bodb02.dbo.CustProductStatus AS s WITH(NOLOCK) ON a.custid = s.custid
+		WHERE	a.IsDeposit = 1;
+	END;
+
+	IF (@sourceType = 0 OR @sourceType = 3)
+	BEGIN
+
+		UPDATE a WITH(ROWLOCK, UPDLOCK)
+		SET a.CustStatusID = (CASE 
+								WHEN c.[Enabled] <> 1 THEN @MBC_ACCOUNTSTATUS_DISABLED
+								WHEN s.CloseInfo <> 0 THEN @MBC_ACCOUNTSTATUS_CLOSED
+								WHEN s.SuspendInfo <> 0 THEN @MBC_ACCOUNTSTATUS_SUSPENDED
+								ELSE @MBC_ACCOUNTSTATUS_OPEN END)
+		FROM #tmpCustomers AS a
+			INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON a.custid = c.custid
+			INNER JOIN bodb02.dbo.CustProductStatus AS s WITH(NOLOCK) ON a.custid = s.custid
+		WHERE	a.IsDeposit = 1;
 	END;
 
 	IF (@sourceType = 0)
@@ -123,9 +154,8 @@ BEGIN;
 		,	a.Danger1		AS Danger1
 		,	a.Danger2		AS Danger2
 		,	a.Danger3		AS Danger3
-	FROM #tmpCustomers AS a WITH(NOLOCK);
-	END
-	
+		FROM #tmpCustomers AS a WITH(NOLOCK);
+	END;
 
 	IF (@sourceType = 1)
 	BEGIN
@@ -141,7 +171,7 @@ BEGIN;
 		,	a.Mrecommend	AS MRecommend
 		,	a.Recommend		AS Recommend
         ,	a.CreatedDate	AS CreatedDate
-	FROM #tmpCustomers AS a WITH(NOLOCK)
+		FROM #tmpCustomers AS a WITH(NOLOCK)
 	END;
 
 	IF (@sourceType = 2)
@@ -152,9 +182,15 @@ BEGIN;
 		,	a.Danger1		AS Danger1
 		,	a.Danger2		AS Danger2
 		,	a.Danger3		AS Danger3
-	FROM #tmpCustomers AS a WITH(NOLOCK);
+		FROM #tmpCustomers AS a WITH(NOLOCK);
 	END;
 	
-
+	IF (@sourceType = 3)
+	BEGIN
+		SELECT
+			a.CustID		AS CustID
+        ,	a.CustStatusID	AS CustStatusID
+		FROM #tmpCustomers AS a WITH(NOLOCK);
+	END;
 END;
 GO
