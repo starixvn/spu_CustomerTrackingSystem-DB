@@ -1,4 +1,4 @@
-/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
 DROP PROCEDURE IF EXISTS `DCS_DC_ArchiveData_DeviceCode`;
 
 DELIMITER $$
