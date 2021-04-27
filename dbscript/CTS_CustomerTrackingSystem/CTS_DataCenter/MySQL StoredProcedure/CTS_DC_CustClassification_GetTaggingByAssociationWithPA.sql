@@ -15,6 +15,8 @@ BEGIN
 		Revisions:
 		   - 20210226@Aries.Nguyen: Created [Redmine ID: #148908]
            - 20210416@Irena.Vo: Update source get Robot User & ignore sub ass acc [Redmine ID: #15250] 
+		   - 20210427@Aries.Nguyen: Enhance performance [Redmine ID: #152509] 
+
 		Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetTaggingByAssociationWithPA('1268,38665541,17004,32339123379301,3481646');
@@ -44,6 +46,19 @@ BEGIN
 		,	TaggingID		INT  
         , 	PRIMARY KEY 	PK_Temp_AssociationPA_CustID(CustID)
 	);  
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustLevel1;
+    CREATE TEMPORARY TABLE 		Temp_CustLevel1 (			
+			CTSCustID		BIGINT UNSIGNED
+		,	PRIMARY KEY (CTSCustID)
+	);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_PA;
+    CREATE TEMPORARY TABLE 		Temp_PA (			
+			CTSCustID		BIGINT UNSIGNED
+		,	CustomerClass	INT DEFAULT 0
+		,	PRIMARY KEY (CTSCustID)
+	);
 
     SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_Customer (CustID) VALUES ('", REPLACE(ip_ListCustID, ",", "'),('"),"');");
 	PREPARE 	stmt1 FROM @sql;
@@ -88,37 +103,32 @@ BEGIN
     DELETE cuAs FROM Temp_CustAssociation AS cuAs
 		INNER JOIN CTS_DataCenter.AssociationRemove AS asRe 
 			ON (cuAs.CTSCustID = asRe.FromCTSCustID AND cuAs.CTSCustID_Aff = asRe.ToCTSCustID) OR (cuAs.CTSCustID_Aff = asRe.ToCTSCustID AND cuAs.CTSCustID = asRe.FromCTSCustID);
-  
+	
+    INSERT INTO Temp_CustLevel1(CTSCustID)
+    SELECT DISTINCT CTSCustID_Aff AS Level1  
+    FROM Temp_CustAssociation;
+    
+    INSERT INTO Temp_PA(CTSCustID, CustomerClass)
+    SELECT 	cus.CTSCustID
+		,	class.CustomerClass
+	FROM Temp_CustLevel1 AS cus
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CTSCustID = cus.CTSCustID AND SportGroupID = 0
+		INNER JOIN CTS_DataCenter.CategoryToCustomerClass AS class ON class.CategoryID =  cc.CategoryID
+    WHERE cc.CategoryID = 61 OR class.CustomerClass IN (8, 10)
+    ON DUPLICATE KEY UPDATE CustomerClass = CASE WHEN class.CustomerClass = 10 THEN 10
+												 WHEN class.CustomerClass = 8 AND Temp_PA.CustomerClass != 10 THEN 8
+											END;
+                                            
     INSERT INTO Temp_CustAssociationPA (CustID, TaggingID)
-	WITH CTE_Result AS (      
+    WITH CTE_Result AS (      
 		SELECT
-			tbl2.CustID
-		, 	tbl2.CTSCustID
+			cus.CustID
+		, 	cus.CTSCustID
 		,   COUNT(*) AS Total
-		,	GROUP_CONCAT( DISTINCT tbl2.CustomerClass SEPARATOR  ',') AS CustomerClassStr
-        FROM (
-				SELECT 
-						tbl.CustID
-					, 	tbl.CTSCustID
-					,	tbl.CTSCustID_Aff
-					,	CASE	WHEN GROUP_CONCAT(CustomerClass SEPARATOR  ',') LIKE '%10%' THEN 10
-								WHEN GROUP_CONCAT(CustomerClass SEPARATOR  ',') LIKE '%8%' THEN 8
-								WHEN GROUP_CONCAT(CustomerClass SEPARATOR  ',') LIKE '%13%' THEN 13
-						END AS 	CustomerClass 
-				FROM(
-					SELECT DISTINCT
-							cus.CustID
-						, 	cus.CTSCustID
-						, 	cus.CTSCustID_Aff 
-						, 	class.CustomerClass
-					FROM Temp_CustAssociation AS cus 
-						INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CTSCustID = cus.CTSCustID_Aff AND SportGroupID = 0
-						INNER JOIN CTS_DataCenter.CategoryToCustomerClass AS class ON class.CategoryID =  cc.CategoryID 
-					WHERE cc.CategoryID = 61 OR class.CustomerClass IN (8, 10)
-				) AS tbl
-				GROUP BY tbl.CustID, tbl.CTSCustID, tbl.CTSCustID_Aff
-        ) AS tbl2
-        GROUP BY tbl2.CustID, tbl2.CTSCustID
+		,	GROUP_CONCAT( DISTINCT pa.CustomerClass SEPARATOR  ',') AS CustomerClassStr
+        FROM Temp_CustAssociation AS cus
+			INNER JOIN Temp_PA AS pa ON cus.CTSCustID_Aff = pa.CTSCustID
+        GROUP BY cus.CustID, cus.CTSCustID
 	)
     SELECT 	CustID
 		,	CASE	WHEN CustomerClassStr LIKE '%10%' THEN 10
@@ -134,5 +144,6 @@ BEGIN
     
     SELECT CustID, TaggingID, TaggingType
     FROM Temp_Customer;
+
 END$$
 DELIMITER ;
