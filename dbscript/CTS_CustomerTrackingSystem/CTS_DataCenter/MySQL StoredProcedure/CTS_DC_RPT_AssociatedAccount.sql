@@ -24,6 +24,7 @@ sp : BEGIN
         
 		Revisions:
 			- 20210226@Harvey.Nguyen: Created [Redmine ID: #150720]
+			- 20210427@Aries.Nguyen: Enhance performance [Redmine ID: #152509] 
             
 		Param's Explanation (filtered by):
             - ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual
@@ -34,6 +35,10 @@ sp : BEGIN
 			- CALL CTS_DataCenter.CTS_DC_RPT_AssociatedAccount('1,11','4414',0,0,'2021-01-28','2021-01-30',41,0,100, @op_TotalItems);
 
 	*/    
+    
+    DECLARE lv_fromday 	INT;
+    DECLARE lv_today 	INT;
+    DECLARE lv_days 	JSON;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_SubscriberID;
     CREATE TEMPORARY TABLE Temp_SubscriberID (
@@ -78,6 +83,11 @@ sp : BEGIN
         ,	EvidenceCode	VARCHAR(200)
         , 	CategoryName	VARCHAR(300)
 	);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_Device;
+	CREATE TEMPORARY TABLE 		Temp_Device (
+				DCSDeviceID 		BIGINT UNSIGNED PRIMARY KEY 
+	);
 
 	SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_SubscriberID (SubscriberID) VALUES ('", REPLACE(ip_SubscriberIDs, ",", "'),('"),"');");
 	PREPARE 	stmt1 FROM @sql;
@@ -91,11 +101,29 @@ sp : BEGIN
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1;
     
+    SET lv_fromday = TO_DAYS(ip_FromAssDate);
+	SET lv_today = TO_DAYS(ip_ToAssDate);
+    
+	WITH RECURSIVE CTE_Day (n) AS
+	(
+	  SELECT lv_fromday 
+	  UNION ALL
+	  SELECT  1  + n  FROM CTE_Day WHERE n < lv_today
+	)
+	SELECT JSON_ARRAYAGG(n)
+	INTO lv_days
+	FROM CTE_Day;
+    
     UPDATE Temp_EvidenceID AS evID
-	INNER JOIN CTS_DataCenter.Evidence evi ON evID.EvidenceID = evi.EvidenceID
+		INNER JOIN CTS_DataCenter.Evidence evi ON evID.EvidenceID = evi.EvidenceID
 	SET evID.EvidenceCode = evi.EvidenceCode;
 
     IF ip_AssociationType = 1 AND  ip_AssociationStatus = 0 THEN
+		INSERT IGNORE INTO Temp_Device(DCSDeviceID)
+		SELECT DCSDeviceID 
+		FROM CTS_DataCenter.DeviceAssociationDay
+		WHERE JSON_OVERLAPS(AssociationDay -> '$', lv_days); 
+        
 		INSERT IGNORE INTO Temp_CustEvidence (CTSCustID,EvidenceID,UserName,SubscriberID,CustStatusID,EvidenceCode) 
 		SELECT ce.CTSCustID
 			,	ce.EvidenceID
@@ -103,26 +131,21 @@ sp : BEGIN
 			, 	cus.SubscriberID 
 			,	cus.CustStatusID
 			,	evID.EvidenceCode
-		FROM  CTS_DataCenter.CustEvidence ce
+		FROM  CTS_DataCenter.CustEvidence ce USE INDEX(IX_CustEvidence_Level_CTSCustID)
 			INNER JOIN Temp_EvidenceID AS evID on evID.EvidenceID = ce.EvidenceID AND  ce.LEVEL = 0
 			INNER JOIN CTS_DataCenter.CTSCustomer cus ON cus.CTSCustID = ce.CTSCustID
-		WHERE (  
-					( 	SELECT ass.FromCTSCustID
-						FROM CTS_DataCenter.Association as ass
-						WHERE  ass.FromCTSCustID = ce.CTSCustID  
-							AND	ass.CreatedDate BETWEEN ip_FromAssDate AND ip_ToAssDate
-						LIMIT 1)   IS NOT NULL
-					OR
-					( 	SELECT ass.FromCTSCustID
-						FROM CTS_DataCenter.Association AS ass
-						WHERE  ass.ToCTSCustID = ce.CTSCustID  
-							AND	ass.CreatedDate BETWEEN ip_FromAssDate AND ip_ToAssDate
-						LIMIT 1)   IS NOT NULL 
-			)
+		WHERE  EXISTS (SELECT 1 FROM AssociationByDevice AS dv 
+							INNER JOIN Temp_Device AS tmp  ON tmp.DCSDeviceID = dv.DCSDeviceID 
+					  WHERE dv.CTSCustID = ce.CTSCustID)
 		 ON DUPLICATE KEY UPDATE Temp_CustEvidence.EvidenceCode = CONCAT(Temp_CustEvidence.EvidenceCode, ', ', evID.EvidenceCode);
     END IF;
     
     IF ip_AssociationType = 1 AND  ip_AssociationStatus = 1 THEN
+		INSERT IGNORE INTO Temp_Device(DCSDeviceID)
+		SELECT DCSDeviceID 
+		FROM CTS_DataCenter.DeviceAssociationDay
+		where JSON_OVERLAPS(AssociationDay -> '$', lv_days); 
+        
 		INSERT IGNORE INTO Temp_CustEvidence (CTSCustID,EvidenceID,UserName,SubscriberID,CustStatusID,EvidenceCode) 
 		SELECT ce.CTSCustID
 			,	ce.EvidenceID
@@ -130,30 +153,24 @@ sp : BEGIN
 			, 	cus.SubscriberID 
 			,	cus.CustStatusID
 			,	evID.EvidenceCode
-		FROM  CTS_DataCenter.CustEvidence ce
-			INNER JOIN Temp_EvidenceID AS evID on evID.EvidenceID = ce.EvidenceID AND  ce.LEVEL = 0
+		FROM  CTS_DataCenter.CustEvidence ce USE INDEX(IX_CustEvidence_Level_CTSCustID)
+			INNER JOIN Temp_EvidenceID AS evID ON evID.EvidenceID = ce.EvidenceID AND  ce.LEVEL = 0
 			INNER JOIN CTS_DataCenter.CTSCustomer cus ON cus.CTSCustID = ce.CTSCustID
-		WHERE (  
-					( 	SELECT ass.FromCTSCustID
-						FROM CTS_DataCenter.Association as ass
-							LEFT JOIN CTS_DataCenter.AssociationRemove assRemove ON assRemove.FromCTSCustID = ass.FromCTSCustID AND assRemove.ToCTSCustID = ass.ToCTSCustID
-						WHERE  ass.FromCTSCustID = ce.CTSCustID  
-							AND	ass.CreatedDate BETWEEN ip_FromAssDate AND ip_ToAssDate
-							AND	assRemove.FromCTSCustID IS NULL
-						LIMIT 1)   IS NOT NULL
-					OR
-					( 	SELECT ass.FromCTSCustID
-						FROM CTS_DataCenter.Association AS ass
-							LEFT JOIN CTS_DataCenter.AssociationRemove assRemove ON assRemove.FromCTSCustID = ass.FromCTSCustID AND assRemove.ToCTSCustID = ass.ToCTSCustID
-						WHERE  ass.ToCTSCustID = ce.CTSCustID  
-							AND	ass.CreatedDate BETWEEN ip_FromAssDate AND ip_ToAssDate
-							AND	assRemove.FromCTSCustID IS NULL
-						LIMIT 1)   IS NOT NULL 
-			)
+		WHERE  (SELECT 1 FROM AssociationByDevice AS dv 
+					INNER JOIN Temp_Device AS tmp  ON dv.DCSDeviceID = tmp.DCSDeviceID
+					INNER JOIN AssociationByDevice AS asDv  ON tmp.DCSDeviceID = asDv.DCSDeviceID
+					LEFT JOIN CTS_DataCenter.AssociationRemove assRemove ON assRemove.FromCTSCustID = dv.CTSCustID AND assRemove.ToCTSCustID = asDv.CTSCustID
+					LEFT JOIN CTS_DataCenter.AssociationRemove assRemove1 ON assRemove1.FromCTSCustID = asDv.CTSCustID AND assRemove1.ToCTSCustID = dv.CTSCustID
+				WHERE dv.CTSCustID = ce.CTSCustID AND  dv.CTSCustID <> asDv.CTSCustID  AND	assRemove.FromCTSCustID IS NULL AND assRemove1.FromCTSCustID  IS NULL LIMIT 1 ) = 1
 		 ON DUPLICATE KEY UPDATE Temp_CustEvidence.EvidenceCode = CONCAT(Temp_CustEvidence.EvidenceCode, ', ', evID.EvidenceCode);
     END IF;
     
     IF ip_AssociationType = 1 AND  ip_AssociationStatus = 2 THEN
+		INSERT IGNORE INTO Temp_Device(DCSDeviceID)
+		SELECT DCSDeviceID 
+		FROM CTS_DataCenter.DeviceAssociationDay
+		WHERE JSON_OVERLAPS(AssociationDay -> '$', lv_days); 
+        
 		INSERT IGNORE INTO Temp_CustEvidence (CTSCustID,EvidenceID,UserName,SubscriberID,CustStatusID,EvidenceCode) 
 		SELECT ce.CTSCustID
 			,	ce.EvidenceID
@@ -161,24 +178,37 @@ sp : BEGIN
 			, 	cus.SubscriberID 
 			,	cus.CustStatusID
 			,	evID.EvidenceCode
-		FROM  CTS_DataCenter.CustEvidence ce
-			INNER JOIN Temp_EvidenceID AS evID on evID.EvidenceID = ce.EvidenceID AND  ce.LEVEL = 0
+		FROM  CTS_DataCenter.CustEvidence ce USE INDEX(IX_CustEvidence_Level_CTSCustID)
+			INNER JOIN Temp_EvidenceID AS evID ON evID.EvidenceID = ce.EvidenceID AND  ce.LEVEL = 0
 			INNER JOIN CTS_DataCenter.CTSCustomer cus ON cus.CTSCustID = ce.CTSCustID
             INNER JOIN CTS_DataCenter.AssociationRemove AS asRe ON asRe.FromCTSCustID = ce.CTSCustID
-		WHERE (  
-					( 	SELECT ass.FromCTSCustID
-						FROM CTS_DataCenter.Association as ass
-						WHERE  ass.FromCTSCustID = ce.CTSCustID   AND ass.ToCTSCustID = asRe.ToCTSCustID
-							AND	ass.CreatedDate BETWEEN ip_FromAssDate AND ip_ToAssDate
-						LIMIT 1)   IS NOT NULL
-					OR
-					( 	SELECT ass.FromCTSCustID
-						FROM CTS_DataCenter.Association AS ass
-						WHERE  ass.ToCTSCustID = ce.CTSCustID   AND ass.FromCTSCustID = asRe.ToCTSCustID
-							AND	ass.CreatedDate BETWEEN ip_FromAssDate AND ip_ToAssDate
-				LIMIT 1)   IS NOT NULL 
-			)
+		WHERE (SELECT 1 FROM AssociationByDevice AS dv 
+					INNER JOIN Temp_Device AS tmp  ON dv.DCSDeviceID = tmp.DCSDeviceID
+					INNER JOIN AssociationByDevice AS asDv  ON tmp.DCSDeviceID = asDv.DCSDeviceID
+					LEFT JOIN CTS_DataCenter.AssociationRemove assRemove ON assRemove.FromCTSCustID = dv.CTSCustID AND assRemove.ToCTSCustID = asDv.CTSCustID
+					LEFT JOIN CTS_DataCenter.AssociationRemove assRemove1 ON assRemove1.FromCTSCustID = asDv.CTSCustID AND assRemove1.ToCTSCustID = dv.CTSCustID
+				WHERE dv.CTSCustID = ce.CTSCustID AND  dv.CTSCustID <> asDv.CTSCustID  AND	assRemove.FromCTSCustID IS NOT NULL AND assRemove1.FromCTSCustID  IS NOT NULL LIMIT 1 ) = 1  
 		 ON DUPLICATE KEY UPDATE Temp_CustEvidence.EvidenceCode = CONCAT(Temp_CustEvidence.EvidenceCode, ', ', evID.EvidenceCode);
+         
+		INSERT IGNORE INTO Temp_CustEvidence (CTSCustID,EvidenceID,UserName,SubscriberID,CustStatusID,EvidenceCode) 
+		SELECT ce.CTSCustID
+			,	ce.EvidenceID
+			,	cus.UserName
+			, 	cus.SubscriberID 
+			,	cus.CustStatusID
+			,	evID.EvidenceCode 
+		FROM  CTS_DataCenter.CustEvidence ce USE INDEX(IX_CustEvidence_Level_CTSCustID)
+			INNER JOIN Temp_EvidenceID AS evID ON evID.EvidenceID = ce.EvidenceID AND  ce.LEVEL = 0
+			INNER JOIN CTS_DataCenter.CTSCustomer cus ON cus.CTSCustID = ce.CTSCustID
+            INNER JOIN CTS_DataCenter.AssociationRemove AS asRe ON asRe.ToCTSCustID = ce.CTSCustID
+		WHERE (SELECT 1 FROM AssociationByDevice AS dv 
+					INNER JOIN Temp_Device AS tmp  ON dv.DCSDeviceID = tmp.DCSDeviceID
+					INNER JOIN AssociationByDevice AS asDv  ON tmp.DCSDeviceID = asDv.DCSDeviceID
+					LEFT JOIN CTS_DataCenter.AssociationRemove assRemove ON assRemove.FromCTSCustID = dv.CTSCustID AND assRemove.ToCTSCustID = asDv.CTSCustID
+					LEFT JOIN CTS_DataCenter.AssociationRemove assRemove1 ON assRemove1.FromCTSCustID = asDv.CTSCustID AND assRemove1.ToCTSCustID = dv.CTSCustID
+				WHERE dv.CTSCustID = ce.CTSCustID AND  dv.CTSCustID <> asDv.CTSCustID  AND	assRemove.FromCTSCustID IS NOT NULL AND assRemove1.FromCTSCustID  IS NOT NULL limit 1) = 1  
+		 ON DUPLICATE KEY UPDATE Temp_CustEvidence.EvidenceCode = CASE WHEN Temp_CustEvidence.EvidenceCode LIKE CONCAT('%',evID.EvidenceCode,'%') THEN Temp_CustEvidence.EvidenceCode
+																	   ELSE CONCAT(Temp_CustEvidence.EvidenceCode, ', ', evID.EvidenceCode) END;
     END IF;
     
 	IF ip_AssociationType = 3 AND  ip_AssociationStatus = 0 THEN
@@ -189,18 +219,18 @@ sp : BEGIN
 			, 	cus.SubscriberID 
 			,	cus.CustStatusID
 			,	evID.EvidenceCode
-		FROM  CTS_DataCenter.CustEvidence ce
-			INNER JOIN Temp_EvidenceID AS evID on evID.EvidenceID = ce.EvidenceID AND  ce.LEVEL = 0
+		FROM  CTS_DataCenter.CustEvidence ce USE INDEX(IX_CustEvidence_Level_CTSCustID)
+			INNER JOIN Temp_EvidenceID AS evID ON evID.EvidenceID = ce.EvidenceID AND  ce.LEVEL = 0
 			INNER JOIN CTS_DataCenter.CTSCustomer cus ON cus.CTSCustID = ce.CTSCustID
 		WHERE (  
 					( 	SELECT ass.FromCTSCustID
-						FROM CTS_DataCenter.AssociationByManual as ass
+						FROM CTS_DataCenter.AssociationByManual AS ass
 						WHERE  ass.FromCTSCustID = ce.CTSCustID  
 							AND	ass.CreatedDate BETWEEN ip_FromAssDate AND ip_ToAssDate
-						LIMIT 1)   IS NOT NULL
+						LIMIT 1)   IS NOT NULL 
 					OR
 					( 	SELECT ass.FromCTSCustID
-						FROM CTS_DataCenter.Association AS ass
+						FROM CTS_DataCenter.AssociationByManual AS ass
 						WHERE  ass.ToCTSCustID = ce.CTSCustID  
 							AND	ass.CreatedDate BETWEEN ip_FromAssDate AND ip_ToAssDate
 						LIMIT 1)   IS NOT NULL 
@@ -216,12 +246,12 @@ sp : BEGIN
 			, 	cus.SubscriberID 
 			,	cus.CustStatusID
 			,	evID.EvidenceCode
-		FROM  CTS_DataCenter.CustEvidence ce
-			INNER JOIN Temp_EvidenceID AS evID on evID.EvidenceID = ce.EvidenceID AND  ce.LEVEL = 0
+		FROM  CTS_DataCenter.CustEvidence ce USE INDEX(IX_CustEvidence_Level_CTSCustID)
+			INNER JOIN Temp_EvidenceID AS evID ON evID.EvidenceID = ce.EvidenceID AND  ce.LEVEL = 0
 			INNER JOIN CTS_DataCenter.CTSCustomer cus ON cus.CTSCustID = ce.CTSCustID
 		WHERE (  
 					( 	SELECT ass.FromCTSCustID
-						FROM CTS_DataCenter.AssociationByManual as ass
+						FROM CTS_DataCenter.AssociationByManual AS ass
 							LEFT JOIN CTS_DataCenter.AssociationRemove assRemove ON assRemove.FromCTSCustID = ass.FromCTSCustID AND assRemove.ToCTSCustID = ass.ToCTSCustID
 						WHERE  ass.FromCTSCustID = ce.CTSCustID  
 							AND	ass.CreatedDate BETWEEN ip_FromAssDate AND ip_ToAssDate
@@ -229,7 +259,7 @@ sp : BEGIN
 						LIMIT 1)   IS NOT NULL
 					OR
 					( 	SELECT ass.FromCTSCustID
-						FROM CTS_DataCenter.Association AS ass
+						FROM CTS_DataCenter.AssociationByManual AS ass
 							LEFT JOIN CTS_DataCenter.AssociationRemove assRemove ON assRemove.FromCTSCustID = ass.FromCTSCustID AND assRemove.ToCTSCustID = ass.ToCTSCustID
 						WHERE  ass.ToCTSCustID = ce.CTSCustID  
 							AND	ass.CreatedDate BETWEEN ip_FromAssDate AND ip_ToAssDate
@@ -247,13 +277,13 @@ sp : BEGIN
 			, 	cus.SubscriberID 
 			,	cus.CustStatusID
 			,	evID.EvidenceCode
-		FROM  CTS_DataCenter.CustEvidence ce
-			INNER JOIN Temp_EvidenceID AS evID on evID.EvidenceID = ce.EvidenceID AND  ce.LEVEL = 0
+		FROM  CTS_DataCenter.CustEvidence ce USE INDEX(IX_CustEvidence_Level_CTSCustID)
+			INNER JOIN Temp_EvidenceID AS evID ON evID.EvidenceID = ce.EvidenceID AND  ce.LEVEL = 0
 			INNER JOIN CTS_DataCenter.CTSCustomer cus ON cus.CTSCustID = ce.CTSCustID
             INNER JOIN CTS_DataCenter.AssociationRemove AS asRe ON asRe.FromCTSCustID = ce.CTSCustID
-		WHERE (  
+		WHERE (   
 					( 	SELECT ass.FromCTSCustID
-						FROM CTS_DataCenter.AssociationByManual as ass
+						FROM CTS_DataCenter.AssociationByManual AS ass
 						WHERE  ass.FromCTSCustID = ce.CTSCustID   AND ass.ToCTSCustID = asRe.ToCTSCustID
 							AND	ass.CreatedDate BETWEEN ip_FromAssDate AND ip_ToAssDate
 						LIMIT 1)   IS NOT NULL
@@ -265,6 +295,33 @@ sp : BEGIN
 						LIMIT 1)   IS NOT NULL 
 			)
 		 ON DUPLICATE KEY UPDATE Temp_CustEvidence.EvidenceCode = CONCAT(Temp_CustEvidence.EvidenceCode, ', ', evID.EvidenceCode);
+         
+         INSERT IGNORE INTO Temp_CustEvidence (CTSCustID,EvidenceID,UserName,SubscriberID,CustStatusID,EvidenceCode) 
+		SELECT ce.CTSCustID
+			,	ce.EvidenceID
+			,	cus.UserName
+			, 	cus.SubscriberID 
+			,	cus.CustStatusID
+			,	evID.EvidenceCode
+		FROM  CTS_DataCenter.CustEvidence ce USE INDEX(IX_CustEvidence_Level_CTSCustID)
+			INNER JOIN Temp_EvidenceID AS evID ON evID.EvidenceID = ce.EvidenceID AND  ce.LEVEL = 0
+			INNER JOIN CTS_DataCenter.CTSCustomer cus ON cus.CTSCustID = ce.CTSCustID
+            INNER JOIN CTS_DataCenter.AssociationRemove AS asRe ON asRe.ToCTSCustID = ce.CTSCustID
+		WHERE (   
+					( 	SELECT ass.FromCTSCustID
+						FROM CTS_DataCenter.AssociationByManual AS ass
+						WHERE  ass.FromCTSCustID = ce.CTSCustID   AND ass.ToCTSCustID = asRe.ToCTSCustID
+							AND	ass.CreatedDate BETWEEN ip_FromAssDate AND ip_ToAssDate
+						LIMIT 1)   IS NOT NULL
+					OR
+					( 	SELECT ass.FromCTSCustID
+						FROM CTS_DataCenter.AssociationByManual AS ass
+						WHERE  ass.ToCTSCustID = ce.CTSCustID   AND ass.FromCTSCustID = asRe.ToCTSCustID
+							AND	ass.CreatedDate BETWEEN ip_FromAssDate AND ip_ToAssDate 
+						LIMIT 1)   IS NOT NULL 
+			)
+		 ON DUPLICATE KEY UPDATE Temp_CustEvidence.EvidenceCode =CASE WHEN Temp_CustEvidence.EvidenceCode LIKE CONCAT('%',evID.EvidenceCode,'%') THEN Temp_CustEvidence.EvidenceCode
+																	  ELSE CONCAT(Temp_CustEvidence.EvidenceCode, ', ', evID.EvidenceCode) END; 
     END IF;
     
     INSERT IGNORE INTO Temp_Result (CTSCustID, UserName, SubscriberID, SubscriberName, AccountStatus, EvidenceCode, CategoryName)
