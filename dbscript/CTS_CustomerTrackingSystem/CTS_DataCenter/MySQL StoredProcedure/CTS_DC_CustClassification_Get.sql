@@ -25,11 +25,12 @@ BEGIN
 			- 20201202@Lex.Khuat: Disable detail categories & clean up wrong syntax [Redmine ID: #145954]
             - 20210114@Irena.Vo: Update logic SP for Get Category List & PIN. Return CategoryID [RedmineID: #145951]
             - 20210226@Jonas.Huynh: Update for Get status for tagging by association with PA [RedmineID: #150454]
+			- 20210318@Irena.Vo: Update get CategoryID for color [RedmineID: #150457]
 
 		Param's Explanation:
 			CALL CTS_DataCenter.CTS_DC_CustClassification_Get('1');
 	*/ 
-		DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory;
+	DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory;
     CREATE TEMPORARY TABLE Temp_LatestRecordOfCategory(
     	CategoryID		SMALLINT UNSIGNED
 	,   CategoryName   	VARCHAR(200) 
@@ -39,7 +40,10 @@ BEGIN
    
     -- Get Lastest category list
 	INSERT INTO Temp_LatestRecordOfCategory (CategoryID, CategoryName, CategoryType, ParentID)
-	SELECT DISTINCT  cc.CategoryGroup
+	SELECT DISTINCT  
+				CASE WHEN cc.ParentID = 50 THEN cc.CategoryGroup
+					 ELSE cate.CategoryID
+				END
 			,	cc.CategoryName
             ,	CASE	WHEN cc.ParentID = 50 THEN 2 -- red
 						WHEN cc.ParentID = 200  THEN 1 -- any color 
@@ -56,11 +60,11 @@ BEGIN
             SELECT 0 AS IsPinCategory;
 	 END IF;
         
-	IF EXISTS (SELECT 1 FROM CTS_DataCenter.TaggingExclusion WHERE CustID = ip_CustID) THEN
+	 IF EXISTS (SELECT 1 FROM CTS_DataCenter.TaggingExclusion WHERE CustID = ip_CustID) THEN
 			SELECT 1 AS IsExcludedTagAssPA;
 	 ELSE 
             SELECT 0 AS IsExcludedTagAssPA;
-	 END IF;
+	 END IF; 
 
 	 SELECT  temp.CategoryType, temp.CategoryID,  temp.CategoryName, temp.ParentID
      FROM Temp_LatestRecordOfCategory AS temp;

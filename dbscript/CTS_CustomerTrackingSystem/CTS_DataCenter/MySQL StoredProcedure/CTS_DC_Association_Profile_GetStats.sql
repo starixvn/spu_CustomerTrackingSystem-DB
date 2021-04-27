@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_Association_Profile_GetStat`;
+DROP PROCEDURE IF EXISTS `CTS_DC_Association_Profile_GetStats`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_Profile_GetStat`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_Profile_GetStats`(
 		IN ip_CTSCustID BIGINT
 )
     SQL SECURITY INVOKER
@@ -14,7 +14,7 @@ BEGIN
         
 		Revisions:
 			- 20210202@Aries.Nguyen: Created [Redmine ID: #148908]
-            
+            - 20210317@Casey.Huynh: Count AssociationByIP to lv_TotalAccounts [Redmine ID: #131662]
 		Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DataCenter.CTS_DC_Association_Profile_GetStat(38665541);
@@ -26,8 +26,7 @@ BEGIN
     SELECT CustID 
     INTO lv_CustID
     FROM CTS_DataCenter.CTSCustomer 
-    WHERE CTSCustID = ip_CTSCustID;
-    
+    WHERE CTSCustID = ip_CTSCustID;    
     
 	SELECT  COUNT(1)
 		INTO lv_TotalDevices
@@ -65,14 +64,27 @@ BEGIN
 		FROM  CTS_DataCenter.AssociationByAI AS asAI 
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asAI.FromCustID AND cust.CustSubID = 0
 		WHERE asAI.ToCustID =  lv_CustID
+        
+        UNION
+        
+		SELECT  cust.CTSCustID
+		FROM  CTS_DataCenter.AssociationByIP AS asAP
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asAP.ToCustID AND cust.CustSubID = 0
+		WHERE asAP.FromCustID =  lv_CustID
+        
+        UNION
+       
+        SELECT  cust.CTSCustID
+		FROM  CTS_DataCenter.AssociationByIP AS asAP 
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asAP.FromCustID AND cust.CustSubID = 0
+		WHERE asAP.ToCustID =  lv_CustID
 	)
 	SELECT COUNT(1)
 		INTO lv_TotalAccounts
 	FROM CTS_Stat;
     
     SELECT 	lv_TotalAccounts AS TotalAccounts
-		,	lv_TotalDevices AS TotalDevices
-        ,	0 AS TotalIps;
+		,	lv_TotalDevices AS TotalDevices;
 END$$
 
 DELIMITER ;
