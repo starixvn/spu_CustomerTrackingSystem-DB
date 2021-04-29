@@ -14,6 +14,7 @@ AS
 	
 	Revisions:
 		-2020018@Casey.Huynh:Created [Redmine ID: 148849]
+        -20210427@Casey.Huynh: Add RoleID Condition [Redmine ID: 153283]
 
 	Developer's Notes:
 		
@@ -29,7 +30,8 @@ BEGIN;
 	
 	SELECT  TOP (@rowSize) @custIDList = COALESCE(@custIDList + ',', '') +  CONVERT(VARCHAR(10),c.CustID)
 	FROM	dbo.Customer AS c WITH(NOLOCK)
-	WHERE	c.CustID > @LastCustId;
+	WHERE	c.CustID > @LastCustId
+			AND c.RoleID BETWEEN 1 AND 4;
 
 	EXEC CTS_Customer_GetInfoByCustIdList @custIDList
 END;
