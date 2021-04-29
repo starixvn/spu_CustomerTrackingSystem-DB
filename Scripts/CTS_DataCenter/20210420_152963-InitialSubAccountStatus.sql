@@ -7,13 +7,17 @@ DBName:		CTS_DataCenter
 
 USE CTS_DataCenter;
 
-INSERT IGNORE INTO CTS_DataCenter.StaticList(ListID,ItemID,ListName,ListNameDisplay,ItemName,ItemNameDisplay,PriorityOrder,Status,Description,CreatedDate)
-VALUES(1,0,'Account Status','Account Status','Other','Other',3,1,'Profile Status Item',NOW()); 
+INSERT IGNORE INTO CTS_DataCenter.StaticList(ListID,ItemID,ListName,ListNameDisplay,ItemName,ItemNameDisplay,Status,Description,CreatedDate)
+VALUES(1,0,'Account Status','Account Status','N/A','N/A',1,'Profile Status Item',NOW()); 
 
 UPDATE CTS_DataCenter.StaticList
-SET PriorityOrder = 1
+SET PriorityOrder = 1, ListNameDisplay = 'Account Status'
 WHERE ListID = 1 AND ItemID IN (1, 11);
 
 UPDATE CTS_DataCenter.StaticList
-SET PriorityOrder = 2
+SET PriorityOrder = 2, ListNameDisplay = 'Account Status'
 WHERE ListID = 1 AND ItemID IN (2,12,3,13,4,14);
+
+UPDATE CTS_DataCenter.StaticList
+SET PriorityOrder = 3, ListNameDisplay = 'Account Status'
+WHERE ListID = 1 AND ItemID NOT IN (1,11,2,12,3,13,4,14);
