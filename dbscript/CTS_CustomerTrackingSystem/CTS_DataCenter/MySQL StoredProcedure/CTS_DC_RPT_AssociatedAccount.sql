@@ -41,7 +41,7 @@ sp : BEGIN
     DECLARE lv_days 	JSON;
 
 	IF (ip_SubscriberIDs IS NULL OR ip_SubscriberIDs = '' OR ip_SubscriberIDs = -1) 
-		OR (ip_AssociationStatus IS NULL OR ip_AssociationStatus = '' OR ip_AssociationStatus = -1)
+		OR (ip_AssociationStatus IS NULL OR ip_AssociationStatus = -1)
         OR (ip_EvidenceIDs IS NULL OR ip_EvidenceIDs = '' OR ip_EvidenceIDs = -1) THEN
 		LEAVE sp;
     END IF;
