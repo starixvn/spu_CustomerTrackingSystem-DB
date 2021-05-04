@@ -21,7 +21,8 @@ sp : BEGIN
         
 		Revisions:
 			- 20210226@Harvey.Nguyen: Created [Redmine ID: #150891]
-            
+            - 20210504@Aries.Nguyen: Enhance performance [Redmine ID: #152509] 
+
 		Param's Explanation (filtered by):
             - ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual
         Example:
@@ -37,16 +38,26 @@ sp : BEGIN
         , 	PRIMARY KEY  (CTSCustID)
 	);
     
-    IF ip_AssociationType = 0 OR ip_AssociationType = 1 THEN
-		INSERT INTO Temp_Associations (CTSCustID, AssociationDate, AssociationStatus)
-		SELECT CASE WHEN ass.FromCTSCustID = ip_CTSCustID THEN ass.ToCTSCustID ELSE ass.FromCTSCustID END
-			, ass.CreatedDate
-            , CASE WHEN assRemove.FromCTSCustID IS NULL THEN 1 ELSE 0 END
-		FROM CTS_DataCenter.Association ass
-            LEFT JOIN CTS_DataCenter.AssociationRemove assRemove ON assRemove.FromCTSCustID = ass.FromCTSCustID AND assRemove.ToCTSCustID = ass.ToCTSCustID
-		WHERE ass.CreatedDate BETWEEN ip_FromAssDate AND ip_ToAssDate
-			AND (ass.FromCTSCustID = ip_CTSCustID OR ass.ToCTSCustID = ip_CTSCustID)
-		ON DUPLICATE KEY UPDATE AssociationDate = LEAST(Temp_Associations.AssociationDate, ass.CreatedDate);
+    IF ip_AssociationType = 0 OR ip_AssociationType = 1 THEN        
+        INSERT INTO Temp_Associations (CTSCustID, AssociationDate, AssociationStatus)
+        SELECT  asCus.CTSCustID  
+			,	GREATEST(asDv.CreatedTime, asCus.CreatedTime)
+            , 	1 AS AssociationStatus
+		FROM CTS_DataCenter.AssociationByDevice AS asDv 
+			INNER JOIN CTS_DataCenter.AssociationByDevice AS asCus ON asCus.DCSDeviceID = asDv.DCSDeviceID AND asCus.CTSCustID <> ip_CTSCustID
+		WHERE asDv.CTSCustID = ip_CTSCustID
+        ON DUPLICATE KEY UPDATE AssociationDate = LEAST(Temp_Associations.AssociationDate, GREATEST(asDv.CreatedTime, asCus.CreatedTime));
+        
+        DELETE FROM Temp_Associations WHERE  AssociationDate NOT  BETWEEN ip_FromAssDate AND ip_ToAssDate;
+        
+        UPDATE Temp_Associations AS tmp
+		SET tmp.AssociationStatus = 0
+        WHERE EXISTS (SELECT 1 FROM AssociationRemove AS rm WHERE rm.FromCTSCustID = ip_CTSCustID AND rm.ToCTSCustID = tmp.CTSCustID);
+        
+		UPDATE Temp_Associations AS tmp
+		SET tmp.AssociationStatus = 0
+        WHERE EXISTS (SELECT 1 FROM AssociationRemove AS rm WHERE rm.ToCTSCustID = ip_CTSCustID AND rm.FromCTSCustID = tmp.CTSCustID);
+
 	END IF;
     
     IF ip_AssociationType = 0 OR ip_AssociationType = 3 THEN
@@ -79,7 +90,7 @@ sp : BEGIN
 	
     SELECT COUNT(1) 
     INTO op_TotalItems
-	FROM Temp_Associations;	
+	FROM Temp_Associations;		
 	
 END$$
 
