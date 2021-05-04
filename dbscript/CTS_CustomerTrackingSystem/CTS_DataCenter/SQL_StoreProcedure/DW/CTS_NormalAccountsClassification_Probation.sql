@@ -160,7 +160,7 @@ BEGIN
 							WHEN (s.Margin <= -2 AND s.TurnoverRM > 150000 AND s.BetCount > 300 AND s.ActiveDays >= 8) THEN 
 								@GENERALCATEGORY_VIP
 							WHEN (s.Site <> 'haifa' OR s.Site IS NULL) THEN @GENERALCATEGORY_NORMALMEMBER
-							WHEN (s.Site = 'haifa' AND s.WinlossRM >= -20000) THEN @GENERALCATEGORY_NORMALMEMBER
+							WHEN (s.Site = 'haifa' AND s.WinlossRM >= -5000) THEN @GENERALCATEGORY_NORMALMEMBER
 							ELSE
 								@GENERALCATEGORY_PROBATION
 						END,

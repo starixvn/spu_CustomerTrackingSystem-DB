@@ -181,7 +181,7 @@ BEGIN
 	-- Remove 'haifa doesn't change category'
 	DELETE a
 	FROM  #tmpCustomerAccummulatedInfo AS a WITH(ROWLOCK)
-	WHERE (a.Site = 'haifa' AND a.Margin < 0 AND a.WinlossRM < -20000);
+	WHERE (a.Site = 'haifa' AND a.Margin < 0 AND a.WinlossRM < -5000);
 
 	-- #7: Classify customers by General Category
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
@@ -194,7 +194,7 @@ BEGIN
 				WHEN (a.Margin > 1 AND a.BetCount >= 20 AND a.WinlossRM > 15000) THEN @GENERALCATEGORY_HIGHRISKPUNTER
 				WHEN (a.Margin >= 0) THEN @GENERALCATEGORY_PROBATION
 				WHEN (a.Margin < 0 AND (a.Site <> 'haifa' OR a.Site IS NULL)) THEN @GENERALCATEGORY_NORMALMEMBER
-				WHEN (a.Margin < 0 AND a.Site = 'haifa' AND a.WinlossRM >= -20000) THEN @GENERALCATEGORY_NORMALMEMBER
+				WHEN (a.Margin < 0 AND a.Site = 'haifa' AND a.WinlossRM >= -5000) THEN @GENERALCATEGORY_NORMALMEMBER
 			END AS CategoryId
 		,	@CurrentDate AS CreatedDate
 		,	@CurrentDateTime AS CreatedTime
