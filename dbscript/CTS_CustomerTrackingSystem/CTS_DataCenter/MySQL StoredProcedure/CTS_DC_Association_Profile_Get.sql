@@ -331,7 +331,7 @@ sp : BEGIN
 	FROM Temp_AssociatedAccount AS tmpAcc
 		INNER JOIN Temp_Classification AS tmpCS ON tmpCS.CTSCustID = tmpAcc.CTSCustID
 	WHERE tmpAcc.IsFiltered = 1
-	ORDER BY  tmpAcc.SubscriberName ASC, tmpAcc.AssociationStatus ASC , tmpAcc.AccountStatusID ASC,  tmpAcc.AssociationDate DESC, tmpAcc.CTSCustID ASC
+	ORDER BY  tmpAcc.SubscriberName ASC, tmpAcc.AssociationStatus ASC , tmpAcc.AccountStatusGroup ASC, tmpAcc.AccountStatusID ASC,  tmpAcc.AssociationDate DESC, tmpAcc.CTSCustID ASC
 	LIMIT ip_Take
 	OFFSET ip_Skip; 
  
