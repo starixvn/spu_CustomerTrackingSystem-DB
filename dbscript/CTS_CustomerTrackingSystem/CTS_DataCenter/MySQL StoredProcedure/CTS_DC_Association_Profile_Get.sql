@@ -29,6 +29,7 @@ sp : BEGIN
 			- 20210415@Aries.Nguyen: Fix show duplicated records at Associated Accounts [Redmine ID: #153511]
 	        - 20210419@Irena.Vo: Ignore get CC on Associated Accounts tab [Redmine ID: #152250]
 			- 20210420@Irena.Vo: Get data for Sub Account on Associated Accounts tab [Redmine ID: #152963]
+            - 20210505@Irena.Vo: Get additional CustId [Redmine ID: #152963]
 		Param's Explanation (filtered by):
 			- ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual, 4 - IP
             - ip_AssociationStatus: 0 - All, 1 - Linked, 2 - UnLinked
@@ -52,6 +53,7 @@ sp : BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_AssociatedAccount;
     CREATE TEMPORARY TABLE 		Temp_AssociatedAccount (
 			CTSCustID			BIGINT UNSIGNED
+		,	CustID				BIGINT UNSIGNED
 		,	SiteID				INT UNSIGNED
         ,	SiteName			VARCHAR(50)
         ,	SubscriberID 		INT UNSIGNED
@@ -259,8 +261,9 @@ sp : BEGIN
      END IF;     
   
      /* Insert data */
-     INSERT IGNORE INTO Temp_AssociatedAccount(CTSCustID,SubscriberID,SubscriberName,SiteID,SiteName,UserName, UserName2,AccountStatusGroup,AccountStatusID,AccountStatusName,AssociationType, AssociationTypeName,AssociationStatus,AssociationDate)
+     INSERT IGNORE INTO Temp_AssociatedAccount(CTSCustID,CustID,SubscriberID,SubscriberName,SiteID,SiteName,UserName, UserName2,AccountStatusGroup,AccountStatusID,AccountStatusName,AssociationType, AssociationTypeName,AssociationStatus,AssociationDate)
      SELECT cust.CTSCustID
+		,	cust.CustID
 		,	cust.SubscriberID
         ,	maSu.SubscriberName
         ,	cust.SiteID
@@ -313,6 +316,7 @@ sp : BEGIN
 
 	/* Return data */
 	SELECT	tmpAcc.CTSCustID
+		,	tmpAcc.CustId
 		,	tmpAcc.SubscriberID
 		, 	tmpAcc.SubscriberName
         , 	tmpAcc.SiteID
