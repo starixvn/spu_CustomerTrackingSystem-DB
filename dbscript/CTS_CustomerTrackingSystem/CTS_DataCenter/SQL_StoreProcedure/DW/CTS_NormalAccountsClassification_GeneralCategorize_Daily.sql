@@ -152,6 +152,7 @@ BEGIN
 	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @ListCustIds, @ResultDataMode = 1;	
 	
 	-- #3: Sum data by custid
+	WHERE c.[Enabled] = 0 OR c.roleid <> 1;
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
 	SELECT	a.CustId
 		,	SUM(a.TurnoverRM)
