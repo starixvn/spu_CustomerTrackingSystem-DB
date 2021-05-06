@@ -15,6 +15,7 @@ AS
 	Revisions:
 		-2020018@Casey.Huynh:Created [Redmine ID: 148849]
         -20210427@Casey.Huynh: Add RoleID Condition [Redmine ID: 153283]
+		-20210506@Casey.Huynh: Add condition By CreatedTime and UserName2 [Redmine ID: 154633]
 
 	Developer's Notes:
 		
@@ -26,13 +27,45 @@ BEGIN;
 	SET NOCOUNT ON;
 
 	DECLARE @custIDList VARCHAR(MAX);
+	DECLARE @TraceTime SMALLDATETIME;
 
-	
-	SELECT  TOP (@rowSize) @custIDList = COALESCE(@custIDList + ',', '') +  CONVERT(VARCHAR(10),c.CustID)
+	--SET @TraceTime = DATEADD(minute, -5, GETDATE());
+
+	SET @TraceTime= '2021-03-05 05:02:00';
+
+	IF	OBJECT_ID('tempdb..#tmpNewCust') IS NOT NULL
+		DROP TABLE	#tmpNewCust;
+
+	CREATE TABLE #tmpNewCust(
+		CustId		INT NOT NULL
+	,	CreatedDate	SMALLDATETIME
+	,	RoleID		TINYINT
+	,	UserName2	VARCHAR(50)
+	,	PRIMARY KEY (CustId)
+	);
+
+	INSERT INTO #tmpNewCust(CustID, CreatedDate, RoleID, UserName2)
+	SELECT	TOP (@rowSize) 
+			c.CustID
+		,	c.CreatDate
+		,	c.RoleID
+		,	c.UserName2
 	FROM	dbo.Customer AS c WITH(NOLOCK)
-	WHERE	c.CustID > @LastCustId
-			AND c.RoleID BETWEEN 1 AND 4;
+	WHERE	c.CustID > @LastCustId			
+			
 
-	EXEC CTS_Customer_GetInfoByCustIdList @custIDList
+	SELECT  @custIDList = COALESCE(@custIDList + ',', '') +  CONVERT(VARCHAR(10),tmpCus.CustID)
+	FROM	#tmpNewCust AS tmpCus WITH(NOLOCK)
+	WHERE	tmpCus.RoleID BETWEEN 1 AND 4
+			AND (tmpCus.UserName2 IS NOT NULL
+					OR (tmpCus.UserName2 IS NULL AND tmpCus.CreatedDate < @TraceTime  )
+				);
+
+	EXEC CTS_Customer_GetInfoByCustIdList @custIDList;
+
+	SELECT	MAX(CustID) AS LastInsertCustID
+	FROM	#tmpNewCust AS tmpCus WITH(NOLOCK)
+	WHERE	tmpCus.CreatedDate < @TraceTime;	
+
 END;
 GO
