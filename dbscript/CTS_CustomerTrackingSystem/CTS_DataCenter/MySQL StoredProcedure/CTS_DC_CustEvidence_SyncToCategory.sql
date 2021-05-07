@@ -23,13 +23,16 @@ BEGIN
            - 20201203@Irena.Vo: Enhance logic Category is NULL [RedmineID: #141563]
 	       - 20210115@Irena.Vo: Insert History Log. [RedmineID: #145951]
 		   - 20210119@Aries.Nguyen: Write main error log - rescan [RedmineID: #149026]
+           - 20210510@Casey.Huynh: Exclude Customer of Odd Feed Sites [Redmine ID: 154694]
            
 		Param's Explanation (filtered by):	
 			CALL CTS_DataCenter.CTS_DC_CustEvidence_SyncToCategory('[{"CustId":43600693, "CTSCustId": 221882500, "SubscriberId": 130, "EvidenceId": 41, "ActionType": 0}]',0,@op_ErrorMessage);
 	*/   
     DECLARE	lv_CurrentDateTime DATETIME DEFAULT CURRENT_TIME();
     DECLARE lv_CreatedBy BIGINT DEFAULT  10278938;
-    DECLARE	lv_IsSyncEvi2Cate VARCHAR(1) DEFAULT '';  
+    DECLARE	lv_IsSyncEvi2Cate VARCHAR(1) DEFAULT '';
+    DECLARE	lv_ExCustIDListIN 	TEXT;
+    DECLARE	lv_ExCustIDListOUT	TEXT; 
     
     DECLARE	lv_No INT DEFAULT 1;
 	DECLARE op_ErrorMessage2 VARCHAR(200) DEFAULT '';
@@ -52,6 +55,7 @@ BEGIN
     
 		SIGNAL SQLSTATE '99999' SET MESSAGE_TEXT = op_ErrorMessage;
     END;
+       
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerEvidences;    
 	CREATE TEMPORARY TABLE Temp_CustomerEvidences(	  
@@ -100,6 +104,9 @@ BEGIN
             , 	ActionType			SMALLINT UNSIGNED	PATH "$.ActionType"
 		 )) AS temp
 		INNER JOIN CTS_DataCenter.EvidenceToCategory AS ec on ec.EvidenceID = temp.EvidenceID;
+        
+    /*	EXCLUDE CUST BY ODD FEED SITE */    
+    CALL CTS_DC_ExcludeCustBySiteStaticList('Temp_CustomerEvidences');
     
     /*	SYNC EVIDENCE TO CATEGORY	*/
     SELECT ParameterValue
