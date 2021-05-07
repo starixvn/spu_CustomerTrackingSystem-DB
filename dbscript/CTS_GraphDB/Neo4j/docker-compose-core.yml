@@ -23,6 +23,7 @@ services:
       NEO4J_dbms_mode: ${CLUSTER_MODE}
       NEO4J_causal__clustering_discovery__type: ${CLUSTER_TYPE}
       NEO4J_causal__clustering_enable__pre__voting: ${CLUSTER_PRE_VOTE}
+      NEO4J_causal__clustering_refuse__to__be__leader: ${CLUSTER_REFUSE_LEADER}
       NEO4J_causal__clustering_minimum__core__cluster__size__at__runtime: ${CLUSTER_SIZE}
       NEO4J_causal__clustering_initial__discovery__members: ${CLUSTER_MEMBERS}
       NEO4J_causal__clustering_minimum__core__cluster__size__at__formation: ${CLUSTER_SIZE}
@@ -38,8 +39,6 @@ services:
 
     env_file:
       - ./neo4j.env
-      #- ./kafka.env 
-      #- ./cypher.env  
 networks:
   app_network:
     external: ${NETWORK_EXTERNAL}

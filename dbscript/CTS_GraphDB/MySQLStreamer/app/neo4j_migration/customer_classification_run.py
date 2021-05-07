@@ -53,7 +53,7 @@ class CTSCustomerClassificationRun(Neo4jContext):
             UNWIND $batch as row
             MATCH (n:CTSCustomer {CTSCustID:toInteger(row.CTSCustID)})
             MATCH (c:CustomerCategory {CategoryID:row.BeforeCategoryID})
-            WHERE row.BeforeCategoryID <> row.CategoryID
+            WHERE row.BeforeCategoryID <> row.CategoryID OR NOT EXISTS(row.CategoryID)
             MATCH (n)-[r:HAS_CATEGORY]-(c)
             DELETE r
             """

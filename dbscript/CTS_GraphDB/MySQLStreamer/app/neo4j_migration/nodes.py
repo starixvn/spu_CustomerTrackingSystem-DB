@@ -29,12 +29,13 @@ class CTSCustomer(BaseNode):
         return BELONG_TO_SUB(self.CTSCustID,self.SubscriberID,self.CreatedDate)
 
 class Device(BaseNode):
-    def __init__(self, deviceID, CTSCustID=None,createdTime=datetime.now().replace(microsecond=0).isoformat()):
+    def __init__(self, deviceID, CTSCustID=None,subscriberID=None,createdDate=datetime.now().replace(microsecond=0).isoformat()):
         self.DeviceID=deviceID
         self.CTSCustID=CTSCustID
-        if createdTime is not None:
-            createdTime=str(createdTime).replace(" ", "T")
-        self.CreatedTime=createdTime
+        if createdDate is not None:
+            createdDate=str(createdDate).replace(" ", "T")
+        self.CreatedDate=createdDate
+        self.SubscriberID=subscriberID
 
 class Subscriber(BaseNode):
     def __init__(self, subscriberID, subscriberName):
