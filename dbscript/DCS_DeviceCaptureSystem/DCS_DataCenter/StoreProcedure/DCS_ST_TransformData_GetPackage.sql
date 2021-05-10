@@ -1,5 +1,5 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin,ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_ST_TransformData_GetPackage`
+DROP PROCEDURE IF EXISTS `DCS_ST_TransformData_GetPackage`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_ST_TransformData_GetPackage` (
