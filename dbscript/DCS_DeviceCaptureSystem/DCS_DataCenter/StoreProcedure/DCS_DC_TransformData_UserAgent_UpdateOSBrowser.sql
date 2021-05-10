@@ -2,7 +2,9 @@
 DROP PROCEDURE IF EXISTS `DCS_DC_TransformData_UserAgent_UpdateOSBrowser`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_TransformData_UserAgent_UpdateOSBrowser`(IN ip_UserAgentJson JSON)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_TransformData_UserAgent_UpdateOSBrowser`(
+		IN ip_UserAgentJson JSON
+)
 SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -13,6 +15,8 @@ BEGIN
 
 		Revisions:
 			- 20201020@CaseyHuynh: Update Owner, metadata, remove ISOLATION setting, Change DB log to CTS_Log [RedmineID: #145271]
+			- 20210510@Aries.Nguyen: Remove insert log zzTracePerformance [Redmine ID: #154792]
+
 		Param's Explanation (filtered by):
 	*/
 	### PERFORMANCE: START
@@ -27,13 +31,13 @@ BEGIN
     DECLARE		vrFromID		BIGINT;
     DECLARE		vrToID			BIGINT;
 
-    SET		vrExecKey = CRC32((UUID_Short()));    
-    SET		vrNotes = 'Update OS Browser';		
-    SET 	vrStepID = 1;
-	SET 	vrStartTime = CURRENT_TIMESTAMP(4);  
+    #SET		vrExecKey = CRC32((UUID_Short()));    
+    #SET		vrNotes = 'Update OS Browser';		
+    #SET 		vrStepID = 1;
+	#SET 		vrStartTime = CURRENT_TIMESTAMP(4);  
     
-    INSERT INTO CTS_Log.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
-    VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);
+    #INSERT INTO CTS_Log.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
+    #VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);
 	  
 	### PERFORMANCE: END  
 	
@@ -106,12 +110,12 @@ BEGIN
 	#=======================
     
 	### PERFORMANCE
-	SET	vrEndTime = CURRENT_TIMESTAMP(4);	
+	#SET	vrEndTime = CURRENT_TIMESTAMP(4);	
     
-    UPDATE	CTS_Log.zzTracePerformance AS z
-    SET		z.EndTime = vrEndTime
-			, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
-    WHERE	z.ExecKey = vrExecKey AND z.StepID = z.StepID;
+    #UPDATE	CTS_Log.zzTracePerformance AS z
+    #SET		z.EndTime = vrEndTime
+	#		, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
+    #WHERE	z.ExecKey = vrExecKey AND z.StepID = z.StepID;
     
     ### PERFORMANCE: END
 END$$

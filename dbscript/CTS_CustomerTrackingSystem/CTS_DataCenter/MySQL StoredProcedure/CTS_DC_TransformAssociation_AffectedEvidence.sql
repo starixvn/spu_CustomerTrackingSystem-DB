@@ -2,7 +2,9 @@
 DROP PROCEDURE IF EXISTS `CTS_DC_TransformAssociation_AffectedEvidence`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_TransformAssociation_AffectedEvidence`(IN ip_Batch INT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_TransformAssociation_AffectedEvidence`(
+		IN ip_Batch INT
+)
     SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -17,7 +19,8 @@ BEGIN
 			- 20200807@Casey.Huynh:[138925] Chagne CustEvidence Structure for Cross Subscriber : Remove SubscriberID and IsCreatedByMaster
 			- 20200821@Casey.Huynh:[140100]: Return CustID is added affected evidence
 			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
-					
+			- 20210510@Aries.Nguyen: Remove insert log zzTracePerformance [Redmine ID: #154792]
+
 		Param's Explanation (filtered by):
 	*/
     
@@ -36,13 +39,13 @@ BEGIN
     DECLARE		vrFromID		BIGINT;
     DECLARE		vrToID			BIGINT;
 
-    SET		vrExecKey = CRC32((UUID_Short()));    
-    SET		vrNotes = '';		
-    SET 	vrStepID = 1;
-	SET 	vrStartTime = CURRENT_TIMESTAMP(4);  
+    #SET		vrExecKey = CRC32((UUID_Short()));    
+    #SET		vrNotes = '';		
+    #SET 		vrStepID = 1;
+	#SET 		vrStartTime = CURRENT_TIMESTAMP(4);  
     
-    INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
-    VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);
+    #INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
+    #VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);
 	  
 	### PERFORMANCE: END  
     
@@ -167,19 +170,19 @@ BEGIN
     
 	
     ### PERFORMANCE
-	SET	vrEndTime = CURRENT_TIMESTAMP(4);
+	#SET	vrEndTime = CURRENT_TIMESTAMP(4);
     
     SELECT 	Count(1), Min(tts.CTSAssDevID), Max(tts.CTSAssDevID)
     INTO	vrTotalRecord, vrFromID, vrToID
     FROM	TempAssociationByDevice AS tts;
     
-    UPDATE	DCS_DataCenter.zzTracePerformance AS z
-    SET		z.EndTime = vrEndTime
-			, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
-            , z.TotalRecord = vrTotalRecord
-            , z.FromID = vrFromID
-            , z.ToID		= vrToID
-    WHERE	z.ExecKey = vrExecKey AND z.StepID = vrStepID;
+    #UPDATE	DCS_DataCenter.zzTracePerformance AS z
+    #SET		z.EndTime = vrEndTime
+	#		 , z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
+    #        , z.TotalRecord = vrTotalRecord
+    #        , z.FromID = vrFromID
+    #        , z.ToID		= vrToID
+    #WHERE	z.ExecKey = vrExecKey AND z.StepID = vrStepID;
     ### PERFORMANCE: END
 
 END$$
