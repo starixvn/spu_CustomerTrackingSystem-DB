@@ -104,7 +104,7 @@ BEGIN
 		INNER JOIN CTS_DataCenter.EvidenceToCategory AS ec on ec.EvidenceID = temp.EvidenceID;
         
     /*	EXCLUDE CUST BY ODD FEED SITE */    
-    CALL CTS_DC_ExcludeCustBySiteStaticList('Temp_CustomerEvidences');
+    CALL CTS_DC_ExcludeCustByCondition(1,'Temp_CustomerEvidences');
     
     /*	SYNC EVIDENCE TO CATEGORY	*/
     SELECT ParameterValue

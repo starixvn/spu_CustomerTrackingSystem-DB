@@ -92,7 +92,7 @@ BEGIN
 	 WHERE temp.DWCateGroup <> 0;
 	
     /*	EXCLUDE CUST BY ODD FEED SITE */    
-    CALL CTS_DC_ExcludeCustBySiteStaticList('Temp_NewClassification');
+    CALL CTS_DC_ExcludeCustByCondition(1, 'Temp_NewClassification');
     
     /*	IGNORE PIN CATEGORY	*/
 	UPDATE Temp_NewClassification AS temp

@@ -67,7 +67,7 @@ BEGIN
 	WHERE temp.ReasonID <> 0;
     
 	/*	EXCLUDE CUST BY ODD FEED SITE */    
-    CALL CTS_DC_ExcludeCustBySiteStaticList('Temp_ProblemAccounts');
+    CALL CTS_DC_ExcludeCustByCondition(1,'Temp_ProblemAccounts');
     
     /*	IGNORE PIN CATEGORY	*/
     UPDATE Temp_ProblemAccounts AS temp
