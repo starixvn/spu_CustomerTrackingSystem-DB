@@ -2,7 +2,9 @@
 DROP PROCEDURE IF EXISTS `DCS_DC_TransformData_UserAgent_GetNullBrowserOSList`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_TransformData_UserAgent_GetNullBrowserOSList`(IN ip_size INT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_TransformData_UserAgent_GetNullBrowserOSList`(
+		IN ip_size INT
+)
     SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -13,7 +15,8 @@ BEGIN
 
 		Revisions:
 			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
-			
+			- 20210510@Aries.Nguyen: Remove insert log zzTracePerformance [Redmine ID: #154792]
+
 		Param's Explanation (filtered by):
 	*/
 	
@@ -29,13 +32,13 @@ BEGIN
     DECLARE		vrFromID		BIGINT;
     DECLARE		vrToID			BIGINT;
 
-    SET		vrExecKey = CRC32((UUID_Short()));    
-    SET		vrNotes = 'GetNullBrowserOSList';		
-    SET 	vrStepID = 1;
-    SET 	vrStartTime = CURRENT_TIMESTAMP(4);
+    #SET		vrExecKey = CRC32((UUID_Short()));    
+    #SET		vrNotes = 'GetNullBrowserOSList';		
+    #SET 		vrStepID = 1;
+    #SET 		vrStartTime = CURRENT_TIMESTAMP(4);
     
-    INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime, TotalRecord)
-    VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime, ip_Size);	
+    #INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime, TotalRecord)
+    #VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime, ip_Size);	
 	    
 	### PERFORMANCE: END
 
@@ -48,12 +51,12 @@ BEGIN
     LIMIT ip_size;
 	
 	### PERFORMANCE
-	SET	vrEndTime = CURRENT_TIMESTAMP(4);
+	#SET	vrEndTime = CURRENT_TIMESTAMP(4);
     
-    UPDATE	DCS_DataCenter.zzTracePerformance AS z
-    SET		z.EndTime = vrEndTime
-			, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
-    WHERE	z.ExecKey = vrExecKey AND z.StepID = z.StepID;
+    #UPDATE	DCS_DataCenter.zzTracePerformance AS z
+    #SET		z.EndTime = vrEndTime
+	#		  , z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
+    #WHERE	    z.ExecKey = vrExecKey AND z.StepID = z.StepID;
     ### PERFORMANCE: END
 	
 END$$

@@ -2,7 +2,9 @@
 DROP PROCEDURE IF EXISTS `CTS_DC_TransformDCSAccountToCTSCustomer`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_TransformDCSAccountToCTSCustomer`(IN ip_AccountList JSON)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_TransformDCSAccountToCTSCustomer`(
+		IN ip_AccountList JSON
+)
 SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -18,6 +20,8 @@ BEGIN
             - 20200526@CaseyHuynh: Update LastLoginTime [RedmineID: #133263]
             - 20201112@CaseyHuynh: GET Lastest Code Move Server P3, update Permission and Add Meta data. Enhance  Transform Retry [RedmineID: #145271]
 			- 20201127@CaseyHuynh: Move statement update IsCTSTransformed to the End[RedmineID: #145277]
+			- 20210510@Aries.Nguyen: Remove insert log zzTracePerformance [Redmine ID: #154792]
+
 		Param's Explanation (filtered by):                
 	*/
 	DECLARE vrDepositSubType TINYINT DEFAULT 1;
@@ -35,29 +39,28 @@ BEGIN
     DECLARE		vrFromID		BIGINT;
     DECLARE		vrToID			BIGINT;
 
-    SET		vrExecKey = CRC32((UUID_Short()));    
-    SET		vrNotes = 'Get Json Data';		
-    SET 	vrStepID = 1;
-	SET 	vrStartTime = CURRENT_TIMESTAMP(4);  
+    #SET		vrExecKey = CRC32((UUID_Short()));    
+    #SET		vrNotes = 'Get Json Data';		
+    #SET 		vrStepID = 1;
+	#SET 		vrStartTime = CURRENT_TIMESTAMP(4);  
     
-    INSERT INTO CTS_Log.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
-    VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);
+    #INSERT INTO CTS_Log.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
+    #VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);
 	  
 	### PERFORMANCE: END  
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Account;
     
-	CREATE TEMPORARY TABLE Temp_Account 
-    (	
-		AccountID				BIGINT	UNSIGNED
+	CREATE TEMPORARY TABLE Temp_Account(	
+		  AccountID				BIGINT	UNSIGNED
         , LoginName				VARCHAR(100)   	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'    
         , SubscriberID			INT
 		, SubscriberType		INT
         , LastLoginTime			TIMESTAMP(4)
 		, LoginNameWithPrefix	VARCHAR(100)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
         , CTSCustID				BIGINT UNSIGNED
-    , PRIMARY KEY	PK_TempAccount_AccountID(AccountID)
-	, UNIQUE KEY	UK_TempAccount_SubscriberIDLoginName(SubscriberID, LoginName)    
+		, PRIMARY KEY	PK_TempAccount_AccountID(AccountID)
+		, UNIQUE KEY	UK_TempAccount_SubscriberIDLoginName(SubscriberID, LoginName)    
     );       
     
 	INSERT INTO Temp_Account(AccountID, LoginName, SubscriberID, SubscriberType, LastLoginTime, LoginNameWithPrefix)
@@ -117,19 +120,19 @@ BEGIN
 	SET 	acc.IsCTSTransformed = (CASE WHEN 	tac.CTSCustID IS NOT NULL THEN 1 ELSE -1 END);
 	#===================================================================== 
 	### PERFORMANCE
-	SET	vrEndTime = CURRENT_TIMESTAMP(4);	
+	#SET	vrEndTime = CURRENT_TIMESTAMP(4);	
 	
 	SELECT 	Count(1), Min(tas.AccountID), Max(tas.AccountID)
 	INTO	vrTotalRecord, vrFromID, vrToID
 	FROM	Temp_Account AS tas;    
 	
-	UPDATE	CTS_Log.zzTracePerformance AS z
-	SET		z.EndTime = vrEndTime
-			, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
-			, z.TotalRecord = vrTotalRecord
-			, z.FromID = vrFromID
-			, z.ToID		= vrToID
-	WHERE	z.ExecKey = vrExecKey  AND z.StepID = vrStepID;
+	#UPDATE	CTS_Log.zzTracePerformance AS z
+	#SET		z.EndTime = vrEndTime
+	#		, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
+	#		, z.TotalRecord = vrTotalRecord
+	#		, z.FromID = vrFromID
+	#		, z.ToID		= vrToID
+	#WHERE	z.ExecKey = vrExecKey  AND z.StepID = vrStepID;
     ### PERFORMANCE: END
 END$$
 DELIMITER ;

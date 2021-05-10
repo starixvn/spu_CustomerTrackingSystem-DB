@@ -1,9 +1,11 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `DCS_DC_TransformData_UnhandleSubscriberAction`;
+
 DELIMITER $$
-
-DROP PROCEDURE IF EXISTS DCS_DataCenter.DCS_DC_TransformData_UnhandleSubscriberAction$$
-
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE DCS_DataCenter.DCS_DC_TransformData_UnhandleSubscriberAction(IN ip_FromTransID BIGINT, IN ip_ToTransID BIGINT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_TransformData_UnhandleSubscriberAction`(
+        IN ip_FromTransID BIGINT
+    ,   IN ip_ToTransID BIGINT
+)
 SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -13,9 +15,11 @@ BEGIN
 	Original:
 
 	Revisions:
-			#1. [20201006@CaseyHuynh][143011]: Move New Server, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_DataCenter"
-            #2. [20201019@CaseyHuynh][143011]:	Move Server, Phase 2
-            #3. [20201111@CaseyHuynh][144307]: Remove code  "Insert New Subscriber To Subscriber table when Subscriber Is Invalid"
+	    - 20201006@CaseyHuynh: Move New Server, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_DataCenter" [Redmine ID: #143011]
+        - 20201019@CaseyHuynh:	Move Server, Phase 2 [Redmine ID: #143011]
+        - 20201111@CaseyHuynh: Remove code  "Insert New Subscriber To Subscriber table when Subscriber Is Invalid" [Redmine ID: #144307]
+        - 20210510@Aries.Nguyen: Remove insert log zzTracePerformance [Redmine ID: #154792]
+
 	Param's Explanation (filtered by):
 	*/
     
@@ -37,20 +41,19 @@ BEGIN
     DECLARE		vrFromID		BIGINT;
     DECLARE		vrToID			BIGINT;
 
-    SET		vrExecKey = CRC32((UUID_Short()));    
-    SET		vrNotes = 'Process Unhandle Subscriber and Action';		
-    SET 	vrStepID = 1;
-    SET 	vrStartTime = CURRENT_TIMESTAMP(4); 
+    #SET		vrExecKey = CRC32((UUID_Short()));    
+    #SET		vrNotes = 'Process Unhandle Subscriber and Action';		
+    #SET 	    vrStepID = 1;
+    #SET 	    vrStartTime = CURRENT_TIMESTAMP(4); 
     
-    INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime, FromID, ToID)
-    VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime, ip_FromTransID, ip_ToTransID);
+    #INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime, FromID, ToID)
+    #VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime, ip_FromTransID, ip_ToTransID);
 	
 	### PERFORMANCE: END 
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Transaction;
-    CREATE TEMPORARY TABLE Temp_Transaction 
-    (	
-		TransID			BIGINT
+    CREATE TEMPORARY TABLE Temp_Transaction (	
+		  TransID			    BIGINT
 		, SubscriberName		VARCHAR(50)
         , Action				VARCHAR(100)
         , ActionResult			VARCHAR(100)
@@ -119,12 +122,12 @@ BEGIN
 				, rt.TransStatus = ts.TransStatus;
    
 	### PERFORMANCE
-	SET	vrEndTime = CURRENT_TIMESTAMP(4);
+	#SET	vrEndTime = CURRENT_TIMESTAMP(4);
     
-    UPDATE	DCS_DataCenter.zzTracePerformance AS z
-    SET		z.EndTime = vrEndTime
-			, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
-    WHERE	z.ExecKey = vrExecKey AND z.StepID = z.StepID;
+    #UPDATE	DCS_DataCenter.zzTracePerformance AS z
+    #SET	  z.EndTime = vrEndTime
+	#		, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
+    #WHERE	z.ExecKey = vrExecKey AND z.StepID = z.StepID;
     ### PERFORMANCE: END
     
 END$$

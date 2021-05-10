@@ -2,7 +2,9 @@
 DROP PROCEDURE IF EXISTS `CTS_DC_TransformAssociationByDevice`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_TransformAssociationByDevice`(IN ip_AssociationList JSON)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_TransformAssociationByDevice`(
+    IN ip_AssociationList JSON
+)
 SQL SECURITY INVOKER
 BEGIN
 /*
@@ -18,6 +20,7 @@ BEGIN
 		    - 20200518@CaseyHuynh: Remove Log Issue
             - 20201112@CaseyHuynh: GET Lastest Code Move Server P3, update Permission and Add Meta data. Change Log table to DB Log. Enhance  Transform Retry [RedmineID: #145271]
             - 20201130@CaseyHuynh: add more condition when update Association.IsCTSTransformed = -1."WHEN asd.CTSCustID IS NULL AND  tmp_ass.CTSCustID IS NULL THEN -1 END)"
+            - 20210510@Aries.Nguyen: Remove insert log dba_SP_PerformanceStats [Redmine ID: #154792]
 		Param's Explanation (filtered by):
                 
 	*/    
@@ -92,6 +95,7 @@ BEGIN
 		FROM Temp_PerformanceStats;
         
 	END;
+
 	DROP TEMPORARY TABLE IF EXISTS Temp_PerformanceStats;
 	CREATE TEMPORARY TABLE Temp_PerformanceStats(
 		step_id INT SIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -114,8 +118,8 @@ BEGIN
     ); 
 	
     #call_time
-     set call_time  = CURRENT_TIMESTAMP(4);
-     set start_time  = CURRENT_TIMESTAMP(4);
+    set call_time  = CURRENT_TIMESTAMP(4);
+    set start_time  = CURRENT_TIMESTAMP(4);
 		
     INSERT INTO Temp_Association
 				(
@@ -137,14 +141,15 @@ BEGIN
 			, DeviceID					BIGINT			PATH "$.DeviceId" 
 			, SubscriberID				INT				PATH "$.SubscriberId"
             , CreatedTime				TIMESTAMP(4)	PATH "$.CreatedTime"
-		 )) as tmpTable;   	
+		 )) as tmpTable;  
+         
 	GET DIAGNOSTICS rowCount = ROW_COUNT;
+
     INSERT INTO Temp_PerformanceStats(step_name, start_time, diff_time, stats)
     WITH CTE_Stats AS (
 		SELECT 'GET_DATA' AS step_name, start_time, TIMESTAMPDIFF(MICROSECOND, start_time, CURRENT_TIMESTAMP(4)) / 1000 as diff_time, JSON_OBJECT('rowCount', rowCount,'info_message',info_message, 'err_message', err_message,'err_no',err_no) as stats
     )
-    SELECT step_name, start_time, diff_time, stats FROM CTE_Stats
-    ;
+    SELECT step_name, start_time, diff_time, stats FROM CTE_Stats;
     
 	IF rowCount = 0 then
 		SIGNAL SQLSTATE '45000'
@@ -158,16 +163,17 @@ BEGIN
     INNER JOIN	CTS_DataCenter.CustDCSAccount AS cus 
 					ON tmp_ass.AccountID = cus.AccountID
 	SET			tmp_ass.CTSCustID = cus.CTSCustID;
+
     GET DIAGNOSTICS rowCount = ROW_COUNT;
     INSERT INTO Temp_PerformanceStats(step_name, start_time, diff_time, stats)
     WITH CTE_Stats AS (
 		SELECT 'SEED_CTSCustID' AS step_name, start_time, TIMESTAMPDIFF(MICROSECOND, start_time, CURRENT_TIMESTAMP(4)) / 1000 as diff_time, JSON_OBJECT('rowCount', rowCount,'info_message',info_message, 'err_message', err_message,'err_no',err_no) as stats
     )
-    SELECT step_name, start_time, diff_time, stats FROM CTE_Stats
-    ;
+    SELECT step_name, start_time, diff_time, stats FROM CTE_Stats;
    
     #=======IF CTSCustID Existing 
     set start_time  = CURRENT_TIMESTAMP(4);
+
 	INSERT IGNORE INTO 	CTS_DataCenter.AssociationByDevice(CTSCustID, DCSDeviceID, SubscriberID, CreatedTime, InsertTime)
 	SELECT 		tmp_ass.CTSCustID 
 				, tmp_ass.DeviceID
@@ -177,15 +183,16 @@ BEGIN
 	FROM 		Temp_Association 	AS tmp_ass
     WHERE		tmp_ass.CTSCustID IS NOT NULL
     GROUP BY	tmp_ass.CTSCustID, tmp_ass.DeviceID, tmp_ass.SubscriberID; 
+
     GET DIAGNOSTICS rowCount = ROW_COUNT;
     INSERT INTO Temp_PerformanceStats(step_name, start_time, diff_time, stats)
     WITH CTE_Stats AS (
 		SELECT 'INSERT_AssociationByDevice' AS step_name, start_time, TIMESTAMPDIFF(MICROSECOND, start_time, CURRENT_TIMESTAMP(4)) / 1000 as diff_time, JSON_OBJECT('rowCount', rowCount,'info_message',info_message, 'err_message', err_message,'err_no',err_no) as stats
     )
-    SELECT step_name, start_time, diff_time, stats FROM CTE_Stats
-    ;
+    SELECT step_name, start_time, diff_time, stats FROM CTE_Stats;
 	
 	set start_time  = CURRENT_TIMESTAMP(4);
+
     UPDATE 		DCS_DataCenter.Association	AS ass
     INNER JOIN	Temp_Association			AS tmp_ass
 				ON	ass.AccountID 		= tmp_ass.AccountID 
@@ -201,14 +208,13 @@ BEGIN
     WITH CTE_Stats AS (
 		SELECT 'UPDATE_Association' AS step_name, start_time, TIMESTAMPDIFF(MICROSECOND, start_time, CURRENT_TIMESTAMP(4)) / 1000 as diff_time, JSON_OBJECT('rowCount', rowCount,'info_message',info_message, 'err_message', err_message,'err_no',err_no) as stats
     )
-    SELECT step_name, start_time, diff_time, stats FROM CTE_Stats
-    ;
+    SELECT step_name, start_time, diff_time, stats FROM CTE_Stats;
 
-	### PERFORMANCE
-	INSERT INTO CTS_Log.dba_SP_PerformanceStats (sch_name, sp_name, step_id, step_name, start_time, diff_time, stats, call_time, end_time)
-	SELECT sch_name, sp_name, step_id, step_name, st.start_time, diff_time, stats, call_time, CURRENT_TIMESTAMP(4) as end_time
-	FROM Temp_PerformanceStats st;
-    ### PERFORMANCE: END   
+	## PERFORMANCE
+	#INSERT INTO CTS_Log.dba_SP_PerformanceStats (sch_name, sp_name, step_id, step_name, start_time, diff_time, stats, call_time, end_time)
+	#SELECT sch_name, sp_name, step_id, step_name, st.start_time, diff_time, stats, call_time, CURRENT_TIMESTAMP(4) as end_time
+	#FROM Temp_PerformanceStats st;
+    ### PERFORMANCE: END     
                           
 END$$
 DELIMITER ;
