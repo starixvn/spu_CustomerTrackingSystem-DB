@@ -2,23 +2,27 @@
 DROP procedure IF EXISTS `CTS_DC_GetCustomerClassificationIntervalScan`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_GetCustomerClassificationIntervalScan`(IN ip_NoOfRecord INT, IN ip_Batch INT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_GetCustomerClassificationIntervalScan`(
+        IN ip_NoOfRecord INT
+    ,   IN ip_Batch INT
+)
     SQL SECURITY INVOKER
 BEGIN
 	/*
-		Created:	[20200612@Casey.Huynh][135324]
-		Task:		Return the auto tag customer list that reach to scanning schedule (interval refer to CTS_DataCenter.CustomerCategory.IntervalScan
-		DB:			CTS_DataCenter
+		Created: 20200612@Casey.Huynh]
+		Task: Return the auto tag customer list that reach to scanning schedule (interval refer to CTS_DataCenter.CustomerCategory.IntervalScan
+		DB: CTS_DataCenter
         
 		Original:
 
 		Revisions:
-			[20200701@Casey.Huynh]		[135324]: Chagne Flow and Store more Info
-            [20200820@Casey.Huynh]		[139061]: Remove USE INDEX 
-            [20200903@Harvey.Nguyen]	[140869]: Add ParentID 
-			[20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow.
-            [20200923@Irena.Vo][141755]: Enhance SP
-			- 20201214-20201221@Irena.Vo: Enhance logic ignore Pin category & Probation List. Remove input ip_ParentID & Update logic SP [RedmineID: #145951]
+			- 20200701@Casey.Huynh: Chagne Flow and Store more Info [Redmine ID: #135324]
+            - 20200820@Casey.Huynh: Remove USE INDEX  [Redmine ID: #139061]
+            - 20200903@Harvey.Nguyen: Add ParentID  [Redmine ID: #140869]
+			- 20200921@Irena.Vo: Enhance SP & insert Probation Management flow. [Redmine ID: #141755]
+            - 20200923@Irena.Vo: Enhance SP [Redmine ID: #141755]
+			- 20201221@Irena.Vo: Enhance logic ignore Pin category & Probation List. Remove input ip_ParentID & Update logic SP [RedmineID: #145951]
+            - 20210510@Aries.Nguyen: Remove insert log dba_SP_PerformanceStats [Redmine ID: #154792]
            
 		Param's Explanation (filtered by):
          ip_CategoryIDList: ex: '1,2,3'       
@@ -43,14 +47,14 @@ BEGIN
     DECLARE		lv_FromID		BIGINT;
     DECLARE		lv_ToID			BIGINT;
 
-    SET		lv_ExecKey = CRC32((UUID_Short()));    
-    SET		lv_Notes = '';# CONCAT('Input: ',ip_NoOfAssociation,'_', ip_NoOfBatch) ;		
-    SET 	lv_StepID = 1;
+    #SET		lv_ExecKey = CRC32((UUID_Short()));    
+    #SET		lv_Notes = '';# CONCAT('Input: ',ip_NoOfAssociation,'_', ip_NoOfBatch) ;		
+    #SET 	    lv_StepID = 1;
     
-    SET 	lv_StartTime = CURRENT_TIMESTAMP(4);	
+    #SET 	lv_StartTime = CURRENT_TIMESTAMP(4);	
     
-    INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
-    VALUES(lv_ExecKey, lv_StepID, lv_SPName,  lv_Notes, lv_StartTime);
+    #INSERT INTO DCS_DataCenter.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
+    #VALUES(lv_ExecKey, lv_StepID, lv_SPName,  lv_Notes, lv_StartTime);
 	### PERFORMANCE: END
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ScanList;
@@ -112,19 +116,19 @@ BEGIN
     END IF;
 	
 	### PERFORMANCE
-	SET		lv_EndTime = CURRENT_TIMESTAMP(4);
+	#SET		lv_EndTime = CURRENT_TIMESTAMP(4);
     
 	SELECT 	Count(1), Min(temp.CustID), Max(temp.CustID)
     INTO	lv_LogTotalRecord, lv_FromID, lv_ToID
     FROM	Temp_ScanList AS temp;    
     
-    UPDATE	DCS_DataCenter.zzTracePerformance AS z
-    SET		z.EndTime = lv_EndTime
-			, z.Duration = TIMESTAMPDIFF(MICROSECOND, lv_StartTime, lv_EndTime)
-            , z.TotalRecord = lv_LogTotalRecord
-            , z.FromID = lv_FromID
-            , z.ToID		= lv_ToID
-    WHERE	z.ExecKey = lv_ExecKey AND z.StepID = lv_StepID ;     
+    #UPDATE	DCS_DataCenter.zzTracePerformance AS z
+    #SET		z.EndTime = lv_EndTime
+	#		 , z.Duration = TIMESTAMPDIFF(MICROSECOND, lv_StartTime, lv_EndTime)
+    #        , z.TotalRecord = lv_LogTotalRecord
+    #        , z.FromID = lv_FromID
+    #        , z.ToID		= lv_ToID
+    #WHERE	z.ExecKey = lv_ExecKey AND z.StepID = lv_StepID ;     
     ### PERFORMANCE: END
   
 END$$
