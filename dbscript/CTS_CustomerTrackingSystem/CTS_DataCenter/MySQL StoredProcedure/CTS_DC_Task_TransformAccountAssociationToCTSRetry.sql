@@ -13,13 +13,12 @@ BEGIN
 
 		Revisions: 
 			- 20201119@CaseyHuynh: Created [RedmineID : #145277] 
+			- 20210510@Aries.Nguyen: Remove insert log zzTracePerformance [Redmine ID: #154792]
 
 		Param's Explanation (filtered by):
               
 	*/    
-    # 
-
-	DECLARE vrCTSCustID BIGINT;
+    DECLARE vrCTSCustID BIGINT;
     DECLARE vrMinCTSCustID BIGINT;
     DECLARE vrMaxCTSCustID BIGINT;
     DECLARE vrTotalCTSCustID BIGINT;
@@ -35,13 +34,13 @@ BEGIN
     DECLARE		vrFromID		BIGINT;
     DECLARE		vrToID			BIGINT;
 
-    SET		vrExecKey = CRC32((UUID_Short()));    
-    SET		vrNotes = '';		
-    SET 	vrStepID = 1;
-	SET 	vrStartTime = CURRENT_TIMESTAMP(4);  
+    #SET		vrExecKey = CRC32((UUID_Short()));    
+    #SET		vrNotes = '';		
+    #SET 	vrStepID = 1;
+	#SET 	vrStartTime = CURRENT_TIMESTAMP(4);  
     
-    INSERT INTO CTS_Log.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
-    VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);
+    #INSERT INTO CTS_Log.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
+    #VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);
 	  
 	### PERFORMANCE: END  
     SET vrCTSCustID = (SELECT ParameterValue FROM CTS_DataCenter.SystemParameter WHERE ParameterID = 4);
@@ -97,19 +96,19 @@ BEGIN
 
     #=======================    
 	### PERFORMANCE
-	SET	vrEndTime = CURRENT_TIMESTAMP(4);	
+	#SET	vrEndTime = CURRENT_TIMESTAMP(4);	
     
     SELECT 	Min(CTSCustID), Max(CTSCustID), COUNT(1)
     INTO 	vrMinCTSCustID, vrMaxCTSCustID, vrTotalCTSCustID
     FROM	Temp_CTSCustomer;
     
-    UPDATE	CTS_Log.zzTracePerformance AS z
-    SET		z.EndTime = vrEndTime
-			, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
-            , z.TotalRecord = vrTotalCTSCustID
-            , z.FromID 		= vrMinCTSCustID
-            , z.ToID		= vrMaxCTSCustID
-    WHERE	z.ExecKey = vrExecKey  AND z.StepID = vrStepID;
+    #UPDATE	CTS_Log.zzTracePerformance AS z
+    #SET		z.EndTime = vrEndTime
+	#		 , z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
+    #        , z.TotalRecord = vrTotalCTSCustID
+    #        , z.FromID 		= vrMinCTSCustID
+    #        , z.ToID		= vrMaxCTSCustID
+    #WHERE	 z.ExecKey = vrExecKey  AND z.StepID = vrStepID;
     ### PERFORMANCE: END
 END$$
 DELIMITER ;

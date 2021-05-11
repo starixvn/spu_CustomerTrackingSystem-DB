@@ -2,19 +2,24 @@
 DROP PROCEDURE IF EXISTS `DCS_DC_TransformToCTS_Association_GetPackage`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_TransformToCTS_Association_GetPackage`(IN ip_NoOfAssociation INT, IN ip_NoOfBatch INT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_TransformToCTS_Association_GetPackage`(
+        IN ip_NoOfAssociation INT
+    ,   IN ip_NoOfBatch INT
+)
 SQL SECURITY INVOKER
 BEGIN
 	/*
-	Created: 20190730@Casey.Huynh
-	Task : Get DeviceID NULL From Table Transaction
-	DB: DCS_DataCenter
-	Original:
+	    Created: 20190730@Casey.Huynh
+	    Task : Get DeviceID NULL From Table Transaction
+	    DB: DCS_DataCenter
+	    Original:
 
-	Revisions:
-		- 20201112@CaseyHuynh: GET Lastest Code Move Server P3, update Permission and Add Meta data. Enhance  script1 [RedmineID: #145271]
-        - 20201201@CaseyHuynh: Get Association if it completed Trasformed Account (Account.IsCTSTransformed !=0)
-	Param's Explanation (filtered by):
+	    Revisions:
+		    - 20201112@CaseyHuynh: GET Lastest Code Move Server P3, update Permission and Add Meta data. Enhance  script1 [RedmineID: #145271]
+            - 20201201@CaseyHuynh: Get Association if it completed Trasformed Account (Account.IsCTSTransformed !=0)
+            - 20210510@Aries.Nguyen: Remove insert log zzTracePerformance [Redmine ID: #154792]
+
+	    Param's Explanation (filtered by):
 	*/
 	
 	DECLARE		TotalRecord		INT UNSIGNED DEFAULT 0;
@@ -32,14 +37,14 @@ BEGIN
     DECLARE		vrFromID		BIGINT;
     DECLARE		vrToID			BIGINT;
 
-    SET		vrExecKey = CRC32((UUID_Short()));    
-    SET		vrNotes = CONCAT('Input: ',ip_NoOfAssociation,'_', ip_NoOfBatch) ;		
-    SET 	vrStepID = 1;
+    #SET		vrExecKey = CRC32((UUID_Short()));    
+    #SET		vrNotes = CONCAT('Input: ',ip_NoOfAssociation,'_', ip_NoOfBatch) ;		
+    #SET 	vrStepID = 1;
     
-    SET 	vrStartTime = CURRENT_TIMESTAMP(4);	
+    #SET 	vrStartTime = CURRENT_TIMESTAMP(4);	
     
-    INSERT INTO CTS_Log.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
-    VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);
+    #INSERT INTO CTS_Log.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime)
+    #VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime);
 
 	### PERFORMANCE: END
 	SET TotalRecord = ip_NoOfAssociation*ip_NoOfBatch;
@@ -65,16 +70,15 @@ BEGIN
 	LIMIT	TotalRecord;    
       
 	### PERFORMANCE
-	SET		vrEndTime = CURRENT_TIMESTAMP(4);
+	#SET		vrEndTime = CURRENT_TIMESTAMP(4);
     
-    UPDATE	CTS_Log.zzTracePerformance AS z
-    SET		z.EndTime = vrEndTime
-			, z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
-            , z.TotalRecord = @RowID - 1
-            , z.FromID 		= @MinAssociationID
-            , z.ToID		= @MaxAssociationID
-
-    WHERE	z.ExecKey = vrExecKey AND z.StepID = z.StepID;
+    #UPDATE	CTS_Log.zzTracePerformance AS z
+    #SET		z.EndTime = vrEndTime
+	#		 , z.Duration = TIMESTAMPDIFF(MICROSECOND, vrStartTime, vrEndTime)
+    #        , z.TotalRecord = @RowID - 1
+    #        , z.FromID 		= @MinAssociationID
+    #        , z.ToID		= @MaxAssociationID
+    #WHERE	z.ExecKey = vrExecKey AND z.StepID = z.StepID;
     ### PERFORMANCE: END 
 END$$
 DELIMITER ;

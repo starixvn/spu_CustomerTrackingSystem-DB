@@ -2,7 +2,10 @@
 DROP PROCEDURE IF EXISTS `DCS_DC_TransformData_Transaction_Insert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_TransformData_Transaction_Insert`(IN ip_FromTransID BIGINT, IN ip_ToTransID BIGINT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_TransformData_Transaction_Insert`(
+        IN ip_FromTransID   BIGINT
+    ,   IN ip_ToTransID     BIGINT
+)
 SQL SECURITY INVOKER
 BEGIN
 /*
@@ -21,9 +24,8 @@ BEGIN
         - 20201019@CaseyHuynh: Move Server, Phase 2	 [RedmineID: #143011]
         - 20201112@CaseyHuynh: GET Lastest Code Move Server P3, update Permission and Add Meta data, Update login Retry for unsuccsess Transform (-1,-2,-3) (SET IsCTSTransformed = 0 instead of -1) [RedmineID: #145271]
 		- 20201119@CaseyHuynh: Enhance New Retry transform association/account Flow, change log to CTS_Log DB [RedmineID: #145271]
-			
-    Reviewer:
-		#1 [Name]: New
+		- 20210510@Aries.Nguyen: Remove insert log zzTracePerformance [Redmine ID: #154792]
+        
 	Param's Explanation (filtered by):
 */
 	DECLARE		SysMinCreatedDate	DATETIME;
@@ -40,20 +42,20 @@ BEGIN
     DECLARE		vrFromID		BIGINT;
     DECLARE		vrToID			BIGINT;
 
-    SET		vrExecKey = CRC32((UUID_Short()));    
-    SET		vrNotes = 'Insert Transaction';		
-    SET 	vrStepID = 1;
-    SET 	vrStartTime = CURRENT_TIMESTAMP(4);
+    #SET		vrExecKey = CRC32((UUID_Short()));    
+    #SET		vrNotes = 'Insert Transaction';		
+    #SET 	    vrStepID = 1;
+    #SET 	    vrStartTime = CURRENT_TIMESTAMP(4);
     
-    INSERT INTO CTS_Log.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime, FromID, ToID)
-    VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime, ip_FromTransID, ip_ToTransID);
+    #INSERT INTO CTS_Log.zzTracePerformance (ExecKey, StepID, SPName, Notes, StartTime, FromID, ToID)
+    #VALUES(vrExecKey, vrStepID, vrSPName,  vrNotes, vrStartTime, ip_FromTransID, ip_ToTransID);
 	
 	### PERFORMANCE: END  
 
     # =================================================================
     DROP TEMPORARY TABLE IF EXISTS Temp_RawTransaction;
 	CREATE TEMPORARY TABLE IF NOT EXISTS Temp_RawTransaction (
-		TransID					BIGINT UNSIGNED NOT NULL
+		  TransID					BIGINT UNSIGNED NOT NULL
 		, LoginName				VARCHAR(100)  CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NOT NULL
 		, TransTime				TIMESTAMP(4) 		NOT NULL
 		, SubscriberID			INT NULL			NULL	
@@ -77,24 +79,22 @@ BEGIN
     # =================================================================
     DROP TEMPORARY TABLE IF EXISTS Temp_Account;
 	CREATE TEMPORARY TABLE  Temp_Account(
-		LoginName				VARCHAR(100) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NOT NULL
-		, SubscriberID			INT NULL
-        , SubscriberType		TINYINT	UNSIGNED	NULL
+		    LoginName				VARCHAR(100) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NOT NULL
+		,   SubscriberID			INT NULL
+        ,   SubscriberType		TINYINT	UNSIGNED	NULL
     );
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_LastLoginTime;
-    CREATE TEMPORARY TABLE Temp_LastLoginTime
-    (
+    CREATE TEMPORARY TABLE Temp_LastLoginTime(
 		SubscriberID	INT
         , AccountID		BIGINT UNSIGNED
         , LastLoginTime	TIMESTAMP(4)
     );
    
     DROP TEMPORARY TABLE IF EXISTS Temp_LastLoginTimeCTSCust;
-    CREATE TEMPORARY TABLE Temp_LastLoginTimeCTSCust
-    (
-		CTSCustID		BIGINT UNSIGNED
-        , LastLoginTime	TIMESTAMP(4)
+    CREATE TEMPORARY TABLE Temp_LastLoginTimeCTSCust(
+		    CTSCustID		BIGINT UNSIGNED
+        ,   LastLoginTime	TIMESTAMP(4)
     );
    
     
@@ -243,16 +243,14 @@ BEGIN
 	#=================================================================	
   
 	### PERFORMANCE
-	SET	vrEndTime = CURRENT_TIMESTAMP(4);
+	#SET	vrEndTime = CURRENT_TIMESTAMP(4);
     
-	UPDATE CTS_Log.zzTracePerformance AS z 
-	SET 
-		z.EndTime = vrEndTime
-		, z.Duration = TIMESTAMPDIFF(MICROSECOND,	vrStartTime, vrEndTime)
-        , z.TotalRecord = (SELECT COUNT(1) FROM Temp_RawTransaction)
-	WHERE
-		z.ExecKey = vrExecKey
-			AND z.StepID = z.StepID;
-    ### PERFORMANCE: END    
+	#UPDATE CTS_Log.zzTracePerformance AS z 
+	#SET 
+	#	    z.EndTime = vrEndTime
+	#	    , z.Duration = TIMESTAMPDIFF(MICROSECOND,	vrStartTime, vrEndTime)
+    #       , z.TotalRecord = (SELECT COUNT(1) FROM Temp_RawTransaction)
+	#WHERE z.ExecKey = vrExecKey AND z.StepID = z.StepID;
+    ### PERFORMANCE: END        
 END$$
 DELIMITER ;
