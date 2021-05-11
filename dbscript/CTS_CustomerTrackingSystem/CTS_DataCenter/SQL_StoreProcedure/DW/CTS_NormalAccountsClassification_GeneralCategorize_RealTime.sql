@@ -11,7 +11,8 @@ AS
 		- 20200901@Long.Luu: Created [Redmine ID: #137550]
 		- 20201126@Long.Luu: Categorize for New Member in General-Realtime [Redmine ID: #145954]
 		- 20210408@John.Ngo: Special rule for Haifa CC2 & Problem Agent Category (only member level) [Redmine ID: #152884]
-
+		- 20210511@John.Ngo: Exclude Customer of Odd Feed Sites [Redmine ID: #154694]
+		
 	Param's Explanation:
 */
 BEGIN
@@ -131,6 +132,11 @@ BEGIN
 	FROM #tmpCustomerAccummulatedInfo AS a
 		LEFT JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON a.CustId = c.custid
 	WHERE c.roleid <> 1;
+	
+	-- Remove 'Odd Feed Sites'
+	DELETE a
+	FROM  #tmpCustomerAccummulatedInfo AS a WITH(ROWLOCK)
+	WHERE (a.Site = 'NextBet' OR a.Site = '9wickets' OR a.Site = '9wsports');
 	
 	-- #5: Classify New Member
 	DELETE	a WITH(ROWLOCK)

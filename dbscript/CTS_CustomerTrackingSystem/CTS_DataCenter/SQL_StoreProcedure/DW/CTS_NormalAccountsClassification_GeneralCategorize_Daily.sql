@@ -12,7 +12,8 @@ AS
 		- 20200901@Long.Luu: Created [Redmine ID: #137550]
         - 20201224@Long.Luu: Update insert data [Redmine ID: #145951]
 		- 20210408@John.Ngo: Special rule for Haifa CC2 & Problem Agent Category (only member level) [Redmine ID: #152884]
-
+		- 20210511@John.Ngo: Exclude Customer of Odd Feed Sites [Redmine ID: #154694]
+		
 	Param's Explanation:
 */
 BEGIN
@@ -144,7 +145,7 @@ BEGIN
 		LEFT JOIN bodb02.dbo.CS_CustomerStatus AS c WITH(NOLOCK) ON r.CustId = c.custid
 	WHERE (c.InactiveInfo > 0)
 		OR (c.InactiveInfo = 0 AND c.SuspendedInfo > 0);
-
+	
 	-- #5: Sum data by custid
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
 	SELECT	a.CustId
@@ -160,6 +161,11 @@ BEGIN
 	SET a.site = c.site
 	FROM #tmpCustomerAccummulatedInfo AS a
 		LEFT JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON a.CustId = c.custid;
+
+	-- Remove 'Odd Feed Sites'
+	DELETE a
+	FROM  #tmpCustomerAccummulatedInfo AS a WITH(ROWLOCK)
+	WHERE (a.Site = 'NextBet' OR a.Site = '9wickets' OR a.Site = '9wsports');
 	
 	-- #6: Classify new members
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
