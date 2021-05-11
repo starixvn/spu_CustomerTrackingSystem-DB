@@ -136,7 +136,7 @@ BEGIN
 		,	lv2.CTSCustID
 	FROM Temp_Device_Level1 AS dv 
 		INNER JOIN CTS_DataCenter.AssociationByDevice AS lv2 ON dv.DeviceLevel1 =  lv2.DCSDeviceID
-	WHERE EXISTS (select 1 from CTS_DataCenter.CustEvidence AS ev FORCE INDEX (IX_CustEvidence_Level_CTSCustID) WHERE ev.CTSCustID = lv2.CTSCustID AND ev.Level = 0);
+	WHERE EXISTS (SELECT 1 FROM CTS_DataCenter.CustEvidence AS ev FORCE INDEX (IX_CustEvidence_Level_CTSCustID) WHERE ev.CTSCustID = lv2.CTSCustID AND ev.Level = 0);
      
     INSERT IGNORE INTO Temp_Association_Level2(CustID, CTSCustID, Level2)
 	SELECT 	roDv.CustID
@@ -144,7 +144,7 @@ BEGIN
 		, 	lv2.Level2
 	FROM Temp_Root_Device_Level1 AS roDv
 		INNER JOIN Temp_Device_Level1_Cust AS lv2 ON roDv.DeviceLevel1 =  lv2.DeviceLevel1
-	WHERE NOT EXISTS (SELECT 1 FROM Temp_Association_Level1 AS lv1 WHERE lv1.CTSCustID = roDv.CTSCustID AND  lv1.Level1 = lv2.Level2);
+	WHERE NOT EXISTS (SELECT 1 FROM Temp_Association_Level1 AS lv1 WHERE lv1.CTSCustID = roDv.CTSCustID and  lv1.Level1 = lv2.Level2);
     
     INSERT INTO Temp_Level2(Level2)
     SELECT DISTINCT Level2
@@ -171,6 +171,16 @@ BEGIN
     FROM Temp_Association_Level2 AS lv2
 		INNER JOIN Temp_Level2_Evidence AS ev ON lv2.Level2 = ev.Level2
         INNER JOIN Evidence AS e ON ev.EvidenceID = e.EvidenceID;
+        
+	DROP TEMPORARY TABLE IF EXISTS Temp_Root_Customer;
+    DROP TEMPORARY TABLE IF EXISTS Temp_Root_Device;
+    DROP TEMPORARY TABLE IF EXISTS Temp_Root_Device_Level1;
+    DROP TEMPORARY TABLE IF EXISTS Temp_Device_Level1;
+    DROP TEMPORARY TABLE IF EXISTS Temp_Device_Level1_Cust;
+    DROP TEMPORARY TABLE IF EXISTS Temp_Association_Level1;
+    DROP TEMPORARY TABLE IF EXISTS Temp_Association_Level2;
+    DROP TEMPORARY TABLE IF EXISTS Temp_Level2;
+    DROP TEMPORARY TABLE IF EXISTS Temp_Level2_Evidence;
         
 END$$
 
