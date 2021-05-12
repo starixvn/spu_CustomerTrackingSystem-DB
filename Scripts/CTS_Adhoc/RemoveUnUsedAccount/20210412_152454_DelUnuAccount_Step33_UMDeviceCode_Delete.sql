@@ -37,7 +37,7 @@ BEGIN
 	FROM	(SELECT delDc.DeviceCodeID FROM CTS_Adhoc.CS152454_DelUnuAccount_DeviceCode AS delDc WHERE delDc.DeviceCodeID > lv_ToDeviceCodeID LIMIT ip_Size) AS tmp;
     
     INSERT INTO CTS_Adhoc.CS152454_DelUnuAccount_zzTrace(ID, Steps,SPName, StartTime,EndTime,Notes)
-    VALUES(33, 33,'CTS_AD_DelUnuAccount_Step33_DeviceCode_Delete',lv_StartTime,NOW(), lv_FromDeviceCodeID,lv_FromDeviceCodeID); 
+    VALUES(33, 33,'CTS_AD_DelUnuAccount_Step33_DeviceCode_Delete',lv_StartTime,NOW(), lv_FromDeviceCodeID); 
     
     WHILE(lv_FromDeviceCodeID IS NOT NULL)
     DO			
