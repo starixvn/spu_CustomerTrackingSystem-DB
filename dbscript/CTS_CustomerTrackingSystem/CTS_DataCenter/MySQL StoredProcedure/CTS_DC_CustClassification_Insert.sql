@@ -33,6 +33,7 @@ sp: BEGIN
             - 20201202@Lex.Khuat: Disable detail categories & clean up wrong syntax [Redmine ID: #145954]
             - 20201214-20201229@Irena.Vo: Insert History Log & Auto Pin [RedmineID: #145951]
             - 20210226@Irena.Vo: Update CategoryID from VVIP [RedmineID: #150454]
+            - 20210512@Casey.Huynh: Exclude Customer of OddsFeedStie and Internal Account [Redmine ID: 154844]
             
 	*/
     DECLARE lv_CurrentDateTime DATETIME DEFAULT CURRENT_TIME();
@@ -43,6 +44,22 @@ sp: BEGIN
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
    
+	/*EXCLUDE Customer*/   
+    DROP TEMPORARY TABLE IF EXISTS Temp_ExcCustID;    
+	CREATE TEMPORARY TABLE Temp_ExcCustID(	  
+			CustID				BIGINT UNSIGNED 
+     );
+    
+    INSERT INTO Temp_ExcCustID(CustID)
+    VALUES(ip_CustID);    
+	
+    CALL CTS_DC_ExcludeCustByCondition('Temp_ExcCustID');
+
+    IF NOT EXISTS (SELECT 1 FROM Temp_ExcCustID) IS NULL THEN
+		SET op_ErrorMessage = 'You are not allowed to update Customer Category and Customer Class for this customer.';
+        LEAVE sp;
+    END IF;
+    
     IF (ip_CategoryID = 210) THEN
         -- Remove all category before: General, Problem.
 	    DELETE cate

@@ -26,6 +26,7 @@ BEGIN
 			- 20210316@Irena.Vo: Write Robot User log more.  [RedmineID: #151374]
             - 20210419@Irena.Vo: Update Priority Robot User.  [RedmineID: #152250] 
             - 20210510@Casey.Huynh: Exclude Customer of Odd Feed Sites [Redmine ID: 154694]
+            - 20210512@Casey.Huynh: Exclude Customer of Internal Account [Redmine ID: 154844]
 		Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DataCenter.CTS_DC_InsertCategorizedProblemAccounts('[{"CustId": 123, "CategoryId": 27}]',0,@op_ErrorMessage);
@@ -66,8 +67,8 @@ BEGIN
 		 )) AS temp
 	WHERE temp.ReasonID <> 0;
     
-	/*	EXCLUDE CUST BY ODD FEED SITE */    
-    CALL CTS_DC_ExcludeCustByCondition(1,'Temp_ProblemAccounts');
+	/*EXCLUDE Customer*/    
+    CALL CTS_DC_ExcludeCustByCondition('Temp_ProblemAccounts');
     
     /*	IGNORE PIN CATEGORY	*/
     UPDATE Temp_ProblemAccounts AS temp

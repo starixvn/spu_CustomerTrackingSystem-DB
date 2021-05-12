@@ -23,8 +23,8 @@ BEGIN
            - 20201203@Irena.Vo: Enhance logic Category is NULL [RedmineID: #141563]
 	       - 20210115@Irena.Vo: Insert History Log. [RedmineID: #145951]
 		   - 20210119@Aries.Nguyen: Write main error log - rescan [RedmineID: #149026]
-           - 20210510@Casey.Huynh: Exclude Customer of Odd Feed Sites [Redmine ID: 154694]
-           
+           - 20210510@Casey.Huynh: Exclude Customer of Odds Feed Sites [Redmine ID: 154694]
+           - 20210512@Casey.Huynh: Exclude Customer of Internal Account [Redmine ID: 154844]
 		Param's Explanation (filtered by):	
 			CALL CTS_DataCenter.CTS_DC_CustEvidence_SyncToCategory('[{"CustId":43600693, "CTSCustId": 221882500, "SubscriberId": 130, "EvidenceId": 41, "ActionType": 0}]',0,@op_ErrorMessage);
 	*/   
@@ -103,8 +103,8 @@ BEGIN
 		 )) AS temp
 		INNER JOIN CTS_DataCenter.EvidenceToCategory AS ec on ec.EvidenceID = temp.EvidenceID;
         
-    /*	EXCLUDE CUST BY ODD FEED SITE */    
-    CALL CTS_DC_ExcludeCustByCondition(1,'Temp_CustomerEvidences');
+    /*EXCLUDE Customer*/      
+    CALL CTS_DC_ExcludeCustByCondition('Temp_CustomerEvidences');
     
     /*	SYNC EVIDENCE TO CATEGORY	*/
     SELECT ParameterValue

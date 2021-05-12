@@ -27,6 +27,7 @@ BEGIN
                 - 20210401@Irena.Vo: Write log for Update Danger Level. Enhance logic SP. [RedmineID: #152249]
                 - 20210415@Casey.Huynh: Ignore Probation Account Monitor if not meet the scan schedule [RedmineID: #153491]
                 - 20210510@Casey.Huynh: Exclude Customer of Odd Feed Sites [Redmine ID: 154694]
+                - 20210512@Casey.Huynh: Exclude Customer of Internal Account [Redmine ID: 154844]
 		Param's Explanation (filtered by):
         Example:
 				- CALL CTS_DataCenter.CTS_DC_InsertMainCustomerClassification('[{"CustId": "2324948","CategoryId":"206","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","LastXDaysMargin":100,"ProbationPeriodWinloss":100,"TaggingID":13,"TaggingType":1}]',@opp);
@@ -91,8 +92,8 @@ BEGIN
 		 )) AS 	temp
 	 WHERE temp.DWCateGroup <> 0;
 	
-    /*	EXCLUDE CUST BY ODD FEED SITE */    
-    CALL CTS_DC_ExcludeCustByCondition(1, 'Temp_NewClassification');
+    /*EXCLUDE Customer*/    
+    CALL CTS_DC_ExcludeCustByCondition('Temp_NewClassification');
     
     /*	IGNORE PIN CATEGORY	*/
 	UPDATE Temp_NewClassification AS temp
