@@ -1,8 +1,10 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="1"></info>*/
 DROP PROCEDURE IF EXISTS `CTS_DC_ExcludeCustByCondition`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_ExcludeCustByCondition`(IN ip_ConditionType TINYINT, IN ip_TableName VARCHAR(200))
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_ExcludeCustByCondition`(
+	IN ip_ConditionType TINYINT
+	, IN ip_TableName VARCHAR(200))
     SQL SECURITY INVOKER
 BEGIN
 	/*
