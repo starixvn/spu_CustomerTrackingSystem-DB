@@ -13,7 +13,7 @@ DROP PROCEDURE IF EXISTS `CTS_AD_DelUnuAccount_Step10_Account_Get`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_AD_DelUnuAccount_Step10_Account_Get`(
 		IN ip_Size INT
-        , IN ip_DelaySec TINYINT
+    ,	IN ip_DelaySec TINYINT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -32,8 +32,7 @@ BEGIN
 	*/     
     
     DECLARE	lv_PreAccountID	BIGINT UNSIGNED; # The Last AccountID
-    DECLARE	lv_ToAccountID		BIGINT UNSIGNED;
-    DECLARE	lv_MaxAccountID		BIGINT UNSIGNED;
+    DECLARE	lv_MaxAccountID	BIGINT UNSIGNED;
     DECLARE lv_StartTime	DATETIME(3) DEFAULT NOW();	
     
     SET	lv_StartTime = NOW();
@@ -45,7 +44,7 @@ BEGIN
     INTO	@lv_152454ToAccountID
     FROM	CTS_Adhoc.CS152454_DelUnuAccount_Account;    
 
-    SET lv_MaxAccountID = 27572620;#(SELECT AccountID FROM DCS_DataCenter.Account WHERE CreatedDate >= '2021-01-01' AND AccountID > 27500000  LIMIT 1);
+    SET lv_MaxAccountID = 29899317;#(SELECT AccountID FROM DCS_DataCenter.Account WHERE CreatedDate >= '2021-02-01' AND AccountID > 27500000  LIMIT 1);
        
     INSERT INTO CTS_Adhoc.CS152454_DelUnuAccount_zzTrace(ID, Steps,SPName, StartTime,EndTime,Notes)
     VALUES(10, 10,'CTS_AD_DelUnuAccount_Step10_Account_Get',lv_StartTime,NOW(), @lv_152454ToAccountID);   
@@ -74,7 +73,7 @@ BEGIN
         
         UPDATE CTS_Adhoc.CS152454_DelUnuAccount_zzTrace
         SET 	Notes = @lv_152454ToAccountID
-				, EndTime = NOW()
+			,	EndTime = NOW()
         WHERE ID = 10;
         
         DO SLEEP(ip_DelaySec);         

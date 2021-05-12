@@ -12,8 +12,8 @@ DROP PROCEDURE IF EXISTS `CTS_AD_DelUnuAccount_Step34_DeviceFingerprint_Delete`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_AD_DelUnuAccount_Step34_DeviceFingerprint_Delete`(
-	IN ip_Size INT
-	, IN ip_DelaySec TINYINT
+		IN ip_Size INT
+	,	IN ip_DelaySec TINYINT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -41,10 +41,10 @@ BEGIN
 	#====Step01. Remove Account From CS152454_DelUnuAccount_Account: IsCTSTransformed = 1 OR LastLoginTime >= '20210101' OUTPUT UmRemoveDeviceID
     WHILE(lv_FromDeviceFingerprintID IS NOT NULL)
     DO			
-            DELETE 		df
-            FROM		DCS_DataCenter.DeviceCode AS df
-            INNER JOIN	CTS_Adhoc.CS152454_DelUnuAccount_DeviceFingerprint AS delDf ON delDf.DeviceFingerprintID = df.DeviceFingerprintID
-            WHERE		delDf.DeviceFingerprintID BETWEEN  lv_FromDeviceFingerprintID AND lv_ToDeviceFingerprintID;
+            DELETE 	df
+            FROM	DCS_DataCenter.DeviceFingerprint AS df
+				INNER JOIN	CTS_Adhoc.CS152454_DelUnuAccount_DeviceFingerprint AS delDf ON delDf.DeviceFingerprintID = df.DeviceFingerprintID
+            WHERE	delDf.DeviceFingerprintID BETWEEN  lv_FromDeviceFingerprintID AND lv_ToDeviceFingerprintID;
 			
             UPDATE CTS_Adhoc.CS152454_DelUnuAccount_zzTrace
 			SET 	Notes = lv_ToDeviceFingerprintID

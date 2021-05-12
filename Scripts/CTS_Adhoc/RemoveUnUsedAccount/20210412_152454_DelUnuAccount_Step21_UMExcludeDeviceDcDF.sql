@@ -52,7 +52,8 @@ BEGIN
         FROM		CTS_Adhoc.CS152454_DelUnuAccount_Device AS delDv
         INNER JOIN	DCS_DataCenter.Association AS ass ON delDv.DeviceID = ass.DeviceID
         LEFT JOIN	CTS_Adhoc.CS152454_DelUnuAccount_Association AS delAss ON delAss.AssociationID = ass.AssociationID
-		WHERE		delDv.DeviceID BETWEEN lv_FromDeviceID AND lv_ToDeviceID;
+		WHERE		delDv.DeviceID BETWEEN lv_FromDeviceID AND lv_ToDeviceID
+					AND delAss.AssociationID IS NULL;
 		
         DELETE 		delDv
         FROM 		CTS_Adhoc.CS152454_DelUnuAccount_Device AS delDv

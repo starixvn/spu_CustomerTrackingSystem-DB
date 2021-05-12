@@ -47,7 +47,7 @@ BEGIN
 			FROM		CTS_Adhoc.CS152454_DelUnuAccount_Account AS delAcc
 			INNER JOIN	DCS_DataCenter.Account AS acc ON delAcc.AccountID = acc.AccountID
 			WHERE		(acc.ISCTSTransformed = 1
-						OR acc.LastLoginTime >= '2021-01-01')
+						OR acc.LastLoginTime >= '2021-02-01')
 						AND delAcc.AccountID > lv_FromAccountID
 			LIMIT ip_Size;   
             
