@@ -18,13 +18,12 @@ sp: BEGIN
 		Original:
 
 		Revisions:
-			- [20200905@Long.Luu][140996]: Created
-			- [20200908@Irena.Vo][141020]: Error MSG for the customers have VVIP before and Update CreatedFromFunction = 1 for special customer (Normal)
-			- [20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow.
-			- [20200923@Irena.Vo][141755]: Enhance SP
-			- 20201214-20201229@Irena.Vo: Remove logic delete Probation List. Enhance logic get VVIP & Insert History Log. Enhance logic validate for RoleID = 1 [RedmineID: #145951]
-			- 20210226@Irena.Vo: Update CategoryID from VVIP [RedmineID: #150454]
-			- 20210512@Casey.Huynh: Exclude Customer of OddsFeedStie and Internal Account [Redmine ID: 154844]
+		   - [20200905@Long.Luu][140996]: Created
+           - [20200908@Irena.Vo][141020]: Error MSG for the customers have VVIP before and Update CreatedFromFunction = 1 for special customer (Normal)
+           - [20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow.
+           - [20200923@Irena.Vo][141755]: Enhance SP
+		   - 20201214-20201229@Irena.Vo: Remove logic delete Probation List. Enhance logic get VVIP & Insert History Log. Enhance logic validate for RoleID = 1 [RedmineID: #145951]
+           - 20210226@Irena.Vo: Update CategoryID from VVIP [RedmineID: #150454]
        
 		Param's Explanation (filtered by):
 			Maximum Customer Class number for input param = 127 
@@ -71,22 +70,6 @@ sp: BEGIN
 		SET op_ErrorMessage = 'This account is not existed in the system!';
         LEAVE sp;
 	END IF;
-    
-	/*EXCLUDE Customer*/    
-    DROP TEMPORARY TABLE IF EXISTS Temp_ExcCustID;    
-	CREATE TEMPORARY TABLE Temp_ExcCustID(	  
-			CustID				BIGINT UNSIGNED 
-     );
-    
-    INSERT INTO Temp_ExcCustID(CustID)
-    SELECT CustID FROM CTS_DataCenter.CTSCustomer WHERE UserName = ip_Username OR UserName2 = ip_Username;    
-	
-    CALL CTS_DC_ExcludeCustByCondition('Temp_ExcCustID');
-
-    IF NOT EXISTS (SELECT 1 FROM Temp_ExcCustID) IS NULL THEN
-		SET op_ErrorMessage = 'You are not allowed to update Customer Category and Customer Class for this customer.';
-        LEAVE sp;
-    END IF;
     
     -- #1: get customer info
     SELECT CTSCustID, CustID, SubscriberID
