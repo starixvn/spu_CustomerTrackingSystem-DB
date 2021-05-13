@@ -13,6 +13,7 @@ AS
         - 20201224@Long.Luu: Update insert data [Redmine ID: #145951]
 		- 20210408@John.Ngo: Special rule for Haifa CC2 & Problem Agent Category (only member level) [Redmine ID: #152884]
 		- 20210511@John.Ngo: Exclude Customer of Odd Feed Sites [Redmine ID: #154694]
+		- 20210512@John.Ngo: Exclude Customer Class for Internal Account [Redmine ID: #154844]
 		
 	Param's Explanation:
 */
@@ -131,12 +132,14 @@ BEGIN
 	INSERT INTO #tmpRawData(CustId, MainDBSportId, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDays)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @ListCustIds;	
 	
-	-- #3: Remove closed & disabled accounts & SMA account	
+	-- #3: Remove closed & disabled accounts & SMA account & Internal Account
 	DELETE r WITH(ROWLOCK)
 		OUTPUT DELETED.CustId INTO #tmpDeletedCustomers(CustId)
 	FROM #tmpRawData AS r
 		LEFT JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON r.CustId = c.custid
-	WHERE c.closed = 1 OR c.[Enabled] = 0;
+	WHERE c.closed = 1 OR c.[Enabled] = 0
+	   OR c.recommend NOT IN (52466,5707545)
+	   OR c.username NOT LIKE '%CashOut';
 
 	-- #4: Remove closed & disabled of CN88
 	DELETE r WITH(ROWLOCK)
