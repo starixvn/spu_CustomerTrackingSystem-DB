@@ -16,7 +16,7 @@ AS
 		-2020018@Casey.Huynh:Created [Redmine ID: 148849]
         -20210427@Casey.Huynh: Add RoleID Condition [Redmine ID: 153283]
 		-20210506@Casey.Huynh: Add condition By CreatedTime and UserName2 [Redmine ID: 154633]
-
+		-20210514@Casey.Huynh: Remove Hardcode TraceTime [Redmine ID: 154633]
 	Developer's Notes:
 		
 
@@ -29,9 +29,7 @@ BEGIN;
 	DECLARE @custIDList VARCHAR(MAX);
 	DECLARE @TraceTime SMALLDATETIME;
 
-	--SET @TraceTime = DATEADD(minute, -5, GETDATE());
-
-	SET @TraceTime= '2021-03-05 05:02:00';
+	SET @TraceTime = DATEADD(minute, -5, GETDATE());
 
 	IF	OBJECT_ID('tempdb..#tmpNewCust') IS NOT NULL
 		DROP TABLE	#tmpNewCust;
