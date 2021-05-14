@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP procedure IF EXISTS `CTS_DC_CustEvidence_SyncToCategory`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustEvidence_SyncToCategory`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_SyncToCategory`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustEvidence_SyncToCategory`(
 		IN ip_CustEvidences JSON
     ,	IN ip_IsRescan BIT    
         
@@ -31,29 +31,6 @@ BEGIN
     DECLARE	lv_CurrentDateTime DATETIME DEFAULT CURRENT_TIME();
     DECLARE lv_CreatedBy BIGINT DEFAULT  10278938;
     DECLARE	lv_IsSyncEvi2Cate VARCHAR(1) DEFAULT '';
-    
-    DECLARE	lv_No INT DEFAULT 1;
-	DECLARE op_ErrorMessage2 VARCHAR(200) DEFAULT '';
-
-	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
-    BEGIN   
-		GET DIAGNOSTICS lv_No = NUMBER;
-		GET STACKED DIAGNOSTICS CONDITION lv_No 
-			op_ErrorMessage = MESSAGE_TEXT;	
-		
-		IF(lv_No > 1) THEN
-				SET lv_No = lv_No - 1;
-				GET STACKED  DIAGNOSTICS CONDITION lv_No
-					op_ErrorMessage2 = MESSAGE_TEXT;	
-        END IF;
-
-		SET op_ErrorMessage = CONCAT(op_ErrorMessage,'; ',op_ErrorMessage2);
-
-		CALL CTS_Log.CTS_Log_ErrorLog_Insert('CTS_DC_CustEvidence_SyncToCategory',op_ErrorMessage, JSON_OBJECT('parameter', ip_CustEvidences));
-    
-		SIGNAL SQLSTATE '99999' SET MESSAGE_TEXT = op_ErrorMessage;
-    END;
-       
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerEvidences;    
 	CREATE TEMPORARY TABLE Temp_CustomerEvidences(	  
@@ -143,7 +120,7 @@ BEGIN
 			, 	cc.CategoryGroup
 			, 	cate.CategoryID  
 			, 	ROW_NUMBER() OVER (PARTITION BY cate.CustID, cc.CategoryGroup
-								   ORDER BY (CASE WHEN cate.CategoryID BETWEEN 72 AND 80 THEN 1 /* From Evd will lastest records */
+								   ORDER BY (CASE WHEN cate.CategoryID BETWEEN 72 AND 150 THEN 1 /* From Evd will lastest records */
 												  ELSE 0
 											 END) ) AS RowOrder
 		FROM CTS_DataCenter.CTSCustomerClassification AS cate
@@ -184,7 +161,7 @@ BEGIN
 		DELETE cate
 		FROM CTS_DataCenter.CTSCustomerClassification cate
 			INNER JOIN Temp_CustomerEvidences AS temp ON temp.CustID = cate.CustID AND cate.SportGroupID = 0 AND temp.CategoryID = cate.CategoryID 
-		WHERE temp.ActionType = 2 AND temp.IsExistedEvi = 0 AND (cate.CategoryID BETWEEN 72 AND 80); 
+		WHERE temp.ActionType = 2 AND temp.IsExistedEvi = 0 AND (cate.CategoryID BETWEEN 72 AND 150); 
         
         /*	UPDATE PA FROM EVIDENCE */
 		UPDATE CTS_DataCenter.CTSCustomerClassification AS cate
@@ -286,7 +263,7 @@ BEGIN
 						 ELSE 0
 					END
 			FROM Temp_CustomerEvidences AS temp
-				LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryID BETWEEN 72 AND 80 AND ex.RowOrder = 1 /* Only existed Evd Cate. */
+				LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryID BETWEEN 72 AND 150 AND ex.RowOrder = 1 /* Only existed Evd Cate. */
 			WHERE temp.ActionType = 2 AND temp.IsExistedEvi = 0;
 	  
 			/*	INSERT LOG IGNORE PIN */
