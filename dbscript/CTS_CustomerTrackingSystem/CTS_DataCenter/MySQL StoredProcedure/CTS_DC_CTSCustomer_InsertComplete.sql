@@ -2,7 +2,7 @@
 DROP PROCEDURE IF EXISTS `CTS_DC_CTSCustomer_InsertComplete`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTSCustomer_InsertComplete`(IN ip_Customer JSON)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTSCustomer_InsertComplete`(IN ip_LastInsertCustID BIGINT UNSIGNED, IN ip_Customer JSON)
     SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -13,36 +13,15 @@ BEGIN
 
 		Revisions:
 			-	20210115@Casey.Huynh: Created [Redmine ID: 148849]
+            -	20210506@Casey.Huynh: LastCustID is sent from MainDB. Add Input Parameter ip_LastCustID [Redmine ID: 154633]
 		Param's Explanation (filtered by):
         
-        CALL CTS_DataCenterCTS_DC_CTSCustomer_InsertComplete ('[{"CTSCustId":30, "CustID:"1284,"Username":"305RM","RegisterName":null,"SubscriberID":130}]'))
+        CALL CTS_DataCenterCTS_DC_CTSCustomer_InsertComplete (10,'[{"CTSCustId":30, "CustID:"1284,"Username":"305RM","RegisterName":null,"SubscriberID":130}]'))
 	*/
     DECLARE lv_LastInsertCustID INT;
-    DECLARE lv_LastInsertCustSubID INT;    
-    DECLARE lv_No    INT    DEFAULT 1;
-    DECLARE lv_ErrorMessage2 VARCHAR(200) DEFAULT '';
-    DECLARE	lv_ErrorMessage	VARCHAR(200) DEFAULT '';
- 
-	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
-    BEGIN   
-		GET DIAGNOSTICS lv_No = NUMBER;
-		GET DIAGNOSTICS CONDITION lv_No 
-            lv_ErrorMessage = MESSAGE_TEXT;	
-		
-		IF(lv_No > 1) THEN
-			SET lv_No = lv_No - 1;
-			GET STACKED  DIAGNOSTICS CONDITION lv_No
-				lv_ErrorMessage2 = MESSAGE_TEXT;	
-        END IF;
-			
-		SET lv_ErrorMessage = CONCAT(lv_ErrorMessage,'; ',lv_ErrorMessage2);
-
-		CALL CTS_Log.CTS_Log_ErrorLog_Insert('CTS_DC_CTSCustomer_InsertComplete',lv_ErrorMessage, JSON_OBJECT('parameter', ip_Customer));
+    DECLARE lv_LastInsertCustSubID INT;   
     
-		SIGNAL SQLSTATE '99999' SET MESSAGE_TEXT = lv_ErrorMessage;
-    END;
-    
-   DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomer;
+	DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomer;
     
 	CREATE TEMPORARY TABLE Temp_CTSCustomer
 	( 		CTSCustID		BIGINT UNSIGNED NOT NULL
@@ -91,12 +70,11 @@ BEGIN
 	WHERE		acc.IsCTSTransformed = -1;    
   
     #=====Update Scan System Parameter;
-    SET lv_LastInsertCustID = (SELECT MAX(tmpCus.CustID) FROM Temp_CTSCustomer AS tmpCus WHERE CustSubID = 0);
-    IF lv_LastInsertCustID > 0
+    IF ip_LastInsertCustID > 0
     THEN
 		UPDATE 	CTS_DataCenter.SystemParameter AS s
-        SET		s.ParameterValue = lv_LastInsertCustID
-		WHERE	s.ParameterID = 7 AND s.ParameterName = 'CTSCustomer_LastInsertCustID';
+        SET		s.ParameterValue = ip_LastInsertCustID
+		WHERE	s.ParameterID = 7 ; # s.ParameterName = 'CTSCustomer_LastInsertCustID';
 	END IF;
     
 	SET lv_LastInsertCustSubID = (SELECT MAX(tmpCus.CustSubID) FROM Temp_CTSCustomer AS tmpCus);
@@ -104,7 +82,7 @@ BEGIN
     THEN
 		UPDATE 	CTS_DataCenter.SystemParameter AS s
         SET		s.ParameterValue = lv_LastInsertCustSubID
-		WHERE	s.ParameterID = 8 AND s.ParameterName = 'CTSCustomer_LastInsertCustSubID';
+		WHERE	s.ParameterID = 8; # s.ParameterName = 'CTSCustomer_LastInsertCustSubID';
 	END IF;
 END$$
 DELIMITER ;
