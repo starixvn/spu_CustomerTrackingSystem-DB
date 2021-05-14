@@ -105,7 +105,7 @@ BEGIN
 		, 	cc.CategoryGroup
         , 	cate.CategoryID  
 		, 	ROW_NUMBER() OVER (PARTITION BY cate.CustID, cc.CategoryGroup
-								ORDER BY (CASE WHEN cate.CategoryID NOT BETWEEN 72 AND 80 THEN 1 /* From NAP CM will lastest records */
+								ORDER BY (CASE WHEN cate.CategoryID NOT BETWEEN 72 AND 150 THEN 1 /* From NAP CM will lastest records */
 											   ELSE 0
 										  END)) AS RowOrder
 	FROM CTS_DataCenter.CTSCustomerClassification AS cate
@@ -145,7 +145,7 @@ BEGIN
 	DELETE cate
     FROM CTS_DataCenter.CTSCustomerClassification cate
 		INNER JOIN Temp_ProblemAccounts AS temp ON temp.CustID = cate.CustID AND cate.SportGroupID = 0
-	WHERE temp.ActionType = 2 AND (cate.CategoryID NOT BETWEEN 72 AND 80);
+	WHERE temp.ActionType = 2 AND (cate.CategoryID NOT BETWEEN 72 AND 150);
     
 	/*	UPDATE PA FROM NAP CM */
     UPDATE CTS_DataCenter.CTSCustomerClassification AS cate
@@ -201,7 +201,7 @@ BEGIN
 					 ELSE 0
 				END
 		FROM Temp_ProblemAccounts AS temp
-			LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryGroup = temp.CategoryGroup AND ex.CategoryID BETWEEN 72 AND 80 /* Not existed Evd Cate (Rescan)*/;
+			LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryGroup = temp.CategoryGroup AND ex.CategoryID BETWEEN 72 AND 150 /* Not existed Evd Cate (Rescan)*/;
     ELSE 
 		/*	INSERT LOG NEW & UPDATE PA FROM NAP CM */
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
@@ -221,7 +221,7 @@ BEGIN
 					 ELSE 0
 				END
 		FROM Temp_ProblemAccounts AS temp
-			LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryGroup = temp.CategoryGroup AND ex.CategoryID BETWEEN 72 AND 80 /* Not existed Evd Cate. */
+			LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryGroup = temp.CategoryGroup AND ex.CategoryID BETWEEN 72 AND 150 /* Not existed Evd Cate. */
 		WHERE temp.ActionType IN (0, 1);
 		
 		/*	INSERT LOG REMOVE PA FROM NAP CM */
@@ -242,7 +242,7 @@ BEGIN
 					 ELSE 0
 				END
 		FROM Temp_ProblemAccounts AS temp
-			LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryID NOT BETWEEN 72 AND 80 AND ex.RowOrder = 1
+			LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryID NOT BETWEEN 72 AND 150 AND ex.RowOrder = 1
 		WHERE temp.ActionType = 2;
 			
 		/*	INSERT LOG IGNORE PIN */
