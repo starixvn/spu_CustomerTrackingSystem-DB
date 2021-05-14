@@ -138,8 +138,8 @@ BEGIN
 	FROM #tmpRawData AS r
 		LEFT JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON r.CustId = c.custid
 	WHERE c.closed = 1 OR c.[Enabled] = 0
-	   OR c.recommend NOT IN (52466,5707545)
-	   OR c.username NOT LIKE '%CashOut';
+	   OR c.recommend IN (52466,5707545)
+	   OR c.username LIKE '%CashOut';
 
 	-- #4: Remove closed & disabled of CN88
 	DELETE r WITH(ROWLOCK)
