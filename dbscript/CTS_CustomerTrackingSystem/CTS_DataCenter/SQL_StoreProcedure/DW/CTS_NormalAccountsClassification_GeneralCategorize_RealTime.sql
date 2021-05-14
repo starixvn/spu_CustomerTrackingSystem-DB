@@ -12,6 +12,7 @@ AS
 		- 20201126@Long.Luu: Categorize for New Member in General-Realtime [Redmine ID: #145954]
 		- 20210408@John.Ngo: Special rule for Haifa CC2 & Problem Agent Category (only member level) [Redmine ID: #152884]
 		- 20210511@John.Ngo: Exclude Customer of Odd Feed Sites [Redmine ID: #154694]
+		- 20210512@John.Ngo: Exclude Customer Class for Internal Account [Redmine ID: #154844]
 		
 	Param's Explanation:
 */
@@ -111,7 +112,9 @@ BEGIN
 		,	a.ActiveDays
 	FROM dbo.CustomerClassification_LatestGeneralChanged AS a WITH(NOLOCK)
 		INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.CustId
-		LEFT JOIN bodb02.dbo.Customer AS cu WITH(NOLOCK) ON a.CustId = cu.custid;
+		LEFT JOIN bodb02.dbo.Customer AS cu WITH(NOLOCK) ON a.CustId = cu.custid
+	WHERE cu.recommend NOT IN (52466,5707545)
+	   OR cu.username NOT LIKE '%CashOut';
 		
 	-- #2: Insert Accounts's BetCount
 	INSERT INTO dbo.CustomerClassification_BetCount(CustId, SportId, BetCount)

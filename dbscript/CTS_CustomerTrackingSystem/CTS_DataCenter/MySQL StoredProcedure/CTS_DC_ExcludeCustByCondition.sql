@@ -3,8 +3,8 @@ DROP PROCEDURE IF EXISTS `CTS_DC_ExcludeCustByCondition`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_ExcludeCustByCondition`(
-	IN ip_ConditionType TINYINT
-	, IN ip_TableName VARCHAR(200))
+	IN ip_TableName VARCHAR(200)
+)
     SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -15,24 +15,39 @@ BEGIN
 
 		Revisions:
 			- 20210507@Casey.Huynh: Created [Redmine ID: 154694]
-		Param's Explanation (filtered by):			
-            - ip_ConditionType: 1: Remove CustID By SiteID
+		Param's Explanation (filtered by):
             - ip_TableName: the table name include CustID column
-        CALL CTS_DataCenter.CTS_DC_ExcludeCustByCondition(1,'table_name');
+        CALL CTS_DataCenter.CTS_DC_ExcludeCustByCondition('table_name');
 	*/
     
     #--Exclude CustID by SiteID from table 'ip_TableName'
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustExclude;
+    CREATE TEMPORARY TABLE Temp_CustExclude(
+		CustID BIGINT UNSIGNED
+	);
     
-    IF (ip_ConditionType = 1)
-    THEN		
-		SET @insertStr =CONCAT(	"DELETE tbl 
+    /***********GET EXCLUDE CustID BY OddsFeedSite, 8RM, BARM, CashOut**********/
+	SET @insertStr =CONCAT(	"	INSERT INTO Temp_CustExclude(CustID)
+								SELECT tbl.CustID
 								FROM ",ip_TableName," as tbl 
 									INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tbl.CustID
-									INNER JOIN CTS_DataCenter.StaticList AS stl ON stl.ItemID = cus.SiteID
-											AND stl.ListID = 11" );
-    END IF;
-    
+									LEFT JOIN CTS_DataCenter.StaticList AS stl ON stl.ItemID = cus.SiteID
+											AND stl.ListID = 11
+									WHERE (cus.Recommend IN (52466,5707545) AND cus.RoleID = 1)
+									  OR cus.UserName Like '%CashOut'
+                                      OR stl.ItemID IS NOT NULL");   
+
 	PREPARE insertStr FROM @insertStr;
 	EXECUTE insertStr;
+    
+    /*********************DELETE************************/
+    SET @insertStr =CONCAT("DELETE  del
+							FROM	",ip_TableName," AS del
+								INNER JOIN Temp_CustExclude AS tmp ON del.CustID = tmp.CustID");   
+
+	PREPARE insertStr FROM @insertStr;
+	EXECUTE insertStr;
+
+	/******************************************************************************/
 END$$
 DELIMITER ;
