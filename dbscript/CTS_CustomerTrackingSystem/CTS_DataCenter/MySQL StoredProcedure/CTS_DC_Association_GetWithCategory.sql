@@ -2,7 +2,7 @@
 DROP PROCEDURE IF EXISTS `CTS_DC_Association_GetWithCategory`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_GetWithCategory`(IN ip_CustIDList VARCHAR(2000), IN ip_IsDelete BOOLEAN)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_GetWithCategory`(IN ip_CustIDList VARCHAR(8000), IN ip_IsDelete BOOLEAN)
 	SQL SECURITY INVOKER
 BEGIN
 	/*
