@@ -11,7 +11,7 @@ USE CTS_Adhoc;
 DROP PROCEDURE IF EXISTS `CTS_AD_DelUnuAccount_Step13_DeviceDeviceCodeDeviceFP_Get`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_AD_DelUnuAccount_Step13_DeviceDeviceCodeDeviceFP_Get`(
+CREATE DEFINER=`casey.vn`@`%` PROCEDURE `CTS_AD_DelUnuAccount_Step13_DeviceDeviceCodeDeviceFP_Get`(
 		IN ip_Size INT
         , IN ip_DelaySec TINYINT
 )
@@ -43,6 +43,14 @@ BEGIN
 		AccountID BIGINT UNSIGNED PRIMARY KEY
     );
     
+    
+	DROP TEMPORARY TABLE IF EXISTS Temp_RemoveDeviceID;
+    CREATE TEMPORARY TABLE Temp_RemoveDeviceID
+    (
+		DeviceID BIGINT UNSIGNED PRIMARY KEY
+    );
+    
+    
     SET	lv_StartTime = NOW();	
     
     SELECT 	MIN(DeviceID), MAX(DeviceID)
@@ -61,24 +69,33 @@ BEGIN
         ORDER BY delAss.DeviceID
         LIMIT	ip_Size;           
         
-        SET lv_FromDeviceID = (SELECT MAX(DeviceID) FROM Temp_DeviceID);             
+        SET lv_FromDeviceID = (SELECT MAX(DeviceID) FROM Temp_DeviceID);        
         
-        DELETE 	tmp_dv
+        /*Remove Device that has association with account not in CS152454_DelUnuAccount_Association*/
+        INSERT INTO Temp_RemoveDeviceID(DeviceID)
+        SELECT 	DISTINCT(tmp_dv.DeviceID)    
         FROM	Temp_DeviceID AS tmp_dv
 			INNER JOIN	DCS_DataCenter.Association AS ass ON tmp_dv.DeviceID = ass.DeviceID
 			LEFT JOIN 	CTS_Adhoc.CS152454_DelUnuAccount_Association AS delAss ON delAss.AccountID = ass.AccountID
-		WHERE	delAss.AccountID IS NULL;       
+		WHERE	delAss.AccountID IS NULL;      
         
+        DELETE 	tmp_dv
+        FROM	Temp_DeviceID AS tmp_dv
+			INNER JOIN	Temp_RemoveDeviceID AS tmp_rv ON tmp_dv.DeviceID = tmp_rv.DeviceID;
+            
+        /*=========GET Device=========******/
         INSERT IGNORE INTO CTS_Adhoc.CS152454_DelUnuAccount_Device(DeviceID, FirstDeviceCode, UserAgentKey, FirstTransID, CreatedTime, CreatedDate, InsertTime)
         SELECT	dv.DeviceID, dv.FirstDeviceCode, dv.UserAgentKey, dv.FirstTransID, dv.CreatedTime, dv.CreatedDate, dv.InsertTime			
         FROM	DCS_DataCenter.Device AS dv
 			INNER JOIN	Temp_DeviceID AS tmpDv ON tmpDv.DeviceID = dv.DeviceID;   
-      
+		
+        /*=========GET DeviceCode=========******/  
         INSERT IGNORE INTO CTS_Adhoc.CS152454_DelUnuAccount_DeviceCode(DeviceCodeID, DeviceCode, DeviceID, FirstTransID, CreatedTime, CreatedDate, InsertTime)
         SELECT	dc.DeviceCodeID, dc.DeviceCode, dc.DeviceID, dc.FirstTransID, dc.CreatedTime, dc.CreatedDate, dc.InsertTime			
         FROM	DCS_DataCenter.DeviceCode AS dc
 			INNER JOIN	Temp_DeviceID AS tmpDv ON tmpDv.DeviceID = dc.DeviceID; 
             
+        /*=========GET DeviceFingerprint=========******/  
 		INSERT IGNORE INTO CTS_Adhoc.CS152454_DelUnuAccount_DeviceFingerprint(DeviceFingerprintID, DeviceID, FingerprintCode, FingerprintMoreInfo, CreatedTime, CreatedDate, InsertTime)
         SELECT	df.DeviceFingerprintID, df.DeviceID, df.FingerprintCode, df.FingerprintMoreInfo, df.CreatedTime, df.CreatedDate, df.InsertTime		
         FROM	DCS_DataCenter.DeviceFingerprint AS df
@@ -91,6 +108,7 @@ BEGIN
 		WHERE ID = 13; 
         
         TRUNCATE TABLE Temp_DeviceID;
+        TRUNCATE TABLE Temp_RemoveDeviceID;
         
         DO SLEEP(ip_DelaySec);           
         

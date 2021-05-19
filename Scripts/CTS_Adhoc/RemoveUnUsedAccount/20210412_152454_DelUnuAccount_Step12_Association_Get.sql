@@ -29,23 +29,32 @@ BEGIN
 	*/ 
 	
   
-    DECLARE	lv_PreAccountID		BIGINT UNSIGNED; # The Last AccountID
+    DECLARE	lv_FromAccountID	BIGINT UNSIGNED; #FromAccountID
+    DECLARE	lv_ToAccountID		BIGINT UNSIGNED; #ToAccountID
+    DECLARE	lv_MaxAccountID		BIGINT UNSIGNED;
     DECLARE	lv_StartTime		DATETIME(3);	
+		
     
     SET	lv_StartTime = NOW();
-    
-    SET	@lv_152454ToAccountID = 0;
-    SET lv_PreAccountID = 1;
+
+    SET lv_FromAccountID = 1;
+    SET lv_ToAccountID = 1;
+    SET lv_MaxAccountID = (SELECT MAX(acc.AccountID) FROM CTS_Adhoc.CS152454_DelUnuAccount_Account AS acc );
     
     INSERT INTO CTS_Adhoc.CS152454_DelUnuAccount_zzTrace(ID, Steps,SPName, StartTime,EndTime,Notes)
-    VALUES(12, 12,'CTS_AD_DelUnuAccount_Step12_Association_Get',lv_StartTime,NOW(), @lv_152454ToAccountID);   
+    VALUES(12, 12,'CTS_AD_DelUnuAccount_Step12_Association_Get',lv_StartTime,NOW(), 0);   
     
-    WHILE (@lv_152454ToAccountID != lv_PreAccountID )
+    WHILE (lv_ToAccountID != lv_MaxAccountID)
     DO			
-		SET lv_PreAccountID = @lv_152454ToAccountID;
+		 SET	lv_ToAccountID = (	SELECT MAX(tmp.AccountID) 
+									FROM	(	SELECT 	acc.AccountID 
+												FROM	CTS_Adhoc.CS152454_DelUnuAccount_Account AS acc 
+												WHERE 	acc.AccountID >  lv_FromAccountID
+                                                LIMIT ip_Size 
+											) tmp);       
         
         INSERT IGNORE INTO CTS_Adhoc.CS152454_DelUnuAccount_Association( AccountID, DeviceID, AssociationID, SubscriberID, CreatedTime, CreatedDate, InsertTime, IsCTSTransformed)
-        SELECT	@lv_152454ToAccountID := acc.AccountID
+        SELECT	acc.AccountID
 				, ass.DeviceID
                 , ass.AssociationID
                 , ass.SubscriberID
@@ -55,12 +64,14 @@ BEGIN
                 , ass.IsCTSTransformed
         FROM	CTS_Adhoc.CS152454_DelUnuAccount_Account AS acc
 			INNER JOIN DCS_DataCenter.Association AS ass ON acc.AccountID = ass.AccountID
-        WHERE	acc.AccountID > lv_PreAccountID
-        LIMIT	ip_Size;   
+        WHERE	acc.AccountID BETWEEN lv_FromAccountID AND lv_ToAccountID;
             
 		#========================================================
+        
+        SET lv_FromAccountID = lv_ToAccountID + 1;
+        
 		UPDATE CTS_Adhoc.CS152454_DelUnuAccount_zzTrace
-		SET 	Notes = lv_PreAccountID
+		SET 	Notes = lv_ToAccountID
 				, EndTime = NOW()
 		WHERE ID = 12;		
         

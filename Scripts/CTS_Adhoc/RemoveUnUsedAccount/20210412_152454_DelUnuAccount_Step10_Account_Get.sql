@@ -45,7 +45,8 @@ BEGIN
     FROM	CTS_Adhoc.CS152454_DelUnuAccount_Account;    
 
     SET lv_MaxAccountID = 29899317;#(SELECT AccountID FROM DCS_DataCenter.Account WHERE CreatedDate >= '2021-02-01' AND AccountID > 27500000  LIMIT 1);
-       
+    
+    
     INSERT INTO CTS_Adhoc.CS152454_DelUnuAccount_zzTrace(ID, Steps,SPName, StartTime,EndTime,Notes)
     VALUES(10, 10,'CTS_AD_DelUnuAccount_Step10_Account_Get',lv_StartTime,NOW(), @lv_152454ToAccountID);   
     
@@ -68,7 +69,7 @@ BEGIN
         WHERE	acc.IsCTSTransformed < 0 
 				AND acc.AccountID > lv_PreAccountID
                 AND acc.AccountID < lv_MaxAccountID
-                AND acc.LastLoginTime < '2021-01-01'
+                AND acc.LastLoginTime < '2021-02-01'
         LIMIT	ip_Size;
         
         UPDATE CTS_Adhoc.CS152454_DelUnuAccount_zzTrace

@@ -103,6 +103,6 @@ CREATE TABLE CS152454_DelUnuAccount_DeviceFingerprint (
 ,	InsertTime TIMESTAMP(4) NOT NULL
 ,	PRIMARY KEY (DeviceID,FingerprintCode)
 ,	KEY KEY_DeviceFingerprintID (DeviceFingerprintID)
-) ENGINE=InnoDB AUTO_INCREMENT=119613421 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB ;
 
 
