@@ -15,6 +15,8 @@ BEGIN
 		Original:
 		Revisions:
 			- 20210401@Irena.Vo: Created [Redmine ID: #152249]
+			- 20210524@Aries.Nguyen: Enhance performance  [Redmine ID: #155693]
+
 		Param's Explanation (filtered by):
 			- ip_CustIDs ; ip_TypeID: 1(Original) / 2(ABI) / 3(Other)
 		Example:
@@ -33,9 +35,9 @@ BEGIN
     
     -- Get lastest history (Ass with PA & Have change Category)
     UPDATE Temp_Customers AS temp
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID AND cate.SportGroupID = 200
-		INNER JOIN CTS_DataCenter.TaggingToCategory AS tag ON tag.CategoryID = cate.CategoryID
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS his ON his.CustID = temp.CustID AND his.SportGroupID = 200 AND his.LastModifiedDate = cate.LastModifiedDate
+		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID AND cate.SportGroupID = 200
+		STRAIGHT_JOIN CTS_DataCenter.TaggingToCategory AS tag ON tag.CategoryID = cate.CategoryID
+		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification_History AS his ON his.CustID = temp.CustID AND his.SportGroupID = 200 AND his.LastModifiedDate = cate.LastModifiedDate
 	SET 	temp.HistoryID = his.ID
 	WHERE 	tag.TaggingID <> 0 AND his.IsDataChanged = 1 AND his.ToCategoryID <> IFNULL(his.FromCategoryID,0);
     
