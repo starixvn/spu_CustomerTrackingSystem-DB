@@ -32,13 +32,16 @@ BEGIN
 	EXECUTE stmt1;
     
 	SELECT	c.CustID
+		,	c.CTSCustID
 		,	c.UserName
         ,	c.SubscriberID
         , 	s.SubscriberName
 		, 	c.Site
 		, 	c.Danger1
+        , 	c.Danger2
         , 	c.Danger3
-        , 	c.Danger3
+        ,	c.Currency
+        ,	CASE WHEN s.SubscriberType = 0 THEN 'C' ELSE 'L' END AS SubscriberType
 	FROM Temp_CustID AS t
 		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON t.CustID = c.CustID
 		INNER JOIN  CTS_Admin.Subscriber AS s ON c.SubscriberID	= s.SubscriberID

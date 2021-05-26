@@ -26,6 +26,7 @@ BEGIN
 	
 	SELECT 	DISTINCT s.GroupID
 		,	s.IsHedging
+        ,	s.ListCustID
 	FROM   CTS_DataCenter.MatchMonitorDetails AS s
 	WHERE  s.EventDate = ip_EventDate
 		AND s.BettypeID = ip_BettypeID

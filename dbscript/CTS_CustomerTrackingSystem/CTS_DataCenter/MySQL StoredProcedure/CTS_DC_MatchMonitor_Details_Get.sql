@@ -47,6 +47,8 @@ BEGIN
     
 	SELECT 	d.ListCustID
 		,	d.ListTransID
+        ,	d.GroupID
+        ,	d.IsHedging
 	FROM   CTS_DataCenter.MatchMonitorDetails AS d
 		INNER JOIN Temp_Score AS s ON s.TotalScore = d.TotalScore
         INNER JOIN Temp_ReasonGroup AS r ON r.GroupID = d.GroupID

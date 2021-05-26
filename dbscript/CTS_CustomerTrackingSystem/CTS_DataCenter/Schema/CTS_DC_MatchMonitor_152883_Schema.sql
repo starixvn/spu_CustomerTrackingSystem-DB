@@ -41,18 +41,23 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorDetails (
 	, 	INDEX			IX_MatchMonitorDetails_GroupIDIsHedging(GroupID,IsHedging)
 ) ENGINE=INNODB;
 
+DROP TABLE CTS_DataCenter.MatchMonitorStaging;
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorStaging (
 		TransID			BIGINT UNSIGNED
-	, 	TransDate		DATETIME
+	, 	TransDate		DATETIME(3)
     ,	MatchID			BIGINT UNSIGNED
+    ,	HomeID			INT UNSIGNED
+	, 	AwayID			INT UNSIGNED
+    ,	LeagueID		INT UNSIGNED
     ,	BettypeID		INT UNSIGNED
+    ,	LiveIndicator	BIT
 	, 	CustID			BIGINT UNSIGNED
     ,	Stake			DECIMAL(20,4)
     ,	LiveHomeScore	SMALLINT UNSIGNED
     ,	LiveAwayScore	SMALLINT UNSIGNED
     ,	GroupID			BIGINT UNSIGNED
     ,	OriginGroupID	BIGINT UNSIGNED
-	, 	PRIMARY KEY		PK_MatchMonitorStaging_TransIDMatchIDBettypeID(TransID,MatchID,BettypeID)
+	, 	PRIMARY KEY		PK_MatchMonitorStaging_TransIDMatchIDBettypeID(TransID,MatchID,BettypeID,LiveIndicator)
 	, 	INDEX			IX_MatchMonitorStaging_GroupID(GroupID)
     , 	INDEX			IX_MatchMonitorStaging_OriginGroupID(OriginGroupID)
 ) ENGINE=INNODB;
