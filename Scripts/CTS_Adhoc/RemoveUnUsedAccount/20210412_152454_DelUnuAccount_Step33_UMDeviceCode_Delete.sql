@@ -47,7 +47,7 @@ BEGIN
 		WHERE		delDc.DeviceCodeID BETWEEN  lv_FromDeviceCodeID AND lv_ToDeviceCodeID;
 		
         UPDATE CTS_Adhoc.CS152454_DelUnuAccount_zzTrace
-		SET 	Notes = @lv_152454ToAccountID
+		SET 	Notes = lv_ToDeviceCodeID
 				, EndTime = NOW()
 		WHERE ID = 33;
         

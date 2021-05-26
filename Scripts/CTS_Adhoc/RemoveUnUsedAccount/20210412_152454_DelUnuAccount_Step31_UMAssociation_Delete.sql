@@ -8,11 +8,11 @@
 				- 202104012@CaseyHuynh: Created [Redmine ID: #152454]
 */
 
-
-DROP PROCEDURE IF EXISTS `CTS_AD_DelUnuAccount_Step31_Association_Delete`;
+USE CTS_Adhoc;
+DROP PROCEDURE IF EXISTS `CTS_AD_DelUnuAccount_Step31_Association_Delete_V1`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_AD_DelUnuAccount_Step31_Association_Delete`(
+CREATE DEFINER=`casey.vn`@`%` PROCEDURE `CTS_AD_DelUnuAccount_Step31_Association_DeleteV1`(
 		IN ip_Size INT
         , IN ip_DelaySec TINYINT
 )
@@ -28,35 +28,37 @@ BEGIN
 			- 20210330@Casey.Huynh [Redmine ID: #152454]
 		Param's Explanation (filtered by):
 	*/ 
-	DECLARE lv_FromAssociationID BIGINT UNSIGNED DEFAULT 0;
-    DECLARE lv_ToAssociationID	BIGINT UNSIGNED DEFAULT 0;
+	DECLARE lv_FromAccountID BIGINT UNSIGNED DEFAULT 0;
+    DECLARE lv_ToAccountID BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_StartTime DATETIME(3) DEFAULT NOW();
     
-	SELECT 	MIN(tmp.AssociationID), MAX(tmp.AssociationID)
-	INTO 	lv_FromAssociationID, lv_ToAssociationID
-	FROM	(SELECT delAss.AssociationID FROM CTS_Adhoc.CS152454_DelUnuAccount_Association AS delAss WHERE delAss.AssociationID > lv_ToAssociationID LIMIT ip_Size) AS tmp;
+	SELECT 	MIN(tmp.AccountID), MAX(tmp.AccountID)
+	INTO 	lv_FromAccountID, lv_ToAccountID
+	FROM	(SELECT DISTINCT delAss.AccountID FROM CTS_Adhoc.CS152454_DelUnuAccount_Association AS delAss WHERE delAss.AccountID > lv_ToAccountID ORDER BY delAss.AccountID   LIMIT ip_Size) AS tmp;
     
     INSERT INTO CTS_Adhoc.CS152454_DelUnuAccount_zzTrace(ID, Steps,SPName, StartTime,EndTime,Notes)
-    VALUES(31, 31,'CTS_AD_DelUnuAccount_Step31_Association_Delete',lv_StartTime,NOW(),lv_FromAssociationID); 
+    VALUES(310, 310,'CTS_AD_DelUnuAccount_Step31_Association_Delete_v1',lv_StartTime,NOW(),lv_FromAccountID); 
     
 	#====Step01. Remove Account From CS152454_DelUnuAccount_Association: IsCTSTransformed = 1 OR LastLoginTime >= '20210101' OUTPUT UmRemoveAssociationID
-    WHILE(lv_FromAssociationID IS NOT NULL)
+    WHILE(lv_FromAccountID IS NOT NULL)
     DO		
 	
             DELETE 		ass
             FROM		DCS_DataCenter.Association ass
-            INNER JOIN	CTS_Adhoc.CS152454_DelUnuAccount_Association AS delAss ON delAss.AssociationID = ass.AssociationID
-            WHERE		delAss.AssociationID BETWEEN  lv_FromAssociationID AND lv_ToAssociationID;
+            INNER JOIN	CTS_Adhoc.CS152454_DelUnuAccount_Association AS delAss ON delAss.AccountID = ass.AccountID
+            WHERE		delAss.AccountID BETWEEN  lv_FromAccountID AND lv_ToAccountID;
             
             UPDATE CTS_Adhoc.CS152454_DelUnuAccount_zzTrace
-			SET 	Notes = lv_ToAssociationID
+			SET 	Notes = lv_ToAccountID
 					, EndTime = NOW()
 			WHERE ID = 31;
                         
             SELECT 	MIN(tmp.AssociationID), MAX(tmp.AssociationID)
-			INTO 	lv_FromAssociationID, lv_ToAssociationID
-			FROM	(SELECT delAss.AssociationID FROM CTS_Adhoc.CS152454_DelUnuAccount_Association AS delAss WHERE delAss.AssociationID > lv_ToAssociationID LIMIT ip_Size) AS tmp;       
+			INTO 	lv_FromAccountID, lv_ToAccountID
+			FROM	(SELECT delAss.AssociationID FROM CTS_Adhoc.CS152454_DelUnuAccount_Association AS delAss 
+						WHERE delAss.AccountID > lv_ToAccountID ORDER BY delAss.AccountID LIMIT ip_Size ) AS tmp;  
             
+            DO SLEEP(ip_DelaySec);
     END WHILE;
     
-END
+END$$
