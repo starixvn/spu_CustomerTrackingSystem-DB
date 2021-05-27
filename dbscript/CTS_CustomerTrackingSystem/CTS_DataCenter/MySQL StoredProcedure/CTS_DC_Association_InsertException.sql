@@ -2,7 +2,14 @@
 DROP PROCEDURE IF EXISTS `CTS_DC_Association_InsertException`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_InsertException`(IN ip_UserID int,IN ip_FromCTSCustID bigint,IN ip_ToUserName varchar(50),IN ip_Comment varchar(500),OUT op_Error int)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_InsertException`(
+		IN ip_UserID		INT
+	,	IN ip_FromCTSCustID BIGINT
+	,	IN ip_ToUserName	VARCHAR(50)
+	,	IN ip_Comment		VARCHAR(500)
+
+	,	OUT op_Error		INT
+)
     SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -12,7 +19,8 @@ BEGIN
 		Original: 
 		Revisions:
 			- 20200807@Casey.Huynh:[138925]: Change ip_Comment VARCHAR(200) To ip_Comment VARCHAR(500)
-			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: #155916]
+			- 20210527@Aries.Nguyen: Cannot insert Exception Customers [Redmine ID: #155916]
 			
 		Param's Explanation (filtered by):
 			OutPut: vr_Error (1: User Is not Existing, 0: Add Successfully)
@@ -22,8 +30,6 @@ BEGIN
     DECLARE		vr_CreatedDate	DATETIME;
     DECLARE		vr_SPName 		VARCHAR(100) 	DEFAULT 'CTS_DC_Association_InsertException';
     DECLARE		vr_Error		INT DEFAULT 0;
-
-    SET SESSION default_collation_for_utf8mb4 = utf8mb4_0900_ai_ci;
     
     SET vr_ToCTSCustID = (	SELECT	CTSCustID 
 							FROM	CTS_DataCenter.CTSCustomer AS ct 
@@ -33,7 +39,7 @@ BEGIN
     IF(vr_ToCTSCustID IS NULL) THEN
 		 SET	vr_Error = 1;
 	ELSE
-		SET	vr_CreatedDate = CURRENT_TIME();
+		SET	vr_CreatedDate = CURRENT_TIMESTAMP();
         
         #======INSERT EXCEPTION=================================
 		INSERT INTO CTS_DataCenter.CustException(FromCTSCustID, ToCTSCustID, CreatedDate, CreatedBy, Comment)
@@ -57,7 +63,6 @@ BEGIN
     END IF;
     
     SET op_Error = vr_Error;
-    SET SESSION default_collation_for_utf8mb4 = utf8mb4_general_ci;
 	
 END$$
 
