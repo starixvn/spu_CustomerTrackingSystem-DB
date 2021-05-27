@@ -19,7 +19,7 @@ BEGIN
 		Original: 
 		Revisions:
 			- 20200807@Casey.Huynh:[138925]: Change ip_Comment VARCHAR(200) To ip_Comment VARCHAR(500)
-			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: #155916]
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: #148723]
 			- 20210527@Aries.Nguyen: Cannot insert Exception Customers [Redmine ID: #155916]
 			
 		Param's Explanation (filtered by):
