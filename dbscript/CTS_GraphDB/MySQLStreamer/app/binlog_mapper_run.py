@@ -110,7 +110,7 @@ class BinlogServer(object):
 						response = mapper.sync()
 
 						replicator.commit_auto_position(payload.timestamp, payload.position)
-						log.info('proceed message: {0} at {1}.'.format(send_topic, datetime.fromtimestamp(payload.timestamp)))
+						log.info('proceed message: {0} at {1}. op: {2}. rows {3}'.format(send_topic, datetime.fromtimestamp(payload.timestamp),payload.message.op,len(payload.message.rows)))
 
 					except BufferError as bex:
 						log.error('%% Local producer queue is full (%s messages awaiting delivery): try again\n' %str(bex))

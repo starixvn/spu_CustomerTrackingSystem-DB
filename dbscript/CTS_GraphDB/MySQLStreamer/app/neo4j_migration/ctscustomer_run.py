@@ -57,6 +57,12 @@ class CTSCustomerRun(Neo4jContext):
 
     @classmethod
     def update_binlog(cls, tx, raws:list):
+
+        # affected list
+        raws_updates = [raw for raw in raws if raw["after"]["SubscriberID"] != raw["before"]["SubscriberID"] or raw["after"]["CustStatusID"] != raw["before"]["CustStatusID"]]
+        if len(raws_updates) == 0:
+            return 0
+
         # 1st remove 
         removeIDs =  []
         #BELONG_TO_SUB
@@ -68,7 +74,7 @@ class CTSCustomerRun(Neo4jContext):
             DELETE r
             RETURN ID(r) AS RID
             """
-        respone = tx.run(remove_belong_to_sub, batch = raws)
+        respone = tx.run(remove_belong_to_sub, batch = raws_updates)
         removeIDs = [row["RID"] for row in respone]
 
         #HAS_STATUS
@@ -80,12 +86,12 @@ class CTSCustomerRun(Neo4jContext):
             DELETE r
             RETURN ID(r) AS RID
             """
-        respone = tx.run(remove_has_status, batch = raws)
+        respone = tx.run(remove_has_status, batch = raws_updates)
         removeIDs = removeIDs + [row["RID"] for row in respone]
 
         # 2nd update
         nIDs = []
-        after = [r["after"] for r in raws]
+        after = [r["after"] for r in raws_updates]
         #####################
         update_bulk = """
             UNWIND $batch as row

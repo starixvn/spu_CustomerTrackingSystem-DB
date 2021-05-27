@@ -31,9 +31,9 @@ class CustEvidenceRun(Neo4jContext):
         batch = json.loads(raws)
         create_bulk = """
             UNWIND $batch as row
-            MATCH (n:CTSCustomer {CTSCustID:row.CTSCustID})
-            MATCH (c:Evidence {EvidenceID:row.EvidenceID})
-            WHERE row.Level = 0
+            MATCH (n:CTSCustomer {CTSCustID:toInteger(row.CTSCustID)})
+            MATCH (c:Evidence {EvidenceID:toInteger(row.EvidenceID)})
+            WHERE toInteger(row.Level) = 0
             MERGE (n)-[r:HAS_EVIDENCE]-(c)
             ON CREATE SET r.CreatedDate=datetime(row.CreatedDate)
             WITH n,c,r
@@ -45,19 +45,15 @@ class CustEvidenceRun(Neo4jContext):
         r_result = tx.run(create_bulk, batch=batch)
         rIDs = [row["RID"] for row in r_result]
 
-        # merge SEEN_ACCOUNT if any
-        seen_account = """
+        # push seen_account
+        push_seen_account = """
             UNWIND $batch as row
-            MATCH (c1:FlaggedCustomer {CTSCustID:toInteger(row.CTSCustID)})
-            MATCH (c1)-[r1:USED_DEVICE]->(n:Device)<-[r2:USED_DEVICE]-(c2:CTSCustomer)
-            WHERE c1.CustID <> c2.CustID
-            WITH c1,c2,MIN(CASE WHEN r1.CreatedDate > r2.CreatedDate THEN r1.CreatedDate ELSE r2.CreatedDate END) AS SeenDate
-            MERGE (c1)-[r:SEEN_ACCOUNT]->(c2)
-            ON CREATE SET r.FirstSeenDate = SeenDate
-            ON MATCH SET r.FirstSeenDate = CASE WHEN r.FirstSeenDate > SeenDate THEN SeenDate ELSE r.FirstSeenDate END
-            RETURN ID(r) AS RID
+            MATCH (c:FlaggedCustomer {CTSCustID:toInteger(row.CTSCustID)})-[:USED_DEVICE]->(d:Device)
+            MERGE (n:FlaggedSeenAccount {CTSCustID: c.CTSCustID, DeviceID: d.DeviceID})
+            ON CREATE SET n.CreatedDate = date(),n.SeenStats=0
+            RETURN ID(n) AS NID
             """
-        r_result = tx.run(seen_account, batch=batch)
+        r_result = tx.run(push_seen_account, batch=batch)
 
         return rIDs
 
@@ -91,6 +87,10 @@ class CustEvidenceRun(Neo4jContext):
             MATCH (c:Evidence {EvidenceID:row.EvidenceID})
             MATCH (n)-[r:HAS_EVIDENCE]-(c)
             DELETE r
+            WITH n
+            WHERE NOT EXISTS((n)-[:HAS_EVIDENCE]-(:Evidence))
+            REMOVE n:FlaggedCustomer
+            RETURN COUNT(n)
             """
         tx.run(remove_all, batch=batch)
 
