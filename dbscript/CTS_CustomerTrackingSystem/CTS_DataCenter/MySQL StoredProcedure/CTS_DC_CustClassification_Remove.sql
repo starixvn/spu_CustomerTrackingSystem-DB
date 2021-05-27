@@ -1,12 +1,13 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
-DROP procedure IF EXISTS `CTS_DC_CustClassification_Remove`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_Remove`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Remove`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_Remove`(
 		IN ip_CustID			BIGINT UNSIGNED
 	,   IN ip_CTSCustID			BIGINT UNSIGNED 
 	,	IN ip_CategoryID		SMALLINT
 	,	IN ip_CreatedBy 		INT
+    
     , 	OUT op_ErrorMessage 	VARCHAR(200)
 )
     SQL SECURITY INVOKER 
@@ -25,48 +26,39 @@ BEGIN
             - 20201201@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. Remove logic detail category. [Redmine ID: #145954]
             - 20201214-20201229@Irena.Vo: Insert History Log & Auto Unpin category. Insert Error Log [RedmineID: #145951]
             - 20210226@Irena.Vo: Update CategoryID from VVIP [RedmineID: #150454]
-            
+			- 20210525@Irena.Vo: Change col name PinCustomerCategory: CustID -> CTSCustID [RedmineID: #152965] 
 		Param's Explanation:
 	*/ 
-
-    DECLARE lv_CurrentDateTime DATETIME DEFAULT CURRENT_TIME();
-    DECLARE lv_SPName VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_Remove';
+    DECLARE lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();
+    DECLARE lv_SPName 			VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_Remove';
     
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
-  
-    IF (ip_CategoryID = 210) THEN
-        -- Remove data CTSCustomerClassification
-		DELETE 	cate
-		FROM 	CTS_DataCenter.CTSCustomerClassification AS cate
-		WHERE 	cate.CustID = ip_CustID AND cate.SportGroupID = 200 AND cate.CategoryID  = 210;
-        
-        INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-	    VALUES(12, lv_SPName, CONCAT('Remove VVIP: From ip_CustID_', ip_CustID), lv_CurrentDateTime, ip_CreatedBy);
+    
+	/*Remove VVIP*/
+	DELETE FROM CTS_DataCenter.CTSCustomerClassification WHERE CTSCustID = ip_CTSCustID AND CategoryID = ip_CategoryID;
 	
-		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
-        (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
-		SELECT 	ip_CustID
-			, 	ip_CTSCustID
-            ,   210
-            ,   200
-			, 	lv_CurrentDateTime
-			, 	ip_CreatedBy
-			,   2  -- Remove
-			,   0  -- Manual
-			,   DATE(lv_CurrentDateTime)
-            ,   -1 -- is Remove VVIP
-			,   14 -- item name = Remove VVIP
-			,	1 -- View History
-			;
-            
-        -- Auto Unpin
-        DELETE pin
-		FROM CTS_DataCenter.PinCustomerCategory AS pin
-		WHERE pin.CustID = ip_CustID;
-    END IF;
-END$$
+	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
+	VALUES(12, lv_SPName, CONCAT('Remove VVIP: From ip_CTSCustID_', ip_CTSCustID, ';ip_CategoryID_', ip_CategoryID), lv_CurrentDateTime, ip_CreatedBy);
 
+	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
+	(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
+	SELECT 	ip_CustID
+		, 	ip_CTSCustID
+		,   ip_CategoryID
+		,   200
+		, 	lv_CurrentDateTime
+		, 	ip_CreatedBy
+		,   2
+		,   0
+		,   DATE(lv_CurrentDateTime)
+		,   -1
+		,   14
+		,	1;
+		
+	/*Auto Unpin*/
+	DELETE FROM CTS_DataCenter.PinCustomerCategory WHERE CTSCustID = ip_CTSCustID;
+END$$
 DELIMITER ;

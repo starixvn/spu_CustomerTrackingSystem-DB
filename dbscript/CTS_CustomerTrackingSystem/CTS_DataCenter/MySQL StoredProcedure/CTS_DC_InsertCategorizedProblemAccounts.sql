@@ -27,6 +27,7 @@ BEGIN
             - 20210419@Irena.Vo: Update Priority Robot User.  [RedmineID: #152250] 
             - 20210510@Casey.Huynh: Exclude Customer of Odd Feed Sites [Redmine ID: 154694]
             - 20210512@Casey.Huynh: Exclude Customer of Internal Account [Redmine ID: 154844]
+            - 20210525@Irena.Vo: Change col name PinCustomerCategory: CustID -> CTSCustID [Redmine ID: 152965]
 		Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DataCenter.CTS_DC_InsertCategorizedProblemAccounts('[{"CustId": 123, "CategoryId": 27}]',0,@op_ErrorMessage);
@@ -70,9 +71,15 @@ BEGIN
 	/*EXCLUDE Customer*/    
     CALL CTS_DC_ExcludeCustByCondition('Temp_ProblemAccounts');
     
+    /*	UPDATE CUST INFO */
+    UPDATE Temp_ProblemAccounts AS temp 
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.CustSubID = 0
+	SET		temp.CTSCustID = cust.CTSCustID
+		, 	temp.SubscriberID = cust.SubscriberID;
+    
     /*	IGNORE PIN CATEGORY	*/
     UPDATE Temp_ProblemAccounts AS temp
-		INNER JOIN CTS_DataCenter.PinCustomerCategory AS pin on pin.CustID = temp.CustID
+		INNER JOIN CTS_DataCenter.PinCustomerCategory AS pin on pin.CTSCustID = temp.CTSCustID
     SET temp.ActionType = 4; 
     
     /*	REMOVE GENERAL CATEGORY BEFORE	*/
@@ -92,12 +99,6 @@ BEGIN
 		LEFT JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.DisplayOrder = temp.ReasonID
     SET 	temp.CategoryID = IFNULL(cc.CategoryID,temp.ReasonID)
 		,	temp.CategoryGroup = IFNULL(cc.CategoryGroup,temp.ReasonID);
-    
-    /*	UPDATE CUST INFO */
-    UPDATE Temp_ProblemAccounts AS temp 
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.CustSubID = 0
-	SET		temp.CTSCustID = cust.CTSCustID
-		, 	temp.SubscriberID = cust.SubscriberID;
     
     /*	GET EXISTED CATEGORY	*/
 	INSERT IGNORE INTO Temp_ExistedClassification (CustID, CategoryGroup, CategoryID, RowOrder)

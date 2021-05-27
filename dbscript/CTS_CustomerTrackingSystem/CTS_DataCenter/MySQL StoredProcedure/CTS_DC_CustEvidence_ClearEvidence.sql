@@ -20,7 +20,7 @@ BEGIN
 
 		Revisions:
 			- 20210204@Long.Luu: Created [Redmine ID: #148719]
-		
+			- 20210525@Irena.Vo: Change col name PinCustomerCategory: CustID -> CTSCustID [Redmine ID: 152965]
 		Param's Explanation (filtered by):   
 			- ActionID: 1 insert, 2 override, 3 clear
             
@@ -88,7 +88,7 @@ BEGIN
 		/*	IGNORE PIN CATEGORY	*/
         DELETE t
         FROM Temp_CustomerEvidence AS t
-			INNER JOIN CTS_DataCenter.PinCustomerCategory AS p ON t.CustID = p.CustID;
+			INNER JOIN CTS_DataCenter.PinCustomerCategory AS p ON t.CTSCustID = p.CTSCustID;
         
 		DELETE c
 		FROM Temp_CustomerEvidence AS t

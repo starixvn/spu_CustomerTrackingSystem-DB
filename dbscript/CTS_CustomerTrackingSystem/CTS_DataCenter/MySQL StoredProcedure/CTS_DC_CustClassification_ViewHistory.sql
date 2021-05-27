@@ -2,7 +2,9 @@
 DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_ViewHistory`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_ViewHistory`(IN ip_CustID BIGINT)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_ViewHistory`(
+	IN ip_CTSCustID 	BIGINT
+)
     SQL SECURITY INVOKER
 BEGIN
   /*
@@ -14,39 +16,40 @@ BEGIN
             - 20210105@Irena.Vo: Created. Update logic SP [RedmineID: #145951]
 			- 20210226@Irena.Vo: Get TaggingType flag for log [RedmineID: #150454]
             - 20210401@Irena.Vo: Update View Log [RedmineID: #152249]
+            - 20210525@Irena.Vo: Change view log: CustID -> CTSCustID [RedmineID: #152965] 
 		Param's Explanation (filtered by):		
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_ViewHistory(43600889);
 	*/   
-       SELECT        temp.ID
-					,	temp.LastModifiedDate AS CreatedTime
-					,   CASE WHEN temp.CategoryID IS NULL THEN '-' ELSE cc1.CategoryName END CategoryName
-                    ,   CASE WHEN temp.TargetCC IN (-1, -99) THEN '-' /* -1: Remove, -99: No mapping CC */ ELSE temp.TargetCC END AS CustomerClass
-					,	temp.CategoryID
-                    ,   CASE WHEN cc2.CategoryGroup IN (201, 202, 205) AND cc3.CategoryGroup IN (203, 204, 206) THEN CONCAT(s.ItemName,' - ',cc2.CategoryName,' to ',cc3.CategoryName)
-                             WHEN cc2.CategoryGroup IN (203, 204) AND cc3.CategoryGroup = 206 THEN CONCAT(s.ItemName,' - ',cc2.CategoryName,' to ',cc3.CategoryName)
-                             ELSE s.ItemNameDisplay
-						END AS SourceTypeName
-					, 	s.ItemID AS SourceTypeID
-                    ,   CASE WHEN tag.CategoryID IS NULL THEN '' -- no display
-							 ELSE CASE WHEN temp.TaggingType = 0 THEN 'Yes' ELSE 'No' END
-						END AS TaggingType
-					,   temp.TurnOverRM AS TurnOver
-                    ,   temp.WinlossRM AS WinLoss
-                    ,	 CASE WHEN temp.TurnOverRM = 0 THEN 0 ELSE (temp.WinlossRM/ temp.TurnOverRM) * 100 END AS Margin
-					,   temp.BetCount
-					,   temp.ActiveDays 
-					,   temp.LastXDaysMargin
-					,   temp.ProbationPeriodWinloss
-					,   u.UserName AS CreatedBy
-		FROM CTS_DataCenter.CTSCustomerClassification_History AS temp
+		SELECT  temp.ID
+			,	temp.LastModifiedDate AS CreatedTime
+			,   (CASE WHEN temp.CategoryID IS NULL THEN '-' ELSE cc1.CategoryName END) AS CategoryName
+			,   (CASE WHEN temp.TargetCC IN (-1, -99) THEN '-' /* -1: Remove, -99: No mapping CC */ ELSE temp.TargetCC END) AS CustomerClass
+			,	temp.CategoryID
+			,   (CASE WHEN cc2.CategoryGroup IN (201, 202, 205) AND cc3.CategoryGroup IN (203, 204, 206) THEN CONCAT(s.ItemName,' - ',cc2.CategoryName,' to ',cc3.CategoryName)
+					 WHEN cc2.CategoryGroup IN (203, 204) AND cc3.CategoryGroup = 206 THEN CONCAT(s.ItemName,' - ',cc2.CategoryName,' to ',cc3.CategoryName)
+					 ELSE s.ItemNameDisplay
+				END) AS SourceTypeName
+			, 	s.ItemID AS SourceTypeID
+			,   (CASE WHEN tag.CategoryID IS NULL THEN '' /*No display*/
+					 ELSE CASE WHEN temp.TaggingType = 0 THEN 'Yes' ELSE 'No' END
+				END) AS TaggingType
+			,   temp.TurnOverRM AS TurnOver
+			,   temp.WinlossRM AS WinLoss
+			,	(CASE WHEN temp.TurnOverRM = 0 THEN 0 ELSE (temp.WinlossRM/ temp.TurnOverRM) * 100 END) AS Margin
+			,   temp.BetCount
+			,   temp.ActiveDays 
+			,   temp.LastXDaysMargin
+			,   temp.ProbationPeriodWinloss
+			,   u.UserName AS CreatedBy
+		FROM 	CTS_DataCenter.CTSCustomerClassification_History AS temp
 			LEFT JOIN CTS_DataCenter.TaggingToCategory AS tag ON tag.CategoryID = temp.CategoryID
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS cc1 ON temp.CategoryID = cc1.CategoryID
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS cc2 ON temp.FromCategoryID = cc2.CategoryID
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS cc3 ON temp.ToCategoryID = cc3.CategoryID
 			INNER JOIN CTS_DataCenter.StaticList AS s ON s.ListID = 4 AND temp.SourceTypeID = s.ItemID
 			INNER JOIN CTS_Admin.CTSUser AS u ON temp.LastModifiedBy = u.UserID
-        WHERE temp.CustID = ip_CustID AND temp.IsDataChanged = 1
+        WHERE 	temp.CTSCustID = ip_CTSCustID AND temp.IsDataChanged = 1
 		ORDER BY temp.ID DESC; 
 END$$
 DELIMITER ;

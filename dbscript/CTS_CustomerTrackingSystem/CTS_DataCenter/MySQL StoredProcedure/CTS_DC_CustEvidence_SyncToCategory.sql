@@ -25,6 +25,7 @@ BEGIN
 		   - 20210119@Aries.Nguyen: Write main error log - rescan [RedmineID: #149026]
            - 20210510@Casey.Huynh: Exclude Customer of Odds Feed Sites [Redmine ID: 154694]
            - 20210512@Casey.Huynh: Exclude Customer of Internal Account [Redmine ID: 154844]
+           - 20210525@Irena.Vo: Change col name PinCustomerCategory: CustID -> CTSCustID [Redmine ID: 152965]
 		Param's Explanation (filtered by):	
 			CALL CTS_DataCenter.CTS_DC_CustEvidence_SyncToCategory('[{"CustId":43600693, "CTSCustId": 221882500, "SubscriberId": 130, "EvidenceId": 41, "ActionType": 0}]',0,@op_ErrorMessage);
 	*/   
@@ -93,7 +94,7 @@ BEGIN
 		#=========================================PREPARE DATA=========================================================
         /*	IGNORE PIN CATEGORY	*/
         UPDATE Temp_CustomerEvidences AS temp
-			INNER JOIN CTS_DataCenter.PinCustomerCategory AS pin ON temp.CustID = pin.CustID
+			INNER JOIN CTS_DataCenter.PinCustomerCategory AS pin ON temp.CTSCustID = pin.CTSCustID
         SET temp.ActionType = 4;
         
         /*	REMOVE GENERAL CATEGORY BEFORE	*/
