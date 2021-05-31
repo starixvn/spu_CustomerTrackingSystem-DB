@@ -11,6 +11,7 @@ AS
 		- 20201111@Long.Luu: Created [Redmine ID: #145028]
 		- 20201224@Long.Luu: Return more data [Redmine ID: #145951]
 		- 20210408@John.Ngo: Special rule for Haifa CC2 & Problem Agent Category (only member level) [Redmine ID: #152884]
+		- 20210531@John.Ngo: Exclude non-real Saba Sport on Customer Classification [Redmine ID: #155976]
         
 	Param's Explanation:
 
@@ -180,7 +181,7 @@ BEGIN
 		AND s.Margin >= 0;
 
 	-- FILTER BY WINNING COUNT
-	-- Get daily raw data for all sports (exclude Parlay)
+	-- Get daily raw data for all sports (exclude Parlay & Saba Sport)
 	INSERT INTO #tmpRawDailyData(RptDate, CustId, Turnover, Winloss, BetCount, IsLastXDays)
 	SELECT	s.RptFromDate
 		,	s.CustId
@@ -188,10 +189,12 @@ BEGIN
 		,	SUM(s.MemberWinloss)
 		,	SUM(s.BetCount)		
 		,	CASE WHEN s.RptFromDate >= @LastXDays THEN 1 ELSE 0 END
-	FROM bodb_Account.dbo.[FactCustProductStatsDetail] AS s WITH(NOLOCK)
+	FROM bodb_Account.dbo.[FactCustProductStatsDetail] AS s WITH(NOLOCK)	
 		INNER JOIN #tmpFilteredCustomers AS t ON s.CustID = t.CustId
+		INNER JOIN bodb02.dbo.League AS l WITH(NOLOCK) ON s.LeagueID = l.leagueid
 	WHERE s.RptFromDate >= @RptFromDate AND s.RptFromDate <= @RptToDate
 		AND s.BetType NOT IN (9, 29)
+		AND l.LeagueGroupID NOT IN (42,74,108,113)
 	GROUP BY s.RptFromDate
 		,	s.CustId
 		,	CASE WHEN s.RptFromDate >= @LastXDays THEN 1 ELSE 0 END;
