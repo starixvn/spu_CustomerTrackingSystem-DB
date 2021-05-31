@@ -28,6 +28,7 @@ BEGIN
                 - 20210415@Casey.Huynh: Ignore Probation Account Monitor if not meet the scan schedule [RedmineID: #153491]
                 - 20210510@Casey.Huynh: Exclude Customer of Odd Feed Sites [Redmine ID: 154694]
                 - 20210512@Casey.Huynh: Exclude Customer of Internal Account [Redmine ID: 154844]
+                - 20210525@Irena.Vo: Change col name PinCustomerCategory: CustID -> CTSCustID [Redmine ID: 152965]
 		Param's Explanation (filtered by):
         Example:
 				- CALL CTS_DataCenter.CTS_DC_InsertMainCustomerClassification('[{"CustId": "2324948","CategoryId":"206","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","LastXDaysMargin":100,"ProbationPeriodWinloss":100,"TaggingID":13,"TaggingType":1}]',@opp);
@@ -95,9 +96,17 @@ BEGIN
     /*EXCLUDE Customer*/    
     CALL CTS_DC_ExcludeCustByCondition('Temp_NewClassification');
     
+    /*	UPDATE CUSTOMER INFO */
+    UPDATE Temp_NewClassification AS temp 
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.CustSubID = 0
+        INNER JOIN CTS_DataCenter.MappingSubscriberSite AS map ON map.SubscriberID = cust.SubscriberID
+	SET		temp.CTSCustID = cust.CTSCustID
+		, 	temp.SubscriberID = cust.SubscriberID
+        ,	temp.IsLicensee = CASE WHEN map.SubscriberGroupID = 2 THEN 1 /*Licensee*/ ELSE 0 /*Credit/CN88*/ END;
+    
     /*	IGNORE PIN CATEGORY	*/
 	UPDATE Temp_NewClassification AS temp
-		INNER JOIN CTS_DataCenter.PinCustomerCategory AS pin on pin.CustID = temp.CustID
+		INNER JOIN CTS_DataCenter.PinCustomerCategory AS pin on pin.CTSCustID = temp.CTSCustID
     SET temp.ActionType = 4;     
     
 	/*	IGNORE PROBLEM ACCOUNT	*/
@@ -112,15 +121,6 @@ BEGIN
     WHERE 	(pro.CreatedDate NOT BETWEEN DATE_SUB(DATE(lv_CurrentDateTime), INTERVAL 19 DAY) AND  DATE_SUB(DATE(lv_CurrentDateTime), INTERVAL 3 DAY))
 			OR (temp.DWCateGroup IN (203,204,206) AND pro.CreatedDate != DATE_SUB(DATE(lv_CurrentDateTime), INTERVAL 19 DAY));
 
-    /*	UPDATE CUSTOMER INFO */
-    UPDATE Temp_NewClassification AS temp 
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.CustSubID = 0
-        INNER JOIN CTS_DataCenter.MappingSubscriberSite AS map ON map.SubscriberID = cust.SubscriberID
-	SET		temp.CTSCustID = cust.CTSCustID
-		, 	temp.SubscriberID = cust.SubscriberID
-        ,	temp.IsLicensee = CASE WHEN map.SubscriberGroupID = 2 THEN 1 /*Licensee*/ ELSE 0 /*Credit/CN88*/ END
-	WHERE 	temp.ActionType = 0;
-  
    /* UPDATE DW CATEGORY */
     UPDATE Temp_NewClassification AS temp 
 		LEFT JOIN TaggingToCategory AS tag ON tag.CategoryGroup = temp.DWCateGroup AND tag.TaggingType = 1 AND temp.TaggingID = tag.TaggingID

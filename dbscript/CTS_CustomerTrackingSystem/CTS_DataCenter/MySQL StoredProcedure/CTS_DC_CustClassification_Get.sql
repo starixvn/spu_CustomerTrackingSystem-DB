@@ -1,9 +1,9 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP procedure IF EXISTS `CTS_DC_CustClassification_Get`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_Get`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Get`(
-	IN ip_CustID 	INT UNSIGNED
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_Get`(
+	IN ip_CTSCustID 		INT UNSIGNED
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -26,48 +26,36 @@ BEGIN
             - 20210114@Irena.Vo: Update logic SP for Get Category List & PIN. Return CategoryID [RedmineID: #145951]
             - 20210226@Jonas.Huynh: Update for Get status for tagging by association with PA [RedmineID: #150454]
 			- 20210318@Irena.Vo: Update get CategoryID for color [RedmineID: #150457]
-
+            - 20210525@Irena.Vo: Change col name PinCustomerCategory, TaggingExclusion: CustID -> CTSCustID [RedmineID: #152965] 
 		Param's Explanation:
-			CALL CTS_DataCenter.CTS_DC_CustClassification_Get('1');
-	*/ 
+			- CALL CTS_DataCenter.CTS_DC_CustClassification_Get('1');
+	 */ 
 	DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory;
     CREATE TEMPORARY TABLE Temp_LatestRecordOfCategory(
-    	CategoryID		SMALLINT UNSIGNED
-	,   CategoryName   	VARCHAR(200) 
-	,   CategoryType    SMALLINT UNSIGNED -- 1: ParentID = 200, 2: ParentID = 50
-    ,	ParentID		SMALLINT UNSIGNED
+			CategoryID		SMALLINT UNSIGNED
+		,   CategoryName   	VARCHAR(200) 
+		,   CategoryType    SMALLINT UNSIGNED /*1: ParentID = 200, 2: ParentID = 50*/
+		,	ParentID		SMALLINT UNSIGNED
     );
    
-    -- Get Lastest category list
-	INSERT INTO Temp_LatestRecordOfCategory (CategoryID, CategoryName, CategoryType, ParentID)
-	SELECT DISTINCT  
-				CASE WHEN cc.ParentID = 50 THEN cc.CategoryGroup
-					 ELSE cate.CategoryID
-				END
-			,	cc.CategoryName
-            ,	CASE	WHEN cc.ParentID = 50 THEN 2 -- red
-						WHEN cc.ParentID = 200  THEN 1 -- any color 
-				END 
-			,	cc.ParentID
+	INSERT INTO Temp_LatestRecordOfCategory(CategoryID, CategoryName, CategoryType, ParentID)
+	SELECT DISTINCT (CASE WHEN cc.ParentID = 50 THEN cc.CategoryGroup ELSE cate.CategoryID END)
+				,	cc.CategoryName
+				,	(CASE WHEN cc.ParentID = 50 THEN 2 WHEN cc.ParentID = 200  THEN 1 END) 
+				,	cc.ParentID
 	FROM	CTS_DataCenter.CTSCustomerClassification AS cate
-		INNER JOIN 	CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
-    WHERE	cate.CustID = ip_CustID AND cc.ParentID IN (50, 200);
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
+    WHERE	cate.CTSCustID = ip_CTSCustID AND cc.ParentID IN (50, 200);
     
-    -- Show results
-     IF EXISTS (SELECT 1 FROM CTS_DataCenter.PinCustomerCategory WHERE CustID = ip_CustID) THEN
-			SELECT 1 AS IsPinCategory;
-	 ELSE 
-            SELECT 0 AS IsPinCategory;
-	 END IF;
+ 
+    IF EXISTS (SELECT 1 FROM CTS_DataCenter.PinCustomerCategory WHERE CTSCustID = ip_CTSCustID) THEN SELECT 1 AS IsPinCategory;
+	ELSE SELECT 0 AS IsPinCategory;
+	END IF;
         
-	 IF EXISTS (SELECT 1 FROM CTS_DataCenter.TaggingExclusion WHERE CustID = ip_CustID) THEN
-			SELECT 1 AS IsExcludedTagAssPA;
-	 ELSE 
-            SELECT 0 AS IsExcludedTagAssPA;
-	 END IF; 
+	IF EXISTS (SELECT 1 FROM CTS_DataCenter.TaggingExclusion WHERE CTSCustID = ip_CTSCustID) THEN SELECT 1 AS IsExcludedTagAssPA;
+	ELSE SELECT 0 AS IsExcludedTagAssPA;
+	END IF; 
 
-	 SELECT  temp.CategoryType, temp.CategoryID,  temp.CategoryName, temp.ParentID
-     FROM Temp_LatestRecordOfCategory AS temp;
+	SELECT CategoryType, CategoryID, CategoryName, ParentID FROM Temp_LatestRecordOfCategory;
 END$$
-
 DELIMITER ;
