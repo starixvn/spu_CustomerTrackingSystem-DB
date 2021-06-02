@@ -11,7 +11,7 @@ Reviewer:
 
 #####################CTS_DataCenter.SportGroup
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
-VALUES(20,'MatchMonitor_LastScannedCustID','Match Monitor - Last Scanned CustID','BIGINT UNSIGNED','0');
+VALUES(20,'MatchMonitor_LastScannedTransID','Match Monitor - Last Scanned TransID','BIGINT UNSIGNED','0');
 /*
 #####################CTS_Admin.LogType
 INSERT INTO CTS_Admin.LogType (LogTypeName,LogTypeDescription)

@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitor (
     ,	MatchID			BIGINT UNSIGNED
 	, 	BettypeID		INT UNSIGNED
     , 	EventDate		DATE
+    , 	KickOffTime		DATETIME
+    ,	EventStatus		VARCHAR(50)
     ,	HomeID			INT UNSIGNED
 	, 	AwayID			INT UNSIGNED
     ,	LeagueID		INT UNSIGNED
@@ -21,7 +23,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitor (
     , 	IsVerified		BIT DEFAULT 0
 	, 	VerifiedDate	DATETIME
     ,	VerifiedBy		INT UNSIGNED
-    ,	INDEX			IX_MatchMonitor_EventDateBettypeMatchID(EventDate,BettypeID,MatchID)
+    ,	UNIQUE INDEX	IX_MatchMonitor_EventDateBettypeMatchID(EventDate,BettypeID,MatchID)
 	, 	INDEX			IX_MatchMonitor_IsVerified(IsVerified)
 ) ENGINE=INNODB AUTO_INCREMENT=1;
 
@@ -46,6 +48,9 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorStaging (
 		TransID			BIGINT UNSIGNED
 	, 	TransDate		DATETIME(3)
     ,	MatchID			BIGINT UNSIGNED
+    , 	EventDate		DATE
+    , 	KickOffTime		DATETIME
+    ,	EventStatus		VARCHAR(50)
     ,	HomeID			INT UNSIGNED
 	, 	AwayID			INT UNSIGNED
     ,	LeagueID		INT UNSIGNED
@@ -55,6 +60,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorStaging (
     ,	Stake			DECIMAL(20,4)
     ,	LiveHomeScore	SMALLINT UNSIGNED
     ,	LiveAwayScore	SMALLINT UNSIGNED
+    ,	TotalScore		SMALLINT UNSIGNED
     ,	GroupID			BIGINT UNSIGNED
     ,	OriginGroupID	BIGINT UNSIGNED
 	, 	PRIMARY KEY		PK_MatchMonitorStaging_TransIDMatchIDBettypeID(TransID,MatchID,BettypeID,LiveIndicator)

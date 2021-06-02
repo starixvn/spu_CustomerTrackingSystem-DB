@@ -45,6 +45,11 @@ BEGIN
         ,	s.IsVerified
         ,	s.VerifiedDate
         ,	u.UserName AS VerifiedBy
+        ,	CASE WHEN s.EventStatus = 'closed' THEN 4 #'Closed'
+				WHEN s.EventDate > CURDATE() THEN 1 #'Early'
+                WHEN s.EventStatus = 'running' AND s.KickOffTime <= NOW() THEN 2 # 'Live'
+				WHEN s.EventDate = CURDATE() THEN 3 #'Today'
+			END AS EventGroup
 	FROM   CTS_DataCenter.MatchMonitor AS s
 		INNER JOIN Temp_Bettype AS b ON s.BettypeID = b.BettypeID
         LEFT JOIN CTS_Admin.CTSUser AS u ON s.VerifiedBy = u.UserID
