@@ -3,7 +3,6 @@ DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule_Complete`;
 DELIMITER $$
 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule_Complete`(
-	IN ip_LastTransID INT
 )
   SQL SECURITY INVOKER
 BEGIN
@@ -16,31 +15,44 @@ BEGIN
 			- 	20210526@Casey.Huynh: Created [Redmine ID: 152883]
 		
 		Param's Explanation (filtered by):
-		CALL CTS_DataCenter.CTS_DC_MatchMonitor_Staging_Insert(
-			'[
-				{"TransID":111928688806,"TransDate":"2021-05-17 07:48:52.527","MatchID":43606436,"LiveIndicator":1,"LiveHomeScore":1,"LiveAwayScore":0,"BettypeID":8,"CustID":38290463,"Stake":50}
-			]');
+		CALLCTS_DC_MatchMonitor_Rule_Complete();
 
 		Example:
 			
 	*/
-    /*DECLARE lv_CustList LONGTEXT;
-        
-	SELECT 	lv_CustList = GROUP_CONCAT(CustID)
+    DECLARE	lv_Last3mMinTime DATETIME(3);
+    DECLARE	lv_Last3mMaxTime DATETIME(3);  
+	DECLARE	lv_LastTransID BIGINT;   
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_Last3mTransGroup;
+    CREATE TEMPORARY TABLE Temp_Last3mTransGroup
+    (
+		OriginGroupID	INT
+    );
+    
+    SELECT 	MAX(TransDate) , MAX(TransID)
+    INTO 	lv_Last3mMaxTime, lv_LastTransID
+    FROM	CTS_DataCenter.MatchMonitorStaging;    
+    
+    SELECT  MIN(TransDate) 
+    INTO 	lv_Last3mMinTime
     FROM	CTS_DataCenter.MatchMonitorStaging
-    WHERE	OriginalGroup = ip_TempGroupID;
+    WHERE   TransDate > TIMESTAMPADD(MINUTE, lv_Last3mMaxTime,-3 );
     
-    CALL CTS_DC_Association_GetGroup(lv_CustList);
+    INSERT INTO Temp_Last3mTransGroup(OriginGroupID)
+    SELECT 	DISTINCT OriginGroupID
+    FROM 	CTS_DataCenter.MatchMonitorStaging
+    WHERE	TransDate >= lv_Last3mMinTime;
     
-    UPDATE CTS_DataCenter.MatchMonitorStaging AS mns
-		LEFT JOIN Temp_Group AS tmpGp ON mns.CustID =  tmpGp.CustID
-	SET	  mns.OriginalGroup = tmpGp.GroupID
-		, mns.IsHedging = tmpGp.IsHedging
-    WHERE  OriginalGroup = ip_TempGroupID;*/
-    
+    DELETE 	mms
+    FROM	CTS_DataCenter.MatchMonitorStaging AS mms
+		LEFT JOIN Temp_Last3mTransGroup AS tmpTg ON mms.OriginGroupID = tmpTg.OriginGroupID
+	WHERE	mms.TransDate < lv_Last3mMinTime AND tmpTg.OriginGroupID IS NULL;    
+
+	/* Update Parameter*/
     UPDATE 	CTS_DataCenter.SystemParameter
-    SET 	ParameterValue = ip_LastTransID
-    WHERE 	ID = 20;
+    SET 	ParameterValue = lv_LastTransID
+    WHERE 	ParameterID = 20;
     
 END$$
 DELIMITER ;

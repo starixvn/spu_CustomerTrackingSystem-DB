@@ -19,24 +19,29 @@ BEGIN
 		Param's Explanation (filtered by):
 		CALL CTS_DataCenter.CTS_DC_MatchMonitor_Staging_Insert(
 			'[
-				{"TransID":111928688806,"TransDate":"2021-05-17 07:48:52.527","MatchID":43606436,"LiveIndicator":1,"LiveHomeScore":1,"LiveAwayScore":0,"Bettype":8,"CustID":38290463,"Stake":50}
+					{"TransID": 111928688807,"TransDate" : "2021-05-17 07:48:52.533","MatchID" : 43614953,"EventDate" : "2021-05-17 00:00:00","KickOffTime" : "2021-05-17 00:00:00","EventStatus" : "running","HomeID" : 953,"AwayID" : 113,"LeagueID" : 3,"Bettype" : 3,"LiveIndicator" : "1","CustID" : 12500792,"Stake" : 20,"LiveHomeScore" : 0,"LiveAwayScore" : 2}
 			]');
 
 		Example:
 			
 	*/
-	DECLARE lv_TempGroupID TINYINT;
+	DECLARE lv_TimeStep TINYINT;
     
-    SET lv_TempGroupID = 30;
-
+    SET lv_TimeStep = 30;
+	
+    INSERT INTO MatchMonitoringTrace(Step, StartTime)
+    VALUES(1,NOW());
+    
 	DROP TEMPORARY TABLE IF EXISTS Temp_TransStaging;
 	CREATE TEMPORARY TABLE Temp_TransStaging(
-			MatchID			INT UNSIGNED NOT NULL
+			MatchID			BIGINT UNSIGNED NOT NULL
 		,	HomeID			INT
         ,	AwayID			INT
+        ,	EventStatus		VARCHAR(50)
+        ,	KickOffTime		DATETIME
         ,	LeagueID		INT
         ,	EventDate		DATETIME
-		,	LiveIndicator 	BIT(1) NOT NULL        
+		,	LiveIndicator 	BIT NOT NULL        
         ,	LiveHomeScore	SMALLINT UNSIGNED NOT NULL
 		,	LiveAwayScore	SMALLINT UNSIGNED NOT NULL
         ,	TotalScore		SMALLINT UNSIGNED NOT NULL
@@ -50,7 +55,7 @@ BEGIN
         ,	PreTime			DATETIME(3)
         ,	TempGroupID		INT
 
-		,	PRIMARY KEY (MatchID, LiveIndicator, TotalScore, BettypeID, TransID)
+		,	PRIMARY KEY (TransID)
 		,	INDEX IX_MatchMonitorStaging_GroupID (GroupID)
 		,	INDEX IX_MatchMonitorStaging_OriginGroupID (OriginGroupID)
 	) ENGINE=MEMORY;  
@@ -62,9 +67,11 @@ BEGIN
 		,	TotalScore		SMALLINT UNSIGNED NOT NULL
 		,	BettypeID		INT UNSIGNED NOT NULL	
 		,	MinTransID		BIGINT UNSIGNED
+        ,	TempGroupID		INT DEFAULT 0
 		,	MinTransDate	DATETIME(3)
+        ,	MaxTransDate	DATETIME(3)
         ,	GroupOrder		INT
-		,	PRIMARY KEY (MatchID, LiveIndicator, TotalScore, BettypeID)
+		,	PRIMARY KEY (MatchID, LiveIndicator, TotalScore, BettypeID, TempGroupID)
 	) ENGINE=MEMORY;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ParentGroup;
@@ -72,12 +79,14 @@ BEGIN
 		TempGroupID INT
     ) ENGINE=MEMORY;
     
-	INSERT IGNORE INTO Temp_TransStaging(TransID, TransDate, MatchID, HomeID, AwayID, LeagueID, EventDate, LiveIndicator, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, CustID, Stake)
+	INSERT IGNORE INTO Temp_TransStaging(TransID, TransDate, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveIndicator, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, CustID, Stake)
 	SELECT  js.TransID
 		,	js.TransDate
 		,	js.MatchID
         ,	js.HomeID
         ,	js.AwayID
+        ,	js.EventStatus
+        ,	js.KickOffTime
         ,	js.LeagueID
         ,	js.EventDate
 		,	js.LiveIndicator
@@ -91,9 +100,11 @@ BEGIN
 					 "$[*]" COLUMNS(
 								TransID			BIGINT UNSIGNED PATH "$.TransID" 
 							,	TransDate		DATETIME(3) PATH "$.TransDate" 
-							,	MatchID			INT	PATH "$.MatchID"
+							,	MatchID			BIGINT	UNSIGNED PATH "$.MatchID"
                             ,	HomeID			INT	PATH "$.HomeID" 
                             ,	AwayID			INT	PATH "$.AwayID" 
+                            ,	EventStatus		VARCHAR(50)	PATH "$.EventStatus" 
+                            ,	KickOffTime		DATETIME PATH "$.KickOffTime" 
                             ,	LeagueID		INT	PATH "$.LeagueID"
                             ,	EventDate		DATETIME PATH "$.EventDate"
 							,	LiveIndicator	INT	PATH "$.LiveIndicator" 
@@ -109,37 +120,56 @@ BEGIN
 	SELECT 		MatchID,  LiveIndicator, LiveHomeScore, LiveAwayScore, LiveHomeScore + LiveAwayScore, BettypeID, TransID, CustID, TransDate, Stake, GroupID, OriginGroupID
 	FROM		MatchMonitorStaging;
 	
-    SET @GroupOrder = 0;
-	INSERT INTO Temp_TransGroup(MatchID, LiveIndicator, TotalScore, BettypeID, MinTransID, MinTransDate, GroupOrder) 
-	SELECT 		MatchID, LiveIndicator, TotalScore, BettypeID, MIN(TransID), MIN(TransDate), @GroupOrder:= @GroupOrder+1
-	FROM		Temp_TransStaging
-	GROUP BY 	MatchID, LiveIndicator, TotalScore, BettypeID;
+    SET @GroupOrder = 0;  
+	INSERT INTO Temp_TransGroup(MatchID, LiveIndicator, TotalScore, BettypeID, MinTransID, MinTransDate) 
+	SELECT 		MatchID, LiveIndicator, TotalScore, BettypeID, MIN(TransID), MIN(TransDate)
+	FROM		Temp_TransStaging AS tmpTs
+	GROUP BY 	tmpTs.MatchID, tmpTs.LiveIndicator, tmpTs.TotalScore, tmpTs.BettypeID;
 
-	SET @TempGroupID=0;
+    SET @TempGroupID=0;
 	SET @PreTime=NULL;
 	UPDATE  Temp_TransStaging AS tmpTs
-		INNER JOIN 	Temp_TransGroup AS tmpTg ON  tmpTs.MatchID = tmpTg.MatchID AND  tmpTs.LiveIndicator = tmpTg.LiveIndicator AND  tmpTs.TotalScore=tmpTg.TotalScore AND tmpTs.BettypeID = tmpTg.BettypeID
-	 SET	tmpTs.OriginGroupID	= MinTransID  
-		,	tmpTs.PreTime		= IF(tmpTs.TransID = tmpTg.MinTransID, @PreTime:=tmpTg.MinTransDate, @PreTime) 	
-		, 	tmpTs.TempGroupID	= IF(tmpTs.TransID = tmpTg.MinTransID,@TempGroupID:=@TempGroupID +1, IF(TIMESTAMPDIFF(MINUTE,@PreTime, @PreTime:=tmpTs.TransDate)> lv_TempGroupID , @TempGroupID:=@TempGroupID +1 , @TempGroupID));
-	   
-    INSERT INTO Temp_ParentGroup(TempGroupID)
-    SELECT		TempGroupID
-    FROM		Temp_TransStaging
-    GROUP BY	TempGroupID
-    HAVING		COUNT(1) > 1;
+		INNER JOIN 	Temp_TransGroup AS tmpTg ON  tmpTs.MatchID = tmpTg.MatchID AND  tmpTs.LiveIndicator = tmpTg.LiveIndicator 
+					AND  tmpTs.TotalScore=tmpTg.TotalScore AND tmpTs.BettypeID = tmpTg.BettypeID
+	 SET	tmpTs.PreTime		= IF(tmpTs.TransID = tmpTg.MinTransID, @PreTime:=tmpTg.MinTransDate, @PreTime) 	
+		, 	tmpTs.TempGroupID	= IF(tmpTs.TransID = tmpTg.MinTransID,@TempGroupID:=@TempGroupID +1, IF(TIMESTAMPDIFF(MINUTE,@PreTime, @PreTime:=tmpTs.TransDate)> lv_TimeStep , @TempGroupID:=@TempGroupID +1 , @TempGroupID))
+	 ;  
 	
-    INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStaging(TransID, TransDate, MatchID, HomeID, AwayID, LeagueID, EventDate, LiveIndicator, LiveHomeScore, LiveAwayScore, BettypeID, CustID, Stake, OriginGroupID)
+    TRUNCATE TABLE Temp_TransGroup;
+    INSERT INTO Temp_TransGroup(MatchID, LiveIndicator, TotalScore, BettypeID, TempGroupID, MinTransID, MinTransDate, GroupOrder) 
+	SELECT 		MatchID, LiveIndicator, TotalScore, BettypeID, TempGroupID, MIN(TransID), MIN(TransDate), @GroupOrder:= @GroupOrder+1
+	FROM		Temp_TransStaging AS tmpTs
+	GROUP BY 	tmpTs.MatchID, tmpTs.LiveIndicator, tmpTs.TotalScore, tmpTs.BettypeID, tmpTs.TempGroupID
+    HAVING COUNT(DISTINCT CustID)>1 AND SUM(Stake) >= 500;
+
+    UPDATE  Temp_TransStaging AS tmpTs
+    INNER JOIN Temp_TransGroup AS tmTg ON tmpTs.MatchID = tmTg.MatchID AND tmpTs.LiveIndicator AND tmTg.LiveIndicator
+					AND tmpTs.TotalScore = tmTg.TotalScore AND tmpTs.BettypeID = tmTg.BettypeID AND tmpTs.TempGroupID = tmTg.TempGroupID
+	SET tmpTs.OriginGroupID = tmTg.GroupOrder;
+	     
+    INSERT INTO Temp_ParentGroup(TempGroupID)
+    SELECT		 tmpTs.TempGroupID
+    FROM		Temp_TransStaging AS tmpTs
+    GROUP BY	tmpTs.MatchID, tmpTs.LiveIndicator, tmpTs.TotalScore, tmpTs.BettypeID, tmpTs.TempGroupID
+	HAVING		COUNT(1) > 1 AND SUM(Stake) >=500;
+
+	TRUNCATE TABLE CTS_DataCenter.MatchMonitorStaging;
+    
+    INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStaging(TransID, TransDate, MatchID, HomeID, AwayID, EventStatus, KickOffTime
+			, LeagueID, EventDate, LiveIndicator, LiveHomeScore, TotalScore, LiveAwayScore, BettypeID, CustID, Stake, OriginGroupID)
     SELECT 	TransID
 		,	TransDate
 		,	MatchID
 		,	HomeID
         ,	AwayID
+        ,	EventStatus
+        ,	KickOffTime
         , 	LeagueID
         ,	EventDate
 		,	LiveIndicator
 		,	LiveHomeScore
 		,	LiveAwayScore
+        ,	TotalScore
 		,	BettypeID
 		,	CustID
 		,	Stake
@@ -148,5 +178,22 @@ BEGIN
 		LEFT JOIN Temp_ParentGroup AS tmpGp ON tmpTs.TempGroupID = tmpGp.TempGroupID;
     
     SELECT TempGroupID FROM Temp_ParentGroup;
+    
+    /**********LOG**************/
+    SELECT	COUNT(1), MIN(TransID),MAX(TransID) 
+    INTO	@CountTrans, @MinTransID, @MaxTransID
+    FROM	Temp_TransStaging;
+    
+    SET @CountTempGroup = (SELECT COUNT(1) FROM Temp_ParentGroup);
+    
+    SELECT 	MAX(ID)
+    INTO 	@Id
+    FROM 	MatchMonitoringTrace;
+    
+    UPDATE	MatchMonitoringTrace
+    SET 	EndTime = NOW(), MinTransID = @MinTransID , MaxTransId = @MaxTransID
+			, Value01 = @CountTrans, Value02 = @CountTempGroup
+            , Notes = 'CountTrans_CountTempGroup'
+    WHERE ID = @Id;
 END$$
 DELIMITER ;
