@@ -58,7 +58,7 @@ BEGIN
 		,	PRIMARY KEY (TransID)
 		,	INDEX IX_MatchMonitorStaging_GroupID (GroupID)
 		,	INDEX IX_MatchMonitorStaging_OriginGroupID (OriginGroupID)
-	) ENGINE=MEMORY;  
+	);  
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_TransGroup;
 	CREATE TEMPORARY TABLE Temp_TransGroup(
@@ -72,12 +72,12 @@ BEGIN
         ,	MaxTransDate	DATETIME(3)
         ,	GroupOrder		INT
 		,	PRIMARY KEY (MatchID, LiveIndicator, TotalScore, BettypeID, TempGroupID)
-	) ENGINE=MEMORY;
+	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ParentGroup;
 	CREATE TEMPORARY TABLE Temp_ParentGroup(
 		TempGroupID INT
-    ) ENGINE=MEMORY;
+    );
     
 	INSERT IGNORE INTO Temp_TransStaging(TransID, TransDate, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveIndicator, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, CustID, Stake)
 	SELECT  js.TransID
@@ -152,8 +152,6 @@ BEGIN
     FROM		Temp_TransStaging AS tmpTs
     GROUP BY	tmpTs.MatchID, tmpTs.LiveIndicator, tmpTs.TotalScore, tmpTs.BettypeID, tmpTs.TempGroupID
 	HAVING		COUNT(1) > 1 AND SUM(Stake) >=500;
-
-	TRUNCATE TABLE CTS_DataCenter.MatchMonitorStaging;
     
     INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStaging(TransID, TransDate, MatchID, HomeID, AwayID, EventStatus, KickOffTime
 			, LeagueID, EventDate, LiveIndicator, LiveHomeScore, TotalScore, LiveAwayScore, BettypeID, CustID, Stake, OriginGroupID)

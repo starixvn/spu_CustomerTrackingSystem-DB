@@ -33,7 +33,7 @@ BEGIN
 		,	AssGroupID 		INT
         ,	GroupID			INT
         ,	IsHedging		INT
-	)ENGINE=MEMORY;        
+	);        
         
 	SELECT 	GROUP_CONCAT(CustID)
 	INTO	lv_CustList
@@ -50,7 +50,7 @@ BEGIN
     FROM	CTS_DataCenter.MatchMonitorStaging AS mms
 		INNER JOIN Temp_Group AS tmpGp ON mms.CustID =  tmpGp.CustID AND OriginGroupID = ip_TempGroupID 
 	GROUP BY mms.OriginGroupID, tmpGp.GroupID , mms.GroupID, tmpGp.IsHedging
-    HAVING	Sum(Stake)>=500;  
+    HAVING	SUM(Stake)>=500;  
     
     UPDATE CTS_DataCenter.MatchMonitorStaging AS mms
 		LEFT JOIN Temp_Group AS tmpGp ON mms.CustID = tmpGp.CustID 
