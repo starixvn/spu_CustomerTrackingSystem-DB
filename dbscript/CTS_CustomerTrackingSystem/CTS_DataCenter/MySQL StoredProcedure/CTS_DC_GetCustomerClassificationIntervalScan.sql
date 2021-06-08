@@ -101,7 +101,7 @@ BEGIN
 	SELECT (((temp.ID-1) DIV ip_NoOfRecord) + 1) AS BatchID
 			, 	temp.CustID 		
 			, 	200 AS SportGroupID	
-			, 	temp.CategoryID
+			, 	temp.CategoryGroup AS CategoryID
 	FROM Temp_ScanList AS temp;   
     
 	IF NOT EXISTS (SELECT 1 FROM Temp_ScanList LIMIT 1)
