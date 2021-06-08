@@ -29,8 +29,6 @@ BEGIN
     
     SET lv_TimeStep = 30;
 	
-    INSERT INTO MatchMonitoringTrace(Step, StartTime)
-    VALUES(1,NOW());
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_TransStaging;
 	CREATE TEMPORARY TABLE Temp_TransStaging(
@@ -177,21 +175,6 @@ BEGIN
     
     SELECT TempGroupID FROM Temp_ParentGroup;
     
-    /**********LOG**************/
-    SELECT	COUNT(1), MIN(TransID),MAX(TransID) 
-    INTO	@CountTrans, @MinTransID, @MaxTransID
-    FROM	Temp_TransStaging;
-    
-    SET @CountTempGroup = (SELECT COUNT(1) FROM Temp_ParentGroup);
-    
-    SELECT 	MAX(ID)
-    INTO 	@Id
-    FROM 	MatchMonitoringTrace;
-    
-    UPDATE	MatchMonitoringTrace
-    SET 	EndTime = NOW(), MinTransID = @MinTransID , MaxTransId = @MaxTransID
-			, Value01 = @CountTrans, Value02 = @CountTempGroup
-            , Notes = 'CountTrans_CountTempGroup'
-    WHERE ID = @Id;
+
 END$$
 DELIMITER ;
