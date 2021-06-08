@@ -1,3 +1,4 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
 /*
 Creator: 20200423@Long.Luu
 Task:	 	Customer Category
