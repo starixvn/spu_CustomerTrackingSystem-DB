@@ -7,7 +7,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 ALTER PROCEDURE [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_Daily]
 	@ListCustIds			VARCHAR(MAX),
-	@IsCheckLast14Days		BIT = 1 
+	@IsCheckLast14Days		BIT = 0 
 AS
 /*
 	Created: 20200901@Long.Luu
@@ -35,12 +35,14 @@ BEGIN
 		,	@GENERALCATEGORY_SMARTPUNTER		INT = 203
 		,	@GENERALCATEGORY_HIGHRISKPUNTER		INT = 204
 		,	@GENERALCATEGORY_VIP				INT = 205
-		,	@GENERALCATEGORY_PROBATION			INT = 206;
+		,	@GENERALCATEGORY_PROBATION			INT = 206
+		,	@GENERALCATEGORY_INACTIVE			INT = 1001;
 
-	DECLARE @CurrentDateTime			DATETIME = GETDATE();
-	DECLARE @CurrentDate				DATE	 = GETDATE();
-	DECLARE @Back14DaysFromToday		DATE	 = DATEADD(DAY, -14, @CurrentDate);
-	DECLARE @Back3DaysFromToday			DATE	 = DATEADD(DAY, -3, @CurrentDate);
+	DECLARE @CurrentDateTime		DATETIME = GETDATE();
+	DECLARE @CurrentDate			DATE	 = GETDATE();
+	DECLARE @Back3DaysFromToday		DATE	 = DATEADD(DAY, -3, @CurrentDate);	
+	DECLARE	@ToDate					DATE	 = DATEADD(DAY, -1, GETDATE());
+	DECLARE	@From30Date				DATE	 = DATEADD(DAY, - 30, @ToDate);
 
 	IF	OBJECT_ID('tempdb..#tmpRawData') IS NOT NULL
 		DROP TABLE	#tmpRawData;
@@ -70,16 +72,6 @@ BEGIN
 		[ActiveDays]		INT NULL
 	);
 
-	CREATE CLUSTERED INDEX IX_tmpCustomerAccummulatedInfo_Margin ON #tmpCustomerAccummulatedInfo(
-		Margin				ASC,
-		TurnoverRM			ASC
-	);
-
-	CREATE NONCLUSTERED INDEX IX_tmpCustomerAccummulatedInfo_ActiveDaysBetCount ON #tmpCustomerAccummulatedInfo(
-		ActiveDays			ASC,
-		BetCount			ASC
-	);
-
 	CREATE NONCLUSTERED INDEX IX_tmpCustomerAccummulatedInfo_Site ON #tmpCustomerAccummulatedInfo(
 		[Site]				ASC
 	);
@@ -91,6 +83,11 @@ BEGIN
 	
 	CREATE TABLE #tmpCustomers(
 			CustId			INT PRIMARY KEY
+		,	IsActive		BIT DEFAULT 0
+	);
+
+	CREATE NONCLUSTERED INDEX IX_tmpCustomers_Site ON #tmpCustomers(
+		IsActive			ASC
 	);
 
 	IF OBJECT_ID('tempdb..#tmpActiveCustomers') IS NOT NULL
@@ -119,46 +116,48 @@ BEGIN
 	INSERT INTO #tmpCustomers(CustId)
 	SELECT val FROM dbo.SPU_StrSplit(@ListCustIds, ',');
 
-	-- START
-/*	IF(@IsCheckLast14Days = 1)
-	BEGIN		
-		-- #0: Get active customers in last 14 days
-		INSERT INTO #tmpActiveCustomers(CustId)
-		EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustIDList_ByModifiedDate  @LastModifiedDatetime = @Back14DaysFromToday;
-	
-		-- #1: Remove inactive customers to be scanned
-		DELETE r WITH(ROWLOCK)
-		FROM #tmpCustomers AS r
-			LEFT JOIN #tmpActiveCustomers AS a ON a.CustId = r.CustId
-		WHERE a.CustId IS NULL;
-	END;
-*/
-	-- #2: GetCustomer Accummulated data
-	SELECT @ListCustIds = STUFF((SELECT ',', CONVERT(VARCHAR(15), CustId) 
-								FROM #tmpCustomers WITH (NOLOCK)
-								FOR XML PATH('')), 1, 1, '');
-
-	INSERT INTO #tmpRawData(CustId, MainDBSportId, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDays)
-	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @ListCustIds;	
-	
-	-- #3: Remove closed & disabled accounts & SMA account & Internal Account
+	-- Remove closed & disabled accounts & SMA account & Internal Account
 	DELETE r WITH(ROWLOCK)
 		OUTPUT DELETED.CustId INTO #tmpDeletedCustomers(CustId)
-	FROM #tmpRawData AS r
+	FROM #tmpCustomers AS r
 		LEFT JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON r.CustId = c.custid
 	WHERE c.closed = 1 OR c.[Enabled] = 0
 	   OR c.recommend IN (52466,5707545)
 	   OR c.username LIKE '%CashOut';
 
-	-- #4: Remove closed & disabled of CN88
+	/*-- Remove closed & disabled of CN88
 	DELETE r WITH(ROWLOCK)
 		OUTPUT DELETED.CustId INTO #tmpDeletedCustomers(CustId)
 	FROM #tmpRawData AS r
 		LEFT JOIN bodb02.dbo.CS_CustomerStatus AS c WITH(NOLOCK) ON r.CustId = c.custid
 	WHERE (c.InactiveInfo > 0)
 		OR (c.InactiveInfo = 0 AND c.SuspendedInfo > 0);
+	*/
+
+	-- START
+	-- #1: Remove inactive customers to be scanned
+	INSERT INTO	#tmpActiveCustomers (CustId)
+	SELECT DISTINCT CustID
+	FROM bodb_Account.dbo.[FactCustProductStatsDetail] AS s WITH(NOLOCK)
+		INNER JOIN bodb02.dbo.League AS l WITH(NOLOCK) ON s.LeagueID = l.leagueid
+	WHERE s.RptFromDate >= @From30Date AND s.RptToDate <= @ToDate
+		AND l.LeagueGroupID NOT IN (42,74,108,113);
+
+	UPDATE r WITH(ROWLOCK, UPDLOCK)
+	SET r.IsActive = 1
+	FROM #tmpCustomers AS r
+		INNER JOIN #tmpActiveCustomers AS a ON a.CustId = r.CustId;
+
+	-- #2: GetCustomer Accummulated data
+	SELECT @ListCustIds = STUFF((SELECT ',', CONVERT(VARCHAR(15), CustId) 
+								FROM #tmpCustomers WITH (NOLOCK)
+								WHERE IsActive = 1
+								FOR XML PATH('')), 1, 1, '');
+
+	INSERT INTO #tmpRawData(CustId, MainDBSportId, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDays)
+	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @ListCustIds;	
 	
-	-- #5: Sum data by custid
+	-- #3: Sum data by custid
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
 	SELECT	a.CustId
 		,	SUM(a.TurnoverRM)
@@ -174,12 +173,12 @@ BEGIN
 	FROM #tmpCustomerAccummulatedInfo AS a
 		LEFT JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON a.CustId = c.custid;
 
-	-- Remove 'Odd Feed Sites'
+	-- #4: Remove 'Odd Feed Sites'
 	DELETE a
 	FROM  #tmpCustomerAccummulatedInfo AS a WITH(ROWLOCK)
 	WHERE (a.Site = 'NextBet' OR a.Site = '9wickets' OR a.Site = '9wsports');
 	
-	-- #6: Classify new members
+	-- #5: Classify new members
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT	c.CustId
 		,	200
@@ -194,7 +193,8 @@ BEGIN
 		LEFT JOIN #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK) ON c.CustId = a.CustId
 		LEFT JOIN #tmpDeletedCustomers AS dc WITH(NOLOCK) ON c.CustId = dc.CustId
 	WHERE a.CustId IS NULL
-		AND dc.CustId IS NULL;
+		AND dc.CustId IS NULL
+		AND c.IsActive = 1;
 		
 	-- Remove 'haifa/manbetX doesn't change category'
 	DELETE a
@@ -222,7 +222,21 @@ BEGIN
 		,	a.ActiveDays
 	FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK);
 
-	-- #8: Delete old data
+	-- #8: Classify Inactive members
+	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
+	SELECT	c.CustId
+		,	200
+		,	@GENERALCATEGORY_INACTIVE AS CategoryId
+		,	@CurrentDate AS CreatedDate
+		,	@CurrentDateTime AS CreatedTime
+		,	0
+		,	0
+		,	0
+		,	0
+	FROM #tmpCustomers AS c WITH(NOLOCK)
+	WHERE c.IsActive = 0;
+
+	-- #9: Delete old data
 /*	WHILE(1 = 1)
 	BEGIN
 		DELETE TOP (5000)
