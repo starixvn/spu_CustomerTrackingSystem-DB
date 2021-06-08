@@ -29,6 +29,7 @@ BEGIN
                 - 20210510@Casey.Huynh: Exclude Customer of Odd Feed Sites [Redmine ID: 154694]
                 - 20210512@Casey.Huynh: Exclude Customer of Internal Account [Redmine ID: 154844]
                 - 20210525@Irena.Vo: Change col name PinCustomerCategory: CustID -> CTSCustID [Redmine ID: 152965]
+                - 20210608@Casey.Huynh: Add Inactive Category [Redmine ID: 156465]
 		Param's Explanation (filtered by):
         Example:
 				- CALL CTS_DataCenter.CTS_DC_InsertMainCustomerClassification('[{"CustId": "2324948","CategoryId":"206","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","LastXDaysMargin":100,"ProbationPeriodWinloss":100,"TaggingID":13,"TaggingType":1}]',@opp);
@@ -132,7 +133,7 @@ BEGIN
 		LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON temp.CustID = cate.CustID AND cate.SportGroupID = 200
 	SET		temp.ExistedCateGroup = 201
 	WHERE 	temp.ActionType = 0 AND temp.DWCateGroup <> 201 AND cate.CustID IS NULL; -- fix issue concurrence.
-    
+
     UPDATE Temp_NewClassification AS temp
         LEFT JOIN TaggingToCategory AS tag ON tag.CategoryGroup = temp.ExistedCateGroup AND tag.TaggingType = 1 AND temp.TaggingID = tag.TaggingID
 	SET		temp.ExistedCateID = IFNULL(tag.CategoryID,temp.ExistedCateGroup)
@@ -148,7 +149,7 @@ BEGIN
     
    /* UPDATE NEW CATEGORY */
 	UPDATE 	Temp_NewClassification AS temp 
-	SET 	temp.NewCateGroup = CASE WHEN temp.ExistedCateGroup IN (201,202,205) AND temp.DWCateGroup IN (203,204) THEN 206 ELSE temp.DWCateGroup END
+	SET 	temp.NewCateGroup = CASE WHEN temp.ExistedCateGroup IN (201,202,205,1000) AND temp.DWCateGroup IN (203,204) THEN 206 ELSE temp.DWCateGroup END
 	WHERE 	temp.ActionType IN (0,1);
 	
     UPDATE 	Temp_NewClassification AS temp 
@@ -225,7 +226,8 @@ BEGIN
 		, 	lv_CurrentDateTime
 		,   DATE(lv_CurrentDateTime) AS LastScannedDate
 	FROM Temp_NewClassification AS temp
-	WHERE temp.NewCateGroup = 206 AND ((temp.ActionType = 0 AND temp.ExistedCateGroup = 201) OR (temp.ActionType = 1  AND temp.ExistedCateGroup <> 206));
+	WHERE temp.NewCateGroup = 206 AND ((temp.ActionType = 0 AND temp.ExistedCateGroup = 201) 
+			OR (temp.ActionType = 1  AND temp.ExistedCateGroup <> 206));
     
     #==========================================WRITE LOG======================================================== 
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History  -- fix issue concurrence.

@@ -3,8 +3,7 @@ DROP procedure IF EXISTS `CTS_DataCenter`.`CTS_DC_GetCustomerClassificationByCat
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_GetCustomerClassificationByCategory`(
-        IN ip_CategoryIDList 	VARCHAR(1000)
-    ,   IN ip_CustSport      	JSON
+		IN ip_CustSport      	JSON
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -19,23 +18,29 @@ BEGIN
             - 202012121@Irena.Vo: Enhance logic ignore Pin category & Probation List  [RedmineID: #145951]
             - 20210510@Aries.Nguyen: Remove insert log zzTracePerformance [Redmine ID: #154792]
 			- 20210525@Irena.Vo: Change col name PinCustomerCategory: CustID -> CTSCustID [Redmine ID: 152965]
+            - 20210608@Casey.Huynh: Return Category Group AND Hardcode RealTime CategoryGroup List [Redmine ID: 156465]
 		Param's Explanation (filtered by):
-            - ip_CategoryIDList: ex: '1,2,3'       
+            - lv_CategoryIDList: ex: '1,2,3'       
 	*/     
     DECLARE	lv_LogTotalRecord	INT;
     DECLARE	lv_FromID			BIGINT;
     DECLARE	lv_ToID				BIGINT;
-	
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_CategoryIDList;
     CREATE TEMPORARY TABLE Temp_CategoryIDList(
-			CategoryID			SMALLINT UNSIGNED
+			CategoryID		SMALLINT UNSIGNED
+		,	CategoryGroup	SMALLINT UNSIGNED
     );
     
     /*GET Category List*/ 
-    CALL CTS_DataCenter.CTS_DC_Sys_SplitStringToTempItemTable(ip_CategoryIDList, ',', 'SMALLINT UNSIGNED');
-    INSERT INTO Temp_CategoryIDList (CategoryID)
-    SELECT Item FROM TempItemTable;
     
+    INSERT INTO Temp_CategoryIDList (CategoryID,CategoryGroup)    
+    SELECT	cat.CategoryID
+		,	cat.CategoryGroup
+	FROM 	CTS_DataCenter.CustomerCategory AS cat
+    WHERE 	cat.CategoryGroup IN (201, 202, 205, 231, 232, 233, 222, 221, 223, 212, 211, 213);
+    
+    SELECT * FROM Temp_CategoryIDList;
     DROP TEMPORARY TABLE IF EXISTS Temp_CustSportList;
 	CREATE TEMPORARY TABLE Temp_CustSportList(
 			CustID				BIGINT UNSIGNED
@@ -50,7 +55,7 @@ BEGIN
 			CustID 				BIGINT UNSIGNED		PATH "$.CustId"
 		, 	SportGroupID 		SMALLINT UNSIGNED	PATH "$.SportGroupId"
 		 )) AS tmpTable;       
-    
+   
     SELECT		tmpCusCat.CustID
 			, 	tmpCusCat.SportGroupID AS SportGroupID
 			, 	tmpCusCat.CategoryID
@@ -58,7 +63,7 @@ BEGIN
 						,	c.CTSCustID AS CTSCustID
 						, 	cus.SportGroupID AS SportGroupID  
 						, 	ccl.SportGroupID AS CurrentSportGroupID
-						, 	ctg.CategoryID AS CategoryID
+						, 	ctg.CategoryGroup AS CategoryID
 				FROM Temp_CustSportList AS cus
 					LEFT JOIN CTS_DataCenter.CTSCustomer AS c ON c.CustID = cus.CustID AND c.CustSubID = 0
 					LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS ccl ON cus.CustID = ccl.CustID AND cus.SportGroupID = ccl.SportGroupID
