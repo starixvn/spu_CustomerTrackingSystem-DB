@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorDetails (
     ,	ListCustID		VARCHAR(2000)
     , 	ListTransID		VARCHAR(2000)   
     , 	IsHedging		BIT DEFAULT 0
-	, 	PRIMARY KEY		PK_MatchMonitorDetails_EventDateBettypeMatchID(EventDate,BettypeID,MatchID,LiveIndicator,GroupID,TotalScore)
+	, 	PRIMARY KEY		PK_MatchMonitorDetails_EventDateBettypeMatchID(EventDate,BettypeID,MatchID,LiveIndicator)
 	, 	INDEX			IX_MatchMonitorDetails_GroupIDIsHedging(GroupID,IsHedging)
 ) ENGINE=INNODB;
 
@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorStaging (
     ,	TotalScore		SMALLINT UNSIGNED
     ,	GroupID			BIGINT UNSIGNED
     ,	OriginGroupID	BIGINT UNSIGNED
-	, 	PRIMARY KEY		PK_MatchMonitorStaging_TransIDMatchIDBettypeID(TransID,MatchID,BettypeID,LiveIndicator)
+	, 	PRIMARY KEY		PK_MatchMonitorStaging_TransIDMatchIDBettypeID(TransID)
 	, 	INDEX			IX_MatchMonitorStaging_GroupID(GroupID)
     , 	INDEX			IX_MatchMonitorStaging_OriginGroupID(OriginGroupID)
 ) ENGINE=INNODB;

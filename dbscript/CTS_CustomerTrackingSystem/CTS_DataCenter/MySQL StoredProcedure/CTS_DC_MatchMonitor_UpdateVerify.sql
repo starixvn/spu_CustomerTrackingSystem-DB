@@ -3,10 +3,10 @@ DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_UpdateVerify`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_UpdateVerify`(
-	IN 	ip_ID 				BIGINT UNSIGNED,
-    IN	ip_UserID			INT UNSIGNED,
+		IN 	ip_ID 				BIGINT UNSIGNED
+    ,	IN	ip_UserID			INT UNSIGNED
     
-    OUT op_ErrorMessage 	VARCHAR(200)
+    ,	OUT op_ErrorMessage 	VARCHAR(200)
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -29,11 +29,6 @@ BEGIN
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
-    
-	DROP TEMPORARY TABLE IF EXISTS Temp_Bettype;
-    CREATE TEMPORARY TABLE Temp_Bettype(
-		BettypeID 	INT UNSIGNED
-	);
  
 	UPDATE CTS_DataCenter.MatchMonitor AS s
     SET s.IsVerified = 1
