@@ -45,16 +45,16 @@ BEGIN
         ,	s.IsVerified
         ,	s.VerifiedDate
         ,	u.UserName AS VerifiedBy
-        ,	CASE WHEN s.EventStatus = 'closed' THEN 4 #'Closed'
-				WHEN s.EventDate > CURDATE() THEN 1 #'Early'
-                WHEN s.EventStatus = 'running' AND s.KickOffTime <= NOW() THEN 2 # 'Live'
-				WHEN s.EventDate = CURDATE() THEN 3 #'Today'
+        ,	CASE WHEN s.EventStatus = 'Completed' THEN 4 #'Closed'
+                WHEN s.EventStatus = 'running' AND s.KickOffTime <= NOW() THEN 1 # 'Live'
+				WHEN s.EventDate = CURDATE() AND s.KickOffTime > NOW() THEN 2 #'Today'
+				WHEN s.EventDate > CURDATE() THEN 3 #'Early'
 			END AS EventGroup
 	FROM   CTS_DataCenter.MatchMonitor AS s
 		INNER JOIN Temp_Bettype AS b ON s.BettypeID = b.BettypeID
         LEFT JOIN CTS_Admin.CTSUser AS u ON s.VerifiedBy = u.UserID
 	WHERE  s.EventDate BETWEEN ip_FromDate AND ip_ToDate
 		AND (ip_IsVerified IS NULL OR s.IsVerified = ip_IsVerified);
-    
+
 END$$
 DELIMITER ;
