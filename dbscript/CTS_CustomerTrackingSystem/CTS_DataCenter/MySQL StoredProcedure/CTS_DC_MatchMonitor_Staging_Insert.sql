@@ -56,11 +56,12 @@ BEGIN
 		,	PRIMARY KEY (TransID)
 		,	INDEX IX_MatchMonitorStaging_GroupID (GroupID)
 		,	INDEX IX_MatchMonitorStaging_OriginGroupID (OriginGroupID)
+        ,	INDEX IX_MatchMonitorStaging_Group(MatchID, LiveIndicator, TotalScore, BettypeID, TempGroupID)
 	);  
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_TransGroup;
 	CREATE TEMPORARY TABLE Temp_TransGroup(
-			MatchID			INT UNSIGNED NOT NULL
+			MatchID			BIGINT UNSIGNED NOT NULL
 		,	LiveIndicator 	BIT(1) NOT NULL
 		,	TotalScore		SMALLINT UNSIGNED NOT NULL
 		,	BettypeID		INT UNSIGNED NOT NULL	
@@ -113,11 +114,14 @@ BEGIN
 							,	Stake			DOUBLE PATH "$.Stake" 
 						)
 				) AS js;
-	
+                
+	UPDATE MatchMonitorStaging
+    SET OriginGroupID = NULL;
+    
 	INSERT IGNORE INTO Temp_TransStaging(MatchID, LiveIndicator, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, TransID, CustID, TransDate, Stake, GroupID, OriginGroupID)
 	SELECT 		MatchID,  LiveIndicator, LiveHomeScore, LiveAwayScore, LiveHomeScore + LiveAwayScore, BettypeID, TransID, CustID, TransDate, Stake, GroupID, OriginGroupID
-	FROM		MatchMonitorStaging;
-	
+	FROM		MatchMonitorStaging;    
+    
     SET @GroupOrder = 0;  
 	INSERT INTO Temp_TransGroup(MatchID, LiveIndicator, TotalScore, BettypeID, MinTransID, MinTransDate) 
 	SELECT 		MatchID, LiveIndicator, TotalScore, BettypeID, MIN(TransID), MIN(TransDate)
