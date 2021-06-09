@@ -2,7 +2,7 @@
 DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_InsertMainCustomerClassification`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_InsertMainCustomerClassification`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_InsertMainCustomerClassification`(
 		IN ip_NewClassification JSON
     
     ,	OUT op_ErrorMessage 	VARCHAR(200)
@@ -55,7 +55,6 @@ BEGIN
         ,	ExistedCateID 			SMALLINT
         , 	NewCateGroup			SMALLINT
         ,	NewCateID				SMALLINT
-        ,	OldCC					SMALLINT -- fix issue concurrency
         ,	TargetCC				SMALLINT
         ,	TargetDangerLevel1		SMALLINT
         ,	SourceTypeID      		SMALLINT
@@ -158,7 +157,6 @@ BEGIN
     WHERE 	temp.ActionType IN (0,1);
     
     /*	UPDATE SOURCE TYPE */   
-    
     UPDATE Temp_NewClassification AS temp 
 	SET 	temp.SourceTypeID = CASE WHEN temp.ExistedCateGroup IS NULL AND temp.NewCateGroup IN (201) THEN 1 /* Less than 10 bets */
 									 WHEN temp.ExistedCateGroup = 201 AND temp.NewCateGroup <> 201 THEN 2 /* After 10 bets To Probation (if have) */
@@ -171,10 +169,8 @@ BEGIN
     /* UPDATE TARGET CC */
     UPDATE Temp_NewClassification AS temp 
 		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID
-		LEFT JOIN CTS_DataCenter.CategoryToCustomerClass AS o ON o.CategoryID = temp.ExistedCateID AND temp.ActionType = 0 AND temp.ExistedCateGroup = 201
         LEFT JOIN CTS_DataCenter.CategoryToCustomerClass AS n ON n.CategoryID = temp.NewCateID
-	SET 	temp.OldCC = IFNULL(sp.CustomerClass,o.CustomerClass)
-		,	temp.TargetCC = IFNULL(sp.CustomerClass,n.CustomerClass)
+	SET 	temp.TargetCC = IFNULL(sp.CustomerClass,n.CustomerClass)
 	WHERE 	temp.ActionType IN (0,1);
    
     /* UPDATE TARGET DANGER LEVEL 1 */
@@ -200,7 +196,7 @@ BEGIN
 		, 	temp.SubscriberID
 		, 	200
 		, 	temp.NewCateID
-		, 	CASE WHEN temp.ExistedCateGroup = 201 THEN DATE_SUB(lv_CurrentDateTime,INTERVAL 1 SECOND) ELSE lv_CurrentDateTime END -- fix issue concurrence.
+		, 	lv_CurrentDateTime
 		, 	lv_CreatedBy
 		, 	lv_CurrentDateTime
 		, 	lv_CreatedBy
@@ -226,34 +222,9 @@ BEGIN
 		, 	lv_CurrentDateTime
 		,   DATE(lv_CurrentDateTime) AS LastScannedDate
 	FROM Temp_NewClassification AS temp
-	WHERE temp.NewCateGroup = 206 AND ((temp.ActionType = 0 AND temp.ExistedCateGroup = 201) 
-			OR (temp.ActionType = 1  AND temp.ExistedCateGroup <> 206));
+	WHERE 	temp.NewCateGroup = 206 AND (temp.ActionType = 0 OR (temp.ActionType = 1  AND temp.ExistedCateGroup <> 206));
     
     #==========================================WRITE LOG======================================================== 
-    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History  -- fix issue concurrence.
-	(CustID,CTSCustID,CategoryID,SportGroupID,LastModifiedDate,LastModifiedBy,TurnoverRM,WinlossRM,BetCount,ActiveDays,ActionType,IsAuto
-    ,InsertDate,TargetCC,SourceTypeID,ToCategoryID,IsDataChanged,TargetDangerLevel1)
-	SELECT DISTINCT	temp.CustID
-		, 	temp.CTSCustID
-		, 	temp.ExistedCateID
-		, 	200
-		, 	DATE_SUB(lv_CurrentDateTime, INTERVAL 1 SECOND)
-		, 	lv_CreatedBy
-		, 	temp.TurnoverRM
-		, 	temp.WinlossRM
-		, 	temp.BetCount
-		, 	temp.ActiveDays
-		, 	temp.ActionType
-		, 	1
-		, 	DATE(lv_CurrentDateTime)
-		,	temp.OldCC
-		,   1
-		, 	temp.ExistedCateID
-		,   1
-        ,   temp.TargetDangerLevel1
-	FROM Temp_NewClassification AS temp
-    WHERE temp.ActionType = 0 AND temp.ExistedCateGroup = 201; 
-
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
 	(CustID,CTSCustID,CategoryID,SportGroupID,LastModifiedDate,LastModifiedBy,TurnoverRM,WinlossRM,BetCount,ActiveDays,ActionType,IsAuto
     ,InsertDate,LastXDaysMargin,ProbationPeriodWinloss,TargetCC,SourceTypeID,FromCategoryID,ToCategoryID,IsDataChanged,TaggingType,TargetDangerLevel1)
@@ -267,7 +238,7 @@ BEGIN
 		, 	temp.WinlossRM
 		, 	temp.BetCount
 		, 	temp.ActiveDays
-		, 	CASE WHEN temp.ActionType = 0 AND temp.ExistedCateGroup = 201 THEN 1 ELSE temp.ActionType END
+		, 	temp.ActionType
 		, 	1
 		, 	DATE(lv_CurrentDateTime)
 		, 	temp.LastXDaysMargin
