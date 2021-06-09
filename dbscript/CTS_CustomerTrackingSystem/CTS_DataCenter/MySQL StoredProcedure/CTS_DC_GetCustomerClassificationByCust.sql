@@ -1,9 +1,9 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP procedure IF EXISTS `CTS_DataCenter`.`CTS_DC_GetCustomerClassificationByCategory`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_GetCustomerClassificationByCust`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_GetCustomerClassificationByCategory`(
-		IN ip_CustSport      	JSON
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_GetCustomerClassificationByCust`(
+		IN ip_CustSport    JSON
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -24,23 +24,8 @@ BEGIN
 	*/     
     DECLARE	lv_LogTotalRecord	INT;
     DECLARE	lv_FromID			BIGINT;
-    DECLARE	lv_ToID				BIGINT;
+    DECLARE	lv_ToID				BIGINT;    
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_CategoryIDList;
-    CREATE TEMPORARY TABLE Temp_CategoryIDList(
-			CategoryID		SMALLINT UNSIGNED
-		,	CategoryGroup	SMALLINT UNSIGNED
-    );
-    
-    /*GET Category List*/ 
-    
-    INSERT INTO Temp_CategoryIDList (CategoryID,CategoryGroup)    
-    SELECT	cat.CategoryID
-		,	cat.CategoryGroup
-	FROM 	CTS_DataCenter.CustomerCategory AS cat
-    WHERE 	cat.CategoryGroup IN (201, 202, 205, 231, 232, 233, 222, 221, 223, 212, 211, 213);
-    
-    SELECT * FROM Temp_CategoryIDList;
     DROP TEMPORARY TABLE IF EXISTS Temp_CustSportList;
 	CREATE TEMPORARY TABLE Temp_CustSportList(
 			CustID				BIGINT UNSIGNED
@@ -65,9 +50,10 @@ BEGIN
 						, 	ccl.SportGroupID AS CurrentSportGroupID
 						, 	ctg.CategoryGroup AS CategoryID
 				FROM Temp_CustSportList AS cus
-					LEFT JOIN CTS_DataCenter.CTSCustomer AS c ON c.CustID = cus.CustID AND c.CustSubID = 0
-					LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS ccl ON cus.CustID = ccl.CustID AND cus.SportGroupID = ccl.SportGroupID
-					LEFT JOIN Temp_CategoryIDList AS ctg ON ccl.CategoryID = ctg.CategoryID
+					LEFT JOIN 	CTS_DataCenter.CTSCustomer AS c ON c.CustID = cus.CustID AND c.CustSubID = 0
+					LEFT JOIN 	CTS_DataCenter.CTSCustomerClassification AS ccl ON cus.CustID = ccl.CustID AND cus.SportGroupID = ccl.SportGroupID
+					INNER JOIN	CTS_DataCenter.CustomerCategory AS ctg ON ccl.CategoryID = ctg.CategoryID
+					WHERE 		ctg.CategoryGroup IN (201, 202, 205, 231, 232, 233, 222, 221, 223, 212, 211, 213)
 			) AS tmpCusCat
 		LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin ON pin.CTSCustID = tmpCusCat.CTSCustID
 		LEFT JOIN CTS_DataCenter.ProbationAccountMonitor AS pro ON pro.CustID = tmpCusCat.CustID AND pro.SportGroupID = 200
