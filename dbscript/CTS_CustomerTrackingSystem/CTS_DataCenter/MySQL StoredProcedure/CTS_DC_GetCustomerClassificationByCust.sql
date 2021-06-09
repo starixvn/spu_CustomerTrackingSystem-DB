@@ -20,7 +20,9 @@ BEGIN
 			- 20210525@Irena.Vo: Change col name PinCustomerCategory: CustID -> CTSCustID [Redmine ID: 152965]
             - 20210608@Casey.Huynh: Return Category Group AND Hardcode RealTime CategoryGroup List [Redmine ID: 156465]
 		Param's Explanation (filtered by):
-            - lv_CategoryIDList: ex: '1,2,3'       
+            - lv_CategoryIDList: ex: '1,2,3' 
+		Example:
+        CALL CTS_DataCenter.CTS_DC_GetCustomerClassificationByCust('[{"CustId":27029,"SportGroupId": 200}]');
 	*/     
     DECLARE	lv_LogTotalRecord	INT;
     DECLARE	lv_FromID			BIGINT;
@@ -53,7 +55,7 @@ BEGIN
 					LEFT JOIN 	CTS_DataCenter.CTSCustomer AS c ON c.CustID = cus.CustID AND c.CustSubID = 0
 					LEFT JOIN 	CTS_DataCenter.CTSCustomerClassification AS ccl ON cus.CustID = ccl.CustID AND cus.SportGroupID = ccl.SportGroupID
 					INNER JOIN	CTS_DataCenter.CustomerCategory AS ctg ON ccl.CategoryID = ctg.CategoryID
-					WHERE 		ctg.CategoryGroup IN (201, 202, 205, 231, 232, 233, 222, 221, 223, 212, 211, 213)
+					WHERE 		ctg.CategoryGroup IN (201, 202, 205, 1000)
 			) AS tmpCusCat
 		LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin ON pin.CTSCustID = tmpCusCat.CTSCustID
 		LEFT JOIN CTS_DataCenter.ProbationAccountMonitor AS pro ON pro.CustID = tmpCusCat.CustID AND pro.SportGroupID = 200
