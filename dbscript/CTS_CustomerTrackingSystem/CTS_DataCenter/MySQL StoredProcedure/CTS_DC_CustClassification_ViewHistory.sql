@@ -17,6 +17,7 @@ BEGIN
 			- 20210226@Irena.Vo: Get TaggingType flag for log [RedmineID: #150454]
             - 20210401@Irena.Vo: Update View Log [RedmineID: #152249]
             - 20210525@Irena.Vo: Change view log: CustID -> CTSCustID [RedmineID: #152965] 
+			- 20210610@Irena.Vo: Write log for Inactive Account [RedmineID: #156465] 
 		Param's Explanation (filtered by):		
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_ViewHistory(43600889);
@@ -26,8 +27,8 @@ BEGIN
 			,   (CASE WHEN temp.CategoryID IS NULL THEN '-' ELSE cc1.CategoryName END) AS CategoryName
 			,   (CASE WHEN temp.TargetCC IN (-1, -99) THEN '-' /* -1: Remove, -99: No mapping CC */ ELSE temp.TargetCC END) AS CustomerClass
 			,	temp.CategoryID
-			,   (CASE WHEN cc2.CategoryGroup IN (201, 202, 205) AND cc3.CategoryGroup IN (203, 204, 206) THEN CONCAT(s.ItemName,' - ',cc2.CategoryName,' to ',cc3.CategoryName)
-					 WHEN cc2.CategoryGroup IN (203, 204) AND cc3.CategoryGroup = 206 THEN CONCAT(s.ItemName,' - ',cc2.CategoryName,' to ',cc3.CategoryName)
+			,   (CASE WHEN cc2.CategoryGroup IN (201, 202, 205, 1000) AND cc3.CategoryGroup IN (203, 204, 206) THEN CONCAT(s.ItemNameDisplay,' - ',cc2.CategoryName,' to ',cc3.CategoryName)
+					 WHEN cc2.CategoryGroup IN (203, 204) AND cc3.CategoryGroup = 206 THEN CONCAT(s.ItemNameDisplay,' - ',cc2.CategoryName,' to ',cc3.CategoryName)
 					 ELSE s.ItemNameDisplay
 				END) AS SourceTypeName
 			, 	s.ItemID AS SourceTypeID
