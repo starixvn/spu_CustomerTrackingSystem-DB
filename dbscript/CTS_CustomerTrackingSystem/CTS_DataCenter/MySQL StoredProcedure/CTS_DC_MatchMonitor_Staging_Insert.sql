@@ -27,8 +27,10 @@ BEGIN
 	*/
 	DECLARE lv_TimeStep TINYINT;
     
-    SET lv_TimeStep = 30;
+    SET lv_TimeStep = 30;	
 	
+    INSERT INTO MatchMonitorTrace_StagingTrace(TransJson, InsertTIme)
+    VALUES(ip_TransList, current_timestamp(3));
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_TransStaging;
 	CREATE TEMPORARY TABLE Temp_TransStaging(
@@ -38,7 +40,7 @@ BEGIN
         ,	EventStatus		VARCHAR(50)
         ,	KickOffTime		DATETIME
         ,	LeagueID		INT
-        ,	EventDate		DATETIME
+        ,	EventDate		DATE
 		,	LiveIndicator 	BIT NOT NULL        
         ,	LiveHomeScore	SMALLINT UNSIGNED NOT NULL
 		,	LiveAwayScore	SMALLINT UNSIGNED NOT NULL
@@ -105,7 +107,7 @@ BEGIN
                             ,	EventStatus		VARCHAR(50)	PATH "$.EventStatus" 
                             ,	KickOffTime		DATETIME PATH "$.KickOffTime" 
                             ,	LeagueID		INT	PATH "$.LeagueID"
-                            ,	EventDate		DATETIME PATH "$.EventDate"
+                            ,	EventDate		DATE PATH "$.EventDate"
 							,	LiveIndicator	INT	PATH "$.LiveIndicator" 
 							,	LiveHomeScore	INT	PATH "$.LiveHomeScore" 
 							,	LiveAwayScore	INT	PATH "$.LiveAwayScore" 
@@ -115,8 +117,9 @@ BEGIN
 						)
 				) AS js;
                 
-	UPDATE MatchMonitorStaging
-    SET OriginGroupID = NULL;
+	UPDATE	MatchMonitorStaging
+    SET		OriginGroupID = NULL;
+		#,	GroupID = NULL;
     
 	INSERT IGNORE INTO Temp_TransStaging(MatchID, LiveIndicator, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, TransID, CustID, TransDate, Stake, GroupID, OriginGroupID)
 	SELECT 		MatchID,  LiveIndicator, LiveHomeScore, LiveAwayScore, LiveHomeScore + LiveAwayScore, BettypeID, TransID, CustID, TransDate, Stake, GroupID, OriginGroupID
@@ -155,6 +158,11 @@ BEGIN
     GROUP BY	tmpTs.MatchID, tmpTs.LiveIndicator, tmpTs.TotalScore, tmpTs.BettypeID, tmpTs.TempGroupID
 	HAVING		COUNT(1) > 1 AND SUM(Stake) >=500;
     
+    UPDATE  CTS_DataCenter.MatchMonitorStaging AS mms
+		INNER JOIN CTS_DataCenter.Temp_TransStaging AS tmpTs ON mms.TransID = tmpTs.TransID
+		INNER JOIN Temp_ParentGroup AS tmpGp ON tmpTs.TempGroupID = tmpGp.TempGroupID
+	SET mms.OriginGroupID = tmpGp.TempGroupID;    
+    
     INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStaging(TransID, TransDate, MatchID, HomeID, AwayID, EventStatus, KickOffTime
 			, LeagueID, EventDate, LiveIndicator, LiveHomeScore, TotalScore, LiveAwayScore, BettypeID, CustID, Stake, OriginGroupID)
     SELECT 	TransID
@@ -177,8 +185,7 @@ BEGIN
 	FROM	Temp_TransStaging AS tmpTs
 		LEFT JOIN Temp_ParentGroup AS tmpGp ON tmpTs.TempGroupID = tmpGp.TempGroupID;
     
-    SELECT TempGroupID FROM Temp_ParentGroup;
-    
+    SELECT DISTINCT OriginGroupID FROM CTS_DataCenter.MatchMonitorStaging WHERE OriginGroupID IS NOT NULL;    
 
 END$$
 DELIMITER ;

@@ -24,12 +24,13 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitor (
     , 	IsVerified		BIT DEFAULT 0
 	, 	VerifiedDate	DATETIME
     ,	VerifiedBy		INT UNSIGNED
-    ,	UNIQUE INDEX	IX_MatchMonitor_EventDateBettypeMatchID(EventDate,BettypeID,MatchID)
+    ,	UNIQUE INDEX	IX_MatchMonitor_EventDateBettypeMatchIDIsHedging(EventDate,BettypeID,MatchID,IsHedging)
 	, 	INDEX			IX_MatchMonitor_IsVerified(IsVerified)
 ) ENGINE=INNODB AUTO_INCREMENT=1;
 
-CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorDetails (
-		MatchID			BIGINT UNSIGNED
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorDetails(
+		ID				BIGINT UNSIGNED AUTO_INCREMENT
+	,	MatchID			BIGINT UNSIGNED
 	, 	BettypeID		INT UNSIGNED
     , 	EventDate		DATE
     ,	LiveIndicator	BIT
@@ -40,7 +41,8 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorDetails (
     ,	ListCustID		VARCHAR(2000)
     , 	ListTransID		VARCHAR(2000)   
     , 	IsHedging		BIT DEFAULT 0
-	, 	PRIMARY KEY		PK_MatchMonitorDetails_EventDateBettypeMatchID(EventDate,BettypeID,MatchID,LiveIndicator)
+	, 	PRIMARY KEY		PK_MatchMonitorDetails_ID(ID)
+	,	INDEX			IX_MatchMonitorDetails_EventDateBettypeMatchID(EventDate,BettypeID,MatchID,LiveIndicator)
 	, 	INDEX			IX_MatchMonitorDetails_GroupIDIsHedging(GroupID,IsHedging)
 ) ENGINE=INNODB;
 
