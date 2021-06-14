@@ -5,6 +5,8 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_RPT_ProblemCaseMonitor`(
 		IN ip_FromDate	DATETIME
 	,	IN ip_ToDate	DATETIME
+    ,	IN ip_SubscriberIDList	VARCHAR(2000)
+    ,	IN ip_ProblemCaseIDList	VARCHAR(200)
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -16,43 +18,87 @@ BEGIN
 		Revisions:
 			- 20210612@Casey.Huynh: Created [RedmineID: #156464]
 		Param's Explanation (filtered by):
-            - ip_CategoryIDList: ex: '1,2,3' 
+            - ip_SubscriberList: SubscriberID LIST
+            - ip_ProblemCaseList: ProblemCaseID List map to Staticlist (ListID = 12)
 		Example: CTS_DC_RPT_ProblemAccountMonitor('2021-06-14');
 	*/ 
     DECLARE lv_StaticListID INT;
     DECLARE lv_Robot INT DEFAULT 1;
     DECLARE lv_GroupBetting INT DEFAULT 2;
     DECLARE lv_SuspiciousAssociation INT DEFAULT 3;
-    DECLARE lv_ProPunter INT  DEFAULT 4;
+    DECLARE lv_ProPunter INT  DEFAULT 9;
+    DECLARE lv_IsAllSubscriber TINYINT DEFAULT 0;
+    DECLARE lv_IsAllProblemCase TINYINT DEFAULT 0;
+    
+    #==============================================================
+    DROP TEMPORARY TABLE IF EXISTS Temp_Subscriber;
+    CREATE TEMPORARY TABLE Temp_Subscriber
+    (
+			SubscriberID	INT
+        ,	SubscriberName	VARCHAR(200)
+    );
+	
+	DROP TEMPORARY TABLE IF EXISTS Temp_ProblemCase;
+    CREATE TEMPORARY TABLE Temp_ProblemCase
+    (
+			ProblemCaseID	SMALLINT UNSIGNED
+		,	ProblemCaseName	VARCHAR(100)
+    );
+	#====GET Subscriber List=========================================
+	CALL CTS_DC_Sys_SplitStringToTempItemTable(ip_SubscriberIDList, ',', 'INT UNSIGNED');
+    
+    SELECT 1 INTO lv_IsAllSubscriber FROM TempItemTable WHERE Item = 0;
+    
+	IF lv_IsAllSubscriber = 1 THEN 
+		INSERT INTO Temp_Subscriber(SubscriberID, SubscriberName)
+        SELECT 	sub.SubscriberID
+			,	sub.SubscriberName
+        FROM	CTS_Admin.Subscriber AS sub;  
+    ELSE
+		INSERT INTO Temp_Subscriber(SubscriberID, SubscriberName)
+        SELECT 	sub.SubscriberID
+			,	sub.SubscriberName
+        FROM	TempItemTable AS tmp
+			INNER JOIN CTS_Admin.Subscriber AS sub ON tmp.Item = sub.SubscriberID;  
+	END IF;
+    
+    #====GET ProblemCase List=======================================================
+    CALL CTS_DC_Sys_SplitStringToTempItemTable(ip_ProblemCaseIDList, ',', 'SMALLINT');
+    
+	SELECT 1 INTO lv_IsAllProblemCase FROM TempItemTable WHERE Item = 0;
+    
+    IF (lv_IsAllProblemCase = 1) THEN
+		INSERT INTO Temp_ProblemCase(ProblemCaseID, ProblemCaseName)
+        SELECT sl.ItemID, sl.ItemName
+        FROM CTS_DataCenter.StaticList AS sl
+        WHERE ListID = 12;
+	ELSE 
+		INSERT INTO Temp_ProblemCase(ProblemCaseID, ProblemCaseName)
+        SELECT sl.ItemID, sl.ItemName
+        FROM TempItemTable AS tmp
+			INNER JOIN CTS_DataCenter.StaticList AS sl ON tmp.Item = sl.ItemID
+        WHERE ListID = 12;
+    END IF;
 
-    SELECT	UserName, SubscriberName
-				, (CASE WHEN pam.ProblemType = lv_Robot THEN 1 ELSE 0 END) 'Robot'
-				, (CASE WHEN pam.ProblemType = lv_GroupBetting THEN 1 ELSE 0 END) 'GroupBetting'
-				, (CASE WHEN pam.ProblemType = lv_SuspiciousAssociation THEN 1 ELSE 0 END) 'SuspiciousAssociation'
-				, (CASE WHEN pam.ProblemType = lv_ProPunter THEN 1 ELSE 0 END) 'ProPunter'
-		FROM	CTS_DataCenter.ProblemAccountMonitor AS pam
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON pam.CustID = cus.CustID AND pam.CustSubID = cus.CustSubID
-			INNER JOIN CTS_Admin.Subscriber AS sub ON cus.SubscriberID = sub.SubscriberID
-		WHERE	pam.CreatedDate = ip_Date;
-
-	SELECT 	UserName
-		,	SubscriberName
-		,	MAX(Robot) AS 'Robot'
-        ,	MAX(GroupBetting) AS 'GroupBetting'
-        ,	MAX(SuspiciousAssociation) AS 'SuspiciousAssociation'
-        ,	MAX(ProPunter) AS 'ProPunter'
-    FROM (
-		SELECT	UserName, SubscriberName
-				, (CASE WHEN pam.ProblemType = lv_Robot THEN 1 ELSE 0 END) 'Robot'
-				, (CASE WHEN pam.ProblemType = lv_GroupBetting THEN 1 ELSE 0 END) 'GroupBetting'
-				, (CASE WHEN pam.ProblemType = lv_SuspiciousAssociation THEN 1 ELSE 0 END) 'SuspiciousAssociation'
-				, (CASE WHEN pam.ProblemType = lv_ProPunter THEN 1 ELSE 0 END) 'ProPunter'
-		FROM	CTS_DataCenter.ProblemAccountMonitor AS pam
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON pam.CustID = cus.CustID AND pam.CustSubID = cus.CustSubID
-			INNER JOIN CTS_Admin.Subscriber AS sub ON cus.SubscriberID = sub.SubscriberID
-		WHERE	pam.CreatedDate = ip_Date) AS tmp
+	SELECT 	tmp.UserName
+		,	tmp.SubscriberName
+		,	MAX(tmp.Robot) AS 'Robot'
+		,	MAX(tmp.SuspiciousAssociation) AS 'SuspiciousAssociation'
+		,	MAX(tmp.ProPunter) AS 'ProPunter'
+	FROM (
+		SELECT	cus.UserName, tmpSub.SubscriberName
+				, (CASE WHEN pcm.ProblemCaseID = lv_Robot THEN 1 ELSE 0 END) 'Robot'
+				, (CASE WHEN pcm.ProblemCaseID = lv_SuspiciousAssociation THEN 1 ELSE 0 END) 'SuspiciousAssociation'
+				, (CASE WHEN pcm.ProblemCaseID = lv_ProPunter THEN 1 ELSE 0 END) 'ProPunter'
+		FROM	CTS_DataCenter.ProblemCaseMonitor AS pcm
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON pcm.CustID = cus.CustID AND pcm.CustSubID = cus.CustSubID
+			INNER JOIN Temp_Subscriber AS tmpSub ON cus.SubscriberID = tmpSub.SubscriberID
+			INNER JOIN Temp_ProblemCase AS tmpPlc ON tmpPlc.ProblemCaseID = pcm.ProblemCaseID
+		WHERE	pcm.CreatedDate BETWEEN ip_FromDate AND ip_ToDate
+				) AS tmp
    GROUP BY tmp.UserName, tmp.SubscriberName
-   ORDER BY UserName;
+   ORDER BY tmp.UserName;
+    
 END$$
 
 DELIMITER ;

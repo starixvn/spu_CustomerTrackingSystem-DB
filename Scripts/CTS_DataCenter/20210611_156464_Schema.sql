@@ -10,15 +10,15 @@ Revisions:
 Reviewer:
 */
 USE CTS_DataCenter;
-
+#DROP  Table ProblemCaseMonitor;
 CREATE TABLE ProblemCaseMonitor(
-		CreatedDate	DATETIME
-	, 	CustID		BIGINT UNSIGNED
+		CreatedDate	DATETIME	
+    ,	ProblemCaseID	SMALLINT
+    , 	CustID		BIGINT UNSIGNED
 	,	CustSubID	BIGINT UNSIGNED
-    ,	ProblemCase	SMALLINT UNSIGNED		
     ,	InsertTime	DATETIME(3)
-	, 	PRIMARY KEY	PK_ProblemAccountMonitor_CustIDCustSubIDProblemType(CreatedDate,CustID,CustSubID,ProblemCase)
-    , 	INDEX PK_ProblemAccountMonitor_CreatedDate(CreatedDate)
+	, 	PRIMARY KEY	PK_ProblemAccountMonitor(CreatedDate,ProblemCaseID,CustID,CustSubID)
+    ,	INDEX IX_ProblemCaseMonitor_CustIDProblemCaseID(CustID,ProblemCaseID)
 ) ENGINE=INNODB;
 
 INSERT IGNORE INTO CTS_DataCenter.StaticList(ListID,ItemID,ListName,ListNameDisplay,ItemName,ItemNameDisplay,Status,Description,CreatedDate, PriorityOrder)
