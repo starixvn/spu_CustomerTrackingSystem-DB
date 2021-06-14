@@ -164,7 +164,7 @@ BEGIN
 	SET mms.OriginGroupID = tmpGp.TempGroupID;    
     
     INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStaging(TransID, TransDate, MatchID, HomeID, AwayID, EventStatus, KickOffTime
-			, LeagueID, EventDate, LiveIndicator, LiveHomeScore, TotalScore, LiveAwayScore, BettypeID, CustID, Stake, OriginGroupID)
+			, LeagueID, EventDate, LiveIndicator, LiveHomeScore, TotalScore, LiveAwayScore, BettypeID, CustID, Stake, OriginGroupID, InsertTime)
     SELECT 	TransID
 		,	TransDate
 		,	MatchID
@@ -182,6 +182,7 @@ BEGIN
 		,	CustID
 		,	Stake
         ,	tmpGp.TempGroupID
+        ,	current_time(3)
 	FROM	Temp_TransStaging AS tmpTs
 		LEFT JOIN Temp_ParentGroup AS tmpGp ON tmpTs.TempGroupID = tmpGp.TempGroupID;
     
