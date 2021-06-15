@@ -12,15 +12,15 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_RPT_ProblemCaseMonitor`(
 BEGIN
 	/*
 		Created: 20210612@Casey.Huynh
-		Task:  Return Customer Fraud Type [RedmineID: #156464]
+		Task:  Get Prolem Case Report [RedmineID: #156464]
 		DB: CTS_DataCenter
 		Original:
 		Revisions:
 			- 20210612@Casey.Huynh: Created [RedmineID: #156464]
 		Param's Explanation (filtered by):
-            - ip_SubscriberList: SubscriberID LIST
-            - ip_ProblemCaseList: ProblemCaseID List map to Staticlist (ListID = 12)
-		Example: CTS_DC_RPT_ProblemAccountMonitor('2021-06-14');
+            - ip_SubscriberList: SubscriberID List.  (0: All Subscriber, OR '1,2,3' list of SubscriberID)
+            - ip_ProblemCaseList: ProblemCaseID List map to Staticlist (ListID = 12) (0: All ProblemCase, OR '1,2,3' list of ProblemCaseID)
+		Example: CALL CTS_DC_RPT_ProblemCaseMonitor('2021-06-01','2021-06-20','0','1,3,9');
 	*/ 
     DECLARE lv_StaticListID INT;
     DECLARE lv_Robot INT DEFAULT 1;
