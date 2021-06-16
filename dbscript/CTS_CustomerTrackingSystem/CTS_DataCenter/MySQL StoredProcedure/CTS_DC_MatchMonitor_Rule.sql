@@ -161,11 +161,8 @@ BEGIN
 									WHERE mm.MatchID = lv_MatchID AND mm.BettypeID = lv_BettypeID),0));
         SET lv_CurrentNoOfHedging = IFNULL((SELECT COUNT(DISTINCT IsHedging) FROM CTS_DataCenter.MatchMonitor AS mm 
 									WHERE mm.MatchID = lv_MatchID AND mm.BettypeID = lv_BettypeID),0);    
-        SELECT lv_NewNoOfHedging, lv_CurrentNoOfHedging;
-        SELECT MAX(IsHedging) FROM Temp_AssGroup;
-        
+                
         IF ( lv_NewNoOfHedging > lv_CurrentNoOfHedging ) THEN		
-			SELECT 'lv_NewNoOfHedging > lv_CurrentNoOfHedging';
 			INSERT IGNORE INTO CTS_DataCenter.MatchMonitor(IsHedging, MatchID, BettypeID, EventDate, EventStatus, KickOffTime, HomeID, AwayID,LeagueID)
 			SELECT 	DISTINCT tmpAg.IsHedging, lv_MatchID, lv_BettypeID, lv_EventDate, lv_EventStatus
 					, lv_KickOffTime, lv_HomeID, lv_AwayID, lv_LeagueID
@@ -173,19 +170,17 @@ BEGIN
 		END IF;
         
         IF  ( lv_NewNoOfHedging = lv_CurrentNoOfHedging AND lv_NewNoOfHedging != 2) THEN
-			SELECT 'lv_NewNoOfHedging = lv_CurrentNoOfHedging AND lv_NewNoOfHedging != 2';
 			UPDATE CTS_DataCenter.MatchMonitor AS mm
             SET mm.IsHedging = (SELECT MAX(IsHedging) FROM Temp_AssGroup)
             WHERE MatchID = lv_MatchID AND BettypeID = lv_BettypeID ;	
 		END IF;
         
         IF  ( lv_NewNoOfHedging < lv_CurrentNoOfHedging ) THEN
-			SELECT 'lv_NewNoOfHedging < lv_CurrentNoOfHedging';
 			DELETE mm
 			FROM CTS_DataCenter.MatchMonitor AS mm
 			 LEFT JOIN (SELECT COUNT(DISTINCT IsHedging) AS IsHedging FROM Temp_AssGroup) AS tmp ON tmp.IsHedging = mm.IsHedging
 			WHERE 	mm.MatchID = lv_MatchID AND mm.BettypeID = lv_BettypeID
-					AND tmp.IsHedging = NULL;	
+					AND tmp.IsHedging IS NULL;	
 		END IF;   
    
 		#====MatchMonitorStaging===============
@@ -208,7 +203,7 @@ BEGIN
             SET lv_DetailsGroupIDPre = lv_DetailsGroupID;
             SET lv_DetailsGroupID = NULL;
             
-            SELECT 	GroupID, mmd.ListTransID
+            SELECT 	mmd.GroupID, mmd.ListTransID
 			INTO 	lv_DetailsGroupID, lv_DetailsListTrans
 			FROM 	CTS_DataCenter.MatchMonitorDetails AS mmd 
 			WHERE	mmd.MatchID = lv_MatchID AND mmd.LiveIndicator = lv_LiveIndicator 
