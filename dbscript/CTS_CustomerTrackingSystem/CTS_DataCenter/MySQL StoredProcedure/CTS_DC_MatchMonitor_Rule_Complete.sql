@@ -37,7 +37,7 @@ BEGIN
     SELECT  MIN(TransDate) 
     INTO 	lv_Last3mMinTime
     FROM	CTS_DataCenter.MatchMonitorStaging
-    WHERE   TransDate > TIMESTAMPADD(MINUTE, lv_Last3mMaxTime,-3 );
+    WHERE   TransDate > TIMESTAMPADD(SECOND, -180, lv_Last3mMaxTime);  
     
     INSERT INTO Temp_Last3mTransGroup(OriginGroupID)
     SELECT 	DISTINCT OriginGroupID
@@ -53,6 +53,5 @@ BEGIN
     UPDATE 	CTS_DataCenter.SystemParameter
     SET 	ParameterValue = lv_LastTransID
     WHERE 	ParameterID = 20;
-    
 END$$
 DELIMITER ;

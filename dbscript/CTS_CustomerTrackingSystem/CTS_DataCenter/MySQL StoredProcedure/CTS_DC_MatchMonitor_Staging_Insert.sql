@@ -25,9 +25,9 @@ BEGIN
 		Example:
 			
 	*/
-	DECLARE lv_TimeStep TINYINT;
+	DECLARE lv_TimeStep SMALLINT;
     
-    SET lv_TimeStep = 30;	
+    SET lv_TimeStep = 180;	
 	
     INSERT INTO MatchMonitorTrace_StagingTrace(TransJson, InsertTIme)
     VALUES(ip_TransList, current_timestamp(3));
@@ -80,6 +80,15 @@ BEGIN
 		TempGroupID INT
     );
     
+    UPDATE	MatchMonitorStaging
+    SET		OriginGroupID = NULL;
+		#,	GroupID = NULL;
+    
+    
+    INSERT IGNORE INTO Temp_TransStaging(MatchID, LiveIndicator, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, TransID, CustID, TransDate, Stake, GroupID, OriginGroupID)
+	SELECT 		MatchID,  LiveIndicator, LiveHomeScore, LiveAwayScore, LiveHomeScore + LiveAwayScore, BettypeID, TransID, CustID, TransDate, Stake, GroupID, OriginGroupID
+	FROM		MatchMonitorStaging;    
+    
 	INSERT IGNORE INTO Temp_TransStaging(TransID, TransDate, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveIndicator, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, CustID, Stake)
 	SELECT  js.TransID
 		,	js.TransDate
@@ -115,31 +124,23 @@ BEGIN
 							,	CustID			INT PATH "$.CustID"
 							,	Stake			DOUBLE PATH "$.Stake" 
 						)
-				) AS js;
-                
-	UPDATE	MatchMonitorStaging
-    SET		OriginGroupID = NULL;
-		#,	GroupID = NULL;
-    
-	INSERT IGNORE INTO Temp_TransStaging(MatchID, LiveIndicator, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, TransID, CustID, TransDate, Stake, GroupID, OriginGroupID)
-	SELECT 		MatchID,  LiveIndicator, LiveHomeScore, LiveAwayScore, LiveHomeScore + LiveAwayScore, BettypeID, TransID, CustID, TransDate, Stake, GroupID, OriginGroupID
-	FROM		MatchMonitorStaging;    
-    
+				) AS js;  
+	    
     SET @GroupOrder = 0;  
 	INSERT INTO Temp_TransGroup(MatchID, LiveIndicator, TotalScore, BettypeID, MinTransID, MinTransDate) 
 	SELECT 		MatchID, LiveIndicator, TotalScore, BettypeID, MIN(TransID), MIN(TransDate)
 	FROM		Temp_TransStaging AS tmpTs
 	GROUP BY 	tmpTs.MatchID, tmpTs.LiveIndicator, tmpTs.TotalScore, tmpTs.BettypeID;
-
+	
     SET @TempGroupID=0;
 	SET @PreTime=NULL;
 	UPDATE  Temp_TransStaging AS tmpTs
 		INNER JOIN 	Temp_TransGroup AS tmpTg ON  tmpTs.MatchID = tmpTg.MatchID AND  tmpTs.LiveIndicator = tmpTg.LiveIndicator 
 					AND  tmpTs.TotalScore=tmpTg.TotalScore AND tmpTs.BettypeID = tmpTg.BettypeID
 	 SET	tmpTs.PreTime		= IF(tmpTs.TransID = tmpTg.MinTransID, @PreTime:=tmpTg.MinTransDate, @PreTime) 	
-		, 	tmpTs.TempGroupID	= IF(tmpTs.TransID = tmpTg.MinTransID,@TempGroupID:=@TempGroupID +1, IF(TIMESTAMPDIFF(MINUTE,@PreTime, @PreTime:=tmpTs.TransDate)> lv_TimeStep , @TempGroupID:=@TempGroupID +1 , @TempGroupID))
+		, 	tmpTs.TempGroupID	= IF(tmpTs.TransID = tmpTg.MinTransID,@TempGroupID:=@TempGroupID +1, IF(TIMESTAMPDIFF(SECOND,@PreTime, @PreTime:=tmpTs.TransDate)> lv_TimeStep , @TempGroupID:=@TempGroupID +1 , @TempGroupID))
 	 ;  
-	
+    
     TRUNCATE TABLE Temp_TransGroup;
     INSERT INTO Temp_TransGroup(MatchID, LiveIndicator, TotalScore, BettypeID, TempGroupID, MinTransID, MinTransDate, GroupOrder) 
 	SELECT 		MatchID, LiveIndicator, TotalScore, BettypeID, TempGroupID, MIN(TransID), MIN(TransDate), @GroupOrder:= @GroupOrder+1
@@ -164,7 +165,7 @@ BEGIN
 	SET mms.OriginGroupID = tmpGp.TempGroupID;    
     
     INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStaging(TransID, TransDate, MatchID, HomeID, AwayID, EventStatus, KickOffTime
-			, LeagueID, EventDate, LiveIndicator, LiveHomeScore, TotalScore, LiveAwayScore, BettypeID, CustID, Stake, OriginGroupID, InsertTime)
+			, LeagueID, EventDate, LiveIndicator, LiveHomeScore,  LiveAwayScore, TotalScore, BettypeID, CustID, Stake, OriginGroupID, InsertTime)
     SELECT 	TransID
 		,	TransDate
 		,	MatchID
@@ -186,7 +187,7 @@ BEGIN
 	FROM	Temp_TransStaging AS tmpTs
 		LEFT JOIN Temp_ParentGroup AS tmpGp ON tmpTs.TempGroupID = tmpGp.TempGroupID;
     
-    SELECT DISTINCT OriginGroupID FROM CTS_DataCenter.MatchMonitorStaging WHERE OriginGroupID IS NOT NULL;    
+    SELECT DISTINCT OriginGroupID FROM CTS_DataCenter.MatchMonitorStaging WHERE OriginGroupID IS NOT NULL AND GroupID IS NULL;    
 
 END$$
 DELIMITER ;
