@@ -5,8 +5,8 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_RPT_ProblemCaseMonitor`(
 		IN ip_FromDate	DATETIME
 	,	IN ip_ToDate	DATETIME
-    ,	IN ip_SubscriberIDList	VARCHAR(2000)
-    ,	IN ip_ProblemCaseIDList	VARCHAR(200)
+    ,	IN ip_SubscriberIDList	TEXT
+    ,	IN ip_ProblemCaseIDList	VARCHAR(500)
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -24,7 +24,6 @@ BEGIN
 	*/ 
     DECLARE lv_StaticListID INT;
     DECLARE lv_Robot INT DEFAULT 1;
-    DECLARE lv_GroupBetting INT DEFAULT 2;
     DECLARE lv_SuspiciousAssociation INT DEFAULT 3;
     DECLARE lv_ProPunter INT  DEFAULT 9;
     DECLARE lv_IsAllSubscriber TINYINT DEFAULT 0;
