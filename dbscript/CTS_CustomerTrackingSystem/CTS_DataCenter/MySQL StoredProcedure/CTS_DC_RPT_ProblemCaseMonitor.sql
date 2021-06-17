@@ -79,26 +79,12 @@ BEGIN
         WHERE ListID = 12;
     END IF;
 
-	SELECT 	
-			tmp.CTSCustID
-        ,	tmp.UserName
-		,	tmp.SubscriberName        
-		,	MAX(tmp.Robot) AS 'Robot'
-		,	MAX(tmp.SuspiciousAssociation) AS 'SuspiciousAssociation'
-		,	MAX(tmp.ProPunter) AS 'ProPunter'
-	FROM (
-		SELECT	cus.UserName, cus.CTSCustID, tmpSub.SubscriberName
-				, (CASE WHEN pcm.ProblemCaseID = lv_Robot THEN 1 ELSE 0 END) 'Robot'
-				, (CASE WHEN pcm.ProblemCaseID = lv_SuspiciousAssociation THEN 1 ELSE 0 END) 'SuspiciousAssociation'
-				, (CASE WHEN pcm.ProblemCaseID = lv_ProPunter THEN 1 ELSE 0 END) 'ProPunter'
-		FROM	CTS_DataCenter.ProblemCaseMonitor AS pcm
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON pcm.CustID = cus.CustID AND pcm.CustSubID = cus.CustSubID
-			INNER JOIN Temp_Subscriber AS tmpSub ON cus.SubscriberID = tmpSub.SubscriberID
-			INNER JOIN Temp_ProblemCase AS tmpPlc ON tmpPlc.ProblemCaseID = pcm.ProblemCaseID
-		WHERE	pcm.CreatedDate BETWEEN ip_FromDate AND ip_ToDate
-				) AS tmp
-   GROUP BY tmp.UserName, tmp.SubscriberName, tmp.CTSCustID
-   ORDER BY tmp.UserName;
+	SELECT	cus.CTSCustID, cus.UserName, tmpSub.SubscriberName, pcm.ProblemCaseID, tmpPlc.ProblemCaseName
+	FROM	CTS_DataCenter.ProblemCaseMonitor AS pcm
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON pcm.CustID = cus.CustID AND pcm.CustSubID = cus.CustSubID
+		INNER JOIN Temp_Subscriber AS tmpSub ON cus.SubscriberID = tmpSub.SubscriberID
+		INNER JOIN Temp_ProblemCase AS tmpPlc ON tmpPlc.ProblemCaseID = pcm.ProblemCaseID
+	WHERE	pcm.CreatedDate BETWEEN ip_FromDate AND ip_ToDate;
     
 END$$
 
