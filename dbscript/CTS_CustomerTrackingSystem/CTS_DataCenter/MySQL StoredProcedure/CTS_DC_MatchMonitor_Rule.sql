@@ -40,13 +40,10 @@ BEGIN
     DECLARE	lv_KickOffTime	DATETIME;
     DECLARE lv_DetailsGroupID INT;
     DECLARE lv_DetailsListTrans VARCHAR(2000);
-    
-	DECLARE lv_StarTime DATETIME(3);
     DECLARE lv_NewNoOfHedging INT;
     DECLARE lv_CurrentNoOfHedging INT;
     DECLARE lv_MaxOldGroupID INT;
     DECLARE lv_DetailsGroupIDPre INT;
-    SET lv_StarTime=current_timestamp(3);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_AssTransGroup;
     CREATE TEMPORARY TABLE Temp_AssTransGroup(
@@ -79,10 +76,7 @@ BEGIN
 		,	PreGroupID	INT
 	);
     */
-   
-	INSERT INTO  MatchMonitoringTrace(SPName, Value01, StartTime)
-	VALUE ('CTS_DC_MatchMonitor_Rule', ip_TempGroupID, lv_StarTime);
-   
+      
 	SELECT 	MatchID, LiveIndicator, TotalScore, BettypeID, EventDate, LiveHomeScore, LiveAwayScore
 			, EventStatus, HomeID, AwayID, KickOffTime, LeagueID, KickOffTime
     INTO 	lv_MatchID, lv_LiveIndicator, lv_TotalScore, lv_BettypeID, lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore
