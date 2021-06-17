@@ -9,7 +9,7 @@ Revisions:
 		- 20210525@Long.Luu: Created [#152883]
 Reviewer:
 */
-DROP TABLE CTS_DataCenter.MatchMonitor;
+
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitor (
 		ID				BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY
     ,	MatchID			BIGINT UNSIGNED
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorDetails(
 	, 	INDEX			IX_MatchMonitorDetails_GroupIDIsHedging(GroupID,IsHedging)
 ) ENGINE=INNODB;
 
-DROP TABLE CTS_DataCenter.MatchMonitorStaging;
+
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorStaging (
 		TransID			BIGINT UNSIGNED
 	, 	TransDate		DATETIME(3)
@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorStaging (
     ,	TotalScore		SMALLINT UNSIGNED
     ,	GroupID			BIGINT UNSIGNED
     ,	OriginGroupID	BIGINT UNSIGNED
+    ,	InsertTime		DATETIME(3)
 	, 	PRIMARY KEY		PK_MatchMonitorStaging_TransIDMatchIDBettypeID(TransID)
 	, 	INDEX			IX_MatchMonitorStaging_GroupID(GroupID)
     , 	INDEX			IX_MatchMonitorStaging_OriginGroupID(OriginGroupID)
