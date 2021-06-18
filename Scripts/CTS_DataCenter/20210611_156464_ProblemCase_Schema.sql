@@ -31,3 +31,15 @@ VALUES	(12,1,'Problem Case','Problem Case','Robot','Robot',1,NULL,NOW(),1)
     ,	(12,7,'Problem Case','Problem Case','Odds Favors','Odds Favors',0,NULL,NOW(),7)
     ,	(12,8,'Problem Case','Problem Case','HighOddsBettor','High Odds Bettor',0,NULL,NOW(),8)
 	,	(12,9,'Problem Case','Problem Case','ProPunter','Pro Punter',1,NULL,NOW(),9);
+
+SET @MaxAssByIP = (SElECT MAX(CreatedDate) FROM CTS_DataCenter.AssociationByIP);
+SET @MaxAssByDevice = (SElECT MAX(CTSAssDevID) FROM CTS_DataCenter.AssociationByDevice);
+SET @MaxClasHis = (SElECT MAX(ID) FROM CTS_DataCenter.CTSCustomerClassification_History);
+
+INSERT INTO CTS_DataCenter.SystemParameter(ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
+VALUES	(21,'ProblemCase_AssByIP_CreatedDate', 'Last Scan time', 'DATETIME', @MaxAssByIP)
+	,	(22,'ProblemCase_AssByDevie_CTSAssDevID', 'Last Scan CTSAssDevID', 'BIGINT UNSIGNED', @MaxAssByDevice)
+    ,	(23,'ProblemCase_CustClassHis_ID', 'Last Scan ID', 'BIGINT UNSIGNED', @MaxClasHis);
+/*
+DELETE FROM CTS_DataCenter.SystemParameter
+WHERE ParameterID IN (21,22,23);*/

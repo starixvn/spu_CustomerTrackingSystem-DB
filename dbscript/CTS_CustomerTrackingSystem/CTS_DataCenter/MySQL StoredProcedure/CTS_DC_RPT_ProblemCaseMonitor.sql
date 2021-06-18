@@ -22,10 +22,7 @@ BEGIN
             - ip_ProblemCaseList: ProblemCaseID List map to Staticlist (ListID = 12) (0: All ProblemCase, OR '1,2,3' list of ProblemCaseID)
 		Example: CALL CTS_DC_RPT_ProblemCaseMonitor('2021-06-01','2021-06-20','0','1,3,9');
 	*/ 
-    DECLARE lv_StaticListID INT;
-    DECLARE lv_Robot INT DEFAULT 1;
-    DECLARE lv_SuspiciousAssociation INT DEFAULT 3;
-    DECLARE lv_ProPunter INT  DEFAULT 9;
+    DECLARE lv_StaticListID INT DEFAULT 12;
     DECLARE lv_IsAllSubscriber TINYINT DEFAULT 0;
     DECLARE lv_IsAllProblemCase TINYINT DEFAULT 0;
     
@@ -76,7 +73,7 @@ BEGIN
         SELECT sl.ItemID, sl.ItemName
         FROM TempItemTable AS tmp
 			INNER JOIN CTS_DataCenter.StaticList AS sl ON tmp.Item = sl.ItemID
-        WHERE ListID = 12;
+        WHERE ListID = lv_StaticListID;
     END IF;
 
 	SELECT	cus.CTSCustID, cus.UserName, tmpSub.SubscriberName, pcm.ProblemCaseID, tmpPlc.ProblemCaseName
@@ -84,7 +81,8 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON pcm.CustID = cus.CustID AND pcm.CustSubID = cus.CustSubID
 		INNER JOIN Temp_Subscriber AS tmpSub ON cus.SubscriberID = tmpSub.SubscriberID
 		INNER JOIN Temp_ProblemCase AS tmpPlc ON tmpPlc.ProblemCaseID = pcm.ProblemCaseID
-	WHERE	pcm.CreatedDate BETWEEN ip_FromDate AND ip_ToDate;
+	WHERE	pcm.CreatedDate BETWEEN ip_FromDate AND ip_ToDate
+    ORDER BY UserName;
     
 END$$
 
