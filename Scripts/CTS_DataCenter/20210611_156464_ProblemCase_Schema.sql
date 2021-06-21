@@ -10,7 +10,8 @@ Revisions:
 Reviewer:
 */
 USE CTS_DataCenter;
-#DROP  Table ProblemCaseMonitor;
+ALTER TABLE CTS_DataCenter.AssociationByIP MODIFY CreatedDate DATETIME(3);
+
 CREATE TABLE ProblemCaseMonitor(
 		CreatedDate	DATETIME	
     ,	ProblemCaseID	SMALLINT
@@ -37,9 +38,7 @@ SET @MaxAssByDevice = (SElECT MAX(CTSAssDevID) FROM CTS_DataCenter.AssociationBy
 SET @MaxClasHis = (SElECT MAX(ID) FROM CTS_DataCenter.CTSCustomerClassification_History);
 
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
-VALUES	(21,'ProblemCase_AssByIP_CreatedDate', 'Last Scan time', 'DATETIME', @MaxAssByIP)
+VALUES	(21,'ProblemCase_AssByIP_CreatedDate', 'Last Scan time', 'DATETIME(3)', @MaxAssByIP)
 	,	(22,'ProblemCase_AssByDevie_CTSAssDevID', 'Last Scan CTSAssDevID', 'BIGINT UNSIGNED', @MaxAssByDevice)
     ,	(23,'ProblemCase_CustClassHis_ID', 'Last Scan ID', 'BIGINT UNSIGNED', @MaxClasHis);
-/*
-DELETE FROM CTS_DataCenter.SystemParameter
-WHERE ParameterID IN (21,22,23);*/
+
