@@ -27,9 +27,9 @@ BEGIN
     DECLARE lv_ProCasProPunter 		SMALLINT DEFAULT 9;
     
     #===========================================================
-    SET lv_sysLastAssByIP = (SELECT MAX(ParameterValue) FROM CTS_DataCenter.SystemParameter WHERE ParameterID = 21);
-    SET lv_sysLastAssByDevice = (SELECT MAX(ParameterValue) FROM CTS_DataCenter.SystemParameter WHERE ParameterID = 22);
-    SET lv_sysLastClassification = (SELECT MAX(ParameterValue) FROM CTS_DataCenter.SystemParameter WHERE ParameterID = 23);
+    SET lv_sysLastAssByIP = (SELECT ParameterValue FROM CTS_DataCenter.SystemParameter WHERE ParameterID = 21);
+    SET lv_sysLastAssByDevice = (SELECT ParameterValue FROM CTS_DataCenter.SystemParameter WHERE ParameterID = 22);
+    SET lv_sysLastClassification = (SELECT ParameterValue FROM CTS_DataCenter.SystemParameter WHERE ParameterID = 23);
         
     #====PROBLEM CASE ROBOT(1) AND PRO PUNTER(9)====================================================
     SET @LastCustClassHisID = lv_sysLastClassification;    
@@ -121,23 +121,24 @@ BEGIN
     FROM Temp_CustProlemCase AS tmpCpc
     WHERE NOT EXISTS(SELECT 1 FROM CTS_DataCenter.ProblemCaseMonitor AS pcm 
 			WHERE tmpCpc.CustID = pcm.CustID AND tmpCpc.ProblemCaseID = pcm.ProblemCaseID);
-    
+   
     UPDATE CTS_DataCenter.SystemParameter AS sys
     SET sys.ParameterValue = @LastCustClassHisID
     WHERE sys.ParameterID = 23;  
     
     #==========================================================================
     #======GET NEW AssociationByIP======================================= 
+    SET @LastAssByIP = lv_sysLastAssByIP;
     INSERT INTO Temp_NewAssociationByIP(FromCTSCustID, FromCustID, ToCTSCustID, ToCustID, CreatedDate)
     SELECT frCus.CTSCustID
 		,	frCus.CustID
         ,	toCus.CTSCustID
         ,	toCus.CustID
-        ,	DATE(asIP.CreatedDate)
+        ,	DATE(@LastAssByIP:=asIP.CreatedDate)
     FROM CTS_DataCenter.AssociationByIP AS asIP
 		INNER JOIN CTS_DataCenter.CTSCustomer AS frCus ON frCus.CustID = asIP.FromCustID AND frCus.CustSubID = 0
         INNER JOIN CTS_DataCenter.CTSCustomer AS toCus ON toCus.CustID = asIP.ToCustID AND toCus.CustSubID = 0;
-	
+
     #======GET NEW AssociaionByDevice======================================= 
     
     SET @LastAssByDevice = lv_sysLastAssByDevice;    
@@ -247,10 +248,12 @@ BEGIN
     HAVING COUNT(1) > 2;
     
     UPDATE CTS_DataCenter.SystemParameter AS sys
+    SET sys.ParameterValue = @LastAssByIP
+    WHERE sys.ParameterID = 21;
+    
+    UPDATE CTS_DataCenter.SystemParameter AS sys
     SET sys.ParameterValue = @LastAssByDevice
     WHERE sys.ParameterID = 22;
-    
-    
 END$$
 
 DELIMITER ;
