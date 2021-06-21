@@ -10,10 +10,14 @@ Revisions:
 Reviewer:
 */
 USE CTS_DataCenter;
-DROP EVENT IF EXISTS `EV_CTS_ProblemCaseMonitor_Rule`; 
-CREATE DEFINER=`ctsOwner.vn`@`%` 
-EVENT `EV_CTS_ProblemCaseMonitor_Rule` ON SCHEDULE EVERY 60 SECOND 
-STARTS CURRENT_TIME() ON COMPLETION NOT PRESERVE ENABLE 
-DO 
-    CALL CTS_DataCenter.CTS_DC_ProblemCaseMonitor_Rule(500);
+DROP EVENT IF EXISTS EV_CTS_ProblemCaseMonitor_Rule;   
+delimiter |
+CREATE EVENT EV_CTS_ProblemCaseMonitor_Rule
+    ON SCHEDULE
+      EVERY 60 SECOND
+    DO
+      BEGIN
+      CALL CTS_DataCenter.CTS_DC_ProblemCaseMonitor_Rule(500);
+      END |
 
+delimiter ;

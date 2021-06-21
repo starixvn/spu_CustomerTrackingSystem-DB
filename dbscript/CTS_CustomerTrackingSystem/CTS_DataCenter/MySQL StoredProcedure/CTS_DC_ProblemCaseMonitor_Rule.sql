@@ -30,7 +30,7 @@ BEGIN
     SET lv_sysLastAssByIP = (SELECT ParameterValue FROM CTS_DataCenter.SystemParameter WHERE ParameterID = 21);
     SET lv_sysLastAssByDevice = (SELECT ParameterValue FROM CTS_DataCenter.SystemParameter WHERE ParameterID = 22);
     SET lv_sysLastClassification = (SELECT ParameterValue FROM CTS_DataCenter.SystemParameter WHERE ParameterID = 23);
-        
+	
     #====PROBLEM CASE ROBOT(1) AND PRO PUNTER(9)====================================================
     SET @LastCustClassHisID = lv_sysLastClassification;    
     DROP TEMPORARY TABLE IF EXISTS Temp_Category;
@@ -121,7 +121,7 @@ BEGIN
     FROM Temp_CustProlemCase AS tmpCpc
     WHERE NOT EXISTS(SELECT 1 FROM CTS_DataCenter.ProblemCaseMonitor AS pcm 
 			WHERE tmpCpc.CustID = pcm.CustID AND tmpCpc.ProblemCaseID = pcm.ProblemCaseID);
-   
+    
     UPDATE CTS_DataCenter.SystemParameter AS sys
     SET sys.ParameterValue = @LastCustClassHisID
     WHERE sys.ParameterID = 23;  
@@ -138,7 +138,7 @@ BEGIN
     FROM CTS_DataCenter.AssociationByIP AS asIP
 		INNER JOIN CTS_DataCenter.CTSCustomer AS frCus ON frCus.CustID = asIP.FromCustID AND frCus.CustSubID = 0
         INNER JOIN CTS_DataCenter.CTSCustomer AS toCus ON toCus.CustID = asIP.ToCustID AND toCus.CustSubID = 0;
-
+	
     #======GET NEW AssociaionByDevice======================================= 
     
     SET @LastAssByDevice = lv_sysLastAssByDevice;    
@@ -162,7 +162,7 @@ BEGIN
  	SELECT	nad.CTSCustID
 		,	nad.CustID
         ,	nad.CustSubID
-		,	cus.CustID
+		,	cus.CTSCustID
         ,	nad.CreatedDate
     FROM Temp_NewAssDevice AS nad
 		INNER JOIN CTS_DataCenter.AssociationByDevice AS ad ON nad.DCSDeviceID = ad.DCSDeviceID AND ad.CTSCustID <> nad.CTSCustID
@@ -176,7 +176,7 @@ BEGIN
     SELECT	nIP.FromCTSCustID
 		,	nIP.FromCustID
         ,	0 AS FromCustSubID
-		,	nIP.ToCustID
+		,	nIP.ToCTSCustID
         ,	nIP.CreatedDate
     FROM Temp_NewAssociationByIP AS nIP
     WHERE EXISTS (SELECT 1 
@@ -188,7 +188,7 @@ BEGIN
     SELECT	nIP.ToCTSCustID
 		,	nIP.ToCustID
         ,	0 AS FromCustSubID
-		,	nIP.FromCustID
+		,	nIP.FromCTSCustID
         ,	nIP.CreatedDate
     FROM Temp_NewAssociationByIP AS nIP
     WHERE EXISTS (SELECT 1 
@@ -229,7 +229,7 @@ BEGIN
  	SELECT	nad.CTSCustID
 		,	nad.CustID
         ,	nad.CustSubID
-		,	cus.CustID
+		,	cus.CTSCustID
         ,	nad.CreatedDate
     FROM Temp_NewAssDevice AS nad
 		INNER JOIN CTS_DataCenter.AssociationByDevice AS ad ON nad.DCSDeviceID = ad.DCSDeviceID AND ad.CTSCustID <> nad.CTSCustID
@@ -248,12 +248,14 @@ BEGIN
     HAVING COUNT(1) > 2;
     
     UPDATE CTS_DataCenter.SystemParameter AS sys
-    SET sys.ParameterValue = @LastAssByIP
-    WHERE sys.ParameterID = 21;
+	SET sys.ParameterValue = @LastAssByIP
+	WHERE sys.ParameterID = 21;
+
+	UPDATE CTS_DataCenter.SystemParameter AS sys
+	SET sys.ParameterValue = @LastAssByDevice
+	WHERE sys.ParameterID = 22;
     
-    UPDATE CTS_DataCenter.SystemParameter AS sys
-    SET sys.ParameterValue = @LastAssByDevice
-    WHERE sys.ParameterID = 22;
+    
 END$$
 
 DELIMITER ;
