@@ -17,7 +17,7 @@ CREATE EVENT EV_CTS_ProblemCaseMonitor_Rule
       EVERY 60 SECOND
     DO
       BEGIN
-      CALL CTS_DataCenter.CTS_DC_ProblemCaseMonitor_Rule(500);
+      CALL CTS_DataCenter.CTS_DC_ProblemCaseMonitor_Rule(100);
       END |
 
 delimiter ;
