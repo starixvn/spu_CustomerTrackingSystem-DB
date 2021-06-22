@@ -102,6 +102,12 @@ BEGIN
         , PRIMARY KEY PK_Temp_NewAssDevice(FromCTSCustID, ToCTSCustID, CreatedDate)
         , INDEX IX_Temp_NewAssDevice(FromCTSCustID, ToCTSCustID, CreatedDate)
     ); 
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_DelCustWithoutPA;    
+    CREATE TEMPORARY TABLE Temp_DelCustWithoutPA(
+		CTSCustID BIGINT PRIMARY KEY
+	);
+    
     #==============================================================================================
     #======Scan CTSCustomerClassification_History FOR cat.CategoryGroup IN (59, 61, 204)
     INSERT IGNORE INTO Temp_CustProlemCase (ID, CreatedDate, CustID, ProblemCaseID)
@@ -137,7 +143,10 @@ BEGIN
         ,	DATE(@LastAssByIP:=asIP.CreatedDate)
     FROM CTS_DataCenter.AssociationByIP AS asIP
 		INNER JOIN CTS_DataCenter.CTSCustomer AS frCus ON frCus.CustID = asIP.FromCustID AND frCus.CustSubID = 0
-        INNER JOIN CTS_DataCenter.CTSCustomer AS toCus ON toCus.CustID = asIP.ToCustID AND toCus.CustSubID = 0;
+        INNER JOIN CTS_DataCenter.CTSCustomer AS toCus ON toCus.CustID = asIP.ToCustID AND toCus.CustSubID = 0
+	WHERE asIP.CreatedDate > lv_sysLastAssByIP
+    ORDER BY asIP.CreatedDate
+	LIMIT ip_PackSize;
 	
     #======GET NEW AssociaionByDevice======================================= 
     
@@ -156,8 +165,7 @@ BEGIN
 	ORDER BY ad.CTSAssDevID
     LIMIT ip_PackSize; 
     
-    #======WHEN NewAss.CTSCustID Associated At least 3 PA Custs==========================
-    
+    #======WHEN NewAss.CTSCustID Associated At least 3 PA Custs==========================    
     INSERT IGNORE INTO Temp_CustAssociation(FromCTSCustID, FromCustID, FromCustSubID, ToCTSCustID, CreatedDate)
  	SELECT	nad.CTSCustID
 		,	nad.CustID
@@ -169,7 +177,7 @@ BEGIN
         INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ad.CTSCustID = cus.CTSCustID AND cus.CustSubID = 0
     WHERE EXISTS (SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
-						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ParentID = 50
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ParentID = 50 AND cat.CategoryGroup <> 52
 					WHERE cus.CustID = cls.CustID AND cls.SportGroupID = 0);
 	
     INSERT INTO Temp_CustAssociation(FromCTSCustID, FromCustID, FromCustSubID, ToCTSCustID, CreatedDate)
@@ -181,7 +189,7 @@ BEGIN
     FROM Temp_NewAssociationByIP AS nIP
     WHERE EXISTS (SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
-						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND ParentID = 50
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND ParentID = 50 AND cat.CategoryGroup <> 52
 					WHERE nIP.FromCustID = cls.CustID AND cls.SportGroupID = 0);
     
     INSERT INTO Temp_CustAssociation(FromCTSCustID, FromCustID, FromCustSubID, ToCTSCustID, CreatedDate)
@@ -193,7 +201,7 @@ BEGIN
     FROM Temp_NewAssociationByIP AS nIP
     WHERE EXISTS (SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
-						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ParentID = 50
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ParentID = 50 AND cat.CategoryGroup <> 52
 					WHERE nIP.ToCustID = cls.CustID AND cls.SportGroupID = 0);
     
     INSERT INTO CTS_DataCenter.ProblemCaseMonitor(CreatedDate, ProblemCaseID, CustID, CustSubID, InsertTime)
@@ -204,15 +212,19 @@ BEGIN
 	GROUP BY  tmpCa.FromCustID, tmpCa.FromCustSubID
     HAVING COUNT(1) > 2;  
     
-	#======WHEN NewAss.CTSCustID X IS PA CustID => CHECK Associated Cust has at least 3 PA Cust==========================
-
-    DELETE tmpCa 
+	#======WHEN NewAss.CTSCustID X IS PA CustID => CHECK Associated Cust has at least 3 PA Cust (exclude GroupBetting)==========================
+    INSERT IGNORE INTO Temp_DelCustWithoutPA(CTSCustID)
+    SELECT FromCTSCustID
     FROM Temp_CustAssociation AS tmpCa
 	WHERE NOT EXISTS (	SELECT 1 
 						FROM CTS_DataCenter.CTSCustomerClassification AS cls
-						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ParentID = 50
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ParentID = 50 AND cat.CategoryGroup <> 52
 						WHERE tmpCa.FromCustID = cls.CustID AND cls.SportGroupID = 0);	
-    
+
+    DELETE tmpCa 
+    FROM Temp_CustAssociation AS tmpCa
+		INNER JOIN Temp_DelCustWithoutPA AS tmpDel ON tmpCa.FromCTSCustID = tmpDel.CTSCustID;
+	
     TRUNCATE TABLE Temp_NewAssDevice;
     INSERT IGNORE INTO Temp_NewAssDevice(DCSDeviceID, CTSCustID, CustID, CustSubID, CreatedDate)
     SELECT	ad.DCSDeviceID
