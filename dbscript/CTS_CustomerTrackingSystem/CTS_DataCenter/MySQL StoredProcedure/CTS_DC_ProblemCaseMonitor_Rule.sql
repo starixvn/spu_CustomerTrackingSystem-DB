@@ -190,7 +190,7 @@ BEGIN
     WHERE EXISTS (SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
 						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND ParentID = 50 AND cat.CategoryGroup <> 52
-					WHERE nIP.FromCustID = cls.CustID AND cls.SportGroupID = 0);
+					WHERE nIP.ToCustID = cls.CustID AND cls.SportGroupID = 0);
     
     INSERT INTO Temp_CustAssociation(FromCTSCustID, FromCustID, FromCustSubID, ToCTSCustID, CreatedDate)
     SELECT	nIP.ToCTSCustID
@@ -202,7 +202,7 @@ BEGIN
     WHERE EXISTS (SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
 						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ParentID = 50 AND cat.CategoryGroup <> 52
-					WHERE nIP.ToCustID = cls.CustID AND cls.SportGroupID = 0);
+					WHERE nIP.FromCustID = cls.CustID AND cls.SportGroupID = 0);
     
     INSERT INTO CTS_DataCenter.ProblemCaseMonitor(CreatedDate, ProblemCaseID, CustID, CustSubID, InsertTime)
     SELECT MIN(CreatedDate), lv_ProCasSuspiciousAss, tmpCa.FromCustID, tmpCa.FromCustSubID, CURRENT_TIME()
