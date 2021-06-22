@@ -12,12 +12,11 @@ Reviewer:
 USE CTS_DataCenter;
 DROP EVENT IF EXISTS EV_CTS_ProblemCaseMonitor_Rule;   
 delimiter |
-CREATE EVENT EV_CTS_ProblemCaseMonitor_Rule
+CREATE DEFINER=`ctsOwner`@`%` EVENT EV_CTS_ProblemCaseMonitor_Rule
     ON SCHEDULE
       EVERY 60 SECOND
     DO
       BEGIN
-      CALL CTS_DataCenter.CTS_DC_ProblemCaseMonitor_Rule(100);
+      CALL CTS_DataCenter.CTS_DC_ProblemCaseMonitor_Rule(50);
       END |
-
 delimiter ;

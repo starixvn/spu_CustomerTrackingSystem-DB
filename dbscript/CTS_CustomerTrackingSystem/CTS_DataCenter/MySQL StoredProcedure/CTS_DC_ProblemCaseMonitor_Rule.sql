@@ -169,7 +169,7 @@ BEGIN
         INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ad.CTSCustID = cus.CTSCustID AND cus.CustSubID = 0
     WHERE EXISTS (SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
-						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND ParentID = 50
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ParentID = 50
 					WHERE cus.CustID = cls.CustID AND cls.SportGroupID = 0);
 	
     INSERT INTO Temp_CustAssociation(FromCTSCustID, FromCustID, FromCustSubID, ToCTSCustID, CreatedDate)
@@ -193,7 +193,7 @@ BEGIN
     FROM Temp_NewAssociationByIP AS nIP
     WHERE EXISTS (SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
-						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cls.ParentID = 50
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ParentID = 50
 					WHERE nIP.ToCustID = cls.CustID AND cls.SportGroupID = 0);
     
     INSERT INTO CTS_DataCenter.ProblemCaseMonitor(CreatedDate, ProblemCaseID, CustID, CustSubID, InsertTime)
