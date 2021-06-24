@@ -69,14 +69,7 @@ BEGIN
         ,	MinPreGroupID	INT
         ,	NoOfPreGroupID	INT
     );
-    /*
-	DROP TEMPORARY TABLE IF EXISTS Temp_PreGroup;
-    CREATE TEMPORARY TABLE Temp_PreGroup(
-			AssGroupID	INT	
-		,	PreGroupID	INT
-	);
-    */
-      
+    
 	SELECT 	MatchID, LiveIndicator, TotalScore, BettypeID, EventDate, LiveHomeScore, LiveAwayScore
 			, EventStatus, HomeID, AwayID, KickOffTime, LeagueID, KickOffTime
     INTO 	lv_MatchID, lv_LiveIndicator, lv_TotalScore, lv_BettypeID, lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore
@@ -91,24 +84,25 @@ BEGIN
     FROM	CTS_DataCenter.MatchMonitorStaging
     WHERE	OriginGroupID = ip_TempGroupID;    
     
+    SELECT lv_CustList;
     CALL CTS_DC_Association_GetGroup(lv_CustList); /*Return CustAssociationGroup Into Temporary table "Temp_Group"*/
-
+	
+    INSERT INTO Temp_AssGroup(AssGroupID, ListCustID, ListTransID, IsHedging, MinPreGroupID, NoOfPreGroupID)
+	SELECT	tmpGp.GroupID AS AssGroupID
+		,	GROUP_CONCAT(DISTINCT mms.CustID) AS ListCustID
+		,	GROUP_CONCAT(DISTINCT mms.TransID) AS ListTransID
+		,	MAX(tmpGp.IsHedging) AS IsHedging
+		,	MIN(mms.GroupID) AS MinPreGroupID
+		,	COUNT(mms.GroupID) AS NoOfPreGroupID
+	FROM	CTS_DataCenter.MatchMonitorStaging AS mms
+		INNER JOIN Temp_Group AS tmpGp ON mms.CustID = tmpGp.CustID
+	WHERE mms.OriginGroupID = ip_TempGroupID 
+	GROUP BY tmpGp.GroupID
+	HAVING SUM(Stake) >= 500 AND COUNT(DISTINCT mms.CustID) > 1;  
+    
     /*****IF EXISTS ANY ASSOCIATION GROUP THEN CHECK GROUP BETTING ELSE END*****/
-    IF EXISTS (SELECT 1 FROM Temp_Group LIMIT 1)
-    THEN
-		
-        INSERT INTO Temp_AssGroup(AssGroupID, ListCustID, ListTransID, IsHedging, MinPreGroupID, NoOfPreGroupID)
-        SELECT	tmpGp.GroupID AS AssGroupID
-            ,	GROUP_CONCAT(DISTINCT mms.CustID) AS ListCustID
-            ,	GROUP_CONCAT(DISTINCT mms.TransID) AS ListTransID
-			,	MAX(tmpGp.IsHedging) AS IsHedging
-            ,	MIN(mms.GroupID) AS MinPreGroupID
-            ,	COUNT(mms.GroupID) AS NoOfPreGroupID
-		FROM	CTS_DataCenter.MatchMonitorStaging AS mms
-			INNER JOIN Temp_Group AS tmpGp ON mms.CustID = tmpGp.CustID
-		WHERE mms.OriginGroupID = ip_TempGroupID 
-		GROUP BY tmpGp.GroupID
-		HAVING SUM(Stake) >= 500 AND COUNT(DISTINCT mms.CustID) > 1;   
+    IF EXISTS (SELECT 1 FROM Temp_AssGroup LIMIT 1)
+    THEN         
                
         #====MatchMonitorDetaisl===============
         DROP TEMPORARY TABLE IF EXISTS Temp_OdlGroupID;
@@ -151,6 +145,7 @@ BEGIN
 		#WHERE	tmpAg.AssGroupID = @AssGroupID;
         
         #====MatchMonitor===============
+        
         SET lv_NewNoOfHedging = (IFNULL((SELECT COUNT(DISTINCT IsHedging) FROM CTS_DataCenter.MatchMonitorDetails AS mm 
 									WHERE mm.MatchID = lv_MatchID AND mm.BettypeID = lv_BettypeID),0));
         SET lv_CurrentNoOfHedging = IFNULL((SELECT COUNT(DISTINCT IsHedging) FROM CTS_DataCenter.MatchMonitor AS mm 
@@ -163,11 +158,11 @@ BEGIN
 			FROM	Temp_AssGroup AS tmpAg;
 		END IF;
         
-        IF  ( lv_NewNoOfHedging = lv_CurrentNoOfHedging AND lv_NewNoOfHedging != 2) THEN
+        IF  ( lv_NewNoOfHedging = lv_CurrentNoOfHedging AND lv_NewNoOfHedging = 1) THEN
 			UPDATE CTS_DataCenter.MatchMonitor AS mm
             SET mm.IsHedging = (SELECT MAX(IsHedging) FROM Temp_AssGroup)
             WHERE MatchID = lv_MatchID AND BettypeID = lv_BettypeID ;	
-		END IF;
+		END IF;       
         
         IF  ( lv_NewNoOfHedging < lv_CurrentNoOfHedging ) THEN
 			DELETE mm
@@ -185,6 +180,20 @@ BEGIN
 			AND 	mmd.TotalScore = lv_TotalScore AND mmd.BettypeID = lv_BettypeID AND mmd.GroupID > lv_MaxOldGroupID
 		ORDER BY mmd.GroupID ASC
         LIMIT 1;
+        
+        /***Trace BUG
+        SET @MaxPackageID = (SELECT Max(PackageID) FROM MatchMonitorTrace_StagingTrace); 
+        INSERT IGNORE INTO CTS_DataCenter.MatchMonitor_Debug(IsHedging, MatchID, BettypeID, EventDate, EventStatus
+				, KickOffTime, HomeID, AwayID,LeagueID, PackageID)
+        SELECT IsHedging, MatchID, BettypeID, EventDate, EventStatus, KickOffTime, HomeID, AwayID,LeagueID, @MaxPackageID
+        FROM  CTS_DataCenter.MatchMonitor;
+        
+        INSERT IGNORE INTO CTS_DataCenter.MatchMonitorDetails_Debug(MatchID, BettypeID, EventDate, LiveIndicator, GroupID
+						, TotalScore, LiveHomeScore, LiveAwayScore, IsHedging, ListCustID, ListTransID,PackageID)
+		SELECT MatchID, BettypeID, EventDate, LiveIndicator, GroupID
+						, TotalScore, LiveHomeScore, LiveAwayScore, IsHedging, ListCustID, ListTransID, @MaxPackageID
+		FROM CTS_DataCenter.MatchMonitorDetails;
+        /***Trace BUG*/
         
 		WHILE lv_DetailsGroupID IS NOT NULL
         DO
@@ -207,6 +216,6 @@ BEGIN
 
         END WHILE;
 	END IF; 
-
+	
 END$$
 DELIMITER ;
