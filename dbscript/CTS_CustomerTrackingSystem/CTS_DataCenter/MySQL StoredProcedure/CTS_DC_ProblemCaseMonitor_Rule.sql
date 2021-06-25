@@ -44,8 +44,7 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_CustProlemCase
     (		
 			CustID			BIGINT UNSIGNED
-		,	ProblemCaseID	SMALLINT
-        ,	CreatedDate		DATETIME        
+		,	ProblemCaseID	SMALLINT     
         ,	ID				BIGINT	
         
         ,	PRIMARY KEY Temp_CustProlemCase_CustID_ProblemCaseID(CustID,ProblemCaseID)
@@ -63,7 +62,6 @@ BEGIN
         ,	CTSCustID	BIGINT UNSIGNED
 		,	CustID		BIGINT UNSIGNED
         ,	CustSubID	BIGINT UNSIGNED 
-        ,	CreatedDate	DATETIME
         
         , PRIMARY KEY PK_Temp_NewAssDevicePA_CTSCustID(DCSDeviceID,CTSCustID)
     );  
@@ -74,7 +72,6 @@ BEGIN
         ,	CTSCustID	BIGINT UNSIGNED
 		,	CustID		BIGINT UNSIGNED
         ,	CustSubID	BIGINT UNSIGNED 
-        ,	CreatedDate	DATETIME
         ,	CTSAssDevID	BIGINT UNSIGNED
         
         , PRIMARY KEY PK_Temp_NewAssDevice_CTSCustID(DCSDeviceID,CTSCustID)
@@ -86,10 +83,8 @@ BEGIN
 		,	FromCustID		BIGINT UNSIGNED
         ,	FromCustSubID	BIGINT UNSIGNED
         ,	ToCTSCustID		BIGINT UNSIGNED
-        ,	CreatedDate		DATETIME
         
-        , PRIMARY KEY PK_Temp_NewAssDevice(FromCTSCustID, ToCTSCustID, CreatedDate)
-        , INDEX IX_Temp_NewAssDevice_CreatedDate(CreatedDate)
+        , PRIMARY KEY PK_Temp_NewAssDevice(FromCTSCustID, ToCTSCustID)
     );  
     
     DROP TEMPORARY TABLE IF EXISTS Temp_NewAssociationByIP;
@@ -98,10 +93,8 @@ BEGIN
 		,	FromCustID		BIGINT UNSIGNED
         ,	ToCTSCustID		BIGINT UNSIGNED
         ,	ToCustID		BIGINT UNSIGNED
-        ,	CreatedDate		DATETIME
         
-        , PRIMARY KEY PK_Temp_NewAssDevice(FromCTSCustID, ToCTSCustID, CreatedDate)
-        , INDEX IX_Temp_NewAssDevice(FromCTSCustID, ToCTSCustID, CreatedDate)
+        , PRIMARY KEY PK_Temp_NewAssDevice(FromCTSCustID, ToCTSCustID)
     ); 
     
     DROP TEMPORARY TABLE IF EXISTS Temp_DelCustWithoutPA;    
@@ -111,9 +104,8 @@ BEGIN
     
     #==============================================================================================
     #======Scan CTSCustomerClassification_History FOR cat.CategoryGroup IN (59, 61, 204)
-    INSERT IGNORE INTO Temp_CustProlemCase (ID, CreatedDate, CustID, ProblemCaseID)
+    INSERT IGNORE INTO Temp_CustProlemCase (ID, CustID, ProblemCaseID)
     SELECT 	@LastCustClassHisID := his.ID
-		,	DATE(his.LastModifiedDate) AS CreatedDate
 		,	CustID
         ,	(CASE WHEN cat.CategoryGroup IN (59,61) THEN lv_ProCasRobot
 				 WHEN cat.CategoryGroup IN (204) THEN lv_ProCasProPunter END) AS ProblemCaseID
@@ -123,8 +115,12 @@ BEGIN
     ORDER BY ID
     LIMIT ip_PackSize;   
     
-    INSERT INTO CTS_DataCenter.ProblemCaseMonitor(CreatedDate, ProblemCaseID, CustID, CustSubID, InsertTime)
-    SELECT tmpCpc.CreatedDate, tmpCpc.ProblemCaseID, tmpCpc.CustID, 0 , CURRENT_TIME()
+    INSERT IGNORE INTO CTS_DataCenter.ProblemCaseMonitor(CreatedDate, ProblemCaseID, CustID, CustSubID, InsertTime)
+    SELECT	CURRENT_DATE() AS CreatedDate
+		,	tmpCpc.ProblemCaseID
+        ,	tmpCpc.CustID
+        ,	0 AS CustSubID
+        ,	CURRENT_TIME()
     FROM Temp_CustProlemCase AS tmpCpc
     WHERE NOT EXISTS(SELECT 1 FROM CTS_DataCenter.ProblemCaseMonitor AS pcm 
 			WHERE tmpCpc.CustID = pcm.CustID AND tmpCpc.ProblemCaseID = pcm.ProblemCaseID);
@@ -136,12 +132,11 @@ BEGIN
     #==========================================================================
     #======GET NEW AssociationByIP======================================= 
     SET @LastAssByIP = lv_sysLastAssByIP;
-    INSERT INTO Temp_NewAssociationByIP(FromCTSCustID, FromCustID, ToCTSCustID, ToCustID, CreatedDate)
+    INSERT INTO Temp_NewAssociationByIP(FromCTSCustID, FromCustID, ToCTSCustID, ToCustID)
     SELECT frCus.CTSCustID
 		,	frCus.CustID
         ,	toCus.CTSCustID
         ,	toCus.CustID
-        ,	DATE(@LastAssByIP:=asIP.CreatedDate)
     FROM CTS_DataCenter.AssociationByIP AS asIP
 		INNER JOIN CTS_DataCenter.CTSCustomer AS frCus ON frCus.CustID = asIP.FromCustID AND frCus.CustSubID = 0
         INNER JOIN CTS_DataCenter.CTSCustomer AS toCus ON toCus.CustID = asIP.ToCustID AND toCus.CustSubID = 0
@@ -153,12 +148,11 @@ BEGIN
     
     SET @LastAssByDevice = lv_sysLastAssByDevice;    
     
-    INSERT IGNORE INTO Temp_NewAssDevice(DCSDeviceID, CTSCustID, CustID, CustSubID, CreatedDate, CTSAssDevID)
+    INSERT IGNORE INTO Temp_NewAssDevice(DCSDeviceID, CTSCustID, CustID, CustSubID, CTSAssDevID)
 	SELECT	ad.DCSDeviceID
 		,	ad.CTSCustID
         ,	cus.CustID
         ,	cus.CustSubID
-        ,	DATE(ad.CreatedTime)
         ,	@LastAssByDevice := ad.CTSAssDevID 
     FROM CTS_DataCenter.AssociationByDevice AS ad		
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ad.CTSCustID = cus.CTSCustID
@@ -167,12 +161,11 @@ BEGIN
     LIMIT ip_PackSize; 
     
     #======WHEN NewAss.CTSCustID Associated At least 3 PA Custs==========================    
-    INSERT IGNORE INTO Temp_CustAssociation(FromCTSCustID, FromCustID, FromCustSubID, ToCTSCustID, CreatedDate)
+    INSERT IGNORE INTO Temp_CustAssociation(FromCTSCustID, FromCustID, FromCustSubID, ToCTSCustID)
  	SELECT	nad.CTSCustID
 		,	nad.CustID
         ,	nad.CustSubID
 		,	cus.CTSCustID
-        ,	nad.CreatedDate
     FROM Temp_NewAssDevice AS nad
 		INNER JOIN CTS_DataCenter.AssociationByDevice AS ad ON nad.DCSDeviceID = ad.DCSDeviceID AND ad.CTSCustID <> nad.CTSCustID
         INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ad.CTSCustID = cus.CTSCustID AND cus.CustSubID = 0
@@ -181,24 +174,22 @@ BEGIN
 						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ParentID = 50 AND cat.CategoryGroup <> 52
 					WHERE cus.CustID = cls.CustID AND cls.SportGroupID = 0);
         
-    INSERT INTO Temp_CustAssociation(FromCTSCustID, FromCustID, FromCustSubID, ToCTSCustID, CreatedDate)
+    INSERT INTO Temp_CustAssociation(FromCTSCustID, FromCustID, FromCustSubID, ToCTSCustID)
     SELECT	nIP.FromCTSCustID
 		,	nIP.FromCustID
         ,	0 AS FromCustSubID
 		,	nIP.ToCTSCustID
-        ,	nIP.CreatedDate
     FROM Temp_NewAssociationByIP AS nIP
     WHERE EXISTS (SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
 						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ParentID = 50 AND cat.CategoryGroup <> 52
 					WHERE nIP.ToCustID = cls.CustID AND cls.SportGroupID = 0);   
     
-    INSERT INTO Temp_CustAssociation(FromCTSCustID, FromCustID, FromCustSubID, ToCTSCustID, CreatedDate)
+    INSERT INTO Temp_CustAssociation(FromCTSCustID, FromCustID, FromCustSubID, ToCTSCustID)
     SELECT	nIP.ToCTSCustID
 		,	nIP.ToCustID
         ,	0 AS FromCustSubID
 		,	nIP.FromCTSCustID
-        ,	nIP.CreatedDate
     FROM Temp_NewAssociationByIP AS nIP
     WHERE EXISTS (SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
@@ -206,15 +197,16 @@ BEGIN
 					WHERE nIP.FromCustID = cls.CustID AND cls.SportGroupID = 0);
         
     INSERT IGNORE INTO CTS_DataCenter.ProblemCaseMonitor(CreatedDate, ProblemCaseID, CustID, CustSubID, InsertTime)
-    SELECT tmp.CreatedDate, lv_ProCasSuspiciousAss, tmp.FromCustID, tmp.FromCustSubID, CURRENT_TIME()
-    FROM (
-			SELECT tmpCa.FromCTSCustID, tmpCa.FromCustID, tmpCa.FromCustSubID, tmpCa.ToCTSCustID, tmpCa.CreatedDate,
-				  ROW_NUMBER() over(partition by tmpCa.FromCTSCustID
-									order by     tmpCa.CreatedDate ASC) RowNum
-			FROM Temp_CustAssociation AS tmpCa
-			WHERE NOT EXISTS(SELECT 1 FROM CTS_DataCenter.ProblemCaseMonitor AS pcm 
-					WHERE tmpCa.FromCustID = pcm.CustID AND pcm.ProblemCaseID = lv_ProCasSuspiciousAss) )AS tmp
-	WHERE RowNum = 3;
+    SELECT	CURRENT_DATE() AS CreatedDate
+		,	lv_ProCasSuspiciousAss
+        ,	tmpCa.FromCustID
+        ,	tmpCa.FromCustSubID
+        ,	CURRENT_TIME()
+    FROM Temp_CustAssociation AS tmpCa
+	WHERE NOT EXISTS(SELECT 1 FROM CTS_DataCenter.ProblemCaseMonitor AS pcm 
+			WHERE tmpCa.FromCustID = pcm.CustID AND pcm.ProblemCaseID = lv_ProCasSuspiciousAss)
+	GROUP BY  tmpCa.FromCustID, tmpCa.FromCustSubID
+    HAVING COUNT(1) > 2; 
 
 	#======WHEN NewAss.CTSCustID X IS PA CustID => CHECK Associated Cust has at least 3 PA Cust (exclude GroupBetting)==========================
     INSERT IGNORE INTO Temp_DelCustWithoutPA(CTSCustID)
@@ -230,23 +222,21 @@ BEGIN
 		INNER JOIN Temp_DelCustWithoutPA AS tmpDel ON tmpCa.FromCTSCustID = tmpDel.CTSCustID;
 	
     TRUNCATE TABLE Temp_NewAssDevice;
-    INSERT IGNORE INTO Temp_NewAssDevice(DCSDeviceID, CTSCustID, CustID, CustSubID, CreatedDate)
+    INSERT IGNORE INTO Temp_NewAssDevice(DCSDeviceID, CTSCustID, CustID, CustSubID)
     SELECT	ad.DCSDeviceID
 		,	ad.CTSCustID
         ,	cus.CustID
         ,	cus.CustSubID
-        ,	tmpCa.CreatedDate
     FROM CTS_DataCenter.AssociationByDevice AS ad
 		INNER JOIN Temp_CustAssociation AS tmpCa ON ad.CTSCustID = tmpCa.ToCTSCustID
         INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpCa.ToCTSCustID = cus.CTSCustID;   
     
     TRUNCATE TABLE Temp_CustAssociation;
-	INSERT IGNORE INTO Temp_CustAssociation(FromCTSCustID, FromCustID, FromCustSubID, ToCTSCustID, CreatedDate)
+	INSERT IGNORE INTO Temp_CustAssociation(FromCTSCustID, FromCustID, FromCustSubID, ToCTSCustID)
  	SELECT	nad.CTSCustID
 		,	nad.CustID
         ,	nad.CustSubID
 		,	cus.CTSCustID
-        ,	nad.CreatedDate
     FROM Temp_NewAssDevice AS nad
 		INNER JOIN CTS_DataCenter.AssociationByDevice AS ad ON nad.DCSDeviceID = ad.DCSDeviceID AND ad.CTSCustID <> nad.CTSCustID
         INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ad.CTSCustID = cus.CTSCustID AND cus.CustSubID = 0
@@ -256,15 +246,16 @@ BEGIN
 					WHERE cus.CustID = cls.CustID AND cls.SportGroupID = 0);
     
     INSERT IGNORE INTO CTS_DataCenter.ProblemCaseMonitor(CreatedDate, ProblemCaseID, CustID, CustSubID, InsertTime)
-    SELECT tmp.CreatedDate, lv_ProCasSuspiciousAss, tmp.FromCustID, tmp.FromCustSubID, CURRENT_TIME()
-    FROM (
-			SELECT tmpCa.FromCTSCustID, tmpCa.FromCustID, tmpCa.FromCustSubID, tmpCa.ToCTSCustID, tmpCa.CreatedDate,
-				  ROW_NUMBER() OVER(PARTITION BY tmpCa.FromCTSCustID
-									ORDER BY     tmpCa.CreatedDate ASC) RowNum
-			FROM Temp_CustAssociation AS tmpCa
-			WHERE NOT EXISTS(SELECT 1 FROM CTS_DataCenter.ProblemCaseMonitor AS pcm 
-					WHERE tmpCa.FromCustID = pcm.CustID AND pcm.ProblemCaseID = lv_ProCasSuspiciousAss) )AS tmp
-	WHERE RowNum = 3;
+    SELECT	CURRENT_DATE() AS CreatedDate
+		,	lv_ProCasSuspiciousAss
+        ,	tmpCa.FromCustID
+        ,	tmpCa.FromCustSubID
+        ,	CURRENT_TIME()
+    FROM Temp_CustAssociation AS tmpCa
+	WHERE NOT EXISTS(SELECT 1 FROM CTS_DataCenter.ProblemCaseMonitor AS pcm 
+			WHERE tmpCa.FromCustID = pcm.CustID AND pcm.ProblemCaseID = lv_ProCasSuspiciousAss)
+	GROUP BY  tmpCa.FromCustID, tmpCa.FromCustSubID
+    HAVING COUNT(1) > 2;
     
     UPDATE CTS_DataCenter.SystemParameter AS sys
 	SET sys.ParameterValue = @LastAssByIP
@@ -272,8 +263,7 @@ BEGIN
 
 	UPDATE CTS_DataCenter.SystemParameter AS sys
 	SET sys.ParameterValue = @LastAssByDevice
-	WHERE sys.ParameterID = 22;
-    
+	WHERE sys.ParameterID = 22;    
     
 END$$
 
