@@ -49,13 +49,15 @@ BEGIN
 		,	d.ListTransID
         ,	d.GroupID
         ,	d.IsHedging
+        ,	d.TotalScore
 	FROM   CTS_DataCenter.MatchMonitorDetails AS d
 		INNER JOIN Temp_Score AS s ON s.TotalScore = d.TotalScore
         INNER JOIN Temp_ReasonGroup AS r ON r.GroupID = d.GroupID
 	WHERE  d.EventDate = ip_EventDate
 		AND d.BettypeID = ip_BettypeID
         AND d.MatchID = ip_MatchID
-        AND	(ip_LiveIndicator IS NULL OR d.LiveIndicator = ip_LiveIndicator);
+        AND	(ip_LiveIndicator IS NULL OR d.LiveIndicator = ip_LiveIndicator)
+        ;
     
 END$$
 DELIMITER ;

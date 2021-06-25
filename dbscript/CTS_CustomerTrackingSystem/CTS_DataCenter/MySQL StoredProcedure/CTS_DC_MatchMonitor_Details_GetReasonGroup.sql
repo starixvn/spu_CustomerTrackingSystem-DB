@@ -24,15 +24,18 @@ BEGIN
 			-	CALL CTS_DC_MatchMonitor_Details_GetReasonGroup('2021-05-01',12345,1);
 	*/
 	
-	SELECT 	s.GroupID
+	SELECT 	TotalScore
+		, 	s.GroupID
 		,	s.IsHedging
-        ,	GROUP_CONCAT(s.ListCustID) AS ListCustID
+        ,	GROUP_CONCAT(s.ListCustID) AS ListCustID  
 	FROM   CTS_DataCenter.MatchMonitorDetails AS s
 	WHERE  s.EventDate = ip_EventDate
 		AND s.BettypeID = ip_BettypeID
         AND s.MatchID = ip_MatchID
-	GROUP BY s.GroupID
-		,	s.IsHedging;
+	GROUP BY TotalScore
+		, 	s.GroupID
+		,	s.IsHedging
+	ORDER BY TotalScore, GroupID;
     
 END$$
 DELIMITER ;
