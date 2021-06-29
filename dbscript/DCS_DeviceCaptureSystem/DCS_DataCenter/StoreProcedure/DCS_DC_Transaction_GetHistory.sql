@@ -2,7 +2,14 @@
 DROP PROCEDURE IF EXISTS `DCS_DC_Transaction_GetHistory`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transaction_GetHistory`(IN ip_DateRange int,IN ip_SubscriberId int,IN ip_CTSCustId bigint,IN ip_PageSize int,IN ip_PageNumber int,OUT op_TotalItem int)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transaction_GetHistory`(
+		IN	ip_DateRange	INT
+    ,	IN	ip_SubscriberId INT
+    ,	IN	ip_CTSCustId 	BIGINT
+    ,	IN	ip_PageSize		INT
+    ,	IN	ip_PageNumber	INT
+    ,	OUT	op_TotalItem	INT
+    )
     SQL SECURITY INVOKER
 proc_label: BEGIN
 	/*
@@ -14,202 +21,90 @@ proc_label: BEGIN
 		Revisions:
 			- 20200518@lex.khuat: Update robot description from Green to Human [Redmine ID: #133934]
 			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
-			
+			- 20210629@Casey.Huynh: Enhance SP and Return Flagged Value (Web will show type of robot) [Redmine ID: 157085]
 		Param's Explanation (filtered by):
 	*/ 
-   
+	DECLARE lv_FromRow INT;
+    DECLARE lv_FromDate DATETIME;
+    DECLARE lv_ToDate DATETIME;
+	
+    SET lv_FromRow = (ip_PageNumber-1)*ip_PageSize;
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_History_Transaction;  
 	CREATE TEMPORARY TABLE Temp_History_Transaction
 	(
-			TransID			BIGINT(20),
-			TransTime	 	DATETIME, 
-            DeviceID 		VARCHAR(64),
-            IP				VARCHAR(50),
-            IPID			DECIMAL(50,0),
-            Flagged			SMALLINT(6),
-            Action			VARCHAR(100),
-            ActionResult	VARCHAR(100),
-            OSName			VARCHAR(100),
-            BrowserName		VARCHAR(100),
-            URL				VARCHAR(100)           
+			TransID			BIGINT
+		,	TransTime	 	DATETIME
+        ,	DeviceID 		VARCHAR(64)
+        ,	IP				VARCHAR(50)
+        ,	IPID			DECIMAL(50,0)
+        ,	Flagged			SMALLINT
+        ,	Action			VARCHAR(100)
+        ,	ActionResult	VARCHAR(100)
+        ,	OSName			VARCHAR(100)
+        ,	BrowserName		VARCHAR(100)
+        ,	URL				VARCHAR(100)
+            
+		,	PRIMARY KEY PK_Temp_History_Transaction(TransID)
     );
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_Account;  
-    
+    DROP TEMPORARY TABLE IF EXISTS Temp_Account;      
     CREATE TEMPORARY TABLE Temp_Account
 	(
 			AccountID	 	BIGINT(20)      
-    );
-	    
-    IF ISNULL(ip_DateRange) OR ip_DateRange < 0 THEN
-		SELECT Count(TransID) INTO op_TotalItem FROM Temp_History_Transaction;
-    
-		SELECT 	TransID			,
-				DATE_FORMAT(TransTime, "%M %d, %y")	as TransTime 	, 
-				DeviceID 		,
-				IP				,
-				IPID			,
-				CASE
-					WHEN Flagged = 5 THEN 'Robot (Browserless - Empty Token)'
-					WHEN Flagged = 6 THEN 'Robot (Browserless - Empty Analysis)'
-					WHEN Flagged = 7 THEN 'Robot (Browserless - Disabled JS)'
-					WHEN Flagged = 8 THEN 'Robot (Browserless - Invalid Analysis)'
-					WHEN Flagged = 9 THEN 'Robot (Browserless - Invalid Token)'
-					WHEN Flagged = 10 THEN 'Robot (Browserless - Invalid Device Code)'
-					ELSE 'Human'
-				END AS Flagged	,
-				Action			,
-				ActionResult	,
-				OSName			,
-				BrowserName		,
-				URL				
-		FROM Temp_History_Transaction       
-		LIMIT ip_PageNumber, ip_PageSize;
-    
-		LEAVE proc_label;
-    END IF;    
-    
-    SELECT LastArchivedDate INTO @MoveTransTime 
-		FROM DCS_DataCenter.ArchiveStatus 
-        WHERE ArchiveID = 1;       
+    );	
     
     INSERT INTO Temp_Account 
-		SELECT cusAcc.AccountID 
-			FROM CTS_DataCenter.CustDCSAccount cusAcc 
-			WHERE cusAcc.CTSCustID = ip_CTSCustId	
-					AND cusAcc.SubscriberID = ip_SubscriberId;
-    
-    SET @MoveDate = Date(@MoveTransTime);
-    SET @ToDate = CURRENT_DATE();
-    SET @FromDate = CASE 
-						WHEN ip_DateRange = 1 THEN DATE_ADD(CURRENT_DATE(), INTERVAL -1 DAY)
-                        WHEN ip_DateRange = 7 THEN DATE_ADD(CURRENT_DATE(), INTERVAL -7 DAY)
-                        WHEN ip_DateRange = 30 THEN DATE_ADD(CURRENT_DATE(), INTERVAL -30 DAY)
-                        WHEN ip_DateRange = 180 THEN DATE_ADD(CURRENT_DATE(), INTERVAL -180 DAY)
-                        ELSE CURRENT_DATE()
-				 END;                
-                 
-    IF @MoveDate <= @FromDate THEN # scan 07
-		INSERT INTO Temp_History_Transaction(TransID, TransTime, DeviceID, IP, IPID, Flagged, Action, ActionResult, OSName, BrowserName, URL)    
-			SELECT 	trs.TransID,
-					trs.TransTime,  
-					trs.FirstDeviceCode, 
-					trs.IP, 
-					trs.IPID,
-					trs.Flagged, 
-					ar.Action, 
-					ar.ActionResult, 
-					uag.OS, 
-					uag.Browser, 
-					ur.URLDetails
-			FROM DCS_DataCenter.Transaction07 trs 
-			LEFT JOIN DCS_DataCenter.UserAgent uag 
-					ON trs.UserAgentKey = uag.UserAgentKey
-			LEFT JOIN DCS_DataCenter.ActionResult ar 
-					ON trs.ActionResultID = ar.ActionResultID
-			LEFT JOIN DCS_DataCenter.URL ur 
-					ON trs.URLID = ur.URLID AND trs.SubscriberID = ur.SubscriberID
+	SELECT 	cusAcc.AccountID 
+	FROM	CTS_DataCenter.CustDCSAccount cusAcc 
+	WHERE 	cusAcc.CTSCustID = ip_CTSCustId	
+			AND cusAcc.SubscriberID = ip_SubscriberId;
+            
+    SET lv_ToDate = CURRENT_DATE();
+    SET lv_FromDate = CASE 
+						WHEN ip_DateRange = 1 THEN DATE_ADD(lv_ToDate, INTERVAL -1 DAY)
+                        WHEN ip_DateRange = 7 THEN DATE_ADD(lv_ToDate, INTERVAL -7 DAY)
+                        ELSE lv_ToDate
+					END;                
+	
+    SET @TotalRow = 0;
+	
+    SELECT 	tmp.TransID
+		,	tmp.TransTime
+		,	tmp.FirstDeviceCode
+		,	tmp.IP
+		,	tmp.IPID
+		,	tmp.Flagged
+		,	tmp.Action
+		,	tmp.ActionResult
+		,	tmp.OS
+		,	tmp.Browser
+		,	tmp.URLDetails
+	FROM	(
+			SELECT 	@TotalRow := @TotalRow + 1
+				,	trs.TransID
+				,	trs.TransTime
+				,	trs.FirstDeviceCode
+				,	trs.IP
+				,	trs.IPID
+				,	trs.Flagged
+				,	ar.Action
+				,	ar.ActionResult
+				,	uag.OS
+				,	uag.Browser
+				,	ur.URLDetails
+			FROM	DCS_DataCenter.Transaction07 trs 
+				LEFT JOIN DCS_DataCenter.UserAgent AS uag ON trs.UserAgentKey = uag.UserAgentKey
+				LEFT JOIN DCS_DataCenter.ActionResult AS ar ON trs.ActionResultID = ar.ActionResultID
+				LEFT JOIN DCS_DataCenter.URL AS ur ON trs.URLID = ur.URLID AND trs.SubscriberID = ur.SubscriberID
 			WHERE trs.AccountID IN (SELECT AccountID FROM Temp_Account)
 				AND trs.SubscriberID = ip_SubscriberId 
-				AND trs.CreatedDate BETWEEN @FromDate And @ToDate;
-        
-    ELSEIF @MoveDate >= @ToDate THEN # scan bk
+				AND trs.CreatedDate BETWEEN lv_FromDate AND lv_ToDate
+			) AS tmp
+		ORDER BY TransTime DESC            
+		LIMIT lv_FromRow, ip_PageSize;
     
-		INSERT INTO Temp_History_Transaction(TransID, TransTime, DeviceID, IP, IPID, Flagged, Action, ActionResult, OSName, BrowserName, URL)    
-			SELECT 	trs.TransID,
-					trs.TransTime,  
-					trs.FirstDeviceCode, 
-					trs.IP, 
-					trs.IPID,
-					trs.Flagged, 
-					ar.Action, 
-					ar.ActionResult, 
-					uag.OS, 
-					uag.Browser, 
-					ur.URLDetails
-			FROM DCS_DataCenter.Transaction_BK01 trs
-			LEFT JOIN DCS_DataCenter.UserAgent uag 
-					ON trs.UserAgentKey = uag.UserAgentKey
-			LEFT JOIN DCS_DataCenter.ActionResult ar 
-					ON trs.ActionResultID = ar.ActionResultID
-			LEFT JOIN DCS_DataCenter.URL ur 
-					ON trs.URLID = ur.URLID AND trs.SubscriberID = ur.SubscriberID
-			WHERE trs.AccountID IN (SELECT AccountID FROM Temp_Account)
-				AND trs.SubscriberID=ip_SubscriberId 
-				AND trs.CreatedDate BETWEEN @FromDate And @ToDate;	
-    ELSE # scan 07 & bk
-		
-		INSERT INTO Temp_History_Transaction(TransID, TransTime, DeviceID, IP, IPID, Flagged, Action, ActionResult, OSName, BrowserName, URL)   
-			SELECT 	trs.TransID,
-					trs.TransTime,  
-					trs.FirstDeviceCode, 
-					trs.IP, 
-					trs.IPID,
-					trs.Flagged, 
-					ar.Action, 
-					ar.ActionResult, 
-					uag.OS, 
-					uag.Browser, 
-					ur.URLDetails
-			FROM DCS_DataCenter.Transaction07 trs 
-			LEFT JOIN DCS_DataCenter.UserAgent uag 
-					ON trs.UserAgentKey = uag.UserAgentKey
-			LEFT JOIN DCS_DataCenter.ActionResult ar 
-					ON trs.ActionResultID = ar.ActionResultID
-			LEFT JOIN DCS_DataCenter.URL ur 
-					ON trs.URLID = ur.URLID AND trs.SubscriberID = ur.SubscriberID
-			WHERE trs.AccountID IN (SELECT AccountID FROM Temp_Account)
-				AND trs.SubscriberID=ip_SubscriberId 
-				AND trs.CreatedDate BETWEEN DATE_ADD(@MoveDate, INTERVAL 1 DAY) And @ToDate;         
-
-        INSERT INTO Temp_History_Transaction(TransID, TransTime, DeviceID, IP, IPID, Flagged, Action, ActionResult, OSName, BrowserName, URL)   
-			SELECT 	trs.TransID,
-					trs.TransTime,  
-					trs.FirstDeviceCode, 
-					trs.IP, 
-					trs.IPID,
-					trs.Flagged, 
-					ar.Action, 
-					ar.ActionResult, 
-					uag.OS, 
-					uag.Browser, 
-					ur.URLDetails
-			FROM DCS_DataCenter.Transaction_BK01 trs
-			LEFT JOIN DCS_DataCenter.UserAgent uag 
-					ON trs.UserAgentKey = uag.UserAgentKey
-			LEFT JOIN DCS_DataCenter.ActionResult ar 
-					ON trs.ActionResultID = ar.ActionResultID
-			LEFT JOIN DCS_DataCenter.URL ur 
-					ON trs.URLID = ur.URLID AND trs.SubscriberID = ur.SubscriberID
-			WHERE trs.AccountID IN (SELECT AccountID FROM Temp_Account)
-				AND trs.SubscriberID=ip_SubscriberId 
-				AND trs.CreatedDate BETWEEN @FromDate And @MoveDate;        
-	END IF;
-    
-    SELECT Count(TransID) INTO op_TotalItem FROM Temp_History_Transaction;
-    
-    SELECT 	TransID			,
-			TransTime	 	, 
-            DeviceID 		,
-            IP				,
-            IPID			,
-            CASE
-				WHEN Flagged = 5 THEN 'Robot (Browserless - Empty Token)'
-                WHEN Flagged = 6 THEN 'Robot (Browserless - Empty Analysis)'
-                WHEN Flagged = 7 THEN 'Robot (Browserless - Disabled JS)'
-                WHEN Flagged = 8 THEN 'Robot (Browserless - Invalid Analysis)'
-                WHEN Flagged = 9 THEN 'Robot (Browserless - Invalid Token)'
-                WHEN Flagged = 10 THEN 'Robot (Browserless - Invalid Device Code)'
-                ELSE 'Human'
-			END AS Flagged	,
-            Action			,
-            ActionResult	,
-            OSName			,
-            BrowserName		,
-            URL				
-	FROM Temp_History_Transaction   
-    ORDER BY TransTime DESC
-    LIMIT ip_PageNumber, ip_PageSize;  
+    SET op_TotalItem = @TotalRow;
     
 END$$
 

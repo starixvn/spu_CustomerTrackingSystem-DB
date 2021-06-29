@@ -16,6 +16,7 @@ BEGIN
 		Revisions:
 			- 20210330@Adam.Tran: Created [Redmine ID: #140348]  
 			- 20210412@Aries.Nguyen: Fix issue performance when filter all  [Redmine ID: #153009]
+            - 20210629@Casey.Huynh: Return Flagged Value (Web will show type of robot) [Redmine ID: 157085]
 
 		Param's Explanation (filtered by):
 
@@ -30,15 +31,7 @@ BEGIN
 		,	trans.TransTime            
 		,	trans.FirstDeviceCode	
         ,	trans.IP
-		,	CASE 
-				WHEN trans.Flagged = 5 THEN 'Robot (Browserless - Empty Token)'
-				WHEN trans.Flagged = 6 THEN 'Robot (Browserless - Empty Analysis)'
-				WHEN trans.Flagged = 7 THEN 'Robot (Browserless - Disabled JS)'
-				WHEN trans.Flagged = 8 THEN 'Robot (Browserless - Invalid Analysis)'
-				WHEN trans.Flagged = 9 THEN 'Robot (Browserless - Invalid Token)'
-				WHEN trans.Flagged = 10 THEN 'Robot (Browserless - Invalid Device Code)'
-				ELSE 'Human'
-			END AS Flagged
+		,	trans.Flagged
 		,	aResult.Action
 		,	aResult.ActionResult
 		,	uAgent.OS
