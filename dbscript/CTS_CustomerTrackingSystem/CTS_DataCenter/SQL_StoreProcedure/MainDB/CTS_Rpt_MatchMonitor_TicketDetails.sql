@@ -157,7 +157,8 @@ BEGIN
 			IF @ListTransId <> ''
 			BEGIN
 				INSERT INTO #tmpTransIds (TransId)
-				SELECT ssk.val FROM dbo.f_SplitString(@ListTransId, ',') ssk;
+				SELECT ssk.val FROM dbo.f_SplitString(@ListTransId, ',') ssk
+				OPTION (MAXRECURSION 0);
 			END;
 
 			-- START --
