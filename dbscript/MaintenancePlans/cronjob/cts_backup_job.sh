@@ -6,7 +6,7 @@ LOGIN_LOG=master-login
 CONTAINER_NAME=cts_slave_mysql80
 LOG_DB=CTS_Log
 RUN_DATE=$(date +%Y-%m-%d)
-BK_DIR=/var/cts/dump
+BK_DIR=/var/cts/dump/mysql
 ERROR_CODE=0
 ZIP_MODE=1
 
@@ -40,4 +40,5 @@ do
 
     echo "$(date +%Y-%m-%d-%H:%M:%S) >> END backing up $backup_dbname: $result"
 done
+
 

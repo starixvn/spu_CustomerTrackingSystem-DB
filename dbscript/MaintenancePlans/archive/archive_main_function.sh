@@ -6,11 +6,11 @@
 #archive_mode=$4
 #log_dbname=$5
 #####################################
-function get_archive_info_to_process()
+function get_archive_info_to_process() 
 {
         #### input parrams
         from_container=$1
-            login_path=$2
+	      login_path=$2
         source_dbname=$3
         archive_mode=$4
         log_dbname=$5
@@ -47,9 +47,10 @@ function get_archive_info_to_process()
 #login_path=$2
 #target_dbname=$3
 #target_table_name=$4
-#partition_week=
+#partition_week=$5
+#partition_week_next=$6
 ###############################################
-function prepare_partition_file_from_archive()
+function prepare_partition_file_from_archive() 
 {
         ##### input parrams
         from_container=$1
@@ -58,24 +59,26 @@ function prepare_partition_file_from_archive()
         target_table_name=$4
         partition_week=$5
         partition_week_next=$6
-
-            ##### local variables
+        
+	    ##### local variables
         partition_name="pw${partition_week}"
-        partition_archive="${target_table_name}#${PARTITION_PREFIX}#${partition_name}"
-
-        partition_command="ALTER TABLE ${target_table_name} \
+        temp_table_name="${target_table_name}_temp"
+        partition_archive="${temp_table_name}#${PARTITION_PREFIX}#${partition_name}"
+        
+	
+        partition_command="ALTER TABLE ${temp_table_name} \
                                 reorganize partition pw999999 INTO ( \
                                         partition ${partition_name} VALUES LESS THAN (${partition_week_next}), \
                                         partition pw999999 VALUES LESS THAN (MAXVALUE) \
                                 ); \
-                                ALTER TABLE ${target_table_name} DISCARD PARTITION ${partition_name} TABLESPACE;
+                                ALTER TABLE ${temp_table_name} DISCARD PARTITION ${partition_name} TABLESPACE;
                         "
         #### add new one
         if [ -n "$partition_week" ]
         then
                 docker exec ${from_container} mysql --login-path=${login_path} -D${target_dbname} -e "$partition_command"
 
-                echo "${target_dbname}.${target_table_name} partition(${partition_name})-> SUCCESS"
+                echo "${target_dbname}.${temp_table_name} partition(${partition_name})-> SUCCESS"
                 return 0
         fi
 
@@ -94,7 +97,7 @@ function prepare_partition_file_from_archive()
 #target_dbname=$9
 #target_table_name=${10}
 ###############################################
-function export_data_file_from_slave()
+function export_data_file_from_slave() 
 {
         #### input parrams
         from_container=$1
@@ -109,15 +112,16 @@ function export_data_file_from_slave()
         target_table_name=${10}
 
         ##### local variables
+        temp_table_name="${target_table_name}_temp"
         partition_name="pw${partition_week}"
         partition_file="${source_table_name}#${PARTITION_PREFIX}#${partition_name}"
         partition_to_copy="${partition_file[@]//"#"/"'#'"}"
-        partition_archive="${target_table_name}#${PARTITION_PREFIX}#${partition_name}"
+        partition_archive="${temp_table_name}#${PARTITION_PREFIX_ARCHIVE}#${partition_name}"
         partition_to_archive="${partition_archive[@]//"#"/"'#'"}"
 
         export_command="
                 FLUSH TABLE ${source_table_name} FOR EXPORT; \
-                system scp -i ${SSH_KEY_FILE} /var/lib/mysql/${source_dbname}/${partition_to_copy}.cfg ${remote_user}@${target_host}:/${target_datadir}/${target_dbname}/${partition_to_archive}.cfg; \
+                system scp -i ${SSH_KEY_FILE} /var/lib/mysql/${source_dbname}/${partition_to_copy}.ibd ${remote_user}@${target_host}:/${target_datadir}/${target_dbname}/${partition_to_archive}.ibd; \
                 UNLOCK TABLES;
         "
 
@@ -126,8 +130,8 @@ function export_data_file_from_slave()
             ######### copy cfg file
             docker exec ${from_container} mysql --login-path=${login_path} -D${source_dbname} -e "$export_command"
             ######### copy ibd data file
-            docker exec ${from_container} scp -i ${SSH_KEY_FILE} /var/lib/mysql/${source_dbname}/${partition_file}.ibd \
-                    ${remote_user}@${target_host}:/${target_datadir}/${target_dbname}/${partition_archive}.ibd
+            #docker exec ${from_container} scp -i ${SSH_KEY_FILE} /var/lib/mysql/${source_dbname}/${partition_file}.ibd \
+            #        ${remote_user}@${target_host}:/${target_datadir}/${target_dbname}/${partition_archive}.ibd
 
             echo "$partition_file to ${partition_archive} -> SUCCESS"
             return 0
@@ -148,7 +152,7 @@ function export_data_file_from_slave()
 #archive_host=$8
 #archive_user=$9
 ###############################################
-function load_partition_file_from_archive()
+function load_partition_file_from_archive() 
 {
         ##### input parrams
         from_container=$1
@@ -161,16 +165,15 @@ function load_partition_file_from_archive()
 
         ##### local variables
         partition_name="pw${partition_week}"
-        partition_archive="${target_table_name}#${PARTITION_PREFIX}#${partition_name}"
+        temp_table_name="${target_table_name}_temp"
+        partition_archive="${temp_table_name}#${PARTITION_PREFIX_ARCHIVE}#${partition_name}"
         partition_archive_to_load="${partition_archive[@]//"#"/"'#'"}"
 
         if [ -n "$partition_archive" -a "$partition_archive" != "FAILED" ]
         then
                 docker exec ${from_container} ssh -i ${SSH_KEY_FILE} ${remote_user}@${target_host} "
                     docker exec ${target_container} chmod 660 /var/lib/mysql/${target_dbname}/${partition_archive_to_load}.ibd;\
-                    docker exec ${target_container} chmod 660 /var/lib/mysql/${target_dbname}/${partition_archive_to_load}.cfg;\
-                    docker exec ${target_container} chown mysql.mysql /var/lib/mysql/${target_dbname}/${partition_archive_to_load}.ibd;\
-                    docker exec ${target_container} chown mysql.mysql /var/lib/mysql/${target_dbname}/${partition_archive_to_load}.cfg
+                    docker exec ${target_container} chown mysql.mysql /var/lib/mysql/${target_dbname}/${partition_archive_to_load}.ibd
                 "
 
                 echo "${target_dbname}.${partition_archive} -> SUCCESS"
@@ -183,13 +186,12 @@ function load_partition_file_from_archive()
 
 ################################################
 #slave_container=$1
-#archive_container=$2
-#login_path=$3
-#archive_dbname=$4
-#archive_table_name=$5
-#partition_week=$6
+#login_path=$2
+#archive_dbname=$3
+#archive_table_name=$4
+#partition_week=$5
 ###############################################
-function import_partition_file_from_archive()
+function import_partition_file_from_archive() 
 {
         ##### input parrams
         from_container=$1
@@ -200,14 +202,15 @@ function import_partition_file_from_archive()
 
         ##### local variables
         partition_name="pw${partition_week}"
-        import_command="ALTER TABLE ${target_table_name} IMPORT PARTITION ${partition_name} TABLESPACE;"
+        temp_table_name="${target_table_name}_temp"
+        import_command="ALTER TABLE ${temp_table_name} IMPORT PARTITION ${partition_name} TABLESPACE;"
 
         ##### remote execution
         if [ -n "$partition_week" ]
         then
                 docker exec ${from_container} mysql --login-path=${login_path} -D${target_dbname} -e "$import_command"
 
-                echo "${target_dbname}.${target_table_name} partition(${partition_name}) -> SUCCESS"
+                echo "${target_dbname}.${temp_table_name} partition(${partition_name}) -> SUCCESS"
                 return 0
         fi
 
@@ -217,33 +220,90 @@ function import_partition_file_from_archive()
 
 ################################################
 #slave_container=$1
+#archive_container=$2
+#login_path=$3
+#archive_dbname=$4
+#archive_table_name=$5
+#partition_week=$6
+#partition_week_next=$7
+###############################################
+function exchange_partition_file_to_table()
+{
+        ##### input parrams
+        from_container=$1
+        target_container=$2
+        target_host=$3
+        remote_user=$4
+        login_path=$5
+        target_dbname=$6
+        target_table_name=$7
+        partition_week=$8
+        partition_week_next=$9
+
+        ##### local variables
+        partition_name="pw${partition_week}"
+        temp_table_name="${target_table_name}_temp"
+        exchange_table_name="${target_table_name}_exchange"
+	partition_archive="${temp_table_name}#${PARTITION_PREFIX_ARCHIVE}#${partition_name}"
+	partition_archive_to_load="${partition_archive[@]//"#"/"'#'"}"
+
+        
+        pre_exchange_command="CALL DBA_RunExchangeTable('${target_table_name}',1,${partition_week}, ${partition_week_next});"
+
+        ##### remote execution
+        if [ -n "$partition_week" ]
+        then
+                docker exec ${from_container} mysql --login-path=${login_path} -D${target_dbname} -e "$pre_exchange_command"
+
+	        docker exec ${from_container} ssh -i ${SSH_KEY_FILE} ${remote_user}@${target_host} "
+                    docker exec -t ${target_container} cp /var/lib/mysql/${target_dbname}/${partition_archive}.ibd /var/lib/mysql/${target_dbname}/${exchange_table_name}.ibd; \
+                    docker exec -t ${target_container} chmod 660 /var/lib/mysql/${target_dbname}/${exchange_table_name}.ibd; \
+                    docker exec -t ${target_container} chown mysql.mysql /var/lib/mysql/${target_dbname}/${exchange_table_name}.ibd
+                "
+
+                run_exchange_command="ALTER TABLE ${exchange_table_name} IMPORT TABLESPACE;"
+                docker exec ${from_container} mysql --login-path=${login_path} -D${target_dbname} -e "$run_exchange_command"
+                
+                merge_exchange_command="CALL DBA_RunExchangeTable('${target_table_name}',2,${partition_week}, ${partition_week_next});"
+                docker exec ${from_container} mysql --login-path=${login_path} -D${target_dbname} -e "$merge_exchange_command"
+
+                return 0
+        fi
+
+        return "FAILED"
+        return -1
+}
+
+
+################################################
+#slave_container=$1
 #login_path=$2
 #master_dbname=$3
 #master_table_name=$4
 #partition_week="$5"
 ################################################
-function delete_partition_file_from_master()
+function delete_partition_file_from_master() 
 {
-            ##### input parrams
-            from_container=$1
-            login_path=$2
-            source_dbname=$3
-            source_table_name=$4
-            partition_week="$5"
+	    ##### input parrams
+	    from_container=$1
+	    login_path=$2
+	    source_dbname=$3
+	    source_table_name=$4
+	    partition_week="$5"
 
-            ##### local variables
-            partition_name="pw${partition_week}"
+	    ##### local variables
+	    partition_name="pw${partition_week}"
 
-            ##### remote execution
-            if [ -n $partition_week ]
-            then
-                        drop_command="ALTER TABLE ${source_table_name} DROP PARTITION ${partition_name};"
-                        docker exec ${from_container} mysql --login-path=${login_path} -D${source_dbname} -e "$drop_command"
+	    ##### remote execution
+	    if [ -n $partition_week ]
+	    then
+		        drop_command="ALTER TABLE ${source_table_name} DROP PARTITION ${partition_name};"
+		        docker exec ${from_container} mysql --login-path=${login_path} -D${source_dbname} -e "$drop_command"
 
-                        echo "${source_dbname}.${source_table_name} partition(${partition_name}) -> SUCCESS"
-                        return 0
-            fi
+		        echo "${source_dbname}.${source_table_name} partition(${partition_name}) -> SUCCESS"
+		        return 0
+	    fi
 
-            echo "FAILED"
+	    echo "FAILED"
         return -1
 }

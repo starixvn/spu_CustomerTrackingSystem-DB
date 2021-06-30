@@ -124,12 +124,10 @@ then
     else
         echo "Step 2 >> ARCHIVE_REORGANIZE: ${ARCHIVE_STATUS}"
     fi
-
     echo "----------------------------------------------------------------------"
 else
-	ERROR_CODE=100
-	echo "Step 2 >> ARCHIVE_REORGANIZE: ${ARCHIVE_STATUS:-UNKNOWN}"
-    	echo "----------------------------------------------------------------------"
+    echo "Step 2 >> ARCHIVE_REORGANIZE: ${ARCHIVE_STATUS}"
+    echo "----------------------------------------------------------------------"
 fi
 
 ################################################
@@ -173,19 +171,40 @@ then
 fi
 
 ################################################
-#step 5 - Import partition tablespace from target
+#step 5.1 - Import partition tablespace from target
 ################################################
 IMPORT_STATUS="NEW"
 if [ "$ERROR_CODE" = "0" ]
 then
-    RESULT_INFO=$(import_partition_file_from_archive $SLAVE_CONTAINER \
+    IMPORT_STATUS=$(import_partition_file_from_archive $SLAVE_CONTAINER \
             $LOGIN_PATH_ARCHIVE \
             $ARCHIVE_DBNAME \
             $ARCHIVE_TABLE_NAME \
             $PARTITION_WEEK) 
     ERROR_CODE=$?
 
-    echo "Step 5 >> ARCHIVE_IMPORT: ${RESULT_INFO}"
+    echo "Step 5.1 >> ARCHIVE_IMPORT: ${IMPORT_STATUS}"
+    echo "----------------------------------------------------------------------"
+fi
+
+################################################
+#step 5.1 - Import partition tablespace from target
+################################################
+EXCHANGE_STATUS="NEW"
+if [ "$ERROR_CODE" = "0" ]
+then
+    EXCHANGE_STATUS=$(exchange_partition_file_to_table $SLAVE_CONTAINER \
+            $ARCHIVE_CONTAINER \
+            $ARCHIVE_HOST \
+            $ARCHIVE_USER \
+            $LOGIN_PATH_ARCHIVE \
+            $ARCHIVE_DBNAME \
+            $ARCHIVE_TABLE_NAME \
+            $PARTITION_WEEK \
+            $PARTITION_WEEK_NEXT) 
+    ERROR_CODE=$?
+
+    echo "Step 5.2 >> EXCHANGE_STATUS (${ERROR_CODE}): ${EXCHANGE_STATUS}"
     echo "----------------------------------------------------------------------"
 fi
 
@@ -211,7 +230,7 @@ then
 	        $SOURE_DBNAME \
 	        $ARCHIVE_MODE \
 	        $PARTITION_WEEK)
-        ERROR_CODE=$?
+        #ERROR_CODE=$?
 
         echo "Step 6 >> ARCHIVE_DROP_SOURCE: ${RESULT_INFO}"
     else
@@ -219,7 +238,6 @@ then
     fi
     echo "----------------------------------------------------------------------"
 fi
-
 
 ##############################################
 #step 7 - UPDATE log status
@@ -256,4 +274,5 @@ else
 fi
 echo "######################################################################"
 ########################################END proccess
+
 

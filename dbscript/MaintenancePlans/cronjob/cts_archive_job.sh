@@ -1,18 +1,27 @@
 #/bin/bash
-CTS_DIR=/var/cts
+CTS_DIR=/var/cts/archive
+source $CTS_DIR/archive_variable.sh
+source $CTS_DIR/archive_status_function.sh
 
-########## INIT ERROR_CODE
-ERROR_CODE=0
 ########## RUN init function
-bash ${CTS_DIR}/archive/archive_init_run.sh
+ERROR_CODE=0
+#esult="0"
+result=$(init_archive_process_status $SLAVE_CONTAINER \
+  		$LOGIN_PATH_MASTER \
+  		$SLAVE_DBNAME)
 
-echo "INIT STATUS ERROR: ${ERROR_CODE}"
+ERROR_CODE=$(echo $result | awk '{print $1}')
+
+echo "INFO - $(date +%Y-%m-%d-%H:%M:%S) - Archiving process initializing ... >> ${result:-NA}"
 if [ "$ERROR_CODE" = "0" ]
 then
 	###############################
-	bash ${CTS_DIR}/archive/archive_process_run.sh "Transaction07"
+	bash ${CTS_DIR}/archive_process_run.sh "Transaction07"
 
 	###############################################
-	bash ${CTS_DIR}/archive/archive_process_run.sh "ProcessedTransaction"
+	bash ${CTS_DIR}/archive_process_run.sh "ProcessedTransaction"
+else
+	echo "ERROR - $(date +%Y-%m-%d-%H:%M:%S) - Archiving process stopped with ERROR-${ERROR_CODE}"
 fi
+
 

@@ -28,7 +28,7 @@ function process_full_backup()
                     --set-gtid-purged=OFF --single-transaction --quick --routines --triggers --events ${backup_dbname} > ${backup_path}
 
         elif [ "$zip_mode" = "1" ]
-	then
+	      then
             docker exec ${from_container} mysqldump --login-path=${login_backup_path} \
                 --set-gtid-purged=OFF --single-transaction --quick --routines --triggers --events ${backup_dbname} | gzip > ${backup_path}
         fi
@@ -36,7 +36,8 @@ function process_full_backup()
         ##### log end process
         BKSizeM=`du -sm $backup_path | awk '{print $1}'`
         docker exec ${from_container} mysql --login-path=${login_log_path} -D${log_dbname} -e "
-            update dba_BackupTask_Log set file_size_m=$BKSizeM,end_time=current_timestamp() where file_name='$backup_path';
+            update dba_BackupTask_Log set file_size_m=$BKSizeM,end_time=current_timestamp() where file_name='$backup_path'; \
+            update DCS_DataCenter.SystemSetting SET VValue='$run_date', UpdatedTime=now() WHERE VGroup='System_Backup' and VName='$backup_dbname'
         "
         echo "${backup_path}: SUCCESS"
         return 0
@@ -45,3 +46,4 @@ function process_full_backup()
     echo "FAILED"
     return -1
 }
+

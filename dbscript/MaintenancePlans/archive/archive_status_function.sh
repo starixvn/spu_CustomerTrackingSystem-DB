@@ -14,11 +14,8 @@ function init_archive_process_status()
     init_command="CALL DCS_Task_RawTransaction_Cleanup();"
     init_status=$(docker exec ${from_container} mysql --login-path=${login_path} -D${source_dbname} -sN -e "${init_command}")
 
-    error_code=$(echo $init_status | awk '{print $1}')
-    error_message=$(echo $init_status | awk '{print $2}')
-
-    echo "$error_message"
-    return $error_code
+    echo "$init_status"
+    return 0
 }
 
 ###################################
@@ -110,13 +107,14 @@ function update_archive_log_info()
                 where row_id=${archive_id};"
 
         ##### run query from checking server
-        if [ "$archive_status" = "RUNNING" -o "$archive_status" = "INVALID" ]
+        if [ $archive_status = "RUNNING" -o  $archive_status = "INVALID" ]
         then
 	       	docker exec ${from_container} mysql --login-path=${login_path} -D${source_dbname} -e "${start_command}"
 
-        elif [ "$archive_status" = "COMPLETED" ]
+        elif [ $archive_status = "COMPLETED" ]
 	    then
                 docker exec ${from_container} mysql --login-path=${login_path} -D${source_dbname} -e "${end_command}"
         fi
 }
+
 
