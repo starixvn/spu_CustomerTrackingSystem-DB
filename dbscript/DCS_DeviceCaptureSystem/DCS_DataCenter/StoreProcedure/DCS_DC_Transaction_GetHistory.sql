@@ -5,9 +5,9 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transaction_GetHistory`(
 		IN	ip_DateRange	INT
     ,	IN	ip_SubscriberId INT
-    ,	IN	ip_CTSCustId 	BIGINT
-    ,	IN	ip_PageSize		INT
-    ,	IN	ip_PageNumber	INT
+    ,	IN	ip_CTSCustId 	BIGINT    
+    ,	IN	ip_Skip			INT
+    ,	IN	ip_Take			INT
     ,	OUT	op_TotalItem	INT
     )
     SQL SECURITY INVOKER
@@ -27,9 +27,7 @@ proc_label: BEGIN
 	DECLARE lv_FromRow INT;
     DECLARE lv_FromDate DATETIME;
     DECLARE lv_ToDate DATETIME;
-	
-    SET lv_FromRow = (ip_PageNumber-1)*ip_PageSize;
-    
+
     DROP TEMPORARY TABLE IF EXISTS Temp_History_Transaction;  
 	CREATE TEMPORARY TABLE Temp_History_Transaction
 	(
@@ -102,7 +100,7 @@ proc_label: BEGIN
 				AND trs.CreatedDate BETWEEN lv_FromDate AND lv_ToDate
 			) AS tmp
 		ORDER BY TransTime DESC            
-		LIMIT lv_FromRow, ip_PageSize;
+		LIMIT ip_Skip, ip_Take;
     
     SET op_TotalItem = @TotalRow;
     
