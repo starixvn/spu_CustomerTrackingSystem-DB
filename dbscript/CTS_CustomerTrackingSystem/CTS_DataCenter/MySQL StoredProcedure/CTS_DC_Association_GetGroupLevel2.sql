@@ -1,0 +1,110 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService,ctsWeb" isFunction="0" isNested="1"></info>*/ 
+DROP PROCEDURE IF EXISTS `CTS_DC_Association_GetGroupLevel2`;
+
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_GetGroupLevel2`(
+		IN ip_UserNames LONGTEXT
+)
+    SQL SECURITY INVOKER
+sp:BEGIN
+	/* 
+		Created:	20210629@Casey.Huynh
+		Task:		Get Association Group Level 2 by list custID
+		DB:			CTS_DataCenter
+        
+		Revisions:
+			- 20210629@Casey.Huynh: Created [Redmine ID: #157086]
+            
+		Param's Explanation (filtered by):
+        Example:
+			- CALL CTS_DataCenter.CTS_DC_Association_GetGroupLevel2(200);
+	*/
+    DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
+    CREATE TEMPORARY TABLE Temp_Customer(
+			CTSCustID	BIGINT
+        ,	CustID		BIGINT
+        ,	CustSubID	BIGINT
+        ,	UserName	VARCHAR(50)
+        ,	StatusID	SMALLINT		
+    );
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_Association;
+    CREATE TEMPORARY TABLE Temp_Association(
+			FromCTSCustID	BIGINT
+        ,	FromCustID		BIGINT
+        ,	FromCustSubID	BIGINT
+        ,	ToCTSCustID		BIGINT
+        ,	ToCustID		BIGINT
+        ,	ToCustSubID		BIGINT		
+    );    
+    
+	DROP TEMPORARY TABLE IF EXISTS Temp_Association_CustID;
+    CREATE TEMPORARY TABLE Temp_Association_CustID(
+			FromCustID		BIGINT
+        ,	ToCustID		BIGINT
+        ,	LeastCustID 	BIGINT GENERATED ALWAYS AS (LEAST(`FromCustID`,`ToCustID`)) STORED NOT NULL
+        ,	GreatestCustID	BIGINT GENERATED ALWAYS AS (GREATEST(`FromCustID`,`ToCustID`)) STORED NOT NULL
+        ,	PRIMARY KEY PK_Temp_Association_CustID(LeastCustID,GreatestCustID)
+    );
+    SET @sql = 	CONCAT("INSERT INTO Temp_Customer(CTSCustID, CustID, CustSubID, UserName, StatusID)
+						SELECT 	cus.CTSCustID, cus.CustID, cus.CustSubID, cus.UserName, cus.CustStatusID
+						FROM	CTS_DataCenter.CTSCustomer AS cus
+						WHERE	cus.UserName IN ('",REPLACE(ip_UserNames,",","','"),"');");
+	PREPARE 	stmt1 FROM @sql;
+	EXECUTE 	stmt1;  
+    
+    SET @CustIDs = (SELECT GROUP_CONCAT(CustID) FROM Temp_Customer WHERE CustSubID =0);
+    
+	SET @sql = 	CONCAT("INSERT INTO Temp_Association_CustID(FromCustID,ToCustID)
+						SELECT  FromCustID,ToCustID
+						FROM	CTS_DataCenter.AssociationByAI AS assAI
+						WHERE 	FromCustID IN ('",REPLACE(@CustIDs,",","','"),"');");		
+	PREPARE 	stmt1 FROM @sql;
+	EXECUTE 	stmt1;  
+    
+    SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_Association_CustID(FromCustID,ToCustID)
+						SELECT  ToCustID, FromCustID
+						FROM	CTS_DataCenter.AssociationByAI AS assAI
+						WHERE 	ToCustID IN ('",REPLACE(@CustIDs,",","','"),"');");	
+	PREPARE 	stmt1 FROM @sql;
+	EXECUTE 	stmt1; 
+        
+    SET @sql = 	CONCAT("INSERT INTO Temp_Association(FromCustID,ToCustID)
+						SELECT  ToCustID, FromCustID
+						FROM	Temp_Association_CustID AS assAI
+						WHERE 	ToCustID IN ('",REPLACE(@CustIDs,",","','"),"')
+								AND ToCustID IN ('",REPLACE(@CustIDs,",","','"),"');");		
+	PREPARE 	stmt1 FROM @sql;
+	EXECUTE 	stmt1; 
+
+	SET @sql = 	CONCAT("DELETE assAI FROM Temp_Association_CustID AS assAI
+						WHERE 	ToCustID IN ('",REPLACE(@CustIDs,",","','"),"')
+								AND ToCustID IN ('",REPLACE(@CustIDs,",","','"),"');");		
+	PREPARE 	stmt1 FROM @sql;
+	EXECUTE 	stmt1; 
+    SELECT COUNT(1) FROM Temp_Association;
+    SET @sql = 	CONCAT("INSERT INTO Temp_Association(FromCustID,ToCustID)
+						SELECT  tmp.FromCustID, assAI.ToCustID
+						FROM	Temp_Association_CustID AS tmp
+							INNER JOIN CTS_DataCenter.AssociationByAI AS assAI ON tmp.ToCustID = assAI.FromCustID 
+						WHERE 	assAI.ToCustID IN ('",REPLACE(@CustIDs,",","','"),"');");
+								
+	PREPARE 	stmt1 FROM @sql;
+	EXECUTE 	stmt1; 
+    SELECT COUNT(1) FROM Temp_Association;
+    
+    SET @sql = 	CONCAT("SELECT * FROM Temp_Association 
+						WHERE FromCustID NOT IN ('",REPLACE(@CustIDs,",","','"),"')
+						OR ToCustID NOT IN ('",REPLACE(@CustIDs,",","','"),"');");
+								
+	PREPARE 	stmt1 FROM @sql;
+	EXECUTE 	stmt1; 
+   
+END$$
+
+DELIMITER ;
+
+SELECT * FROM CTSCustomer;
+CALL CTS_DC_Association_GetGroupLevel2('12909Helen28,24AVIARMB30002,3979Helen25,9700Helen28,9WsportsINR01001,AA1898H48,AB88INH0126772,AB88INH0188455,AHMBB00024,ALC3611004,ALC3611008,ALogRMB01125368,ALogTB0171129,B10T3042598,B14TMB12327,B14TNA54574,B14TNA54587,B14TTH72377,B14TTR29774,B14TTR29822,B14TTR30185,B14TTR30298,B14TTR30321,B18T4578685,B60T8777065,B62TMB22041,B62TMB25203,B62TTB04236,B65TTH73482,B65TTH73487,B65TTH73532,B65TTH73562,B8TZA02731,BobbetRMB0152908,BPL1666666,CG347603148,CS069803019,CZ0103000,D81GG21000,DawooRMB01209401,DHBI02009,DS27B518020,DS98833H14,DTE102A308007,DTE1755500005,DTF1899B07004,DTF3120325000,DTF35E311003,DU32H603003,FabetINH016220,FP350404002,GA11AA0EV,HAIFARMB011851690,HAIFARMB011936880,HDQ5588507,HJJJ01000,HK10AG18003,HPOW900333,ig128INH02785,ig128INH028764,JBK2700007,JSD8522006,KKFFDM2555,KUTECHINH012448,KY182209001,KY182209006,L777CC111,Lucky88INH017566,LVY888949,LWWAB88226,MacaubetIN01168501,MARSRMB013591373,MDRM00137,MQRM72000,MS88INH01404540,MS88INH01441596,MS88TB01275275,NA1977E1O,NextBetINH01001,NW629205009,OXbetINH011582,PKO0675003,QW132MT021,QZSH010900A,RB1680777B65,RG581101013,RG63H300002,RG9239930A,S222HHY52009,S56SHCA01002,S688HZ2Y0003,S69TBKK01020,SAE3101039,SCI4148300,SCI4148301,SCMHE97412,SDK71210777,SG7M1306101,SKA1004747,SKA1006355,SMOI0011007,SMON8811084,SWQ2908001,SX3B910129,TM11IBC2833,TPAD66113,TTH0701002,TV9C0008111,TVKJ01ABX64,TVKJ01XYG91,VKS0001308,W88INH01326232,W88INH01358632,W88INH01368002,W88INH01379368,W88INH01399105,WinboxRM032096,WINCIGAC751,WTW5AA27E
+,YiboRMB0140773,YunjiRMB012674,ZN040905005');
+SELECT * FROM Temp_Customer;
