@@ -310,9 +310,11 @@ sp:BEGIN
         ,	tmpFc.Status
 		, 	TRIM(GROUP_CONCAT(DISTINCT ' ',evd.EvidenceCode,' ',evd.EvidenceName)) AS Evidence
         , 	TRIM(GROUP_CONCAT(DISTINCT ' ', cat.CategoryName)) AS CustomerCategory
+        ,	TRIM(GROUP_CONCAT(DISTINCT cat.CategoryID)) AS CategoryIDs
         ,	tmpFc.CTSCustID
         ,	tmpFc.CustID
-        ,	tmpFc.CustSubID        
+        ,	tmpFc.CustSubID
+        
     FROM Temp_CustGroup AS tmpCg
 		INNER JOIN Temp_FromCust AS tmpFc ON tmpCg.CTSCustID = tmpFc.CTSCustID
 		LEFT JOIN CTS_DataCenter.CustEvidence AS ced ON tmpCg.CTSCustID = ced.CTSCustID
