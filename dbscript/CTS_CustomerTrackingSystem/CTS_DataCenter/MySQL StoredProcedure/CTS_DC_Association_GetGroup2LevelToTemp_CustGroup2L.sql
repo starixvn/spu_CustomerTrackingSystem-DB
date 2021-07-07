@@ -22,6 +22,8 @@ sp:BEGIN
     DECLARE lv_CTSCustID BIGINT UNSIGNED;
     DECLARE lv_GroupID BIGINT UNSIGNED DEFAULT 0;
     
+    
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_CustGroup2L;
     CREATE TEMPORARY TABLE Temp_CustGroup2L(	
 			CTSCustID 	BIGINT UNSIGNED
@@ -90,6 +92,13 @@ sp:BEGIN
         ,	PRIMARY KEY Temp_AssociationByDevice(CTSCustID,DCSDeviceID)
     );
     
+    /**DEBUG**/
+    SET @Step=0;
+
+    insert into CTS_Adhoc.PerformanceCheck(Step, StartTime, Comments)
+    Values(@Step:=@Step+1,CURRENT_TIMESTAMP(3),'');
+     /**DEBUG**/
+     
     #======GET INPUT CUSTOMER======================================================================
     SET @sql = 	CONCAT("INSERT INTO Temp_FromCust(CTSCustID, CustID, CustSubID, UserName, CustStatus)
 						SELECT cus.CTSCustID, cus.CustID, cus.CustSubID, cus.UserName, sta.ItemName AS CustStatus
@@ -99,6 +108,11 @@ sp:BEGIN
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1;  
     
+    /**DEBUG**/
+    insert into CTS_Adhoc.PerformanceCheck(Step, StartTime, Comments)
+    Values(@Step:=@Step+1,CURRENT_TIMESTAMP(3),'');
+     /**DEBUG**/
+     
     INSERT INTO Temp_ToCust(CTSCustID, CustID, CustSubID, UserName, CustStatus)
     SELECT	tmpFc.CTSCustID
 		,	tmpFc.CustID
@@ -106,6 +120,11 @@ sp:BEGIN
         ,	tmpFc.UserName
         ,	tmpFc.CustStatus
     FROM Temp_FromCust AS tmpFc;
+    
+    /**DEBUG**/
+    insert into CTS_Adhoc.PerformanceCheck(Step, StartTime, Comments)
+    Values(@Step:=@Step+1,CURRENT_TIMESTAMP(3),'');
+     /**DEBUG**/
     
     /*****ASSOCIATION LEVEL 1**************************************************/    
 	/*****AssociationByAI******************************************************/
@@ -119,7 +138,12 @@ sp:BEGIN
     FROM CTS_DataCenter.AssociationByAI AS ai
 		INNER JOIN Temp_FromCust AS tmpFc ON ai.FromCustID = tmpFc.CustID AND tmpFc.CustSubID = 0
         INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ai.ToCustID = cus.CustID AND cus.CustSubID = 0;
-   
+    
+    /**DEBUG**/
+    insert into CTS_Adhoc.PerformanceCheck(Step, StartTime, Comments)
+    Values(@Step:=@Step+1,CURRENT_TIMESTAMP(3),'');
+     /**DEBUG**/
+    
 	INSERT IGNORE INTO Temp_AssociationLevel1(FromCTSCustID, FromCustID, FromCustSubID, ToCTSCustID, ToCustID, ToCustSubID)
     SELECT	tmpTc.CTSCustID AS FromCTSCustID
 		,	tmpTc.CustID	AS FromCustID
@@ -131,6 +155,11 @@ sp:BEGIN
 		INNER JOIN Temp_ToCust AS tmpTc ON ai.ToCustID = tmpTc.CustID AND tmpTc.CustSubID = 0
         INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ai.FromCustID = cus.CustID AND cus.CustSubID = 0;
 	
+    /**DEBUG**/
+    insert into CTS_Adhoc.PerformanceCheck(Step, StartTime, Comments)
+    Values(@Step:=@Step+1,CURRENT_TIMESTAMP(3),'');
+     /**DEBUG**/
+    
     /*****AssociationByIP******************************************************/
 	INSERT  INTO Temp_AssociationLevel1(FromCTSCustID, FromCustID, FromCustSubID, ToCTSCustID, ToCustID, ToCustSubID)
     SELECT	tmpFc.CTSCustID AS FromCTSCustID
@@ -142,7 +171,12 @@ sp:BEGIN
     FROM CTS_DataCenter.AssociationByIP AS ip
 		INNER JOIN Temp_FromCust AS tmpFc ON ip.FromCustID = tmpFc.CustID AND tmpFc.CustSubID = 0
         INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ip.ToCustID = cus.CustID AND cus.CustSubID = 0;
-  
+	
+    /**DEBUG**/
+    insert into CTS_Adhoc.PerformanceCheck(Step, StartTime, Comments)
+    Values(@Step:=@Step+1,CURRENT_TIMESTAMP(3),'');
+     /**DEBUG**/
+    
 	INSERT IGNORE INTO Temp_AssociationLevel1(FromCTSCustID, FromCustID, FromCustSubID, ToCTSCustID, ToCustID, ToCustSubID)
 	SELECT	tmpTc.CTSCustID AS FromCTSCustID
 		,	tmpTc.CustID	AS FromCustID
@@ -153,7 +187,12 @@ sp:BEGIN
 	FROM CTS_DataCenter.AssociationByIP AS ip
 		INNER JOIN Temp_ToCust AS tmpTc ON ip.ToCustID = tmpTc.CustID AND tmpTc.CustSubID = 0
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ip.FromCustID = cus.CustID AND cus.CustSubID = 0;
-
+	
+    /**DEBUG**/
+    insert into CTS_Adhoc.PerformanceCheck(Step, StartTime, Comments)
+    Values(@Step:=@Step+1,CURRENT_TIMESTAMP(3),'');
+     /**DEBUG**/
+    
 	/*****AssociationByManual**************************************************/
     INSERT IGNORE INTO Temp_AssociationLevel1(FromCTSCustID, FromCustID, FromCustSubID, ToCTSCustID, ToCustID, ToCustSubID)
 	SELECT	tmpFc.CTSCustID AS FromCTSCustID
@@ -165,7 +204,12 @@ sp:BEGIN
 	FROM CTS_DataCenter.AssociationByManual AS am
 		INNER JOIN Temp_FromCust AS tmpFc ON am.FromCTSCustID = tmpFc.CTSCustID
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON am.ToCTSCustID = cus.CTSCustID;
-		
+	
+    /**DEBUG**/
+    insert into CTS_Adhoc.PerformanceCheck(Step, StartTime, Comments)
+    Values(@Step:=@Step+1,CURRENT_TIMESTAMP(3),'');
+     /**DEBUG**/
+    
 	INSERT IGNORE INTO Temp_AssociationLevel1(FromCTSCustID, FromCustID, FromCustSubID, ToCTSCustID, ToCustID, ToCustSubID)
 	SELECT	tmpTc.CTSCustID AS FromCTSCustID
 		,	tmpTc.CustID	AS FromCustID
@@ -176,7 +220,12 @@ sp:BEGIN
 	FROM CTS_DataCenter.AssociationByManual AS am
 		INNER JOIN Temp_ToCust AS tmpTc ON am.ToCTSCustID = tmpTc.CTSCustID 
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON am.FromCTSCustID = cus.CTSCustID;
-		
+	
+    /**DEBUG**/
+    insert into CTS_Adhoc.PerformanceCheck(Step, StartTime, Comments)
+    Values(@Step:=@Step+1,CURRENT_TIMESTAMP(3),'');
+     /**DEBUG**/
+    	
 	/*****AssociationByDevice**************************************************/    
     INSERT INTO Temp_AssociationByDevice(CTSCustID, CustID, CustSubID, DCSDeviceID)
     SELECT	tmpFc.CTSCustID
@@ -186,6 +235,11 @@ sp:BEGIN
 	FROM Temp_FromCust AS tmpFc		
 		INNER JOIN CTS_DataCenter.AssociationByDevice AS adv ON adv.CTSCustID = tmpFc.CTSCustID
         INNER JOIN CTS_DataCenter.DeviceAssociationDay AS dsd WHERE dsd.DCSDeviceID = adv.DCSDeviceID;
+    
+    /**DEBUG**/
+    insert into CTS_Adhoc.PerformanceCheck(Step, StartTime, Comments)
+    Values(@Step:=@Step+1,CURRENT_TIMESTAMP(3),'');
+     /**DEBUG**/
     
 	INSERT IGNORE INTO Temp_AssociationLevel1(FromCTSCustID, FromCustID, FromCustSubID, ToCTSCustID, ToCustID, ToCustSubID)
 	SELECT	tmpAd.CTSCustID AS FromCTSCustID
@@ -197,7 +251,12 @@ sp:BEGIN
 	FROM Temp_AssociationByDevice AS tmpAd
 		INNER JOIN CTS_DataCenter.AssociationByDevice AS adv ON adv.DCSDeviceID = tmpAd.DCSDeviceID AND adv.CTSCustID <> tmpAd.CTSCustID
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON adv.CTSCustID = cus.CTSCustID;
-        
+     
+    /**DEBUG**/
+    insert into CTS_Adhoc.PerformanceCheck(Step, StartTime, Comments)
+    Values(@Step:=@Step+1,CURRENT_TIMESTAMP(3),'');
+     /**DEBUG**/
+       
 	/******Insert Association Level 1**********************************************/
 	INSERT IGNORE INTO Temp_AssGroup2Level(FromCTSCustID, ToCTSCustID)
 	SELECT	FromCTSCustID
@@ -209,6 +268,11 @@ sp:BEGIN
 	FROM Temp_AssociationLevel1 AS tmpAl1
 	WHERE EXISTS(SELECT 1 FROM Temp_ToCust AS tmpTc WHERE tmpAl1.ToCTSCustID = tmpTc.CTSCustID);
     
+    /**DEBUG**/
+    insert into CTS_Adhoc.PerformanceCheck(Step, StartTime, Comments)
+    Values(@Step:=@Step+1,CURRENT_TIMESTAMP(3),'');
+     /**DEBUG**/
+    
 	 /*****ASSOCIATION LEVEL 2***************************************************/
 	 /*****AssociationByAI******************************************************/
 	 INSERT IGNORE INTO Temp_AssGroup2Level(FromCTSCustID, ToCTSCustID)
@@ -218,7 +282,12 @@ sp:BEGIN
 		INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.FromCustID = tmpAl1.ToCustID
 		INNER JOIN Temp_ToCust AS tmpTc ON ai.ToCustID = tmpTc.CustID AND tmpTc.CustSubID = 0 
 	 WHERE tmpAl1.FromCustID <> tmpTc.CustID;
-
+	
+    /**DEBUG**/
+    insert into CTS_Adhoc.PerformanceCheck(Step, StartTime, Comments)
+    Values(@Step:=@Step+1,CURRENT_TIMESTAMP(3),'');
+     /**DEBUG**/
+    
 	INSERT IGNORE INTO Temp_AssGroup2Level(FromCTSCustID , ToCTSCustID)
 	 SELECT tmpAl1.FromCTSCustID	AS FromCTSCustID
 			,	tmpTc.CTSCustID 	AS ToCTSCustID
@@ -226,7 +295,12 @@ sp:BEGIN
 		INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.ToCustID = tmpAl1.ToCustID
 		INNER JOIN Temp_ToCust AS tmpTc ON ai.FromCustID = tmpTc.CustID AND tmpTc.CustSubID = 0
 	WHERE tmpAl1.FromCustID <> tmpTc.CustID;
-
+	
+    /**DEBUG**/
+    insert into CTS_Adhoc.PerformanceCheck(Step, StartTime, Comments)
+    Values(@Step:=@Step+1,CURRENT_TIMESTAMP(3),'');
+     /**DEBUG**/
+    
 	/*****AssociationByIP******************************************************/
 	 INSERT IGNORE INTO Temp_AssGroup2Level(FromCTSCustID , ToCTSCustID)
 	 SELECT tmpAl1.FromCTSCustID	AS FromCTSCustID
@@ -236,6 +310,11 @@ sp:BEGIN
 		INNER JOIN Temp_ToCust AS tmpTc ON ip.ToCustID = tmpTc.CustID AND tmpTc.CustSubID = 0 
 	 WHERE tmpAl1.FromCustID <> tmpTc.CustID;
 	
+    /**DEBUG**/
+    insert into CTS_Adhoc.PerformanceCheck(Step, StartTime, Comments)
+    Values(@Step:=@Step+1,CURRENT_TIMESTAMP(3),'');
+     /**DEBUG**/
+    
     INSERT IGNORE INTO Temp_AssGroup2Level(FromCTSCustID , ToCTSCustID)
 	SELECT tmpAl1.FromCTSCustID		AS FromCTSCustID
 		,	tmpTc.CTSCustID			AS ToCTSCustID
@@ -243,6 +322,11 @@ sp:BEGIN
 		INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.ToCustID = tmpAl1.ToCustID
 		INNER JOIN Temp_ToCust AS tmpTc ON ip.FromCustID = tmpTc.CustID AND tmpTc.CustSubID = 0
 	WHERE tmpAl1.FromCustID <> tmpTc.CustID;
+    
+    /**DEBUG**/
+    insert into CTS_Adhoc.PerformanceCheck(Step, StartTime, Comments)
+    Values(@Step:=@Step+1,CURRENT_TIMESTAMP(3),'');
+     /**DEBUG**/
     
     /*****AssociationByManual******************************************************/
 	INSERT IGNORE INTO Temp_AssGroup2Level(FromCTSCustID , ToCTSCustID)
@@ -253,6 +337,11 @@ sp:BEGIN
 		INNER JOIN Temp_ToCust AS tmpTc ON am.ToCTSCustID = tmpTc.CTSCustID
 	WHERE tmpAl1.FromCTSCustID <> tmpTc.CTSCustID;
 	
+    /**DEBUG**/
+    insert into CTS_Adhoc.PerformanceCheck(Step, StartTime, Comments)
+    Values(@Step:=@Step+1,CURRENT_TIMESTAMP(3),'');
+     /**DEBUG**/
+    
 	INSERT IGNORE INTO Temp_AssGroup2Level(FromCTSCustID , ToCTSCustID)
 	SELECT tmpAl1.FromCTSCustID		AS FromCTSCustID
 		,	tmpTc.CTSCustID			AS ToCTSCustID
@@ -260,6 +349,11 @@ sp:BEGIN
 		INNER JOIN CTS_DataCenter.AssociationByManual AS am ON am.ToCTSCustID = tmpAl1.ToCTSCustID
 		INNER JOIN Temp_ToCust AS tmpTc ON am.FromCTSCustID = tmpTc.CTSCustID
 	WHERE tmpAl1.FromCTSCustID <> tmpTc.CTSCustID;
+    
+    /**DEBUG**/
+    insert into CTS_Adhoc.PerformanceCheck(Step, StartTime, Comments)
+    Values(@Step:=@Step+1,CURRENT_TIMESTAMP(3),'');
+     /**DEBUG**/
     
     /*****AssociationByDevice**************************************************/ 
     TRUNCATE TABLE Temp_AssociationByDevice;
@@ -272,6 +366,11 @@ sp:BEGIN
 		INNER JOIN CTS_DataCenter.AssociationByDevice AS adv ON adv.CTSCustID = tmpAl1.FromCTSCustID
         INNER JOIN CTS_DataCenter.DeviceAssociationDay AS dsd WHERE dsd.DCSDeviceID = adv.DCSDeviceID;
     
+    /**DEBUG**/
+    insert into CTS_Adhoc.PerformanceCheck(Step, StartTime, Comments)
+    Values(@Step:=@Step+1,CURRENT_TIMESTAMP(3),'');
+     /**DEBUG**/
+    
 	INSERT IGNORE INTO Temp_AssGroup2Level(FromCTSCustID , ToCTSCustID)
 	SELECT	tmpAd.CTSCustID AS FromCTSCustID
 		,	tmpTc.CTSCustID	AS ToCTSCustID
@@ -279,6 +378,11 @@ sp:BEGIN
 		INNER JOIN CTS_DataCenter.AssociationByDevice AS adv ON adv.DCSDeviceID = tmpAd.DCSDeviceID AND adv.CTSCustID <> tmpAd.CTSCustID
 		INNER JOIN Temp_ToCust AS tmpTc ON adv.CTSCustID = tmpTc.CTSCustID;   
     
+    
+    /**DEBUG**/
+    insert into CTS_Adhoc.PerformanceCheck(Step, StartTime, Comments)
+    Values(@Step:=@Step+1,CURRENT_TIMESTAMP(3),'');
+     /**DEBUG**/
     
     SET lv_CTSCustID = (SELECT FromCTSCustID FROM Temp_AssGroup2Level LIMIT 1);
     
@@ -311,6 +415,11 @@ sp:BEGIN
         #======LOOP CONDITION==================
 		SET lv_CTSCustID = (SELECT FromCTSCustID FROM Temp_AssGroup2Level LIMIT 1);        
 	END WHILE;
+    
+    /**DEBUG**/
+    insert into CTS_Adhoc.PerformanceCheck(Step, StartTime, Comments)
+    Values(@Step:=@Step+1,CURRENT_TIMESTAMP(3),'');
+     /**DEBUG**/
     
     
 END$$
