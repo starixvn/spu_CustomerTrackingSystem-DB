@@ -22,7 +22,12 @@ sp:BEGIN
     
 	
     CALL CTS_DC_Association_GetGroup2LevelToTemp_CustGroup2L(ip_CTSCustIDs);
-
+	
+    /**DEBUG**/
+    insert into CTS_Adhoc.PerformanceCheck(Step, StartTime, Comments)
+    Values(@Step:=@Step+1,CURRENT_TIMESTAMP(3),'');
+     /**DEBUG**/
+    
     SELECT tmpCg.GroupID
 		,	tmpCg.UserName
         ,	tmpCg.CustStatus
@@ -40,6 +45,11 @@ sp:BEGIN
         LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = ccl.CategoryID
 	GROUP BY tmpCg.GroupID, tmpCg.UserName, tmpCg.CustStatus, tmpCg.CTSCustID, tmpCg.CustID, tmpCg.CustSubID;        
    
+    /**DEBUG**/
+    insert into CTS_Adhoc.PerformanceCheck(Step, StartTime, Comments)
+    Values(@Step:=@Step+1,CURRENT_TIMESTAMP(3),'');
+     /**DEBUG**/
+    
 END$$
 
 DELIMITER ;
