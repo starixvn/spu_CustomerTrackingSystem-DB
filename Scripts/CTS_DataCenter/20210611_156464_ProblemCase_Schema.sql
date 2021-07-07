@@ -10,6 +10,10 @@ Revisions:
 Reviewer:
 */
 USE CTS_DataCenter;
+
+ALTER TABLE CTS_DataCenter.SystemEventStatus ADD LastExecTime DATETIME;
+
+
 ALTER TABLE CTS_DataCenter.AssociationByIP MODIFY CreatedDate DATETIME(3);
 
 CREATE TABLE ProblemCaseMonitor(
@@ -42,3 +46,5 @@ VALUES	(21,'ProblemCase_AssByIP_CreatedDate', 'Last Scan time', 'DATETIME(3)', @
 	,	(22,'ProblemCase_AssByDevie_CTSAssDevID', 'Last Scan CTSAssDevID', 'BIGINT UNSIGNED', @MaxAssByDevice)
     ,	(23,'ProblemCase_CustClassHis_ID', 'Last Scan ID', 'BIGINT UNSIGNED', @MaxClasHis);
 
+INSERT INTO SystemEventStatus(EventName, Status, LastExecTime)
+VALUES('EV_CTS_ProblemCaseMonitor_Rule', 'Stop', CURRENT_TIME());
