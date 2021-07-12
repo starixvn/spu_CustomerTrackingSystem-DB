@@ -135,7 +135,7 @@ BEGIN
 			,LiveIndicator,LiveHomeScore,LiveAwayScore,TotalScore,BettypeID,TransID,CustID,TransDate,Stake,GroupID
 			,OriginGroupID,PreTime,TempGroupID,CURRENT_TIMESTAMP(),@MaxPackageID 
     FROM Temp_TransStaging;
-    /***Trace BUG*/
+    **Trace BUG*/
     
     SET @GroupOrder = 0;  
 	INSERT INTO Temp_TransGroup(MatchID, LiveIndicator, TotalScore, BettypeID, MinTransID, MinTransDate) 

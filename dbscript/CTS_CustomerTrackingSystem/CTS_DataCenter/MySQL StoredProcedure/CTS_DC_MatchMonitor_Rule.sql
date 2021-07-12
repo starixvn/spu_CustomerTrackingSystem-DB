@@ -1,7 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
 DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule`;
-DELIMITER $$
 
+DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule`(
 	IN ip_TempGroupID INT
 )
@@ -193,7 +193,7 @@ BEGIN
 		SELECT MatchID, BettypeID, EventDate, LiveIndicator, GroupID
 						, TotalScore, LiveHomeScore, LiveAwayScore, IsHedging, ListCustID, ListTransID, @MaxPackageID
 		FROM CTS_DataCenter.MatchMonitorDetails;
-        /***Trace BUG*/
+        **Trace BUG*/
         
 		WHILE lv_DetailsGroupID IS NOT NULL
         DO
