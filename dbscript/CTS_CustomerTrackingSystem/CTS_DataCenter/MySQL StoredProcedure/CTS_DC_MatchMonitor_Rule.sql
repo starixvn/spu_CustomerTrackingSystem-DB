@@ -22,7 +22,7 @@ BEGIN
 		Example:
 			
 	*/
-    DECLARE lv_CustList TEXT;
+    DECLARE lv_CustList LONGTEXT;
     DECLARE lv_MaxGroupID	INT DEFAULT 0;
 	DECLARE lv_MinGroupID	INT DEFAULT 0;
     DECLARE lv_AssGroupID	INT DEFAULT 0;
@@ -84,7 +84,6 @@ BEGIN
     FROM	CTS_DataCenter.MatchMonitorStaging
     WHERE	OriginGroupID = ip_TempGroupID;    
     
-    SELECT lv_CustList;
     CALL CTS_DC_Association_GetGroup(lv_CustList); /*Return CustAssociationGroup Into Temporary table "Temp_Group"*/
 	
     INSERT INTO Temp_AssGroup(AssGroupID, ListCustID, ListTransID, IsHedging, MinPreGroupID, NoOfPreGroupID)
