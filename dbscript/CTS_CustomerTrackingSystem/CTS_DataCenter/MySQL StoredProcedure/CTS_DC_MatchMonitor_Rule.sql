@@ -22,7 +22,7 @@ BEGIN
 		Example:
 			
 	*/
-    DECLARE lv_CustList VARCHAR(8000);
+    DECLARE lv_CustList TEXT;
     DECLARE lv_MaxGroupID	INT DEFAULT 0;
 	DECLARE lv_MinGroupID	INT DEFAULT 0;
     DECLARE lv_AssGroupID	INT DEFAULT 0;
@@ -63,7 +63,7 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_AssGroup;
     CREATE TEMPORARY TABLE Temp_AssGroup(
 			AssGroupID		INT
-		,	ListCustID		VARCHAR(8000)
+		,	ListCustID		TEXT
         ,	ListTransID		TEXT
         ,	IsHedging		INT
         ,	MinPreGroupID	INT
