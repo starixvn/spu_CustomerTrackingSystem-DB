@@ -46,7 +46,7 @@ BEGIN
         ,	s.VerifiedDate
         ,	u.UserName AS VerifiedBy
         ,	CASE WHEN s.EventStatus = 'Completed' THEN 4 #'Closed'
-                WHEN s.EventStatus IN ('running', 'closed') AND s.KickOffTime <= NOW() THEN 1 # 'Live'
+                WHEN s.EventStatus <> 'Completed' AND s.KickOffTime <= NOW() THEN 1 # 'Live'
 				WHEN s.EventDate = CURDATE() AND s.KickOffTime > NOW() THEN 2 #'Today'
 				WHEN s.EventDate > CURDATE() THEN 3 #'Early'
 			END AS EventGroup

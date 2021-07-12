@@ -117,10 +117,6 @@ BEGIN
 		,	TicketStatus		SMALLINT
 	);	
 
-	CREATE CLUSTERED INDEX #CIX_tmpMatchDetailsIdx ON #tmpTickets (
-			TransDate			DESC
-	);
-
 	IF (@QueryType = 1)
 		BEGIN
 			INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,BetType,CustId,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
@@ -152,6 +148,7 @@ BEGIN
 				AND b.BetFrom NOT IN ('p','m','w','0','3','6')
 				AND b.recommend NOT IN (52466,5707545) -- 8RM, BARM
 				AND b.Username NOT LIKE '%Cashout%'
+				AND m.sporttype = 1
 				AND m.leagueid NOT IN (42,74,108,113) -- SABA leagues
 			ORDER BY b.transid ASC
 				;
@@ -197,6 +194,7 @@ BEGIN
 					AND b.BetFrom NOT IN ('p','m','w','0','3','6')
 					AND b.recommend NOT IN (52466,5707545) -- 8RM, BARM
 					AND b.Username NOT LIKE '%Cashout%'
+					AND m.sporttype = 1
 					AND m.leagueid NOT IN (42,74,108,113) -- SABA leagues
 					;
 			END;
@@ -232,6 +230,7 @@ BEGIN
 					AND b.BetFrom NOT IN ('p','m','w','0','3','6')
 					AND b.recommend NOT IN (52466,5707545) -- 8RM, BARM
 					AND b.Username NOT LIKE '%Cashout%'
+					AND m.sporttype = 1
 					AND m.leagueid NOT IN (42,74,108,113) -- SABA leagues
 					;
 			END;
@@ -267,17 +266,15 @@ BEGIN
 					AND b.BetFrom NOT IN ('p','m','w','0','3','6')
 					AND b.recommend NOT IN (52466,5707545) -- 8RM, BARM
 					AND b.Username NOT LIKE '%Cashout%'
+					AND m.sporttype = 1
 					AND m.leagueid NOT IN (42,74,108,113) -- SABA leagues
 					;
 			END;
-		END;
-
-	
+		END;	
 
 	-- Return data
 	SELECT	*
-	FROM #tmpTickets AS m WITH(NOLOCK)
-	ORDER BY m.TransDate DESC;
+	FROM #tmpTickets AS m WITH(NOLOCK);
 	
 	DROP TABLE #tmpTransIds;
 	DROP TABLE #tmpTickets;

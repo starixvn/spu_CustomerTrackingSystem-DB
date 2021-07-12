@@ -39,8 +39,8 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorDetails(
     ,	TotalScore		SMALLINT UNSIGNED
     ,	LiveHomeScore	SMALLINT UNSIGNED
     ,	LiveAwayScore	SMALLINT UNSIGNED
-    ,	ListCustID		VARCHAR(2000)
-    , 	ListTransID		VARCHAR(2000)   
+    ,	ListCustID		VARCHAR(8000)
+    , 	ListTransID		TEXT   
     , 	IsHedging		BIT DEFAULT 0
 	, 	PRIMARY KEY		PK_MatchMonitorDetails_ID(ID)
 	,	INDEX			IX_MatchMonitorDetails_EventDateBettypeMatchID(EventDate,BettypeID,MatchID,LiveIndicator)
