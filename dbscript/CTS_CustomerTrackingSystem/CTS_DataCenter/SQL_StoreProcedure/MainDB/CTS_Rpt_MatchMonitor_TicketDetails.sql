@@ -1,5 +1,10 @@
---DROP PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_TicketDetails];
-CREATE PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_TicketDetails]
+/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_TicketDetails]
 		@QueryType				TINYINT = 1
 
 	,	@LastScannedTransID		BIGINT = 0
@@ -113,7 +118,7 @@ BEGIN
 	);	
 
 	CREATE CLUSTERED INDEX #CIX_tmpMatchDetailsIdx ON #tmpTickets (
-			EventDate			DESC
+			TransDate			DESC
 	);
 
 	IF (@QueryType = 1)
@@ -141,13 +146,12 @@ BEGIN
 				,	b.liveindicator
 			FROM dbo.bettrans AS b WITH(NOLOCK)
 				INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
-				INNER JOIN dbo.custInfo AS c WITH(NOLOCK) ON c.custid = b.custid
 			WHERE	b.transid > @LastScannedTransID
 				AND b.bettype IN (1,3,7,8)
 				AND b.Currency NOT IN (20,27,28)
 				AND b.BetFrom NOT IN ('p','m','w','0','3','6')
-				AND c.recommend NOT IN (52466,5707545) -- 8RM, BARM
-				AND c.Username NOT LIKE '%Cashout%'
+				AND b.recommend NOT IN (52466,5707545) -- 8RM, BARM
+				AND b.Username NOT LIKE '%Cashout%'
 				AND m.leagueid NOT IN (42,74,108,113) -- SABA leagues
 			ORDER BY b.transid ASC
 				;
@@ -188,12 +192,11 @@ BEGIN
 				FROM bodb_Archive.dbo.bettrans_bk AS b WITH(NOLOCK)
 					INNER JOIN #tmpTransIds AS t WITH(NOLOCK) ON t.TransId = b.transid
 					INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.matchid = m.matchid
-					INNER JOIN dbo.custInfo AS c WITH(NOLOCK) ON c.custid = b.custid
 				WHERE	b.bettype IN (1,3,7,8)
 					AND b.Currency NOT IN (20,27,28)
 					AND b.BetFrom NOT IN ('p','m','w','0','3','6')
-					AND c.recommend NOT IN (52466,5707545) -- 8RM, BARM
-					AND c.Username NOT LIKE '%Cashout%'
+					AND b.recommend NOT IN (52466,5707545) -- 8RM, BARM
+					AND b.Username NOT LIKE '%Cashout%'
 					AND m.leagueid NOT IN (42,74,108,113) -- SABA leagues
 					;
 			END;
@@ -224,12 +227,11 @@ BEGIN
 				FROM dbo.bettrans14 AS b WITH(NOLOCK)
 					INNER JOIN #tmpTransIds AS t WITH(NOLOCK) ON t.TransId = b.transid
 					INNER JOIN dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
-					INNER JOIN dbo.custInfo AS c WITH(NOLOCK) ON c.custid = b.custid
 				WHERE	b.bettype IN (1,3,7,8)
 					AND b.Currency NOT IN (20,27,28)
 					AND b.BetFrom NOT IN ('p','m','w','0','3','6')
-					AND c.recommend NOT IN (52466,5707545) -- 8RM, BARM
-					AND c.Username NOT LIKE '%Cashout%'
+					AND b.recommend NOT IN (52466,5707545) -- 8RM, BARM
+					AND b.Username NOT LIKE '%Cashout%'
 					AND m.leagueid NOT IN (42,74,108,113) -- SABA leagues
 					;
 			END;
@@ -260,12 +262,11 @@ BEGIN
 				FROM dbo.bettrans AS b WITH(NOLOCK)
 					INNER JOIN #tmpTransIds AS t WITH(NOLOCK) ON t.TransId = b.transid
 					INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
-					INNER JOIN dbo.custInfo AS c WITH(NOLOCK) ON c.custid = b.custid
 				WHERE	b.bettype IN (1,3,7,8)
 					AND b.Currency NOT IN (20,27,28)
 					AND b.BetFrom NOT IN ('p','m','w','0','3','6')
-					AND c.recommend NOT IN (52466,5707545) -- 8RM, BARM
-					AND c.Username NOT LIKE '%Cashout%'
+					AND b.recommend NOT IN (52466,5707545) -- 8RM, BARM
+					AND b.Username NOT LIKE '%Cashout%'
 					AND m.leagueid NOT IN (42,74,108,113) -- SABA leagues
 					;
 			END;
