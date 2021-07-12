@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService,ctsWeb" isFunction="0" isNested="1"></info>*/ 
-DROP PROCEDURE IF EXISTS `CTS_DC_RPT_AssociationDetection`;
+DROP PROCEDURE IF EXISTS `CTS_DC_RPT_AssociationDetection_checkPer`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_RPT_AssociationDetection`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_RPT_AssociationDetection_checkPer`(
 		IN ip_CTSCustIDs TEXT
 )
     SQL SECURITY INVOKER
@@ -22,12 +22,7 @@ sp:BEGIN
     
 	
     CALL CTS_DC_Association_GetGroup2LevelToTemp_CustGroup2L(ip_CTSCustIDs);
-	
-    /**DEBUG**/
-    insert into CTS_Adhoc.PerformanceCheck(Step, StartTime, Comments)
-    Values(@Step:=@Step+1,CURRENT_TIMESTAMP(3),'');
-     /**DEBUG**/
-    
+
     SELECT tmpCg.GroupID
 		,	tmpCg.UserName
         ,	tmpCg.CustStatus
@@ -45,11 +40,6 @@ sp:BEGIN
         LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = ccl.CategoryID
 	GROUP BY tmpCg.GroupID, tmpCg.UserName, tmpCg.CustStatus, tmpCg.CTSCustID, tmpCg.CustID, tmpCg.CustSubID;        
    
-    /**DEBUG**/
-    insert into CTS_Adhoc.PerformanceCheck(Step, StartTime, Comments)
-    Values(@Step:=@Step+1,CURRENT_TIMESTAMP(3),'');
-     /**DEBUG**/
-    
 END$$
 
 DELIMITER ;
