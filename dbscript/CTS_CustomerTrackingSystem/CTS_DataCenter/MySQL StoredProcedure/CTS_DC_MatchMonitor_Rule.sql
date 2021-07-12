@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS CTS_DC_MatchMonitor_Rule;
+DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule`;
 DELIMITER $$
 
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE CTS_DC_MatchMonitor_Rule(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule`(
 	IN ip_TempGroupID INT
 )
   SQL SECURITY INVOKER
