@@ -145,12 +145,19 @@ BEGIN
 		#WHERE	tmpAg.AssGroupID = @AssGroupID;
         
         #====MatchMonitor===============
+        SELECT COUNT(DISTINCT IsHedging) 
+        INTO lv_NewNoOfHedging
+        FROM CTS_DataCenter.MatchMonitorDetails AS mm 
+		WHERE mm.MatchID = lv_MatchID AND mm.BettypeID = lv_BettypeID;
         
-        SET lv_NewNoOfHedging = (IFNULL((SELECT COUNT(DISTINCT IsHedging) FROM CTS_DataCenter.MatchMonitorDetails AS mm 
-									WHERE mm.MatchID = lv_MatchID AND mm.BettypeID = lv_BettypeID),0));
-        SET lv_CurrentNoOfHedging = IFNULL((SELECT COUNT(DISTINCT IsHedging) FROM CTS_DataCenter.MatchMonitor AS mm 
-									WHERE mm.MatchID = lv_MatchID AND mm.BettypeID = lv_BettypeID),0);    
-                
+        SELECT COUNT(DISTINCT IsHedging) 
+		INTO lv_CurrentNoOfHedging
+		FROM CTS_DataCenter.MatchMonitor AS mm 
+		WHERE mm.MatchID = lv_MatchID AND mm.BettypeID = lv_BettypeID;
+        
+        SET lv_NewNoOfHedging = IFNULL(lv_NewNoOfHedging,0);
+        SET lv_CurrentNoOfHedging = IFNULL(lv_CurrentNoOfHedging,0);
+        
         IF ( lv_NewNoOfHedging > lv_CurrentNoOfHedging ) THEN		
 			INSERT IGNORE INTO CTS_DataCenter.MatchMonitor(IsHedging, MatchID, BettypeID, EventDate, EventStatus, KickOffTime, HomeID, AwayID,LeagueID)
 			SELECT 	DISTINCT tmpAg.IsHedging, lv_MatchID, lv_BettypeID, lv_EventDate, lv_EventStatus
@@ -180,21 +187,7 @@ BEGIN
 			AND 	mmd.TotalScore = lv_TotalScore AND mmd.BettypeID = lv_BettypeID AND mmd.GroupID > lv_MaxOldGroupID
 		ORDER BY mmd.GroupID ASC
         LIMIT 1;
-        
-        /***Trace BUG
-        SET @MaxPackageID = (SELECT Max(PackageID) FROM MatchMonitorTrace_StagingTrace); 
-        INSERT IGNORE INTO CTS_DataCenter.MatchMonitor_Debug(IsHedging, MatchID, BettypeID, EventDate, EventStatus
-				, KickOffTime, HomeID, AwayID,LeagueID, PackageID)
-        SELECT IsHedging, MatchID, BettypeID, EventDate, EventStatus, KickOffTime, HomeID, AwayID,LeagueID, @MaxPackageID
-        FROM  CTS_DataCenter.MatchMonitor;
-        
-        INSERT IGNORE INTO CTS_DataCenter.MatchMonitorDetails_Debug(MatchID, BettypeID, EventDate, LiveIndicator, GroupID
-						, TotalScore, LiveHomeScore, LiveAwayScore, IsHedging, ListCustID, ListTransID,PackageID)
-		SELECT MatchID, BettypeID, EventDate, LiveIndicator, GroupID
-						, TotalScore, LiveHomeScore, LiveAwayScore, IsHedging, ListCustID, ListTransID, @MaxPackageID
-		FROM CTS_DataCenter.MatchMonitorDetails;
-        **Trace BUG*/
-        
+
 		WHILE lv_DetailsGroupID IS NOT NULL
         DO
 			CALL CTS_DataCenter.CTS_DC_Sys_SplitStringToTempItemTable(lv_DetailsListTrans,',','BIGINT UNSIGNED');

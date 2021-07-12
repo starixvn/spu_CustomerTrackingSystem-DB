@@ -126,17 +126,7 @@ BEGIN
 							,	Stake			DOUBLE PATH "$.Stake" 
 						)
 				) AS js;  
-	 /***Trace BUG   
-    SET @MaxPackageID = (SELECT Max(PackageID) FROM MatchMonitorTrace_StagingTrace);    
-	INSERT IGNORE INTO MatchMonitorStaging_Debug(MatchID,HomeID,AwayID,EventStatus,KickOffTime,LeagueID,EventDate
-			,LiveIndicator,LiveHomeScore,LiveAwayScore,TotalScore,BettypeID,TransID,CustID,TransDate,Stake,GroupID
-			,OriginGroupID,PreTime,TempGroupID,InsertTime,PackageID)
-	SELECT 	MatchID,HomeID,AwayID,EventStatus,KickOffTime,LeagueID,EventDate
-			,LiveIndicator,LiveHomeScore,LiveAwayScore,TotalScore,BettypeID,TransID,CustID,TransDate,Stake,GroupID
-			,OriginGroupID,PreTime,TempGroupID,CURRENT_TIMESTAMP(),@MaxPackageID 
-    FROM Temp_TransStaging;
-    **Trace BUG*/
-    
+
     SET @GroupOrder = 0;  
 	INSERT INTO Temp_TransGroup(MatchID, LiveIndicator, TotalScore, BettypeID, MinTransID, MinTransDate) 
 	SELECT 		MatchID, LiveIndicator, TotalScore, BettypeID, MIN(TransID), MIN(TransDate)
