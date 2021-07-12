@@ -81,10 +81,6 @@ BEGIN
     SET		OriginGroupID = NULL;
 		#,	GroupID = NULL;
     
-    /***Trace BUG*/
-    INSERT INTO MatchMonitorTrace_StagingTrace(TransJson,InsertTime)
-    VALUES(ip_TransList,current_timestamp(3));
-    /***Trace BUG*/
     
     INSERT IGNORE INTO Temp_TransStaging(MatchID, LiveIndicator, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, TransID, CustID, TransDate, Stake, GroupID, OriginGroupID)
 	SELECT 		MatchID,  LiveIndicator, LiveHomeScore, LiveAwayScore, LiveHomeScore + LiveAwayScore, BettypeID, TransID, CustID, TransDate, Stake, GroupID, OriginGroupID
