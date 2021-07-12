@@ -22,7 +22,7 @@ BEGIN
 		Example:
 			
 	*/
-    DECLARE lv_CustList LONGTEXT;
+    DECLARE lv_CustList VARCHAR(8000);
     DECLARE lv_MaxGroupID	INT DEFAULT 0;
 	DECLARE lv_MinGroupID	INT DEFAULT 0;
     DECLARE lv_AssGroupID	INT DEFAULT 0;
@@ -39,7 +39,7 @@ BEGIN
     DECLARE	lv_LeagueID	INT UNSIGNED;
     DECLARE	lv_KickOffTime	DATETIME;
     DECLARE lv_DetailsGroupID INT;
-    DECLARE lv_DetailsListTrans VARCHAR(2000);
+    DECLARE lv_DetailsListTrans TEXT;
     DECLARE lv_NewNoOfHedging INT;
     DECLARE lv_CurrentNoOfHedging INT;
     DECLARE lv_MaxOldGroupID INT;
@@ -63,8 +63,8 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_AssGroup;
     CREATE TEMPORARY TABLE Temp_AssGroup(
 			AssGroupID		INT
-		,	ListCustID		VARCHAR(2000)
-        ,	ListTransID		VARCHAR(2000)
+		,	ListCustID		VARCHAR(8000)
+        ,	ListTransID		TEXT
         ,	IsHedging		INT
         ,	MinPreGroupID	INT
         ,	NoOfPreGroupID	INT
