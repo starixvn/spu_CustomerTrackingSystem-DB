@@ -39,7 +39,7 @@ BEGIN
     DECLARE	lv_LeagueID	INT UNSIGNED;
     DECLARE	lv_KickOffTime	DATETIME;
     DECLARE lv_DetailsGroupID INT;
-    DECLARE lv_DetailsListTrans TEXT;
+    DECLARE lv_DetailsListTrans LONGTEXT;
     DECLARE lv_NewNoOfHedging INT;
     DECLARE lv_CurrentNoOfHedging INT;
     DECLARE lv_MaxOldGroupID INT;
@@ -63,8 +63,8 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_AssGroup;
     CREATE TEMPORARY TABLE Temp_AssGroup(
 			AssGroupID		INT
-		,	ListCustID		TEXT
-        ,	ListTransID		TEXT
+		,	ListCustID		LONGTEXT
+        ,	ListTransID		LONGTEXT
         ,	IsHedging		INT
         ,	MinPreGroupID	INT
         ,	NoOfPreGroupID	INT
