@@ -2,7 +2,7 @@
 DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_GetCustomerClassificationIntervalScan`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_GetCustomerClassificationIntervalScan`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_GetCustomerClassificationIntervalScan`(
 		IN ip_NoOfRecord 		INT
 	,   IN ip_Batch 			INT
 )
@@ -39,9 +39,29 @@ BEGIN
         ,	INDEX				IX_Temp_ScanList_ID(ID)	
 		,	INDEX				IX_Temp_ScanList_CustID(CustID)
 	);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_ScanDateInvalid;
+	CREATE TEMPORARY TABLE Temp_ScanDateInvalid(
+			DayScan				INT
+		,	ScanDateInvalid		DATETIME
+	);
+
+	DROP TEMPORARY TABLE IF EXISTS Temp_CategoryScanDateInvalid;
+	CREATE TEMPORARY TABLE Temp_CategoryScanDateInvalid(
+			CategoryID			INT
+		,	SportGroupID		INT
+		,	ScanDateInvalid		DATETIME
+		,	PRIMARY KEY 		PK(CategoryID,ScanDateInvalid,SportGroupID)
+	);
 	
-	SELECT MAX(ScanTime) INTO lv_LastScanTime FROM CTS_DataCenter.CTSCustomerClassification_ScanStatus;
-    SELECT MAX(LastCustID) INTO lv_LastCustID FROM CTS_DataCenter.CTSCustomerClassification_ScanStatus WHERE ScanTime = lv_LastScanTime;
+	SELECT MAX(ScanTime) 
+    INTO lv_LastScanTime 
+    FROM CTS_DataCenter.CTSCustomerClassification_ScanStatus;
+    
+    SELECT MAX(LastCustID) 
+    INTO lv_LastCustID 
+    FROM CTS_DataCenter.CTSCustomerClassification_ScanStatus 
+    WHERE ScanTime = lv_LastScanTime;
     
 	IF(DATE(lv_LastScanTime) < DATE(lv_ScanTime))
 	THEN
@@ -51,24 +71,60 @@ BEGIN
 		SET lv_ScanTime = lv_LastScanTime;
 	END IF;
 	
-	SET lv_TotalRecord = ip_Batch * ip_NoOfRecord;
+    INSERT INTO Temp_ScanDateInvalid(DayScan, ScanDateInvalid)
+	WITH RECURSIVE CTE_DayScanInValid(ScanDateInvalid) AS (
+		SELECT DATE_SUB(@lv_ScanTime, INTERVAL 14+30 DAY) 
+		UNION ALL 
+		SELECT ScanDateInvalid + INTERVAL 1 DAY 
+		FROM CTE_DayScanInValid
+		WHERE ScanDateInvalid + INTERVAL 1 DAY <= DATE_SUB(@lv_ScanTime, INTERVAL 14 DAY)
+	)
+	SELECT 14 AS Flag
+		, 	DATE(cte.ScanDateInvalid)
+	FROM CTE_DayScanInValid AS cte;
 
-	/*INSERT CATEGORY TO SCAN*/
+	INSERT INTO Temp_ScanDateInvalid(DayScan, ScanDateInvalid)
+	WITH RECURSIVE CTE_DayScanInValid(ScanDateInvalid) AS (
+		SELECT DATE_SUB(@lv_ScanTime, INTERVAL 7+15 DAY) 
+		UNION ALL 
+		SELECT ScanDateInvalid + INTERVAL 1 DAY 
+		FROM CTE_DayScanInValid
+		WHERE ScanDateInvalid + INTERVAL 1 DAY <= DATE_SUB(@lv_ScanTime, INTERVAL 7 DAY)
+	)
+	SELECT 7 AS Flag
+		, 	DATE(cte.ScanDateInvalid)
+	FROM CTE_DayScanInValid AS cte;
+    
+    INSERT INTO Temp_CategoryScanDateInvalid(CategoryID,SportGroupID, ScanDateInvalid)
+	SELECT CategoryID, 200, temp.ScanDateInvalid
+	FROM CTS_DataCenter.CustomerCategory AS cat
+		INNER JOIN Temp_ScanDateInvalid AS temp ON temp.DayScan = CEIL((cat.ScanIntervalInSecond/60/60/24))
+	WHERE cat.ParentID = 200 
+		AND cat.IsActive = 1
+		AND cat.IsUsedManually = 0 
+		AND cat.ScanIntervalInSecond > 0; 
+    
+	SET lv_TotalRecord = ip_Batch * ip_NoOfRecord;
+	
+    /*INSERT CATEGORY TO SCAN*/
 	INSERT INTO Temp_ScanList (CustID, CategoryID)
-	SELECT ccl.CustID AS CustID, cat.CategoryGroup AS CategoryID
+    SELECT ccl.CustID AS CustID
+		, 	cat.CategoryGroup AS CategoryID
 	FROM CTS_DataCenter.CTSCustomerClassification AS ccl
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON ccl.CategoryID = cat.CategoryID
-		LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin ON pin.CTSCustID = ccl.CTSCustID
-		LEFT JOIN CTS_DataCenter.ProbationAccountMonitor AS pro on pro.CustID = ccl.CustID AND pro.SportGroupID = 200
-	WHERE 	pin.CTSCustID IS NULL 
-			AND pro.SportGroupID IS NULL
-			AND cat.IsActive = 1
-			AND cat.IsUsedManually = 0
-			AND cat.ScanIntervalInSecond > 0
-			AND ccl.SportGroupID = 200
-			AND ccl.LastScannedDate <= DATE_SUB(DATE(lv_ScanTime), INTERVAL cat.ScanIntervalInSecond SECOND)
-			AND ccl.CustID > lv_LastCustID
-	ORDER BY ccl.CustID ASC
+	WHERE EXISTS (SELECT 1 
+				  FROM Temp_CategoryScanDateInvalid AS temp 
+				  WHERE temp.CategoryID = ccl.CategoryID 
+						AND temp.ScanDateInvalid = ccl.LastScannedDate  
+						AND temp.SportGroupID = ccl.SportGroupID 
+                        AND ccl.CustID > lv_LastCustID) 
+		 AND NOT EXISTS (SELECT 1 
+						 FROM  CTS_DataCenter.PinCustomerCategory AS pin 
+                         WHERE pin.CTSCustID = ccl.CTSCustID)
+		 AND NOT EXISTS (SELECT 1 
+						 FROM  CTS_DataCenter.ProbationAccountMonitor AS pro 
+                         WHERE pro.CustID = ccl.CustID 
+							AND pro.SportGroupID = 200)
 	LIMIT lv_TotalRecord;
 	
 	SELECT (((temp.ID-1) DIV ip_NoOfRecord) + 1) AS BatchID
