@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitor (
     ,	INDEX			IX_MatchMonitor_MatchID_BettypeID(MatchID,BettypeID)
 ) ENGINE=INNODB AUTO_INCREMENT=1;
 
+DROP TABLE IF EXISTS CTS_DataCenter.MatchMonitorDetails;
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorDetails(
 		ID				BIGINT UNSIGNED AUTO_INCREMENT
 	,	MatchID			BIGINT UNSIGNED
@@ -39,7 +40,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorDetails(
     ,	TotalScore		SMALLINT UNSIGNED
     ,	LiveHomeScore	SMALLINT UNSIGNED
     ,	LiveAwayScore	SMALLINT UNSIGNED
-    ,	ListCustID		VARCHAR(8000)
+    ,	ListCustID		TEXT
     , 	ListTransID		TEXT   
     , 	IsHedging		BIT DEFAULT 0
 	, 	PRIMARY KEY		PK_MatchMonitorDetails_ID(ID)
