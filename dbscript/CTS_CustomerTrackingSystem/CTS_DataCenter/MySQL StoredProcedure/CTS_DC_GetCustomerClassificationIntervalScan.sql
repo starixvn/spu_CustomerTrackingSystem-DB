@@ -22,33 +22,28 @@ BEGIN
 			- 20201221@Irena.Vo: Enhance logic ignore Pin category & Probation List. Remove input ip_ParentID & Update logic SP [RedmineID: #145951]
             - 20210510@Aries.Nguyen: Remove insert log dba_SP_PerformanceStats [Redmine ID: #154792]
             - 20210525@Irena.Vo: Change col name PinCustomerCategory: CustID -> CTSCustID [Redmine ID: 152965]
+			- 20210712@Irena.Vo: Fix bug get duplicated daily data [Redmine ID: 158262]
 		Param's Explanation (filtered by):      
-			- CALL CTS_DC_GetCustomerClassificationIntervalScan (100,1,200);
+			- CALL CTS_DC_GetCustomerClassificationIntervalScan (100,1);
 	*/
-	DECLARE lv_ScanTime 		DATETIME DEFAULT CURRENT_TIME();
-	DECLARE lv_ScanDate 		DATETIME;    
+	DECLARE lv_ScanTime 		DATETIME DEFAULT CURRENT_TIMESTAMP();
 	DECLARE lv_LastScanTime 	DATETIME;
-	DECLARE lv_LastScanDate 	DATETIME;
+    DECLARE lv_LastCustID 		BIGINT;
 	DECLARE lv_TotalRecord 		BIGINT UNSIGNED;
-	DECLARE	lv_LogTotalRecord 	INT;
-	DECLARE	lv_FromID			BIGINT;
-	DECLARE	lv_ToID				BIGINT;
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_ScanList;
 	CREATE TEMPORARY TABLE Temp_ScanList(
-			CustID 				BIGINT UNSIGNED
-		, 	SportGroupID 		SMALLINT UNSIGNED
+			ID					INT AUTO_INCREMENT
+		,	CustID 				BIGINT UNSIGNED
 		, 	CategoryID			SMALLINT UNSIGNED    
-		, 	ID					INT SIGNED AUTO_INCREMENT
-		,	INDEX				IX_Temp_ScanList_ID(ID)
+        ,	INDEX				IX_Temp_ScanList_ID(ID)	
 		,	INDEX				IX_Temp_ScanList_CustID(CustID)
 	);
 	
-	SET lv_LastScanTime = (SELECT MAX(ScanTime) FROM CTS_DataCenter.CTSCustomerClassification_ScanStatus);
-	SET lv_ScanDate = DATE(lv_ScanTime);
-	SET lv_LastScanDate = DATE(lv_LastScanTime);
-	
-	IF(lv_LastScanDate <> lv_ScanDate)
+	SELECT MAX(ScanTime) INTO lv_LastScanTime FROM CTS_DataCenter.CTSCustomerClassification_ScanStatus;
+    SELECT MAX(LastCustID) INTO lv_LastCustID FROM CTS_DataCenter.CTSCustomerClassification_ScanStatus WHERE ScanTime = lv_LastScanTime;
+    
+	IF(DATE(lv_LastScanTime) < DATE(lv_ScanTime))
 	THEN
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_ScanStatus(ScanTime, LastCustID, ScanStatus, ParentCategoryID)
 		VALUES(lv_ScanTime, 0, 0, 200);
@@ -57,10 +52,10 @@ BEGIN
 	END IF;
 	
 	SET lv_TotalRecord = ip_Batch * ip_NoOfRecord;
-	
+
 	/*INSERT CATEGORY TO SCAN*/
-	INSERT INTO Temp_ScanList (CustID, SportGroupID, CategoryID)
-	SELECT ccl.CustID AS CustID, ccl.SportGroupID AS SportGroupID, ccl.CategoryID AS CategoryID
+	INSERT INTO Temp_ScanList (CustID, CategoryID)
+	SELECT ccl.CustID AS CustID, cat.CategoryGroup AS CategoryID
 	FROM CTS_DataCenter.CTSCustomerClassification AS ccl
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON ccl.CategoryID = cat.CategoryID
 		LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin ON pin.CTSCustID = ccl.CTSCustID
@@ -71,12 +66,14 @@ BEGIN
 			AND cat.IsUsedManually = 0
 			AND cat.ScanIntervalInSecond > 0
 			AND ccl.SportGroupID = 200
-			AND ccl.LastScannedDate <= DATE_SUB(lv_ScanDate, INTERVAL cat.ScanIntervalInSecond SECOND)
+			AND ccl.LastScannedDate <= DATE_SUB(DATE(lv_ScanTime), INTERVAL cat.ScanIntervalInSecond SECOND)
+			AND ccl.CustID > lv_LastCustID
+	ORDER BY ccl.CustID ASC
 	LIMIT lv_TotalRecord;
-	  
+	
 	SELECT (((temp.ID-1) DIV ip_NoOfRecord) + 1) AS BatchID
 			, 	temp.CustID 		
-			, 	temp.SportGroupID	
+			, 	200 AS SportGroupID	
 			, 	temp.CategoryID
 	FROM Temp_ScanList AS temp;     
 	
@@ -86,9 +83,5 @@ BEGIN
 		SET		ScanStatus = 1
 		WHERE	ScanTime = lv_ScanTime;
 	END IF;
-
-	SELECT 	COUNT(1), MIN(CustID), MAX(CustID)
-	INTO	lv_LogTotalRecord, lv_FromID, lv_ToID
-	FROM	Temp_ScanList;    
 END$$
 DELIMITER ;
