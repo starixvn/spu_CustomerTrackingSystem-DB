@@ -27,24 +27,6 @@ proc_label: BEGIN
 	DECLARE lv_FromRow INT;
     DECLARE lv_FromDate DATETIME;
     DECLARE lv_ToDate DATETIME;
-
-    DROP TEMPORARY TABLE IF EXISTS Temp_History_Transaction;  
-	CREATE TEMPORARY TABLE Temp_History_Transaction
-	(
-			TransID			BIGINT
-		,	TransTime	 	DATETIME
-        ,	DeviceID 		VARCHAR(64)
-        ,	IP				VARCHAR(50)
-        ,	IPID			DECIMAL(50,0)
-        ,	Flagged			SMALLINT
-        ,	Action			VARCHAR(100)
-        ,	ActionResult	VARCHAR(100)
-        ,	OSName			VARCHAR(100)
-        ,	BrowserName		VARCHAR(100)
-        ,	URL				VARCHAR(100)
-            
-		,	PRIMARY KEY PK_Temp_History_Transaction(TransID)
-    );
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Account;      
     CREATE TEMPORARY TABLE Temp_Account
