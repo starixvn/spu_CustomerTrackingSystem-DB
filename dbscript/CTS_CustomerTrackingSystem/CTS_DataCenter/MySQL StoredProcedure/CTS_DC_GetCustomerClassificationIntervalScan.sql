@@ -73,11 +73,11 @@ BEGIN
 	
     INSERT INTO Temp_ScanDateInvalid(DayScan, ScanDateInvalid)
 	WITH RECURSIVE CTE_DayScanInValid(ScanDateInvalid) AS (
-		SELECT DATE_SUB(@lv_ScanTime, INTERVAL 14+30 DAY) 
+		SELECT DATE_SUB(lv_ScanTime, INTERVAL 14+30 DAY) 
 		UNION ALL 
 		SELECT ScanDateInvalid + INTERVAL 1 DAY 
 		FROM CTE_DayScanInValid
-		WHERE ScanDateInvalid + INTERVAL 1 DAY <= DATE_SUB(@lv_ScanTime, INTERVAL 14 DAY)
+		WHERE ScanDateInvalid + INTERVAL 1 DAY <= DATE_SUB(lv_ScanTime, INTERVAL 14 DAY)
 	)
 	SELECT 14 AS Flag
 		, 	DATE(cte.ScanDateInvalid)
@@ -85,11 +85,11 @@ BEGIN
 
 	INSERT INTO Temp_ScanDateInvalid(DayScan, ScanDateInvalid)
 	WITH RECURSIVE CTE_DayScanInValid(ScanDateInvalid) AS (
-		SELECT DATE_SUB(@lv_ScanTime, INTERVAL 7+15 DAY) 
+		SELECT DATE_SUB(lv_ScanTime, INTERVAL 7+15 DAY) 
 		UNION ALL 
 		SELECT ScanDateInvalid + INTERVAL 1 DAY 
 		FROM CTE_DayScanInValid
-		WHERE ScanDateInvalid + INTERVAL 1 DAY <= DATE_SUB(@lv_ScanTime, INTERVAL 7 DAY)
+		WHERE ScanDateInvalid + INTERVAL 1 DAY <= DATE_SUB(lv_ScanTime, INTERVAL 7 DAY)
 	)
 	SELECT 7 AS Flag
 		, 	DATE(cte.ScanDateInvalid)
