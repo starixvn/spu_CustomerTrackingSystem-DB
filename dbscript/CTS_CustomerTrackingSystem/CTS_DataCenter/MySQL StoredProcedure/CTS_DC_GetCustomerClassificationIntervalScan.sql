@@ -22,7 +22,7 @@ BEGIN
 			- 20201221@Irena.Vo: Enhance logic ignore Pin category & Probation List. Remove input ip_ParentID & Update logic SP [RedmineID: #145951]
             - 20210510@Aries.Nguyen: Remove insert log dba_SP_PerformanceStats [Redmine ID: #154792]
             - 20210525@Irena.Vo: Change col name PinCustomerCategory: CustID -> CTSCustID [Redmine ID: 152965]
-		- 20210712@Irena.Vo: Fix bug get duplicated daily data [Redmine ID: 158262]
+			- 20210712@Irena.Vo: Fix bug get duplicated daily data [Redmine ID: 158262]
 		Param's Explanation (filtered by):      
 			- CALL CTS_DC_GetCustomerClassificationIntervalScan (100,1);
 	*/
