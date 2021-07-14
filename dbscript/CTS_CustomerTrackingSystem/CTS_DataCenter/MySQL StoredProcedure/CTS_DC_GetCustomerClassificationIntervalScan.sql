@@ -77,7 +77,7 @@ BEGIN
 		UNION ALL 
 		SELECT ScanDateInvalid + INTERVAL 1 DAY 
 		FROM CTE_DayScanInValid
-		WHERE ScanDateInvalid + INTERVAL 1 DAY <= DATE_SUB(lv_ScanTime, INTERVAL 14 DAY)
+		WHERE ScanDateInvalid + INTERVAL 1 DAY <= DATE_SUB(lv_ScanTime, INTERVAL 13 DAY)
 	)
 	SELECT 14 AS Flag
 		, 	DATE(cte.ScanDateInvalid)
@@ -89,7 +89,7 @@ BEGIN
 		UNION ALL 
 		SELECT ScanDateInvalid + INTERVAL 1 DAY 
 		FROM CTE_DayScanInValid
-		WHERE ScanDateInvalid + INTERVAL 1 DAY <= DATE_SUB(lv_ScanTime, INTERVAL 7 DAY)
+		WHERE ScanDateInvalid + INTERVAL 1 DAY <= DATE_SUB(lv_ScanTime, INTERVAL 6 DAY)
 	)
 	SELECT 7 AS Flag
 		, 	DATE(cte.ScanDateInvalid)
