@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule`(
-	IN ip_TempGroupID INT
+	IN ip_TimeGroupID INT
 )
   SQL SECURITY INVOKER
 BEGIN
@@ -17,7 +17,7 @@ BEGIN
 			- 	20210526@Casey.Huynh: Created [Redmine ID: 152883]
 		
 		Param's Explanation (filtered by):
-		CALL  CTS_DC_MatchMonitor_Rule(ip_TempGroupID);
+		CALL  CTS_DC_MatchMonitor_Rule(ip_TimeGroupID);
 
 		Example:
 			
@@ -25,7 +25,7 @@ BEGIN
     DECLARE lv_CustList LONGTEXT;
     DECLARE lv_MaxGroupID	INT DEFAULT 0;
 	DECLARE lv_MinGroupID	INT DEFAULT 0;
-    DECLARE lv_AssGroupID	INT DEFAULT 0;
+    DECLARE lv_LoopID	INT DEFAULT 0;
     DECLARE	lv_MatchID		BIGINT UNSIGNED;
     DECLARE	lv_BettypeID		INT;
     DECLARE	lv_EventDate		DATE;
@@ -42,24 +42,26 @@ BEGIN
     DECLARE lv_DetailsListTrans LONGTEXT;
     DECLARE lv_NewNoOfHedging INT;
     DECLARE lv_CurrentNoOfHedging INT;
-    DECLARE lv_MaxOldGroupID INT;
-    DECLARE lv_DetailsGroupIDPre INT;
+    DECLARE lv_GroupID INT;
+    DECLARE lv_DetailsGroupIDPre INT;    
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_AssTransGroup;
-    CREATE TEMPORARY TABLE Temp_AssTransGroup(
-			MatchID			BIGINT UNSIGNED
-		,   BettypeID		INT UNSIGNED
-        ,	EventDate		DATE       
-        ,   LiveIndicator	BIT
-        ,	GroupID			INT
-        ,	TotalScore		INT
-        
-        ,	PreGroupID		INT
-        ,	NewGroupID		INT
-		,	AssGroupID 		INT
-        ,	IsHedging		INT
-	);  
-    
+    DROP TEMPORARY TABLE IF EXISTS Temp_TransGroup;
+    CREATE TEMPORARY TABLE Temp_TransGroup(
+			TransID			BIGINT UNSIGNED
+		,	TransDate		DATETIME(3)
+        ,	CustID			BIGINT UNSIGNED
+        ,	Stake			DECIMAL
+        , 	GroupID			BIGINT UNSIGNED
+        ,	AssGroupID		INT
+        ,	IsHedging		BOOLEAN        
+        ,	PreTime			DATETIME(3)
+        ,	TimeGroupID		INT        
+        , 	LoopID			INT
+		
+        ,	PRIMARY KEY (TransID)
+        ,	INDEX Temp_TransGroup_TimeGroupID(TimeGroupID)
+    );
+ 
     DROP TEMPORARY TABLE IF EXISTS Temp_AssGroup;
     CREATE TEMPORARY TABLE Temp_AssGroup(
 			AssGroupID		INT
@@ -70,144 +72,205 @@ BEGIN
         ,	NoOfPreGroupID	INT
     );
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_AssGroup;
+	CREATE TEMPORARY TABLE Temp_AssGroup(
+			AssGroupID INT
+		,	MinTransID BIGINT UNSIGNED
+        ,	MinTransDate BIGINT UNSIGNED
+        ,	MaxTimeGroupID INT
+	);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_RevmoveTimeGroup;
+	CREATE TEMPORARY TABLE Temp_RevmoveTimeGroup(TimeGroupID INT);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_OdlGroupID;
+	CREATE TEMPORARY TABLE Temp_OdlGroupID(OldGroupID INT);
+    
+    #====================================================================================
 	SELECT 	MatchID, LiveIndicator, TotalScore, BettypeID, EventDate, LiveHomeScore, LiveAwayScore
 			, EventStatus, HomeID, AwayID, KickOffTime, LeagueID, KickOffTime
     INTO 	lv_MatchID, lv_LiveIndicator, lv_TotalScore, lv_BettypeID, lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore
 			, lv_EventStatus, lv_HomeID, lv_AwayID, lv_KickOffTime, lv_LeagueID, lv_KickOffTime
     FROM  	CTS_DataCenter.MatchMonitorStaging
-    WHERE	OriginGroupID = ip_TempGroupID 
-    LIMIT 	1;
+    WHERE	OriginGroupID = ip_TimeGroupID 
+    LIMIT 	1; 
 
-    /********GET CUST ASSOCIATION GROUP********/    
-	SELECT 	GROUP_CONCAT(CustID)
-	INTO	lv_CustList
-    FROM	CTS_DataCenter.MatchMonitorStaging
-    WHERE	OriginGroupID = ip_TempGroupID;    
+    #********GET CUST ASSOCIATION GROUP********	       
+    INSERT INTO Temp_TransGroup(TransID, TransDate, CustID, Stake, GroupID, LoopID)
+    SELECT	mms.TransID
+		,	mms.TransDate
+        ,	mms.CustID
+        ,	mms.Stake
+        ,	mms.GroupID
+        ,	1 AS LoopID
+    FROM CTS_DataCenter.MatchMonitorStaging AS mms
+	WHERE mms.OriginGroupID = ip_TimeGroupID;
     
-    CALL CTS_DC_Association_GetGroup(lv_CustList); /*Return CustAssociationGroup Into Temporary table "Temp_Group"*/
-	
-    INSERT INTO Temp_AssGroup(AssGroupID, ListCustID, ListTransID, IsHedging, MinPreGroupID, NoOfPreGroupID)
-	SELECT	tmpGp.GroupID AS AssGroupID
-		,	GROUP_CONCAT(DISTINCT mms.CustID) AS ListCustID
-		,	GROUP_CONCAT(DISTINCT mms.TransID) AS ListTransID
-		,	MAX(tmpGp.IsHedging) AS IsHedging
-		,	MIN(mms.GroupID) AS MinPreGroupID
-		,	COUNT(mms.GroupID) AS NoOfPreGroupID
-	FROM	CTS_DataCenter.MatchMonitorStaging AS mms
-		INNER JOIN Temp_Group AS tmpGp ON mms.CustID = tmpGp.CustID
-	WHERE mms.OriginGroupID = ip_TempGroupID 
-	GROUP BY tmpGp.GroupID
-	HAVING SUM(Stake) >= 500 AND COUNT(DISTINCT mms.CustID) > 1;  
+	SET @i=1;
+    SET @lv_LoopID = 1;
     
-    /*****IF EXISTS ANY ASSOCIATION GROUP THEN CHECK GROUP BETTING ELSE END*****/
-    IF EXISTS (SELECT 1 FROM Temp_AssGroup LIMIT 1)
-    THEN         
-               
-        #====MatchMonitorDetaisl===============
-        DROP TEMPORARY TABLE IF EXISTS Temp_OdlGroupID;
-        CREATE TEMPORARY TABLE Temp_OdlGroupID(OldGroupID INT);
+	WHILE @lv_LoopID IS NOT NULL
+	DO   
+	  
+		SELECT 	GROUP_CONCAT(DISTINCT CustID)
+		INTO	lv_CustList
+		FROM	Temp_TransGroup AS tmpTg
+		WHERE	tmpTg.LoopID = @lv_LoopID;        
+        
+		CALL CTS_DC_Association_GetGroup(lv_CustList); #Return CustAssociationGroup Into Temporary table "Temp_Group" 
+
+        UPDATE Temp_TransGroup AS tmpTg
+			INNER JOIN Temp_Group AS tmpGp ON tmpTg.CustID = tmpGp.CustID
+        SET tmpTg.AssGroupID = tmpGp.GroupID, tmpTg.IsHedging = tmpGp.IsHedging
+        WHERE	tmpTg.LoopID = @lv_LoopID;
+        
+        #=====REMOVE TRANS NOT HAVE GROUP=========        
+        DELETE 	tmpTg 
+        FROM 	Temp_TransGroup AS tmpTg
+		WHERE 	tmpTg.AssGroupID IS NULL
+				AND tmpTg.LoopID = @lv_LoopID;  
+
+        #==================================
+        TRUNCATE TABLE Temp_AssGroup;
+        
+		INSERT INTO Temp_AssGroup(AssGroupID, MinTransID, MinTransDate, MaxTimeGroupID)
+		SELECT 	AssGroupID, MIN(TransID), MIN(TransDate), MAX(TimeGroupID)
+		FROM	Temp_TransGroup AS  tmpTg
+        WHERE	tmpTg.LoopID = @lv_LoopID
+		GROUP BY AssGroupID;
+        
+		SET @TimeGroupID=0;
+		SET @PreTime=NULL;
+		SET @GroupOrder = 0; 
+        
+		UPDATE Temp_TransGroup AS tmpTg
+			INNER JOIN Temp_AssGroup AS tmpTa ON  tmpTg.AssGroupID = tmpTa.AssGroupID
+		SET	tmpTg.PreTime = IF(tmpTg.TransID = tmpTa.MinTransID, @PreTime:=tmpTa.MinTransDate, @PreTime) 	
+			, 	tmpTg.TimeGroupID	= IF(tmpTg.TransID = tmpTa.MinTransID, @TimeGroupID:=@TimeGroupID + 1
+										, IF(TIMESTAMPDIFF(SECOND,@PreTime, @PreTime:=tmpTg.TransDate) > 180 , @TimeGroupID:=@TimeGroupID +1 
+										, @TimeGroupID))
+		WHERE tmpTg.LoopID = @lv_LoopID;
+        
+        #==================================================
+        SET @i=IFNULL((SELECT tmpTg.TimeGroupID FROM Temp_TransGroup AS tmpTg WHERE tmpTg.LoopID = @lv_LoopID AND tmpTg.TimeGroupID > 1 LIMIT 1),1);
+      
+        
+		#=====REMOVE TRANS GROUP NOT MATCH CONDITION TOTAL STAKE AND NUMBER OF CUST=========		
+        TRUNCATE TABLE Temp_RevmoveTimeGroup;
+        
+        INSERT INTO Temp_RevmoveTimeGroup(TimeGroupID)
+        SELECT TimeGroupID
+        FROM Temp_TransGroup AS tmpTg        
+        WHERE tmpTg.LoopID = @lv_LoopID
+        GROUP BY tmpTg.TimeGroupID
+        HAVING SUM(Stake) < 500 OR COUNT(DISTINCT CustID) < 2;
+
+        DELETE tmpTg
+        FROM Temp_TransGroup AS tmpTg
+			INNER JOIN Temp_RevmoveTimeGroup AS tmpRv ON tmpTg.TimeGroupID = tmpRv.TimeGroupID
+		WHERE tmpTg.LoopID = @lv_LoopID;
+        #===================================  
 		
-        INSERT INTO Temp_OdlGroupID(OldGroupID)
-        SELECT DISTINCT GroupID 
-        FROM CTS_DataCenter.MatchMonitorStaging AS mms 
-        WHERE mms.MatchID = lv_MatchID AND  mms.LiveIndicator = lv_LiveIndicator AND mms.TotalScore = lv_TotalScore AND mms.BettypeID = lv_BettypeID
-				AND mms.OriginGroupID = ip_TempGroupID AND GroupID IS NOT NULL;
-              
-		DELETE	mmd
-        FROM	CTS_DataCenter.MatchMonitorDetails AS mmd
-        INNER JOIN Temp_OdlGroupID AS tmp ON mmd.GroupID = tmp.OldGroupID 
-        WHERE	mmd.MatchID = lv_MatchID AND  mmd.LiveIndicator = lv_LiveIndicator AND mmd.TotalScore = lv_TotalScore AND mmd.BettypeID = lv_BettypeID;
-        
-        SET 	lv_MaxOldGroupID = 0;
-        
-        SELECT 	IFNULL(MAX(GroupID),0)
-        INTO 	lv_MaxOldGroupID
-        FROM 	CTS_DataCenter.MatchMonitorDetails AS mmd
-        WHERE	mmd.MatchID = lv_MatchID AND  mmd.LiveIndicator = lv_LiveIndicator AND mmd.TotalScore = lv_TotalScore AND mmd.BettypeID = lv_BettypeID;
-       
-        SET @MaxGroupID = lv_MaxOldGroupID;
-        
-        INSERT IGNORE INTO CTS_DataCenter.MatchMonitorDetails(MatchID, BettypeID, EventDate, LiveIndicator, GroupID
-						, TotalScore, LiveHomeScore, LiveAwayScore, IsHedging, ListCustID, ListTransID)
-		SELECT	lv_MatchID
-			,	lv_BettypeID
-			,	lv_EventDate
-			,	lv_LiveIndicator
-			,	@MaxGroupID := @MaxGroupID + 1
-			,	lv_TotalScore
-			,	lv_LiveHomeScore
-			,	lv_LiveAwayScore
-			,	tmpAg.IsHedging
-			,	tmpAg.ListCustID
-			,	tmpAg.ListTransID
-		FROM	Temp_AssGroup AS tmpAg;
-		#WHERE	tmpAg.AssGroupID = @AssGroupID;
-        
-        #====MatchMonitor===============
-        SELECT COUNT(DISTINCT IsHedging) 
-        INTO lv_NewNoOfHedging
-        FROM CTS_DataCenter.MatchMonitorDetails AS mm 
-		WHERE mm.MatchID = lv_MatchID AND mm.BettypeID = lv_BettypeID;
-        
-        SELECT COUNT(DISTINCT IsHedging) 
-		INTO lv_CurrentNoOfHedging
-		FROM CTS_DataCenter.MatchMonitor AS mm 
-		WHERE mm.MatchID = lv_MatchID AND mm.BettypeID = lv_BettypeID;
-        
-        SET lv_NewNoOfHedging = IFNULL(lv_NewNoOfHedging,0);
-        SET lv_CurrentNoOfHedging = IFNULL(lv_CurrentNoOfHedging,0);
-        
-        IF ( lv_NewNoOfHedging > lv_CurrentNoOfHedging ) THEN		
-			INSERT IGNORE INTO CTS_DataCenter.MatchMonitor(IsHedging, MatchID, BettypeID, EventDate, EventStatus, KickOffTime, HomeID, AwayID,LeagueID)
-			SELECT 	DISTINCT tmpAg.IsHedging, lv_MatchID, lv_BettypeID, lv_EventDate, lv_EventStatus
-					, lv_KickOffTime, lv_HomeID, lv_AwayID, lv_LeagueID
-			FROM	Temp_AssGroup AS tmpAg;
-		END IF;
-        
-        IF  ( lv_NewNoOfHedging = lv_CurrentNoOfHedging AND lv_NewNoOfHedging = 1) THEN
-			UPDATE CTS_DataCenter.MatchMonitor AS mm
-            SET mm.IsHedging = (SELECT MAX(IsHedging) FROM Temp_AssGroup)
-            WHERE MatchID = lv_MatchID AND BettypeID = lv_BettypeID ;	
-		END IF;       
-        
-        IF  ( lv_NewNoOfHedging < lv_CurrentNoOfHedging ) THEN
-			DELETE mm
-			FROM CTS_DataCenter.MatchMonitor AS mm
-			 LEFT JOIN (SELECT COUNT(DISTINCT IsHedging) AS IsHedging FROM Temp_AssGroup) AS tmp ON tmp.IsHedging = mm.IsHedging
-			WHERE 	mm.MatchID = lv_MatchID AND mm.BettypeID = lv_BettypeID
-					AND tmp.IsHedging IS NULL;	
-		END IF;   
-   
-		#====MatchMonitorStaging===============
-        SELECT 	GroupID, ListTransID
-		INTO 	lv_DetailsGroupID, lv_DetailsListTrans
-		FROM 	CTS_DataCenter.MatchMonitorDetails AS mmd 
-		WHERE	mmd.MatchID = lv_MatchID AND mmd.LiveIndicator = lv_LiveIndicator 
-			AND 	mmd.TotalScore = lv_TotalScore AND mmd.BettypeID = lv_BettypeID AND mmd.GroupID > lv_MaxOldGroupID
-		ORDER BY mmd.GroupID ASC
-        LIMIT 1;
+        IF @i = 1 AND EXISTS (SELECT 1 FROM Temp_TransGroup) THEN # DONE FOR LoopID=lv_LoopID
+			
+			#===GET Current GroupID=====
+            TRUNCATE TABLE Temp_OdlGroupID;
+            
+            INSERT INTO Temp_OdlGroupID(OldGroupID)
+			SELECT DISTINCT tmpTg.GroupID
+            FROM Temp_TransGroup AS tmpTg
+            WHERE tmpTg.LoopID = @lv_LoopID;  
 
-		WHILE lv_DetailsGroupID IS NOT NULL
-        DO
-			CALL CTS_DataCenter.CTS_DC_Sys_SplitStringToTempItemTable(lv_DetailsListTrans,',','BIGINT UNSIGNED');
-            
-            UPDATE CTS_DataCenter.MatchMonitorStaging mms
-			INNER JOIN TempItemTable AS tmpIt ON mms.TransID = tmpIt.Item
-            SET mms.GroupID = lv_DetailsGroupID;           
-            
-            SET lv_DetailsGroupIDPre = lv_DetailsGroupID;
-            SET lv_DetailsGroupID = NULL;
-            
-            SELECT 	mmd.GroupID, mmd.ListTransID
-			INTO 	lv_DetailsGroupID, lv_DetailsListTrans
-			FROM 	CTS_DataCenter.MatchMonitorDetails AS mmd 
-			WHERE	mmd.MatchID = lv_MatchID AND mmd.LiveIndicator = lv_LiveIndicator 
-					AND	mmd.TotalScore = lv_TotalScore AND mmd.BettypeID = lv_BettypeID AND mmd.GroupID > lv_DetailsGroupIDPre
-            ORDER BY mmd.GroupID ASC
-			LIMIT 1;
+            START TRANSACTION;
+				DELETE	mmd
+				FROM	CTS_DataCenter.MatchMonitorDetails AS mmd
+				INNER JOIN Temp_OdlGroupID AS tmp ON mmd.GroupID = tmp.OldGroupID 
+				WHERE	mmd.MatchID = lv_MatchID AND  mmd.LiveIndicator = lv_LiveIndicator AND mmd.TotalScore = lv_TotalScore AND mmd.BettypeID = lv_BettypeID;
+                
+                SELECT 	MIN(OldGroupID)
+				INTO 	lv_GroupID
+				FROM 	Temp_OdlGroupID;
+                
+                IF lv_GroupID IS NULL THEN
+					SELECT MAX(GroupID) + 1
+					INTO lv_GroupID
+					FROM CTS_DataCenter.MatchMonitorDetails AS mmd
+					WHERE mmd.MatchID = lv_MatchID AND  mmd.LiveIndicator = lv_LiveIndicator AND mmd.TotalScore = lv_TotalScore AND mmd.BettypeID = lv_BettypeID;
+				END IF;
+				
+                SET lv_GroupID = IFNULL(lv_GroupID,1);
+                
+                UPDATE Temp_TransGroup AS tmpTg
+                SET 	tmpTg.GroupID = lv_GroupID
+                WHERE	tmpTg.LoopID = @lv_LoopID;
+               
+				INSERT IGNORE INTO CTS_DataCenter.MatchMonitorDetails(MatchID, BettypeID, EventDate, LiveIndicator
+							, TotalScore, LiveHomeScore, LiveAwayScore, GroupID, IsHedging, ListCustID, ListTransID, LastModifiedTime)
+				SELECT	lv_MatchID
+					,	lv_BettypeID
+					,	lv_EventDate
+					,	lv_LiveIndicator					
+					,	lv_TotalScore
+					,	lv_LiveHomeScore
+					,	lv_LiveAwayScore
+                    ,	lv_GroupID
+					,	MAX(tmpTg.IsHedging)
+					,	GROUP_CONCAT(DISTINCT tmpTg.CustID) AS ListCustID
+					,	GROUP_CONCAT(tmpTg.TransID) AS ListTransID
+                    ,	CURRENT_TIMESTAMP(3)
+				FROM	Temp_TransGroup AS tmpTg                
+                WHERE	tmpTg.LoopID = @lv_LoopID;
 
-        END WHILE;
-	END IF; 
-	
+                SELECT  COUNT(DISTINCT mm.IsHedging), MIN(mm.IsHedging), MAX(mm.IsHedging)
+                INTO @NoOfIsHedging, @MinIsHedging, @MaxIsHedging
+                FROM CTS_DataCenter.MatchMonitor AS mm 
+				WHERE mm.MatchID = lv_MatchID AND mm.BettypeID = lv_BettypeID;
+                
+                SELECT COUNT(DISTINCT mmd.IsHedging), MIN(mmd.IsHedging), MAX(mmd.IsHedging)
+                INTO @NoOfIsHedgingDetails, @MinIsHedgingDetails, @MaxIsHedgingDetails
+                FROM CTS_DataCenter.MatchMonitorDetails AS mmd
+				WHERE mmd.MatchID = lv_MatchID AND mmd.BettypeID = lv_BettypeID;
+                
+                IF(@NoOfIsHedging < @NoOfIsHedgingDetails) 
+                THEN                
+					INSERT IGNORE INTO CTS_DataCenter.MatchMonitor(IsHedging, MatchID, BettypeID, EventDate, EventStatus, KickOffTime, HomeID, AwayID,LeagueID,LastModifiedTime)
+					SELECT 	(CASE WHEN @MinIsHedging = 0 THEN 1 ELSE 0 END) AS IsHedging
+							, lv_MatchID, lv_BettypeID, lv_EventDate, lv_EventStatus , lv_KickOffTime, lv_HomeID, lv_AwayID, lv_LeagueID, CURRENT_TIMESTAMP(3) ;
+                END IF;
+                
+                IF(@NoOfIsHedging = @NoOfIsHedgingDetails AND @MinIsHedging <> @MinIsHedgingDetails) 
+                THEN                
+					UPDATE CTS_DataCenter.MatchMonitor AS mm 
+                    SET mm.IsHedging = @MinIsHedgingDetails, mm.LastModifiedTime = CURRENT_TIMESTAMP(3)
+					WHERE mm.MatchID = lv_MatchID AND mm.BettypeID = lv_BettypeID;
+                END IF;
+                
+                IF(@NoOfIsHedging > @NoOfIsHedgingDetails) 
+                THEN                
+					DELETE  mm
+                    FROM	CTS_DataCenter.MatchMonitor AS mm 
+					WHERE 	mm.MatchID = lv_MatchID AND mm.BettypeID = lv_BettypeID AND mm.IsHedging <> @MinIsHedgingDetails ;
+                END IF;       
+                
+			COMMIT;
+            
+			UPDATE CTS_DataCenter.MatchMonitorStaging AS mms
+            INNER JOIN Temp_TransGroup AS tmpTg ON mms.TransID = tmpTg.TransID
+            SET mms.GroupID = tmpTg.GroupID;
+            
+			DELETE tmpTg
+			FROM Temp_TransGroup AS tmpTg
+			WHERE tmpTg.LoopID = @lv_LoopID;            
+        ELSE
+			UPDATE Temp_TransGroup AS tmpTg
+            SET tmpTg.LoopID = tmpTg.TimeGroupID, tmpTg.AssGroupID = NULL, tmpTg.IsHedging = NULL
+            WHERE tmpTg.LoopID = @lv_LoopID;
+        END IF;
+        #============================================================
+        SET @lv_LoopID = (SELECT TimeGroupID FROM Temp_TransGroup LIMIT 1);       
+        #===========================================    
+        
+	END WHILE;
+
 END$$
 DELIMITER ;

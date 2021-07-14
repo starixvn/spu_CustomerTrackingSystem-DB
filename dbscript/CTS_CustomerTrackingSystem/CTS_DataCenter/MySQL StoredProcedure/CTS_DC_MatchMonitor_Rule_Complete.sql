@@ -27,9 +27,15 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Last3mTransGroup;
     CREATE TEMPORARY TABLE Temp_Last3mTransGroup
     (
-		OriginGroupID	INT
+			MatchID INT
+        ,	LiveIndicator BIT
+        ,	TotalScore SMALLINT
+        ,	BettypeID INT 
+        ,   GroupID INT
+        
+        ,	PRIMARY KEY (MatchID,LiveIndicator,TotalScore,GroupID)
     );
-    
+     
     SELECT 	MAX(TransDate) , MAX(TransID)
     INTO 	lv_Last3mMaxTime, lv_LastTransID
     FROM	CTS_DataCenter.MatchMonitorStaging;    
@@ -38,16 +44,17 @@ BEGIN
     INTO 	lv_Last3mMinTime
     FROM	CTS_DataCenter.MatchMonitorStaging
     WHERE   TransDate > TIMESTAMPADD(SECOND, -180, lv_Last3mMaxTime);  
-    
-    INSERT INTO Temp_Last3mTransGroup(OriginGroupID)
-    SELECT 	DISTINCT OriginGroupID
-    FROM 	CTS_DataCenter.MatchMonitorStaging
-    WHERE	TransDate >= lv_Last3mMinTime;
+        
+    INSERT INTO Temp_Last3mTransGroup(MatchID, LiveIndicator, TotalScore, BettypeID, GroupID)
+    SELECT 	DISTINCT mms.MatchID, mms.LiveIndicator, mms.TotalScore, mms.BettypeID, mms.GroupID
+    FROM 	CTS_DataCenter.MatchMonitorStaging mms
+    WHERE	mms.TransDate >= lv_Last3mMinTime AND mms.GroupID IS NOT NULL;
     
     DELETE 	mms
     FROM	CTS_DataCenter.MatchMonitorStaging AS mms
-		LEFT JOIN Temp_Last3mTransGroup AS tmpTg ON mms.OriginGroupID = tmpTg.OriginGroupID
-	WHERE	mms.TransDate < lv_Last3mMinTime AND tmpTg.OriginGroupID IS NULL;    
+		LEFT JOIN Temp_Last3mTransGroup AS tmpTg ON mms.MatchID = tmpTg.MatchID AND mms.LiveIndicator = tmpTg.LiveIndicator
+			AND mms.TotalScore = tmpTg.TotalScore AND mms.BettypeID = tmpTg.BettypeID  AND mms.GroupID = tmpTg.GroupID
+	WHERE	mms.TransDate < lv_Last3mMinTime  AND tmpTg.GroupID IS NULL ;    
 
 	/* Update Parameter*/
     UPDATE 	CTS_DataCenter.SystemParameter
