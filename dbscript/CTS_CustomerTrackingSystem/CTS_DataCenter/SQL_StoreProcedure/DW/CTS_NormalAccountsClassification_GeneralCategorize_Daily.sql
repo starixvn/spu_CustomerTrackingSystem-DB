@@ -1,3 +1,10 @@
+USE [bodb_VR2Model]
+GO
+/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_Daily]    Script Date: 7/14/2021 4:24:09 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
 ALTER PROCEDURE [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_Daily]
 	@ListCustIds			VARCHAR(MAX),
 	@IsCheckLast14Days		BIT = 1 
@@ -14,6 +21,8 @@ AS
 		- 20210408@John.Ngo: Special rule for Haifa CC2 & Problem Agent Category (only member level) [Redmine ID: #152884]
 		- 20210511@John.Ngo: Exclude Customer of Odd Feed Sites [Redmine ID: #154694]
 		- 20210512@John.Ngo: Exclude Customer Class for Internal Account [Redmine ID: #154844]
+		- 20210714@Long.Luu: Special rule for ManbetX CC2 [Redmine ID: #158465]
+		
 		
 	Param's Explanation:
 */
@@ -187,10 +196,10 @@ BEGIN
 	WHERE a.CustId IS NULL
 		AND dc.CustId IS NULL;
 		
-	-- Remove 'haifa doesn't change category'
+	-- Remove 'haifa/manbetX doesn't change category'
 	DELETE a
 	FROM  #tmpCustomerAccummulatedInfo AS a WITH(ROWLOCK)
-	WHERE (a.Site = 'haifa' AND a.Margin < 0 AND a.WinlossRM < -5000);
+	WHERE (a.Site IN ('haifa','manbetx') AND a.Margin < 0 AND a.WinlossRM < -5000);
 
 	-- #7: Classify customers by General Category
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
@@ -202,8 +211,8 @@ BEGIN
 				WHEN (a.Margin >= 0.1 AND a.Margin <= 1 AND a.BetCount >= 20 AND a.WinlossRM > 15000) THEN @GENERALCATEGORY_SMARTPUNTER
 				WHEN (a.Margin > 1 AND a.BetCount >= 20 AND a.WinlossRM > 15000) THEN @GENERALCATEGORY_HIGHRISKPUNTER
 				WHEN (a.Margin >= 0) THEN @GENERALCATEGORY_PROBATION
-				WHEN (a.Margin < 0 AND (a.Site <> 'haifa' OR a.Site IS NULL)) THEN @GENERALCATEGORY_NORMALMEMBER
-				WHEN (a.Margin < 0 AND a.Site = 'haifa' AND a.WinlossRM >= -5000) THEN @GENERALCATEGORY_NORMALMEMBER
+				WHEN (a.Margin < 0 AND (a.Site NOT IN ('haifa','manbetx') OR a.Site IS NULL)) THEN @GENERALCATEGORY_NORMALMEMBER
+				WHEN (a.Margin < 0 AND a.Site IN ('haifa','manbetx') AND a.WinlossRM >= -5000) THEN @GENERALCATEGORY_NORMALMEMBER
 			END AS CategoryId
 		,	@CurrentDate AS CreatedDate
 		,	@CurrentDateTime AS CreatedTime

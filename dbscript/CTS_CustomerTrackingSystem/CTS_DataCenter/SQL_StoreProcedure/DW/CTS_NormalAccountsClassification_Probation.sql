@@ -1,3 +1,10 @@
+USE [bodb_VR2Model]
+GO
+/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_Probation]    Script Date: 7/14/2021 4:34:41 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
 ALTER PROCEDURE [dbo].[CTS_NormalAccountsClassification_Probation]
 		@CustomersXML			XML
 AS
@@ -12,6 +19,7 @@ AS
 		- 20201224@Long.Luu: Return more data [Redmine ID: #145951]
 		- 20210408@John.Ngo: Special rule for Haifa CC2 & Problem Agent Category (only member level) [Redmine ID: #152884]
 		- 20210531@John.Ngo: Exclude non-real Saba Sport on Customer Classification [Redmine ID: #155976]
+		- 20210714@Long.Luu: Special rule for ManbetX CC2 [Redmine ID: #158465]
         
 	Param's Explanation:
 
@@ -160,8 +168,8 @@ BEGIN
 		c.CategoryId = CASE 
 							WHEN (s.Margin <= -2 AND s.TurnoverRM > 150000 AND s.BetCount > 300 AND s.ActiveDays >= 8) THEN 
 								@GENERALCATEGORY_VIP
-							WHEN (s.Site <> 'haifa' OR s.Site IS NULL) THEN @GENERALCATEGORY_NORMALMEMBER
-							WHEN (s.Site = 'haifa' AND s.WinlossRM >= -5000) THEN @GENERALCATEGORY_NORMALMEMBER
+							WHEN (s.Site NOT IN ('haifa','manbetx') OR s.Site IS NULL) THEN @GENERALCATEGORY_NORMALMEMBER
+							WHEN (s.Site IN ('haifa','manbetx') AND s.WinlossRM >= -5000) THEN @GENERALCATEGORY_NORMALMEMBER
 							ELSE
 								@GENERALCATEGORY_PROBATION
 						END,
