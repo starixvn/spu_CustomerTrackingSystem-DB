@@ -13,7 +13,6 @@ BEGIN
 		Task: Return the auto tag customer list that reach to scanning schedule (interval refer to CTS_DataCenter.CustomerCategory.IntervalScan
 		DB: CTS_DataCenter
 		Original:
-
 		Revisions:
 			- 20200701@Casey.Huynh: Chagne Flow and Store more Info [Redmine ID: #135324]
             - 20200820@Casey.Huynh: Remove USE INDEX  [Redmine ID: #139061]
@@ -24,7 +23,6 @@ BEGIN
             - 20210510@Aries.Nguyen: Remove insert log dba_SP_PerformanceStats [Redmine ID: #154792]
             - 20210525@Irena.Vo: Change col name PinCustomerCategory: CustID -> CTSCustID [Redmine ID: 152965]
 			- 20210712@Irena.Vo: Fix bug get duplicated daily data [Redmine ID: 158262]
-
 		Param's Explanation (filtered by):      
 			- CALL CTS_DC_GetCustomerClassificationIntervalScan (100,1);
 	*/

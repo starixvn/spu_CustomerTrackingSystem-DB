@@ -3,8 +3,8 @@ DROP PROCEDURE IF EXISTS `CTS_DC_Association_GetWithCategory`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_GetWithCategory`(
-		IN ip_CustIDList			VARCHAR(8000)
-	,	IN ip_IsGetAssociation		BOOLEAN
+		IN ip_CustIDList	VARCHAR(8000)
+	,	IN ip_IsDelete		BOOLEAN
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -17,14 +17,11 @@ BEGIN
 		Revisions:
 			- 20201027@Harvey: Init SPs. Association: only get association by device
 			- 20210317@Irena.Vo: Review logic get data & update syntax. [RedmineID: #151374]
-			- 20210622@Aries.Nguyen: Update coding convention and improve locking  [Redmine ID: #157203]
-			- 20210715@Aries.Nguyen: Fix Duplicate Daily Data [Redmine ID: #158262] 
-
+			- 20210715@Aries.Nguyen: Improve locking . Fix get Duplicate Category [Redmine ID: #158262] 
 		Param's Explanation (filtered by):
 			- pre-condition: RegisterName is not null & Category is PA, Smart Punter, High Risk Punter. 
-		
 		Example:
-			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetForSoon88('41609149,41611983,41630670', 0);
+			- CALL CTS_DataCenter.CTS_DC_Association_GetWithCategory('41609149,41611983,41630670', 0);
 	*/
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
