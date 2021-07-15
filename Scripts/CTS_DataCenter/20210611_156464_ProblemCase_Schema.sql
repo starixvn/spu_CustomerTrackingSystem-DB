@@ -10,11 +10,16 @@ Revisions:
 Reviewer:
 */
 USE CTS_DataCenter;
+ALTER TABLE AssociationByAI 
+	DROP PRIMARY KEY
+    , ADD COLUMN ID BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY FIRST
+    , ADD UNIQUE KEY UX_AssociationByAI_FromCustIDToCustID(FromCustID,ToCustID);
 
+#=================================================================================
+/*
 ALTER TABLE CTS_DataCenter.SystemEventStatus ADD LastExecTime DATETIME;
-
-
 ALTER TABLE CTS_DataCenter.AssociationByIP MODIFY CreatedDate DATETIME(3);
+
 
 CREATE TABLE ProblemCaseMonitor(
 		CreatedDate	DATETIME	
@@ -48,3 +53,4 @@ VALUES	(21,'ProblemCase_AssByIP_CreatedDate', 'Last Scan time', 'DATETIME(3)', @
 
 INSERT INTO SystemEventStatus(EventName, Status, LastExecTime)
 VALUES('EV_CTS_ProblemCaseMonitor_Rule', 'Stop', CURRENT_TIME());
+*/
