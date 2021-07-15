@@ -91,9 +91,7 @@ BEGIN
 														AND Temp_Customer.CategoryID < class.CategoryID THEN class.LastModifiedDate
 													ELSE Temp_Customer.LastModifiedDate
 											   END,
-							CategoryName = CASE WHEN  Temp_Customer.LastModifiedDate < class.LastModifiedDate THEN custCate.CategoryName
-												WHEN  Temp_Customer.LastModifiedDate = class.LastModifiedDate 
-													AND Temp_Customer.CategoryID < class.CategoryID THEN custCate.CategoryName
+							CategoryName = CASE WHEN  Temp_Customer.CategoryID = class.CategoryID THEN custCate.CategoryName
 												ELSE Temp_Customer.CategoryName
 											END;
     
@@ -157,9 +155,7 @@ BEGIN
 														AND Temp_Result.CategoryID < class.CategoryID THEN class.LastModifiedDate
 													ELSE Temp_Result.LastModifiedDate
 											   END,
-							CategoryName = CASE WHEN  Temp_Result.LastModifiedDate < class.LastModifiedDate THEN custCate.CategoryName
-												WHEN  Temp_Result.LastModifiedDate = class.LastModifiedDate 
-													AND Temp_Result.CategoryID < class.CategoryID THEN custCate.CategoryName
+							CategoryName = CASE WHEN  Temp_Result.CategoryID = class.CategoryID THEN custCate.CategoryName
 												ELSE Temp_Result.CategoryName
 											END;
             
