@@ -19,7 +19,7 @@ BEGIN
 		Example: ;
 	*/ 
     
-    DECLARE lv_sysLastAssByIP			DATETIME;
+    DECLARE lv_sysLastAssByIP			BIGINT UNSIGNED;
     DECLARE lv_sysLastAssByDevice		BIGINT UNSIGNED;
     DECLARE lv_sysLastClassification	BIGINT UNSIGNED;
     DECLARE lv_ProCasRobot 			SMALLINT DEFAULT 1;
@@ -140,7 +140,7 @@ BEGIN
     FROM CTS_DataCenter.AssociationByIP AS asIP
 		INNER JOIN CTS_DataCenter.CTSCustomer AS frCus ON frCus.CustID = asIP.FromCustID AND frCus.CustSubID = 0
         INNER JOIN CTS_DataCenter.CTSCustomer AS toCus ON toCus.CustID = asIP.ToCustID AND toCus.CustSubID = 0
-	WHERE asIP.CreatedDate > lv_sysLastAssByIP
+	WHERE asIP.ID > lv_sysLastAssByIP
     ORDER BY asIP.CreatedDate
 	LIMIT ip_PackSize;
 	
