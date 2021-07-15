@@ -141,7 +141,7 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomer AS frCus ON frCus.CustID = asIP.FromCustID AND frCus.CustSubID = 0
         INNER JOIN CTS_DataCenter.CTSCustomer AS toCus ON toCus.CustID = asIP.ToCustID AND toCus.CustSubID = 0
 	WHERE asIP.ID > lv_sysLastAssByIP
-    ORDER BY asIP.CreatedDate
+    ORDER BY asIP.ID ASC
 	LIMIT ip_PackSize;
 	
     #======GET NEW AssociaionByDevice======================================= 
