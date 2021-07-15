@@ -10,11 +10,20 @@ Revisions:
 Reviewer:
 */
 USE CTS_DataCenter;
-ALTER TABLE AssociationByAI 
-	DROP PRIMARY KEY
-    , ADD COLUMN ID BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY FIRST
-    , ADD UNIQUE KEY UX_AssociationByAI_FromCustIDToCustID(FromCustID,ToCustID);
+ALTER TABLE AssociationByIP DROP INDEX IX_AssociationByIP_ToCustID;
+ALTER TABLE AssociationByIP 
+		DROP PRIMARY KEY
+    , 	ADD COLUMN ID BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY FIRST
+    , 	ADD UNIQUE KEY UX_AssociationByIP_FromCustIDToCustID(FromCustID,ToCustID)
+    ,	ADD UNIQUE KEY UX_AssociationByIP_ToCustIDFromCustID(ToCustID,FromCustID);
 
+SET @MaxAssByIP = (SElECT MAX(ID) FROM CTS_DataCenter.AssociationByIP);
+UPDATE SystemParameter
+SET     ParameterValue = @MaxAssByIP
+    ,   ParameterName  = 'ProblemCase_AssByIP_ID'
+    ,   ParameterDesc  = 'Last Scan ID'
+    ,   ParameterDataType = 'BIGINT UNSIGNED'
+WHERE ParameterID = 21;
 #=================================================================================
 /*
 ALTER TABLE CTS_DataCenter.SystemEventStatus ADD LastExecTime DATETIME;
