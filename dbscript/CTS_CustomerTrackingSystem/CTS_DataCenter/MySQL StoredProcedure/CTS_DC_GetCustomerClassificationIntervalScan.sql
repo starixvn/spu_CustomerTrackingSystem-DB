@@ -71,7 +71,7 @@ BEGIN
     INSERT INTO Temp_CategoryScanDate(CategoryID,SportGroupID, ScanDate, CategoryGroup)
 	SELECT 	CategoryID
 		, 	ParentID
-        , 	DATE_SUB(DATE(lv_ScanTime), INTERVAL ScanIntervalInSecond SECOND)
+        , 	DATE_SUB(DATE(lv_ScanTime), INTERVAL ScanIntervalInSecond - 86400 SECOND)
         ,	CategoryGroup
 	FROM CTS_DataCenter.CustomerCategory AS cat
 	WHERE ParentID = 200 
