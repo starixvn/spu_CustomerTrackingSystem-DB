@@ -15,7 +15,7 @@ ALTER TABLE AssociationByIP
 		DROP PRIMARY KEY
     , 	ADD COLUMN ID BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY FIRST
     , 	ADD UNIQUE KEY UX_AssociationByIP_FromCustIDToCustID(FromCustID,ToCustID)
-    ,	ADD UNIQUE KEY UX_AssociationByIP_ToCustIDFromCustID(ToCustID,FromCustID);
+    ,	ADD INDEX IX_AssociationByIP_ToCustIDFromCustID(ToCustID,FromCustID);
 
 SET @MaxAssByIP = (SElECT MAX(ID) FROM CTS_DataCenter.AssociationByIP);
 UPDATE SystemParameter
