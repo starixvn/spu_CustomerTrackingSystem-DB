@@ -97,7 +97,7 @@ BEGIN
     
     /* GET RESULT */
     /* Is remove category */
-    IF ip_IsGetAssociation THEN
+    IF ip_IsDelete THEN
 		SELECT RegisterName, CategoryName FROM Temp_Customer;
     
 	/* Is get category */
