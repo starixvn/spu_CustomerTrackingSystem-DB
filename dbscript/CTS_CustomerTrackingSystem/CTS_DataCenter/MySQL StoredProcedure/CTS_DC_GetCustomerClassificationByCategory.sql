@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_GetCustomerClassificationByCust`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_GetCustomerClassificationByCategory`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_GetCustomerClassificationByCust`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_GetCustomerClassificationByCategory`(
 		IN ip_CustSport    JSON
 )
     SQL SECURITY INVOKER
