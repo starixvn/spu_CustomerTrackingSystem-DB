@@ -1,12 +1,13 @@
 USE [bodb_VR2Model]
 GO
-/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_Daily]    Script Date: 7/14/2021 4:24:09 AM ******/
+/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_Daily]    Script Date: 07/16/2021 15:11:56 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 ALTER PROCEDURE [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_Daily]
 	@ListCustIds			VARCHAR(MAX),
+	--@FunctionId				SMALLINT,-- = -1,
 	@IsCheckLast14Days		BIT = 0 
 AS
 /*
@@ -21,8 +22,8 @@ AS
 		- 20210408@John.Ngo: Special rule for Haifa CC2 & Problem Agent Category (only member level) [Redmine ID: #152884]
 		- 20210511@John.Ngo: Exclude Customer of Odd Feed Sites [Redmine ID: #154694]
 		- 20210512@John.Ngo: Exclude Customer Class for Internal Account [Redmine ID: #154844]
+        - 20210607@Long.Luu: Check Inactive Accounts [Redmine ID: #156465]
 		- 20210714@Long.Luu: Special rule for ManbetX CC2 [Redmine ID: #158465]
-		
 		
 	Param's Explanation:
 */
@@ -116,6 +117,11 @@ BEGIN
 	INSERT INTO #tmpCustomers(CustId)
 	SELECT val FROM dbo.SPU_StrSplit(@ListCustIds, ',');
 
+	-- LOG INPUT DATA
+	/*INSERT INTO dbo.CustomerClassification_InputLog(CustId,CreatedDate,CreatedTime,FunctionId)
+	SELECT CustId, @CurrentDate, @CurrentDateTime, @FunctionId
+	FROM #tmpCustomers;
+	*/
 	-- Remove closed & disabled accounts & SMA account & Internal Account
 	DELETE r WITH(ROWLOCK)
 		OUTPUT DELETED.CustId INTO #tmpDeletedCustomers(CustId)
@@ -196,7 +202,7 @@ BEGIN
 		AND dc.CustId IS NULL
 		AND c.IsActive = 1;
 		
-	-- Remove 'haifa/manbetX doesn't change category'
+	-- #6: Remove 'haifa/manbetX doesn't change category'
 	DELETE a
 	FROM  #tmpCustomerAccummulatedInfo AS a WITH(ROWLOCK)
 	WHERE (a.Site IN ('haifa','manbetx') AND a.Margin < 0 AND a.WinlossRM < -5000);
