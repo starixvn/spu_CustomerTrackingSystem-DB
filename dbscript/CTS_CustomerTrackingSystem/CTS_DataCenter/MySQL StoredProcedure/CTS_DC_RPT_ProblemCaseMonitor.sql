@@ -82,6 +82,7 @@ BEGIN
 		INNER JOIN Temp_Subscriber AS tmpSub ON cus.SubscriberID = tmpSub.SubscriberID
 		INNER JOIN Temp_ProblemCase AS tmpPlc ON tmpPlc.ProblemCaseID = pcm.ProblemCaseID
 	WHERE	pcm.CreatedDate BETWEEN ip_FromDate AND ip_ToDate
+		AND cus.CurrencyID NOT IN (20,72)
     ORDER BY UserName;
     
 END$$
