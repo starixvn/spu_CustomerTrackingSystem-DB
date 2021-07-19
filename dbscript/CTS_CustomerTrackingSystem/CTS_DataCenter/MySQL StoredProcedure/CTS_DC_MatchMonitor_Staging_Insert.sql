@@ -15,6 +15,7 @@ BEGIN
 
 		Revisions:
 			- 	20210526@Casey.Huynh: Created [Redmine ID: 152883]
+            -	20210719@Casey.Huynh: Fix Issue Rule Trans.StepTime and AssGroup [Redmine ID: 158946]
 		
 		Param's Explanation (filtered by):
 		CALL CTS_DataCenter.CTS_DC_MatchMonitor_Staging_Insert(
@@ -78,7 +79,10 @@ BEGIN
 				) AS js;  
 	     
     INSERT INTO Temp_OringinGroupID(MatchID, LiveIndicator, TotalScore, BettypeID)
-    SELECT		mms.MatchID, mms.LiveIndicator, mms.TotalScore, mms.BettypeID
+    SELECT	mms.MatchID
+		,	mms.LiveIndicator
+        ,	mms.TotalScore
+        ,	mms.BettypeID
     FROM		CTS_DataCenter.MatchMonitorStaging AS mms
     GROUP BY	mms.MatchID, mms.LiveIndicator, mms.TotalScore, mms.BettypeID
 	HAVING		COUNT(DISTINCT CustID) > 1 AND SUM(Stake) >=500;

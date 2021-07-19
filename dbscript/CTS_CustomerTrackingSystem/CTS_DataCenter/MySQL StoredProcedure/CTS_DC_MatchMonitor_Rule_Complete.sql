@@ -13,6 +13,7 @@ BEGIN
 
 		Revisions:
 			- 	20210526@Casey.Huynh: Created [Redmine ID: 152883]
+            -	20210719@Casey.Huynh: Fix Issue Rule Trans.StepTime and AssGroup [Redmine ID: 158946]
 		
 		Param's Explanation (filtered by):
 		CALLCTS_DC_MatchMonitor_Rule_Complete();

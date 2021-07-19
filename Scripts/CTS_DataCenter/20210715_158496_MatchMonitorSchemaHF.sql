@@ -1,13 +1,10 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
 /*
 Creator: 	20210716@Casey.Huynh
-Task:	 	Add Insert Date
+Task:	 	Fix Issue Rule Trans.StepTime and AssGroup [Redmine ID: 158946]
 Server:  	Master
 DBName:		CTS_DataCenter
 
-Revisions: 
-		-20210716@Casey.Huynh: Created [Redmine: 158496]
-Reviewer:
 */
 
 USE CTS_DataCenter;
@@ -19,10 +16,20 @@ UPDATE SystemParameter
 SET ParameterValue = 0
 WHERE ParameterID = 20;
 
-#===================
+#=======MatchMonitor============
 ALTER TABLE CTS_DataCenter.MatchMonitor
 ADD COLUMN LastModifiedTime DATETIME(3); 
 
-#===================
+#======MatchMonitorDetails=============
 ALTER TABLE CTS_DataCenter.MatchMonitorDetails
 ADD COLUMN LastModifiedTime DATETIME(3); 
+
+#=====MatchMonitorStaging==============
+ALTER TABLE CTS_DataCenter.MatchMonitorStaging
+DROP INDEX IX_MatchMonitorStaging_OriginGroupIDMatchInfo;
+
+ALTER TABLE CTS_DataCenter.MatchMonitorStaging
+ADD INDEX IX_MatchMonitorStaging_OriginGroupIDMatchInfo(OriginGroupID);
+
+ALTER TABLE CTS_DataCenter.MatchMonitorStaging
+ADD INDEX IX_MatchMonitorDetailsStaging_MatchInfoGroup(MatchID,LiveIndicator,TotalScore,BettypeID); 
