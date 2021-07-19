@@ -1,44 +1,38 @@
 #!/bin/bash
 ########## BACKUP variables
-CTS_DIR=/var/cts
-LOGIN_BACKUP=slave-login
-LOGIN_LOG=master-login
-CONTAINER_NAME=cts_slave_mysql80
-LOG_DB=CTS_Log
-RUN_DATE=$(date +%Y-%m-%d)
-BK_DIR=/var/cts/dump/mysql
+CTS_DIR=/var/cts 
+SLAVE_LOGIN_FOR_BACKUP=slave-backup 
+MASTER_LOGIN_FOR_LOG=master-login 
+CONTAINER_NAME=cts_slave_mysql80 
+CONTAINER_BINLOG_VOLUMNE=/volumes/cts_slave_mysql80/binlog 
+CONTAINER_DATA_VOLUMNE=/volumes/cts_slave_mysql80/data 
+CONTAINER_LOGIN_VOLUMNE=/var/cts/backup/login_path/.mylogin.cnf 
+CONTAINER_NETWORK=cts_network 
+LOG_DB=CTS_Log 
+RUN_DATE=$(date +%Y-%m-%d) 
+BK_DIR=/var/cts/dump 
 ERROR_CODE=0
-ZIP_MODE=1
 
 ########## LOAD cts backup function
-source ${CTS_DIR}/backup/backup_full_function.sh
-
+source ${CTS_DIR}/backup/backup_full_function_xtrabackup.sh
+                       
 ######### START backup process
-echo "CTS backup full RUN_DATE: ${RUN_DATE}"
-
-# LIST dbs to backup
-databases=("CTS_Admin" "CTS_DataCenter" "DCS_DataCenter")
-for backup_dbname in "${databases[@]}"
-do
-   echo "$(date +%Y-%m-%d-%H:%M:%S) >> START backing up ... $backup_dbname"
+echo "INFO - $(date +%Y-%m-%d-%H:%M:%S) >> START backing up ... "
    
-   BACKUP_PATH="$BK_DIR/${backup_dbname}_$(date +%Y%m%d%H%M%S).sql"
-   if [ "$ZIP_MODE" = "1" ]
-   then
-        BACKUP_PATH="${BACKUP_PATH}.gz"
-   fi
+BACKUP_PATH="$BK_DIR/CTS_BK_$(date +%Y%m%d)" 
+mkdir $BACKUP_PATH 
 
-   result=$(process_full_backup $CONTAINER_NAME \
-       $BACKUP_PATH \
-       $LOGIN_BACKUP \
-       $backup_dbname \
-       $LOGIN_LOG \
-       $LOG_DB \
-       $RUN_DATE \
-       $ZIP_MODE)
-       ERROR_CODE=$?
+result=$(process_full_backup $CONTAINER_NAME \
+    $BACKUP_PATH \
+    $SLAVE_LOGIN_FOR_BACKUP \
+    $MASTER_LOGIN_FOR_LOG \
+    $LOG_DB \
+    $RUN_DATE \
+    $CONTAINER_BINLOG_VOLUMNE \
+    $CONTAINER_DATA_VOLUMNE \
+    $CONTAINER_NETWORK \
+    $CONTAINER_LOGIN_VOLUMNE)
+    ERROR_CODE=$? 
 
-    echo "$(date +%Y-%m-%d-%H:%M:%S) >> END backing up $backup_dbname: $result"
-done
-
-
+echo "INFO - $(date +%Y-%m-%d-%H:%M:%S) >> END backing up $backup_dbname: $result"
+# RUN mysql_logrotae weekly docker exec cts_slave_mysql80 logrotate -f /etc/logrotate.d/mysql_logrotate >> /var/cts/log/mysql_logrotate.log
