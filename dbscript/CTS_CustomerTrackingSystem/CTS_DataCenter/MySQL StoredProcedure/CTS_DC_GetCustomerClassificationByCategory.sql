@@ -24,10 +24,6 @@ BEGIN
 		Example:
         CALL CTS_DataCenter.CTS_DC_GetCustomerClassificationByCust('[{"CustId":27029,"SportGroupId": 200}]');
 	*/     
-    DECLARE	lv_LogTotalRecord	INT;
-    DECLARE	lv_FromID			BIGINT;
-    DECLARE	lv_ToID				BIGINT;    
-    
     DROP TEMPORARY TABLE IF EXISTS Temp_CustSportList;
 	CREATE TEMPORARY TABLE Temp_CustSportList(
 			CustID				BIGINT UNSIGNED
@@ -62,9 +58,6 @@ BEGIN
 	WHERE	pin.CTSCustID IS NULL 
             AND pro.SportGroupID IS NULL
             AND (tmpCusCat.CurrentSportGroupID IS NULL OR tmpCusCat.CategoryID IS NOT NULL);
-
-	SELECT 	COUNT(1), MIN(CustID), MAX(CustID)
-    INTO	lv_LogTotalRecord, lv_FromID, lv_ToID
-    FROM	Temp_CustSportList;    
+			
 END$$
 DELIMITER ;
