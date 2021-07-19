@@ -62,6 +62,7 @@ BEGIN
 	THEN
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_ScanStatus(ScanTime, LastCustID, ScanStatus, ParentCategoryID)
 		VALUES(lv_ScanTime, 0, 0, 200);
+        SET lv_LastCustID = 0;
 	ELSE	
 		SET lv_ScanTime = lv_LastScanTime;
 	END IF;
