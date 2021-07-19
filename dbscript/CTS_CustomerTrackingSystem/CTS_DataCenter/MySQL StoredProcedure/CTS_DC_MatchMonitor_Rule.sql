@@ -79,7 +79,7 @@ sp: BEGIN
 	CREATE TEMPORARY TABLE Temp_AssGroup(
 			AssGroupID INT
 		,	MinTransID BIGINT UNSIGNED
-        ,	MinTransDate BIGINT UNSIGNED
+        ,	MinTransDate DATETIME(3)
         ,	MaxTimeGroupID INT
         
         ,	PRIMARY KEY PK_Temp_AssGroup_AssGroupID(AssGroupID)

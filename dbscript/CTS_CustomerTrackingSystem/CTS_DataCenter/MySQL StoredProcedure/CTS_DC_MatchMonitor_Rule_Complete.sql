@@ -34,7 +34,7 @@ BEGIN
         ,	BettypeID INT 
         ,   GroupID INT
         
-        ,	PRIMARY KEY (MatchID,LiveIndicator,TotalScore,GroupID)
+        ,	PRIMARY KEY (MatchID,LiveIndicator,TotalScore,BettypeID,GroupID)
     );
      
     SELECT 	MAX(TransDate) , MAX(TransID)
