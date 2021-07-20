@@ -143,8 +143,9 @@ BEGIN
 	-- START
 	-- #1: Remove inactive customers to be scanned
 	INSERT INTO	#tmpActiveCustomers (CustId)
-	SELECT DISTINCT CustID
-	FROM bodb_Account.dbo.[FactCustProductStatsDetail] AS s WITH(NOLOCK)
+	SELECT DISTINCT r.CustID
+	FROM #tmpCustomers AS r
+		INNER JOIN bodb_Account.dbo.[FactCustProductStatsDetail] AS s WITH(NOLOCK) ON r.CustId = s.CustID
 		INNER JOIN bodb02.dbo.League AS l WITH(NOLOCK) ON s.LeagueID = l.leagueid
 	WHERE s.RptFromDate >= @From30Date AND s.RptToDate <= @ToDate
 		AND l.LeagueGroupID NOT IN (42,74,108,113);

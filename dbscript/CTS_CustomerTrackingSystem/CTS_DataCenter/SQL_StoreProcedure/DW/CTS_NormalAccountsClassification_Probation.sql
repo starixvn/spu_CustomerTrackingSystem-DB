@@ -1,6 +1,6 @@
 USE [bodb_VR2Model]
 GO
-/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_Probation]    Script Date: 7/16/2021 4:00:27 AM ******/
+/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_Probation]    Script Date: 7/20/2021 12:54:17 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -111,8 +111,9 @@ BEGIN
 
 	-- Check inactive customers
 	INSERT INTO	#tmpActiveCustomers (CustId)
-	SELECT DISTINCT CustID
-	FROM bodb_Account.dbo.[FactCustProductStatsDetail] AS s WITH(NOLOCK)
+	SELECT DISTINCT r.CustID
+	FROM #tmpCustomers AS r
+		INNER JOIN bodb_Account.dbo.[FactCustProductStatsDetail] AS s WITH(NOLOCK) ON r.CustId = s.CustID
 		INNER JOIN bodb02.dbo.League AS l WITH(NOLOCK) ON s.LeagueID = l.leagueid
 	WHERE s.RptFromDate >= @From30Date AND s.RptToDate <= @ToDate
 		AND l.LeagueGroupID NOT IN (42,74,108,113);
