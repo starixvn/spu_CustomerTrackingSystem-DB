@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_CustInfo_GetByCustID`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustInfo_GetByCustID`(
-	IN ip_ListCustID VARCHAR(8000)
+	IN ip_ListCustID LONGTEXT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -15,6 +15,7 @@ BEGIN
 
 		Revisions:
 			- 	20210526@Long.Luu: Created [Redmine ID: 152883]
+			- 	20210720@Long.Luu: Change datatype from varchar(8k) to longtext [Redmine ID: 152883]
 			
 		Param's Explanation (filtered by):
         		
