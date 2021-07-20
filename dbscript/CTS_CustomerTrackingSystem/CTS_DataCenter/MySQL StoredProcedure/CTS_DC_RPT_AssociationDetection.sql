@@ -56,8 +56,12 @@ sp:BEGIN
     SELECT GROUP_CONCAT(CustID) 
     INTO lv_CustIDs
     FROM Temp_AssociationInfo;
+
+    IF lv_CustIDs IS NULL THEN
+		LEAVE sp;
+	END IF;
 	
-    CALL CTS_DC_Association_GetGroup(lv_CustIDs);
+    CALL CTS_DC_Association_GetGroupNLevel(lv_CustIDs);
     
     SELECT 	grp.GroupID
 		,	cus.CTSCustID
