@@ -61,7 +61,7 @@ sp:BEGIN
 		LEAVE sp;
 	END IF;
 	
-    CALL CTS_DC_Association_GetGroupNLevel(lv_CustIDs);
+    CALL CTS_DC_AssociationDetection_GetGroup(lv_CustIDs);
     
     SELECT 	grp.GroupID
 		,	cus.CTSCustID
