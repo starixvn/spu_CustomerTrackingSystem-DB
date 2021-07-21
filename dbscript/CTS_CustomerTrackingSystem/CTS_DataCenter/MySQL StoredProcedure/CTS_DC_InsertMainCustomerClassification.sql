@@ -30,6 +30,7 @@ BEGIN
 				- 20210512@Casey.Huynh: Exclude Customer of Internal Account [Redmine ID: 154844]
 				- 20210525@Irena.Vo: Change col name PinCustomerCategory: CustID -> CTSCustID [Redmine ID: 152965]
 				- 20210608@Casey.Huynh: Add Inactive Category (1001, 1002). Remove redundant New member log after Remove PA [Redmine ID: 156465]
+                - 20210721@Irena.Vo: Fix bug no update data with CreatedDate < 20 Probation Last Day [Redmine ID: 158810]
 		Param's Explanation (filtered by):
 		Example:
 				- CALL CTS_DataCenter.CTS_DC_InsertMainCustomerClassification('[{"CustId": "2324948","CategoryId":"206","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","LastXDaysMargin":100,"ProbationPeriodWinloss":100,"TaggingID":13,"TaggingType":1}]',@opp);
@@ -110,7 +111,7 @@ BEGIN
 	UPDATE 	Temp_NewClassification AS temp
 		INNER JOIN ProbationAccountMonitor AS pro ON temp.CustID = pro.CustID
 	SET		temp.ActionType = 5,	temp.IsDataChanged = 0
-	WHERE 	(temp.DWCateGroup IN (203,204,206) AND pro.CreatedDate <> lv_ProbationLastDay) OR (pro.CreatedDate > lv_LimitedDay);
+	WHERE 	(temp.DWCateGroup IN (203,204,206) AND pro.CreatedDate > lv_ProbationLastDay) OR (pro.CreatedDate > lv_LimitedDay);
 
 	/*IGNORE PIN CATEGORY*/
 	UPDATE 	Temp_NewClassification AS temp
