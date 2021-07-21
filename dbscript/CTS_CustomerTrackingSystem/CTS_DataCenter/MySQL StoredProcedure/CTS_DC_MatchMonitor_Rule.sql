@@ -3,9 +3,9 @@ DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule`(
-	IN ip_TimeGroupID INT
+		IN ip_TempGroupID INT
 )
-  SQL SECURITY INVOKER
+	SQL SECURITY INVOKER
 sp: BEGIN
 	/*
 		Created:	20210526@Casey.Huynh
@@ -20,14 +20,14 @@ sp: BEGIN
 		Param's Explanation (filtered by):	
 
 		Example:
-			CALL  CTS_DC_MatchMonitor_Rule(ip_TimeGroupID);
+			CALL  CTS_DC_MatchMonitor_Rule(ip_TempGroupID);
 			
 	*/
-    DECLARE lv_CustList LONGTEXT;
-    DECLARE lv_MaxGroupID	INT DEFAULT 0;
-	DECLARE lv_MinGroupID	INT DEFAULT 0;
-    DECLARE lv_LoopID	INT DEFAULT 0;
-    DECLARE	lv_MatchID		BIGINT UNSIGNED;
+    DECLARE lv_CustList 		LONGTEXT;
+    DECLARE lv_MaxGroupID		INT DEFAULT 0;
+	DECLARE lv_MinGroupID		INT DEFAULT 0;
+    DECLARE lv_LoopID			INT DEFAULT 0;
+    DECLARE	lv_MatchID			BIGINT UNSIGNED;
     DECLARE	lv_BettypeID		INT;
     DECLARE	lv_EventDate		DATE;
     DECLARE	lv_LiveIndicator	INT;
@@ -35,16 +35,16 @@ sp: BEGIN
     DECLARE	lv_LiveHomeScore	SMALLINT UNSIGNED;
     DECLARE	lv_LiveAwayScore	SMALLINT UNSIGNED;
     DECLARE	lv_EventStatus		VARCHAR(50);
-    DECLARE	lv_HomeID	INT UNSIGNED;
-    DECLARE	lv_AwayID	INT UNSIGNED;
-    DECLARE	lv_LeagueID	INT UNSIGNED;
-    DECLARE	lv_KickOffTime	DATETIME;
-    DECLARE lv_DetailsGroupID INT;
+    DECLARE	lv_HomeID			INT UNSIGNED;
+    DECLARE	lv_AwayID			INT UNSIGNED;
+    DECLARE	lv_LeagueID			INT UNSIGNED;
+    DECLARE	lv_KickOffTime		DATETIME;
+    DECLARE lv_DetailsGroupID 	INT;
     DECLARE lv_DetailsListTrans LONGTEXT;
-    DECLARE lv_NewNoOfHedging INT;
-    DECLARE lv_CurrentNoOfHedging INT;
-    DECLARE lv_GroupID INT;
-    DECLARE lv_DetailsGroupIDPre INT;    
+    DECLARE lv_NewNoOfHedging 		INT;
+    DECLARE lv_CurrentNoOfHedging	INT;
+    DECLARE lv_GroupID 				INT;
+    DECLARE lv_DetailsGroupIDPre	INT;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_TransGroup;
     CREATE TEMPORARY TABLE Temp_TransGroup(
@@ -102,7 +102,7 @@ sp: BEGIN
         ,	mms.GroupID
         ,	1 AS LoopID
     FROM CTS_DataCenter.MatchMonitorStaging AS mms
-	WHERE mms.OriginGroupID = ip_TimeGroupID;
+	WHERE mms.OriginGroupID = ip_TempGroupID;
     
     IF NOT EXISTS(SELECT 1 FROM Temp_TransGroup)
     THEN
@@ -125,7 +125,7 @@ sp: BEGIN
     INTO 	lv_MatchID, lv_LiveIndicator, lv_TotalScore, lv_BettypeID, lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore
 			, lv_EventStatus, lv_HomeID, lv_AwayID, lv_KickOffTime, lv_LeagueID, lv_KickOffTime
     FROM  	CTS_DataCenter.MatchMonitorStaging
-    WHERE	OriginGroupID = ip_TimeGroupID 
+    WHERE	OriginGroupID = ip_TempGroupID 
     LIMIT 	1; 
     
 	SET @i=1;
@@ -194,7 +194,7 @@ sp: BEGIN
 		WHERE tmpTg.LoopID = lv_LoopID;
         #===================================  
 		
-        IF @i = 1 AND EXISTS (SELECT 1 FROM Temp_TransGroup)
+        IF @i = 1 AND EXISTS (SELECT 1 FROM Temp_TransGroup AS tmpTg WHERE tmpTg.LoopID = lv_LoopID)
         THEN 			
 			#===GET Current GroupID=====
             TRUNCATE TABLE Temp_OdlGroupID;
@@ -291,6 +291,6 @@ sp: BEGIN
         #===========================================    
         
 	END WHILE;
-
+    
 END$$
 DELIMITER ;
