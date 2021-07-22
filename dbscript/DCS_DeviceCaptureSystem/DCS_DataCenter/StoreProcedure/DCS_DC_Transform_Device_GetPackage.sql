@@ -17,7 +17,7 @@ BEGIN
 	    Revisions:
             - 20201012@Casey.Huynh: Add Trace Performance log
             - 20210510@Aries.Nguyen: Remove insert log dba_SP_PerformanceStats [Redmine ID: #154792]
-            - 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
+            - 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]  
 
 	    Param's Explanation (filtered by):
 	*/
