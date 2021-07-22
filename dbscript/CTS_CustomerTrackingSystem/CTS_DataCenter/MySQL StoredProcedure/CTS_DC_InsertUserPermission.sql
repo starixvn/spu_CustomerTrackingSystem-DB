@@ -2,7 +2,11 @@
 DROP PROCEDURE IF EXISTS `CTS_DC_InsertUserPermission`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_InsertUserPermission`(IN ip_UserIDList json,OUT op_ErrorMessage varchar(200))
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_InsertUserPermission`(
+        IN ip_UserIDList        JSON
+ 
+    ,   OUT op_ErrorMessage     VARCHAR(200)
+)
     SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -12,12 +16,15 @@ BEGIN
 		Original:
         
         Revision:
-			- 20200818@Roger.Le: [Redmine ID: 138575] Created
-            - 20200918@Lex.Khuat: [Redmine ID: 141755] Support new probation notification
-			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+			- 20200818@Roger.Le: Created [Redmine ID: #138575]
+            - 20200918@Lex.Khuat: Support new probation notification [Redmine ID: #141755]
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: #148723]
+            - 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
                 
 		Param's Explanation (filtered by):
-                call CTS_DataCenter.CTS_DC_InsertUserPermission('[{"UserID": 1111, "FuncID": 1}, {"UserID": 1112, "FuncID": 2}], @error)';
+
+        Example:
+            - CALL CTS_DataCenter.CTS_DC_InsertUserPermission('[{"UserID": 1111, "FuncID": 1}, {"UserID": 1112, "FuncID": 2}], @error)';
 	*/
 
 	DECLARE lv_CurrentTime	DATETIME DEFAULT CURRENT_TIME();
@@ -52,7 +59,6 @@ BEGIN
 			, FuncID	SMALLINT UNSIGNED	PATH "$.FuncID"
 		 )) AS tmp;
 
-	SET SQL_SAFE_UPDATES = 0;
     
     INSERT INTO Temp_NewCTSUserPermission(UserID, FuncID)
     SELECT DISTINCT t.UserID, t.FuncID
