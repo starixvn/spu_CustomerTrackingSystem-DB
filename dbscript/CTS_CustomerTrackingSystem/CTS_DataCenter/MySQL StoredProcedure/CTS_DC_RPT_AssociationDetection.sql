@@ -69,13 +69,13 @@ sp:BEGIN
 		,	cus.UserName
         ,	cus.CustSubID 
         ,	cus.CustStatus
-		, 	TRIM(GROUP_CONCAT(DISTINCT ' ',ev.EvidenceCode,' ',ev.EvidenceName)) AS Evidence
+		, 	TRIM(GROUP_CONCAT(DISTINCT ' ',ev.EvidenceCode)) AS Evidence
         , 	TRIM(GROUP_CONCAT(DISTINCT ' ',cat.CategoryName)) AS CustomerCategory
         ,	TRIM(GROUP_CONCAT(DISTINCT cat.CategoryID)) AS CategoryIDs
         ,	TRIM(GROUP_CONCAT(DISTINCT cat.ParentID)) AS ParentIDs
     FROM Temp_Group AS grp
 		INNER JOIN Temp_AssociationInfo AS cus ON cus.CustID = grp.CustID
-		LEFT JOIN CTS_DataCenter.CustEvidence AS ce ON cus.CTSCustID = ce.CTSCustID AND Level = 0
+		LEFT JOIN CTS_DataCenter.CustEvidence AS ce ON cus.CTSCustID = ce.CTSCustID
         LEFT JOIN CTS_DataCenter.Evidence AS ev ON ev.EvidenceID = ce.EvidenceID
         LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS ccl ON cus.CustID = ccl.CustID
         LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = ccl.CategoryID
