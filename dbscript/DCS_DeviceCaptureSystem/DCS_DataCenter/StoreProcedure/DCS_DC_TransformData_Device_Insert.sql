@@ -592,7 +592,7 @@ BEGIN
 	    LEFT JOIN DCS_DataCenter.DeviceFingerprint AS df ON df.DeviceID = de.DeviceID AND df.FingerprintCode = tts.FingerprintCode;
 
     UPDATE Temp_Transaction AS tts
-	    INNER JOIN Temp_TransactionInfo AS info ON de.TransID = tts.TransID
+	    INNER JOIN Temp_TransactionInfo AS info ON info.TransID = tts.TransID
 	SET	    tts.DeviceID 				=  info.DeviceID
 		,   tts.FirstDeviceCode 		=  info.FirstDeviceCode
 		,   tts.DeviceCodeID 			=  info.DeviceCodeID
