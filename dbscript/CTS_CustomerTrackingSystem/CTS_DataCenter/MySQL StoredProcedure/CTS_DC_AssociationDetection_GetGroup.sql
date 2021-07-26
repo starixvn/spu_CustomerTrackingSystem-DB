@@ -7,7 +7,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociationDetection_GetGroup`(
 )
     SQL SECURITY INVOKER
 sp:BEGIN
-	/* 
+	/*  
 		Created:	20210326@Aries.Nguyen
 		Task:		Get Association Detection
 		DB:			CTS_DataCenter
@@ -82,12 +82,32 @@ sp:BEGIN
 		 ,	PRIMARY KEY(DCSDeviceID, CTSCustID)
 	);
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_AssociationDevice_Level1;
-	CREATE TEMPORARY TABLE 		Temp_AssociationDevice_Level1 (
+    DROP TEMPORARY TABLE IF EXISTS Temp_Association_Level1;
+	CREATE TEMPORARY TABLE 		Temp_Association_Level1 (
 		    CTSCustID			BIGINT UNSIGNED 
-		,	Level1				BIGINT UNSIGNED	        
-        ,	INDEX				IX_Temp_AssociationDevice_Level1_(Level1,CTSCustID)
-        ,	PRIMARY KEY(CTSCustID, Level1)
+		,	CTSCustID_Level1	BIGINT UNSIGNED	 
+        ,	CustID				BIGINT UNSIGNED 
+		,	CustID_Level1		BIGINT UNSIGNED
+        ,	AssociationType		SMALLINT
+        ,	INDEX				IX_Temp_Association_CTSCustID_Level1_(CTSCustID_Level1)
+        ,	INDEX 				IX_Temp_Association_CTSCustID_CTSCustID(CTSCustID, CTSCustID_Level1)
+        ,	INDEX				IX_Temp_Association_CustID(CustID_Level1)
+        ,	INDEX 				IX_Temp_Association_CustID_Level1(CustID)
+	);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_Association_Level1_Distinct;
+	CREATE TEMPORARY TABLE 		Temp_Association_Level1_Distinct (
+		    CTSCustID			BIGINT UNSIGNED 
+		,	CTSCustID_Level1	BIGINT UNSIGNED	 
+		,	PRIMARY KEY 		PK_Temp_Association_Level1_Distinct(CTSCustID_Level1, CTSCustID )
+	);
+    
+    
+	DROP TEMPORARY TABLE IF EXISTS Temp_Level1_Info;
+	CREATE TEMPORARY TABLE 		Temp_Level1_Info (
+		    CTSCustID			BIGINT UNSIGNED 
+        ,	CustID				BIGINT UNSIGNED 
+        ,	INDEX				IX_Temp_Level1_Info(CTSCustID)
 	);
 
     DROP TEMPORARY TABLE IF EXISTS Temp_DeviceCust_Group;
@@ -114,10 +134,10 @@ sp:BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;
 	CREATE TEMPORARY TABLE 		Temp_CustInfo (
-		 	CustID 			BIGINT UNSIGNED 
+		 	CustID 			BIGINT UNSIGNED PRIMARY KEY
 	);
     
-	SET @sql = 	CONCAT("INSERT INTO Temp_CustInfo (CustID) VALUES ('", REPLACE(ip_CustIDs, ",", "'),('"),"');");
+	SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_CustInfo (CustID) VALUES ('", REPLACE(ip_CustIDs, ",", "'),('"),"');");
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1;  
 	
@@ -125,6 +145,11 @@ sp:BEGIN
 	SELECT IFNULL(cus.CTSCustID,0), tmp.CustID
 	FROM Temp_CustInfo AS tmp
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON tmp.CustID = cus.CustID AND cus.CustSubID = 0;
+        
+	DROP TEMPORARY TABLE IF EXISTS Temp_Cust_Duplicate;
+	CREATE TEMPORARY TABLE Temp_Cust_Duplicate LIKE Temp_Cust;
+	INSERT INTO Temp_Cust_Duplicate
+	SELECT * FROM Temp_Cust;
     
 /*------------Get association Device ------------------*/
 	INSERT IGNORE INTO Temp_CustDevice(CTSCustID, DCSDeviceID)
@@ -147,35 +172,13 @@ sp:BEGIN
 		INNER JOIN CTS_DataCenter.AssociationByDevice AS lv1 ON dv.DCSDeviceID =  lv1.DCSDeviceID
     WHERE  NOT EXISTS (SELECT 1 FROM Temp_Cust AS cust WHERE lv1.CTSCustID =  cust.CTSCustID);
 	
-    INSERT IGNORE INTO Temp_AssociationDevice_Level1(CTSCustID, Level1)
+    INSERT IGNORE INTO Temp_Association_Level1(CTSCustID, CTSCustID_Level1, AssociationType)
     SELECT 	cuDv.CTSCustID
 		, 	lv1.CTSCustID
+        ,	1 AS AssociationType
 	FROM Temp_CustDevice AS cuDv
 		INNER JOIN Temp_CustDevice_Level1 AS lv1 ON cuDv.DCSDeviceID =  lv1.DCSDeviceID;
 	
-    INSERT INTO Temp_DeviceLevel1_Group(CTSCustID, TotalCust)
-	SELECT 	Level1
-		, 	COUNT(1) AS TotalCust
-	FROM Temp_AssociationDevice_Level1 
-	GROUP BY Level1;
-    
-    DELETE FROM Temp_AssociationDevice_Level1 AS tmp
-	WHERE tmp.CTSCustID IN (SELECT CTSCustID FROM Temp_DeviceLevel1_Group WHERE TotalCust = 1);
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_AssociationDevice_Level1_Duplicate;
-	CREATE TEMPORARY TABLE Temp_AssociationDevice_Level1_Duplicate LIKE Temp_AssociationDevice_Level1;
-	INSERT INTO Temp_AssociationDevice_Level1_Duplicate 
-	SELECT * FROM Temp_AssociationDevice_Level1;
-    
-    INSERT IGNORE INTO Temp_Association(CTSCustID_1, CTSCustID_2, AssociationType, Level)
-	SELECT 	DISTINCT 
-			lv1.CTSCustID
-		,  	lv2.CTSCustID  
-        , 	1 AS AssociationType 
-        ,	2 AS Level
-	FROM Temp_AssociationDevice_Level1 AS lv1
-		INNER JOIN Temp_AssociationDevice_Level1_Duplicate AS lv2 ON lv1.Level1 = lv2.Level1 AND lv1.CTSCustID != lv2.CTSCustID;
-    
 	INSERT INTO Temp_DeviceCust_Group(DCSDeviceID, TotalCust)
 	SELECT 	DCSDeviceID
 		, 	COUNT(1) AS TotalCust
@@ -201,194 +204,133 @@ sp:BEGIN
 		INNER JOIN Temp_CustDevice_Duplicate AS dv1 ON dv.DCSDeviceID = dv1.DCSDeviceID AND dv.CTSCustID != dv1.CTSCustID;
 
 /*---------------------------------------------Get Association Manual --------------------------------------- */
-	DROP TEMPORARY TABLE IF EXISTS Temp_Cust_Duplicate;
-	CREATE TEMPORARY TABLE Temp_Cust_Duplicate LIKE Temp_Cust;
-	INSERT INTO Temp_Cust_Duplicate
-	SELECT * FROM Temp_Cust;
-    
-    /*-------Manual Level 1---------*/
-    
-	INSERT IGNORE INTO Temp_Association(CTSCustID_1, CTSCustID_2, AssociationType, Level)
-	SELECT  cus.CTSCustID
-		,  	ma.ToCTSCustID
-        , 	2 AS AssociationType
-        , 	1 AS Level
-	FROM Temp_Cust AS cus
-		INNER JOIN CTS_DataCenter.AssociationByManual AS ma ON ma.FromCTSCustID = cus.CTSCustID
-	WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tic WHERE tic.CTSCustID = ma.ToCTSCustID);
-
-	INSERT IGNORE INTO Temp_Association(CTSCustID_1, CTSCustID_2, AssociationType, Level)
-	SELECT  ma.ToCTSCustID
-		, 	cus.CTSCustID
-        , 	2 AS AssociationType
-        , 	1 AS Level
-	FROM Temp_Cust AS cus
-		INNER JOIN CTS_DataCenter.AssociationByManual AS ma ON ma.FromCTSCustID = cus.CTSCustID
-	WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tic WHERE tic.CTSCustID = ma.ToCTSCustID);
-
-	INSERT IGNORE INTO Temp_Association(CTSCustID_1, CTSCustID_2, AssociationType, Level)
-	SELECT  cus.CTSCustID
-		,  	ma.FromCTSCustID
-        , 	2 AS AssociationType
-        , 	1 AS Level
-	FROM Temp_Cust AS cus 
-		INNER JOIN CTS_DataCenter.AssociationByManual AS ma ON ma.ToCTSCustID = cus.CTSCustID
-	WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tic WHERE tic.CTSCustID = ma.FromCTSCustID);
-
-	INSERT IGNORE INTO Temp_Association(CTSCustID_1, CTSCustID_2, AssociationType, Level)
-	SELECT  ma.FromCTSCustID
-		, 	cus.CTSCustID
-        ,   2 AS AssociationType
-        , 	1 AS Level
-	FROM Temp_Cust AS cus 
-		INNER JOIN CTS_DataCenter.AssociationByManual AS ma ON ma.ToCTSCustID = cus.CTSCustID
-	WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tic WHERE tic.CTSCustID = ma.FromCTSCustID);
-    
-    /*-------Manual Level 2---------*/
-    
-    INSERT IGNORE INTO Temp_Association(CTSCustID_1, CTSCustID_2, AssociationType, Level)
-    SELECT  ma1.FromCTSCustID
-		, 	ma2.ToCTSCustID
+    INSERT IGNORE INTO Temp_Association_Level1(CTSCustID, CTSCustID_Level1, AssociationType)
+    SELECT  cus.CTSCustID
+		, 	ma.ToCTSCustID
         ,  	2 AS AssociationType
-        , 	2 AS Level
 	FROM Temp_Cust AS cus 
-		INNER JOIN CTS_DataCenter.AssociationByManual AS ma1 ON ma1.FromCTSCustID = cus.CTSCustID
-        INNER JOIN CTS_DataCenter.AssociationByManual AS ma2 ON ma2.FromCTSCustID = ma1.ToCTSCustID AND ma1.FromCTSCustID != ma2.ToCTSCustID
-    WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tic WHERE tic.CTSCustID = ma2.ToCTSCustID);
+		INNER JOIN CTS_DataCenter.AssociationByManual AS ma ON ma.FromCTSCustID = cus.CTSCustID;
     
-    INSERT IGNORE INTO Temp_Association(CTSCustID_1, CTSCustID_2, AssociationType, Level)
-    SELECT  ma1.FromCTSCustID
-		, 	ma2.FromCTSCustID
+    INSERT IGNORE INTO Temp_Association_Level1(CTSCustID, CTSCustID_Level1, AssociationType)
+    SELECT  cus.CTSCustID
+		, 	ma.FromCTSCustID
         ,  	2 AS AssociationType
-        , 	2 AS Level
 	FROM Temp_Cust AS cus 
-		INNER JOIN CTS_DataCenter.AssociationByManual AS ma1 ON ma1.FromCTSCustID = cus.CTSCustID
-        INNER JOIN CTS_DataCenter.AssociationByManual AS ma2 ON ma2.ToCTSCustID = ma1.ToCTSCustID AND ma1.FromCTSCustID != ma2.FromCTSCustID
-    WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tic WHERE tic.CTSCustID = ma2.FromCTSCustID);
-
+        INNER JOIN CTS_DataCenter.AssociationByManual AS ma ON ma.ToCTSCustID = cus.CTSCustID;
+        
   /*----------------------------------------------Get association by AI-------------------------------------------*/
-	
-     /*-------AI Level 1---------*/
-    
-	INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType, Level)
-	SELECT  cus.CustID
-		,  	ai.ToCustID
-        , 	3 AS AssociationType
-        , 	1 AS Level
-	FROM Temp_Cust AS cus
-		INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.FromCustID = cus.CustID
-	WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tic WHERE tic.CustID = ai.ToCustID);
-
-	INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType, Level)
-	SELECT	ai.ToCustID
-		, 	cus.CustID
+	INSERT IGNORE INTO Temp_Association_Level1(CustID, CustID_Level1, AssociationType)
+    SELECT  cus.CustID
+		, 	ai.ToCustID
         ,  	3 AS AssociationType
-        , 	1 AS Level
-	FROM Temp_Cust AS cus
-		INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.FromCustID = cus.CustID
-	WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tic WHERE tic.CustID = ai.ToCustID);
-
-	INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType, Level)
-	SELECT  cus.CustID
-		,  	ai.FromCustID
-        , 	3 AS AssociationType
-        , 	1 AS Level
 	FROM Temp_Cust AS cus 
-		INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.ToCustID = cus.CustID
-	WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tic WHERE tic.CustID = ai.FromCustID);
-
-	INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType, Level)
-	SELECT  ai.FromCustID
-		, 	cus.CustID
-        ,  	3 AS AssociationType
-        , 	1 AS Level
-	FROM Temp_Cust AS cus 
-		INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.ToCustID = cus.CustID
-	WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tic WHERE tic.CustID = ai.FromCustID);
+		INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.FromCustID = cus.CustID;
     
-    /*-------AI Level 2---------*/
-    
-    INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType, Level)
-    SELECT  ai1.FromCustID
-		, 	ai2.ToCustID
+    INSERT IGNORE INTO Temp_Association_Level1(CustID, CustID_Level1, AssociationType)
+    SELECT  cus.CustID
+		, 	ai.FromCustID
         ,  	3 AS AssociationType
-        , 	2 AS Level
 	FROM Temp_Cust AS cus 
-		INNER JOIN CTS_DataCenter.AssociationByAI AS ai1 ON ai1.FromCustID = cus.CustID
-        INNER JOIN CTS_DataCenter.AssociationByAI AS ai2 ON ai2.FromCustID = ai1.ToCustID AND ai1.FromCustID != ai2.ToCustID
-    WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tic WHERE tic.CustID = ai2.ToCustID);
-    
-    INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType, Level)
-    SELECT  ai1.FromCustID
-		, 	ai2.FromCustID
-        ,  	3 AS AssociationType
-        , 	2 AS Level
-	FROM Temp_Cust AS cus 
-		INNER JOIN CTS_DataCenter.AssociationByAI AS ai1 ON ai1.FromCustID = cus.CustID
-        INNER JOIN CTS_DataCenter.AssociationByAI AS ai2 ON ai2.ToCustID = ai1.ToCustID AND ai1.FromCustID != ai2.FromCustID
-    WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tic WHERE tic.CustID = ai2.FromCustID);
+        INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.ToCustID = cus.CustID;
     
 
 /*------------------------------------------Get association by IP-------------------------------------------------*/
-	/*-------IP Level 1---------*/
+	INSERT IGNORE INTO Temp_Association_Level1(CustID, CustID_Level1, AssociationType)
+    SELECT  cus.CustID
+		, 	ip.ToCustID
+        ,  	4 AS AssociationType
+	FROM Temp_Cust AS cus 
+        INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.FromCustID = cus.CustID;
     
-	INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType, Level)
-	SELECT  cus.CustID
-		,  	ip.ToCustID
-        , 	4 AS AssociationType
-        , 	1 AS Level
-	FROM Temp_Cust AS cus
-		INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.FromCustID = cus.CustID
-	WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tic WHERE tic.CustID = ip.ToCustID);
+    INSERT IGNORE INTO Temp_Association_Level1(CustID, CustID_Level1, AssociationType)
+    SELECT  cus.CustID
+		, 	ip.FromCustID
+        ,  	4 AS AssociationType
+	FROM Temp_Cust AS cus 
+        INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.ToCustID = cus.CustID;
+    
+/*******************************Level 2**********************************************/
+	INSERT IGNORE INTO Temp_CustInfo(CustID)
+	SELECT lv1.CustID
+	FROM Temp_Association_Level1 AS lv1
+    WHERE lv1.CTSCustID IS NULL;
+    
+    INSERT IGNORE INTO Temp_CustInfo(CustID)
+	SELECT lv1.CustID_Level1
+	FROM Temp_Association_Level1 AS lv1
+    WHERE lv1.CTSCustID_Level1 IS NULL;
+    
+	INSERT INTO Temp_Level1_Info(CTSCustID, CustID)
+    SELECT 	cust.CTSCustID
+		, 	cust.CustID
+    FROM Temp_CustInfo AS info
+		INNER JOIN CTSCustomer AS cust ON cust.CustID = info.CustID AND CustSubID = 0;
 
-	INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType, Level)
-	SELECT  ip.ToCustID
-		, 	cus.CustID
-        ,  	4 AS AssociationType
-        , 	1 AS Level
-	FROM Temp_Cust AS cus
-		INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.FromCustID = cus.CustID
-	WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tic WHERE tic.CustID = ip.ToCustID);
 
-	INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType, Level)
-	SELECT 	cus.CustID
-		,  	ip.FromCustID
-        , 	4 AS AssociationType
-        , 	1 AS Level
+    UPDATE Temp_Association_Level1 AS lv1
+		INNER JOIN Temp_Level1_Info AS info ON info.CustID = lv1.CustID
+	SET lv1.CTSCustID = info.CTSCustID;
+    
+    UPDATE Temp_Association_Level1 AS lv1
+		INNER JOIN Temp_Level1_Info AS info ON info.CustID = lv1.CustID_Level1
+	SET lv1.CTSCustID_Level1 = info.CTSCustID;
+	
+    INSERT IGNORE Temp_Association_Level1_Distinct(CTSCustID,CTSCustID_Level1)
+    SELECT DISTINCT
+		   CTSCustID
+		,  CTSCustID_Level1
+    FROM Temp_Association_Level1;
+    
+	INSERT IGNORE INTO Temp_Association(CTSCustID_1, CTSCustID_2, AssociationType, Level)
+	SELECT 	cus.CTSCustID
+		,  	lv1.CTSCustID_Level1  
+        , 	0 AS AssociationType 
+        ,	1 AS Level
 	FROM Temp_Cust AS cus 
-		INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.ToCustID = cus.CustID
-	WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tic WHERE tic.CustID = ip.FromCustID);
+        INNER JOIN Temp_Association_Level1_Distinct AS lv1 ON lv1.CTSCustID = cus.CTSCustID AND lv1.CTSCustID_Level1 != cus.CTSCustID
+	WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS dup WHERE dup.CTSCustID = lv1.CTSCustID_Level1);
+    
+    INSERT IGNORE INTO Temp_Association(CTSCustID_1, CTSCustID_2, AssociationType, Level)
+	SELECT 	cus.CTSCustID
+		,  	lv1.CTSCustID  
+        , 	0 AS AssociationType 
+        ,	1 AS Level
+	FROM Temp_Cust AS cus 
+        INNER JOIN Temp_Association_Level1_Distinct AS lv1 ON lv1.CTSCustID_Level1 = cus.CTSCustID AND lv1.CTSCustID != cus.CTSCustID
+	WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS dup WHERE dup.CTSCustID = lv1.CTSCustID);
+    
+    DELETE 
+    FROM Temp_Association_Level1_Distinct AS lv1
+    WHERE EXISTS (SELECT 1 FROM Temp_Association AS ass WHERE ass.CTSCustID_1 = lv1.CTSCustID AND ass.CTSCustID_2 = lv1.CTSCustID_Level1);
+    
+    DELETE 
+    FROM Temp_Association_Level1_Distinct AS lv1
+    WHERE EXISTS (SELECT 1 FROM Temp_Association AS ass WHERE ass.CTSCustID_2 = lv1.CTSCustID AND ass.CTSCustID_1  = lv1.CTSCustID_Level1);
+    
+	INSERT INTO Temp_DeviceLevel1_Group(CTSCustID, TotalCust)
+	SELECT 	CTSCustID_Level1
+		, 	COUNT(1) AS TotalCust
+	FROM Temp_Association_Level1_Distinct 
+	GROUP BY CTSCustID_Level1;
+    
 
-	INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType, Level)
-	SELECT  ip.FromCustID
-		, 	cus.CustID
-        ,  	4 AS AssociationType
-        , 	1 AS Level
-	FROM Temp_Cust AS cus 
-		INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.ToCustID = cus.CustID
-	WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tic WHERE tic.CustID = ip.FromCustID);
+    DELETE
+    FROM Temp_Association_Level1_Distinct AS tmp
+	WHERE tmp.CTSCustID_Level1 IN (SELECT CTSCustID FROM Temp_DeviceLevel1_Group WHERE TotalCust = 1);
     
-    /*-------IP Level 2---------*/
+    DROP TEMPORARY TABLE IF EXISTS Temp_Association_Level1_Distinct_Duplicate;
+	CREATE TEMPORARY TABLE Temp_Association_Level1_Distinct_Duplicate LIKE Temp_Association_Level1_Distinct;
+	INSERT INTO Temp_Association_Level1_Distinct_Duplicate 
+	SELECT * FROM Temp_Association_Level1_Distinct;
     
-    INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType, Level)
-    SELECT  ip1.FromCustID
-		, 	ip2.ToCustID
-        ,  	4 AS AssociationType
-        , 	2 AS Level
-	FROM Temp_Cust AS cus 
-		INNER JOIN CTS_DataCenter.AssociationByIP AS ip1 ON ip1.FromCustID = cus.CustID
-        INNER JOIN CTS_DataCenter.AssociationByIP AS ip2 ON ip2.FromCustID = ip1.ToCustID AND ip1.FromCustID != ip2.ToCustID
-    WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tic WHERE tic.CustID = ip2.ToCustID);
-    
-    INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType, Level)
-    SELECT  ip1.FromCustID
-		, 	ip2.FromCustID
-        ,  	4 AS AssociationType
-        , 	2 AS Level
-	FROM Temp_Cust AS cus 
-		INNER JOIN CTS_DataCenter.AssociationByIP AS ip1 ON ip1.FromCustID = cus.CustID
-        INNER JOIN CTS_DataCenter.AssociationByIP AS ip2 ON ip2.ToCustID = ip1.ToCustID AND ip1.FromCustID != ip2.FromCustID
-    WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tic WHERE tic.CustID = ip2.FromCustID);
+    INSERT IGNORE INTO Temp_Association(CTSCustID_1, CTSCustID_2, AssociationType, Level)
+	SELECT 	DISTINCT 
+			lv1.CTSCustID
+		,  	lv2.CTSCustID  
+        , 	0 AS AssociationType 
+        ,	2 AS Level
+	FROM Temp_Association_Level1_Distinct AS lv1
+		INNER JOIN Temp_Association_Level1_Distinct_Duplicate AS lv2 ON lv1.CTSCustID_Level1 = lv2.CTSCustID_Level1 AND lv1.CTSCustID != lv2.CTSCustID;
 
 #-----------------------------------------------------------Update CustId, CTSCustID of Association table------------------------------------------------
 	INSERT IGNORE INTO Temp_Association_Distinct(CTSCustID_1, CustID_1, CTSCustID_2, CustID_2)
