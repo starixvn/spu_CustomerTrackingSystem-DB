@@ -1,5 +1,4 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-USE CTS_DataCenter;
 DROP PROCEDURE IF EXISTS `CTS_DC_CustEvidence_ClearEvidence`;
 
 DELIMITER $$
@@ -21,11 +20,13 @@ BEGIN
 		Revisions:
 			- 20210204@Long.Luu: Created [Redmine ID: #148719]
 			- 20210525@Irena.Vo: Change col name PinCustomerCategory: CustID -> CTSCustID [Redmine ID: 152965]
+			- 20210622@Aries.Nguyen: Update coding convention and improve locking  [Redmine ID: #157203]
+
 		Param's Explanation (filtered by):   
 			- ActionID: 1 insert, 2 override, 3 clear
             
 		Example:			
-			- call CTS_DataCenter.CTS_DC_CustEvidence_ClearEvidence('8', @op_ErrorMessage);
+			- CALL CTS_DataCenter.CTS_DC_CustEvidence_ClearEvidence('8', @op_ErrorMessage);
 	*/
         
     DECLARE	lv_CurrentDateTime 		DATETIME DEFAULT CURRENT_TIME();
@@ -37,12 +38,17 @@ BEGIN
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_CustomerIDs;
-    CREATE TEMPORARY TABLE 		Temp_CustomerIDs (
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustomerID;
+    CREATE TEMPORARY TABLE 		Temp_CustomerID (
 			CustID 				BIGINT UNSIGNED
 		,	CTSCustID			BIGINT UNSIGNED DEFAULT 0
-        , 	PRIMARY KEY     	PK_Temp_CustomerIDs_CTSCustID_CustID(CTSCustID,CustID)
-	);   
+        , 	PRIMARY KEY     	PK_Temp_CustomerID_CTSCustID_CustID(CTSCustID,CustID)
+	);  
+	
+	DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustID;
+    CREATE TEMPORARY TABLE 		Temp_CTSCustID (
+			CTSCustID			BIGINT UNSIGNED PRIMARY KEY   	
+	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerEvidence;
     CREATE TEMPORARY TABLE 		Temp_CustomerEvidence (			
@@ -52,30 +58,35 @@ BEGIN
         , 	PRIMARY KEY     	PK_Temp_CustomerEvidence_CTSCustID_EvidenceID(CTSCustID,EvidenceID)
 	);   
         
-    SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_CustomerIDs (CTSCustID) VALUES ('", REPLACE(ip_CTSCustIDList, ",", "'),('"),"');");
+    SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_CTSCustID (CTSCustID) VALUES ('", REPLACE(ip_CTSCustIDList, ",", "'),('"),"');");
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1;
     
-    UPDATE Temp_CustomerIDs AS t
-		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON t.CTSCustID = c.CTSCustID
-	SET t.CustID = c.CustID;
+	INSERT INTO Temp_CustomerID(CTSCustID, CustID)
+    SELECT  t.CTSCustID
+		,	c.CustID
+	FROM Temp_CTSCustID AS t
+		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON t.CTSCustID = c.CTSCustID;
     
     INSERT INTO Temp_CustomerEvidence(CTSCustID,CustID,EvidenceID)
-    SELECT DISTINCT e.CTSCustID, t.CustID, e.EvidenceID
+    SELECT	DISTINCT 
+			e.CTSCustID
+		,	t.CustID
+		,	e.EvidenceID
     FROM CTS_DataCenter.CustEvidence AS e
-		INNER JOIN Temp_CustomerIDs AS t ON e.CTSCustID = t.CTSCustID
+		INNER JOIN Temp_CustomerID AS t ON e.CTSCustID = t.CTSCustID
 	WHERE e.Level = 0;
     
     /* Delete customer's flagged evidences */
     DELETE e
     FROM CTS_DataCenter.CustEvidence AS e
-		INNER JOIN Temp_CustomerIDs AS t ON e.CTSCustID = t.CTSCustID
+		INNER JOIN Temp_CustomerID AS t ON e.CTSCustID = t.CTSCustID
 	WHERE e.Level = 0;
     
     /* Delete associated customer's evidences */
     DELETE e
     FROM CTS_DataCenter.CustEvidence AS e
-		INNER JOIN Temp_CustomerIDs AS t ON t.CTSCustID = e.FromCustID
+		INNER JOIN Temp_CustomerID AS t ON t.CTSCustID = e.FromCustID
 	WHERE e.Level = 2;
 
 	/* Remove relevant category */
@@ -117,7 +128,7 @@ BEGIN
 		FROM Temp_CustomerEvidence;
     END IF;
     
-    DROP TEMPORARY TABLE Temp_CustomerIDs;
+    DROP TEMPORARY TABLE Temp_CustomerID;
     DROP TEMPORARY TABLE Temp_CustomerEvidence;
 END$$
 

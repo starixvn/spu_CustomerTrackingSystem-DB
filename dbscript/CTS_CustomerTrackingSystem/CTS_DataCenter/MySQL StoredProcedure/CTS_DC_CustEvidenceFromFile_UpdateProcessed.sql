@@ -6,10 +6,10 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidenceFromFile_UpdateProce
 		IN ip_IDList			VARCHAR(2000)
 	,	IN ip_IsProcessed		BOOLEAN
 	,	IN ip_UpdatedBy			INT
+
 	,	OUT op_ErrorMessage		VARCHAR(200)
 )
-	SQL SECURITY INVOKER
-	
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20201106@Adam.Tran
@@ -20,6 +20,9 @@ BEGIN
 		Revisions:
 			- 20201106@Adam.Tran: Created [Redmine ID: #141563]
 			- 20201203@Adam.Tran [Redmine ID: 141563]: add input ip_IsProcessed
+			- 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
+
+		Param's Explanation (filtered by):
 	*/
 	
 	DECLARE lv_CurrentTime	TIMESTAMP DEFAULT CURRENT_TIMESTAMP();
@@ -29,9 +32,8 @@ BEGIN
     END;
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustomerEvidence;
-	CREATE TEMPORARY TABLE Temp_CustomerEvidence
-	(
-		ID	BIGINT UNSIGNED		
+	CREATE TEMPORARY TABLE Temp_CustomerEvidence(
+			ID				BIGINT UNSIGNED		
 		,	PRIMARY KEY		PK_Temp_CustomerEvidence_ID(ID) 
 	);	
 		
@@ -40,8 +42,7 @@ BEGIN
 	EXECUTE stmt1;	
 	
 	UPDATE CTS_DataCenter.CustEvidenceFromFile AS ce
-	INNER JOIN Temp_CustomerEvidence as temp
-		ON temp.ID = ce.ID
+		INNER JOIN Temp_CustomerEvidence as temp ON temp.ID = ce.ID
 	SET		ce.IsProcessed = ip_IsProcessed
 		,	ce.LastModifiedTime = lv_CurrentTime
 		,	ce.LastModifiedBy = ip_UpdatedBy;		  

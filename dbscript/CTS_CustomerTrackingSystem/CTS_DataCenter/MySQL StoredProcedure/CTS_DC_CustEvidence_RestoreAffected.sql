@@ -1,12 +1,13 @@
-DELIMITER $$
-USE `CTS_DataCenter` $$
-DROP PROCEDURE IF EXISTS CTS_DC_CustEvidence_RestoreAffected $$
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
+DROP procedure IF EXISTS `CTS_DC_CustEvidence_RestoreAffected`;
 
-CREATE PROCEDURE CTS_DC_CustEvidence_RestoreAffected (
-	IN ip_CTSCustID 		BIGINT,        
-    IN ip_EvidenceID 		SMALLINT,	
-    IN ip_UserID 			INT)
-    
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_RestoreAffected`(
+		IN ip_CTSCustID		BIGINT UNSIGNED
+	,	IN ip_EvidenceID	SMALLINT
+	,	IN ip_UserID		INT
+)
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200204@Thai
@@ -15,10 +16,12 @@ BEGIN
 		Original:
 
 		Revisions:
+			- 20210622@Aries.Nguyen: Update coding convention and inprove locking [Redmine ID: #157203]
         
 		Param's Explanation (filtered by):			
         
-        CALL CTS_DC_RestoreAffectedEvidence (11113, 5, 8)
+		Example;
+			- CALL CTS_DC_RestoreAffectedEvidence (11113, 5, 8)
 	*/    
       
     DECLARE		vr_CreatedDate	DATETIME;	
