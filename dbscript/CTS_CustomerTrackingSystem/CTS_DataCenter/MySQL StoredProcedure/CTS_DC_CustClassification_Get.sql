@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_Get`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_Get`(
-	IN ip_CTSCustID 		INT UNSIGNED
+	IN ip_CTSCustID 		BIGINT UNSIGNED
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -27,7 +27,11 @@ BEGIN
             - 20210226@Jonas.Huynh: Update for Get status for tagging by association with PA [RedmineID: #150454]
 			- 20210318@Irena.Vo: Update get CategoryID for color [RedmineID: #150457]
             - 20210525@Irena.Vo: Change col name PinCustomerCategory, TaggingExclusion: CustID -> CTSCustID [RedmineID: #152965] 
+			- 20210622@Aries.Nguyen: Update coding convention  [Redmine ID: #157203]
+
 		Param's Explanation:
+
+		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_Get('1');
 	 */ 
 	DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory;
@@ -48,12 +52,16 @@ BEGIN
     WHERE	cate.CTSCustID = ip_CTSCustID AND cc.ParentID IN (50, 200);
     
  
-    IF EXISTS (SELECT 1 FROM CTS_DataCenter.PinCustomerCategory WHERE CTSCustID = ip_CTSCustID) THEN SELECT 1 AS IsPinCategory;
-	ELSE SELECT 0 AS IsPinCategory;
+    IF EXISTS (SELECT 1 FROM CTS_DataCenter.PinCustomerCategory WHERE CTSCustID = ip_CTSCustID) THEN 
+		SELECT 1 AS IsPinCategory;
+	ELSE 
+		SELECT 0 AS IsPinCategory;
 	END IF;
         
-	IF EXISTS (SELECT 1 FROM CTS_DataCenter.TaggingExclusion WHERE CTSCustID = ip_CTSCustID) THEN SELECT 1 AS IsExcludedTagAssPA;
-	ELSE SELECT 0 AS IsExcludedTagAssPA;
+	IF EXISTS (SELECT 1 FROM CTS_DataCenter.TaggingExclusion WHERE CTSCustID = ip_CTSCustID) THEN 
+		SELECT 1 AS IsExcludedTagAssPA;
+	ELSE 
+		SELECT 0 AS IsExcludedTagAssPA;
 	END IF; 
 
 	SELECT CategoryType, CategoryID, CategoryName, ParentID FROM Temp_LatestRecordOfCategory;

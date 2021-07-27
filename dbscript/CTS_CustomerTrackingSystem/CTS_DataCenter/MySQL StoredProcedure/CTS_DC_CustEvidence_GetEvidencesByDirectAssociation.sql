@@ -15,10 +15,12 @@ BEGIN
 		Original:
 
 		Revisions:
-           - 20210226@JonasHuynh [Redmine ID: #150456]: Created
-           - 20210308@JonasHuynh [Redmine ID: #150456]: Update logic SP
+           - 20210226@JonasHuynh: Created [Redmine ID: #150456]
+           - 20210308@JonasHuynh: Update logic SP [Redmine ID: #150456]
+		   - 20210622@Aries.Nguyen: Update coding convention and improve locking[Redmine ID: #157203]
 		   
-		Param's Explanation (filtered by):			
+		Param's Explanation (filtered by):		
+		
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustEvidence_GetAllEvidencesByCusts('43600693,1176086');
 	*/
@@ -29,6 +31,12 @@ BEGIN
 		,	CustID              BIGINT UNSIGNED PRIMARY KEY
 		,	CTSCustID           BIGINT UNSIGNED
         ,	INDEX 				IX_Temp_RootCustomer (CTSCustID)
+	);
+
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustID;    
+	CREATE TEMPORARY TABLE Temp_CustID(	  
+			CustID              BIGINT UNSIGNED
+        ,	INDEX 				IX_Temp_CustID_CustID (CustID)
 	);
 	      
     DROP TEMPORARY TABLE IF EXISTS   Temp_FlaggedEvidence;
@@ -41,15 +49,17 @@ BEGIN
 	);
         
 	/* Insert CustIDs  */
-	SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_RootCustomer (CustID) VALUES ('", REPLACE(ip_CustIDs, ",", "'),('"),"');");
+	SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_CustID (CustID) VALUES ('", REPLACE(ip_CustIDs, ",", "'),('"),"');");
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1;   
     
 	/* Update CTSCustID */
-    UPDATE      Temp_RootCustomer AS temp
-    INNER JOIN  CTS_DataCenter.CTSCustomer AS cust ON cust.CustID = temp.CustID AND cust.CustSubID = 0
-    SET         temp.RootCustID = cust.CustID
-			,	temp.CTSCustID = cust.CTSCustID;
+	INSERT IGNORE INTO Temp_RootCustomer(RootCustID, CustID, CTSCustID)
+	SELECT  cust.CustID
+		,	temp.CustID
+		,	cust.CTSCustID
+	FROM Temp_CustID AS temp
+		INNER JOIN  CTS_DataCenter.CTSCustomer AS cust ON cust.CustID = temp.CustID AND cust.CustSubID = 0;
 		
     /* Get Direct Association */
     INSERT INTO Temp_FlaggedEvidence (AssCTSCustID, RootCustID, EvidenceID, CreatedDate, AssociationLevel)
@@ -58,7 +68,8 @@ BEGIN
         , 	ce.EvidenceID
         , 	ce.CreatedDate
         ,	CASE WHEN ce.Level = 0 THEN 0 ELSE 1 END AS AssociationLevel	   
-	FROM Temp_RootCustomer AS c	INNER JOIN CTS_DataCenter.CustEvidence AS ce ON ce.CTSCustID = c.CTSCustID;
+	FROM Temp_RootCustomer AS c	
+		INNER JOIN CTS_DataCenter.CustEvidence AS ce ON ce.CTSCustID = c.CTSCustID;
         
 	-- Return CustId, Level0CustId, EvidenceCode, EvidenceName, CreatedDate, AssociatedLevel
     SELECT DISTINCT cust.CustID				AS CustId

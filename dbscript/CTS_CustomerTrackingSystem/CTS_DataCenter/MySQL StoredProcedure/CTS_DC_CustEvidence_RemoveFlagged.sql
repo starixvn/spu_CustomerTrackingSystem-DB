@@ -2,7 +2,13 @@
 DROP procedure IF EXISTS `CTS_DC_CustEvidence_RemoveFlagged`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_RemoveFlagged`(IN ip_CTSCustID bigint, IN ip_EvidenceID smallint,IN ip_UserID int,OUT op_ErrorMessage varchar(200))
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_RemoveFlagged`(
+        IN ip_CTSCustID         BIGINT UNSIGNED
+    ,   IN ip_EvidenceID        SMALLINT
+    ,   IN ip_UserID            INT
+    
+    ,   OUT op_ErrorMessage     VARCHAR(200)
+)
     SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -17,10 +23,12 @@ BEGIN
             - 20201020@Irena.Vo: Enhance logic remove Evidence Category [Redmine ID: #141756]
             - 20201111@Irena.Vo: Enhance logic Insert History for Evidence Category [Redmine ID: #145027]
             - 20201125@Irena.Vo: Move flow sync Evidence to Category [Redmine ID: #141563]
+            - 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
         
 		Param's Explanation (filtered by):			
         
-        CALL CTS_DataCenter.CTS_DC_CustEvidence_RemoveFlagged(221882500, 41, 8, @op_ErrorMessage);
+        Exmaple:
+            - CALL CTS_DataCenter.CTS_DC_CustEvidence_RemoveFlagged(221882500, 41, 8, @op_ErrorMessage);
 	*/    
      
     DECLARE		lv_SPName 			VARCHAR(100) 	DEFAULT 'CTS_DC_CustEvidence_RemoveFlagged';  
@@ -33,13 +41,13 @@ BEGIN
 	
     /*DELETE FLAGGED EVIDENCE*/
     DELETE FROM CTS_DataCenter.CustEvidence
-	WHERE FromCustID = ip_CTSCustID		
-	AND EvidenceID = ip_EvidenceID;
+	WHERE   FromCustID = ip_CTSCustID		
+	    AND EvidenceID = ip_EvidenceID;
   
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	VALUES(4, lv_SPName, CONCAT('Remove Flagged Evidence: ip_CTSCustID = ', ip_CTSCustID, ';ip_EvidenceID = ', ip_EvidenceID), lv_CreatedDateTime, ip_UserID); 
 
-     -- Web will return ip_CTSCustID, ip_CustID, ip_SubscriberID, ip_EvidenceID, 2 (ActionType)
+     # Web will return ip_CTSCustID, ip_CustID, ip_SubscriberID, ip_EvidenceID, 2 (ActionType)
 END$$
 
 DELIMITER ;

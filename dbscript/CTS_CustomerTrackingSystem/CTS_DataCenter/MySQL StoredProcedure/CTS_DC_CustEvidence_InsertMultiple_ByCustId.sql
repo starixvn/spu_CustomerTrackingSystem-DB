@@ -2,7 +2,11 @@
 DROP procedure IF EXISTS `CTS_DC_CustEvidence_InsertMultiple_ByCustId`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_InsertMultiple_ByCustId`(IN ip_NewAccountEvidences json, IN ip_UserID int, OUT op_ErrorMessage VARCHAR(200))
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_InsertMultiple_ByCustId`(
+        IN ip_NewAccountEvidences   JSON
+    ,   IN ip_UserID                INT
+    
+    ,   OUT op_ErrorMessage         VARCHAR(200))
     SQL SECURITY INVOKER
 sp: BEGIN
 		/*
@@ -20,10 +24,10 @@ sp: BEGIN
             - 20201111@Irena.Vo: Enhance logic Insert History for Evidence Category [Redmine ID: #145027]
 			- 20201130@Irena.Vo: Enhance logic Insert new evidence (remove existed evidence category before) [Redmine ID: #141563]
 			- 20201214-20210107@Irena.Vo: Move logic Sync to Category by new sp: SyncToCategory. Insert Error Log [RedmineID: #145951]
-            
-        call CTS_DataCenter.CTS_DC_CustEvidence_InsertMultiple_ByCustId
-			('[{"CustID": 43600693, "EvidenceID": 45, "Comment": "na test 1"},{"CustID":43600693, "EvidenceID": 46, "Comment":"na test 2"},
-			{"CustID":43600889, "EvidenceID": 45, "Comment":"na test 3"}]', 8, @op_ErrorMessage);
+            - 20210622@Aries.Nguyen: Update coding convention and improve locking [Redmine ID: #157203]
+        
+        Example:
+            - CALL CTS_DataCenter.CTS_DC_CustEvidence_InsertMultiple_ByCustId('[{"CustID": 43600693, "EvidenceID": 45, "Comment": "na test 1"},{"CustID":43600693, "EvidenceID": 46, "Comment":"na test 2"},{"CustID":43600889, "EvidenceID": 45, "Comment":"na test 3"}]', 8, @op_ErrorMessage);
     
 	*/    
     DECLARE		lv_SPName 			VARCHAR(100) DEFAULT 'CTS_DC_CustEvidence_InsertMultiple_ByCustId';  
@@ -47,8 +51,7 @@ sp: BEGIN
     END;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_MultipleAccountEvidence;    
-	CREATE TEMPORARY TABLE Temp_MultipleAccountEvidence 
-    (	 
+	CREATE TEMPORARY TABLE Temp_MultipleAccountEvidence(	 
 			CustID			BIGINT UNSIGNED    
         ,   CTSCustID		BIGINT UNSIGNED     
         ,	SubscriberID	INT UNSIGNED
@@ -70,6 +73,14 @@ sp: BEGIN
         ,	ToCTSCustID 	BIGINT UNSIGNED
         , 	PRIMARY KEY	    PK_Temp_AssociatedException_FromCTSCustID_ToCTSCustID(FromCTSCustID,ToCTSCustID)
 	);
+
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;
+    CREATE TEMPORARY TABLE Temp_CustInfo(
+			CustID 	        BIGINT UNSIGNED
+        ,	CTSCustID 	    BIGINT UNSIGNED
+        , 	SubscriberID    INT
+        ,   INDEX	        IX_Temp_CustInfo_CustID(CustID)
+	);
     
     INSERT INTO Temp_MultipleAccountEvidence(CustID, EvidenceID, Remark)
 	SELECT 	tmpTable.CustID
@@ -83,9 +94,17 @@ sp: BEGIN
 		 )) AS tmpTable;  
   
     /*	GET CUSTOMER INFO	*/
+    INSERT INTO Temp_CustInfo(CustID, CTSCustID, SubscriberID)
+    SELECT  t.CustID
+        ,   cus.CTSCustID
+        ,   cus.SubscriberID
+    FROM Temp_MultipleAccountEvidence AS t
+        INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON t.CustID = cus.CustID AND cus.CustSubID = 0;
+
     UPDATE Temp_MultipleAccountEvidence AS t
-	INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON t.CustID = cus.CustID AND cus.CustSubID = 0
-    SET t.CTSCustID = cus.CTSCustID, t.SubscriberID = cus.SubscriberID;
+	    INNER JOIN Temp_CustInfo AS cus ON t.CustID = cus.CustID 
+    SET     t.CTSCustID = cus.CTSCustID
+        ,   t.SubscriberID = cus.SubscriberID;
     
     /*	INSERT NEW FLAGGED EVIDENCE	*/
 	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID,  EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
@@ -100,37 +119,52 @@ sp: BEGIN
 	
     /*	GET AFFECTED DEVICES	*/
     INSERT INTO Temp_AffectedDevices(CTSCustID, DCSDeviceID)
-    SELECT DISTINCT t.CTSCustID, a.DCSDeviceID
+    SELECT  DISTINCT 
+            t.CTSCustID
+        ,   a.DCSDeviceID
     FROM CTS_DataCenter.AssociationByDevice AS a    
-	INNER JOIN Temp_MultipleAccountEvidence AS t ON a.CTSCustID = t.CTSCustID;
+	    INNER JOIN Temp_MultipleAccountEvidence AS t ON a.CTSCustID = t.CTSCustID;
     
      /*	GET ASSOCIATED EXCEPTIONS	*/
     INSERT INTO Temp_AssociatedException(FromCTSCustID, ToCTSCustID)
-    SELECT DISTINCT t.CTSCustID
-		,	CASE WHEN e.LeastCTSCustID_Order = t.CTSCustID THEN e.GreatestCTSCustID_Order ELSE e.LeastCTSCustID_Order END
+    SELECT  DISTINCT 
+            t.CTSCustID
+		,	CASE WHEN e.LeastCTSCustID_Order = t.CTSCustID THEN e.GreatestCTSCustID_Order 
+                 ELSE e.LeastCTSCustID_Order 
+            END
     FROM CTS_DataCenter.CustException AS e
-	INNER JOIN Temp_MultipleAccountEvidence AS t ON e.LeastCTSCustID_Order = t.CTSCustID OR e.GreatestCTSCustID_Order = t.CTSCustID;
+	    INNER JOIN Temp_MultipleAccountEvidence AS t ON e.LeastCTSCustID_Order = t.CTSCustID OR e.GreatestCTSCustID_Order = t.CTSCustID;
     
     /*	INSERT NEW AFFECTED EVIDENCES	*/
 	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
-    SELECT DISTINCT a.CTSCustID, t.EvidenceID, t.Remark, 2, t.CTSCustID, lv_CurrentDateTime, ip_UserID
+    SELECT  DISTINCT 
+            a.CTSCustID
+        ,   t.EvidenceID
+        ,   t.Remark
+        ,   2
+        ,   t.CTSCustID
+        ,   lv_CurrentDateTime
+        ,   ip_UserID
     FROM Temp_MultipleAccountEvidence AS t
 		INNER JOIN Temp_AffectedDevices AS d ON t.CTSCustID = d.CTSCustID
 		INNER JOIN CTS_DataCenter.AssociationByDevice AS a ON a.DCSDeviceID = d.DCSDeviceID
         LEFT JOIN Temp_AssociatedException AS e ON t.CTSCustID = e.FromCTSCustID AND a.CTSCustID = e.ToCTSCustID
-	WHERE a.CTSCustID <> d.CTSCustID AND (e.FromCTSCustID IS NULL OR e.ToCTSCustID IS NULL);
+	WHERE   a.CTSCustID <> d.CTSCustID 
+        AND (e.FromCTSCustID IS NULL OR e.ToCTSCustID IS NULL);
     
      /*	WRITE LOG	*/
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	VALUES(3, lv_SPName, 'Insert bunch of Customer Evidences by CustId', lv_CurrentDateTime, ip_UserID);
 
 	-- Return CTSCustID, CustID, SubscriberID, EvidenceID, 0 (ActionType)
-    SELECT DISTINCT temp.CustId
-				,	temp.CTSCustId
-                ,	temp.SubscriberId
-                ,	temp.EvidenceId
-                ,	0 AS ActionType
+    SELECT  DISTINCT 
+            temp.CustId
+        ,	temp.CTSCustId
+        ,	temp.SubscriberId
+        ,	temp.EvidenceId
+        ,	0 AS ActionType
     FROM Temp_MultipleAccountEvidence AS temp;
+
 END$$
 
 DELIMITER ;
