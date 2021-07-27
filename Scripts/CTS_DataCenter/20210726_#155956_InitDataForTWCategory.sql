@@ -19,9 +19,26 @@ VALUES
 INSERT IGNORE INTO CTS_DataCenter.CategoryToCustomerClass(CategoryID,CustomerClass)
 VALUES (257,57),(258,58),(267,67),(268,68),(277,77),(278,78);
 
+INSERT IGNORE INTO CTS_DataCenter.StaticList(CategoryID,CustomerClass)
+VALUES (257,57),(258,58),(267,67),(268,68),(277,77),(278,78);
+
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
 ADD TWGroupBettingRate DECIMAL(10,4); 
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
 ADD TWTicketRejectRate DECIMAL(10,4); 
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
 ADD TWBetCount BIGINT; 
+
+INSERT IGNORE INTO `CTS_DataCenter`.`StaticList`
+(`ListID`, `ItemID`, `ListName`, `ListNameDisplay`, `ItemName`, `ItemNameDisplay`, `PriorityOrder`, `Status`, `Description`, `CreatedDate`)
+VALUES
+(9, 2, 'Tagging Type', 'Tagging Type', 'Tagging By TW', 'Tagging By TW', 2, 1, 'Tagging By TW: Group betting & Reject', '2021-07-27 05:45:34');
+
+INSERT IGNORE INTO CTS_DataCenter.TaggingToCategory (CategoryID, TaggingID, TaggingType, CategoryGroup)
+VALUES 
+(257, 7, 2, 206),
+(258, 8, 2, 206),
+(267, 7, 2, 203),
+(268, 8, 2, 203),
+(277, 7, 2, 204),
+(278, 8, 2, 204);
