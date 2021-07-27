@@ -10,10 +10,12 @@ BEGIN
 		Task :		Function add new subscriber
 		DB:			CTS_DataCenter && CTS_Admin
 		Original: 
+
 		Revisions:
             - 20200911@Roger.Le[138102]: Created
             - 20200924@Lex.Khuat[138102]: Support return sub with multi sites
 			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+            - 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
             
 		Param's Explanation:
 	*/
@@ -31,10 +33,8 @@ BEGIN
         ,	sub.IsTest
         ,	COUNT(s.SiteID) AS SiteCount
     FROM  CTS_Admin.Subscriber AS sub
-        INNER JOIN CTS_DataCenter.MappingSubscriberSite AS s
-			ON s.SubscriberID = sub.SubscriberID
-        INNER JOIN CTS_DataCenter.SubscriberGroup AS sg
-			ON s.SubscriberGroupID = sg.SubscriberGroupID
+        INNER JOIN CTS_DataCenter.MappingSubscriberSite AS s ON s.SubscriberID = sub.SubscriberID
+        INNER JOIN CTS_DataCenter.SubscriberGroup AS sg ON s.SubscriberGroupID = sg.SubscriberGroupID
 	GROUP BY 	sub.SubscriberID
 			,	sub.SubscriberName
             ,	sub.SubscriberPrefix

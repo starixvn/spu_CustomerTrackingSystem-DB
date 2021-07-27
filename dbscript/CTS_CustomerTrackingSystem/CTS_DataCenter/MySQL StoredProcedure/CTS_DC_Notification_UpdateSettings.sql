@@ -2,7 +2,13 @@
 DROP PROCEDURE IF EXISTS `CTS_DC_Notification_UpdateSettings`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Notification_UpdateSettings`(IN ip_UserID int,IN ip_FunctionID smallint,IN ip_IsTurningOn bit,OUT op_ErrorMessage varchar(200))
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Notification_UpdateSettings`(
+		IN ip_UserID			INT
+	,	IN ip_FunctionID		SMALLINT
+	,	IN ip_IsTurningOn		BIT
+	
+	,	OUT op_ErrorMessage		VARCHAR(200)
+)
     SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -14,6 +20,7 @@ BEGIN
 		Revisions:
 			- 2020106@Long.Luu: Created [Redmine ID: #142414]
 			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+			- 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
         
 		Param's Explanation (filtered by):
 	*/
