@@ -2,7 +2,9 @@
 DROP PROCEDURE IF EXISTS `CTS_DC_Subscriber_GetDetails`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Subscriber_GetDetails`(IN ip_SubscriberID int)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Subscriber_GetDetails`(
+		IN ip_SubscriberID	INT
+)
     SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -13,6 +15,7 @@ BEGIN
 		Revisions:
             - 20200924@Lex.Khuat[138102]: Created
 			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+			- 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
             
 		Param's Explanation:
 	*/
