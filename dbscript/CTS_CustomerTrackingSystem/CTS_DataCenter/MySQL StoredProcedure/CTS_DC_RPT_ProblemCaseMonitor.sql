@@ -17,6 +17,7 @@ BEGIN
 		Original:
 		Revisions:
 			- 20210612@Casey.Huynh: Created [RedmineID: #156464]
+            - 20210727@Casey.Huynh: Tunning Performance [RedmineID: #156464]
 		Param's Explanation (filtered by):
             - ip_SubscriberList: SubscriberID List.  (0: All Subscriber, OR '1,2,3' list of SubscriberID)
             - ip_ProblemCaseList: ProblemCaseID List map to Staticlist (ListID = 12) (0: All ProblemCase, OR '1,2,3' list of ProblemCaseID)
@@ -32,6 +33,8 @@ BEGIN
     (
 			SubscriberID	INT
         ,	SubscriberName	VARCHAR(200)
+        
+        ,	PRIMARY KEY Temp_Subscriber(SubscriberID)
     );
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_ProblemCase;
@@ -40,18 +43,40 @@ BEGIN
 			ProblemCaseID	SMALLINT UNSIGNED
 		,	ProblemCaseName	VARCHAR(100)
     );
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_ProblemCaseMonitor;
+    CREATE TEMPORARY TABLE Temp_ProblemCaseMonitor(
+			CustID		BIGINT UNSIGNED
+        ,	CustSubID	BIGINT UNSIGNED
+        ,	ProblemCaseID	SMALLINT UNSIGNED
+		,	ProblemCaseName	VARCHAR(100)
+        
+        ,	PRIMARY KEY Temp_ProblemCaseMonitor(CustID,CustSubID,ProblemCaseID)
+    );
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_CusProbleCase;
+    CREATE TEMPORARY TABLE Temp_CusProbleCase(
+			SubscriberID	INT UNSIGNED
+		,	CTSCustID		BIGINT UNSIGNED
+        ,	UserName		VARCHAR(50)        
+        ,	ProblemCaseID	SMALLINT UNSIGNED
+        ,	ProblemCaseName	VARCHAR(100)
+        
+        ,	PRIMARY KEY Temp_CusProbleCase(SubscriberID, CTSCustID, ProblemCaseID)
+	);    
+    
 	#====GET Subscriber List=========================================
 	CALL CTS_DC_Sys_SplitStringToTempItemTable(ip_SubscriberIDList, ',', 'INT UNSIGNED');
     
     SELECT 1 INTO lv_IsAllSubscriber FROM TempItemTable WHERE Item = 0;
     
 	IF lv_IsAllSubscriber = 1 THEN 
-		INSERT INTO Temp_Subscriber(SubscriberID, SubscriberName)
+		INSERT IGNORE INTO Temp_Subscriber(SubscriberID, SubscriberName)
         SELECT 	sub.SubscriberID
 			,	sub.SubscriberName
         FROM	CTS_Admin.Subscriber AS sub;  
     ELSE
-		INSERT INTO Temp_Subscriber(SubscriberID, SubscriberName)
+		INSERT IGNORE INTO Temp_Subscriber(SubscriberID, SubscriberName)
         SELECT 	sub.SubscriberID
 			,	sub.SubscriberName
         FROM	TempItemTable AS tmp
@@ -75,15 +100,34 @@ BEGIN
 			INNER JOIN CTS_DataCenter.StaticList AS sl ON tmp.Item = sl.ItemID
         WHERE ListID = lv_StaticListID;
     END IF;
-
-	SELECT	cus.CTSCustID, cus.UserName, tmpSub.SubscriberName, pcm.ProblemCaseID, tmpPlc.ProblemCaseName
+	    
+	INSERT INTO Temp_ProblemCaseMonitor(CustID, CustSubID, ProblemCaseID, ProblemCaseName)
+	SELECT	pcm.CustID
+		,	pcm.CustSubID
+		,	pcm.ProblemCaseID
+        ,	tmpPlc.ProblemCaseName
 	FROM	CTS_DataCenter.ProblemCaseMonitor AS pcm
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON pcm.CustID = cus.CustID AND pcm.CustSubID = cus.CustSubID
-		INNER JOIN Temp_Subscriber AS tmpSub ON cus.SubscriberID = tmpSub.SubscriberID
 		INNER JOIN Temp_ProblemCase AS tmpPlc ON tmpPlc.ProblemCaseID = pcm.ProblemCaseID
-	WHERE	pcm.CreatedDate BETWEEN ip_FromDate AND ip_ToDate
-		AND cus.CurrencyID NOT IN (20,72)
-    ORDER BY UserName;
+    WHERE	pcm.CreatedDate BETWEEN ip_FromDate AND ip_ToDate;
+    
+    INSERT INTO Temp_CusProbleCase(SubscriberID, CTSCustID, UserName, ProblemCaseID, ProblemCaseName)
+    SELECT	cus.SubscriberID
+		,	cus.CTSCustID
+        ,	cus.UserName
+        ,	pcm.ProblemCaseID
+        ,	pcm.ProblemCaseName
+	FROM Temp_ProblemCaseMonitor AS pcm
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON pcm.CustID = cus.CustID AND pcm.CustSubID = cus.CustSubID
+	WHERE cus.CurrencyID NOT IN (20,72);   
+
+	SELECT 	tmpCp.CTSCustID
+		, 	tmpCp.UserName
+        , 	tmpSub.SubscriberName
+        , 	tmpCp.ProblemCaseID
+        , 	tmpCp.ProblemCaseName
+    FROM Temp_CusProbleCase AS tmpCp
+		INNER JOIN Temp_Subscriber AS tmpSub ON tmpCp.SubscriberID = tmpSub.SubscriberID
+	ORDER BY tmpCp.UserName;
     
 END$$
 
