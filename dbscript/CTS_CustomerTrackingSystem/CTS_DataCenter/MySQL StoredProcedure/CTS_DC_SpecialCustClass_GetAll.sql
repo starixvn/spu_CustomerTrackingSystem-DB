@@ -3,8 +3,8 @@ DROP PROCEDURE IF EXISTS `CTS_DC_SpecialCustClass_GetAll`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_SpecialCustClass_GetAll`(
-	IN ip_IsGetAllInfo 		BIT,
-    IN ip_Username 			VARCHAR(50)
+		IN ip_IsGetAllInfo 		BIT
+	,	IN ip_Username 			VARCHAR(50)
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -18,6 +18,7 @@ BEGIN
 		   - 20200905@Long.Luu [140996]: Created
            - 20200908@Irena.Vo [141020]: Exclude VVIP, Pin category in list
 		   - 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+		   - 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
            
 		Param's Explanation (filtered by):
 	*/        
