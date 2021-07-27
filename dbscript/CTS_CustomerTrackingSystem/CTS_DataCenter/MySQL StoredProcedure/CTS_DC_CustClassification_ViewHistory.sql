@@ -19,6 +19,8 @@ BEGIN
             - 20210525@Irena.Vo: Change view log: CustID -> CTSCustID [RedmineID: #152965] 
 			- 20210610@Irena.Vo: Write log for Inactive Account [RedmineID: #156465] 
             - 20210722@Irena.Vo: Refactor SP [RedmineID: #157203] 
+            - 20210727@Long.Luu: Return more data for TW's categories [RedmineID: #155956] 
+            
 		Param's Explanation (filtered by):		
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_ViewHistory(43600889);
@@ -40,22 +42,34 @@ BEGIN
 							AND cc3.CategoryGroup IN (CONST_CATEGORY_SMART, CONST_CATEGORY_HIGHRISK, CONST_CATEGORY_PROBATION) 
 								THEN CONCAT(s.ItemNameDisplay,' - ',cc2.CategoryName,' to ',cc3.CategoryName)
 					 WHEN cc2.CategoryGroup IN (CONST_CATEGORY_SMART, CONST_CATEGORY_HIGHRISK) 
+			,   (	CASE WHEN cc2.CategoryGroup IN (201, 202, 205, 1000) AND cc3.CategoryGroup IN (203, 204, 206) 
+						THEN CONCAT(s.ItemNameDisplay,' - ',cc2.CategoryName,' to ',cc3.CategoryName)
+					WHEN cc2.CategoryGroup IN (203, 204) AND cc3.CategoryGroup = 206 
+						THEN CONCAT(s.ItemNameDisplay,' - ',cc2.CategoryName,' to ',cc3.CategoryName)
 							AND cc3.CategoryGroup = CONST_CATEGORY_PROBATION 
 								THEN CONCAT(s.ItemNameDisplay,' - ',cc2.CategoryName,' to ',cc3.CategoryName)
-					 ELSE s.ItemNameDisplay
-				END) AS SourceTypeName
+					ELSE s.ItemNameDisplay
+					END
+				) AS SourceTypeName
 			, 	s.ItemID AS SourceTypeID
-			,   (CASE WHEN tag.CategoryID IS NULL THEN '' /*No display*/
-					 ELSE CASE WHEN temp.TaggingType = 0 THEN 'Yes' ELSE 'No' END
-				END) AS TaggingType
+			,   (	CASE WHEN tag.CategoryID IS NULL THEN '' /*No display*/
+					ELSE CASE WHEN temp.TaggingType = 0 THEN 'Yes' ELSE 'No' END
+					END
+				) AS TaggingType
 			,   temp.TurnOverRM AS TurnOver
 			,   temp.WinlossRM AS WinLoss
-			,	(CASE WHEN temp.TurnOverRM = 0 THEN 0 ELSE (temp.WinlossRM/ temp.TurnOverRM) * 100 END) AS Margin
+			,	(	CASE WHEN temp.TurnOverRM = 0 THEN 0 
+					ELSE (temp.WinlossRM/ temp.TurnOverRM) * 100 
+                    END
+				) AS Margin
 			,   temp.BetCount
 			,   temp.ActiveDays 
 			,   temp.LastXDaysMargin
 			,   temp.ProbationPeriodWinloss
 			,   u.UserName AS CreatedBy
+            ,	temp.TWBetCount
+            ,	temp.TWGroupBettingRate
+            ,	temp.TWTicketRejectRate
 		FROM 	CTS_DataCenter.CTSCustomerClassification_History AS temp
 			LEFT JOIN CTS_DataCenter.TaggingToCategory AS tag ON tag.CategoryID = temp.CategoryID
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS cc1 ON temp.CategoryID = cc1.CategoryID
