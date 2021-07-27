@@ -1,8 +1,13 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
 DROP PROCEDURE IF EXISTS `CTS_DC_AssociatedAccountMonitor_Remove`;
-
+   
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedAccountMonitor_Remove`(IN ip_CTSCustID int,IN ip_UserID int,OUT op_ErrorMessage varchar(200))
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedAccountMonitor_Remove`(
+		IN ip_CTSCustID		BIGINT UNSIGNED
+	,	IN ip_UserID		INT
+	
+	,	OUT op_ErrorMessage VARCHAR(200)
+)
     SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -13,7 +18,8 @@ BEGIN
 
 		Revisions:
 			- 20200706@Long.Luu: Created [Redmine ID: #134652]
-			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723] 
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+			- 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
         
 		Param's Explanation (filtered by):
 	*/

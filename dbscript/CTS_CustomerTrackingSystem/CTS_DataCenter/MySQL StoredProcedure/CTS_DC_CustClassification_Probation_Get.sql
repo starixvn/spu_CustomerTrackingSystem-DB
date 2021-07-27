@@ -2,7 +2,13 @@
 DROP procedure IF EXISTS `CTS_DC_CustClassification_Probation_Get`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Probation_Get`(IN ip_Username varchar(50), IN ip_FromDaysLeft smallint, IN ip_ToDaysLeft smallint, IN ip_SubscriberID int, IN ip_StatusIDs varchar(500))
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Probation_Get`(
+        IN ip_Username      VARCHAR(50)
+    ,   IN ip_FromDaysLeft  SMALLINT
+    ,   IN ip_ToDaysLeft    SMALLINT
+    ,   IN ip_SubscriberID  INT
+    ,   IN ip_StatusIDs     VARCHAR(500)
+)
     SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -16,6 +22,7 @@ BEGIN
             - 20201010@Long.Luu: Tune the performance [Redmine ID: #142546]
             - 20201118@Lex.Khuat: Update probation rule to 20 days left [Redmine ID: #145028]
             - 20201208@Lex.Khuat: Remove isAssPA from result set [Redmine ID: #145950]
+            - 20210622@Aries.Nguyen: Update coding convention  [Redmine ID: #157203]	
             
 		Param's Explanation (filtered by):
             - ip_Username: null or '' to skip filter
@@ -96,10 +103,8 @@ BEGIN
 		,	pam.CreatedTime
 		,	lv_DayLefts - DATEDIFF(lv_CurrentDate, pam.CreatedDate)
     FROM CTS_DataCenter.ProbationAccountMonitor AS pam
-	INNER JOIN CTS_DataCenter.CTSCustomer AS cust
-		ON pam.CustID = cust.CustID
-	INNER JOIN Temp_CustomerStatus AS st
-		ON cust.CustStatusID = st.CustStatusID
+	    INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON pam.CustID = cust.CustID
+	    INNER JOIN Temp_CustomerStatus AS st ON cust.CustStatusID = st.CustStatusID
     WHERE (lv_CustID = 0 OR lv_CustID = pam.CustID)
 		AND pam.SportGroupID = 200
 		AND cust.SubscriberID = IFNULL(ip_SubscriberID, 0)
@@ -121,11 +126,10 @@ BEGIN
 					ELSE tmp.DaysLeft
 			END AS DaysLeft
 	FROM Temp_ProbationAccounts AS tmp
-    LEFT JOIN CTS_DataCenter.StaticList AS st
-		ON	st.ListID = 1 AND tmp.CustStatusID = st.ItemID
+    LEFT JOIN CTS_DataCenter.StaticList AS st ON st.ListID = 1 AND tmp.CustStatusID = st.ItemID
 	ORDER BY CASE	WHEN tmp.DaysLeft < 0 THEN 0
 					ELSE tmp.DaysLeft
-			END DESC;
+			 END DESC;
 
 END$$
 

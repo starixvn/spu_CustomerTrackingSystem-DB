@@ -17,24 +17,34 @@ sp:BEGIN
 		Revisions:	
 			- 20210324@Irena.Vo: Created [RedmineID: #148997]
             - 20210406@Irena.Vo: Fix bug Clean ID is NULL [RedmineID: #152938]
-					
+			- 20210622@Aries.Nguyen: Update coding convention and improve locking  [Redmine ID: #157203]	
+
 		Param's Explanation (filtered by):
-			call CTS_DataCenter.CTS_DC_CustClassification_History_CleanUp(30,200);
+
+		Example:
+			- CALL CTS_DataCenter.CTS_DC_CustClassification_History_CleanUp(30,200);
 	*/
     DECLARE lv_MaxDate 		DATE;
     DECLARE lv_CleanedID 	BIGINT;
 	DECLARE lv_EndID 		BIGINT;
     
     SET	lv_MaxDate = DATE_SUB(CURRENT_DATE(), INTERVAL ip_TakeDays DAY);
-    SET	lv_CleanedID = (SELECT ParameterValue FROM CTS_DataCenter.SystemParameter WHERE ParameterID = 15); 
-    SET lv_EndID = (SELECT MAX(temp.ID) 
-					 FROM  (SELECT ID
-							FROM CTS_DataCenter.CTSCustomerClassification_History
-							WHERE ID > lv_CleanedID AND InsertDate <= lv_MaxDate AND IsDataChanged = 0
-							ORDER BY ID ASC
-							LIMIT ip_Batch) AS temp);
+
+    SELECT ParameterValue
+	INTO lv_CleanedID
+	FROM CTS_DataCenter.SystemParameter WHERE ParameterID = 15; 
+
+    SELECT MAX(temp.ID) 
+	INTO lv_EndID
+	FROM (SELECT ID
+		  FROM CTS_DataCenter.CTSCustomerClassification_History
+		  WHERE ID > lv_CleanedID AND InsertDate <= lv_MaxDate AND IsDataChanged = 0
+		  ORDER BY ID ASC
+		  LIMIT ip_Batch) AS temp;
                             
-    IF (lv_EndID IS NULL) THEN LEAVE sp; END IF;
+    IF (lv_EndID IS NULL) THEN 
+		LEAVE sp; 
+	END IF;
     
 	DELETE 
 	FROM CTS_DataCenter.CTSCustomerClassification_History

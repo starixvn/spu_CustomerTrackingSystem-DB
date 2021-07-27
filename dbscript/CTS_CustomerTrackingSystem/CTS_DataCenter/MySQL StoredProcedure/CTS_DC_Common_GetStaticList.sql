@@ -2,7 +2,10 @@
 DROP PROCEDURE IF EXISTS `CTS_DC_Common_GetStaticList`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Common_GetStaticList`(IN ip_ListID INT, IN ip_Status BOOL)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Common_GetStaticList`(
+		IN	ip_ListID INT
+	,	IN ip_Status BOOL
+)
     SQL SECURITY INVOKER
 BEGIN
 /*
@@ -14,24 +17,25 @@ BEGIN
 		Revisions:
 			- 20191219@Casey.Huynh: Created
 			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+			- 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
 			
 		Param's Explanation (filtered by):
                 
 	*/
    
    SELECT	sl.ListID
-			, sl.ItemID
-			, sl.ListName 
-            , sl.ListNameDisplay
-            , sl.ItemName
-            , sl.ItemNameDisplay
-            , sl.PriorityOrder
-            , sl.Status
-            , sl.Description
-            , sl.CreatedDate
-	FROM	CTS_DataCenter.StaticList	AS sl
-    WHERE	sl.ListID = ip_ListID
-			AND sl.Status = ip_Status;
+		,	sl.ItemID
+		,	sl.ListName 
+        ,	sl.ListNameDisplay
+        ,	sl.ItemName
+        ,	sl.ItemNameDisplay
+        ,	sl.PriorityOrder
+        ,	sl.Status
+        ,	sl.Description
+        ,	sl.CreatedDate
+	FROM  CTS_DataCenter.StaticList	AS sl
+    WHERE   sl.ListID = ip_ListID
+		AND sl.Status = ip_Status;
     
 END$$
 DELIMITER ;
