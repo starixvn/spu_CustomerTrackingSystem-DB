@@ -80,9 +80,9 @@ sp:BEGIN
         LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS ccl ON cus.CustID = ccl.CustID
         LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = ccl.CategoryID
 	GROUP BY grp.GroupID
-        ,    cus.CTSCustID
-		, 	 cus.CustID
         , 	 cus.UserName
+        ,    cus.CTSCustID
+		, 	 cus.CustID  
         , 	 cus.CustStatus
         , 	 cus.CustSubID;            
    
