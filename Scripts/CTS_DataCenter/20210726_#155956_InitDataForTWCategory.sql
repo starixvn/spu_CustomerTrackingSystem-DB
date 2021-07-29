@@ -27,6 +27,8 @@ ADD TWGroupBettingRate DECIMAL(10,4);
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
 ADD TWTicketRejectRate DECIMAL(10,4); 
 ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
+ADD TWDesktopUsageRate DECIMAL(10,4); 
+ALTER TABLE CTS_DataCenter.CTSCustomerClassification_History
 ADD TWBetCount BIGINT; 
 
 INSERT IGNORE INTO `CTS_DataCenter`.`StaticList`

@@ -70,6 +70,7 @@ BEGIN
             ,	temp.TWBetCount
             ,	temp.TWGroupBettingRate
             ,	temp.TWTicketRejectRate
+            ,	temp.TWDesktopUsageRate
 		FROM 	CTS_DataCenter.CTSCustomerClassification_History AS temp
 			LEFT JOIN CTS_DataCenter.TaggingToCategory AS tag ON tag.CategoryID = temp.CategoryID
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS cc1 ON temp.CategoryID = cc1.CategoryID
