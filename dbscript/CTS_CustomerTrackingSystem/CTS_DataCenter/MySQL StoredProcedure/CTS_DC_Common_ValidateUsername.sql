@@ -4,7 +4,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_Common_ValidateUsername`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Common_ValidateUsername`(
-	  IN ip_ListUsername 		VARCHAR(2000)
+	  IN ip_ListUsername 		LONGTEXT
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -16,11 +16,12 @@ BEGIN
 
 		Revisions:
 			- 20210204@Long.Luu: Created [Redmine ID: #148719]
+			- 20210729@Aries.Nguyen: Change data type param ip_ListUsername  [Redmine ID: #157086]
 		
 		Param's Explanation (filtered by):   
             
 		Example:			
-			- call CTS_DataCenter.CTS_DC_Common_ValidateUsername('member19');
+			- CALL CTS_DataCenter.CTS_DC_Common_ValidateUsername('member19');
 	*/
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Username;
