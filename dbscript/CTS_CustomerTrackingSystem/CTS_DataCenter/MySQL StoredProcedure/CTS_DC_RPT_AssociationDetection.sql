@@ -79,9 +79,9 @@ sp:BEGIN
         LEFT JOIN CTS_DataCenter.Evidence AS ev ON ev.EvidenceID = ce.EvidenceID
         LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS ccl ON cus.CustID = ccl.CustID
         LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = ccl.CategoryID
-	GROUP BY cus.CTSCustID
+	GROUP BY grp.GroupID
+        ,    cus.CTSCustID
 		, 	 cus.CustID
-        , 	 grp.GroupID
         , 	 cus.UserName
         , 	 cus.CustStatus
         , 	 cus.CustSubID;            
