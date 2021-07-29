@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_InsertUserPermission`;
+DROP PROCEDURE IF EXISTS `CTS_DC_Common_InsertUserPermission`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_InsertUserPermission`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Common_InsertUserPermission`(
         IN ip_UserIDList        JSON
  
     ,   OUT op_ErrorMessage     VARCHAR(200)
