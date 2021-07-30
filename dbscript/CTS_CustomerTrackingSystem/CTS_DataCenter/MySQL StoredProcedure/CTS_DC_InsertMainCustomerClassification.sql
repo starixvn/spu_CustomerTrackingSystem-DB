@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_InsertMainCustomerClassification`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_InsertNormalAccount`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_InsertMainCustomerClassification`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_InsertNormalAccount`(
 		IN ip_NewClassification		JSON
 
 	,	OUT op_ErrorMessage 		VARCHAR(200)
@@ -35,7 +35,7 @@ BEGIN
                 
 		Param's Explanation (filtered by):
 		Example:
-				- CALL CTS_DataCenter.CTS_DC_InsertMainCustomerClassification('[{"CustId": "8","CategoryId":"203","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","LastXDaysMargin":100,"ProbationPeriodWinloss":100,"TaggingID":7,"TaggingType":2,"TWBetCount":10,"TWGroupBettingRate":0.5,"TWTicketRejectRate":0.5,"TWDesktopUsageRate":0.5}]',@opp);
+				- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount('[{"CustId": "8","CategoryId":"203","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","LastXDaysMargin":100,"ProbationPeriodWinloss":100,"TaggingID":7,"TaggingType":2,"TWBetCount":10,"TWGroupBettingRate":0.5,"TWTicketRejectRate":0.5,"TWDesktopUsageRate":0.5}]',@opp);
 	*/ 
     
     DECLARE	CONST_GROUP_PA 							INT DEFAULT 0;

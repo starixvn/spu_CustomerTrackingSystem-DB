@@ -61,7 +61,6 @@ BEGIN
 		,CateId AS 'TaggingID'
 		,2 AS 'TaggingType'
 	FROM #tmpCustomerClassification
-	WHERE CateId IS NOT NULL
 
 
 END;
