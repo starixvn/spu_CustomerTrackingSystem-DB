@@ -24,6 +24,7 @@ AS
 		- 20210512@John.Ngo: Exclude Customer Class for Internal Account [Redmine ID: #154844]
         - 20210607@Long.Luu: Check Inactive Accounts [Redmine ID: #156465]
 		- 20210714@Long.Luu: Special rule for ManbetX CC2 [Redmine ID: #158465]
+		- 20210730@John.Ngo: [CTS] New way to store Closed Status [Redmine ID: #152259]
 		
 	Param's Explanation:
 */
@@ -127,7 +128,7 @@ BEGIN
 		OUTPUT DELETED.CustId INTO #tmpDeletedCustomers(CustId)
 	FROM #tmpCustomers AS r
 		LEFT JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON r.CustId = c.custid
-	WHERE c.closed = 1 OR c.[Enabled] = 0
+	WHERE (c.[Enabled] = 0 OR c.roleid <> 1)
 	   OR c.recommend IN (52466,5707545)
 	   OR c.username LIKE '%CashOut';
 
