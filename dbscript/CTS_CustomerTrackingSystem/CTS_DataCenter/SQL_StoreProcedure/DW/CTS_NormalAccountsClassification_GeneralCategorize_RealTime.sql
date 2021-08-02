@@ -1,6 +1,6 @@
 USE [bodb_VR2Model]
 GO
-/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_RealTime]    Script Date: 7/14/2021 4:33:32 AM ******/
+/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_RealTime]    Script Date: 02-Aug-21 5:39:59 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -109,9 +109,15 @@ BEGIN
 		,	T.C.value('./@CategoryId', 'SMALLINT') AS CategoryId
 	FROM @CustomersXML.nodes('//CustomerClassificationModel') AS T(C)
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
-
+	
 	-- START
-	-- #1: GetCustomer Accummulated data
+	-- #1: Remove SMA account
+	DELETE a WITH(ROWLOCK)
+	FROM #tmpCustomers AS a
+		LEFT JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON a.CustId = c.custid
+	WHERE c.roleid <> 1;
+	
+	-- #2: GetCustomer Accummulated data
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, Site, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
 	SELECT	a.CustId
 		,	cu.Site
@@ -125,8 +131,8 @@ BEGIN
 		LEFT JOIN bodb02.dbo.Customer AS cu WITH(NOLOCK) ON a.CustId = cu.custid
 	WHERE cu.recommend NOT IN (52466,5707545)
 	   OR cu.username NOT LIKE '%CashOut';
-		
-	-- #2: Insert Accounts's BetCount
+	
+	-- #3: Insert Accounts's BetCount
 	INSERT INTO dbo.CustomerClassification_BetCount(CustId, SportId, BetCount)
 	SELECT c.CustId, @GENERAL_SPORTID, 0
 	FROM #tmpCustomers AS c WITH(NOLOCK)
@@ -134,24 +140,18 @@ BEGIN
 	WHERE c.CategoryId IN (@GENERALCATEGORY_NORMALMEMBER, @GENERALCATEGORY_VIP, @GENERALCATEGORY_BLANKED)
 		AND v.CustId IS NULL;
 
-	-- #3: Remove Accounts less than 100 tickets compared to last scan
+	-- #4: Remove Accounts less than 100 tickets compared to last scan
 	DELETE a WITH(ROWLOCK)
 	FROM #tmpCustomerAccummulatedInfo AS a
 		LEFT JOIN dbo.CustomerClassification_BetCount AS v WITH(NOLOCK) ON a.CustId = v.CustId
 	WHERE (v.CustId IS NOT NULL AND (a.BetCount - v.BetCount < 100));
-
-	-- #4: Remove SMA account
-	DELETE a WITH(ROWLOCK)
-	FROM #tmpCustomerAccummulatedInfo AS a
-		LEFT JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON a.CustId = c.custid
-	WHERE c.roleid <> 1;
 	
-	-- Remove 'Odd Feed Sites'
+	-- #5: Remove 'Odd Feed Sites'
 	DELETE a
 	FROM  #tmpCustomerAccummulatedInfo AS a WITH(ROWLOCK)
 	WHERE (a.Site = 'NextBet' OR a.Site = '9wickets' OR a.Site = '9wsports');
 	
-	-- #5: Classify New Member
+	-- #6: Classify New Member
 	DELETE	a WITH(ROWLOCK)
 	OUTPUT	DELETED.CustId
 		,	DELETED.TurnoverRM
@@ -162,12 +162,12 @@ BEGIN
 	FROM #tmpCustomerAccummulatedInfo AS a
 	WHERE a.BetCount < 10;
 	
-	-- Remove 'haifa/manbetx doesn't change category'
+	-- #7: Remove 'haifa/manbetx doesn't change category'
 	DELETE a
 	FROM  #tmpCustomerAccummulatedInfo AS a WITH(ROWLOCK)
 	WHERE (a.Site IN ('haifa','manbetx') AND a.Margin < 0 AND a.WinlossRM < -5000);
 	
-	-- #6: Classify Normal Member, Smart Punter & High Risk Punter
+	-- #8: Classify Normal Member, Smart Punter & High Risk Punter
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT	a.CustId
 		,	@GENERAL_SPORTID
@@ -187,7 +187,7 @@ BEGIN
 		,	a.ActiveDays
 	FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK);
 
-	-- #7: Insert new members
+	-- #9: Insert new members
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT	v.CustId, @GENERAL_SPORTID
 		,	@GENERALCATEGORY_NEWMEMBER --CASE WHEN (c.CustId IS NULL) THEN @GENERALCATEGORY_NEWMEMBER ELSE 0 END
@@ -196,7 +196,7 @@ BEGIN
 	FROM #tmpNewCustomer AS v WITH(NOLOCK)
 		LEFT JOIN #tmpDangerousCustomer AS c WITH(NOLOCK) ON v.CustId = c.CustId;
 
-	-- #8: Log Dangerous Customers for tracking
+	-- #10: Log Dangerous Customers for tracking
 	INSERT INTO dbo.CustomerClassification_DangerousCustomerLog(CustId, ScannedTime)
 	SELECT	t.CustId
 		,	GETDATE()
@@ -204,7 +204,7 @@ BEGIN
 		LEFT JOIN dbo.CustomerClassification_DangerousCustomerLog AS d WITH(NOLOCK) ON t.CustId = d.CustId
 	WHERE d.CustId IS NULL;
 
-	-- #9: Update last scanned ticket count back to dbo.CustomerClassification_BetCount
+	-- #11: Update last scanned ticket count back to dbo.CustomerClassification_BetCount
 	UPDATE v WITH(ROWLOCK, UPDLOCK)
 	SET v.BetCount = (a.BetCount - (a.BetCount % 100))
 		,	v.LastScannedDate = @CurrentDateTime
