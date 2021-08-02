@@ -17,9 +17,6 @@ if [ "$ERROR_CODE" = "0" ]
 then
 	###############################
 	bash ${CTS_DIR}/archive_process_run.sh "Transaction07"
-
-	###############################################
-	bash ${CTS_DIR}/archive_process_run.sh "ProcessedTransaction"
 else
 	echo "ERROR - $(date +%Y-%m-%d-%H:%M:%S) - Archiving process stopped with ERROR-${ERROR_CODE}"
 fi
