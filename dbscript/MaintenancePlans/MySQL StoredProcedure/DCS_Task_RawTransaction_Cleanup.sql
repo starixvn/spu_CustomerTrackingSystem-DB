@@ -49,6 +49,12 @@ BEGIN
 	prepare drop_statement from @dropCMD;
 	execute drop_statement;
 	deallocate prepare drop_statement;
+
+	set @dropCMD = concat('alter table DCS_DataCenter.ProcessedTransaction DROP partition ', @pweekdrop, ';');
+    #select @dropCMD;
+	prepare drop_statement from @dropCMD;
+	execute drop_statement;
+	deallocate prepare drop_statement;
     
     ##########################################
 	set @addCMD = concat('',
@@ -90,11 +96,6 @@ BEGIN
     WITH cts_archive as (
 		select 'DCS_DataCenter' as `db_name`,
 			'Transaction07' as `obj_name`,
-			concat('{"week": ',@dropweek,'}') as `archive_info`,
-			'NEW' as `status`
-		union 
-		select 'DCS_DataCenter' as `db_name`,
-			'ProcessedTransaction' as `obj_name`,
 			concat('{"week": ',@dropweek,'}') as `archive_info`,
 			'NEW' as `status`
     )
