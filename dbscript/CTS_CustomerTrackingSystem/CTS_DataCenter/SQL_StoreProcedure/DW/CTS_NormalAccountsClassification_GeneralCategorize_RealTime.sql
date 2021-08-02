@@ -21,6 +21,7 @@ AS
 		- 20210511@John.Ngo: Exclude Customer of Odd Feed Sites [Redmine ID: #154694]
 		- 20210512@John.Ngo: Exclude Customer Class for Internal Account [Redmine ID: #154844]
 		- 20210714@Long.Luu: Special rule for ManbetX CC2 [Redmine ID: #158465]
+		- 20210802@Long.Luu: Rescan for customers that have no category in CTS [Redmine ID: #158465]
 		
 	Param's Explanation:
 */
@@ -34,7 +35,8 @@ BEGIN
 		,	@GENERALCATEGORY_SMARTPUNTER		INT = 203
 		,	@GENERALCATEGORY_HIGHRISKPUNTER		INT = 204
 		,	@GENERALCATEGORY_VIP				INT = 205
-		,	@GENERALCATEGORY_PROBATION			INT = 206;
+		,	@GENERALCATEGORY_PROBATION			INT = 206
+		,	@GENERALCATEGORY_BLANKED			INT = 0;
 
 	DECLARE	@CurrentDateTime			DATETIME = GETDATE()
 		,	@CurrentDate				DATE = GETDATE();
@@ -129,7 +131,7 @@ BEGIN
 	SELECT c.CustId, @GENERAL_SPORTID, 0
 	FROM #tmpCustomers AS c WITH(NOLOCK)
 		LEFT JOIN dbo.CustomerClassification_BetCount AS v WITH(NOLOCK) ON c.CustId = v.CustId
-	WHERE c.CategoryId IN (@GENERALCATEGORY_NORMALMEMBER, @GENERALCATEGORY_VIP)
+	WHERE c.CategoryId IN (@GENERALCATEGORY_NORMALMEMBER, @GENERALCATEGORY_VIP, @GENERALCATEGORY_BLANKED)
 		AND v.CustId IS NULL;
 
 	-- #3: Remove Accounts less than 100 tickets compared to last scan
