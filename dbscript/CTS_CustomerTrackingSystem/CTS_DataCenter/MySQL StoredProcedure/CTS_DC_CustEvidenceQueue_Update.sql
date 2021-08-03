@@ -16,13 +16,10 @@ BEGIN
 		Task:		Update processed statsu for CustEvidenceQueue [Redmine ID: #148719]
 		DB:			CTS_DataCenter
 		Original:
-
 		Revisions:
 			- 20210204@Long.Luu: Created [Redmine ID: #148719]
-		
 		Param's Explanation (filtered by):   
 			- ActionID: 1 insert, 2 override, 3 clear
-            
 		Example:			
 			- call CTS_DataCenter.CTS_DC_CustEvidenceQueue_Update('1,2,3,4', @op_ErrorMessage);
 	*/
@@ -50,7 +47,5 @@ BEGIN
 		,	ce.LastModifiedTime = lv_CurrentTime;		  
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_ProcessedID;
-	
 END$$
-
 DELIMITER ;

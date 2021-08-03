@@ -17,20 +17,16 @@ BEGIN
 		Task:		Main SP of Customer Evidence Queue [Redmine ID: #148719]
 		DB:			CTS_DataCenter
 		Original:
-
 		Revisions:
 			- 20210204@Long.Luu: Created [Redmine ID: #148719]
-		
 		Param's Explanation (filtered by):   
 			- ip_ActionID: 1 insert, 2 override, 3 clear
-            
 		Example:			
 			- call CTS_DataCenter.CTS_DC_CustEvidenceQueue_TakeAction('[{"CTSCustID":19314,"EvidenceID":13,"Remark":"test","CreatedBy":8}]', 1, @op_ErrorMessage);
 	*/
     
     DECLARE lv_CustIDList 	VARCHAR(2000);
     DECLARE lv_CreatedBy 	INT DEFAULT 10278938;
-    
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerEvidences;    
 	CREATE TEMPORARY TABLE Temp_CustomerEvidences 
@@ -66,7 +62,5 @@ BEGIN
         
 		CALL CTS_DC_CustEvidence_ClearEvidence(lv_CustIDList, op_ErrorMessage, op_Result);
     END IF;
-    
 END$$
-
 DELIMITER ;

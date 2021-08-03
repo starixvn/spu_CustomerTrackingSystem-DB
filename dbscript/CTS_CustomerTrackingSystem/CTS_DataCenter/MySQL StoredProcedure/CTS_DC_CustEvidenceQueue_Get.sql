@@ -13,12 +13,9 @@ BEGIN
 		Task:		Get data from CustEvidenceQueue [Redmine ID: #148719]
 		DB:			CTS_DataCenter
 		Original:
-
 		Revisions:
 			- 20210204@Long.Luu: Created [Redmine ID: #148719]
-		
 		Param's Explanation (filtered by): 
-            
 		Example:			
 			- call CTS_DataCenter.CTS_DC_CustEvidenceQueue_Get();
 	*/    
@@ -44,7 +41,4 @@ BEGIN
 	WHERE q.FileKey = lv_FileKey
 		AND q.IsProcessed = 0;	
 END$$
-
 DELIMITER ;
-
-

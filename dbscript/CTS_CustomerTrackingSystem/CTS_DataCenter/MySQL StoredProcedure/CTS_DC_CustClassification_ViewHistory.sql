@@ -18,17 +18,30 @@ BEGIN
             - 20210401@Irena.Vo: Update View Log [RedmineID: #152249]
             - 20210525@Irena.Vo: Change view log: CustID -> CTSCustID [RedmineID: #152965] 
 			- 20210610@Irena.Vo: Write log for Inactive Account [RedmineID: #156465] 
+            - 20210722@Irena.Vo: Refactor SP [RedmineID: #157203] 
 		Param's Explanation (filtered by):		
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_ViewHistory(43600889);
 	*/   
+		DECLARE CONST_CATEGORY_NEWMEMBER 				INT DEFAULT 201;
+		DECLARE	CONST_CATEGORY_NORMALMEMBER 			INT DEFAULT 202;
+		DECLARE CONST_CATEGORY_SMART 					INT DEFAULT 203;
+		DECLARE CONST_CATEGORY_HIGHRISK 				INT DEFAULT 204;
+		DECLARE CONST_CATEGORY_VIP 						INT DEFAULT 205;
+		DECLARE CONST_CATEGORY_PROBATION				INT DEFAULT 206;
+		DECLARE CONST_CATEGORY_INACTIVE					INT DEFAULT 1000;
+        
 		SELECT  temp.ID
 			,	temp.LastModifiedDate AS CreatedTime
 			,   (CASE WHEN temp.CategoryID IS NULL THEN '-' ELSE cc1.CategoryName END) AS CategoryName
 			,   (CASE WHEN temp.TargetCC IN (-1, -99) THEN '-' /* -1: Remove, -99: No mapping CC */ ELSE temp.TargetCC END) AS CustomerClass
 			,	temp.CategoryID
-			,   (CASE WHEN cc2.CategoryGroup IN (201, 202, 205, 1000) AND cc3.CategoryGroup IN (203, 204, 206) THEN CONCAT(s.ItemNameDisplay,' - ',cc2.CategoryName,' to ',cc3.CategoryName)
-					 WHEN cc2.CategoryGroup IN (203, 204) AND cc3.CategoryGroup = 206 THEN CONCAT(s.ItemNameDisplay,' - ',cc2.CategoryName,' to ',cc3.CategoryName)
+			,   (CASE WHEN cc2.CategoryGroup IN (CONST_CATEGORY_NEWMEMBER, CONST_CATEGORY_NORMALMEMBER, CONST_CATEGORY_VIP, CONST_CATEGORY_INACTIVE) 
+							AND cc3.CategoryGroup IN (CONST_CATEGORY_SMART, CONST_CATEGORY_HIGHRISK, CONST_CATEGORY_PROBATION) 
+								THEN CONCAT(s.ItemNameDisplay,' - ',cc2.CategoryName,' to ',cc3.CategoryName)
+					 WHEN cc2.CategoryGroup IN (CONST_CATEGORY_SMART, CONST_CATEGORY_HIGHRISK) 
+							AND cc3.CategoryGroup = CONST_CATEGORY_PROBATION 
+								THEN CONCAT(s.ItemNameDisplay,' - ',cc2.CategoryName,' to ',cc3.CategoryName)
 					 ELSE s.ItemNameDisplay
 				END) AS SourceTypeName
 			, 	s.ItemID AS SourceTypeID

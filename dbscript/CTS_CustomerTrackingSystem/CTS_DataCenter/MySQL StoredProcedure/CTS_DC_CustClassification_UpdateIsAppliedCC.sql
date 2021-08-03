@@ -1,8 +1,11 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP procedure IF EXISTS `CTS_DC_CustClassification_UpdateIsAppliedCC`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_UpdateIsAppliedCC`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_UpdateIsAppliedCC`(IN ip_ProcessedCustList JSON, OUT op_ErrorMessage VARCHAR(200))
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_UpdateIsAppliedCC`(
+		IN 	ip_ProcessedCustList 	JSON
+    , 	OUT op_ErrorMessage 		VARCHAR(200)
+)
     SQL SECURITY INVOKER
 BEGIN
 /*
@@ -11,12 +14,12 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original:
 		Revisions:
-                - 20201214-20210107@Irena.Vo: Created. Update logic & Insert Error Log [RedmineID: #145951]
-		
+			- 20201214-20210107@Irena.Vo: Created. Update logic & Insert Error Log [RedmineID: #145951]
+			- 20210625@Long.Luu: Refactor  [Redmine ID: #157203]
 		Param's Explanation (filtered by):		
-			set @op_ErrorMessage = '0';
-				call CTS_DataCenter.CTS_DC_CustClassification_UpdateIsAppliedCC('[{"CustId":"43600895","ScannedTime":"2020-10-02 00:00:00"}]', @op_ErrorMessage);
-			select @op_ErrorMessage;
+		Example:
+			- CALL CTS_DataCenter.CTS_DC_CustClassification_UpdateIsAppliedCC('[{"CustId":"43600895","ScannedTime":"2020-10-02 00:00:00"}]', @op_ErrorMessage);
+			
 	*/ 
 	DECLARE	lv_No				INT			 DEFAULT 0;
     DECLARE lv_ErrorNo 			INT          DEFAULT 0;
@@ -40,8 +43,7 @@ BEGIN
 			CustID              BIGINT UNSIGNED 
         ,   ScannedTime         DATETIME
         ,   PRIMARY KEY 		PK_Temp_ProcessedCustList_CustID_ScannedTime(CustID,ScannedTime)
-        , 	INDEX 				IX_Temp_ProcessedCustList_ScannedTime(ScannedTime)       
-     );
+	);
     
     INSERT INTO Temp_ProcessedCustList(CustID, ScannedTime)
 	SELECT DISTINCT 	temp.CustID
@@ -56,7 +58,5 @@ BEGIN
     INNER JOIN Temp_ProcessedCustList AS temp ON temp.CustID = his.CustID AND his.IsAppliedCC = 0
     SET his.IsAppliedCC = 1
     WHERE his.LastModifiedDate <= temp.ScannedTime;
-    
 END$$
-
 DELIMITER ;
