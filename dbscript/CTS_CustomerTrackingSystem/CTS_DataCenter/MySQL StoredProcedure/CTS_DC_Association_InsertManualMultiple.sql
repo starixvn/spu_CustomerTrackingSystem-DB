@@ -5,6 +5,7 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_InsertManualMultiple`(
 		IN ip_ManualAssociationList 	JSON
 )
+SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200622@Harvey
