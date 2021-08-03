@@ -24,7 +24,7 @@ BEGIN
 		Param's Explanation (filtered by):
 	*/
     DECLARE lv_CustID           BIGINT UNSIGNED;
-    DECLARE lv_CustomerClass    TINYINT;
+    DECLARE lv_CustomerClass    SMALLINT;
     
     DECLARE lv_CurrentDateTime  DATETIME DEFAULT CURRENT_TIME();
     DECLARE lv_SPName           VARCHAR(200) DEFAULT 'CTS_DC_SpecialCustClass_Remove'; 
