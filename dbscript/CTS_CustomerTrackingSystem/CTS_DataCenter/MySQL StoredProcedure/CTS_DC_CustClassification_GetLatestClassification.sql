@@ -16,6 +16,7 @@ BEGIN
 			- 20201214@Irena.Vo: Created [RedmineID: #145951]
             - 20210413@Irena.Vo: Get Reason. Ignore sub account for case CC = -1 [RedmineID: #141931]
 			- 20210419@Irena.Vo: Get Category more [RedmineID: #153617]
+			- 20210625@Long.Luu: Refactor  [Redmine ID: #157203]
 		Param's Explanation:
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetLatestClassification('1,2,1277,555555');
@@ -44,7 +45,7 @@ BEGIN
     CREATE TEMPORARY TABLE 		Temp_CustomerClass (
         	CustID				BIGINT UNSIGNED PRIMARY KEY 
 		,   CustomerClass       SMALLINT	
-        ,	Category			TEXT
+        ,	CategoryGroup		SMALLINT
         ,	ScannedTime			DATETIME
     );    
     
@@ -55,33 +56,33 @@ BEGIN
     
 	/* Insert Existed Special CC */
 	INSERT INTO Temp_ExistedSpecialCC (CustID, CustomerClass, ScannedTime)
-    SELECT 		c.CustID,	sp.CustomerClass, sp.LastModifiedDate
-    FROM 		Temp_Customers AS c
-		INNER JOIN 	CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = c.CustID;
+    SELECT c.CustID, sp.CustomerClass, sp.LastModifiedDate
+    FROM Temp_Customers AS c
+		INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = c.CustID;
     
     /* Insert Existed Lastest Category */
 	INSERT INTO Temp_ExistedLastestCategory(CustID, ScannedTime, CategoryID)
-    SELECT 		t1.CustID, t2.ScannedTime, MAX(t1.CategoryID)
-    FROM 		CTS_DataCenter.CTSCustomerClassification AS t1,
-    LATERAL (	SELECT cate.CustID, MAX(cate.LastModifiedDate) AS ScannedTime 
+    SELECT t1.CustID, t2.ScannedTime, MAX(t1.CategoryID)
+    FROM CTS_DataCenter.CTSCustomerClassification AS t1,
+		LATERAL (SELECT cate.CustID, MAX(cate.LastModifiedDate) AS ScannedTime 
 				FROM CTS_DataCenter.CTSCustomerClassification AS cate 
-					INNER JOIN Temp_Customers AS c ON c.CustID = cate.CustID AND cate.SportGroupID IN (0,200)
-				GROUP BY cate.CustID	) AS t2
-	WHERE 		t1.CustID = t2.CustID  AND t1.SportGroupID IN (0,200) AND t1.LastModifiedDate = t2.ScannedTime 
-    GROUP BY 	t1.CustID, t2.ScannedTime;
+					INNER JOIN Temp_Customers AS c ON c.CustID = cate.CustID
+				GROUP BY cate.CustID) AS t2
+	WHERE t1.CustID = t2.CustID AND t1.LastModifiedDate = t2.ScannedTime
+    GROUP BY t1.CustID, t2.ScannedTime;
     
     /* Update ScannedTime & CategoryGroup for Special CC */
-    UPDATE    	Temp_ExistedSpecialCC AS es
-		INNER JOIN 	Temp_ExistedLastestCategory AS ec ON ec.CustID = es.CustID
-    SET 	   		es.ScannedTime = GREATEST(es.ScannedTime,ec.ScannedTime)
-				,	es.CategoryID = ec.CategoryID;
+    UPDATE Temp_ExistedSpecialCC AS es
+		INNER JOIN Temp_ExistedLastestCategory AS ec ON ec.CustID = es.CustID
+    SET es.ScannedTime = GREATEST(es.ScannedTime, ec.ScannedTime),
+		es.CategoryID = ec.CategoryID;
     
-    DELETE 		ec
-    FROM 		Temp_ExistedLastestCategory AS ec 
-    INNER JOIN  Temp_ExistedSpecialCC AS es ON es.CustID = ec.CustID;
+    DELETE ec
+    FROM Temp_ExistedLastestCategory AS ec 
+		INNER JOIN Temp_ExistedSpecialCC AS es ON es.CustID = ec.CustID;
     
     /* Mapping Customer Class */
-    INSERT INTO Temp_CustomerClass (CustID, CustomerClass, Category, ScannedTime)
+    INSERT INTO Temp_CustomerClass (CustID, CustomerClass, CategoryGroup, ScannedTime)
     SELECT a.CustID, a.CustomerClass, cc.CategoryGroup, a.ScannedTime
 	FROM (	SELECT es.CustID,  es.CustomerClass, es.CategoryID, es.ScannedTime
 			FROM Temp_ExistedSpecialCC AS es
@@ -92,15 +93,16 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = a.CategoryID;
     
     /* Insert Customer Class = -1 */
-	INSERT INTO Temp_CustomerClass (CustID, CustomerClass, Category, ScannedTime)
-    SELECT 		temp.CustID, -1	AS CustomerClass, -1 AS Category, CURRENT_TIME()
-    FROM 		Temp_Customers AS temp
+	INSERT INTO Temp_CustomerClass (CustID, CustomerClass, CategoryGroup, ScannedTime)
+    SELECT temp.CustID, -1	AS CustomerClass, -1 AS CategoryGroup, CURRENT_TIME()
+    FROM Temp_Customers AS temp
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID = temp.CustID AND cust.CustSubID = 0 -- Existed CustID
 		LEFT JOIN Temp_ExistedSpecialCC AS es ON es.CustID = temp.CustID -- Not existed Special CC
 		LEFT JOIN Temp_ExistedLastestCategory AS ec ON ec.CustID = temp.CustID -- Not existed Category
-    WHERE 		es.CustID IS NULL AND ec.CustID IS NULL;
+    WHERE es.CustID IS NULL AND ec.CustID IS NULL;
     
     /* Get Lastest Customer Class to sync in mainDB */
-    SELECT DISTINCT	c.CustID, c.CustomerClass, c.Category, c.ScannedTime FROM Temp_CustomerClass AS c;
+    SELECT DISTINCT	c.CustID, c.CustomerClass, c.CategoryGroup AS Category, c.ScannedTime 
+    FROM Temp_CustomerClass AS c;
 END$$
 DELIMITER ;

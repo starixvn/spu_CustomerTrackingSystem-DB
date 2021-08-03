@@ -20,23 +20,44 @@ sp: BEGIN
 		Revisions:
             - 20210226@Jonas.Huynh: Created  [RedmineID: #150454]
             - 20210525@Irena.Vo: Change col name TaggingExclusion: CustID -> CTSCustID [RedmineID: #152965]
+			- 20210729@Irena.Vo: Refactor SP [RedmineID: #157203]
 		Param's Explanation:
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_AssociatedAccountMonitor_UpdateTaggingAssWithPA(1, 1, 1, 1, TRUE, @op_ErrorMessage);
 	*/ 
     DECLARE lv_CurrentDateTime 		DATETIME DEFAULT CURRENT_TIME();
     DECLARE lv_SPName 				VARCHAR(200) DEFAULT 'CTS_DC_AssociatedAccountMonitor_UpdateTaggingAssWithPA'; 
+    DECLARE lv_CustID 				BIGINT;
+    
+    DECLARE CONST_CHECKNORMAL		SMALLINT DEFAULT 20;
+    DECLARE CONST_UNCHECKNORMAL		SMALLINT DEFAULT 21;
     
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
     
+    SELECT CustID
+    INTO lv_CustID
+    FROM CTS_DataCenter.CTSCustomer 
+    WHERE CTSCustID = ip_CTSCustID AND CustSubID = 0;    
+    
     /*Insert Tagging Associated Exclusion With PA.*/
     IF (ip_IsExcludedTagAssPA = 1) THEN
 		INSERT INTO CTS_DataCenter.TaggingExclusion(CTSCustID, CreatedTime) 
 		SELECT ip_CTSCustID, lv_CurrentDateTime;
-		 
+		
+        INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
+		(CustID, CTSCustID, LastModifiedDate, LastModifiedBy, SourceTypeID, InsertDate, IsDataChanged, TaggingType)
+		SELECT DISTINCT lv_CustID
+			,	ip_CTSCustID
+			, 	lv_CurrentDateTime
+			, 	ip_CreatedBy
+			, 	CONST_CHECKNORMAL
+			, 	DATE(lv_CurrentDateTime)
+            ,	0
+            ,	0;
+        
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 		VALUES(30, lv_SPName, CONCAT('Unmark Tagging By Association With PA: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID), lv_CurrentDateTime, ip_CreatedBy);
     END IF;   
@@ -47,6 +68,16 @@ sp: BEGIN
 		FROM 	CTS_DataCenter.TaggingExclusion AS tagging
 		WHERE 	tagging.CTSCustID = ip_CTSCustID;
 		
+		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
+		(CustID, CTSCustID, LastModifiedDate, LastModifiedBy, SourceTypeID, InsertDate, IsDataChanged)
+		SELECT DISTINCT lv_CustID
+			,	ip_CTSCustID
+			, 	lv_CurrentDateTime
+			, 	ip_CreatedBy
+			, 	CONST_UNCHECKNORMAL
+			, 	DATE(lv_CurrentDateTime)
+            ,	0;
+        
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 		VALUES(31, lv_SPName, CONCAT('Mark Tagging By Association With PA: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID), lv_CurrentDateTime, ip_CreatedBy);
     END IF; 
