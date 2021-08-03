@@ -1,13 +1,13 @@
 USE [bodb_VR2Model]
 GO
-/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_Daily]    Script Date: 07/16/2021 15:11:56 ******/
+/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_Daily]    Script Date: 03-Aug-21 7:48:53 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 ALTER PROCEDURE [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_Daily]
 	@ListCustIds			VARCHAR(MAX),
-	--@FunctionId				SMALLINT,-- = -1,
+	@FunctionId				SMALLINT = -1,
 	@IsCheckLast14Days		BIT = 0 
 AS
 /*
@@ -119,15 +119,15 @@ BEGIN
 	SELECT val FROM dbo.SPU_StrSplit(@ListCustIds, ',');
 
 	-- LOG INPUT DATA
-	/*INSERT INTO dbo.CustomerClassification_InputLog(CustId,CreatedDate,CreatedTime,FunctionId)
+	INSERT INTO dbo.CustomerClassification_InputLog(CustId,CreatedDate,CreatedTime,FunctionId)
 	SELECT CustId, @CurrentDate, @CurrentDateTime, @FunctionId
 	FROM #tmpCustomers;
-	*/
+	
 	-- Remove closed & disabled accounts & SMA account & Internal Account
 	DELETE r WITH(ROWLOCK)
 		OUTPUT DELETED.CustId INTO #tmpDeletedCustomers(CustId)
 	FROM #tmpCustomers AS r
-		LEFT JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON r.CustId = c.custid
+		INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON r.CustId = c.custid
 	WHERE (c.[Enabled] = 0 OR c.roleid <> 1)
 	   OR c.recommend IN (52466,5707545)
 	   OR c.username LIKE '%CashOut';
@@ -142,14 +142,22 @@ BEGIN
 	*/
 
 	-- START
-	-- #1: Remove inactive customers to be scanned
-	INSERT INTO	#tmpActiveCustomers (CustId)
-	SELECT DISTINCT r.CustID
-	FROM #tmpCustomers AS r
-		INNER JOIN bodb_Account.dbo.[FactCustProductStatsDetail] AS s WITH(NOLOCK) ON r.CustId = s.CustID
-		INNER JOIN bodb02.dbo.League AS l WITH(NOLOCK) ON s.LeagueID = l.leagueid
-	WHERE s.RptFromDate >= @From30Date AND s.RptToDate <= @ToDate
-		AND l.LeagueGroupID NOT IN (42,74,108,113);
+	IF (@FunctionId = 4) 
+		BEGIN
+			INSERT INTO	#tmpActiveCustomers (CustId)
+			SELECT DISTINCT r.CustID
+			FROM #tmpCustomers AS r;
+		END
+	ELSE
+		BEGIN
+			INSERT INTO	#tmpActiveCustomers (CustId)
+			SELECT DISTINCT r.CustID
+			FROM #tmpCustomers AS r
+				INNER JOIN bodb_Account.dbo.[FactCustProductStatsDetail] AS s WITH(NOLOCK) ON r.CustId = s.CustID
+				--INNER JOIN bodb02.dbo.League AS l WITH(NOLOCK) ON s.LeagueID = l.leagueid
+			WHERE s.RptFromDate >= @From30Date AND s.RptToDate <= @ToDate;
+				--AND l.LeagueGroupID NOT IN (42,74,108,113);
+		END;
 
 	UPDATE r WITH(ROWLOCK, UPDLOCK)
 	SET r.IsActive = 1

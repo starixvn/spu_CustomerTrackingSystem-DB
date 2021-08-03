@@ -1,6 +1,6 @@
 USE [bodb_VR2Model]
 GO
-/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_RealTime]    Script Date: 02-Aug-21 5:39:59 PM ******/
+/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_RealTime]    Script Date: 03-Aug-21 7:50:03 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -21,7 +21,8 @@ AS
 		- 20210511@John.Ngo: Exclude Customer of Odd Feed Sites [Redmine ID: #154694]
 		- 20210512@John.Ngo: Exclude Customer Class for Internal Account [Redmine ID: #154844]
 		- 20210714@Long.Luu: Special rule for ManbetX CC2 [Redmine ID: #158465]
-		- 20210802@Long.Luu: Rescan for customers that have no category in CTS [Redmine ID: #158465]
+        - 20210802@Long.Luu: Rescan for customers that have no category in CTS [Redmine ID: #158465]
+		- 20210803@Long.Luu: Log Input Data for Classification [Redmine ID: #157203]
 		
 	Param's Explanation:
 */
@@ -29,6 +30,7 @@ BEGIN
 	
 	SET NOCOUNT ON;
 	DECLARE @GENERAL_SPORTID	SMALLINT = 200;
+	DECLARE @FUNCTIONID			SMALLINT = 1;
 
 	DECLARE @GENERALCATEGORY_NEWMEMBER			INT = 201
 		,	@GENERALCATEGORY_NORMALMEMBER		INT = 202
@@ -36,7 +38,8 @@ BEGIN
 		,	@GENERALCATEGORY_HIGHRISKPUNTER		INT = 204
 		,	@GENERALCATEGORY_VIP				INT = 205
 		,	@GENERALCATEGORY_PROBATION			INT = 206
-		,	@GENERALCATEGORY_BLANKED			INT = 0;
+		,	@GENERALCATEGORY_INACTIVE			INT = 1000
+        ,	@GENERALCATEGORY_BLANKED			INT = 0;
 
 	DECLARE	@CurrentDateTime			DATETIME = GETDATE()
 		,	@CurrentDate				DATE = GETDATE();
@@ -51,7 +54,8 @@ BEGIN
 		[WinlossRM]			MONEY NULL,
 		[Margin]			MONEY NULL,
 		[BetCount]			BIGINT NULL,
-		[ActiveDays]		INT NULL
+		[ActiveDays]		INT NULL,
+		[CategoryId]		SMALLINT NULL
 	);
 
 	CREATE CLUSTERED INDEX IX_tmpCustomerAccummulatedInfo_Margin ON #tmpCustomerAccummulatedInfo(
@@ -110,6 +114,11 @@ BEGIN
 	FROM @CustomersXML.nodes('//CustomerClassificationModel') AS T(C)
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 	
+	-- LOG INPUT DATA
+	INSERT INTO dbo.CustomerClassification_InputLog(CustId,CreatedDate,CreatedTime,FunctionId)
+	SELECT DISTINCT CustId, @CurrentDate, @CurrentDateTime, @FUNCTIONID
+	FROM #tmpCustomers;	
+	
 	-- START
 	-- #1: Remove SMA account
 	DELETE a WITH(ROWLOCK)
@@ -118,7 +127,13 @@ BEGIN
 	WHERE c.roleid <> 1;
 	
 	-- #2: GetCustomer Accummulated data
-	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, Site, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
+	DELETE a WITH(ROWLOCK)
+	FROM #tmpCustomers AS a
+		INNER JOIN bodb02.dbo.Customer AS cu WITH(NOLOCK) ON a.CustId = cu.custid
+	WHERE cu.recommend IN (52466,5707545)
+		OR cu.username LIKE '%CashOut';
+  
+	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, Site, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays, CategoryId)
 	SELECT	a.CustId
 		,	cu.Site
 		,	a.TurnoverRM
@@ -126,25 +141,25 @@ BEGIN
 		,	a.Margin
 		,	a.BetCount
 		,	a.ActiveDays
+		,	c.CategoryId
 	FROM dbo.CustomerClassification_LatestGeneralChanged AS a WITH(NOLOCK)
 		INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.CustId
-		LEFT JOIN bodb02.dbo.Customer AS cu WITH(NOLOCK) ON a.CustId = cu.custid
-	WHERE cu.recommend NOT IN (52466,5707545)
-	   OR cu.username NOT LIKE '%CashOut';
+		LEFT JOIN bodb02.dbo.Customer AS cu WITH(NOLOCK) ON a.CustId = cu.custid;
 	
 	-- #3: Insert Accounts's BetCount
 	INSERT INTO dbo.CustomerClassification_BetCount(CustId, SportId, BetCount)
 	SELECT c.CustId, @GENERAL_SPORTID, 0
 	FROM #tmpCustomers AS c WITH(NOLOCK)
 		LEFT JOIN dbo.CustomerClassification_BetCount AS v WITH(NOLOCK) ON c.CustId = v.CustId
-	WHERE c.CategoryId IN (@GENERALCATEGORY_NORMALMEMBER, @GENERALCATEGORY_VIP, @GENERALCATEGORY_BLANKED)
+	WHERE c.CategoryId IN (@GENERALCATEGORY_NORMALMEMBER, @GENERALCATEGORY_VIP)
 		AND v.CustId IS NULL;
 
 	-- #4: Remove Accounts less than 100 tickets compared to last scan
 	DELETE a WITH(ROWLOCK)
 	FROM #tmpCustomerAccummulatedInfo AS a
 		LEFT JOIN dbo.CustomerClassification_BetCount AS v WITH(NOLOCK) ON a.CustId = v.CustId
-	WHERE (v.CustId IS NOT NULL AND (a.BetCount - v.BetCount < 100));
+	WHERE a.CategoryId IN (@GENERALCATEGORY_NORMALMEMBER, @GENERALCATEGORY_VIP)
+		AND (v.CustId IS NOT NULL AND (a.BetCount - v.BetCount < 100));
 	
 	-- #5: Remove 'Odd Feed Sites'
 	DELETE a
@@ -165,7 +180,8 @@ BEGIN
 	-- #7: Remove 'haifa/manbetx doesn't change category'
 	DELETE a
 	FROM  #tmpCustomerAccummulatedInfo AS a WITH(ROWLOCK)
-	WHERE (a.Site IN ('haifa','manbetx') AND a.Margin < 0 AND a.WinlossRM < -5000);
+	WHERE (a.CategoryId NOT IN (@GENERALCATEGORY_INACTIVE, @GENERALCATEGORY_BLANKED)) 
+		AND (a.Site IN ('haifa','manbetx') AND a.Margin < 0 AND a.WinlossRM < -5000);
 	
 	-- #8: Classify Normal Member, Smart Punter & High Risk Punter
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
@@ -178,6 +194,7 @@ BEGIN
 				WHEN (a.Margin >= 0) THEN @GENERALCATEGORY_PROBATION
 				WHEN (a.Margin < 0 AND (a.Site NOT IN ('haifa','manbetx') OR a.Site IS NULL)) THEN @GENERALCATEGORY_NORMALMEMBER
 				WHEN (a.Margin < 0 AND a.Site IN ('haifa','manbetx') AND a.WinlossRM >= -5000) THEN @GENERALCATEGORY_NORMALMEMBER
+				WHEN (a.Margin < 0 AND a.Site IN ('haifa','manbetx')) THEN @GENERALCATEGORY_NEWMEMBER
 			END		
 		,	@CurrentDate
 		,	@CurrentDateTime
