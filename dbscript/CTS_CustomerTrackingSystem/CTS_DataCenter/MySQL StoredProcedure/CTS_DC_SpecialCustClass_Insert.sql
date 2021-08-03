@@ -3,11 +3,12 @@ DROP procedure IF EXISTS `CTS_DC_SpecialCustClass_Insert`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_SpecialCustClass_Insert`(
-		IN ip_Username varchar(50)
-    ,	IN ip_CustomerClass tinyint
-    ,	IN ip_IsAffectedToAssociation bit
-    ,	IN ip_UserID int
-    ,	OUT op_ErrorMessage varchar(200)
+		IN ip_Username					VARCHAR(50)
+    ,	IN ip_CustomerClass				SMALLINT
+    ,	IN ip_IsAffectedToAssociation	BIT
+    ,	IN ip_UserID					INT
+
+    ,	OUT op_ErrorMessage				VARCHAR(200)
 )
     SQL SECURITY INVOKER
 sp: BEGIN
@@ -17,14 +18,15 @@ sp: BEGIN
 		DB:			CTS_DataCenter
 		Original:
 
-		Revisions:
-		   - [20200905@Long.Luu][140996]: Created
-           - [20200908@Irena.Vo][141020]: Error MSG for the customers have VVIP before and Update CreatedFromFunction = 1 for special customer (Normal)
-           - [20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow.
-           - [20200923@Irena.Vo][141755]: Enhance SP
-		   - 20201214-20201229@Irena.Vo: Remove logic delete Probation List. Enhance logic get VVIP & Insert History Log. Enhance logic validate for RoleID = 1 [RedmineID: #145951]
+		Revisions: 
+		   - 20200905@Long.Luu: Created [Redmine ID: #140996]
+           - 20200908@Irena.Vo: Error MSG for the customers have VVIP before and Update CreatedFromFunction = 1 for special customer (Normal) [Redmine ID: #141020]
+           - 20200921@Irena.Vo: Enhance SP & insert Probation Management flow. [Redmine ID: #141755]
+		   - 20201229@Irena.Vo: Remove logic delete Probation List. Enhance logic get VVIP & Insert History Log. Enhance logic validate for RoleID = 1 [RedmineID: #145951]
            - 20210226@Irena.Vo: Update CategoryID from VVIP [RedmineID: #150454]
 		   - 20210419@Irena.Vo: Get Category more [RedmineID: #153617]
+		   - 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
+
 		Param's Explanation (filtered by):
 			- Maximum Customer Class number for input param = 127 
 	*/    
@@ -33,16 +35,19 @@ sp: BEGIN
     DECLARE lv_CustID			INT UNSIGNED;
 	DECLARE lv_SubscriberID 	INT;
     DECLARE	lv_CurrentDateTime	DATETIME DEFAULT CURRENT_TIME();
-    DECLARE	lv_SPName 			VARCHAR(100) 	DEFAULT 'CTS_DC_SpecialCustClass_Insert';        
-    
+    DECLARE	lv_SPName 			VARCHAR(100) 	DEFAULT 'CTS_DC_SpecialCustClass_Insert';
+	
+	DECLARE	CONST_CATEGORYID_VVIP 	INT DEFAULT 210;
+    DECLARE	CONST_GROUP_NORMAL		INT DEFAULT 200;
+
+
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;        
     END;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_AffectedCustomers;    
-	CREATE TEMPORARY TABLE Temp_AffectedCustomers 
-    (	 
+	CREATE TEMPORARY TABLE Temp_AffectedCustomers (	 
 			CTSCustID			BIGINT UNSIGNED PRIMARY KEY
     );    
     
@@ -72,7 +77,9 @@ sp: BEGIN
 	END IF;
     
     -- #1: get customer info
-    SELECT CTSCustID, CustID, SubscriberID
+    SELECT	CTSCustID
+		,	CustID
+		,	SubscriberID
     INTO lv_CTSCustID, lv_CustID, lv_SubscriberID
     FROM CTS_DataCenter.CTSCustomer 
     WHERE UserName = ip_Username OR UserName2 = ip_Username;    
@@ -84,7 +91,7 @@ sp: BEGIN
 	END IF;
     
      -- Existed VVIP CustomerClass before -> Display error message
-	IF EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification WHERE CustID = lv_CustID AND SportGroupID = 200 AND CategoryID = 210) THEN
+	IF EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification WHERE CustID = lv_CustID AND SportGroupID = CONST_GROUP_NORMAL AND CategoryID = CONST_CATEGORYID_VVIP) THEN
 		SET op_ErrorMessage = 'This account has already been marked with VVIP CustomerClass!';
         LEAVE sp;
 	END IF;
@@ -167,6 +174,11 @@ sp: BEGIN
 	FROM Temp_NewCustomerClass AS sp;
     
     /* GET LATEST CC */
-    SELECT 	DISTINCT CustId, CustomerClass, -1 AS Category, lv_CurrentDateTime AS ScannedTime FROM Temp_NewCustomerClass;
+    SELECT 	DISTINCT 
+			CustId
+		,	CustomerClass
+		,	-1 AS Category
+		,	lv_CurrentDateTime AS ScannedTime 
+	FROM Temp_NewCustomerClass;
 END$$
 DELIMITER ;

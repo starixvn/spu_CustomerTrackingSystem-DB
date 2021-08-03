@@ -6,6 +6,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Probation_Upd
 		IN ip_CustidList		JSON
 	,	IN ip_Remark 			VARCHAR(300)
 	,	IN ip_CreatedBy 		INT
+
     , 	OUT op_ErrorMessage 	VARCHAR(200)
 )
     SQL SECURITY INVOKER
@@ -17,14 +18,16 @@ sp: BEGIN
 		Original: 
 		Revisions:
 			- 20200918@Lex.Khuat [Redmine ID: #141755]: Created
-			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: #148723]
+            - 20210622@Aries.Nguyen: Update coding convention and improve locking   [Redmine ID: #157203]
 		
         Param's Explanation:
 			- ip_CustidList: Json list with CustID, SportGroupID, NewCategoryID
             - ip_Remark: Remark to manual mark in batch
             - ip_CreatedBy: UserID to mark in batch
-		Sample:
-			- call CTS_DataCenter.CTS_DC_CustClassification_Probation_Update('[{"CustID": 1408, "SportGroupID": 1, "NewCategoryID": 6}, {"CustID": 1408, "SportGroupID": 200, "NewCategoryID": 202}]', '', 8, @aaaa);
+
+		Example:
+			- CALL CTS_DataCenter.CTS_DC_CustClassification_Probation_Update('[{"CustID": 1408, "SportGroupID": 1, "NewCategoryID": 6}, {"CustID": 1408, "SportGroupID": 200, "NewCategoryID": 202}]', '', 8, @aaaa);
 	*/
     
     DECLARE lv_CurrentTime	DATETIME		DEFAULT CURRENT_TIME();
@@ -35,21 +38,32 @@ sp: BEGIN
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
 
-	#============================================
     DROP TEMPORARY TABLE IF EXISTS Temp_TargetCustomerCategory;
-    #============================================
-
     CREATE TEMPORARY TABLE Temp_TargetCustomerCategory (
-		CTSCustID			BIGINT UNSIGNED
-	, 	CustID				INT UNSIGNED
-	,	SubscriberID		INT	UNSIGNED
-    ,	SportGroupID		SMALLINT
-    ,	NewCategoryID		SMALLINT
-    ,	ParentID			SMALLINT
-    ,	PRIMARY KEY	PK_TempTargetCustomerCategory_CustID(CustID, SportGroupID, NewCategoryID) 
-	,	INDEX 		IX_TempTargetCustomerCategory_NewCategoryID(NewCategoryID)
+	    	CTSCustID			BIGINT UNSIGNED
+	    , 	CustID				INT UNSIGNED
+	    ,	SubscriberID		INT	UNSIGNED
+        ,	SportGroupID		SMALLINT
+        ,	NewCategoryID		SMALLINT
+        ,	ParentID			SMALLINT
+        ,	PRIMARY KEY	PK_TempTargetCustomerCategory_CustID(CustID, SportGroupID, NewCategoryID) 
+	    ,	INDEX 		IX_TempTargetCustomerCategory_NewCategoryID(NewCategoryID)
     );
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;
+    CREATE TEMPORARY TABLE Temp_CustInfo (
+	    	CTSCustID			BIGINT UNSIGNED
+	    , 	CustID				INT UNSIGNED
+        ,   SubscriberID		INT	UNSIGNED
+        ,	INDEX 		IX_Temp_CustInfo_CustID(CustID)
+    );
+
+    DROP TEMPORARY TABLE IF EXISTS Temp_SpecialCustomerClass;
+    CREATE TEMPORARY TABLE Temp_SpecialCustomerClass (
+	    	CTSCustID			BIGINT UNSIGNED
+        ,	INDEX 		IX_Temp_CustInfo_CTSCustID(CTSCustID)
+    );
+
     #========= GET DATA TO UPDATE =========
 	INSERT INTO Temp_TargetCustomerCategory(CustID, SportGroupID, NewCategoryID)
 	SELECT 	tmp.CustID
@@ -63,28 +77,30 @@ sp: BEGIN
 		 )) AS tmp;
     
 	#========= UPDATE CUSTOMER INFO =========
+    INSERT INTO Temp_CustInfo(CTSCustID, CustID, SubscriberID)
+    SELECT  cust.CTSCustID
+        ,   temp.CustID
+        ,   cust.SubscriberID
+    FROM Temp_TargetCustomerCategory AS temp 
+        INNER JOIN	CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID;
+
     UPDATE 	Temp_TargetCustomerCategory AS temp 
-	INNER JOIN	CTS_DataCenter.CTSCustomer AS cust
-		ON	temp.CustID = cust.CustID
+	    INNER JOIN	Temp_CustInfo AS cust ON temp.CustID = cust.CustID
 	SET		temp.CTSCustID = cust.CTSCustID
 		,	temp.SubscriberID = cust.SubscriberID;
     
     #========= VALIDATE SPORTGROUP =========
     UPDATE 	Temp_TargetCustomerCategory AS temp
-    INNER JOIN CTS_DataCenter.CustomerCategory AS cate
-		ON	temp.NewCategoryID = cate.CategoryID
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON	temp.NewCategoryID = cate.CategoryID
 	SET		temp.ParentID = cate.ParentID
-		,	temp.SportGroupID =		CASE	WHEN cate.ParentID = 200 THEN 200
-											ELSE temp.SportGroupID
-									END;
+		,	temp.SportGroupID =	 CASE	WHEN cate.ParentID = 200 THEN 200
+										ELSE temp.SportGroupID
+								 END;
 	
     #========= UPDATE GENERAL/DETAIL CATEGORIES =========
     UPDATE CTS_DataCenter.CTSCustomerClassification AS cc
-    INNER JOIN Temp_TargetCustomerCategory AS temp
-		ON	temp.CustID = cc.CustID
-        AND	temp.SportGroupID = cc.SportGroupID
-	INNER JOIN CTS_DataCenter.CustomerCategory AS cate
-		ON	cc.CategoryID = cate.CategoryID
+        INNER JOIN Temp_TargetCustomerCategory AS temp ON	temp.CustID = cc.CustID AND	temp.SportGroupID = cc.SportGroupID
+	    INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON	cc.CategoryID = cate.CategoryID
 	SET		cc.CTSCustID = temp.CTSCustID
 		,	cc.SubscriberID = temp.SubscriberID
         ,	cc.CategoryID = temp.NewCategoryID
@@ -92,33 +108,31 @@ sp: BEGIN
         ,	cc.LastModifiedDate = lv_CurrentTime
         ,	cc.LastModifiedBy = ip_CreatedBy
         ,	cc.LastScannedDate = DATE(lv_CurrentTime)
-	WHERE	temp.ParentID = cate.ParentID
+	WHERE temp.ParentID = cate.ParentID
 		AND	cate.ParentID in (1, 200);
             
     #========= LOG NEW CUSTOMER CATEGORIES HISTORY =========   
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
     (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, ActionType, IsAuto, InsertDate)
-    SELECT 	  temp.CustID
-			, temp.CTSCustID
-			, temp.NewCategoryID
-            , temp.SportGroupID
-            , lv_CurrentTime
-            , ip_CreatedBy
-            , 0
-            , 0
-            , 0
-            , 0
-			, 1
-            , 0
-            , DATE(lv_CurrentTime)
-	FROM 	Temp_TargetCustomerCategory AS temp;
+    SELECT  temp.CustID
+	    ,   temp.CTSCustID
+	    ,   temp.NewCategoryID
+        ,   temp.SportGroupID
+        ,   lv_CurrentTime
+        ,   ip_CreatedBy
+        ,   0
+        ,   0
+        ,   0
+        ,   0
+	    ,   1
+        ,   0
+        ,   DATE(lv_CurrentTime)
+	FROM  Temp_TargetCustomerCategory AS temp;
 
     #========= REMOVE PROBATION MONITOR DATA =========
     DELETE pam
     FROM CTS_DataCenter.ProbationAccountMonitor AS pam
-    INNER JOIN Temp_TargetCustomerCategory AS temp
-		ON	temp.CustID = pam.CustID
-        AND	temp.SportGroupID = pam.SportGroupID;
+    INNER JOIN Temp_TargetCustomerCategory AS temp ON temp.CustID = pam.CustID AND	temp.SportGroupID = pam.SportGroupID;
     
     #========= ADD USER LOG =========
     INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
@@ -130,11 +144,14 @@ sp: BEGIN
 	FROM Temp_TargetCustomerCategory;
     
     #========= SKIP SPECIAL + ROBOT FROM SENDING CUSTOMER CLASS TO MAINDB =========
+    INSERT INTO Temp_SpecialCustomerClass(CTSCustID)
+    SELECT temp.CTSCustID
+    FROM Temp_TargetCustomerCategory AS temp
+    INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc ON	temp.CTSCustID = sc.CTSCustID AND sc.CreatedFromFunction = 1;
+
     DELETE temp
     FROM Temp_TargetCustomerCategory AS temp
-    INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc
-		ON	temp.CTSCustID = sc.CTSCustID
-        AND sc.CreatedFromFunction = 1;
+    WHERE temp.CTSCustID IN (SELECT CTSCustID FROM Temp_SpecialCustomerClass);
     
     #========= SENDING CUSTOMER CLASS AFTER APPLY NEW GENERAL/DETAILED CUSTOMER CATEGORIES =========
     SELECT DISTINCT CustID,

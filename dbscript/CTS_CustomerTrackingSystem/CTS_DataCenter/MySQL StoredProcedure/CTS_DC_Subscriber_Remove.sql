@@ -1,28 +1,30 @@
-USE `CTS_DataCenter`;
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin,ctsWebAdmin" isFunction="0" isNested="0"></info>*/
 DROP procedure IF EXISTS `CTS_DC_Subscriber_Remove`;
 
 DELIMITER $$
-USE `CTS_DataCenter`$$
-CREATE DEFINER=`ctsWeb`@`%` PROCEDURE `CTS_DC_Subscriber_Remove`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Subscriber_Remove`(
 		IN ip_SubscriberID		INT UNSIGNED
 	,	IN ip_UserID 			INT
 
-    , 	OUT op_ErrorMessage 	VARCHAR(200))
+    , 	OUT op_ErrorMessage 	VARCHAR(200)
+)
 sp: BEGIN
 /*
 		Created:	20200914@Roger.Le
 		Task :		Function add new subscriber
 		DB:			CTS_DataCenter && CTS_Admin
 		Original: 
+
 		Revisions:
-            - [20200914@Roger.Le][138102]: Created 
-            - [20200924@Lex.Khuat][138102]: Spec changes, terminating now deactivates whole sub including all sites
+            - 20200914@Roger.Le: Created [Redmine ID: #138102]
+            - 20200924@Lex.Khuat: Spec changes, terminating now deactivates whole sub including all sites [Redmine ID: #138102]
+			- 20210702@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
             
             
 		Param's Explanation:
 	*/
     
-    DECLARE lv_CurrentTime DATETIME DEFAULT CURRENT_DATE();
+    DECLARE lv_CurrentTime		DATETIME DEFAULT CURRENT_DATE();
     DECLARE lv_SPName 			VARCHAR(200)	DEFAULT 'CTS_DC_Subscriber_Remove';
     
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
@@ -48,10 +50,10 @@ sp: BEGIN
 
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	SELECT	26
-	,	lv_SPName
-	,	CONCAT('Terminate subscriber: SubID_', SubscriberID, '; SubName_', SubscriberName, '; SubPrefix_', SubscriberPrefix, '; SubType_', SubscriberType, '; IsTest_', IsTest)
-	,	lv_CurrentTime
-	,	ip_UserID
+		,	lv_SPName
+		,	CONCAT('Terminate subscriber: SubID_', SubscriberID, '; SubName_', SubscriberName, '; SubPrefix_', SubscriberPrefix, '; SubType_', SubscriberType, '; IsTest_', IsTest)
+		,	lv_CurrentTime
+		,	ip_UserID
 	FROM CTS_Admin.Subscriber
 	WHERE SubscriberID = IFNULL(ip_SubscriberID, 0);
 

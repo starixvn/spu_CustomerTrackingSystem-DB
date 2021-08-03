@@ -2,7 +2,17 @@
 DROP PROCEDURE IF EXISTS `CTS_DC_Subscriber_Update`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Subscriber_Update`(OUT op_ErrorMessage varchar(2000), IN ip_SubscriberID int, IN ip_SubscriberName varchar(50), IN ip_SubscriberType tinyint, IN ip_SubscriberPrefix varchar(30), IN ip_IsTest bit, IN ip_SiteList json, IN ip_UserID int)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Subscriber_Update`(
+		OUT op_ErrorMessage			VARCHAR(2000)
+	
+	,	IN ip_SubscriberID			INT
+	,	IN ip_SubscriberName		VARCHAR(50)
+	,	IN ip_SubscriberType		TINYINT
+	,	IN ip_SubscriberPrefix		VARCHAR(30)
+	,	IN ip_IsTest				BIT
+	,	IN ip_SiteList				JSON
+	,	IN ip_UserID				INT
+)
     SQL SECURITY INVOKER
 sp: BEGIN
 	/*
@@ -16,6 +26,9 @@ sp: BEGIN
             - [20201118@Lex.Khuat][145576]: Fix issue multi site update skip prefix, remove rule validate duplicating site
             - [20200912@Lex.Khuat][146563]: Rollback code to #138102, no validating for updating multi sites sub
             - 20200911@Casey.Huynh: Return Subscriber is updated or Add New [Redmine ID: 148849]
+            - 20210412@Casey.Huynh: SET DCSStatus = 1 for New Subscriber [Redmine ID: 153202]
+			- 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
+
 		Param's Explanation:
 			- ip_SubscriberID: 0 => Insert mode, <> 0 => Update mode, input siteID
 			- ip_SubscriberType: 0 => Credit, 1 => Licensees
@@ -41,8 +54,8 @@ sp: BEGIN
 		, 	SiteName			VARCHAR(50)
 		, 	RoleMapping 		TINYINT
         ,	CurrentSubID		INT	DEFAULT 0
-        , 	INDEX			IX_Temp_Sites_SiteID (SiteID)
-        ,	INDEX			IX_Temp_Sites_CurrentSubID (CurrentSubID)
+        , 	INDEX				IX_Temp_Sites_SiteID (SiteID)
+        ,	INDEX				IX_Temp_Sites_CurrentSubID (CurrentSubID)
     );
     
 	CREATE TEMPORARY TABLE Temp_SitesDelete( 	 
@@ -51,8 +64,8 @@ sp: BEGIN
 		, 	RoleMapping 		TINYINT
 		,	SubscriberID		INT
         ,	SubscriberGroupID	SMALLINT UNSIGNED
-        , 	INDEX			IX_Temp_Sites_SiteID (SiteID)
-        ,	INDEX			IX_Temp_Sites_CurrentSubID (SubscriberID)
+        , 	INDEX				IX_Temp_Sites_SiteID (SiteID)
+        ,	INDEX				IX_Temp_Sites_CurrentSubID (SubscriberID)
     );
     
     #========= CHECK SUBSCRIBER NAME ALREADY EXISTS =========
@@ -86,10 +99,9 @@ sp: BEGIN
 		  SiteID				INT				PATH "$.SiteID" 
 		, SiteName 				VARCHAR(50) 	PATH "$.SiteName"
 		, RoleMapping			TINYINT 		PATH "$.RoleMapping" 
-		 )) as tmpTable
-	LEFT JOIN CTS_DataCenter.MappingSubscriberSite AS site
-		ON tmpTable.SiteID = site.SiteID
-        AND site.SubscriberID = lv_SubscriberID;
+		 )
+	) as tmpTable
+		LEFT JOIN CTS_DataCenter.MappingSubscriberSite AS site ON tmpTable.SiteID = site.SiteID AND site.SubscriberID = lv_SubscriberID;
 
     #========= CHECK IF SITEID DUPLICATED IN PARAM =========
     IF (EXISTS (SELECT 1
@@ -110,10 +122,10 @@ sp: BEGIN
 		#========= UPDATE SUBSCRIBER =========
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 		SELECT	27
-		,	lv_SPName
-        ,	CONCAT('Update subscriber: SubID_', SubscriberID, '; SubName_', SubscriberName, '; SubPrefix_', SubscriberPrefix, '; SubType_', SubscriberType, '; IsTest_', IsTest)
-        ,	lv_CurrentTime
-        ,	ip_UserID
+			,	lv_SPName
+			,	CONCAT('Update subscriber: SubID_', SubscriberID, '; SubName_', SubscriberName, '; SubPrefix_', SubscriberPrefix, '; SubType_', SubscriberType, '; IsTest_', IsTest)
+			,	lv_CurrentTime
+			,	ip_UserID
 		FROM CTS_Admin.Subscriber
         WHERE SubscriberID = lv_SubscriberID
 			AND (LOWER(SubscriberName) <> LOWER(IFNULL(ip_SubscriberName, ''))
@@ -129,15 +141,15 @@ sp: BEGIN
         
     ELSE
 		#========= INSERT SUBSCRIBER =========
-		INSERT INTO CTS_Admin.Subscriber (SubscriberName, SubscriberPrefix, SubscriberType, SubscriberStatus, CreatedDate, CreatedBy, IsTest)
+		INSERT INTO CTS_Admin.Subscriber (SubscriberName, SubscriberPrefix, SubscriberType, SubscriberStatus, CreatedDate, CreatedBy, IsTest, DCSStatus)
 		SELECT	ip_SubscriberName
 			,	ip_SubscriberPrefix
 			,	ip_SubscriberType
-			,	1
+			,	1 AS SubscriberStatus
 			,	lv_CurrentTime
 			,	ip_UserID
-			,	ip_IsTest;
-		
+			,	ip_IsTest
+			,	1 AS DCSStatus;
 		#========= GET NEW INSERTED SUBSCRIBER ID =========
 		SELECT	SubscriberID
 		INTO	lv_SubscriberID
@@ -191,17 +203,13 @@ sp: BEGIN
         ,	lv_CurrentTime
         ,	ip_UserID
 	FROM CTS_DataCenter.MappingSubscriberSite AS site
-    INNER JOIN Temp_Sites AS tmp
-		ON site.SiteID = tmp.SiteID
-		AND site.SubscriberID = tmp.CurrentSubID
+		INNER JOIN Temp_Sites AS tmp ON site.SiteID = tmp.SiteID AND site.SubscriberID = tmp.CurrentSubID
     WHERE tmp.CurrentSubID = lv_SubscriberID
 		AND (site.SiteName <> tmp.SiteName
 			OR site.RoleMapping <> tmp.RoleMapping);
     
     UPDATE CTS_DataCenter.MappingSubscriberSite AS site
-    INNER JOIN Temp_Sites AS tmp
-		ON site.SiteID = tmp.SiteID
-		AND site.SubscriberID = tmp.CurrentSubID
+		INNER JOIN Temp_Sites AS tmp ON site.SiteID = tmp.SiteID AND site.SubscriberID = tmp.CurrentSubID
     SET		site.SiteName = tmp.SiteName
 		,	site.RoleMapping = tmp.RoleMapping
         ,	site.SubscriberName = ip_SubscriberName
@@ -220,9 +228,8 @@ sp: BEGIN
         ,	site.SubscriberID
         ,	site.SubscriberGroupID
     FROM CTS_DataCenter.MappingSubscriberSite AS site
-    LEFT JOIN Temp_Sites AS tmp
-		ON site.SiteID = tmp.SiteID
-	WHERE site.SubscriberID = lv_SubscriberID
+		LEFT JOIN Temp_Sites AS tmp ON site.SiteID = tmp.SiteID
+	WHERE	site.SubscriberID = lv_SubscriberID
 		AND tmp.SiteID IS NULL;
 
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
@@ -235,9 +242,7 @@ sp: BEGIN
 
 	DELETE site
     FROM CTS_DataCenter.MappingSubscriberSite AS site
-    INNER JOIN Temp_SitesDelete AS del
-		ON site.SiteID = del.SiteID
-        AND site.SubscriberID = del.SubscriberID
+    INNER JOIN Temp_SitesDelete AS del ON site.SiteID = del.SiteID AND site.SubscriberID = del.SubscriberID
 	WHERE site.SubscriberID = lv_SubscriberID;
     
 	#======Return New SubID/SiteID for Update CTSCustomer

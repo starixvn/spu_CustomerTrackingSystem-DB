@@ -1,12 +1,12 @@
-DELIMITER $$
-USE CTS_DataCenter $$
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_Association_InsertManualMultiple`$$
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_Association_InsertAssociationByIP`;
 
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_Association_InsertAssociationByIP`(
-	IN 	ip_CoupleIPStats 	JSON,
-	IN 	ip_ScanDate			DATETIME,
-    
-    OUT op_ErrorMessage 	VARCHAR(200)
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_InsertAssociationByIP`(
+		IN 	ip_CoupleIPStats 	JSON
+	,	IN 	ip_ScanDate			DATETIME
+	
+	,	OUT op_ErrorMessage 	VARCHAR(200)
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -18,9 +18,10 @@ BEGIN
 
 		Revisions:
 			- 20210315@Long.Luu: Created [Redmine ID: #0000]
+			- 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
             
 		Example:
-			call CTS_DataCenter.CTS_DC_Association_InsertAssociationByIP ('[{"C1": 43600693, "C2": 45}]', '2021-01-11', @ErrorMessage);    
+			-CALL CTS_DataCenter.CTS_DC_Association_InsertAssociationByIP ('[{"C1": 43600693, "C2": 45}]', '2021-01-11', @ErrorMessage);    
 	*/ 
     
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 

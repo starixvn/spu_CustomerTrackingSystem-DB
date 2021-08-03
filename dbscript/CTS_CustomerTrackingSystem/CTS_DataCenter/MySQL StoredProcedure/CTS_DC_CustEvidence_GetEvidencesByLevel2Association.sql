@@ -18,14 +18,27 @@ BEGIN
            - 20210301@Harvey.Nguyen: Created  [Redmine ID: #150917]
 		   - 20210308@Jonas.Huynh: Update logic SP [Redmine ID: #150917]
            - 20210427@Aries.Nguyen: Enhance performance [Redmine ID: #152509] 
+		   - 20210622@Aries.Nguyen: Update coding convention and improve locking[Redmine ID: #157203]
            
-		Param's Explanation (filtered by):			
+		Param's Explanation (filtered by):	
+		
         Example:
             - CALL CTS_DataCenter.CTS_DC_CustEvidence_GetEvidencesByLevel2Association('17004');
 	*/
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Root_Customer;
     CREATE TEMPORARY TABLE Temp_Root_Customer(
+		 	CTSCustID		BIGINT UNSIGNED  
+		,	CustID          BIGINT UNSIGNED
+	);
+
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustID;
+    CREATE TEMPORARY TABLE Temp_CustID( 
+		CustID          BIGINT UNSIGNED PRIMARY KEY
+	);
+
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustID_Lv2;
+    CREATE TEMPORARY TABLE Temp_CustID_Lv2(
 		 	CTSCustID		BIGINT UNSIGNED  
 		,	CustID          BIGINT UNSIGNED
 	);
@@ -94,13 +107,15 @@ BEGIN
         ,	PRIMARY KEY(Level2, EvidenceID)
 	);
     
-    SET @sql = 	CONCAT("INSERT INTO Temp_Root_Customer (CustID) VALUES ('", REPLACE(ip_CustIDs, ",", "'),('"),"');");
+    SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_CustID (CustID) VALUES ('", REPLACE(ip_CustIDs, ",", "'),('"),"');");
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1;   
     
-    UPDATE      Temp_Root_Customer AS temp
-		INNER JOIN  CTS_DataCenter.CTSCustomer AS tcust ON tcust.CustID = temp.CustID AND tcust.CustSubID = 0
-    SET         temp.CTSCustID = tcust.CTSCustID;
+	INSERT IGNORE INTO Temp_Root_Customer(CTSCustID, CustID)
+	SELECT  tcust.CTSCustID 
+		,	temp.CustID
+	FROM Temp_CustID AS temp
+		INNER JOIN  CTS_DataCenter.CTSCustomer AS tcust ON tcust.CustID = temp.CustID AND tcust.CustSubID = 0;
     
 	# Get root device has association
 	INSERT INTO Temp_Root_Device(CustID,CTSCustID,DCSDeviceID)
@@ -150,8 +165,15 @@ BEGIN
     SELECT DISTINCT Level2
     FROM Temp_Association_Level2;
     
+	INSERT INTO Temp_CustID_Lv2(CTSCustID, CustID)
+	SELECT  lv2.Level2
+		,	cust.CustID
+	FROM Temp_Level2 AS lv2
+		INNER JOIN CTS_DataCenter.CTSCustomer cust ON cust.CTSCustID = lv2.Level2;
+
+
     UPDATE Temp_Level2 AS lv2
-    INNER JOIN CTS_DataCenter.CTSCustomer cust ON cust.CTSCustID = lv2.Level2
+    INNER JOIN Temp_CustID_Lv2 AS cust ON cust.CTSCustID = lv2.Level2
     SET lv2.CustID = cust.CustID;
     
     INSERT INTO Temp_Level2_Evidence(CustID, Level2, EvidenceID, CreatedDate)

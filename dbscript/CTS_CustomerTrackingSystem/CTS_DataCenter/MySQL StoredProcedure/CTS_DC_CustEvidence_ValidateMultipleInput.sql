@@ -6,8 +6,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_ValidateMultipleInp
 		IN ip_NewAccountEvidences 	JSON
 	,	IN ip_IsOverride 			BOOLEAN
 )
-SQL SECURITY INVOKER
-
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200608@Long.Luu
@@ -20,20 +19,23 @@ BEGIN
 		   - 20200824@Roger.Le: Evidence Upload - Overrite the data [Redmine ID: #137551]
 		   - 20201116@Adam.Tran: Implement Cust Evidence from file [Redmine ID: #141563]
 		   - 20210407@Adam.Tran: Prevent Adding Evidence for Sub Account [Redmine ID: #153007]
+		   - 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
+
 		Param's Explanation (filtered by):
-			call CTS_DataCenter.CTS_DC_CustEvidence_ValidateMultipleInput('[{"RowId":1,"Username":"member17","EvidenceCode":"2.1"},{"RowId":3,"Username":"M9D2CSub01","EvidenceCode":"6.1"}]', 0);
+
+		Example:
+			- CALL CTS_DataCenter.CTS_DC_CustEvidence_ValidateMultipleInput('[{"RowId":1,"Username":"member17","EvidenceCode":"2.1"},{"RowId":3,"Username":"M9D2CSub01","EvidenceCode":"6.1"}]', 0);
 	*/    
     
-	DROP TEMPORARY TABLE IF EXISTS tmpMultipleAccountEvidence;    
-	CREATE TEMPORARY TABLE tmpMultipleAccountEvidence 
-    (	 
+	DROP TEMPORARY TABLE IF EXISTS Temp_MultipleAccountEvidence;    
+	CREATE TEMPORARY TABLE Temp_MultipleAccountEvidence (	 
 			RowId			INT
 		,  	Username		VARCHAR(50)        
         , 	EvidenceCode	VARCHAR(10)        
-        , 	PRIMARY KEY	tmpMultipleAccountEvidence(Username,EvidenceCode) 
+        , 	PRIMARY KEY	Temp_MultipleAccountEvidence(Username,EvidenceCode) 
     );     
     
-    INSERT INTO tmpMultipleAccountEvidence(RowId, Username, EvidenceCode)
+    INSERT INTO Temp_MultipleAccountEvidence(RowId, Username, EvidenceCode)
 	SELECT 	tmpTable.RowId
 		, 	tmpTable.Username
 		, 	tmpTable.EvidenceCode
@@ -57,7 +59,7 @@ BEGIN
 				WHEN c.CustSubID IS NOT NULL AND c.CustSubID <> 0 THEN 'This Customer cannot be added evidence.'
                 ELSE ''
 			END AS RowStatus
-    FROM tmpMultipleAccountEvidence AS t
+    FROM Temp_MultipleAccountEvidence AS t
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS c ON t.Username = c.Username
         LEFT JOIN CTS_DataCenter.Evidence AS e ON t.EvidenceCode = e.EvidenceCode
         LEFT JOIN CTS_DataCenter.CustEvidence AS ce ON c.CTSCustID = ce.CTSCustID AND e.EvidenceID = ce.EvidenceID AND ce.Level = 0;	
