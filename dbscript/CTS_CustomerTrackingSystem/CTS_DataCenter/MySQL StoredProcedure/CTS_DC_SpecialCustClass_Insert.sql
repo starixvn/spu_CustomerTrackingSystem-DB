@@ -4,7 +4,7 @@ DROP procedure IF EXISTS `CTS_DC_SpecialCustClass_Insert`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_SpecialCustClass_Insert`(
 		IN ip_Username					VARCHAR(50)
-    ,	IN ip_CustomerClass				TINYINT
+    ,	IN ip_CustomerClass				SMALLINT
     ,	IN ip_IsAffectedToAssociation	BIT
     ,	IN ip_UserID					INT
 
