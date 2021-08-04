@@ -24,9 +24,8 @@ BEGIN
             - 202101295@Casey.Huynh: Add Ignore to Update statement [Redmine ID: 149639]
             - 20210506@Casey.Huynh: Remove Error Message Log [Redmine ID: 154633]
 			- 20210622@Aries.Nguyen: Update coding convention and improve locking [Redmine ID: #157203]
-
+			- 20210804@Irena.Vo: Fix issue No rescan for existed Customer [Redmine ID: #159706]
 		Param's Explanation (filtered by):
-        
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CTSCustomer_Insert ('[{"BatchId":1,"CustID":1,"CustStatusID":0,"Username":"SA-SD$","Username2":null,"Site":"BEST-ODDS","SiteId":1,"RoleId":4,"CurrencyId":1,"Currency":"SD$","Srecommend":1,"Mrecommend":0,"Recommend":0,"CreatedDate":"2020-04-24T03:18:00"},{"BatchId":1,"CustId":2,"CustSubId":0,"Username":"SA-RM","Username2":null,"Site":"BEST-ODDS","SiteId":1,"RoleId":4,"CurrencyId":2,"Currency":"RM","Srecommend":2,"Mrecommend":0,"Recommend":0,"CreatedDate":"2020-04-24T03:18:00"}]')
 	*/
@@ -164,7 +163,6 @@ BEGIN
 		,	cus.UserName
     	,	cus.RegisterName
     	,	cus.CustSubID
-		,	tmpCus.IsExisting
     FROM	Temp_CTSCustomer AS tmpCus
 		INNER JOIN 	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID AND tmpCus.CustSubID = cus.CustSubID;    
 END$$
