@@ -8,6 +8,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Subscriber_Remove`(
 
     , 	OUT op_ErrorMessage 	VARCHAR(200)
 )
+	SQL SECURITY INVOKER
 sp: BEGIN
 /*
 		Created:	20200914@Roger.Le
