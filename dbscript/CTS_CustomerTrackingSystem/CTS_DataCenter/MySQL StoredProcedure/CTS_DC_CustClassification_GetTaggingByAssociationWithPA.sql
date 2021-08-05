@@ -18,6 +18,7 @@ BEGIN
 		   - 20210427@Aries.Nguyen: Enhance performance [Redmine ID: #152509] 
 		   - 20210525@Irena.Vo: Change col name TaggingExclusion: CustID -> CTSCustID [Redmine ID: 152965]
 		   - 20210722@Long.Luu: Refactor  [Redmine ID: #157203]
+           - 20210804@Irena.Vo: Fix issue get Duplicate list Association Remove [Redmine ID: #159706]
 		Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetTaggingByAssociationWithPA('1268,38665541,17004,32339123379301,3481646');
@@ -76,7 +77,7 @@ BEGIN
     CREATE TEMPORARY TABLE 	Temp_AssociationRemoveAccounts (
 			FromCTSCustID 	BIGINT UNSIGNED
 		,	ToCTSCustID		BIGINT UNSIGNED
-        ,	PRIMARY KEY 	PK_Temp_AssociationRemoveAccounts (FromCTSCustID)
+        ,	PRIMARY KEY 	PK_Temp_AssociationRemoveAccounts (FromCTSCustID,ToCTSCustID)
         ,	KEY				IX_Temp_AssociationRemoveAccounts_ToCTSCustID (ToCTSCustID)
 	); 
     

@@ -31,10 +31,11 @@ BEGIN
                 - 20210525@Irena.Vo: Change col name PinCustomerCategory: CustID -> CTSCustID [Redmine ID: 152965]
 				- 20210608@Casey.Huynh: Add Inactive Category (1001, 1002). Remove redundant New member log after Remove PA [Redmine ID: 156465]
 				- 20210722@Long.Luu: Refactor. Update logic [Redmine ID: #157203]
+				- 20210804@Irena.Vo: Fix issue no view History log [Redmine ID: #159706]
 		Param's Explanation (filtered by):
         Example:
-				- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount('[{"CustId": "2324948","CategoryId":"206","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","LastXDaysMargin":100,"ProbationPeriodWinloss":100,"TaggingID":13,"TaggingType":1}]',@opp);
-	*/ 
+				- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount('[{"CustId": "43600693","CategoryId":"1000","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","TaggingID":10,"TaggingType":1}]',@or);
+*/ 
     DECLARE	CONST_GROUP_PA 							INT DEFAULT 0;
 	DECLARE	CONST_GROUP_NORMAL 						INT DEFAULT 200;
     
@@ -221,10 +222,10 @@ BEGIN
     
     /*	UPDATE SOURCE TYPE */    
     UPDATE 	Temp_NewClassification AS temp 
-	SET 	temp.SourceTypeID =(CASE WHEN temp.OldCateGroup IS NULL AND temp.NewCateGroup = CONST_CATEGORY_NEWMEMBER THEN CONST_SOURCETYPE_LESSTHAN10TICKETS
+	SET 	temp.SourceTypeID =(CASE WHEN (temp.OldCateGroup IS NULL OR temp.OldCateGroup = CONST_CATEGORY_NEWMEMBER) AND temp.NewCateGroup = CONST_CATEGORY_NEWMEMBER THEN CONST_SOURCETYPE_LESSTHAN10TICKETS
 									 WHEN temp.OldCateGroup IN (CONST_CATEGORY_NEWMEMBER,CONST_CATEGORY_INACTIVE) AND temp.NewCateGroup NOT IN (CONST_CATEGORY_NEWMEMBER,CONST_CATEGORY_INACTIVE) THEN CONST_SOURCETYPE_AFTER10TICKETS 
 									 WHEN temp.OldCateGroup = CONST_CATEGORY_PROBATION AND temp.NewCateGroup IN (CONST_CATEGORY_SMART, CONST_CATEGORY_HIGHRISK) THEN CONST_SOURCETYPE_PASSPROBATION
-									 WHEN (temp.OldCateGroup = CONST_CATEGORY_PROBATION AND temp.NewCateGroup = CONST_CATEGORY_PROBATION) THEN CONST_SOURCETYPE_FAILPROBATION
+									 WHEN temp.OldCateGroup = CONST_CATEGORY_PROBATION AND temp.NewCateGroup = CONST_CATEGORY_PROBATION THEN CONST_SOURCETYPE_FAILPROBATION
                                      WHEN (temp.OldCateGroup IS NULL OR temp.OldCateGroup IN (CONST_CATEGORY_NEWMEMBER,CONST_CATEGORY_NORMALMEMBER,CONST_CATEGORY_VIP)) AND temp.NewCateGroup = CONST_CATEGORY_INACTIVE THEN CONST_SOURCETYPE_INACTIVENORMAL 
                                      WHEN temp.OldCateGroup IN (CONST_CATEGORY_SMART,CONST_CATEGORY_HIGHRISK,CONST_CATEGORY_PROBATION) AND temp.NewCateGroup = CONST_CATEGORY_INACTIVE THEN CONST_SOURCETYPE_INACTIVEPROPUNTER
                                      ELSE CONST_SOURCETYPE_SCANONSCHEDULE
@@ -233,7 +234,7 @@ BEGIN
 	
     UPDATE 	Temp_NewClassification AS temp
 	SET 	temp.IsDataChanged = (CASE WHEN temp.NewCateID = temp.OldCateID AND temp.SourceTypeID <> CONST_SOURCETYPE_FAILPROBATION THEN 0 /*No update category*/ ELSE temp.IsDataChanged END)
-	WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);     
+	WHERE 	temp.ActionType = CONST_ACTIONTYPE_UPDATE;     
     
     /* UPDATE TARGET CC */
     UPDATE Temp_NewClassification AS temp 
