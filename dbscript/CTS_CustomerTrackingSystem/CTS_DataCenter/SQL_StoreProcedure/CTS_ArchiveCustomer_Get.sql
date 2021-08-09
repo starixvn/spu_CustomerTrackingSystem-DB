@@ -1,10 +1,10 @@
-/*<info serverAlias="DB05-bodb_Customer" executers="bodbSPUNet" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBARCCUST-bodb_Customer" executers="bodbSPUNet" viewers="" isFunction="0" isNested="0"></info>*/
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
 GO
 ALTER PROCEDURE	CTS_ArchiveCustomer_Get
 		@lastArchiveDate	DATETIME
-	,	@lastCustId			INT UNSIGNED
+	,	@lastCustId			INT
 	,	@rowSize			INT = 500
     ,	@custType			TINYINT
 AS
