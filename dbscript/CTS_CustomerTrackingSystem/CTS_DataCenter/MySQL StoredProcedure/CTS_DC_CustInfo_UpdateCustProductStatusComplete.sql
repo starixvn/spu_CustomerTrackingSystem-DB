@@ -14,26 +14,22 @@ BEGIN
 		Task:		CTSCustomer (Credit Cust Status) by CustProductStatus_History [Redmine ID: #152259]
 		DB:			CTS_DataCenter
 		Original:
-
 		Revisions:
 			-	20210208@Casey.Huynh: Created [Redmine ID: 149941]
 		Param's Explanation (filtered by):
-		
 		Example: 
 	*/
 
-	DROP TEMPORARY TABLE IF EXISTS TempCTSCustomer;
-	CREATE TEMPORARY TABLE TempCTSCustomer(
+	DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomer;
+	CREATE TEMPORARY TABLE Temp_CTSCustomer(
 			CustID			INT UNSIGNED
         ,	CustStatusID	TINYINT
-  
-		,	INDEX IX_TempCTSCustomer_CustID(CustID)
+		,	INDEX IX_Temp_CTSCustomer_CustID(CustID)
 	);	
  
-	INSERT INTO TempCTSCustomer(CustID, CustStatusID)
+	INSERT INTO Temp_CTSCustomer(CustID, CustStatusID)
 	SELECT	js.CustID
 		,	js.CustStatusID
-		
 	FROM JSON_TABLE(ip_CustProductStatus, 
 		"$[*]" COLUMNS(
 				CustID			INT UNSIGNED	PATH "$.CustID"
@@ -42,7 +38,7 @@ BEGIN
 	) AS js;	
        
 	UPDATE 		CTS_DataCenter.CTSCustomer AS ctsCust
-		INNER JOIN 	TempCTSCustomer AS tempCust ON ctsCust.CustID = tempCust.CustID
+		INNER JOIN 	Temp_CTSCustomer AS tempCust ON ctsCust.CustID = tempCust.CustID
 	SET		ctsCust.CustStatusID = tempCust.CustStatusID
 		,	ctsCust.ModifiedTime = CURRENT_TIMESTAMP(4)
 	WHERE	ctsCust.CustSubID = 0;
@@ -55,6 +51,5 @@ BEGIN
 	UPDATE	CTS_DataCenter.SystemParameter AS s
 	SET		s.ParameterValue = ip_LastUpdateCustID
 	WHERE	s.ParameterID = 19;
-
 END$$
 DELIMITER ;
