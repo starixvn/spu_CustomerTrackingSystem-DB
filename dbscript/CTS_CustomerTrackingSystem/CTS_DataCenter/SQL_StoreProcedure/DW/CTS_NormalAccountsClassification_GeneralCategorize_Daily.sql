@@ -1,10 +1,3 @@
-USE [bodb_VR2Model]
-GO
-/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_Daily]    Script Date: 03-Aug-21 7:48:53 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
 ALTER PROCEDURE [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_Daily]
 	@ListCustIds			VARCHAR(MAX),
 	@FunctionId				SMALLINT = -1,
@@ -152,7 +145,6 @@ BEGIN
 	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @ListCustIds, @ResultDataMode = 1;	
 	
 	-- #3: Sum data by custid
-	WHERE c.[Enabled] = 0 OR c.roleid <> 1;
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
 	SELECT	a.CustId
 		,	SUM(a.TurnoverRM)
