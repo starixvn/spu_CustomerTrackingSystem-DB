@@ -29,9 +29,7 @@ CREATE TABLE ArchiveCustomer_CTSCustomer(
 
 INSERT INTO SystemParameter(ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
 VALUES	(24, 'ArchiveCustomer_LastTime', 'Last Archive Time', 'DATETIME(3)', '2021-06-10 00:00:00')
-	,	(24, 'ArchiveCustomer_LastCustID', 'Last CustID per Archive Time', 'INT UNSIGNED', '2021-06-10 00:00:00');
-
-;SELECT * FROM SystemParameter;
+	,	(25, 'ArchiveCustomer_LastCustID', 'Last CustID per Archive Time', 'INT UNSIGNED', '2021-06-10 00:00:00');
 
 
 

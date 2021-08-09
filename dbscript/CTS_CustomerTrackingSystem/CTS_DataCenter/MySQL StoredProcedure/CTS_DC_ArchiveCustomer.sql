@@ -24,7 +24,7 @@ sp: BEGIN
 			
 	*/
     DECLARE lv_MaxArchiveTime DATETIME(3);
-    DECLARE lv_MaxCustID BIGINT UNSIGNED;
+    DECLARE lv_MaxCustID INT UNSIGNED;
     DECLARE lv_MinArchiveDate DATETIME(3);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_InputCustomer;
