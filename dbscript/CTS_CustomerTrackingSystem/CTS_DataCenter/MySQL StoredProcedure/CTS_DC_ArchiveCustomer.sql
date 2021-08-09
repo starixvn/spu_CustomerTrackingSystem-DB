@@ -4,6 +4,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_ArchiveCustomer`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_ArchiveCustomer`(
 		IN ip_CustomerList JSON
+	,	IN ip_CustType TINYINT
 )
 	SQL SECURITY INVOKER
 sp: BEGIN
@@ -320,7 +321,7 @@ sp: BEGIN
     
     /********UPDATE SYSTEM PARAMETER*****************************************/
     /************************************************************************/
-    SELECT 'aa', c.* FROM Temp_ArchiveCTSCustomer c;
+
     IF EXISTS(SELECT 1 FROM  Temp_ArchiveCTSCustomer)
     THEN
 		SELECT MAX(ArchivedDateMainDB) 
@@ -337,14 +338,26 @@ sp: BEGIN
 		INTO lv_MaxCustID
 		FROM Temp_ArchiveCTSCustomer
 		WHERE ArchivedDateMainDB = lv_MaxArchiveTime;
-
-		UPDATE CTS_DataCenter.SystemParameter
-		SET ParameterValue = lv_MaxArchiveTime
-		WHERE ParameterID = 24;
 		
-		UPDATE CTS_DataCenter.SystemParameter
-		SET ParameterValue = lv_MaxCustID
-		WHERE ParameterID = 25;
+        IF (ip_CustType = 0) THEN
+			UPDATE CTS_DataCenter.SystemParameter
+			SET ParameterValue = lv_MaxArchiveTime
+			WHERE ParameterID = 24;
+			
+			UPDATE CTS_DataCenter.SystemParameter
+			SET ParameterValue = lv_MaxCustID
+			WHERE ParameterID = 25;
+		END IF;
+        
+        IF (ip_CustType = 1) THEN
+			UPDATE CTS_DataCenter.SystemParameter
+			SET ParameterValue = lv_MaxArchiveTime
+			WHERE ParameterID = 26;
+			
+			UPDATE CTS_DataCenter.SystemParameter
+			SET ParameterValue = lv_MaxCustID
+			WHERE ParameterID = 27;
+		END IF;
     END IF;
 END$$
 DELIMITER ;

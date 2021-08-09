@@ -28,8 +28,7 @@ CREATE TABLE ArchiveCustomer_CTSCustomer(
 ) ENGINE=InnoDB;
 
 INSERT INTO SystemParameter(ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
-VALUES	(24, 'ArchiveCustomer_LastTime', 'Last Archive Time', 'DATETIME(3)', '2021-06-10 00:00:00')
-	,	(25, 'ArchiveCustomer_LastCustID', 'Last CustID per Archive Time', 'INT UNSIGNED', '2021-06-10 00:00:00');
-
-
-
+VALUES	(24, 'ArchiveCustomer_Credit_LastTime', 'Last Archive Time', 'DATETIME(3)', '2021-06-10 00:00:00')
+	,	(25, 'ArchiveCustomer_Credit_LastCustID', 'Last CustID per Archive Time', 'INT UNSIGNED', '2021-06-10 00:00:00')
+	,	(26, 'ArchiveCustomer_Deposit_LastTime', 'Last Archive Time', 'DATETIME(3)', '2021-06-10 00:00:00')
+	,	(27, 'ArchiveCustomer_Deposit_LastCustID', 'Last CustID per Archive Time', 'INT UNSIGNED', '2021-06-10 00:00:00');
