@@ -28,9 +28,13 @@ BEGIN
 	END;
 
 	CREATE TABLE #tmpCustomerClassification (
-			CustId			INT NOT NULL PRIMARY KEY		
-		,	CateId			TINYINT NULL
-	);
+			CustId				INT NOT NULL PRIMARY KEY		
+		,	CateId				TINYINT NULL
+		,	TWBetCount			INT		NULL
+		,	TWGroupBettingRate	MONEY	NULL
+		,	TWTicketRejectRate	MONEY	NULL
+		,	TWDesktopUsageRate	MONEY	NULL
+	);	
 
 	INSERT INTO #tmpCustomerClassification(CustId)
 	SELECT	val AS CustId
@@ -38,6 +42,8 @@ BEGIN
 	
 	UPDATE cc
 	SET cc.CateId = 8
+		, cc.TWDesktopUsageRate = lup.DesktopPer
+		, cc.TWTicketRejectRate = lup.RejectPer
 	FROM #tmpCustomerClassification cc
 	INNER JOIN dbo.LicUserProfile lup WITH (NOLOCK) ON cc.CustId = lup.CustId
 	WHERE lup.ParlayPer IS NULL
@@ -46,6 +52,8 @@ BEGIN
 
 	UPDATE cc
 	SET cc.CateId = 7
+		, cc.TWBetCount = lup.TotalBetCount
+		, cc.TWGroupBettingRate = lup.GroupBettingPer
 	FROM #tmpCustomerClassification cc
 	INNER JOIN dbo.LicUserProfile lup WITH (NOLOCK) ON cc.CustId = lup.CustId
 	WHERE cc.CateId IS NULL
@@ -60,6 +68,10 @@ BEGIN
 	SELECT CustId AS 'CustID'
 		,CateId AS 'TaggingID'
 		,2 AS 'TaggingType'
+		,TWBetCount			
+		,TWGroupBettingRate	
+		,TWTicketRejectRate	
+		,TWDesktopUsageRate	
 	FROM #tmpCustomerClassification
 
 
