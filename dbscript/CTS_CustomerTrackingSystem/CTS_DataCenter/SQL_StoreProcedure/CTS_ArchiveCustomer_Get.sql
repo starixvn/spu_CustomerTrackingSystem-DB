@@ -9,16 +9,15 @@ ALTER PROCEDURE	CTS_ArchiveCustomer_Get
     ,	@custType			TINYINT
 AS
 /*
-	Creator:	20210205@CaseyHuynh
-	Task:		Get updated Customer_History [Redmine ID: 149941]
-	Database:	bodb_CustHistory
+	Creator:	20211008@CaseyHuynh
+	Task:		Get Archive Customer [Redmine ID: 159611]
+	Database:	bodb_Customer
 	
 	Revisions:
-		- 20210205@CaseyHuynh: Created [Redmine ID: 149941]
+		- 20210205@CaseyHuynh: Created [Redmine ID: 159611]
 
 	Developer's Notes:
-		- @Example:			NULL		- Explaination [DEFAULT]
-
+    
 	EXEC CTS_ArchiveCustomer_Get '2021-02-03 03:35:51.810',100,150,1	
 
 */
