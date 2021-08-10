@@ -32,22 +32,22 @@ sp: BEGIN
     CREATE TEMPORARY TABLE Temp_InputCustomer
     (
 			CustID	INT UNSIGNED
-        ,	ArchivedDateMainDB	DATETIME(3)
+        ,	ArchivedDate	DATETIME(3)
         
-        ,	PRIMARY KEY Temp_InputCustomer(ArchivedDateMainDB, CustID)
+        ,	PRIMARY KEY Temp_InputCustomer(ArchivedDate, CustID)
     );
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ArchiveCustDCSAccount;
     CREATE TEMPORARY TABLE Temp_ArchiveCustDCSAccount(		
 			AccountID BIGINT UNSIGNED
         ,	CTSCustID BIGINT UNSIGNED
-        ,	ArchivedDateMainDB	DATETIME(3)	
-        ,	PRIMARY KEY PK_Temp_ArchiveCustDCSAccount_AccountID(AccountID, ArchivedDateMainDB)
+        ,	ArchivedDate	DATETIME(3)	
+        ,	PRIMARY KEY PK_Temp_ArchiveCustDCSAccount_AccountID(AccountID, ArchivedDate)
     ); 
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ArchiveCTSCustomer;
     CREATE TEMPORARY TABLE Temp_ArchiveCTSCustomer(		
-        	ArchivedDateMainDB	DATETIME(3)
+        	ArchivedDate	DATETIME(3)
 		,	CTSCustID	BIGINT UNSIGNED
 		, 	CustID	INT UNSIGNED
         ,	CustSubID	BIGINT UNSIGNED
@@ -56,23 +56,23 @@ sp: BEGIN
         ,	SubscriberID	INT
         ,	RoleID			TINYINT
         
-        ,	PRIMARY KEY Temp_ArchiveCustomer(CTSCustID, ArchivedDateMainDB)
+        ,	PRIMARY KEY Temp_ArchiveCustomer(CTSCustID, ArchivedDate)
         ,	INDEX Temp_ArchiveCustomer(CustID, CustSubID)
     ); 
 	
 	/***********************GET ARCHIVE DATA TO TEMPTABLE*************************************************************/
-    INSERT INTO Temp_InputCustomer(CustID, ArchivedDateMainDB)
+    INSERT INTO Temp_InputCustomer(CustID, ArchivedDate)
 	SELECT		CustID	
-			,	ArchivedDateMainDB
+			,	ArchivedDate
 	FROM JSON_TABLE(ip_CustomerList,
 		 "$[*]" COLUMNS(
 						CustID				INT	 UNSIGNED		PATH "$.CustID" 
-					,	ArchivedDateMainDB	DATETIME(3)			PATH "$.ArchivedDateMainDB"
+					,	ArchivedDate	DATETIME(3)			PATH "$.ArchivedDate"
 				)
 	) AS js;
     
-    INSERT INTO Temp_ArchiveCTSCustomer(ArchivedDateMainDB, CTSCustID, CustID, CustSubID, UserName, UserName2, SubscriberID, RoleID)
-    SELECT tmpCus.ArchivedDateMainDB
+    INSERT INTO Temp_ArchiveCTSCustomer(ArchivedDate, CTSCustID, CustID, CustSubID, UserName, UserName2, SubscriberID, RoleID)
+    SELECT tmpCus.ArchivedDate
 		,	cus.CTSCustID
         ,	cus.CustID
         ,	cus.CustSubID
@@ -83,7 +83,7 @@ sp: BEGIN
     FROM Temp_InputCustomer AS tmpCus
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID;
         
-    INSERT IGNORE INTO Temp_ArchiveCustDCSAccount(AccountID, CTSCustID, ArchivedDateMainDB)
+    INSERT IGNORE INTO Temp_ArchiveCustDCSAccount(AccountID, CTSCustID, ArchivedDate)
     SELECT 	tmpCus.CTSCustID
 		,	cda.AccountID
         ,	cda.AccountID
@@ -91,20 +91,20 @@ sp: BEGIN
     INNER JOIN CTS_DataCenter.CustDCSAccount AS cda ON tmpCus.CTSCustID = cda.CTSCustID;
    
     /***********************REMOVE PREVIOUS ARCHIVE DATA*************************************************************/
-    SELECT MIN(ArchivedDateMainDB)
+    SELECT MIN(ArchivedDate)
     INTO lv_MinArchiveDate
     FROM Temp_ArchiveCTSCustomer;
     
-    IF EXISTS (SELECT 1 FROM CTS_DataCenter.ArchiveCustomer_CTSCustomer AS arcCus WHERE ArchivedDateMainDB < lv_MinArchiveDate)
+    IF EXISTS (SELECT 1 FROM CTS_DataCenter.ArchiveCustomer_CTSCustomer AS arcCus WHERE ArchivedDate < lv_MinArchiveDate)
     THEN
 		DELETE  arcCus
 		FROM	ArchiveCustomer_CTSCustomer AS arcCus
-		WHERE	ArchivedDateMainDB < lv_MinArchiveDate;
+		WHERE	ArchivedDate < lv_MinArchiveDate;
 	END IF;
     
     /***********************BACKUP ARCHIVE DATA*************************************************************/
-    INSERT IGNORE INTO CTS_DataCenter.ArchiveCustomer_CTSCustomer(ArchivedDateMainDB, CTSCustID, SubscriberID, CustID, CustSubID, UserName, UserName2, RoleID, InsertTime)
-    SELECT	tmpCus.ArchivedDateMainDB
+    INSERT IGNORE INTO CTS_DataCenter.ArchiveCustomer_CTSCustomer(ArchivedDate, CTSCustID, SubscriberID, CustID, CustSubID, UserName, UserName2, RoleID, InsertTime)
+    SELECT	tmpCus.ArchivedDate
 		,	tmpCus.CTSCustID
         ,	tmpCus.SubscriberID
         ,	tmpCus.CustID
@@ -324,7 +324,7 @@ sp: BEGIN
 
     IF EXISTS(SELECT 1 FROM  Temp_ArchiveCTSCustomer)
     THEN
-		SELECT MAX(ArchivedDateMainDB) 
+		SELECT MAX(ArchivedDate) 
 		INTO lv_MaxArchiveTime
 		FROM Temp_ArchiveCTSCustomer;
         
@@ -332,12 +332,12 @@ sp: BEGIN
         
         SELECT MAX(CustID) 
 		FROM Temp_ArchiveCTSCustomer
-		WHERE ArchivedDateMainDB = lv_MaxArchiveTime;
+		WHERE ArchivedDate = lv_MaxArchiveTime;
         
 		SELECT MAX(CustID) 
 		INTO lv_MaxCustID
 		FROM Temp_ArchiveCTSCustomer
-		WHERE ArchivedDateMainDB = lv_MaxArchiveTime;
+		WHERE ArchivedDate = lv_MaxArchiveTime;
 		
         IF (ip_CustType = 0) THEN
 			UPDATE CTS_DataCenter.SystemParameter
