@@ -58,8 +58,17 @@ sp: BEGIN
         
         ,	PRIMARY KEY Temp_ArchiveCustomer(CTSCustID, ArchivedDate)
         ,	INDEX Temp_ArchiveCustomer(CustID, CustSubID)
-    ); 
-	
+    ); 	
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_RemoveDCSDevice;
+    CREATE TEMPORARY TABLE Temp_RemoveDCSDevice(
+		DCSDeviceID BIGINT UNSIGNED
+    );
+    
+	DROP  TEMPORARY TABLE IF EXISTS Temp_DCSDevice;
+    CREATE TEMPORARY TABLE Temp_DCSDevice(
+		DCSDeviceID BIGINT UNSIGNED
+    );
 	/***********************GET ARCHIVE DATA TO TEMPTABLE*************************************************************/
     INSERT INTO Temp_InputCustomer(CustID, ArchivedDate)
 	SELECT		CustID	
@@ -157,10 +166,6 @@ sp: BEGIN
 		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.ToCustID = tmpCus.CustID;
     
     #===============5.================================================================================
-	DROP TABLE IF EXISTS Temp_DCSDevice;
-    CREATE TEMPORARY TABLE Temp_DCSDevice(
-		DCSDeviceID BIGINT UNSIGNED
-    );
     
     INSERT INTO Temp_DCSDevice(DCSDeviceID)
     SELECT asd.DCSDeviceID
@@ -172,10 +177,6 @@ sp: BEGIN
 	FROM CTS_DataCenter.AssociationByDevice AS del
 		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.CTSCustID = tmpCus.CTSCustID;
     
-    DROP TABLE IF EXISTS Temp_RemoveDCSDevice;
-    CREATE TEMPORARY TABLE Temp_RemoveDCSDevice(
-		DCSDeviceID BIGINT UNSIGNED
-    );
     
     #===============6.================================================================================
     INSERT INTO CTS_DataCenter.Temp_RemoveDCSDevice(DCSDeviceID)
@@ -322,21 +323,15 @@ sp: BEGIN
     /********UPDATE SYSTEM PARAMETER*****************************************/
     /************************************************************************/
 
-    IF EXISTS(SELECT 1 FROM  Temp_ArchiveCTSCustomer)
+    IF EXISTS(SELECT 1 FROM  Temp_InputCustomer)
     THEN
 		SELECT MAX(ArchivedDate) 
 		INTO lv_MaxArchiveTime
-		FROM Temp_ArchiveCTSCustomer;
-        
-		SELECT lv_MaxArchiveTime;
-        
-        SELECT MAX(CustID) 
-		FROM Temp_ArchiveCTSCustomer
-		WHERE ArchivedDate = lv_MaxArchiveTime;
+		FROM Temp_InputCustomer;
         
 		SELECT MAX(CustID) 
 		INTO lv_MaxCustID
-		FROM Temp_ArchiveCTSCustomer
+		FROM Temp_InputCustomer
 		WHERE ArchivedDate = lv_MaxArchiveTime;
 		
         IF (ip_CustType = 0) THEN

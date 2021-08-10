@@ -61,8 +61,9 @@ BEGIN;
 			WHERE		cus.ArchiveDate > @lastArchiveDate
 			ORDER BY	cus.ArchiveDate, cus.CustID;
 		END;
-	ELSE IF (@custType = 1) --Licencee
-
+	END;
+	IF (@custType = 1) --Licencee
+	BEGIN
 		INSERT INTO #tmpArchivedCustomers(ArchivedDate, CustID)
 		SELECT		TOP(@rowSize) cus.ArchivedDate
 					, cus.CustID

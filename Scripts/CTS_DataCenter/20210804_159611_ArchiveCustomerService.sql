@@ -11,7 +11,7 @@ Reviewer:
 */
 USE CTS_DataCenter;
 CREATE TABLE ArchiveCustomer_CTSCustomer(
-		ArchivedDateMainDB DATETIME(3)
+		ArchivedDate DATETIME(3)
 	,	CTSCustID BIGINT UNSIGNED NOT NULL
 	,	SubscriberID INT UNSIGNED DEFAULT NULL
 	,	CustID INT UNSIGNED DEFAULT NULL
@@ -21,7 +21,7 @@ CREATE TABLE ArchiveCustomer_CTSCustomer(
 	,	RoleID TINYINT DEFAULT NULL
     ,	InsertTime DATETIME(3)
   
-    ,	PRIMARY KEY (ArchivedDateMainDB, CTSCustID)
+    ,	PRIMARY KEY (ArchivedDate, CTSCustID)
     ,	INDEX  IX_ArchiveCustomer_CTSCustomer_CTSCustID (CTSCustID)
     ,	INDEX  IX_ArchiveCustomer_CTSCustomerUserName (UserName)
     ,	INDEX  IX_ArchiveCustomer_CTSCustomer_CustID (CustID)    
