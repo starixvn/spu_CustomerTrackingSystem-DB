@@ -12,7 +12,8 @@ BEGIN
 		Original:
 		Revisions:
 			- 20210316@Casey.Huynh: Created [Redmine ID: #150457]
-                - 20210727@Irena.Vo: Enhance Category filter [Redmine ID: #159142]
+            - 20210727@Irena.Vo: Enhance Category filter [Redmine ID: #159142]
+			- 20210805@Irena.Vo: Update get Category filter [Redmine ID: #155956]
 		Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DC_Category_Get();
@@ -25,7 +26,7 @@ BEGIN
         ,  	CategoryIDs 	LONGTEXT
     );
     
-    INSERT INTO Temp_CategoryFilter (CategoryGroup, CategoryName, CategoryIDs)
+    INSERT IGNORE INTO Temp_CategoryFilter (CategoryGroup, CategoryName, CategoryIDs)
     SELECT 	'Problem Account Category' AS CategoryGroup		    
 		,	cat.CategoryName
 		,	GROUP_CONCAT(cat.CategoryID SEPARATOR ',')  AS CategoryIDs  
