@@ -114,9 +114,9 @@ BEGIN
 	SELECT DISTINCT r.CustID
 	FROM #tmpCustomers AS r
 		INNER JOIN bodb_Account.dbo.[FactCustProductStatsDetail] AS s WITH(NOLOCK) ON r.CustId = s.CustID
-		INNER JOIN bodb02.dbo.League AS l WITH(NOLOCK) ON s.LeagueID = l.leagueid
+		--INNER JOIN bodb02.dbo.League AS l WITH(NOLOCK) ON s.LeagueID = l.leagueid
 	WHERE s.RptFromDate >= @From30Date AND s.RptToDate <= @ToDate
-		AND l.LeagueGroupID NOT IN (42,74,108,113);
+		--AND l.LeagueGroupID NOT IN (42,74,108,113);
 
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, LastXDaysMargin, ProbationPeriodWinloss)
 	SELECT  r.CustId
