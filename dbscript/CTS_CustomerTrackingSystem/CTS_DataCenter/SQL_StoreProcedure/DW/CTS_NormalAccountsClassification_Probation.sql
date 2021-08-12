@@ -22,6 +22,7 @@ AS
 		- 20210607@Long.Luu: Change probation rules [Redmine ID: #156466]
         - 20210611@Long.Luu: Check Inactive Accounts [Redmine ID: #156465] 
 		- 20210714@Long.Luu: Special rule for ManbetX CC2 [Redmine ID: #158465]
+		- 20210811@Long.Luu: Change way to check Customers' Inactive status [Redmine ID: #159543]
         
 	Param's Explanation:
 
@@ -100,6 +101,7 @@ BEGIN
 	
 	CREATE TABLE #tmpActiveCustomers(
 			CustId			INT PRIMARY KEY
+		,	IsActive		BIT DEFAULT 0
 	);
 	
 	-- Parse customers info
@@ -110,16 +112,16 @@ BEGIN
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 
 	-- Check inactive customers
-	INSERT INTO	#tmpActiveCustomers (CustId)
-	SELECT DISTINCT r.CustID
-	FROM #tmpCustomers AS r
-		INNER JOIN bodb_Account.dbo.[FactCustProductStatsDetail] AS s WITH(NOLOCK) ON r.CustId = s.CustID
-		--INNER JOIN bodb02.dbo.League AS l WITH(NOLOCK) ON s.LeagueID = l.leagueid
-	WHERE s.RptFromDate >= @From30Date AND s.RptToDate <= @ToDate
-		--AND l.LeagueGroupID NOT IN (42,74,108,113);
+	SELECT @CustIdList = STUFF((SELECT DISTINCT ',' + CAST(CustId AS VARCHAR(10))
+			  FROM #tmpCustomers
+			  FOR XML PATH ('')), 1, 1, '');
 
+	INSERT INTO #tmpActiveCustomers(CustId, IsActive)
+	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @CustIdList, @ResultDataMode = 2, @FromDate = @From30Date, @ToDate = @ToDate;	
+
+	-- Insert inactive customers
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, LastXDaysMargin, ProbationPeriodWinloss)
-	SELECT  r.CustId
+	SELECT  CustId
 		,  @GENERAL_SPORTID
 		,  @GENERALCATEGORY_INACTIVE
 		,  @CurrentDate AS CreatedDate
@@ -130,14 +132,13 @@ BEGIN
 		,  0
 		,  0
 		,  0
-	FROM #tmpCustomers AS r
-		LEFT JOIN #tmpActiveCustomers AS a ON a.CustId = r.CustId
-	WHERE a.CustId IS NULL;
+	FROM #tmpActiveCustomers
+	WHERE IsActive = 0;
 
 	DELETE r WITH(ROWLOCK)
 	FROM #tmpCustomers AS r
-		LEFT JOIN #tmpActiveCustomers AS a ON a.CustId = r.CustId
-	WHERE a.CustId IS NULL;
+		INNER JOIN #tmpActiveCustomers AS a ON a.CustId = r.CustId
+	WHERE a.IsActive = 0;
 
 	-- Get Customer's ID List
 	SELECT @CustIdList = STUFF((SELECT DISTINCT ',' + CAST(CustId AS VARCHAR(10))

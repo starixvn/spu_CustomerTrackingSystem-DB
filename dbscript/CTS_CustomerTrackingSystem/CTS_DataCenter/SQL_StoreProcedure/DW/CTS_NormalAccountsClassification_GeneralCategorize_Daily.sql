@@ -24,7 +24,8 @@ AS
 		- 20210512@John.Ngo: Exclude Customer Class for Internal Account [Redmine ID: #154844]
         - 20210607@Long.Luu: Check Inactive Accounts [Redmine ID: #156465]
 		- 20210714@Long.Luu: Special rule for ManbetX CC2 [Redmine ID: #158465]
-		- 20210730@John.Ngo: [CTS] New way to store Closed Status [Redmine ID: #152259]
+		- 20210730@John.Ngo: [CTS] New way to store Closed Status [Redmine ID: #152259]		
+		- 20210811@Long.Luu: Change way to check Customers' Inactive status [Redmine ID: #159543]
 		
 	Param's Explanation:
 */
@@ -91,15 +92,6 @@ BEGIN
 	CREATE NONCLUSTERED INDEX IX_tmpCustomers_Site ON #tmpCustomers(
 		IsActive			ASC
 	);
-
-	IF OBJECT_ID('tempdb..#tmpActiveCustomers') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpActiveCustomers;
-	END
-	
-	CREATE TABLE #tmpActiveCustomers(
-			CustId			INT PRIMARY KEY
-	);
 	
 	IF OBJECT_ID('tempdb..#tmpDeletedCustomers') IS NOT NULL
 	BEGIN
@@ -114,15 +106,24 @@ BEGIN
 		[CustId]			ASC
 	);
 	
-	-- GET LIST CUSTOMER-SPORT
-	INSERT INTO #tmpCustomers(CustId)
-	SELECT val FROM dbo.SPU_StrSplit(@ListCustIds, ',');
+	-- START
+	-- #1: Filter Customers
+	IF (@FunctionId = 4) 
+		BEGIN
+			INSERT INTO #tmpCustomers(CustId, IsActive)
+			SELECT val, 1 FROM dbo.SPU_StrSplit(@ListCustIds, ',');
+		END
+	ELSE
+		BEGIN
+			INSERT INTO #tmpCustomers(CustId, IsActive)
+			EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @ListCustIds, @ResultDataMode = 2, @FromDate = @From30Date, @ToDate = @ToDate;	
+		END;
 
 	-- LOG INPUT DATA
 	INSERT INTO dbo.CustomerClassification_InputLog(CustId,CreatedDate,CreatedTime,FunctionId)
 	SELECT CustId, @CurrentDate, @CurrentDateTime, @FunctionId
 	FROM #tmpCustomers;
-	
+
 	-- Remove closed & disabled accounts & SMA account & Internal Account
 	DELETE r WITH(ROWLOCK)
 		OUTPUT DELETED.CustId INTO #tmpDeletedCustomers(CustId)
@@ -141,29 +142,6 @@ BEGIN
 		OR (c.InactiveInfo = 0 AND c.SuspendedInfo > 0);
 	*/
 
-	-- START
-	IF (@FunctionId = 4) 
-		BEGIN
-			INSERT INTO	#tmpActiveCustomers (CustId)
-			SELECT DISTINCT r.CustID
-			FROM #tmpCustomers AS r;
-		END
-	ELSE
-		BEGIN
-			INSERT INTO	#tmpActiveCustomers (CustId)
-			SELECT DISTINCT r.CustID
-			FROM #tmpCustomers AS r
-				INNER JOIN bodb_Account.dbo.[FactCustProductStatsDetail] AS s WITH(NOLOCK) ON r.CustId = s.CustID
-				--INNER JOIN bodb02.dbo.League AS l WITH(NOLOCK) ON s.LeagueID = l.leagueid
-			WHERE s.RptFromDate >= @From30Date AND s.RptToDate <= @ToDate;
-				--AND l.LeagueGroupID NOT IN (42,74,108,113);
-		END;
-
-	UPDATE r WITH(ROWLOCK, UPDLOCK)
-	SET r.IsActive = 1
-	FROM #tmpCustomers AS r
-		INNER JOIN #tmpActiveCustomers AS a ON a.CustId = r.CustId;
-
 	-- #2: GetCustomer Accummulated data
 	SELECT @ListCustIds = STUFF((SELECT ',', CONVERT(VARCHAR(15), CustId) 
 								FROM #tmpCustomers WITH (NOLOCK)
@@ -171,7 +149,7 @@ BEGIN
 								FOR XML PATH('')), 1, 1, '');
 
 	INSERT INTO #tmpRawData(CustId, MainDBSportId, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDays)
-	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @ListCustIds;	
+	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @ListCustIds, @ResultDataMode = 1;	
 	
 	-- #3: Sum data by custid
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
