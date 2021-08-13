@@ -5,7 +5,7 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_Device_Insert`(
     IN ip_TransJson LONGTEXT
 )
-SQL SECURITY INVOKER
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 	    Created: 20200730@Bobby.Nguyen
@@ -145,12 +145,12 @@ BEGIN
     SELECT t.TransID
 		, AccountID
 		, SubscriberID
-		, (CASE WHEN tmpTrans.UserAgentKey ="null" THEN NULL ELSE tmpTrans.UserAgentKey END) AS UserAgentKey
-		, (CASE WHEN tmpTrans.DeviceCode ="null" THEN NULL ELSE tmpTrans.DeviceCode END) AS DeviceCode
+		, (CASE WHEN tmpTrans.UserAgentKey IS NULL THEN NULL ELSE tmpTrans.UserAgentKey END) AS UserAgentKey
+		, (CASE WHEN tmpTrans.DeviceCode IS NULL THEN NULL ELSE tmpTrans.DeviceCode END) AS DeviceCode
 		, CreatedDate
 		, TransTime
-		,  (CASE WHEN tmpTrans.FingerprintCode ="null" THEN NULL ELSE tmpTrans.FingerprintCode END) AS FingerprintCode
-		,  (CASE WHEN tmpTrans.FingerprintMoreInfo ="null" THEN NULL ELSE tmpTrans.FingerprintMoreInfo END) AS FingerprintMoreInfo
+		,  (CASE WHEN tmpTrans.FingerprintCode IS NULL THEN NULL ELSE tmpTrans.FingerprintCode END) AS FingerprintCode
+		,  (CASE WHEN tmpTrans.FingerprintMoreInfo IS NULL THEN NULL ELSE tmpTrans.FingerprintMoreInfo END) AS FingerprintMoreInfo
 	FROM DCS_DataCenter.Transaction tmpTrans
 	INNER JOIN CTE_Trans t ON tmpTrans.TransId = t.TransId
     ORDER BY t.TransId ASC;

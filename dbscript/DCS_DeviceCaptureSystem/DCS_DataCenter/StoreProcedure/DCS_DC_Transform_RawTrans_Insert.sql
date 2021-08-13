@@ -45,18 +45,18 @@ BEGIN
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
-		,	(CASE WHEN rt.DeviceCode ="null" THEN NULL ELSE rt.DeviceCode END) AS DeviceCode
-		,	(CASE WHEN rt.FingerprintCode ="null" OR rt.DeviceCode ="null"	THEN NULL ELSE rt.FingerprintCode END) AS FingerprintCode
-		,	(CASE WHEN rt.FingerprintMoreInfo ="null" OR rt.DeviceCode ="null" THEN NULL ELSE rt.FingerprintMoreInfo END) AS FingerprintMoreInfo
-		,	LEFT((CASE WHEN rt.UserAgent ="null" THEN NULL ELSE rt.UserAgent END),1000) AS UserAgent
-		,	(CASE WHEN rt.IP ="null" THEN NULL ELSE rt.IP END) AS IP
+		,	(CASE WHEN rt.DeviceCode IS NULL THEN NULL ELSE rt.DeviceCode END) AS DeviceCode
+		,	(CASE WHEN rt.FingerprintCode IS NULL OR rt.DeviceCode IS NULL	THEN NULL ELSE rt.FingerprintCode END) AS FingerprintCode
+		,	(CASE WHEN rt.FingerprintMoreInfo IS NULL OR rt.DeviceCode IS NULL THEN NULL ELSE rt.FingerprintMoreInfo END) AS FingerprintMoreInfo
+		,	LEFT((CASE WHEN rt.UserAgent IS NULL THEN NULL ELSE rt.UserAgent END),1000) AS UserAgent
+		,	(CASE WHEN rt.IP IS NULL THEN NULL ELSE rt.IP END) AS IP
 		,	(CASE WHEN rt.IPID = 0 THEN NULL ELSE rt.IPID END) AS IPID
 		,	(CASE WHEN rt.Flagged = -1 THEN NULL ELSE rt.Flagged END) AS Flagged
 		,	(CASE WHEN rt.PluginID = 0 THEN NULL ELSE rt.PluginID END) AS PluginID            
-		,	(CASE WHEN rt.URL ="null" THEN NULL ELSE rt.URL END) AS URL
-		,	(CASE WHEN rt.Action ="null" THEN NULL ELSE rt.Action END) AS Action
-		,	(CASE WHEN rt.ActionResult ="null" THEN NULL ELSE rt.ActionResult END) AS ActionResult
-		,	LEFT((CASE WHEN rt.InvalidDevice ="null" THEN NULL ELSE rt.InvalidDevice END),1000) AS InvalidDevice
+		,	(CASE WHEN rt.URL IS NULL THEN NULL ELSE rt.URL END) AS URL
+		,	(CASE WHEN rt.Action IS NULL THEN NULL ELSE rt.Action END) AS Action
+		,	(CASE WHEN rt.ActionResult IS NULL THEN NULL ELSE rt.ActionResult END) AS ActionResult
+		,	LEFT((CASE WHEN rt.InvalidDevice IS NULL THEN NULL ELSE rt.InvalidDevice END),1000) AS InvalidDevice
 		,	TransStatus
 	FROM	JSON_TABLE(
 			ip_RawTransJson,
