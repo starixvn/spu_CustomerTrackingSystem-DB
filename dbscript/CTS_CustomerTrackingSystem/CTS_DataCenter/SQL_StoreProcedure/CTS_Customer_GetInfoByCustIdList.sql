@@ -103,7 +103,7 @@ BEGIN;
 			,	a.Danger3 = c.danger3
 		FROM #tmpCustomers AS a
 			INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON a.custid = c.custid
-			INNER JOIN bodb02.dbo.CustSuper AS cs WITH(NOLOCK) ON a.Srecommend = cs.custid;
+			INNER JOIN bodb02.dbo.Dep_CustSuper AS cs WITH(NOLOCK) ON a.Srecommend = cs.custid;
 
 
 		UPDATE a WITH(ROWLOCK, UPDLOCK)
