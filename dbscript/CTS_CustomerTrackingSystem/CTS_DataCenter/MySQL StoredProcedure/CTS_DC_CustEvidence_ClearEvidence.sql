@@ -3,10 +3,10 @@ DROP PROCEDURE IF EXISTS `CTS_DC_CustEvidence_ClearEvidence`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_ClearEvidence`(
-		IN ip_CTSCustIDList 		VARCHAR(2000)
+		IN ip_CTSCustIDList 		VARCHAR(8000)
     
     ,	OUT op_ErrorMessage 		VARCHAR(200) 
-    ,	OUT op_Result 				VARCHAR(2000)
+    ,	OUT op_Result 				VARCHAR(8000)
 )
 SQL SECURITY INVOKER
 

@@ -8,7 +8,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidenceQueue_TakeAction`(
 	,	IN	ip_ActionID				TINYINT UNSIGNED
     
     ,	OUT op_ErrorMessage 		VARCHAR(200)    
-    ,	OUT op_Result 				VARCHAR(2000)
+    ,	OUT op_Result 				VARCHAR(8000)
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -25,7 +25,7 @@ BEGIN
 			- call CTS_DataCenter.CTS_DC_CustEvidenceQueue_TakeAction('[{"CTSCustID":19314,"EvidenceID":13,"Remark":"test","CreatedBy":8}]', 1, @op_ErrorMessage);
 	*/
     
-    DECLARE lv_CustIDList 	VARCHAR(2000);
+    DECLARE lv_CustIDList 	VARCHAR(8000);
     DECLARE lv_CreatedBy 	INT DEFAULT 10278938;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerEvidences;    

@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_CustEvidenceFromFile_UpdateStatus`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidenceFromFile_UpdateStatus`(
-		IN ip_IDList			VARCHAR(2000)
+		IN ip_IDList			TEXT
 	,	IN ip_IsProcessed		BOOLEAN
 	,	IN ip_UpdatedBy			INT
 
