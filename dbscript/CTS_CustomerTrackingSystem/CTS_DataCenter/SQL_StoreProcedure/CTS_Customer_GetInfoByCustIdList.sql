@@ -67,7 +67,7 @@ BEGIN;
 	FROM	bodb02.dbo.strSplit(@custIdList, ',');
 
 
-	IF (@sourceType = 0 OR @sourceType = 1 OR @sourceType = 2)
+	IF (@sourceType IN (0,1,2))
 	BEGIN
 		UPDATE tmpCust 
 		SET		Username = 	cust.username
@@ -89,7 +89,7 @@ BEGIN;
 			LEFT JOIN dbo.Site AS st2 WITH (NOLOCK) ON cust.site = st2.site;
 	END;
 
-	IF (@sourceType = 0 OR @sourceType = 2)
+	IF (@sourceType IN(0,2))
 	BEGIN
 		-- Get MBC's Customer Status
 		UPDATE a WITH(ROWLOCK, UPDLOCK)
@@ -103,7 +103,7 @@ BEGIN;
 			,	a.Danger3 = c.danger3
 		FROM #tmpCustomers AS a
 			INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON a.custid = c.custid
-			INNER JOIN bodb02.dbo.Dep_CustSuper AS cs WITH(NOLOCK) ON a.Srecommend = cs.custid;
+			INNER JOIN bodb02.dbo.CustSuper AS cs WITH(NOLOCK) ON a.Srecommend = cs.custid;
 
 
 		UPDATE a WITH(ROWLOCK, UPDLOCK)
