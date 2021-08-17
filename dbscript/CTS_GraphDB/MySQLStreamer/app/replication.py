@@ -55,9 +55,9 @@ class StreamReplicator(object):
 		self.auto_path = '{0}/auto-gtid.txt'.format(CONF_PATH)
 		self.cts_shm = shared_memory.ShareableList(name='cts_shm')
 
-	def get_auto_position(self, repl_conf=None):
+	def get_auto_position(self, repl_conf=None, mode=None):
 		txt_gtid:str = None
-		if 'auto_position' in repl_conf:
+		if 'auto_position' in repl_conf and mode=='up':
 			return repl_conf['auto_position']
 		
 		if self.auto_position:

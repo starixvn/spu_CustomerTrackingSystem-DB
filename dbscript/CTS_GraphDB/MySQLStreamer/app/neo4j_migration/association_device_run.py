@@ -40,6 +40,39 @@ class AssociationByDeviceRun(Neo4jContext):
         r_result = tx.run(used_device,batch=batch)
         rIDS = [row["RID"] for row in n_result]
 
+        # merge SEEN_ACCOUNT_1 if any
+        seen_account_1 = """
+            UNWIND $batch as row
+            MATCH (c1:FlaggedCustomer {CTSCustID:toInteger(row.CTSCustID)})
+            MATCH (n:Device {DeviceID:toInteger(row.DeviceID)})
+            WITH c1,n
+            MATCH (c1)-[r1:USED_DEVICE]->(n)<-[r2:USED_DEVICE]-(c2:CTSCustomer)
+            WHERE c1.CustID <> c2.CustID
+            WITH c1,c2,CASE WHEN r1.CreatedDate > r2.CreatedDate THEN r1.CreatedDate ELSE r2.CreatedDate END AS SeenDate
+            MERGE (c1)-[r:SEEN_ACCOUNT]->(c2)
+            ON CREATE SET r.FirstSeenDate = SeenDate
+            ON MATCH SET r.FirstSeenDate = CASE WHEN r.FirstSeenDate > SeenDate THEN SeenDate ELSE r.FirstSeenDate END
+            RETURN ID(r) AS RID
+            """
+        #r_result = tx.run(seen_account_1, batch=batch)
+
+
+        # merge SEEN_ACCOUNT_2 if any
+        seen_account_2 = """
+            UNWIND $batch as row
+            MATCH (c2:CTSCustomer {CTSCustID:toInteger(row.CTSCustID)})
+            MATCH (n:Device {DeviceID:toInteger(row.DeviceID)})
+            WITH c2,n
+            MATCH (c2)-[r2:USED_DEVICE]->(n)<-[r1:USED_DEVICE]-(c1:FlaggedCustomer)
+            WHERE c1.CustID <> c2.CustID 
+            WITH c1,c2,CASE WHEN r1.CreatedDate > r2.CreatedDate THEN r1.CreatedDate ELSE r2.CreatedDate END AS SeenDate
+            MERGE (c1)-[r:SEEN_ACCOUNT]->(c2)
+            ON CREATE SET r.FirstSeenDate = SeenDate
+            ON MATCH SET r.FirstSeenDate = CASE WHEN r.FirstSeenDate > SeenDate THEN SeenDate ELSE r.FirstSeenDate END
+            RETURN ID(r) AS RID
+            """
+        #r_result = tx.run(seen_account_2, batch=batch)
+
         # push seen_account
         push_seen_account = """
             UNWIND $batch as row
