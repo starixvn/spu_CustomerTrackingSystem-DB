@@ -13,9 +13,9 @@ class BinlogFactory:
     binlog = BinlogServer(mysql_conf, repl_conf, kafka_conf)
     
     @staticmethod
-    def process(act):
+    def process(act, mode):
         if act == 'start':
-            BinlogFactory.binlog.start()
+            BinlogFactory.binlog.start(mode)
         elif act == 'stop':
             BinlogFactory.binlog.stop()
 

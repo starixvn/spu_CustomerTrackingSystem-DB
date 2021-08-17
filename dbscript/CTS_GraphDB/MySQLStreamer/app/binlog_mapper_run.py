@@ -50,14 +50,16 @@ class BinlogServer(object):
 
 		self.binlog_stream:BinLogStreamReader = None
 
-	def start(self):
+	def start(self, mode):
 
 		#print(self.repl);
+		if mode is None:
+			mode = 'recovery'
 
 		replicator = StreamReplicator(self.mysql)
 		binlog_server_conf = int(self.repl['server_id'])
 		slave_uuid_conf = self.repl['slave_uuid']
-		auto_position_conf = replicator.get_auto_position(self.repl)
+		auto_position_conf = replicator.get_auto_position(self.repl, mode)
 		slave_heartbeat_conf = int(self.repl['slave_heartbeat'])
 		only_schemas_conf = list(str(self.repl['only_schemas']).split(','))
 		only_tables_conf = list(str(self.repl['only_tables']).split(','))
@@ -130,7 +132,7 @@ class BinlogServer(object):
 			self.binlog_stream.close()
 
 		except Exception as ex:
-			sys.stderr.write('%% Unhandle exception (%s MySQL Streamer connect failed): try again\n' %str(ex))
+			print('%% Unhandle exception (%s MySQL Streamer connect failed): try again\n' %str(ex))
 
 	def stop(self):
 		if self.binlog_stream:

@@ -57,7 +57,6 @@ class CTSCustomerRun(Neo4jContext):
 
     @classmethod
     def update_binlog(cls, tx, raws:list):
-
         # affected list
         raws_updates = [raw for raw in raws if raw["after"]["SubscriberID"] != raw["before"]["SubscriberID"] or raw["after"]["CustStatusID"] != raw["before"]["CustStatusID"]]
         if len(raws_updates) == 0:
