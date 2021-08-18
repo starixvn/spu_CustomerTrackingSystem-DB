@@ -399,7 +399,7 @@ sp:BEGIN
 	WHERE EXISTS (SELECT 1 FROM Temp_Association_Remove AS rm WHERE  rm.CTSCustID_1 = ass.CTSCustID_1 AND rm.CTSCustID_2 = ass.CTSCustID_2);
 
     DELETE 
-	FROM Temp_Association AS ass
+	FROM Temp_Association_Distinct AS ass
 	WHERE EXISTS (SELECT 1 FROM Temp_Association_Remove AS rm WHERE  rm.CTSCustID_1 = ass.CTSCustID_2 AND rm.CTSCustID_2 = ass.CTSCustID_1);
 
 	#select * from Temp_Association;
