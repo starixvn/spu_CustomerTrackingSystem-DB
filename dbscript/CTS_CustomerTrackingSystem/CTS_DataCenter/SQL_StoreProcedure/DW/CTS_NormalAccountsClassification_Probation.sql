@@ -23,6 +23,7 @@ AS
         - 20210611@Long.Luu: Check Inactive Accounts [Redmine ID: #156465] 
 		- 20210714@Long.Luu: Special rule for ManbetX CC2 [Redmine ID: #158465]
 		- 20210811@Long.Luu: Change way to check Customers' Inactive status [Redmine ID: #159543]
+		- 20210818@Long.Luu: Check Winloss on probation assessment [Redmine ID: #159709]
         
 	Param's Explanation:
 
@@ -38,7 +39,8 @@ BEGIN
 
 	DECLARE @FUNCTIONID			SMALLINT = 2;
 
-	DECLARE @GENERALCATEGORY_NORMALMEMBER		INT = 202
+	DECLARE @GENERALCATEGORY_NEWMEMBER			INT = 201
+		,	@GENERALCATEGORY_NORMALMEMBER		INT = 202
 		,	@GENERALCATEGORY_SMARTPUNTER		INT = 203
 		,	@GENERALCATEGORY_HIGHRISKPUNTER		INT = 204
 		,	@GENERALCATEGORY_VIP				INT = 205
@@ -187,8 +189,13 @@ BEGIN
 	UPDATE c WITH(ROWLOCK, UPDLOCK)
 	SET c.IsPassed = 1,
 		c.CategoryId = CASE 
-							WHEN (s.Margin <= -2 AND s.TurnoverRM >= 150000 AND s.BetCount >= 300) THEN @GENERALCATEGORY_VIP
-							WHEN (s.Site IN ('haifa','manbetx') AND s.WinlossRM < -5000) THEN @GENERALCATEGORY_PROBATION
+							WHEN (s.Margin <= -2 AND s.TurnoverRM >= 150000 AND s.BetCount >= 300) THEN 
+								@GENERALCATEGORY_VIP
+							WHEN (s.Site IN ('haifa','manbetx') AND s.WinlossRM < -5000) THEN 
+								@GENERALCATEGORY_PROBATION
+							WHEN (s.Site IN ('haifa','manbetx') AND s.WinlossRM < 5000) THEN 
+								@GENERALCATEGORY_NEWMEMBER
+							--WHEN (s.Site NOT IN ('haifa','manbetx') AND s.WinlossRM < 10000) THEN @GENERALCATEGORY_NORMALMEMBER
 							ELSE @GENERALCATEGORY_NORMALMEMBER								
 						END
 	FROM #tmpCustomers AS c
@@ -200,9 +207,13 @@ BEGIN
 	SET c.IsPassed = 1,
 		c.CategoryId =	CASE 
 							WHEN (a.Margin <= 1 AND a.WinlossRM > 15000 AND a.BetCount >= 20) THEN 
-								 @GENERALCATEGORY_SMARTPUNTER
+								@GENERALCATEGORY_SMARTPUNTER
 							WHEN (a.Margin > 1 AND a.WinlossRM > 15000 AND a.BetCount >= 20) THEN
-								 @GENERALCATEGORY_HIGHRISKPUNTER
+								@GENERALCATEGORY_HIGHRISKPUNTER
+							WHEN (a.Site NOT IN ('haifa','manbetx') AND a.WinlossRM < 10000) THEN
+								@GENERALCATEGORY_NORMALMEMBER
+							WHEN (a.Site IN ('haifa','manbetx') AND a.WinlossRM < 5000) THEN
+								@GENERALCATEGORY_NEWMEMBER
 							ELSE @GENERALCATEGORY_PROBATION
 						END
 	FROM #tmpCustomers AS c
