@@ -144,8 +144,8 @@ BEGIN
     INSERT INTO Temp_PA(CTSCustID, CustomerClass)
     SELECT 	cus.CTSCustID, class.CustomerClass
 	FROM 	Temp_CustLevel1 AS cus
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CTSCustID = cus.CTSCustID AND SportGroupID = CONST_GROUP_PA
-		INNER JOIN CTS_DataCenter.CategoryToCustomerClass AS class ON class.CategoryID =  cc.CategoryID
+		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CTSCustID = cus.CTSCustID AND SportGroupID = CONST_GROUP_PA
+		STRAIGHT_JOIN CTS_DataCenter.CategoryToCustomerClass AS class ON class.CategoryID =  cc.CategoryID
     WHERE 	cc.CategoryID = CONST_CATEGORYID_ROBOTUSERS OR class.CustomerClass IN (8, 10)
     ON DUPLICATE KEY UPDATE CustomerClass = CASE WHEN class.CustomerClass = 10 THEN 10
 												 WHEN class.CustomerClass = 8 AND Temp_PA.CustomerClass <> 10 THEN 8
