@@ -122,12 +122,12 @@ BEGIN
     DELETE cuAs FROM Temp_CustAssociation AS cuAs
 		INNER JOIN Temp_SubAccounts AS cus ON cuAs.CTSCustID = cus.CTSCustID;
   
-    INSERT INTO Temp_AssociationRemoveAccounts(FromCTSCustID,ToCTSCustID)
+    INSERT IGNORE INTO Temp_AssociationRemoveAccounts(FromCTSCustID,ToCTSCustID)
     SELECT DISTINCT asRe.FromCTSCustID, asRe.ToCTSCustID
     FROM Temp_CustAssociation AS cuAs
 		INNER JOIN CTS_DataCenter.AssociationRemove AS asRe ON cuAs.CTSCustID_Aff = asRe.ToCTSCustID AND cuAs.CTSCustID = asRe.FromCTSCustID;
 
-	INSERT INTO Temp_AssociationRemoveAccounts(FromCTSCustID,ToCTSCustID)
+	INSERT IGNORE INTO Temp_AssociationRemoveAccounts(FromCTSCustID,ToCTSCustID)
     SELECT DISTINCT asRe.FromCTSCustID, asRe.ToCTSCustID
     FROM Temp_CustAssociation AS cuAs
 		INNER JOIN CTS_DataCenter.AssociationRemove AS asRe ON cuAs.CTSCustID = asRe.ToCTSCustID AND cuAs.CTSCustID_Aff = asRe.FromCTSCustID;
