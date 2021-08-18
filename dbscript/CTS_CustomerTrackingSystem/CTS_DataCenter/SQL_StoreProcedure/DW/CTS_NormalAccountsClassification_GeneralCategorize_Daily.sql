@@ -113,8 +113,8 @@ BEGIN
 		END;
 
 	-- LOG INPUT DATA
-	INSERT INTO dbo.CustomerClassification_InputLog(CustId,CreatedDate,CreatedTime,FunctionId)
-	SELECT CustId, @CurrentDate, @CurrentDateTime, @FunctionId
+	INSERT INTO dbo.CustomerClassification_InputLog(CustId,CreatedDate,CreatedTime,FunctionId,IsActive)
+	SELECT CustId, @CurrentDate, @CurrentDateTime, @FunctionId, IsActive
 	FROM #tmpCustomers;
 
 	-- Remove closed & disabled accounts & SMA account & Internal Account
