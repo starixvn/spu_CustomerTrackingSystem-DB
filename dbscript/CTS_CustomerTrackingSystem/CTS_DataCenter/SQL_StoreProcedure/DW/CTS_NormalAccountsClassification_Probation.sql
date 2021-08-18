@@ -36,6 +36,8 @@ BEGIN
 	DECLARE @PARLAY_SPORTID		SMALLINT = -100
 		,	@GENERAL_SPORTID	SMALLINT = 200;
 
+	DECLARE @FUNCTIONID			SMALLINT = 2;
+
 	DECLARE @GENERALCATEGORY_NORMALMEMBER		INT = 202
 		,	@GENERALCATEGORY_SMARTPUNTER		INT = 203
 		,	@GENERALCATEGORY_HIGHRISKPUNTER		INT = 204
@@ -118,6 +120,11 @@ BEGIN
 
 	INSERT INTO #tmpActiveCustomers(CustId, IsActive)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @CustIdList, @ResultDataMode = 2, @FromDate = @From30Date, @ToDate = @ToDate;	
+
+	-- LOG INPUT DATA
+	INSERT INTO dbo.CustomerClassification_InputLog(CustId,CreatedDate,CreatedTime,FunctionId,IsActive)
+	SELECT CustId, @CurrentDate, @CurrentDateTime, @FUNCTIONID, IsActive
+	FROM #tmpActiveCustomers WITH(NOLOCK );
 
 	-- Insert inactive customers
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, LastXDaysMargin, ProbationPeriodWinloss)
