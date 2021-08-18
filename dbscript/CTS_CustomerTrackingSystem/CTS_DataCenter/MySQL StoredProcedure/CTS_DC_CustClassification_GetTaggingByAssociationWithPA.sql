@@ -130,7 +130,7 @@ BEGIN
 	INSERT INTO Temp_AssociationRemoveAccounts(FromCTSCustID,ToCTSCustID)
     SELECT DISTINCT asRe.FromCTSCustID, asRe.ToCTSCustID
     FROM Temp_CustAssociation AS cuAs
-		INNER JOIN CTS_DataCenter.AssociationRemove AS asRe ON cuAs.CTSCustID = asRe.ToCTSCustID AND cuAs.CTSCustID_Aff = asRe.FromCTSCustID
+		INNER JOIN CTS_DataCenter.AssociationRemove AS asRe ON cuAs.CTSCustID = asRe.ToCTSCustID AND cuAs.CTSCustID_Aff = asRe.FromCTSCustID;
 	
     DELETE cuAs 
 	FROM Temp_CustAssociation AS cuAs
