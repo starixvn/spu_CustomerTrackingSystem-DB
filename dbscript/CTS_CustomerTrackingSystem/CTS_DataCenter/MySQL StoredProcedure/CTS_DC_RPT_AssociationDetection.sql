@@ -14,7 +14,7 @@ sp:BEGIN
         
 		Revisions:
 			- 20210629@Casey.Huynh: Created [Redmine ID: #157086]
-            
+            - 20210818@Aries.Nguyen: Exclude Unlink association [Redmine ID: #159708]
 		Param's Explanation (filtered by):
 
         Example:
@@ -51,7 +51,8 @@ sp:BEGIN
         ,	sta.ItemName AS CustStatus
 	FROM CTS_DataCenter.CTSCustomer AS cust
 		INNER JOIN CTS_DataCenter.StaticList AS sta ON sta.ListID = 1 AND sta.ItemID = cust.CustStatusID
-    WHERE EXISTS (SELECT 1 FROM Temp_CTSCustID AS temp WHERE temp.CTSCustID = cust.CTSCustID);
+    WHERE EXISTS (SELECT 1 FROM Temp_CTSCustID AS temp WHERE temp.CTSCustID = cust.CTSCustID)
+        AND cust.SiteID NOT IN (SELECT ex.ItemID FROM CTS_DataCenter.StaticList AS ex WHERE ex.ListID = 11);
     
     SELECT GROUP_CONCAT(CustID) 
     INTO lv_CustIDs
