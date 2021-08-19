@@ -13,8 +13,8 @@ sp:BEGIN
 		DB:			CTS_DataCenter
         
 		Revisions:
-			- 20210720@Aries.Nguyen: Created [Redmine ID: #157086
-            
+			- 20210720@Aries.Nguyen: Created [Redmine ID: #157086]
+            - 20210818@Aries.Nguyen: Exclude Unlink association [Redmine ID: #159708]
 		Param's Explanation (filtered by):
 
         Example:
@@ -231,8 +231,7 @@ sp:BEGIN
 		, 	ai.FromCustID
         ,  	3 AS AssociationType
 	FROM Temp_Cust AS cus 
-        INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.ToCustID = cus.CustID;
-    
+        INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.ToCustID = cus.CustID;  
 
 /*------------------------------------------Get association by IP-------------------------------------------------*/
 	INSERT IGNORE INTO Temp_Association_Level1(CustID, CustID_Level1, AssociationType)
@@ -248,6 +247,27 @@ sp:BEGIN
         ,  	4 AS AssociationType
 	FROM Temp_Cust AS cus 
         INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.ToCustID = cus.CustID;
+
+#-----------------------------------------------------------------Handle Association Remove For Level 1-------------------------------------------------------
+	INSERT INTO Temp_Association_Remove(CTSCustID_1, CTSCustID_2)
+	SELECT 	FromCTSCustID
+		, 	ToCTSCustID 
+	FROM CTS_DataCenter.AssociationRemove AS rm
+	WHERE EXISTS (SELECT 1 FROM Temp_Association_Level1 AS ass WHERE  rm.FromCTSCustID = ass.CTSCustID AND rm.ToCTSCustID = ass.CTSCustID_Level1);
+
+	INSERT INTO Temp_Association_Remove(CTSCustID_1, CTSCustID_2)
+	SELECT 	FromCTSCustID
+		, 	ToCTSCustID 
+	FROM CTS_DataCenter.AssociationRemove AS rm
+	WHERE EXISTS (SELECT 1 FROM Temp_Association_Level1 AS ass WHERE  rm.FromCTSCustID = ass.CTSCustID_Level1 AND rm.ToCTSCustID = ass.CTSCustID);
+
+	DELETE 
+    FROM Temp_Association_Level1 AS ass
+	WHERE EXISTS (SELECT 1 FROM Temp_Association_Remove AS rm WHERE  rm.CTSCustID_1 = ass.CTSCustID AND rm.CTSCustID_2 = ass.CTSCustID_Level1);
+
+    DELETE FROM Temp_Association_Level1 AS ass
+	WHERE EXISTS (SELECT 1 FROM Temp_Association_Remove AS rm WHERE  rm.CTSCustID_1 = ass.CTSCustID_Level1 AND rm.CTSCustID_2 = ass.CTSCustID);
+
     
 /*******************************Level 2**********************************************/
 	INSERT IGNORE INTO Temp_CustInfo(CustID)
@@ -377,6 +397,10 @@ sp:BEGIN
 	DELETE 
     FROM Temp_Association_Distinct AS ass
 	WHERE EXISTS (SELECT 1 FROM Temp_Association_Remove AS rm WHERE  rm.CTSCustID_1 = ass.CTSCustID_1 AND rm.CTSCustID_2 = ass.CTSCustID_2);
+
+    DELETE 
+	FROM Temp_Association_Distinct AS ass
+	WHERE EXISTS (SELECT 1 FROM Temp_Association_Remove AS rm WHERE  rm.CTSCustID_1 = ass.CTSCustID_2 AND rm.CTSCustID_2 = ass.CTSCustID_1);
 
 	#select * from Temp_Association;
 	lp: LOOP 

@@ -19,6 +19,7 @@ BEGIN
 		   - 20210525@Irena.Vo: Change col name TaggingExclusion: CustID -> CTSCustID [Redmine ID: 152965]
 		   - 20210722@Long.Luu: Refactor  [Redmine ID: #157203]
            - 20210804@Irena.Vo: Fix issue get Duplicate list Association Remove [Redmine ID: #159706]
+		   - 20210818@Aries.Nguyen: Exclude Unlink association [Redmine ID: #159708]
 		Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetTaggingByAssociationWithPA('1268,38665541,17004,32339123379301,3481646');
@@ -85,13 +86,10 @@ BEGIN
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1; 
     
-	UPDATE Temp_InputCustomers AS temp
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON temp.CustID = cus.CustID AND cus.CustSubID = 0
-	SET temp.CTSCustID = cus.CTSCustID;
-    
     INSERT INTO Temp_Customer(CustID, CTSCustID)
-    SELECT tbl.CustID, tbl.CTSCustID
-    FROM Temp_InputCustomers  AS tbl;
+    SELECT temp.CustID, cus.CTSCustID
+    FROM Temp_InputCustomers AS temp
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON temp.CustID = cus.CustID AND cus.CustSubID = 0;
     
 	UPDATE Temp_Customer  AS tbl 
 		INNER JOIN CTS_DataCenter.TaggingExclusion AS mar ON tbl.CTSCustID = mar.CTSCustID
@@ -124,15 +122,20 @@ BEGIN
     DELETE cuAs FROM Temp_CustAssociation AS cuAs
 		INNER JOIN Temp_SubAccounts AS cus ON cuAs.CTSCustID = cus.CTSCustID;
   
-    INSERT INTO Temp_AssociationRemoveAccounts(FromCTSCustID,ToCTSCustID)
+    INSERT IGNORE INTO Temp_AssociationRemoveAccounts(FromCTSCustID,ToCTSCustID)
     SELECT DISTINCT asRe.FromCTSCustID, asRe.ToCTSCustID
     FROM Temp_CustAssociation AS cuAs
-		INNER JOIN CTS_DataCenter.AssociationRemove AS asRe 
-			ON (cuAs.CTSCustID = asRe.FromCTSCustID AND cuAs.CTSCustID_Aff = asRe.ToCTSCustID) OR (cuAs.CTSCustID_Aff = asRe.ToCTSCustID AND cuAs.CTSCustID = asRe.FromCTSCustID);
+		INNER JOIN CTS_DataCenter.AssociationRemove AS asRe ON cuAs.CTSCustID_Aff = asRe.ToCTSCustID AND cuAs.CTSCustID = asRe.FromCTSCustID;
+
+	INSERT IGNORE INTO Temp_AssociationRemoveAccounts(FromCTSCustID,ToCTSCustID)
+    SELECT DISTINCT asRe.FromCTSCustID, asRe.ToCTSCustID
+    FROM Temp_CustAssociation AS cuAs
+		INNER JOIN CTS_DataCenter.AssociationRemove AS asRe ON cuAs.CTSCustID = asRe.ToCTSCustID AND cuAs.CTSCustID_Aff = asRe.FromCTSCustID;
 	
-    DELETE cuAs FROM Temp_CustAssociation AS cuAs
-		INNER JOIN Temp_AssociationRemoveAccounts AS asRe 
-			ON (cuAs.CTSCustID = asRe.FromCTSCustID AND cuAs.CTSCustID_Aff = asRe.ToCTSCustID) OR (cuAs.CTSCustID_Aff = asRe.ToCTSCustID AND cuAs.CTSCustID = asRe.FromCTSCustID);
+    DELETE cuAs 
+	FROM Temp_CustAssociation AS cuAs
+		INNER JOIN Temp_AssociationRemoveAccounts AS asRe ON (cuAs.CTSCustID = asRe.FromCTSCustID AND cuAs.CTSCustID_Aff = asRe.ToCTSCustID) 
+														  OR (cuAs.CTSCustID_Aff = asRe.FromCTSCustID AND cuAs.CTSCustID = asRe.ToCTSCustID);
 	
     INSERT INTO Temp_CustLevel1(CTSCustID)
     SELECT DISTINCT CTSCustID_Aff AS Level1  
@@ -141,8 +144,8 @@ BEGIN
     INSERT INTO Temp_PA(CTSCustID, CustomerClass)
     SELECT 	cus.CTSCustID, class.CustomerClass
 	FROM 	Temp_CustLevel1 AS cus
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CTSCustID = cus.CTSCustID AND SportGroupID = CONST_GROUP_PA
-		INNER JOIN CTS_DataCenter.CategoryToCustomerClass AS class ON class.CategoryID =  cc.CategoryID
+		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CTSCustID = cus.CTSCustID AND SportGroupID = CONST_GROUP_PA
+		STRAIGHT_JOIN CTS_DataCenter.CategoryToCustomerClass AS class ON class.CategoryID =  cc.CategoryID
     WHERE 	cc.CategoryID = CONST_CATEGORYID_ROBOTUSERS OR class.CustomerClass IN (8, 10)
     ON DUPLICATE KEY UPDATE CustomerClass = CASE WHEN class.CustomerClass = 10 THEN 10
 												 WHEN class.CustomerClass = 8 AND Temp_PA.CustomerClass <> 10 THEN 8
