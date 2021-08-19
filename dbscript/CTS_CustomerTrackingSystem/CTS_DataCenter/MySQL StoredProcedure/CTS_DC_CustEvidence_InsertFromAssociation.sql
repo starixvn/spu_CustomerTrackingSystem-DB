@@ -93,10 +93,8 @@ BEGIN
 			,	tmp_ca.FromCTSCustID
 			,	lv_CreatedDate AS CreatedDate
 			,	ce.CreatedBy AS CreatedBy
-		FROM CTS_DataCenter.CustEvidence	AS ce
-			INNER JOIN	Temp_CustAssociation AS tmp_ca ON ce.CTSCustID = tmp_ca.FromCTSCustID
-		WHERE	ce.CTSCustID = tmp_ca.FromCTSCustID
-			AND ce.Level = 0;    
+		FROM CTS_DataCenter.CustEvidence AS ce USE INDEX FOR JOIN (IX_CustEvidence_Level_CTSCustID)
+			INNER JOIN	Temp_CustAssociation AS tmp_ca ON ce.CTSCustID = tmp_ca.FromCTSCustID AND ce.Level = 0;    
 			
     #===4. Place Affected Evidence Of Level 0 (ToCTSCust) for (ToCTSCust)==================================
 		INSERT IGNORE INTO Temp_CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
@@ -107,10 +105,8 @@ BEGIN
 			,	tmp_ca.ToCTSCustID
 			,	lv_CreatedDate AS CreatedDate
 			,	ce.CreatedBy AS CreatedBy
-		FROM CTS_DataCenter.CustEvidence	AS ce
-			INNER JOIN	Temp_CustAssociation AS tmp_ca ON ce.CTSCustID = tmp_ca.ToCTSCustID
-		WHERE ce.CTSCustID = tmp_ca.ToCTSCustID
-			AND ce.Level	= 0;
+		FROM CTS_DataCenter.CustEvidence AS ce USE INDEX FOR JOIN (IX_CustEvidence_Level_CTSCustID)
+			INNER JOIN	Temp_CustAssociation AS tmp_ca ON ce.CTSCustID = tmp_ca.ToCTSCustID AND ce.Level	= 0;
                     
 		IF EXISTS (SELECT 1 FROM Temp_CustEvidence LIMIT 1) THEN  
 			DELETE tce
