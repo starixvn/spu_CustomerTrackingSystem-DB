@@ -102,6 +102,12 @@ sp:BEGIN
 		,	PRIMARY KEY 		PK_Temp_Association_Level1_Distinct(CTSCustID_Level1, CTSCustID )
 	);
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_Exclude_CTSCustID;
+	CREATE TEMPORARY TABLE 		Temp_Exclude_CTSCustID (
+		    CTSCustID			BIGINT UNSIGNED 
+		,	PRIMARY KEY 		PK_Temp_Exclude_CTSCustID(CTSCustID)
+	);
+    
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Level1_Info;
 	CREATE TEMPORARY TABLE 		Temp_Level1_Info (
@@ -299,7 +305,17 @@ sp:BEGIN
     SELECT DISTINCT
 		   CTSCustID
 		,  CTSCustID_Level1
-    FROM Temp_Association_Level1;
+    FROM Temp_Association_Level1; 
+    
+    INSERT IGNORE INTO Temp_Exclude_CTSCustID(CTSCustID)
+    SELECT cust.CTSCustID 
+    FROM Temp_Association_Level1_Distinct AS lv1 
+		INNER JOIN CTSCustomer AS cust ON cust.CTSCustID = lv1.CTSCustID_Level1
+	WHERE cust.SiteID IN (SELECT ex.ItemID FROM CTS_DataCenter.StaticList AS ex WHERE ex.ListID = 11);
+    
+    DELETE 
+    FROM Temp_Association_Level1_Distinct AS lv1
+    WHERE EXISTS (SELECT 1 FROM Temp_Exclude_CTSCustID AS ex WHERE ex.CTSCustID = lv1.CTSCustID_Level1);
     
 	INSERT IGNORE INTO Temp_Association(CTSCustID_1, CTSCustID_2, AssociationType, Level)
 	SELECT 	cus.CTSCustID
