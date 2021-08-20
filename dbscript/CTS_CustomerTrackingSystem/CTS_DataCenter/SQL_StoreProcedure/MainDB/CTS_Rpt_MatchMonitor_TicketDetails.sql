@@ -8,6 +8,7 @@ ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_TicketDetails]
 		@QueryType				TINYINT = 1
 
 	,	@LastScannedTransID		BIGINT = 0
+	,	@IsLive					BIT = 1
 	,	@BatchSize				INT = 500
 
 	,	@ListTransId			VARCHAR(MAX) = ''
@@ -21,10 +22,11 @@ AS
 
 	Revisions:
 		- 20210526@Long.Luu: Created [Redmine ID: #152883]
-		- 20210728@Long.Luu: Exclude SABA's leaguegroup [Redmine ID: #159187]
+		- 20210728@Long.Luu: Exclude SABA's leaguegroup [Redmine ID: #159187]		
+		- 20210820@Long.Luu: Separate Live/Nonlive ticket selection [Redmine ID: #159195]
 
 	Params Explaination:
-		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID & @BatchSize)
+		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize)
 					  2 - to show on report (get tickets by @EventDate & @ListTransId)
 
 	Example:
@@ -34,7 +36,8 @@ BEGIN
 	SET NOCOUNT ON;
 
 	DECLARE @BalanceUpDay			SMALLDATETIME
-		,	@MoveBetsDay			SMALLDATETIME;
+		,	@MoveBetsDay			SMALLDATETIME
+		,	@Today					DATE = GETDATE();
 
 	IF	OBJECT_ID('tempdb..#BUMBData') IS NOT NULL
 	BEGIN;
@@ -145,7 +148,9 @@ BEGIN
 				INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
 			WHERE	b.transid > @LastScannedTransID
+				AND m.eventdate >= @Today
 				AND b.bettype IN (1,3,7,8)
+				AND b.LiveIndicator = @IsLive
 				AND b.Currency NOT IN (20,27,28)
 				AND b.BetFrom NOT IN ('p','m','w','0','3','6')
 				AND b.recommend NOT IN (52466,5707545) -- 8RM, BARM
