@@ -3,10 +3,10 @@ DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Get`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Get`(
-	IN ip_FromDate 		DATE,
-    IN ip_ToDate 		DATE,
-    IN ip_Bettypes 		VARCHAR(50),
-    IN ip_IsVerified 	BIT
+		IN ip_FromDate 		DATE
+    ,	IN ip_ToDate 		DATE
+    ,	IN ip_Bettypes 		VARCHAR(50)
+    ,	IN ip_IsVerified 	BIT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -18,11 +18,13 @@ BEGIN
 
 		Revisions:
 			- 	20210526@Long.Luu: Created [Redmine ID: 152883]
+            -	20210823@Casey.Huynh: Return Market value [Redmine ID: 159195]
 		
 		Param's Explanation (filtered by):
-		
+			- ip_Market: 0 return LiveIndicator = 0, 1 return LiveIndicator = 1
+            
 		Example:
-			-	CALL CTS_DC_MatchMonitor_Get('2021-05-01','2021-05-03','1',0);
+			-	CALL CTS_DC_MatchMonitor_Get('2021-05-01','2021-05-03','1',0,1);
 	*/
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Bettype;
@@ -37,6 +39,7 @@ BEGIN
 	SELECT 	s.ID
 		,	s.MatchID
 		,	s.EventDate
+        ,	s.LiveIndicator AS Market
         ,	s.HomeID
         ,	s.AwayID
         ,	s.LeagueID

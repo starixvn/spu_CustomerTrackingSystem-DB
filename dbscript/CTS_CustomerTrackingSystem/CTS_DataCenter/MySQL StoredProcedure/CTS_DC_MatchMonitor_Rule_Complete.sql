@@ -3,6 +3,8 @@ DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule_Complete`;
 DELIMITER $$
 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule_Complete`(
+		IN ip_Result 	JSON
+	, 	IN ip_IsLive 	BOOLEAN
 )
   SQL SECURITY INVOKER
 BEGIN

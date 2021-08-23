@@ -4,6 +4,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule`(
 		IN ip_TempGroupID INT
+	,	IN ip_IsLive 	BOOLEAN
 )
 	SQL SECURITY INVOKER
 sp: BEGIN
