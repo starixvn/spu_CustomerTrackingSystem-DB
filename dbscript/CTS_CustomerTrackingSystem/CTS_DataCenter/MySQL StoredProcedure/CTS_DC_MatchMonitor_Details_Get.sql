@@ -3,12 +3,13 @@ DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Details_Get`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Details_Get`(
-	IN ip_EventDate			DATE,
-    IN ip_MatchID 			BIGINT UNSIGNED,
-    IN ip_BettypeID			INT UNSIGNED,
-    IN ip_LiveIndicator		BIT,
-    IN ip_ListScore			VARCHAR(200),
-    IN ip_ListReasonGroup	VARCHAR(200)
+		IN ip_EventDate			DATE
+    ,	IN ip_MatchID 			BIGINT UNSIGNED
+    ,	IN ip_BettypeID			INT UNSIGNED
+    ,	IN ip_LiveIndicator		BIT
+    ,	IN ip_ListScore			VARCHAR(200)
+    ,	IN ip_ListReasonGroup	VARCHAR(200)
+    ,	IN ip_Site				TINYINT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -50,6 +51,7 @@ BEGIN
         ,	d.GroupID
         ,	d.IsHedging
         ,	d.TotalScore
+        ,	d.LiveIndicator AS Market
 	FROM   CTS_DataCenter.MatchMonitorDetails AS d
 		INNER JOIN Temp_Score AS s ON s.TotalScore = d.TotalScore
         INNER JOIN Temp_ReasonGroup AS r ON r.GroupID = d.GroupID
