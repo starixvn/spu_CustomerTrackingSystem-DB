@@ -5,7 +5,7 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidenceQueue_Affected_Remove`(
 		IN 	ip_BatchSize 	INT
         
-	,	OUT op_IsExist 	 	BIT
+	,	OUT op_IsExist 	 	SMALLINT
 )
     SQL SECURITY INVOKER
 sp : BEGIN
