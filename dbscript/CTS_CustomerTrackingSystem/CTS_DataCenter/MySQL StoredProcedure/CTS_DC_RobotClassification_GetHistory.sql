@@ -30,6 +30,7 @@ sp : BEGIN
 	FROM CTS_DataCenter.RobotClassification
 	WHERE CustID = ip_CustID
 		AND FromDate BETWEEN ip_FromDate AND ip_ToDate
+	ORDER BY FromDate DESC
 ;
 
 
