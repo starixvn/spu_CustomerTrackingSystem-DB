@@ -67,20 +67,6 @@ sp: BEGIN
 			EvidenceID		SMALLINT UNSIGNED
         ,	EvidenceCode	VARCHAR(10)
     );
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_AffectedDevices;
-    CREATE TEMPORARY TABLE Temp_AffectedDevices(
-			CTSCustID		BIGINT UNSIGNED     
-		,	DCSDeviceID		BIGINT UNSIGNED
-        , 	PRIMARY KEY		PK_Temp_AffectedDevices_CTSCustID_DCSDeviceID(CTSCustID,DCSDeviceID) 
-	);
-  
-    DROP TEMPORARY TABLE IF EXISTS Temp_AssociatedException;
-    CREATE TEMPORARY TABLE Temp_AssociatedException(
-			FromCTSCustID 	BIGINT UNSIGNED
-        ,	ToCTSCustID 	BIGINT UNSIGNED
-        , 	PRIMARY KEY		PK_Temp_AssociatedException_FromCTSCustID_ToCTSCustID(FromCTSCustID,ToCTSCustID)
-	);
 
 	SET @sql = CONCAT("INSERT INTO Temp_CustID (CustID) VALUES ('", REPLACE(ip_CustIds, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
@@ -113,41 +99,14 @@ sp: BEGIN
         ,	lv_CreatedBy
     FROM 	Temp_CustomerList AS t 
         CROSS JOIN Temp_EvidenceList AS e;
-    
-    /*	GET AFFECTED EVIDENCES FOR CUSTOMERS	*/
-    INSERT INTO Temp_AffectedDevices(CTSCustID, DCSDeviceID)
-    SELECT  DISTINCT 
-            t.CTSCustID
-        ,   a.DCSDeviceID
-    FROM CTS_DataCenter.AssociationByDevice AS a    
-	    INNER JOIN Temp_CustomerList AS t ON a.CTSCustID = t.CTSCustID;
-    
-    /*	GET ASSOCIATED EXCEPTIONS FOR CUSTOMERS	*/
-    INSERT INTO Temp_AssociatedException(FromCTSCustID, ToCTSCustID)
-    SELECT DISTINCT 
-           t.CTSCustID
-		,  CASE WHEN e.LeastCTSCustID_Order = t.CTSCustID  THEN e.GreatestCTSCustID_Order 
-                ELSE e.LeastCTSCustID_Order 
-           END
-    FROM CTS_DataCenter.CustException AS e
-	    INNER JOIN Temp_CustomerList AS t ON e.LeastCTSCustID_Order = t.CTSCustID OR e.GreatestCTSCustID_Order = t.CTSCustID;
-    
-    /*	INSERT NEW AFFECTED EVIDENCES FOR  CUSTOMERS	*/
-	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID,EvidenceID, Level, FromCustID, CreatedDate, CreatedBy)
-    SELECT  DISTINCT 
-            a.CTSCustID
-        ,   ev.EvidenceID
-        ,   2
-        ,   t.CTSCustID
-        ,   lv_CurrentDateTime
-        ,   lv_CreatedBy
-    FROM Temp_CustomerList AS t 
-	    INNER JOIN Temp_AffectedDevices AS d ON t.CTSCustID = d.CTSCustID
-	    INNER JOIN CTS_DataCenter.AssociationByDevice AS a ON a.DCSDeviceID = d.DCSDeviceID
-	    LEFT JOIN CTS_DataCenter.CTSCustomer AS c ON a.CTSCustID = c.CTSCustID AND c.CustSubID = 0
-	    LEFT JOIN Temp_AssociatedException AS e ON t.CTSCustID = e.FromCTSCustID AND a.CTSCustID = e.ToCTSCustID
-	    CROSS JOIN Temp_EvidenceList AS ev
-	WHERE 		a.CTSCustID <> d.CTSCustID AND (e.FromCTSCustID IS NULL OR e.ToCTSCustID IS NULL);
+   
+   /*	INSERT NEW AFFECTED EVIDENCE FOR CUSTOMERS	*/
+   INSERT INTO CTS_DataCenter.CustEvidenceAffectedQueueInsert(CTSCustID,  EvidenceID, CreatedBy)
+   SELECT 	t.CTSCustID
+		,	e.EvidenceID
+        ,	lv_CreatedBy
+   FROM Temp_CustomerList AS t 
+        CROSS JOIN Temp_EvidenceList AS e;
    
     -- Return CTSCustID, CustID, SubscriberID, EvidenceID, 0 (ActionType)
     SELECT  DISTINCT 

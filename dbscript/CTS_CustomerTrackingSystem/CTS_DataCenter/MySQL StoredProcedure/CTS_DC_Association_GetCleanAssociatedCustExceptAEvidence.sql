@@ -32,25 +32,12 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_Association (
 		CTSCustID 		BIGINT UNSIGNED PRIMARY KEY
     );    
-        
-    DROP TEMPORARY TABLE IF EXISTS Temp_CustEvidence;
-    CREATE TEMPORARY TABLE Temp_CustEvidence (
-			CTSCustID 		BIGINT UNSIGNED
-		,	EvidenceID		SMALLINT
-        ,	INDEX IX_Temp_CustEvidence_CTSCustID_EvidenceID(CTSCustID,EvidenceID)
-    );
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CleanCustID;
     CREATE TEMPORARY TABLE Temp_CleanCustID (
 			CTSCustID 		BIGINT UNSIGNED PRIMARY KEY
     );
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_CustRetractEvidence;
-    CREATE TEMPORARY TABLE Temp_CustRetractEvidence (
-			CTSCustID 		BIGINT UNSIGNED 
-        ,	EvidenceID		SMALLINT
-    );
-
     # Get devices list for root account
 	INSERT INTO Temp_AffectedDevice(DCSDeviceID)
 	SELECT  DISTINCT 
@@ -64,41 +51,22 @@ BEGIN
             a.CTSCustID
 	FROM CTS_DataCenter.AssociationByDevice AS a
 		INNER JOIN Temp_AffectedDevice AS t ON a.DCSDeviceID = t.DCSDeviceID;
-    
-    # Get customer evidences
-    INSERT INTO Temp_CustEvidence(CTSCustID, EvidenceID)
-    SELECT c.CTSCustID, c.EvidenceID
-    FROM CTS_DataCenter.CustEvidence AS c
-		INNER JOIN Temp_Association AS t ON c.CTSCustID = t.CTSCustID
-	WHERE c.EvidenceID <> ip_EvidenceID;
-    
-    INSERT INTO Temp_CustRetractEvidence(CTSCustID, EvidenceID)
-    SELECT  c.CTSCustID
-        ,   c.EvidenceID
-    FROM Temp_CustEvidence AS c
-		INNER JOIN CTS_DataCenter.CustRetractEvidence AS r ON c.CTSCustID = r.CTSCustID AND c.EvidenceID = r.EvidenceID;
-
-    DELETE c
-    FROM Temp_CustEvidence AS c
-		INNER JOIN Temp_CustRetractEvidence AS r ON c.CTSCustID = r.CTSCustID AND c.EvidenceID = r.EvidenceID;
         
     # Accounts that are clean
     INSERT INTO Temp_CleanCustID(CTSCustID)
-    SELECT  DISTINCT 
-            c.CTSCustID
-	FROM Temp_Association AS c
-		LEFT JOIN (	SELECT DISTINCT CTSCustID FROM Temp_CustEvidence) AS r ON c.CTSCustID = r.CTSCustID
-	WHERE r.CTSCustID IS NULL ;
+    SELECT CTSCustID 
+    FROM Temp_Association AS cus
+    WHERE NOT EXISTS (SELECT 1 
+				      FROM CTS_DataCenter.CustEvidence as ev 
+                      WHERE ev.CTSCustID = cus.CTSCustID AND ev.EvidenceID <> ip_EvidenceID
+					    AND NOT EXISTS (SELECT 1 
+									    FROM CTS_DataCenter.CustRetractEvidence AS re 
+									    WHERE re.CTSCustID = ev.CTSCustID 
+										    AND re.EvidenceID = ev.EvidenceID));
     
-    SELECT  DISTINCT	
-            c.CustID
+    SELECT  c.CustID
     FROM Temp_CleanCustID AS a
-		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON a.CTSCustID = c.CTSCustID;
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_AffectedDevices;
-    DROP TEMPORARY TABLE IF EXISTS Temp_Association;
-    DROP TEMPORARY TABLE IF EXISTS Temp_CustEvidence;
-    DROP TEMPORARY TABLE IF EXISTS Temp_CleanCustID;    
+		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON a.CTSCustID = c.CTSCustID;   
     
 END$$
 
