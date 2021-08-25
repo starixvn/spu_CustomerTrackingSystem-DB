@@ -192,7 +192,7 @@ sp : BEGIN
     WHERE EXISTS (SELECT 1 
 				  FROM Temp_CustEvidence AS aff
 				  WHERE aff.CTSCustID = ev.CTSCustID
-					AND	aff.CTSCustID_Affected = ev.FromCustID
+					AND	aff.FromCustID = ev.FromCustID
                     AND aff.EvidenceID = ev.EvidenceID);
     
     DELETE 
