@@ -26,7 +26,7 @@ BEGIN
 		Example:
 			-	CALL CTS_DC_MatchMonitor_Get('2021-05-01','2021-05-03','1',0,1);
 	*/
-	
+    
 	DROP TEMPORARY TABLE IF EXISTS Temp_Bettype;
     CREATE TEMPORARY TABLE Temp_Bettype(
 		BettypeID 	INT UNSIGNED
@@ -48,16 +48,16 @@ BEGIN
         ,	s.IsVerified
         ,	s.VerifiedDate
         ,	u.UserName AS VerifiedBy
-        ,	CASE WHEN s.EventStatus = 'Completed' THEN 4 #'Closed'
-                WHEN s.EventStatus <> 'Completed' AND s.KickOffTime <= NOW() THEN 1 # 'Live'
+        ,	CASE WHEN NOW() BETWEEN s.KickOffTime AND TIMESTAMPADD(MINUTE, 150, s.KickOffTime ) AND LiveIndicator = 1 THEN 1 #Live
 				WHEN s.EventDate = CURDATE() AND s.KickOffTime > NOW() THEN 2 #'Today'
 				WHEN s.EventDate > CURDATE() THEN 3 #'Early'
-			END AS EventGroup
+                ELSE 4 #'Closed'
+			END	AS EventGroup
 	FROM   CTS_DataCenter.MatchMonitor AS s
 		INNER JOIN Temp_Bettype AS b ON s.BettypeID = b.BettypeID
         LEFT JOIN CTS_Admin.CTSUser AS u ON s.VerifiedBy = u.UserID
 	WHERE  s.EventDate BETWEEN ip_FromDate AND ip_ToDate
 		AND (ip_IsVerified IS NULL OR s.IsVerified = ip_IsVerified);
-
+SELECT NOW();
 END$$
 DELIMITER ;
