@@ -40,9 +40,14 @@ BEGIN
     END;
 	
     /*DELETE FLAGGED EVIDENCE*/
-    DELETE FROM CTS_DataCenter.CustEvidence
+    DELETE 
+    FROM CTS_DataCenter.CustEvidence
 	WHERE   FromCustID = ip_CTSCustID		
-	    AND EvidenceID = ip_EvidenceID;
+	    AND EvidenceID = ip_EvidenceID
+        AND Level = 0;
+
+    INSERT INTO CustEvidenceAffectedQueueRemove(CTSCustID, EvidenceID)
+    VALUES(ip_CTSCustID, ip_EvidenceID)
   
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	VALUES(4, lv_SPName, CONCAT('Remove Flagged Evidence: ip_CTSCustID = ', ip_CTSCustID, ';ip_EvidenceID = ', ip_EvidenceID), lv_CreatedDateTime, ip_UserID); 
