@@ -17,7 +17,7 @@ sp : BEGIN
 		Explanation:
 			- RobotType: 2-Bad | 1-Good | 0:Observed | -1:No data
         Example:
-			- CALL CTS_DataCenter.CTS_DC_RobotClassification_GetRobotStatus(135125302);
+			- CALL CTS_DataCenter.CTS_DC_RobotClassification_GetRobotStatus(3698310);
 	*/
     
     DROP TEMPORARY TABLE IF EXISTS tmpLastestRobotClassification;  
@@ -29,16 +29,29 @@ sp : BEGIN
     );
     
     INSERT INTO tmpLastestRobotClassification
-    SELECT CustID
-		,RobotType
-        ,MAX(FromDate) AS 'ScannedDate'
-	FROM CTS_DataCenter.RobotClassification
-	WHERE CustID = ip_CustID
-	GROUP BY CustID
-		,SportTypeID
-		,BetTypeID
-		,LiveIndicator
-        ,RobotType;
+    WITH lastestClassification
+	AS (
+		SELECT CustID
+			,SportTypeID
+			,BetTypeID
+			,LiveIndicator
+			,MAX(FromDate) AS 'ScannedDate'
+		FROM CTS_DataCenter.RobotClassification
+		WHERE CustID = ip_CustID
+		GROUP BY CustID
+			,SportTypeID
+			,BetTypeID
+			,LiveIndicator
+		)
+	SELECT lc.CustID
+		, rc.RobotType
+        , lc.ScannedDate
+	FROM lastestClassification lc
+	INNER JOIN RobotClassification rc ON lc.CustID = rc.CustID
+		AND lc.SportTypeID = rc.SportTypeID
+		AND lc.BetTypeID = rc.BetTypeID
+		AND lc.LiveIndicator = rc.LiveIndicator
+		AND lc.ScannedDate = rc.FromDate;
         
 	IF EXISTS(SELECT 1 FROM tmpLastestRobotClassification WHERE RobotType = 2) THEN
 		SELECT CustID, RobotType
@@ -48,7 +61,7 @@ sp : BEGIN
 	ELSEIF EXISTS(SELECT 1 FROM tmpLastestRobotClassification WHERE RobotType = 0) THEN
 		SELECT CustID, RobotType
         FROM tmpLastestRobotClassification 
-        WHERE RobotType = 2
+        WHERE RobotType = 0
         LIMIT 1;
 	ELSEIF EXISTS(SELECT 1 FROM tmpLastestRobotClassification WHERE RobotType = 1) THEN
 		SELECT CustID, RobotType
