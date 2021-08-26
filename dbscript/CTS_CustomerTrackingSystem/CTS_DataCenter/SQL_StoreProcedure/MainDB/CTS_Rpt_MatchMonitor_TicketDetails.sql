@@ -149,6 +149,7 @@ BEGIN
 				INNER JOIN dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
 			WHERE	b.transid > @LastScannedTransID
 				AND m.eventdate >= @Today
+                AND m.eventstatus = 'running'
 				AND b.bettype IN (1,3,7,8)
 				AND b.LiveIndicator = @IsLive
 				AND b.Currency NOT IN (20,27,28)
