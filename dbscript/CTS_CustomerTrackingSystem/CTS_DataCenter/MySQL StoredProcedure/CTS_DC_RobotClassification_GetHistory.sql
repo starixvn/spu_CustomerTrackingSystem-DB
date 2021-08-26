@@ -22,16 +22,15 @@ sp : BEGIN
 	*/
 	
     SELECT CustID
-		,SportTypeID
-		,BetTypeID
-		,LiveIndicator
-		,RobotType
-		,FromDate AS 'ScannedDate'
+		, SportTypeID
+		, BetTypeID
+		, LiveIndicator
+		, RobotType
+		, FromDate AS 'ScannedDate'
 	FROM CTS_DataCenter.RobotClassification
 	WHERE CustID = ip_CustID
 		AND FromDate BETWEEN ip_FromDate AND ip_ToDate
-	ORDER BY FromDate DESC
-;
+	ORDER BY FromDate DESC;
 
 
 END$$

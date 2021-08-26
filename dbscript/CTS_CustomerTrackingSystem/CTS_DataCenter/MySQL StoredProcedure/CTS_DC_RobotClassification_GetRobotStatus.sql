@@ -20,15 +20,15 @@ sp : BEGIN
 			- CALL CTS_DataCenter.CTS_DC_RobotClassification_GetRobotStatus(3698310);
 	*/
     
-    DROP TEMPORARY TABLE IF EXISTS tmpLastestRobotClassification;  
-	CREATE TEMPORARY TABLE tmpLastestRobotClassification
+    DROP TEMPORARY TABLE IF EXISTS Temp_LastestRobotClassification;  
+	CREATE TEMPORARY TABLE Temp_LastestRobotClassification
     (
 		CustID		BIGINT,
         RobotType	TINYINT,
         ScannedDate	DATETIME
     );
     
-    INSERT INTO tmpLastestRobotClassification
+    INSERT INTO Temp_LastestRobotClassification
     WITH lastestClassification
 	AS (
 		SELECT CustID
@@ -53,19 +53,19 @@ sp : BEGIN
 		AND lc.LiveIndicator = rc.LiveIndicator
 		AND lc.ScannedDate = rc.FromDate;
         
-	IF EXISTS(SELECT 1 FROM tmpLastestRobotClassification WHERE RobotType = 2) THEN
+	IF EXISTS(SELECT 1 FROM Temp_LastestRobotClassification WHERE RobotType = 2) THEN
 		SELECT CustID, RobotType
-        FROM tmpLastestRobotClassification 
+        FROM Temp_LastestRobotClassification 
         WHERE RobotType = 2
         LIMIT 1;
-	ELSEIF EXISTS(SELECT 1 FROM tmpLastestRobotClassification WHERE RobotType = 0) THEN
+	ELSEIF EXISTS(SELECT 1 FROM Temp_LastestRobotClassification WHERE RobotType = 0) THEN
 		SELECT CustID, RobotType
-        FROM tmpLastestRobotClassification 
+        FROM Temp_LastestRobotClassification 
         WHERE RobotType = 0
         LIMIT 1;
-	ELSEIF EXISTS(SELECT 1 FROM tmpLastestRobotClassification WHERE RobotType = 1) THEN
+	ELSEIF EXISTS(SELECT 1 FROM Temp_LastestRobotClassification WHERE RobotType = 1) THEN
 		SELECT CustID, RobotType
-        FROM tmpLastestRobotClassification 
+        FROM Temp_LastestRobotClassification 
         WHERE RobotType = 1
         LIMIT 1;
 	ELSE

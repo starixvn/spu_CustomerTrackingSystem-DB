@@ -22,18 +22,23 @@ sp : BEGIN
     WITH lastestClassification
 	AS (
 		SELECT CustID
-			,SportTypeID
-			,BetTypeID
-			,LiveIndicator
-			,MAX(FromDate) AS 'ScannedDate'
+			, SportTypeID
+			, BetTypeID
+			, LiveIndicator
+			, MAX(FromDate) AS 'ScannedDate'
 		FROM CTS_DataCenter.RobotClassification
 		WHERE CustID = ip_CustID
 		GROUP BY CustID
-			,SportTypeID
-			,BetTypeID
-			,LiveIndicator
+			, SportTypeID
+			, BetTypeID
+			, LiveIndicator
 		)
-	SELECT lc.*, rc.RobotType
+	SELECT lc.CustID
+		, lc.SportTypeID
+		, lc.BetTypeID
+		, lc.LiveIndicator
+		, lc.ScannedDate
+        , rc.RobotType
 	FROM lastestClassification lc
 	INNER JOIN RobotClassification rc ON lc.CustID = rc.CustID
 		AND lc.SportTypeID = rc.SportTypeID
