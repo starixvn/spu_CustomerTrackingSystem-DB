@@ -17,6 +17,7 @@ BEGIN
 		Revisions:
 			- 20200820@Aries.Nguyen: created [Redmine ID: 139701]  	
             - 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
+            - 20210823@Aries.Nguyen: Enhannce  Affected Evidence flow [Redmine ID: #160470]
         
 		Param's Explanation (filtered by):
         

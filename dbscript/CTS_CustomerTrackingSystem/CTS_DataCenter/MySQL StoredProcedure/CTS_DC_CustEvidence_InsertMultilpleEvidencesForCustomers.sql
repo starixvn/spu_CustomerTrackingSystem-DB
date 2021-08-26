@@ -24,6 +24,7 @@ sp: BEGIN
             - 20201130@Irena.Vo: Enhance logic Insert new evidence (remove existed evidence category before) [Redmine ID: #141563]
 			- 20201214-20210107@Irena.Vo: Move logic Sync to Category by new sp: SyncToCategory. Insert Error Log. Remove User Log [RedmineID: #145951] 
             - 20210622@Aries.Nguyen: Update coding convention and improve locking [Redmine ID: #157203]
+            - 20210823@Aries.Nguyen: Enhannce  Affected Evidence flow [Redmine ID: #160470]
             
 		Param's Explanation(filered by):
 		

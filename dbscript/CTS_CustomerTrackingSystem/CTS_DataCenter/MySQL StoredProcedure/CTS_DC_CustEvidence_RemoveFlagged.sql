@@ -24,6 +24,7 @@ BEGIN
             - 20201111@Irena.Vo: Enhance logic Insert History for Evidence Category [Redmine ID: #145027]
             - 20201125@Irena.Vo: Move flow sync Evidence to Category [Redmine ID: #141563]
             - 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
+            - 20210823@Aries.Nguyen: Enhannce  Affected Evidence flow [Redmine ID: #160470]
         
 		Param's Explanation (filtered by):			
         

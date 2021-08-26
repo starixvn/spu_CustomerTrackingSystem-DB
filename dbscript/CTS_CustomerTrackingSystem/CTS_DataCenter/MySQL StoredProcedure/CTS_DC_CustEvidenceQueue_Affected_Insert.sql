@@ -16,7 +16,7 @@ sp : BEGIN
 		Original:
 
 		Revisions:
-			- 20210622@Aries.Nguyen: Update coding convention and improve locking [Redmine ID: #160470]
+			- 20210823@Aries.Nguyen: Created [Redmine ID: #160470]
             
 		Param's Explanation (filtered by):
 		Example: 
