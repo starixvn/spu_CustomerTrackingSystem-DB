@@ -19,19 +19,27 @@ sp : BEGIN
 			- CALL CTS_DataCenter.CTS_DC_RobotClassification_GetLastest(16905114);
 	*/
 	
-    SELECT CustID
-		,SportTypeID
-		,BetTypeID
-		,LiveIndicator
-		,RobotType
-		,MAX(FromDate) AS 'ScannedDate'
-	FROM CTS_DataCenter.RobotClassification
-	WHERE CustID = ip_CustID
-	GROUP BY CustID
-		,SportTypeID
-		,BetTypeID
-		,LiveIndicator
-		,RobotType;
+    WITH lastestClassification
+	AS (
+		SELECT CustID
+			,SportTypeID
+			,BetTypeID
+			,LiveIndicator
+			,MAX(FromDate) AS 'ScannedDate'
+		FROM CTS_DataCenter.RobotClassification
+		WHERE CustID = ip_CustID
+		GROUP BY CustID
+			,SportTypeID
+			,BetTypeID
+			,LiveIndicator
+		)
+	SELECT lc.*, rc.RobotType
+	FROM lastestClassification lc
+	INNER JOIN RobotClassification rc ON lc.CustID = rc.CustID
+		AND lc.SportTypeID = rc.SportTypeID
+		AND lc.BetTypeID = rc.BetTypeID
+		AND lc.LiveIndicator = rc.LiveIndicator
+		AND lc.ScannedDate = rc.FromDate;
 
 END$$
 
