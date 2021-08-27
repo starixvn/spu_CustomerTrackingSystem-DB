@@ -119,7 +119,7 @@ sp : BEGIN
         
     END IF;
     
-    IF (lv_TotalAff + lv_SecondBatchSize) = 0 THEN
+    IF NOT EXISTS (SELECT 1 FROM Temp_CustAffectedEvidence) THEN
 		LEAVE sp;
     END IF;
     
