@@ -73,7 +73,12 @@ sp : BEGIN
 		  ORDER BY ID ASC
 		  LIMIT ip_BatchSize) AS tbl;
 
-    IF lv_QueueID_Next IS NOT NULL AND lv_QueueID_Next = lv_QueueID THEN
+    IF lv_QueueID_Next IS NULL THEN
+        SET op_IsExist = 0;
+        LEAVE sp;
+    END IF;
+
+    IF lv_QueueID_Next = lv_QueueID THEN
         SET lv_QueueID_Next = lv_QueueID + 1;
     END IF;
 
@@ -136,7 +141,7 @@ sp : BEGIN
     
     IF lv_TotalAff  = 0 THEN
         UPDATE CTS_DataCenter.SystemParameter 
-        SET ParameterValue = lv_QueueID_Next
+        SET ParameterValue = 0
         WHERE ParameterID = 30; 
 	
         UPDATE CTS_DataCenter.SystemParameter 

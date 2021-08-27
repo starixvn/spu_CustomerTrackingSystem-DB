@@ -25,10 +25,10 @@ CREATE TABLE `CTS_DataCenter`.`CustEvidenceAffectedQueueRemove` (
  ) ENGINE=InnoDB;
 
 INSERT INTO SystemParameter(ParameterID, ParameterName, ParameterDesc,ParameterDataType,ParameterValue)
-VALUES (30, 'EffectedEvidence_LastestQueueIDInsert',  'Lastest Queue ID insert affected evidence', 'BIGINT UNSIGNED', '0');
+VALUES (30, 'AffectedEvidence_LastestQueueIDInsert',  'Lastest Queue ID insert affected evidence', 'BIGINT UNSIGNED', '0');
 
 INSERT INTO SystemParameter(ParameterID, ParameterName, ParameterDesc,ParameterDataType,ParameterValue)
-VALUES (31, 'EffectedEvidence_LastestCTSCustIDQueueInsert', 'Lastest association CTSCustID Queue insert', 'BIGINT UNSIGNED', '0');
+VALUES (31, 'AffectedEvidence_LastestCTSCustIDQueueInsert', 'Lastest association CTSCustID Queue insert', 'BIGINT UNSIGNED', '0');
 
 INSERT INTO SystemParameter(ParameterID, ParameterName, ParameterDesc,ParameterDataType,ParameterValue)
 VALUES (32, 'AffectedEvidence_LastestQueueIDRemove', 'Lastest QueueID Affected Evidence Remove', 'BIGINT UNSIGNED', '0');

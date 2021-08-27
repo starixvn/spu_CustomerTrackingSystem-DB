@@ -42,12 +42,17 @@ sp : BEGIN
     SELECT MAX(tbl.ID)
     INTO lv_QueueID_Next
     FROM (SELECT ID
-		  FROM CTS_DataCenter.CustEvidenceAffectedQueueInsert
+		  FROM CTS_DataCenter.CustEvidenceAffectedQueueRemove
 		  WHERE ID >= lv_QueueID
 		  ORDER BY ID ASC
 		  LIMIT ip_BatchSize) AS tbl;
 
-    IF lv_QueueID_Next IS NOT NULL AND lv_QueueID_Next = lv_QueueID THEN
+    IF lv_QueueID_Next IS NULL THEN
+        SET op_IsExist = 0;
+        LEAVE sp;
+    END IF;
+
+    IF lv_QueueID_Next = lv_QueueID THEN
         SET lv_QueueID_Next = lv_QueueID + 1;
     END IF;
     
@@ -73,14 +78,14 @@ sp : BEGIN
 
     IF lv_TotalAff = 0 THEN
          UPDATE CTS_DataCenter.SystemParameter 
-         SET ParameterValue = lv_QueueID_Next
+         SET ParameterValue = 0
          WHERE ParameterID = 32; 
 
          DELETE 
-	     FROM CustEvidenceAffectedQueueInsert
+	     FROM CustEvidenceAffectedQueueRemove
          WHERE ID < lv_QueueID_Next;
 
-        IF EXISTS (SELECT 1 FROM CTS_DataCenter.CustEvidenceAffectedQueueInsert WHERE ID > lv_QueueID_Next) THEN
+        IF EXISTS (SELECT 1 FROM CTS_DataCenter.CustEvidenceAffectedQueueRemove WHERE ID > lv_QueueID_Next) THEN
             SET op_IsExist = 1;
             LEAVE sp;
         END IF;
