@@ -16,13 +16,23 @@ BEGIN
 			- 20200820@Long.Luu: Created [Redmine ID: #139701]
 			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: #148723]
 			- 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
+			- 20210823@Aries.Nguyen: Enhannce  Affected Evidence flow [Redmine ID: #160470]
 		
 		Param's Explanation (filtered by):
 	*/
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_AffectedDevices;
-    CREATE TEMPORARY TABLE Temp_AffectedDevices(
-			DCSDeviceID 	BIGINT PRIMARY KEY
+    DROP TEMPORARY TABLE IF EXISTS   Temp_AssociatedException;
+    CREATE TEMPORARY TABLE Temp_AssociatedException(
+			FromCTSCustID 	BIGINT UNSIGNED
+        ,	ToCTSCustID 	BIGINT UNSIGNED
+        , 	PRIMARY KEY		PK_Temp_AssociatedException_FromCTSCustID_ToCTSCustID(FromCTSCustID,ToCTSCustID)
+	);
+
+	DROP TEMPORARY TABLE IF EXISTS Temp_Association;
+    CREATE TEMPORARY TABLE Temp_Association(
+			CTSCustID 		BIGINT UNSIGNED
+		,	CTSCustID_Aff	BIGINT UNSIGNED
+		,	PRIMARY KEY(CTSCustID,CTSCustID_Aff)
 	);
  
 	DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustIDs;
@@ -34,17 +44,39 @@ BEGIN
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
     
-	# Get devices list for root account
-	INSERT INTO Temp_AffectedDevices(DCSDeviceID)
-	SELECT DISTINCT a.DCSDeviceID
-	FROM CTS_DataCenter.AssociationByDevice AS a
-		INNER JOIN Temp_CTSCustIDs AS t ON a.CTSCustID = t.CTSCustID;
+
+	INSERT IGNORE INTO Temp_Association(CTSCustID, CTSCustID_Aff)
+	SELECT cust.CTSCustID, ass.CTSCustID AS CTSCustID_Aff
+	FROM Temp_CTSCustIDs AS cust
+		INNER JOIN CTS_DataCenter.AssociationByDevice AS dv ON  cust.CTSCustID = dv.CTSCustID
+		INNER JOIN CTS_DataCenter.AssociationByDevice AS ass ON ass.DCSDeviceID = dv.DCSDeviceID AND ass.CTSCustID <> dv.CTSCustID;
+	
+	INSERT INTO Temp_AssociatedException(FromCTSCustID, ToCTSCustID)
+    SELECT	ex.FromCTSCustID
+		,	ex.ToCTSCustID
+    FROM CTS_DataCenter.AssociationRemove AS ex
+		INNER JOIN Temp_Association AS aff ON ex.FromCTSCustID = aff.CTSCustID_Aff AND ex.ToCTSCustID = aff.CTSCustID;
     
+    INSERT INTO Temp_AssociatedException(FromCTSCustID, ToCTSCustID)
+    SELECT	ex.FromCTSCustID
+		,	ex.ToCTSCustID
+    FROM CTS_DataCenter.AssociationRemove AS ex
+		INNER JOIN Temp_Association AS aff ON ex.FromCTSCustID = aff.CTSCustID AND ex.ToCTSCustID = aff.CTSCustID_Aff;
+    
+    DELETE 
+    FROM Temp_Association AS aff
+    WHERE EXISTS (SELECT 1 FROM Temp_AssociatedException AS ex WHERE ex.FromCTSCustID = aff.CTSCustID AND ex.ToCTSCustID = aff.CTSCustID_Aff);
+    
+    DELETE 
+    FROM Temp_Association AS aff
+    WHERE EXISTS (SELECT 1 FROM Temp_AssociatedException AS ex WHERE ex.FromCTSCustID = aff.CTSCustID_Aff AND ex.ToCTSCustID = aff.CTSCustID);
+
+
 	# Get associated accounts
-    SELECT DISTINCT c.CustID
-	FROM CTS_DataCenter.AssociationByDevice AS a
-		INNER JOIN Temp_AffectedDevices AS t ON a.DCSDeviceID = t.DCSDeviceID        
-        INNER JOIN CTS_DataCenter.CTSCustomer AS c ON a.CTSCustID = c.CTSCustID;
+    SELECT DISTINCT cust.CustID
+	FROM Temp_Association AS ass      
+        INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON ass.CTSCustID_Aff = cust.CTSCustID;
+ 
     
 END$$
 DELIMITER ;

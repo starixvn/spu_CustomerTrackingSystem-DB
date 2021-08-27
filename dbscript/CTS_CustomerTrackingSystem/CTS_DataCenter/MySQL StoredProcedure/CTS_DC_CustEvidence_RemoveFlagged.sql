@@ -24,6 +24,7 @@ BEGIN
             - 20201111@Irena.Vo: Enhance logic Insert History for Evidence Category [Redmine ID: #145027]
             - 20201125@Irena.Vo: Move flow sync Evidence to Category [Redmine ID: #141563]
             - 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
+            - 20210823@Aries.Nguyen: Enhannce  Affected Evidence flow [Redmine ID: #160470]
         
 		Param's Explanation (filtered by):			
         
@@ -40,9 +41,14 @@ BEGIN
     END;
 	
     /*DELETE FLAGGED EVIDENCE*/
-    DELETE FROM CTS_DataCenter.CustEvidence
+    DELETE 
+    FROM CTS_DataCenter.CustEvidence
 	WHERE   FromCustID = ip_CTSCustID		
-	    AND EvidenceID = ip_EvidenceID;
+	    AND EvidenceID = ip_EvidenceID
+        AND Level = 0;
+
+    INSERT INTO CustEvidenceAffectedQueueRemove(CTSCustID, EvidenceID)
+    VALUES(ip_CTSCustID, ip_EvidenceID);
   
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	VALUES(4, lv_SPName, CONCAT('Remove Flagged Evidence: ip_CTSCustID = ', ip_CTSCustID, ';ip_EvidenceID = ', ip_EvidenceID), lv_CreatedDateTime, ip_UserID); 

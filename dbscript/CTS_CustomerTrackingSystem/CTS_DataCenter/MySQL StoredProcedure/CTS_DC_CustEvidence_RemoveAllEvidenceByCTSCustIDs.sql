@@ -25,6 +25,7 @@ sp: BEGIN
 		   - 20201130@Irena.Vo: Enhance logic Insert new evidence (remove existed evidence category before) [Redmine ID: #141563]
 		   - 20201222-20210107@Irena.Vo: Insert Error Log [RedmineID: #145951]
 		   - 20210622@Aries.Nguyen: Update coding convention and inprove locking [Redmine ID: #157203]
+		   - 20210823@Aries.Nguyen: Enhannce  Affected Evidence flow [Redmine ID: #160470]
            
 	*/
     DECLARE lv_CurrentDateTime	DATETIME DEFAULT CURRENT_TIME();
@@ -61,28 +62,7 @@ sp: BEGIN
 		,   CustID          BIGINT UNSIGNED
         ,   SubscriberID    INT UNSIGNED
 		, 	PRIMARY KEY		PK_Temp_MultipleAccount_CTSCustID(CTSCustID) 
-	);      
-	
-	DROP TEMPORARY TABLE IF EXISTS Temp_AssociationException;
-	CREATE TEMPORARY TABLE Temp_AssociationException(
-			FromCTSCustID 	BIGINT UNSIGNED
-		,	ToCTSCustID 	BIGINT UNSIGNED
-		, 	PRIMARY KEY		PK_Temp_AssociationException_FromCTSCustID_ToCTSCustID(FromCTSCustID,ToCTSCustID)
-	);
-	
-	DROP  TEMPORARY TABLE IF EXISTS Temp_AffectedDevices;
-	CREATE TEMPORARY TABLE Temp_AffectedDevices(
-			CTSCustID		BIGINT UNSIGNED     
-		,	DCSDeviceID		BIGINT UNSIGNED
-		, 	PRIMARY KEY		PK_Temp_AffectedDevices_CTSCustID_DCSDeviceID(CTSCustID,DCSDeviceID) 
-	);
-	
-	DROP TEMPORARY TABLE IF EXISTS Temp_CustEvidence;
-	CREATE TEMPORARY TABLE Temp_CustEvidence(
-			CTSCustID 	BIGINT UNSIGNED
-		,	FromCustID 	BIGINT UNSIGNED
-		,   INDEX		IX_Temp_CustEvidence_CTSCustID_FromCustID(CTSCustID, FromCustID)
-	);
+	);      		
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustEvidenceList;
 	CREATE TEMPORARY TABLE Temp_CustEvidenceList(
@@ -111,35 +91,7 @@ sp: BEGIN
 		,	c.SubscriberID
 	FROM Temp_CTSCustID AS t
 		LEFT JOIN 	CTS_DataCenter.CTSCustomer AS c ON t.CTSCustID = c.CTSCustID AND c.CustSubID = 0;
-    
-	INSERT INTO Temp_AffectedDevices(CTSCustID, DCSDeviceID)
-	SELECT	DISTINCT 
-			t.CTSCustID
-		,	a.DCSDeviceID
-	FROM CTS_DataCenter.AssociationByDevice AS a    
-		INNER JOIN Temp_MultipleAccount AS t ON a.CTSCustID = t.CTSCustID;
-	 
-	INSERT INTO Temp_AssociationException(FromCTSCustID, ToCTSCustID)
-	SELECT	DISTINCT 
-			t.CTSCustID
-		,	CASE WHEN e.LeastCTSCustID_Order = t.CTSCustID THEN e.GreatestCTSCustID_Order 
-				 ELSE e.LeastCTSCustID_Order 
-			END
-	FROM CTS_DataCenter.CustException AS e
-		INNER JOIN Temp_MultipleAccount AS t ON e.LeastCTSCustID_Order = t.CTSCustID OR e.GreatestCTSCustID_Order = t.CTSCustID;
-	
-   # Get all association follow devices
-	INSERT INTO Temp_CustEvidence(CTSCustID, FromCustID)
-	SELECT 	DISTINCT 
-			a.CTSCustID
-		,	t.CTSCustID
-	FROM Temp_MultipleAccount AS t
-		INNER JOIN Temp_AffectedDevices AS d ON t.CTSCustID = d.CTSCustID
-		INNER JOIN CTS_DataCenter.AssociationByDevice AS a ON a.DCSDeviceID = d.DCSDeviceID
-		LEFT JOIN Temp_AssociationException AS e ON t.CTSCustID = e.FromCTSCustID AND a.CTSCustID = e.ToCTSCustID
-	WHERE a.CTSCustID <> d.CTSCustID		
-    	AND (e.FromCTSCustID IS NULL OR e.ToCTSCustID IS NULL);
-    	
+       	
     IF(!ip_IsRollback) THEN
 		BEGIN
 			 # Save log
@@ -155,17 +107,6 @@ sp: BEGIN
 			FROM Temp_MultipleAccount AS tmp
 				INNER JOIN CTS_DataCenter.CustEvidence as cus ON tmp.CTSCustID = cus.CTSCustID AND cus.Level = 0;
                     
-            INSERT IGNORE INTO CTS_DataCenter.CustEvidenceLog(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, SessionId)
-			SELECT	cus.CTSCustID
-				,	cus.EvidenceID
-				,	cus.Remark
-				,	cus.Level
-				,	cus.FromCustID
-				,	cus.CreatedDate
-				,	cus.CreatedBy
-				,	ip_SessionId
-			FROM Temp_CustEvidence AS tmp
-				INNER JOIN CTS_DataCenter.CustEvidence as cus ON tmp.CTSCustID = cus.CTSCustID AND cus.FromCustID = tmp.FromCustID;
         END;
     END IF;
     
@@ -175,11 +116,15 @@ sp: BEGIN
 			temp.CTSCustID
 		,	evd.EvidenceID
     FROM Temp_MultipleAccount AS temp 
-		INNER JOIN CustEvidence AS evd ON temp.CTSCustID = evd.FromCustID;
+		INNER JOIN CustEvidence AS evd ON temp.CTSCustID = evd.FromCustID AND Level = 0;
     
+   INSERT INTO CTS_DataCenter.CustEvidenceAffectedQueueRemove(CTSCustID)
+   SELECT 	ev.CTSCustID
+   FROM Temp_MultipleAccount AS ev;
+
 	DELETE evd
     FROM  CustEvidence AS evd
-    INNER JOIN  Temp_MultipleAccount AS temp ON temp.CTSCustID = evd.FromCustID;
+    INNER JOIN  Temp_MultipleAccount AS temp ON temp.CTSCustID = evd.FromCustID AND Level = 0;
     
     IF(ip_IsRollback) THEN
 		BEGIN
@@ -191,6 +136,14 @@ sp: BEGIN
 				,	log.Level
 				,	log.FromCustID
 				,	log.CreatedDate
+				,	log.CreatedBy
+			FROM CTS_DataCenter.CustEvidenceLog log
+            WHERE log.SessionId = ip_SessionId;
+
+			INSERT INTO CTS_DataCenter.CustEvidenceAffectedQueueInsert(CTSCustID,  EvidenceID, Remark, CreatedBy)
+			SELECT 	log.CTSCustID
+				,	log.EvidenceID
+				,	log.Remark
 				,	log.CreatedBy
 			FROM CTS_DataCenter.CustEvidenceLog log
             WHERE log.SessionId = ip_SessionId;

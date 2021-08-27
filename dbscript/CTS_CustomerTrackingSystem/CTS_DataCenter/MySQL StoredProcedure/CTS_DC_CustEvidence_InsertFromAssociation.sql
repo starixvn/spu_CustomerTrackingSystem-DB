@@ -3,10 +3,10 @@ DROP PROCEDURE IF EXISTS `CTS_DC_CustEvidence_InsertFromAssociation`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_InsertFromAssociation`(
-		IN ip_Batch INT
+		IN ip_BatchSize INT
 )
     SQL SECURITY INVOKER
-BEGIN
+sp : BEGIN
 	/*
 		Created:	20200123@Casey.Huynh	
 		Task :		Place Affected Evidence for New AssociationByDevice
@@ -21,120 +21,205 @@ BEGIN
 			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
 			- 20210510@Aries.Nguyen: Remove insert log zzTracePerformance [Redmine ID: #154792]
 			- 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
+			- 20210823@Aries.Nguyen: Enhannce  Affected Evidence flow [Redmine ID: #160470]
 
 		Param's Explanation (filtered by):
 	*/
     
     DECLARE	lv_LastCTSAssDevID BIGINT UNSIGNED;
-    DECLARE	lv_CreatedDate	DATETIME;
+    DECLARE	lv_LastCTSCustIDAff BIGINT UNSIGNED;
+    DECLARE lv_TotalAff 		INT DEFAULT 0;
+    DECLARE lv_SecondBatchSize 	INT DEFAULT 0;
   
-    
-    SET	lv_CreatedDate = CURRENT_TIME();
-    
-	DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByDevice;    
-	CREATE TEMPORARY TABLE Temp_AssociationByDevice( 	
-			CTSAssDevID		BIGINT	UNSIGNED
-        ,	FromCTSCustID	BIGINT	UNSIGNED
-        ,	DCSDeviceID	BIGINT	UNSIGNED
+    DROP TEMPORARY TABLE IF EXISTS   Temp_AssociatedException;
+    CREATE TEMPORARY TABLE Temp_AssociatedException(
+			FromCTSCustID 	BIGINT UNSIGNED
+        ,	ToCTSCustID 	BIGINT UNSIGNED
+        , 	PRIMARY KEY		PK_Temp_AssociatedException_FromCTSCustID_ToCTSCustID(FromCTSCustID,ToCTSCustID)
 	);
-	
-	DROP TEMPORARY TABLE IF EXISTS Temp_CustAssociation;    
-	CREATE TEMPORARY TABLE Temp_CustAssociation( 		
-			FromCTSCustID		BIGINT	UNSIGNED
-        ,	ToCTSCustID			BIGINT	UNSIGNED
-	);	
+
+    
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustAffectedEvidence;    
+	CREATE TEMPORARY TABLE Temp_CustAffectedEvidence( 	
+			CTSAssDevID			BIGINT	UNSIGNED
+        ,	CTSCustID			BIGINT	UNSIGNED
+        ,	CTSCustID_Affected	BIGINT	UNSIGNED
+		,	INDEX				IX_Temp_CustAffectedEvidence_CTSAssDevID(CTSAssDevID)
+		,	INDEX				IX_Temp_CustAffectedEvidence_CTSCustID_Affected(CTSCustID,CTSCustID_Affected)
+	);
+    
+    DROP TEMPORARY TABLE IF EXISTS   Temp_AffectedExisted;
+    CREATE TEMPORARY TABLE Temp_AffectedExisted(
+			CTSCustID 		BIGINT UNSIGNED
+		,	FromCustID		BIGINT UNSIGNED	
+        ,	EvidenceID		SMALLINT
+        , 	PRIMARY KEY(CTSCustID, FromCustID, EvidenceID)
+	);
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustEvidence;    
 	CREATE TEMPORARY TABLE Temp_CustEvidence(
-			CTSCustID			BIGINT		UNSIGNED					NOT NULL
-		,	EvidenceID			SMALLINT								NOT NULL
-		,	Remark				VARCHAR(500)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NULL
-		,	Level				TINYINT									NOT NULL	COMMENT 'Level 1 - 2'
-		,	FromCustID			BIGINT		UNSIGNED					NOT NULL
-		,	CreatedDate			DATETIME								NOT NULL
-		,	CreatedBy			INT										NOT NULL 
+			CTSCustID			BIGINT UNSIGNED					
+		,	EvidenceID			SMALLINT								
+		,	Remark				VARCHAR(500)	
+		,	Level				TINYINT									
+		,	FromCustID			BIGINT UNSIGNED					
+		,	CreatedDate			DATETIME								
+		,	CreatedBy			INT										
         ,	PRIMARY KEY			PK_CustEvidence(CTSCustID, FromCustID, EvidenceID)
 	);
     
 	#===1. GET List of New Association=====================================================================
-    SET lv_LastCTSAssDevID = (SELECT LastCTSAssDevID FROM CTS_DataCenter.ProcessAffectedEvidence LIMIT 1);
+    SELECT ParameterValue 
+    INTO lv_LastCTSAssDevID
+    FROM CTS_DataCenter.SystemParameter 
+    WHERE ParameterID = 33; 
     
-    INSERT INTO Temp_AssociationByDevice(CTSAssDevID, FromCTSCustID, DCSDeviceID)
-    SELECT	ad.CTSAssDevID
-		,	ad.CTSCustID AS FromCTSCustID
-		,	ad.DCSDeviceID
-    FROM CTS_DataCenter.AssociationByDevice AS ad
-	WHERE ad.CTSAssDevID > lv_LastCTSAssDevID
-    LIMIT ip_Batch;    
+    SELECT ParameterValue 
+    INTO lv_LastCTSCustIDAff
+    FROM CTS_DataCenter.SystemParameter 
+    WHERE ParameterID = 34;
     
-    #===2.GET CTSCust Association with Step1 (CTSCust, Device, Subscriber)=================================
-    INSERT INTO	Temp_CustAssociation(FromCTSCustID, ToCTSCustID)
-    SELECT	DISTINCT 
-			tmp_ad.FromCTSCustID
-		,	ad.CTSCustID AS ToCTSCustID
-	FROM		Temp_AssociationByDevice	AS tmp_ad
-		INNER JOIN CTS_DataCenter.AssociationByDevice AS ad ON tmp_ad.DCSDeviceID = ad.DCSDeviceID
-	WHERE	tmp_ad.FromCTSCustID <> ad.CTSCustID;
+    INSERT INTO Temp_CustAffectedEvidence(CTSAssDevID, CTSCustID, CTSCustID_Affected)
+    SELECT 	dv.CTSAssDevID
+		,	dv.CTSCustID
+        ,	aff.CTSCustID
+	FROM CTS_DataCenter.AssociationByDevice AS dv,
+	LATERAL
+		(SELECT ass.CTSCustID
+		 FROM CTS_DataCenter.AssociationByDevice AS ass
+		 WHERE dv.DCSDeviceID = ass.DCSDeviceID 
+			AND dv.CTSCustID != ass.CTSCustID
+			AND ass.CTSCustID > lv_LastCTSCustIDAff
+		 ORDER BY ass.DCSDeviceID ASC, ass.CTSCustID ASC
+		 LIMIT ip_BatchSize) AS aff
+	WHERE dv.CTSAssDevID = lv_LastCTSAssDevID 
+	LIMIT ip_BatchSize;
     
-    DELETE tmp_ca
-    FROM Temp_CustAssociation AS tmp_ca
-		INNER JOIN	CTS_DataCenter.CustException AS ce ON	 ce.LeastCTSCustID_Order = LEAST(tmp_ca.FromCTSCustID, tmp_ca.ToCTSCustID)
-														 AND GreatestCTSCustID_Order = GREATEST(tmp_ca.FromCTSCustID, tmp_ca.ToCTSCustID);
-                    
-                   
-    #===3. Place Affected Evidence Level 0  Of (FromCTSCust) for (ToCTSCust)===============================
-    IF EXISTS (SELECT 1 FROM Temp_CustAssociation LIMIT 1) THEN     
+    SELECT COUNT(1)
+    INTO lv_TotalAff
+    FROM Temp_CustAffectedEvidence;   
+    
+    IF ip_BatchSize > lv_TotalAff THEN
+		SET lv_SecondBatchSize = ip_BatchSize - lv_TotalAff;
         
-		INSERT IGNORE INTO Temp_CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
-		SELECT	tmp_ca.ToCTSCustID
-			,	ce.EvidenceID
-			,	'Auto New AssDev' AS Remark
-			,	2 AS Level
-			,	tmp_ca.FromCTSCustID
-			,	lv_CreatedDate AS CreatedDate
-			,	ce.CreatedBy AS CreatedBy
-		FROM CTS_DataCenter.CustEvidence AS ce USE INDEX FOR JOIN (IX_CustEvidence_Level_CTSCustID)
-			INNER JOIN	Temp_CustAssociation AS tmp_ca ON ce.CTSCustID = tmp_ca.FromCTSCustID AND ce.Level = 0;    
+        INSERT INTO Temp_CustAffectedEvidence(CTSAssDevID, CTSCustID, CTSCustID_Affected)
+		SELECT 	dv.CTSAssDevID
+			,	dv.CTSCustID
+			,	aff.CTSCustID
+		FROM CTS_DataCenter.AssociationByDevice AS dv,
+		LATERAL
+			(SELECT ass.CTSCustID
+			 FROM CTS_DataCenter.AssociationByDevice AS ass
+			 WHERE dv.DCSDeviceID = ass.DCSDeviceID AND   dv.CTSCustID != ass.CTSCustID
+             ORDER BY ass.DCSDeviceID ASC, ass.CTSCustID ASC
+			 LIMIT lv_SecondBatchSize) AS aff
+		WHERE dv.CTSAssDevID > lv_LastCTSAssDevID  
+        ORDER BY dv.CTSAssDevID ASC
+		LIMIT lv_SecondBatchSize;
+        
+    END IF;
+    
+    IF (lv_TotalAff + lv_SecondBatchSize) = 0 THEN
+		LEAVE sp;
+    END IF;
+    
+    SELECT MAX(CTSAssDevID)
+    INTO lv_LastCTSAssDevID
+    FROM Temp_CustAffectedEvidence;
+    
+    SELECT MAX(CTSCustID_Affected)
+    INTO lv_LastCTSCustIDAff
+    FROM Temp_CustAffectedEvidence
+    WHERE CTSAssDevID = lv_LastCTSAssDevID;
+	
+    INSERT IGNORE INTO Temp_AssociatedException(FromCTSCustID, ToCTSCustID)
+    SELECT	ex.FromCTSCustID
+		,	ex.ToCTSCustID
+    FROM CTS_DataCenter.CustException AS ex
+		INNER JOIN Temp_CustAffectedEvidence AS aff ON ex.FromCTSCustID = aff.CTSCustID AND ex.ToCTSCustID = aff.CTSCustID_Affected;
+    
+    INSERT IGNORE INTO Temp_AssociatedException(FromCTSCustID, ToCTSCustID)
+    SELECT	ex.FromCTSCustID
+		,	ex.ToCTSCustID
+    FROM CTS_DataCenter.CustException AS ex
+		INNER JOIN Temp_CustAffectedEvidence AS aff ON ex.FromCTSCustID = aff.CTSCustID_Affected AND ex.ToCTSCustID = aff.CTSCustID;
+    
+    INSERT IGNORE INTO Temp_AssociatedException(FromCTSCustID, ToCTSCustID)
+    SELECT	ex.FromCTSCustID
+		,	ex.ToCTSCustID
+    FROM CTS_DataCenter.AssociationRemove AS ex
+		INNER JOIN Temp_CustAffectedEvidence AS aff ON ex.FromCTSCustID = aff.CTSCustID_Affected AND ex.ToCTSCustID = aff.CTSCustID;
+    
+    INSERT IGNORE INTO Temp_AssociatedException(FromCTSCustID, ToCTSCustID)
+    SELECT	ex.FromCTSCustID
+		,	ex.ToCTSCustID
+    FROM CTS_DataCenter.AssociationRemove AS ex
+		INNER JOIN Temp_CustAffectedEvidence AS aff ON ex.FromCTSCustID = aff.CTSCustID AND ex.ToCTSCustID = aff.CTSCustID_Affected;
+    
+    DELETE 
+    FROM Temp_CustAffectedEvidence AS aff
+    WHERE EXISTS (SELECT 1 FROM Temp_AssociatedException AS ex WHERE ex.FromCTSCustID = aff.CTSCustID AND ex.ToCTSCustID = aff.CTSCustID_Affected);
+    
+    DELETE 
+    FROM Temp_CustAffectedEvidence AS aff
+    WHERE EXISTS (SELECT 1 FROM Temp_AssociatedException AS ex WHERE ex.FromCTSCustID = aff.CTSCustID_Affected AND ex.ToCTSCustID = aff.CTSCustID);
+    
+	INSERT IGNORE INTO Temp_CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
+	SELECT	aff.CTSCustID_Affected
+		,	ce.EvidenceID
+		,	'Auto New AssDev' AS Remark
+		,	2 AS Level
+		,	aff.CTSCustID
+		,	NOW() AS CreatedDate
+		,	ce.CreatedBy AS CreatedBy
+	FROM CTS_DataCenter.CustEvidence AS ce USE INDEX FOR JOIN (IX_CustEvidence_Level_CTSCustID)
+		INNER JOIN	Temp_CustAffectedEvidence AS aff ON ce.CTSCustID = aff.CTSCustID AND ce.Level = 0;
+	
+    INSERT IGNORE INTO Temp_CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
+	SELECT	aff.CTSCustID
+		,	ce.EvidenceID
+		,	'Auto New AssDev' AS Remark
+		,	2 AS Level
+		,	aff.CTSCustID_Affected
+		,	NOW() AS CreatedDate
+		,	ce.CreatedBy AS CreatedBy
+	FROM CTS_DataCenter.CustEvidence AS ce USE INDEX FOR JOIN (IX_CustEvidence_Level_CTSCustID)
+		INNER JOIN	Temp_CustAffectedEvidence AS aff ON ce.CTSCustID = aff.CTSCustID_Affected AND ce.Level = 0;  
 			
-    #===4. Place Affected Evidence Of Level 0 (ToCTSCust) for (ToCTSCust)==================================
-		INSERT IGNORE INTO Temp_CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
-		SELECT	tmp_ca.FromCTSCustID
-			,	ce.EvidenceID
-			,	'Auto New AssDev' AS Remark
-			,	2 AS Level
-			,	tmp_ca.ToCTSCustID
-			,	lv_CreatedDate AS CreatedDate
-			,	ce.CreatedBy AS CreatedBy
-		FROM CTS_DataCenter.CustEvidence AS ce USE INDEX FOR JOIN (IX_CustEvidence_Level_CTSCustID)
-			INNER JOIN	Temp_CustAssociation AS tmp_ca ON ce.CTSCustID = tmp_ca.ToCTSCustID AND ce.Level	= 0;
-                    
-		IF EXISTS (SELECT 1 FROM Temp_CustEvidence LIMIT 1) THEN  
-			DELETE tce
-            FROM Temp_CustEvidence AS tce
-				INNER JOIN CTS_DataCenter.CustEvidence  AS ce ON tce.CTSCustID = ce.CTSCustID AND tce.FromCustID = ce.FromCustID AND tce.EvidenceID = ce.EvidenceID;            
-            
-			INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
-			SELECT	tce.CTSCustID
-				,	tce.EvidenceID
-				,	tce.Remark
-				,	tce.Level
-				,	tce.FromCustID
-				,	tce.CreatedDate
-				,	tce.CreatedBy
-			FROM	Temp_CustEvidence	AS tce;	
-            
-			SELECT cus.CustID
-			FROM (SELECT DISTINCT CTSCustID FROM Temp_CustEvidence)	AS tce
-				INNER JOIN	CTS_DataCenter.CTSCustomer AS cus ON tce.CTSCustID = cus.CTSCustID;	
-		END IF;
-	END IF;
+    INSERT IGNORE INTO Temp_AffectedExisted(CTSCustID,FromCustID, EvidenceID)
+    SELECT CTSCustID,FromCustID, EvidenceID
+    FROM  CTS_DataCenter.CustEvidence AS ev
+    WHERE EXISTS (SELECT 1 
+				  FROM Temp_CustEvidence AS aff
+				  WHERE aff.CTSCustID = ev.CTSCustID
+					AND	aff.FromCustID = ev.FromCustID
+                    AND aff.EvidenceID = ev.EvidenceID);
     
-	#=====Update ProcessAffectedEvidence ===============================================
-    UPDATE	CTS_DataCenter.ProcessAffectedEvidence
-    SET		LastCTSAssDevID = (SELECT IFNULL(MAX(CTSAssDevID),LastCTSAssDevID) FROM Temp_AssociationByDevice);
+    DELETE 
+    FROM Temp_CustEvidence AS ev
+    WHERE EXISTS (SELECT 1 
+				  FROM Temp_AffectedExisted AS ex 
+                  WHERE ev.CTSCustID = ex.CTSCustID 
+					AND ev.FromCustID = ex.FromCustID
+                    AND ev.EvidenceID = ex.EvidenceID);
     
+    INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
+	SELECT	tce.CTSCustID
+		,	tce.EvidenceID
+		,	tce.Remark
+		,	tce.Level
+		,	tce.FromCustID
+		,	tce.CreatedDate
+		,	tce.CreatedBy
+	FROM	Temp_CustEvidence	AS tce;
     
-
+     UPDATE CTS_DataCenter.SystemParameter 
+    SET ParameterValue = lv_LastCTSAssDevID
+    WHERE ParameterID = 33; 
+	
+    UPDATE CTS_DataCenter.SystemParameter 
+    SET ParameterValue = lv_LastCTSCustIDAff
+    WHERE ParameterID = 34; 
 END$$
 
 DELIMITER ;

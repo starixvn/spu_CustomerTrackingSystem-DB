@@ -28,6 +28,7 @@ sp: BEGIN
             - 20201111@Irena.Vo: Enhance logic Insert History for Evidence Category [Redmine ID: #145027]
             - 20201125@Irena.Vo: Move flow sync Evidence to Category [Redmine ID: #141563]
 			- 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
+			- 20210823@Aries.Nguyen: Enhannce  Affected Evidence flow [Redmine ID: #160470]
         
 		Param's Explanation (filtered by):		
 
@@ -42,17 +43,7 @@ sp: BEGIN
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
-    END;
-  
-	DROP TEMPORARY TABLE IF EXISTS   Temp_AffectedDevices;
-    CREATE TEMPORARY TABLE Temp_AffectedDevices(
-			DCSDeviceID		BIGINT
-	);
-    
-	DROP TEMPORARY TABLE IF EXISTS   Temp_AssociatedException;
-    CREATE TEMPORARY TABLE Temp_AssociatedException(
-        	ToCTSCustID 	BIGINT UNSIGNED
-	);
+    END;    
 	
     /*IGNORE NOT EXISTED CUSTOMERS OR EXISTED EVIDENCE*/
 	IF NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomer WHERE CTSCustID = ip_CTSCustID) THEN
@@ -65,39 +56,11 @@ sp: BEGIN
     
 	/*INSERT FLAGGED EVIDENCE*/    
 	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
-	VALUES (ip_CTSCustID, ip_EvidenceID, ip_Remark, 0, ip_CTSCustID, lv_CreatedDateTime, ip_UserID);
-	
-	/*GET AFFECTED DEVICES*/
-    INSERT INTO Temp_AffectedDevices(DCSDeviceID)
-    SELECT DISTINCT ass.DCSDeviceID
-    FROM CTS_DataCenter.AssociationByDevice ass    
-    WHERE ass.CTSCustID = ip_CTSCustID;
-
-	/*GET ASSOCITED EXCEPTION*/
-    INSERT INTO Temp_AssociatedException(ToCTSCustID)
-    SELECT DISTINCT CASE WHEN LeastCTSCustID_Order = ip_CTSCustID THEN GreatestCTSCustID_Order 
-						 ELSE LeastCTSCustID_Order 
-					END
-    FROM CTS_DataCenter.CustException
-    WHERE  LeastCTSCustID_Order = ip_CTSCustID 
-		OR GreatestCTSCustID_Order = ip_CTSCustID;
-   
-   /*INSERT AFFECTED EVIDENCES*/    
-	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
-    SELECT	DISTINCT 
-			ass.CTSCustID
-		,	ip_EvidenceID
-		,	ip_Remark
-		,	2
-		,	ip_CTSCustID
-		,	lv_CreatedDateTime
-		,	ip_UserID
-    FROM CTS_DataCenter.AssociationByDevice AS ass
-		INNER JOIN CTS_DataCenter.CTSCustomer cust ON cust.CTSCustID = ass.CTSCustID
-		INNER JOIN Temp_AffectedDevices AS dev ON ass.DCSDeviceID = dev.DCSDeviceID
-	WHERE ass.CTSCustID <> ip_CTSCustID		
-    	  AND ass.CTSCustID NOT IN (SELECT ToCTSCustID FROM Temp_AssociatedException);
+	VALUES (ip_CTSCustID, ip_EvidenceID, ip_Remark, 0, ip_CTSCustID, lv_CreatedDateTime, ip_UserID);  
     
+	INSERT INTO CTS_DataCenter.CustEvidenceAffectedQueueInsert(CTSCustID,  EvidenceID, Remark, CreatedBy)
+	VALUES (ip_CTSCustID, ip_EvidenceID, ip_Remark, ip_UserID);
+
    /*WRITE LOG*/
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	VALUES(3, lv_SPName, CONCAT('Insert Evidence: ip_CTSCustID = ', ip_CTSCustID, ';ip_EvidenceID = ', ip_EvidenceID), lv_CreatedDateTime, ip_UserID);

@@ -25,6 +25,7 @@ sp: BEGIN
 			- 20201130@Irena.Vo: Enhance logic Insert new evidence (remove existed evidence category before) [Redmine ID: #141563]
 			- 20201214-20210107@Irena.Vo: Move logic Sync to Category by new sp: SyncToCategory. Insert Error Log [RedmineID: #145951]
             - 20210622@Aries.Nguyen: Update coding convention and improve locking [Redmine ID: #157203]
+            - 20210823@Aries.Nguyen: Enhannce  Affected Evidence flow [Redmine ID: #160470]
         
         Example:
             - CALL CTS_DataCenter.CTS_DC_CustEvidence_InsertMultiple_ByCustId('[{"CustID": 43600693, "EvidenceID": 45, "Comment": "na test 1"},{"CustID":43600693, "EvidenceID": 46, "Comment":"na test 2"},{"CustID":43600889, "EvidenceID": 45, "Comment":"na test 3"}]', 8, @op_ErrorMessage);
@@ -59,20 +60,6 @@ sp: BEGIN
         , 	Remark			VARCHAR(500)  
         , 	PRIMARY KEY	    PK_Temp_MultipleAccountEvidence_CustID_EvidenceID(CustID,EvidenceID) 
     );      
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_AffectedDevices;
-    CREATE TEMPORARY TABLE Temp_AffectedDevices(
-			CTSCustID		BIGINT UNSIGNED     
-		,	DCSDeviceID		BIGINT UNSIGNED
-        , 	PRIMARY KEY	    PK_Temp_AffectedDevices_CTSCustID_DCSDeviceID(CTSCustID,DCSDeviceID) 
-	);
-    
-	DROP TEMPORARY TABLE IF EXISTS Temp_AssociatedException;
-    CREATE TEMPORARY TABLE Temp_AssociatedException(
-			FromCTSCustID 	BIGINT UNSIGNED
-        ,	ToCTSCustID 	BIGINT UNSIGNED
-        , 	PRIMARY KEY	    PK_Temp_AssociatedException_FromCTSCustID_ToCTSCustID(FromCTSCustID,ToCTSCustID)
-	);
 
     DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;
     CREATE TEMPORARY TABLE Temp_CustInfo(
@@ -116,41 +103,14 @@ sp: BEGIN
         ,	lv_CurrentDateTime
         ,	ip_UserID
     FROM Temp_MultipleAccountEvidence AS t;
-	
-    /*	GET AFFECTED DEVICES	*/
-    INSERT INTO Temp_AffectedDevices(CTSCustID, DCSDeviceID)
-    SELECT  DISTINCT 
-            t.CTSCustID
-        ,   a.DCSDeviceID
-    FROM CTS_DataCenter.AssociationByDevice AS a    
-	    INNER JOIN Temp_MultipleAccountEvidence AS t ON a.CTSCustID = t.CTSCustID;
-    
-     /*	GET ASSOCIATED EXCEPTIONS	*/
-    INSERT INTO Temp_AssociatedException(FromCTSCustID, ToCTSCustID)
-    SELECT  DISTINCT 
-            t.CTSCustID
-		,	CASE WHEN e.LeastCTSCustID_Order = t.CTSCustID THEN e.GreatestCTSCustID_Order 
-                 ELSE e.LeastCTSCustID_Order 
-            END
-    FROM CTS_DataCenter.CustException AS e
-	    INNER JOIN Temp_MultipleAccountEvidence AS t ON e.LeastCTSCustID_Order = t.CTSCustID OR e.GreatestCTSCustID_Order = t.CTSCustID;
-    
+	   
     /*	INSERT NEW AFFECTED EVIDENCES	*/
-	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
-    SELECT  DISTINCT 
-            a.CTSCustID
-        ,   t.EvidenceID
-        ,   t.Remark
-        ,   2
-        ,   t.CTSCustID
-        ,   lv_CurrentDateTime
-        ,   ip_UserID
-    FROM Temp_MultipleAccountEvidence AS t
-		INNER JOIN Temp_AffectedDevices AS d ON t.CTSCustID = d.CTSCustID
-		INNER JOIN CTS_DataCenter.AssociationByDevice AS a ON a.DCSDeviceID = d.DCSDeviceID
-        LEFT JOIN Temp_AssociatedException AS e ON t.CTSCustID = e.FromCTSCustID AND a.CTSCustID = e.ToCTSCustID
-	WHERE   a.CTSCustID <> d.CTSCustID 
-        AND (e.FromCTSCustID IS NULL OR e.ToCTSCustID IS NULL);
+    INSERT INTO CTS_DataCenter.CustEvidenceAffectedQueueInsert(CTSCustID,  EvidenceID, Remark, CreatedBy)
+	SELECT 	t.CTSCustID
+		,	t.EvidenceID
+        ,	t.Remark
+        ,	ip_UserID
+    FROM Temp_MultipleAccountEvidence AS t;
     
      /*	WRITE LOG	*/
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
