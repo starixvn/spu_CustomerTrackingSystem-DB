@@ -203,12 +203,12 @@ sp : BEGIN
     
     
     INSERT IGNORE INTO Temp_AffectedExisted(CTSCustID,FromCustID, EvidenceID)
-    SELECT CTSCustID,FromCustID, EvidenceID
+    SELECT FromCustID,CTSCustID, EvidenceID
     FROM  CTS_DataCenter.CustEvidence AS ev
     WHERE EXISTS (SELECT 1 
 				  FROM Temp_CustAffectedEvidence AS aff
-				  WHERE aff.CTSCustID = ev.CTSCustID
-					AND	aff.CTSCustID_Affected = ev.FromCustID
+				  WHERE aff.CTSCustID_Affected  = ev.CTSCustID
+					AND	aff.CTSCustID = ev.FromCustID
                     AND aff.EvidenceID = ev.EvidenceID);
     
     DELETE 
