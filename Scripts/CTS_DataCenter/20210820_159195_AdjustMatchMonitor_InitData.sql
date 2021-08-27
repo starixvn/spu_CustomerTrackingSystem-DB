@@ -66,8 +66,6 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorStagingNonLive(
     ,	INDEX			IX_MatchMonitorStaging_GroupID(GroupID)
 ) ENGINE=INNODB;
 
-
-
 DROP TABLE IF EXISTS CTS_DataCenter.MatchMonitorDetails;
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorDetails(
 		ID				BIGINT UNSIGNED AUTO_INCREMENT
@@ -110,7 +108,6 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitor (
 	, 	INDEX			IX_MatchMonitor_IsVerified(IsVerified)
     ,	INDEX			IX_MatchMonitor_MatchID_BettypeID(MatchID,BettypeID)
 ) ENGINE=INNODB AUTO_INCREMENT=1;
-
 
 #####################CTS_DataCenter.SportGroup
 UPDATE CTS_DataCenter.SystemParameter

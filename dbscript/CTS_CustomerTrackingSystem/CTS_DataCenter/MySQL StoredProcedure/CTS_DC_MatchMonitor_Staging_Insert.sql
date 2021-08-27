@@ -3,8 +3,8 @@ DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Staging_Insert`;
 DELIMITER $$
 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Staging_Insert`(
-	IN ip_TransList JSON
-    , IN ip_IsLive 	BOOLEAN
+		IN ip_IsLive 	BOOLEAN 
+    ,	IN ip_TransList JSON
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -28,6 +28,7 @@ BEGIN
 		Example:
 			
 	*/
+    
 	DROP TEMPORARY TABLE IF EXISTS Temp_OringinGroupID;
 	CREATE TEMPORARY TABLE Temp_OringinGroupID(
 			MatchID			BIGINT UNSIGNED NOT NULL
@@ -80,7 +81,7 @@ BEGIN
 								,	Stake			DOUBLE PATH "$.Stake" 
 							)
 					) AS js;  
-			 
+	
 		INSERT INTO Temp_OringinGroupID(MatchID, LiveIndicator, TotalScore, BettypeID)
 		SELECT	mms.MatchID
 			,	mms.LiveIndicator
