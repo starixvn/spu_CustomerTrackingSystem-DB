@@ -153,25 +153,25 @@ sp : BEGIN
     FROM Temp_CustAffectedEvidence
     WHERE QueueID = lv_QueueID;
     
-    INSERT INTO Temp_AssociatedException(FromCTSCustID, ToCTSCustID)
+    INSERT IGNORE INTO Temp_AssociatedException(FromCTSCustID, ToCTSCustID)
     SELECT	ex.FromCTSCustID
 		,	ex.ToCTSCustID
     FROM CTS_DataCenter.CustException AS ex
 		INNER JOIN Temp_CustAffectedEvidence AS aff ON ex.FromCTSCustID = aff.CTSCustID AND ex.ToCTSCustID = aff.CTSCustID_Affected;
     
-    INSERT INTO Temp_AssociatedException(FromCTSCustID, ToCTSCustID)
+    INSERT IGNORE INTO Temp_AssociatedException(FromCTSCustID, ToCTSCustID)
     SELECT	ex.FromCTSCustID
 		,	ex.ToCTSCustID
     FROM CTS_DataCenter.CustException AS ex
 		INNER JOIN Temp_CustAffectedEvidence AS aff ON ex.FromCTSCustID = aff.CTSCustID_Affected AND ex.ToCTSCustID = aff.CTSCustID;
     
-    INSERT INTO Temp_AssociatedException(FromCTSCustID, ToCTSCustID)
+    INSERT IGNORE INTO Temp_AssociatedException(FromCTSCustID, ToCTSCustID)
     SELECT	ex.FromCTSCustID
 		,	ex.ToCTSCustID
     FROM CTS_DataCenter.AssociationRemove AS ex
 		INNER JOIN Temp_CustAffectedEvidence AS aff ON ex.FromCTSCustID = aff.CTSCustID_Affected AND ex.ToCTSCustID = aff.CTSCustID;
     
-    INSERT INTO Temp_AssociatedException(FromCTSCustID, ToCTSCustID)
+    INSERT IGNORE INTO Temp_AssociatedException(FromCTSCustID, ToCTSCustID)
     SELECT	ex.FromCTSCustID
 		,	ex.ToCTSCustID
     FROM CTS_DataCenter.AssociationRemove AS ex
