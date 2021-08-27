@@ -65,7 +65,18 @@ sp : BEGIN
     FROM CTS_DataCenter.SystemParameter 
     WHERE ParameterID = 31; 
 
-    SET lv_QueueID_Next = lv_QueueID + ip_BatchSize;
+    SELECT MAX(tbl.ID)
+    INTO lv_QueueID_Next
+    FROM (SELECT ID
+		  FROM CTS_DataCenter.CustEvidenceAffectedQueueInsert
+		  WHERE ID >= lv_QueueID
+		  ORDER BY ID ASC
+		  LIMIT ip_BatchSize) AS tbl;
+
+    IF lv_QueueID_Next IS NOT NULL AND lv_QueueID_Next = lv_QueueID THEN
+        SET lv_QueueID_Next = lv_QueueID + 1;
+    END IF;
+
     
     INSERT INTO Temp_CustAffectedEvidence(QueueID, CTSCustID, CTSCustID_Affected, EvidenceID, Remark,CreatedBy)
     SELECT 	root.ID
@@ -113,7 +124,7 @@ sp : BEGIN
              WHERE dv.CTSCustID = root.CTSCustID
 			 ORDER BY ass.CTSCustID ASC
 			 LIMIT lv_SecondBatchSize) AS aff
-		WHERE root.ID between lv_QueueID + 1 AND lv_QueueID_Next
+		WHERE root.ID BETWEEN lv_QueueID + 1 AND lv_QueueID_Next
 		ORDER BY root.ID ASC
 		LIMIT lv_SecondBatchSize;
         
@@ -124,19 +135,19 @@ sp : BEGIN
     FROM Temp_CustAffectedEvidence;
     
     IF lv_TotalAff  = 0 THEN
-        IF EXISTS (SELECT 1 FROM CTS_DataCenter.CustEvidenceAffectedQueueInsert WHERE ID > lv_QueueID_Next) THEN
-            UPDATE CTS_DataCenter.SystemParameter 
-            SET ParameterValue = lv_QueueID_Next
-            WHERE ParameterID = 30; 
+        UPDATE CTS_DataCenter.SystemParameter 
+        SET ParameterValue = lv_QueueID_Next
+        WHERE ParameterID = 30; 
 	
-            UPDATE CTS_DataCenter.SystemParameter 
-            SET ParameterValue = 0
-            WHERE ParameterID = 31; 
+        UPDATE CTS_DataCenter.SystemParameter 
+        SET ParameterValue = 0
+        WHERE ParameterID = 31; 
 
-            DELETE 
-	        FROM CustEvidenceAffectedQueueInsert
-            WHERE ID < lv_QueueID_Next;
+        DELETE 
+	    FROM CustEvidenceAffectedQueueInsert
+        WHERE ID < lv_QueueID_Next;
 
+        IF EXISTS (SELECT 1 FROM CTS_DataCenter.CustEvidenceAffectedQueueInsert WHERE ID > lv_QueueID_Next) THEN
             SET op_IsExist = 1;
             LEAVE sp;
         END IF;

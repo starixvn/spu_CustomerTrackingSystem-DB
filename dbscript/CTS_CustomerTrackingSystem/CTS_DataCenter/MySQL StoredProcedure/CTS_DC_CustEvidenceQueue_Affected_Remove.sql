@@ -39,15 +39,25 @@ sp : BEGIN
     FROM CTS_DataCenter.SystemParameter 
     WHERE ParameterID = 32; 
 
-    SET lv_QueueID_Next = lv_QueueID + ip_BatchSize;
+    SELECT MAX(tbl.ID)
+    INTO lv_QueueID_Next
+    FROM (SELECT ID
+		  FROM CTS_DataCenter.CustEvidenceAffectedQueueInsert
+		  WHERE ID >= lv_QueueID
+		  ORDER BY ID ASC
+		  LIMIT ip_BatchSize) AS tbl;
+
+    IF lv_QueueID_Next IS NOT NULL AND lv_QueueID_Next = lv_QueueID THEN
+        SET lv_QueueID_Next = lv_QueueID + 1;
+    END IF;
     
     
     INSERT INTO Temp_CustAffectedEvidence(QueueID, CustEvidID)
     SELECT 	root.ID
 		,	aff.CustEvidID
 	FROM CTS_DataCenter.CustEvidenceAffectedQueueRemove AS root,
-	LATERAL
-		(SELECT ev.CustEvidID
+	LATERAL(
+        SELECT ev.CustEvidID
 		FROM CTS_DataCenter.CustEvidence AS ev
 		WHERE ev.FromCustID = root.CTSCustID 
             AND (root.EvidenceID IS NULL OR ev.EvidenceID = root.EvidenceID)
@@ -62,15 +72,15 @@ sp : BEGIN
     FROM Temp_CustAffectedEvidence;
 
     IF lv_TotalAff = 0 THEN
+         UPDATE CTS_DataCenter.SystemParameter 
+         SET ParameterValue = lv_QueueID_Next
+         WHERE ParameterID = 32; 
+
+         DELETE 
+	     FROM CustEvidenceAffectedQueueInsert
+         WHERE ID < lv_QueueID_Next;
+
         IF EXISTS (SELECT 1 FROM CTS_DataCenter.CustEvidenceAffectedQueueInsert WHERE ID > lv_QueueID_Next) THEN
-            UPDATE CTS_DataCenter.SystemParameter 
-            SET ParameterValue = lv_QueueID_Next
-            WHERE ParameterID = 32; 
-
-            DELETE 
-	        FROM CustEvidenceAffectedQueueInsert
-            WHERE ID < lv_QueueID_Next;
-
             SET op_IsExist = 1;
             LEAVE sp;
         END IF;
