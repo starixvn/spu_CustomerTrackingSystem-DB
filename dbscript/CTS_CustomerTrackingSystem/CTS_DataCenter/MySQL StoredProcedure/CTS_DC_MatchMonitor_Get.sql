@@ -44,7 +44,7 @@ BEGIN
         ,	s.AwayID
         ,	s.LeagueID
         ,	s.BettypeID
-        ,	CASE WHEN s.IsHedging = 1 THEN 'Hedging' ELSE 'Group Betting' END AS Reason
+        ,	s.IsHedging		#CASE WHEN s.IsHedging = 1 THEN 'Hedging' ELSE 'Group Betting' END AS Reason
         ,	s.IsVerified
         ,	s.VerifiedDate
         ,	u.UserName AS VerifiedBy
