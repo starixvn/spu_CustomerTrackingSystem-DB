@@ -17,8 +17,8 @@ BEGIN
 
 		Revisions:
 			- 	20210526@Long.Luu: Created [Redmine ID: 152883]
-		
-		Param's Explanation (filtered by):
+			- -	20210823@Casey.Huynh: Remove ListCustID from return result[Redmine ID: 159195]
+		Param's Explanation (filtered by): 
 		
 		Example:
 			-	CALL CTS_DC_MatchMonitor_Details_GetReasonGroup('2021-05-01',12345,1);

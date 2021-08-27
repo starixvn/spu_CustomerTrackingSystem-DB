@@ -5,11 +5,11 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Details_Get`(
 		IN ip_EventDate			DATE
     ,	IN ip_MatchID 			BIGINT UNSIGNED
+    ,	IN ip_LiveIndicator		BOOLEAN
     ,	IN ip_BettypeID			INT UNSIGNED
-    ,	IN ip_LiveIndicator		BIT
     ,	IN ip_ListScore			VARCHAR(200)
     ,	IN ip_ListReasonGroup	VARCHAR(200)
-    ,	IN ip_Site				TINYINT
+    ,	IN ip_IsHedging			BOOLEAN
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -58,7 +58,8 @@ BEGIN
 	WHERE  d.EventDate = ip_EventDate
 		AND d.BettypeID = ip_BettypeID
         AND d.MatchID = ip_MatchID
-        AND	(ip_LiveIndicator IS NULL OR d.LiveIndicator = ip_LiveIndicator)
+        AND d.LiveIndicator = ip_LiveIndicator
+        AND d.IsHedging = ip_Hedging
         ;
     
 END$$
