@@ -24,6 +24,7 @@ sp : BEGIN
 	*/    
     DECLARE lv_QueueID 			BIGINT UNSIGNED;
     DECLARE lv_QueueID_Next 	BIGINT UNSIGNED;
+    DECLARE lv_QueueID_Sync 	BIGINT UNSIGNED;
     DECLARE lv_LastCTSCustID 	BIGINT UNSIGNED;
     DECLARE lv_TotalAff 		INT DEFAULT 0;
     DECLARE lv_SecondBatchSize 	INT DEFAULT 0;
@@ -36,6 +37,7 @@ sp : BEGIN
         , 	EvidenceID			SMALLINT UNSIGNED       
         , 	Remark				VARCHAR(500)
 		,	CreatedBy			INT UNSIGNED
+        ,	Created				DATETIME(3)
         , 	INDEX				IX_Temp_CustAffectedEvidence_CTSCustID_Affected(CTSCustID,CTSCustID_Affected) 
         , 	INDEX				IX_Temp_CustAffectedEvidence_QueueID(QueueID) 
     );
@@ -83,13 +85,14 @@ sp : BEGIN
     END IF;
 
     
-    INSERT INTO Temp_CustAffectedEvidence(QueueID, CTSCustID, CTSCustID_Affected, EvidenceID, Remark,CreatedBy)
+    INSERT INTO Temp_CustAffectedEvidence(QueueID, CTSCustID, CTSCustID_Affected, EvidenceID, Remark,CreatedBy, Created)
     SELECT 	root.ID
 		,	root.CTSCustID
 		,  	aff.CTSCustID
 		,	root.EvidenceID
 		,	root.Remark
 		,	root.CreatedBy
+        ,	root.Created
 	FROM CTS_DataCenter.CustEvidenceAffectedQueueInsert AS root,
 	LATERAL
 		(SELECT DISTINCT
@@ -112,13 +115,14 @@ sp : BEGIN
     IF ip_BatchSize > lv_TotalAff THEN
 		SET lv_SecondBatchSize = ip_BatchSize - lv_TotalAff;
         
-        INSERT INTO Temp_CustAffectedEvidence(QueueID, CTSCustID, CTSCustID_Affected, EvidenceID, Remark,CreatedBy)
+        INSERT INTO Temp_CustAffectedEvidence(QueueID, CTSCustID, CTSCustID_Affected, EvidenceID, Remark,CreatedBy,Created)
 		SELECT 	root.ID
 			,	root.CTSCustID
 			,  	aff.CTSCustID
 			,	root.EvidenceID
 			,	root.Remark
 			,	root.CreatedBy
+            ,	root.Created
 		FROM CTS_DataCenter.CustEvidenceAffectedQueueInsert AS root,
 		LATERAL
 			(SELECT DISTINCT
@@ -134,7 +138,27 @@ sp : BEGIN
 		LIMIT lv_SecondBatchSize;
         
     END IF;
-
+	
+    /*********Sync Insert Remove Queue******/
+	SELECT ins.QueueID
+    INTO lv_QueueID_Sync
+    FROM Temp_CustAffectedEvidence AS ins
+    WHERE EXISTS (SELECT 1 
+				  FROM CTS_DataCenter.CustEvidenceAffectedQueueRemove AS rm 
+                  WHERE rm.CTSCustID = ins.CTSCustID 
+					AND rm.Created <=  ins.Created)
+	ORDER BY  ins.QueueID ASC
+    LIMIT 1;
+    
+    IF lv_QueueID_Sync IS NOT NULL THEN
+		DELETE 
+		FROM Temp_CustAffectedEvidence
+		WHERE QueueID >= lv_QueueID_Sync;
+        DO SLEEP(30); /*Sleep 30s wait queue remove completed*/
+    END IF;
+   
+    /*****************************/
+    
     SELECT COUNT(1)
     INTO lv_TotalAff
     FROM Temp_CustAffectedEvidence;
@@ -147,10 +171,12 @@ sp : BEGIN
         UPDATE CTS_DataCenter.SystemParameter 
         SET ParameterValue = 0
         WHERE ParameterID = 31; 
-
-        DELETE 
-	    FROM CustEvidenceAffectedQueueInsert
-        WHERE ID < lv_QueueID_Next;
+		
+        IF lv_QueueID_Sync IS NULL THEN
+			DELETE 
+			FROM CustEvidenceAffectedQueueInsert
+			WHERE ID < lv_QueueID_Next;
+		END IF;
 
         IF EXISTS (SELECT 1 FROM CTS_DataCenter.CustEvidenceAffectedQueueInsert WHERE ID > lv_QueueID_Next) THEN
             SET op_IsExist = 1;
