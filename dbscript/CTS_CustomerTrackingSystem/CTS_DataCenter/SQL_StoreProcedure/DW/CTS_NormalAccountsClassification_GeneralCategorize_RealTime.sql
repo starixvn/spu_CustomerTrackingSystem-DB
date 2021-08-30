@@ -23,6 +23,7 @@ AS
 		- 20210714@Long.Luu: Special rule for ManbetX CC2 [Redmine ID: #158465]
         - 20210802@Long.Luu: Rescan for customers that have no category in CTS [Redmine ID: #158465]
 		- 20210803@Long.Luu: Log Input Data for Classification [Redmine ID: #157203]
+		- 20210818@Long.Luu: Check Winloss on probation assessment [Redmine ID: #159709]
 		
 	Param's Explanation:
 */
@@ -191,6 +192,8 @@ BEGIN
 				WHEN (a.Margin <= -2 AND a.TurnoverRM > 150000 AND a.BetCount > 300 AND a.ActiveDays >= 8) THEN @GENERALCATEGORY_VIP
 				WHEN (a.Margin >= 0.1 AND a.Margin <= 1 AND a.BetCount >= 20 AND a.WinlossRM > 15000) THEN @GENERALCATEGORY_SMARTPUNTER
 				WHEN (a.Margin > 1 AND a.BetCount >= 20 AND a.WinlossRM > 15000) THEN @GENERALCATEGORY_HIGHRISKPUNTER
+				WHEN (a.Margin >= 0 AND a.Site NOT IN ('haifa','manbetx') AND a.WinlossRM < 10000) THEN @GENERALCATEGORY_NORMALMEMBER
+				WHEN (a.Margin >= 0 AND a.Site IN ('haifa','manbetx') AND a.WinlossRM < 5000) THEN @GENERALCATEGORY_NEWMEMBER
 				WHEN (a.Margin >= 0) THEN @GENERALCATEGORY_PROBATION
 				WHEN (a.Margin < 0 AND (a.Site NOT IN ('haifa','manbetx') OR a.Site IS NULL)) THEN @GENERALCATEGORY_NORMALMEMBER
 				WHEN (a.Margin < 0 AND a.Site IN ('haifa','manbetx') AND a.WinlossRM >= -5000) THEN @GENERALCATEGORY_NORMALMEMBER

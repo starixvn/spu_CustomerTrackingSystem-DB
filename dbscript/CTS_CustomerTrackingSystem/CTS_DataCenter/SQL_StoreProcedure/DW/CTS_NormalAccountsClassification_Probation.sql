@@ -51,7 +51,7 @@ BEGIN
 		,	@CurrentDateTime	DATETIME = GETDATE()
 		,	@CurrentDate		DATE	 = GETDATE()
 
-	DECLARE	@ToDate				DATE	 = DATEADD(DAY, -1, GETDATE());
+	DECLARE	@ToDate				DATE	 = GETDATE();
 	DECLARE	@From30Date			DATE	 = DATEADD(DAY, - 30, @ToDate);
 	
 	IF	OBJECT_ID('tempdb..#tmpRawData') IS NOT NULL
