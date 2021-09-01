@@ -185,24 +185,24 @@ BEGIN
 		AND c.IsActive = 1;
 		
 	-- #6: Remove 'haifa/manbetX doesn't change category'
-	DELETE a
+	/*DELETE a
 	FROM  #tmpCustomerAccummulatedInfo AS a WITH(ROWLOCK)
-	WHERE (a.Site IN ('haifa','manbetx') AND a.Margin < 0 AND a.WinlossRM < -5000);
+	WHERE (a.Site IN ('haifa','manbetx') AND a.Margin < 0 AND a.WinlossRM < -5000);*/
 
 	-- #7: Classify customers by General Category
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT	a.CustId
 		,	200
 		,	CASE
-				WHEN a.BetCount < 10 THEN @GENERALCATEGORY_NEWMEMBER
 				WHEN (a.Margin <= -2 AND a.TurnoverRM > 150000 AND a.BetCount > 300 AND a.ActiveDays >= 8) THEN @GENERALCATEGORY_VIP
 				WHEN (a.Margin >= 0.1 AND a.Margin <= 1 AND a.BetCount >= 20 AND a.WinlossRM > 15000) THEN @GENERALCATEGORY_SMARTPUNTER
 				WHEN (a.Margin > 1 AND a.BetCount >= 20 AND a.WinlossRM > 15000) THEN @GENERALCATEGORY_HIGHRISKPUNTER
-				WHEN (a.Margin >= 0 AND a.Site NOT IN ('haifa','manbetx') AND a.WinlossRM < 10000) THEN @GENERALCATEGORY_NORMALMEMBER
-				WHEN (a.Margin >= 0 AND a.Site IN ('haifa','manbetx') AND a.WinlossRM < 5000) THEN @GENERALCATEGORY_NEWMEMBER
+				WHEN (a.Margin >= 0 AND a.Site IN ('haifa','manbetx') AND a.WinlossRM > -5000) THEN @GENERALCATEGORY_NEWMEMBER
+				WHEN (a.Margin >= 0 AND a.WinlossRM < 10000) THEN @GENERALCATEGORY_NORMALMEMBER
 				WHEN (a.Margin >= 0) THEN @GENERALCATEGORY_PROBATION
-				WHEN (a.Margin < 0 AND (a.Site NOT IN ('haifa','manbetx') OR a.Site IS NULL)) THEN @GENERALCATEGORY_NORMALMEMBER
-				WHEN (a.Margin < 0 AND a.Site IN ('haifa','manbetx') AND a.WinlossRM >= -5000) THEN @GENERALCATEGORY_NORMALMEMBER
+				WHEN (a.Margin < 0 AND (a.Site NOT IN ('haifa','manbetx') OR a.Site IS NULL)) THEN @GENERALCATEGORY_NORMALMEMBER				
+				WHEN (a.Margin < 0 AND a.Site IN ('haifa','manbetx') AND a.WinlossRM <= -5000) THEN @GENERALCATEGORY_NORMALMEMBER
+				WHEN (a.Margin < 0 AND a.Site IN ('haifa','manbetx')) THEN @GENERALCATEGORY_NEWMEMBER
 			END AS CategoryId
 		,	@CurrentDate AS CreatedDate
 		,	@CurrentDateTime AS CreatedTime

@@ -191,12 +191,10 @@ BEGIN
 		c.CategoryId = CASE 
 							WHEN (s.Margin <= -2 AND s.TurnoverRM >= 150000 AND s.BetCount >= 300) THEN 
 								@GENERALCATEGORY_VIP
-							WHEN (s.Site IN ('haifa','manbetx') AND s.WinlossRM < -5000) THEN 
-								@GENERALCATEGORY_PROBATION
-							WHEN (s.Site IN ('haifa','manbetx') AND s.WinlossRM < 5000) THEN 
+							WHEN (s.Site IN ('haifa','manbetx') AND s.WinlossRM > -5000) THEN 
 								@GENERALCATEGORY_NEWMEMBER
 							--WHEN (s.Site NOT IN ('haifa','manbetx') AND s.WinlossRM < 10000) THEN @GENERALCATEGORY_NORMALMEMBER
-							ELSE @GENERALCATEGORY_NORMALMEMBER								
+							ELSE @GENERALCATEGORY_NORMALMEMBER							
 						END
 	FROM #tmpCustomers AS c
 		INNER JOIN #tmpCustomerAccummulatedInfo AS s ON c.CustId = s.CustId
@@ -210,10 +208,10 @@ BEGIN
 								@GENERALCATEGORY_SMARTPUNTER
 							WHEN (a.Margin > 1 AND a.WinlossRM > 15000 AND a.BetCount >= 20) THEN
 								@GENERALCATEGORY_HIGHRISKPUNTER
-							WHEN (a.Site NOT IN ('haifa','manbetx') AND a.WinlossRM < 10000) THEN
-								@GENERALCATEGORY_NORMALMEMBER
-							WHEN (a.Site IN ('haifa','manbetx') AND a.WinlossRM < 5000) THEN
+							WHEN (a.Site IN ('haifa','manbetx') AND a.WinlossRM > -5000) THEN
 								@GENERALCATEGORY_NEWMEMBER
+							WHEN (a.WinlossRM < 10000) THEN
+								@GENERALCATEGORY_NORMALMEMBER
 							ELSE @GENERALCATEGORY_PROBATION
 						END
 	FROM #tmpCustomers AS c
