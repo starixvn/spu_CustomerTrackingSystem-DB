@@ -28,24 +28,28 @@ BEGIN
 			
 	*/
     DECLARE	lv_Last3mMinTime 	DATETIME(3);
-    DECLARE	lv_Last3mMaxTime 	DATETIME(3);  
-	DECLARE	lv_LastTransID 		BIGINT;   
-    DECLARE lv_GroupID 			INT;
-	DECLARE lv_IsHedging 		BOOLEAN;
-    DECLARE lv_TransIDList 		LONGTEXT;
-    DECLARE lv_CustIDList		LONGTEXT;
-    DECLARE lv_OldGroupIDList	TEXT;
-    DECLARE lv_NoOfOldGroupID	INT;
-    DECLARE lv_EventDate 		DATE;
-    DECLARE lv_LiveHomeScore	SMALLINT UNSIGNED;
-    DECLARE lv_LiveAwayScore	SMALLINT UNSIGNED;
-    DECLARE lv_MaxGroupID 		INT;
-	DECLARE lv_MinGroupID 		INT;
-    DECLARE lv_MatchHedging		BOOLEAN DEFAULT 0;
-    DECLARE lv_MatchNotHedging 	BOOLEAN DEFAULT 0;
+    DECLARE	lv_Last3mMaxTime 			DATETIME(3);  
+	DECLARE	lv_LastTransID 				BIGINT;   
+    DECLARE lv_GroupID 					INT;
+	DECLARE lv_IsHedging 				BOOLEAN;
+    DECLARE lv_TransIDList 				LONGTEXT;
+    DECLARE lv_CustIDList				LONGTEXT;
+    DECLARE lv_OldGroupIDList			TEXT;
+    DECLARE lv_NoOfOldGroupID			INT;
+    DECLARE lv_EventDate 				DATE;
+    DECLARE lv_LiveHomeScore			SMALLINT UNSIGNED;
+    DECLARE lv_LiveAwayScore			SMALLINT UNSIGNED;
+    DECLARE lv_MaxGroupID 				INT;
+	DECLARE lv_MinGroupID 				INT;
+    DECLARE lv_MatchHedging				BOOLEAN DEFAULT 0;
+    DECLARE lv_MatchNotHedging 			BOOLEAN DEFAULT 0;
 	DECLARE lv_MatchDetailsHedging		BOOLEAN DEFAULT 0;
     DECLARE lv_MatchDetailsNotHedging 	BOOLEAN DEFAULT 0;
-
+    DECLARE	lv_KickOffTime 				DATETIME;
+    DECLARE	lv_EventStatus 				VARCHAR(50);
+    DECLARE lv_HomeID 					INT UNSIGNED;
+    DECLARE lv_AwayID 					INT UNSIGNED;
+    DECLARE lv_LeagueID					INT UNSIGNED;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Last3mTransGroup;
     CREATE TEMPORARY TABLE Temp_Last3mTransGroup
@@ -96,10 +100,21 @@ BEGIN
     INTO lv_MaxGroupID
     FROM MatchMonitorDetails WHERE LiveIndicator = ip_LiveIndicator AND MatchID = ip_MatchID AND BettypeID = ip_BettypeID AND TotalScore = ip_TotalScore;
     
-    SELECT EventDate, LiveHomeScore, LiveAwayScore
-    INTO lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore
-    FROM MatchMonitorDetails WHERE LiveIndicator = ip_LiveIndicator AND MatchID = ip_MatchID AND BettypeID = ip_BettypeID AND TotalScore = ip_TotalScore
-    LIMIT 1;
+    IF (ip_LiveIndicator = 1) THEN
+		SELECT EventDate, LiveHomeScore, LiveAwayScore, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID
+		INTO lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID
+		FROM CTS_DataCenter.MatchMonitorStagingLive WHERE  MatchID = ip_MatchID AND BettypeID = ip_BettypeID AND TotalScore = ip_TotalScore
+		LIMIT 1;
+	END IF;
+    
+     IF (ip_LiveIndicator = 0) THEN
+		SELECT EventDate, LiveHomeScore, LiveAwayScore, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID
+		INTO lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID
+		FROM CTS_DataCenter.MatchMonitorStagingNonLive WHERE  MatchID = ip_MatchID AND BettypeID = ip_BettypeID AND TotalScore = ip_TotalScore
+		LIMIT 1;
+	END IF;
+
+	SELECT lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID;
 
     lp: LOOP 
 		SET lv_GroupID = 0;
@@ -166,15 +181,35 @@ BEGIN
     INTO lv_MatchDetailsHedging
     FROM CTS_DataCenter.MatchMonitorDetails 
     WHERE LiveIndicator = ip_LiveIndicator AND MatchID = ip_MatchID AND BettypeID = ip_BettypeID  AND IsHedging = 0  LIMIT 1;
-	/*
-    IF(lv_MatchHedging +  lv_MatchNotHedging < lv_MatchDetailsHedging + lv_MatchDetailsNotHedging)
-    THEN
+	
+    IF(lv_MatchHedging +  lv_MatchNotHedging < lv_MatchDetailsHedging + lv_MatchDetailsNotHedging) THEN
 		IF(lv_MatchHedging = 0 AND lv_MatchDetailsHedging = 1) THEN
-        INSERT INTO 
-    END IF;*/
+			INSERT INTO CTS_DataCenter.MatchMonitor(MatchID,BettypeID, LiveIndicator, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, IsHedging)
+			VALUES(ip_MatchID, ip_BettypeID, ip_LiveIndicator, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, 1);
+		END IF;
+        
+        IF(lv_MatchNonHedging = 0 AND lv_MatchDetailsNonHedging = 1) THEN
+			INSERT INTO CTS_DataCenter.MatchMonitor(MatchID,BettypeID, LiveIndicator, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, IsHedging)
+			VALUES(ip_MatchID, ip_BettypeID, ip_LiveIndicator, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, 0);
+		END IF;        
+    END IF;
+    
+    IF(lv_MatchHedging +  lv_MatchNotHedging = lv_MatchDetailsHedging + lv_MatchDetailsNotHedging AND lv_MatchDetailsHedging + lv_MatchDetailsNotHedging = 1) THEN
+		IF(lv_MatchHedging = 0 AND lv_MatchDetailsHedging = 1) THEN
+			UPDATE CTS_DataCenter.MatchMonitor
+            SET IsHedging = 1
+            WHERE LiveIndicator = ip_LiveIndicator AND MatchID = ip_MatchID AND BettypeID = ip_BettypeID;
+		END IF;
+        
+        IF(lv_MatchHedging = 1 AND lv_MatchDetailsHedging = 0) THEN
+			UPDATE CTS_DataCenter.MatchMonitor
+            SET IsHedging = 0
+            WHERE LiveIndicator = ip_LiveIndicator AND MatchID = ip_MatchID AND BettypeID = ip_BettypeID;
+		END IF;       
+    END IF;
+    
 	#======Clean Staging=================================================
-    IF (ip_LiveIndicator = 1) THEN
-		
+    IF (ip_LiveIndicator = 1) THEN		
 		SELECT 	MAX(TransDate) , MAX(TransID)
 		INTO 	lv_Last3mMaxTime, lv_LastTransID
 		FROM	CTS_DataCenter.MatchMonitorStagingLive;    
@@ -200,5 +235,33 @@ BEGIN
 		SET 	ParameterValue = lv_LastTransID
 		WHERE 	ParameterID = 20;
 	END IF;
+    
+    IF (ip_LiveIndicator = 0) THEN		
+		SELECT 	MAX(TransDate) , MAX(TransID)
+		INTO 	lv_Last3mMaxTime, lv_LastTransID
+		FROM	CTS_DataCenter.MatchMonitorStagingNonLive;    
+		
+		SELECT  MIN(TransDate) 
+		INTO 	lv_Last3mMinTime
+		FROM	CTS_DataCenter.MatchMonitorStagingNonLive
+		WHERE   TransDate > TIMESTAMPADD(SECOND, -180, lv_Last3mMaxTime);  
+			
+		INSERT INTO Temp_Last3mTransGroup(MatchID, TotalScore, BettypeID, GroupID)
+		SELECT 	DISTINCT mms.MatchID,  mms.TotalScore, mms.BettypeID, mms.GroupID
+		FROM 	CTS_DataCenter.MatchMonitorStagingNonLive mms
+		WHERE	mms.TransDate >= lv_Last3mMinTime AND mms.GroupID IS NOT NULL;
+		
+		DELETE 	mms
+		FROM	CTS_DataCenter.MatchMonitorStagingNonLive AS mms
+			LEFT JOIN Temp_Last3mTransGroup AS tmpTg ON mms.MatchID = tmpTg.MatchID 
+				AND mms.TotalScore = tmpTg.TotalScore AND mms.BettypeID = tmpTg.BettypeID  AND mms.GroupID = tmpTg.GroupID
+		WHERE	mms.TransDate < lv_Last3mMinTime  AND tmpTg.GroupID IS NULL ;    
+        
+        /* Update Parameter*/
+		UPDATE 	CTS_DataCenter.SystemParameter
+		SET 	ParameterValue = lv_LastTransID
+		WHERE 	ParameterID = 29;
+	END IF;
+   
 END$$
 DELIMITER ;
