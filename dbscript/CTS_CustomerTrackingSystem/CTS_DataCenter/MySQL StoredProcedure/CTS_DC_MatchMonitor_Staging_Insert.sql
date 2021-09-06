@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Staging_Insert`;
 DELIMITER $$
 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Staging_Insert`(
-		IN ip_IsLive 	BOOLEAN 
+		IN ip_LiveIndicator	BOOLEAN 
     ,	IN ip_TransList JSON
 )
     SQL SECURITY INVOKER
@@ -28,23 +28,10 @@ BEGIN
 		Example:
 			
 	*/
+    DECLARE lv_MinTransDate3m DATETIME(3);    # the min transdate of last trans in 3 minute
     
-	DROP TEMPORARY TABLE IF EXISTS Temp_OringinGroupID;
-	CREATE TEMPORARY TABLE Temp_OringinGroupID(
-			MatchID			BIGINT UNSIGNED NOT NULL
-		,	LiveIndicator 	BIT(1) NOT NULL
-		,	TotalScore		SMALLINT UNSIGNED NOT NULL
-		,	BettypeID		INT UNSIGNED NOT NULL
-        ,	OringinGroupID	INT AUTO_INCREMENT
-		,	PRIMARY KEY (MatchID, LiveIndicator, TotalScore, BettypeID)
-        ,	UNIQUE KEY UK_Temp_TransGroup_OringinGroupID(OringinGroupID)
-	);
-    
-    IF ip_IsLive = 1 THEN    
-		UPDATE	CTS_DataCenter.MatchMonitorStagingLive
-		SET		OriginGroupID = NULL;    
-		
-		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingLive(TransID, TransDate, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveIndicator, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, CustID, Stake, InsertTime)
+    IF ip_LiveIndicator = 1 THEN    
+		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingLive(TransID, TransDate, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, CustID, Stake, InsertTime)
 		SELECT  js.TransID
 			,	js.TransDate
 			,	js.MatchID
@@ -54,7 +41,6 @@ BEGIN
 			,	js.KickOffTime
 			,	js.LeagueID
 			,	js.EventDate
-			,	js.LiveIndicator
 			,	js.LiveHomeScore
 			,	js.LiveAwayScore
 			,	js.LiveHomeScore + js.LiveAwayScore AS TotalScore
@@ -73,7 +59,6 @@ BEGIN
 								,	KickOffTime		DATETIME PATH "$.KickOffTime" 
 								,	LeagueID		INT	PATH "$.LeagueID"
 								,	EventDate		DATE PATH "$.EventDate"
-								,	LiveIndicator	INT	PATH "$.LiveIndicator" 
 								,	LiveHomeScore	INT	PATH "$.LiveHomeScore" 
 								,	LiveAwayScore	INT	PATH "$.LiveAwayScore" 
 								,	BettypeID		INT	PATH "$.Bettype" 
@@ -81,31 +66,21 @@ BEGIN
 								,	Stake			DOUBLE PATH "$.Stake" 
 							)
 					) AS js;  
-	
-		INSERT INTO Temp_OringinGroupID(MatchID, LiveIndicator, TotalScore, BettypeID)
+		
+        SELECT TIMESTAMPADD(SECOND, -180, MAX(TransDate))
+		INTO lv_MinTransDate3m
+		FROM CTS_DataCenter.MatchMonitorStagingLive;
+        
 		SELECT	mms.MatchID
-			,	mms.LiveIndicator
 			,	mms.TotalScore
 			,	mms.BettypeID
 		FROM		CTS_DataCenter.MatchMonitorStagingLive AS mms
-		GROUP BY	mms.MatchID, mms.LiveIndicator, mms.TotalScore, mms.BettypeID
-		HAVING		COUNT(DISTINCT CustID) > 1 AND SUM(Stake) >=500;
-		
-		UPDATE  CTS_DataCenter.MatchMonitorStagingLive AS mms
-			INNER JOIN Temp_OringinGroupID AS tmpGp ON mms.MatchID = tmpGp.MatchID AND mms.LiveIndicator = tmpGp.LiveIndicator
-						AND mms.TotalScore = tmpGp.TotalScore AND mms.BettypeID = tmpGp.BettypeID
-		SET mms.OriginGroupID = tmpGp.OringinGroupID;   
-		
-		SELECT 	DISTINCT OriginGroupID 
-		FROM 	CTS_DataCenter.MatchMonitorStagingLive
-		WHERE 	OriginGroupID IS NOT NULL AND GroupID IS NULL;    
-	END IF;
-    
-    IF ip_IsLive = 0 THEN    
-		UPDATE	CTS_DataCenter.MatchMonitorStagingNonLive
-		SET		OriginGroupID = NULL;    
-		
-		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingNonLive(TransID, TransDate, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveIndicator, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, CustID, Stake, InsertTime)
+        WHERE		GroupID = 0 #AND TransDate >= lv_MinTransDate3m
+		GROUP BY	mms.MatchID, mms.TotalScore, mms.BettypeID
+		HAVING		COUNT(DISTINCT CustID) > 1 AND SUM(Stake) >= 500;
+        
+	ELSE
+    	INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingNonLive(TransID, TransDate, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, CustID, Stake, InsertTime)
 		SELECT  js.TransID
 			,	js.TransDate
 			,	js.MatchID
@@ -115,7 +90,6 @@ BEGIN
 			,	js.KickOffTime
 			,	js.LeagueID
 			,	js.EventDate
-			,	js.LiveIndicator
 			,	js.LiveHomeScore
 			,	js.LiveAwayScore
 			,	js.LiveHomeScore + js.LiveAwayScore AS TotalScore
@@ -134,7 +108,6 @@ BEGIN
 								,	KickOffTime		DATETIME PATH "$.KickOffTime" 
 								,	LeagueID		INT	PATH "$.LeagueID"
 								,	EventDate		DATE PATH "$.EventDate"
-								,	LiveIndicator	INT	PATH "$.LiveIndicator" 
 								,	LiveHomeScore	INT	PATH "$.LiveHomeScore" 
 								,	LiveAwayScore	INT	PATH "$.LiveAwayScore" 
 								,	BettypeID		INT	PATH "$.Bettype" 
@@ -142,24 +115,19 @@ BEGIN
 								,	Stake			DOUBLE PATH "$.Stake" 
 							)
 					) AS js;  
-			 
-		INSERT INTO Temp_OringinGroupID(MatchID, LiveIndicator, TotalScore, BettypeID)
+		
+        SELECT TIMESTAMPADD(SECOND, -180, MAX(TransDate))
+		INTO lv_MinTransDate3m
+		FROM CTS_DataCenter.MatchMonitorStagingNonLive;
+        
 		SELECT	mms.MatchID
-			,	mms.LiveIndicator
 			,	mms.TotalScore
 			,	mms.BettypeID
 		FROM		CTS_DataCenter.MatchMonitorStagingNonLive AS mms
-		GROUP BY	mms.MatchID, mms.LiveIndicator, mms.TotalScore, mms.BettypeID
-		HAVING		COUNT(DISTINCT CustID) > 1 AND SUM(Stake) >=500;
-		
-		UPDATE  CTS_DataCenter.MatchMonitorStagingNonLive AS mms
-			INNER JOIN Temp_OringinGroupID AS tmpGp ON mms.MatchID = tmpGp.MatchID AND mms.LiveIndicator = tmpGp.LiveIndicator
-						AND mms.TotalScore = tmpGp.TotalScore AND mms.BettypeID = tmpGp.BettypeID
-		SET mms.OriginGroupID = tmpGp.OringinGroupID;   
-		
-		SELECT 	DISTINCT OriginGroupID 
-		FROM 	CTS_DataCenter.MatchMonitorStagingNonLive
-		WHERE 	OriginGroupID IS NOT NULL AND GroupID IS NULL;    
+        WHERE		GroupID = 0 #AND TransDate >= lv_MinTransDate3m
+		GROUP BY	mms.MatchID, mms.TotalScore, mms.BettypeID
+		HAVING		COUNT(DISTINCT CustID) > 1 AND SUM(Stake) >= 500;
+        
 	END IF;
     
 END$$

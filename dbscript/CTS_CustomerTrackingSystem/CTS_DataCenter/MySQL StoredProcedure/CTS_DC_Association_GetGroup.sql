@@ -106,7 +106,8 @@ sp:BEGIN
 	FROM Temp_CustDevice 
 	GROUP BY DCSDeviceID;
 
-	DELETE FROM Temp_CustDevice AS tmp
+	DELETE tmp
+    FROM Temp_CustDevice AS tmp
 	WHERE tmp.DCSDeviceID IN (SELECT DCSDeviceID FROM Temp_DeviceCust_Group WHERE TotalCust = 1);
 	# select * from Temp_DeviceCust_Group;
 
@@ -216,7 +217,7 @@ sp:BEGIN
 	DELETE FROM Temp_Association AS ass
 	WHERE EXISTS (SELECT 1 FROM Temp_Association_Remove AS rm WHERE  rm.CTSCustID_1 = ass.CTSCustID_2 AND rm.CTSCustID_2 = ass.CTSCustID_1);
 
-# select * from Temp_Association;
+	# select * from Temp_Association;
 	lp: LOOP 
 		SET lv_CustID = (SELECT CustID_1
 							FROM Temp_Association

@@ -16,22 +16,22 @@ DROP TABLE IF EXISTS CTS_DataCenter.MatchMonitorStagingLive;
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorStagingLive(
 		TransID			BIGINT UNSIGNED
 	, 	TransDate		DATETIME(3)
+    , 	CustID			BIGINT UNSIGNED
+    ,	GroupID			BIGINT UNSIGNED    
+    ,	OriginGroupID	BIGINT UNSIGNED
+    ,	Stake			DECIMAL(20,4)
     ,	MatchID			BIGINT UNSIGNED
     ,	LiveIndicator	BOOLEAN
-    ,	BettypeID		INT UNSIGNED
+    ,	BettypeID		INT UNSIGNED    
+    ,	TotalScore		SMALLINT UNSIGNED
     , 	EventDate		DATE
     , 	KickOffTime		DATETIME
     ,	EventStatus		VARCHAR(50)
     ,	HomeID			INT UNSIGNED
 	, 	AwayID			INT UNSIGNED
-    ,	LeagueID		INT UNSIGNED    
-	, 	CustID			BIGINT UNSIGNED
-    ,	Stake			DECIMAL(20,4)
+    ,	LeagueID		INT UNSIGNED
     ,	LiveHomeScore	SMALLINT UNSIGNED
     ,	LiveAwayScore	SMALLINT UNSIGNED
-    ,	TotalScore		SMALLINT UNSIGNED
-    ,	GroupID			BIGINT UNSIGNED
-    ,	OriginGroupID	BIGINT UNSIGNED
     ,	InsertTime		DATETIME(3)
 	, 	PRIMARY KEY		PK_MatchMonitorStaging_TransID(TransID)
 	, 	INDEX			IX_MatchMonitorStaging_OriginGroupIDMatchInfo(OriginGroupID,MatchID,LiveIndicator,TotalScore,BettypeID)
@@ -43,22 +43,22 @@ DROP TABLE IF EXISTS CTS_DataCenter.MatchMonitorStagingNonLive;
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorStagingNonLive(
 		TransID			BIGINT UNSIGNED
 	, 	TransDate		DATETIME(3)
+    , 	CustID			BIGINT UNSIGNED
+    ,	GroupID			BIGINT UNSIGNED    
+    ,	OriginGroupID	BIGINT UNSIGNED
+    ,	Stake			DECIMAL(20,4)
     ,	MatchID			BIGINT UNSIGNED
     ,	LiveIndicator	BOOLEAN
-    ,	BettypeID		INT UNSIGNED
+    ,	BettypeID		INT UNSIGNED    
+    ,	TotalScore		SMALLINT UNSIGNED
     , 	EventDate		DATE
     , 	KickOffTime		DATETIME
     ,	EventStatus		VARCHAR(50)
     ,	HomeID			INT UNSIGNED
 	, 	AwayID			INT UNSIGNED
-    ,	LeagueID		INT UNSIGNED    
-	, 	CustID			BIGINT UNSIGNED
-    ,	Stake			DECIMAL(20,4)
+    ,	LeagueID		INT UNSIGNED
     ,	LiveHomeScore	SMALLINT UNSIGNED
     ,	LiveAwayScore	SMALLINT UNSIGNED
-    ,	TotalScore		SMALLINT UNSIGNED
-    ,	GroupID			BIGINT UNSIGNED
-    ,	OriginGroupID	BIGINT UNSIGNED
     ,	InsertTime		DATETIME(3)
 	, 	PRIMARY KEY		PK_MatchMonitorStaging_TransID(TransID)
 	, 	INDEX			IX_MatchMonitorStaging_OriginGroupIDMatchInfo(OriginGroupID,MatchID,LiveIndicator,TotalScore,BettypeID)
