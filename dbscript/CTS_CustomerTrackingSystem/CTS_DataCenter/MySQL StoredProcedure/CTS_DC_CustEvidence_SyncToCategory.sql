@@ -203,7 +203,7 @@ BEGIN
 		WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE, CONST_ACTIONTYPE_REMOVE);
     
 		/*	REMOVE PA FROM EVIDENCE */
-		INSERT INTO Temp_CustEvidence(CTSCustID, CategoryID)
+		INSERT IGNORE INTO Temp_CustEvidence(CTSCustID, CategoryID)
 		SELECT  temp.CTSCustID
 			,	temp.CategoryID
 		FROM Temp_CustomerEvidences AS temp
