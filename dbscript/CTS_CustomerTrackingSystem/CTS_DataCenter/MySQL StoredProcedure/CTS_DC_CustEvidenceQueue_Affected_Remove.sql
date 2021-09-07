@@ -24,12 +24,15 @@ sp : BEGIN
 	*/    
 	DECLARE lv_QueueID 		BIGINT UNSIGNED;
     DECLARE lv_QueueID_Next BIGINT UNSIGNED;
+    DECLARE lv_QueueID_Sync 	BIGINT UNSIGNED;
     DECLARE lv_TotalAff 	INT DEFAULT 0;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustAffectedEvidence;    
 	CREATE TEMPORARY TABLE Temp_CustAffectedEvidence(
 			QueueID				BIGINT UNSIGNED
+		,	CTSCustID			BIGINT UNSIGNED  
 		,	CustEvidID			BIGINT UNSIGNED  
+        ,	Created				DATETIME(3)
         ,	INDEX 				IX_Temp_CustAffectedEvidence_QueueID(QueueID)
         ,	INDEX 				IX_Temp_CustAffectedEvidence_CustEvidID(CustEvidID)
     );
@@ -57,9 +60,11 @@ sp : BEGIN
     END IF;
     
     
-    INSERT INTO Temp_CustAffectedEvidence(QueueID, CustEvidID)
+    INSERT INTO Temp_CustAffectedEvidence(QueueID,CTSCustID, CustEvidID, Created)
     SELECT 	root.ID
+		,	root.CTSCustID
 		,	aff.CustEvidID
+        ,	root.Created
 	FROM CTS_DataCenter.CustEvidenceAffectedQueueRemove AS root,
 	LATERAL(
         SELECT ev.CustEvidID
@@ -72,6 +77,27 @@ sp : BEGIN
     ORDER BY root.ID ASC 
 	LIMIT ip_BatchSize;
     
+    /*********Sync Insert Remove Queue******/
+	SELECT rm.QueueID
+    INTO lv_QueueID_Sync
+    FROM Temp_CustAffectedEvidence AS rm
+    WHERE EXISTS (SELECT 1 
+				  FROM CTS_DataCenter.CustEvidenceAffectedQueueInsert AS ins 
+                  WHERE ins.CTSCustID = rm.CTSCustID 
+					AND ins.Created <  rm.Created)
+	ORDER BY  rm.QueueID ASC
+    LIMIT 1;
+    
+    IF lv_QueueID_Sync IS NOT NULL THEN
+		DELETE 
+		FROM Temp_CustAffectedEvidence
+		WHERE QueueID >= lv_QueueID_Sync;
+        DO SLEEP(30); /*Sleep 30s wait queue insert completed*/
+    END IF;
+   
+    /*****************************/
+    
+    
     SELECT COUNT(1)
     INTO lv_TotalAff
     FROM Temp_CustAffectedEvidence;
@@ -81,9 +107,11 @@ sp : BEGIN
          SET ParameterValue = 0
          WHERE ParameterID = 32; 
 
-         DELETE 
-	     FROM CustEvidenceAffectedQueueRemove
-         WHERE ID < lv_QueueID_Next;
+         IF lv_QueueID_Sync IS NULL THEN
+             DELETE 
+	         FROM CustEvidenceAffectedQueueRemove
+             WHERE ID < lv_QueueID_Next;
+         END IF;
 
         IF EXISTS (SELECT 1 FROM CTS_DataCenter.CustEvidenceAffectedQueueRemove WHERE ID > lv_QueueID_Next) THEN
             SET op_IsExist = 1;
