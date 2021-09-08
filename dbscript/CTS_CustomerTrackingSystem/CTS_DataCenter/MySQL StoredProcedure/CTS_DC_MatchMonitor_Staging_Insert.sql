@@ -27,8 +27,7 @@ BEGIN
 
 		Example:
 			
-	*/
-    
+	*/    
     IF ip_LiveIndicator = 1 THEN    
 		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingLive(TransID, TransDate, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, CustID, Stake, InsertTime)
 		SELECT  js.TransID
@@ -60,7 +59,7 @@ BEGIN
 								,	EventDate		DATE PATH "$.EventDate"
 								,	LiveHomeScore	INT	PATH "$.LiveHomeScore" 
 								,	LiveAwayScore	INT	PATH "$.LiveAwayScore" 
-								,	BettypeID		INT	PATH "$.BettypeID" 
+								,	BettypeID		INT	PATH "$.Bettype" 
 								,	CustID			INT PATH "$.CustID"
 								,	Stake			DOUBLE PATH "$.Stake" 
 							)
@@ -105,7 +104,7 @@ BEGIN
 								,	EventDate		DATE PATH "$.EventDate"
 								,	LiveHomeScore	INT	PATH "$.LiveHomeScore" 
 								,	LiveAwayScore	INT	PATH "$.LiveAwayScore" 
-								,	BettypeID		INT	PATH "$.BettypeID" 
+								,	BettypeID		INT	PATH "$.Bettype" 
 								,	CustID			INT PATH "$.CustID"
 								,	Stake			DOUBLE PATH "$.Stake" 
 							)
