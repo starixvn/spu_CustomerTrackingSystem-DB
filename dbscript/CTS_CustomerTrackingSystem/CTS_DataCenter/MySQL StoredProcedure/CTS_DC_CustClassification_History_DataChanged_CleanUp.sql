@@ -42,7 +42,7 @@ sp:BEGIN
 		,	WinlossRM  				DECIMAL(20 , 4 )  
 		,	BetCount  				BIGINT  
 		,	ActiveDays  			INT  
-		,	RobotCounter  			DECIMAL(20,4)  
+		,	RobotCounter  			SMALLINT  
 		,	ProbationPeriodWinloss  DECIMAL(20,4)  
 		,	TargetCC  				SMALLINT  
 		,	SourceTypeID  			SMALLINT UNSIGNED  
