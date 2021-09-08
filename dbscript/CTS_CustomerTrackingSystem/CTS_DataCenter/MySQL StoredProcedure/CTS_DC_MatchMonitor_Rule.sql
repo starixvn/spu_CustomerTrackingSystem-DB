@@ -183,7 +183,6 @@ sp: BEGIN
     INSERT INTO Temp_StagingTrans02 SELECT * FROM Temp_StagingTrans01;
     #******** CACULATE TIME GROUP BY CUSTID AND IN 3 MINUTES *****************************************************************
     #*************************************************************************************************************************   
-    SELECT 'DEBUG1', current_timestamp(3);
     WHILE EXISTS ( SELECT 1 FROM Temp_StagingTrans01)
     DO
 		SET lv_TimeGroupID = lv_TimeGroupID + 1;
@@ -217,7 +216,7 @@ sp: BEGIN
         INNER JOIN Temp_CustTimeGroup AS ctg ON ctg.TransID = tmpSt.TransID;
   
     END WHILE;
-    SELECT 'DEBUG2', current_timestamp(3);
+    
     INSERT INTO Temp_CustTime01(CustID, MinTransDate, MaxTransDate)
     SELECT	tmpCt.CustID
 		,	MIN(tmpCt.TransDate)
@@ -370,7 +369,7 @@ sp: BEGIN
     FROM Temp_Association AS tmpAss
 		INNER JOIN Temp_CustTime01 AS tmpC1 ON tmpC1.CustID = tmpAss.CustID_1
         INNER JOIN Temp_CustTime02 AS tmpC2 ON tmpC2.CustID = tmpAss.CustID_2;
-    SELECT 'DEBUG03', current_timestamp();   
+
 	lp: LOOP 
         
         SET lv_CustID = 0;
@@ -409,8 +408,6 @@ sp: BEGIN
 		SET lv_GroupID = lv_GroupID + 1;
 		SET @i = @i+1;
 	END LOOP;         
-	
-    SELECT 'DEBUG04', current_timestamp();   
     
     INSERT INTO Temp_CustHedging(CustID)
     SELECT grp.CustID 
