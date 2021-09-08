@@ -169,7 +169,7 @@ sp: BEGIN
         WHERE	mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID;
         
 	ELSE 
-		INSERT INTO Temp_StagingTrans01(TransID, TransDate, CustID, Stake)
+		INSERT INTO Temp_StagingTrans01(TransID, TransDate, CustID, OldGroupID, Stake)
         SELECT	mms.TransID
 			,	mms.TransDate
             ,	mms.CustID

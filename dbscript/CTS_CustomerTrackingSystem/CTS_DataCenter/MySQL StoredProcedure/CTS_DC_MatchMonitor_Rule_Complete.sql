@@ -123,7 +123,7 @@ BEGIN
         INTO lv_GroupID, lv_IsHedging, lv_TransIDList, lv_CustIDList, lv_OldGroupIDList, lv_NoOfOldGroupID
         FROM Temp_TransGroup
         ORDER BY GroupID LIMIT 1;
-        
+
         IF lv_GroupID =0 
         THEN			
             LEAVE lp; 
@@ -136,9 +136,9 @@ BEGIN
             VALUES(ip_MatchID, ip_LiveIndicator, ip_TotalScore, ip_BettypeID, lv_EventDate, lv_GroupID, lv_LiveHomeScore, lv_LiveAwayScore, lv_CustIDList, lv_TransIDList, lv_IsHedging);
         END IF; 
         
-		IF (lv_NoOfOldGroupID = 1) THEN # UPDATE OLD GROUP
+		IF (lv_NoOfOldGroupID = 1) THEN # UPDATE OLD GROUP			
 			UPDATE CTS_DataCenter.MatchMonitorDetails
-			SET GroupID = lv_GroupID, ListCustID = lv_CustIDList, ListTransID = lv_TransIDList
+			SET GroupID = lv_GroupID, ListCustID = lv_CustIDList, ListTransID = lv_TransIDList, IsHedging = lv_IsHedging
 			WHERE  LiveIndicator = ip_LiveIndicator AND MatchID = ip_MatchID AND BettypeID = ip_BettypeID AND TotalScore = ip_TotalScore AND GroupID = lv_OldGroupIDList;
 		END IF;
         
@@ -159,6 +159,23 @@ BEGIN
         
         DELETE tmptg
         FROM Temp_TransGroup AS tmptg WHERE GroupID = lv_GroupID;
+        
+        IF(ip_LiveIndicator = 1) THEN
+			SET @sql = 	CONCAT("UPDATE CTS_DataCenter.MatchMonitorStagingLive
+            SET GroupID = ",lv_GroupID,"
+            WHERE TransID IN (",lv_TransIDList,")");
+            /*
+			UPDATE CTS_DataCenter.MatchMonitorStagingLive
+            SET GroupID = lv_GroupID
+            WHERE TransID IN (lv_TransIDList);*/
+		ELSE
+			SET @sql = 	CONCAT("UPDATE CTS_DataCenter.MatchMonitorStagingNonLive
+            SET GroupID = ",lv_GroupID,"
+            WHERE TransID IN (",lv_TransIDList,")");
+        END IF;
+      
+		PREPARE 	stmt1 FROM @sql;
+		EXECUTE 	stmt1;  
     END LOOP;
     
     #======Update MatchMonitor===========================================
@@ -174,22 +191,24 @@ BEGIN
     WHERE LiveIndicator = ip_LiveIndicator AND MatchID = ip_MatchID AND BettypeID = ip_BettypeID AND IsHedging = 0  LIMIT 1;
     
 	SELECT 1
-    INTO lv_MatchDetailsNotHedging
+    INTO lv_MatchDetailsHedging
     FROM CTS_DataCenter.MatchMonitorDetails 
     WHERE LiveIndicator = ip_LiveIndicator AND MatchID = ip_MatchID AND BettypeID = ip_BettypeID AND IsHedging = 1  LIMIT 1;
     
     SELECT 1
-    INTO lv_MatchDetailsHedging
+    INTO lv_MatchDetailsNotHedging
     FROM CTS_DataCenter.MatchMonitorDetails 
     WHERE LiveIndicator = ip_LiveIndicator AND MatchID = ip_MatchID AND BettypeID = ip_BettypeID  AND IsHedging = 0  LIMIT 1;
-	
+	SELECT 'DEBUG00', lv_MatchHedging, lv_MatchNotHedging, lv_MatchDetailsHedging,lv_MatchDetailsNotHedging;
     IF(lv_MatchHedging +  lv_MatchNotHedging < lv_MatchDetailsHedging + lv_MatchDetailsNotHedging) THEN
 		IF(lv_MatchHedging = 0 AND lv_MatchDetailsHedging = 1) THEN
+			SELECT 'DEBUG01', lv_MatchHedging, lv_MatchNotHedging, lv_MatchDetailsHedging,lv_MatchDetailsNotHedging;
 			INSERT INTO CTS_DataCenter.MatchMonitor(MatchID,BettypeID, LiveIndicator, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, IsHedging)
 			VALUES(ip_MatchID, ip_BettypeID, ip_LiveIndicator, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, 1);
 		END IF;
         
         IF(lv_MatchNotHedging = 0 AND lv_MatchDetailsNotHedging = 1) THEN
+			SELECT 'DEBUG02', lv_MatchHedging, lv_MatchNotHedging, lv_MatchDetailsHedging,lv_MatchDetailsNotHedging;
 			INSERT INTO CTS_DataCenter.MatchMonitor(MatchID,BettypeID, LiveIndicator, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, IsHedging)
 			VALUES(ip_MatchID, ip_BettypeID, ip_LiveIndicator, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, 0);
 		END IF;        
@@ -197,12 +216,14 @@ BEGIN
     
     IF(lv_MatchHedging +  lv_MatchNotHedging = lv_MatchDetailsHedging + lv_MatchDetailsNotHedging AND lv_MatchDetailsHedging + lv_MatchDetailsNotHedging = 1) THEN
 		IF(lv_MatchHedging = 0 AND lv_MatchDetailsHedging = 1) THEN
+			SELECT 'DEBUG03', lv_MatchHedging, lv_MatchNotHedging, lv_MatchDetailsHedging,lv_MatchDetailsNotHedging;
 			UPDATE CTS_DataCenter.MatchMonitor
             SET IsHedging = 1
             WHERE LiveIndicator = ip_LiveIndicator AND MatchID = ip_MatchID AND BettypeID = ip_BettypeID;
 		END IF;
         
         IF(lv_MatchHedging = 1 AND lv_MatchDetailsHedging = 0) THEN
+			SELECT 'DEBUG04', lv_MatchHedging, lv_MatchNotHedging, lv_MatchDetailsHedging,lv_MatchDetailsNotHedging;
 			UPDATE CTS_DataCenter.MatchMonitor
             SET IsHedging = 0
             WHERE LiveIndicator = ip_LiveIndicator AND MatchID = ip_MatchID AND BettypeID = ip_BettypeID;
