@@ -20,8 +20,11 @@ BEGIN
 			- 20210610@Irena.Vo: Write log for Inactive Account [RedmineID: #156465] 
             - 20210722@Irena.Vo: Refactor SP [RedmineID: #157203] 
             - 20210727@Long.Luu: Return more data for TW's categories [RedmineID: #155956] 
+			- 20210907@Long.Luu: Update Robot Users rules  [Redmine ID: #161232]
+            
 		Param's Explanation (filtered by):		
         Example:
+        
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_ViewHistory(43600889);
 	*/   
 		DECLARE CONST_CATEGORY_NEWMEMBER 				INT DEFAULT 201;
@@ -53,8 +56,7 @@ BEGIN
 			,	(CASE WHEN temp.TurnOverRM = 0 THEN 0 ELSE (temp.WinlossRM/ temp.TurnOverRM) * 100 END) AS Margin
 			,   temp.BetCount
 			,   temp.ActiveDays 
-			,   temp.LastXDaysMargin
-			,   temp.ProbationPeriodWinloss
+			,   temp.RobotCounter
 			,   u.UserName AS CreatedBy
             ,	temp.TWBetCount
             ,	temp.TWGroupBettingRate
