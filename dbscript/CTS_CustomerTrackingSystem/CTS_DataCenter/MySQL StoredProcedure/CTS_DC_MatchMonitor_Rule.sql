@@ -39,13 +39,14 @@ sp: BEGIN
     #=================================================================================    
     DROP TEMPORARY TABLE IF EXISTS Temp_StagingTrans01;
     CREATE TEMPORARY TABLE Temp_StagingTrans01(
-			TransID		BIGINT UNSIGNED
-        ,	TransDate	DATETIME(3)
-        ,	CustID		BIGINT
-        ,	OldGroupID	INT
+			TransID		BIGINT UNSIGNED NOT NULL
+        ,	TransDate	DATETIME(3)  NOT NULL
+        ,	CustID		BIGINT  NOT NULL
+        ,	OldGroupID	INT 
         ,	Stake		DECIMAL(20,4)
         
         ,	PRIMARY KEY PK_Temp_StagingTrans(CustID, TransDate, Stake, TransID)
+        ,	INDEX IX_Temp_StagingTrans(TransID)
     );
     
     DROP TEMPORARY TABLE IF EXISTS Temp_StagingTrans02;
@@ -53,7 +54,7 @@ sp: BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustTimeGroup;
     CREATE TEMPORARY TABLE Temp_CustTimeGroup(
-			TransID		BIGINT UNSIGNED
+			TransID		BIGINT UNSIGNED 
         ,	TransDate	DATETIME(3)
         ,	CustID		BIGINT
         ,	Stake		DECIMAL(20,4)
@@ -182,6 +183,7 @@ sp: BEGIN
     INSERT INTO Temp_StagingTrans02 SELECT * FROM Temp_StagingTrans01;
     #******** CACULATE TIME GROUP BY CUSTID AND IN 3 MINUTES *****************************************************************
     #*************************************************************************************************************************   
+    SELECT 'DEBUG1', current_timestamp(3);
     WHILE EXISTS ( SELECT 1 FROM Temp_StagingTrans01)
     DO
 		SET lv_TimeGroupID = lv_TimeGroupID + 1;
@@ -212,9 +214,10 @@ sp: BEGIN
         
         DELETE tmpSt
         FROM Temp_StagingTrans01 AS tmpSt
-        WHERE tmpSt.CustID = lv_TimeCustID;       
+        INNER JOIN Temp_CustTimeGroup AS ctg ON ctg.TransID = tmpSt.TransID;
+  
     END WHILE;
-    
+    SELECT 'DEBUG2', current_timestamp(3);
     INSERT INTO Temp_CustTime01(CustID, MinTransDate, MaxTransDate)
     SELECT	tmpCt.CustID
 		,	MIN(tmpCt.TransDate)
@@ -367,7 +370,7 @@ sp: BEGIN
     FROM Temp_Association AS tmpAss
 		INNER JOIN Temp_CustTime01 AS tmpC1 ON tmpC1.CustID = tmpAss.CustID_1
         INNER JOIN Temp_CustTime02 AS tmpC2 ON tmpC2.CustID = tmpAss.CustID_2;
-       
+    SELECT 'DEBUG03', current_timestamp();   
 	lp: LOOP 
         
         SET lv_CustID = 0;
@@ -407,6 +410,7 @@ sp: BEGIN
 		SET @i = @i+1;
 	END LOOP;         
 	
+    SELECT 'DEBUG04', current_timestamp();   
     
     INSERT INTO Temp_CustHedging(CustID)
     SELECT grp.CustID 
@@ -422,10 +426,7 @@ sp: BEGIN
     WHERE EXISTS (SELECT 1 FROM Temp_CustHedging AS hed WHERE hed.CustID = grp.CustID);
        
     #*************************************************************************************************
-    SELECT	ip_MatchID 			AS MatchID	
-        ,	ip_BettypeID			AS Bettype
-        ,	ip_TotalScore 		AS TotalScore;
-	
+
     SELECT  tmpTg.GroupID
         ,	MAX(IsHedging) AS IsHedging
         ,	GROUP_CONCAT(tmpSt.TransID) AS TransIDList

@@ -20,7 +20,7 @@ BEGIN
             -	20210823@Casey.Huynh: Seperate scan for Live and NonLive [Redmine ID: 159195]
 		
 		Param's Explanation (filtered by):
-		CALL CTS_DataCenter.CTS_DC_MatchMonitor_Staging_Insert(
+		CALL CTS_DataCenter.CTS_DC_MatchMonitor_Staging_Insert(1,
 			'[
 					{"TransID": 111928688807,"TransDate" : "2021-05-17 07:48:52.533","MatchID" : 43614953,"EventDate" : "2021-05-17 00:00:00","KickOffTime" : "2021-05-17 00:00:00","EventStatus" : "running","HomeID" : 953,"AwayID" : 113,"LeagueID" : 3,"Bettype" : 3,"LiveIndicator" : "1","CustID" : 12500792,"Stake" : 20,"LiveHomeScore" : 0,"LiveAwayScore" : 2}
 			]');
@@ -28,7 +28,6 @@ BEGIN
 		Example:
 			
 	*/
-    DECLARE lv_MinTransDate3m DATETIME(3);    # the min transdate of last trans in 3 minute
     
     IF ip_LiveIndicator = 1 THEN    
 		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingLive(TransID, TransDate, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, CustID, Stake, InsertTime)
@@ -61,23 +60,19 @@ BEGIN
 								,	EventDate		DATE PATH "$.EventDate"
 								,	LiveHomeScore	INT	PATH "$.LiveHomeScore" 
 								,	LiveAwayScore	INT	PATH "$.LiveAwayScore" 
-								,	BettypeID		INT	PATH "$.Bettype" 
+								,	BettypeID		INT	PATH "$.BettypeID" 
 								,	CustID			INT PATH "$.CustID"
 								,	Stake			DOUBLE PATH "$.Stake" 
 							)
 					) AS js;  
 		
-        SELECT TIMESTAMPADD(SECOND, -180, MAX(TransDate))
-		INTO lv_MinTransDate3m
-		FROM CTS_DataCenter.MatchMonitorStagingLive;
-        
 		SELECT	mms.MatchID
 			,	mms.TotalScore
 			,	mms.BettypeID
 		FROM		CTS_DataCenter.MatchMonitorStagingLive AS mms
-        WHERE		GroupID = 0 #AND TransDate >= lv_MinTransDate3m
+        WHERE		mms.GroupID = 0
 		GROUP BY	mms.MatchID, mms.TotalScore, mms.BettypeID
-		HAVING		COUNT(DISTINCT CustID) > 1 AND SUM(Stake) >= 500;
+		HAVING		COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= 500;
         
 	ELSE
     	INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingNonLive(TransID, TransDate, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, CustID, Stake, InsertTime)
@@ -110,23 +105,20 @@ BEGIN
 								,	EventDate		DATE PATH "$.EventDate"
 								,	LiveHomeScore	INT	PATH "$.LiveHomeScore" 
 								,	LiveAwayScore	INT	PATH "$.LiveAwayScore" 
-								,	BettypeID		INT	PATH "$.Bettype" 
+								,	BettypeID		INT	PATH "$.BettypeID" 
 								,	CustID			INT PATH "$.CustID"
 								,	Stake			DOUBLE PATH "$.Stake" 
 							)
 					) AS js;  
 		
-        SELECT TIMESTAMPADD(SECOND, -180, MAX(TransDate))
-		INTO lv_MinTransDate3m
-		FROM CTS_DataCenter.MatchMonitorStagingNonLive;
-        
+
 		SELECT	mms.MatchID
 			,	mms.TotalScore
 			,	mms.BettypeID
 		FROM		CTS_DataCenter.MatchMonitorStagingNonLive AS mms
-        WHERE		GroupID = 0 #AND TransDate >= lv_MinTransDate3m
+        WHERE		mms.GroupID = 0
 		GROUP BY	mms.MatchID, mms.TotalScore, mms.BettypeID
-		HAVING		COUNT(DISTINCT CustID) > 1 AND SUM(Stake) >= 500;
+		HAVING		COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= 500;
         
 	END IF;
     

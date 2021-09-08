@@ -27,9 +27,9 @@ BEGIN
 		Example:
 			
 	*/
-    DECLARE	lv_Last3mMinTime 	DATETIME(3);
-    DECLARE	lv_Last3mMaxTime 			DATETIME(3);  
-	DECLARE	lv_LastTransID 				BIGINT;   
+ #   DECLARE	lv_Last3mMinTime 	DATETIME(3);
+ #   DECLARE	lv_Last3mMaxTime 			DATETIME(3);  
+#	DECLARE	lv_LastTransID 				BIGINT;   
     DECLARE lv_GroupID 					INT;
 	DECLARE lv_IsHedging 				BOOLEAN;
     DECLARE lv_TransIDList 				LONGTEXT;
@@ -51,7 +51,7 @@ BEGIN
     DECLARE lv_AwayID 					INT UNSIGNED;
     DECLARE lv_LeagueID					INT UNSIGNED;
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_Last3mTransGroup;
+/*    DROP TEMPORARY TABLE IF EXISTS Temp_Last3mTransGroup;
     CREATE TEMPORARY TABLE Temp_Last3mTransGroup
     (
 			MatchID INT
@@ -61,6 +61,7 @@ BEGIN
         
         ,	PRIMARY KEY (MatchID,TotalScore,BettypeID,GroupID)
     );
+    */
     DROP TEMPORARY TABLE IF EXISTS Temp_TransGroup;
     CREATE TEMPORARY TABLE Temp_TransGroup
     (
@@ -114,7 +115,7 @@ BEGIN
 		LIMIT 1;
 	END IF;
 
-	SELECT lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID;
+	#SELECT lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID;
 
     lp: LOOP 
 		SET lv_GroupID = 0;
@@ -188,7 +189,7 @@ BEGIN
 			VALUES(ip_MatchID, ip_BettypeID, ip_LiveIndicator, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, 1);
 		END IF;
         
-        IF(lv_MatchNonHedging = 0 AND lv_MatchDetailsNonHedging = 1) THEN
+        IF(lv_MatchNotHedging = 0 AND lv_MatchDetailsNotHedging = 1) THEN
 			INSERT INTO CTS_DataCenter.MatchMonitor(MatchID,BettypeID, LiveIndicator, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, IsHedging)
 			VALUES(ip_MatchID, ip_BettypeID, ip_LiveIndicator, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, 0);
 		END IF;        
@@ -208,60 +209,7 @@ BEGIN
 		END IF;       
     END IF;
     
-	#======Clean Staging=================================================
-    IF (ip_LiveIndicator = 1) THEN		
-		SELECT 	MAX(TransDate) , MAX(TransID)
-		INTO 	lv_Last3mMaxTime, lv_LastTransID
-		FROM	CTS_DataCenter.MatchMonitorStagingLive;    
-		
-		SELECT  MIN(TransDate) 
-		INTO 	lv_Last3mMinTime
-		FROM	CTS_DataCenter.MatchMonitorStagingLive
-		WHERE   TransDate > TIMESTAMPADD(SECOND, -180, lv_Last3mMaxTime);  
-			
-		INSERT INTO Temp_Last3mTransGroup(MatchID, TotalScore, BettypeID, GroupID)
-		SELECT 	DISTINCT mms.MatchID,  mms.TotalScore, mms.BettypeID, mms.GroupID
-		FROM 	CTS_DataCenter.MatchMonitorStagingLive mms
-		WHERE	mms.TransDate >= lv_Last3mMinTime AND mms.GroupID IS NOT NULL;
-		
-		DELETE 	mms
-		FROM	CTS_DataCenter.MatchMonitorStagingLive AS mms
-			LEFT JOIN Temp_Last3mTransGroup AS tmpTg ON mms.MatchID = tmpTg.MatchID 
-				AND mms.TotalScore = tmpTg.TotalScore AND mms.BettypeID = tmpTg.BettypeID  AND mms.GroupID = tmpTg.GroupID
-		WHERE	mms.TransDate < lv_Last3mMinTime  AND tmpTg.GroupID IS NULL ;    
-        
-        /* Update Parameter*/
-		UPDATE 	CTS_DataCenter.SystemParameter
-		SET 	ParameterValue = lv_LastTransID
-		WHERE 	ParameterID = 20;
-	END IF;
-    
-    IF (ip_LiveIndicator = 0) THEN		
-		SELECT 	MAX(TransDate) , MAX(TransID)
-		INTO 	lv_Last3mMaxTime, lv_LastTransID
-		FROM	CTS_DataCenter.MatchMonitorStagingNonLive;    
-		
-		SELECT  MIN(TransDate) 
-		INTO 	lv_Last3mMinTime
-		FROM	CTS_DataCenter.MatchMonitorStagingNonLive
-		WHERE   TransDate > TIMESTAMPADD(SECOND, -180, lv_Last3mMaxTime);  
-			
-		INSERT INTO Temp_Last3mTransGroup(MatchID, TotalScore, BettypeID, GroupID)
-		SELECT 	DISTINCT mms.MatchID,  mms.TotalScore, mms.BettypeID, mms.GroupID
-		FROM 	CTS_DataCenter.MatchMonitorStagingNonLive mms
-		WHERE	mms.TransDate >= lv_Last3mMinTime AND mms.GroupID IS NOT NULL;
-		
-		DELETE 	mms
-		FROM	CTS_DataCenter.MatchMonitorStagingNonLive AS mms
-			LEFT JOIN Temp_Last3mTransGroup AS tmpTg ON mms.MatchID = tmpTg.MatchID 
-				AND mms.TotalScore = tmpTg.TotalScore AND mms.BettypeID = tmpTg.BettypeID  AND mms.GroupID = tmpTg.GroupID
-		WHERE	mms.TransDate < lv_Last3mMinTime  AND tmpTg.GroupID IS NULL ;    
-        
-        /* Update Parameter*/
-		UPDATE 	CTS_DataCenter.SystemParameter
-		SET 	ParameterValue = lv_LastTransID
-		WHERE 	ParameterID = 29;
-	END IF;
+
    
 END$$
 DELIMITER ;
