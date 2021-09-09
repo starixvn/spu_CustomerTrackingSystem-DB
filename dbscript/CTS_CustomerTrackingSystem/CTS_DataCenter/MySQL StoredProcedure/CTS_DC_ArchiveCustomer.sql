@@ -87,9 +87,9 @@ sp: BEGIN
     FROM Temp_InputCustomer AS tmpCus
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID;
         
-    INSERT IGNORE INTO Temp_ArchiveCustDCSAccount(CTSCustID, AccountID, ArchivedDate)
-    SELECT 	tmpCus.CTSCustID
-		,	cda.AccountID
+    INSERT IGNORE INTO Temp_ArchiveCustDCSAccount(AccountID, CTSCustID, ArchivedDate)
+    SELECT 	cda.AccountID
+        ,	tmpCus.CTSCustID		
         ,	tmpCus.ArchivedDate
 	FROM	 Temp_ArchiveCTSCustomer AS tmpCus
     INNER JOIN CTS_DataCenter.CustDCSAccount AS cda ON tmpCus.CTSCustID = cda.CTSCustID;
