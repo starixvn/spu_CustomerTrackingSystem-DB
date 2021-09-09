@@ -3,9 +3,7 @@ DROP procedure IF EXISTS `CTS_DC_CustEvidenceQueue_Affected_Insert`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidenceQueue_Affected_Insert`(
-		IN 	ip_BatchSize 	INT
-        
-	,	OUT op_IsExist 	 	SMALLINT
+		OUT op_IsDataExist 	 	SMALLINT
 )
     SQL SECURITY INVOKER
 sp : BEGIN
@@ -17,10 +15,11 @@ sp : BEGIN
 
 		Revisions:
 			- 20210823@Aries.Nguyen: Created [Redmine ID: #160470]
+            - 20210909@Aries.Nguyen: Update bet limit [Redmine ID: #160711]
             
 		Param's Explanation (filtered by):
 		Example: 
-			- CALL CTS_DataCenter.CTS_DC_CustEvidenceQueue_Affected_Insert(ip_BatchSize, @op_IsExist);
+			- CALL CTS_DataCenter.CTS_DC_CustEvidenceQueue_Affected_Insert(@op_IsDataExist);
 	*/    
     DECLARE lv_QueueID 			BIGINT UNSIGNED;
     DECLARE lv_QueueID_Next 	BIGINT UNSIGNED;
@@ -28,6 +27,7 @@ sp : BEGIN
     DECLARE lv_LastCTSCustID 	BIGINT UNSIGNED;
     DECLARE lv_TotalAff 		INT DEFAULT 0;
     DECLARE lv_SecondBatchSize 	INT DEFAULT 0;
+    DECLARE lv_BatchSize 	    INT;	
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustAffectedEvidence;    
 	CREATE TEMPORARY TABLE Temp_CustAffectedEvidence(
@@ -67,16 +67,21 @@ sp : BEGIN
     FROM CTS_DataCenter.SystemParameter 
     WHERE ParameterID = 31; 
 
+    SELECT ParameterValue 
+    INTO lv_BatchSize
+    FROM CTS_DataCenter.SystemParameter 
+    WHERE ParameterID = 42;
+
     SELECT MAX(tbl.ID)
     INTO lv_QueueID_Next
     FROM (SELECT ID
 		  FROM CTS_DataCenter.CustEvidenceAffectedQueueInsert
 		  WHERE ID >= lv_QueueID
 		  ORDER BY ID ASC
-		  LIMIT ip_BatchSize) AS tbl;
+		  LIMIT lv_BatchSize) AS tbl;
 
     IF lv_QueueID_Next IS NULL THEN
-        SET op_IsExist = 0;
+        SET op_IsDataExist = 0;
         LEAVE sp;
     END IF;
 
@@ -103,17 +108,17 @@ sp : BEGIN
 																	AND ass.CTSCustID > lv_LastCTSCustID
 		WHERE dv.CTSCustID = root.CTSCustID
 		ORDER BY ass.CTSCustID ASC
-		LIMIT ip_BatchSize) AS aff
+		LIMIT lv_BatchSize) AS aff
 	WHERE root.ID = lv_QueueID 
     ORDER BY  root.ID ASC
-	LIMIT ip_BatchSize;
+	LIMIT lv_BatchSize;
     
     SELECT COUNT(1)
     INTO lv_TotalAff
     FROM Temp_CustAffectedEvidence;
     
-    IF ip_BatchSize > lv_TotalAff THEN
-		SET lv_SecondBatchSize = ip_BatchSize - lv_TotalAff;
+    IF lv_BatchSize > lv_TotalAff THEN
+		SET lv_SecondBatchSize = lv_BatchSize - lv_TotalAff;
         
         INSERT INTO Temp_CustAffectedEvidence(QueueID, CTSCustID, CTSCustID_Affected, EvidenceID, Remark,CreatedBy,Created)
 		SELECT 	root.ID
@@ -179,10 +184,10 @@ sp : BEGIN
 		END IF;
 
         IF EXISTS (SELECT 1 FROM CTS_DataCenter.CustEvidenceAffectedQueueInsert WHERE ID > lv_QueueID_Next) THEN
-            SET op_IsExist = 1;
+            SET op_IsDataExist = 1;
             LEAVE sp;
         END IF;
-		SET op_IsExist = 0;
+		SET op_IsDataExist = 0;
 		LEAVE sp;
     END IF;
     
@@ -268,7 +273,11 @@ sp : BEGIN
 	FROM CustEvidenceAffectedQueueInsert
     WHERE ID < lv_QueueID;
     
-	SET op_IsExist = 1;
+	SET op_IsDataExist = 1;
+    
+    SELECT  DISTINCT
+            CTSCustID_Affected
+    FROM Temp_CustAffectedEvidence;
     
 END$$
 
