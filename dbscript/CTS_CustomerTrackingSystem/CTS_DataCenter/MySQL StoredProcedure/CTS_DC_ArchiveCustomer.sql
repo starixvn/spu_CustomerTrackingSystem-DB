@@ -59,11 +59,7 @@ sp: BEGIN
         ,	PRIMARY KEY Temp_ArchiveCustomer(CTSCustID, ArchivedDate)
         ,	INDEX Temp_ArchiveCustomer(CustID, CustSubID)
     ); 	
-    
-	DROP  TEMPORARY TABLE IF EXISTS Temp_DCSDevice;
-    CREATE TEMPORARY TABLE Temp_DCSDevice(
-		DCSDeviceID BIGINT UNSIGNED
-    );
+
 	/***********************GET ARCHIVE DATA TO TEMPTABLE*************************************************************/
     INSERT INTO Temp_InputCustomer(CustID, ArchivedDate)
 	SELECT		CustID	
@@ -94,18 +90,7 @@ sp: BEGIN
 	FROM	 Temp_ArchiveCTSCustomer AS tmpCus
     INNER JOIN CTS_DataCenter.CustDCSAccount AS cda ON tmpCus.CTSCustID = cda.CTSCustID;
    
-    /***********************REMOVE PREVIOUS ARCHIVE DATA*************************************************************/
-    SELECT MIN(ArchivedDate)
-    INTO lv_MinArchiveDate
-    FROM Temp_ArchiveCTSCustomer;
-    
-    IF EXISTS (SELECT 1 FROM CTS_DataCenter.ArchiveCustomer_CTSCustomer AS arcCus WHERE ArchivedDate < lv_MinArchiveDate)
-    THEN
-		DELETE  arcCus
-		FROM	ArchiveCustomer_CTSCustomer AS arcCus
-		WHERE	ArchivedDate < lv_MinArchiveDate;
-	END IF;
-    
+   
     /***********************BACKUP ARCHIVE DATA*************************************************************/
     INSERT IGNORE INTO CTS_DataCenter.ArchiveCustomer_CTSCustomer(ArchivedDate, CTSCustID, SubscriberID, CustID, CustSubID, UserName, UserName2, RoleID, InsertTime)
     SELECT	tmpCus.ArchivedDate
@@ -160,14 +145,7 @@ sp: BEGIN
 	FROM CTS_DataCenter.AssociationByAI AS del
 		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.ToCustID = tmpCus.CustID;
     
-    #===============5.================================================================================
-    
-    INSERT INTO Temp_DCSDevice(DCSDeviceID)
-    SELECT asd.DCSDeviceID
-    FROM CTS_DataCenter.AssociationByDevice AS asd
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON asd.CTSCustID = tmpCus.CTSCustID
-        INNER JOIN	CTS_DataCenter.DeviceAssociationDay AS dad ON dad.DCSDeviceID = asd.DCSDeviceID;
-  
+    #===============5.================================================================================    
     DELETE del
 	FROM CTS_DataCenter.AssociationByDevice AS del
 		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.CTSCustID = tmpCus.CTSCustID;
