@@ -60,11 +60,6 @@ sp: BEGIN
         ,	INDEX Temp_ArchiveCustomer(CustID, CustSubID)
     ); 	
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_RemoveDCSDevice;
-    CREATE TEMPORARY TABLE Temp_RemoveDCSDevice(
-		DCSDeviceID BIGINT UNSIGNED
-    );
-    
 	DROP  TEMPORARY TABLE IF EXISTS Temp_DCSDevice;
     CREATE TEMPORARY TABLE Temp_DCSDevice(
 		DCSDeviceID BIGINT UNSIGNED
@@ -177,19 +172,6 @@ sp: BEGIN
 	FROM CTS_DataCenter.AssociationByDevice AS del
 		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.CTSCustID = tmpCus.CTSCustID;
     
-    
-    #===============6.================================================================================
-    INSERT INTO CTS_DataCenter.Temp_RemoveDCSDevice(DCSDeviceID)
-    SELECT tmp.DCSDeviceID
-    FROM Temp_DCSDevice AS tmp
-    INNER JOIN CTS_DataCenter.AssociationByDevice AS asd ON tmp.DCSDeviceID = asd.DCSDeviceID
-    GROUP BY DCSDeviceID
-    HAVING COUNT(1) = 1;
-    
-    DELETE del
-	FROM CTS_DataCenter.DeviceAssociationDay AS del
-		INNER JOIN	Temp_RemoveDCSDevice AS tmpDev ON del.DCSDeviceID = tmpDev.DCSDeviceID;   
-        
 	#===============7.================================================================================
     DELETE del
 	FROM CTS_DataCenter.AssociationByIP AS del
