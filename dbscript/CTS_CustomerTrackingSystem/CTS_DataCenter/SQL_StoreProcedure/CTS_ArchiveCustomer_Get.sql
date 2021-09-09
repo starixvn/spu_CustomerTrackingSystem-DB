@@ -48,7 +48,7 @@ BEGIN;
 		FROM		bodb_Customer.dbo.CustInfo_Old AS cus WITH(NOLOCK)
 		WHERE		cus.ArchiveDate = @lastArchiveDate
 					AND cus.CustId > @lastCustId
-		ORDER BY	cus.ArchiveDate ASC, cus.CustID ASC;
+		ORDER BY	cus.CustID ASC;
 
 		SET @rowCount = (SELECT COUNT(1) FROM #tmpArchivedCustomers AS tmpCus)
 
@@ -59,7 +59,7 @@ BEGIN;
 					,	cus.CustID
 			FROM		bodb_Customer.dbo.CustInfo_Old AS cus WITH(NOLOCK)
 			WHERE		cus.ArchiveDate > @lastArchiveDate
-			ORDER BY	cus.ArchiveDate, cus.CustID;
+			ORDER BY	cus.ArchiveDate ASC, cus.CustID ASC;
 		END;
 	END;
 	IF (@custType = 1) --Licencee
@@ -70,7 +70,7 @@ BEGIN;
 		FROM		bodb02.dbo.Dep_Customer_Archived AS cus WITH(NOLOCK)
 		WHERE		cus.ArchivedDate = @lastArchiveDate
 					AND cus.CustId > @lastCustId
-		ORDER BY	cus.ArchivedDate ASC, cus.CustID ASC;
+		ORDER BY	cus.CustID ASC;
 
 		SET @rowCount = (SELECT COUNT(1) FROM #tmpArchivedCustomers AS tmpCus)
 
@@ -81,7 +81,7 @@ BEGIN;
 					,	cus.CustID
 			FROM		bodb02.dbo.Dep_Customer_Archived AS cus WITH(NOLOCK)
 			WHERE		cus.ArchivedDate > @lastArchiveDate
-			ORDER BY	cus.ArchivedDate, cus.CustID;
+			ORDER BY	cus.ArchivedDate ASC, cus.CustID ASC;
 		END;
 	END;
 

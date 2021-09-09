@@ -230,12 +230,7 @@ sp: BEGIN
 	FROM CTS_DataCenter.CustException AS del
 		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.ToCTSCustID = tmpCus.CTSCustID; 
     
-    #===============19.================================================================================
-	DELETE 	del
-	FROM CTS_DataCenter.CustRetractEvidence AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.CTSCustID = tmpCus.CTSCustID; 
-    
-    #===============20.================================================================================
+    #===============19.===============================================================================
 	DELETE 	del
 	FROM CTS_DataCenter.CustRetractEvidence AS del
 		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.CTSCustID = tmpCus.CTSCustID; 
