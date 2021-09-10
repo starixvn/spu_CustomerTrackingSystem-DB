@@ -181,10 +181,6 @@ BEGIN
 		INNER JOIN	Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryID = temp.CategoryID
 	SET	temp.ActionType = CONST_ACTIONTYPE_UPDATE
 	WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT;
-    
-    DELETE FROM Temp_ProblemAccounts 
-    WHERE CategoryID = CONST_CATEGORYID_ROBOTUSERS
-		AND ActionType = CONST_ACTIONTYPE_UPDATE;
 
     /* GET REMOVED PROBLEM ACCOUNTS */
     UPDATE Temp_ProblemAccounts AS temp
@@ -231,8 +227,9 @@ BEGIN
 		, 	cate.LastModifiedBy = lv_CreatedBy
 		,   cate.LastModifiedDate = lv_CurrentDateTime
 		, 	cate.LastScannedDate = DATE(lv_CurrentDateTime)
-	WHERE temp.ActionType = CONST_ACTIONTYPE_UPDATE;
-     
+	WHERE temp.ActionType = CONST_ACTIONTYPE_UPDATE
+		AND temp.CategoryID <> CONST_CATEGORYID_ROBOTUSERS;
+        
     /*	INSERT NEW PA FROM NAP CM */
     INSERT INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, 
 	CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
