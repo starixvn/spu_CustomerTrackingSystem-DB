@@ -27,6 +27,7 @@ BEGIN
            - 20210512@Casey.Huynh: Exclude Customer of Internal Account [Redmine ID: 154844]
            - 20210525@Irena.Vo: Change col name PinCustomerCategory: CustID -> CTSCustID [Redmine ID: 152965]
 		   - 20210622@Aries.Nguyen: Update coding convention and inprove locking [Redmine ID: #157203]
+           - 20211009@Irena.Vo: Additional compare CategoryGroup for remove evidence [Redmine ID: #161232]
 		Param's Explanation (filtered by):
 		Exmaple:
 			- CALL CTS_DataCenter.CTS_DC_CustEvidence_SyncToCategory('[{"CustId":43600693, "CTSCustId": 221882500, "SubscriberId": 130, "EvidenceId": 41, "ActionType": 0}]',0,@op_ErrorMessage);
@@ -323,7 +324,7 @@ BEGIN
 						 ELSE 0
 					END
 			FROM Temp_CustomerEvidences AS temp
-				LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryID BETWEEN 72 AND 150 AND ex.RowOrder = 1 /* Only existed Evd Cate. */
+				LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryGroupID = temp.CategoryGroupID AND ex.CategoryID BETWEEN 72 AND 150 AND ex.RowOrder = 1 /* Only existed Evd Cate. */
 			WHERE temp.ActionType = CONST_ACTIONTYPE_REMOVE AND temp.IsExistedEvi = 0;
 	  
 			/*	INSERT LOG IGNORE PIN */
