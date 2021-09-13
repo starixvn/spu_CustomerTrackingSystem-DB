@@ -34,7 +34,8 @@ sp: BEGIN
 			CustID	INT UNSIGNED
         ,	ArchivedDate	DATETIME(3)
         
-        ,	PRIMARY KEY Temp_InputCustomer(ArchivedDate, CustID)
+        ,	PRIMARY KEY Temp_InputCustomer(CustID)
+        ,	INDEX  IX_Temp_InputCustomer(ArchivedDate)
     );
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ArchiveCustDCSAccount;
@@ -126,15 +127,6 @@ sp: BEGIN
     DELETE del
 	FROM CTS_DataCenter.AssociatedAccountNotification AS del
 		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.CTSCustID = tmpCus.CTSCustID;
-    
-    #===============3.================================================================================
-    DELETE del
-	FROM CTS_DataCenter.Association AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.FromCTSCustID = tmpCus.CTSCustID;
-    
-    DELETE del
-	FROM CTS_DataCenter.Association AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.ToCTSCustID = tmpCus.CTSCustID;
     
     #===============4.================================================================================
     DELETE del
