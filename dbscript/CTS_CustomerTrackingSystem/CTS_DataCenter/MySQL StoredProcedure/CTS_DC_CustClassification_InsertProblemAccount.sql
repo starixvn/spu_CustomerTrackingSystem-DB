@@ -29,7 +29,10 @@ BEGIN
             - 20210512@Casey.Huynh: Exclude Customer of Internal Account [Redmine ID: 154844]
             - 20210525@Irena.Vo: Change col name PinCustomerCategory: CustID -> CTSCustID [Redmine ID: 152965]
 			- 20210625@Long.Luu: Refactor. Update logic  [Redmine ID: #157203]
+			- 20210907@Long.Luu: Update Robot Users rules  [Redmine ID: #161232]
+            
         Param's Explanation (filtered by):
+        
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertProblemAccount('[{"CustId": 123, "CategoryId": 27}]',0,@op_ErrorMessage);
 	*/   
@@ -55,6 +58,7 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_InputCustomers(	  
 			CustID				BIGINT UNSIGNED 
         , 	ReasonID			SMALLINT 
+        , 	RobotCounter		SMALLINT 
         , 	PRIMARY KEY     	PK_Temp_InputCustomers_CustID_ReasonID(CustID,ReasonID)  
     ); 
     
@@ -84,6 +88,7 @@ BEGIN
 		, 	ActionType		    SMALLINT DEFAULT 0 /* 0: Insert, 1: Update, 2: Remove, 4: Ignore PIN */
         , 	IsLastDataChanged   BIT DEFAULT 0
         ,	LastSourceTypeID	INT
+        , 	RobotCounter		SMALLINT 
         , 	PRIMARY KEY     	PK_Temp_ProblemAccounts_CustID_ReasonID(CustID,ReasonID)  
     );  
      
@@ -111,21 +116,22 @@ BEGIN
 		, 	PRIMARY KEY		PK_Temp_LastHistory(CustID)
     );
    
-    INSERT INTO Temp_InputCustomers(CustID, ReasonID)
-	SELECT DISTINCT temp.CustID, 	temp.ReasonID 
+    INSERT INTO Temp_InputCustomers(CustID, ReasonID, RobotCounter)
+	SELECT DISTINCT temp.CustID, temp.ReasonID , temp.RobotCounter
 	FROM JSON_TABLE(ip_ProblemAccounts,
 		"$[*]" COLUMNS(
-				CustID 		BIGINT UNSIGNED		PATH "$.CustID"
-			,	ReasonID	SMALLINT 			PATH "$.ReasonID"	
+				CustID 			BIGINT UNSIGNED		PATH "$.CustID"
+			,	ReasonID		SMALLINT 			PATH "$.ReasonID"	
+			,	RobotCounter	SMALLINT 			PATH "$.RobotCounter"	
 		 )) AS temp
 	WHERE temp.ReasonID <> 0;
     
-	/*EXCLUDE Customer*/    
-    CALL CTS_DC_ExcludeCustByCondition('Temp_ProblemAccounts');
+	/*	EXCLUDE Customer */    
+    CALL CTS_DC_ExcludeCustByCondition('Temp_InputCustomers');
     
     /*	INSERT CUST INFO */
-    INSERT INTO Temp_ProblemAccounts(CustID, ReasonID, CTSCustID, SubscriberID)
-    SELECT temp.CustID, temp.ReasonID, cust.CTSCustID, cust.SubscriberID
+    INSERT INTO Temp_ProblemAccounts(CustID, ReasonID, CTSCustID, SubscriberID, RobotCounter)
+    SELECT temp.CustID, temp.ReasonID, cust.CTSCustID, cust.SubscriberID, temp.RobotCounter
     FROM Temp_InputCustomers AS temp 
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.CustSubID = 0;
     
@@ -221,8 +227,9 @@ BEGIN
 		, 	cate.LastModifiedBy = lv_CreatedBy
 		,   cate.LastModifiedDate = lv_CurrentDateTime
 		, 	cate.LastScannedDate = DATE(lv_CurrentDateTime)
-	WHERE temp.ActionType = CONST_ACTIONTYPE_UPDATE;
-     
+	WHERE temp.ActionType = CONST_ACTIONTYPE_UPDATE
+		AND temp.CategoryID <> CONST_CATEGORYID_ROBOTUSERS;
+        
     /*	INSERT NEW PA FROM NAP CM */
     INSERT INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, 
 	CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
@@ -260,7 +267,7 @@ BEGIN
      
 		/* INSERT LOG RE-SCAN PA FROM NAP CM */    
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
-		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
+		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, RobotCounter)
 		SELECT DISTINCT temp.CustID
 			, 	temp.CTSCustID
 			, 	temp.CategoryID
@@ -276,13 +283,14 @@ BEGIN
 					 WHEN temp.IsLastDataChanged = 1 AND ex.CategoryGroup IS NULL THEN 1
 					 ELSE 0
 				END
+			,	temp.RobotCounter
 		FROM Temp_ProblemAccounts AS temp
 			LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID 
 				AND ex.CategoryGroup = temp.CategoryGroup AND ex.CategoryID BETWEEN 72 AND 150 /* Not existed Evd Cate (Rescan)*/;
     ELSE 
 		/*	INSERT LOG NEW & UPDATE PA FROM NAP CM */
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
-		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
+		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, RobotCounter)
 		SELECT DISTINCT temp.CustID
 			, 	temp.CTSCustID
 			, 	temp.CategoryID
@@ -297,6 +305,7 @@ BEGIN
 			,   CASE WHEN ex.CategoryGroup IS NULL THEN 1
 					 ELSE 0
 				END
+			,	temp.RobotCounter
 		FROM Temp_ProblemAccounts AS temp
 			LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID 
 				AND ex.CategoryGroup = temp.CategoryGroup AND ex.CategoryID BETWEEN 72 AND 150 /* Not existed Evd Cate. */
@@ -304,7 +313,7 @@ BEGIN
 		
 		/*	INSERT LOG REMOVE PA FROM NAP CM */
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
-		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
+		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, RobotCounter)
 		SELECT DISTINCT temp.CustID
 			, 	temp.CTSCustID
 			, 	ex.CategoryID
@@ -319,6 +328,7 @@ BEGIN
 			,   CASE WHEN ex.CategoryGroup IS NOT NULL THEN 1
 					 ELSE 0
 				END AS IsDataChanged
+			,	temp.RobotCounter
 		FROM Temp_ProblemAccounts AS temp
 			LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID 
 				AND ex.CategoryID <> CONST_CATEGORYID_ROBOTUSERS AND (ex.CategoryID NOT BETWEEN 72 AND 150) AND ex.RowOrder = 1
