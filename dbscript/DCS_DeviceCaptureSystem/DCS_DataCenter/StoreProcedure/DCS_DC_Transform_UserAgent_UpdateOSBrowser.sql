@@ -17,6 +17,7 @@ BEGIN
 			- 20201020@CaseyHuynh: Update Owner, metadata, remove ISOLATION setting, Change DB log to CTS_Log [RedmineID: #145271]
 			- 20210510@Aries.Nguyen: Remove insert log zzTracePerformance [Redmine ID: #154792]
 			- 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
+            - 20210914@Casey.Huynh: BrowserID and OSID Exceed DataRange [#161576]
 
 		Param's Explanation (filtered by):
 	*/
@@ -28,8 +29,8 @@ BEGIN
 		,	BrowserName		VARCHAR(100)
 		,	OSName			VARCHAR(100)
         ,   CreatedDate		DATETIME
-        ,	BrowserID		INT
-        ,	OSID			INT
+        ,	BrowserID		INT UNSIGNED
+        ,	OSID			INT UNSIGNED
 	);
 
 	#=======================
