@@ -17,10 +17,10 @@ BEGIN
 			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
 			- 20210510@Aries.Nguyen: Remove insert log zzTracePerformance [Redmine ID: #154792]
 			- 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
-
+			- 20210914@Casey.Huynh: BrowserID and OSID Exceed DataRange [#161576]
 		Param's Explanation (filtered by):
 	*/
-	
+
 	SELECT	ua.UserAgentKey
 		,	ua.UserAgent
 		,	ua.CreatedDate
