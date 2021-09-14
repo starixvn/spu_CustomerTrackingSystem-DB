@@ -26,7 +26,7 @@ BEGIN
 		,	ua.CreatedDate
 	FROM DCS_DataCenter.UserAgent AS ua
     WHERE	BrowserID IS NULL 
-		AND OSID IS NULL
+		OR 	OSID IS NULL
     LIMIT ip_size;
 		
 END$$
