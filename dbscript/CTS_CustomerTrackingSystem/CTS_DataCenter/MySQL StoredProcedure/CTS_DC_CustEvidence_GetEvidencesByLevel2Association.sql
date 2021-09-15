@@ -19,6 +19,7 @@ BEGIN
 		   - 20210308@Jonas.Huynh: Update logic SP [Redmine ID: #150917]
            - 20210427@Aries.Nguyen: Enhance performance [Redmine ID: #152509] 
 		   - 20210622@Aries.Nguyen: Update coding convention and improve locking[Redmine ID: #157203]
+		   - 20210915@Aries.Nguyen: Remove DeviceAssociationDay table [Redmine ID: #160470]
            
 		Param's Explanation (filtered by):	
 		
@@ -123,8 +124,7 @@ BEGIN
 		,	root.CTSCustID
 		,	dv.DCSDeviceID
 	FROM Temp_Root_Customer AS root 
-		INNER JOIN CTS_DataCenter.AssociationByDevice AS dv ON dv.CTSCustID =  root.CTSCustID
-	WHERE EXISTS (SELECT 1 FROM DeviceAssociationDay AS da WHERE da.DCSDeviceID = dv.DCSDeviceID);
+		INNER JOIN CTS_DataCenter.AssociationByDevice AS dv ON dv.CTSCustID =  root.CTSCustID;
 	
     #Get association level 1
     INSERT IGNORE INTO Temp_Association_Level1(CustID, CTSCustID,Level1)
@@ -140,8 +140,7 @@ BEGIN
 		, 	asDv.DCSDeviceID
 	FROM Temp_Association_Level1 AS lv1
 		INNER JOIN CTS_DataCenter.AssociationByDevice AS asDv ON asDv.CTSCustID = lv1.Level1
-	WHERE NOT EXISTS (SELECT 1 FROM Temp_Root_Device AS roDv WHERE lv1.CTSCustID =  roDv.CTSCustID AND asDv.DCSDeviceID = roDv.DCSDeviceID)
-		AND  EXISTS (SELECT 1 FROM DeviceAssociationDay AS da WHERE da.DCSDeviceID = asDv.DCSDeviceID);
+	WHERE NOT EXISTS (SELECT 1 FROM Temp_Root_Device AS roDv WHERE lv1.CTSCustID =  roDv.CTSCustID AND asDv.DCSDeviceID = roDv.DCSDeviceID);
 	
     INSERT INTO Temp_Device_Level1(DeviceLevel1)
     SELECT DISTINCT DeviceLevel1 FROM Temp_Root_Device_Level1;
