@@ -237,8 +237,7 @@ sp: BEGIN
 	SELECT 	cus.CTSCustID 
 		, 	dv.DCSDeviceID
 	FROM Temp_Cust AS cus
-		INNER JOIN CTS_DataCenter.AssociationByDevice AS dv ON dv.CTSCustID = cus.CTSCustID
-	WHERE EXISTS (SELECT 1 FROM CTS_DataCenter.DeviceAssociationDay AS dd WHERE dd.DCSDeviceID = dv.DCSDeviceID);
+		INNER JOIN CTS_DataCenter.AssociationByDevice AS dv ON dv.CTSCustID = cus.CTSCustID;
 
 	INSERT INTO Temp_DeviceCust_Group(DCSDeviceID, TotalCust)
 	SELECT 	DCSDeviceID

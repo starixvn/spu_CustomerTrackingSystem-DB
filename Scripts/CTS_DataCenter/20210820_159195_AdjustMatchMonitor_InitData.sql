@@ -12,6 +12,8 @@ Reviewer:
 */
 USE CTS_DataCenter;
 
+DROP TABLE CTS_DataCenter.MatchMonitorStaging;
+
 DROP TABLE IF EXISTS CTS_DataCenter.MatchMonitorStagingLive;
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorStagingLive(
 		TransID			BIGINT UNSIGNED

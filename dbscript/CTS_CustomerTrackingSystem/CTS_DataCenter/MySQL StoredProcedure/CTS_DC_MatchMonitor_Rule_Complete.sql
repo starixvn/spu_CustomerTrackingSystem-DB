@@ -115,8 +115,6 @@ BEGIN
 		LIMIT 1;
 	END IF;
 
-	#SELECT lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID;
-
     lp: LOOP 
 		SET lv_GroupID = 0;
         SELECT GroupID, IsHedging, TransIDList, CustIDList, OldGroupIDList, NoOfOldGroupID
@@ -128,14 +126,14 @@ BEGIN
         THEN			
             LEAVE lp; 
         END IF;
-        
+
         IF(lv_NoOfOldGroupID = 0) # INSERT NEW GROUP
         THEN
 			SET lv_MaxGroupID = lv_MaxGroupID + 1;
             INSERT IGNORE INTO CTS_DataCenter.MatchMonitorDetails(MatchID, LiveIndicator, TotalScore, BettypeID, EventDate, GroupID, LiveHomeScore, LiveAwayScore, ListCustID, ListTransID, IsHedging)
             VALUES(ip_MatchID, ip_LiveIndicator, ip_TotalScore, ip_BettypeID, lv_EventDate, lv_GroupID, lv_LiveHomeScore, lv_LiveAwayScore, lv_CustIDList, lv_TransIDList, lv_IsHedging);
         END IF; 
-        
+       
 		IF (lv_NoOfOldGroupID = 1) THEN # UPDATE OLD GROUP			
 			UPDATE CTS_DataCenter.MatchMonitorDetails
 			SET GroupID = lv_GroupID, ListCustID = lv_CustIDList, ListTransID = lv_TransIDList, IsHedging = lv_IsHedging
@@ -144,15 +142,15 @@ BEGIN
         
         IF (lv_NoOfOldGroupID > 1) THEN # MERGE GROUP
 			CALL CTS_DC_Sys_SplitStringToTempItemTable(lv_OldGroupIDList,',','INT');
-			SET lv_MinGroupID = (SELECT Item FROM TempItemTable ORDER BY Item LIMIT 1);
-			
+			SET lv_MinGroupID = (SELECT Item FROM TempItemTable WHERE Item <> 0 ORDER BY Item LIMIT 1);
+		
             DELETE mmd
             FROM CTS_DataCenter.MatchMonitorDetails AS mmd
 				INNER JOIN TempItemTable AS tmpIt ON mmd.GroupID = tmpIt.Item
 			WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.TotalScore = ip_TotalScore AND mmd.GroupID = lv_OldGroupIDList	AND mmd.GroupID <> lv_MinGroupID;
                     
 			UPDATE CTS_DataCenter.MatchMonitorDetails
-			SET GroupID = lv_GroupID, ListCustID = ip_CustIDList, ListTransID = lv_TransIDList, IsHedging = IsHedging
+			SET GroupID = lv_GroupID, ListCustID = lv_CustIDList, ListTransID = lv_TransIDList, IsHedging = IsHedging
 			WHERE LiveIndicator = ip_LiveIndicator AND MatchID = ip_MatchID AND BettypeID = ip_BettypeID AND TotalScore = ip_TotalScore AND GroupID = lv_MinGroupID;
 			
 		END IF;
