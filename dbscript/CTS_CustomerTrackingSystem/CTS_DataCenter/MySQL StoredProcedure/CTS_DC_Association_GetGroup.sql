@@ -15,6 +15,8 @@ sp:BEGIN
 		Revisions:
 			- 20210326@Aries.Nguyen: Created [Redmine ID: #148998]
             - 20210818@Aries.Nguyen: Exclude Unlink association [Redmine ID: #159708]
+			- 20210915@Aries.Nguyen: Remove DeviceAssociationDay table [Redmine ID: #160470]
+
 		Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DataCenter.CTS_DC_Association_GetGroup(200);
@@ -94,8 +96,7 @@ sp:BEGIN
 	SELECT 	cus.CTSCustID 
 		, 	dv.DCSDeviceID
 	FROM Temp_Cust AS cus
-		INNER JOIN CTS_DataCenter.AssociationByDevice AS dv ON dv.CTSCustID = cus.CTSCustID
-	WHERE EXISTS (SELECT 1 FROM CTS_DataCenter.DeviceAssociationDay AS dd WHERE dd.DCSDeviceID = dv.DCSDeviceID);
+		INNER JOIN CTS_DataCenter.AssociationByDevice AS dv ON dv.CTSCustID = cus.CTSCustID;
 	# select * from Temp_CustDevice;
 
 

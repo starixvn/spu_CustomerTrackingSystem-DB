@@ -25,6 +25,7 @@ sp : BEGIN
 		Revisions:
 			- 20210226@Harvey.Nguyen: Created [Redmine ID: #150720]
 			- 20210427@Aries.Nguyen: Enhance performance [Redmine ID: #152509] 
+			- 20210915@Aries.Nguyen: Remove DeviceAssociationDay table [Redmine ID: #160470]
             
 		Param's Explanation (filtered by):
             - ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual
@@ -35,10 +36,6 @@ sp : BEGIN
 			- CALL CTS_DataCenter.CTS_DC_RPT_AssociatedAccount('1,11','4414',0,0,'2021-01-28','2021-01-30',41,0,100, @op_TotalItems);
 
 	*/    
-    
-	DECLARE lv_fromday 	INT;
-    DECLARE lv_today 	INT;
-    DECLARE lv_days 	JSON;
 
 	IF (ip_SubscriberIDs IS NULL OR ip_SubscriberIDs = '' OR ip_SubscriberIDs = -1) 
 		OR (ip_AssociationStatus IS NULL OR ip_AssociationStatus = -1)
@@ -112,20 +109,7 @@ sp : BEGIN
     SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_EvidenceID (EvidenceID) VALUES ('", REPLACE(ip_EvidenceIDs, ",", "'),('"),"');");
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1;
-    
-    SET lv_fromday = TO_DAYS(ip_FromAssDate);
-	SET lv_today = TO_DAYS(ip_ToAssDate);
-    
-	WITH RECURSIVE CTE_Day (n) AS
-	(
-	  SELECT lv_fromday 
-	  UNION ALL
-	  SELECT  1  + n  FROM CTE_Day WHERE n < lv_today
-	)
-	SELECT JSON_ARRAYAGG(n)
-	INTO lv_days
-	FROM CTE_Day;
-    
+       
     UPDATE Temp_EvidenceID AS evID
 	INNER JOIN CTS_DataCenter.Evidence evi ON evID.EvidenceID = evi.EvidenceID
 	SET evID.EvidenceCode = evi.EvidenceCode;
@@ -133,8 +117,8 @@ sp : BEGIN
     IF ip_AssociationType = 1 AND  ip_AssociationStatus = 0 THEN
 		INSERT IGNORE INTO Temp_Device(DCSDeviceID)
 		SELECT DCSDeviceID 
-		FROM CTS_DataCenter.DeviceAssociationDay  FORCE INDEX (IXM_DeviceAssociationDay_AssociationDay_HasEvidence)
-		WHERE JSON_OVERLAPS(AssociationDay -> '$', lv_days); 
+		FROM CTS_DataCenter.AssociationByDevice AS dv   
+		WHERE dv.CreatedTime BETWEEN ip_FromAssDate AND ip_ToAssDate; 
         
 		INSERT IGNORE INTO Temp_CustEvidence (CTSCustID,CustID,EvidenceID,UserName,SubscriberID,CustStatusID,EvidenceCode) 
 		SELECT ce.CTSCustID
@@ -176,8 +160,8 @@ sp : BEGIN
     IF ip_AssociationType = 1 AND  ip_AssociationStatus = 1 THEN
 		INSERT IGNORE INTO Temp_Device(DCSDeviceID)
 		SELECT DCSDeviceID 
-		FROM CTS_DataCenter.DeviceAssociationDay  FORCE INDEX (IXM_DeviceAssociationDay_AssociationDay_HasEvidence)
-		WHERE JSON_OVERLAPS(AssociationDay -> '$', lv_days); 
+		FROM CTS_DataCenter.AssociationByDevice AS dv   
+		WHERE dv.CreatedTime BETWEEN ip_FromAssDate AND ip_ToAssDate;
         
         INSERT IGNORE INTO Temp_CustEvidence (CTSCustID,CustID,EvidenceID,UserName,SubscriberID,CustStatusID,EvidenceCode) 
 		SELECT ce.CTSCustID
@@ -222,8 +206,8 @@ sp : BEGIN
     IF ip_AssociationType = 1 AND  ip_AssociationStatus = 2 THEN
 		INSERT IGNORE INTO Temp_Device(DCSDeviceID)
 		SELECT DCSDeviceID 
-		FROM CTS_DataCenter.DeviceAssociationDay  FORCE INDEX (IXM_DeviceAssociationDay_AssociationDay_HasEvidence)
-		WHERE JSON_OVERLAPS(AssociationDay -> '$', lv_days); 
+		FROM CTS_DataCenter.AssociationByDevice AS dv   
+		WHERE dv.CreatedTime BETWEEN ip_FromAssDate AND ip_ToAssDate;
         
         INSERT IGNORE INTO Temp_CustEvidence (CTSCustID,CustID,EvidenceID,UserName,SubscriberID,CustStatusID,EvidenceCode) 
 		SELECT ce.CTSCustID
