@@ -276,8 +276,9 @@ sp : BEGIN
 	SET op_IsDataExist = 1;
     
     SELECT  DISTINCT
-            CTSCustID_Affected
-    FROM Temp_CustAffectedEvidence;
+            cus.CustID
+    FROM Temp_CustAffectedEvidence AS ev
+        INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = ev.CTSCustID_Affected;
     
 END$$
 

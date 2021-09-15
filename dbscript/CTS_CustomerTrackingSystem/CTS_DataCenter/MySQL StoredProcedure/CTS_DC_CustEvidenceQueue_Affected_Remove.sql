@@ -144,11 +144,12 @@ sp : BEGIN
     WHERE ID < lv_QueueID;
     
     SELECT  DISTINCT
-            CTSCustID 
-    FROM Temp_CustAffectedEvidence AS cus
+            cus.CustID 
+    FROM Temp_CustAffectedEvidence AS cusEv
+        INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cusEv.CTSCustID = cus.CTSCustID
     WHERE NOT EXISTS (SELECT 1 
 				      FROM CTS_DataCenter.CustEvidence as ev 
-                      WHERE ev.CTSCustID = cus.CTSCustID
+                      WHERE ev.CTSCustID = cusEv.CTSCustID
 					    AND NOT EXISTS (SELECT 1 
 									    FROM CTS_DataCenter.CustRetractEvidence AS re 
 									    WHERE re.CTSCustID = ev.CTSCustID 
