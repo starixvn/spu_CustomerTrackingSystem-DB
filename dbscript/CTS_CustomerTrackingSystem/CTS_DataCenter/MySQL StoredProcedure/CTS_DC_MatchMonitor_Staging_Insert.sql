@@ -69,7 +69,6 @@ BEGIN
 			,	mms.TotalScore
 			,	mms.BettypeID
 		FROM		CTS_DataCenter.MatchMonitorStagingLive AS mms
-        WHERE		mms.GroupID = 0
 		GROUP BY	mms.MatchID, mms.TotalScore, mms.BettypeID
 		HAVING		COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= 500;
         
@@ -115,7 +114,6 @@ BEGIN
 			,	mms.TotalScore
 			,	mms.BettypeID
 		FROM		CTS_DataCenter.MatchMonitorStagingNonLive AS mms
-        WHERE		mms.GroupID = 0
 		GROUP BY	mms.MatchID, mms.TotalScore, mms.BettypeID
 		HAVING		COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= 500;
         
