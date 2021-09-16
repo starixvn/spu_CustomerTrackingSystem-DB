@@ -18,6 +18,8 @@ BEGIN
 			- 20210510@Aries.Nguyen: Remove insert log zzTracePerformance [Redmine ID: #154792]
 			- 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
 			- 20210914@Casey.Huynh: BrowserID and OSID Exceed DataRange [#161576]
+			- 20210916@Aries.Nguyen: Update sp [#161576]
+
 		Param's Explanation (filtered by):
 	*/
 
@@ -26,7 +28,15 @@ BEGIN
 		,	ua.CreatedDate
 	FROM DCS_DataCenter.UserAgent AS ua
     WHERE	BrowserID IS NULL 
-		OR 	OSID IS NULL
+	
+    UNION 
+    
+	SELECT	ua.UserAgentKey
+		,	ua.UserAgent
+		,	ua.CreatedDate
+	FROM DCS_DataCenter.UserAgent AS ua
+    WHERE	OSID IS NULL
+
     LIMIT ip_size;
 		
 END$$
