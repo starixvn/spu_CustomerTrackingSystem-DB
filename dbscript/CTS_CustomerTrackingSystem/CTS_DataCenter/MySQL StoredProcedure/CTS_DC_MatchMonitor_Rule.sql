@@ -83,6 +83,9 @@ sp: BEGIN
         ,	CustID_2			BIGINT UNSIGNED
 		,	MinTransDate_2	DATETIME(3)
 		,	MaxTransDate_2	DATETIME(3)
+        
+        ,	PRIMARY KEY PK_Temp_CustAssociation(CustID_1, MinTransDate_1)
+        
 	);
         
 	DROP TEMPORARY TABLE IF EXISTS Temp_TransGroup;
@@ -92,8 +95,9 @@ sp: BEGIN
 		,	MaxTransDate	DATETIME(3)
 		,	GroupID			INT
         , 	IsHedging		BOOLEAN DEFAULT 0
-	);
-    
+        
+        ,	PRIMARY KEY PK_Temp_TransGroup(CustID, MinTransDate)
+	);    
     
     #-------------------------------------------------------------------
     DROP TEMPORARY TABLE IF EXISTS Temp_Association;
@@ -105,6 +109,7 @@ sp: BEGIN
 		 ,  AssociationType		SMALLINT
 		 ,	INDEX IX_Temp_Association_CTSCustID1_CTSCustID2(CTSCustID_1,CTSCustID_2)
 		 ,	INDEX IX_Temp_Association_CustID1_CustID2(CustID_1,CustID_2)
+         ,	INDEX IX_Temp_Association_CustID1_CustID2(CustID_2)
 	);
 
     DROP TEMPORARY TABLE IF EXISTS Temp_Association_Remove;
@@ -113,8 +118,7 @@ sp: BEGIN
 		 ,	CTSCustID_2 	    BIGINT UNSIGNED
 		 ,	INDEX IX_Temp_Association_CTSCustID_1(CTSCustID_1)
 		 ,	INDEX IX_Temp_Association_CTSCustID_2(CTSCustID_2)
-	); 
-    
+	);     
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
 	CREATE TEMPORARY TABLE 		Temp_Cust (
@@ -128,7 +132,7 @@ sp: BEGIN
 			CTSCustID			BIGINT UNSIGNED  
 		 ,	DCSDeviceID  		BIGINT UNSIGNED 
 		 ,	PRIMARY KEY(DCSDeviceID, CTSCustID)
-	);  
+	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_DeviceCust_Group;
 	CREATE TEMPORARY TABLE 		Temp_DeviceCust_Group (
@@ -428,7 +432,6 @@ sp: BEGIN
         ,	GROUP_CONCAT(tmpSt.TransID) AS TransIDList
         ,	GROUP_CONCAT(DISTINCT tmpSt.CustID) AS CustIDList
         ,	GROUP_CONCAT(DISTINCT tmpSt.OldGroupID) AS OldGroupIDList
-        ,	SUM(CASE WHEN tmpSt.OldGroupID <> 0 THEN 1 ELSE 0 END) AS NoOfOldGroupID
     FROM 	Temp_TransGroup AS tmpTg
 		INNER JOIN Temp_StagingTrans02  AS tmpSt ON tmpSt.CustID = tmpTg.CustID AND tmpSt.TransDate BETWEEN tmpTg.MinTransDate AND tmpTg.MaxTransDate
 	GROUP BY tmpTg.GroupID

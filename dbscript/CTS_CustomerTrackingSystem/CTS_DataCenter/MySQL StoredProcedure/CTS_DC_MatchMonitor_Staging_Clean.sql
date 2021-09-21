@@ -35,7 +35,7 @@ BEGIN
         
         ,	PRIMARY KEY (MatchID,TotalScore,BettypeID,GroupID)
     );
-    
+
     #======Clean Staging=================================================
     IF (ip_LiveIndicator = 1) THEN		
 		SELECT 	MAX(TransDate) , MAX(TransID)
@@ -59,9 +59,11 @@ BEGIN
 		WHERE	mms.TransDate < lv_Last3mMinTime  AND tmpTg.GroupID IS NULL ;    
         
         /* Update Parameter*/
-		UPDATE 	CTS_DataCenter.SystemParameter
-		SET 	ParameterValue = lv_LastTransID
-		WHERE 	ParameterID = 20;
+        IF lv_LastTransID > 0 THEN			
+			UPDATE 	CTS_DataCenter.SystemParameter
+			SET 	ParameterValue = lv_LastTransID
+			WHERE 	ParameterID = 20;
+		END IF;
 	END IF;
     
     IF (ip_LiveIndicator = 0) THEN		
@@ -86,9 +88,12 @@ BEGIN
 		WHERE	mms.TransDate < lv_Last3mMinTime  AND tmpTg.GroupID IS NULL ;    
         
         /* Update Parameter*/
-		UPDATE 	CTS_DataCenter.SystemParameter
-		SET 	ParameterValue = lv_LastTransID
-		WHERE 	ParameterID = 29;
+        IF lv_LastTransID > 0 THEN	
+			UPDATE 	CTS_DataCenter.SystemParameter
+			SET 	ParameterValue = lv_LastTransID
+			WHERE 	ParameterID = 29;
+		END IF;
+        
 	END IF;
     
 END$$

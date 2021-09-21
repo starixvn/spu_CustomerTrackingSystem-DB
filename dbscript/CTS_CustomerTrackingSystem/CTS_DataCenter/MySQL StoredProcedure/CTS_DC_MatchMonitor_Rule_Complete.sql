@@ -39,7 +39,7 @@ BEGIN
     DECLARE lv_EventDate 				DATE;
     DECLARE lv_LiveHomeScore			SMALLINT UNSIGNED;
     DECLARE lv_LiveAwayScore			SMALLINT UNSIGNED;
-    DECLARE lv_MaxGroupID 				INT;
+    DECLARE lv_TargetGroupID 				INT;
 	DECLARE lv_MinGroupID 				INT;
     DECLARE lv_MatchHedging				BOOLEAN DEFAULT 0;
     DECLARE lv_MatchNotHedging 			BOOLEAN DEFAULT 0;
@@ -69,19 +69,17 @@ BEGIN
         ,	IsHedging 		BOOLEAN
         ,	TransIDList 	LONGTEXT
         ,	CustIDList		LONGTEXT 
-        ,	OldGroupIDList	TEXT 
-        ,   NoOfOldGroupID	INT
+        ,	OldGroupIDList	TEXT
         
         ,	PRIMARY KEY Temp_TransGroup(GroupID)
     );
     
-    INSERT IGNORE INTO CTS_DataCenter.Temp_TransGroup(GroupID, IsHedging, TransIDList, CustIDList, OldGroupIDList, NoOfOldGroupID)
+    INSERT IGNORE INTO CTS_DataCenter.Temp_TransGroup(GroupID, IsHedging, TransIDList, CustIDList, OldGroupIDList)
 		SELECT  js.GroupID
 			,	js.IsHedging
 			,	js.TransIDList
 			,	js.CustIDList
 			,	js.OldGroupIDList
-			,	js.NoOfOldGroupID
 		FROM JSON_TABLE(ip_TransGroup,
 						 "$[*]" COLUMNS(
 									GroupID			INT PATH "$.GroupID" 
@@ -89,19 +87,11 @@ BEGIN
 								,	TransIDList		LONGTEXT PATH "$.TransIDList"
 								,	CustIDList		LONGTEXT PATH "$.CustIDList" 
 								,	OldGroupIDList	TEXT PATH "$.OldGroupIDList" 
-								,	NoOfOldGroupID	INT	PATH "$.NoOfOldGroupID" 
 							)
 					) AS js;  
     
    
-    #======Update MatchMonitorDetails====================================
-
-    SELECT MAX(GroupID)
-    INTO lv_MaxGroupID
-    FROM MatchMonitorDetails WHERE LiveIndicator = ip_LiveIndicator AND MatchID = ip_MatchID AND BettypeID = ip_BettypeID AND TotalScore = ip_TotalScore;
-	
-    SET lv_MaxGroupID = IFNULL(lv_MaxGroupID,0);
-    
+    #======Update MatchMonitorDetails====================================  
     
     IF (ip_LiveIndicator = 1) THEN
 		SELECT EventDate, LiveHomeScore, LiveAwayScore, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID
@@ -116,62 +106,71 @@ BEGIN
 		FROM CTS_DataCenter.MatchMonitorStagingNonLive WHERE  MatchID = ip_MatchID AND BettypeID = ip_BettypeID AND TotalScore = ip_TotalScore
 		LIMIT 1;
 	END IF;
-
+	
     lp: LOOP 
 		SET lv_GroupID = 0;
-        SELECT GroupID, IsHedging, TransIDList, CustIDList, OldGroupIDList, NoOfOldGroupID
-        INTO lv_GroupID, lv_IsHedging, lv_TransIDList, lv_CustIDList, lv_OldGroupIDList, lv_NoOfOldGroupID
+        SELECT GroupID, IsHedging, TransIDList, CustIDList, OldGroupIDList
+        INTO lv_GroupID, lv_IsHedging, lv_TransIDList, lv_CustIDList, lv_OldGroupIDList
         FROM Temp_TransGroup
-        ORDER BY GroupID LIMIT 1;
-
+        ORDER BY GroupID LIMIT 1;        
+        
         IF lv_GroupID =0 
         THEN			
             LEAVE lp; 
         END IF;
-	
+		
+        CALL CTS_DC_Sys_SplitStringToTempItemTable(lv_OldGroupIDList,',','INT');
+		SET lv_TargetGroupID = (SELECT Item FROM TempItemTable WHERE Item <> 0 ORDER BY Item LIMIT 1);
+        SET lv_NoOfOldGroupID = (SELECT COUNT(1) FROM TempItemTable WHERE Item <> 0);       
+		SET lv_TargetGroupID = IFNULL(lv_TargetGroupID,0);
+        
         IF(lv_NoOfOldGroupID = 0) # INSERT NEW GROUP
         THEN
-			SET lv_MaxGroupID = lv_MaxGroupID + 1;
-
+			SELECT MAX(GroupID)
+			INTO lv_TargetGroupID
+			FROM MatchMonitorDetails WHERE LiveIndicator = ip_LiveIndicator AND MatchID = ip_MatchID AND BettypeID = ip_BettypeID AND TotalScore = ip_TotalScore; 
+			
+            SET lv_TargetGroupID = IFNULL(lv_TargetGroupID,0);
+			SET lv_TargetGroupID =  lv_TargetGroupID + 1;
+            
             INSERT IGNORE INTO CTS_DataCenter.MatchMonitorDetails(MatchID, LiveIndicator, TotalScore, BettypeID, EventDate, GroupID, LiveHomeScore, LiveAwayScore, ListCustID, ListTransID, IsHedging)
-            VALUES(ip_MatchID, ip_LiveIndicator, ip_TotalScore, ip_BettypeID, lv_EventDate, lv_MaxGroupID, lv_LiveHomeScore, lv_LiveAwayScore, lv_CustIDList, lv_TransIDList, lv_IsHedging);
+            VALUES(ip_MatchID, ip_LiveIndicator, ip_TotalScore, ip_BettypeID, lv_EventDate, lv_TargetGroupID, lv_LiveHomeScore, lv_LiveAwayScore, lv_CustIDList, lv_TransIDList, lv_IsHedging);
         END IF; 
        
-		IF (lv_NoOfOldGroupID = 1) THEN # UPDATE OLD GROUP			
+		IF (lv_NoOfOldGroupID = 1) THEN # UPDATE OLD GROUP	
+        
 			UPDATE CTS_DataCenter.MatchMonitorDetails
-			SET GroupID = lv_GroupID, ListCustID = lv_CustIDList, ListTransID = lv_TransIDList, IsHedging = lv_IsHedging
-			WHERE  LiveIndicator = ip_LiveIndicator AND MatchID = ip_MatchID AND BettypeID = ip_BettypeID AND TotalScore = ip_TotalScore AND GroupID = lv_OldGroupIDList;
-		END IF;
+			SET GroupID = lv_TargetGroupID, ListCustID = lv_CustIDList, ListTransID = lv_TransIDList, IsHedging = lv_IsHedging
+			WHERE  LiveIndicator = ip_LiveIndicator AND MatchID = ip_MatchID AND BettypeID = ip_BettypeID AND TotalScore = ip_TotalScore AND GroupID = lv_TargetGroupID;
+		END IF;        
+        
         
         IF (lv_NoOfOldGroupID > 1) THEN # MERGE GROUP
-			CALL CTS_DC_Sys_SplitStringToTempItemTable(lv_OldGroupIDList,',','INT');
-			SET lv_MinGroupID = (SELECT Item FROM TempItemTable WHERE Item <> 0 ORDER BY Item LIMIT 1);
-
+			
+        
             DELETE mmd
             FROM CTS_DataCenter.MatchMonitorDetails AS mmd
 				INNER JOIN TempItemTable AS tmpIt ON mmd.GroupID = tmpIt.Item
-			WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.TotalScore = ip_TotalScore AND mmd.GroupID = lv_OldGroupIDList	AND mmd.GroupID <> lv_MinGroupID;
+			WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.TotalScore = ip_TotalScore AND mmd.GroupID <> lv_TargetGroupID;
                     
-			UPDATE CTS_DataCenter.MatchMonitorDetails
-			SET GroupID = lv_GroupID, ListCustID = lv_CustIDList, ListTransID = lv_TransIDList, IsHedging = lv_IsHedging
-			WHERE LiveIndicator = ip_LiveIndicator AND MatchID = ip_MatchID AND BettypeID = ip_BettypeID AND TotalScore = ip_TotalScore AND GroupID = lv_MinGroupID;
+			UPDATE CTS_DataCenter.MatchMonitorDetails AS mmd
+			SET mmd.GroupID = lv_TargetGroupID, mmd.ListCustID = lv_CustIDList, mmd.ListTransID = lv_TransIDList, mmd.IsHedging = lv_IsHedging
+			WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.TotalScore = ip_TotalScore AND mmd.GroupID = lv_TargetGroupID;
 			
 		END IF;
         
+
         DELETE tmptg
         FROM Temp_TransGroup AS tmptg WHERE GroupID = lv_GroupID;
         
         IF(ip_LiveIndicator = 1) THEN
 			SET @sql = 	CONCAT("UPDATE CTS_DataCenter.MatchMonitorStagingLive
-            SET GroupID = ",lv_GroupID,"
+            SET GroupID = ",lv_TargetGroupID,"
             WHERE TransID IN (",lv_TransIDList,")");
-            /*
-			UPDATE CTS_DataCenter.MatchMonitorStagingLive
-            SET GroupID = lv_GroupID
-            WHERE TransID IN (lv_TransIDList);*/
+            
 		ELSE
 			SET @sql = 	CONCAT("UPDATE CTS_DataCenter.MatchMonitorStagingNonLive
-            SET GroupID = ",lv_GroupID,"
+            SET GroupID = ",lv_TargetGroupID,"
             WHERE TransID IN (",lv_TransIDList,")");
         END IF;
       
