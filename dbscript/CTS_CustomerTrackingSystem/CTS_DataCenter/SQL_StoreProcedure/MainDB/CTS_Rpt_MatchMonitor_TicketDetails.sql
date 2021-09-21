@@ -147,6 +147,7 @@ BEGIN
 			FROM dbo.bettrans AS b WITH(NOLOCK)
 				INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
+				INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.CustId = c.custid
 			WHERE	b.transid > @LastScannedTransID
                 AND m.eventstatus <> 'completed'
 				AND b.bettype IN (1,3,7,8)
@@ -157,6 +158,7 @@ BEGIN
 				AND b.Username NOT LIKE '%Cashout%'
 				AND m.sporttype = 1
 				AND l.LeagueGroupID NOT IN (42,74,108,113) -- SABA leagues
+				AND (c.Site = 'NextBet' OR c.Site = '9wickets' OR c.Site = '9wsports')
 			ORDER BY b.transid ASC
 				;
 		END
