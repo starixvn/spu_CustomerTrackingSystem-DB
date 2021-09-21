@@ -28,16 +28,7 @@ BEGIN
 		,	SubscriberID	INT
         ,	INDEX 			IX_Temp_CTSCustomer_CTSCustID(CTSCustID)
     );
-    
-	DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustInfo;
-    CREATE TEMPORARY TABLE Temp_CTSCustInfo(
-			CTSCustID		BIGINT UNSIGNED
-		,	SubscriberID	INT
-		,	IsFlagged		BIT DEFAULT 0
-        ,	IsAffected		BIT DEFAULT 0
-		,	INDEX			IX_Temp_CTSCustInfo_CTSCustID(CTSCustID)
-	);
-
+     
     INSERT INTO Temp_CTSCustomer(CTSCustID, SubscriberID)
 	SELECT	tmpCust.CTSCustID
 		,	tmpCust.SubscriberID
@@ -48,27 +39,26 @@ BEGIN
 		)
 	) AS  tmpCust;
     
-	/* Mark flagged tag for each associated account */
-	INSERT INTO Temp_CTSCustInfo(CTSCustID, SubscriberID, IsFlagged, IsAffected)
-	SELECT 	tmpCust.CTSCustID
-		,	tmpCust.SubscriberID
-		,	ce.IsFlagged
-		,	ce.IsAffected
-    FROM Temp_CTSCustomer AS tmpCust, 
-		LATERAL	(SELECT ce.CTSCustID
-					,	MAX(CASE WHEN ce.Level = 0 THEN 1 ELSE 0 END) AS IsFlagged
-					,	MAX(CASE WHEN ce.Level = 2 THEN 1 ELSE 0 END) AS IsAffected
-				 FROM CTS_DataCenter.CustEvidence AS ce
-					 LEFT JOIN CTS_DataCenter.CustRetractEvidence AS crev ON ce.CTSCustID = crev.CTSCustID AND ce.EvidenceID = crev.EvidenceID AND ce.Level = 2
-				 WHERE   ce.CTSCustID = tmpCust.CTSCustID
-					 AND crev.CTSCustID IS NULL
-				 GROUP BY ce.CTSCustID) AS ce;
-	
-    SELECT	CTSCustID
+	SELECT 	CTSCustID
 		,	SubscriberID
-        ,	IsFlagged
-        ,	IsAffected
-	FROM Temp_CTSCustInfo;
+        ,	IFNULL((SELECT 1 
+				   FROM CTS_DataCenter.CustEvidence as ev 
+				   WHERE ev.CTSCustID = cus.CTSCustID AND ev.Level = 0
+						AND NOT EXISTS (SELECT 1 
+										FROM CTS_DataCenter.CustRetractEvidence AS re 
+										WHERE re.CTSCustID = ev.CTSCustID 
+											AND re.EvidenceID = ev.EvidenceID) 
+										LIMIT 1),0) AS IsFlagged
+		,	IFNULL((SELECT 1 
+				    FROM CTS_DataCenter.CustEvidence as ev 
+				    WHERE ev.CTSCustID = cus.CTSCustID AND ev.Level = 2
+						AND NOT EXISTS (SELECT 1 
+										FROM CTS_DataCenter.CustRetractEvidence AS re 
+										WHERE re.CTSCustID = ev.CTSCustID 
+											AND re.EvidenceID = ev.EvidenceID) 
+										LIMIT 1),0) AS IsAffected
+    FROM Temp_CTSCustomer AS cus;
+ 
 END$$
 
 DELIMITER ;
