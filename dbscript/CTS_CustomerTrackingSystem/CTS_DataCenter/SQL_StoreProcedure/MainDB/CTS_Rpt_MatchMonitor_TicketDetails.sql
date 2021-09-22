@@ -158,7 +158,7 @@ BEGIN
 				AND b.Username NOT LIKE '%Cashout%'
 				AND m.sporttype = 1
 				AND l.LeagueGroupID NOT IN (42,74,108,113) -- SABA leagues
-				AND (c.Site = 'NextBet' OR c.Site = '9wickets' OR c.Site = '9wsports')
+				AND c.Site NOT IN ('NextBet','9wickets','9wsports')
 			ORDER BY b.transid ASC
 				;
 		END
