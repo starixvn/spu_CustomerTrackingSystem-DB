@@ -84,7 +84,7 @@ sp: BEGIN
 		,	MinTransDate_2	DATETIME(3)
 		,	MaxTransDate_2	DATETIME(3)
         
-        ,	PRIMARY KEY PK_Temp_CustAssociation(CustID_1, MinTransDate_1)
+        ,	PRIMARY KEY PK_Temp_CustAssociation(CustID_1, MinTransDate_1, CustID_2)
         
 	);
         
@@ -107,9 +107,9 @@ sp: BEGIN
 		 ,	CTSCustID_2 	    BIGINT UNSIGNED DEFAULT 0
 		 ,  CustID_2 	    	BIGINT UNSIGNED DEFAULT 0
 		 ,  AssociationType		SMALLINT
-		 ,	INDEX IX_Temp_Association_CTSCustID1_CTSCustID2(CTSCustID_1,CTSCustID_2)
+		 ,	PRIMARY KEY IX_Temp_Association_CTSCustID1_CTSCustID2(CTSCustID_1,CTSCustID_2)
 		 ,	INDEX IX_Temp_Association_CustID1_CustID2(CustID_1,CustID_2)
-         ,	INDEX IX_Temp_Association_CustID1_CustID2(CustID_2)
+         ,	INDEX IX_Temp_Association_CustID2(CustID_2)
 	);
 
     DROP TEMPORARY TABLE IF EXISTS Temp_Association_Remove;
@@ -359,9 +359,22 @@ sp: BEGIN
     FROM Temp_Association AS ass
 	WHERE EXISTS (SELECT 1 FROM Temp_Association_Remove AS rm WHERE  rm.CTSCustID_1 = ass.CTSCustID_2 AND rm.CTSCustID_2 = ass.CTSCustID_1);
 
-
     INSERT INTO Temp_CustTime02 SELECT * FROM Temp_CustTime01;
-	
+    
+	SELECT 	*
+    FROM Temp_Association AS tmpAss;
+    
+    
+    SELECT 	tmpC1.CustID
+		,	tmpC1.MinTransDate
+        ,	tmpC1.MaxTransDate
+        ,	tmpC2.CustID
+		,	tmpC2.MinTransDate
+        ,	tmpC2.MaxTransDate
+    FROM Temp_Association AS tmpAss
+		INNER JOIN Temp_CustTime01 AS tmpC1 ON tmpC1.CustID = tmpAss.CustID_1
+        INNER JOIN Temp_CustTime02 AS tmpC2 ON tmpC2.CustID = tmpAss.CustID_2;
+    
     INSERT INTO Temp_CustAssociation(CustID_1,MinTransDate_1,MaxTransDate_1,CustID_2,MinTransDate_2,MaxTransDate_2)
     SELECT 	tmpC1.CustID
 		,	tmpC1.MinTransDate
