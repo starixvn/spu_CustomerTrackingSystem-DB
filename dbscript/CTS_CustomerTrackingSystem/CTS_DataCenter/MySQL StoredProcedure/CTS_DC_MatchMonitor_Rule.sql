@@ -361,20 +361,6 @@ sp: BEGIN
 
     INSERT INTO Temp_CustTime02 SELECT * FROM Temp_CustTime01;
     
-	SELECT 	*
-    FROM Temp_Association AS tmpAss;
-    
-    
-    SELECT 	tmpC1.CustID
-		,	tmpC1.MinTransDate
-        ,	tmpC1.MaxTransDate
-        ,	tmpC2.CustID
-		,	tmpC2.MinTransDate
-        ,	tmpC2.MaxTransDate
-    FROM Temp_Association AS tmpAss
-		INNER JOIN Temp_CustTime01 AS tmpC1 ON tmpC1.CustID = tmpAss.CustID_1
-        INNER JOIN Temp_CustTime02 AS tmpC2 ON tmpC2.CustID = tmpAss.CustID_2;
-    
     INSERT INTO Temp_CustAssociation(CustID_1,MinTransDate_1,MaxTransDate_1,CustID_2,MinTransDate_2,MaxTransDate_2)
     SELECT 	tmpC1.CustID
 		,	tmpC1.MinTransDate
