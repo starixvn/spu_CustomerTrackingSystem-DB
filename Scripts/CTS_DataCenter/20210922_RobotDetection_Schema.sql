@@ -10,16 +10,15 @@ Revisions:
 Reviewer:
 */
 
-DROP TABLE IF EXISTS CTS_DataCenter.RobotDetection;
-CREATE TABLE IF NOT EXISTS CTS_DataCenter.RobotDetection(
-		CustID						BIGINT UNSIGNED
-    ,	PeriodRangeType				SMALLINT UNSIGNED
-    ,	LatestPeriodRangeType		SMALLINT UNSIGNED
-    ,	CreatedDate					DATE
-    ,	LastModifiedDate			DATE
-	, 	PRIMARY KEY			PK_RobotDetection_CustID(CustID)
-    , 	KEY					IX_RobotDetection_CreatedDate(CreatedDate)
-) ENGINE=INNODB;
+CREATE TABLE `RobotDetection` (
+  `CustID` bigint unsigned NOT NULL,
+  `PeriodRangeType` smallint unsigned DEFAULT NULL,
+  `LatestPeriodRangeType` smallint unsigned DEFAULT NULL,
+  `CreatedDate` date DEFAULT NULL,
+  `LastModifiedDate` datetime DEFAULT NULL,
+  PRIMARY KEY (`CustID`),
+  KEY `IX_RobotDetection_CreatedDate` (`CreatedDate`)
+) ENGINE=InnoDB;
 
 
 /*

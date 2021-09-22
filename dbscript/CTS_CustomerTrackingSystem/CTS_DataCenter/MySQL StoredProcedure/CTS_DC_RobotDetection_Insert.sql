@@ -2,7 +2,7 @@ DELIMITER $$
 USE CTS_DataCenter $$
 DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_RobotDetection_Insert`$$
 
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_RobotDetection_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_RobotDetection_Insert`(
 	IN 	ip_RobotInfo	 		JSON,
     
     OUT op_ErrorMessage 		VARCHAR(200)
