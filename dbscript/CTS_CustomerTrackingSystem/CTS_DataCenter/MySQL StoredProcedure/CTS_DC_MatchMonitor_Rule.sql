@@ -77,14 +77,14 @@ sp: BEGIN
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_CustAssociation;
 	CREATE TEMPORARY TABLE Temp_CustAssociation(
-			CustID_1			BIGINT UNSIGNED
+			CustID_1		BIGINT UNSIGNED
 		,	MinTransDate_1	DATETIME(3)
 		,	MaxTransDate_1	DATETIME(3)
-        ,	CustID_2			BIGINT UNSIGNED
+        ,	CustID_2		BIGINT UNSIGNED
 		,	MinTransDate_2	DATETIME(3)
 		,	MaxTransDate_2	DATETIME(3)
         
-        ,	PRIMARY KEY PK_Temp_CustAssociation(CustID_1, MinTransDate_1, CustID_2, MinTransDate_2)
+        ,	INDEX IX_Temp_CustAssociation(CustID_1, MinTransDate_1, CustID_2, MinTransDate_2)
         
 	);
         
@@ -107,7 +107,7 @@ sp: BEGIN
 		 ,	CTSCustID_2 	    BIGINT UNSIGNED DEFAULT 0
 		 ,  CustID_2 	    	BIGINT UNSIGNED DEFAULT 0
 		 ,  AssociationType		SMALLINT
-		 ,	PRIMARY KEY IX_Temp_Association_CTSCustID1_CTSCustID2(CTSCustID_1,CTSCustID_2)
+		 ,	INDEX IX_Temp_Association_CTSCustID1_CTSCustID2(CTSCustID_1,CTSCustID_2)
 		 ,	INDEX IX_Temp_Association_CustID1_CustID2(CustID_1,CustID_2)
          ,	INDEX IX_Temp_Association_CustID2(CustID_2)
 	);
@@ -434,7 +434,7 @@ sp: BEGIN
     FROM 	Temp_TransGroup AS tmpTg
 		INNER JOIN Temp_StagingTrans02  AS tmpSt ON tmpSt.CustID = tmpTg.CustID AND tmpSt.TransDate BETWEEN tmpTg.MinTransDate AND tmpTg.MaxTransDate
 	GROUP BY tmpTg.GroupID
-    HAVING SUM(Stake) >= 500;	
+    HAVING SUM(Stake) >= 500 AND COUNT(DISTINCT tmpSt.CustID) > 1;	
     
 END$$
 DELIMITER ;
