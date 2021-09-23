@@ -84,7 +84,7 @@ sp: BEGIN
 		,	MinTransDate_2	DATETIME(3)
 		,	MaxTransDate_2	DATETIME(3)
         
-        ,	PRIMARY KEY PK_Temp_CustAssociation(CustID_1, MinTransDate_1, CustID_2)
+        ,	PRIMARY KEY PK_Temp_CustAssociation(CustID_1, MinTransDate_1, CustID_2, MinTransDate_2)
         
 	);
         
@@ -415,7 +415,7 @@ sp: BEGIN
     SELECT grp.CustID 
     FROM Temp_TransGroup AS grp
 	WHERE EXISTS (	SELECT 1 
-					FROM CTSCustomerClassification AS cla 
+					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
                     WHERE cla.CustID = grp.CustID
 						AND cla.SportGroupID = 0
                         AND cla.CategoryID in (73,53,153));
