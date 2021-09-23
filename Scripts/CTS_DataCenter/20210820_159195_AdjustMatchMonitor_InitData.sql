@@ -113,4 +113,9 @@ WHERE ParameterID = 20;
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
 VALUES(29,'MatchMonitor_LastScannedNonliveTransID','Match Monitor - Last Scanned Nonlive TransID','BIGINT UNSIGNED','0');
 
+#=================
+UPDATE CTS_DataCenter.SystemParameter 
+SET ParameterValue = 112942394982
+WHERE ParameterID IN (20,29);
 
+SELECT *  FROM CTS_DataCenter.SystemParameter WHERE ParameterID IN (20,29);
