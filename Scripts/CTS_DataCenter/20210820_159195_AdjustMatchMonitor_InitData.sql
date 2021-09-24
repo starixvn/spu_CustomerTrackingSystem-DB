@@ -12,6 +12,15 @@ Reviewer:
 */
 USE CTS_DataCenter;
 
+DELETE sys 
+FROM CTS_DataCenter.SystemParameter AS sys
+WHERE ParameterID IN (20,29);
+
+INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
+VALUES(20,'MatchMonitor_StagingInsert_LiveLastTransID','MatchMonitor_StagingInsert_LiveLastTransID','BIGINT UNSIGNED','0')
+	, (29,'MatchMonitor_StagingInsert_NonliveLastTransID','MatchMonitor_StagingInsert_NonliveLastTransID','BIGINT UNSIGNED','0')
+	, (42,'MatchMonitor_RuleProcess_LiveLastTransID','MatchMonitor_RuleProcess_LiveLastTransID','BIGINT UNSIGNED','0')
+	, (43,'MatchMonitor_RuleProcess_NonliveLastTransID','MatchMonitor_RuleProcess_NonliveLastTransID','BIGINT UNSIGNED','0');
 
 UPDATE CTS_DataCenter.SystemParameter 
 SET ParameterValue = 112942394982
@@ -22,7 +31,10 @@ TRUNCATE TABLE CTS_DataCenter.MatchMonitorStagingNonLive;
 TRUNCATE TABLE CTS_DataCenter.MatchMonitorDetails;
 TRUNCATE TABLE CTS_DataCenter.MatchMonitor;
 
-/*DROP TABLE CTS_DataCenter.MatchMonitorStaging;
+/*
+
+
+DROP TABLE CTS_DataCenter.MatchMonitorStaging;
 
 DROP TABLE IF EXISTS CTS_DataCenter.MatchMonitorStagingLive;
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorStagingLive(
