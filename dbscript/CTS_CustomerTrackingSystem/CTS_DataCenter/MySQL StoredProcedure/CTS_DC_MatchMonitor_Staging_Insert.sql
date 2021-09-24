@@ -28,6 +28,9 @@ BEGIN
 		Example:
 			
 	*/    
+    
+    DECLARE lv_LastTransID BIGINT UNSIGNED DEFAULT 0;
+    
     IF ip_LiveIndicator = 1 THEN    
 		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingLive(TransID, TransDate, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, CustID, Stake, InsertTime)
 		SELECT  js.TransID
@@ -65,13 +68,16 @@ BEGIN
 							)
 					) AS js;  
 		
-		SELECT	mms.MatchID
-			,	mms.TotalScore
-			,	mms.BettypeID
-		FROM		CTS_DataCenter.MatchMonitorStagingLive AS mms
-		GROUP BY	mms.MatchID, mms.TotalScore, mms.BettypeID
-		HAVING		COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= 500;
-        
+		#=====UPDATE SYSTEM PARAMETER===============================
+		SELECT 	MAX(TransID)
+		INTO 	lv_LastTransID
+		FROM	CTS_DataCenter.MatchMonitorStagingLive;  
+            
+         IF lv_LastTransID > 0 THEN	   
+			UPDATE 	CTS_DataCenter.SystemParameter
+			SET 	ParameterValue = lv_LastTransID
+			WHERE 	ParameterID = 20;
+		END IF;        
 	ELSE
     	INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingNonLive(TransID, TransDate, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, CustID, Stake, InsertTime)
 		SELECT  js.TransID
@@ -107,15 +113,18 @@ BEGIN
 								,	CustID			INT PATH "$.CustID"
 								,	Stake			DOUBLE PATH "$.Stake" 
 							)
-					) AS js;  
-		
+					) AS js;  		
 
-		SELECT	mms.MatchID
-			,	mms.TotalScore
-			,	mms.BettypeID
-		FROM		CTS_DataCenter.MatchMonitorStagingNonLive AS mms
-		GROUP BY	mms.MatchID, mms.TotalScore, mms.BettypeID
-		HAVING		COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= 500;
+		#=====UPDATE SYSTEM PARAMETER===============================
+		SELECT 	MAX(TransID)
+		INTO 	lv_LastTransID
+		FROM	CTS_DataCenter.MatchMonitorStagingNonLive;  
+            
+         IF lv_LastTransID > 0 THEN	   
+			UPDATE 	CTS_DataCenter.SystemParameter
+			SET 	ParameterValue = lv_LastTransID
+			WHERE 	ParameterID = 29;
+		END IF; 
         
 	END IF;
     
