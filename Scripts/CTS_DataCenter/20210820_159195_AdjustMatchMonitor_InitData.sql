@@ -26,33 +26,23 @@ UPDATE CTS_DataCenter.SystemParameter
 SET ParameterValue = 112942394982
 WHERE ParameterID IN (20,29);
 
-TRUNCATE TABLE CTS_DataCenter.MatchMonitorStagingLive;
-TRUNCATE TABLE CTS_DataCenter.MatchMonitorStagingNonLive;
-TRUNCATE TABLE CTS_DataCenter.MatchMonitorDetails;
-TRUNCATE TABLE CTS_DataCenter.MatchMonitor;
-
-/*
-
-
-DROP TABLE CTS_DataCenter.MatchMonitorStaging;
-
 DROP TABLE IF EXISTS CTS_DataCenter.MatchMonitorStagingLive;
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorStagingLive(
-		TransID			BIGINT UNSIGNED
+		TransID			BIGINT NOT NULL
 	, 	TransDate		DATETIME(3)
-    ,	MatchID			BIGINT UNSIGNED
-    ,   TotalScore		SMALLINT UNSIGNED
-    ,	BettypeID		INT UNSIGNED
+    ,	MatchID			INT
+    ,   TotalScore		INT
+    ,	BettypeID		INT
     , 	CustID			BIGINT UNSIGNED
     ,	Stake			DECIMAL(20,4)        
-    ,	LiveHomeScore	SMALLINT UNSIGNED
-    ,	LiveAwayScore	SMALLINT UNSIGNED
+    ,	LiveHomeScore	INT
+    ,	LiveAwayScore	INT
     , 	EventDate		DATE
     , 	KickOffTime		DATETIME
     ,	EventStatus		VARCHAR(50)
-    ,	HomeID			INT UNSIGNED
-	, 	AwayID			INT UNSIGNED
-    ,	LeagueID		INT UNSIGNED      
+    ,	HomeID			INT
+	, 	AwayID			INT
+    ,	LeagueID		INT      
     ,	GroupID			INT UNSIGNED DEFAULT 0
     ,	InsertTime		DATETIME(3)
     
@@ -63,43 +53,43 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorStagingLive(
 
 DROP TABLE IF EXISTS CTS_DataCenter.MatchMonitorStagingNonLive;
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorStagingNonLive(
-		TransID			BIGINT UNSIGNED
+		TransID			BIGINT NOT NULL
 	, 	TransDate		DATETIME(3)
-    ,	MatchID			BIGINT UNSIGNED
-    ,   TotalScore		SMALLINT UNSIGNED
-    ,	BettypeID		INT UNSIGNED
+    ,	MatchID			INT
+    ,   TotalScore		INT
+    ,	BettypeID		INT
     , 	CustID			BIGINT UNSIGNED
     ,	Stake			DECIMAL(20,4)        
-    ,	LiveHomeScore	SMALLINT UNSIGNED
-    ,	LiveAwayScore	SMALLINT UNSIGNED
+    ,	LiveHomeScore	INT
+    ,	LiveAwayScore	INT
     , 	EventDate		DATE
     , 	KickOffTime		DATETIME
     ,	EventStatus		VARCHAR(50)
-    ,	HomeID			INT UNSIGNED
-	, 	AwayID			INT UNSIGNED
-    ,	LeagueID		INT UNSIGNED      
+    ,	HomeID			INT
+	, 	AwayID			INT
+    ,	LeagueID		INT      
     ,	GroupID			INT UNSIGNED DEFAULT 0
     ,	InsertTime		DATETIME(3)
     
-	, 	PRIMARY KEY		PK_MatchMonitorStagingLive_TransID(TransID)
-	, 	INDEX			IX_MatchMonitorStagingLive_Group(MatchID, TotalScore, BettypeID, GroupID)
-    ,	INDEX			IX_MatchMonitorStagingLive_TransDate(TransDate)
+	, 	PRIMARY KEY		PK_MatchMonitorStagingNonLive_TransID(TransID)
+	, 	INDEX			IX_MatchMonitorStagingNonLive_Group(MatchID, TotalScore, BettypeID, GroupID)
+    ,	INDEX			IX_MatchMonitorStagingNonLive_TransDate(TransDate)
 ) ENGINE=INNODB;
 
 DROP TABLE IF EXISTS CTS_DataCenter.MatchMonitorDetails;
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorDetails(
 		ID				BIGINT UNSIGNED AUTO_INCREMENT	
-	,	MatchID			BIGINT UNSIGNED NOT NULL
+	,	MatchID			INT NOT NULL
     ,	LiveIndicator	BOOLEAN	NOT NULL 
-    ,	TotalScore		SMALLINT UNSIGNED NOT NULL 
-    , 	BettypeID		INT UNSIGNED NOT NULL    
-    ,	GroupID			BIGINT UNSIGNED NOT NULL     
+    ,	TotalScore		INT NOT NULL 
+    , 	BettypeID		INT NOT NULL    
+    ,	GroupID			INT UNSIGNED NOT NULL     
     , 	IsHedging		BOOLEAN NOT NULL 
     ,	ListCustID		LONGTEXT
     , 	ListTransID		LONGTEXT
-    , 	EventDate		DATE NOT NULL
-    ,	LiveHomeScore	SMALLINT UNSIGNED
-    ,	LiveAwayScore	SMALLINT UNSIGNED
+    , 	EventDate		DATE
+    ,	LiveHomeScore	INT
+    ,	LiveAwayScore	INT
 	, 	PRIMARY KEY		PK_MatchMonitorDetails_ID(ID)
 	,	UNIQUE KEY		UK_MatchMonitorDetails_EventDateBettypeMatchID(MatchID,LiveIndicator,TotalScore,BettypeID,GroupID)
 	, 	INDEX			IX_MatchMonitorDetails_GroupIDIsHedging(GroupID,IsHedging)
@@ -110,15 +100,15 @@ DROP TABLE IF EXISTS CTS_DataCenter.MatchMonitor;
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitor (
 		ID				BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY
 	, 	EventDate		DATE NOT NULL
-	, 	BettypeID		INT UNSIGNED NOT NULL
-    ,	MatchID			BIGINT UNSIGNED NOT NULL
+	, 	BettypeID		INT NOT NULL
+    ,	MatchID			INT NOT NULL
     ,	LiveIndicator	BOOLEAN NOT NULL
     , 	IsHedging		BOOLEAN  NOT NULL    
     , 	KickOffTime		DATETIME
     ,	EventStatus		VARCHAR(50)
-    ,	HomeID			INT UNSIGNED
-	, 	AwayID			INT UNSIGNED
-    ,	LeagueID		INT UNSIGNED    
+    ,	HomeID			INT
+	, 	AwayID			INT
+    ,	LeagueID		INT
     , 	IsVerified		BOOLEAN DEFAULT 0
 	, 	VerifiedDate	DATETIME
     ,	VerifiedBy		INT UNSIGNED
@@ -126,17 +116,3 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitor (
 	, 	INDEX			IX_MatchMonitor_IsVerified(IsVerified)
     ,	INDEX			IX_MatchMonitor_MatchID_BettypeID(MatchID,BettypeID)
 ) ENGINE=INNODB AUTO_INCREMENT=1;
-
-
-#####################CTS_DataCenter.SportGroup
-
-UPDATE CTS_DataCenter.SystemParameter
-SET ParameterName = 'MatchMonitor_LastScannedLiveTransID', ParameterDesc = 'Match Monitor - Last Scanned Live TransID'
-WHERE ParameterID = 20;
-
-INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
-VALUES(29,'MatchMonitor_LastScannedNonliveTransID','Match Monitor - Last Scanned Nonlive TransID','BIGINT UNSIGNED','0');
-
-#=================
-*/
-#SELECT *  FROM CTS_DataCenter.SystemParameter WHERE ParameterID IN (20,29);

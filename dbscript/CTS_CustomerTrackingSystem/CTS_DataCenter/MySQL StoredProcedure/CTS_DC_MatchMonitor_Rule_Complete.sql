@@ -4,6 +4,7 @@ DELIMITER $$
 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule_Complete`(
 		IN ip_LiveIndicator BOOLEAN
+	,	IN ip_MaxTransID 	BIGINT UNSIGNED
 	, 	IN ip_MatchID		INT
     , 	IN ip_BettypeID		INT
     , 	IN ip_TotalScore	TINYINT
@@ -22,14 +23,11 @@ BEGIN
             -	20210830@Casey.Huynh: Update Rule seperate Live and NonLive and move to Slave [Redmine ID: 159195]
 		
 		Param's Explanation (filtered by):
-		CALLCTS_DC_MatchMonitor_Rule_Complete();
+		CALL CTS_DC_MatchMonitor_Rule_Complete();
 
 		Example:
 			
-	*/
- #   DECLARE	lv_Last3mMinTime 	DATETIME(3);
- #   DECLARE	lv_Last3mMaxTime 			DATETIME(3);  
-#	DECLARE	lv_LastTransID 				BIGINT;   
+	*/ 
     DECLARE lv_GroupID 					INT;
 	DECLARE lv_IsHedging 				BOOLEAN;
     DECLARE lv_TransIDList 				LONGTEXT;
@@ -88,23 +86,24 @@ BEGIN
 								,	CustIDList		LONGTEXT PATH "$.CustIDList" 
 								,	OldGroupIDList	TEXT PATH "$.OldGroupIDList" 
 							)
-					) AS js;  
-    
+					) AS js;     
    
     #======Update MatchMonitorDetails====================================  
     
     IF (ip_LiveIndicator = 1) THEN
-		SELECT EventDate, LiveHomeScore, LiveAwayScore, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID
+		SELECT mms.EventDate, mms.LiveHomeScore, mms.LiveAwayScore, mms.EventDate, mms.KickOffTime, mms.EventStatus, mms.HomeID, mms.AwayID, mms.LeagueID
 		INTO lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID
-		FROM CTS_DataCenter.MatchMonitorStagingLive WHERE  MatchID = ip_MatchID AND BettypeID = ip_BettypeID AND TotalScore = ip_TotalScore
+		FROM CTS_DataCenter.MatchMonitorStagingLive AS mms
+		WHERE mms.TransID <= ip_MaxTransID AND mms.MatchID = ip_MatchID AND mms.BettypeID = ip_BettypeID AND mms.TotalScore = mms.ip_TotalScore
 		LIMIT 1;
 	END IF;
     
-     IF (ip_LiveIndicator = 0) THEN
-		SELECT EventDate, LiveHomeScore, LiveAwayScore, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID
+	IF (ip_LiveIndicator = 0) THEN
+		SELECT mms.EventDate, mms.LiveHomeScore, mms.LiveAwayScore, mms.EventDate, mms.KickOffTime, mms.EventStatus, mms.HomeID, mms.AwayID, mms.LeagueID
 		INTO lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID
-		FROM CTS_DataCenter.MatchMonitorStagingNonLive WHERE  MatchID = ip_MatchID AND BettypeID = ip_BettypeID AND TotalScore = ip_TotalScore
-		LIMIT 1;
+		FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms
+		WHERE mms.TransID <= ip_MaxTransID AND mms.MatchID = ip_MatchID AND mms.BettypeID = ip_BettypeID AND mms.TotalScore = mms.ip_TotalScore
+		LIMIT 1;	 
 	END IF;
 	
     lp: LOOP 
@@ -145,8 +144,7 @@ BEGIN
 		END IF;        
         
         
-        IF (lv_NoOfOldGroupID > 1) THEN # MERGE GROUP
-			
+        IF (lv_NoOfOldGroupID > 1) THEN # MERGE GROUP			
         
             DELETE mmd
             FROM CTS_DataCenter.MatchMonitorDetails AS mmd

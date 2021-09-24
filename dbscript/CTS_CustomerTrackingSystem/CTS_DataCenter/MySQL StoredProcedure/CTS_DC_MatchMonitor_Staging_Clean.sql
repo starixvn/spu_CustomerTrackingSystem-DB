@@ -3,7 +3,8 @@ DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Staging_Clean`;
 DELIMITER $$
 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Staging_Clean`(
-	IN ip_LiveIndicator BOOLEAN
+		IN ip_LiveIndicator BOOLEAN
+	,	IN ip_MaxTransID BIGINT UNSIGNED
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -22,8 +23,8 @@ BEGIN
 			
 	*/
 	DECLARE	lv_Last3mMinTime 	DATETIME(3);
-    DECLARE	lv_Last3mMaxTime 			DATETIME(3);  
-	DECLARE	lv_LastTransID 				BIGINT;   
+    DECLARE	lv_Last3mMaxTime 	DATETIME(3);  
+	DECLARE	lv_LastTransID 		BIGINT;   
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Last3mTransGroup;
     CREATE TEMPORARY TABLE Temp_Last3mTransGroup
@@ -38,9 +39,10 @@ BEGIN
 
     #======Clean Staging=================================================
     IF (ip_LiveIndicator = 1) THEN		
-		SELECT 	MAX(TransDate) , MAX(TransID)
+		SELECT 	MAX(mms.TransDate) , MAX(mms.TransID)
 		INTO 	lv_Last3mMaxTime, lv_LastTransID
-		FROM	CTS_DataCenter.MatchMonitorStagingLive;    
+		FROM	CTS_DataCenter.MatchMonitorStagingLive AS mms
+        WHERE	mms.TransID <= ip_MaxTransID;    
 		
 		SELECT  MIN(TransDate) 
 		INTO 	lv_Last3mMinTime
@@ -60,9 +62,9 @@ BEGIN
         
         /* Update Parameter*/
         IF lv_LastTransID > 0 THEN			
-			UPDATE 	CTS_DataCenter.SystemParameter
-			SET 	ParameterValue = lv_LastTransID
-			WHERE 	ParameterID = 20;
+			UPDATE 	CTS_DataCenter.SystemParameter AS sys
+			SET 	sys.ParameterValue = ip_MaxTransID
+			WHERE 	sys.ParameterID = 42;
 		END IF;
 	END IF;
     
@@ -89,9 +91,9 @@ BEGIN
         
         /* Update Parameter*/
         IF lv_LastTransID > 0 THEN	
-			UPDATE 	CTS_DataCenter.SystemParameter
-			SET 	ParameterValue = lv_LastTransID
-			WHERE 	ParameterID = 29;
+			UPDATE 	CTS_DataCenter.SystemParameter AS sys
+			SET 	sys.ParameterValue = ip_MaxTransID
+			WHERE 	sys.ParameterID = 43;
 		END IF;
         
 	END IF;

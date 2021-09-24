@@ -53,7 +53,7 @@ BEGIN
 						 "$[*]" COLUMNS(
 									TransID			BIGINT UNSIGNED PATH "$.TransID" 
 								,	TransDate		DATETIME(3) PATH "$.TransDate" 
-								,	MatchID			BIGINT	UNSIGNED PATH "$.MatchID"
+								,	MatchID			INT PATH "$.MatchID"
 								,	HomeID			INT	PATH "$.HomeID" 
 								,	AwayID			INT	PATH "$.AwayID" 
 								,	EventStatus		VARCHAR(50)	PATH "$.EventStatus" 
@@ -69,14 +69,14 @@ BEGIN
 					) AS js;  
 		
 		#=====UPDATE SYSTEM PARAMETER===============================
-		SELECT 	MAX(TransID)
-		INTO 	lv_LastTransID
-		FROM	CTS_DataCenter.MatchMonitorStagingLive;  
+		SELECT MAX(mms.TransID)
+		INTO lv_LastTransID
+		FROM CTS_DataCenter.MatchMonitorStagingLive AS mms;  
             
          IF lv_LastTransID > 0 THEN	   
-			UPDATE 	CTS_DataCenter.SystemParameter
-			SET 	ParameterValue = lv_LastTransID
-			WHERE 	ParameterID = 20;
+			UPDATE CTS_DataCenter.SystemParameter AS sys
+			SET sys.ParameterValue = lv_LastTransID
+			WHERE sys.ParameterID = 20;
 		END IF;        
 	ELSE
     	INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingNonLive(TransID, TransDate, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, CustID, Stake, InsertTime)
@@ -100,7 +100,7 @@ BEGIN
 						 "$[*]" COLUMNS(
 									TransID			BIGINT UNSIGNED PATH "$.TransID" 
 								,	TransDate		DATETIME(3) PATH "$.TransDate" 
-								,	MatchID			BIGINT	UNSIGNED PATH "$.MatchID"
+								,	MatchID			INT PATH "$.MatchID"
 								,	HomeID			INT	PATH "$.HomeID" 
 								,	AwayID			INT	PATH "$.AwayID" 
 								,	EventStatus		VARCHAR(50)	PATH "$.EventStatus" 
@@ -116,14 +116,14 @@ BEGIN
 					) AS js;  		
 
 		#=====UPDATE SYSTEM PARAMETER===============================
-		SELECT 	MAX(TransID)
+		SELECT 	MAX(mms.TransID)
 		INTO 	lv_LastTransID
-		FROM	CTS_DataCenter.MatchMonitorStagingNonLive;  
+		FROM	CTS_DataCenter.MatchMonitorStagingNonLive AS mms;  
             
          IF lv_LastTransID > 0 THEN	   
-			UPDATE 	CTS_DataCenter.SystemParameter
-			SET 	ParameterValue = lv_LastTransID
-			WHERE 	ParameterID = 29;
+			UPDATE 	CTS_DataCenter.SystemParameter AS sys
+			SET 	sys.ParameterValue = lv_LastTransID
+			WHERE 	sys.ParameterID = 29;
 		END IF; 
         
 	END IF;

@@ -1,12 +1,13 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule`;
+DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule_Process`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule_Process`(
 		IN ip_LiveIndicator	BOOLEAN
-	,	IN ip_MatchID INT
-    ,	IN ip_TotalScore INT
-    ,	IN ip_BettypeID INT    
+	,	IN ip_MatchID INT UNSIGNED
+    ,	IN ip_TotalScore INT UNSIGNED
+    ,	IN ip_BettypeID INT UNSIGNED
+    ,	IN ip_MaxTransID BIGINT UNSIGNED
 )
 	SQL SECURITY INVOKER
 sp: BEGIN
@@ -170,7 +171,7 @@ sp: BEGIN
             ,	mms.GroupID
             ,	mms.Stake
 		FROM CTS_DataCenter.MatchMonitorStagingLive AS mms
-        WHERE	mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID;
+        WHERE mms.TransID <= ip_MaxTransID AND mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID;
         
 	ELSE 
 		INSERT INTO Temp_StagingTrans01(TransID, TransDate, CustID, OldGroupID, Stake)
@@ -180,7 +181,7 @@ sp: BEGIN
             ,	mms.GroupID
             ,	mms.Stake
 		FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms
-        WHERE	mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID;
+        WHERE  mms.TransID <= ip_MaxTransID AND	mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID;
         
     END IF;
     
@@ -233,8 +234,7 @@ sp: BEGIN
     INSERT IGNORE INTO Temp_Cust(CTSCustID, CustID)
 	SELECT DISTINCT IFNULL(cus.CTSCustID,0), tmp.CustID
 	FROM Temp_CustTimeGroup AS tmp
-		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON tmp.CustID = cus.CustID AND cus.CustSubID = 0;
-    
+		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON tmp.CustID = cus.CustID AND cus.CustSubID = 0;    
     
 	#------------Get association Device ------------------#
 	INSERT IGNORE INTO Temp_CustDevice(CTSCustID, DCSDeviceID)
@@ -425,7 +425,6 @@ sp: BEGIN
     WHERE EXISTS (SELECT 1 FROM Temp_CustHedging AS hed WHERE hed.CustID = grp.CustID);
        
     #*************************************************************************************************
-
     SELECT  tmpTg.GroupID
         ,	MAX(IsHedging) AS IsHedging
         ,	GROUP_CONCAT(tmpSt.TransID) AS TransIDList
