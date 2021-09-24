@@ -12,7 +12,17 @@ Reviewer:
 */
 USE CTS_DataCenter;
 
-DROP TABLE CTS_DataCenter.MatchMonitorStaging;
+
+UPDATE CTS_DataCenter.SystemParameter 
+SET ParameterValue = 112942394982
+WHERE ParameterID IN (20,29);
+
+TRUNCATE TABLE CTS_DataCenter.MatchMonitorStagingLive;
+TRUNCATE TABLE CTS_DataCenter.MatchMonitorStagingNonLive;
+TRUNCATE TABLE CTS_DataCenter.MatchMonitorDetails;
+TRUNCATE TABLE CTS_DataCenter.MatchMonitor;
+
+/*DROP TABLE CTS_DataCenter.MatchMonitorStaging;
 
 DROP TABLE IF EXISTS CTS_DataCenter.MatchMonitorStagingLive;
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorStagingLive(
@@ -105,7 +115,9 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitor (
     ,	INDEX			IX_MatchMonitor_MatchID_BettypeID(MatchID,BettypeID)
 ) ENGINE=INNODB AUTO_INCREMENT=1;
 
+
 #####################CTS_DataCenter.SportGroup
+
 UPDATE CTS_DataCenter.SystemParameter
 SET ParameterName = 'MatchMonitor_LastScannedLiveTransID', ParameterDesc = 'Match Monitor - Last Scanned Live TransID'
 WHERE ParameterID = 20;
@@ -114,8 +126,5 @@ INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDe
 VALUES(29,'MatchMonitor_LastScannedNonliveTransID','Match Monitor - Last Scanned Nonlive TransID','BIGINT UNSIGNED','0');
 
 #=================
-UPDATE CTS_DataCenter.SystemParameter 
-SET ParameterValue = 112942394982
-WHERE ParameterID IN (20,29);
-
-SELECT *  FROM CTS_DataCenter.SystemParameter WHERE ParameterID IN (20,29);
+*/
+#SELECT *  FROM CTS_DataCenter.SystemParameter WHERE ParameterID IN (20,29);

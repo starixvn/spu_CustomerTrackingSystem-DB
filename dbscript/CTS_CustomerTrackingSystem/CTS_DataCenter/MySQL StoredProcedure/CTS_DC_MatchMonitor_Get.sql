@@ -58,6 +58,6 @@ BEGIN
         LEFT JOIN CTS_Admin.CTSUser AS u ON s.VerifiedBy = u.UserID
 	WHERE  s.EventDate BETWEEN ip_FromDate AND ip_ToDate
 		AND (ip_IsVerified IS NULL OR s.IsVerified = ip_IsVerified);
-SELECT NOW();
+
 END$$
 DELIMITER ;
