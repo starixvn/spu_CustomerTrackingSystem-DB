@@ -33,6 +33,8 @@ BEGIN
 				- 20210722@Long.Luu: Refactor. Update logic [Redmine ID: #157203]
 				- 20210804@Irena.Vo: Fix issue no view History log [Redmine ID: #159706]
 				- 20210729@Long.Luu: Add up TW's new categories. Fix get duplicated Fail probation log [Redmine ID: 155956]
+				- 20210920@Aries.Nguyen: Split history log  [Redmine ID: #161890]
+
 		Param's Explanation (filtered by):
         Example:
 				- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount('[{"CustId": "43600693","CategoryId":"1000","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","TaggingID":10,"TaggingType":1}]',@or);
@@ -338,8 +340,39 @@ BEGIN
 		AND (temp.ActionType = CONST_ACTIONTYPE_INSERT 
 			OR (temp.ActionType = CONST_ACTIONTYPE_UPDATE AND temp.OldCateGroup <> CONST_CATEGORY_PROBATION));
 
-    /* 15: WRITE LOG */
+    /* 15: WRITE HISTORY LOG (VIEW ON WEB) */
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
+	(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, TWBetCount, TWGroupBettingRate, TWTicketRejectRate, TWDesktopUsageRate
+    , ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsDataChanged, TaggingType, TargetDangerLevel1)
+	SELECT DISTINCT	temp.CustID
+				, 	temp.CTSCustID
+				, 	temp.NewCateID
+				, 	CONST_GROUP_NORMAL
+				, 	lv_CurrentDateTime
+				, 	lv_CreatedBy
+				, 	temp.TurnoverRM
+				, 	temp.WinlossRM
+				, 	temp.BetCount
+				, 	temp.ActiveDays
+                ,	temp.TWBetCount
+                , 	temp.TWGroupBettingRate
+                , 	temp.TWTicketRejectRate
+                , 	temp.TWDesktopUsageRate
+				, 	temp.ActionType
+				, 	1
+				, 	DATE(lv_CurrentDateTime)
+				,	temp.TargetCC 
+				,   temp.SourceTypeID
+				, 	temp.OldCateID 
+				, 	temp.DWCateID
+				,   temp.IsDataChanged
+				,	temp.TaggingType
+				,	temp.TargetDangerLevel1
+	FROM 	Temp_NewClassification AS temp
+	WHERE temp.IsDataChanged  = 1;
+	
+    /* 16: WRITE HISTORY LOG (TRACE DATA) */
+	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log
 	(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, TWBetCount, TWGroupBettingRate, TWTicketRejectRate, TWDesktopUsageRate
     , ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsDataChanged, TaggingType, TargetDangerLevel1)
 	SELECT DISTINCT	temp.CustID
@@ -368,7 +401,7 @@ BEGIN
 				,	temp.TargetDangerLevel1
 	FROM 	Temp_NewClassification AS temp;
     
-	/* 16: RETURN UPDATED CUSTOMERS TO SERVICE FOR FUTHER STEPS */
+	/* 17: RETURN UPDATED CUSTOMERS TO SERVICE FOR FUTHER STEPS */
 	SELECT DISTINCT temp.CustId FROM Temp_NewClassification AS temp WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);
 END$$
 DELIMITER ;
