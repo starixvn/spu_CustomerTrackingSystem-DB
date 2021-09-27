@@ -121,6 +121,22 @@ BEGIN
 			,   1
 		FROM Temp_CustomerEvidence AS t             
 			INNER JOIN CTS_DataCenter.EvidenceToCategory AS ec ON t.EvidenceID = ec.EvidenceID;
+
+		INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
+		SELECT DISTINCT t.CustID
+			, 	t.CTSCustID
+			, 	ec.CategoryID
+			, 	0
+			, 	lv_CurrentDateTime
+			, 	lv_CreatedBy
+			, 	2
+			, 	1
+			, 	DATE(lv_CurrentDateTime)
+			, 	-1
+			, 	9
+			,   1
+		FROM Temp_CustomerEvidence AS t             
+			INNER JOIN CTS_DataCenter.EvidenceToCategory AS ec ON t.EvidenceID = ec.EvidenceID;
                 
         SELECT GROUP_CONCAT(DISTINCT CustID SEPARATOR ', ')
         INTO op_Result
