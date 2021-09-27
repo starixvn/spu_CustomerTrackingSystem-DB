@@ -26,6 +26,7 @@ sp: BEGIN
            - 20210226@Irena.Vo: Update CategoryID from VVIP [RedmineID: #150454]
 		   - 20210419@Irena.Vo: Get Category more [RedmineID: #153617]
 		   - 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
+		   - 20210920@Aries.Nguyen: Split history log  [Redmine ID: #161890]
 
 		Param's Explanation (filtered by):
 			- Maximum Customer Class number for input param = 127 
@@ -159,8 +160,20 @@ sp: BEGIN
 	VALUES(19, lv_SPName, CONCAT('Insert SpecialCustomerClass: ip_CTSCustID = ', lv_CTSCustID, ';ip_CustomerClass = ', ip_CustomerClass), lv_CurrentDateTime, ip_UserID);
 
     /*	INSERT LOG	*/
-	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
-    (CustID, CTSCustID, LastModifiedDate, LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
+	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History (CustID, CTSCustID, LastModifiedDate, LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
+    SELECT    sp.CustID
+			, sp.CTSCustID
+            , lv_CurrentDateTime
+            , ip_UserID
+			, 0  -- insert
+            , 0  -- manual
+            , DATE(lv_CurrentDateTime)
+            , sp.CustomerClass
+            , 10 -- item name = Add Customer Class
+            , 1 -- View History
+	FROM Temp_NewCustomerClass AS sp;
+
+	INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, LastModifiedDate, LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
     SELECT    sp.CustID
 			, sp.CTSCustID
             , lv_CurrentDateTime

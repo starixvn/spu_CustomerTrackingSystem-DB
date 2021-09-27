@@ -20,6 +20,7 @@ BEGIN
 			- 20200908@Long.Luu [Redmine ID: #140996]: Created 
 			- 20201229@Irena.Vo: Insert History Log.  [Redmine ID: #145951]
             - 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
+            - 20210920@Aries.Nguyen: Split history log  [Redmine ID: #161890]
         
 		Param's Explanation (filtered by):
 	*/
@@ -58,6 +59,19 @@ BEGIN
     
     -- Insert Log
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, LastModifiedDate,LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
+	SELECT  DISTINCT  
+            lv_CustID
+	    ,   ip_CTSCustID
+	    ,   lv_CurrentDateTime
+	    ,   ip_UserID
+	    ,   2 -- remove
+	    ,   0 -- manual
+	    ,   DATE(lv_CurrentDateTime)
+	    ,   -1
+	    ,   12 -- item name = Remove Customer Class
+	    ,   1; -- View History
+
+    INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, LastModifiedDate,LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
 	SELECT  DISTINCT  
             lv_CustID
 	    ,   ip_CTSCustID
