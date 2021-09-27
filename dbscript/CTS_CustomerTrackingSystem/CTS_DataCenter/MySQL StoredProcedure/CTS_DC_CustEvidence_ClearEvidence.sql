@@ -22,6 +22,7 @@ BEGIN
 			- 20210525@Irena.Vo: Change col name PinCustomerCategory: CustID -> CTSCustID [Redmine ID: 152965]
 			- 20210622@Aries.Nguyen: Update coding convention and improve locking  [Redmine ID: #157203]
 			- 20210823@Aries.Nguyen: Enhannce  Affected Evidence flow [Redmine ID: #160470]
+			- 20210920@Aries.Nguyen: Split history log  [Redmine ID: #161890]
 
 		Param's Explanation (filtered by):   
 			- ActionID: 1 insert, 2 override, 3 clear
