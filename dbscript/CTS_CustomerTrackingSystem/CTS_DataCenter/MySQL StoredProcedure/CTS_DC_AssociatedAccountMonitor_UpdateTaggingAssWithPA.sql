@@ -21,16 +21,17 @@ sp: BEGIN
             - 20210226@Jonas.Huynh: Created  [RedmineID: #150454]
             - 20210525@Irena.Vo: Change col name TaggingExclusion: CustID -> CTSCustID [RedmineID: #152965]
 			- 20210729@Irena.Vo: Refactor SP [RedmineID: #157203]
+		    - 20210928@Irena.Vo: Split history log  [Redmine ID: #161890]
 		Param's Explanation:
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_AssociatedAccountMonitor_UpdateTaggingAssWithPA(1, 1, 1, 1, TRUE, @op_ErrorMessage);
 	*/ 
-    DECLARE lv_CurrentDateTime 		DATETIME DEFAULT CURRENT_TIME();
-    DECLARE lv_SPName 				VARCHAR(200) DEFAULT 'CTS_DC_AssociatedAccountMonitor_UpdateTaggingAssWithPA'; 
-    DECLARE lv_CustID 				BIGINT;
+	DECLARE CONST_SOURCETYPE_EXCLUDEASSWITHPA	INT DEFAULT 20;
+    DECLARE CONST_SOURCETYPE_INCLUDEASSWITHPA	INT DEFAULT 21;
     
-    DECLARE CONST_CHECKNORMAL		SMALLINT DEFAULT 20;
-    DECLARE CONST_UNCHECKNORMAL		SMALLINT DEFAULT 21;
+    DECLARE lv_CurrentDateTime 					DATETIME DEFAULT CURRENT_TIME();
+    DECLARE lv_SPName 							VARCHAR(200) DEFAULT 'CTS_DC_AssociatedAccountMonitor_UpdateTaggingAssWithPA'; 
+    DECLARE lv_CustID 							BIGINT;
     
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
@@ -49,11 +50,22 @@ sp: BEGIN
 		
         INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
 		(CustID, CTSCustID, LastModifiedDate, LastModifiedBy, SourceTypeID, InsertDate, IsDataChanged, TaggingType)
-		SELECT DISTINCT lv_CustID
+		SELECT  lv_CustID
 			,	ip_CTSCustID
 			, 	lv_CurrentDateTime
 			, 	ip_CreatedBy
-			, 	CONST_CHECKNORMAL
+			, 	CONST_SOURCETYPE_EXCLUDEASSWITHPA
+			, 	DATE(lv_CurrentDateTime)
+            ,	0
+            ,	0;
+		
+		INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log
+		(CustID, CTSCustID, LastModifiedDate, LastModifiedBy, SourceTypeID, InsertDate, IsDataChanged, TaggingType)
+		SELECT  lv_CustID
+			,	ip_CTSCustID
+			, 	lv_CurrentDateTime
+			, 	ip_CreatedBy
+			, 	CONST_SOURCETYPE_EXCLUDEASSWITHPA
 			, 	DATE(lv_CurrentDateTime)
             ,	0
             ,	0;
@@ -70,11 +82,21 @@ sp: BEGIN
 		
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
 		(CustID, CTSCustID, LastModifiedDate, LastModifiedBy, SourceTypeID, InsertDate, IsDataChanged)
-		SELECT DISTINCT lv_CustID
+		SELECT  lv_CustID
 			,	ip_CTSCustID
 			, 	lv_CurrentDateTime
 			, 	ip_CreatedBy
-			, 	CONST_UNCHECKNORMAL
+			, 	CONST_SOURCETYPE_INCLUDEASSWITHPA
+			, 	DATE(lv_CurrentDateTime)
+            ,	0;
+        
+        INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log
+		(CustID, CTSCustID, LastModifiedDate, LastModifiedBy, SourceTypeID, InsertDate, IsDataChanged)
+		SELECT  lv_CustID
+			,	ip_CTSCustID
+			, 	lv_CurrentDateTime
+			, 	ip_CreatedBy
+			, 	CONST_SOURCETYPE_INCLUDEASSWITHPA
 			, 	DATE(lv_CurrentDateTime)
             ,	0;
         
