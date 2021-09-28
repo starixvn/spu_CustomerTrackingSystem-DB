@@ -24,6 +24,7 @@ AS
 		- 20210526@Long.Luu: Created [Redmine ID: #152883]
 		- 20210728@Long.Luu: Exclude SABA's leaguegroup [Redmine ID: #159187]		
 		- 20210820@Long.Luu: Separate Live/Nonlive ticket selection [Redmine ID: #159195]
+		- 20210928@Long.Luu: Remove useless filter [Redmine ID: #159195]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize)
@@ -198,14 +199,7 @@ BEGIN
 				FROM bodb_Archive.dbo.bettrans_bk AS b WITH(NOLOCK)
 					INNER JOIN #tmpTransIds AS t WITH(NOLOCK) ON t.TransId = b.transid
 					INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.matchid = m.matchid
-					INNER JOIN dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
-				WHERE	b.bettype IN (1,3,7,8)
-					AND b.Currency NOT IN (20,27,28)
-					AND b.BetFrom NOT IN ('p','m','w','0','3','6')
-					AND b.recommend NOT IN (52466,5707545) -- 8RM, BARM
-					AND m.sporttype = 1
-					AND l.LeagueGroupID NOT IN (42,74,108,113) -- SABA leagues
-					;
+				;
 			END;
 
 			IF	@IsGetDataFrom14 = 1
@@ -234,15 +228,7 @@ BEGIN
 				FROM dbo.bettrans14 AS b WITH(NOLOCK)
 					INNER JOIN #tmpTransIds AS t WITH(NOLOCK) ON t.TransId = b.transid
 					INNER JOIN dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
-					INNER JOIN dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
-				WHERE	b.bettype IN (1,3,7,8)
-					AND b.Currency NOT IN (20,27,28)
-					AND b.BetFrom NOT IN ('p','m','w','0','3','6')
-					AND b.recommend NOT IN (52466,5707545) -- 8RM, BARM
-					AND b.Username NOT LIKE '%Cashout%'
-					AND m.sporttype = 1
-					AND l.LeagueGroupID NOT IN (42,74,108,113) -- SABA leagues
-					;
+				;
 			END;
 
 			IF	@IsGetDataFromOrigin = 1
@@ -271,15 +257,7 @@ BEGIN
 				FROM dbo.bettrans AS b WITH(NOLOCK)
 					INNER JOIN #tmpTransIds AS t WITH(NOLOCK) ON t.TransId = b.transid
 					INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
-					INNER JOIN dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
-				WHERE	b.bettype IN (1,3,7,8)
-					AND b.Currency NOT IN (20,27,28)
-					AND b.BetFrom NOT IN ('p','m','w','0','3','6')
-					AND b.recommend NOT IN (52466,5707545) -- 8RM, BARM
-					AND b.Username NOT LIKE '%Cashout%'
-					AND m.sporttype = 1
-					AND l.LeagueGroupID NOT IN (42,74,108,113) -- SABA leagues
-					;
+				;
 			END;
 		END;	
 
