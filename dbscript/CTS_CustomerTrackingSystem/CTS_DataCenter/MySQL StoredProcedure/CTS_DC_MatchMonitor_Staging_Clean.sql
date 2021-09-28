@@ -36,7 +36,7 @@ BEGIN
         
         ,	PRIMARY KEY (MatchID,TotalScore,BettypeID,GroupID)
     );
-
+	
     #======Clean Staging=================================================
     IF (ip_LiveIndicator = 1) THEN		
 		SELECT 	MAX(mms.TransDate) , MAX(mms.TransID)
