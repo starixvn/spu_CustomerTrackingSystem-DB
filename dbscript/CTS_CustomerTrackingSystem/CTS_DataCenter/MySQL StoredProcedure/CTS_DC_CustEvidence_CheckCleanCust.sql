@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CustEvidence_CheckCleanCustFlagged`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustEvidence_CheckCleanCust`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_CheckCleanCustFlagged`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_CheckCleanCust`(
     IN ip_CTSCustIDList LONGTEXT
 )
     SQL SECURITY INVOKER
