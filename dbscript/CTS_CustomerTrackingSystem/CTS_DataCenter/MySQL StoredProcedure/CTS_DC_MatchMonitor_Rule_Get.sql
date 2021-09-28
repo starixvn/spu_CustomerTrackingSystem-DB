@@ -3,8 +3,9 @@ DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule_Get`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule_Get`(
-		IN	ip_LiveIndicator BOOLEAN
-	,	OUT	op_MaxTransID BIGINT UNSIGNED
+		IN	ip_LiveIndicator	BOOLEAN
+	,	IN  ip_NoOfRow 			INT
+	,	OUT	op_MaxTransID		BIGINT UNSIGNED
 )
 	SQL SECURITY INVOKER
 sp: BEGIN
@@ -32,10 +33,9 @@ sp: BEGIN
         FROM CTS_DataCenter.SystemParameter AS sys
         WHERE ParameterID = 42;
         
-        SELECT MAX(mms.TransID)
+        SELECT MAX(tmp.TransID)
         INTO lv_MaxTransID
-        FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms
-        WHERE mms.TransID > lv_LastTransID;
+        FROM (SELECT mms.TransID FROM CTS_DataCenter.MatchMonitorStagingLive AS mms WHERE mms.TransID > lv_LastTransID ORDER BY mms.TransID LIMIT ip_NoOfRow) AS tmp;
         
         SET op_MaxTransID = IFNULL(lv_MaxTransID,0) ;
         
@@ -54,12 +54,11 @@ sp: BEGIN
         FROM CTS_DataCenter.SystemParameter AS sys
         WHERE ParameterID = 43;
         
-        SELECT MAX(mms.TransID)
+        SELECT MAX(tmp.TransID)
         INTO lv_MaxTransID
-        FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms
-        WHERE mms.TransID > lv_LastTransID;
+        FROM (SELECT mms.TransID FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms WHERE mms.TransID > lv_LastTransID ORDER BY mms.TransID  LIMIT ip_NoOfRow) AS tmp;
 		
-		SET op_MaxTransID = IFNULL(lv_MaxTransID,0);        
+		SET op_MaxTransID = IFNULL(lv_MaxTransID, 0);        
         
         IF(lv_LastTransID < lv_MaxTransID) THEN            
 			SELECT	mms.MatchID
