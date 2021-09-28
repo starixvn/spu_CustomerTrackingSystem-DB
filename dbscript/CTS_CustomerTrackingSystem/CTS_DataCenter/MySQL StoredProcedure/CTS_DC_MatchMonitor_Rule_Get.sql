@@ -39,12 +39,12 @@ sp: BEGIN
         
         SET op_MaxTransID = IFNULL(lv_MaxTransID,0) ;
         
-        IF(lv_LastTransID < lv_MaxTransID) THEN            
+        IF(lv_LastTransID < lv_MaxTransID) THEN    
 			SELECT	mms.MatchID
 				,	mms.TotalScore
 				,	mms.BettypeID
-			FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms
-            WHERE	TransID <= lv_MaxTransID
+			FROM CTS_DataCenter.MatchMonitorStagingLive AS mms
+            WHERE mms.TransID <= lv_MaxTransID
 			GROUP BY mms.MatchID, mms.TotalScore, mms.BettypeID
 			HAVING COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= 500;            
 		END IF;
@@ -65,7 +65,7 @@ sp: BEGIN
 				,	mms.TotalScore
 				,	mms.BettypeID
 			FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms
-            WHERE	TransID <= lv_MaxTransID
+            WHERE mms.TransID <= lv_MaxTransID
 			GROUP BY mms.MatchID, mms.TotalScore, mms.BettypeID
 			HAVING COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= 500;            
 		END IF;
