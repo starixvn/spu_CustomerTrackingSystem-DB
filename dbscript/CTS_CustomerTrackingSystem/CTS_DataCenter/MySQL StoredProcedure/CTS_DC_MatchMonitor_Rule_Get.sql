@@ -31,7 +31,7 @@ sp: BEGIN
 		SELECT sys.ParameterValue
         INTO lv_LastTransID
         FROM CTS_DataCenter.SystemParameter AS sys
-        WHERE ParameterID = 42;
+        WHERE ParameterID = 47;
         
         SELECT MAX(tmp.TransID)
         INTO lv_MaxTransID
@@ -52,7 +52,7 @@ sp: BEGIN
 		SELECT sys.ParameterValue
         INTO lv_LastTransID
         FROM CTS_DataCenter.SystemParameter AS sys
-        WHERE ParameterID = 43;
+        WHERE ParameterID = 48;
         
         SELECT MAX(tmp.TransID)
         INTO lv_MaxTransID

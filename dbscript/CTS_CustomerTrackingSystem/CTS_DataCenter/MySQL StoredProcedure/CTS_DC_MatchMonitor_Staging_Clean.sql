@@ -64,7 +64,7 @@ BEGIN
         IF lv_LastTransID > 0 THEN			
 			UPDATE 	CTS_DataCenter.SystemParameter AS sys
 			SET 	sys.ParameterValue = ip_MaxTransID
-			WHERE 	sys.ParameterID = 42;
+			WHERE 	sys.ParameterID = 47;
 		END IF;
 	END IF;
     
@@ -93,7 +93,7 @@ BEGIN
         IF lv_LastTransID > 0 THEN	
 			UPDATE 	CTS_DataCenter.SystemParameter AS sys
 			SET 	sys.ParameterValue = ip_MaxTransID
-			WHERE 	sys.ParameterID = 43;
+			WHERE 	sys.ParameterID = 48;
 		END IF;
         
 	END IF;
