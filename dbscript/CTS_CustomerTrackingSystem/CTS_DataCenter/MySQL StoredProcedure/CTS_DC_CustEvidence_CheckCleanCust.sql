@@ -45,7 +45,9 @@ BEGIN
 										    AND re.EvidenceID = ev.EvidenceID));
     
 
-    SELECT DISTINCT	c.CustID
+    SELECT  DISTINCT	
+            c.CustID
+        ,   a.CTSCustID
     FROM Temp_CleanCustID AS a
 		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON a.CTSCustID = c.CTSCustID;
  
