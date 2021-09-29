@@ -31,10 +31,12 @@ sp : BEGIN
 	CREATE TEMPORARY TABLE Temp_CustAffectedEvidence(
 			QueueID				BIGINT UNSIGNED
 		,	CTSCustID			BIGINT UNSIGNED  
+        ,	CTSCustID_Aff		BIGINT UNSIGNED
 		,	CustEvidID			BIGINT UNSIGNED  
         ,	Created				DATETIME(3)
         ,	INDEX 				IX_Temp_CustAffectedEvidence_QueueID(QueueID)
         ,	INDEX 				IX_Temp_CustAffectedEvidence_CustEvidID(CustEvidID)
+        ,	INDEX 				IX_Temp_CustAffectedEvidence_CTSCustID_Aff(CTSCustID_Aff)
     );
 
     SELECT ParameterValue 
@@ -65,14 +67,16 @@ sp : BEGIN
     END IF;
     
     
-    INSERT INTO Temp_CustAffectedEvidence(QueueID,CTSCustID, CustEvidID, Created)
+    INSERT INTO Temp_CustAffectedEvidence(QueueID, CTSCustID, CTSCustID_Aff, CustEvidID, Created)
     SELECT 	root.ID
 		,	root.CTSCustID
+        ,	aff.CTSCustID
 		,	aff.CustEvidID
         ,	root.Created
 	FROM CTS_DataCenter.CustEvidenceAffectedQueueRemove AS root,
 	LATERAL(
-        SELECT ev.CustEvidID
+        SELECT  ev.CTSCustID
+            ,   ev.CustEvidID   
 		FROM CTS_DataCenter.CustEvidence AS ev
 		WHERE ev.FromCustID = root.CTSCustID 
             AND (root.EvidenceID IS NULL OR ev.EvidenceID = root.EvidenceID)
@@ -146,7 +150,7 @@ sp : BEGIN
     SELECT  DISTINCT
             cus.CustID 
     FROM Temp_CustAffectedEvidence AS cusEv
-        INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cusEv.CTSCustID = cus.CTSCustID
+        INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cusEv.CTSCustID_Aff = cus.CTSCustID
     WHERE NOT EXISTS (SELECT 1 
 				      FROM CTS_DataCenter.CustEvidence as ev 
                       WHERE ev.CTSCustID = cusEv.CTSCustID
