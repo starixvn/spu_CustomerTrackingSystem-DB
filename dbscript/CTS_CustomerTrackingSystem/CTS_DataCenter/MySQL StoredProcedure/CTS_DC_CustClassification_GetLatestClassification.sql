@@ -63,7 +63,7 @@ BEGIN
 		INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = c.CustID;
     
     /* 3. Insert Existed Lastest Category */
-	INSERT INTO Temp_ExistedLastestCategory(CustID, ScannedTime, SportGroupID, CategoryID)
+	INSERT IGNORE INTO Temp_ExistedLastestCategory(CustID, ScannedTime, SportGroupID, CategoryID)
     SELECT t1.CustID, t2.ScannedTime, t1.SportGroupID, MAX(t1.CategoryID) AS CategoryID
     FROM CTS_DataCenter.CTSCustomerClassification AS t1,
 		LATERAL (SELECT cate.CustID, MAX(cate.LastModifiedDate) AS ScannedTime 
