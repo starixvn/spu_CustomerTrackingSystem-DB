@@ -84,5 +84,5 @@ BEGIN
  				SET Status = 'Stop' 
  				WHERE EventName = 'EV_CTS_DataCenter_ArchiveCustomer';
  	END IF;
-END
-delimiter |
+END |
+delimiter ;
