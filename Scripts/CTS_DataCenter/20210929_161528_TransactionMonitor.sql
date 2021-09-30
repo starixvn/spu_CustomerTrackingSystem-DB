@@ -1,35 +1,37 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
+/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2"></info>*/
 /*
 Creator:	20210929@Casey.Huynh
 Task:	 	Adjust Match Monitor
 Server:  	Master
-DBName:		CTS_DataCenter
+DBName:		DCS_DataCenter
 
 Revisions: 
 		- 20210929@Casey.Huynh: Created [#161528]
 Reviewer:
 
 */
-USE CTS_DataCenter;
+USE DCS_DataCenter;
 
-CREATE TABLE RawTransactionSum(
+CREATE TABLE SumRawTransaction(
 		TransDate		DATETIME NOT NULL
-	,	SubscriberId	INT NOT NULL
+	,	SubscriberID	INT NOT NULL
 	,	TransTotal		INT
-	,	PRIMARY KEY PK_RawTransactionSum(TransDate, SubscriberId)
+	,	PRIMARY KEY PK_SumRawTransaction(TransDate, SubscriberId)
 ) ENGINE=InnoDB;
 
-CREATE TABLE Transaction07Sum(
-		TransDate				DATETIME NOT NULL
-	,	SubscriberId			INT NOT NULL
-	,	ValidTransTotal			INT
-	,	ValidTransBrowserless	INT
-	,	ValidTransNoDevice		INT
-	,	ValidTransOldDevice		INT
-	,	ValidTransRecoverDevice	INT
-	,	ValidTransNewDevice		INT
-	,	PRIMARY KEY TransactionSum(TransDate, SubscriberId)
+CREATE TABLE SumTransaction(
+		TransDate					DATETIME NOT NULL
+	,	SubscriberID				INT NOT NULL
+	,	ValidTotal					INT UNSIGNED
+    ,	ValidTotalDevice			INT UNSIGNED
+    ,	ValidDeviceStatusNew		INT UNSIGNED
+	,	ValidDeviceStatusOld		INT UNSIGNED
+	,	ValidDevoceStatusRecover	INT UNSIGNED
+	,	ValidTransBrowserless		INT UNSIGNED
+    ,	LastTransID					BIGINT UNSIGNED
+	
+	,	PRIMARY KEY PK_SumTransaction(TransDate, SubscriberId)
 ) ENGINE=InnoDB;
 
-INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
-VALUES(49,'Transaction07Sum_LastTransID','Transaction07Sum_LastTransID','BIGINT UNSIGNED','0');
+INSERT INTO DCS_DataCenter.SystemSetting(ID,VGroup,VName,VValue,UpdatedTime)
+VALUES(11,'SumTransaction','SumTransactionLastTransID','0',NOW());
