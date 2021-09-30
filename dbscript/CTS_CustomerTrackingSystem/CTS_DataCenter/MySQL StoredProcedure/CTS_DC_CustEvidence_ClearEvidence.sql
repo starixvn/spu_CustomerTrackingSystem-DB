@@ -22,6 +22,7 @@ BEGIN
 			- 20210525@Irena.Vo: Change col name PinCustomerCategory: CustID -> CTSCustID [Redmine ID: 152965]
 			- 20210622@Aries.Nguyen: Update coding convention and improve locking  [Redmine ID: #157203]
 			- 20210823@Aries.Nguyen: Enhannce  Affected Evidence flow [Redmine ID: #160470]
+			- 20210920@Aries.Nguyen: Split history log  [Redmine ID: #161890]
 
 		Param's Explanation (filtered by):   
 			- ActionID: 1 insert, 2 override, 3 clear
@@ -107,6 +108,22 @@ BEGIN
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS c ON t.CTSCustID = c.CTSCustID AND c.CategoryID = ec.CategoryID ; 
             
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
+		SELECT DISTINCT t.CustID
+			, 	t.CTSCustID
+			, 	ec.CategoryID
+			, 	0
+			, 	lv_CurrentDateTime
+			, 	lv_CreatedBy
+			, 	2
+			, 	1
+			, 	DATE(lv_CurrentDateTime)
+			, 	-1
+			, 	9
+			,   1
+		FROM Temp_CustomerEvidence AS t             
+			INNER JOIN CTS_DataCenter.EvidenceToCategory AS ec ON t.EvidenceID = ec.EvidenceID;
+
+		INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
 		SELECT DISTINCT t.CustID
 			, 	t.CTSCustID
 			, 	ec.CategoryID

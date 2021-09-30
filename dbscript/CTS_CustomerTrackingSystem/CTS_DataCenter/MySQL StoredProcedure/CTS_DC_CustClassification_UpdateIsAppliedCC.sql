@@ -7,7 +7,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_UpdateIsAppli
     , 	OUT op_ErrorMessage 		VARCHAR(200)
 )
     SQL SECURITY INVOKER
-BEGIN
+BEGIN 
 /*
 		Created:	20201214@Irena.Vo
 		Task:		Update IsAppliedCC = 1 from Customer List are updated CustomerClass in mainDB successfully (VVIP, Robot, Special CC, PA, Normal)
@@ -16,6 +16,8 @@ BEGIN
 		Revisions:
 			- 20201214-20210107@Irena.Vo: Created. Update logic & Insert Error Log [RedmineID: #145951]
 			- 20210625@Long.Luu: Refactor  [Redmine ID: #157203]
+			- 20210920@Aries.Nguyen: Enhance performance  [Redmine ID: #161890]
+
 		Param's Explanation (filtered by):		
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_UpdateIsAppliedCC('[{"CustId":"43600895","ScannedTime":"2020-10-02 00:00:00"}]', @op_ErrorMessage);
@@ -24,6 +26,9 @@ BEGIN
 	DECLARE	lv_No				INT			 DEFAULT 0;
     DECLARE lv_ErrorNo 			INT          DEFAULT 0;
     DECLARE lv_CodName 			VARCHAR(200) DEFAULT '0';
+    DECLARE lv_Stmp_Cond		LONGTEXT;
+    DECLARE	lv_Stmp_Upd			LONGTEXT;
+    DECLARE	lv_Stmp				LONGTEXT;
 
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN   
@@ -53,10 +58,20 @@ BEGIN
 			  CustID 			BIGINT UNSIGNED		PATH "$.CustId"
 			, ScannedTime		DATETIME		    PATH "$.ScannedTime"
 		 )) AS temp;
-     
-    UPDATE CTS_DataCenter.CTSCustomerClassification_History AS his
-    INNER JOIN Temp_ProcessedCustList AS temp ON temp.CustID = his.CustID AND his.IsAppliedCC = 0
-    SET his.IsAppliedCC = 1
-    WHERE his.LastModifiedDate <= temp.ScannedTime;
+	
+    SELECT GROUP_CONCAT('(CustID = ',CustID, ' AND LastModifiedDate <= ', "'", ScannedTime, "')" SEPARATOR ' OR ')
+	INTO lv_Stmp_Cond
+	from Temp_ProcessedCustList;
+    
+    SET lv_Stmp_Upd = 'UPDATE CTS_DataCenter.CTSCustomerClassification_History 
+					   SET IsAppliedCC = 1
+					   WHERE  IsAppliedCC = 0 and SportGroupID in (200,0) and (';
+                       
+	SET @stmp = CONCAT(lv_Stmp_Upd, lv_Stmp_Cond, ');');
+    
+    PREPARE stmt FROM @stmp;
+	EXECUTE stmt;
+	
+    DEALLOCATE PREPARE stmt;
 END$$
 DELIMITER ;

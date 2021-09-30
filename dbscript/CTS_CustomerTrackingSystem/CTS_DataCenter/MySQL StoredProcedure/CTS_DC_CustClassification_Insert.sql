@@ -35,6 +35,7 @@ sp: BEGIN
             - 20210226@Irena.Vo: Update CategoryID from VVIP [RedmineID: #150454]
             - 20210419@Irena.Vo: Get Category more [RedmineID: #153617]
             - 20210525@Irena.Vo: Change col name PinCustomerCategory: CustID -> CTSCustID [RedmineID: #152965] 
+			- 20210920@Aries.Nguyen: Split history log  [Redmine ID: #161890]
 	*/
     DECLARE lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();
 	DECLARE lv_SPName 			VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_Insert';
@@ -67,8 +68,21 @@ sp: BEGIN
 		,   DATE(lv_CurrentDateTime);
 	
 	/*Insert VVIP history*/
-	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
-	(CustID, CTSCustID, CategoryID, SportGroupID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
+	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
+	SELECT 	ip_CustID
+		, 	ip_CTSCustID
+		, 	ip_CategoryID
+		, 	200
+		, 	lv_CurrentDateTime
+		, 	ip_CreatedBy
+		,	0 
+		,	0 
+		,   DATE(lv_CurrentDateTime)
+		,   100 
+		,   13 
+		,	1;
+
+	INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
 	SELECT 	ip_CustID
 		, 	ip_CTSCustID
 		, 	ip_CategoryID
