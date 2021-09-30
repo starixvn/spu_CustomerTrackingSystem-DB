@@ -9,6 +9,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_InsertException`(
 	,	IN ip_Comment		VARCHAR(500)
 
 	,	OUT op_Error		INT
+	,	OUT op_ToCTSCustID	BIGINT UNSIGNED
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -23,6 +24,7 @@ BEGIN
 			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: #148723]
 			- 20210527@Aries.Nguyen: Cannot insert Exception Customers [Redmine ID: #155916]
 			- 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
+			- 20210909@Aries.Nguyen: Update bet limit [Redmine ID: #160711]
 			
 		Param's Explanation (filtered by):
 			- OutPut: lv_Error (1: User Is not Existing, 0: Add Successfully)
@@ -67,6 +69,7 @@ BEGIN
     END IF;
     
     SET op_Error = lv_Error;
+	SET op_ToCTSCustID = lv_ToCTSCustID;
 	
 END$$
 

@@ -22,6 +22,7 @@ sp : BEGIN
 			- 20210510@Aries.Nguyen: Remove insert log zzTracePerformance [Redmine ID: #154792]
 			- 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
 			- 20210823@Aries.Nguyen: Enhannce  Affected Evidence flow [Redmine ID: #160470]
+			- 20210909@Aries.Nguyen: Update bet limit [Redmine ID: #160711]
 
 		Param's Explanation (filtered by):
 	*/
@@ -213,13 +214,20 @@ sp : BEGIN
 		,	tce.CreatedBy
 	FROM	Temp_CustEvidence	AS tce;
     
-     UPDATE CTS_DataCenter.SystemParameter 
+    UPDATE CTS_DataCenter.SystemParameter 
     SET ParameterValue = lv_LastCTSAssDevID
     WHERE ParameterID = 33; 
 	
     UPDATE CTS_DataCenter.SystemParameter 
     SET ParameterValue = lv_LastCTSCustIDAff
     WHERE ParameterID = 34; 
+
+	SELECT	DISTINCT
+            cus.CustID 
+	FROM Temp_CustEvidence AS cusEv
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cusEv.CTSCustID = cus.CTSCustID;
+
+
 END$$
 
 DELIMITER ;
