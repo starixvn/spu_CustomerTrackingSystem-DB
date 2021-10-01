@@ -17,9 +17,8 @@ BEGIN
         
 	    Param's Explanation (filtered by):
         
-        Example: CALL DCS_DC_SumRawTransaction_Update('[{"TransDate":"2021-09-28", "SubscriberID":2, "TransTotal":2800}
-														,{"TransDate":"2021-09-29", "SubscriberID":2, "TransTotal":2900}]');			]');
-
+        Example: CALL DCS_DC_SumRawTransaction_Update('[{"TransDate":"2021-09-30", "SubscriberID":2, "TransTotal":2800}
+														,{"TransDate":"2021-09-30", "SubscriberID":2, "TransTotal":2900}]');
     */
     
     DECLARE lv_MaxTransDate DATETIME;

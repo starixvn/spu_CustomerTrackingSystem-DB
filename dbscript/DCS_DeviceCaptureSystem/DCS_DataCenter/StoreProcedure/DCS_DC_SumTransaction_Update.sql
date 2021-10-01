@@ -18,9 +18,9 @@ BEGIN
         
 	    Param's Explanation (filtered by):
         
-        Example: CALL DCS_DC_SumRawTransaction_Update('[{"TransDate":"2021-09-28", "SubscriberID":2, "TransTotal":2800}
-														,{"TransDate":"2021-09-29", "SubscriberID":2, "TransTotal":2900}]');			]');
-
+        Example: CALL DCS_DC_SumTransaction_Update(60000,'[{"TransDate":"2021-09-28", "SubscriberID":2, "ValidTotal":5000,"ValidTotalDevice":4500
+        , "ValidDeviceStatusNew":500, "ValidDeviceStatusOld":3000, "ValidDeviceStatusRecover":1000, "ValidBrowserless":1500}]');
+		SELECT * FROM SumTransaction;
     */
     DROP TEMPORARY TABLE IF EXISTS Temp_SumTransaction;
     CREATE TEMPORARY TABLE Temp_SumTransaction(
@@ -54,7 +54,7 @@ BEGIN
             ,	TotalDevice			INT UNSIGNED PATH "$.ValidTotalDevice" 
             ,	DeviceStatusNew		INT UNSIGNED PATH "$.ValidDeviceStatusNew" 
             ,	DeviceStatusOld		INT UNSIGNED PATH "$.ValidDeviceStatusOld" 
-            ,	DevoceStatusRecover	INT UNSIGNED PATH "$.ValidDevoceStatusRecover" 
+            ,	DevoceStatusRecover	INT UNSIGNED PATH "$.ValidDeviceStatusRecover" 
             ,	Browserless			INT UNSIGNED PATH "$.ValidBrowserless"
 			)
 		) AS js ;

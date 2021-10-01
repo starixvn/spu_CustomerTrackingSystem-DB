@@ -15,7 +15,7 @@ USE DCS_DataCenter;
 CREATE TABLE SumRawTransaction(
 		TransDate		DATETIME NOT NULL
 	,	SubscriberID	INT NOT NULL
-	,	TransTotal		INT
+	,	TransTotal		INT UNSIGNED
 	,	PRIMARY KEY PK_SumRawTransaction(TransDate, SubscriberId)
 ) ENGINE=InnoDB;
 
@@ -26,8 +26,8 @@ CREATE TABLE SumTransaction(
     ,	ValidTotalDevice			INT UNSIGNED
     ,	ValidDeviceStatusNew		INT UNSIGNED
 	,	ValidDeviceStatusOld		INT UNSIGNED
-	,	ValidDevoceStatusRecover	INT UNSIGNED
-	,	ValidTransBrowserless		INT UNSIGNED
+	,	ValidDeviceStatusRecover	INT UNSIGNED
+	,	ValidBrowserless			INT UNSIGNED
     ,	LastTransID					BIGINT UNSIGNED
 	
 	,	PRIMARY KEY PK_SumTransaction(TransDate, SubscriberId)
