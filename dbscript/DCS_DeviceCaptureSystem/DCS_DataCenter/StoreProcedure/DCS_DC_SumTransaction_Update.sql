@@ -18,7 +18,7 @@ BEGIN
         
 	    Param's Explanation (filtered by):
         
-        Example: CALL DCS_DC_SumTransaction_Update(60000,'[{"TransDate":"2021-09-28", "SubscriberID":2, "ValidTotal":5000,"ValidTotalDevice":4500
+        Example: CALL DCS_DC_SumTransaction_Update(70001,'[{"TransDate":"2021-09-28", "SubscriberID":4, "ValidTotal":5000,"ValidNoDevice":500
         , "ValidDeviceStatusNew":500, "ValidDeviceStatusOld":3000, "ValidDeviceStatusRecover":1000, "ValidBrowserless":1500}]');
 		SELECT * FROM SumTransaction;
     */
@@ -27,7 +27,7 @@ BEGIN
 			TransDate					DATETIME NOT NULL
 		,	SubscriberID				INT NOT NULL
 		,	ValidTotal					INT UNSIGNED
-		,	ValidTotalDevice			INT UNSIGNED
+		,	ValidNoDevice				INT UNSIGNED
 		,	ValidDeviceStatusNew		INT UNSIGNED
 		,	ValidDeviceStatusOld		INT UNSIGNED
 		,	ValidDeviceStatusRecover	INT UNSIGNED
@@ -36,35 +36,35 @@ BEGIN
 		,	PRIMARY KEY PK_SumTransaction(TransDate, SubscriberId)
 	) ENGINE=InnoDB;
     
-    INSERT IGNORE INTO Temp_SumTransaction(TransDate, SubscriberID, ValidTotal, ValidTotalDevice
+    INSERT IGNORE INTO Temp_SumTransaction(TransDate, SubscriberID, ValidTotal, ValidNoDevice
     , ValidDeviceStatusNew, ValidDeviceStatusOld, ValidDeviceStatusRecover, ValidBrowserless)
 	SELECT 	js.TransDate
 		,	js.SubscriberID
-        ,	js.Total
-        ,	js.TotalDevice
-        ,	js.DeviceStatusNew
-        ,	js.DeviceStatusOld
-        ,	js.DevoceStatusRecover
-        ,	js.Browserless
+        ,	js.ValidTotal
+        ,	js.ValidNoDevice
+        ,	js.ValidDeviceStatusNew
+        ,	js.ValidDeviceStatusOld
+        ,	js.ValidDeviceStatusRecover
+        ,	js.ValidBrowserless
 		FROM JSON_TABLE(ip_SumJson,
 			"$[*]" COLUMNS(
-				TransDate			DATETIME PATH "$.TransDate"
-            ,   SubscriberID		INT UNSIGNED PATH "$.SubscriberID" 
-			,	Total				INT UNSIGNED PATH "$.ValidTotal" 
-            ,	TotalDevice			INT UNSIGNED PATH "$.ValidTotalDevice" 
-            ,	DeviceStatusNew		INT UNSIGNED PATH "$.ValidDeviceStatusNew" 
-            ,	DeviceStatusOld		INT UNSIGNED PATH "$.ValidDeviceStatusOld" 
-            ,	DevoceStatusRecover	INT UNSIGNED PATH "$.ValidDeviceStatusRecover" 
-            ,	Browserless			INT UNSIGNED PATH "$.ValidBrowserless"
+				TransDate					DATETIME PATH "$.TransDate"
+            ,   SubscriberID				INT UNSIGNED PATH "$.SubscriberID" 
+			,	ValidTotal					INT UNSIGNED PATH "$.ValidTotal" 
+            ,	ValidNoDevice				INT UNSIGNED PATH "$.ValidNoDevice" 
+            ,	ValidDeviceStatusNew		INT UNSIGNED PATH "$.ValidDeviceStatusNew" 
+            ,	ValidDeviceStatusOld		INT UNSIGNED PATH "$.ValidDeviceStatusOld" 
+            ,	ValidDeviceStatusRecover	INT UNSIGNED PATH "$.ValidDeviceStatusRecover" 
+            ,	ValidBrowserless			INT UNSIGNED PATH "$.ValidBrowserless"
 			)
 		) AS js ;
         
-        INSERT IGNORE INTO SumTransaction(TransDate, SubscriberID, ValidTotal, ValidTotalDevice
+        INSERT IGNORE INTO SumTransaction(TransDate, SubscriberID, ValidTotal, ValidNoDevice
 			, ValidDeviceStatusNew, ValidDeviceStatusOld, ValidDeviceStatusRecover, ValidBrowserless, LastTransID)
         SELECT	tmpSt.TransDate
 			,	tmpSt.SubscriberID
             ,	tmpSt.ValidTotal
-            ,	tmpSt.ValidTotalDevice
+            ,	tmpSt.ValidNoDevice
 			,	tmpSt.ValidDeviceStatusNew
             ,	tmpSt.ValidDeviceStatusOld
             ,	tmpSt.ValidDeviceStatusRecover
@@ -76,7 +76,7 @@ BEGIN
 			INNER JOIN Temp_SumTransaction AS tmpSt ON st.TransDate = tmpSt.TransDate 
 				AND st.SubscriberID = tmpSt.SubscriberID AND st.LastTransID < ip_MaxTransID
 		SET		st.ValidTotal = st.ValidTotal + st.ValidTotal
-			,	st.ValidTotalDevice = st.ValidTotalDevice + st.ValidTotalDevice
+			,	st.ValidNoDevice = st.ValidNoDevice + st.ValidNoDevice
             ,	st.ValidDeviceStatusNew = st.ValidDeviceStatusNew + st.ValidDeviceStatusNew
             ,	st.ValidDeviceStatusOld = st.ValidDeviceStatusOld + st.ValidDeviceStatusOld
             ,	st.ValidDeviceStatusRecover = st.ValidDeviceStatusRecover + st.ValidDeviceStatusRecover

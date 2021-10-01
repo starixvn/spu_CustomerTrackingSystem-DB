@@ -1,9 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_SumTransaction07_Get`;
+DROP PROCEDURE IF EXISTS `DCS_DC_SumTransaction_Get`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_SumTransaction07_Get`(
-	IN ip_Size	INT
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_SumTransaction_Get`(
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -17,11 +16,12 @@ BEGIN
         
 	    Param's Explanation (filtered by):
         
-        Example: 
+        Example: CALL DCS_DC_SumTransaction_Get(5000);
 
     */
-	DECLARE lv_MaxTransID BIGINT UNSIGNED;
+	DECLARE lv_BatchSize BIGINT UNSIGNED;
     DECLARE lv_LastTransID BIGINT UNSIGNED;
+	DECLARE lv_MaxTransID BIGINT UNSIGNED;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Trans;
     CREATE TEMPORARY TABLE Temp_Trans(
@@ -54,14 +54,15 @@ BEGIN
     );
     
     SET lv_LastTransID = (SELECT VValue FROM DCS_DataCenter.SystemSetting WHERE ID = 11);
+    SET lv_BatchSize = (SELECT VValue FROM DCS_DataCenter.SystemSetting WHERE ID = 12);
     
     SELECT MAX(tmp.TransID) 
     INTO lv_MaxTransID
-    FROM (SELECT TransID FROM DCS_DataCenter.Transaction07 WHERE TransID > lv_LastTransID LIMIT ip_Size) AS tmp;
+    FROM (SELECT TransID FROM DCS_DataCenter.Transaction07 WHERE TransID > lv_LastTransID LIMIT lv_BatchSize) AS tmp;
     
     SELECT IFNULL(lv_MaxTransID,0);
     
-    SELECT lv_MaxTransID;
+    SELECT lv_MaxTransID AS MaxTransID;
     
     IF lv_MaxTransID IS NOT NULL THEN
     

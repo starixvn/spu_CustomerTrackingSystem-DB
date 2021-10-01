@@ -23,7 +23,7 @@ CREATE TABLE SumTransaction(
 		TransDate					DATETIME NOT NULL
 	,	SubscriberID				INT NOT NULL
 	,	ValidTotal					INT UNSIGNED
-    ,	ValidTotalDevice			INT UNSIGNED
+    ,	ValidNoDevice				INT UNSIGNED
     ,	ValidDeviceStatusNew		INT UNSIGNED
 	,	ValidDeviceStatusOld		INT UNSIGNED
 	,	ValidDeviceStatusRecover	INT UNSIGNED
@@ -34,4 +34,5 @@ CREATE TABLE SumTransaction(
 ) ENGINE=InnoDB;
 
 INSERT INTO DCS_DataCenter.SystemSetting(ID,VGroup,VName,VValue,UpdatedTime)
-VALUES(11,'SumTransaction','SumTransactionLastTransID','0',NOW());
+VALUES(11,'SumTransaction','SumTransactionLastTransID','0',NOW())
+	, (12,'ServiceSumTransaction','BatchSize DCS_DC_SumTransaction_Get','5000',NOW());
