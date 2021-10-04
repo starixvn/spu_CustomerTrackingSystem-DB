@@ -660,8 +660,7 @@ sp: BEGIN
             
             DELETE 
 			FROM CTS_DataCenter.CustEvidenceLog
-			WHERE  CustEvidID IN (SELECT CustEvidID FROM Temp_CustEvidenceLog_Clean)
-			LIMIT lv_CleanTableBatchSize;
+			WHERE  CustEvidID IN (SELECT CustEvidID FROM Temp_CustEvidenceLog_Clean);
 			
 			UPDATE  CTS_DataCenter.SystemParameter 
 			SET ParameterValue = 'CTS_DataCenter.CustEvidenceLog'
@@ -851,8 +850,8 @@ sp: BEGIN
             
             DELETE ev
 			FROM CTS_DataCenter.ProbationAccountMonitor AS ev
-				INNER JOIN Temp_ProbationAccountMonitor_Clean AS tmp ON tmp.CTSCustID = ev.CTSCustID
-																AND tmp.SportGroupID = ev.SportGroupID;
+				INNER JOIN Temp_ProbationAccountMonitor_Clean AS tmp ON tmp.CustID = ev.CustID
+																	AND tmp.SportGroupID = ev.SportGroupID;
 			
 			UPDATE  CTS_DataCenter.SystemParameter 
 			SET ParameterValue = 'CTS_DataCenter.ProbationAccountMonitor'
