@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `DCS_DC_SumRawTransaction_Update`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_SumRawTransaction_Update`(
-		IN ip_SumJson		JSON  
+		IN ip_SumJson	JSON  
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -14,33 +14,39 @@ BEGIN
 	    Original:
 
 	    Revisions:		    
-        
+			-	20210930@Casey.Huynh: Created [Redmine ID: 161528]
+            
 	    Param's Explanation (filtered by):
         
         Example: CALL DCS_DC_SumRawTransaction_Update('[{"TransDate":"2021-09-30", "SubscriberID":2, "TransTotal":2800}
 														,{"TransDate":"2021-09-30", "SubscriberID":2, "TransTotal":2900}]');
     */
     
-    DECLARE lv_MaxTransDate DATETIME;
+    DECLARE lv_LastTransDate DATETIME;
     DECLARE lv_Today DATETIME DEFAULT CURRENT_DATE();
     
-    SELECT MAX(srt.TransDate) 
-    INTO lv_MaxTransDate
-    FROM DCS_DataCenter.SumRawTransaction AS srt;
-    
-    SET lv_MaxTransDate = IFNULL(lv_MaxTransDate,DATE_SUB(lv_Today, INTERVAL 1 DAY));
-    
-    WHILE lv_MaxTransDate <= lv_Today DO    
-		SET lv_MaxTransDate = DATE_ADD(lv_MaxTransDate, INTERVAL 1 DAY);
+    SELECT VValue
+    INTO lv_LastTransDate
+    FROM DCS_DataCenter.SystemSetting AS ss
+    WHERE ID = 13;   
+   
+    #=========INITIAL IF NOT EXISTS==============================================
+    WHILE lv_LastTransDate < lv_Today DO 
+
+        SET lv_LastTransDate = DATE_ADD(lv_LastTransDate, INTERVAL 1 DAY);
         
         INSERT IGNORE INTO DCS_DataCenter.SumRawTransaction(TransDate, SubscriberID, TransTotal)    
-		SELECT 	lv_MaxTransDate
-				, sub.SubscriberID
-				, 0
+		SELECT 	lv_LastTransDate
+			,	sub.SubscriberID
+			,	0
 		FROM CTS_Admin.Subscriber AS sub
-		WHERE sub.DCSStatus = 1;
+		WHERE sub.DCSStatus = 1;      
         
-    END WHILE;    
+        UPDATE DCS_DataCenter.SystemSetting AS ss
+		SET ss.VValue = lv_LastTransDate
+        WHERE ID = 13;       
+        
+    END WHILE;
     
     INSERT INTO DCS_DataCenter.SumRawTransaction(TransDate, SubscriberID, TransTotal)
 	SELECT 	js.TransDate
@@ -53,7 +59,7 @@ BEGIN
 			,	TransSum		INT PATH "$.TransTotal" 
 			)
 		) AS js
-	ON DUPLICATE KEY UPDATE TransTotal = TransTotal + js.TransSum;	
+	ON DUPLICATE KEY UPDATE TransTotal = TransTotal + js.TransSum;    
     
 END$$
 DELIMITER ;

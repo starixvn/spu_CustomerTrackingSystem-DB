@@ -15,7 +15,8 @@ BEGIN
 	    Original:
 
 	    Revisions:		    
-        
+        	-	20210930@Casey.Huynh: Created [Redmine ID: 161528]
+            
 	    Param's Explanation (filtered by):
         
         Example: CALL DCS_DC_SumTransaction_Update(70001,'[{"TransDate":"2021-09-28", "SubscriberID":4, "ValidTotal":5000,"ValidNoDevice":500

@@ -13,7 +13,8 @@ BEGIN
 	    Original:
 
 	    Revisions:		    
-        
+        	-	20210930@Casey.Huynh: Created [Redmine ID: 161528]
+            
 	    Param's Explanation (filtered by):
         
         Example: CALL DCS_DC_SumTransaction_Get(5000);

@@ -20,7 +20,8 @@ BEGIN
 	    Original:
 
 	    Revisions:		    
-        
+			-	20210930@Casey.Huynh: Created [Redmine ID: 161528]
+            
 	    Param's Explanation (filtered by):
         
         Example: CALL DCS_DC_RPT_Transaction('2021-10-01','2021-10-04','2,4',0,50,@op_TotalRow);

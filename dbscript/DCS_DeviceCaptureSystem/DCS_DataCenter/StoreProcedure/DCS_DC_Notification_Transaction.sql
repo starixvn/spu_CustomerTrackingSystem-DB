@@ -12,8 +12,9 @@ BEGIN
 	    DB: DCS_DataCenter (Slave)
 	    Original:
 
-	    Revisions:		    
-        
+	    Revisions:
+			-	20210930@Casey.Huynh: Created [Redmine ID: 161528]
+			
 	    Param's Explanation (filtered by):
         
         Example: CALL DCS_DC_Notification_Transaction();
