@@ -9,7 +9,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_RPT_Transaction`(
 	,	IN ip_Skip 				INT
     ,	IN ip_Take 				INT
     
-    ,	OUT op_TotalItems		INT
+    ,	OUT op_TotalRow			INT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -23,7 +23,7 @@ BEGIN
         
 	    Param's Explanation (filtered by):
         
-        Example: CALL DCS_DC_Notification_Transaction(5000);
+        Example: CALL DCS_DC_RPT_Transaction('2021-10-01','2021-10-04','2,4',0,50,@op_TotalRow);
 
     */    
     DROP TEMPORARY TABLE IF EXISTS Temp_Subscriber;
@@ -36,10 +36,10 @@ BEGIN
 						SELECT SubscriberID, SubscriberName
 						FROM CTS_Admin.Subscriber 
 						WHERE SubscriberID IN (',ip_SubscriberList,')');
-                        
+                     
     PREPARE	stmt1 FROM @sql;
 	EXECUTE stmt1;
-    
+     
 	SELECT	SQL_CALC_FOUND_ROWS
 			tmpSb.SubscriberName AS 'Subscriber'
 		,	SUM(rt.TransTotal) AS 'Total Trans'
@@ -48,7 +48,7 @@ BEGIN
 		,	SUM(IFNULL(ts.ValidDeviceStatusOld,0)) AS 'Valid Trans (Old Device)'
 		,	SUM(IFNULL(ts.ValidDeviceStatusRecover,0)) AS 'Valid Trans (Recover Device)'
 		,	SUM(IFNULL(ts.ValidNoDevice,0)) AS 'Valid Trans (No Device)'  
-		,	SUM(rt.TransTotal) - SUM(IFNULL(ts.ValidNoDevice,0)) AS 'Invalid Trans'  
+		,	SUM(rt.TransTotal) - SUM(IFNULL(ts.ValidTotal,0)) AS 'Invalid Trans'  
 		,	SUM(IFNULL(ts.ValidBrowserless,0)) AS 'Browserless'  
 	FROM DCS_DataCenter.SumRawTransaction AS rt
 		LEFT JOIN DCS_DataCenter.SumTransaction AS ts ON rt.TransDate = ts.TransDate AND rt.SubscriberID = ts.SubscriberID
@@ -59,7 +59,7 @@ BEGIN
 	LIMIT ip_Take
 	OFFSET ip_Skip;
         
-	SET op_TotalItems = FOUND_ROWS();
+	SET op_TotalRow = FOUND_ROWS();
     
 END$$
 DELIMITER ;

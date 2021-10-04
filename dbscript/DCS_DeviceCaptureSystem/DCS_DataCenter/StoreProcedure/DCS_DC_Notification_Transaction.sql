@@ -16,7 +16,7 @@ BEGIN
         
 	    Param's Explanation (filtered by):
         
-        Example: CALL DCS_DC_Notification_Transaction(5000);
+        Example: CALL DCS_DC_Notification_Transaction();
 
     */
 	DECLARE lv_Yesterday DATETIME;
@@ -56,7 +56,7 @@ BEGIN
     WHERE tmpYs.TransTotal/tmpPy.TransTotal < 0.5 AND tmpPy.TransTotal > 0; 
     
     /* Total Trans (Yesterday) = 0 and Total Trans (Yesterday - 1) > 0 */
-    SELECT 	CONCAT(sb.SubscriberName) AS YesterDayZero
+    SELECT 	CONCAT(sb.SubscriberName) AS YesterdayZero
     FROM Temp_PreYesterday AS tmpPy
     INNER JOIN Temp_Yesterday AS tmpYs ON tmpPy.SubscriberID = tmpYs.SubscriberID
     INNER JOIN CTS_Admin.Subscriber AS sb ON tmpPy.SubscriberID = sb.SubscriberID
