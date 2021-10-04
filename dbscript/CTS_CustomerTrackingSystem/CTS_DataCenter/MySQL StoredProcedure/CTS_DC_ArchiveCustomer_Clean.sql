@@ -464,9 +464,9 @@ sp: BEGIN
             
             DELETE cl
 			FROM CTS_DataCenter.CTSCustomerClassification AS cl
-				INNER JOIN Temp_AssociationRemove_Clean AS tmp ON tmp.CustID = ass.CategoryID 
-																AND tmp.SportGroupID = ass.SportGroupID
-																AND tmp.CategoryID = ass.CategoryID;
+				INNER JOIN Temp_CTSCustomerClassification_Clean AS tmp ON tmp.CustID = cl.CustID 
+																		AND tmp.SportGroupID = cl.SportGroupID
+																		AND tmp.CategoryID = cl.CategoryID;
 			
 			UPDATE  CTS_DataCenter.SystemParameter 
 			SET ParameterValue = 'CTS_DataCenter.CTSCustomerClassification'
