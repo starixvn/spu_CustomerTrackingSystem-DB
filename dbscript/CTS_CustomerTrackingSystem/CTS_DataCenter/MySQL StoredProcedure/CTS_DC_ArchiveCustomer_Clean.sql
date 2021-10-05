@@ -600,8 +600,7 @@ sp: BEGIN
             
             DELETE 
 			FROM CTS_DataCenter.CustEvidence
-			WHERE  CustEvidID IN (SELECT CTSCustID FROM Temp_CustEvidence_Clean)
-			LIMIT lv_CleanTableBatchSize;
+			WHERE  CustEvidID IN (SELECT CustEvidID FROM Temp_CustEvidence_Clean);
 			
 			UPDATE  CTS_DataCenter.SystemParameter 
 			SET ParameterValue = 'CTS_DataCenter.CustEvidence-Leve2'
