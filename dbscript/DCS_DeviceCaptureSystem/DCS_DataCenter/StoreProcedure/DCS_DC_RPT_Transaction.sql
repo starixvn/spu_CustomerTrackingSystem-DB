@@ -43,13 +43,13 @@ BEGIN
      
 	SELECT	SQL_CALC_FOUND_ROWS
 			tmpSb.SubscriberName AS 'Subscriber'
-		,	SUM(rt.TransTotal) AS 'Total Trans'
-		,	SUM(IFNULL(ts.ValidTotal,0)) AS 'Total Valid Trans'
-		,	SUM(IFNULL(ts.ValidDeviceStatusNew,0)) AS 'Valid Trans (New Device)'
-		,	SUM(IFNULL(ts.ValidDeviceStatusOld,0)) AS 'Valid Trans (Old Device)'
-		,	SUM(IFNULL(ts.ValidDeviceStatusRecover,0)) AS 'Valid Trans (Recover Device)'
-		,	SUM(IFNULL(ts.ValidNoDevice,0)) AS 'Valid Trans (No Device)'  
-		,	SUM(rt.TransTotal) - SUM(IFNULL(ts.ValidTotal,0)) AS 'Invalid Trans'  
+		,	SUM(rt.TransTotal) AS 'TotalTrans'
+		,	SUM(IFNULL(ts.ValidTotal,0)) AS 'TotalValidTrans'
+		,	SUM(IFNULL(ts.ValidDeviceStatusNew,0)) AS 'ValidTransNewDevice'
+		,	SUM(IFNULL(ts.ValidDeviceStatusOld,0)) AS 'ValidTransOldDevice'
+		,	SUM(IFNULL(ts.ValidDeviceStatusRecover,0)) AS 'ValidTransRecoverDevice'
+		,	SUM(IFNULL(ts.ValidNoDevice,0)) AS 'ValidTransNoDevice'  
+		,	SUM(rt.TransTotal) - SUM(IFNULL(ts.ValidTotal,0)) AS 'InvalidTrans'  
 		,	SUM(IFNULL(ts.ValidBrowserless,0)) AS 'Browserless'  
 	FROM DCS_DataCenter.SumRawTransaction AS rt
 		LEFT JOIN DCS_DataCenter.SumTransaction AS ts ON rt.TransDate = ts.TransDate AND rt.SubscriberID = ts.SubscriberID
