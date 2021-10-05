@@ -37,6 +37,18 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Yesterday;
     CREATE TEMPORARY TABLE Temp_Yesterday LIKE Temp_PreYesterday;
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_Subscriber;
+    CREATE TEMPORARY TABLE Temp_Subscriber(
+			SubscriberID INT PRIMARY KEY
+		,	SubscriberName VARCHAR(50)
+    );
+    
+    INSERT INTO Temp_Subscriber(SubscriberID, SubscriberName)
+    SELECT	sb.SubscriberID
+		,	sb.SubscriberName
+    FROM CTS_Admin.Subscriber AS sb
+    WHERE sb.DCSStatus = 1;
+ 
     INSERT INTO Temp_PreYesterday(SubscriberID, TransTotal)
     SELECT	srt.SubscriberID
 		,	srt.TransTotal
@@ -50,25 +62,26 @@ BEGIN
     WHERE 	srt.TransDate = lv_Yesterday;
 
     /* Total Trans (Yesterday)/Total Trans (Yesterday - 1) < 50% */
-    SELECT 	CONCAT(sb.SubscriberName) AS YesterdayLess50Percent
-    FROM Temp_PreYesterday AS tmpPy
-    INNER JOIN Temp_Yesterday AS tmpYs ON tmpPy.SubscriberID = tmpYs.SubscriberID
-    INNER JOIN CTS_Admin.Subscriber AS sb ON tmpPy.SubscriberID = sb.SubscriberID
-    WHERE tmpYs.TransTotal/tmpPy.TransTotal < 0.5 AND tmpPy.TransTotal > 0; 
+    SELECT 	CONCAT(tmpSb.SubscriberName) AS YesterdayLess50Percent
+    FROM Temp_Subscriber AS tmpSb
+		INNER JOIN Temp_PreYesterday AS tmpPy ON tmpSb.SubscriberID = tmpPy.SubscriberID
+		LEFT JOIN Temp_Yesterday AS tmpYs ON tmpSb.SubscriberID = tmpYs.SubscriberID    
+    WHERE (IFNULL(tmpYs.TransTotal,0)/tmpPy.TransTotal) < 0.5; 
     
     /* Total Trans (Yesterday) = 0 and Total Trans (Yesterday - 1) > 0 */
-    SELECT 	CONCAT(sb.SubscriberName) AS YesterdayZero
-    FROM Temp_PreYesterday AS tmpPy
-    INNER JOIN Temp_Yesterday AS tmpYs ON tmpPy.SubscriberID = tmpYs.SubscriberID
-    INNER JOIN CTS_Admin.Subscriber AS sb ON tmpPy.SubscriberID = sb.SubscriberID
-    WHERE tmpYs.TransTotal = 0 AND tmpPy.TransTotal > 0;
+    SELECT 	CONCAT(tmpSb.SubscriberName) AS YesterdayZero
+    FROM Temp_Subscriber AS tmpSb
+		INNER JOIN Temp_PreYesterday AS tmpPy ON tmpSb.SubscriberID = tmpPy.SubscriberID
+		LEFT JOIN Temp_Yesterday AS tmpYs ON tmpSb.SubscriberID = tmpYs.SubscriberID    
+    WHERE tmpYs.TransTotal IS NULL AND tmpPy.TransTotal > 0;
     
-	/* Valid Trans(Yesterday)/Total Trans(Yesteday) <50% */
-    SELECT 	CONCAT(sb.SubscriberName) AS ValidLess50Percent
-    FROM Temp_Yesterday AS tmpYs
-    LEFT JOIN DCS_DataCenter.SumTransaction AS st ON st.SubscriberID = tmpYs.SubscriberID AND st.TransDate = lv_Yesterday 
-    INNER JOIN CTS_Admin.Subscriber AS sb ON tmpYs.SubscriberID = sb.SubscriberID
+	/* Valid Trans(Yesterday)/Total Trans(Yesteday) < 50% */
+    SELECT 	CONCAT(tmpSb.SubscriberName) AS ValidLess50Percent  
+    FROM Temp_Subscriber AS tmpSb
+		INNER JOIN Temp_Yesterday AS tmpYs ON tmpSb.SubscriberID = tmpYs.SubscriberID
+		LEFT JOIN DCS_DataCenter.SumTransaction AS st ON st.SubscriberID = tmpYs.SubscriberID AND st.TransDate = lv_Yesterday        
     WHERE IFNULL(st.ValidTotal,0)/tmpYs.TransTotal < 0.5 AND tmpYs.TransTotal > 0;
+
     
 END$$
 DELIMITER ;
