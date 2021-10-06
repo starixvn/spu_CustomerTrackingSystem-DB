@@ -8,8 +8,8 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Details_Get`(
     ,	IN ip_BettypeID			INT UNSIGNED
     ,	IN ip_LiveIndicator		BOOLEAN     
     ,	IN ip_IsHedging			BOOLEAN  
-    ,	IN ip_ScoreList			VARCHAR(200)     
-    ,	IN ip_GroupIDList		VARCHAR(200)
+    ,	IN ip_ScoreList			VARCHAR(500)     
+    ,	IN ip_GroupIDList		VARCHAR(2000)
     
 )
     SQL SECURITY INVOKER
