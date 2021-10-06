@@ -35,5 +35,4 @@ CREATE TABLE SumTransaction(
 
 INSERT INTO DCS_DataCenter.SystemSetting(ID,VGroup,VName,VValue,UpdatedTime)
 VALUES(11,'SumTransaction','SumTransaction_LastTransID','0',NOW())
-	, (12,'ServiceSumTransaction','BatchSize DCS_DC_SumTransaction_Get','5000',NOW())
-    , (13,'SumRawTransaction','SumRawTransaction_LastTransDate',DATE(NOW()),NOW());
+	, (12,'ServiceSumTransaction','BatchSize DCS_DC_SumTransaction_Get','5000',NOW());
