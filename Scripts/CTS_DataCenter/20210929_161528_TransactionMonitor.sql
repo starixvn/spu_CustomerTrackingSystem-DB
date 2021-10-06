@@ -1,12 +1,12 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2"></info>*/
 /*
 Creator:	20210929@Casey.Huynh
-Task:	 	Adjust Match Monitor
+Task:	 	Transaction Monitor
 Server:  	Master
 DBName:		DCS_DataCenter
 
 Revisions: 
-		- 20210929@Casey.Huynh: Created [#161528]
+		- 20210929@Casey.Huynh: Created [Redmine ID: #161528]
 Reviewer:
 
 */
