@@ -24,7 +24,7 @@ BEGIN
             
 	    Param's Explanation (filtered by):
         
-        Example: CALL DCS_DC_RPT_Transaction('2021-10-01','2021-10-04','2,4',0,50,@op_TotalRow); SELECT @op_TotalRow;
+        Example: CALL DCS_DC_RPT_Transaction('2021-09-28','2021-10-04','2,6',0,50,@op_TotalRow); SELECT @op_TotalRow;
     */    
     DROP TEMPORARY TABLE IF EXISTS Temp_Subscriber;
     CREATE TEMPORARY TABLE Temp_Subscriber(
@@ -43,14 +43,14 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_TransReport;
     CREATE TEMPORARY TABLE Temp_TransReport(
 			Subscriber 				VARCHAR(50)  PRIMARY KEY
-        ,	TotalTrans				INT	UNSIGNED
-        ,	TotalValidTrans			INT	UNSIGNED
-        ,	ValidTransNewDevice		INT	UNSIGNED
-        ,	ValidTransOldDevice		INT	UNSIGNED
-        ,	ValidTransRecoverDevice	INT	UNSIGNED
-        ,	ValidTransNoDevice		INT	UNSIGNED
-        ,	InvalidTrans			INT	UNSIGNED
-        ,	ValidBrowserless		INT	UNSIGNED
+        ,	TotalTrans				BIGINT
+        ,	TotalValidTrans			BIGINT
+        ,	ValidTransNewDevice		BIGINT
+        ,	ValidTransOldDevice		BIGINT
+        ,	ValidTransRecoverDevice	BIGINT
+        ,	ValidTransNoDevice		BIGINT
+        ,	InvalidTrans			BIGINT	
+        ,	ValidBrowserless		BIGINT
     );
 	
     INSERT INTO Temp_TransReport(Subscriber, TotalTrans, TotalValidTrans, ValidTransNewDevice, ValidTransOldDevice, ValidTransRecoverDevice
