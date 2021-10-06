@@ -3,12 +3,14 @@ DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Details_Get`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Details_Get`(
-	IN ip_EventDate			DATE,
-    IN ip_MatchID 			BIGINT UNSIGNED,
-    IN ip_BettypeID			INT UNSIGNED,
-    IN ip_LiveIndicator		BIT,
-    IN ip_ListScore			VARCHAR(200),
-    IN ip_ListReasonGroup	VARCHAR(200)
+		IN ip_EventDate			DATE
+    ,	IN ip_MatchID 			BIGINT UNSIGNED    
+    ,	IN ip_BettypeID			INT UNSIGNED
+    ,	IN ip_LiveIndicator		BOOLEAN     
+    ,	IN ip_IsHedging			BOOLEAN  
+    ,	IN ip_ScoreList			VARCHAR(500)     
+    ,	IN ip_GroupIDList		VARCHAR(2000)
+    
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -37,11 +39,11 @@ BEGIN
 		GroupID 	BIGINT UNSIGNED
 	);
  
-	SET @sql = CONCAT("INSERT INTO Temp_Score (TotalScore) VALUES ('", REPLACE(ip_ListScore, ",", "'),('"),"');");
+	SET @sql = CONCAT("INSERT INTO Temp_Score (TotalScore) VALUES ('", REPLACE(ip_ScoreList, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
     
-    SET @sql = CONCAT("INSERT INTO Temp_ReasonGroup (GroupID) VALUES ('", REPLACE(ip_ListReasonGroup, ",", "'),('"),"');");
+    SET @sql = CONCAT("INSERT INTO Temp_ReasonGroup (GroupID) VALUES ('", REPLACE(ip_GroupIDList, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
     
@@ -50,13 +52,15 @@ BEGIN
         ,	d.GroupID
         ,	d.IsHedging
         ,	d.TotalScore
+        ,	d.LiveIndicator AS Market
 	FROM   CTS_DataCenter.MatchMonitorDetails AS d
 		INNER JOIN Temp_Score AS s ON s.TotalScore = d.TotalScore
         INNER JOIN Temp_ReasonGroup AS r ON r.GroupID = d.GroupID
 	WHERE  d.EventDate = ip_EventDate
 		AND d.BettypeID = ip_BettypeID
         AND d.MatchID = ip_MatchID
-        AND	(ip_LiveIndicator IS NULL OR d.LiveIndicator = ip_LiveIndicator)
+        AND d.LiveIndicator = ip_LiveIndicator
+        AND d.IsHedging = ip_IsHedging
         ;
     
 END$$
