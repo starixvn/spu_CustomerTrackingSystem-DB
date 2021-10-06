@@ -75,19 +75,19 @@ BEGIN
         
         UPDATE SumTransaction AS st
 			INNER JOIN Temp_SumTransaction AS tmpSt ON st.TransDate = tmpSt.TransDate 
-				AND st.SubscriberID = tmpSt.SubscriberID AND st.LastTransID < ip_MaxTransID
-		SET		st.ValidTotal = st.ValidTotal + st.ValidTotal
-			,	st.ValidNoDevice = st.ValidNoDevice + st.ValidNoDevice
-            ,	st.ValidDeviceStatusNew = st.ValidDeviceStatusNew + st.ValidDeviceStatusNew
-            ,	st.ValidDeviceStatusOld = st.ValidDeviceStatusOld + st.ValidDeviceStatusOld
-            ,	st.ValidDeviceStatusRecover = st.ValidDeviceStatusRecover + st.ValidDeviceStatusRecover
-            ,	st.ValidBrowserless = st.ValidBrowserless + st.ValidBrowserless
+					AND st.SubscriberID = tmpSt.SubscriberID AND st.LastTransID < ip_MaxTransID
+		SET		st.ValidTotal = st.ValidTotal + tmpSt.ValidTotal
+			,	st.ValidNoDevice = st.ValidNoDevice + tmpSt.ValidNoDevice
+            ,	st.ValidDeviceStatusNew = st.ValidDeviceStatusNew + tmpSt.ValidDeviceStatusNew
+            ,	st.ValidDeviceStatusOld = st.ValidDeviceStatusOld + tmpSt.ValidDeviceStatusOld
+            ,	st.ValidDeviceStatusRecover = st.ValidDeviceStatusRecover + tmpSt.ValidDeviceStatusRecover
+            ,	st.ValidBrowserless = st.ValidBrowserless + tmpSt.ValidBrowserless
             ,	st.LastTransID = ip_MaxTransID;
             
 		/*Update System Setting*/
         UPDATE SystemSetting AS s
-        SET	VValue = ip_MaxTransID
-		,	UpdatedTime = CURRENT_TIME()
+        SET	s.VValue = ip_MaxTransID
+		,	s.UpdatedTime = CURRENT_TIME()
         WHERE s.ID = 11;
     
 END$$

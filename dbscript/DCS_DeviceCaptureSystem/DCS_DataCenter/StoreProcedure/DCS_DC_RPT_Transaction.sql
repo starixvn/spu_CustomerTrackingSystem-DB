@@ -24,14 +24,14 @@ BEGIN
             
 	    Param's Explanation (filtered by):
         
-        Example: CALL DCS_DC_RPT_Transaction('2021-10-01','2021-10-04','2,4',0,50,@op_TotalRow);
-
+        Example: CALL DCS_DC_RPT_Transaction('2021-10-01','2021-10-04','2,4',0,50,@op_TotalRow); SELECT @op_TotalRow;
     */    
     DROP TEMPORARY TABLE IF EXISTS Temp_Subscriber;
     CREATE TEMPORARY TABLE Temp_Subscriber(
 			SubscriberID INT PRIMARY KEY
 		,	SubscriberName VARCHAR(50)
-    );
+    );  
+	
     
     SET @sql = CONCAT('	INSERT INTO Temp_Subscriber(SubscriberID, SubscriberName)
 						SELECT SubscriberID, SubscriberName
@@ -40,9 +40,23 @@ BEGIN
                      
     PREPARE	stmt1 FROM @sql;
 	EXECUTE stmt1;
-     
-	SELECT	SQL_CALC_FOUND_ROWS
-			tmpSb.SubscriberName AS 'Subscriber'
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_TransReport;
+    CREATE TEMPORARY TABLE Temp_TransReport(
+			Subscriber 				VARCHAR(50)  PRIMARY KEY
+        ,	TotalTrans				INT	UNSIGNED
+        ,	TotalValidTrans			INT	UNSIGNED
+        ,	ValidTransNewDevice		INT	UNSIGNED
+        ,	ValidTransOldDevice		INT	UNSIGNED
+        ,	ValidTransRecoverDevice	INT	UNSIGNED
+        ,	ValidTransNoDevice		INT	UNSIGNED
+        ,	InvalidTrans			INT	UNSIGNED
+        ,	ValidBrowserless		INT	UNSIGNED
+    );
+	
+    INSERT INTO Temp_TransReport(Subscriber, TotalTrans, TotalValidTrans, ValidTransNewDevice, ValidTransOldDevice, ValidTransRecoverDevice
+    , ValidTransNoDevice,  InvalidTrans, ValidBrowserless)
+	SELECT	tmpSb.SubscriberName AS 'Subscriber'
 		,	SUM(rt.TransTotal) AS 'TotalTrans'
 		,	SUM(IFNULL(ts.ValidTotal,0)) AS 'TotalValidTrans'
 		,	SUM(IFNULL(ts.ValidDeviceStatusNew,0)) AS 'ValidTransNewDevice'
@@ -50,17 +64,28 @@ BEGIN
 		,	SUM(IFNULL(ts.ValidDeviceStatusRecover,0)) AS 'ValidTransRecoverDevice'
 		,	SUM(IFNULL(ts.ValidNoDevice,0)) AS 'ValidTransNoDevice'  
 		,	SUM(rt.TransTotal) - SUM(IFNULL(ts.ValidTotal,0)) AS 'InvalidTrans'  
-		,	SUM(IFNULL(ts.ValidBrowserless,0)) AS 'Browserless'  
+		,	SUM(IFNULL(ts.ValidBrowserless,0)) AS 'ValidBrowserless'
 	FROM DCS_DataCenter.SumRawTransaction AS rt
 		LEFT JOIN DCS_DataCenter.SumTransaction AS ts ON rt.TransDate = ts.TransDate AND rt.SubscriberID = ts.SubscriberID
 		INNER JOIN Temp_Subscriber AS tmpSb ON rt.SubscriberID = tmpSb.SubscriberID
 	WHERE rt.TransDate BETWEEN ip_FromDate AND ip_ToDate
-	GROUP BY tmpSb.SubscriberName
-	ORDER BY tmpSb.SubscriberName
+	GROUP BY tmpSb.SubscriberName;
+    
+    SELECT	tmpTr.Subscriber
+		,	tmpTr.TotalTrans
+        ,	tmpTr.TotalValidTrans
+        ,	tmpTr.ValidTransNewDevice
+        ,	tmpTr.ValidTransOldDevice
+        ,	tmpTr.ValidTransRecoverDevice
+		,	tmpTr.ValidTransNoDevice
+        ,	tmpTr.InvalidTrans
+        ,	tmpTr.ValidBrowserless
+	FROM	Temp_TransReport AS tmpTr
+    ORDER BY tmpTr.Subscriber
 	LIMIT ip_Take
-	OFFSET ip_Skip;
+	OFFSET ip_Skip;	
         
-	SET op_TotalRow = FOUND_ROWS();
+	SET op_TotalRow = (SELECT COUNT(1) FROM Temp_TransReport);
     
 END$$
 DELIMITER ;

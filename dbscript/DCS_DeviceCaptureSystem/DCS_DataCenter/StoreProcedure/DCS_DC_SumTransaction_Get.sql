@@ -61,9 +61,7 @@ BEGIN
     INTO lv_MaxTransID
     FROM (SELECT TransID FROM DCS_DataCenter.Transaction07 WHERE TransID > lv_LastTransID LIMIT lv_BatchSize) AS tmp;
     
-    SELECT IFNULL(lv_MaxTransID,0);
-    
-    SELECT lv_MaxTransID AS MaxTransID;
+    SELECT IFNULL(lv_MaxTransID,0) AS MaxTransID;
     
     IF lv_MaxTransID IS NOT NULL THEN
     
@@ -75,10 +73,10 @@ BEGIN
 		INSERT INTO Temp_ValidTrans(TransID, TransDate,SubscriberID, DeviceID, DeviceStatus, Flagged, AccountID)
 		SELECT ts.TransID, ts.TransDate,ts.SubscriberID, ts.DeviceID, ts.DeviceStatus, ts.Flagged, ts.AccountID
 		FROM Temp_Trans AS ts
-		INNER JOIN CTS_DataCenter.CustDCSAccount AS dc ON ts.AccountID = dc.AccountID;        
+			INNER JOIN CTS_DataCenter.CustDCSAccount AS dc ON ts.AccountID = dc.AccountID;        
 		
 		SELECT TransDate
-			,	SubscriberId
+			,	SubscriberID
 			,	COUNT(1) AS ValidTotal
             ,	SUM(CASE WHEN DeviceID > 0 THEN 1 ELSE 0 END) AS ValidTotalDevice
 			,	SUM(CASE WHEN DeviceStatus = 1 THEN 1 ELSE 0 END) AS ValidDeviceStatusNew
