@@ -54,8 +54,13 @@ BEGIN
         
     );
     
-    SET lv_LastTransID = (SELECT VValue FROM DCS_DataCenter.SystemSetting WHERE ID = 11);
-    SET lv_BatchSize = (SELECT VValue FROM DCS_DataCenter.SystemSetting WHERE ID = 12);
+    SELECT VValue
+    INTO lv_LastTransID
+    FROM DCS_DataCenter.SystemSetting WHERE ID = 11;
+    
+    SELECT VValue
+    INTO lv_BatchSize
+    FROM DCS_DataCenter.SystemSetting WHERE ID = 12;
     
     SELECT MAX(tmp.TransID) 
     INTO lv_MaxTransID

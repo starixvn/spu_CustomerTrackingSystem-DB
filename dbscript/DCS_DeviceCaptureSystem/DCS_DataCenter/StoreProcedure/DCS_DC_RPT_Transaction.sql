@@ -30,8 +30,7 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_Subscriber(
 			SubscriberID INT PRIMARY KEY
 		,	SubscriberName VARCHAR(50)
-    );  
-	
+    );  	
     
     SET @sql = CONCAT('	INSERT INTO Temp_Subscriber(SubscriberID, SubscriberName)
 						SELECT SubscriberID, SubscriberName
@@ -69,7 +68,7 @@ BEGIN
 		LEFT JOIN DCS_DataCenter.SumTransaction AS ts ON rt.TransDate = ts.TransDate AND rt.SubscriberID = ts.SubscriberID
 		INNER JOIN Temp_Subscriber AS tmpSb ON rt.SubscriberID = tmpSb.SubscriberID
 	WHERE rt.TransDate BETWEEN ip_FromDate AND ip_ToDate
-	GROUP BY tmpSb.SubscriberName;
+	GROUP BY tmpSb.SubscriberID, tmpSb.SubscriberName;
     
     SELECT	tmpTr.Subscriber
 		,	tmpTr.TotalTrans
