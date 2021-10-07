@@ -17,6 +17,7 @@ BEGIN
 			- 20210330@Adam.Tran: Created [Redmine ID: #140348]  
 			- 20210412@Aries.Nguyen: Fix issue performance when filter all  [Redmine ID: #153009]
             - 20210629@Casey.Huynh: Return Flagged Value (Web will show type of robot) [Redmine ID: 157085]
+			- 20211006@Aries.Nguyen: Fix issue performance when filter sub SM88  [Redmine ID: #162888]
 
 		Param's Explanation (filtered by):
 
@@ -39,16 +40,16 @@ BEGIN
 		,	url.URLDetails
 		,	trans.AccountID
 		,	trans.TransID
-		FROM DCS_DataCenter.Transaction07 AS trans
-			LEFT JOIN CTS_DataCenter.CustDCSAccount AS cAcc ON trans.AccountID = cAcc.AccountID
-			LEFT JOIN CTS_DataCenter.CTSCustomer AS cust ON cAcc.CTSCustID = cust.CTSCustID AND cust.SubscriberID = trans.SubscriberID
-			LEFT JOIN DCS_DataCenter.UserAgent AS uAgent ON trans.UserAgentKey = uAgent.UserAgentKey
-			LEFT JOIN DCS_DataCenter.ActionResult AS aResult ON trans.ActionResultID = aResult.ActionResultID
-			LEFT JOIN DCS_DataCenter.URL AS url ON trans.URLID = url.URLID AND trans.SubscriberID = url.SubscriberID
-			LEFT JOIN CTS_Admin.Subscriber AS subs ON cust.SubscriberID = subs.SubscriberID			
-		WHERE (ip_SubscriberId = -1 OR trans.SubscriberID = ip_SubscriberId) AND  cAcc.AccountID IS NOT NULL AND cust.CTSCustID IS NOT NULL
-		ORDER BY trans.TransTime DESC
-		LIMIT ip_Length;
+	FROM DCS_DataCenter.Transaction07 AS trans
+		LEFT JOIN CTS_DataCenter.CustDCSAccount AS cAcc ON trans.AccountID = cAcc.AccountID AND cAcc.SubscriberID = trans.SubscriberID
+		LEFT JOIN CTS_DataCenter.CTSCustomer AS cust ON cAcc.CTSCustID = cust.CTSCustID 
+		LEFT JOIN DCS_DataCenter.UserAgent AS uAgent ON trans.UserAgentKey = uAgent.UserAgentKey
+		LEFT JOIN DCS_DataCenter.ActionResult AS aResult ON trans.ActionResultID = aResult.ActionResultID
+		LEFT JOIN DCS_DataCenter.URL AS url ON trans.URLID = url.URLID AND trans.SubscriberID = url.SubscriberID
+		LEFT JOIN CTS_Admin.Subscriber AS subs ON cust.SubscriberID = subs.SubscriberID			
+	WHERE (ip_SubscriberId = -1 OR trans.SubscriberID = ip_SubscriberId) AND  cAcc.AccountID IS NOT NULL AND cust.CTSCustID IS NOT NULL
+	ORDER BY trans.TransTime DESC
+	LIMIT ip_Length;
 	
 END$$
 
