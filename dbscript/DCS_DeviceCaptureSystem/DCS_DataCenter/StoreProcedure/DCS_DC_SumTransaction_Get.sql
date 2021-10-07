@@ -83,10 +83,10 @@ BEGIN
 		SELECT TransDate
 			,	SubscriberID
 			,	COUNT(1) AS ValidTotal
-            ,	SUM(CASE WHEN DeviceID > 0 THEN 1 ELSE 0 END) AS ValidTotalDevice
+            ,	SUM(CASE WHEN DeviceStatus IS NULL THEN 1 ELSE 0 END) AS ValidNoDevice
 			,	SUM(CASE WHEN DeviceStatus = 1 THEN 1 ELSE 0 END) AS ValidDeviceStatusNew
 			,	SUM(CASE WHEN DeviceStatus = 2 THEN 1 ELSE 0 END) AS ValidDeviceStatusOld
-			,	SUM(CASE WHEN DeviceStatus = 3 THEN 1 ELSE 0 END) AS ValidDevoceStatusRecover  
+			,	SUM(CASE WHEN DeviceStatus = 3 THEN 1 ELSE 0 END) AS ValidDeviceStatusRecover  
             ,	SUM(CASE WHEN Flagged > 1 THEN 1 ELSE 0 END) AS ValidBrowserless
 		FROM Temp_ValidTrans
 		GROUP BY TransDate,SubscriberID;          
