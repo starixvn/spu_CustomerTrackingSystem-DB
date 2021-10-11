@@ -411,7 +411,7 @@ sp: BEGIN
 		SET @i = @i+1;
 	END LOOP;         
     
-    INSERT INTO Temp_CustHedging(CustID)
+    INSERT IGNORE INTO Temp_CustHedging(CustID)
     SELECT grp.CustID 
     FROM Temp_TransGroup AS grp
 	WHERE EXISTS (	SELECT 1 
