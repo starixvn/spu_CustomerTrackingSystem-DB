@@ -27,6 +27,8 @@ BEGIN
 	*/
     
 	SELECT 	DISTINCT s.TotalScore
+		,	s.LiveHomeScore
+        ,	s.LiveAwayScore
 	FROM   CTS_DataCenter.MatchMonitorDetails AS s
 	WHERE  s.EventDate = ip_EventDate
 		AND s.BettypeID = ip_BettypeID
