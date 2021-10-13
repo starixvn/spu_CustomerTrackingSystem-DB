@@ -68,13 +68,6 @@ BEGIN
 		LEFT JOIN Temp_Yesterday AS tmpYs ON tmpSb.SubscriberID = tmpYs.SubscriberID    
     WHERE (IFNULL(tmpYs.TransTotal,0)/tmpPy.TransTotal) < 0.5;
     
-    /* Total Trans (Yesterday) = 0 and Total Trans (Yesterday - 1) > 0 */
-    SELECT 	GROUP_CONCAT(tmpSb.SubscriberName) AS YesterdayZero
-    FROM Temp_Subscriber AS tmpSb
-		INNER JOIN Temp_PreYesterday AS tmpPy ON tmpSb.SubscriberID = tmpPy.SubscriberID
-		LEFT JOIN Temp_Yesterday AS tmpYs ON tmpSb.SubscriberID = tmpYs.SubscriberID    
-    WHERE tmpYs.TransTotal IS NULL AND tmpPy.TransTotal > 0;
-    
 	/* Valid Trans(Yesterday)/Total Trans(Yesteday) < 50% */
     SELECT 	GROUP_CONCAT(tmpSb.SubscriberName) AS ValidLess50Percent  
     FROM Temp_Subscriber AS tmpSb
