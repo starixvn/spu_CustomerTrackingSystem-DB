@@ -389,7 +389,7 @@ BEGIN
     FROM Temp_CustProlemCase;
     
     SET op_AssDeviceID = lv_NextAssDeviceID + 1;
-    SET op_AssIPID = lv_NextAssDeviceID + 1;
+    SET op_AssIPID = lv_NextAssIPID + 1;
 
 END$$
 DELIMITER ;
