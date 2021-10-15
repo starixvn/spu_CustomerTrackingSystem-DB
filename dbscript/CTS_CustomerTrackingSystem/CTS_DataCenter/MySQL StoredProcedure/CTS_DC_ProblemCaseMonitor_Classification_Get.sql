@@ -50,12 +50,12 @@ BEGIN
     END IF;
     
     SELECT 	CustID
-        ,	CASE WHEN his.CategoryID IN (59,61,79,81,159,161,204,271,272,273,277,278) THEN CONST_ProblemCase_Robot
-				 WHEN his.CategoryID IN (204,271,272,273,277,278) THEN CONST_ProblemCase_ProPunter END AS ProblemCaseID
+        ,	CASE WHEN cat.CategoryGroup IN (59,61) THEN CONST_ProblemCase_Robot
+				 WHEN cat.CategoryGroup IN (204) THEN CONST_ProblemCase_ProPunter END AS ProblemCaseID
     FROM CTS_DataCenter.CTSCustomerClassification_History AS his
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON his.CategoryID = cat.CategoryID AND cat.CategoryGroup IN (59, 61, 204)
     WHERE his.ID BETWEEN lv_LastHistoryID  AND lv_NextHistoryID
-		AND	his.IsDataChanged = 1 
-        AND his.CategoryID IN (59,61,79,81,159,161,204,271,272,273,277,278);  
+		AND	his.IsDataChanged = 1;  
 	
     SET op_ClassificationHistoryID = lv_NextHistoryID;
 END$$
