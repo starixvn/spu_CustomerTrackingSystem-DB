@@ -14,7 +14,7 @@ BEGIN
 
 	    Revisions:		    
         	-	20210930@Casey.Huynh: Created [Redmine ID: 161528]
-            
+            -	202110150@Casey.Huynh: Update Get TransID from LastTransID + 1 [Redmine ID: 161528]
 	    Param's Explanation (filtered by):
         
         Example: CALL DCS_DC_SumTransaction_Get(5000);
@@ -64,7 +64,7 @@ BEGIN
     
     SELECT MAX(tmp.TransID) 
     INTO lv_MaxTransID
-    FROM (SELECT TransID FROM DCS_DataCenter.Transaction07 WHERE TransID > lv_LastTransID LIMIT lv_BatchSize) AS tmp;
+    FROM (SELECT TransID FROM DCS_DataCenter.Transaction07 WHERE TransID > lv_LastTransID ORDER BY TransID ASC LIMIT lv_BatchSize) AS tmp;
     
     SELECT IFNULL(lv_MaxTransID,0) AS MaxTransID;
     
@@ -73,7 +73,7 @@ BEGIN
 		INSERT INTO Temp_Trans(TransID, TransDate,SubscriberID, DeviceID, DeviceStatus, Flagged, AccountID)
 		SELECT TransID, CreatedDate, SubscriberID, DeviceID, DeviceStatus, Flagged , AccountID
 		FROM DCS_DataCenter.Transaction07 AS ts
-		WHERE TransID BETWEEN lv_LastTransID AND lv_MaxTransID;
+		WHERE TransID BETWEEN lv_LastTransID + 1 AND lv_MaxTransID;
        
 		INSERT INTO Temp_ValidTrans(TransID, TransDate,SubscriberID, DeviceID, DeviceStatus, Flagged, AccountID)
 		SELECT ts.TransID, ts.TransDate,ts.SubscriberID, ts.DeviceID, ts.DeviceStatus, ts.Flagged, ts.AccountID
