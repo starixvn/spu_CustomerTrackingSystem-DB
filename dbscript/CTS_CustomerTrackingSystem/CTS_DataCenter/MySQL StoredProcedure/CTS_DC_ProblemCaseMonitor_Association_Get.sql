@@ -149,9 +149,9 @@ BEGIN
     WHERE ip.ID BETWEEN lv_LastAssIPID AND lv_NextAssIPID
 		AND EXISTS (SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
+                        INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ParentID = 50 AND cat.CategoryGroup <> 52
 					WHERE  cls.CustID = ip.FromCustID
-						AND cls.SportGroupID = 0
-                        AND cls.CategoryID IN (51,53,54,55,56,57,58,59,60,61,62,73,74,75,76,78,79,80,81,82,151,153,154,155,156,157,158,159,161,162));
+						AND cls.SportGroupID = 0);
 	
     INSERT IGNORE INTO Temp_AssIP_PA(CustID)
     SELECT 	ip.FromCustID
@@ -159,9 +159,9 @@ BEGIN
     WHERE ip.ID BETWEEN lv_LastAssIPID AND lv_NextAssIPID
 		AND EXISTS (SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
+                        INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ParentID = 50 AND cat.CategoryGroup <> 52
 					WHERE  cls.CustID = ip.ToCustID
-						AND cls.SportGroupID = 0
-                        AND cls.CategoryID IN (51,53,54,55,56,57,58,59,60,61,62,73,74,75,76,78,79,80,81,82,151,153,154,155,156,157,158,159,161,162));
+						AND cls.SportGroupID = 0);
 	
     INSERT IGNORE INTO Temp_NewAssIP(FromCustID, FromCTSCustID, ToCustID, ToCTSCustID)
     SELECT 	pa.CustID
@@ -245,9 +245,9 @@ BEGIN
     FROM Temp_CustID AS tmp
     WHERE EXISTS   (SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
+                        INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ParentID = 50 AND cat.CategoryGroup <> 52
 					WHERE  cls.CustID = tmp.CustID
-						AND cls.SportGroupID = 0
-                        AND cls.CategoryID IN (51,53,54,55,56,57,58,59,60,61,62,73,74,75,76,78,79,80,81,82,151,153,154,155,156,157,158,159,161,162));
+						AND cls.SportGroupID = 0);
 	
     INSERT IGNORE INTO Temp_CustAssociation(CustID, CTSCustID, CustID_Aff, CTSCustID_Aff)
     SELECT 	DISTINCT
@@ -370,9 +370,9 @@ BEGIN
     WHERE ass.IsPA = 1 
 		AND	EXISTS (SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
+                        INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ParentID = 50 AND cat.CategoryGroup <> 52
 					WHERE  cls.CustID = ass.CustID_Aff
-						AND cls.SportGroupID = 0
-                        AND cls.CategoryID IN (51,53,54,55,56,57,58,59,60,61,62,73,74,75,76,78,79,80,81,82,151,153,154,155,156,157,158,159,161,162));
+						AND cls.SportGroupID = 0);
 	
     UPDATE Temp_CustAssociation AS ass
     SET ass.IsPA = 1
