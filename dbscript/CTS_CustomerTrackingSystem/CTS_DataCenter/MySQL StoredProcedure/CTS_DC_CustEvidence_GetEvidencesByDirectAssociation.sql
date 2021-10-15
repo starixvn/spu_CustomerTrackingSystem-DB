@@ -18,11 +18,12 @@ BEGIN
            - 20210226@JonasHuynh: Created [Redmine ID: #150456]
            - 20210308@JonasHuynh: Update logic SP [Redmine ID: #150456]
 		   - 20210622@Aries.Nguyen: Update coding convention and improve locking[Redmine ID: #157203]
+		   - 20211014@Aries.Nguyen: Remove association unlink[Redmine ID: #163093]
 		   
 		Param's Explanation (filtered by):		
 		
         Example:
-			- CALL CTS_DataCenter.CTS_DC_CustEvidence_GetAllEvidencesByCusts('43600693,1176086');
+			- CALL CTS_DataCenter.CTS_DC_CustEvidence_GetEvidencesByDirectAssociation('43600693,1176086');
 	*/
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_RootCustomer;    
@@ -38,14 +39,22 @@ BEGIN
 			CustID              BIGINT UNSIGNED
         ,	INDEX 				IX_Temp_CustID_CustID (CustID)
 	);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_Unlink;    
+	CREATE TEMPORARY TABLE Temp_Unlink(	  
+			RootCTSCustID       BIGINT UNSIGNED
+        ,	AssCTSCustID 		BIGINT UNSIGNED 
+	);
 	      
     DROP TEMPORARY TABLE IF EXISTS   Temp_FlaggedEvidence;
     CREATE TEMPORARY TABLE Temp_FlaggedEvidence(
 		 	AssCTSCustID		BIGINT UNSIGNED  
 		,	RootCustID			BIGINT UNSIGNED
+        ,	RootCTSCustID		BIGINT UNSIGNED
         ,	EvidenceID			INT
 		,	CreatedDate			DATETIME
 		, 	AssociationLevel	SMALLINT
+        ,	INDEX 				IX_Temp_FlaggedEvidence(AssCTSCustID, RootCustID)
 	);
         
 	/* Insert CustIDs  */
@@ -60,18 +69,41 @@ BEGIN
 		,	cust.CTSCustID
 	FROM Temp_CustID AS temp
 		INNER JOIN  CTS_DataCenter.CTSCustomer AS cust ON cust.CustID = temp.CustID AND cust.CustSubID = 0;
-		
+        
+	
     /* Get Direct Association */
-    INSERT INTO Temp_FlaggedEvidence (AssCTSCustID, RootCustID, EvidenceID, CreatedDate, AssociationLevel)
+    INSERT INTO Temp_FlaggedEvidence (AssCTSCustID, RootCustID, RootCTSCustID, EvidenceID, CreatedDate, AssociationLevel)
 	SELECT  ce.FromCustID 	AS AssCTSCustID
 		,	c.CustID 		AS RootCustID
+        ,	c.CTSCustID		AS RootCTSCustID
         , 	ce.EvidenceID
         , 	ce.CreatedDate
         ,	CASE WHEN ce.Level = 0 THEN 0 ELSE 1 END AS AssociationLevel	   
 	FROM Temp_RootCustomer AS c	
 		INNER JOIN CTS_DataCenter.CustEvidence AS ce ON ce.CTSCustID = c.CTSCustID;
         
-	-- Return CustId, Level0CustId, EvidenceCode, EvidenceName, CreatedDate, AssociatedLevel
+	 /* Unlink  Association */
+	INSERT INTO Temp_Unlink(RootCTSCustID, AssCTSCustID)
+    SELECT 	tmp.CTSCustID
+		,	rm.ToCTSCustID
+    FROM  Temp_RootCustomer AS tmp 
+		INNER JOIN CTS_DataCenter.AssociationRemove AS rm ON rm.FromCTSCustID = tmp.CTSCustID;
+	
+    INSERT INTO Temp_Unlink(RootCTSCustID, AssCTSCustID)
+    SELECT 	tmp.CTSCustID
+		,	rm.FromCTSCustID
+    FROM  Temp_RootCustomer AS tmp 
+		INNER JOIN CTS_DataCenter.AssociationRemove AS rm ON rm.ToCTSCustID = tmp.CTSCustID;
+    
+    DELETE ass
+    FROM Temp_FlaggedEvidence AS ass
+    WHERE EXISTS (SELECT 1 
+				  FROM Temp_Unlink AS rm 
+                  WHERE rm.RootCTSCustID = ass.RootCTSCustID 
+					AND rm.AssCTSCustID = ass.AssCTSCustID);
+    
+        
+	/* Return CustId, Level0CustId, EvidenceCode, EvidenceName, CreatedDate, AssociatedLevel */
     SELECT DISTINCT cust.CustID				AS CustId
 				,	e.EvidenceCode			AS EvidenceCode
                 ,	e.EvidenceName			AS EvidenceName
