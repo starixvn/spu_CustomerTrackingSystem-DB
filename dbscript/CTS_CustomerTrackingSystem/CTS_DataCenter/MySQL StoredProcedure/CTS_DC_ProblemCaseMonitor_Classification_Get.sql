@@ -57,6 +57,6 @@ BEGIN
     WHERE his.ID BETWEEN lv_LastHistoryID  AND lv_NextHistoryID
 		AND	his.IsDataChanged = 1;  
 	
-    SET op_ClassificationHistoryID = lv_NextHistoryID;
+    SET op_ClassificationHistoryID = lv_NextHistoryID + 1;
 END$$
 DELIMITER ;
