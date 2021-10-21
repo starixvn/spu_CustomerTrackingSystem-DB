@@ -9,7 +9,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule_Process`(
     ,	IN ip_TotalScore INT UNSIGNED
     ,	IN ip_BettypeID INT UNSIGNED
 )
-  SQL SECURITY INVOKER
+    SQL SECURITY INVOKER
 sp: BEGIN
 	/*
 		Created:	20210526@Casey.Huynh
@@ -21,11 +21,12 @@ sp: BEGIN
 			- 	20210526@Casey.Huynh: Created [Redmine ID: 152883]
 			-	20210719@Casey.Huynh: Fix Issue Rule Trans.StepTime and AssGroup [Redmine ID: 158946]
             -	20210830@Casey.Huynh: Update Rule seperate Live and NonLive and move to Slave [Redmine ID: 159195]
+			-	20211019@Aries.Nguyen: Use FEDERATED  table [Redmine ID: 163400]	
             
 		Param's Explanation (filtered by):	
 
 		Example:
-			CALL CTS_DC_MatchMonitor_Rule_Process(1,113171940189,22081995,1,1);
+			- CALL CTS_DC_MatchMonitor_Rule_Process(1,113171940189,22081995,1,1);
 			
 	*/
     DECLARE lv_TimeCustID BIGINT UNSIGNED DEFAULT 0;
@@ -170,7 +171,7 @@ sp: BEGIN
             ,	mms.CustID
             ,	mms.GroupID
             ,	mms.Stake
-		FROM CTS_DataCenter.MatchMonitorStagingLive AS mms
+		FROM CTS_DataCenter.MatchMonitorStagingLive_Master AS mms
         WHERE mms.TransID <= ip_MaxTransID AND mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID;
         
 	ELSE 
@@ -180,7 +181,7 @@ sp: BEGIN
             ,	mms.CustID
             ,	mms.GroupID
             ,	mms.Stake
-		FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms
+		FROM CTS_DataCenter.MatchMonitorStagingNonLive_Master AS mms
         WHERE  mms.TransID <= ip_MaxTransID AND	mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID;
         
     END IF;
