@@ -29,7 +29,7 @@ BEGIN
 		,	tmp.CustID
 		, 	CONST_ProblemCase_SuspiciousAss
         ,	0
-        ,	CURRENT_DATE() AS CreatedDate
+        ,	CURRENT_TIME() AS CreatedDate
 	 FROM JSON_TABLE(ip_ProblemCaseData,
 		"$[*]" COLUMNS(
 				CustID 					BIGINT UNSIGNED		PATH "$.CustID"
