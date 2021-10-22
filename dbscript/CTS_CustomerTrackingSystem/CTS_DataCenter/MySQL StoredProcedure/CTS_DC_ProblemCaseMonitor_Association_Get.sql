@@ -221,7 +221,7 @@ BEGIN
 		SET lv_NextAssDeviceID = lv_LastAssDeviceID;
     END IF;
     
-    INSERT INTO Temp_NewAssDevice(DCSDeviceID, CTSCustID, CustID)
+    INSERT IGNORE INTO Temp_NewAssDevice(DCSDeviceID, CTSCustID, CustID)
     SELECT 	dv.DCSDeviceID
 		,	dv.CTSCustID
         ,	cus.CustID
@@ -247,7 +247,7 @@ BEGIN
 		INNER JOIN  AssociationByIP AS ip ON dv.CustID = ip.ToCustID
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ip.FromCustID AND cus.CustSubID = 0;
     
-    INSERT INTO Temp_NewAssDevice(DCSDeviceID, CTSCustID, CustID)
+    INSERT IGNORE INTO Temp_NewAssDevice(DCSDeviceID, CTSCustID, CustID)
     SELECT 	dv.DCSDeviceID
 		,	cus.CTSCustID
 		,	ip.CustID
