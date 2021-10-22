@@ -163,6 +163,19 @@ BEGIN
 					WHERE  cls.CustID = ip.ToCustID
 						AND cls.SportGroupID = 0);
 	
+    INSERT IGNORE INTO Temp_ProlemCase_Exist(CustID)
+	SELECT ass.CustID
+	FROM Temp_AssIP_PA AS ass
+	WHERE EXISTS (SELECT 1 
+					FROM ProblemCaseMonitor AS prc 
+                    WHERE prc.CustID = ass.CustID 
+						AND prc.ProblemCaseID = CONST_ProblemCase_SuspiciousAss);
+    
+    DELETE 
+    FROM Temp_AssIP_PA AS ip
+    WHERE ip.CustID IN (SELECT tmp.CustID FROM Temp_ProlemCase_Exist AS tmp);
+    
+	
     INSERT IGNORE INTO Temp_NewAssIP(FromCustID, FromCTSCustID, ToCustID, ToCTSCustID)
     SELECT 	pa.CustID
 		,	frCus.CTSCustID
@@ -215,6 +228,32 @@ BEGIN
 	FROM AssociationByDevice AS dv
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = dv.CTSCustID AND cus.CustSubID = 0
     WHERE dv.CTSAssDevID BETWEEN lv_LastAssDeviceID AND lv_NextAssDeviceID;
+    
+    INSERT IGNORE INTO Temp_NewAssIP(FromCustID, FromCTSCustID, ToCustID, ToCTSCustID)
+    SELECT 	dv.CustID
+		,	dv.CTSCustID
+		,	ip.ToCustID
+        ,	cus.CTSCustID
+	FROM Temp_NewAssDevice AS dv 
+		INNER JOIN  AssociationByIP AS ip ON dv.CustID = ip.FromCustID
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ip.ToCustID AND cus.CustSubID = 0;
+    
+    INSERT IGNORE INTO Temp_NewAssIP(FromCustID, FromCTSCustID, ToCustID, ToCTSCustID)
+    SELECT 	dv.CustID
+		,	dv.CTSCustID
+		,	ip.FromCustID
+        ,	cus.CTSCustID
+	FROM Temp_NewAssDevice AS dv 
+		INNER JOIN  AssociationByIP AS ip ON dv.CustID = ip.ToCustID
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ip.FromCustID AND cus.CustSubID = 0;
+    
+    INSERT INTO Temp_NewAssDevice(DCSDeviceID, CTSCustID, CustID)
+    SELECT 	dv.DCSDeviceID
+		,	cus.CTSCustID
+		,	ip.CustID
+    FROM Temp_AssIP_PA AS ip
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ip.CustID AND cus.CustSubID = 0
+        INNER JOIN AssociationByDevice AS dv ON cus.CTSCustID = dv.CTSCustID;
     
     INSERT INTO Temp_AssDevice_Level1(DCSDeviceID, CTSCustID, CustID)
     SELECT  DISTINCT
