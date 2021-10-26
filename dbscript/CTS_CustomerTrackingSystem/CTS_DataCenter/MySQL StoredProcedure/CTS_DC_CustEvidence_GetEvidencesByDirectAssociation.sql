@@ -107,7 +107,7 @@ BEGIN
 	/* Return CustId, Level0CustId, EvidenceCode, EvidenceName, CreatedDate, AssociatedLevel */
     SELECT	DISTINCT 
 			e.EvidenceCode			AS EvidenceCode
-		,	e.EvidenceName			AS EvidenceName
+		,	temp.AssociationLevel	AS AssociatedLevel
 		,	temp.RootCustID 		AS Level0CustId
     FROM Temp_FlaggedEvidence AS temp
   		INNER JOIN CTS_DataCenter.Evidence AS e ON e.EvidenceID = temp.EvidenceID AND e.IsActive = True;

@@ -174,7 +174,7 @@ BEGIN
     
     SELECT  DISTINCT
 			e.EvidenceCode	AS EvidenceCode
-		,	e.EvidenceName	AS EvidenceName
+		,	2				AS AssociatedLevel
 		,	lv2.CustID 		AS Level0CustId
     FROM Temp_Association_Level2 AS lv2
 		INNER JOIN CTS_DataCenter.CustEvidence AS ev FORCE INDEX (IX_CustEvidence_Level_CTSCustID) ON ev.CTSCustID = lv2.Level2 AND Level = 0
