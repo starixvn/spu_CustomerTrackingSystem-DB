@@ -29,6 +29,7 @@ BEGIN
 		   - 20210622@Aries.Nguyen: Update coding convention and inprove locking [Redmine ID: #157203]
            - 20211009@Irena.Vo: Additional compare CategoryGroup for remove evidence [Redmine ID: #161232]
 		   - 20210922@Long.Luu: Split Classification History & Log  [Redmine ID: #161890]
+		   - 20211026@Aries.Nguyen: Archive inactive association [Redmine ID: #163087]
             
 		Param's Explanation (filtered by):
 		Exmaple:
@@ -385,7 +386,9 @@ BEGIN
     WHERE temp.ActionType <> CONST_ACTIONTYPE_REMOVE OR (temp.ActionType = CONST_ACTIONTYPE_REMOVE AND temp.IsExistedEvi = 0);
     
     /* 16: RETURN UPDATED CUSTOMERS TO SERVICE FOR FUTHER STEPS */
-	SELECT	DISTINCT temp.CustId 
+	SELECT	DISTINCT 
+		,	temp.CustId 
+		,	temp.CTSCustID
 	FROM Temp_CustomerEvidences AS temp
 	WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE, CONST_ACTIONTYPE_REMOVE); 
 END$$

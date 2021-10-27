@@ -31,6 +31,7 @@ BEGIN
 			- 20210625@Long.Luu: Refactor. Update logic  [Redmine ID: #157203]
 			- 20210907@Long.Luu: Update Robot Users rules  [Redmine ID: #161232]
             - 20210922@Long.Luu: Split Classification History & Log  [Redmine ID: #161890]
+			- 20211026@Aries.Nguyen: Archive inactive association [Redmine ID: #163087]
             
         Param's Explanation (filtered by):
         
@@ -389,7 +390,9 @@ BEGIN
 		LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryID <> CONST_CATEGORYID_ROBOTUSERS AND (ex.CategoryID NOT BETWEEN 72 AND 150) AND ex.RowOrder = 1;
     
 	/* 17: RETURN UPDATED CUSTOMERS TO SERVICE FOR FUTHER STEPS */
-	SELECT DISTINCT temp.CustId 
+	SELECT	DISTINCT 
+			temp.CustId
+		,	temp.CTSCustID
     FROM Temp_ProblemAccounts AS temp 
     WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE, CONST_ACTIONTYPE_REMOVE); 
 END$$
