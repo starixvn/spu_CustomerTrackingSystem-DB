@@ -20,9 +20,9 @@ BEGIN
         Example: 
 			- CALL CTS_Arc_CustomerAssociation_LastTicketDate_Update('[{"CustID": 221882500}]');
 */   
-	DROP TEMPORARY TABLE IF EXISTS Temp_Cust;    
+		DROP TEMPORARY TABLE IF EXISTS Temp_Cust;    
 	CREATE TEMPORARY TABLE Temp_Cust( 	  
-			CustID		BIGINT UNSIGNED	
+			CustID		INT UNSIGNED	
         ,	PRIMARY	KEY (CustID)
 	);
     
@@ -38,7 +38,7 @@ BEGIN
 	SELECT	info.CustID
 	FROM JSON_TABLE(ip_CustInfo,
 		 "$[*]" COLUMNS(
-				CustID		SMALLINT		PATH "$.CustID")
+				CustID INT UNSIGNED		PATH "$.CustID")
 	) AS info;
     
     INSERT INTO Temp_CustArchived(CTSCustID, CustID)
