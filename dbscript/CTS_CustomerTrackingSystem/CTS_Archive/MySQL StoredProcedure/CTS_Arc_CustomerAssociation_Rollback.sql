@@ -347,7 +347,7 @@ sp : BEGIN
 			
 			SELECT COUNT(1)
             INTO lv_Count
-            FROM Temp_AssociationByIP_Clean;
+            FROM AssociationByManual_Arc;
             
             IF lv_Count >= lv_BatchSize_AssData THEN
 				LEAVE sp;
@@ -405,7 +405,7 @@ sp : BEGIN
 			
 			SELECT COUNT(1)
             INTO lv_Count
-            FROM Temp_AssociationByIP_Clean;
+            FROM Temp_AssociationByManual_Clean;
             
             IF lv_Count >= lv_BatchSize_AssData THEN
 				LEAVE sp;
