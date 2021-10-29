@@ -108,7 +108,26 @@ sp : BEGIN
 			OR (cus.CustStatusID NOT IN (2,3,4,12,13,14) AND cate.ParentID = CONST_NORMAL  AND cate.TaggingType = CONST_Tagging_Normal AND tmp.Days >= CONST_30Days)
             OR (cate.ParentID = CONST_NORMAL  AND cate.TaggingType IN (CONST_Tagging_WithPA,CONST_Tagging_TW) AND tmp.Days >= CONST_60Days)
             OR (cate.ParentID = CONST_PA   AND tmp.Days >= CONST_90Days);
+        
+        IF NOT EXISTS (SELECT 1 FROM  CTS_Archive.CTSCustomerAssociationArchive_Process) THEN
+			
+            SELECT MAX(CTSCustID)
+			INTO lv_LastCTSCust
+			FROM Temp_CustNoBet;
             
+			UPDATE CTS_Archive.SystemParameter
+			SET ParameterValue = lv_LastCTSCust
+			WHERE ParameterID = 2;
+            
+            UPDATE CTS_Archive.SystemParameter
+			SET ParameterValue = 'AssociationByAI-From'
+			WHERE ParameterID = 4; 
+            
+            SET op_IsDataExist = 1;
+            
+			LEAVE sp;
+        END IF;
+        
 		UPDATE CTS_Archive.SystemParameter
 		SET ParameterValue = 'AssociationByAI-From'
 		WHERE ParameterID = 4; 
@@ -404,7 +423,7 @@ sp : BEGIN
 			
 			SELECT COUNT(1)
             INTO lv_Count
-            FROM Temp_AssociationByIP_Clean;
+            FROM Temp_AssociationByManual_Clean;
             
             IF lv_Count >= lv_BatchSize_AssData THEN
 				SET op_IsDataExist = 1;
@@ -463,7 +482,7 @@ sp : BEGIN
 			
 			SELECT COUNT(1)
             INTO lv_Count
-            FROM Temp_AssociationByIP_Clean;
+            FROM Temp_AssociationByManual_Clean;
             
             IF lv_Count >= lv_BatchSize_AssData THEN
 				SET op_IsDataExist = 1;
@@ -500,7 +519,7 @@ sp : BEGIN
 			
 			SELECT COUNT(1)
             INTO lv_Count
-            FROM Temp_AssociationByIP_Clean;
+            FROM Temp_CustEvidence_Clean;
             
             IF lv_Count >= lv_BatchSize_AssData THEN
 				SET op_IsDataExist = 1;
@@ -537,7 +556,7 @@ sp : BEGIN
 			
 			SELECT COUNT(1)
             INTO lv_Count
-            FROM Temp_AssociationByIP_Clean;
+            FROM Temp_CustEvidence_Clean;
             
             IF lv_Count >= lv_BatchSize_AssData THEN
 				SET op_IsDataExist = 1;
