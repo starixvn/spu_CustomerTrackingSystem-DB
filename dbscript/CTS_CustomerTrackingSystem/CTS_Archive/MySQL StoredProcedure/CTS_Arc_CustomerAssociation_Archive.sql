@@ -20,7 +20,19 @@ sp : BEGIN
         Example:  
 			- CALL CTS_Arc_CustomerAssociation_Archive(@IsDataExist);
 */   
-	DECLARE lv_DateValid 			DATETIME DEFAULT DATE_SUB(NOW(), INTERVAL 15 DAY); 
+    DECLARE	CONST_15Days 						    INT DEFAULT 15;
+    DECLARE	CONST_30Days 						    INT DEFAULT 30;
+    DECLARE	CONST_60Days 						    INT DEFAULT 60;
+    DECLARE	CONST_90Days 						    INT DEFAULT 90;
+
+    DECLARE	CONST_PA 								INT DEFAULT 50;
+	DECLARE	CONST_NORMAL 							INT DEFAULT 200;
+
+    DECLARE	CONST_Tagging_Normal 					INT DEFAULT 0;
+    DECLARE	CONST_Tagging_WithPA 					INT DEFAULT 1;
+    DECLARE	CONST_Tagging_TW 					    INT DEFAULT 2;
+
+	DECLARE lv_DateValid 			DATETIME DEFAULT DATE_SUB(NOW(), INTERVAL CONST_15Days DAY); 
     DECLARE lv_NowToDays 			INT DEFAULT TO_DAYS(NOW());
 	DECLARE lv_BatchSize_Cust 		INT;
     DECLARE lv_LastCTSCust 			BIGINT UNSIGNED;
@@ -64,7 +76,7 @@ sp : BEGIN
 			,	cus.CustID
             ,	lv_NowToDays - TO_DAYS(LastTicketDate) 
         FROM CTS_DataCenter.CTSCustomerAssociationStatus AS cus 
-        WHERE cus.LastTicketDate < lv_DateValid
+        WHERE cus.LastTicketDate <= lv_DateValid
 			AND cus.CTSCustID > lv_LastCTSCust
             AND cus.IsArchived = 0
         ORDER BY cus.CTSCustID ASC
@@ -92,10 +104,10 @@ sp : BEGIN
 			LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON tmp.CTSCustID = cus.CTSCustID
             LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON tmp.CustID = cls.CustID
             LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON cls.CategoryID = cate.CategoryID
-        WHERE  (cus.CustStatusID IN (2,3) AND cate.ParentID = 200 AND cate.TaggingType = 0 AND tmp.Days >= 15)
-			OR (cus.CustStatusID NOT IN (2,3) AND cate.ParentID = 200  AND cate.TaggingType = 0 AND tmp.Days >= 30)
-            OR (cate.ParentID = 200  AND cate.TaggingType IN (1,2) AND tmp.Days >= 60)
-            OR (cate.ParentID = 50   AND tmp.Days >= 90);
+        WHERE  (cus.CustStatusID IN (2,3,4,12,13,14) AND cate.ParentID = CONST_NORMAL AND cate.TaggingType = CONST_Tagging_Normal AND tmp.Days >= CONST_15Days)
+			OR (cus.CustStatusID NOT IN (2,3,4,12,13,14) AND cate.ParentID = CONST_NORMAL  AND cate.TaggingType = CONST_Tagging_Normal AND tmp.Days >= CONST_30Days)
+            OR (cate.ParentID = CONST_NORMAL  AND cate.TaggingType IN (CONST_Tagging_WithPA,CONST_Tagging_TW) AND tmp.Days >= CONST_60Days)
+            OR (cate.ParentID = CONST_PA   AND tmp.Days >= CONST_90Days);
             
 		UPDATE CTS_Archive.SystemParameter
 		SET ParameterValue = 'AssociationByAI-From'
