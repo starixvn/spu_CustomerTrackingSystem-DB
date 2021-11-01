@@ -19,6 +19,7 @@ BEGIN
            - 20210308@JonasHuynh: Update logic SP [Redmine ID: #150456]
 		   - 20210622@Aries.Nguyen: Update coding convention and improve locking[Redmine ID: #157203]
 		   - 20211014@Aries.Nguyen: Remove association unlink[Redmine ID: #163093]
+		   - 20211021@Aries.Nguyen: Return only evidence infor[Redmine ID: #163514]
 		   
 		Param's Explanation (filtered by):		
 		
@@ -104,15 +105,12 @@ BEGIN
     
         
 	/* Return CustId, Level0CustId, EvidenceCode, EvidenceName, CreatedDate, AssociatedLevel */
-    SELECT DISTINCT cust.CustID				AS CustId
-				,	e.EvidenceCode			AS EvidenceCode
-                ,	e.EvidenceName			AS EvidenceName
-                ,	temp.RootCustID 		AS Level0CustId
-                ,	temp.CreatedDate		AS CreatedDate
-                ,	temp.AssociationLevel	AS AssociatedLevel
+    SELECT	DISTINCT 
+			e.EvidenceCode			AS EvidenceCode
+		,	temp.AssociationLevel	AS AssociatedLevel
+		,	temp.RootCustID 		AS Level0CustId
     FROM Temp_FlaggedEvidence AS temp
-  		INNER JOIN CTS_DataCenter.Evidence AS e ON e.EvidenceID = temp.EvidenceID AND e.IsActive = True
-        INNER JOIN CTS_DataCenter.CTSCustomer cust ON cust.CTSCustID = temp.AssCTSCustID;
+  		INNER JOIN CTS_DataCenter.Evidence AS e ON e.EvidenceID = temp.EvidenceID AND e.IsActive = True;
   
 END$$
 
