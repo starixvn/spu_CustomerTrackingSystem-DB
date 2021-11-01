@@ -45,15 +45,18 @@ BEGIN
 			DCSDeviceID	BIGINT UNSIGNED
         ,	CTSCustID	BIGINT UNSIGNED
 		,	CustID		BIGINT UNSIGNED
+        ,   IsIP		BIT DEFAULT 0
         ,	PRIMARY KEY(DCSDeviceID, CTSCustID)
         ,	INDEX 		IX_Temp_NewAssDevice_CustID(CustID)
     );  
     
     DROP TEMPORARY TABLE IF EXISTS Temp_AssDevice_Level1;
     CREATE TEMPORARY TABLE Temp_AssDevice_Level1(
-			DCSDeviceID	BIGINT UNSIGNED
-        ,	CTSCustID	BIGINT UNSIGNED
-        ,	CustID		BIGINT UNSIGNED
+			DCSDeviceID			BIGINT UNSIGNED
+        ,	CTSCustID			BIGINT UNSIGNED
+        ,	CustID				BIGINT UNSIGNED
+        ,	CTSAssDevID			BIGINT UNSIGNED
+        ,   IsIP				BIT DEFAULT 0
         ,	PRIMARY KEY(DCSDeviceID, CTSCustID)
         ,	INDEX 		IX_Temp_AssDevice_Level1_CustID(CustID)
     );
@@ -65,6 +68,11 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_PA;
     CREATE TEMPORARY TABLE 	Temp_PA (			
+			CustID		BIGINT UNSIGNED PRIMARY KEY
+	);
+
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustProcessed;
+    CREATE TEMPORARY TABLE 	Temp_CustProcessed (			
 			CustID		BIGINT UNSIGNED PRIMARY KEY
 	);
     
@@ -145,7 +153,7 @@ BEGIN
     
     INSERT IGNORE INTO Temp_AssIP_PA(CustID)
     SELECT 	ip.ToCustID
-	FROM AssociationByIP AS ip
+	FROM CTS_DataCenter.AssociationByIP AS ip
     WHERE ip.ID BETWEEN lv_LastAssIPID AND lv_NextAssIPID
 		AND EXISTS (SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
@@ -155,7 +163,7 @@ BEGIN
 	
     INSERT IGNORE INTO Temp_AssIP_PA(CustID)
     SELECT 	ip.FromCustID
-	FROM AssociationByIP AS ip
+	FROM CTS_DataCenter.AssociationByIP AS ip
     WHERE ip.ID BETWEEN lv_LastAssIPID AND lv_NextAssIPID
 		AND EXISTS (SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
@@ -167,7 +175,7 @@ BEGIN
 	SELECT ass.CustID
 	FROM Temp_AssIP_PA AS ass
 	WHERE EXISTS (SELECT 1 
-					FROM ProblemCaseMonitor AS prc 
+					FROM CTS_DataCenter.ProblemCaseMonitor AS prc 
                     WHERE prc.CustID = ass.CustID 
 						AND prc.ProblemCaseID = CONST_ProblemCase_SuspiciousAss);
     
@@ -182,7 +190,7 @@ BEGIN
 		,	ip.ToCustID
         ,	toCus.CTSCustID
 	FROM Temp_AssIP_PA AS pa 
-		INNER JOIN  AssociationByIP AS ip ON pa.CustID = ip.FromCustID
+		INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON pa.CustID = ip.FromCustID
 		INNER JOIN CTS_DataCenter.CTSCustomer AS frCus ON frCus.CustID = pa.CustID AND frCus.CustSubID = 0
         INNER JOIN CTS_DataCenter.CTSCustomer AS toCus ON toCus.CustID = ip.ToCustID AND toCus.CustSubID = 0;
 	
@@ -192,7 +200,7 @@ BEGIN
 		,	ip.FromCustID
         ,	toCus.CTSCustID
 	FROM Temp_AssIP_PA AS pa 
-		INNER JOIN  AssociationByIP AS ip ON pa.CustID = ip.ToCustID
+		INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON pa.CustID = ip.ToCustID
 		INNER JOIN CTS_DataCenter.CTSCustomer AS frCus ON frCus.CustID = pa.CustID AND frCus.CustSubID = 0
         INNER JOIN CTS_DataCenter.CTSCustomer AS toCus ON toCus.CustID = ip.FromCustID AND toCus.CustSubID = 0;
     
@@ -225,9 +233,24 @@ BEGIN
     SELECT 	dv.DCSDeviceID
 		,	dv.CTSCustID
         ,	cus.CustID
-	FROM AssociationByDevice AS dv
+	FROM CTS_DataCenter.AssociationByDevice AS dv
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = dv.CTSCustID AND cus.CustSubID = 0
     WHERE dv.CTSAssDevID BETWEEN lv_LastAssDeviceID AND lv_NextAssDeviceID;
+
+    INSERT IGNORE INTO Temp_CustProcessed(CustID)
+    SELECT dv.CustID
+    FROM Temp_NewAssDevice AS dv
+    WHERE EXISTS (SELECT 1 
+			      FROM CTS_DataCenter.ProblemCaseMonitor AS prc 
+                  WHERE prc.CustID = dv.CustID 
+			        AND prc.ProblemCaseID = CONST_ProblemCase_SuspiciousAss)
+      AND EXISTS (SELECT 1 
+				  FROM CTS_DataCenter.CTSCustomerClassification AS cls
+				  WHERE  cls.CustID = dv.CustID AND cls.SportGroupID = 200);
+
+    DELETE 
+    FROM Temp_NewAssDevice AS dv
+    WHERE EXISTS (SELECT 1 FROM Temp_CustProcessed AS tmp WHERE tmp.CustID = dv.CustID);
     
     INSERT IGNORE INTO Temp_NewAssIP(FromCustID, FromCTSCustID, ToCustID, ToCTSCustID)
     SELECT 	dv.CustID
@@ -235,7 +258,7 @@ BEGIN
 		,	ip.ToCustID
         ,	cus.CTSCustID
 	FROM Temp_NewAssDevice AS dv 
-		INNER JOIN  AssociationByIP AS ip ON dv.CustID = ip.FromCustID
+		INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON dv.CustID = ip.FromCustID
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ip.ToCustID AND cus.CustSubID = 0;
     
     INSERT IGNORE INTO Temp_NewAssIP(FromCustID, FromCTSCustID, ToCustID, ToCTSCustID)
@@ -244,25 +267,28 @@ BEGIN
 		,	ip.FromCustID
         ,	cus.CTSCustID
 	FROM Temp_NewAssDevice AS dv 
-		INNER JOIN  AssociationByIP AS ip ON dv.CustID = ip.ToCustID
+		INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON dv.CustID = ip.ToCustID
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ip.FromCustID AND cus.CustSubID = 0;
     
-    INSERT IGNORE INTO Temp_NewAssDevice(DCSDeviceID, CTSCustID, CustID)
+    INSERT IGNORE INTO Temp_NewAssDevice(DCSDeviceID, CTSCustID, CustID, IsIP)
     SELECT 	dv.DCSDeviceID
 		,	cus.CTSCustID
 		,	ip.CustID
+        ,   1
     FROM Temp_AssIP_PA AS ip
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ip.CustID AND cus.CustSubID = 0
-        INNER JOIN AssociationByDevice AS dv ON cus.CTSCustID = dv.CTSCustID;
-    
-    INSERT INTO Temp_AssDevice_Level1(DCSDeviceID, CTSCustID, CustID)
+        INNER JOIN CTS_DataCenter.AssociationByDevice AS dv ON cus.CTSCustID = dv.CTSCustID;
+
+    INSERT INTO Temp_AssDevice_Level1(DCSDeviceID, CTSCustID, CustID, CTSAssDevID, IsIP)
     SELECT  DISTINCT
 			ass.DCSDeviceID
 		,	dv.CTSCustID
         ,	cus.CustID
+        ,	dv.CTSAssDevID
+        ,   ass.IsIP
     FROM Temp_NewAssDevice AS ass
-		INNER JOIN AssociationByDevice AS dv ON ass.DCSDeviceID = dv.DCSDeviceID 
-											AND ass.CTSCustID != dv.CTSCustID
+		INNER JOIN CTS_DataCenter.AssociationByDevice AS dv ON ass.DCSDeviceID = dv.DCSDeviceID 
+											                AND ass.CTSCustID != dv.CTSCustID
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = dv.CTSCustID AND cus.CustSubID = 0;
 
 	/**********************************************************/
@@ -287,7 +313,7 @@ BEGIN
                         INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ParentID = 50 AND cat.CategoryGroup <> 52
 					WHERE  cls.CustID = tmp.CustID
 						AND cls.SportGroupID = 0);
-	
+
     INSERT IGNORE INTO Temp_CustAssociation(CustID, CTSCustID, CustID_Aff, CTSCustID_Aff)
     SELECT 	DISTINCT
 			root.CustID
@@ -295,14 +321,16 @@ BEGIN
         ,	lv1.CustID
         ,	lv1.CTSCustID
     FROM Temp_NewAssDevice AS root
-		INNER JOIN Temp_AssDevice_Level1 AS lv1 ON root.DCSDeviceID = lv1.DCSDeviceID AND root.CTSCustID != lv1.CTSCustID;
+		INNER JOIN Temp_AssDevice_Level1 AS lv1 ON root.DCSDeviceID = lv1.DCSDeviceID AND root.CTSCustID != lv1.CTSCustID
+	WHERE lv1.CustID IN (SELECT pa.CustID FROM Temp_PA AS pa);
         
     INSERT IGNORE INTO Temp_CustAssociation(CustID, CTSCustID, CustID_Aff, CTSCustID_Aff)
-    SELECT 	FromCustID
-		,	FromCTSCustID
-        ,	ToCustID
-        ,	ToCTSCustID
-    FROM Temp_NewAssIP;  
+    SELECT 	ip.FromCustID
+		,	ip.FromCTSCustID
+        ,	ip.ToCustID
+        ,	ip.ToCTSCustID
+    FROM Temp_NewAssIP AS ip
+    WHERE ip.ToCustID IN (SELECT pa.CustID FROM Temp_PA AS pa);  
     
     /*****************************Remove Unlink****************************************/
     INSERT IGNORE INTO Temp_Unlink(FromCTSCustID,ToCTSCustID)
@@ -343,11 +371,15 @@ BEGIN
      FROM Temp_AssDevice_Level1 AS lv1
      WHERE lv1.DCSDeviceID NOT IN (SELECT ass.DCSDeviceID FROM Temp_NewAssDevice AS ass);
      
+     DELETE 
+	 FROM Temp_AssDevice_Level1 AS lv1
+	 WHERE lv1.CTSAssDevID >= lv_NextAssDeviceID OR lv1.IsIP = 1;
+
      INSERT IGNORE INTO Temp_ProlemCase_Exist(CustID)
      SELECT lv1.CustID
      FROM Temp_AssDevice_Level1 AS lv1
      WHERE EXISTS (SELECT 1 
-					FROM ProblemCaseMonitor AS prc 
+					FROM CTS_DataCenter.ProblemCaseMonitor AS prc 
                     WHERE prc.CustID = lv1.CustID 
 						AND prc.ProblemCaseID = CONST_ProblemCase_SuspiciousAss);
 					
@@ -365,7 +397,7 @@ BEGIN
 		,	lv1.CTSCustID
         ,	lv1.CustID
     FROM Temp_DeviceLevel1_Distinct AS lv1
-		INNER JOIN CTS_DataCenter.AssociationByDevice AS dv ON dv.CTSCustID = lv1.CTSCustID;
+		INNER JOIN CTS_DataCenter.AssociationByDevice AS dv ON dv.CTSCustID = lv1.CTSCustID AND dv.CTSAssDevID <= lv_NextAssDeviceID;
 	
     TRUNCATE TABLE Temp_CustAssociation;
     
@@ -406,7 +438,7 @@ BEGIN
     INSERT IGNORE INTO Temp_PA(CustID)
 	SELECT ass.CustID_Aff
     FROM Temp_CustAssociation AS ass
-    WHERE ass.IsPA = 1 
+    WHERE ass.IsPA = 0
 		AND	EXISTS (SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
                         INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ParentID = 50 AND cat.CategoryGroup <> 52
