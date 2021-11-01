@@ -2,9 +2,7 @@
 DROP PROCEDURE IF EXISTS `CTS_DC_CustEvidence_InsertFromAssociation`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_InsertFromAssociation`(
-		IN ip_BatchSize INT
-)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_InsertFromAssociation`()
     SQL SECURITY INVOKER
 sp : BEGIN
 	/*
@@ -23,6 +21,7 @@ sp : BEGIN
 			- 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
 			- 20210823@Aries.Nguyen: Enhannce  Affected Evidence flow [Redmine ID: #160470]
 			- 20210909@Aries.Nguyen: Update bet limit [Redmine ID: #160711]
+			- 20211001@Aries.Nguyen: Get batch size from sys parameter table [Redmine ID: #164083]
 
 		Param's Explanation (filtered by):
 	*/
@@ -31,6 +30,8 @@ sp : BEGIN
     DECLARE	lv_LastCTSCustIDAff BIGINT UNSIGNED;
     DECLARE lv_TotalAff 		INT DEFAULT 0;
     DECLARE lv_SecondBatchSize 	INT DEFAULT 0;
+	DECLARE	lv_BatchSize		INT DEFAULT 1000;
+
   
     DROP TEMPORARY TABLE IF EXISTS   Temp_AssociatedException;
     CREATE TEMPORARY TABLE Temp_AssociatedException(
@@ -70,6 +71,12 @@ sp : BEGIN
 	);
     
 	#===1. GET List of New Association=====================================================================
+	SELECT ParameterValue 
+    INTO lv_BatchSize
+    FROM CTS_DataCenter.SystemParameter 
+    WHERE ParameterID = 61;
+
+
     SELECT ParameterValue 
     INTO lv_LastCTSAssDevID
     FROM CTS_DataCenter.SystemParameter 
@@ -92,16 +99,16 @@ sp : BEGIN
 			AND dv.CTSCustID != ass.CTSCustID
 			AND ass.CTSCustID > lv_LastCTSCustIDAff
 		 ORDER BY ass.DCSDeviceID ASC, ass.CTSCustID ASC
-		 LIMIT ip_BatchSize) AS aff
+		 LIMIT lv_BatchSize) AS aff
 	WHERE dv.CTSAssDevID = lv_LastCTSAssDevID 
-	LIMIT ip_BatchSize;
+	LIMIT lv_BatchSize;
     
     SELECT COUNT(1)
     INTO lv_TotalAff
     FROM Temp_CustAffectedEvidence;   
     
-    IF ip_BatchSize > lv_TotalAff THEN
-		SET lv_SecondBatchSize = ip_BatchSize - lv_TotalAff;
+    IF lv_BatchSize > lv_TotalAff THEN
+		SET lv_SecondBatchSize = lv_BatchSize - lv_TotalAff;
         
         INSERT INTO Temp_CustAffectedEvidence(CTSAssDevID, CTSCustID, CTSCustID_Affected)
 		SELECT 	dv.CTSAssDevID

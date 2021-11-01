@@ -16,6 +16,7 @@ sp : BEGIN
 		Revisions:
 			- 20210622@Aries.Nguyen:  Created [Redmine ID: #160470]
             - 20210909@Aries.Nguyen: Update bet limit [Redmine ID: #160711]
+            - 20211101@Aries.Nguyen: Fix clear data in queue incorect [Redmine ID: #164083]
             
 		Param's Explanation (filtered by):
 		Example: 
@@ -61,12 +62,7 @@ sp : BEGIN
         SET op_IsDataExist = 0;
         LEAVE sp;
     END IF;
-
-    IF lv_QueueID_Next = lv_QueueID THEN
-        SET lv_QueueID_Next = lv_QueueID + 1;
-    END IF;
-    
-    
+   
     INSERT INTO Temp_CustAffectedEvidence(QueueID, CTSCustID, CTSCustID_Aff, CustEvidID, Created)
     SELECT 	root.ID
 		,	root.CTSCustID
@@ -119,7 +115,7 @@ sp : BEGIN
          IF lv_QueueID_Sync IS NULL THEN
              DELETE 
 	         FROM CustEvidenceAffectedQueueRemove
-             WHERE ID < lv_QueueID_Next;
+             WHERE ID <= lv_QueueID_Next;
          END IF;
 
         IF EXISTS (SELECT 1 FROM CTS_DataCenter.CustEvidenceAffectedQueueRemove WHERE ID > lv_QueueID_Next) THEN
