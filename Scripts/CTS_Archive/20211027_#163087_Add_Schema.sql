@@ -124,6 +124,10 @@ INNER JOIN  CTS_DataCenter.TaggingToCategory AS tag ON cate.CategoryID = tag.Cat
 SET 	cate.TaggingID = tag.TaggingID
 	,	cate.TaggingType = tag.TaggingType;
 
+UPDATE CTS_DataCenter.CustomerCategory
+SET TaggingType = 0
+WHERE CategoryID IN (1001, 1002);
+
 
 
 USE CTS_Archive;
