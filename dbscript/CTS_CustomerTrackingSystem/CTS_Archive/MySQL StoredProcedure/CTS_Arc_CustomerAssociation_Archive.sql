@@ -2,9 +2,7 @@
 DROP PROCEDURE IF EXISTS `CTS_Arc_CustomerAssociation_Archive`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_Arc_CustomerAssociation_Archive`(
-        OUT op_IsDataExist 	 	SMALLINT
-)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_Arc_CustomerAssociation_Archive`()
     SQL SECURITY INVOKER
 sp : BEGIN
 /*
@@ -39,6 +37,7 @@ sp : BEGIN
     DECLARE lv_BatchSize_AssData 	INT;
     DECLARE lv_Table 				VARCHAR(100);
     DECLARE lv_Count				INT DEFAULT 0;
+    DECLARE lv_DayProcessing		INT DEFAULT TO_DAYS(NOW());
     
     SELECT ParameterValue
     INTO lv_BatchSize_Cust
@@ -60,8 +59,15 @@ sp : BEGIN
     FROM CTS_Archive.SystemParameter
     WHERE ParameterID = 4;
     
+    SELECT ParameterValue
+    INTO lv_DayProcessing
+    FROM CTS_Archive.SystemParameter
+    WHERE ParameterID = 8;
     
-	
+    IF lv_DayProcessing > lv_NowToDays THEN
+		LEAVE sp;
+	END IF;
+    
     IF NOT EXISTS (SELECT 1 FROM CTS_Archive.CTSCustomerAssociationArchive_Process) THEN
 		DROP TEMPORARY TABLE IF EXISTS Temp_CustNoBet;    
 		CREATE TEMPORARY TABLE Temp_CustNoBet( 	
@@ -91,7 +97,9 @@ sp : BEGIN
 			SET ParameterValue = 'AssociationByAI-From'
 			WHERE ParameterID = 4; 
             
-            SET op_IsDataExist = 0;
+			UPDATE CTS_Archive.SystemParameter
+			SET ParameterValue = lv_NowToDays + 1
+			WHERE ParameterID = 8; 
             
 			LEAVE sp;
         END IF;
@@ -122,8 +130,6 @@ sp : BEGIN
             UPDATE CTS_Archive.SystemParameter
 			SET ParameterValue = 'AssociationByAI-From'
 			WHERE ParameterID = 4; 
-            
-            SET op_IsDataExist = 1;
             
 			LEAVE sp;
         END IF;
@@ -172,7 +178,6 @@ sp : BEGIN
             FROM Temp_AssociationByAI_Clean;
             
             IF lv_Count >= lv_BatchSize_AssData THEN
-				SET op_IsDataExist = 1;
 				LEAVE sp;
             END IF;
 			
@@ -220,7 +225,6 @@ sp : BEGIN
             FROM Temp_AssociationByAI_Clean;
             
             IF lv_Count >= lv_BatchSize_AssData THEN
-				SET op_IsDataExist = 1;
 				LEAVE sp;
             END IF;
 			
@@ -271,7 +275,6 @@ sp : BEGIN
             FROM Temp_AssociationByDevice_Clean;
             
             IF lv_Count >= lv_BatchSize_AssData THEN
-				SET op_IsDataExist = 1;
 				LEAVE sp;
             END IF;
 			
@@ -319,7 +322,6 @@ sp : BEGIN
             FROM Temp_AssociationByIP_Clean;
             
             IF lv_Count >= lv_BatchSize_AssData THEN
-				SET op_IsDataExist = 1;
 				LEAVE sp;
             END IF;
 			
@@ -367,7 +369,6 @@ sp : BEGIN
             FROM Temp_AssociationByIP_Clean;
             
             IF lv_Count >= lv_BatchSize_AssData THEN
-				SET op_IsDataExist = 1;
 				LEAVE sp;
             END IF;
 			
@@ -426,7 +427,6 @@ sp : BEGIN
             FROM Temp_AssociationByManual_Clean;
             
             IF lv_Count >= lv_BatchSize_AssData THEN
-				SET op_IsDataExist = 1;
 				LEAVE sp;
             END IF;
 			
@@ -485,7 +485,6 @@ sp : BEGIN
             FROM Temp_AssociationByManual_Clean;
             
             IF lv_Count >= lv_BatchSize_AssData THEN
-				SET op_IsDataExist = 1;
 				LEAVE sp;
             END IF;
 			
@@ -522,7 +521,6 @@ sp : BEGIN
             FROM Temp_CustEvidence_Clean;
             
             IF lv_Count >= lv_BatchSize_AssData THEN
-				SET op_IsDataExist = 1;
 				LEAVE sp;
             END IF;
 			
@@ -559,7 +557,6 @@ sp : BEGIN
             FROM Temp_CustEvidence_Clean;
             
             IF lv_Count >= lv_BatchSize_AssData THEN
-				SET op_IsDataExist = 1;
 				LEAVE sp;
             END IF;
 			
@@ -572,14 +569,10 @@ sp : BEGIN
     SELECT MAX(CTSCustID)
     INTO lv_LastCTSCust
     FROM CTS_Archive.CTSCustomerAssociationArchive_Process;
-    
-    
             
 	UPDATE CTS_Archive.SystemParameter
 	SET ParameterValue = 'AssociationByAI-From'
 	WHERE ParameterID = 4; 
-    
-	SET op_IsDataExist = 1;
     
     UPDATE CTS_DataCenter.CTSCustomerAssociationStatus AS cus
     SET cus.IsArchived = 1

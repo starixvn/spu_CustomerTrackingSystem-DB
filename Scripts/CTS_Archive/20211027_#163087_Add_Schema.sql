@@ -96,7 +96,8 @@ VALUES  (1, 'Archive Association Cust Batch Size', 'Batch Size', 'INT', '500'),
         
         (5, 'Rollback Association Cust Batch Size', 'Batch Size', 'INT', '500'),
         (6, 'Rollback Association Data Batch Size', 'Batch Size', 'INT', '500'),
-        (7, 'Rollback Association Table Processing', 'Rollback Association Table Process', 'INT', 'AssociationByAI-From');
+        (7, 'Rollback Association Table Processing', 'Rollback Association Table Process', 'INT', 'AssociationByAI-From'),
+		(8, 'Archive Association Day Processing', 'Value get by SELECT TO_DAYS(NOW())', 'INT', '738461');
  
 USE CTS_DataCenter;
 CREATE TABLE `CTSCustomerAssociationStatus` (
