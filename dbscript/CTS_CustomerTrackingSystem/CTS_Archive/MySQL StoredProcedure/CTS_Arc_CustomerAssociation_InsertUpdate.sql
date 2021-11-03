@@ -33,8 +33,11 @@ BEGIN
 	FROM JSON_TABLE(ip_CustInfo,
 		 "$[*]" COLUMNS(
 				CTSCustID	BIGINT UNSIGNED	PATH "$.CTSCustID" 
-			, 	CustID		BIGINT UNSIGNED	PATH "$.CustID"  )
-	) AS info;
+			, 	CustID		BIGINT UNSIGNED	PATH "$.CustID" 
+			, 	CustSubID	BIGINT UNSIGNED	PATH "$.CustSubID" 
+			, 	RoleID		TINYINT			PATH "$.RoleID" )
+	) AS info
+	WHERE info.RoleID = 1 AND info.CustSubID = 0;
     
     INSERT INTO CTS_DataCenter.CTSCustomerAssociationStatus(CTSCustID, CustID, LastTicketDate)
     SELECT 	tmp.CTSCustID
