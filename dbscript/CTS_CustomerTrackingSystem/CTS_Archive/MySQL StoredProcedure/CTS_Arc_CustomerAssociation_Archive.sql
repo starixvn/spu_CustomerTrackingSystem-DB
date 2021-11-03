@@ -110,7 +110,7 @@ sp : BEGIN
 			,	tmp.CustID
         FROM Temp_CustNoBet AS tmp
 			LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON tmp.CTSCustID = cus.CTSCustID
-            LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON tmp.CustID = cls.CustID
+            LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON tmp.CTSCustID = cls.CTSCustID
             LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON cls.CategoryID = cate.CategoryID
         WHERE  (cus.CustStatusID IN (2,3,4,12,13,14) AND cate.ParentID = CONST_NORMAL AND cate.TaggingType = CONST_Tagging_Normal AND tmp.Days >= CONST_15Days)
 			OR (cus.CustStatusID NOT IN (2,3,4,12,13,14) AND cate.ParentID = CONST_NORMAL  AND cate.TaggingType = CONST_Tagging_Normal AND tmp.Days >= CONST_30Days)
