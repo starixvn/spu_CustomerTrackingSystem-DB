@@ -135,6 +135,8 @@ USE CTS_Archive;
 CREATE ROLE 'ArcWriter';
 GRANT SELECT, INSERT, UPDATE, DELETE, CREATE TEMPORARY TABLES, EXECUTE ON `CTS_Archive`.* TO `ArcWriter`@`%`;
 GRANT  `ArcWriter`@`%`  TO `ctsServiceAdmin`@`%`;
+GRANT  `ArcWriter`@`%`  TO `ctsWebAdmin`@`%`;
+GRANT  `ArcWriter`@`%`  TO `ctsAPIAdmin`@`%`;
 FLUSH PRIVILEGES;
 
 
