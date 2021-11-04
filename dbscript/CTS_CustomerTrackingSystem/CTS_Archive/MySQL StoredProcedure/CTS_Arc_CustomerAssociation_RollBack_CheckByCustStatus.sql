@@ -20,7 +20,7 @@ BEGIN
         Example:  
 			- CALL CTS_Arc_CustomerAssociation_RollBack_CheckByCustStatus('[{"CustID": 1,"CustStatusID": 2}]');
 */   
-	DECLARE	CONST_30Days	INT DEFAULT 29; /*not 30, cause set on the current date. Ex select DATE_SUB('2021-11-30', INTERVAL  30  DAY) return '2021-10-31' not '2021-11-01' */
+	DECLARE	CONST_30Days	INT DEFAULT 30; 
 
 	DECLARE lv_DateValid	DATETIME DEFAULT DATE_SUB(NOW(), INTERVAL CONST_30Days DAY); 
     
