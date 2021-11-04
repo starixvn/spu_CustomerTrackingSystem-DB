@@ -20,7 +20,7 @@ BEGIN
         Example: 
 			- CALL CTS_Arc_CustomerAssociation_RollBack_CheckByNewPA('[{"CTSCustID":1, "CustID": 1}]');
 */   
-	DECLARE	CONST_90Days	INT DEFAULT 29; /*not 90, cause set on the current date. Ex select DATE_SUB('2021-11-30', INTERVAL  90  DAY) return '2021-09-01' not '2021-09-02' */
+	DECLARE	CONST_90Days	INT DEFAULT 89; /*not 90, cause set on the current date. Ex select DATE_SUB('2021-11-30', INTERVAL  90  DAY) return '2021-09-01' not '2021-09-02' */
 
 	DECLARE lv_DateValid	DATETIME DEFAULT DATE_SUB(NOW(), INTERVAL CONST_90Days DAY); 
     
