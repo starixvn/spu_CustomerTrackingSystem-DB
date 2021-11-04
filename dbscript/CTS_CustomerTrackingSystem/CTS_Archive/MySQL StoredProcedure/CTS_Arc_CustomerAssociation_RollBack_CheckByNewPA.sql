@@ -21,6 +21,7 @@ BEGIN
 			- CALL CTS_Arc_CustomerAssociation_RollBack_CheckByNewPA('[{"CTSCustID":1, "CustID": 1}]');
 */   
 	DECLARE	CONST_90Days	INT DEFAULT 90; 
+
 	DECLARE lv_DateValid	DATETIME DEFAULT DATE_SUB(NOW(), INTERVAL CONST_90Days DAY); 
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Cust;    
@@ -48,7 +49,7 @@ BEGIN
     
     INSERT INTO Temp_CustRollBack(CTSCustID)
     SELECT cus.CTSCustID
-    FROM CTS_DataCenter.CTSCustomerAssociationStatus AS cus
+    FROM CTS_Archive.CTSCustomerAssociationStatus AS cus
     WHERE cus.IsArchived = 1 
 		AND cus.LastTicketDate > lv_DateValid
         AND EXISTS (SELECT 1 FROM Temp_Cust AS tmp WHERE tmp.CTSCustID = cus.CTSCustID);
@@ -57,7 +58,7 @@ BEGIN
     FROM  CTS_Archive.CTSCustomerAssociationArchive_Process AS pro
     WHERE  EXISTS (SELECT 1 FROM Temp_CustRollBack AS tmp WHERE tmp.CTSCustID = pro.CTSCustID);
     
-    UPDATE CTS_DataCenter.CTSCustomerAssociationStatus AS cust
+    UPDATE CTS_Archive.CTSCustomerAssociationStatus AS cust
     SET 	cust.IsRollBack = 1
 		,	cust.RollBackDate = NOW()
 		,	cust.IsArchived = 0

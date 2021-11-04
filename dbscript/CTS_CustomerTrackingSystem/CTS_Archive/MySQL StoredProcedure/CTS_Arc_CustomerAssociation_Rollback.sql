@@ -42,7 +42,7 @@ sp : BEGIN
         INSERT INTO CTS_Archive.CTSCustomerAssociationRollBack_Process(CTSCustID, CustID)
         SELECT  cus.CTSCustID
 			,	cus.CustID
-        FROM CTS_DataCenter.CTSCustomerAssociationStatus AS cus 
+        FROM CTS_Archive.CTSCustomerAssociationStatus AS cus 
         WHERE cus.IsRollBack = 1
         ORDER BY cus.RollBackDate ASC
         LIMIT lv_BatchSize_Cust;
@@ -417,7 +417,7 @@ sp : BEGIN
         SET lv_Table = 'CustEvidence-From';
 	 END IF;    
 	
-    UPDATE CTS_DataCenter.CTSCustomerAssociationStatus AS cus
+    UPDATE CTS_Archive.CTSCustomerAssociationStatus AS cus
     SET 	cus.IsRollBack = 0
 		,	cus.RollBackDate = NULL
         ,	cus.IsArchived = 0

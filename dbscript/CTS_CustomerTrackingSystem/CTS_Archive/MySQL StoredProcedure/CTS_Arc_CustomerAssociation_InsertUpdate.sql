@@ -39,12 +39,12 @@ BEGIN
 	) AS info
 	WHERE info.RoleID = 1 AND info.CustSubID = 0;
     
-    INSERT INTO CTS_DataCenter.CTSCustomerAssociationStatus(CTSCustID, CustID, LastTicketDate)
+    INSERT INTO CTS_Archive.CTSCustomerAssociationStatus(CTSCustID, CustID, LastTicketDate)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
         ,	NOW()
 	FROM Temp_Cust AS tmp
-    WHERE NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerAssociationStatus AS arc  WHERE arc.CTSCustID = tmp.CTSCustID);
+    WHERE NOT EXISTS (SELECT 1 FROM CTS_Archive.CTSCustomerAssociationStatus AS arc  WHERE arc.CTSCustID = tmp.CTSCustID);
     
 END$$
 DELIMITER ;

@@ -81,7 +81,7 @@ sp : BEGIN
         SELECT  cus.CTSCustID
 			,	cus.CustID
             ,	lv_NowToDays - TO_DAYS(LastTicketDate) 
-        FROM CTS_DataCenter.CTSCustomerAssociationStatus AS cus 
+        FROM CTS_Archive.CTSCustomerAssociationStatus AS cus 
         WHERE cus.LastTicketDate <= lv_DateValid
 			AND cus.CTSCustID > lv_LastCTSCust
             AND cus.IsArchived = 0
@@ -574,7 +574,7 @@ sp : BEGIN
 	SET ParameterValue = 'AssociationByAI-From'
 	WHERE ParameterID = 4; 
     
-    UPDATE CTS_DataCenter.CTSCustomerAssociationStatus AS cus
+    UPDATE CTS_Archive.CTSCustomerAssociationStatus AS cus
     SET cus.IsArchived = 1
     WHERE EXISTS (SELECT 1 FROM CTS_Archive.CTSCustomerAssociationArchive_Process AS pro WHERE pro.CTSCustID = cus.CTSCustID);
     

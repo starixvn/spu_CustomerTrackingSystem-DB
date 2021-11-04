@@ -53,7 +53,7 @@ BEGIN
     
     INSERT INTO Temp_CustRollBack(CTSCustID)
     SELECT cus.CTSCustID
-    FROM CTS_DataCenter.CTSCustomerAssociationStatus AS cus
+    FROM CTS_Archive.CTSCustomerAssociationStatus AS cus
     WHERE cus.IsArchived = 1 
 		AND cus.LastTicketDate > lv_DateValid
         AND EXISTS (SELECT 1 FROM Temp_Cust AS tmp WHERE tmp.CustID = cus.CustID);
@@ -62,7 +62,7 @@ BEGIN
     FROM  CTS_Archive.CTSCustomerAssociationArchive_Process AS pro
     WHERE  EXISTS (SELECT 1 FROM Temp_CustRollBack AS tmp WHERE tmp.CTSCustID = pro.CTSCustID);
     
-    UPDATE CTS_DataCenter.CTSCustomerAssociationStatus AS cus
+    UPDATE CTS_Archive.CTSCustomerAssociationStatus AS cus
     SET 	cus.IsRollBack = 1 
 		,	cus.RollBackDate = NOW()  
 		,	cus.IsArchived = 0     

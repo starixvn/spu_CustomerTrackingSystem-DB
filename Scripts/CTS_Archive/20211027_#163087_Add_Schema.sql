@@ -88,6 +88,22 @@ CREATE TABLE `CTSCustomerAssociationRollBack_Process` (
 ) ENGINE=InnoDB;
 
 USE CTS_Archive;
+CREATE TABLE `CTSCustomerAssociationStatus` (
+   `CTSCustID` BIGINT UNSIGNED NOT NULL,
+   `CustID` INT UNSIGNED NOT NULL,
+   `LastTicketDate` DATETIME ,
+   `IsArchived` BIT DEFAULT 0,
+   `IsRollBack` BIT DEFAULT 0,
+   `RollBackDate` DATETIME,
+   `Created` DATETIME DEFAULT CURRENT_TIMESTAMP,
+   PRIMARY KEY (`CTSCustID`),
+   KEY `IX_CTSCustomerAssociationArchive_CustID` (`CustID`),
+   KEY `IX_CTSCustomerAssociationArchive_IsArchived` (`IsArchived`,`CTSCustID`, `LastTicketDate`),
+   KEY `IX_CTSCustomerAssociationArchive_IsRollBack_RollBackDate` (`IsRollBack`,`RollBackDate`)
+) ENGINE=InnoDB;
+
+
+USE CTS_Archive;
 INSERT IGNORE INTO CTS_Archive.SystemParameter(ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
 VALUES  (1, 'Archive Association Cust Batch Size', 'Batch Size', 'INT', '500'),
 	    (2, 'Archive Last Cust Archive ID', 'Last CTSCustID', 'INT', '0'),
@@ -99,20 +115,7 @@ VALUES  (1, 'Archive Association Cust Batch Size', 'Batch Size', 'INT', '500'),
         (7, 'Rollback Association Table Processing', 'Rollback Association Table Process', 'INT', 'AssociationByAI-From'),
 		(8, 'Archive Association Day Processing', 'Value get by SELECT TO_DAYS(NOW())', 'INT', '738461');
  
-USE CTS_DataCenter;
-CREATE TABLE `CTSCustomerAssociationStatus` (
-   `CTSCustID` BIGINT UNSIGNED NOT NULL,
-   `CustID` INT UNSIGNED NOT NULL,
-   `LastTicketDate` DATETIME ,
-   `IsArchived` BIT DEFAULT 0,
-   `IsRollBack` BIT DEFAULT 0,
-   `RollBackDate` DATETIME,
-   `Created` DATETIME DEFAULT CURRENT_TIMESTAMP,
-   PRIMARY KEY (`CTSCustID`),
-   KEY `IX_CTSCustomerAssociationArchive_CustID` (`CustID`),
-   KEY `IX_CTSCustomerAssociationArchive_LastTicketDate` (`LastTicketDate`),
-   KEY `IX_CTSCustomerAssociationArchive_IsRollBack_RollBackDate` (`IsRollBack`,`RollBackDate`)
-) ENGINE=InnoDB;
+
 
 
 USE CTS_DataCenter;
