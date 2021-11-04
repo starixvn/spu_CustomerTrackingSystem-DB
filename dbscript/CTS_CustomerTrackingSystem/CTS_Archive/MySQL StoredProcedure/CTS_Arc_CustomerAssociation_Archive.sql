@@ -18,26 +18,26 @@ sp : BEGIN
         Example:  
 			- CALL CTS_Arc_CustomerAssociation_Archive(@IsDataExist);
 */   
-    DECLARE	CONST_15Days 						    INT DEFAULT 15;
-    DECLARE	CONST_30Days 						    INT DEFAULT 30;
-    DECLARE	CONST_60Days 						    INT DEFAULT 60;
-    DECLARE	CONST_90Days 						    INT DEFAULT 90;
+    DECLARE	CONST_15Days 			    INT DEFAULT 14; /*not 15, cause set on the current date. Ex select DATE_SUB('2021-11-15', INTERVAL  15  DAY) return '2021-10-31' not '2021-11-01' */
+    DECLARE	CONST_30Days 				INT DEFAULT 29;
+    DECLARE	CONST_60Days 				INT DEFAULT 59;
+    DECLARE	CONST_90Days 				INT DEFAULT 89;
 
-    DECLARE	CONST_PA 								INT DEFAULT 50;
-	DECLARE	CONST_NORMAL 							INT DEFAULT 200;
+    DECLARE	CONST_PA 					INT DEFAULT 50;
+	DECLARE	CONST_NORMAL 				INT DEFAULT 200;
 
-    DECLARE	CONST_Tagging_Normal 					INT DEFAULT 0;
-    DECLARE	CONST_Tagging_WithPA 					INT DEFAULT 1;
-    DECLARE	CONST_Tagging_TW 					    INT DEFAULT 2;
+    DECLARE	CONST_Tagging_Normal 		INT DEFAULT 0;
+    DECLARE	CONST_Tagging_WithPA 		INT DEFAULT 1;
+    DECLARE	CONST_Tagging_TW 			INT DEFAULT 2;
 
-	DECLARE lv_DateValid 			DATETIME DEFAULT DATE_SUB(NOW(), INTERVAL CONST_15Days DAY); 
-    DECLARE lv_NowToDays 			INT DEFAULT TO_DAYS(NOW());
-	DECLARE lv_BatchSize_Cust 		INT;
-    DECLARE lv_LastCTSCust 			BIGINT UNSIGNED;
-    DECLARE lv_BatchSize_AssData 	INT;
-    DECLARE lv_Table 				VARCHAR(100);
-    DECLARE lv_Count				INT DEFAULT 0;
-    DECLARE lv_DayProcessing		INT DEFAULT TO_DAYS(NOW());
+	DECLARE lv_DateValid 			    DATETIME DEFAULT DATE_SUB(NOW(), INTERVAL CONST_15Days DAY); 
+    DECLARE lv_NowToDays 			    INT DEFAULT TO_DAYS(NOW());
+	DECLARE lv_BatchSize_Cust 		    INT;
+    DECLARE lv_LastCTSCust 			    BIGINT UNSIGNED;
+    DECLARE lv_BatchSize_AssData 	    INT;
+    DECLARE lv_Table 				    VARCHAR(100);
+    DECLARE lv_Count				    INT DEFAULT 0;
+    DECLARE lv_DayProcessing		    INT DEFAULT TO_DAYS(NOW());
     
     SELECT ParameterValue
     INTO lv_BatchSize_Cust
