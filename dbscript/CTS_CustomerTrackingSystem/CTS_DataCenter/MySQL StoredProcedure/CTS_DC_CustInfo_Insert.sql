@@ -162,6 +162,7 @@ BEGIN
     	,	cus.CustID
 		,	cus.UserName
     	,	cus.RegisterName
+		,	cus.RoleID
     	,	cus.CustSubID
     FROM	Temp_CTSCustomer AS tmpCus
 		INNER JOIN 	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID AND tmpCus.CustSubID = cus.CustSubID;    
