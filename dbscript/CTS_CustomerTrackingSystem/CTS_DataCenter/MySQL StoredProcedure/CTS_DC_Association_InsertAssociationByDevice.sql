@@ -5,7 +5,7 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_InsertAssociationByDevice`(
     IN ip_AssociationList JSON
 )
-SQL SECURITY INVOKER
+    SQL SECURITY INVOKER
 BEGIN
 /*
 		Created:	20191115@Terry.Nguyen
@@ -87,7 +87,7 @@ BEGIN
     #=======IF CTSCustID Existing 
     INSERT IGNORE INTO Temp_CustArchived(CTSCustID)
     SELECT cus.CTSCustID
-    FROM CTS_DataCenter.CTSCustomerAssociationStatus AS cus
+    FROM CTS_Archive.CTSCustomerAssociationStatus AS cus
     WHERE EXISTS (SELECT 1 FROM Temp_Association AS tmp WHERE tmp.CTSCustID =  cus.CTSCustID AND cus.IsArchived = 1);
     
 	INSERT IGNORE INTO 	CTS_DataCenter.AssociationByDevice(CTSCustID, DCSDeviceID, SubscriberID, CreatedTime, InsertTime)
@@ -103,12 +103,12 @@ BEGIN
 		,	 tmp_ass.DeviceID
 		,	 tmp_ass.SubscriberID; 
         
-	INSERT IGNORE INTO 	CTS_Archive.AssociationByDevice_Arc(CTSCustID, DCSDeviceID, SubscriberID, AssociationDate, InsertTime)
+	INSERT IGNORE INTO 	CTS_Archive.AssociationByDevice_Arc(CTSCustID, DCSDeviceID, SubscriberID, AssociationDate, Created)
 	SELECT	tmp_ass.CTSCustID 
 		,	tmp_ass.DeviceID
 		,	tmp_ass.SubscriberID
 		,	MIN(tmp_ass.CreatedTime)	
-		,	CURRENT_TIMESTAMP()	AS InsertTime
+		,	CURRENT_TIMESTAMP()	AS Created
 	FROM Temp_Association 	AS tmp_ass
     WHERE tmp_ass.CTSCustID IS NOT NULL
 		AND EXISTS (SELECT 1 FROM Temp_CustArchived AS arc WHERE arc.CTSCustID = tmp_ass.CTSCustID)

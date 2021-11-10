@@ -509,8 +509,7 @@ sp : BEGIN
           
 			DELETE 
 			FROM CTS_DataCenter.CustEvidence AS  ev
-			WHERE  EXISTS (SELECT 1 FROM Temp_CustEvidence_Clean AS tmp WHERE ev.CustEvidID = tmp.CustEvidID)
-			LIMIT lv_BatchSize_AssData;
+			WHERE  EXISTS (SELECT 1 FROM Temp_CustEvidence_Clean AS tmp WHERE ev.CustEvidID = tmp.CustEvidID);
 			
 			UPDATE  CTS_Archive.SystemParameter 
 			SET ParameterValue = 'CustEvidence-From'
@@ -545,8 +544,7 @@ sp : BEGIN
           
 			DELETE 
 			FROM CTS_DataCenter.CustEvidence AS  ev
-			WHERE  EXISTS (SELECT 1 FROM Temp_CustEvidence_Clean AS tmp WHERE ev.CustEvidID = tmp.CustEvidID)
-			LIMIT lv_BatchSize_AssData;
+			WHERE  EXISTS (SELECT 1 FROM Temp_CustEvidence_Clean AS tmp WHERE ev.CustEvidID = tmp.CustEvidID);
 			
 			UPDATE  CTS_Archive.SystemParameter 
 			SET ParameterValue = 'CustEvidence-To'
