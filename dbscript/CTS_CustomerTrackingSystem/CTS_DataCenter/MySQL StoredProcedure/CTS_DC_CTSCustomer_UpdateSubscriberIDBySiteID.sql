@@ -126,6 +126,11 @@ BEGIN
         INNER JOIN TempCTSCustomer AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= ch.CustID
         SET	ch.CTSCustID = tmpCus.CTSCustID;
 		
+        #=====UPDATE ProbationAccountMonitor====================
+        UPDATE CTS_DataCenter.ProbationAccountMonitor AS pa
+        INNER JOIN TempCTSCustomer AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= pa.CustID
+        SET	pa.CTSCustID = tmpCus.CTSCustID;
+        
         #================================================================        
         SET lv_PreCTSCustID = (SELECT 1 FROM TempCTSCustomer AS tmpCus LIMIT 1);
     END WHILE;
