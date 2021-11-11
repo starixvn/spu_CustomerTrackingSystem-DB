@@ -123,7 +123,8 @@ BEGIN
 				  WHEN asd.CTSCustID IS NULL AND  tmp_ass.CTSCustID IS NULL THEN -1 
 			 END)
 	FROM Temp_Association AS tmp_ass
-		LEFT JOIN CTS_DataCenter.AssociationByDevice AS asd ON asd.CTSCustID = tmp_ass.CTSCustID AND asd.DCSDeviceID = tmp_ass.DeviceID;
+		LEFT JOIN CTS_DataCenter.AssociationByDevice AS asd ON asd.CTSCustID = tmp_ass.CTSCustID AND asd.DCSDeviceID = tmp_ass.DeviceID
+	WHERE NOT EXISTS (SELECT 1 FROM Temp_CustArchived AS arc WHERE arc.CTSCustID = tmp_ass.CTSCustID);
 	
     INSERT IGNORE INTO Temp_Transformed(AccountID, DeviceID, IsCTSTransformed)
 	SELECT	tmp_ass.AccountID
@@ -132,7 +133,8 @@ BEGIN
 				  WHEN asd.CTSCustID IS NULL AND  tmp_ass.CTSCustID IS NULL THEN -1 
 			 END)
 	FROM Temp_Association AS tmp_ass
-		LEFT JOIN CTS_Archive.AssociationByDevice_Arc AS asd ON asd.CTSCustID = tmp_ass.CTSCustID AND asd.DCSDeviceID = tmp_ass.DeviceID;
+		LEFT JOIN CTS_Archive.AssociationByDevice_Arc AS asd ON asd.CTSCustID = tmp_ass.CTSCustID AND asd.DCSDeviceID = tmp_ass.DeviceID
+	WHERE  EXISTS (SELECT 1 FROM Temp_CustArchived AS arc WHERE arc.CTSCustID = tmp_ass.CTSCustID);
     
     UPDATE DCS_DataCenter.Association AS ass
 		INNER JOIN	Temp_Transformed AS tr ON ass.AccountID = tr.AccountID AND ass.DeviceID = tr.DeviceID

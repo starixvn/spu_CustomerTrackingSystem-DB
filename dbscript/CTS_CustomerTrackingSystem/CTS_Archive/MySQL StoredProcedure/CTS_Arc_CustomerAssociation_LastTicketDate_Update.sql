@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_Arc_CustomerAssociation_LastTicketDate_Update`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_Arc_CustomerAssociation_LastTicketDate_Update`(
-		IN ip_CustInfo 		JSON
+		IN ip_CustInfo 		LONGTEXT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -18,9 +18,9 @@ BEGIN
         Param's Explanation (filtered by):
 
         Example: 
-			- CALL CTS_Arc_CustomerAssociation_LastTicketDate_Update('[{"CustID": 221882500}]');
+			- CALL CTS_Arc_CustomerAssociation_LastTicketDate_Update('221882500,122,443');
 */   
-		DROP TEMPORARY TABLE IF EXISTS Temp_Cust;    
+	DROP TEMPORARY TABLE IF EXISTS Temp_Cust;    
 	CREATE TEMPORARY TABLE Temp_Cust( 	  
 			CustID		INT UNSIGNED	
         ,	PRIMARY	KEY (CustID)
@@ -32,14 +32,10 @@ BEGIN
 		,	CustID			INT 	UNSIGNED
         ,	PRIMARY	KEY (CTSCustID)
 	);
-
-    
-	INSERT IGNORE INTO Temp_Cust(CustID)
-	SELECT	info.CustID
-	FROM JSON_TABLE(ip_CustInfo,
-		 "$[*]" COLUMNS(
-				CustID INT UNSIGNED		PATH "$.CustID")
-	) AS info;
+	
+    SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_Cust (CustID) VALUES ('", REPLACE(ip_CustInfo, ",", "'),('"),"');");
+	PREPARE 	stmt1 FROM @sql;
+	EXECUTE 	stmt1;   
     
     INSERT INTO Temp_CustArchived(CTSCustID, CustID)
     SELECT 	cus.CTSCustID
