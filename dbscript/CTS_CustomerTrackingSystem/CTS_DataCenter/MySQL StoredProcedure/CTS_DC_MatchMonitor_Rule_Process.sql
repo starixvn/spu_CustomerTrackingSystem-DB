@@ -23,6 +23,7 @@ sp: BEGIN
             -	20210830@Casey.Huynh: Update Rule seperate Live and NonLive and move to Slave [Redmine ID: 159195]
 			-	20211019@Aries.Nguyen: Use FEDERATED  table [Redmine ID: 163400]
 			-	20211102@Aries.Nguyen: Fix FEDERATED connection fail[Redmine ID: 163400]
+            -	20211111@Casey.Huynh: Fix Issue Trans of the same Cust not merge Group [Redmine ID: 164558]
             
 		Param's Explanation (filtered by):	
 
@@ -209,7 +210,7 @@ sp: BEGIN
                 ,	lv_TransID AS TransID
 			UNION
 			SELECT	tmpSt.CustID
-				,	MinTransDate
+				,	tmpSt.TransDate AS MinTransDate
                 ,	tmpSt.TransDate
                 ,  	tmpSt.Stake
                 ,	tmpSt.TransID
