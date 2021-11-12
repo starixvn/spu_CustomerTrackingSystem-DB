@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_SystemFormulaBetMonitor_Remove`;
+DROP PROCEDURE IF EXISTS `CTS_DC_TWProblemDetectionMonitor_Remove`;
 DELIMITER $$
 
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_SystemFormulaBetMonitor_Remove`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_TWProblemDetectionMonitor_Remove`(
 	IN ip_CustIDList TEXT
 )
     SQL SECURITY INVOKER
@@ -19,7 +19,7 @@ sp: BEGIN
 		Param's Explanation (filtered by):	
 
 		Example:
-			- CALL CTS_DC_SystemFormulaBetMonitor_Remove('2158796,2140907');		
+			- CALL CTS_DC_TWProblemDetectionMonitor_Remove('2158796,2140907');		
 	*/
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustID;
@@ -32,9 +32,9 @@ sp: BEGIN
     PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1;
     
-	DELETE sfb
-    FROM CTS_DataCenter.SystemFormulaBetMonitor AS sfb
-		INNER JOIN Temp_CustID AS tmpCus ON sfb.CustID = tmpCus.CustID;
+	DELETE twb
+    FROM CTS_DataCenter.TWProblemDetectionMonitor AS twb
+		INNER JOIN Temp_CustID AS tmpCus ON twb.CustID = tmpCus.CustID;
 END$$
 DELIMITER ;
 

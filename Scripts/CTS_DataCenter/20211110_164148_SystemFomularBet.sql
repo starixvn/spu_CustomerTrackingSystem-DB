@@ -12,9 +12,19 @@ Reviewer:
 */
 USE CTS_DataCenter;
 
-CREATE TABLE SystemFormulaBetMonitor(
+CREATE TABLE TWProblemDetectionMonitor(
 		CustID		INT UNSIGNED
+	,	UserName	VARCHAR(50)
+	,	RoleID		TINYINT
+    ,	ReasonID	TINYINT
+    ,	PreventActionID	TINYINT
+    ,	Comment		VARCHAR(300)
+    ,	VoidTime	VARCHAR(50)
+    ,	LimitAcount DECIMAL(20,4)
+    ,	UserID		INT
+    ,	IP			VARCHAR(15)    
 	,	CreatedDate	DATETIME
-	,	PRIMARY KEY PK_SystemFormularBetMonitor(CustID)
-    ,	INDEX IX_SystemFormularBetMonitor_CreatedDate(CreatedDate)
+    
+	,	PRIMARY KEY PK_TWProblemDetectionMonitor_CustID(CustID)
+    ,	INDEX IX_TWProblemDetectionMonitor_CreatedDate(CreatedDate)
 ) ENGINE=InnoDB;
