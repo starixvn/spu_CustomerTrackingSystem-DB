@@ -24,6 +24,7 @@ CREATE TABLE TWProblemDetectionMonitor(
     ,	UserID		INT
     ,	IP			VARCHAR(15)    
 	,	CreatedDate	DATETIME
+    ,	InsertTime	DATETIME(4)
     
 	,	PRIMARY KEY PK_TWProblemDetectionMonitor_CustID(CustID)
     ,	INDEX IX_TWProblemDetectionMonitor_CreatedDate(CreatedDate)

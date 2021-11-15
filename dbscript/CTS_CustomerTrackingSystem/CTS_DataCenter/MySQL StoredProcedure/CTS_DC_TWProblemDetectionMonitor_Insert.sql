@@ -27,7 +27,7 @@ sp: BEGIN
 
 	*/
     
-    INSERT IGNORE INTO CTS_DataCenter.TWProblemDetectionMonitor(CustID, UserName, RoleID, ReasonID, PreventActionID, Comment, VoidTime, LimitAcount, UserID, IP, CreatedDate)
+    INSERT IGNORE INTO CTS_DataCenter.TWProblemDetectionMonitor(CustID, UserName, RoleID, ReasonID, PreventActionID, Comment, VoidTime, LimitAcount, UserID, IP, CreatedDate, InsertTime)
     SELECT	jsTbl.CustID
 		,	jsTbl.UserName
 		,	jsTbl.RoleID
@@ -39,6 +39,7 @@ sp: BEGIN
 		,	jsTbl.UserID
 		,	jsTbl.IP
 		,	CURRENT_DATE() AS CreatedDate
+        , 	CURRENT_TIMESTAMP(4) AS InsertTime
 	 FROM JSON_TABLE(ip_CustDetectInfo,
 					"$[*]" COLUMNS(
 										CustID		INT UNSIGNED	PATH "$.CustID"

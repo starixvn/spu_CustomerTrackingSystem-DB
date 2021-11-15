@@ -35,7 +35,9 @@ sp: BEGIN
 		,	tpd.LimitAcount
 		,	tpd.UserID
 		,	tpd.IP
-        ,	(CASE WHEN cc.ParentID = 200 AND GROUP_CONCAT(cc.CategoryGroup) IN (201,202,205) THEN 1 ELSE 0 END) AS IsMonitorCategoryGroup 
+        ,	(CASE WHEN cc.ParentID = 200 AND GROUP_CONCAT(cc.CategoryGroup) IN (201,202,205) THEN 1 ELSE 0 END) AS IsMonitorCategoryGroup
+        ,	1 AS IsMonitorSite
+        ,	tpd.InsertTime
         
     FROM CTS_DataCenter.TWProblemDetectionMonitor AS tpd
         INNER JOIN CTS_DataCenter.CTSCustomerClassification AS ccl ON tpd.CustID = ccl.CustID 

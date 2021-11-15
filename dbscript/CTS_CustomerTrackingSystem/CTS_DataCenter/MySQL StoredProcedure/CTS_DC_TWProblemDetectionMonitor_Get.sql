@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_TWProblemDetectionMonitor_GetBySite`;
+DROP PROCEDURE IF EXISTS `CTS_DC_TWProblemDetectionMonitor_Get`;
 DELIMITER $$
 
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_TWProblemDetectionMonitor_GetBySite`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_TWProblemDetectionMonitor_Get`(
 		IN ip_SiteIDList	VARCHAR(500)
 	,	IN ip_UserNameList TEXT
 )
@@ -38,21 +38,17 @@ sp: BEGIN
     
     SET @sql= CONCAT("INSERT INTO Temp_UserName (UserName) VALUES ('", REPLACE(ip_UserNameList, ',', "'),('"),"');");
     PREPARE 	stmt1 FROM @sql;
-	EXECUTE 	stmt1;
-    
-    SET @sql= CONCAT("INSERT INTO Temp_SiteID (SiteID) VALUES ('", REPLACE(ip_SiteIDList, ',', "'),('"),"');");
-    PREPARE 	stmt1 FROM @sql;
-	EXECUTE 	stmt1;
-    
+	EXECUTE 	stmt1;    
+   
     SELECT	cus.CustID
 		,	tmpCus.UserName
         ,	(CASE WHEN cc.ParentID = 200 AND GROUP_CONCAT(cc.CategoryGroup) IN (201,202,205) THEN 1 ELSE 0 END) AS IsMonitorCategoryGroup
+        ,	(CASE WHEN cus.SiteID = 487 THEN 1 ELSE 0 END) AS IsMonitorSite
     FROM Temp_UserName AS tmpCus
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.UserName = tmpCus.UserName AND cus.CustSubID = 0 AND cus.SiteID IN (SELECT SiteID FROM Temp_SiteID)
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.UserName = tmpCus.UserName AND cus.CustSubID = 0 
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS ccl ON cus.CustID = ccl.CustID 
-        INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON ccl.CategoryID = cc.CategoryID
-	GROUP BY cus.CustID, cus.UserName, cc.ParentID;
-	
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON ccl.CategoryID = cc.CategoryID        
+	GROUP BY cus.CustID, cus.UserName, cc.ParentID, SiteID;	
     
 END$$
 DELIMITER ;
