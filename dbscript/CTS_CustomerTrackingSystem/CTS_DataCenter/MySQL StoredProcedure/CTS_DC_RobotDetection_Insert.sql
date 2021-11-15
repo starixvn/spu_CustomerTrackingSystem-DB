@@ -1,12 +1,13 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_RobotDetection_Insert`;
+
 DELIMITER $$
-USE CTS_DataCenter $$
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_RobotDetection_Insert`$$
 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_RobotDetection_Insert`(
-	IN 	ip_RobotInfo	 		JSON,
-    IN 	ip_ScanDate			    DATETIME,
+		IN 	ip_RobotInfo	 		JSON
+    ,	IN 	ip_ScanDate			    DATETIME
     
-    OUT op_ErrorMessage 		VARCHAR(200)
+    ,	OUT op_ErrorMessage 		VARCHAR(200)
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -20,10 +21,10 @@ BEGIN
 			- 20210217@Long.Luu: Created [Redmine ID: #0000]
             
 		Example:
-			call CTS_DataCenter.CTS_DC_RobotDetection_Insert ('[{"C": 111, "R": 1, "LR": 1}]', @ErrorMessage);    
+			call CTS_DataCenter.CTS_DC_RobotDetection_Insert ('[{"C": 123, "R": 1}]','20210911', @ErrorMessage);    
 	*/    
     
-    DECLARE lv_CurrentDateTime 			DATETIME DEFAULT NOW();
+    DECLARE lv_CurrentDateTime 			TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP(3);
     
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
@@ -39,6 +40,13 @@ BEGIN
         ,	PRIMARY KEY 				PK_Temp_RobotInfo(CustID, PeriodRangeType)
 	); 
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_ExistedRobotInfo;    
+	CREATE TEMPORARY TABLE Temp_ExistedRobotInfo(	  	
+			CustID						BIGINT UNSIGNED
+		, 	PeriodRangeType				SMALLINT UNSIGNED
+        ,	PRIMARY KEY 				PK_Temp_RobotInfo(CustID, PeriodRangeType)
+	); 
+    
     INSERT INTO Temp_RobotInfo(CustID, PeriodRangeType)
 	SELECT 	tmpTable.CustID
 		, 	tmpTable.PeriodRangeType
@@ -48,18 +56,24 @@ BEGIN
             , 	PeriodRangeType 		SMALLINT UNSIGNED	PATH "$.R"
 		 )) AS tmpTable;  
     
+    INSERT INTO Temp_ExistedRobotInfo(CustID, PeriodRangeType)
+	SELECT 	r.CustID
+		, 	r.PeriodRangeType
+	FROM Temp_RobotInfo AS t
+		INNER JOIN CTS_DataCenter.RobotDetection AS r ON r.CustID = t.CustID;
+    
     UPDATE Temp_RobotInfo AS t
-		INNER JOIN CTS_DataCenter.RobotDetection AS r ON r.CustID = t.CustID
+		INNER JOIN Temp_ExistedRobotInfo AS r ON r.CustID = t.CustID
 	SET t.IsNewRobot = 0;
     
     UPDATE Temp_RobotInfo AS t
-		INNER JOIN CTS_DataCenter.RobotDetection AS r ON r.CustID = t.CustID AND r.PeriodRangeType = t.PeriodRangeType
+		INNER JOIN Temp_ExistedRobotInfo AS r ON r.CustID = t.CustID AND r.PeriodRangeType = t.PeriodRangeType
 	SET t.IsNewRange = 0;
 
     INSERT INTO CTS_DataCenter.RobotDetection(CustID,PeriodRangeType,CreatedDate,LastModifiedDate)
     SELECT CustID, PeriodRangeType, lv_CurrentDateTime, lv_CurrentDateTime #ip_ScanDate, lv_CurrentDateTime
-    FROM Temp_RobotInfo as t
-    WHERE t.IsNewRange = 1;
+    FROM Temp_RobotInfo
+    WHERE IsNewRange = 1;
     
     UPDATE CTS_DataCenter.RobotDetection AS r
 		INNER JOIN Temp_RobotInfo AS t ON r.CustID = t.CustID AND r.PeriodRangeType = t.PeriodRangeType

@@ -24,6 +24,8 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
+	DECLARE @Last90Days DATE = DATEADD(DAY,-90,GETDATE());
+
 	IF	OBJECT_ID('tempdb..#tmpTransIds') IS NOT NULL
 	BEGIN
 		DROP TABLE #tmpTransIds;
@@ -60,6 +62,18 @@ BEGIN
 		,	LiveIndicator		BIT
 		,	TicketStatus		SMALLINT
 	);	
+
+	IF	OBJECT_ID('tempdb..#tmpMatch') IS NOT NULL
+	BEGIN
+		DROP TABLE #tmpMatch;
+	END;
+
+	CREATE TABLE #tmpMatch(
+			MatchId				INT
+		,	EventDate			DATETIME
+		,	RankNo				INT
+		,	PRIMARY KEY (MatchId, EventDate, RankNo)
+	);
 	
 	-- START --
 	IF @ListTransId <> ''
@@ -152,12 +166,42 @@ BEGIN
 		,	b.liveindicator
 	FROM #tmpTransIds AS t WITH(NOLOCK)
 		INNER JOIN bodb_Archive.dbo.bettrans_bk AS b WITH(NOLOCK) ON t.TransId = b.transid
-		INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.matchid = m.matchid
+		INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.matchid = m.matchid	
+	WHERE m.EventDate > @Last90Days;
 	;
 
+	INSERT INTO #tmpMatch(MatchId, EventDate, RankNo)
+	SELECT DISTINCT MatchId
+		,	EventDate
+		,	ROW_NUMBER() OVER(ORDER BY EventDate ASC)
+	FROM #tmpTickets WITH(NOLOCK);
+
+	DELETE FROM #tmpMatch
+	WHERE RankNo > 50;
+
 	-- Return data
-	SELECT	*
-	FROM #tmpTickets AS m WITH(NOLOCK);
+	SELECT DISTINCT t.TransId
+		,	t.TransDate
+		,	t.MatchId
+		,	t.EventDate
+		,	t.EventStatus
+		,	t.KickOffTime
+		,	t.HomeId
+		,	t.AwayId
+		,	t.LeagueId
+		,	t.BetType
+		,	t.CustId
+		,	t.BetTeam
+		,	t.Stake
+		,	t.Odds
+		,	t.Hdp1
+		,	t.Hdp2
+		,	t.LiveHomeScore
+		,	t.LiveAwayScore
+		,	t.TicketStatus
+		,	t.LiveIndicator
+	FROM #tmpTickets AS t WITH(NOLOCK)
+		INNER JOIN #tmpMatch AS m WITH(NOLOCK) ON t.MatchId = m.MatchId;
 	
 	DROP TABLE #tmpTransIds;
 	DROP TABLE #tmpTickets;

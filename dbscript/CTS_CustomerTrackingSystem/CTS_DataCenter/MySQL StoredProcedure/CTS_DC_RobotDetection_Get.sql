@@ -1,12 +1,12 @@
-DELIMITER $$
-USE CTS_DataCenter $$
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_RobotDetection_Get`$$
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_RobotDetection_Get`;
 
+DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_RobotDetection_Get`(
-	IN 	ip_CustID	 			BIGINT UNSIGNED,
+		IN 	ip_CustID	 			BIGINT UNSIGNED
     
-    OUT op_FirstRobotDate		DATETIME,
-    OUT op_LastRobotDate		DATETIME
+    ,	OUT op_FirstRobotDate		TIMESTAMP(3)
+    ,	OUT op_LastRobotDate		TIMESTAMP(3)
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -20,7 +20,7 @@ BEGIN
 			- 20211109@Long.Luu: Created [Redmine ID: #162341]
             
 		Example:
-			call CTS_DataCenter.CTS_DC_RobotDetection_Get (123);    
+			call CTS_DataCenter.CTS_DC_RobotDetection_Get (123,@a,@b);  
 	*/    
     
     SELECT 	MIN(CreatedDate), MAX(LastModifiedDate)
