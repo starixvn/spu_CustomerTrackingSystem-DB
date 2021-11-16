@@ -29,3 +29,8 @@ CREATE TABLE TWProblemDetectionMonitor(
 	,	PRIMARY KEY PK_TWProblemDetectionMonitor_CustID(CustID)
     ,	INDEX IX_TWProblemDetectionMonitor_CreatedDate(CreatedDate)
 ) ENGINE=InnoDB;
+
+/*****************************/
+INSERT INTO CTS_DataCenter.SystemParameter(ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
+VALUES	(62, 'Scan TWProblemDetection', 'Batch Size', 'INT', '500')
+	,	(63, 'Scan TWProblemDetection', 'LastCustID', 'INT UNSINGEG', '0');

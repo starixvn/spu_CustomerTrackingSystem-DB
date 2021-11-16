@@ -2,7 +2,7 @@
 DROP PROCEDURE IF EXISTS `CTS_DC_TWProblemDetectionMonitor_Scan`;
 DELIMITER $$
 
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_TWProblemDetectionMonitor_Scan`()
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_TWProblemDetectionMonitor_Scan`(OUT op_LastCustID INT UNSIGNED)
     SQL SECURITY INVOKER
 sp: BEGIN
 	/*
@@ -19,13 +19,29 @@ sp: BEGIN
 		Example:
 			- CALL CTS_DC_TWProblemDetectionMonitor_Scan();
 	*/
+    DECLARE lv_BatchSize SMALLINT DEFAULT 500;
+    DECLARE lv_LastCustID INT UNSIGNED;
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_Remove;
     CREATE TEMPORARY TABLE Temp_Remove(
 			CustID INT UNSIGNED PRIMARY KEY
     );
     
-    INSERT INTO Temp_Remove(CustID)
-    SELECT	tpd.CustID
+    DROP TEMPORARY TABLE IF EXISTS Temp_Scan;
+    CREATE TEMPORARY TABLE Temp_Scan(
+			CustID INT UNSIGNED PRIMARY KEY
+    );
+    
+	SELECT s.ParameterValue 
+    INTO lv_BatchSize 
+    FROM CTS_DataCenter.SystemParameter AS s WHERE s.ParameterID = 62;    
+    
+    SELECT s.ParameterValue 
+    INTO lv_LastCustID 
+    FROM CTS_DataCenter.SystemParameter AS s WHERE s.ParameterID = 63;
+    
+    INSERT INTO Temp_Remove(CustID)    
+    SELECT tpd.CustID
     FROM CTS_DataCenter.TWProblemDetectionMonitor AS tpd
 		INNER JOIN CTS_Archive.CTSCustomerAssociationStatus AS cas ON tpd.CustID = cas.CustID
     WHERE DATEDIFF(CURRENT_DATE(), GREATEST(tpd.CreatedDate, cas.LastTicketDate)) >= 60;    
@@ -33,26 +49,48 @@ sp: BEGIN
 	DELETE tpd
     FROM CTS_DataCenter.TWProblemDetectionMonitor AS tpd
 		INNER JOIN Temp_Remove AS tmpRev ON tpd.CustID = tmpRev.CustID;
-    
-    SELECT 	tpd.CustID
-		,	tpd.UserName
-		,	tpd.RoleID
-		,	tpd.ReasonID
-		,	tpd.PreventActionID
-		,	tpd.Comment
-		,	tpd.VoidTime
-		,	tpd.LimitAcount
-		,	tpd.UserID
-		,	tpd.IP
-        ,	(CASE WHEN cc.ParentID = 200 AND GROUP_CONCAT(cc.CategoryGroup) IN (201,202,205) THEN 1 ELSE 0 END) AS IsMonitorCategoryGroup
-        ,	1 AS IsMonitorSite
-        ,	tpd.InsertTime        
+        
+    INSERT INTO Temp_Scan(CustID)
+    SELECT tpd.CustID
     FROM CTS_DataCenter.TWProblemDetectionMonitor AS tpd
-        INNER JOIN CTS_DataCenter.CTSCustomerClassification AS ccl ON tpd.CustID = ccl.CustID 
-		INNER JOIN CTS_DataCenter.CategoryToCustomerClass AS ctc ON ccl.CategoryID = ctc.CategoryID
-		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON ccl.CategoryID = cc.CategoryID
-	WHERE tpd.CreatedDate < CURRENT_DATE()
-	GROUP BY cc.ParentID, tpd.CustID, tpd.UserName, tpd.CustID, tpd.UserName, tpd.RoleID, tpd.ReasonID, tpd.PreventActionID, tpd.Comment, tpd.VoidTime, tpd.LimitAcount, tpd.UserID, tpd.IP;
+    WHERE tpd.CustID > lv_LastCustID AND tpd.CreatedDate < CURRENT_DATE()
+    ORDER BY tpd.CustID ASC
+    LIMIT lv_BatchSize;    
+    
+    IF EXISTS (SELECT 1 FROM Temp_Scan)
+    THEN 
+		SELECT 	tpd.CustID
+			,	tpd.UserName
+			,	tpd.RoleID
+			,	tpd.ReasonID
+			,	tpd.PreventActionID
+			,	tpd.Comment
+			,	tpd.VoidTime
+			,	tpd.LimitAcount
+			,	tpd.UserID
+			,	tpd.IP
+			,	(CASE WHEN cc.ParentID = 200 AND GROUP_CONCAT(cc.CategoryGroup) IN (201,202,205) THEN 1 ELSE 0 END) AS IsMonitorCategoryGroup
+			,	1 AS IsMonitorSite
+			,	tpd.InsertTime        
+		FROM Temp_Scan AS tmpS
+			INNER JOIN CTS_DataCenter.TWProblemDetectionMonitor AS tpd ON tpd.CustID = tmpS.CustID
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS ccl ON tpd.CustID = ccl.CustID 
+			INNER JOIN CTS_DataCenter.CategoryToCustomerClass AS ctc ON ccl.CategoryID = ctc.CategoryID
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON ccl.CategoryID = cc.CategoryID
+		GROUP BY cc.ParentID, tpd.CustID, tpd.UserName, tpd.RoleID, tpd.ReasonID, tpd.PreventActionID, tpd.Comment, tpd.VoidTime, tpd.LimitAcount, tpd.UserID, tpd.IP;
+        
+        /*UPDATE CTS_DataCenter.SystemParameter AS s 
+		SET s.ParameterValue = (SELECT MAX(s.CustID) FROM Temp_Scan AS s)
+        WHERE s.ParameterID = 63;*/
+        
+        SET op_LastCustID = (SELECT MAX(s.CustID) FROM Temp_Scan AS s);
+    ELSE
+		SET op_LastCustID = 0;
+        
+		UPDATE CTS_DataCenter.SystemParameter AS s 
+		SET s.ParameterValue =0
+        WHERE s.ParameterID = 63;
+    END IF;
 
 END$$
 DELIMITER ;
