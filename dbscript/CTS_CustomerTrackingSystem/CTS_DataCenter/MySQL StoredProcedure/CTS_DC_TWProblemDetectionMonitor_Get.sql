@@ -3,8 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_TWProblemDetectionMonitor_Get`;
 DELIMITER $$
 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_TWProblemDetectionMonitor_Get`(
-		IN ip_SiteIDList	VARCHAR(500)
-	,	IN ip_UserNameList TEXT
+	IN ip_UserNameList TEXT
 )
     SQL SECURITY INVOKER
 sp: BEGIN
@@ -25,15 +24,8 @@ sp: BEGIN
 	*/
     
     DROP TEMPORARY TABLE IF EXISTS Temp_UserName;
-    CREATE TEMPORARY TABLE Temp_UserName
-    (
+    CREATE TEMPORARY TABLE Temp_UserName(
 		UserName VARCHAR(50) PRIMARY KEY
-	);
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_SiteID;
-    CREATE TEMPORARY TABLE Temp_SiteID
-    (
-		SiteID INT UNSIGNED PRIMARY KEY
 	);
     
     SET @sql= CONCAT("INSERT INTO Temp_UserName (UserName) VALUES ('", REPLACE(ip_UserNameList, ',', "'),('"),"');");

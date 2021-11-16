@@ -20,10 +20,19 @@ sp: BEGIN
 			- CALL CTS_DC_TWProblemDetectionMonitor_Scan();
 	*/
     
-	DELETE tpd
+    CREATE TEMPORARY TABLE Temp_Remove(
+			CustID INT UNSIGNED PRIMARY KEY
+    );
+    
+    INSERT INTO Temp_Remove(CustID)
+    SELECT	tpd.CustID
     FROM CTS_DataCenter.TWProblemDetectionMonitor AS tpd
 		INNER JOIN CTS_Archive.CTSCustomerAssociationStatus AS cas ON tpd.CustID = cas.CustID
-    WHERE DATEDIFF(CURRENT_DATE(), GREATEST(tpd.CreatedDate, cas.LastTicketDate)) >= 60;
+    WHERE DATEDIFF(CURRENT_DATE(), GREATEST(tpd.CreatedDate, cas.LastTicketDate)) >= 60;    
+    
+	DELETE tpd
+    FROM CTS_DataCenter.TWProblemDetectionMonitor AS tpd
+		INNER JOIN Temp_Remove AS tmpRev ON tpd.CustID = tmpRev.CustID;
     
     SELECT 	tpd.CustID
 		,	tpd.UserName
@@ -37,8 +46,7 @@ sp: BEGIN
 		,	tpd.IP
         ,	(CASE WHEN cc.ParentID = 200 AND GROUP_CONCAT(cc.CategoryGroup) IN (201,202,205) THEN 1 ELSE 0 END) AS IsMonitorCategoryGroup
         ,	1 AS IsMonitorSite
-        ,	tpd.InsertTime
-        
+        ,	tpd.InsertTime        
     FROM CTS_DataCenter.TWProblemDetectionMonitor AS tpd
         INNER JOIN CTS_DataCenter.CTSCustomerClassification AS ccl ON tpd.CustID = ccl.CustID 
 		INNER JOIN CTS_DataCenter.CategoryToCustomerClass AS ctc ON ccl.CategoryID = ctc.CategoryID

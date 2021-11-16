@@ -42,16 +42,16 @@ sp: BEGIN
         , 	CURRENT_TIMESTAMP(4) AS InsertTime
 	 FROM JSON_TABLE(ip_CustDetectInfo,
 					"$[*]" COLUMNS(
-										CustID		INT UNSIGNED	PATH "$.CustID"
-									,	UserName	VARCHAR(50)		PATH "$.UserName"
-									,	RoleID		TINYINT			PATH "$.RoleID"
-									,	ReasonID	TINYINT 		PATH "$.ReasonID"
-									,	PreventActionID	TINYINT		PATH "$.PreventActionID"
-									,	Comment		VARCHAR(300)	PATH "$.Comment"
-									,	VoidTime	VARCHAR(50)		PATH "$.VoidTime"
-									,	LimitAcount DECIMAL(20,4)	PATH "$.LimitAcount"
-									,	UserID		INT				PATH "$.UserID"
-									,	IP			VARCHAR(15)    	PATH "$.IP"
+										CustID			INT UNSIGNED	PATH "$.CustID"
+									,	UserName		VARCHAR(50)		PATH "$.UserName"
+									,	RoleID			TINYINT			PATH "$.RoleID"
+									,	ReasonID		TINYINT 		PATH "$.ReasonID"
+									,	PreventActionID	TINYINT			PATH "$.PreventActionID"
+									,	Comment			VARCHAR(300)	PATH "$.Comment"
+									,	VoidTime		VARCHAR(50)		PATH "$.VoidTime"
+									,	LimitAcount 	DECIMAL(20,4)	PATH "$.LimitAcount"
+									,	UserID			INT				PATH "$.UserID"
+									,	IP				VARCHAR(15)    	PATH "$.IP"
 					 )) AS 	jsTbl;
 
 END$$
