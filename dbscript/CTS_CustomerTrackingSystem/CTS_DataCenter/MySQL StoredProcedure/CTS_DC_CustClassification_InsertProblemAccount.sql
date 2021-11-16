@@ -32,6 +32,7 @@ BEGIN
 			- 20210907@Long.Luu: Update Robot Users rules  [Redmine ID: #161232]
             - 20210922@Long.Luu: Split Classification History & Log  [Redmine ID: #161890]
 			- 20211026@Aries.Nguyen: Archive inactive association [Redmine ID: #163087]
+            - 20211116@Casey.Huynh: Sync Robot User Categories to Dangerous Setting [Redmine ID: #161665]
             
         Param's Explanation (filtered by):
         
@@ -100,6 +101,7 @@ BEGIN
         ,	LastSourceTypeID	INT
         , 	RobotCounter		SMALLINT 
         ,	IsDataChanged		BIT DEFAULT 1 /*0: No change category => No Action*/
+		,	SubscriberGroupID	SMALLINT UNSIGNED
         , 	PRIMARY KEY     	PK_Temp_ProblemAccounts_CustID_ReasonID(CustID,ReasonID)  
     );  
      
@@ -143,10 +145,11 @@ BEGIN
     CALL CTS_DC_ExcludeCustByCondition('Temp_InputCustomers');
     
     /*	3: INSERT CUST INFO */
-    INSERT INTO Temp_ProblemAccounts(CustID, ReasonID, CTSCustID, SubscriberID, RobotCounter)
-    SELECT temp.CustID, temp.ReasonID, cust.CTSCustID, cust.SubscriberID, temp.RobotCounter
+    INSERT INTO Temp_ProblemAccounts(CustID, ReasonID, CTSCustID, SubscriberID, RobotCounter, SubscriberGroupID)
+    SELECT DISTINCT temp.CustID, temp.ReasonID, cust.CTSCustID, cust.SubscriberID, temp.RobotCounter, mss.SubscriberGroupID
     FROM Temp_InputCustomers AS temp 
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.CustSubID = 0;
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.CustSubID = 0
+		INNER JOIN CTS_DataCenter.MappingSubscriberSite AS mss ON cust.SiteID = mss.SiteID;
     
     /*	4: IGNORE PIN CATEGORY	*/
     INSERT INTO Temp_PinnedCustomers (CTSCustID)
@@ -296,7 +299,7 @@ BEGIN
             
 		/* 15.1.4: Insert log from Insert NAP PA */    
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
-		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, RobotCounter)
+		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, RobotCounter, TargetDangerLevel1, IsAppliedDangerLevel1)
 		SELECT DISTINCT temp.CustID
 			, 	temp.CTSCustID
 			, 	temp.CategoryID
@@ -310,6 +313,9 @@ BEGIN
 			, 	temp.SourceTypeID
 			,  	temp.IsDataChanged
 			,	temp.RobotCounter
+            ,	(CASE WHEN temp.CategoryGroup = 61 AND SubscriberGroupID = 1 THEN 6 
+					 WHEN temp.CategoryGroup = 61 AND SubscriberGroupID = 2 THEN 16 END) AS TargetDangerLevel1
+			,	0 AS IsAppliedDangerLevel1
 		FROM Temp_ProblemAccounts AS temp
         WHERE temp.IsDataChanged = 1;
         
@@ -332,7 +338,7 @@ BEGIN
     
 		/*	15.2.2: Insert log from Insert NAP PA */
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
-		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, RobotCounter)
+		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, RobotCounter, TargetDangerLevel1, IsAppliedDangerLevel1)
 		SELECT DISTINCT temp.CustID
 			, 	temp.CTSCustID
 			, 	temp.CategoryID
@@ -346,6 +352,9 @@ BEGIN
 			, 	temp.SourceTypeID
 			,  	temp.IsDataChanged
 			,	temp.RobotCounter
+            ,	(CASE WHEN temp.CategoryGroup = 61 AND SubscriberGroupID = 1 THEN 6 
+					 WHEN temp.CategoryGroup = 61 AND SubscriberGroupID = 2 THEN 16 END) AS TargetDangerLevel1
+			,	0 AS IsAppliedDangerLevel1
 		FROM Temp_ProblemAccounts AS temp
 		WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE) AND temp.IsDataChanged = 1;
 		

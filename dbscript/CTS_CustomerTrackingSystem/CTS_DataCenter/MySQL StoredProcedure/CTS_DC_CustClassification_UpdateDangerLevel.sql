@@ -40,12 +40,20 @@ BEGIN
 			  CustID 			BIGINT UNSIGNED		PATH "$.CustId"
 			, ScannedTime		DATETIME		    PATH "$.ScannedTime"
 		 )) AS temp;
-    
+         
     IF (ip_TypeID = 1) THEN
 		UPDATE CTS_DataCenter.CTSCustomerClassification_History AS his
 			INNER JOIN Temp_ProcessedCustList AS temp ON temp.CustID = his.CustID AND his.SportGroupID = CONST_GROUP_NORMAL 
                 AND his.LastModifiedDate <= temp.ScannedTime AND his.IsAppliedCC = 1 AND his.IsAppliedDangerLevel1 = 0 
 		SET his.IsAppliedDangerLevel1 = 1;
+	END IF;
+    
+    IF (ip_TypeID = 2) THEN
+		UPDATE CTS_DataCenter.CTSCustomerClassification_History AS his
+			INNER JOIN Temp_ProcessedCustList AS temp ON temp.CustID = his.CustID  
+		SET his.IsAppliedDangerLevel1 = 1
+        WHERE his.LastModifiedDate <= temp.ScannedTime AND his.IsAppliedDangerLevel1 = 0 
+			  AND EXISTS (SELECT CategoryID FROM CTS_DataCenter.CustomerCategory AS cca WHERE cca.CategoryID = his.CategoryID AND cca.CategoryGroup = 61) ;
 	END IF;
     
 	/* IF (ip_TypeID = 2) THEN

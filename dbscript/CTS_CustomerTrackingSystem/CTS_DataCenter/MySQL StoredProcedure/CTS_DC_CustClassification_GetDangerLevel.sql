@@ -23,7 +23,8 @@ BEGIN
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetDangerLevel('36266996,27852979,2324948',1);
 	*/
     
-	DECLARE	CONST_GROUP_NORMAL 				INT DEFAULT 200;
+	DECLARE	CONST_GROUP_NORMAL 		INT DEFAULT 200;
+    DECLARE	CONST_GROUP_ROBOTUSER 	INT DEFAULT 61;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_InputCustomers;
     CREATE TEMPORARY TABLE Temp_InputCustomers (
@@ -41,31 +42,47 @@ BEGIN
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1;    
     
-    -- Get lastest history (Ass with PA & Have change Category)
-    INSERT INTO Temp_Customers(CustID, HistoryID)
-    SELECT temp.CustID, his.ID
-    FROM Temp_InputCustomers AS temp
-		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID 
-			AND cate.SportGroupID = CONST_GROUP_NORMAL
-		STRAIGHT_JOIN CTS_DataCenter.TaggingToCategory AS tag ON tag.CategoryID = cate.CategoryID
-		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification_History AS his ON his.CustID = temp.CustID 
-			AND his.SportGroupID = CONST_GROUP_NORMAL AND his.LastModifiedDate = cate.LastModifiedDate
-	WHERE 	tag.TaggingID <> 0 AND his.IsDataChanged = 1 AND his.ToCategoryID <> IFNULL(his.FromCategoryID, 0);
+    
     
     -- Get Results.
-    IF (ip_TypeID = 1) THEN -- Original
+    IF (ip_TypeID = 1) THEN -- Original    
+		-- Get lastest history (Ass with PA & Have change Category)
+        /*
+		INSERT INTO Temp_Customers(CustID, HistoryID)
+		SELECT temp.CustID, his.ID
+		FROM Temp_InputCustomers AS temp
+			STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID 
+				AND cate.SportGroupID = CONST_GROUP_NORMAL
+			STRAIGHT_JOIN CTS_DataCenter.TaggingToCategory AS tag ON tag.CategoryID = cate.CategoryID
+			STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification_History AS his ON his.CustID = temp.CustID 
+				AND his.SportGroupID = CONST_GROUP_NORMAL AND his.LastModifiedDate = cate.LastModifiedDate
+		WHERE 	tag.TaggingID <> 0 AND his.IsDataChanged = 1 AND his.ToCategoryID <> IFNULL(his.FromCategoryID, 0);    
+    
 		SELECT temp.CustId, his.LastModifiedDate AS ScannedTime, his.TargetDangerLevel1 AS DangerLevel
 		FROM Temp_Customers AS temp
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS his ON his.ID = temp.HistoryID
-        WHERE his.TargetDangerLevel1 IS NOT NULL;
+		WHERE his.TargetDangerLevel1 IS NOT NULL;*/
+        
+        SELECT temp.CustID, his.LastModifiedDate AS ScannedTime, his.TargetDangerLevel1 AS DangerLevel
+		FROM Temp_InputCustomers AS temp
+			STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID AND cate.SportGroupID = CONST_GROUP_NORMAL
+			STRAIGHT_JOIN CTS_DataCenter.TaggingToCategory AS tag ON tag.CategoryID = cate.CategoryID
+			STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification_History AS his ON his.CustID = temp.CustID 
+				AND his.SportGroupID = CONST_GROUP_NORMAL AND his.LastModifiedDate = cate.LastModifiedDate
+		WHERE 	tag.TaggingID <> 0 AND his.ToCategoryID <> IFNULL(his.FromCategoryID, 0)
+				AND his.TargetDangerLevel1 IS NOT NULL;        
 	END IF;
     
-   /* IF (ip_TypeID = 2) THEN -- ABI
-		SELECT temp.CustId, his.LastModifiedDate AS ScannedTime, his.TargetDangerLevel2 AS DangerLevel
-		FROM Temp_Customers AS temp
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS his ON his.ID = temp.HistoryID
-        WHERE his.TargetDangerLevel2 IS NOT NULL;
+    IF (ip_TypeID = 2) THEN -- ABI
+    	-- Get lastest history (Ass with PA & Have change Category)
+		SELECT temp.CustID, his.LastModifiedDate AS ScannedTime, his.TargetDangerLevel1 AS DangerLevel
+		FROM Temp_InputCustomers AS temp
+			STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID
+			STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification_History AS his ON his.CustID = temp.CustID AND his.CategoryID = cate.CategoryID AND his.LastModifiedDate = cate.LastModifiedDate
+		WHERE EXISTS (SELECT 1 FROM CTS_DataCenter.CustomerCategory cat WHERE cat.CategoryGroup = CONST_GROUP_ROBOTUSER AND cat.CategoryID = cate.CategoryID)
+				AND his.TargetDangerLevel1 IS NOT NULL;
 	END IF;
+    /*
     IF (ip_TypeID = 3) THEN -- Other
 		SELECT temp.CustId, his.LastModifiedDate AS ScannedTime, his.TargetDangerLevel3 AS DangerLevel
 		FROM Temp_Customers AS temp
