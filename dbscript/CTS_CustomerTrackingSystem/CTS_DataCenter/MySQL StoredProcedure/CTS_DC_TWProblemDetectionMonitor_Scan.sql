@@ -21,6 +21,7 @@ sp: BEGIN
 	*/
     DECLARE lv_BatchSize SMALLINT DEFAULT 500;
     DECLARE lv_LastCustID INT UNSIGNED;
+    DECLARE lv_DelDate DATETIME;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Remove;
     CREATE TEMPORARY TABLE Temp_Remove(
@@ -30,6 +31,7 @@ sp: BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Scan;
     CREATE TEMPORARY TABLE Temp_Scan(
 			CustID INT UNSIGNED PRIMARY KEY
+		,	CreatedDate	DATETIME
     );
     
 	SELECT s.ParameterValue 
@@ -38,27 +40,37 @@ sp: BEGIN
     
     SELECT s.ParameterValue 
     INTO lv_LastCustID 
-    FROM CTS_DataCenter.SystemParameter AS s WHERE s.ParameterID = 63;
+    FROM CTS_DataCenter.SystemParameter AS s WHERE s.ParameterID = 63;   
     
-    INSERT INTO Temp_Remove(CustID)    
-    SELECT tpd.CustID
-    FROM CTS_DataCenter.TWProblemDetectionMonitor AS tpd
-		INNER JOIN CTS_Archive.CTSCustomerAssociationStatus AS cas ON tpd.CustID = cas.CustID
-    WHERE DATEDIFF(CURRENT_DATE(), GREATEST(tpd.CreatedDate, cas.LastTicketDate)) >= 60;    
-    
-	DELETE tpd
-    FROM CTS_DataCenter.TWProblemDetectionMonitor AS tpd
-		INNER JOIN Temp_Remove AS tmpRev ON tpd.CustID = tmpRev.CustID;
-        
-    INSERT INTO Temp_Scan(CustID)
-    SELECT tpd.CustID
+    INSERT INTO Temp_Scan(CustID, CreatedDate)
+    SELECT	tpd.CustID
+		,	tpd.CreatedDate
     FROM CTS_DataCenter.TWProblemDetectionMonitor AS tpd
     WHERE tpd.CustID > lv_LastCustID AND tpd.CreatedDate < CURRENT_DATE()
     ORDER BY tpd.CustID ASC
-    LIMIT lv_BatchSize;    
-    
-    IF EXISTS (SELECT 1 FROM Temp_Scan)
-    THEN 
+    LIMIT lv_BatchSize;
+
+    IF EXISTS (SELECT 1 FROM Temp_Scan) THEN
+		SET lv_DelDate = DATE_SUB(CURRENT_DATE(), INTERVAL 59 DAY);
+        
+		SET op_LastCustID = (SELECT MAX(s.CustID) FROM Temp_Scan AS s); 
+        
+		INSERT INTO Temp_Remove(CustID)    
+		SELECT	tpd.CustID
+		FROM Temp_Scan AS tmpS
+			INNER JOIN CTS_Archive.CTSCustomerAssociationStatus AS cas ON tpd.CustID = tmpS.CustID AND tmpS.LastTicketDate < lv_DelDate
+		WHERE tmpS.CreatedDate < lv_DelDate;
+        
+        IF EXISTS (SELECT 1 FROM Temp_Remove) THEN
+			DELETE tpd
+			FROM CTS_DataCenter.TWProblemDetectionMonitor AS tpd
+			INNER JOIN Temp_Remove AS tmpRev ON tpd.CustID = tmpRev.CustID;
+			
+			DELETE tmpS
+			FROM Temp_Scan AS tmpS
+				INNER JOIN Temp_Remove AS tmpRev ON tmpS.CustID = tmpRev.CustID;
+		END IF;	
+        
 		SELECT 	tpd.CustID
 			,	tpd.UserName
 			,	tpd.RoleID
@@ -77,19 +89,13 @@ sp: BEGIN
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS ccl ON tpd.CustID = ccl.CustID 
 			INNER JOIN CTS_DataCenter.CategoryToCustomerClass AS ctc ON ccl.CategoryID = ctc.CategoryID
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON ccl.CategoryID = cc.CategoryID
-		GROUP BY cc.ParentID, tpd.CustID, tpd.UserName, tpd.RoleID, tpd.ReasonID, tpd.PreventActionID, tpd.Comment, tpd.VoidTime, tpd.LimitAmount, tpd.UserID, tpd.IP;
-        
-        /*UPDATE CTS_DataCenter.SystemParameter AS s 
-		SET s.ParameterValue = (SELECT MAX(s.CustID) FROM Temp_Scan AS s)
-        WHERE s.ParameterID = 63;*/
-        
-        SET op_LastCustID = (SELECT MAX(s.CustID) FROM Temp_Scan AS s);
-    ELSE
+		GROUP BY cc.ParentID, tpd.CustID, tpd.UserName, tpd.RoleID, tpd.ReasonID, tpd.PreventActionID, tpd.Comment, tpd.VoidTime, tpd.LimitAmount, tpd.UserID, tpd.IP; 			
+	ELSE 
 		SET op_LastCustID = 0;
-        
+		
 		UPDATE CTS_DataCenter.SystemParameter AS s 
 		SET s.ParameterValue =0
-        WHERE s.ParameterID = 63;
+		WHERE s.ParameterID = 63;
     END IF;
 
 END$$
