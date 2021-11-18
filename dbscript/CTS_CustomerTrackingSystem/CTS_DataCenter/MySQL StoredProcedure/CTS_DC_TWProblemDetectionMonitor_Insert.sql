@@ -20,14 +20,14 @@ sp: BEGIN
 
 		Example:
 			- CALL CTS_DC_TWProblemDetectionMonitor_Insert('[
-				  {"CustID" : 2111103,"UserName" : "AW0078010","RoleID" : 1,"ReasonID" : 1,"PreventActionID" : 2,"Comment" : "Testing","VoidTime" : "2021-11-12 00:36:39.5043","LimitAcount" : 1000.01,"UserID" : 1234,"IP" : "192.168.8.9"},
-				  {"CustID" : 2158796,"UserName" : "AW0078045","RoleID" : 1,"ReasonID" : 1,"PreventActionID" : 2,"Comment" : "Testing","VoidTime" : "2021-11-12 00:36:39.5043","LimitAcount" : 1000.01,"UserID" : 1234,"IP" : "192.168.8.9"}
+				  {"CustID" : 2111103,"UserName" : "AW0078010","RoleID" : 1,"ReasonID" : 1,"PreventActionID" : 2,"Comment" : "Testing","VoidTime" : "2021-11-12 00:36:39.5043","LimitAmount" : 1000.01,"UserID" : 1234,"IP" : "192.168.8.9"},
+				  {"CustID" : 2158796,"UserName" : "AW0078045","RoleID" : 1,"ReasonID" : 1,"PreventActionID" : 2,"Comment" : "Testing","VoidTime" : "2021-11-12 00:36:39.5043","LimitAmount" : 1000.01,"UserID" : 1234,"IP" : "192.168.8.9"}
 					]');;
             
 
 	*/
     
-    INSERT IGNORE INTO CTS_DataCenter.TWProblemDetectionMonitor(CustID, UserName, RoleID, ReasonID, PreventActionID, Comment, VoidTime, LimitAcount, UserID, IP, CreatedDate, InsertTime)
+    INSERT IGNORE INTO CTS_DataCenter.TWProblemDetectionMonitor(CustID, UserName, RoleID, ReasonID, PreventActionID, Comment, VoidTime, LimitAmount, UserID, IP, CreatedDate, InsertTime)
     SELECT	jsTbl.CustID
 		,	jsTbl.UserName
 		,	jsTbl.RoleID
@@ -35,7 +35,7 @@ sp: BEGIN
 		,	jsTbl.PreventActionID
 		,	jsTbl.Comment
 		,	jsTbl.VoidTime
-		,	jsTbl.LimitAcount
+		,	jsTbl.LimitAmount
 		,	jsTbl.UserID
 		,	jsTbl.IP
 		,	CURRENT_DATE() AS CreatedDate
@@ -49,7 +49,7 @@ sp: BEGIN
 									,	PreventActionID	TINYINT			PATH "$.PreventActionID"
 									,	Comment			VARCHAR(300)	PATH "$.Comment"
 									,	VoidTime		VARCHAR(50)		PATH "$.VoidTime"
-									,	LimitAcount 	DECIMAL(20,4)	PATH "$.LimitAcount"
+									,	LimitAmount 	DECIMAL(20,4)	PATH "$.LimitAmount"
 									,	UserID			INT				PATH "$.UserID"
 									,	IP				VARCHAR(15)    	PATH "$.IP"
 					 )) AS 	jsTbl;

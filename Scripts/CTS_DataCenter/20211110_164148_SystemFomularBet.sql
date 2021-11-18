@@ -20,7 +20,7 @@ CREATE TABLE TWProblemDetectionMonitor(
     ,	PreventActionID	TINYINT
     ,	Comment		VARCHAR(300)
     ,	VoidTime	VARCHAR(50)
-    ,	LimitAcount DECIMAL(20,4)
+    ,	LimitAmount DECIMAL(20,4)
     ,	UserID		INT
     ,	IP			VARCHAR(15)    
 	,	CreatedDate	DATETIME
