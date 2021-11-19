@@ -13,17 +13,18 @@ Reviewer:
 # Remove Data CTSCustomerClassification_History
 DELETE rev
 FROM CTS_DataCenter.CTSCustomerClassification_History AS rev
-	INNER JOIN CTS_Adhoc.CS164521_CTSCustomer AS cus ON cch.CustID = rev.CustID;
+	INNER JOIN CTS_Adhoc.CS164521_CTSCustomer AS cus ON cus.CustID = rev.CustID;
     
 # Remove Data CTSCustomerClassification    
 DELETE rev
 FROM CTS_DataCenter.CTSCustomerClassification AS rev
-	INNER JOIN CTS_Adhoc.CS164521_CTSCustomer AS cus ON cch.CustID = rev.CustID;
+	INNER JOIN CTS_Adhoc.CS164521_CTSCustomer AS cus ON cus.CustID = rev.CustID;
 
 # Remove Data CTSCustomer    
 DELETE rev
 FROM CTS_DataCenter.CTSCustomer AS rev
-	INNER JOIN CTS_Adhoc.CS164521_CTSCustomer AS cus ON cch.CustID = rev.CustID;  
+	INNER JOIN CTS_Adhoc.CS164521_CTSCustomer AS cus ON cus.CTSCustID = rev.CTSCustID;  
+
 
 # Remove Data MappingSubscriberSite
 DELETE rev
