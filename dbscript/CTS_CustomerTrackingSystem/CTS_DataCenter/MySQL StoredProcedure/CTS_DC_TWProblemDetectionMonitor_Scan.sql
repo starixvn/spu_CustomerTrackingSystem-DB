@@ -56,9 +56,9 @@ sp: BEGIN
 		SET op_LastCustID = (SELECT MAX(s.CustID) FROM Temp_Scan AS s); 
         
 		INSERT INTO Temp_Remove(CustID)    
-		SELECT	tpd.CustID
+		SELECT	tmpS.CustID
 		FROM Temp_Scan AS tmpS
-			INNER JOIN CTS_Archive.CTSCustomerAssociationStatus AS cas ON tpd.CustID = tmpS.CustID AND tmpS.LastTicketDate < lv_DelDate
+			INNER JOIN CTS_Archive.CTSCustomerAssociationStatus AS cas ON cas.CustID = tmpS.CustID AND cas.LastTicketDate < lv_DelDate
 		WHERE tmpS.CreatedDate < lv_DelDate;
         
         IF EXISTS (SELECT 1 FROM Temp_Remove) THEN
