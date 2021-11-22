@@ -27,20 +27,37 @@ sp: BEGIN
     CREATE TEMPORARY TABLE Temp_UserName(
 		UserName VARCHAR(50) PRIMARY KEY
 	);
-
+	
+    DROP TEMPORARY TABLE IF EXISTS Temp_ExistCust;
+    CREATE TEMPORARY TABLE Temp_ExistCust(
+			UserName VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PRIMARY KEY
+        ,	CustID	INT UNSIGNED
+        ,	IsMonitorCategoryGroup BOOLEAN
+        ,	IsMonitorSite BOOLEAN
+	);
+    
+    
     SET @sql= CONCAT("INSERT INTO Temp_UserName (UserName) VALUES ('", REPLACE(ip_UserNameList, ',', "'),('"),"');");
     PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1;      
-    
-    SELECT	cus.CustID
-		,	tmpCus.UserName
+      
+    INSERT INTO Temp_ExistCust (UserName, CustID, IsMonitorCategoryGroup, IsMonitorSite)
+    SELECT	tmpCus.UserName
+		,	cus.CustID
         ,	(CASE WHEN cc.ParentID = 200 AND GROUP_CONCAT(cc.CategoryGroup) IN (201,202,205) THEN 1 ELSE 0 END) AS IsMonitorCategoryGroup
         ,	(CASE WHEN cus.SiteID = 487 THEN 1 ELSE 0 END) AS IsMonitorSite
     FROM Temp_UserName AS tmpCus
-		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.UserName = tmpCus.UserName AND cus.CustSubID = 0 
-		LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS ccl ON cus.CustID = ccl.CustID 
-        LEFT JOIN CTS_DataCenter.CustomerCategory AS cc ON ccl.CategoryID = cc.CategoryID
-	GROUP BY cus.CustID, cus.UserName, cc.ParentID, SiteID;	
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.UserName = tmpCus.UserName AND cus.CustSubID = 0 
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS ccl ON cus.CustID = ccl.CustID 
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON ccl.CategoryID = cc.CategoryID
+	GROUP BY cus.CustID, tmpCus.UserName, cc.ParentID, SiteID;	
+    
+    SELECT 	tmpCus.UserName
+			, tmpEs.CustID
+            , IFNULL(tmpEs.IsMonitorCategoryGroup,0) AS IsMonitorCategoryGroup
+            , IFNULL(tmpEs.IsMonitorSite,0) AS IsMonitorSite
+    FROM 	Temp_UserName AS tmpCus
+    LEFT JOIN Temp_ExistCust AS tmpEs ON tmpCus.UserName = tmpEs.UserName;
     
 END$$
 DELIMITER ;

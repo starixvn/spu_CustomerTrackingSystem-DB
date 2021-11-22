@@ -43,7 +43,7 @@ sp: BEGIN
 	 FROM JSON_TABLE(ip_CustDetectInfo,
 					"$[*]" COLUMNS(
 										CustID			INT UNSIGNED	PATH "$.CustID"
-									,	UserName		VARCHAR(50)		PATH "$.UserName"
+									,	UserName		VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PATH "$.UserName"
 									,	RoleID			TINYINT			PATH "$.RoleID"
 									,	ReasonID		TINYINT 		PATH "$.ReasonID"
 									,	PreventActionID	TINYINT			PATH "$.PreventActionID"
