@@ -88,20 +88,22 @@ BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_ProblemAccounts;    
 	CREATE TEMPORARY TABLE Temp_ProblemAccounts(	  
-			CustID				BIGINT UNSIGNED 
-		, 	CTSCustID			BIGINT UNSIGNED DEFAULT 0
-        , 	SubscriberID		INT DEFAULT 0 
-        , 	ReasonID			SMALLINT 
-        , 	CategoryID		    SMALLINT
-        ,	CategoryGroup     	SMALLINT    
-        ,	TargetCC			SMALLINT
-        ,	SourceTypeID		SMALLINT
-		, 	ActionType		    SMALLINT DEFAULT 0 /* 0: Insert, 1: Update, 2: Remove, 4: Ignore PIN */
-        , 	IsLastDataChanged   BIT DEFAULT 0
-        ,	LastSourceTypeID	INT
-        , 	RobotCounter		SMALLINT 
-        ,	IsDataChanged		BIT DEFAULT 1 /*0: No change category => No Action*/
-		,	SubscriberGroupID	SMALLINT UNSIGNED
+			CustID					BIGINT UNSIGNED 
+		, 	CTSCustID				BIGINT UNSIGNED DEFAULT 0
+        , 	SubscriberID			INT DEFAULT 0 
+        , 	ReasonID				SMALLINT 
+        , 	CategoryID		    	SMALLINT
+        ,	CategoryGroup     		SMALLINT    
+        ,	TargetCC				SMALLINT
+        ,	SourceTypeID			SMALLINT
+		, 	ActionType		    	SMALLINT DEFAULT 0 /* 0: Insert, 1: Update, 2: Remove, 4: Ignore PIN */
+        , 	IsLastDataChanged  		BIT DEFAULT 0
+        ,	LastSourceTypeID		INT
+        , 	RobotCounter			SMALLINT 
+        ,	IsDataChanged			BIT DEFAULT 1 /*0: No change category => No Action*/
+		,	IsLicensee				SMALLINT UNSIGNED
+		,	TargetDangerLevel		SMALLINT UNSIGNED
+        ,	IsAppliedDangerLevel	SMALLINT UNSIGNED	
         , 	PRIMARY KEY     	PK_Temp_ProblemAccounts_CustID_ReasonID(CustID,ReasonID)  
     );  
      
@@ -145,8 +147,13 @@ BEGIN
     CALL CTS_DC_ExcludeCustByCondition('Temp_InputCustomers');
     
     /*	3: INSERT CUST INFO */
-    INSERT INTO Temp_ProblemAccounts(CustID, ReasonID, CTSCustID, SubscriberID, RobotCounter, SubscriberGroupID)
-    SELECT DISTINCT temp.CustID, temp.ReasonID, cust.CTSCustID, cust.SubscriberID, temp.RobotCounter, mss.SubscriberGroupID
+    INSERT INTO Temp_ProblemAccounts(CustID, ReasonID, CTSCustID, SubscriberID, RobotCounter, IsLicensee)
+    SELECT DISTINCT temp.CustID
+		,	temp.ReasonID
+        , 	cust.CTSCustID
+        , 	cust.SubscriberID
+        , 	temp.RobotCounter
+        ,	(CASE WHEN mss.SubscriberGroupID = 2 THEN 1 ELSE 0 END) AS IsLicensee
     FROM Temp_InputCustomers AS temp 
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.CustSubID = 0
 		INNER JOIN CTS_DataCenter.MappingSubscriberSite AS mss ON cust.SiteID = mss.SiteID;
@@ -226,6 +233,13 @@ BEGIN
 								  ELSE CONST_SOURCETYPE_REMOVENAPPA /* Remove */
 							 END)
 	WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE, CONST_ACTIONTYPE_REMOVE);
+    
+    /* 11.1 UPDATE DANGER LEVEL FOR ROBOT_USER(TypeID = 2)*/
+    UPDATE Temp_ProblemAccounts AS temp
+		INNER JOIN CTS_DataCenter.CategoryToDangerLevel AS ctd ON temp.CategoryID = ctd.CategoryID AND TypeID = 2 AND temp.IsLicensee = ctd.IsLicensee
+    SET temp.TargetDangerLevel =  ctd.DangerLevel
+		, temp.IsAppliedDangerLevel = 0
+	WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);    
     
 	/*	12: REMOVE PA FROM NAP CM */
 	DELETE cate
@@ -313,9 +327,8 @@ BEGIN
 			, 	temp.SourceTypeID
 			,  	temp.IsDataChanged
 			,	temp.RobotCounter
-            ,	(CASE WHEN temp.CategoryGroup = 61 AND SubscriberGroupID = 1 THEN 6 
-					 WHEN temp.CategoryGroup = 61 AND SubscriberGroupID = 2 THEN 16 END) AS TargetDangerLevel1
-			,	0 AS IsAppliedDangerLevel1
+            ,	temp.TargetDangerLevel AS TargetDangerLevel1
+			,	temp.IsAppliedDangerLevel AS IsAppliedDangerLevel1
 		FROM Temp_ProblemAccounts AS temp
         WHERE temp.IsDataChanged = 1;
         
@@ -352,9 +365,8 @@ BEGIN
 			, 	temp.SourceTypeID
 			,  	temp.IsDataChanged
 			,	temp.RobotCounter
-            ,	(CASE WHEN temp.CategoryGroup = 61 AND SubscriberGroupID = 1 THEN 6 
-					 WHEN temp.CategoryGroup = 61 AND SubscriberGroupID = 2 THEN 16 END) AS TargetDangerLevel1
-			,	0 AS IsAppliedDangerLevel1
+            ,	temp.TargetDangerLevel AS TargetDangerLevel1
+			,	temp.IsAppliedDangerLevel AS IsAppliedDangerLevel1
 		FROM Temp_ProblemAccounts AS temp
 		WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE) AND temp.IsDataChanged = 1;
 		
