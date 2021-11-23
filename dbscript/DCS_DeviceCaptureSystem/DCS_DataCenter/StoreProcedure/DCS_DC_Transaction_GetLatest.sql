@@ -18,38 +18,45 @@ BEGIN
 			- 20210412@Aries.Nguyen: Fix issue performance when filter all  [Redmine ID: #153009]
             - 20210629@Casey.Huynh: Return Flagged Value (Web will show type of robot) [Redmine ID: 157085]
 			- 20211006@Aries.Nguyen: Fix issue performance when filter sub SM88  [Redmine ID: #162888]
+			- 20211123@Aries.Nguyen: Fix issue performance when filter sub AlphaIBCIndo  [Redmine ID: #162888]
 
 		Param's Explanation (filtered by):
 
         Example:
 			- CALL CTS_DataCenter.DCS_DC_Transaction_GetLatest(1, 100);
 	*/
-	
-	SELECT 	cust.UserName
-		,	cust.UserName2 AS LoginID
-		,	subs.SubscriberName
-		,	cust.CTSCustID
-		,	trans.TransTime            
-		,	trans.FirstDeviceCode	
-        ,	trans.IP
-		,	trans.Flagged
-		,	aResult.Action
-		,	aResult.ActionResult
-		,	uAgent.OS
-		,	uAgent.Browser
-		,	url.URLDetails
-		,	trans.AccountID
-		,	trans.TransID
-	FROM DCS_DataCenter.Transaction07 AS trans
-		LEFT JOIN CTS_DataCenter.CustDCSAccount AS cAcc ON trans.AccountID = cAcc.AccountID AND cAcc.SubscriberID = trans.SubscriberID
-		LEFT JOIN CTS_DataCenter.CTSCustomer AS cust ON cAcc.CTSCustID = cust.CTSCustID 
-		LEFT JOIN DCS_DataCenter.UserAgent AS uAgent ON trans.UserAgentKey = uAgent.UserAgentKey
-		LEFT JOIN DCS_DataCenter.ActionResult AS aResult ON trans.ActionResultID = aResult.ActionResultID
-		LEFT JOIN DCS_DataCenter.URL AS url ON trans.URLID = url.URLID AND trans.SubscriberID = url.SubscriberID
-		LEFT JOIN CTS_Admin.Subscriber AS subs ON cust.SubscriberID = subs.SubscriberID			
-	WHERE (ip_SubscriberId = -1 OR trans.SubscriberID = ip_SubscriberId) AND  cAcc.AccountID IS NOT NULL AND cust.CTSCustID IS NOT NULL
-	ORDER BY trans.TransTime DESC
-	LIMIT ip_Length;
+	SET @sql = 	CONCAT("
+		SELECT 	cust.UserName
+			,	cust.UserName2 AS LoginID
+			,	subs.SubscriberName
+			,	cust.CTSCustID
+			,	trans.TransTime            
+			,	trans.FirstDeviceCode	
+			,	trans.IP
+			,	trans.Flagged
+			,	aResult.Action
+			,	aResult.ActionResult
+			,	uAgent.OS
+			,	uAgent.Browser
+			,	url.URLDetails
+			,	trans.AccountID
+			,	trans.TransID
+		FROM DCS_DataCenter.Transaction07 AS trans
+			LEFT JOIN CTS_DataCenter.CustDCSAccount AS cAcc ON trans.AccountID = cAcc.AccountID AND cAcc.SubscriberID = trans.SubscriberID
+			LEFT JOIN CTS_DataCenter.CTSCustomer AS cust ON cAcc.CTSCustID = cust.CTSCustID 
+			LEFT JOIN DCS_DataCenter.UserAgent AS uAgent ON trans.UserAgentKey = uAgent.UserAgentKey
+			LEFT JOIN DCS_DataCenter.ActionResult AS aResult ON trans.ActionResultID = aResult.ActionResultID
+			LEFT JOIN DCS_DataCenter.URL AS url ON trans.URLID = url.URLID AND trans.SubscriberID = url.SubscriberID
+			LEFT JOIN CTS_Admin.Subscriber AS subs ON cust.SubscriberID = subs.SubscriberID			
+		WHERE (", ip_SubscriberId, " = -1 OR trans.SubscriberID = ", ip_SubscriberId ,")", 
+			"AND  cAcc.AccountID IS NOT NULL 
+			 AND cust.CTSCustID IS NOT NULL
+		ORDER BY trans.TransTime DESC
+		LIMIT ", ip_Length);
+     
+    PREPARE stmt1 FROM  @sql;
+    EXECUTE stmt1; 
+	DEALLOCATE PREPARE stmt1;
 	
 END$$
 
