@@ -13,6 +13,7 @@ sp: BEGIN
 
 		Revisions:
 			- 	20210927@Aries.Nguyen: Created [Redmine ID: #162277]
+			- 	20211123@Aries.Nguyen: Clean data inactive association [Redmine ID: #165001]
 		Param's Explanation (filtered by):	
 			
 	*/
@@ -22,6 +23,7 @@ sp: BEGIN
     DECLARE lv_LastID 					BIGINT UNSIGNED;
     DECLARE lv_NextID 					BIGINT UNSIGNED;
     DECLARE lv_Table 					VARCHAR(100);
+    DECLARE lv_Count				    INT DEFAULT 0;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;
     CREATE TEMPORARY TABLE Temp_CustInfo(
@@ -93,13 +95,20 @@ sp: BEGIN
 			SET ParameterValue = 'DCS_DataCenter.Association'
 			WHERE ParameterID = 46;
 			
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_Association_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
 
         SET lv_Table = 'DCS_DataCenter.Account';
     END IF;
 	
-
     /********************************************* 2. DCS_DataCenter.Account *********************************************************/
 	IF (lv_Table = 'DCS_DataCenter.Account') THEN 
 		IF EXISTS (SELECT 1  FROM DCS_DataCenter.Account  WHERE  AccountID IN (SELECT AccountID FROM Temp_CustInfo )) THEN
@@ -115,9 +124,8 @@ sp: BEGIN
         END IF;
         
         SET lv_Table = 'CTS_DataCenter.AssociatedAccountMonitor';
-    END IF;
+    END IF; 
     
-
 	/********************************************* 3. CTS_DataCenter.AssociatedAccountMonitor *********************************************************/
     IF (lv_Table = 'CTS_DataCenter.AssociatedAccountMonitor') THEN 
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.AssociatedAccountMonitor WHERE  CTSCustID IN (SELECT CTSCustID FROM Temp_CustInfo)) THEN
@@ -156,7 +164,15 @@ sp: BEGIN
 			SET ParameterValue = 'CTS_DataCenter.AssociatedAccountNotification'
 			WHERE ParameterID = 46;
 
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_AssociatedAccountNotification_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         SET lv_Table = 'CTS_DataCenter.AssociationByAI-From';
     END IF;
@@ -187,7 +203,15 @@ sp: BEGIN
 			SET ParameterValue = 'CTS_DataCenter.AssociationByAI-From'
 			WHERE ParameterID = 46;
 			
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_AssociationByAI_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
 		SET lv_Table = 'CTS_DataCenter.AssociationByAI-To';
@@ -217,14 +241,21 @@ sp: BEGIN
 			SET ParameterValue = 'CTS_DataCenter.AssociationByAI-To'
 			WHERE ParameterID = 46;
 
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_AssociationByAI_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
         SET lv_Table = 'CTS_DataCenter.AssociationByDevice';
     END IF;
 	
-
-    /********************************************* 6. CTS_DataCenter.AssociationByDevice *********************************************************/
+   /********************************************* 6. CTS_DataCenter.AssociationByDevice *********************************************************/
     IF (lv_Table = 'CTS_DataCenter.AssociationByDevice') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.AssociationByDevice WHERE CTSCustID IN (SELECT CTSCustID FROM Temp_CustInfo)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByDevice_Clean;
@@ -246,13 +277,20 @@ sp: BEGIN
 			SET ParameterValue = 'CTS_DataCenter.AssociationByDevice'
 			WHERE ParameterID = 46;
         
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_AssociationByDevice_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
         SET lv_Table = 'CTS_DataCenter.AssociationByIP-From';
 	END IF; 
     
-	
 	/********************************************* 7. CTS_DataCenter.AssociationByIP *********************************************************/
     IF (lv_Table = 'CTS_DataCenter.AssociationByIP-From') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.AssociationByIP WHERE FromCustID IN (SELECT CustID FROM Temp_CustInfo)) THEN
@@ -275,15 +313,21 @@ sp: BEGIN
 			SET ParameterValue = 'CTS_DataCenter.AssociationByIP-From'
 			WHERE ParameterID = 46;
 			
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_AssociationByIP_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
         SET lv_Table = 'CTS_DataCenter.AssociationByIP-To';
 	 END IF; 
      
-     
-     
-     IF (lv_Table = 'CTS_DataCenter.AssociationByIP-To') THEN
+	IF (lv_Table = 'CTS_DataCenter.AssociationByIP-To') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.AssociationByIP WHERE ToCustID IN (SELECT CustID FROM Temp_CustInfo)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByIP_Clean;
 			CREATE TEMPORARY TABLE Temp_AssociationByIP_Clean(
@@ -304,14 +348,20 @@ sp: BEGIN
 			SET ParameterValue = 'CTS_DataCenter.AssociationByIP-To'
 			WHERE ParameterID = 46;
 			
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_AssociationByIP_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
         SET lv_Table = 'CTS_DataCenter.AssociationByManual-From';
 	 END IF;   
      
-     
-    
     /********************************************* 8. CTS_DataCenter.AssociationByManual *********************************************************/
     IF (lv_Table = 'CTS_DataCenter.AssociationByManual-From') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.AssociationByManual WHERE FromCTSCustID IN (SELECT CTSCustID FROM Temp_CustInfo)) THEN
@@ -338,7 +388,15 @@ sp: BEGIN
 			SET ParameterValue = 'CTS_DataCenter.AssociationByManual-From'
 			WHERE ParameterID = 46;
         
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_AssociationByManual_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
         SET lv_Table = 'CTS_DataCenter.AssociationByManual-To';
@@ -369,14 +427,21 @@ sp: BEGIN
 			SET ParameterValue = 'CTS_DataCenter.AssociationByManual-To'
 			WHERE ParameterID = 46;
 			
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_AssociationByManual_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
         SET lv_Table = 'CTS_DataCenter.AssociationRemove-From';
 	 END IF;    
      
-     
-     
+    
     /********************************************* 9. CTS_DataCenter.AssociationRemove *********************************************************/
     IF (lv_Table = 'CTS_DataCenter.AssociationRemove-From') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.AssociationRemove WHERE FromCTSCustID IN (SELECT CTSCustID FROM Temp_CustInfo))  THEN
@@ -403,13 +468,19 @@ sp: BEGIN
 			SET ParameterValue = 'CTS_DataCenter.AssociationRemove-From'
 			WHERE ParameterID = 46;
 			
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_AssociationRemove_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
         SET lv_Table = 'CTS_DataCenter.AssociationRemove-To';
 	END IF;  
-    
-    
     
     IF (lv_Table = 'CTS_DataCenter.AssociationRemove-To') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.AssociationRemove WHERE ToCTSCustID IN (SELECT CTSCustID FROM Temp_CustInfo)) THEN
@@ -436,12 +507,19 @@ sp: BEGIN
 			SET ParameterValue = 'CTS_DataCenter.AssociationRemove-To'
 			WHERE ParameterID = 46;
 
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_AssociationRemove_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
         SET lv_Table = 'CTS_DataCenter.CTSCustomerClassification';
 	 END IF; 
-
 
 	/********************************************* 10. CTS_DataCenter.CTSCustomerClassification *********************************************************/
     IF (lv_Table = 'CTS_DataCenter.CTSCustomerClassification') THEN
@@ -472,14 +550,20 @@ sp: BEGIN
 			SET ParameterValue = 'CTS_DataCenter.CTSCustomerClassification'
 			WHERE ParameterID = 46;
 			
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_CTSCustomerClassification_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
         SET lv_Table = 'CTS_DataCenter.CTSCustomerClassification_History';
 	 END IF; 
      
-     
-    
     /********************************************* 11. CTS_DataCenter.CTSCustomerClassification_History *********************************************************/
     IF (lv_Table = 'CTS_DataCenter.CTSCustomerClassification_History') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.CTSCustomerClassification_History WHERE CustID IN (SELECT CustID FROM Temp_CustInfo)) THEN
@@ -502,13 +586,20 @@ sp: BEGIN
 			SET ParameterValue = 'CTS_DataCenter.CTSCustomerClassification_History'
 			WHERE ParameterID = 46;
 			
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_CTSCustomerClassification_History_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
         SET lv_Table = 'CTS_DataCenter.CTSCustomerClassification_InputDataLog';
 	 END IF; 
      
-
     /********************************************* 12. CTS_DataCenter.CTSCustomerClassification_InputDataLog *********************************************************/
     IF (lv_Table = 'CTS_DataCenter.CTSCustomerClassification_InputDataLog') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.CTSCustomerClassification_InputDataLog WHERE CustID IN (SELECT CustID FROM Temp_CustInfo)) THEN 
@@ -531,12 +622,19 @@ sp: BEGIN
 			SET ParameterValue = 'CTS_DataCenter.CTSCustomerClassification_InputDataLog'
 			WHERE ParameterID = 46;
 			
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_CTSCustomerClassification_InputDataLog_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
         SET lv_Table = 'CTS_DataCenter.CustDCSAccount';
 	 END IF; 
-    
     
     /********************************************* 13. CTS_DataCenter.CustDCSAccount *********************************************************/
 	IF (lv_Table = 'CTS_DataCenter.CustDCSAccount') THEN
@@ -555,7 +653,6 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.CustEvidence-Leve0';
 	 END IF; 
     
-
     /********************************************* 14. CTS_DataCenter.CustEvidence *********************************************************/
 	IF (lv_Table = 'CTS_DataCenter.CustEvidence-Leve0') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.CustEvidence WHERE CTSCustID IN (SELECT CTSCustID FROM Temp_CustInfo)) THEN
@@ -578,13 +675,20 @@ sp: BEGIN
 			SET ParameterValue = 'CTS_DataCenter.CustEvidence-Leve0'
 			WHERE ParameterID = 46;
 			
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_CustEvidence_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
         SET lv_Table = 'CTS_DataCenter.CustEvidence-Leve2';
 	 END IF; 
      
-	
     IF (lv_Table = 'CTS_DataCenter.CustEvidence-Leve2') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.CustEvidence WHERE FromCustID IN (SELECT CTSCustID FROM Temp_CustInfo)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_CustEvidence_Clean;
@@ -606,12 +710,19 @@ sp: BEGIN
 			SET ParameterValue = 'CTS_DataCenter.CustEvidence-Leve2'
 			WHERE ParameterID = 46;
 			
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_CustEvidence_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
         SET lv_Table = 'CTS_DataCenter.CustEvidenceFromFile';
 	 END IF;         
-     
 
 	/********************************************* 15. CTS_DataCenter.CustEvidenceFromFile *********************************************************/
 	IF (lv_Table = 'CTS_DataCenter.CustEvidenceFromFile') THEN
@@ -635,13 +746,19 @@ sp: BEGIN
 			SET ParameterValue = 'CTS_DataCenter.CustEvidenceFromFile'
 			WHERE ParameterID = 46;
 			
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_CustEvidenceFromFile_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
         SET lv_Table = 'CTS_DataCenter.CustEvidenceLog';
 	 END IF;     
-     
-     
      
     /********************************************* 16. CTS_DataCenter.CustEvidenceLog *********************************************************/
 	IF (lv_Table = 'CTS_DataCenter.CustEvidenceLog') THEN
@@ -665,12 +782,19 @@ sp: BEGIN
 			SET ParameterValue = 'CTS_DataCenter.CustEvidenceLog'
 			WHERE ParameterID = 46;
 		   
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_CustEvidenceLog_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
         SET lv_Table = 'CTS_DataCenter.CustEvidenceQueue';
 	 END IF; 
-     
      
     /********************************************* 17. CTS_DataCenter.CustEvidenceQueue *********************************************************/
 	IF (lv_Table = 'CTS_DataCenter.CustEvidenceQueue') THEN
@@ -694,7 +818,15 @@ sp: BEGIN
 			SET ParameterValue = 'CTS_DataCenter.CustEvidenceQueue'
 			WHERE ParameterID = 46;
 		
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_CustEvidenceQueue_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
         SET lv_Table = 'CTS_DataCenter.CustException-From';
@@ -725,13 +857,19 @@ sp: BEGIN
 			SET ParameterValue = 'CTS_DataCenter.CustException-From'
 			WHERE ParameterID = 46;
 			
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_CustException_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
         SET lv_Table = 'CTS_DataCenter.CustException-To';
 	 END IF; 
-     
-     
      
     IF (lv_Table = 'CTS_DataCenter.CustException-To') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.CustException WHERE ToCTSCustID IN (SELECT CTSCustID FROM Temp_CustInfo)) THEN
@@ -758,14 +896,20 @@ sp: BEGIN
 			SET ParameterValue = 'CTS_DataCenter.CustException-To'
 			WHERE ParameterID = 46;
 			
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_CustException_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
         SET lv_Table = 'CTS_DataCenter.CustRetractEvidence';
 	 END IF; 
      
-     
-    
     /********************************************* 19. CTS_DataCenter.CustRetractEvidence *********************************************************/
 	IF (lv_Table = 'CTS_DataCenter.CustRetractEvidence' ) THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.CustRetractEvidence WHERE CTSCustID IN (SELECT CTSCustID FROM Temp_CustInfo)) THEN
@@ -793,13 +937,19 @@ sp: BEGIN
 			SET ParameterValue = 'CTS_DataCenter.CustRetractEvidence'
 			WHERE ParameterID = 46;
 		   
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_CustRetractEvidence_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
         SET lv_Table = 'CTS_DataCenter.PinCustomerCategory';
 	 END IF; 
-     
-     
      
 	/********************************************* 20. CTS_DataCenter.PinCustomerCategory *********************************************************/
 	IF (lv_Table = 'CTS_DataCenter.PinCustomerCategory') THEN
@@ -824,7 +974,15 @@ sp: BEGIN
 			SET ParameterValue = 'CTS_DataCenter.PinCustomerCategory'
 			WHERE ParameterID = 46;
 			
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_PinCustomerCategory_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
         SET lv_Table = 'CTS_DataCenter.ProbationAccountMonitor';
@@ -856,12 +1014,20 @@ sp: BEGIN
 			SET ParameterValue = 'CTS_DataCenter.ProbationAccountMonitor'
 			WHERE ParameterID = 46;
 		
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_ProbationAccountMonitor_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
+		
+        SET lv_Table = 'CTS_DataCenter.ProblemCaseMonitor';
 	 END IF;  
      
-     SET lv_Table = 'CTS_DataCenter.ProblemCaseMonitor';
-    
     /********************************************* 22. CTS_DataCenter.ProblemCaseMonitor *********************************************************/
 	IF (lv_Table = 'CTS_DataCenter.ProblemCaseMonitor') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.ProblemCaseMonitor WHERE CustID IN (SELECT CustID FROM Temp_CustInfo)) THEN
@@ -888,7 +1054,15 @@ sp: BEGIN
 			SET ParameterValue = 'CTS_DataCenter.ProblemCaseMonitor'
 			WHERE ParameterID = 46;
 			
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_ProblemCaseMonitor_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
         SET lv_Table = 'CTS_DataCenter.RobotClassification';
@@ -929,14 +1103,20 @@ sp: BEGIN
 			SET ParameterValue = 'CTS_DataCenter.RobotClassification'
 			WHERE ParameterID = 46;
 		
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_RobotClassification_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
         SET lv_Table = 'CTS_DataCenter.SmartGroupHistory';
 	 END IF;
 	
-    
-    
     /********************************************* 24. CTS_DataCenter.SmartGroupHistory *********************************************************/
 	IF (lv_Table = 'CTS_DataCenter.SmartGroupHistory') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.SmartGroupHistory WHERE CustID IN (SELECT CustID FROM Temp_CustInfo)) THEN
@@ -963,13 +1143,20 @@ sp: BEGIN
 			SET ParameterValue = 'CTS_DataCenter.SmartGroupHistory'
 			WHERE ParameterID = 46;
 			
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_SmartGroupHistory_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
         SET lv_Table = 'CTS_DataCenter.SpecialCustomerClass';
 	 END IF;
-     
-
+	
     /********************************************* 25. CTS_DataCenter.SpecialCustomerClass *********************************************************/
     IF (lv_Table = 'CTS_DataCenter.SpecialCustomerClass') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.SpecialCustomerClass WHERE CTSCustID IN (SELECT CTSCustID FROM Temp_CustInfo)) THEN
@@ -996,13 +1183,20 @@ sp: BEGIN
 			SET ParameterValue = 'CTS_DataCenter.SpecialCustomerClass'
 			WHERE ParameterID = 46;
 			
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_SpecialCustomerClass_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
         SET lv_Table = 'CTS_DataCenter.TaggingExclusion';
 	 END IF;    
      
-
     /********************************************* 26. CTS_DataCenter.TaggingExclusion *********************************************************/
     IF (lv_Table = 'CTS_DataCenter.TaggingExclusion') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.TaggingExclusion WHERE CTSCustID IN (SELECT CTSCustID FROM Temp_CustInfo)) THEN
@@ -1025,13 +1219,291 @@ sp: BEGIN
 			SET ParameterValue = 'CTS_DataCenter.TaggingExclusion'
 			WHERE ParameterID = 46;
 
-			LEAVE sp;
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_TaggingExclusion_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
+
+		SET lv_Table = 'CTS_Archive.CTSCustomerAssociationStatus';
 	 END IF;   
       
+	/********************************************* 27. CTS_Archive.CTSCustomerAssociationStatus *********************************************************/
+	IF (lv_Table = 'CTS_Archive.CTSCustomerAssociationStatus') THEN 
+		IF EXISTS (SELECT 1  FROM CTS_Archive.CTSCustomerAssociationStatus  WHERE  CTSCustID IN (SELECT CTSCustID FROM Temp_CustInfo )) THEN
+			DELETE acc
+			FROM CTS_Archive.CTSCustomerAssociationStatus AS acc
+				INNER JOIN  Temp_CustInfo AS tmp ON acc.CTSCustID = tmp.CTSCustID;
+			
+			UPDATE  CTS_DataCenter.SystemParameter 
+			SET ParameterValue = 'CTS_Archive.CTSCustomerAssociationStatus'
+			WHERE ParameterID = 46;
+			
+			LEAVE sp;
+        END IF;
         
-	/********************************************* 27. CTS_DataCenter.CTSCustomer *********************************************************/
-	DELETE 
+        SET lv_Table = 'CTS_Archive.AssociationByAI_Arc-From';
+    END IF; 
+    
+    /********************************************* 28. CTS_Archive.AssociationByAI_Arc *********************************************************/
+	IF (lv_Table = 'CTS_Archive.AssociationByAI_Arc-From') THEN  
+		IF EXISTS (SELECT 1  FROM CTS_Archive.AssociationByAI_Arc WHERE  FromCustID IN (SELECT CustID FROM Temp_CustInfo)) THEN
+			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByAI_Clean;
+			CREATE TEMPORARY TABLE Temp_AssociationByAI_Clean(
+					ID   	BIGINT UNSIGNED  PRIMARY KEY 
+			);
+            
+            INSERT IGNORE INTO Temp_AssociationByAI_Clean(ID)
+            SELECT ID
+			FROM CTS_Archive.AssociationByAI_Arc 
+			WHERE  FromCustID IN (SELECT CustID FROM Temp_CustInfo)
+            LIMIT lv_CleanTableBatchSize;
+            
+            DELETE ass
+			FROM CTS_Archive.AssociationByAI_Arc AS ass
+				INNER JOIN Temp_AssociationByAI_Clean AS tmp ON tmp.ID = ass.ID;
+			
+			UPDATE  CTS_DataCenter.SystemParameter 
+			SET ParameterValue = 'CTS_Archive.AssociationByAI_Arc-From'
+			WHERE ParameterID = 46;
+			
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_AssociationByAI_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
+        END IF;
+        
+		SET lv_Table = 'CTS_Archive.AssociationByAI_Arc-To';
+    END IF;
+    
+    IF (lv_Table = 'CTS_Archive.AssociationByAI_Arc-To') THEN  
+		IF EXISTS (SELECT 1  FROM CTS_Archive.AssociationByAI_Arc WHERE  ToCustID IN (SELECT CustID FROM Temp_CustInfo)) THEN
+			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByAI_Clean;
+			CREATE TEMPORARY TABLE Temp_AssociationByAI_Clean(
+					ID   	BIGINT UNSIGNED  PRIMARY KEY
+			);
+            
+            INSERT IGNORE INTO Temp_AssociationByAI_Clean(ID)
+            SELECT 	ID
+			FROM CTS_Archive.AssociationByAI_Arc 
+			WHERE  ToCustID IN (SELECT CustID FROM Temp_CustInfo)
+            LIMIT lv_CleanTableBatchSize;
+            
+            DELETE ass
+			FROM CTS_Archive.AssociationByAI_Arc AS ass
+				INNER JOIN Temp_AssociationByAI_Clean AS tmp ON tmp.ID = ass.ID;
+			
+			UPDATE  CTS_DataCenter.SystemParameter 
+			SET ParameterValue = 'CTS_Archive.AssociationByAI_Arc-To'
+			WHERE ParameterID = 46;
+
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_AssociationByAI_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
+        END IF;
+        
+        SET lv_Table = 'CTS_Archive.AssociationByDevice_Arc';
+    END IF;
+    
+	/********************************************* 29. CTS_Archive.AssociationByDevice_Arc *********************************************************/
+    IF (lv_Table = 'CTS_Archive.AssociationByDevice_Arc') THEN
+		IF EXISTS (SELECT 1  FROM CTS_Archive.AssociationByDevice_Arc WHERE CTSCustID IN (SELECT CTSCustID FROM Temp_CustInfo)) THEN
+			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByDevice_Clean;
+			CREATE TEMPORARY TABLE Temp_AssociationByDevice_Clean(
+					ID   BIGINT UNSIGNED PRIMARY KEY
+			);
+            
+            INSERT IGNORE INTO Temp_AssociationByDevice_Clean(ID)
+            SELECT 	ID
+			FROM CTS_Archive.AssociationByDevice_Arc
+			WHERE  CTSCustID IN (SELECT CTSCustID FROM Temp_CustInfo)
+			LIMIT lv_CleanTableBatchSize;
+            
+            DELETE 
+			FROM CTS_Archive.AssociationByDevice_Arc AS dv
+			WHERE  dv.ID IN (SELECT tmp.ID FROM Temp_AssociationByDevice_Clean AS tmp);
+        
+			UPDATE  CTS_DataCenter.SystemParameter 
+			SET ParameterValue = 'CTS_Archive.AssociationByDevice_Arc'
+			WHERE ParameterID = 46;
+        
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_AssociationByDevice_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
+        END IF;
+        
+        SET lv_Table = 'CTS_Archive.AssociationByIP_Arc-From';
+	END IF; 
+    
+    /********************************************* 30. CTS_Archive.AssociationByIP_Arc *********************************************************/
+    IF (lv_Table = 'CTS_Archive.AssociationByIP_Arc-From') THEN
+		IF EXISTS (SELECT 1  FROM CTS_Archive.AssociationByIP_Arc WHERE FromCustID IN (SELECT CustID FROM Temp_CustInfo)) THEN
+			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByIP_Clean;
+			CREATE TEMPORARY TABLE Temp_AssociationByIP_Clean(
+					ID   BIGINT UNSIGNED PRIMARY KEY
+			);
+            
+            INSERT IGNORE INTO Temp_AssociationByIP_Clean(ID)
+            SELECT 	ID
+			FROM CTS_Archive.AssociationByIP_Arc
+			WHERE  FromCustID IN (SELECT CustID FROM Temp_CustInfo)
+			LIMIT lv_CleanTableBatchSize;
+            
+            DELETE 
+			FROM CTS_Archive.AssociationByIP_Arc
+			WHERE  ID IN (SELECT ID FROM Temp_AssociationByIP_Clean);
+			
+			UPDATE  CTS_DataCenter.SystemParameter 
+			SET ParameterValue = 'CTS_Archive.AssociationByIP_Arc-From'
+			WHERE ParameterID = 46;
+			
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_AssociationByIP_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
+        END IF;
+        
+        SET lv_Table = 'CTS_Archive.AssociationByIP_Arc-To';
+	 END IF; 
+     
+	IF (lv_Table = 'CTS_Archive.AssociationByIP_Arc-To') THEN
+		IF EXISTS (SELECT 1  FROM CTS_Archive.AssociationByIP_Arc WHERE ToCustID IN (SELECT CustID FROM Temp_CustInfo)) THEN
+			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByIP_Clean;
+			CREATE TEMPORARY TABLE Temp_AssociationByIP_Clean(
+					ID   BIGINT UNSIGNED PRIMARY KEY
+			);
+            
+            INSERT IGNORE INTO Temp_AssociationByIP_Clean(ID)
+            SELECT 	ID
+			FROM CTS_Archive.AssociationByIP_Arc
+			WHERE  ToCustID IN (SELECT CustID FROM Temp_CustInfo)
+			LIMIT lv_CleanTableBatchSize;
+            
+            DELETE 
+			FROM CTS_Archive.AssociationByIP_Arc
+			WHERE  ID IN (SELECT ID FROM Temp_AssociationByIP_Clean);
+			
+			UPDATE  CTS_DataCenter.SystemParameter 
+			SET ParameterValue = 'CTS_Archive.AssociationByIP_Arc-To'
+			WHERE ParameterID = 46;
+			
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_AssociationByIP_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
+        END IF;
+        
+        SET lv_Table = 'CTS_Archive.AssociationByManual_Arc-From';
+	 END IF;   
+	
+	/********************************************* 31. CTS_DataCenter.AssociationByManual_Arc *********************************************************/
+    IF (lv_Table = 'CTS_Archive.AssociationByManual_Arc-From') THEN
+		IF EXISTS (SELECT 1  FROM CTS_Archive.AssociationByManual_Arc WHERE FromCTSCustID IN (SELECT CTSCustID FROM Temp_CustInfo)) THEN
+			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByManual_Clean;
+			CREATE TEMPORARY TABLE Temp_AssociationByManual_Clean(
+					ID  BIGINT UNSIGNED  PRIMARY KEY
+			);
+            
+            INSERT IGNORE INTO Temp_AssociationByManual_Clean(ID)
+            SELECT 	ID
+			FROM CTS_Archive.AssociationByManual_Arc 
+			WHERE  FromCTSCustID IN (SELECT CTSCustID FROM Temp_CustInfo)
+            LIMIT lv_CleanTableBatchSize;
+            
+			DELETE ass
+			FROM CTS_Archive.AssociationByManual_Arc AS ass
+				INNER JOIN Temp_AssociationByManual_Clean AS tmp ON tmp.ID = ass.ID;
+			
+        
+			UPDATE  CTS_DataCenter.SystemParameter 
+			SET ParameterValue = 'CTS_Archive.AssociationByManual_Arc-From'
+			WHERE ParameterID = 46;
+        
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_AssociationByManual_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
+        END IF;
+        
+        SET lv_Table = 'CTS_Archive.AssociationByManual_Arc-To';
+	 END IF;  
+     
+    IF (lv_Table = 'CTS_Archive.AssociationByManual_Arc-To') THEN
+		IF EXISTS (SELECT 1  FROM CTS_Archive.AssociationByManual_Arc WHERE ToCTSCustID IN (SELECT CTSCustID FROM Temp_CustInfo)) THEN
+			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByManual_Clean;
+			CREATE TEMPORARY TABLE Temp_AssociationByManual_Clean(
+					ID  BIGINT UNSIGNED PRIMARY KEY
+			);
+            
+            INSERT IGNORE INTO Temp_AssociationByManual_Clean(ID)
+            SELECT 	ID
+			FROM CTS_Archive.AssociationByManual_Arc 
+			WHERE  ToCTSCustID IN (SELECT CTSCustID FROM Temp_CustInfo)
+            LIMIT lv_CleanTableBatchSize;
+            
+			DELETE ass
+			FROM CTS_Archive.AssociationByManual_Arc AS ass
+				INNER JOIN Temp_AssociationByManual_Clean AS tmp ON tmp.ID = ass.ID;
+			
+			
+			UPDATE  CTS_DataCenter.SystemParameter 
+			SET ParameterValue = 'CTS_Archive.AssociationByManual_Arc-To'
+			WHERE ParameterID = 46;
+			
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_AssociationByManual_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
+        END IF;
+        
+        SET lv_Table = 'CTS_DataCenter.CTSCustomer';
+	 END IF;    
+     
+    /********************************************* 32. CTS_DataCenter.CTSCustomer *********************************************************/
+	
+    DELETE 
 	FROM CTS_DataCenter.CTSCustomer
 	WHERE  CTSCustID IN (SELECT CTSCustID FROM Temp_CustInfo);
   
