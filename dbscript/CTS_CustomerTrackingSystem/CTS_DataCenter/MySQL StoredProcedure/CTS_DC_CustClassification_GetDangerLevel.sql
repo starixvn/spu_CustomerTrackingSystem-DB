@@ -17,77 +17,80 @@ BEGIN
 			- 20210401@Irena.Vo: Created [Redmine ID: #152249]
 			- 20210524@Aries.Nguyen: Enhance performance  [Redmine ID: #155693]
 			- 20210625@Long.Luu: Refactor  [Redmine ID: #157203]
+			- 20211115@Irena.Vo: Re-priortize Robot and other PA categories  [Redmine ID: #164344]
+			- 20211116@Casey.Huynh: Sync Robot User Categories to Dangerous Setting [Redmine ID: #161665]
 		Param's Explanation (filtered by):
 			- ip_CustIDs ; ip_TypeID: 1(Original) / 2(ABI) / 3(Other)
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetDangerLevel('36266996,27852979,2324948',1);
 	*/
-    
-	DECLARE	CONST_GROUP_NORMAL 		INT DEFAULT 200;
+	DECLARE	CONST_GROUP_PROBLEM 	INT DEFAULT 0;
     DECLARE	CONST_GROUP_ROBOTUSER 	INT DEFAULT 61;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_InputCustomers;
     CREATE TEMPORARY TABLE Temp_InputCustomers (
-			CustID 		BIGINT UNSIGNED PRIMARY KEY
+			CustID 				BIGINT UNSIGNED PRIMARY KEY
     );  
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_Customers;
-    CREATE TEMPORARY TABLE Temp_Customers (
-			CustID 		BIGINT UNSIGNED PRIMARY KEY
-        ,	HistoryID 	BIGINT UNSIGNED
-    );  
+    DROP TEMPORARY TABLE IF EXISTS Temp_ProblemAccounts;
+    CREATE TEMPORARY TABLE 		Temp_ProblemAccounts (
+        	CustID			    BIGINT UNSIGNED
+		,	ScannedTime			DATETIME
+        ,	CategoryID			SMALLINT
+        ,	PRIMARY KEY 		PK(CustID,CategoryID)
+    ); 
     
-    -- Insert CustIDs
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustDangerLevels;
+    CREATE TEMPORARY TABLE 		Temp_CustDangerLevels (
+        	CustID			    BIGINT UNSIGNED
+		,	ScannedTime			DATETIME
+        ,	SportGroupID		SMALLINT
+        ,	CategoryID			SMALLINT
+        ,	PRIMARY KEY 		PK(CustID,CategoryID)
+    ); 
+	
+    /* Insert CustIDs */
 	SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_InputCustomers (CustID) VALUES ('", REPLACE(ip_CustIDs, ",", "'),('"),"');");
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1;    
     
+	/*  Get Problem Account List */
+	INSERT IGNORE INTO Temp_ProblemAccounts(CustID, ScannedTime, CategoryID)
+    SELECT cate.CustID, cate.LastModifiedDate, cate.CategoryID
+    FROM CTS_DataCenter.CTSCustomerClassification AS cate
+		INNER JOIN Temp_InputCustomers AS c ON c.CustID = cate.CustID AND cate.SportGroupID = CONST_GROUP_PROBLEM;
     
+    /* Get Danger Level to push */
+    IF (ip_TypeID = 1) THEN -- Original for Ass with PA    
+		INSERT IGNORE INTO Temp_CustDangerLevels (CustID, ScannedTime, SportGroupID, CategoryID)
+        SELECT cate.CustID, cate.LastModifiedDate, cate.SportGroupID, cate.CategoryID
+		FROM CTS_DataCenter.CTSCustomerClassification AS cate
+			INNER JOIN Temp_InputCustomers AS c ON c.CustID = cate.CustID
+			INNER JOIN CTS_DataCenter.CategoryToDangerLevel AS d ON d.CategoryID = cate.CategoryID AND d.TypeID = 1
+		WHERE NOT EXISTS (SELECT 1 FROM Temp_ProblemAccounts AS p WHERE p.CustID = cate.CustID);
     
-    -- Get Results.
-    IF (ip_TypeID = 1) THEN -- Original    
-		-- Get lastest history (Ass with PA & Have change Category)
-        /*
-		INSERT INTO Temp_Customers(CustID, HistoryID)
-		SELECT temp.CustID, his.ID
-		FROM Temp_InputCustomers AS temp
-			STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID 
-				AND cate.SportGroupID = CONST_GROUP_NORMAL
-			STRAIGHT_JOIN CTS_DataCenter.TaggingToCategory AS tag ON tag.CategoryID = cate.CategoryID
-			STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification_History AS his ON his.CustID = temp.CustID 
-				AND his.SportGroupID = CONST_GROUP_NORMAL AND his.LastModifiedDate = cate.LastModifiedDate
-		WHERE 	tag.TaggingID <> 0 AND his.IsDataChanged = 1 AND his.ToCategoryID <> IFNULL(his.FromCategoryID, 0);    
-    
-		SELECT temp.CustId, his.LastModifiedDate AS ScannedTime, his.TargetDangerLevel1 AS DangerLevel
-		FROM Temp_Customers AS temp
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS his ON his.ID = temp.HistoryID
-		WHERE his.TargetDangerLevel1 IS NOT NULL;*/
-        
-        SELECT temp.CustID, his.LastModifiedDate AS ScannedTime, his.TargetDangerLevel1 AS DangerLevel
-		FROM Temp_InputCustomers AS temp
-			STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID AND cate.SportGroupID = CONST_GROUP_NORMAL
-			STRAIGHT_JOIN CTS_DataCenter.TaggingToCategory AS tag ON tag.CategoryID = cate.CategoryID
-			STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification_History AS his ON his.CustID = temp.CustID 
-				AND his.SportGroupID = CONST_GROUP_NORMAL AND his.LastModifiedDate = cate.LastModifiedDate
-		WHERE 	tag.TaggingID <> 0 AND his.ToCategoryID <> IFNULL(his.FromCategoryID, 0)
-				AND his.TargetDangerLevel1 IS NOT NULL;        
+        SELECT DISTINCT his.CustID, his.LastModifiedDate AS ScannedTime, his.TargetDangerLevel1 AS DangerLevel
+        FROM CTS_DataCenter.CTSCustomerClassification_History AS his
+			INNER JOIN Temp_CustDangerLevels AS cd ON cd.CustID = his.CustID AND cd.SportGroupID = his.SportGroupID AND cd.CategoryID = his.CategoryID AND cd.ScannedTime = his.LastModifiedDate 
+		WHERE his.TargetDangerLevel1 IS NOT NULL AND his.ToCategoryID <> IFNULL(his.FromCategoryID, 0);
 	END IF;
     
-    IF (ip_TypeID = 2) THEN -- ABI
-    	-- Get lastest history (Ass with PA & Have change Category)
-		SELECT temp.CustID, his.LastModifiedDate AS ScannedTime, his.TargetDangerLevel1 AS DangerLevel
-		FROM Temp_InputCustomers AS temp
-			STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID
-			STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification_History AS his ON his.CustID = temp.CustID AND his.CategoryID = cate.CategoryID AND his.LastModifiedDate = cate.LastModifiedDate
-		WHERE EXISTS (SELECT 1 FROM CTS_DataCenter.CustomerCategory cat WHERE cat.CategoryGroup = CONST_GROUP_ROBOTUSER AND cat.CategoryID = cate.CategoryID)
-				AND his.TargetDangerLevel1 IS NOT NULL;
+    IF (ip_TypeID = 2) THEN -- ABI for Robot User
+		DELETE p
+        FROM Temp_ProblemAccounts AS p
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cc on cc.CategoryID = p.CategoryID AND cc.CategoryGroup = CONST_GROUP_ROBOTUSER;
+    
+		INSERT IGNORE INTO Temp_CustDangerLevels (CustID, ScannedTime, SportGroupID, CategoryID)
+        SELECT cate.CustID, cate.LastModifiedDate, cate.SportGroupID, cate.CategoryID
+		FROM CTS_DataCenter.CTSCustomerClassification AS cate
+			INNER JOIN Temp_InputCustomers AS c ON c.CustID = cate.CustID
+			INNER JOIN CTS_DataCenter.CategoryToDangerLevel AS d ON d.CategoryID = cate.CategoryID AND d.TypeID = 2
+		WHERE NOT EXISTS (SELECT 1 FROM Temp_ProblemAccounts AS p WHERE p.CustID = cate.CustID);
+    
+        SELECT DISTINCT his.CustID, his.LastModifiedDate AS ScannedTime, his.TargetDangerLevel1 AS DangerLevel
+        FROM CTS_DataCenter.CTSCustomerClassification_History AS his
+			INNER JOIN Temp_CustDangerLevels AS cd ON cd.CustID = his.CustID AND cd.SportGroupID = his.SportGroupID AND cd.CategoryID = his.CategoryID AND cd.ScannedTime = his.LastModifiedDate 
+		WHERE his.TargetDangerLevel1 IS NOT NULL;
 	END IF;
-    /*
-    IF (ip_TypeID = 3) THEN -- Other
-		SELECT temp.CustId, his.LastModifiedDate AS ScannedTime, his.TargetDangerLevel3 AS DangerLevel
-		FROM Temp_Customers AS temp
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS his ON his.ID = temp.HistoryID
-        WHERE his.TargetDangerLevel3 IS NOT NULL;
-	END IF; */
 END$$
 DELIMITER ;

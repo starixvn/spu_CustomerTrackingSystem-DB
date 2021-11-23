@@ -28,9 +28,8 @@ BEGIN
 			- 20210318@Irena.Vo: Update get CategoryID for color [RedmineID: #150457]
             - 20210525@Irena.Vo: Change col name PinCustomerCategory, TaggingExclusion: CustID -> CTSCustID [RedmineID: #152965] 
 			- 20210622@Aries.Nguyen: Update coding convention  [Redmine ID: #157203]
-
+			- 20211115@Irena.Vo: Re-priortize Robot and other PA categories  [Redmine ID: #164344]
 		Param's Explanation:
-
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_Get('1');
 	 */ 
@@ -51,7 +50,10 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
     WHERE	cate.CTSCustID = ip_CTSCustID AND cc.ParentID IN (50, 200);
     
- 
+    IF (SELECT COUNT(DISTINCT ParentID) FROM Temp_LatestRecordOfCategory) > 1 THEN
+		DELETE FROM Temp_LatestRecordOfCategory WHERE ParentID = 200;
+    END IF;
+    
     IF EXISTS (SELECT 1 FROM CTS_DataCenter.PinCustomerCategory WHERE CTSCustID = ip_CTSCustID) THEN 
 		SELECT 1 AS IsPinCategory;
 	ELSE 
