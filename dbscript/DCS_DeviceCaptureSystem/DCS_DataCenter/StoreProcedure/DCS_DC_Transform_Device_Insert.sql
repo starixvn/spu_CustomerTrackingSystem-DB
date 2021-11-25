@@ -381,7 +381,7 @@ BEGIN
     
     # INSERT new DeviceFingerprint
     SET start_time = CURRENT_TIMESTAMP(4);
-	INSERT IGNORE INTO DCS_DataCenter.DeviceFingerprint(FingerprintCode, DeviceID, CreatedTime, CreatedDate, InsertTime)
+	INSERT IGNORE INTO DCS_DataCenter.DeviceFingerprint(FingerprintCode, DeviceID, CreatedTime, InsertTime)
     WITH CTE_DeviceCode AS (
 		SELECT DISTINCT DeviceCode, DeviceID FROM Temp_ExistedDevice
         UNION
@@ -390,7 +390,6 @@ BEGIN
 	SELECT tts.FingerprintCode
 		, de.DeviceID
 		, MIN(tts.TransTime) AS CreatedTime
-		, MIN(tts.CreatedDate) AS CreatedDate
 		, insertionTime	AS InsertTime
     FROM Temp_Transaction AS tts
     INNER JOIN CTE_DeviceCode AS de ON de.DeviceCode = tts.DeviceCode
