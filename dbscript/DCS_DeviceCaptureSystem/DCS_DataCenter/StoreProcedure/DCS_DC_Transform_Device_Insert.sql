@@ -118,7 +118,6 @@ BEGIN
         , UserAgentKey			VARCHAR(32)
 		, DeviceCode			VARCHAR(32) 
 		, FingerprintCode		VARCHAR(620)
-        , FingerprintMoreInfo	VARCHAR(250)
 		, CreatedDate			DATETIME
 		, TransTime				TIMESTAMP(4) 
         , DeviceCodeID			BIGINT UNSIGNED
@@ -132,7 +131,7 @@ BEGIN
     
 	#========GET INPUT DATA===========================
     set start_time  = CURRENT_TIMESTAMP(4);
-	INSERT INTO Temp_Transaction(TransID, AccountID, SubscriberID, UserAgentKey, DeviceCode, CreatedDate, TransTime,  FingerprintCode, FingerprintMoreInfo)
+	INSERT INTO Temp_Transaction(TransID, AccountID, SubscriberID, UserAgentKey, DeviceCode, CreatedDate, TransTime,  FingerprintCode)
     WITH CTE_Trans AS (
 		SELECT TransID
 		FROM JSON_TABLE(
@@ -150,7 +149,6 @@ BEGIN
 		, CreatedDate
 		, TransTime
 		,  (CASE WHEN tmpTrans.FingerprintCode IS NULL THEN NULL ELSE tmpTrans.FingerprintCode END) AS FingerprintCode
-		,  (CASE WHEN tmpTrans.FingerprintMoreInfo IS NULL THEN NULL ELSE tmpTrans.FingerprintMoreInfo END) AS FingerprintMoreInfo
 	FROM DCS_DataCenter.Transaction tmpTrans
 	INNER JOIN CTE_Trans t ON tmpTrans.TransId = t.TransId
     ORDER BY t.TransId ASC;
@@ -383,7 +381,7 @@ BEGIN
     
     # INSERT new DeviceFingerprint
     SET start_time = CURRENT_TIMESTAMP(4);
-	INSERT IGNORE INTO DCS_DataCenter.DeviceFingerprint(FingerprintCode, DeviceID, FingerprintMoreInfo, CreatedTime, CreatedDate, InsertTime)
+	INSERT IGNORE INTO DCS_DataCenter.DeviceFingerprint(FingerprintCode, DeviceID, CreatedTime, CreatedDate, InsertTime)
     WITH CTE_DeviceCode AS (
 		SELECT DISTINCT DeviceCode, DeviceID FROM Temp_ExistedDevice
         UNION
@@ -391,7 +389,6 @@ BEGIN
     )
 	SELECT tts.FingerprintCode
 		, de.DeviceID
-		, MIN(tts.FingerprintMoreInfo) AS FingerprintMoreInfo
 		, MIN(tts.TransTime) AS CreatedTime
 		, MIN(tts.CreatedDate) AS CreatedDate
 		, insertionTime	AS InsertTime

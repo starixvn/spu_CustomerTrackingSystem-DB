@@ -54,7 +54,6 @@ BEGIN
 		,   CreatedDate			    DATETIME COMMENT 'Date Only' 
 		,   InsertTime			    TIMESTAMP(4) 		
         ,   FingerprintCode		    VARCHAR(620)
-        ,   FingerprintMoreInfo	    TEXT CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_RawTransactionInfo;
@@ -91,7 +90,7 @@ BEGIN
     WHERE VGroup = "DCS_Device_Transform" 
         AND VName = "MinCreatedDate";
 
-	INSERT INTO Temp_RawTransaction(TransID, LoginName, TransTime, SubscriberID, SubscriberType, DeviceCode , URLDetails, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, FingerprintCode, FingerprintMoreInfo)
+	INSERT INTO Temp_RawTransaction(TransID, LoginName, TransTime, SubscriberID, SubscriberType, DeviceCode , URLDetails, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, FingerprintCode)
 	SELECT  rt.TransID
 	    ,   rt.LoginName
         ,   rt.TransTime
@@ -108,7 +107,6 @@ BEGIN
         ,   rt.TransStatus
         ,   rt.CreatedDate
         ,   rt.FingerprintCode
-        ,   rt.FingerprintMoreInfo
 	FROM		DCS_DataCenter.RawTransaction AS rt
         INNER JOIN	CTS_Admin.Subscriber AS su ON	rt.SubscriberName = su.SubscriberName
 	    INNER JOIN	DCS_DataCenter.ActionResult AS ar ON	rt.Action = ar.Action AND IFNULL(rt.ActionResult,'') = ar.ActionResult
@@ -190,7 +188,7 @@ BEGIN
         ,   LastLoginTime
     FROM  Temp_LastLoginTimeCTSCust AS tmp_cus;
 
-    INSERT IGNORE INTO  DCS_DataCenter.Transaction(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey , IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, FingerprintCode, FingerprintMoreInfo)
+    INSERT IGNORE INTO  DCS_DataCenter.Transaction(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey , IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, FingerprintCode)
    	SELECT  trt.TransID
 	    ,   trt.LoginName
         ,   trt.TransTime                
@@ -208,19 +206,17 @@ BEGIN
         ,   CURRENT_TIMESTAMP(4) AS InsertTime
         ,   trt.DeviceCode
         ,   FingerprintCode
-        ,   FingerprintMoreInfo
 	FROM Temp_RawTransaction AS trt;	
 
     #================================================================
     
-	INSERT IGNORE INTO DCS_DataCenter.ProcessedTransaction( LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, FingerprintMoreInfo, UserAgent , IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID)
+	INSERT IGNORE INTO DCS_DataCenter.ProcessedTransaction( LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent , IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID)
 	SELECT  rt.LoginName
         ,   rt.SubscriberName
         ,   rt.TransTime
         ,   rt.CreatedDate
         ,   rt.DeviceCode
         ,   rt.FingerprintCode
-        ,   rt.FingerprintMoreInfo
         ,   rt.UserAgent
 	    ,   rt.IP
         ,   rt.IPID

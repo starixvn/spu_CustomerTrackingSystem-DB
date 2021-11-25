@@ -28,7 +28,6 @@ BEGIN
 		,	TransTime					TIMESTAMP(4)	 					NOT NULL
 		,	DeviceCode					VARCHAR(32) 						NULL		COMMENT 'Device Inject Code: 32 characters is auto generated'
 		,	FingerprintCode				VARCHAR(620)						NULL		COMMENT 'Device Fingerprint Codes, the hashcode bases on the set attributes'    
-		,	FingerprintMoreInfo			VARCHAR(250)						NULL
 		,	UserAgent					VARCHAR(1000)						NULL
 		,	IP							VARCHAR(50) 						NULL
         ,	IPID						DECIMAL(50,0)						NULL
@@ -41,13 +40,12 @@ BEGIN
 		,	TransStatus					BIT(16)								NULL
     );     
 		
-	INSERT INTO Temp_Transactions(	LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, FingerprintMoreInfo, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus)
+	INSERT INTO Temp_Transactions(	LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
 		,	(CASE WHEN rt.DeviceCode IS NULL THEN NULL ELSE rt.DeviceCode END) AS DeviceCode
 		,	(CASE WHEN rt.FingerprintCode IS NULL OR rt.DeviceCode IS NULL	THEN NULL ELSE rt.FingerprintCode END) AS FingerprintCode
-		,	(CASE WHEN rt.FingerprintMoreInfo IS NULL OR rt.DeviceCode IS NULL THEN NULL ELSE rt.FingerprintMoreInfo END) AS FingerprintMoreInfo
 		,	LEFT((CASE WHEN rt.UserAgent IS NULL THEN NULL ELSE rt.UserAgent END),1000) AS UserAgent
 		,	(CASE WHEN rt.IP IS NULL THEN NULL ELSE rt.IP END) AS IP
 		,	(CASE WHEN rt.IPID = 0 THEN NULL ELSE rt.IPID END) AS IPID
@@ -66,7 +64,6 @@ BEGIN
 							,	TransTime				TIMESTAMP(4) 	PATH "$.TransTime"
 							,	DeviceCode				VARCHAR(32)		PATH "$.DeviceCode"
 							,	FingerprintCode			VARCHAR(620)	PATH "$.FingerprintCode"
-							,	FingerprintMoreInfo		VARCHAR(250)	PATH "$.FingerprintMoreInfo"
 							,	UserAgent				TEXT 			PATH "$.UserAgent"
 							,	IP						VARCHAR(50) 	PATH "$.IP"
                             ,	IPID					DECIMAL(50,0)	PATH "$.IPId"
@@ -80,14 +77,13 @@ BEGIN
 				)
 		   ) AS  rt; 
 	
-	INSERT INTO DCS_DataCenter.RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, FingerprintMoreInfo, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus)
+	INSERT INTO DCS_DataCenter.RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
 		,	DATE(rt.TransTime) AS CreatedDate
 		,	rt.DeviceCode
 		,	rt.FingerprintCode
-		,	rt.FingerprintMoreInfo
 		,	rt.UserAgent
 		,	rt.IP
         ,	rt.IPID
