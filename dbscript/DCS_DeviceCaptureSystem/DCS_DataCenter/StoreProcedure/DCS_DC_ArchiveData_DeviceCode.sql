@@ -48,6 +48,10 @@ sp:BEGIN
 		  ORDER BY DeviceCodeID ASC
 		  LIMIT lv_BatchSize) AS tbl;
 	
+    IF(lv_DeviceCodeID_Next IS NULL) THEN
+        SET lv_DeviceCodeID_Next = lv_DeviceCodeID_Last;
+    END IF;
+
     IF(lv_DateValid >= DATE(NOW())) THEN
 		LEAVE sp;
     END IF;
@@ -79,7 +83,7 @@ sp:BEGIN
     WHERE EXISTS (SELECT 1 FROM Temp_DeviceCode AS tmp WHERE tmp.DeviceCodeID = cod.DeviceCodeID);
     
     UPDATE DCS_DataCenter.SystemSetting AS ss
-    SET 	VValue = lv_DeviceCodeID_Last
+    SET 	VValue = lv_DeviceCodeID_Next
 		,	UpdatedTime = NOW()
     WHERE	ID = 8; 
 END$$
