@@ -1,16 +1,16 @@
-/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2"></info>*/
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
 /*
 Creator:	20211112@Casey.Huynh
 Task:	 	Init CategoryToDangerLevel
 Server:  	Master
-DBName:		DCS_DataCenter
+DBName:		CTS_DataCenter
 
 Revisions: 
 		- 20211112@Casey.Huynh: Created [Redmine ID: #161665]
 Reviewer:
 
 */
-USE DCS_DataCenter;
+USE CTS_DataCenter;
 
 INSERT INTO CategoryToDangerLevel(CategoryID,IsLicensee,TypeID,DangerLevel)
 VALUES	(61,0,2,6)
