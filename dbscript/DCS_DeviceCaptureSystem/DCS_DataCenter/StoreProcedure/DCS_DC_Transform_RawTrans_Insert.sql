@@ -16,8 +16,16 @@ BEGIN
 		Revisions:
 			- 20201006@CaseyHuynh: Move New Server, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_DataCenter" [Redmine ID: #143011]
 			- 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
+            - 20211129@Casey.Huynh: Remove FingerprintMoreInfo Column [Redmine ID: #165167]
 
 		Param's Explanation (filtered by):
+			
+		Example:
+			CALL DCS_DC_Transform_RawTrans_Insert ('
+            [{"Action" : "login","ActionResult" : "login -> successfully","DeviceCode" : "6f6bea6ce7074622bc18a921f8be1e60","FingerprintCode" : "ade5b939c13195aaae06466b6757754413fcdc2a;0423c13edf617398aed953a6fd4e7d24","Flagged" : 2,"InvalidDevice" : null,"IP" : "14.167.17.120","IPId" : 245830008,"LoginName" : "U702202002","PluginID" : null,"SubscriberName" : "MAXBET789Y","TransStatus" : "0","TransTime" : "2021-11-21 00:00:00.0201","URL" : "http://m122.viva88.net:806/FpsHandler","UserAgent" : "Mozilla/5.0 (iPhone; CPU iPhone OS 15_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.1 Mobile/15E148 Safari/604.1"}
+			,{"Action" : "login","ActionResult" : "login -> successfully","DeviceCode" : "a707e6620cce48a4ada3cd3887e5d77f","FingerprintCode" : "f4cf2f4634bfd83191d70c4f1913cc79878cce5f;4c7acb513373c49e797f2f35c6e1f99d","Flagged" : 2,"InvalidDevice" : null,"IP" : "103.199.41.17","IPId" : 1741105425,"LoginName" : "Khanh1973","PluginID" : null,"SubscriberName" : "11BET","TransStatus" : "0","TransTime" : "2021-11-21 00:00:00.2418","URL" : "http://l9j7ma.cx5888.com/FpsHandler","UserAgent" : "Mozilla/5.0 (Linux; Android 11; CPH2113) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Mobile Safari/537.36"}
+			]
+            ');
 
 	*/
 

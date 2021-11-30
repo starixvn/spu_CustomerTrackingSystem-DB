@@ -26,9 +26,11 @@ BEGIN
 		    - 20201119@CaseyHuynh: Enhance New Retry transform association/account Flow, change log to CTS_Log DB [RedmineID: #145271]
 		    - 20210510@Aries.Nguyen: Remove insert log zzTracePerformance [Redmine ID: #154792]
             - 20210622@Aries.Nguyen: Update coding convention and improve locking [Redmine ID: #157203]
-        
+			- 20211129@Casey.Huynh: Remove FingerprintMoreInfo Column [Redmine ID: #165167]
 	    Param's Explanation (filtered by):
-
+		
+        Example:
+			CALL DCS_DC_Transform_Transaction_Insert(1,200);
     */
 	DECLARE		lv_SysMinCreatedDate	DATETIME;
     

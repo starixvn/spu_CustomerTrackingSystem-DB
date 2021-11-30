@@ -20,8 +20,12 @@ BEGIN
 		    - 20201019@CaseyHuynh:	Move Server, Phase 2 [Redmine ID: 143011]	
             - 20201020@CaseyHuynh: Update Owner, metadata [Redmine ID: 145271]
             - 20210510@Aries.Nguyen: Remove insert log dba_SP_PerformanceStats [Redmine ID: #154792]
+            - 20211129@Casey.Huynh: Remove Transaction07.FingerprintMoreInfo AND Devicefingerprint.CreatedDate Column [Redmine ID: #165167]
 
 	    Param's Explanation (filtered by):
+        
+        Example:
+			CALL DCS_DC_Transform_Device_Insert('[{"TransId": 1},{"TransId": 2}]');
 	*/
 
 	DECLARE vrDeviceStatusNew			TINYINT DEFAULT 1;			# New Device
