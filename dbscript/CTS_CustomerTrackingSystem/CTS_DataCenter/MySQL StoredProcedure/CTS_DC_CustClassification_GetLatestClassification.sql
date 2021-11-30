@@ -1,4 +1,3 @@
-use CTS_DataCenter;
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb,ctsAPI,ctsService" isFunction="0" isNested="0"></info>*/
 DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_GetLatestClassification`;
 
@@ -38,7 +37,7 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ExistedSpecialCC;
     CREATE TEMPORARY TABLE 		Temp_ExistedSpecialCC (
-			CustID              BIGINT UNSIGNED PRIMARY KEY auto_increment        
+			CustID              BIGINT UNSIGNED PRIMARY KEY 
 		,	ScannedTime			DATETIME
         ,   CustomerClass       SMALLINT
     );  
@@ -46,9 +45,8 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_ProblemAccounts;
     CREATE TEMPORARY TABLE 		Temp_ProblemAccounts (
         	CustID			    BIGINT UNSIGNED
-		,	ScannedTime			DATETIME
-		,	CategoryID			SMALLINT
-        ,	PRIMARY KEY 		PK(CustID,CategoryID)
+        ,	CategoryGroup		SMALLINT
+        ,	PRIMARY KEY 		PK(CustID,CategoryGroup)
     ); 
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CategoryList;
@@ -57,6 +55,7 @@ BEGIN
 		,	ScannedTime			DATETIME
         ,	SportGroupID		SMALLINT
         ,	CategoryID			SMALLINT
+        ,	CategoryGroup		SMALLINT
 		,	PRIMARY KEY 		PK(CustID,CategoryID)
     ); 
     
@@ -72,8 +71,8 @@ BEGIN
     CREATE TEMPORARY TABLE 		Temp_LatestClassification (
         	CustID				BIGINT UNSIGNED PRIMARY KEY 
 		,	ScannedTime			DATETIME
-		,   CustomerClass       SMALLINT DEFAULT -1 -- -1: No data, <> -1: Has data
-		,	CategoryGroup		SMALLINT DEFAULT -1 -- -1: No data, <> -1: Has data
+		,   CustomerClass       SMALLINT DEFAULT -1 /* -1: No data, <> -1: Has data */
+		,	CategoryGroup		SMALLINT DEFAULT -1 /* -1: No data, <> -1: Has data */
     );    
     
     /* 1. Insert CustIDs */
@@ -87,41 +86,40 @@ BEGIN
     FROM Temp_InputCustomers AS c
 		INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = c.CustID;
     
-    /* 3. Get Problem Account */
-	INSERT IGNORE INTO Temp_ProblemAccounts(CustID, ScannedTime, CategoryID)
-    SELECT cate.CustID, cate.LastModifiedDate, cate.CategoryID
-    FROM CTS_DataCenter.CTSCustomerClassification AS cate
-		INNER JOIN Temp_InputCustomers AS c ON c.CustID = cate.CustID AND cate.SportGroupID = CONST_GROUP_PROBLEM;
-	
-    /* 4. Insert Category List */
-    /* 4.1 From Normal Category */
-    INSERT IGNORE INTO Temp_CategoryList (CustID, ScannedTime, SportGroupID, CategoryID)
-    SELECT cate.CustID, cate.LastModifiedDate, CONST_GROUP_NORMAL, cate.CategoryID
-    FROM CTS_DataCenter.CTSCustomerClassification AS cate
-		INNER JOIN Temp_InputCustomers AS c ON c.CustID = cate.CustID AND cate.SportGroupID = CONST_GROUP_NORMAL 
-    WHERE NOT EXISTS (SELECT 1 FROM Temp_ProblemAccounts AS p WHERE p.CustID = cate.CustID);
-    
-    /* 4.2 From Problem Category */
-    DELETE p
-    FROM Temp_ProblemAccounts AS p
-		INNER JOIN  CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = p.CategoryID AND cc.CategoryGroup = CONST_GROUP_ROBOTUSER; /** Clean Robot User. Only get PA */
-    
-	INSERT IGNORE INTO Temp_CategoryList (CustID, ScannedTime, SportGroupID, CategoryID)
-    SELECT CustID, ScannedTime, CONST_GROUP_PROBLEM, CategoryID 
-    FROM Temp_ProblemAccounts;
-    
-    /* 4.3 From Robot User */
-    INSERT IGNORE INTO Temp_CategoryList (CustID, ScannedTime, SportGroupID, CategoryID)
-    SELECT cate.CustID, cate.LastModifiedDate, CONST_GROUP_PROBLEM, cate.CategoryID
+    /* 3 Get Problem Account */
+	INSERT IGNORE INTO Temp_ProblemAccounts(CustID, CategoryGroup)
+    SELECT cate.CustID, cc.CategoryGroup
     FROM CTS_DataCenter.CTSCustomerClassification AS cate
 		INNER JOIN Temp_InputCustomers AS c ON c.CustID = cate.CustID AND cate.SportGroupID = CONST_GROUP_PROBLEM
-		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID AND cc.Categorygroup = CONST_GROUP_ROBOTUSER
-    WHERE NOT EXISTS (SELECT 1 FROM Temp_ProblemAccounts AS p WHERE p.CustID = cate.CustID);
+        INNER JOIN  CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID;
+	
+    /* 4. Insert Category List */
+    INSERT IGNORE INTO Temp_CategoryList (CustID, ScannedTime, SportGroupID, CategoryID, CategoryGroup)
+    SELECT cate.CustID, cate.LastModifiedDate, cate.SportGroupID, cate.CategoryID, cc.CategoryGroup
+    FROM CTS_DataCenter.CTSCustomerClassification AS cate
+		INNER JOIN Temp_InputCustomers AS c ON c.CustID = cate.CustID
+        INNER JOIN  CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID;
     
-    /* 5. Insert Existed Lastest Category */
+    /* 5. Validate Data */
+    /* 5.1 Validate Normal Category */
+    DELETE c 
+    FROM Temp_CategoryList AS c 
+		INNER JOIN Temp_ProblemAccounts AS p ON p.CustID = c.CustID AND c.SportGroupID = CONST_GROUP_NORMAL;
+    
+    /* 5.2 Validate Robot User */
+	DELETE p
+    FROM Temp_ProblemAccounts AS p
+    WHERE p.CategoryGroup = CONST_GROUP_ROBOTUSER; /** Clean Robot User. Only get PA */
+    
+    DELETE c 
+    FROM Temp_CategoryList AS c 
+		INNER JOIN Temp_ProblemAccounts AS p ON p.CustID = c.CustID AND c.CategoryGroup = CONST_GROUP_ROBOTUSER;
+
+    /* 6. Insert Existed Lastest Category */
 	INSERT IGNORE INTO Temp_ExistedLatestCategory(CustID, ScannedTime)
-    SELECT CustID, MAX(ScannedTime) AS ScannedTime
-    FROM Temp_CategoryList GROUP BY CustID;
+    SELECT c.CustID, MAX(c.ScannedTime) AS ScannedTime
+    FROM Temp_CategoryList AS c
+    GROUP BY c.CustID;
     
     UPDATE Temp_ExistedLatestCategory AS ec,
 		LATERAL (SELECT CustID, ScannedTime, SportGroupID, MAX(CategoryID) AS CategoryID 
@@ -131,7 +129,7 @@ BEGIN
 		, 	ec.CategoryID = c.CategoryID
 	WHERE ec.CustID = c.CustID AND ec.ScannedTime = c.ScannedTime;
     
-    /* 6. Update ScannedTime to back Special CC */
+    /* 7. Update ScannedTime to back Special CC */
     UPDATE Temp_ExistedSpecialCC AS es
 		INNER JOIN Temp_ExistedLatestCategory AS ec ON ec.CustID = es.CustID
     SET es.ScannedTime = GREATEST(es.ScannedTime, ec.ScannedTime);
@@ -140,7 +138,7 @@ BEGIN
     FROM Temp_ExistedLatestCategory AS ec  
 		INNER JOIN Temp_ExistedSpecialCC AS es ON es.CustID = ec.CustID;
     
-    /* 7. Mapping case: Not existed category */
+    /* 8. Mapping case: Not existed category */
 	INSERT IGNORE INTO Temp_LatestClassification (CustID, ScannedTime)
     SELECT temp.CustID, lv_CurrentDateTime AS ScannedTime
     FROM Temp_InputCustomers AS temp
@@ -148,20 +146,20 @@ BEGIN
 	WHERE NOT EXISTS (SELECT 1 FROM Temp_ExistedSpecialCC AS es WHERE es.CustID = temp.CustID) /* Not existed Special CC */
 		 AND NOT EXISTS (SELECT 1 FROM Temp_ExistedLatestCategory AS ec WHERE ec.CustID = temp.CustID); /* Not existed Category */
     
-    /* 8. Mapping case: Existed Special CC */
+    /* 9. Mapping case: Existed Special CC */
     INSERT IGNORE INTO Temp_LatestClassification (CustID, ScannedTime, CustomerClass)
     SELECT es.CustID, es.ScannedTime,  es.CustomerClass 
     FROM Temp_ExistedSpecialCC AS es;
     
-    /* 9. Mapping case: Existed Category */
+    /* 10. Mapping case: Existed Category */
 	INSERT IGNORE INTO Temp_LatestClassification (CustID, ScannedTime, CustomerClass, CategoryGroup)
 	SELECT 	ec.CustID, ec.ScannedTime,  map.CustomerClass
 		,	CASE WHEN ec.SportGroupID = CONST_GROUP_NORMAL THEN -1 ELSE cc.CategoryGroup END AS CategoryGroup
 	FROM Temp_ExistedLatestCategory AS ec 
 		INNER JOIN CTS_DataCenter.CategoryToCustomerClass AS map ON map.CategoryID = ec.CategoryID
-		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = ec.CategoryID;
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = ec.CategoryID;
     
-    /* 10. Get Latest Classification to push */
+    /* 11. Get Latest Classification to push */
     SELECT DISTINCT	c.CustID, c.CustomerClass, c.CategoryGroup AS Category, c.ScannedTime 
     FROM Temp_LatestClassification AS c;
 END$$
