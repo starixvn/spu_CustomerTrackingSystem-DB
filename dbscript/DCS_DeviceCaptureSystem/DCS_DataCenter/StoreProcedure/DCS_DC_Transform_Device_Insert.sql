@@ -20,8 +20,12 @@ BEGIN
 		    - 20201019@CaseyHuynh:	Move Server, Phase 2 [Redmine ID: 143011]	
             - 20201020@CaseyHuynh: Update Owner, metadata [Redmine ID: 145271]
             - 20210510@Aries.Nguyen: Remove insert log dba_SP_PerformanceStats [Redmine ID: #154792]
+            - 20211129@Casey.Huynh: Remove Transaction07.FingerprintMoreInfo AND Devicefingerprint.CreatedDate Column [Redmine ID: #165167]
 
 	    Param's Explanation (filtered by):
+        
+        Example:
+			CALL DCS_DC_Transform_Device_Insert('[{"TransId": 1},{"TransId": 2}]');
 	*/
 
 	DECLARE vrDeviceStatusNew			TINYINT DEFAULT 1;			# New Device
@@ -118,7 +122,6 @@ BEGIN
         , UserAgentKey			VARCHAR(32)
 		, DeviceCode			VARCHAR(32) 
 		, FingerprintCode		VARCHAR(620)
-        , FingerprintMoreInfo	VARCHAR(250)
 		, CreatedDate			DATETIME
 		, TransTime				TIMESTAMP(4) 
         , DeviceCodeID			BIGINT UNSIGNED
@@ -132,7 +135,7 @@ BEGIN
     
 	#========GET INPUT DATA===========================
     set start_time  = CURRENT_TIMESTAMP(4);
-	INSERT INTO Temp_Transaction(TransID, AccountID, SubscriberID, UserAgentKey, DeviceCode, CreatedDate, TransTime,  FingerprintCode, FingerprintMoreInfo)
+	INSERT INTO Temp_Transaction(TransID, AccountID, SubscriberID, UserAgentKey, DeviceCode, CreatedDate, TransTime,  FingerprintCode)
     WITH CTE_Trans AS (
 		SELECT TransID
 		FROM JSON_TABLE(
@@ -150,7 +153,6 @@ BEGIN
 		, CreatedDate
 		, TransTime
 		,  (CASE WHEN tmpTrans.FingerprintCode IS NULL THEN NULL ELSE tmpTrans.FingerprintCode END) AS FingerprintCode
-		,  (CASE WHEN tmpTrans.FingerprintMoreInfo IS NULL THEN NULL ELSE tmpTrans.FingerprintMoreInfo END) AS FingerprintMoreInfo
 	FROM DCS_DataCenter.Transaction tmpTrans
 	INNER JOIN CTE_Trans t ON tmpTrans.TransId = t.TransId
     ORDER BY t.TransId ASC;
@@ -383,7 +385,7 @@ BEGIN
     
     # INSERT new DeviceFingerprint
     SET start_time = CURRENT_TIMESTAMP(4);
-	INSERT IGNORE INTO DCS_DataCenter.DeviceFingerprint(FingerprintCode, DeviceID, FingerprintMoreInfo, CreatedTime, CreatedDate, InsertTime)
+	INSERT IGNORE INTO DCS_DataCenter.DeviceFingerprint(FingerprintCode, DeviceID, CreatedTime, InsertTime)
     WITH CTE_DeviceCode AS (
 		SELECT DISTINCT DeviceCode, DeviceID FROM Temp_ExistedDevice
         UNION
@@ -391,9 +393,7 @@ BEGIN
     )
 	SELECT tts.FingerprintCode
 		, de.DeviceID
-		, MIN(tts.FingerprintMoreInfo) AS FingerprintMoreInfo
 		, MIN(tts.TransTime) AS CreatedTime
-		, MIN(tts.CreatedDate) AS CreatedDate
 		, insertionTime	AS InsertTime
     FROM Temp_Transaction AS tts
     INNER JOIN CTE_DeviceCode AS de ON de.DeviceCode = tts.DeviceCode
