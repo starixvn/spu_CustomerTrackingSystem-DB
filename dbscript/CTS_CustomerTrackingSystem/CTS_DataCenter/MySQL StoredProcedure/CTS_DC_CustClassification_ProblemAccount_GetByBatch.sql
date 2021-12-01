@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb,ctsAPI,ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_ProblemAccount_Scan`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_ProblemAccount_GetByBatch`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_ProblemAccount_Scan`()
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_ProblemAccount_GetByBatch`()
     SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -17,7 +17,7 @@ BEGIN
 		Param's Explanation (filtered by):   
         
         Example: 
-			- CALL CTS_DC_CustClassification_ProblemAccount_Scan ();
+			- CALL CTS_DC_CustClassification_ProblemAccount_GetByBatch ();
 	*/	 
 	DECLARE	CONST_GROUP_PROBLEM 	INT DEFAULT 0;
     DECLARE lv_LastCustID 			INT UNSIGNED;
