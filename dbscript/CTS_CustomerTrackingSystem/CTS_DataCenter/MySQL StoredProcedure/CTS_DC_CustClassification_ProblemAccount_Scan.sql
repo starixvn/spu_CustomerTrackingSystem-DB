@@ -1,4 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb,ctsAPI,ctsService" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_ProblemAccount_Scan`;
+
+DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_ProblemAccount_Scan`()
     SQL SECURITY INVOKER
 BEGIN
