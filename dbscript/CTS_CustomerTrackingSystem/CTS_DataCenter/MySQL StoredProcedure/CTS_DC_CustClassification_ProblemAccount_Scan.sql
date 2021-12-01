@@ -12,7 +12,7 @@ BEGIN
 		Original:
 
 		Revisions:
-			- 20211130@Aries.Nguyen:	Created - [Redmine: #164079 ]
+			- 20211130@Aries.Nguyen: Created [Redmine: #164079]
         
 		Param's Explanation (filtered by):   
         
@@ -21,8 +21,13 @@ BEGIN
 	*/	 
 	DECLARE	CONST_GROUP_PROBLEM 	INT DEFAULT 0;
     DECLARE lv_LastCustID 			INT UNSIGNED;
+    DECLARE lv_NextCustID 			INT UNSIGNED;
 	DECLARE lv_BatchSize 			INT;
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
+    CREATE TEMPORARY TABLE Temp_Cust (
+			CustID 		INT  UNSIGNED PRIMARY KEY
+    );
 	
     SELECT ParameterValue
 	INTO lv_LastCustID
@@ -36,22 +41,30 @@ BEGIN
 	
     SET @lv_LastID = null; 
     
-	SELECT @lv_LastID := CustID AS CustID
+    INSERT IGNORE INTO Temp_Cust(CustID)
+	SELECT CustID
 	FROM CTS_DataCenter.CTSCustomerClassification
 	WHERE CustID > lv_LastCustID
 		AND SportGroupID = CONST_GROUP_PROBLEM
 	ORDER BY CustID ASC
 	LIMIT lv_BatchSize;
     
-    IF @lv_LastID IS NOT NULL THEN
+    SELECT MAX(CustID)
+    INTO lv_NextCustID
+    FROM Temp_Cust;
+    
+    IF lv_NextCustID IS NOT NULL THEN
 		UPDATE CTS_DataCenter.SystemParameter 
-        SET ParameterValue = @lv_LastID
+        SET ParameterValue = lv_NextCustID
 		WHERE ParameterID = 64;
 	ELSE 
 		UPDATE CTS_DataCenter.SystemParameter 
         SET ParameterValue = 0
 		WHERE ParameterID = 64;
     END IF;
+    
+    SELECT CustID
+    FROM Temp_Cust;
     
 END$$
 DELIMITER ;
