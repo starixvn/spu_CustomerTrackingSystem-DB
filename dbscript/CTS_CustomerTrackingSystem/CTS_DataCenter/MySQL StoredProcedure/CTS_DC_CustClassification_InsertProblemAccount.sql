@@ -32,9 +32,8 @@ BEGIN
 			- 20210907@Long.Luu: Update Robot Users rules  [Redmine ID: #161232]
             - 20210922@Long.Luu: Split Classification History & Log  [Redmine ID: #161890]
 			- 20211026@Aries.Nguyen: Archive inactive association [Redmine ID: #163087]
-            
+            - 20211116@Casey.Huynh: Sync Robot User Categories to Dangerous Setting [Redmine ID: #161665]
         Param's Explanation (filtered by):
-        
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertProblemAccount('[{"CustID": 456, "ReasonID": 59, "RobotCounter": 0}]',0,@op_ErrorMessage);
 	*/   
@@ -64,72 +63,72 @@ BEGIN
 	DECLARE lv_CreatedBy 						INT DEFAULT 10278938;
     DECLARE lv_CurrentDateTime 					DATETIME DEFAULT CURRENT_TIME(); 
     
-	DROP TEMPORARY TABLE IF EXISTS Temp_InputCustomers;    
-	CREATE TEMPORARY TABLE Temp_InputCustomers(	  
-			CustID				BIGINT UNSIGNED 
-        , 	ReasonID			SMALLINT 
-        , 	RobotCounter		SMALLINT 
-        , 	PRIMARY KEY     	PK_Temp_InputCustomers_CustID_ReasonID(CustID,ReasonID)  
+	DROP TEMPORARY TABLE IF EXISTS Temp_ProblemAccounts;    
+	CREATE TEMPORARY TABLE Temp_ProblemAccounts(	  
+			CustID					BIGINT UNSIGNED 
+		, 	CTSCustID				BIGINT UNSIGNED DEFAULT 0
+        , 	SubscriberID			INT DEFAULT 0 
+        ,	IsLicensee				SMALLINT UNSIGNED
+        , 	ReasonID				SMALLINT 
+        , 	RobotCounter			SMALLINT 
+        , 	CategoryID		    	SMALLINT
+        ,	CategoryGroup     		SMALLINT    
+        ,	SourceTypeID			SMALLINT
+        , 	IsLastDataChanged  		BIT DEFAULT 0 /* Get by history */
+        ,	LastSourceTypeID		INT  /* Get by history */
+        ,	IsDataChanged			BIT DEFAULT 1 /*0: No change category => No Action*/
+		,	TargetCC				SMALLINT
+		,	TargetDangerLevel		SMALLINT UNSIGNED
+        , 	ActionType		    	SMALLINT DEFAULT 0 /* 0: Insert, 1: Update, 2: Remove, 4: Ignore PIN */
+        , 	PRIMARY KEY     		PK_Temp_ProblemAccounts(CustID,ReasonID)  
+    );  
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_ExistedCustomers;    
+	CREATE TEMPORARY TABLE Temp_ExistedCustomers(	  
+			CustID				BIGINT UNSIGNED PRIMARY KEY 
+        , 	CTSCustID			BIGINT 
+        , 	SubscriberID		INT 
+        ,	IsLicensee			BIT
     ); 
     
     DROP TEMPORARY TABLE IF EXISTS Temp_PinnedCustomers;    
 	CREATE TEMPORARY TABLE Temp_PinnedCustomers(	  
-			CTSCustID				BIGINT UNSIGNED PRIMARY KEY
+			CTSCustID			BIGINT UNSIGNED PRIMARY KEY
     ); 
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_CustomersTargetCC;    
-	CREATE TEMPORARY TABLE Temp_CustomersTargetCC(	  
-			CustID				BIGINT UNSIGNED 
-        , 	CategoryID		    SMALLINT 
-        ,	TargetCC			SMALLINT
-        , 	PRIMARY KEY     	PK_Temp_CustomersTargetCC_CustID_CategoryID(CustID,CategoryID)  
-    ); 
-    
-	DROP TEMPORARY TABLE IF EXISTS Temp_ProblemAccounts;    
-	CREATE TEMPORARY TABLE Temp_ProblemAccounts(	  
-			CustID				BIGINT UNSIGNED 
-		, 	CTSCustID			BIGINT UNSIGNED DEFAULT 0
-        , 	SubscriberID		INT DEFAULT 0 
-        , 	ReasonID			SMALLINT 
-        , 	CategoryID		    SMALLINT
-        ,	CategoryGroup     	SMALLINT    
-        ,	TargetCC			SMALLINT
-        ,	SourceTypeID		SMALLINT
-		, 	ActionType		    SMALLINT DEFAULT 0 /* 0: Insert, 1: Update, 2: Remove, 4: Ignore PIN */
-        , 	IsLastDataChanged   BIT DEFAULT 0
-        ,	LastSourceTypeID	INT
-        , 	RobotCounter		SMALLINT 
-        ,	IsDataChanged		BIT DEFAULT 1 /*0: No change category => No Action*/
-        , 	PRIMARY KEY     	PK_Temp_ProblemAccounts_CustID_ReasonID(CustID,ReasonID)  
-    );  
-     
-	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedClassification;    
+    DROP TEMPORARY TABLE IF EXISTS Temp_ExistedClassification;    
 	CREATE TEMPORARY TABLE Temp_ExistedClassification(	  
 			CustID				BIGINT UNSIGNED 
         , 	CategoryID	        SMALLINT UNSIGNED
         ,	CategoryGroup     	SMALLINT UNSIGNED    
         ,	RowOrder			SMALLINT
-        , 	PRIMARY KEY 		PK_Temp_ExistedClassification_CustID_CategoryID(CustID, CategoryID)     
+        , 	PRIMARY KEY 		PK_Temp_ExistedClassification(CustID, CategoryID)     
      );
-   
+     
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustomersTargetCC;    
+	CREATE TEMPORARY TABLE Temp_CustomersTargetCC(	  
+			CustID				BIGINT UNSIGNED 
+        , 	CategoryID		    SMALLINT 
+        ,	TargetCC			SMALLINT
+        , 	PRIMARY KEY     	PK_Temp_CustomersTargetCC(CustID,CategoryID)  
+    ); 
+
 	DROP TEMPORARY TABLE IF EXISTS Temp_LastHistory;    
 	CREATE TEMPORARY TABLE Temp_LastHistory(	  
-			CustID			BIGINT UNSIGNED 
-		,	HistoryID		BIGINT
-		, 	PRIMARY KEY		PK_Temp_LastHistory(HistoryID)
+			HistoryID		BIGINT UNSIGNED PRIMARY KEY
+        ,   CustID			BIGINT UNSIGNED 
     );
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustHistory;    
 	CREATE TEMPORARY TABLE Temp_CustHistory(	  
-			CustID			BIGINT UNSIGNED 
+			CustID			BIGINT UNSIGNED PRIMARY KEY
 		,	SourceTypeID	INT
         ,	IsDataChanged	BIT
-		, 	PRIMARY KEY		PK_Temp_LastHistory(CustID)
     );
    
     /* START */
 	/* 1: PARSE RAW DATA */
-    INSERT INTO Temp_InputCustomers(CustID, ReasonID, RobotCounter)
+    INSERT IGNORE INTO Temp_ProblemAccounts(CustID, ReasonID, RobotCounter)
 	SELECT DISTINCT temp.CustID, temp.ReasonID , temp.RobotCounter
 	FROM JSON_TABLE(ip_ProblemAccounts,
 		"$[*]" COLUMNS(
@@ -140,16 +139,26 @@ BEGIN
 	WHERE temp.ReasonID <> 0;
     
 	/*	2: EXCLUDE CUSTOMER */    
-    CALL CTS_DC_ExcludeCustByCondition('Temp_InputCustomers');
+    CALL CTS_DC_ExcludeCustByCondition('Temp_ProblemAccounts');
     
     /*	3: INSERT CUST INFO */
-    INSERT INTO Temp_ProblemAccounts(CustID, ReasonID, CTSCustID, SubscriberID, RobotCounter)
-    SELECT temp.CustID, temp.ReasonID, cust.CTSCustID, cust.SubscriberID, temp.RobotCounter
-    FROM Temp_InputCustomers AS temp 
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.CustSubID = 0;
+    INSERT IGNORE INTO Temp_ExistedCustomers(CustID,CTSCustID,SubscriberID,IsLicensee)
+    SELECT DISTINCT cust.CustID
+        , 	cust.CTSCustID
+        , 	cust.SubscriberID
+        ,	(CASE WHEN mss.SubscriberGroupID = 2 THEN 1 ELSE 0 END) AS IsLicensee
+    FROM Temp_ProblemAccounts AS temp 
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.CustSubID = 0
+		INNER JOIN CTS_DataCenter.MappingSubscriberSite AS mss ON cust.SiteID = mss.SiteID;
+    
+    UPDATE Temp_ProblemAccounts AS temp
+		INNER JOIN Temp_ExistedCustomers AS ec ON ec.CustID = temp.CustID
+	SET 	temp.CTSCustID = ec.CTSCustID
+		,	temp.SubscriberID = ec.SubscriberID
+        ,   temp.IsLicensee = ec.IsLicensee;
     
     /*	4: IGNORE PIN CATEGORY	*/
-    INSERT INTO Temp_PinnedCustomers (CTSCustID)
+    INSERT IGNORE INTO Temp_PinnedCustomers (CTSCustID)
     SELECT DISTINCT pin.CTSCustID
     FROM Temp_ProblemAccounts AS temp
 		INNER JOIN CTS_DataCenter.PinCustomerCategory AS pin on pin.CTSCustID = temp.CTSCustID; 
@@ -224,13 +233,19 @@ BEGIN
 							 END)
 	WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE, CONST_ACTIONTYPE_REMOVE);
     
-	/*	12: REMOVE PA FROM NAP CM */
+    /* 12: UPDATE DANGER LEVEL FOR ROBOT_USER */
+    UPDATE Temp_ProblemAccounts AS temp
+		INNER JOIN CTS_DataCenter.CategoryToDangerLevel AS ctd ON ctd.CategoryID = temp.CategoryID AND ctd.IsLicensee = temp.IsLicensee AND ctd.TypeID = 2 
+    SET 	temp.TargetDangerLevel =  ctd.DangerLevel
+	WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);    
+    
+	/*	13: REMOVE PA FROM NAP CM */
 	DELETE cate
     FROM CTS_DataCenter.CTSCustomerClassification cate
 		INNER JOIN Temp_ProblemAccounts AS temp ON temp.CustID = cate.CustID AND cate.SportGroupID = CONST_GROUP_PA
 	WHERE temp.ActionType = CONST_ACTIONTYPE_REMOVE AND cate.CategoryID <> CONST_CATEGORYID_ROBOTUSERS AND (cate.CategoryID NOT BETWEEN 72 AND 150);
     
-	/*	13: UPDATE PA FROM NAP CM */
+	/*	14: UPDATE PA FROM NAP CM */
     UPDATE CTS_DataCenter.CTSCustomerClassification AS cate
 		INNER JOIN Temp_ProblemAccounts AS temp on temp.CustID = cate.CustID 
 			AND cate.SportGroupID = CONST_GROUP_PA AND temp.CategoryID = cate.CategoryID 
@@ -242,7 +257,7 @@ BEGIN
 	WHERE temp.ActionType = CONST_ACTIONTYPE_UPDATE
 		AND temp.CategoryID <> CONST_CATEGORYID_ROBOTUSERS;
         
-    /*	14: INSERT NEW PA FROM NAP CM */
+    /*	15: INSERT NEW PA FROM NAP CM */
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, 
 	CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
 	SELECT 	temp.CustID
@@ -258,10 +273,10 @@ BEGIN
 	FROM Temp_ProblemAccounts AS temp
     WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT;           
     
-    /* 15: WRITE HISTORY LOG (VIEW ON WEB) */
-    /* 15.1: Rescan data */    
+    /* 16: WRITE HISTORY LOG (VIEW ON WEB) */
+    /* 16.1: Rescan data */    
     IF (ip_IsRescan = 1) THEN
-        /* 15.1.1: Insert Last History*/    
+        /* 16.1.1: Insert Last History*/    
         INSERT INTO Temp_LastHistory (CustID, HistoryID)
 		SELECT  his.CustID,	MAX(his.ID)
 		FROM CTS_DataCenter.CTSCustomerClassification_History AS his
@@ -278,7 +293,7 @@ BEGIN
 		SET 	temp.LastSourceTypeID = h.SourceTypeID
 			, 	temp.IsLastDataChanged = h.IsDataChanged;
      
-		/* 15.1.2: Update IsDataChanged */
+		/* 16.1.2: Update IsDataChanged */
 		UPDATE Temp_ProblemAccounts AS temp
 		SET temp.IsDataChanged = 0
 		WHERE temp.LastSourceTypeID NOT IN (CONST_SOURCETYPE_REMOVENAPPA,CONST_SOURCETYPE_REMOVEEVIDENCE,CONST_SOURCETYPE_RESCANBYEVIDENCE,CONST_SOURCETYPE_REMOVEVVIP,CONST_SOURCETYPE_REMOVESPECIALCC,CONST_SOURCETYPE_EXCLUDEASSWITHPA,CONST_SOURCETYPE_INCLUDEASSWITHPA)
@@ -290,13 +305,13 @@ BEGIN
 		WHERE temp.LastSourceTypeID IN (CONST_SOURCETYPE_REMOVENAPPA,CONST_SOURCETYPE_REMOVEEVIDENCE,CONST_SOURCETYPE_RESCANBYEVIDENCE,CONST_SOURCETYPE_REMOVEVVIP,CONST_SOURCETYPE_REMOVESPECIALCC,CONST_SOURCETYPE_EXCLUDEASSWITHPA,CONST_SOURCETYPE_INCLUDEASSWITHPA)
 			AND temp.ActionType = CONST_ACTIONTYPE_INSERT;
             
-		/* 15.1.3: Update SourceTypeID */
+		/* 16.1.3: Update SourceTypeID */
 		UPDATE Temp_ProblemAccounts AS temp
 		SET temp.SourceTypeID = CONST_SOURCETYPE_RESCANBYNAPPA;
             
-		/* 15.1.4: Insert log from Insert NAP PA */    
+		/* 16.1.4: Insert log from Insert NAP PA */    
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
-		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, RobotCounter)
+		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, RobotCounter, TargetDangerLevel1)
 		SELECT DISTINCT temp.CustID
 			, 	temp.CTSCustID
 			, 	temp.CategoryID
@@ -310,12 +325,13 @@ BEGIN
 			, 	temp.SourceTypeID
 			,  	temp.IsDataChanged
 			,	temp.RobotCounter
+            ,	temp.TargetDangerLevel AS TargetDangerLevel1
 		FROM Temp_ProblemAccounts AS temp
         WHERE temp.IsDataChanged = 1;
         
-	/* 15.2: Normal data */         
+	/* 16.2: Normal data */         
     ELSE 
-		/* 15.2.1: Update IsDataChanged */
+		/* 16.2.1: Update IsDataChanged */
 		UPDATE Temp_ProblemAccounts AS temp
 			INNER JOIN Temp_PinnedCustomers AS pin ON pin.CTSCustID = temp.CTSCustID
 		SET temp.IsDataChanged = 0;
@@ -330,9 +346,9 @@ BEGIN
 		SET temp.IsDataChanged = 0
 		WHERE temp.ActionType = CONST_ACTIONTYPE_REMOVE AND ex.CategoryGroup IS NULL;
     
-		/*	15.2.2: Insert log from Insert NAP PA */
+		/*	16.2.2: Insert log from Insert NAP PA */
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
-		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, RobotCounter)
+		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, RobotCounter, TargetDangerLevel1)
 		SELECT DISTINCT temp.CustID
 			, 	temp.CTSCustID
 			, 	temp.CategoryID
@@ -346,10 +362,11 @@ BEGIN
 			, 	temp.SourceTypeID
 			,  	temp.IsDataChanged
 			,	temp.RobotCounter
+            ,	temp.TargetDangerLevel AS TargetDangerLevel1
 		FROM Temp_ProblemAccounts AS temp
 		WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE) AND temp.IsDataChanged = 1;
 		
-		/*	15.2.3: Insert log from Remove NAP PA */
+		/*	16.2.3: Insert log from Remove NAP PA */
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
 		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, RobotCounter)
 		SELECT DISTINCT temp.CustID
@@ -370,9 +387,9 @@ BEGIN
 		WHERE temp.ActionType = CONST_ACTIONTYPE_REMOVE AND temp.IsDataChanged = 1;
     END IF;
     
-    /* 16: WRITE HISTORY LOG (TRACE DATA) */
+    /* 17: WRITE HISTORY LOG (TRACE DATA) */
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log
-		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, RobotCounter)
+		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, RobotCounter, TargetDangerLevel1)
 	SELECT DISTINCT temp.CustID
 		, 	temp.CTSCustID
 		, 	CASE WHEN temp.ActionType = CONST_ACTIONTYPE_REMOVE AND ex.CategoryID IS NOT NULL THEN ex.CategoryID ELSE temp.CategoryID END
@@ -386,13 +403,12 @@ BEGIN
 		, 	temp.SourceTypeID
 		,   temp.IsDataChanged
 		,	temp.RobotCounter
+		,	temp.TargetDangerLevel AS TargetDangerLevel1
 	FROM Temp_ProblemAccounts AS temp
 		LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryID <> CONST_CATEGORYID_ROBOTUSERS AND (ex.CategoryID NOT BETWEEN 72 AND 150) AND ex.RowOrder = 1;
     
-	/* 17: RETURN UPDATED CUSTOMERS TO SERVICE FOR FUTHER STEPS */
-	SELECT	DISTINCT 
-			temp.CustID
-		,	temp.CTSCustID
+	/* 18: RETURN UPDATED CUSTOMERS TO SERVICE FOR FUTHER STEPS */
+	SELECT	DISTINCT temp.CustID,	temp.CTSCustID
     FROM Temp_ProblemAccounts AS temp 
     WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE, CONST_ACTIONTYPE_REMOVE); 
 END$$
