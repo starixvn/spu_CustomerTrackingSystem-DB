@@ -21,6 +21,7 @@ BEGIN
             - 20210722@Irena.Vo: Refactor SP [RedmineID: #157203] 
             - 20210727@Long.Luu: Return more data for TW's categories [RedmineID: #155956] 
 			- 20210907@Long.Luu: Update Robot Users rules  [Redmine ID: #161232]
+			- 20211116@Aries.Nguyen: Return history with CTSUser is null[Redmine ID: #156935]
             
 		Param's Explanation (filtered by):		
         Example:
@@ -58,6 +59,7 @@ BEGIN
 			,   temp.ActiveDays 
 			,   temp.RobotCounter
 			,   u.UserName AS CreatedBy
+			,	temp.LastModifiedBy AS LastModifiedBy
             ,	temp.TWBetCount
             ,	temp.TWGroupBettingRate
             ,	temp.TWTicketRejectRate
@@ -67,8 +69,8 @@ BEGIN
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS cc1 ON temp.CategoryID = cc1.CategoryID
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS cc2 ON temp.FromCategoryID = cc2.CategoryID
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS cc3 ON temp.ToCategoryID = cc3.CategoryID
-			INNER JOIN CTS_DataCenter.StaticList AS s ON s.ListID = 4 AND temp.SourceTypeID = s.ItemID
-			INNER JOIN CTS_Admin.CTSUser AS u ON temp.LastModifiedBy = u.UserID
+			LEFT JOIN CTS_DataCenter.StaticList AS s ON s.ListID = 4 AND temp.SourceTypeID = s.ItemID
+			LEFT JOIN CTS_Admin.CTSUser AS u ON temp.LastModifiedBy = u.UserID
         WHERE 	temp.CTSCustID = ip_CTSCustID AND temp.IsDataChanged = 1
 		ORDER BY temp.ID DESC; 
 END$$
