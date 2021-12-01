@@ -42,7 +42,7 @@ BEGIN
 	SELECT 	CTSCustID
 		,	SubscriberID
         ,	IFNULL((SELECT 1 
-				   FROM CTS_DataCenter.CustEvidence as ev 
+				   FROM CTS_DataCenter.CustEvidence AS ev USE INDEX (IX_CustEvidence_Level_CTSCustID)
 				   WHERE ev.CTSCustID = cus.CTSCustID AND ev.Level = 0
 						AND NOT EXISTS (SELECT 1 
 										FROM CTS_DataCenter.CustRetractEvidence AS re 
@@ -50,7 +50,7 @@ BEGIN
 											AND re.EvidenceID = ev.EvidenceID) 
 										LIMIT 1),0) AS IsFlagged
 		,	IFNULL((SELECT 1 
-				    FROM CTS_DataCenter.CustEvidence as ev 
+				    FROM CTS_DataCenter.CustEvidence AS ev USE INDEX (IX_CustEvidence_Level_CTSCustID)
 				    WHERE ev.CTSCustID = cus.CTSCustID AND ev.Level = 2
 						AND NOT EXISTS (SELECT 1 
 										FROM CTS_DataCenter.CustRetractEvidence AS re 
