@@ -33,6 +33,7 @@ BEGIN
             - 20210922@Long.Luu: Split Classification History & Log  [Redmine ID: #161890]
 			- 20211026@Aries.Nguyen: Archive inactive association [Redmine ID: #163087]
             - 20211116@Casey.Huynh: Sync Robot User Categories to Dangerous Setting [Redmine ID: #161665]
+			- 20211115@Aries.Nguyen: Use ReasonID column instead of  DisplayOrder column [Redmine ID: #156935]
         Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertProblemAccount('[{"CustID": 456, "ReasonID": 59, "RobotCounter": 0}]',0,@op_ErrorMessage);
@@ -181,7 +182,7 @@ BEGIN
     
     /*  7: UPDATE CATEGORY ID, CATEGORY GROUP ID */
     UPDATE Temp_ProblemAccounts AS temp 
-		LEFT JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.DisplayOrder = temp.ReasonID
+		LEFT JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.ReasonID = temp.ReasonID
     SET 	temp.CategoryID = IFNULL(cc.CategoryID,temp.ReasonID)
 		,	temp.CategoryGroup = IFNULL(cc.CategoryGroup,temp.ReasonID);
     
