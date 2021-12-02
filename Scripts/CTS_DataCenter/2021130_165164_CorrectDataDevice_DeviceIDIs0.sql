@@ -6,10 +6,11 @@ Server:  	Master
 DBName:		DCS_DataCenter
 
 Revisions: 
-		- 20211119@Casey.Huynh: Created [Redmine ID: #165164]
+		- 20211130@Casey.Huynh: Created [Redmine ID: #165164]
 Reviewer:
 */
 USE DCS_DataCenter;
+
 /***ISSUE01: DeviceID = 0 ************************************************
 1. STOP SERVICE
 2. Deploy SP
