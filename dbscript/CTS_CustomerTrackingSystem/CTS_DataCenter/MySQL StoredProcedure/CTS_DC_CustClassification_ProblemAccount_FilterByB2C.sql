@@ -33,14 +33,22 @@ BEGIN
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1;
     
-    SELECT CustID 
-    FROM Temp_Cust AS cust
-	WHERE EXISTS (SELECT 1 
-			  FROM CTS_DataCenter.CTSCustomerClassification AS clss
-              WHERE clss.CustID = cust.CustID
-				AND clss.SportGroupID = CONST_GROUP_PROBLEM 
-				AND clss.SubscriberID IN (SELECT ItemID 
-										  FROM CTS_DataCenter.StaticList 
-                                          WHERE ListID = 15));
+    WITH CTS_Cust AS (
+		SELECT 	DISTINCT
+				cust.CustID
+			,	cate.AFCFraudID
+			,	clss.SportGroupID
+		FROM Temp_Cust AS cust
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CustID = cust.CustID
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID 
+		WHERE clss.SubscriberID IN (SELECT ItemID 
+									FROM CTS_DataCenter.StaticList 
+									WHERE ListID = 15)
+	)
+	SELECT 	CustID
+		,	CASE WHEN SportGroupID = CONST_GROUP_PROBLEM THEN JSON_ARRAYAGG(AFCFraudID)
+			ELSE NULL END AS FraudID
+	FROM CTS_Cust
+	GROUP BY CustID, SportGroupID;
 END$$
 DELIMITER ;

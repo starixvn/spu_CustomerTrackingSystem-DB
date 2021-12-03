@@ -29,7 +29,9 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
     CREATE TEMPORARY TABLE Temp_Cust (
-			CustID 		INT  UNSIGNED PRIMARY KEY
+			CustID 		INT  UNSIGNED 
+		,	FraudID		int
+        ,	PRIMARY KEY(CustID, FraudID)
     );
 	
     SELECT ParameterValue
@@ -47,13 +49,15 @@ BEGIN
 	FROM CTS_DataCenter.SystemParameter 
 	WHERE ParameterID = 66;
     
-    INSERT IGNORE INTO Temp_Cust(CustID)
-	SELECT CustID
-	FROM CTS_DataCenter.CTSCustomerClassification
-	WHERE CustID > lv_LastCustID
-		AND SportGroupID = CONST_GROUP_PROBLEM
-        AND SubscriberID = lv_CurrentSubID
-	ORDER BY CustID ASC
+    INSERT IGNORE INTO Temp_Cust(CustID, FraudID)
+	SELECT 	clss.CustID
+		,	cate.AFCFraudID
+	FROM CTS_DataCenter.CTSCustomerClassification AS clss
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID 
+	WHERE clss.CustID > lv_LastCustID
+		AND clss.SportGroupID = CONST_GROUP_PROBLEM
+        AND clss.SubscriberID = lv_CurrentSubID
+	ORDER BY clss.CustID ASC
 	LIMIT lv_BatchSize;
     
     IF NOT EXISTS (SELECT 1 FROM Temp_Cust) THEN
@@ -68,14 +72,17 @@ BEGIN
     END IF;
     
     IF lv_NextSubID IS NOT NULL THEN
-		INSERT IGNORE INTO Temp_Cust(CustID)
-		SELECT CustID
-		FROM CTS_DataCenter.CTSCustomerClassification
-		WHERE CustID > 0
-			AND SportGroupID = CONST_GROUP_PROBLEM
-			AND SubscriberID = lv_NextSubID
-		ORDER BY CustID ASC
+		INSERT IGNORE INTO Temp_Cust(CustID, FraudID)
+		SELECT 	clss.CustID
+			,	cate.AFCFraudID
+		FROM CTS_DataCenter.CTSCustomerClassification AS clss
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID 
+		WHERE clss.CustID > 0
+			AND clss.SportGroupID = CONST_GROUP_PROBLEM
+			AND clss.SubscriberID = lv_NextSubID
+		ORDER BY clss.CustID ASC
 		LIMIT lv_BatchSize;
+        
 	ELSE
 		SET lv_NextSubID = lv_CurrentSubID;
 	END IF;
@@ -109,8 +116,10 @@ BEGIN
 		WHERE ParameterID = 65;
     END IF;
     
-    SELECT CustID
-    FROM Temp_Cust;
+    SELECT 	CustID
+		,	JSON_ARRAYAGG(FraudID) AS FraudID
+    FROM Temp_Cust
+    GROUP BY CustID;
     
 END$$
 DELIMITER ;

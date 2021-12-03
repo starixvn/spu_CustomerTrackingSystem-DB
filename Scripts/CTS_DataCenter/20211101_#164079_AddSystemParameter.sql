@@ -19,3 +19,7 @@ USE CTS_DataCenter;
 ALTER TABLE CTSCustomerClassification ADD INDEX IX_CTSCustomerClassification_SubscriberID_SportGroupID(SubscriberID,SportGroupID), ALGORITHM=INPLACE, LOCK=NONE;
 
 ALTER TABLE CTSCustomerClassification DROP INDEX IX_CTSCustomerClassification_CTSCustID;
+
+USE CTS_DataCenter;
+ALTER TABLE CTS_DataCenter.CustomerCategory ADD COLUMN AFCFraudID INT, ALGORITHM=INSTANT;
+
