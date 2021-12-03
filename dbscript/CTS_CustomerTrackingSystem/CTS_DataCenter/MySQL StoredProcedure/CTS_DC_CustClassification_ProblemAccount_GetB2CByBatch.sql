@@ -90,8 +90,15 @@ BEGIN
     SELECT MAX(CustID)
     INTO lv_NextCustID
     FROM Temp_Cust;
-    
+		
     IF lv_NextCustID IS NOT NULL THEN
+		INSERT IGNORE INTO Temp_Cust(CustID, FraudID)
+		SELECT 	clss.CustID
+			,	cate.AFCFraudID
+		FROM CTS_DataCenter.CTSCustomerClassification AS clss
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID 
+		WHERE clss.CustID = lv_NextCustID;
+        
 		UPDATE CTS_DataCenter.SystemParameter 
         SET ParameterValue = lv_NextCustID
 		WHERE ParameterID = 64;
@@ -117,7 +124,7 @@ BEGIN
     END IF;
     
     SELECT 	CustID
-		,	JSON_ARRAYAGG(FraudID) AS FraudID
+		,	GROUP_CONCAT(FraudID) AS FraudID
     FROM Temp_Cust
     GROUP BY CustID;
     
