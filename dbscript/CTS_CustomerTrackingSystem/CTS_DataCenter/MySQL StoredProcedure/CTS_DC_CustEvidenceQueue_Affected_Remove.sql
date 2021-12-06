@@ -116,7 +116,11 @@ sp : BEGIN
              DELETE 
 	         FROM CustEvidenceAffectedQueueRemove
              WHERE ID <= lv_QueueID_Next;
-         END IF;
+         ELSE
+            DELETE 
+			FROM CustEvidenceAffectedQueueRemove
+			WHERE ID < lv_QueueID_Sync;
+		END IF;
 
         IF EXISTS (SELECT 1 FROM CTS_DataCenter.CustEvidenceAffectedQueueRemove WHERE ID > lv_QueueID_Next) THEN
             SET op_IsDataExist = 1;

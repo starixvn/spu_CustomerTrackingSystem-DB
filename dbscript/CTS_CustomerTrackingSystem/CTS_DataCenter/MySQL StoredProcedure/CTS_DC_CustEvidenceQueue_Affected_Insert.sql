@@ -177,6 +177,10 @@ sp : BEGIN
 			DELETE 
 			FROM CustEvidenceAffectedQueueInsert
 			WHERE ID <= lv_QueueID_Next;
+        ELSE
+            DELETE 
+			FROM CustEvidenceAffectedQueueInsert
+			WHERE ID < lv_QueueID_Sync;
 		END IF;
 
         IF EXISTS (SELECT 1 FROM CTS_DataCenter.CustEvidenceAffectedQueueInsert WHERE ID > lv_QueueID_Next) THEN
