@@ -21,7 +21,7 @@ BEGIN
             - 20201020@CaseyHuynh: Update Owner, metadata [Redmine ID: 145271]
             - 20210510@Aries.Nguyen: Remove insert log dba_SP_PerformanceStats [Redmine ID: #154792]
             - 20211129@Casey.Huynh: Remove Transaction07.FingerprintMoreInfo AND Devicefingerprint.CreatedDate Column [Redmine ID: #165167]
-
+			- 20211201@Casey.Huynh: Fix Issue Devicefingerprint.DeviceID = 0 [Redmine ID: #165164]
 	    Param's Explanation (filtered by):
         
         Example:
@@ -385,21 +385,17 @@ BEGIN
     
     # INSERT new DeviceFingerprint
     SET start_time = CURRENT_TIMESTAMP(4);
-	INSERT IGNORE INTO DCS_DataCenter.DeviceFingerprint(FingerprintCode, DeviceID, CreatedTime, InsertTime)
-    WITH CTE_DeviceCode AS (
-		SELECT DISTINCT DeviceCode, DeviceID FROM Temp_ExistedDevice
-        UNION
-        SELECT DISTINCT DeviceCode, DeviceID FROM Temp_RecoveredDevice
-    )
+    
+    INSERT IGNORE INTO DCS_DataCenter.DeviceFingerprint(FingerprintCode, DeviceID, CreatedTime, InsertTime)
 	SELECT tts.FingerprintCode
-		, de.DeviceID
+		, tmpEd.DeviceID
 		, MIN(tts.TransTime) AS CreatedTime
 		, insertionTime	AS InsertTime
     FROM Temp_Transaction AS tts
-    INNER JOIN CTE_DeviceCode AS de ON de.DeviceCode = tts.DeviceCode
+    INNER JOIN Temp_ExistedDevice AS tmpEd ON tmpEd.DeviceCode = tts.DeviceCode
     WHERE tts.FingerprintCode IS NOT NULL
-    GROUP BY tts.FingerprintCode, de.DeviceID;
-   
+    GROUP BY tts.FingerprintCode, tmpEd.DeviceID;
+    
     GET DIAGNOSTICS rowCount = ROW_COUNT;
     INSERT INTO Temp_PerformanceStats(step_name, start_time, diff_time, stats)
     WITH CTE_Stats AS (
