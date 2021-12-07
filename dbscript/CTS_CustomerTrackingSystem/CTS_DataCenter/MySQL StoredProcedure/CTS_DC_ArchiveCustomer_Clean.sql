@@ -69,8 +69,111 @@ sp: BEGIN
 	IF NOT EXISTS (SELECT 1 FROM Temp_CustInfo) THEN
 		LEAVE sp; 
 	END IF;
+    
+    /*************************************** 1. DCS_DataCenter.DeviceFingerprint *******************************/
+    IF (lv_Table = 'DCS_DataCenter.DeviceFingerprint') THEN
+		IF EXISTS (SELECT 1  FROM DCS_DataCenter.ArchiveCustomer_Device) THEN
+			DROP TEMPORARY TABLE IF EXISTS Temp_DeviceFingerprint_Clean;
+			CREATE TEMPORARY TABLE Temp_DeviceFingerprint_Clean(
+					DeviceID   			BIGINT UNSIGNED
+				,	FingerprintCode   	VARCHAR(620) COLLATE utf8_unicode_ci
+				,	PRIMARY KEY(DeviceID, FingerprintCode)
+			);
+            
+            INSERT IGNORE INTO Temp_DeviceFingerprint_Clean(DeviceID, FingerprintCode)
+            SELECT 	df.DeviceID
+				,	df.FingerprintCode
+			FROM DCS_DataCenter.DeviceFingerprint AS df
+            WHERE EXISTS (SELECT 1 FROM DCS_DataCenter.ArchiveCustomer_Device AS dv  WHERE dv.DeviceID = df.DeviceID)
+            LIMIT lv_CleanTableBatchSize;
+            
+            DELETE df
+			FROM  DCS_DataCenter.DeviceFingerprint AS df
+				INNER JOIN Temp_DeviceFingerprint_Clean AS tmp ON tmp.DeviceID = df.DeviceID AND tmp.FingerprintCode = df.FingerprintCode;
+			
+            UPDATE  CTS_DataCenter.SystemParameter 
+			SET ParameterValue = 'DCS_DataCenter.DeviceFingerprint'
+			WHERE ParameterID = 46;
+			
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_DeviceFingerprint_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+            
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
+        END IF;
+        
+		SET lv_Table = 'DCS_DataCenter.DeviceCode';
+    END IF;
+    
+    /*************************************** 2. DCS_DataCenter.DeviceCode **************************************/
+    IF (lv_Table = 'DCS_DataCenter.DeviceCode') THEN
+		IF EXISTS (SELECT 1  FROM DCS_DataCenter.ArchiveCustomer_Device) THEN
+			DROP TEMPORARY TABLE IF EXISTS Temp_DeviceCode_Clean;
+			CREATE TEMPORARY TABLE Temp_DeviceCode_Clean(
+					DeviceCodeID   	BIGINT UNSIGNED PRIMARY KEY
+			);
+            
+            INSERT IGNORE INTO Temp_DeviceCode_Clean(DeviceCodeID)
+            SELECT 	dc.DeviceCodeID
+			FROM DCS_DataCenter.DeviceCode AS dc
+            WHERE EXISTS (SELECT 1 FROM DCS_DataCenter.ArchiveCustomer_Device AS dv  WHERE dv.DeviceID = dc.DeviceID)
+            LIMIT lv_CleanTableBatchSize;
+            
+            DELETE dc
+			FROM  DCS_DataCenter.DeviceCode AS dc
+				INNER JOIN Temp_DeviceCode_Clean AS tmp ON tmp.DeviceCodeID = dc.DeviceCodeID;
+			
+            UPDATE  CTS_DataCenter.SystemParameter 
+			SET ParameterValue = 'DCS_DataCenter.DeviceCode'
+			WHERE ParameterID = 46;
+			
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_DeviceCode_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+            
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
+        END IF;
+        
+		SET lv_Table = 'DCS_DataCenter.Device';
+    END IF;
+    
+    /*************************************** 3. DCS_DataCenter.Device ******************************************/
+    IF (lv_Table = 'DCS_DataCenter.Device') THEN
+		IF EXISTS (SELECT 1  FROM DCS_DataCenter.ArchiveCustomer_Device) THEN
+            DELETE dv
+			FROM  DCS_DataCenter.Device AS dv
+				INNER JOIN DCS_DataCenter.ArchiveCustomer_Device AS tmp ON tmp.DeviceID = dv.DeviceID;
+			
+            SELECT COUNT(1)
+            INTO lv_Count
+            FROM DCS_DataCenter.ArchiveCustomer_Device;
+            
+            DELETE dv
+			FROM  DCS_DataCenter.ArchiveCustomer_Device AS dv;
+            
+            UPDATE  CTS_DataCenter.SystemParameter 
+			SET ParameterValue = 'DCS_DataCenter.Device'
+			WHERE ParameterID = 46;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+            
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
+        END IF;
+        
+		SET lv_Table = 'DCS_DataCenter.Association';
+    END IF;
 	
-    /******************************************** 1. DCS_DataCenter.Association *********************************************************/
+    /*************************************** 4. DCS_DataCenter.Association *************************************/
     IF (lv_Table = 'DCS_DataCenter.Association') THEN
 		IF EXISTS (SELECT 1  FROM DCS_DataCenter.Association AS ass  WHERE  ass.AccountID IN (SELECT tmp.AccountID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_Association_Clean;
@@ -87,13 +190,32 @@ sp: BEGIN
             WHERE  ass.AccountID IN (SELECT tmp.AccountID FROM Temp_CustInfo AS tmp)
             LIMIT lv_CleanTableBatchSize;
             
+            INSERT INTO DCS_DataCenter.ArchiveCustomer_Device(AccountID, DeviceID)
+			SELECT  tmp.AccountID 
+				,	tmp.DeviceID
+			FROM Temp_Association_Clean AS tmp
+			WHERE NOT EXISTS (SELECT 1 
+							  FROM DCS_DataCenter.Association AS ass 
+							  WHERE ass.DeviceID = tmp.DeviceID 
+								AND ass.AccountID != tmp.AccountID);
+            
             DELETE ass
 			FROM  DCS_DataCenter.Association AS ass
 				INNER JOIN Temp_Association_Clean AS tmp ON tmp.AccountID = ass.AccountID AND tmp.DeviceID = ass.DeviceID;
 			
-			UPDATE  CTS_DataCenter.SystemParameter 
-			SET ParameterValue = 'DCS_DataCenter.Association'
-			WHERE ParameterID = 46;
+            IF EXISTS(SELECT 1 FROM DCS_DataCenter.ArchiveCustomer_Device) THEN
+				UPDATE  CTS_DataCenter.SystemParameter 
+				SET ParameterValue = 'DCS_DataCenter.DeviceFingerprint'
+				WHERE ParameterID = 46;
+                
+                LEAVE sp;
+            ELSE 
+				UPDATE  CTS_DataCenter.SystemParameter 
+				SET ParameterValue = 'DCS_DataCenter.Association'
+				WHERE ParameterID = 46;
+            END IF;
+            
+			
 			
 			SELECT COUNT(1)
             INTO lv_Count
@@ -105,11 +227,11 @@ sp: BEGIN
 			
             SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
-
+        
         SET lv_Table = 'DCS_DataCenter.Account';
     END IF;
 	
-    /********************************************* 2. DCS_DataCenter.Account *********************************************************/
+    /*************************************** 5. DCS_DataCenter.Account *****************************************/
 	IF (lv_Table = 'DCS_DataCenter.Account') THEN 
 		IF EXISTS (SELECT 1  FROM DCS_DataCenter.Account AS acc WHERE  acc.AccountID IN (SELECT tmp.AccountID FROM Temp_CustInfo AS tmp)) THEN
 			DELETE acc
@@ -126,7 +248,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.AssociatedAccountMonitor';
     END IF; 
     
-	/********************************************* 3. CTS_DataCenter.AssociatedAccountMonitor *********************************************************/
+	/*************************************** 6. CTS_DataCenter.AssociatedAccountMonitor ************************/
     IF (lv_Table = 'CTS_DataCenter.AssociatedAccountMonitor') THEN 
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.AssociatedAccountMonitor AS aam WHERE  aam.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
 			DELETE aam
@@ -142,7 +264,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.AssociatedAccountNotification';
     END IF;
     
-    /********************************************* 4. CTS_DataCenter.AssociatedAccountNotification *********************************************************/
+    /*************************************** 7. CTS_DataCenter.AssociatedAccountNotification *******************/
     IF (lv_Table = 'CTS_DataCenter.AssociatedAccountNotification') THEN 
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.AssociatedAccountNotification AS ass WHERE  ass.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_AssociatedAccountNotification_Clean;
@@ -177,8 +299,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.AssociationByAI-From';
     END IF;
     
-
-    /********************************************* 5. CTS_DataCenter.AssociationByAI *********************************************************/
+    /*************************************** 8. CTS_DataCenter.AssociationByAI *********************************/
     IF (lv_Table = 'CTS_DataCenter.AssociationByAI-From') THEN  
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.AssociationByAI AS ai WHERE  ai.FromCustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByAI_Clean;
@@ -255,7 +376,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.AssociationByDevice';
     END IF;
 	
-   /********************************************* 6. CTS_DataCenter.AssociationByDevice *********************************************************/
+   /**************************************** 9. CTS_DataCenter.AssociationByDevice *****************************/
     IF (lv_Table = 'CTS_DataCenter.AssociationByDevice') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.AssociationByDevice  AS dv WHERE dv.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByDevice_Clean;
@@ -291,7 +412,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.AssociationByIP-From';
 	END IF; 
     
-	/********************************************* 7. CTS_DataCenter.AssociationByIP *********************************************************/
+	/*************************************** 10. CTS_DataCenter.AssociationByIP ********************************/
     IF (lv_Table = 'CTS_DataCenter.AssociationByIP-From') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.AssociationByIP AS ip WHERE ip.FromCustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByIP_Clean;
@@ -362,7 +483,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.AssociationByManual-From';
 	 END IF;   
      
-    /********************************************* 8. CTS_DataCenter.AssociationByManual *********************************************************/
+    /*************************************** 11. CTS_DataCenter.AssociationByManual ***************************/
     IF (lv_Table = 'CTS_DataCenter.AssociationByManual-From') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.AssociationByManual AS ma WHERE ma.FromCTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByManual_Clean;
@@ -441,8 +562,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.AssociationRemove-From';
 	 END IF;    
      
-    
-    /********************************************* 9. CTS_DataCenter.AssociationRemove *********************************************************/
+    /*************************************** 12. CTS_DataCenter.AssociationRemove ****************************/
     IF (lv_Table = 'CTS_DataCenter.AssociationRemove-From') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.AssociationRemove AS rm WHERE rm.FromCTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp))  THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationRemove_Clean;
@@ -521,7 +641,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.CTSCustomerClassification';
 	 END IF; 
 
-	/********************************************* 10. CTS_DataCenter.CTSCustomerClassification *********************************************************/
+	/*************************************** 13. CTS_DataCenter.CTSCustomerClassification ********************/
     IF (lv_Table = 'CTS_DataCenter.CTSCustomerClassification') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.CTSCustomerClassification AS clss WHERE clss.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomerClassification_Clean;
@@ -564,7 +684,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.CTSCustomerClassification_History';
 	 END IF; 
      
-    /********************************************* 11. CTS_DataCenter.CTSCustomerClassification_History *********************************************************/
+    /*************************************** 14. CTS_DataCenter.CTSCustomerClassification_History ************/
     IF (lv_Table = 'CTS_DataCenter.CTSCustomerClassification_History') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.CTSCustomerClassification_History AS his WHERE his.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomerClassification_History_Clean;
@@ -600,7 +720,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.CTSCustomerClassification_InputDataLog';
 	 END IF; 
      
-    /********************************************* 12. CTS_DataCenter.CTSCustomerClassification_InputDataLog *********************************************************/
+    /*************************************** 15. CTS_DataCenter.CTSCustomerClassification_InputDataLog *******/
     IF (lv_Table = 'CTS_DataCenter.CTSCustomerClassification_InputDataLog') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.CTSCustomerClassification_InputDataLog AS lo WHERE lo.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)) THEN 
 			DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomerClassification_InputDataLog_Clean;
@@ -636,7 +756,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.CustDCSAccount';
 	 END IF; 
     
-    /********************************************* 13. CTS_DataCenter.CustDCSAccount *********************************************************/
+    /*************************************** 16. CTS_DataCenter.CustDCSAccount *******************************/
 	IF (lv_Table = 'CTS_DataCenter.CustDCSAccount') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.CustDCSAccount AS cu WHERE cu.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
 			DELETE cu
@@ -653,7 +773,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.CustEvidence-Leve0';
 	 END IF; 
     
-    /********************************************* 14. CTS_DataCenter.CustEvidence *********************************************************/
+    /*************************************** 17. CTS_DataCenter.CustEvidence *********************************/
 	IF (lv_Table = 'CTS_DataCenter.CustEvidence-Leve0') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.CustEvidence AS ev WHERE ev.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_CustEvidence_Clean;
@@ -724,7 +844,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.CustEvidenceFromFile';
 	 END IF;         
 
-	/********************************************* 15. CTS_DataCenter.CustEvidenceFromFile *********************************************************/
+	/*************************************** 18. CTS_DataCenter.CustEvidenceFromFile *************************/
 	IF (lv_Table = 'CTS_DataCenter.CustEvidenceFromFile') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.CustEvidenceFromFile AS ev WHERE ev.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_CustEvidenceFromFile_Clean;
@@ -760,7 +880,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.CustEvidenceLog';
 	 END IF;     
      
-    /********************************************* 16. CTS_DataCenter.CustEvidenceLog *********************************************************/
+    /*************************************** 19. CTS_DataCenter.CustEvidenceLog ******************************/
 	IF (lv_Table = 'CTS_DataCenter.CustEvidenceLog') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.CustEvidenceLog AS ev WHERE ev.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_CustEvidenceLog_Clean;
@@ -796,7 +916,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.CustEvidenceQueue';
 	 END IF; 
      
-    /********************************************* 17. CTS_DataCenter.CustEvidenceQueue *********************************************************/
+    /*************************************** 20. CTS_DataCenter.CustEvidenceQueue ****************************/
 	IF (lv_Table = 'CTS_DataCenter.CustEvidenceQueue') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.CustEvidenceQueue AS ev WHERE ev.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_CustEvidenceQueue_Clean;
@@ -832,7 +952,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.CustException-From';
 	 END IF;   
 	
-	/********************************************* 18. CTS_DataCenter.CustException *********************************************************/
+	/*************************************** 21. CTS_DataCenter.CustException ********************************/
 	IF (lv_Table = 'CTS_DataCenter.CustException-From') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.CustException AS ex WHERE ex.FromCTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_CustException_Clean;
@@ -910,7 +1030,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.CustRetractEvidence';
 	 END IF; 
      
-    /********************************************* 19. CTS_DataCenter.CustRetractEvidence *********************************************************/
+    /*************************************** 22. CTS_DataCenter.CustRetractEvidence ***************************/
 	IF (lv_Table = 'CTS_DataCenter.CustRetractEvidence' ) THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.CustRetractEvidence  AS ev WHERE ev.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_CustRetractEvidence_Clean;
@@ -951,7 +1071,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.PinCustomerCategory';
 	 END IF; 
      
-	/********************************************* 20. CTS_DataCenter.PinCustomerCategory *********************************************************/
+	/*************************************** 23. CTS_DataCenter.PinCustomerCategory ***************************/
 	IF (lv_Table = 'CTS_DataCenter.PinCustomerCategory') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.PinCustomerCategory AS pin WHERE pin.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_PinCustomerCategory_Clean;
@@ -988,7 +1108,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.ProbationAccountMonitor';
 	 END IF;  
      
-    /********************************************* 21. CTS_DataCenter.ProbationAccountMonitor *********************************************************/
+    /*************************************** 24. CTS_DataCenter.ProbationAccountMonitor ***********************/
 	IF (lv_Table = 'CTS_DataCenter.ProbationAccountMonitor') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.ProbationAccountMonitor AS pro WHERE pro.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp))  THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_ProbationAccountMonitor_Clean;
@@ -1028,7 +1148,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.ProblemCaseMonitor';
 	 END IF;  
      
-    /********************************************* 22. CTS_DataCenter.ProblemCaseMonitor *********************************************************/
+    /*************************************** 25. CTS_DataCenter.ProblemCaseMonitor ****************************/
 	IF (lv_Table = 'CTS_DataCenter.ProblemCaseMonitor') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.ProblemCaseMonitor AS cas WHERE cas.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_ProblemCaseMonitor_Clean;
@@ -1068,7 +1188,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.RobotClassification';
 	 END IF;  
      
-	/********************************************* 23. CTS_DataCenter.RobotClassification *********************************************************/
+	/*************************************** 26. CTS_DataCenter.RobotClassification ***************************/
 	IF (lv_Table = 'CTS_DataCenter.RobotClassification') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.RobotClassification AS ro WHERE ro.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_RobotClassification_Clean;
@@ -1117,7 +1237,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.SmartGroupHistory';
 	 END IF;
 	
-    /********************************************* 24. CTS_DataCenter.SmartGroupHistory *********************************************************/
+    /*************************************** 27. CTS_DataCenter.SmartGroupHistory *****************************/
 	IF (lv_Table = 'CTS_DataCenter.SmartGroupHistory') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.SmartGroupHistory As his WHERE his.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_SmartGroupHistory_Clean;
@@ -1157,7 +1277,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.SpecialCustomerClass';
 	 END IF;
 	
-    /********************************************* 25. CTS_DataCenter.SpecialCustomerClass *********************************************************/
+    /*************************************** 28. CTS_DataCenter.SpecialCustomerClass **************************/
     IF (lv_Table = 'CTS_DataCenter.SpecialCustomerClass') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.SpecialCustomerClass As sp WHERE sp.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_SpecialCustomerClass_Clean;
@@ -1197,7 +1317,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.TaggingExclusion';
 	 END IF;    
      
-    /********************************************* 26. CTS_DataCenter.TaggingExclusion *********************************************************/
+    /*************************************** 29. CTS_DataCenter.TaggingExclusion ******************************/
     IF (lv_Table = 'CTS_DataCenter.TaggingExclusion') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.TaggingExclusion AS tag WHERE tag.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_TaggingExclusion_Clean;
@@ -1233,7 +1353,7 @@ sp: BEGIN
 		SET lv_Table = 'CTS_Archive.CTSCustomerAssociationStatus';
 	 END IF;   
       
-	/********************************************* 27. CTS_Archive.CTSCustomerAssociationStatus *********************************************************/
+	/*************************************** 30. CTS_Archive.CTSCustomerAssociationStatus *********************/
 	IF (lv_Table = 'CTS_Archive.CTSCustomerAssociationStatus') THEN 
 		IF EXISTS (SELECT 1  FROM CTS_Archive.CTSCustomerAssociationStatus AS acc WHERE  acc.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
 			DELETE acc
@@ -1250,7 +1370,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_Archive.AssociationByAI_Arc-From';
     END IF; 
     
-    /********************************************* 28. CTS_Archive.AssociationByAI_Arc *********************************************************/
+    /*************************************** 31. CTS_Archive.AssociationByAI_Arc ******************************/
 	IF (lv_Table = 'CTS_Archive.AssociationByAI_Arc-From') THEN  
 		IF EXISTS (SELECT 1  FROM CTS_Archive.AssociationByAI_Arc AS ai WHERE ai.FromCustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByAI_Clean;
@@ -1321,7 +1441,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_Archive.AssociationByDevice_Arc';
     END IF;
     
-	/********************************************* 29. CTS_Archive.AssociationByDevice_Arc *********************************************************/
+	/*************************************** 32. CTS_Archive.AssociationByDevice_Arc ***************************/
     IF (lv_Table = 'CTS_Archive.AssociationByDevice_Arc') THEN
 		IF EXISTS (SELECT 1  FROM CTS_Archive.AssociationByDevice_Arc AS dv WHERE dv.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByDevice_Clean;
@@ -1357,7 +1477,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_Archive.AssociationByIP_Arc-From';
 	END IF; 
     
-    /********************************************* 30. CTS_Archive.AssociationByIP_Arc *********************************************************/
+    /*************************************** 33. CTS_Archive.AssociationByIP_Arc *******************************/
     IF (lv_Table = 'CTS_Archive.AssociationByIP_Arc-From') THEN
 		IF EXISTS (SELECT 1  FROM CTS_Archive.AssociationByIP_Arc AS ip WHERE ip.FromCustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByIP_Clean;
@@ -1428,7 +1548,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_Archive.AssociationByManual_Arc-From';
 	 END IF;   
 	
-	/********************************************* 31. CTS_DataCenter.AssociationByManual_Arc *********************************************************/
+	/*************************************** 34. CTS_DataCenter.AssociationByManual_Arc ************************/
     IF (lv_Table = 'CTS_Archive.AssociationByManual_Arc-From') THEN
 		IF EXISTS (SELECT 1  FROM CTS_Archive.AssociationByManual_Arc AS ma WHERE ma.FromCTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByManual_Clean;
@@ -1501,7 +1621,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.CTSCustomer';
 	 END IF;    
      
-    /********************************************* 32. CTS_DataCenter.CTSCustomer *********************************************************/
+    /*************************************** 35. CTS_DataCenter.CTSCustomer ************************************/
 	
     DELETE cus
 	FROM CTS_DataCenter.CTSCustomer AS cus
