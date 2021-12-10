@@ -15,6 +15,7 @@ BEGIN
 
 		Revisions:
 			-	20210115@Casey.Huynh: Created [Redmine ID: 148849]
+            -	20211029@Casey.Huynh: Update CTSClassification, CTSClassification_History [Redmine ID: 163899]
 		Param's Explanation (filtered by):
 		
 		Exampele: CALL CTS_DC_CTSCustomer_UpdateSubscriberIDBySiteID ('[{"SubscriberID":898294,"SiteID":43534235,"RoleMapping":1}]');
@@ -58,11 +59,14 @@ BEGIN
     
     CREATE TEMPORARY TABLE TempCTSCustomer
     (
-		CTSCustID	BIGINT UNSIGNED
+			CTSCustID	BIGINT UNSIGNED
+        ,	CustID			INT UNSIGNED
+        ,	CustSubID		INT UNSIGNED
         ,	UserName		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
         ,	RegisterName	VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
-        ,	SubscriberID	INT
+        ,	SubscriberID	INT        
         ,	PRIMARY KEY TempCTSCustomer(CTSCustID)
+        ,	INDEX TempCTSCustomer_CustSubIDCustID(CustSubID,CustID)
     );
       
 	INSERT INTO TempSubSite(SubscriberID, SiteID, RoleMapping)
@@ -82,43 +86,53 @@ BEGIN
 		
         TRUNCATE TABLE TempCTSCustomer;
         
-		INSERT INTO TempCTSCustomer(CTSCustID, RegisterName, SubscriberID, UserName)
-        SELECT 		cus.CTSCustID					
-					,	SUBSTRING(cus.UserName2, LOCATE('$',cus.UserName2) + 1) AS RegisterName
-                    ,	mss.SubscriberID
-                    ,	cus.UserName
-		FROM 		CTS_DataCenter.CTSCustomer AS cus 
-		INNER JOIN	TempSubSite AS mss ON cus.SiteID = mss.SiteID 
-					AND ((mss.RoleMapping = 1 AND cus.RoleID = 1)
-					OR (mss.RoleMapping = 2 AND cus.RoleID > 1)
-					OR (mss.RoleMapping = 0))
-		WHERE 		cus.SubscriberID IS NULL
-					AND cus.SiteID = mss.SiteID
-		LIMIT		lv_size;
+		INSERT INTO TempCTSCustomer(CTSCustID, CustID, CustSubID, RegisterName, SubscriberID, UserName)
+        SELECT 	cus.CTSCustID
+			,	cus.CustID
+            ,	cus.CustSubID
+			,	SUBSTRING(cus.UserName2, LOCATE('$',cus.UserName2) + 1) AS RegisterName
+            ,	mss.SubscriberID
+            ,	cus.UserName
+		FROM CTS_DataCenter.CTSCustomer AS cus 
+			INNER JOIN TempSubSite AS mss ON cus.SiteID = mss.SiteID AND ((mss.RoleMapping = 1 AND cus.RoleID = 1) OR (mss.RoleMapping = 2 AND cus.RoleID > 1) OR (mss.RoleMapping = 0))
+		WHERE cus.SubscriberID IS NULL AND cus.SiteID = mss.SiteID
+		LIMIT lv_size;
         
-        UPDATE		CTS_DataCenter.CTSCustomer AS cus 
-        INNER JOIN	TempCTSCustomer AS tmpCus ON cus.CTSCustID = tmpCus.CTSCustID
-        SET			cus.SubscriberID = tmpCus.SubscriberID
-					,	cus.RegisterName = tmpCus.RegisterName
-					,	cus.ModifiedTime = CURRENT_TIMESTAMP(4);
-        
-        SET lv_PreCTSCustID = (SELECT 1 FROM TempCTSCustomer AS tmpCus LIMIT 1);
+        UPDATE CTS_DataCenter.CTSCustomer AS cus 
+			INNER JOIN TempCTSCustomer AS tmpCus ON cus.CTSCustID = tmpCus.CTSCustID
+        SET		cus.SubscriberID = tmpCus.SubscriberID
+			,	cus.RegisterName = tmpCus.RegisterName
+			,	cus.ModifiedTime = CURRENT_TIMESTAMP(4);
 		
         #=====ReTransform==============================
-		UPDATE		DCS_DataCenter.Account AS acc	
-		INNER JOIN	TempCTSCustomer AS tmpCus
-					ON acc.LoginName = tmpCus.RegisterName
-					AND	acc.SubscriberID = tmpCus.SubscriberID
-		SET			acc.IsCTSTransformed = 0
-		WHERE		acc.IsCTSTransformed = -1;    
+		UPDATE DCS_DataCenter.Account AS acc	
+			INNER JOIN TempCTSCustomer AS tmpCus ON acc.LoginName = tmpCus.RegisterName AND	acc.SubscriberID = tmpCus.SubscriberID
+		SET	acc.IsCTSTransformed = 0
+		WHERE acc.IsCTSTransformed = -1;    
 		
-		UPDATE		DCS_DataCenter.Account AS acc	
-		INNER JOIN	TempCTSCustomer AS tmpCus
-					ON acc.LoginName = tmpCus.UserName
-					AND acc.SubscriberID = tmpCus.SubscriberID
-		SET			acc.IsCTSTransformed = 0
-		WHERE		acc.IsCTSTransformed = -1;    
-  
+		UPDATE DCS_DataCenter.Account AS acc	
+			INNER JOIN TempCTSCustomer AS tmpCus ON acc.LoginName = tmpCus.UserName AND acc.SubscriberID = tmpCus.SubscriberID
+		SET acc.IsCTSTransformed = 0
+		WHERE acc.IsCTSTransformed = -1;    
+		
+        #=====UPDATE CTSCustomerClassification====================
+        UPDATE CTS_DataCenter.CTSCustomerClassification AS cc
+        INNER JOIN TempCTSCustomer AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= cc.CustID
+        SET		cc.CTSCustID = tmpCus.CTSCustID
+			,	cc.SubscriberID = tmpCus.SubscriberID;
+            
+		#=====UPDATE CTSCustomerClassification_History====================
+        UPDATE CTS_DataCenter.CTSCustomerClassification_History AS ch
+        INNER JOIN TempCTSCustomer AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= ch.CustID
+        SET	ch.CTSCustID = tmpCus.CTSCustID;
+		
+        #=====UPDATE ProbationAccountMonitor====================
+        UPDATE CTS_DataCenter.ProbationAccountMonitor AS pa
+        INNER JOIN TempCTSCustomer AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= pa.CustID
+        SET	pa.CTSCustID = tmpCus.CTSCustID;
+        
+        #================================================================        
+        SET lv_PreCTSCustID = (SELECT 1 FROM TempCTSCustomer AS tmpCus LIMIT 1);
     END WHILE;
 END$$
 DELIMITER ;

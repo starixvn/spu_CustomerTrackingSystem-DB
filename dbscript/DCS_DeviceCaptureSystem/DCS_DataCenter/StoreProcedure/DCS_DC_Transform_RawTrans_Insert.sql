@@ -16,8 +16,16 @@ BEGIN
 		Revisions:
 			- 20201006@CaseyHuynh: Move New Server, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_DataCenter" [Redmine ID: #143011]
 			- 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
+            - 20211129@Casey.Huynh: Remove FingerprintMoreInfo Column [Redmine ID: #165167]
 
 		Param's Explanation (filtered by):
+			
+		Example:
+			CALL DCS_DC_Transform_RawTrans_Insert ('
+            [{"Action" : "login","ActionResult" : "login -> successfully","DeviceCode" : "6f6bea6ce7074622bc18a921f8be1e60","FingerprintCode" : "ade5b939c13195aaae06466b6757754413fcdc2a;0423c13edf617398aed953a6fd4e7d24","Flagged" : 2,"InvalidDevice" : null,"IP" : "14.167.17.120","IPId" : 245830008,"LoginName" : "U702202002","PluginID" : null,"SubscriberName" : "MAXBET789Y","TransStatus" : "0","TransTime" : "2021-11-21 00:00:00.0201","URL" : "http://m122.viva88.net:806/FpsHandler","UserAgent" : "Mozilla/5.0 (iPhone; CPU iPhone OS 15_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.1 Mobile/15E148 Safari/604.1"}
+			,{"Action" : "login","ActionResult" : "login -> successfully","DeviceCode" : "a707e6620cce48a4ada3cd3887e5d77f","FingerprintCode" : "f4cf2f4634bfd83191d70c4f1913cc79878cce5f;4c7acb513373c49e797f2f35c6e1f99d","Flagged" : 2,"InvalidDevice" : null,"IP" : "103.199.41.17","IPId" : 1741105425,"LoginName" : "Khanh1973","PluginID" : null,"SubscriberName" : "11BET","TransStatus" : "0","TransTime" : "2021-11-21 00:00:00.2418","URL" : "http://l9j7ma.cx5888.com/FpsHandler","UserAgent" : "Mozilla/5.0 (Linux; Android 11; CPH2113) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Mobile Safari/537.36"}
+			]
+            ');
 
 	*/
 
@@ -28,7 +36,6 @@ BEGIN
 		,	TransTime					TIMESTAMP(4)	 					NOT NULL
 		,	DeviceCode					VARCHAR(32) 						NULL		COMMENT 'Device Inject Code: 32 characters is auto generated'
 		,	FingerprintCode				VARCHAR(620)						NULL		COMMENT 'Device Fingerprint Codes, the hashcode bases on the set attributes'    
-		,	FingerprintMoreInfo			VARCHAR(250)						NULL
 		,	UserAgent					VARCHAR(1000)						NULL
 		,	IP							VARCHAR(50) 						NULL
         ,	IPID						DECIMAL(50,0)						NULL
@@ -41,13 +48,12 @@ BEGIN
 		,	TransStatus					BIT(16)								NULL
     );     
 		
-	INSERT INTO Temp_Transactions(	LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, FingerprintMoreInfo, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus)
+	INSERT INTO Temp_Transactions(	LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
 		,	(CASE WHEN rt.DeviceCode IS NULL THEN NULL ELSE rt.DeviceCode END) AS DeviceCode
 		,	(CASE WHEN rt.FingerprintCode IS NULL OR rt.DeviceCode IS NULL	THEN NULL ELSE rt.FingerprintCode END) AS FingerprintCode
-		,	(CASE WHEN rt.FingerprintMoreInfo IS NULL OR rt.DeviceCode IS NULL THEN NULL ELSE rt.FingerprintMoreInfo END) AS FingerprintMoreInfo
 		,	LEFT((CASE WHEN rt.UserAgent IS NULL THEN NULL ELSE rt.UserAgent END),1000) AS UserAgent
 		,	(CASE WHEN rt.IP IS NULL THEN NULL ELSE rt.IP END) AS IP
 		,	(CASE WHEN rt.IPID = 0 THEN NULL ELSE rt.IPID END) AS IPID
@@ -66,7 +72,6 @@ BEGIN
 							,	TransTime				TIMESTAMP(4) 	PATH "$.TransTime"
 							,	DeviceCode				VARCHAR(32)		PATH "$.DeviceCode"
 							,	FingerprintCode			VARCHAR(620)	PATH "$.FingerprintCode"
-							,	FingerprintMoreInfo		VARCHAR(250)	PATH "$.FingerprintMoreInfo"
 							,	UserAgent				TEXT 			PATH "$.UserAgent"
 							,	IP						VARCHAR(50) 	PATH "$.IP"
                             ,	IPID					DECIMAL(50,0)	PATH "$.IPId"
@@ -80,14 +85,13 @@ BEGIN
 				)
 		   ) AS  rt; 
 	
-	INSERT INTO DCS_DataCenter.RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, FingerprintMoreInfo, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus)
+	INSERT INTO DCS_DataCenter.RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
 		,	DATE(rt.TransTime) AS CreatedDate
 		,	rt.DeviceCode
 		,	rt.FingerprintCode
-		,	rt.FingerprintMoreInfo
 		,	rt.UserAgent
 		,	rt.IP
         ,	rt.IPID

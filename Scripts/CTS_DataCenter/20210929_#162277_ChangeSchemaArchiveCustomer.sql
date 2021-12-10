@@ -1,0 +1,88 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
+/*
+    Creator: 	20210929@Aries.Nguyen
+    Task:	 	Schema for Archive Customer
+    DBName:		CTS_DataCenter
+*/
+
+USE CTS_DataCenter;
+ALTER TABLE ArchiveCustomer_CTSCustomer 
+		DROP PRIMARY KEY
+    ,	ADD COLUMN ID  BIGINT UNSIGNED AUTO_INCREMENT FIRST
+    ,	ADD PRIMARY KEY (ID, ArchivedDate)
+	,	ADD COLUMN AccountID BIGINT UNSIGNED AFTER CTSCustID
+    , 	ALGORITHM=INPLACE, LOCK=SHARED;
+
+ALTER TABLE ArchiveCustomer_CTSCustomer     
+PARTITION BY RANGE (extract(year_month from `ArchivedDate`))
+(
+ PARTITION pm202004 VALUES LESS THAN (202005) ENGINE = InnoDB,
+ PARTITION pm202005 VALUES LESS THAN (202006) ENGINE = InnoDB,
+ PARTITION pm202006 VALUES LESS THAN (202007) ENGINE = InnoDB,
+ PARTITION pm202007 VALUES LESS THAN (202008) ENGINE = InnoDB,
+ PARTITION pm202008 VALUES LESS THAN (202009) ENGINE = InnoDB,
+ PARTITION pm202009 VALUES LESS THAN (202010) ENGINE = InnoDB,
+ PARTITION pm202010 VALUES LESS THAN (202011) ENGINE = InnoDB,
+ PARTITION pm202011 VALUES LESS THAN (202012) ENGINE = InnoDB,
+ PARTITION pm202012 VALUES LESS THAN (202101) ENGINE = InnoDB,
+ PARTITION pm202101 VALUES LESS THAN (202102) ENGINE = InnoDB,
+ PARTITION pm202102 VALUES LESS THAN (202103) ENGINE = InnoDB,
+ PARTITION pm202103 VALUES LESS THAN (202104) ENGINE = InnoDB,
+ PARTITION pm202104 VALUES LESS THAN (202105) ENGINE = InnoDB,
+ PARTITION pm202105 VALUES LESS THAN (202106) ENGINE = InnoDB,
+ PARTITION pm202106 VALUES LESS THAN (202107) ENGINE = InnoDB,
+ PARTITION pm202107 VALUES LESS THAN (202108) ENGINE = InnoDB,
+ PARTITION pm202108 VALUES LESS THAN (202109) ENGINE = InnoDB,
+ PARTITION pm202109 VALUES LESS THAN (202110) ENGINE = InnoDB,
+ PARTITION pm202110 VALUES LESS THAN (202111) ENGINE = InnoDB,
+ PARTITION pm202111 VALUES LESS THAN (202112) ENGINE = InnoDB,
+ PARTITION pm202112 VALUES LESS THAN (202201) ENGINE = InnoDB,
+ PARTITION pm202201 VALUES LESS THAN (202202) ENGINE = InnoDB,
+ PARTITION pm202202 VALUES LESS THAN (202203) ENGINE = InnoDB,
+ PARTITION pm202203 VALUES LESS THAN (202204) ENGINE = InnoDB,
+ PARTITION pm202204 VALUES LESS THAN (202205) ENGINE = InnoDB,
+ PARTITION pm202205 VALUES LESS THAN (202206) ENGINE = InnoDB,
+ PARTITION pm202206 VALUES LESS THAN (202207) ENGINE = InnoDB,
+ PARTITION pm202207 VALUES LESS THAN (202208) ENGINE = InnoDB,
+ PARTITION pm202208 VALUES LESS THAN (202209) ENGINE = InnoDB,
+ PARTITION pm202209 VALUES LESS THAN (202210) ENGINE = InnoDB,
+ PARTITION pm202210 VALUES LESS THAN (202211) ENGINE = InnoDB,
+ PARTITION pm202211 VALUES LESS THAN (202212) ENGINE = InnoDB,
+ PARTITION pm999999 VALUES LESS THAN MAXVALUE ENGINE = InnoDB) ;
+
+ INSERT INTO CTS_DataCenter.SystemParameter(ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
+VALUES(43, 'ArchiveCustomer_BatchSize', 'Archive Customer Batch Size', 'BIGINT UNSIGNED', '50');
+
+INSERT INTO CTS_DataCenter.SystemParameter(ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
+VALUES(44, 'ArchiveCustomer_CleanTable_BatchSize', 'Archive Customer Clean Table Batch Size', 'BIGINT UNSIGNED', '500');
+
+INSERT INTO CTS_DataCenter.SystemParameter(ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
+VALUES(45, 'ArchiveCustomer_LastArchiveID', 'Archive Customer Last Archive ID', 'BIGINT UNSIGNED', '0');
+
+INSERT INTO CTS_DataCenter.SystemParameter(ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
+VALUES(46, 'ArchiveCustomer_CurrentCleanTable', 'Archive Customer Current Cleaning Tablee', 'VARCHAR', 'DCS_DataCenter.Association');
+
+INSERT INTO CTS_DataCenter.SystemEventStatus (EventName, `Status`) 
+VALUES ('EV_CTS_DataCenter_ArchiveCustomer', 'Stop');
+
+
+
+delimiter |
+CREATE EVENT EV_CTS_DataCenter_ArchiveCustomer
+    ON SCHEDULE
+      EVERY 30 SECOND
+    DO
+BEGIN
+	IF EXISTS(SELECT 1 FROM CTS_DataCenter.SystemEventStatus WHERE EventName = 'EV_CTS_DataCenter_ArchiveCustomer' AND Status = 'Stop') THEN
+ 				UPDATE CTS_DataCenter.SystemEventStatus 
+ 				SET Status = 'Start' 
+ 				WHERE EventName = 'EV_CTS_DataCenter_ArchiveCustomer';
+ 
+ 				CAll CTS_DataCenter.CTS_DC_ArchiveCustomer_Clean(); 
+ 
+ 				UPDATE CTS_DataCenter.SystemEventStatus 
+ 				SET Status = 'Stop' 
+ 				WHERE EventName = 'EV_CTS_DataCenter_ArchiveCustomer';
+ 	END IF;
+END |
+delimiter ;

@@ -34,7 +34,7 @@ BEGIN
 				- 20210804@Irena.Vo: Fix issue no view History log [Redmine ID: #159706]
 				- 20210729@Long.Luu: Add up TW's new categories. Fix get duplicated Fail probation log [Redmine ID: 155956]
 				- 20210920@Aries.Nguyen: Split history log  [Redmine ID: #161890]
-
+				- 20211122@Irena.Vo: Process Licensee info by site [Redmine ID: #161665]
 		Param's Explanation (filtered by):
         Example:
 				- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount('[{"CustId": "43600693","CategoryId":"1000","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","TaggingID":10,"TaggingType":1}]',@or);
@@ -97,16 +97,16 @@ BEGIN
 		,	SourceTypeID      		SMALLINT
 		,	IsDataChanged			BIT DEFAULT 1 /*0: No change category => No Action*/
         ,	TargetCC				SMALLINT
-		,	TargetDangerLevel1		SMALLINT
+		,	TargetDangerLevel		SMALLINT
 		, 	ActionType				SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN; 5: Not satisfy Pass Probation*/
 		, 	INDEX    			    IX_Temp_NewClassification(CustID, DWCateGroup)  
 	); 
     
-	DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;    
-	CREATE TEMPORARY TABLE Temp_CustInfo(	  	
+	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedCustomers;    
+	CREATE TEMPORARY TABLE Temp_ExistedCustomers(	  	
 			CustID					BIGINT UNSIGNED PRIMARY KEY
-        , 	CTSCustID				BIGINT DEFAULT 0   
-        , 	SubscriberID			INT DEFAULT 0        
+        , 	CTSCustID				BIGINT
+        , 	SubscriberID			INT     
         ,	IsLicensee				BIT      
 	); 
     
@@ -165,18 +165,20 @@ BEGIN
     CALL CTS_DC_ExcludeCustByCondition('Temp_NewClassification');
     
     /* 3: GENERATE CUSTOMERS' INFO */
-    INSERT IGNORE INTO Temp_CustInfo(CustID, CTSCustID, SubscriberID, IsLicensee)
-    SELECT 	DISTINCT temp.CustID, cust.CTSCustID, cust.SubscriberID
-		, 	CASE WHEN map.SubscriberGroupID = 2 THEN 1 /*Licensee*/ ELSE 0 /*Credit/CN88*/ END AS IsLicensee
+    INSERT IGNORE INTO Temp_ExistedCustomers(CustID, CTSCustID, SubscriberID, IsLicensee)
+    SELECT 	DISTINCT cust.CustID
+		, 	cust.CTSCustID
+        , 	cust.SubscriberID
+		, 	CASE WHEN mss.SubscriberGroupID = 2 THEN 1 ELSE 0 END AS IsLicensee
     FROM Temp_NewClassification AS temp 
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.CustSubID = 0
-        INNER JOIN CTS_DataCenter.MappingSubscriberSite AS map ON map.SubscriberID = cust.SubscriberID;
+        INNER JOIN CTS_DataCenter.MappingSubscriberSite AS mss ON mss.SiteID = cust.SiteID;
         
     UPDATE Temp_NewClassification AS temp 
-		INNER JOIN Temp_CustInfo AS cust ON temp.CustID = cust.CustID
-	SET		temp.CTSCustID = cust.CTSCustID
-		, 	temp.SubscriberID = cust.SubscriberID
-        ,	temp.IsLicensee = cust.IsLicensee;
+		INNER JOIN Temp_ExistedCustomers AS ec ON temp.CustID = ec.CustID
+	SET		temp.CTSCustID = ec.CTSCustID
+		, 	temp.SubscriberID = ec.SubscriberID
+        ,	temp.IsLicensee = ec.IsLicensee;
     
     /*4: GET PROBATION CUSTOMERS */
     INSERT IGNORE INTO Temp_ProbationCustomers(CustID, ScanDate)
@@ -285,10 +287,10 @@ BEGIN
 	SET 	temp.TargetCC = IFNULL(sp.CustomerClass,n.CustomerClass)
 	WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);
    
-    /* 10: GENERATE TARGET DANGER LEVEL 1 */
+    /* 10: GENERATE TARGET DANGER LEVEL */
     UPDATE Temp_NewClassification AS temp 
 		INNER JOIN CTS_DataCenter.CategoryToDangerLevel AS d ON d.CategoryID = temp.NewCateID AND d.IsLicensee = temp.IsLicensee AND d.TypeID = 1
-    SET 	temp.TargetDangerLevel1 = d.DangerLevel
+    SET 	temp.TargetDangerLevel = d.DangerLevel
     WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);
     
     /* 11: UPDATE CTS CLASSIFICATION */
@@ -367,7 +369,7 @@ BEGIN
 				, 	temp.DWCateID
 				,   temp.IsDataChanged
 				,	temp.TaggingType
-				,	temp.TargetDangerLevel1
+				,	temp.TargetDangerLevel AS TargetDangerLevel1
 	FROM 	Temp_NewClassification AS temp
 	WHERE temp.IsDataChanged  = 1;
 	
@@ -398,7 +400,7 @@ BEGIN
 				, 	temp.DWCateID
 				,   temp.IsDataChanged
 				,	temp.TaggingType
-				,	temp.TargetDangerLevel1
+				,	temp.TargetDangerLevel AS TargetDangerLevel1
 	FROM 	Temp_NewClassification AS temp;
     
 	/* 17: RETURN UPDATED CUSTOMERS TO SERVICE FOR FUTHER STEPS */

@@ -7,7 +7,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_GetEvidencesByLevel
 )
     SQL SECURITY INVOKER
 BEGIN
-
+ 
 	/*
 		Created:	20210301@Harvey.Nguyen
 		Task:		Get all evidences by Custs for level 2 [Redmine ID: 150456]
@@ -20,6 +20,8 @@ BEGIN
            - 20210427@Aries.Nguyen: Enhance performance [Redmine ID: #152509] 
 		   - 20210622@Aries.Nguyen: Update coding convention and improve locking[Redmine ID: #157203]
 		   - 20210915@Aries.Nguyen: Remove DeviceAssociationDay table [Redmine ID: #160470]
+		   - 20211014@Aries.Nguyen: Remove association unlink[Redmine ID: #163093]
+		   - 20211021@Aries.Nguyen: Return only evidence infor[Redmine ID: #163514]
            
 		Param's Explanation (filtered by):	
 		
@@ -36,12 +38,6 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustID;
     CREATE TEMPORARY TABLE Temp_CustID( 
 		CustID          BIGINT UNSIGNED PRIMARY KEY
-	);
-
-	DROP TEMPORARY TABLE IF EXISTS Temp_CustID_Lv2;
-    CREATE TEMPORARY TABLE Temp_CustID_Lv2(
-		 	CTSCustID		BIGINT UNSIGNED  
-		,	CustID          BIGINT UNSIGNED
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Root_Device;
@@ -92,20 +88,10 @@ BEGIN
         ,	INDEX IX_Temp_Association_Level2(Level2)
 	);
     
-    DROP TEMPORARY TABLE IF EXISTS   Temp_Level2;
-    CREATE TEMPORARY TABLE Temp_Level2 (
-			CustID		BIGINT UNSIGNED
-		,	Level2		BIGINT UNSIGNED
-        ,	PRIMARY KEY(Level2)
-	);
-    
-    DROP TEMPORARY TABLE IF EXISTS   Temp_Level2_Evidence;
-    CREATE TEMPORARY TABLE Temp_Level2_Evidence (
-			CustID		BIGINT UNSIGNED
-		,	Level2		BIGINT UNSIGNED
-		,	EvidenceID	INT
-        ,	CreatedDate	DATETIME
-        ,	PRIMARY KEY(Level2, EvidenceID)
+    DROP TEMPORARY TABLE IF EXISTS Temp_Unlink;    
+	CREATE TEMPORARY TABLE Temp_Unlink(	  
+			CTSCustID       BIGINT UNSIGNED
+        ,	AssCTSCustID 	BIGINT UNSIGNED 
 	);
     
     SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_CustID (CustID) VALUES ('", REPLACE(ip_CustIDs, ",", "'),('"),"');");
@@ -117,6 +103,18 @@ BEGIN
 		,	temp.CustID
 	FROM Temp_CustID AS temp
 		INNER JOIN  CTS_DataCenter.CTSCustomer AS tcust ON tcust.CustID = temp.CustID AND tcust.CustSubID = 0;
+    
+    INSERT INTO Temp_Unlink(CTSCustID, AssCTSCustID)
+    SELECT 	tmp.CTSCustID
+		,	rm.ToCTSCustID
+    FROM  Temp_Root_Customer AS tmp 
+		INNER JOIN CTS_DataCenter.AssociationRemove AS rm ON rm.FromCTSCustID = tmp.CTSCustID;
+	
+    INSERT INTO Temp_Unlink(CTSCustID, AssCTSCustID)
+    SELECT 	tmp.CTSCustID
+		,	rm.FromCTSCustID
+    FROM  Temp_Root_Customer AS tmp 
+		INNER JOIN CTS_DataCenter.AssociationRemove AS rm ON rm.ToCTSCustID = tmp.CTSCustID;
     
 	# Get root device has association
 	INSERT INTO Temp_Root_Device(CustID,CTSCustID,DCSDeviceID)
@@ -134,6 +132,13 @@ BEGIN
 	FROM Temp_Root_Device AS dv
 		INNER JOIN CTS_DataCenter.AssociationByDevice AS lv1 ON dv.DCSDeviceID =  lv1.DCSDeviceID AND dv.CTSCustID != lv1.CTSCustID;
 	
+    DELETE ass
+    FROM Temp_Association_Level1 AS ass
+    WHERE EXISTS (SELECT 1 
+				  FROM Temp_Unlink AS rm 
+                  WHERE rm.CTSCustID = ass.CTSCustID 
+					AND rm.AssCTSCustID = ass.Level1);
+    
     INSERT IGNORE INTO Temp_Root_Device_Level1(CustID, CTSCustID, DeviceLevel1)
 	SELECT  lv1.CustID
 		,	lv1.CTSCustID
@@ -160,37 +165,19 @@ BEGIN
 		INNER JOIN Temp_Device_Level1_Cust AS lv2 ON roDv.DeviceLevel1 =  lv2.DeviceLevel1
 	WHERE NOT EXISTS (SELECT 1 FROM Temp_Association_Level1 AS lv1 WHERE lv1.CTSCustID = roDv.CTSCustID and  lv1.Level1 = lv2.Level2);
     
-    INSERT INTO Temp_Level2(Level2)
-    SELECT DISTINCT Level2
-    FROM Temp_Association_Level2;
+    DELETE ass
+    FROM Temp_Association_Level2 AS ass
+    WHERE EXISTS (SELECT 1 
+				  FROM Temp_Unlink AS rm 
+                  WHERE rm.CTSCustID = ass.CTSCustID 
+					AND rm.AssCTSCustID = ass.Level2);
     
-	INSERT INTO Temp_CustID_Lv2(CTSCustID, CustID)
-	SELECT  lv2.Level2
-		,	cust.CustID
-	FROM Temp_Level2 AS lv2
-		INNER JOIN CTS_DataCenter.CTSCustomer cust ON cust.CTSCustID = lv2.Level2;
-
-
-    UPDATE Temp_Level2 AS lv2
-    INNER JOIN Temp_CustID_Lv2 AS cust ON cust.CTSCustID = lv2.Level2
-    SET lv2.CustID = cust.CustID;
-    
-    INSERT INTO Temp_Level2_Evidence(CustID, Level2, EvidenceID, CreatedDate)
-    SELECT 	lv2.CustID
-		,	lv2.Level2
-		,	ev.EvidenceID
-        ,	ev.CreatedDate
-    FROM Temp_Level2 AS lv2 
-		INNER JOIN CTS_DataCenter.CustEvidence AS ev FORCE INDEX (IX_CustEvidence_Level_CTSCustID) ON ev.CTSCustID = lv2.Level2 AND Level = 0;
-    
-    SELECT  ev.CustID		AS CustId
-		,	e.EvidenceCode	AS EvidenceCode
-		,	e.EvidenceName	AS EvidenceName
-		,	lv2.CustID 		AS Level0CustId
-		,	ev.CreatedDate	AS CreatedDate
+    SELECT  DISTINCT
+			e.EvidenceCode	AS EvidenceCode
 		,	2				AS AssociatedLevel
+		,	lv2.CustID 		AS Level0CustId
     FROM Temp_Association_Level2 AS lv2
-		INNER JOIN Temp_Level2_Evidence AS ev ON lv2.Level2 = ev.Level2
+		INNER JOIN CTS_DataCenter.CustEvidence AS ev FORCE INDEX (IX_CustEvidence_Level_CTSCustID) ON ev.CTSCustID = lv2.Level2 AND Level = 0
         INNER JOIN Evidence AS e ON ev.EvidenceID = e.EvidenceID;
         
 	DROP TEMPORARY TABLE IF EXISTS Temp_Root_Customer;
@@ -200,8 +187,6 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Device_Level1_Cust;
     DROP TEMPORARY TABLE IF EXISTS Temp_Association_Level1;
     DROP TEMPORARY TABLE IF EXISTS Temp_Association_Level2;
-    DROP TEMPORARY TABLE IF EXISTS Temp_Level2;
-    DROP TEMPORARY TABLE IF EXISTS Temp_Level2_Evidence;
         
 END$$
 

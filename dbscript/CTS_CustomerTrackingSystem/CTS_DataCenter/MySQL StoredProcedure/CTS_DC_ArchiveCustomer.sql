@@ -3,10 +3,10 @@ DROP PROCEDURE IF EXISTS `CTS_DC_ArchiveCustomer`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_ArchiveCustomer`(
-		IN ip_CustomerList JSON
-	,	IN ip_CustType TINYINT
+		IN ip_CustomerList  JSON
+	,	IN ip_CustType      TINYINT
 )
-	SQL SECURITY INVOKER
+    SQL SECURITY INVOKER
 sp: BEGIN
 	/*
 		Created:	20210804@Casey.Huynh
@@ -15,45 +15,40 @@ sp: BEGIN
 		Original:
 
 		Revisions:
-			- 	20210804@Casey.Huynh: Created [Redmine ID: 152883]
-			-	20210719@Casey.Huynh: Fix Issue Rule Trans.StepTime and AssGroup [Redmine ID: 158946]
+			- 	20210804@Casey.Huynh: Created [Redmine ID: #152883]
+			-	20210719@Casey.Huynh: Fix Issue Rule Trans.StepTime and AssGroup [Redmine ID: #158946]
+            -	20210929@Aries.Nguyen: Enhance performance [Redmine ID: #162277]
             
 		Param's Explanation (filtered by):	
 
 		Example:
-			CALL  CTS_DC_ArchiveCustomer(ip_TempGroupID);
 			
 	*/
-    DECLARE lv_MaxArchiveTime DATETIME(3);
-    DECLARE lv_MaxCustID INT UNSIGNED;
-    DECLARE lv_MinArchiveDate DATETIME(3);
+    DECLARE lv_MaxArchiveTime 	DATETIME(3);
+    DECLARE lv_MaxCustID 		INT UNSIGNED;
+    DECLARE lv_MinArchiveDate 	DATETIME(3);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_InputCustomer;
-    CREATE TEMPORARY TABLE Temp_InputCustomer
-    (
-			CustID	INT UNSIGNED
+    CREATE TEMPORARY TABLE Temp_InputCustomer(
+			CustID			INT UNSIGNED
         ,	ArchivedDate	DATETIME(3)
-        
-        ,	PRIMARY KEY Temp_InputCustomer(CustID)
-        ,	INDEX  IX_Temp_InputCustomer(ArchivedDate)
     );
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ArchiveCustDCSAccount;
     CREATE TEMPORARY TABLE Temp_ArchiveCustDCSAccount(		
 			AccountID BIGINT UNSIGNED
         ,	CTSCustID BIGINT UNSIGNED
-        ,	ArchivedDate	DATETIME(3)	
-        ,	PRIMARY KEY PK_Temp_ArchiveCustDCSAccount_AccountID(AccountID, ArchivedDate)
     ); 
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ArchiveCTSCustomer;
     CREATE TEMPORARY TABLE Temp_ArchiveCTSCustomer(		
         	ArchivedDate	DATETIME(3)
-		,	CTSCustID	BIGINT UNSIGNED
-		, 	CustID	INT UNSIGNED
-        ,	CustSubID	BIGINT UNSIGNED
-        ,	UserName	VARCHAR(50)
-        ,	UserName2	VARCHAR(50)
+		,	CTSCustID		BIGINT UNSIGNED
+		, 	CustID			BIGINT UNSIGNED
+        , 	AccountID		BIGINT UNSIGNED
+        ,	CustSubID		BIGINT UNSIGNED
+        ,	UserName		VARCHAR(50)
+        ,	UserName2		VARCHAR(50)
         ,	SubscriberID	INT
         ,	RoleID			TINYINT
         
@@ -67,7 +62,7 @@ sp: BEGIN
 			,	ArchivedDate
 	FROM JSON_TABLE(ip_CustomerList,
 		 "$[*]" COLUMNS(
-						CustID				INT	 UNSIGNED		PATH "$.CustID" 
+						CustID			INT	 UNSIGNED		PATH "$.CustID" 
 					,	ArchivedDate	DATETIME(3)			PATH "$.ArchivedDate"
 				)
 	) AS js;
@@ -84,192 +79,29 @@ sp: BEGIN
     FROM Temp_InputCustomer AS tmpCus
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID;
         
-    INSERT IGNORE INTO Temp_ArchiveCustDCSAccount(AccountID, CTSCustID, ArchivedDate)
-    SELECT 	cda.AccountID
-        ,	tmpCus.CTSCustID		
-        ,	tmpCus.ArchivedDate
-	FROM	 Temp_ArchiveCTSCustomer AS tmpCus
-    INNER JOIN CTS_DataCenter.CustDCSAccount AS cda ON tmpCus.CTSCustID = cda.CTSCustID;
+    INSERT IGNORE INTO Temp_ArchiveCustDCSAccount(AccountID, CTSCustID)
+    SELECT 	ac.AccountID
+        ,	cus.CTSCustID		
+	FROM	Temp_ArchiveCTSCustomer AS cus
+		INNER JOIN CTS_DataCenter.CustDCSAccount AS ac ON cus.CTSCustID = ac.CTSCustID;
    
+   UPDATE Temp_ArchiveCTSCustomer AS cust
+   INNER JOIN Temp_ArchiveCustDCSAccount AS ac ON ac.CTSCustID = cust.CTSCustID
+   SET cust.AccountID =  ac.AccountID;
    
-    /***********************BACKUP ARCHIVE DATA*************************************************************/
-    INSERT IGNORE INTO CTS_DataCenter.ArchiveCustomer_CTSCustomer(ArchivedDate, CTSCustID, SubscriberID, CustID, CustSubID, UserName, UserName2, RoleID, InsertTime)
-    SELECT	tmpCus.ArchivedDate
-		,	tmpCus.CTSCustID
-        ,	tmpCus.SubscriberID
-        ,	tmpCus.CustID
-        ,	tmpCus.CustSubID
-        ,	tmpCus.UserName
-        ,	tmpCus.UserName2
-        ,	tmpCus.RoleID
+    INSERT IGNORE INTO CTS_DataCenter.ArchiveCustomer_CTSCustomer(ArchivedDate, CTSCustID, AccountID, SubscriberID, CustID, CustSubID, UserName, UserName2, RoleID, InsertTime)
+    SELECT	cus.ArchivedDate
+		,	cus.CTSCustID
+        ,	cus.AccountID
+        ,	cus.SubscriberID
+        ,	cus.CustID
+        ,	cus.CustSubID
+        ,	cus.UserName
+        ,	cus.UserName2
+        ,	cus.RoleID
         ,	CURRENT_TIMESTAMP(3)
-    FROM Temp_ArchiveCTSCustomer AS tmpCus;
+    FROM Temp_ArchiveCTSCustomer AS cus;
 	
-    /**********************DELETE DCS DATA *********************************************************/
-    /***********************************************************************************************/
-    #=============1.==================================================================================
-	DELETE del
-    FROM DCS_DataCenter.Association AS del
-		INNER JOIN Temp_ArchiveCustDCSAccount AS tmpAcc ON del.AccountID = tmpAcc.AccountID;
-    
-    #=============2.==================================================================================
-    DELETE del
-    FROM DCS_DataCenter.Account AS del
-		INNER JOIN Temp_ArchiveCustDCSAccount AS tmpAcc ON del.AccountID = tmpAcc.AccountID;
-    
-	/**********************DELETE CTS DATA *********************************************************/
-    #==============1.=================================================================================
-    DELETE del
-	FROM CTS_DataCenter.AssociatedAccountMonitor AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.CTSCustID = tmpCus.CTSCustID;
-    
-    #==============2.=================================================================================
-    DELETE del
-	FROM CTS_DataCenter.AssociatedAccountNotification AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.CTSCustID = tmpCus.CTSCustID;
-    
-    #===============4.================================================================================
-    DELETE del
-	FROM CTS_DataCenter.AssociationByAI AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.FromCustID = tmpCus.CustID;
-    
-    DELETE del
-	FROM CTS_DataCenter.AssociationByAI AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.ToCustID = tmpCus.CustID;
-    
-    #===============5.================================================================================    
-    DELETE del
-	FROM CTS_DataCenter.AssociationByDevice AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.CTSCustID = tmpCus.CTSCustID;
-    
-	#===============7.================================================================================
-    DELETE del
-	FROM CTS_DataCenter.AssociationByIP AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.FromCustID = tmpCus.CustID;
-    
-    DELETE del
-	FROM CTS_DataCenter.AssociationByIP AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.ToCustID = tmpCus.CustID;
-    
-    #===============8.================================================================================
-    DELETE del
-	FROM CTS_DataCenter.AssociationByManual AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.FromCTSCustID = tmpCus.CTSCustID;
-    
-    DELETE del
-	FROM CTS_DataCenter.AssociationByManual AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.ToCTSCustID = tmpCus.CTSCustID;    
-    
-    #===============9.================================================================================
-    DELETE del
-	FROM CTS_DataCenter.AssociationRemove AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.FromCTSCustID = tmpCus.CTSCustID;
-    
-    DELETE del
-	FROM CTS_DataCenter.AssociationRemove AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.ToCTSCustID = tmpCus.CTSCustID;
-        
-	#===============10.================================================================================
-	DELETE del
-	FROM CTS_DataCenter.CTSCustomerClassification AS del
-		INNER JOIN Temp_ArchiveCTSCustomer AS tmpCus ON  del.CustID = tmpCus.CustID; 
-    
-    #===============11.================================================================================
-	DELETE del
-	FROM CTS_DataCenter.CTSCustomerClassification_History AS del
-		INNER JOIN Temp_ArchiveCTSCustomer AS tmpCus ON del.CustID = tmpCus.CustID; 
-    
-    #===============12.================================================================================
-	DELETE 	del
-	FROM CTS_DataCenter.CTSCustomerClassification_InputDataLog AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.CustID = tmpCus.CustID; 
-    
-    #===============13.================================================================================
-	DELETE 	del
-	FROM CTS_DataCenter.CustDCSAccount AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.CTSCustID = tmpCus.CTSCustID; 
-    
-    #===============14.================================================================================
-	DELETE 	del
-	FROM CTS_DataCenter.CustEvidence AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.CTSCustID = tmpCus.CTSCustID; 
-    
-    DELETE 	del
-	FROM CTS_DataCenter.CustEvidence AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.FromCustID = tmpCus.CTSCustID;      
-    
-	#===============15.================================================================================
-	DELETE 	del
-	FROM CTS_DataCenter.CustEvidenceFromFile AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.CTSCustID = tmpCus.CTSCustID; 
-	
-    #===============16.================================================================================
-	DELETE 	del
-	FROM CTS_DataCenter.CustEvidenceLog AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.CTSCustID = tmpCus.CTSCustID; 
-    
-    #===============17.================================================================================
-	DELETE 	del
-	FROM CTS_DataCenter.CustEvidenceQueue AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.CTSCustID = tmpCus.CTSCustID; 
-        
-	#===============18.================================================================================
-	DELETE 	del
-	FROM CTS_DataCenter.CustException AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.FromCTSCustID = tmpCus.CTSCustID; 
-        
-	DELETE 	del
-	FROM CTS_DataCenter.CustException AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.ToCTSCustID = tmpCus.CTSCustID; 
-    
-    #===============19.===============================================================================
-	DELETE 	del
-	FROM CTS_DataCenter.CustRetractEvidence AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.CTSCustID = tmpCus.CTSCustID; 
-    
-	#===============21.================================================================================
-	DELETE 	del
-	FROM CTS_DataCenter.PinCustomerCategory AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.CTSCustID = tmpCus.CTSCustID; 
-    
-    #===============22.================================================================================
-	DELETE 	del
-	FROM CTS_DataCenter.ProbationAccountMonitor AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.CustID = tmpCus.CustID; 
-    
-     #===============23.================================================================================
-	DELETE 	del
-	FROM CTS_DataCenter.ProblemCaseMonitor AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.CustID = tmpCus.CustID; 
-    
-	#===============24.================================================================================
-	DELETE 	del
-	FROM CTS_DataCenter.RobotClassification AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.CustID = tmpCus.CustID;     
-    
-    #===============25.================================================================================
-	DELETE 	del
-	FROM CTS_DataCenter.SmartGroupHistory AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.CustID = tmpCus.CustID; 
-
-    #===============25.================================================================================
-	DELETE 	del
-	FROM CTS_DataCenter.SpecialCustomerClass AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.CTSCustID = tmpCus.CTSCustID;     
-    
-    #===============26.================================================================================
-	DELETE 	del
-	FROM CTS_DataCenter.TaggingExclusion AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.CTSCustID = tmpCus.CTSCustID;   
-        
-	#===============27.================================================================================
-	DELETE 	del
-	FROM CTS_DataCenter.CTSCustomer AS del
-		INNER JOIN	Temp_ArchiveCTSCustomer AS tmpCus ON del.CTSCustID = tmpCus.CTSCustID;  
-    
-    /********UPDATE SYSTEM PARAMETER*****************************************/
-    /************************************************************************/
-
     IF EXISTS(SELECT 1 FROM  Temp_InputCustomer)
     THEN
 		SELECT MAX(ArchivedDate) 

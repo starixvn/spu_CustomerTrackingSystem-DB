@@ -3,9 +3,11 @@ DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Details_GetScore`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Details_GetScore`(
-	IN ip_EventDate		DATE,
-    IN ip_MatchID 		BIGINT UNSIGNED,
-    IN ip_BettypeID		INT UNSIGNED
+		IN ip_EventDate		DATE
+    ,	IN ip_MatchID 		BIGINT UNSIGNED
+    ,	IN ip_BettypeID		INT UNSIGNED
+	,	IN ip_LiveIndicator BOOLEAN
+	,	IN ip_IsHedging		BOOLEAN
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -30,7 +32,9 @@ BEGIN
 	FROM   CTS_DataCenter.MatchMonitorDetails AS s
 	WHERE  s.EventDate = ip_EventDate
 		AND s.BettypeID = ip_BettypeID
-        AND s.MatchID = ip_MatchID;
+        AND s.MatchID = ip_MatchID
+        AND s.LiveIndicator = ip_LiveIndicator
+        AND s.IsHedging = ip_IsHedging;
     
 END$$
 DELIMITER ;
