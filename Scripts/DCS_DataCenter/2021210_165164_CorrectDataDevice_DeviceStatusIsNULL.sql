@@ -55,17 +55,17 @@ FROM DCS_DataCenter.DeviceFingerprint AS del
 	INNER JOIN CTS_Adhoc.AH_CheckConsistent_DeviceFingerprint AS dv ON del.DeviceFingerprintID = dv.DeviceFingerprintID;
     
 DELETE del
-FROM DCS_DataCenter.DCS_DeviceCode AS del
+FROM DCS_DataCenter.DeviceCode AS del
 	INNER JOIN CTS_Adhoc.AH_CheckConsistent_DeviceCode AS dv ON del.DeviceCodeID = dv.DeviceCodeID;
     
 DELETE del
 FROM DCS_DataCenter.Association AS del
-	INNER JOIN CTS_Adhoc.AH_CheckConsistent_DeviceCode AS dv ON del.AssociationID = dv.AssociationID;
+	INNER JOIN CTS_Adhoc.AH_CheckConsistent_Association_MissDevice AS dv ON del.AssociationID = dv.AssociationID;
 
 #============CTS_DataCenter===================== 
 USE CTS_DataCenter;
 DELETE del
 FROM CTS_DataCenter.AssociationByDevice AS del
-	INNER JOIN CTS_Adhoc.AH_CheckConsistent_CTS_AssociationByDevice AS dv ON del.DeviceID = dv.DeviceID;
+	INNER JOIN CTS_Adhoc.AH_CheckConsistent_AssociationByDevice_MissDevice AS dv ON del.CTSAssDevID = dv.CTSAssDevID;
     
 
