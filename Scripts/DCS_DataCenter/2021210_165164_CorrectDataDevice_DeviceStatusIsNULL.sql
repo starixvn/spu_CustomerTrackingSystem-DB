@@ -27,15 +27,16 @@ CALL AH_CheckConsistent_CTS_AssociationByDevice(10000);
 #====GET Customer Classification ========================================================
 DROP TABLE IF EXISTS CTS_Adhoc.AH_CheckConsistent_TaggingByAssociationWithPA;
 CREATE TABLE CTS_Adhoc.AH_CheckConsistent_TaggingByAssociationWithPA(
-	CTSCustID BIGINT UNSIGNED PRIMARY KEY
-    , CategoryID INT
+		CTSCustID BIGINT UNSIGNED PRIMARY KEY
+    , 	CategoryID INT
+    ,	PRIMARY KEY (CTSCustID,CategoryID)
 );
 
 INSERT INTO CTS_Adhoc.AH_CheckConsistent_TaggingByAssociationWithPA(CTSCustID, CategoryID)
-SELECT	CTSCustID
-	,	CategoryID
+SELECT	DISTINCT dv.CTSCustID
+	,	cls.CategoryID
 FROM AH_CheckConsistent_AssociationByDevice_MissDevice dv 
-	INNER JOIN CTS_DataCenter.CTSClassification cls ON dv.CTSCustID = cls.CTSCustID
+	INNER JOIN CTS_DataCenter.CTSCustomerClassification cls ON dv.CTSCustID = cls.CTSCustID
 WHERE cls.CategoryID IN (231,232,233,221,222,223,211,212,213);
 
 /***********STEP 2.3: Check Data Missing Device***************************/
