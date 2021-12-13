@@ -48,7 +48,7 @@ BEGIN
 	EXECUTE stmt1;
     
 	SELECT 	d.ListCustID
-		,	d.ListTransID
+		,	d.ListTransID       (1,2,3,4,5) 
         ,	d.GroupID
         ,	d.IsHedging
         ,	d.TotalScore
@@ -62,6 +62,12 @@ BEGIN
         AND d.LiveIndicator = ip_LiveIndicator
         AND d.IsHedging = ip_IsHedging
         ;
+
+   SELECT	TranList
+			, VerifiedDate
+            , VerifiedBy
+   FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans;
+   
     
 END$$
 DELIMITER ;
