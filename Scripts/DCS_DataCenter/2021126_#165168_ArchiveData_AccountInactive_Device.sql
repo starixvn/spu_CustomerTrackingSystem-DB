@@ -48,7 +48,7 @@ CREATE EVENT EV_DCS_DataCenter_ArchiveAccountInactive_Device
   				SET Status = 'Start' 
   				WHERE EventName = 'EV_DCS_DataCenter_ArchiveAccountInactive_Device';
   
-  				CAll DCS_DataCenter.CTS_DC_ArchiveData_AccountInactive_Device(); 
+  				CAll DCS_DataCenter.DCS_DC_ArchiveData_AccountInactive_Device(); 
   
   				UPDATE CTS_DataCenter.SystemEventStatus 
   				SET Status = 'Stop' 

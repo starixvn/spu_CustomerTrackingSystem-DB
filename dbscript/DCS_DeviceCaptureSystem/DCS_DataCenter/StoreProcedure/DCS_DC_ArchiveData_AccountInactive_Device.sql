@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_ArchiveData_AccountInactive_Device`;
+DROP PROCEDURE IF EXISTS `DCS_DC_ArchiveData_AccountInactive_Device`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_ArchiveData_AccountInactive_Device`()
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_ArchiveData_AccountInactive_Device`()
     SQL SECURITY INVOKER
 sp: BEGIN
 	/*
