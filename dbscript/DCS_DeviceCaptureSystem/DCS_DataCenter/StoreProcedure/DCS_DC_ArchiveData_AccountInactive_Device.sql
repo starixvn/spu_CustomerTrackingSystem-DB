@@ -143,6 +143,79 @@ sp: BEGIN
         
 		SET lv_Table = 'DCS_DataCenter.Device';
     END IF;
+
+    IF (lv_Table = 'CTS_DataCenter.AssociationByDevice') THEN
+		IF EXISTS (SELECT 1  FROM DCS_DataCenter.ArchiveAccountInactive_Device) THEN
+			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByDevice_Clean;
+			CREATE TEMPORARY TABLE Temp_AssociationByDevice_Clean(
+					CTSAssDevID   	BIGINT UNSIGNED PRIMARY KEY
+			);
+            
+            INSERT IGNORE INTO Temp_AssociationByDevice_Clean(CTSAssDevID)
+            SELECT 	dv.CTSAssDevID
+			FROM CTS_DataCenter.AssociationByDevice AS dv
+            WHERE EXISTS (SELECT 1 FROM DCS_DataCenter.ArchiveAccountInactive_Device AS tmp  WHERE dv.DCSDeviceID = tmp.DeviceID)
+            LIMIT lv_BatchSizeDelete;
+            
+            DELETE dv
+			FROM  CTS_DataCenter.AssociationByDevice AS dv
+				INNER JOIN Temp_AssociationByDevice_Clean AS tmp ON tmp.CTSAssDevID = dv.CTSAssDevID;
+			
+            UPDATE  DCS_DataCenter.SystemSetting
+			SET VValue = 'CTS_DataCenter.AssociationByDevice'
+			WHERE ID = CONS_SysID_TableDeleting;
+			
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_AssociationByDevice_Clean;
+            
+            IF lv_Count >=lv_BatchSizeDelete THEN
+				LEAVE sp;
+            END IF;
+            
+            SET lv_BatchSizeDelete = lv_BatchSizeDelete - lv_Count;
+            
+        END IF;
+        
+		SET lv_Table = 'CTS_Archive.AssociationByDevice_Arc';
+    END IF;
+    
+    /*************************************** 4. CTS_Archive.AssociationByDevice_Arc ***************************/
+    IF (lv_Table = 'CTS_Archive.AssociationByDevice_Arc') THEN
+		IF EXISTS (SELECT 1  FROM DCS_DataCenter.ArchiveAccountInactive_Device) THEN
+			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByDevice_Clean;
+			CREATE TEMPORARY TABLE Temp_AssociationByDevice_Clean(
+					ID   	BIGINT UNSIGNED PRIMARY KEY
+			);
+            
+            INSERT IGNORE INTO Temp_AssociationByDevice_Clean(ID)
+            SELECT 	dv.ID
+			FROM CTS_Archive.AssociationByDevice_Arc AS dv
+            WHERE EXISTS (SELECT 1 FROM DCS_DataCenter.ArchiveAccountInactive_Device AS tmp  WHERE dv.DCSDeviceID = tmp.DeviceID)
+            LIMIT lv_BatchSizeDelete;
+            
+            DELETE dv
+			FROM  CTS_Archive.AssociationByDevice_Arc AS dv
+				INNER JOIN Temp_AssociationByDevice_Clean AS tmp ON tmp.ID = dv.ID;
+			
+            UPDATE  DCS_DataCenter.SystemSetting
+			SET VValue = 'CTS_Archive.AssociationByDevice_Arc'
+			WHERE ID = CONS_SysID_TableDeleting;
+			
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_AssociationByDevice_Clean;
+            
+            IF lv_Count >=lv_BatchSizeDelete THEN
+				LEAVE sp;
+            END IF;
+            
+            SET lv_BatchSizeDelete = lv_BatchSizeDelete - lv_Count;
+            
+        END IF;
+        
+		SET lv_Table = 'DCS_DataCenter.Device';
+    END IF;
     
     /*************************************** 3. DCS_DataCenter.Device ******************************************/
     IF (lv_Table = 'DCS_DataCenter.Device') THEN
