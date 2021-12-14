@@ -218,7 +218,7 @@ sp: BEGIN
 		SET lv_Table = 'DCS_DataCenter.Device';
     END IF;
     
-    /*************************************** 3. DCS_DataCenter.Device ******************************************/
+    /*************************************** 5. DCS_DataCenter.Device ******************************************/
     IF (lv_Table = 'DCS_DataCenter.Device') THEN
 		IF EXISTS (SELECT 1  FROM DCS_DataCenter.ArchiveAccountInactive_Device) THEN
             DELETE dv
@@ -236,7 +236,7 @@ sp: BEGIN
 		SET lv_Table = 'DCS_DataCenter.Association';
     END IF;
 	
-    /*************************************** 4. DCS_DataCenter.Association *************************************/
+    /*************************************** 6. DCS_DataCenter.Association *************************************/
     IF (lv_Table = 'DCS_DataCenter.Association') THEN
 		IF EXISTS (SELECT 1  FROM DCS_DataCenter.ArchiveAccountInactive_Device) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_Association_Clean;
