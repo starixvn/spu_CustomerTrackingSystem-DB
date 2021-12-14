@@ -24,9 +24,14 @@ ALTER TABLE MatchMonitor
 
 /*===2. CREATE Table===========*/
 CREATE TABLE MatchMonitorDetailsVerifiedTrans (
-		MatchID 		BIGINT UNSIGNED
-	,	Market			TINYINT
+		ID				INT	UNSIGNED AUTO_INCREMENT
+	,	MatchID 		BIGINT UNSIGNED
+	,	LiveIndicator	TINYINT
 	,	BettypeID		INT UNSIGNED
 	,	TransList		LONGTEXT
 	,	VerifiedDate	DATETIME
-	,	VerifiedBy		INT);
+	,	VerifiedBy		INT
+    
+    ,	PRIMARY KEY PK_MatchMonitorDetailsVerifiedTrans_ID(ID)
+    ,	INDEX IX_MatchMonitorDetailsVerifiedTrans(MatchID,LiveIndicator,BettypeID)
+    );

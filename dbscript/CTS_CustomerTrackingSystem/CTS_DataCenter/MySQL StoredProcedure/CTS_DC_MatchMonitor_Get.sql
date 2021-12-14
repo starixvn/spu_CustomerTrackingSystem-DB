@@ -28,10 +28,6 @@ BEGIN
             
 		Example:
 			-	CALL CTS_DC_MatchMonitor_Get('2021-12-11','2021-12-14','Test',NULL,'1,2,3,4','1,3,7,8',NULL);
-            
-				SELECT * FROM MatchMonitor;
-
-				SELECT NOW();
 	*/
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Bettype;
