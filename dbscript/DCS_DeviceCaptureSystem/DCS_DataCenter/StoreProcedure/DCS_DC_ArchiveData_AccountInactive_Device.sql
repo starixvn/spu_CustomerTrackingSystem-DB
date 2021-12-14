@@ -144,6 +144,7 @@ sp: BEGIN
 		SET lv_Table = 'DCS_DataCenter.Device';
     END IF;
 
+    /*************************************** 3. CTS_DataCenter.AssociationByDevice ****************************/
     IF (lv_Table = 'CTS_DataCenter.AssociationByDevice') THEN
 		IF EXISTS (SELECT 1  FROM DCS_DataCenter.ArchiveAccountInactive_Device) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByDevice_Clean;
