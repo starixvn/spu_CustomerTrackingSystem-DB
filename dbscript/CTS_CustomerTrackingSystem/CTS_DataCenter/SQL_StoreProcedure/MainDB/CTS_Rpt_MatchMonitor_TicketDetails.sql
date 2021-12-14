@@ -24,7 +24,8 @@ AS
 		- 20210526@Long.Luu: Created [Redmine ID: #152883]
 		- 20210728@Long.Luu: Exclude SABA's leaguegroup [Redmine ID: #159187]		
 		- 20210820@Long.Luu: Separate Live/Nonlive ticket selection [Redmine ID: #159195]
-		- 20210928@Long.Luu: Remove useless filter [Redmine ID: #159195]
+		- 20210928@Long.Luu: Remove useless filter [Redmine ID: #159195]		
+		- 20211214@Long.Luu: Return danger info [Redmine ID: #165606]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize)
@@ -112,6 +113,9 @@ BEGIN
 		,	LiveAwayScore		SMALLINT
 		,	LiveIndicator		BIT
 		,	TicketStatus		SMALLINT
+		,	Danger1				TINYINT
+		,	Danger2				TINYINT
+		,	Danger3				TINYINT
 		,	Danger4				TINYINT
 		,	Danger5				TINYINT
 	);	
@@ -123,28 +127,6 @@ BEGIN
 	CREATE NONCLUSTERED INDEX #IX_tmpTickets_LeagueId ON #tmpTickets (
 			LeagueId		DESC
 	);
-
-	IF	OBJECT_ID('tempdb..#tmpCustInfo') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpCustInfo;
-	END;
-
-	CREATE TABLE	#tmpCustInfo(
-			CustId				INT PRIMARY KEY
-		,	Danger4				TINYINT
-		,	Danger5				TINYINT
-	);	
-
-	IF	OBJECT_ID('tempdb..#tmpLeagueInfo') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpLeagueInfo;
-	END;
-
-	CREATE TABLE	#tmpLeagueInfo(
-			LeagueId			INT PRIMARY KEY
-		,	Danger4				TINYINT
-		,	Danger5				TINYINT
-	);	
 
 	IF (@QueryType = 1)
 		BEGIN
@@ -286,7 +268,10 @@ BEGIN
 			END;
 
 			UPDATE	t WITH(ROWLOCK, UPDLOCK)
-			SET		t.Danger4 = c.Danger4
+			SET		t.Danger1 = c.danger
+				,	t.Danger2 = c.danger2
+				,	t.Danger3 = c.danger3
+				,	t.Danger4 = c.Danger4
 				,	t.Danger5 = c.Danger5
 				,	t.LeagueName = l.leaguename
 			FROM #tmpTickets AS t
