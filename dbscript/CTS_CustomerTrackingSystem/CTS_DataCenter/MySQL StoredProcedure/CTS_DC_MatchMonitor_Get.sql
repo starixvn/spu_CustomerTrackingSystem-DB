@@ -7,9 +7,9 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Get`(
     ,	IN 	ip_ToDate 			DATE
     ,	IN 	ip_LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
     , 	IN	ip_Market 			TINYINT
-    , 	IN	ip_MarketSession	TINYINT
+    , 	IN	ip_MatchSection		VARCHAR(50)
     ,	IN 	ip_Bettypes 		VARCHAR(50)
-    ,	IN 	ip_IsVerified 	BIT
+    ,	IN 	ip_IsVerified 		BIT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -27,17 +27,30 @@ BEGIN
 			- ip_Market: 0 return LiveIndicator = 0, 1 return LiveIndicator = 1
             
 		Example:
-			-	CALL CTS_DC_MatchMonitor_Get('2021-05-01','2021-05-03','1',0,1);
+			-	CALL CTS_DC_MatchMonitor_Get('2021-12-11','2021-12-14','Test',NULL,'1,2,3,4','1,3,7,8',NULL);
+            
+				SELECT * FROM MatchMonitor;
+
+				SELECT NOW();
 	*/
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Bettype;
     CREATE TEMPORARY TABLE Temp_Bettype(
 		BettypeID 	INT UNSIGNED
 	);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_MatchSection;
+    CREATE TEMPORARY TABLE Temp_MatchSection(
+		MatchSection 	TINYINT
+	);
  
 	SET @sql = CONCAT("INSERT INTO Temp_Bettype (BettypeID) VALUES ('", REPLACE(ip_Bettypes, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
-	EXECUTE stmt1;
+	EXECUTE stmt1;    
+       
+	SET @sql = CONCAT("INSERT INTO Temp_MatchSection (MatchSection) VALUES ('", REPLACE(ip_MatchSection, ",", "'),('"),"');");
+	PREPARE stmt1 FROM @sql;
+	EXECUTE stmt1;    
     
     SELECT	tmp.ID
 		,	tmp.MatchID
@@ -50,12 +63,12 @@ BEGIN
 		,	tmp.BettypeID
 		,	tmp.IsHedging
 		,	tmp.IsVerified
-		,	tmp.MarketSession
+		,	tmp.MatchSection
     FROM ( 
 			SELECT 	s.ID
 				,	s.MatchID
 				,	s.EventDate
-				,	s.LiveIndicator AS Market
+				,	s.LiveIndicator
 				,	s.HomeID
 				,	s.AwayID
 				,	s.LeagueID                
@@ -67,15 +80,17 @@ BEGIN
 						WHEN s.EventDate = CURDATE() AND s.KickOffTime > NOW() THEN 2 #'Today'
 						WHEN s.EventDate > CURDATE() THEN 3 #'Early'
 						ELSE 4 #'Closed'
-					END	AS MarketSession
+					END	AS MatchSection
 			FROM   CTS_DataCenter.MatchMonitor AS s
 				INNER JOIN Temp_Bettype AS b ON s.BettypeID = b.BettypeID
-				LEFT JOIN CTS_Admin.CTSUser AS u ON s.VerifiedBy = u.UserID
 			WHERE s.EventDate BETWEEN ip_FromDate AND ip_ToDate
 				AND (ip_IsVerified IS NULL OR s.IsVerified = ip_IsVerified)
 			) AS tmp
+            INNER JOIN Temp_MatchSection AS tmpMst ON tmpMst.MatchSection = tmp.MatchSection
        WHERE  (tmp.LeagueName IS NULL OR (tmp.LeagueName LIKE CONCAT('%',ip_LeagueName,'%')))
-			AND tmp.Market = IFNULL(ip_Market, tmp.Market)
-			AND tmp.MarketSession = IFNULL(ip_MarketSession, tmp.MarketSession);
+			AND tmp.LiveIndicator = IFNULL(ip_Market, tmp.LiveIndicator);
+            
 END$$
 DELIMITER ;
+
+

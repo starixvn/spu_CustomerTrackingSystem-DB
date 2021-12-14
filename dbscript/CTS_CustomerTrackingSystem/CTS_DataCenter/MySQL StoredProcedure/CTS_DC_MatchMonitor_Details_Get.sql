@@ -48,26 +48,32 @@ BEGIN
 	EXECUTE stmt1;
     
 	SELECT 	d.ListCustID
-		,	d.ListTransID       (1,2,3,4,5) 
-        ,	d.GroupID
-        ,	d.IsHedging
-        ,	d.TotalScore
-        ,	d.LiveIndicator AS Market
+		,	d.ListTransID
+		,	d.GroupID
+		,	d.IsHedging
+		,	d.TotalScore
+		,	d.LiveIndicator AS Market
 	FROM   CTS_DataCenter.MatchMonitorDetails AS d
 		INNER JOIN Temp_Score AS s ON s.TotalScore = d.TotalScore
-        INNER JOIN Temp_ReasonGroup AS r ON r.GroupID = d.GroupID
+		INNER JOIN Temp_ReasonGroup AS r ON r.GroupID = d.GroupID
 	WHERE  d.EventDate = ip_EventDate
 		AND d.BettypeID = ip_BettypeID
-        AND d.MatchID = ip_MatchID
-        AND d.LiveIndicator = ip_LiveIndicator
-        AND d.IsHedging = ip_IsHedging
-        ;
+		AND d.MatchID = ip_MatchID
+		AND d.LiveIndicator = ip_LiveIndicator
+		AND d.IsHedging = ip_IsHedging
+		;
 
-   SELECT	TranList
+	SELECT	js.TransID
 			, VerifiedDate
             , VerifiedBy
-   FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans;
-   
-    
+	FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans AS mdv
+		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mdv.TransList), ',', '","'), 
+						'$[*]' COLUMNS (TransID BIGINT UNSIGNED path '$')
+						) js
+	WHERE   mdv.EventDate = ip_EventDate
+		AND mdv.BettypeID = ip_BettypeID
+		AND mdv.MatchID = ip_MatchID
+		AND mdv.LiveIndicator = ip_LiveIndicator;
+
 END$$
 DELIMITER ;

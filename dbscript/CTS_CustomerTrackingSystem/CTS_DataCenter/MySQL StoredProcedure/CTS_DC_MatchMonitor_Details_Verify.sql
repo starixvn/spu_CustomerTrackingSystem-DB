@@ -4,7 +4,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Details_Verify`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Details_Verify`(
 		IN ip_MatchID 		BIGINT UNSIGNED   
-    ,	IN ip_Market		BOOLEAN      
+    ,	IN ip_LiveIndicator	BOOLEAN      
     ,	IN ip_BettypeID		INT UNSIGNED
     ,	IN ip_TransList		LONGTEXT
 	,	IN ip_VerifiedBy	INT	
@@ -21,11 +21,12 @@ BEGIN
 	
 	Param's Explanation (filtered by):	
 
-	Example: CALL CTS_DC_MatchMonitor_Details_Verify(1,1,1,'1,2,4,5',8);
+	Example: CALL CTS_DC_MatchMonitor_Details_Verify(1,0,1,'1,2,4,5',8);
+			CALL CTS_DC_MatchMonitor_Details_Verify(1,0,2,'11,12,14,15',9);
 	*/ 
 	
-    INSERT INTO MatchMonitorDetailsVerifiedTrans(MatchID, Market, BettypeID, TransList, VerifiedBy, VerifiedDate)
-    VALUES (ip_MatchID, ip_Market, ip_BettypeID, ip_TransList, ip_VerifiedBy, CURRENT_DATE());	   
+    INSERT INTO MatchMonitorDetailsVerifiedTrans(MatchID, LiveIndicator, BettypeID, TransList, VerifiedBy, VerifiedDate)
+    VALUES (ip_MatchID, ip_LiveIndicator, ip_BettypeID, ip_TransList, ip_VerifiedBy, CURRENT_TIME());	   
 	
 END$$
 DELIMITER ;
