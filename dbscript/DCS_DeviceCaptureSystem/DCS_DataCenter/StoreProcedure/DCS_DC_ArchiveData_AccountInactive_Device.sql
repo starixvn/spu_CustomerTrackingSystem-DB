@@ -141,7 +141,7 @@ sp: BEGIN
             
         END IF;
         
-		SET lv_Table = 'DCS_DataCenter.Device';
+		SET lv_Table = 'CTS_DataCenter.AssociationByDevice';
     END IF;
 
     /*************************************** 3. CTS_DataCenter.AssociationByDevice ****************************/
