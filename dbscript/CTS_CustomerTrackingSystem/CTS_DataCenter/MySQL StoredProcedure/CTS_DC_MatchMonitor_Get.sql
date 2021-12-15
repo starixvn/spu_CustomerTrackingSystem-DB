@@ -83,7 +83,7 @@ BEGIN
 				AND (ip_IsVerified IS NULL OR s.IsVerified = ip_IsVerified)
 			) AS tmp
             INNER JOIN Temp_MatchSection AS tmpMst ON tmpMst.MatchSection = tmp.MatchSection
-       WHERE  (tmp.LeagueName IS NULL OR (tmp.LeagueName LIKE CONCAT('%',ip_LeagueName,'%')))
+       WHERE  (ip_LeagueName IS NULL OR (tmp.LeagueName LIKE CONCAT('%',ip_LeagueName,'%')))
 			AND tmp.LiveIndicator = IFNULL(ip_Market, tmp.LiveIndicator);
             
 END$$
