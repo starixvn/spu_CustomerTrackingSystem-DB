@@ -14,7 +14,7 @@ BEGIN
 		Original:
 
 		Revisions:
-			- 20201213@Harvey: Initial
+			- 20211213@Harvey: Initial
 		Param's Explanation (filtered by):
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustInfo_Monitoring_CompareData ('');
@@ -35,5 +35,12 @@ BEGIN
 			,	CustSubID		INT		UNSIGNED		PATH "$.CustSubID"
 			)
 	) AS js;
+    
+    SELECT tcust.*
+	FROM Temp_CTSCustomer tcust
+	LEFT JOIN CTSCustomer cust ON tcust.CustID = cust.CustID
+		AND tcust.CustSubID = cust.CustSubID
+	WHERE cust.CustID IS NULL;
+
 END$$
 DELIMITER ;

@@ -3,10 +3,9 @@
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
 GO
-ALTER PROCEDURE	CTS_Customer_Monitoring_GetCustSub
+ALTER PROCEDURE	CTS_Customer_Monitoring_GetCustSubInfo
 		@FromDate	DATETIME
 	,	@ToDate		DATETIME
-	,	@rowSize INT = 500
 AS
 /*
 	Creator:	20210115@CaseyHuynh
@@ -25,7 +24,7 @@ AS
 BEGIN;
 	SET NOCOUNT ON;
 
-	SELECT TOP (@rowSize) 
+	SELECT TOP
 			sub.custid		AS CustID
 		,	sub.subaccid	AS CustSubID
 		,	sub.username	AS UserName

@@ -6,7 +6,6 @@ GO
 CREATE OR ALTER PROCEDURE CTS_Customer_Monitoring_GetCustomerInfo
 		@FromDate	DATETIME
 	,	@ToDate		DATETIME
-	,	@rowSize	INT = 500
 AS
 /*
 	Creator:	20211210@Harvey.Nguyen
@@ -36,8 +35,7 @@ BEGIN;
 	);
 
 	INSERT INTO #tmpNewCust(CustID, RoleID)
-	SELECT	TOP (@rowSize) 
-			c.CustID
+	SELECT 	c.CustID
 		,	c.RoleID
 	FROM	dbo.Customer AS c WITH(NOLOCK)
 	WHERE	c.creatdate >= @FromDate AND c.creatdate < @ToDate		
