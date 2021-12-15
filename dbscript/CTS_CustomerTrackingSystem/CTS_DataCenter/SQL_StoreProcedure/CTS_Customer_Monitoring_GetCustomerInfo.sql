@@ -3,7 +3,7 @@
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
 GO
-CREATE OR ALTER PROCEDURE CTS_Customer_Monitoring_GetCustomerInfo
+ALTER PROCEDURE CTS_Customer_Monitoring_GetCustomerInfo
 		@FromDate	DATETIME
 	,	@ToDate		DATETIME
 AS
@@ -13,7 +13,7 @@ AS
 	Database:	DBCTS.bodb02
 	
 	Revisions:
-		-
+		- 20211210@Harvey:		Initial - [Redmine: #165607]
 	Developer's Notes:
 		
 
