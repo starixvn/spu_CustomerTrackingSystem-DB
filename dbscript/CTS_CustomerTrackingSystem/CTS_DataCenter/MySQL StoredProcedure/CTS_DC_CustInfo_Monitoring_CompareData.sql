@@ -31,8 +31,9 @@ BEGIN
 			,	CustSubID
 	FROM JSON_TABLE(ip_CustomerList,
 		 "$[*]" COLUMNS(
-				CustID			INT		UNSIGNED		PATH "$.CustID" 
-			,	CustSubID		INT		UNSIGNED		PATH "$.CustSubID"
+				CustID			INT			UNSIGNED		PATH "$.CustID" 
+			,	CustSubID		INT			UNSIGNED		PATH "$.CustSubID"
+            ,	UserName		VARCHAR(50)					PATH "$.UserName"
 			)
 	) AS js;
     
