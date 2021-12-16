@@ -1,4 +1,4 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
 DROP PROCEDURE IF EXISTS `CTS_DC_CustInfo_Monitoring_CompareData`;
 
 DELIMITER $$
@@ -22,13 +22,15 @@ BEGIN
 	*/
 	DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomer;    
 	CREATE TEMPORARY TABLE Temp_CTSCustomer(
-			CustID			INT
-		,	CustSubID 		INT
+			CustID			INT	UNSIGNED
+		,	CustSubID 		INT	UNSIGNED
+        ,	UserName 		VARCHAR(50)
 	);
 
-    INSERT INTO Temp_CTSCustomer(CustID, CustSubID)
+    INSERT INTO Temp_CTSCustomer(CustID, CustSubID, UserName)
 	SELECT		CustID	
 			,	CustSubID
+            ,	UserName
 	FROM JSON_TABLE(ip_CustomerList,
 		 "$[*]" COLUMNS(
 				CustID			INT			UNSIGNED		PATH "$.CustID" 
@@ -37,7 +39,9 @@ BEGIN
 			)
 	) AS js;
     
-    SELECT tcust.*
+    SELECT tcust.CustID
+		,	tcust.CustSubID
+        ,	tcust.UserName
 	FROM Temp_CTSCustomer tcust
 	LEFT JOIN CTSCustomer cust ON tcust.CustID = cust.CustID
 		AND tcust.CustSubID = cust.CustSubID
