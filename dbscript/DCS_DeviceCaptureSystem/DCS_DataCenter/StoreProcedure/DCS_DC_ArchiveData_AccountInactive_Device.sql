@@ -13,6 +13,7 @@ sp: BEGIN
 
 		Revisions:
 			- 	20211209@Aries.Nguyen: Created [Redmine ID: #165168]
+            - 	20211220@Aries.Nguyen: Fix issue performance when use Functional Key Parts and user variable [Redmine ID: #166234] 
 		Param's Explanation (filtered by):	
 			
 	*/
@@ -270,8 +271,8 @@ sp: BEGIN
     INSERT IGNORE INTO Temp_Account(AccountID)
     SELECT	AccountID
     FROM DCS_DataCenter.Account 
-    WHERE DATE(LastLoginTime) = lv_Date
-		AND  AccountID > lv_LastAccountID
+    WHERE DATE(LastLoginTime) = (SELECT lv_Date)
+		AND  AccountID > (SELECT lv_LastAccountID)
     ORDER BY AccountID ASC
     LIMIT lv_BatchSizeAccount;
 	
@@ -279,7 +280,7 @@ sp: BEGIN
 		SELECT DATE(LastLoginTime)
         INTO lv_NextDate
 		FROM DCS_DataCenter.Account 
-		WHERE DATE(LastLoginTime) > lv_Date
+		WHERE DATE(LastLoginTime) > (SELECT lv_Date)
 		ORDER BY DATE(LastLoginTime) ASC
 		LIMIT 1;
     END IF;
@@ -300,7 +301,7 @@ sp: BEGIN
 		INSERT IGNORE INTO Temp_Account(AccountID)
 		SELECT	AccountID
 		FROM DCS_DataCenter.Account 
-		WHERE DATE(LastLoginTime) = lv_NextDate
+		WHERE DATE(LastLoginTime) = (SELECT lv_NextDate)
 			AND  AccountID > 0
 		ORDER BY AccountID ASC
 		LIMIT lv_BatchSizeAccount;
