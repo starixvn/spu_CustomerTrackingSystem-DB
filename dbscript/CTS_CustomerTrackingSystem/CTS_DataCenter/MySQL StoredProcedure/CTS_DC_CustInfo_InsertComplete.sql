@@ -5,6 +5,7 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustInfo_InsertComplete`(
 		IN ip_LastInsertCustID  BIGINT UNSIGNED
 	,	IN ip_Customer			JSON
+    ,	IN ip_IsInsertMissing	BOOLEAN
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -18,6 +19,7 @@ BEGIN
 			- 20210115@Casey.Huynh: Created [Redmine ID: 148849]
             - 20210506@Casey.Huynh: LastCustID is sent from MainDB. Add Input Parameter ip_LastCustID [Redmine ID: 154633]
 			- 20210622@Aries.Nguyen: Update coding convention and improve locking [Redmine ID: #157203]
+			- 20211220@Harvey.Nguyen: Add ip_IsInsertMissing for insert missing customer [Redmine ID: #166173]
 
 		Param's Explanation (filtered by):
         
@@ -75,21 +77,23 @@ BEGIN
 		INNER JOIN	Temp_CTSCustomer AS tmpCus ON acc.LoginName = tmpCus.UserName AND acc.SubscriberID = tmpCus.SubscriberID
 	WHERE acc.IsCTSTransformed = -1; 
 	   
-  
-    #=====Update Scan System Parameter;
-    IF ip_LastInsertCustID > 0
-    THEN
-		UPDATE 	CTS_DataCenter.SystemParameter AS s
-        SET		s.ParameterValue = ip_LastInsertCustID
-		WHERE	s.ParameterID = 7 ; # s.ParameterName = 'CTSCustomer_LastInsertCustID';
-	END IF;
-    
-	SET lv_LastInsertCustSubID = (SELECT MAX(tmpCus.CustSubID) FROM Temp_CTSCustomer AS tmpCus);
-    IF lv_LastInsertCustSubID > 0
-    THEN
-		UPDATE 	CTS_DataCenter.SystemParameter AS s
-        SET		s.ParameterValue = lv_LastInsertCustSubID
-		WHERE	s.ParameterID = 8; # s.ParameterName = 'CTSCustomer_LastInsertCustSubID';
-	END IF;
+    IF NOT ip_IsInsertMissing
+    THEN 
+		#=====Update Scan System Parameter;
+		IF ip_LastInsertCustID > 0
+		THEN
+			UPDATE 	CTS_DataCenter.SystemParameter AS s
+			SET		s.ParameterValue = ip_LastInsertCustID
+			WHERE	s.ParameterID = 7 ; # s.ParameterName = 'CTSCustomer_LastInsertCustID';
+		END IF;
+		
+		SET lv_LastInsertCustSubID = (SELECT MAX(tmpCus.CustSubID) FROM Temp_CTSCustomer AS tmpCus);
+		IF lv_LastInsertCustSubID > 0
+		THEN
+			UPDATE 	CTS_DataCenter.SystemParameter AS s
+			SET		s.ParameterValue = lv_LastInsertCustSubID
+			WHERE	s.ParameterID = 8; # s.ParameterName = 'CTSCustomer_LastInsertCustSubID';
+		END IF;
+    END IF;
 END$$
 DELIMITER ;

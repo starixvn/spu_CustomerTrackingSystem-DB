@@ -28,7 +28,7 @@ BEGIN
 		`UserName` VARCHAR(50) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_unicode_ci' NULL
 	);
 
-    INSERT INTO Temp_MissingCust(CustID, CustSubID, UserName, ScannedDate)
+    INSERT INTO Temp_MissingCust(CustID, CustSubID, UserName)
 	SELECT		CustID	
 			,	CustSubID
             ,	UserName
