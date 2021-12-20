@@ -102,6 +102,7 @@ BEGIN
 		,	AwayId				INT
 		,	LeagueId			INT
 		,	LeagueName			NVARCHAR(500)
+		,	SportType			SMALLINT
 		,	BetType				SMALLINT
 		,	CustId				INT
 		,	BetTeam				NVARCHAR(10)
@@ -130,7 +131,7 @@ BEGIN
 
 	IF (@QueryType = 1)
 		BEGIN
-			INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,BetType,CustId,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
+			INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,SportType,BetType,CustId,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
 			SELECT	TOP (@BatchSize) b.transid
 				,	b.transdate
 				,	b.matchid
@@ -141,6 +142,7 @@ BEGIN
 				,	m.awayid
 				,	m.leagueid
 				,	l.leaguename
+				,	m.sporttype
 				,	b.bettype
 				,	b.custid
 				,	b.betteam
@@ -182,7 +184,7 @@ BEGIN
 			-- START --
 			IF @IsGetDataFromBK = 1
 			BEGIN
-				INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,BetType,CustId,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
+				INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
 				SELECT	b.transid
 					,	b.transdate
 					,	b.matchid
@@ -192,6 +194,7 @@ BEGIN
 					,	m.homeid
 					,	m.awayid
 					,	m.leagueid
+					,	m.sporttype
 					,	b.bettype
 					,	b.custid
 					,	b.betteam
@@ -211,7 +214,7 @@ BEGIN
 
 			IF	@IsGetDataFrom14 = 1
 			BEGIN
-				INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,BetType,CustId,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
+				INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
 				SELECT	b.transid
 					,	b.transdate
 					,	b.matchid
@@ -221,6 +224,7 @@ BEGIN
 					,	m.homeid
 					,	m.awayid
 					,	m.leagueid
+					,	m.sporttype
 					,	b.bettype
 					,	b.custid
 					,	b.betteam
@@ -240,7 +244,7 @@ BEGIN
 
 			IF	@IsGetDataFromOrigin = 1
 			BEGIN
-				INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,BetType,CustId,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
+				INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
 				SELECT	b.transid
 					,	b.transdate
 					,	b.matchid
@@ -250,6 +254,7 @@ BEGIN
 					,	m.homeid
 					,	m.awayid
 					,	m.leagueid
+					,	m.sporttype
 					,	b.bettype
 					,	b.custid
 					,	b.betteam
