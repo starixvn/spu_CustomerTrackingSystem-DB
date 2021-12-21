@@ -20,7 +20,8 @@ ALTER TABLE MatchMonitorStagingNonLive
 ALTER TABLE MatchMonitor
 	ADD COLUMN LeagueName VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
 ,	DROP COLUMN VerifiedDate
-,	DROP COLUMN VerifiedBy;
+,	DROP COLUMN VerifiedBy
+,	DROP COLUMN IsVerified;
 
 /*===2. CREATE Table===========*/
 CREATE TABLE MatchMonitorDetailsVerifiedTrans (
@@ -28,7 +29,7 @@ CREATE TABLE MatchMonitorDetailsVerifiedTrans (
 	,	MatchID 		BIGINT UNSIGNED
 	,	LiveIndicator	TINYINT
 	,	BettypeID		INT UNSIGNED
-	,	TransList		LONGTEXT
+	,	ListTransID		LONGTEXT
 	,	VerifiedDate	DATETIME
 	,	VerifiedBy		INT
     

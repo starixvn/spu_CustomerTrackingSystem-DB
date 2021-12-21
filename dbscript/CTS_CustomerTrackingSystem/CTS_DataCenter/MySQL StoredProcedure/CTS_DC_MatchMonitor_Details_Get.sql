@@ -1,6 +1,6 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
 DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Details_Get`;
-
+CALL (
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Details_Get`(
 		IN ip_MatchID 			BIGINT UNSIGNED    
@@ -61,17 +61,17 @@ BEGIN
 		AND d.MatchID = ip_MatchID
 		AND d.LiveIndicator = ip_LiveIndicator
 		AND d.IsHedging = ip_IsHedging;
-
+	
 	SELECT	js.TransID
 			, VerifiedDate
-            , VerifiedBy
+            , (SELECT UserName FROM CTS_Admin.UserSubscriber WHERE UserID = VerifiedBy) AS VerifiedBy
 	FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans AS mdv
-		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mdv.TransList), ',', '","'), 
-						'$[*]' COLUMNS (TransID BIGINT UNSIGNED path '$')
+		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mdv.ListTransID), ',', '","'), 
+						'$[*]' COLUMNS (TransID BIGINT UNSIGNED PATH '$')
 						) js
 	WHERE  	mdv.MatchID = ip_MatchID
 		AND mdv.LiveIndicator = ip_LiveIndicator
         AND	mdv.BettypeID = ip_BettypeID;
-
+        
 END$$
 DELIMITER ;

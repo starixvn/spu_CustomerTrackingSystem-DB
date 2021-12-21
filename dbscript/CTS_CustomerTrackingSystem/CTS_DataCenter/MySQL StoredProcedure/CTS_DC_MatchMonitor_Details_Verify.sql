@@ -6,7 +6,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Details_Verify`(
 		IN ip_MatchID 		BIGINT UNSIGNED   
     ,	IN ip_LiveIndicator	BOOLEAN      
     ,	IN ip_BettypeID		INT UNSIGNED
-    ,	IN ip_TransList		LONGTEXT
+    ,	IN ip_ListTransID	LONGTEXT
 	,	IN ip_VerifiedBy	INT	
 )
     SQL SECURITY INVOKER
@@ -25,8 +25,8 @@ BEGIN
 			CALL CTS_DC_MatchMonitor_Details_Verify(1,0,2,'11,12,14,15',9);
 	*/ 
 	
-    INSERT INTO MatchMonitorDetailsVerifiedTrans(MatchID, LiveIndicator, BettypeID, TransList, VerifiedBy, VerifiedDate)
-    VALUES (ip_MatchID, ip_LiveIndicator, ip_BettypeID, ip_TransList, ip_VerifiedBy, CURRENT_TIME());	   
+    INSERT INTO MatchMonitorDetailsVerifiedTrans(MatchID, LiveIndicator, BettypeID, ListTransID, VerifiedBy, VerifiedDate)
+    VALUES (ip_MatchID, ip_LiveIndicator, ip_BettypeID, ip_ListTransID, ip_VerifiedBy, CURRENT_TIME());	   
 	
 END$$
 DELIMITER ;

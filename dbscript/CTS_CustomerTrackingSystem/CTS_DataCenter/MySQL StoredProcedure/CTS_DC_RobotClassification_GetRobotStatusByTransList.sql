@@ -88,7 +88,7 @@ BEGIN
 					 "$[*]" COLUMNS(
 								CustID			BIGINT UNSIGNED PATH "$.CustID" 
 							,	TransDate		DATETIME(3) PATH "$.TransDate"                               
-							,	TransID			INT PATH "$.TransID"
+							,	TransID			BIGINT UNSIGNED PATH "$.TransID"
 						)
 				) AS js;    
             
@@ -117,8 +117,7 @@ BEGIN
 	GROUP BY cte.CustID
 		,	cte.TransDate
 		,	cte.TransID;
-	
-    SELECT * FROM Temp_TransRobot;
+        
     INSERT INTO Temp_TransRobotCateroy(CustID, TransDate, TransID, Priority, CategoryID, LastModifiedDate)    
     SELECT	tb.CustID
 		,	tb.TransDate
@@ -153,7 +152,7 @@ BEGIN
     
     SELECT tmpTs.TransID
 		,  tmpTr.RobotType
-        ,	EXISTS (SELECT 1 FROM CTS_DataCenter.RobotDetection AS rd WHERE rd.CustID = tmpTs.CustID) AS IsRobot
+        ,	EXISTS (SELECT 1 FROM CTS_DataCenter.RobotDetection AS rd WHERE rd.CustID = tmpTs.CustID AND rd.CreatedDate < tmpTs.TransDate) AS IsRobot
     FROM Temp_Trans AS tmpTs
 		INNER JOIN Temp_TransRobotType AS tmpTr ON tmpTs.TransID = tmpTr.TransID;
     

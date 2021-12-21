@@ -21,7 +21,7 @@ BEGIN
 			- 	20210526@Casey.Huynh: Created [Redmine ID: 152883]
             -	20210719@Casey.Huynh: Fix Issue Rule Trans.StepTime and AssGroup [Redmine ID: 158946]
             -	20210830@Casey.Huynh: Update Rule seperate Live and NonLive and move to Slave [Redmine ID: 159195]
-            -	20211213@Casey.Huynh: Enhance MM, Add column LeagueName, reset IsVerified = 0 [Redmine ID: 165606]
+            -	20211213@Casey.Huynh: Enhance MM, Add column LeagueName [Redmine ID: 165606]
 		
 		Param's Explanation (filtered by):
 		CALL CTS_DC_MatchMonitor_Rule_Complete();
@@ -209,13 +209,13 @@ BEGIN
     IF(lv_MatchHedging +  lv_MatchNotHedging = lv_MatchDetailsHedging + lv_MatchDetailsNotHedging AND lv_MatchDetailsHedging + lv_MatchDetailsNotHedging = 1) THEN
 		IF(lv_MatchHedging = 0 AND lv_MatchDetailsHedging = 1) THEN			
 			UPDATE IGNORE CTS_DataCenter.MatchMonitor
-            SET IsHedging = 1, IsVerified = 0
+            SET IsHedging = 1
             WHERE LiveIndicator = ip_LiveIndicator AND MatchID = ip_MatchID AND BettypeID = ip_BettypeID;
 		END IF;
         
         IF(lv_MatchHedging = 1 AND lv_MatchDetailsHedging = 0) THEN			
 			UPDATE IGNORE CTS_DataCenter.MatchMonitor
-            SET IsHedging = 0 , IsVerified = 0
+            SET IsHedging = 0
             WHERE LiveIndicator = ip_LiveIndicator AND MatchID = ip_MatchID AND BettypeID = ip_BettypeID;
 		END IF;       
     END IF;
