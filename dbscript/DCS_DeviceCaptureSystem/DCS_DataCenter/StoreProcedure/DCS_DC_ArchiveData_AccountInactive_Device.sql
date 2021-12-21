@@ -24,10 +24,7 @@ sp: BEGIN
     DECLARE CONS_SysID_BatchSizeDelete 	INT DEFAULT 18;
     
     
-    DECLARE lv_Date 				DATE;
-    DECLARE lv_NextDate 			DATE;
     DECLARE lv_DateValid			DATE DEFAULT DATE_SUB(NOW(), INTERVAL 6 MONTH);
-    DECLARE lv_LastAccountID 		BIGINT UNSIGNED;
     DECLARE lv_NextAccountID 		BIGINT UNSIGNED;
     DECLARE lv_BatchSizeAccount 	INT;
     DECLARE lv_BatchSizeDelete 		INT;
@@ -39,14 +36,17 @@ sp: BEGIN
     CREATE TEMPORARY TABLE Temp_Account(
 		AccountID   BIGINT UNSIGNED PRIMARY KEY
     );
-    
+    SET @lv_Date = NULL;
+    SET @lv_LastAccountID = NULL;
+    SET @lv_NextDate = NULL;
+
     SELECT VValue
-	INTO lv_Date
+	INTO @lv_Date
 	FROM DCS_DataCenter.SystemSetting
 	WHERE ID = CONS_SysID_Date; 
     
     SELECT VValue
-	INTO lv_LastAccountID
+	INTO @lv_LastAccountID
 	FROM DCS_DataCenter.SystemSetting
 	WHERE ID = CONS_SysID_LastAccountID; 
     
@@ -65,7 +65,7 @@ sp: BEGIN
 	FROM DCS_DataCenter.SystemSetting
 	WHERE ID = CONS_SysID_BatchSizeDelete; 
     
-    IF lv_Date >= lv_DateValid THEN
+    IF @lv_Date >= lv_DateValid THEN
 		LEAVE sp;
 	END IF;
     
@@ -271,23 +271,23 @@ sp: BEGIN
     INSERT IGNORE INTO Temp_Account(AccountID)
     SELECT	AccountID
     FROM DCS_DataCenter.Account 
-    WHERE DATE(LastLoginTime) = (SELECT lv_Date)
-		AND  AccountID > (SELECT lv_LastAccountID)
+    WHERE DATE(LastLoginTime) = (SELECT @lv_Date)
+		AND  AccountID > (SELECT @lv_LastAccountID)
     ORDER BY AccountID ASC
     LIMIT lv_BatchSizeAccount;
 	
     IF NOT EXISTS (SELECT 1 FROM Temp_Account) THEN
 		SELECT DATE(LastLoginTime)
-        INTO lv_NextDate
+        INTO @lv_NextDate
 		FROM DCS_DataCenter.Account 
-		WHERE DATE(LastLoginTime) > (SELECT lv_Date)
+		WHERE DATE(LastLoginTime) > (SELECT @lv_Date)
 		ORDER BY DATE(LastLoginTime) ASC
 		LIMIT 1;
     END IF;
     
-    IF lv_NextDate IS NOT NULL THEN
+    IF @lv_NextDate IS NOT NULL THEN
 		UPDATE  DCS_DataCenter.SystemSetting 
-		SET VValue = lv_NextDate
+		SET VValue = @lv_NextDate
 		WHERE ID = CONS_SysID_Date;
             
 		UPDATE  DCS_DataCenter.SystemSetting 
@@ -301,7 +301,7 @@ sp: BEGIN
 		INSERT IGNORE INTO Temp_Account(AccountID)
 		SELECT	AccountID
 		FROM DCS_DataCenter.Account 
-		WHERE DATE(LastLoginTime) = (SELECT lv_NextDate)
+		WHERE DATE(LastLoginTime) = (SELECT @lv_NextDate)
 			AND  AccountID > 0
 		ORDER BY AccountID ASC
 		LIMIT lv_BatchSizeAccount;
