@@ -128,14 +128,14 @@ sp: BEGIN
 		,	 trans.TransDate;
 	
      SELECT trans.AccountID
-		,	MAX(trans.TransDate)
+		,	MAX(trans.TransDate) AS TransDate
 		,	trans.IP
 	FROM Temp_ValidTrans AS trans
     GROUP BY trans.AccountID
         ,	 trans.IP;
 	
     SELECT 	trans.AccountID
-		,	MAX(trans.TransDate)
+		,	MAX(trans.TransDate) AS TransDate
 		,	trans.DeviceID
 	FROM Temp_ValidTrans AS trans
     GROUP BY trans.AccountID
