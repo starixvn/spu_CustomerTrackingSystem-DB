@@ -19,14 +19,20 @@ BEGIN
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustInfo_Profile_GetDate(200);
 	*/
-    DECLARE	CONST_GROUP_NORMAL 		INT DEFAULT 200;
+    DECLARE	CONST_GROUP_NORMAL 				INT DEFAULT 200;
+    DECLARE	CONST_CATEGORYGROUP_PROBATION 	INT DEFAULT 206;
     
 	DECLARE lv_NextCategoryScan		DATE;
+    DECLARE lv_NextProbationScan	DATE;
     DECLARE lv_LastTicket 			DATETIME;
     DECLARE lv_LastLogin 			DATETIME;
     DECLARE lv_Created				DATETIME;
 	
-    SELECT MIN(DATE_ADD(clss.LastScannedDate, INTERVAL cate.ScanIntervalInSecond SECOND))
+    SELECT CASE
+				WHEN cate.CategoryGroup = CONST_CATEGORYGROUP_PROBATION AND clss.CreatedDate < DATE_SUB(NOW(), INTERVAL 2 DAY) THEN DATE(NOW())
+                WHEN cate.CategoryGroup = CONST_CATEGORYGROUP_PROBATION AND clss.CreatedDate >= DATE_SUB(NOW(), INTERVAL 2 DAY) THEN DATE(DATE_ADD(clss.CreatedDate, INTERVAL 3 DAY))
+                ELSE DATE_ADD(clss.LastScannedDate, INTERVAL cate.ScanIntervalInSecond SECOND)
+			END
     INTO lv_NextCategoryScan
 	FROM CTS_DataCenter.CTSCustomerClassification AS clss
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID =  clss.CategoryID AND  cate.ScanIntervalInSecond > 0

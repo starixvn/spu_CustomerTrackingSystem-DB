@@ -58,12 +58,12 @@ BEGIN
     WHERE AccountID  = lv_AccountID
 		AND LastTransDate BETWEEN ip_FromDate AND ip_ToDate; 
     
-    SELECT 	lv_Count_Device_Desktop 						AS DesktopUsage
-		,	ROUND(lv_Count_Login/lv_Count_Device_Desktop,2)	AS DesktopUsagePercent
-		,	lv_Count_Device_Mobile 							AS MobileUsage
-        ,	ROUND(lv_Count_Login/lv_Count_Device_Desktop,2)	AS MobileUsagePercent
-        ,	lv_Count_Device_Others 							AS OthersUsage
-        ,	ROUND(lv_Count_Login/lv_Count_Device_Desktop,2)	AS OthersUsagePercent
+    SELECT 	lv_Count_Device_Desktop 								AS DesktopUsage
+		,	ROUND((lv_Count_Device_Desktop/lv_Count_Login)*100,2)	AS DesktopUsagePercent
+		,	lv_Count_Device_Mobile 									AS MobileUsage
+        ,	ROUND((lv_Count_Device_Mobile/lv_Count_Login)*100,2)	AS MobileUsagePercent
+        ,	lv_Count_Device_Others 									AS OthersUsage
+        ,	ROUND((lv_Count_Device_Others/lv_Count_Login)*100,2)	AS OthersUsagePercent
         ,	lv_Count_Login 									AS Logins
         ,	lv_Count_IP 									AS IPs
         ,	lv_Count_Device 								AS Devices;
