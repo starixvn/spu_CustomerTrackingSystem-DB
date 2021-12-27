@@ -135,12 +135,12 @@ BEGIN
 		,	cte.TransDate
 		,	cte.TransID;
   
-    INSERT INTO  Temp_TransRobotType(TransID,RobotType)
+	INSERT INTO  Temp_TransRobotType(TransID,RobotType)
     SELECT 	tmpTr.TransID
-		,	(CASE WHEN tmpTrc.CategoryID IN (61, 81, 161) THEN RobotType ELSE -1 END) AS RobotType
+		,	(CASE WHEN tmpRh.CategoryID IN (61, 81, 161) THEN tmpPr.RobotType ELSE -1 END) AS RobotType
     FROM Temp_ExistsRobotClassification AS tmpTr
-		LEFT JOIN Temp_TransRobotCateroy AS tmpTrc ON tmpTr.TransID = tmpTrc.TransID
-		LEFT JOIN Temp_RobotTypePriority AS tmpPr ON tmpPr.Priority = tmpTr.Priority;        
+		LEFT JOIN Temp_ExistsRobotUserHistory AS tmpRh ON tmpTr.TransID = tmpRh.TransID
+		LEFT JOIN Temp_RobotTypePriority AS tmpPr ON tmpPr.Priority = tmpTr.Priority;     
         
     SELECT 	tmpTs.TransID
 		,	(	CASE	WHEN tmpRt.TransID IS NOT NULL THEN tmpRt.RobotType
