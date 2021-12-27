@@ -1,4 +1,4 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
 DROP PROCEDURE IF EXISTS `DCS_DC_ArchiveData_Account_RemoveDeviceAndIP`;
 
 DELIMITER $$
@@ -33,7 +33,8 @@ sp: BEGIN
 	FROM DCS_DataCenter.SystemSetting
 	WHERE ID = CONS_SysID_BatchSizeIP; 
     
-    IF NOT EXISTS (SELECT 1 FROM DCS_DataCenter.AccountDevice WHERE LastTransDate < lv_DateValid) THEN
+    IF NOT EXISTS (SELECT 1 FROM DCS_DataCenter.AccountDevice WHERE LastTransDate < lv_DateValid) 
+		AND  NOT EXISTS (SELECT 1 FROM DCS_DataCenter.AccountIP WHERE LastTransDate < lv_DateValid) THEN
 		LEAVE sp;
 	END IF;
     
