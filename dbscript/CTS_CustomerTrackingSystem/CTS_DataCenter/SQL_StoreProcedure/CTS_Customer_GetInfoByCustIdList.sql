@@ -1,11 +1,9 @@
-USE [bodb02]
+/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" viewers="" isFunction="0" isNested="1"></info>*/
+
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
 GO
-/****** Object:  StoredProcedure [dbo].[CTS_Customer_GetInfoByCustIdList]    Script Date: 22-Dec-21 3:00:25 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-ALTER PROCEDURE	[dbo].[CTS_Customer_GetInfoByCustIdList]
+ALTER PROCEDURE	CTS_Customer_GetInfoByCustIdList
 		@custIdList			VARCHAR(MAX) = ''
 	,	@sourceType			TINYINT	= 0
 AS
