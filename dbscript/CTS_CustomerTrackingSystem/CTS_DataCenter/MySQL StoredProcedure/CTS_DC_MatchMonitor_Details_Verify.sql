@@ -1,4 +1,4 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
 DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Details_Verify`;
 
 DELIMITER $$
@@ -25,7 +25,7 @@ BEGIN
 			CALL CTS_DC_MatchMonitor_Details_Verify(1,0,2,'11,12,14,15',9);
 	*/ 
 	
-    INSERT INTO MatchMonitorDetailsVerifiedTrans(MatchID, LiveIndicator, BettypeID, ListTransID, VerifiedBy, VerifiedDate)
+    INSERT INTO CTS_DataCenter.MatchMonitorDetailsVerifiedTrans(MatchID, LiveIndicator, BettypeID, ListTransID, VerifiedBy, VerifiedDate)
     VALUES (ip_MatchID, ip_LiveIndicator, ip_BettypeID, ip_ListTransID, ip_VerifiedBy, CURRENT_TIME());	   
 	
 END$$

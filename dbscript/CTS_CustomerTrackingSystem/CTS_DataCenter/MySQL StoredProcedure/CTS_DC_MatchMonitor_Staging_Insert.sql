@@ -18,6 +18,7 @@ BEGIN
 			- 	20210526@Casey.Huynh: Created [Redmine ID: 152883]
             -	20210719@Casey.Huynh: Fix Issue Rule Trans.StepTime and AssGroup [Redmine ID: 158946]
             -	20210823@Casey.Huynh: Seperate scan for Live and NonLive [Redmine ID: 159195]
+            -	20211213@Casey.Huynh: Enhance MM, Add column LeagueName [Redmine ID: 165606]
 		
 		Param's Explanation (filtered by):
 		CALL CTS_DataCenter.CTS_DC_MatchMonitor_Staging_Insert(1,

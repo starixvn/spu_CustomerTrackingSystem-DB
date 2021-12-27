@@ -64,7 +64,7 @@ BEGIN
 	
 	SELECT	js.TransID
 			, VerifiedDate
-            , (SELECT UserName FROM CTS_Admin.UserSubscriber WHERE UserID = VerifiedBy) AS VerifiedBy
+            , (SELECT UserName FROM CTS_Admin.CTSUser WHERE UserID = VerifiedBy) AS VerifiedBy
 	FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans AS mdv
 		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mdv.ListTransID), ',', '","'), 
 						'$[*]' COLUMNS (TransID BIGINT UNSIGNED PATH '$')

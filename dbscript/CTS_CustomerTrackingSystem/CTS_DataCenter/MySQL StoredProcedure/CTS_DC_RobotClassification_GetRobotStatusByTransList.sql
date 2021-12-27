@@ -112,24 +112,25 @@ BEGIN
     
 	INSERT INTO Temp_ExistsRobotClassification(CustID, TransDate, TransID, Priority)
 	WITH CTE_TransRobot AS(
-	SELECT	tmpTr.CustID
-		,	tmpTr.TransDate
-		,	tmpTr.TransID
-		, 	rcl.SportTypeID
-        , 	rcl.LiveIndicator        
-        ,	rcl.BetTypeID
-		,	MAX(FromDate) AS FromDate
-	FROM Temp_Trans AS tmpTr
-		INNER JOIN CTS_DataCenter.RobotClassification AS rcl ON tmpTr.CustID = rcl.CustID
-			  AND (tmpTr.TransDate > rcl.FromDate OR tmpTr.TransDate BETWEEN rcl.FromDate AND rcl.ToDate)
-    GROUP BY tmpTr.CustID,	tmpTr.TransDate, tmpTr.TransID, rcl.SportTypeID, rcl.LiveIndicator, rcl.BetTypeID)
+		SELECT	tmpTr.CustID
+			,	tmpTr.TransDate
+			,	tmpTr.TransID
+			, 	rcl.SportTypeID
+			, 	rcl.LiveIndicator        
+			,	rcl.BetTypeID
+			,	MAX(FromDate) AS FromDate
+		FROM Temp_Trans AS tmpTr
+			INNER JOIN CTS_DataCenter.RobotClassification AS rcl ON tmpTr.CustID = rcl.CustID
+				  AND (tmpTr.TransDate > rcl.FromDate OR tmpTr.TransDate BETWEEN rcl.FromDate AND rcl.ToDate)
+		GROUP BY tmpTr.CustID,	tmpTr.TransDate, tmpTr.TransID, rcl.SportTypeID, rcl.LiveIndicator, rcl.BetTypeID
+	)
     SELECT	cte.CustID
 		,	cte.TransDate
 		,	cte.TransID
         ,	MAX(tmpPr.Priority) 
 	FROM 	CTE_TransRobot AS cte
-	INNER JOIN CTS_DataCenter.RobotClassification AS rcl1 ON cte.CustID = rcl1.CustID AND cte.FromDate = rcl1.FromDate
-			AND cte.SportTypeID = rcl1.SportTypeID AND cte.LiveIndicator = rcl1.LiveIndicator AND cte.BetTypeID = rcl1.BetTypeID
+		INNER JOIN CTS_DataCenter.RobotClassification AS rcl1 ON cte.CustID = rcl1.CustID AND cte.FromDate = rcl1.FromDate
+					AND cte.SportTypeID = rcl1.SportTypeID AND cte.LiveIndicator = rcl1.LiveIndicator AND cte.BetTypeID = rcl1.BetTypeID
 		INNER JOIN Temp_RobotTypePriority AS tmpPr ON tmpPr.RobotType = rcl1.RobotType
 	GROUP BY cte.CustID
 		,	cte.TransDate

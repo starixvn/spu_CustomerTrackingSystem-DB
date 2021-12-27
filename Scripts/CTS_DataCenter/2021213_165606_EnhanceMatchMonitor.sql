@@ -25,7 +25,7 @@ ALTER TABLE MatchMonitor
 
 /*===2. CREATE Table===========*/
 CREATE TABLE MatchMonitorDetailsVerifiedTrans (
-		ID				INT	UNSIGNED AUTO_INCREMENT
+		ID				BIGINT	UNSIGNED AUTO_INCREMENT
 	,	MatchID 		BIGINT UNSIGNED
 	,	LiveIndicator	TINYINT
 	,	BettypeID		INT UNSIGNED
