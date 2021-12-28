@@ -151,25 +151,65 @@ BEGIN
 		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mmd.ListTransID), ',', '","'), 
 						'$[*]' COLUMNS (TransID BIGINT UNSIGNED PATH '$')
 						) js
-	WHERE NOT EXISTS (SELECT 1 FROM Temp_VerfiedTrans AS tmpVt WHERE js.TransID = tmpVt.TransID);
+	WHERE NOT EXISTS (SELECT 1 FROM Temp_VerfiedTrans AS tmpVt WHERE js.TransID = tmpVt.TransID);    
     
+    IF (ip_IsVerified IS NULL)
+    THEN
+		SELECT	tmpMm.ID
+			,	tmpMm.MatchID
+			,	tmpMm.EventDate
+			,	tmpMm.LiveIndicator AS Market
+			,	tmpMm.HomeID
+			,	tmpMm.AwayID
+			,	tmpMm.LeagueID                
+			,	tmpMm.LeagueName
+			,	tmpMm.BettypeID
+			,	tmpMm.IsHedging
+			,	tmpMm.MatchSection 
+			,	(CASE WHEN tmpNv.MatchID IS NULL THEN 1 ELSE 0 END) IsVerified
+		FROM Temp_MatchMonitor AS tmpMm
+        	LEFT JOIN Temp_MatchGroup_NotVerified AS tmpNv ON tmpMm.MatchID = tmpNv.MatchID AND tmpMm.LiveIndicator = tmpNv.LiveIndicator 
+					AND tmpMm.BettypeID = tmpNv.BettypeID AND tmpMm.IsHedging = tmpNv.IsHedging;
+	END IF;
     
+	IF (ip_IsVerified = 0)
+    THEN
+		SELECT	tmpMm.ID
+			,	tmpMm.MatchID
+			,	tmpMm.EventDate
+			,	tmpMm.LiveIndicator AS Market
+			,	tmpMm.HomeID
+			,	tmpMm.AwayID
+			,	tmpMm.LeagueID                
+			,	tmpMm.LeagueName
+			,	tmpMm.BettypeID
+			,	tmpMm.IsHedging
+			,	tmpMm.MatchSection 
+			,	0 AS  IsVerified
+		FROM Temp_MatchMonitor AS tmpMm
+		INNER JOIN Temp_MatchGroup_NotVerified AS tmpNv ON tmpMm.MatchID = tmpNv.MatchID AND tmpMm.LiveIndicator = tmpNv.LiveIndicator 
+					AND tmpMm.BettypeID = tmpNv.BettypeID AND tmpMm.IsHedging = tmpNv.IsHedging;
+	END IF;
     
-	SELECT	tmpMm.ID
-		,	tmpMm.MatchID
-		,	tmpMm.EventDate
-		,	tmpMm.LiveIndicator AS Market
-		,	tmpMm.HomeID
-		,	tmpMm.AwayID
-		,	tmpMm.LeagueID                
-		,	tmpMm.LeagueName
-		,	tmpMm.BettypeID
-		,	tmpMm.IsHedging
-		,	tmpMm.MatchSection 
-		,	(CASE WHEN tmpNv.MatchID IS NULL THEN 1 ELSE 0 END) IsVerified
-    FROM Temp_MatchMonitor AS tmpMm
-    LEFT JOIN Temp_MatchGroup_NotVerified AS tmpNv ON tmpMm.MatchID = tmpNv.MatchID AND tmpMm.LiveIndicator = tmpNv.LiveIndicator 
-				AND tmpMm.BettypeID = tmpNv.BettypeID AND tmpMm.IsHedging = tmpNv.IsHedging;
+    IF (ip_IsVerified = 1)
+    THEN
+		SELECT	tmpMm.ID
+			,	tmpMm.MatchID
+			,	tmpMm.EventDate
+			,	tmpMm.LiveIndicator AS Market
+			,	tmpMm.HomeID
+			,	tmpMm.AwayID
+			,	tmpMm.LeagueID                
+			,	tmpMm.LeagueName
+			,	tmpMm.BettypeID
+			,	tmpMm.IsHedging
+			,	tmpMm.MatchSection 
+			,	1 AS  IsVerified
+		FROM Temp_MatchMonitor AS tmpMm
+		LEFT JOIN Temp_MatchGroup_NotVerified AS tmpNv ON tmpMm.MatchID = tmpNv.MatchID AND tmpMm.LiveIndicator = tmpNv.LiveIndicator 
+					AND tmpMm.BettypeID = tmpNv.BettypeID AND tmpMm.IsHedging = tmpNv.IsHedging
+		WHERE tmpNv.MatchID IS NULL;
+	END IF;
                 
 END$$
 DELIMITER ;
