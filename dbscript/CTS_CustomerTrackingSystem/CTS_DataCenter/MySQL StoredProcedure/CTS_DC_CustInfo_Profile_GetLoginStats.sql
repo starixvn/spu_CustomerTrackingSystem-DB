@@ -21,7 +21,6 @@ BEGIN
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustInfo_Profile_GetLoginStats(200);
 	*/
-    DECLARE lv_AccountID 				BIGINT UNSIGNED;
 	DECLARE lv_Count_Device_Desktop 	INT;
     DECLARE lv_Count_Device_Mobile 		INT;
     DECLARE lv_Count_Device_Others 		INT;
@@ -29,34 +28,39 @@ BEGIN
     DECLARE lv_Count_IP					INT;
     DECLARE lv_Count_Device				INT;
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_AccountID;
+	CREATE TEMPORARY TABLE Temp_AccountID(
+			AccountID	BIGINT UNSIGNED PRIMARY KEY
+	);	
+    
+    INSERT IGNORE INTO Temp_AccountID(AccountID)
     SELECT AccountID 
-    INTO lv_AccountID
     FROM CTS_DataCenter.CustDCSAccount
 	WHERE  CTSCustID  = ip_CTSCustID; 
     
-    SELECT  SUM(DeviceDesktop)
-		,   SUM(DeviceMobile)
-        ,   SUM(DeviceOthers)
-        ,   SUM(TotalLogin)
+    SELECT  SUM(sm.DeviceDesktop)
+		,   SUM(sm.DeviceMobile)
+        ,   SUM(sm.DeviceOthers)
+        ,   SUM(sm.TotalLogin)
 	INTO 	lv_Count_Device_Desktop
 		,	lv_Count_Device_Mobile
         ,	lv_Count_Device_Others
         ,	lv_Count_Login
-    FROM DCS_DataCenter.SumAccountLogin
-    WHERE AccountID  = lv_AccountID
-		AND TransDate BETWEEN ip_FromDate AND ip_ToDate; 
+    FROM DCS_DataCenter.SumAccountLogin AS sm
+    WHERE sm.AccountID IN (SELECT tmp.AccountID FROM Temp_AccountID AS tmp )
+		AND sm.TransDate BETWEEN ip_FromDate AND ip_ToDate; 
 	
     SELECT  COUNT(1)
 	INTO 	lv_Count_IP
-    FROM DCS_DataCenter.AccountIP
-    WHERE AccountID  = lv_AccountID
-		AND LastTransDate BETWEEN ip_FromDate AND ip_ToDate; 
+    FROM DCS_DataCenter.AccountIP AS ip
+    WHERE ip.AccountID IN (SELECT tmp.AccountID FROM Temp_AccountID AS tmp )
+		AND ip.LastTransDate BETWEEN ip_FromDate AND ip_ToDate; 
 	
     SELECT  COUNT(1)
 	INTO 	lv_Count_Device
-    FROM DCS_DataCenter.AccountDevice
-    WHERE AccountID  = lv_AccountID
-		AND LastTransDate BETWEEN ip_FromDate AND ip_ToDate; 
+    FROM DCS_DataCenter.AccountDevice AS dv
+    WHERE dv.AccountID IN (SELECT tmp.AccountID FROM Temp_AccountID AS tmp )
+		AND dv.LastTransDate BETWEEN ip_FromDate AND ip_ToDate; 
     
     SELECT 	lv_Count_Device_Desktop 								AS DesktopUsage
 		,	ROUND((lv_Count_Device_Desktop/lv_Count_Login)*100,2)	AS DesktopUsagePercent
