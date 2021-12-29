@@ -19,6 +19,7 @@ BEGIN
 			- 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
 			- 20210914@Casey.Huynh: BrowserID and OSID Exceed DataRange [#161576]
 			- 20210916@Aries.Nguyen: Update sp [#161576]
+			- 20211214@Aries.Nguyen: Enrich the information on customer profile [Redmine ID: #165105]
 
 		Param's Explanation (filtered by):
 	*/
@@ -35,7 +36,15 @@ BEGIN
 		,	ua.UserAgent
 		,	ua.CreatedDate
 	FROM DCS_DataCenter.UserAgent AS ua
-    WHERE	OSID IS NULL
+    WHERE	ua.OSID IS NULL
+
+	UNION 
+    
+	SELECT	ua.UserAgentKey
+		,	ua.UserAgent
+		,	ua.CreatedDate
+	FROM DCS_DataCenter.UserAgent AS ua
+    WHERE	ua.DeviceTypeID IS NULL
 
     LIMIT ip_size;
 		

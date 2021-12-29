@@ -5,7 +5,7 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_UserAgent_UpdateOSBrowser`(
 		IN ip_UserAgentJson JSON
 )
-SQL SECURITY INVOKER
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20190815@Terry.Nguyen
@@ -18,6 +18,7 @@ BEGIN
 			- 20210510@Aries.Nguyen: Remove insert log zzTracePerformance [Redmine ID: #154792]
 			- 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
             - 20210914@Casey.Huynh: BrowserID and OSID Exceed DataRange [#161576]
+			- 20211214@Aries.Nguyen: Enrich the information on customer profile [Redmine ID: #165105]
 
 		Param's Explanation (filtered by):
 	*/
@@ -28,17 +29,20 @@ BEGIN
 			UserAgentKey 	VARCHAR(32)
 		,	BrowserName		VARCHAR(100)
 		,	OSName			VARCHAR(100)
+        ,	DeviceTypeName	VARCHAR(15)	
         ,   CreatedDate		DATETIME
         ,	BrowserID		INT UNSIGNED
         ,	OSID			INT UNSIGNED
+        ,	DeviceTypeID	INT UNSIGNED
 	);
 
 	#=======================
 
-	INSERT INTO Temp_UserAgent(UserAgentKey, BrowserName, OSName, CreatedDate)
+	INSERT INTO Temp_UserAgent(UserAgentKey, BrowserName, OSName,DeviceTypeName, CreatedDate)
 	SELECT 	tmpUA.UserAgentKey
 		,	tmpUA.BrowserName
 		,	tmpUA.OSName
+        ,	tmpUA.DeviceTypeName
 		,	tmpUA.CreatedDate
 	FROM
 	JSON_TABLE(ip_UserAgentJson
@@ -46,6 +50,7 @@ BEGIN
 							UserAgentKey 		VARCHAR(32)		PATH "$.UserAgentKey"							
 						,	BrowserName			VARCHAR(100)	PATH "$.BrowserName" 
 						,	OSName				VARCHAR(100)	PATH "$.OSName"
+                        ,	DeviceTypeName		VARCHAR(20)		PATH "$.DeviceTypeName"
                         ,	CreatedDate			DATETIME		PATH "$.CreatedDate" 
 		)
 	) AS  tmpUA;
@@ -65,13 +70,23 @@ BEGIN
 		,	MIN(CreatedDate) 
 	FROM Temp_UserAgent AS tmpOs 
     GROUP BY tmpOs.OSName;
+    
+    # Insert Device Type
+	INSERT IGNORE INTO DCS_DataCenter.DeviceType(DeviceTypeName, GroupName, Created)
+	SELECT	tmpDv.DeviceTypeName
+		,	'Others'
+		,	NOW() 
+	FROM Temp_UserAgent AS tmpDv 
+    GROUP BY tmpDv.DeviceTypeName;
 	
 	# Update Browser and OS Id into temporary table
 	UPDATE Temp_UserAgent as tmpAU 
 		INNER JOIN	DCS_DataCenter.OS AS os ON tmpAU.OSName = os.OSName
 		INNER JOIN	DCS_DataCenter.Browser AS br ON tmpAU.BrowserName = br.BrowserName
+        INNER JOIN	DCS_DataCenter.DeviceType AS dv ON tmpAU.DeviceTypeName = dv.DeviceTypeName
 	SET		tmpAU.BrowserID = br.BrowserID
-		,	tmpAU.OSID = os.OSID;             
+		,	tmpAU.OSID = os.OSID
+        ,	tmpAU.DeviceTypeID = dv.DeviceTypeID;    
                 
 	# Update Browser and OS into User Agent table
 	UPDATE DCS_DataCenter.UserAgent AS us 
@@ -79,7 +94,8 @@ BEGIN
 	SET		us.BrowserID = tmp.BrowserID
 		,	us.OSID = tmp.OSID
 		,	us.Browser = tmp.BrowserName
-		,	us.OS = tmp.OSName;
+		,	us.OS = tmp.OSName
+        ,	us.DeviceTypeID = tmp.DeviceTypeID;
 
 END$$
 
