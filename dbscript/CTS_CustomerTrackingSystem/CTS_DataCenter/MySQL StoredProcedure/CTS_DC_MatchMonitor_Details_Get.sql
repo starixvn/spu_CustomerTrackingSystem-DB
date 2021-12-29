@@ -3,8 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Details_Get`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Details_Get`(
-		IN ip_EventDate			DATE
-    ,	IN ip_MatchID 			BIGINT UNSIGNED    
+		IN ip_MatchID 			BIGINT UNSIGNED    
     ,	IN ip_BettypeID			INT UNSIGNED
     ,	IN ip_LiveIndicator		BOOLEAN     
     ,	IN ip_IsHedging			BOOLEAN  
@@ -22,12 +21,15 @@ BEGIN
 
 		Revisions:
 			- 	20210526@Long.Luu: Created [Redmine ID: 152883]
-		
+			-	20211213@Casey.Huynh: Enhance MM, Return more data 'Verified Trans List', Remove input Parameter ip_EventDate [Redmine ID: 165606]
 		Param's Explanation (filtered by):
 		
 		Example:
-			-	CALL CTS_DC_MatchMonitor_Details_Get('2021-05-01',12345,1,1,'1,2,3','100001,100002,100003');
+			-	CALL CTS_DC_MatchMonitor_Details_Get('2021-05-01',12345,1,1,0,'1,2,3','100001,100002,100003');
+            SELECT * FROM MatchMonitorDetails;
+			SELECT * FROM MatchMonitorDetailsVerifiedTrans;
 	*/
+    
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Score;
     CREATE TEMPORARY TABLE Temp_Score(
@@ -49,19 +51,27 @@ BEGIN
     
 	SELECT 	d.ListCustID
 		,	d.ListTransID
-        ,	d.GroupID
-        ,	d.IsHedging
-        ,	d.TotalScore
-        ,	d.LiveIndicator AS Market
+		,	d.GroupID
+		,	d.IsHedging
+		,	d.TotalScore
 	FROM   CTS_DataCenter.MatchMonitorDetails AS d
 		INNER JOIN Temp_Score AS s ON s.TotalScore = d.TotalScore
-        INNER JOIN Temp_ReasonGroup AS r ON r.GroupID = d.GroupID
-	WHERE  d.EventDate = ip_EventDate
-		AND d.BettypeID = ip_BettypeID
-        AND d.MatchID = ip_MatchID
-        AND d.LiveIndicator = ip_LiveIndicator
-        AND d.IsHedging = ip_IsHedging
-        ;
-    
+		INNER JOIN Temp_ReasonGroup AS r ON r.GroupID = d.GroupID
+	WHERE 	d.BettypeID = ip_BettypeID
+		AND d.MatchID = ip_MatchID
+		AND d.LiveIndicator = ip_LiveIndicator
+		AND d.IsHedging = ip_IsHedging;
+	
+	SELECT	js.TransID
+			, VerifiedDate
+            , (SELECT UserName FROM CTS_Admin.CTSUser WHERE UserID = VerifiedBy) AS VerifiedBy
+	FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans AS mdv
+		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mdv.ListTransID), ',', '","'), 
+						'$[*]' COLUMNS (TransID BIGINT UNSIGNED PATH '$')
+						) js
+	WHERE  	mdv.MatchID = ip_MatchID
+		AND mdv.LiveIndicator = ip_LiveIndicator
+        AND	mdv.BettypeID = ip_BettypeID;
+        
 END$$
 DELIMITER ;

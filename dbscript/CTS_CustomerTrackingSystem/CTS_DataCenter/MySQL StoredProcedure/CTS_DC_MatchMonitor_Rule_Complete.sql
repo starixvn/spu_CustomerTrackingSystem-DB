@@ -21,13 +21,14 @@ BEGIN
 			- 	20210526@Casey.Huynh: Created [Redmine ID: 152883]
             -	20210719@Casey.Huynh: Fix Issue Rule Trans.StepTime and AssGroup [Redmine ID: 158946]
             -	20210830@Casey.Huynh: Update Rule seperate Live and NonLive and move to Slave [Redmine ID: 159195]
+            -	20211213@Casey.Huynh: Enhance MM, Add column LeagueName [Redmine ID: 165606]
 		
 		Param's Explanation (filtered by):
 		CALL CTS_DC_MatchMonitor_Rule_Complete();
 
 		Example:
 			
-	*/ 
+		*/ 
     DECLARE lv_GroupID 					INT;
 	DECLARE lv_IsHedging 				BOOLEAN;
     DECLARE lv_TransIDList 				LONGTEXT;
@@ -48,6 +49,7 @@ BEGIN
     DECLARE lv_HomeID 					INT UNSIGNED;
     DECLARE lv_AwayID 					INT UNSIGNED;
     DECLARE lv_LeagueID					INT UNSIGNED;
+    DECLARE lv_LeagueName				VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
     
 /*    DROP TEMPORARY TABLE IF EXISTS Temp_Last3mTransGroup;
     CREATE TEMPORARY TABLE Temp_Last3mTransGroup
@@ -91,16 +93,16 @@ BEGIN
     #======Update MatchMonitorDetails====================================  
     
     IF (ip_LiveIndicator = 1) THEN
-		SELECT mms.EventDate, mms.LiveHomeScore, mms.LiveAwayScore, mms.EventDate, mms.KickOffTime, mms.EventStatus, mms.HomeID, mms.AwayID, mms.LeagueID
-		INTO lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID
+		SELECT mms.EventDate, mms.LiveHomeScore, mms.LiveAwayScore, mms.EventDate, mms.KickOffTime, mms.EventStatus, mms.HomeID, mms.AwayID, mms.LeagueID, mms.LeagueName
+		INTO lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName
 		FROM CTS_DataCenter.MatchMonitorStagingLive AS mms
 		WHERE mms.TransID <= ip_MaxTransID AND mms.MatchID = ip_MatchID AND mms.BettypeID = ip_BettypeID AND mms.TotalScore = ip_TotalScore
 		LIMIT 1;
 	END IF;
     
 	IF (ip_LiveIndicator = 0) THEN
-		SELECT mms.EventDate, mms.LiveHomeScore, mms.LiveAwayScore, mms.EventDate, mms.KickOffTime, mms.EventStatus, mms.HomeID, mms.AwayID, mms.LeagueID
-		INTO lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID
+		SELECT mms.EventDate, mms.LiveHomeScore, mms.LiveAwayScore, mms.EventDate, mms.KickOffTime, mms.EventStatus, mms.HomeID, mms.AwayID, mms.LeagueID, mms.LeagueName
+		INTO lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName
 		FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms
 		WHERE mms.TransID <= ip_MaxTransID AND mms.MatchID = ip_MatchID AND mms.BettypeID = ip_BettypeID AND mms.TotalScore = ip_TotalScore
 		LIMIT 1;	 
@@ -194,13 +196,13 @@ BEGIN
 	
     IF(lv_MatchHedging +  lv_MatchNotHedging < lv_MatchDetailsHedging + lv_MatchDetailsNotHedging) THEN
 		IF(lv_MatchHedging = 0 AND lv_MatchDetailsHedging = 1) THEN			
-			INSERT IGNORE INTO CTS_DataCenter.MatchMonitor(MatchID,BettypeID, LiveIndicator, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, IsHedging)
-			VALUES(ip_MatchID, ip_BettypeID, ip_LiveIndicator, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, 1);
+			INSERT IGNORE INTO CTS_DataCenter.MatchMonitor(MatchID,BettypeID, LiveIndicator, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueName, IsHedging)
+			VALUES(ip_MatchID, ip_BettypeID, ip_LiveIndicator, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName, 1);
 		END IF;
         
         IF(lv_MatchNotHedging = 0 AND lv_MatchDetailsNotHedging = 1) THEN			
-			INSERT IGNORE INTO CTS_DataCenter.MatchMonitor(MatchID,BettypeID, LiveIndicator, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, IsHedging)
-			VALUES(ip_MatchID, ip_BettypeID, ip_LiveIndicator, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, 0);
+			INSERT IGNORE INTO CTS_DataCenter.MatchMonitor(MatchID,BettypeID, LiveIndicator, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueName, IsHedging)
+			VALUES(ip_MatchID, ip_BettypeID, ip_LiveIndicator, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName, 0);
 		END IF;        
     END IF;
     

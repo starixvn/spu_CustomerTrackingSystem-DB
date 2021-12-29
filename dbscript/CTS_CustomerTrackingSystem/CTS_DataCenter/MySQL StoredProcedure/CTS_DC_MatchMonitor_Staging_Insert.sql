@@ -18,6 +18,7 @@ BEGIN
 			- 	20210526@Casey.Huynh: Created [Redmine ID: 152883]
             -	20210719@Casey.Huynh: Fix Issue Rule Trans.StepTime and AssGroup [Redmine ID: 158946]
             -	20210823@Casey.Huynh: Seperate scan for Live and NonLive [Redmine ID: 159195]
+            -	20211213@Casey.Huynh: Enhance MM, Add column LeagueName [Redmine ID: 165606]
 		
 		Param's Explanation (filtered by):
 		CALL CTS_DataCenter.CTS_DC_MatchMonitor_Staging_Insert(1,
@@ -32,9 +33,10 @@ BEGIN
     DECLARE lv_LastTransID BIGINT UNSIGNED DEFAULT 0;
     
     IF ip_LiveIndicator = 1 THEN    
-		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingLive(TransID, TransDate, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, CustID, Stake, InsertTime)
+		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingLive(TransID, TransDate, LeagueName, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, CustID, Stake, InsertTime)
 		SELECT  js.TransID
 			,	js.TransDate
+            ,	js.LeagueName
 			,	js.MatchID
 			,	js.HomeID
 			,	js.AwayID
@@ -53,6 +55,7 @@ BEGIN
 						 "$[*]" COLUMNS(
 									TransID			BIGINT UNSIGNED PATH "$.TransID" 
 								,	TransDate		DATETIME(3) PATH "$.TransDate" 
+                                ,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PATH "$.LeagueName"
 								,	MatchID			INT PATH "$.MatchID"
 								,	HomeID			INT	PATH "$.HomeID" 
 								,	AwayID			INT	PATH "$.AwayID" 
@@ -79,9 +82,10 @@ BEGIN
 			WHERE sys.ParameterID = 20;
 		END IF;        
 	ELSE
-    	INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingNonLive(TransID, TransDate, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, CustID, Stake, InsertTime)
+    	INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingNonLive(TransID, TransDate, LeagueName,  MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, CustID, Stake, InsertTime)
 		SELECT  js.TransID
 			,	js.TransDate
+            ,	js.LeagueName
 			,	js.MatchID
 			,	js.HomeID
 			,	js.AwayID
@@ -99,7 +103,8 @@ BEGIN
 		FROM JSON_TABLE(ip_TransList,
 						 "$[*]" COLUMNS(
 									TransID			BIGINT UNSIGNED PATH "$.TransID" 
-								,	TransDate		DATETIME(3) PATH "$.TransDate" 
+								,	TransDate		DATETIME(3) PATH "$.TransDate"
+                                ,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PATH "$.LeagueName"
 								,	MatchID			INT PATH "$.MatchID"
 								,	HomeID			INT	PATH "$.HomeID" 
 								,	AwayID			INT	PATH "$.AwayID" 
