@@ -53,7 +53,7 @@ BEGIN
 	SELECT 	clss.CustID
 		,	cate.AFCFraudID
 	FROM CTS_DataCenter.CTSCustomerClassification AS clss
-		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID 
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID  AND cate.AFCFraudID IS NOT NULL
 	WHERE clss.CustID > lv_LastCustID
 		AND clss.SportGroupID = CONST_GROUP_PROBLEM
         AND clss.SubscriberID = lv_CurrentSubID
@@ -76,7 +76,7 @@ BEGIN
 		SELECT 	clss.CustID
 			,	cate.AFCFraudID
 		FROM CTS_DataCenter.CTSCustomerClassification AS clss
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID 
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID AND cate.AFCFraudID IS NOT NULL
 		WHERE clss.CustID > 0
 			AND clss.SportGroupID = CONST_GROUP_PROBLEM
 			AND clss.SubscriberID = lv_NextSubID
@@ -96,7 +96,7 @@ BEGIN
 		SELECT 	clss.CustID
 			,	cate.AFCFraudID
 		FROM CTS_DataCenter.CTSCustomerClassification AS clss
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID 
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID AND cate.AFCFraudID IS NOT NULL 
 		WHERE clss.CustID = lv_NextCustID;
         
 		UPDATE CTS_DataCenter.SystemParameter 
