@@ -23,6 +23,7 @@ BEGIN
 			- 	20210526@Long.Luu: Created [Redmine ID: 152883]
             -	20210823@Casey.Huynh: Return Market value [Redmine ID: 159195]
 			-	20211213@Casey.Huynh: Enhance MM, Add column LeagueName, reset IsVerified = 0 [Redmine ID: 165606]
+            - 	20220107@Casey.Huynh: Fix Issue get data for Verified Trans [Redmine ID: 167192]
 		Param's Explanation (filtered by):
 			- ip_Market: 0 return LiveIndicator = 0, 1 return LiveIndicator = 1
             
@@ -128,10 +129,12 @@ BEGIN
     
     INSERT IGNORE INTO Temp_VerfiedTrans(TransID)
     SELECT js.TransID
-    FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans AS mdv
+    FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans AS mdv 
+    INNER JOIN Temp_MatchMonitor AS tmpMm ON mdv.MatchID = tmpMm.MatchID AND mdv.LiveIndicator = tmpMm.LiveIndicator AND mdv.BettypeID = tmpMm.BettypeID 
 		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mdv.ListTransID), ',', '","'), 
 						'$[*]' COLUMNS (TransID BIGINT UNSIGNED PATH '$')
-						) js;
+						) js
+	;
 
     INSERT IGNORE INTO Temp_MatchGroup(MatchID, LiveIndicator, BettypeID, IsHedging)
     SELECT	tmpMm.MatchID
