@@ -29,8 +29,7 @@ BEGIN
 		Example:
 			CALL CTS_DC_MatchMonitor_Details_Get(48995415,1,0,1,0,3,'1,2,3');
 
-	*/
-    
+	*/   
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Score;
     CREATE TEMPORARY TABLE Temp_Score(
