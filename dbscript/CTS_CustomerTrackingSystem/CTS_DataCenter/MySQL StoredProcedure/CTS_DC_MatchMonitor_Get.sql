@@ -24,6 +24,7 @@ BEGIN
             -	20210823@Casey.Huynh: Return Market value [Redmine ID: 159195]
             - 	20220107@Casey.Huynh: Fix Issue get data for Verified Trans [Redmine ID: 167192]
 			-	20211213@Casey.Huynh: Enhance MM, Add column LeagueName, reset IsVerified = 0 [Redmine ID: 165606]
+            -	20220110@Casey.Huynh: Enhance MM, BetID, Reason [Redmine ID: 166986]
 		Param's Explanation (filtered by):
 			- ip_Market: 0 return LiveIndicator = 0, 1 return LiveIndicator = 1
             
