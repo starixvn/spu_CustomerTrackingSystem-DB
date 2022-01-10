@@ -23,12 +23,12 @@ BEGIN
 		Revisions:
 			- 	20210526@Long.Luu: Created [Redmine ID: 152883]
 			-	20211213@Casey.Huynh: Enhance MM, Return more data 'Verified Trans List', Remove input Parameter ip_EventDate [Redmine ID: 165606]
+            -	20220110@Casey.Huynh: Enhance MM, BetID, Reason [Redmine ID: 166986]
 		Param's Explanation (filtered by):
 		
 		Example:
-			-	CALL CTS_DC_MatchMonitor_Details_Get('2021-05-01',12345,1,1,0,'1,2,3','100001,100002,100003');
-            SELECT * FROM MatchMonitorDetails;
-			SELECT * FROM MatchMonitorDetailsVerifiedTrans;
+			CALL CTS_DC_MatchMonitor_Details_Get(48995415,1,0,1,0,3,'1,2,3');
+
 	*/
     
 	
