@@ -26,19 +26,19 @@ BEGIN
 		Param's Explanation (filtered by): 
 		
 		Example:
-			-	CALL CTS_DC_MatchMonitor_Details_GetReasonGroup('2021-05-01',12345,1);
+			-	CALL CTS_DC_MatchMonitor_Details_GetReasonGroup(48995415,1,0,1,0);;
 	*/
 	
-	SELECT 	TotalScore
-		, 	s.GroupID
-	FROM   CTS_DataCenter.MatchMonitorDetails AS s
-	WHERE  	s.BettypeID = ip_BettypeID
-        AND s.MatchID = ip_MatchID
-        AND s.LiveIndicator = ip_LiveIndicator
-        AND s.IsHedging = ip_IsHedging
-	GROUP BY TotalScore
-		, 	s.GroupID
-	ORDER BY TotalScore, GroupID;
+	SELECT 	mm.TotalScore
+		, 	mm.GroupID
+	FROM   CTS_DataCenter.MatchMonitorDetails AS mm
+	WHERE  	mm.BettypeID = ip_BettypeID
+		AND mm.BetID = ip_BetID
+        AND mm.MatchID = ip_MatchID
+        AND mm.LiveIndicator = ip_LiveIndicator
+        AND mm.Reason = ip_Reason
+	GROUP BY mm.TotalScore,	mm.GroupID
+	ORDER BY mm.TotalScore, mm.GroupID;
     
 END$$
 DELIMITER ;

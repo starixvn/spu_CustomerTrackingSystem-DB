@@ -5,8 +5,9 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Details_Get`(
 		IN ip_MatchID 			BIGINT UNSIGNED    
     ,	IN ip_BettypeID			INT UNSIGNED
+    ,	IN ip_BetID				TINYINT
     ,	IN ip_LiveIndicator		BOOLEAN     
-    ,	IN ip_IsHedging			BOOLEAN  
+    ,	IN ip_Reason			TINYINT  
     ,	IN ip_ScoreList			VARCHAR(500)     
     ,	IN ip_GroupIDList		VARCHAR(2000)
     
@@ -52,15 +53,16 @@ BEGIN
 	SELECT 	d.ListCustID
 		,	d.ListTransID
 		,	d.GroupID
-		,	d.IsHedging
+		,	d.Reason
 		,	d.TotalScore
 	FROM   CTS_DataCenter.MatchMonitorDetails AS d
 		INNER JOIN Temp_Score AS s ON s.TotalScore = d.TotalScore
 		INNER JOIN Temp_ReasonGroup AS r ON r.GroupID = d.GroupID
 	WHERE 	d.BettypeID = ip_BettypeID
+		AND d.BetID = ip_BetID
 		AND d.MatchID = ip_MatchID
 		AND d.LiveIndicator = ip_LiveIndicator
-		AND d.IsHedging = ip_IsHedging;
+		AND d.Reason = ip_Reason;
 	
 	SELECT	js.TransID
 			, VerifiedDate
@@ -71,7 +73,8 @@ BEGIN
 						) js
 	WHERE  	mdv.MatchID = ip_MatchID
 		AND mdv.LiveIndicator = ip_LiveIndicator
-        AND	mdv.BettypeID = ip_BettypeID;
+        AND	mdv.BettypeID = ip_BettypeID
+        AND	mdv.BetID = ip_BetID;
         
 END$$
 DELIMITER ;
