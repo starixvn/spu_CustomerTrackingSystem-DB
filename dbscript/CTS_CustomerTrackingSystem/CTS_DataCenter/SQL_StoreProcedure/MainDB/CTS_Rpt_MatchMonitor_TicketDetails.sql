@@ -26,13 +26,14 @@ AS
 		- 20210820@Long.Luu: Separate Live/Nonlive ticket selection [Redmine ID: #159195]
 		- 20210928@Long.Luu: Remove useless filter [Redmine ID: #159195]		
 		- 20211214@Long.Luu: Return danger info [Redmine ID: #165606]
+		- 20220110@Long.Luu: Return BetId and support data for Basketbal & Esports [Redmine ID: #166986]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize)
 					  2 - to show on report (get tickets by @EventDate & @ListTransId)
 
 	Example:
-		EXECUTE [dbo].[CTS_Rpt_MatchMonitor_TicketDetails] @EventDate = '2021-02-23 00:00:00.000', @MatchId = 40391219, @CustId1 = 46777100, @CustId2 = 47717138, @Bettypes = '1,3'
+		EXECUTE [dbo].[CTS_Rpt_MatchMonitor_TicketDetails] @QueryType = 1, @LastScannedTransID = 0, @IsLive = 1,	@BatchSize = 500;
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -86,6 +87,23 @@ BEGIN
 			TransId				BIGINT NOT NULL PRIMARY KEY
 	);
 
+	IF	OBJECT_ID('tempdb..#tmpSupportedSportBettype') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpSupportedSportBettype;
+	END;
+
+	CREATE TABLE	#tmpSupportedSportBettype(
+			SportType			SMALLINT
+		,	BetType				SMALLINT
+	);
+
+	INSERT INTO #tmpSupportedSportBettype(SportType,BetType)
+	VALUES (1,1),(1,3),(1,7),(1,8); -- Soccer
+	INSERT INTO #tmpSupportedSportBettype(SportType,BetType)
+	VALUES (2,1),(2,3),(2,7),(2,8),(2,20),(2,609),(2,610),(2,612); -- Basketball
+	INSERT INTO #tmpSupportedSportBettype(SportType,BetType)
+	VALUES (43,1),(43,3),(43,20); -- E-Sports
+
 	IF	OBJECT_ID('tempdb..#tmpTickets') IS NOT NULL
 	BEGIN
 		DROP TABLE	#tmpTickets;
@@ -106,6 +124,7 @@ BEGIN
 		,	BetType				SMALLINT
 		,	CustId				INT
 		,	BetTeam				NVARCHAR(10)
+		,	BetId				BIGINT
 		,	Stake				MONEY
 		,	Odds				SMALLMONEY
 		,	Hdp1				SMALLMONEY
@@ -131,7 +150,7 @@ BEGIN
 
 	IF (@QueryType = 1)
 		BEGIN
-			INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,SportType,BetType,CustId,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
+			INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,SportType,BetType,CustId,BetTeam, BetId,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
 			SELECT	TOP (@BatchSize) b.transid
 				,	b.transdate
 				,	b.matchid
@@ -146,6 +165,7 @@ BEGIN
 				,	b.bettype
 				,	b.custid
 				,	b.betteam
+				,	b.betid
 				,	b.stake
 				,	b.odds
 				,	b.hdp1
@@ -158,15 +178,14 @@ BEGIN
 				INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
 				INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
+				INNER JOIN #tmpSupportedSportBettype AS t WITH(NOLOCK) ON m.sporttype = t.SportType AND b.bettype = t.BetType
 			WHERE	b.transid > @LastScannedTransID
                 AND m.eventstatus <> 'completed'
-				AND b.bettype IN (1,3,7,8)
 				AND b.LiveIndicator = @IsLive
 				AND b.Currency NOT IN (20,27,28)
 				AND b.BetFrom NOT IN ('p','m','w','0','3','6')
 				AND b.recommend NOT IN (52466,5707545) -- 8RM, BARM
 				AND b.Username NOT LIKE '%Cashout%'
-				AND m.sporttype = 1
 				AND l.LeagueGroupID NOT IN (42,74,108,113) -- SABA leagues
 				AND c.Site NOT IN ('NextBet','9wickets','9wsports')
 			ORDER BY b.transid ASC
@@ -184,7 +203,7 @@ BEGIN
 			-- START --
 			IF @IsGetDataFromBK = 1
 			BEGIN
-				INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
+				INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
 				SELECT	b.transid
 					,	b.transdate
 					,	b.matchid
@@ -198,6 +217,7 @@ BEGIN
 					,	b.bettype
 					,	b.custid
 					,	b.betteam
+					,	b.betid
 					,	b.stake
 					,	b.odds
 					,	b.hdp1
@@ -214,7 +234,7 @@ BEGIN
 
 			IF	@IsGetDataFrom14 = 1
 			BEGIN
-				INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
+				INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
 				SELECT	b.transid
 					,	b.transdate
 					,	b.matchid
@@ -228,6 +248,7 @@ BEGIN
 					,	b.bettype
 					,	b.custid
 					,	b.betteam
+					,	b.betid
 					,	b.stake
 					,	b.odds
 					,	b.hdp1
@@ -244,7 +265,7 @@ BEGIN
 
 			IF	@IsGetDataFromOrigin = 1
 			BEGIN
-				INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
+				INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
 				SELECT	b.transid
 					,	b.transdate
 					,	b.matchid
@@ -258,6 +279,7 @@ BEGIN
 					,	b.bettype
 					,	b.custid
 					,	b.betteam
+					,	b.betid
 					,	b.stake
 					,	b.odds
 					,	b.hdp1
