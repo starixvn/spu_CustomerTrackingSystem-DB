@@ -25,6 +25,7 @@ BEGIN
             - 20210506@Casey.Huynh: Remove Error Message Log [Redmine ID: 154633]
 			- 20210622@Aries.Nguyen: Update coding convention and improve locking [Redmine ID: #157203]
 			- 20210804@Irena.Vo: Fix issue No rescan for existed Customer [Redmine ID: #159706]
+            - 20220110@Casey.Huynh: HF Missing CustSub [Redmine ID: #167242]
 		Param's Explanation (filtered by):
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustInfo_Insert ('[
@@ -61,6 +62,7 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustExist;    
 	CREATE TEMPORARY TABLE Temp_CustExist(
 			CustID			INT
+		,	CustSubID		INT
 	);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;    
@@ -110,14 +112,15 @@ BEGIN
 			,	CreatedDate		DATETIME	 	PATH "$.CreatedDate" 
 			)
 	) AS js;
-	
-	INSERT INTO Temp_CustExist(CustID)
-	SELECT  tmpCus.CustID
+	   
+    
+	INSERT INTO Temp_CustExist(CustID, CustSubID)
+	SELECT  tmpCus.CustID, tmpCus.CustSubID
 	FROM Temp_CTSCustomer AS tmpCus
 		INNER JOIN	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID AND tmpCus.CustSubID = cus.CustSubID;
 
     UPDATE Temp_CTSCustomer AS tmpCus
-		INNER JOIN Temp_CustExist AS cus ON tmpCus.CustID = cus.CustID 
+		INNER JOIN Temp_CustExist AS cus ON tmpCus.CustID = cus.CustID AND tmpCus.CustSubID = cus.CustSubID
     SET tmpCus.IsExisting = 1;
     
 	INSERT INTO Temp_CustInfo(CustID,SubscriberID, RegisterName)
@@ -129,7 +132,7 @@ BEGIN
 																AND ((mss.RoleMapping = 1 AND tmpCus.RoleID = 1)
 																	OR (mss.RoleMapping = 2 AND tmpCus.RoleID > 1)
 																	OR (mss.RoleMapping = 0));
-	
+                                                                    
 	UPDATE Temp_CTSCustomer AS tmpCus
     INNER JOIN Temp_CustInfo AS cus ON tmpCus.CustID = cus.CustID
 	SET   tmpCus.SubscriberID = cus.SubscriberID
