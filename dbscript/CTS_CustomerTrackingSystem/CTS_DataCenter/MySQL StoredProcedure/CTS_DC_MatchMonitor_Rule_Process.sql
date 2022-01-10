@@ -8,6 +8,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule_Process`(
 	,	IN ip_MatchID			INT UNSIGNED
     ,	IN ip_TotalScore		INT UNSIGNED
     ,	IN ip_BettypeID			INT UNSIGNED
+    ,	IN ip_BetID				BIGINT
 )
     SQL SECURITY INVOKER
 sp: BEGIN
@@ -24,6 +25,7 @@ sp: BEGIN
 			-	20211019@Aries.Nguyen: Use FEDERATED  table [Redmine ID: 163400]
 			-	20211102@Aries.Nguyen: Fix FEDERATED connection fail[Redmine ID: 163400]
             -	20211111@Casey.Huynh: Fix Issue Trans of the same Cust not merge Group [Redmine ID: 164558]
+            -	20220110@Casey.Huynh: Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
             
 		Param's Explanation (filtered by):	
 
@@ -174,7 +176,7 @@ sp: BEGIN
             ,	mms.GroupID
             ,	mms.Stake
 		FROM CTS_DataCenter.MatchMonitorStagingLive AS mms
-        WHERE mms.TransID <= ip_MaxTransID AND mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID;
+        WHERE mms.TransID <= ip_MaxTransID AND mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID;
         
 	ELSE 
 		INSERT INTO Temp_StagingTrans01(TransID, TransDate, CustID, OldGroupID, Stake)
@@ -184,7 +186,7 @@ sp: BEGIN
             ,	mms.GroupID
             ,	mms.Stake
 		FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms
-        WHERE  mms.TransID <= ip_MaxTransID AND	mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID;
+        WHERE  mms.TransID <= ip_MaxTransID AND	mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID;
         
     END IF;
     

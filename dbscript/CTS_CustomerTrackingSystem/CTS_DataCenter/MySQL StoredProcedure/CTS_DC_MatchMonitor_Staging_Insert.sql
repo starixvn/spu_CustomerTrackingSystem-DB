@@ -19,6 +19,7 @@ BEGIN
             -	20210719@Casey.Huynh: Fix Issue Rule Trans.StepTime and AssGroup [Redmine ID: 158946]
             -	20210823@Casey.Huynh: Seperate scan for Live and NonLive [Redmine ID: 159195]
             -	20211213@Casey.Huynh: Enhance MM, Add column LeagueName [Redmine ID: 165606]
+            -	20220110@Casey.Huynh: Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
 		
 		Param's Explanation (filtered by):
 		CALL CTS_DataCenter.CTS_DC_MatchMonitor_Staging_Insert(1,
@@ -33,10 +34,11 @@ BEGIN
     DECLARE lv_LastTransID BIGINT UNSIGNED DEFAULT 0;
     
     IF ip_LiveIndicator = 1 THEN    
-		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingLive(TransID, TransDate, LeagueName, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, CustID, Stake, InsertTime)
+		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingLive(TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
 		SELECT  js.TransID
 			,	js.TransDate
             ,	js.LeagueName
+            ,	js.SportType
 			,	js.MatchID
 			,	js.HomeID
 			,	js.AwayID
@@ -48,14 +50,17 @@ BEGIN
 			,	js.LiveAwayScore
 			,	js.LiveHomeScore + js.LiveAwayScore AS TotalScore
 			,	js.BettypeID
+            ,	js.BetID
 			,	js.CustID
 			,	js.Stake
+            ,	js.Betteam
 			,	CURRENT_TIMESTAMP(3)
 		FROM JSON_TABLE(ip_TransList,
 						 "$[*]" COLUMNS(
 									TransID			BIGINT UNSIGNED PATH "$.TransID" 
 								,	TransDate		DATETIME(3) PATH "$.TransDate" 
                                 ,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PATH "$.LeagueName"
+                                ,	SportType		INT PATH "$.SportType"
 								,	MatchID			INT PATH "$.MatchID"
 								,	HomeID			INT	PATH "$.HomeID" 
 								,	AwayID			INT	PATH "$.AwayID" 
@@ -65,9 +70,11 @@ BEGIN
 								,	EventDate		DATE PATH "$.EventDate"
 								,	LiveHomeScore	INT	PATH "$.LiveHomeScore" 
 								,	LiveAwayScore	INT	PATH "$.LiveAwayScore" 
-								,	BettypeID		INT	PATH "$.Bettype" 
+								,	BettypeID		INT	PATH "$.Bettype"
+                                ,	BetID			BIGINT	PATH "$.BetID"
 								,	CustID			INT PATH "$.CustID"
 								,	Stake			DOUBLE PATH "$.Stake" 
+                                ,	Betteam			VARCHAR(10)	PATH "$.Betteam" 
 							)
 					) AS js;  
 		
@@ -82,10 +89,11 @@ BEGIN
 			WHERE sys.ParameterID = 20;
 		END IF;        
 	ELSE
-    	INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingNonLive(TransID, TransDate, LeagueName,  MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, CustID, Stake, InsertTime)
+    	INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingNonLive(TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
 		SELECT  js.TransID
 			,	js.TransDate
             ,	js.LeagueName
+            ,	js.SportType
 			,	js.MatchID
 			,	js.HomeID
 			,	js.AwayID
@@ -97,14 +105,17 @@ BEGIN
 			,	js.LiveAwayScore
 			,	js.LiveHomeScore + js.LiveAwayScore AS TotalScore
 			,	js.BettypeID
+            ,	js.BetID
 			,	js.CustID
 			,	js.Stake
+            ,	js.Betteam
 			,	CURRENT_TIMESTAMP(3)
 		FROM JSON_TABLE(ip_TransList,
 						 "$[*]" COLUMNS(
 									TransID			BIGINT UNSIGNED PATH "$.TransID" 
 								,	TransDate		DATETIME(3) PATH "$.TransDate"
                                 ,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PATH "$.LeagueName"
+                                ,	SportType		INT PATH "$.SportType"
 								,	MatchID			INT PATH "$.MatchID"
 								,	HomeID			INT	PATH "$.HomeID" 
 								,	AwayID			INT	PATH "$.AwayID" 
@@ -114,9 +125,11 @@ BEGIN
 								,	EventDate		DATE PATH "$.EventDate"
 								,	LiveHomeScore	INT	PATH "$.LiveHomeScore" 
 								,	LiveAwayScore	INT	PATH "$.LiveAwayScore" 
-								,	BettypeID		INT	PATH "$.Bettype" 
+								,	BettypeID		INT	PATH "$.Bettype"
+                                ,	BetID			BIGINT	PATH "$.BetID"
 								,	CustID			INT PATH "$.CustID"
-								,	Stake			DOUBLE PATH "$.Stake" 
+								,	Stake			DOUBLE PATH "$.Stake"
+                                ,	Betteam			VARCHAR(10)	PATH "$.Betteam" 
 							)
 					) AS js;  		
 

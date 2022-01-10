@@ -5,8 +5,9 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Details_GetReasonGroup`(
 		IN ip_MatchID 		BIGINT UNSIGNED
     ,	IN ip_BettypeID		INT UNSIGNED
+    ,	IN ip_BetID			BIGINT
     ,	IN ip_LiveIndicator BOOLEAN
-	,	IN ip_IsHedging		BOOLEAN
+	,	IN ip_Reason		TINYINT
     
 )
     SQL SECURITY INVOKER
@@ -21,6 +22,7 @@ BEGIN
 			- 	20210526@Long.Luu: Created [Redmine ID: 152883]
 			- -	20210823@Casey.Huynh: Remove ListCustID from return result[Redmine ID: 159195]
             -	20211213@Casey.Huynh: Enhance MM, Remove input Parameter ip_EventDate [Redmine ID: 165606]
+            -	20220110@Casey.Huynh: Enhance MM, BetID, Reason [Redmine ID: 166986]
 		Param's Explanation (filtered by): 
 		
 		Example:

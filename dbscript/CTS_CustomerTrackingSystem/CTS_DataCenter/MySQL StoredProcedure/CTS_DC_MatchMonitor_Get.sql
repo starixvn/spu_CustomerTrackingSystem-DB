@@ -8,7 +8,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Get`(
     ,	IN 	ip_LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
     , 	IN	ip_Market 			TINYINT
     , 	IN	ip_MatchSection		VARCHAR(50)
-    ,	IN 	ip_Bettypes 		VARCHAR(50)
+    ,	IN 	ip_Bettypes 		JSON # BettypeID and BetID
     ,	IN 	ip_IsVerified 		BIT
 )
     SQL SECURITY INVOKER
@@ -42,13 +42,14 @@ BEGIN
         ,	LeagueID		INT
         ,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
         ,	BettypeID		INT
-        ,	IsHedging		TINYINT
+        ,	Reason			TINYINT
         ,	MatchSection	INT   
     );
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Bettype;
     CREATE TEMPORARY TABLE Temp_Bettype(
-		BettypeID 	INT UNSIGNED
+			BettypeID 	INT UNSIGNED
+        ,	BetID		BIGINT
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_MatchSection;
@@ -61,7 +62,7 @@ BEGIN
 			MatchID 		INT
         ,	LiveIndicator	TINYINT
 		,	BettypeID		INT
-        ,	IsHedging		INT
+        ,	Reason			INT
         
         ,	PRIMARY KEY PK_Temp_MatchTrans(MatchID,LiveIndicator,BettypeID,IsHedging)
 	);
@@ -81,17 +82,21 @@ BEGIN
         TransID	BIGINT UNSIGNED PRIMARY KEY
 	);
     
-    
-    
-	SET @sql = CONCAT("INSERT INTO Temp_Bettype (BettypeID) VALUES ('", REPLACE(ip_Bettypes, ",", "'),('"),"');");
-	PREPARE stmt1 FROM @sql;
-	EXECUTE stmt1;    
-       
+    INSERT IGNORE INTO Temp_Bettype(BettypeID, BetID)
+	SELECT  js.BettypeID
+		,	js.BetID
+	FROM JSON_TABLE(ip_TransList,
+					 "$[*]" COLUMNS(
+								BettypeID		INT	PATH "$.Bettype"
+							,	BetID			BIGINT	PATH "$.BetID"
+						)
+				) AS js;  
+          
 	SET @sql = CONCAT("INSERT INTO Temp_MatchSection (MatchSection) VALUES ('", REPLACE(ip_MatchSection, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1; 
     
-    INSERT INTO Temp_MatchMonitor(ID, MatchID, EventDate, LiveIndicator, HomeID, AwayID, LeagueID, LeagueName, BettypeID, IsHedging, MatchSection)    
+    INSERT INTO Temp_MatchMonitor(ID, MatchID, EventDate, LiveIndicator, HomeID, AwayID, LeagueID, LeagueName, BettypeID, Reason, MatchSection)    
     SELECT	tmp.ID
 		,	tmp.MatchID
 		,	tmp.EventDate
@@ -101,7 +106,7 @@ BEGIN
 		,	tmp.LeagueID                
 		,	tmp.LeagueName
 		,	tmp.BettypeID
-		,	tmp.IsHedging
+		,	tmp.Reason
 		,	tmp.MatchSection
     FROM ( 
 			SELECT 	s.ID
@@ -113,14 +118,14 @@ BEGIN
 				,	s.LeagueID                
 				,	s.LeagueName
 				,	s.BettypeID
-				,	s.IsHedging		#CASE WHEN s.IsHedging = 1 THEN 'Hedging' ELSE 'Group Betting' END AS Reason
+				,	s.Reason		# 0:Group Betting, 1: Hedging, 2: Arbitrage
 				,	CASE WHEN NOW() BETWEEN s.KickOffTime AND TIMESTAMPADD(MINUTE, 150, s.KickOffTime ) AND LiveIndicator = 1 THEN 1 #Live
 						WHEN s.EventDate = CURDATE() AND s.KickOffTime > NOW() THEN 2 #'Today'
 						WHEN s.EventDate > CURDATE() THEN 3 #'Early'
 						ELSE 4 #'Closed'
 					END	AS MatchSection
 			FROM   CTS_DataCenter.MatchMonitor AS s
-				INNER JOIN Temp_Bettype AS b ON s.BettypeID = b.BettypeID
+				INNER JOIN Temp_Bettype AS tmpBt ON s.BettypeID = b.BettypeID AND s.BetID = tmpBt.BetID
 			WHERE s.EventDate BETWEEN ip_FromDate AND ip_ToDate
 			) AS tmp
             INNER JOIN Temp_MatchSection AS tmpMst ON tmpMst.MatchSection = tmp.MatchSection

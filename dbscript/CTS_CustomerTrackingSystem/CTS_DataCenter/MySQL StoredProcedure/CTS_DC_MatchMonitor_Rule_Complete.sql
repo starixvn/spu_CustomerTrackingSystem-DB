@@ -7,7 +7,8 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule_Complete`(
 	,	IN ip_MaxTransID 	BIGINT UNSIGNED
 	, 	IN ip_MatchID		INT
     , 	IN ip_TotalScore	TINYINT
-    , 	IN ip_BettypeID		INT    
+    , 	IN ip_BettypeID		INT
+    ,	IN ip_BetID			BIGINT
     , 	IN ip_TransGroup	JSON
 )
   SQL SECURITY INVOKER
@@ -22,7 +23,7 @@ BEGIN
             -	20210719@Casey.Huynh: Fix Issue Rule Trans.StepTime and AssGroup [Redmine ID: 158946]
             -	20210830@Casey.Huynh: Update Rule seperate Live and NonLive and move to Slave [Redmine ID: 159195]
             -	20211213@Casey.Huynh: Enhance MM, Add column LeagueName [Redmine ID: 165606]
-		
+			-	20220110@Casey.Huynh: Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
 		Param's Explanation (filtered by):
 		CALL CTS_DC_MatchMonitor_Rule_Complete();
 
@@ -96,7 +97,7 @@ BEGIN
 		SELECT mms.EventDate, mms.LiveHomeScore, mms.LiveAwayScore, mms.EventDate, mms.KickOffTime, mms.EventStatus, mms.HomeID, mms.AwayID, mms.LeagueID, mms.LeagueName
 		INTO lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName
 		FROM CTS_DataCenter.MatchMonitorStagingLive AS mms
-		WHERE mms.TransID <= ip_MaxTransID AND mms.MatchID = ip_MatchID AND mms.BettypeID = ip_BettypeID AND mms.TotalScore = ip_TotalScore
+		WHERE mms.TransID <= ip_MaxTransID AND mms.MatchID = ip_MatchID AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.TotalScore = ip_TotalScore
 		LIMIT 1;
 	END IF;
     
@@ -104,7 +105,7 @@ BEGIN
 		SELECT mms.EventDate, mms.LiveHomeScore, mms.LiveAwayScore, mms.EventDate, mms.KickOffTime, mms.EventStatus, mms.HomeID, mms.AwayID, mms.LeagueID, mms.LeagueName
 		INTO lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName
 		FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms
-		WHERE mms.TransID <= ip_MaxTransID AND mms.MatchID = ip_MatchID AND mms.BettypeID = ip_BettypeID AND mms.TotalScore = ip_TotalScore
+		WHERE mms.TransID <= ip_MaxTransID AND mms.MatchID = ip_MatchID AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.TotalScore = ip_TotalScore
 		LIMIT 1;	 
 	END IF;
 	

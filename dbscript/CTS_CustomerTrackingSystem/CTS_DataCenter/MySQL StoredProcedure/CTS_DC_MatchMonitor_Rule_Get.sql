@@ -17,7 +17,7 @@ sp: BEGIN
 
 		Revisions:
 			- 	20210924@Casey.Huynh: Created [Redmine ID: 159195]
-            
+            -	20220110@Casey.Huynh: Enhance MM(SportType, Betteam, BetID), Return BetID [Redmine ID: 166986]
 		Param's Explanation (filtered by):	
 
 		Example:
@@ -43,9 +43,10 @@ sp: BEGIN
 			SELECT	mms.MatchID
 				,	mms.TotalScore
 				,	mms.BettypeID
+                ,	mms.BetID
 			FROM CTS_DataCenter.MatchMonitorStagingLive AS mms
             WHERE mms.TransID <= lv_MaxTransID
-			GROUP BY mms.MatchID, mms.TotalScore, mms.BettypeID
+			GROUP BY mms.MatchID, mms.TotalScore, mms.BettypeID, mms.BetID
 			HAVING COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= 500;            
 		END IF;
 	ELSE
@@ -64,9 +65,10 @@ sp: BEGIN
 			SELECT	mms.MatchID
 				,	mms.TotalScore
 				,	mms.BettypeID
+                ,	mms.BetID
 			FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms
             WHERE mms.TransID <= lv_MaxTransID
-			GROUP BY mms.MatchID, mms.TotalScore, mms.BettypeID
+			GROUP BY mms.MatchID, mms.TotalScore, mms.BettypeID, mms.BetID
 			HAVING COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= 500;            
 		END IF;
 	END IF;

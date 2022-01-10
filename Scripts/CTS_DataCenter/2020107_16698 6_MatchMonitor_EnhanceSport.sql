@@ -1,44 +1,48 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
 /*
-Creator:	20211213@Casey.Huynh
-Task:	 	Enhance MatchMonitor
+Creator:	20220110@Casey.Huynh
+Task:	 	Enhance MatchMonitor (SportType, Betteam, BetID)
 Server:  	Master
 DBName:		CTS_DataCenter
 
 Revisions: 
-		- 20211213@Casey.Huynh: Created [Redmine ID: #165606]
+		- 20211213@Casey.Huynh: Created [Redmine ID: #166986]
 Reviewer:
 */
 USE CTS_DataCenter;
-/*===1. ALTER Tables===========*/
+/*===1. ALTER Tables: Column===========*/
 ALTER TABLE MatchMonitorStagingLive
 		ADD COLUMN SportType INT
 	,	ADD COLUMN Betteam VARCHAR(10) 
-    ,	ADD COLUMN BetID BIGINT
-    ,	ADD COLUMN Betcheck VARCHAR(50);
+    ,	ADD COLUMN BetID BIGINT;
 
 ALTER TABLE MatchMonitorStagingNonLive
 		ADD COLUMN SportType INT
 	,	ADD COLUMN Betteam VARCHAR(10) 
-    ,	ADD COLUMN BetID BIGINT
-    ,	ADD COLUMN Betcheck VARCHAR(50);
+    ,	ADD COLUMN BetID BIGINT;
 
 ALTER TABLE MatchMonitor
-	ADD COLUMN LeagueName VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
-,	DROP COLUMN VerifiedDate
-,	DROP COLUMN VerifiedBy
-,	DROP COLUMN IsVerified;
+		ADD COLUMN SportType INT
+    ,	ADD COLUMN BetID BIGINT
+    ,   CHANGE COLUMN IsHedging Reason TINYINT ;
 
-/*===2. CREATE Table===========*/
-CREATE TABLE MatchMonitorDetailsVerifiedTrans (
-		ID				BIGINT	UNSIGNED AUTO_INCREMENT
-	,	MatchID 		BIGINT UNSIGNED
-	,	LiveIndicator	TINYINT
-	,	BettypeID		INT UNSIGNED
-	,	ListTransID		LONGTEXT
-	,	VerifiedDate	DATETIME
-	,	VerifiedBy		INT
+ALTER TABLE MatchMonitorDetails
+		ADD COLUMN BetID 		BIGINT
+	 ,	CHANGE COLUMN IsHedging Reason TINYINT ;
     
-    ,	PRIMARY KEY PK_MatchMonitorDetailsVerifiedTrans_ID(ID)
-    ,	INDEX IX_MatchMonitorDetailsVerifiedTrans(MatchID,LiveIndicator,BettypeID)
-    );
+ALTER TABLE MatchMonitorDetailsVerifiedTrans
+    	ADD COLUMN BetID 		BIGINT;        
+        
+/*===2. ALTER Tables: INDEX===========*/
+ALTER TABLE MatchMonitorStagingLive
+		DROP INDEX IX_MatchMonitorStagingLive_Group
+	,	ADD INDEX IX_MatchMonitorStagingLive_Group (MatchID,TotalScore,BettypeID,BetID,GroupID);
+
+ALTER TABLE MatchMonitorStagingNonLive
+		DROP INDEX IX_MatchMonitorStagingNonLive_Group
+	,	ADD INDEX IX_MatchMonitorStagingNonLive_Group(MatchID,TotalScore,BettypeID,BetID,GroupID);
+    
+ALTER TABLE MatchMonitorDetailsVerifiedTrans
+		DROP INDEX IX_MatchMonitorDetailsVerifiedTrans
+	,	ADD INDEX IX_MatchMonitorDetailsVerifiedTrans(MatchID,LiveIndicator,BettypeID, BetID)
+
