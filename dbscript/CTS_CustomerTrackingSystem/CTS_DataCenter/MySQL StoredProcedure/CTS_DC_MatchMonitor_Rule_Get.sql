@@ -21,7 +21,7 @@ sp: BEGIN
 		Param's Explanation (filtered by):	
 
 		Example:
-			CALL  CTS_DC_MatchMonitor_Rule_Get(0);
+			CALL  CTS_DC_MatchMonitor_Rule_Get(1,500,@MaxTrans);
 			
 	*/
 	DECLARE lv_LastTransID BIGINT UNSIGNED DEFAULT 0;
@@ -47,7 +47,8 @@ sp: BEGIN
 			FROM CTS_DataCenter.MatchMonitorStagingLive AS mms
             WHERE mms.TransID <= lv_MaxTransID
 			GROUP BY mms.MatchID, mms.TotalScore, mms.BettypeID, mms.BetID
-			HAVING COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= 500;            
+			HAVING COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= 500;      
+            
 		END IF;
 	ELSE
 		SELECT sys.ParameterValue
@@ -71,6 +72,7 @@ sp: BEGIN
 			GROUP BY mms.MatchID, mms.TotalScore, mms.BettypeID, mms.BetID
 			HAVING COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= 500;            
 		END IF;
+        
 	END IF;
 END$$
 DELIMITER ;

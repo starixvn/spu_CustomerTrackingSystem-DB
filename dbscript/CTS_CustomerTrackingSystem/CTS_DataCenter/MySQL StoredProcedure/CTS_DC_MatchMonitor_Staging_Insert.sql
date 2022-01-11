@@ -22,13 +22,15 @@ BEGIN
             -	20220110@Casey.Huynh: Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
 		
 		Param's Explanation (filtered by):
-		CALL CTS_DataCenter.CTS_DC_MatchMonitor_Staging_Insert(1,
-			'[
-					{"TransID": 111928688807,"TransDate" : "2021-05-17 07:48:52.533","MatchID" : 43614953,"EventDate" : "2021-05-17 00:00:00","KickOffTime" : "2021-05-17 00:00:00","EventStatus" : "running","HomeID" : 953,"AwayID" : 113,"LeagueID" : 3,"Bettype" : 3,"LiveIndicator" : "1","CustID" : 12500792,"Stake" : 20,"LiveHomeScore" : 0,"LiveAwayScore" : 2}
-			]');
+		
 
 		Example:
-			
+			CALL CTS_DataCenter.CTS_DC_MatchMonitor_Staging_Insert(1,
+			'[
+					{"TransID": 1,"TransDate" : "2021-05-17 07:48:52.533","MatchID" : 43614953,"EventDate" : "2021-05-17 00:00:00","KickOffTime" : "2021-05-17 00:00:00","EventStatus" : "running","HomeID" : 953,"AwayID" : 113,"LeagueID" : 3,"Bettype" : 3, "BetID" : 0,  "LiveIndicator" : "1","CustID" : 12500792,"Stake" : 20,"Betteam" : "a","LiveHomeScore" : 0,"LiveAwayScore" : 2}
+			]');;
+            
+            
 	*/    
     
     DECLARE lv_LastTransID BIGINT UNSIGNED DEFAULT 0;
@@ -46,11 +48,11 @@ BEGIN
 			,	js.KickOffTime
 			,	js.LeagueID
 			,	js.EventDate
-			,	js.LiveHomeScore
-			,	js.LiveAwayScore
-			,	js.LiveHomeScore + js.LiveAwayScore AS TotalScore
+			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore END) AS LiveHomeScore
+			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveAwayScore END) AS LiveAwayScore
+			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore + js.LiveAwayScore END) AS TotalScore
 			,	js.BettypeID
-            ,	js.BetID
+            ,	IFNULL(js.BetID,0)
 			,	js.CustID
 			,	js.Stake
             ,	js.Betteam
@@ -60,7 +62,7 @@ BEGIN
 									TransID			BIGINT UNSIGNED PATH "$.TransID" 
 								,	TransDate		DATETIME(3) PATH "$.TransDate" 
                                 ,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PATH "$.LeagueName"
-                                ,	SportType		INT PATH "$.SportType"
+                                ,	SportType		INT PATH "$.Sportype"
 								,	MatchID			INT PATH "$.MatchID"
 								,	HomeID			INT	PATH "$.HomeID" 
 								,	AwayID			INT	PATH "$.AwayID" 
