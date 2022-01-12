@@ -6,10 +6,11 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Get`(
 		IN 	ip_FromDate 		DATE
     ,	IN 	ip_ToDate 			DATE
     ,	IN 	ip_LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+    ,	IN	ip_SportType		VARCHAR(500)
     , 	IN	ip_Market 			TINYINT
     , 	IN	ip_MatchSection		VARCHAR(50)
     ,	IN 	ip_IsVerified 		BIT
-    ,	IN 	ip_Bettypes 		JSON # BettypeID and BetID    
+    ,	IN 	ip_Bettypes 		JSON # BettypeID and BetID       
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -29,7 +30,7 @@ BEGIN
 			- ip_Market: 0 return LiveIndicator = 0, 1 return LiveIndicator = 1
             
 		Example:
-			-	CALL CTS_DC_MatchMonitor_Get('2021-12-14','2022-01-09','MEXICO PRIMERA DIVISION',1,'1,2,3,4',NULL,'[{"BettypeID":1,"BetID":0},{"BettypeID":3,"BetID":0},{"BettypeID":7,"BetID":0}]');
+			-	CALL CTS_DC_MatchMonitor_Get('2021-12-14','2022-01-09','MEXICO PRIMERA DIVISION','1,2', 1,'1,2,3,4',NULL,'[{"BettypeID":1,"BetID":0},{"BettypeID":3,"BetID":0},{"BettypeID":7,"BetID":0}]');
 	*/
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitor;
@@ -42,6 +43,7 @@ BEGIN
         ,	AwayID			INT
         ,	LeagueID		INT
         ,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+        ,	Sporttype		INT
         ,	BettypeID		INT
         ,	BetID			BIGINT
         ,	Reason			TINYINT
@@ -54,6 +56,11 @@ BEGIN
         ,	BetID		BIGINT
 	);
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_Sporttype;
+    CREATE TEMPORARY TABLE Temp_Sporttype(
+			Sporttype 	INT
+	);
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_MatchSection;
     CREATE TEMPORARY TABLE Temp_MatchSection(
 		MatchSection 	TINYINT
@@ -64,6 +71,7 @@ BEGIN
 			MatchID 		INT
         ,	LiveIndicator	TINYINT
 		,	BettypeID		INT
+        ,	BetID			INT
         ,	Reason			INT
         
         ,	PRIMARY KEY PK_Temp_MatchTrans(MatchID,LiveIndicator,BettypeID,Reason)
@@ -74,6 +82,7 @@ BEGIN
 			MatchID 		INT
         ,	LiveIndicator	TINYINT
 		,	BettypeID		INT
+        ,	BetID		INT
         ,	Reason		INT
         
         ,	PRIMARY KEY PK_Temp_MatchTrans(MatchID,LiveIndicator,BettypeID,Reason)
@@ -98,7 +107,11 @@ BEGIN
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1; 
     
-    INSERT INTO Temp_MatchMonitor(ID, MatchID, EventDate, LiveIndicator, HomeID, AwayID, LeagueID, LeagueName, BettypeID, BetID, Reason, MatchSection)    
+    SET @sql = CONCAT("INSERT INTO Temp_Sporttype (Sporttype) VALUES ('", REPLACE(ip_Sporttype, ",", "'),('"),"');");
+	PREPARE stmt1 FROM @sql;
+	EXECUTE stmt1; 
+    
+    INSERT INTO Temp_MatchMonitor(ID, MatchID, EventDate, LiveIndicator, HomeID, AwayID, LeagueID, LeagueName, Sporttype, BettypeID, BetID, Reason, MatchSection)    
     SELECT	tmp.ID
 		,	tmp.MatchID
 		,	tmp.EventDate
@@ -107,6 +120,7 @@ BEGIN
 		,	tmp.AwayID
 		,	tmp.LeagueID                
 		,	tmp.LeagueName
+        ,	tmp.Sporttype
 		,	tmp.BettypeID
         ,	tmp.BetID
 		,	tmp.Reason
@@ -120,6 +134,7 @@ BEGIN
 				,	s.AwayID
 				,	s.LeagueID                
 				,	s.LeagueName
+                ,	s.Sporttype
 				,	s.BettypeID
                 ,	s.BetID
 				,	s.Reason		# 0:Group Betting, 1: Hedging, 2: Arbitrage
@@ -130,16 +145,13 @@ BEGIN
 					END	AS MatchSection
 			FROM   CTS_DataCenter.MatchMonitor AS s
 				INNER JOIN Temp_Bettype AS tmpBt ON s.BettypeID = tmpBt.BettypeID AND s.BetID = tmpBt.BetID
+                INNER JOIN Temp_Sporttype AS tmpSt ON s.Sporttype = tmpSt.SportType
 			WHERE s.EventDate BETWEEN ip_FromDate AND ip_ToDate
 			) AS tmp
             INNER JOIN Temp_MatchSection AS tmpMst ON tmpMst.MatchSection = tmp.MatchSection
        WHERE  (ip_LeagueName IS NULL OR (tmp.LeagueName LIKE CONCAT('%',ip_LeagueName,'%')))
 			AND tmp.LiveIndicator = IFNULL(ip_Market, tmp.LiveIndicator);
     
-    SELECT * FROM Temp_Bettype;
-     SELECT * FROM Temp_MatchSection;
-      SELECT * FROM Temp_MatchMonitor;
-
     INSERT IGNORE INTO Temp_VerfiedTrans(TransID)
     SELECT js.TransID
     FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans AS mdv
@@ -147,18 +159,20 @@ BEGIN
 		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mdv.ListTransID), ',', '","'), 
 						'$[*]' COLUMNS (TransID BIGINT UNSIGNED PATH '$')
 						) js;
-
-    INSERT IGNORE INTO Temp_MatchGroup(MatchID, LiveIndicator, BettypeID, Reason)
+	
+    INSERT IGNORE INTO Temp_MatchGroup(MatchID, LiveIndicator, BettypeID, BetID, Reason)
     SELECT	tmpMm.MatchID
 				,	tmpMm.LiveIndicator
 				,	tmpMm.BettypeID
+                ,	tmpMm.BetID
 				,	tmpMm.Reason
 	FROM Temp_MatchMonitor AS tmpMm;
     
-	INSERT INTO Temp_MatchGroup_NotVerified(MatchID, LiveIndicator, BettypeID, Reason)
+	INSERT INTO Temp_MatchGroup_NotVerified(MatchID, LiveIndicator, BettypeID, BetID, Reason)
     SELECT DISTINCT	tmpMg.MatchID
 		,	tmpMg.LiveIndicator
 		,	tmpMg.BettypeID
+        ,	tmpMg.BetID
 		,	tmpMg.Reason
     FROM Temp_MatchGroup AS tmpMg
 		INNER JOIN CTS_DataCenter.MatchMonitorDetails AS mmd ON tmpMg.MatchID = mmd.MatchID AND tmpMg.LiveIndicator = mmd.LiveIndicator 
@@ -167,7 +181,7 @@ BEGIN
 						'$[*]' COLUMNS (TransID BIGINT UNSIGNED PATH '$')
 						) js
 	WHERE NOT EXISTS (SELECT 1 FROM Temp_VerfiedTrans AS tmpVt WHERE js.TransID = tmpVt.TransID);    
-    
+   
     IF (ip_IsVerified IS NULL)
     THEN
 		SELECT	tmpMm.ID
@@ -178,13 +192,15 @@ BEGIN
 			,	tmpMm.AwayID
 			,	tmpMm.LeagueID                
 			,	tmpMm.LeagueName
+            ,	tmpMm.Sporttype
 			,	tmpMm.BettypeID
+            ,	tmpMm.BetID
 			,	tmpMm.Reason
 			,	tmpMm.MatchSection 
 			,	(CASE WHEN tmpNv.MatchID IS NULL THEN 1 ELSE 0 END) IsVerified
 		FROM Temp_MatchMonitor AS tmpMm
         	LEFT JOIN Temp_MatchGroup_NotVerified AS tmpNv ON tmpMm.MatchID = tmpNv.MatchID AND tmpMm.LiveIndicator = tmpNv.LiveIndicator 
-					AND tmpMm.BettypeID = tmpNv.BettypeID AND tmpMm.Reason = tmpNv.Reason;
+					AND tmpMm.BettypeID = tmpNv.BettypeID AND tmpMm.BetID = tmpNv.BetID AND tmpMm.Reason = tmpNv.Reason;
 	END IF;
     
 	IF (ip_IsVerified = 0)
@@ -197,13 +213,15 @@ BEGIN
 			,	tmpMm.AwayID
 			,	tmpMm.LeagueID                
 			,	tmpMm.LeagueName
+            ,	tmpMm.Sporttype
 			,	tmpMm.BettypeID
+            ,	tmpMm.BetID
 			,	tmpMm.Reason
 			,	tmpMm.MatchSection 
 			,	0 AS  IsVerified
 		FROM Temp_MatchMonitor AS tmpMm
 		INNER JOIN Temp_MatchGroup_NotVerified AS tmpNv ON tmpMm.MatchID = tmpNv.MatchID AND tmpMm.LiveIndicator = tmpNv.LiveIndicator 
-					AND tmpMm.BettypeID = tmpNv.BettypeID AND tmpMm.Reason = tmpNv.Reason;
+					AND tmpMm.BettypeID = tmpNv.BettypeID AND tmpMm.BetID = tmpNv.BetID AND tmpMm.Reason = tmpNv.Reason;
 	END IF;
     
     IF (ip_IsVerified = 1)
@@ -216,13 +234,15 @@ BEGIN
 			,	tmpMm.AwayID
 			,	tmpMm.LeagueID                
 			,	tmpMm.LeagueName
+			,	tmpMm.Sporttype
 			,	tmpMm.BettypeID
+            ,	tmpMm.BetID
 			,	tmpMm.Reason
 			,	tmpMm.MatchSection 
 			,	1 AS  IsVerified
 		FROM Temp_MatchMonitor AS tmpMm
 		LEFT JOIN Temp_MatchGroup_NotVerified AS tmpNv ON tmpMm.MatchID = tmpNv.MatchID AND tmpMm.LiveIndicator = tmpNv.LiveIndicator 
-					AND tmpMm.BettypeID = tmpNv.BettypeID AND tmpMm.Reason = tmpNv.Reason
+					AND tmpMm.BettypeID = tmpNv.BettypeID AND tmpMm.BetID = tmpNv.BetID AND tmpMm.Reason = tmpNv.Reason
 		WHERE tmpNv.MatchID IS NULL;
 	END IF;
                 
