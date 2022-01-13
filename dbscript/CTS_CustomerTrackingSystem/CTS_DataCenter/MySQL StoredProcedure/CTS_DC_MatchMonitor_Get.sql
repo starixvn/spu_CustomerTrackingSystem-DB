@@ -32,7 +32,7 @@ BEGIN
 		Example:
 			-	CALL CTS_DC_MatchMonitor_Get('2021-12-14','2022-01-09','MEXICO PRIMERA DIVISION','1,2', 1,'1,2,3,4',NULL,'[{"BettypeID":1,"BetID":0},{"BettypeID":3,"BetID":0},{"BettypeID":7,"BetID":0}]');
 	*/
-    
+      
 	DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitor;
     CREATE TEMPORARY TABLE Temp_MatchMonitor(
 			ID				BIGINT UNSIGNED
