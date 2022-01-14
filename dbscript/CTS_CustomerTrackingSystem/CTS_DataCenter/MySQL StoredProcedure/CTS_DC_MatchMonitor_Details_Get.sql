@@ -40,7 +40,12 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_ReasonGroup(
 		GroupID 	BIGINT UNSIGNED
 	);
- 
+    
+	#======Score not include in Rule of (baseketball)
+	IF ip_ScoreList IS NULL THEN 
+		SET ip_ScoreList = '0';
+    END IF;
+    #============================================
 	SET @sql = CONCAT("INSERT INTO Temp_Score (TotalScore) VALUES ('", REPLACE(ip_ScoreList, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
