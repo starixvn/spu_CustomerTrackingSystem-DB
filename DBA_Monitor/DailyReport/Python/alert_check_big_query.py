@@ -11,7 +11,7 @@ for message in messageSettingList:
     telegram.sendMessage(message[0].replace("\\n","\n"))
 
 
-messageSettingList = db.exec("slave",'MonDB.DBA_Monitor_BigQuery_Check();',None,False)
+messageSettingList = db.exec("replica",'MonDB.DBA_Monitor_BigQuery_Check();',None,False)
 for message in messageSettingList:
     if message[0] == None:
         continue
