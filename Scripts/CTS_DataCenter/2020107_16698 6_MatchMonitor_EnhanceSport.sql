@@ -44,5 +44,5 @@ ALTER TABLE MatchMonitorStagingNonLive
     
 ALTER TABLE MatchMonitorDetailsVerifiedTrans
 		DROP INDEX IX_MatchMonitorDetailsVerifiedTrans
-	,	ADD INDEX IX_MatchMonitorDetailsVerifiedTrans(MatchID,LiveIndicator,BettypeID, BetID)
+	,	ADD INDEX IX_MatchMonitorDetailsVerifiedTrans(MatchID,LiveIndicator,BettypeID, BetID);
 

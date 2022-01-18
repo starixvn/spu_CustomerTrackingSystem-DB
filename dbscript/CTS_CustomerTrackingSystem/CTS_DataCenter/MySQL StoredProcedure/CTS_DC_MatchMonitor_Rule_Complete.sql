@@ -91,9 +91,9 @@ BEGIN
 								,	OldGroupIDList	TEXT PATH "$.OldGroupIDList" 
 							)
 					) AS js;     
-    
+     
     #======Update MatchMonitorDetails====================================  
-     SELECT 'DEBUG', ip_MatchID, ip_LiveIndicator, ip_TotalScore, ip_BettypeID, ip_BetID, lv_EventDate, lv_TargetGroupID, lv_LiveHomeScore, lv_LiveAwayScore, lv_CustIDList, lv_TransIDList, lv_Reason;
+    
     IF (ip_LiveIndicator = 1) THEN
 		SELECT mms.EventDate, mms.LiveHomeScore, mms.LiveAwayScore, mms.EventDate, mms.KickOffTime, mms.EventStatus, mms.HomeID, mms.AwayID, mms.LeagueID, mms.LeagueName, mms.Sporttype
 		INTO lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName, lv_Sporttype
@@ -102,8 +102,6 @@ BEGIN
 		LIMIT 1;
 	END IF;
 
-    SELECT 'DEBUG00', ip_MaxTransID, ip_MatchID, ip_TotalScore, ip_BettypeID, ip_BetID,ip_TransGroup;
-	SELECT 'DEBUG01', lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName;
 	IF (ip_LiveIndicator = 0) THEN
 		SELECT mms.EventDate, mms.LiveHomeScore, mms.LiveAwayScore, mms.EventDate, mms.KickOffTime, mms.EventStatus, mms.HomeID, mms.AwayID, mms.LeagueID, mms.LeagueName, mms.Sporttype
 		INTO lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName, lv_Sporttype
@@ -120,17 +118,18 @@ BEGIN
         INTO lv_GroupID, lv_Reason, lv_TransIDList, lv_CustIDList, lv_OldGroupIDList
         FROM Temp_TransGroup
         ORDER BY GroupID LIMIT 1;        
-        
-        IF lv_GroupID =0 
+          
+       IF lv_GroupID =0 
         THEN			
             LEAVE lp; 
         END IF;
 		
         CALL CTS_DC_Sys_SplitStringToTempItemTable(lv_OldGroupIDList,',','INT');
+        
 		SET lv_TargetGroupID = (SELECT Item FROM TempItemTable WHERE Item <> 0 ORDER BY Item LIMIT 1);
         SET lv_NoOfOldGroupID = (SELECT COUNT(1) FROM TempItemTable WHERE Item <> 0);       
 		SET lv_TargetGroupID = IFNULL(lv_TargetGroupID,0);
-        
+                
         IF(lv_NoOfOldGroupID = 0) # INSERT NEW GROUP
         THEN
 			SELECT 	MAX(mmd.GroupID)
@@ -139,12 +138,11 @@ BEGIN
             WHERE 	mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID AND mmd.TotalScore = ip_TotalScore; 
 			
             SET lv_TargetGroupID = IFNULL(lv_TargetGroupID,0);
-			SET lv_TargetGroupID =  lv_TargetGroupID + 1;
-            
-            SELECT 'DEBUG03', ip_MatchID, ip_LiveIndicator, ip_TotalScore, ip_BettypeID, ip_BetID, lv_EventDate, lv_TargetGroupID, lv_LiveHomeScore, lv_LiveAwayScore, lv_CustIDList, lv_TransIDList, lv_Reason;
-            
+			SET lv_TargetGroupID =  lv_TargetGroupID + 1;            
+   
             INSERT IGNORE INTO CTS_DataCenter.MatchMonitorDetails(MatchID, LiveIndicator, TotalScore, BettypeID, BetID, EventDate, GroupID, LiveHomeScore, LiveAwayScore, ListCustID, ListTransID, Reason)
-            VALUES(ip_MatchID, ip_LiveIndicator, ip_TotalScore, ip_BettypeID, ip_BetID, lv_EventDate, lv_TargetGroupID, lv_LiveHomeScore, lv_LiveAwayScore, lv_CustIDList, lv_TransIDList, lv_Reason);
+            VALUES(ip_MatchID, ip_LiveIndicator, ip_TotalScore, ip_BettypeID, ip_BetID, lv_EventDate, lv_TargetGroupID, lv_LiveHomeScore, lv_LiveAwayScore, lv_CustIDList, lv_TransIDList, lv_Reason);          
+            
         END IF; 
        
 		IF (lv_NoOfOldGroupID = 1) THEN # UPDATE OLD GROUP	        

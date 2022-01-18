@@ -62,7 +62,7 @@ BEGIN
 									TransID			BIGINT UNSIGNED PATH "$.TransID" 
 								,	TransDate		DATETIME(3) PATH "$.TransDate" 
                                 ,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PATH "$.LeagueName"
-                                ,	SportType		INT PATH "$.Sportype"
+                                ,	SportType		INT PATH "$.SportType"
 								,	MatchID			INT PATH "$.MatchID"
 								,	HomeID			INT	PATH "$.HomeID" 
 								,	AwayID			INT	PATH "$.AwayID" 
