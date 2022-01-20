@@ -3,8 +3,8 @@ DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Staging_Clean`;
 DELIMITER $$
 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Staging_Clean`(
-		IN ip_LiveIndicator BOOLEAN
-	,	IN ip_MaxTransID BIGINT UNSIGNED
+		IN ip_LiveIndicator	BOOLEAN
+	,	IN ip_MaxTransID	BIGINT UNSIGNED
 )
     SQL SECURITY INVOKER
 BEGIN

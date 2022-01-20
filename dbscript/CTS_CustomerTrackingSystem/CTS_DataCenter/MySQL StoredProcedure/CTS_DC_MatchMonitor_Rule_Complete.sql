@@ -76,7 +76,7 @@ BEGIN
 					 "$[*]" COLUMNS(
 								GroupID			INT PATH "$.GroupID" 
 							,	Reason			TINYINT PATH "$.Reason" 
-							,	TransIDList		LONGTEXT PATH "$.TransList"
+							,	TransIDList		LONGTEXT PATH "$.TransIDList"
 							,	CustIDList		LONGTEXT PATH "$.CustIDList" 
 							,	OldGroupIDList	TEXT PATH "$.OldGroupIDList" 
 						)

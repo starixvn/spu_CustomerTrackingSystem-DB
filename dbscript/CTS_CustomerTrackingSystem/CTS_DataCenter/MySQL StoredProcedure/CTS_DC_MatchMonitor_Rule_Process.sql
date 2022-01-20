@@ -456,12 +456,12 @@ sp: BEGIN
     CREATE TEMPORARY TABLE Temp_ResultGroup(
 			GroupID			INT PRIMARY KEY
 		,	Reason			TINYINT
-        ,	TransList		LONGTEXT
+        ,	TransIDList		LONGTEXT
         ,	CustIDList		LONGTEXT
         ,	OldGroupIDList	VARCHAR(500)
     );	
 	
-    INSERT INTO Temp_ResultGroup(GroupID, Reason, TransList, CustIDList, OldGroupIDList)
+    INSERT INTO Temp_ResultGroup(GroupID, Reason, TransIDList, CustIDList, OldGroupIDList)
     SELECT  tmpTg.GroupID
         ,	(CASE WHEN COUNT(DISTINCT tmpSt.Betteam) > 1 THEN 2 ELSE 0 END) AS Reason
         ,	GROUP_CONCAT(tmpSt.TransID) AS TransIDList
@@ -527,7 +527,7 @@ sp: BEGIN
 
 	SELECT	tmpRg.GroupID
 		,	tmpRg.Reason
-        ,	tmpRg.TransList
+        ,	tmpRg.TransIDList
         ,	tmpRg.CustIDList
         ,	tmpRg.OldGroupIDList
     FROM Temp_ResultGroup AS tmpRg;

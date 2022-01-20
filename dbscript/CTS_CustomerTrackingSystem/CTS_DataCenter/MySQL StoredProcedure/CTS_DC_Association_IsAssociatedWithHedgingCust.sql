@@ -170,7 +170,7 @@ sp: BEGIN
 		LEAVE sp;
 	END IF;
     
-    #=======CHECK AssociationByDevice================================    
+    #=======CHECK AssociationByDevice================================       
     
     INSERT INTO Temp_AssociationByDevice(DeviceID, CTSCustID)
     SELECT	adv.DCSDeviceID
@@ -191,6 +191,11 @@ sp: BEGIN
 		LEFT JOIN Temp_Device AS tmpDv ON tmpAdv.DeviceID = tmpDv.DeviceID
 	WHERE tmpDv.DeviceID IS NULL;
     
+    TRUNCATE TABLE Temp_Cust;
+    
+    IF EXISTS (SELECT 1 FROM Temp_AssociationByDevice AS tmpAdv
+				INNER JOIN CTS_DataCenter.AssociationRemove AS ar ON tmpAdv.CTSCustID = ar.FromCTSCustID OR tmpAdv.CTSCustID = ar.ToCTSCustID) THEN
+	
     INSERT IGNORE INTO Temp_Association(FromCTSCustID, ToCTSCustID)
     SELECT LEAST(tmpAdv.CTSCustID,adv.CTSCustID), GREATEST(tmpAdv.CTSCustID,adv.CTSCustID)
     FROM Temp_AssociationByDevice AS tmpAdv
@@ -219,6 +224,16 @@ sp: BEGIN
 					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
 					WHERE cla.CTSCustID = tmpAss.ToCTSCustID AND cla.SportGroupID = 0 AND cla.CategoryID in (73,53,153))
 	LIMIT 1;	
-    
+       
+    ELSE
+		SELECT  1
+		INTO op_IsHedging
+        FROM Temp_Device AS tmpAdv
+			INNER JOIN CTS_DataCenter.AssociationByDevice AS adv ON adv.DeviceID = tmpAdv.DeviceID
+		WHERE EXISTS(	SELECT 1 
+					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
+					WHERE cla.CTSCustID = adv.CTSCustID AND cla.SportGroupID = 0 AND cla.CategoryID in (73,53,153))
+		LIMIT 1;	
+	END IF;
 END$$
 DELIMITER ;
