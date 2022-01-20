@@ -32,7 +32,11 @@ ALTER TABLE MatchMonitorDetails
     
 ALTER TABLE MatchMonitorDetailsVerifiedTrans
     	ADD COLUMN BetID 		BIGINT;        
-        
+
+ALTER TABLE AssociationRemove
+		ADD COLUMN FromCustID 	INT UNSIGNED   
+    ,   ADD COLUMN ToCustID 	INT UNSIGNED;    
+    
 /*===2. ALTER Tables: INDEX===========*/
 ALTER TABLE MatchMonitorStagingLive
 		DROP INDEX IX_MatchMonitorStagingLive_Group
@@ -46,3 +50,12 @@ ALTER TABLE MatchMonitorDetailsVerifiedTrans
 		DROP INDEX IX_MatchMonitorDetailsVerifiedTrans
 	,	ADD INDEX IX_MatchMonitorDetailsVerifiedTrans(MatchID,LiveIndicator,BettypeID, BetID);
 
+ALTER TABLE AssociationRemove
+		ADD INDEX IX_AssociationRemove_FromCustIDToCustID(FromCustID,ToCustID);
+        
+/*===3 INIT Data AssociationRemove===========*/
+UPDATE CTS_DataCenter.AssociationRemove AS ar
+	INNER JOIN CTS_DataCenter.CTSCustomer AS c1 ON ar.FromCTSCustID = c1.CTSCustID
+	INNER JOIN CTS_DataCenter.CTSCustomer AS c2 ON ar.ToCTSCustID = c2.CTSCustID
+SET 	ar.FromCustID = LEAST(c1.CTSCustID,c2.CTSCustID)
+	,	ar.ToCustID = GREATEST(c1.CTSCustID,c2.CTSCustID);

@@ -17,10 +17,11 @@ sp: BEGIN
 		Revisions:
 			- 	20210526@Casey.Huynh: Created (MatchMonitor Rule) [Redmine ID: 166986]
             
-		Param's Explanation (filtered by):	
-			CALL CTS_DC_Association_IsAssociatedHedgingCustByCustIDList(
-		Example:
-	6);
+		Param's Explanation (filtered by):			
+		
+        Example:
+			CALL CTS_DC_Association_IsAssociatedHedgingCustByCustIDList('37144067,37144068', @op_IsHedging);
+
 	*/
     
     DROP TEMPORARY TABLE IF EXISTS Temp_InputCust;
@@ -37,10 +38,11 @@ sp: BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByDevice;
     CREATE TEMPORARY TABLE Temp_AssociationByDevice(
-			DeviceID	BIGINT UNSIGNED PRIMARY KEY
+			DeviceID	BIGINT UNSIGNED
 		,	CTSCustID	BIGINT UNSIGNED
         
-        ,	INDEX	IX_Temp_Association_CTSCustID(DeviceID, CTSCustID)        
+        ,	PRIMARY KEY	PK_Temp_Association(DeviceID, CTSCustID)    
+        ,	INDEX IX_Temp_AssociationByDevice_CTSCustID(CTSCustID)    
 	);
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Device;
@@ -80,7 +82,8 @@ sp: BEGIN
 	INTO op_IsHedging
 	FROM Temp_Cust AS tmpCus
 		INNER JOIN CTS_DataCenter.AssociationByIP AS ma ON ma.FromCustID = tmpCus.CustID
-	WHERE	tmpCus.CTSCustID IS NOT NULL
+        LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.FromCustID AND ma.ToCustID = ar.ToCustID
+	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.FromCustID IS NULL
 		AND	EXISTS(	SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
 					WHERE cla.CustID = ma.ToCustID AND cla.SportGroupID = 0 AND cla.CategoryID in (73,53,153))
@@ -94,7 +97,8 @@ sp: BEGIN
 	INTO op_IsHedging
 	FROM Temp_Cust AS tmpCus
 		INNER JOIN CTS_DataCenter.AssociationByIP AS ma ON ma.ToCustID = tmpCus.CustID
-	WHERE	tmpCus.CTSCustID IS NOT NULL
+        LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.FromCustID AND ma.ToCustID = ar.ToCustID
+	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.FromCustID IS NULL
 		AND	EXISTS(	SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
 					WHERE cla.CustID = ma.FromCustID AND cla.SportGroupID = 0 AND cla.CategoryID in (73,53,153))
@@ -108,7 +112,8 @@ sp: BEGIN
 	INTO op_IsHedging
 	FROM Temp_Cust AS tmpCus
 		INNER JOIN CTS_DataCenter.AssociationByAI AS ma ON ma.FromCustID = tmpCus.CustID
-	WHERE	tmpCus.CTSCustID IS NOT NULL
+        LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.FromCustID AND ma.ToCustID = ar.ToCustID
+	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.FromCustID IS NULL
 		AND	EXISTS(	SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
 					WHERE cla.CustID = ma.ToCustID AND cla.SportGroupID = 0 AND cla.CategoryID in (73,53,153))
@@ -122,7 +127,8 @@ sp: BEGIN
 	INTO op_IsHedging
 	FROM Temp_Cust AS tmpCus
 		INNER JOIN CTS_DataCenter.AssociationByAI AS ma ON ma.ToCustID = tmpCus.CustID
-	WHERE	tmpCus.CTSCustID IS NOT NULL
+        LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.FromCustID AND ma.ToCustID = ar.ToCustID
+	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.FromCustID IS NULL
 		AND	EXISTS(	SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
 					WHERE cla.CustID = ma.FromCustID AND cla.SportGroupID = 0 AND cla.CategoryID in (73,53,153))
@@ -164,8 +170,7 @@ sp: BEGIN
 		LEAVE sp;
 	END IF;
     
-    #=======CHECK AssociationByDevice================================
-    
+    #=======CHECK AssociationByDevice================================    
     
     INSERT INTO Temp_AssociationByDevice(DeviceID, CTSCustID)
     SELECT	adv.DCSDeviceID
@@ -175,11 +180,10 @@ sp: BEGIN
 	WHERE tmpCus.CTSCustID IS NOT NULL;
     
 	INSERT INTO Temp_Device(DeviceID)
-	SELECT	adv.DCSDeviceID		
-	FROM Temp_Cust AS tmpCus
-		INNER JOIN CTS_DataCenter.AssociationByDevice AS adv ON adv.CTSCustID = tmpCus.CustID
-	WHERE tmpCus.CTSCustID IS NOT NULL
-    GROUP BY adv.DCSDeviceID	
+	SELECT	tmpAdv.DeviceID		
+	FROM 	Temp_AssociationByDevice AS tmpAdv
+	WHERE 	tmpAdv.CTSCustID IS NOT NULL
+    GROUP BY tmpAdv.DeviceID	
     HAVING COUNT(1) > 0;
     
     DELETE tmpAdv
@@ -187,11 +191,10 @@ sp: BEGIN
 		LEFT JOIN Temp_Device AS tmpDv ON tmpAdv.DeviceID = tmpDv.DeviceID
 	WHERE tmpDv.DeviceID IS NULL;
     
-    INSERT INTO Temp_Association(FromCTSCustID, ToCTSCustID)
+    INSERT IGNORE INTO Temp_Association(FromCTSCustID, ToCTSCustID)
     SELECT LEAST(tmpAdv.CTSCustID,adv.CTSCustID), GREATEST(tmpAdv.CTSCustID,adv.CTSCustID)
     FROM Temp_AssociationByDevice AS tmpAdv
-		INNER JOIN  CTS_DataCenter.AssociationByDevice AS adv ON tmpAdv.DeviceID = adv.DCSDeviceID AND tmpAdv.CTSCustID <> adv.CTSCustID
-	;
+		INNER JOIN  CTS_DataCenter.AssociationByDevice AS adv ON tmpAdv.DeviceID = adv.DCSDeviceID AND tmpAdv.CTSCustID <> adv.CTSCustID;
     
     DELETE tmpAss
     FROM Temp_Association AS tmpAss
@@ -215,9 +218,7 @@ sp: BEGIN
 	WHERE EXISTS(	SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
 					WHERE cla.CTSCustID = tmpAss.ToCTSCustID AND cla.SportGroupID = 0 AND cla.CategoryID in (73,53,153))
-	LIMIT 1;
-	
-	
+	LIMIT 1;	
     
 END$$
 DELIMITER ;

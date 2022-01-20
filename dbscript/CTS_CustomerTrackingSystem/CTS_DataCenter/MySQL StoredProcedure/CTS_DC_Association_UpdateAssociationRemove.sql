@@ -2,8 +2,20 @@
 DROP PROCEDURE IF EXISTS `CTS_DC_Association_UpdateAssociationRemove`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_UpdateAssociationRemove`(OUT op_ErrorMessage varchar(200),IN ip_FromSubscriberID int,IN ip_FromCTSCustID bigint,IN ip_ToSubscriberID int,IN ip_ToCTSCustID bigint,IN ip_Remark varchar(500),IN ip_CreatedBy bigint,IN ip_IsActionRemove bit)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_UpdateAssociationRemove`(
+		OUT op_ErrorMessage 	VARCHAR(200)
+    ,	IN ip_FromSubscriberID 	INT
+    ,	IN ip_FromCTSCustID		BIGINT UNSIGNED
+    ,	IN ip_FromCustID		INT UNSIGNED
+    ,	IN ip_ToSubscriberID	INT
+    ,	IN ip_ToCTSCustID		BIGINT UNSIGNED
+    ,	IN ip_ToCustID			INT UNSIGNED
+    ,	IN ip_Remark			VARCHAR(500)
+    ,	IN ip_CreatedBy			INT
+    ,	IN ip_IsActionRemove 	BIT)
+    
     SQL SECURITY INVOKER
+    
 BEGIN
 	/*
 		Created:	20200416@Long.Luu	
@@ -13,6 +25,7 @@ BEGIN
 		Revisions:
 			- 20200416@Long.Luu: Created [Redmine ID: #131506]
 			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+            - 20220120@Casey.Huynh: Enhance Add Column CustID [Redmine ID: #157203]
             
 		Param's Explanation:
 	*/ 
@@ -53,8 +66,8 @@ BEGIN
 					VALUES(9, 'CTS_DC_Association_UpdateAssociationRemove', CONCAT('Delete Association Remove: ip_FromCTSCustID_', lv_FromCTSCustID, ';ip_ToCTSCustID_', lv_ToCTSCustID,')'), CURRENT_TIME(), ip_CreatedBy);    
                 ELSE
 					
-					INSERT INTO CTS_DataCenter.AssociationRemove(FromSubscriberID, FromCTSCustID, ToSubscriberID, ToCTSCustID, Remark, CreatedDate, CreatedBy)
-					VALUES(lv_FromSubscriberID, lv_FromCTSCustID, lv_ToSubscriberID, lv_ToCTSCustID, ip_Remark, CURRENT_TIME(), ip_CreatedBy);
+					INSERT INTO CTS_DataCenter.AssociationRemove(FromSubscriberID, FromCTSCustID, FromCustID, ToSubscriberID, ToCTSCustID, ToCustID, Remark, CreatedDate, CreatedBy)
+					VALUES(lv_FromSubscriberID,lv_FromCTSCustID, LEAST(ip_FromCustID,ip_ToCustID), lv_ToSubscriberID, lv_FromCTSCustID, GREATEST(ip_FromCustID,ip_ToCustID), ip_Remark, CURRENT_TIME(), ip_CreatedBy);
 				   
 					INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 					VALUES(8, 'CTS_DC_Association_UpdateAssociationRemove', CONCAT('Insert Association Remove: ip_FromCTSCustID_', lv_FromCTSCustID, ';ip_ToCTSCustID_', lv_ToCTSCustID,')'), CURRENT_TIME(), ip_CreatedBy);
