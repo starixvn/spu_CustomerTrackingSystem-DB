@@ -34,8 +34,10 @@ ALTER TABLE MatchMonitorDetailsVerifiedTrans
     	ADD COLUMN BetID 		BIGINT;        
 
 ALTER TABLE AssociationRemove
-		ADD COLUMN FromCustID 	INT UNSIGNED   
-    ,   ADD COLUMN ToCustID 	INT UNSIGNED;    
+		ADD COLUMN FromCustID 		INT UNSIGNED
+	,   ADD COLUMN FromCustSubID 	INT UNSIGNED
+    ,   ADD COLUMN ToCustID 		INT UNSIGNED   
+    ,   ADD COLUMN ToCustSubID 		INT UNSIGNED;
     
 /*===2. ALTER Tables: INDEX===========*/
 ALTER TABLE MatchMonitorStagingLive
