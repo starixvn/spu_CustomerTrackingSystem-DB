@@ -74,5 +74,8 @@ sp: BEGIN
 		END IF;
         
 	END IF;
+    
+   # INSERT INTO CTS_DataCenter.MatchMonitor_Log(SPName,ip_LiveIndicator,ip_MaxTransID, InsertTime)
+	#SELECT 'CTS_DC_MatchMonitor_Rule_Get',ip_LiveIndicator,op_MaxTransID,CURRENT_TIMESTAMP(3);
 END$$
 DELIMITER ;

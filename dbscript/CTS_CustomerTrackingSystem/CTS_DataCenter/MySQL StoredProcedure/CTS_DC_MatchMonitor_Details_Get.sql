@@ -5,7 +5,7 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Details_Get`(
 		IN ip_MatchID 			BIGINT UNSIGNED    
     ,	IN ip_BettypeID			INT UNSIGNED
-    ,	IN ip_BetID				TINYINT
+    ,	IN ip_BetID				BIGINT
     ,	IN ip_LiveIndicator		BOOLEAN     
     ,	IN ip_Reason			TINYINT  
     ,	IN ip_ScoreList			VARCHAR(500)     

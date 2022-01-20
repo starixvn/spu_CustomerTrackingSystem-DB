@@ -24,14 +24,15 @@ BEGIN
             -	20210830@Casey.Huynh: Update Rule seperate Live and NonLive and move to Slave [Redmine ID: 159195]
             -	20211213@Casey.Huynh: Enhance MM, Add column LeagueName [Redmine ID: 165606]
 			-	20220110@Casey.Huynh: Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
-		Param's Explanation (filtered by):
-		CALL CTS_DC_MatchMonitor_Rule_Complete();
+            
+		Param's Explanation (filtered by):			
 
 		Example:
+			CALL CTS_DC_MatchMonitor_Rule_Complete(1,114089577333,48310358,0,1,0,'[{"GroupID":4,"Reason":0,"TransList":"114089577333,114089576830","CustIDList":"55706032,55895790","OldGroupIDList":"0"}]');
 			
 		*/ 
     DECLARE lv_GroupID 					INT;
-	DECLARE lv_Reason 				BOOLEAN;
+	DECLARE lv_Reason 					BOOLEAN;
     DECLARE lv_TransIDList 				LONGTEXT;
     DECLARE lv_CustIDList				LONGTEXT;
     DECLARE lv_OldGroupIDList			TEXT;
@@ -52,18 +53,7 @@ BEGIN
     DECLARE lv_LeagueID					INT UNSIGNED;
     DECLARE lv_LeagueName				VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
     DECLARE	lv_Sporttype				INT;
-    
-/*    DROP TEMPORARY TABLE IF EXISTS Temp_Last3mTransGroup;
-    CREATE TEMPORARY TABLE Temp_Last3mTransGroup
-    (
-			MatchID INT
-        ,	TotalScore SMALLINT
-        ,	BettypeID INT 
-        ,   GroupID INT
-        
-        ,	PRIMARY KEY (MatchID,TotalScore,BettypeID,GroupID)
-    );
-    */
+  
     DROP TEMPORARY TABLE IF EXISTS Temp_TransGroup;
     CREATE TEMPORARY TABLE Temp_TransGroup
     (
@@ -77,20 +67,20 @@ BEGIN
     );
     
     INSERT IGNORE INTO CTS_DataCenter.Temp_TransGroup(GroupID, Reason, TransIDList, CustIDList, OldGroupIDList)
-		SELECT  js.GroupID
-			,	js.Reason
-			,	js.TransIDList
-			,	js.CustIDList
-			,	js.OldGroupIDList
-		FROM JSON_TABLE(ip_TransGroup,
-						 "$[*]" COLUMNS(
-									GroupID			INT PATH "$.GroupID" 
-								,	Reason			TINYINT PATH "$.Reason" 
-								,	TransIDList		LONGTEXT PATH "$.TransList"
-								,	CustIDList		LONGTEXT PATH "$.CustIDList" 
-								,	OldGroupIDList	TEXT PATH "$.OldGroupIDList" 
-							)
-					) AS js;     
+	SELECT  js.GroupID
+		,	js.Reason
+		,	js.TransIDList
+		,	js.CustIDList
+		,	js.OldGroupIDList
+	FROM JSON_TABLE(ip_TransGroup,
+					 "$[*]" COLUMNS(
+								GroupID			INT PATH "$.GroupID" 
+							,	Reason			TINYINT PATH "$.Reason" 
+							,	TransIDList		LONGTEXT PATH "$.TransList"
+							,	CustIDList		LONGTEXT PATH "$.CustIDList" 
+							,	OldGroupIDList	TEXT PATH "$.OldGroupIDList" 
+						)
+				) AS js;     
      
     #======Update MatchMonitorDetails====================================  
     
@@ -198,19 +188,28 @@ BEGIN
     INSERT INTO Temp_MatchMonitorDetails_Reason(Reason)
     SELECT DISTINCT Reason
     FROM CTS_DataCenter.MatchMonitorDetails AS mmd
-    WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID; 
+    WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID;     
     
-    DELETE mm
-    FROM CTS_DataCenter.MatchMonitor AS mm
+    IF EXISTS (SELECT 1 FROM CTS_DataCenter.MatchMonitor) THEN 
+		SET @LogMM = 1;
+    END IF;
+    
+	DELETE mm
+	FROM CTS_DataCenter.MatchMonitor AS mm
 		LEFT JOIN Temp_MatchMonitorDetails_Reason AS tmpMmd ON mm.Reason = tmpMmd.Reason
-	WHERE mm.LiveIndicator = ip_LiveIndicator AND mm.MatchID = ip_MatchID AND mm.BettypeID = ip_BettypeID AND mm.BetID = ip_BetID AND tmpMmd.Reason IS NULL;
-        
+	WHERE mm.LiveIndicator = ip_LiveIndicator AND mm.MatchID = ip_MatchID AND mm.BettypeID = ip_BettypeID AND mm.BetID = ip_BetID AND tmpMmd.Reason IS NULL;    
+    
     INSERT IGNORE INTO CTS_DataCenter.MatchMonitor(MatchID, BettypeID, BetID, LiveIndicator, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueName, Sporttype, Reason)
     SELECT	ip_MatchID, ip_BettypeID, ip_BetID, ip_LiveIndicator, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName, lv_Sporttype
 		,	mmd. Reason
 	FROM CTS_DataCenter.MatchMonitorDetails AS mmd
 		LEFT JOIN Temp_MatchMonitor_Reason AS tmpMm ON mmd.Reason = tmpMm.Reason
-	WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID;     
+	WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID;
+    
+    IF @LogMM = 1 AND NOT EXISTS (SELECT 1 FROM CTS_DataCenter.MatchMonitor) THEN
+		INSERT INTO MatchMonitor_Log(SPName) 
+		VALUES('CTS_DC_MatchMonitor_Rule_Complete');
+    END IF;
     
 END$$
 DELIMITER ;

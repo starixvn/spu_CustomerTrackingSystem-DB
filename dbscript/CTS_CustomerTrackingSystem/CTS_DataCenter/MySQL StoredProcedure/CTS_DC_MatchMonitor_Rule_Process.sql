@@ -509,8 +509,9 @@ sp: BEGIN
         SET lv_CustIDList = (SELECT GROUP_CONCAT(tmpTg.CustID)
             FROM Temp_TransGroup AS tmpTg 
             WHERE tmpTg.GroupID = lv_GroupID);
+         
         CALL CTS_DC_Association_IsAssociatedHedgingCustByCustIDList(lv_CustIDList, lv_IsHedging);
-        
+       
         IF lv_IsHedging = 1 THEN
 			UPDATE Temp_ResultGroup AS tmpRg
             SET	tmpRg.Reason = 1

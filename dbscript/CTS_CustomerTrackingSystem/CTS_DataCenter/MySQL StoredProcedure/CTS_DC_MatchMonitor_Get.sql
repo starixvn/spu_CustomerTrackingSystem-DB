@@ -7,7 +7,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Get`(
     ,	IN 	ip_ToDate 			DATE
     ,	IN 	ip_LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
     ,	IN	ip_SportType		VARCHAR(500)
-    , 	IN	ip_Market 			TINYINT
+    , 	IN	ip_Market 			TINYINT			# NULL if Both (Live and NonLive)
     , 	IN	ip_MatchSection		VARCHAR(50)
     ,	IN 	ip_IsVerified 		BIT
     ,	IN 	ip_Bettypes 		JSON # BettypeID and BetID       
@@ -27,10 +27,11 @@ BEGIN
 			-	20211213@Casey.Huynh: Enhance MM, Add column LeagueName, reset IsVerified = 0 [Redmine ID: 165606]
             -	20220110@Casey.Huynh: Enhance MM, BetID, Reason [Redmine ID: 166986]
 		Param's Explanation (filtered by):
-			- ip_Market: 0 return LiveIndicator = 0, 1 return LiveIndicator = 1
+			- ip_Market: 0 return LiveIndicator = 0, 1 return LiveIndicator = 1, NULL: Both Live And Non-Live
+            - ip_LeagueName: NULL IF any ELSE LIKE %ip_LeagueName%
             
 		Example:
-			-	CALL CTS_DC_MatchMonitor_Get('2021-12-14','2022-01-09','MEXICO PRIMERA DIVISION','1,2', 1,'1,2,3,4',NULL,'[{"BettypeID":1,"BetID":0},{"BettypeID":3,"BetID":0},{"BettypeID":7,"BetID":0}]');
+			-	CALL CTS_DC_MatchMonitor_Get('2021-12-05','2021-12-08',NULL,'1,2,43', '1','1,2,3,4',NULL,'[{"BettypeID":1,"BetID":0},{"BettypeID":3,"BetID":0},{"BettypeID":7,"BetID":0}]');
 	*/
       
 	DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitor;

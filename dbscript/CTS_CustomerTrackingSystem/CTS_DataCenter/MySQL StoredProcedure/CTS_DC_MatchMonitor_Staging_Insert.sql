@@ -4,7 +4,7 @@ DELIMITER $$
 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Staging_Insert`(
 		IN ip_LiveIndicator	BOOLEAN 
-    ,	IN ip_TransList JSON
+    ,	IN ip_TransList 	JSON
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -21,15 +21,10 @@ BEGIN
             -	20211213@Casey.Huynh: Enhance MM, Add column LeagueName [Redmine ID: 165606]
             -	20220110@Casey.Huynh: Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
 		
-		Param's Explanation (filtered by):
-		
+		Param's Explanation (filtered by):		
 
 		Example:
-			CALL CTS_DataCenter.CTS_DC_MatchMonitor_Staging_Insert(1,
-			'[
-					{"TransID": 1,"TransDate" : "2021-05-17 07:48:52.533","MatchID" : 43614953,"EventDate" : "2021-05-17 00:00:00","KickOffTime" : "2021-05-17 00:00:00","EventStatus" : "running","HomeID" : 953,"AwayID" : 113,"LeagueID" : 3,"Bettype" : 3, "BetID" : 0,  "LiveIndicator" : "1","CustID" : 12500792,"Stake" : 20,"Betteam" : "a","LiveHomeScore" : 0,"LiveAwayScore" : 2}
-			]');;
-            
+			CALL CTS_DataCenter.CTS_DC_MatchMonitor_Staging_Insert(1,'[{"TransID": 1,"TransDate" : "2021-05-17 07:48:52.533","MatchID" : 43614953,"EventDate" : "2021-05-17 00:00:00","KickOffTime" : "2021-05-17 00:00:00","EventStatus" : "running","HomeID" : 953,"AwayID" : 113,"LeagueID" : 3,"Bettype" : 3, "BetID" : 0,  "LiveIndicator" : "1","CustID" : 12500792,"Stake" : 20,"Betteam" : "a","LiveHomeScore" : 0,"LiveAwayScore" : 2}]');;
             
 	*/    
     
@@ -140,7 +135,7 @@ BEGIN
 		INTO 	lv_LastTransID
 		FROM	CTS_DataCenter.MatchMonitorStagingNonLive AS mms;  
             
-         IF lv_LastTransID > 0 THEN	   
+        IF lv_LastTransID > 0 THEN	   
 			UPDATE 	CTS_DataCenter.SystemParameter AS sys
 			SET 	sys.ParameterValue = lv_LastTransID
 			WHERE 	sys.ParameterID = 29;
