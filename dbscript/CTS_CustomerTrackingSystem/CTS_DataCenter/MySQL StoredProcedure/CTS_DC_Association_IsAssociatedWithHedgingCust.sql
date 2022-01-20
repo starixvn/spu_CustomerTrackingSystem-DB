@@ -229,7 +229,7 @@ sp: BEGIN
 		SELECT  1
 		INTO op_IsHedging
         FROM Temp_Device AS tmpAdv
-			INNER JOIN CTS_DataCenter.AssociationByDevice AS adv ON adv.DeviceID = tmpAdv.DeviceID
+			INNER JOIN CTS_DataCenter.AssociationByDevice AS adv ON adv.DCSDeviceID = tmpAdv.DeviceID
 		WHERE EXISTS(	SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
 					WHERE cla.CTSCustID = adv.CTSCustID AND cla.SportGroupID = 0 AND cla.CategoryID in (73,53,153))
