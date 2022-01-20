@@ -279,7 +279,7 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ip.CustID AND cus.CustSubID = 0
         INNER JOIN CTS_DataCenter.AssociationByDevice AS dv ON cus.CTSCustID = dv.CTSCustID;
 
-    INSERT INTO Temp_AssDevice_Level1(DCSDeviceID, CTSCustID, CustID, CTSAssDevID, IsIP)
+    INSERT IGNORE INTO Temp_AssDevice_Level1(DCSDeviceID, CTSCustID, CustID, CTSAssDevID, IsIP)
     SELECT  DISTINCT
 			ass.DCSDeviceID
 		,	dv.CTSCustID
