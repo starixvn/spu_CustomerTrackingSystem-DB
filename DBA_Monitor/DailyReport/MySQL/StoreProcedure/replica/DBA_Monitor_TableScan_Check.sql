@@ -21,6 +21,7 @@ sp: BEGIN
 	*/
     DECLARE lv_MessageAlert 	LONGTEXT;
     DECLARE lv_LastDate 		DATETIME;
+    DECLARE lv_BeforeLastDate 	DATETIME;
     DECLARE lv_Server 			VARCHAR(20);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Table;
@@ -29,6 +30,13 @@ sp: BEGIN
 	    ,	TableName 	VARCHAR(64) NOT NULL
 		,	Count_Read 	BIGINT UNSIGNED
         ,	Created		DATETIME
+        ,	PRIMARY KEY (DB,TableName)
+    );
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_PreTable;
+	CREATE TEMPORARY TABLE Temp_PreTable (
+			DB 			VARCHAR(64) NOT NULL
+	    ,	TableName 	VARCHAR(64) NOT NULL
         ,	PRIMARY KEY (DB,TableName)
     );
     
@@ -41,7 +49,7 @@ sp: BEGIN
     IF lv_LastDate < DATE_SUB(NOW(), INTERVAL 45 MINUTE) THEN
 		SELECT NULL AS MessageAlert;
         LEAVE sp;
-    END IF;
+    END IF; 
 	
     INSERT IGNORE INTO Temp_Table(DB,TableName,Count_Read,Created)
 	SELECT `Database` 
@@ -52,6 +60,20 @@ sp: BEGIN
 	WHERE Created = lv_LastDate
 		AND Count_Read >= 10000000
         AND TableName NOT IN ('CTSCustomer', 'AssociationByDevice','CTSCustomerClassification');
+     
+	SET lv_BeforeLastDate = DATE_SUB(lv_LastDate, INTERVAL 45 MINUTE);
+    INSERT IGNORE INTO Temp_PreTable(DB,TableName)
+	SELECT `Database` 
+		,	TableName
+    FROM MonDB.DBA_Table_IO_Monitor 
+	WHERE Created > lv_BeforeLastDate 
+		AND Created < lv_LastDate
+        AND TableName NOT IN ('CTSCustomer', 'AssociationByDevice','CTSCustomerClassification')
+		AND Count_Read >= 10000000;
+	
+    DELETE tbl
+    FROM Temp_Table AS tbl
+    WHERE EXISTS (SELECT 1 FROM Temp_PreTable AS pre WHERE pre.DB = tbl.DB AND pre.TableName = tbl.TableName);
         
 	IF @@hostname like '%master%' THEN
 		SET lv_Server = 'Master(58)';

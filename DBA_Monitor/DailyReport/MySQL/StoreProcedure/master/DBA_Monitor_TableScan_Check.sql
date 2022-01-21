@@ -19,9 +19,10 @@ sp: BEGIN
         Example:
 			- CALL MonDB.DBA_Monitor_TableScan_Check(); 
 	*/
-    DECLARE lv_MessageAlert 	LONGTEXT;
-    DECLARE lv_LastDate 		DATETIME;
-    DECLARE lv_Server 			VARCHAR(20);
+    DECLARE lv_MessageAlert 		LONGTEXT;
+    DECLARE lv_LastDate 			DATETIME;
+    DECLARE lv_BeforeLastDate 		DATETIME;
+    DECLARE lv_Server 				VARCHAR(20);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Table;
 	CREATE TEMPORARY TABLE Temp_Table (
@@ -29,6 +30,13 @@ sp: BEGIN
 	    ,	TableName 	VARCHAR(64) NOT NULL
 		,	Count_Read 	BIGINT UNSIGNED
         ,	Created		DATETIME
+        ,	PRIMARY KEY (DB,TableName)
+    );
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_PreTable;
+	CREATE TEMPORARY TABLE Temp_PreTable (
+			DB 			VARCHAR(64) NOT NULL
+	    ,	TableName 	VARCHAR(64) NOT NULL
         ,	PRIMARY KEY (DB,TableName)
     );
     
@@ -51,7 +59,26 @@ sp: BEGIN
     FROM MonDB.DBA_Table_IO_Monitor 
 	WHERE Created = lv_LastDate
 		AND Count_Read >= 10000000;
-        
+	
+    DELETE 
+    FROM Temp_Table
+    WHERE TIME(Created) >= '05:00:00'
+		AND TIME(Created) <= '06:00:00'
+        AND TableName = 'CTSCustomerClassification';
+    
+    SET lv_BeforeLastDate = DATE_SUB(lv_LastDate, INTERVAL 45 MINUTE);
+    INSERT IGNORE INTO Temp_PreTable(DB,TableName)
+	SELECT `Database` 
+		,	TableName
+    FROM MonDB.DBA_Table_IO_Monitor 
+	WHERE Created > lv_BeforeLastDate 
+		AND Created < lv_LastDate
+		AND Count_Read >= 10000000;
+    
+    DELETE tbl
+    FROM Temp_Table AS tbl
+    WHERE EXISTS (SELECT 1 FROM Temp_PreTable AS pre WHERE pre.DB = tbl.DB AND pre.TableName = tbl.TableName);
+    
 	IF @@hostname like '%master%' THEN
 		SET lv_Server = 'Master(58)';
     ELSE 
@@ -60,7 +87,7 @@ sp: BEGIN
     
     IF NOT EXISTS (SELECT 1 FROM Temp_Table) THEN
         SELECT NULL AS MessageAlert;
-		LEAVE sp; 
+		LEAVE sp;  
     END IF;
     
      SELECT CONCAT("<b>[Alerting] CTS Table Scan</b> \\n",
