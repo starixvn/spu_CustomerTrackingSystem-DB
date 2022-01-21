@@ -23,11 +23,11 @@ ALTER TABLE MatchMonitorStagingNonLive
 
 ALTER TABLE MatchMonitor
 		ADD COLUMN SportType INT
-    ,	ADD COLUMN BetID BIGINT
+    ,	ADD COLUMN BetID BIGINT NOT NULL DEFAULT 0
     ,   CHANGE COLUMN IsHedging Reason TINYINT ;
 
 ALTER TABLE MatchMonitorDetails
-		ADD COLUMN BetID 		BIGINT
+		ADD COLUMN BetID BIGINT NOT NULL DEFAULT 0
 	 ,	CHANGE COLUMN IsHedging Reason TINYINT ;
     
 ALTER TABLE MatchMonitorDetailsVerifiedTrans
@@ -40,6 +40,7 @@ ALTER TABLE AssociationRemove
     ,   ADD COLUMN ToCustSubID 		INT UNSIGNED;
     
 /*===2. ALTER Tables: INDEX===========*/
+
 ALTER TABLE MatchMonitorStagingLive
 		DROP INDEX IX_MatchMonitorStagingLive_Group
 	,	ADD INDEX IX_MatchMonitorStagingLive_Group (MatchID,TotalScore,BettypeID,BetID,GroupID);
@@ -54,7 +55,23 @@ ALTER TABLE MatchMonitorDetailsVerifiedTrans
 
 ALTER TABLE AssociationRemove
 		ADD INDEX IX_AssociationRemove_FromCustIDToCustID(FromCustID,ToCustID);
-        
+
+ALTER TABLE MatchMonitor
+		DROP INDEX IX_MatchMonitor_EventDateBettypeMatchIDIsHedging #OLD UNIQUE KEY `IX_MatchMonitor_EventDateBettypeMatchIDIsHedging` (`EventDate`,`BettypeID`,`MatchID`,`LiveIndicator`,`IsHedging`),
+	,	ADD UNIQUE KEY UK_MatchMonitor_MatchGroup (EventDate,BettypeID,BetID,MatchID,LiveIndicator,Reason);
+
+ALTER TABLE MatchMonitor
+		DROP INDEX IX_MatchMonitor_MatchID_BettypeID #OLD KEY `IX_MatchMonitor_MatchID_BettypeID` (`MatchID`,`BettypeID`),
+	,	ADD INDEX IX_MatchMonitor_MatchIDBettype(MatchID,BettypeID,BetID);
+
+ALTER TABLE MatchMonitorDetails
+		DROP INDEX UK_MatchMonitorDetails_EventDateBettypeMatchID #OLD `UNIQUE KEY `UK_MatchMonitorDetails_EventDateBettypeMatchID` (`MatchID`,`LiveIndicator`,`TotalScore`,`BettypeID`,`GroupID`)
+	,	ADD UNIQUE KEY UK_MatchMonitorDetails_MatchDetailGroup(MatchID,LiveIndicator,TotalScore,BettypeID,BetID,GroupID);
+    
+ALTER TABLE MatchMonitorDetails
+		DROP INDEX IX_MatchMonitorDetails_MatchID_BettypeID # OLD KEY `IX_MatchMonitorDetails_MatchID_BettypeID` (`MatchID`,`BettypeID`)
+	,	ADD INDEX IX_MatchMonitorDetails_MatchID_BettypeID (MatchID,BettypeID,BetID);
+	
 /*===3 INIT Data AssociationRemove===========*/
 UPDATE CTS_DataCenter.AssociationRemove AS ar
 	INNER JOIN CTS_DataCenter.CTSCustomer AS c1 ON ar.FromCTSCustID = c1.CTSCustID
