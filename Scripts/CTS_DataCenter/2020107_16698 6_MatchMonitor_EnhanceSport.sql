@@ -14,12 +14,12 @@ USE CTS_DataCenter;
 ALTER TABLE MatchMonitorStagingLive
 		ADD COLUMN SportType INT
 	,	ADD COLUMN Betteam VARCHAR(10) 
-    ,	ADD COLUMN BetID BIGINT;
+    ,	ADD COLUMN BetID BIGINT DEFAULT 0;
 
 ALTER TABLE MatchMonitorStagingNonLive
 		ADD COLUMN SportType INT
 	,	ADD COLUMN Betteam VARCHAR(10) 
-    ,	ADD COLUMN BetID BIGINT;
+    ,	ADD COLUMN BetID BIGINT DEFAULT 0;
 
 ALTER TABLE MatchMonitor
 		ADD COLUMN SportType INT
@@ -31,7 +31,7 @@ ALTER TABLE MatchMonitorDetails
 	 ,	CHANGE COLUMN IsHedging Reason TINYINT ;
     
 ALTER TABLE MatchMonitorDetailsVerifiedTrans
-    	ADD COLUMN BetID 		BIGINT;        
+    	ADD COLUMN BetID BIGINT  DEFAULT 0;        
 
 ALTER TABLE AssociationRemove
 		ADD COLUMN FromCustID 		INT UNSIGNED
