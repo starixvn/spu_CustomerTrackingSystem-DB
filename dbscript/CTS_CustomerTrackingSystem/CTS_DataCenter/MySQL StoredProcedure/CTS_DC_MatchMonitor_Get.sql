@@ -75,7 +75,7 @@ BEGIN
         ,	BetID			INT
         ,	Reason			INT
         
-        ,	PRIMARY KEY PK_Temp_MatchTrans(MatchID,LiveIndicator,BettypeID,Reason)
+        ,	PRIMARY KEY PK_Temp_MatchTrans(MatchID,LiveIndicator,BettypeID, BetID, Reason)
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_MatchGroup_NotVerified;
@@ -86,7 +86,7 @@ BEGIN
         ,	BetID		INT
         ,	Reason		INT
         
-        ,	PRIMARY KEY PK_Temp_MatchTrans(MatchID,LiveIndicator,BettypeID,Reason)
+        ,	PRIMARY KEY PK_Temp_MatchTrans(MatchID,LiveIndicator,BettypeID, BetID, Reason)
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_VerfiedTrans;
