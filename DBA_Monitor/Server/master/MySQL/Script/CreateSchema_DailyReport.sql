@@ -21,22 +21,6 @@ CREATE TABLE `BigQuery_Check` (
 	TRX_ID 		BIGINT UNSIGNED PRIMARY KEY
  ) ENGINE=InnoDB;
 
-/*Deploy SP
-DBA_Monitor_ConfigChanged_Get
-DBA_Monitor_AccountTransform_Status
-DBA_Monitor_ArchiveCustomer_Status
-DBA_Monitor_UpdateLastLoginTime_Status
-DBA_Monitor_ArchiveDeviceCode_Status
-
-DBA_Monitor_ArchiveDeviceByAccountInactive_Status
-DBA_Monitor_BackupFull_Status
-DBA_Monitor_SlowQuery_Metric
-DBA_Monitor_ErrorQuery_Metric
-DBA_Monitor_RowAffectedSP_Metric
-
-DBA_Monitor_BigQuery_Check
-*/
-
 GRANT EVENT ON  *.* TO `CTSMonitor`@`%`;
 GRANT ALL PRIVILEGES ON `MonDB`.* TO `CTSMonitor`@`%`;
 

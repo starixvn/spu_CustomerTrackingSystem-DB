@@ -20,7 +20,8 @@ class DBHelper:
                                             password = dbConfigMaster['password'],
                                             db = dbConfigMaster['db'],
                                             port = dbConfigMaster['port'],
-                                            auth_plugin='mysql_native_password');
+                                            auth_plugin='mysql_native_password',
+                                            autocommit = True);
             self.cursorMaster = self.connectionMaster.cursor();
         elif  serverName == "replica" :
             dbConfigReplica = config['mysql_replica'];
@@ -29,7 +30,8 @@ class DBHelper:
                                             password = dbConfigReplica['password'],
                                             db = dbConfigReplica['db'],
                                             port = dbConfigReplica['port'],
-                                            auth_plugin='mysql_native_password');
+                                            auth_plugin='mysql_native_password',
+                                            autocommit = True);
             self.cursorReplica = self.connectionReplica.cursor();
         elif  serverName == "archive" :
             dbConfigArchive= config['mysql_archive'];
@@ -38,15 +40,18 @@ class DBHelper:
                                             password = dbConfigArchive['password'],
                                             db = dbConfigArchive['db'],
                                             port = dbConfigArchive['port'],
-                                            auth_plugin='mysql_native_password');
+                                            auth_plugin='mysql_native_password',
+                                            autocommit = True);
             self.cursorArchive = self.connectionArchive.cursor();
        
     def exec(self, serverName, query, params, isGetFirst):  
         sp_result = None
         if serverName.lower() == "master":
             self.initCursor("master")
-            self.cursorMaster = self.connectionMaster.cursor()
-            self.cursorMaster.callproc(query)
+            if params == None:
+                self.cursorMaster.callproc(query)
+            else:
+                self.cursorMaster.callproc(query,params)
             sp_result = self.cursorMaster.stored_results()
             for item in sp_result:
                 result = item.fetchall()
@@ -58,7 +63,10 @@ class DBHelper:
 
         elif  serverName.lower() == "replica" :
             self.initCursor("replica")
-            self.cursorReplica.callproc(query)
+            if params == None:
+                self.cursorReplica.callproc(query)
+            else:
+                self.cursorReplica.callproc(query,params)
             sp_result = self.cursorReplica.stored_results()
             for item in sp_result:
                 result = item.fetchall()
@@ -70,7 +78,10 @@ class DBHelper:
 
         elif  serverName.lower() == "archive" :
             self.initCursor("archive")
-            self.cursorArchive.callproc(query)
+            if params == None:
+                self.cursorArchive.callproc(query)
+            else:
+                self.cursorArchive.callproc(query,params)
             sp_result = self.cursorArchive.stored_results()
             for item in sp_result:
                 result = item.fetchall()
