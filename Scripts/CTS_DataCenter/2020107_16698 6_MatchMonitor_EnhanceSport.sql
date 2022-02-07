@@ -9,7 +9,18 @@ Revisions:
 		- 20211213@Casey.Huynh: Created [Redmine ID: #166986]
 Reviewer:
 */
+
 USE CTS_DataCenter;
+
+/*===0. ALTER Tables: Column===========*/
+DELETE sl
+FROM MatchMonitorStagingLive AS sl
+WHERE GroupID != 0;
+
+DELETE sl
+FROM MatchMonitorStagingNonLive AS sl
+WHERE GroupID != 0;
+
 /*===1. ALTER Tables: Column===========*/
 ALTER TABLE MatchMonitorStagingLive
 		ADD COLUMN SportType INT
@@ -22,7 +33,7 @@ ALTER TABLE MatchMonitorStagingNonLive
     ,	ADD COLUMN BetID BIGINT DEFAULT 0;
 
 ALTER TABLE MatchMonitor
-		ADD COLUMN SportType INT
+		ADD COLUMN SportType INT DEFAULT 1
     ,	ADD COLUMN BetID BIGINT NOT NULL DEFAULT 0
     ,   CHANGE COLUMN IsHedging Reason TINYINT ;
 
@@ -34,10 +45,10 @@ ALTER TABLE MatchMonitorDetailsVerifiedTrans
     	ADD COLUMN BetID BIGINT  DEFAULT 0;        
 
 ALTER TABLE AssociationRemove
-		ADD COLUMN FromCustID 		INT UNSIGNED
-	,   ADD COLUMN FromCustSubID 	INT UNSIGNED
-    ,   ADD COLUMN ToCustID 		INT UNSIGNED   
-    ,   ADD COLUMN ToCustSubID 		INT UNSIGNED;
+		ADD COLUMN LeastCustID 			INT UNSIGNED
+	,   ADD COLUMN LeastCustSubID 		INT UNSIGNED
+    ,   ADD COLUMN GreatestCustID 		INT UNSIGNED   
+    ,   ADD COLUMN GreatestCustSubID 	INT UNSIGNED;
     
 /*===2. ALTER Tables: INDEX===========*/
 
@@ -73,8 +84,24 @@ ALTER TABLE MatchMonitorDetails
 	,	ADD INDEX IX_MatchMonitorDetails_MatchID_BettypeID (MatchID,BettypeID,BetID);
 	
 /*===3 INIT Data AssociationRemove===========*/
+/* Check IF EXISTS data CustSub != 0
+SELECT t.*
+FROM (
+SELECT c.CTSCustID, CustID, CustSubID FROM AssociationRemove a
+iNNER JOIN CTSCustomer c on a.FromCTSCustID = c.CTSCustID
+union
+SELECT c.CTSCustID, CustID, CustSubID  FROM AssociationRemove a
+iNNER JOIN CTSCustomer c on a.FromCTSCustID = c.CTSCustID) AS t
+WHERE CustSubID <> 0;*/
+
 UPDATE CTS_DataCenter.AssociationRemove AS ar
-	INNER JOIN CTS_DataCenter.CTSCustomer AS c1 ON ar.FromCTSCustID = c1.CTSCustID
-	INNER JOIN CTS_DataCenter.CTSCustomer AS c2 ON ar.ToCTSCustID = c2.CTSCustID
-SET 	ar.FromCustID = LEAST(c1.CTSCustID,c2.CTSCustID)
-	,	ar.ToCustID = GREATEST(c1.CTSCustID,c2.CTSCustID);
+	INNER JOIN CTS_DataCenter.CTSCustomer AS c1 ON ar.FromCTSCustID = c1.CTSCustID AND c1.CustSubID = 0
+	INNER JOIN CTS_DataCenter.CTSCustomer AS c2 ON ar.ToCTSCustID = c2.CTSCustID AND c2.CustSubID = 0
+SET 	ar.LeastCustID = LEAST(c1.CustID,c2.CustID)
+	,	ar.LeastCustSubID = 0
+	,	ar.GreatestCustID = GREATEST(c1.CustID,c2.CustID)
+    ,	ar.GreatestCustSubID = 0;
+
+/****Update for CustSubID = <> 0*****/
+    
+SELECT * FROM CTS_DataCenter.AssociationRemove AS ar WHERE ar.LeastCustID IS NULL;

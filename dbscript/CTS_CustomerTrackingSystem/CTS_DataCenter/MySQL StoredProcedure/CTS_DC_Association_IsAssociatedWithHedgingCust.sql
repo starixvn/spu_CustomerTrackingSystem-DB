@@ -82,7 +82,7 @@ sp: BEGIN
 	INTO op_IsHedging
 	FROM Temp_Cust AS tmpCus
 		INNER JOIN CTS_DataCenter.AssociationByIP AS ma ON ma.FromCustID = tmpCus.CustID
-        LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.FromCustID AND ma.ToCustID = ar.ToCustID AND ar.ToCustSubID = 0
+        LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.LeastCustID AND ar.LeastCustSubID = 0 AND ma.ToCustID = ar.GreatestCustID AND ar.GreatestCustSubID = 0
 	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.FromCustID IS NULL
 		AND	EXISTS(	SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
@@ -97,7 +97,7 @@ sp: BEGIN
 	INTO op_IsHedging
 	FROM Temp_Cust AS tmpCus
 		INNER JOIN CTS_DataCenter.AssociationByIP AS ma ON ma.ToCustID = tmpCus.CustID
-        LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.FromCustID AND ma.ToCustID = ar.ToCustID AND ar.ToCustSubID = 0
+        LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.FromCustID AND ar.LeastCustSubID = 0 AND ma.ToCustID = ar.GreatestCustID AND ar.GreatestCustSubID = 0
 	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.FromCustID IS NULL
 		AND	EXISTS(	SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
@@ -112,7 +112,7 @@ sp: BEGIN
 	INTO op_IsHedging
 	FROM Temp_Cust AS tmpCus
 		INNER JOIN CTS_DataCenter.AssociationByAI AS ma ON ma.FromCustID = tmpCus.CustID
-        LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.FromCustID AND ma.ToCustID = ar.ToCustID AND ar.ToCustSubID = 0
+        LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.FromCustID AND ar.LeastCustSubID = 0 AND ma.ToCustID = ar.GreatestCustID AND ar.GreatestCustSubID = 0
 	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.FromCustID IS NULL
 		AND	EXISTS(	SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
@@ -127,7 +127,7 @@ sp: BEGIN
 	INTO op_IsHedging
 	FROM Temp_Cust AS tmpCus
 		INNER JOIN CTS_DataCenter.AssociationByAI AS ma ON ma.ToCustID = tmpCus.CustID
-        LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.FromCustID AND ma.ToCustID = ar.ToCustID AND ar.ToCustSubID = 0
+        LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.FromCustID AND ar.LeastCustSubID = 0 AND ma.ToCustID = ar.GreatestCustID AND ar.GreatestCustSubID = 0
 	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.FromCustID IS NULL
 		AND	EXISTS(	SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
