@@ -83,7 +83,7 @@ sp: BEGIN
 	FROM Temp_Cust AS tmpCus
 		INNER JOIN CTS_DataCenter.AssociationByIP AS ma ON ma.FromCustID = tmpCus.CustID
         LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.LeastCustID AND ar.LeastCustSubID = 0 AND ma.ToCustID = ar.GreatestCustID AND ar.GreatestCustSubID = 0
-	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.FromCustID IS NULL
+	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.LeastCustID IS NULL
 		AND	EXISTS(	SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
 					WHERE cla.CustID = ma.ToCustID AND cla.SportGroupID = 0 AND cla.CategoryID in (73,53,153))
@@ -97,8 +97,8 @@ sp: BEGIN
 	INTO op_IsHedging
 	FROM Temp_Cust AS tmpCus
 		INNER JOIN CTS_DataCenter.AssociationByIP AS ma ON ma.ToCustID = tmpCus.CustID
-        LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.FromCustID AND ar.LeastCustSubID = 0 AND ma.ToCustID = ar.GreatestCustID AND ar.GreatestCustSubID = 0
-	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.FromCustID IS NULL
+        LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.LeastCustID AND ar.LeastCustSubID = 0 AND ma.ToCustID = ar.GreatestCustID AND ar.GreatestCustSubID = 0
+	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.LeastCustID IS NULL
 		AND	EXISTS(	SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
 					WHERE cla.CustID = ma.FromCustID AND cla.SportGroupID = 0 AND cla.CategoryID in (73,53,153))
@@ -112,8 +112,8 @@ sp: BEGIN
 	INTO op_IsHedging
 	FROM Temp_Cust AS tmpCus
 		INNER JOIN CTS_DataCenter.AssociationByAI AS ma ON ma.FromCustID = tmpCus.CustID
-        LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.FromCustID AND ar.LeastCustSubID = 0 AND ma.ToCustID = ar.GreatestCustID AND ar.GreatestCustSubID = 0
-	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.FromCustID IS NULL
+        LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.LeastCustID AND ar.LeastCustSubID = 0 AND ma.ToCustID = ar.GreatestCustID AND ar.GreatestCustSubID = 0
+	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.LeastCustID IS NULL
 		AND	EXISTS(	SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
 					WHERE cla.CustID = ma.ToCustID AND cla.SportGroupID = 0 AND cla.CategoryID in (73,53,153))
@@ -127,8 +127,8 @@ sp: BEGIN
 	INTO op_IsHedging
 	FROM Temp_Cust AS tmpCus
 		INNER JOIN CTS_DataCenter.AssociationByAI AS ma ON ma.ToCustID = tmpCus.CustID
-        LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.FromCustID AND ar.LeastCustSubID = 0 AND ma.ToCustID = ar.GreatestCustID AND ar.GreatestCustSubID = 0
-	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.FromCustID IS NULL
+        LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.LeastCustID AND ar.LeastCustSubID = 0 AND ma.ToCustID = ar.GreatestCustID AND ar.GreatestCustSubID = 0
+	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.LeastCustID IS NULL
 		AND	EXISTS(	SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
 					WHERE cla.CustID = ma.FromCustID AND cla.SportGroupID = 0 AND cla.CategoryID in (73,53,153))
