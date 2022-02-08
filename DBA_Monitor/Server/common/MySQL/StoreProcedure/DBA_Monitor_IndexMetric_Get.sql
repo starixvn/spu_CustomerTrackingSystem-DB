@@ -62,6 +62,6 @@ BEGIN
 	FROM performance_schema.table_io_waits_summary_by_index_usage
 	WHERE OBJECT_SCHEMA NOT IN ('performance_schema','mysql');
 
-	#TRUNCATE TABLE  performance_schema.table_io_waits_summary_by_index_usage;
+	TRUNCATE TABLE  performance_schema.table_io_waits_summary_by_index_usage;
 END$$
 DELIMITER ;
