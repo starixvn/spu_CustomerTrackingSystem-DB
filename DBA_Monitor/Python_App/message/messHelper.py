@@ -13,7 +13,7 @@ class MessageHelper:
         self.chatID = telegramConfig['chat_id']
         self.bot = telegram.Bot(token=self.token);
 
-    def sendMessage(self, message):
+    def SendMessage(self, message):
         self.bot.sendMessage(chat_id=self.chatID, text=message,parse_mode='HTML')
 
     def close(self):

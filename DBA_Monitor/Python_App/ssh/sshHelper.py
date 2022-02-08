@@ -20,7 +20,7 @@ class SSHHelper:
         self.connectionReplica.connect(sshConfigReplica['host'], 
                                  username=sshConfigReplica['user'], 
                                  password=sshConfigReplica['password'])
-    def exec(self, serverName, command):
+    def Exec(self, serverName, command):
         if serverName.lower() == "master":
             (ssh_stdin, ssh_stdout, ssh_stderr) = self.connectionMaster.exec_command(command)
             for line in ssh_stdout.readlines():

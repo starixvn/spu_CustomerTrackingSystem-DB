@@ -205,8 +205,8 @@ BEGIN
 		FROM Temp_Metrics;
     END IF;
     
-    IF ip_Server = 'Replica' THEN
-		INSERT IGNORE INTO MonDB.Monitor_IndexMetric_Replica185(Created, Object_Type, Object_Schema, Object_Name,
+    IF ip_Server = 'replica' THEN
+		INSERT IGNORE INTO MonDB.Monitor_TableMetric_Replica185(Created, Object_Type, Object_Schema, Object_Name,
 																Count_Star, Sum_Timer_Wait, Min_Timer_Wait, Avg_Timer_Wait, Max_Timer_Wait,
 																Count_Read, Sum_Timer_Read, Min_Timer_Read, Avg_Timer_Read, Max_Timer_Read,
 																Count_Write, Sum_Timer_Write, Min_Timer_Write, Avg_Timer_Write, Max_Timer_Write,
@@ -257,7 +257,7 @@ BEGIN
     END IF;
     
     IF ip_Server = 'archive' THEN
-		INSERT IGNORE INTO  MonDB.Monitor_IndexMetric_Archive59(Created, Object_Type, Object_Schema, Object_Name,
+		INSERT IGNORE INTO  MonDB.Monitor_TableMetric_Archive59(Created, Object_Type, Object_Schema, Object_Name,
 																Count_Star, Sum_Timer_Wait, Min_Timer_Wait, Avg_Timer_Wait, Max_Timer_Wait,
 																Count_Read, Sum_Timer_Read, Min_Timer_Read, Avg_Timer_Read, Max_Timer_Read,
 																Count_Write, Sum_Timer_Write, Min_Timer_Write, Avg_Timer_Write, Max_Timer_Write,

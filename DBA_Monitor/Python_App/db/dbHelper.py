@@ -12,7 +12,7 @@ class DBHelper:
     cursorReplica = None;
     cursorArchive = None;
         
-    def initCursor(self,serverName):
+    def InitCursor(self,serverName):
         if serverName == "master":
             dbConfigMaster = config['mysql_master'];
             self.connectionMaster = mysql.connect(host=dbConfigMaster['host'],
@@ -44,10 +44,10 @@ class DBHelper:
                                             autocommit = True);
             self.cursorArchive = self.connectionArchive.cursor();
        
-    def exec(self, serverName, query, params, isGetFirst):  
+    def Exec(self, serverName, query, params, isGetFirst):  
         sp_result = None
         if serverName.lower() == "master":
-            self.initCursor("master")
+            self.InitCursor("master")
             if params == None:
                 self.cursorMaster.callproc(query)
             else:
@@ -55,14 +55,14 @@ class DBHelper:
             sp_result = self.cursorMaster.stored_results()
             for item in sp_result:
                 result = item.fetchall()
-                self.closeCursor("master")
+                self.CloseCursor("master")
                 if isGetFirst:
                     return result[0][0]
                 else:
                     return result
 
         elif  serverName.lower() == "replica" :
-            self.initCursor("replica")
+            self.InitCursor("replica")
             if params == None:
                 self.cursorReplica.callproc(query)
             else:
@@ -70,14 +70,14 @@ class DBHelper:
             sp_result = self.cursorReplica.stored_results()
             for item in sp_result:
                 result = item.fetchall()
-                self.closeCursor("replica")
+                self.CloseCursor("replica")
                 if isGetFirst:
                     return result[0][0]
                 else:
                     return result
 
         elif  serverName.lower() == "archive" :
-            self.initCursor("archive")
+            self.InitCursor("archive")
             if params == None:
                 self.cursorArchive.callproc(query)
             else:
@@ -85,13 +85,13 @@ class DBHelper:
             sp_result = self.cursorArchive.stored_results()
             for item in sp_result:
                 result = item.fetchall()
-                self.closeCursor("archive")
+                self.CloseCursor("archive")
                 if isGetFirst:
                     return result[0][0]
                 else:
                     return result
 
-    def closeCursor(self,serverName):
+    def CloseCursor(self,serverName):
         if serverName.lower() == "master":
             self.cursorMaster.close()
             self.connectionMaster.close()
