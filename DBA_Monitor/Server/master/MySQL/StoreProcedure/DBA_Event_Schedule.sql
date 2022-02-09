@@ -51,7 +51,7 @@ sp:BEGIN
 		,	`STATUS`
         ,	`DEFINER`
 	FROM information_schema.events AS ev
-    WHERE ev.EVENT_NAME IN (SELECT evst.EventName FROM MonDB.SystemEventStatus AS evst);
+    WHERE ev.EVENT_NAME IN (SELECT evst.EventName COLLATE utf8_general_ci FROM CTS_DataCenter.SystemEventStatus AS evst);
 	
     IF EXISTS ( SELECT * 
 				FROM MonDB.SystemEventSchedule
@@ -73,20 +73,20 @@ sp:BEGIN
     INTO lv_ListEventStop
 	FROM MonDB.SystemEventSchedule AS sch
 	WHERE EXISTS (SELECT 1 FROM Temp_EventStatus AS ev WHERE sch.EventName = ev.EventName AND `Status` = 'ENABLED') 
-		AND sch.FromTime >= lv_CurTime
-		AND sch.ToTime <= lv_CurTime ;
+		AND sch.FromTime <= lv_CurTime
+		AND sch.ToTime >= lv_CurTime ;
 	
     IF lv_ListEventStop IS NOT NULL THEN
 		CALL MonDB.DBA_Event_SetStatus(lv_ListEvent, 'DISABLE');
     END IF;
 	
-    SELECT GROUP_CONCAT(sch.EventName) 
+    SELECT GROUP_CONCAT(DISTINCT sch.EventName) 
     INTO lv_ListEventStart
 	FROM MonDB.SystemEventSchedule AS sch
-	WHERE EXISTS (SELECT 1 FROM Temp_EventStatus AS ev WHERE sch.EventName = ev.EventName AND sch.`Status` = 'DISABLED' AND sch.`DEFINER` = lv_CurUser) 
-		AND (sch.FromTime < lv_CurTime OR sch.ToTime > lv_CurTime);
+	WHERE EXISTS (SELECT 1 FROM Temp_EventStatus AS ev WHERE sch.EventName = ev.EventName AND ev.`Status` = 'DISABLED' AND ev.`CurUser` = lv_CurUser) 
+		AND (sch.FromTime > lv_CurTime OR sch.ToTime < lv_CurTime);
     
-    IF lv_ListEventStop IS NOT NULL THEN
+    IF lv_ListEventStart IS NOT NULL THEN
 		CALL MonDB.DBA_Event_SetStatus(lv_ListEventStart, 'ENABLE');
     END IF;
     

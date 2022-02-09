@@ -66,21 +66,21 @@ sp: BEGIN
     /**************************************************/
     
     IF EXISTS (SELECT 1 FROM Temp_Event WHERE EventName = 'EV_DCS_DataCenter_Account_UpdateLastLoginTime') AND ip_Status = 'DISABLE' THEN
-		ALTER EVENT DCS_DataCenter.EV_CTS_DataCenter_ArchiveCustomer DISABLE;
+		ALTER EVENT DCS_DataCenter.EV_DCS_DataCenter_Account_UpdateLastLoginTime DISABLE;
     END IF;
     
     IF EXISTS (SELECT 1 FROM Temp_Event WHERE EventName = 'EV_DCS_DataCenter_Account_UpdateLastLoginTime') AND ip_Status = 'ENABLE' THEN
-		ALTER EVENT DCS_DataCenter.EV_CTS_DataCenter_ArchiveCustomer ENABLE;
+		ALTER EVENT DCS_DataCenter.EV_DCS_DataCenter_Account_UpdateLastLoginTime ENABLE;
     END IF;
     
     /**************************************************/
     
     IF EXISTS (SELECT 1 FROM Temp_Event WHERE EventName = 'EV_DCS_DataCenter_ArchiveAccountInactive_Device') AND ip_Status = 'DISABLE' THEN
-		ALTER EVENT DCS_DataCenter.EV_CTS_DataCenter_ArchiveCustomer DISABLE;
+		ALTER EVENT DCS_DataCenter.EV_DCS_DataCenter_ArchiveAccountInactive_Device DISABLE;
     END IF;
     
     IF EXISTS (SELECT 1 FROM Temp_Event WHERE EventName = 'EV_DCS_DataCenter_ArchiveAccountInactive_Device') AND ip_Status = 'ENABLE' THEN
-		ALTER EVENT DCS_DataCenter.EV_CTS_DataCenter_ArchiveCustomer ENABLE;
+		ALTER EVENT DCS_DataCenter.EV_DCS_DataCenter_ArchiveAccountInactive_Device ENABLE;
     END IF;
     
 END$$

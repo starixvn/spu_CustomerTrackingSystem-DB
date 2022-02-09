@@ -37,3 +37,15 @@ VALUES 	('UM', null, '2022-01-20', '15:30', '19:00', 'GTM+7'),
         ('EV_DCS_DataCenter_ArchiveAccountInactive_Device', '4',null, '15:30', '19:00', 'GTM+7'),
         ('EV_DCS_DataCenter_ArchiveAccountInactive_Device', '5',null, '15:30', '19:00', 'GTM+7'),
         ('EV_DCS_DataCenter_ArchiveAccountInactive_Device', '6',null, '15:30', '19:00', 'GTM+7');
+
+USE MonDB;
+delimiter |
+CREATE EVENT EV_MonDB_Event_Schedule
+    ON SCHEDULE
+      EVERY 1 HOUR
+    DO
+      BEGIN
+			CALL MonDB.DBA_Event_Schedule();
+      END |
+
+delimiter ;
