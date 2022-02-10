@@ -18,5 +18,4 @@ cll.MonitorTableMetric('archive')
 cll.MonitorIndexMetric('archive')
 
 
-alert.CheckTableScan('master')
-alert.CheckTableScan('replica')
+alert.CheckTableScan('archive')
