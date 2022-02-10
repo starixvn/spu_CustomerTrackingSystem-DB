@@ -96,7 +96,7 @@ BEGIN
                     INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 					VALUES(9, 'CTS_DC_Association_UpdateAssociationRemove', CONCAT('Delete Association Remove: ip_FromCTSCustID_', lv_LeastCTSCustID, ';ip_ToCTSCustID_', lv_GreatestCTSCustID,')'), CURRENT_TIME(), ip_CreatedBy);    
                 ELSE					
-					INSERT INTO CTS_DataCenter.AssociationRemove(FromSubscriberID, FromCTSCustID, FromCustID, FromCustSubID, ToSubscriberID, ToCTSCustID, ToCustID, ToCustSubID, Remark, CreatedDate, CreatedBy)
+					INSERT INTO CTS_DataCenter.AssociationRemove(FromSubscriberID, FromCTSCustID, LeastCustID, LeastCustSubID, ToSubscriberID, ToCTSCustID, GreatestCustID, GreatestCustSubID, Remark, CreatedDate, CreatedBy)
 					VALUES(lv_LeastSubscriberID,lv_LeastCTSCustID, lv_LeastCustID, lv_LeastCustSubID, lv_GreatestSubscriberID, lv_GreatestCTSCustID, lv_GreatestCustID, lv_GreatestCustSubID, ip_Remark, CURRENT_TIME(), ip_CreatedBy);
 				   
 					INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
