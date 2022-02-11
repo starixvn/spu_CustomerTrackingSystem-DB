@@ -9,6 +9,7 @@
 USE CTS_DataCenter;
 INSERT INTO `CTS_DataCenter`.`SystemParameter` (`ParameterID`, `ParameterName`, `ParameterDesc`, `ParameterDataType`, `ParameterValue`) VALUES ('68', 'MonitorNeo4jCustomer_LastScannedCTSCustID', 'MonitorNeo4jCustomer_LastScannedCTSCustID', 'BIGINT', '0');
 
+USE CTS_Log
 CREATE TABLE `CTS_Log`.`Monitor_Neo4j_CTSCustomer_Missing` (
   `CTSCustID` 	BIGINT UNSIGNED NOT NULL,
   `ScannedDate` DATETIME NULL,
