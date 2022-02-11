@@ -14,7 +14,8 @@ BEGIN
         
 		Revisions:
 			- 20210818@Harvey.Nguyen: Created [Redmine ID: #160382]
-			- 20210907@Long.Luu: Update Robot Users rules  [Redmine ID: #161232]
+			- 20210907@Long.Luu: Update Robot Users rules  [Redmine ID: #161232]            
+			- 20220211@Long.Luu: Remove detailed robot classification  [Redmine ID: #167726]
             
 		Explanation:
 			- RobotType: 2-Bad | 1-Good | 0-Observed | -1-No classification | -2-Not Robot
@@ -29,57 +30,15 @@ BEGIN
     DECLARE CONST_ROBOTTYPE_NOTYPE 		INT DEFAULT -1;
     DECLARE CONST_ROBOTTYPE_NOTROBOT 	INT DEFAULT -2;
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_LastestRobotClassification;  
-	CREATE TEMPORARY TABLE Temp_LastestRobotClassification
-    (
-		CustID			BIGINT,
-        RobotType		TINYINT,
-        ScannedDate		DATETIME
-    );
-    
-    IF EXISTS (	SELECT 1 FROM CTSCustomerClassification 
-				WHERE CustID = ip_CustID AND SportGroupID = 0 AND CategoryID IN (61, 81, 161)) THEN
-		INSERT INTO Temp_LastestRobotClassification
-		WITH CTE_LastestClassification
-		AS (
-			SELECT 	CustID
-				,	SportTypeID
-				,	BetTypeID
-				,	LiveIndicator
-				,	MAX(FromDate) AS 'ScannedDate'
-			FROM CTS_DataCenter.RobotClassification
-			WHERE CustID = ip_CustID
-			GROUP BY CustID
-				,	SportTypeID
-				,	BetTypeID
-				,	LiveIndicator
-			)
-		SELECT 	lc.CustID
-			, 	rc.RobotType
-			, 	lc.ScannedDate
-		FROM CTE_LastestClassification AS lc
-			INNER JOIN RobotClassification AS rc ON lc.CustID = rc.CustID
-				AND lc.SportTypeID = rc.SportTypeID
-				AND lc.BetTypeID = rc.BetTypeID
-				AND lc.LiveIndicator = rc.LiveIndicator
-				AND lc.ScannedDate = rc.FromDate;
-			
-		IF EXISTS (SELECT 1 FROM Temp_LastestRobotClassification WHERE RobotType = 2) THEN
-			SELECT ip_CustID AS 'CustID', CONST_ROBOTTYPE_BAD AS 'RobotType';
-		ELSEIF EXISTS (SELECT 1 FROM Temp_LastestRobotClassification WHERE RobotType = 0) THEN
-			SELECT ip_CustID AS 'CustID', CONST_ROBOTTYPE_OBSERVED AS 'RobotType';
-		ELSEIF EXISTS (SELECT 1 FROM Temp_LastestRobotClassification WHERE RobotType = 1) THEN
-			SELECT ip_CustID AS 'CustID', CONST_ROBOTTYPE_GOOD AS 'RobotType';
-		ELSE
-			SELECT ip_CustID AS 'CustID', CONST_ROBOTTYPE_NOTYPE AS 'RobotType';
-		END IF;
-	ELSE
-		SELECT DISTINCT CustID, CONST_ROBOTTYPE_NOTROBOT AS 'RobotType'
-		FROM CTSCustomerClassification
-		WHERE CustID = ip_CustID
-			AND SportGroupID = 0
-			AND CategoryID IN (61, 81, 161);		
-    END IF;   
+    SELECT 	CustID
+		, 	CASE 
+				WHEN CategoryID IN (163) THEN CONST_ROBOTTYPE_BAD
+                WHEN CategoryID IN (164) THEN CONST_ROBOTTYPE_GOOD
+				WHEN CategoryID IN (61, 81, 161) THEN CONST_ROBOTTYPE_NOTYPE
+                ELSE CONST_ROBOTTYPE_NOTROBOT
+			END AS 'RobotType'
+	FROM CTSCustomerClassification
+	WHERE CustID = ip_CustID;
     
 END$$
 
