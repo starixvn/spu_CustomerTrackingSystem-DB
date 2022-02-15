@@ -6,7 +6,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule_Process`(
 		IN ip_LiveIndicator		BOOLEAN
 	,	IN ip_MaxTransID		BIGINT UNSIGNED
 	,	IN ip_MatchID			INT UNSIGNED
-    ,	IN ip_TotalScore		INT UNSIGNED
+    ,	IN ip_TotalScore		INT 
     ,	IN ip_BettypeID			INT UNSIGNED
     ,	IN ip_BetID				BIGINT
 )
