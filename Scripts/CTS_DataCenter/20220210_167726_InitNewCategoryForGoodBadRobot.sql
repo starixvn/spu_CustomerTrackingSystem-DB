@@ -36,4 +36,4 @@ INSERT INTO CTS_DataCenter.CategoryToDangerLevel(CategoryID,IsLicensee,TypeID,Da
 VALUES (163,0,2,31),(163,1,2,31),(164,0,2,32),(164,1,2,32);
 
 INSERT INTO CTS_DataCenter.CategoryToCustomerClass(CategoryID,CustomerClass)
-VALUES (163,13),(164,13);
+VALUES (163,131),(164,132);

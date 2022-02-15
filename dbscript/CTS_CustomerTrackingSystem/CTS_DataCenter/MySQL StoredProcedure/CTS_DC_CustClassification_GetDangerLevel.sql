@@ -22,11 +22,13 @@ BEGIN
             - 20220210@Irena.Vo: Adjust logic for Update ABI Danger Level [#167746]
 		Param's Explanation (filtered by):
 			- ip_CustIDs ; ip_TypeID: 1(Original) / 2(ABI) / 3(Other)
+            
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetDangerLevel('36266996,27852979,2324948',1);
 	*/
-	DECLARE	CONST_GROUP_PROBLEM 	INT DEFAULT 0;
-    DECLARE	CONST_GROUP_ROBOTUSER 	INT DEFAULT 61;
+    
+	DECLARE	CONST_GROUP_PROBLEMACCOUNT 	INT DEFAULT 0;
+    DECLARE	CONST_GROUP_ROBOTUSER 		INT DEFAULT 61;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_InputCustomers;
     CREATE TEMPORARY TABLE Temp_InputCustomers (
@@ -59,7 +61,7 @@ BEGIN
 	INSERT IGNORE INTO Temp_ProblemAccounts(CustID, ScannedTime, CategoryID)
     SELECT cate.CustID, cate.LastModifiedDate, cate.CategoryID
     FROM CTS_DataCenter.CTSCustomerClassification AS cate
-		INNER JOIN Temp_InputCustomers AS c ON c.CustID = cate.CustID AND cate.SportGroupID = CONST_GROUP_PROBLEM;
+		INNER JOIN Temp_InputCustomers AS c ON c.CustID = cate.CustID AND cate.SportGroupID = CONST_GROUP_PROBLEMACCOUNT;
     
      /* Get Danger Level to push */
     IF (ip_TypeID = 1) THEN -- Original Danger
