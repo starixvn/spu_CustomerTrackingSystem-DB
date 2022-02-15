@@ -67,7 +67,7 @@ sp: BEGIN
         ,	PRIMARY KEY	IX_Temp_AssociationRemove_FromCTSCustID(FromCTSCustID,ToCTSCustID)
 	);   
    
-    SET @sql = CONCAT("INSERT INTO Temp_InputCust(CustID) VALUES ('", REPLACE(ip_CustIDList, ",", "'),('"),"');");
+    SET @sql = CONCAT("INSERT IGNORE INTO Temp_InputCust(CustID) VALUES ('", REPLACE(ip_CustIDList, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
 
