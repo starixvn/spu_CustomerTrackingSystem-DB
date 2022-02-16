@@ -26,6 +26,7 @@ BEGIN
             - 	20220107@Casey.Huynh: Fix Issue get data for Verified Trans [Redmine ID: 167192]
 			-	20211213@Casey.Huynh: Enhance MM, Add column LeagueName, reset IsVerified = 0 [Redmine ID: 165606]
             -	20220110@Casey.Huynh: Enhance MM, BetID, Reason [Redmine ID: 166986]
+            - 	20220216@Casey.Huynh: Fix Issue, show IsVerified = 0 when all tickets were verified [Redmine ID: 166986]
 		Param's Explanation (filtered by):
 			- ip_Market: 0 return LiveIndicator = 0, 1 return LiveIndicator = 1, NULL: Both Live And Non-Live
             - ip_LeagueName: NULL IF any ELSE LIKE %ip_LeagueName%
@@ -177,7 +178,7 @@ BEGIN
 		,	tmpMg.Reason
     FROM Temp_MatchGroup AS tmpMg
 		INNER JOIN CTS_DataCenter.MatchMonitorDetails AS mmd ON tmpMg.MatchID = mmd.MatchID AND tmpMg.LiveIndicator = mmd.LiveIndicator 
-				AND tmpMg.BettypeID = mmd.BettypeID AND tmpMg.Reason = mmd.Reason
+				AND tmpMg.BettypeID = mmd.BettypeID AND tmpMg.BetID = mmd.BetID AND tmpMg.Reason = mmd.Reason
 		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mmd.ListTransID), ',', '","'), 
 						'$[*]' COLUMNS (TransID BIGINT UNSIGNED PATH '$')
 						) js
