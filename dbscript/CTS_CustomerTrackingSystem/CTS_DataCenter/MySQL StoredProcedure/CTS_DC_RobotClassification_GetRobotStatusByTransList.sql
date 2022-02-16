@@ -144,9 +144,9 @@ BEGIN
 		LEFT JOIN Temp_RobotTypePriority AS tmpPr ON tmpPr.Priority = tmpTr.Priority;     
         
     SELECT 	tmpTs.TransID
-		,	(	CASE	WHEN tmpRt.TransID IS NOT NULL THEN tmpRt.RobotType
-						WHEN tmpRh.TransID IS NOT NULL THEN -1
-						ELSE -4
+		,	(	CASE	WHEN tmpRh.TransID IS NULL THEN -4
+						WHEN tmpRt.TransID IS NOT NULL THEN tmpRt.RobotType
+						ELSE -1
                 END) AS RobotType
 		,	EXISTS (SELECT 1 FROM CTS_DataCenter.RobotDetection AS rd WHERE rd.CustID = tmpTs.CustID AND rd.CreatedDate < tmpTs.TransDate) AS IsRobot
     FROM Temp_Trans AS tmpTs

@@ -4,7 +4,7 @@ DELIMITER $$
 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Staging_Insert`(
 		IN ip_LiveIndicator	BOOLEAN 
-    ,	IN ip_TransList JSON
+    ,	IN ip_TransList 	JSON
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -19,24 +19,23 @@ BEGIN
             -	20210719@Casey.Huynh: Fix Issue Rule Trans.StepTime and AssGroup [Redmine ID: 158946]
             -	20210823@Casey.Huynh: Seperate scan for Live and NonLive [Redmine ID: 159195]
             -	20211213@Casey.Huynh: Enhance MM, Add column LeagueName [Redmine ID: 165606]
+            -	20220110@Casey.Huynh: Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
 		
-		Param's Explanation (filtered by):
-		CALL CTS_DataCenter.CTS_DC_MatchMonitor_Staging_Insert(1,
-			'[
-					{"TransID": 111928688807,"TransDate" : "2021-05-17 07:48:52.533","MatchID" : 43614953,"EventDate" : "2021-05-17 00:00:00","KickOffTime" : "2021-05-17 00:00:00","EventStatus" : "running","HomeID" : 953,"AwayID" : 113,"LeagueID" : 3,"Bettype" : 3,"LiveIndicator" : "1","CustID" : 12500792,"Stake" : 20,"LiveHomeScore" : 0,"LiveAwayScore" : 2}
-			]');
+		Param's Explanation (filtered by):		
 
 		Example:
-			
+			CALL CTS_DataCenter.CTS_DC_MatchMonitor_Staging_Insert(1,'[{"TransID": 1,"TransDate" : "2021-05-17 07:48:52.533","MatchID" : 43614953,"EventDate" : "2021-05-17 00:00:00","KickOffTime" : "2021-05-17 00:00:00","EventStatus" : "running","HomeID" : 953,"AwayID" : 113,"LeagueID" : 3,"Bettype" : 3, "BetID" : 0,  "LiveIndicator" : "1","CustID" : 12500792,"Stake" : 20,"Betteam" : "a","LiveHomeScore" : 0,"LiveAwayScore" : 2}]');;
+            
 	*/    
     
     DECLARE lv_LastTransID BIGINT UNSIGNED DEFAULT 0;
     
     IF ip_LiveIndicator = 1 THEN    
-		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingLive(TransID, TransDate, LeagueName, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, CustID, Stake, InsertTime)
+		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingLive(TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
 		SELECT  js.TransID
 			,	js.TransDate
             ,	js.LeagueName
+            ,	js.SportType
 			,	js.MatchID
 			,	js.HomeID
 			,	js.AwayID
@@ -44,18 +43,21 @@ BEGIN
 			,	js.KickOffTime
 			,	js.LeagueID
 			,	js.EventDate
-			,	js.LiveHomeScore
-			,	js.LiveAwayScore
-			,	js.LiveHomeScore + js.LiveAwayScore AS TotalScore
+			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore END) AS LiveHomeScore
+			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveAwayScore END) AS LiveAwayScore
+			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore + js.LiveAwayScore END) AS TotalScore
 			,	js.BettypeID
+            ,	IFNULL(js.BetID,0)
 			,	js.CustID
 			,	js.Stake
+            ,	js.Betteam
 			,	CURRENT_TIMESTAMP(3)
 		FROM JSON_TABLE(ip_TransList,
 						 "$[*]" COLUMNS(
 									TransID			BIGINT UNSIGNED PATH "$.TransID" 
 								,	TransDate		DATETIME(3) PATH "$.TransDate" 
                                 ,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PATH "$.LeagueName"
+                                ,	SportType		INT PATH "$.SportType"
 								,	MatchID			INT PATH "$.MatchID"
 								,	HomeID			INT	PATH "$.HomeID" 
 								,	AwayID			INT	PATH "$.AwayID" 
@@ -65,9 +67,11 @@ BEGIN
 								,	EventDate		DATE PATH "$.EventDate"
 								,	LiveHomeScore	INT	PATH "$.LiveHomeScore" 
 								,	LiveAwayScore	INT	PATH "$.LiveAwayScore" 
-								,	BettypeID		INT	PATH "$.Bettype" 
+								,	BettypeID		INT	PATH "$.Bettype"
+                                ,	BetID			BIGINT	PATH "$.BetID"
 								,	CustID			INT PATH "$.CustID"
 								,	Stake			DOUBLE PATH "$.Stake" 
+                                ,	Betteam			VARCHAR(10)	PATH "$.Betteam" 
 							)
 					) AS js;  
 		
@@ -82,10 +86,11 @@ BEGIN
 			WHERE sys.ParameterID = 20;
 		END IF;        
 	ELSE
-    	INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingNonLive(TransID, TransDate, LeagueName,  MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, CustID, Stake, InsertTime)
+    	INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingNonLive(TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
 		SELECT  js.TransID
 			,	js.TransDate
             ,	js.LeagueName
+            ,	js.SportType
 			,	js.MatchID
 			,	js.HomeID
 			,	js.AwayID
@@ -97,14 +102,17 @@ BEGIN
 			,	js.LiveAwayScore
 			,	js.LiveHomeScore + js.LiveAwayScore AS TotalScore
 			,	js.BettypeID
+            ,	js.BetID
 			,	js.CustID
 			,	js.Stake
+            ,	js.Betteam
 			,	CURRENT_TIMESTAMP(3)
 		FROM JSON_TABLE(ip_TransList,
 						 "$[*]" COLUMNS(
 									TransID			BIGINT UNSIGNED PATH "$.TransID" 
 								,	TransDate		DATETIME(3) PATH "$.TransDate"
                                 ,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PATH "$.LeagueName"
+                                ,	SportType		INT PATH "$.SportType"
 								,	MatchID			INT PATH "$.MatchID"
 								,	HomeID			INT	PATH "$.HomeID" 
 								,	AwayID			INT	PATH "$.AwayID" 
@@ -114,9 +122,11 @@ BEGIN
 								,	EventDate		DATE PATH "$.EventDate"
 								,	LiveHomeScore	INT	PATH "$.LiveHomeScore" 
 								,	LiveAwayScore	INT	PATH "$.LiveAwayScore" 
-								,	BettypeID		INT	PATH "$.Bettype" 
+								,	BettypeID		INT	PATH "$.Bettype"
+                                ,	BetID			BIGINT	PATH "$.BetID"
 								,	CustID			INT PATH "$.CustID"
-								,	Stake			DOUBLE PATH "$.Stake" 
+								,	Stake			DOUBLE PATH "$.Stake"
+                                ,	Betteam			VARCHAR(10)	PATH "$.Betteam" 
 							)
 					) AS js;  		
 
@@ -125,7 +135,7 @@ BEGIN
 		INTO 	lv_LastTransID
 		FROM	CTS_DataCenter.MatchMonitorStagingNonLive AS mms;  
             
-         IF lv_LastTransID > 0 THEN	   
+        IF lv_LastTransID > 0 THEN	   
 			UPDATE 	CTS_DataCenter.SystemParameter AS sys
 			SET 	sys.ParameterValue = lv_LastTransID
 			WHERE 	sys.ParameterID = 29;

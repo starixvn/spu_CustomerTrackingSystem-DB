@@ -5,8 +5,9 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Details_Get`(
 		IN ip_MatchID 			BIGINT UNSIGNED    
     ,	IN ip_BettypeID			INT UNSIGNED
+    ,	IN ip_BetID				BIGINT
     ,	IN ip_LiveIndicator		BOOLEAN     
-    ,	IN ip_IsHedging			BOOLEAN  
+    ,	IN ip_Reason			TINYINT  
     ,	IN ip_ScoreList			VARCHAR(500)     
     ,	IN ip_GroupIDList		VARCHAR(2000)
     
@@ -22,14 +23,13 @@ BEGIN
 		Revisions:
 			- 	20210526@Long.Luu: Created [Redmine ID: 152883]
 			-	20211213@Casey.Huynh: Enhance MM, Return more data 'Verified Trans List', Remove input Parameter ip_EventDate [Redmine ID: 165606]
+            -	20220110@Casey.Huynh: Enhance MM, BetID, Reason [Redmine ID: 166986]
 		Param's Explanation (filtered by):
 		
 		Example:
-			-	CALL CTS_DC_MatchMonitor_Details_Get('2021-05-01',12345,1,1,0,'1,2,3','100001,100002,100003');
-            SELECT * FROM MatchMonitorDetails;
-			SELECT * FROM MatchMonitorDetailsVerifiedTrans;
-	*/
-    
+			CALL CTS_DC_MatchMonitor_Details_Get(48995415,1,0,1,0,3,'1,2,3');
+
+	*/   
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Score;
     CREATE TEMPORARY TABLE Temp_Score(
@@ -40,7 +40,12 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_ReasonGroup(
 		GroupID 	BIGINT UNSIGNED
 	);
- 
+    
+	#======Score not include in Rule of (baseketball)
+	IF ip_ScoreList IS NULL THEN 
+		SET ip_ScoreList = '0';
+    END IF;
+    #============================================
 	SET @sql = CONCAT("INSERT INTO Temp_Score (TotalScore) VALUES ('", REPLACE(ip_ScoreList, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
@@ -52,15 +57,16 @@ BEGIN
 	SELECT 	d.ListCustID
 		,	d.ListTransID
 		,	d.GroupID
-		,	d.IsHedging
+		,	d.Reason
 		,	d.TotalScore
 	FROM   CTS_DataCenter.MatchMonitorDetails AS d
 		INNER JOIN Temp_Score AS s ON s.TotalScore = d.TotalScore
 		INNER JOIN Temp_ReasonGroup AS r ON r.GroupID = d.GroupID
 	WHERE 	d.BettypeID = ip_BettypeID
+		AND d.BetID = ip_BetID
 		AND d.MatchID = ip_MatchID
 		AND d.LiveIndicator = ip_LiveIndicator
-		AND d.IsHedging = ip_IsHedging;
+		AND d.Reason = ip_Reason;
 	
 	SELECT	js.TransID
 			, VerifiedDate
@@ -71,7 +77,8 @@ BEGIN
 						) js
 	WHERE  	mdv.MatchID = ip_MatchID
 		AND mdv.LiveIndicator = ip_LiveIndicator
-        AND	mdv.BettypeID = ip_BettypeID;
+        AND	mdv.BettypeID = ip_BettypeID
+        AND	mdv.BetID = ip_BetID;
         
 END$$
 DELIMITER ;
