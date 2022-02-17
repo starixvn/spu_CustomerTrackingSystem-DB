@@ -18,6 +18,8 @@ sp: BEGIN
 		Revisions:
 			- 	20210924@Casey.Huynh: Created [Redmine ID: 159195]
             -	20220110@Casey.Huynh: Enhance MM(SportType, Betteam, BetID), Return BetID [Redmine ID: 166986]
+            -	20220217@Casey.Huynh: Enhance MM, Update TO >= 1000 [Redmine ID: 168736]
+            
 		Param's Explanation (filtered by):	
 
 		Example:
@@ -47,7 +49,7 @@ sp: BEGIN
 			FROM CTS_DataCenter.MatchMonitorStagingLive AS mms
             WHERE mms.TransID <= lv_MaxTransID
 			GROUP BY mms.MatchID, mms.TotalScore, mms.BettypeID, mms.BetID
-			HAVING COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= 500;      
+			HAVING COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= 1000;      
             
 		END IF;
 	ELSE
