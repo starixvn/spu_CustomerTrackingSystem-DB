@@ -26,6 +26,7 @@ sp: BEGIN
 			-	20211102@Aries.Nguyen: Fix FEDERATED connection fail[Redmine ID: 163400]
             -	20211111@Casey.Huynh: Fix Issue Trans of the same Cust not merge Group [Redmine ID: 164558]
             -	20220110@Casey.Huynh: Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
+            -	20220217@Casey.Huynh: Enhance MM, Update TO >= 1000 [Redmine ID: 168736]
             
 		Param's Explanation (filtered by):	
 
@@ -470,7 +471,7 @@ sp: BEGIN
     FROM 	Temp_TransGroup AS tmpTg
 		INNER JOIN Temp_StagingTrans02  AS tmpSt ON tmpSt.CustID = tmpTg.CustID AND tmpSt.TransDate BETWEEN tmpTg.MinTransDate AND tmpTg.MaxTransDate
 	GROUP BY tmpTg.GroupID
-    HAVING SUM(Stake) >= 500 AND COUNT(DISTINCT tmpSt.CustID) > 1;
+    HAVING SUM(Stake) >= 1000 AND COUNT(DISTINCT tmpSt.CustID) > 1;
 
     DELETE tmpTg
     FROM Temp_TransGroup AS tmpTg
