@@ -72,7 +72,7 @@ sp: BEGIN
 			FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms
             WHERE mms.TransID <= lv_MaxTransID
 			GROUP BY mms.MatchID, mms.TotalScore, mms.BettypeID, mms.BetID
-			HAVING COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= 500;            
+			HAVING COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= 1000;            
 		END IF;
         
 	END IF;
