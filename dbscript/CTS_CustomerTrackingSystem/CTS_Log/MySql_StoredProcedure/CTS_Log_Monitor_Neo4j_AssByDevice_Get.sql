@@ -21,7 +21,9 @@ BEGIN
         CALL CTS_DataCenter.CTS_Log_CTSCustomer_Get ()
 	*/
     
-SELECT CTSAssDevID, CTSCustID, DCSDeviceID
+SELECT CTSAssDevID
+	, CTSCustID
+    , DCSDeviceID AS 'DeviceID'
 FROM CTS_DataCenter.AssociationByDevice
 WHERE CTSAssDevID > ip_CTSAssDevID 
 ORDER BY CTSAssDevID

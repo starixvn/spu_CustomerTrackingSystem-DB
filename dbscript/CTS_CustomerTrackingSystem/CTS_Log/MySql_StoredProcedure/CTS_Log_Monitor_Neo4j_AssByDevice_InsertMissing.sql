@@ -35,7 +35,7 @@ BEGIN
 		 "$[*]" COLUMNS(
 				CTSAssDevID		BIGINT			UNSIGNED		PATH "$.CTSAssDevID",
                 CTSCustID		BIGINT			UNSIGNED		PATH "$.CTSCustID",
-                DCSDeviceID		BIGINT			UNSIGNED		PATH "$.DCSDeviceID"
+                DCSDeviceID		BIGINT			UNSIGNED		PATH "$.DeviceID"
 			)
 	) AS js;
     
