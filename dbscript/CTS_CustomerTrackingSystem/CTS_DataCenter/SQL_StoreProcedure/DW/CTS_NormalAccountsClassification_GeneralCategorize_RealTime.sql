@@ -1,6 +1,6 @@
 USE [bodb_VR2Model]
 GO
-/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_RealTime]    Script Date: 03-Aug-21 7:50:03 PM ******/
+/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_RealTime]    Script Date: 2/23/2022 2:18:50 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -24,6 +24,7 @@ AS
         - 20210802@Long.Luu: Rescan for customers that have no category in CTS [Redmine ID: #158465]
 		- 20210803@Long.Luu: Log Input Data for Classification [Redmine ID: #157203]
 		- 20210818@Long.Luu: Check Winloss on probation assessment [Redmine ID: #159709]
+		- 20220222@Long.Luu: Remove 10k Probation rule for Credit [Redmine ID: #168988]
 		
 	Param's Explanation:
 */
@@ -51,6 +52,8 @@ BEGIN
 	CREATE TABLE #tmpCustomerAccummulatedInfo(
 		[CustId]			INT NOT NULL,
 		[Site]				VARCHAR (10) NULL,
+		[IsDeposit]			BIT DEFAULT 0,
+		[SRecommend]		INT,
 		[TurnoverRM]		MONEY NULL,
 		[WinlossRM]			MONEY NULL,
 		[Margin]			MONEY NULL,
@@ -122,9 +125,10 @@ BEGIN
 	
 	-- START	
 	-- #1: GetCustomer Accummulated data  
-	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, Site, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays, CategoryId)
+	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, Site, SRecommend, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays, CategoryId)
 	SELECT	a.CustId
 		,	cu.Site
+		,	cu.srecommend
 		,	a.TurnoverRM
 		,	a.WinlossRM
 		,	a.Margin
@@ -134,7 +138,16 @@ BEGIN
 	FROM dbo.CustomerClassification_LatestGeneralChanged AS a WITH(NOLOCK)
 		INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.CustId
 		LEFT JOIN bodb02.dbo.Customer AS cu WITH(NOLOCK) ON a.CustId = cu.custid;
-	
+
+	UPDATE a WITH(ROWLOCK, UPDLOCK)
+	SET a.IsDeposit = 1
+	FROM #tmpCustomerAccummulatedInfo AS a
+		INNER JOIN bodb02.dbo.Dep_CustSuper AS c WITH(NOLOCK) ON a.SRecommend = c.custid;
+/*
+INSERT INTO dbo.CustomerClassification_InputLog_RealTime(CustId,CreatedDate,CreatedTime,Step)
+SELECT DISTINCT CustId, @CurrentDate, @CurrentDateTime, 1
+FROM #tmpCustomerAccummulatedInfo;	
+*/
 	-- #2: Insert Accounts's BetCount
 	INSERT INTO dbo.CustomerClassification_BetCount(CustId, SportId, BetCount)
 	SELECT c.CustId, @GENERAL_SPORTID, 0
@@ -142,14 +155,22 @@ BEGIN
 		LEFT JOIN dbo.CustomerClassification_BetCount AS v WITH(NOLOCK) ON c.CustId = v.CustId
 	WHERE c.CategoryId IN (@GENERALCATEGORY_NORMALMEMBER, @GENERALCATEGORY_VIP)
 		AND v.CustId IS NULL;
-
+/*
+INSERT INTO dbo.CustomerClassification_InputLog_RealTime(CustId,CreatedDate,CreatedTime,Step)
+SELECT DISTINCT CustId, @CurrentDate, @CurrentDateTime, 3
+FROM #tmpCustomers;	
+*/
 	-- #3: Remove Accounts less than 100 tickets compared to last scan
 	DELETE a WITH(ROWLOCK)
 	FROM #tmpCustomerAccummulatedInfo AS a
 		LEFT JOIN dbo.CustomerClassification_BetCount AS v WITH(NOLOCK) ON a.CustId = v.CustId
 	WHERE a.CategoryId IN (@GENERALCATEGORY_NORMALMEMBER, @GENERALCATEGORY_VIP)
 		AND (v.CustId IS NOT NULL AND (a.BetCount - v.BetCount < 100));
-	
+/*
+INSERT INTO dbo.CustomerClassification_InputLog_RealTime(CustId,CreatedDate,CreatedTime,Step)
+SELECT DISTINCT CustId, @CurrentDate, @CurrentDateTime, 5
+FROM #tmpCustomerAccummulatedInfo;	
+*/	
 	-- #4: Classify New Member
 	DELETE	a WITH(ROWLOCK)
 	OUTPUT	DELETED.CustId
@@ -160,7 +181,11 @@ BEGIN
 	INTO #tmpNewCustomer(CustId, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	FROM #tmpCustomerAccummulatedInfo AS a
 	WHERE a.BetCount < 10;
-	
+/*
+INSERT INTO dbo.CustomerClassification_InputLog_RealTime(CustId,CreatedDate,CreatedTime,Step)
+SELECT DISTINCT CustId, @CurrentDate, @CurrentDateTime, 7
+FROM #tmpCustomerAccummulatedInfo;	
+*/	
 	-- #5: Classify Normal Member, Smart Punter & High Risk Punter
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT	a.CustId
@@ -169,12 +194,12 @@ BEGIN
 				WHEN (a.Margin <= -2 AND a.TurnoverRM > 150000 AND a.BetCount > 300 AND a.ActiveDays >= 8) THEN @GENERALCATEGORY_VIP
 				WHEN (a.Margin >= 0.1 AND a.Margin <= 1 AND a.BetCount >= 20 AND a.WinlossRM > 15000) THEN @GENERALCATEGORY_SMARTPUNTER
 				WHEN (a.Margin > 1 AND a.BetCount >= 20 AND a.WinlossRM > 15000) THEN @GENERALCATEGORY_HIGHRISKPUNTER
-				WHEN (a.Margin >= 0 AND a.Site IN ('haifa','manbetx') AND a.WinlossRM > -5000) THEN @GENERALCATEGORY_NEWMEMBER
-				WHEN (a.Margin >= 0 AND a.WinlossRM < 10000) THEN @GENERALCATEGORY_NORMALMEMBER
+				WHEN (a.Margin >= 0 AND a.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') AND a.WinlossRM > -5000) THEN @GENERALCATEGORY_NEWMEMBER
+				WHEN (a.Margin >= 0 AND a.WinlossRM < 10000 AND a.IsDeposit = 0) THEN @GENERALCATEGORY_NORMALMEMBER
 				WHEN (a.Margin >= 0) THEN @GENERALCATEGORY_PROBATION
-				WHEN (a.Margin < 0 AND (a.Site NOT IN ('haifa','manbetx') OR a.Site IS NULL)) THEN @GENERALCATEGORY_NORMALMEMBER				
-				WHEN (a.Margin < 0 AND a.Site IN ('haifa','manbetx') AND a.WinlossRM <= -5000) THEN @GENERALCATEGORY_NORMALMEMBER
-				WHEN (a.Margin < 0 AND a.Site IN ('haifa','manbetx')) THEN @GENERALCATEGORY_NEWMEMBER
+				WHEN (a.Margin < 0 AND (a.Site NOT IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') OR a.Site IS NULL)) THEN @GENERALCATEGORY_NORMALMEMBER				
+				WHEN (a.Margin < 0 AND a.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') AND a.WinlossRM <= -5000) THEN @GENERALCATEGORY_NORMALMEMBER
+				WHEN (a.Margin < 0 AND a.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada')) THEN @GENERALCATEGORY_NEWMEMBER
 			END		
 			
 		,	@CurrentDate
@@ -184,7 +209,11 @@ BEGIN
 		,	a.BetCount
 		,	a.ActiveDays
 	FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK);
-
+/*
+INSERT INTO dbo.CustomerClassification_InputLog_RealTime(CustId,CreatedDate,CreatedTime,Step)
+SELECT DISTINCT CustId, @CurrentDate, @CurrentDateTime, 9
+FROM #tmpCustomerAccummulatedInfo;	
+*/
 	-- #6: Insert new members
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT	v.CustId, @GENERAL_SPORTID
@@ -192,7 +221,11 @@ BEGIN
 		,	@CurrentDate, GETDATE()
 		,	v.TurnoverRM, v.WinlossRM, v.BetCount, v.ActiveDays
 	FROM #tmpNewCustomer AS v WITH(NOLOCK);
-
+/*
+INSERT INTO dbo.CustomerClassification_InputLog_RealTime(CustId,CreatedDate,CreatedTime,Step)
+SELECT DISTINCT CustId, @CurrentDate, @CurrentDateTime, 11
+FROM #tmpNewCustomer;	
+*/
 	-- #7: Log Dangerous Customers for tracking
 	INSERT INTO dbo.CustomerClassification_DangerousCustomerLog(CustId, ScannedTime)
 	SELECT	t.CustId
@@ -207,7 +240,14 @@ BEGIN
 		,	v.LastScannedDate = @CurrentDateTime
 	FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 		INNER JOIN dbo.CustomerClassification_BetCount AS v ON a.CustId = v.CustId;
-	
+/*
+INSERT INTO dbo.CustomerClassification_InputLog_RealTime(CustId,CreatedDate,CreatedTime,Step)
+SELECT DISTINCT CustId, @CurrentDate, @CurrentDateTime, 13
+FROM #tmpNewCustomer;
+INSERT INTO dbo.CustomerClassification_InputLog_RealTime(CustId,CreatedDate,CreatedTime,Step)
+SELECT DISTINCT CustId, @CurrentDate, @CurrentDateTime, 13
+FROM #tmpCustomerAccummulatedInfo;	
+*/	
 	DROP TABLE #tmpCustomerAccummulatedInfo;
 	DROP TABLE #tmpDangerousCustomer;
 	DROP TABLE #tmpNewCustomer;

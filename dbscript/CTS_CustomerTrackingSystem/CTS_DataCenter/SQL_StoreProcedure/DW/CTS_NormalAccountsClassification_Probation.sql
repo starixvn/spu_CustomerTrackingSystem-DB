@@ -1,6 +1,6 @@
 USE [bodb_VR2Model]
 GO
-/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_Probation]    Script Date: 7/20/2021 12:54:17 AM ******/
+/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_Probation]    Script Date: 2/23/2022 3:00:47 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -24,6 +24,7 @@ AS
 		- 20210714@Long.Luu: Special rule for ManbetX CC2 [Redmine ID: #158465]
 		- 20210811@Long.Luu: Change way to check Customers' Inactive status [Redmine ID: #159543]
 		- 20210818@Long.Luu: Check Winloss on probation assessment [Redmine ID: #159709]
+		- 20220222@Long.Luu: Remove 10k Probation rule for Credit [Redmine ID: #168988]
         
 	Param's Explanation:
 
@@ -75,6 +76,8 @@ BEGIN
 	CREATE TABLE #tmpCustomerAccummulatedInfo(
 		[CustId]			INT NOT NULL PRIMARY KEY,
 		[Site]				VARCHAR (10) NULL,
+		[IsDeposit]			BIT DEFAULT 0,
+		[SRecommend]		INT,
 		[TurnoverRM]		MONEY NULL,
 		[WinlossRM]			MONEY NULL,
 		[Margin]			MONEY NULL,
@@ -182,16 +185,22 @@ BEGIN
 	-- Get site info
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
 	SET a.site = c.site
+		,	a.SRecommend = c.srecommend
 	FROM #tmpCustomerAccummulatedInfo AS a
 		LEFT JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON a.CustId = c.custid;
-		
+
+	UPDATE a WITH(ROWLOCK, UPDLOCK)
+	SET a.IsDeposit = 1
+	FROM #tmpCustomerAccummulatedInfo AS a
+		INNER JOIN bodb02.dbo.Dep_CustSuper AS c WITH(NOLOCK) ON a.SRecommend = c.custid;	
+
 	-- Assign level for customers with margin <0 (jump down to Normal or VIP)
 	UPDATE c WITH(ROWLOCK, UPDLOCK)
 	SET c.IsPassed = 1,
 		c.CategoryId = CASE 
 							WHEN (s.Margin <= -2 AND s.TurnoverRM >= 150000 AND s.BetCount >= 300) THEN 
 								@GENERALCATEGORY_VIP
-							WHEN (s.Site IN ('haifa','manbetx') AND s.WinlossRM > -5000) THEN 
+							WHEN (s.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') AND s.WinlossRM > -5000) THEN 
 								@GENERALCATEGORY_NEWMEMBER
 							--WHEN (s.Site NOT IN ('haifa','manbetx') AND s.WinlossRM < 10000) THEN @GENERALCATEGORY_NORMALMEMBER
 							ELSE @GENERALCATEGORY_NORMALMEMBER							
@@ -208,9 +217,9 @@ BEGIN
 								@GENERALCATEGORY_SMARTPUNTER
 							WHEN (a.Margin > 1 AND a.WinlossRM > 15000 AND a.BetCount >= 20) THEN
 								@GENERALCATEGORY_HIGHRISKPUNTER
-							WHEN (a.Site IN ('haifa','manbetx') AND a.WinlossRM > -5000) THEN
+							WHEN (a.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') AND a.WinlossRM > -5000) THEN
 								@GENERALCATEGORY_NEWMEMBER
-							WHEN (a.WinlossRM < 10000) THEN
+							WHEN (a.WinlossRM < 10000 AND a.IsDeposit = 0) THEN
 								@GENERALCATEGORY_NORMALMEMBER
 							ELSE @GENERALCATEGORY_PROBATION
 						END
