@@ -29,17 +29,13 @@ BEGIN
 					,	{"CustID":23264138, "TransDate": "2022-12-14", "TransID":"5"}
 					]');
 
-	*/
-    DECLARE	CONST_CATEGORYID_ROBOTUSERS 		INT DEFAULT 61;
-    DECLARE	CONST_CATEGORYID_BADROBOTUSERS 		INT DEFAULT 163;
-    DECLARE	CONST_CATEGORYID_GOODROBOTUSERS 	INT DEFAULT 164;
-    
-    DECLARE	CONST_GROUP_PA 						INT DEFAULT 0;
-    
+	*/    
     DECLARE CONST_ROBOTTYPE_NOTROBOT 	TINYINT DEFAULT -2;
     DECLARE CONST_ROBOTTYPE_ROBOT 		TINYINT DEFAULT -1;
+    DECLARE CONST_ROBOTTYPE_OBSERVED	TINYINT DEFAULT 0;
     DECLARE CONST_ROBOTTYPE_GOOD 		TINYINT DEFAULT 1;
     DECLARE CONST_ROBOTTYPE_BAD 		TINYINT DEFAULT 2;
+    DECLARE CONST_CATEGORY_ROBOT 		SMALLINT DEFAULT 61;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Trans;
     CREATE TEMPORARY TABLE Temp_Trans(
@@ -55,7 +51,7 @@ BEGIN
 			CustID				BIGINT UNSIGNED
 		,	TransDate			DATETIME(3)
         ,	TransID				BIGINT UNSIGNED
-        ,	CategoryID			SMALLINT
+        ,	RobotType			SMALLINT
         ,	LastModifiedDate	DATETIME
         
         ,	PRIMARY KEY PK_Temp_TransRobot(CustID,TransDate,TransID)
@@ -90,21 +86,19 @@ BEGIN
 			,	TransID			BIGINT UNSIGNED PATH "$.TransID"
 		)) AS js;    
             
-    INSERT INTO Temp_RobotClassificationHistory(CustID, TransDate, TransID, CategoryID, LastModifiedDate)    
+    INSERT INTO Temp_RobotClassificationHistory(CustID, TransDate, TransID, RobotType, LastModifiedDate)    
     SELECT	t.CustID
 		,	t.TransDate
 		,	t.TransID
-		,	w.CategoryID
-        ,	w.LastModifiedDate
+		,	w.RobotType
+        ,	w.FromDate
     FROM Temp_Trans AS t,
         LATERAL(
-			SELECT CategoryID, LastModifiedDate
-			FROM CTS_DataCenter.CTSCustomerClassification_History
-			WHERE CustID = CustID
-				AND SportGroupID = CONST_GROUP_PA
-				AND CategoryID IN (CONST_CATEGORYID_ROBOTUSERS, 81, 161, CONST_CATEGORYID_BADROBOTUSERS, CONST_CATEGORYID_GOODROBOTUSERS) 
-				AND LastModifiedDate <= t.TransDate
-			ORDER BY LastModifiedDate DESC
+			SELECT RobotType, FromDate
+			FROM RobotClassification
+			WHERE CustID = t.CustID
+				AND FromDate <= t.TransDate
+			ORDER BY FromDate DESC
 			LIMIT 1
 		) AS w;
     
@@ -114,17 +108,27 @@ BEGIN
 	FROM Temp_RobotClassificationHistory
 	GROUP BY TransID;
     
-	SELECT 	h.TransID
-		,	(	CASE	
-					WHEN h.CategoryID = CONST_CATEGORYID_GOODROBOTUSERS THEN CONST_ROBOTTYPE_GOOD
-					WHEN h.CategoryID = CONST_CATEGORYID_BADROBOTUSERS THEN CONST_ROBOTTYPE_BAD
-                    WHEN h.CategoryID = CONST_CATEGORYID_ROBOTUSERS THEN CONST_ROBOTTYPE_ROBOT
-					ELSE CONST_ROBOTTYPE_NOTROBOT
-                END
-			) AS RobotType
-		,	EXISTS (SELECT 1 FROM CTS_DataCenter.RobotDetection AS r WHERE r.CustID = h.CustID AND r.CreatedDate < h.TransDate) AS IsRobot
-    FROM Temp_RobotClassificationHistory AS h
-		INNER JOIN Temp_TransLatestRobotClassificationDate AS ls ON h.TransID = ls.TransID AND h.LastModifiedDate = ls.ScannedDate;
+    WITH CTE_temp (TransID, RobotType, IsAIRobot, IsTWRobot) AS
+    (
+		SELECT 	h.TransID
+			,	(	CASE	
+						WHEN h.RobotType IN (CONST_ROBOTTYPE_GOOD,CONST_ROBOTTYPE_BAD,CONST_ROBOTTYPE_OBSERVED) THEN h.RobotType
+						ELSE CONST_ROBOTTYPE_ROBOT
+					END
+				) AS RobotType
+			,	EXISTS (SELECT 1 FROM RobotDetection AS r WHERE r.CustID = h.CustID AND r.CreatedDate < h.TransDate) AS IsAIRobot
+            ,	EXISTS (SELECT 1 FROM CTSCustomerClassification AS c WHERE c.CustID = h.CustID AND c.CategoryID = CONST_CATEGORY_ROBOT) AS IsTWRobot
+		FROM Temp_RobotClassificationHistory AS h
+			INNER JOIN Temp_TransLatestRobotClassificationDate AS ls ON h.TransID = ls.TransID AND h.LastModifiedDate = ls.ScannedDate
+    )
+    SELECT 	TransID
+		,	CASE 
+				WHEN IsTWRobot = 1 THEN RobotType
+                ELSE CONST_ROBOTTYPE_NOTROBOT
+			END AS RobotType
+        ,	IsAIRobot AS IsRobot
+    FROM CTE_temp;
+    
  END$$
 
 DELIMITER ;

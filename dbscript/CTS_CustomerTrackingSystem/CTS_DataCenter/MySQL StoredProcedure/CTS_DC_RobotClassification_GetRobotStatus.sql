@@ -30,15 +30,27 @@ BEGIN
     DECLARE CONST_ROBOTTYPE_NOTYPE 		INT DEFAULT -1;
     DECLARE CONST_ROBOTTYPE_NOTROBOT 	INT DEFAULT -2;
     
-    SELECT 	CustID
+    SET @LatestRobotType = -1;
+    SET @IsRobot = EXISTS(
+							SELECT 1 
+                            FROM CTSCustomerClassification 
+                            WHERE CustID = ip_CustID
+								AND CategoryID IN (61, 81, 161, 163, 164)
+					);
+                    
+	SELECT RobotType
+    INTO @LatestRobotType
+    FROM RobotClassification
+	WHERE CustID = ip_CustID
+    ORDER BY FromDate DESC
+    LIMIT 1;
+    
+    SELECT 	ip_CustID
 		, 	CASE 
-				WHEN CategoryID IN (163) THEN CONST_ROBOTTYPE_BAD
-                WHEN CategoryID IN (164) THEN CONST_ROBOTTYPE_GOOD
-				WHEN CategoryID IN (61, 81, 161) THEN CONST_ROBOTTYPE_NOTYPE
+				WHEN @LatestRobotType IN (CONST_ROBOTTYPE_BAD,CONST_ROBOTTYPE_GOOD,CONST_ROBOTTYPE_OBSERVED) THEN @LatestRobotType
+                WHEN @IsRobot = 1 THEN CONST_ROBOTTYPE_NOTYPE
                 ELSE CONST_ROBOTTYPE_NOTROBOT
-			END AS 'RobotType'
-	FROM CTSCustomerClassification
-	WHERE CustID = ip_CustID;
+			END AS 'RobotType';
     
 END$$
 

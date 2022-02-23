@@ -20,13 +20,16 @@ BEGIN
 			- 20210811@Irena.Vo: Fix issue get PA Category incorrectly [Redmine ID: 160071]
             - 20210910@Irena.Vo: Additional IGNORE for insert table Temp_CustomerClass [Redmine ID: 161232]
 			- 20211115@Irena.Vo: Re-priortize Robot and other PA categories  [Redmine ID: #164344]
+			- 20220214@Long.Luu: Support new category for Good & Bad Robot User [Redmine ID: #167726]
+            
         Param's Explanation:     
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetLatestClassification('1,2,1277,555555');
 	*/ 
-	DECLARE	CONST_GROUP_NORMAL 		INT DEFAULT 200;
-    DECLARE	CONST_GROUP_PROBLEM 	INT DEFAULT 0;
-    DECLARE	CONST_GROUP_ROBOTUSER 	INT DEFAULT 61;
+	DECLARE	CONST_GROUP_NORMAL 			INT DEFAULT 200;
+    DECLARE	CONST_GROUP_PROBLEM 		INT DEFAULT 0;
+    DECLARE	CONST_GROUP_ROBOTUSER 		INT DEFAULT 61;
+    DECLARE	CONST_CC_GOODROBOTUSERS 	INT DEFAULT 132;
     
     DECLARE lv_CurrentDateTime		DATETIME DEFAULT CURRENT_TIMESTAMP();
     
@@ -69,7 +72,10 @@ BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_LatestClassification;
     CREATE TEMPORARY TABLE 		Temp_LatestClassification (
-        	CustID				BIGINT UNSIGNED PRIMARY KEY 
+        	CustID				BIGINT UNSIGNED PRIMARY KEY             
+        , 	SubscriberID		INT DEFAULT 0 
+        ,	IsLicensee			BIT
+        ,	CurrencyID			INT
 		,	ScannedTime			DATETIME
 		,   CustomerClass       SMALLINT DEFAULT -1 /* -1: No data, <> -1: Has data */
 		,	CategoryGroup		SMALLINT DEFAULT -1 /* -1: No data, <> -1: Has data */
@@ -159,8 +165,24 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CategoryToCustomerClass AS map ON map.CategoryID = ec.CategoryID
         INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = ec.CategoryID;
     
-    /* 11. Get Latest Classification to push */
-    SELECT DISTINCT	c.CustID, c.CustomerClass, c.CategoryGroup AS Category, c.ScannedTime 
+    /* 11. Add up Customer Info */
+    UPDATE Temp_LatestClassification AS t		
+		INNER JOIN CTSCustomer AS c ON t.CustID = c.CustID AND c.CustSubID = 0
+		INNER JOIN MappingSubscriberSite AS mss ON c.SiteID = mss.SiteID
+	SET t.SubscriberID = c.SubscriberID
+		,	t.IsLicensee = (CASE WHEN mss.SubscriberGroupID = 2 THEN 1 ELSE 0 END)
+        ,	t.CurrencyID = c.CurrencyID;
+        
+    /* 12. Get Latest Classification to push */
+    SELECT DISTINCT	c.CustID
+		, 	CASE 
+				WHEN (c.CustomerClass = CONST_CC_GOODROBOTUSERS AND ((c.IsLicensee = 0 AND c.SubscriberID IN (2,130)) OR (c.IsLicensee = 1 AND c.CurrencyID IN (13,78)))) 
+					THEN 13
+				ELSE
+					c.CustomerClass
+			END AS CustomerClass
+        , 	c.CategoryGroup AS Category
+        , 	c.ScannedTime 
     FROM Temp_LatestClassification AS c;
 END$$
 DELIMITER ;

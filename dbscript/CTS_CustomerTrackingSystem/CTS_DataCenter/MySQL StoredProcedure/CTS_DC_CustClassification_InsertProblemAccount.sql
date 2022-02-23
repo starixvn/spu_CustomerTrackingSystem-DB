@@ -157,8 +157,8 @@ BEGIN
         ,	(CASE WHEN mss.SubscriberGroupID = 2 THEN 1 ELSE 0 END) AS IsLicensee
         ,	cust.CurrencyID
     FROM Temp_ProblemAccounts AS temp 
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.CustSubID = 0
-		INNER JOIN CTS_DataCenter.MappingSubscriberSite AS mss ON cust.SiteID = mss.SiteID;
+		INNER JOIN CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.CustSubID = 0
+		INNER JOIN MappingSubscriberSite AS mss ON cust.SiteID = mss.SiteID;
     
     UPDATE Temp_ProblemAccounts AS temp
 		INNER JOIN Temp_ExistedCustomers AS ec ON ec.CustID = temp.CustID
@@ -237,18 +237,22 @@ BEGIN
 		LEFT JOIN CTS_DataCenter.CategoryToCustomerClass AS map ON map.CategoryID = temp.CategoryID
 	WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE, CONST_ACTIONTYPE_REMOVE);
     
-    # Update CC for 163 (Bad Robot), 164 (Good Robot) (Site 611111 & currency in RMB(13) & EUR(78)) --> CC=13), others get the configged one
+    # Update Category, CC for 163 (Bad Robot), 164 (Good Robot) (Site 611111 & currency in RMB(13) & EUR(78)) --> CC=13,CategoryID=61), others get the configged one
 	UPDATE Temp_ProblemAccounts AS temp 
 		INNER JOIN Temp_CustomersTargetCC AS tcc ON tcc.CustID = temp.CustID AND tcc.CategoryID = temp.CategoryID
 	SET	temp.TargetCC = 	CASE WHEN (temp.CategoryID = CONST_CATEGORYID_GOODROBOTUSERS AND ((temp.IsLicensee = 0 AND temp.SubscriberID IN (2,130)) OR (temp.IsLicensee = 1 AND temp.CurrencyID IN (13,78))))
 									THEN 13
 								ELSE tcc.TargetCC
+							END,
+		temp.CategoryID = 	CASE WHEN (temp.CategoryID = CONST_CATEGORYID_GOODROBOTUSERS AND ((temp.IsLicensee = 0 AND temp.SubscriberID IN (2,130)) OR (temp.IsLicensee = 1 AND temp.CurrencyID IN (13,78))))
+									THEN CONST_CATEGORYID_ROBOTUSERS
+								ELSE tcc.CategoryID
 							END
 	WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE, CONST_ACTIONTYPE_REMOVE);
     
     /*	11: UPDATE SOURCE TYPE ID */
 	UPDATE Temp_ProblemAccounts AS temp 
-    SET	temp.SourceTypeID = (CASE WHEN temp.CategoryID = CONST_CATEGORYID_ROBOTUSERS THEN CONST_SOURCETYPE_INSERTROBOTUSERS /* Insert Robot User */
+    SET	temp.SourceTypeID = (CASE WHEN temp.CategoryID IN (CONST_CATEGORYID_ROBOTUSERS,CONST_CATEGORYID_GOODROBOTUSERS,CONST_CATEGORYID_BADROBOTUSERS) THEN CONST_SOURCETYPE_INSERTROBOTUSERS /* Insert Robot User */
 								  WHEN temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE) THEN CONST_SOURCETYPE_INSERTNAPPA /* Insert & Update */
 								  ELSE CONST_SOURCETYPE_REMOVENAPPA /* Remove */
 							 END)

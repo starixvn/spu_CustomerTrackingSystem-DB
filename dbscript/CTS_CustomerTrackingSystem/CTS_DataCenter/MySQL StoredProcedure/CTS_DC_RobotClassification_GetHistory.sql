@@ -61,7 +61,7 @@ sp : BEGIN
         ,	BetCount
         ,	ActiveDays
 	FROM CTS_DataCenter.RobotClassification
-	WHERE CustID = 32221326
+	WHERE CustID = ip_CustID
 	ORDER BY FromDate ASC;
 
 	INSERT INTO Temp_History2(RobotType, OriginID)
