@@ -34,6 +34,7 @@ BEGIN
 			- 20211026@Aries.Nguyen: Archive inactive association [Redmine ID: #163087]
             - 20211116@Casey.Huynh: Sync Robot User Categories to Dangerous Setting [Redmine ID: #161665]
 			- 20211115@Aries.Nguyen: Use ReasonID column instead of  DisplayOrder column [Redmine ID: #156935]
+            - 20220210@Irena.Vo: Adjust logic for Update ABI Danger Level [#167746]
         Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertProblemAccount('[{"CustID": 456, "ReasonID": 59, "RobotCounter": 0}]',0,@op_ErrorMessage);
@@ -69,7 +70,7 @@ BEGIN
 			CustID					BIGINT UNSIGNED 
 		, 	CTSCustID				BIGINT UNSIGNED DEFAULT 0
         , 	SubscriberID			INT DEFAULT 0 
-        ,	IsLicensee				SMALLINT UNSIGNED
+        ,	IsLicensee				BIT
         , 	ReasonID				SMALLINT 
         , 	RobotCounter			SMALLINT 
         , 	CategoryID		    	SMALLINT
@@ -234,7 +235,7 @@ BEGIN
 							 END)
 	WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE, CONST_ACTIONTYPE_REMOVE);
     
-    /* 12: UPDATE DANGER LEVEL FOR ROBOT_USER */
+    /* 12: UPDATE ABI DANGER LEVEL */
     UPDATE Temp_ProblemAccounts AS temp
 		INNER JOIN CTS_DataCenter.CategoryToDangerLevel AS ctd ON ctd.CategoryID = temp.CategoryID AND ctd.IsLicensee = temp.IsLicensee AND ctd.TypeID = 2 
     SET 	temp.TargetDangerLevel =  ctd.DangerLevel
