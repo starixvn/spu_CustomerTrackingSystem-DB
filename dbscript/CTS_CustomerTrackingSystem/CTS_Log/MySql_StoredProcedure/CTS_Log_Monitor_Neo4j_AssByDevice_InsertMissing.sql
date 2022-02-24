@@ -39,7 +39,7 @@ BEGIN
 			)
 	) AS js;
     
-    INSERT INTO CTS_Log.Monitor_Neo4j_CTSCustomer_Missing(CTSAssDevID, CTSCustID, DCSDeviceID)
+    INSERT INTO CTS_Log.Monitor_Neo4j_AssByDevice_Missing(CTSAssDevID, CTSCustID, DCSDeviceID)
     SELECT 		CTSAssDevID	
             ,	CTSCustID
             ,	DCSDeviceID
