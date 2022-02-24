@@ -16,7 +16,7 @@ CREATE TABLE `CTS_Log`.`Monitor_Neo4j_AssByIP_Missing` (
 	`ToCustID`	BIGINT UNSIGNED NOT NULL,
   PRIMARY KEY (`ID`));
   
-####     CTS_Log_Monitor_Neo4j_AssByIP_Get     ########
+#########     CTS_Log_Monitor_Neo4j_AssByIP_Get     ########
 USE CTS_Log;
 DROP PROCEDURE IF EXISTS `CTS_Log_Monitor_Neo4j_AssByIP_Get`;
 
@@ -73,45 +73,6 @@ BEGIN
 
 	*/
 
-    INSERT INTO CTS_Log.Monitor_Neo4j_AssByIP_Missing(ID, FromCustID, ToCustID)
-	SELECT		ID
-				, FromCustID
-                , ToCustID	
-	FROM JSON_TABLE(ip_AssByIPList,
-		 "$[*]" COLUMNS(
-				ID				BIGINT			UNSIGNED		PATH "$.AssByIpID",
-                FromCustID		BIGINT			UNSIGNED		PATH "$.FromCustID",
-                ToCustID		BIGINT			UNSIGNED		PATH "$.ToCustID"
-			)
-	) AS js;
-    
-
-END$$
-DELIMITER ;
-
-############################ CTS_Log_Monitor_Neo4j_AssByDevice_InsertMissing #####################
-DROP PROCEDURE IF EXISTS `CTS_Log_Monitor_Neo4j_AssByIP_InsertMissing`;
-
-DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_Log_Monitor_Neo4j_AssByIP_InsertMissing`(
-		IN 	ip_AssByIPList 	JSON
-)
-    SQL SECURITY INVOKER
-BEGIN
-	/*
-		Created:	20201213@Harvey
-		Task:		Insert missing association by IP [Redmine ID: 116528]
-		DB:			CTS_DataCenter
-		Original:
-
-		Revisions:
-			- 20220128@Harvey: Initial
-		Param's Explanation (filtered by):
-		Example:
-			- CALL CTS_Log.CTS_Log_Monitor_Neo4j_AssByIP_InsertMissing ('');
-
-	*/
-
     DROP TEMPORARY TABLE IF EXISTS Temp_MissingAssByIP;    
 	CREATE TEMPORARY TABLE Temp_MissingAssByIP(
 		`ID`			BIGINT UNSIGNED NOT NULL,
@@ -137,6 +98,56 @@ BEGIN
             ,	ToCustID
     FROM Temp_MissingAssByIP;
     
+
+END$$
+DELIMITER ;
+
+############################ CTS_Log_Monitor_Neo4j_AssByDevice_InsertMissing #####################
+DROP PROCEDURE IF EXISTS `CTS_Log_Monitor_Neo4j_AssByDevice_InsertMissing`;
+
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_Log_Monitor_Neo4j_AssByDevice_InsertMissing`(
+		IN 	ip_AssByDeviceList 	JSON
+)
+    SQL SECURITY INVOKER
+BEGIN
+	/*
+		Created:	20201213@Harvey
+		Task:		Insert missing customer [Redmine ID: 116528]
+		DB:			CTS_DataCenter
+		Original:
+
+		Revisions:
+			- 20220128@Harvey: Initial
+		Param's Explanation (filtered by):
+		Example:
+			- CALL CTS_Log.CTS_Log_InsertMissingCusts ('');
+
+	*/
+	DROP TEMPORARY TABLE IF EXISTS Temp_MissingAssByDevice;    
+	CREATE TEMPORARY TABLE Temp_MissingAssByDevice(
+		`CTSAssDevID`	BIGINT UNSIGNED NOT NULL,
+        `CTSCustID`		BIGINT UNSIGNED NOT NULL,
+        `DCSDeviceID`	BIGINT UNSIGNED NOT NULL
+	);
+
+    INSERT INTO Temp_MissingAssByDevice(CTSAssDevID, CTSCustID, DCSDeviceID)
+	SELECT		CTSAssDevID
+				, CTSCustID
+                , DCSDeviceID	
+	FROM JSON_TABLE(ip_AssByDeviceList,
+		 "$[*]" COLUMNS(
+				CTSAssDevID		BIGINT			UNSIGNED		PATH "$.CTSAssDevID",
+                CTSCustID		BIGINT			UNSIGNED		PATH "$.CTSCustID",
+                DCSDeviceID		BIGINT			UNSIGNED		PATH "$.DeviceID"
+			)
+	) AS js;
+    
+    INSERT INTO CTS_Log.Monitor_Neo4j_AssByDevice_Missing(CTSAssDevID, CTSCustID, DCSDeviceID)
+    SELECT 		CTSAssDevID	
+            ,	CTSCustID
+            ,	DCSDeviceID
+    FROM Temp_MissingAssByDevice;
 
 END$$
 DELIMITER ;
