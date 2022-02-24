@@ -21,7 +21,7 @@ BEGIN
         CALL CTS_DataCenter.CTS_Log_CTSCustomer_Get ()
 	*/
     
-SELECT ID, FromCustID, ToCustID
+SELECT ID 'AssByIpID', FromCustID, ToCustID
 FROM CTS_DataCenter.AssociationByIP
 WHERE ID > ip_IDAssByIP 
 ORDER BY ID

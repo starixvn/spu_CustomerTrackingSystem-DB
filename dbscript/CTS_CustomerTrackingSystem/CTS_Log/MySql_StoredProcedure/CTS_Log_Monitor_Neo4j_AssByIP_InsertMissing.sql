@@ -21,7 +21,14 @@ BEGIN
 
 	*/
 
-    INSERT INTO CTS_Log.Monitor_Neo4j_AssByIP_Missing(ID, FromCustID, ToCustID)
+    DROP TEMPORARY TABLE IF EXISTS Temp_MissingAssByIP;    
+	CREATE TEMPORARY TABLE Temp_MissingAssByIP(
+		`ID`			BIGINT UNSIGNED NOT NULL,
+        `FromCustID`	BIGINT UNSIGNED NOT NULL,
+        `ToCustID`		BIGINT UNSIGNED NOT NULL
+	);
+
+    INSERT INTO Temp_MissingAssByIP(ID, FromCustID, ToCustID)
 	SELECT		ID
 				, FromCustID
                 , ToCustID	
@@ -32,6 +39,12 @@ BEGIN
                 ToCustID		BIGINT			UNSIGNED		PATH "$.ToCustID"
 			)
 	) AS js;
+    
+    INSERT INTO CTS_Log.Monitor_Neo4j_AssByIP_Missing(ID, FromCustID, ToCustID)
+    SELECT 		ID	
+            ,	FromCustID
+            ,	ToCustID
+    FROM Temp_MissingAssByIP;
     
 
 END$$
