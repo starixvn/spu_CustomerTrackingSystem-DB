@@ -1,3 +1,10 @@
+USE [bodb_VR2Model]
+GO
+/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_Daily]    Script Date: 2/23/2022 2:18:47 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
 ALTER PROCEDURE [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_Daily]
 	@ListCustIds			VARCHAR(MAX),
 	@FunctionId				SMALLINT = -1,
@@ -19,7 +26,8 @@ AS
 		- 20210714@Long.Luu: Special rule for ManbetX CC2 [Redmine ID: #158465]
 		- 20210730@John.Ngo: [CTS] New way to store Closed Status [Redmine ID: #152259]		
 		- 20210811@Long.Luu: Change way to check Customers' Inactive status [Redmine ID: #159543]		
-		- 20210818@Long.Luu: Check Winloss on probation assessment [Redmine ID: #159709]
+		- 20210818@Long.Luu: Check Winloss on probation assessment [Redmine ID: #159709]	
+		- 20220222@Long.Luu: Remove 10k Probation rule for Credit [Redmine ID: #168988]
 		
 	Param's Explanation:
 */
@@ -62,6 +70,8 @@ BEGIN
 	CREATE TABLE #tmpCustomerAccummulatedInfo(
 		[CustId]			INT NOT NULL,
 		[Site]				VARCHAR (10) NULL,
+		[IsDeposit]			BIT DEFAULT 0,
+		[SRecommend]		INT,
 		[TurnoverRM]		MONEY NULL,
 		[WinlossRM]			MONEY NULL,
 		[Margin]			MONEY NULL,
@@ -117,7 +127,7 @@ BEGIN
 	INSERT INTO dbo.CustomerClassification_InputLog(CustId,CreatedDate,CreatedTime,FunctionId,IsActive)
 	SELECT CustId, @CurrentDate, @CurrentDateTime, @FunctionId, IsActive
 	FROM #tmpCustomers;
-
+	
 	-- Remove closed & disabled accounts & SMA account & Internal Account
 	DELETE r WITH(ROWLOCK)
 		OUTPUT DELETED.CustId INTO #tmpDeletedCustomers(CustId)
@@ -158,8 +168,14 @@ BEGIN
 	
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
 	SET a.site = c.site
+		,	a.SRecommend = c.srecommend
 	FROM #tmpCustomerAccummulatedInfo AS a
 		LEFT JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON a.CustId = c.custid;
+
+	UPDATE a WITH(ROWLOCK, UPDLOCK)
+	SET a.IsDeposit = 1
+	FROM #tmpCustomerAccummulatedInfo AS a
+		INNER JOIN bodb02.dbo.Dep_CustSuper AS c WITH(NOLOCK) ON a.SRecommend = c.custid;
 
 	-- #4: Remove 'Odd Feed Sites'
 	DELETE a
@@ -198,12 +214,12 @@ BEGIN
 				WHEN (a.Margin <= -2 AND a.TurnoverRM > 150000 AND a.BetCount > 300 AND a.ActiveDays >= 8) THEN @GENERALCATEGORY_VIP
 				WHEN (a.Margin >= 0.1 AND a.Margin <= 1 AND a.BetCount >= 20 AND a.WinlossRM > 15000) THEN @GENERALCATEGORY_SMARTPUNTER
 				WHEN (a.Margin > 1 AND a.BetCount >= 20 AND a.WinlossRM > 15000) THEN @GENERALCATEGORY_HIGHRISKPUNTER
-				WHEN (a.Margin >= 0 AND a.Site IN ('haifa','manbetx') AND a.WinlossRM > -5000) THEN @GENERALCATEGORY_NEWMEMBER
-				WHEN (a.Margin >= 0 AND a.WinlossRM < 10000) THEN @GENERALCATEGORY_NORMALMEMBER
+				WHEN (a.Margin >= 0 AND a.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') AND a.WinlossRM > -5000) THEN @GENERALCATEGORY_NEWMEMBER
+				WHEN (a.Margin >= 0 AND a.WinlossRM < 10000 AND a.IsDeposit = 0) THEN @GENERALCATEGORY_NORMALMEMBER
 				WHEN (a.Margin >= 0) THEN @GENERALCATEGORY_PROBATION
-				WHEN (a.Margin < 0 AND (a.Site NOT IN ('haifa','manbetx') OR a.Site IS NULL)) THEN @GENERALCATEGORY_NORMALMEMBER				
-				WHEN (a.Margin < 0 AND a.Site IN ('haifa','manbetx') AND a.WinlossRM <= -5000) THEN @GENERALCATEGORY_NORMALMEMBER
-				WHEN (a.Margin < 0 AND a.Site IN ('haifa','manbetx')) THEN @GENERALCATEGORY_NEWMEMBER
+				WHEN (a.Margin < 0 AND (a.Site NOT IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') OR a.Site IS NULL)) THEN @GENERALCATEGORY_NORMALMEMBER				
+				WHEN (a.Margin < 0 AND a.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') AND a.WinlossRM <= -5000) THEN @GENERALCATEGORY_NORMALMEMBER
+				WHEN (a.Margin < 0 AND a.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada')) THEN @GENERALCATEGORY_NEWMEMBER
 			END AS CategoryId
 		,	@CurrentDate AS CreatedDate
 		,	@CurrentDateTime AS CreatedTime
