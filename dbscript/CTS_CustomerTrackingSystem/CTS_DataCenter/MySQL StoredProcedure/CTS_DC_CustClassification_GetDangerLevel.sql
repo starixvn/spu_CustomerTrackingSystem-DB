@@ -27,7 +27,7 @@ BEGIN
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetDangerLevel('36266996,27852979,2324948',1);
 	*/
     
-	DECLARE	CONST_GROUP_PROBLEMACCOUNT 	INT DEFAULT 0;
+	DECLARE	CONST_GROUP_PROBLEM 		INT DEFAULT 0;
     DECLARE	CONST_GROUP_ROBOTUSER 		INT DEFAULT 61;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_InputCustomers;
@@ -61,7 +61,7 @@ BEGIN
 	INSERT IGNORE INTO Temp_ProblemAccounts(CustID, ScannedTime, CategoryID)
     SELECT cate.CustID, cate.LastModifiedDate, cate.CategoryID
     FROM CTS_DataCenter.CTSCustomerClassification AS cate
-		INNER JOIN Temp_InputCustomers AS c ON c.CustID = cate.CustID AND cate.SportGroupID = CONST_GROUP_PROBLEMACCOUNT;
+		INNER JOIN Temp_InputCustomers AS c ON c.CustID = cate.CustID AND cate.SportGroupID = CONST_GROUP_PROBLEM;
     
      /* Get Danger Level to push */
     IF (ip_TypeID = 1) THEN -- Original Danger

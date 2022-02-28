@@ -32,11 +32,8 @@ BEGIN
 	*/    
     DECLARE CONST_ROBOTTYPE_NOTROBOT 	TINYINT DEFAULT -2;
     DECLARE CONST_ROBOTTYPE_ROBOT 		TINYINT DEFAULT -1;
-    DECLARE CONST_ROBOTTYPE_OBSERVED	TINYINT DEFAULT 0;
-    DECLARE CONST_ROBOTTYPE_GOOD 		TINYINT DEFAULT 1;
-    DECLARE CONST_ROBOTTYPE_BAD 		TINYINT DEFAULT 2;
-    DECLARE CONST_CATEGORY_ROBOT 		SMALLINT DEFAULT 61;
-    
+    DECLARE CONST_GROUP_ROBOTUSER 		SMALLINT DEFAULT 61;
+   
     DROP TEMPORARY TABLE IF EXISTS Temp_Trans;
     CREATE TEMPORARY TABLE Temp_Trans(
 			CustID		BIGINT UNSIGNED
@@ -46,89 +43,103 @@ BEGIN
         ,	PRIMARY KEY PK_Temp_Trans(CustID,TransDate,TransID)
 	);
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_RobotClassificationHistory;
-    CREATE TEMPORARY TABLE Temp_RobotClassificationHistory(
-			CustID				BIGINT UNSIGNED
-		,	TransDate			DATETIME(3)
-        ,	TransID				BIGINT UNSIGNED
-        ,	RobotType			SMALLINT
-        ,	LastModifiedDate	DATETIME
-        
-        ,	PRIMARY KEY PK_Temp_TransRobot(CustID,TransDate,TransID)
-	);
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_ExistsRobotClassification;
-    CREATE TEMPORARY TABLE Temp_ExistsRobotClassification(
+    DROP TEMPORARY TABLE IF EXISTS Temp_AIRobotTrans;
+    CREATE TEMPORARY TABLE Temp_AIRobotTrans(
 			CustID		BIGINT UNSIGNED
-		,	TransDate	DATETIME(3)
         ,	TransID		BIGINT UNSIGNED
-        ,	Priority	TINYINT
+        ,	TransDate	DATETIME(3)
+        ,	RobotType	TINYINT
         
-        ,	PRIMARY KEY PK_Temp_ExistsRobotClassification(CustID,TransDate,TransID)
+        ,	PRIMARY KEY PK_Temp_AIRobotTrans(CustID,TransDate,TransID)
 	);
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_TransLatestRobotClassificationDate;  
-	CREATE TEMPORARY TABLE Temp_TransLatestRobotClassificationDate
+	DROP TEMPORARY TABLE IF EXISTS Temp_RobotUserTrans;
+    CREATE TEMPORARY TABLE Temp_RobotUserTrans(
+			CustID			BIGINT UNSIGNED
+        ,	TransID			BIGINT UNSIGNED
+		,	TransDate		DATETIME(3)
+        
+        ,	PRIMARY KEY 	PK_Temp_RobotUserTrans(CustID,TransDate,TransID)
+	);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_Result;  
+	CREATE TEMPORARY TABLE Temp_Result
     (
-			TransID			BIGINT UNSIGNED
-        ,	ScannedDate		DATETIME
+			CustID		BIGINT UNSIGNED
+        ,	TransID		BIGINT UNSIGNED
+		,	TransDate	DATETIME(3)
+        , 	RobotType	TINYINT
+        
+        ,	PRIMARY KEY 	PK_Temp_Result(CustID,TransDate,TransID)
     );
     
-    /* START */    
+    #=========================================================================
     INSERT INTO Temp_Trans(CustID,TransDate,TransID)
 	SELECT  js.CustID
 		,	js.TransDate
 		,	js.TransID
 	FROM JSON_TABLE(ip_TransList,
-		"$[*]" COLUMNS(
-				CustID			BIGINT UNSIGNED PATH "$.CustID" 
-			,	TransDate		DATETIME(3) PATH "$.TransDate"                               
-			,	TransID			BIGINT UNSIGNED PATH "$.TransID"
-		)) AS js;    
-            
-    INSERT INTO Temp_RobotClassificationHistory(CustID, TransDate, TransID, RobotType, LastModifiedDate)    
+					 "$[*]" COLUMNS(
+								CustID			BIGINT UNSIGNED PATH "$.CustID" 
+							,	TransDate		DATETIME(3) PATH "$.TransDate"                               
+							,	TransID			BIGINT UNSIGNED PATH "$.TransID"
+						)
+				) AS js;    
+
+    /*AI Robot*/
+	INSERT INTO Temp_AIRobotTrans(CustID, TransID, TransDate, RobotType)
     SELECT	t.CustID
-		,	t.TransDate
 		,	t.TransID
+        ,	t.TransDate
 		,	w.RobotType
-        ,	w.FromDate
     FROM Temp_Trans AS t,
         LATERAL(
-			SELECT RobotType, FromDate
-			FROM RobotClassification
-			WHERE CustID = t.CustID
-				AND FromDate <= t.TransDate
-			ORDER BY FromDate DESC
+			SELECT ai.RobotType
+			FROM CTS_DataCenter.RobotClassification AS ai
+			WHERE ai.CustID = t.CustID
+				AND ai.FromDate <= t.TransDate
+			ORDER BY ai.FromDate DESC
 			LIMIT 1
 		) AS w;
+   
+    /*Robot User*/
+	INSERT INTO Temp_RobotUserTrans(CustID, TransID, TransDate)    
+    SELECT	t.CustID
+		,	t.TransID
+        ,	t.TransDate
+    FROM Temp_Trans AS t,
+        LATERAL(
+			SELECT h.CategoryID
+			FROM CTS_DataCenter.CTSCustomerClassification_History AS h
+				INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = h.CategoryID
+			WHERE h.CustID = t.CustID
+				AND cc.CategoryGroup = CONST_GROUP_ROBOTUSER
+				AND h.LastModifiedDate <= t.TransDate
+			ORDER BY h.LastModifiedDate DESC
+			LIMIT 1
+		) AS tmp;    
     
-    INSERT INTO Temp_TransLatestRobotClassificationDate(TransID, ScannedDate)
-    SELECT	TransID
-		,	MAX(LastModifiedDate)
-	FROM Temp_RobotClassificationHistory
-	GROUP BY TransID;
+    DELETE r
+    FROM Temp_RobotUserTrans AS r
+		INNER JOIN Temp_AIRobotTrans AS ai ON ai.CustID = r.CustID AND ai.TransID = r.TransID;
     
-    WITH CTE_temp (TransID, RobotType, IsAIRobot, IsTWRobot) AS
-    (
-		SELECT 	h.TransID
-			,	(	CASE	
-						WHEN h.RobotType IN (CONST_ROBOTTYPE_GOOD,CONST_ROBOTTYPE_BAD,CONST_ROBOTTYPE_OBSERVED) THEN h.RobotType
-						ELSE CONST_ROBOTTYPE_ROBOT
-					END
-				) AS RobotType
-			,	EXISTS (SELECT 1 FROM RobotDetection AS r WHERE r.CustID = h.CustID AND r.CreatedDate < h.TransDate) AS IsAIRobot
-            ,	EXISTS (SELECT 1 FROM CTSCustomerClassification AS c WHERE c.CustID = h.CustID AND c.CategoryID = CONST_CATEGORY_ROBOT) AS IsTWRobot
-		FROM Temp_RobotClassificationHistory AS h
-			INNER JOIN Temp_TransLatestRobotClassificationDate AS ls ON h.TransID = ls.TransID AND h.LastModifiedDate = ls.ScannedDate
-    )
-    SELECT 	TransID
-		,	CASE 
-				WHEN IsTWRobot = 1 THEN RobotType
-                ELSE CONST_ROBOTTYPE_NOTROBOT
-			END AS RobotType
-        ,	IsAIRobot AS IsRobot
-    FROM CTE_temp;
+    /*Get Result*/
+    INSERT INTO Temp_Result (CustID, TransID, TransDate, RobotType)
+    SELECT CustID, TransID, TransDate, RobotType FROM Temp_AIRobotTrans;
     
+    INSERT INTO Temp_Result (CustID, TransID, TransDate, RobotType)
+    SELECT CustID, TransID, TransDate, CONST_ROBOTTYPE_ROBOT FROM Temp_RobotUserTrans;
+    
+    INSERT INTO Temp_Result (CustID, TransID, TransDate, RobotType)
+    SELECT t.CustID, t.TransID, t.TransDate, CONST_ROBOTTYPE_NOTROBOT
+    FROM Temp_Trans AS t
+	WHERE NOT EXISTS (SELECT 1 FROM Temp_AIRobotTrans AS ai WHERE ai.CustID = t.CustID AND ai.TransID = t.TransID)
+		AND NOT EXISTS (SELECT 1 FROM Temp_RobotUserTrans AS r WHERE r.CustID = t.CustID AND r.TransID = t.TransID);
+    
+    SELECT 	r.TransID
+		,	r.RobotType
+		,	EXISTS (SELECT 1 FROM CTS_DataCenter.RobotDetection AS rd WHERE rd.CustID = r.CustID AND rd.CreatedDate <= r.TransDate) AS IsRobot
+    FROM Temp_Result AS r
+    ORDER BY r.TransID ASC;
  END$$
-
 DELIMITER ;
