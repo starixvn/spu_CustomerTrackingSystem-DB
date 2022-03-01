@@ -14,6 +14,7 @@ BEGIN
 		Original:
 		Revisions:
 			- 20211026@Aries.Nguyen [Redmine ID: #163087]: Created
+			- 20220301@Aries.Nguyen: Change datatype of the CustID column [Redmine ID: #169264]
             
         Param's Explanation (filtered by):
 
@@ -44,7 +45,7 @@ BEGIN
 	FROM JSON_TABLE(ip_CustInfo,
 		 "$[*]" COLUMNS(
 				CTSCustID	BIGINT UNSIGNED	PATH "$.CTSCustID" 
-			, 	CustID		SMALLINT		PATH "$.CustID"  )
+			, 	CustID		BIGINT UNSIGNED	PATH "$.CustID"  )
 	) AS info;
     
     INSERT INTO Temp_CustRollBack(CTSCustID)
