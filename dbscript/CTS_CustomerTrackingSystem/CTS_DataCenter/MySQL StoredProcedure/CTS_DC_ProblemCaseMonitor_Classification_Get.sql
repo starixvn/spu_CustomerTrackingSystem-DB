@@ -54,7 +54,7 @@ BEGIN
     END IF;
     
     SELECT 	CustID
-        ,	CASE WHEN cat.CategoryGroup IN (59,61) OR  cat.CategoryID IN (CONST_CategoryID_BadRobot, CONST_CategoryID_GoodRobot) THEN CONST_ProblemCase_Robot
+        ,	CASE WHEN cat.CategoryGroup IN (59,61) THEN CONST_ProblemCase_Robot
 				 WHEN cat.CategoryGroup IN (204) THEN CONST_ProblemCase_ProPunter END AS ProblemCaseID
     FROM CTS_DataCenter.CTSCustomerClassification_History AS his
         INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON his.CategoryID = cat.CategoryID AND cat.CategoryGroup IN (59, 61, 204)
