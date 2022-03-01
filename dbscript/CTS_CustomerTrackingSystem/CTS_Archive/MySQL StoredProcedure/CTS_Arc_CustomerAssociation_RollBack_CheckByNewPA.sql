@@ -44,7 +44,7 @@ BEGIN
 	FROM JSON_TABLE(ip_CustInfo,
 		 "$[*]" COLUMNS(
 				CTSCustID	BIGINT UNSIGNED	PATH "$.CTSCustID" 
-			, 	CustID		SMALLINT		PATH "$.CustID"  )
+			, 	CustID		BIGINT UNSIGNED	PATH "$.CustID"  )
 	) AS info;
     
     INSERT INTO Temp_CustRollBack(CTSCustID)
