@@ -14,6 +14,7 @@ BEGIN
 		Original:
 		Revisions:
 			- 20211026@Aries.Nguyen [Redmine ID: #163087]: Created
+			- 20220301@Aries.Nguyen: Change datatype of the CustID column [Redmine ID: #169264]
             
         Param's Explanation (filtered by):
 
