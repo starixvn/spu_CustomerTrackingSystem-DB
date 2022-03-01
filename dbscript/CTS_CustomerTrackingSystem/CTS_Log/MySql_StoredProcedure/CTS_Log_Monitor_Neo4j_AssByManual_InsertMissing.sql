@@ -28,11 +28,11 @@ BEGIN
         `ToCTSCustID`		BIGINT UNSIGNED NOT NULL
 	);
 
-    INSERT INTO Temp_MissingAssByIP(AssID, FromCTSCustID, ToCTSCustID)
+    INSERT INTO Temp_MissingAssByManual(AssID, FromCTSCustID, ToCTSCustID)
 	SELECT		AssID
 				, FromCTSCustID
                 , ToCTSCustID	
-	FROM JSON_TABLE(ip_AssByAIList,
+	FROM JSON_TABLE(ip_AssByManualList,
 		 "$[*]" COLUMNS(
 				AssID			BIGINT			UNSIGNED		PATH "$.AssID",
                 FromCTSCustID	BIGINT			UNSIGNED		PATH "$.FromCTSCustID",
