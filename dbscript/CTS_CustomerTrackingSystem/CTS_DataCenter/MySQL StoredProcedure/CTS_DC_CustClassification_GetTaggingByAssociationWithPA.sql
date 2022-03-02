@@ -20,13 +20,16 @@ BEGIN
 		   - 20210722@Long.Luu: Refactor  [Redmine ID: #157203]
            - 20210804@Irena.Vo: Fix issue get Duplicate list Association Remove [Redmine ID: #159706]
 		   - 20210818@Aries.Nguyen: Exclude Unlink association [Redmine ID: #159708]
+		   - 20220210@Aries.Nguyen: Re-arrange customer category/class for good/bad robot [Redmine ID: #167726]
 		Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetTaggingByAssociationWithPA('1268,38665541,17004,32339123379301,3481646');
 	*/
 	
-    DECLARE	CONST_CATEGORYID_ROBOTUSERS 	INT DEFAULT 61;
-    DECLARE	CONST_GROUP_PA 					INT DEFAULT 0;
+    DECLARE	CONST_CATEGORYID_ROBOTUSERS 		INT DEFAULT 61;
+	DECLARE	CONST_CATEGORYID_BADROBOTUSERS 		INT DEFAULT 163;
+	DECLARE	CONST_CATEGORYID_GOODROBOTUSERS 	INT DEFAULT 164;
+    DECLARE	CONST_GROUP_PA 						INT DEFAULT 0;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_InputCustomers;
     CREATE TEMPORARY TABLE 	Temp_InputCustomers (
@@ -146,7 +149,8 @@ BEGIN
 	FROM 	Temp_CustLevel1 AS cus
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CTSCustID = cus.CTSCustID AND SportGroupID = CONST_GROUP_PA
 		STRAIGHT_JOIN CTS_DataCenter.CategoryToCustomerClass AS class ON class.CategoryID =  cc.CategoryID
-    WHERE 	cc.CategoryID = CONST_CATEGORYID_ROBOTUSERS OR class.CustomerClass IN (8, 10)
+    WHERE	cc.CategoryID IN (CONST_CATEGORYID_ROBOTUSERS,CONST_CATEGORYID_BADROBOTUSERS,CONST_CATEGORYID_GOODROBOTUSERS)
+		OR	class.CustomerClass IN (8, 10)
     ON DUPLICATE KEY UPDATE CustomerClass = CASE WHEN class.CustomerClass = 10 THEN 10
 												 WHEN class.CustomerClass = 8 AND Temp_PA.CustomerClass <> 10 THEN 8
 											END;

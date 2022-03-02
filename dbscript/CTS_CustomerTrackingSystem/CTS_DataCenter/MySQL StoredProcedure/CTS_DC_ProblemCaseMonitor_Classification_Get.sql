@@ -14,14 +14,18 @@ BEGIN
 		Original:
 		Revisions:
 			- 20211006@Aries.Nguyen: Created [RedmineID: #162830]
-
+            - 20220210@Aries.Nguyen: Re-arrange customer category/class for good/bad robot [Redmine ID: #167726]
 		Param's Explanation (filtered by):
 
 		Example: 
             - CALL CTS_DataCenter.CTS_DC_ProblemCaseMonitor_Classification_Get(@op_ClassificationHistoryID);
 	*/ 
-	DECLARE	CONST_ProblemCase_Robot 		INT DEFAULT 1;
-	DECLARE	CONST_ProblemCase_ProPunter 	INT DEFAULT 9;
+	DECLARE	CONST_ProblemCase_Robot 		    INT DEFAULT 1;
+    DECLARE	CONST_ProblemCase_BadRobot 		    INT DEFAULT 10;
+    DECLARE	CONST_ProblemCase_GoodRobot 		INT DEFAULT 11;
+	DECLARE	CONST_ProblemCase_ProPunter 	    INT DEFAULT 9;
+    DECLARE	CONST_CategoryID_BadRobot 		    INT DEFAULT 163;
+	DECLARE	CONST_CategoryID_GoodRobot 	        INT DEFAULT 164;
     
     DECLARE lv_LastHistoryID				BIGINT UNSIGNED;
 	DECLARE lv_NextHistoryID				BIGINT UNSIGNED;

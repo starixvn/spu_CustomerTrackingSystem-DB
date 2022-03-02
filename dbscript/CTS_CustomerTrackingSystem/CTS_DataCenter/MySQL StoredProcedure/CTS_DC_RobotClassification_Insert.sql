@@ -4,7 +4,8 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_RobotClassification_Insert`$$
 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_RobotClassification_Insert`(
 	IN 	ip_DailyPrediction 		JSON,
-    
+    IN 	ip_TestingLength		INT,
+	
     OUT op_ErrorMessage 		VARCHAR(200)
 )
     SQL SECURITY INVOKER
@@ -16,12 +17,11 @@ BEGIN
 		Original: 
 
 		Revisions:
-			- 20210217@Long.Luu: Created [Redmine ID: #0000]
+			- 20220210@Diego.Nguyen: Created [Redmine ID: #0000]
             
 		Example:
-			call CTS_DataCenter.CTS_DC_RobotClassification_Insert ('[{"C": 111, "CID": 1, "IP": 1, "IPW": 1, "FD": "2021-07-01", "TD": "2021-07-15"}]', @ErrorMessage);    
+			call CTS_DataCenter.CTS_DC_RobotClassification_Insert ('[{"C": 222, "IP": 1, "IPW": 1, "FD": "2021-07-01", "TD": "2021-07-15", "WL": 3000, "AD":22, "BC":33, "TO":5000}]', @ErrorMessage);    call CTS_DataCenter.CTS_DC_RobotClassification_Insert ('[{"C": 111, "CID": 1, "IP": 1, "IPW": 1, "FD": "2021-07-01", "TD": "2021-07-15"}]', @ErrorMessage);    
 	*/ 
-    
     
     DECLARE CONST_ROBOTTYPE_OBSERVED 	TINYINT UNSIGNED DEFAULT 0;
     DECLARE CONST_ROBOTTYPE_GOOD 		TINYINT UNSIGNED DEFAULT 1;
@@ -32,44 +32,28 @@ BEGIN
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_ComboMapping;    
-	CREATE TEMPORARY TABLE Temp_ComboMapping(	  	
-			ComboID				SMALLINT UNSIGNED PRIMARY KEY
-		, 	SportTypeID			SMALLINT UNSIGNED
-		, 	BetTypeID			SMALLINT UNSIGNED
-		, 	LiveIndicator		BIT       
-	); 
-    
     DROP TEMPORARY TABLE IF EXISTS Temp_LatestInsertedClassification;    
 	CREATE TEMPORARY TABLE Temp_LatestInsertedClassification(	  	
 			CustID				BIGINT UNSIGNED
-		, 	SportTypeID			SMALLINT UNSIGNED
-		, 	BetTypeID			SMALLINT UNSIGNED
-		, 	LiveIndicator		BIT     
         ,	FromDate			DATE
-        ,	PRIMARY KEY 		PK_Temp_LatestInsertedClassification(CustID,SportTypeID,BetTypeID,LiveIndicator)
+        ,	PRIMARY KEY 		PK_Temp_LatestInsertedClassification(CustID)
 	); 
     
     DROP TEMPORARY TABLE IF EXISTS Temp_RobotClassification;    
 	CREATE TEMPORARY TABLE Temp_RobotClassification(	  	
 			CustID				BIGINT UNSIGNED
-		, 	SportTypeID			SMALLINT UNSIGNED
-		, 	BetTypeID			SMALLINT UNSIGNED
-		, 	LiveIndicator		BIT       
         ,	RobotType			TINYINT
         ,	FromDate			DATE
-        ,	ToDate				DATE    
-        ,	PRIMARY KEY 		PK_Temp_RobotClassification(CustID,SportTypeID,BetTypeID,LiveIndicator)
+        ,	ToDate				DATE
+        , 	Winloss				DECIMAL(20,4)		
+		, 	ActiveDays			TINYINT					
+		, 	BetCount			INT					
+		, 	Turnover			DECIMAL(20,4)
+        ,	PRIMARY KEY 		PK_Temp_RobotClassification(CustID,FromDate)
 	); 
-    
-    INSERT INTO Temp_ComboMapping(ComboID,SportTypeID,BetTypeID,LiveIndicator)
-    VALUES (1,1,1,1),(2,1,1,0),(3,1,3,1),(4,1,3,0),(5,1,7,1),(6,1,7,0),(7,1,8,1),(8,1,8,0),(9,2,1,1),(10,2,1,0),(11,2,3,1),(12,2,3,0),(13,2,7,1),(14,2,7,0),(15,2,8,1),(16,2,8,0),(17,0,1,1),(18,0,1,0),(19,0,3,1),(20,0,3,0),(21,0,7,1),(22,0,7,0),(23,0,8,1),(24,0,8,0);
 	
-    INSERT INTO Temp_RobotClassification(CustID,SportTypeID,BetTypeID,LiveIndicator,RobotType,FromDate,ToDate)
+    INSERT INTO Temp_RobotClassification(CustID,RobotType,FromDate,ToDate,Winloss,ActiveDays,BetCount,Turnover)
 	SELECT 	tmpTable.CustID
-		, 	t.SportTypeID
-		, 	t.BetTypeID
-		, 	t.LiveIndicator
         ,	CASE 
 				WHEN IsPrediction = 0 THEN CONST_ROBOTTYPE_OBSERVED 
                 ELSE 
@@ -79,32 +63,37 @@ BEGIN
 			END AS RobotType
 		,	tmpTable.FromDate
 		,	tmpTable.ToDate
+        ,	tmpTable.Winloss
+        ,	tmpTable.ActiveDays
+        ,	tmpTable.BetCount
+        ,	tmpTable.Turnover
 	FROM JSON_TABLE(ip_DailyPrediction,
 		 "$[*]" COLUMNS(
 			  CustID 			BIGINT UNSIGNED		PATH "$.C"
-            , ComboID 			TINYINT UNSIGNED	PATH "$.CID"
+            /*, ComboID 			TINYINT UNSIGNED	PATH "$.CID"*/
 			, IsPrediction		BIT					PATH "$.IP"            
 			, IsPredictWin		BIT					PATH "$.IPW"          
 			, FromDate			DATE				PATH "$.FD"          
 			, ToDate			DATE				PATH "$.TD"
-		 )) AS tmpTable
-         INNER JOIN Temp_ComboMapping AS t ON tmpTable.ComboID = t.ComboID;  
+            , Winloss			DECIMAL(20,4)		PATH "$.WL"
+            , ActiveDays		INT					PATH "$.AD"
+            , BetCount			INT					PATH "$.BC"
+            , Turnover			DECIMAL(20,4)		PATH "$.TO"
+		 )) AS tmpTable;  
 	
-    INSERT INTO Temp_LatestInsertedClassification(CustID,SportTypeID,BetTypeID,LiveIndicator,FromDate)
-    SELECT t.CustID, t.SportTypeID, t.BetTypeID, t.LiveIndicator, MAX(t.FromDate)
+    INSERT INTO Temp_LatestInsertedClassification(CustID,FromDate)
+    SELECT t.CustID, MAX(t.FromDate)
     FROM CTS_DataCenter.RobotClassification AS t
-		INNER JOIN Temp_RobotClassification AS d ON t.CustID = d.CustID AND t.SportTypeID = d.SportTypeID
-			AND t.BetTypeID = d.BetTypeID AND t.LiveIndicator = d.LiveIndicator
-	GROUP BY t.CustID, t.SportTypeID, t.BetTypeID, t.LiveIndicator;
+		INNER JOIN Temp_RobotClassification AS d ON t.CustID = d.CustID
+	GROUP BY t.CustID;
             
 	DELETE d
 	FROM Temp_LatestInsertedClassification AS t
-		INNER JOIN Temp_RobotClassification AS d ON t.CustID = d.CustID AND t.SportTypeID = d.SportTypeID
-			AND t.BetTypeID = d.BetTypeID AND t.LiveIndicator = d.LiveIndicator
-    WHERE DATE_ADD(t.FromDate, INTERVAL 14 DAY) > d.FromDate;
+		INNER JOIN Temp_RobotClassification AS d ON t.CustID = d.CustID
+    WHERE DATE_ADD(t.FromDate, INTERVAL ip_TestingLength DAY) > d.FromDate;
             
-	INSERT INTO CTS_DataCenter.RobotClassification(CustID,SportTypeID,BetTypeID,LiveIndicator,RobotType,FromDate,ToDate)
-	SELECT CustID,SportTypeID,BetTypeID,LiveIndicator,RobotType,FromDate,ToDate
+	INSERT INTO CTS_DataCenter.RobotClassification(CustID,RobotType,FromDate,ToDate,Winloss,ActiveDays,BetCount,Turnover)
+	SELECT CustID,RobotType,FromDate,ToDate,Winloss,ActiveDays,BetCount,Turnover
     FROM Temp_RobotClassification;
      
 END$$	

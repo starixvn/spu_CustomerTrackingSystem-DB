@@ -20,13 +20,17 @@ BEGIN
 			- 20210811@Irena.Vo: Fix issue get PA Category incorrectly [Redmine ID: 160071]
             - 20210910@Irena.Vo: Additional IGNORE for insert table Temp_CustomerClass [Redmine ID: 161232]
 			- 20211115@Irena.Vo: Re-priortize Robot and other PA categories  [Redmine ID: #164344]
+			- 20220214@Long.Luu: Support new category for Good & Bad Robot User [Redmine ID: #167726]
+            
         Param's Explanation:     
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetLatestClassification('1,2,1277,555555');
 	*/ 
-	DECLARE	CONST_GROUP_NORMAL 		INT DEFAULT 200;
-    DECLARE	CONST_GROUP_PROBLEM 	INT DEFAULT 0;
-    DECLARE	CONST_GROUP_ROBOTUSER 	INT DEFAULT 61;
+	DECLARE	CONST_GROUP_NORMAL 					INT DEFAULT 200;
+    DECLARE	CONST_GROUP_PROBLEM 				INT DEFAULT 0;
+    DECLARE	CONST_GROUP_ROBOTUSER 				INT DEFAULT 61;
+    DECLARE	CONST_CATEGORY_BADROBOTUSER 		INT DEFAULT 163;
+    DECLARE	CONST_CATEGORY_GOODROBOTUSER 		INT DEFAULT 164;
     
     DECLARE lv_CurrentDateTime		DATETIME DEFAULT CURRENT_TIMESTAMP();
     
@@ -69,10 +73,11 @@ BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_LatestClassification;
     CREATE TEMPORARY TABLE 		Temp_LatestClassification (
-        	CustID				BIGINT UNSIGNED PRIMARY KEY 
+        	CustID				BIGINT UNSIGNED PRIMARY KEY             
 		,	ScannedTime			DATETIME
 		,   CustomerClass       SMALLINT DEFAULT -1 /* -1: No data, <> -1: Has data */
 		,	CategoryGroup		SMALLINT DEFAULT -1 /* -1: No data, <> -1: Has data */
+		,	CategoryID			SMALLINT DEFAULT -1 /* -1: No data, <> -1: Has data */
     );    
     
     /* 1. Insert CustIDs */
@@ -152,15 +157,19 @@ BEGIN
     FROM Temp_ExistedSpecialCC AS es;
     
     /* 10. Mapping case: Existed Category */
-	INSERT IGNORE INTO Temp_LatestClassification (CustID, ScannedTime, CustomerClass, CategoryGroup)
+	INSERT IGNORE INTO Temp_LatestClassification (CustID, ScannedTime, CustomerClass, CategoryGroup, CategoryID)
 	SELECT 	ec.CustID, ec.ScannedTime,  map.CustomerClass
 		,	CASE WHEN ec.SportGroupID = CONST_GROUP_NORMAL THEN -1 ELSE cc.CategoryGroup END AS CategoryGroup
+        ,	CASE WHEN ec.SportGroupID = CONST_GROUP_NORMAL THEN -1 ELSE ec.CategoryID END AS CategoryID
 	FROM Temp_ExistedLatestCategory AS ec 
 		INNER JOIN CTS_DataCenter.CategoryToCustomerClass AS map ON map.CategoryID = ec.CategoryID
         INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = ec.CategoryID;
-    
-    /* 11. Get Latest Classification to push */
-    SELECT DISTINCT	c.CustID, c.CustomerClass, c.CategoryGroup AS Category, c.ScannedTime 
+
+    /* 12. Get Latest Classification to push */
+     SELECT DISTINCT c.CustID
+		, 	c.CustomerClass
+        , 	CASE WHEN c.CategoryID IN (CONST_CATEGORY_BADROBOTUSER, CONST_CATEGORY_GOODROBOTUSER) THEN c.CategoryID ELSE c.CategoryGroup END AS Category
+        , 	c.ScannedTime 
     FROM Temp_LatestClassification AS c;
 END$$
 DELIMITER ;

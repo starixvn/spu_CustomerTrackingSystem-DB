@@ -35,11 +35,15 @@ BEGIN
             - 20211116@Casey.Huynh: Sync Robot User Categories to Dangerous Setting [Redmine ID: #161665]
 			- 20211115@Aries.Nguyen: Use ReasonID column instead of  DisplayOrder column [Redmine ID: #156935]
             - 20220210@Irena.Vo: Adjust logic for Update ABI Danger Level [#167746]
+			- 20220214@Long.Luu: Support new category for Good & Bad Robot User [Redmine ID: #167726]
+            
         Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertProblemAccount('[{"CustID": 456, "ReasonID": 59, "RobotCounter": 0}]',0,@op_ErrorMessage);
 	*/   
     DECLARE	CONST_CATEGORYID_ROBOTUSERS 		INT DEFAULT 61;
+    DECLARE	CONST_CATEGORYID_BADROBOTUSERS 		INT DEFAULT 163;
+    DECLARE	CONST_CATEGORYID_GOODROBOTUSERS 	INT DEFAULT 164;
     
     DECLARE	CONST_GROUP_PA 						INT DEFAULT 0;
 	DECLARE	CONST_GROUP_NORMAL 					INT DEFAULT 200;
@@ -71,6 +75,7 @@ BEGIN
 		, 	CTSCustID				BIGINT UNSIGNED DEFAULT 0
         , 	SubscriberID			INT DEFAULT 0 
         ,	IsLicensee				BIT
+        ,	CurrencyID				INT
         , 	ReasonID				SMALLINT 
         , 	RobotCounter			SMALLINT 
         , 	CategoryID		    	SMALLINT
@@ -91,6 +96,7 @@ BEGIN
         , 	CTSCustID			BIGINT 
         , 	SubscriberID		INT 
         ,	IsLicensee			BIT
+        ,	CurrencyID			INT
     ); 
     
     DROP TEMPORARY TABLE IF EXISTS Temp_PinnedCustomers;    
@@ -144,20 +150,22 @@ BEGIN
     CALL CTS_DC_ExcludeCustByCondition('Temp_ProblemAccounts');
     
     /*	3: INSERT CUST INFO */
-    INSERT IGNORE INTO Temp_ExistedCustomers(CustID,CTSCustID,SubscriberID,IsLicensee)
+    INSERT IGNORE INTO Temp_ExistedCustomers(CustID,CTSCustID,SubscriberID,IsLicensee,CurrencyID)
     SELECT DISTINCT cust.CustID
         , 	cust.CTSCustID
         , 	cust.SubscriberID
         ,	(CASE WHEN mss.SubscriberGroupID = 2 THEN 1 ELSE 0 END) AS IsLicensee
+        ,	cust.CurrencyID
     FROM Temp_ProblemAccounts AS temp 
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.CustSubID = 0
-		INNER JOIN CTS_DataCenter.MappingSubscriberSite AS mss ON cust.SiteID = mss.SiteID;
+		INNER JOIN CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.CustSubID = 0
+		INNER JOIN MappingSubscriberSite AS mss ON cust.SiteID = mss.SiteID;
     
     UPDATE Temp_ProblemAccounts AS temp
 		INNER JOIN Temp_ExistedCustomers AS ec ON ec.CustID = temp.CustID
 	SET 	temp.CTSCustID = ec.CTSCustID
 		,	temp.SubscriberID = ec.SubscriberID
-        ,   temp.IsLicensee = ec.IsLicensee;
+        ,   temp.IsLicensee = ec.IsLicensee
+        ,	temp.CurrencyID = ec.CurrencyID;
     
     /*	4: IGNORE PIN CATEGORY	*/
     INSERT IGNORE INTO Temp_PinnedCustomers (CTSCustID)
@@ -200,7 +208,14 @@ BEGIN
 		INNER JOIN Temp_ProblemAccounts AS temp ON temp.CustID = cate.CustID AND cate.SportGroupID = CONST_GROUP_PA
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
 	WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT;
-   
+    
+    # Remove new category 61 inserted if there are existed 163, 164  
+    DELETE n
+    FROM Temp_ProblemAccounts AS n
+		INNER JOIN Temp_ExistedClassification AS e ON n.CustID = e.CustID 
+			AND (n.CategoryID = CONST_CATEGORYID_ROBOTUSERS AND e.CategoryID IN (CONST_CATEGORYID_BADROBOTUSERS,CONST_CATEGORYID_GOODROBOTUSERS));
+    
+    # Update Action type to Update
 	UPDATE Temp_ProblemAccounts AS temp 
 		INNER JOIN	Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryID = temp.CategoryID
 	SET	temp.ActionType = CONST_ACTIONTYPE_UPDATE
@@ -222,32 +237,54 @@ BEGIN
 		LEFT JOIN CTS_DataCenter.CategoryToCustomerClass AS map ON map.CategoryID = temp.CategoryID
 	WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE, CONST_ACTIONTYPE_REMOVE);
     
+    # Update Category, CC for 163 (Bad Robot), 164 (Good Robot) (Site 611111 & currency in RMB(13) & EUR(78)) --> CC=13,CategoryID=61), others get the configged one
 	UPDATE Temp_ProblemAccounts AS temp 
 		INNER JOIN Temp_CustomersTargetCC AS tcc ON tcc.CustID = temp.CustID AND tcc.CategoryID = temp.CategoryID
-	SET	temp.TargetCC = tcc.TargetCC
+	SET	temp.TargetCC = 	CASE WHEN (temp.CategoryID = CONST_CATEGORYID_GOODROBOTUSERS AND ((temp.IsLicensee = 0 AND temp.SubscriberID IN (2,130)) OR (temp.IsLicensee = 1 AND temp.CurrencyID IN (13,78))))
+									THEN 13
+								ELSE tcc.TargetCC
+							END,
+		temp.CategoryID = 	CASE WHEN (temp.CategoryID = CONST_CATEGORYID_GOODROBOTUSERS AND ((temp.IsLicensee = 0 AND temp.SubscriberID IN (2,130)) OR (temp.IsLicensee = 1 AND temp.CurrencyID IN (13,78))))
+									THEN CONST_CATEGORYID_ROBOTUSERS
+								ELSE tcc.CategoryID
+							END
 	WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE, CONST_ACTIONTYPE_REMOVE);
     
     /*	11: UPDATE SOURCE TYPE ID */
 	UPDATE Temp_ProblemAccounts AS temp 
-    SET	temp.SourceTypeID = (CASE WHEN temp.CategoryID = CONST_CATEGORYID_ROBOTUSERS THEN CONST_SOURCETYPE_INSERTROBOTUSERS /* Insert Robot User */
+    SET	temp.SourceTypeID = (CASE WHEN temp.CategoryID IN (CONST_CATEGORYID_ROBOTUSERS,CONST_CATEGORYID_GOODROBOTUSERS,CONST_CATEGORYID_BADROBOTUSERS) THEN CONST_SOURCETYPE_INSERTROBOTUSERS /* Insert Robot User */
 								  WHEN temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE) THEN CONST_SOURCETYPE_INSERTNAPPA /* Insert & Update */
 								  ELSE CONST_SOURCETYPE_REMOVENAPPA /* Remove */
 							 END)
 	WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE, CONST_ACTIONTYPE_REMOVE);
     
     /* 12: UPDATE ABI DANGER LEVEL */
+    # update DangerLevel for 163 (Bad Robot), 164 (Good Robot) (Site 611111 & currency in RMB(13) & EUR(78) --> assign special ABI), Others get the configged one
     UPDATE Temp_ProblemAccounts AS temp
 		INNER JOIN CTS_DataCenter.CategoryToDangerLevel AS ctd ON ctd.CategoryID = temp.CategoryID AND ctd.IsLicensee = temp.IsLicensee AND ctd.TypeID = 2 
-    SET 	temp.TargetDangerLevel =  ctd.DangerLevel
-	WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);    
+    SET 	temp.TargetDangerLevel =  	CASE 
+											WHEN (temp.CategoryID = CONST_CATEGORYID_GOODROBOTUSERS AND ((temp.IsLicensee = 0 AND temp.SubscriberID IN (2,130)) OR (temp.IsLicensee = 1 AND temp.CurrencyID IN (13,78))))
+												THEN CASE WHEN temp.IsLicensee = 1 THEN 16 ELSE 6 END
+											ELSE ctd.DangerLevel
+										END
+	WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);   
     
 	/*	13: REMOVE PA FROM NAP CM */
 	DELETE cate
     FROM CTS_DataCenter.CTSCustomerClassification cate
 		INNER JOIN Temp_ProblemAccounts AS temp ON temp.CustID = cate.CustID AND cate.SportGroupID = CONST_GROUP_PA
-	WHERE temp.ActionType = CONST_ACTIONTYPE_REMOVE AND cate.CategoryID <> CONST_CATEGORYID_ROBOTUSERS AND (cate.CategoryID NOT BETWEEN 72 AND 150);
+	WHERE temp.ActionType = CONST_ACTIONTYPE_REMOVE AND (cate.CategoryID NOT BETWEEN 72 AND 150)
+		AND cate.CategoryID NOT IN (CONST_CATEGORYID_ROBOTUSERS,CONST_CATEGORYID_BADROBOTUSERS,CONST_CATEGORYID_GOODROBOTUSERS);
     
-	/*	14: UPDATE PA FROM NAP CM */
+    /*	14: REMOVE ROBOT USER CATEGORY	*/
+	DELETE cate
+    FROM CTS_DataCenter.CTSCustomerClassification AS cate
+		INNER JOIN Temp_ProblemAccounts AS temp ON temp.CustID = cate.CustID AND cate.SportGroupID = CONST_GROUP_PA 
+	WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT		
+		AND ((cate.CategoryID = CONST_CATEGORYID_ROBOTUSERS AND temp.CategoryID IN (CONST_CATEGORYID_GOODROBOTUSERS,CONST_CATEGORYID_BADROBOTUSERS))
+			OR (cate.CategoryID IN (CONST_CATEGORYID_GOODROBOTUSERS,CONST_CATEGORYID_BADROBOTUSERS) AND temp.CategoryID <> cate.CategoryID));
+            
+	/*	15: UPDATE PA FROM NAP CM */
     UPDATE CTS_DataCenter.CTSCustomerClassification AS cate
 		INNER JOIN Temp_ProblemAccounts AS temp on temp.CustID = cate.CustID 
 			AND cate.SportGroupID = CONST_GROUP_PA AND temp.CategoryID = cate.CategoryID 
@@ -259,7 +296,7 @@ BEGIN
 	WHERE temp.ActionType = CONST_ACTIONTYPE_UPDATE
 		AND temp.CategoryID <> CONST_CATEGORYID_ROBOTUSERS;
         
-    /*	15: INSERT NEW PA FROM NAP CM */
+    /*	16: INSERT NEW PA FROM NAP CM */
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, 
 	CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
 	SELECT 	temp.CustID
@@ -275,10 +312,10 @@ BEGIN
 	FROM Temp_ProblemAccounts AS temp
     WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT;           
     
-    /* 16: WRITE HISTORY LOG (VIEW ON WEB) */
-    /* 16.1: Rescan data */    
+    /* 17: WRITE HISTORY LOG (VIEW ON WEB) */
+    /* 17.1: Rescan data */    
     IF (ip_IsRescan = 1) THEN
-        /* 16.1.1: Insert Last History*/    
+        /* 17.1.1: Insert Last History*/    
         INSERT INTO Temp_LastHistory (CustID, HistoryID)
 		SELECT  his.CustID,	MAX(his.ID)
 		FROM CTS_DataCenter.CTSCustomerClassification_History AS his
@@ -295,7 +332,7 @@ BEGIN
 		SET 	temp.LastSourceTypeID = h.SourceTypeID
 			, 	temp.IsLastDataChanged = h.IsDataChanged;
      
-		/* 16.1.2: Update IsDataChanged */
+		/* 17.1.2: Update IsDataChanged */
 		UPDATE Temp_ProblemAccounts AS temp
 		SET temp.IsDataChanged = 0
 		WHERE temp.LastSourceTypeID NOT IN (CONST_SOURCETYPE_REMOVENAPPA,CONST_SOURCETYPE_REMOVEEVIDENCE,CONST_SOURCETYPE_RESCANBYEVIDENCE,CONST_SOURCETYPE_REMOVEVVIP,CONST_SOURCETYPE_REMOVESPECIALCC,CONST_SOURCETYPE_EXCLUDEASSWITHPA,CONST_SOURCETYPE_INCLUDEASSWITHPA)
@@ -307,11 +344,11 @@ BEGIN
 		WHERE temp.LastSourceTypeID IN (CONST_SOURCETYPE_REMOVENAPPA,CONST_SOURCETYPE_REMOVEEVIDENCE,CONST_SOURCETYPE_RESCANBYEVIDENCE,CONST_SOURCETYPE_REMOVEVVIP,CONST_SOURCETYPE_REMOVESPECIALCC,CONST_SOURCETYPE_EXCLUDEASSWITHPA,CONST_SOURCETYPE_INCLUDEASSWITHPA)
 			AND temp.ActionType = CONST_ACTIONTYPE_INSERT;
             
-		/* 16.1.3: Update SourceTypeID */
+		/* 17.1.3: Update SourceTypeID */
 		UPDATE Temp_ProblemAccounts AS temp
 		SET temp.SourceTypeID = CONST_SOURCETYPE_RESCANBYNAPPA;
             
-		/* 16.1.4: Insert log from Insert NAP PA */    
+		/* 17.1.4: Insert log from Insert NAP PA */    
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
 		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, RobotCounter, TargetDangerLevel1)
 		SELECT DISTINCT temp.CustID
@@ -331,16 +368,19 @@ BEGIN
 		FROM Temp_ProblemAccounts AS temp
         WHERE temp.IsDataChanged = 1;
         
-	/* 16.2: Normal data */         
+	/* 17.2: Normal data */         
     ELSE 
-		/* 16.2.1: Update IsDataChanged */
+		/* 17.2.1: Update IsDataChanged */
 		UPDATE Temp_ProblemAccounts AS temp
 			INNER JOIN Temp_PinnedCustomers AS pin ON pin.CTSCustID = temp.CTSCustID
 		SET temp.IsDataChanged = 0;
 
 		UPDATE Temp_ProblemAccounts AS temp
 			INNER JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryGroup = temp.CategoryGroup
-		SET temp.IsDataChanged = 0
+		SET temp.IsDataChanged = 	CASE 
+										WHEN temp.CategoryGroup <> CONST_CATEGORYID_ROBOTUSERS THEN 0
+                                        ELSE CASE WHEN temp.CategoryID <> ex.CategoryID THEN 1 ELSE 0 END
+									END
 		WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);
     
 		UPDATE Temp_ProblemAccounts AS temp
@@ -348,7 +388,7 @@ BEGIN
 		SET temp.IsDataChanged = 0
 		WHERE temp.ActionType = CONST_ACTIONTYPE_REMOVE AND ex.CategoryGroup IS NULL;
     
-		/*	16.2.2: Insert log from Insert NAP PA */
+		/*	17.2.2: Insert log from Insert NAP PA */
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
 		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, RobotCounter, TargetDangerLevel1)
 		SELECT DISTINCT temp.CustID
@@ -368,7 +408,7 @@ BEGIN
 		FROM Temp_ProblemAccounts AS temp
 		WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE) AND temp.IsDataChanged = 1;
 		
-		/*	16.2.3: Insert log from Remove NAP PA */
+		/*	17.2.3: Insert log from Remove NAP PA */
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
 		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, RobotCounter)
 		SELECT DISTINCT temp.CustID
@@ -389,7 +429,7 @@ BEGIN
 		WHERE temp.ActionType = CONST_ACTIONTYPE_REMOVE AND temp.IsDataChanged = 1;
     END IF;
     
-    /* 17: WRITE HISTORY LOG (TRACE DATA) */
+    /* 18: WRITE HISTORY LOG (TRACE DATA) */
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log
 		(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, RobotCounter, TargetDangerLevel1)
 	SELECT DISTINCT temp.CustID
@@ -409,7 +449,7 @@ BEGIN
 	FROM Temp_ProblemAccounts AS temp
 		LEFT JOIN Temp_ExistedClassification AS ex ON ex.CustID = temp.CustID AND ex.CategoryID <> CONST_CATEGORYID_ROBOTUSERS AND (ex.CategoryID NOT BETWEEN 72 AND 150) AND ex.RowOrder = 1;
     
-	/* 18: RETURN UPDATED CUSTOMERS TO SERVICE FOR FUTHER STEPS */
+	/* 19: RETURN UPDATED CUSTOMERS TO SERVICE FOR FUTHER STEPS */
 	SELECT	DISTINCT temp.CustID,	temp.CTSCustID
     FROM Temp_ProblemAccounts AS temp 
     WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE, CONST_ACTIONTYPE_REMOVE); 
