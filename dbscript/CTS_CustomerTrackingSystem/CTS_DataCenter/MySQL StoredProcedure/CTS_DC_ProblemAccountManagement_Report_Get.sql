@@ -53,7 +53,7 @@ BEGIN
         WHERE map.SiteID IN (SELECT tmp.SiteID FROM Temp_SiteID AS tmp);
     END IF;
     
-     IF ip_UserName IS NULL OR ip_UserName = '' THEN 
+     IF ip_UserName IS NOT NULL OR ip_UserName != '' THEN 
 		SELECT  CTSCustID
         INTO 	lv_CTSCustID
         FROM CTS_DataCenter.CTSCustomer
