@@ -28,9 +28,11 @@ AS
 */   
 RETURN
 	SELECT	tally.Fromtime 'FromTime',
-		DATEADD(SECOND, @Step, tally.Fromtime) 'ToTime'
+			CASE WHEN DATEADD(SECOND, @Step, tally.Fromtime) > @ToTime THEN @ToTime 
+			ELSE DATEADD(SECOND, @Step, tally.Fromtime) END AS 'ToTime'
 	FROM	(
-		SELECT	[NoDays] = (DATEDIFF(SECOND, @FromTime, @ToTime)) / 5 + 1
+		SELECT [NoDays] = CASE WHEN ((DATEDIFF(SECOND, @FromTime, @ToTime)) - @Step + 1) < 0 THEN 1 
+							ELSE (DATEDIFF(SECOND, @FromTime, @ToTime)) - @Step + 1 END
 	) cnt
 	CROSS APPLY	(
 		SELECT	TOP(cnt.NoDays)
@@ -38,6 +40,7 @@ RETURN
 		FROM		(VALUES (0), (0), (0), (0), (0), (0), (0), (0), (0), (0)) x10(n)
 			CROSS APPLY	(VALUES (0), (0), (0), (0), (0), (0), (0), (0), (0), (0)) x100(n)
 			CROSS APPLY	(VALUES (0), (0), (0), (0), (0), (0), (0), (0), (0), (0)) x1000(n)
+			CROSS APPLY	(VALUES (0), (0), (0), (0), (0), (0), (0), (0), (0), (0)) x10000(n)
 	) tally;
 GO
 
