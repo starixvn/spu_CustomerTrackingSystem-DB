@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP procedure IF EXISTS `CTS_DataCenter`.`CTS_DC_ProblemAccountManagement_Report_Get`;
+DROP procedure IF EXISTS `CTS_DC_ProblemAccountManagement_Report_Get`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_ProblemAccountManagement_Report_Get`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_ProblemAccountManagement_Report_Get`(
 		IN ip_FromDate		DATETIME
     ,	IN ip_ToDate		DATETIME
     ,	IN ip_Sites			LONGTEXT
@@ -31,12 +31,6 @@ sp :BEGIN
         , 	PRIMARY KEY (SiteID)
 	);   
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_SubscriberID;
-    CREATE TEMPORARY TABLE 		Temp_SubscriberID (
-			SubscriberID 		INT UNSIGNED
-        , 	PRIMARY KEY (SubscriberID)
-	);   
-    
     IF ip_Sites IS NULL OR ip_Sites = '' THEN
 		SET lv_IsAllSite = 1;
     END IF;
@@ -45,11 +39,7 @@ sp :BEGIN
 		SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_SiteID (SiteID) VALUES ('", REPLACE(ip_Sites, ",", "'),('"),"');");
 		PREPARE 	stmt1 FROM @sql;
 		EXECUTE 	stmt1; 
-        
-        INSERT IGNORE INTO Temp_SubscriberID(SubscriberID)
-        SELECT map.SubscriberID 
-        FROM CTS_DataCenter.MappingSubscriberSite AS map
-        WHERE map.SiteID IN (SELECT tmp.SiteID FROM Temp_SiteID AS tmp);
+
     END IF;
     
      IF ip_UserName IS NOT NULL AND  ip_UserName != '' THEN 
@@ -81,7 +71,7 @@ sp :BEGIN
         INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON class.CategoryID = cate.CategoryID
 	WHERE    class.CreatedDate BETWEEN ip_FromDate AND ip_ToDate
 		AND  class.SportGroupID = 0
-		AND (lv_IsAllSite = 1 OR class.SubscriberID IN (SELECT sub.SubscriberID FROM Temp_SubscriberID AS sub))
+		AND (lv_IsAllSite = 1 OR cus.SiteID IN (SELECT st.SiteID FROM Temp_SiteID AS st))
 		AND (lv_CTSCustID = 0 OR cus.CTSCustID = lv_CTSCustID
 							   OR (ip_HasDownline = 1 
 									AND (cus.SRecommend = lv_CTSCustID 
