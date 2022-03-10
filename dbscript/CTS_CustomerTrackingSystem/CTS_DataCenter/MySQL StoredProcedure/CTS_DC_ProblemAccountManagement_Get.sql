@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP procedure IF EXISTS `CTS_DC_ProblemAccountManagement_Report_Get`;
+DROP procedure IF EXISTS `CTS_DataCenter`.`CTS_DC_ProblemAccountManagement_Get`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_ProblemAccountManagement_Report_Get`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_ProblemAccountManagement_Get`(
 		IN ip_FromDate		DATETIME
     ,	IN ip_ToDate		DATETIME
     ,	IN ip_Sites			LONGTEXT
@@ -20,7 +20,7 @@ sp :BEGIN
 			- 20211130@Aries.Nguyen: Created [Redmine: #164079]
 		Param's Explanation (filtered by):   
         Example: 
-			-CALL CTS_DC_ProblemAccountManagement_Report_Get('2021-03-03 00:00:00', '2021-03-10 00:00:00', null,'KEONUS',0); 
+			-CALL CTS_DC_ProblemAccountManagement_Get('2021-03-03 00:00:00', '2021-03-10 00:00:00', null,'KEONUS',0); 
 	*/	
     DECLARE lv_IsAllSite 			BIT DEFAULT 0;
     DECLARE lv_CTSCustID 			BIGINT UNSIGNED DEFAULT 0;
