@@ -78,8 +78,10 @@ BEGIN
         INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON class.CategoryID = cate.CategoryID
 	WHERE  class.CreatedDate BETWEEN ip_FromDate AND ip_ToDate
 		AND (lv_IsAllSite = 1 OR class.SubscriberID IN (SELECT sub.SubscriberID FROM Temp_SubscriberID AS sub))
-		AND (lv_CTSCustID = 0 OR cus.CTSCustID = lv_CTSCustID)
-		AND ((lv_CTSCustID = 0 AND ip_HasDownline = 0) OR cus.SRecommend = lv_CTSCustID OR cus.MRecommend = lv_CTSCustID OR cus.Recommend = lv_CTSCustID)	
-	LIMIT 500;
+		AND (lv_CTSCustID = 0 OR cus.CTSCustID = lv_CTSCustID
+							   OR (ip_HasDownline = 1 
+									AND (cus.SRecommend = lv_CTSCustID 
+									OR cus.MRecommend = lv_CTSCustID 
+									OR cus.Recommend = lv_CTSCustID)));
 END$$
 DELIMITER ;
