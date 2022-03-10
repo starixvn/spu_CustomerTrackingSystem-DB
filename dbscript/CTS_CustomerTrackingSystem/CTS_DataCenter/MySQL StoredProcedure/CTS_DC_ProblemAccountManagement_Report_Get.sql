@@ -20,7 +20,7 @@ BEGIN
 			- 20211130@Aries.Nguyen: Created [Redmine: #164079]
 		Param's Explanation (filtered by):   
         Example: 
-			-CALL CTS_DC_ProblemAccountManagement_Report_Get('2021-01-03 00:00:00', '2021-03-03 00:00:00', null,null,0); 
+			-CALL CTS_DC_ProblemAccountManagement_Report_Get('2021-03-03 00:00:00', '2021-03-10 00:00:00', null,'KEONUS',0); 
 	*/	
     DECLARE lv_IsAllSite 			BIT DEFAULT 0;
     DECLARE lv_HasFilterUserName	BIT DEFAULT 0;
@@ -53,7 +53,7 @@ BEGIN
         WHERE map.SiteID IN (SELECT tmp.SiteID FROM Temp_SiteID AS tmp);
     END IF;
     
-     IF ip_UserName IS NOT NULL OR ip_UserName != '' THEN 
+     IF ip_UserName IS NOT NULL AND  ip_UserName != '' THEN 
 		SELECT  CTSCustID
         INTO 	lv_CTSCustID
         FROM CTS_DataCenter.CTSCustomer
