@@ -58,7 +58,7 @@ BEGIN
         INTO 	lv_CTSCustID
         FROM CTS_DataCenter.CTSCustomer
         WHERE  UserName = ip_UserName
-			OR UserName2 = ip_UserName
+			OR RegisterName = ip_UserName
 		LIMIT 1;
      END IF;
     
