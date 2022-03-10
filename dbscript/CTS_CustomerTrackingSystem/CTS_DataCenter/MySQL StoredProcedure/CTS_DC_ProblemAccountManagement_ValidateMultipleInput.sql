@@ -30,10 +30,10 @@ sp:BEGIN
 		,	IsDuplicated			BIT DEFAULT 0 /* 0: Not duplicated UserName;  1: Duplicated UserName */
         ,	IsInvalid 				BIT DEFAULT 0 /* 0: Existed CTSCustomer;  1: Not existed CTSCustomer */
         ,	IsSubAccount 			BIT DEFAULT 0 /* 0: Is Main Account;  1: Is Sub Account */
-        ,	IsSMALicensee 			BIT DEFAULT 0 /* 0: Is not Upline Licensee Account;  1: Is Upline Licensee Account */
-        ,	IsInternalAccount		BIT DEFAULT 0 /* 0: Is not OddsFeed Site/ Downline of 8RM, BARM/ CashOut; 1: Is OddsFeed Site/ Downline of 8RM, BARM/ CashOut */
-        ,	IsExistedPinCategory	BIT DEFAULT 0 /* 0: Not existed Pin Category;  1: Existed Pin Category */
-		,	IsExistedNAPPA 			BIT DEFAULT 0 /* 0: Not existed NAP PA (M);  1: Existed NAP PA (M) */
+        ,	IsUplineLicensee 		BIT DEFAULT 0 /* 0: Is not Upline Licensee Account;  1: Is Upline Licensee Account */
+        ,	IsInternalAccount		BIT DEFAULT 0 /* 0: Is not Internal Account; 1: Is Internal Account | (OddsFeed Site/ Downline of 8RM, BARM/ CashOut) */
+        ,	IsExistingPinCategory	BIT DEFAULT 0 /* 0: Not existing Pin Category;  1: Existing Pin Category */
+		,	IsExistingNAPPA 		BIT DEFAULT 0 /* 0: Not existing NAP PA (M);  1: Existing NAP PA (M) */
         ,	INDEX 					IX_Temp_UserNames_UserName (UserName)
 	);
     
@@ -55,10 +55,10 @@ sp:BEGIN
         ,	INDEX 					IX_Temp_ExistedCustomers_UserName (UserName)
 	);
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_ExistedNAPPA;
-	CREATE TEMPORARY TABLE Temp_ExistedNAPPA( 	
+    DROP TEMPORARY TABLE IF EXISTS Temp_ExistingNAPPA;
+	CREATE TEMPORARY TABLE Temp_ExistingNAPPA( 	
 			UserName				VARCHAR(50)
-        ,	INDEX 					IX_Temp_ExistedNAPPA_UserName (UserName)
+        ,	INDEX 					IX_Temp_ExistingNAPPA_UserName (UserName)
 	);
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_ErrorResults;
@@ -108,7 +108,7 @@ sp:BEGIN
     
      /*6. Validate for Is Upline Licensee Account */
     UPDATE Temp_UserNames AS u
-	SET u.IsSMALicensee = 1
+	SET u.IsUplineLicensee = 1
     WHERE EXISTS (SELECT 1 FROM Temp_ExistedCustomers AS ec WHERE ec.UserName = u.UserName AND ec.IsLicensee = 1 AND ec.RoleID <> 1);
     
 	/*7. Validate for Is Internal Account */
@@ -118,14 +118,14 @@ sp:BEGIN
 	SET u.IsInternalAccount = 1
 	WHERE st.ItemID IS NOT NULL OR (ec.Recommend IN (52466,5707545) AND ec.RoleID = 1) OR ec.UserName Like '%CashOut';
     
-	/*8. Validate for Existed Pin Category */
+	/*8. Validate for Existing Pin Category */
     UPDATE Temp_UserNames AS u
 		INNER JOIN Temp_ExistedCustomers AS ec ON ec.UserName = u.UserName  
-	SET u.IsExistedPinCategory = 1
+	SET u.IsExistingPinCategory = 1
     WHERE EXISTS (SELECT 1 FROM CTS_DataCenter.PinCustomerCategory AS pin WHERE pin.CTSCustID = ec.CTSCustID);
     
-	/*9. Validate for Existed NAP PA (M) */
-	INSERT IGNORE INTO Temp_ExistedNAPPA (UserName)
+	/*9. Validate for Existing NAP PA (M) */
+	INSERT IGNORE INTO Temp_ExistingNAPPA (UserName)
 	SELECT DISTINCT u.UserName
 	FROM Temp_UserNames AS u
 		INNER JOIN Temp_ExistedCustomers AS ec ON ec.UserName = u.UserName  
@@ -133,23 +133,23 @@ sp:BEGIN
         INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cc.CategoryID AND cat.SourceType = 'NAP' AND cat.ReasonID BETWEEN 102 AND 110;
 	
 	UPDATE Temp_UserNames AS u
-	SET u.IsExistedNAPPA = 1
-    WHERE EXISTS (SELECT 1 FROM Temp_ExistedNAPPA AS epa WHERE epa.UserName = u.UserName);
+	SET u.IsExistingNAPPA = 1
+    WHERE EXISTS (SELECT 1 FROM Temp_ExistingNAPPA AS epa WHERE epa.UserName = u.UserName);
     
     /*10. Return Error Results */
     INSERT INTO Temp_ErrorResults (UserName, ErrorMsg) 
     SELECT UserName
 			,	CASE 
-					WHEN IsDuplicated = 1 THEN 'Duplicate Username'
+					WHEN IsDuplicated = 1 THEN 'Duplicated Username'
 					WHEN IsInvalid = 1 THEN 'Invalid Username'
-                    WHEN IsSubAccount = 1 THEN 'Cannot mark for Sub Account'
-                    WHEN IsSMALicensee = 1 THEN 'Cannot mark for Upline Licensee Account'
-                    WHEN IsInternalAccount = 1 THEN 'Cannot mark for Internal Account: OddsFeed Site/ Downline of 8RM, BARM/ CashOut'
-                    WHEN IsExistedPinCategory = 1 THEN 'Existed Pin Category'
-					WHEN IsExistedNAPPA = 1 THEN 'Existed marked directly Problem Account'
+                    WHEN IsSubAccount = 1 THEN 'Sub Account'
+                    WHEN IsUplineLicensee = 1 THEN 'Upline Licensee Account'
+                    WHEN IsInternalAccount = 1 THEN 'Internal Account'
+                    WHEN IsExistingPinCategory = 1 THEN 'Existing Pin Category'
+					WHEN IsExistingNAPPA = 1 THEN 'Existing Problem Account'
 				END AS ErrorMsg
 	FROM Temp_UserNames
-    WHERE IsDuplicated = 1 OR IsInvalid = 1 OR IsSubAccount = 1 OR IsSMALicensee = 1 OR IsInternalAccount = 1 OR IsExistedPinCategory = 1 OR IsExistedNAPPA = 1;
+    WHERE IsDuplicated = 1 OR IsInvalid = 1 OR IsSubAccount = 1 OR IsUplineLicensee = 1 OR IsInternalAccount = 1 OR IsExistingPinCategory = 1 OR IsExistingNAPPA = 1;
    
     IF EXISTS (SELECT 1 FROM Temp_ErrorResults) THEN
 		SELECT UserName, ErrorMsg FROM Temp_ErrorResults;
