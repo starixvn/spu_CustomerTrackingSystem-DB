@@ -10,7 +10,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_ProblemAccountM
     ,	IN ip_HasDownline	SMALLINT
 )
     SQL SECURITY INVOKER
-BEGIN
+sp :BEGIN
 	/*
 		Created:	20220307@Aries.Nguyen
 		Task:		Mark Problem Account
@@ -23,7 +23,6 @@ BEGIN
 			-CALL CTS_DC_ProblemAccountManagement_Report_Get('2021-03-03 00:00:00', '2021-03-10 00:00:00', null,'KEONUS',0); 
 	*/	
     DECLARE lv_IsAllSite 			BIT DEFAULT 0;
-    DECLARE lv_HasFilterUserName	BIT DEFAULT 0;
     DECLARE lv_CTSCustID 			BIGINT UNSIGNED DEFAULT 0;
 
     DROP TEMPORARY TABLE IF EXISTS Temp_SiteID;
@@ -60,6 +59,10 @@ BEGIN
         WHERE  UserName = ip_UserName
 			OR RegisterName = ip_UserName
 		LIMIT 1;
+
+		IF  lv_CTSCustID IS NULL OR lv_CTSCustID = 0 THEN
+			LEAVE sp;
+		END IF;
      END IF;
     
     SELECT 	cus.CTSCustID
@@ -76,7 +79,8 @@ BEGIN
 	FROM CTS_DataCenter.CTSCustomerClassification AS class
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON class.CTSCustID = cus.CTSCustID
         INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON class.CategoryID = cate.CategoryID
-	WHERE  class.CreatedDate BETWEEN ip_FromDate AND ip_ToDate
+	WHERE    class.CreatedDate BETWEEN ip_FromDate AND ip_ToDate
+		AND  class.SportGroupID = 0
 		AND (lv_IsAllSite = 1 OR class.SubscriberID IN (SELECT sub.SubscriberID FROM Temp_SubscriberID AS sub))
 		AND (lv_CTSCustID = 0 OR cus.CTSCustID = lv_CTSCustID
 							   OR (ip_HasDownline = 1 
