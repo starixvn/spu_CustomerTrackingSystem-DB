@@ -63,7 +63,7 @@ sp :BEGIN
 		, 	cus.SiteID
 		,	cus.Currency
 		,	cus.CurrencyID
-        ,	GROUP_CONCAT(DISTINCT cate.CategoryName SEPARATOR ', ')
+        ,	GROUP_CONCAT(DISTINCT cate.CategoryName SEPARATOR ', ') AS CategoryName
 		,	MIN(class.CreatedDate) AS CreatedDate
 	FROM CTS_DataCenter.CTSCustomerClassification AS class
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON class.CTSCustID = cus.CTSCustID
