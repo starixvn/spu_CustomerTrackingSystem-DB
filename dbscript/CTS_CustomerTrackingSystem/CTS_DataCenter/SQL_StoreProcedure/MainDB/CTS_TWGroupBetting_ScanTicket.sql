@@ -46,8 +46,8 @@ IF OBJECT_ID('tempdb..#BigLeague') IS NOT NULL
 	DROP TABLE #BigLeague;
 
 CREATE TABLE #BigLeague (
-	LeagueId INT
-	,Sporttype TINYINT
+	LeagueId	INT
+	,Sporttype	TINYINT
 	)
 
 INSERT INTO #TimeRange (FromTime, ToTime)
@@ -241,19 +241,32 @@ INNER JOIN (
 		,tfs.RuleId
 	) tempTable ON tempTable.RuleId = tcv.RuleId AND tempTable.Betteam = tcv.Betteam AND tempTable.FromTime = tcv.FromTime AND tempTable.ToTime = tcv.ToTime
 
---INSERT INTO SPU_GroupBettingTicket (
---	CustId
---	,TransId
---	)
+-- Delete existing ticket in last run
+DELETE st
+FROM #SuspectTicket st WITH (NOLOCK)
+INNER JOIN dbo.SPU_GroupBettingTicket gbt WITH (NOLOCK) ON st.Transid = gbt.TransId
+
+TRUNCATE TABLE dbo.SPU_GroupBettingTicket
+
+INSERT INTO SPU_GroupBettingTicket (
+	CustId
+	,TransId
+	)
 SELECT DISTINCT st.Custid
 			,st.Transid
 FROM #SuspectTicket st WITH (NOLOCK)
 INNER JOIN #TicketCountViolation tcv WITH (NOLOCK) ON st.RuleId = tcv.RuleId AND st.Betteam = tcv.Betteam AND st.FromTime = tcv.FromTime AND st.ToTime = tcv.ToTime
-LEFT JOIN dbo.SPU_GroupBettingTicket gbt WITH (NOLOCK) ON gbt.TransId = st.Transid
 WHERE (tcv.IsViolateBetFrom = 1
 	OR tcv.IsViolateRFM = 1
 	OR tcv.IsViolateCC = 1)
-	AND gbt.TransId IS NULL
 
 DROP TABLE #SuspectTicket
+DROP TABLE #TimeRange;
+DROP TABLE #TicketForScanning;
+DROP TABLE #TicketCountViolation;
+DROP TABLE #BigLeague;
+
+
+
+
 
