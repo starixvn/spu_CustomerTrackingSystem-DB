@@ -58,7 +58,6 @@ sp :BEGIN
     SELECT 	cus.CTSCustID
 		, 	cus.CustID
 		, 	cus.UserName
-		, 	cus.UserName2
 		, 	cus.Site
 		, 	cus.SiteID
 		,	cus.Currency
@@ -67,7 +66,7 @@ sp :BEGIN
 		,	MIN(class.CreatedDate) AS CreatedDate
 	FROM CTS_DataCenter.CTSCustomerClassification AS class
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON class.CTSCustID = cus.CTSCustID
-        INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON class.CategoryID = cate.CategoryID
+        STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON class.CategoryID = cate.CategoryID
 	WHERE    class.CreatedDate BETWEEN ip_FromDate AND ip_ToDate
 		AND  class.SportGroupID = 0
 		AND (lv_IsAllSite = 1 OR cus.SiteID IN (SELECT st.SiteID FROM Temp_SiteID AS st))
