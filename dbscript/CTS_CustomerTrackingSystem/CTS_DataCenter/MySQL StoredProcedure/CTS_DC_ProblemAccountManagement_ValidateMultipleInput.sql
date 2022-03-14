@@ -24,8 +24,8 @@ sp:BEGIN
 	*/
     DECLARE lv_ReasonID SMALLINT;
     
-	DROP TEMPORARY TABLE IF EXISTS Temp_UserNames;
-	CREATE TEMPORARY TABLE Temp_UserNames( 	 
+	DROP TEMPORARY TABLE IF EXISTS Temp_UserName;
+	CREATE TEMPORARY TABLE Temp_UserName( 	 
 			UserName				VARCHAR(50)
 		,	IsDuplicated			BIT DEFAULT 0 /* 0: Not duplicated UserName;  1: Duplicated UserName */
         ,	IsInvalid 				BIT DEFAULT 0 /* 0: Existed CTSCustomer;  1: Not existed CTSCustomer */
@@ -34,17 +34,17 @@ sp:BEGIN
         ,	IsInternalAccount		BIT DEFAULT 0 /* 0: Is not Internal Account; 1: Is Internal Account | (OddsFeed Site/ Downline of 8RM, BARM/ CashOut) */
         ,	IsExistingPinCategory	BIT DEFAULT 0 /* 0: Not existing Pin Category;  1: Existing Pin Category */
 		,	IsExistingNAPPA 		BIT DEFAULT 0 /* 0: Not existing NAP PA (M);  1: Existing NAP PA (M) */
-        ,	INDEX 					IX_Temp_UserNames_UserName (UserName)
+        ,	INDEX 					IX_Temp_UserName_UserName (UserName)
 	);
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_DuplicatedUserNames;
-	CREATE TEMPORARY TABLE Temp_DuplicatedUserNames( 	 
+    DROP TEMPORARY TABLE IF EXISTS Temp_DuplicatedUserName;
+	CREATE TEMPORARY TABLE Temp_DuplicatedUserName( 	 
 			UserName				VARCHAR(50)
-        ,	INDEX 					IX_Temp_DuplicatedUserNames_UserName (UserName)
+        ,	INDEX 					IX_Temp_DuplicatedUserName_UserName (UserName)
 	);
 	
-    DROP TEMPORARY TABLE IF EXISTS Temp_ExistedCustomers;
-	CREATE TEMPORARY TABLE Temp_ExistedCustomers( 	 
+    DROP TEMPORARY TABLE IF EXISTS Temp_ExistedCustomer;
+	CREATE TEMPORARY TABLE Temp_ExistedCustomer( 	 
 			CTSCustID 				BIGINT UNSIGNED PRIMARY KEY
 		,	UserName				VARCHAR(50)
         ,	RoleID					SMALLINT
@@ -52,7 +52,7 @@ sp:BEGIN
         ,	Recommend				BIGINT UNSIGNED
         ,	SiteID					INT
         ,	IsLicensee				BIT /* 0: Credit,  1: Licensee */
-        ,	INDEX 					IX_Temp_ExistedCustomers_UserName (UserName)
+        ,	INDEX 					IX_Temp_ExistedCustomer_UserName (UserName)
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ExistingNAPPA;
@@ -61,30 +61,30 @@ sp:BEGIN
         ,	INDEX 					IX_Temp_ExistingNAPPA_UserName (UserName)
 	);
     
-	DROP TEMPORARY TABLE IF EXISTS Temp_ErrorResults;
-	CREATE TEMPORARY TABLE Temp_ErrorResults( 	
+	DROP TEMPORARY TABLE IF EXISTS Temp_ErrorResult;
+	CREATE TEMPORARY TABLE Temp_ErrorResult( 	
 			UserName				VARCHAR(50)
 		,	ErrorMsg				TEXT
 	);
     
     /*1. Receive UserName List */
-    SET @sql = 	CONCAT("INSERT INTO Temp_UserNames (UserName) VALUES ('", REPLACE(ip_UserNames, ",", "'),('"),"');");
+    SET @sql = 	CONCAT("INSERT INTO Temp_UserName (UserName) VALUES ('", REPLACE(ip_UserNames, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;    
     
     /*2. Validate for Duplicated UserName */
-    INSERT IGNORE INTO Temp_DuplicatedUserNames(UserName)
+    INSERT IGNORE INTO Temp_DuplicatedUserName(UserName)
     SELECT DISTINCT UserName
-	FROM Temp_UserNames
+	FROM Temp_UserName
 	GROUP BY UserName
 	HAVING COUNT(1) > 1;
     
-    UPDATE Temp_UserNames AS u
-		INNER JOIN Temp_DuplicatedUserNames AS d ON u.UserName = d.UserName
+    UPDATE Temp_UserName AS u
+		INNER JOIN Temp_DuplicatedUserName AS d ON u.UserName = d.UserName
 	SET u.IsDuplicated = 1;
 
 	/*3. Get Existed Customers */
-	INSERT IGNORE INTO Temp_ExistedCustomers(CTSCustID, UserName, RoleID, CustSubID, Recommend, SiteID, IsLicensee)
+	INSERT IGNORE INTO Temp_ExistedCustomer(CTSCustID, UserName, RoleID, CustSubID, Recommend, SiteID, IsLicensee)
     SELECT 	DISTINCT c.CTSCustID
 		,	u.UserName
         , 	c.RoleID
@@ -92,52 +92,52 @@ sp:BEGIN
         ,	c.Recommend
         ,	c.SiteID
 		,	CASE WHEN m.SubscriberGroupID = 2 THEN 1 ELSE 0 END AS IsLicensee
-	FROM Temp_UserNames AS u
+	FROM Temp_UserName AS u
 		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON u.UserName = c.UserName
         INNER JOIN CTS_DataCenter.MappingSubscriberSite AS m ON m.SiteID = c.SiteID;
 
     /*4. Validate for Is Not Existed CTSCustomer */
-    UPDATE Temp_UserNames AS u
+    UPDATE Temp_UserName AS u
 	SET u.IsInvalid = 1
-    WHERE NOT EXISTS (SELECT 1 FROM Temp_ExistedCustomers AS ec WHERE ec.UserName = u.UserName);
+    WHERE NOT EXISTS (SELECT 1 FROM Temp_ExistedCustomer AS ec WHERE ec.UserName = u.UserName);
     
     /*5. Validate for Is Sub Account */
-    UPDATE Temp_UserNames AS u
+    UPDATE Temp_UserName AS u
 	SET u.IsSubAccount = 1
-    WHERE EXISTS (SELECT 1 FROM Temp_ExistedCustomers AS ec WHERE ec.UserName = u.UserName AND ec.CustSubID <> 0);
+    WHERE EXISTS (SELECT 1 FROM Temp_ExistedCustomer AS ec WHERE ec.UserName = u.UserName AND ec.CustSubID <> 0);
     
      /*6. Validate for Is Upline Licensee Account */
-    UPDATE Temp_UserNames AS u
+    UPDATE Temp_UserName AS u
 	SET u.IsUplineLicensee = 1
-    WHERE EXISTS (SELECT 1 FROM Temp_ExistedCustomers AS ec WHERE ec.UserName = u.UserName AND ec.IsLicensee = 1 AND ec.RoleID <> 1);
+    WHERE EXISTS (SELECT 1 FROM Temp_ExistedCustomer AS ec WHERE ec.UserName = u.UserName AND ec.IsLicensee = 1 AND ec.RoleID <> 1);
     
 	/*7. Validate for Is Internal Account */
-	UPDATE Temp_UserNames AS u
-		INNER JOIN Temp_ExistedCustomers AS ec ON ec.UserName = u.UserName  
+	UPDATE Temp_UserName AS u
+		INNER JOIN Temp_ExistedCustomer AS ec ON ec.UserName = u.UserName  
         LEFT JOIN CTS_DataCenter.StaticList AS st ON st.ItemID = ec.SiteID AND st.ListID = 11 /* OddsFeed site: NextBet, 9wickets, 9wsports */
 	SET u.IsInternalAccount = 1
 	WHERE st.ItemID IS NOT NULL OR (ec.Recommend IN (52466,5707545) AND ec.RoleID = 1) OR ec.UserName Like '%CashOut';
     
 	/*8. Validate for Existing Pin Category */
-    UPDATE Temp_UserNames AS u
-		INNER JOIN Temp_ExistedCustomers AS ec ON ec.UserName = u.UserName  
+    UPDATE Temp_UserName AS u
+		INNER JOIN Temp_ExistedCustomer AS ec ON ec.UserName = u.UserName  
 	SET u.IsExistingPinCategory = 1
     WHERE EXISTS (SELECT 1 FROM CTS_DataCenter.PinCustomerCategory AS pin WHERE pin.CTSCustID = ec.CTSCustID);
     
 	/*9. Validate for Existing NAP PA (M) */
 	INSERT IGNORE INTO Temp_ExistingNAPPA (UserName)
 	SELECT DISTINCT u.UserName
-	FROM Temp_UserNames AS u
-		INNER JOIN Temp_ExistedCustomers AS ec ON ec.UserName = u.UserName  
+	FROM Temp_UserName AS u
+		INNER JOIN Temp_ExistedCustomer AS ec ON ec.UserName = u.UserName  
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CTSCustID = ec.CTSCustID
         INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cc.CategoryID AND cat.SourceType = 'NAP' AND cat.ReasonID BETWEEN 102 AND 110;
 	
-	UPDATE Temp_UserNames AS u
+	UPDATE Temp_UserName AS u
 	SET u.IsExistingNAPPA = 1
     WHERE EXISTS (SELECT 1 FROM Temp_ExistingNAPPA AS epa WHERE epa.UserName = u.UserName);
     
     /*10. Return Error Results */
-    INSERT INTO Temp_ErrorResults (UserName, ErrorMsg) 
+    INSERT INTO Temp_ErrorResult (UserName, ErrorMsg) 
     SELECT UserName
 			,	CASE 
 					WHEN IsDuplicated = 1 THEN 'Duplicated Username'
@@ -148,17 +148,17 @@ sp:BEGIN
                     WHEN IsExistingPinCategory = 1 THEN 'Existing Pin Category'
 					WHEN IsExistingNAPPA = 1 THEN 'Existing Problem Account'
 				END AS ErrorMsg
-	FROM Temp_UserNames
+	FROM Temp_UserName
     WHERE IsDuplicated = 1 OR IsInvalid = 1 OR IsSubAccount = 1 OR IsUplineLicensee = 1 OR IsInternalAccount = 1 OR IsExistingPinCategory = 1 OR IsExistingNAPPA = 1;
    
-    IF EXISTS (SELECT 1 FROM Temp_ErrorResults) THEN
-		SELECT UserName, ErrorMsg FROM Temp_ErrorResults;
+    IF EXISTS (SELECT 1 FROM Temp_ErrorResult) THEN
+		SELECT UserName, ErrorMsg FROM Temp_ErrorResult;
         
-        leave sp;
+        LEAVE sp;
     END IF;
     
    /*11. Return Results for Sync to NAP CM */
-   IF NOT EXISTS (SELECT 1 FROM Temp_ErrorResults) THEN       
+   IF NOT EXISTS (SELECT 1 FROM Temp_ErrorResult) THEN       
 		SELECT ReasonID INTO lv_ReasonID FROM CTS_DataCenter.CustomerCategory WHERE CategoryID = ip_CategoryID;
                 
 		SELECT 		CASE WHEN ec.IsLicensee = 1 THEN 'Licensee' ELSE 'Credit' END AS Site
@@ -168,11 +168,11 @@ sp:BEGIN
                 ,	1 AS ActionID
                 ,	ip_Comment AS Comment
                 ,	ip_UserID AS UserID
-		FROM Temp_UserNames AS u
-			INNER JOIN Temp_ExistedCustomers AS ec ON ec.UserName = u.UserName
+		FROM Temp_UserName AS u
+			INNER JOIN Temp_ExistedCustomer AS ec ON ec.UserName = u.UserName
 		ORDER BY ec.IsLicensee DESC, ec.RoleID ASC;
         
-		leave sp;
+		LEAVE sp;
    END IF;
 END$$
 DELIMITER ;

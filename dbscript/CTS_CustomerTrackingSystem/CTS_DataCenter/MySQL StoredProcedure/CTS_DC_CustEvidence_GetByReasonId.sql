@@ -21,20 +21,20 @@ BEGIN
 														{"CustID": 5941, "ReasonID": 29},
 														{"CustID": 40290237, "ReasonID": 103}]');
 	*/
-    DROP TEMPORARY TABLE IF EXISTS Temp_InputCustomers;    
-	CREATE TEMPORARY TABLE Temp_InputCustomers(	  
+    DROP TEMPORARY TABLE IF EXISTS Temp_InputCustomer;    
+	CREATE TEMPORARY TABLE Temp_InputCustomer(	  
 			CustID					BIGINT UNSIGNED 
 		,	ReasonID				SMALLINT	
-        ,	PRIMARY KEY				PK_Temp_InputCustomers(CustID,ReasonID)
+        ,	PRIMARY KEY				PK_Temp_InputCustomer(CustID,ReasonID)
     );
     
-	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedCustomers;    
-	CREATE TEMPORARY TABLE Temp_ExistedCustomers(	  
+	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedCustomer;    
+	CREATE TEMPORARY TABLE Temp_ExistedCustomer(	  
 			CustID				BIGINT UNSIGNED
         , 	CTSCustID			BIGINT 
         ,	IsLicensee			BIT
         ,	ReasonID			SMALLINT	
-        ,	PRIMARY KEY			PK_Temp_ExistedCustomers(CustID,IsLicensee,ReasonID)
+        ,	PRIMARY KEY			PK_Temp_ExistedCustomer(CustID,IsLicensee,ReasonID)
     ); 
     
     DROP TEMPORARY TABLE IF EXISTS Temp_EvidenceMapping;    
@@ -47,7 +47,7 @@ BEGIN
     ); 
     
     /*	1: GET CUSTOMERS */
-	INSERT IGNORE INTO Temp_InputCustomers(CustID, ReasonID)
+	INSERT IGNORE INTO Temp_InputCustomer(CustID, ReasonID)
 	SELECT DISTINCT temp.CustID, temp.ReasonID
 	FROM JSON_TABLE(ip_InputCustomers,
 		"$[*]" COLUMNS(
@@ -56,21 +56,21 @@ BEGIN
 		 )) AS temp
 	WHERE temp.ReasonID <> 0;
 	
-	CALL CTS_DC_ExcludeCustByCondition('Temp_InputCustomers');
+	CALL CTS_DC_ExcludeCustByCondition('Temp_InputCustomer');
     
 	/*	2: GET EXISTED CUSTOMERS */
-    INSERT IGNORE INTO Temp_ExistedCustomers(CustID,CTSCustID,IsLicensee,ReasonID)
+    INSERT IGNORE INTO Temp_ExistedCustomer(CustID,CTSCustID,IsLicensee,ReasonID)
     SELECT DISTINCT cust.CustID
         , 	cust.CTSCustID
         ,	(CASE WHEN m.SubscriberGroupID = 2 THEN 1 ELSE 0 END) AS IsLicensee
         ,	temp.ReasonID
-    FROM Temp_InputCustomers AS temp 
+    FROM Temp_InputCustomer AS temp 
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.CustSubID = 0
 		INNER JOIN CTS_DataCenter.MappingSubscriberSite AS m ON cust.SiteID = m.SiteID;
 
     /*	3: IGNORE PIN CATEGORY	*/
     DELETE ec
-    FROM Temp_ExistedCustomers AS ec
+    FROM Temp_ExistedCustomer AS ec
 		INNER JOIN CTS_DataCenter.PinCustomerCategory AS pin on pin.CTSCustID = ec.CTSCustID; 
         
      /*	4: GET EVIDENCE	MAPPING RULE */
@@ -87,7 +87,7 @@ BEGIN
  
     /* 5: RETURN CUSTOMER EVIDENCE TO SYNC */
     SELECT DISTINCT ec.CTSCustID, ec.CustID, em.EvidenceID, em.EvidenceCode, 'Add from Problem Account Management' AS Remark 
-    FROM Temp_ExistedCustomers AS ec 
+    FROM Temp_ExistedCustomer AS ec 
 		INNER JOIN Temp_EvidenceMapping AS em ON em.ReasonID = ec.ReasonID AND em.IsLicensee = ec.IsLicensee;
 END$$
 DELIMITER ;
