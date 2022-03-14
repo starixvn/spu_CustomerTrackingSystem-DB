@@ -13,4 +13,4 @@ ADD INDEX IX_CTSCustomer_MRecommend (MRecommend),
 ADD INDEX IX_CTSCustomer_Recommend (Recommend);
 
 ALTER TABLE CTSCustomerClassification 
-ADD INDEX IX_CTSCustomerClassification_CreatedDate (CreatedDate);
+ADD INDEX IX_CTSCustomerClassification_SportGroupID_CreatedDate (SportGroupID,CreatedDate);

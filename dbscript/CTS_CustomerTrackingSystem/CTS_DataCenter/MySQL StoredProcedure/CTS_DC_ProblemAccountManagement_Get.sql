@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP procedure IF EXISTS `CTS_DataCenter`.`CTS_DC_ProblemAccountManagement_Get`;
+DROP procedure IF EXISTS `CTS_DC_ProblemAccountManagement_Get`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_ProblemAccountManagement_Get`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_ProblemAccountManagement_Get`(
 		IN ip_FromDate		DATETIME
     ,	IN ip_ToDate		DATETIME
     ,	IN ip_Sites			LONGTEXT
@@ -63,9 +63,8 @@ sp :BEGIN
 		, 	cus.SiteID
 		,	cus.Currency
 		,	cus.CurrencyID
-        ,	cate.CategoryName
-		, 	class.CategoryID 
-		,	class.CreatedDate
+        ,	GROUP_CONCAT(DISTINCT cate.CategoryName SEPARATOR ', ')
+		,	MIN(class.CreatedDate) AS CreatedDate
 	FROM CTS_DataCenter.CTSCustomerClassification AS class
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON class.CTSCustID = cus.CTSCustID
         INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON class.CategoryID = cate.CategoryID
@@ -76,6 +75,14 @@ sp :BEGIN
 							   OR (ip_HasDownline = 1 
 									AND (cus.SRecommend = lv_CTSCustID 
 									OR cus.MRecommend = lv_CTSCustID 
-									OR cus.Recommend = lv_CTSCustID)));
+									OR cus.Recommend = lv_CTSCustID)))
+	GROUP BY cus.CTSCustID
+		, 	 cus.CustID
+		, 	 cus.UserName
+		, 	 cus.UserName2
+		, 	 cus.Site
+		, 	 cus.SiteID
+		,	 cus.Currency
+		,	 cus.CurrencyID;
 END$$
 DELIMITER ;
