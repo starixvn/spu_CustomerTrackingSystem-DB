@@ -24,6 +24,7 @@ sp :BEGIN
 	*/	
     DECLARE lv_IsAllSite 			BIT DEFAULT 0;
     DECLARE lv_CTSCustID 			BIGINT UNSIGNED DEFAULT 0;
+    DECLARE lv_CustID 				BIGINT UNSIGNED DEFAULT 0;
 
     DROP TEMPORARY TABLE IF EXISTS Temp_SiteID;
     CREATE TEMPORARY TABLE 		Temp_SiteID (
@@ -44,7 +45,9 @@ sp :BEGIN
     
      IF ip_UserName IS NOT NULL AND  ip_UserName != '' THEN 
 		SELECT  CTSCustID
+			,	CustID
         INTO 	lv_CTSCustID
+			,	lv_CustID
         FROM CTS_DataCenter.CTSCustomer
         WHERE  UserName = ip_UserName
 			OR RegisterName = ip_UserName
@@ -72,9 +75,9 @@ sp :BEGIN
 		AND (lv_IsAllSite = 1 OR cus.SiteID IN (SELECT st.SiteID FROM Temp_SiteID AS st))
 		AND (lv_CTSCustID = 0 OR cus.CTSCustID = lv_CTSCustID
 							   OR (ip_HasDownline = 1 
-									AND (cus.SRecommend = lv_CTSCustID 
-									OR cus.MRecommend = lv_CTSCustID 
-									OR cus.Recommend = lv_CTSCustID)))
+									AND (cus.SRecommend = lv_CustID 
+									OR cus.MRecommend = lv_CustID 
+									OR cus.Recommend = lv_CustID)))
 	GROUP BY cus.CTSCustID
 		, 	 cus.CustID
 		, 	 cus.UserName
