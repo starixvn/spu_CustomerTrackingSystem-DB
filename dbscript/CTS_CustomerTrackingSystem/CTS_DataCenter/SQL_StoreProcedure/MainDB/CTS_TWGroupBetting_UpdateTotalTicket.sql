@@ -1,3 +1,4 @@
+/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 CREATE PROCEDURE [dbo].[CTS_TWGroupBetting_UpdateTotalTicket]
 	@LastScannedTime DATETIME
 AS

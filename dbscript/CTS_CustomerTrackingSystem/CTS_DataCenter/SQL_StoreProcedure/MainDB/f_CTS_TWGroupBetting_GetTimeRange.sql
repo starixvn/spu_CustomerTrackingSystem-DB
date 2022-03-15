@@ -1,11 +1,4 @@
-USE [bodb02]
-GO
-
-SET ANSI_NULLS ON
-GO
-
-SET QUOTED_IDENTIFIER ON
-GO
+/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="1" isNested="0"></info>*/
 
 ALTER FUNCTION [dbo].[f_CTS_TWGroupBetting_GetTimeRange] (
 	@FromTime DATETIME, 
