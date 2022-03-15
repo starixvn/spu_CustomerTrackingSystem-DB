@@ -1,6 +1,7 @@
 /*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
-CREATE PROCEDURE [dbo].[CTS_TWGroupBetting_UpdateTotalTicket]
-	@LastScannedTime DATETIME
+ALTER PROCEDURE [dbo].[CTS_TWGroupBetting_UpdateTotalTicket]
+	@LastScannedTime		DATETIME,
+	@LastestScannedTime		DATETIME	OUTPUT
 AS
 /*
 	Created: 20220314@Harvey.Nguyen
@@ -37,6 +38,10 @@ BEGIN
 	INNER JOIN SPU_GroupBettingCustomer AS gbc WITH (NOLOCK) ON bt.custid = gbc.CustId
 	WHERE gbc.LastModifiedDate > @LastScannedTime
 	GROUP BY bt.custid;
+
+	SELECT @LastestScannedTime = MAX(gbc.LastModifiedDate)
+	FROM #PreGroupBettingCustomer AS pgbc WITH (NOLOCK)
+		INNER JOIN SPU_GroupBettingCustomer AS gbc WITH (NOLOCK) ON pgbc.CustId = gbc.CustId
 
 	UPDATE gbc
 	SET gbc.TicketCount = gbc.TicketCount + pgbc.TicketCount
