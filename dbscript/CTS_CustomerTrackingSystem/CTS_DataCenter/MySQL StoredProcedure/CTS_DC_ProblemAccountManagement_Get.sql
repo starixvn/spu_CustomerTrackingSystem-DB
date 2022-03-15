@@ -41,6 +41,13 @@ sp :BEGIN
 		PREPARE 	stmt1 FROM @sql;
 		EXECUTE 	stmt1; 
 
+		DELETE 
+        FROM Temp_SiteID AS tmp
+        WHERE EXISTS (SELECT 1 
+					  FROM CTS_DataCenter.MappingSubscriberSite AS map 
+					  WHERE  map.SiteID = tmp.SiteID
+						 AND map.SubscriberStatus = -1);
+
     END IF;
     
      IF ip_UserName IS NOT NULL AND  ip_UserName != '' THEN 
