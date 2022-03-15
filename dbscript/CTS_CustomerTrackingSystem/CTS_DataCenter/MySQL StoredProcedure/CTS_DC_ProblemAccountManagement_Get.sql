@@ -22,7 +22,6 @@ sp :BEGIN
         Example: 
 			-CALL CTS_DC_ProblemAccountManagement_Get('2021-03-03 00:00:00', '2021-03-10 00:00:00', null,'KEONUS',0); 
 	*/	
-    DECLARE lv_IsAllSite 			BIT DEFAULT 0;
     DECLARE lv_CTSCustID 			BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_CustID 				BIGINT UNSIGNED DEFAULT 0;
 
@@ -33,22 +32,15 @@ sp :BEGIN
 	);   
     
     IF ip_Sites IS NULL OR ip_Sites = '' THEN
-		SET lv_IsAllSite = 1;
-    END IF;
-    
-    IF lv_IsAllSite = 0 THEN 
+		INSERT IGNORE INTO Temp_SiteID(SiteID)
+        SELECT map.SiteID 
+		FROM CTS_DataCenter.MappingSubscriberSite AS map 
+		WHERE map.SubscriberStatus <> -1;
+	ELSE 
 		SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_SiteID (SiteID) VALUES ('", REPLACE(ip_Sites, ",", "'),('"),"');");
 		PREPARE 	stmt1 FROM @sql;
-		EXECUTE 	stmt1; 
-
-		DELETE 
-        FROM Temp_SiteID AS tmp
-        WHERE EXISTS (SELECT 1 
-					  FROM CTS_DataCenter.MappingSubscriberSite AS map 
-					  WHERE  map.SiteID = tmp.SiteID
-						 AND map.SubscriberStatus = -1);
-
-    END IF;
+		EXECUTE 	stmt1;
+    END IF; 
     
      IF ip_UserName IS NOT NULL AND  ip_UserName != '' THEN 
 		SELECT  CTSCustID
@@ -79,8 +71,8 @@ sp :BEGIN
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON class.CategoryID = cate.CategoryID
 	WHERE    class.CreatedDate BETWEEN ip_FromDate AND ip_ToDate
 		AND  class.SportGroupID = 0
-		AND (lv_IsAllSite = 1 OR cus.SiteID IN (SELECT st.SiteID FROM Temp_SiteID AS st))
-		AND (lv_CTSCustID = 0 OR cus.CTSCustID = lv_CTSCustID
+		AND  cus.SiteID IN (SELECT st.SiteID FROM Temp_SiteID AS st)
+		AND  (lv_CTSCustID = 0 OR cus.CTSCustID = lv_CTSCustID
 							   OR (ip_HasDownline = 1 
 									AND (cus.SRecommend = lv_CustID 
 									OR cus.MRecommend = lv_CustID 
