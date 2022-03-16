@@ -1,6 +1,6 @@
-/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="1" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-bodb02" selectors="bodbSPUNet" isFunction="1" isNested="0"></info>*/
 
-ALTER FUNCTION [dbo].[f_CTS_TWGroupBetting_GetTimeRange] (
+CREATE FUNCTION [dbo].[f_CTS_TWGroupBetting_GetTimeRange] (
 	@FromTime DATETIME, 
 	@ToTime DATETIME, 
 	@Step INT
