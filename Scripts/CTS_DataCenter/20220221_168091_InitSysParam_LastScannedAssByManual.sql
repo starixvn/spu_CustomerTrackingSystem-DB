@@ -13,9 +13,10 @@ ALTER TABLE `CTS_DataCenter`.`AssociationByManual`
 ADD COLUMN `AssID` BIGINT NOT NULL AUTO_INCREMENT FIRST,
 DROP PRIMARY KEY,
 ADD PRIMARY KEY (`AssID`),
-ADD INDEX `IX_AssociationByManual_FromCTSCustID` (`FromCTSCustID` ASC) VISIBLE;
+DROP INDEX IX_AssociationByManual_ToCTSCustID,
+ADD UNIQUE INDEX `UN_AssociationByManual_FromCTSCustID_ToCTSCustID` (`FromCTSCustID`,`ToCTSCustID`) VISIBLE,
+ADD INDEX `IX_AssociationByManual_ToCTSCustID_FromCTSCustID` (`ToCTSCustID`, `FromCTSCustID`) VISIBLE;
 ;
-
 
 USE CTS_Log;
 CREATE TABLE `CTS_Log`.`Monitor_Neo4j_AssByManual_Missing` (

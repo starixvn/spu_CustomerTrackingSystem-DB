@@ -10,14 +10,13 @@ USE CTS_DataCenter;
 INSERT INTO `CTS_DataCenter`.`SystemParameter` (`ParameterID`, `ParameterName`, `ParameterDesc`, `ParameterDataType`, `ParameterValue`) VALUES ('73', 'MonitorNeo4jAssociation_LastScannedAssByAI', 'MonitorNeo4jAssociation_LastScannedAssByAI', 'BIGINT', '0');
 
 ALTER TABLE `CTS_DataCenter`.`AssociationByAI` 
-DROP PRIMARY KEY;
-
-ALTER TABLE `CTS_DataCenter`.`AssociationByAI` 
+DROP PRIMARY KEY,
 ADD COLUMN `AssID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT FIRST,
-ADD PRIMARY KEY (`AssID`);
+ADD PRIMARY KEY (`AssID`),
+DROP INDEX IX_AssociationByAI_ToCustID,
+ADD UNIQUE INDEX `UN_AssociationByAI_FromCustID_ToCustID` (`FromCustID`,`ToCustID`) VISIBLE,
+ADD INDEX `IX_AssociationByAI_ToCustID_FromCustID` (`ToCustID`,`FromCustID`) VISIBLE;
 
-ALTER TABLE `CTS_DataCenter`.`AssociationByAI` 
-ADD INDEX `IX_AssociationByAI_FromCustID` (`FromCustID` ASC) VISIBLE;
 
 USE CTS_Log;
 CREATE TABLE `CTS_Log`.`Monitor_Neo4j_AssByAI_Missing` (
