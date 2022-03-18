@@ -307,6 +307,11 @@ BEGIN
 		OR tcv.IsViolateRFM = 1
 		OR tcv.IsViolateCC = 1);
 
+	SELECT gbc.Custid
+			,gbc.Transid
+	FROM SPU_GroupBettingTicket AS gbc WITH (NOLOCK);
+
+
 	DROP TABLE #TmpSuspectTicket
 	DROP TABLE #TmpTimeRange;
 	DROP TABLE #TmpTicketForScanning;
