@@ -37,7 +37,7 @@ BEGIN
 			)
 	) AS js;
     
-    INSERT INTO CTS_Log.Monitor_Neo4j_AssByManual_Missing(CustID, CategoryID)
+    INSERT INTO CTS_Log.Monitor_Neo4j_CustClassification_Missing(CustID, CategoryID)
     SELECT 		CustID
 				, CategoryID
     FROM Temp_MissingCustClassification;
