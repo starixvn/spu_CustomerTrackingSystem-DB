@@ -1,10 +1,10 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
 DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_InactiveNewMemberScan_UpdateStatus`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE  `CTS_DataCenter`.`CTS_DC_CustClassification_InactiveNewMemberScan_UpdateStatus`(
-		IN ip_LastCustID 		BIGINT UNSIGNED
-    ,	IN ip_LastScannedTime 	DATETIME
+		IN ip_LastCreatedDate 	DATETIME
+	,	IN ip_LastCTSCustID 	BIGINT UNSIGNED
 )
     SQL SECURITY INVOKER
 sp:BEGIN
@@ -17,14 +17,18 @@ sp:BEGIN
 			- 20220317@Irena.Vo: Created [Redmine ID: #169960]
 		Param's Explanation (filtered by):
 		Example: 
-			- CALL CTS_DataCenter.CTS_DC_CustClassification_InactiveNewMemberScan_UpdateStatus(100,'2022-02-02 00:00:00');
+			- CALL CTS_DataCenter.CTS_DC_CustClassification_InactiveNewMemberScan_UpdateStatus('2020-01-01 00:00:00',1200);
 	*/    
         UPDATE CTS_DataCenter.SystemParameter 
-        SET ParameterValue = ip_LastCustID 
+        SET ParameterValue = ip_LastCreatedDate
         WHERE ParameterID = 80;
         
-        UPDATE CTS_DataCenter.SystemParameter 
-        SET ParameterValue = ip_LastScannedTime 
+		UPDATE CTS_DataCenter.SystemParameter 
+        SET ParameterValue = ip_LastCTSCustID
         WHERE ParameterID = 81;
+        
+        UPDATE CTS_DataCenter.SystemParameter 
+        SET ParameterValue = CURRENT_TIMESTAMP() 
+        WHERE ParameterID = 82;
 END$$
 DELIMITER ; 
