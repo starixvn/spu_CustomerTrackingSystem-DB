@@ -21,8 +21,6 @@ sp:BEGIN
     DECLARE lv_LastCTSCustID			BIGINT UNSIGNED;
     DECLARE lv_Last30Days 				DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 29 DAY);
     
-    DECLARE CONST_GROUP_NORMAL			SMALLINT DEFAULT 200;
-    
     DROP TEMPORARY TABLE IF EXISTS Temp_InactiveNewMember;
     CREATE TEMPORARY TABLE 	Temp_InactiveNewMember (
 			CustID 			BIGINT UNSIGNED PRIMARY KEY
@@ -61,7 +59,7 @@ sp:BEGIN
 	SELECT cate.CustID,cate.CreatedDate
 	FROM CTS_DataCenter.CTSCustomerClassification AS cate
 		STRAIGHT_JOIN CTS_Archive.CTSCustomerAssociationStatus AS ld ON ld.CTSCustID = cate.CTSCustID 
-	WHERE cate.SportGroupID = CONST_GROUP_NORMAL AND cate.CategoryID IN (201, 231, 232, 233)
+	WHERE cate.SportGroupID = 200 AND cate.CategoryID IN (201, 231, 232, 233)
 		AND cate.CreatedDate > lv_LastCreatedDate
 		AND cate.CreatedDate <= lv_Last30Days
 		AND ld.LastTicketDate <= lv_Last30Days
@@ -74,7 +72,7 @@ sp:BEGIN
 	SELECT cate.CustID, cate.CreatedDate
 	FROM CTS_DataCenter.CTSCustomerClassification AS cate
 		STRAIGHT_JOIN CTS_Archive.CTSCustomerAssociationStatus AS ld ON ld.CTSCustID = cate.CTSCustID 
-    WHERE cate.SportGroupID = CONST_GROUP_NORMAL AND cate.CategoryID IN (201, 231, 232, 233)
+    WHERE cate.SportGroupID = 200 AND cate.CategoryID IN (201, 231, 232, 233)
 		AND cate.CreatedDate = lv_LastCreatedDate
         AND cate.CreatedDate <= lv_Last30Days
 		AND ld.LastTicketDate <= lv_Last30Days;
