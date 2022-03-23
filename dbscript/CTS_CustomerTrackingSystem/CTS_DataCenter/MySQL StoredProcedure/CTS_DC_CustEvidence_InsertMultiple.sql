@@ -6,6 +6,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_InsertMultiple`(
 		IN ip_NewAccountEvidences	JSON
 	,	IN ip_UserID				INT
 	,	IN ip_IsOverride			TINYINT
+    ,	IN ip_SourceType            SMALLINT UNSIGNED
 	
 	,	OUT op_ErrorMessage			VARCHAR(200)
 )
@@ -28,6 +29,7 @@ BEGIN
 			- 20210107@Irena.Vo: Insert Error Log [RedmineID: #145951] 
 			- 20210622@Aries.Nguyen: Update coding convention and improve locking [Redmine ID: #157203]
 			- 20210823@Aries.Nguyen: Enhannce  Affected Evidence flow [Redmine ID: #160470]
+			- 20220323@Aries.Nguyen: Allow Unmark and Update on PA Management Function [Redmine ID: #170135]
 
 		Param's Explanation (filtered by):
 		Example:
@@ -35,22 +37,6 @@ BEGIN
 	*/    
     DECLARE		lv_SPName 			VARCHAR(100) 	DEFAULT 'CTS_DC_CustEvidence_InsertMultiple';    
     DECLARE		lv_CreatedDateTime 	DATETIME DEFAULT CURRENT_TIME();   
-    
-	DECLARE	lv_No				INT			 DEFAULT 0;
-    DECLARE lv_ErrorNo 			INT          DEFAULT 0;
-    DECLARE lv_CodName 			TEXT         DEFAULT '0';
-
-	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
-    BEGIN   
-		GET DIAGNOSTICS lv_No 	= 	NUMBER;
-		GET DIAGNOSTICS CONDITION lv_No 
-            op_ErrorMessage 	= 	MESSAGE_TEXT	
-		,	lv_ErrorNo 			= 	MYSQL_ERRNO
-		,	lv_CodName 			= 	RETURNED_SQLSTATE;
-    
-        INSERT INTO CTS_Log.CTSErrorLog(EventID, Message, Description)
-        VALUES(6, op_ErrorMessage, JSON_OBJECT('err_no',lv_ErrorNo,'cod_name',lv_CodName,'parameter',ip_NewAccountEvidences));
-    END;
      
     DROP TEMPORARY TABLE IF EXISTS Temp_MultipleAccountEvidence;    
 	CREATE TEMPORARY TABLE Temp_MultipleAccountEvidence(	 
@@ -97,8 +83,9 @@ BEGIN
 
 	END IF; 
     
+    
     /*INSERT NEW FLAGGED EVIDENCE HAS Override*/
-	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID,  EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy)
+	INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID,  EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, SourceType)
 	SELECT 	t.CTSCustID
 		,	t.EvidenceID
         ,	t.Remark
@@ -106,6 +93,7 @@ BEGIN
         ,	t.CTSCustID
         ,	lv_CreatedDateTime
         ,	t.CreatedBy
+        ,	ip_SourceType
     FROM Temp_MultipleAccountEvidence AS t;
 
 	INSERT INTO CTS_DataCenter.CustEvidenceAffectedQueueInsert(CTSCustID,  EvidenceID, Remark, CreatedBy)
@@ -113,7 +101,7 @@ BEGIN
 		,	t.EvidenceID
         ,	t.Remark
         ,	t.CreatedBy
-    FROM Temp_MultipleAccountEvidence AS t;
+    FROM Temp_MultipleAccountEvidence AS t; 
     
     /*WRITE LOG*/
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)

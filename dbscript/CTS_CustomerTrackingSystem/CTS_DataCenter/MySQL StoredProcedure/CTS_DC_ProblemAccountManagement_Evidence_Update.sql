@@ -1,0 +1,110 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin,ctsServiceAdmin,ctsAPIAdmin" isFunction="0" isNested="0"></info>*/
+DROP procedure IF EXISTS `CTS_DC_ProblemAccountManagement_Evidence_Update`;
+
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_ProblemAccountManagement_Evidence_Update`(
+		IN ip_CustInfo		JSON
+	,	IN ip_ModifiedBy	INT UNSIGNED
+    ,	IN ip_SourceType    SMALLINT UNSIGNED
+)
+    SQL SECURITY INVOKER
+sp :BEGIN
+/*
+		Created:	20220322@Aries.Nguyen
+		Task:		Allow Unmark and Update on PA Management Function [Redmine ID: #170135]
+		DB:			CTS_DataCenter
+		Original:
+		Revisions:
+			- 20220322@Aries.Nguyen: Created [Redmine ID: #170135]
+
+        Param's Explanation (filtered by):
+			- ip_SourceType: 1 - NAP, 0 - Others
+        Example: 
+			- CALL CTS_DC_ProblemAccountManagement_Evidence_Update('[{"CustID":1384, "FromReasonID":103, "ToReasonID":106}]',555,1);
+*/   
+	DECLARE lv_CustRemove LONGTEXT;
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustEvidenceExist;    
+	CREATE TEMPORARY TABLE Temp_CustEvidenceExist(	 
+			CustEvidID	BIGINT UNSIGNED PRIMARY KEY
+		,	CTSCustID	BIGINT UNSIGNED 
+        ,	EvidenceID  SMALLINT
+        ,	UNIQUE KEY	UN_Temp_CustEvidenceExist_CTSCustID_EvidenceID(CTSCustID,EvidenceID)
+	);
+    
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustParam;    
+	CREATE TEMPORARY TABLE Temp_CustParam( 	  
+			CustID			BIGINT UNSIGNED
+        , 	CTSCustID		BIGINT UNSIGNED
+        ,	EvidenceID		INT 
+        ,	EviLevel	TINYINT DEFAULT 0
+        ,   PRIMARY KEY(CTSCustID,EvidenceID)
+	);
+    
+    INSERT IGNORE INTO Temp_CustParam(CustID,CTSCustID,EvidenceID)
+	SELECT	info.CustID
+		,	cust.CTSCustID
+        ,	ev.EvidenceID
+	FROM JSON_TABLE(ip_CustInfo,
+		 "$[*]" COLUMNS(
+				CustID			VARCHAR(50)		PATH "$.CustID" 
+			, 	FromReasonID	INT				PATH "$.ToReasonID")
+	) AS info
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON info.CustID = cust.CustID AND cust.CustSubID = 0
+		INNER JOIN CTS_DataCenter.MappingSubscriberSite AS m ON cust.SiteID = m.SiteID,
+        LATERAL (SELECT  CASE WHEN m.SubscriberGroupID = 2  THEN cate.EvidenceID_Licensee ELSE cate.EvidenceID_Credit END AS EvidenceID
+                 FROM CTS_DataCenter.CustomerCategory AS cate 
+                 WHERE cate.ReasonID = info.FromReasonID 
+                    AND (cate.EvidenceID_Licensee IS NOT NULL OR  cate.EvidenceCode_Credit  IS NOT NULL)
+                 LIMIT 1) AS ev;
+    
+    SELECT GROUP_CONCAT(DISTINCT CustID)
+    INTO lv_CustRemove
+    FROM Temp_CustParam;
+    
+    IF ip_SourceType = 1 THEN
+		CALL CTS_DC_ProblemAccountManagement_Evidence_Remove(lv_CustRemove,ip_SourceType);
+    END IF;
+    
+    CALL CTS_DC_ExcludeCustByCondition('Temp_CustParam');
+    
+	DELETE tmp
+    FROM Temp_CustParam AS tmp
+		INNER JOIN CTS_DataCenter.PinCustomerCategory AS pin on pin.CTSCustID = tmp.CTSCustID; 
+    
+    INSERT INTO Temp_CustEvidenceExist(CustEvidID,CTSCustID,EvidenceID)
+	SELECT 	ev.CustEvidID
+		,	ev.CTSCustID
+        ,	ev.EvidenceID
+	FROM CTS_DataCenter.CustEvidence AS ev 
+	WHERE EXISTS (SELECT 1 
+				  FROM Temp_CustParam AS tmp 
+                  WHERE ev.CTSCustID = tmp.CTSCustID 
+					AND ev.EvidenceID = tmp.EvidenceID
+					AND ev.Level = tmp.EviLevel
+                    AND ev.SourceType = 0);
+	
+    DELETE 
+    FROM CTS_DataCenter.CustEvidence AS ev
+    WHERE EXISTS (SELECT 1 FROM Temp_CustEvidenceExist AS tmp WHERE tmp.CustEvidID = ev.CustEvidID);
+    
+    INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, Level, FromCustID, CreatedDate, CreatedBy, SourceType)
+	SELECT 	tmp.CTSCustID
+		,	tmp.EvidenceID
+        ,	"Add from Problem Account Management"
+        ,	0 
+        ,	tmp.CTSCustID
+        ,	NOW()
+        ,	ip_ModifiedBy
+        ,	ip_SourceType
+    FROM Temp_CustParam AS tmp;
+
+	INSERT INTO CTS_DataCenter.CustEvidenceAffectedQueueInsert(CTSCustID,  EvidenceID, Remark, CreatedBy)
+	SELECT 	tmp.CTSCustID
+		,	tmp.EvidenceID
+        ,	"Add from Problem Account Management"
+        ,	ip_ModifiedBy
+    FROM Temp_CustParam AS tmp
+    WHERE NOT EXISTS (SELECT 1 FROM Temp_CustEvidenceExist AS ex WHERE ex.CTSCustID = tmp.CTSCustID AND ex.EvidenceID = tmp.EvidenceID);
+END$$
+DELIMITER ;
