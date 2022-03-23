@@ -21,6 +21,7 @@ BEGIN
            - 20210804@Irena.Vo: Fix issue get Duplicate list Association Remove [Redmine ID: #159706]
 		   - 20210818@Aries.Nguyen: Exclude Unlink association [Redmine ID: #159708]
 		   - 20220210@Aries.Nguyen: Re-arrange customer category/class for good/bad robot [Redmine ID: #167726]
+		   - 20220323@Aries.Nguyen: No detect Association with 3 Problem Accounts (Both have Group Betting and Hedging) [Redmine ID: #170363]
 		Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetTaggingByAssociationWithPA('1268,38665541,17004,32339123379301,3481646');
@@ -153,6 +154,7 @@ BEGIN
 		OR	class.CustomerClass IN (8, 10)
     ON DUPLICATE KEY UPDATE CustomerClass = CASE WHEN class.CustomerClass = 10 THEN 10
 												 WHEN class.CustomerClass = 8 AND Temp_PA.CustomerClass <> 10 THEN 8
+												 WHEN class.CustomerClass = 8 AND Temp_PA.CustomerClass = 10 THEN 10
 											END;
     
     INSERT INTO Temp_CustAssociationPA (CustID, TaggingID)
