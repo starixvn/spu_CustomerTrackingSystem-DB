@@ -10,7 +10,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_Log_Monitor_Neo4j_CustClassificatio
 BEGIN
 	/*
 		Created:	20220223@Harvey
-		Task:		Get cust classification by manual for monitor replication MySql -> Neo4j [Redmine ID: 168091]
+		Task:		Get cust classification for monitor replication MySql -> Neo4j [Redmine ID: 168091]
 		DB:			CTS_Log
 		Original:
 
