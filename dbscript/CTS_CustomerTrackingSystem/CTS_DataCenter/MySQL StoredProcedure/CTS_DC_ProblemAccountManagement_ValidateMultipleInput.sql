@@ -47,6 +47,7 @@ BEGIN
 			CTSCustID 				BIGINT UNSIGNED PRIMARY KEY
 		,	UserName				VARCHAR(50)
         ,	RoleID					SMALLINT
+        ,	CustID					BIGINT UNSIGNED
         ,   CustSubID				SMALLINT
         ,	Recommend				BIGINT UNSIGNED
         ,	SiteID					INT
@@ -77,10 +78,11 @@ BEGIN
 	SET u.IsDuplicated = 1;
 
 	/*3. Get Existed Customers */
-	INSERT IGNORE INTO Temp_ExistedCustomer(CTSCustID, UserName, RoleID, CustSubID, Recommend, SiteID, IsLicensee)
+	INSERT IGNORE INTO Temp_ExistedCustomer(CTSCustID, UserName, RoleID, CustID, CustSubID, Recommend, SiteID, IsLicensee)
     SELECT 	DISTINCT c.CTSCustID
 		,	u.UserName
         , 	c.RoleID
+        ,	c.CustID
         ,	c.CustSubID
         ,	c.Recommend
         ,	c.SiteID
@@ -143,6 +145,7 @@ BEGIN
                 
 		SELECT 		CASE WHEN ec.IsLicensee = 1 THEN 'Licensee' ELSE 'Credit' END AS Site
 				,	ec.RoleID AS RoleID
+                ,	ec.CustID AS CustID
 				,	u.UserName AS UserName
 				,	lv_ReasonID AS ReasonID
                 ,	1 AS ActionID
