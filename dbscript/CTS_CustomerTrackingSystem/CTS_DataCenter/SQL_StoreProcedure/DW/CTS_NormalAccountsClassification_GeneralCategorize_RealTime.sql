@@ -25,6 +25,7 @@ AS
 		- 20210803@Long.Luu: Log Input Data for Classification [Redmine ID: #157203]
 		- 20210818@Long.Luu: Check Winloss on probation assessment [Redmine ID: #159709]
 		- 20220222@Long.Luu: Remove 10k Probation rule for Credit [Redmine ID: #168988]
+		- 20220325@Long.Luu: Update TicketCount rescan for Normal Member from 100 to 20 [Redmine ID: #170465]
 		
 	Param's Explanation:
 */
@@ -160,12 +161,20 @@ INSERT INTO dbo.CustomerClassification_InputLog_RealTime(CustId,CreatedDate,Crea
 SELECT DISTINCT CustId, @CurrentDate, @CurrentDateTime, 3
 FROM #tmpCustomers;	
 */
-	-- #3: Remove Accounts less than 100 tickets compared to last scan
+	-- #3: Remove Accounts that Ticket Count has not reach the schedule
+	-- Remove Accounts less than 100 tickets compared to last scan for VIP
 	DELETE a WITH(ROWLOCK)
 	FROM #tmpCustomerAccummulatedInfo AS a
 		LEFT JOIN dbo.CustomerClassification_BetCount AS v WITH(NOLOCK) ON a.CustId = v.CustId
-	WHERE a.CategoryId IN (@GENERALCATEGORY_NORMALMEMBER, @GENERALCATEGORY_VIP)
+	WHERE a.CategoryId IN (@GENERALCATEGORY_VIP)
 		AND (v.CustId IS NOT NULL AND (a.BetCount - v.BetCount < 100));
+
+	-- Remove Accounts less than 20 tickets compared to last scan for Normal Member
+	DELETE a WITH(ROWLOCK)
+	FROM #tmpCustomerAccummulatedInfo AS a
+		LEFT JOIN dbo.CustomerClassification_BetCount AS v WITH(NOLOCK) ON a.CustId = v.CustId
+	WHERE a.CategoryId IN (@GENERALCATEGORY_NORMALMEMBER)
+		AND (v.CustId IS NOT NULL AND (a.BetCount - v.BetCount < 20));
 /*
 INSERT INTO dbo.CustomerClassification_InputLog_RealTime(CustId,CreatedDate,CreatedTime,Step)
 SELECT DISTINCT CustId, @CurrentDate, @CurrentDateTime, 5
@@ -200,8 +209,7 @@ FROM #tmpCustomerAccummulatedInfo;
 				WHEN (a.Margin < 0 AND (a.Site NOT IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') OR a.Site IS NULL)) THEN @GENERALCATEGORY_NORMALMEMBER				
 				WHEN (a.Margin < 0 AND a.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') AND a.WinlossRM <= -5000) THEN @GENERALCATEGORY_NORMALMEMBER
 				WHEN (a.Margin < 0 AND a.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada')) THEN @GENERALCATEGORY_NEWMEMBER
-			END		
-			
+			END					
 		,	@CurrentDate
 		,	@CurrentDateTime
 		,	a.TurnoverRM
@@ -236,7 +244,12 @@ FROM #tmpNewCustomer;
 
 	-- #8: Update last scanned ticket count back to dbo.CustomerClassification_BetCount
 	UPDATE v WITH(ROWLOCK, UPDLOCK)
-	SET v.BetCount = (a.BetCount - (a.BetCount % 100))
+	SET v.BetCount = CASE 
+						WHEN a.CategoryId IN (@GENERALCATEGORY_VIP) 
+							THEN (a.BetCount - (a.BetCount % 100))
+						WHEN a.CategoryId IN (@GENERALCATEGORY_NORMALMEMBER) 
+							THEN (a.BetCount - (a.BetCount % 20))
+					END
 		,	v.LastScannedDate = @CurrentDateTime
 	FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 		INNER JOIN dbo.CustomerClassification_BetCount AS v ON a.CustId = v.CustId;
