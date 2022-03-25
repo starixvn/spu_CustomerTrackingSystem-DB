@@ -4,6 +4,8 @@ DROP PROCEDURE IF EXISTS `DCS_DC_SumTransaction_Update`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_SumTransaction_Update`(
 		IN ip_MaxTransID			BIGINT UNSIGNED
+	,	IN ip_DateScan				DATE
+    ,	IN ip_AccountID				BIGINT UNSIGNED
 	,   IN ip_SumSubscriber			JSON  
     ,   IN ip_SumDeviceType			JSON 
     ,   IN ip_AccountIP				JSON  
@@ -20,6 +22,7 @@ BEGIN
 	    Revisions:		    
         	-	20210930@Casey.Huynh: Created [Redmine ID: 161528]
             -   20211214@Aries.Nguyen: Enrich the information on customer profile [Redmine ID: #165105]
+			-   20220325@Aries.Nguyen: Refactor the Sum data job of transaction statistic [Redmine ID: #170525]
 
 	    Param's Explanation (filtered by):
         
@@ -98,16 +101,18 @@ BEGIN
 		,	DeviceDesktop	INT 
 		,	DeviceOthers	INT 
 		,	TotalLogin		INT 
+        ,	MaxTransID		BIGINT UNSIGNED 
 		,	PRIMARY KEY PK_Temp_SumDeviceType(AccountID, TransDate)
 	) ENGINE=InnoDB;
     
-    INSERT IGNORE INTO Temp_SumDeviceType(AccountID, TransDate, DeviceMobile, DeviceDesktop, DeviceOthers, TotalLogin)
+    INSERT IGNORE INTO Temp_SumDeviceType(AccountID, TransDate, DeviceMobile, DeviceDesktop, DeviceOthers, TotalLogin,MaxTransID)
 	SELECT 	js.AccountID
 		,	DATE(js.TransDate)
         ,	js.DeviceMobile
         ,	js.DeviceDesktop
         ,	js.DeviceOthers
         ,	js.TotalLogin
+        ,	js.MaxTransID
 	FROM JSON_TABLE(ip_SumDeviceType,
 		"$[*]" COLUMNS(
 				AccountID		BIGINT UNSIGNED 	PATH "$.AccountID"
@@ -116,6 +121,7 @@ BEGIN
             ,	DeviceDesktop	INT 				PATH "$.DeviceDesktop" 
             ,	DeviceOthers	INT 				PATH "$.DeviceOthers" 
             ,	TotalLogin		INT 				PATH "$.TotalLogin" 
+            ,	MaxTransID		BIGINT UNSIGNED 	PATH "$.MaxTransID" 
 			)
 	) AS js ;
     
@@ -126,7 +132,7 @@ BEGIN
         ,	tmp.DeviceDesktop
         ,	tmp.DeviceOthers
         ,	tmp.TotalLogin
-        ,	ip_MaxTransID AS LastTransID
+        ,	tmp.MaxTransID
 	FROM Temp_SumDeviceType AS tmp
     WHERE NOT EXISTS (SELECT 1 
 					  FROM DCS_DataCenter.SumAccountLogin AS lg 
@@ -136,12 +142,12 @@ BEGIN
     UPDATE DCS_DataCenter.SumAccountLogin AS lg
 	INNER JOIN Temp_SumDeviceType AS tmp ON  lg.AccountID =  tmp.AccountID 
 										 AND lg.TransDate =  tmp.TransDate
-										 AND lg.LastTransID < ip_MaxTransID
+										 AND lg.LastTransID  < tmp.MaxTransID
 	SET		lg.DeviceMobile  = lg.DeviceMobile + tmp.DeviceMobile
 		,	lg.DeviceDesktop = lg.DeviceDesktop + tmp.DeviceDesktop
 		,	lg.DeviceOthers  = lg.DeviceOthers + tmp.DeviceOthers
 		,	lg.TotalLogin    = lg.TotalLogin + tmp.TotalLogin
-		,	lg.LastTransID   = ip_MaxTransID;
+		,	lg.LastTransID   = tmp.MaxTransID;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_SumDeviceTypeByAccount;
     CREATE TEMPORARY TABLE Temp_SumDeviceTypeByAccount(
@@ -150,15 +156,17 @@ BEGIN
 		,	DeviceDesktop	INT 
 		,	DeviceOthers	INT 
 		,	TotalLogin		INT 
+		,	MaxTransID		BIGINT UNSIGNED 
 		,	PRIMARY KEY PK_Temp_SumDeviceType(AccountID)
 	) ENGINE=InnoDB;
     
-    INSERT IGNORE INTO Temp_SumDeviceTypeByAccount(AccountID, DeviceMobile, DeviceDesktop, DeviceOthers, TotalLogin)
+    INSERT IGNORE INTO Temp_SumDeviceTypeByAccount(AccountID, DeviceMobile, DeviceDesktop, DeviceOthers, TotalLogin,MaxTransID)
 	SELECT 	AccountID
         ,	SUM(DeviceMobile)
         ,	SUM(DeviceDesktop)
         ,	SUM(DeviceOthers)
         ,	SUM(TotalLogin)
+        ,	MAX(MaxTransID)
 	FROM  Temp_SumDeviceType
     GROUP BY AccountID;
     
@@ -168,7 +176,7 @@ BEGIN
         ,	tmp.DeviceDesktop
         ,	tmp.DeviceOthers
         ,	tmp.TotalLogin
-        ,	ip_MaxTransID AS LastTransID
+        ,	tmp.MaxTransID
 	FROM Temp_SumDeviceTypeByAccount AS tmp
     WHERE NOT EXISTS (SELECT 1 
 					  FROM DCS_DataCenter.SumAccountLoginTotal AS lg 
@@ -176,12 +184,12 @@ BEGIN
                       
 	UPDATE DCS_DataCenter.SumAccountLoginTotal AS lg
 	INNER JOIN Temp_SumDeviceTypeByAccount AS tmp  ON  lg.AccountID =  tmp.AccountID 
-												   AND lg.LastTransID < ip_MaxTransID
+												   AND lg.LastTransID < tmp.MaxTransID 
 	SET		lg.DeviceMobile  = lg.DeviceMobile + tmp.DeviceMobile
 		,	lg.DeviceDesktop = lg.DeviceDesktop + tmp.DeviceDesktop
 		,	lg.DeviceOthers  = lg.DeviceOthers + tmp.DeviceOthers
 		,	lg.TotalLogin    = lg.TotalLogin + tmp.TotalLogin
-		,	lg.LastTransID   = ip_MaxTransID;
+		,	lg.LastTransID   = tmp.MaxTransID;
    
     /***************************************Update TransDate By AccountIP**********************************************/
     DROP TEMPORARY TABLE IF EXISTS Temp_AccountIP;
@@ -262,6 +270,16 @@ BEGIN
 	SET	s.VValue = ip_MaxTransID
 	,	s.UpdatedTime = CURRENT_TIME()
 	WHERE s.ID = 11;
+    
+    UPDATE SystemSetting AS s
+	SET	s.VValue = ip_DateScan
+	,	s.UpdatedTime = CURRENT_TIME()
+	WHERE s.ID = 21;
+    
+    UPDATE SystemSetting AS s
+	SET	s.VValue = ip_AccountID
+	,	s.UpdatedTime = CURRENT_TIME()
+	WHERE s.ID = 22;
     
 END$$
 DELIMITER ;
