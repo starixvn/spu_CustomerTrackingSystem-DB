@@ -12,6 +12,7 @@ sp:BEGIN
 		Original:
 		Revisions:
 			- 20220316@Irena.Vo: Created [Redmine ID: #169960]
+			- 20220328@Irena.Vo: Fix bug return LastCreatedDate is NULL OR LastCTSCustID is NULL  [Redmine ID: #170610]
 		Param's Explanation (filtered by):
 		Example: 
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_InactiveNewMemberScan_Get();
@@ -66,20 +67,22 @@ sp:BEGIN
 	ORDER BY cate.CreatedDate ASC
 	LIMIT lv_BatchSize;
     
-    SELECT MAX(CreatedDate) INTO lv_LastCreatedDate FROM Temp_ExistingNewMember;
-    
-	INSERT IGNORE INTO Temp_ExistingNewMember (CustID, CreatedDate)
-	SELECT cate.CustID, cate.CreatedDate
-	FROM CTS_DataCenter.CTSCustomerClassification AS cate
-		STRAIGHT_JOIN CTS_Archive.CTSCustomerAssociationStatus AS ld ON ld.CTSCustID = cate.CTSCustID 
-    WHERE cate.SportGroupID = 200 AND cate.CategoryID IN (201, 231, 232, 233)
-		AND cate.CreatedDate = lv_LastCreatedDate
-        AND cate.CreatedDate <= lv_Last30Days
-		AND ld.LastTicketDate <= lv_Last30Days;
-	
-	INSERT IGNORE INTO Temp_InactiveNewMember (CustID)
-    SELECT CustID
-    FROM Temp_ExistingNewMember;
+    IF EXISTS (SELECT 1 FROM Temp_ExistingNewMember) THEN
+		SELECT MAX(CreatedDate) INTO lv_LastCreatedDate FROM Temp_ExistingNewMember;
+        
+        INSERT IGNORE INTO Temp_ExistingNewMember (CustID, CreatedDate)
+		SELECT cate.CustID, cate.CreatedDate
+		FROM CTS_DataCenter.CTSCustomerClassification AS cate
+			STRAIGHT_JOIN CTS_Archive.CTSCustomerAssociationStatus AS ld ON ld.CTSCustID = cate.CTSCustID 
+		WHERE cate.SportGroupID = 200 AND cate.CategoryID IN (201, 231, 232, 233)
+			AND cate.CreatedDate = lv_LastCreatedDate
+			AND cate.CreatedDate <= lv_Last30Days
+			AND ld.LastTicketDate <= lv_Last30Days;
+		
+		INSERT IGNORE INTO Temp_InactiveNewMember (CustID)
+		SELECT CustID
+		FROM Temp_ExistingNewMember;
+    END IF;
     
     /* 3. Get Customer List are not Category and have not bet tickets within 30 last days */
 	INSERT IGNORE INTO Temp_NotExistingCategory (CustID, CTSCustID)
@@ -98,11 +101,13 @@ sp:BEGIN
 	ORDER BY cus.CTSCustID ASC
 	LIMIT lv_BatchSize;
 	
-    SELECT MAX(CTSCustID) INTO lv_LastCTSCustID FROM Temp_NotExistingCategory;
-    
-    INSERT IGNORE INTO Temp_InactiveNewMember (CustID)
-    SELECT CustID
-    FROM Temp_NotExistingCategory;
+    IF EXISTS (SELECT 1 FROM Temp_NotExistingCategory) THEN
+		SELECT MAX(CTSCustID) INTO lv_LastCTSCustID FROM Temp_NotExistingCategory;
+        
+		INSERT IGNORE INTO Temp_InactiveNewMember (CustID)
+		SELECT CustID
+		FROM Temp_NotExistingCategory;
+    END IF;
     
     /* 4. Get Scanning List */
     IF NOT EXISTS (SELECT 1 FROM Temp_InactiveNewMember) THEN
