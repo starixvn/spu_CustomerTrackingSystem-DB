@@ -29,7 +29,7 @@ BEGIN
 	FROM @GBTicketXML.nodes('//TWGroupBettingTicket') AS T(C)
 	OPTION (OPTIMIZE FOR (@GBTicketXML = NULL));
 
-	TRUNCATE TABLE dbo.SPU_GroupBettingTicket
+	DELETE FROM SPU_GroupBettingTicket;
 
 	INSERT INTO SPU_GroupBettingTicket (
 		CustId

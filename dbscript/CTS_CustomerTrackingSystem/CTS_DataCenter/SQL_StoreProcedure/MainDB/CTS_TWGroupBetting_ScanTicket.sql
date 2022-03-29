@@ -299,7 +299,7 @@ BEGIN
 	FROM #TmpSuspectTicket AS st
 	INNER JOIN dbo.SPU_GroupBettingTicket gbt WITH (NOLOCK) ON st.Transid = gbt.TransId;
 
-	TRUNCATE TABLE dbo.SPU_GroupBettingTicket
+	DELETE FROM SPU_GroupBettingTicket;
 
 	INSERT INTO SPU_GroupBettingTicket (
 		CustId

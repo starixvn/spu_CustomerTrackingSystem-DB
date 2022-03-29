@@ -22,7 +22,6 @@ CREATE TABLE [dbo].[SPU_GroupBettingTicket](
 	TransId ASC
 ))
 
-GRANT SELECT,UPDATE,INSERT,DELETE ON dbo.[SPU_GroupBettingTicket] TO bodbSPUNet;
 
 GO
 
@@ -36,7 +35,6 @@ CREATE TABLE [dbo].[SPU_GroupBettingCustomer](
 	CustId ASC
 ))
 
-GRANT SELECT,UPDATE,INSERT,DELETE ON dbo.[SPU_GroupBettingCustomer] TO bodbSPUNet;
 
 GO
 CREATE NONCLUSTERED INDEX IX_SPU_GroupBettingCustomer_LastModifiedDate   
@@ -59,7 +57,6 @@ CREATE TABLE [dbo].[SPU_GroupBettingRule] (
 	RuleId ASC
 ));
 
-GRANT SELECT,UPDATE,INSERT,DELETE ON dbo.[SPU_GroupBettingRule] TO bodbSPUNet;
 
 CREATE TABLE [dbo].[SPU_GroupBettingGroupingRule] (
   RuleId 		INT 		NOT NULL,
@@ -69,7 +66,6 @@ CREATE TABLE [dbo].[SPU_GroupBettingGroupingRule] (
   Sporttype		TINYINT		NULL
 );
 
-GRANT SELECT,UPDATE,INSERT,DELETE ON dbo.[SPU_GroupBettingGroupingRule] TO bodbSPUNet;
 
 -- Init data [SPU_GroupBettingRule]--
 INSERT INTO dbo.SPU_GroupBettingRule (RuleName, LimitSecond, TicketCountLimit, RFMLimitValue, RFMLimitPercent, CustClassLimitValue, CustClassLimitPercent, BetFromLimitValue, BetFromLimitPercent) VALUES ('RuleType1', '5', '13', '8', '70', '1,2', '50', 'x,z', '70');
