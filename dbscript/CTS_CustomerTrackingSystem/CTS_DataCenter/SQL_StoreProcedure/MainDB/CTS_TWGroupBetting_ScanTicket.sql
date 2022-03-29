@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
-CREATE PROCEDURE [dbo].[CTS_TWGroupBetting_ScanTicket]
+ALTER PROCEDURE [dbo].[CTS_TWGroupBetting_ScanTicket]
 		@FromTime	DATETIME,
 		@ToTime		DATETIME,
 		@Step		INT
@@ -30,7 +30,7 @@ BEGIN
 		DROP TABLE #TmpTicketForScanning;
 
 	CREATE TABLE #TmpTicketForScanning (
-		Transid BIGINT PRIMARY KEY
+		Transid BIGINT
 		,Transdate DATETIME
 		,Custid INT
 		,Leagueid INT
@@ -48,12 +48,15 @@ BEGIN
 		,FromTime DATETIME
 		,ToTime DATETIME
 		);
+
+	CREATE INDEX IX_TicketForScanning_Transid
+		ON #TmpTicketForScanning (Transid);
 
 	IF OBJECT_ID('tempdb..#TmpSuspectTicket') IS NOT NULL
 		DROP TABLE #TmpSuspectTicket;
 
 	CREATE TABLE #TmpSuspectTicket (
-		Transid BIGINT PRIMARY KEY
+		Transid BIGINT 
 		,Transdate DATETIME
 		,Custid INT
 		,Leagueid INT
@@ -71,6 +74,9 @@ BEGIN
 		,FromTime DATETIME
 		,ToTime DATETIME
 		);
+
+	CREATE INDEX IX_TmpSuspectTicket_Transid
+		ON #TmpSuspectTicket (Transid);
 
 	CREATE NONCLUSTERED INDEX #IX_SuspectTicket_RuleId ON #TmpSuspectTicket (
 			RuleId		ASC
