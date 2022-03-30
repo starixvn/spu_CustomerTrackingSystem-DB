@@ -1,4 +1,4 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb,ctsAPI,ctsService" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
 DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_ProblemAccountProbation_Insert`;
 
 DELIMITER $$
@@ -31,7 +31,7 @@ BEGIN
 		, 	CTSCustID				BIGINT UNSIGNED 
         ,	SportGroupID			SMALLINT UNSIGNED DEFAULT 0 
         , 	CategoryID				SMALLINT UNSIGNED
-        , 	RelevantCategoryID 	SMALLINT UNSIGNED
+        , 	RelevantCategoryID 	    SMALLINT UNSIGNED
         , 	TargetCC 				SMALLINT UNSIGNED
         , 	TargetDangerLevel1 		SMALLINT 
         ,	IsProbation 			BIT
