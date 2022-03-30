@@ -6,6 +6,5 @@ DBName:		CTS_DataCenter
 */
 
 USE CTS_DataCenter;
-USE CTS_DataCenter;
 ALTER TABLE CTSCustomerClassification ADD INDEX IX_CTSCustomerClassification_CategoryID(CategoryID);
 ALTER TABLE CTSCustomerClassification DROP INDEX IX_CTSCustomerClassification_CategoryIDLastScannedDate;

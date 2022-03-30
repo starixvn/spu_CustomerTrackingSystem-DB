@@ -20,7 +20,7 @@ VALUES (84, 'DailyScan_Normal_BatchSize', 'DailyScan_Normal_BatchSize', 'BIGINT'
 ALTER TABLE CTS_DataCenter.CustomerCategory
 ADD COLUMN CustomerClass SMALLINT UNSIGNED,
 ADD COLUMN CustomerClassException SMALLINT UNSIGNED,
-ADD COLUMN RelationshipCategoryID SMALLINT UNSIGNED,
+ADD COLUMN RelevantCategoryID SMALLINT UNSIGNED,
 ADD COLUMN ABIDangerLevel_Licensee SMALLINT UNSIGNED,
 ADD COLUMN ABIDangerLevelException_Licensee SMALLINT UNSIGNED,
 ADD COLUMN ABIDangerLevel_Credit SMALLINT UNSIGNED,
@@ -37,7 +37,7 @@ SET CustomerClassException = 132
 WHERE CategoryID = 163;
 
 UPDATE CTS_DataCenter.CustomerCategory
-SET RelationshipCategoryID = CASE WHEN CategoryID = 54 THEN 94
+SET RelevantCategoryID = CASE WHEN CategoryID = 54 THEN 94
 								  WHEN CategoryID = 74 THEN 114
                                   WHEN CategoryID = 154 THEN 134
 								  WHEN CategoryID = 94 THEN 54
@@ -96,7 +96,7 @@ UPDATE CTS_DataCenter.CustomerCategory
 SET IsProbation = 1
 WHERE CategoryID IN (94,114,134,100,120,95,115,135,92,112,132,93,113,133,102,122,142,98,118,138,99,119,139);
 
-SELECT CategoryID,RelationshipCategoryID,CategoryName,CategorySpec,CustomerClassException,IsProbation,ABIDangerLevel_Licensee,ABIDangerLevel_Credit
+SELECT CategoryID,RelevantCategoryID,CategoryName,CategorySpec,CustomerClassException,IsProbation,ABIDangerLevel_Licensee,ABIDangerLevel_Credit
 FROM CustomerCategory;
 
 
@@ -111,7 +111,7 @@ SET cate.ABIDangerLevel_Licensee = abi.DangerLevel
 WHERE abi.IsLicensee = 1;
 
 UPDATE CTS_DataCenter.CustomerCategory AS cate
-INNER JOIN CTS_DataCenter.CustomerCategory AS rela on cate.RelationshipCategoryID = rela.CategoryID
+INNER JOIN CTS_DataCenter.CustomerCategory AS rela on cate.RelevantCategoryID = rela.CategoryID
 SET cate.ReasonID = rela.ReasonID
 	, cate.SourceType = rela.SourceType
     , cate.EvidenceID_Licensee = rela.EvidenceID_Licensee
