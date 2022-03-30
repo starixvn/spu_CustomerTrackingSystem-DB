@@ -43,7 +43,7 @@ BEGIN
     INSERT INTO Temp_Category(CategoryID)
 	SELECT CategoryID
 	FROM CustomerCategory 
-	WHERE RelationshipCategoryID IS NOT NULL; 
+	WHERE RelevantCategoryID IS NOT NULL; 
     
     SELECT ParameterValue 
     INTO lv_BatchSize 
@@ -62,10 +62,11 @@ BEGIN
 
     INSERT IGNORE INTO Temp_PA (CustID)
 	SELECT 	clss.CustID
-	FROM CTS_DataCenter.CTSCustomerClassification AS clss
+	FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID)
 	WHERE clss.CustID > lv_LastCustID
 		AND clss.CategoryID = lv_LastCategoryID
-	ORDER BY clss.CustID ASC
+	ORDER BY clss.CategoryID ASC
+		,	 clss.CustID ASC
 	LIMIT lv_BatchSize;
     
     IF NOT EXISTS (SELECT 1 FROM Temp_PA) THEN
@@ -81,10 +82,11 @@ BEGIN
     IF lv_NextCategoryID IS NOT NULL THEN
 		INSERT IGNORE INTO Temp_PA (CustID)
 		SELECT 	clss.CustID
-		FROM CTS_DataCenter.CTSCustomerClassification AS clss
+		FROM CTS_DataCenter.CTSCustomerClassification AS clss  USE INDEX(IX_CTSCustomerClassification_CategoryID)
 		WHERE clss.CustID > 0
 			AND clss.CategoryID = lv_NextCategoryID
-		ORDER BY clss.CustID ASC
+		ORDER BY clss.CategoryID ASC
+			,	 clss.CustID ASC
 		LIMIT lv_BatchSize;
 	ELSE
 		SET lv_NextCategoryID = lv_LastCategoryID;

@@ -72,7 +72,7 @@ BEGIN
     
     INSERT IGNORE INTO Temp_Normal (CustID)
 	SELECT 	clss.CustID
-	FROM CTS_DataCenter.CTSCustomerClassification AS clss
+	FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID)
 	WHERE clss.CustID > lv_LastCustID
 		AND clss.CategoryID = lv_LastCategoryID
 		AND clss.LastScannedDate <= lv_ScanDateValid
@@ -83,7 +83,8 @@ BEGIN
 						 FROM  CTS_DataCenter.ProbationAccountMonitor AS pro 
 						 WHERE pro.CustID = clss.CustID 
 							AND pro.SportGroupID = 200)
-	ORDER BY clss.CustID ASC
+	ORDER BY clss.CategoryID ASC
+		,	 clss.CustID ASC
 	LIMIT lv_BatchSize;
     
     IF NOT EXISTS (SELECT 1 FROM Temp_Normal) THEN
@@ -94,6 +95,14 @@ BEGIN
 		FROM Temp_Category  AS cate
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON cate.CategoryID = clss.CategoryID 
 		WHERE cate.CategoryID > lv_LastCategoryID
+			AND clss.LastScannedDate <= cate.ScanDate
+            AND NOT EXISTS (SELECT 1 
+							 FROM  CTS_DataCenter.PinCustomerCategory AS pin 
+							 WHERE pin.CTSCustID = clss.CTSCustID)
+			AND NOT EXISTS (SELECT 1 
+							 FROM  CTS_DataCenter.ProbationAccountMonitor AS pro 
+							 WHERE pro.CustID = clss.CustID 
+								AND pro.SportGroupID = 200)
 		ORDER BY cate.CategoryID ASC
 		LIMIT 1; 
     END IF;
@@ -106,7 +115,7 @@ BEGIN
     
 		INSERT IGNORE INTO Temp_Normal (CustID)
 		SELECT 	clss.CustID
-		FROM CTS_DataCenter.CTSCustomerClassification AS clss
+		FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID)
 		WHERE clss.CustID > 0
 			AND clss.CategoryID = lv_NextCategoryID
 			AND clss.LastScannedDate <= lv_NextScanDateValid
@@ -117,7 +126,8 @@ BEGIN
 							 FROM  CTS_DataCenter.ProbationAccountMonitor AS pro 
 							 WHERE pro.CustID = clss.CustID 
 								AND pro.SportGroupID = 200)
-		ORDER BY clss.CustID ASC
+		ORDER BY clss.CategoryID ASC
+			,	 clss.CustID ASC
 		LIMIT lv_BatchSize;
         
 	ELSE
