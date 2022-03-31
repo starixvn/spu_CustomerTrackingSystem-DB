@@ -29,6 +29,7 @@ BEGIN
             - 20210525@Irena.Vo: Change col name PinCustomerCategory, TaggingExclusion: CustID -> CTSCustID [RedmineID: #152965] 
 			- 20210622@Aries.Nguyen: Update coding convention  [Redmine ID: #157203]
 			- 20211115@Irena.Vo: Re-priortize Robot and other PA categories  [Redmine ID: #164344]
+			- 20220328@Aries.Nguyen: Add new category/class for PA Probation [Redmine ID: #170468]
 		Param's Explanation:
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_Get('1');
@@ -39,16 +40,19 @@ BEGIN
 		,   CategoryName   	VARCHAR(200) 
 		,   CategoryType    SMALLINT UNSIGNED /*1: ParentID = 200, 2: ParentID = 50*/
 		,	ParentID		SMALLINT UNSIGNED
+		,	IsProbation		BIT DEFAULT 0
     );
    
-	INSERT INTO Temp_LatestRecordOfCategory(CategoryID, CategoryName, CategoryType, ParentID)
+	INSERT INTO Temp_LatestRecordOfCategory(CategoryID, CategoryName, CategoryType, ParentID, IsProbation)
 	SELECT DISTINCT (CASE WHEN cc.ParentID = 50 THEN cc.CategoryGroup ELSE cate.CategoryID END)
 				,	cc.CategoryName
 				,	(CASE WHEN cc.ParentID = 50 THEN 2 WHEN cc.ParentID = 200  THEN 1 END) 
 				,	cc.ParentID
+				,	IsProbation
 	FROM	CTS_DataCenter.CTSCustomerClassification AS cate
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
-    WHERE	cate.CTSCustID = ip_CTSCustID AND cc.ParentID IN (50, 200);
+    WHERE	cate.CTSCustID = ip_CTSCustID 
+		AND cc.ParentID IN (50, 200);
     
     IF (SELECT COUNT(DISTINCT ParentID) FROM Temp_LatestRecordOfCategory) > 1 THEN
 		DELETE FROM Temp_LatestRecordOfCategory WHERE ParentID = 200;
@@ -66,6 +70,11 @@ BEGIN
 		SELECT 0 AS IsExcludedTagAssPA;
 	END IF; 
 
-	SELECT CategoryType, CategoryID, CategoryName, ParentID FROM Temp_LatestRecordOfCategory;
+	SELECT	CategoryType
+		,	CategoryID
+		,	CategoryName
+		,	ParentID
+		,	IsProbation 
+	FROM Temp_LatestRecordOfCategory;
 END$$
 DELIMITER ;

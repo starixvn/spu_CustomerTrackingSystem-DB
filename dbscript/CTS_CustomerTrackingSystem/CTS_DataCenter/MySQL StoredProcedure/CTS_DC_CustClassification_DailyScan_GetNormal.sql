@@ -19,7 +19,7 @@ BEGIN
 			- 20220328@Aries.Nguyen: Created [Redmine ID: #170468]
 
 		Param's Explanation (filtered by):      
-			- CALL CTS_DC_CustClassification_DailyScan_GetPA (@op_LastCategoryID, @op_LastCustID);
+			- CALL CTS_DC_CustClassification_DailyScan_GetNormal (@op_LastCategoryID, @op_LastCustID);
 	*/
 	DECLARE lv_LastCategoryID 		INT;
 	DECLARE lv_LastCustID 			BIGINT UNSIGNED;
@@ -53,7 +53,7 @@ BEGIN
     SELECT ParameterValue 
     INTO lv_BatchSize 
     FROM CTS_DataCenter.SystemParameter 
-    WHERE ParameterID = 84;
+    WHERE ParameterID = 84; 
     
     SELECT ParameterValue 
     INTO lv_LastCategoryID 
@@ -65,27 +65,40 @@ BEGIN
     FROM CTS_DataCenter.SystemParameter 
     WHERE ParameterID = 86;
     
+    IF lv_LastCategoryID IS NULL OR  lv_LastCategoryID = 0 THEN
+		SELECT CategoryID 
+		INTO lv_LastCategoryID 
+		FROM Temp_Category
+		ORDER BY CategoryID ASC
+        LIMIT 1;
+	END  IF;
+    
     SELECT ScanDate 
     INTO lv_ScanDateValid 
     FROM Temp_Category
     WHERE CategoryID = lv_LastCategoryID;
-    
-    INSERT IGNORE INTO Temp_Normal (CustID)
-	SELECT 	clss.CustID
-	FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID)
-	WHERE clss.CustID > lv_LastCustID
-		AND clss.CategoryID = lv_LastCategoryID
-		AND clss.LastScannedDate <= lv_ScanDateValid
-		AND NOT EXISTS (SELECT 1 
-						 FROM  CTS_DataCenter.PinCustomerCategory AS pin 
-						 WHERE pin.CTSCustID = clss.CTSCustID)
-		AND NOT EXISTS (SELECT 1 
-						 FROM  CTS_DataCenter.ProbationAccountMonitor AS pro 
-						 WHERE pro.CustID = clss.CustID 
-							AND pro.SportGroupID = 200)
-	ORDER BY clss.CategoryID ASC
-		,	 clss.CustID ASC
-	LIMIT lv_BatchSize;
+  
+    SET @sql = 	CONCAT("
+		INSERT IGNORE INTO Temp_Normal (CustID)
+		SELECT 	clss.CustID
+		FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID_CustID)
+		WHERE clss.CustID > ", lv_LastCustID," ","
+			AND clss.CategoryID = ",lv_LastCategoryID," ","
+			AND clss.LastScannedDate <= '",lv_ScanDateValid,"' ","
+			AND NOT EXISTS (SELECT 1 
+							 FROM  CTS_DataCenter.PinCustomerCategory AS pin 
+							 WHERE pin.CTSCustID = clss.CTSCustID)
+			AND NOT EXISTS (SELECT 1 
+							 FROM  CTS_DataCenter.ProbationAccountMonitor AS pro 
+							 WHERE pro.CustID = clss.CustID 
+								AND pro.SportGroupID = 200)
+		ORDER BY clss.CategoryID ASC
+			,	 clss.CustID ASC
+		LIMIT ",lv_BatchSize,";");
+
+    PREPARE stmt1 FROM  @sql;
+    EXECUTE stmt1; 
+	DEALLOCATE PREPARE stmt1;
     
     IF NOT EXISTS (SELECT 1 FROM Temp_Normal) THEN
 		SELECT 	cate.CategoryID
@@ -109,16 +122,17 @@ BEGIN
     
     IF lv_NextCategoryID IS NOT NULL THEN
 		SELECT ScanDate 
-		INTO lv_ScanDateValid 
+		INTO lv_ScanDateValid  
 		FROM Temp_Category
 		WHERE CategoryID = lv_NextCategoryID;
-    
+        
+         SET @sql =  CONCAT("
 		INSERT IGNORE INTO Temp_Normal (CustID)
 		SELECT 	clss.CustID
-		FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID)
+		FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID_CustID)
 		WHERE clss.CustID > 0
-			AND clss.CategoryID = lv_NextCategoryID
-			AND clss.LastScannedDate <= lv_NextScanDateValid
+			AND clss.CategoryID = ", lv_NextCategoryID," ","
+			AND clss.LastScannedDate <= '", lv_NextScanDateValid,"' ","
 			AND NOT EXISTS (SELECT 1 
 							 FROM  CTS_DataCenter.PinCustomerCategory AS pin 
 							 WHERE pin.CTSCustID = clss.CTSCustID)
@@ -128,7 +142,11 @@ BEGIN
 								AND pro.SportGroupID = 200)
 		ORDER BY clss.CategoryID ASC
 			,	 clss.CustID ASC
-		LIMIT lv_BatchSize;
+		LIMIT ", lv_BatchSize,";");
+    
+    PREPARE stmt1 FROM  @sql;
+    EXECUTE stmt1; 
+	DEALLOCATE PREPARE stmt1;
         
 	ELSE
 		SET lv_NextCategoryID = lv_LastCategoryID;

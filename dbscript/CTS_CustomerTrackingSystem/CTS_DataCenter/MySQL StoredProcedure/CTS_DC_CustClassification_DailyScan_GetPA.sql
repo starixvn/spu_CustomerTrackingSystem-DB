@@ -60,14 +60,27 @@ BEGIN
     FROM CTS_DataCenter.SystemParameter 
     WHERE ParameterID = 89;
 
-    INSERT IGNORE INTO Temp_PA (CustID)
-	SELECT 	clss.CustID
-	FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID)
-	WHERE clss.CustID > lv_LastCustID
-		AND clss.CategoryID = lv_LastCategoryID
-	ORDER BY clss.CategoryID ASC
-		,	 clss.CustID ASC
-	LIMIT lv_BatchSize;
+	IF lv_LastCategoryID IS NULL OR  lv_LastCategoryID = 0 THEN
+		SELECT CategoryID 
+		INTO lv_LastCategoryID 
+		FROM Temp_Category
+		ORDER BY CategoryID ASC
+        LIMIT 1;
+	END  IF;
+    
+	SET @sql = 	CONCAT("
+		INSERT IGNORE INTO Temp_PA (CustID)
+		SELECT 	clss.CustID
+		FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID_CustID)
+		WHERE clss.CustID > ",lv_LastCustID," ","
+			AND clss.CategoryID = ",lv_LastCategoryID," ","
+		ORDER BY clss.CategoryID ASC
+			,	 clss.CustID ASC
+		LIMIT ",lv_BatchSize,";");
+
+    PREPARE stmt1 FROM  @sql;
+    EXECUTE stmt1; 
+	DEALLOCATE PREPARE stmt1;
     
     IF NOT EXISTS (SELECT 1 FROM Temp_PA) THEN
 		SELECT 	cate.CategoryID
@@ -80,14 +93,20 @@ BEGIN
     END IF;
     
     IF lv_NextCategoryID IS NOT NULL THEN
+		
+		SET @sql = 	CONCAT("
 		INSERT IGNORE INTO Temp_PA (CustID)
 		SELECT 	clss.CustID
-		FROM CTS_DataCenter.CTSCustomerClassification AS clss  USE INDEX(IX_CTSCustomerClassification_CategoryID)
+		FROM CTS_DataCenter.CTSCustomerClassification AS clss  USE INDEX(IX_CTSCustomerClassification_CategoryID_CustID)
 		WHERE clss.CustID > 0
-			AND clss.CategoryID = lv_NextCategoryID
+			AND clss.CategoryID = ", lv_NextCategoryID," ","
 		ORDER BY clss.CategoryID ASC
 			,	 clss.CustID ASC
-		LIMIT lv_BatchSize;
+		LIMIT ",lv_BatchSize,";");
+
+		PREPARE stmt1 FROM  @sql;
+		EXECUTE stmt1; 
+		DEALLOCATE PREPARE stmt1; 
 	ELSE
 		SET lv_NextCategoryID = lv_LastCategoryID;
 	END IF;
