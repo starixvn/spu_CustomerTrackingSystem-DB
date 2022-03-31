@@ -7,5 +7,5 @@
 
 /*Run on Master*/
 USE CTS_DataCenter;
-INSERT INTO `CTS_DataCenter`.`SystemParameter` (`ParameterID`, `ParameterName`, `ParameterDesc`, `ParameterDataType`, `ParameterValue`) VALUES ('77', 'TWGroupBetting_LastScanTime', 'TWGroupBetting_LastScanTime', 'DATETIME', '2022-03-15 00:00:00');
-INSERT INTO `CTS_DataCenter`.`SystemParameter` (`ParameterID`, `ParameterName`, `ParameterDesc`, `ParameterDataType`, `ParameterValue`) VALUES ('78', 'TWGroupBetting_LastTimeCountTotalTicket', 'TWGroupBetting_LastTimeCountTotalTicket', 'DATETIME', '2022-03-15 00:00:00');
+INSERT INTO `CTS_DataCenter`.`SystemParameter` (`ParameterID`, `ParameterName`, `ParameterDesc`, `ParameterDataType`, `ParameterValue`) VALUES ('77', 'TWGroupBetting_LastScanTime', 'TWGroupBetting_LastScanTime', 'DATETIME', '2022-03-28 00:00:00');
+INSERT INTO `CTS_DataCenter`.`SystemParameter` (`ParameterID`, `ParameterName`, `ParameterDesc`, `ParameterDataType`, `ParameterValue`) VALUES ('78', 'TWGroupBetting_LastTimeCountTotalTicket', 'TWGroupBetting_LastTimeCountTotalTicket', 'DATETIME', '2022-03-28 00:00:00');

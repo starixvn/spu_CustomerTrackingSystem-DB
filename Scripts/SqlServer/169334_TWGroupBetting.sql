@@ -1,8 +1,8 @@
 /*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 /*
-    Creator: 	20220207@Harvey.Nguyen
+    Creator: 	20220331@Harvey.Nguyen
     Task:	 	Create table and init data for calculate TW Groupbeting  [Redmine ID: 169334]
-    DBName:		CTS_DataCenter
+    DBName:		bodb02
 */
 
 USE [bodb02]

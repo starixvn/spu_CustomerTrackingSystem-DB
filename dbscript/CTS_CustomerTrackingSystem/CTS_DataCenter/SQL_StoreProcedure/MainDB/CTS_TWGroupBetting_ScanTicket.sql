@@ -151,7 +151,7 @@ BEGIN
 	LEFT JOIN #TmpBigLeague AS bl WITH (NOLOCK) ON m.leagueid = bl.LeagueId
 	CROSS APPLY [dbo].[SPU_GroupBettingRule] AS gbr
 	CROSS APPLY #TmpTimeRange AS tr
-	WHERE b.transid > 114760099329
+	WHERE b.transid > 115093947593
 		AND b.refno = 100000000000
 		AND b.currency <> 20
 		AND m.sporttype IN (1,2)
