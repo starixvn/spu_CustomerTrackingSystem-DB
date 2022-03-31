@@ -20,6 +20,7 @@ BEGIN
             - 20201130@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. Remove logic detail category. [Redmine ID: #145954]
             - 20201216@Harvey.Nguyen: grouping category [Redmine ID: #147299]
             - 20210622@Aries.Nguyen: Update coding convention  [Redmine ID: #157203]
+            - 20220331@Harvey.Nguyen: refactor code [Redmine ID: #170802]
 
 		Param's Explanation:
 
