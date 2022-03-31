@@ -11,6 +11,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Get`(
     , 	IN	ip_MatchSection		VARCHAR(50)
     ,	IN 	ip_IsVerified 		BIT
     ,	IN 	ip_Bettypes 		JSON # BettypeID and BetID       
+    ,	IN	ip_Reason			VARCHAR(50)
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -27,12 +28,14 @@ BEGIN
 			-	20211213@Casey.Huynh: Enhance MM, Add column LeagueName, reset IsVerified = 0 [Redmine ID: 165606]
             -	20220110@Casey.Huynh: Enhance MM, BetID, Reason [Redmine ID: 166986]
             - 	20220216@Casey.Huynh: Fix Issue, show IsVerified = 0 when all tickets were verified [Redmine ID: 166986]
+            - 	20220325@Long.Luu: Add Reason filter [Redmine ID: 170466]
+            
 		Param's Explanation (filtered by):
 			- ip_Market: 0 return LiveIndicator = 0, 1 return LiveIndicator = 1, NULL: Both Live And Non-Live
             - ip_LeagueName: NULL IF any ELSE LIKE %ip_LeagueName%
             
 		Example:
-			-	CALL CTS_DC_MatchMonitor_Get('2021-12-05','2021-12-08',NULL,'1,2,43', '1','1,2,3,4',NULL,'[{"BettypeID":1,"BetID":0},{"BettypeID":3,"BetID":0},{"BettypeID":7,"BetID":0}]');
+			-	CALL CTS_DC_MatchMonitor_Get('2021-12-05','2021-12-08',NULL,'1,2,43', '1','1,2,3,4',NULL,'[{"BettypeID":1,"BetID":0},{"BettypeID":3,"BetID":0},{"BettypeID":7,"BetID":0}],'0,1');
 	*/
       
 	DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitor;
@@ -61,6 +64,11 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Sporttype;
     CREATE TEMPORARY TABLE Temp_Sporttype(
 			Sporttype 	INT
+	);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_Reason;
+    CREATE TEMPORARY TABLE Temp_Reason(
+			ReasonID 	INT
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_MatchSection;
@@ -113,6 +121,10 @@ BEGIN
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1; 
     
+    SET @sql = CONCAT("INSERT INTO Temp_Reason (ReasonID) VALUES ('", REPLACE(ip_Reason, ",", "'),('"),"');");
+	PREPARE stmt1 FROM @sql;
+	EXECUTE stmt1; 
+    
     INSERT INTO Temp_MatchMonitor(ID, MatchID, EventDate, LiveIndicator, HomeID, AwayID, LeagueID, LeagueName, Sporttype, BettypeID, BetID, Reason, MatchSection)    
     SELECT	tmp.ID
 		,	tmp.MatchID
@@ -148,6 +160,7 @@ BEGIN
 			FROM   CTS_DataCenter.MatchMonitor AS s
 				INNER JOIN Temp_Bettype AS tmpBt ON s.BettypeID = tmpBt.BettypeID AND s.BetID = tmpBt.BetID
                 INNER JOIN Temp_Sporttype AS tmpSt ON s.Sporttype = tmpSt.SportType
+                INNER JOIN Temp_Reason AS r ON r.ReasonID = s.Reason
 			WHERE s.EventDate BETWEEN ip_FromDate AND ip_ToDate
 			) AS tmp
             INNER JOIN Temp_MatchSection AS tmpMst ON tmpMst.MatchSection = tmp.MatchSection
