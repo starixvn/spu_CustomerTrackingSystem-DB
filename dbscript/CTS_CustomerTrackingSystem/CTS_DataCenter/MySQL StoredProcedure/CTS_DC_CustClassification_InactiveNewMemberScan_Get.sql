@@ -2,7 +2,7 @@
 DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_InactiveNewMemberScan_Get`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE  `CTS_DataCenter`.`CTS_DC_CustClassification_InactiveNewMemberScan_Get`()
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_InactiveNewMemberScan_Get`()
     SQL SECURITY INVOKER
 sp:BEGIN
 /*
@@ -13,6 +13,7 @@ sp:BEGIN
 		Revisions:
 			- 20220316@Irena.Vo: Created [Redmine ID: #169960]
 			- 20220328@Irena.Vo: Fix bug return LastCreatedDate is NULL OR LastCTSCustID is NULL  [Redmine ID: #170610]
+            - 20220331@Aries.Nguyen: Fix performance issue  [Redmine ID: #170769]
 		Param's Explanation (filtered by):
 		Example: 
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_InactiveNewMemberScan_Get();
@@ -20,6 +21,7 @@ sp:BEGIN
 	DECLARE lv_BatchSize 				INT;
 	DECLARE lv_LastCreatedDate 			DATETIME;
     DECLARE lv_LastCTSCustID			BIGINT UNSIGNED;
+    DECLARE lv_MaxCTSCustID				BIGINT UNSIGNED;
     DECLARE lv_Last30Days 				DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 29 DAY);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_InactiveNewMember;
@@ -84,19 +86,38 @@ sp:BEGIN
 		FROM Temp_ExistingNewMember;
     END IF;
     
+    IF EXISTS (SELECT 1 FROM Temp_InactiveNewMember) THEN
+		SELECT DISTINCT CustID 
+		FROM Temp_InactiveNewMember;
+        
+		SELECT lv_LastCreatedDate AS LastCreatedDate;
+        
+        SELECT lv_LastCTSCustID AS LastCTSCustID;
+        
+        LEAVE sp;
+	END IF;
+    
     /* 3. Get Customer List are not Category and have not bet tickets within 30 last days */
+    SELECT CTSCustID
+    INTO lv_MaxCTSCustID
+    FROM CTS_DataCenter.CTSCustomer AS cus USE INDEX(PRIMARY)
+    WHERE  cus.CTSCustID > lv_LastCTSCustID
+		AND cus.CreatedDate > lv_Last30Days
+    ORDER BY cus.CTSCustID ASC
+    LIMIT 1;
+    
 	INSERT IGNORE INTO Temp_NotExistingCategory (CustID, CTSCustID)
 	SELECT cus.CustID, cus.CTSCustID
-	FROM CTS_DataCenter.CTSCustomer AS cus
+	FROM CTS_DataCenter.CTSCustomer AS cus USE INDEX(PRIMARY)
 		STRAIGHT_JOIN CTS_Archive.CTSCustomerAssociationStatus AS ld ON ld.CTSCustID = cus.CTSCustID 
 	WHERE NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification AS cate WHERE cate.CTSCustID = cus.CTSCustID)
 		AND NOT EXISTS (SELECT 1 FROM CTS_DataCenter.StaticList AS st WHERE st.ItemID = cus.SiteID AND st.ListID = 11)
-		AND cus.CTSCustID > lv_LastCTSCustID
+		AND cus.CTSCustID > lv_LastCTSCustID 
+        AND cus.CTSCustID < lv_MaxCTSCustID
         AND cus.Recommend NOT IN (52466,5707545)
 		AND cus.UserName NOT LIKE '%CashOut'
         AND cus.CustSubID = 0
 		AND cus.RoleID = 1
-		AND cus.CreatedDate <= lv_Last30Days
 		AND ld.LastTicketDate <= lv_Last30Days
 	ORDER BY cus.CTSCustID ASC
 	LIMIT lv_BatchSize;
