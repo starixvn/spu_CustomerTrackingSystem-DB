@@ -5,7 +5,7 @@ AS
 /*
 	Created: 20220314@Harvey.Nguyen
 	Task : Insert group betting ticket from DB061 -> DB062 %
-	DB	 : bodb02
+	DB	 : DBCTS.bodb02
 
 	Revisions:
 		- 20220314@Harvey.Nguyen: Init sp [Redmine ID: #170160]

@@ -10,7 +10,7 @@ AS
 /*
 	Created by: 20220308@Harvey.Nguyen
 	Task: Calculate TW group betting percent
-	DB: DB061.dbo.bodb02
+	DB: DBCTS.bodb02
 	Original: 
 	
 	Revisions:

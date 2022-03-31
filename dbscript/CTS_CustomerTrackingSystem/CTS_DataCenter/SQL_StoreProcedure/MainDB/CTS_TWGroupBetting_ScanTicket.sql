@@ -7,7 +7,7 @@ AS
 /*
 	Created: 20220314@Harvey.Nguyen
 	Task : Caculate TW Group betting %
-	DB	 : bodb02
+	DB	 : DBCTS.bodb02
 
 	Revisions:
 		- 20220314@Harvey.Nguyen: Scan ticket [Redmine ID: #169671]
