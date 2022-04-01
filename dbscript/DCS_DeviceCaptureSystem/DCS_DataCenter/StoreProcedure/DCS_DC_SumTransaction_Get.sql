@@ -178,7 +178,7 @@ sp: BEGIN
 		SET  op_DateScan = DATE_ADD(lv_LastDateScan, INTERVAL 1 DAY);
 		SET  op_AccountID = 0;
     ELSE
-		SELECT 	MAX(CreatedDate)
+		SELECT 	MAX(TransDate)
 			,	MAX(AccountID)
         INTO 	op_DateScan
 			,	op_AccountID
