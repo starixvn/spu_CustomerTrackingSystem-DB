@@ -146,17 +146,24 @@ sp: BEGIN
 	) ENGINE=InnoDB;
     
     IF  lv_LastDateScan < lv_CurrDateTrans THEN
-		INSERT IGNORE INTO Temp_SumTransactionByDate(TransID, TransDate, AccountID, IP, DeviceID, UserAgentKey)
-		SELECT  trans.TransID 
-			,	DATE(trans.TransTime) AS TransDate
-			,	trans.AccountID 
-			,	trans.IP
-			,	trans.DeviceID
-			,	trans.UserAgentKey
-		FROM DCS_DataCenter.Transaction07 AS  trans
-		WHERE trans.CreatedDate = lv_LastDateScan
-			AND trans.AccountID > lv_LastAccountID
-		ORDER BY trans.AccountID ASC;
+		SET @sql = 	CONCAT("
+			INSERT IGNORE INTO Temp_SumTransactionByDate(TransID, TransDate, AccountID, IP, DeviceID, UserAgentKey)
+			SELECT  trans.TransID 
+				,	DATE(trans.TransTime) AS TransDate
+				,	trans.AccountID 
+				,	trans.IP
+				,	trans.DeviceID
+				,	trans.UserAgentKey
+			FROM DCS_DataCenter.Transaction07 AS  trans USE INDEX (IX_Transaction07_CreatedDate_AccountID)
+			WHERE trans.CreatedDate = '",lv_LastDateScan,"' ","
+				AND trans.AccountID > ",lv_LastAccountID," ","
+			ORDER BY trans.CreatedDate ASC
+				,	 trans.AccountID ASC
+			LIMIT ",lv_BatchSize,";");
+        
+        PREPARE stmt1 FROM  @sql;
+		EXECUTE stmt1; 
+		DEALLOCATE PREPARE stmt1;
 
 		SELECT MAX(AccountID)
 		INTO lv_MaxAccountID
@@ -169,7 +176,7 @@ sp: BEGIN
 			,	trans.IP
 			,	trans.DeviceID
 			,	trans.TransID
-		FROM DCS_DataCenter.Transaction07 AS  trans
+		FROM DCS_DataCenter.Transaction07 AS trans USE INDEX (IX_Transaction07_CreatedDate_AccountID)
 		WHERE trans.CreatedDate = lv_LastDateScan
 			AND trans.AccountID = lv_MaxAccountID;
     END IF;
