@@ -122,41 +122,59 @@ BEGIN
 	WHERE sporttype = 2
 		AND leagueid IN (56038,56053,95746,86331,56046,56049,78717,7391,44735,11548,63021,44721,44737,11550,81263,52821,88529,93817,102499,82879,82880,82881,101655,82883,82884,82885,82886,82783,82864,82784,101684,82786,82787,82788,82865,82789,82866,82790,101685,82792,82793,82794,82867,82795,82868,82796,101686,82798,82799,82800,82869,82801,82870,82802,101687,82804,82805,82806,82871,82807,82872,82808,101688,82810,82811,82812,82873,82757,96709,56054,56069,99367,99352,56062,99366,56065,56066,56067,56071,99232,99321,99329,99326,99327,99324,99328,99325,56027,24567,75146,48649,93818,102501,7390,7361,7363,44719,95440,104895,95441,104897,93816,102500,99520,99518,82862,82918,55716,83031,83089,83114,82779,82778,101700,101701,64977,95442,104898,95443,104899,99368,99926,82229,92117,100569,92558,99331,99970,99444,100003,100505,99438,100096,99528,95432,103857,95444,104896,95445,104900,99519);
 	
+	;WITH cte_raw AS (
+		SELECT b.transid
+			,b.transdate
+			,b.custid
+			,m.leagueid
+			,m.matchid
+			,m.sporttype
+			,b.bettype
+			,b.currency
+			,b.betteam
+			,b.betfrom
+			,b.liveindicator AS islive
+			,pf.Tag AS RFM
+			,ci.CustomerClass
+			,CASE 
+				WHEN bl.LeagueId IS NOT NULL
+					THEN 1
+				ELSE 0
+				END 'IsBigLeague'
+		FROM dbo.bettrans AS b WITH (NOLOCK)
+		INNER JOIN match AS m WITH (NOLOCK) ON b.matchid = m.matchid
+		INNER JOIN dbo.custinfo AS ci WITH (NOLOCK) ON b.custid = ci.custid
+		LEFT JOIN LicUserProfile AS pf WITH (NOLOCK) ON b.custid = pf.CustId
+		LEFT JOIN #TmpBigLeague AS bl WITH (NOLOCK) ON m.leagueid = bl.LeagueId
+		WHERE b.transid > 115093947593
+			AND b.refno = 100000000000
+			AND b.currency <> 20
+			AND m.sporttype IN (1,2)
+			AND b.bettype IN (1,3,7,8,609,610)
+			AND b.transdate BETWEEN @FromTime AND @ToTime
+	)
 	INSERT INTO #TmpTicketForScanning
 	SELECT b.transid
 		,b.transdate
 		,b.custid
-		,m.leagueid
-		,m.matchid
-		,m.sporttype
+		,b.leagueid
+		,b.matchid
+		,b.sporttype
 		,b.bettype
 		,b.currency
 		,b.betteam
 		,b.betfrom
-		,b.liveindicator AS islive
-		,pf.Tag AS RFM
-		,ci.CustomerClass
+		,b.islive
+		,b.RFM
+		,b.CustomerClass
 		,gbr.ruleid
-		,CASE 
-			WHEN bl.LeagueId IS NOT NULL
-				THEN 1
-			ELSE 0
-			END 'IsBigLeague'
+		,b.IsBigLeague
 		,tr.FromTime
 		,tr.ToTime
-	FROM dbo.bettrans AS b WITH (NOLOCK)
-	INNER JOIN match AS m WITH (NOLOCK) ON b.matchid = m.matchid
-	INNER JOIN dbo.custinfo AS ci WITH (NOLOCK) ON b.custid = ci.custid
-	LEFT JOIN LicUserProfile AS pf WITH (NOLOCK) ON b.custid = pf.CustId
-	LEFT JOIN #TmpBigLeague AS bl WITH (NOLOCK) ON m.leagueid = bl.LeagueId
+	FROM cte_raw AS b
 	CROSS APPLY [dbo].[SPU_GroupBettingRule] AS gbr
 	CROSS APPLY #TmpTimeRange AS tr
-	WHERE b.transid > 115093947593
-		AND b.refno = 100000000000
-		AND b.currency <> 20
-		AND m.sporttype IN (1,2)
-		AND b.bettype IN (1,3,7,8,609,610)
-		AND b.transdate BETWEEN tr.FromTime AND tr.ToTime
+	WHERE b.transdate BETWEEN tr.FromTime AND tr.ToTime
 	ORDER BY transid ASC;
 
 	INSERT INTO #TmpSuspectTicket
