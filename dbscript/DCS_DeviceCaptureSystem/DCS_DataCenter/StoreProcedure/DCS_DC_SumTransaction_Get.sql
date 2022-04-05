@@ -179,12 +179,12 @@ sp: BEGIN
 		FROM DCS_DataCenter.Transaction07 AS trans USE INDEX (IX_Transaction07_CreatedDate_AccountID)
 		WHERE trans.CreatedDate = lv_LastDateScan
 			AND trans.AccountID = lv_MaxAccountID;
-    END IF;
 
-	IF NOT EXISTS (SELECT 1 FROM Temp_SumTransactionByDate) THEN
 		SET  op_DateScan = DATE_ADD(lv_LastDateScan, INTERVAL 1 DAY);
 		SET  op_AccountID = 0;
-    ELSE
+    END IF;
+
+	IF EXISTS (SELECT 1 FROM Temp_SumTransactionByDate) THEN
 		SELECT 	MAX(TransDate)
 			,	MAX(AccountID)
         INTO 	op_DateScan
