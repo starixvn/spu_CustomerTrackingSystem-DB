@@ -134,7 +134,7 @@ sp: BEGIN
 			TransID			BIGINT UNSIGNED PRIMARY KEY
 		,	TransDate		DATE
 		,	AccountID		BIGINT UNSIGNED
-		,	IP				INT UNSIGNED
+		,	IP				VARCHAR(50) CHARACTER SET utf8 COLLATE utf8_unicode_ci
 		,	DeviceID		INT UNSIGNED
 		,	UserAgentKey	INT UNSIGNED
 		,	INDEX 			IX_Temp_SumTransactionByDate_AccountID(AccountID)
