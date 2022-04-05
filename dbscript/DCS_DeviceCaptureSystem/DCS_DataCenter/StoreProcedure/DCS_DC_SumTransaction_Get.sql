@@ -135,8 +135,8 @@ sp: BEGIN
 		,	TransDate		DATE
 		,	AccountID		BIGINT UNSIGNED
 		,	IP				VARCHAR(50) CHARACTER SET utf8 COLLATE utf8_unicode_ci
-		,	DeviceID		INT UNSIGNED
-		,	UserAgentKey	INT UNSIGNED
+		,	DeviceID		BIGINT UNSIGNED
+		,	UserAgentKey	VARCHAR(32)
 		,	INDEX 			IX_Temp_SumTransactionByDate_AccountID(AccountID)
 	) ENGINE=InnoDB;
 
@@ -170,12 +170,12 @@ sp: BEGIN
 		FROM Temp_SumTransactionByDate;
 
 		INSERT IGNORE INTO Temp_SumTransactionByDate(TransID, TransDate, AccountID, IP, DeviceID, UserAgentKey)
-		SELECT  trans.AccountID 
-			,	trans.TransTime
-			,	trans.UserAgentKey
+		SELECT  trans.TransID
+			,	DATE(trans.TransTime) AS TransDate
+			,	trans.AccountID 
 			,	trans.IP
 			,	trans.DeviceID
-			,	trans.TransID
+			,	trans.UserAgentKey
 		FROM DCS_DataCenter.Transaction07 AS trans USE INDEX (IX_Transaction07_CreatedDate_AccountID)
 		WHERE trans.CreatedDate = lv_LastDateScan
 			AND trans.AccountID = lv_MaxAccountID;
