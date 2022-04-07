@@ -151,10 +151,10 @@ BEGIN
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CTSCustID = cus.CTSCustID AND SportGroupID = CONST_GROUP_PA
 		STRAIGHT_JOIN CTS_DataCenter.CategoryToCustomerClass AS class ON class.CategoryID =  cc.CategoryID
     WHERE	cc.CategoryID IN (CONST_CATEGORYID_ROBOTUSERS,CONST_CATEGORYID_BADROBOTUSERS,CONST_CATEGORYID_GOODROBOTUSERS)
-		OR	class.CustomerClass IN (8, 10)
-    ON DUPLICATE KEY UPDATE CustomerClass = CASE WHEN class.CustomerClass = 10 THEN 10
-												 WHEN class.CustomerClass = 8 AND Temp_PA.CustomerClass <> 10 THEN 8
-												 WHEN class.CustomerClass = 8 AND Temp_PA.CustomerClass = 10 THEN 10
+		OR	class.CustomerClass IN (8, 10, 86, 106)
+    ON DUPLICATE KEY UPDATE CustomerClass = CASE WHEN class.CustomerClass IN (10,106) THEN 10
+												 WHEN class.CustomerClass IN (8, 86) AND Temp_PA.CustomerClass NOT IN (10, 106) THEN 8
+												 WHEN class.CustomerClass IN (8, 86) AND Temp_PA.CustomerClass IN (10, 106) THEN 10
 											END;
     
     INSERT INTO Temp_CustAssociationPA (CustID, TaggingID)

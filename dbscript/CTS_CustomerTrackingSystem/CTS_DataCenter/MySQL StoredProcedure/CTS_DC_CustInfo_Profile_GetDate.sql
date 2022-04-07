@@ -14,32 +14,25 @@ BEGIN
 		
 		Revisions:
 			- 20211214@Aries.Nguyen: Created [Redmine ID: #165105]
+- 20220407@Irena.Vo: Get additional date for New Member(no bet in 30 last days), PA, Robot [Redmine ID: #170468]
 
 		Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustInfo_Profile_GetDate(200);
 	*/
     DECLARE	CONST_GROUP_NORMAL 				INT DEFAULT 200;
+    DECLARE	CONST_GROUP_PROBLEM				INT DEFAULT 0;
+    
     DECLARE	CONST_CATEGORYGROUP_PROBATION 	INT DEFAULT 206;
+    DECLARE	CONST_CATEGORYGROUP_NEWMEMBER 	INT DEFAULT 201;
+    DECLARE	CONST_CATEGORYGROUP_ROBOT 		INT DEFAULT 61;
     
 	DECLARE lv_NextCategoryScan		DATE;
-    DECLARE lv_NextProbationScan	DATE;
     DECLARE lv_LastTicket 			DATETIME;
     DECLARE lv_LastLogin 			DATETIME;
     DECLARE lv_Created				DATETIME;
 	
-    SELECT CASE
-				WHEN cate.CategoryGroup = CONST_CATEGORYGROUP_PROBATION AND clss.CreatedDate < DATE_SUB(NOW(), INTERVAL 2 DAY) THEN DATE(NOW())
-                WHEN cate.CategoryGroup = CONST_CATEGORYGROUP_PROBATION AND clss.CreatedDate >= DATE_SUB(NOW(), INTERVAL 2 DAY) THEN DATE(DATE_ADD(clss.CreatedDate, INTERVAL 3 DAY))
-                ELSE DATE_ADD(clss.LastScannedDate, INTERVAL cate.ScanIntervalInSecond SECOND)
-			END
-    INTO lv_NextCategoryScan
-	FROM CTS_DataCenter.CTSCustomerClassification AS clss
-		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID =  clss.CategoryID AND  cate.ScanIntervalInSecond > 0
-	WHERE clss.CTSCustID = ip_CTSCustID
-		AND clss.SportGroupID = CONST_GROUP_NORMAL;
-    
-    SELECT 	LastLoginTime
+	SELECT 	LastLoginTime
 		, 	CreatedDate 
 	INTO 	lv_LastLogin
 		, 	lv_Created
@@ -50,6 +43,29 @@ BEGIN
     INTO lv_LastTicket
 	FROM CTS_Archive.CTSCustomerAssociationStatus 
 	WHERE CTSCustID = ip_CTSCustID;
+    
+    /* PA Category (not robot) */
+    SELECT DATE_ADD(CURRENT_DATE(), INTERVAL 1 DAY)
+    INTO lv_NextCategoryScan
+    FROM CTS_DataCenter.CTSCustomerClassification AS clss
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID =  clss.CategoryID
+    WHERE clss.CTSCustID = ip_CTSCustID
+			AND clss.SportGroupID = CONST_GROUP_PROBLEM AND cate.CategoryGroup <> CONST_CATEGORYGROUP_ROBOT
+    LIMIT 1;
+    
+    /* Normal Category */
+    IF (lv_NextCategoryScan IS NULL) THEN
+		 SELECT CASE WHEN cate.CategoryGroup = CONST_CATEGORYGROUP_NEWMEMBER AND lv_LastTicket <= DATE_SUB(CURRENT_DATE(), INTERVAL 29 DAY) THEN DATE_ADD(CURRENT_DATE(), INTERVAL 1 DAY)
+					 WHEN cate.CategoryGroup = CONST_CATEGORYGROUP_PROBATION AND clss.CreatedDate < DATE_SUB(CURRENT_DATE(), INTERVAL 2 DAY) THEN DATE(CURRENT_DATE())
+					 WHEN cate.CategoryGroup = CONST_CATEGORYGROUP_PROBATION AND clss.CreatedDate >= DATE_SUB(CURRENT_DATE(), INTERVAL 2 DAY) THEN DATE(DATE_ADD(clss.CreatedDate, INTERVAL 3 DAY))
+					 WHEN cate.ScanIntervalInSecond > 0 THEN DATE_ADD(clss.LastScannedDate, INTERVAL cate.ScanIntervalInSecond SECOND)
+				 END 
+		INTO lv_NextCategoryScan
+		FROM CTS_DataCenter.CTSCustomerClassification AS clss
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID =  clss.CategoryID
+		WHERE clss.CTSCustID = ip_CTSCustID
+			AND clss.SportGroupID = CONST_GROUP_NORMAL;
+    END IF;
     
     SELECT 	lv_NextCategoryScan AS NextCategoryScan
 		,	lv_LastTicket		AS LastTicket
