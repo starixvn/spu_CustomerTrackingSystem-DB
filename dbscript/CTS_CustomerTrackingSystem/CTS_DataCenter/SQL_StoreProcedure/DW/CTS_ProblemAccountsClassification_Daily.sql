@@ -23,8 +23,8 @@ BEGIN
 	
 	SET NOCOUNT ON;
 
-	DECLARE @PROBLEMACCOUNT_KEEPSTATE	INT = 0
-		,	@PROBLEMACCOUNT_LOSING		INT = 1
+	DECLARE @PROBLEMACCOUNT_LOSING		INT = 0
+		,	@PROBLEMACCOUNT_KEEPSTATE	INT = 1
 		,	@PROBLEMACCOUNT_WINNING		INT = 2;  
 
 	DECLARE @CurrentDateTime		DATETIME = GETDATE();
@@ -78,25 +78,15 @@ BEGIN
 
 	-- #3: Classify new members
 	--INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
-	
-	SELECT	a.CustID
-		,	CASE WHEN a.WinlossStatus = @PROBLEMACCOUNT_LOSING THEN 1 ELSE 0 END AS IsLosing
-		,	a.TurnoverRM
-		,	a.WinlossRM
-		,	a.BetCount
-		,	a.ActiveDays
-	FROM (
-			SELECT	r.CustId
-				,	CASE
-						WHEN (r.WinlossRM < -10000) THEN @PROBLEMACCOUNT_LOSING
-						WHEN (r.WinlossRM >= -5000) THEN @PROBLEMACCOUNT_WINNING
-						ELSE @PROBLEMACCOUNT_KEEPSTATE
-					END AS WinlossStatus
-				,	r.TurnoverRM
-				,	r.WinlossRM
-				,	r.BetCount
-				,	r.ActiveDays
-			FROM #tmpCustomerAccummulatedInfo AS r WITH(NOLOCK)
-	) AS a
-	WHERE a.WinlossStatus IN (@PROBLEMACCOUNT_LOSING,@PROBLEMACCOUNT_WINNING);
+	SELECT	r.CustId
+		,	CASE
+				WHEN (r.WinlossRM < -10000) THEN @PROBLEMACCOUNT_LOSING
+				WHEN (r.WinlossRM >= -5000) THEN @PROBLEMACCOUNT_WINNING
+				ELSE @PROBLEMACCOUNT_KEEPSTATE
+			END AS WinlossStatus
+		,	r.TurnoverRM
+		,	r.WinlossRM
+		,	r.BetCount
+		,	r.ActiveDays
+	FROM #tmpCustomerAccummulatedInfo AS r WITH(NOLOCK)
 END;
