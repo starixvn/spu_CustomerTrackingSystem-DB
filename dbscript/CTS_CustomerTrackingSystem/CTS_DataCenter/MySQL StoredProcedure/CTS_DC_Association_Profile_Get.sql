@@ -30,14 +30,17 @@ sp : BEGIN
 	        - 20210419@Irena.Vo: Ignore get CC on Associated Accounts tab [Redmine ID: #152250]
 			- 20210420@Irena.Vo: Get data for Sub Account on Associated Accounts tab [Redmine ID: #152963]
             - 20210505@Irena.Vo: Get additional CustId [Redmine ID: #152963]
-			- 20210506@Irena.Vo: Get additional CustSubId [Redmine ID: #154624]
+			- 20210506@Irena.Vo: Get additional CustSubId [Redmine ID: #154624]            
 			- 20220328@Aries.Nguyen: Add new category/class for PA Probation [Redmine ID: #170468]
 
+			- 20220408@Long.Luu: Get more data from AssociationGroupByAI [Redmine ID: #171222]
+            
 		Param's Explanation (filtered by):
 			- ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual, 4 - IP
             - ip_AssociationStatus: 0 - All, 1 - Linked, 2 - UnLinked
             - ip_AccountStatusIDs: 0,1,11,2,3,4,12,13,14 - All,    1,11 - Open(1:Open, 11:Active),  2,3,4,12,13,14 - Closed (2:Disabled, 3:Closed, 4:Suspended, 12:Inactive, 13:View Only, 14:Suspended), 0: Other (sub account)
             - ip_CategoryIDs: 0, 51,205,206,...-Selected CategoryIDs (0-'No Category' Option)
+            
         Example:
 			-  set @op_TotalItems='0';
 			   CALL CTS_DataCenter.CTS_DC_Association_Profile_Get(221882500,0,0,
@@ -73,6 +76,7 @@ sp : BEGIN
         ,	AssociationDate		DATETIME
         ,	IsFiltered	        BIT DEFAULT 0
         , 	PRIMARY KEY(CTSCustID)
+        ,	INDEX IX_Temp_AssociatedAccount_CustID(CustID)
         ,	INDEX IX_Temp_AssociatedAccount_SubscriberID(SubscriberID)
 	);   
 	
@@ -120,6 +124,18 @@ sp : BEGIN
     CREATE TEMPORARY TABLE 	Temp_CategoryID (
 			CategoryID 		SMALLINT UNSIGNED
         , 	PRIMARY KEY (CategoryID)
+	);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_Group;
+    CREATE TEMPORARY TABLE 	Temp_Group (
+			GroupID 		SMALLINT UNSIGNED PRIMARY KEY
+	);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustomerGroup;
+    CREATE TEMPORARY TABLE 	Temp_CustomerGroup (
+			CustID 			BIGINT UNSIGNED PRIMARY KEY
+		,	AssociationDate	DATETIME
+		,	GroupIDList		VARCHAR(1000)
 	);
     
 	SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_SubscriberID (SubscriberID) VALUES ('", REPLACE(ip_SubscriberIDs, ",", "'),('"),"');");
@@ -191,6 +207,26 @@ sp : BEGIN
 		FROM CTS_DataCenter.AssociationByAI AS asAI 
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asAI.FromCustID AND cust.CustSubID = 0
 		WHERE	asAI.ToCustID =  lv_CustID;
+        
+        INSERT INTO Temp_Group(GroupID)
+        SELECT DISTINCT GroupID
+        FROM CTS_DataCenter.AssociationGroupByAI
+        WHERE CustID = lv_CustID;
+        
+        INSERT INTO Temp_CustomerGroup(CustID, AssociationDate, GroupIDList)
+        SELECT  g.CustID
+			,	MIN(g.CreatedDate)
+            ,	GROUP_CONCAT(g.GroupID SEPARATOR ',')
+		FROM Temp_Group AS t
+			INNER JOIN CTS_DataCenter.AssociationGroupByAI AS g ON t.GroupID = g.GroupID AND g.CustID <> lv_CustID
+		GROUP BY g.CustID;
+        
+        INSERT IGNORE INTO Temp_Association(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
+		SELECT  CustID 
+			,	2 AS AssociationType
+            ,	1 AS AssociationStatus
+			,	AssociationDate
+		FROM Temp_CustomerGroup;
     END IF;
     
 	IF ip_AssociationType = 0 OR ip_AssociationType = 4 THEN
@@ -341,8 +377,10 @@ sp : BEGIN
 		,	tmpCS.CategoryIDs AS CategoryIDs
 		,	tmpCS.CategoryNames AS CategoryNames
 		,	tmpCS.IsProbation AS IsProbation
+        	,	t.GroupID AS GroupIDs
 	FROM Temp_AssociatedAccount AS tmpAcc
 		INNER JOIN Temp_Classification AS tmpCS ON tmpCS.CTSCustID = tmpAcc.CTSCustID
+        	LEFT JOIN Temp_CustomerGroup AS t ON tmpAcc.CustID = t.CustID
 	WHERE tmpAcc.IsFiltered = 1
 	ORDER BY  tmpAcc.SubscriberName ASC, tmpAcc.AssociationStatus ASC , tmpAcc.AccountStatusGroup ASC, tmpAcc.AccountStatusID ASC,  tmpAcc.AssociationDate DESC, tmpAcc.CTSCustID ASC
 	LIMIT ip_Take
