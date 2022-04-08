@@ -18,6 +18,7 @@ sp :BEGIN
 		Original:
 		Revisions:
 			- 20211130@Aries.Nguyen: Created [Redmine: #164079]
+            - 20220408@Casey.Huynh: Return CreatedBy [Redmine: #171223]
 		Param's Explanation (filtered by):   
         Example: 
 			-CALL CTS_DC_ProblemAccountManagement_Get('2021-03-03 00:00:00', '2021-03-10 00:00:00', null,'KEONUS',0); 
@@ -66,6 +67,7 @@ sp :BEGIN
 		,	cus.CurrencyID
         ,	GROUP_CONCAT(DISTINCT cate.CategoryName SEPARATOR ', ') AS CategoryName
 		,	MIN(class.CreatedDate) AS CreatedDate
+        ,	class.CreatedBy
 	FROM CTS_DataCenter.CTSCustomerClassification AS class
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON class.CTSCustID = cus.CTSCustID
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON class.CategoryID = cate.CategoryID
