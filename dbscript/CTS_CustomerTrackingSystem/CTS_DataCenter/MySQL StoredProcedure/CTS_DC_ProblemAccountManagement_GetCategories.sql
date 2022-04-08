@@ -12,12 +12,13 @@ BEGIN
 		Original:
 		Revisions:
 			- 20220307@Irena.Vo: Created [Redmine ID: #159014]
+			- 20220407@Irena.Vo: Change logic get [Redmine ID: #170135]
 		Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DC_ProblemAccountManagement_GetCategories();
 	*/
 	SELECT 	DISTINCT cat.CategoryID, cat.CategoryName
 	FROM	CTS_DataCenter.CustomerCategory AS cat
-	WHERE 	cat.SourceType = 'NAP' AND cat.ReasonID BETWEEN 102 AND 110; 
+	WHERE 	cat.SourceType = 'NAP' AND (cat.CategoryID BETWEEN 151 AND 162) AND cat.CategoryID NOT IN (151,160,161); 
 END$$
 DELIMITER ;
