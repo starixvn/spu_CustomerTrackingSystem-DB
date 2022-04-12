@@ -15,6 +15,7 @@ sp: BEGIN
 			- 	20210927@Aries.Nguyen: Created [Redmine ID: #162277]
 			- 	20211123@Aries.Nguyen: Clean data inactive association [Redmine ID: #165001]
 			- 	20211216@Aries.Nguyen: Clean data Sum Account Login Info [Redmine ID: #165105]
+            -	20220408@Casey.Huynh: Add AssociationGroupByAI [Redmine ID: #171222]
 		Param's Explanation (filtered by):	
 			
 	*/
@@ -383,6 +384,45 @@ sp: BEGIN
 			SELECT COUNT(1)
             INTO lv_Count
             FROM Temp_AssociationByAI_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
+        END IF;
+        
+        SET lv_Table = 'CTS_DataCenter.AssiciationGroupByAI';
+    END IF;
+    
+    IF (lv_Table = 'CTS_DataCenter.AssiciationGroupByAI') THEN  
+		IF EXISTS (SELECT 1  FROM CTS_DataCenter.AssiciationGroupByAI AS asg WHERE  asg.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)) THEN
+			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationGroupByAI_Clean;
+			CREATE TEMPORARY TABLE Temp_AssociationGroupByAI_Clean(
+					CustID 		BIGINT UNSIGNED NOT NULL
+				,	GroupID 	BIGINT UNSIGNED NOT NULL
+                
+                ,	PRIMARY KEY (CustID, GroupID)
+			) ENGINE=InnoDB;
+            
+            INSERT IGNORE INTO Temp_AssiciationGroupByAI_Clean(CustID, GroupID)
+            SELECT 	asg.FromCustID
+				,	asg.ToCustID
+			FROM CTS_DataCenter.AssiciationGroupByAI AS asg
+			WHERE  asg.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)
+            LIMIT lv_CleanTableBatchSize;
+            
+            DELETE asg
+			FROM CTS_DataCenter.AssiciationGroupByAI AS asg
+				INNER JOIN Temp_AssiciationGroupByAI_Clean AS tmp ON tmp.CustID = asg.CustID AND tmp.GroupID = asg.GroupID;
+			
+			UPDATE  CTS_DataCenter.SystemParameter 
+			SET ParameterValue = 'CTS_DataCenter.AssiciationGroupByAI'
+			WHERE ParameterID = 46;
+
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_AssiciationGroupByAI_Clean;
             
             IF lv_Count >= lv_CleanTableBatchSize THEN
 				LEAVE sp;

@@ -12,7 +12,7 @@ sp : BEGIN
 		Original:
 		Revisions:
 			- 20211026@Aries.Nguyen [Redmine ID: #163087]: Created
-            
+            - 20220408@Casey.Huynh: Add AssociationGroupByAI [Redmine ID: #171222]
         Param's Explanation (filtered by):
 
         Example:  
@@ -235,40 +235,42 @@ sp : BEGIN
     END IF;
     
     IF (lv_Table = 'AssociationGroupByAI') THEN  
-		IF (lv_Table = 'AssociationGroupByAI') THEN  
-		IF EXISTS (SELECT 1  FROM CTS_DataCenter.AssiciationGroupByAI AS ai WHERE EXISTS (SELECT 1 FROM CTS_Archive.CTSCustomerAssociationArchive_Process AS pro WHERE ai.ToCustID = pro.CustID)) THEN
+		IF EXISTS (SELECT 1  FROM CTS_DataCenter.AssiciationGroupByAI AS asg WHERE EXISTS (SELECT 1 FROM CTS_Archive.CTSCustomerAssociationArchive_Process AS pro WHERE asg.CustID = pro.CustID)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationGroupByAI_Clean;
 			CREATE TEMPORARY TABLE Temp_AssociationGroupByAI_Clean(
 					ID				BIGINT UNSIGNED DEFAULT NULL
-				,	GroupID 		BIGINT UNSIGNED DEFAULT NULL
-				,	OriginGroupID 	BIGINT UNSIGNED DEFAULT NULL
+				,	GroupID 		BIGINT UNSIGNED NOT NULL
+				,	OriginGroupID 	BIGINT UNSIGNED NOT NULL
 				,	CustID 			BIGINT UNSIGNED DEFAULT NULL
 				,	CreatedDate 	DATETIME DEFAULT NULL
                 
                 ,	PRIMARY KEY (CustID,GroupID)
-                ,	INDEX IX_Temp_AssociationGroupByAI_Clean(ID)
 			) ENGINE=InnoDB;
-            
-            INSERT IGNORE INTO Temp_AssiciationGroupByAI_Clean(FromCustID, ToCustID, AssociationDate)
-            SELECT 	ai.FromCustID
-				,	ai.ToCustID
-                ,	ai.CreatedDate
-			FROM CTS_DataCenter.AssiciationGroupByAI  AS ai
-			WHERE EXISTS (SELECT 1 FROM CTS_Archive.CTSCustomerAssociationArchive_Process AS pro WHERE ai.ToCustID = pro.CustID)
+                      
+            INSERT IGNORE INTO Temp_AssociationGroupByAI_Clean(ID, GroupID, OriginGroupID, CustID, CreatedDate)
+            SELECT 	asg.ID
+				,	asg.GroupID
+                ,	asg.OriginGroupID
+                ,	asg.CustID
+                ,	asg.CreatedDate
+			FROM CTS_Archive.AssiciationGroupByAI  AS asg
+			WHERE EXISTS (SELECT 1 FROM CTS_Archive.CTSCustomerAssociationArchive_Process AS pro WHERE asg.CustID = pro.CustID)
             LIMIT lv_BatchSize_AssData;
             
-            INSERT IGNORE INTO CTS_Archive.AssiciationGroupByAI_Arc(FromCustID, ToCustID, AssociationDate)
-            SELECT	FromCustID
-				,	ToCustID
-                ,	AssociationDate
-			FROM Temp_AssiciationGroupByAI_Clean;
+            INSERT IGNORE INTO CTS_Archive.AssiciationGroupByAI_Arc(ID, GroupID, OriginGroupID, CustID, CreatedDate)
+			SELECT 	tmpCl.ID
+				,	tmpCl.GroupID
+                ,	tmpCl.OriginGroupID
+                ,	tmpCl.CustID
+                ,	tmpCl.CreatedDate
+			FROM Temp_AssiciationGroupByAI_Clean  AS tmpCl;
             
-            DELETE ass
-			FROM CTS_DataCenter.AssiciationGroupByAI AS ass
-				INNER JOIN Temp_AssiciationGroupByAI_Clean AS tmp ON tmp.FromCustID = ass.FromCustID AND tmp.ToCustID = ass.ToCustID;
+            DELETE asg
+			FROM CTS_DataCenter.AssiciationGroupByAI AS asg
+				INNER JOIN Temp_AssiciationGroupByAI_Clean AS tmpCl ON tmpCl.CustID = asg.CustID AND tmpCl.GroupID = asg.GroupID;
 			
 			UPDATE  CTS_Archive.SystemParameter 
-			SET ParameterValue = 'AssiciationGroupByAI-To'
+			SET ParameterValue = 'AssiciationGroupByAI'
 			WHERE ParameterID = 4;
 
 			SELECT COUNT(1)
