@@ -67,10 +67,11 @@ sp :BEGIN
 		,	cus.CurrencyID
         ,	GROUP_CONCAT(DISTINCT cate.CategoryName SEPARATOR ', ') AS CategoryName
 		,	MIN(class.CreatedDate) AS CreatedDate
-        ,	class.CreatedBy
+        ,	us.UserName AS CreatedBy
 	FROM CTS_DataCenter.CTSCustomerClassification AS class
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON class.CTSCustID = cus.CTSCustID
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON class.CategoryID = cate.CategoryID
+        LEFT JOIN	CTS_Admin.CTSUser AS us ON class.CreatedBy = us.UserID  
 	WHERE    class.CreatedDate BETWEEN ip_FromDate AND ip_ToDate
 		AND  class.SportGroupID = 0
 		AND  cus.SiteID IN (SELECT st.SiteID FROM Temp_SiteID AS st)
@@ -80,13 +81,13 @@ sp :BEGIN
 									OR cus.MRecommend = lv_CustID 
 									OR cus.Recommend = lv_CustID)))
 	GROUP BY cus.CTSCustID
-		, 	 cus.CustID
-		, 	 cus.UserName
-		, 	 cus.UserName2
-		, 	 cus.Site
-		, 	 cus.SiteID
-		,	 cus.Currency
-		,	 cus.CurrencyID
-        ,	class.CreatedBy;
+		, 	cus.CustID
+		, 	cus.UserName
+		, 	cus.UserName2
+		, 	cus.Site
+		, 	cus.SiteID
+		,	cus.Currency
+		,	cus.CurrencyID
+        ,	us.UserName;
 END$$
 DELIMITER ;
