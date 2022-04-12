@@ -15,6 +15,7 @@ BEGIN
 		Revisions: Fix get assocition account  incorrect
 			- 20211214@Aries.Nguyen: Created [Redmine ID: #165105]
             - 20211229@Aries.Nguyen:  Fix get assocition account  incorrect [Redmine ID: #165105]
+            - 20220408@Casey.Huynh: Add AssociationGroupByAI [Redmine ID: #171222]
 		Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustInfo_Profile_GetAssociationAccount(10832);
