@@ -16,11 +16,11 @@ sp:BEGIN
 			- 20210720@Aries.Nguyen: Created [Redmine ID: #157086]
             - 20210818@Aries.Nguyen: Exclude Unlink association [Redmine ID: #159708]
 			- 20210915@Aries.Nguyen: Remove DeviceAssociationDay table [Redmine ID: #160470]
-
+			- 20220408@Casey.Huynh: Add AssociationGroupByAI [Redmine ID: #171222]
 		Param's Explanation (filtered by):
 
         Example:
-			- CALL CTS_DataCenter.CTS_DC_Association_GetGroupNLevel('257861,11436');
+			- CALL CTS_DataCenter.CTS_DC_AssociationDetection_GetGroup('49596361,58365603');
 	*/
     DECLARE lv_CustID BIGINT UNSIGNED;
     DECLARE lv_GroupId INT DEFAULT 1;
@@ -145,6 +145,14 @@ sp:BEGIN
 		 	CustID 			BIGINT UNSIGNED PRIMARY KEY
 	);
     
+	DROP TEMPORARY TABLE IF EXISTS Temp_AssGroupByAI;
+	CREATE TEMPORARY TABLE Temp_AssGroupByAI (
+			GroupID 	BIGINT UNSIGNED
+		,	CustID	BIGINT UNSIGNED
+		
+		, 	PRIMARY KEY (GroupID,CustID)
+	);
+    
 	SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_CustInfo (CustID) VALUES ('", REPLACE(ip_CustIDs, ",", "'),('"),"');");
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1;  
@@ -210,7 +218,7 @@ sp:BEGIN
 	FROM Temp_CustDevice AS dv
 		INNER JOIN Temp_CustDevice_Duplicate AS dv1 ON dv.DCSDeviceID = dv1.DCSDeviceID AND dv.CTSCustID != dv1.CTSCustID;
 
-/*---------------------------------------------Get Association Manual --------------------------------------- */
+	/*---------------------------------------------Get Association Manual --------------------------------------- */
     INSERT IGNORE INTO Temp_Association_Level1(CTSCustID, CTSCustID_Level1, AssociationType)
     SELECT  cus.CTSCustID
 		, 	ma.ToCTSCustID
@@ -225,7 +233,7 @@ sp:BEGIN
 	FROM Temp_Cust AS cus 
         INNER JOIN CTS_DataCenter.AssociationByManual AS ma ON ma.ToCTSCustID = cus.CTSCustID;
         
-  /*----------------------------------------------Get association by AI-------------------------------------------*/
+	/*----------------------------------------------Get association by AI-------------------------------------------*/
 	INSERT IGNORE INTO Temp_Association_Level1(CustID, CustID_Level1, AssociationType)
     SELECT  cus.CustID
 		, 	ai.ToCustID
@@ -239,7 +247,21 @@ sp:BEGIN
         ,  	3 AS AssociationType
 	FROM Temp_Cust AS cus 
         INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.ToCustID = cus.CustID;  
-
+        
+/*----------------------------------------------Get AssociationGroupByAI-------------------------------------------*/
+	INSERT IGNORE INTO Temp_AssGroupByAI(GroupID, CustID)
+	SELECT	asg.GroupID 
+		,	asg.CustID
+	FROM	Temp_Cust AS cus 
+		INNER JOIN CTS_DataCenter.AssociationGroupByAI AS asg ON asg.CustID = cus.CustID;
+        
+	INSERT IGNORE INTO Temp_Association_Level1(CustID, CustID_Level1, AssociationType)
+    SELECT  tmpAg.CustID
+		, 	asg.CustID AS CustID_Level1
+        ,  	3 AS AssociationType
+	FROM Temp_AssGroupByAI AS tmpAg 
+        INNER JOIN CTS_DataCenter.AssociationGroupByAI AS asg ON tmpAg.GroupID = asg.GroupID AND asg.CustID <> tmpAg.CustID;    
+    
 /*------------------------------------------Get association by IP-------------------------------------------------*/
 	INSERT IGNORE INTO Temp_Association_Level1(CustID, CustID_Level1, AssociationType)
     SELECT  cus.CustID
