@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
-CREATE PROCEDURE [dbo].[CTS_TWGroupBetting_CountGBTicket]
+ALTER PROCEDURE [dbo].[CTS_TWGroupBetting_CountGBTicket]
 AS
 /*
 	Created: 20220314@Harvey.Nguyen
@@ -19,37 +19,42 @@ BEGIN
 	DROP TABLE #PreGroupBettingTicket;
 
 	CREATE TABLE #PreGroupBettingTicket (
-		CustId INT NOT NULL
-		,TransId BIGINT NOT NULL
-		,IsUpdateCount BIT
+		CustId			INT NOT NULL
+		,TransId		BIGINT NOT NULL
+		,TransDate		DATE	NOT NULL
+		,IsUpdateCount	BIT
 		);
 
 	INSERT INTO #PreGroupBettingTicket (
 		CustId
 		,TransId
+		,TransDate
 		,IsUpdateCount
 		)
 	SELECT CustId
 		,TransId
+		,TransDate
 		,0
 	FROM dbo.SPU_GroupBettingTicket WITH (NOLOCK);
-
+	
 	UPDATE pgbt
 	SET pgbt.IsUpdateCount = 1
 	FROM #PreGroupBettingTicket pgbt
-	INNER JOIN dbo.SPU_GroupBettingCustomer gbc WITH (NOLOCK) ON pgbt.CustId = gbc.CustId;
+	INNER JOIN dbo.SPU_GroupBettingCustomer gbc WITH (NOLOCK) ON pgbt.CustId = gbc.CustId AND pgbt.TransDate = gbc.ScanDate ;
 
 	INSERT INTO SPU_GroupBettingCustomer (
 		CustId
 		,GBTicketCount
+		,ScanDate
 		,LastModifiedDate
 		)
 	SELECT CustId
 		,COUNT(TransId)
+		,TransDate
 		,GETDATE()
 	FROM #PreGroupBettingTicket
 	WHERE IsUpdateCount = 0
-	GROUP BY CustId;
+	GROUP BY CustId, TransDate;
 
 	UPDATE gbc
 	SET gbc.GBTicketCount = gbc.GBTicketCount + TEMP.GBTicketCount
@@ -57,9 +62,10 @@ BEGIN
 	FROM dbo.SPU_GroupBettingCustomer gbc WITH (NOLOCK)
 	INNER JOIN (
 		SELECT CustId
+			,TransDate
 			,COUNT(TransId) 'GBTicketCount'
 		FROM #PreGroupBettingTicket
 		WHERE IsUpdateCount = 1
-		GROUP BY CustId
-		) TEMP ON TEMP.CustId = gbc.CustId;
+		GROUP BY CustId,TransDate
+		) TEMP ON TEMP.CustId = gbc.CustId AND TEMP.TransDate = gbc.ScanDate;
 END

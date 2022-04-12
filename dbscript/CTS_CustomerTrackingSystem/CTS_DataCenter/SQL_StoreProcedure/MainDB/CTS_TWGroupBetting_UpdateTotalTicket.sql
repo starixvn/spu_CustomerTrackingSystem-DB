@@ -16,42 +16,55 @@ AS
 */
 BEGIN
 	SET NOCOUNT ON;
+	CREATE TABLE #tmpScanningCust(
+		CustId		INT,
+		ScanDate	DATE,
+		CONSTRAINT PK_ScanningCust PRIMARY KEY (CustId,ScanDate)
+	)
 
-	IF OBJECT_ID('tempdb..#PreGroupBettingCustomer') IS NOT NULL
-		DROP TABLE #PreGroupBettingCustomer;
+	INSERT INTO #tmpScanningCust
+	SELECT DISTINCT CustId
+		,CONVERT(DATE, getdate()) AS 'ScanDate'
+	FROM SPU_GroupBettingCustomer
 
-	CREATE TABLE #PreGroupBettingCustomer (
-		CustId INT
-		,TicketCount INT
-		,IsUpdateCount BIT
-		);
-
-	INSERT INTO #PreGroupBettingCustomer (
+	INSERT INTO SPU_GroupBettingCustomer (
 		CustId
+		,ScanDate
+		,GBTicketCount
 		,TicketCount
-		,IsUpdateCount
 		)
-	SELECT bt.custid
-		,COUNT(bt.transid) 'NoOfTicket'
+	SELECT sc.CustId
+		,sc.ScanDate
 		,0
-	FROM bettrans bt WITH (NOLOCK)
-	INNER JOIN SPU_GroupBettingCustomer AS gbc WITH (NOLOCK) ON bt.custid = gbc.CustId
-	WHERE gbc.LastModifiedDate > @LastScannedTime
-	GROUP BY bt.custid;
+		,0
+	FROM #tmpScanningCust sc
+	LEFT JOIN SPU_GroupBettingCustomer gbc ON sc.CustId = gbc.CustId AND sc.ScanDate = gbc.ScanDate
+	WHERE gbc.CustId IS NULL;
 
-	SELECT @LastestScannedTime = MAX(gbc.LastModifiedDate)
-	FROM #PreGroupBettingCustomer AS pgbc WITH (NOLOCK)
-		INNER JOIN SPU_GroupBettingCustomer AS gbc WITH (NOLOCK) ON pgbc.CustId = gbc.CustId
-
+	;WITH count_ticket AS (
+		SELECT bt.custid
+			,gbc.ScanDate
+			,COUNT(1) 'TicketCount'
+		FROM SPU_GroupBettingCustomer gbc WITH (NOLOCK)
+		INNER JOIN bettrans bt WITH (NOLOCK) ON gbc.CustId = bt.custid
+			AND (
+				bt.transdate >= CONVERT(DATETIME, gbc.ScanDate)
+				AND bt.transdate < DATEADD(day, 1, CONVERT(DATETIME, gbc.ScanDate))
+				)
+		WHERE gbc.LastCountTotalTicketDate IS NULL
+			OR gbc.LastCountTotalTicketDate BETWEEN gbc.ScanDate AND DATEADD(day, 1, gbc.ScanDate)
+		GROUP BY bt.custid
+			,gbc.ScanDate
+		)
 	UPDATE gbc
-	SET gbc.TicketCount = gbc.TicketCount + pgbc.TicketCount
-	FROM SPU_GroupBettingCustomer AS gbc WITH (NOLOCK)
-	INNER JOIN #PreGroupBettingCustomer AS pgbc ON gbc.CustId = pgbc.CustId
-	WHERE gbc.TicketCount IS NOT NULL;
+	SET gbc.TicketCount = ct.TicketCount
+		,gbc.LastCountTotalTicketDate = GETDATE()
+	FROM SPU_GroupBettingCustomer gbc WITH (NOLOCK)
+	INNER JOIN count_ticket ct WITH (NOLOCK) ON gbc.CustId = ct.custid
+		AND gbc.ScanDate = ct.ScanDate;
 
-	UPDATE gbc
-	SET gbc.TicketCount = pgbc.TicketCount
-	FROM SPU_GroupBettingCustomer AS gbc WITH (NOLOCK)
-	INNER JOIN #PreGroupBettingCustomer AS pgbc ON gbc.CustId = pgbc.CustId
-	WHERE gbc.TicketCount IS NULL;
+	-- Clear unused data
+	DELETE FROM SPU_GroupBettingCustomer
+	WHERE ScanDate < DATEADD(day,-5, GETDATE()) AND TicketCount = 0 AND GBTicketCount = 0;
+
 END

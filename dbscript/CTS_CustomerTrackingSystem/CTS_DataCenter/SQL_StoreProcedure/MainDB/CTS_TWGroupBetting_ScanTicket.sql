@@ -1,8 +1,10 @@
 /*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[CTS_TWGroupBetting_ScanTicket]
-		@FromTime	DATETIME,
-		@ToTime		DATETIME,
-		@Step		INT
+		@FromTime		DATETIME,
+		@ToTime			DATETIME,
+		@Step			INT,
+		@LastTransID	BIGINT,
+		@MaxTransID		BIGINT OUTPUT
 AS
 /*
 	Created: 20220314@Harvey.Nguyen
@@ -146,7 +148,7 @@ BEGIN
 		INNER JOIN dbo.custinfo AS ci WITH (NOLOCK) ON b.custid = ci.custid
 		LEFT JOIN LicUserProfile AS pf WITH (NOLOCK) ON b.custid = pf.CustId
 		LEFT JOIN #TmpBigLeague AS bl WITH (NOLOCK) ON m.leagueid = bl.LeagueId
-		WHERE b.transid > 115093947593
+		WHERE b.transid > @LastTransID
 			AND b.refno = 100000000000
 			AND b.currency <> 20
 			AND m.sporttype IN (1,2)
@@ -176,6 +178,9 @@ BEGIN
 	CROSS APPLY #TmpTimeRange AS tr
 	WHERE b.transdate BETWEEN tr.FromTime AND tr.ToTime
 	ORDER BY transid ASC;
+
+	SELECT @MaxTransID = MAX(Transid)
+	FROM #TmpTicketForScanning;
 
 	INSERT INTO #TmpSuspectTicket
 	SELECT tfs.*
@@ -322,9 +327,11 @@ BEGIN
 	INSERT INTO SPU_GroupBettingTicket (
 		CustId
 		,TransId
+		,TransDate
 		)
 	SELECT DISTINCT st.Custid
 				,st.Transid
+				,CONVERT(DATE,st.Transdate)
 	FROM #TmpSuspectTicket st WITH (NOLOCK)
 	INNER JOIN #TmpTicketCountViolation AS tcv WITH (NOLOCK) ON st.RuleId = tcv.RuleId AND st.Betteam = tcv.Betteam AND st.FromTime = tcv.FromTime AND st.ToTime = tcv.ToTime
 	WHERE (tcv.IsViolateBetFrom = 1
@@ -333,6 +340,7 @@ BEGIN
 
 	SELECT gbc.Custid
 			,gbc.Transid
+			,gbc.TransDate
 	FROM SPU_GroupBettingTicket AS gbc WITH (NOLOCK);
 
 

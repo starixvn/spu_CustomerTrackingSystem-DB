@@ -21,11 +21,13 @@ BEGIN
 	CREATE TABLE #TmpGroupBettingTicket (
 		TransId		BIGINT	PRIMARY KEY
 		,CustId		INT
+		,TransDate	DATE
 	);
 
-	INSERT INTO #TmpGroupBettingTicket (Transid, Custid)
+	INSERT INTO #TmpGroupBettingTicket (Transid, Custid, TransDate)
 	SELECT	T.C.value('./@Transid', 'BIGINT') AS Transid
 		,	T.C.value('./@CustId', 'INT') AS CustId
+		,	T.C.value('./@TransDate', 'DATE') AS TransDate
 	FROM @GBTicketXML.nodes('//TWGroupBettingTicket') AS T(C)
 	OPTION (OPTIMIZE FOR (@GBTicketXML = NULL));
 
@@ -34,9 +36,11 @@ BEGIN
 	INSERT INTO SPU_GroupBettingTicket (
 		CustId
 		,TransId
+		,TransDate
 		)
 	SELECT Custid
 		,Transid
+		,TransDate
 	FROM #TmpGroupBettingTicket
 
 	DROP TABLE #TmpGroupBettingTicket
