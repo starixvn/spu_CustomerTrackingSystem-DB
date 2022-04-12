@@ -86,6 +86,7 @@ sp :BEGIN
 		, 	 cus.Site
 		, 	 cus.SiteID
 		,	 cus.Currency
-		,	 cus.CurrencyID;
+		,	 cus.CurrencyID
+        ,	class.CreatedBy;
 END$$
 DELIMITER ;
