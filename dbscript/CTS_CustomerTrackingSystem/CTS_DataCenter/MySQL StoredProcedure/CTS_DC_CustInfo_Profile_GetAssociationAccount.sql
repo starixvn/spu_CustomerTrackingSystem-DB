@@ -17,7 +17,7 @@ BEGIN
             - 20211229@Aries.Nguyen:  Fix get assocition account  incorrect [Redmine ID: #165105]
 		Param's Explanation (filtered by):
         Example:
-			- CALL CTS_DataCenter.CTS_DC_CustInfo_Profile_GetAssociationAccount(200);
+			- CALL CTS_DataCenter.CTS_DC_CustInfo_Profile_GetAssociationAccount(10832);
 	*/
     DECLARE lv_CustID 		BIGINT UNSIGNED;
 	DECLARE lv_Count_AI 	INT;   
@@ -46,6 +46,19 @@ BEGIN
         ,	KEY				Temp_AssociationRemove_CustID(CustID)
 	); 
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_AssGroupByAI;
+	CREATE TEMPORARY TABLE Temp_AssGroupByAI (
+			GroupID 	BIGINT UNSIGNED
+		, 	PRIMARY KEY (GroupID)
+	);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_AssCustByAI;
+	CREATE TEMPORARY TABLE Temp_AssCustByAI (
+			CustID 	BIGINT UNSIGNED
+		, 	PRIMARY KEY (CustID)
+	);
+    
+    #==========================================    
     INSERT IGNORE INTO Temp_AccountStatusID (AccountStatusID)
 	SELECT ItemID 
     FROM CTS_DataCenter.StaticList 
@@ -105,17 +118,18 @@ BEGIN
         AND cust.CustStatusID IN (SELECT sta.AccountStatusID FROM Temp_AccountStatusID AS sta)
         AND (cust.SiteID,cust.SubscriberID) IN (SELECT subInfo.SiteID, subInfo.SubscriberID FROM Temp_SubscriberSiteID AS subInfo);
     
-    SELECT COUNT(1) 
-    INTO lv_Count_AI
+    /*==================GET association from AI===============================================*/
+    INSERT IGNORE INTO Temp_AssCustByAI(CustID)
+    SELECT cust.CustID
     FROM CTS_DataCenter.AssociationByAI AS ai
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = ai.ToCustID AND cust.CustSubID = 0
     WHERE ai.FromCustID = lv_CustID
 		AND  ai.ToCustID NOT IN (SELECT rm.CustID FROM Temp_AssociationRemove AS rm)
         AND cust.CustStatusID IN (SELECT sta.AccountStatusID FROM Temp_AccountStatusID AS sta)
-        AND (cust.SiteID,cust.SubscriberID) IN (SELECT subInfo.SiteID, subInfo.SubscriberID FROM Temp_SubscriberSiteID AS subInfo);
-         
-    SELECT COUNT(1) + lv_Count_AI
-    INTO lv_Count_AI
+        AND (cust.SiteID,cust.SubscriberID) IN (SELECT subInfo.SiteID, subInfo.SubscriberID FROM Temp_SubscriberSiteID AS subInfo);   
+	
+    INSERT IGNORE INTO Temp_AssCustByAI(CustID)
+    SELECT cust.CustID
     FROM CTS_DataCenter.AssociationByAI AS ai
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = ai.FromCustID AND cust.CustSubID = 0
     WHERE ai.ToCustID = lv_CustID
@@ -123,6 +137,25 @@ BEGIN
         AND cust.CustStatusID IN (SELECT sta.AccountStatusID FROM Temp_AccountStatusID AS sta)
         AND (cust.SiteID,cust.SubscriberID) IN (SELECT subInfo.SiteID, subInfo.SubscriberID FROM Temp_SubscriberSiteID AS subInfo);
     
+    #==================GET association from AI: AssociationGroupByAI===============================================
+	INSERT IGNORE INTO Temp_AssGroupByAI(GroupID)
+	SELECT	asg.GroupID 
+	FROM	CTS_DataCenter.AssociationGroupByAI AS asg
+	WHERE	asg.CustID = lv_CustID; 
+    
+	INSERT IGNORE INTO Temp_AssCustByAI(CustID)
+    SELECT cust.CustID
+    FROM CTS_DataCenter.AssociationGroupByAI AS asg
+		INNER JOIN Temp_AssGroupByAI AS tmpAg ON asg.GroupID = tmpAg.GroupID AND asg.CustID <> lv_CustID
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asg.CustID AND cust.CustSubID = 0
+    WHERE asg.CustID NOT IN (SELECT rm.CustID FROM Temp_AssociationRemove AS rm)
+        AND cust.CustStatusID IN (SELECT sta.AccountStatusID FROM Temp_AccountStatusID AS sta)
+        AND (cust.SiteID,cust.SubscriberID) IN (SELECT subInfo.SiteID, subInfo.SubscriberID FROM Temp_SubscriberSiteID AS subInfo);
+    
+    SELECT COUNT(1)
+    INTO lv_Count_AI
+    FROM Temp_AssCustByAI;    
+    /*============================================================*/
     SELECT COUNT(1)
     INTO lv_Count_IP
     FROM CTS_DataCenter.AssociationByIP AS ip
