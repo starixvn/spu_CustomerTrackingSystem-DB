@@ -152,6 +152,59 @@ sp : BEGIN
             SET lv_BatchSize_AssData = lv_BatchSize_AssData - lv_Count;
         END IF;
         
+        SET lv_Table = 'AssociationGroupByAI';
+    END IF;
+    
+    IF (lv_Table = 'AssociationGroupByAI') THEN  
+		IF EXISTS (SELECT 1  FROM CTS_Archive.AssociationGroupByAI_Arc AS ai WHERE EXISTS (SELECT 1 FROM CTS_Archive.CTSCustomerAssociationRollBack_Process AS pro WHERE ai.ToCustID = pro.CustID )) THEN
+			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationGroupByAI_Clean;
+			CREATE TEMPORARY TABLE Temp_AssociationGroupByAI_Clean(
+					ID				BIGINT UNSIGNED DEFAULT NULL
+				,	GroupID 		BIGINT UNSIGNED DEFAULT NULL
+				,	OriginGroupID 	BIGINT UNSIGNED DEFAULT NULL
+				,	CustID 			BIGINT UNSIGNED DEFAULT NULL
+				,	CreatedDate 	DATETIME DEFAULT NULL
+                
+                ,	PRIMARY KEY (CustID,GroupID)
+                ,	INDEX IX_Temp_AssociationGroupByAI_Clean(ID)
+			) ENGINE=InnoDB;
+            
+            INSERT IGNORE INTO Temp_AssociationGroupByAI_Clean(ID, GroupID, OriginGroupID, CustID, CreatedDate)
+            SELECT 	ID
+				,	asg.GroupID
+                ,	asg.OriginGroupID
+                ,	asg.CustID
+                ,	asg.CreatedDate
+			FROM CTS_Archive.AssociationGroupByAI_Arc  AS asg
+			WHERE EXISTS (SELECT 1 FROM CTS_Archive.CTSCustomerAssociationRollBack_Process AS pro WHERE asg.CustID = pro.CustID)
+            LIMIT lv_BatchSize_AssData;
+            
+            INSERT IGNORE INTO CTS_DataCenter.AssociationGroupByAI(GroupID, OriginGroupID, CustID, CreatedDate)
+            SELECT	tmpCl.GroupID
+                ,	tmpCl.OriginGroupID
+                ,	tmpCl.CustID
+                ,	tmpCl.CreatedDate
+			FROM Temp_AssociationGroupByAI_Clean AS tmpCl;
+            
+            DELETE ass
+			FROM CTS_Archive.AssociationGroupByAI_Arc AS ass
+				INNER JOIN Temp_AssociationGroupByAI_Clean AS tmp ON tmpCl.CustID = tmpCl.CustID AND tmpCl.GroupID = tmpCl.GroupID;
+			
+			UPDATE  CTS_Archive.SystemParameter 
+			SET ParameterValue = 'AssociationGroupByAI'
+			WHERE ParameterID = 7;
+
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_AssociationGroupByAI_Clean;
+            
+            IF lv_Count >= lv_BatchSize_AssData THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_BatchSize_AssData = lv_BatchSize_AssData - lv_Count;
+        END IF;
+        
         SET lv_Table = 'AssociationByDevice';
     END IF;
     
