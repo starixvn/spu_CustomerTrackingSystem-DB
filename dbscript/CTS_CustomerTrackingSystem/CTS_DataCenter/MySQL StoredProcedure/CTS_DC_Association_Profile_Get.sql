@@ -133,9 +133,10 @@ sp : BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerGroup;
     CREATE TEMPORARY TABLE 	Temp_CustomerGroup (
-			CustID 			BIGINT UNSIGNED PRIMARY KEY
-		,	AssociationDate	DATETIME
-		,	GroupIDList		VARCHAR(1000)
+			CustID 					BIGINT UNSIGNED PRIMARY KEY
+		,	AssociationDate			DATETIME
+		,	GroupIDList				VARCHAR(1000)        
+		,	OriginGroupIDList		VARCHAR(1000)
 	);
     
 	SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_SubscriberID (SubscriberID) VALUES ('", REPLACE(ip_SubscriberIDs, ",", "'),('"),"');");
@@ -213,10 +214,11 @@ sp : BEGIN
         FROM CTS_DataCenter.AssociationGroupByAI
         WHERE CustID = lv_CustID;
         
-        INSERT INTO Temp_CustomerGroup(CustID, AssociationDate, GroupIDList)
+        INSERT INTO Temp_CustomerGroup(CustID, AssociationDate, GroupIDList, OriginGroupIDList)
         SELECT  g.CustID
 			,	MIN(g.CreatedDate)
-            ,	GROUP_CONCAT(g.GroupID SEPARATOR ',')
+            ,	GROUP_CONCAT(g.GroupID SEPARATOR ',')            
+            ,	GROUP_CONCAT(g.OriginGroupID SEPARATOR ',')
 		FROM Temp_Group AS t
 			INNER JOIN CTS_DataCenter.AssociationGroupByAI AS g ON t.GroupID = g.GroupID AND g.CustID <> lv_CustID
 		GROUP BY g.CustID;
@@ -378,6 +380,7 @@ sp : BEGIN
 		,	tmpCS.CategoryNames AS CategoryNames
 		,	tmpCS.IsProbation AS IsProbation
         	,	t.GroupID AS GroupIDs
+        	,	t.OriginGroupID AS OriginGroupIDs
 	FROM Temp_AssociatedAccount AS tmpAcc
 		INNER JOIN Temp_Classification AS tmpCS ON tmpCS.CTSCustID = tmpAcc.CTSCustID
         	LEFT JOIN Temp_CustomerGroup AS t ON tmpAcc.CustID = t.CustID

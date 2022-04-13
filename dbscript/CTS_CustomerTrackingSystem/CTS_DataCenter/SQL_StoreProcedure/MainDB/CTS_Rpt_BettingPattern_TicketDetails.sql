@@ -110,8 +110,7 @@ BEGIN
 	BEGIN
 		INSERT INTO #tmpCustIds (CustId)
 		SELECT ssk.val FROM dbo.f_SplitString(@CustIds, ',') ssk;
-	END;
-	
+	END;	
 
 	-- START --
 	IF @IsGetDataFromBK = 1
