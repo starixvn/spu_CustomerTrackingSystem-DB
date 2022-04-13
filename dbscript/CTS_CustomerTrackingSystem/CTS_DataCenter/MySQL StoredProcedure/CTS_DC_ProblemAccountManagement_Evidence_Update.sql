@@ -136,8 +136,8 @@ sp :BEGIN
 		AND NOT EXISTS (SELECT 1 FROM Temp_CustEvidenceExist AS ex WHERE ex.CTSCustID = tmp.CTSCustID AND ex.EvidenceID = tmp.EvidenceID);
 
     SELECT	DISTINCT
-            cus.CustID 
-    FROM Temp_CustParam AS cus
+            tmp.CustID 
+    FROM Temp_CustParam AS tmp
     WHERE tmp.EvidenceID IS NOT NULL;
 END$$
 DELIMITER ;
