@@ -22,7 +22,8 @@ sp :BEGIN
         Example: 
 			- CALL CTS_DC_ProblemAccountManagement_Evidence_Update('[{"CustID":1384, "FromReasonID":103, "ToReasonID":106}]',555,1);
 */   
-	DECLARE lv_CustRemove LONGTEXT;
+	DECLARE lv_CustRemove       LONGTEXT;
+    DECLARE lv_SourceTypeStr    VARCHAR(20) DEFAULT "Evidence";
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustEvidenceExist;    
 	CREATE TEMPORARY TABLE Temp_CustEvidenceExist(	 
@@ -42,6 +43,10 @@ sp :BEGIN
         ,   PRIMARY KEY(CTSCustID,EvidenceID)
 	);
     
+    IF ip_SourceType = 1 THEN
+        SET lv_SourceTypeStr = 'NAP'
+    END IF;
+
     INSERT IGNORE INTO Temp_CustParam(CustID,CTSCustID,OldEvidenceID,EvidenceID)
 	SELECT	info.CustID
 		,	cust.CTSCustID
@@ -57,12 +62,12 @@ sp :BEGIN
 		INNER JOIN CTS_DataCenter.MappingSubscriberSite AS m ON cust.SiteID = m.SiteID,
         LATERAL (SELECT  CASE WHEN m.SubscriberGroupID = 2  THEN cate.EvidenceID_Licensee ELSE cate.EvidenceID_Credit END AS EvidenceID
                  FROM CTS_DataCenter.CustomerCategory AS cate 
-                 WHERE cate.ReasonID = info.ToReasonID  AND cate.SourceType = 'Evidence'
+                 WHERE cate.ReasonID = info.ToReasonID  AND cate.SourceType = lv_SourceTypeStr
                     AND (cate.EvidenceID_Licensee IS NOT NULL OR  cate.EvidenceCode_Credit  IS NOT NULL)
                  LIMIT 1) AS ev,
 		LATERAL (SELECT  CASE WHEN m.SubscriberGroupID = 2  THEN cate.EvidenceID_Licensee ELSE cate.EvidenceID_Credit END AS OldEvidenceID
                  FROM CTS_DataCenter.CustomerCategory AS cate 
-                 WHERE cate.ReasonID = info.FromReasonID AND cate.SourceType = 'Evidence'
+                 WHERE cate.ReasonID = info.FromReasonID AND cate.SourceType = lv_SourceTypeStr
                     AND (cate.EvidenceID_Licensee IS NOT NULL OR  cate.EvidenceCode_Credit  IS NOT NULL)
                  LIMIT 1) AS oldEv;
     
