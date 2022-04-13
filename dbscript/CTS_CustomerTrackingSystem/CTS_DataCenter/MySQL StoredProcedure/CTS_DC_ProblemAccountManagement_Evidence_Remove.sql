@@ -29,6 +29,7 @@ sp :BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustID;    
 	CREATE TEMPORARY TABLE Temp_CTSCustID(	  
 			CTSCustID	BIGINT UNSIGNED PRIMARY KEY
+		,	CustID		BIGINT UNSIGNED
 		,	EviLevel	TINYINT DEFAULT 0
 	);
     
@@ -44,8 +45,9 @@ sp :BEGIN
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1;  
     
-    INSERT IGNORE INTO Temp_CTSCustID(CTSCustID)
-    SELECT cust.CTSCustID
+    INSERT IGNORE INTO Temp_CTSCustID(CTSCustID,CustID)
+    SELECT	cust.CTSCustID
+		,	tmp.CustID
     FROM Temp_CustID AS tmp 
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON tmp.CustID = cust.CustID AND cust.CustSubID = 0;
         
@@ -68,6 +70,17 @@ sp :BEGIN
     DELETE 
     FROM CTS_DataCenter.CustEvidence AS ev
     WHERE EXISTS (SELECT 1 FROM Temp_CustEvidenceExist AS tmp WHERE tmp.CustEvidID = ev.CustEvidID);
+
+	SELECT	DISTINCT
+			cus.CustID 
+    FROM Temp_CTSCustID AS cus
+    WHERE NOT EXISTS (SELECT 1 
+				      FROM CTS_DataCenter.CustEvidence as ev 
+                      WHERE ev.CTSCustID = cus.CTSCustID
+					    AND NOT EXISTS (SELECT 1 
+									    FROM CTS_DataCenter.CustRetractEvidence AS re 
+									    WHERE re.CTSCustID = ev.CTSCustID 
+										    AND re.EvidenceID = ev.EvidenceID));
     
 END$$
 DELIMITER ;
