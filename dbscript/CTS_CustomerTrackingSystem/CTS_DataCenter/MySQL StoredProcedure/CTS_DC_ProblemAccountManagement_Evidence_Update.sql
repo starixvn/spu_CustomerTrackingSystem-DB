@@ -56,13 +56,13 @@ sp :BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON info.CustID = cust.CustID AND cust.CustSubID = 0
 		INNER JOIN CTS_DataCenter.MappingSubscriberSite AS m ON cust.SiteID = m.SiteID,
         LATERAL (SELECT  CASE WHEN m.SubscriberGroupID = 2  THEN cate.EvidenceID_Licensee ELSE cate.EvidenceID_Credit END AS EvidenceID
-                 FROM CTS_DataCenter.CustomerCategory AS cate 
+                 FROM CTS_DataCenter.CustomerCategory AS cate AND cate.SourceType = 'Evidence'
                  WHERE cate.ReasonID = info.ToReasonID 
                     AND (cate.EvidenceID_Licensee IS NOT NULL OR  cate.EvidenceCode_Credit  IS NOT NULL)
                  LIMIT 1) AS ev,
 		LATERAL (SELECT  CASE WHEN m.SubscriberGroupID = 2  THEN cate.EvidenceID_Licensee ELSE cate.EvidenceID_Credit END AS OldEvidenceID
                  FROM CTS_DataCenter.CustomerCategory AS cate 
-                 WHERE cate.ReasonID = info.FromReasonID 
+                 WHERE cate.ReasonID = info.FromReasonID AND cate.SourceType = 'Evidence'
                     AND (cate.EvidenceID_Licensee IS NOT NULL OR  cate.EvidenceCode_Credit  IS NOT NULL)
                  LIMIT 1) AS oldEv;
     

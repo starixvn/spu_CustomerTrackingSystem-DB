@@ -51,3 +51,7 @@ UPDATE CTS_DataCenter.CustomerCategory AS cate
 INNER JOIN Temp_EvidenceMapping AS tmp ON cate.CategoryID = tmp.CategoryID AND tmp.IsLicensee = 0
 SET 	cate.EvidenceID_Credit = tmp.EvidenceID
 	,	cate.EvidenceCode_Credit = tmp.EvidenceCode;
+
+UPDATE CTS_DataCenter.CustomerCategory
+SET SourceType = 'Evidence'
+WHERE CategorySpec like '%Evidence%'; 
