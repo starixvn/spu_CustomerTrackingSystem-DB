@@ -44,7 +44,7 @@ sp :BEGIN
 	);
     
     IF ip_SourceType = 1 THEN
-        SET lv_SourceTypeStr = 'NAP'
+        SET lv_SourceTypeStr = 'NAP';
     END IF;
 
     INSERT IGNORE INTO Temp_CustParam(CustID,CTSCustID,OldEvidenceID,EvidenceID)
