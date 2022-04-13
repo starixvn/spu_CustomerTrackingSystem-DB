@@ -23,3 +23,5 @@ CREATE TABLE [dbo].[SPU_GroupBettingCustomer](
 
 ALTER TABLE dbo.SPU_GroupBettingTicket
 ADD TransDate DATE;
+
+TRUNCATE TABLE dbo.SPU_GroupBettingTicket;

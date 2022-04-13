@@ -1,7 +1,5 @@
 /*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[CTS_TWGroupBetting_UpdateTotalTicket]
-	@LastScannedTime		DATETIME,
-	@LastestScannedTime		DATETIME	OUTPUT
 AS
 /*
 	Created: 20220314@Harvey.Nguyen
@@ -16,6 +14,9 @@ AS
 */
 BEGIN
 	SET NOCOUNT ON;
+
+	IF OBJECT_ID('tempdb..#tmpScanningCust') IS NOT NULL
+	DROP TABLE #tmpScanningCust;
 	CREATE TABLE #tmpScanningCust(
 		CustId		INT,
 		ScanDate	DATE,
@@ -52,7 +53,7 @@ BEGIN
 				AND bt.transdate < DATEADD(day, 1, CONVERT(DATETIME, gbc.ScanDate))
 				)
 		WHERE gbc.LastCountTotalTicketDate IS NULL
-			OR gbc.LastCountTotalTicketDate BETWEEN gbc.ScanDate AND DATEADD(day, 1, gbc.ScanDate)
+			OR gbc.LastCountTotalTicketDate BETWEEN gbc.ScanDate AND DATEADD(MINUTE, 1470, CONVERT(DATETIME,gbc.ScanDate))
 		GROUP BY bt.custid
 			,gbc.ScanDate
 		)

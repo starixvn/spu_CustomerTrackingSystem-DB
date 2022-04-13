@@ -20,6 +20,10 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
+	DECLARE @GBTicketXMLString VARCHAR(MAX);
+	DECLARE @ServerName	VARCHAR(20);
+	SET @ServerName = @@SERVERNAME;
+
 	IF OBJECT_ID('tempdb..#TmpTimeRange') IS NOT NULL
 	DROP TABLE #TmpTimeRange;
 
@@ -322,27 +326,49 @@ BEGIN
 	FROM #TmpSuspectTicket AS st
 	INNER JOIN dbo.SPU_GroupBettingTicket gbt WITH (NOLOCK) ON st.Transid = gbt.TransId;
 
-	DELETE FROM SPU_GroupBettingTicket;
+	IF @ServerName = 'DB061'
+	BEGIN
+		SET @GBTicketXMLString = (SELECT DISTINCT st.Custid AS 'CustId'
+												,st.Transid AS 'TransId'
+												,CONVERT(DATE,st.Transdate) AS 'TransDate'
+									FROM #TmpSuspectTicket st WITH (NOLOCK)
+									INNER JOIN #TmpTicketCountViolation AS tcv WITH (NOLOCK) ON st.RuleId = tcv.RuleId AND st.Betteam = tcv.Betteam AND st.FromTime = tcv.FromTime AND st.ToTime = tcv.ToTime
+									WHERE (tcv.IsViolateBetFrom = 1
+										OR tcv.IsViolateRFM = 1
+										OR tcv.IsViolateCC = 1)
+									FOR XML RAW('TWGroupBettingTicket'), ROOT);
 
-	INSERT INTO SPU_GroupBettingTicket (
-		CustId
-		,TransId
-		,TransDate
-		)
-	SELECT DISTINCT st.Custid
-				,st.Transid
-				,CONVERT(DATE,st.Transdate)
-	FROM #TmpSuspectTicket st WITH (NOLOCK)
-	INNER JOIN #TmpTicketCountViolation AS tcv WITH (NOLOCK) ON st.RuleId = tcv.RuleId AND st.Betteam = tcv.Betteam AND st.FromTime = tcv.FromTime AND st.ToTime = tcv.ToTime
-	WHERE (tcv.IsViolateBetFrom = 1
-		OR tcv.IsViolateRFM = 1
-		OR tcv.IsViolateCC = 1);
+		EXEC DB06.bodb02.dbo.CTS_TWGroupBetting_SyncDataGroupBettingTicket @GBTicketXMLString;
+		
+	END
+	ELSE IF @ServerName = 'DB062'
+	BEGIN 
+		SET @GBTicketXMLString = (SELECT DISTINCT st.Custid AS 'CustId'
+												,st.Transid AS 'TransId'
+												,CONVERT(DATE,st.Transdate) AS 'TransDate'
+									FROM #TmpSuspectTicket st WITH (NOLOCK)
+									INNER JOIN #TmpTicketCountViolation AS tcv WITH (NOLOCK) ON st.RuleId = tcv.RuleId AND st.Betteam = tcv.Betteam AND st.FromTime = tcv.FromTime AND st.ToTime = tcv.ToTime
+									WHERE (tcv.IsViolateBetFrom = 1
+										OR tcv.IsViolateRFM = 1
+										OR tcv.IsViolateCC = 1)
+									FOR XML RAW('TWGroupBettingTicket'), ROOT);
 
-	SELECT gbc.Custid
-			,gbc.Transid
-			,gbc.TransDate
-	FROM SPU_GroupBettingTicket AS gbc WITH (NOLOCK);
+		EXEC DB061.bodb02.dbo.CTS_TWGroupBetting_SyncDataGroupBettingTicket @GBTicketXMLString;
+	END
+	ELSE IF @ServerName = 'TESTDB061' -- for local test
+	BEGIN 
+		SET @GBTicketXMLString = (SELECT DISTINCT st.Custid AS 'CustId'
+												,st.Transid AS 'TransId'
+												,CONVERT(DATE,st.Transdate) AS 'TransDate'
+									FROM #TmpSuspectTicket st WITH (NOLOCK)
+									INNER JOIN #TmpTicketCountViolation AS tcv WITH (NOLOCK) ON st.RuleId = tcv.RuleId AND st.Betteam = tcv.Betteam AND st.FromTime = tcv.FromTime AND st.ToTime = tcv.ToTime
+									WHERE (tcv.IsViolateBetFrom = 1
+										OR tcv.IsViolateRFM = 1
+										OR tcv.IsViolateCC = 1)
+									FOR XML RAW('TWGroupBettingTicket'), ROOT);
 
+		EXEC TESTDB061.bodb02.dbo.CTS_TWGroupBetting_SyncDataGroupBettingTicket @GBTicketXMLString;
+	END
 
 	DROP TABLE #TmpSuspectTicket
 	DROP TABLE #TmpTimeRange;
