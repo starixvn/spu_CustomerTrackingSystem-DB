@@ -153,6 +153,5 @@ BEGIN
 			INNER JOIN Temp_ExistedCustomer AS ec ON ec.UserName = u.UserName
 		ORDER BY ec.IsLicensee DESC, ec.RoleID ASC;
     END IF;
-    
 END$$
 DELIMITER ;

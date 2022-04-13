@@ -36,36 +36,61 @@ sp :BEGIN
 	CREATE TEMPORARY TABLE Temp_CustParam( 	  
 			CustID			BIGINT UNSIGNED
         , 	CTSCustID		BIGINT UNSIGNED
+        ,	OldEvidenceID	INT 
         ,	EvidenceID		INT 
-        ,	EviLevel	TINYINT DEFAULT 0
+        ,	EviLevel		TINYINT DEFAULT 0
         ,   PRIMARY KEY(CTSCustID,EvidenceID)
 	);
     
-    INSERT IGNORE INTO Temp_CustParam(CustID,CTSCustID,EvidenceID)
+    INSERT IGNORE INTO Temp_CustParam(CustID,CTSCustID,OldEvidenceID,EvidenceID)
 	SELECT	info.CustID
 		,	cust.CTSCustID
+        ,	oldEv.OldEvidenceID
         ,	ev.EvidenceID
 	FROM JSON_TABLE(ip_CustInfo,
 		 "$[*]" COLUMNS(
 				CustID			VARCHAR(50)		PATH "$.CustID" 
-			, 	FromReasonID	INT				PATH "$.ToReasonID")
+			, 	FromReasonID	INT				PATH "$.FromReasonID"
+            ,	ToReasonID		INT				PATH "$.ToReasonID")
 	) AS info
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON info.CustID = cust.CustID AND cust.CustSubID = 0
 		INNER JOIN CTS_DataCenter.MappingSubscriberSite AS m ON cust.SiteID = m.SiteID,
         LATERAL (SELECT  CASE WHEN m.SubscriberGroupID = 2  THEN cate.EvidenceID_Licensee ELSE cate.EvidenceID_Credit END AS EvidenceID
                  FROM CTS_DataCenter.CustomerCategory AS cate 
+                 WHERE cate.ReasonID = info.ToReasonID 
+                    AND (cate.EvidenceID_Licensee IS NOT NULL OR  cate.EvidenceCode_Credit  IS NOT NULL)
+                 LIMIT 1) AS ev,
+		LATERAL (SELECT  CASE WHEN m.SubscriberGroupID = 2  THEN cate.EvidenceID_Licensee ELSE cate.EvidenceID_Credit END AS OldEvidenceID
+                 FROM CTS_DataCenter.CustomerCategory AS cate 
                  WHERE cate.ReasonID = info.FromReasonID 
                     AND (cate.EvidenceID_Licensee IS NOT NULL OR  cate.EvidenceCode_Credit  IS NOT NULL)
-                 LIMIT 1) AS ev;
+                 LIMIT 1) AS oldEv;
     
-    SELECT GROUP_CONCAT(DISTINCT CustID)
-    INTO lv_CustRemove
-    FROM Temp_CustParam;
+    /*******************Remove Evidence FromReasonID*******************************/
+    INSERT INTO Temp_CustEvidenceExist(CustEvidID,CTSCustID,EvidenceID)
+	SELECT 	ev.CustEvidID
+		,	ev.CTSCustID
+        ,	ev.EvidenceID
+	FROM CTS_DataCenter.CustEvidence AS ev 
+	WHERE EXISTS (SELECT 1 
+				  FROM Temp_CustParam AS tmp 
+                  WHERE tmp.OldEvidenceID IS NOT NULL
+					AND ev.CTSCustID = tmp.CTSCustID 
+					AND ev.EvidenceID = tmp.OldEvidenceID
+					AND ev.Level = tmp.EviLevel
+                    AND ev.SourceType = 1);
+	 
+    DELETE 
+    FROM CTS_DataCenter.CustEvidence AS ev
+    WHERE EXISTS (SELECT 1 FROM Temp_CustEvidenceExist AS tmp WHERE tmp.CustEvidID = ev.CustEvidID);
     
-    IF ip_SourceType = 1 THEN
-		CALL CTS_DC_ProblemAccountManagement_Evidence_Remove(lv_CustRemove,ip_SourceType);
-    END IF;
+    INSERT INTO CTS_DataCenter.CustEvidenceAffectedQueueRemove(CTSCustID, EvidenceID)
+    SELECT 	tmp.CTSCustID
+		,	tmp.EvidenceID
+    FROM Temp_CustEvidenceExist AS tmp;
     
+    TRUNCATE TABLE Temp_CustEvidenceExist;
+     /*******************Insert Evidence ToReasonID*******************************/
     CALL CTS_DC_ExcludeCustByCondition('Temp_CustParam');
     
 	DELETE tmp
@@ -79,7 +104,8 @@ sp :BEGIN
 	FROM CTS_DataCenter.CustEvidence AS ev 
 	WHERE EXISTS (SELECT 1 
 				  FROM Temp_CustParam AS tmp 
-                  WHERE ev.CTSCustID = tmp.CTSCustID 
+                  WHERE  tmp.EvidenceID IS NOT NULL
+					AND ev.CTSCustID = tmp.CTSCustID 
 					AND ev.EvidenceID = tmp.EvidenceID
 					AND ev.Level = tmp.EviLevel
                     AND ev.SourceType = 0);
@@ -97,14 +123,16 @@ sp :BEGIN
         ,	NOW()
         ,	ip_ModifiedBy
         ,	ip_SourceType
-    FROM Temp_CustParam AS tmp;
-
+    FROM Temp_CustParam AS tmp
+	WHERE tmp.EvidenceID IS NOT NULL;
+					 
 	INSERT INTO CTS_DataCenter.CustEvidenceAffectedQueueInsert(CTSCustID,  EvidenceID, Remark, CreatedBy)
 	SELECT 	tmp.CTSCustID
 		,	tmp.EvidenceID
         ,	"Add from Problem Account Management"
         ,	ip_ModifiedBy
     FROM Temp_CustParam AS tmp
-    WHERE NOT EXISTS (SELECT 1 FROM Temp_CustEvidenceExist AS ex WHERE ex.CTSCustID = tmp.CTSCustID AND ex.EvidenceID = tmp.EvidenceID);
+    WHERE  tmp.EvidenceID IS NOT NULL
+		AND NOT EXISTS (SELECT 1 FROM Temp_CustEvidenceExist AS ex WHERE ex.CTSCustID = tmp.CTSCustID AND ex.EvidenceID = tmp.EvidenceID);
 END$$
 DELIMITER ;

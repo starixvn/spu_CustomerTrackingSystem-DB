@@ -105,7 +105,6 @@ BEGIN
     
     /*WRITE LOG*/
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-	VALUES(3, lv_SPName, 'Insert bunch of Customer Evidences', lv_CreatedDateTime, ip_UserID);              
-    
+	VALUES(3, lv_SPName, 'Insert bunch of Customer Evidences', lv_CreatedDateTime, ip_UserID);     
 END$$
 DELIMITER ;
