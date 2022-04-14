@@ -17,7 +17,7 @@ BEGIN
 			- 20220328@Aries.Nguyen: Created [Redmine ID: #170468]
 
 		Param's Explanation (filtered by):      
-			- CALL CTS_DC_CustClassification_ProblemAccountProbation_Insert ('[{"CustId": 123,"IsLosing": X,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10}]');
+			- CALL CTS_DC_CustClassification_ProblemAccountProbation_Insert ('[{"CustID": 123,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10}]');
 	*/ 
 	DECLARE CONST_SOURCETYPE_SCANPA 			INT DEFAULT 23;
     DECLARE	CONST_ACTIONTYPE_UPDATE 			INT DEFAULT 1;
@@ -35,7 +35,7 @@ BEGIN
         , 	TargetCC 				SMALLINT UNSIGNED
         , 	TargetDangerLevel1 		SMALLINT 
         ,	IsProbation 			BIT
-        , 	IsLosing				BIT
+        , 	WinlossStatus			SMALLINT /*LOSING  = 0,KEEPSTATE = 1, WINNING = 2;*/
         , 	IsLicensee				BIT
         ,	TurnoverRM				DECIMAL(20,4)
         ,	WinlossRM				DECIMAL(20,4)
@@ -45,7 +45,7 @@ BEGIN
         , 	PRIMARY KEY(CustID,CategoryID)  
     );  
     
-    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, CategoryID, RelevantCategoryID,TargetCC,TargetDangerLevel1, IsProbation, IsLosing, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsDataChanged)
+    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, CategoryID, RelevantCategoryID,TargetCC,TargetDangerLevel1, IsProbation, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsDataChanged)
 	SELECT 	js.CustID
 		,	cust.CTSCustID
         ,	clss.CategoryID
@@ -53,20 +53,21 @@ BEGIN
         ,	desCate.TargetCC
         ,	desCate.TargetDangerLevel1
         ,	cate.IsProbation
-		, 	js.IsLosing 
+		, 	js.WinlossStatus 
         , 	js.TurnoverRM
         , 	js.WinlossRM
         , 	js.BetCount
         , 	js.ActiveDays
-        ,	CASE WHEN js.IsLosing = 0 AND cate.IsProbation = 0 THEN 0  /*Win + PA => Update*/
-				 WHEN js.IsLosing = 0 AND cate.IsProbation = 1 THEN 1  /*Win + Probation => No Change*/
-                 WHEN js.IsLosing = 1 AND cate.IsProbation = 0 THEN 1  /*Lose + PA => Update */
-                 WHEN js.IsLosing = 1 AND cate.IsProbation = 1 THEN 0  /*Lose + Probation => No Change */
+        ,	CASE WHEN js.WinlossStatus = 1 THEN 0 /*No Change*/
+				 WHEN js.WinlossStatus = 0 AND cate.IsProbation = 0 THEN 1  /*Lose + PA => Update */
+				 WHEN js.WinlossStatus = 0 AND cate.IsProbation = 1 THEN 0  /*Lose + Probation =>  No Change*/
+                 WHEN js.WinlossStatus = 2 AND cate.IsProbation = 0 THEN 0  /*Win + PA => No Change  */
+                 WHEN js.WinlossStatus = 2 AND cate.IsProbation = 1 THEN 1  /*Win + Probation => Update */
 			END AS IsDataChanged
 	FROM JSON_TABLE(ip_ProblemAccount,
 		"$[*]" COLUMNS(
 				CustID 			BIGINT UNSIGNED			PATH "$.CustID"
-			,	IsLosing		BIT 					PATH "$.IsLosing"	
+			,	WinlossStatus	SMALLINT 				PATH "$.WinlossStatus"	
 			,	TurnoverRM		DECIMAL(20,4) 			PATH "$.TurnoverRM"	
             ,	WinlossRM		DECIMAL(20,4) 			PATH "$.WinlossRM"	
 			,	BetCount		BIGINT 					PATH "$.BetCount"	
@@ -101,7 +102,7 @@ BEGIN
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT  CustID
 		, 	CTSCustID
-		, 	CategoryID
+		, 	RelevantCategoryID
 		, 	SportGroupID
 		, 	NOW() AS LastModifiedDate
 		, 	lv_CreatedBy AS LastModifiedBy
@@ -116,12 +117,13 @@ BEGIN
         ,	WinlossRM
         , 	BetCount
         , 	ActiveDays
-	FROM Temp_PA;
+	FROM Temp_PA
+    WHERE IsDataChanged = 1;
 
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT  CustID
 		, 	CTSCustID
-		, 	CategoryID
+		, 	RelevantCategoryID
 		, 	SportGroupID
 		, 	NOW() AS LastModifiedDate
 		, 	lv_CreatedBy AS LastModifiedBy
@@ -138,8 +140,10 @@ BEGIN
         , 	ActiveDays
 	FROM Temp_PA;
     
-	SELECT 	CustID
+	SELECT 	DISTINCT
+			CustID
 		,	CTSCustID
-    FROM Temp_PA; 
+    FROM Temp_PA
+    WHERE IsDataChanged = 1; 
 END$$
 DELIMITER ;
