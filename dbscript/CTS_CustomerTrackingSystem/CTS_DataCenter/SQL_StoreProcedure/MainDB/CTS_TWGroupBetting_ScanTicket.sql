@@ -336,6 +336,8 @@ BEGIN
 										OR tcv.IsViolateCC = 1)
 									FOR XML RAW('TWGroupBettingTicket'), ROOT);
 
+	EXEC CTS_TWGroupBetting_SyncDataGroupBettingTicket @GBTicketXMLString;		
+
 	IF @ServerName = 'DB061'
 	BEGIN
 		EXEC DB06.bodb02.dbo.CTS_TWGroupBetting_SyncDataGroupBettingTicket @GBTicketXMLString;		
@@ -343,10 +345,6 @@ BEGIN
 	ELSE IF @ServerName = 'DB062'
 	BEGIN 
 		EXEC DB061.bodb02.dbo.CTS_TWGroupBetting_SyncDataGroupBettingTicket @GBTicketXMLString;
-	END
-	ELSE IF @ServerName = 'TESTDB061' -- for local test
-	BEGIN 
-		EXEC TESTDB061.bodb02.dbo.CTS_TWGroupBetting_SyncDataGroupBettingTicket @GBTicketXMLString;
 	END
 
 	DROP TABLE #TmpSuspectTicket
