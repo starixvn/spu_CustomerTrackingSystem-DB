@@ -1,6 +1,6 @@
 /*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
-CREATE PROCEDURE [dbo].[CTS_TWGroupBetting_SyncDataGroupBettingTicket]
-		@GBTicketXML	XML
+CREATE OR ALTER PROCEDURE [dbo].[CTS_TWGroupBetting_SyncDataGroupBettingTicket]
+		@GBTicketXMLString	VARCHAR(MAX)
 AS
 /*
 	Created: 20220314@Harvey.Nguyen
@@ -15,17 +15,23 @@ AS
 */
 BEGIN
 	SET NOCOUNT ON;
+
+	DECLARE @GBTicketXML XML;
+	SET @GBTicketXML = CONVERT(XML,@GBTicketXMLString);
+
 	IF OBJECT_ID('tempdb..#TmpGroupBettingTicket') IS NOT NULL
 		DROP TABLE #TmpGroupBettingTicket;
 
 	CREATE TABLE #TmpGroupBettingTicket (
 		TransId		BIGINT	PRIMARY KEY
 		,CustId		INT
+		,TransDate	DATE
 	);
 
-	INSERT INTO #TmpGroupBettingTicket (Transid, Custid)
-	SELECT	T.C.value('./@Transid', 'BIGINT') AS Transid
+	INSERT INTO #TmpGroupBettingTicket (TransId, Custid, TransDate)
+	SELECT	T.C.value('./@TransId', 'BIGINT') AS TransId
 		,	T.C.value('./@CustId', 'INT') AS CustId
+		,	T.C.value('./@TransDate', 'DATE') AS TransDate
 	FROM @GBTicketXML.nodes('//TWGroupBettingTicket') AS T(C)
 	OPTION (OPTIMIZE FOR (@GBTicketXML = NULL));
 
@@ -34,9 +40,11 @@ BEGIN
 	INSERT INTO SPU_GroupBettingTicket (
 		CustId
 		,TransId
+		,TransDate
 		)
 	SELECT Custid
-		,Transid
+		,TransId
+		,TransDate
 	FROM #TmpGroupBettingTicket
 
 	DROP TABLE #TmpGroupBettingTicket
