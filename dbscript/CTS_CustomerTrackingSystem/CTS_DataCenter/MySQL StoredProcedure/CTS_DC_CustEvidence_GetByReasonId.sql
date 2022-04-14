@@ -2,7 +2,7 @@
 DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustEvidence_GetByReasonId`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustEvidence_GetByReasonId`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_GetByReasonId`(
 	IN  ip_InputCustomers JSON
 )
     SQL SECURITY INVOKER
@@ -21,73 +21,48 @@ BEGIN
 														{"CustID": 5941, "ReasonID": 29},
 														{"CustID": 40290237, "ReasonID": 103}]');
 	*/
-    DROP TEMPORARY TABLE IF EXISTS Temp_InputCustomer;    
-	CREATE TEMPORARY TABLE Temp_InputCustomer(	  
-			CustID					BIGINT UNSIGNED 
-		,	ReasonID				SMALLINT	
-        ,	PRIMARY KEY				PK_Temp_InputCustomer(CustID,ReasonID)
-    );
-    
-	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedCustomer;    
-	CREATE TEMPORARY TABLE Temp_ExistedCustomer(	  
-			CustID				BIGINT UNSIGNED
-        , 	CTSCustID			BIGINT 
-        ,	IsLicensee			BIT
-        ,	ReasonID			SMALLINT	
-        ,	PRIMARY KEY			PK_Temp_ExistedCustomer(CustID,IsLicensee,ReasonID)
-    ); 
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_EvidenceMapping;    
-	CREATE TEMPORARY TABLE Temp_EvidenceMapping(	  
-			EvidenceID			BIGINT UNSIGNED
-		,	EvidenceCode		VARCHAR(10) 
-        ,	IsLicensee			BIT
-        ,	ReasonID			SMALLINT
-        ,	PRIMARY KEY			PK_Temp_EvidenceMapping(EvidenceID,IsLicensee,ReasonID)
-    ); 
-    
-    /*	1: GET CUSTOMERS */
-	INSERT IGNORE INTO Temp_InputCustomer(CustID, ReasonID)
-	SELECT DISTINCT temp.CustID, temp.ReasonID
-	FROM JSON_TABLE(ip_InputCustomers,
-		"$[*]" COLUMNS(
-				CustID 			BIGINT UNSIGNED		PATH "$.CustID"
-			,	ReasonID		SMALLINT 			PATH "$.ReasonID"	
-		 )) AS temp
-	WHERE temp.ReasonID <> 0;
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustParam;    
+	CREATE TEMPORARY TABLE Temp_CustParam( 	  
+			CustID			BIGINT UNSIGNED
+        , 	CTSCustID		BIGINT UNSIGNED
+        ,	EvidenceID		INT 
+        ,   EvidenceCode	VARCHAR(10)
+        ,   PRIMARY KEY(CTSCustID,EvidenceID)
+	);
 	
-	CALL CTS_DC_ExcludeCustByCondition('Temp_InputCustomer');
-    
 	/*	2: GET EXISTED CUSTOMERS */
-    INSERT IGNORE INTO Temp_ExistedCustomer(CustID,CTSCustID,IsLicensee,ReasonID)
-    SELECT DISTINCT cust.CustID
-        , 	cust.CTSCustID
-        ,	(CASE WHEN m.SubscriberGroupID = 2 THEN 1 ELSE 0 END) AS IsLicensee
-        ,	temp.ReasonID
-    FROM Temp_InputCustomer AS temp 
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.CustSubID = 0
-		INNER JOIN CTS_DataCenter.MappingSubscriberSite AS m ON cust.SiteID = m.SiteID;
-
-    /*	3: IGNORE PIN CATEGORY	*/
+    INSERT IGNORE INTO Temp_CustParam(CustID,CTSCustID,EvidenceID,EvidenceCode)
+	SELECT	info.CustID
+		,	cust.CTSCustID
+        ,	ev.EvidenceID
+        ,	ev.EvidenceCode
+	FROM JSON_TABLE(ip_InputCustomers,
+		 "$[*]" COLUMNS(
+				CustID			VARCHAR(50)		PATH "$.CustID" 
+			, 	ReasonID		INT				PATH "$.ReasonID")
+	) AS info
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON info.CustID = cust.CustID AND cust.CustSubID = 0
+		INNER JOIN CTS_DataCenter.MappingSubscriberSite AS m ON cust.SiteID = m.SiteID,
+        LATERAL (SELECT  CASE WHEN m.SubscriberGroupID = 2  THEN cate.EvidenceID_Licensee ELSE cate.EvidenceID_Credit END AS EvidenceID
+					,	 CASE WHEN m.SubscriberGroupID = 2  THEN cate.EvidenceCode_Licensee ELSE cate.EvidenceCode_Credit END AS EvidenceCode
+                 FROM CTS_DataCenter.CustomerCategory AS cate
+                 WHERE cate.ReasonID = info.ReasonID 
+					AND (cate.EvidenceID_Licensee IS NOT NULL OR  cate.EvidenceCode_Credit  IS NOT NULL)
+                 LIMIT 1) AS ev;
+    
+    CALL CTS_DC_ExcludeCustByCondition('Temp_CustParam');
+    
     DELETE ec
-    FROM Temp_ExistedCustomer AS ec
+    FROM Temp_CustParam AS ec
 		INNER JOIN CTS_DataCenter.PinCustomerCategory AS pin on pin.CTSCustID = ec.CTSCustID; 
         
-     /*	4: GET EVIDENCE	MAPPING RULE */
-	INSERT IGNORE INTO Temp_EvidenceMapping(EvidenceID,EvidenceCode,IsLicensee,ReasonID)
-    SELECT DISTINCT evd.EvidenceID
-			,	evd.EvidenceCode
-            ,	CASE WHEN evd.OrderNo <= 10 THEN 0 ELSE 1 END AS IsLicensee
-            ,	rs.ReasonID
-    FROM CTS_DataCenter.Evidence AS evd
-		INNER JOIN CTS_DataCenter.EvidenceToCategory AS etc ON etc.EvidenceID = evd.EvidenceID
-        INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = etc.CategoryID
-        INNER JOIN CTS_DataCenter.CustomerCategory AS rs ON rs.CategoryGroup = cat.CategoryGroup 
-	WHERE (evd.OrderNo BETWEEN 1 AND 20) AND rs.ReasonID <> 0;
- 
     /* 5: RETURN CUSTOMER EVIDENCE TO SYNC */
-    SELECT DISTINCT ec.CTSCustID, ec.CustID, em.EvidenceID, em.EvidenceCode, 'Add from Problem Account Management' AS Remark 
-    FROM Temp_ExistedCustomer AS ec 
-		INNER JOIN Temp_EvidenceMapping AS em ON em.ReasonID = ec.ReasonID AND em.IsLicensee = ec.IsLicensee;
+    SELECT 	DISTINCT 
+			ec.CTSCustID
+		, 	ec.CustID
+		, 	ec.EvidenceID
+        , 	ec.EvidenceCode
+        , 	'Add from Problem Account Management' AS Remark 
+    FROM Temp_CustParam AS ec ;
 END$$
 DELIMITER ;
