@@ -326,9 +326,7 @@ BEGIN
 	FROM #TmpSuspectTicket AS st
 	INNER JOIN dbo.SPU_GroupBettingTicket gbt WITH (NOLOCK) ON st.Transid = gbt.TransId;
 
-	IF @ServerName = 'DB061'
-	BEGIN
-		SET @GBTicketXMLString = (SELECT DISTINCT st.Custid AS 'CustId'
+	SET @GBTicketXMLString = (SELECT DISTINCT st.Custid AS 'CustId'
 												,st.Transid AS 'TransId'
 												,CONVERT(DATE,st.Transdate) AS 'TransDate'
 									FROM #TmpSuspectTicket st WITH (NOLOCK)
@@ -338,35 +336,16 @@ BEGIN
 										OR tcv.IsViolateCC = 1)
 									FOR XML RAW('TWGroupBettingTicket'), ROOT);
 
-		EXEC DB06.bodb02.dbo.CTS_TWGroupBetting_SyncDataGroupBettingTicket @GBTicketXMLString;
-		
+	IF @ServerName = 'DB061'
+	BEGIN
+		EXEC DB06.bodb02.dbo.CTS_TWGroupBetting_SyncDataGroupBettingTicket @GBTicketXMLString;		
 	END
 	ELSE IF @ServerName = 'DB062'
 	BEGIN 
-		SET @GBTicketXMLString = (SELECT DISTINCT st.Custid AS 'CustId'
-												,st.Transid AS 'TransId'
-												,CONVERT(DATE,st.Transdate) AS 'TransDate'
-									FROM #TmpSuspectTicket st WITH (NOLOCK)
-									INNER JOIN #TmpTicketCountViolation AS tcv WITH (NOLOCK) ON st.RuleId = tcv.RuleId AND st.Betteam = tcv.Betteam AND st.FromTime = tcv.FromTime AND st.ToTime = tcv.ToTime
-									WHERE (tcv.IsViolateBetFrom = 1
-										OR tcv.IsViolateRFM = 1
-										OR tcv.IsViolateCC = 1)
-									FOR XML RAW('TWGroupBettingTicket'), ROOT);
-
 		EXEC DB061.bodb02.dbo.CTS_TWGroupBetting_SyncDataGroupBettingTicket @GBTicketXMLString;
 	END
 	ELSE IF @ServerName = 'TESTDB061' -- for local test
 	BEGIN 
-		SET @GBTicketXMLString = (SELECT DISTINCT st.Custid AS 'CustId'
-												,st.Transid AS 'TransId'
-												,CONVERT(DATE,st.Transdate) AS 'TransDate'
-									FROM #TmpSuspectTicket st WITH (NOLOCK)
-									INNER JOIN #TmpTicketCountViolation AS tcv WITH (NOLOCK) ON st.RuleId = tcv.RuleId AND st.Betteam = tcv.Betteam AND st.FromTime = tcv.FromTime AND st.ToTime = tcv.ToTime
-									WHERE (tcv.IsViolateBetFrom = 1
-										OR tcv.IsViolateRFM = 1
-										OR tcv.IsViolateCC = 1)
-									FOR XML RAW('TWGroupBettingTicket'), ROOT);
-
 		EXEC TESTDB061.bodb02.dbo.CTS_TWGroupBetting_SyncDataGroupBettingTicket @GBTicketXMLString;
 	END
 
