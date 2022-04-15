@@ -119,3 +119,8 @@ SET cate.ReasonID = rela.ReasonID
     , cate.EvidenceID_Credit = rela.EvidenceID_Credit
     , cate.EvidenceCode_Credit = rela.EvidenceCode_Credit
 WHERE cate.IsProbation = 1;
+
+UPDATE CustomerCategory AS pro
+INNER JOIN CustomerCategory AS pa ON pa.CategoryID = pro.RelevantCategoryID
+SET pro.AFCFraudID = pa.AFCFraudID
+WHERE pro.IsProbation = 1; 

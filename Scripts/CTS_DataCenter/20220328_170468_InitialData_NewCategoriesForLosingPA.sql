@@ -8,53 +8,53 @@ DBName:		CTS_DataCenter
 USE CTS_DataCenter;
 
 INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CategoryNameCN,CategoryGroup)
-VALUES (92,'Group Betting (Probation)','Group Betting (Probation)',50,255,1,0,NOW(),'群组投注 (观察中)',52);
+VALUES (92,'Group Betting (Probation)','Group Betting (Probation)',50,255,1,0,NOW(),'群组投注 (观察中)',92);
 INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CategoryNameCN,CategoryGroup)
-VALUES (94,'Arbitrage (Probation)','Arbitrage (Probation)',50,255,1,0,NOW(),'打水套利 (观察中）',54);
+VALUES (94,'Arbitrage (Probation)','Arbitrage (Probation)',50,255,1,0,NOW(),'打水套利 (观察中）',94);
 INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CategoryNameCN,CategoryGroup)
-VALUES (98,'Irrigation Bet (Probation)','Irrigation Bet (Probation)',50,255,1,0,NOW(),'灌水投注 (观察中)',58);
+VALUES (98,'Irrigation Bet (Probation)','Irrigation Bet (Probation)',50,255,1,0,NOW(),'灌水投注 (观察中)',98);
 INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CategoryNameCN,CategoryGroup)
-VALUES (95,'Fixed Game (Probation)','Fixed Game (Probation)',50,255,1,0,NOW(),'内定赛事 (观察中)',55);
+VALUES (95,'Fixed Game (Probation)','Fixed Game (Probation)',50,255,1,0,NOW(),'内定赛事 (观察中)',95);
 INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CategoryNameCN,CategoryGroup)
-VALUES (99,'System Formula Bet (Probation)','System Formula Bet (Probation)',50,255,1,0,NOW(),'机械/系统计算投注 (观察中）',59);
+VALUES (99,'System Formula Bet (Probation)','System Formula Bet (Probation)',50,255,1,0,NOW(),'机械/系统计算投注 (观察中）',99);
 INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CategoryNameCN,CategoryGroup)
-VALUES (93,'Hedging (Probation)','Hedging (Probation)',50,255,1,0,NOW(),'出货群组 (观察中）',53);
+VALUES (93,'Hedging (Probation)','Hedging (Probation)',50,255,1,0,NOW(),'出货群组 (观察中）',93);
 INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CategoryNameCN,CategoryGroup)
-VALUES (100,'Bonus Hunter (Probation)','Bonus Hunter (Probation)',50,255,1,0,NOW(),'赏金猎人 (观察中）',60);
+VALUES (100,'Bonus Hunter (Probation)','Bonus Hunter (Probation)',50,255,1,0,NOW(),'赏金猎人 (观察中）',100);
 INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CategoryNameCN,CategoryGroup)
-VALUES (102,'Info Bet (Probation)','Info Bet (Probation)',50,255,1,0,NOW(),'资讯单投注 (观察中）',62);
+VALUES (102,'Info Bet (Probation)','Info Bet (Probation)',50,255,1,0,NOW(),'资讯单投注 (观察中）',102);
 
 INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CategoryNameCN,CategoryGroup)
-VALUES (112,'Group Betting (Probation)','Group Betting (Evidence - Probation)',50,255,1,0,NOW(),'群组投注 (观察中)',52);
+VALUES (112,'Group Betting (Probation)','Group Betting (Evidence - Probation)',50,255,1,0,NOW(),'群组投注 (观察中)',92);
 INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CategoryNameCN,CategoryGroup)
-VALUES (114,'Arbitrage (Probation)','Arbitrage (Evidence - Probation)',50,255,1,0,NOW(),'打水套利 (观察中）',54);
+VALUES (114,'Arbitrage (Probation)','Arbitrage (Evidence - Probation)',50,255,1,0,NOW(),'打水套利 (观察中）',94);
 INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CategoryNameCN,CategoryGroup)
-VALUES (118,'Irrigation Bet (Probation)','Irrigation Bet (Evidence - Probation)',50,255,1,0,NOW(),'灌水投注 (观察中)',58);
+VALUES (118,'Irrigation Bet (Probation)','Irrigation Bet (Evidence - Probation)',50,255,1,0,NOW(),'灌水投注 (观察中)',98);
 INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CategoryNameCN,CategoryGroup)
-VALUES (115,'Fixed Game (Probation)','Fixed Game (Evidence - Probation)',50,255,1,0,NOW(),'内定赛事 (观察中)',55);
+VALUES (115,'Fixed Game (Probation)','Fixed Game (Evidence - Probation)',50,255,1,0,NOW(),'内定赛事 (观察中)',95);
 INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CategoryNameCN,CategoryGroup)
-VALUES (119,'System Formula Bet (Probation)','System Formula Bet (Evidence - Probation)',50,255,1,0,NOW(),'机械/系统计算投注 (观察中）',59);
+VALUES (119,'System Formula Bet (Probation)','System Formula Bet (Evidence - Probation)',50,255,1,0,NOW(),'机械/系统计算投注 (观察中）',99);
 INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CategoryNameCN,CategoryGroup)
-VALUES (113,'Hedging (Probation)','Hedging (Evidence - Probation)',50,255,1,0,NOW(),'出货群组 (观察中）',53);
+VALUES (113,'Hedging (Probation)','Hedging (Evidence - Probation)',50,255,1,0,NOW(),'出货群组 (观察中）',93);
 INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CategoryNameCN,CategoryGroup)
-VALUES (120,'Bonus Hunter (Probation)','Bonus Hunter (Evidence - Probation)',50,255,1,0,NOW(),'赏金猎人 (观察中）',60);
+VALUES (120,'Bonus Hunter (Probation)','Bonus Hunter (Evidence - Probation)',50,255,1,0,NOW(),'赏金猎人 (观察中）',100);
 INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CategoryNameCN,CategoryGroup)
-VALUES (122,'Info Bet (Probation)','Info Bet (Evidence - Probation)',50,255,1,0,NOW(),'资讯单投注 (观察中）',62);
+VALUES (122,'Info Bet (Probation)','Info Bet (Evidence - Probation)',50,255,1,0,NOW(),'资讯单投注 (观察中）',102);
 
 INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CategoryNameCN,CategoryGroup)
-VALUES (132,'Group Betting (Probation)','Group Betting (M - Probation)',50,255,1,0,NOW(),'群组投注 (观察中)',52);
+VALUES (132,'Group Betting (Probation)','Group Betting (M - Probation)',50,255,1,0,NOW(),'群组投注 (观察中)',92);
 INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CategoryNameCN,CategoryGroup)
-VALUES (134,'Arbitrage (Probation)','Arbitrage (M - Probation)',50,255,1,0,NOW(),'打水套利 (观察中）',54);
+VALUES (134,'Arbitrage (Probation)','Arbitrage (M - Probation)',50,255,1,0,NOW(),'打水套利 (观察中）',94);
 INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CategoryNameCN,CategoryGroup)
-VALUES (138,'Irrigation Bet (Probation)','Irrigation Bet (M - Probation)',50,255,1,0,NOW(),'灌水投注 (观察中)',58);
+VALUES (138,'Irrigation Bet (Probation)','Irrigation Bet (M - Probation)',50,255,1,0,NOW(),'灌水投注 (观察中)',98);
 INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CategoryNameCN,CategoryGroup)
-VALUES (135,'Fixed Game (Probation)','Fixed Game (M - Probation)',50,255,1,0,NOW(),'内定赛事 (观察中)',55);
+VALUES (135,'Fixed Game (Probation)','Fixed Game (M - Probation)',50,255,1,0,NOW(),'内定赛事 (观察中)',95);
 INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CategoryNameCN,CategoryGroup)
-VALUES (139,'System Formula Bet (Probation)','System Formula Bet (M - Probation)',50,255,1,0,NOW(),'机械/系统计算投注 (观察中）',59);
+VALUES (139,'System Formula Bet (Probation)','System Formula Bet (M - Probation)',50,255,1,0,NOW(),'机械/系统计算投注 (观察中）',99);
 INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CategoryNameCN,CategoryGroup)
-VALUES (133,'Hedging (Probation)','Hedging (M - Probation)',50,255,1,0,NOW(),'出货群组 (观察中）',53);
+VALUES (133,'Hedging (Probation)','Hedging (M - Probation)',50,255,1,0,NOW(),'出货群组 (观察中）',93);
 INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CategoryNameCN,CategoryGroup)
-VALUES (142,'Info Bet (Probation)','Info Bet (M - Probation)',50,255,1,0,NOW(),'资讯单投注 (观察中）',62);
+VALUES (142,'Info Bet (Probation)','Info Bet (M - Probation)',50,255,1,0,NOW(),'资讯单投注 (观察中）',102);
 
 INSERT INTO CategoryToCustomerClass(CategoryID,CustomerClass)
 VALUES (92,86), (94,96), (98,96), (95,106), (99,106), (93,106), (100,116), (102,126);
