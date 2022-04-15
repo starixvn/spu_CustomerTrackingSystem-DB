@@ -20,6 +20,7 @@ sp: BEGIN
             -	202110150@Casey.Huynh: Update Get TransID from LastTransID + 1 [Redmine ID: 161528]
             -   20211214@Aries.Nguyen: Enrich the information on customer profile [Redmine ID: #165105]
 			-   20220325@Aries.Nguyen: Refactor the Sum data job of transaction statistic [Redmine ID: #170525]
+			-   20220415@Aries.Nguyen: Fix bug return op_DateScan incorrect [Redmine ID: #170525]
 
 	    Param's Explanation (filtered by):
         
@@ -145,6 +146,9 @@ sp: BEGIN
 		AccountID		BIGINT UNSIGNED PRIMARY KEY
 	) ENGINE=InnoDB;
     
+	SET  op_DateScan = lv_LastDateScan;
+	SET  op_AccountID = lv_LastAccountID;
+
     IF  lv_LastDateScan < lv_CurrDateTrans THEN
 		SET @sql = 	CONCAT("
 			INSERT IGNORE INTO Temp_SumTransactionByDate(TransID, TransDate, AccountID, IP, DeviceID, UserAgentKey)
