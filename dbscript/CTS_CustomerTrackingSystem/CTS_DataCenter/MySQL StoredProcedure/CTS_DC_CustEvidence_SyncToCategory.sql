@@ -35,7 +35,7 @@ BEGIN
             
 		Param's Explanation (filtered by):
 		Exmaple:
-			- CALL CTS_DataCenter.CTS_DC_CustEvidence_SyncToCategory('[{"CustId":43600693, "CTSCustId": 221882500, "SubscriberId": 130, "EvidenceId": 41, "ActionType": 0}]',0,@op_ErrorMessage);
+			- CALL CTS_DataCenter.CTS_DC_CustEvidence_SyncToCategory('[{"CustID":43600693, "CTSCustID": 221882500, "SubscriberId": 130, "EvidenceId": 41, "ActionType": 0}]',0,@op_ErrorMessage);
 	*/   
 	DECLARE	CONST_GROUP_PA 						INT DEFAULT 0;
 	DECLARE	CONST_GROUP_NORMAL 					INT DEFAULT 200;
@@ -61,7 +61,7 @@ BEGIN
     DECLARE	lv_IsSyncEvi2Cate	VARCHAR(1) DEFAULT '';
 	
     /*  1: Get Mapping category*/
-	CALL CTS_DC_CustClassification_MappingCategory(ip_CustEvidences, 'Evidence');
+	CALL CTS_DC_CustClassification_MappingPACategory(ip_CustEvidences, 'Evidence');
 
     SELECT ParameterValue
     INTO lv_IsSyncEvi2Cate
@@ -86,7 +86,8 @@ BEGIN
 		DELETE clss
 		FROM CTS_DataCenter.CTSCustomerClassification AS clss
 		INNER JOIN Temp_PA AS pa ON pa.CustID = clss.CustID AND clss.SportGroupID = CONST_GROUP_PA AND pa.CategoryID = clss.CategoryID 
-		WHERE	temp.ActionType = CONST_ACTIONTYPE_REMOVE AND temp.IsExistedEvi = 0 AND SourceType = 'NAP'; 
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = clss.CategoryID
+		WHERE	pa.ActionType = CONST_ACTIONTYPE_REMOVE AND pa.IsExistedEvi = 0 AND cate.SourceType = 'NAP'; 
         
         /*	5: UPDATE PA FROM EVIDENCE */
 		UPDATE CTS_DataCenter.CTSCustomerClassification AS clss
@@ -103,7 +104,6 @@ BEGIN
 			INNER JOIN Temp_ExistedClassification AS pa on pa.CustID = cate.CustID AND cate.SportGroupID = CONST_GROUP_PA AND pa.CategoryID = cate.CategoryID 
 		SET 	cate.CTSCustID = pa.CTSCustID
 			,	cate.CategoryID = pa.RelevantCategoryID
-			, 	cate.SubscriberID  = temp.SubscriberID
 			, 	cate.LastModifiedBy = lv_CreatedBy
 			,   cate.LastModifiedDate = lv_CurrentDateTime
 			, 	cate.LastScannedDate = DATE(lv_CurrentDateTime)
@@ -116,7 +116,7 @@ BEGIN
 			, 	pa.CTSCustID
 			, 	pa.SubscriberID
 			, 	pa.CategoryID
-			,   pa
+			,   CONST_GROUP_PA
 			, 	'Synced by Evidence'
 			, 	lv_CurrentDateTime
 			,   lv_CreatedBy
@@ -152,12 +152,13 @@ BEGIN
 			, 	pa.BetCount
 			, 	pa.ActiveDays
 		FROM Temp_PA AS pa
-		WHERE temp.IsDataChanged = 1;
+		WHERE pa.IsDataChanged = 1;
 	END IF;
     
     /* 8: WRITE HISTORY LOG (TRACE DATA) */
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log (CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays)
-	SELECT DISTINCT temp.CustID
+	SELECT 	DISTINCT 
+			pa.CustID
 		, 	pa.CTSCustID
 		, 	pa.CategoryID
 		, 	CONST_GROUP_PA
@@ -174,8 +175,7 @@ BEGIN
 		,	pa.WinlossRM
 		, 	pa.BetCount
 		, 	pa.ActiveDays
-	FROM Temp_PA AS pa
-    WHERE pa.ActionType;
+	FROM Temp_PA AS pa;
     
     /* 18: RETURN UPDATED CUSTOMERS TO SERVICE FOR FUTHER STEPS */
 	SELECT	DISTINCT 

@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin,ctsService,ctsAPIAdmin,ctsAPI,ctsWebAdmin,ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_MappingCategory`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_MappingPACategory`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_MappingCategory`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_MappingPACategory`(
 		IN 		ip_CustInfo 	JSON
 	,	IN 		ip_SourceType	VARCHAR(20)
 )
@@ -165,10 +165,16 @@ BEGIN
 																AND cate.SourceType = ip_SourceType
 																AND ((pa.WinlossStatus = 0 AND cate.IsProbation = 1) OR 
 																	 (pa.WinlossStatus <> 0 AND cate.IsProbation = 0) OR
-                                                                     (pa.WinlossStatus IS NULL AND cate.IsProbation = 0)))  /*Map Cate from NAP Or Evidence*/
+                                                                     (pa.WinlossStatus IS NULL AND cate.IsProbation = 0)))  /*Map Cate <=> NAP*/
 															  OR (pa.ReasonID IS NOT NULL 
 																	AND cate.ReasonID = pa.ReasonID 
-																	AND cate.SourceType = 'AI') /*Map Cate from AI*/; 
+																	AND cate.SourceType = 'AI') /*Map Cate <=> AI*/
+															  OR (pa.EvidenceID IS NOT NULL 
+																	AND (cate.EvidenceID_Licensee = pa.EvidenceID OR cate.EvidenceID_Credit = pa.EvidenceID)
+																	AND cate.SourceType = ip_SourceType
+																	AND ((pa.WinlossStatus = 0 AND cate.IsProbation = 1) OR 
+																		(pa.WinlossStatus <> 0 AND cate.IsProbation = 0) OR
+																		(pa.WinlossStatus IS NULL AND cate.IsProbation = 0)));  /*Map Cate <=> Evidence*/
  
                 
 	/*	2: EXCLUDE CUSTOMER */    

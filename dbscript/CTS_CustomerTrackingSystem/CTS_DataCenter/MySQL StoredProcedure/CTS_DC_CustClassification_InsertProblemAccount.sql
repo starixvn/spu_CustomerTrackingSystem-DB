@@ -58,7 +58,7 @@ BEGIN
     DECLARE lv_CurrentDateTime 					DATETIME DEFAULT CURRENT_TIME(); 
     
     /*  1: Get Mapping category*/
-	CALL CTS_DC_CustClassification_MappingCategory(ip_ProblemAccounts, 'NAP');
+	CALL CTS_DC_CustClassification_MappingPACategory(ip_ProblemAccounts, 'NAP');
     
     /*	2: REMOVE GENERAL CATEGORY BEFORE	*/
     DELETE clss
