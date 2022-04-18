@@ -213,7 +213,8 @@ BEGIN
 	END;
 
 	-- Return data
-	SELECT	c.username AS UserName
+	SELECT	c.custid AS CustID
+		,	c.username AS UserName
 		,	m.TransDate
 		,	m.TransId
 		,	bt.typenamee AS TypeName

@@ -2,7 +2,7 @@
 DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_Association_Profile_Get`;
 
 DELIMITER $$ 
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_Association_Profile_Get`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_Profile_Get`(
 		IN ip_CTSCustID 		BIGINT UNSIGNED
 	,	IN ip_AssociationType	INT
 	,	IN ip_AssociationStatus INT 
@@ -224,11 +224,12 @@ sp : BEGIN
 		GROUP BY g.CustID;
         
         INSERT IGNORE INTO Temp_Association(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
-		SELECT  CustID 
+		SELECT   c.CTSCustID
 			,	2 AS AssociationType
             ,	1 AS AssociationStatus
-			,	AssociationDate
-		FROM Temp_CustomerGroup;
+			,	t.AssociationDate
+		FROM Temp_CustomerGroup AS t
+			INNER JOIN CTSCustomer AS c ON t.CustID = c.CustID;
     END IF;
     
 	IF ip_AssociationType = 0 OR ip_AssociationType = 4 THEN
