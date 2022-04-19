@@ -235,7 +235,7 @@ sp : BEGIN
     END IF;
     
     IF (lv_Table = 'AssociationGroupByAI') THEN  
-		IF EXISTS (SELECT 1  FROM CTS_DataCenter.AssiciationGroupByAI AS asg WHERE EXISTS (SELECT 1 FROM CTS_Archive.CTSCustomerAssociationArchive_Process AS pro WHERE asg.CustID = pro.CustID)) THEN
+		IF EXISTS (SELECT 1  FROM CTS_DataCenter.AssociationGroupByAI AS asg WHERE EXISTS (SELECT 1 FROM CTS_Archive.CTSCustomerAssociationArchive_Process AS pro WHERE asg.CustID = pro.CustID)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationGroupByAI_Clean;
 			CREATE TEMPORARY TABLE Temp_AssociationGroupByAI_Clean(
 					ID				BIGINT UNSIGNED DEFAULT NULL
@@ -253,29 +253,29 @@ sp : BEGIN
                 ,	asg.OriginGroupID
                 ,	asg.CustID
                 ,	asg.CreatedDate
-			FROM CTS_Archive.AssiciationGroupByAI  AS asg
+			FROM CTS_Archive.AssociationGroupByAI  AS asg
 			WHERE EXISTS (SELECT 1 FROM CTS_Archive.CTSCustomerAssociationArchive_Process AS pro WHERE asg.CustID = pro.CustID)
             LIMIT lv_BatchSize_AssData;
             
-            INSERT IGNORE INTO CTS_Archive.AssiciationGroupByAI_Arc(ID, GroupID, OriginGroupID, CustID, CreatedDate)
+            INSERT IGNORE INTO CTS_Archive.AssociationGroupByAI_Arc(ID, GroupID, OriginGroupID, CustID, CreatedDate)
 			SELECT 	tmpCl.ID
 				,	tmpCl.GroupID
                 ,	tmpCl.OriginGroupID
                 ,	tmpCl.CustID
                 ,	tmpCl.CreatedDate
-			FROM Temp_AssiciationGroupByAI_Clean  AS tmpCl;
+			FROM Temp_AssociationGroupByAI_Clean  AS tmpCl;
             
             DELETE asg
-			FROM CTS_DataCenter.AssiciationGroupByAI AS asg
-				INNER JOIN Temp_AssiciationGroupByAI_Clean AS tmpCl ON tmpCl.CustID = asg.CustID AND tmpCl.GroupID = asg.GroupID;
+			FROM CTS_DataCenter.AssociationGroupByAI AS asg
+				INNER JOIN Temp_AssociationGroupByAI_Clean AS tmpCl ON tmpCl.CustID = asg.CustID AND tmpCl.GroupID = asg.GroupID;
 			
 			UPDATE  CTS_Archive.SystemParameter 
-			SET ParameterValue = 'AssiciationGroupByAI'
+			SET ParameterValue = 'AssociationGroupByAI'
 			WHERE ParameterID = 4;
 
 			SELECT COUNT(1)
             INTO lv_Count
-            FROM Temp_AssiciationGroupByAI_Clean;
+            FROM Temp_AssociationGroupByAI_Clean;
             
             IF lv_Count >= lv_BatchSize_AssData THEN
 				LEAVE sp;
