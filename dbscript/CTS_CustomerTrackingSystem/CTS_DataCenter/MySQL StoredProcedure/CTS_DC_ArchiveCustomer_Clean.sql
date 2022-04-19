@@ -1496,8 +1496,43 @@ sp: BEGIN
             SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
+        SET lv_Table = 'CTS_Archive.AssociationGroupByAI_Arc';
+    END IF; 
+    
+    IF (lv_Table = 'CTS_Archive.AssociationGroupByAI_Arc') THEN  
+		IF EXISTS (SELECT 1  FROM CTS_Archive.AssociationGroupByAI_Arc AS ai WHERE ai.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)) THEN
+			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationGroupByAI_Clean;
+			CREATE TEMPORARY TABLE Temp_AssociationGroupByAI_Clean(
+					ID   	BIGINT UNSIGNED  PRIMARY KEY
+			);
+            
+            INSERT IGNORE INTO Temp_AssociationGroupByAI_Clean(ID)
+            SELECT 	ai.ID
+			FROM CTS_Archive.AssociationGroupByAI_Arc AS ai
+			WHERE  ai.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)
+            LIMIT lv_CleanTableBatchSize;
+            
+            DELETE ass
+			FROM CTS_Archive.AssociationGroupByAI_Arc AS ass
+				INNER JOIN Temp_AssociationGroupByAI_Clean AS tmp ON tmp.ID = ass.ID;
+			
+			UPDATE  CTS_DataCenter.SystemParameter 
+			SET ParameterValue = 'CTS_Archive.AssociationGroupByAI_Arc'
+			WHERE ParameterID = 46;
+
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_AssociationGroupByAI_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
+        END IF;
+        
         SET lv_Table = 'CTS_Archive.AssociationByDevice_Arc';
-    END IF;
+    END IF; 
     
 	/*************************************** 33. CTS_Archive.AssociationByDevice_Arc ***************************/
     IF (lv_Table = 'CTS_Archive.AssociationByDevice_Arc') THEN
