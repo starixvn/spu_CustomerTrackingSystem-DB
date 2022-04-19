@@ -162,7 +162,7 @@ sp : BEGIN
 					ID				BIGINT UNSIGNED DEFAULT NULL
 				,	GroupID 		BIGINT UNSIGNED NOT NULL
 				,	OriginGroupID 	BIGINT UNSIGNED NOT NULL
-				,	CustID 			BIGINT UNSIGNED DEFAULT NULL
+				,	CustID 			BIGINT UNSIGNED NOT NULL
 				,	CreatedDate 	DATETIME DEFAULT NULL
                 
                 ,	PRIMARY KEY (CustID,GroupID)
@@ -184,10 +184,10 @@ sp : BEGIN
                 ,	tmpCl.CustID
                 ,	tmpCl.CreatedDate
 			FROM Temp_AssociationGroupByAI_Clean AS tmpCl;
-            
+            SELECT 1;
             DELETE ass
 			FROM CTS_Archive.AssociationGroupByAI_Arc AS ass
-				INNER JOIN Temp_AssociationGroupByAI_Clean AS tmp ON tmpCl.CustID = tmpCl.CustID AND tmpCl.GroupID = tmpCl.GroupID;
+				INNER JOIN Temp_AssociationGroupByAI_Clean AS tmpCl ON ass.CustID = tmpCl.CustID AND ass.GroupID = tmpCl.GroupID;
 			
 			UPDATE  CTS_Archive.SystemParameter 
 			SET ParameterValue = 'AssociationGroupByAI'
