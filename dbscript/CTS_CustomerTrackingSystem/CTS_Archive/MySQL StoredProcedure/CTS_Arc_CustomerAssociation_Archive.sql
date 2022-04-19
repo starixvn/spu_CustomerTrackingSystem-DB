@@ -241,7 +241,7 @@ sp : BEGIN
 					ID				BIGINT UNSIGNED DEFAULT NULL
 				,	GroupID 		BIGINT UNSIGNED NOT NULL
 				,	OriginGroupID 	BIGINT UNSIGNED NOT NULL
-				,	CustID 			BIGINT UNSIGNED DEFAULT NULL
+				,	CustID 			BIGINT UNSIGNED NOT NULL
 				,	CreatedDate 	DATETIME DEFAULT NULL
                 
                 ,	PRIMARY KEY (CustID,GroupID)
@@ -253,7 +253,7 @@ sp : BEGIN
                 ,	asg.OriginGroupID
                 ,	asg.CustID
                 ,	asg.CreatedDate
-			FROM CTS_Archive.AssociationGroupByAI  AS asg
+			FROM CTS_DataCenter.AssociationGroupByAI  AS asg
 			WHERE EXISTS (SELECT 1 FROM CTS_Archive.CTSCustomerAssociationArchive_Process AS pro WHERE asg.CustID = pro.CustID)
             LIMIT lv_BatchSize_AssData;
             
