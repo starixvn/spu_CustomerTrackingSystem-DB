@@ -7,7 +7,7 @@
 USE CTS_Archive;
 
 CREATE TABLE AssociationGroupByAI_Arc(
-		ID				BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
+		ID				BIGINT UNSIGNED NOT NULL
 	,	GroupID 		BIGINT UNSIGNED NOT NULL
 	,	OriginGroupID 	BIGINT UNSIGNED DEFAULT NULL
 	,	CustID 			BIGINT UNSIGNED NOT NULL
@@ -16,5 +16,5 @@ CREATE TABLE AssociationGroupByAI_Arc(
 	,	PRIMARY KEY (CustID, GroupID)
     ,	INDEX IX_AssociationGroupByAI_Arc_GroupIDCustID(GroupID, CustID)
     ,	INDEX IX_AssociationGroupByAI_Arc_OriginGroupIDCustID(OriginGroupID, CustID)
+    ,	INDEX IX_AssociationGroupByAI_Arc_ID(ID)
 ) ENGINE=InnoDB;
-            
