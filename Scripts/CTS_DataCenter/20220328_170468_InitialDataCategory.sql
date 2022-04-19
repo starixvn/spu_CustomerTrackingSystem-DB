@@ -110,6 +110,18 @@ INNER JOIN CategoryToDangerLevel AS abi ON cate.CategoryID = abi.CategoryID
 SET cate.ABIDangerLevel_Licensee = abi.DangerLevel
 WHERE abi.IsLicensee = 1;
 
+UPDATE CTS_DataCenter.CustomerCategory
+SET     EvidenceID_Licensee = '50'
+    ,   EvidenceCode_Licensee = '6.18' 
+WHERE (CategoryID = '80');
+
+UPDATE CTS_DataCenter.CustomerCategory
+SET     EvidenceID_Licensee = '61', EvidenceCode_Licensee = '6.9'
+    ,   EvidenceID_Credit = '51'
+    ,   EvidenceCode_Credit = '6.19' 
+WHERE (CategoryID = '82');
+ 
+
 UPDATE CTS_DataCenter.CustomerCategory AS cate
 INNER JOIN CTS_DataCenter.CustomerCategory AS rela on cate.RelevantCategoryID = rela.CategoryID
 SET cate.ReasonID = rela.ReasonID
