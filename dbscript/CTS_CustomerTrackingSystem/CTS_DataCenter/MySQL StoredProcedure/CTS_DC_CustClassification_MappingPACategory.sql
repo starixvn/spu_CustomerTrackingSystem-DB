@@ -46,6 +46,8 @@ BEGIN
     DECLARE CONST_SOURCETYPE_INCLUDEASSWITHPA	INT DEFAULT 21;
 	DECLARE CONST_SOURCETYPE_RESCANBYPA 		INT DEFAULT 23;
     
+    DECLARE lv_CreatedBy 						INT DEFAULT 10278938;
+    
 	DROP TEMPORARY TABLE IF EXISTS Temp_PA;    
 	CREATE TEMPORARY TABLE Temp_PA(	  
 		/*Cust info*/
@@ -55,6 +57,7 @@ BEGIN
         ,	CurrencyID				INT
         ,	IsLicensee				BIT
 		,	IsRobotException 		BIT DEFAULT 0 
+        ,	CreatedBy 				INT UNSIGNED
         
         /*Data warehouse, mainDB  info*/
         , 	WinlossStatus			SMALLINT /*LOSING  = 0,KEEPSTATE = 1, WINNING = 2;*/
@@ -100,6 +103,7 @@ BEGIN
         ,	CategoryGroup     	SMALLINT UNSIGNED    
         ,	IsProbation			BIT DEFAULT 0
         ,	IsChangeByWinloss	BIT DEFAULT 0
+        ,	CreatedBy 			INT UNSIGNED
         , 	PRIMARY KEY 		PK_Temp_ExistedClassification(CustID, CategoryID)     
      );
 	
@@ -110,7 +114,7 @@ BEGIN
 		, 	PRIMARY KEY		PK_Temp_ExistedEvidence(CustID, CategoryID)
     );
     
-    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, SubscriberID, CurrencyID, IsLicensee, IsRobotException,
+    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, SubscriberID, CurrencyID, IsLicensee, IsRobotException,CreatedBy,
 							   RobotCounter, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,
 							   ReasonID, EvidenceID,
                                CategoryID,CategoryGroup, ActionType, TargetCC)
@@ -123,6 +127,7 @@ BEGIN
         ,   CASE WHEN (mss.SubscriberGroupID <> 2 AND cust.SubscriberID IN (2,130)) OR (mss.SubscriberGroupID = 2 AND cust.CurrencyID IN (13,78)) THEN 1
 				 ELSE 0 
 			END AS IsRobotException
+        ,	IFNULL(pa.CreatedBy,lv_CreatedBy) AS CreatedBy
         
         , 	pa.RobotCounter
         , 	pa.WinlossStatus 
@@ -155,6 +160,7 @@ BEGIN
 			,	WinlossRM		DECIMAL(20,4) 		PATH "$.WinlossRM"
 			, 	BetCount		BIGINT 				PATH "$.BetCount"
 			, 	ActiveDays		INT 				PATH "$.ActiveDays"
+            , 	CreatedBy		INT UNSIGNED		PATH "$.CreatedBy"
 	)) AS pa
 		INNER JOIN CTSCustomer AS cust ON pa.CustID = cust.CustID AND cust.CustSubID = 0
 		INNER JOIN MappingSubscriberSite AS mss ON cust.SiteID = mss.SiteID
@@ -218,9 +224,10 @@ BEGIN
 					   ELSE 0 END
 	,	pa.IsProbation = cate.IsProbation;
 	
-    UPDATE Temp_PA AS pa 
+    UPDATE IGNORE Temp_PA AS pa 
 		INNER JOIN	Temp_ExistedClassification AS ex ON ex.CustID = pa.CustID AND ex.CategoryID = pa.CategoryID
-	SET	pa.ActionType = CONST_ACTIONTYPE_UPDATE
+	SET		pa.ActionType = CONST_ACTIONTYPE_UPDATE
+		,	ex.CreatedBy = pa.CreatedBy
 	WHERE pa.ActionType = CONST_ACTIONTYPE_INSERT;
     
     UPDATE Temp_PA AS pa 
@@ -237,14 +244,14 @@ BEGIN
                                                      AND e.CategoryID IN (CONST_CATEGORYID_BADROBOTUSERS,CONST_CATEGORYID_GOODROBOTUSERS);
                                                      
     UPDATE Temp_ExistedClassification AS ex  
-    SET IsChangeByWinloss = 1
-    WHERE  RelevantCategoryID IS NOT NULL
+    SET ex.IsChangeByWinloss = 1
+    WHERE  ex.RelevantCategoryID IS NOT NULL
 		AND	EXISTS (SELECT 1 
 				  FROM Temp_PA AS pa
                   WHERE pa.CustID = ex.CustID AND pa.IsProbation <> ex.IsProbation);
 	
     UPDATE Temp_PA AS pa
-    SET IsDataChanged = 0
+    SET pa.IsDataChanged = 0
     WHERE EXISTS (SELECT 1 
 				  FROM Temp_ExistedClassification AS ex
                   WHERE pa.CustID = ex.CustID AND (pa.CategoryGroup = ex.CategoryGroup OR pa.CategoryID = ex.CategoryID))

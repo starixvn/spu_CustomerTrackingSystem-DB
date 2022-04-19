@@ -54,7 +54,6 @@ BEGIN
     DECLARE	CONST_GROUP_PA 						INT DEFAULT 0;
 	DECLARE	CONST_GROUP_NORMAL 					INT DEFAULT 200;
     
-    DECLARE lv_CreatedBy 						INT DEFAULT 10278938;
     DECLARE lv_CurrentDateTime 					DATETIME DEFAULT CURRENT_TIME(); 
     
     /*  1: Get Mapping category*/
@@ -92,7 +91,7 @@ BEGIN
 		INNER JOIN Temp_PA AS pa on pa.CustID = clss.CustID AND clss.SportGroupID = CONST_GROUP_PA AND pa.CategoryID = clss.CategoryID 
 	SET 	clss.CTSCustID = pa.CTSCustID
 		, 	clss.SubscriberID  = pa.SubscriberID
-		, 	clss.LastModifiedBy = lv_CreatedBy
+		, 	clss.LastModifiedBy = pa.CreatedBy
 		,   clss.LastModifiedDate = lv_CurrentDateTime
 		, 	clss.LastScannedDate = DATE(lv_CurrentDateTime)
 	WHERE pa.ActionType = CONST_ACTIONTYPE_UPDATE
@@ -103,7 +102,7 @@ BEGIN
 		INNER JOIN Temp_ExistedClassification AS pa on pa.CustID = cate.CustID AND cate.SportGroupID = CONST_GROUP_PA AND pa.CategoryID = cate.CategoryID 
 	SET 	cate.CTSCustID = pa.CTSCustID
 		,	cate.CategoryID = pa.RelevantCategoryID
-		, 	cate.LastModifiedBy = lv_CreatedBy
+		, 	cate.LastModifiedBy = pa.CreatedBy
 		,   cate.LastModifiedDate = lv_CurrentDateTime
 		, 	cate.LastScannedDate = DATE(lv_CurrentDateTime)
 	WHERE pa.IsChangeByWinloss = 1;
@@ -117,9 +116,9 @@ BEGIN
 		, 	pa.CategoryID
 		, 	0
 		, 	lv_CurrentDateTime
-		, 	lv_CreatedBy
+		, 	pa.CreatedBy
 		, 	lv_CurrentDateTime
-		, 	lv_CreatedBy
+		, 	pa.CreatedBy
 		, 	DATE(lv_CurrentDateTime)
 	FROM Temp_PA AS pa
     WHERE pa.ActionType = CONST_ACTIONTYPE_INSERT;      
@@ -137,7 +136,7 @@ BEGIN
 		, 	pa.CategoryID
 		, 	CONST_GROUP_PA
 		, 	lv_CurrentDateTime
-		, 	lv_CreatedBy
+		, 	pa.CreatedBy
 		, 	pa.ActionType
 		, 	1
 		, 	DATE(lv_CurrentDateTime)
@@ -160,7 +159,7 @@ BEGIN
 		, 	pa.CategoryID 
 		, 	CONST_GROUP_PA
 		, 	lv_CurrentDateTime
-		, 	lv_CreatedBy
+		, 	pa.CreatedBy
 		, 	pa.ActionType
 		, 	1
 		, 	DATE(lv_CurrentDateTime)
