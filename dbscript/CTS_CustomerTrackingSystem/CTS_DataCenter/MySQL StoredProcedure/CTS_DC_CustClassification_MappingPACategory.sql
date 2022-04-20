@@ -186,7 +186,7 @@ BEGIN
 	/*	2: EXCLUDE CUSTOMER */    
     CALL CTS_DC_ExcludeCustByCondition('Temp_PA');
     
-    INSERT IGNORE INTO Temp_ExistedClassification (CustID,CTSCustID, CategoryGroup, CategoryID, IsProbation, RelevantCategoryID)
+    INSERT IGNORE INTO Temp_ExistedClassification (CustID,CTSCustID, CategoryID, CategoryGroup, IsProbation, RelevantCategoryID)
 	SELECT 	clss.CustID
 		,	clss.CTSCustID
 		, 	clss.CategoryID  
