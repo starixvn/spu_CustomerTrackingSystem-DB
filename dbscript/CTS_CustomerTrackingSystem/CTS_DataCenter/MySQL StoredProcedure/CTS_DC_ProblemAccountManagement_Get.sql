@@ -18,6 +18,7 @@ sp :BEGIN
 		Original:
 		Revisions:
 			- 20211130@Aries.Nguyen: Created [Redmine: #164079]
+            - 20220408@Casey.Huynh: Return CreatedBy [Redmine: #171223]
 		Param's Explanation (filtered by):   
         Example: 
 			-CALL CTS_DC_ProblemAccountManagement_Get('2021-03-03 00:00:00', '2021-03-10 00:00:00', null,'KEONUS',0); 
@@ -66,9 +67,11 @@ sp :BEGIN
 		,	cus.CurrencyID
         ,	GROUP_CONCAT(DISTINCT cate.CategoryName SEPARATOR ', ') AS CategoryName
 		,	MIN(class.CreatedDate) AS CreatedDate
+        ,	us.UserName AS CreatedBy
 	FROM CTS_DataCenter.CTSCustomerClassification AS class
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON class.CTSCustID = cus.CTSCustID
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON class.CategoryID = cate.CategoryID
+        LEFT JOIN	CTS_Admin.CTSUser AS us ON class.CreatedBy = us.UserID  
 	WHERE    class.CreatedDate BETWEEN ip_FromDate AND ip_ToDate
 		AND  class.SportGroupID = 0
 		AND  cus.SiteID IN (SELECT st.SiteID FROM Temp_SiteID AS st)
@@ -78,12 +81,13 @@ sp :BEGIN
 									OR cus.MRecommend = lv_CustID 
 									OR cus.Recommend = lv_CustID)))
 	GROUP BY cus.CTSCustID
-		, 	 cus.CustID
-		, 	 cus.UserName
-		, 	 cus.UserName2
-		, 	 cus.Site
-		, 	 cus.SiteID
-		,	 cus.Currency
-		,	 cus.CurrencyID;
+		, 	cus.CustID
+		, 	cus.UserName
+		, 	cus.UserName2
+		, 	cus.Site
+		, 	cus.SiteID
+		,	cus.Currency
+		,	cus.CurrencyID
+        ,	us.UserName;
 END$$
 DELIMITER ;
