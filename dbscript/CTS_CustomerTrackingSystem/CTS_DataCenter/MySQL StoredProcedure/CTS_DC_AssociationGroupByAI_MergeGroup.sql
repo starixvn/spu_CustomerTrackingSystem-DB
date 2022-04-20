@@ -43,14 +43,21 @@ BEGIN
         ,	PRIMARY KEY 		PK_Temp_MergedGroupID_IDOldGroupID(ID,OldGroupID)
 	); 
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_MinMergedGroupID;    
+	CREATE TEMPORARY TABLE Temp_MinMergedGroupID(	  	
+			ID					SMALLINT UNSIGNED
+		,	NewGroupID			BIGINT UNSIGNED
+        ,	PRIMARY KEY 		PK_Temp_MinMergedGroupID_IDNewGroupID(ID,NewGroupID)
+	); 
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_AffectedCustGroup;    
 	CREATE TEMPORARY TABLE Temp_AffectedCustGroup(	  	
-			CustID				BIGINT UNSIGNED
+			ID					INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+		,	CustID				BIGINT UNSIGNED
 		,	OldGroupID			BIGINT UNSIGNED
 		,	NewGroupID			BIGINT UNSIGNED
         ,	OrderID				SMALLINT UNSIGNED
-        ,	PRIMARY KEY 		PK_Temp_AffectedCustGroup_CustIDOldGroupID(CustID,OldGroupID)
-        ,	INDEX 				IX_Temp_AffectedCustGroup_CustIDNewGroupID(CustID,NewGroupID)
+        ,	INDEX 				IX_Temp_AffectedCustGroup_CustIDOldGroupID(CustID,OldGroupID)
 	); 
     
     DROP TEMPORARY TABLE IF EXISTS Temp_MergeInfo;    
@@ -85,11 +92,14 @@ BEGIN
     FROM Temp_MergeGroup AS t
 		INNER JOIN AssociationGroupByAI AS g ON t.OriginGroupID = g.OriginGroupID;
     
+    INSERT INTO Temp_MinMergedGroupID(ID, NewGroupID)
+    SELECT a.ID, MIN(g.GroupID)
+	FROM Temp_MergeGroup AS a
+		INNER JOIN AssociationGroupByAI AS g ON a.OriginGroupID = g.OriginGroupID
+	GROUP BY a.ID;
+                    
     UPDATE Temp_MergedGroupID AS t
-		INNER JOIN (SELECT a.ID, MIN(g.GroupID) AS NewGroupID
-					FROM Temp_MergeGroup AS a
-						INNER JOIN AssociationGroupByAI AS g ON a.OriginGroupID = g.OriginGroupID
-					GROUP BY a.ID) AS v ON t.ID = v.ID
+		INNER JOIN Temp_MinMergedGroupID AS v ON t.ID = v.ID
 	SET t.NewGroupID = v.NewGroupID;
     
     INSERT INTO Temp_AffectedCustGroup(CustID,OldGroupID,NewGroupID, OrderID)
