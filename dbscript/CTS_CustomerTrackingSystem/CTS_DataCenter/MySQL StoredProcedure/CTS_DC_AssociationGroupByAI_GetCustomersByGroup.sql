@@ -30,7 +30,7 @@ BEGIN
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
 	
-    SELECT g.GroupID, g.CustID
+    SELECT g.GroupID, g.OriginGroupID, g.CustID
     FROM AssociationGroupByAI AS g
 		INNER JOIN Temp_Group AS t ON g.GroupID = t.GroupID;
     
