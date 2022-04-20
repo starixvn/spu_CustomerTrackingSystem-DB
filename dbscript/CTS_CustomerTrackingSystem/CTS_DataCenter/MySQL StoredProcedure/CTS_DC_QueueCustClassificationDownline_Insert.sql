@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_QueueCustClassificationForDownline_Insert`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassificationQueue_Insert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_QueueCustClassificationForDownline_Insert`(    	
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassificationQueue_Insert`(    	
      	IN ip_CTSCustID			BIGINT UNSIGNED
     ,	IN ip_CustID			BIGINT UNSIGNED
     ,	IN ip_SubscriberID		INT
@@ -19,7 +19,7 @@ BEGIN
 		Task :		Insert CustClassificationDownline
 		DB:			CTS_DataCenter
 		Original: 
-
+CTS_DC_CustClassification_Get
 		Revisions:
 			- 20220418@Casey.Huynh: Add and Remove VVIP for Downline [Redmine ID: #159013]
 
@@ -27,7 +27,7 @@ BEGIN
         ip_ActionType: 1-Insert, 2-Remove
         
         Example: 
-        CALL CTS_DC_QueueCustClassificationForDownline_Insert(2998,179747,2,110,'Test Insert',78,3,1);
+        CALL CTS_DC_CustClassificationQueue_Insert(2998,179747,2,110,'Test Insert',78,3,1);
 	*/ 
 	
     DECLARE lv_MinCTSCustID		BIGINT UNSIGNED;
@@ -61,8 +61,8 @@ BEGIN
         ORDER BY cus.CTSCustID ASC
         LIMIT 1;
     END IF;
-    SELECT 1;
-	INSERT INTO CTS_DataCenter.QueueCustomerClassificationDownline(CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryID, LastDownlineCTSCustID, ActionType, InsertTime)
+
+	INSERT INTO CTS_DataCenter.CTSCustomerClassificationDownlineQueue(CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryID, LastDownlineCTSCustID, ActionType, InsertTime)
     SELECT ip_CTSCustID, ip_CustID, ip_RoleID, ip_SubscriberID, ip_CreatedBy, ip_Remark, ip_CategoryID, lv_MinCTSCustID AS LastDownlineCTSCustID, ip_ActionType, CURRENT_TIMESTAMP(3);
     
 END$$

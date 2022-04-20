@@ -1,9 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_QueueCustClassificationForDownline_Get`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CTSCustomerClassificationDownlineQueue_Get`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_QueueCustClassificationForDownline_Get`(
-   
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CTSCustomerClassificationDownlineQueue_Get`(   
 )
     SQL SECURITY INVOKER 
 BEGIN
@@ -18,7 +17,7 @@ BEGIN
 
 		Param's Explanation:
         
-        Example: CALL CTS_DC_QueueCustClassificationForDownline_Get();
+        Example: CALL CTS_DC_CTSCustomerClassificationDownlineQueue_Get();
 	*/ 
 	DECLARE lv_BatchSize		INT;
     DECLARE lv_QueueID			BIGINT UNSIGNED;
@@ -41,7 +40,7 @@ BEGIN
     #=========GET QUEUE Info====================================
     SELECT que.ID, que.CTSCustID, que.CustID, que.RoleID, que.SubscriberID, que.CreatedBy, que.Remark, que.CategoryID, que.LastDownlineCTSCustID, que.ActionType
     INTO lv_QueueID, lv_CTSCustID, lv_CustID, lv_RoleID, lv_SubscriberID, lv_CreatedBy, lv_Remark, lv_CategoryID, lv_LastDownlineCTSCustID, lv_ActionType
-    FROM CTS_DataCenter.QueueCustomerClassificationDownline AS que
+    FROM CTS_DataCenter.CTSCustomerClassificationDownlineQueue AS que
     ORDER BY ID ASC
     LIMIT 1;    
 
@@ -92,12 +91,11 @@ BEGIN
     
     IF @gv_CTSCustID IS NOT NULL THEN
 		SELECT	lv_ActionType AS ActionType
-			,	lv_RoleID AS RoleID
             , 	lv_QueueID AS QueueID;
     ELSE
 		SELECT NULL AS ActionType, NULL AS RoleID;
 		DELETE que
-		FROM CTS_DataCenter.QueueCustomerClassificationDownline AS que
+		FROM CTS_DataCenter.CTSCustomerClassificationDownlineQueue AS que
         WHERE que.ID = lv_QueueID;
 	END IF;
     

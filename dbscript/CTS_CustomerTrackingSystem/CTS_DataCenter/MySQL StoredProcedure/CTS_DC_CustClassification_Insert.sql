@@ -3,8 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_Insert`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_Insert`(
-		IN ip_CategoryID		SMALLINT UNSIGNED        
-    ,	IN ip_FromAction		TINYINT
+		IN ip_FromAction		TINYINT
     ,	IN ip_QueueID			BIGINT
     ,	IN ip_AffectDownline	BOOLEAN
     ,	IN ip_CustJson			JSON
@@ -38,7 +37,11 @@ sp: BEGIN
             - 10220418@Casey.Huynh: Add and Remove VVIP for Downline [Redmine ID: #159013]
             
 		Param's Explanation:
-			ip_FromAction: 1: Manual, 2:Service
+			ip_FromAction: From Web(1),From Service(2)
+            ip_QueueID: From Web(NULL), From Service(<QueueID>)
+            ip_AffectDownline:  From Web(0,1) , From Service(NULL)
+            
+		Example: CALL 
 	*/
     DECLARE lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();
 	DECLARE lv_SPName 			VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_Insert';
@@ -55,6 +58,7 @@ sp: BEGIN
 		 	CustID			BIGINT UNSIGNED		
          ,  CTSCustID 		BIGINT UNSIGNED
          ,	SubscriberID 	INT UNSIGNED
+         ,	CategoryID		INT	
          ,	CreatedBy		BIGINT UNSIGNED
          ,	Remark			VARCHAR(300)
          
@@ -63,13 +67,14 @@ sp: BEGIN
 	);
     
     /**************************************************************************************/
-    INSERT INTO Temp_Customer(CustID, CTSCustID, SubscriberID, CreatedBy, Remark) 
-	SELECT 	DISTINCT temp.CustID, temp.CTSCustID, temp.SubscriberID, temp.CreatedBy, temp.Remark
+    INSERT INTO Temp_Customer(CustID, CTSCustID, SubscriberID, CategoryID, CreatedBy, Remark) 
+	SELECT 	DISTINCT temp.CustID, temp.CTSCustID, temp.SubscriberID, temp.CategoryID, temp.CreatedBy, temp.Remark
 	FROM JSON_TABLE(ip_CustJson,
 		 "$[*]" COLUMNS(
 				CustID 			BIGINT UNSIGNED	PATH "$.CustID"
 			,	CTSCustID 		BIGINT UNSIGNED	PATH "$.CTSCustID"
             ,	SubscriberID 	INT UNSIGNED	PATH "$.SubscriberID"
+            ,	CategoryID		INT				PATH "$.CategoryID"
             ,	CreatedBy 		BIGINT UNSIGNED	PATH "$.CreatedBy"
             ,	Remark			VARCHAR(300)	PATH "$.Remark"
 		 )) AS temp;
@@ -77,6 +82,18 @@ sp: BEGIN
     SELECT MAX(tmpCus.CTSCustID)
     INTO lv_MaxCTSCustID
     FROM Temp_Customer AS tmpCus;
+    
+    /********USER LOG***********************************************************************/
+    IF ip_FromAction = 1 THEN
+		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
+		SELECT 10 AS LogTypeID
+			, 	lv_SPName
+			, 	CONCAT('Insert VVIP: CTSCustID', tmpCus.CTSCustID,'; AffectDownline_', ip_AffectDownline,'; SubscriberID_', tmpCus.SubscriberID, '; ip_CategoryID_', ip_CategoryID, '; Remark_', tmpCus.Remark)
+            ,	lv_CurrentDateTime
+            , 	tmpCus.CreatedBy
+        FROM Temp_Customer AS tmpCus;
+	END IF;
+    
     /************************************************************************************/        
 	/*Remove all category, customer class, probation list before.*/
 	DELETE cls
@@ -137,23 +154,15 @@ sp: BEGIN
 		,   13 
 		,	1
 	FROM Temp_Customer AS tmpCus;
-
-	IF ip_FromAction = 1 THEN
-		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-		SELECT 10 AS LogTypeID
-			, 	lv_SPName
-			, 	CONCAT('Insert VVIP: CTSCustID', tmpCus.CTSCustID,'; AffectDownline_', ip_AffectDownline,'; SubscriberID_', tmpCus.SubscriberID, '; ip_CategoryID_', ip_CategoryID, '; Remark_', tmpCus.Remark)
-            ,	lv_CurrentDateTime
-            , 	tmpCus.CreatedBy
-        FROM Temp_Customer AS tmpCus;
-	END IF;
     
 	/*Auto Pin Category*/
 	INSERT IGNORE INTO CTS_DataCenter.PinCustomerCategory(CTSCustID, CreatedTime)
 	SELECT tmpCus.CTSCustID, lv_CurrentDateTime
     FROM Temp_Customer AS tmpCus;
+    
+    
  
-    /*GET LATEST VVIP*/
+    /*RETURN CustList: push CC to NAP */
     SELECT	tmpCus.CustID AS CustId
 		,	100 AS CustomerClass
         ,	ip_CategoryID AS Category
@@ -161,7 +170,7 @@ sp: BEGIN
     FROM  Temp_Customer AS tmpCus;
     
     /*****UPDATE Queue LastID************/
-    IF ip_FromActionType = 2 AND ip_QueueID <> NULL THEN
+    IF ip_FromAction = 2 AND ip_QueueID <> NULL THEN
 		UPDATE CTS_DataCenter.QueueCustomerClassificationDownline AS que
 		SET que.LastDownlineCTSCustID = lv_MaxCTSCustID
 		WHERE que.ID = ip_QueueID;

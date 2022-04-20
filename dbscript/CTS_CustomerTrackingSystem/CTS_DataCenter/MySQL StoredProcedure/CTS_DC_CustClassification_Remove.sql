@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_Remove`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_Remove`(
-    	IN ip_Action			TINYINT
+    	IN ip_FromAction		TINYINT
     ,	IN ip_AffectDownline	BOOLEAN
     ,	IN ip_CustJson			JSON
     
@@ -28,7 +28,9 @@ BEGIN
 			- 20210525@Irena.Vo: Change col name PinCustomerCategory: CustID -> CTSCustID [RedmineID: #152965] 
 			- 20210920@Aries.Nguyen: Split history log  [Redmine ID: #161890]
             - 10220418@Casey.Huynh: Add and Remove VVIP for Downline [Redmine ID: #159013]
+            
 		Param's Explanation:
+			ip_FromAction: 1 From Web, 2 From Service
 	*/ 
     DECLARE lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();
     DECLARE lv_SPName 			VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_Remove';
@@ -60,14 +62,9 @@ BEGIN
             ,	CategoryID 	SMALLINT UNSIGNED	PATH "$.CategoryID"
             
 		 )) AS temp;
-    /************************************************************************************/
-
-	/*Remove VVIP*/
-	DELETE cls
-    FROM CTS_DataCenter.CTSCustomerClassification AS cls
-		INNER JOIN Temp_Customer AS tmpCus ON cls.CustID = tmpCus.CustID AND tmpCus.CategoryID = ip_CategoryID;
-	
-    IF ip_Action = 0 THEN
+         
+    /*********************User Log*************************************************************/	
+    IF ip_FromAction = 1 THEN
         INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 		SELECT 10 AS LogTypeID
 			, 	lv_SPName
@@ -75,7 +72,11 @@ BEGIN
             ,	lv_CurrentDateTime
             , 	tmpCus.CreatedBy
         FROM Temp_Customer AS tmpCus;
-    END IF;	
+    END IF;
+    /*************************************Remove VVIP*************************************/
+	DELETE cls
+    FROM CTS_DataCenter.CTSCustomerClassification AS cls
+		INNER JOIN Temp_Customer AS tmpCus ON cls.CustID = tmpCus.CustID AND tmpCus.CategoryID = ip_CategoryID;    	
 	
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
 	SELECT 	tmpCus.CustID
