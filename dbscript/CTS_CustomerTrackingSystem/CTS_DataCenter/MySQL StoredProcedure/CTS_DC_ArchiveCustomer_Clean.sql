@@ -17,7 +17,9 @@ sp: BEGIN
 			- 	20211216@Aries.Nguyen: Clean data Sum Account Login Info [Redmine ID: #165105]
             -	20220408@Casey.Huynh: Add AssociationGroupByAI [Redmine ID: #171222]
 		Param's Explanation (filtered by):	
-			
+        
+        Example:
+			CALL CTS_DC_ArchiveCustomer_Clean();
 	*/
     
     DECLARE lv_CustBatchSize 			INT;
@@ -406,8 +408,8 @@ sp: BEGIN
 			) ENGINE=InnoDB;
             
             INSERT IGNORE INTO Temp_AssociationGroupByAI_Clean(CustID, GroupID)
-            SELECT 	asg.FromCustID
-				,	asg.ToCustID
+            SELECT 	asg.CustID
+				,	asg.GroupID
 			FROM CTS_DataCenter.AssociationGroupByAI AS asg
 			WHERE  asg.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)
             LIMIT lv_CleanTableBatchSize;
