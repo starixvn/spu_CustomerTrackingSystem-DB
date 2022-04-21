@@ -196,7 +196,7 @@ BEGIN
         ,	cate.IsProbation
         ,	cate.RelevantCategoryID
         ,	cate.SourceType
-        ,	CASE WHEN ip_SourceType = 'NAP' AND temp. ActionType = CONST_ACTIONTYPE_REMOVE THEN 1
+        ,	CASE WHEN ip_SourceType = 'NAP' AND temp. ActionType = CONST_ACTIONTYPE_REMOVE AND cate.SourceType = 'NAP' THEN 1
 			ELSE 0 END AS IsRemoveFromNAP
 		,	temp.CreatedBy
 	FROM  Temp_PA AS temp 
