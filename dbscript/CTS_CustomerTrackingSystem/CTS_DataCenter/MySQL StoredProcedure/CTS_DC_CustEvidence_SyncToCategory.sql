@@ -86,7 +86,7 @@ BEGIN
 		FROM CTS_DataCenter.CTSCustomerClassification AS clss
 		INNER JOIN Temp_PA AS pa ON pa.CustID = clss.CustID AND clss.SportGroupID = CONST_GROUP_PA AND pa.CategoryID = clss.CategoryID 
         INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = clss.CategoryID
-		WHERE	pa.ActionType = CONST_ACTIONTYPE_REMOVE AND pa.IsExistedEvi = 0 AND cate.SourceType = 'NAP'; 
+		WHERE	pa.ActionType = CONST_ACTIONTYPE_REMOVE AND pa.IsExistedEvi = 0 AND cate.SourceType = 'Evidence'; 
         
         /*	5: UPDATE PA FROM EVIDENCE */
 		UPDATE CTS_DataCenter.CTSCustomerClassification AS clss
