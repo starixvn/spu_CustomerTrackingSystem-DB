@@ -53,9 +53,9 @@ BEGIN
     
     DECLARE	CONST_GROUP_PA 						INT DEFAULT 0;
 	DECLARE	CONST_GROUP_NORMAL 					INT DEFAULT 200;
-
+    
     DECLARE CONST_SOURCETYPE_RESCANBYNAPPA 		INT DEFAULT 15;
-
+    
     DECLARE lv_CurrentDateTime 					DATETIME DEFAULT CURRENT_TIME(); 
     
     /*  1: Get Mapping category*/
@@ -76,9 +76,8 @@ BEGIN
     /*	4: REMOVE PA FROM NAP CM */
     DELETE clss
     FROM CTS_DataCenter.CTSCustomerClassification AS clss
-		INNER JOIN Temp_PA AS pa ON pa.CustID = clss.CustID AND clss.SportGroupID = CONST_GROUP_PA
-        INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = clss.CategoryID
-	WHERE pa.ActionType = CONST_ACTIONTYPE_REMOVE AND cate.SourceType = 'NAP';
+		INNER JOIN Temp_PA AS pa ON pa.CustID = clss.CustID AND clss.SportGroupID = CONST_GROUP_PA AND clss.CategoryID = pa.CategoryID
+	WHERE pa.ActionType = CONST_ACTIONTYPE_REMOVE;
     
     /*	5: REMOVE ROBOT USER CATEGORY	*/
     DELETE clss

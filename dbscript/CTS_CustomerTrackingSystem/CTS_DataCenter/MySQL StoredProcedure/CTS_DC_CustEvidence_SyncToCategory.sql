@@ -126,9 +126,9 @@ BEGIN
 		WHERE pa.ActionType = CONST_ACTIONTYPE_INSERT;
    
 		IF (ip_IsRescan = 1) THEN
-            UPDATE Temp_CustomerEvidences AS temp
-            SET temp.SourceTypeID = CONST_SOURCETYPE_RESCANBYEVIDENCE;
-        END IF;    
+            UPDATE Temp_PA AS pa
+            SET pa.SourceTypeID = CONST_SOURCETYPE_RESCANBYEVIDENCE;
+        END IF;   
 	    
         /*	7: Write log IsDataChange*/
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays)

@@ -18,7 +18,7 @@ BEGIN
 			- 20220328@Aries.Nguyen: Created [Redmine ID: #170468]
 
 		Param's Explanation (filtered by):      
-			- CALL CTS_DC_CustClassification_MappingCategory ('[{"CustID": 123,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10}]','NAP');
+			- CALL CTS_DC_CustClassification_MappingCategory ('[{"CustID": 123,"ReasonID": -1,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10}]','NAP');
 */ 
     DECLARE	CONST_CATEGORYID_ROBOTUSERS 		INT DEFAULT 61;
     DECLARE	CONST_CATEGORYID_BADROBOTUSERS 		INT DEFAULT 163;
@@ -103,7 +103,9 @@ BEGIN
         ,	CategoryGroup     	SMALLINT UNSIGNED    
         ,	IsProbation			BIT DEFAULT 0
         ,	IsChangeByWinloss	BIT DEFAULT 0
+        ,	SourceType			VARCHAR(50)
         ,	CreatedBy 			INT UNSIGNED
+        ,	IsRemoveFromNAP 	BIT DEFAULT 0
         , 	PRIMARY KEY 		PK_Temp_ExistedClassification(CustID, CategoryID)     
      );
 	
@@ -186,22 +188,28 @@ BEGIN
 	/*	2: EXCLUDE CUSTOMER */    
     CALL CTS_DC_ExcludeCustByCondition('Temp_PA');
     
-    INSERT IGNORE INTO Temp_ExistedClassification (CustID,CTSCustID, CategoryID, CategoryGroup, IsProbation, RelevantCategoryID)
+    INSERT IGNORE INTO Temp_ExistedClassification (CustID,CTSCustID,CategoryID,CategoryGroup,IsProbation,RelevantCategoryID,SourceType,IsRemoveFromNAP,CreatedBy)
 	SELECT 	clss.CustID
 		,	clss.CTSCustID
 		, 	clss.CategoryID  
         , 	cate.CategoryGroup
         ,	cate.IsProbation
         ,	cate.RelevantCategoryID
-	FROM CTS_DataCenter.CTSCustomerClassification AS clss
-		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = clss.CategoryID
-	WHERE EXISTS (SELECT 1 
-				  FROM Temp_PA AS temp
-				  WHERE  temp.CustID = clss.CustID 
-					 AND clss.SportGroupID = 0);
+        ,	cate.SourceType
+        ,	CASE WHEN ip_SourceType = 'NAP' AND temp. ActionType = CONST_ACTIONTYPE_REMOVE THEN 1
+			ELSE 0 END AS IsRemoveFromNAP
+		,	temp.CreatedBy
+	FROM  Temp_PA AS temp 
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON temp.CustID = clss.CustID AND clss.SportGroupID = 0
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = clss.CategoryID;
+	
+	UPDATE IGNORE Temp_PA AS pa 
+	INNER JOIN	Temp_ExistedClassification AS ex ON ex.CustID = pa.CustID AND ex.CategoryID = pa.CategoryID
+	SET		pa.ActionType = CONST_ACTIONTYPE_UPDATE
+		,	pa.IsExisted = 1
+	WHERE pa.ActionType = CONST_ACTIONTYPE_INSERT;
      
 	UPDATE Temp_PA AS pa
-    LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON pa.CategoryID = clss.CategoryID AND  pa.CustID = clss.CustID
 	INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON pa.CategoryID = cate.CategoryID
 	SET pa.TargetCC	= CASE  WHEN pa.CategoryID = CONST_CATEGORYID_GOODROBOTUSERS AND pa.IsRobotException = 1 THEN cate.CustomerClassException
 							WHEN pa.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE) AND pa.TargetCC > 0 THEN pa.TargetCC
@@ -220,16 +228,8 @@ BEGIN
 									WHEN pa.IsLicensee = 1 THEN cate.ABIDangerLevel_Licensee
 									WHEN pa.IsLicensee = 0 THEN cate.ABIDangerLevel_Credit				
 								END
-	,	pa.IsExisted = CASE WHEN clss.CustID IS NOT NULL THEN 1
-					   ELSE 0 END
 	,	pa.IsProbation = cate.IsProbation;
 	
-    UPDATE IGNORE Temp_PA AS pa 
-		INNER JOIN	Temp_ExistedClassification AS ex ON ex.CustID = pa.CustID AND ex.CategoryID = pa.CategoryID
-	SET		pa.ActionType = CONST_ACTIONTYPE_UPDATE
-		,	ex.CreatedBy = pa.CreatedBy
-	WHERE pa.ActionType = CONST_ACTIONTYPE_INSERT;
-    
     UPDATE Temp_PA AS pa 
     SET	pa.SourceTypeID = (CASE WHEN pa.CategoryID IN (CONST_CATEGORYID_ROBOTUSERS,CONST_CATEGORYID_GOODROBOTUSERS,CONST_CATEGORYID_BADROBOTUSERS) THEN CONST_SOURCETYPE_INSERTROBOTUSERS /* Insert Robot User */
 								  WHEN pa.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE) THEN CONST_SOURCETYPE_INSERTNAPPA /* Insert & Update */
@@ -239,9 +239,9 @@ BEGIN
     
     DELETE pa
     FROM Temp_PA AS pa
-		INNER JOIN Temp_ExistedClassification AS e ON pa.CustID = e.CustID 
-													 AND pa.CategoryID = CONST_CATEGORYID_ROBOTUSERS 
-                                                     AND e.CategoryID IN (CONST_CATEGORYID_BADROBOTUSERS,CONST_CATEGORYID_GOODROBOTUSERS);
+	INNER JOIN Temp_ExistedClassification AS e ON pa.CustID = e.CustID 
+												AND pa.CategoryID = CONST_CATEGORYID_ROBOTUSERS 
+												AND e.CategoryID IN (CONST_CATEGORYID_BADROBOTUSERS,CONST_CATEGORYID_GOODROBOTUSERS);
                                                      
     UPDATE Temp_ExistedClassification AS ex  
     SET ex.IsChangeByWinloss = 1
@@ -254,9 +254,25 @@ BEGIN
     SET pa.IsDataChanged = 0
     WHERE EXISTS (SELECT 1 
 				  FROM Temp_ExistedClassification AS ex
-                  WHERE pa.CustID = ex.CustID AND (pa.CategoryGroup = ex.CategoryGroup OR pa.CategoryID = ex.CategoryID))
-		 OR pa.ActionType = CONST_ACTIONTYPE_IGNOREPIN;
+                  WHERE pa.CustID = ex.CustID AND (pa.CategoryGroup = ex.CategoryGroup OR pa.CategoryID = ex.CategoryID));
 	
+    DELETE 
+    FROM Temp_PA
+    WHERE ActionType = CONST_ACTIONTYPE_REMOVE AND ip_SourceType = 'NAP';
+    
+	INSERT INTO Temp_PA(CustID,CTSCustID,CategoryID,CategoryGroup,ActionType,IsDataChanged,TargetCC,SourceTypeID,CreatedBy)
+    SELECT 	ex.CustID
+		,	ex.CTSCustID
+        ,	ex.CategoryID
+        ,	ex.CategoryGroup
+        ,	CONST_ACTIONTYPE_REMOVE AS ActionType
+        ,	1 AS IsDataChanged
+        ,	-1 AS TargetCC
+        ,	CONST_SOURCETYPE_REMOVENAPPA AS SourceTypeID
+        ,	ex.CreatedBy
+	FROM Temp_ExistedClassification AS ex
+    WHERE ex.IsRemoveFromNAP = 1;
+    
     IF ip_SourceType = 'Evidence' THEN
 		INSERT INTO Temp_ExistedEvidence(CustID,CategoryID)
 		SELECT  pa.CustID
