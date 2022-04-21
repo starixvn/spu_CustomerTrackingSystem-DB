@@ -15,6 +15,7 @@ BEGIN
 		Revisions:
              - 20201224-20210107@Irena.Vo: Created. Insert Error Log [RedmineID: #145951]
              - 20210622@Aries.Nguyen: Update coding convention and improve locking[Redmine ID: #157203]
+             - 20220421@Irena.Vo: Rename select CustId -> CustID [Redmine ID: #170468]
            
 		Param's Explanation (filtered by):		 	
 	*/   
@@ -61,12 +62,12 @@ BEGIN
     FROM Temp_CustID AS temp
         INNER JOIN  CTS_DataCenter.CTSCustomer AS cust ON cust.CustID = temp.CustID AND cust.CustSubID = 0;
 
-     -- Return CTSCustID, CustID, SubscriberID, EvidenceID, 0 (ActionType)
+     -- Return CustID, CTSCustID, SubscriberID, EvidenceID, 0 (ActionType)
     SELECT  DISTINCT 
-            temp.CustId
-	    ,	temp.CTSCustId
-        ,	temp.SubscriberId
-        ,	e.EvidenceId
+            temp.CustID
+	    ,	temp.CTSCustID
+        ,	temp.SubscriberID
+        ,	e.EvidenceID
         ,	0 AS ActionType
     FROM Temp_Customer AS temp
         INNER JOIN CTS_DataCenter.CustEvidence AS ce ON ce.CTSCustID = temp.CTSCustID AND ce.Level = 0

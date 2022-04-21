@@ -26,6 +26,7 @@ sp: BEGIN
 			- 20201214-20210107@Irena.Vo: Move logic Sync to Category by new sp: SyncToCategory. Insert Error Log [RedmineID: #145951]
             - 20210622@Aries.Nguyen: Update coding convention and improve locking [Redmine ID: #157203]
             - 20210823@Aries.Nguyen: Enhannce  Affected Evidence flow [Redmine ID: #160470]
+            - 20220421@Irena.Vo: Rename select CustId -> CustID [Redmine ID: #170468]
         
         Example:
             - CALL CTS_DataCenter.CTS_DC_CustEvidence_InsertMultiple_ByCustId('[{"CustID": 43600693, "EvidenceID": 45, "Comment": "na test 1"},{"CustID":43600693, "EvidenceID": 46, "Comment":"na test 2"},{"CustID":43600889, "EvidenceID": 45, "Comment":"na test 3"}]', 8, @op_ErrorMessage);
@@ -116,12 +117,12 @@ sp: BEGIN
 	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 	VALUES(3, lv_SPName, 'Insert bunch of Customer Evidences by CustId', lv_CurrentDateTime, ip_UserID);
 
-	-- Return CTSCustID, CustID, SubscriberID, EvidenceID, 0 (ActionType)
+	-- Return CustID, CTSCustID, SubscriberID, EvidenceID, 0 (ActionType)
     SELECT  DISTINCT 
-            temp.CustId
-        ,	temp.CTSCustId
-        ,	temp.SubscriberId
-        ,	temp.EvidenceId
+            temp.CustID
+        ,	temp.CTSCustID
+        ,	temp.SubscriberID
+        ,	temp.EvidenceID
         ,	0 AS ActionType
     FROM Temp_MultipleAccountEvidence AS temp;
 
