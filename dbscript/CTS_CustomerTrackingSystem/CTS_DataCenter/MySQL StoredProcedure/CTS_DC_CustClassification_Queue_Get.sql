@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassificationQueue_Get`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_Queue_Get`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassificationQueue_Get`(   
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_Queue_Get`(   
 )
     SQL SECURITY INVOKER 
 BEGIN
@@ -17,7 +17,7 @@ BEGIN
 
 		Param's Explanation:
         
-        Example: CALL CTS_DC_CTSCustomerClassificationDownlineQueue_Get();
+        Example: CALL CTS_DC_CustClassificationQueue_Get();
 	*/ 
 	DECLARE lv_BatchSize		INT;
     DECLARE lv_QueueID			BIGINT UNSIGNED;
@@ -88,9 +88,10 @@ BEGIN
         ORDER BY cus.CTSCustID ASC
         LIMIT lv_BatchSize;
     END IF;    
-    
-    IF @gv_CTSCustID IS NOT NULL THEN
+  
+    IF @gv_CTSCustID > lv_LastDownlineCTSCustID THEN
 		SELECT	lv_ActionType AS ActionType
+			,	lv_RoleID AS UplineRoleID
             , 	lv_QueueID AS QueueID;
     ELSE
 		SELECT NULL AS ActionType, NULL AS RoleID;

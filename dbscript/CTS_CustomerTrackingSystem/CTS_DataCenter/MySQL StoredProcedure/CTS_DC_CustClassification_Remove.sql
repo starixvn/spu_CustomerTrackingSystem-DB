@@ -4,6 +4,8 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_Remove`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_Remove`(
     	IN ip_FromAction		TINYINT
+	,	IN ip_UplineRoleID		TINYINT
+    ,	IN ip_QueueID			BIGINT
     ,	IN ip_AffectDownline	BOOLEAN
     ,	IN ip_CustJson			JSON
     
@@ -27,19 +29,22 @@ BEGIN
             - 20210226@Irena.Vo: Update CategoryID from VVIP [RedmineID: #150454]
 			- 20210525@Irena.Vo: Change col name PinCustomerCategory: CustID -> CTSCustID [RedmineID: #152965] 
 			- 20210920@Aries.Nguyen: Split history log  [Redmine ID: #161890]
-            - 10220418@Casey.Huynh: Add and Remove VVIP for Downline [Redmine ID: #159013]
+            - 20220418@Casey.Huynh: Add and Remove VVIP for Downline [Redmine ID: #159013]
             
 		Param's Explanation:
 			ip_FromAction: 1 From Web, 2 From Service
 	*/ 
     DECLARE lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();
     DECLARE lv_SPName 			VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_Remove';
-    
+    DECLARE lv_MaxCTSCustID		BIGINT UNSIGNED;
+    DECLARE lv_SourceTypeID		INT;
+   /* 
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
-    
+    */
+
     DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
 	CREATE TEMPORARY TABLE 		Temp_Customer (
 		 	CustID			BIGINT UNSIGNED		
@@ -52,8 +57,8 @@ BEGIN
 	);
     
     /**************************************************************************************/
-    INSERT INTO Temp_Customer(CustID, CTSCustID, CreatedBy) 
-	SELECT 	DISTINCT temp.CustID, temp.CTSCustID, temp.CreatedBy
+    INSERT INTO Temp_Customer(CustID, CTSCustID, CreatedBy, CategoryID) 
+	SELECT 	DISTINCT temp.CustID, temp.CTSCustID, temp.CreatedBy, temp.CategoryID
 	FROM JSON_TABLE(ip_CustJson,
 		 "$[*]" COLUMNS(
 				CustID 		BIGINT UNSIGNED		PATH "$.CustID"
@@ -61,51 +66,52 @@ BEGIN
             ,	CreatedBy 	BIGINT UNSIGNED		PATH "$.CreatedBy"
             ,	CategoryID 	SMALLINT UNSIGNED	PATH "$.CategoryID"
             
-		 )) AS temp;
-         
-    /*********************User Log*************************************************************/	
-    IF ip_FromAction = 1 THEN
-        INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-		SELECT 10 AS LogTypeID
-			, 	lv_SPName
-			, 	CONCAT('Remove VVIP: CTSCustID', tmpCus.CTSCustID,'; AffectDownline_', ip_AffectDownline,'; CategoryID_', tmpCus.CategoryID)
-            ,	lv_CurrentDateTime
-            , 	tmpCus.CreatedBy
-        FROM Temp_Customer AS tmpCus;
-    END IF;
+		 )) AS temp;      
+
+	SELECT MAX(tmpCus.CTSCustID)
+    INTO lv_MaxCTSCustID
+    FROM Temp_Customer AS tmpCus;
+    
+    /****SET SourceTypeID for write log******/
+    SET lv_SourceTypeID = 	CASE 	WHEN ip_FromAction = 1 THEN 14
+									WHEN ip_FromAction = 2 AND ip_UplineRoleID = 4 THEN 26
+									WHEN ip_FromAction = 2 AND ip_UplineRoleID = 3 THEN 27
+									WHEN ip_FromAction = 2 AND ip_UplineRoleID = 2 THEN 28
+							END;
+                   
     /*************************************Remove VVIP*************************************/
 	DELETE cls
     FROM CTS_DataCenter.CTSCustomerClassification AS cls
-		INNER JOIN Temp_Customer AS tmpCus ON cls.CustID = tmpCus.CustID AND tmpCus.CategoryID = ip_CategoryID;    	
+		INNER JOIN Temp_Customer AS tmpCus ON cls.CustID = tmpCus.CustID AND tmpCus.CategoryID = cls.CategoryID;    	
 	
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
 	SELECT 	tmpCus.CustID
 		, 	tmpCus.CTSCustID
 		,   tmpCus.CategoryID
-		,   200
-		, 	lv_CurrentDateTime
-		, 	tmpCus.CreatedBy
-		,   2
-		,   0
-		,   DATE(lv_CurrentDateTime)
-		,   -1
-		,   14
-		,	1
+		,   200 AS SportGroupID
+		, 	lv_CurrentDateTime AS LastModifiedDate
+		, 	tmpCus.CreatedBy AS LastModifiedBy
+		,   2 AS ActionType
+		,   0 AS IsAuto
+		,   DATE(lv_CurrentDateTime) AS InsertDate
+		,   -1 AS TargetCC
+		,   lv_SourceTypeID AS SourceTypeID
+		,	1 AS IsDataChanged
 	FROM Temp_Customer AS tmpCus;
 
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
 	SELECT 	tmpCus.CustID
 		, 	tmpCus.CTSCustID
 		,   tmpCus.CategoryID
-		,   200
-		, 	lv_CurrentDateTime
-		, 	tmpCus.CreatedBy
-		,   2
-		,   0
-		,   DATE(lv_CurrentDateTime)
-		,   -1
-		,   14
-		,	1
+		,   200 AS SportGroupID
+		, 	lv_CurrentDateTime AS LastModifiedDate
+		, 	tmpCus.CreatedBy AS LastModifiedBy
+		,   2 AS ActionType
+		,   0 AS IsAuto
+		,   DATE(lv_CurrentDateTime) AS InsertDate
+		,   -1 AS TargetCC
+		,   lv_SourceTypeID AS SourceTypeID
+		,	1 AS IsDataChanged
 	FROM Temp_Customer AS tmpCus;
 		
 	/*Auto Unpin*/
@@ -116,6 +122,24 @@ BEGIN
 	/*Return Remove VVIP List to Rescan*/
     SELECT tmpCus.CustID
 	FROM Temp_Customer AS tmpCus;
+
+    /*****UPDATE Queue LastID************/
+    IF ip_FromAction = 2 AND ip_QueueID IS NOT NULL THEN
+		UPDATE CTS_DataCenter.CTSCustomerClassificationDownlineQueue AS que
+		SET que.LastDownlineCTSCustID = lv_MaxCTSCustID
+		WHERE que.ID = ip_QueueID;
+    END IF;
+    
+    /*********************User Log*************************************************************/	
+    IF ip_FromAction = 1 THEN
+        INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
+		SELECT 10 AS LogTypeID
+			, 	lv_SPName
+			, 	CONCAT('Remove VVIP: CTSCustID', tmpCus.CTSCustID,'; AffectDownline_', ip_AffectDownline,'; CategoryID_', tmpCus.CategoryID)
+            ,	lv_CurrentDateTime
+            , 	tmpCus.CreatedBy
+        FROM Temp_Customer AS tmpCus;
+    END IF;
     
 END$$
 DELIMITER ;

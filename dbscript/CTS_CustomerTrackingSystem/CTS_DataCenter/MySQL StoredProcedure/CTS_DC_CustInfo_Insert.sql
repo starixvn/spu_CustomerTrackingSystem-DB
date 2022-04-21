@@ -164,6 +164,43 @@ BEGIN
     FROM	Temp_CTSCustomer AS tmpCus
     WHERE	tmpCus.IsExisting = 0;
     
+    /**********MARK VVIP IF DRIRECT UPLINE IS VVIP***************************/
+    
+    /*=========GET VVIP FROM QUEUE================*/
+    CREATE TEMPORARY TABLE Temp_VVIPCust(
+			CTSCustID		BIGINT UNSIGNED PRIMARY KEY
+        ,	CustID			BIGINT	UNSIGNED
+        ,	SubscriberID	INT UNSIGNED
+        ,	CreatedBy		INT
+        ,	Remark			INT
+        ,	MRecommend	INT
+        ,	Recommend	INT
+        
+        ,	PRIMARY KEY Temp_CustVVIP_CTSCustID(CTSCustID)
+    );
+    
+    INSERT INTO Temp_VVIPCust(CTSCustID, CustID)
+    SELECT CTSCustID, CustID
+    FROM Temp_CTSCustomer AS tmpCus
+		INNER JOIN CTS_DataCenter.CTSCustomerClassificationDownlineQueue AS que ON tmpCus.SRecommend = que.CustID
+    WHERE tmpCus.IsExisting = 0 AND tmpCus.RoleID <> 4;
+    
+    INSERT IGNORE INTO Temp_VVIPCust(CTSCustID, CustID)
+    SELECT CTSCustID, CustID
+    FROM Temp_CTSCustomer AS tmpCus
+		INNER JOIN CTS_DataCenter.CTSCustomerClassificationDownlineQueue AS que ON tmpCus.MRecommend = que.CustID
+    WHERE tmpCus.IsExisting = 0 AND tmpCus.RoleID <> 4;
+    
+	INSERT IGNORE INTO Temp_VVIPCust(CTSCustID, CustID)
+    SELECT CTSCustID, CustID
+    FROM Temp_CTSCustomer AS tmpCus
+		INNER JOIN CTS_DataCenter.CTSCustomerClassificationDownlineQueue AS que ON tmpCus.Recommend = que.CustID
+    WHERE tmpCus.IsExisting = 0 AND tmpCus.RoleID <> 4;
+    
+    
+    
+    
+    /*****OUT PUT TO RESCAN CC************/
 	SELECT	cus.CTSCustID
 		,	cus.SubscriberID
     	,	cus.CustID
