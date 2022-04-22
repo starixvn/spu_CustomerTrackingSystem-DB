@@ -106,7 +106,7 @@ sp: BEGIN
                                 WHEN ip_FromAction = 2 AND ip_UplineRoleID = 2 THEN 26
 							END;    
     /************************************************************************************/    
-	INSERT INTO CTSCustomerClassificationVVIP(CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryID, IsAffectToDownline,InsertTime) 
+	INSERT IGNORE INTO CTSCustomerClassificationVVIP(CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryID, IsAffectToDownline,InsertTime) 
 	SELECT tmpCus.CTSCustID
 		,	tmpCus.CustID
 		,	tmpCus.RoleID

@@ -32,19 +32,17 @@ CREATE TABLE CTSCustomerClassificationVVIPQueue(
 
 USE CTS_DataCenter;
 CREATE TABLE CTSCustomerClassificationVVIP(
-			ID						INT AUTO_INCREMENT
-		,  	CTSCustID 				BIGINT UNSIGNED
+		  	CTSCustID 				BIGINT UNSIGNED
 		,	CustID					BIGINT UNSIGNED
 		,	RoleID					TINYINT
 		,	SubscriberID 			INT UNSIGNED
 		,	CreatedBy				BIGINT UNSIGNED
 		,	Remark					VARCHAR(300)
 		,	CategoryID				SMALLINT UNSIGNED
-		,	IsAffectToDownline 		BIGINT UNSIGNED
+		,	IsAffectToDownline 		BOOLEAN
 		,	InsertTime				DATETIME(3)
 
-		,	PRIMARY KEY PK_Temp_Customer(ID)
-        ,	INDEX IX_Temp_Customer_CTSCustID(CTSCustID)
+		,	PRIMARY KEY PK_Temp_Customer(CTSCustID)
 		,	INDEX IX_Temp_Customer_CustID(CustID)
 		,	INDEX IX_Temp_Customer_IsAffectToDownline(IsAffectToDownline)
 );
