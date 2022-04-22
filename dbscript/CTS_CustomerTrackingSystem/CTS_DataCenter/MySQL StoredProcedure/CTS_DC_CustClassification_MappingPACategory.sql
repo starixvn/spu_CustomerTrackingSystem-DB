@@ -182,7 +182,8 @@ BEGIN
 																	AND cate.SourceType = ip_SourceType
 																	AND ((pa.WinlossStatus = 0 AND cate.IsProbation = 1) OR 
 																		(pa.WinlossStatus <> 0 AND cate.IsProbation = 0) OR
-																		(pa.WinlossStatus IS NULL AND cate.IsProbation = 0)));  /*Map Cate <=> Evidence*/
+																		(pa.WinlossStatus IS NULL AND cate.IsProbation = 0) OR
+                                                                        (pa.ActionType = 2 ))); /*Map Cate <=> Evidence*/
  
                 
 	/*	2: EXCLUDE CUSTOMER */    
