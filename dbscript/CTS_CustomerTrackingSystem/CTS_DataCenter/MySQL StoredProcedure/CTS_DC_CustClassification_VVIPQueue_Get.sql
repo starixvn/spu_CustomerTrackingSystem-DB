@@ -52,7 +52,6 @@ BEGIN
             ,	lv_SubscriberID AS SubscriberID
             ,	lv_CreatedBy AS CreatedBy
             ,	lv_Remark AS Remark
-            ,	lv_CategoryID AS CategoryID
             ,	lv_LastDownlineCTSCustID AS LastDownlineCTSCustID
 		FROM CTS_DataCenter.CTSCustomer AS cus
 		WHERE cus.CustID <> lv_CustID AND CustSubID = 0 AND cus.SRecommend = lv_CustID AND cus.CTSCustID > lv_LastDownlineCTSCustID
@@ -83,7 +82,6 @@ BEGIN
             ,	lv_SubscriberID AS SubscriberID
             ,	lv_CreatedBy AS CreatedBy
             ,	lv_Remark AS Remark
-            ,	lv_CategoryID AS CategoryID
             ,	lv_LastDownlineCTSCustID AS LastDownlineCTSCustID
 		FROM CTS_DataCenter.CTSCustomer AS cus
 		WHERE cus.CustID <> lv_CustID AND CustSubID = 0 AND cus.Recommend = lv_CustID AND cus.CTSCustID > lv_LastDownlineCTSCustID

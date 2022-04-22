@@ -38,7 +38,7 @@ sp: BEGIN
             - 10220418@Casey.Huynh: Add and Remove VVIP for Downline [Redmine ID: #159013]
             
 		Param's Explanation:
-			ip_FromAction: From Web(1),From Service(2)
+			ip_FromAction: From Web(1),From Service VVIPDownLine(2), From Insert NewCustomer(3)
             ip_QueueID: From Web(NULL), From Service(<QueueID>)
             ip_AffectDownline:  From Web(0,1) , From Service(NULL)
             ip_UplineRoleID: From Web(NULL), From Service(<UplineRoleID>)
