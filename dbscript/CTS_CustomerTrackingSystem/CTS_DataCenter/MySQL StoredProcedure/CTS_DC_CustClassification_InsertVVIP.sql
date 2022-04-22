@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_Insert`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_InsertVVIP`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_InsertVVIP`(
 		IN ip_FromAction		TINYINT
 	,	IN ip_UplineRoleID		TINYINT
     ,	IN ip_QueueID			BIGINT
@@ -41,27 +41,35 @@ sp: BEGIN
 			ip_FromAction: From Web(1),From Service(2)
             ip_QueueID: From Web(NULL), From Service(<QueueID>)
             ip_AffectDownline:  From Web(0,1) , From Service(NULL)
+            ip_UplineRoleID: From Web(NULL), From Service(<UplineRoleID>)
             
 		Example:
-			CALL CTS_DC_CustClassification_Insert(1,NULL,NULL,1,'[{"CustID":720475,"CTSCustID":5710,"SubscriberID":2,"CategoryID":210,"CreatedBy":169368,"Remark":"Test Insert 01"}]', @output);
+			CALL CTS_DC_CustClassification_MarkVVIP(1,NULL,NULL,1,'[{"CustID":720475,"CTSCustID":5710,"SubscriberID":2,"CategoryID":210,"CreatedBy":169368,"Remark":"Test Insert 01"}]', @output);
 	*/
     DECLARE lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();
-	DECLARE lv_SPName 			VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_Insert';
-    DECLARE lv_Role 			INT;
+	DECLARE lv_SPName 			VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_InsertVVIP';
+    DECLARE	lv_CategoryID		INT DEFAULT 210;
+    DECLARE lv_SportGroupID		INT DEFAULT 200;
+    DECLARE lv_LogTypeID		INT DEFAULT 10;
+    DECLARE lv_ActionType		INT DEFAULT 0;
+	DECLARE lv_IsAuto			INT DEFAULT 0;
     DECLARE lv_MaxCTSCustID		BIGINT UNSIGNED;
-    DECLARE lv_SourceTypeID		INT;
+    DECLARE lv_SourceTypeID		INT;    
+    DECLARE lv_CustomerClass	INT; 
     
+    
+    /*
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
-    END;
+    END;*/
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
 	CREATE TEMPORARY TABLE 		Temp_Customer (
 		 	CustID			BIGINT UNSIGNED		
          ,  CTSCustID 		BIGINT UNSIGNED
          ,	SubscriberID 	INT UNSIGNED
-         ,	CategoryID		INT	
+         ,	RoleID			INT	
          ,	CreatedBy		BIGINT UNSIGNED
          ,	Remark			VARCHAR(300)
          
@@ -69,16 +77,21 @@ sp: BEGIN
          ,	INDEX IX_Temp_Customer_CTSCustID(CTSCustID)
 	);
     
+    SELECT  cat.CustomerClass
+    INTO lv_CustomerClass
+    FROM CTS_DataCenter.CustomerCategory AS cat
+    WHERE cat.CategoryID = lv_CategoryID; 
+    
     /**************************************************************************************/
-    INSERT INTO Temp_Customer(CustID, CTSCustID, SubscriberID, CategoryID, CreatedBy, Remark) 
-	SELECT 	DISTINCT temp.CustID, temp.CTSCustID, temp.SubscriberID, temp.CategoryID, temp.CreatedBy, temp.Remark
+    INSERT INTO Temp_Customer(CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, Remark) 
+	SELECT 	DISTINCT temp.CustID, temp.CTSCustID, temp.SubscriberID, temp.RoleID, temp.CreatedBy, temp.Remark
 	FROM JSON_TABLE(ip_CustJson,
 		 "$[*]" COLUMNS(
 				CustID 			BIGINT UNSIGNED	PATH "$.CustID"
 			,	CTSCustID 		BIGINT UNSIGNED	PATH "$.CTSCustID"
+            ,	RoleID			INT				PATH "$.RoleID"
             ,	SubscriberID 	INT UNSIGNED	PATH "$.SubscriberID"
-            ,	CategoryID		INT				PATH "$.CategoryID"
-            ,	CreatedBy 		BIGINT UNSIGNED	PATH "$.CreatedBy"
+            ,	CreatedBy 		BIGINT UNSIGNED	PATH "$.CreatedBy"            
             ,	Remark			VARCHAR(300)	PATH "$.Remark"
 		 )) AS temp;
 	
@@ -91,9 +104,21 @@ sp: BEGIN
 								WHEN ip_FromAction = 2 AND ip_UplineRoleID = 4 THEN 24
                                 WHEN ip_FromAction = 2 AND ip_UplineRoleID = 3 THEN 25
                                 WHEN ip_FromAction = 2 AND ip_UplineRoleID = 2 THEN 26
-							END;
-    
-    /************************************************************************************/        
+							END;    
+    /************************************************************************************/    
+	INSERT INTO CTSCustomerClassificationVVIP(CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryID, IsAffectToDownline,InsertTime) 
+	SELECT tmpCus.CTSCustID
+		,	tmpCus.CustID
+		,	tmpCus.RoleID
+		,	tmpCus.SubscriberID
+		,	tmpCus.CreatedBy
+		,	tmpCus.Remark
+		,	lv_CategoryID
+		,	ip_AffectDownline AS IsAffectToDownline
+		,	lv_CurrentDateTime AS InsertTime
+	FROM Temp_Customer AS tmpCus
+    WHERE tmpCus.RoleID > 1;    
+
 	/*Remove all category, customer class, probation list before.*/
 	DELETE cls
     FROM CTS_DataCenter.CTSCustomerClassification AS cls
@@ -113,8 +138,8 @@ sp: BEGIN
 	SELECT 	tmpCus.CustID
 		, 	tmpCus.CTSCustID
 		, 	tmpCus.SubscriberID
-		, 	tmpCus.CategoryID
-		,   200 AS SportGroupID
+		, 	lv_CategoryID
+		,   lv_SportGroupID
 		, 	tmpCus.Remark
 		, 	lv_CurrentDateTime AS CreatedDate
 		,   tmpCus.CreatedBy
@@ -122,34 +147,34 @@ sp: BEGIN
 		,   tmpCus.CreatedBy AS LastModifiedBy
 		,   DATE(lv_CurrentDateTime) AS LastScannedDate
 	FROM Temp_Customer AS tmpCus;
-    
+  
 	/*Insert VVIP history*/
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
 	SELECT 	tmpCus.CustID
 		, 	tmpCus.CTSCustID
-		, 	tmpCus.CategoryID
-		, 	200 AS SportGroupID
+		, 	lv_CategoryID
+		, 	lv_SportGroupID
 		, 	lv_CurrentDateTime AS LastModifiedDate
 		, 	tmpCus.CreatedBy AS LastModifiedBy
-		,	0 AS ActionType
-		,	0 AS IsAuto
+		,	lv_ActionType
+		,	lv_IsAuto
 		,   DATE(lv_CurrentDateTime) AS InsertDate
-		,   100 AS TargetCC
+		,   lv_CustomerClass AS TargetCC
 		,   lv_SourceTypeID AS SourceTypeID
 		,	1 AS IsDataChanged
 	FROM Temp_Customer AS tmpCus;
-
+	
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
 	SELECT 	tmpCus.CustID
 		, 	tmpCus.CTSCustID
-		, 	tmpCus.CategoryID
-		, 	200 AS SportGroupID
+		, 	lv_CategoryID
+		, 	lv_SportGroupID
 		, 	lv_CurrentDateTime AS LastModifiedDate
 		, 	tmpCus.CreatedBy AS LastModifiedBy
-		,	0 AS ActionType
-		,	0 AS IsAuto
+		,	lv_ActionType
+		,	lv_IsAuto
 		,   DATE(lv_CurrentDateTime) AS InsertDate
-		,   100 AS TargetCC
+		,   lv_CustomerClass AS TargetCC
 		,   lv_SourceTypeID AS SourceTypeID
 		,	1 AS IsDataChanged
 	FROM Temp_Customer AS tmpCus;
@@ -161,14 +186,14 @@ sp: BEGIN
  
     /*RETURN CustList: push CC to NAP */
     SELECT	tmpCus.CustID AS CustId
-		,	100 AS CustomerClass
-        ,	tmpCus.CategoryID AS Category
+		,	lv_CustomerClass AS CustomerClass
+        ,	lv_CategoryID AS Category
         ,	lv_CurrentDateTime AS ScannedTime
     FROM  Temp_Customer AS tmpCus;
     
     /*****UPDATE Queue LastID************/
     IF ip_FromAction = 2 AND ip_QueueID IS NOT NULL THEN
-		UPDATE CTS_DataCenter.CTSCustomerClassificationDownlineQueue AS que
+		UPDATE CTS_DataCenter.CTSCustomerClassificationVVIPQueue AS que
 		SET que.LastDownlineCTSCustID = lv_MaxCTSCustID
 		WHERE que.ID = ip_QueueID;
     END IF;
@@ -176,10 +201,10 @@ sp: BEGIN
     /********USER LOG***********************************************************************/
     IF ip_FromAction = 1 THEN
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-		SELECT 10 AS LogTypeID
+		SELECT  lv_LogTypeID
 			, 	lv_SPName
-			, 	CONCAT('Insert VVIP: CTSCustID_', tmpCus.CTSCustID,'; AffectDownline_', ip_AffectDownline,'; SubscriberID_', tmpCus.SubscriberID, '; CategoryID_', tmpCus.CategoryID, '; Remark_', tmpCus.Remark)
-            ,	lv_CurrentDateTime
+			, 	CONCAT('Insert VVIP: CTSCustID_', tmpCus.CTSCustID,'; RoleID_', tmpCus.RoleID, '; AffectDownline_', ip_AffectDownline,'; SubscriberID_', tmpCus.SubscriberID, '; CategoryID_', lv_CategoryID, '; Remark_', tmpCus.Remark)
+            ,	lv_CurrentDateTime AS CreatedDate
             , 	tmpCus.CreatedBy
         FROM Temp_Customer AS tmpCus;
 	END IF;

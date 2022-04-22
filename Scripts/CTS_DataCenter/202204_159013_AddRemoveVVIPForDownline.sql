@@ -11,7 +11,8 @@ Reviewer:
 */
 
 USE CTS_DataCenter;
-CREATE TABLE QueueCustomerClassificationDownline(
+
+CREATE TABLE CTSCustomerClassificationVVIPQueue(
 			ID						BIGINT UNSIGNED	AUTO_INCREMENT
 		,  	CTSCustID 				BIGINT UNSIGNED
 		,	CustID					BIGINT UNSIGNED
@@ -22,7 +23,7 @@ CREATE TABLE QueueCustomerClassificationDownline(
 		,	CategoryID				SMALLINT UNSIGNED
 		,	LastDownlineCTSCustID 	BIGINT UNSIGNED
         ,	ActionType				TINYINT
-		,	InsertTime		DATETIME(3)
+		,	InsertTime				DATETIME(3)
 
 		,	PRIMARY KEY PK_Temp_Customer(ID)
 		,	INDEX IX_Temp_Customer_CustID(CustID)
@@ -30,9 +31,27 @@ CREATE TABLE QueueCustomerClassificationDownline(
 );
 
 USE CTS_DataCenter;
+CREATE TABLE CTSCustomerClassificationVVIP(
+			ID						INT AUTO_INCREMENT
+		,  	CTSCustID 				BIGINT UNSIGNED
+		,	CustID					BIGINT UNSIGNED
+		,	RoleID					TINYINT
+		,	SubscriberID 			INT UNSIGNED
+		,	CreatedBy				BIGINT UNSIGNED
+		,	Remark					VARCHAR(300)
+		,	CategoryID				SMALLINT UNSIGNED
+		,	IsAffectToDownline 		BIGINT UNSIGNED
+		,	InsertTime				DATETIME(3)
+
+		,	PRIMARY KEY PK_Temp_Customer(ID)
+        ,	INDEX IX_Temp_Customer_CTSCustID(CTSCustID)
+		,	INDEX IX_Temp_Customer_CustID(CustID)
+		,	INDEX IX_Temp_Customer_IsAffectToDownline(IsAffectToDownline)
+);
+
+USE CTS_DataCenter;
 INSERT INTO SystemParameter (ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue) 
 VALUES ('91', 'QueueCustomerClassificationDownline_PackSize', 'QueueCustomerClassificationDownline_PackSize', 'INT', '500');
-
 
 USE CTS_DataCenter;
 INSERT INTO CTS_DataCenter.StaticList(ListID,ItemID,ListName,ListNameDisplay,ItemName,ItemNameDisplay,PriorityOrder,Status,Description,CreatedDate)

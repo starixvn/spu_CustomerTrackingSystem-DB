@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_Queue_Get`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_VVIPQueue_Get`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_Queue_Get`(   
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_VVIPQueue_Get`(   
 )
     SQL SECURITY INVOKER 
 BEGIN
@@ -40,7 +40,7 @@ BEGIN
     #=========GET QUEUE Info====================================
     SELECT que.ID, que.CTSCustID, que.CustID, que.RoleID, que.SubscriberID, que.CreatedBy, que.Remark, que.CategoryID, que.LastDownlineCTSCustID, que.ActionType
     INTO lv_QueueID, lv_CTSCustID, lv_CustID, lv_RoleID, lv_SubscriberID, lv_CreatedBy, lv_Remark, lv_CategoryID, lv_LastDownlineCTSCustID, lv_ActionType
-    FROM CTS_DataCenter.CTSCustomerClassificationDownlineQueue AS que
+    FROM CTS_DataCenter.CTSCustomerClassificationVVIPQueue AS que
     ORDER BY ID ASC
     LIMIT 1;    
 
@@ -48,6 +48,7 @@ BEGIN
     IF lv_RoleID = 4 THEN
 		SELECT @gv_CTSCustID:=cus.CTSCustID AS CTSCustID
 			,	cus.CustID AS CustID
+            ,	cus.RoleID AS RoleID
             ,	lv_SubscriberID AS SubscriberID
             ,	lv_CreatedBy AS CreatedBy
             ,	lv_Remark AS Remark
@@ -63,10 +64,10 @@ BEGIN
     IF lv_RoleID = 3 THEN 
 		SELECT 	@gv_CTSCustID:=cus.CTSCustID AS CTSCustID
 			,	cus.CustID AS CustID
+            ,	cus.RoleID
             ,	lv_SubscriberID AS SubscriberID
             ,	lv_CreatedBy AS CreatedBy
             ,	lv_Remark AS Remark
-            ,	lv_CategoryID AS CategoryID
             ,	lv_LastDownlineCTSCustID AS LastDownlineCTSCustID
 		FROM CTS_DataCenter.CTSCustomer AS cus
 		WHERE cus.CustID <> lv_CustID AND CustSubID = 0 AND cus.MRecommend = lv_CustID AND cus.CTSCustID > lv_LastDownlineCTSCustID
@@ -78,6 +79,7 @@ BEGIN
     IF lv_RoleID = 2 THEN 
 		SELECT	@gv_CTSCustID:=cus.CTSCustID AS CTSCustID
 			,	cus.CustID AS CustID
+            ,	cus.RoleID AS RoleID
             ,	lv_SubscriberID AS SubscriberID
             ,	lv_CreatedBy AS CreatedBy
             ,	lv_Remark AS Remark
@@ -96,7 +98,7 @@ BEGIN
     ELSE
 		SELECT NULL AS ActionType, NULL AS RoleID;
 		DELETE que
-		FROM CTS_DataCenter.CTSCustomerClassificationDownlineQueue AS que
+		FROM CTS_DataCenter.CTSCustomerClassificationVVIPQueue AS que
         WHERE que.ID = lv_QueueID;
 	END IF;
     

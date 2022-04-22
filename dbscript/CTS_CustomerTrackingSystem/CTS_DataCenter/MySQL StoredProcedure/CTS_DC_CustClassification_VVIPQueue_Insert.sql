@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_Queue_Insert`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_VVIPQueue_Insert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_Queue_Insert`(    	
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_VVIPQueue_Insert`(    	
      	IN ip_CTSCustID			BIGINT UNSIGNED
     ,	IN ip_CustID			BIGINT UNSIGNED
     ,	IN ip_SubscriberID		INT
@@ -52,6 +52,7 @@ CTS_DC_CustClassification_Get
         LIMIT 1;
     END IF;
     
+     
     #====== Agent RoleID = 2===============
     IF ip_RoleID = 2 THEN 
 		SELECT IFNULL(cus.CTSCustID-1, ip_CTSCustID)
@@ -62,8 +63,8 @@ CTS_DC_CustClassification_Get
         LIMIT 1;
     END IF;
 
-	INSERT INTO CTS_DataCenter.CTSCustomerClassificationDownlineQueue(CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryID, LastDownlineCTSCustID, ActionType, InsertTime)
+	INSERT INTO CTS_DataCenter.CTSCustomerClassificationVVIPQueue(CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryID, LastDownlineCTSCustID, ActionType, InsertTime)
     SELECT ip_CTSCustID, ip_CustID, ip_RoleID, ip_SubscriberID, ip_CreatedBy, ip_Remark, ip_CategoryID, lv_MinCTSCustID AS LastDownlineCTSCustID, ip_ActionType, CURRENT_TIMESTAMP(3);
-    
+
 END$$
 DELIMITER ;
