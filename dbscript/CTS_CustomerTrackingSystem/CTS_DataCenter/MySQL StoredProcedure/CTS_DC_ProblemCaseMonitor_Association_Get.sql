@@ -15,9 +15,8 @@ BEGIN
 		Original:
 		Revisions:
 			- 20211006@Aries.Nguyen: Created [RedmineID: #162830]
-
+			- 20220422@Irena.Vo: Mapping Problem Case from table CustomerCategory [Redmine ID: #170468]
 		Param's Explanation (filtered by):
-
 		Example: 
             - CALL CTS_DC_ProblemCaseMonitor_Association_Get(@op_AssDeviceID, @op_AssIPID);
 	*/ 
@@ -157,7 +156,7 @@ BEGIN
     WHERE ip.ID BETWEEN lv_LastAssIPID AND lv_NextAssIPID
 		AND EXISTS (SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
-                        INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ParentID = 50 AND cat.CategoryGroup <> 52
+                        INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ProblemCaseID = CONST_ProblemCase_SuspiciousAss
 					WHERE  cls.CustID = ip.FromCustID
 						AND cls.SportGroupID = 0);
 	
@@ -167,7 +166,7 @@ BEGIN
     WHERE ip.ID BETWEEN lv_LastAssIPID AND lv_NextAssIPID
 		AND EXISTS (SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
-                        INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ParentID = 50 AND cat.CategoryGroup <> 52
+                        INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ProblemCaseID = CONST_ProblemCase_SuspiciousAss
 					WHERE  cls.CustID = ip.ToCustID
 						AND cls.SportGroupID = 0);
 	
@@ -310,7 +309,7 @@ BEGIN
     FROM Temp_CustID AS tmp
     WHERE EXISTS   (SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
-                        INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ParentID = 50 AND cat.CategoryGroup <> 52
+                        INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ProblemCaseID = CONST_ProblemCase_SuspiciousAss
 					WHERE  cls.CustID = tmp.CustID
 						AND cls.SportGroupID = 0);
 
@@ -441,7 +440,7 @@ BEGIN
     WHERE ass.IsPA = 0
 		AND	EXISTS (SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
-                        INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ParentID = 50 AND cat.CategoryGroup <> 52
+                        INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ProblemCaseID = CONST_ProblemCase_SuspiciousAss
 					WHERE  cls.CustID = ass.CustID_Aff
 						AND cls.SportGroupID = 0);
 	

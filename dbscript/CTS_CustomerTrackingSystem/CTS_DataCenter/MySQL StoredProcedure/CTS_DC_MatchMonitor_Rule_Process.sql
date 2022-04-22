@@ -27,9 +27,8 @@ sp: BEGIN
             -	20211111@Casey.Huynh: Fix Issue Trans of the same Cust not merge Group [Redmine ID: 164558]
             -	20220110@Casey.Huynh: Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
             -	20220217@Casey.Huynh: Enhance MM, Update TO >= 1000 [Redmine ID: 168736]
-            
+            - 	20220422@Irena.Vo: Mapping Is Hedging Reason (MM) from table CustomerCategory [Redmine ID: #170468]
 		Param's Explanation (filtered by):	
-
 		Example:
 			- CALL CTS_DC_MatchMonitor_Rule_Process(1,113171940189,22081995,1,1);
 			
@@ -483,9 +482,10 @@ sp: BEGIN
     FROM Temp_TransGroup AS grp
 	WHERE EXISTS (	SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID
                     WHERE cla.CustID = grp.CustID
 						AND cla.SportGroupID = 0
-                        AND cla.CategoryID in (73,53,153));
+                        AND cc.IsHedgingReasonMM = 1);
     
     UPDATE Temp_ResultGroup AS tmpRg
 		INNER JOIN Temp_GroupHedging AS tmpGh ON tmpRg.GroupID = tmpGh.GroupID

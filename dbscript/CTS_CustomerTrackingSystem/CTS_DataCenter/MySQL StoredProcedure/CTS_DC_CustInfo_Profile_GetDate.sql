@@ -14,7 +14,7 @@ BEGIN
 		
 		Revisions:
 			- 20211214@Aries.Nguyen: Created [Redmine ID: #165105]
-- 20220407@Irena.Vo: Get additional date for New Member(no bet in 30 last days), PA, Robot [Redmine ID: #170468]
+			- 20220407@Irena.Vo: Get additional date for New Member(no bet in 30 last days), PA, Robot [Redmine ID: #170468]
 
 		Param's Explanation (filtered by):
         Example:
@@ -31,6 +31,8 @@ BEGIN
     DECLARE lv_LastTicket 			DATETIME;
     DECLARE lv_LastLogin 			DATETIME;
     DECLARE lv_Created				DATETIME;
+    
+    DECLARE lv_ScanScheduler		DATETIME DEFAULT CAST(CONCAT(DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY) , ' ', '21:00:00') as DATETIME);
 	
 	SELECT 	LastLoginTime
 		, 	CreatedDate 
@@ -45,7 +47,9 @@ BEGIN
 	WHERE CTSCustID = ip_CTSCustID;
     
     /* PA Category (not robot) */
-    SELECT DATE_ADD(CURRENT_DATE(), INTERVAL 1 DAY)
+    SELECT CASE WHEN CURRENT_TIMESTAMP() > lv_ScanScheduler THEN DATE_ADD(CURRENT_DATE(), INTERVAL 1 DAY) 
+				ELSE CURRENT_DATE() 
+			END
     INTO lv_NextCategoryScan
     FROM CTS_DataCenter.CTSCustomerClassification AS clss
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID =  clss.CategoryID
@@ -55,8 +59,9 @@ BEGIN
     
     /* Normal Category */
     IF (lv_NextCategoryScan IS NULL) THEN
-		 SELECT CASE WHEN cate.CategoryGroup = CONST_CATEGORYGROUP_NEWMEMBER AND lv_LastTicket <= DATE_SUB(CURRENT_DATE(), INTERVAL 29 DAY) THEN DATE_ADD(CURRENT_DATE(), INTERVAL 1 DAY)
-					 WHEN cate.CategoryGroup = CONST_CATEGORYGROUP_PROBATION AND clss.CreatedDate < DATE_SUB(CURRENT_DATE(), INTERVAL 2 DAY) THEN DATE(CURRENT_DATE())
+		 SELECT CASE WHEN cate.CategoryGroup = CONST_CATEGORYGROUP_NEWMEMBER AND lv_LastTicket <= DATE_SUB(CURRENT_DATE(), INTERVAL 29 DAY) AND CURRENT_TIMESTAMP() > lv_ScanScheduler THEN DATE_ADD(CURRENT_DATE(), INTERVAL 1 DAY)
+					 WHEN cate.CategoryGroup = CONST_CATEGORYGROUP_NEWMEMBER AND lv_LastTicket <= DATE_SUB(CURRENT_DATE(), INTERVAL 29 DAY) AND CURRENT_TIMESTAMP() <= lv_ScanScheduler THEN CURRENT_DATE()
+                     WHEN cate.CategoryGroup = CONST_CATEGORYGROUP_PROBATION AND clss.CreatedDate < DATE_SUB(CURRENT_DATE(), INTERVAL 2 DAY) THEN DATE(CURRENT_DATE())
 					 WHEN cate.CategoryGroup = CONST_CATEGORYGROUP_PROBATION AND clss.CreatedDate >= DATE_SUB(CURRENT_DATE(), INTERVAL 2 DAY) THEN DATE(DATE_ADD(clss.CreatedDate, INTERVAL 3 DAY))
 					 WHEN cate.ScanIntervalInSecond > 0 THEN DATE_ADD(clss.LastScannedDate, INTERVAL cate.ScanIntervalInSecond SECOND)
 				 END 

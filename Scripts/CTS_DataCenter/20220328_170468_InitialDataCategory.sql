@@ -25,7 +25,10 @@ ADD COLUMN ABIDangerLevel_Licensee SMALLINT UNSIGNED,
 ADD COLUMN ABIDangerLevelException_Licensee SMALLINT UNSIGNED,
 ADD COLUMN ABIDangerLevel_Credit SMALLINT UNSIGNED,
 ADD COLUMN ABIDangerLevelException_Credit SMALLINT UNSIGNED,
-ADD COLUMN IsProbation BIT DEFAULT 0;
+ADD COLUMN IsProbation BIT DEFAULT 0,
+ADD COLUMN ProblemCaseID SMALLINT UNSIGNED,
+ADD COLUMN IsHedgingReasonMM BIT (1),
+ADD COLUMN RootTaggingID SMALLINT UNSIGNED;
 
 UPDATE CTS_DataCenter.CustomerCategory  AS cate
 INNER JOIN CTS_DataCenter.CategoryToCustomerClass  AS clss  ON cate.CategoryID = clss.CategoryID
@@ -121,7 +124,6 @@ SET     EvidenceID_Licensee = '61', EvidenceCode_Licensee = '6.9'
     ,   EvidenceCode_Credit = '6.19' 
 WHERE (CategoryID = '82');
  
-
 UPDATE CTS_DataCenter.CustomerCategory AS cate
 INNER JOIN CTS_DataCenter.CustomerCategory AS rela on cate.RelevantCategoryID = rela.CategoryID
 SET cate.ReasonID = rela.ReasonID
@@ -136,3 +138,22 @@ UPDATE CustomerCategory AS pro
 INNER JOIN CustomerCategory AS pa ON pa.CategoryID = pro.RelevantCategoryID
 SET pro.AFCFraudID = pa.AFCFraudID
 WHERE pro.IsProbation = 1; 
+
+/*Related to Problem Case Monitor*/
+UPDATE CustomerCategory AS cat
+SET cat.ProblemCaseID = CASE WHEN cat.CategoryGroup IN (59, 99, 61) THEN 1 /*Robot*/
+						     WHEN cat.ParentID = 50 AND cat.CategoryGroup NOT IN (52, 92) THEN 4 /*SuspiciousAss*/
+							 WHEN cat.CategoryGroup IN (204) THEN 9 /*ProPunter*/
+						END;
+
+/*Related to Match Monitor*/
+UPDATE CustomerCategory AS cat
+SET cat.IsHedgingReasonMM = 1
+WHERE cat.CategoryGroup IN (53, 93);
+
+/*Related to Root Tagging Association*/
+UPDATE CustomerCategory AS cat
+SET cat.RootTaggingID = CASE WHEN cat.CustomerClass IN (10, 106) THEN 10 /*Hedging, Fixed Game, System Formula Bet*/
+						 WHEN cat.CustomerClass IN (8, 86) THEN 8 /*Group Betting*/
+                         WHEN cat.CustomerClass IN (13, 131, 132) THEN 13 /*Robot*/
+					END;

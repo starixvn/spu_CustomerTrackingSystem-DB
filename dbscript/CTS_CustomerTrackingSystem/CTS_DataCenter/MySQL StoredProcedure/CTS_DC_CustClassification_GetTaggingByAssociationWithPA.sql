@@ -22,14 +22,11 @@ BEGIN
 		   - 20210818@Aries.Nguyen: Exclude Unlink association [Redmine ID: #159708]
 		   - 20220210@Aries.Nguyen: Re-arrange customer category/class for good/bad robot [Redmine ID: #167726]
 		   - 20220323@Aries.Nguyen: No detect Association with 3 Problem Accounts (Both have Group Betting and Hedging) [Redmine ID: #170363]
+           - 20220422@Irena.Vo: Mapping Root Tagging from table CustomerCategory [Redmine ID: #170468]
 		Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetTaggingByAssociationWithPA('1268,38665541,17004,32339123379301,3481646');
 	*/
-	
-    DECLARE	CONST_CATEGORYID_ROBOTUSERS 		INT DEFAULT 61;
-	DECLARE	CONST_CATEGORYID_BADROBOTUSERS 		INT DEFAULT 163;
-	DECLARE	CONST_CATEGORYID_GOODROBOTUSERS 	INT DEFAULT 164;
     DECLARE	CONST_GROUP_PA 						INT DEFAULT 0;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_InputCustomers;
@@ -70,7 +67,7 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_PA;
     CREATE TEMPORARY TABLE 	Temp_PA (			
 			CTSCustID		BIGINT UNSIGNED PRIMARY KEY
-		,	CustomerClass	INT DEFAULT 0
+		,	RootTaggingID	INT DEFAULT 0
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_SubAccounts;
@@ -145,16 +142,15 @@ BEGIN
     SELECT DISTINCT CTSCustID_Aff AS Level1  
     FROM 	Temp_CustAssociation;
     
-    INSERT INTO Temp_PA(CTSCustID, CustomerClass)
-    SELECT 	cus.CTSCustID, class.CustomerClass
+    INSERT INTO Temp_PA(CTSCustID, RootTaggingID)
+    SELECT 	cus.CTSCustID, cc.RootTaggingID
 	FROM 	Temp_CustLevel1 AS cus
-		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CTSCustID = cus.CTSCustID AND SportGroupID = CONST_GROUP_PA
-		STRAIGHT_JOIN CTS_DataCenter.CategoryToCustomerClass AS class ON class.CategoryID =  cc.CategoryID
-    WHERE	cc.CategoryID IN (CONST_CATEGORYID_ROBOTUSERS,CONST_CATEGORYID_BADROBOTUSERS,CONST_CATEGORYID_GOODROBOTUSERS)
-		OR	class.CustomerClass IN (8, 10, 86, 106)
-    ON DUPLICATE KEY UPDATE CustomerClass = CASE WHEN class.CustomerClass IN (10,106) THEN 10
-												 WHEN class.CustomerClass IN (8, 86) AND Temp_PA.CustomerClass NOT IN (10, 106) THEN 8
-												 WHEN class.CustomerClass IN (8, 86) AND Temp_PA.CustomerClass IN (10, 106) THEN 10
+		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CTSCustID = cus.CTSCustID AND cate.SportGroupID = CONST_GROUP_PA
+		STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID =  cate.CategoryID
+    WHERE	cc.RootTaggingID IS NOT NULL
+    ON DUPLICATE KEY UPDATE RootTaggingID = CASE WHEN cc.RootTaggingID = 10 THEN 10
+												 WHEN cc.RootTaggingID = 10 AND Temp_PA.RootTaggingID <> 10 THEN 8
+												 WHEN cc.RootTaggingID = 8 AND Temp_PA.RootTaggingID = 10 THEN 10
 											END;
     
     INSERT INTO Temp_CustAssociationPA (CustID, TaggingID)
@@ -162,16 +158,16 @@ BEGIN
 		SELECT	cus.CustID
 			, 	cus.CTSCustID
 			,   COUNT(*) AS Total
-			,	GROUP_CONCAT( DISTINCT pa.CustomerClass SEPARATOR  ',') AS CustomerClassStr
+			,	GROUP_CONCAT( DISTINCT pa.RootTaggingID SEPARATOR  ',') AS RootTaggingIDStr
         FROM 	Temp_CustAssociation AS cus
 			INNER JOIN Temp_PA AS pa ON cus.CTSCustID_Aff = pa.CTSCustID
         GROUP BY 	cus.CustID, cus.CTSCustID
 	)
     SELECT 	CustID
-		,	CASE 	WHEN CustomerClassStr LIKE '%10%' THEN 10
-					WHEN CustomerClassStr LIKE '%8%' THEN 8
-					WHEN CustomerClassStr LIKE '%13%' THEN 13
-			END AS CustomerClass
+		,	CASE 	WHEN RootTaggingIDStr LIKE '%10%' THEN 10
+					WHEN RootTaggingIDStr LIKE '%8%' THEN 8
+					WHEN RootTaggingIDStr LIKE '%13%' THEN 13
+			END AS RootTaggingID
 	FROM 	CTE_Result 
 	WHERE 	CTE_Result.Total > 2;
 	
