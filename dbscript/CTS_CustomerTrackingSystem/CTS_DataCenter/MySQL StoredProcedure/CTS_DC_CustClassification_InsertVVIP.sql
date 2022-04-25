@@ -117,8 +117,7 @@ sp: BEGIN
 		,	lv_CategoryID
 		,	ip_AffectDownline AS IsAffectToDownline
 		,	lv_CurrentDateTime AS InsertTime
-	FROM Temp_Customer AS tmpCus
-    WHERE tmpCus.RoleID;    
+	FROM Temp_Customer AS tmpCus;
 
 	/*Remove all category, customer class, probation list before.*/
 	DELETE cls
