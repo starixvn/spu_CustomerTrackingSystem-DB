@@ -14,6 +14,7 @@ BEGIN
 		Original:
 		Revisions:
 			- 20210612@Casey.Huynh: Created [RedmineID: #156464]
+            - 20220422@Irena.Vo: Mapping Problem Case from table CustomerCategory [Redmine ID: #170468]
 		Param's Explanation (filtered by):
 
 		Example: ;
@@ -103,15 +104,14 @@ BEGIN
 	);
     
     #==============================================================================================
-    #======Scan CTSCustomerClassification_History FOR cat.CategoryGroup IN (59, 61, 204)
+    #======Scan CTSCustomerClassification_History FOR cat.ProblemCaseID IN (lv_ProCasRobot, lv_ProCasProPunter)
     INSERT IGNORE INTO Temp_CustProlemCase (ID, CustID, ProblemCaseID)
     SELECT 	@LastCustClassHisID := his.ID
-		,	CustID
-        ,	(CASE WHEN cat.CategoryGroup IN (59,61) THEN lv_ProCasRobot
-				 WHEN cat.CategoryGroup IN (204) THEN lv_ProCasProPunter END) AS ProblemCaseID
+		,	his.CustID
+        ,	cat.ProblemCaseID
     FROM CTS_DataCenter.CTSCustomerClassification_History AS his
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON his.CategoryID = cat.CategoryID
-    WHERE his.ID > lv_sysLastClassification AND his.IsDataChanged = 1 AND cat.CategoryGroup IN (59, 61, 204)
+    WHERE his.ID > lv_sysLastClassification AND his.IsDataChanged = 1 AND cat.ProblemCaseID IN (lv_ProCasRobot, lv_ProCasProPunter)
     ORDER BY ID
     LIMIT ip_PackSize;   
     
@@ -171,7 +171,7 @@ BEGIN
         INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ad.CTSCustID = cus.CTSCustID AND cus.CustSubID = 0
     WHERE EXISTS (SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
-						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ParentID = 50 AND cat.CategoryGroup <> 52
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ProblemCaseID = lv_ProCasSuspiciousAss
 					WHERE cus.CustID = cls.CustID AND cls.SportGroupID = 0);
         
     INSERT INTO Temp_CustAssociation(FromCTSCustID, FromCustID, FromCustSubID, ToCTSCustID)
@@ -182,7 +182,7 @@ BEGIN
     FROM Temp_NewAssociationByIP AS nIP
     WHERE EXISTS (SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
-						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ParentID = 50 AND cat.CategoryGroup <> 52
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ProblemCaseID = lv_ProCasSuspiciousAss
 					WHERE nIP.ToCustID = cls.CustID AND cls.SportGroupID = 0);   
     
     INSERT INTO Temp_CustAssociation(FromCTSCustID, FromCustID, FromCustSubID, ToCTSCustID)
@@ -193,7 +193,7 @@ BEGIN
     FROM Temp_NewAssociationByIP AS nIP
     WHERE EXISTS (SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
-						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ParentID = 50 AND cat.CategoryGroup <> 52
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ProblemCaseID = lv_ProCasSuspiciousAss
 					WHERE nIP.FromCustID = cls.CustID AND cls.SportGroupID = 0);
         
     INSERT IGNORE INTO CTS_DataCenter.ProblemCaseMonitor(CreatedDate, ProblemCaseID, CustID, CustSubID, InsertTime)
@@ -214,7 +214,7 @@ BEGIN
     FROM Temp_CustAssociation AS tmpCa
 	WHERE NOT EXISTS (	SELECT 1 
 						FROM CTS_DataCenter.CTSCustomerClassification AS cls
-						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ParentID = 50 AND cat.CategoryGroup <> 52
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ProblemCaseID = lv_ProCasSuspiciousAss
 						WHERE tmpCa.FromCustID = cls.CustID AND cls.SportGroupID = 0);	
 
     DELETE tmpCa 

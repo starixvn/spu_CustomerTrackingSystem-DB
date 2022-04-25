@@ -16,6 +16,7 @@ sp:BEGIN
 			- 20210629@Casey.Huynh: Created [Redmine ID: #157086]
             - 20210818@Aries.Nguyen: Exclude Unlink association [Redmine ID: #159708]
             - 20211026@Aries.Nguyen: Bug Exclude Unlink association [Redmine ID: #163706]
+            - 20220328@Aries.Nguyen: Add new category/class for PA Probation [Redmine ID: #170468]
 
 		Param's Explanation (filtered by):
 
@@ -99,6 +100,7 @@ sp:BEGIN
         , 	TRIM(GROUP_CONCAT(DISTINCT ' ',cat.CategoryName)) AS CustomerCategory
         ,	TRIM(GROUP_CONCAT(DISTINCT cat.CategoryID)) AS CategoryIDs
         ,	TRIM(GROUP_CONCAT(DISTINCT cat.ParentID)) AS ParentIDs
+        ,   MAX(cat.IsProbation) AS IsProbation
     FROM Temp_Group AS grp
 		INNER JOIN Temp_AssociationInfo AS cus ON cus.CustID = grp.CustID
         LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS ccl ON cus.CustID = ccl.CustID

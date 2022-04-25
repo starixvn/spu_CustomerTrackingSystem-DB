@@ -1,0 +1,177 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_DailyScan_GetNormal`;
+
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_DailyScan_GetNormal`(
+		OUT op_LastCategoryID 	INT 
+	,	OUT op_LastCustID 		BIGINT UNSIGNED 
+
+)
+    SQL SECURITY INVOKER
+BEGIN
+	/*
+		Created: 20220328@Aries.Nguyen
+		Task: Add new category/class for PA Probation [Redmine ID: #170468]
+		DB: CTS_DataCenter
+        
+		Original:
+		Revisions:
+			- 20220328@Aries.Nguyen: Created [Redmine ID: #170468]
+
+		Param's Explanation (filtered by):      
+			- CALL CTS_DC_CustClassification_DailyScan_GetNormal (@op_LastCategoryID, @op_LastCustID);
+	*/
+	DECLARE lv_LastCategoryID 		INT;
+	DECLARE lv_LastCustID 			BIGINT UNSIGNED;
+    DECLARE lv_BatchSize 			BIGINT;
+    DECLARE lv_ScanDateValid 		DATETIME;
+    
+    DECLARE lv_NextCategoryID 		INT;
+    DECLARE lv_NextCustID 			BIGINT UNSIGNED;
+    DECLARE lv_NextScanDateValid 	DATETIME;
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_Category;
+	CREATE TEMPORARY TABLE Temp_Category(
+			CategoryID				INT PRIMARY KEY 	
+        ,	ScanDate				DATETIME
+	);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_Normal;
+    CREATE TEMPORARY TABLE 	Temp_Normal (
+			CustID 			BIGINT UNSIGNED PRIMARY KEY
+	);
+    
+    INSERT INTO Temp_Category(CategoryID, ScanDate)
+	SELECT 	CategoryID
+        , 	DATE_SUB(NOW(), INTERVAL ScanIntervalInSecond - 86400 SECOND)
+	FROM CTS_DataCenter.CustomerCategory
+	WHERE ParentID = 200 
+		AND IsActive = 1
+		AND IsUsedManually = 0 
+		AND ScanIntervalInSecond > 0; 
+    
+    SELECT ParameterValue 
+    INTO lv_BatchSize 
+    FROM CTS_DataCenter.SystemParameter 
+    WHERE ParameterID = 84; 
+    
+    SELECT ParameterValue 
+    INTO lv_LastCategoryID 
+    FROM CTS_DataCenter.SystemParameter 
+    WHERE ParameterID = 85;
+    
+    SELECT ParameterValue 
+    INTO lv_LastCustID 
+    FROM CTS_DataCenter.SystemParameter 
+    WHERE ParameterID = 86;
+    
+    IF lv_LastCategoryID IS NULL OR  lv_LastCategoryID = 0 THEN
+		SELECT CategoryID 
+		INTO lv_LastCategoryID 
+		FROM Temp_Category
+		ORDER BY CategoryID ASC
+        LIMIT 1;
+	END  IF;
+    
+    SELECT ScanDate 
+    INTO lv_ScanDateValid 
+    FROM Temp_Category
+    WHERE CategoryID = lv_LastCategoryID;
+  
+    SET @sql = 	CONCAT("
+		INSERT IGNORE INTO Temp_Normal (CustID)
+		SELECT 	clss.CustID
+		FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID_CustID)
+		WHERE clss.CustID > ", lv_LastCustID," ","
+			AND clss.CategoryID = ",lv_LastCategoryID," ","
+			AND clss.LastScannedDate <= '",lv_ScanDateValid,"' ","
+			AND NOT EXISTS (SELECT 1 
+							 FROM  CTS_DataCenter.PinCustomerCategory AS pin 
+							 WHERE pin.CTSCustID = clss.CTSCustID)
+			AND NOT EXISTS (SELECT 1 
+							 FROM  CTS_DataCenter.ProbationAccountMonitor AS pro 
+							 WHERE pro.CustID = clss.CustID 
+								AND pro.SportGroupID = 200)
+		ORDER BY clss.CategoryID ASC
+			,	 clss.CustID ASC
+		LIMIT ",lv_BatchSize,";");
+
+    PREPARE stmt1 FROM  @sql;
+    EXECUTE stmt1; 
+	DEALLOCATE PREPARE stmt1;
+    
+    IF NOT EXISTS (SELECT 1 FROM Temp_Normal) THEN
+		SELECT 	cate.CategoryID
+			,	cate.ScanDate
+        INTO 	lv_NextCategoryID
+			,	lv_NextScanDateValid
+		FROM Temp_Category  AS cate
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON cate.CategoryID = clss.CategoryID 
+		WHERE cate.CategoryID > lv_LastCategoryID
+			AND clss.LastScannedDate <= cate.ScanDate
+            AND NOT EXISTS (SELECT 1 
+							 FROM  CTS_DataCenter.PinCustomerCategory AS pin 
+							 WHERE pin.CTSCustID = clss.CTSCustID)
+			AND NOT EXISTS (SELECT 1 
+							 FROM  CTS_DataCenter.ProbationAccountMonitor AS pro 
+							 WHERE pro.CustID = clss.CustID 
+								AND pro.SportGroupID = 200)
+		ORDER BY cate.CategoryID ASC
+		LIMIT 1; 
+    END IF;
+    
+    IF lv_NextCategoryID IS NOT NULL THEN
+		SELECT ScanDate 
+		INTO lv_ScanDateValid  
+		FROM Temp_Category
+		WHERE CategoryID = lv_NextCategoryID;
+        
+         SET @sql =  CONCAT("
+		INSERT IGNORE INTO Temp_Normal (CustID)
+		SELECT 	clss.CustID
+		FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID_CustID)
+		WHERE clss.CustID > 0
+			AND clss.CategoryID = ", lv_NextCategoryID," ","
+			AND clss.LastScannedDate <= '", lv_NextScanDateValid,"' ","
+			AND NOT EXISTS (SELECT 1 
+							 FROM  CTS_DataCenter.PinCustomerCategory AS pin 
+							 WHERE pin.CTSCustID = clss.CTSCustID)
+			AND NOT EXISTS (SELECT 1 
+							 FROM  CTS_DataCenter.ProbationAccountMonitor AS pro 
+							 WHERE pro.CustID = clss.CustID 
+								AND pro.SportGroupID = 200)
+		ORDER BY clss.CategoryID ASC
+			,	 clss.CustID ASC
+		LIMIT ", lv_BatchSize,";");
+    
+    PREPARE stmt1 FROM  @sql;
+    EXECUTE stmt1; 
+	DEALLOCATE PREPARE stmt1;
+        
+	ELSE
+		SET lv_NextCategoryID = lv_LastCategoryID;
+	END IF;
+    
+    SELECT MAX(CustID)
+    INTO lv_NextCustID
+    FROM Temp_Normal;
+    
+    IF lv_NextCustID IS NOT NULL THEN
+        SET op_LastCategoryID = lv_NextCategoryID;
+		SET op_LastCustID = lv_NextCustID;
+	ELSE 
+		SELECT CategoryID
+        INTO lv_NextCategoryID
+		FROM Temp_Category
+		ORDER BY CategoryID ASC 
+		LIMIT 1;
+	
+        SET op_LastCategoryID = lv_NextCategoryID;
+        SET op_LastCustID = 0;
+    END IF;
+    
+    SELECT 	CustID
+    FROM Temp_Normal;
+
+END$$
+DELIMITER ;

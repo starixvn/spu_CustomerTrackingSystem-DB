@@ -20,6 +20,7 @@ BEGIN
             - 20201130@Aries.Nguyen: Update metadata for goSQL. Remove transaction isolation level REPEATABLE READ and READ UNCOMMITTED. Remove logic detail category. [Redmine ID: #145954]
             - 20201216@Harvey.Nguyen: grouping category [Redmine ID: #147299]
             - 20210622@Aries.Nguyen: Update coding convention  [Redmine ID: #157203]
+            - 20220331@Harvey.Nguyen: refactor code [Redmine ID: #170802]
 
 		Param's Explanation:
 
@@ -59,18 +60,7 @@ BEGIN
     
     INSERT INTO Temp_LatestRecordOfCategory(CustID, CategoryID, LastModifiedDate)
     SELECT cla.CustID
-        , (CASE WHEN cla.CategoryID = 151 THEN 51
-                WHEN cla.CategoryID IN (72, 152) THEN 52
-				WHEN cla.CategoryID IN (73, 153) THEN 53
-                WHEN cla.CategoryID IN (74, 154) THEN 54 
-                WHEN cla.CategoryID IN (75, 155) THEN 55
-                WHEN cla.CategoryID IN (76, 156) THEN 56
-				WHEN cla.CategoryID IN (77, 157) THEN 57
-				WHEN cla.CategoryID IN (78, 158) THEN 58
-				WHEN cla.CategoryID IN (79, 159) THEN 59
-				WHEN cla.CategoryID = 80 THEN 60
-                ELSE cla.CategoryID
-	        END) AS 'CategoryID'
+        , 	cla.CategoryID AS 'CategoryID'
         ,   MAX(cla.LastModifiedDate) AS 'LastModifiedDate'
     FROM		CTS_DataCenter.CTSCustomerClassification AS cla
 		INNER JOIN Temp_CustID AS cust ON cla.CustID = cust.CustID

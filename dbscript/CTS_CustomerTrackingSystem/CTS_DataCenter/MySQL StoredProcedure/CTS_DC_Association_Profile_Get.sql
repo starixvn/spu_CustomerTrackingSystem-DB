@@ -31,6 +31,8 @@ sp : BEGIN
 			- 20210420@Irena.Vo: Get data for Sub Account on Associated Accounts tab [Redmine ID: #152963]
             - 20210505@Irena.Vo: Get additional CustId [Redmine ID: #152963]
 			- 20210506@Irena.Vo: Get additional CustSubId [Redmine ID: #154624]
+			- 20220328@Aries.Nguyen: Add new category/class for PA Probation [Redmine ID: #170468]
+
 		Param's Explanation (filtered by):
 			- ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual, 4 - IP
             - ip_AssociationStatus: 0 - All, 1 - Linked, 2 - UnLinked
@@ -80,6 +82,7 @@ sp : BEGIN
 		,	ParentID		SMALLINT UNSIGNED
 		,	CategoryIDs		VARCHAR(1000)
 		,	CategoryNames	VARCHAR(5000)
+		,	IsProbation		BIT DEFAULT 0
         , 	PRIMARY KEY (CTSCustID)
 	);
     
@@ -299,11 +302,12 @@ sp : BEGIN
 		WHERE cate.CTSCustID IS NULL;
     END IF;
     
-    INSERT IGNORE INTO Temp_Classification(CTSCustID, ParentID, CategoryIDs, CategoryNames)
+    INSERT IGNORE INTO Temp_Classification(CTSCustID, ParentID, CategoryIDs, CategoryNames,IsProbation)
 	SELECT	tmpAcc.CTSCustID
 		,	cc.ParentID -- Each Customer has only 1 ParentID
 		,	GROUP_CONCAT(DISTINCT cate.CategoryID SEPARATOR ',') 
         ,	GROUP_CONCAT(DISTINCT cc.CategoryName SEPARATOR ',')
+		,	MAX(cc.IsProbation)
 	FROM	Temp_AssociatedAccount AS tmpAcc
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CTSCustID = tmpAcc.CTSCustID
         INNER JOIN Temp_CategoryID AS tmpCate ON tmpCate.CategoryID = cate.CategoryID
@@ -336,6 +340,7 @@ sp : BEGIN
 		,	tmpCS.ParentID AS ParentIDs
 		,	tmpCS.CategoryIDs AS CategoryIDs
 		,	tmpCS.CategoryNames AS CategoryNames
+		,	tmpCS.IsProbation AS IsProbation
 	FROM Temp_AssociatedAccount AS tmpAcc
 		INNER JOIN Temp_Classification AS tmpCS ON tmpCS.CTSCustID = tmpAcc.CTSCustID
 	WHERE tmpAcc.IsFiltered = 1

@@ -15,13 +15,12 @@ sp: BEGIN
 		Original:
 
 		Revisions:
-			- 	20210526@Casey.Huynh: Created (MatchMonitor Rule) [Redmine ID: 166986]
-            - 	20220226@Casey.Huynh: Created (MatchMonitor Rule) [Redmine ID: 166986]
+			- 20210526@Casey.Huynh: Created (MatchMonitor Rule) [Redmine ID: 166986]
+            - 20220226@Casey.Huynh: Created (MatchMonitor Rule) [Redmine ID: 166986]
+            - 20220422@Irena.Vo: Mapping Is Hedging Reason (MM) from table CustomerCategory [Redmine ID: #170468]
 		Param's Explanation (filtered by):			
-		
         Example:
 			CALL CTS_DC_Association_IsAssociatedHedgingCustByCustIDList('37144067,37144068', @op_IsHedging);
-
 	*/
     
     DROP TEMPORARY TABLE IF EXISTS Temp_InputCust;
@@ -86,7 +85,8 @@ sp: BEGIN
 	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.LeastCustID IS NULL
 		AND	EXISTS(	SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
-					WHERE cla.CustID = ma.ToCustID AND cla.SportGroupID = 0 AND cla.CategoryID in (73,53,153))
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID
+					WHERE cla.CustID = ma.ToCustID AND cla.SportGroupID = 0 AND cc.IsHedgingReasonMM = 1)
 	LIMIT 1;
 
 	IF op_IsHedging IS NOT NULL THEN 
@@ -101,7 +101,8 @@ sp: BEGIN
 	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.LeastCustID IS NULL
 		AND	EXISTS(	SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
-					WHERE cla.CustID = ma.FromCustID AND cla.SportGroupID = 0 AND cla.CategoryID in (73,53,153))
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID
+					WHERE cla.CustID = ma.FromCustID AND cla.SportGroupID = 0 AND cc.IsHedgingReasonMM = 1)
 	LIMIT 1;
 
 	IF op_IsHedging IS NOT NULL THEN 
@@ -116,7 +117,8 @@ sp: BEGIN
 	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.LeastCustID IS NULL
 		AND	EXISTS(	SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
-					WHERE cla.CustID = ma.ToCustID AND cla.SportGroupID = 0 AND cla.CategoryID in (73,53,153))
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID
+					WHERE cla.CustID = ma.ToCustID AND cla.SportGroupID = 0 AND cc.IsHedgingReasonMM = 1)
 	LIMIT 1;
 
 	IF op_IsHedging IS NOT NULL THEN 
@@ -131,7 +133,8 @@ sp: BEGIN
 	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.LeastCustID IS NULL
 		AND	EXISTS(	SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
-					WHERE cla.CustID = ma.FromCustID AND cla.SportGroupID = 0 AND cla.CategoryID in (73,53,153))
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID
+					WHERE cla.CustID = ma.FromCustID AND cla.SportGroupID = 0 AND cc.IsHedgingReasonMM = 1)
 	LIMIT 1;
     
 	IF op_IsHedging IS NOT NULL THEN 
@@ -147,7 +150,8 @@ sp: BEGIN
 		AND ar.FromCTSCustID IS NULL
 		AND	EXISTS(	SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
-					WHERE cla.CTSCustID = ma.ToCTSCustID AND cla.SportGroupID = 0 AND cla.CategoryID in (73,53,153))
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID
+					WHERE cla.CTSCustID = ma.ToCTSCustID AND cla.SportGroupID = 0 AND cc.IsHedgingReasonMM = 1)
 	LIMIT 1;
 
 	IF op_IsHedging IS NOT NULL THEN 
@@ -163,7 +167,8 @@ sp: BEGIN
 		AND ar.FromCTSCustID IS NULL
 		AND	EXISTS(	SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
-					WHERE cla.CTSCustID = ma.FromCTSCustID AND cla.SportGroupID = 0 AND cla.CategoryID in (73,53,153))
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID
+					WHERE cla.CTSCustID = ma.FromCTSCustID AND cla.SportGroupID = 0 AND cc.IsHedgingReasonMM = 1)
 	LIMIT 1;
 	
 	IF op_IsHedging IS NOT NULL THEN 
@@ -210,7 +215,8 @@ sp: BEGIN
 		FROM Temp_Association AS tmpAss
 		WHERE EXISTS(	SELECT 1 
 						FROM CTS_DataCenter.CTSCustomerClassification AS cla 
-						WHERE cla.CTSCustID = tmpAss.FromCTSCustID AND cla.SportGroupID = 0 AND cla.CategoryID in (73,53,153))
+							INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID
+						WHERE cla.CTSCustID = tmpAss.FromCTSCustID AND cla.SportGroupID = 0 AND cc.IsHedgingReasonMM = 1)
 		LIMIT 1;
 		
 		IF op_IsHedging IS NOT NULL THEN 
@@ -222,7 +228,8 @@ sp: BEGIN
 		FROM Temp_Association AS tmpAss
 		WHERE EXISTS(	SELECT 1 
 						FROM CTS_DataCenter.CTSCustomerClassification AS cla 
-						WHERE cla.CTSCustID = tmpAss.ToCTSCustID AND cla.SportGroupID = 0 AND cla.CategoryID in (73,53,153))
+							INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID
+						WHERE cla.CTSCustID = tmpAss.ToCTSCustID AND cla.SportGroupID = 0 AND cc.IsHedgingReasonMM = 1)
 		LIMIT 1;	
        
     ELSE
@@ -232,7 +239,8 @@ sp: BEGIN
 			INNER JOIN CTS_DataCenter.AssociationByDevice AS adv ON adv.DCSDeviceID = tmpAdv.DeviceID
 		WHERE EXISTS(	SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
-					WHERE cla.CTSCustID = adv.CTSCustID AND cla.SportGroupID = 0 AND cla.CategoryID in (73,53,153))
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID
+					WHERE cla.CTSCustID = adv.CTSCustID AND cla.SportGroupID = 0 AND cc.IsHedgingReasonMM = 1)
 		LIMIT 1;	
 	END IF;
 END$$

@@ -25,6 +25,7 @@ sp: BEGIN
 			- 20201214-20210107@Irena.Vo: Move logic Sync to Category by new sp: SyncToCategory. Insert Error Log. Remove User Log [RedmineID: #145951] 
             - 20210622@Aries.Nguyen: Update coding convention and improve locking [Redmine ID: #157203]
             - 20210823@Aries.Nguyen: Enhannce  Affected Evidence flow [Redmine ID: #160470]
+            - 20220421@Irena.Vo: Rename select CustId -> CustID [Redmine ID: #170468]
             
 		Param's Explanation(filered by):
 		
@@ -109,12 +110,12 @@ sp: BEGIN
    FROM Temp_CustomerList AS t 
         CROSS JOIN Temp_EvidenceList AS e;
    
-    -- Return CTSCustID, CustID, SubscriberID, EvidenceID, 0 (ActionType)
+    -- Return CustID, CTSCustID, SubscriberID, EvidenceID, 0 (ActionType)
     SELECT  DISTINCT 
-            cust.CustId
-	    ,	cust.CTSCustId
-        ,	cust.SubscriberId
-        ,	ev.EvidenceId
+            cust.CustID
+	    ,	cust.CTSCustID
+        ,	cust.SubscriberID
+        ,	ev.EvidenceID
         ,	0 AS ActionType
     FROM Temp_CustomerList AS cust 
         CROSS JOIN  Temp_EvidenceList AS ev;
