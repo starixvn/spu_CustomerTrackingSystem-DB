@@ -104,6 +104,7 @@ sp: BEGIN
 								WHEN ip_FromAction = 2 AND ip_UplineRoleID = 4 THEN 24
                                 WHEN ip_FromAction = 2 AND ip_UplineRoleID = 3 THEN 25
                                 WHEN ip_FromAction = 2 AND ip_UplineRoleID = 2 THEN 26
+                                WHEN ip_FromAction = 3 THEN 30
 							END;    
     /************************************************************************************/    
 	INSERT IGNORE INTO CTSCustomerClassificationVVIP(CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryID, IsAffectToDownline,InsertTime) 
@@ -117,7 +118,7 @@ sp: BEGIN
 		,	ip_AffectDownline AS IsAffectToDownline
 		,	lv_CurrentDateTime AS InsertTime
 	FROM Temp_Customer AS tmpCus
-    WHERE tmpCus.RoleID > 1;    
+    WHERE tmpCus.RoleID;    
 
 	/*Remove all category, customer class, probation list before.*/
 	DELETE cls

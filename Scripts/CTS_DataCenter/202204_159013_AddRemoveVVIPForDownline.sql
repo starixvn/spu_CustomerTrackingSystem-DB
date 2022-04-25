@@ -55,7 +55,16 @@ USE CTS_DataCenter;
 INSERT INTO CTS_DataCenter.StaticList(ListID,ItemID,ListName,ListNameDisplay,ItemName,ItemNameDisplay,PriorityOrder,Status,Description,CreatedDate)
 VALUES (4,24,'Classification Source Type','Classification Source Type','VVIP tag is affected by Super','VVIP tag is affected by Super',24,1,'Mark VVIP For Downline',NOW())
 	, (4,25,'Classification Source Type','Classification Source Type','VVIP tag is affected by Master','VVIP tag is affected by Master',25,1,'Mark VVIP For Downline',NOW())
-    , (4,26,'Classification Source Type','Classification Source Type','VVIP untag is affected by Master','VVIP tag is affected by Agent',26,1,'Mark VVIP For Downline',NOW())
+    , (4,26,'Classification Source Type','Classification Source Type','VVIP tag is affected by Agent','VVIP tag is affected by Agent',26,1,'Mark VVIP For Downline',NOW())
     , (4,27,'Classification Source Type','Classification Source Type','VVIP untag is affected by Super','VVIP untag is affected by Super',27,1,'Remove VVIP For Downline',NOW())
 	, (4,28,'Classification Source Type','Classification Source Type','VVIP untag is affected by Master','VVIP untag is affected by Master',28,1,'Remove VVIP For Downline',NOW())
-    , (4,29,'Classification Source Type','Classification Source Type','VVIP untag is affected by Master','VVIP untag is affected by Agent',29,1,'Remove VVIP For Downline',NOW())
+    , (4,29,'Classification Source Type','Classification Source Type','VVIP untag is affected by Agent','VVIP untag is affected by Agent',29,1,'Remove VVIP For Downline',NOW())
+    , (4,30,'Classification Source Type','Classification Source Type','VVIP tag is affected by direct upline','VVIP tag is affected by direct upline',30,1,'Insert New Cust Affected By Upline',NOW());
+    
+UPDATE CTS_DataCenter.StaticList
+SET ItemName = 'VVIP is marked manually', ItemNameDisplay = 'VVIP is marked manually'
+WHERE ListID = 4 AND ItemID = 13;
+
+UPDATE CTS_DataCenter.StaticList
+SET ItemName = 'VVIP is unmarked manually', ItemNameDisplay = 'VVIP is unmarked manually'
+WHERE ListID = 4 AND ItemID = 14;
