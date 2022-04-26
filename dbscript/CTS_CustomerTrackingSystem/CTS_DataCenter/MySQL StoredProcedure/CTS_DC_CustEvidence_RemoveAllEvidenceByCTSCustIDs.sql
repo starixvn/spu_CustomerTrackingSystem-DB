@@ -4,6 +4,7 @@ DROP procedure IF EXISTS `CTS_DC_CustEvidence_RemoveAllEvidenceByCTSCustIDs`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_RemoveAllEvidenceByCTSCustIDs`(
 		IN ip_CTSCustIDs		JSON
+	,	IN ip_CreatedBy			INT
 	,	IN ip_SessionId			BIGINT
 	,	IN ip_IsRollback		TINYINT
 	,	IN ip_IsClearLog		TINYINT
@@ -27,6 +28,7 @@ sp: BEGIN
 		   - 20210622@Aries.Nguyen: Update coding convention and inprove locking [Redmine ID: #157203]
 		   - 20210823@Aries.Nguyen: Enhannce  Affected Evidence flow [Redmine ID: #160470]
            - 20220421@Irena.Vo: Rename select CustId -> CustID [Redmine ID: #170468]
+           - 20220426@Casey.Huynh: Return CreatedBy [Redmine ID: #171512]
            
 	*/
     DECLARE lv_CurrentDateTime	DATETIME DEFAULT CURRENT_TIME();
@@ -156,13 +158,14 @@ sp: BEGIN
         END;
     END IF;
     
-	-- Return CTSCustID, CustID, SubscriberID, EvidenceID, 2 (ActionType)
+	-- Return CTSCustID, CustID, SubscriberID, EvidenceID, 2 (ActionType) TO Remove Classication 
     SELECT	DISTINCT 
 			temp.CTSCustID
 		,	temp.CustID
 		,	temp.SubscriberID
 		,	evd.EvidenceID
 		,	2 AS ActionType-- remove
+        ,	ip_CreatedBy AS CreatedBy
 	FROM Temp_MultipleAccount AS temp
 		INNER JOIN Temp_CustEvidenceList AS evd ON evd.CTSCustID = temp.CTSCustID;
 END$$

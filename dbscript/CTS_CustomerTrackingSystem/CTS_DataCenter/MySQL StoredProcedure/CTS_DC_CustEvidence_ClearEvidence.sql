@@ -24,6 +24,7 @@ BEGIN
 			- 20210823@Aries.Nguyen: Enhannce  Affected Evidence flow [Redmine ID: #160470]
 			- 20210920@Aries.Nguyen: Split history log  [Redmine ID: #161890]
 			- 20220414@Aries.Nguyen: Add new category/class for PA Probation [Redmine ID: #170468]
+            - 20220426@Casey.Huynh: Return CreatedBy [Redmine ID: #171512]
 
 		Param's Explanation (filtered by):   
 			- ActionID: 1 insert, 2 override, 3 clear
@@ -150,7 +151,7 @@ BEGIN
 			, 	ec.CategoryID
 			, 	0
 			, 	lv_CurrentDateTime
-			, 	ip_CreatedBy
+			, 	ip_CreatedBy AS CreatedBy
 			, 	2
 			, 	1
 			, 	DATE(lv_CurrentDateTime)

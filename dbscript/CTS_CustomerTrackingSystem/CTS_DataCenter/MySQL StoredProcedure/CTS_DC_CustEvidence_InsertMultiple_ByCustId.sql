@@ -27,6 +27,7 @@ sp: BEGIN
             - 20210622@Aries.Nguyen: Update coding convention and improve locking [Redmine ID: #157203]
             - 20210823@Aries.Nguyen: Enhannce  Affected Evidence flow [Redmine ID: #160470]
             - 20220421@Irena.Vo: Rename select CustId -> CustID [Redmine ID: #170468]
+            - 20220426@Casey.Huynh: Return CreatedBy [Redmine ID: #171512]
         
         Example:
             - CALL CTS_DataCenter.CTS_DC_CustEvidence_InsertMultiple_ByCustId('[{"CustID": 43600693, "EvidenceID": 45, "Comment": "na test 1"},{"CustID":43600693, "EvidenceID": 46, "Comment":"na test 2"},{"CustID":43600889, "EvidenceID": 45, "Comment":"na test 3"}]', 8, @op_ErrorMessage);
@@ -124,6 +125,7 @@ sp: BEGIN
         ,	temp.SubscriberID
         ,	temp.EvidenceID
         ,	0 AS ActionType
+        ,	ip_UserID
     FROM Temp_MultipleAccountEvidence AS temp;
 
 END$$

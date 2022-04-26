@@ -5,6 +5,7 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers`(
         IN ip_CustIds           VARCHAR(4000)
     ,   IN ip_EvidenceCodes     VARCHAR(4000)
+    ,	IN ip_CreatedBy			INT
 
     ,   OUT op_ErrorMessage     VARCHAR(200)
 )
@@ -26,14 +27,15 @@ sp: BEGIN
             - 20210622@Aries.Nguyen: Update coding convention and improve locking [Redmine ID: #157203]
             - 20210823@Aries.Nguyen: Enhannce  Affected Evidence flow [Redmine ID: #160470]
             - 20220421@Irena.Vo: Rename select CustId -> CustID [Redmine ID: #170468]
+            - 20220426@Casey.Huynh: Return CreatedBy [Redmine ID: #171512]
             
 		Param's Explanation(filered by):
 		
 		Example:
-            -CALL CTS_DataCenter.CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers('43600693,43600889', '6.1', @op_ErrorMessage);
+            -CALL CTS_DataCenter.CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers('43600693,43600889', '6.1', 8, @op_ErrorMessage);
 	*/    
 	DECLARE		lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();
-    DECLARE 	lv_CreatedBy        BIGINT DEFAULT 10278938;
+    DECLARE		lv_SPName VARCHAR(200) DEFAULT 'CTS_DC_CustEvidence_InsertMultilpleEvidencesForCustomers';
     
     DECLARE	lv_No				INT			 DEFAULT 0;
     DECLARE lv_ErrorNo 			INT          DEFAULT 0;
@@ -98,7 +100,7 @@ sp: BEGIN
         ,	0 
         ,	t.CTSCustID
         ,	lv_CurrentDateTime
-        ,	lv_CreatedBy
+        ,	ip_CreatedBy
     FROM 	Temp_CustomerList AS t 
         CROSS JOIN Temp_EvidenceList AS e;
    
@@ -106,7 +108,7 @@ sp: BEGIN
    INSERT INTO CTS_DataCenter.CustEvidenceAffectedQueueInsert(CTSCustID,  EvidenceID, CreatedBy)
    SELECT 	t.CTSCustID
 		,	e.EvidenceID
-        ,	lv_CreatedBy
+        ,	ip_CreatedBy
    FROM Temp_CustomerList AS t 
         CROSS JOIN Temp_EvidenceList AS e;
    
@@ -117,8 +119,13 @@ sp: BEGIN
         ,	cust.SubscriberID
         ,	ev.EvidenceID
         ,	0 AS ActionType
+        ,	ip_CreatedBy AS CreatedBy
     FROM Temp_CustomerList AS cust 
         CROSS JOIN  Temp_EvidenceList AS ev;
+	
+    /*WRITE LOG*/
+	INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
+	VALUES(3, lv_SPName, 'Insert Multiple Evidences for Customers ',lv_CurrentDateTime,ip_CreatedBy);
 END$$
 
 DELIMITER ;
