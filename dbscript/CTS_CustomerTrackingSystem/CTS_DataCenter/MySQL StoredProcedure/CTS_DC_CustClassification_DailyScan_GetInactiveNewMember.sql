@@ -100,22 +100,17 @@ sp:BEGIN
     END IF;
     
     IF lv_NextCategoryID IS NOT NULL THEN
-		SELECT ScanDate 
-		INTO lv_ScanDateValid  
-		FROM Temp_Category
-		WHERE CategoryID = lv_NextCategoryID;
-        
-         SET @sql =  CONCAT("
+		SET @sql =  CONCAT("
 		INSERT IGNORE INTO Temp_InactiveNewMember (CustID)
 		SELECT 	clss.CustID
 		FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID_CustID)
 		WHERE clss.CustID > 0
 			AND clss.CategoryID = ", lv_NextCategoryID," ","
-			AND clss.CreatedDate <= '", lv_NextScanDateValid,"' ","
+			AND clss.CreatedDate <= '", lv_ScanDateValid,"' ","
 			AND NOT EXISTS (SELECT 1 
 							FROM  CTS_Archive.CTSCustomerAssociationStatus AS ticket 
 							WHERE ticket.CTSCustID = clss.CTSCustID
-								AND ticket.LastTicketDate > '",lv_Last30Days,"')
+								AND ticket.LastTicketDate > '",lv_ScanDateValid,"')
 		ORDER BY clss.CategoryID ASC
 			,	 clss.CustID ASC
 		LIMIT ", lv_BatchSize,";");
