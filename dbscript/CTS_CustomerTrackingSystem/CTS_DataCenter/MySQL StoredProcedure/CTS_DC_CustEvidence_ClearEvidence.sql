@@ -4,6 +4,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_CustEvidence_ClearEvidence`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_ClearEvidence`(
 		IN ip_CTSCustIDList 		VARCHAR(8000)
+    ,   IN ip_CreatedBy				INT
     
     ,	OUT op_ErrorMessage 		VARCHAR(200) 
     ,	OUT op_Result 				VARCHAR(8000)
@@ -28,11 +29,11 @@ BEGIN
 			- ActionID: 1 insert, 2 override, 3 clear
             
 		Example:			
-			- CALL CTS_DataCenter.CTS_DC_CustEvidence_ClearEvidence('8', @op_ErrorMessage);
+			- CALL CTS_DataCenter.CTS_DC_CustEvidence_ClearEvidence('5940,40290236', 8, @op_ErrorMessage, @op_Result);
 	*/
         
     DECLARE	lv_CurrentDateTime 		DATETIME DEFAULT CURRENT_TIME();
-    DECLARE lv_CreatedBy 			BIGINT DEFAULT  10278938;
+   # DECLARE ip_CreatedBy 			BIGINT DEFAULT  10278938;
     DECLARE	lv_IsSyncEvi2Category 	VARCHAR(1) DEFAULT '';  
     
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
@@ -68,7 +69,9 @@ BEGIN
         ,	CategoryID			SMALLINT UNSIGNED
         , 	PRIMARY KEY     	PK_Temp_ExistedClass(CustID,CategoryID)
 	);   
-        
+	
+    
+    
     SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_CTSCustID (CTSCustID) VALUES ('", REPLACE(ip_CTSCustIDList, ",", "'),('"),"');");
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1;
@@ -78,7 +81,7 @@ BEGIN
 		,	c.CustID
 	FROM Temp_CTSCustID AS t
 		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON t.CTSCustID = c.CTSCustID;
-    
+  
     INSERT INTO Temp_CustomerEvidence(CTSCustID,CustID,EvidenceID)
     SELECT	DISTINCT 
 			e.CTSCustID
@@ -131,7 +134,7 @@ BEGIN
 			, 	ec.CategoryID
 			, 	0
 			, 	lv_CurrentDateTime
-			, 	lv_CreatedBy
+			, 	ip_CreatedBy
 			, 	2
 			, 	1
 			, 	DATE(lv_CurrentDateTime)
@@ -147,7 +150,7 @@ BEGIN
 			, 	ec.CategoryID
 			, 	0
 			, 	lv_CurrentDateTime
-			, 	lv_CreatedBy
+			, 	ip_CreatedBy
 			, 	2
 			, 	1
 			, 	DATE(lv_CurrentDateTime)
@@ -161,9 +164,7 @@ BEGIN
         INTO op_Result
 		FROM Temp_CustomerEvidence;
     END IF;
-     
-    DROP TEMPORARY TABLE Temp_CustomerID;
-    DROP TEMPORARY TABLE Temp_CustomerEvidence;
+
 END$$
 
 DELIMITER ;
