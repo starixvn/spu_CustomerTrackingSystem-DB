@@ -140,6 +140,40 @@ sp: BEGIN
 	IF op_IsHedging IS NOT NULL THEN 
 		LEAVE sp;
 	END IF;
+    
+    #=======CHECK AssociationGroupByAI====================================
+    DROP TEMPORARY TABLE IF EXISTS Temp_AssGroupByAI;
+	CREATE TEMPORARY TABLE Temp_AssGroupByAI (
+			GroupID 	BIGINT UNSIGNED
+		,	CustID		BIGINT UNSIGNED
+		
+		, 	PRIMARY KEY (GroupID,CustID)
+        ,	INDEX IX_Temp_AssGroupByAI_CustID(CustID)
+	);
+    
+    INSERT INTO Temp_AssGroupByAI(GroupID, CustID)
+    SELECT DISTINCT asg.GroupID
+		,	asg.CustID
+    FROM Temp_Cust AS tmpCus
+		INNER JOIN CTS_DataCenter.AssociationGroupByAI AS asg ON tmpCus.CustID = asg.CustID ;
+
+    SELECT  1
+	INTO op_IsHedging
+	FROM Temp_AssGroupByAI AS tmpCus
+		INNER JOIN CTS_DataCenter.AssociationGroupByAI AS ma ON ma.CustID <> tmpCus.CustID AND ma.GroupID = tmpCus.GroupID
+        LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON LEAST(ma.CustID,tmpCus.CustID) = ar.LeastCustID AND ar.LeastCustSubID = 0 AND GREATEST(ma.CustID,tmpCus.CustID) = ar.GreatestCustID AND ar.GreatestCustSubID = 0
+	WHERE ar.LeastCustID IS NULL
+		AND	EXISTS(	SELECT 1 
+					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID
+					WHERE cla.CustID = ma.CustID AND cla.SportGroupID = 0 AND cc.IsHedgingReasonMM = 1)
+	LIMIT 1;
+    
+	IF op_IsHedging IS NOT NULL THEN 
+		LEAVE sp;
+	END IF;
+    
+    
     #=======CHECK AssociationByManual====================================
 	SELECT  1
 	INTO op_IsHedging
