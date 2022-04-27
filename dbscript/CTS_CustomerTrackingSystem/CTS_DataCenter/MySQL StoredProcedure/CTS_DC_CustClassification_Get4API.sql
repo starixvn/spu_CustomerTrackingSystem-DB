@@ -21,6 +21,7 @@ BEGIN
             - 20201216@Harvey.Nguyen: grouping category [Redmine ID: #147299]
             - 20210622@Aries.Nguyen: Update coding convention  [Redmine ID: #157203]
             - 20220331@Harvey.Nguyen: refactor code [Redmine ID: #170802]
+			- 20220426@Harvey.Nguyen: fix bug return duplicate category [Redmine ID: #170802]
 
 		Param's Explanation:
 
@@ -69,7 +70,7 @@ BEGIN
 			OR a.ParentID IN (SELECT ParentID FROM Temp_ParentID))
 	GROUP BY cla.CustID, CategoryID;
 
-    SELECT 	c.CustID AS CustID
+    SELECT DISTINCT	c.CustID AS CustID
 		,	b.CategoryName AS ParentCategoryName
 		,	a.CategoryName
     FROM Temp_LatestRecordOfCategory AS c
