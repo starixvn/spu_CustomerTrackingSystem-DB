@@ -15,6 +15,7 @@ BEGIN
 		Original:
 		Revisions:
 			- 20220328@Aries.Nguyen: Created [Redmine ID: #170468]
+            - 20220426@Aries.Nguyen: CTS - Daily PA Scan - Check Losing lead to show Created Date is wrong in PAM [Redmine ID: #171972]
 
 		Param's Explanation (filtered by):      
 			- CALL CTS_DC_CustClassification_ProblemAccountProbation_Insert ('[{"CustID": 123,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10}]');
@@ -96,7 +97,6 @@ BEGIN
     SET 	clss.CategoryID = tmp.RelevantCategoryID
 		,	clss.LastModifiedDate = NOW()
         ,	clss.LastModifiedBy = lv_CreatedBy
-        ,	clss.CreatedDate = NOW()
     WHERE tmp.IsDataChanged = 1;
     
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays)
