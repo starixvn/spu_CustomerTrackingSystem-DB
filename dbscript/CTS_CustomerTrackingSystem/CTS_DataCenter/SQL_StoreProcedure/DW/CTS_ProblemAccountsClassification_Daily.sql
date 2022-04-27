@@ -56,12 +56,34 @@ BEGIN
 		[ActiveDays]		INT NULL
 	);
 
+	IF OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpCustomers;
+	END
+	
+	CREATE TABLE #tmpCustomers(
+			CustId			INT
+	);
+
+	CREATE CLUSTERED INDEX IX_#mpCustomers_CustId ON #tmpCustomers(
+		[CustId]			ASC
+	);
+
 	-- START
 	/*-- LOG INPUT DATA
 	INSERT INTO dbo.CustomerClassification_InputLog(CustId,CreatedDate,CreatedTime,FunctionId,IsActive)
 	SELECT CustId, @CurrentDate, @CurrentDateTime, @FunctionId, IsActive
 	FROM #tmpCustomers;
 	*/
+
+	-- #0: Distinct custid
+	INSERT INTO #tmpCustomers(CustId)
+	SELECT val FROM dbo.SPU_StrSplit(@ListCustIds, ',');
+
+	SELECT @ListCustIds = STUFF((SELECT ',', CONVERT(VARCHAR(15), t.CustId) 
+								FROM (SELECT DISTINCT CustId FROM #tmpCustomers WITH (NOLOCK)) AS t
+								FOR XML PATH('')), 1, 1, '');
+								
 	-- #1: GetCustomer Accummulated data
 	INSERT INTO #tmpRawData(CustId, MainDBSportId, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDays)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @ListCustIds, @ResultDataMode = 1;	
