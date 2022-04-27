@@ -80,9 +80,9 @@ BEGIN
     
     /****SET SourceTypeID for write log******/
     SET lv_SourceTypeID = 	CASE 	WHEN ip_FromAction = 1 THEN 14
-									WHEN ip_FromAction = 2 AND ip_UplineRoleID = 4 THEN 26
-									WHEN ip_FromAction = 2 AND ip_UplineRoleID = 3 THEN 27
-									WHEN ip_FromAction = 2 AND ip_UplineRoleID = 2 THEN 28
+									WHEN ip_FromAction = 2 AND ip_UplineRoleID = 4 THEN 27
+									WHEN ip_FromAction = 2 AND ip_UplineRoleID = 3 THEN 28
+									WHEN ip_FromAction = 2 AND ip_UplineRoleID = 2 THEN 29
 							END;   
                             
     /*************************************Remove VVIP*************************************/
