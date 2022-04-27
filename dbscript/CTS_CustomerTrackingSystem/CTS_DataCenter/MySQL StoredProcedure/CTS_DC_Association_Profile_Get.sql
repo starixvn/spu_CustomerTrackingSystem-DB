@@ -380,11 +380,11 @@ sp : BEGIN
 		,	tmpCS.CategoryIDs AS CategoryIDs
 		,	tmpCS.CategoryNames AS CategoryNames
 		,	tmpCS.IsProbation AS IsProbation
-        	,	t.GroupID AS GroupIDs
-        	,	t.OriginGroupID AS OriginGroupIDs
+		,	t.GroupIDList AS GroupIDs
+		,	t.OriginGroupIDList AS OriginGroupIDs
 	FROM Temp_AssociatedAccount AS tmpAcc
 		INNER JOIN Temp_Classification AS tmpCS ON tmpCS.CTSCustID = tmpAcc.CTSCustID
-        	LEFT JOIN Temp_CustomerGroup AS t ON tmpAcc.CustID = t.CustID
+		LEFT JOIN Temp_CustomerGroup AS t ON tmpAcc.CustID = t.CustID
 	WHERE tmpAcc.IsFiltered = 1
 	ORDER BY  tmpAcc.SubscriberName ASC, tmpAcc.AssociationStatus ASC , tmpAcc.AccountStatusGroup ASC, tmpAcc.AccountStatusID ASC,  tmpAcc.AssociationDate DESC, tmpAcc.CTSCustID ASC
 	LIMIT ip_Take

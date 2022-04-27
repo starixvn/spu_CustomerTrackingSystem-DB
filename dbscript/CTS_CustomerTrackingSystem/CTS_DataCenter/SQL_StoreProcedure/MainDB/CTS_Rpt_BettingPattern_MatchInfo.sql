@@ -66,10 +66,10 @@ BEGIN
 	);
 
 	INSERT INTO #tmpCustIds (CustId)
-	SELECT ssk.val FROM dbo.f_SplitString(@CustIds, ',') ssk;
+	SELECT ssk.value FROM STRING_SPLIT(@CustIds, ',') ssk;
 
 	INSERT INTO #tmpMatches (MatchId)
-	SELECT ssk.val FROM dbo.f_SplitString(@MatchIds, ',') ssk;
+	SELECT ssk.value FROM STRING_SPLIT (@MatchIds, ',') ssk;
 
 	INSERT INTO #tmpMatchesInfo (MatchId, EventDate, HomeId, AwayId, LeagueId, DataSource)
 	SELECT	tm.MatchId
@@ -109,7 +109,7 @@ BEGIN
 	FROM #tmpMatches AS tm WITH(NOLOCK)
 		INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON tm.MatchId = m.matchid;
 	
-	SELECT @CustListCounter = COUNT(1) FROM #tmpCustIds;
+	SELECT @CustListCounter = COUNT(DISTINCT CustId) FROM #tmpCustIds;
 
 	INSERT INTO #tmpFilteredMatches(MatchId)
 	SELECT t.MatchId
@@ -123,7 +123,7 @@ BEGIN
 	INSERT INTO #tmpFilteredMatches(MatchId)
 	SELECT t.MatchId
 	FROM #tmpMatchesInfo AS t
-		INNER JOIN bodb02.dbo.bettrans14 AS b WITH(NOLOCK) ON t.MatchId = b.matchid
+		INNER JOIN bodb02.dbo.bettrans14 AS b WITH(NOLOCK) ON t.MatchId = b.matchid AND t.Eventdate= b.winlostdate
 		INNER JOIN #tmpCustIds AS tc WITH(NOLOCK) ON b.custid = tc.CustId
 	WHERE t.DataSource = 1
 	GROUP BY t.MatchID
@@ -132,7 +132,7 @@ BEGIN
 	INSERT INTO #tmpFilteredMatches(MatchId)
 	SELECT t.MatchId
 	FROM #tmpMatchesInfo AS t
-		INNER JOIN bodb_Archive.dbo.bettrans_bk AS b WITH(NOLOCK) ON t.MatchId = b.matchid
+		INNER JOIN bodb_Archive.dbo.bettrans_bk AS b WITH(NOLOCK) ON t.MatchId = b.matchid AND t.Eventdate= b.winlostdate
 		INNER JOIN #tmpCustIds AS tc WITH(NOLOCK) ON b.custid = tc.CustId
 	WHERE t.DataSource = 2
 	GROUP BY t.MatchID

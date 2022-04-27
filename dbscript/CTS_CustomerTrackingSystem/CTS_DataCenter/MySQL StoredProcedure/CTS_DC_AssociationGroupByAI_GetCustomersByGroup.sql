@@ -23,14 +23,14 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Group;
     CREATE TEMPORARY TABLE Temp_Group (
-			GroupID			BIGINT UNSIGNED PRIMARY KEY
+			GroupID			BIGINT UNSIGNED
     );
     
     SET @sql = CONCAT("INSERT INTO Temp_Group (GroupID) VALUES ('", REPLACE(ip_GroupList, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
 	
-    SELECT g.GroupID, g.OriginGroupID, g.CustID
+    SELECT DISTINCT g.GroupID, g.OriginGroupID, g.CustID
     FROM AssociationGroupByAI AS g
 		INNER JOIN Temp_Group AS t ON g.GroupID = t.GroupID;
     
