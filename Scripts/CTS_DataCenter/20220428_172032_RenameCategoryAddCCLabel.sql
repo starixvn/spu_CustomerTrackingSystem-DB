@@ -10,15 +10,16 @@ ALTER TABLE CustomerCategory
 	ADD COLUMN CustomerClassName VARCHAR(50) AFTER CustomerClass
 ,	ADD COLUMN CustomerClassNameCN VARCHAR(50) AFTER CustomerClassName;
 
+CREATE TABLE CustomerCategory_BK LIKE CustomerCategory;
+INSERT INTO CustomerCategory_BK SELECT * FROM CustomerCategory;
+/*
 ALTER TABLE CategoryToCustomerClass
 	ADD COLUMN CustomerClassName VARCHAR(50) AFTER CustomerClass
 ,	ADD COLUMN CustomerClassNameCN VARCHAR(50) AFTER CustomerClassName;
 
-CREATE TABLE CustomerCategory_BK LIKE CustomerCategory;
-INSERT INTO CustomerCategory_BK SELECT * FROM CustomerCategory;
-
 CREATE TABLE CategoryToCustomerClass_BK LIKE CategoryToCustomerClass;
 INSERT INTO CategoryToCustomerClass_BK SELECT * FROM CategoryToCustomerClass;
+*/
 
 DROP TEMPORARY TABLE IF EXISTS Temp_CustomerCategory;
 CREATE TEMPORARY TABLE Temp_CustomerCategory (
@@ -27,10 +28,10 @@ CREATE TEMPORARY TABLE Temp_CustomerCategory (
   `CategoryNameCN` varchar(50) ,
   `CustomerClassName` varchar(50),
   `CustomerClassNameCN` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL
-) ENGINE=InnoDB AUTO_INCREMENT=1003 DEFAULT CHARSET=utf8mb3 COLLATE=utf8_unicode_ci;
+);
 
 INSERT INTO Temp_CustomerCategory (CategoryID, CategoryName, CategoryNameCN, CustomerClassName, CustomerClassNameCN)
-values (56,'AB Bet','AB投注','Problems','問題')
+VALUES (56,'AB Bet','AB投注','Problems','問題')
 ,(76,'AB Bet','AB投注','Problems','問題')
 ,(156,'AB Bet','AB投注','Problems','問題')
 ,(51,'Abnormal','非正常','','')
@@ -125,9 +126,7 @@ values (56,'AB Bet','AB投注','Problems','問題')
 ,(99,'Formula Bet (low)','机械/系统计算投注 (观察中）','Problems -','問題-')
 ,(119,'Formula Bet (low)','机械/系统计算投注 (观察中）','Problems -','問題-')
 ,(139,'Formula Bet (low)','机械/系统计算投注 (观察中）','Problems -','問題-')
-,(210,'VVIP (internal)','超级贵宾','Healthy +','健康+')
-;
-
+,(210,'VVIP (internal)','超级贵宾','Healthy +','健康+');
 
 #========Update CustomerCategory#=========================
 UPDATE CustomerCategory AS cc
@@ -137,16 +136,11 @@ SET 	cc.CategoryName = tmp.CategoryName
     ,	cc.CustomerClassName = tmp.CustomerClassName
 	,	cc.CustomerClassNameCN = tmp.CustomerClassNameCN;
 
-UPDATE CustomerCategory AS cc
-INNER JOIN Temp_CustomerCategory AS tmp ON cc.CategoryID = tmp.CategoryID AND tmp.CategoryName <> ''
-SET 	cc.CategoryName = tmp.CategoryName
-	,	cc.CategoryNameCN = tmp.CategoryNameCN
-    ,	cc.CustomerClassName = tmp.CustomerClassName
-	,	cc.CustomerClassNameCN = tmp.CustomerClassNameCN;
-
+/*
 #========Update CategoryToCustomerClass#=========================
 UPDATE CategoryToCustomerClass AS cc
 INNER JOIN Temp_CustomerCategory AS tmp ON cc.CategoryID = tmp.CategoryID AND tmp.CategoryName <> ''
 SET 	
     	cc.CustomerClassName = tmp.CustomerClassName
 	,	cc.CustomerClassNameCN = tmp.CustomerClassNameCN;
+*/
