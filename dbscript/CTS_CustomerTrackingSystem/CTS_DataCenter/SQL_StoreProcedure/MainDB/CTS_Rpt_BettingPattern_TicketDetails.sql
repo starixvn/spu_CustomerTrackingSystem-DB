@@ -103,13 +103,13 @@ BEGIN
 	IF @Bettypes <> ''
 	BEGIN
 		INSERT INTO #tmpBettypes (BettypeId)
-		SELECT ssk.val FROM dbo.f_SplitString(@Bettypes, ',') ssk;
+		SELECT ssk.value FROM STRING_SPLIT(@Bettypes, ',') ssk;
 	END;
 
 	IF @CustIds <> ''
 	BEGIN
 		INSERT INTO #tmpCustIds (CustId)
-		SELECT ssk.val FROM dbo.f_SplitString(@CustIds, ',') ssk;
+		SELECT ssk.value FROM STRING_SPLIT(@CustIds, ',') ssk;
 	END;	
 
 	-- START --
