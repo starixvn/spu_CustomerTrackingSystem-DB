@@ -22,6 +22,7 @@ sp: BEGIN
             - 20210525@Irena.Vo: Change col name TaggingExclusion: CustID -> CTSCustID [RedmineID: #152965]
 			- 20210729@Irena.Vo: Refactor SP [RedmineID: #157203]
 		    - 20210928@Irena.Vo: Split history log  [Redmine ID: #161890]
+			- 20220428@Casey.Huynh.Huynh: Update Creator for CustomerClassification [Redmine ID: #171512]
 		Param's Explanation:
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_AssociatedAccountMonitor_UpdateTaggingAssWithPA(1, 1, 1, 1, TRUE, @op_ErrorMessage);
@@ -45,8 +46,10 @@ sp: BEGIN
     
     /*Insert Tagging Associated Exclusion With PA.*/
     IF (ip_IsExcludedTagAssPA = 1) THEN
-		INSERT INTO CTS_DataCenter.TaggingExclusion(CTSCustID, CreatedTime) 
-		SELECT ip_CTSCustID, lv_CurrentDateTime;
+		INSERT INTO CTS_DataCenter.TaggingExclusion(CTSCustID, CreatedTime, CreatedBy) 
+		SELECT	ip_CTSCustID
+			,	lv_CurrentDateTime
+            ,	ip_CreatedBy;
 		
         INSERT INTO CTS_DataCenter.CTSCustomerClassification_History
 		(CustID, CTSCustID, LastModifiedDate, LastModifiedBy, SourceTypeID, InsertDate, IsDataChanged, TaggingType)
