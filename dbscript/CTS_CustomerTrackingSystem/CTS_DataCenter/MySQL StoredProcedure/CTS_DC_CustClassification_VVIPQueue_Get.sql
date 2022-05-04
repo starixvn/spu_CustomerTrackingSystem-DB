@@ -17,7 +17,7 @@ BEGIN
 
 		Param's Explanation:
         
-        Example: CALL CTS_DC_CustClassificationQueue_Get();
+        Example: CALL CTS_DC_CustClassification_VVIPQueue_Get();
 	*/ 
 	DECLARE lv_BatchSize		INT;
     DECLARE lv_QueueID			BIGINT UNSIGNED;
@@ -46,49 +46,55 @@ BEGIN
 
     #====== Super RoleID = 4 Get By SRecommend===============
     IF lv_RoleID = 4 THEN
+		SET @sqlstr = CONCAT('
 		SELECT @gv_CTSCustID:=cus.CTSCustID AS CTSCustID
 			,	cus.CustID AS CustID
             ,	cus.RoleID AS RoleID
-            ,	lv_SubscriberID AS SubscriberID
-            ,	lv_CreatedBy AS CreatedBy
-            ,	lv_Remark AS Remark
-            ,	lv_LastDownlineCTSCustID AS LastDownlineCTSCustID
-		FROM CTS_DataCenter.CTSCustomer AS cus
-		WHERE cus.CustID <> lv_CustID AND CustSubID = 0 AND cus.SRecommend = lv_CustID AND cus.CTSCustID > lv_LastDownlineCTSCustID
+            ,	',lv_SubscriberID,' AS SubscriberID
+            ,	',lv_CreatedBy,' AS CreatedBy
+            ,	',lv_Remark,' AS Remark
+            ,	',lv_LastDownlineCTSCustID,' AS LastDownlineCTSCustID
+		FROM CTS_DataCenter.CTSCustomer AS cus USE INDEX(IX_CTSCustomer_SRecommend)
+		WHERE cus.CustID <> ',lv_CustID,' AND CustSubID = 0 AND cus.SRecommend = ',lv_CustID,' AND cus.CTSCustID > ',lv_LastDownlineCTSCustID,'
         ORDER BY cus.CTSCustID ASC
-        LIMIT lv_BatchSize;
+        LIMIT ',lv_BatchSize);
     END IF;
 	
     #====== Master RoleID = 3 Get By MRecommend===============
     IF lv_RoleID = 3 THEN 
-		SELECT 	@gv_CTSCustID:=cus.CTSCustID AS CTSCustID
+		SET @sqlstr = CONCAT('
+		SELECT @gv_CTSCustID:=cus.CTSCustID AS CTSCustID
 			,	cus.CustID AS CustID
-            ,	cus.RoleID
-            ,	lv_SubscriberID AS SubscriberID
-            ,	lv_CreatedBy AS CreatedBy
-            ,	lv_Remark AS Remark
-            ,	lv_LastDownlineCTSCustID AS LastDownlineCTSCustID
-		FROM CTS_DataCenter.CTSCustomer AS cus
-		WHERE cus.CustID <> lv_CustID AND CustSubID = 0 AND cus.MRecommend = lv_CustID AND cus.CTSCustID > lv_LastDownlineCTSCustID
+            ,	cus.RoleID AS RoleID
+            ,	',lv_SubscriberID,' AS SubscriberID
+            ,	',lv_CreatedBy,' AS CreatedBy
+            ,	',lv_Remark,' AS Remark
+            ,	',lv_LastDownlineCTSCustID,' AS LastDownlineCTSCustID
+		FROM CTS_DataCenter.CTSCustomer AS cus USE INDEX(IX_CTSCustomer_SRecommend)
+		WHERE cus.CustID <> ',lv_CustID,' AND CustSubID = 0 AND cus.MRecommend = ',lv_CustID,' AND cus.CTSCustID > ',lv_LastDownlineCTSCustID,'
         ORDER BY cus.CTSCustID ASC
-        LIMIT lv_BatchSize;
+        LIMIT ',lv_BatchSize);
     END IF;
     
     #====== Agent RoleID = 2 GET by Recommend===============
     IF lv_RoleID = 2 THEN 
-		SELECT	@gv_CTSCustID:=cus.CTSCustID AS CTSCustID
+		SET @sqlstr = CONCAT('
+		SELECT @gv_CTSCustID:=cus.CTSCustID AS CTSCustID
 			,	cus.CustID AS CustID
             ,	cus.RoleID AS RoleID
-            ,	lv_SubscriberID AS SubscriberID
-            ,	lv_CreatedBy AS CreatedBy
-            ,	lv_Remark AS Remark
-            ,	lv_LastDownlineCTSCustID AS LastDownlineCTSCustID
-		FROM CTS_DataCenter.CTSCustomer AS cus
-		WHERE cus.CustID <> lv_CustID AND CustSubID = 0 AND cus.Recommend = lv_CustID AND cus.CTSCustID > lv_LastDownlineCTSCustID
+            ,	',lv_SubscriberID,' AS SubscriberID
+            ,	',lv_CreatedBy,' AS CreatedBy
+            ,	',lv_Remark,' AS Remark
+            ,	',lv_LastDownlineCTSCustID,' AS LastDownlineCTSCustID
+		FROM CTS_DataCenter.CTSCustomer AS cus USE INDEX(IX_CTSCustomer_SRecommend)
+		WHERE cus.CustID <> ',lv_CustID,' AND CustSubID = 0 AND cus.Recommend = ',lv_CustID,' AND cus.CTSCustID > ',lv_LastDownlineCTSCustID,'
         ORDER BY cus.CTSCustID ASC
-        LIMIT lv_BatchSize;
+        LIMIT ',lv_BatchSize);
     END IF;    
-  
+	
+    PREPARE stmt1 FROM @sqlstr;
+	EXECUTE stmt1;
+    
     IF @gv_CTSCustID > lv_LastDownlineCTSCustID THEN
 		SELECT	lv_ActionType AS ActionType
 			,	lv_RoleID AS UplineRoleID
@@ -99,6 +105,6 @@ BEGIN
 		FROM CTS_DataCenter.CTSCustomerClassificationVVIPQueue AS que
         WHERE que.ID = lv_QueueID;
 	END IF;
-    
+
 END$$
 DELIMITER ;
