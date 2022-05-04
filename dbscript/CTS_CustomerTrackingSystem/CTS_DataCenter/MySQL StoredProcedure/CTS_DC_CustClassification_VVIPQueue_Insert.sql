@@ -27,8 +27,10 @@ BEGIN
 			ip_ActionType: 1-Insert, 2-Remove
         
         Example: 
-			CALL CTS_DC_CustClassificationQueue_Insert(2998,179747,2,110,'Test Insert',78,3,1);
+			CALL CTS_DC_CustClassification_VVIPQueue_Insert(2998,179747,2,110,'Test Insert',78,3,1);
 	*/ 
+	INSERT INTO CTS_Log.CTSLog(SPName, InsertTime, OtherText ,JsonString1,JsonString2,JsonString3)
+	SELECT 'CTS_DC_CustClassification_VVIPQueue_Insert', current_timestamp(3), CONCAT('ip_ActionType:',ip_ActionType,'; ip_CTSCustID:',ip_CTSCustID,'; ip_CustID:',ip_CustID,'; SubscriberID:', IFNULL(ip_SubscriberID,'NULL'), 'ip_Remark:', IFNULL(ip_Remark,'NULL')),NULL,NULL,NULL;
 
 	INSERT INTO CTS_DataCenter.CTSCustomerClassificationVVIPQueue(CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryID, LastDownlineCTSCustID, ActionType, InsertTime)
     SELECT ip_CTSCustID, ip_CustID, ip_RoleID, ip_SubscriberID, ip_CreatedBy, ip_Remark, ip_CategoryID, 0 AS LastDownlineCTSCustID, ip_ActionType, CURRENT_TIMESTAMP(3);

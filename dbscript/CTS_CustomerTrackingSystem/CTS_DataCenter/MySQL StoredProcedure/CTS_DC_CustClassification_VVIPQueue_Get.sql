@@ -43,7 +43,7 @@ BEGIN
     FROM CTS_DataCenter.CTSCustomerClassificationVVIPQueue AS que
     ORDER BY ID ASC
     LIMIT 1;    
-
+	
     #====== Super RoleID = 4 Get By SRecommend===============
     IF lv_RoleID = 4 THEN
 		SET @sqlstr = CONCAT('
@@ -52,12 +52,13 @@ BEGIN
             ,	cus.RoleID AS RoleID
             ,	',lv_SubscriberID,' AS SubscriberID
             ,	',lv_CreatedBy,' AS CreatedBy
-            ,	',lv_Remark,' AS Remark
+            ,	''',IFNULL(lv_Remark,''),''' AS Remark
             ,	',lv_LastDownlineCTSCustID,' AS LastDownlineCTSCustID
 		FROM CTS_DataCenter.CTSCustomer AS cus USE INDEX(IX_CTSCustomer_SRecommend)
 		WHERE cus.CustID <> ',lv_CustID,' AND CustSubID = 0 AND cus.SRecommend = ',lv_CustID,' AND cus.CTSCustID > ',lv_LastDownlineCTSCustID,'
         ORDER BY cus.CTSCustID ASC
         LIMIT ',lv_BatchSize);
+
     END IF;
 	
     #====== Master RoleID = 3 Get By MRecommend===============
@@ -68,7 +69,7 @@ BEGIN
             ,	cus.RoleID AS RoleID
             ,	',lv_SubscriberID,' AS SubscriberID
             ,	',lv_CreatedBy,' AS CreatedBy
-            ,	',lv_Remark,' AS Remark
+            ,	''',IFNULL(lv_Remark,''),''' AS Remark
             ,	',lv_LastDownlineCTSCustID,' AS LastDownlineCTSCustID
 		FROM CTS_DataCenter.CTSCustomer AS cus USE INDEX(IX_CTSCustomer_SRecommend)
 		WHERE cus.CustID <> ',lv_CustID,' AND CustSubID = 0 AND cus.MRecommend = ',lv_CustID,' AND cus.CTSCustID > ',lv_LastDownlineCTSCustID,'
@@ -84,16 +85,17 @@ BEGIN
             ,	cus.RoleID AS RoleID
             ,	',lv_SubscriberID,' AS SubscriberID
             ,	',lv_CreatedBy,' AS CreatedBy
-            ,	',lv_Remark,' AS Remark
+            ,	''',IFNULL(lv_Remark,''),''' AS Remark
             ,	',lv_LastDownlineCTSCustID,' AS LastDownlineCTSCustID
 		FROM CTS_DataCenter.CTSCustomer AS cus USE INDEX(IX_CTSCustomer_SRecommend)
 		WHERE cus.CustID <> ',lv_CustID,' AND CustSubID = 0 AND cus.Recommend = ',lv_CustID,' AND cus.CTSCustID > ',lv_LastDownlineCTSCustID,'
         ORDER BY cus.CTSCustID ASC
         LIMIT ',lv_BatchSize);
     END IF;    
-	
+
     PREPARE stmt1 FROM @sqlstr;
 	EXECUTE stmt1;
+    
     
     IF @gv_CTSCustID > lv_LastDownlineCTSCustID THEN
 		SELECT	lv_ActionType AS ActionType
@@ -105,6 +107,9 @@ BEGIN
 		FROM CTS_DataCenter.CTSCustomerClassificationVVIPQueue AS que
         WHERE que.ID = lv_QueueID;
 	END IF;
+
+	INSERT INTO CTS_Log.CTSLog(SPName, InsertTime, OtherText ,JsonString1,JsonString2,JsonString3)
+	SELECT 'CTS_DC_CustClassification_VVIPQueue_Get', current_timestamp(3), CONCAT('lv_ActionType:',lv_ActionType,'; lv_CTSCustID:',lv_CTSCustID,'; lv_CustID:',lv_CustID,'; lv_LastDownlineCTSCustID:',lv_LastDownlineCTSCustID,'; lv_RoleID:',lv_RoleID,'; lv_QueueID:',lv_QueueID),NULL,NULL,NULL;
 
 END$$
 DELIMITER ;

@@ -63,7 +63,9 @@ sp: BEGIN
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;*/
-    
+	INSERT INTO CTS_Log.CTSLog(SPName, InsertTime, OtherText ,JsonString1,JsonString2,JsonString3)
+	SELECT 'CTS_DC_CustClassification_InsertVVIP', current_timestamp(3), CONCAT('ip_FromAction:',ip_FromAction,'ip_UplineRoleID:',ip_UplineRoleID,'ip_QueueID:',ip_QueueID,'ip_AffectDownline:',ip_AffectDownline),ip_CustJson,NULL,NULL;
+
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
 	CREATE TEMPORARY TABLE 		Temp_Customer (
 		 	CustID			BIGINT UNSIGNED		
@@ -76,11 +78,12 @@ sp: BEGIN
          ,	PRIMARY KEY PK_Temp_Customer(CustID)
          ,	INDEX IX_Temp_Customer_CTSCustID(CTSCustID)
 	);
-    
+
+ 
     SELECT  cat.CustomerClass
     INTO lv_CustomerClass
     FROM CTS_DataCenter.CustomerCategory AS cat
-    WHERE cat.CategoryID = lv_CategoryID; 
+    WHERE cat.CategoryID = lv_CategoryID;    
     
     /**************************************************************************************/
     INSERT INTO Temp_Customer(CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, Remark) 

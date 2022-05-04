@@ -62,6 +62,9 @@ BEGIN
          ,	PRIMARY KEY PK_Temp_Customer(CustID)
          ,	INDEX IX_Temp_Customer_CTSCustID(CTSCustID)
 	);
+
+	INSERT INTO CTS_Log.CTSLog(SPName, InsertTime, OtherText ,JsonString1,JsonString2,JsonString3)
+	SELECT 'CTS_DC_CustClassification_RemoveVVIP', current_timestamp(3), CONCAT('ip_FromAction:',ip_FromAction,'; ip_UplineRoleID:',ip_UplineRoleID,'; ip_QueueID:',ip_QueueID,'; ip_AffectDownline:',ip_AffectDownline),ip_CustJson,NULL,NULL;
     
     /**************************************************************************************/
     INSERT INTO Temp_Customer(CustID, CTSCustID, CreatedBy) 
