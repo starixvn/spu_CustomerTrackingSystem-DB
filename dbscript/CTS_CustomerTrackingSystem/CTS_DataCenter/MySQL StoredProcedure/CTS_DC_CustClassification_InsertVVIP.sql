@@ -44,7 +44,7 @@ sp: BEGIN
             ip_UplineRoleID: From Web(NULL), From Service(<UplineRoleID>)
             
 		Example:
-			CALL CTS_DC_CustClassification_MarkVVIP(1,NULL,NULL,1,'[{"CustID":720475,"CTSCustID":5710,"SubscriberID":2,"CategoryID":210,"CreatedBy":169368,"Remark":"Test Insert 01"}]', @output);
+			CALL CTS_DC_CustClassification_InsertVVIP(1,NULL,NULL,1,'[{"CustID":720475,"CTSCustID":5710,"SubscriberID":2,"CategoryID":210,"CreatedBy":169368,"Remark":"Test Insert 01"}]', @output);
 	*/
     DECLARE lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();
 	DECLARE lv_SPName 			VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_InsertVVIP';
@@ -56,15 +56,14 @@ sp: BEGIN
     DECLARE lv_MaxCTSCustID		BIGINT UNSIGNED;
     DECLARE lv_SourceTypeID		INT;    
     DECLARE lv_CustomerClass	INT; 
-    
-    
-    /*
+  
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
     BEGIN         
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
-    END;*/
-	INSERT INTO CTS_Log.CTSLog(SPName, InsertTime, OtherText ,JsonString1,JsonString2,JsonString3)
-	SELECT 'CTS_DC_CustClassification_InsertVVIP', current_timestamp(3), CONCAT('ip_FromAction:',ip_FromAction,'ip_UplineRoleID:',ip_UplineRoleID,'ip_QueueID:',ip_QueueID,'ip_AffectDownline:',ip_AffectDownline),ip_CustJson,NULL,NULL;
+    END;
+    
+	#INSERT INTO CTS_Log.CTSLog(SPName, InsertTime, OtherText ,JsonString1,JsonString2,JsonString3)
+	#SELECT 'CTS_DC_CustClassification_InsertVVIP', current_timestamp(3), CONCAT('ip_FromAction:',ip_FromAction,'ip_UplineRoleID:',ip_UplineRoleID,'ip_QueueID:',ip_QueueID,'ip_AffectDownline:',ip_AffectDownline),ip_CustJson,NULL,NULL;
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
 	CREATE TEMPORARY TABLE 		Temp_Customer (

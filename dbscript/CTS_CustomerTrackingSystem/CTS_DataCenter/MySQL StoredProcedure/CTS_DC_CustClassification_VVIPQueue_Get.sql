@@ -94,8 +94,7 @@ BEGIN
     END IF;    
 
     PREPARE stmt1 FROM @sqlstr;
-	EXECUTE stmt1;
-    
+	EXECUTE stmt1;    
     
     IF @gv_CTSCustID > lv_LastDownlineCTSCustID THEN
 		SELECT	lv_ActionType AS ActionType
@@ -108,8 +107,8 @@ BEGIN
         WHERE que.ID = lv_QueueID;
 	END IF;
 
-	INSERT INTO CTS_Log.CTSLog(SPName, InsertTime, OtherText ,JsonString1,JsonString2,JsonString3)
-	SELECT 'CTS_DC_CustClassification_VVIPQueue_Get', current_timestamp(3), CONCAT('lv_ActionType:',lv_ActionType,'; lv_CTSCustID:',lv_CTSCustID,'; lv_CustID:',lv_CustID,'; lv_LastDownlineCTSCustID:',lv_LastDownlineCTSCustID,'; lv_RoleID:',lv_RoleID,'; lv_QueueID:',lv_QueueID),NULL,NULL,NULL;
+	#INSERT INTO CTS_Log.CTSLog(SPName, InsertTime, OtherText ,JsonString1,JsonString2,JsonString3)
+	#SELECT 'CTS_DC_CustClassification_VVIPQueue_Get', current_timestamp(3), CONCAT('lv_ActionType:',lv_ActionType,'; lv_CTSCustID:',lv_CTSCustID,'; lv_CustID:',lv_CustID,'; lv_LastDownlineCTSCustID:',lv_LastDownlineCTSCustID,'; lv_RoleID:',lv_RoleID,'; lv_QueueID:',lv_QueueID),NULL,NULL,NULL;
 
 END$$
 DELIMITER ;
