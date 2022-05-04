@@ -131,10 +131,10 @@ VALUES (56,'AB Bet','AB投注','Problems','問題')
 #========Update CustomerCategory#=========================
 UPDATE CustomerCategory AS cc
 INNER JOIN Temp_CustomerCategory AS tmp ON cc.CategoryID = tmp.CategoryID AND tmp.CategoryName <> ''
-SET 	cc.CategoryName = tmp.CategoryName
-	,	cc.CategoryNameCN = tmp.CategoryNameCN
-    ,	cc.CustomerClassName = tmp.CustomerClassName
-	,	cc.CustomerClassNameCN = tmp.CustomerClassNameCN;
+SET 	cc.CategoryName = TRIM(tmp.CategoryName)
+	,	cc.CategoryNameCN = TRIM(tmp.CategoryNameCN)
+    ,	cc.CustomerClassName = TRIM(tmp.CustomerClassName)
+	,	cc.CustomerClassNameCN = TRIM(tmp.CustomerClassNameCN);
 
 /*
 #========Update CategoryToCustomerClass#=========================
