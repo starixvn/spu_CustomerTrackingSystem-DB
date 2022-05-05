@@ -25,9 +25,9 @@ CREATE TABLE CTSCustomerClassificationVVIPQueue(
         ,	ActionType				TINYINT
 		,	InsertTime				DATETIME(3)
 
-		,	PRIMARY KEY PK_Temp_Customer(ID)
-		,	INDEX IX_Temp_Customer_CustID(CustID)
-		,	INDEX IX_Temp_Customer_CTSCustID(CTSCustID)
+		,	PRIMARY KEY PK_CTSCustomerClassificationVVIPQueue_ID(ID)
+		,	INDEX IX_CTSCustomerClassificationVVIPQueue_CustID(CustID)
+		,	INDEX IX_CTSCustomerClassificationVVIPQueue_CTSCustID(CTSCustID)
 );
 
 USE CTS_DataCenter;
@@ -42,9 +42,8 @@ CREATE TABLE CTSCustomerClassificationVVIP(
 		,	IsAffectToDownline 		BOOLEAN
 		,	InsertTime				DATETIME(3)
 
-		,	PRIMARY KEY PK_Temp_Customer(CTSCustID)
-		,	INDEX IX_Temp_Customer_CustID(CustID)
-		,	INDEX IX_Temp_Customer_IsAffectToDownline(IsAffectToDownline)
+		,	PRIMARY KEY PK_CTSCustomerClassificationVVIP_CTSCustID(CTSCustID)
+		,	INDEX IX_CTSCustomerClassificationVVIP_CustID(CustID)
 );
 
 USE CTS_DataCenter;
