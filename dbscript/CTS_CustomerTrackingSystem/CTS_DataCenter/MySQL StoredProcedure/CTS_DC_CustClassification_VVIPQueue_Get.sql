@@ -58,6 +58,9 @@ BEGIN
 		WHERE cus.CustID <> ',lv_CustID,' AND CustSubID = 0 AND cus.SRecommend = ',lv_CustID,' AND cus.CTSCustID > ',lv_LastDownlineCTSCustID,'
         ORDER BY cus.CTSCustID ASC
         LIMIT ',lv_BatchSize);
+        
+        PREPARE stmt1 FROM @sqlstr;
+		EXECUTE stmt1;
 
     END IF;
 	
@@ -75,6 +78,9 @@ BEGIN
 		WHERE cus.CustID <> ',lv_CustID,' AND CustSubID = 0 AND cus.MRecommend = ',lv_CustID,' AND cus.CTSCustID > ',lv_LastDownlineCTSCustID,'
         ORDER BY cus.CTSCustID ASC
         LIMIT ',lv_BatchSize);
+        
+        PREPARE stmt1 FROM @sqlstr;
+		EXECUTE stmt1;
     END IF;
     
     #====== Agent RoleID = 2 GET by Recommend===============
@@ -91,15 +97,18 @@ BEGIN
 		WHERE cus.CustID <> ',lv_CustID,' AND CustSubID = 0 AND cus.Recommend = ',lv_CustID,' AND cus.CTSCustID > ',lv_LastDownlineCTSCustID,'
         ORDER BY cus.CTSCustID ASC
         LIMIT ',lv_BatchSize);
+        
+		PREPARE stmt1 FROM @sqlstr;
+		EXECUTE stmt1;
     END IF;        
     
-    IF @gv_CTSCustID > lv_LastDownlineCTSCustID THEN
+     
+    IF @gv_CTSCustID > lv_LastDownlineCTSCustID THEN   
+		
 		SELECT	lv_ActionType AS ActionType
 			,	lv_RoleID AS UplineRoleID
-            , 	lv_QueueID AS QueueID;
+            , 	lv_QueueID AS QueueID;         
             
-            PREPARE stmt1 FROM @sqlstr;
-			EXECUTE stmt1;
     ELSE
 		SELECT NULL AS ActionType, NULL AS RoleID;
 		DELETE que
@@ -108,7 +117,7 @@ BEGIN
 	END IF;
 
 	#INSERT INTO CTS_Log.CTSLog(SPName, InsertTime, OtherText ,JsonString1,JsonString2,JsonString3)
-	#SELECT 'CTS_DC_CustClassification_VVIPQueue_Get', current_timestamp(3), CONCAT('lv_ActionType:',lv_ActionType,'; lv_CTSCustID:',lv_CTSCustID,'; lv_CustID:',lv_CustID,'; lv_LastDownlineCTSCustID:',lv_LastDownlineCTSCustID,'; lv_RoleID:',lv_RoleID,'; lv_QueueID:',lv_QueueID),NULL,NULL,NULL;
+	#SELECT 'CTS_DC_CustClassification_VVIPQueue_Get', current_timestamp(3), CONCAT('lv_ActionType:',lv_ActionType,'; MAXCTSCustID:',@gv_CTSCustID, '; lv_CTSCustID:',lv_CTSCustID,'; lv_CustID:',lv_CustID,'; lv_LastDownlineCTSCustID:',lv_LastDownlineCTSCustID,'; lv_RoleID:',lv_RoleID,'; lv_QueueID:',lv_QueueID),NULL,NULL,NULL;
 
 END$$
 DELIMITER ;
