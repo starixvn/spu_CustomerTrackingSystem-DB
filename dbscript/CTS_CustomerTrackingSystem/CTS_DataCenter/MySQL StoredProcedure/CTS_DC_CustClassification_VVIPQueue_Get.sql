@@ -71,7 +71,7 @@ BEGIN
             ,	',lv_CreatedBy,' AS CreatedBy
             ,	''',IFNULL(lv_Remark,''),''' AS Remark
             ,	',lv_LastDownlineCTSCustID,' AS LastDownlineCTSCustID
-		FROM CTS_DataCenter.CTSCustomer AS cus USE INDEX(IX_CTSCustomer_SRecommend)
+		FROM CTS_DataCenter.CTSCustomer AS cus USE INDEX(IX_CTSCustomer_MRecommend)
 		WHERE cus.CustID <> ',lv_CustID,' AND CustSubID = 0 AND cus.MRecommend = ',lv_CustID,' AND cus.CTSCustID > ',lv_LastDownlineCTSCustID,'
         ORDER BY cus.CTSCustID ASC
         LIMIT ',lv_BatchSize);
@@ -87,19 +87,19 @@ BEGIN
             ,	',lv_CreatedBy,' AS CreatedBy
             ,	''',IFNULL(lv_Remark,''),''' AS Remark
             ,	',lv_LastDownlineCTSCustID,' AS LastDownlineCTSCustID
-		FROM CTS_DataCenter.CTSCustomer AS cus USE INDEX(IX_CTSCustomer_SRecommend)
+		FROM CTS_DataCenter.CTSCustomer AS cus USE INDEX(IX_CTSCustomer_Recommend)
 		WHERE cus.CustID <> ',lv_CustID,' AND CustSubID = 0 AND cus.Recommend = ',lv_CustID,' AND cus.CTSCustID > ',lv_LastDownlineCTSCustID,'
         ORDER BY cus.CTSCustID ASC
         LIMIT ',lv_BatchSize);
-    END IF;    
-
-    PREPARE stmt1 FROM @sqlstr;
-	EXECUTE stmt1;    
+    END IF;        
     
     IF @gv_CTSCustID > lv_LastDownlineCTSCustID THEN
 		SELECT	lv_ActionType AS ActionType
 			,	lv_RoleID AS UplineRoleID
             , 	lv_QueueID AS QueueID;
+            
+            PREPARE stmt1 FROM @sqlstr;
+			EXECUTE stmt1;
     ELSE
 		SELECT NULL AS ActionType, NULL AS RoleID;
 		DELETE que
