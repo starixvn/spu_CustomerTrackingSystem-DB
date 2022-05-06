@@ -60,7 +60,7 @@ BEGIN
         INTO lv_CustIDList
 		FROM Temp_CustomerEvidences AS t;
         
-		CALL CTS_DC_CustEvidence_ClearEvidence(lv_CustIDList, op_ErrorMessage, op_Result);
+		CALL CTS_DC_CustEvidence_ClearEvidence(ip_CustEvidence, op_ErrorMessage, op_Result);
     END IF;
 END$$
 DELIMITER ;
