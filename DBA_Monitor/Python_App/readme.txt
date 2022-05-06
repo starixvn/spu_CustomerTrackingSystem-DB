@@ -22,6 +22,9 @@ pip3 install scp
 deactivate
 
 
+#mkdir keyfiles
+#mkdir archivepartitionfiles
+
 #create user 
 	+Replica
 		dba_cts_replica 	password

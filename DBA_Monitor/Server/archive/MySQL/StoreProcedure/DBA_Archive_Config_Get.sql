@@ -85,13 +85,11 @@ BEGIN
         INNER JOIN MonDB.MysqlServer AS svSourceMaster ON job.SourceMasterServerID = svSourceMaster.ID
 		INNER JOIN MonDB.MysqlServer AS serDes ON job.DesServerID = serDes.ID
         INNER JOIN MonDB.NotificationChannel AS noti ON job.NotificationChannelID = noti.ID
-	WHERE job.PartitionType = 'Weekly'
-		AND job.DateExecute = lv_DayOfWeekGMT7
-		AND job.TimeExecute <  lv_CurrTimeGMT7
-		AND job.LastExecuteStatus != 'Processed'
-        AND job.LastExecuted != lv_DateGMT7
-        AND job.RunType = ip_RunType
-        AND svSource.DBATaskStatus = 'None'
-        AND serDes.DBATaskStatus = 'None';
+	WHERE   job.PartitionType = 'Weekly'
+		AND svSource.DBATaskStatus = 'None'
+        AND serDes.DBATaskStatus = 'None'
+        AND svSourceMaster.DBATaskStatus = 'None'
+        AND ((job.RunType = ip_RunType AND ip_RunType = 'Job' AND job.DateExecute = lv_DayOfWeekGMT7 AND job.TimeExecute <  lv_CurrTimeGMT7  AND job.LastExecuted != lv_DateGMT7) 
+			OR (job.RunType = ip_RunType AND ip_RunType = 'Manual'));
 END$$
 DELIMITER ;
