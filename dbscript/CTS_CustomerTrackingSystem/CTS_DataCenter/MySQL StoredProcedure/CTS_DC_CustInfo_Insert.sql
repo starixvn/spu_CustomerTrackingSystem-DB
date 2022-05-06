@@ -26,14 +26,15 @@ BEGIN
 			- 20210622@Aries.Nguyen: Update coding convention and improve locking [Redmine ID: #157203]
 			- 20210804@Irena.Vo: Fix issue No rescan for existed Customer [Redmine ID: #159706]
             - 20220110@Casey.Huynh: HF Missing CustSub [Redmine ID: #167242]
+            - 20220418@Casey.Huynh: Add and Remove VVIP for Downline [Redmine ID: #159013]
 		Param's Explanation (filtered by):
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustInfo_Insert ('[
-					{"BatchId":1,"CustID":10040738,"CustStatusID":1,"UserName":"HAIFARMB01151207","UserName2":"haifa$20297251","Site":"haifa","SiteID":44,"RoleID":1,"CurrencyID":13,"Currency":"RMB","SRecommend":4359240,"MRecommend":4359287,"Recommend":4359308,"CreatedDate":"2013-01-27 05:56:00.000","Danger1":0,"Danger2":0,"Danger3":0,"CustSubID":0}
-					,{"BatchId":1,"CustID":15124347,"CustStatusID":1,"UserName":"HAIFARMB01554620","UserName2":"haifa$40834748","Site":"haifa","SiteID":44,"RoleID":1,"CurrencyID":13,"Currency":"RMB","SRecommend":4359240,"MRecommend":4359287,"Recommend":4359308,"CreatedDate":"2014-06-19 09:12:00.000","Danger1":0,"Danger2":0,"Danger3":0,"CustSubID":0}
-					,{"BatchId":1,"CustID":18349232,"CustStatusID":1,"UserName":"HAIFARMB01897790","UserName2":"haifa$83884255","Site":"haifa","SiteID":44,"RoleID":1,"CurrencyID":13,"Currency":"RMB","SRecommend":4359240,"MRecommend":4359287,"Recommend":4359308,"CreatedDate":"2015-06-28 07:22:00.000","Danger1":0,"Danger2":0,"Danger3":0,"CustSubID":0}]');
-
+				 {"BatchId":1,"CustID":10040738,"CustStatusID":1,"UserName":"HAIFARMB01151207","UserName2":"haifa$20297251","Site":"haifa","SiteID":44,"RoleID":1,"CurrencyID":13,"Currency":"RMB","SRecommend":4359240,"MRecommend":4359287,"Recommend":4359308,"CreatedDate":"2013-01-27 05:56:00.000","Danger1":0,"Danger2":0,"Danger3":0,"CustSubID":0}
+				,{"BatchId":1,"CustID":15124347,"CustStatusID":1,"UserName":"HAIFARMB01554620","UserName2":"haifa$40834748","Site":"haifa","SiteID":44,"RoleID":1,"CurrencyID":13,"Currency":"RMB","SRecommend":4359240,"MRecommend":4359287,"Recommend":4359308,"CreatedDate":"2014-06-19 09:12:00.000","Danger1":0,"Danger2":0,"Danger3":0,"CustSubID":0}
+				,{"BatchId":1,"CustID":18349232,"CustStatusID":1,"UserName":"HAIFARMB01897790","UserName2":"haifa$83884255","Site":"haifa","SiteID":44,"RoleID":1,"CurrencyID":13,"Currency":"RMB","SRecommend":4359240,"MRecommend":4359287,"Recommend":4359308,"CreatedDate":"2015-06-28 07:22:00.000","Danger1":0,"Danger2":0,"Danger3":0,"CustSubID":0}]');
 	*/
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomer;    
 	CREATE TEMPORARY TABLE Temp_CTSCustomer( 	  
 			SubscriberID 	INT 			
@@ -57,6 +58,7 @@ BEGIN
         ,	CreatedDate		DATETIME
         ,	IsExisting 		BOOLEAN DEFAULT 0
         ,	INDEX			IX_Temp_CTSCustomer_SiteIDRoleID(RoleID, SiteID)
+        ,	INDEX			IX_Temp_CTSCustomer_CustSubID(CustSubID)
 	);
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustExist;    
@@ -111,8 +113,7 @@ BEGIN
 			,	Recommend		INT	 UNSIGNED 	PATH "$.Recommend" 
 			,	CreatedDate		DATETIME	 	PATH "$.CreatedDate" 
 			)
-	) AS js;
-	   
+	) AS js;	   
     
 	INSERT INTO Temp_CustExist(CustID, CustSubID)
 	SELECT  tmpCus.CustID, tmpCus.CustSubID
@@ -131,8 +132,7 @@ BEGIN
 		INNER JOIN	CTS_DataCenter.MappingSubscriberSite mss ON tmpCus.SiteID = mss.SiteID 
 																AND ((mss.RoleMapping = 1 AND tmpCus.RoleID = 1)
 																	OR (mss.RoleMapping = 2 AND tmpCus.RoleID > 1)
-																	OR (mss.RoleMapping = 0));
-                                                                    
+																	OR (mss.RoleMapping = 0));                                                                    
 	UPDATE Temp_CTSCustomer AS tmpCus
     INNER JOIN Temp_CustInfo AS cus ON tmpCus.CustID = cus.CustID
 	SET   tmpCus.SubscriberID = cus.SubscriberID
@@ -164,6 +164,62 @@ BEGIN
     FROM	Temp_CTSCustomer AS tmpCus
     WHERE	tmpCus.IsExisting = 0;
     
+    /**********MARK VVIP IF DRIRECT UPLINE IS VVIP***************************/   
+    /*=========GET VVIP FROM QUEUE================*/
+    DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
+    CREATE TEMPORARY TABLE Temp_Cust(
+			CTSCustID		BIGINT 	UNSIGNED
+        ,	CustID			BIGINT	UNSIGNED        
+        ,	SubscriberID	INT UNSIGNED
+        ,	RoleID			INT        
+        ,	SRecommend		BIGINT	UNSIGNED
+        ,	MRecommend		BIGINT	UNSIGNED
+        ,	Recommend		BIGINT	UNSIGNED
+        ,	DirectUpLine	BIGINT	UNSIGNED
+    );
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_VVIPCust;
+    CREATE TEMPORARY TABLE Temp_VVIPCust(
+			CTSCustID		BIGINT UNSIGNED
+        ,	CustID			BIGINT	UNSIGNED
+        ,	SubscriberID	INT UNSIGNED
+        ,	RoleID			INT
+        ,	CreatedBy		INT
+        
+        ,	PRIMARY KEY Temp_CustVVIP_CTSCustID(CTSCustID)
+    ); 
+	
+    INSERT INTO Temp_Cust(CTSCustID, CustID, SubscriberID, RoleID, SRecommend, MRecommend, Recommend, DirectUpLine)
+    SELECT 	cus.CTSCustID
+		,	cus.CustID
+        ,	cus.SubscriberID
+        ,	cus.RoleID
+        ,	cus.SRecommend
+        ,	cus.MRecommend
+        ,	cus.Recommend
+        ,	(CASE WHEN cus.RoleID = 1 THEN cus.Recommend 
+				WHEN cus.RoleID = 2 THEN cus.MRecommend
+                WHEN cus.RoleID = 3 THEN cus.SRecommend END) AS DirectUpLine               
+    FROM Temp_CTSCustomer AS tmpCus	
+    INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID AND cus.CustSubID = 0 AND tmpCus.RoleID < 4
+    WHERE	tmpCus.IsExisting = 0;
+    
+    INSERT INTO Temp_VVIPCust(CTSCustID, CustID, SubscriberID, CreatedBy, RoleID)
+    SELECT DISTINCT tmpCus.CTSCustID, tmpCus.CustID, tmpCus.SubscriberID, vip.CreatedBy, tmpCus.RoleID
+    FROM Temp_Cust AS tmpCus		
+		INNER JOIN CTS_DataCenter.CTSCustomerClassificationVVIP AS vip ON vip.CustID = tmpCus.DirectUpLine AND vip.IsAffectToDownline = 1;
+    
+    INSERT IGNORE INTO Temp_VVIPCust(CTSCustID, CustID, SubscriberID, CreatedBy, RoleID)
+    SELECT DISTINCT tmpCus.CTSCustID, tmpCus.CustID, tmpCus.SubscriberID, que.CreatedBy, tmpCus.RoleID
+    FROM Temp_Cust AS tmpCus		
+		INNER JOIN CTS_DataCenter.CTSCustomerClassificationVVIPQueue AS que ON que.CustID IN (tmpCus.SRecommend, tmpCus.MRecommend, tmpCus.Recommend) AND que.ActionType = 1;
+    
+    DELETE tmpCus 
+    FROM Temp_CTSCustomer AS tmpCus
+		INNER JOIN Temp_VVIPCust AS tmpVip ON tmpCus.CustID = tmpVip.CustID 
+	WHERE tmpCus.CustSubID = 0;
+    
+    /*****OUT PUT TO RESCAN CC************/
 	SELECT	cus.CTSCustID
 		,	cus.SubscriberID
     	,	cus.CustID
@@ -173,5 +229,14 @@ BEGIN
     	,	cus.CustSubID
     FROM	Temp_CTSCustomer AS tmpCus
 		INNER JOIN 	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID AND tmpCus.CustSubID = cus.CustSubID;    
+        
+	/*****OUT PUT TO INSERT VVIP************/    
+    SELECT	tmpVip.CTSCustID
+		,	tmpVip.CustID AS CustID
+		,	tmpVip.RoleID AS RoleID
+		,	tmpVip.SubscriberID AS SubscriberID
+		,	tmpVip.CreatedBy AS CreatedBy        
+	FROM Temp_VVIPCust AS tmpVip;
+	
 END$$
 DELIMITER ;
