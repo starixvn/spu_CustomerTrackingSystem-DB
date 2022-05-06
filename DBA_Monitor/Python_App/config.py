@@ -2,5 +2,5 @@ import json
 
 config = {}
 
-with open('config.json') as f:
+with open('/var/cts/monitor/config.json') as f:
     config = json.load(f)
