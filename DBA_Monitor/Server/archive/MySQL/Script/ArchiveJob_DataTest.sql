@@ -4,11 +4,11 @@ DROP TABLE IF EXISTS Table_TestArchive_Source;
 SET @sql = CONCAT("
 CREATE TABLE Table_TestArchive_Source (
    ID bigint unsigned NOT NULL AUTO_INCREMENT,
-   Name varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+   Name varchar(100) NOT NULL,
    CreatedDate datetime NOT NULL,
    PRIMARY KEY (ID,CreatedDate),
    KEY IX_Table_TestArchive_Name (Name)
- ) ENGINE=InnoDB
+ ) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
  /*!50100 PARTITION BY RANGE (yearweek(CreatedDate,0))
  (PARTITION pw", @yw-2," VALUES LESS THAN (",@yw-1,") ENGINE = InnoDB,
   PARTITION pw", @yw-1," VALUES LESS THAN (",@yw,") ENGINE = InnoDB,
@@ -35,11 +35,11 @@ DROP TABLE IF EXISTS Table_TestArchive_Des;
 SET @sql = CONCAT("
 CREATE TABLE Table_TestArchive_Des (
    ID bigint unsigned NOT NULL AUTO_INCREMENT,
-   Name varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+   Name varchar(100) NOT NULL,
    CreatedDate datetime NOT NULL,
    PRIMARY KEY (ID,CreatedDate),
    KEY IX_Table_TestArchive_Name (Name)
- ) ENGINE=InnoDB
+ ) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
  /*!50100 PARTITION BY RANGE (yearweek(CreatedDate,0))
  (PARTITION pw", @yw-6," VALUES LESS THAN (",@yw-5,") ENGINE = InnoDB,
   PARTITION pw", @yw-5," VALUES LESS THAN (",@yw-4,") ENGINE = InnoDB,

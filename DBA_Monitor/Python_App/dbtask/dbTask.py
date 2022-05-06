@@ -62,7 +62,7 @@ class DBTaskHelper:
                 return (True,hasPartition[0]['PARTITION_NAME'], int(hasPartition[0]['PARTITION_DESCRIPTION']), hasPartition[0]['TABLE_ROWS']);
             return (False,'');
         except Exception as ex:
-            raise Exception(("CheckPartitionExist",ex,connOpt,database,tableName,keepDataRange)) 
+            raise Exception(("CheckPartitionExist",ex,database,tableName,keepDataRange)) 
 
     def CheckSchemaTableSync(self,connOpt, database, tableName, tempTableName):
         try:
@@ -80,14 +80,14 @@ class DBTaskHelper:
                 return True;
             return False;
         except Exception as ex:
-            raise Exception(("CheckSchemaTableSync",ex,connOpt, database, tableName, tempTableName)) 
+            raise Exception(("CheckSchemaTableSync",ex, database, tableName, tempTableName)) 
     
     def GetDefineTable(self,connOpt,database,table):
         try:
             strSchema = self.db.Execute(connOpt,'SHOW CREATE TABLE ' + database + "." + table)
             return strSchema[0]['Create Table'];  
         except Exception as ex:
-            raise Exception(("GetDefineTable",ex,connOpt,database,table)) 
+            raise Exception(("GetDefineTable",ex,database,table)) 
 
     def CreateArchiveTableTemp(self,connOpt,queryText,database,tableName):
         try:
@@ -96,7 +96,7 @@ class DBTaskHelper:
                         ALTER TABLE {database}.{tableName} DISCARD TABLESPACE;'''.format(database=database,tableName=tableName).replace('\t'," ").replace('\n'," ")
             self.db.Execute(connOpt,query)            
         except Exception as ex:
-            raise Exception(("CreateArchiveTableTemp",ex,connOpt,queryText,database,tableName)) 
+            raise Exception(("CreateArchiveTableTemp",ex,queryText,database,tableName)) 
 
     def CopyPartitionToDes(self,sourceSSHOpt,sourceDBPath, sourceDatabase,sourceTable,desSSHOpt,desContainerName,desDBPath,desDataFileOwner,desDatabase,desTable,partitionName,partitionDelimiter):
         try:
@@ -117,14 +117,14 @@ class DBTaskHelper:
                 os.remove(partitionLocalPath)
 
         except Exception as ex:
-            raise Exception(("CopyPartitionToDes",ex,sourceSSHOpt,sourceDBPath, sourceDatabase,sourceTable,desSSHOpt,desContainerName,desDBPath,desDataFileOwner,desDatabase,desTable,partitionName,partitionDelimiter)) 
+            raise Exception(("CopyPartitionToDes",ex,sourceDBPath, sourceDatabase,sourceTable,desContainerName,desDBPath,desDataFileOwner,desDatabase,desTable,partitionName,partitionDelimiter)) 
 
     def ImportPartition(self,connOpt,table):
         try:
             query = '''ALTER TABLE {table} IMPORT TABLESPACE;'''.format(table=table).replace('\n'," ")
             self.db.Execute(connOpt,query);
         except Exception as ex:
-            raise Exception(("ImportPartition",ex,connOpt,table)) 
+            raise Exception(("ImportPartition",ex,table)) 
     
     def SyncIndex(self,connOpt,desDatabase, desTable,tempTable):
         try:
@@ -150,7 +150,7 @@ class DBTaskHelper:
             if scrpt[0]['Script']:
                 self.db.Execute(connOpt,scrpt[0]['Script'])
         except Exception as ex:
-            raise Exception(("SyncIndex",ex,connOpt,desDatabase, desTable,tempTable)) 
+            raise Exception(("SyncIndex",ex,desDatabase, desTable,tempTable)) 
     
     def CheckIndexSync(self,connOpt,desDatabase, desTable,tempDatabase,tempTable):
         try:
@@ -173,7 +173,7 @@ class DBTaskHelper:
                 return True;
             return False;
         except Exception as ex:
-            raise Exception(("CheckIndexSync",ex,connOpt,desDatabase, desTable,tempDatabase,tempTable)) 
+            raise Exception(("CheckIndexSync",ex,desDatabase, desTable,tempDatabase,tempTable)) 
 
     def ReorganizePartiton(self,configOjb,tableName,partitionName,partitionDes,partitionMax):
         try:
@@ -184,7 +184,7 @@ class DBTaskHelper:
                 );'''.format(tableName=tableName,partitionName=partitionName,partitionDes=partitionDes,partitionMax=partitionMax).replace('\t'," ").replace('\n'," ")
             self.db.Execute(configOjb,query);
         except Exception as ex:
-            raise Exception(("ReorganizePartiton",ex,configOjb,tableName,partitionName,partitionDes))
+            raise Exception(("ReorganizePartiton",ex,tableName,partitionName,partitionDes))
     
     def ExchangePartiton(self,configOjb,tableName,partitionName,tableTemp):
         try:
@@ -192,7 +192,15 @@ class DBTaskHelper:
                     '''.format(tableName=tableName,partitionName=partitionName,tableTemp=tableTemp).replace('\t'," ").replace('\n'," ")
             self.db.Execute(configOjb,query);
         except Exception as ex:
-            raise Exception(("ExchangePartiton",ex,configOjb,tableName,partitionName))
+            raise Exception(("ExchangePartiton",ex,tableName,partitionName))
+
+    def FlushTable(self,configOjb,tableName):
+        try:
+            query = '''FLUSH TABLES {tableName} FOR EXPORT; UNLOCK TABLES;
+                    '''.format(tableName=tableName).replace('\t'," ").replace('\n'," ")
+            self.db.Execute(configOjb,query);
+        except Exception as ex:
+            raise Exception(("FlushTable",ex,tableName))
 
     def DropPartiton(self,configOjb,tableName,partitionName):
         try:
@@ -200,14 +208,14 @@ class DBTaskHelper:
                     '''.format(tableName=tableName,partitionName=partitionName).replace('\t'," ").replace('\n'," ")
             self.db.Execute(configOjb,query);
         except Exception as ex:
-            raise Exception(("DropPartiton",ex,(ex,configOjb,tableName,partitionName)))
+            raise Exception(("DropPartiton",ex,(ex,tableName,partitionName)))
     
     def DropTable(self,configOjb,tableName):
         try:
             query = '''DROP TABLE {tableName};'''.format(tableName=tableName).replace('\t'," ").replace('\n'," ")
             self.db.Execute(configOjb,query);
         except Exception as ex:
-            raise Exception(("DropTable",ex,(ex,configOjb,tableName)))
+            raise Exception(("DropTable",ex,(ex,tableName)))
 
     def UpdateServerStatus(self,serverID, status):
         try:
@@ -296,7 +304,7 @@ class DBTaskHelper:
 
             #Check des partition isn't exist
             if self.CheckPartitionExist(desMysqlOpt, configOjb['Des_Database'],configOjb['Des_Table'], configOjb['KeepDataRange'])[0] == True:
-                raise Exception("Source partition is exist")
+                raise Exception("Des partition is exist")
 
             strSchema = self.GetDefineTable(sourceMysqlOpt,configOjb['Source_Database'], configOjb['Source_Table'])
             strSchema = strSchema.replace(configOjb['Source_Table'], tempTableName)
@@ -304,6 +312,8 @@ class DBTaskHelper:
             
             if self.CheckSchemaTableSync(desMysqlOpt,configOjb['Des_Database'], configOjb['Des_Table'],tempTableName) == False:
                 raise Exception("Source and Des schemas aren't sync")
+
+            self.FlushTable(sourceMysqlOpt,configOjb['Source_Table'])
 
             self.CopyPartitionToDes(sourceSSHOpt,
                                     configOjb['Source_DataPath'],
