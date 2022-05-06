@@ -1,8 +1,7 @@
-CREATE PROCEDURE [dbo].[CTS_Rpt_BettingPattern_TicketDetails]
+ALTER PROCEDURE [dbo].[CTS_Rpt_BettingPattern_TicketDetails]
 		@EventDate			DATETIME
 	,	@MatchId			INT
-	,	@CustId1			INT
-	,	@CustId2			INT
+	,	@CustIds			VARCHAR(2000) = ''
 	,	@Bettypes			VARCHAR(2000) = ''
 
 AS
@@ -13,6 +12,7 @@ AS
 
 	Revisions:
 		- 20210304@John.Ngo: Display betting pattern details [Redmine ID: #151156]
+		- 20220408@Long.Luu: Get more data from AssociationGroupByAI [Redmine ID: #171222]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_Rpt_BettingPattern_TicketDetails] @EventDate = '2021-02-23 00:00:00.000', @MatchId = 40391219, @CustId1 = 46777100, @CustId2 = 47717138, @Bettypes = '1,3'
@@ -103,8 +103,14 @@ BEGIN
 	IF @Bettypes <> ''
 	BEGIN
 		INSERT INTO #tmpBettypes (BettypeId)
-		SELECT ssk.val FROM dbo.f_SplitString(@Bettypes, ',') ssk;
+		SELECT ssk.value FROM STRING_SPLIT(@Bettypes, ',') ssk;
 	END;
+
+	IF @CustIds <> ''
+	BEGIN
+		INSERT INTO #tmpCustIds (CustId)
+		SELECT ssk.value FROM STRING_SPLIT(@CustIds, ',') ssk;
+	END;	
 
 	-- START --
 	IF @IsGetDataFromBK = 1
@@ -133,10 +139,10 @@ BEGIN
 			,	b.livehomescore
 			,	b.liveawayscore
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH(NOLOCK)
+			INNER JOIN #tmpCustIds AS c WITH(NOLOCK) ON b.custid = c.CustId
 			LEFT JOIN #tmpBettypes AS tbt WITH(NOLOCK) ON tbt.BettypeId = b.bettype
 		WHERE	b.winlostdate = @EventDate
 			AND b.matchid = @MatchId
-			AND (b.custid = @CustId1 OR b.custid = @CustId2)
 			AND (@Bettypes = '' OR tbt.BettypeId IS NOT NULL);
 	END;
 
@@ -166,10 +172,10 @@ BEGIN
 			,	b.livehomescore
 			,	b.liveawayscore
 		FROM bodb02.dbo.bettrans14 AS b WITH(NOLOCK)
+			INNER JOIN #tmpCustIds AS c WITH(NOLOCK) ON b.custid = c.CustId
 			LEFT JOIN #tmpBettypes AS tbt WITH(NOLOCK) ON tbt.BettypeId = b.bettype
 		WHERE	b.winlostdate = @EventDate
 			AND b.matchid = @MatchId
-			AND (b.custid = @CustId1 OR b.custid = @CustId2)
 			AND (@Bettypes = '' OR tbt.BettypeId IS NOT NULL);
 	END;
 
@@ -199,15 +205,16 @@ BEGIN
 			,	b.livehomescore
 			,	b.liveawayscore
 		FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
+			INNER JOIN #tmpCustIds AS c WITH(NOLOCK) ON b.custid = c.CustId
 			LEFT JOIN #tmpBettypes AS tbt WITH(NOLOCK) ON tbt.BettypeId = b.bettype
 		WHERE	b.winlostdate = @EventDate
 			AND b.matchid = @MatchId
-			AND (b.custid = @CustId1 OR b.custid = @CustId2)
 			AND (@Bettypes = '' OR tbt.BettypeId IS NOT NULL);
 	END;
 
 	-- Return data
-	SELECT	c.username AS UserName
+	SELECT	c.custid AS CustID
+		,	c.username AS UserName
 		,	m.TransDate
 		,	m.TransId
 		,	bt.typenamee AS TypeName

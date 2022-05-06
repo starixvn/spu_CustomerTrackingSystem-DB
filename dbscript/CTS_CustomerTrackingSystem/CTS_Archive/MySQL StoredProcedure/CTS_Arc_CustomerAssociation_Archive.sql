@@ -12,7 +12,7 @@ sp : BEGIN
 		Original:
 		Revisions:
 			- 20211026@Aries.Nguyen [Redmine ID: #163087]: Created
-            
+            - 20220408@Casey.Huynh: Add AssociationGroupByAI [Redmine ID: #171222]
         Param's Explanation (filtered by):
 
         Example:  
@@ -223,6 +223,59 @@ sp : BEGIN
 			SELECT COUNT(1)
             INTO lv_Count
             FROM Temp_AssociationByAI_Clean;
+            
+            IF lv_Count >= lv_BatchSize_AssData THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_BatchSize_AssData = lv_BatchSize_AssData - lv_Count;
+        END IF;
+        
+        SET lv_Table = 'AssociationGroupByAI';
+    END IF;
+    
+    IF (lv_Table = 'AssociationGroupByAI') THEN  
+		IF EXISTS (SELECT 1  FROM CTS_DataCenter.AssociationGroupByAI AS asg WHERE EXISTS (SELECT 1 FROM CTS_Archive.CTSCustomerAssociationArchive_Process AS pro WHERE asg.CustID = pro.CustID)) THEN
+			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationGroupByAI_Clean;
+			CREATE TEMPORARY TABLE Temp_AssociationGroupByAI_Clean(
+					ID				BIGINT UNSIGNED DEFAULT NULL
+				,	GroupID 		BIGINT UNSIGNED NOT NULL
+				,	OriginGroupID 	BIGINT UNSIGNED NOT NULL
+				,	CustID 			BIGINT UNSIGNED NOT NULL
+				,	CreatedDate 	DATETIME DEFAULT NULL
+                
+                ,	PRIMARY KEY (CustID,GroupID)
+			) ENGINE=InnoDB;
+                      
+            INSERT IGNORE INTO Temp_AssociationGroupByAI_Clean(ID, GroupID, OriginGroupID, CustID, CreatedDate)
+            SELECT 	asg.ID
+				,	asg.GroupID
+                ,	asg.OriginGroupID
+                ,	asg.CustID
+                ,	asg.CreatedDate
+			FROM CTS_DataCenter.AssociationGroupByAI  AS asg
+			WHERE EXISTS (SELECT 1 FROM CTS_Archive.CTSCustomerAssociationArchive_Process AS pro WHERE asg.CustID = pro.CustID)
+            LIMIT lv_BatchSize_AssData;
+            
+            INSERT IGNORE INTO CTS_Archive.AssociationGroupByAI_Arc(ID, GroupID, OriginGroupID, CustID, CreatedDate)
+			SELECT 	tmpCl.ID
+				,	tmpCl.GroupID
+                ,	tmpCl.OriginGroupID
+                ,	tmpCl.CustID
+                ,	tmpCl.CreatedDate
+			FROM Temp_AssociationGroupByAI_Clean  AS tmpCl;
+            
+            DELETE asg
+			FROM CTS_DataCenter.AssociationGroupByAI AS asg
+				INNER JOIN Temp_AssociationGroupByAI_Clean AS tmpCl ON tmpCl.CustID = asg.CustID AND tmpCl.GroupID = asg.GroupID;
+			
+			UPDATE  CTS_Archive.SystemParameter 
+			SET ParameterValue = 'AssociationGroupByAI'
+			WHERE ParameterID = 4;
+
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_AssociationGroupByAI_Clean;
             
             IF lv_Count >= lv_BatchSize_AssData THEN
 				LEAVE sp;

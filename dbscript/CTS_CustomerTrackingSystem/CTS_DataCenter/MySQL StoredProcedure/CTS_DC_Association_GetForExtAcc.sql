@@ -16,7 +16,7 @@ sp : BEGIN
         
 		Revisions:
 			- 20210330@Aries.Nguyen: Created [Redmine ID: #152507]
-            
+            - 20220408@Casey.Huynh: Add AssociationGroupByAI [Redmine ID: #171222]
         Param's Explanation (filtered by):
 			- ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual, 4 - IP
             - ip_AssociationStatus: 0 - All, 1 - Linked, 2 - UnLinked
@@ -52,6 +52,14 @@ sp : BEGIN
         , 	AssociationStatus	INT
         ,	AssociationDate		DaTETIME
         , 	PRIMARY KEY (CTSCustID_Aff,AssociationType, AssociationStatus)
+	);  
+    
+	DROP TEMPORARY TABLE IF EXISTS Temp_AssGroupByAI;
+	CREATE TEMPORARY TABLE Temp_AssGroupByAI (
+			GroupID 	BIGINT UNSIGNED
+		,	CreatedDate	DATETIME
+        
+        , 	PRIMARY KEY (GroupID)
 	);  
     
     /*<Customer Category Rule/>*/    
@@ -99,6 +107,7 @@ sp : BEGIN
 
     # ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual, 4 - IP
     IF ip_AssociationType = 0 OR ip_AssociationType = 2 THEN
+		#==================GET association from AssociationByAI===============================================
 		INSERT IGNORE INTO Temp_CustAssociation(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
 		SELECT 
 				cust.CTSCustID 
@@ -118,6 +127,22 @@ sp : BEGIN
 		FROM CTS_DataCenter.AssociationByAI AS asAI 
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asAI.FromCustID AND cust.CustSubID = 0
 		WHERE	asAI.ToCustID =  ip_CustID;
+        
+        #==================GET association from AssociationGroupByAI===============================================
+        INSERT IGNORE INTO Temp_AssGroupByAI(GroupID, CreatedDate)
+        SELECT	asg.GroupID 
+			,	asg.CreatedDate
+        FROM	CTS_DataCenter.AssociationGroupByAI AS asg
+        WHERE	asg.CustID = ip_CustID;
+        
+        INSERT IGNORE INTO Temp_CustAssociation (CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
+        SELECT	cus.CTSCustID
+			,	2 AS AssociationType
+            ,	1 AS AssociationStatus
+            ,	asg.CreatedDate AS AssociationDate
+        FROM	CTS_DataCenter.AssociationGroupByAI AS asg
+			INNER JOIN Temp_AssGroupByAI AS tmpAg ON asg.GroupID = tmpAg.GroupID AND asg.CustID <> ip_CustID
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID  = asg.CustID AND cus.CustSubID = 0;            
     END IF;
     
 	IF ip_AssociationType = 0 OR ip_AssociationType = 4 THEN
