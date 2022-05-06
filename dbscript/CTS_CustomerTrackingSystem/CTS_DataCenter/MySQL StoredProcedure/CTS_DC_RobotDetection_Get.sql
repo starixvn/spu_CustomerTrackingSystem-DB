@@ -6,7 +6,8 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_RobotDetection_Get`(
 		IN 	ip_CustID	 			BIGINT UNSIGNED
     
     ,	OUT op_FirstRobotDate		TIMESTAMP(3)
-    ,	OUT op_LastRobotDate		TIMESTAMP(3)
+    ,	OUT op_LastRobotDate		TIMESTAMP(3)    
+    ,	OUT op_RobotType			INT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -20,8 +21,33 @@ BEGIN
 			- 20211109@Long.Luu: Created [Redmine ID: #162341]
             
 		Example:
-			call CTS_DataCenter.CTS_DC_RobotDetection_Get (123,@a,@b);  
+			call CTS_DataCenter.CTS_DC_RobotDetection_Get (123,@a,@b,@c);  select @a,@b,@c;
 	*/    
+    DECLARE CONST_ROBOTTYPE_BAD 		INT DEFAULT 2;
+	DECLARE	CONST_ROBOTTYPE_GOOD 		INT DEFAULT 1;
+	DECLARE CONST_ROBOTTYPE_OBSERVED 	INT DEFAULT 0;
+    DECLARE CONST_ROBOTTYPE_NOTYPE 		INT DEFAULT -1;
+    DECLARE CONST_ROBOTTYPE_NOTROBOT 	INT DEFAULT -2;
+    
+    SET @LatestRobotType = -2;
+    SET @IsRobotBetting = EXISTS(
+								SELECT 1 
+								FROM RobotDetection 
+								WHERE CustID = ip_CustID
+							);
+                            
+	SELECT RobotType
+    INTO @LatestRobotType
+    FROM RobotClassification
+	WHERE CustID = ip_CustID
+    ORDER BY FromDate DESC
+    LIMIT 1;
+    
+    SET op_RobotType = 	CASE 
+							WHEN @LatestRobotType IN (CONST_ROBOTTYPE_BAD,CONST_ROBOTTYPE_GOOD,CONST_ROBOTTYPE_OBSERVED) THEN @LatestRobotType
+							WHEN @IsRobotBetting = 1 THEN CONST_ROBOTTYPE_NOTYPE
+							ELSE CONST_ROBOTTYPE_NOTROBOT
+						END;
     
     SELECT 	MIN(CreatedDate), MAX(LastModifiedDate)
     INTO op_FirstRobotDate, op_LastRobotDate
