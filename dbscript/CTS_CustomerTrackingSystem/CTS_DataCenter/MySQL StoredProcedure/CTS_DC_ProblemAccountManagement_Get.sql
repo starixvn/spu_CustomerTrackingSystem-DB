@@ -19,9 +19,13 @@ sp :BEGIN
 		Revisions:
 			- 20211130@Aries.Nguyen: Created [Redmine: #164079]
             - 20220408@Casey.Huynh: Return CreatedBy [Redmine: #171223]
+            - 20220426@Casey.Huynh: Add CreatedBy [Redmine ID: #171512]
 		Param's Explanation (filtered by):   
         Example: 
-			-CALL CTS_DC_ProblemAccountManagement_Get('2021-03-03 00:00:00', '2021-03-10 00:00:00', null,'KEONUS',0); 
+			-CALL CTS_DC_ProblemAccountManagement_Get('2022-01-10 00:00:00', '2022-05-10 00:00:00', null,null,0); 
+            CALL CTS_DC_ProblemAccountManagement_Get_New('2022-01-10 00:00:00', '2022-05-10 00:00:00', null,null,0); 
+            
+            
 	*/	
     DECLARE lv_CTSCustID 			BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_CustID 				BIGINT UNSIGNED DEFAULT 0;
@@ -57,7 +61,38 @@ sp :BEGIN
 			LEAVE sp;
 		END IF;
      END IF;
+	
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustPA;
+	CREATE TEMPORARY TABLE Temp_CustPA(
+			CTSCustID		BIGINT UNSIGNED
+        ,	CustID			INT UNSIGNED
+        ,	SRecommend		INT UNSIGNED
+        ,	MRecommend		INT UNSIGNED
+        ,	Recommend		INT UNSIGNED
+        ,	UserName		VARCHAR(50)
+        ,	Site			VARCHAR(50)
+        ,	SiteID			INT
+        ,	Currency		VARCHAR(10)
+        ,	CurrencyID		INT
+        ,	CategoryName	VARCHAR(50)
+        ,	CreatedDate		DATETIME
+        ,	CreatedBy		INT UNSIGNED
+        
+        ,	PRIMARY KEY IX_Temp_CustPA(CTSCustID,CategoryName)
+        ,	INDEX IX_Temp_CustPA_CTSCustIDCreatedDate(CTSCustID,CreatedDate)
+	);   
     
+    
+	DROP TEMPORARY TABLE IF EXISTS Temp_FirstPA;
+	CREATE TEMPORARY TABLE Temp_FirstPA(
+			CTSCustID		BIGINT UNSIGNED
+		,	MinCreatedDate	DATETIME
+        ,	FirstCreatedBy	VARCHAR(50)
+        
+        ,	PRIMARY KEY IX_Temp_FirstCreatedBy(CTSCustID)
+	); 
+
+    INSERT IGNORE INTO Temp_CustPA(CTSCustID, CustID, UserName, Site, SiteID, Currency, CurrencyID, CategoryName, CreatedDate, CreatedBy)
     SELECT 	cus.CTSCustID
 		, 	cus.CustID
 		, 	cus.UserName
@@ -65,29 +100,49 @@ sp :BEGIN
 		, 	cus.SiteID
 		,	cus.Currency
 		,	cus.CurrencyID
-        ,	GROUP_CONCAT(DISTINCT cate.CategoryName SEPARATOR ', ') AS CategoryName
-		,	MIN(class.CreatedDate) AS CreatedDate
-        ,	us.UserName AS CreatedBy
+        ,	cate.CategoryName
+		,	class.CreatedDate
+        ,	class.CreatedBy
 	FROM CTS_DataCenter.CTSCustomerClassification AS class
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON class.CTSCustID = cus.CTSCustID
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON class.CategoryID = cate.CategoryID
-        LEFT JOIN	CTS_Admin.CTSUser AS us ON class.CreatedBy = us.UserID  
 	WHERE    class.CreatedDate BETWEEN ip_FromDate AND ip_ToDate
 		AND  class.SportGroupID = 0
 		AND  cus.SiteID IN (SELECT st.SiteID FROM Temp_SiteID AS st)
 		AND  (lv_CTSCustID = 0 OR cus.CTSCustID = lv_CTSCustID
 							   OR (ip_HasDownline = 1 
 									AND (cus.SRecommend = lv_CustID 
-									OR cus.MRecommend = lv_CustID 
-									OR cus.Recommend = lv_CustID)))
-	GROUP BY cus.CTSCustID
-		, 	cus.CustID
-		, 	cus.UserName
-		, 	cus.UserName2
-		, 	cus.Site
-		, 	cus.SiteID
-		,	cus.Currency
-		,	cus.CurrencyID
+										OR cus.MRecommend = lv_CustID 
+										OR cus.Recommend = lv_CustID)));
+                             
+	INSERT IGNORE INTO Temp_FirstPA(CTSCustID, MinCreatedDate, FirstCreatedBy)
+    SELECT	tmpPA.CTSCustID
+		,	tmpPA.CreatedDate
+        ,	tmpPA.CreatedBy
+	FROM Temp_CustPA AS tmpPA
+    ORDER BY tmpPA.CTSCustID, tmpPA.CreatedDate;
+
+    SELECT 	tmpPA.CTSCustID
+		, 	tmpPA.CustID
+		, 	tmpPA.UserName
+		, 	tmpPA.Site
+		, 	tmpPA.SiteID
+		,	tmpPA.Currency
+		,	tmpPA.CurrencyID
+        ,	GROUP_CONCAT(DISTINCT tmpPA.CategoryName SEPARATOR ', ') AS CategoryName
+		,	tmpF.MinCreatedDate AS CreatedDate
+        ,	us.UserName AS CreatedBy
+	FROM Temp_CustPA AS tmpPA
+		LEFT JOIN Temp_FirstPA AS tmpF ON tmpPA.CTSCustID = tmpF.CTSCustID 
+        LEFT JOIN CTS_Admin.CTSUser AS us ON tmpF.FirstCreatedBy = us.UserID
+	GROUP BY tmpPA.CTSCustID
+		, 	tmpPA.CustID
+		, 	tmpPA.UserName
+		, 	tmpPA.Site
+		, 	tmpPA.SiteID
+		,	tmpPA.Currency
+		,	tmpPA.CurrencyID
+        ,	tmpF.MinCreatedDate
         ,	us.UserName;
 END$$
 DELIMITER ;
