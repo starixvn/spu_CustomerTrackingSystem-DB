@@ -307,7 +307,7 @@ class DBTaskHelper:
                 raise Exception("Des partition is exist")
 
             strSchema = self.GetDefineTable(sourceMysqlOpt,configOjb['Source_Database'], configOjb['Source_Table'])
-            strSchema = strSchema.replace(configOjb['Source_Table'], tempTableName)
+            strSchema = strSchema.replace(configOjb['Source_Table'], tempTableName,1)
             self.CreateArchiveTableTemp(desMysqlOpt,strSchema,configOjb['Des_Database'],tempTableName)
             
             if self.CheckSchemaTableSync(desMysqlOpt,configOjb['Des_Database'], configOjb['Des_Table'],tempTableName) == False:
