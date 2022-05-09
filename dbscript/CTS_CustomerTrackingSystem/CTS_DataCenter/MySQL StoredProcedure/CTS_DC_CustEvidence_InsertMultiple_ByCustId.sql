@@ -125,7 +125,7 @@ sp: BEGIN
         ,	temp.SubscriberID
         ,	temp.EvidenceID
         ,	0 AS ActionType
-        ,	ip_UserID
+        ,	ip_UserID AS CreatedBy
     FROM Temp_MultipleAccountEvidence AS temp;
 
 END$$
