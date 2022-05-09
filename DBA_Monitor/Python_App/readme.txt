@@ -17,4 +17,35 @@ pip3 install python-telegram-bot
 pip3 install mysql-connector-python
 pip3 install cryptography
 pip3 install paramiko
+pip3 install scp
+
 deactivate
+
+
+#mkdir keyfiles
+#mkdir archivepartitionfiles
+
+#create user 
+	+Replica
+		dba_cts_replica 	password
+		sudo adduser dba_cts_replica
+		sudo adduser dba_cts_replica docker
+		
+		ssh-keygen -t rsa
+		mv /home/dba_cts_replica/.ssh/id_rsa /home/dba_cts_replica/.ssh/dba_cts_replica_rsa_private_key
+		mv /home/dba_cts_replica/.ssh/id_rsa.pub /home/dba_cts_replica/.ssh/authorized_keys
+		
+		chmod 600 /home/dba_cts_replica/.ssh/dba_cts_replica_rsa_private_key
+		chmod 600 /home/dba_cts_replica/.ssh/authorized_keys
+	+Archive
+		
+		dba_cts_archive		password
+		sudo adduser dba_cts_archive 
+		sudo adduser dba_cts_archive docker
+		
+		ssh-keygen -t rsa
+		mv /home/dba_cts_archive/.ssh/id_rsa /home/dba_cts_archive/.ssh/dba_cts_archive_rsa_private_key
+		mv /home/dba_cts_archive/.ssh/id_rsa.pub /home/dba_cts_archive/.ssh/authorized_keys
+		
+		chmod 600 /home/dba_cts_archive/.ssh/dba_cts_archive_rsa_private_key
+		chmod 600 /home/dba_cts_archive/.ssh/authorized_keys

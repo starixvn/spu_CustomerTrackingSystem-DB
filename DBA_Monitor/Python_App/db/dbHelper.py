@@ -1,6 +1,44 @@
 import mysql.connector as mysql
 from config import config
+from datetime import datetime
 
+class DBHandler:
+    connection = None;
+    cursorQuery = None;
+
+    def InitConnection(self, connOpt):
+        self.connection = mysql.connect(host=connOpt['host'],
+                                        user = connOpt['user'],
+                                        password = connOpt['password'],
+                                        db = connOpt['db'],
+                                        port = connOpt['port'],
+                                        auth_plugin='mysql_native_password',
+                                        autocommit = True);
+        self.cursorQuery = self.connection.cursor(dictionary=True);
+
+    def CloseConnection(self):
+        self.cursorQuery.close()
+        self.connection.close()
+
+
+    def Call_SP(self, connOpt, spName, params):
+            self.InitConnection(connOpt)
+            self.cursorQuery.callproc(spName,params)
+            sp_result = self.cursorQuery.stored_results()
+            result = [list.fetchall() for list in sp_result]
+            self.CloseConnection()
+            return result;
+    
+    def Execute(self, connOpt, queryText):
+            self.InitConnection(connOpt)
+            self.cursorQuery.execute(queryText)
+            result = self.cursorQuery.fetchall()
+            self.CloseConnection()
+            return result;
+
+    def close(self):
+       self.CloseConnection(self)
+        
 
 class DBHelper:
 
@@ -11,7 +49,7 @@ class DBHelper:
     cursorMaster = None;
     cursorReplica = None;
     cursorArchive = None;
-        
+
     def InitCursor(self,serverName):
         if serverName == "master":
             dbConfigMaster = config['mysql_master'];
