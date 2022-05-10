@@ -21,7 +21,7 @@ BEGIN
             - 20210910@Irena.Vo: Additional IGNORE for insert table Temp_CustomerClass [Redmine ID: 161232]
 			- 20211115@Irena.Vo: Re-priortize Robot and other PA categories  [Redmine ID: #164344]
 			- 20220214@Long.Luu: Support new category for Good & Bad Robot User [Redmine ID: #167726]
-            
+            - 20220428@Casey.Huynh: Rename Category Add CC Label  [Redmine ID: #172032]
         Param's Explanation:     
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetLatestClassification('1,2,1277,555555');
@@ -76,6 +76,7 @@ BEGIN
         	CustID				BIGINT UNSIGNED PRIMARY KEY             
 		,	ScannedTime			DATETIME
 		,   CustomerClass       SMALLINT DEFAULT -1 /* -1: No data, <> -1: Has data */
+        ,	CustomerClassName	VARCHAR(50)
 		,	CategoryGroup		SMALLINT DEFAULT -1 /* -1: No data, <> -1: Has data */
 		,	CategoryID			SMALLINT DEFAULT -1 /* -1: No data, <> -1: Has data */
     );    
@@ -157,19 +158,20 @@ BEGIN
     FROM Temp_ExistedSpecialCC AS es;
     
     /* 10. Mapping case: Existed Category */
-	INSERT IGNORE INTO Temp_LatestClassification (CustID, ScannedTime, CustomerClass, CategoryGroup, CategoryID)
-	SELECT 	ec.CustID, ec.ScannedTime,  map.CustomerClass
+	INSERT IGNORE INTO Temp_LatestClassification (CustID, ScannedTime, CustomerClass, CustomerClassName, CategoryGroup, CategoryID)
+	SELECT 	ec.CustID, ec.ScannedTime,  cc.CustomerClass, cc.CustomerClassName
 		,	CASE WHEN ec.SportGroupID = CONST_GROUP_NORMAL THEN -1 ELSE cc.CategoryGroup END AS CategoryGroup
         ,	CASE WHEN ec.SportGroupID = CONST_GROUP_NORMAL THEN -1 ELSE ec.CategoryID END AS CategoryID
-	FROM Temp_ExistedLatestCategory AS ec 
-		INNER JOIN CTS_DataCenter.CategoryToCustomerClass AS map ON map.CategoryID = ec.CategoryID
+	FROM Temp_ExistedLatestCategory AS ec
         INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = ec.CategoryID;
 
     /* 12. Get Latest Classification to push */
      SELECT DISTINCT c.CustID
 		, 	c.CustomerClass
-        , 	CASE WHEN c.CategoryID IN (CONST_CATEGORY_BADROBOTUSER, CONST_CATEGORY_GOODROBOTUSER) THEN c.CategoryID ELSE c.CategoryGroup END AS Category
+        ,	c.CustomerClassName
+        , 	CASE WHEN c.CategoryID IN (CONST_CATEGORY_BADROBOTUSER, CONST_CATEGORY_GOODROBOTUSER) THEN c.CategoryID ELSE c.CategoryGroup END AS Category # PACategory
         , 	c.ScannedTime 
     FROM Temp_LatestClassification AS c;
+
 END$$
 DELIMITER ;
