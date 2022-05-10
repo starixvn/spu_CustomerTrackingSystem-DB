@@ -17,7 +17,7 @@ BEGIN
 		Revisions:
 			- 20220328@Aries.Nguyen: Created [Redmine ID: #170468]
             - 20220505@Aries.Nguyen: Classification History - Wrong store Source Type for mark/remove PA [Redmine ID: #172401]
-
+			- 20220426@Casey.Huynh: Return CreatedBy [Redmine ID: #171512]
 		Param's Explanation (filtered by):      
 			- CALL CTS_DC_CustClassification_MappingCategory ('[{"CustID": 123,"ReasonID": -1,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10}]','NAP');
 */ 
@@ -47,8 +47,6 @@ BEGIN
 	DECLARE CONST_SOURCETYPE_EXCLUDEASSWITHPA	INT DEFAULT 20;
     DECLARE CONST_SOURCETYPE_INCLUDEASSWITHPA	INT DEFAULT 21;
 	DECLARE CONST_SOURCETYPE_RESCANBYPA 		INT DEFAULT 23;
-    
-    DECLARE lv_CreatedBy 						INT DEFAULT 10278938;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_PA;    
 	CREATE TEMPORARY TABLE Temp_PA(	  
@@ -131,8 +129,7 @@ BEGIN
         ,   CASE WHEN (mss.SubscriberGroupID <> 2 AND cust.SubscriberID IN (2,130)) OR (mss.SubscriberGroupID = 2 AND cust.CurrencyID IN (13,78)) THEN 1
 				 ELSE 0 
 			END AS IsRobotException
-        ,	IFNULL(pa.CreatedBy,lv_CreatedBy) AS CreatedBy
-        
+		,	pa.CreatedBy         
         , 	pa.RobotCounter
         , 	pa.WinlossStatus 
         , 	pa.TurnoverRM
