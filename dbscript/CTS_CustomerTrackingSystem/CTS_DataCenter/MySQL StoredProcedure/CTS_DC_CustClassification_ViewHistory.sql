@@ -22,10 +22,9 @@ BEGIN
             - 20210727@Long.Luu: Return more data for TW's categories [RedmineID: #155956] 
 			- 20210907@Long.Luu: Update Robot Users rules  [Redmine ID: #161232]
 			- 20211116@Aries.Nguyen: Return history with CTSUser is null[Redmine ID: #156935]
-            
+            - 20220510@Irena.Vo: Update for return CreatedBy [Redmine ID: #171512]
 		Param's Explanation (filtered by):		
         Example:
-        
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_ViewHistory(43600889);
 	*/   
 		DECLARE CONST_CATEGORY_NEWMEMBER 				INT DEFAULT 201;
@@ -58,8 +57,10 @@ BEGIN
 			,   temp.BetCount
 			,   temp.ActiveDays 
 			,   temp.RobotCounter
-			,   u.UserName AS CreatedBy
-			,	temp.LastModifiedBy AS LastModifiedBy
+			,   CASE WHEN u.UserID IS NOT NULL THEN u.UserName 
+					 WHEN temp.LastModifiedBy IS NOT NULL THEN temp.LastModifiedBy 
+                     ELSE NULL 
+				END AS CreatedBy
             ,	temp.TWBetCount
             ,	temp.TWGroupBettingRate
             ,	temp.TWTicketRejectRate
