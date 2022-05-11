@@ -22,10 +22,7 @@ sp :BEGIN
             - 20220426@Casey.Huynh: Add CreatedBy [Redmine ID: #171512]
 		Param's Explanation (filtered by):   
         Example: 
-			-CALL CTS_DC_ProblemAccountManagement_Get('2022-01-10 00:00:00', '2022-05-10 00:00:00', null,null,0); 
-            CALL CTS_DC_ProblemAccountManagement_Get_New('2022-01-10 00:00:00', '2022-05-10 00:00:00', null,null,0); 
-            
-            
+			CALL CTS_DC_ProblemAccountManagement_Get('2022-01-10 00:00:00', '2022-05-10 00:00:00', null,null,0); 
 	*/	
     DECLARE lv_CTSCustID 			BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_CustID 				BIGINT UNSIGNED DEFAULT 0;
@@ -131,7 +128,10 @@ sp :BEGIN
 		,	tmpPA.CurrencyID
         ,	GROUP_CONCAT(DISTINCT tmpPA.CategoryName SEPARATOR ', ') AS CategoryName
 		,	tmpF.MinCreatedDate AS CreatedDate
-        ,	us.UserName AS CreatedBy
+        ,   CASE WHEN us.UserID IS NOT NULL THEN us.UserName 
+				 WHEN tmpF.FirstCreatedBy IS NOT NULL THEN tmpF.FirstCreatedBy
+                 ELSE NULL 
+			END AS CreatedBy
 	FROM Temp_CustPA AS tmpPA
 		LEFT JOIN Temp_FirstPA AS tmpF ON tmpPA.CTSCustID = tmpF.CTSCustID 
         LEFT JOIN CTS_Admin.CTSUser AS us ON tmpF.FirstCreatedBy = us.UserID
