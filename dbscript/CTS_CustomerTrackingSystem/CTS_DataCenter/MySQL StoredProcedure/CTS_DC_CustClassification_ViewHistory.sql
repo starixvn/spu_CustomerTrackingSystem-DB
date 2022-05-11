@@ -57,10 +57,7 @@ BEGIN
 			,   temp.BetCount
 			,   temp.ActiveDays 
 			,   temp.RobotCounter
-			,   CASE WHEN u.UserID IS NOT NULL THEN u.UserName 
-					 WHEN temp.LastModifiedBy IS NOT NULL THEN temp.LastModifiedBy 
-                     ELSE NULL 
-				END AS CreatedBy
+			,   IFNULL(u.UserName, temp.LastModifiedBy) AS CreatedBy
             ,	temp.TWBetCount
             ,	temp.TWGroupBettingRate
             ,	temp.TWTicketRejectRate
