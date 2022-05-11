@@ -58,51 +58,21 @@ sp :BEGIN
 			LEAVE sp;
 		END IF;
      END IF;
-	
-    DROP TEMPORARY TABLE IF EXISTS Temp_CustPA;
-	CREATE TEMPORARY TABLE Temp_CustPA(
-			CTSCustID		BIGINT UNSIGNED
-        ,	CustID			INT UNSIGNED
-        ,	SRecommend		INT UNSIGNED
-        ,	MRecommend		INT UNSIGNED
-        ,	Recommend		INT UNSIGNED
-        ,	UserName		VARCHAR(50)
-        ,	Site			VARCHAR(50)
-        ,	SiteID			INT
-        ,	Currency		VARCHAR(10)
-        ,	CurrencyID		INT
-        ,	CategoryName	VARCHAR(50)
-        ,	CreatedDate		DATETIME
-        ,	CreatedBy		INT UNSIGNED
-        
-        ,	PRIMARY KEY IX_Temp_CustPA(CTSCustID,CategoryName)
-        ,	INDEX IX_Temp_CustPA_CTSCustIDCreatedDate(CTSCustID,CreatedDate)
-	);   
-    
-    
-	DROP TEMPORARY TABLE IF EXISTS Temp_FirstPA;
-	CREATE TEMPORARY TABLE Temp_FirstPA(
-			CTSCustID		BIGINT UNSIGNED
-		,	MinCreatedDate	DATETIME
-        ,	FirstCreatedBy	VARCHAR(50)
-        
-        ,	PRIMARY KEY IX_Temp_FirstCreatedBy(CTSCustID)
-	); 
-
-    INSERT IGNORE INTO Temp_CustPA(CTSCustID, CustID, UserName, Site, SiteID, Currency, CurrencyID, CategoryName, CreatedDate, CreatedBy)
-    SELECT 	cus.CTSCustID
+	    
+	SELECT 	cus.CTSCustID
 		, 	cus.CustID
 		, 	cus.UserName
 		, 	cus.Site
 		, 	cus.SiteID
 		,	cus.Currency
 		,	cus.CurrencyID
-        ,	cate.CategoryName
-		,	class.CreatedDate
-        ,	class.CreatedBy
+        ,	GROUP_CONCAT(DISTINCT cate.CategoryName SEPARATOR ', ') AS CategoryName
+		,	MIN(class.CreatedDate) AS CreatedDate
+        ,	SUBSTRING_INDEX(GROUP_CONCAT(IFNULL(us.UserName, class.CreatedBy) ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS CreatedBy
 	FROM CTS_DataCenter.CTSCustomerClassification AS class
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON class.CTSCustID = cus.CTSCustID
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON class.CategoryID = cate.CategoryID
+        LEFT JOIN CTS_Admin.CTSUser AS us ON class.CreatedBy = us.UserID
 	WHERE    class.CreatedDate BETWEEN ip_FromDate AND ip_ToDate
 		AND  class.SportGroupID = 0
 		AND  cus.SiteID IN (SELECT st.SiteID FROM Temp_SiteID AS st)
@@ -110,39 +80,14 @@ sp :BEGIN
 							   OR (ip_HasDownline = 1 
 									AND (cus.SRecommend = lv_CustID 
 										OR cus.MRecommend = lv_CustID 
-										OR cus.Recommend = lv_CustID)));
-                             
-	INSERT IGNORE INTO Temp_FirstPA(CTSCustID, MinCreatedDate, FirstCreatedBy)
-    SELECT	tmpPA.CTSCustID
-		,	tmpPA.CreatedDate
-        ,	tmpPA.CreatedBy
-	FROM Temp_CustPA AS tmpPA
-    ORDER BY tmpPA.CTSCustID, tmpPA.CreatedDate;
-
-    SELECT 	tmpPA.CTSCustID
-		, 	tmpPA.CustID
-		, 	tmpPA.UserName
-		, 	tmpPA.Site
-		, 	tmpPA.SiteID
-		,	tmpPA.Currency
-		,	tmpPA.CurrencyID
-        ,	GROUP_CONCAT(DISTINCT tmpPA.CategoryName SEPARATOR ', ') AS CategoryName
-		,	tmpF.MinCreatedDate AS CreatedDate
-        ,   CASE WHEN us.UserID IS NOT NULL THEN us.UserName 
-				 WHEN tmpF.FirstCreatedBy IS NOT NULL THEN tmpF.FirstCreatedBy
-                 ELSE NULL 
-			END AS CreatedBy
-	FROM Temp_CustPA AS tmpPA
-		LEFT JOIN Temp_FirstPA AS tmpF ON tmpPA.CTSCustID = tmpF.CTSCustID 
-        LEFT JOIN CTS_Admin.CTSUser AS us ON tmpF.FirstCreatedBy = us.UserID
-	GROUP BY tmpPA.CTSCustID
-		, 	tmpPA.CustID
-		, 	tmpPA.UserName
-		, 	tmpPA.Site
-		, 	tmpPA.SiteID
-		,	tmpPA.Currency
-		,	tmpPA.CurrencyID
-        ,	tmpF.MinCreatedDate
-        ,	us.UserName;
+										OR cus.Recommend = lv_CustID)))
+	GROUP BY cus.CTSCustID
+		, 	cus.CustID
+		, 	cus.UserName
+		, 	cus.Site
+		, 	cus.SiteID
+		,	cus.Currency
+		,	cus.CurrencyID;
+	
 END$$
 DELIMITER ;
