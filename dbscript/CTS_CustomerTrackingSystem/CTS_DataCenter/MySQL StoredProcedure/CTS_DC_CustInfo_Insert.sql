@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CustInfo_Insert_DupUserName`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustInfo_Insert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustInfo_Insert_DupUserName`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustInfo_Insert`(
 	IN ip_CustomerList JSON
 )
     SQL SECURITY INVOKER
@@ -27,7 +27,7 @@ BEGIN
 			- 20210804@Irena.Vo: Fix issue No rescan for existed Customer [Redmine ID: #159706]
             - 20220110@Casey.Huynh: HF Missing CustSub [Redmine ID: #167242]
             - 20220418@Casey.Huynh: Add and Remove VVIP for Downline [Redmine ID: #159013]
-            - 20220511@Casey.Huynh: Missing ArchiveCust  [Redmine ID: #xxxx]
+            - 20220511@Casey.Huynh: Missing ArchiveCust  [Redmine ID: #172615]
 		Param's Explanation (filtered by):
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustInfo_Insert ('[

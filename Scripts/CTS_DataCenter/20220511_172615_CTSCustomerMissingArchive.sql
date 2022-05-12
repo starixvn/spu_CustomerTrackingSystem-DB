@@ -1,7 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
 /*
     Creator: 	20220511@Casey.Huynh
-    Task:	 	20220511@Casey.Huynh: Missing ArchiveCust  [Redmine ID: #xxxx]
+    Task:	 	20220511@Casey.Huynh: Missing ArchiveCust  [Redmine ID: #172615]
     DBName:		CTS_DataCenter
 */
 
