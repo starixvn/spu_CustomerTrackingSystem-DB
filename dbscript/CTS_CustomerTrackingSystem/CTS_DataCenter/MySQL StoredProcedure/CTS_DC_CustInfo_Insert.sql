@@ -27,6 +27,7 @@ BEGIN
 			- 20210804@Irena.Vo: Fix issue No rescan for existed Customer [Redmine ID: #159706]
             - 20220110@Casey.Huynh: HF Missing CustSub [Redmine ID: #167242]
             - 20220418@Casey.Huynh: Add and Remove VVIP for Downline [Redmine ID: #159013]
+            - 20220512@Casey.Huynh: HF Return more info in VVIP List [Redmine ID: #172712]
             - 20220511@Casey.Huynh: Missing ArchiveCust  [Redmine ID: #172615]
 		Param's Explanation (filtered by):
 		Example:
@@ -39,17 +40,17 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomer;    
 	CREATE TEMPORARY TABLE Temp_CTSCustomer( 	  
 			SubscriberID 	INT 			
-		,	CustID			INT	 UNSIGNED NOT NULL
+		,	CustID			INT	UNSIGNED NOT NULL
         ,	CustStatusID	TINYINT
         ,	Danger1			TINYINT
         ,	Danger2			TINYINT
         ,	Danger3			TINYINT
-		,	CustSubID		BIGINT			
-		,	UserName		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
-		,	UserName2		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
-        ,	RegisterName	VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+		,	CustSubID		INT UNSIGNED			
+		,	UserName		VARCHAR(50)	
+		,	UserName2		VARCHAR(50)
+        ,	RegisterName	VARCHAR(50)
 		,	SiteID			INT
-        ,	Site			VARCHAR(20) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+        ,	Site			VARCHAR(20)
 		,	RoleID			TINYINT		 
 		,	Currency		VARCHAR(50) 	
 		,	CurrencyID		INT			 	
@@ -67,8 +68,8 @@ BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustExist;    
 	CREATE TEMPORARY TABLE Temp_CustExist(
-			CustID			INT UNSIGNED
-		,	CustSubID		INT
+			CustID			INT UNSIGNED	
+		,	CustSubID		INT UNSIGNED
         
         ,	PRIMARY KEY PK_Temp_CustExist(CustID,CustSubID)
 	);
@@ -114,16 +115,16 @@ BEGIN
 			,	CreatedDate
 	FROM JSON_TABLE(ip_CustomerList,
 		 "$[*]" COLUMNS(
-				CustID			INT	 UNSIGNED	PATH "$.CustID" 
+				CustID			INT	UNSIGNED	PATH "$.CustID" 
 			,	CustStatusID	TINYINT			PATH "$.CustStatusID" 
 			,	Danger1			TINYINT		 	PATH "$.Danger1" 
 			,	Danger2			TINYINT		 	PATH "$.Danger2" 
 			,	Danger3			TINYINT		 	PATH "$.Danger3" 
-			,	CustSubID		BIGINT			PATH "$.CustSubID" 
-			,	UserName		VARCHAR(50)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	PATH "$.UserName"
-			,	UserName2		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	PATH "$.UserName2" 
+			,	CustSubID		INT UNSIGNED	PATH "$.CustSubID" 
+			,	UserName		VARCHAR(50) 	PATH "$.UserName"
+			,	UserName2		VARCHAR(50)		PATH "$.UserName2" 
 			,	SiteID			INT 			PATH "$.SiteID" 
-			,	Site			VARCHAR(20)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' 	PATH "$.Site" 
+			,	Site			VARCHAR(20)		PATH "$.Site" 
 			,	RoleID			TINYINT		 	PATH "$.RoleID" 
 			,	Currency		VARCHAR(50) 	PATH "$.Currency" 
 			,	CurrencyID		INT			 	PATH "$.CurrencyID" 
@@ -238,7 +239,10 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
     CREATE TEMPORARY TABLE Temp_Cust(
 			CTSCustID		BIGINT 	UNSIGNED
-        ,	CustID			BIGINT	UNSIGNED        
+        ,	CustID			BIGINT	UNSIGNED
+        ,	CustSubID		INT	UNSIGNED
+        ,	UserName		VARCHAR(50)
+        ,	RegisterName	VARCHAR(50)
         ,	SubscriberID	INT UNSIGNED
         ,	RoleID			INT        
         ,	SRecommend		BIGINT	UNSIGNED
@@ -253,7 +257,10 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_VVIPCust;
     CREATE TEMPORARY TABLE Temp_VVIPCust(
 			CTSCustID		BIGINT UNSIGNED
-        ,	CustID			BIGINT	UNSIGNED
+        ,	CustID			INT	UNSIGNED        
+		,	CustSubID		INT	UNSIGNED
+        ,	UserName		VARCHAR(50)
+        ,	RegisterName	VARCHAR(50)
         ,	SubscriberID	INT UNSIGNED
         ,	RoleID			INT
         ,	CreatedBy		INT
@@ -261,9 +268,12 @@ BEGIN
         ,	PRIMARY KEY Temp_CustVVIP_CustID(CustID)
     ); 
 	
-    INSERT INTO Temp_Cust(CTSCustID, CustID, SubscriberID, RoleID, SRecommend, MRecommend, Recommend, DirectUpLine)
+    INSERT INTO Temp_Cust(CTSCustID, CustID, CustSubID, UserName, RegisterName, SubscriberID, RoleID, SRecommend, MRecommend, Recommend, DirectUpLine)
     SELECT 	cus.CTSCustID
 		,	cus.CustID
+        ,	cus.CustSubID
+        ,	cus.UserName
+        ,	cus.RegisterName
         ,	cus.SubscriberID
         ,	cus.RoleID
         ,	cus.SRecommend
@@ -273,16 +283,28 @@ BEGIN
 				WHEN cus.RoleID = 2 THEN cus.MRecommend
                 WHEN cus.RoleID = 3 THEN cus.SRecommend END) AS DirectUpLine               
     FROM Temp_CTSCustomer AS tmpCus	
-    INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID AND cus.CustSubID = 0 AND tmpCus.CustSubID = 0 AND tmpCus.RoleID < 4
-    WHERE	tmpCus.DuplicateType = 0;
-    
-    INSERT INTO Temp_VVIPCust(CTSCustID, CustID, SubscriberID, CreatedBy, RoleID)
-    SELECT DISTINCT tmpCus.CTSCustID, tmpCus.CustID, tmpCus.SubscriberID, vip.CreatedBy, tmpCus.RoleID
+    INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID AND cus.CustSubID = 0 AND tmpCus.RoleID < 4;
+
+    INSERT INTO Temp_VVIPCust(CTSCustID, CustID, CustSubID, UserName, RegisterName, SubscriberID, CreatedBy, RoleID)
+    SELECT DISTINCT tmpCus.CTSCustID
+		,	tmpCus.CustID
+        ,	tmpCus.CustSubID
+        ,	tmpCus.UserName
+        ,	tmpCus.RegisterName
+        ,	tmpCus.SubscriberID
+        ,	vip.CreatedBy, tmpCus.RoleID
     FROM Temp_Cust AS tmpCus		
 		INNER JOIN CTS_DataCenter.CTSCustomerClassificationVVIP AS vip ON vip.CustID = tmpCus.DirectUpLine AND vip.IsAffectToDownline = 1;
     
-    INSERT IGNORE INTO Temp_VVIPCust(CTSCustID, CustID, SubscriberID, CreatedBy, RoleID)
-    SELECT DISTINCT tmpCus.CTSCustID, tmpCus.CustID, tmpCus.SubscriberID, que.CreatedBy, tmpCus.RoleID
+    INSERT IGNORE INTO Temp_VVIPCust(CTSCustID, CustID, CustSubID, UserName, RegisterName, SubscriberID, CreatedBy, RoleID)
+    SELECT DISTINCT tmpCus.CTSCustID
+		, 	tmpCus.CustID
+		,	tmpCus.CustSubID
+        ,	tmpCus.UserName
+        ,	tmpCus.RegisterName
+        ,	tmpCus.SubscriberID
+        ,	que.CreatedBy
+        ,	tmpCus.RoleID
     FROM Temp_Cust AS tmpCus		
 		INNER JOIN CTS_DataCenter.CTSCustomerClassificationVVIPQueue AS que ON que.CustID IN (tmpCus.SRecommend, tmpCus.MRecommend, tmpCus.Recommend) AND que.ActionType = 1;
     
@@ -305,6 +327,9 @@ BEGIN
 	/*****OUT PUT TO INSERT VVIP************/    
     SELECT	tmpVip.CTSCustID
 		,	tmpVip.CustID AS CustID
+        ,	tmpVip.CustSubID AS CustSubID
+        ,	tmpVip.UserName AS UserName
+        ,	tmpVip.RegisterName AS RegisterName
 		,	tmpVip.RoleID AS RoleID
 		,	tmpVip.SubscriberID AS SubscriberID
 		,	tmpVip.CreatedBy AS CreatedBy        
