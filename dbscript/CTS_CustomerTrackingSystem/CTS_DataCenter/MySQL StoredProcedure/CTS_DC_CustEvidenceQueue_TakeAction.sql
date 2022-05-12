@@ -19,6 +19,9 @@ BEGIN
 		Original:
 		Revisions:
 			- 20210204@Long.Luu: Created [Redmine ID: #148719]
+            - 20220426@Casey.Huynh: Add CreatedBy [Redmine ID: #171512]
+            
+            
 		Param's Explanation (filtered by):   
 			- ip_ActionID: 1 insert, 2 override, 3 clear
 		Example:			
@@ -59,8 +62,9 @@ BEGIN
 		SELECT GROUP_CONCAT(t.CTSCustID)
         INTO lv_CustIDList
 		FROM Temp_CustomerEvidences AS t;
-        
-		CALL CTS_DC_CustEvidence_ClearEvidence(lv_CustIDList, op_ErrorMessage, op_Result);
+
+		CALL CTS_DC_CustEvidence_ClearEvidence(ip_CustEvidence, op_ErrorMessage, op_Result);
+
     END IF;
 END$$
 DELIMITER ;

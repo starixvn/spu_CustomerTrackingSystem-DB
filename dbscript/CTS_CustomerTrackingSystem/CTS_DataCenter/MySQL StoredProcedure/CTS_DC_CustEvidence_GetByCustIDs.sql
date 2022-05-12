@@ -16,8 +16,12 @@ BEGIN
              - 20201224-20210107@Irena.Vo: Created. Insert Error Log [RedmineID: #145951]
              - 20210622@Aries.Nguyen: Update coding convention and improve locking[Redmine ID: #157203]
              - 20220421@Irena.Vo: Rename select CustId -> CustID [Redmine ID: #170468]
+             - 20220426@Casey.Huynh: Return CreatedBy [Redmine ID: #171512]
            
-		Param's Explanation (filtered by):		 	
+		Param's Explanation (filtered by):
+        
+        Example:
+			CALL CTS_DC_CustEvidence_GetByCustIDs('1,23');
 	*/   
     DECLARE lv_ErrorMessage		VARCHAR(200) DEFAULT '0';
     DECLARE	lv_No				INT			 DEFAULT 0;
@@ -68,6 +72,7 @@ BEGIN
 	    ,	temp.CTSCustID
         ,	temp.SubscriberID
         ,	e.EvidenceID
+        ,	ce.CreatedBy
         ,	0 AS ActionType
     FROM Temp_Customer AS temp
         INNER JOIN CTS_DataCenter.CustEvidence AS ce ON ce.CTSCustID = temp.CTSCustID AND ce.Level = 0

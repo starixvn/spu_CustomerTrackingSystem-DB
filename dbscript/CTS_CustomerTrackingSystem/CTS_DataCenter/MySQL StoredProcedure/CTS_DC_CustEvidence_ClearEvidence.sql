@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_CustEvidence_ClearEvidence`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustEvidence_ClearEvidence`(
-		IN ip_CTSCustIDList 		VARCHAR(8000)
+		IN ip_CustJson 				JSON
     
     ,	OUT op_ErrorMessage 		VARCHAR(200) 
     ,	OUT op_Result 				VARCHAR(8000)
@@ -23,16 +23,16 @@ BEGIN
 			- 20210823@Aries.Nguyen: Enhannce  Affected Evidence flow [Redmine ID: #160470]
 			- 20210920@Aries.Nguyen: Split history log  [Redmine ID: #161890]
 			- 20220414@Aries.Nguyen: Add new category/class for PA Probation [Redmine ID: #170468]
-
+            - 20220426@Casey.Huynh: Add CreatedBy [Redmine ID: #171512]
+            
 		Param's Explanation (filtered by):   
 			- ActionID: 1 insert, 2 override, 3 clear
             
 		Example:			
-			- CALL CTS_DataCenter.CTS_DC_CustEvidence_ClearEvidence('8', @op_ErrorMessage);
+			- CALL CTS_DataCenter.CTS_DC_CustEvidence_ClearEvidence('5940,40290236', 8, @op_ErrorMessage, @op_Result);
 	*/
         
     DECLARE	lv_CurrentDateTime 		DATETIME DEFAULT CURRENT_TIME();
-    DECLARE lv_CreatedBy 			BIGINT DEFAULT  10278938;
     DECLARE	lv_IsSyncEvi2Category 	VARCHAR(1) DEFAULT '';  
     
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
@@ -40,23 +40,28 @@ BEGIN
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_InputCustList;
+    CREATE TEMPORARY TABLE 	Temp_InputCustList (
+			CTSCustID		BIGINT UNSIGNED PRIMARY KEY
+		,	RemoveBy		INT	UNSIGNED
+	);
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerID;
     CREATE TEMPORARY TABLE 		Temp_CustomerID (
 			CustID 				BIGINT UNSIGNED
 		,	CTSCustID			BIGINT UNSIGNED DEFAULT 0
+        ,	RemoveBy			INT	UNSIGNED
         , 	PRIMARY KEY     	PK_Temp_CustomerID_CTSCustID_CustID(CTSCustID,CustID)
 	);  
 	
-	DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustID;
-    CREATE TEMPORARY TABLE 		Temp_CTSCustID (
-			CTSCustID			BIGINT UNSIGNED PRIMARY KEY   	
-	);
+	
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerEvidence;
     CREATE TEMPORARY TABLE 		Temp_CustomerEvidence (			
 			CTSCustID			BIGINT UNSIGNED DEFAULT 0
 		,	CustID 				BIGINT UNSIGNED
 		,	EvidenceID			SMALLINT UNSIGNED
+        ,	RemoveBy			INT	UNSIGNED
         , 	PRIMARY KEY     	PK_Temp_CustomerEvidence_CTSCustID_EvidenceID(CTSCustID,EvidenceID)
 	);   
     
@@ -68,22 +73,40 @@ BEGIN
         ,	CategoryID			SMALLINT UNSIGNED
         , 	PRIMARY KEY     	PK_Temp_ExistedClass(CustID,CategoryID)
 	);   
+	
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustomerEvidences;    
+	CREATE TEMPORARY TABLE Temp_CustomerEvidences 
+	(	 
+			CTSCustID		BIGINT UNSIGNED
+        ,	EvidenceID		SMALLINT UNSIGNED
+        ,	Remark			VARCHAR(500)
+        ,	RemoveBy		INT UNSIGNED
         
-    SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_CTSCustID (CTSCustID) VALUES ('", REPLACE(ip_CTSCustIDList, ",", "'),('"),"');");
-	PREPARE 	stmt1 FROM @sql;
-	EXECUTE 	stmt1;
+		, 	INDEX	IX_Temp_CustomerEvidences_CTSCustID_EvidenceID(CTSCustID,EvidenceID) 
+	);      
     
-	INSERT INTO Temp_CustomerID(CTSCustID, CustID)
+    INSERT INTO Temp_InputCustList(CTSCustID, RemoveBy)
+	SELECT	tmpTable.CTSCustID
+		,	tmpTable.RemoveBy
+	FROM JSON_TABLE(ip_CustJson, 
+		"$[*]" COLUMNS(
+			  CTSCustID 	BIGINT UNSIGNED		PATH "$.CTSCustID"
+            , RemoveBy		INT UNSIGNED		PATH "$.CreatedBy"
+		)) AS tmpTable;	
+    
+	INSERT INTO Temp_CustomerID(CTSCustID, CustID, RemoveBy)
     SELECT  t.CTSCustID
 		,	c.CustID
-	FROM Temp_CTSCustID AS t
+        ,	t.RemoveBy
+	FROM Temp_InputCustList AS t
 		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON t.CTSCustID = c.CTSCustID;
-    
-    INSERT INTO Temp_CustomerEvidence(CTSCustID,CustID,EvidenceID)
+  
+    INSERT INTO Temp_CustomerEvidence(CTSCustID,CustID,EvidenceID, RemoveBy)
     SELECT	DISTINCT 
 			e.CTSCustID
 		,	t.CustID
 		,	e.EvidenceID
+        ,	t.RemoveBy
     FROM CTS_DataCenter.CustEvidence AS e
 		INNER JOIN Temp_CustomerID AS t ON e.CTSCustID = t.CTSCustID
 	WHERE e.Level = 0;
@@ -120,24 +143,26 @@ BEGIN
 		INNER JOIN  Temp_CustomerEvidence AS tmp ON tmp.CustID = clss.CustID 
 		INNER JOIN  CTS_DataCenter.CustomerCategory AS cate ON (cate.EvidenceID_Licensee = tmp.EvidenceID OR cate.EvidenceID_Credit = tmp.EvidenceID) 
 																AND cate.SourceType = 'Evidence' 
-																AND clss.CategoryID = cate.CategoryID; 
+																AND clss.CategoryID = cate.CategoryID;
+                                                    
 		DELETE  clss
 		FROM CTS_DataCenter.CTSCustomerClassification AS clss       
 		INNER JOIN  Temp_ExistedClass AS tmp ON  clss.CustID = tmp.CustID AND clss.CategoryID = tmp.CategoryID; 
-            
-		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
+
+		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate
+				, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
 		SELECT DISTINCT t.CustID
 			, 	t.CTSCustID
 			, 	ec.CategoryID
-			, 	0
-			, 	lv_CurrentDateTime
-			, 	lv_CreatedBy
-			, 	2
-			, 	1
-			, 	DATE(lv_CurrentDateTime)
-			, 	-1
-			, 	9
-			,   1
+			, 	0 AS SportGroupID
+			, 	lv_CurrentDateTime AS LastModifiedDate
+			, 	t.RemoveBy AS LastModifiedBy
+			, 	2 AS ActionType
+			, 	1 AS IsAuto
+			, 	DATE(lv_CurrentDateTime) AS InsertDate
+			, 	-1 AS TargetCC
+			, 	9 AS SourceTypeID
+			,   1 AS IsDataChanged
 		FROM Temp_CustomerEvidence AS t             
 			INNER JOIN Temp_ExistedClass AS ec ON t.EvidenceID = ec.EvidenceID;
 
@@ -145,9 +170,9 @@ BEGIN
 		SELECT DISTINCT t.CustID
 			, 	t.CTSCustID
 			, 	ec.CategoryID
-			, 	0
+			, 	0 AS SportGroupID
 			, 	lv_CurrentDateTime
-			, 	lv_CreatedBy
+			, 	t.RemoveBy AS CreatedBy
 			, 	2
 			, 	1
 			, 	DATE(lv_CurrentDateTime)
@@ -161,9 +186,7 @@ BEGIN
         INTO op_Result
 		FROM Temp_CustomerEvidence;
     END IF;
-     
-    DROP TEMPORARY TABLE Temp_CustomerID;
-    DROP TEMPORARY TABLE Temp_CustomerEvidence;
+
 END$$
 
 DELIMITER ;

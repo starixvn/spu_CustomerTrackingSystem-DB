@@ -20,7 +20,9 @@ sp: BEGIN
 		Revisions:
 			- 20201214-20201229@Irena.Vo: Add logic insert Pin/Unpin. Update logic SP. Update param name  [RedmineID: #145951]
             - 20210525@Irena.Vo: Change col name PinCustomerCategory: CustID -> CTSCustID [RedmineID: #152965]
+            - 20220428@Casey.Huynh.Huynh: Update Creator for CustomerClassification [Redmine ID: #171512]
 		Param's Explanation:
+        
 	*/ 
     DECLARE lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();
     DECLARE lv_SPName 			VARCHAR(200) DEFAULT 'CTS_DC_AssociatedAccountMonitor_UpdatePin'; 
@@ -32,8 +34,8 @@ sp: BEGIN
     
     /*Verify Pin category.*/
     IF (ip_IsPinCategory = 1) THEN
-		INSERT INTO CTS_DataCenter.PinCustomerCategory(CTSCustID, CreatedTime) 
-		SELECT ip_CTSCustID, lv_CurrentDateTime;
+		INSERT INTO CTS_DataCenter.PinCustomerCategory(CTSCustID, CreatedTime, CreatedBy) 
+		SELECT ip_CTSCustID, lv_CurrentDateTime, ip_CreatedBy;
 		 
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 		VALUES(21, lv_SPName, CONCAT('Pin CTSCustomerClassification: ip_CTSCustID_', ip_CTSCustID, ';ip_SubscriberID_', ip_SubscriberID), lv_CurrentDateTime, ip_CreatedBy);

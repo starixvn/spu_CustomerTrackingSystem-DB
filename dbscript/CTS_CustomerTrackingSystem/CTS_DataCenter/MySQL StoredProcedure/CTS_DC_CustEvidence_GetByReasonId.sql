@@ -14,12 +14,13 @@ BEGIN
 		Original:
 		Revisions:
 			- 20220307@Irena.Vo: Created [Redmine ID: #159014]
+            - 20220426@Casey.Huynh: Return Evidence CreatedBy [Redmine ID: #171512]
 		Param's Explanation (filtered by):
         Example:
-			- CALL CTS_DC_CustEvidence_GetByReasonId('[{"CustID": 5940, "ReasonID": 28},{"CustID": 5940, "ReasonID": 102},
-														{"CustID": 40290236, "ReasonID": 28},{"CustID": 40290236, "ReasonID": 102},
-														{"CustID": 5941, "ReasonID": 29},
-														{"CustID": 40290237, "ReasonID": 103}]');
+			- CALL CTS_DC_CustEvidence_GetByReasonId('[{"CustID": 5940, "ReasonID": 28,"CreatedBy": 8},{"CustID": 5940, "ReasonID": 29,"CreatedBy": 8 },
+														{"CustID": 40290236, "ReasonID": 28, "CreatedBy": 8},{"CustID": 40290236, "ReasonID": 102,"CreatedBy": 8},
+														{"CustID": 5941, "ReasonID": 29,"CreatedBy": 8},
+														{"CustID": 40290237, "ReasonID": 103,"CreatedBy": 8}]');
 	*/
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustParam;    
 	CREATE TEMPORARY TABLE Temp_CustParam( 	  
@@ -27,19 +28,22 @@ BEGIN
         , 	CTSCustID		BIGINT UNSIGNED
         ,	EvidenceID		INT 
         ,   EvidenceCode	VARCHAR(10)
+        ,	CreatedBy		INT
         ,   PRIMARY KEY(CTSCustID,EvidenceID)
 	);
 	
-	/*	2: GET EXISTED CUSTOMERS */
-    INSERT IGNORE INTO Temp_CustParam(CustID,CTSCustID,EvidenceID,EvidenceCode)
+    /*	2: GET EXISTED CUSTOMERS */
+    INSERT IGNORE INTO Temp_CustParam(CustID, CreatedBy, CTSCustID,EvidenceID,EvidenceCode)
 	SELECT	info.CustID
-		,	cust.CTSCustID
+		,	info.CreatedBy
+		,	cust.CTSCustID        
         ,	ev.EvidenceID
         ,	ev.EvidenceCode
 	FROM JSON_TABLE(ip_InputCustomers,
 		 "$[*]" COLUMNS(
 				CustID			VARCHAR(50)		PATH "$.CustID" 
-			, 	ReasonID		INT				PATH "$.ReasonID")
+			, 	ReasonID		INT				PATH "$.ReasonID"
+            , 	CreatedBy		INT				PATH "$.CreatedBy")
 	) AS info
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON info.CustID = cust.CustID AND cust.CustSubID = 0
 		INNER JOIN CTS_DataCenter.MappingSubscriberSite AS m ON cust.SiteID = m.SiteID,
@@ -52,6 +56,7 @@ BEGIN
     
     CALL CTS_DC_ExcludeCustByCondition('Temp_CustParam');
     
+    
     DELETE ec
     FROM Temp_CustParam AS ec
 		INNER JOIN CTS_DataCenter.PinCustomerCategory AS pin on pin.CTSCustID = ec.CTSCustID; 
@@ -63,6 +68,7 @@ BEGIN
 		, 	ec.EvidenceID
         , 	ec.EvidenceCode
         , 	'Add from Problem Account Management' AS Remark 
+        ,	ec.CreatedBy
     FROM Temp_CustParam AS ec ;
 END$$
 DELIMITER ;
