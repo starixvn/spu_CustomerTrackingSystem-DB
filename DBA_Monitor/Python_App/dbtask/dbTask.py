@@ -47,6 +47,34 @@ class DBTaskHelper:
             return listConfig;  
         except Exception as ex:
             raise Exception(("GetArchiveConfig",ex)) 
+    
+    def GetDropPartitionConfig(self):
+        try:
+            listConfig = self.db.Call_SP(self.connArchiveOpt,'DBA_DropPartition_Config_Get',None)
+            return listConfig;  
+        except Exception as ex:
+            raise Exception(("GetDropPartitionConfig",ex)) 
+    
+    def GetReOrganizePartitionConfig(self):
+        try:
+            listConfig = self.db.Call_SP(self.connArchiveOpt,'DBA_ReOrganizePartition_Config_Get',None)
+            return listConfig;  
+        except Exception as ex:
+            raise Exception(("GetReOrganizePartitionConfig",ex)) 
+
+    def GetSlowLogConfig(self):
+        try:
+            listConfig = self.db.Call_SP(self.connArchiveOpt,'DBA_SlowLog_Config_Get',None)
+            return listConfig;  
+        except Exception as ex:
+            raise Exception(("GetSlowLogConfig",ex)) 
+    
+    def GetFragmentationTableConfig(self):
+        try:
+            listConfig = self.db.Call_SP(self.connArchiveOpt,'DBA_FragmentationTable_Config_Get',None)
+            return listConfig;  
+        except Exception as ex:
+            raise Exception(("GetFragmentationTableConfig",ex)) 
 
     def CheckPartitionExist(self,connOpt,database,tableName,keepDataRange):
         try:
@@ -63,6 +91,22 @@ class DBTaskHelper:
             return (False,'');
         except Exception as ex:
             raise Exception(("CheckPartitionExist",ex,database,tableName,keepDataRange)) 
+
+    def CheckPartitionExistByName(self,connOpt,database,tableName,partitionName):
+        try:
+            query = ''' SELECT 1 AS HasPartition
+                        FROM information_schema.partitions
+                        WHERE TABLE_CATALOG = "def"
+	                    AND TABLE_SCHEMA = "{database}"
+                        AND TABLE_NAME = "{tableName}"
+                        AND PARTITION_NAME = {partitionName};
+                    '''.format(database=database,tableName=tableName,partitionName=partitionName).replace('\t'," ").replace('\n'," ")
+            hasPartition = self.db.Execute(connOpt,query)
+            if hasPartition and hasPartition[0]['HasPartition'] == 1:
+                return True;
+            return False;
+        except Exception as ex:
+            raise Exception(("CheckPartitionExistByName",ex,database,tableName,partitionName))
 
     def CheckSchemaTableSync(self,connOpt, database, tableName, tempTableName):
         try:
@@ -367,6 +411,203 @@ class DBTaskHelper:
 
     def ArchiveJob(self,runType):
         configs = self.GetArchiveConfig(runType)
+        for config in configs[0]:
+            self.ArchivePartition(config)
+
+    def DropPartitionByConfig(self,configOjb):
+        try:
+            notificationMetaDataStr = configOjb['NotificationMetaData']
+            notificationMetaData = json.loads(notificationMetaDataStr)
+
+            mysqlOpt = {
+                "host": configOjb['ServerIP'],
+                "user": configOjb['MysqlUser'], 
+                "password": configOjb['MysqlPassword'],
+                "db": configOjb['Database'],
+                "port": configOjb['ServerPort']
+            }
+
+            self.telegramOpt = {
+                "token": notificationMetaData['token'],
+                "chat_id": notificationMetaData['chat_id']
+            }
+            messText ='''<b>Drop Partition</b>\n\nServer: {server}\nTable: {database}.{table}\nPartition Name: {partitionName} {partitionDate}\n\nStatus: '''.format(server=configOjb['ServerName'],
+                                                        database=configOjb['Database'],
+                                                        table=configOjb['Table'],
+
+                                                        partitionName=configOjb['PartitionName'],
+                                                        partitionDate=configOjb['PartitionDate'])
+
+            self.UpdateServerStatus(configOjb['ServerID'],"Drop Partition - Running")
+
+            #Check source partition exist
+            partition_info = self.CheckPartitionExistByName(mysqlOpt, configOjb['Database'],configOjb['Table'], configOjb['PartitionName']);
+            if partition_info == False:
+                messText = messText + "<b>Partition isn't exist</b>"
+                self.UpdateServerStatus(configOjb['ServerID'],"None")
+                self.tele.SendTelegramMessage(self.telegramOpt,messText);
+                return
+
+            self.DropPartiton(mysqlOpt,configOjb['Table'],configOjb['PartitionName'])
+            
+            self.UpdateServerStatus(configOjb['ServerID'],"None")
+
+            messText = messText +  "<b>Processed</b>"
+
+            self.tele.SendTelegramMessage(self.telegramOpt,messText);
+
+        except Exception as ex:
+            self.WriteLog(("DropPartitionByConfig",ex))
+
+    def DropPartitionJob(self):
+        configs = self.GetDropPartitionConfig()
+        for config in configs[0]:
+            self.ArchivePartition(config)
+
+    def ReOrganizePartitionByConfig(self,configOjb):
+        try:
+            notificationMetaDataStr = configOjb['NotificationMetaData']
+            notificationMetaData = json.loads(notificationMetaDataStr)
+
+            mysqlOpt = {
+                "host": configOjb['ServerIP'],
+                "user": configOjb['MysqlUser'], 
+                "password": configOjb['MysqlPassword'],
+                "db": configOjb['Database'],
+                "port": configOjb['ServerPort']
+            }
+
+            self.telegramOpt = {
+                "token": notificationMetaData['token'],
+                "chat_id": notificationMetaData['chat_id']
+            }
+            messText ='''<b>ReOrganizePartition Partition</b>\n\nServer: {server}\nTable: {database}.{table}\nPartition Name: {partitionName} {PartitionDes}\n\nStatus: '''.format(server=configOjb['ServerName'],
+                                                        database=configOjb['Database'],
+                                                        table=configOjb['Table'],
+
+                                                        partitionName=configOjb['PartitionName'],
+                                                        partitionDes=configOjb['PartitionDes'])
+
+            self.UpdateServerStatus(configOjb['ServerID'],"ReOrganizePartition Partition - Running")
+
+            #Check source partition exist
+            partition_info = self.CheckPartitionExistByName(mysqlOpt, configOjb['Database'],configOjb['Table'], configOjb['PartitionName']);
+            if partition_info == True:
+                messText = messText + "<b>Partition existed</b>"
+                self.UpdateServerStatus(configOjb['ServerID'],"None")
+                self.tele.SendTelegramMessage(self.telegramOpt,messText);
+                return
+
+            self.ReorganizePartiton(mysqlOpt,configOjb['Table'],configOjb['PartitionName'],configOjb['PartitionDes'],configOjb['PartitionMax'])
+            
+            self.UpdateServerStatus(configOjb['ServerID'],"None")
+
+            messText = messText +  "<b>Processed</b>"
+
+            self.tele.SendTelegramMessage(self.telegramOpt,messText);
+
+        except Exception as ex:
+            self.WriteLog(("DropPartitionByConfig",ex))
+
+    def ReOrganizePartitionJob(self):
+        configs = self.GetReOrganizePartitionConfig()
+        for config in configs[0]:
+            self.ArchivePartition(config)
+
+    def GetSlowLog(self,connOpt):
+        try:
+            query = 'SELECT Start_Time,User_Host,Query_Time,Lock_Time,Rows_Sent,Rows_Examined,DB,Last_Insert_ID,Insert_ID,Server_ID,Sql_Text,Thread_ID FROM mysql.slow_log;'
+            query = self.db.Execute(connOpt,query)
+            return json.dumps(list)
+        except Exception as ex:
+            raise Exception(("GetSlowLog",ex))
+
+    def InsertSlowLog(self,connOpt,logs,serverID):
+        try:
+            self.db.Call_SP(connOpt,'DBA_SlowLog_Insert',(logs,serverID,))
+        except Exception as ex:
+            raise Exception(("InsertSlowLog",ex))
+
+    def TruncateSlowLog(self,connOpt):
+        try:
+            query = 'SET sql_log_bin = OFF;truncate table mysql.slow_log;'
+            self.db.Execute(connOpt,query)
+        except Exception as ex:
+            raise Exception(("TruncateSlowLog",ex))
+
+    def ArchiveSlowLog(self,configOjb):
+        try:
+            notificationMetaDataStr = configOjb['NotificationMetaData']
+            notificationMetaData = json.loads(notificationMetaDataStr)
+
+            mysqlOpt = {
+                "host": configOjb['ServerIP'],
+                "user": configOjb['MysqlUser'], 
+                "password": configOjb['MysqlPassword'],
+                "db": configOjb['Database'],
+                "port": configOjb['ServerPort']
+            }
+
+            self.telegramOpt = {
+                "token": notificationMetaData['token'],
+                "chat_id": notificationMetaData['chat_id']
+            }
+
+
+            self.UpdateServerStatus(configOjb['ServerID'],"Move Slow Log - Running")
+
+            dataLogs = self.GetSlowLog(mysqlOpt)
+
+            self.InsertSlowLog(mysqlOpt,dataLogs,configOjb['ServerID'])
+
+            self.TruncateSlowLog(mysqlOpt)
+
+            self.UpdateServerStatus(configOjb['ServerID'],"None")
+
+        except Exception as ex:
+            self.WriteLog(("DropPartitionByConfig",ex))
+
+    def SlowLogJob(self):
+        configs = self.GetSlowLogConfig()
+        for config in configs[0]:
+            self.ArchiveSlowLog(config)
+    
+    def RebuildTable(self,connOpt,tableName):
+        try:
+            query =  '''ALTER TABLE {tableName} ENGINE=INNODB;'''.format(tableName=tableName)
+            self.db.Execute(connOpt,query);
+        except Exception as ex:
+            raise Exception(("RebuildTable",ex,tableName))
+
+    def FragmentationTable(self,configOjb):
+        try:
+            notificationMetaDataStr = configOjb['NotificationMetaData']
+            notificationMetaData = json.loads(notificationMetaDataStr)
+
+            mysqlOpt = {
+                "host": configOjb['ServerIP'],
+                "user": configOjb['MysqlUser'], 
+                "password": configOjb['MysqlPassword'],
+                "db": configOjb['Database'],
+                "port": configOjb['ServerPort']
+            }
+
+            self.telegramOpt = {
+                "token": notificationMetaData['token'],
+                "chat_id": notificationMetaData['chat_id']
+            }
+
+            self.UpdateServerStatus(configOjb['ServerID'],"Rebuild Table - Running")
+
+            self.RebuildTable(mysqlOpt,configOjb['TableName'])
+
+            self.UpdateServerStatus(configOjb['ServerID'],"None")
+
+        except Exception as ex:
+            self.WriteLog(("DropPartitionByConfig",ex))
+
+    def FragmentationTableJob(self):
+        configs = self.GetFragmentationTableConfig()
         for config in configs[0]:
             self.ArchivePartition(config)
 
