@@ -32,7 +32,7 @@ CREATE TABLE CTSCustomerDuplicate (
 	,	InsertedTime DATETIME(4) DEFAULT NULL COMMENT 'When row inserted'
 	,	ModifiedTime DATETIME(4) DEFAULT NULL COMMENT 'When row modified'
     ,	DuplicateType 	TINYINT
-    ,	DupCTSCustID	BIGINT UNSIGNED
+    ,	OldCTSCustID	BIGINT UNSIGNED
 	,	PRIMARY KEY PK_CTSCustomerDuplicate_ID(ID)
 	,	INDEX IX_CTSCustomerDuplicate_UserName (UserName)
 ) ENGINE=InnoDB ;

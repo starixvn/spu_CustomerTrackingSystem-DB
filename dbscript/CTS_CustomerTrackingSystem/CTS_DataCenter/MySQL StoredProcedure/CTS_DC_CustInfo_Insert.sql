@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CustInfo_Insert`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustInfo_Insert_DupUserName`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustInfo_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustInfo_Insert_DupUserName`(
 	IN ip_CustomerList JSON
 )
     SQL SECURITY INVOKER
@@ -57,8 +57,8 @@ BEGIN
 		,	MRecommend		INT	 UNSIGNED 			
 		,	Recommend		INT	 UNSIGNED
         ,	CreatedDate		DATETIME
-        ,	DuplicateType 	TINYINT #1-Dup(CustID and CustSubID), 2-Dup UserName(not dup CustID and CustSubID)
-        ,	DupCTSCustID	BIGINT UNSIGNED
+        ,	DuplicateType 	TINYINT DEFAULT 0#1-Dup(CustID and CustSubID), 2-Dup UserName(not dup CustID and CustSubID)
+        ,	OldCTSCustID	BIGINT UNSIGNED
         
         ,	PRIMARY KEY PK_Temp_CTSCustomer(CustID, CustSubID)
         ,	INDEX IX_Temp_CTSCustomer_SiteIDRoleID(SiteID, RoleID)
@@ -67,19 +67,18 @@ BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustExist;    
 	CREATE TEMPORARY TABLE Temp_CustExist(
-			DupCTSCustID	BIGINT UNSIGNED
-		,	CustID			INT UNSIGNED
+			CustID			INT UNSIGNED
 		,	CustSubID		INT
         
-        ,	PRIMARY KEY PK_Temp_CustExist (DupCTSCustID)
+        ,	PRIMARY KEY PK_Temp_CustExist(CustID,CustSubID)
 	);
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_DupUserName;    
 	CREATE TEMPORARY TABLE Temp_DupUserName(
-			DupCTSCustID	BIGINT UNSIGNED
-        ,	UserName		VARCHAR(50)
+			UserName		VARCHAR(50)
         ,	CustID			INT UNSIGNED
 		,	CustSubID		INT UNSIGNED
+        ,	OldCTSCustID	BIGINT UNSIGNED
         
         ,	PRIMARY KEY PK_Temp_DupUserName(UserName)
 	);
@@ -91,7 +90,7 @@ BEGIN
 		,	SubscriberID 	INT UNSIGNED
 		,	RegisterName	VARCHAR(50)
         
-        ,	PRIMARY KEY PK_Temp_CustInfo(CustID)
+        ,	PRIMARY KEY PK_Temp_CustInfo(CustID,CustSubID)
 	);
 
     INSERT INTO Temp_CTSCustomer(CustID, CustStatusID, Danger1, Danger2, Danger3, CustSubID, UserName, UserName2, SiteID
@@ -135,34 +134,40 @@ BEGIN
 			)
 	) AS js;	   
     
-	INSERT INTO Temp_CustExist(DupCTSCustID, CustID, CustSubID)
-	SELECT	cus.DupCTSCustID
-		,	tmpCus.CustID
+	INSERT INTO Temp_CustExist(CustID, CustSubID)
+	SELECT	tmpCus.CustID
 		,	tmpCus.CustSubID        
 	FROM Temp_CTSCustomer AS tmpCus
 		INNER JOIN	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID AND tmpCus.CustSubID = cus.CustSubID;
-        
-	INSERT INTO Temp_DupUserName(DupCTSCustID, CustID, CustSubID)
-	SELECT  cus.DupCTSCustID
+        SELECT 1;
+	INSERT INTO Temp_DupUserName(UserName, CustID, CustSubID, OldCTSCustID)
+	SELECT  tmpCus.UserName		
 		,	tmpCus.CustID
         ,	tmpCus.CustSubID
+        ,	cus.CTSCustID
 	FROM Temp_CTSCustomer AS tmpCus
 		LEFT JOIN Temp_CustExist AS tmpEx ON tmpCus.CustID = tmpEx.CustID AND tmpCus.CustSubID = tmpEx.CustSubID
-		INNER JOIN	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID AND tmpCus.CustSubID = cus.CustSubID
+		INNER JOIN	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.UserName = cus.UserName
 	WHERE tmpEx.CustID IS NULL;
-    
+    SELECT 2;
     UPDATE Temp_CTSCustomer AS tmpCus
 		INNER JOIN Temp_CustExist AS tmpEx ON tmpCus.CustID = tmpEx.CustID AND tmpCus.CustSubID = tmpEx.CustSubID
-    SET tmpCus.DuplicateType = 1
-		AND tmpCus.DupCTSCustID = tmpEx.CTSCustID;
+    SET tmpCus.DuplicateType = 1;
     
+    SELECT 3, tmpCus.DuplicateType, tmpCus.OldCTSCustID, tmpCus.*
+    FROM Temp_CTSCustomer AS tmpCus
+		INNER JOIN Temp_DupUserName AS tmpDun ON tmpCus.UserName = tmpDun.UserName;
+    
+   
     UPDATE Temp_CTSCustomer AS tmpCus
-		INNER JOIN Temp_DupUserName AS tmpDun ON tmpCus.CustID = tmpDun.CustID AND tmpCus.CustSubID = tmpDun.CustSubID
+		INNER JOIN Temp_DupUserName AS tmpDun ON tmpCus.UserName = tmpDun.UserName
     SET tmpCus.DuplicateType = 2
-		AND tmpCus.DupCTSCustID = tmpDun.CTSCustID;
+		, tmpCus.OldCTSCustID = tmpDun.OldCTSCustID;
         
+     SELECT 4, tmpCus.*  FROM Temp_CTSCustomer AS tmpCus;
+     
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerDuplicate(SubscriberID, CustID, CustSubID, UserName, UserName2, SiteID, Site, RoleID, Currency, CurrencyID
-			, SRecommend, MRecommend, Recommend, CreatedDate , RegisterName , CustStatusID , Danger1 ,Danger2 , Danger3 , InsertedTime , ModifiedTime, DuplicateType, DupCTSCustID)
+			, SRecommend, MRecommend, Recommend, CreatedDate , RegisterName , CustStatusID , Danger1 ,Danger2 , Danger3 , InsertedTime , ModifiedTime, DuplicateType, OldCTSCustID)
 	SELECT    tmpCus.SubscriberID
 			, tmpCus.CustID
             , tmpCus.CustSubID
@@ -185,7 +190,7 @@ BEGIN
             , CURRENT_TIMESTAMP(4) AS InsertedTime
             , CURRENT_TIMESTAMP(4) AS ModifiedTime
             , tmpCus.DuplicateType
-            , tmpCus.CTSCustID
+            , tmpCus.OldCTSCustID
     FROM Temp_CTSCustomer AS tmpCus
     WHERE tmpCus.DuplicateType = 2;
     
