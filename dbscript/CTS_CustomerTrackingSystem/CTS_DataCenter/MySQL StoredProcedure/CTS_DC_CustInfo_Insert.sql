@@ -139,7 +139,7 @@ BEGIN
 		,	tmpCus.CustSubID        
 	FROM Temp_CTSCustomer AS tmpCus
 		INNER JOIN	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID AND tmpCus.CustSubID = cus.CustSubID;
-        SELECT 1;
+  
 	INSERT INTO Temp_DupUserName(UserName, CustID, CustSubID, OldCTSCustID)
 	SELECT  tmpCus.UserName		
 		,	tmpCus.CustID
@@ -149,22 +149,15 @@ BEGIN
 		LEFT JOIN Temp_CustExist AS tmpEx ON tmpCus.CustID = tmpEx.CustID AND tmpCus.CustSubID = tmpEx.CustSubID
 		INNER JOIN	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.UserName = cus.UserName
 	WHERE tmpEx.CustID IS NULL;
-    SELECT 2;
+
     UPDATE Temp_CTSCustomer AS tmpCus
 		INNER JOIN Temp_CustExist AS tmpEx ON tmpCus.CustID = tmpEx.CustID AND tmpCus.CustSubID = tmpEx.CustSubID
     SET tmpCus.DuplicateType = 1;
-    
-    SELECT 3, tmpCus.DuplicateType, tmpCus.OldCTSCustID, tmpCus.*
-    FROM Temp_CTSCustomer AS tmpCus
-		INNER JOIN Temp_DupUserName AS tmpDun ON tmpCus.UserName = tmpDun.UserName;
-    
-   
+
     UPDATE Temp_CTSCustomer AS tmpCus
 		INNER JOIN Temp_DupUserName AS tmpDun ON tmpCus.UserName = tmpDun.UserName
     SET tmpCus.DuplicateType = 2
 		, tmpCus.OldCTSCustID = tmpDun.OldCTSCustID;
-        
-     SELECT 4, tmpCus.*  FROM Temp_CTSCustomer AS tmpCus;
      
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerDuplicate(SubscriberID, CustID, CustSubID, UserName, UserName2, SiteID, Site, RoleID, Currency, CurrencyID
 			, SRecommend, MRecommend, Recommend, CreatedDate , RegisterName , CustStatusID , Danger1 ,Danger2 , Danger3 , InsertedTime , ModifiedTime, DuplicateType, OldCTSCustID)
