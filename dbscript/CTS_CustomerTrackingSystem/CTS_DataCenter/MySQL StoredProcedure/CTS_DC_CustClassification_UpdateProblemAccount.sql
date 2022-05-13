@@ -177,7 +177,8 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = clss.CategoryID 
 															AND cate.RelevantCategoryID IS NOT NULL
                                                             AND ((temp.WinlossStatus = 0 AND cate.IsProbation = 0) OR 
-																 (temp.WinlossStatus = 2 AND cate.IsProbation = 1));
+																 (temp.WinlossStatus <> 0 AND cate.IsProbation = 1 ) OR
+																  (temp.WinlossStatus IS NULL AND cate.IsProbation = 1 ));
 	
     UPDATE CTS_DataCenter.CTSCustomerClassification AS clss
     INNER JOIN Temp_ExistedClassification AS tmp ON clss.CustID = tmp.CustID AND clss.CategoryID = tmp.CategoryID
