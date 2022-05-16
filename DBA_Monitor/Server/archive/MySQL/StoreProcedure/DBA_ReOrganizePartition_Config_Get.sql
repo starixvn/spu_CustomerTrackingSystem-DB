@@ -31,6 +31,7 @@ BEGIN
     SELECT 	sv.SystemName 
 		,	sv.SystemRole
 		,	sv.ServerName 
+		,	sv.ID AS ServerID
 		,	sv.ServerIP 
 		,	sv.ServerPort 
 		,	sv.MysqlUser 

@@ -44,6 +44,7 @@ CREATE TABLE `ReOrganizePartitionJob` (
    `NotificationChannelID` int unsigned DEFAULT NULL,
    `HasAlert` bit(1) DEFAULT b'1',
    `IsActive` bit(1) DEFAULT b'1',
+   `LastExecuted` datetime DEFAULT NULL,
    `Created` datetime DEFAULT CURRENT_TIMESTAMP,
    `Modified` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
    PRIMARY KEY (`ID`)

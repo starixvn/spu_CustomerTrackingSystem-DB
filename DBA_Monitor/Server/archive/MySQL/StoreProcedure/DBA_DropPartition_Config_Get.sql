@@ -30,29 +30,28 @@ BEGIN
 	
     SELECT 	sv.SystemName 
 		,	sv.SystemRole
+        ,	sv.ID AS ServerID
 		,	sv.ServerName 
 		,	sv.ServerIP 
 		,	sv.ServerPort 
 		,	sv.MysqlUser 
 		,	sv.MysqlPassword 
     
+		,	job.ID AS JobID
 		,	job.Database 
 		,	job.Table 
-		,	job.PartitionMax
         ,   CASE WHEN job.PartitionType = 'Weekly' THEN CONCAT(job.PartitionPrefix,YEARWEEK(DATE_SUB(DATE_ADD(NOW(), INTERVAL 11 HOUR), INTERVAL job.DayRange DAY))) 
 				 WHEN job.PartitionType = 'Monthly' THEN CONCAT(job.PartitionPrefix,EXTRACT(YEAR_MONTH FROM DATE_SUB(DATE_ADD(NOW(), INTERVAL 11 HOUR), INTERVAL job.DayRange DAY)))
             END AS PartitionName
 		,	DATE_SUB(DATE_ADD(NOW(), INTERVAL 11 HOUR), INTERVAL job.DayRange DAY) AS PartitionDate
 		,	noti.MetaData AS NotificationMetaData
 		,	DATE(DATE_ADD(NOW(), INTERVAL 11 HOUR)) AS CurrentDate
-	FROM job.ReOrganizePartitionJob AS job
+	FROM MonDB.DropPartitionJob AS job
 		INNER JOIN MonDB.MysqlServer AS sv ON job.ServerID = sv.ID
 		INNER JOIN MonDB.NotificationChannel AS noti ON job.NotificationChannelID = noti.ID
 	WHERE   sv.DBATaskStatus = 'None'
 		AND job.IsActive = 1
-        AND job.DateExecute = lv_DayOfWeekGMT7 
-		AND job.TimeExecute <  lv_CurrTimeGMT7 
-		AND job.LastExecuted != lv_DateGMT7
+        AND job.LastExecuted != lv_DateGMT7
         AND (job.PartitionType = 'Weekly' 
 				OR (job.PartitionType = 'Monthly' AND lv_DayOfMonthGMT7 <= 7));
 END$$

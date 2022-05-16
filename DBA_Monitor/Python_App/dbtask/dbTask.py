@@ -50,28 +50,28 @@ class DBTaskHelper:
     
     def GetDropPartitionConfig(self):
         try:
-            listConfig = self.db.Call_SP(self.connArchiveOpt,'DBA_DropPartition_Config_Get',None)
+            listConfig = self.db.Call_SP(self.connArchiveOpt,'DBA_DropPartition_Config_Get',())
             return listConfig;  
         except Exception as ex:
             raise Exception(("GetDropPartitionConfig",ex)) 
     
     def GetReOrganizePartitionConfig(self):
         try:
-            listConfig = self.db.Call_SP(self.connArchiveOpt,'DBA_ReOrganizePartition_Config_Get',None)
+            listConfig = self.db.Call_SP(self.connArchiveOpt,'DBA_ReOrganizePartition_Config_Get',())
             return listConfig;  
         except Exception as ex:
             raise Exception(("GetReOrganizePartitionConfig",ex)) 
 
     def GetSlowLogConfig(self):
         try:
-            listConfig = self.db.Call_SP(self.connArchiveOpt,'DBA_SlowLog_Config_Get',None)
+            listConfig = self.db.Call_SP(self.connArchiveOpt,'DBA_SlowLog_Config_Get',())
             return listConfig;  
         except Exception as ex:
             raise Exception(("GetSlowLogConfig",ex)) 
     
     def GetFragmentationTableConfig(self):
         try:
-            listConfig = self.db.Call_SP(self.connArchiveOpt,'DBA_FragmentationTable_Config_Get',None)
+            listConfig = self.db.Call_SP(self.connArchiveOpt,'DBA_FragmentationTable_Config_Get',())
             return listConfig;  
         except Exception as ex:
             raise Exception(("GetFragmentationTableConfig",ex)) 
@@ -99,7 +99,7 @@ class DBTaskHelper:
                         WHERE TABLE_CATALOG = "def"
 	                    AND TABLE_SCHEMA = "{database}"
                         AND TABLE_NAME = "{tableName}"
-                        AND PARTITION_NAME = {partitionName};
+                        AND PARTITION_NAME = "{partitionName}";
                     '''.format(database=database,tableName=tableName,partitionName=partitionName).replace('\t'," ").replace('\n'," ")
             hasPartition = self.db.Execute(connOpt,query)
             if hasPartition and hasPartition[0]['HasPartition'] == 1:
@@ -276,6 +276,39 @@ class DBTaskHelper:
                 self.db.Execute(self.connArchiveOpt,query);
         except Exception as ex:
             raise Exception(("UpdateLastExecuted",ex,(ex,jobID,date)))
+    
+    def UpdateDropPartitionLastExecuted(self,jobID, date):
+        try:
+            if date and jobID:
+                query = '''Update MonDB.DropPartitionJob Set LastExecuted = "{date}" WHERE ID = {jobID};'''.format(jobID=jobID,date=date)
+                self.db.Execute(self.connArchiveOpt,query);
+        except Exception as ex:
+            raise Exception(("UpdateDropPartitionLastExecuted",ex,(ex,jobID,date)))
+    
+    def UpdateReOrganizePartitionLastExecuted(self,jobID, date):
+        try:
+            if date and jobID:
+                query = '''Update MonDB.ReOrganizePartitionJob Set LastExecuted = "{date}" WHERE ID = {jobID};'''.format(jobID=jobID,date=date)
+                self.db.Execute(self.connArchiveOpt,query);
+        except Exception as ex:
+            raise Exception(("UpdateReOrganizePartitionLastExecuted",ex,(ex,jobID,date)))
+    
+    def UpdateSlowLogLastExecuted(self,jobID, date):
+        try:
+            if date and jobID:
+                query = '''Update MonDB.SlowLogJob Set LastExecuted = "{date}" WHERE ID = {jobID};'''.format(jobID=jobID,date=date)
+                self.db.Execute(self.connArchiveOpt,query);
+        except Exception as ex:
+            raise Exception(("UpdateSlowLogLastExecuted",ex,(ex,jobID,date)))
+    
+    def UpdateFragmentationTableLastExecuted(self,jobID, date):
+        try:
+            if date and jobID:
+                query = '''Update MonDB.FragmentationTableJob Set LastExecuted = "{date}" WHERE ID = {jobID};'''.format(jobID=jobID,date=date)
+                self.db.Execute(self.connArchiveOpt,query);
+        except Exception as ex:
+            raise Exception(("UpdateFragmentationTableLastExecuted",ex,(ex,jobID,date)))
+
 
     def ArchivePartition(self,configOjb):
         try:
@@ -445,12 +478,15 @@ class DBTaskHelper:
             if partition_info == False:
                 messText = messText + "<b>Partition isn't exist</b>"
                 self.UpdateServerStatus(configOjb['ServerID'],"None")
+                self.UpdateDropPartitionLastExecuted(configOjb['JobID'],configOjb['CurrentDate'])
                 self.tele.SendTelegramMessage(self.telegramOpt,messText);
                 return
 
             self.DropPartiton(mysqlOpt,configOjb['Table'],configOjb['PartitionName'])
             
             self.UpdateServerStatus(configOjb['ServerID'],"None")
+
+            self.UpdateDropPartitionLastExecuted(configOjb['JobID'],configOjb['CurrentDate'])
 
             messText = messText +  "<b>Processed</b>"
 
@@ -462,7 +498,7 @@ class DBTaskHelper:
     def DropPartitionJob(self):
         configs = self.GetDropPartitionConfig()
         for config in configs[0]:
-            self.ArchivePartition(config)
+            self.DropPartitionByConfig(config)
 
     def ReOrganizePartitionByConfig(self,configOjb):
         try:
@@ -481,12 +517,12 @@ class DBTaskHelper:
                 "token": notificationMetaData['token'],
                 "chat_id": notificationMetaData['chat_id']
             }
-            messText ='''<b>ReOrganizePartition Partition</b>\n\nServer: {server}\nTable: {database}.{table}\nPartition Name: {partitionName} {PartitionDes}\n\nStatus: '''.format(server=configOjb['ServerName'],
+            messText ='''<b>ReOrganizePartition Partition</b>\n\nServer: {server}\nTable: {database}.{table}\nPartition Name: {partitionName} {partitionDate}\n\nStatus: '''.format(server=configOjb['ServerName'],
                                                         database=configOjb['Database'],
                                                         table=configOjb['Table'],
 
                                                         partitionName=configOjb['PartitionName'],
-                                                        partitionDes=configOjb['PartitionDes'])
+                                                        partitionDate=configOjb['PartitionDate'])
 
             self.UpdateServerStatus(configOjb['ServerID'],"ReOrganizePartition Partition - Running")
 
@@ -495,6 +531,7 @@ class DBTaskHelper:
             if partition_info == True:
                 messText = messText + "<b>Partition existed</b>"
                 self.UpdateServerStatus(configOjb['ServerID'],"None")
+                self.UpdateReOrganizePartitionLastExecuted(configOjb['JobID'],configOjb['CurrentDate'])
                 self.tele.SendTelegramMessage(self.telegramOpt,messText);
                 return
 
@@ -502,29 +539,31 @@ class DBTaskHelper:
             
             self.UpdateServerStatus(configOjb['ServerID'],"None")
 
+            self.UpdateReOrganizePartitionLastExecuted(configOjb['JobID'],configOjb['CurrentDate'])
+            
             messText = messText +  "<b>Processed</b>"
 
             self.tele.SendTelegramMessage(self.telegramOpt,messText);
 
         except Exception as ex:
-            self.WriteLog(("DropPartitionByConfig",ex))
+            self.WriteLog(("ReOrganizePartitionByConfig",ex))
 
     def ReOrganizePartitionJob(self):
         configs = self.GetReOrganizePartitionConfig()
         for config in configs[0]:
-            self.ArchivePartition(config)
+            self.ReOrganizePartitionByConfig(config)
 
     def GetSlowLog(self,connOpt):
         try:
             query = 'SELECT Start_Time,User_Host,Query_Time,Lock_Time,Rows_Sent,Rows_Examined,DB,Last_Insert_ID,Insert_ID,Server_ID,Sql_Text,Thread_ID FROM mysql.slow_log;'
-            query = self.db.Execute(connOpt,query)
-            return json.dumps(list)
+            data = self.db.Execute(connOpt,query)
+            return json.dumps(data, indent=4, sort_keys=True, default=str)
         except Exception as ex:
             raise Exception(("GetSlowLog",ex))
 
-    def InsertSlowLog(self,connOpt,logs,serverID):
+    def InsertSlowLog(self,logs,serverID):
         try:
-            self.db.Call_SP(connOpt,'DBA_SlowLog_Insert',(logs,serverID,))
+            self.db.Call_SP(self.connArchiveOpt,'DBA_SlowLog_Insert',(logs,serverID,))
         except Exception as ex:
             raise Exception(("InsertSlowLog",ex))
 
@@ -544,7 +583,7 @@ class DBTaskHelper:
                 "host": configOjb['ServerIP'],
                 "user": configOjb['MysqlUser'], 
                 "password": configOjb['MysqlPassword'],
-                "db": configOjb['Database'],
+                "db": "mysql",
                 "port": configOjb['ServerPort']
             }
 
@@ -558,14 +597,16 @@ class DBTaskHelper:
 
             dataLogs = self.GetSlowLog(mysqlOpt)
 
-            self.InsertSlowLog(mysqlOpt,dataLogs,configOjb['ServerID'])
+            self.InsertSlowLog(dataLogs,configOjb['ServerID'])
 
             self.TruncateSlowLog(mysqlOpt)
-
+            
             self.UpdateServerStatus(configOjb['ServerID'],"None")
 
+            self.UpdateSlowLogLastExecuted(configOjb['JobID'],configOjb['CurrentDate'])
+
         except Exception as ex:
-            self.WriteLog(("DropPartitionByConfig",ex))
+            self.WriteLog(("ArchiveSlowLog",ex))
 
     def SlowLogJob(self):
         configs = self.GetSlowLogConfig()
@@ -603,13 +644,14 @@ class DBTaskHelper:
 
             self.UpdateServerStatus(configOjb['ServerID'],"None")
 
+            self.UpdateFragmentationTableLastExecuted(configOjb['JobID'],configOjb['CurrentDate'])
         except Exception as ex:
             self.WriteLog(("DropPartitionByConfig",ex))
 
     def FragmentationTableJob(self):
         configs = self.GetFragmentationTableConfig()
         for config in configs[0]:
-            self.ArchivePartition(config)
+            self.FragmentationTable(config)
 
     def close(self):
         self.db.close()

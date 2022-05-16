@@ -20,19 +20,24 @@ BEGIN
         Example:
 			- CALL MonDB.DBA_ReOrganizeArchive_Config_Get();
 	*/
+    DECLARE lv_DateGMT7			DATE  DEFAULT DATE(DATE_ADD(NOW(), INTERVAL 11 HOUR));
     SELECT 	sv.SystemName 
 		,	sv.SystemRole
 		,	sv.ServerName 
+        ,	sv.ID AS ServerID
 		,	sv.ServerIP 
 		,	sv.ServerPort 
 		,	sv.MysqlUser 
 		,	sv.MysqlPassword 
+        ,	job.ID AS JobID
 		,	job.HasAlert
 		,	noti.MetaData AS NotificationMetaData
 		,	DATE(DATE_ADD(NOW(), INTERVAL 11 HOUR)) AS CurrentDate
 	FROM MonDB.SlowLogJob AS job
 		INNER JOIN MonDB.MysqlServer AS sv ON job.ServerID = sv.ID
 		INNER JOIN MonDB.NotificationChannel AS noti ON job.NotificationChannelID = noti.ID
-	WHERE   job.IsActive = 1;
+	WHERE   job.IsActive = 1
+		AND sv.DBATaskStatus = 'None'
+		AND job.LastExecuted != lv_DateGMT7;
 END$$
 DELIMITER ;
