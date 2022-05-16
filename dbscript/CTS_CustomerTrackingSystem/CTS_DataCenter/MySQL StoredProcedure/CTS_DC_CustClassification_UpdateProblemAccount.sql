@@ -15,7 +15,8 @@ BEGIN
 		Original:
 		Revisions:
 			- 2021115@Aries.Nguyen [Redmine ID: #156935]: Created
-            - 20220210@Irena.Vo: Add new logic for Update ABI Danger Level [#167746]
+            - 20220210@Irena.Vo: Add new logic for Update ABI Danger Level [Redmine ID: #167746]
+            - 20220210@Aries.Nguyen: Missing logic PA Probation for Update PA from NAP CM/ PAM [Redmine ID: #172382]
             
         Param's Explanation (filtered by):
 
@@ -37,6 +38,12 @@ BEGIN
 			CustID			BIGINT UNSIGNED
 		,	FromReasonID	INT  
         ,	ToReasonID		INT 
+        
+        , 	WinlossStatus			SMALLINT /*LOSING  = 0,KEEPSTATE = 1, WINNING = 2;*/
+        ,	TurnoverRM				DECIMAL(20,4)
+        ,	WinlossRM				DECIMAL(20,4)
+        , 	BetCount				BIGINT 
+        , 	ActiveDays				INT 
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CheckExist;    
@@ -70,6 +77,12 @@ BEGIN
         ,	SubscriberID			INT UNSIGNED DEFAULT 0
         ,	IsLicensee				BIT
         ,	TargetDangerLevel		SMALLINT UNSIGNED
+        
+		, 	WinlossStatus			SMALLINT /*LOSING  = 0,KEEPSTATE = 1, WINNING = 2;*/
+        ,	TurnoverRM				DECIMAL(20,4)
+        ,	WinlossRM				DECIMAL(20,4)
+        , 	BetCount				BIGINT 
+        , 	ActiveDays				INT 
 
 		,	FromReasonID			INT  
         ,	FromCategoryID			INT  
@@ -85,21 +98,48 @@ BEGIN
         ,	INDEX IX_Temp_CustInfo_CTSCustID(CTSCustID)
 	);
     
-    INSERT IGNORE INTO Temp_CustParam(CustID,FromReasonID,ToReasonID)
+    DROP TEMPORARY TABLE IF EXISTS Temp_ExistedClassification;    
+	CREATE TEMPORARY TABLE Temp_ExistedClassification(	  
+			CustID				BIGINT UNSIGNED 
+		,	CTSCustID			BIGINT UNSIGNED DEFAULT 0
+        , 	CategoryID	        SMALLINT UNSIGNED
+        ,	RelevantCategoryID  SMALLINT UNSIGNED
+        , 	PRIMARY KEY 		PK_Temp_ExistedClassification(CustID, CategoryID)     
+     );
+    
+    INSERT IGNORE INTO Temp_CustParam(CustID,FromReasonID,ToReasonID,WinlossStatus,TurnoverRM,WinlossRM,BetCount,ActiveDays)
 	SELECT	info.CustID
 		, 	info.FromReasonID
         ,	info.ToReasonID
+        
+		,	info.WinlossStatus
+        ,	info.TurnoverRM
+        ,	info.WinlossRM
+        ,	info.BetCount
+        ,	info.ActiveDays
 	FROM JSON_TABLE(ip_CustInfo,
 		 "$[*]" COLUMNS(
 				CustID			VARCHAR(50)		PATH "$.CustID" 
 			, 	FromReasonID	INT				PATH "$.FromReasonID" 
-            , 	ToReasonID		INT				PATH "$.ToReasonID")
+            , 	ToReasonID		INT				PATH "$.ToReasonID"
+            
+            ,	WinlossStatus	SMALLINT 		PATH "$.WinlossStatus" 
+			,	TurnoverRM		DECIMAL(20,4)	PATH "$.TurnoverRM"
+			,	WinlossRM		DECIMAL(20,4) 	PATH "$.WinlossRM"
+			, 	BetCount		BIGINT 			PATH "$.BetCount"
+			, 	ActiveDays		INT 			PATH "$.ActiveDays")
 	) AS info;
     
-    INSERT IGNORE INTO Temp_CustInfo(CustID,FromReasonID,ToReasonID,UserID) 
-    SELECT DISTINCT tmp.CustID
+    INSERT IGNORE INTO Temp_CustInfo(CustID,FromReasonID,ToReasonID,WinlossStatus,TurnoverRM,WinlossRM,BetCount,ActiveDays,UserID) 
+    SELECT 	DISTINCT
+			tmp.CustID
         ,	tmp.FromReasonID
         ,	tmp.ToReasonID
+        ,	tmp.WinlossStatus
+        ,	tmp.TurnoverRM
+        ,	tmp.WinlossRM
+        ,	tmp.BetCount
+        ,	tmp.ActiveDays
         ,	ip_ModifiedBy
 	FROM Temp_CustParam AS tmp;
         
@@ -117,7 +157,7 @@ BEGIN
 	SET 	tmp.CTSCustID = ec.CTSCustID
 		,	tmp.SubscriberID = ec.SubscriberID
         ,   tmp.IsLicensee = ec.IsLicensee;
-
+	
     INSERT IGNORE INTO Temp_CheckPin(CTSCustID)
     SELECT pin.CTSCustID
     FROM CTS_DataCenter.PinCustomerCategory AS pin
@@ -126,7 +166,27 @@ BEGIN
     DELETE 
     FROM Temp_CustInfo AS info
     WHERE EXISTS (SELECT 1 FROM Temp_CheckPin AS pin WHERE pin.CTSCustID = info.CTSCustID);
-
+	
+	INSERT IGNORE INTO Temp_ExistedClassification (CustID,CTSCustID,CategoryID,RelevantCategoryID)
+	SELECT 	clss.CustID
+		,	clss.CTSCustID
+		, 	clss.CategoryID  
+        ,	cate.RelevantCategoryID
+	FROM  Temp_CustInfo AS temp 
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON temp.CustID = clss.CustID AND clss.SportGroupID = 0
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = clss.CategoryID 
+															AND cate.RelevantCategoryID IS NOT NULL
+                                                            AND ((temp.WinlossStatus = 0 AND cate.IsProbation = 0) OR 
+																 (temp.WinlossStatus <> 0 AND cate.IsProbation = 1 ) OR
+																  (temp.WinlossStatus IS NULL AND cate.IsProbation = 1 ));
+	
+    UPDATE CTS_DataCenter.CTSCustomerClassification AS clss
+    INNER JOIN Temp_ExistedClassification AS tmp ON clss.CustID = tmp.CustID AND clss.CategoryID = tmp.CategoryID
+    SET 	clss.CategoryID = tmp.RelevantCategoryID
+		, 	clss.LastModifiedBy = ip_ModifiedBy
+		,   clss.LastModifiedDate = NOW()
+		, 	clss.LastScannedDate = DATE(NOW());
+    
     INSERT IGNORE INTO Temp_Special(CTSCustID,CustomerClass) 
     SELECT  sp.CTSCustID
         ,   sp.CustomerClass
@@ -134,13 +194,23 @@ BEGIN
     WHERE EXISTS (SELECT 1 FROM Temp_CustInfo AS info WHERE info.CTSCustID = sp.CTSCustID);
     
 	UPDATE Temp_CustInfo AS tmp 
-		LEFT JOIN CTS_DataCenter.CustomerCategory AS cc ON tmp.FromReasonID = cc.ReasonID AND SourceType = 'NAP'
-    SET 	tmp.FromCategoryID = cc.CategoryID;
+		LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON tmp.FromReasonID = cate.ReasonID 
+															AND cate.SourceType = 'NAP' 
+                                                            AND (cate.RelevantCategoryID IS NULL OR
+																 (cate.RelevantCategoryID IS NOT NULL AND ((tmp.WinlossStatus = 0 AND cate.IsProbation = 1) OR 
+																										  (tmp.WinlossStatus <> 0 AND cate.IsProbation = 0 ) OR
+																										  (tmp.WinlossStatus IS NULL AND cate.IsProbation = 0 ))))
+    SET tmp.FromCategoryID = cate.CategoryID;
 	
     UPDATE Temp_CustInfo AS tmp 
-		LEFT JOIN CTS_DataCenter.CustomerCategory AS cc ON tmp.ToReasonID = cc.ReasonID AND SourceType = 'NAP'
-    SET 	tmp.ToCategoryID = cc.CategoryID
-		,	tmp.ToCategoryGroup = cc.CategoryGroup;
+		LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON tmp.ToReasonID = cate.ReasonID 
+															AND cate.SourceType = 'NAP'
+                                                            AND (cate.RelevantCategoryID IS NULL OR
+																 (cate.RelevantCategoryID IS NOT NULL AND ((tmp.WinlossStatus = 0 AND cate.IsProbation = 1) OR 
+																										  (tmp.WinlossStatus <> 0 AND cate.IsProbation = 0 ) OR
+																										  (tmp.WinlossStatus IS NULL AND cate.IsProbation = 0 ))))
+    SET 	tmp.ToCategoryID = cate.CategoryID
+		,	tmp.ToCategoryGroup = cate.CategoryGroup;
     
     UPDATE Temp_CustInfo AS tmp 
 		LEFT JOIN CTS_DataCenter.CategoryToCustomerClass AS cc ON tmp.ToCategoryID = cc.CategoryID
@@ -257,7 +327,7 @@ BEGIN
     SET 	tmp.TargetDangerLevel =  ctd.DangerLevel;    
 
     /*Write History, Log*/
-	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, FromCategoryID, ToCategoryID, ActionType, TargetCC, SourceTypeID, IsDataChanged, LastModifiedDate,LastModifiedBy,  InsertDate, TargetDangerLevel1)
+	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, FromCategoryID, ToCategoryID, ActionType, TargetCC, SourceTypeID, IsDataChanged, LastModifiedDate,LastModifiedBy,  InsertDate, TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT 	tmp.CustID
 		, 	tmp.CTSCustID
 		, 	CASE WHEN tmp.HasFromCategoryID = 1 AND  tmp.HasToCategoryID = 1  THEN tmp.FromCategoryID /*Delete From*/
@@ -276,10 +346,14 @@ BEGIN
         ,	tmp.UserID
         ,	NOW() AS InsertDate
         ,	tmp.TargetDangerLevel
+        ,	tmp.TurnoverRM
+        , 	tmp.WinlossRM
+		, 	tmp.BetCount
+        ,	tmp.ActiveDays
 	FROM Temp_CustInfo AS tmp
     WHERE tmp.HasToCategoryIDOther = 0;
     
-    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID, FromCategoryID, ToCategoryID, ActionType, TargetCC, SourceTypeID, IsDataChanged, LastModifiedDate,LastModifiedBy,  InsertDate, TargetDangerLevel1)
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID, FromCategoryID, ToCategoryID, ActionType, TargetCC, SourceTypeID, IsDataChanged, LastModifiedDate,LastModifiedBy,  InsertDate, TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT 	tmp.CustID
 		, 	tmp.CTSCustID
 		, 	CASE WHEN tmp.HasFromCategoryID = 1 AND  tmp.HasToCategoryID = 1  THEN tmp.FromCategoryID /*Delete From*/
@@ -300,9 +374,13 @@ BEGIN
         ,	tmp.UserID
         ,	NOW() AS InsertDate
         , 	tmp.TargetDangerLevel
+        ,	tmp.TurnoverRM
+        , 	tmp.WinlossRM
+		, 	tmp.BetCount
+        ,	tmp.ActiveDays
 	FROM Temp_CustInfo AS tmp;
 
-    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID, FromCategoryID, ToCategoryID, ActionType, TargetCC, SourceTypeID, IsDataChanged, LastModifiedDate,LastModifiedBy,  InsertDate)
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID, FromCategoryID, ToCategoryID, ActionType, TargetCC, SourceTypeID, IsDataChanged, LastModifiedDate,LastModifiedBy,  InsertDate,TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT 	tmp.CustID
 		, 	NULL
 		, 	NULL
@@ -316,12 +394,20 @@ BEGIN
         ,	NOW() AS LastModifiedDate
         ,	ip_ModifiedBy
         ,	NOW() AS InsertDate
+        ,	tmp.TurnoverRM
+        , 	tmp.WinlossRM
+		, 	tmp.BetCount
+        ,	tmp.ActiveDays
 	FROM Temp_CustParam AS tmp
     WHERE NOT EXISTS (SELECT 1 FROM Temp_CustInfo AS info WHERE tmp.CustID = tmp.CustID);
     
-    SELECT 	tmp.CTSCustID
-		,	tmp.CustID
-    FROM Temp_CustInfo AS tmp;
+    SELECT 	tmp1.CTSCustID
+		,	tmp1.CustID
+    FROM Temp_CustInfo AS tmp1
+    UNION 
+	SELECT  tmp2.CTSCustID
+		,	tmp2.CustID
+	FROM Temp_ExistedClassification AS tmp2;
 END$$	
 
 DELIMITER ;
