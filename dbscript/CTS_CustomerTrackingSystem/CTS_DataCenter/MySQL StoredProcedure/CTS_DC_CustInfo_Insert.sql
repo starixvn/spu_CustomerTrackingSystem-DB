@@ -27,8 +27,9 @@ BEGIN
 			- 20210804@Irena.Vo: Fix issue No rescan for existed Customer [Redmine ID: #159706]
             - 20220110@Casey.Huynh: HF Missing CustSub [Redmine ID: #167242]
             - 20220418@Casey.Huynh: Add and Remove VVIP for Downline [Redmine ID: #159013]
-            - 20220512@Casey.Huynh: HF Return more info in VVIP List [Redmine ID: #172712]
             - 20220511@Casey.Huynh: Missing ArchiveCust  [Redmine ID: #172615]
+            - 20220512@Casey.Huynh: HF Return more info in VVIP List [Redmine ID: #172712]
+
 		Param's Explanation (filtered by):
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustInfo_Insert ('[
@@ -40,17 +41,17 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomer;    
 	CREATE TEMPORARY TABLE Temp_CTSCustomer( 	  
 			SubscriberID 	INT 			
-		,	CustID			INT	UNSIGNED NOT NULL
+		,	CustID			INT	 UNSIGNED NOT NULL
         ,	CustStatusID	TINYINT
         ,	Danger1			TINYINT
         ,	Danger2			TINYINT
         ,	Danger3			TINYINT
 		,	CustSubID		INT UNSIGNED			
-		,	UserName		VARCHAR(50)	
-		,	UserName2		VARCHAR(50)
-        ,	RegisterName	VARCHAR(50)
+		,	UserName		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+		,	UserName2		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+        ,	RegisterName	VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 		,	SiteID			INT
-        ,	Site			VARCHAR(20)
+        ,	Site			VARCHAR(20) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 		,	RoleID			TINYINT		 
 		,	Currency		VARCHAR(50) 	
 		,	CurrencyID		INT			 	
@@ -68,7 +69,7 @@ BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustExist;    
 	CREATE TEMPORARY TABLE Temp_CustExist(
-			CustID			INT UNSIGNED	
+			CustID			INT UNSIGNED
 		,	CustSubID		INT UNSIGNED
         
         ,	PRIMARY KEY PK_Temp_CustExist(CustID,CustSubID)
@@ -76,7 +77,7 @@ BEGIN
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_DupUserName;    
 	CREATE TEMPORARY TABLE Temp_DupUserName(
-			UserName		VARCHAR(50)
+			UserName		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
         ,	CustID			INT UNSIGNED
 		,	CustSubID		INT UNSIGNED
         ,	OldCTSCustID	BIGINT UNSIGNED
@@ -89,11 +90,11 @@ BEGIN
 			CustID			INT UNSIGNED
 		,	CustSubID		INT UNSIGNED
 		,	SubscriberID 	INT UNSIGNED
-		,	RegisterName	VARCHAR(50)
+		,	RegisterName	VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
         
         ,	PRIMARY KEY PK_Temp_CustInfo(CustID,CustSubID)
 	);
-
+	
     INSERT INTO Temp_CTSCustomer(CustID, CustStatusID, Danger1, Danger2, Danger3, CustSubID, UserName, UserName2, SiteID
     , Site, RoleID, Currency, CurrencyID, SRecommend, MRecommend, Recommend, CreatedDate)
 	SELECT		CustID	
@@ -120,11 +121,11 @@ BEGIN
 			,	Danger1			TINYINT		 	PATH "$.Danger1" 
 			,	Danger2			TINYINT		 	PATH "$.Danger2" 
 			,	Danger3			TINYINT		 	PATH "$.Danger3" 
-			,	CustSubID		INT UNSIGNED	PATH "$.CustSubID" 
-			,	UserName		VARCHAR(50) 	PATH "$.UserName"
-			,	UserName2		VARCHAR(50)		PATH "$.UserName2" 
+			,	CustSubID		INT	UNSIGNED	PATH "$.CustSubID" 
+			,	UserName		VARCHAR(50)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	PATH "$.UserName"
+			,	UserName2		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	PATH "$.UserName2" 
 			,	SiteID			INT 			PATH "$.SiteID" 
-			,	Site			VARCHAR(20)		PATH "$.Site" 
+			,	Site			VARCHAR(20)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' 	PATH "$.Site" 
 			,	RoleID			TINYINT		 	PATH "$.RoleID" 
 			,	Currency		VARCHAR(50) 	PATH "$.Currency" 
 			,	CurrencyID		INT			 	PATH "$.CurrencyID" 
@@ -241,8 +242,8 @@ BEGIN
 			CTSCustID		BIGINT 	UNSIGNED
         ,	CustID			BIGINT	UNSIGNED
         ,	CustSubID		INT	UNSIGNED
-        ,	UserName		VARCHAR(50)
-        ,	RegisterName	VARCHAR(50)
+        ,	UserName		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+        ,	RegisterName	VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
         ,	SubscriberID	INT UNSIGNED
         ,	RoleID			INT        
         ,	SRecommend		BIGINT	UNSIGNED
@@ -257,8 +258,8 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_VVIPCust;
     CREATE TEMPORARY TABLE Temp_VVIPCust(
 			CTSCustID		BIGINT UNSIGNED
-        ,	CustID			INT	UNSIGNED        
-		,	CustSubID		INT	UNSIGNED
+        ,	CustID			BIGINT	UNSIGNED
+        ,	CustSubID		INT	UNSIGNED
         ,	UserName		VARCHAR(50)
         ,	RegisterName	VARCHAR(50)
         ,	SubscriberID	INT UNSIGNED
@@ -283,8 +284,9 @@ BEGIN
 				WHEN cus.RoleID = 2 THEN cus.MRecommend
                 WHEN cus.RoleID = 3 THEN cus.SRecommend END) AS DirectUpLine               
     FROM Temp_CTSCustomer AS tmpCus	
-    INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID AND cus.CustSubID = 0 AND tmpCus.RoleID < 4;
-
+    INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID AND cus.CustSubID = 0 AND tmpCus.RoleID < 4
+    WHERE	tmpCus.DuplicateType = 0;
+    
     INSERT INTO Temp_VVIPCust(CTSCustID, CustID, CustSubID, UserName, RegisterName, SubscriberID, CreatedBy, RoleID)
     SELECT DISTINCT tmpCus.CTSCustID
 		,	tmpCus.CustID
@@ -326,7 +328,7 @@ BEGIN
         
 	/*****OUT PUT TO INSERT VVIP************/    
     SELECT	tmpVip.CTSCustID
-		,	tmpVip.CustID AS CustID
+		,	tmpVip.CustID AS CustID        
         ,	tmpVip.CustSubID AS CustSubID
         ,	tmpVip.UserName AS UserName
         ,	tmpVip.RegisterName AS RegisterName
