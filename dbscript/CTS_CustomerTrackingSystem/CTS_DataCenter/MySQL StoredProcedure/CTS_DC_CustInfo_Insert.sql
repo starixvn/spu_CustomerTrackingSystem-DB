@@ -27,6 +27,7 @@ BEGIN
 			- 20210804@Irena.Vo: Fix issue No rescan for existed Customer [Redmine ID: #159706]
             - 20220110@Casey.Huynh: HF Missing CustSub [Redmine ID: #167242]
             - 20220418@Casey.Huynh: Add and Remove VVIP for Downline [Redmine ID: #159013]
+            - 20220511@Casey.Huynh: Missing ArchiveCust  [Redmine ID: #172615]
 		Param's Explanation (filtered by):
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustInfo_Insert ('[
@@ -56,22 +57,40 @@ BEGIN
 		,	MRecommend		INT	 UNSIGNED 			
 		,	Recommend		INT	 UNSIGNED
         ,	CreatedDate		DATETIME
-        ,	IsExisting 		BOOLEAN DEFAULT 0
-        ,	INDEX			IX_Temp_CTSCustomer_SiteIDRoleID(RoleID, SiteID)
-        ,	INDEX			IX_Temp_CTSCustomer_CustSubID(CustSubID)
+        ,	DuplicateType 	TINYINT DEFAULT 0#1-Dup(CustID and CustSubID), 2-Dup UserName(not dup CustID and CustSubID)
+        ,	OldCTSCustID	BIGINT UNSIGNED
+        
+        ,	PRIMARY KEY PK_Temp_CTSCustomer(CustID, CustSubID)
+        ,	INDEX IX_Temp_CTSCustomer_SiteIDRoleID(SiteID, RoleID)
+        ,	INDEX IX_Temp_CTSCustomer_DuplicateType(DuplicateType)
 	);
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustExist;    
 	CREATE TEMPORARY TABLE Temp_CustExist(
-			CustID			INT
+			CustID			INT UNSIGNED
 		,	CustSubID		INT
+        
+        ,	PRIMARY KEY PK_Temp_CustExist(CustID,CustSubID)
 	);
-
+	
+    DROP TEMPORARY TABLE IF EXISTS Temp_DupUserName;    
+	CREATE TEMPORARY TABLE Temp_DupUserName(
+			UserName		VARCHAR(50)
+        ,	CustID			INT UNSIGNED
+		,	CustSubID		INT UNSIGNED
+        ,	OldCTSCustID	BIGINT UNSIGNED
+        
+        ,	PRIMARY KEY PK_Temp_DupUserName(UserName)
+	);
+    
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;    
 	CREATE TEMPORARY TABLE Temp_CustInfo(
-			CustID			INT
-		,	SubscriberID 	INT
+			CustID			INT UNSIGNED
+		,	CustSubID		INT UNSIGNED
+		,	SubscriberID 	INT UNSIGNED
 		,	RegisterName	VARCHAR(50)
+        
+        ,	PRIMARY KEY PK_Temp_CustInfo(CustID,CustSubID)
 	);
 
     INSERT INTO Temp_CTSCustomer(CustID, CustStatusID, Danger1, Danger2, Danger3, CustSubID, UserName, UserName2, SiteID
@@ -116,16 +135,66 @@ BEGIN
 	) AS js;	   
     
 	INSERT INTO Temp_CustExist(CustID, CustSubID)
-	SELECT  tmpCus.CustID, tmpCus.CustSubID
+	SELECT	tmpCus.CustID
+		,	tmpCus.CustSubID        
 	FROM Temp_CTSCustomer AS tmpCus
 		INNER JOIN	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID AND tmpCus.CustSubID = cus.CustSubID;
+  
+	INSERT INTO Temp_DupUserName(UserName, CustID, CustSubID, OldCTSCustID)
+	SELECT  tmpCus.UserName		
+		,	tmpCus.CustID
+        ,	tmpCus.CustSubID
+        ,	cus.CTSCustID
+	FROM Temp_CTSCustomer AS tmpCus
+		LEFT JOIN Temp_CustExist AS tmpEx ON tmpCus.CustID = tmpEx.CustID AND tmpCus.CustSubID = tmpEx.CustSubID
+		INNER JOIN	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.UserName = cus.UserName
+	WHERE tmpEx.CustID IS NULL;
 
     UPDATE Temp_CTSCustomer AS tmpCus
-		INNER JOIN Temp_CustExist AS cus ON tmpCus.CustID = cus.CustID AND tmpCus.CustSubID = cus.CustSubID
-    SET tmpCus.IsExisting = 1;
+		INNER JOIN Temp_CustExist AS tmpEx ON tmpCus.CustID = tmpEx.CustID AND tmpCus.CustSubID = tmpEx.CustSubID
+    SET tmpCus.DuplicateType = 1;
+
+    UPDATE Temp_CTSCustomer AS tmpCus
+		INNER JOIN Temp_DupUserName AS tmpDun ON tmpCus.UserName = tmpDun.UserName
+    SET tmpCus.DuplicateType = 2
+		, tmpCus.OldCTSCustID = tmpDun.OldCTSCustID;
+     
+	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerDuplicate(SubscriberID, CustID, CustSubID, UserName, UserName2, SiteID, Site, RoleID, Currency, CurrencyID
+			, SRecommend, MRecommend, Recommend, CreatedDate , RegisterName , CustStatusID , Danger1 ,Danger2 , Danger3 , InsertedTime , ModifiedTime, DuplicateType, OldCTSCustID)
+	SELECT    tmpCus.SubscriberID
+			, tmpCus.CustID
+            , tmpCus.CustSubID
+            , tmpCus.UserName
+            , tmpCus.UserName2
+            , tmpCus.SiteID
+            , tmpCus.Site
+            , tmpCus.RoleID
+            , tmpCus.Currency
+            , tmpCus.CurrencyID
+            , tmpCus.SRecommend
+            , tmpCus.MRecommend
+            , tmpCus.Recommend
+            , tmpCus.CreatedDate
+            , tmpCus.RegisterName
+            , tmpCus.CustStatusID
+            , tmpCus.Danger1
+            , tmpCus.Danger2
+            , tmpCus.Danger3
+            , CURRENT_TIMESTAMP(4) AS InsertedTime
+            , CURRENT_TIMESTAMP(4) AS ModifiedTime
+            , tmpCus.DuplicateType
+            , tmpCus.OldCTSCustID
+    FROM Temp_CTSCustomer AS tmpCus
+    WHERE tmpCus.DuplicateType = 2;
     
-	INSERT INTO Temp_CustInfo(CustID,SubscriberID, RegisterName)
+    # Remove Duplicate UserName 
+    DELETE tmpCus
+    FROM Temp_CTSCustomer AS tmpCus
+    WHERE tmpCus.DuplicateType = 2; 
+    
+	INSERT INTO Temp_CustInfo(CustID, CustSubID, SubscriberID, RegisterName)
 	SELECT  tmpCus.CustID
+		, 	tmpCus.CustSubID
 		,	mss.SubscriberID
 		,	SUBSTRING(tmpCus.UserName2, LOCATE('$',tmpCus.UserName2) + 1)
 	FROM Temp_CTSCustomer AS tmpCus
@@ -134,7 +203,7 @@ BEGIN
 																	OR (mss.RoleMapping = 2 AND tmpCus.RoleID > 1)
 																	OR (mss.RoleMapping = 0));                                                                    
 	UPDATE Temp_CTSCustomer AS tmpCus
-    INNER JOIN Temp_CustInfo AS cus ON tmpCus.CustID = cus.CustID
+    INNER JOIN Temp_CustInfo AS cus ON tmpCus.CustID = cus.CustID AND tmpCus.CustSubID = cus.CustSubID
 	SET   tmpCus.SubscriberID = cus.SubscriberID
 		, tmpCus.RegisterName = cus.RegisterName;        
 	
@@ -162,7 +231,7 @@ BEGIN
             , CURRENT_TIMESTAMP(4) AS InsertedTime
             , CURRENT_TIMESTAMP(4) AS ModifiedTime
     FROM	Temp_CTSCustomer AS tmpCus
-    WHERE	tmpCus.IsExisting = 0;
+    WHERE	tmpCus.DuplicateType = 0;
     
     /**********MARK VVIP IF DRIRECT UPLINE IS VVIP***************************/   
     /*=========GET VVIP FROM QUEUE================*/
@@ -176,6 +245,9 @@ BEGIN
         ,	MRecommend		BIGINT	UNSIGNED
         ,	Recommend		BIGINT	UNSIGNED
         ,	DirectUpLine	BIGINT	UNSIGNED
+		
+        ,	PRIMARY KEY PK_Temp_Cust_CTSCustID(CTSCustID)
+        ,	INDEX IX_DirectUpLine(DirectUpLine)
     );
     
     DROP TEMPORARY TABLE IF EXISTS Temp_VVIPCust;
@@ -186,7 +258,7 @@ BEGIN
         ,	RoleID			INT
         ,	CreatedBy		INT
         
-        ,	PRIMARY KEY Temp_CustVVIP_CTSCustID(CTSCustID)
+        ,	PRIMARY KEY Temp_CustVVIP_CustID(CustID)
     ); 
 	
     INSERT INTO Temp_Cust(CTSCustID, CustID, SubscriberID, RoleID, SRecommend, MRecommend, Recommend, DirectUpLine)
@@ -201,8 +273,8 @@ BEGIN
 				WHEN cus.RoleID = 2 THEN cus.MRecommend
                 WHEN cus.RoleID = 3 THEN cus.SRecommend END) AS DirectUpLine               
     FROM Temp_CTSCustomer AS tmpCus	
-    INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID AND cus.CustSubID = 0 AND tmpCus.RoleID < 4
-    WHERE	tmpCus.IsExisting = 0;
+    INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID AND cus.CustSubID = 0 AND tmpCus.CustSubID = 0 AND tmpCus.RoleID < 4
+    WHERE	tmpCus.DuplicateType = 0;
     
     INSERT INTO Temp_VVIPCust(CTSCustID, CustID, SubscriberID, CreatedBy, RoleID)
     SELECT DISTINCT tmpCus.CTSCustID, tmpCus.CustID, tmpCus.SubscriberID, vip.CreatedBy, tmpCus.RoleID
