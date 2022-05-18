@@ -28,6 +28,8 @@ BEGIN
             - 20220110@Casey.Huynh: HF Missing CustSub [Redmine ID: #167242]
             - 20220418@Casey.Huynh: Add and Remove VVIP for Downline [Redmine ID: #159013]
             - 20220511@Casey.Huynh: Missing ArchiveCust  [Redmine ID: #172615]
+            - 20220512@Casey.Huynh: HF Return more info in VVIP List [Redmine ID: #172712]
+
 		Param's Explanation (filtered by):
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustInfo_Insert ('[
@@ -44,7 +46,7 @@ BEGIN
         ,	Danger1			TINYINT
         ,	Danger2			TINYINT
         ,	Danger3			TINYINT
-		,	CustSubID		BIGINT			
+		,	CustSubID		INT UNSIGNED			
 		,	UserName		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 		,	UserName2		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
         ,	RegisterName	VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
@@ -68,14 +70,14 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustExist;    
 	CREATE TEMPORARY TABLE Temp_CustExist(
 			CustID			INT UNSIGNED
-		,	CustSubID		INT
+		,	CustSubID		INT UNSIGNED
         
         ,	PRIMARY KEY PK_Temp_CustExist(CustID,CustSubID)
 	);
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_DupUserName;    
 	CREATE TEMPORARY TABLE Temp_DupUserName(
-			UserName		VARCHAR(50)
+			UserName		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
         ,	CustID			INT UNSIGNED
 		,	CustSubID		INT UNSIGNED
         ,	OldCTSCustID	BIGINT UNSIGNED
@@ -88,11 +90,11 @@ BEGIN
 			CustID			INT UNSIGNED
 		,	CustSubID		INT UNSIGNED
 		,	SubscriberID 	INT UNSIGNED
-		,	RegisterName	VARCHAR(50)
+		,	RegisterName	VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
         
         ,	PRIMARY KEY PK_Temp_CustInfo(CustID,CustSubID)
 	);
-
+	
     INSERT INTO Temp_CTSCustomer(CustID, CustStatusID, Danger1, Danger2, Danger3, CustSubID, UserName, UserName2, SiteID
     , Site, RoleID, Currency, CurrencyID, SRecommend, MRecommend, Recommend, CreatedDate)
 	SELECT		CustID	
@@ -114,12 +116,12 @@ BEGIN
 			,	CreatedDate
 	FROM JSON_TABLE(ip_CustomerList,
 		 "$[*]" COLUMNS(
-				CustID			INT	 UNSIGNED	PATH "$.CustID" 
+				CustID			INT	UNSIGNED	PATH "$.CustID" 
 			,	CustStatusID	TINYINT			PATH "$.CustStatusID" 
 			,	Danger1			TINYINT		 	PATH "$.Danger1" 
 			,	Danger2			TINYINT		 	PATH "$.Danger2" 
 			,	Danger3			TINYINT		 	PATH "$.Danger3" 
-			,	CustSubID		BIGINT			PATH "$.CustSubID" 
+			,	CustSubID		INT	UNSIGNED	PATH "$.CustSubID" 
 			,	UserName		VARCHAR(50)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	PATH "$.UserName"
 			,	UserName2		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	PATH "$.UserName2" 
 			,	SiteID			INT 			PATH "$.SiteID" 
@@ -238,7 +240,10 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
     CREATE TEMPORARY TABLE Temp_Cust(
 			CTSCustID		BIGINT 	UNSIGNED
-        ,	CustID			BIGINT	UNSIGNED        
+        ,	CustID			BIGINT	UNSIGNED
+        ,	CustSubID		INT	UNSIGNED
+        ,	UserName		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+        ,	RegisterName	VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
         ,	SubscriberID	INT UNSIGNED
         ,	RoleID			INT        
         ,	SRecommend		BIGINT	UNSIGNED
@@ -254,16 +259,22 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_VVIPCust(
 			CTSCustID		BIGINT UNSIGNED
         ,	CustID			BIGINT	UNSIGNED
+        ,	CustSubID		INT	UNSIGNED
+        ,	UserName		VARCHAR(50)
+        ,	RegisterName	VARCHAR(50)
         ,	SubscriberID	INT UNSIGNED
         ,	RoleID			INT
         ,	CreatedBy		INT
         
         ,	PRIMARY KEY Temp_CustVVIP_CustID(CustID)
     ); 
-	
-    INSERT INTO Temp_Cust(CTSCustID, CustID, SubscriberID, RoleID, SRecommend, MRecommend, Recommend, DirectUpLine)
+
+    INSERT INTO Temp_Cust(CTSCustID, CustID, CustSubID, UserName, RegisterName, SubscriberID, RoleID, SRecommend, MRecommend, Recommend, DirectUpLine)
     SELECT 	cus.CTSCustID
 		,	cus.CustID
+        ,	cus.CustSubID
+        ,	cus.UserName
+        ,	cus.RegisterName
         ,	cus.SubscriberID
         ,	cus.RoleID
         ,	cus.SRecommend
@@ -276,13 +287,26 @@ BEGIN
     INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID AND cus.CustSubID = 0 AND tmpCus.CustSubID = 0 AND tmpCus.RoleID < 4
     WHERE	tmpCus.DuplicateType = 0;
     
-    INSERT INTO Temp_VVIPCust(CTSCustID, CustID, SubscriberID, CreatedBy, RoleID)
-    SELECT DISTINCT tmpCus.CTSCustID, tmpCus.CustID, tmpCus.SubscriberID, vip.CreatedBy, tmpCus.RoleID
+    INSERT INTO Temp_VVIPCust(CTSCustID, CustID, CustSubID, UserName, RegisterName, SubscriberID, CreatedBy, RoleID)
+    SELECT DISTINCT tmpCus.CTSCustID
+		,	tmpCus.CustID
+        ,	tmpCus.CustSubID
+        ,	tmpCus.UserName
+        ,	tmpCus.RegisterName
+        ,	tmpCus.SubscriberID
+        ,	vip.CreatedBy, tmpCus.RoleID
     FROM Temp_Cust AS tmpCus		
 		INNER JOIN CTS_DataCenter.CTSCustomerClassificationVVIP AS vip ON vip.CustID = tmpCus.DirectUpLine AND vip.IsAffectToDownline = 1;
     
-    INSERT IGNORE INTO Temp_VVIPCust(CTSCustID, CustID, SubscriberID, CreatedBy, RoleID)
-    SELECT DISTINCT tmpCus.CTSCustID, tmpCus.CustID, tmpCus.SubscriberID, que.CreatedBy, tmpCus.RoleID
+    INSERT IGNORE INTO Temp_VVIPCust(CTSCustID, CustID, CustSubID, UserName, RegisterName, SubscriberID, CreatedBy, RoleID)
+    SELECT DISTINCT tmpCus.CTSCustID
+		, 	tmpCus.CustID
+		,	tmpCus.CustSubID
+        ,	tmpCus.UserName
+        ,	tmpCus.RegisterName
+        ,	tmpCus.SubscriberID
+        ,	que.CreatedBy
+        ,	tmpCus.RoleID
     FROM Temp_Cust AS tmpCus		
 		INNER JOIN CTS_DataCenter.CTSCustomerClassificationVVIPQueue AS que ON que.CustID IN (tmpCus.SRecommend, tmpCus.MRecommend, tmpCus.Recommend) AND que.ActionType = 1;
     
@@ -304,7 +328,10 @@ BEGIN
         
 	/*****OUT PUT TO INSERT VVIP************/    
     SELECT	tmpVip.CTSCustID
-		,	tmpVip.CustID AS CustID
+		,	tmpVip.CustID AS CustID        
+        ,	tmpVip.CustSubID AS CustSubID
+        ,	tmpVip.UserName AS UserName
+        ,	tmpVip.RegisterName AS RegisterName
 		,	tmpVip.RoleID AS RoleID
 		,	tmpVip.SubscriberID AS SubscriberID
 		,	tmpVip.CreatedBy AS CreatedBy        
