@@ -55,7 +55,6 @@ BEGIN
 	WHERE   sv.DBATaskStatus = 'None'
 		AND job.IsActive = 1
 		AND job.DateExecute = lv_DayOfWeekGMT7 
-		AND job.TimeExecute <  lv_CurrTimeGMT7 
 		AND job.LastExecuted != lv_DateGMT7
         AND (job.PartitionType = 'Weekly' 
 				OR (job.PartitionType = 'Monthly' AND lv_DayOfMonthGMT7 <= 7));

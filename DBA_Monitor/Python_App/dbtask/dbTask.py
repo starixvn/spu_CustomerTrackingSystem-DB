@@ -569,7 +569,7 @@ class DBTaskHelper:
 
     def TruncateSlowLog(self,connOpt):
         try:
-            query = 'SET sql_log_bin = OFF;truncate table mysql.slow_log;'
+            query = 'truncate table mysql.slow_log;'
             self.db.Execute(connOpt,query)
         except Exception as ex:
             raise Exception(("TruncateSlowLog",ex))
