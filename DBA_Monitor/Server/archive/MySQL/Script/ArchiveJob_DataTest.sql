@@ -61,3 +61,34 @@ VALUE (CONCAT("Name_", YEARWEEK(DATE_SUB(NOW(),INTERVAL 42 DAY))), DATE_SUB(NOW(
 UPDATE `MonDB`.`MysqlServer` SET `DBATaskStatus` = 'None' WHERE (`ID` = '7');
 UPDATE `MonDB`.`MysqlServer` SET `DBATaskStatus` = 'None' WHERE (`ID` = '8');
 UPDATE `MonDB`.`ArchivePartitionJob` SET `LastExecuted` = '2022-04-22 00:00:00' WHERE (`ID` = '1');
+
+
+/**************************/
+USE `CTS_Archive`;
+SET @ym = extract(year_month from NOW()); 
+DROP TABLE IF EXISTS Table_TestArchive_Source_Monthly;
+SET @sql = CONCAT("
+CREATE TABLE Table_TestArchive_Source_Monthly (
+   ID bigint unsigned NOT NULL AUTO_INCREMENT,
+   Name varchar(100) NOT NULL,
+   CreatedDate datetime NOT NULL,
+   PRIMARY KEY (ID,CreatedDate),
+   KEY IX_Table_TestArchive_Name (Name)
+ ) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+ /*!50100 PARTITION BY RANGE (yearweek(CreatedDate,0))
+ (PARTITION pm", @ym-2," VALUES LESS THAN (",@ym-1,") ENGINE = InnoDB,
+  PARTITION pm", @ym-1," VALUES LESS THAN (",@ym,") ENGINE = InnoDB,
+  PARTITION pm", @ym," VALUES LESS THAN (",@ym+1,") ENGINE = InnoDB,
+  PARTITION pm", @ym+1," VALUES LESS THAN (",@ym+2,") ENGINE = InnoDB,
+  PARTITION pm999999 VALUES LESS THAN MAXVALUE ENGINE = InnoDB) */");
+
+PREPARE stmt1 FROM @sql;
+EXECUTE stmt1;
+
+INSERT INTO Table_TestArchive_Source_Monthly(Name, CreatedDate)
+VALUE (CONCAT("Name_", extract(year_month from DATE_SUB(NOW(),INTERVAL 60 DAY))), DATE_SUB(NOW(),INTERVAL 60 DAY)),
+	  (CONCAT("Name_", extract(year_month from  DATE_SUB(NOW(),INTERVAL 30 DAY))), DATE_SUB(NOW(),INTERVAL 30 DAY)),
+      (CONCAT("Name_", extract(year_month from  NOW())), NOW()),
+      (CONCAT("Name_", extract(year_month from  DATE_ADD(NOW(),INTERVAL 30 DAY))), DATE_ADD(NOW(),INTERVAL 30 DAY));
+
+select * from Table_TestArchive_Source_Monthly;
