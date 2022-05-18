@@ -273,7 +273,7 @@ BEGIN
 				WHEN cus.RoleID = 2 THEN cus.MRecommend
                 WHEN cus.RoleID = 3 THEN cus.SRecommend END) AS DirectUpLine               
     FROM Temp_CTSCustomer AS tmpCus	
-    INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID AND cus.CustSubID = 0 AND tmpCus.RoleID < 4
+    INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID AND cus.CustSubID = 0 AND tmpCus.CustSubID = 0 AND tmpCus.RoleID < 4
     WHERE	tmpCus.DuplicateType = 0;
     
     INSERT INTO Temp_VVIPCust(CTSCustID, CustID, SubscriberID, CreatedBy, RoleID)
