@@ -204,7 +204,7 @@ BEGIN
         ,   CASE WHEN mss.SubscriberGroupID = 2 THEN 1 
 				 WHEN mss.SubscriberGroupID IS NULL THEN NULL
 			ELSE 0 END AS IsLicensee
-        ,   CASE WHEN cust.UserName Like '%CashOut' OR stl.ItemID IS NOT NULL OR (cust.Recommend IN (52466,5707545) AND cust.RoleID = 1)
+        ,   CASE WHEN tmpCus.UserName Like '%CashOut' OR stl.ItemID IS NOT NULL OR (tmpCus.Recommend IN (52466,5707545) AND tmpCus.RoleID = 1)
 				 THEN 1 
 			ELSE 0 END AS IsInternal
 	FROM Temp_CTSCustomer AS tmpCus
@@ -212,7 +212,7 @@ BEGIN
 																AND ((mss.RoleMapping = 1 AND tmpCus.RoleID = 1)
 																	OR (mss.RoleMapping = 2 AND tmpCus.RoleID > 1)
 																	OR (mss.RoleMapping = 0))
-        LEFT JOIN CTS_DataCenter.StaticList AS stl ON stl.ItemID = cust.SiteID AND stl.ListID = 11;          
+        LEFT JOIN CTS_DataCenter.StaticList AS stl ON stl.ItemID = tmpCus.SiteID AND stl.ListID = 11;          
         
 	UPDATE Temp_CTSCustomer AS tmpCus
     INNER JOIN Temp_CustInfo AS cus ON tmpCus.CustID = cus.CustID AND tmpCus.CustSubID = cus.CustSubID

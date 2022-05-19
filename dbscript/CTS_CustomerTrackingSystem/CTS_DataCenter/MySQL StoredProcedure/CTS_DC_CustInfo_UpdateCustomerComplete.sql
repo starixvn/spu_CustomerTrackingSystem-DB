@@ -7,7 +7,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustInfo_UpdateCustomerComplete`
 	,	IN ip_LastUpdateCustID	INT 
 	,	IN ip_CustomerInfo		JSON
 )
- SQL SECURITY INVOKER
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20210208@Casey.Huynh
@@ -75,7 +75,7 @@ BEGIN
 		,   CASE WHEN mss.SubscriberGroupID = 2 THEN 1 
 				 WHEN mss.SubscriberGroupID IS NULL THEN NULL
 			ELSE 0 END AS IsLicensee
-        ,   CASE WHEN cust.UserName Like '%CashOut' OR stl.ItemID IS NOT NULL OR (cust.Recommend IN (52466,5707545) AND cust.RoleID = 1)
+        ,   CASE WHEN js.UserName Like '%CashOut' OR stl.ItemID IS NOT NULL OR (js.Recommend IN (52466,5707545) AND js.RoleID = 1)
 				 THEN 1 
 			ELSE 0 END AS IsInternal
 	FROM JSON_TABLE(ip_CustomerInfo, 
@@ -94,11 +94,11 @@ BEGIN
             ,	UpdateType		TINYINT			PATH "$.UpdateType"	
 		)
 	) AS js
-		INNER JOIN	CTS_DataCenter.MappingSubscriberSite mss ON tmpCus.SiteID = mss.SiteID 
-																AND ((mss.RoleMapping = 1 AND tmpCus.RoleID = 1)
-																	OR (mss.RoleMapping = 2 AND tmpCus.RoleID > 1)
+		INNER JOIN	CTS_DataCenter.MappingSubscriberSite mss ON js.SiteID = mss.SiteID 
+																AND ((mss.RoleMapping = 1 AND js.RoleID = 1)
+																	OR (mss.RoleMapping = 2 AND js.RoleID > 1)
 																	OR (mss.RoleMapping = 0))
-        LEFT JOIN CTS_DataCenter.StaticList AS stl ON stl.ItemID = cust.SiteID AND stl.ListID = 11;       	
+        LEFT JOIN CTS_DataCenter.StaticList AS stl ON stl.ItemID = js.SiteID AND stl.ListID = 11;       	
 
     IF EXISTS (SELECT 1 FROM Temp_CTSCustomer AS tmpCus WHERE  tmpCus.UpdateType = 1 )
     THEN
