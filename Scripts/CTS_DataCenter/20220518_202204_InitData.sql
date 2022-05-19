@@ -7,7 +7,7 @@
 
 USE CTS_DataCenter;
 INSERT INTO `CTS_DataCenter`.`SystemParameter` (`ParameterID`, `ParameterName`, `ParameterDesc`, `ParameterDataType`, `ParameterValue`)
-VALUES (1000, 'InitDataCustomerInfo', 'InitDataCustomerInfo', 'BIGINT', 0);
+VALUES (1000, 'InitDataCustomerInfo_LastCTSCustID', 'InitDataCustomerInfo_LastCTSCustID', 'BIGINT', 0);
 
 
 USE CTS_DataCenter;
