@@ -29,6 +29,7 @@ BEGIN
             - 20220418@Casey.Huynh: Add and Remove VVIP for Downline [Redmine ID: #159013]
             - 20220511@Casey.Huynh: Missing ArchiveCust  [Redmine ID: #172615]
             - 20220512@Casey.Huynh: HF Return more info in VVIP List [Redmine ID: #172712]
+            - 20220519@Aries.Nguyen: Init cust info: IsLicensee, IsInternal [Redmine ID: #202204]
 
 		Param's Explanation (filtered by):
 		Example:
@@ -61,7 +62,8 @@ BEGIN
         ,	CreatedDate		DATETIME
         ,	DuplicateType 	TINYINT DEFAULT 0#1-Dup(CustID and CustSubID), 2-Dup UserName(not dup CustID and CustSubID)
         ,	OldCTSCustID	BIGINT UNSIGNED
-        
+        ,	IsLicensee		BIT
+		,	IsInternal		BIT
         ,	PRIMARY KEY PK_Temp_CTSCustomer(CustID, CustSubID)
         ,	INDEX IX_Temp_CTSCustomer_SiteIDRoleID(SiteID, RoleID)
         ,	INDEX IX_Temp_CTSCustomer_DuplicateType(DuplicateType)
@@ -91,12 +93,12 @@ BEGIN
 		,	CustSubID		INT UNSIGNED
 		,	SubscriberID 	INT UNSIGNED
 		,	RegisterName	VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
-        
+        ,	IsLicensee		BIT
+		,	IsInternal		BIT
         ,	PRIMARY KEY PK_Temp_CustInfo(CustID,CustSubID)
 	);
 	
-    INSERT INTO Temp_CTSCustomer(CustID, CustStatusID, Danger1, Danger2, Danger3, CustSubID, UserName, UserName2, SiteID
-    , Site, RoleID, Currency, CurrencyID, SRecommend, MRecommend, Recommend, CreatedDate)
+    INSERT INTO Temp_CTSCustomer(CustID, CustStatusID, Danger1, Danger2, Danger3, CustSubID, UserName, UserName2, SiteID, Site, RoleID, Currency, CurrencyID, SRecommend, MRecommend, Recommend, CreatedDate)
 	SELECT		CustID	
 			,	CustStatusID
 			,	Danger1
@@ -194,20 +196,30 @@ BEGIN
     FROM Temp_CTSCustomer AS tmpCus
     WHERE tmpCus.DuplicateType = 2; 
     
-	INSERT INTO Temp_CustInfo(CustID, CustSubID, SubscriberID, RegisterName)
+	INSERT IGNORE INTO Temp_CustInfo(CustID, CustSubID, SubscriberID, RegisterName,IsLicensee,IsInternal)
 	SELECT  tmpCus.CustID
 		, 	tmpCus.CustSubID
 		,	mss.SubscriberID
 		,	SUBSTRING(tmpCus.UserName2, LOCATE('$',tmpCus.UserName2) + 1)
+        ,   CASE WHEN mss.SubscriberGroupID = 2 THEN 1 
+				 WHEN mss.SubscriberGroupID IS NULL THEN NULL
+			ELSE 0 END AS IsLicensee
+        ,   CASE WHEN cust.UserName Like '%CashOut' OR stl.ItemID IS NOT NULL OR (cust.Recommend IN (52466,5707545) AND cust.RoleID = 1)
+				 THEN 1 
+			ELSE 0 END AS IsInternal
 	FROM Temp_CTSCustomer AS tmpCus
 		INNER JOIN	CTS_DataCenter.MappingSubscriberSite mss ON tmpCus.SiteID = mss.SiteID 
 																AND ((mss.RoleMapping = 1 AND tmpCus.RoleID = 1)
 																	OR (mss.RoleMapping = 2 AND tmpCus.RoleID > 1)
-																	OR (mss.RoleMapping = 0));                                                                    
+																	OR (mss.RoleMapping = 0))
+        LEFT JOIN CTS_DataCenter.StaticList AS stl ON stl.ItemID = cust.SiteID AND stl.ListID = 11;          
+        
 	UPDATE Temp_CTSCustomer AS tmpCus
     INNER JOIN Temp_CustInfo AS cus ON tmpCus.CustID = cus.CustID AND tmpCus.CustSubID = cus.CustSubID
 	SET   tmpCus.SubscriberID = cus.SubscriberID
-		, tmpCus.RegisterName = cus.RegisterName;        
+		, tmpCus.RegisterName = cus.RegisterName
+        , tmpCus.IsLicensee = cus.IsLicensee    
+        , tmpCus.IsInternal = cus.IsInternal;      
 	
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomer(SubscriberID, CustID, CustSubID, UserName, UserName2, SiteID, Site, RoleID, Currency, CurrencyID
 			, SRecommend, MRecommend, Recommend, CreatedDate , RegisterName , CustStatusID , Danger1 ,Danger2 , Danger3 , InsertedTime , ModifiedTime)
