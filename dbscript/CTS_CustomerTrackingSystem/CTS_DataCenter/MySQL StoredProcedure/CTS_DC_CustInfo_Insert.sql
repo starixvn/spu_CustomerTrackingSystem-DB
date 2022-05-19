@@ -222,7 +222,7 @@ BEGIN
         , tmpCus.IsInternal = cus.IsInternal;      
 	
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomer(SubscriberID, CustID, CustSubID, UserName, UserName2, SiteID, Site, RoleID, Currency, CurrencyID
-			, SRecommend, MRecommend, Recommend, CreatedDate , RegisterName , CustStatusID , Danger1 ,Danger2 , Danger3 , InsertedTime , ModifiedTime)
+			, SRecommend, MRecommend, Recommend, CreatedDate , RegisterName , CustStatusID , Danger1 ,Danger2 , Danger3 , InsertedTime , ModifiedTime, IsLicensee, IsInternal)
 	SELECT    tmpCus.SubscriberID
 			, tmpCus.CustID
             , tmpCus.CustSubID
@@ -244,6 +244,8 @@ BEGIN
             , tmpCus.Danger3
             , CURRENT_TIMESTAMP(4) AS InsertedTime
             , CURRENT_TIMESTAMP(4) AS ModifiedTime
+            , IsLicensee
+            , IsInternal
     FROM	Temp_CTSCustomer AS tmpCus
     WHERE	tmpCus.DuplicateType = 0;
     
