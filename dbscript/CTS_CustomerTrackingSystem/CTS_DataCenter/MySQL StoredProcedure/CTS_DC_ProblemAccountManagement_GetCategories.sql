@@ -13,12 +13,13 @@ BEGIN
 		Revisions:
 			- 20220307@Irena.Vo: Created [Redmine ID: #159014]
 			- 20220407@Irena.Vo: Change logic get [Redmine ID: #170135]
+            - 20220519@Casey.Huynh: Renovate PA Process [Redmine ID: #172061]
             
 		Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DC_ProblemAccountManagement_GetCategories();
 	*/
-	SELECT 	DISTINCT cat.CategoryID, cat.CategoryName
+	SELECT 	DISTINCT cat.CategoryID, cat.CategoryName, cat.CategoryGroup
 	FROM	CTS_DataCenter.CustomerCategory AS cat
 	WHERE 	cat.SourceType = 'NAP' AND cat.CategoryID BETWEEN 52 AND 62 AND cat.CategoryID NOT IN (56,60,61); 
     
