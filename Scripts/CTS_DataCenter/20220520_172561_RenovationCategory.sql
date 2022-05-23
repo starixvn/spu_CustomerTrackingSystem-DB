@@ -7,6 +7,50 @@
 
 USE CTS_DataCenter;
 
+CREATE TABLE `CTSCustomerClassificationOldPA` (
+  `CustID` bigint unsigned NOT NULL,
+  `CTSCustID` bigint unsigned DEFAULT NULL,
+  `SubscriberID` int unsigned DEFAULT NULL,
+  `SportGroupID` smallint unsigned NOT NULL,
+  `CategoryID` smallint unsigned NOT NULL,
+  `Remark` varchar(500),
+  `CreatedDate` datetime DEFAULT NULL,
+  `CreatedBy` int DEFAULT NULL,
+  `LastModifiedDate` datetime DEFAULT NULL,
+  `LastModifiedBy` int unsigned DEFAULT NULL,
+  `LastScannedDate` date DEFAULT NULL,
+  `IsFromTVS` bit(1) DEFAULT b'0',
+  `IsFromTW` bit(1) DEFAULT b'0',
+  `IsFromPAM` bit(1) DEFAULT b'0',
+  `IsDirectPA` bit(1) DEFAULT NULL,
+  `IsAffectToDownline` bit(1) DEFAULT NULL,
+  PRIMARY KEY (`CustID`,`SportGroupID`,`CategoryID`),
+  KEY `IX_CTSCustomerClassification_CustSportGroup` (`CTSCustID`,`SportGroupID`,`LastModifiedDate`),
+  KEY `IX_CTSCustomerClassification_SubscriberID_SportGroupID` (`SubscriberID`,`SportGroupID`),
+  KEY `IX_CTSCustomerClassification_SportGroupID_CreatedDate` (`SportGroupID`,`CreatedDate`),
+  KEY `IX_CTSCustomerClassification_CategoryID_CustID` (`CategoryID`,`CustID`,`LastScannedDate`)
+) ENGINE=InnoDB;
+
+
+CREATE TABLE `CTSCustomerClassificationQueue` (
+  `ID` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `CTSCustID` bigint unsigned DEFAULT NULL,
+  `CustID` bigint unsigned DEFAULT NULL,
+  `RoleID` tinyint DEFAULT NULL,
+  `SubscriberID` int unsigned DEFAULT NULL,
+  `CreatedBy` bigint unsigned DEFAULT NULL,
+  `Remark` varchar(300),
+  `CategoryGroup` int DEFAULT NULL,
+  `CategoryID` smallint unsigned DEFAULT NULL,
+  `LastDownlineCTSCustID` bigint unsigned DEFAULT NULL,
+  `ActionType` tinyint DEFAULT NULL COMMENT '1: INSERT VVIP, 2:Remove VVIP, 3:INSERT PA, 4: UNMARK PA',
+  `InsertTime` datetime(3) DEFAULT NULL,
+  PRIMARY KEY (`ID`),
+  KEY `IX_Temp_Customer_CustID` (`CustID`),
+  KEY `IX_Temp_Customer_CTSCustID` (`CTSCustID`)
+) ENGINE=InnoDB;
+
+
 SELECT * FROM CTS_DataCenter.StaticList WHERE ListID = 4 ORDER BY ItemID DESC;
 
 INSERT INTO CTS_DataCenter.StaticList(ListID,ItemID,ListName,ListNameDisplay,ItemName,ItemNameDisplay,PriorityOrder,Status,Description,CreatedDate)
