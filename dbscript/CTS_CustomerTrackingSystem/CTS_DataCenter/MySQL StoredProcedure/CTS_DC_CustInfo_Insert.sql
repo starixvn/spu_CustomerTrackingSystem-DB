@@ -249,6 +249,17 @@ BEGIN
             , IsInternal
     FROM	Temp_CTSCustomer AS tmpCus
     WHERE	tmpCus.DuplicateType = 0;
+
+	/*****OUT PUT TO RESCAN CC************/
+	SELECT	cus.CTSCustID
+		,	cus.SubscriberID
+    	,	cus.CustID
+		,	cus.UserName
+    	,	cus.RegisterName
+		,	cus.RoleID
+    	,	cus.CustSubID
+    FROM	Temp_CTSCustomer AS tmpCus
+		INNER JOIN 	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID AND tmpCus.CustSubID = cus.CustSubID;   
   
 END$$
 DELIMITER ;
