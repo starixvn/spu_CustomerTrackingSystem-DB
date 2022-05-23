@@ -30,7 +30,7 @@ BEGIN
 		, 	CTSCustID				BIGINT UNSIGNED DEFAULT 0
         ,	RoleID					INT
         , 	SubscriberID			INT DEFAULT 0
-        ,	IsLicensee				BIT
+        ,	IsLicensee				BOOLEAN
         ,	Remark 					VARCHAR(500)        
         ,	CreatedBy 				INT UNSIGNED
         
@@ -44,165 +44,139 @@ BEGIN
         /*Get Mapping Value*/
 		, 	CategoryID		    	SMALLINT
         ,	CategoryGroup     		SMALLINT
-        ,	Reason					SMALLINT
-        ,	IsDirectPA				BIT
-        ,	IsProbation				BIT DEFAULT 0	          
+        ,	Reason					INT
+        ,	IsDirectPA				BOOLEAN
+        ,	IsProbation				BOOLEAN DEFAULT 0	          
 		,	TargetCC				SMALLINT
 		,	TargetDangerLevel		SMALLINT UNSIGNED
 		, 	ToEvidenceID			SMALLINT        
-        ,	IsFromTVS				BIT DEFAULT 0
-        ,	IsFromTW				BIT DEFAULT 0
-        ,	IsFromPAM				BIT DEFAULT 0
-        ,	IsDataChanged			TINYINT DEFAULT 0  /* 1:From REMOVE Special Classification */
+        ,	IsFromTVS				BOOLEAN DEFAULT 0
+        ,	IsFromTW				BOOLEAN DEFAULT 0
+        ,	IsFromPAM				BOOLEAN DEFAULT 0
+        ,	IsDataChanged			BOOLEAN DEFAULT 0 # 0: Not Change, 1: Changed (IF call from SpecialCC function THEN 1 ELSE 0)
+        ,	DataChangeType			TINYINT DEFAULT 0 # 0: New OR Change Category, 1: Change Probation Status, 2: NOT CHANGE
         ,	OldCategoryID		    SMALLINT
+        ,	RelevantCategoryID		SMALLINT	
+        ,	RelevantCategoryGroup	SMALLINT	
         , 	PRIMARY KEY     		PK_Temp_PA(CustID,CategoryID)  
     );  
-    
-    IF ip_ByType = 'Category' THEN    
-		INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, CreatedBy, CategoryID, CategoryGroup, IsProbation
-				, TargetCC, TargetDangerLevel, ToEvidenceID, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromPAM, IsDataChanged)
-		WITH CTE_CustInfo AS
-        (
-			SELECT 	DISTINCT tmpJs.CustID
-			,	tmpJs.CTSCustID
-            ,	tmpJs.RoleID
-			, 	tmpJs.SubscriberID			
-            ,	tmpJs.CategoryID
-            ,	tmpJs.CategoryGroup
-            ,	tmpJs.IsLicensee
-			,	tmpJs.CreatedBy 
-            ,	tmpJs.Remark
-            ,	tmpJs.IsDirectPA
-			, 	tmpJs.WinlossStatus 
-			, 	tmpJs.TurnoverRM
-			, 	tmpJs.WinlossRM 
-			, 	tmpJs.BetCount 
-			, 	tmpJs.ActiveDays 
-			,	(CASE WHEN sp.CTSCustID IS NOT NULL THEN sp.CustomerClass ELSE NULL END) AS SpecialClass
-            ,	(CASE WHEN WinlossStatus = 0 THEN 1 ELSE 0 END) AS IsProbation
-            ,	tmpJs.IsFromPAM
-            ,	tmpJs.IsDataChanged
-		FROM JSON_TABLE(ip_CustInfo,
-			"$[*]" COLUMNS(
-					CustID 			BIGINT UNSIGNED		PATH "$.CustID"
-				,	CTSCustID 		BIGINT UNSIGNED		PATH "$.CTSCustID"
-                ,	RoleID 			INT					PATH "$.RoleID" 
-				,	SubscriberID 	BIGINT UNSIGNED		PATH "$.SubscriberID"
-                ,	CategoryID		BIGINT UNSIGNED		PATH "$.CategoryID"
-                ,	CategoryGroup	BIGINT UNSIGNED		PATH "$.CategoryGroup"
-                ,	IsLicensee		BIT					PATH "$.IsLicensee"
-				, 	CreatedBy		INT UNSIGNED		PATH "$.CreatedBy"
-                , 	Remark			VARCHAR(500)		PATH "$.Remark"
-                , 	IsDirectPA		VARCHAR(500)		PATH "$.IsDirectPA"
-				,	WinlossStatus	SMALLINT 			PATH "$.WinlossStatus" 
-				,	TurnoverRM		DECIMAL(20,4)		PATH "$.TurnoverRM"
-				,	WinlossRM		DECIMAL(20,4) 		PATH "$.WinlossRM"
-				, 	BetCount		BIGINT 				PATH "$.BetCount"
-				, 	ActiveDays		INT 				PATH "$.ActiveDays"
-                , 	IsFromPAM		INT 				PATH "$.IsFromPAM"
-                , 	IsDataChanged	INT 				PATH "$.IsDataChanged"             
-                
-		)) AS tmpJs
-			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on tmpJs.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
-			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CTSCustID = sp.CTSCustID 
-			WHERE pin.CTSCustID IS NULL
-		)
-        SELECT 	cte.CustID
-			,	cte.CTSCustID
-            ,	cte.RoleID
-			, 	cte.SubscriberID
-			,	cte.CreatedBy
-			, 	tmpCat.CategoryID
-			,	tmpCat.CategoryGroup
-			,	cte.IsProbation
-            ,	IFNULL(cte.SpecialClass,tmpCat.TargetCC) AS TargetCC                       
-            ,	tmpCat.TargetDangerLevel 
-            ,	tmpCat.ToEvidenceID
-			, 	cte.WinlossStatus 
-			, 	cte.TurnoverRM
-			, 	cte.WinlossRM 
-			, 	cte.BetCount 
-			, 	cte.ActiveDays	
-            ,	cte.IsFromPAM
-            ,	cte.IsDataChanged
-		FROM CTE_CustInfo AS cte,
-		LATERAL (
-				SELECT 	cat.CategoryID
-					,	cat.CategoryGroup
-					, 	IFNULL(cat.CustomerClass, -99) AS TargetCC
-					, 	(CASE WHEN cte.IsLicensee = 1 THEN cat.ABIDangerLevel_Licensee
-							WHEN cte.IsLicensee = 0 THEN cat.ABIDangerLevel_Credit				
-						END) AS TargetDangerLevel
-					,	(CASE WHEN cte.IsLicensee = 1 THEN cat.EvidenceID_Licensee
-							 WHEN cte.IsLicensee = 0 THEN cat.EvidenceID_Credit
-						ELSE NULL END) AS ToEvidenceID
-				FROM CTS_DataCenter.CustomerCategory  AS cat
-				WHERE cat.CategoryGroup = cte.CategoryGroup AND cat.IsProbation = cte.IsProbation
-                LIMIT 1
-			) AS tmpCat;
-    END IF;   
    
+    IF ip_ByType = 'Category' THEN      
+	INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, CategoryID, CategoryGroup, RelevantCategoryID, IsLicensee, CreatedBy, Remark, IsDirectPA
+		, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromPAM, IsDataChanged, TargetCC, TargetDangerLevel, ToEvidenceID, IsProbation )
+	
+	SELECT 	DISTINCT tmpJs.CustID
+		,	tmpJs.CTSCustID
+		,	tmpJs.RoleID
+		, 	tmpJs.SubscriberID
+		,	tmpJs.CategoryID
+		,	tmpJs.CategoryGroup
+		,	cat.RelevantCategoryID
+		,	tmpJs.IsLicensee
+		,	tmpJs.CreatedBy 
+		,	tmpJs.Remark
+		,	tmpJs.IsDirectPA
+		, 	tmpJs.WinlossStatus 
+		, 	tmpJs.TurnoverRM
+		, 	tmpJs.WinlossRM 
+		, 	tmpJs.BetCount 
+		, 	tmpJs.ActiveDays
+		,	tmpJs.IsFromPAM
+		,	tmpJs.IsDataChanged
+		,	(CASE 	WHEN sp.CTSCustID IS NOT NULL THEN sp.CustomerClass ELSE IFNULL(cat.CustomerClass,-99) END) AS TargetCC
+		,	(CASE 	WHEN tmpJs.IsLicensee = 1 THEN cat.ABIDangerLevel_Licensee
+					WHEN tmpJs.IsLicensee = 0 THEN cat.ABIDangerLevel_Credit END) AS TargetDangerLevel
+		,	(CASE 	WHEN tmpJs.IsLicensee = 1 THEN cat.EvidenceID_Licensee
+					WHEN tmpJs.IsLicensee = 0 THEN cat.EvidenceID_Credit
+					ELSE NULL END) AS ToEvidenceID
+		,	(CASE WHEN WinlossStatus = 0 THEN 1 ELSE 0 END) AS IsProbation            
+	FROM JSON_TABLE(ip_CustInfo,
+		"$[*]" COLUMNS(
+				CustID 			BIGINT UNSIGNED		PATH "$.CustID"
+			,	CTSCustID 		BIGINT UNSIGNED		PATH "$.CTSCustID"
+			,	RoleID 			INT					PATH "$.RoleID" 
+			,	SubscriberID 	BIGINT UNSIGNED		PATH "$.SubscriberID"
+			,	CategoryID		BIGINT UNSIGNED		PATH "$.CategoryID"
+			,	CategoryGroup	BIGINT UNSIGNED		PATH "$.CategoryGroup"
+			,	IsLicensee		BOOLEAN				PATH "$.IsLicensee"
+			, 	CreatedBy		INT UNSIGNED		PATH "$.CreatedBy"
+			, 	Remark			VARCHAR(500)		PATH "$.Remark"
+			, 	IsDirectPA		BOOLEAN				PATH "$.IsDirectPA"
+			,	WinlossStatus	SMALLINT 			PATH "$.WinlossStatus" 
+			,	TurnoverRM		DECIMAL(20,4)		PATH "$.TurnoverRM"
+			,	WinlossRM		DECIMAL(20,4) 		PATH "$.WinlossRM"
+			, 	BetCount		BIGINT 				PATH "$.BetCount"
+			, 	ActiveDays		INT 				PATH "$.ActiveDays"
+			, 	IsFromPAM		BOOLEAN 			PATH "$.IsFromPAM"
+			, 	IsDataChanged	BOOLEAN 			PATH "$.IsDataChanged"   
+			
+	)) AS tmpJs
+		LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on tmpJs.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
+		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CTSCustID = sp.CTSCustID 
+		INNER JOIN CTS_DataCenter.CustomerCategory  AS cat ON cat.CategoryID = tmpJs.CategoryID
+		WHERE pin.CTSCustID IS NULL;
+	
+		UPDATE Temp_PA AS tmpPA
+		INNER JOIN CTS_DataCenter.CustomerCategory  AS cat ON cat.CategoryID = tmpPA.RelevantCategoryID
+        SET tmpPA.RelevantCategoryGroup = cat.CategoryGroup;
+    END IF;   
+
     IF ip_ByType = 'Reason' THEN
-		INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, CreatedBy, CategoryID, CategoryGroup, IsProbation
-				, TargetCC, TargetDangerLevel, ToEvidenceID, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays)
-		WITH CTE_CustInfo AS
-        (
-		SELECT 	DISTINCT tmpJs.CustID
-            ,	tmpJs.ReasonID
-			,	tmpJs.CreatedBy  
-			, 	tmpJs.WinlossStatus 
-			, 	tmpJs.TurnoverRM
-			, 	tmpJs.WinlossRM 
-			, 	tmpJs.BetCount 
-			, 	tmpJs.ActiveDays 
-		FROM JSON_TABLE(ip_CustInfo,
-			"$[*]" COLUMNS(
-					CustID 			BIGINT UNSIGNED		PATH "$.CustID"
-                ,	RoleID 			INT					PATH "$.ReasonID" 
-				,	WinlossStatus	SMALLINT 			PATH "$.WinlossStatus" 
-				,	TurnoverRM		DECIMAL(20,4)		PATH "$.TurnoverRM"
-				,	WinlossRM		DECIMAL(20,4) 		PATH "$.WinlossRM"
-				, 	BetCount		BIGINT 				PATH "$.BetCount"
-				, 	ActiveDays		INT 				PATH "$.ActiveDays"
-		)) AS tmpJs
-			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on tmpJs.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
-			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CTSCustID = sp.CTSCustID 
-			WHERE pin.CTSCustID IS NULL
-		)
-        SELECT 	cte.CustID
-			,	cte.CTSCustID
-            ,	cte.RoleID
-			, 	cte.SubscriberID
-			,	cte.CreatedBy
-			, 	tmpCat.CategoryID
-			,	tmpCat.CategoryGroup
-			,	cte.IsProbation
-            ,	IFNULL(cte.SpecialClass,tmpCat.TargetCC) AS TargetCC                       
-            ,	tmpCat.TargetDangerLevel 
-            ,	tmpCat.ToEvidenceID
-			, 	cte.WinlossStatus 
-			, 	cte.TurnoverRM
-			, 	cte.WinlossRM 
-			, 	cte.BetCount 
-			, 	cte.ActiveDays			
-		FROM CTE_CustInfo AS cte,
-		LATERAL (
-				SELECT 	cat.CategoryID
-					,	cat.CategoryGroup
-					, 	IFNULL(cat.CustomerClass, -99) AS TargetCC
-					, 	(CASE WHEN cte.IsLicensee = 1 THEN cat.ABIDangerLevel_Licensee
-							WHEN cte.IsLicensee = 0 THEN cat.ABIDangerLevel_Credit				
-						END) AS TargetDangerLevel
-					,	(CASE WHEN cte.IsLicensee = 1 THEN cat.EvidenceID_Licensee
-							 WHEN cte.IsLicensee = 0 THEN cat.EvidenceID_Credit
-						ELSE NULL END) AS ToEvidenceID
-				FROM CTS_DataCenter.CustomerCategory  AS cat
-				WHERE cat.CategoryGroup = tmpJs.CategoryGroup AND cte.IsProbation = cat.IsProbation
-			) AS tmpCat;
+ 
+	INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, CategoryID, CategoryGroup, RelevantCategoryID, IsLicensee, CreatedBy, Remark, IsDirectPA
+	, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS,  TargetCC, TargetDangerLevel, ToEvidenceID, IsProbation )	
+	SELECT 	DISTINCT tmpJs.CustID
+		,	cus.CTSCustID
+		,	cus.RoleID
+		, 	cus.SubscriberID
+		,	cat.CategoryID    
+		,	cat.CategoryGroup
+		,	cat.RelevantCategoryID
+		,	cus.IsLicensee
+		,	tmpJs.CreatedBy 
+		,	NULL AS Remark
+		,	tmpJs.IsDirectPA
+		, 	tmpJs.WinlossStatus 
+		, 	tmpJs.TurnoverRM
+		, 	tmpJs.WinlossRM 
+		, 	tmpJs.BetCount 
+		, 	tmpJs.ActiveDays
+		,	tmpJs.IsFromTVS
+		,	(CASE 	WHEN sp.CTSCustID IS NOT NULL THEN sp.CustomerClass ELSE IFNULL(cat.CustomerClass,-99) END) AS TargetCC
+		,	(CASE 	WHEN cus.IsLicensee = 1 THEN cat.ABIDangerLevel_Licensee
+					WHEN cus.IsLicensee = 0 THEN cat.ABIDangerLevel_Credit END) AS TargetDangerLevel
+		,	(CASE 	WHEN cus.IsLicensee = 1 THEN cat.EvidenceID_Licensee
+					WHEN cus.IsLicensee = 0 THEN cat.EvidenceID_Credit
+					ELSE NULL END) AS ToEvidenceID
+		,	(CASE WHEN WinlossStatus = 0 THEN 1 ELSE 0 END) AS IsProbation            
+	FROM JSON_TABLE(ip_CustInfo,
+		"$[*]" COLUMNS(
+				CustID 			BIGINT UNSIGNED		PATH "$.CustID"
+			,	ReasonID		INT 				PATH "$.ReasonID"
+			, 	CreatedBy		INT UNSIGNED		PATH "$.CreatedBy"
+            , 	IsDirectPA		BOOLEAN				PATH "$.IsDirectPA"
+			,	WinlossStatus	SMALLINT 			PATH "$.WinlossStatus" 
+			,	TurnoverRM		DECIMAL(20,4)		PATH "$.TurnoverRM"
+			,	WinlossRM		DECIMAL(20,4) 		PATH "$.WinlossRM"
+			, 	BetCount		BIGINT 				PATH "$.BetCount"
+			, 	ActiveDays		INT 				PATH "$.ActiveDays"
+			, 	IsFromTVS		BOOLEAN 			PATH "$.IsFromTVS"
+	)) AS tmpJs
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
+		LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on cus.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
+		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON cus.CTSCustID = sp.CTSCustID 
+		INNER JOIN CTS_DataCenter.CustomerCategory  AS cat ON cat.ReasonID = tmpJs.ReasonID
+		WHERE pin.CTSCustID IS NULL;
+		
+        /*
+		UPDATE Temp_PA AS tmpPA
+		INNER JOIN CTS_DataCenter.CustomerCategory  AS cat ON cat.CategoryID = tmpPA.RelevantCategoryID
+        SET tmpPA.RelevantCategoryGroup = cat.CategoryGroup;*/
             
 		/*	2: EXCLUDE CUSTOMER */    
 		CALL CTS_DC_ExcludeCustByCondition('Temp_PA');  
 	END IF;
-	
+
+
 END$$
 DELIMITER ;

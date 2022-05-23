@@ -69,6 +69,7 @@ sp :BEGIN
         ,	GROUP_CONCAT(DISTINCT cate.CategoryName SEPARATOR ', ') AS CategoryName
 		,	MIN(class.CreatedDate) AS CreatedDate
         ,	SUBSTRING_INDEX(GROUP_CONCAT(IFNULL(us.UserName, class.CreatedBy) ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS CreatedBy
+        ,	SUBSTRING_INDEX(GROUP_CONCAT(IFNULL(us.UserName, class.Remark) ORDER BY class.Remark SEPARATOR ', '),',',1) AS Remark
 	FROM CTS_DataCenter.CTSCustomerClassification AS class
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON class.CTSCustID = cus.CTSCustID
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON class.CategoryID = cate.CategoryID
