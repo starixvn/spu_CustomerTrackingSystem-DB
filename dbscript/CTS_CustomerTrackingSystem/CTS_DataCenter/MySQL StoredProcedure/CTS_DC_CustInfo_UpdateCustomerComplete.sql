@@ -7,7 +7,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustInfo_UpdateCustomerComplete`
 	,	IN ip_LastUpdateCustID	INT 
 	,	IN ip_CustomerInfo		JSON
 )
- SQL SECURITY INVOKER
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20210208@Casey.Huynh
@@ -18,6 +18,7 @@ BEGIN
 		Revisions:
 			- 20210208@Casey.Huynh: Created [Redmine ID: 149941]
 			- 20210622@Aries.Nguyen: Update coding convention  [Redmine ID: #157203]
+			- 20220519@Aries.Nguyen: Init cust info: IsLicensee, IsInternal [Redmine ID: #202204]
 
 		Param's Explanation (filtered by):
 		
@@ -33,6 +34,8 @@ BEGIN
         ,	Site			VARCHAR(20) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
         ,	UserName		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
         ,	RegisterName	VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+		,	IsLicensee		BIT
+		,	IsInternal		BIT
     );
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomer;
@@ -51,11 +54,12 @@ BEGIN
 		,	CurrencyID		INT
         ,	SubscriberID	INT
         ,	UpdateType		TINYINT	/*1: Diff(Site, UserName, UserName2) , 0: Others*/
-  
+		,	IsLicensee		BIT
+		,	IsInternal		BIT
 		,	INDEX IX_Temp_CTSCustomer_CustID(CustID)
 	);	
  
-	INSERT INTO Temp_CTSCustomer(CustID, UserName, UserName2, SiteID, Site, RoleID, SRecommend, MRecommend, Recommend, Currency, CurrencyID, UpdateType)
+	INSERT INTO Temp_CTSCustomer(CustID, UserName, UserName2, SiteID, Site, RoleID, SRecommend, MRecommend, Recommend, Currency, CurrencyID, UpdateType,IsLicensee,IsInternal)
 	SELECT	js.CustID
 		,	js.UserName
         ,	js.UserName2
@@ -68,6 +72,12 @@ BEGIN
         ,	js.Currency
 		,	js.CurrencyID
 		,	js.UpdateType
+		,   CASE WHEN mss.SubscriberGroupID = 2 THEN 1 
+				 WHEN mss.SubscriberGroupID IS NULL THEN NULL
+			ELSE 0 END AS IsLicensee
+        ,   CASE WHEN js.UserName Like '%CashOut' OR stl.ItemID IS NOT NULL OR (js.Recommend IN (52466,5707545) AND js.RoleID = 1)
+				 THEN 1 
+			ELSE 0 END AS IsInternal
 	FROM JSON_TABLE(ip_CustomerInfo, 
 		"$[*]" COLUMNS(
 				CustID			INT UNSIGNED	PATH "$.CustID"    
@@ -83,7 +93,12 @@ BEGIN
 			,	CurrencyID		INT		 		PATH "$.CurrencyID"	
             ,	UpdateType		TINYINT			PATH "$.UpdateType"	
 		)
-	) AS js;	
+	) AS js
+		INNER JOIN	CTS_DataCenter.MappingSubscriberSite mss ON js.SiteID = mss.SiteID 
+																AND ((mss.RoleMapping = 1 AND js.RoleID = 1)
+																	OR (mss.RoleMapping = 2 AND js.RoleID > 1)
+																	OR (mss.RoleMapping = 0))
+        LEFT JOIN CTS_DataCenter.StaticList AS stl ON stl.ItemID = js.SiteID AND stl.ListID = 11;       	
 
     IF EXISTS (SELECT 1 FROM Temp_CTSCustomer AS tmpCus WHERE  tmpCus.UpdateType = 1 )
     THEN
@@ -96,7 +111,7 @@ BEGIN
 			,	tmpCus.RegisterName = SUBSTRING(tmpCus.UserName2, LOCATE('$',tmpCus.UserName2) + 1)
 		WHERE	tmpCus.UpdateType = 1;        
         	
-		INSERT INTO Temp_CTSCustomerCustSub(CustID, CTSCustID, SubscriberID, SiteID, Site,  UserName, RegisterName)
+		INSERT INTO Temp_CTSCustomerCustSub(CustID, CTSCustID, SubscriberID, SiteID, Site,  UserName, RegisterName,IsLicensee,IsInternal)
         SELECT	ctsCust.CustID
 			,	ctsCust.CTSCustID
 			,	tmpCus.SubscriberID
@@ -104,6 +119,8 @@ BEGIN
 			,	tmpCus.Site
 			,	ctsCust.UserName
 			,	ctsCust.RegisterName
+			,	tmpCus.IsLicensee
+			,	tmpCus.IsInternal
         FROM		CTS_DataCenter.CTSCustomer AS ctsCust
 			INNER JOIN	Temp_CTSCustomer AS tmpCus ON ctsCust.CustID = tmpCus.CustID        
         WHERE	ctsCust.CustSubID > 0
@@ -126,6 +143,8 @@ BEGIN
 		, 	ctsCust.Recommend = tempCust.Recommend
         ,	ctsCust.Currency = tempCust.Currency
 		,	ctsCust.CurrencyID = tempCust.CurrencyID
+		,	ctsCust.IsLicensee = tempCust.IsLicensee
+		,	ctsCust.IsInternal =  tempCust.IsInternal
 		,	ctsCust.ModifiedTime = CURRENT_TIMESTAMP(4)
 	WHERE	ctsCust.CustSubID = 0;    
    
@@ -135,6 +154,8 @@ BEGIN
 		,	ctsCust.SiteID = tmpCus.SiteID
 		,	ctsCust.Site = tmpCus.Site            
         ,	ctsCust.ModifiedTime = CURRENT_TIMESTAMP(4)
+		,	ctsCust.IsLicensee = tmpCus.IsLicensee
+		,	ctsCust.IsInternal =  tmpCus.IsInternal
 	WHERE	ctsCust.CustSubID > 0;
    
 	#========Retry Transform Cust Sub==========================================
