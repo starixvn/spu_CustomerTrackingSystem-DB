@@ -120,11 +120,12 @@ BEGIN
 		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CTSCustID = sp.CTSCustID 
 		INNER JOIN CTS_DataCenter.CustomerCategory  AS cat ON cat.CategoryID = tmpJs.CategoryID
 		WHERE pin.CTSCustID IS NULL;
-	
+
 		UPDATE Temp_PA AS tmpPA
 		INNER JOIN CTS_DataCenter.CustomerCategory  AS cat ON cat.CategoryID = tmpPA.RelevantCategoryID
         SET 	tmpPA.RelevantCategoryGroup = cat.CategoryGroup
-			,	tmpPA.RevelentTargetCC = (CASE 	WHEN tmpPA.SpecialCC IS NOT NULL THEN tmpPA.SpecialCC ELSE IFNULL(cat.CustomerClass,-99) END);
+			,	tmpPA.RelevantTargetCC = (CASE 	WHEN tmpPA.SpecialCC IS NOT NULL THEN tmpPA.SpecialCC ELSE IFNULL(cat.CustomerClass,-99) END);
+
     END IF;   
 
     IF ip_ByType = 'Reason' THEN 
@@ -213,7 +214,7 @@ BEGIN
 			UPDATE Temp_PA AS tmpPA
 			INNER JOIN CTS_DataCenter.CustomerCategory  AS cat ON cat.CategoryID = tmpPA.RelevantCategoryID
 			SET 	tmpPA.RelevantCategoryGroup = cat.CategoryGroup
-				,	tmpPA.RevelentTargetCC = (CASE 	WHEN tmpPA.SpecialCC IS NOT NULL THEN tmpPA.SpecialCC ELSE IFNULL(cat.CustomerClass,-99) END);
+				,	tmpPA.RelevantTargetCC = (CASE 	WHEN tmpPA.SpecialCC IS NOT NULL THEN tmpPA.SpecialCC ELSE IFNULL(cat.CustomerClass,-99) END);
 	END IF;
 
 END$$

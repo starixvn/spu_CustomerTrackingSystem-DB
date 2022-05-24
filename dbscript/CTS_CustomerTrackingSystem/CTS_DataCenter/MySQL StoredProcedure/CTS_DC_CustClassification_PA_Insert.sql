@@ -79,7 +79,7 @@ BEGIN
 		,	CategoryID 		SMALLINT UNSIGNED
         ,	CategoryGroup	SMALLINT UNSIGNED
         ,	OldCategoryID 	SMALLINT UNSIGNED
-        ,	DataChangeType	TINYINT DEFAULT 0 	#0:No Change, 1:Change Pobation Status (Winloss), 2: Change CatgoryGroup
+        ,	DataChangeType	TINYINT DEFAULT 0 	#0: New Category, 1:Change Pobation Status (Winloss), 2: No Change
 	);
 
 	INSERT INTO Temp_ExistCategoryType(CustID, CategoryID, CategoryGroup, OldCategoryID)
@@ -107,22 +107,25 @@ BEGIN
     LEFT JOIN Temp_ExistCategoryType AS ecl on tmpPA.CustID = ecl.CustID
     SET 	tmpPA.IsDataChanged = (CASE WHEN ecl.DataChangeType = 3 THEN 0 ELSE IsDataChanged END)
 		,	tmpPA.OldCategoryID = ecl.CategoryID
-        ,	tmpPA.DataChangeType = CASE WHEN tmpPA.IsProbation = 1 AND ecl.CategoryID = tmpPA.CategoryID THEN 1
-										WHEN tmpPA.IsProbation = 0 AND tmpPA.RelevantCategoryID = ecl.CategoryID THEN 1
-										WHEN tmpPA.IsProbation = 1 AND tmpPA.RelevantCategoryID = ecl.CategoryID THEN 2 
-										WHEN tmpPA.IsProbation = 0 AND tmpPA.CategoryID = ecl.CategoryID THEN 2 
+        ,	tmpPA.DataChangeType = CASE WHEN tmpPA.IsProbation = 1 AND ecl.CategoryID = tmpPA.CategoryID THEN 1 # Change Probation Status
+										WHEN tmpPA.IsProbation = 0 AND tmpPA.RelevantCategoryID = ecl.CategoryID THEN 1 # Change Probation Status
+										WHEN tmpPA.IsProbation = 1 AND tmpPA.RelevantCategoryID = ecl.CategoryID THEN 2 # No change
+										WHEN tmpPA.IsProbation = 0 AND tmpPA.CategoryID = ecl.CategoryID THEN 2 # No Change
                                         ELSE 0 END;
 	
+
      UPDATE Temp_PA AS tmpPA
      SET tmpPA.IsDataChanged = 1
 		, tmpPA.CategoryID = (CASE WHEN tmpPA.IsProbation = 1 THEN tmpPA.RelevantCategoryID ELSE tmpPA.CategoryID END)
-     WHERE tmpPA.DataChangeType = 0;
+        , tmpPA.TargetCC = (CASE WHEN tmpPA.IsProbation = 1 THEN tmpPA.RelevantTargetCC ELSE tmpPA.TargetCC END)
+     WHERE tmpPA.DataChangeType = 0; # New Category
      
      UPDATE Temp_PA AS tmpPA
      INNER JOIN Temp_ExistCategoryType AS ecl on tmpPA.CustID = ecl.CustID
      SET tmpPA.IsDataChanged = 1
 		, tmpPA.CategoryID = (CASE WHEN tmpPA.IsProbation = 1 THEN tmpPA.RelevantCategoryID ELSE tmpPA.CategoryID END)
         , tmpPA.OldCategoryID = ecl.OldCategoryID
+        , tmpPA.TargetCC = (CASE WHEN tmpPA.IsProbation = 1 THEN tmpPA.RelevantTargetCC ELSE tmpPA.TargetCC END)
      WHERE tmpPA.DataChangeType = 1;
      
 	/*	7: UPDATE PA By Winloss Probation: tmpPA.IsDataChanged = 2 */
@@ -234,7 +237,7 @@ BEGIN
          FROM Temp_PA AS tmpPA WHERE IsFromPAM = 1 LIMIT 1;
 
          IF (lv_CreatedBy IS NOT NULL) THEN
-			 SELECT LEFT(CONCAT('NoOfCustID:',COUNT(1),'_',GROUP_CONCAT(DISTINCT CTSCustID)),500)
+			 SELECT LEFT(CONCAT('CustNo.:',COUNT(1),'_',GROUP_CONCAT(DISTINCT CTSCustID)),500)
 			 INTO lv_LogInfo
 			 FROM Temp_PA AS tmpPA;
              
