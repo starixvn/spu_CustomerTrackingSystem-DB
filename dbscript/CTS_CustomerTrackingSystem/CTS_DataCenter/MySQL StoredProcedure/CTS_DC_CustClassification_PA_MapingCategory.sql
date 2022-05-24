@@ -42,11 +42,11 @@ BEGIN
         , 	ActiveDays				INT 
         
         /*Get Mapping Value*/
-		, 	CategoryID		    	SMALLINT
-        ,	CategoryGroup     		SMALLINT
+		, 	CategoryID		    	SMALLINT UNSIGNED
+        ,	CategoryGroup     		SMALLINT UNSIGNED
         ,	IsDirectPA				BOOLEAN
         ,	IsProbation				BOOLEAN DEFAULT 0	          
-		,	TargetCC				SMALLINT
+		,	TargetCC				SMALLINT UNSIGNED
 		,	TargetDangerLevel		SMALLINT UNSIGNED
 		, 	ToEvidenceID			SMALLINT        
         ,	IsFromTVS				BOOLEAN DEFAULT 0
@@ -55,14 +55,16 @@ BEGIN
         ,	IsDataChanged			BOOLEAN DEFAULT 0 # 0: Not Change, 1: Changed (IF call from SpecialCC function THEN 1 ELSE 0)
         ,	DataChangeType			TINYINT DEFAULT 0 # 0: New OR Change Category, 1: Change Probation Status, 2: NOT CHANGE
         ,	OldCategoryID		    SMALLINT
-        ,	RelevantCategoryID		SMALLINT	
-        ,	RelevantCategoryGroup	SMALLINT	
+        ,	RelevantCategoryID		SMALLINT UNSIGNED	
+        ,	RelevantCategoryGroup	SMALLINT UNSIGNED
+        ,	RelevantTargetCC		SMALLINT UNSIGNED
+        ,	SpecialCC				SMALLINT UNSIGNED
         , 	PRIMARY KEY     		PK_Temp_PA(CustID,CategoryID)  
     );  
    
     IF ip_ByType = 'Category' THEN      
 	INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, CategoryID, CategoryGroup, RelevantCategoryID, IsLicensee, CreatedBy, Remark, IsDirectPA
-		, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromPAM, IsDataChanged, TargetCC, TargetDangerLevel, ToEvidenceID, IsProbation )	
+		, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromPAM, IsDataChanged, TargetCC, TargetDangerLevel, ToEvidenceID, IsProbation, SpecialCC )	
 	SELECT 	DISTINCT tmpJs.CustID
 		,	tmpJs.CTSCustID
 		,	tmpJs.RoleID
@@ -83,13 +85,14 @@ BEGIN
         ,	tmpJs.IsFromTW
         ,	tmpJs.IsFromPAM
 		,	tmpJs.IsDataChanged
-		,	(CASE 	WHEN sp.CTSCustID IS NOT NULL THEN sp.CustomerClass ELSE IFNULL(cat.CustomerClass,-99) END) AS TargetCC
+		,	(CASE 	WHEN sp.CustomerClass IS NOT NULL THEN sp.CustomerClass ELSE IFNULL(cat.CustomerClass,-99) END) AS TargetCC
 		,	(CASE 	WHEN tmpJs.IsLicensee = 1 THEN cat.ABIDangerLevel_Licensee
 					WHEN tmpJs.IsLicensee = 0 THEN cat.ABIDangerLevel_Credit END) AS TargetDangerLevel
 		,	(CASE 	WHEN tmpJs.IsLicensee = 1 THEN cat.EvidenceID_Licensee
 					WHEN tmpJs.IsLicensee = 0 THEN cat.EvidenceID_Credit
 					ELSE NULL END) AS ToEvidenceID
-		,	(CASE WHEN WinlossStatus = 0 THEN 1 ELSE 0 END) AS IsProbation            
+		,	(CASE WHEN WinlossStatus = 0 THEN 1 ELSE 0 END) AS IsProbation  
+        ,	 sp.CustomerClass AS SpecialCC
 	FROM JSON_TABLE(ip_CustInfo,
 		"$[*]" COLUMNS(
 				CustID 			BIGINT UNSIGNED		PATH "$.CustID"
@@ -120,12 +123,13 @@ BEGIN
 	
 		UPDATE Temp_PA AS tmpPA
 		INNER JOIN CTS_DataCenter.CustomerCategory  AS cat ON cat.CategoryID = tmpPA.RelevantCategoryID
-        SET tmpPA.RelevantCategoryGroup = cat.CategoryGroup;
+        SET 	tmpPA.RelevantCategoryGroup = cat.CategoryGroup
+			,	tmpPA.RevelentTargetCC = (CASE 	WHEN tmpPA.SpecialCC IS NOT NULL THEN tmpPA.SpecialCC ELSE IFNULL(cat.CustomerClass,-99) END);
     END IF;   
 
     IF ip_ByType = 'Reason' THEN 
 		INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, CategoryID, CategoryGroup, RelevantCategoryID, IsLicensee, CreatedBy, Remark, IsDirectPA
-			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromPAM, TargetCC, TargetDangerLevel, ToEvidenceID, IsProbation )	
+			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromPAM, TargetCC, TargetDangerLevel, ToEvidenceID, IsProbation, SpecialCC )	
 		WITH CTS_CustPA AS(
 		SELECT 	DISTINCT tmpJs.CustID
 			,	cus.CTSCustID
@@ -146,6 +150,7 @@ BEGIN
 			,	sp.CustomerClass AS SpecialCustomerClass
 			,	(CASE WHEN WinlossStatus = 0 THEN 1 ELSE 0 END) AS IsProbation 
 			,	tmpJs.ReasonID
+            ,	sp.CustomerClass AS SpecialCC
 		FROM JSON_TABLE(ip_CustInfo,
 			"$[*]" COLUMNS(
 					CustID 			BIGINT UNSIGNED		PATH "$.CustID"
@@ -184,13 +189,14 @@ BEGIN
 			,	cte.IsFromTVS
 			,	cte.IsFromTW
 			,	cte.IsFromPAM
-			,	(CASE 	WHEN cte.SpecialCustomerClass IS NOT NULL THEN cte.SpecialCustomerClass ELSE IFNULL(tmpF.CustomerClass,-99) END) AS TargetCC
+			,	(CASE 	WHEN cte.SpecialCC IS NOT NULL THEN cte.SpecialCC ELSE IFNULL(cat.CustomerClass,-99) END) AS TargetCC
 			,	(CASE 	WHEN cte.IsLicensee = 1 THEN tmpF.ABIDangerLevel_Licensee
 						WHEN cte.IsLicensee = 0 THEN tmpF.ABIDangerLevel_Credit END) AS TargetDangerLevel
 			,	(CASE 	WHEN cte.IsLicensee = 1 THEN tmpF.EvidenceID_Licensee
 						WHEN cte.IsLicensee = 0 THEN tmpF.EvidenceID_Credit
 						ELSE NULL END) AS ToEvidenceID
-			,	cte.IsProbation     
+			,	cte.IsProbation
+            ,	cte.SpecialCC
 		FROM CTS_CustPA AS cte,
 		LATERAL( SELECT cat.CategoryID
 					,	cat.CategoryGroup
@@ -206,7 +212,8 @@ BEGIN
 	 
 			UPDATE Temp_PA AS tmpPA
 			INNER JOIN CTS_DataCenter.CustomerCategory  AS cat ON cat.CategoryID = tmpPA.RelevantCategoryID
-			SET tmpPA.RelevantCategoryGroup = cat.CategoryGroup;
+			SET 	tmpPA.RelevantCategoryGroup = cat.CategoryGroup
+				,	tmpPA.RevelentTargetCC = (CASE 	WHEN tmpPA.SpecialCC IS NOT NULL THEN tmpPA.SpecialCC ELSE IFNULL(cat.CustomerClass,-99) END);
 	END IF;
 
 END$$

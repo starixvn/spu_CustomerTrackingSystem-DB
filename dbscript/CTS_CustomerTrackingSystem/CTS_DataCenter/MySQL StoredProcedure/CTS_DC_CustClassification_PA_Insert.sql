@@ -4,10 +4,13 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_PA_Insert`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_Insert`(
 		IN ip_ByType			VARCHAR(20) 
+    ,	IN ip_IsFromQueue		BOOLEAN
     ,   IN ip_ProblemAccounts 	JSON
+    
     ,	OUT op_ErrorMessage 	VARCHAR(200)
 )
     SQL SECURITY INVOKER
+
 BEGIN
 /*
 		Created:	20200715@Long.Luu
@@ -44,22 +47,25 @@ BEGIN
 			
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_PA_Insert('[{"CustID": 456, "ReasonID": 59, "RobotCounter": 0}]',0,@op_ErrorMessage);
 	*/   
-
+ #DECLARE ip_IsFromQueue		BOOLEAN;
     DECLARE lv_CurrentDateTime	DATETIME DEFAULT CURRENT_TIME(); 
     DECLARE	CONST_PA_SPORTGROUP TINYINT DEFAULT 0;
     DECLARE CONST_ACTIONTYPE_INSERT INT DEFAULT 0;
-    DECLARE CONST_GROUP_NORMAL INT DEFAULT 200;
-
+    DECLARE CONST_NORMAL_SPORTGROUP INT DEFAULT 200;
+    DECLARE CONST_USERLOG_LOGTYPE SMALLINT DEFAULT 32;
+    DECLARE CONST_SPNAME VARCHAR(100) DEFAULT 'CTS_DC_CustClassification_PA_Insert';
+    DECLARE lv_LogInfo VARCHAR(500);
+	DECLARE lv_CreatedBy SMALLINT;
+    DECLARE lv_NoOfCust INT;
+    DECLARE lv_CreatedDate VARCHAR(500);
+    
     /* Mapping Category */
     CALL CTS_DC_CustClassification_PA_MapingCategory(ip_ByType,ip_ProblemAccounts);
-    
-	/*	2: EXCLUDE CUSTOMER */    
-	CALL CTS_DC_ExcludeCustByCondition('Temp_PA');  
 
     /*	2: REMOVE GENERAL CATEGORY BEFORE	*/
     DELETE clss
     FROM CTS_DataCenter.CTSCustomerClassification AS clss
-		INNER JOIN Temp_PA AS tmpPA ON tmpPA.CustID = clss.CustID AND clss.SportGroupID = CONST_GROUP_NORMAL;
+		INNER JOIN Temp_PA AS tmpPA ON tmpPA.CustID = clss.CustID AND clss.SportGroupID = CONST_NORMAL_SPORTGROUP;
   
     /*	3: REMOVE PA PROBATION LIST WHEN IsProbation = 0*/
     DELETE pro
@@ -205,24 +211,44 @@ BEGIN
         ,	tmpPA.IsDirectPA
 	FROM Temp_PA AS tmpPA;
     
-    /* INSERT SMA PA TO QUEUE PA AS */
-    INSERT IGNORE INTO CTSCustomerClassificationQueue(CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryID, CategoryGroup, LastDownlineCTSCustID, ActionType, InsertTime)
-    SELECT tmpPA.CTSCustID
-		,	tmpPA.CustID
-		,	tmpPA.RoleID
-        ,	tmpPA.SubscriberID
-        ,	tmpPA.CreatedBy
-        ,	tmpPA.Remark        
-        ,	tmpPA.CategoryID
-        ,	tmpPA.CategoryGroup
-        ,	0 AS LastDownlineCTSCustID
-        ,	0 AS ActionType # 0: Mark PA
-        ,	CURRENT_TIMESTAMP(3) AS InsertTime
-    FROM Temp_PA AS tmpPA
-    WHERE RoleID > 1;
-     
+    IF(ip_IsFromQueue = 0) THEN
+		/* INSERT SMA PA TO QUEUE PA AS */
+		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationQueue(CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryID, CategoryGroup, LastDownlineCTSCustID, ActionType, InsertTime)
+		SELECT tmpPA.CTSCustID
+			,	tmpPA.CustID
+			,	tmpPA.RoleID
+			,	tmpPA.SubscriberID
+			,	tmpPA.CreatedBy
+			,	tmpPA.Remark        
+			,	tmpPA.CategoryID
+			,	tmpPA.CategoryGroup
+			,	0 AS LastDownlineCTSCustID
+			,	0 AS ActionType # 0: Mark PA
+			,	CURRENT_TIMESTAMP(3) AS InsertTime
+		FROM Temp_PA AS tmpPA
+		WHERE tmpPA.RoleID > 1;
+        
+		/* WRITE USER LOG IF FROM PAM*/
+         SELECT CreatedBy 
+         INTO lv_CreatedBy
+         FROM Temp_PA AS tmpPA WHERE IsFromPAM = 1 LIMIT 1;
+
+         IF (lv_CreatedBy IS NOT NULL) THEN
+			 SELECT LEFT(CONCAT('NoOfCustID:',COUNT(1),'_',GROUP_CONCAT(DISTINCT CTSCustID)),500)
+			 INTO lv_LogInfo
+			 FROM Temp_PA AS tmpPA;
+             
+		 INSERT IGNORE INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
+		 SELECT CONST_USERLOG_LOGTYPE AS LogTypeID
+			,	CONST_SPNAME AS SPName
+			,	lv_LogInfo AS LogInfo
+			,	DATE(lv_CurrentDateTime) AS CreatedDate
+			,	lv_CreatedBy AS CreatedBy;        
+        END IF;    
+	END IF;
+    
     /* INSERT EVIDENCE FOR ROOT */
-    INSERT IGNORE INTO CustEvidence(CTSCustID, EvidenceID, Remark, `Level`, FromCustID,  CreatedDate, CreatedBy)
+    INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, `Level`, FromCustID,  CreatedDate, CreatedBy)
     SELECT tmpPA.CTSCustID
 		,	tmpPA.ToEvidenceID
 		,	tmpPA.Remark
@@ -233,20 +259,20 @@ BEGIN
     FROM Temp_PA AS tmpPA;
     
     /* INSERT EVIDENCE QUEUE */
-     INSERT IGNORE INTO CustEvidenceAffectedQueueInsert(CTSCustID, EvidenceID, Remark, CreatedBy, Created)
+     INSERT IGNORE INTO CTS_DataCenter.CustEvidenceAffectedQueueInsert(CTSCustID, EvidenceID, Remark, CreatedBy, Created)
      SELECT tmpPA.CTSCustID
 		,	tmpPA.ToEvidenceID
 		,	tmpPA.Remark
         ,	tmpPA.CreatedBy
         ,	DATE(lv_CurrentDateTime) AS CreatedDate
     FROM Temp_PA AS tmpPA
-    WHERE RoleID > 1;
-    
+    WHERE tmpPA.RoleID > 1;
+
 	/* 19: RETURN UPDATED CUSTOMERS TO SERVICE FOR FUTHER STEPS */
 	SELECT	DISTINCT 
 			tmpPA.CustID
 		,	tmpPA.CTSCustID
     FROM Temp_PA AS tmpPA; 
-    
+ 
 END$$
 DELIMITER ;
