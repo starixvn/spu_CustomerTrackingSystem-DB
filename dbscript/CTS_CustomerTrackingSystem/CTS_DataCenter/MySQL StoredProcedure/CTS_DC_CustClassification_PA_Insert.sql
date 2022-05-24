@@ -136,7 +136,7 @@ BEGIN
 
 	# INSERT NEW PA
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, 
-	CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsDirect, Remark, IsFromPAM)
+	CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsDirect, Remark, IsFromPAM, IsFromTVS, IsFromTW)
 	SELECT 	tmpPA.CustID
 		,	tmpPA.CTSCustID
 		, 	tmpPA.SubscriberID
@@ -150,6 +150,8 @@ BEGIN
         ,	tmpPA.IsDirectPA
         ,	tmpPA.Remark
         ,	tmpPA.IsFromPAM
+        ,	tmpPA.IsFromTVS
+        ,	tmpPA.IsFromTW
 	FROM Temp_PA AS tmpPA
     WHERE tmpPA.DataChangeType = 0;      
 
@@ -178,7 +180,7 @@ BEGIN
         ,	tmpPA.Remark
 	FROM Temp_PA AS tmpPA
 	WHERE tmpPA.IsDataChanged = 1;
-    
+
     /******INSERT LOG FOR ALL ******/
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType
 			, InsertDate, TargetCC, SourceTypeID, IsDataChanged,  TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, IsDirect)
