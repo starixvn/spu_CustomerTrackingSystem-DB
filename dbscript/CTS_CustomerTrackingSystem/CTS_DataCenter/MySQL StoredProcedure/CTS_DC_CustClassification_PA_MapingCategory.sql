@@ -63,8 +63,7 @@ BEGIN
    
     IF ip_ByType = 'Category' THEN      
 	INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, CategoryID, CategoryGroup, RelevantCategoryID, IsLicensee, CreatedBy, Remark, IsDirectPA
-		, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromPAM, IsDataChanged, TargetCC, TargetDangerLevel, ToEvidenceID, IsProbation )
-	
+		, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromPAM, IsDataChanged, TargetCC, TargetDangerLevel, ToEvidenceID, IsProbation )	
 	SELECT 	DISTINCT tmpJs.CustID
 		,	tmpJs.CTSCustID
 		,	tmpJs.RoleID
@@ -81,7 +80,9 @@ BEGIN
 		, 	tmpJs.WinlossRM 
 		, 	tmpJs.BetCount 
 		, 	tmpJs.ActiveDays
-		,	tmpJs.IsFromPAM
+		,	tmpJs.IsFromTVS
+        ,	tmpJs.IsFromTW
+        ,	tmpJs.IsFromPAM
 		,	tmpJs.IsDataChanged
 		,	(CASE 	WHEN sp.CTSCustID IS NOT NULL THEN sp.CustomerClass ELSE IFNULL(cat.CustomerClass,-99) END) AS TargetCC
 		,	(CASE 	WHEN tmpJs.IsLicensee = 1 THEN cat.ABIDangerLevel_Licensee
@@ -107,7 +108,9 @@ BEGIN
 			,	WinlossRM		DECIMAL(20,4) 		PATH "$.WinlossRM"
 			, 	BetCount		BIGINT 				PATH "$.BetCount"
 			, 	ActiveDays		INT 				PATH "$.ActiveDays"
-			, 	IsFromPAM		BOOLEAN 			PATH "$.IsFromPAM"
+			, 	IsFromTVS		BOOLEAN 			PATH "$.IsFromTVS"
+            , 	IsFromTW		BOOLEAN 			PATH "$.IsFromTW"
+            , 	IsFromPAM		BOOLEAN 			PATH "$.IsFromPAM"
 			, 	IsDataChanged	BOOLEAN 			PATH "$.IsDataChanged"   
 			
 	)) AS tmpJs
@@ -123,7 +126,7 @@ BEGIN
 
     IF ip_ByType = 'Reason' THEN 
 	INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, CategoryID, CategoryGroup, RelevantCategoryID, IsLicensee, CreatedBy, Remark, IsDirectPA
-	, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS,  TargetCC, TargetDangerLevel, ToEvidenceID, IsProbation )	
+		, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS,  TargetCC, TargetDangerLevel, ToEvidenceID, IsProbation )	
 	SELECT 	DISTINCT tmpJs.CustID
 		,	cus.CTSCustID
 		,	cus.RoleID
@@ -160,6 +163,8 @@ BEGIN
 			, 	BetCount		BIGINT 				PATH "$.BetCount"
 			, 	ActiveDays		INT 				PATH "$.ActiveDays"
 			, 	IsFromTVS		BOOLEAN 			PATH "$.IsFromTVS"
+            , 	IsFromTW		BOOLEAN 			PATH "$.IsFromTW"
+            , 	IsFromPAM		BOOLEAN 			PATH "$.IsFromPAM"
 	)) AS tmpJs
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
 		LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on cus.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
