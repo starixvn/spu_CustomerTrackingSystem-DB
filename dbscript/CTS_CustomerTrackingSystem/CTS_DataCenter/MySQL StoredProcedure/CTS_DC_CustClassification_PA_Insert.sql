@@ -51,7 +51,7 @@ BEGIN
     DECLARE CONST_GROUP_NORMAL INT DEFAULT 200;
 
     /* Mapping Category */
-    CALL CTS_DC_CustClassification_PA_MapingCategory_DEBUG(ip_ByType,ip_ProblemAccounts);
+    CALL CTS_DC_CustClassification_PA_MapingCategory(ip_ByType,ip_ProblemAccounts);
     
 	/*	2: EXCLUDE CUSTOMER */    
 	CALL CTS_DC_ExcludeCustByCondition('Temp_PA');  
