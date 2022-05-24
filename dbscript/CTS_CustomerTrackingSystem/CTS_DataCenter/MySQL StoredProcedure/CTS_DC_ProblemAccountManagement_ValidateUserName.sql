@@ -71,13 +71,12 @@ BEGIN
         ,	(CASE WHEN c.UserName IS NULL THEN 'Invalid Username' 
 				  WHEN c.CustSubID <> 0 THEN 'Sub Account'
                   WHEN (c.IsLicensee = 1 AND c.RoleID > 1) THEN 'Upline Licensee Account'
-                  WHEN (c.IsInternal = 1 OR st.ItemID IS NOT NULL) THEN 'Internal Account'
+                  WHEN (c.IsInternal = 1) THEN 'Internal Account'
                   WHEN (SELECT 1 FROM CTS_DataCenter.PinCustomerCategory AS pin WHERE pin.CTSCustID = c.CTSCustID) IS NOT NULL THEN 'Existing Pin Category'
                   ELSE NULL
 			END) AS ErrorMsg
 	FROM Temp_UserName AS u
-		LEFT JOIN CTS_DataCenter.CTSCustomer AS c ON u.UserName = c.UserName
-        LEFT JOIN CTS_DataCenter.StaticList AS st ON c.SiteID = st.ItemID AND st.ListID = 11;
+		LEFT JOIN CTS_DataCenter.CTSCustomer AS c ON u.UserName = c.UserName;
    
     IF EXISTS (SELECT 1 FROM Temp_ExistedCustomer WHERE ErrorMsg IS NOT NULL) THEN
 		SELECT UserName, ErrorMsg 
