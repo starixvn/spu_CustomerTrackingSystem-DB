@@ -125,9 +125,13 @@ BEGIN
 	SET 	cls.CTSCustID = tmpPA.CTSCustID
 		,	cls.CategoryID = tmpPA.CategoryID
 		, 	cls.LastModifiedBy = tmpPA.CreatedBy
-		,	 cls.Remark = tmpPA.Remark
+		,	cls.Remark = tmpPA.Remark
 		,   cls.LastModifiedDate = lv_CurrentDateTime
 		, 	cls.LastScannedDate = DATE(lv_CurrentDateTime)
+        ,	cls.IsDirect = tmpPA.IsDirectPA
+        ,	cls.IsFromPAM = tmpPA.IsFromPAM
+        ,	cls.IsFromTVS = tmpPA.IsFromTVS
+        ,	cls.IsFromTW = tmpPA.IsFromTW
 	WHERE tmpPA.DataChangeType = 1;	
 
 	# INSERT NEW PA
@@ -210,7 +214,7 @@ BEGIN
         ,	tmpPA.CategoryID
         ,	tmpPA.CategoryGroup
         ,	0 AS LastDownlineCTSCustID
-        ,	0 AS ActionType
+        ,	0 AS ActionType # 0: Mark PA
         ,	CURRENT_TIMESTAMP(3) AS InsertTime
     FROM Temp_PA AS tmpPA
     WHERE RoleID > 1;

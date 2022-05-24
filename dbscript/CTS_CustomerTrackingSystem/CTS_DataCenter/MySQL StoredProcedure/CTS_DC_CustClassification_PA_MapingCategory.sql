@@ -121,8 +121,7 @@ BEGIN
         SET tmpPA.RelevantCategoryGroup = cat.CategoryGroup;
     END IF;   
 
-    IF ip_ByType = 'Reason' THEN
- 
+    IF ip_ByType = 'Reason' THEN 
 	INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, CategoryID, CategoryGroup, RelevantCategoryID, IsLicensee, CreatedBy, Remark, IsDirectPA
 	, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS,  TargetCC, TargetDangerLevel, ToEvidenceID, IsProbation )	
 	SELECT 	DISTINCT tmpJs.CustID
@@ -166,7 +165,7 @@ BEGIN
 		LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on cus.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
 		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON cus.CTSCustID = sp.CTSCustID 
 		INNER JOIN CTS_DataCenter.CustomerCategory  AS cat ON cat.ReasonID = tmpJs.ReasonID
-		WHERE pin.CTSCustID IS NULL;
+		WHERE pin.CTSCustID IS NULL AND cus.IsInternal = 0;
 		
         /*
 		UPDATE Temp_PA AS tmpPA
