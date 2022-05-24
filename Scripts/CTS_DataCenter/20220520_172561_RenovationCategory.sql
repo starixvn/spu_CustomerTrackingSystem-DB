@@ -51,7 +51,7 @@ CREATE TABLE `CTSCustomerClassificationQueue` (
 ) ENGINE=InnoDB;
 
 
-SELECT * FROM CTS_DataCenter.StaticList WHERE ListID = 4 ORDER BY ItemID DESC;
+SELECT * FROM CTS_Admin.LogType WHERE ListID = 4 ORDER BY ItemID DESC;
 
 INSERT INTO CTS_DataCenter.StaticList(ListID,ItemID,ListName,ListNameDisplay,ItemName,ItemNameDisplay,PriorityOrder,Status,Description,CreatedDate)
 VALUES (4,31,'Classification Source Type','Classification Source Type','Problem Account is marked directly','Problem Account is marked directly',31,1,'Problem Account is marked directly',NOW())
@@ -68,3 +68,10 @@ VALUES (166,'AI Good Robot Betting','AI Good Robot Betting',50,166,1,0,NOW(),'æ­
 
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
 VALUES (94,'RobotBettingService_LastScannedTime','RobotBettingService_LastScannedTime','DATETIME','2022-09-22 08:00:00.000');	
+
+
+/*********************************************************/
+USE CTS_Admin;
+INSERT INTO LogType(LogTypeID, LogTypeName, LogTypeDescription)
+VALUES	(32,'Mark Problem Acccount','Mark Problem Acccount')
+	,	(33,'Unmark Problem Acccount','Unmark Problem Acccount');
