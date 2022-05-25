@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_PA_MapingCategory`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_MapingCategory`(
-		IN 		ip_ByType		VARCHAR(20)	#"Category, Reason, Evidence"
+		IN 		ip_InputType	VARCHAR(20)	#"Category, Reason, Evidence"
     ,	IN 		ip_CustInfo 	JSON
 	
 )
@@ -62,7 +62,7 @@ BEGIN
         , 	PRIMARY KEY     		PK_Temp_PA(CustID,CategoryID)  
     );  
    
-    IF ip_ByType = 'Category' THEN      
+    IF ip_InputType = 'Category' THEN      
 	INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, CategoryID, CategoryGroup, RelevantCategoryID, IsLicensee, CreatedBy, Remark, IsDirectPA
 		, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromPAM, IsDataChanged, TargetCC, TargetDangerLevel, ToEvidenceID, IsProbation, SpecialCC )	
 	SELECT 	DISTINCT tmpJs.CustID
@@ -128,7 +128,7 @@ BEGIN
 
     END IF;   
 
-    IF ip_ByType = 'Reason' THEN 
+    IF ip_InputType = 'Reason' THEN 
 		INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, CategoryID, CategoryGroup, RelevantCategoryID, IsLicensee, CreatedBy, Remark, IsDirectPA
 			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromPAM, TargetCC, TargetDangerLevel, ToEvidenceID, IsProbation, SpecialCC )	
 		WITH CTS_CustPA AS(

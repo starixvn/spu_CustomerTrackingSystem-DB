@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_PA_Insert`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_Insert`(
-		IN ip_ByType			VARCHAR(20) 
+		IN ip_InputType			VARCHAR(20) 
     ,	IN ip_IsFromQueue		BOOLEAN
     ,   IN ip_ProblemAccounts 	JSON
     
@@ -42,12 +42,12 @@ BEGIN
             - 20220519@Casey.Huynh: Renovate PA Process [RedmineID: #172061]
             
         Param's Explanation (filtered by):
-			- ip_ByType: 1: Category, 2: Reason
+			- ip_InputType: 1: Category, 2: Reason
         Example:
 			
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_PA_Insert('[{"CustID": 456, "ReasonID": 59, "RobotCounter": 0}]',0,@op_ErrorMessage);
 	*/   
- #DECLARE ip_IsFromQueue		BOOLEAN;
+
     DECLARE lv_CurrentDateTime	DATETIME DEFAULT CURRENT_TIME(); 
     DECLARE	CONST_PA_SPORTGROUP TINYINT DEFAULT 0;
     DECLARE CONST_ACTIONTYPE_INSERT INT DEFAULT 0;
@@ -57,30 +57,36 @@ BEGIN
     DECLARE lv_LogInfo VARCHAR(500);
 	DECLARE lv_CreatedBy INT UNSIGNED;
     DECLARE lv_NoOfCust INT;
-    DECLARE lv_CreatedDate VARCHAR(500);
     
-    /* Mapping Category */
-    CALL CTS_DC_CustClassification_PA_MapingCategory(ip_ByType,ip_ProblemAccounts);
-
-    /* 2: REMOVE GENERAL CATEGORY BEFORE	*/
-    DELETE clss
-    FROM CTS_DataCenter.CTSCustomerClassification AS clss
-		INNER JOIN Temp_PA AS tmpPA ON tmpPA.CustID = clss.CustID AND clss.SportGroupID = CONST_NORMAL_SPORTGROUP;
-  
-    /* 3: REMOVE PA PROBATION LIST WHEN IsProbation = 0*/
-    DELETE pro
-    FROM CTS_DataCenter.ProbationAccountMonitor AS pro
-		INNER JOIN Temp_PA AS tmpPA ON tmpPA.CustID = pro.CustID
-	WHERE IsProbation = 0;
-
-    DROP TEMPORARY TABLE IF EXISTS Temp_ExistCategoryType ;
+	DROP TEMPORARY TABLE IF EXISTS Temp_ExistCategoryType ;
     CREATE TEMPORARY TABLE Temp_ExistCategoryType(
 			CustID INT
 		,	CategoryID 		SMALLINT UNSIGNED
         ,	CategoryGroup	SMALLINT UNSIGNED
         ,	OldCategoryID 	SMALLINT UNSIGNED
         ,	DataChangeType	TINYINT DEFAULT 0 	#0: New Category, 1:Change Pobation Status (Winloss), 2: No Change
+        
+        ,	PRIMARY KEY PK_Temp_ExistCategoryType_CustID(CustID)
 	);
+    
+    /* Mapping Category */
+    CALL CTS_DC_CustClassification_PA_MapingCategory(ip_InputType,ip_ProblemAccounts);
+
+	/* EXCLUDED PIN CATEGORY BEFORE	*/
+    DELETE tmpPA
+    FROM Temp_PA AS tmpPA 
+		INNER JOIN CTS_DataCenter.PinCustomerCategory AS pin ON tmpPA.CTSCustID = pin.CTSCustID;
+
+    /* REMOVE GENERAL CATEGORY BEFORE	*/
+    DELETE clss
+    FROM CTS_DataCenter.CTSCustomerClassification AS clss
+		INNER JOIN Temp_PA AS tmpPA ON tmpPA.CustID = clss.CustID AND clss.SportGroupID = CONST_NORMAL_SPORTGROUP;
+  
+    /* REMOVE PA PROBATION LIST WHEN IsProbation = 0*/
+    DELETE pro
+    FROM CTS_DataCenter.ProbationAccountMonitor AS pro
+		INNER JOIN Temp_PA AS tmpPA ON tmpPA.CustID = pro.CustID
+	WHERE IsProbation = 0;
 
 	INSERT INTO Temp_ExistCategoryType(CustID, CategoryID, CategoryGroup, OldCategoryID)
     WITH CTE_ExistsCategory AS
@@ -114,17 +120,17 @@ BEGIN
                                         ELSE 0 END;
 	
      UPDATE Temp_PA AS tmpPA
-     SET tmpPA.IsDataChanged = 1
-		, tmpPA.CategoryID = (CASE WHEN tmpPA.IsProbation = 1 THEN tmpPA.RelevantCategoryID ELSE tmpPA.CategoryID END)
-        , tmpPA.TargetCC = (CASE WHEN tmpPA.IsProbation = 1 THEN tmpPA.RelevantTargetCC ELSE tmpPA.TargetCC END)
+     SET	tmpPA.IsDataChanged = 1
+		,	tmpPA.CategoryID = (CASE WHEN tmpPA.IsProbation = 1 THEN tmpPA.RelevantCategoryID ELSE tmpPA.CategoryID END)
+        ,	tmpPA.TargetCC = (CASE WHEN tmpPA.IsProbation = 1 THEN tmpPA.RelevantTargetCC ELSE tmpPA.TargetCC END)
      WHERE tmpPA.DataChangeType = 0; # New Category
      
      UPDATE Temp_PA AS tmpPA
      INNER JOIN Temp_ExistCategoryType AS ecl on tmpPA.CustID = ecl.CustID
-     SET tmpPA.IsDataChanged = 1
-		, tmpPA.CategoryID = (CASE WHEN tmpPA.IsProbation = 1 THEN tmpPA.RelevantCategoryID ELSE tmpPA.CategoryID END)
-        , tmpPA.OldCategoryID = ecl.OldCategoryID
-        , tmpPA.TargetCC = (CASE WHEN tmpPA.IsProbation = 1 THEN tmpPA.RelevantTargetCC ELSE tmpPA.TargetCC END)
+     SET	tmpPA.IsDataChanged = 1
+		,	tmpPA.CategoryID = (CASE WHEN tmpPA.IsProbation = 1 THEN tmpPA.RelevantCategoryID ELSE tmpPA.CategoryID END)
+        ,	tmpPA.OldCategoryID = ecl.OldCategoryID
+        ,	tmpPA.TargetCC = (CASE WHEN tmpPA.IsProbation = 1 THEN tmpPA.RelevantTargetCC ELSE tmpPA.TargetCC END)
      WHERE tmpPA.DataChangeType = 1;
      
 	/*	7: UPDATE PA By Winloss Probation: tmpPA.IsDataChanged = 2 */
@@ -225,7 +231,7 @@ BEGIN
 			,	tmpPA.CategoryID
 			,	tmpPA.CategoryGroup
 			,	0 AS LastDownlineCTSCustID
-			,	0 AS ActionType # 0: Mark PA
+			,	3 AS ActionType # 0: Mark PA
 			,	CURRENT_TIMESTAMP(3) AS InsertTime
 		FROM Temp_PA AS tmpPA
 		WHERE tmpPA.RoleID > 1;

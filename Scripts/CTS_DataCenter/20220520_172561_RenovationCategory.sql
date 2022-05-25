@@ -45,6 +45,7 @@ CREATE TABLE `CTSCustomerClassificationQueue` (
   `LastDownlineCTSCustID` bigint unsigned DEFAULT NULL,
   `ActionType` tinyint DEFAULT NULL COMMENT '1: INSERT VVIP, 2:Remove VVIP, 3:INSERT PA, 4: UNMARK PA',
   `InsertTime` datetime(3) DEFAULT NULL,
+  IsExceptDirectDownline BOOLEAN NULL,
   PRIMARY KEY (`ID`),
   KEY `IX_Temp_Customer_CustID` (`CustID`),
   KEY `IX_Temp_Customer_CTSCustID` (`CTSCustID`)
