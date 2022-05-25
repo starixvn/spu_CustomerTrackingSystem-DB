@@ -39,7 +39,7 @@ BEGIN
             - 20220210@Irena.Vo: Adjust logic for Update ABI Danger Level [#167746]
 			- 20220214@Long.Luu: Support new category for Good & Bad Robot User [Redmine ID: #167726]
 			- 20220414@Aries.Nguyen: Add new category/class for PA Probation [Redmine ID: #170468]
-            - 20220519@Casey.Huynh: Renovate PA Process [Redmine ID: #172061]
+            - 20220519@Casey.Huynh: Renovate PA Process [RedmineID: #172061]
             
         Param's Explanation (filtered by):
 			- ip_ByType: 1: Category, 2: Reason
@@ -55,19 +55,19 @@ BEGIN
     DECLARE CONST_USERLOG_LOGTYPE SMALLINT DEFAULT 32;
     DECLARE CONST_SPNAME VARCHAR(100) DEFAULT 'CTS_DC_CustClassification_PA_Insert';
     DECLARE lv_LogInfo VARCHAR(500);
-	DECLARE lv_CreatedBy SMALLINT;
+	DECLARE lv_CreatedBy INT UNSIGNED;
     DECLARE lv_NoOfCust INT;
     DECLARE lv_CreatedDate VARCHAR(500);
     
     /* Mapping Category */
     CALL CTS_DC_CustClassification_PA_MapingCategory(ip_ByType,ip_ProblemAccounts);
 
-    /*	2: REMOVE GENERAL CATEGORY BEFORE	*/
+    /* 2: REMOVE GENERAL CATEGORY BEFORE	*/
     DELETE clss
     FROM CTS_DataCenter.CTSCustomerClassification AS clss
 		INNER JOIN Temp_PA AS tmpPA ON tmpPA.CustID = clss.CustID AND clss.SportGroupID = CONST_NORMAL_SPORTGROUP;
   
-    /*	3: REMOVE PA PROBATION LIST WHEN IsProbation = 0*/
+    /* 3: REMOVE PA PROBATION LIST WHEN IsProbation = 0*/
     DELETE pro
     FROM CTS_DataCenter.ProbationAccountMonitor AS pro
 		INNER JOIN Temp_PA AS tmpPA ON tmpPA.CustID = pro.CustID
@@ -113,7 +113,6 @@ BEGIN
 										WHEN tmpPA.IsProbation = 0 AND tmpPA.CategoryID = ecl.CategoryID THEN 2 # No Change
                                         ELSE 0 END;
 	
-
      UPDATE Temp_PA AS tmpPA
      SET tmpPA.IsDataChanged = 1
 		, tmpPA.CategoryID = (CASE WHEN tmpPA.IsProbation = 1 THEN tmpPA.RelevantCategoryID ELSE tmpPA.CategoryID END)
