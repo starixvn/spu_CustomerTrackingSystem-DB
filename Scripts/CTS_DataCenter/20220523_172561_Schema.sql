@@ -24,6 +24,28 @@ VALUES (92, 'ReScanNewMember_LastCTSCustID', 'ReScanNewMember_LastCTSCustID', 'B
 INSERT INTO CTS_DataCenter.SystemParameter (ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
 VALUES (93, 'ReScanNewMember_BatchSize', 'ReScanNewMember_BatchSize', 'INT', 1000);
 
+USE CTS_DataCenter;
+CREATE TABLE `CTSCustomerClassification_InputDataLog_V2` (
+   `ID` bigint NOT NULL AUTO_INCREMENT,
+   `CustID` bigint unsigned NOT NULL,
+   `FunctionID` smallint unsigned NOT NULL,
+   `InputValue` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+   `CreatedDate` date NOT NULL,
+   `CreatedTime` datetime NOT NULL,
+   `JsonInputValue` json DEFAULT NULL,
+   PRIMARY KEY (`ID`,`CreatedDate`),
+   KEY `IXF_CTSCustomerClassification_InputDataLog_CustID` ((cast(json_unquote(json_extract(`JsonInputValue`,'$.CustID')) as unsigned)))
+ ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8_unicode_ci
+  /*!50100 PARTITION BY RANGE (yearweek(`CreatedDate`,0))
+ (PARTITION pw202221 VALUES LESS THAN (202222) ENGINE = InnoDB,
+  PARTITION pw202222 VALUES LESS THAN (202223) ENGINE = InnoDB,
+  PARTITION pw202223 VALUES LESS THAN (202224) ENGINE = InnoDB,
+  PARTITION pw202224 VALUES LESS THAN (202225) ENGINE = InnoDB,
+  PARTITION pw999999 VALUES LESS THAN MAXVALUE ENGINE = InnoDB) */;
+
+RENAME TABLE CTSCustomerClassification_InputDataLog TO CTSCustomerClassification_InputDataLog_BK;
+RENAME TABLE CTSCustomerClassification_InputDataLog_V2 TO CTSCustomerClassification_InputDataLog;
+
 
 USE CTS_Archive;
 CREATE TABLE `CTSLog` (

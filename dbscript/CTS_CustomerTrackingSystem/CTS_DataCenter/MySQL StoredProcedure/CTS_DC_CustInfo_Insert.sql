@@ -99,6 +99,19 @@ BEGIN
         ,	PRIMARY KEY PK_Temp_CustInfo(CustID,CustSubID)
 	);
 	
+	DROP TEMPORARY TABLE IF EXISTS Temp_Result;    
+	CREATE TEMPORARY TABLE Temp_Result(
+			CTSCustID		BIGINT UNSIGNED NOT NULL
+		,	SubscriberID	INT UNSIGNED
+    	,	CustID			INT UNSIGNED NOT NULL
+		,	UserName		VARCHAR(50)
+    	,	RegisterName	VARCHAR(50)
+		,	RoleID			TINYINT
+    	,	CustSubID		INT UNSIGNED NOT NULL
+        ,	PRIMARY KEY		PK_Temp_Result(CTSCustID)
+		,	INDEX			IX_Temp_Result_CustID(CustID,CustSubID)
+	);
+
     INSERT INTO Temp_CTSCustomer(CustID, CustStatusID, Danger1, Danger2, Danger3, CustSubID, UserName, UserName2, SiteID, Site, RoleID, Currency, CurrencyID, SRecommend, MRecommend, Recommend, CreatedDate)
 	SELECT		CustID	
 			,	CustStatusID
@@ -250,7 +263,8 @@ BEGIN
     FROM	Temp_CTSCustomer AS tmpCus
     WHERE	tmpCus.DuplicateType = 0;
 
-	/*****OUT PUT TO RESCAN CC************/
+
+	INSERT INTO Temp_Result(CTSCustID,SubscriberID,CustID,UserName,RegisterName,RoleID,CustSubID)
 	SELECT	cus.CTSCustID
 		,	cus.SubscriberID
     	,	cus.CustID
@@ -260,6 +274,32 @@ BEGIN
     	,	cus.CustSubID
     FROM	Temp_CTSCustomer AS tmpCus
 		INNER JOIN 	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID AND tmpCus.CustSubID = cus.CustSubID;   
+
+	#=====UPDATE CTSCustomerClassification====================
+    UPDATE CTS_DataCenter.CTSCustomerClassification AS cc
+    INNER JOIN Temp_Result AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= cc.CustID
+    SET		cc.CTSCustID = tmpCus.CTSCustID
+		,	cc.SubscriberID = tmpCus.SubscriberID;
+            
+	#=====UPDATE CTSCustomerClassification_History====================
+    UPDATE CTS_DataCenter.CTSCustomerClassification_History AS ch
+    INNER JOIN Temp_Result AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= ch.CustID
+    SET	ch.CTSCustID = tmpCus.CTSCustID;
+	
+    #=====UPDATE ProbationAccountMonitor====================
+    UPDATE CTS_DataCenter.ProbationAccountMonitor AS pa
+    INNER JOIN Temp_Result AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= pa.CustID
+    SET	pa.CTSCustID = tmpCus.CTSCustID;
+
+	SELECT	CTSCustID
+		,	SubscriberID
+    	,	CustID
+		,	UserName
+    	,	RegisterName
+		,	RoleID
+    	,	CustSubID 
+	FROM Temp_Result;
+
   
 END$$
 DELIMITER ;

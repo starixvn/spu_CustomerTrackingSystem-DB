@@ -62,18 +62,18 @@ BEGIN
         ,  	PRIMARY KEY(CustID,CategoryID)
     );
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_Cat;    
+    DROP TEMPORARY TABLE IF EXISTS Temp_ExistCateRobot;    
 	CREATE TEMPORARY TABLE Temp_ExistCateRobot(	  
 			CustID			BIGINT UNSIGNED 
         ,	CategoryID 		INT	
         ,  	PRIMARY KEY(CustID,CategoryID)
     );
     
-    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, SubscriberID,IsRobotException, CategoryID, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTW,CreatedBy)
+    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, SubscriberID,IsRobotException, CategoryID,TargetCC, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTW,CreatedBy)
 	SELECT	js.CustID
 		,	cus.CTSCustID
 		,	cus.SubscriberID
-        ,   CASE WHEN (IsLicensee = 0 AND cust.SubscriberID IN (2,130)) OR (IsLicensee = 1 AND cust.CurrencyID IN (13,78)) THEN 1
+        ,   CASE WHEN (IsLicensee = 0 AND cus.SubscriberID IN (2,130)) OR (cus.IsLicensee = 1 AND cus.CurrencyID IN (13,78)) THEN 1
 				 ELSE 0 
 			END AS IsRobotException
         
@@ -98,31 +98,31 @@ BEGIN
                 , 	IsFromTW		BIT 				PATH "$.IsFromTW"
                 , 	CreatedBy		INT 				PATH "$.CreatedBy"
 	)) AS js 
-		INNER JOIN  CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = js.CustID AND js.CustSubID = 0 AND IsInternal = 0
-		LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on js.CTSCustID = pin.CTSCustID
-        LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON cust.CustID = sp.CustID 
-        LEFT JOIN CTS_DataCenter.CTSCustomerClassificationVVIP AS vip on js.CTSCustID = vip.CTSCustID
+		INNER JOIN  CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = js.CustID AND cus.CustSubID = 0 AND cus.IsInternal = 0
+		LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on cus.CTSCustID = pin.CTSCustID
+        LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON cus.CustID = sp.CustID 
+        LEFT JOIN CTS_DataCenter.CTSCustomerClassificationVVIP AS vip on cus.CTSCustID = vip.CTSCustID
 	WHERE pin.CTSCustID IS NULL
 		AND  vip.CTSCustID IS NULL;
-	
+
     INSERT INTO Temp_ExistCateRobot(CustID,CategoryID)
-    SELECT 	class.CustID
-		,	class.CategoryID
-    FROM CTSCustomerClassification AS class
+    SELECT 	clss.CustID
+		,	clss.CategoryID
+    FROM CTSCustomerClassification AS clss
     WHERE EXISTS (SELECT 1 
 				  FROM Temp_PA AS tmp 
-                  WHERE class.CustID = tmp.CustID 
-					AND   ((class.CategoryID = CONST_CATEGORYID_ROBOTUSERS AND tmp.CategoryID IN (CONST_CATEGORYID_BADROBOTUSERS,CONST_CATEGORYID_GOODROBOTUSERS))
-						OR (class.CategoryID = CONST_CATEGORYID_ROBOTBETTING AND tmp.CategoryID IN (CONST_CATEGORYID_GOODROBOTBETTING,CONST_CATEGORYID_BADROBOTBETTING))
-						OR (tmp.CategoryID = CONST_CATEGORYID_ROBOTUSERS AND class.CategoryID IN (CONST_CATEGORYID_BADROBOTUSERS,CONST_CATEGORYID_GOODROBOTUSERS))
-                        OR (tmp.CategoryID = CONST_CATEGORYID_ROBOTBETTING AND class.CategoryID IN (CONST_CATEGORYID_GOODROBOTBETTING,CONST_CATEGORYID_BADROBOTBETTING))));
+                  WHERE clss.CustID = tmp.CustID 
+					AND   ((clss.CategoryID = CONST_CATEGORYID_ROBOTUSERS AND tmp.CategoryID IN (CONST_CATEGORYID_BADROBOTUSERS,CONST_CATEGORYID_GOODROBOTUSERS))
+						OR (clss.CategoryID = CONST_CATEGORYID_ROBOTBETTING AND tmp.CategoryID IN (CONST_CATEGORYID_GOODROBOTBETTING,CONST_CATEGORYID_BADROBOTBETTING))
+						OR (tmp.CategoryID = CONST_CATEGORYID_ROBOTUSERS AND clss.CategoryID IN (CONST_CATEGORYID_BADROBOTUSERS,CONST_CATEGORYID_GOODROBOTUSERS))
+                        OR (tmp.CategoryID = CONST_CATEGORYID_ROBOTBETTING AND clss.CategoryID IN (CONST_CATEGORYID_GOODROBOTBETTING,CONST_CATEGORYID_BADROBOTBETTING))));
    
     DELETE clss
     FROM CTS_DataCenter.CTSCustomerClassification AS clss
 	WHERE EXISTS (SELECT 1 
 				  FROM Temp_ExistCateRobot AS tmp 
                   WHERE clss.CustID = tmp.CustID 
-					AND class.CategoryID IN(CONST_CATEGORYID_ROBOTUSERS,CONST_CATEGORYID_ROBOTBETTING));
+					AND clss.CategoryID IN(CONST_CATEGORYID_ROBOTUSERS,CONST_CATEGORYID_ROBOTBETTING));
 	
     DELETE pa
     FROM Temp_PA AS pa
@@ -146,7 +146,7 @@ BEGIN
 									WHEN pa.IsLicensee = 1 THEN cate.ABIDangerLevel_Licensee
 									WHEN pa.IsLicensee = 0 THEN cate.ABIDangerLevel_Credit				
 								END;
-    
+ 
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID,CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate,IsFromTW, IsDirect)
 	SELECT 	CustID
 		,	CTSCustID
@@ -169,7 +169,7 @@ BEGIN
 		, 	CONST_GROUP_PA
 		, 	lv_Now
 		, 	CreatedBy
-		, 	ActionType
+		, 	1 AS ActionType
 		, 	1
 		, 	DATE(lv_Now)
 		, 	TargetCC
@@ -191,12 +191,12 @@ BEGIN
 		, 	CONST_GROUP_PA
 		, 	lv_Now
 		, 	CreatedBy
-		, 	ActionType
+		, 	1 AS ActionType
 		, 	1
 		, 	DATE(lv_Now)
 		, 	TargetCC
 		, 	CONST_SOURCETYPE_INSERTROBOTUSERS AS SourceTypeID
-		,   IsDataChanged
+		,   1 AS IsDataChanged
 		,	RobotCounter
 		,	TargetDangerLevel AS TargetDangerLevel1
         ,	TurnoverRM
@@ -206,7 +206,9 @@ BEGIN
 	FROM Temp_PA AS pa;
 
 
-	SELECT 1 CTSCustID, 1 CustID;
+	SELECT CTSCustID
+		,  CustID
+    FROM Temp_PA;
 
 END$$
 DELIMITER ;

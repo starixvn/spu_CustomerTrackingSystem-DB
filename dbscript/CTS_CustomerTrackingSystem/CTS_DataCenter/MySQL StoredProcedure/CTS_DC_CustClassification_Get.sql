@@ -2,7 +2,7 @@
 DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_Get`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_Get`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Get`(
 	IN ip_CTSCustID 		BIGINT UNSIGNED
 )
     SQL SECURITY INVOKER
@@ -38,17 +38,19 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_LatestRecordOfCategory(
 			CategoryID		SMALLINT UNSIGNED
 		,   CategoryName   	VARCHAR(200) 
+        ,	CategoryGroup   SMALLINT UNSIGNED
 		,   CategoryType    SMALLINT UNSIGNED /*1: ParentID = 200, 2: ParentID = 50*/
 		,	ParentID		SMALLINT UNSIGNED
 		,	IsProbation		BIT DEFAULT 0
     );
    
-	INSERT INTO Temp_LatestRecordOfCategory(CategoryID, CategoryName, CategoryType, ParentID, IsProbation)
+	INSERT INTO Temp_LatestRecordOfCategory(CategoryID, CategoryName,CategoryGroup, CategoryType, ParentID, IsProbation)
 	SELECT DISTINCT (CASE WHEN cc.ParentID = 50 THEN cc.CategoryGroup ELSE cate.CategoryID END)
 				,	cc.CategoryName
+                ,	cc.CategoryGroup
 				,	(CASE WHEN cc.ParentID = 50 THEN 2 WHEN cc.ParentID = 200  THEN 1 END) 
 				,	cc.ParentID
-				,	IsProbation
+				,	IsPAProbation AS IsProbation
 	FROM	CTS_DataCenter.CTSCustomerClassification AS cate
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
     WHERE	cate.CTSCustID = ip_CTSCustID 
@@ -70,9 +72,10 @@ BEGIN
 		SELECT 0 AS IsExcludedTagAssPA;
 	END IF; 
 
-	SELECT	CategoryType
+	SELECT	CategoryType 
 		,	CategoryID
 		,	CategoryName
+        ,	CategoryGroup
 		,	ParentID
 		,	IsProbation 
 	FROM Temp_LatestRecordOfCategory;

@@ -63,6 +63,9 @@ sp: BEGIN
         ,   CategoryID		BIGINT UNSIGNED 
         ,	IsDirect		BIT
         ,	ReasonID 		INT
+        ,	IsFromTVS 		BIT
+        ,	IsFromTW 		BIT
+        ,	IsFromPAM 		BIT
         
         
         ,	IsRobot 		BIT DEFAULT 0
@@ -151,7 +154,7 @@ sp: BEGIN
 		,	tmp.ActiveDays = cate.ActiveDays;
 		
      /***********************Check PA from Old table****************************/
-    INSERT INTO Temp_CustCategory(CTSCustID,CustID, CategoryID,CategoryGroup, IsDirect, ReasonID, Remark)
+    INSERT INTO Temp_CustCategory(CTSCustID,CustID, CategoryID,CategoryGroup, IsDirect, ReasonID, Remark,IsFromTVS,IsFromTW,IsFromPAM)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
         ,	class.CategoryID
@@ -159,12 +162,15 @@ sp: BEGIN
 		,	1 AS IsDirect
         ,	cate.ReasonID
         ,	class.Remark
+        ,	class.IsFromTVS 		
+        ,	class.IsFromTW 		
+        ,	class.IsFromPAM 		
     FROM Temp_CustInfo AS tmp    
 		INNER JOIN CTS_DataCenter.CTSCustomerClassificationOldPA AS class ON class.CustID = tmp.CustID AND class.IsDirect = 1
         INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup != CONST_CATEGORYGROUP_ROBOT;
 	
     /***********************Check affected PA from Upline****************************/
-    INSERT INTO Temp_CustCategory(CTSCustID,CustID, CategoryID,CategoryGroup, IsDirect, ReasonID, Remark)
+    INSERT INTO Temp_CustCategory(CTSCustID,CustID, CategoryID,CategoryGroup, IsDirect, ReasonID, Remark,IsFromTVS,IsFromTW,IsFromPAM)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
         ,	class.CategoryID
@@ -172,6 +178,9 @@ sp: BEGIN
 		,	0 AS IsDirect
         ,	cate.ReasonID
         ,	class.Remark
+        ,	class.IsFromTVS 		
+        ,	class.IsFromTW 		
+        ,	class.IsFromPAM 		
     FROM Temp_CustInfo AS tmp    
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS class ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = CONST_GROUP_PA
         INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup != CONST_CATEGORYGROUP_ROBOT;
@@ -185,6 +194,9 @@ sp: BEGIN
 		, 	CategoryID
         ,	CategoryGroup
         , 	IsDirect
+		,	IsFromTVS 		
+        ,	IsFromTW 		
+        ,	IsFromPAM 		
         
         ,	IsRobot 		
 		,	Turnover 		
