@@ -47,6 +47,17 @@ RENAME TABLE CTSCustomerClassification_InputDataLog TO CTSCustomerClassification
 RENAME TABLE CTSCustomerClassification_InputDataLog_V2 TO CTSCustomerClassification_InputDataLog;
 
 
+ALTER TABLE CustomerCategory 
+ADD COLUMN DangerLevelType SMALLINT,
+ADD COLUMN PAPriority SMALLINT;
+
+UPDATE CustomerCategory
+SET    DangerLevelType = CASE WHEN ParentID = 50 OR CategoryID = 50 THEN 2
+						 ELSE 1 END 
+	,  PAPriority = CASE WHEN ParentID = 50 AND  RootTaggingID = 13 THEN 2
+						 WHEN ParentID = 50 AND  (RootTaggingID IS NULL  OR RootTaggingID != 13) THEN 1
+                         ELSE 3 END;
+
 USE CTS_Archive;
 CREATE TABLE `CTSLog` (
    `ID` bigint unsigned NOT NULL AUTO_INCREMENT,
