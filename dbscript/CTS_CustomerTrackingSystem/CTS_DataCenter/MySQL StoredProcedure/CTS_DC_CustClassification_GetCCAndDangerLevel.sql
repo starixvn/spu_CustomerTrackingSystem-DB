@@ -51,7 +51,8 @@ BEGIN
 		,	clss.CategoryID
 		,	clss.CustomerClass
         ,	clss.DangerLevel
-        ,	clss.DangerLevelType
+        ,	CASE WHEN clss.DangerLevel IS NULL THEN 0
+			ELSE clss.DangerLevelType END AS DangerLevelType
     FROM Temp_CustInfo AS tmp,
 		LATERAL(SELECT 	cate.CategoryID
 					,	CASE  WHEN cate.CategoryID IN (CONST_CATEGORYID_GOODROBOTUSERS,CONST_CATEGORYID_GOODROBOTBETTING) AND tmp.IsRobotException = 1 THEN cate.CustomerClassException
@@ -68,7 +69,7 @@ BEGIN
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID
                 WHERE clss.CustID = tmp.CustID
                 ORDER BY  clss.LastModifiedDate DESC
-						, cate.Priority ASC
+						, cate.Priority ASC 
                 LIMIT 1) AS clss;
 END$$
 
