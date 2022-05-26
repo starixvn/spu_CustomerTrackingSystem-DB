@@ -19,35 +19,34 @@ CREATE TABLE `CTSCustomerClassificationOldPA` (
   `LastModifiedDate` datetime DEFAULT NULL,
   `LastModifiedBy` int unsigned DEFAULT NULL,
   `LastScannedDate` date DEFAULT NULL,
-  `IsFromTVS` bit(1) DEFAULT b'0',
-  `IsFromTW` bit(1) DEFAULT b'0',
-  `IsFromPAM` bit(1) DEFAULT b'0',
-  `IsDirectPA` bit(1) DEFAULT NULL,
-  `IsAffectToDownline` bit(1) DEFAULT NULL,
-  PRIMARY KEY (`CustID`,`SportGroupID`,`CategoryID`),
-  KEY `IX_CTSCustomerClassification_CustSportGroup` (`CTSCustID`,`SportGroupID`,`LastModifiedDate`),
-  KEY `IX_CTSCustomerClassification_SubscriberID_SportGroupID` (`SubscriberID`,`SportGroupID`),
-  KEY `IX_CTSCustomerClassification_SportGroupID_CreatedDate` (`SportGroupID`,`CreatedDate`),
-  KEY `IX_CTSCustomerClassification_CategoryID_CustID` (`CategoryID`,`CustID`,`LastScannedDate`)
+  `IsFromTVS` BOOLEAN DEFAULT 0,
+  `IsFromTW` BOOLEAN DEFAULT  0,
+  `IsFromPAM` BOOLEAN DEFAULT  0,
+  `IsDirectPA` BOOLEAN DEFAULT NULL,
+  `InsertTime` DATETIME(3) DEFAULT NULL,
+  PRIMARY KEY (`CustID`,`SportGroupID`,`CategoryID`)
 ) ENGINE=InnoDB;
-
 
 CREATE TABLE `CTSCustomerClassificationQueue` (
   `ID` bigint unsigned NOT NULL AUTO_INCREMENT,
   `CTSCustID` bigint unsigned DEFAULT NULL,
-  `CustID` bigint unsigned DEFAULT NULL,
+  `CustID` INT unsigned DEFAULT NULL,
   `RoleID` tinyint DEFAULT NULL,
   `SubscriberID` int unsigned DEFAULT NULL,
-  `CreatedBy` bigint unsigned DEFAULT NULL,
+  `CreatedBy` INT unsigned DEFAULT NULL,
   `Remark` varchar(300),
   `CategoryGroup` int DEFAULT NULL,
   `CategoryID` smallint unsigned DEFAULT NULL,
   `LastDownlineCTSCustID` bigint unsigned DEFAULT NULL,
   `ActionType` tinyint DEFAULT NULL COMMENT '1: INSERT VVIP, 2:Remove VVIP, 3:INSERT PA, 4: UNMARK PA',
   `InsertTime` datetime(3) DEFAULT NULL,
-  IsExceptDirectDownline BOOLEAN NULL,
+	IsExceptDirectDownline BOOLEAN DEFAULT 0,
+		IsFromTVS		BOOLEAN DEFAULT 0
+	, 	IsFromTW		BOOLEAN DEFAULT 0
+	, 	IsFromPAM		BOOLEAN DEFAULT 0
+	,	IsDirectPA		BOOLEAN DEFAULT 0,
   PRIMARY KEY (`ID`),
-  KEY `IX_Temp_Customer_CustID` (`CustID`),
+  KEY `IX_Temp_Customer_CustID` (`CustID`, ActionType),
   KEY `IX_Temp_Customer_CTSCustID` (`CTSCustID`)
 ) ENGINE=InnoDB;
 
