@@ -37,6 +37,7 @@ sp: BEGIN
         ,	MRecommend		BIGINT	UNSIGNED
         ,	Recommend		BIGINT	UNSIGNED
         ,	DirectUpLine	BIGINT	UNSIGNED
+		,	IsLicensee		BIT
 		
         ,	CreatedBy		INT
         ,	INDEX PK_Temp_CustInfo_CustID(CustID)
@@ -53,8 +54,12 @@ sp: BEGIN
 	CREATE TEMPORARY TABLE Temp_CustCategory (	  
 			CTSCustID		BIGINT UNSIGNED 
         ,   CustID			BIGINT UNSIGNED 
-        ,   CategoryID		BIGINT UNSIGNED 
+        ,   CategoryID		INT
+        ,   CategoryGroup	INT
 		,   Remark			VARCHAR(500)
+		,	IsFromTVS		BIT
+        ,	IsFromTW		BIT
+        ,	IsFromPAM		BIT
         ,	CreatedBy		INT
         ,	PRIMARY KEY(CustID, CategoryID)
 	);
@@ -71,7 +76,7 @@ sp: BEGIN
     FROM CTS_DataCenter.SystemParameter 
     WHERE ParameterID = 93; 
 
-    INSERT INTO Temp_CustInfo(CTSCustID, CustID, CustSubID, UserName, RegisterName, SubscriberID, RoleID, SRecommend, MRecommend, Recommend, DirectUpLine)
+    INSERT INTO Temp_CustInfo(CTSCustID, CustID, CustSubID, UserName, RegisterName, SubscriberID, RoleID, SRecommend, MRecommend, Recommend, DirectUpLine,IsLicensee)
     SELECT 	cus.CTSCustID
 		,	cus.CustID
         ,	cus.CustSubID
@@ -84,7 +89,8 @@ sp: BEGIN
         ,	cus.Recommend
         ,	(CASE WHEN cus.RoleID = 1 THEN cus.Recommend 
 				WHEN cus.RoleID = 2 THEN cus.MRecommend
-                WHEN cus.RoleID = 3 THEN cus.SRecommend END) AS DirectUpLine               
+                WHEN cus.RoleID = 3 THEN cus.SRecommend END) AS DirectUpLine   
+		,	cus.IsLicensee
     FROM CTS_DataCenter.CTSCustomer AS cus 
     WHERE cus.CustSubID = 0
         AND cus.IsInternal = 0
@@ -112,14 +118,18 @@ sp: BEGIN
     FROM Temp_CustInfo AS tmp		
 		INNER JOIN CTS_DataCenter.CTSCustomerClassificationVVIPQueue AS que ON que.CustID IN (tmp.SRecommend, tmp.MRecommend, tmp.Recommend) AND que.ActionType = 1;
 	
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, Remark, CreatedBy)
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID,CategoryGroup, Remark, CreatedBy,IsFromTVS,IsFromTW,IsFromPAM)
     SELECT 	tmp.CTSCustID
 		,	class.CustID
         ,	class.CategoryID
+        ,	cate.CategoryGroup
         ,	class.Remark
         ,	class.CreatedBy
+        ,	class.IsFromTVS
+        ,	class.IsFromTW
+        ,	class.IsFromPAM
     FROM Temp_CustInfo AS tmp    
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS class ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = 0
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS class ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = 0 AND class.IsDirect = 0
         INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup != 61;
 	
     SELECT	tmp.CTSCustID
@@ -133,13 +143,22 @@ sp: BEGIN
 	FROM Temp_CustInfo AS tmp
 		INNER JOIN Temp_VVIPCust AS vip ON tmp.CTSCustID = vip.CTSCustID;
 
-    
-    SELECT 	CTSCustID		
-        ,   CustID			
-        ,   CategoryID		
-		,   Remark		
-        ,	CreatedBy
-    FROM Temp_CustCategory;
+     
+    SELECT 	cate.CTSCustID		
+        ,   cate.CustID	
+		,  	tmp.RoleID
+        ,  	tmp.SubscriberID
+        ,  	tmp.IsLicensee
+        
+        ,   cate.CategoryID		
+		,	cate.CategoryGroup
+		,   cate.Remark		
+        ,	cate.CreatedBy
+        ,	cate.IsFromTVS
+        ,	cate.IsFromTW
+        ,	cate.IsFromPAM
+    FROM Temp_CustCategory AS cate
+		LEFT JOIN Temp_CustInfo AS tmp ON tmp.CustID = cate.CustID; 
     
     SELECT 	tmp.CTSCustID		
         ,   tmp.CustID	

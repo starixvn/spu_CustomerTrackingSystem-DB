@@ -69,20 +69,22 @@ BEGIN
         ,  	PRIMARY KEY(CustID,CategoryID)
     );
     
-    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, SubscriberID,IsRobotException, CategoryID,TargetCC, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTW,CreatedBy)
+    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, SubscriberID,IsLicensee,IsRobotException, CategoryID,TargetCC, TurnoverRM, WinlossRM, BetCount, ActiveDays,RobotCounter, IsFromTW,CreatedBy)
 	SELECT	js.CustID
 		,	cus.CTSCustID
 		,	cus.SubscriberID
-        ,   CASE WHEN (IsLicensee = 0 AND cus.SubscriberID IN (2,130)) OR (cus.IsLicensee = 1 AND cus.CurrencyID IN (13,78)) THEN 1
+        ,	cus.IsLicensee
+        ,   CASE WHEN (cus.IsLicensee = 0 AND cus.SubscriberID IN (2,130)) OR (cus.IsLicensee = 1 AND cus.CurrencyID IN (13,78)) THEN 1
 				 ELSE 0 
 			END AS IsRobotException
         
 		, 	js.CategoryID
-        ,	CASE WHEN sp.CTSCustID IS NOT NULL THEN sp.CustomerClass ELSE 0 END AS TargetCC
+        ,	sp.CustomerClass AS TargetCC
         , 	js.TurnoverRM
         , 	js.WinlossRM
         , 	js.BetCount
         , 	js.ActiveDays
+        ,	js.RobotCounter
         , 	js.IsFromTW
         ,	js.CreatedBy
 	FROM JSON_TABLE(ip_CustInfo,
@@ -95,7 +97,7 @@ BEGIN
 				, 	BetCount		BIGINT 				PATH "$.BetCount"
 				, 	ActiveDays		INT 				PATH "$.ActiveDays"
                 
-                , 	IsFromTW		BIT 				PATH "$.IsFromTW"
+                , 	IsFromTW		BOOLEAN 			PATH "$.IsFromTW"
                 , 	CreatedBy		INT 				PATH "$.CreatedBy"
 	)) AS js 
 		INNER JOIN  CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = js.CustID AND cus.CustSubID = 0 AND cus.IsInternal = 0
@@ -103,7 +105,7 @@ BEGIN
         LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON cus.CustID = sp.CustID 
         LEFT JOIN CTS_DataCenter.CTSCustomerClassificationVVIP AS vip on cus.CTSCustID = vip.CTSCustID
 	WHERE pin.CTSCustID IS NULL
-		AND  vip.CTSCustID IS NULL;
+		AND  vip.CTSCustID IS NULL; 
 
     INSERT INTO Temp_ExistCateRobot(CustID,CategoryID)
     SELECT 	clss.CustID
@@ -135,6 +137,7 @@ BEGIN
 	INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON pa.CategoryID = cate.CategoryID
 	SET pa.TargetCC	= CASE  WHEN pa.TargetCC IS NOT NULL THEN pa.TargetCC
 							WHEN pa.CategoryID IN (CONST_CATEGORYID_GOODROBOTUSERS,CONST_CATEGORYID_GOODROBOTBETTING) AND pa.IsRobotException = 1 THEN cate.CustomerClassException
+                            WHEN pa.TargetCC IS NULL THEN IFNULL(cate.CustomerClass, -99) 
 							ELSE  -99 END 
 	,	pa.CategoryID = CASE WHEN pa.CategoryID = CONST_CATEGORYID_GOODROBOTUSERS AND pa.IsRobotException = 1 THEN CONST_CATEGORYID_ROBOTUSERS
 							 WHEN pa.CategoryID = CONST_CATEGORYID_GOODROBOTBETTING AND pa.IsRobotException = 1 THEN CONST_CATEGORYID_ROBOTBETTING
@@ -159,10 +162,10 @@ BEGIN
 		, 	CreatedBy
 		, 	DATE(lv_Now)
         ,	IsFromTW
-        ,	0 AS IsDirect
+        ,	1 AS IsDirect
 	FROM Temp_PA AS pa;  
     
-    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, RobotCounter, TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays)
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, RobotCounter, TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays,IsDirect)
 	SELECT 	CustID
 		, 	CTSCustID
 		, 	CategoryID
@@ -181,9 +184,10 @@ BEGIN
 		,	WinlossRM
 		, 	BetCount
 		, 	ActiveDays
+        ,	1 AS IsDirect
 	FROM Temp_PA AS pa;
     
-    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, RobotCounter, TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays)
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, RobotCounter, TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays,IsDirect)
 	SELECT 	DISTINCT 
 			CustID
 		, 	CTSCustID
@@ -203,6 +207,7 @@ BEGIN
 		,	WinlossRM
 		, 	BetCount
 		, 	ActiveDays
+		,	1 AS IsDirect
 	FROM Temp_PA AS pa;
 
 
