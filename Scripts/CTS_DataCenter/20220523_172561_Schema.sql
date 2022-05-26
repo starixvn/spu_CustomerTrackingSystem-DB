@@ -54,7 +54,7 @@ ADD COLUMN PAPriority SMALLINT;
 UPDATE CustomerCategory
 SET    DangerLevelType = CASE WHEN ParentID = 50 OR CategoryID = 50 THEN 2
 						 ELSE 1 END 
-	,  PAPriority = CASE WHEN ParentID = 50 AND  RootTaggingID = 13 THEN 2
+	,  Priority = CASE WHEN ParentID = 50 AND  RootTaggingID = 13 THEN 2
 						 WHEN ParentID = 50 AND  (RootTaggingID IS NULL  OR RootTaggingID != 13) THEN 1
                          ELSE 3 END;
 
