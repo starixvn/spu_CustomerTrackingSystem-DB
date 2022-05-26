@@ -72,11 +72,6 @@ BEGIN
     /* Mapping Category */
     CALL CTS_DC_CustClassification_PA_MapingCategory(ip_InputType,ip_ProblemAccounts);
 
-	/* EXCLUDED PIN CATEGORY BEFORE	*/
-    DELETE tmpPA
-    FROM Temp_PA AS tmpPA 
-		INNER JOIN CTS_DataCenter.PinCustomerCategory AS pin ON tmpPA.CTSCustID = pin.CTSCustID;
-
     /* REMOVE GENERAL CATEGORY BEFORE	*/
     DELETE clss
     FROM CTS_DataCenter.CTSCustomerClassification AS clss
@@ -133,7 +128,7 @@ BEGIN
         ,	tmpPA.TargetCC = (CASE WHEN tmpPA.IsProbation = 1 THEN tmpPA.RelevantTargetCC ELSE tmpPA.TargetCC END)
      WHERE tmpPA.DataChangeType = 1;
      
-	/*	7: UPDATE PA By Winloss Probation: tmpPA.IsDataChanged = 2 */
+	/*UPDATE PA By Winloss Probation: tmpPA.IsDataChanged = 2 */
     UPDATE CTS_DataCenter.CTSCustomerClassification AS cls
 		INNER JOIN Temp_PA AS tmpPA on tmpPA.CustID = cls.CustID AND cls.CategoryID = tmpPA.OldCategoryID 
 	SET 	cls.CTSCustID = tmpPA.CTSCustID
@@ -219,7 +214,7 @@ BEGIN
         ,	tmpPA.IsDirectPA
 	FROM Temp_PA AS tmpPA;
     
-    IF(ip_IsFromQueue = 0) THEN
+    IF (ip_IsFromQueue = 0) THEN
 		/* INSERT SMA PA TO QUEUE PA AS */
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationQueue(CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryID, CategoryGroup, LastDownlineCTSCustID, ActionType, InsertTime)
 		SELECT tmpPA.CTSCustID
@@ -276,7 +271,7 @@ BEGIN
     FROM Temp_PA AS tmpPA
     WHERE tmpPA.RoleID > 1;
 
-	/* 19: RETURN UPDATED CUSTOMERS TO SERVICE FOR FUTHER STEPS */
+	/* RETURN UPDATED CUSTOMERS TO SERVICE FOR FUTHER STEPS */
 	SELECT	DISTINCT 
 			tmpPA.CustID
 		,	tmpPA.CTSCustID
