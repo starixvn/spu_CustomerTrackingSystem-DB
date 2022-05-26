@@ -93,10 +93,13 @@ BEGIN
     WHERE cat.EvidenceID_Licensee IS NOT NULL;
 
     #==============================================================    
-    DELETE cls
-    FROM CTS_DataCenter.CTSCustomerClassification AS cls
-		INNER JOIN Temp_PA AS tmpPA ON cls.CustID = tmpPA.CustID AND cls.SportGroupID = CONST_PA_SPORTGROUP
-	WHERE tmpPA.IsPA = 1;
+    INSERT INTO CTS_DataCenter.CustEvidenceAffectedQueueRemove(CTSCustID, EvidenceID, Created)
+    SELECT tmpPA.CTSCustID
+		,	ce.EvidenceID
+        ,	lv_CurrentDateTime
+    FROM CTS_DataCenter.CustEvidence AS ce
+		INNER JOIN Temp_PA AS tmpPA ON ce.CTSCustID = tmpPA.CTSCustID
+        INNER JOIN Temp_EvidencePA AS tmpEp ON ce.EvidenceID = tmpEp.EvidenceID;    
 	
     UPDATE CTS_DataCenter.RobotDetection AS rd
 		INNER JOIN Temp_PA AS tmpPA ON rd.CustID = tmpPA.CustID
@@ -105,15 +108,7 @@ BEGIN
     DELETE ce
     FROM CTS_DataCenter.CustEvidence AS ce
 		INNER JOIN Temp_PA AS tmpPA ON ce.CTSCustID = tmpPA.CTSCustID
-        INNER JOIN Temp_EvidencePA AS tmpEp ON ce.EvidenceID = tmpEp.EvidenceID;     
-
-	INSERT INTO CTS_DataCenter.CustEvidenceAffectedQueueRemove(CTSCustID, EvidenceID, Created)
-    SELECT tmpPA.CTSCustID
-		,	ce.EvidenceID
-        ,	lv_CurrentDateTime
-    FROM CTS_DataCenter.CustEvidence AS ce
-		INNER JOIN Temp_PA AS tmpPA ON ce.CTSCustID = tmpPA.CTSCustID
-        INNER JOIN Temp_EvidencePA AS tmpEp ON ce.EvidenceID = tmpEp.EvidenceID;
+        INNER JOIN Temp_EvidencePA AS tmpEp ON ce.EvidenceID = tmpEp.EvidenceID;    
     
 	IF(ip_IsFromQueue = 0) THEN
 		/* INSERT SMA PA TO QUEUE PA AS */
@@ -150,7 +145,12 @@ BEGIN
 			,	lv_CreatedBy AS CreatedBy;        
         END IF;    
         
-	END IF;
+	END IF;    
+    
+    DELETE cls
+    FROM CTS_DataCenter.CTSCustomerClassification AS cls
+		INNER JOIN Temp_PA AS tmpPA ON cls.CustID = tmpPA.CustID AND cls.SportGroupID = CONST_PA_SPORTGROUP
+	WHERE tmpPA.IsPA = 1;
     
 	/*RETURN UPDATED CUSTOMERS TO SERVICE FOR FUTHER STEPS */
 	SELECT	DISTINCT 
