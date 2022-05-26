@@ -61,11 +61,11 @@ VALUES (4,31,'Classification Source Type','Classification Source Type','Problem 
     , (4,34,'Classification Source Type','Classification Source Type','Unmarking Problem Account is affected by Uplines','Unmarking Problem Account is affected by Uplines',34,1,'Unmarking Problem Account is affected by Uplines',NOW());
 	
 INSERT INTO CTS_DataCenter.CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CategoryNameCN,CategoryGroup,ReasonID,SourceType,CustomerClass,CustomerClassName,CustomerClassNameCN,CustomerClassException,ABIDangerLevel_Licensee,ABIDangerLevel_Credit,IsPAProbation,ProblemCaseID,RootTaggingID)
-VALUES (63,'AI Robot Betting','AI Robot Betting',50,61,1,0,NOW(),'机械用户',61,61,'AI',13,'Robot','機械',13,16,6,0,1,13);
+VALUES (63,'Robot User','AI Robot Betting',50,61,1,0,NOW(),'机械用户',61,61,'AI',13,'Robot','機械',13,16,6,0,1,13);
 INSERT INTO CTS_DataCenter.CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CategoryNameCN,CategoryGroup,ReasonID,SourceType,CustomerClass,CustomerClassName,CustomerClassNameCN,CustomerClassException,ABIDangerLevel_Licensee,ABIDangerLevel_Credit,IsPAProbation,ProblemCaseID,RootTaggingID)
-VALUES (165,'AI Bad Robot Betting','AI Bad Robot Betting',50,165,1,0,NOW(),'非正常机械玩家',61,165,'AI',131,'Robot','機械',132,31,31,0,1,13);
+VALUES (165,'Bad Robot User','AI Bad Robot Betting',50,165,1,0,NOW(),'非正常机械玩家',61,165,'AI',131,'Robot','機械',132,31,31,0,1,13);
 INSERT INTO CTS_DataCenter.CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CategoryNameCN,CategoryGroup,ReasonID,SourceType,CustomerClass,CustomerClassName,CustomerClassNameCN,CustomerClassException,ABIDangerLevel_Licensee,ABIDangerLevelException_Licensee,ABIDangerLevel_Credit,ABIDangerLevelException_Credit,IsPAProbation,ProblemCaseID,RootTaggingID)
-VALUES (166,'AI Good Robot Betting','AI Good Robot Betting',50,166,1,0,NOW(),'正常机械玩家',61,166,'AI',132,'Robot','機械',13,32,16,32,6,0,1,13);
+VALUES (166,'Good Robot User','AI Good Robot Betting',50,166,1,0,NOW(),'正常机械玩家',61,166,'AI',132,'Robot','機械',13,32,16,32,6,0,1,13);
 
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
 VALUES (94,'RobotBettingService_LastScannedTime','RobotBettingService_LastScannedTime','DATETIME','2022-09-22 08:00:00.000');	
