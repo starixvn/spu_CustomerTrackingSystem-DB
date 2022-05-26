@@ -51,7 +51,7 @@ BEGIN
 		,	RobotCounter			INT 
         
         ,	IsFromTW				BIT
-		,	CreatedBy				BIT
+		,	CreatedBy				INT UNSIGNED
         , 	PRIMARY KEY(CustID,CategoryID)
     );  
     
@@ -98,7 +98,7 @@ BEGIN
 				, 	ActiveDays		INT 				PATH "$.ActiveDays"
                 
                 , 	IsFromTW		BOOLEAN 			PATH "$.IsFromTW"
-                , 	CreatedBy		INT 				PATH "$.CreatedBy"
+                , 	CreatedBy		INT UNSIGNED		PATH "$.CreatedBy"
 	)) AS js 
 		INNER JOIN  CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = js.CustID AND cus.CustSubID = 0 AND cus.IsInternal = 0
 		LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on cus.CTSCustID = pin.CTSCustID

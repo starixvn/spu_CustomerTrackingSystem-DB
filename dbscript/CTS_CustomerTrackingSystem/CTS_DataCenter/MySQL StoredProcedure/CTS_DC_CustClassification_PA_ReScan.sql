@@ -62,10 +62,9 @@ sp: BEGIN
         ,	CategoryGroup   SMALLINT
         ,   CategoryID		BIGINT UNSIGNED 
         ,	IsDirect		BIT
-        ,	ReasonID 		INT
-        ,	IsFromTVS 		BIT
-        ,	IsFromTW 		BIT
-        ,	IsFromPAM 		BIT
+        ,	IsFromTVS 		BIT DEFAULT 0
+        ,	IsFromTW 		BIT DEFAULT 0
+        ,	IsFromPAM 		BIT DEFAULT 0
         
         
         ,	IsRobot 		BIT DEFAULT 0
@@ -111,14 +110,16 @@ sp: BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
     
     /***********************Check Robot betting****************************/
-    INSERT INTO Temp_CustCategory(CTSCustID, CustID, CategoryID,CategoryGroup, ReasonID ,IsDirect,IsRobot)
+    INSERT INTO Temp_CustCategory(CTSCustID, CustID,RoleID,SubscriberID,IsLicensee ,CategoryID,CategoryGroup ,IsDirect,IsRobot)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
+        ,	tmp.RoleID 
+        ,	tmp.SubscriberID
+		,	tmp.IsLicensee
 		,	CONST_CATEGORYID_ROBOTBETTING AS CategoryID
         ,	CONST_CATEGORYID_ROBOTBETTING AS CategoryGroup
-        ,	CONST_CATEGORYID_ROBOTBETTING AS ReasonID
         ,	1 AS IsDirect
-        ,	1
+        ,	1 AS IsRobot
     FROM  Temp_CustInfo AS tmp
     WHERE EXISTS (SELECT 1 FROM CTS_DataCenter.RobotDetection AS rb WHERE rb.CustID = tmp.CustID AND rb.IsDisabled = 0);
 	
@@ -147,20 +148,21 @@ sp: BEGIN
 	UPDATE Temp_CustCategory AS tmp
     INNER JOIN Temp_RobotCate AS cate ON cate.CustID = tmp.CustID
     SET 	tmp.CategoryID = cate.CategoryID
-		,	tmp.ReasonID = cate.CategoryID
         ,	tmp.Turnover = cate.Turnover 
 		,	tmp.Winloss = cate.Winloss
 		,	tmp.BetCount = 	cate.BetCount
 		,	tmp.ActiveDays = cate.ActiveDays;
 		
      /***********************Check PA from Old table****************************/
-    INSERT INTO Temp_CustCategory(CTSCustID,CustID, CategoryID,CategoryGroup, IsDirect, ReasonID, Remark,IsFromTVS,IsFromTW,IsFromPAM)
+    INSERT INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,CategoryID,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromPAM)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
+        ,	tmp.RoleID
+        ,	tmp.SubscriberID
+		,	tmp.IsLicensee
         ,	class.CategoryID
         ,	cate.CategoryGroup
 		,	1 AS IsDirect
-        ,	cate.ReasonID
         ,	class.Remark
         ,	class.IsFromTVS 		
         ,	class.IsFromTW 		
@@ -170,13 +172,15 @@ sp: BEGIN
         INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup != CONST_CATEGORYGROUP_ROBOT;
 	
     /***********************Check affected PA from Upline****************************/
-    INSERT INTO Temp_CustCategory(CTSCustID,CustID, CategoryID,CategoryGroup, IsDirect, ReasonID, Remark,IsFromTVS,IsFromTW,IsFromPAM)
+    INSERT INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee, CategoryID,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromPAM)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
+        ,	tmp.RoleID
+        ,	tmp.SubscriberID
+		,	tmp.IsLicensee
         ,	class.CategoryID
         ,	cate.CategoryGroup
 		,	0 AS IsDirect
-        ,	cate.ReasonID
         ,	class.Remark
         ,	class.IsFromTVS 		
         ,	class.IsFromTW 		
