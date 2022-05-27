@@ -54,9 +54,9 @@ ADD COLUMN PAPriority SMALLINT;
 UPDATE CustomerCategory
 SET    DangerLevelType = CASE WHEN ParentID = 50 OR CategoryID = 50 THEN 2
 						 ELSE 1 END 
-	,  Priority = CASE WHEN ParentID = 50 AND  RootTaggingID = 13 THEN 2
-						 WHEN ParentID = 50 AND  (RootTaggingID IS NULL  OR RootTaggingID != 13) THEN 1
-                         ELSE 3 END;
+	,  Priority = CASE WHEN ParentID = 50 AND  RootTaggingID = 13 THEN 20
+						 WHEN ParentID = 50 AND  (RootTaggingID IS NULL  OR RootTaggingID != 13) THEN 10
+                         ELSE 30 END;
 
 USE CTS_Archive;
 CREATE TABLE `CTSLog` (

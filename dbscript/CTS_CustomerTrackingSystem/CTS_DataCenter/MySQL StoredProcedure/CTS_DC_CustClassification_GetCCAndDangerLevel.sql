@@ -45,7 +45,7 @@ BEGIN
         , 	sp.CustomerClass
     FROM JSON_TABLE(CONCAT('[',ip_CustIDs,']'),'$[*]' COLUMNS(NESTED PATH '$' COLUMNS (CustID BIGINT UNSIGNED PATH '$'))) AS tmp
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID AND cus.CustSubID  = 0
-		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = sp.CustID;
+		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = tmp.CustID;
     
     SELECT 	tmp.CustID
 		,	clss.CategoryID
@@ -68,8 +68,8 @@ BEGIN
 				FROM CTS_DataCenter.CTSCustomerClassification AS clss
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID
                 WHERE clss.CustID = tmp.CustID
-                ORDER BY  clss.LastModifiedDate DESC
-						, cate.Priority ASC 
+                ORDER BY  cate.Priority ASC  
+						, clss.LastModifiedDate DESC
                 LIMIT 1) AS clss;
 END$$
 
