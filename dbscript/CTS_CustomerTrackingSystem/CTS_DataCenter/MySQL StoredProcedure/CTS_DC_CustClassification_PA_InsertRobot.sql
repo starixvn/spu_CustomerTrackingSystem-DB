@@ -149,7 +149,14 @@ BEGIN
 									WHEN pa.IsLicensee = 1 THEN cate.ABIDangerLevel_Licensee
 									WHEN pa.IsLicensee = 0 THEN cate.ABIDangerLevel_Credit				
 								END;
- 
+	
+	DELETE clss
+    FROM CTS_DataCenter.CTSCustomerClassification AS clss
+	WHERE EXISTS (SELECT 1 
+				  FROM Temp_PA AS tmp 
+                  WHERE clss.CustID = tmp.CustID 
+					AND clss.SportGroupID = 200);
+
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID,CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate,IsFromTW, IsDirect)
 	SELECT 	CustID
 		,	CTSCustID
