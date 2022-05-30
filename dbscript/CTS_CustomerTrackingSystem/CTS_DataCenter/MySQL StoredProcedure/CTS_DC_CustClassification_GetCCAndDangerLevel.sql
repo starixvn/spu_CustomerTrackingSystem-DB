@@ -8,12 +8,12 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_GetCCAndDange
     SQL SECURITY INVOKER
 BEGIN
 	/*
-		Created:	20201214@Irena.Vo	
-		Task :		Get Customers' latest Customer Class 
+		Created:	20220526@Aries.Nguyen	
+		Task :		Renovate PA Process
 		DB:			CTS_DataCenter
 		Original: 
 		Revisions:
-			- 20201214@Irena.Vo: Created [RedmineID: #145951]
+			- 20220526@Aries.Nguyen: Created [RedmineID: #172561]
         Param's Explanation:     
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetCCAndDangerLevel('1,2,1277,555555');

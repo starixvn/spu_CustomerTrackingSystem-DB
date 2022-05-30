@@ -18,7 +18,7 @@ sp: BEGIN
         Param's Explanation:
 
 		Example:
-			- CALL CTS_DataCenter.CTS_DC_CustInfo_CheckCategoryInfoNewCust();
+			- CALL CTS_DataCenter.CTS_DC_CustInfo_CheckCategoryInfoNewCust(@op_LastCTSCustID);SELECT @op_LastCTSCustID;
 	*/
     DECLARE lv_LastCTSCustID 	BIGINT UNSIGNED;
     DECLARE lv_BatchSize 		INT UNSIGNED;
