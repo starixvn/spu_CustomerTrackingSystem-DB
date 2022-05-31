@@ -18,8 +18,8 @@ BEGIN
 		Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DC_ProblemAccountManagement_GetCategories();
-	*/
-	SELECT 	DISTINCT cat.CategoryName, cat.CategoryGroup, cat.CategoryID
+	*/ 
+	SELECT 	DISTINCT cat.CategoryName, cat.CategoryGroup, cat.CategoryGroup AS CategoryID # cat.CategoryID
 	FROM	CTS_DataCenter.CustomerCategory AS cat
 	WHERE 	cat.SourceType = 'NAP' AND cat.CategoryID BETWEEN 52 AND 62 AND cat.CategoryID NOT IN (56,60,61); 
     
