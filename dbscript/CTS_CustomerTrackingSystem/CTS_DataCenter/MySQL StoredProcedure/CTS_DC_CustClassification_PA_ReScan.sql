@@ -64,7 +64,7 @@ sp: BEGIN
         ,	IsDirect		BIT
         ,	IsFromTVS 		BIT DEFAULT 0
         ,	IsFromTW 		BIT DEFAULT 0
-        ,	IsFromPAM 		BIT DEFAULT 0
+        ,	IsFromCTS 		BIT DEFAULT 0
         
         
         ,	IsRobot 		BIT DEFAULT 0
@@ -154,7 +154,7 @@ sp: BEGIN
 		,	tmp.ActiveDays = cate.ActiveDays;
 		
      /***********************Check PA from Old table****************************/
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,CategoryID,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromPAM)
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,CategoryID,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
         ,	tmp.RoleID
@@ -166,12 +166,12 @@ sp: BEGIN
         ,	class.Remark
         ,	class.IsFromTVS 		
         ,	class.IsFromTW 		
-        ,	class.IsFromPAM 		
+        ,	class.IsFromCTS 		
     FROM Temp_CustInfo AS tmp    
 		INNER JOIN CTS_DataCenter.CTSCustomerClassificationOldPA AS class ON class.CustID = tmp.CustID AND class.IsDirect = 1
         INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup != CONST_CATEGORYGROUP_ROBOT;
 	
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,CategoryID,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromPAM)
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,CategoryID,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
         ,	tmp.RoleID
@@ -183,13 +183,13 @@ sp: BEGIN
         ,	class.Remark
         ,	class.IsFromTVS 		
         ,	class.IsFromTW 		
-        ,	class.IsFromPAM 		
+        ,	class.IsFromCTS 		
     FROM Temp_CustInfo AS tmp    
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS class ON class.CustID = tmp.CustID AND class.IsDirect = 1
         INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup != CONST_CATEGORYGROUP_ROBOT;
 	 
     /***********************Check affected PA from Upline****************************/
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee, CategoryID,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromPAM)
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee, CategoryID,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
         ,	tmp.RoleID
@@ -201,7 +201,7 @@ sp: BEGIN
         ,	class.Remark
         ,	class.IsFromTVS 		
         ,	class.IsFromTW 		
-        ,	class.IsFromPAM 		
+        ,	class.IsFromCTS 		
     FROM Temp_CustInfo AS tmp    
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS class ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = CONST_GROUP_PA AND class.IsDirect = 1
         INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup != CONST_CATEGORYGROUP_ROBOT;
@@ -217,7 +217,7 @@ sp: BEGIN
         , 	IsDirect
 		,	IsFromTVS 		
         ,	IsFromTW 		
-        ,	IsFromPAM 		
+        ,	IsFromCTS 		
         
         ,	IsRobot 		
 		,	Turnover 		

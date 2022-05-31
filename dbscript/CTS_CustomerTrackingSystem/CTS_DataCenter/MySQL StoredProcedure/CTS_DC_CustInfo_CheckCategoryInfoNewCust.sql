@@ -59,7 +59,7 @@ sp: BEGIN
 		,   Remark			VARCHAR(500)
 		,	IsFromTVS		BIT
         ,	IsFromTW		BIT
-        ,	IsFromPAM		BIT
+        ,	IsFromCTS		BIT
         ,	CreatedBy		INT
         ,	PRIMARY KEY(CustID, CategoryID)
 	);
@@ -118,7 +118,7 @@ sp: BEGIN
     FROM Temp_CustInfo AS tmp		
 		INNER JOIN CTS_DataCenter.CTSCustomerClassificationVVIPQueue AS que ON que.CustID IN (tmp.SRecommend, tmp.MRecommend, tmp.Recommend) AND que.ActionType = 1;
 	
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID,CategoryGroup, Remark, CreatedBy,IsFromTVS,IsFromTW,IsFromPAM)
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID,CategoryGroup, Remark, CreatedBy,IsFromTVS,IsFromTW,IsFromCTS)
     SELECT 	tmp.CTSCustID
 		,	class.CustID
         ,	class.CategoryID
@@ -127,7 +127,7 @@ sp: BEGIN
         ,	class.CreatedBy
         ,	class.IsFromTVS
         ,	class.IsFromTW
-        ,	class.IsFromPAM
+        ,	class.IsFromCTS
     FROM Temp_CustInfo AS tmp    
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS class ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = 0 AND class.IsDirect = 1
         INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup != 61;
@@ -156,7 +156,7 @@ sp: BEGIN
         ,	cate.CreatedBy
         ,	cate.IsFromTVS
         ,	cate.IsFromTW
-        ,	cate.IsFromPAM
+        ,	cate.IsFromCTS
     FROM Temp_CustCategory AS cate
 		LEFT JOIN Temp_CustInfo AS tmp ON tmp.CustID = cate.CustID; 
     
