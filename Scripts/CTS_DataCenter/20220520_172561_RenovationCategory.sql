@@ -21,8 +21,8 @@ CREATE TABLE `CTSCustomerClassificationOldPA` (
   `LastScannedDate` date DEFAULT NULL,
   `IsFromTVS` BOOLEAN DEFAULT 0,
   `IsFromTW` BOOLEAN DEFAULT  0,
-  `IsFromPAM` BOOLEAN DEFAULT  0,
-  `IsDirectPA` BOOLEAN DEFAULT NULL,
+  `IsFromCTS` BOOLEAN DEFAULT  0,
+  `IsDirect` BOOLEAN DEFAULT NULL,
   `InsertTime` DATETIME(3) DEFAULT NULL,
   PRIMARY KEY (`CustID`,`SportGroupID`,`CategoryID`)
 ) ENGINE=InnoDB;
@@ -43,8 +43,8 @@ CREATE TABLE `CTSCustomerClassificationQueue` (
 	IsExceptDirectDownline BOOLEAN DEFAULT 0,
 		IsFromTVS		BOOLEAN DEFAULT 0
 	, 	IsFromTW		BOOLEAN DEFAULT 0
-	, 	IsFromPAM		BOOLEAN DEFAULT 0
-	,	IsDirectPA		BOOLEAN DEFAULT 0,
+	, 	IsFromCTS		BOOLEAN DEFAULT 0
+	,	IsDirect		BOOLEAN DEFAULT 0,
   PRIMARY KEY (`ID`),
   KEY `IX_Temp_Customer_CustID` (`CustID`, ActionType),
   KEY `IX_Temp_Customer_CTSCustID` (`CTSCustID`)
