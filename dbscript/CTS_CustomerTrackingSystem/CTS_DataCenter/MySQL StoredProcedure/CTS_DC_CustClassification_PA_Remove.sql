@@ -112,7 +112,7 @@ BEGIN
 		,	ce.EvidenceID
         ,	lv_CurrentDateTime
     FROM CTS_DataCenter.CustEvidence AS ce
-		INNER JOIN Temp_InputCust AS tmpPA ON ce.CTSCustID = tmpPA.CTSCustID
+		INNER JOIN Temp_InputCust AS tmpPA ON ce.CTSCustID = tmpPA.CTSCustID AND ce.Level = 0
         INNER JOIN Temp_EvidencePA AS tmpEp ON ce.EvidenceID = tmpEp.EvidenceID;    
 	
     UPDATE CTS_DataCenter.RobotDetection AS rd
