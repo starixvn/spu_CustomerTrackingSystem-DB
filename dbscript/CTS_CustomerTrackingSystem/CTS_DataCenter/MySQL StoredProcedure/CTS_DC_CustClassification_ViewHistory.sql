@@ -23,6 +23,7 @@ BEGIN
 			- 20210907@Long.Luu: Update Robot Users rules  [Redmine ID: #161232]
 			- 20211116@Aries.Nguyen: Return history with CTSUser is null[Redmine ID: #156935]
             - 20220510@Irena.Vo: Update for return CreatedBy [Redmine ID: #171512]
+			- 20220519@Aries.Nguyen: Renovate the Category Log History [Redmine ID: #172560]
 		Param's Explanation (filtered by):		
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_ViewHistory(43600889);
@@ -62,6 +63,8 @@ BEGIN
             ,	temp.TWGroupBettingRate
             ,	temp.TWTicketRejectRate
             ,	temp.TWDesktopUsageRate
+			,	temp.Remark
+			,	temp.TVSRequestID
 		FROM 	CTS_DataCenter.CTSCustomerClassification_History AS temp
 			LEFT JOIN CTS_DataCenter.TaggingToCategory AS tag ON tag.CategoryID = temp.CategoryID
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS cc1 ON temp.CategoryID = cc1.CategoryID

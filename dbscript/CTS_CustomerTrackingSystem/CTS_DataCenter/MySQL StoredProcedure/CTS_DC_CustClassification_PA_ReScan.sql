@@ -171,6 +171,23 @@ sp: BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomerClassificationOldPA AS class ON class.CustID = tmp.CustID AND class.IsDirect = 1
         INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup != CONST_CATEGORYGROUP_ROBOT;
 	
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,CategoryID,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromPAM)
+    SELECT 	tmp.CTSCustID
+		,	tmp.CustID
+        ,	tmp.RoleID
+        ,	tmp.SubscriberID
+		,	tmp.IsLicensee
+        ,	class.CategoryID
+        ,	cate.CategoryGroup
+		,	1 AS IsDirect
+        ,	class.Remark
+        ,	class.IsFromTVS 		
+        ,	class.IsFromTW 		
+        ,	class.IsFromPAM 		
+    FROM Temp_CustInfo AS tmp    
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS class ON class.CustID = tmp.CustID AND class.IsDirect = 1
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup != CONST_CATEGORYGROUP_ROBOT;
+	 
     /***********************Check affected PA from Upline****************************/
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee, CategoryID,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromPAM)
     SELECT 	tmp.CTSCustID

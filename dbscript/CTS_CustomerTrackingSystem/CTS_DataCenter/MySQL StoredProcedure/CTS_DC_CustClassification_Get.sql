@@ -30,6 +30,7 @@ BEGIN
 			- 20210622@Aries.Nguyen: Update coding convention  [Redmine ID: #157203]
 			- 20211115@Irena.Vo: Re-priortize Robot and other PA categories  [Redmine ID: #164344]
 			- 20220328@Aries.Nguyen: Add new category/class for PA Probation [Redmine ID: #170468]
+			- 20220531@Aries.Nguyen: Renovate process PA [Redmine ID: #172561]
 		Param's Explanation:
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_Get('1');
