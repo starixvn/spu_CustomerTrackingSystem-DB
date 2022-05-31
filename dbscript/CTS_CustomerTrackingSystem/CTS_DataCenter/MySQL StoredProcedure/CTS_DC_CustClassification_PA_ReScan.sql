@@ -52,28 +52,29 @@ sp: BEGIN
      
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustCategory;    
 	CREATE TEMPORARY TABLE Temp_CustCategory (	  
-			CTSCustID		BIGINT UNSIGNED
-        ,   CustID			BIGINT UNSIGNED 
+			CTSCustID			BIGINT UNSIGNED
+        ,   CustID				BIGINT UNSIGNED 
         
-        ,	RoleID 			TINYINT 
-		, 	SubscriberID	INT 
-        ,	IsLicensee		BIT
+        ,	RoleID 				TINYINT 
+		, 	SubscriberID		INT 
+        ,	IsLicensee			BIT
         
-        ,	CategoryGroup   SMALLINT
-        ,   CategoryID		BIGINT UNSIGNED 
-        ,	IsDirect		BIT
-        ,	IsFromTVS 		BIT DEFAULT 0
-        ,	IsFromTW 		BIT DEFAULT 0
-        ,	IsFromCTS 		BIT DEFAULT 0
+        ,	CategoryGroup   	SMALLINT
+        ,   CategoryID			BIGINT UNSIGNED 
+        ,	IsDirect			BIT
+        ,	IsFromTVS 			BIT DEFAULT 0
+        ,	IsFromTW 			BIT DEFAULT 0
+        ,	IsFromCTS 			BIT DEFAULT 0
         
         
-        ,	IsRobot 		BIT DEFAULT 0
-		,	Turnover 		DECIMAL(20,4) 
-		,	Winloss 		DECIMAL(20,4) 
-		,	BetCount 		INT 
-		,	ActiveDays 		TINYINT UNSIGNED 
+        ,	IsRobot 			BIT DEFAULT 0
+		,	Turnover 			DECIMAL(20,4) 
+		,	Winloss 			DECIMAL(20,4) 
+		,	BetCount 			INT 
+		,	ActiveDays 			TINYINT UNSIGNED 
         
-		,	Remark			VARCHAR(500)
+        ,	LastModifiedDate	DATETIME
+		,	Remark				VARCHAR(500)
 		,	PRIMARY KEY(CustID,CategoryID)
 	);
     
@@ -154,7 +155,7 @@ sp: BEGIN
 		,	tmp.ActiveDays = cate.ActiveDays;
 		
      /***********************Check PA from Old table****************************/
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,CategoryID,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS)
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,CategoryID,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
         ,	tmp.RoleID
@@ -166,12 +167,13 @@ sp: BEGIN
         ,	class.Remark
         ,	class.IsFromTVS 		
         ,	class.IsFromTW 		
-        ,	class.IsFromCTS 		
+        ,	class.IsFromCTS 
+		,	class.LastModifiedDate
     FROM Temp_CustInfo AS tmp    
 		INNER JOIN CTS_DataCenter.CTSCustomerClassificationOldPA AS class ON class.CustID = tmp.CustID AND class.IsDirect = 1
         INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup != CONST_CATEGORYGROUP_ROBOT;
 	
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,CategoryID,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS)
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,CategoryID,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
         ,	tmp.RoleID
@@ -183,13 +185,14 @@ sp: BEGIN
         ,	class.Remark
         ,	class.IsFromTVS 		
         ,	class.IsFromTW 		
-        ,	class.IsFromCTS 		
+        ,	class.IsFromCTS 	
+        ,	class.LastModifiedDate
     FROM Temp_CustInfo AS tmp    
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS class ON class.CustID = tmp.CustID AND class.IsDirect = 1
         INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup != CONST_CATEGORYGROUP_ROBOT;
 	 
     /***********************Check affected PA from Upline****************************/
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee, CategoryID,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS)
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee, CategoryID,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
         ,	tmp.RoleID
@@ -201,7 +204,8 @@ sp: BEGIN
         ,	class.Remark
         ,	class.IsFromTVS 		
         ,	class.IsFromTW 		
-        ,	class.IsFromCTS 		
+        ,	class.IsFromCTS 	
+        ,	class.LastModifiedDate
     FROM Temp_CustInfo AS tmp    
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS class ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = CONST_GROUP_PA AND class.IsDirect = 1
         INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup != CONST_CATEGORYGROUP_ROBOT;
@@ -225,6 +229,7 @@ sp: BEGIN
 		,	BetCount 		
 		,	ActiveDays 		
         
+        ,  	LastModifiedDate
 		,	Remark		
     FROM Temp_CustCategory;
 END$$

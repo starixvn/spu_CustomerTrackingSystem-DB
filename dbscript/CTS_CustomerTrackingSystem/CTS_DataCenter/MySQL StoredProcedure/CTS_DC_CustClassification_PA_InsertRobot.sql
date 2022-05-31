@@ -7,18 +7,18 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_InsertRobo
 )
     SQL SECURITY INVOKER
 BEGIN
-/*
+/* 
 		Created:	20220520@Aries.Nguyen
 		Task :		Renovate PA Process
 		DB:			CTS_DataCenter
 		Original: 
 		Revisions: 
-			- 20220520@Aries.Nguyen: Created [Redmine ID: #172561]
+			- 20220520@Aries.Nguyen: Created [Redmine ID: #172561] 
 		
-        Param's Explanation:
+        Param's Explanation: 
 
 		Example:
-			- CALL CTS_DataCenter.CTS_DC_CustClassification_PA_InsertRobot("1,2,3,4");
+			- CALL CTS_DataCenter.CTS_DC_CustClassification_PA_InsertRobot('[{"CustID":1,"CategoryID":61}]');
 */
 	DECLARE	CONST_CATEGORYID_ROBOTUSERS 		INT DEFAULT 61;
     DECLARE	CONST_CATEGORYID_BADROBOTUSERS 		INT DEFAULT 163;
@@ -27,6 +27,10 @@ BEGIN
     DECLARE	CONST_CATEGORYID_ROBOTBETTING 		INT DEFAULT 63;
     DECLARE	CONST_CATEGORYID_GOODROBOTBETTING 	INT DEFAULT 166;
     DECLARE	CONST_CATEGORYID_BADROBOTBETTING 	INT DEFAULT 165;
+    
+    DECLARE CONST_ROBOTTYPE_OBSERVED 	TINYINT UNSIGNED DEFAULT 0;
+    DECLARE CONST_ROBOTTYPE_GOOD 		TINYINT UNSIGNED DEFAULT 1;
+    DECLARE CONST_ROBOTTYPE_BAD 		TINYINT UNSIGNED DEFAULT 2;
     
     DECLARE	CONST_GROUP_PA 						INT DEFAULT 0;
     DECLARE CONST_SOURCETYPE_INSERTROBOTUSERS	INT DEFAULT 11;
@@ -54,6 +58,17 @@ BEGIN
 		,	CreatedBy				INT UNSIGNED
         , 	PRIMARY KEY(CustID,CategoryID)
     );  
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_RobotTW;    
+	CREATE TEMPORARY TABLE Temp_RobotTW (	  
+			CustID			BIGINT UNSIGNED 
+		, 	CategoryID		BIGINT UNSIGNED 
+		,	Turnover 		DECIMAL(20,4) 
+		,	Winloss 		DECIMAL(20,4) 
+		,	BetCount 		INT 
+		,	ActiveDays 		TINYINT UNSIGNED 
+		,	PRIMARY KEY(CustID,CategoryID)
+	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ExistCateRobot;    
 	CREATE TEMPORARY TABLE Temp_ExistCateRobot(	  
@@ -106,8 +121,40 @@ BEGIN
         LEFT JOIN CTS_DataCenter.CTSCustomerClassificationVVIP AS vip on cus.CTSCustID = vip.CTSCustID
 	WHERE pin.CTSCustID IS NULL
 		AND  vip.CTSCustID IS NULL; 
-
-    INSERT INTO Temp_ExistCateRobot(CustID,CategoryID)
+	
+    INSERT IGNORE INTO Temp_RobotTW(CustID, CategoryID,Turnover,Winloss,BetCount,ActiveDays)
+    SELECT 	tmp.CustID
+		,	CASE WHEN tbl.RobotType = CONST_ROBOTTYPE_OBSERVED THEN CONST_CATEGORYID_ROBOTUSERS
+				WHEN tbl.RobotType = CONST_ROBOTTYPE_GOOD THEN CONST_CATEGORYID_BADROBOTUSERS
+                WHEN tbl.RobotType = CONST_ROBOTTYPE_BAD THEN CONST_CATEGORYID_GOODROBOTUSERS
+			END AS CategoryID
+		,	tbl.Turnover 	
+		,	tbl.Winloss 	
+		,	tbl.BetCount 	
+		,	tbl.ActiveDays 	
+    FROM Temp_PA AS tmp,
+		LATERAL(SELECT 	rb.RobotType
+					,	rb.Turnover 	
+					,	rb.Winloss 	
+					,	rb.BetCount 	
+					,	rb.ActiveDays 	
+				FROM CTS_DataCenter.RobotClassification AS rb 
+                WHERE rb.CustID = tmp.CustID
+                ORDER BY rb.CustID ASC
+					,	 rb.FromDate DESC
+				LIMIT 1) AS tbl
+	WHERE   tmp.IsFromTW = 1
+		AND tmp.CategoryID = CONST_CATEGORYID_ROBOTUSERS;
+    
+    UPDATE Temp_PA AS pa
+	INNER JOIN Temp_RobotTW AS tw ON pa.CustID = tw.CustID AND pa.CategoryID = CONST_CATEGORYID_ROBOTUSERS
+    SET 	pa.CategoryID = tw.CategoryID
+		,	pa.TurnoverRM = tw.Turnover
+        ,	pa.WinlossRM = tw.Winloss
+        ,	pa.BetCount = tw.BetCount
+        ,	pa.ActiveDays = tw.ActiveDays;
+    
+    INSERT INTO Temp_ExistCateRobot(CustID,CategoryID) 
     SELECT 	clss.CustID
 		,	clss.CategoryID
     FROM CTSCustomerClassification AS clss
@@ -119,7 +166,7 @@ BEGIN
 						OR (tmp.CategoryID = CONST_CATEGORYID_ROBOTUSERS AND clss.CategoryID IN (CONST_CATEGORYID_BADROBOTUSERS,CONST_CATEGORYID_GOODROBOTUSERS))
                         OR (tmp.CategoryID = CONST_CATEGORYID_ROBOTBETTING AND clss.CategoryID IN (CONST_CATEGORYID_GOODROBOTBETTING,CONST_CATEGORYID_BADROBOTBETTING))));
    
-    DELETE clss
+    DELETE clss 
     FROM CTS_DataCenter.CTSCustomerClassification AS clss
 	WHERE EXISTS (SELECT 1 
 				  FROM Temp_ExistCateRobot AS tmp 
