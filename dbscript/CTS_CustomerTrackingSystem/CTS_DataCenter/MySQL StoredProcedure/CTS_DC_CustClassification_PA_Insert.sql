@@ -65,8 +65,8 @@ BEGIN
         ,	CategoryGroup	SMALLINT UNSIGNED
         ,	OldCategoryID 	SMALLINT UNSIGNED
         ,	DataChangeType	TINYINT DEFAULT 0 	#0: New Category, 1:Change Pobation Status (Winloss), 2: No Change
-        
-        ,	PRIMARY KEY PK_Temp_ExistCategoryType_CustID(CustID)
+
+        ,	PRIMARY KEY PK_Temp_ExistCategoryType_CustID(CustID, CategoryID)
 	);
     
     /* Mapping Category */
@@ -138,14 +138,14 @@ BEGIN
 		,   cls.LastModifiedDate = lv_CurrentDateTime
 		, 	cls.LastScannedDate = DATE(lv_CurrentDateTime)
         ,	cls.IsDirect = tmpPA.IsDirectPA
-        ,	cls.IsFromPAM = tmpPA.IsFromPAM
+        ,	cls.IsFromCTS = tmpPA.IsFromCTS
         ,	cls.IsFromTVS = tmpPA.IsFromTVS
         ,	cls.IsFromTW = tmpPA.IsFromTW
 	WHERE tmpPA.DataChangeType = 1;	
 
 	# INSERT NEW PA
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, 
-	CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsDirect, Remark, IsFromPAM, IsFromTVS, IsFromTW)
+	CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsDirect, Remark, IsFromCTS, IsFromTVS, IsFromTW)
 	SELECT 	tmpPA.CustID
 		,	tmpPA.CTSCustID
 		, 	tmpPA.SubscriberID
@@ -158,7 +158,7 @@ BEGIN
 		, 	DATE(lv_CurrentDateTime) AS LastScannedDate
         ,	tmpPA.IsDirectPA
         ,	tmpPA.Remark
-        ,	tmpPA.IsFromPAM
+        ,	tmpPA.IsFromCTS
         ,	tmpPA.IsFromTVS
         ,	tmpPA.IsFromTW
 	FROM Temp_PA AS tmpPA
@@ -217,7 +217,7 @@ BEGIN
     IF (ip_IsFromQueue = 0) THEN
 		/* INSERT SMA PA TO QUEUE PA AS */
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationQueue(CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryID, CategoryGroup, LastDownlineCTSCustID
-			, IsDirect, IsFromTVS, IsFromTW, IsFromPAM, ActionType, InsertTime)
+			, IsDirect, IsFromTVS, IsFromTW, IsFromCTS, ActionType, InsertTime)
 		SELECT tmpPA.CTSCustID
 			,	tmpPA.CustID
 			,	tmpPA.RoleID
@@ -230,7 +230,7 @@ BEGIN
             ,	tmpPA.IsDirectPA AS IsDirectPA
             ,	tmpPA.IsFromTVS AS IsFromTVS
             ,	tmpPA.IsFromTW AS IsFromTW
-            ,	tmpPA.IsFromPAM AS IsFromPAM
+            ,	tmpPA.IsFromCTS AS IsFromCTS
 			,	3 AS ActionType # 0: Mark PA
 			,	CURRENT_TIMESTAMP(3) AS InsertTime
 		FROM Temp_PA AS tmpPA
@@ -239,7 +239,7 @@ BEGIN
 		/* WRITE USER LOG IF FROM PAM*/
          SELECT CreatedBy 
          INTO lv_CreatedBy
-         FROM Temp_PA AS tmpPA WHERE IsFromPAM = 1 LIMIT 1;
+         FROM Temp_PA AS tmpPA WHERE IsFromCTS = 1 LIMIT 1;
 
          IF (lv_CreatedBy IS NOT NULL) THEN
 			 SELECT LEFT(CONCAT('CustNo.:',COUNT(1),'_',GROUP_CONCAT(DISTINCT CTSCustID)),500)
@@ -274,7 +274,7 @@ BEGIN
         ,	tmpPA.CreatedBy
         ,	DATE(lv_CurrentDateTime) AS CreatedDate
     FROM Temp_PA AS tmpPA
-    WHERE tmpPA.RoleID > 1;
+    WHERE tmpPA.RoleID ;
 
 	/* RETURN UPDATED CUSTOMERS TO SERVICE FOR FUTHER STEPS */
 	SELECT	DISTINCT 

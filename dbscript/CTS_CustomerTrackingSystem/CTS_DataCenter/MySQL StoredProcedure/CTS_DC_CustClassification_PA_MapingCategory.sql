@@ -51,7 +51,7 @@ BEGIN
 		, 	ToEvidenceID			SMALLINT        
         ,	IsFromTVS				BOOLEAN DEFAULT 0
         ,	IsFromTW				BOOLEAN DEFAULT 0
-        ,	IsFromPAM				BOOLEAN DEFAULT 0
+        ,	IsFromCTS				BOOLEAN DEFAULT 0
         ,	IsDataChanged			BOOLEAN DEFAULT 0 # 0: Not Change, 1: Changed (IF call from SpecialCC function THEN 1 ELSE 0)
         ,	DataChangeType			TINYINT DEFAULT 0 # 0: New OR Change Category, 1: Change Probation Status, 2: NOT CHANGE
         ,	OldCategoryID		    SMALLINT
@@ -64,7 +64,7 @@ BEGIN
    
     IF ip_InputType = 'Category' THEN      
 	INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, CategoryID, CategoryGroup, RelevantCategoryID, IsLicensee, CreatedBy, Remark, IsDirectPA
-		, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromPAM, IsDataChanged, TargetCC, TargetDangerLevel, ToEvidenceID, IsProbation, SpecialCC )	
+		, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsDataChanged, TargetCC, TargetDangerLevel, ToEvidenceID, IsProbation, SpecialCC )	
 	SELECT 	DISTINCT tmpJs.CustID
 		,	tmpJs.CTSCustID
 		,	tmpJs.RoleID
@@ -83,7 +83,7 @@ BEGIN
 		, 	tmpJs.ActiveDays
 		,	tmpJs.IsFromTVS
         ,	tmpJs.IsFromTW
-        ,	tmpJs.IsFromPAM
+        ,	tmpJs.IsFromCTS
 		,	tmpJs.IsDataChanged
 		,	(CASE 	WHEN sp.CustomerClass IS NOT NULL THEN sp.CustomerClass ELSE IFNULL(cat.CustomerClass,-99) END) AS TargetCC
 		,	(CASE 	WHEN tmpJs.IsLicensee = 1 THEN cat.ABIDangerLevel_Licensee
@@ -112,7 +112,7 @@ BEGIN
 			, 	ActiveDays		INT 				PATH "$.ActiveDays"
 			, 	IsFromTVS		BOOLEAN 			PATH "$.IsFromTVS"
             , 	IsFromTW		BOOLEAN 			PATH "$.IsFromTW"
-            , 	IsFromPAM		BOOLEAN 			PATH "$.IsFromPAM"
+            , 	IsFromCTS		BOOLEAN 			PATH "$.IsFromCTS"
 			, 	IsDataChanged	BOOLEAN 			PATH "$.IsDataChanged"   
 			
 	)) AS tmpJs
@@ -130,7 +130,7 @@ BEGIN
 
     IF ip_InputType = 'Reason' THEN 
 		INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, CategoryID, CategoryGroup, RelevantCategoryID, IsLicensee, CreatedBy, Remark, IsDirectPA
-			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromPAM, TargetCC, TargetDangerLevel, ToEvidenceID, IsProbation, SpecialCC )	
+			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, TargetCC, TargetDangerLevel, ToEvidenceID, IsProbation, SpecialCC )	
 		WITH CTS_CustPA AS(
 		SELECT 	DISTINCT tmpJs.CustID
 			,	cus.CTSCustID
@@ -147,7 +147,7 @@ BEGIN
 			, 	tmpJs.ActiveDays
 			,	tmpJs.IsFromTVS
 			,	tmpJs.IsFromTW
-			,	tmpJs.IsFromPAM
+			,	tmpJs.IsFromCTS
 			,	sp.CustomerClass AS SpecialCustomerClass
 			,	(CASE WHEN WinlossStatus = 0 THEN 1 ELSE 0 END) AS IsProbation 
 			,	tmpJs.ReasonID
@@ -165,7 +165,7 @@ BEGIN
 				, 	ActiveDays		INT 				PATH "$.ActiveDays"
 				, 	IsFromTVS		BOOLEAN 			PATH "$.IsFromTVS"
 				, 	IsFromTW		BOOLEAN 			PATH "$.IsFromTW"
-				, 	IsFromPAM		BOOLEAN 			PATH "$.IsFromPAM"
+				, 	IsFromCTS		BOOLEAN 			PATH "$.IsFromCTS"
 		)) AS tmpJs
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
 			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on cus.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
@@ -189,7 +189,7 @@ BEGIN
 			, 	cte.ActiveDays
 			,	cte.IsFromTVS
 			,	cte.IsFromTW
-			,	cte.IsFromPAM
+			,	cte.IsFromCTS
 			,	(CASE 	WHEN cte.SpecialCC IS NOT NULL THEN cte.SpecialCC ELSE IFNULL(cat.CustomerClass,-99) END) AS TargetCC
 			,	(CASE 	WHEN cte.IsLicensee = 1 THEN tmpF.ABIDangerLevel_Licensee
 						WHEN cte.IsLicensee = 0 THEN tmpF.ABIDangerLevel_Credit END) AS TargetDangerLevel
