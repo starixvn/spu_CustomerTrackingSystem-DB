@@ -51,8 +51,8 @@ BEGIN
         ,	PRIMARY KEY PK_Temp_InputCust(CustID)
 	);
     
-    DROP TABLE IF EXISTS Tem_PACust;
-    CREATE TEMPORARY TABLE Tem_PACust(
+    DROP TEMPORARY TABLE IF EXISTS Temp_PACust;
+    CREATE TEMPORARY TABLE Temp_PACust(
 		CustID INT UNSIGNED PRIMARY KEY
         , IsDirectPA BOOLEAN DEFAULT NULL
 	);
@@ -84,7 +84,7 @@ BEGIN
             , 	IsDirectPA				BOOLEAN 			PATH "$.IsDirectPA"
 	)) AS tmpJs;
     
-    INSERT IGNORE INTO Tem_PACust(CustID, IsDirectPA)
+    INSERT IGNORE INTO Temp_PACust(CustID, IsDirectPA)
     SELECT tmpPa.CustID
 		,	tmpPa.IsDirectPA
     FROM Temp_InputCust AS tmpPa,
@@ -94,7 +94,7 @@ BEGIN
 			) AS tmpCls;
 			
 	UPDATE Temp_InputCust AS tmpIc
-    INNER JOIN Tem_PACust AS tmpPA ON tmpIc.CustID = tmpPA.CustID
+    INNER JOIN Temp_PACust AS tmpPA ON tmpIc.CustID = tmpPA.CustID
     SET tmpIc.IsPA = 1;
 	#===========================================================
     INSERT INTO Temp_EvidencePA(EvidenceID)
