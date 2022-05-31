@@ -84,8 +84,9 @@ BEGIN
             , 	IsDirectPA				BOOLEAN 			PATH "$.IsDirectPA"
 	)) AS tmpJs;
     
-    INSERT IGNORE INTO Tem_PACust(CustID, IsDirect)
+    INSERT IGNORE INTO Tem_PACust(CustID, IsDirectPA)
     SELECT tmpPa.CustID
+		,	tmpPa.IsDirectPA
     FROM Temp_InputCust AS tmpPa,
     LATERAL (	SELECT CustID
 				FROM CTS_DataCenter.CTSCustomerClassification AS cls 

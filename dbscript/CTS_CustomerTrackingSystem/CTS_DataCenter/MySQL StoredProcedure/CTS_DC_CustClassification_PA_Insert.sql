@@ -217,7 +217,7 @@ BEGIN
     IF (ip_IsFromQueue = 0) THEN
 		/* INSERT SMA PA TO QUEUE PA AS */
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationQueue(CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryID, CategoryGroup, LastDownlineCTSCustID
-			, IsDirectPA, IsFromTVS, IsFromTW, IsFromPAM, ActionType, InsertTime)
+			, IsDirect, IsFromTVS, IsFromTW, IsFromPAM, ActionType, InsertTime)
 		SELECT tmpPA.CTSCustID
 			,	tmpPA.CustID
 			,	tmpPA.RoleID

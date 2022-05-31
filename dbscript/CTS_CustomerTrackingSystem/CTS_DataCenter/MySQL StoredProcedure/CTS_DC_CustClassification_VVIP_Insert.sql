@@ -119,7 +119,7 @@ sp: BEGIN
 	FROM Temp_Customer AS tmpCus;
 	
     /****MOVE PA TO OLD PA*****/
-    INSERT INTO CTSCustomerClassificationOldPA(CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsFromTVS, IsFromTW, IsFromPAM, IsDirectPA, InsertTime) 
+    INSERT INTO CTSCustomerClassificationOldPA(CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsFromTVS, IsFromTW, IsFromPAM, IsDirect, InsertTime) 
     SELECT	cls.CustID
 		,	cls.CTSCustID
         ,	cls.SubscriberID
@@ -134,7 +134,7 @@ sp: BEGIN
         ,	cls.IsFromTVS
         ,	cls.IsFromTW
         ,	cls.IsFromPAM
-        ,	cls.IsDirectPA
+        ,	cls.IsDirect
         ,	CURRENT_TIMESTAMP(3) AS InsertTime
 	FROM CTS_DataCenter.CTSCustomerClassification AS cls
 		INNER JOIN Temp_Customer AS tmpCus ON cls.CustID = tmpCus.CustID;	
