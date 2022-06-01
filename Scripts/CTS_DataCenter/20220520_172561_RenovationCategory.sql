@@ -28,27 +28,24 @@ CREATE TABLE `CTSCustomerClassificationOldPA` (
 ) ENGINE=InnoDB;
 
 CREATE TABLE `CTSCustomerClassificationQueue` (
-  `ID` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `CTSCustID` bigint unsigned DEFAULT NULL,
-  `CustID` INT unsigned DEFAULT NULL,
-  `RoleID` tinyint DEFAULT NULL,
-  `SubscriberID` int unsigned DEFAULT NULL,
-  `CreatedBy` INT unsigned DEFAULT NULL,
-  `Remark` varchar(300),
-  `CategoryGroup` int DEFAULT NULL,
-  `CategoryID` smallint unsigned DEFAULT NULL,
-  `LastDownlineCTSCustID` bigint unsigned DEFAULT NULL,
-  `ActionType` tinyint DEFAULT NULL COMMENT '1: INSERT VVIP, 2:Remove VVIP, 3:INSERT PA, 4: UNMARK PA',
-  `InsertTime` datetime(3) DEFAULT NULL,
-	IsExceptDirectDownline BOOLEAN DEFAULT 0,
-		IsFromTVS		BOOLEAN DEFAULT 0
-	, 	IsFromTW		BOOLEAN DEFAULT 0
-	, 	IsFromCTS		BOOLEAN DEFAULT 0
-	,	IsDirect		BOOLEAN DEFAULT 0,
-  PRIMARY KEY (`ID`),
-  KEY `IX_Temp_Customer_CustID` (`CustID`, ActionType),
-  KEY `IX_Temp_Customer_CTSCustID` (`CTSCustID`)
-) ENGINE=InnoDB;
+   `ID` bigint unsigned NOT NULL AUTO_INCREMENT,
+   `CTSCustID` bigint unsigned DEFAULT NULL,
+   `CustID` int unsigned DEFAULT NULL,
+   `RoleID` tinyint DEFAULT NULL,
+   `SubscriberID` int unsigned DEFAULT NULL,
+   `CreatedBy` int unsigned DEFAULT NULL,
+   `Remark` varchar(300) COLLATE utf8_unicode_ci DEFAULT NULL,
+   `CategoryGroup` int DEFAULT NULL,
+   `CategoryID` smallint unsigned DEFAULT NULL,
+   `LastDownlineCTSCustID` bigint unsigned DEFAULT NULL,
+   `ActionType` tinyint DEFAULT NULL COMMENT '1: INSERT VVIP, 2:Remove VVIP, 3:INSERT PA, 4: UNMARK PA',
+   `InsertTime` datetime(3) DEFAULT NULL,
+   `IsExceptDirectDownline` tinyint(1) DEFAULT '0',
+   `IsFromTVS` tinyint(1) DEFAULT '0',
+   `IsFromTW` tinyint(1) DEFAULT '0',
+   `IsFromCTS` tinyint(1) DEFAULT '0',
+   PRIMARY KEY (`ID`)
+ ) ENGINE=InnoDB;
 
 
 SELECT * FROM CTS_Admin.LogType WHERE ListID = 4 ORDER BY ItemID DESC;
