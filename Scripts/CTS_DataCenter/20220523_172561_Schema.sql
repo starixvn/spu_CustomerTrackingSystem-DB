@@ -15,6 +15,8 @@ ADD  COLUMN IsFromCTS BIT  DEFAULT 0,
 ADD  COLUMN IsDirect BIT DEFAULT NULL,
 ADD  COLUMN TVSRequestID BIGINT UNSIGNED DEFAULT NULL;
 
+ALTER TABLE CTSCustomerClassification ADD INDEX IX_CTSCustomerClassification_TVSRequestID(TVSRequestID);
+
 USE CTS_DataCenter
 ALTER TABLE  CTSCustomerClassification_History 
 ADD COLUMN Remark VARCHAR(500),

@@ -24,7 +24,9 @@ CREATE TABLE `CTSCustomerClassificationOldPA` (
   `IsFromCTS` BOOLEAN DEFAULT  0,
   `IsDirect` BOOLEAN DEFAULT NULL,
   `InsertTime` DATETIME(3) DEFAULT NULL,
-  PRIMARY KEY (`CustID`,`SportGroupID`,`CategoryID`)
+  `TVSRequestID` BIGINT UNSIGNED DEFAULT NULL,
+  PRIMARY KEY (`CustID`,`SportGroupID`,`CategoryID`),
+  KEY `IX_CTSCustomerClassification_TVSRequestID` (`TVSRequestID`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE `CTSCustomerClassificationQueue` (
@@ -44,6 +46,7 @@ CREATE TABLE `CTSCustomerClassificationQueue` (
    `IsFromTVS` tinyint(1) DEFAULT '0',
    `IsFromTW` tinyint(1) DEFAULT '0',
    `IsFromCTS` tinyint(1) DEFAULT '0',
+   `TVSRequestID` BIGINT UNSIGNED DEFAULT NULL,
    PRIMARY KEY (`ID`)
  ) ENGINE=InnoDB;
 

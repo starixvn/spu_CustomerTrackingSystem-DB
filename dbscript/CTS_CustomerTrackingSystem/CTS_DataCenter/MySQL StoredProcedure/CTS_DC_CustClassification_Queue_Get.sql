@@ -44,6 +44,7 @@ BEGIN
     DECLARE lv_IsFromTVS 				TINYINT(1);
     DECLARE lv_IsFromTW 				TINYINT(1);
     DECLARE lv_IsFromCTS 				TINYINT(1);
+    DECLARE lv_TVSRequestID             BIGINT;
 
     SELECT sys.ParameterValue
     INTO lv_BatchSize
@@ -59,7 +60,7 @@ BEGIN
         
         , 	que.CreatedBy, IFNULL(que.Remark,'') AS Remark
         
-        , 	IFNULL(que.IsExceptDirectDownline,0) AS IsExceptDirectDownline, que.IsFromTVS, que.IsFromTW, que.IsFromCTS
+        , 	IFNULL(que.IsExceptDirectDownline,0) AS IsExceptDirectDownline, que.IsFromTVS, que.IsFromTW, que.IsFromCTS, IFNULL(que.TVSRequestID,-1) AS TVSRequestID
     INTO 	lv_QueueID, lv_LastDownlineCTSCustID, lv_ActionType
 		
         , 	lv_CTSCustID, lv_CustID , lv_SubscriberID, lv_RoleID
@@ -68,7 +69,7 @@ BEGIN
         
         , 	lv_CreatedBy, lv_Remark
         
-        ,	lv_IsExceptDirectDownline, lv_IsFromTVS, lv_IsFromTW, lv_IsFromCTS
+        ,	lv_IsExceptDirectDownline, lv_IsFromTVS, lv_IsFromTW, lv_IsFromCTS, lv_TVSRequestID
     FROM CTS_DataCenter.CTSCustomerClassificationQueue AS que
     ORDER BY ID ASC
     LIMIT 1;    
@@ -92,6 +93,7 @@ BEGIN
             ,	',lv_IsFromTVS,' AS IsFromTVS
             ,	',lv_IsFromTW,' AS IsFromTW
             ,	',lv_IsFromCTS,' AS IsFromCTS
+            ,	',lv_TVSRequestID,' AS TVSRequestID
    
             ,	',lv_LastDownlineCTSCustID,' AS LastDownlineCTSCustID
 		FROM CTS_DataCenter.CTSCustomer AS cus USE INDEX(IX_CTSCustomer_SRecommend)
@@ -123,6 +125,7 @@ BEGIN
             ,	',lv_IsFromTVS,' AS IsFromTVS
             ,	',lv_IsFromTW,' AS IsFromTW
             ,	',lv_IsFromCTS,' AS IsFromCTS
+            ,	',lv_TVSRequestID,' AS TVSRequestID
    
             ,	',lv_LastDownlineCTSCustID,' AS LastDownlineCTSCustID
 		FROM CTS_DataCenter.CTSCustomer AS cus USE INDEX(IX_CTSCustomer_MRecommend)
@@ -153,6 +156,7 @@ BEGIN
             ,	',lv_IsFromTVS,' AS IsFromTVS
             ,	',lv_IsFromTW,' AS IsFromTW
             ,	',lv_IsFromCTS,' AS IsFromCTS
+            ,	',lv_TVSRequestID,' AS TVSRequestID
    
             ,	',lv_LastDownlineCTSCustID,' AS LastDownlineCTSCustID
 		FROM CTS_DataCenter.CTSCustomer AS cus USE INDEX(IX_CTSCustomer_Recommend)
