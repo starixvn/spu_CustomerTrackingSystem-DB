@@ -3,8 +3,8 @@ DROP procedure IF EXISTS `CTS_DC_CustClassification_Queue_Complete`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Queue_Complete`(    	
-		IN ip_QueueID      		BIGINT UNSIGNED
-	,  	IN ip_LastCTSCustID     BIGINT UNSIGNED
+		IN ip_QueueID      				BIGINT UNSIGNED
+	,  	IN ip_LastDownlineCTSCustID     BIGINT UNSIGNED
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -22,7 +22,7 @@ BEGIN
         Example: CALL CTS_DC_CustClassification_Queue_Complete(1,2);
 	*/ 
 	UPDATE CTS_DataCenter.CTSCustomerClassificationQueue AS que
-	SET que.LastDownlineCTSCustID = ip_LastCTSCustID
+	SET que.LastDownlineCTSCustID = ip_LastDownlineCTSCustID
 	WHERE que.ID = ip_QueueID;
 
 END$$
