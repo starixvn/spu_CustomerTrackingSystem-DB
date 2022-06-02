@@ -4,7 +4,6 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_PA_Remove`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_Remove`(
 		IN ip_IsFromQueue			BOOLEAN
-	,	IN ip_ExceptDirectDownline 	BOOLEAN
     ,   IN ip_ProblemAccounts 		JSON
     ,	OUT op_ErrorMessage 		VARCHAR(200)
 )
@@ -22,7 +21,7 @@ BEGIN
 			- ip_ByType: 1: Category, 2: Reason
         Example:
 	
-			- CALL CTS_DataCenter.CTS_DC_CustClassification_PA_Remove(0,0,'[{"CustID": 456, "CTSCustID": 324557, "RoleID": 4, "SubscriberID": 2, "CreatedBy": 8, "IsExceptDirectDownline": 0}]',@op_ErrorMessage);
+			- CALL CTS_DataCenter.CTS_DC_CustClassification_PA_Remove(0,'[{"CustID": 456, "CTSCustID": 324557, "RoleID": 4, "SubscriberID": 2, "CreatedBy": 8, "IsExceptDirectDownline": 1}]',@op_ErrorMessage);
             
 	*/ 
     DECLARE lv_CurrentDateTime	DATETIME DEFAULT CURRENT_TIME(); 
@@ -46,7 +45,7 @@ BEGIN
         ,	CreatedBy 				INT UNSIGNED
         ,	IsExceptDirectDownline	BOOLEAN DEFAULT NULL
         ,	IsDirectPA				BOOLEAN DEFAULT NULL
-        ,	IsPA					BOOLEAN DEFAULT NULL
+        ,	IsRemovedPA				BOOLEAN DEFAULT 0
         
         ,	PRIMARY KEY PK_Temp_InputCust(CustID)
 	);
@@ -82,20 +81,23 @@ BEGIN
 			, 	Remark					VARCHAR(500)		PATH "$.Remark"
 			, 	IsExceptDirectDownline	BOOLEAN 			PATH "$.IsExceptDirectDownline"
             , 	IsDirectPA				BOOLEAN 			PATH "$.IsDirectPA"
-	)) AS tmpJs;
+	)) AS tmpJs
+    LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on tmpJs.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category;
+    WHERE pin.CTSCustID IS NULL;
     
     INSERT IGNORE INTO Temp_PACust(CustID, IsDirectPA)
-    SELECT tmpPa.CustID
-		,	tmpPa.IsDirectPA
-    FROM Temp_InputCust AS tmpPa,
+    SELECT	tmpIc.CustID
+		,	tmpIc.IsDirectPA
+    FROM Temp_InputCust AS tmpIc,
     LATERAL (	SELECT CustID
 				FROM CTS_DataCenter.CTSCustomerClassification AS cls 
-				WHERE cls.CustID = tmpPa.CustID AND cls.SportGroupID = CONST_PA_SPORTGROUP
+				WHERE cls.CustID = tmpIc.CustID AND cls.SportGroupID = CONST_PA_SPORTGROUP
 			) AS tmpCls;
 			
 	UPDATE Temp_InputCust AS tmpIc
-    INNER JOIN Temp_PACust AS tmpPA ON tmpIc.CustID = tmpPA.CustID
-    SET tmpIc.IsPA = 1;
+    INNER JOIN Temp_PACust AS tmpPA ON tmpIc.CustID = tmpPA.CustID AND NOT(tmpIc.IsExceptDirectDownline = 1 AND tmpPA.IsDirectPA = 0)
+    SET tmpIc.IsRemovedPA = 1;
+    
 	#===========================================================
     INSERT INTO Temp_EvidencePA(EvidenceID)
     SELECT DISTINCT cat.EvidenceID_Credit
@@ -109,63 +111,63 @@ BEGIN
 
     #==============================================================    
     INSERT INTO CTS_DataCenter.CustEvidenceAffectedQueueRemove(CTSCustID, EvidenceID, Created)
-    SELECT tmpPA.CTSCustID
+    SELECT tmpIc.CTSCustID
 		,	ce.EvidenceID
         ,	lv_CurrentDateTime
     FROM CTS_DataCenter.CustEvidence AS ce
-		INNER JOIN Temp_InputCust AS tmpPA ON ce.CTSCustID = tmpPA.CTSCustID AND ce.Level = 0
+		INNER JOIN Temp_InputCust AS tmpIc ON ce.CTSCustID = tmpIc.CTSCustID AND ce.Level = 0 AND tmpIc.IsRemovedPA = 1
         INNER JOIN Temp_EvidencePA AS tmpEp ON ce.EvidenceID = tmpEp.EvidenceID;    
 	
     UPDATE CTS_DataCenter.RobotDetection AS rd
-		INNER JOIN Temp_InputCust AS tmpPA ON rd.CustID = tmpPA.CustID
+		INNER JOIN Temp_InputCust AS tmpIc ON rd.CustID = tmpIc.CustID AND tmpIc.IsRemovedPA = 1
 	SET rd.IsDisabled = 1;
 
     DELETE ce
     FROM CTS_DataCenter.CustEvidence AS ce
-		INNER JOIN Temp_InputCust AS tmpPA ON ce.CTSCustID = tmpPA.CTSCustID
+		INNER JOIN Temp_InputCust AS tmpIc ON ce.CTSCustID = tmpIc.CTSCustID
         INNER JOIN Temp_EvidencePA AS tmpEp ON ce.EvidenceID = tmpEp.EvidenceID;    
     
 	IF(ip_IsFromQueue = 0) THEN
+    
 		/* INSERT SMA PA TO QUEUE PA AS */
-
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationQueue(CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, LastDownlineCTSCustID, ActionType, InsertTime, IsExceptDirectDownline)
-		SELECT tmpPA.CTSCustID
-			,	tmpPA.CustID
-			,	tmpPA.RoleID
-			,	tmpPA.SubscriberID
-			,	tmpPA.CreatedBy
-			,	tmpPA.Remark    
+		SELECT tmpIc.CTSCustID
+			,	tmpIc.CustID
+			,	tmpIc.RoleID
+			,	tmpIc.SubscriberID
+			,	tmpIc.CreatedBy
+			,	tmpIc.Remark    
 			,	0 AS LastDownlineCTSCustID
 			,	4 AS ActionType # 4: UnMark PA, 3: Mark PA
 			,	lv_CurrentDateTime AS InsertTime
-            , 	tmpPA.IsExceptDirectDownline
-		FROM Temp_InputCust AS tmpPA
-		WHERE tmpPA.RoleID > 1;              
+            , 	tmpIc.IsExceptDirectDownline
+		FROM Temp_InputCust AS tmpIc
+		WHERE tmpIc.RoleID > 1;              
 
 		/* WRITE USER LOG IF FROM PAM*/
-         SELECT CreatedBy, IsExceptDirectDownline
+         SELECT tmpIc.CreatedBy, tmpIc.IsExceptDirectDownline
          INTO lv_CreatedBy, lv_IsExceptDirectDownline
-         FROM Temp_InputCust AS tmpPA LIMIT 1;
+         FROM Temp_InputCust AS tmpIc LIMIT 1;
 
          IF (lv_CreatedBy IS NOT NULL) THEN
-			 SELECT LEFT(CONCAT('CustNo.:',COUNT(1),'_IsExceptDirectDL:',lv_IsExceptDirectDownline,'_CustList',GROUP_CONCAT(DISTINCT CTSCustID)),500)
+			 SELECT LEFT(CONCAT('CustNo.:',COUNT(1),'_IsExceptDirectDL:',lv_IsExceptDirectDownline,'_CustList',GROUP_CONCAT(DISTINCT tmpIc.CTSCustID)),500)
 			 INTO lv_LogInfo
-			 FROM Temp_InputCust AS tmpPA;
+			 FROM Temp_InputCust AS tmpIc;
              
 		 INSERT IGNORE INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 		 SELECT CONST_USERLOG_LOGTYPE AS LogTypeID
 			,	CONST_SPNAME AS SPName
 			,	lv_LogInfo AS LogInfo
 			,	DATE(lv_CurrentDateTime) AS CreatedDate
-			,	lv_CreatedBy AS CreatedBy;        
-        END IF;    
-        
+			,	lv_CreatedBy AS CreatedBy;
+            
+        END IF;        
 	END IF;    
     
     DELETE cls
     FROM CTS_DataCenter.CTSCustomerClassification AS cls
 		INNER JOIN Temp_InputCust AS tmpPA ON cls.CustID = tmpPA.CustID AND cls.SportGroupID = CONST_PA_SPORTGROUP
-	WHERE tmpPA.IsPA = 1;
+	WHERE tmpPA.IsRemovedPA = 1;
 
     /**********INSERT LOG FOR IsDataChange: CategoryID OR CC********/  
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType
@@ -191,7 +193,7 @@ BEGIN
         ,	NULL AS IsDirectPA
         ,	tmpPA.Remark
 	FROM Temp_InputCust AS tmpPA
-    WHERE tmpPA.IsPA = 1;
+    WHERE tmpPA.IsRemovedPA = 1;
 
     /******INSERT LOG FOR ALL ******/
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType
@@ -221,6 +223,7 @@ BEGIN
 	SELECT	DISTINCT 
 			tmpPA.CustID
 		,	tmpPA.CTSCustID
+        ,	tmpPA.IsRemovedPA
     FROM Temp_InputCust AS tmpPA; 
  
 END$$
