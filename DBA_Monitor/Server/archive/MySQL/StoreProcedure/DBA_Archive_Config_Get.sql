@@ -65,7 +65,7 @@ BEGIN
 		,	job.DesDatabase AS  Des_Database
 		,	job.DesTable AS Des_Table
 		,	job.PartitionType
-        ,	CONCAT(job.PartitionPrefix,YEARWEEK(DATE_SUB(DATE_ADD(NOW(), INTERVAL 11 HOUR), INTERVAL 14 DAY)), "  " , DATE(DATE_SUB(DATE_ADD(NOW(), INTERVAL 11 HOUR), INTERVAL job.KeepDataRange DAY))) AS PartitionName
+        ,	CONCAT(job.PartitionPrefix,YEARWEEK(DATE_SUB(DATE_ADD(NOW(), INTERVAL 11 HOUR), INTERVAL job.KeepDataRange DAY)), "  " , DATE(DATE_SUB(DATE_ADD(NOW(), INTERVAL 11 HOUR), INTERVAL job.KeepDataRange DAY))) AS PartitionName
 		,	job.PartitionPrefix
         ,	job.PartitionDelimiter
         ,	job.PartitionMax
