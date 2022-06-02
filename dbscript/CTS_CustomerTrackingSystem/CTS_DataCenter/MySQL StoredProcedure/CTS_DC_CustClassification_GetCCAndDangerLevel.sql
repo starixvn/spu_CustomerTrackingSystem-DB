@@ -54,7 +54,7 @@ BEGIN
         ,	CASE WHEN clss.DangerLevel IS NULL THEN 0
 			ELSE clss.DangerLevelType END AS DangerLevelType
     FROM Temp_CustInfo AS tmp,
-		LATERAL(SELECT 	cate.CategoryID
+		LATERAL(SELECT 	cate.CategoryGroup AS CategoryID
 					,	CASE  WHEN cate.CategoryID IN (CONST_CATEGORYID_GOODROBOTUSERS,CONST_CATEGORYID_GOODROBOTBETTING) AND tmp.IsRobotException = 1 THEN cate.CustomerClassException
 							  ELSE cate.CustomerClass 
 						END AS CustomerClass
