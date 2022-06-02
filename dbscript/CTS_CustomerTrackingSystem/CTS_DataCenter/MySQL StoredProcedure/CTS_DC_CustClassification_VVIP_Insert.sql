@@ -8,8 +8,6 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassificat
     ,	IN ip_QueueID			BIGINT
     ,	IN ip_AffectDownline	BOOLEAN
     ,	IN ip_CustJson			JSON
-    
-    , 	OUT op_ErrorMessage 	VARCHAR(200)
 )
     SQL SECURITY INVOKER 
 sp: BEGIN
@@ -58,11 +56,7 @@ sp: BEGIN
     DECLARE lv_SourceTypeID		INT;    
     DECLARE lv_CustomerClass	INT; 
   
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION 
-    BEGIN         
-        GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
-    END;
- 
+
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
 	CREATE TEMPORARY TABLE 		Temp_Customer (
 		 	CustID			BIGINT UNSIGNED		
@@ -201,8 +195,8 @@ sp: BEGIN
 	FROM Temp_Customer AS tmpCus;
     
 	/*Auto Pin Category*/
-	INSERT IGNORE INTO CTS_DataCenter.PinCustomerCategory(CTSCustID, CreatedTime)
-	SELECT tmpCus.CTSCustID, lv_CurrentDateTime
+	INSERT IGNORE INTO CTS_DataCenter.PinCustomerCategory(CTSCustID, CreatedTime, CreatedBy)
+	SELECT tmpCus.CTSCustID, lv_CurrentDateTime, tmpCus.CreatedBy
     FROM Temp_Customer AS tmpCus;  
  
     /*RETURN CustList: push CC to NAP */

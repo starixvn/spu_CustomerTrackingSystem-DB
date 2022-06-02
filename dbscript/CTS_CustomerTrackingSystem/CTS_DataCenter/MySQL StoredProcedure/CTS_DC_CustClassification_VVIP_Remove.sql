@@ -8,8 +8,6 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassificat
     ,	IN ip_QueueID			BIGINT
     ,	IN ip_AffectDownline	BOOLEAN
     ,	IN ip_CustJson			JSON
-    
-    , 	OUT op_ErrorMessage 	VARCHAR(200)
 )
     SQL SECURITY INVOKER 
 BEGIN
@@ -47,13 +45,6 @@ BEGIN
     DECLARE lv_MaxCTSCustID		BIGINT UNSIGNED;
     DECLARE lv_SourceTypeID		INT;    
     
-  
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION 
-    BEGIN         
-        GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
-    END;
- 
-
     DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
 	CREATE TEMPORARY TABLE 		Temp_Customer (
 		 	CustID			BIGINT UNSIGNED		
