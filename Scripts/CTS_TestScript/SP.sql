@@ -250,7 +250,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DBA_Dummy_CTSCustomerClassification`(
 		IN 		ip_CTSCustID		BIGINT UNSIGNED
 	,   IN 		ip_SubscriberID		INT UNSIGNED
     
-    ,   IN 		ip_IsLicensee		BIT 
+    ,   IN 		ip_IsLicensee		BIT
     ,   IN 		ip_IsRobotException BIT
     ,	IN		ip_LastTicketDate	DATETIME
     
@@ -270,8 +270,7 @@ sp: BEGIN
     DECLARE	CONST_GROUP_ROBOTUSER 				INT DEFAULT 61;
     DECLARE CONST_ACTIONTYPE_INSERT 			INT DEFAULT 0;
     
-	DECLARE	CONST_CATEGORYID_GOODROBOTUSERS 	INT DEFAULT 164;
-    DECLARE	CONST_CATEGORYID_GOODROBOTBETTING 	INT DEFAULT 166;
+	DECLARE	CONST_CATEGORYID_GOODROBOT 	INT DEFAULT 164;
     
 	DECLARE CONST_ROBOTTYPE_OBSERVED 	TINYINT UNSIGNED DEFAULT 0;
     DECLARE CONST_ROBOTTYPE_GOOD 		TINYINT UNSIGNED DEFAULT 1;
@@ -382,10 +381,10 @@ sp: BEGIN
 	SELECT  ip_CTSCustID,ip_CTSCustID
 		, 	CASE WHEN cate.ParentID = 50 THEN 0 ELSE 200 END AS SportGroupID, cate.CategoryID
         ,	CASE  WHEN ip_SpecialCC > 0 THEN ip_SpecialCC
-				  WHEN cate.CategoryID IN (CONST_CATEGORYID_GOODROBOTUSERS,CONST_CATEGORYID_GOODROBOTBETTING) AND ip_IsRobotException = 1 THEN cate.CustomerClassException
+				  WHEN cate.CategoryID IN (CONST_CATEGORYID_GOODROBOT) AND ip_IsRobotException = 1 THEN cate.CustomerClassException
 			ELSE cate.CustomerClass END AS CustomerClass
-		,	CASE WHEN cate.CategoryID IN (CONST_CATEGORYID_GOODROBOTUSERS,CONST_CATEGORYID_GOODROBOTBETTING) AND ip_IsRobotException = 1 AND ip_IsLicensee = 1 THEN cate.ABIDangerLevelException_Licensee
-							 WHEN cate.CategoryID IN (CONST_CATEGORYID_GOODROBOTUSERS,CONST_CATEGORYID_GOODROBOTBETTING) AND ip_IsRobotException = 1 AND ip_IsLicensee = 0 THEN cate.ABIDangerLevelException_Credit
+		,	CASE WHEN cate.CategoryID IN (CONST_CATEGORYID_GOODROBOT) AND ip_IsRobotException = 1 AND ip_IsLicensee = 1 THEN cate.ABIDangerLevelException_Licensee
+							 WHEN cate.CategoryID IN (CONST_CATEGORYID_GOODROBOT) AND ip_IsRobotException = 1 AND ip_IsLicensee = 0 THEN cate.ABIDangerLevelException_Credit
 							 WHEN ip_IsLicensee = 1 THEN cate.ABIDangerLevel_Licensee
 							 WHEN ip_IsLicensee = 0 THEN cate.ABIDangerLevel_Credit
 			END AS DangerLevel, 0 AS IsDirect, 0 AS TVSRequestID

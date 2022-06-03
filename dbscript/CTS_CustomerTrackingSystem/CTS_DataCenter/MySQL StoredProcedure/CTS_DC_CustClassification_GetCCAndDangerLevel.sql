@@ -20,10 +20,9 @@ BEGIN
 	*/ 
 	DECLARE	CONST_GROUP_NORMAL 					INT DEFAULT 200;
     DECLARE	CONST_GROUP_PROBLEM 				INT DEFAULT 0;
-    DECLARE	CONST_GROUP_ROBOTUSER 				INT DEFAULT 61;
+    DECLARE	CONST_GROUP_ROBOT 					INT DEFAULT 61;
     
-	DECLARE	CONST_CATEGORYID_GOODROBOTUSERS 	INT DEFAULT 164;
-    DECLARE	CONST_CATEGORYID_GOODROBOTBETTING 	INT DEFAULT 166;
+	DECLARE	CONST_CATEGORYID_GOODROBOT 			INT DEFAULT 164;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;
     CREATE TEMPORARY TABLE 		Temp_CustInfo (
@@ -55,12 +54,12 @@ BEGIN
 			ELSE clss.DangerLevelType END AS DangerLevelType
     FROM Temp_CustInfo AS tmp,
 		LATERAL(SELECT 	cate.CategoryGroup AS CategoryID
-					,	CASE  WHEN cate.CategoryID IN (CONST_CATEGORYID_GOODROBOTUSERS,CONST_CATEGORYID_GOODROBOTBETTING) AND tmp.IsRobotException = 1 THEN cate.CustomerClassException
+					,	CASE  WHEN cate.CategoryID IN (CONST_CATEGORYID_GOODROBOT) AND tmp.IsRobotException = 1 THEN cate.CustomerClassException
 							  ELSE cate.CustomerClass 
 						END AS CustomerClass
 					,	cate.CustomerClassName
-					,	CASE WHEN cate.CategoryID IN (CONST_CATEGORYID_GOODROBOTUSERS,CONST_CATEGORYID_GOODROBOTBETTING) AND tmp.IsRobotException = 1 AND tmp.IsLicensee = 1 THEN cate.ABIDangerLevelException_Licensee
-							 WHEN cate.CategoryID IN (CONST_CATEGORYID_GOODROBOTUSERS,CONST_CATEGORYID_GOODROBOTBETTING) AND tmp.IsRobotException = 1 AND tmp.IsLicensee = 0 THEN cate.ABIDangerLevelException_Credit
+					,	CASE WHEN cate.CategoryID IN (CONST_CATEGORYID_GOODROBOT) AND tmp.IsRobotException = 1 AND tmp.IsLicensee = 1 THEN cate.ABIDangerLevelException_Licensee
+							 WHEN cate.CategoryID IN (CONST_CATEGORYID_GOODROBOT) AND tmp.IsRobotException = 1 AND tmp.IsLicensee = 0 THEN cate.ABIDangerLevelException_Credit
 							 WHEN tmp.IsLicensee = 1 THEN cate.ABIDangerLevel_Licensee
 							 WHEN tmp.IsLicensee = 0 THEN cate.ABIDangerLevel_Credit
 						 END AS DangerLevel
