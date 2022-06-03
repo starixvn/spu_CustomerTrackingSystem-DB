@@ -4,7 +4,7 @@ DROP procedure IF EXISTS `CTS_DC_CustClassification_Queue_Get`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Queue_Get`(
 		OUT op_QueueID					BIGINT UNSIGNED
-	,	OUT op_LastDownlineCTSCustID 	BIGINT UNSIGNED
+	,	OUT op_LastDownlineCTSCustID 	BIGINT
 	,	OUT op_ActionType				TINYINT
     ,	OUT op_UplineRoleID				TINYINT
 )
@@ -163,7 +163,7 @@ BEGIN
 		WHERE cus.CustSubID = 0 AND cus.Recommend = ',lv_CustID,' AND cus.CTSCustID > ',lv_LastDownlineCTSCustID,' AND cus.RoleID != ', lv_RoleID,'
         ORDER BY cus.CTSCustID ASC
         LIMIT ',lv_BatchSize);
-        
+         
 		PREPARE stmt1 FROM @sqlstr;
 		EXECUTE stmt1;
     END IF;        
@@ -175,14 +175,10 @@ BEGIN
 		SET op_ActionType = lv_ActionType; 
 		SET op_UplineRoleID = lv_RoleID;      
     ELSE
-		SET op_QueueID	= NULL;
-		SET op_LastDownlineCTSCustID = NULL;
+		SET op_QueueID	= lv_QueueID;
+		SET op_LastDownlineCTSCustID = -1;
 		SET op_ActionType = NULL; 
 		SET op_UplineRoleID = NULL;   
-        
-		DELETE que
-		FROM CTS_DataCenter.CTSCustomerClassificationQueue AS que
-        WHERE que.ID = lv_QueueID;
 	END IF;
 END$$
 
