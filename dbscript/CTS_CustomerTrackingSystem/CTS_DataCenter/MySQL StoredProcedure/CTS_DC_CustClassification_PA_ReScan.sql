@@ -112,7 +112,7 @@ sp: BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
     
     /***********************Check Robot betting****************************/
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID,RoleID,SubscriberID,IsLicensee ,CategoryID,CategoryGroup ,IsDirect,IsRobot)
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID,RoleID,SubscriberID,IsLicensee ,CategoryID,CategoryGroup ,IsFromCTS,IsDirect,IsRobot)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
         ,	tmp.RoleID 
@@ -120,40 +120,12 @@ sp: BEGIN
 		,	tmp.IsLicensee
 		,	CONST_CATEGORYID_ROBOT AS CategoryID
         ,	CONST_CATEGORYID_ROBOT AS CategoryGroup
-        ,	1 AS IsDirect
+        ,	1 AS IsFromCTS
+        ,	0 AS IsDirect
         ,	1 AS IsRobot
     FROM  Temp_CustInfo AS tmp
     WHERE EXISTS (SELECT 1 FROM CTS_DataCenter.RobotDetection AS rb WHERE rb.CustID = tmp.CustID AND rb.IsDisabled = 0);
-	
-    INSERT IGNORE INTO Temp_RobotCate(CustID, CategoryID,Turnover,Winloss,BetCount,ActiveDays)
-    SELECT 	tmp.CustID
-		,	CASE WHEN tbl.RobotType = CONST_ROBOTTYPE_OBSERVED THEN CONST_CATEGORYID_ROBOT
-				WHEN tbl.RobotType = CONST_ROBOTTYPE_GOOD THEN CONST_CATEGORYID_GOODROBOT
-                WHEN tbl.RobotType = CONST_ROBOTTYPE_BAD THEN CONST_CATEGORYID_BADROBOT
-			END AS CategoryID
-		,	tbl.Turnover 	
-		,	tbl.Winloss 	
-		,	tbl.BetCount 	
-		,	tbl.ActiveDays 	
-    FROM Temp_CustCategory AS tmp,
-		LATERAL(SELECT 	rb.RobotType
-					,	rb.Turnover 	
-					,	rb.Winloss 	
-					,	rb.BetCount 	
-					,	rb.ActiveDays 	
-				FROM CTS_DataCenter.RobotClassification AS rb 
-                WHERE rb.CustID = tmp.CustID
-                ORDER BY rb.CustID ASC
-					,	 rb.FromDate DESC
-				LIMIT 1) AS tbl;
-             
-	UPDATE IGNORE Temp_CustCategory AS tmp
-    INNER JOIN Temp_RobotCate AS cate ON cate.CustID = tmp.CustID
-    SET 	tmp.CategoryID = cate.CategoryID
-        ,	tmp.Turnover = cate.Turnover 
-		,	tmp.Winloss = cate.Winloss
-		,	tmp.BetCount = 	cate.BetCount
-		,	tmp.ActiveDays = cate.ActiveDays;
+
 		
      /***********************Check PA from Old table****************************/
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,CategoryID,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID)

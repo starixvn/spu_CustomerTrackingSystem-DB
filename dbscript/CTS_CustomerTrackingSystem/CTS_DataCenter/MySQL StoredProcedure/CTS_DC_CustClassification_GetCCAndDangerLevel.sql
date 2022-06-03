@@ -38,7 +38,7 @@ BEGIN
     INSERT IGNORE INTO Temp_CustInfo (CustID,IsLicensee,IsRobotException,CustomerClass)
     SELECT  tmp.CustID
 		,	cus.IsLicensee
-        ,	CASE WHEN (cus.IsLicensee = 0 AND cus.SubscriberID IN (2,130)) OR (cus.IsLicensee = 0 AND cus.CurrencyID IN (13,78)) THEN 1
+        ,	CASE WHEN (cus.IsLicensee = 0 AND cus.SiteID = 16) OR (cus.IsLicensee = 0 AND cus.CurrencyID IN (6,13)) THEN 1
 				 ELSE 0 
 			END AS IsRobotException
         , 	sp.CustomerClass
