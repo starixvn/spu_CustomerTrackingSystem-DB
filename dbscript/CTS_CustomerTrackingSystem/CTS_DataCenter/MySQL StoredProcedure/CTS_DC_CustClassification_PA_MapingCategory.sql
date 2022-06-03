@@ -190,7 +190,7 @@ BEGIN
 			,	cte.IsFromTVS
 			,	cte.IsFromTW
 			,	cte.IsFromCTS
-			,	(CASE 	WHEN cte.SpecialCC IS NOT NULL THEN cte.SpecialCC ELSE IFNULL(cat.CustomerClass,-99) END) AS TargetCC
+			,	(CASE 	WHEN cte.SpecialCC IS NOT NULL THEN cte.SpecialCC ELSE IFNULL(tmpF.CustomerClass,-99) END) AS TargetCC
 			,	(CASE 	WHEN cte.IsLicensee = 1 THEN tmpF.ABIDangerLevel_Licensee
 						WHEN cte.IsLicensee = 0 THEN tmpF.ABIDangerLevel_Credit END) AS TargetDangerLevel
 			,	(CASE 	WHEN cte.IsLicensee = 1 THEN tmpF.EvidenceID_Licensee
