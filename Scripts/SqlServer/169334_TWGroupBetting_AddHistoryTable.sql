@@ -1,7 +1,7 @@
 /*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 /*
     Creator: 	05052022@Harvey.Nguyen
-    Task:	 	Add table for ticket data storage  [Redmine ID: ####]
+    Task:	 	Add table for ticket data storage  [Redmine ID: 169334]
     DBName:		bodb02
 */
 
@@ -21,7 +21,7 @@ CREATE TABLE [dbo].[SPU_GroupBettingTicket_History](
  CONSTRAINT [PK_SPU_GroupBettingTicket_History] PRIMARY KEY CLUSTERED 
 (
 	[TransId] ASC
-)) ON [PRIMARY]
+))
 
 GO
 CREATE NONCLUSTERED INDEX IX_SPU_GroupBettingTicket_History_TransDate

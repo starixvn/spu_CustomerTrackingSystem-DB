@@ -17,7 +17,9 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
-	DECLARE @GBTicketXML XML;
+	DECLARE @GBTicketXML	XML
+		,	@ArchivedDate	DATETIME = DATEADD(day, -3, GETDATE())
+		;
 	SET @GBTicketXML = CONVERT(XML,@GBTicketXMLString);
 
 	IF OBJECT_ID('tempdb..#TmpGroupBettingTicket') IS NOT NULL
@@ -35,6 +37,9 @@ BEGIN
 		,	T.C.value('./@TransDate', 'DATE') AS TransDate
 	FROM @GBTicketXML.nodes('//TWGroupBettingTicket') AS T(C)
 	OPTION (OPTIMIZE FOR (@GBTicketXML = NULL));
+
+	DELETE FROM SPU_GroupBettingTicket_History
+	WHERE TransDate <= @ArchivedDate
 
 	INSERT INTO SPU_GroupBettingTicket_History (
 		TransId
@@ -59,3 +64,4 @@ BEGIN
 	DROP TABLE #TmpGroupBettingTicket
 
 END
+
