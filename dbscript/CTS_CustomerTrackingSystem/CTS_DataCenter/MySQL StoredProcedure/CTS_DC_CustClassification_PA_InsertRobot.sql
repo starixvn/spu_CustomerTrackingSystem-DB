@@ -255,7 +255,7 @@ BEGIN
 	FROM Temp_PA AS pa
     WHERE pa.IsDataChanged =  1;
     
-    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, SourceTypeID, IsDataChanged, RobotCounter, TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays,IsDirect)
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, SourceTypeID, IsDataChanged, RobotCounter, TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays,IsDirect,Remark)
 	SELECT 	pa.CustID
 		, 	pa.CTSCustID
 		, 	pa.CategoryID
@@ -274,10 +274,11 @@ BEGIN
 		, 	pa.BetCount
 		, 	pa.ActiveDays
         ,	pa.IsDirect
+        ,	pa.Remark
 	FROM Temp_PA AS pa
     WHERE pa.IsDataChanged =  1;
     
-    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, SourceTypeID, IsDataChanged, RobotCounter, TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays,IsDirect)
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, SourceTypeID, IsDataChanged, RobotCounter, TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays,IsDirect,Remark)
 	SELECT 	pa.CustID
 		, 	pa.CTSCustID
 		, 	pa.CategoryID
@@ -296,6 +297,7 @@ BEGIN
 		, 	pa.BetCount
 		, 	pa.ActiveDays
         ,	pa.IsDirect
+		,	pa.Remark
 	FROM Temp_PA AS pa;
 
 
