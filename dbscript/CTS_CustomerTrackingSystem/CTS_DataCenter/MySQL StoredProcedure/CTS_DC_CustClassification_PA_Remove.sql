@@ -34,7 +34,7 @@ BEGIN
 	DECLARE lv_CreatedBy INT UNSIGNED;
     DECLARE lv_NoOfCust INT;
     DECLARE lv_IsExceptDirectDownline BOOLEAN;
-
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_InputCust;    
 	CREATE TEMPORARY TABLE Temp_InputCust(
 			CustID					BIGINT UNSIGNED 
@@ -97,9 +97,9 @@ BEGIN
     LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on tmpJs.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category;
     WHERE pin.CTSCustID IS NULL;
 
-    INSERT IGNORE INTO Temp_CustPA(CustID, CTSCustID, CategoryID, EvidenceID_Licensee, EvidenceID_Credit
+   INSERT IGNORE INTO Temp_CustPA(CustID, CTSCustID, CategoryID, EvidenceID_Licensee, EvidenceID_Credit
 					, RoleID, SubscriberID, CreatedBy, Remark, IsDirectPA, IsRemovedPA)
-    SELECT	tmpIc.CustID
+    SELECT	 tmpIc.CustID
 		,	tmpIc.CTSCustID
 		,	cls.CategoryID
         ,	cat.EvidenceID_Licensee
@@ -109,7 +109,7 @@ BEGIN
         ,	tmpIc.CreatedBy
         ,	tmpIc.Remark
         ,	tmpIc.IsDirectPA
-        ,	(CASE WHEN tmpIc.IsExceptDirectDownline <> cls.IsDirect THEN 1 ELSE 0 END) AS IsRemovedPA    
+        ,	(CASE WHEN (tmpIc.IsExceptDirectDownline = 1 AND  cls.IsDirect = 1 AND ip_IsFromQueue = 0 )  THEN 0 ELSE 1 END) AS IsRemovedPA    
     FROM Temp_InputCust AS tmpIc
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON tmpIc.CustID = cls.CustID AND cls.SportGroupID = CONST_PA_SPORTGROUP
         INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID; 
@@ -135,7 +135,8 @@ BEGIN
   
     UPDATE Temp_InputCust AS tmpIc
     SET tmpIc.IsRemovedPA = 1
-    WHERE NOT EXISTS (SELECT 1 FROM Temp_CustPA AS tmpCp WHERE tmpCp.IsRemovedPA = 0 AND tmpIc.CustID = tmpCp.CustID);
+    WHERE NOT EXISTS (SELECT 1 FROM Temp_CustPA AS tmpCp WHERE tmpCp.IsRemovedPA = 0 AND tmpIc.CustID = tmpCp.CustID)
+			OR ip_IsFromQueue = 0 ;
            
 	IF(ip_IsFromQueue = 0) THEN    
 		# INSERT SMA PA TO QUEUE PA AS #
@@ -171,8 +172,8 @@ BEGIN
 			,	lv_CreatedBy AS CreatedBy;
             
         END IF;        
-	END IF;    
-
+	END IF;   
+    
     DELETE cls
     FROM CTS_DataCenter.CTSCustomerClassification AS cls
 		INNER JOIN Temp_CustPA AS tmpCp ON cls.CustID = tmpCp.CustID AND cls.SportGroupID = CONST_PA_SPORTGROUP AND cls.CategoryID = tmpCp.CategoryID

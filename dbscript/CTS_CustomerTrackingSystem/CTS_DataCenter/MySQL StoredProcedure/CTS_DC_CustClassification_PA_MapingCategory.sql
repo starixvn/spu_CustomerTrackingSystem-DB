@@ -42,39 +42,43 @@ BEGIN
         , 	ActiveDays				INT 
         
         /*Get Mapping Value*/
-		, 	CategoryID		    		SMALLINT UNSIGNED
-        ,	CategoryGroup     			SMALLINT UNSIGNED        
-        ,	IsProbation					BOOLEAN  NULL
-        ,	IsDirectPA					BOOLEAN
-		,	TargetCC					SMALLINT UNSIGNED
-		,	TargetDangerLevel			SMALLINT UNSIGNED
-		, 	ToEvidenceID				SMALLINT        
-        ,	IsFromTVS					BOOLEAN DEFAULT 0
-        ,	IsFromTW					BOOLEAN DEFAULT 0
-        ,	IsFromCTS					BOOLEAN DEFAULT 0
-        ,	IsDataChanged				BOOLEAN DEFAULT 0 	# 0: Not Change, 1: Changed (IF call from SpecialCC function THEN 1 ELSE 0)
-        ,	DataChangeType				TINYINT DEFAULT 0	# 0: New OR Change Category, 1: Change Probation Status, 2: NOT CHANGE
-        ,	OldCategoryID		    	SMALLINT UNSIGNED
-        ,	RelevantCategoryID			SMALLINT UNSIGNED	
-        ,	RelevantCategoryGroup		SMALLINT UNSIGNED
+		, 	InputCategoryID		    SMALLINT UNSIGNED
+        ,	InputCategoryGroup     	SMALLINT UNSIGNED      
+        ,	IsProbationStatus		BOOLEAN  NULL
+        , 	CategoryID		   		SMALLINT UNSIGNED
+        ,	CategoryGroup     		SMALLINT UNSIGNED
+        ,	IsProbation	     		BOOLEAN
+        ,	TargetCC				SMALLINT UNSIGNED
+		,	TargetDangerLevel		SMALLINT UNSIGNED
+        , 	ToEvidenceID			SMALLINT
+        , 	RelevantCategoryID		SMALLINT UNSIGNED
+        ,	RelevantCategoryGroup   SMALLINT UNSIGNED
+        ,	RelevantIsProbation	   	BOOLEAN
         ,	RelevantTargetCC			SMALLINT UNSIGNED
-        ,	RelevantTargetDangerLevel	SMALLINT UNSIGNED
-        ,	RelevantIsProbation			BOOLEAN
-        ,	SpecialCC					SMALLINT UNSIGNED
-        , 	PRIMARY KEY     		PK_Temp_PA(CustID,CategoryID)  
+		,	RelevantTargetDangerLevel	SMALLINT UNSIGNED
+        , 	RelevantToEvidenceID		SMALLINT
+		,	IsDirectPA				BOOLEAN        
+        ,	IsFromTVS				BOOLEAN DEFAULT 0
+        ,	IsFromTW				BOOLEAN DEFAULT 0
+        ,	IsFromCTS				BOOLEAN DEFAULT 0
+        ,	IsDataChanged			BOOLEAN DEFAULT 0 	# 0: Not Change, 1: Changed (IF call from SpecialCC function THEN 1 ELSE 0)
+        ,	DataChangeType			TINYINT DEFAULT 0	# 0: New OR Change Category, 1: Change Probation Status, 2: NOT CHANGE
+        ,	OldCategoryID		    SMALLINT
+        ,	SpecialCC				SMALLINT UNSIGNED
+        , 	PRIMARY KEY     		PK_Temp_PA(CustID,InputCategoryID)  
     );  
    
     IF ip_InputType = 'Category' THEN	
-		
-        INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, CategoryID, CategoryGroup, RelevantCategoryID, IsLicensee, CreatedBy, Remark, IsDirectPA
-			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsDataChanged, TargetCC, TargetDangerLevel, ToEvidenceID, IsProbation, SpecialCC)	
+    
+        INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, InputCategoryID, InputCategoryGroup, RelevantCategoryID, IsLicensee, CreatedBy, Remark, IsDirectPA
+			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsDataChanged, IsProbationStatus)#TargetCC, TargetDangerLevel, ToEvidenceID,  SpecialCC)	
 		SELECT 	DISTINCT tmpJs.CustID
 			,	tmpJs.CTSCustID
 			,	tmpJs.RoleID
 			, 	tmpJs.SubscriberID
 			,	tmpJs.CategoryID
 			,	tmpJs.CategoryGroup
-			,	cat.RelevantCategoryID
+            ,	cat.RelevantCategoryID
 			,	tmpJs.IsLicensee
 			,	tmpJs.CreatedBy 
 			,	tmpJs.Remark
@@ -87,15 +91,18 @@ BEGIN
 			,	tmpJs.IsFromTVS
 			,	tmpJs.IsFromTW
 			,	tmpJs.IsFromCTS
-			,	tmpJs.IsDataChanged
+			,	tmpJs.IsDataChanged		
+			,	(CASE 	WHEN tmpJs.WinlossStatus = 1 THEN NULL #KEEP CURRENT PA
+						WHEN tmpJs.WinlossStatus = 0 THEN 1  # PROBATION
+                        ELSE 0  # NOT PROBATION (WinlossStatus IN (NULL, 2)
+                        END) AS IsProbationStatus
+			/*,	 sp.CustomerClass AS SpecialCC
 			,	(CASE 	WHEN sp.CustomerClass IS NOT NULL THEN sp.CustomerClass ELSE IFNULL(cat.CustomerClass,-99) END) AS TargetCC
 			,	(CASE 	WHEN tmpJs.IsLicensee = 1 THEN cat.ABIDangerLevel_Licensee
 						WHEN tmpJs.IsLicensee = 0 THEN cat.ABIDangerLevel_Credit END) AS TargetDangerLevel
 			,	(CASE 	WHEN tmpJs.IsLicensee = 1 THEN cat.EvidenceID_Licensee
 						WHEN tmpJs.IsLicensee = 0 THEN cat.EvidenceID_Credit
-						ELSE NULL END) AS ToEvidenceID
-			,	 cat.IsProbation 
-			,	 sp.CustomerClass AS SpecialCC
+						ELSE NULL END) AS ToEvidenceID*/
 		FROM JSON_TABLE(ip_CustInfo,
 			"$[*]" COLUMNS(
 					CustID 			BIGINT UNSIGNED		PATH "$.CustID"
@@ -121,16 +128,33 @@ BEGIN
 			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on tmpJs.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
 			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CTSCustID = sp.CTSCustID 
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.CategoryID
-			WHERE pin.CTSCustID IS NULL;  
+			WHERE pin.CTSCustID IS NULL;            
             
 			UPDATE Temp_PA AS tmpPA
-				INNER JOIN CTS_DataCenter.CustomerCategory  AS cat ON cat.CategoryID = tmpPA.RelevantCategoryID
+			INNER JOIN CTS_DataCenter.CustomerCategory  AS cat ON cat.CategoryID IN (tmpPA.InputCategoryID, tmpPA.RelevantCategoryID) AND cat.IsProbation = 0
+			SET 	tmpPA.CategoryGroup = cat.CategoryGroup	
+				,	tmpPA.CategoryID = cat.CategoryGroup
+                ,	tmpPA.IsProbation = cat.IsProbation
+				,	tmpPA.TargetCC = (CASE 	WHEN tmpPA.SpecialCC IS NOT NULL THEN tmpPA.SpecialCC ELSE IFNULL(cat.CustomerClass,-99) END)
+                ,	tmpPA.TargetDangerLevel = (CASE WHEN tmpPA.IsLicensee = 1 THEN cat.ABIDangerLevel_Licensee
+													WHEN tmpPA.IsLicensee = 0 THEN cat.ABIDangerLevel_Credit END) 
+				,	tmpPA.ToEvidenceID = (CASE 	WHEN tmpPA.IsLicensee = 1 THEN cat.EvidenceID_Licensee
+												WHEN tmpPA.IsLicensee = 0 THEN cat.EvidenceID_Credit
+												ELSE NULL END)
+				,	tmpPA.RelevantCategoryID = cat.RelevantCategoryID;
+	
+			UPDATE Temp_PA AS tmpPA
+			INNER JOIN CTS_DataCenter.CustomerCategory  AS cat ON cat.CategoryID = tmpPA.RelevantCategoryID
 			SET 	tmpPA.RelevantCategoryGroup = cat.CategoryGroup	
-				,	tmpPA.RelevantIsProbation	= cat.IsProbation
-                ,	tmpPA.RelevantTargetDangerLevel = (CASE	WHEN tmpPA.IsLicensee = 1 THEN cat.ABIDangerLevel_Licensee
-															WHEN tmpPA.IsLicensee = 0 THEN cat.ABIDangerLevel_Credit END)
-				,	tmpPA.RelevantTargetCC = (CASE	WHEN tmpPA.SpecialCC IS NOT NULL THEN tmpPA.SpecialCC ELSE IFNULL(cat.CustomerClass,-99) END);
-    
+				,	tmpPA.RelevantCategoryID = cat.CategoryGroup
+				,	tmpPA.RelevantTargetCC = (CASE 	WHEN tmpPA.SpecialCC IS NOT NULL THEN tmpPA.SpecialCC ELSE IFNULL(cat.CustomerClass,-99) END)
+                ,	tmpPA.RelevantTargetDangerLevel = (CASE WHEN tmpPA.IsLicensee = 1 THEN cat.ABIDangerLevel_Licensee
+													WHEN tmpPA.IsLicensee = 0 THEN cat.ABIDangerLevel_Credit END) 
+				,	tmpPA.RelevantToEvidenceID = (CASE 	WHEN tmpPA.IsLicensee = 1 THEN cat.EvidenceID_Licensee
+												WHEN tmpPA.IsLicensee = 0 THEN cat.EvidenceID_Credit
+												ELSE NULL END)
+				,	tmpPA.RelevantIsProbation = cat.IsProbation;
+	
     END IF;   
  
     IF ip_InputType = 'Reason' THEN 
