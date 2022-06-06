@@ -34,7 +34,7 @@ BEGIN
 	DECLARE lv_CreatedBy INT UNSIGNED;
     DECLARE lv_NoOfCust INT;
     DECLARE lv_IsExceptDirectDownline BOOLEAN;
-    
+        
     DROP TEMPORARY TABLE IF EXISTS Temp_InputCust;    
 	CREATE TEMPORARY TABLE Temp_InputCust(
 			CustID					BIGINT UNSIGNED 
@@ -109,7 +109,7 @@ BEGIN
         ,	tmpIc.CreatedBy
         ,	tmpIc.Remark
         ,	tmpIc.IsDirectPA
-        ,	(CASE WHEN (tmpIc.IsExceptDirectDownline = 1 AND  cls.IsDirect = 1 AND ip_IsFromQueue = 0 )  THEN 0 ELSE 1 END) AS IsRemovedPA    
+        ,	(CASE WHEN (tmpIc.IsExceptDirectDownline = 1 AND  cls.IsDirect = 1 AND ip_IsFromQueue = 1 )  THEN 0 ELSE 1 END) AS IsRemovedPA    
     FROM Temp_InputCust AS tmpIc
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON tmpIc.CustID = cls.CustID AND cls.SportGroupID = CONST_PA_SPORTGROUP
         INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID; 
