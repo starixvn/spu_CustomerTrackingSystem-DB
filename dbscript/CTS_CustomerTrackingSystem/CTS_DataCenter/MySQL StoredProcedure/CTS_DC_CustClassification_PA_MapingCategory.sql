@@ -239,7 +239,7 @@ BEGIN
 					,	cat.EvidenceID_Licensee
 					,	cat.EvidenceID_Credit
 				FROM CTS_DataCenter.CustomerCategory AS cat  
-				WHERE cat.ReasonID = cte.ReasonID
+				WHERE cat.ReasonID = cte.ReasonID AND (cat.IsProbation = cte.IsProbation OR cte.IsProbation IS NULL)
 				LIMIT 1) AS tmpF;	
 	 
 			UPDATE Temp_PA AS tmpPA

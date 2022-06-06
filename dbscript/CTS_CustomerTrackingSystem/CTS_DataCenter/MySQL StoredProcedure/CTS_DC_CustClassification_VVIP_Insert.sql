@@ -207,7 +207,7 @@ sp: BEGIN
     
     /*****UPDATE Queue LastID************/
     IF ip_FromAction = 2 AND ip_QueueID IS NOT NULL THEN
-		UPDATE CTS_DataCenter.CTSCustomerClassificationVVIPQueue AS que
+		UPDATE CTS_DataCenter.CTSCustomerClassificationQueue AS que
 		SET que.LastDownlineCTSCustID = lv_MaxCTSCustID
 		WHERE que.ID = ip_QueueID;
     END IF;

@@ -32,7 +32,7 @@ BEGIN
 	#INSERT INTO CTS_Log.CTSLog(SPName, InsertTime, OtherText ,JsonString1,JsonString2,JsonString3)
 	#SELECT 'CTS_DC_CustClassification_VVIPQueue_Insert', current_timestamp(3), CONCAT('ip_ActionType:',ip_ActionType,'; ip_CTSCustID:',ip_CTSCustID,'; ip_CustID:',ip_CustID,'; SubscriberID:', IFNULL(ip_SubscriberID,'NULL'), 'ip_Remark:', IFNULL(ip_Remark,'NULL')),NULL,NULL,NULL;
 
-	INSERT INTO CTS_DataCenter.CTSCustomerClassificationVVIPQueue(CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryID, LastDownlineCTSCustID, ActionType, InsertTime)
+	INSERT INTO CTS_DataCenter.CTSCustomerClassificationQueue(CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryID, LastDownlineCTSCustID, ActionType, InsertTime)
     SELECT ip_CTSCustID, ip_CustID, ip_RoleID, ip_SubscriberID, ip_CreatedBy, ip_Remark, ip_CategoryID, 0 AS LastDownlineCTSCustID, ip_ActionType, CURRENT_TIMESTAMP(3);
 
 END$$

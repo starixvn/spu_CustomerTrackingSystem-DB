@@ -122,7 +122,7 @@ BEGIN
         
 	/***DELETE FROM VVIP TABLE********/
     DELETE clv
-    FROM CTS_DataCenter.CTSCustomerClassificationVVIP AS clv
+    FROM CTS_DataCenter.CTSCustomerClassificationQueue AS clv
 		INNER JOIN Temp_Customer AS tmpCus ON clv.CTSCustID = tmpCus.CTSCustID;
         
 	/*Return Remove VVIP List to Rescan*/
