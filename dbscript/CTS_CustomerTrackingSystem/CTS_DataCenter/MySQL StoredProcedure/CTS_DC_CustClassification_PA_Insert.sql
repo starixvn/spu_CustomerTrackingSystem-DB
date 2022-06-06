@@ -94,7 +94,7 @@ BEGIN
     
 
     /* Mapping Category */
-    CALL CTS_DC_CustClassification_PA_MappingCategory_DEBUG1(ip_InputType,ip_ProblemAccounts);
+    CALL CTS_DC_CustClassification_PA_MappingCategory(ip_InputType,ip_ProblemAccounts);
    
     #=============REMOVE GENERAL CATEGORY BEFORE=============
     DELETE clss
@@ -270,7 +270,7 @@ BEGIN
 		,	tmpPA.Remark
         ,	0 AS `Level`
         ,	tmpPA.CTSCustID
-        ,	DATE(lv_CurrentDateTime) AS CreatedDate
+        ,	lv_CurrentDateTime AS CreatedDate
         ,	tmpPA.CreatedBy
     FROM Temp_PA AS tmpPA;
     
@@ -280,7 +280,7 @@ BEGIN
 		,	tmpPA.ToEvidenceID
 		,	tmpPA.Remark
         ,	tmpPA.CreatedBy
-        ,	DATE(lv_CurrentDateTime) AS CreatedDate
+        ,	lv_CurrentDateTime AS CreatedDate
     FROM Temp_PA AS tmpPA;
 
 	#=====RETURN UPDATED CUSTOMERS TO SERVICE FOR FUTHER STEPS===========
