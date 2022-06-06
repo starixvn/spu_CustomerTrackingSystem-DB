@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_PA_MappingCategory`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_MappingCategory`(
-		IN 		ip_InputType	VARCHAR(20)	#"Category, Reason, Evidence"
+		IN 		ip_InputType	VARCHAR(20)	#"Category, Reason"
     ,	IN 		ip_CustInfo 	JSON
 	
 )
@@ -23,6 +23,8 @@ BEGIN
 		Param's Explanation (filtered by):      
 			- CALL CTS_DC_CustClassification_PA_MapingCategory ('Category','[{"CustID": 3679910,"ReasonID": 3679910,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10}]','NAP');
 */     
+	DECLARE lv_TVSRequestIDs VARCHAR(2000);
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_PA;    
 	CREATE TEMPORARY TABLE Temp_PA(	  
 		/*Cust info*/
@@ -65,6 +67,7 @@ BEGIN
         ,	DataChangeType			TINYINT DEFAULT 0	# 0: New OR Change Category, 1: Change Probation Status, 2: NOT CHANGE
         ,	OldCategoryID		    SMALLINT
         ,	SpecialCC				SMALLINT UNSIGNED
+        ,	TVSRequestID			INT
         , 	PRIMARY KEY     		PK_Temp_PA(CustID,InputCategoryID)  
     );  
    
@@ -159,7 +162,7 @@ BEGIN
  
     IF ip_InputType = 'Reason' THEN 
 		INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, CategoryID, CategoryGroup, RelevantCategoryID, IsLicensee, CreatedBy, Remark, IsDirectPA
-			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, TargetCC, TargetDangerLevel, ToEvidenceID, IsProbation, SpecialCC )	
+			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, TargetCC, TargetDangerLevel, ToEvidenceID, IsProbation, SpecialCC, TVSRequestID)	
 		WITH CTS_CustPA AS(
 		SELECT 	DISTINCT tmpJs.CustID
 			,	cus.CTSCustID
@@ -182,6 +185,7 @@ BEGIN
 						WHEN tmpJs.WinlossStatus = 1 THEN NULL  
 						ELSE 0  END) AS IsProbation 
 			,	tmpJs.ReasonID
+            ,	tmpJs.TVSRequestID
             ,	sp.CustomerClass AS SpecialCC
 		FROM JSON_TABLE(ip_CustInfo,
 			"$[*]" COLUMNS(
@@ -197,6 +201,7 @@ BEGIN
 				, 	IsFromTVS		BOOLEAN 			PATH "$.IsFromTVS"
 				, 	IsFromTW		BOOLEAN 			PATH "$.IsFromTW"
 				, 	IsFromCTS		BOOLEAN 			PATH "$.IsFromCTS"
+                , 	TVSRequestID	INT 				PATH "$.TVSRequestID"
 		)) AS tmpJs
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
 			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on cus.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
@@ -229,6 +234,7 @@ BEGIN
 						ELSE NULL END) AS ToEvidenceID
 			,	cte.IsProbation
             ,	cte.SpecialCC
+            ,	cte.TVSRequestID
 		FROM CTS_CustPA AS cte,
 		LATERAL( SELECT cat.CategoryID
 					,	cat.CategoryGroup
@@ -241,12 +247,19 @@ BEGIN
 				FROM CTS_DataCenter.CustomerCategory AS cat  
 				WHERE cat.ReasonID = cte.ReasonID AND (cat.IsProbation = cte.IsProbation OR cte.IsProbation IS NULL)
 				LIMIT 1) AS tmpF;	
-	 
-			UPDATE Temp_PA AS tmpPA
-			INNER JOIN CTS_DataCenter.CustomerCategory  AS cat ON cat.CategoryID = tmpPA.RelevantCategoryID
-			SET 	tmpPA.RelevantCategoryGroup = cat.CategoryGroup
-				,	tmpPA.RelevantIsProbation = cat.IsProbation
-				,	tmpPA.RelevantTargetCC = (CASE 	WHEN tmpPA.SpecialCC IS NOT NULL THEN tmpPA.SpecialCC ELSE IFNULL(cat.CustomerClass,-99) END);
+                
+		SELECT GROUP_CONCAT(DISTINCT TVSRequestID)
+        INTO lv_TVSRequestIDs FROM Temp_PA AS tmpPA;
+        
+        CALL CTS_DC_CustClassification_PA_RemoveOldTVSRequest(lv_TVSRequestIDs);
+        
+		UPDATE Temp_PA AS tmpPA
+		INNER JOIN CTS_DataCenter.CustomerCategory  AS cat ON cat.CategoryID = tmpPA.RelevantCategoryID
+		SET 	tmpPA.RelevantCategoryGroup = cat.CategoryGroup
+			,	tmpPA.RelevantIsProbation = cat.IsProbation
+			,	tmpPA.RelevantTargetCC = (CASE 	WHEN tmpPA.SpecialCC IS NOT NULL THEN tmpPA.SpecialCC ELSE IFNULL(cat.CustomerClass,-99) END);
+            
+		
 	END IF;
 END$$
 DELIMITER ;

@@ -6,8 +6,6 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_Insert`(
 		IN ip_InputType			VARCHAR(20) 
     ,	IN ip_IsFromQueue		BOOLEAN
     ,   IN ip_ProblemAccounts 	JSON
-    
-    ,	OUT op_ErrorMessage 	VARCHAR(200)
 )
     SQL SECURITY INVOKER
 
@@ -59,7 +57,7 @@ BEGIN
     DECLARE lv_LogInfo VARCHAR(500);
 	DECLARE lv_CreatedBy INT UNSIGNED;
     DECLARE lv_NoOfCust INT;
-    
+
 	DROP TEMPORARY TABLE IF EXISTS Temp_ExistCategory ;
     CREATE TEMPORARY TABLE Temp_ExistCategory(		
 			CustID 					INT UNSIGNED
@@ -172,7 +170,7 @@ BEGIN
         
     #============INSERT NEW PA==================================
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, 
-	CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsDirect, Remark, IsFromCTS, IsFromTVS, IsFromTW)
+	CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsDirect, Remark, IsFromCTS, IsFromTVS, IsFromTW, TVSRequestID)
 	SELECT 	tmpPA.CustID
 		,	tmpPA.CTSCustID
 		, 	tmpPA.SubscriberID
@@ -191,6 +189,7 @@ BEGIN
         ,	tmpPA.IsFromCTS
         ,	tmpPA.IsFromTVS
         ,	tmpPA.IsFromTW
+        ,	tmpPA.TVSRequestID
 	FROM Temp_PA AS tmpPA
     WHERE tmpPA.DataChangeType = 0 ;   
     
