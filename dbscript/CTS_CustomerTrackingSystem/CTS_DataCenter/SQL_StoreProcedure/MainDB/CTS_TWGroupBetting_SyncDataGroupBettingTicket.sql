@@ -9,6 +9,7 @@ AS
 
 	Revisions:
 		- 20220314@Harvey.Nguyen: Init sp [Redmine ID: #170160]
+		- 20220505@Harvey.Nguyen: Insert GroupBetting ticket into history table
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_SyncDataGroupBettingTicket] 
@@ -34,6 +35,14 @@ BEGIN
 		,	T.C.value('./@TransDate', 'DATE') AS TransDate
 	FROM @GBTicketXML.nodes('//TWGroupBettingTicket') AS T(C)
 	OPTION (OPTIMIZE FOR (@GBTicketXML = NULL));
+
+	INSERT INTO SPU_GroupBettingTicket_History (
+		TransId
+		,TransDate
+		)
+	SELECT TransId
+		,TransDate
+	FROM #TmpGroupBettingTicket
 
 	DELETE FROM SPU_GroupBettingTicket;
 
