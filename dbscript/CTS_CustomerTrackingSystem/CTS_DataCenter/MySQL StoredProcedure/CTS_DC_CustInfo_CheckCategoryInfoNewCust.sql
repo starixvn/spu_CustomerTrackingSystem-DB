@@ -116,7 +116,7 @@ sp: BEGIN
     SELECT 	tmp.CTSCustID
 		,	que.CreatedBy
     FROM Temp_CustInfo AS tmp		
-		INNER JOIN CTS_DataCenter.CTSCustomerClassificationVVIPQueue AS que ON que.CustID IN (tmp.SRecommend, tmp.MRecommend, tmp.Recommend) AND que.ActionType = 1;
+		INNER JOIN CTS_DataCenter.CTSCustomerClassificationQueue AS que ON que.CustID IN (tmp.SRecommend, tmp.MRecommend, tmp.Recommend) AND que.ActionType = 1;
 	
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID,CategoryGroup, Remark, CreatedBy,IsFromTVS,IsFromTW,IsFromCTS)
     SELECT 	tmp.CTSCustID
