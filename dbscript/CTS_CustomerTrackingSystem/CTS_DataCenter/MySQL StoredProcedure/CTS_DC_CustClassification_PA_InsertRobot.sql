@@ -52,6 +52,7 @@ BEGIN
         
         ,	IsFromTW				BIT
         ,	IsFromCTS				BIT
+        ,	IsFromAI				BIT
         ,	IsDirect				BIT
         ,	IsDataChanged			BIT DEFAULT 1
         
@@ -77,13 +78,14 @@ BEGIN
         ,	CategoryID 		INT	
         ,	IsFromTW		BIT
 		,	IsFromCTS		BIT
+        ,	IsFromAI		BIT
         ,	IsDirect		BIT
         ,	Remark			VARCHAR(500)
 		,	CreatedBy		INT UNSIGNED
         ,  	PRIMARY KEY(CustID,CategoryID)
     );
     
-    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, SubscriberID,IsLicensee,IsRobotException, CategoryID,TargetCC, TurnoverRM, WinlossRM, BetCount, ActiveDays,RobotCounter, IsFromTW,IsFromCTS,IsDirect,Remark,CreatedBy)
+    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, SubscriberID,IsLicensee,IsRobotException, CategoryID,TargetCC, TurnoverRM, WinlossRM, BetCount, ActiveDays,RobotCounter, IsFromTW,IsFromCTS,IsFromAI,IsDirect,Remark,CreatedBy)
 	SELECT	js.CustID
 		,	cus.CTSCustID
 		,	cus.SubscriberID
@@ -101,6 +103,7 @@ BEGIN
         ,	js.RobotCounter
         , 	IFNULL(js.IsFromTW,0) AS IsFromTW
 		,	IFNULL(js.IsFromCTS,0) AS IsFromCTS		
+        ,	IFNULL(js.IsFromAI,0) AS IsFromAI
         ,	IFNULL(js.IsDirect,0) AS IsDirect	
         ,	js.Remark
         ,	js.CreatedBy
@@ -116,6 +119,7 @@ BEGIN
                 
                 , 	IsFromTW		BOOLEAN 			PATH "$.IsFromTW"
                 , 	IsFromCTS		BOOLEAN 			PATH "$.IsFromCTS"
+                , 	IsFromAI		BOOLEAN 			PATH "$.IsFromAI"
                 , 	IsDirect		BOOLEAN 			PATH "$.IsDirect"
                 
                  , 	Remark			VARCHAR(500)		PATH "$.Remark"
@@ -134,6 +138,7 @@ BEGIN
                         ,	 ActiveDays = IFNULL(Temp_PA.ActiveDays, js.ActiveDays)
                         ,	 IsFromTW = CASE WHEN js.IsFromTW = 1 THEN 1 ELSE Temp_PA.IsFromTW END
                         ,	 IsFromCTS = CASE WHEN js.IsFromCTS = 1 THEN 1 ELSE Temp_PA.IsFromCTS END
+                        ,	 IsFromAI = CASE WHEN js.IsFromAI = 1 THEN 1 ELSE Temp_PA.IsFromAI END
                         ,	 IsDirect = CASE WHEN js.IsDirect = 1 THEN 1 ELSE Temp_PA.IsDirect END
                         ,	 Remark = CASE WHEN js.IsFromCTS = 1 THEN js.Remark ELSE Temp_PA.Remark END
                         ,	 CreatedBy = CASE WHEN js.IsFromCTS = 1 THEN js.CreatedBy ELSE Temp_PA.CreatedBy END;
@@ -168,11 +173,12 @@ BEGIN
         ,	pa.BetCount = tw.BetCount
         ,	pa.ActiveDays = tw.ActiveDays;
     
-    INSERT IGNORE INTO Temp_ExistCateRobot(CustID,CategoryID,IsFromTW,IsFromCTS,IsDirect,Remark,CreatedBy) 
+    INSERT IGNORE INTO Temp_ExistCateRobot(CustID,CategoryID,IsFromTW,IsFromCTS,IsFromAI,IsDirect,Remark,CreatedBy) 
     SELECT 	clss.CustID
 		,	clss.CategoryID
         ,	clss.IsFromTW		
 		, 	clss.IsFromCTS	
+        , 	clss.IsFromAI	
 		, 	clss.IsDirect	
         ,	clss.Remark
         ,	clss.CreatedBy
@@ -217,6 +223,7 @@ BEGIN
 		,	clss.Remark =  CASE WHEN pa.IsFromCTS = 1 THEN pa.Remark ELSE clss.Remark END  
 		,	clss.IsFromTW =   CASE WHEN pa.IsFromTW = 1 THEN pa.IsFromTW ELSE clss.IsFromTW END  
         ,	clss.IsFromCTS =  CASE WHEN pa.IsFromCTS = 1 THEN pa.IsFromCTS ELSE clss.IsFromCTS END  
+        ,	clss.IsFromAI =  CASE WHEN pa.IsFromAI = 1 THEN pa.IsFromAI ELSE clss.IsFromAI END  
         ,	clss.IsDirect = CASE WHEN pa.IsDirect = 1 THEN pa.IsDirect ELSE clss.IsDirect END ;
     
 	UPDATE IGNORE Temp_PA AS pa
@@ -224,6 +231,7 @@ BEGIN
     SET 	pa.Remark = CASE WHEN ex.IsFromCTS = 1 THEN ex.Remark ELSE pa.Remark END
         ,	pa.CreatedBy = CASE WHEN ex.IsFromCTS = 1 THEN ex.CreatedBy ELSE pa.CreatedBy END
         ,	pa.IsFromCTS = CASE WHEN ex.IsFromCTS = 1 THEN ex.IsFromCTS ELSE pa.IsFromCTS END
+        ,	pa.IsFromAI = CASE WHEN ex.IsFromAI = 1 THEN ex.IsFromAI ELSE pa.IsFromAI END
         ,	pa.IsFromTW = CASE WHEN ex.IsFromTW = 1 THEN ex.IsFromTW ELSE pa.IsFromTW END
         ,	pa.IsDirect = CASE WHEN ex.IsDirect = 1 THEN ex.IsDirect ELSE pa.IsDirect END;
         
@@ -235,7 +243,7 @@ BEGIN
 					AND pa.IsDataChanged = 1
 					AND clss.CategoryID IN (CONST_CATEGORYID_ROBOT,CONST_CATEGORYID_BADROBOT,CONST_CATEGORYID_GOODROBOT));
     
-    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID,IsFromTW,IsFromCTS, IsDirect,Remark,CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID,IsFromTW,IsFromCTS,IsFromAI, IsDirect,Remark,CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
 	SELECT 	pa.CustID
 		,	pa.CTSCustID
 		, 	pa.SubscriberID
@@ -244,6 +252,7 @@ BEGIN
 		, 	CONST_GROUP_PA AS SportGroupID
         ,	pa.IsFromTW
         ,	pa.IsFromCTS
+        ,	pa.IsFromAI
         ,	pa.IsDirect
         ,	pa.Remark
         

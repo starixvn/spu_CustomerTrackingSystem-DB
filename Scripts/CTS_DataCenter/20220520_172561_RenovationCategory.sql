@@ -25,6 +25,7 @@ CREATE TABLE `CTSCustomerClassificationOldPA` (
   `IsDirect` BOOLEAN DEFAULT NULL,
   `InsertTime` DATETIME(3) DEFAULT NULL,
   `TVSRequestID` BIGINT UNSIGNED DEFAULT NULL,
+  `IsFromAI` BOOLEAN DEFAULT  0,
   PRIMARY KEY (`CustID`,`SportGroupID`,`CategoryID`),
   KEY `IX_CTSCustomerClassification_TVSRequestID` (`TVSRequestID`)
 ) ENGINE=InnoDB;

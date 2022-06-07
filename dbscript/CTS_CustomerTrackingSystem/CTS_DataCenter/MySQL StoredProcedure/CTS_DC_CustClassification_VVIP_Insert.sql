@@ -2,14 +2,14 @@
 DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_VVIP_Insert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_VVIP_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_VVIP_Insert`(
 		IN ip_FromAction		TINYINT
 	,	IN ip_UplineRoleID		TINYINT
     ,	IN ip_QueueID			BIGINT
     ,	IN ip_AffectDownline	BOOLEAN
     ,	IN ip_CustJson			JSON
 )
-    SQL SECURITY INVOKER 
+    SQL SECURITY INVOKER
 sp: BEGIN
 		/*
 		Created:	20200423@Long.Luu	
@@ -114,7 +114,7 @@ sp: BEGIN
 	
     /****MOVE PA TO OLD PA*****/
     INSERT INTO CTSCustomerClassificationOldPA(CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
-    , LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsDirect, InsertTime) 
+    , LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsDirect, InsertTime) 
     SELECT	cls.CustID
 		,	cls.CTSCustID
         ,	cls.SubscriberID
@@ -129,6 +129,7 @@ sp: BEGIN
         ,	cls.IsFromTVS
         ,	cls.IsFromTW
         ,	cls.IsFromCTS
+        ,	cls.IsFromAI
         ,	cls.IsDirect
         ,	CURRENT_TIMESTAMP(3) AS InsertTime
 	FROM CTS_DataCenter.CTSCustomerClassification AS cls
