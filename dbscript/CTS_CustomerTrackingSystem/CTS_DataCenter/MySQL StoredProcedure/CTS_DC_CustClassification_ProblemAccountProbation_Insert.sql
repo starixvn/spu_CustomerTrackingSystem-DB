@@ -16,6 +16,7 @@ BEGIN
 		Revisions:
 			- 20220328@Aries.Nguyen: Created [Redmine ID: #170468]
             - 20220426@Aries.Nguyen: CTS - Daily PA Scan - Check Losing lead to show Created Date is wrong in PAM [Redmine ID: #171972]
+            - 20220607@Aries.Nguyen: Renovate PA process [Redmine ID: #172561]
 
 		Param's Explanation (filtered by):      
 			- CALL CTS_DC_CustClassification_ProblemAccountProbation_Insert ('[{"CustID": 123,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10}]');
@@ -123,7 +124,7 @@ BEGIN
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT  CustID
 		, 	CTSCustID
-		, 	RelevantCategoryID
+		, 	CASE WHEN IsDataChanged = 1 THEN RelevantCategoryID ELSE CategoryID END AS CategoryID
 		, 	SportGroupID
 		, 	NOW() AS LastModifiedDate
 		, 	lv_CreatedBy AS LastModifiedBy
