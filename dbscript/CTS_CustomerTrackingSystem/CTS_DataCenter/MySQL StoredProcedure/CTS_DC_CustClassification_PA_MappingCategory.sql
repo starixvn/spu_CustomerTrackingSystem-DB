@@ -20,11 +20,10 @@ BEGIN
             - 20220505@Aries.Nguyen: Classification History - Wrong store Source Type for mark/remove PA [Redmine ID: #172401]
 			- 20220426@Casey.Huynh: Return CreatedBy [Redmine ID: #171512]
             - 20220519@Casey.Huynh: Renovate PA Process [Redmine ID: #172061]
+            
 		Param's Explanation (filtered by):      
-			- CALL CTS_DC_CustClassification_PA_MapingCategory ('Category','[{"CustID": 3679910,"ReasonID": 3679910,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10}]','NAP');
-*/     
-	DECLARE lv_TVSRequestIDs VARCHAR(2000);
-    
+			- call CTS_DataCenter.CTS_DC_CustClassification_PA_Insert('Reason', false, '[{"CustID":4783095,"CTSCustID":0,"RoleID":0,"SubscriberID":0,"CategoryID":null,"CategoryGroup":0,"ReasonID":37,"IsLicensee":false,"CreatedBy":10278938,"LastModifiedDate":null,"Remark":null,"IsDirectPA":false,"WinlossStatus":null,"TurnoverRM":null,"WinlossRM":null,"BetCount":null,"ActiveDays":null,"IsFromCTS":false,"IsFromTVS":true,"TVSRequestID":66900,"IsFromTW":false,"IsDataChanged":false},{"CustID":5566350,"CTSCustID":0,"RoleID":0,"SubscriberID":0,"CategoryID":null,"CategoryGroup":0,"ReasonID":28,"IsLicensee":false,"CreatedBy":10278938,"LastModifiedDate":null,"Remark":null,"IsDirectPA":false,"WinlossStatus":null,"TurnoverRM":null,"WinlossRM":null,"BetCount":null,"ActiveDays":null,"IsFromCTS":false,"IsFromTVS":true,"TVSRequestID":66903,"IsFromTW":false,"IsDataChanged":false},{"CustID":5566350,"CTSCustID":0,"RoleID":0,"SubscriberID":0,"CategoryID":null,"CategoryGroup":0,"ReasonID":30,"IsLicensee":false,"CreatedBy":10278938,"LastModifiedDate":null,"Remark":null,"IsDirectPA":false,"WinlossStatus":null,"TurnoverRM":null,"WinlossRM":null,"BetCount":null,"ActiveDays":null,"IsFromCTS":false,"IsFromTVS":true,"TVSRequestID":66904,"IsFromTW":false,"IsDataChanged":false}]');
+*/         
     DROP TEMPORARY TABLE IF EXISTS Temp_PA;    
 	CREATE TEMPORARY TABLE Temp_PA(	  
 		/*Cust info*/
@@ -247,11 +246,8 @@ BEGIN
 				FROM CTS_DataCenter.CustomerCategory AS cat  
 				WHERE cat.ReasonID = cte.ReasonID AND (cat.IsProbation = cte.IsProbation OR cte.IsProbation IS NULL)
 				LIMIT 1) AS tmpF;	
-                
-		SELECT GROUP_CONCAT(DISTINCT TVSRequestID)
-        INTO lv_TVSRequestIDs FROM Temp_PA AS tmpPA;
         
-        CALL CTS_DC_CustClassification_PA_RemoveOldTVSRequest(lv_TVSRequestIDs);
+        CALL CTS_DC_CustClassification_PA_RemoveOldTVSRequest();
         
 		UPDATE Temp_PA AS tmpPA
 		INNER JOIN CTS_DataCenter.CustomerCategory  AS cat ON cat.CategoryID = tmpPA.RelevantCategoryID
