@@ -122,7 +122,7 @@ BEGIN
         
 	/***DELETE FROM VVIP TABLE********/
     DELETE clv
-    FROM CTS_DataCenter.CTSCustomerClassificationQueue AS clv
+    FROM CTS_DataCenter.CTSCustomerClassificationVVIP AS clv
 		INNER JOIN Temp_Customer AS tmpCus ON clv.CTSCustID = tmpCus.CTSCustID;
         
 	/*Return Remove VVIP List to Rescan*/
@@ -131,7 +131,7 @@ BEGIN
 
     /*****UPDATE Queue LastID************/
     IF ip_FromAction = 2 AND ip_QueueID IS NOT NULL THEN
-		UPDATE CTS_DataCenter.CTSCustomerClassificationVVIPQueue AS que
+		UPDATE CTS_DataCenter.CTSCustomerClassificationQueue AS que
 		SET que.LastDownlineCTSCustID = lv_MaxCTSCustID
 		WHERE que.ID = ip_QueueID;
     END IF;
