@@ -15,6 +15,7 @@ BEGIN
 		Revisions:
 			- 20211214@Aries.Nguyen: Created [Redmine ID: #165105]
 			- 20220407@Irena.Vo: Get additional date for New Member(no bet in 30 last days), PA, Robot [Redmine ID: #170468]
+			- 20220603@Long.Luu: Merge Robot AI & Robot TW [Redmine ID: #172561]
 
 		Param's Explanation (filtered by):
         Example:
@@ -26,6 +27,8 @@ BEGIN
     DECLARE	CONST_CATEGORYGROUP_PROBATION 	INT DEFAULT 206;
     DECLARE	CONST_CATEGORYGROUP_NEWMEMBER 	INT DEFAULT 201;
     DECLARE	CONST_CATEGORYGROUP_ROBOT 		INT DEFAULT 61;
+    DECLARE	CONST_CATEGORYGROUP_BADROBOT 	INT DEFAULT 163;
+    DECLARE	CONST_CATEGORYGROUP_GOODROBOT	INT DEFAULT 164;
     
 	DECLARE lv_NextCategoryScan		DATE;
     DECLARE lv_LastTicket 			DATETIME;
@@ -54,7 +57,8 @@ BEGIN
     FROM CTS_DataCenter.CTSCustomerClassification AS clss
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID =  clss.CategoryID
     WHERE clss.CTSCustID = ip_CTSCustID
-			AND clss.SportGroupID = CONST_GROUP_PROBLEM AND cate.CategoryGroup <> CONST_CATEGORYGROUP_ROBOT
+			AND clss.SportGroupID = CONST_GROUP_PROBLEM 
+            AND cate.CategoryGroup NOT IN (CONST_CATEGORYGROUP_ROBOT, CONST_CATEGORYGROUP_BADROBOT, CONST_CATEGORYGROUP_GOODROBOT)
     LIMIT 1;
     
     /* Normal Category */
