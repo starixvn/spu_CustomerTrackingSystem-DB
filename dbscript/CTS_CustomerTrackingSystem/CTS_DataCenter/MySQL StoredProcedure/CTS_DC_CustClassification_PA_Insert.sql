@@ -155,7 +155,7 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON tmpPA.CustID = cls.CustID
         INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID
 	WHERE EXISTS (SELECT 1 FROM Temp_CustProbationStatus AS tmpCp WHERE cls.CustID = tmpCp.CustID);
-        
+    /*    
 	INSERT IGNORE INTO Temp_ExistCategory(CustID, CTSCustID, ExistCategoryID, CategoryID, CategoryGroup, IsProbation, LastModifiedDate, CreatedBy, Remark, IsDirectPA
 			, TVSRequestID, IsFromCTS, IsFromTVS, IsFromTW, IsFromOldPA, SpecialCC )
     SELECT	tmpPA.CustID
@@ -178,7 +178,7 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomerClassificationOldPA AS cls ON tmpPA.CustID = cls.CustID
         INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID
 	WHERE EXISTS (SELECT 1 FROM Temp_CustProbationStatus AS tmpCp WHERE cls.CustID = tmpCp.CustID);
-
+	*/
     #=======UPDATE IF Change Probation Status: DataChangeType = 1 AND IsDataChanged = 1=============	
     UPDATE Temp_PA AS tmpPA
 		INNER JOIN Temp_ExistCategory AS tmpEc ON tmpPA.RelevantCategoryGroup = tmpEc.CategoryGroup AND tmpEc.IsFromOldPA = 0
@@ -253,7 +253,7 @@ BEGIN
 		, 	CONST_SPORTGROUP_PA AS SportGroupID
 		, 	NOW()
 		, 	tmpPA.CreatedBy
-		, 	NOW() AS LastModifiedDate
+		, 	IFNULL(tmpPA.LastModifiedDate, NOW()) AS LastModifiedDate
 		, 	tmpPA.CreatedBy AS LastModifiedBy
 		, 	NOW() AS LastScannedDate
         ,	tmpPA.IsDirectPA
@@ -289,7 +289,7 @@ BEGIN
         ,	tmpPA.Remark
         ,	tmpPA.TVSRequestID
 	FROM Temp_PA AS tmpPA
-	WHERE tmpPA.IsDataChanged IN (0,1)
+	WHERE tmpPA.IsDataChanged IN (0,1) OR (tmpPA.DataChangeType = 0)
     ORDER BY tmpPA.LastModifiedDate, tmpPA.CategoryID;
 
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate

@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin,ctsService,ctsAPIAdmin,ctsAPI,ctsWebAdmin,ctsWeb" isFunction="0" isNested="1"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_PA_MappingCategory`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_PA_MappingCategory_Debug`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_MappingCategory`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_MappingCategory_Debug`(
 		IN 		ip_InputType	VARCHAR(20)	#"Category, Reason"
     ,	IN 		ip_CustInfo 	JSON
 	
@@ -75,7 +75,7 @@ BEGIN
    
     IF ip_InputType = 'Category' THEN    
         INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, InputCategoryID, InputCategoryGroup,  IsLicensee, CreatedBy, Remark, IsDirectPA
-			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsDataChanged, SpecialCC, IsProbation, RelevantCategoryID)
+			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsDataChanged, SpecialCC, IsProbation, RelevantCategoryID, LastModifiedDate, IsFromOldPA)
 		SELECT 	DISTINCT tmpJs.CustID
 			,	tmpJs.CTSCustID
 			,	tmpJs.RoleID
@@ -100,6 +100,8 @@ BEGIN
                         ELSE 0  # NOT PROBATION (WinlossStatus IN (1, NULL, 2))
                         END) AS IsProbation			
             ,	cat.RelevantCategoryID
+            ,	tmpJs.LastModifiedDate
+            ,	(CASE WHEN tmpJs.LastModifiedDate IS NULL THEN 1 ELSE 0 END) IsFromOldPA
 		FROM JSON_TABLE(ip_CustInfo,
 			"$[*]" COLUMNS(
 					CustID 			BIGINT UNSIGNED		PATH "$.CustID"
@@ -120,7 +122,8 @@ BEGIN
 				, 	IsFromTVS		BOOLEAN 			PATH "$.IsFromTVS"
 				, 	IsFromTW		BOOLEAN 			PATH "$.IsFromTW"
 				, 	IsFromCTS		BOOLEAN 			PATH "$.IsFromCTS"
-				, 	IsDataChanged	BOOLEAN 			PATH "$.IsDataChanged"				
+				, 	IsDataChanged	BOOLEAN 			PATH "$.IsDataChanged"
+				, 	LastModifiedDate	BOOLEAN 		PATH "$.LastModifiedDate"
 		)) AS tmpJs
 			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on tmpJs.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
 			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CTSCustID = sp.CTSCustID 
