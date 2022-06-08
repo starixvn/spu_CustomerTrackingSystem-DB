@@ -858,19 +858,13 @@ class DBTaskHelper:
             elif status[3]:
                 error = status[3]
 
-            messText ='''<b>Replication Delay</b>\nServer Name: {serverName} - {serverIP}\nMessage: Delay was over {delayMintute}%'''.format(serverName=configOjb['ServerName'],
+            messText ='''<b>Replication Delay</b>\nServer Name: {serverName} - {serverIP}\nMessage: Delay was over {delayMintute}min'''.format(serverName=configOjb['ServerName'],
                                                                 serverIP=configOjb['ServerIP'],
                                                                 delayMintute=status[0])
             
             messError ='''<b>Replication Error</b>\nServer Name: {serverName} - {serverIP}\nMessage: {error}'''.format(serverName=configOjb['ServerName'],
                                                                 serverIP=configOjb['ServerIP'],
                                                                 error=error)
-
-            if status[0] >= threshold:
-                isCached = self.CheckAlertCached(configOjb['ServerID'],'HealthCheckReplication', 0, 1);
-                if isCached == False:
-                    self.UpdateServerStatus(configOjb['ServerID'],"HealthCheckReplication - Alerting")
-                    self.tele.SendTelegramMessage(self.telegramOpt,messText);
             
             if error:
                 isCached = self.CheckAlertCached(configOjb['ServerID'],'HealthCheckReplication', 0, 1);
@@ -878,6 +872,15 @@ class DBTaskHelper:
                     self.UpdateServerStatus(configOjb['ServerID'],"HealthCheckReplication - Alerting")
                     self.tele.SendTelegramMessage(self.telegramOpt,messError);
                 return
+                
+            if status[0] >= threshold:
+                isCached = self.CheckAlertCached(configOjb['ServerID'],'HealthCheckReplication', 0, 1);
+                if isCached == False:
+                    self.UpdateServerStatus(configOjb['ServerID'],"HealthCheckReplication - Alerting")
+                    self.tele.SendTelegramMessage(self.telegramOpt,messText);
+                return
+            
+            
 
             self.CheckAlertCached(configOjb['ServerID'],'HealthCheckReplication', 0, 0);
         except Exception as ex:
@@ -947,13 +950,13 @@ class DBTaskHelper:
             threshold = int(configOjb['Threshold'])
             thresholdApp = int(configOjb['ThresholdApp'])
             thresholdRowLocked = int(configOjb['ThresholdRowLocked'])
-
+            temp = 1
             bigQueryList  = self.CheckQueryRunning(mysqlOpt,threshold,thresholdApp,thresholdRowLocked)
-            
+            temp = 2
             if len(bigQueryList) == 0:
                 self.CheckAlertCached(configOjb['ServerID'],'CheckBigQuery', 0, 0);
                 return
-
+            temp = 3
             for queryInfo in bigQueryList:
                 messText ='''<b>Big Query</b>\nServer Name: {serverName} - {serverIP}\nLatency: {latency}\nTable Locked: {tblLocked}\nRow Locked: {rowLocked}\nRow Modified: {rowModified}\nUser: {user}\nHost: {host}\nSPName: {sp}\nQueryText: {queryText}'''.format(serverName=configOjb['ServerName'],
                                                                 serverIP=configOjb['ServerIP'],
@@ -965,11 +968,13 @@ class DBTaskHelper:
                                                                 host=queryInfo["Host"],
                                                                 sp=queryInfo["SPName"],
                                                                 queryText=queryInfo["Query"])
+                temp = 4
                 isCached = self.CheckAlertCached(configOjb['ServerID'],'CheckBigQuery', queryInfo["ThreadID"], 1);
                 if isCached == False:
+                    temp = 5
                     self.tele.SendTelegramMessage(self.telegramOpt,messText);
         except Exception as ex:
-            self.WriteLog(("CheckBigQuery",ex))
+            self.WriteLog(("CheckBigQuery",ex,temp))
 
     def CheckBigQueryJob(self):
         configs = self.CheckBigQueryConfig()

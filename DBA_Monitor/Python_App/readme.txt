@@ -64,4 +64,7 @@ deactivate
 		chmod 600 /var/cts/monitor/keyfiles/dba_cts_aws_rsa_private_key
 
 #check connect ssh key file
-ssh -i /var/cts/monitor/keyfiles/dba_cts_aws_rsa_private_key dba_cts_aws@10.14.213.5 ls
+ssh -i /var/cts/monitor/keyfiles/dba_cts_aws_rsa_private_key dba_cts_aws@xx.xx.xx.xx ls
+
+
+/var/cts/monitor/cts_env/bin/python /var/cts/monitor/main_test.py
