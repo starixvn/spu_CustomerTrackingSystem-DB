@@ -46,7 +46,7 @@ sp: BEGIN
 		,	MRecommend		INT  
 		,	Recommend 		INT  
         , 	SubscriberID	INT 
-        ,	IsLicensee		BIT
+        ,	IsLicensee		BIT 
         ,	CategoryGroup   SMALLINT
      ); 
      
@@ -129,7 +129,7 @@ sp: BEGIN
 
 		
      /***********************Check PA from Old table****************************/
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,CategoryID,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID)
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,CategoryID,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID,IsRobot)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
         ,	tmp.RoleID
@@ -144,6 +144,7 @@ sp: BEGIN
         ,	class.IsFromCTS 
 		,	class.LastModifiedDate
         ,	class.TVSRequestID
+        ,	CASE WHEN class.CategoryID = CONST_CATEGORYGROUP_ROBOT THEN 1 ELSE 0 END AS IsRobot
     FROM Temp_CustInfo AS tmp    
 		INNER JOIN CTS_DataCenter.CTSCustomerClassificationOldPA AS class ON class.CustID = tmp.CustID AND class.IsDirect = 1
         INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID 
@@ -152,7 +153,7 @@ sp: BEGIN
 	ON DUPLICATE KEY UPDATE  IsFromCTS = 1
                         ,	 Remark = class.Remark;	
 	
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,CategoryID,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID)
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,CategoryID,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID,IsRobot)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
         ,	tmp.RoleID
@@ -163,10 +164,11 @@ sp: BEGIN
 		,	1 AS IsDirect
         ,	class.Remark
         ,	class.IsFromTVS 		
-        ,	class.IsFromTW 		
+        ,	class.IsFromTW 		 
         ,	class.IsFromCTS 	
         ,	class.LastModifiedDate
 		,	class.TVSRequestID
+        ,	CASE WHEN class.CategoryID = CONST_CATEGORYGROUP_ROBOT THEN 1 ELSE 0 END AS IsRobot
     FROM Temp_CustInfo AS tmp    
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS class ON class.CustID = tmp.CustID AND class.IsDirect = 1
         INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID 
