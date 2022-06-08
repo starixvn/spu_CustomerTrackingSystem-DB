@@ -32,12 +32,6 @@ BEGIN
     FROM Temp_PA AS t
 		INNER JOIN CTSCustomerClassificationOldPA AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
 	WHERE t.TVSRequestID IS NOT NULL;
-        	
-    /* REMOVE FROM CLASSIFICATION LOG  */
-	DELETE d
-    FROM Temp_PA AS t
-		INNER JOIN CTSCustomerClassification_Log AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
-	WHERE t.TVSRequestID IS NOT NULL;
     
     /* REMOVE FROM CLASSIFICATION HISTORY  */    
 	DELETE d
