@@ -113,7 +113,7 @@ sp: BEGIN
 	FROM Temp_Customer AS tmpCus;
 	
     /****MOVE PA TO OLD PA*****/
-    INSERT INTO CTSCustomerClassificationOldPA(CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
+    INSERT IGNORE INTO CTSCustomerClassificationOldPA(CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
     , LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsDirect, InsertTime) 
     SELECT	cls.CustID
 		,	cls.CTSCustID
