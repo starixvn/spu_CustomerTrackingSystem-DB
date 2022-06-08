@@ -105,7 +105,7 @@ BEGIN
     SELECT 'CTS_DC_CustClassification_PA_Insert_Debug', CONCAT('ip_InputType: ',ip_InputType),ip_ProblemAccounts ;    
 
     /* Mapping Category */
-    CALL CTS_DC_CustClassification_PA_MappingCategory_Debug(ip_InputType,ip_ProblemAccounts);
+    CALL CTS_DC_CustClassification_PA_MappingCategory(ip_InputType,ip_ProblemAccounts);
 	
 	INSERT IGNORE INTO Temp_CustProbationStatus(CustID, CTSCustID, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsProbation, WinlossStatus, IsLicensee)
     SELECT DISTINCT tmpPA.CustID
