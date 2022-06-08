@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin,ctsService,ctsAPIAdmin,ctsAPI,ctsWebAdmin,ctsWeb" isFunction="0" isNested="1"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_PA_MappingCategory_Debug`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_PA_MappingCategory`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_MappingCategory_Debug`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_MappingCategory`(
 		IN 		ip_InputType	VARCHAR(20)	#"Category, Reason"
     ,	IN 		ip_CustInfo 	JSON
 	
