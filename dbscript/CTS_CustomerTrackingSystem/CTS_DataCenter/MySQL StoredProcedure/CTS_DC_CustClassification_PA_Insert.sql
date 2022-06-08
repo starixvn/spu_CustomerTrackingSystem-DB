@@ -272,7 +272,7 @@ BEGIN
 		, 	tmpPA.CTSCustID
 		, 	tmpPA.CategoryID
 		, 	CONST_SPORTGROUP_PA AS SportGroupID
-		, 	tmpPA.LastModifiedDate AS LastModifiedDate
+		, 	IFNULL(tmpPA.LastModifiedDate,NOW()) AS LastModifiedDate
 		, 	tmpPA.CreatedBy AS LastModifiedBy
 		, 	tmpPA.ActionType
 		, 	NOW() AS InsertDate
@@ -290,7 +290,7 @@ BEGIN
         ,	tmpPA.TVSRequestID
 	FROM Temp_PA AS tmpPA
 	WHERE tmpPA.IsDataChanged IN (0,1) OR (tmpPA.DataChangeType = 0)
-    ORDER BY tmpPA.LastModifiedDate, tmpPA.CategoryID;
+    ORDER BY LastModifiedDate, tmpPA.CategoryID;
 
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate
     , TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, IsDirect, Remark, TVSRequestID)
@@ -298,7 +298,7 @@ BEGIN
 		,	tmpPA.CTSCustID
 		,	tmpPA.CategoryID
 		,	CONST_SPORTGROUP_PA AS SportGroupID
-		,	tmpPA.LastModifiedDate
+		,	IFNULL(tmpPA.LastModifiedDate,NOW())
 		,	tmpPA.CreatedBy AS LastModifiedBy
 		,	tmpPA.ActionType
 		,	1 AS IsAuto 
