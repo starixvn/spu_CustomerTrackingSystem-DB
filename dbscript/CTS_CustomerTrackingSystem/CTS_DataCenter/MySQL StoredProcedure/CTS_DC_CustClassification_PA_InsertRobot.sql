@@ -244,6 +244,13 @@ BEGIN
 					AND pa.IsDataChanged = 1
 					AND (clss.CategoryID IN (CONST_CATEGORYID_ROBOT,CONST_CATEGORYID_BADROBOT,CONST_CATEGORYID_GOODROBOT) OR clss.SportGroupID = CONST_GROUP_NORMAL));
     
+    DELETE pro
+    FROM CTS_DataCenter.ProbationAccountMonitor AS pro
+	WHERE EXISTS (SELECT 1 
+				  FROM  Temp_PA AS pa  
+                  WHERE pa.CustID = pro.CustID  
+					AND pa.IsDataChanged = 1);
+        
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID,IsFromTW,IsFromCTS,IsFromAI, IsDirect,Remark,CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
 	SELECT 	pa.CustID
 		,	pa.CTSCustID
