@@ -34,12 +34,19 @@ class DBTaskHelper:
         text = '''{date}: {message}
                '''.format(date=nowUTC7,message=message)
         print(text)
-        mess = '''<b>Archiving Partition Error</b>\n{text}'''.format(text=text)
+        mess = '''<b>DB Task Error</b>\n{text}'''.format(text=text)
         self.tele.SendTelegramMessage(self.telegramOpt,mess);
 
     def RandomStr(self,number):  
         ran = ''.join(random.choices(string.ascii_uppercase + string.digits, k = number))    
         return str(ran)
+
+    def sizeof_fmt(self,num, suffix="B"):
+        for unit in ["", "K", "M", "G", "T", "P", "E", "Z"]:
+            if abs(num) < 1024.0:
+                return f"{num:3.1f}{unit}{suffix}"
+            num /= 1024.0
+        return f"{num:.1f}Yi{suffix}"
 
     def GetArchiveConfig(self,runType):
         try:
@@ -147,7 +154,7 @@ class DBTaskHelper:
             
             partitionSourcePath = '''{sourceDBPath}/{sourceDatabase}/{sourceTable}{partitionDelimiter}{partitionName}.ibd'''.format(sourceDBPath=sourceDBPath,sourceDatabase=sourceDatabase,sourceTable=sourceTable,partitionDelimiter=partitionDelimiter,partitionName=partitionName)
             partitionDesPath = '''{desDBPath}/{desDatabase}/{desTable}.ibd'''.format(desDBPath=desDBPath,desDatabase=desDatabase,desTable=desTable)
-            partitionLocalPath = '''archivepartitionfiles/{desTable}.ibd'''.format(desTable=desTable)
+            partitionLocalPath = '''/var/cts/monitor/archivepartitionfiles/{desTable}.ibd'''.format(desTable=desTable)
             cmdChmod = '''docker exec {desContainerName} chmod 660 /var/lib/mysql/{desDatabase}/{desTable}.ibd'''.format(desContainerName=desContainerName,desDatabase=desDatabase,desTable=desTable)
             cmdChown = '''docker exec {desContainerName} chown mysql.mysql /var/lib/mysql/{desDatabase}/{desTable}.ibd'''.format(desContainerName=desContainerName,desDatabase=desDatabase,desTable=desTable)
 
@@ -264,7 +271,7 @@ class DBTaskHelper:
     def UpdateServerStatus(self,serverID, status):
         try:
             if serverID > 0:
-                query = '''Update MonDB.MysqlServer Set DBATaskStatus = "{status}" WHERE ID = {serverID};'''.format(status=status,serverID=serverID)
+                query = '''Update MonDB.MysqlServer Set DBATaskStatus = "{status}" WHERE ID = {serverID} AND DBATaskStatus = "None";'''.format(status=status,serverID=serverID)
                 self.db.Execute(self.connArchiveOpt,query);
         except Exception as ex:
             raise Exception(("UpdateServerStatus",ex,(ex,serverID,status)))
@@ -652,6 +659,327 @@ class DBTaskHelper:
         configs = self.GetFragmentationTableConfig()
         for config in configs[0]:
             self.FragmentationTable(config)
+
+    def GetHealthCheckStorageConfig(self):
+        try:
+            listConfig = self.db.Call_SP(self.connArchiveOpt,'DBA_HealthCheck_Storage_Get',())
+            return listConfig;  
+        except Exception as ex:
+            raise Exception(("GetHealthCheckStorageConfig",ex))
+
+    
+    def CheckAlertCached(self,serverID,type,threadID,isAlert):
+        try:
+            isCached = self.db.Call_SP(self.connArchiveOpt,'DBA_Alert_Cached_Check',(serverID,type,threadID,isAlert))
+            if isCached[0][0]['IsCached'] == 1:
+                return True;
+            return False;
+        except Exception as ex:
+            raise Exception(("CheckAlertCached",ex)) 
+
+    def HealthCheckStorage(self,configOjb):
+        try:
+            notificationMetaDataStr = configOjb['NotificationMetaData']
+            notificationMetaData = json.loads(notificationMetaDataStr)
+
+            self.telegramOpt = {
+                "token": notificationMetaData['token'],
+                "chat_id": notificationMetaData['chat_id']
+            }
+
+            sshOpt = {
+                "serverIP": configOjb['ServerIP'],
+                "user": configOjb['SSHUser'], 
+                "keyFile": configOjb['SSHKey_File'],
+            }
+
+            command = '''df -h {filesystem} --output=size,avail,used,pcent | tail -1 | awk '{op}print $1"|"$2"|"$3"|"$4{cl}' '''.format(filesystem=configOjb['FileSystem'],op="{",cl="}")
+
+            result = self.ssh.Exec_Command(sshOpt,command)
+
+            resultArr = result.split("|")
+
+            size = resultArr[0]
+            avail = resultArr[1]
+            used = resultArr[2]
+            pcent =  int(resultArr[3].replace("%", ""))
+            threshold = int(configOjb['Threshold'])
+
+            messText ='''<b>Disk Usage Alert</b>\nServer Name: {serverName} - {serverIP}\nDisk Size: {size}\nDisk Avail: {avail}\nDisk Used: {used}\nMessage: Disk Usage was over {pcent}%'''.format(serverName=configOjb['ServerName'],
+                                                                serverIP=configOjb['ServerIP'],
+                                                                size=size,
+                                                                avail=avail,
+                                                                used=used,
+                                                                pcent=pcent)
+
+            if pcent >= threshold:
+                isCached = self.CheckAlertCached(configOjb['ServerID'],'HealthCheckStorage', 0, 1);
+                if isCached == False:
+                    self.UpdateServerStatus(configOjb['ServerID'],"HealthCheckStorage - Alerting")
+                    self.tele.SendTelegramMessage(self.telegramOpt,messText);
+                return;
+
+            self.CheckAlertCached(configOjb['ServerID'],'HealthCheckStorage', 0, 0);
+        except Exception as ex:
+            self.WriteLog(("HealthCheckStorage",ex))
+
+    def HealthCheckStorageJob(self):
+        configs = self.GetHealthCheckStorageConfig()
+        for config in configs[0]:
+            self.HealthCheckStorage(config)
+    
+    def GetHealthCheckMemoryConfig(self):
+        try:
+            listConfig = self.db.Call_SP(self.connArchiveOpt,'DBA_HealthCheck_Memory_Get',())
+            return listConfig;  
+        except Exception as ex:
+            raise Exception(("GetHealthCheckMemoryConfig",ex))
+
+    def HealthCheckMemory(self,configOjb):
+        try:
+            notificationMetaDataStr = configOjb['NotificationMetaData']
+            notificationMetaData = json.loads(notificationMetaDataStr)
+
+            self.telegramOpt = {
+                "token": notificationMetaData['token'],
+                "chat_id": notificationMetaData['chat_id']
+            }
+
+            sshOpt = {
+                "serverIP": configOjb['ServerIP'],
+                "user": configOjb['SSHUser'], 
+                "keyFile": configOjb['SSHKey_File'],
+            }
+
+
+            commandMem = '''free | awk '{op}print $2"|"$3{clo}' '''.format(op="/^Mem:/{",clo="}")
+            commandSwap = '''free | awk '{op}print $2"|"$3{clo}' '''.format(op="/^Swap:/{",clo="}")
+
+            resultMem = self.ssh.Exec_Command(sshOpt,commandMem)
+            resultSwap = self.ssh.Exec_Command(sshOpt,commandSwap)
+
+            resultMemArr = resultMem.split("|")
+            resultSwapArr = resultSwap.split("|")
+
+            sizeMem = int(resultMemArr[0])
+            usedMem = int(resultMemArr[1])
+
+            sizeSwap = int(resultSwapArr[0])
+            usedSwap = int(resultSwapArr[1])
+
+            threshold = int(configOjb['Threshold'])
+
+            pcent= ((usedMem + usedSwap)/(sizeMem + sizeSwap))*100;
+
+            messText ='''<b>Memory Usage Alert</b>\nServer Name: {serverName} - {serverIP}\nMem Size: {sizeMem}\nMem Used: {usedMem}\nSwap Size: {sizeSwap}\nSwap Used: {usedSwap}\nMessage: Memory Usage was over {pcent}%'''.format(serverName=configOjb['ServerName'],
+                                                                serverIP=configOjb['ServerIP'],
+                                                                sizeMem= self.sizeof_fmt(sizeMem),
+                                                                usedMem= self.sizeof_fmt(usedMem),
+                                                                sizeSwap= self.sizeof_fmt(sizeSwap),
+                                                                usedSwap= self.sizeof_fmt(usedSwap),
+                                                                pcent=round(pcent,0))
+
+            if pcent >= threshold:
+                isCached = self.CheckAlertCached(configOjb['ServerID'],'HealthCheckMemory', 0, 1);
+                if isCached == False:
+                    self.UpdateServerStatus(configOjb['ServerID'],"HealthCheckMemory - Alerting")
+                    self.tele.SendTelegramMessage(self.telegramOpt,messText);
+                return;
+
+            self.CheckAlertCached(configOjb['ServerID'],'HealthCheckMemory', 0, 0);
+        except Exception as ex:
+            self.WriteLog(("HealthCheckMemory",ex))
+            
+    def HealthCheckMemoryJob(self):
+        configs = self.GetHealthCheckMemoryConfig()
+        for config in configs[0]:
+            self.HealthCheckMemory(config)
+    
+    def GetHealthCheckReplicationConfig(self):
+        try:
+            listConfig = self.db.Call_SP(self.connArchiveOpt,'DBA_HealthCheck_Replication_Get',())
+            return listConfig;  
+        except Exception as ex:
+            raise Exception(("GetHealthCheckReplicationConfig",ex))
+
+    def CheckReplicationStatus(self,mysqlOpt):
+        try:
+            errorConnection = None
+            errorCoordinator = None
+            errorWorker = None
+            query = '''SELECT IFNULL((SELECT TIMESTAMPDIFF(MINUTE,LAST_PROCESSED_TRANSACTION_ORIGINAL_COMMIT_TIMESTAMP, LAST_PROCESSED_TRANSACTION_IMMEDIATE_COMMIT_TIMESTAMP) FROM performance_schema.replication_applier_status_by_coordinator LIMIT 1),0) AS DelayMinute;'''
+            queryResult = self.db.Execute(mysqlOpt,query)
+            delayMinute = queryResult[0]['DelayMinute']
+
+
+            query = '''SELECT (SELECT LAST_ERROR_MESSAGE  FROM performance_schema.replication_connection_status WHERE SERVICE_STATE != 'ON' LIMIT 1) AS Error_Connection
+	                ,  (SELECT LAST_ERROR_MESSAGE  FROM performance_schema.replication_applier_status_by_coordinator WHERE SERVICE_STATE != 'ON' LIMIT 1) AS Error_Coordinator
+                    ,  (SELECT LAST_ERROR_MESSAGE  FROM performance_schema.replication_applier_status_by_worker WHERE SERVICE_STATE != 'ON' LIMIT 1) AS Error_Worker;'''
+
+            queryResult = self.db.Execute(mysqlOpt,query)
+
+            errorConnection = queryResult[0]['Error_Connection']
+            errorCoordinator = queryResult[0]['Error_Coordinator']
+            errorWorker = queryResult[0]['Error_Worker']
+            
+            return (delayMinute,errorConnection,errorCoordinator,errorWorker)
+
+        except Exception as ex:
+            raise Exception(("CheckReplicationStatus",ex,(ex)))
+
+
+    def HealthCheckReplication(self,configOjb):
+        try:
+            notificationMetaDataStr = configOjb['NotificationMetaData']
+            notificationMetaData = json.loads(notificationMetaDataStr)
+
+            self.telegramOpt = {
+                "token": notificationMetaData['token'],
+                "chat_id": notificationMetaData['chat_id']
+            }
+
+            mysqlOpt = {
+                "host": configOjb['ServerIP'],
+                "user": configOjb['MysqlUser'], 
+                "password": configOjb['MysqlPassword'],
+                "db": 'performance_schema',
+                "port": configOjb['ServerPort']
+            }
+
+
+            status  = self.CheckReplicationStatus(mysqlOpt)
+            threshold = int(configOjb['Threshold'])
+            
+            error = None
+            if status[1]:
+                error = status[1]
+            elif status[2]:
+                error = status[2]
+            elif status[3]:
+                error = status[3]
+
+            messText ='''<b>Replication Delay</b>\nServer Name: {serverName} - {serverIP}\nMessage: Delay was over {delayMintute}min'''.format(serverName=configOjb['ServerName'],
+                                                                serverIP=configOjb['ServerIP'],
+                                                                delayMintute=status[0])
+            
+            messError ='''<b>Replication Error</b>\nServer Name: {serverName} - {serverIP}\nMessage: {error}'''.format(serverName=configOjb['ServerName'],
+                                                                serverIP=configOjb['ServerIP'],
+                                                                error=error)
+            
+            if error:
+                isCached = self.CheckAlertCached(configOjb['ServerID'],'HealthCheckReplication', 0, 1);
+                if isCached == False:
+                    self.UpdateServerStatus(configOjb['ServerID'],"HealthCheckReplication - Alerting")
+                    self.tele.SendTelegramMessage(self.telegramOpt,messError);
+                return
+                
+            if status[0] >= threshold:
+                isCached = self.CheckAlertCached(configOjb['ServerID'],'HealthCheckReplication', 0, 1);
+                if isCached == False:
+                    self.UpdateServerStatus(configOjb['ServerID'],"HealthCheckReplication - Alerting")
+                    self.tele.SendTelegramMessage(self.telegramOpt,messText);
+                return
+            
+            
+
+            self.CheckAlertCached(configOjb['ServerID'],'HealthCheckReplication', 0, 0);
+        except Exception as ex:
+            self.WriteLog(("HealthCheckReplication",ex))
+
+    def HealthCheckReplicationJob(self):
+        configs = self.GetHealthCheckReplicationConfig()
+        for config in configs[0]:
+            self.HealthCheckReplication(config)
+
+    def CheckBigQueryConfig(self):
+        try:
+            listConfig = self.db.Call_SP(self.connArchiveOpt,'DBA_HealthCheck_BigQuery_Get',())
+            return listConfig;  
+        except Exception as ex:
+            raise Exception(("CheckBigQueryConfig",ex))
+
+    def CheckQueryRunning(self,mysqlOpt,threshold,thresholdApp,thresholdRowLocked):
+        try:
+            query = '''SELECT  trx.trx_mysql_thread_id AS 'ThreadID'
+                        ,	TIMESTAMPDIFF(SECOND, trx.trx_started, NOW()) AS 'Latency'
+                        ,	trx.trx_tables_locked AS 'Table Locked'
+                        ,	trx.trx_rows_locked AS 'Row Locked'
+                        ,	trx.trx_rows_modified AS 'Row Modified'
+                        ,	(SELECT sta.DIGEST_TEXT FROM performance_schema.events_statements_current AS sta WHERE sta.THREAD_ID = thd.THREAD_ID AND EVENT_NAME = 'statement/sql/call_procedure') AS SPName
+                        ,	CASE	WHEN trx.trx_query IS NOT NULL  THEN trx.trx_query ELSE thd.PROCESSLIST_INFO END AS 	'Query' 
+                        ,	trx.trx_state AS 'Tran State'
+                        ,	thd.PROCESSLIST_STATE AS 'Thread State'
+                        ,	trx.trx_started AS 'Start Time'
+                        ,	thd.PROCESSLIST_USER AS 'User'
+                        ,   thd.PROCESSLIST_HOST AS 'Host'
+                        ,	trx.trx_isolation_level AS 'Isolation'
+                    FROM  INFORMATION_SCHEMA.INNODB_TRX AS trx 
+                    LEFT JOIN performance_schema.threads AS thd ON trx.trx_mysql_thread_id =  thd.PROCESSLIST_ID
+                    WHERE 	thd.PROCESSLIST_USER != 'repl_neo4j'
+                        AND ((thd.PROCESSLIST_USER LIKE '%.vn' AND TIMESTAMPDIFF(SECOND, trx.trx_started, NOW()) > {threshold})
+                            OR(thd.PROCESSLIST_USER NOT LIKE '%.vn' AND TIMESTAMPDIFF(SECOND, trx.trx_started, NOW()) > {thresholdApp}))
+                        OR trx.trx_rows_locked > {thresholdRowLocked}
+                        OR trx.trx_rows_modified > {thresholdRowLocked};
+                    '''.format(threshold=threshold,thresholdApp=thresholdApp,thresholdRowLocked=thresholdRowLocked)
+
+            queryResult = self.db.Execute(mysqlOpt,query)
+
+
+            return queryResult
+
+        except Exception as ex:
+            raise Exception(("CheckQueryRunning",ex,(ex)))
+
+    def CheckBigQuery(self,configOjb):
+        try:
+            notificationMetaDataStr = configOjb['NotificationMetaData']
+            notificationMetaData = json.loads(notificationMetaDataStr)
+
+            self.telegramOpt = {
+                "token": notificationMetaData['token'],
+                "chat_id": notificationMetaData['chat_id']
+            }
+
+            mysqlOpt = {
+                "host": configOjb['ServerIP'],
+                "user": configOjb['MysqlUser'], 
+                "password": configOjb['MysqlPassword'],
+                "db": "performance_schema",
+                "port": configOjb['ServerPort']
+            }
+            threshold = int(configOjb['Threshold'])
+            thresholdApp = int(configOjb['ThresholdApp'])
+            thresholdRowLocked = int(configOjb['ThresholdRowLocked'])
+            temp = 1
+            bigQueryList  = self.CheckQueryRunning(mysqlOpt,threshold,thresholdApp,thresholdRowLocked)
+            temp = 2
+            if len(bigQueryList) == 0:
+                self.CheckAlertCached(configOjb['ServerID'],'CheckBigQuery', 0, 0);
+                return
+            temp = 3
+            for queryInfo in bigQueryList:
+                messText ='''<b>Big Query</b>\nServer Name: {serverName} - {serverIP}\nLatency: {latency}\nTable Locked: {tblLocked}\nRow Locked: {rowLocked}\nRow Modified: {rowModified}\nUser: {user}\nHost: {host}\nSPName: {sp}\nQueryText: {queryText}'''.format(serverName=configOjb['ServerName'],
+                                                                serverIP=configOjb['ServerIP'],
+                                                                latency=queryInfo["Latency"],
+                                                                tblLocked=queryInfo["Table Locked"],
+                                                                rowLocked=queryInfo["Row Locked"],
+                                                                rowModified=queryInfo["Row Modified"],
+                                                                user=queryInfo["User"],
+                                                                host=queryInfo["Host"],
+                                                                sp=queryInfo["SPName"],
+                                                                queryText=queryInfo["Query"])
+                temp = 4
+                isCached = self.CheckAlertCached(configOjb['ServerID'],'CheckBigQuery', queryInfo["ThreadID"], 1);
+                if isCached == False:
+                    temp = 5
+                    self.tele.SendTelegramMessage(self.telegramOpt,messText);
+        except Exception as ex:
+            self.WriteLog(("CheckBigQuery",ex,temp))
+
+    def CheckBigQueryJob(self):
+        configs = self.CheckBigQueryConfig()
+        for config in configs[0]:
+            self.CheckBigQuery(config)
 
     def close(self):
         self.db.close()

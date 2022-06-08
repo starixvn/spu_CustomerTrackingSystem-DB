@@ -36,7 +36,8 @@ BEGIN
 		,	sv.ServerPort 
 		,	sv.MysqlUser 
 		,	sv.MysqlPassword 
-
+		
+        ,	job.ID AS JobID
 		,	job.Database 
 		,	job.Table 
 		,	job.PartitionMax

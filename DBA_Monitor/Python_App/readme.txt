@@ -49,3 +49,22 @@ deactivate
 		
 		chmod 600 /home/dba_cts_archive/.ssh/dba_cts_archive_rsa_private_key
 		chmod 600 /home/dba_cts_archive/.ssh/authorized_keys
+
+	+Archive
+		
+		dba_cts_aws		password
+		sudo adduser dba_cts_aws 
+		
+		ssh-keygen -t rsa
+		mv /home/dba_cts_aws/.ssh/id_rsa /home/dba_cts_aws/.ssh/dba_cts_aws_rsa_private_key
+		mv /home/dba_cts_aws/.ssh/id_rsa.pub /home/dba_cts_aws/.ssh/authorized_keys
+		
+		chmod 600 /home/dba_cts_aws/.ssh/dba_cts_aws_rsa_private_key
+		chmod 600 /home/dba_cts_aws/.ssh/authorized_keys
+		chmod 600 /var/cts/monitor/keyfiles/dba_cts_aws_rsa_private_key
+
+#check connect ssh key file
+ssh -i /var/cts/monitor/keyfiles/dba_cts_aws_rsa_private_key dba_cts_aws@xx.xx.xx.xx ls
+
+
+/var/cts/monitor/cts_env/bin/python /var/cts/monitor/main_test.py
