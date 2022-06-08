@@ -8,7 +8,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassificat
     ,	IN ip_QueueID			BIGINT
     ,	IN ip_AffectDownline	BOOLEAN
     ,	IN ip_CustJson			JSON
-)
+) 
     SQL SECURITY INVOKER 
 BEGIN
 	/*
@@ -32,6 +32,10 @@ BEGIN
             
 		Param's Explanation:
 			ip_FromAction: 1 From Web, 2 From Service
+            
+        Example:    
+            CALL CTS_DC_CustClassification_VVIP_Remove(1,NULL,NULL,0,'[{"CustID":35094205,"CTSCustID":200001,"CreatedBy":169368,"Remark":"Test Insert 01"}]');
+            
 	*/ 
     DECLARE lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();
     DECLARE lv_SPName 			VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_VVIP_Remove';
@@ -50,6 +54,7 @@ BEGIN
 		 	CustID			BIGINT UNSIGNED		
          ,  CTSCustID 		BIGINT UNSIGNED
          ,	CreatedBy		BIGINT UNSIGNED
+         ,	IsExistVVIP		BOOLEAN
          
          ,	PRIMARY KEY PK_Temp_Customer(CustID)
          ,	INDEX IX_Temp_Customer_CTSCustID(CTSCustID)
@@ -59,15 +64,16 @@ BEGIN
 	#SELECT 'CTS_DC_CustClassification_RemoveVVIP', current_timestamp(3), CONCAT('ip_FromAction:',ip_FromAction,'; ip_UplineRoleID:',ip_UplineRoleID,'; ip_QueueID:',ip_QueueID,'; ip_AffectDownline:',ip_AffectDownline),ip_CustJson,NULL,NULL;
     
     /**************************************************************************************/
-    INSERT INTO Temp_Customer(CustID, CTSCustID, CreatedBy) 
-	SELECT 	DISTINCT temp.CustID, temp.CTSCustID, temp.CreatedBy
+    INSERT INTO Temp_Customer(CustID, CTSCustID, CreatedBy, IsExistVVIP) 
+	SELECT 	DISTINCT temp.CustID, temp.CTSCustID, temp.CreatedBy, (CASE WHEN cls.CustID IS NOT NULL THEN 1 ELSE 0 END) AS IsExistVVIP
 	FROM JSON_TABLE(ip_CustJson,
 		 "$[*]" COLUMNS(
 				CustID 		BIGINT UNSIGNED		PATH "$.CustID"
 			,	CTSCustID 	BIGINT UNSIGNED		PATH "$.CTSCustID"
             ,	CreatedBy 	BIGINT UNSIGNED		PATH "$.CreatedBy"
             
-		 )) AS temp;      
+		 )) AS temp
+		LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON  temp.CustID = cls.CustID AND cls.CategoryID = 210;      
 
 	SELECT MAX(tmpCus.CTSCustID)
     INTO lv_MaxCTSCustID
@@ -83,7 +89,7 @@ BEGIN
     /*************************************Remove VVIP*************************************/
 	DELETE cls
     FROM CTS_DataCenter.CTSCustomerClassification AS cls
-		INNER JOIN Temp_Customer AS tmpCus ON cls.CustID = tmpCus.CustID AND cls.CategoryID = lv_CategoryID;    	
+		INNER JOIN Temp_Customer AS tmpCus ON cls.CustID = tmpCus.CustID AND cls.CategoryID = lv_CategoryID AND tmpCus.IsExistVVIP = 1;    	
 	
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
 	SELECT 	tmpCus.CustID
@@ -98,7 +104,8 @@ BEGIN
 		,   lv_TargetCC AS TargetCC
 		,   lv_SourceTypeID AS SourceTypeID
 		,	lv_IsDataChanged AS IsDataChanged
-	FROM Temp_Customer AS tmpCus;
+	FROM Temp_Customer AS tmpCus
+    WHERE tmpCus.IsExistVVIP = 1;
 
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
 	SELECT 	tmpCus.CustID
@@ -118,12 +125,12 @@ BEGIN
 	/*Auto Unpin*/
 	DELETE pcc
     FROM CTS_DataCenter.PinCustomerCategory AS pcc
-		INNER JOIN Temp_Customer AS tmpCus ON pcc.CTSCustID = tmpCus.CTSCustID;
+		INNER JOIN Temp_Customer AS tmpCus ON pcc.CTSCustID = tmpCus.CTSCustID AND tmpCus.IsExistVVIP = 1;
         
 	/***DELETE FROM VVIP TABLE********/
     DELETE clv
     FROM CTS_DataCenter.CTSCustomerClassificationVVIP AS clv
-		INNER JOIN Temp_Customer AS tmpCus ON clv.CTSCustID = tmpCus.CTSCustID;
+		INNER JOIN Temp_Customer AS tmpCus ON clv.CTSCustID = tmpCus.CTSCustID AND tmpCus.IsExistVVIP = 1;
         
 	/*Return Remove VVIP List to Rescan*/
     SELECT tmpCus.CustID
