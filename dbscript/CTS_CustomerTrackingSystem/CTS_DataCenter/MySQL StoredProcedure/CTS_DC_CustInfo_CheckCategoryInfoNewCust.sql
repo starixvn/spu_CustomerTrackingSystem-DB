@@ -120,7 +120,7 @@ sp: BEGIN
 	
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID,CategoryGroup, Remark, CreatedBy,IsFromTVS,IsFromTW,IsFromCTS)
     SELECT 	tmp.CTSCustID
-		,	class.CustID
+		,	tmp.CustID
         ,	class.CategoryID
         ,	cate.CategoryGroup
         ,	class.Remark
@@ -161,7 +161,7 @@ sp: BEGIN
 		LEFT JOIN Temp_CustInfo AS tmp ON tmp.CustID = cate.CustID; 
     
     SELECT 	tmp.CTSCustID		
-        ,   tmp.CustID	
+        ,   tmp.CustID	 
     FROM Temp_CustInfo AS tmp
     WHERE NOT EXISTS (SELECT 1 FROM Temp_VVIPCust AS vv WHERE tmp.CTSCustID = vv.CTSCustID)
 		AND NOT EXISTS (SELECT 1 FROM Temp_CustCategory AS cate WHERE cate.CustID = tmp.CustID);
