@@ -21,10 +21,9 @@ BEGIN
 			- 20220426@Casey.Huynh: Return CreatedBy [Redmine ID: #171512]
             - 20220519@Casey.Huynh: Renovate PA Process [Redmine ID: #172061]
 		Param's Explanation (filtered by):      
-			- CALL CTS_DC_CustClassification_PA_MapingCategory ('Category','[{"CustID": 3679910,"ReasonID": 3679910,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10}]','NAP');
-	*/     
-	DECLARE lv_TVSRequestIDs VARCHAR(2000);
-    
+			CALL CTS_DC_CustClassification_PA_MapingCategory ('Category','[{"CustID": 3679910,"ReasonID": 3679910,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10}]','NAP');
+	*/    
+  
     DROP TEMPORARY TABLE IF EXISTS Temp_PA;    
 	CREATE TEMPORARY TABLE Temp_PA(	  
 		/*Cust info*/
@@ -188,7 +187,7 @@ BEGIN
                         ELSE 0  # NOT PROBATION (WinlossStatus IN (1, NULL, 2))
                         END) AS IsProbation			
             ,	tmpLtr.RelevantCategoryID
-            ,	tmpJs.ReasonID
+            ,	tmpJs.TVSRequestID
             FROM JSON_TABLE(ip_CustInfo,
 			"$[*]" COLUMNS(
 					CustID 			BIGINT UNSIGNED		PATH "$.CustID"
