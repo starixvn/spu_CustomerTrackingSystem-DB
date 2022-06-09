@@ -1,4 +1,4 @@
-#=================<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin,ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin,ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
 DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_VVIP_Insert`;
 
 DELIMITER $$
@@ -55,7 +55,9 @@ sp: BEGIN
     DECLARE lv_MaxCTSCustID		BIGINT UNSIGNED;
     DECLARE lv_SourceTypeID		INT;    
     DECLARE lv_CustomerClass	INT; 
-  
+
+#	INSERT INTO CaseyLog(SPName, OthersParam, JsonText)
+ #   SELECT 'CTS_DC_CustClassification_VVIP_Insert', CONCAT('ip_FromAction:',ip_FromAction,' ip_UplineRoleID:', ip_UplineRoleID, ' ip_QueueID:', ip_QueueID, ' ip_AffectDownline:', ip_AffectDownline) , ip_CustJson;
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
 	CREATE TEMPORARY TABLE 		Temp_Customer (
@@ -66,6 +68,7 @@ sp: BEGIN
          ,	CreatedBy		BIGINT UNSIGNED
          ,	Remark			VARCHAR(300)
          ,	IsExistVVIP		BOOLEAN
+         ,	IsDirect		BOOLEAN
          
          ,	PRIMARY KEY PK_Temp_Customer(CustID)
          ,	INDEX IX_Temp_Customer_CTSCustID(CTSCustID)
@@ -77,8 +80,10 @@ sp: BEGIN
     WHERE cat.CategoryID = lv_CategoryID;    
     
     /**************************************************************************************/
-    INSERT INTO Temp_Customer(CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, Remark, IsExistVVIP) 
-	SELECT 	DISTINCT temp.CustID, temp.CTSCustID, temp.SubscriberID, temp.RoleID, temp.CreatedBy, temp.Remark, (CASE WHEN cls.CustID IS NOT NULL THEN 1 ELSE 0 END) AS IsExistVVIP
+    INSERT INTO Temp_Customer(CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, Remark, IsExistVVIP, IsDirect) 
+	SELECT 	DISTINCT temp.CustID, temp.CTSCustID, temp.SubscriberID, temp.RoleID, temp.CreatedBy, temp.Remark
+		,	(CASE WHEN cls.CustID IS NOT NULL THEN 1 ELSE 0 END) AS IsExistVVIP
+        ,	(CASE WHEN ip_FromAction = 1 THEN  1 ELSE 0 END) AS IsDirect 
 	FROM JSON_TABLE(ip_CustJson,
 		 "$[*]" COLUMNS(
 				CustID 			BIGINT UNSIGNED	PATH "$.CustID"
@@ -102,7 +107,7 @@ sp: BEGIN
                                 WHEN ip_FromAction = 3 THEN 30
 							END;    
     /************************************************************************************/
-	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationVVIP(CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryID, IsAffectToDownline,InsertTime) 
+	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationVVIP(CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryID, IsAffectToDownline,InsertTime, IsDirect) 
 	SELECT tmpCus.CTSCustID
 		,	tmpCus.CustID
 		,	tmpCus.RoleID
@@ -112,6 +117,7 @@ sp: BEGIN
 		,	lv_CategoryID
 		,	ip_AffectDownline AS IsAffectToDownline
 		,	lv_CurrentDateTime AS InsertTime
+		,	tmpCus.IsDirect
 	FROM Temp_Customer AS tmpCus
     WHERE tmpCus.IsExistVVIP = 0;
 	
@@ -152,7 +158,7 @@ sp: BEGIN
 		INNER JOIN Temp_Customer AS tmpCus ON pam.CustID = tmpCus.CustID WHERE tmpCus.IsExistVVIP = 0;
         
 	/*Insert VVIP*/
-	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification (CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
+	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification (CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsDirect)
 	SELECT 	tmpCus.CustID
 		, 	tmpCus.CTSCustID
 		, 	tmpCus.SubscriberID
@@ -164,11 +170,13 @@ sp: BEGIN
 		,   lv_CurrentDateTime AS LastModifiedDate
 		,   tmpCus.CreatedBy AS LastModifiedBy
 		,   DATE(lv_CurrentDateTime) AS LastScannedDate
+        ,	tmpCus.IsDirect
 	FROM Temp_Customer AS tmpCus
     WHERE tmpCus.IsExistVVIP = 0;
   
 	/*Insert VVIP history*/
-	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID , LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, Remark)
+	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID , LastModifiedDate, LastModifiedBy, ActionType, IsAuto
+			, InsertDate, TargetCC, SourceTypeID, IsDataChanged, Remark, IsDirect)
 	SELECT 	tmpCus.CustID
 		, 	tmpCus.CTSCustID
 		, 	lv_CategoryID
@@ -182,10 +190,11 @@ sp: BEGIN
 		,   lv_SourceTypeID AS SourceTypeID
 		,	1 AS IsDataChanged
         ,	tmpCus.Remark
+        , 	tmpCus.IsDirect
 	FROM Temp_Customer AS tmpCus
     WHERE tmpCus.IsExistVVIP = 0;
 	
-	INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
+	INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, IsDirect)
 	SELECT 	tmpCus.CustID
 		, 	tmpCus.CTSCustID
 		, 	lv_CategoryID
@@ -198,6 +207,7 @@ sp: BEGIN
 		,   lv_CustomerClass AS TargetCC
 		,   lv_SourceTypeID AS SourceTypeID
 		,	1 AS IsDataChanged
+        ,	tmpCus.IsDirect
 	FROM Temp_Customer AS tmpCus
     WHERE tmpCus.IsExistVVIP = 0;
     

@@ -51,6 +51,8 @@ CREATE TABLE `CTSCustomerClassificationQueue` (
    PRIMARY KEY (`ID`)
  ) ENGINE=InnoDB;
 
+ALTER TABLE CTSCustomerClassificationVVIP
+ADD COLUMN IsDirect TINYINT(1);
 
 SELECT * FROM CTS_Admin.LogType WHERE ListID = 4 ORDER BY ItemID DESC;
 
