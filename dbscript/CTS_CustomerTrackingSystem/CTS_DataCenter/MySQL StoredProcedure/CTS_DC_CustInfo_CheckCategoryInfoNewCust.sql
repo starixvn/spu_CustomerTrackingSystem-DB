@@ -47,6 +47,15 @@ sp: BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_VVIPCust;
     CREATE TEMPORARY TABLE Temp_VVIPCust(
 			CTSCustID		BIGINT UNSIGNED  PRIMARY KEY 
+		,	CustID			BIGINT	UNSIGNED
+		,	CreatedBy		INT
+        ,	INDEX PK_Temp_VVIPCust_CustID(CustID)
+    ); 
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_VVIPCust_Depth;
+    CREATE TEMPORARY TABLE Temp_VVIPCust_Depth(
+			CTSCustID		BIGINT UNSIGNED  PRIMARY KEY 
+		,	CustID			BIGINT UNSIGNED
 		,	CreatedBy		INT
     ); 
     
@@ -103,26 +112,39 @@ sp: BEGIN
     
     IF op_LastCTSCustID IS NULL THEN
 		SET op_LastCTSCustID = lv_LastCTSCustID;
-        LEAVE sp;
     END IF;
     
-    INSERT IGNORE INTO Temp_VVIPCust(CTSCustID,CreatedBy)
+    INSERT IGNORE INTO Temp_VVIPCust(CTSCustID,CustID,CreatedBy)
     SELECT  tmp.CTSCustID
+		,	tmp.CustID
 		,	vip.CreatedBy
     FROM Temp_CustInfo AS tmp		
 		INNER JOIN CTS_DataCenter.CTSCustomerClassificationVVIP AS vip ON vip.CustID = tmp.DirectUpLine AND vip.IsAffectToDownline = 1;
     
-    INSERT IGNORE INTO Temp_VVIPCust(CTSCustID,CreatedBy)
+    INSERT IGNORE INTO Temp_VVIPCust(CTSCustID,CustID,CreatedBy)
     SELECT 	tmp.CTSCustID
+		,	tmp.CustID
 		,	que.CreatedBy
     FROM Temp_CustInfo AS tmp		
 		INNER JOIN CTS_DataCenter.CTSCustomerClassificationQueue AS que ON que.CustID IN (tmp.SRecommend, tmp.MRecommend, tmp.Recommend) AND que.ActionType = 1;
 	
+    INSERT IGNORE INTO Temp_VVIPCust_Depth(CTSCustID,CreatedBy)
+	SELECT 	tmp.CTSCustID
+		,	vv.CreatedBy
+    FROM Temp_CustInfo AS tmp		
+		INNER JOIN Temp_VVIPCust AS vv ON vv.CustID IN (tmp.SRecommend, tmp.MRecommend, tmp.Recommend);
+        
+	INSERT IGNORE INTO Temp_VVIPCust(CTSCustID,CustID,CreatedBy)
+    SELECT 	tmp.CTSCustID
+		,	tmp.CustID
+		,	tmp.CreatedBy
+    FROM Temp_VVIPCust_Depth AS tmp;
+    
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID,CategoryGroup, Remark, CreatedBy,IsFromTVS,IsFromTW,IsFromCTS)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
         ,	class.CategoryID
-        ,	cate.CategoryGroup
+        ,	cate.CategoryGroup 
         ,	class.Remark
         ,	class.CreatedBy
         ,	class.IsFromTVS
@@ -131,7 +153,7 @@ sp: BEGIN
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS class USE INDEX (PRIMARY) ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = 0 AND class.IsDirect = 1
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup != 61;
-	
+	 
     SELECT	tmp.CTSCustID
 		,	tmp.CustID          
         ,	tmp.CustSubID  
@@ -158,7 +180,8 @@ sp: BEGIN
         ,	cate.IsFromTW
         ,	cate.IsFromCTS
     FROM Temp_CustCategory AS cate
-		LEFT JOIN Temp_CustInfo AS tmp ON tmp.CustID = cate.CustID; 
+		LEFT JOIN Temp_CustInfo AS tmp ON tmp.CustID = cate.CustID
+	WHERE NOT EXISTS (SELECT 1 FROM Temp_VVIPCust AS vv WHERE cate.CTSCustID = vv.CTSCustID); 
     
     SELECT 	tmp.CTSCustID		
         ,   tmp.CustID	 
