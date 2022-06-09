@@ -161,16 +161,17 @@ BEGIN
 	
     END IF;   
  
-    IF ip_InputType = 'Reason' THEN 
+    IF ip_InputType = 'Reason' THEN
+    
 		INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, InputCategoryID, InputCategoryGroup,  IsLicensee, CreatedBy, Remark, IsDirectPA
-			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsDataChanged, SpecialCC, IsProbation, RelevantCategoryID, TVSRequestID)
+			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, SpecialCC, IsProbation, RelevantCategoryID, TVSRequestID)
 		SELECT	DISTINCT tmpJs.CustID
-			,	tmpJs.CTSCustID
-			,	tmpJs.RoleID
-			, 	tmpJs.SubscriberID
+			,	cus.CTSCustID
+			,	cus.RoleID
+			, 	cus.SubscriberID
 			,	tmpLtr.CategoryGroup AS InputCategoryID
 			,	tmpLtr.CategoryGroup AS InputCategoryGroup
-			,	tmpJs.IsLicensee
+			,	cus.IsLicensee
 			,	tmpJs.CreatedBy 
 			,	tmpJs.Remark
 			,	tmpJs.IsDirectPA
@@ -182,7 +183,6 @@ BEGIN
 			,	tmpJs.IsFromTVS
 			,	tmpJs.IsFromTW
 			,	tmpJs.IsFromCTS
-			,	tmpJs.IsDataChanged
             ,	sp.CustomerClass
 			,	(CASE 	WHEN tmpJs.WinlossStatus = 0 THEN 1  # PROBATION
                         ELSE 0  # NOT PROBATION (WinlossStatus IN (1, NULL, 2))
@@ -204,6 +204,7 @@ BEGIN
 				, 	IsFromTW		BOOLEAN 			PATH "$.IsFromTW"
 				, 	IsFromCTS		BOOLEAN 			PATH "$.IsFromCTS"
                 , 	TVSRequestID	INT 				PATH "$.TVSRequestID"
+                , 	Remark			VARCHAR(500) 		PATH "$.Remark"
 		)) AS tmpJs
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
 			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on cus.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
@@ -239,14 +240,7 @@ BEGIN
 			,	tmpPA.RelevantCategoryID = tmpCat.CategoryGroup
 			,	tmpPA.RelevantIsProbation = tmpCat.IsProbation;
                 
-		 CALL CTS_DC_CustClassification_PA_RemoveOldTVSRequest();
-        
-		UPDATE Temp_PA AS tmpPA
-		INNER JOIN CTS_DataCenter.CustomerCategory  AS cat ON cat.CategoryID = tmpPA.RelevantCategoryID
-		SET 	tmpPA.RelevantCategoryGroup = cat.CategoryGroup
-			,	tmpPA.RelevantIsProbation = cat.IsProbation
-			,	tmpPA.RelevantTargetCC = (CASE 	WHEN tmpPA.SpecialCC IS NOT NULL THEN tmpPA.SpecialCC ELSE IFNULL(cat.CustomerClass,-99) END);
-            
+		CALL CTS_DC_CustClassification_PA_RemoveOldTVSRequest();        
 		
 	END IF;
 END$$
