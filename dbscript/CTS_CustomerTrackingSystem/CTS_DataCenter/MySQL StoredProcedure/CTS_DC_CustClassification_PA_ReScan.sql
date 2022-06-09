@@ -146,8 +146,8 @@ sp: BEGIN
         ,	class.TVSRequestID
         ,	CASE WHEN class.CategoryID = CONST_CATEGORYGROUP_ROBOT THEN 1 ELSE 0 END AS IsRobot
     FROM Temp_CustInfo AS tmp    
-		INNER JOIN CTS_DataCenter.CTSCustomerClassificationOldPA AS class ON class.CustID = tmp.CustID AND class.IsDirect = 1
-        INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID 
+		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationOldPA AS class USE INDEX (PRIMARY) ON class.CustID = tmp.CustID AND class.IsDirect = 1
+        STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID 
 														  AND (cate.CategoryGroup != CONST_CATEGORYGROUP_ROBOT 
 															 OR (cate.CategoryGroup = CONST_CATEGORYGROUP_ROBOT AND class.IsFromCTS = 1))
 	ON DUPLICATE KEY UPDATE  IsFromCTS = 1
@@ -170,8 +170,8 @@ sp: BEGIN
 		,	class.TVSRequestID
         ,	CASE WHEN class.CategoryID = CONST_CATEGORYGROUP_ROBOT THEN 1 ELSE 0 END AS IsRobot
     FROM Temp_CustInfo AS tmp    
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS class ON class.CustID = tmp.CustID AND class.IsDirect = 1
-        INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID 
+		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS class USE INDEX (PRIMARY) ON class.CustID = tmp.CustID AND class.IsDirect = 1
+        STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID 
 															AND (cate.CategoryGroup != CONST_CATEGORYGROUP_ROBOT 
 															 OR (cate.CategoryGroup = CONST_CATEGORYGROUP_ROBOT AND class.IsFromCTS = 1))
 	ON DUPLICATE KEY UPDATE  IsFromCTS = 1
@@ -194,8 +194,8 @@ sp: BEGIN
         ,	class.LastModifiedDate
         ,	class.TVSRequestID
     FROM Temp_CustInfo AS tmp    
-		INNER JOIN CTS_DataCenter.CTSCustomerClassificationOldPA AS class ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = CONST_GROUP_PA AND class.IsDirect = 1
-        INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup != CONST_CATEGORYGROUP_ROBOT
+		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationOldPA AS class USE INDEX (PRIMARY)  ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = CONST_GROUP_PA AND class.IsDirect = 1
+        STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup != CONST_CATEGORYGROUP_ROBOT
 	WHERE NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassificationVVIP AS vv WHERE vv.CustID = class.CustID);
     
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee, CategoryID,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID)
@@ -214,8 +214,8 @@ sp: BEGIN
         ,	class.LastModifiedDate
         ,	class.TVSRequestID
     FROM Temp_CustInfo AS tmp    
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS class ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = CONST_GROUP_PA AND class.IsDirect = 1
-        INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup != CONST_CATEGORYGROUP_ROBOT;
+		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS class USE INDEX (PRIMARY) ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = CONST_GROUP_PA AND class.IsDirect = 1
+        STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup != CONST_CATEGORYGROUP_ROBOT;
         
 	SELECT 	CTSCustID
 		,	CustID
