@@ -22,8 +22,8 @@ BEGIN
             - 20220519@Casey.Huynh: Renovate PA Process [Redmine ID: #172061]
 		Param's Explanation (filtered by):      
 			CALL CTS_DC_CustClassification_PA_MapingCategory ('Category','[{"CustID": 3679910,"ReasonID": 3679910,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10}]','NAP');
-	*/    
-  
+	*/
+ 
     DROP TEMPORARY TABLE IF EXISTS Temp_PA;    
 	CREATE TEMPORARY TABLE Temp_PA(	  
 		/*Cust info*/
@@ -74,7 +74,7 @@ BEGIN
    
     IF ip_InputType = 'Category' THEN    
         INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, InputCategoryID, InputCategoryGroup,  IsLicensee, CreatedBy, Remark, IsDirectPA
-			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsDataChanged, SpecialCC, IsProbation, RelevantCategoryID, LastModifiedDate, IsFromOldPA)
+			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsDataChanged, SpecialCC, IsProbation, RelevantCategoryID, LastModifiedDate)
 		SELECT 	DISTINCT tmpJs.CustID
 			,	tmpJs.CTSCustID
 			,	tmpJs.RoleID
@@ -100,7 +100,6 @@ BEGIN
                         END) AS IsProbation			
             ,	cat.RelevantCategoryID
             ,	tmpJs.LastModifiedDate
-            ,	(CASE WHEN tmpJs.LastModifiedDate IS NULL THEN 1 ELSE 0 END) IsFromOldPA
 		FROM JSON_TABLE(ip_CustInfo,
 			"$[*]" COLUMNS(
 					CustID 			BIGINT UNSIGNED		PATH "$.CustID"
@@ -156,8 +155,8 @@ BEGIN
                     WHERE cat.CategoryID = tmpPA.RelevantCategoryID LIMIT 1) AS tmpCat
 			SET 	tmpPA.RelevantCategoryGroup = tmpCat.CategoryGroup	
 				,	tmpPA.RelevantCategoryID = tmpCat.CategoryGroup
-                ,	tmpPA.RelevantIsProbation = tmpCat.IsProbation;
-	
+                ,	tmpPA.RelevantIsProbation = tmpCat.IsProbation;			
+            
     END IF;   
  
     IF ip_InputType = 'Reason' THEN
