@@ -10,7 +10,7 @@ sp: BEGIN
 	/*
 		Created:	20220520@Aries.Nguyen
 		Task :		Renovate PA Process
-		DB:			CTS_DataCenter
+		DB:			CTS_DataCenter 
 		Original: 
 		Revisions:  
 			- 20220520@Aries.Nguyen: Created [Redmine ID: #172561]
@@ -99,7 +99,7 @@ sp: BEGIN
     SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_CustID (CustID) VALUES ('", REPLACE(ip_CustIDs, ",", "'),('"),"');");
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1;    
-    
+     
     INSERT  INTO Temp_CustInfo(CTSCustID,CustID,SRecommend,MRecommend,Recommend,RoleID,SubscriberID,IsLicensee)
     SELECT 	cus.CTSCustID
 		,	cus.CustID
@@ -148,8 +148,8 @@ sp: BEGIN
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationOldPA AS class USE INDEX (PRIMARY) ON class.CustID = tmp.CustID AND class.IsDirect = 1
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID 
-														  AND (cate.CategoryGroup != CONST_CATEGORYGROUP_ROBOT 
-															 OR (cate.CategoryGroup = CONST_CATEGORYGROUP_ROBOT AND class.IsFromCTS = 1))
+														  AND (cate.CategoryGroup NOT IN (CONST_CATEGORYGROUP_ROBOT,CONST_CATEGORYID_BADROBOT, CONST_CATEGORYID_GOODROBOT)
+															 OR (cate.CategoryGroup IN (CONST_CATEGORYGROUP_ROBOT,CONST_CATEGORYID_BADROBOT, CONST_CATEGORYID_GOODROBOT) AND (class.IsFromCTS = 1 OR class.IsFromTVS = 1)))
 	ON DUPLICATE KEY UPDATE  IsFromCTS = 1
                         ,	 Remark = class.Remark;	
 	
@@ -172,8 +172,8 @@ sp: BEGIN
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS class USE INDEX (PRIMARY) ON class.CustID = tmp.CustID AND class.IsDirect = 1
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID 
-															AND (cate.CategoryGroup != CONST_CATEGORYGROUP_ROBOT 
-															 OR (cate.CategoryGroup = CONST_CATEGORYGROUP_ROBOT AND class.IsFromCTS = 1))
+															AND (cate.CategoryGroup NOT IN (CONST_CATEGORYGROUP_ROBOT,CONST_CATEGORYID_BADROBOT, CONST_CATEGORYID_GOODROBOT)
+															 OR (cate.CategoryGroup  IN (CONST_CATEGORYGROUP_ROBOT,CONST_CATEGORYID_BADROBOT, CONST_CATEGORYID_GOODROBOT) AND (class.IsFromCTS = 1 OR class.IsFromTVS = 1)))
 	ON DUPLICATE KEY UPDATE  IsFromCTS = 1
                         ,	 Remark = class.Remark;	
 	 
@@ -195,7 +195,7 @@ sp: BEGIN
         ,	class.TVSRequestID
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationOldPA AS class USE INDEX (PRIMARY)  ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = CONST_GROUP_PA AND class.IsDirect = 1
-        STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup != CONST_CATEGORYGROUP_ROBOT
+        STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup NOT IN (CONST_CATEGORYGROUP_ROBOT,CONST_CATEGORYID_BADROBOT, CONST_CATEGORYID_GOODROBOT)
 	WHERE NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassificationVVIP AS vv WHERE vv.CustID = class.CustID);
     
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee, CategoryID,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID)
@@ -215,7 +215,7 @@ sp: BEGIN
         ,	class.TVSRequestID
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS class USE INDEX (PRIMARY) ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = CONST_GROUP_PA AND class.IsDirect = 1
-        STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup != CONST_CATEGORYGROUP_ROBOT;
+        STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup NOT IN (CONST_CATEGORYGROUP_ROBOT,CONST_CATEGORYID_BADROBOT, CONST_CATEGORYID_GOODROBOT);
         
 	SELECT 	CTSCustID
 		,	CustID
