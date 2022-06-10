@@ -43,7 +43,8 @@ BEGIN
         ,	IsRobotException 		BIT DEFAULT 0 
         
 		,	CategoryID 				INT	
-        ,	ReasonID				INT DEFAULT 36
+        ,	ReasonID				INT DEFAULT 36        
+        , 	ToEvidenceID			SMALLINT
         ,	TargetCC				SMALLINT
 		,	TargetDangerLevel		SMALLINT UNSIGNED
         

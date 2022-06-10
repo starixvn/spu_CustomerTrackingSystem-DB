@@ -43,7 +43,7 @@ BEGIN
     FROM Temp_PA AS t
 		INNER JOIN CTSCustomerClassificationOldPA AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
 	WHERE t.TVSRequestID IS NOT NULL
-		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND IsFromAI = 0);
+		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0);
     
     /* REMOVE FROM CLASSIFICATION HISTORY  */    
 	DELETE d
@@ -61,13 +61,14 @@ BEGIN
     FROM Temp_PA AS t
 		INNER JOIN CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
 	WHERE t.TVSRequestID IS NOT NULL
-		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND IsFromAI = 0);
+		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0);
       
 	/* REMOVE FROM CUSTOMER EVIDENCE  */ 
     DELETE t
     FROM Temp_PA AS t
-		INNER JOIN CustEvidence AS e ON t.CTSCustID = e.CTSCustID AND t.ToEvidenceID = e.EvidenceID
+		INNER JOIN CustEvidence AS e ON t.CTSCustID = e.CTSCustID AND t.ToEvidenceID IS NOT NULL
 	WHERE t.TVSRequestID IS NOT NULL
+		AND t.ToEvidenceID = e.EvidenceID
 		AND e.Level = 0;    			
 
 	/* LOG THE VOID REQUEST FOR FURTHER TRACKING */
