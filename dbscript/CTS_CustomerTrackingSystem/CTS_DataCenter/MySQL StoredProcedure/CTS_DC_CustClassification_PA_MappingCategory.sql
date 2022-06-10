@@ -47,6 +47,7 @@ BEGIN
         ,	InputCategoryGroup     	SMALLINT UNSIGNED      
         ,	IsProbationStatus		BOOLEAN  NULL
         , 	CategoryID		   		SMALLINT UNSIGNED
+        , 	ReasonID		   		INT
         ,	CategoryGroup     		SMALLINT UNSIGNED
         ,	IsProbation	     		BOOLEAN
         ,	TargetCC				SMALLINT UNSIGNED
@@ -162,7 +163,7 @@ BEGIN
     IF ip_InputType = 'Reason' THEN
     
 		INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, InputCategoryID, InputCategoryGroup,  IsLicensee, CreatedBy, Remark, IsDirectPA
-			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, SpecialCC, IsProbation, RelevantCategoryID, TVSRequestID)
+			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, SpecialCC, IsProbation, RelevantCategoryID, TVSRequestID, ReasonID)
 		SELECT	DISTINCT tmpJs.CustID
 			,	cus.CTSCustID
 			,	cus.RoleID
@@ -187,6 +188,7 @@ BEGIN
                         END) AS IsProbation			
             ,	tmpLtr.RelevantCategoryID
             ,	tmpJs.TVSRequestID
+            ,	tmpJs.ReasonID
             FROM JSON_TABLE(ip_CustInfo,
 			"$[*]" COLUMNS(
 					CustID 			BIGINT UNSIGNED		PATH "$.CustID"
