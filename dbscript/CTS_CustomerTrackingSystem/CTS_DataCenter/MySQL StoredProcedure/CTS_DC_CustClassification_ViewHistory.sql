@@ -2,7 +2,7 @@
 DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_ViewHistory`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_ViewHistory`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_ViewHistory`(
 	IN ip_CTSCustID 	BIGINT
 )
     SQL SECURITY INVOKER
@@ -41,16 +41,10 @@ BEGIN
 			,   (CASE WHEN temp.CategoryID IS NULL THEN '-' ELSE cc1.CategoryName END) AS CategoryName
 			,   (CASE WHEN temp.TargetCC IN (-1, -99) THEN '-' /* -1: Remove, -99: No mapping CC */ ELSE temp.TargetCC END) AS CustomerClass
 			,	temp.CategoryID
-			,   (CASE WHEN cc2.CategoryGroup IN (CONST_CATEGORY_NEWMEMBER, CONST_CATEGORY_NORMALMEMBER, CONST_CATEGORY_VIP, CONST_CATEGORY_INACTIVE) 
-							AND cc3.CategoryGroup IN (CONST_CATEGORY_SMART, CONST_CATEGORY_HIGHRISK, CONST_CATEGORY_PROBATION) 
-								THEN CONCAT(s.ItemNameDisplay,' - ',cc2.CategoryName,' to ',cc3.CategoryName)
-					 WHEN cc2.CategoryGroup IN (CONST_CATEGORY_SMART, CONST_CATEGORY_HIGHRISK) 
-							AND cc3.CategoryGroup = CONST_CATEGORY_PROBATION 
-								THEN CONCAT(s.ItemNameDisplay,' - ',cc2.CategoryName,' to ',cc3.CategoryName)
-					 ELSE s.ItemNameDisplay
-				END) AS SourceTypeName
+			,    s.ItemNameDisplay AS SourceTypeName
 			, 	s.ItemID AS SourceTypeID
-			,   (CASE WHEN tag.CategoryID IS NULL THEN '' /*No display*/ ELSE CASE WHEN temp.TaggingType = 0 THEN 'Yes' ELSE 'No' END 
+			,   (CASE WHEN cc1.TaggingID IS NULL OR cc1.TaggingID = 0  THEN '' /*No display*/ 
+					  ELSE CASE WHEN temp.TaggingType = 0 THEN 'Yes' ELSE 'No' END 
 				 END) AS TaggingType
 			,   temp.TurnOverRM AS TurnOver
 			,   temp.WinlossRM AS WinLoss
@@ -65,11 +59,12 @@ BEGIN
             ,	temp.TWDesktopUsageRate
 			,	temp.Remark
 			,	temp.TVSRequestID
+            ,	temp.IsFromTVS
+            ,	temp.IsFromTW
+            ,	temp.IsFromCTS
+            ,	temp.IsFromAI
 		FROM 	CTS_DataCenter.CTSCustomerClassification_History AS temp
-			LEFT JOIN CTS_DataCenter.TaggingToCategory AS tag ON tag.CategoryID = temp.CategoryID
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS cc1 ON temp.CategoryID = cc1.CategoryID
-			LEFT JOIN CTS_DataCenter.CustomerCategory AS cc2 ON temp.FromCategoryID = cc2.CategoryID
-			LEFT JOIN CTS_DataCenter.CustomerCategory AS cc3 ON temp.ToCategoryID = cc3.CategoryID
 			LEFT JOIN CTS_DataCenter.StaticList AS s ON s.ListID = 4 AND temp.SourceTypeID = s.ItemID
 			LEFT JOIN CTS_Admin.CTSUser AS u ON temp.LastModifiedBy = u.UserID
         WHERE 	temp.CTSCustID = ip_CTSCustID AND temp.IsDataChanged = 1

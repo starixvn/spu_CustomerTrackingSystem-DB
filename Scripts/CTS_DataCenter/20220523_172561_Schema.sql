@@ -25,18 +25,30 @@ USE CTS_DataCenter
 ALTER TABLE  CTSCustomerClassification_History 
 ADD COLUMN Remark VARCHAR(500),
 ADD COLUMN IsDirect BIT DEFAULT NULL,
-ADD COLUMN TVSRequestID BIGINT UNSIGNED DEFAULT NULL;
+ADD COLUMN TVSRequestID BIGINT UNSIGNED DEFAULT NULL,
+ADD COLUMN  IsFromTVS BIT DEFAULT 0,
+ADD COLUMN  IsFromTW BIT DEFAULT 0,
+ADD COLUMN  IsFromCTS BIT DEFAULT 0,
+ADD COLUMN IsFromAI BIT DEFAULT 0;
 
 ALTER TABLE  CTSCustomerClassification_Log
 ADD COLUMN Remark VARCHAR(500),
 ADD COLUMN IsDirect BIT DEFAULT NULL,
-ADD COLUMN TVSRequestID BIGINT UNSIGNED DEFAULT NULL;
+ADD COLUMN TVSRequestID BIGINT UNSIGNED DEFAULT NULL,
+ADD COLUMN  IsFromTVS BIT DEFAULT 0,
+ADD COLUMN  IsFromTW BIT DEFAULT 0,
+ADD COLUMN  IsFromCTS BIT DEFAULT 0,
+ADD COLUMN IsFromAI BIT DEFAULT 0;
 
 USE CTS_Archive;
 ALTER TABLE  CTSCustomerClassification_History_Archive 
 ADD COLUMN Remark VARCHAR(500),
 ADD COLUMN IsDirect BIT DEFAULT NULL,
-ADD COLUMN TVSRequestID BIGINT UNSIGNED DEFAULT NULL;
+ADD COLUMN TVSRequestID BIGINT UNSIGNED DEFAULT NULL,
+ADD COLUMN  IsFromTVS BIT DEFAULT 0,
+ADD COLUMN  IsFromTW BIT DEFAULT 0,
+ADD COLUMN  IsFromCTS BIT DEFAULT 0,
+ADD COLUMN IsFromAI BIT DEFAULT 0;
 
 USE CTS_DataCenter;
 UPDATE CustomerCategory 
@@ -190,6 +202,10 @@ BEGIN
      	,	Remark
         ,   IsDirect
         ,   TVSRequestID
+        ,	IsFromTVS 				 
+		,	IsFromTW 				
+		,	IsFromCTS 				
+		,	IsFromAI 	
 	)
 	SELECT	HistoryID
         ,	CustID
@@ -223,6 +239,10 @@ BEGIN
         ,	Remark
         ,   IsDirect
         ,   TVSRequestID
+        ,	IsFromTVS 				 
+		,	IsFromTW 				
+		,	IsFromCTS 				
+		,	IsFromAI 	
 	FROM JSON_TABLE(
 			ip_HistoryJson,
 			 "$[*]" COLUMNS(
@@ -258,6 +278,10 @@ BEGIN
                             ,	Remark		            VARCHAR(500) 		PATH "$.Remark"
                             ,   IsDirect                BOOLEAN             PATH "$.IsDirect"
                             ,   TVSRequestID            BIGINT UNSIGNED 	PATH "$.TVSRequestID"   
+                            ,	IsFromTVS 				BOOLEAN 	        PATH IsFromTVS   
+			                ,	IsFromTW 				BOOLEAN 	        PATH IsFromTW   
+			                ,	IsFromCTS 				BOOLEAN 	        PATH IsFromCTS   
+			                ,	IsFromAI 	            BOOLEAN 	        PATH IsFromAI   
 				)
 		   ) AS  tbl; 
 END$$
