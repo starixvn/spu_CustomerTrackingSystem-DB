@@ -209,7 +209,8 @@ BEGIN
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
 			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on cus.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
 			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON cus.CTSCustID = sp.CTSCustID,
-            LATERAL (SELECT cat.CategoryGroup, cat.RelevantCategoryID FROM CTS_DataCenter.CustomerCategory AS cat WHERE cat.ReasonID = tmpJs.ReasonID LIMIT 1) tmpLtr;
+            LATERAL (SELECT cat.CategoryGroup, cat.RelevantCategoryID FROM CTS_DataCenter.CustomerCategory AS cat WHERE cat.ReasonID = tmpJs.ReasonID LIMIT 1) tmpLtr
+		WHERE pin.CTSCustID IS NULL;
 		
         UPDATE Temp_PA AS tmpPA,
             LATERAL(SELECT 	cat.CategoryGroup
