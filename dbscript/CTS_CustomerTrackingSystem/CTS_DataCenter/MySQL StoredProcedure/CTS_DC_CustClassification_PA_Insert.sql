@@ -165,8 +165,8 @@ BEGIN
     WHERE tmpPA.IsDataChanged = 0 AND tmpEc.CustID IS NULL;
     
     UPDATE Temp_PA AS tmpPA
-		INNER JOIN Temp_ExistCategory AS tmpEc ON tmpPA.RelevantCategoryGroup = tmpEc.CategoryGroup# AND tmpEc.IsFromOldPA = 0
-	SET 	tmpPA.DataChangeType = (CASE WHEN tmpPA.WinlossStatus = 1 THEN 2 ELSE 1 END)
+		INNER JOIN Temp_ExistCategory AS tmpEc ON tmpPA.RelevantCategoryGroup = tmpEc.CategoryGroup AND tmpPA.CustID = tmpEc.CustID # AND tmpEc.IsFromOldPA = 0
+	SET 	tmpPA.DataChangeType = 1 #(CASE WHEN tmpPA.WinlossStatus = 1 THEN 2 ELSE 1 END)
 		,	tmpPA.IsDataChanged = 1 # (CASE WHEN tmpPA.WinlossStatus = 1 THEN 0 ELSE 1 END)
         ,	tmpPA.OldCategoryID = tmpEc.ExistCategoryID
         ,	tmpPA.LastModifiedDate = tmpEc.LastModifiedDate
