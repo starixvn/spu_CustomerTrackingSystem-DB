@@ -145,13 +145,13 @@ sp: BEGIN
 		,	tmp.CustID
         ,	class.CategoryID
         ,	cate.CategoryGroup 
-        ,	class.Remark
+        ,	class.Remark 
         ,	class.CreatedBy
         ,	class.IsFromTVS
         ,	class.IsFromTW
         ,	class.IsFromCTS
     FROM Temp_CustInfo AS tmp    
-		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS class USE INDEX (PRIMARY) ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = 0 AND class.IsDirect = 1
+		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS class USE INDEX (PRIMARY) ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = 0 
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup != 61;
 	 
     SELECT	tmp.CTSCustID
