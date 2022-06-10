@@ -247,7 +247,7 @@ BEGIN
         ,	tmpPA.IsFromTW
         ,	tmpPA.TVSRequestID
 	FROM Temp_PA AS tmpPA
-    WHERE tmpPA.DataChangeType = 0;   
+    WHERE tmpPA.DataChangeType = 0 OR tmpPA.IsFromOldPA = 1;   
   
     #=============INSERT HISTORY WHERE Category CHANGE OR Special Remove==================================================
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType
