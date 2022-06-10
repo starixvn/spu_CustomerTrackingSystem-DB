@@ -43,9 +43,6 @@ BEGIN
 			,	temp.CategoryID
 			,    s.ItemNameDisplay AS SourceTypeName
 			, 	s.ItemID AS SourceTypeID
-			,   (CASE WHEN cc1.TaggingID IS NULL OR cc1.TaggingID = 0  THEN '' /*No display*/ 
-					  ELSE CASE WHEN temp.TaggingType = 0 THEN 'Yes' ELSE 'No' END 
-				 END) AS TaggingType
 			,   temp.TurnOverRM AS TurnOver
 			,   temp.WinlossRM AS WinLoss
 			,	(CASE WHEN temp.TurnOverRM = 0 THEN 0 ELSE (temp.WinlossRM/ temp.TurnOverRM) * 100 END) AS Margin

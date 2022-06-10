@@ -278,10 +278,10 @@ BEGIN
                             ,	Remark		            VARCHAR(500) 		PATH "$.Remark"
                             ,   IsDirect                BOOLEAN             PATH "$.IsDirect"
                             ,   TVSRequestID            BIGINT UNSIGNED 	PATH "$.TVSRequestID"   
-                            ,	IsFromTVS 				BOOLEAN 	        PATH IsFromTVS   
-			                ,	IsFromTW 				BOOLEAN 	        PATH IsFromTW   
-			                ,	IsFromCTS 				BOOLEAN 	        PATH IsFromCTS   
-			                ,	IsFromAI 	            BOOLEAN 	        PATH IsFromAI   
+                            ,	IsFromTVS 				BOOLEAN 	        PATH "$.IsFromTVS"
+			                ,	IsFromTW 				BOOLEAN 	        PATH "$.IsFromTW"  
+			                ,	IsFromCTS 				BOOLEAN 	        PATH "$.IsFromCTS"   
+			                ,	IsFromAI 	            BOOLEAN 	        PATH "$.IsFromAI"  
 				)
 		   ) AS  tbl; 
 END$$
