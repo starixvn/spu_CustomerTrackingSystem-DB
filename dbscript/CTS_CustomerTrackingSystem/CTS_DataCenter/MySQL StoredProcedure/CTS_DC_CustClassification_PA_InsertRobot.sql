@@ -43,6 +43,7 @@ BEGIN
         ,	IsRobotException 		BIT DEFAULT 0 
         
 		,	CategoryID 				INT	
+        ,	ReasonID				INT DEFAULT 36
         ,	TargetCC				SMALLINT
 		,	TargetDangerLevel		SMALLINT UNSIGNED
         
@@ -155,6 +156,8 @@ BEGIN
                         ,	 Remark = CASE WHEN js.IsFromCTS = 1 THEN js.Remark ELSE Temp_PA.Remark END
                         ,	 CreatedBy = CASE WHEN js.IsFromCTS = 1 THEN js.CreatedBy ELSE Temp_PA.CreatedBy END;
 	
+    CALL CTS_DataCenter.CTS_DC_CustClassification_PA_RemoveOldTVSRequest();
+    
     INSERT IGNORE INTO Temp_RobotClassification(CustID, CategoryID,Turnover,Winloss,BetCount,ActiveDays)
     SELECT 	tmp.CustID
 		,	CASE WHEN tbl.RobotType = CONST_ROBOTTYPE_OBSERVED THEN CONST_CATEGORYID_ROBOT
