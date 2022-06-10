@@ -65,9 +65,9 @@ BEGIN
         ,	OldCategoryID		    SMALLINT
         ,	SpecialCC				SMALLINT UNSIGNED
         ,	TVSRequestID			INT NULL
-        ,	OldCategroyID			SMALLINT UNSIGNED
         ,	LastModifiedDate		DATETIME
         ,	IsFromOldPA				BOOLEAN
+        ,	PinCTSCustID			BIGINT UNSIGNED			
         ,	ActionType				TINYINT DEFAULT 0	#0:INSERT, 1:UPDATE
         , 	PRIMARY KEY PK_Temp_PA(CustID,InputCategoryID)  
         ,	INDEX IX_Temp_PA(IsDataChanged,LastModifiedDate)
@@ -75,7 +75,7 @@ BEGIN
    
     IF ip_InputType = 'Category' THEN    
         INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, InputCategoryID, InputCategoryGroup,  IsLicensee, CreatedBy, Remark, IsDirectPA
-			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsDataChanged, SpecialCC, IsProbation, RelevantCategoryID, LastModifiedDate)
+			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsDataChanged, SpecialCC, IsProbation, RelevantCategoryID, LastModifiedDate, PinCTSCustID)
 		SELECT 	DISTINCT tmpJs.CustID
 			,	tmpJs.CTSCustID
 			,	tmpJs.RoleID
@@ -101,6 +101,7 @@ BEGIN
                         END) AS IsProbation			
             ,	cat.RelevantCategoryID
             ,	tmpJs.LastModifiedDate
+            ,	pin.CTSCustID
 		FROM JSON_TABLE(ip_CustInfo,
 			"$[*]" COLUMNS(
 					CustID 			BIGINT UNSIGNED		PATH "$.CustID"
@@ -126,8 +127,7 @@ BEGIN
 		)) AS tmpJs
 			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on tmpJs.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
 			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CTSCustID = sp.CTSCustID 
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.CategoryID
-			WHERE pin.CTSCustID IS NULL;            
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.CategoryID;
 
 			UPDATE Temp_PA AS tmpPA,
             LATERAL(SELECT 	cat.CategoryGroup
@@ -163,7 +163,7 @@ BEGIN
     IF ip_InputType = 'Reason' THEN
     
 		INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, InputCategoryID, InputCategoryGroup,  IsLicensee, CreatedBy, Remark, IsDirectPA
-			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, SpecialCC, IsProbation, RelevantCategoryID, TVSRequestID, ReasonID)
+			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, SpecialCC, IsProbation, RelevantCategoryID, TVSRequestID, ReasonID, PinCTSCustID)
 		SELECT	DISTINCT tmpJs.CustID
 			,	cus.CTSCustID
 			,	cus.RoleID
@@ -189,6 +189,7 @@ BEGIN
             ,	tmpLtr.RelevantCategoryID
             ,	tmpJs.TVSRequestID
             ,	tmpJs.ReasonID
+            ,	pin.CTSCustID
             FROM JSON_TABLE(ip_CustInfo,
 			"$[*]" COLUMNS(
 					CustID 			BIGINT UNSIGNED		PATH "$.CustID"
@@ -209,8 +210,7 @@ BEGIN
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
 			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on cus.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
 			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON cus.CTSCustID = sp.CTSCustID,
-            LATERAL (SELECT cat.CategoryGroup, cat.RelevantCategoryID FROM CTS_DataCenter.CustomerCategory AS cat WHERE cat.ReasonID = tmpJs.ReasonID LIMIT 1) tmpLtr
-		WHERE pin.CTSCustID IS NULL;
+            LATERAL (SELECT cat.CategoryGroup, cat.RelevantCategoryID FROM CTS_DataCenter.CustomerCategory AS cat WHERE cat.ReasonID = tmpJs.ReasonID LIMIT 1) tmpLtr;
 		
         UPDATE Temp_PA AS tmpPA,
             LATERAL(SELECT 	cat.CategoryGroup

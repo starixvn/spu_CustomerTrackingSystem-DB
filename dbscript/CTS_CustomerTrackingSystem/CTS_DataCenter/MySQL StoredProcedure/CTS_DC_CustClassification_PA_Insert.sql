@@ -104,6 +104,31 @@ BEGIN
     /* Mapping Category */
     CALL CTS_DC_CustClassification_PA_MappingCategory(ip_InputType,ip_ProblemAccounts);
 	
+	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationOldPA(CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
+		, LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsDirect, InsertTime) 
+    SELECT	tmpPA.CustID
+		,	tmpPA.CTSCustID
+        ,	tmpPA.SubscriberID
+        ,	CONST_SPORTGROUP_PA AS SportGroupID
+        ,	tmpPA.CategoryID
+        ,	tmpPA.Remark
+        ,	NOW() AS CreatedDate
+        ,	tmpPA.CreatedBy
+        ,	NOW() AS LastModifiedDate
+        ,	tmpPA.CreatedBy AS LastModifiedBy
+        ,	NOW() AS LastScannedDate
+        ,	tmpPA.IsFromTVS
+        ,	tmpPA.IsFromTW
+        ,	tmpPA.IsFromCTS
+        ,	tmpPA.IsDirectPA
+        ,	CURRENT_TIMESTAMP(3) AS InsertTime
+	FROM Temp_PA AS tmpPA
+	WHERE tmpPA.PinCTSCustID IS NOT NULL; 
+    
+    DELETE tmpPA
+    FROM Temp_PA AS tmpPA
+    WHERE tmpPA.PinCTSCustID IS NOT NULL; 
+    
 	INSERT IGNORE INTO Temp_CustProbationStatus(CustID, CTSCustID, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsProbation, WinlossStatus, IsLicensee)
     SELECT DISTINCT tmpPA.CustID
 		,	tmpPA.CTSCustID
