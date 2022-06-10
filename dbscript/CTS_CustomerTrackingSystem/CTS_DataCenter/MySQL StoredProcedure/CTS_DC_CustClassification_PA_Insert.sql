@@ -4,7 +4,7 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_PA_Insert`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_Insert`(
 		IN ip_InputType			VARCHAR(20) 
-    ,	IN ip_IsFromQueue		BOOLEAN
+    ,	IN ip_IsToQueue			BOOLEAN
     ,   IN ip_ProblemAccounts 	JSON
 )
     SQL SECURITY INVOKER
@@ -280,7 +280,7 @@ BEGIN
     ORDER BY LastModifiedDate, tmpPA.CategoryID;
 
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate
-    , TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, IsDirect, Remark, TVSRequestID)
+		, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, IsDirect, Remark, TVSRequestID)
 	SELECT 		tmpPA.CustID
 		,	tmpPA.CTSCustID
 		,	tmpPA.CategoryID
@@ -304,7 +304,8 @@ BEGIN
 		,	tmpPA.TVSRequestID
 	FROM Temp_PA AS tmpPA;
 
-    IF (ip_IsFromQueue = 0) THEN
+    IF (ip_IsToQueue = 1) THEN
+    
 		# INSERT SMA PA TO QUEUE PA AS 
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationQueue(CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryID, CategoryGroup, LastDownlineCTSCustID
 			, IsFromTVS, IsFromTW, IsFromCTS, ActionType, InsertTime)
@@ -356,14 +357,14 @@ BEGIN
     FROM Temp_PA AS tmpPA;
     
     #========INSERT EVIDENCE QUEUE=========
-     INSERT IGNORE INTO CTS_DataCenter.CustEvidenceAffectedQueueInsert(CTSCustID, EvidenceID, Remark, CreatedBy, Created)
-     SELECT tmpPA.CTSCustID
+	 INSERT IGNORE INTO CTS_DataCenter.CustEvidenceAffectedQueueInsert(CTSCustID, EvidenceID, Remark, CreatedBy, Created)
+	 SELECT tmpPA.CTSCustID
 		,	tmpPA.ToEvidenceID
 		,	tmpPA.Remark
         ,	tmpPA.CreatedBy
         ,	lv_CurrentDateTime AS CreatedDate
-    FROM Temp_PA AS tmpPA
-     WHERE tmpPA.DataChangeType = 0 OR tmpPA.IsFromOldPA = 1;  
+	FROM Temp_PA AS tmpPA
+	WHERE tmpPA.DataChangeType = 0 OR tmpPA.IsFromOldPA = 1;  
 
 	#=====RETURN UPDATED CUSTOMERS TO SERVICE FOR FUTHER STEPS===========
 	SELECT	DISTINCT 
@@ -371,5 +372,8 @@ BEGIN
 		,	tmpPA.CTSCustID
     FROM Temp_PA AS tmpPA; 
 
+	INSERT INTO CTS_Log.CTSDebugLog(SPName, InsertTime, OtherText, JsonString1)
+    SELECT 'CTS_DC_CustClassification_PA_Insert_DEBUG', CURRENT_TIMESTAMP(4), CONCAT('ip_InputType:',ip_InputType,' ,ip_IsToQueue:',ip_IsToQueue),ip_ProblemAccounts;
+    
 END$$
 DELIMITER ;
