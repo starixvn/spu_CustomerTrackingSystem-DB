@@ -123,7 +123,7 @@ BEGIN
 				, 	IsFromTW		BOOLEAN 			PATH "$.IsFromTW"
 				, 	IsFromCTS		BOOLEAN 			PATH "$.IsFromCTS"
 				, 	IsDataChanged	BOOLEAN 			PATH "$.IsDataChanged"
-				, 	LastModifiedDate	BOOLEAN 		PATH "$.LastModifiedDate"
+				, 	LastModifiedDate	DATETIME 		PATH "$.LastModifiedDate"
 		)) AS tmpJs
 			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on tmpJs.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
 			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CTSCustID = sp.CTSCustID 

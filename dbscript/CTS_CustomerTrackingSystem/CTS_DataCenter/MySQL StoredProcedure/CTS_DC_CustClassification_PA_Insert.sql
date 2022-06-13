@@ -282,7 +282,7 @@ BEGIN
 		, 	tmpPA.CTSCustID
 		, 	tmpPA.CategoryID
 		, 	CONST_SPORTGROUP_PA AS SportGroupID
-		, 	IFNULL(tmpPA.LastModifiedDate,NOW()) AS LastModifiedDate
+		, 	NOW() AS LastModifiedDate
 		, 	tmpPA.CreatedBy AS LastModifiedBy
 		, 	tmpPA.ActionType
 		, 	NOW() AS InsertDate
