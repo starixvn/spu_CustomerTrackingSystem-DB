@@ -12,7 +12,8 @@ AS
 	DB	 : DBCTS.bodb02
 
 	Revisions:
-		- 20220314@Harvey.Nguyen: Scan ticket [Redmine ID: #169671]
+		- 20220314@Harvey.Nguyen: Scan ticket				[Redmine ID: #169671]
+		- 20220613@Harvey.Nguyen: Remove credit tickets		[Redmine ID: #169671]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_ScanTicket] '2022-02-15 23:10:15.983','2022-02-16 02:15:20.983',10900
@@ -148,6 +149,7 @@ BEGIN
 				ELSE 0
 				END 'IsBigLeague'
 		FROM dbo.bettrans AS b WITH (NOLOCK)
+		INNER JOIN Dep_CustSuper AS dCust WITH (NOLOCK) ON  dCust.custid = b.srecommend
 		INNER JOIN match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 		INNER JOIN dbo.custinfo AS ci WITH (NOLOCK) ON b.custid = ci.custid
 		LEFT JOIN LicUserProfile AS pf WITH (NOLOCK) ON b.custid = pf.CustId
