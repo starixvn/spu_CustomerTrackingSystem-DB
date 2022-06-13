@@ -203,7 +203,7 @@ BEGIN
 
     #======UPDATE IF Change Probation Status for Existing CategoryID
     INSERT INTO Temp_PA(CustID, CTSCustID, InputCategoryID, OldCategoryID, CategoryID, TargetCC,  TargetDangerLevel, ToEvidenceID, Remark, TurnoverRM, WinlossRM, BetCount, ActiveDays
-				, IsDirectPA, IsFromTVS, IsFromTW, IsFromCTS, IsDataChanged, DataChangeType, LastModifiedDate, CreatedBy, IsFromOldPA, IsProbation)
+				, IsDirectPA, IsFromTVS, IsFromTW, IsFromCTS, IsDataChanged, DataChangeType, LastModifiedDate, CreatedBy, IsFromOldPA, IsProbation, TVSRequestID)
 	SELECT 		tmpEc.CustID
 			,	tmpEc.CTSCustID
             ,	tmpEc.ExistCategoryID AS InputCategoryID
@@ -230,6 +230,7 @@ BEGIN
             ,	tmpEc.CreatedBy
             ,	tmpEc.IsFromOldPA
             ,	tmpEc.IsProbation
+            ,	tmpEc.TVSRequestID
 		FROM Temp_ExistCategory AS tmpEc
 		INNER JOIN Temp_CustProbationStatus AS tmpCp ON tmpCp.CustID = tmpEc.CustID AND tmpCp.IsProbation <> tmpEc.IsProbation AND  tmpCp.WinlossStatus <> 1 
         , LATERAL (SELECT 	cat.CategoryGroup
