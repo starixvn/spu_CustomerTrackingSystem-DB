@@ -20,7 +20,14 @@ BEGIN
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_PA_RemoveOldTVSRequest();
             
 	*/ 
-  
+	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedEvidence;    
+	CREATE TEMPORARY TABLE Temp_ExistedEvidence(	  
+			CTSCustID				BIGINT UNSIGNED 
+        ,	EvidenceID_Licensee 	SMALLINT	        
+        ,	EvidenceID_Credit 		SMALLINT	
+        ,  	INDEX IX_Temp_ExistedEvidence_CTSCustIDEvidenceID(CTSCustID, EvidenceID_Licensee, EvidenceID_Credit)
+    );
+    
     /* REMOVE FROM QUEUE  */
     UPDATE Temp_PA AS t
 		INNER JOIN CTSCustomerClassificationQueue AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
@@ -51,25 +58,31 @@ BEGIN
 		INNER JOIN CTSCustomerClassification_History AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
 	WHERE t.TVSRequestID IS NOT NULL;
         
-    /* REMOVE FROM CLASSIFICATION  */      
+    /* REMOVE FROM CLASSIFICATION  */
+    INSERT INTO Temp_ExistedEvidence(CTSCustID, EvidenceID_Licensee, EvidenceID_Credit)
+    SELECT DISTINCT t.CTSCustID, c.EvidenceID_Licensee, c.EvidenceID_Credit
+    FROM Temp_PA AS t
+		INNER JOIN CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
+        INNER JOIN CustomerCategory AS c ON d.CategoryID = d.CategoryID
+	WHERE t.TVSRequestID IS NOT NULL;    
+    
     UPDATE Temp_PA AS t
 		INNER JOIN CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
 	SET d.IsFromTVS = 0
 	WHERE t.TVSRequestID IS NOT NULL;
     
-	DELETE t
+	DELETE d
     FROM Temp_PA AS t
 		INNER JOIN CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
 	WHERE t.TVSRequestID IS NOT NULL
 		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0);
       
 	/* REMOVE FROM CUSTOMER EVIDENCE  */ 
-    DELETE t
-    FROM Temp_PA AS t
-		INNER JOIN CustEvidence AS e ON t.CTSCustID = e.CTSCustID AND t.ToEvidenceID IS NOT NULL
-	WHERE t.TVSRequestID IS NOT NULL
-		AND t.ToEvidenceID = e.EvidenceID
-		AND e.Level = 0;    			
+    DELETE d
+    FROM Temp_ExistedEvidence AS t
+		INNER JOIN CustEvidence AS d ON t.CTSCustID = d.CTSCustID 
+			AND (t.EvidenceID_Credit = d.EvidenceID OR t.EvidenceID_Licensee = d.EvidenceID)
+	WHERE d.Level = 0;    			
 
 	/* LOG THE VOID REQUEST FOR FURTHER TRACKING */
     INSERT INTO TVSVoidRequest_History (TVSRequestID,CustIDs,ReasonID,CreatedBy,CreatedDate)
