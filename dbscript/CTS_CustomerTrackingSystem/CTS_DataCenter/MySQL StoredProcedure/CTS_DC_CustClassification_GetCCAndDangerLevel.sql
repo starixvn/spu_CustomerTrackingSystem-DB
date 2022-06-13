@@ -10,7 +10,7 @@ BEGIN
 	/*
 		Created:	20220526@Aries.Nguyen	
 		Task :		Renovate PA Process
-		DB:			CTS_DataCenter
+		DB:			CTS_DataCenter  
 		Original: 
 		Revisions:
 			- 20220526@Aries.Nguyen: Created [RedmineID: #172561]
@@ -35,6 +35,16 @@ BEGIN
 		,	DangerLevelType		INT  
     );    
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustCateInfo;
+    CREATE TEMPORARY TABLE 		Temp_CustCateInfo (
+        	CustID				BIGINT UNSIGNED PRIMARY KEY 	
+		,	CategoryID			INT
+		,	CustomerClass		INT
+        ,	CustomerClassName  	VARCHAR(50)
+        ,	DangerLevel			INT
+		,	DangerLevelType		SMALLINT  
+    );    
+    
     INSERT IGNORE INTO Temp_CustInfo (CustID,IsLicensee,IsRobotException,CustomerClass)
     SELECT  tmp.CustID
 		,	cus.IsLicensee
@@ -46,6 +56,7 @@ BEGIN
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID AND cus.CustSubID  = 0
 		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = tmp.CustID;
     
+    INSERT INTO Temp_CustCateInfo(CustID,CategoryID,CustomerClass,CustomerClassName,DangerLevel,DangerLevelType)
     SELECT 	tmp.CustID
 		,	clss.CategoryID
 		,	clss.CustomerClass
@@ -72,6 +83,15 @@ BEGIN
                 ORDER BY  cate.Priority ASC  
 						, clss.LastModifiedDate DESC
                 LIMIT 1) AS clss;
+		
+	SELECT 	tmp.CustID
+		,	cate.CategoryID
+		,	IFNULL(cate.CustomerClass,-1) AS CustomerClass
+        ,	cate.CustomerClassName  
+        ,	cate.DangerLevel
+        ,	cate.DangerLevelType 
+    FROM Temp_CustInfo AS tmp
+		LEFT JOIN Temp_CustCateInfo AS cate ON tmp.CustID = cate.CustID;
 END$$
 
 DELIMITER ;
