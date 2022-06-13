@@ -53,7 +53,7 @@ BEGIN
         , 	BetCount				BIGINT 
         , 	ActiveDays				INT 
 		,	RobotCounter			INT 
-        
+         
         ,	IsFromTW				BIT
         ,	IsFromCTS				BIT
         ,	IsFromAI				BIT
@@ -64,6 +64,9 @@ BEGIN
         
         ,	Remark					VARCHAR(500)
 		,	CreatedBy				INT UNSIGNED
+        
+		,	IsPin					BIT DEFAULT 0
+        ,	IsVVIP					BIT DEFAULT 0
         , 	PRIMARY KEY(CustID,CategoryID)
     );  
     
@@ -93,7 +96,7 @@ BEGIN
         ,  	PRIMARY KEY(CustID,CategoryID)
     );
     
-    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, SubscriberID,IsLicensee,IsRobotException, CategoryID,TargetCC, TurnoverRM, WinlossRM, BetCount, ActiveDays,RobotCounter, IsFromTW,IsFromCTS,IsFromAI,IsFromTVS,TVSRequestID,IsDirect,Remark,CreatedBy)
+    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, SubscriberID,IsLicensee,IsRobotException, CategoryID,TargetCC, TurnoverRM, WinlossRM, BetCount, ActiveDays,RobotCounter, IsFromTW,IsFromCTS,IsFromAI,IsFromTVS,TVSRequestID,IsDirect,Remark,CreatedBy,IsPin,IsVVIP)
 	SELECT	js.CustID
 		,	cus.CTSCustID
 		,	cus.SubscriberID
@@ -117,6 +120,10 @@ BEGIN
         ,	IFNULL(js.IsDirect,0) AS IsDirect	
         ,	js.Remark
         ,	js.CreatedBy
+        ,	CASE WHEN pin.CTSCustID IS NOT NULL THEN 1 
+				 ELSE 0 END AS IsPin
+		,	CASE WHEN vip.CTSCustID IS NOT NULL THEN 1 
+				 ELSE 0 END AS IsVVIP 
 	FROM JSON_TABLE(ip_CustInfo,
 	"$[*]" COLUMNS( CustID 			BIGINT UNSIGNED		PATH "$.CustID"
                 ,	CategoryID		BIGINT UNSIGNED		PATH "$.CategoryID"
@@ -141,8 +148,6 @@ BEGIN
 		LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on cus.CTSCustID = pin.CTSCustID
         LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON cus.CustID = sp.CustID 
         LEFT JOIN CTS_DataCenter.CTSCustomerClassificationVVIP AS vip on cus.CTSCustID = vip.CTSCustID
-	WHERE pin.CTSCustID IS NULL
-		AND  vip.CTSCustID IS NULL
 	ON DUPLICATE KEY UPDATE  RobotCounter = IFNULL(Temp_PA.RobotCounter, js.RobotCounter)
 						,	 TurnoverRM = IFNULL(Temp_PA.TurnoverRM, js.TurnoverRM)  
                         ,	 WinlossRM = IFNULL(Temp_PA.WinlossRM, js.WinlossRM)  
@@ -158,6 +163,35 @@ BEGIN
                         ,	 CreatedBy = CASE WHEN js.IsFromCTS = 1 THEN js.CreatedBy ELSE Temp_PA.CreatedBy END;
 	
     CALL CTS_DataCenter.CTS_DC_CustClassification_PA_RemoveOldTVSRequest();
+    
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationOldPA(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID,IsFromTW,IsFromCTS,IsFromAI,IsFromTVS,TVSRequestID, IsDirect,Remark,CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
+	SELECT 	pa.CustID
+		,	pa.CTSCustID
+		, 	pa.SubscriberID
+        
+		, 	pa.CategoryID
+		, 	CONST_GROUP_PA AS SportGroupID
+        ,	pa.IsFromTW
+        ,	pa.IsFromCTS
+        ,	pa.IsFromAI
+		,	pa.IsFromTVS
+		,	pa.TVSRequestID
+        ,	pa.IsDirect
+        ,	pa.Remark
+        
+		, 	lv_Now AS CreatedDate
+		, 	pa.CreatedBy
+		, 	lv_Now AS LastModifiedDate
+		, 	CreatedBy AS  LastModifiedBy
+		, 	DATE(lv_Now) AS LastScannedDate
+	FROM Temp_PA AS pa
+    WHERE pa.IsFromTVS = 1 
+		AND (pa.IsVVIP =  1 OR pa.IsPin = 1);
+    
+    DELETE 
+    FROM Temp_PA AS pa
+    WHERE pa.IsVVIP =  1 
+		OR pa.IsPin = 1;
     
     INSERT IGNORE INTO Temp_RobotClassification(CustID, CategoryID,Turnover,Winloss,BetCount,ActiveDays)
     SELECT 	tmp.CustID

@@ -19,7 +19,7 @@ sp: BEGIN
 
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_PA_ReScan("1,2,3,4");
-	*/
+	*/ 
     DECLARE	CONST_CATEGORYID_ROBOT 		INT DEFAULT 61;
     DECLARE	CONST_CATEGORYID_BADROBOT 	INT DEFAULT 163;
     DECLARE	CONST_CATEGORYID_GOODROBOT 	INT DEFAULT 164;
@@ -61,6 +61,7 @@ sp: BEGIN
         
         ,	CategoryGroup   	SMALLINT
         ,   CategoryID			BIGINT UNSIGNED 
+        ,   CategoryIDSource	BIGINT UNSIGNED 
         ,	IsDirect			BIT
         ,	IsFromTVS 			BIT DEFAULT 0
         ,	IsFromTW 			BIT DEFAULT 0
@@ -77,7 +78,7 @@ sp: BEGIN
         
         ,	LastModifiedDate	DATETIME
 		,	Remark				VARCHAR(500)
-		,	PRIMARY KEY(CustID,CategoryID)
+		,	PRIMARY KEY(CustID,CategoryIDSource)
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Robot;    
@@ -113,13 +114,14 @@ sp: BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
     
     /***********************Check Robot betting****************************/
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID,RoleID,SubscriberID,IsLicensee ,CategoryID,CategoryGroup,IsFromAI,IsDirect,IsRobot)
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID,RoleID,SubscriberID,IsLicensee ,CategoryID,CategoryIDSource, CategoryGroup,IsFromAI,IsDirect,IsRobot)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
         ,	tmp.RoleID 
         ,	tmp.SubscriberID
 		,	tmp.IsLicensee
 		,	CONST_CATEGORYID_ROBOT AS CategoryID
+        ,	CONST_CATEGORYID_ROBOT AS CategoryIDSource
         ,	CONST_CATEGORYID_ROBOT AS CategoryGroup
         ,	1 AS IsFromAI
         ,	1 AS IsDirect
@@ -129,13 +131,15 @@ sp: BEGIN
 
 		
      /***********************Check PA from Old table****************************/
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,CategoryID,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID,IsRobot)
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,CategoryID,CategoryIDSource,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID,IsRobot)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
         ,	tmp.RoleID
         ,	tmp.SubscriberID
 		,	tmp.IsLicensee
         ,	class.CategoryID
+        ,	CASE WHEN cate.IsPAProbation = 1 THEN cate.RelevantCategoryID
+				 ELSE class.CategoryID END AS CategoryIDSource
         ,	cate.CategoryGroup
 		,	1 AS IsDirect
         ,	class.Remark
@@ -153,13 +157,15 @@ sp: BEGIN
 	ON DUPLICATE KEY UPDATE  IsFromCTS = 1
                         ,	 Remark = class.Remark;	
 	
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,CategoryID,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID,IsRobot)
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,CategoryID,CategoryIDSource,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID,IsRobot)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
         ,	tmp.RoleID
         ,	tmp.SubscriberID
 		,	tmp.IsLicensee
         ,	class.CategoryID
+        ,	CASE WHEN cate.IsPAProbation = 1 THEN cate.RelevantCategoryID
+				 ELSE class.CategoryID END AS CategoryIDSource
         ,	cate.CategoryGroup
 		,	1 AS IsDirect
         ,	class.Remark
@@ -178,13 +184,15 @@ sp: BEGIN
                         ,	 Remark = class.Remark;	
 	 
     /***********************Check affected PA from Upline****************************/
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee, CategoryID,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID)
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee, CategoryID,CategoryIDSource,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
         ,	tmp.RoleID
         ,	tmp.SubscriberID
 		,	tmp.IsLicensee
         ,	class.CategoryID
+		,	CASE WHEN cate.IsPAProbation = 1 THEN cate.RelevantCategoryID
+				 ELSE class.CategoryID END AS CategoryIDSource
         ,	cate.CategoryGroup
 		,	0 AS IsDirect
         ,	class.Remark
@@ -198,13 +206,15 @@ sp: BEGIN
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup NOT IN (CONST_CATEGORYGROUP_ROBOT,CONST_CATEGORYID_BADROBOT, CONST_CATEGORYID_GOODROBOT)
 	WHERE NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassificationVVIP AS vv WHERE vv.CustID = class.CustID);
     
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee, CategoryID,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID)
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee, CategoryID,CategoryIDSource,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
         ,	tmp.RoleID
         ,	tmp.SubscriberID
 		,	tmp.IsLicensee
         ,	class.CategoryID
+		,	CASE WHEN cate.IsPAProbation = 1 THEN cate.RelevantCategoryID
+				 ELSE class.CategoryID END AS CategoryIDSource
         ,	cate.CategoryGroup
 		,	0 AS IsDirect
         ,	class.Remark
