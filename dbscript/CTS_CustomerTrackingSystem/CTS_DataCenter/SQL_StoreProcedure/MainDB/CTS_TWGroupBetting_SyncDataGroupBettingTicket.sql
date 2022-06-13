@@ -9,6 +9,7 @@ AS
 
 	Revisions:
 		- 20220314@Harvey.Nguyen: Init sp [Redmine ID: #170160]
+		- 20220505@Harvey.Nguyen: Insert GroupBetting ticket into history table
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_SyncDataGroupBettingTicket] 
@@ -16,7 +17,9 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
-	DECLARE @GBTicketXML XML;
+	DECLARE @GBTicketXML	XML
+		,	@ArchivedDate	DATETIME = DATEADD(day, -3, GETDATE())
+		;
 	SET @GBTicketXML = CONVERT(XML,@GBTicketXMLString);
 
 	IF OBJECT_ID('tempdb..#TmpGroupBettingTicket') IS NOT NULL
@@ -35,6 +38,17 @@ BEGIN
 	FROM @GBTicketXML.nodes('//TWGroupBettingTicket') AS T(C)
 	OPTION (OPTIMIZE FOR (@GBTicketXML = NULL));
 
+	DELETE FROM SPU_GroupBettingTicket_History
+	WHERE TransDate <= @ArchivedDate
+
+	INSERT INTO SPU_GroupBettingTicket_History (
+		TransId
+		,TransDate
+		)
+	SELECT TransId
+		,TransDate
+	FROM #TmpGroupBettingTicket
+
 	DELETE FROM SPU_GroupBettingTicket;
 
 	INSERT INTO SPU_GroupBettingTicket (
@@ -50,3 +64,4 @@ BEGIN
 	DROP TABLE #TmpGroupBettingTicket
 
 END
+
