@@ -8,6 +8,7 @@ AS
 
 	Revisions:
 		- 20220314@Harvey.Nguyen: Scan ticket [Redmine ID: #169671]
+		- 20220614@Harvey.Nguyen: Add rowlock in updating [Redmine ID: #169671]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_CountGBTicket]
@@ -59,7 +60,7 @@ BEGIN
 	UPDATE gbc
 	SET gbc.GBTicketCount = gbc.GBTicketCount + TEMP.GBTicketCount
 		,gbc.LastModifiedDate = GETDATE()
-	FROM dbo.SPU_GroupBettingCustomer gbc WITH (NOLOCK)
+	FROM dbo.SPU_GroupBettingCustomer gbc WITH(UPDLOCK, ROWLOCK)
 	INNER JOIN (
 		SELECT CustId
 			,TransDate
