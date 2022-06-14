@@ -14,6 +14,7 @@ sp: BEGIN
 		Original: 
 		Revisions: 
 			- 20220520@Aries.Nguyen: Created [Redmine ID: #172561]
+            - 20220614@Aries.Nguyen: CTS - Classify Category for new Customer (all roles) is not Latest [Redmine ID: #174084]
 		
         Param's Explanation:
 
@@ -38,7 +39,7 @@ sp: BEGIN
         ,	Recommend		BIGINT	UNSIGNED
         ,	DirectUpLine	BIGINT	UNSIGNED
 		,	IsLicensee		BIT
-		
+        
         ,	CreatedBy		INT
         ,	INDEX PK_Temp_CustInfo_CustID(CustID)
         ,	INDEX IX_Temp_CustInfo_DirectUpLine(DirectUpLine)
@@ -70,6 +71,7 @@ sp: BEGIN
         ,	IsFromTW		BIT
         ,	IsFromCTS		BIT
         ,	CreatedBy		INT
+		,	LastModifiedDate	DATETIME
         ,	PRIMARY KEY(CustID, CategoryID)
 	);
     
@@ -140,7 +142,7 @@ sp: BEGIN
 		,	tmp.CreatedBy
     FROM Temp_VVIPCust_Depth AS tmp;
     
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID,CategoryGroup, Remark, CreatedBy,IsFromTVS,IsFromTW,IsFromCTS)
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID,CategoryGroup, Remark, CreatedBy,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
         ,	class.CategoryID
@@ -150,6 +152,7 @@ sp: BEGIN
         ,	class.IsFromTVS
         ,	class.IsFromTW
         ,	class.IsFromCTS
+        ,	class.LastModifiedDate
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS class USE INDEX (PRIMARY) ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = 0 
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup != 61;
@@ -171,7 +174,7 @@ sp: BEGIN
 		,  	tmp.RoleID
         ,  	tmp.SubscriberID
         ,  	tmp.IsLicensee
-        
+         
         ,   cate.CategoryID		
 		,	cate.CategoryGroup
 		,   cate.Remark		
@@ -179,6 +182,7 @@ sp: BEGIN
         ,	cate.IsFromTVS
         ,	cate.IsFromTW
         ,	cate.IsFromCTS
+        ,	 cate.LastModifiedDate
     FROM Temp_CustCategory AS cate
 		LEFT JOIN Temp_CustInfo AS tmp ON tmp.CustID = cate.CustID
 	WHERE NOT EXISTS (SELECT 1 FROM Temp_VVIPCust AS vv WHERE cate.CTSCustID = vv.CTSCustID); 
