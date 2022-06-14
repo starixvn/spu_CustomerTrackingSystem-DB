@@ -307,7 +307,7 @@ BEGIN
     ORDER BY tmpPA.LastModifiedDate ASC, tmpPA.CategoryID ASC;
 
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate
-		, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, IsDirect, Remark, TVSRequestID)
+		, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, IsDirect, Remark, TVSRequestID, IsFromTVS, IsFromTW, IsFromCTS)
 	SELECT 		tmpPA.CustID
 		,	tmpPA.CTSCustID
 		,	tmpPA.CategoryID
@@ -329,6 +329,9 @@ BEGIN
 		,	tmpPA.IsDirectPA
         ,	tmpPA.Remark
 		,	tmpPA.TVSRequestID
+        ,	tmpPA.IsFromTVS
+        ,	tmpPA.IsFromTW
+        ,	tmpPA.IsFromCTS
 	FROM Temp_PA AS tmpPA;
 
     IF (ip_IsToQueue = 1) THEN
