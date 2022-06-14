@@ -15,6 +15,7 @@ BEGIN
 
 		Revisions:
 			- 20210507@Casey.Huynh: Created [Redmine ID: 154694]
+            - 20220519@Casey.Huynh: Update Get IsInternal FROM CTSCustomer
 		Param's Explanation (filtered by):
             - ip_TableName: the table name include CustID column
         CALL CTS_DataCenter.CTS_DC_ExcludeCustByCondition('table_name');
@@ -26,16 +27,14 @@ BEGIN
 		CustID BIGINT UNSIGNED
 	);
     
-    /***********GET EXCLUDE CustID BY OddsFeedSite, 8RM, BARM, CashOut**********/
+    /***********GET EXCLUDE CustID BY OddsFeedSite, 8RM, BARM, CashOut **********/
 	SET @insertStr =CONCAT(	"	INSERT INTO Temp_CustExclude(CustID)
 								SELECT tbl.CustID
 								FROM ",ip_TableName," as tbl 
 									INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tbl.CustID
 									LEFT JOIN CTS_DataCenter.StaticList AS stl ON stl.ItemID = cus.SiteID
 											AND stl.ListID = 11
-									WHERE (cus.Recommend IN (52466,5707545) AND cus.RoleID = 1)
-									  OR cus.UserName Like '%CashOut'
-                                      OR stl.ItemID IS NOT NULL");   
+									WHERE cus.IsInternal = 1 OR stl.ItemID IS NOT NULL");   
 
 	PREPARE insertStr FROM @insertStr;
 	EXECUTE insertStr;

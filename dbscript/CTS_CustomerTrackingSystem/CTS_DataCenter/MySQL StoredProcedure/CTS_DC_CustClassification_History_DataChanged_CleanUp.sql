@@ -15,6 +15,7 @@ sp:BEGIN
 		
 		Revisions:	
 			- 20210901@Aries.Nguyen: Created [RedmineID: #160758]	
+			- 20220519@Aries.Nguyen: Renovate the Category Log History[Redmine ID: #172560]
             
 		Param's Explanation (filtered by):
 
@@ -62,6 +63,13 @@ sp:BEGIN
 		,	TWTicketRejectRate  	DECIMAL(10,4)  
 		,	TWBetCount  			BIGINT  
 		,	TWDesktopUsageRate  	DECIMAL(10,4)  
+        ,	Remark 					VARCHAR(500)
+		,	IsDirect				BIT(1) 
+		,	TVSRequestID			BIGINT UNSIGNED 
+        ,	IsFromTVS 				BIT 
+		,	IsFromTW 				BIT
+		,	IsFromCTS 				BIT
+		,	IsFromAI 				BIT 
 		,	PRIMARY KEY (ID)
 		,	KEY 					IX_CTSCustomerClassification_History_CustID (CustID)
 	);
@@ -96,7 +104,7 @@ sp:BEGIN
 		  ORDER BY ID ASC
 		  LIMIT lv_BatchSize) AS tbl;
 
-    INSERT INTO Temp_History(ID, CustID, CTSCustID, SportGroupID, CategoryID,TurnoverRM , WinlossRM, BetCount, ActiveDays, RobotCounter, ProbationPeriodWinloss, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsAppliedCC, IsDataChanged, ActionType, IsAuto, LastModifiedDate, LastModifiedBy, InsertDate, TaggingType, TargetDangerLevel1, IsAppliedDangerLevel1, TWGroupBettingRate, TWTicketRejectRate, TWBetCount, TWDesktopUsageRate  )
+    INSERT INTO Temp_History(ID, CustID, CTSCustID, SportGroupID, CategoryID,TurnoverRM , WinlossRM, BetCount, ActiveDays, RobotCounter, ProbationPeriodWinloss, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsAppliedCC, IsDataChanged, ActionType, IsAuto, LastModifiedDate, LastModifiedBy, InsertDate, TaggingType, TargetDangerLevel1, IsAppliedDangerLevel1, TWGroupBettingRate, TWTicketRejectRate, TWBetCount, TWDesktopUsageRate,Remark,IsDirect,TVSRequestID, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI)
     SELECT 	ID  					
 		,	CustID  				
 		,	CTSCustID  				
@@ -126,6 +134,13 @@ sp:BEGIN
 		,	TWTicketRejectRate  	
 		,	TWBetCount  			
 		,	TWDesktopUsageRate  
+        ,	Remark 			
+		,	IsDirect
+		,	TVSRequestID
+		,	IsFromTVS 				 
+		,	IsFromTW 				
+		,	IsFromCTS 				
+		,	IsFromAI 				 
 	FROM CTS_DataCenter.CTSCustomerClassification_History
     WHERE ID BETWEEN lv_LastID AND lv_NextLastID
 		AND IsDataChanged = 1
@@ -186,6 +201,13 @@ sp:BEGIN
 			,	TWTicketRejectRate  	
 			,	TWBetCount  			
 			,	TWDesktopUsageRate 
+            ,	Remark 	
+			,	IsDirect
+			,	TVSRequestID
+            ,	IsFromTVS 				 
+			,	IsFromTW 				
+			,	IsFromCTS 				
+			,	IsFromAI 		
 		FROM Temp_History;
 		
 		UPDATE CTS_DataCenter.SystemParameter

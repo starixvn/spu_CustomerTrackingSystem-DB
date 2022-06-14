@@ -16,6 +16,7 @@ BEGIN
 			- 20210818@Harvey.Nguyen: Created [Redmine ID: #160382]
 			- 20210907@Long.Luu: Update Robot Users rules  [Redmine ID: #161232]
 			- 20220214@Long.Luu: Support new category for Good & Bad Robot User [Redmine ID: #167726]
+			- 20220603@Long.Luu: Merge Robot AI & Robot TW [Redmine ID: #172561]
             
 		Explanation:
 			- RobotType: 2-Bad | 1-Good | 0-Observed | -1-No classification | -2-Not Robot
@@ -30,9 +31,11 @@ BEGIN
 					]');
 
 	*/    
-    DECLARE CONST_ROBOTTYPE_NOTROBOT 	TINYINT DEFAULT -2;
-    DECLARE CONST_ROBOTTYPE_ROBOT 		TINYINT DEFAULT -1;
-    DECLARE CONST_GROUP_ROBOTUSER 		SMALLINT DEFAULT 61;
+    DECLARE CONST_ROBOTTYPE_NOTROBOT		TINYINT DEFAULT -2;
+    DECLARE CONST_ROBOTTYPE_ROBOT 			TINYINT DEFAULT -1;
+    DECLARE	CONST_CATEGORYGROUP_ROBOT 		INT DEFAULT 61;
+    DECLARE	CONST_CATEGORYGROUP_BADROBOT 	INT DEFAULT 163;
+    DECLARE	CONST_CATEGORYGROUP_GOODROBOT	INT DEFAULT 164;
    
     DROP TEMPORARY TABLE IF EXISTS Temp_Trans;
     CREATE TEMPORARY TABLE Temp_Trans(
@@ -80,9 +83,9 @@ BEGIN
 		,	js.TransID
 	FROM JSON_TABLE(ip_TransList,
 					 "$[*]" COLUMNS(
-								CustID			BIGINT UNSIGNED PATH "$.CustID" 
-							,	TransDate		DATETIME(3) PATH "$.TransDate"                               
-							,	TransID			BIGINT UNSIGNED PATH "$.TransID"
+								CustID			BIGINT UNSIGNED 	PATH "$.CustID" 
+							,	TransDate		DATETIME(3) 		PATH "$.TransDate"                               
+							,	TransID			BIGINT UNSIGNED 	PATH "$.TransID"
 						)
 				) AS js;    
 
@@ -113,7 +116,7 @@ BEGIN
 			FROM CTS_DataCenter.CTSCustomerClassification_History AS h
 				INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = h.CategoryID
 			WHERE h.CustID = t.CustID
-				AND cc.CategoryGroup = CONST_GROUP_ROBOTUSER
+				AND cc.CategoryGroup IN (CONST_CATEGORYGROUP_ROBOT, CONST_CATEGORYGROUP_BADROBOT, CONST_CATEGORYGROUP_GOODROBOT)
 				AND h.LastModifiedDate <= t.TransDate
 			ORDER BY h.LastModifiedDate DESC
 			LIMIT 1
