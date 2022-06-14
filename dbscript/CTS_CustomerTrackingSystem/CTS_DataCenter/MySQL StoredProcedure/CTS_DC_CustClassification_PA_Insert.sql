@@ -350,8 +350,9 @@ BEGIN
             ,	tmpPA.IsFromCTS AS IsFromCTS
 			,	3 AS ActionType # 0: Mark PA
 			,	CURRENT_TIMESTAMP(3) AS InsertTime
-		FROM Temp_PA AS tmpPA
-		WHERE tmpPA.RoleID > 1;
+		FROM Temp_PA AS tmpPA        
+		WHERE tmpPA.RoleID > 1
+        ORDER BY tmpPA.LastModifiedDate, tmpPA.CategoryID;
 
 		# WRITE USER LOG IF FROM PAM
          SELECT CreatedBy 
