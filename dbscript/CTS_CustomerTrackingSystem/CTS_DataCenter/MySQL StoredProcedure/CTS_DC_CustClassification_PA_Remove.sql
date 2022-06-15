@@ -72,7 +72,12 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_EvidencePA(
 			EvidenceID SMALLINT
         ,	PRIMARY KEY PK_Temp_EvidencePA(EvidenceID)
-    );  
+    ); 
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_KeepDirect;
+	CREATE TEMPORARY TABLE Temp_KeepDirect(
+		CustID INT UNSIGNED PRIMARY KEY
+	);
 	
 	INSERT IGNORE INTO Temp_InputCust(CustID, CTSCustID, RoleID, SubscriberID, CreatedBy, Remark, IsExceptDirectDownline, IsDirectPA)
 	SELECT 	DISTINCT tmpJs.CustID
@@ -121,11 +126,16 @@ BEGIN
     FROM CTS_DataCenter.CustEvidence AS ce
 		INNER JOIN Temp_CustPA AS tmpCp ON ce.CTSCustID = tmpCp.CTSCustID AND ce.Level = 0 
 					AND ce.EvidenceID IN (tmpCp.EvidenceID_Licensee, tmpCp.EvidenceID_Credit)
-	WHERE tmpCp.IsRemovedPA = 1;
+	WHERE tmpCp.IsRemovedPA = 1;    
+
+    INSERT INTO Temp_KeepDirect
+    SELECT DISTINCT tmpCp.CustID
+    FROM Temp_CustPA AS tmpCp WHERE tmpCp.IsRemovedPA = 0;   
     
 	UPDATE CTS_DataCenter.RobotDetection AS rd
+    INNER JOIN Temp_CustPA AS tmpCp ON  rd.CustID = tmpCp.CustID
 	SET rd.IsDisabled = 1
-    WHERE NOT EXISTS (SELECT 1 FROM Temp_CustPA AS tmpCp WHERE tmpCp.IsRemovedPA = 0 AND tmpCp.CustID = rd.CustID);
+    WHERE NOT EXISTS (SELECT 1 FROM Temp_KeepDirect AS tmpKD WHERE tmpCp.CustID = tmpKD.CustID);
     
 	DELETE ce
     FROM CTS_DataCenter.CustEvidence AS ce
@@ -168,7 +178,7 @@ BEGIN
 		 SELECT CONST_USERLOG_LOGTYPE AS LogTypeID
 			,	CONST_SPNAME AS SPName
 			,	lv_LogInfo AS LogInfo
-			,	DATE(lv_CurrentDateTime) AS CreatedDate
+			,	lv_CurrentDateTime AS CreatedDate
 			,	lv_CreatedBy AS CreatedBy;
             
         END IF;        
