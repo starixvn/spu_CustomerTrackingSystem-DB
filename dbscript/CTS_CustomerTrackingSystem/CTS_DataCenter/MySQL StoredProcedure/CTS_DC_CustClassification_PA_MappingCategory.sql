@@ -50,7 +50,7 @@ BEGIN
         , 	ReasonID		   		INT
         ,	CategoryGroup     		SMALLINT UNSIGNED
         ,	IsProbation	     		BOOLEAN
-        ,	TargetCC				SMALLINT UNSIGNED
+        ,	TargetCC				SMALLINT
 		,	TargetDangerLevel		SMALLINT UNSIGNED
         , 	ToEvidenceID			SMALLINT
         , 	RelevantCategoryID		SMALLINT UNSIGNED
