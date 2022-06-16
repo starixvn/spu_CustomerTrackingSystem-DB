@@ -14,6 +14,7 @@ sp: BEGIN
 		Original: 
 		Revisions:  
 			- 20220520@Aries.Nguyen: Created [Redmine ID: #172561]
+            - 20220616@Aries.Nguyen: Cannot mark PA (affected by uplines) correctly with First Mark [Redmine ID: #174136]
 		
         Param's Explanation:
 
@@ -60,8 +61,8 @@ sp: BEGIN
         ,	IsLicensee			BIT
         
         ,	CategoryGroup   	SMALLINT
-        ,   CategoryID			BIGINT UNSIGNED 
-        ,   CategoryIDSource	BIGINT UNSIGNED 
+        ,   CategoryID			INT
+        ,   CategoryIDSource	INT 
         ,	IsDirect			BIT
         ,	IsFromTVS 			BIT DEFAULT 0
         ,	IsFromTW 			BIT DEFAULT 0
@@ -78,6 +79,16 @@ sp: BEGIN
         
         ,	LastModifiedDate	DATETIME
 		,	Remark				VARCHAR(500)
+		,	PRIMARY KEY(CustID,CategoryIDSource)
+	);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustCateDate;    
+	CREATE TEMPORARY TABLE Temp_CustCateDate (	  
+			CustID				BIGINT UNSIGNED 
+        ,	CategoryIDSource   	SMALLINT
+        
+        ,	Remark				VARCHAR(500)
+        ,	LastModifiedDate	DATETIME
 		,	PRIMARY KEY(CustID,CategoryIDSource)
 	);
     
@@ -138,10 +149,11 @@ sp: BEGIN
         ,	tmp.SubscriberID
 		,	tmp.IsLicensee
         ,	class.CategoryID
-        ,	CASE WHEN cate.IsPAProbation = 1 THEN cate.RelevantCategoryID
+        ,	CASE WHEN class.CategoryID IN (62,82,102,122,142,162) THEN 62
+				 WHEN cate.IsPAProbation = 1 THEN cate.RelevantCategoryID
 				 ELSE class.CategoryID END AS CategoryIDSource
         ,	cate.CategoryGroup
-		,	1 AS IsDirect
+		,	class.IsDirect
         ,	class.Remark
         ,	class.IsFromTVS 		
         ,	class.IsFromTW 		
@@ -150,12 +162,25 @@ sp: BEGIN
         ,	class.TVSRequestID
         ,	CASE WHEN class.CategoryID = CONST_CATEGORYGROUP_ROBOT THEN 1 ELSE 0 END AS IsRobot
     FROM Temp_CustInfo AS tmp    
-		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationOldPA AS class USE INDEX (PRIMARY) ON class.CustID = tmp.CustID AND class.IsDirect = 1
+		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationOldPA AS class USE INDEX (PRIMARY) ON class.CustID = tmp.CustID AND class.SportGroupID = CONST_GROUP_PA
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID 
 														  AND (cate.CategoryGroup NOT IN (CONST_CATEGORYGROUP_ROBOT,CONST_CATEGORYID_BADROBOT, CONST_CATEGORYID_GOODROBOT)
 															 OR (cate.CategoryGroup IN (CONST_CATEGORYGROUP_ROBOT,CONST_CATEGORYID_BADROBOT, CONST_CATEGORYID_GOODROBOT) AND (class.IsFromCTS = 1 OR class.IsFromTVS = 1)))
 	ON DUPLICATE KEY UPDATE  IsFromCTS = 1
                         ,	 Remark = class.Remark;	
+    
+    INSERT IGNORE INTO Temp_CustCateDate(CustID,CategoryIDSource,Remark,LastModifiedDate)
+    SELECT 	tmp.CustID
+		,	tmp.CategoryIDSource
+        ,	tmp.Remark
+        ,	tmp.LastModifiedDate
+    FROM Temp_CustCategory AS tmp
+    WHERE tmp.IsDirect = 0;
+    
+    DELETE 
+    FROM Temp_CustCategory AS tmp
+    WHERE IsDirect = 0;
+	
 	
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,CategoryID,CategoryIDSource,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID,IsRobot)
     SELECT 	tmp.CTSCustID
@@ -164,7 +189,8 @@ sp: BEGIN
         ,	tmp.SubscriberID
 		,	tmp.IsLicensee
         ,	class.CategoryID
-        ,	CASE WHEN cate.IsPAProbation = 1 THEN cate.RelevantCategoryID
+        ,	CASE WHEN class.CategoryID IN (62,82,102,122,142,162) THEN 62
+				 WHEN cate.IsPAProbation = 1 THEN cate.RelevantCategoryID
 				 ELSE class.CategoryID END AS CategoryIDSource
         ,	cate.CategoryGroup
 		,	1 AS IsDirect
@@ -176,7 +202,7 @@ sp: BEGIN
 		,	class.TVSRequestID
         ,	CASE WHEN class.CategoryID = CONST_CATEGORYGROUP_ROBOT THEN 1 ELSE 0 END AS IsRobot
     FROM Temp_CustInfo AS tmp    
-		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS class USE INDEX (PRIMARY) ON class.CustID = tmp.CustID AND class.IsDirect = 1
+		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS class USE INDEX (PRIMARY) ON class.CustID = tmp.CustID AND class.SportGroupID = CONST_GROUP_PA AND class.IsDirect = 1
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID 
 															AND (cate.CategoryGroup NOT IN (CONST_CATEGORYGROUP_ROBOT,CONST_CATEGORYID_BADROBOT, CONST_CATEGORYID_GOODROBOT)
 															 OR (cate.CategoryGroup  IN (CONST_CATEGORYGROUP_ROBOT,CONST_CATEGORYID_BADROBOT, CONST_CATEGORYID_GOODROBOT) AND (class.IsFromCTS = 1 OR class.IsFromTVS = 1)))
@@ -191,7 +217,8 @@ sp: BEGIN
         ,	tmp.SubscriberID
 		,	tmp.IsLicensee
         ,	class.CategoryID
-		,	CASE WHEN cate.IsPAProbation = 1 THEN cate.RelevantCategoryID
+		,	CASE WHEN class.CategoryID IN (62,82,102,122,142,162) THEN 62
+				 WHEN cate.IsPAProbation = 1 THEN cate.RelevantCategoryID
 				 ELSE class.CategoryID END AS CategoryIDSource
         ,	cate.CategoryGroup
 		,	0 AS IsDirect
@@ -204,7 +231,11 @@ sp: BEGIN
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationOldPA AS class USE INDEX (PRIMARY)  ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = CONST_GROUP_PA AND class.IsDirect = 1
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup NOT IN (CONST_CATEGORYGROUP_ROBOT,CONST_CATEGORYID_BADROBOT, CONST_CATEGORYID_GOODROBOT)
-	WHERE NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassificationVVIP AS vv WHERE vv.CustID = class.CustID);
+	WHERE NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassificationVVIP AS vv WHERE vv.CustID = class.CustID)
+    ON DUPLICATE KEY UPDATE  Remark = CASE WHEN  class.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN class.Remark
+										   ELSE Temp_CustCategory.Remark END
+						,	LastModifiedDate = CASE WHEN class.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN class.LastModifiedDate
+													ELSE Temp_CustCategory.LastModifiedDate END;
     
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee, CategoryID,CategoryIDSource,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID)
     SELECT 	tmp.CTSCustID
@@ -213,7 +244,8 @@ sp: BEGIN
         ,	tmp.SubscriberID
 		,	tmp.IsLicensee
         ,	class.CategoryID
-		,	CASE WHEN cate.IsPAProbation = 1 THEN cate.RelevantCategoryID
+		,	CASE WHEN class.CategoryID IN (62,82,102,122,142,162) THEN 62
+				 WHEN cate.IsPAProbation = 1 THEN cate.RelevantCategoryID
 				 ELSE class.CategoryID END AS CategoryIDSource
         ,	cate.CategoryGroup
 		,	0 AS IsDirect
@@ -225,8 +257,17 @@ sp: BEGIN
         ,	class.TVSRequestID
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS class USE INDEX (PRIMARY) ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = CONST_GROUP_PA AND class.IsDirect = 1
-        STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup NOT IN (CONST_CATEGORYGROUP_ROBOT,CONST_CATEGORYID_BADROBOT, CONST_CATEGORYID_GOODROBOT);
-        
+        STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup NOT IN (CONST_CATEGORYGROUP_ROBOT,CONST_CATEGORYID_BADROBOT, CONST_CATEGORYID_GOODROBOT)
+	ON DUPLICATE KEY UPDATE  Remark = CASE WHEN  class.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN class.Remark
+										   ELSE Temp_CustCategory.Remark END
+						,	LastModifiedDate = CASE WHEN class.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN class.LastModifiedDate
+													ELSE Temp_CustCategory.LastModifiedDate END;
+	
+    UPDATE Temp_CustCategory AS cate
+    INNER JOIN Temp_CustCateDate AS tmp ON cate.CustID = tmp.CustID AND cate.CategoryIDSource = tmp.CategoryIDSource
+    SET 	cate.LastModifiedDate = tmp.LastModifiedDate
+		,	cate.Remark = tmp.Remark;
+    
 	SELECT 	CTSCustID
 		,	CustID
 		,	RoleID 			 
@@ -251,6 +292,7 @@ sp: BEGIN
         ,  	LastModifiedDate
 		,	Remark		
     FROM Temp_CustCategory;
+ 
 END$$
 
 DELIMITER ;
