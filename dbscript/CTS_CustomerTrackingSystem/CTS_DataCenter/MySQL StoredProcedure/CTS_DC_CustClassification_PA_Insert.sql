@@ -8,7 +8,6 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_Insert`(
     ,   IN ip_ProblemAccounts 	JSON
 )
     SQL SECURITY INVOKER
-
 BEGIN
 /*
 		Created:	20200715@Long.Luu
@@ -66,7 +65,7 @@ BEGIN
         ,	ExistCategoryID 		SMALLINT UNSIGNED
 		,	CategoryID 				SMALLINT UNSIGNED
         ,	CategoryGroup			SMALLINT UNSIGNED
-        ,	TargetCC				SMALLINT UNSIGNED
+        ,	TargetCC				SMALLINT
 		,	TargetDangerLevel		SMALLINT UNSIGNED
         , 	ToEvidenceID			SMALLINT
         ,	IsProbation				BOOLEAN
