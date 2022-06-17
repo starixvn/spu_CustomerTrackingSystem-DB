@@ -14,6 +14,7 @@ AS
 	Revisions:
 		- 20220314@Harvey.Nguyen: Scan ticket				[Redmine ID: #169671]
 		- 20220613@Harvey.Nguyen: Remove credit tickets		[Redmine ID: #169671]
+		- 20220617@Harvey.Nguyen: Fix bug wrong inner join	[Redmine ID: #169671]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_ScanTicket] '2022-02-15 23:10:15.983','2022-02-16 02:15:20.983',10900
@@ -241,7 +242,7 @@ BEGIN
 			,tcv.ToTime
 		FROM #TmpSuspectTicket tfs
 		INNER JOIN #TmpTicketCountViolation AS tcv ON tfs.RuleId = tcv.RuleId
-			AND tfs.Betteam = tcv.Betteam
+			AND tfs.Betteam = tcv.Betteam AND tfs.FromTime = tcv.FromTime AND tfs.ToTime = tcv.ToTime
 		INNER JOIN dbo.SPU_GroupBettingRule AS gbr ON tfs.RuleId = gbr.RuleId
 		WHERE tfs.RFM > gbr.RFMLimitValue
 		GROUP BY tcv.RuleId
@@ -276,7 +277,7 @@ BEGIN
 			,tcv.ToTime
 		FROM #TmpSuspectTicket AS tfs
 		INNER JOIN #TmpTicketCountViolation AS tcv ON tfs.RuleId = tcv.RuleId
-			AND tfs.Betteam = tcv.Betteam
+			AND tfs.Betteam = tcv.Betteam AND tfs.FromTime = tcv.FromTime AND tfs.ToTime = tcv.ToTime
 		INNER JOIN dbo.SPU_GroupBettingRule AS gbr ON tfs.RuleId = gbr.RuleId
 		WHERE tfs.CustomerClass NOT IN (1,2)
 		GROUP BY tcv.RuleId
@@ -311,7 +312,7 @@ BEGIN
 			,tcv.ToTime
 		FROM #TmpSuspectTicket AS tfs
 		INNER JOIN #TmpTicketCountViolation AS tcv ON tfs.RuleId = tcv.RuleId
-			AND tfs.Betteam = tcv.Betteam
+			AND tfs.Betteam = tcv.Betteam AND tfs.FromTime = tcv.FromTime AND tfs.ToTime = tcv.ToTime
 		INNER JOIN dbo.SPU_GroupBettingRule AS gbr ON tfs.RuleId = gbr.RuleId
 		WHERE tfs.BetFrom IN ('x','z')
 		GROUP BY tcv.RuleId
