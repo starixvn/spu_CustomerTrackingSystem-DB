@@ -15,6 +15,7 @@ sp: BEGIN
 		Revisions: 
 			- 20220520@Aries.Nguyen: Created [Redmine ID: #172561]
             - 20220614@Aries.Nguyen: CTS - Classify Category for new Customer (all roles) is not Latest [Redmine ID: #174084]
+            - 20220616@Aries.Nguyen: Cannot mark PA (affected by uplines) correctly with First Mark [Redmine ID: #174136]
 		
         Param's Explanation:
 
@@ -62,17 +63,18 @@ sp: BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustCategory;    
 	CREATE TEMPORARY TABLE Temp_CustCategory (	  
-			CTSCustID		BIGINT UNSIGNED 
-        ,   CustID			BIGINT UNSIGNED 
-        ,   CategoryID		INT
-        ,   CategoryGroup	INT
-		,   Remark			VARCHAR(500)
-		,	IsFromTVS		BIT
-        ,	IsFromTW		BIT
-        ,	IsFromCTS		BIT
-        ,	CreatedBy		INT
+			CTSCustID		    BIGINT UNSIGNED 
+        ,   CustID			    BIGINT UNSIGNED 
+        ,   CategoryID		    INT
+        ,   CategoryIDSource	INT  
+        ,   CategoryGroup	    INT
+		,   Remark			    VARCHAR(500)
+		,	IsFromTVS		    BIT
+        ,	IsFromTW		    BIT
+        ,	IsFromCTS		    BIT
+        ,	CreatedBy		    INT
 		,	LastModifiedDate	DATETIME
-        ,	PRIMARY KEY(CustID, CategoryID)
+        ,	PRIMARY KEY(CustID,CategoryIDSource)
 	);
     
     
@@ -142,10 +144,13 @@ sp: BEGIN
 		,	tmp.CreatedBy
     FROM Temp_VVIPCust_Depth AS tmp;
     
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID,CategoryGroup, Remark, CreatedBy,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate)
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID,CategoryIDSource,CategoryGroup, Remark, CreatedBy,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
         ,	class.CategoryID
+        ,	CASE WHEN class.CategoryID IN (62,82,102,122,142,162) THEN 62
+				 WHEN cate.IsPAProbation = 1 THEN cate.RelevantCategoryID
+				 ELSE class.CategoryID END AS CategoryIDSource
         ,	cate.CategoryGroup 
         ,	class.Remark 
         ,	class.CreatedBy

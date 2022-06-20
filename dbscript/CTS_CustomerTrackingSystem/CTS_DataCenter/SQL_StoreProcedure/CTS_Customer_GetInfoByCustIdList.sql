@@ -23,6 +23,7 @@ AS
 		- 20210205@Casey.Huynh:	Return  Customer Info [Redmine ID: 149941]
 		- 20210423@Casey.Huynh:	Enhance Get Closed and Suspended Status of Credit Customer from table bodb02.dbo.CustProductStatus [Redmine ID: #152259]		
 		- 20211214@Long.Luu:	Return more data (danger from 1 to 5) [Redmine: #165105]
+		- 20220616@Long.Luu:	Get Licensee Info [Redmine ID: 174136]
 
 	Developer's Notes:
 		- @sourceType: 0- GET New Customer Info, 1- Get Info Customer table, 2-Get CustInfo table, 3 GET Info CustProductStatus table
@@ -61,7 +62,8 @@ BEGIN;
 		,	Srecommend		INT
 		,	Mrecommend		INT
 		,	Recommend		INT
-		,	CreatedDate		DATETIME		
+		,	CreatedDate		DATETIME	
+		,	IsLicensee		BIT		
 	);
 
 	INSERT	INTO #tmpCustomers (CustId)
@@ -104,9 +106,10 @@ BEGIN;
 			,	a.Danger3 = c.danger3
 			,	a.Danger4 = c.Danger4
 			,	a.Danger5 = c.Danger5
+			,	a.IsLicensee = CASE WHEN cs.custid IS NULL THEN 0 ELSE 1 END
 		FROM #tmpCustomers AS a
 			INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON a.custid = c.custid
-			INNER JOIN bodb02.dbo.Dep_CustSuper AS cs WITH(NOLOCK) ON a.Srecommend = cs.custid;
+			LEFT JOIN bodb02.dbo.Dep_CustSuper AS cs WITH(NOLOCK) ON a.Srecommend = cs.custid;
 
 		UPDATE a WITH(ROWLOCK, UPDLOCK)
 		SET a.CustStatusID = (CASE 
@@ -158,6 +161,7 @@ BEGIN;
 			,	a.Danger3		AS Danger3			
 			,	a.Danger4		AS Danger4
 			,	a.Danger5		AS Danger5
+			,	a.IsLicensee	AS IsLicensee
 		FROM #tmpCustomers AS a WITH(NOLOCK);
 	END;
 
@@ -175,6 +179,7 @@ BEGIN;
 			,	a.Mrecommend	AS MRecommend
 			,	a.Recommend		AS Recommend
 			,	a.CreatedDate	AS CreatedDate
+			,	a.IsLicensee	AS IsLicensee
 		FROM #tmpCustomers AS a WITH(NOLOCK)
 	END;
 
