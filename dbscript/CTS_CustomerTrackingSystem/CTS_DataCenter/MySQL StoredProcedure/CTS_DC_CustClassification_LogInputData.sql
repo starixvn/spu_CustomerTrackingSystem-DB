@@ -17,6 +17,7 @@ BEGIN
 		Original: 
 		Revisions:
 			- 20210707@Long.Luu: Created [Redmine ID: #157203] 
+            
 		Example:
 			call CTS_DataCenter.CTS_DC_CustClassification_LogInputData ('[{"CustID": 111, "InputValue": "1"}]',1, @ErrorMessage);    
 	*/ 
@@ -26,7 +27,7 @@ BEGIN
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
     
-    INSERT INTO CTSCustomerClassification_InputDataLog(CustID,FunctionID,InputValue,CreatedDate,CreatedTime)
+    INSERT INTO CTSCustomerClassification_InputDataLog(CustID,FunctionID,JsonInputValue,CreatedDate,CreatedTime)
 	SELECT 	DISTINCT tmpTable.CustID
 		, 	ip_FunctionID
 		, 	tmpTable.InputValue
@@ -35,7 +36,7 @@ BEGIN
 	FROM JSON_TABLE(ip_InputData,
 		 "$[*]" COLUMNS(
 			  CustID 			BIGINT UNSIGNED		PATH "$.CustID"
-            , InputValue 		VARCHAR(50)			PATH "$.InputValue"
+            , InputValue 		JSON				PATH "$.InputValue"
 		 )) AS tmpTable; 
          
 END$$
