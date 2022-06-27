@@ -15,8 +15,12 @@ USE CTS_DataCenter;
 ALTER TABLE MatchMonitor
 ADD COLUMN ClassifyStatus TINYINT DEFAULT 0 COMMENT '0: Default, 1: Classify Done, 2: Ready To Classify (Match Complete)';
 
+ALTER TABLE MatchMonitor
+ADD INDEX IX_MatchMonitor_SportTypeClassifyStatus(SportType,ClassifyStatus);
+
 ALTER TABLE MatchMonitorDetails
 ADD COLUMN ClassifyStatus TINYINT  DEFAULT 0 COMMENT '0: Default, 1: Classify Done';
+
 /******************StaticList***************************/
 USE CTS_DataCenter;
 INSERT INTO CTS_DataCenter.StaticList(ListID,ItemID,ListName,ListNameDisplay,ItemName,ItemNameDisplay,PriorityOrder,Status,Description,CreatedDate)
