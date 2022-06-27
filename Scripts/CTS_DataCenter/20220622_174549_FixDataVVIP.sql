@@ -21,6 +21,9 @@ CREATE TEMPORARY TABLE Temp_VVIPCust(
   ID bigint unsigned NOT NULL AUTO_INCREMENT,
   CTSCustID bigint unsigned DEFAULT NULL,
   CustID bigint unsigned DEFAULT NULL,
+  Srecommend int,
+  Mrecommend int,
+  Recommend int,
   RoleID tinyint DEFAULT NULL,
   SubscriberID int unsigned DEFAULT NULL,
   CreatedBy bigint unsigned DEFAULT NULL,
@@ -30,12 +33,14 @@ CREATE TEMPORARY TABLE Temp_VVIPCust(
   , KEY IX_CTSCustomerClassificationQueue_CustID (CustID)
 ) ENGINE=InnoDB;
 
-INSERT INTO Temp_VVIPCust(CTSCustID,CustID,RoleID,SubscriberID,CreatedBy,Remark)
+INSERT INTO Temp_VVIPCust(CTSCustID,CustID,RoleID,SubscriberID,CreatedBy,Remark, SRecommend,MRecommend,Recommend)
 SELECT 	vip.CTSCustID
 	,	vip.CustID,vip.RoleID,vip.SubscriberID,vip.CreatedBy,vip.Remark
+    ,	cus.SRecommend, cus.MRecommend, cus.Recommend
 FROM CTSCustomerClassificationVVIP AS vip
-INNER JOIN CTSCustomerClassification_History AS his ON vip.CustID = his.CustID
-INNER JOIN StaticList s ON his.SourceTypeID = s.ItemID AND ListID = 4
+	INNER JOIN CTSCustomerClassification_History AS his ON vip.CustID = his.CustID
+	INNER JOIN CTSCustomer cus on his.CTSCustID = cus.CTSCustID
+	INNER JOIN StaticList s ON his.SourceTypeID = s.ItemID AND ListID = 4
 WHERE vip.IsAffectToDownline = 0 
 	AND vip.RoleID > 1 
     AND his.SourceTypeID = 30 
@@ -55,12 +60,23 @@ SET		vip.IsDirect = 0
 
 SET @MaxHistoryID = (SELECT MAX(ID) FROM CTSCustomerClassification_History AS his);
 
+/**************CHECK DATA IN TEMPORARY TABLE NOT INCLUDE BOTH MAster and Agent the same line ******************************************************/
+    
+SELECT MRecommend,  COUNT(DISTINCT RoleID) # Expect count = 1
+FROM Temp_VVIPCust
+Group by MRecommend;
+/************INSERT QUEUE*******************************************/
+
 INSERT INTO CTSCustomerClassificationQueue (ID, CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryGroup, CategoryID, LastDownlineCTSCustID, ActionType, InsertTime, IsFromCTS, IsDirect)
 SELECT tmpVvip.ID, tmpVvip.CTSCustID, tmpVvip.CustID, tmpVvip.RoleID, tmpVvip.SubscriberID, CreatedBy, 'HF174549' AS Remark, 
 	210 AS CategoryGroup, 210 AS CategoryID, 0 AS LastDownlineCTSCustID, 1 AS ActionType, CURRENT_TIMESTAMP(3) InsertTime, 1 AS IsFromCTS, 0 AS IsDirect
 FROM Temp_VVIPCust AS tmpVvip;
 
 /*****WAIT QUEUE RUN DONE DATA********************/
+
+SELECT q.* #RETUNR EMPTY
+FROM CTSCustomerClassificationQueue AS q
+	INNER JOIN  Temp_VVIPCust AS tmpVvip ON tmpVvip.CustID = q.CustID;
 
 /******UPDATE SourceTypeID FOR AGENT*************/   
 UPDATE CTS_DataCenter.CTSCustomerClassification_History AS his
