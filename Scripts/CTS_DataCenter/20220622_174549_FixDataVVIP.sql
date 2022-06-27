@@ -1,3 +1,16 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
+/*
+Creator:	20220627@Casey.Huynh
+Task:	 	Fix Missing VVIP
+Server:  	Master
+DBName:		CTS_DataCenter
+
+Revisions: 
+		- 20220627@Casey.Huynh: Created [Redmine ID: #174549]
+Reviewer:
+*/
+
+
 /* Step01. GET List VVIP SMA CTSCustomerClassificationVVIP WITH====================
    - IsDirect IS NULL: the VVIP added before "Renovation PA"
    - IsAffectToDownline = 0: Maybe Issue record
@@ -12,8 +25,9 @@ CREATE TEMPORARY TABLE Temp_VVIPCust(
   SubscriberID int unsigned DEFAULT NULL,
   CreatedBy bigint unsigned DEFAULT NULL,
   Remark varchar(300) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
-  PRIMARY KEY (ID),
-  KEY IX_CTSCustomerClassificationQueue_CustID (CustID)
+  PRIMARY KEY (ID)
+  , UNIQUE KEY UX_Temp_VVIPCust(CustID)
+  , KEY IX_CTSCustomerClassificationQueue_CustID (CustID)
 ) ENGINE=InnoDB;
 
 INSERT INTO Temp_VVIPCust(CTSCustID,CustID,RoleID,SubscriberID,CreatedBy,Remark)
@@ -51,23 +65,23 @@ FROM Temp_VVIPCust AS tmpVvip;
 UPDATE CTS_DataCenter.CTSCustomerClassification_History AS his
 	INNER JOIN CTS_DataCenter.CTSCustomerClassificationVVIP AS vvip ON his.CTSCustID = vvip.CTSCustID AND vvip.IsDirect = 0
 	INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON vvip.CustID = cus.Recommend AND cus.RoleID = 2
-	INNER JOIN  Temp_VVIPCust AS tmpVvip ON his.CustID = tmpVvip.CustID AND his.CategoryID = 210
-SET his.SourceTypeID = 30
+	INNER JOIN  Temp_VVIPCust AS tmpVvip ON tmpVvip.CustID = Mrecommend
+SET his.SourceTypeID = 30, his.CreatedBy = 10278938
 WHERE his.ID > @MaxHistoryID AND his.CategoryID = 210;
 
 /******UPDATE SourceTypeID FOR MEMBER*************/   
 UPDATE CTS_DataCenter.CTSCustomerClassification_History AS his
 INNER JOIN CTS_DataCenter.CTSCustomerClassificationVVIP AS vvip ON his.CTSCustID = vvip.CTSCustID AND vvip.IsDirect = 0
 INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON vvip.CustID = cus.CustID AND cus.RoleID = 1
-INNER JOIN  Temp_VVIPCust AS tmpVvip ON his.CustID = tmpVvip.CustID AND his.CategoryID = 210
-SET his.SourceTypeID = 30
+INNER JOIN  Temp_VVIPCust AS tmpVvip ON tmpVvip.CustID IN (Mrecommend, Recommend)
+SET his.SourceTypeID = 30, his.CreatedBy = 10278938
 WHERE his.ID > @MaxHistoryID AND his.CategoryID = 210;
     
 /*Step04: Innit data before VVIP Downline launched*/
 INSERT INTO CTS_DataCenter.CTSCustomerClassificationVVIP(CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryID, IsAffectToDownline, InsertTime, IsDirect)
 SELECT cls.CTSCustID, cls.CustID, cus.RoleID, cus.SubscriberID, cls.CreatedBy, cls.Remark, cls.CategoryID,  0 AS IsAffectToDownline, cls.CreatedDate, 1 AS IsDirect
 FROM CTS_DataCenter.CTSCustomerClassification AS cls
-INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = cls.CustID
+INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = cls.CTSCustID
 LEFT JOIN CTS_DataCenter.CTSCustomerClassificationVVIP AS vvip ON cls.CTSCustID = vvip.CTSCustID
 WHERE cls.CategoryID = 210 AND vvip.CTSCustID IS NULL;
 
