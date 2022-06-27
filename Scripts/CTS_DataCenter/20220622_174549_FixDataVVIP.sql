@@ -33,7 +33,6 @@ CREATE TEMPORARY TABLE Temp_VVIPCust(
 INSERT INTO Temp_VVIPCust(CTSCustID,CustID,RoleID,SubscriberID,CreatedBy,Remark)
 SELECT 	vip.CTSCustID
 	,	vip.CustID,vip.RoleID,vip.SubscriberID,vip.CreatedBy,vip.Remark
-#SourceTypeID, s.ItemName, vip.InsertTime, vip.RoleID, his.*, vip.*
 FROM CTSCustomerClassificationVVIP AS vip
 INNER JOIN CTSCustomerClassification_History AS his ON vip.CustID = his.CustID
 INNER JOIN StaticList s ON his.SourceTypeID = s.ItemID AND ListID = 4
@@ -57,31 +56,33 @@ SET		vip.IsDirect = 0
 SET @MaxHistoryID = (SELECT MAX(ID) FROM CTSCustomerClassification_History AS his);
 
 INSERT INTO CTSCustomerClassificationQueue (ID, CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryGroup, CategoryID, LastDownlineCTSCustID, ActionType, InsertTime, IsFromCTS, IsDirect)
-SELECT tmpVvip.ID, tmpVvip.CTSCustID, tmpVvip.CustID, tmpVvip.RoleID, tmpVvip.SubscriberID, CreatedBy, NULL AS Remark, 
+SELECT tmpVvip.ID, tmpVvip.CTSCustID, tmpVvip.CustID, tmpVvip.RoleID, tmpVvip.SubscriberID, CreatedBy, 'HF174549' AS Remark, 
 	210 AS CategoryGroup, 210 AS CategoryID, 0 AS LastDownlineCTSCustID, 1 AS ActionType, CURRENT_TIMESTAMP(3) InsertTime, 1 AS IsFromCTS, 0 AS IsDirect
 FROM Temp_VVIPCust AS tmpVvip;
+
+/*****WAIT QUEUE RUN DONE DATA********************/
 
 /******UPDATE SourceTypeID FOR AGENT*************/   
 UPDATE CTS_DataCenter.CTSCustomerClassification_History AS his
 	INNER JOIN CTS_DataCenter.CTSCustomerClassificationVVIP AS vvip ON his.CTSCustID = vvip.CTSCustID AND vvip.IsDirect = 0
 	INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON vvip.CustID = cus.Recommend AND cus.RoleID = 2
-	INNER JOIN  Temp_VVIPCust AS tmpVvip ON tmpVvip.CustID = Mrecommend
-SET his.SourceTypeID = 30, his.CreatedBy = 10278938
-WHERE his.ID > @MaxHistoryID AND his.CategoryID = 210;
+	INNER JOIN  Temp_VVIPCust AS tmpVvip ON tmpVvip.CustID = cus.Mrecommend
+SET his.SourceTypeID = 30, his.LastModifiedBy = 10278938,  his.Remark = ''
+WHERE his.ID > @MaxHistoryID AND his.CategoryID = 210 AND his.Remark = 'HF174549';
 
 /******UPDATE SourceTypeID FOR MEMBER*************/   
 UPDATE CTS_DataCenter.CTSCustomerClassification_History AS his
-INNER JOIN CTS_DataCenter.CTSCustomerClassificationVVIP AS vvip ON his.CTSCustID = vvip.CTSCustID AND vvip.IsDirect = 0
-INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON vvip.CustID = cus.CustID AND cus.RoleID = 1
-INNER JOIN  Temp_VVIPCust AS tmpVvip ON tmpVvip.CustID IN (Mrecommend, Recommend)
-SET his.SourceTypeID = 30, his.CreatedBy = 10278938
-WHERE his.ID > @MaxHistoryID AND his.CategoryID = 210;
+	INNER JOIN CTS_DataCenter.CTSCustomerClassificationVVIP AS vvip ON his.CTSCustID = vvip.CTSCustID AND vvip.IsDirect = 0
+	INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON vvip.CustID = cus.CustID AND cus.RoleID = 1
+	INNER JOIN  Temp_VVIPCust AS tmpVvip ON tmpVvip.CustID IN (cus.Mrecommend, cus.Recommend)
+SET his.SourceTypeID = 30, his.LastModifiedBy = 10278938, his.Remark = ''
+WHERE his.ID > @MaxHistoryID AND his.CategoryID = 210 AND his.Remark = 'HF174549';
     
 /*Step04: Innit data before VVIP Downline launched*/
 INSERT INTO CTS_DataCenter.CTSCustomerClassificationVVIP(CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryID, IsAffectToDownline, InsertTime, IsDirect)
-SELECT cls.CTSCustID, cls.CustID, cus.RoleID, cus.SubscriberID, cls.CreatedBy, cls.Remark, cls.CategoryID,  0 AS IsAffectToDownline, cls.CreatedDate, 1 AS IsDirect
+SELECT cls.CTSCustID, cls.CustID, cus.RoleID, cus.Subkhông scriberID, cls.CreatedBy, cls.Remark, cls.CategoryID,  0 AS IsAffectToDownline, cls.CreatedDate, 1 AS IsDirect
 FROM CTS_DataCenter.CTSCustomerClassification AS cls
-INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = cls.CTSCustID
+	INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = cls.CTSCustID
 LEFT JOIN CTS_DataCenter.CTSCustomerClassificationVVIP AS vvip ON cls.CTSCustID = vvip.CTSCustID
 WHERE cls.CategoryID = 210 AND vvip.CTSCustID IS NULL;
 
