@@ -1,4 +1,4 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
 DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_MatchMonitor_Get`;
 
 DELIMITER $$
@@ -19,10 +19,14 @@ BEGIN
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_MatchMonitor_Get();
 	 */ 	
+     DECLARE lv_Sub90minute DATETIME;
+     
+     SET lv_Sub90minute = TIMESTAMPADD(MINUTE,-90, NOW());
      
      SELECT DISTINCT mm.MatchID
      FROM CTS_DataCenter.MatchMonitor AS mm
-     WHERE mm.SportType = 1 AND mm.ClassifyStatus = 0;
-    
+     WHERE	mm.SportType = 1 
+		AND mm.ClassifyStatus = 0 
+        AND mm.KickOffTime < lv_Sub90minute; 
 END$$
 DELIMITER ;
