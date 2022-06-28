@@ -127,10 +127,10 @@ BEGIN
 			AND b.bettype IN (1,3,7,8,609,610)
 	ORDER BY b.transid ASC;
 
-	SELECT @FromTime = DATEADD(MINUTE, -5, MIN(transdate))
+	SELECT @FromTime = DATEADD(MINUTE, -1, MIN(transdate))
 	FROM #TempTrans;
 
-	SELECT @ToTime = DATEADD(MINUTE, 5, MAX(transdate))
+	SELECT @ToTime = DATEADD(MINUTE, 1, MAX(transdate))
 	FROM #TempTrans;
 
 	INSERT INTO #TmpBigLeague
@@ -197,7 +197,7 @@ BEGIN
 		,b.IsBigLeague
 		,trans.GroupId
 	FROM cte_raw AS b
-	INNER JOIN #TempTrans trans ON b.transdate BETWEEN trans.Transdate AND DATEADD(SECOND,-@Step,trans.Transdate)
+	INNER JOIN #TempTrans trans ON b.transdate BETWEEN DATEADD(SECOND,-@Step,trans.Transdate) AND trans.Transdate
 	CROSS APPLY [dbo].[SPU_GroupBettingRule] AS gbr
 	ORDER BY b.transid ASC;
                                   
