@@ -14,15 +14,14 @@ BEGIN
 		Original: 
 		Revisions:
 			- 20220526@Aries.Nguyen: Created [RedmineID: #172561]
+            - 20220628@Aries.Nguyen: Update robot classification rule [Redmine ID: #174430]
+            
         Param's Explanation:     
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetCCAndDangerLevel('1,2,1277,555555');
 	*/ 
 	DECLARE	CONST_GROUP_NORMAL 					INT DEFAULT 200;
     DECLARE	CONST_GROUP_PROBLEM 				INT DEFAULT 0;
-    DECLARE	CONST_GROUP_ROBOT 					INT DEFAULT 61;
-    
-	DECLARE	CONST_CATEGORYID_GOODROBOT 			INT DEFAULT 164;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;
     CREATE TEMPORARY TABLE 		Temp_CustInfo (
@@ -68,12 +67,9 @@ BEGIN
 		LATERAL(SELECT 	CASE WHEN clss.SportGroupID =  CONST_GROUP_PROBLEM AND  tmp.CustomerClass IS NULL THEN  CategoryGroup 
 							 ELSE NULL END AS CategoryID
 					,	CASE  WHEN tmp.CustomerClass IS NOT NULL THEN tmp.CustomerClass
-							  WHEN cate.CategoryID IN (CONST_CATEGORYID_GOODROBOT) AND tmp.IsRobotException = 1 THEN cate.CustomerClassException
 							  ELSE cate.CustomerClass END AS CustomerClass
 					,	cate.CustomerClassName
-					,	CASE WHEN cate.CategoryID IN (CONST_CATEGORYID_GOODROBOT) AND tmp.IsRobotException = 1 AND tmp.IsLicensee = 1 THEN cate.ABIDangerLevelException_Licensee
-							 WHEN cate.CategoryID IN (CONST_CATEGORYID_GOODROBOT) AND tmp.IsRobotException = 1 AND tmp.IsLicensee = 0 THEN cate.ABIDangerLevelException_Credit
-							 WHEN tmp.IsLicensee = 1 THEN cate.ABIDangerLevel_Licensee
+					,	CASE WHEN tmp.IsLicensee = 1 THEN cate.ABIDangerLevel_Licensee
 							 WHEN tmp.IsLicensee = 0 THEN cate.ABIDangerLevel_Credit
 						 END AS DangerLevel
                     ,	cate.DangerLevelType 

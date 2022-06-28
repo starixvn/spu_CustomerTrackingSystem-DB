@@ -16,6 +16,7 @@ sp: BEGIN
 			- 20220520@Aries.Nguyen: Created [Redmine ID: #172561]
             - 20220614@Aries.Nguyen: CTS - Classify Category for new Customer (all roles) is not Latest [Redmine ID: #174084]
             - 20220616@Aries.Nguyen: Cannot mark PA (affected by uplines) correctly with First Mark [Redmine ID: #174136]
+            - 20220628@Aries.Nguyen: Update robot classification rule [Redmine ID: #174430]
 		
         Param's Explanation:
 
@@ -160,7 +161,7 @@ sp: BEGIN
         ,	class.LastModifiedDate
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS class USE INDEX (PRIMARY) ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = 0 
-        STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup != 61;
+        STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup != 163;
 	 
     SELECT	tmp.CTSCustID
 		,	tmp.CustID          

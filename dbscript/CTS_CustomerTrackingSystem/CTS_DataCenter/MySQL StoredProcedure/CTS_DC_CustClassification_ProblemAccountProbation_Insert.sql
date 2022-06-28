@@ -17,10 +17,14 @@ BEGIN
 			- 20220328@Aries.Nguyen: Created [Redmine ID: #170468]
             - 20220426@Aries.Nguyen: CTS - Daily PA Scan - Check Losing lead to show Created Date is wrong in PAM [Redmine ID: #171972]
             - 20220607@Aries.Nguyen: Renovate PA process [Redmine ID: #172561]
+            - 20220628@Aries.Nguyen: Update robot classification rule [Redmine ID: #174430]
 
 		Param's Explanation (filtered by):      
 			- CALL CTS_DC_CustClassification_ProblemAccountProbation_Insert ('[{"CustID": 123,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10}]');
 	*/ 
+    DECLARE	CONST_CATEGORYID_ROBOT 				INT DEFAULT 163;
+    DECLARE	CONST_CATEGORYID_ROBOTLOSING 		INT DEFAULT 164;
+    
 	DECLARE CONST_SOURCETYPE_SCANPA 			INT DEFAULT 23;
     DECLARE	CONST_ACTIONTYPE_UPDATE 			INT DEFAULT 1;
     
@@ -75,20 +79,15 @@ BEGIN
 			,	BetCount		BIGINT 					PATH "$.BetCount"	
             ,	ActiveDays		INT 					PATH "$.ActiveDays"	
 		 )) AS js
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON js.CustID = cust.CustID AND cust.CustSubID = 0
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON js.CustID = cust.CustID AND cust.CustSubID = 0 AND cust.IsInternal = 0
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CustID = js.CustID
-        INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID AND cate.RelevantCategoryID IS NOT NULL
-        INNER JOIN MappingSubscriberSite AS mss ON cust.SiteID = mss.SiteID,
-        LATERAL (SELECT CASE WHEN mss.SubscriberGroupID = 2 THEN tbl.ABIDangerLevel_Licensee 
-							 ELSE tbl.ABIDangerLevel_Credit 
-                        END AS TargetDangerLevel1
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID AND cate.RelevantCategoryID IS NOT NULL,
+        LATERAL (SELECT CASE WHEN cust.IsLicensee = 1 THEN tbl.ABIDangerLevel_Licensee  ELSE tbl.ABIDangerLevel_Credit END AS TargetDangerLevel1
 					,	tbl.CustomerClass AS TargetCC
                  FROM CTS_DataCenter.CustomerCategory AS tbl 
                  WHERE cate.RelevantCategoryID = tbl.CategoryID 
-                 LIMIT 1) AS desCate;
+                 LIMIT 1) AS desCate; 
     
-	CALL CTS_DC_ExcludeCustByCondition('Temp_PA');
-	
     DELETE pa
     FROM Temp_PA AS pa
     WHERE EXISTS (SELECT 1 FROM CTS_DataCenter.PinCustomerCategory AS pin WHERE pin.CTSCustID = pa.CTSCustID); 
@@ -96,7 +95,6 @@ BEGIN
     UPDATE CTS_DataCenter.CTSCustomerClassification AS clss
     INNER JOIN Temp_PA AS tmp ON tmp.CustID = clss.CustID AND tmp.SportGroupID = clss.SportGroupID AND tmp.CategoryID = clss.CategoryID 
     SET 	clss.CategoryID = tmp.RelevantCategoryID
-		,	clss.LastModifiedDate = NOW()
         ,	clss.LastModifiedBy = lv_CreatedBy
     WHERE tmp.IsDataChanged = 1;
     
@@ -144,6 +142,8 @@ BEGIN
 	SELECT 	DISTINCT
 			CustID
 		,	CTSCustID
+        ,	CASE WHEN CategoryID in (CONST_CATEGORYID_ROBOT,CONST_CATEGORYID_ROBOTLOSING) THEN 1
+			ELSE 0 END AS ISRobot
     FROM Temp_PA
     WHERE IsDataChanged = 1; 
 END$$
