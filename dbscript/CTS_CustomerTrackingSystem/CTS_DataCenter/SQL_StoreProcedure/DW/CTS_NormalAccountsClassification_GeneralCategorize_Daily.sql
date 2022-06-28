@@ -28,6 +28,7 @@ AS
 		- 20210811@Long.Luu: Change way to check Customers' Inactive status [Redmine ID: #159543]		
 		- 20210818@Long.Luu: Check Winloss on probation assessment [Redmine ID: #159709]	
 		- 20220222@Long.Luu: Remove 10k Probation rule for Credit [Redmine ID: #168988]
+		- 20280628@Long.Luu: Exclude more Internal Accounts [Redmine ID: #174430]
 		
 	Param's Explanation:
 */
@@ -134,8 +135,10 @@ BEGIN
 	FROM #tmpCustomers AS r
 		INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON r.CustId = c.custid
 	WHERE (c.[Enabled] = 0 OR c.roleid <> 1)
-	   OR c.recommend IN (52466,5707545)
-	   OR c.username LIKE '%CashOut';
+		OR c.srecommend IN (41430709)
+		OR c.mrecommend IN (27899314,11656504,12146012)
+		OR c.recommend IN (52466,5707545,29270764,134456)
+		OR c.username LIKE '%CashOut';
 
 	/*-- Remove closed & disabled of CN88
 	DELETE r WITH(ROWLOCK)
