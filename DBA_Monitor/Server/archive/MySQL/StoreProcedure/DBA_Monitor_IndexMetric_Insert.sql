@@ -4,80 +4,40 @@ DROP PROCEDURE IF EXISTS `DBA_Monitor_IndexMetric_Insert`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DBA_Monitor_IndexMetric_Insert`(
-		IN	ip_Metric 	JSON
-	,	IN 	ip_Server	VARCHAR(20)
+		IN	ip_Metric 		JSON
+	,	IN 	ip_ServerID		BIGINT UNSIGNED
 )
     SQL SECURITY INVOKER
 BEGIN
 	/*
-		Created:	20220125@Aries.Nguyen
-		Task:		Move Monitor Data to Archive Server
+		Created:	20210816@Aries.Nguyen
+		Task:		Grafana Monitor Table IO Metric
 		DB:			MonDB
 		Original: 
 
 		Revisions:
-			- 20220125@Aries.Nguyen: Created [Redmine ID: #167927]
+			- 20210127@Aries.Nguyen: Created [Redmine ID: #160195]
+            - 20220630@Aries.Nguyen: Update monitor [Redmine ID: #172483]
             
 		Param's Explanation (filtered by):
         Example:
-			- CALL MonDB.DBA_Monitor_IndexMetric_Insert();
+			- CALL MonDB.DBA_Monitor_TableMetric_Get();
 	*/
-    DROP TEMPORARY TABLE IF EXISTS Temp_Metrics;
-	CREATE TEMPORARY TABLE Temp_Metrics (
-			Object_Type 		VARCHAR(64) NOT NULL
-		,	Object_Schema 		VARCHAR(64) NOT NULL
-		,	Object_Name 		VARCHAR(64) NOT NULL
-		,	Index_Name 			VARCHAR(64) NOT NULL
-		,	Count_Star 			BIGINT UNSIGNED NOT NULL
-		,	Sum_Timer_Wait 		BIGINT UNSIGNED NOT NULL
-		,	Min_Timer_Wait 		BIGINT UNSIGNED NOT NULL
-		,	Avg_Timer_Wait 		BIGINT UNSIGNED NOT NULL
-		,	Max_Timer_Wait 		BIGINT UNSIGNED NOT NULL
-		,	Count_Read 			BIGINT UNSIGNED NOT NULL
-		,	Sum_Timer_Read 		BIGINT UNSIGNED NOT NULL
-		,	Min_Timer_Read 		BIGINT UNSIGNED NOT NULL
-		,	Avg_Timer_Read 		BIGINT UNSIGNED NOT NULL
-		,	Max_Timer_Read		BIGINT UNSIGNED NOT NULL
-		,	Count_Write 		BIGINT UNSIGNED NOT NULL
-		,	Sum_Timer_Write 	BIGINT UNSIGNED NOT NULL
-		,	Min_Timer_Write	 	BIGINT UNSIGNED NOT NULL
-		,	Avg_Timer_Write 	BIGINT UNSIGNED NOT NULL
-		,	Max_Timer_Write		BIGINT UNSIGNED NOT NULL
-		,	Count_Fetch 		BIGINT UNSIGNED NOT NULL
-		,	Sum_Timer_Fetch 	BIGINT UNSIGNED NOT NULL
-		,	Min_Timer_Fetch 	BIGINT UNSIGNED NOT NULL
-		,	Avg_Timer_Fetch 	BIGINT UNSIGNED NOT NULL
-		,	Max_Timer_Fetch 	BIGINT UNSIGNED NOT NULL
-		,	Count_Insert 		BIGINT UNSIGNED NOT NULL
-		,	Sum_Timer_Insert 	BIGINT UNSIGNED NOT NULL
-		,	Min_Timer_Insert 	BIGINT UNSIGNED NOT NULL
-		,	Avg_Timer_Insert 	BIGINT UNSIGNED NOT NULL
-		,	Max_Timer_Insert 	BIGINT UNSIGNED NOT NULL
-		,	Count_Update 		BIGINT UNSIGNED NOT NULL
-		,	Sum_Timer_Update 	BIGINT UNSIGNED NOT NULL
-		,	Min_Timer_Update 	BIGINT UNSIGNED NOT NULL
-		,	Avg_Timer_Update 	BIGINT UNSIGNED NOT NULL
-		,	Max_Timer_Update 	BIGINT UNSIGNED NOT NULL
-		,	Count_Delete 		BIGINT UNSIGNED NOT NULL
-		,	Sum_Timer_Delete 	BIGINT UNSIGNED NOT NULL
-		,	Min_Timer_Delete 	BIGINT UNSIGNED NOT NULL
-		,	Avg_Timer_Delete 	BIGINT UNSIGNED NOT NULL
-		,	Max_Timer_Delete 	BIGINT UNSIGNED NOT NULL
-		,	PRIMARY KEY (Object_Type,Object_Schema,Object_Name,Index_Name)
-	) ENGINE=InnoDB;
-    
-    INSERT IGNORE INTO Temp_Metrics(Object_Type, Object_Schema, Object_Name, Index_Name,
-									Count_Star, Sum_Timer_Wait, Min_Timer_Wait, Avg_Timer_Wait, Max_Timer_Wait,
-									Count_Read, Sum_Timer_Read, Min_Timer_Read, Avg_Timer_Read, Max_Timer_Read,
-									Count_Write, Sum_Timer_Write, Min_Timer_Write, Avg_Timer_Write, Max_Timer_Write,
-									Count_Fetch, Sum_Timer_Fetch, Min_Timer_Fetch, Avg_Timer_Fetch, Max_Timer_Fetch,
-									Count_Insert, Sum_Timer_Insert, Min_Timer_Insert, Avg_Timer_Insert, Max_Timer_Insert,
-									Count_Update, Sum_Timer_Update, Min_Timer_Update, Avg_Timer_Update, Max_Timer_Update,
-									Count_Delete, Sum_Timer_Delete, Min_Timer_Delete, Avg_Timer_Delete, Max_Timer_Delete)
-	SELECT	Object_Type
+	INSERT IGNORE INTO   MonDB.Monitor_IndexMetric_Master58(ServerID,Created,
+															Object_Type, Object_Schema, Object_Name, Index_Name,
+															Count_Star, Sum_Timer_Wait, Min_Timer_Wait, Avg_Timer_Wait, Max_Timer_Wait,
+															Count_Read, Sum_Timer_Read, Min_Timer_Read, Avg_Timer_Read, Max_Timer_Read,
+															Count_Write, Sum_Timer_Write, Min_Timer_Write, Avg_Timer_Write, Max_Timer_Write,
+															Count_Fetch, Sum_Timer_Fetch, Min_Timer_Fetch, Avg_Timer_Fetch, Max_Timer_Fetch,
+															Count_Insert, Sum_Timer_Insert, Min_Timer_Insert, Avg_Timer_Insert, Max_Timer_Insert,
+															Count_Update, Sum_Timer_Update, Min_Timer_Update, Avg_Timer_Update, Max_Timer_Update,
+															Count_Delete, Sum_Timer_Delete, Min_Timer_Delete, Avg_Timer_Delete, Max_Timer_Delete)
+	SELECT	ip_ServerID AS ServerID
+		,	CURRENT_TIMESTAMP() AS Created
+		,	Object_Type
 		,	Object_Schema 
 		,	Object_Name 
-        ,	Index_Name
+		,	Index_Name
 		,	Count_Star  
 		,	Sum_Timer_Wait  
 		,	Min_Timer_Wait  
@@ -156,161 +116,5 @@ BEGIN
 				,	Max_Timer_Delete 	BIGINT UNSIGNED 	PATH "$.Max_Timer_Delete" 
 			)
 	) AS metric;
-    
-    IF ip_Server = 'master' THEN
-		INSERT IGNORE INTO MonDB.Monitor_IndexMetric_Master58(Created, Object_Type, Object_Schema, Object_Name, Index_Name,
-															  Count_Star, Sum_Timer_Wait, Min_Timer_Wait, Avg_Timer_Wait, Max_Timer_Wait,
-															  Count_Read, Sum_Timer_Read, Min_Timer_Read, Avg_Timer_Read, Max_Timer_Read,
-															  Count_Write, Sum_Timer_Write, Min_Timer_Write, Avg_Timer_Write, Max_Timer_Write,
-															  Count_Fetch, Sum_Timer_Fetch, Min_Timer_Fetch, Avg_Timer_Fetch, Max_Timer_Fetch,
-															  Count_Insert, Sum_Timer_Insert, Min_Timer_Insert, Avg_Timer_Insert, Max_Timer_Insert,
-															  Count_Update, Sum_Timer_Update, Min_Timer_Update, Avg_Timer_Update, Max_Timer_Update,
-															  Count_Delete, Sum_Timer_Delete, Min_Timer_Delete, Avg_Timer_Delete, Max_Timer_Delete)
-		SELECT	CURRENT_TIMESTAMP()
-			,	Object_Type
-			,	Object_Schema 
-			,	Object_Name 
-			,	Index_Name
-			,	Count_Star  
-			,	Sum_Timer_Wait  
-			,	Min_Timer_Wait  
-			,	Avg_Timer_Wait  
-			,	Max_Timer_Wait  
-			,	Count_Read  
-			,	Sum_Timer_Read  
-			,	Min_Timer_Read  
-			,	Avg_Timer_Read  
-			,	Max_Timer_Read  
-			,	Count_Write  
-			,	Sum_Timer_Write  
-			,	Min_Timer_Write  
-			,	Avg_Timer_Write  
-			,	Max_Timer_Write  
-			,	Count_Fetch  
-			,	Sum_Timer_Fetch  
-			,	Min_Timer_Fetch  
-			,	Avg_Timer_Fetch  
-			,	Max_Timer_Fetch  
-			,	Count_Insert  
-			,	Sum_Timer_Insert  
-			,	Min_Timer_Insert  
-			,	Avg_Timer_Insert  
-			,	Max_Timer_Insert  
-			,	Count_Update  
-			,	Sum_Timer_Update  
-			,	Min_Timer_Update  
-			,	Avg_Timer_Update  
-			,	Max_Timer_Update  
-			,	Count_Delete  
-			,	Sum_Timer_Delete  
-			,	Min_Timer_Delete  
-			,	Avg_Timer_Delete  
-			,	Max_Timer_Delete  
-		FROM Temp_Metrics;
-    END IF;
-    
-    IF ip_Server = 'replica' THEN
-		INSERT IGNORE INTO MonDB.Monitor_IndexMetric_Replica185(Created, Object_Type, Object_Schema, Object_Name, Index_Name,
-																Count_Star, Sum_Timer_Wait, Min_Timer_Wait, Avg_Timer_Wait, Max_Timer_Wait,
-																Count_Read, Sum_Timer_Read, Min_Timer_Read, Avg_Timer_Read, Max_Timer_Read,
-																Count_Write, Sum_Timer_Write, Min_Timer_Write, Avg_Timer_Write, Max_Timer_Write,
-																Count_Fetch, Sum_Timer_Fetch, Min_Timer_Fetch, Avg_Timer_Fetch, Max_Timer_Fetch,
-																Count_Insert, Sum_Timer_Insert, Min_Timer_Insert, Avg_Timer_Insert, Max_Timer_Insert,
-																Count_Update, Sum_Timer_Update, Min_Timer_Update, Avg_Timer_Update, Max_Timer_Update,
-																Count_Delete, Sum_Timer_Delete, Min_Timer_Delete, Avg_Timer_Delete, Max_Timer_Delete)
-		SELECT	CURRENT_TIMESTAMP()
-			,	Object_Type
-			,	Object_Schema 
-			,	Object_Name 
-			,	Index_Name
-			,	Count_Star  
-			,	Sum_Timer_Wait  
-			,	Min_Timer_Wait  
-			,	Avg_Timer_Wait  
-			,	Max_Timer_Wait  
-			,	Count_Read  
-			,	Sum_Timer_Read  
-			,	Min_Timer_Read  
-			,	Avg_Timer_Read  
-			,	Max_Timer_Read  
-			,	Count_Write  
-			,	Sum_Timer_Write  
-			,	Min_Timer_Write  
-			,	Avg_Timer_Write  
-			,	Max_Timer_Write  
-			,	Count_Fetch  
-			,	Sum_Timer_Fetch  
-			,	Min_Timer_Fetch  
-			,	Avg_Timer_Fetch  
-			,	Max_Timer_Fetch  
-			,	Count_Insert  
-			,	Sum_Timer_Insert  
-			,	Min_Timer_Insert  
-			,	Avg_Timer_Insert  
-			,	Max_Timer_Insert  
-			,	Count_Update  
-			,	Sum_Timer_Update  
-			,	Min_Timer_Update  
-			,	Avg_Timer_Update  
-			,	Max_Timer_Update  
-			,	Count_Delete  
-			,	Sum_Timer_Delete  
-			,	Min_Timer_Delete  
-			,	Avg_Timer_Delete  
-			,	Max_Timer_Delete  
-		FROM Temp_Metrics;
-    END IF;
-    
-    IF ip_Server = 'archive' THEN
-		INSERT IGNORE INTO  MonDB.Monitor_IndexMetric_Archive59(Created, Object_Type, Object_Schema, Object_Name, Index_Name,
-																Count_Star, Sum_Timer_Wait, Min_Timer_Wait, Avg_Timer_Wait, Max_Timer_Wait,
-																Count_Read, Sum_Timer_Read, Min_Timer_Read, Avg_Timer_Read, Max_Timer_Read,
-																Count_Write, Sum_Timer_Write, Min_Timer_Write, Avg_Timer_Write, Max_Timer_Write,
-																Count_Fetch, Sum_Timer_Fetch, Min_Timer_Fetch, Avg_Timer_Fetch, Max_Timer_Fetch,
-																Count_Insert, Sum_Timer_Insert, Min_Timer_Insert, Avg_Timer_Insert, Max_Timer_Insert,
-																Count_Update, Sum_Timer_Update, Min_Timer_Update, Avg_Timer_Update, Max_Timer_Update,
-																Count_Delete, Sum_Timer_Delete, Min_Timer_Delete, Avg_Timer_Delete, Max_Timer_Delete)
-		SELECT	CURRENT_TIMESTAMP()
-			,	Object_Type
-			,	Object_Schema 
-			,	Object_Name 
-			,	Index_Name
-			,	Count_Star  
-			,	Sum_Timer_Wait  
-			,	Min_Timer_Wait  
-			,	Avg_Timer_Wait  
-			,	Max_Timer_Wait  
-			,	Count_Read  
-			,	Sum_Timer_Read  
-			,	Min_Timer_Read  
-			,	Avg_Timer_Read  
-			,	Max_Timer_Read  
-			,	Count_Write  
-			,	Sum_Timer_Write  
-			,	Min_Timer_Write  
-			,	Avg_Timer_Write  
-			,	Max_Timer_Write  
-			,	Count_Fetch  
-			,	Sum_Timer_Fetch  
-			,	Min_Timer_Fetch  
-			,	Avg_Timer_Fetch  
-			,	Max_Timer_Fetch  
-			,	Count_Insert  
-			,	Sum_Timer_Insert  
-			,	Min_Timer_Insert  
-			,	Avg_Timer_Insert  
-			,	Max_Timer_Insert  
-			,	Count_Update  
-			,	Sum_Timer_Update  
-			,	Min_Timer_Update  
-			,	Avg_Timer_Update  
-			,	Max_Timer_Update  
-			,	Count_Delete  
-			,	Sum_Timer_Delete  
-			,	Min_Timer_Delete  
-			,	Avg_Timer_Delete  
-			,	Max_Timer_Delete  
-		FROM Temp_Metrics;
-    END IF;
 END$$
 DELIMITER ;

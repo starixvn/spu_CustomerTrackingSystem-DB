@@ -8,7 +8,7 @@ class MessageHelper:
     bot = None
 
     def __init__(self):
-        telegramConfig = config['telegram_channel_test'];
+        telegramConfig = config['telegram_channel'];
         self.token_1 = telegramConfig['token']
         self.chatID = telegramConfig['chat_id']
         

@@ -1,3 +1,4 @@
+from socket import timeout
 import mysql.connector as mysql
 from config import config
 from datetime import datetime
