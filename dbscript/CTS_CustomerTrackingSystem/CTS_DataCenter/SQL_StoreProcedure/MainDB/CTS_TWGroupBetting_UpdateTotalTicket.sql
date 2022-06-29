@@ -21,7 +21,7 @@ BEGIN
 	CREATE TABLE #tmpScanningCust(
 		CustId		INT,
 		ScanDate	DATE,
-		CONSTRAINT PK_ScanningCust PRIMARY KEY (CustId,ScanDate)
+		CONSTRAINT PK_tmpScanningCust PRIMARY KEY (CustId,ScanDate)
 	)
 
 	INSERT INTO #tmpScanningCust

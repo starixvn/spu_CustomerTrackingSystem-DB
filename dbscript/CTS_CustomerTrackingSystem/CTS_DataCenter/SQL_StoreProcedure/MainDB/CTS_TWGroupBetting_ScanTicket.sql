@@ -89,6 +89,7 @@ BEGIN
 		RuleId TINYINT
 		,Betteam NVARCHAR(10)
 		,MatchId INT
+		,Bettype SMALLINT
 		,TicketCount INT
 		,IsViolateRFM BIT
 		,IsViolateCC BIT
@@ -172,7 +173,7 @@ BEGIN
 		INNER JOIN dbo.custinfo AS ci WITH (NOLOCK) ON b.custid = ci.custid
 		LEFT JOIN LicUserProfile AS pf WITH (NOLOCK) ON b.custid = pf.CustId
 		LEFT JOIN #TmpBigLeague AS bl WITH (NOLOCK) ON m.leagueid = bl.LeagueId
-		WHERE b.transid > @LastTransID
+		WHERE b.transid > (@LastTransID - 2500)
 			AND b.refno = 100000000000
 			AND b.currency <> 20
 			AND m.sporttype IN (1,2)
@@ -205,7 +206,22 @@ BEGIN
 	FROM #TempTrans;
 	
 	INSERT INTO #TmpSuspectTicket
-	SELECT tfs.*
+	SELECT tfs.Transid 
+		,tfs.Transdate
+		,tfs.Custid
+		,tfs.Leagueid
+		,tfs.Matchid
+		,tfs.Sporttype
+		,tfs.Bettype
+		,tfs.Currency
+		,tfs.Betteam
+		,tfs.BetFrom
+		,tfs.Liveindicator
+		,tfs.RFM
+		,tfs.CustomerClass
+		,tfs.RuleId
+		,tfs.IsBigLeague
+		,tfs.GroupId
 	FROM #TmpTicketForScanning AS tfs WITH (NOLOCK)
 	INNER JOIN SPU_GroupBettingGroupingRule AS gr WITH (NOLOCK) ON tfs.RuleId = gr.RuleId
 		AND tfs.IsBigLeague = gr.IsBigLeague
@@ -217,18 +233,21 @@ BEGIN
 		RuleId
 		,Betteam
 		,Matchid
+		,Bettype
 		,TicketCount
 		,GroupId
 		)
 	SELECT st.RuleId
 		,st.Betteam
 		,st.Matchid
+		,st.Bettype
 		,COUNT(1) 'TicketCount'
 		,st.GroupId
 	FROM #TmpSuspectTicket AS st WITH (NOLOCK)
 	INNER JOIN SPU_GroupBettingRule AS gbr WITH (NOLOCK) ON st.RuleId = gbr.RuleId
 	GROUP BY st.Betteam
 		,st.Matchid
+		,st.Bettype
 		,st.RuleId
 		,st.GroupId
 		,gbr.TicketCountLimit
@@ -242,6 +261,7 @@ BEGIN
 		SELECT tcv.RuleId
 			,tcv.Betteam
 			,tcv.MatchId
+			,tcv.Bettype
 			,CASE 
 				WHEN (
 						tfs.RuleId IN (1,2,13,15,17)
@@ -256,18 +276,20 @@ BEGIN
 				END 'IsViolatedRFM'
 			,tcv.GroupId
 		FROM #TmpSuspectTicket tfs
-		INNER JOIN #TmpTicketCountViolation AS tcv ON tfs.RuleId = tcv.RuleId AND tfs.Matchid= tcv.MatchId
+		INNER JOIN #TmpTicketCountViolation AS tcv ON tfs.RuleId = tcv.RuleId AND tfs.Matchid = tcv.MatchId AND tfs.Bettype = tcv.Bettype
 			AND tfs.Betteam = tcv.Betteam AND tfs.GroupId = tcv.GroupId
 		INNER JOIN dbo.SPU_GroupBettingRule AS gbr ON tfs.RuleId = gbr.RuleId
 		WHERE tfs.RFM > gbr.RFMLimitValue
 		GROUP BY tcv.RuleId
 			,tcv.Betteam
 			,tcv.MatchId
+			,tcv.Bettype
 			,tcv.GroupId
 			,tcv.TicketCount
 			,gbr.RFMLimitPercent
 			,tfs.RuleId
-		) tempTable ON tempTable.RuleId = tcv.RuleId AND tempTable.Betteam = tcv.Betteam AND tempTable.GroupId = tcv.GroupId AND tempTable.MatchId = tcv.MatchId ;
+		) tempTable ON tempTable.RuleId = tcv.RuleId AND tempTable.Betteam = tcv.Betteam AND tempTable.GroupId = tcv.GroupId 
+			AND tempTable.MatchId = tcv.MatchId AND tempTable.Bettype = tcv.Bettype;
 
 	-- Check CC
 	UPDATE tcv
@@ -277,6 +299,7 @@ BEGIN
 		SELECT tcv.RuleId
 			,tcv.Betteam
 			,tcv.MatchId
+			,tcv.Bettype
 			,CASE 
 				WHEN (
 						tfs.RuleId IN (6,8,12,14,16)
@@ -291,18 +314,20 @@ BEGIN
 				END 'IsViolateCC'
 			,tcv.GroupId
 		FROM #TmpSuspectTicket AS tfs
-		INNER JOIN #TmpTicketCountViolation AS tcv ON tfs.RuleId = tcv.RuleId AND tfs.Matchid= tcv.MatchId
+		INNER JOIN #TmpTicketCountViolation AS tcv ON tfs.RuleId = tcv.RuleId AND tfs.Matchid= tcv.MatchId AND tfs.Bettype = tcv.Bettype
 			AND tfs.Betteam = tcv.Betteam AND tfs.GroupId = tcv.GroupId
 		INNER JOIN dbo.SPU_GroupBettingRule AS gbr ON tfs.RuleId = gbr.RuleId
 		WHERE tfs.CustomerClass NOT IN (1,2)
 		GROUP BY tcv.RuleId
 			,tcv.Betteam
 			,tcv.MatchId
+			,tcv.Bettype
 			,tcv.GroupId
 			,tcv.TicketCount
 			,gbr.CustClassLimitPercent
 			,tfs.RuleId
-		) tempTable ON tempTable.RuleId = tcv.RuleId AND tempTable.Betteam = tcv.Betteam AND tempTable.GroupId = tcv.GroupId AND tempTable.MatchId = tcv.MatchId;
+		) tempTable ON tempTable.RuleId = tcv.RuleId AND tempTable.Betteam = tcv.Betteam AND tempTable.GroupId = tcv.GroupId
+			AND tempTable.MatchId = tcv.MatchId AND tempTable.Bettype = tcv.Bettype;
 
 	-- Check BetFrom
 	UPDATE tcv
@@ -312,6 +337,7 @@ BEGIN
 		SELECT tcv.RuleId
 			,tcv.Betteam
 			,tcv.MatchId
+			,tcv.Bettype
 			,CASE 
 				WHEN (
 						tfs.RuleId IN (6,8,12,14,16)
@@ -326,18 +352,19 @@ BEGIN
 				END 'IsViolateBetFrom'
 			,tcv.GroupId
 		FROM #TmpSuspectTicket AS tfs
-		INNER JOIN #TmpTicketCountViolation AS tcv ON tfs.RuleId = tcv.RuleId AND tfs.Matchid= tcv.MatchId
+		INNER JOIN #TmpTicketCountViolation AS tcv ON tfs.RuleId = tcv.RuleId AND tfs.Matchid= tcv.MatchId AND tfs.Bettype = tcv.Bettype
 			AND tfs.Betteam = tcv.Betteam AND tfs.GroupId = tcv.GroupId
 		INNER JOIN dbo.SPU_GroupBettingRule AS gbr ON tfs.RuleId = gbr.RuleId
 		WHERE tfs.BetFrom IN ('x','z')
 		GROUP BY tcv.RuleId
 			,tcv.Betteam
 			,tcv.MatchId
+			,tcv.Bettype
 			,tcv.GroupId
 			,tcv.TicketCount
 			,gbr.BetFromLimitPercent
 			,tfs.RuleId
-		) tempTable ON tempTable.RuleId = tcv.RuleId AND tempTable.Betteam = tcv.Betteam AND tempTable.GroupId = tcv.GroupId AND tempTable.MatchId = tcv.MatchId;
+		) tempTable ON tempTable.RuleId = tcv.RuleId AND tempTable.Betteam = tcv.Betteam AND tempTable.GroupId = tcv.GroupId AND tempTable.MatchId = tcv.MatchId AND tempTable.Bettype = tcv.Bettype;
 
 	-- Delete existing ticket in last run
 	DELETE st
@@ -349,6 +376,7 @@ BEGIN
 												,CONVERT(DATE,st.Transdate) AS 'TransDate'
 									FROM #TmpSuspectTicket st WITH (NOLOCK)
 									INNER JOIN #TmpTicketCountViolation AS tcv WITH (NOLOCK) ON st.RuleId = tcv.RuleId AND st.Betteam = tcv.Betteam AND st.GroupId = tcv.GroupId
+										AND st.Matchid = tcv.Matchid AND st.Bettype = tcv.Bettype
 									WHERE (tcv.IsViolateBetFrom = 1
 										OR tcv.IsViolateRFM = 1
 										OR tcv.IsViolateCC = 1)
