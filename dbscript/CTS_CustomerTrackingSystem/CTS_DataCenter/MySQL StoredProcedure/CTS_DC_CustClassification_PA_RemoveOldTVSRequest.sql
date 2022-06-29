@@ -13,6 +13,7 @@ BEGIN
 		Original:
 		Revisions:
             - 20220602@Long.Luu: Created [Redmine ID: #172561]
+            - 20220628@Long.Luu: Remove affected evidence in case of update Reason [Redmine ID: #174430]
             
         Param's Explanation (filtered by):
         
@@ -82,7 +83,15 @@ BEGIN
     FROM Temp_ExistedEvidence AS t
 		INNER JOIN CustEvidence AS d ON t.CTSCustID = d.CTSCustID 
 			AND (t.EvidenceID_Credit = d.EvidenceID OR t.EvidenceID_Licensee = d.EvidenceID)
-	WHERE d.Level = 0;    			
+	WHERE d.Level = 0;    		
+	
+    /* REMOVE AFFECTED EVIDENCE  */ 
+    INSERT INTO CustEvidenceAffectedQueueRemove (CTSCustID,EvidenceID,Created)
+    SELECT	t.CTSCustID
+		,	CASE WHEN d.IsLicensee = 1 THEN EvidenceID_Licensee ELSE EvidenceID_Credit END
+        ,	NOW()
+    FROM Temp_ExistedEvidence AS t
+		INNER JOIN CTSCustomer AS d ON t.CTSCustID = d.CTSCustID;
 
 	/* LOG THE VOID REQUEST FOR FURTHER TRACKING */
     INSERT INTO TVSVoidRequest_History (TVSRequestID,CustIDs,ReasonID,CreatedBy,CreatedDate)
