@@ -15,38 +15,21 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original:
 		Revisions:
-			- 20200715@Long.Luu [#136460]: Created
-			- 20200828@Roger.Le [#140211]: Enhance Problem Account Category - Multiple Reason 
-			- 20200908@Irena.Vo [#141020]: Exclude VVIP Customers, Pin 
-            - 20201014@Irena.Vo [#141930]: Add Multi Problem Category, Remove old categoryid from NapCM
-            - 20201019@Irena.Vo  [#141930]: Get distinct CustID List for lastest category
-            - 20210115@Irena.Vo: Insert History Log [RedmineID: #145951]
-			- 20210119@Aries.Nguyen: Write main error log - Rescan  [RedmineID: #149026]
-			- 20210316@Irena.Vo: Write Robot User log more.  [RedmineID: #151374]
-            - 20210419@Irena.Vo: Update Priority Robot User.  [RedmineID: #152250] 
-            - 20210510@Casey.Huynh: Exclude Customer of Odd Feed Sites [Redmine ID: 154694]
-            - 20210512@Casey.Huynh: Exclude Customer of Internal Account [Redmine ID: 154844]
-            - 20210525@Irena.Vo: Change col name PinCustomerCategory: CustID -> CTSCustID [Redmine ID: 152965]
-			- 20210625@Long.Luu: Refactor. Update logic  [Redmine ID: #157203]
-			- 20210907@Long.Luu: Update Robot Users rules  [Redmine ID: #161232]
-            - 20210922@Long.Luu: Split Classification History & Log  [Redmine ID: #161890]
-			- 20211026@Aries.Nguyen: Archive inactive association [Redmine ID: #163087]
-            - 20211116@Casey.Huynh: Sync Robot User Categories to Dangerous Setting [Redmine ID: #161665]
-			- 20211115@Aries.Nguyen: Use ReasonID column instead of  DisplayOrder column [Redmine ID: #156935]
-            - 20220210@Irena.Vo: Adjust logic for Update ABI Danger Level [#167746]
-			- 20220214@Long.Luu: Support new category for Good & Bad Robot User [Redmine ID: #167726]
-			- 20220414@Aries.Nguyen: Add new category/class for PA Probation [Redmine ID: #170468]
-            - 20220519@Casey.Huynh: Renovate PA Process [RedmineID: #172061]
-            
+            - 20220519@Casey.Huynh: Created. Renovate PA Process [RedmineID: #172061]
+            - 20220627@Casey.Huynh: Add MatchID To Remark  [Redmine ID: #174218]
         Param's Explanation (filtered by):
 			- ip_InputType: 1: Category, 2: Reason
         Example:
 			
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_PA_Insert('Category',0,'[
-					{"CustID":3679910,"CTSCustID":16,"RoleID":1,"SubscriberID":130,"IsLicensee":1,"IsDirectPA":1,"IsFromTVS":0,"IsFromTW":0, "IsFromPAM":1,"IsRobot":0,"CategoryID":92,"CategoryGroup":92,"Remark":"Na test"
-					,"CreatedBy":10278938,"WinlossStatus":0,"TurnoverRM":20000,"WinlossRM":-11000,"BetCount":100,"ActiveDays":10}]');
+					{"CustID":1277,"CTSCustID":83,"RoleID":1,"SubscriberID":130,"IsLicensee":1,"IsDirectPA":1,"IsFromTVS":0,"IsFromTW":0, "IsFromPAM":1,"IsRobot":0,"CategoryID":153,"CategoryGroup":53,"Remark":"Na test"
+					,"CreatedBy":10278938,"WinlossStatus":0,"TurnoverRM":20000,"WinlossRM":-11000,"BetCount":100,"ActiveDays":10, "MatchID":123456789}]');
+             
+             SELECT * FROM Temp_PA;
+             SELECT s.Remark, s.SourceTypeID, s.* FROM CTSCustomerClassification_History  s WHERE CustID = 1277 ORDER BY ID Desc;  # 1281463;
+             SELECT s.Remark, s.SourceTypeID, s.* FROM CTSCustomerClassification_History  s  ORDER BY ID Desc;   
 	*/   
-
+    
     DECLARE lv_CurrentDateTime	DATETIME DEFAULT CURRENT_TIME(); 
     DECLARE	CONST_SPORTGROUP_PA TINYINT DEFAULT 0;
     DECLARE CONST_ACTIONTYPE_INSERT INT DEFAULT 0;
@@ -288,8 +271,9 @@ BEGIN
 		, 	tmpPA.ActionType
 		, 	NOW() AS InsertDate
 		, 	tmpPA.TargetCC
-		, 	(CASE WHEN IsDirectPA = 1 THEN 31 
-					WHEN IsDirectPA = 0 THEN 32 END) AS SourceTypeID
+		, 	(CASE	WHEN tmpPA.MatchID IS NOT NULL THEN 35
+					WHEN tmpPA.IsDirectPA = 1 THEN 31 
+					WHEN tmpPA.IsDirectPA = 0 THEN 32 END) AS SourceTypeID
 		,  	1 AS IsDataChanged
 		,	tmpPA.TargetDangerLevel AS TargetDangerLevel1
 		,	tmpPA.TurnoverRM
