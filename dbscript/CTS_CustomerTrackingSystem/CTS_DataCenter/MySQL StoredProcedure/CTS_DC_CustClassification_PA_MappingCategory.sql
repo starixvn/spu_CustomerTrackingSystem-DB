@@ -20,10 +20,11 @@ BEGIN
             - 20220505@Aries.Nguyen: Classification History - Wrong store Source Type for mark/remove PA [Redmine ID: #172401]
 			- 20220426@Casey.Huynh: Return CreatedBy [Redmine ID: #171512]
             - 20220519@Casey.Huynh: Renovate PA Process [Redmine ID: #172061]
+            - 20220627@Casey.Huynh: Classify Match Monitor Results, Add MatchID [Redmine ID: #174218]
 		Param's Explanation (filtered by):      
-			CALL CTS_DC_CustClassification_PA_MapingCategory ('Category','[{"CustID": 3679910,"ReasonID": 3679910,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10}]','NAP');
+			CALL CTS_DC_CustClassification_PA_MappingCategory ('Category','[{"CustID": 3679910,"ReasonID": 3679910,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10, "MatchID": 1}]');
 	*/
- 
+
     DROP TEMPORARY TABLE IF EXISTS Temp_PA;    
 	CREATE TEMPORARY TABLE Temp_PA(	  
 		/*Cust info*/
@@ -69,13 +70,14 @@ BEGIN
         ,	IsFromOldPA				BOOLEAN
         ,	PinCTSCustID			BIGINT UNSIGNED			
         ,	ActionType				TINYINT DEFAULT 0	#0:INSERT, 1:UPDATE
+        ,	MatchID					INT
         , 	PRIMARY KEY PK_Temp_PA(CustID,InputCategoryID)  
         ,	INDEX IX_Temp_PA(IsDataChanged,LastModifiedDate)
     );  
    
     IF ip_InputType = 'Category' THEN    
         INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, InputCategoryID, InputCategoryGroup,  IsLicensee, CreatedBy, Remark, IsDirectPA
-			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsDataChanged, SpecialCC, IsProbation, RelevantCategoryID, LastModifiedDate, PinCTSCustID)
+			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsDataChanged, SpecialCC, IsProbation, RelevantCategoryID, LastModifiedDate, PinCTSCustID, MatchID)
 		SELECT 	DISTINCT tmpJs.CustID
 			,	tmpJs.CTSCustID
 			,	tmpJs.RoleID
@@ -84,7 +86,7 @@ BEGIN
 			,	tmpJs.CategoryGroup
 			,	tmpJs.IsLicensee
 			,	tmpJs.CreatedBy 
-			,	tmpJs.Remark
+			,	(CASE WHEN tmpJs.MatchID IS NOT NULL THEN MatchID ELSE tmpJs.Remark END) AS Remark
 			,	tmpJs.IsDirectPA
 			, 	IFNULL(tmpJs.WinlossStatus,2) AS  WinlossStatus
 			, 	tmpJs.TurnoverRM
@@ -102,6 +104,7 @@ BEGIN
             ,	cat.RelevantCategoryID
             ,	tmpJs.LastModifiedDate
             ,	pin.CTSCustID
+			,	tmpJs.MatchID
 		FROM JSON_TABLE(ip_CustInfo,
 			"$[*]" COLUMNS(
 					CustID 			BIGINT UNSIGNED		PATH "$.CustID"
@@ -124,10 +127,11 @@ BEGIN
 				, 	IsFromCTS		BOOLEAN 			PATH "$.IsFromCTS"
 				, 	IsDataChanged	BOOLEAN 			PATH "$.IsDataChanged"
 				, 	LastModifiedDate	DATETIME 		PATH "$.LastModifiedDate"
+                , 	MatchID				INT 			PATH "$.MatchID"	
 		)) AS tmpJs
 			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on tmpJs.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
 			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CTSCustID = sp.CTSCustID 
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.CategoryID;
+			LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.CategoryID;
 
 			UPDATE Temp_PA AS tmpPA,
             LATERAL(SELECT 	cat.CategoryGroup

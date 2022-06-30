@@ -30,13 +30,13 @@ BEGIN
 	FROM JSON_TABLE(ip_MatchJson,
 		 "$[*]" COLUMNS(
 				MatchID 			BIGINT UNSIGNED PATH "$.MatchID"
-			,	EventStatus 		BIGINT UNSIGNED	PATH "$.EventStatus"
+			,	EventStatus 		VARCHAR(50)	PATH "$.EventStatus"
 		 )) AS tmpJs
 	 WHERE tmpJs.EventStatus = 'Completed' 
 			AND NOT EXISTS (SELECT 1 FROM CTS_DataCenter.MatchMonitorStagingLive AS ms WHERE ms.MatchID = tmpJs.MatchID);
          
 	UPDATE CTS_DataCenter.MatchMonitor AS mm
-		INNER JOIN Temp_CompletedMatch AS tmpMi ON mm.MatchID = tmpMi
+		INNER JOIN Temp_CompletedMatch AS tmpMi ON mm.MatchID = tmpMi.MatchID
     SET mm.ClassifyStatus = 2;
 	    
 END$$
