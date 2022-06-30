@@ -27,11 +27,15 @@ BEGIN
     
     DECLARE	CONST_GROUP_PA 						INT DEFAULT 0;
     DECLARE	CONST_GROUP_NORMAL 					INT DEFAULT 200;
-    DECLARE CONST_SOURCETYPE_INSERTROBOTUSERS	INT DEFAULT 11;
+    
+    DECLARE CONST_SOURCETYPE_INSERTROBOTUSERS	INT DEFAULT 32;
+    DECLARE CONST_SOURCETYPE_PROBLEMDIRECT		INT DEFAULT 31;
+    DECLARE CONST_SOURCETYPE_PROBLEMAFFECT		INT DEFAULT 32;
     DECLARE	CONST_ACTIONTYPE_UPDATE 			INT DEFAULT 1;
+    
     DECLARE lv_Now								DATETIME DEFAULT NOW();
     DECLARE lv_CreatedBy 						INT DEFAULT 10278938;
-    
+
 	DROP TEMPORARY TABLE IF EXISTS Temp_PA;    
 	CREATE TEMPORARY TABLE Temp_PA(	  
 			CTSCustID				BIGINT UNSIGNED 
@@ -218,7 +222,7 @@ BEGIN
         ,	clss.LastModifiedBy = lv_CreatedBy
     WHERE tmp.IsChangeWinloss = 1 
 		AND tmp.IsRobot = 0;
-    
+  
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT  pa.CustID
 		, 	pa.CTSCustID
@@ -230,7 +234,8 @@ BEGIN
 		, 	1 AS IsAuto
 		, 	NOW() AS InsertDate
 		, 	tbl.CustomerClass AS TargetCC
-		, 	CONST_SOURCETYPE_INSERTROBOTUSERS
+		, 	CASE WHEN cate.IsDirect = 1 THEN CONST_SOURCETYPE_PROBLEMDIRECT
+				 ELSE CONST_SOURCETYPE_PROBLEMAFFECT END AS SourceTypeID
 		,   IsDataChanged
         ,	CASE WHEN pa.IsLicensee = 1 THEN tbl.ABIDangerLevel_Licensee  
 				 ELSE tbl.ABIDangerLevel_Credit END AS TargetDangerLevel1
