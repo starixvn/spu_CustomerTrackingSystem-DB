@@ -42,7 +42,7 @@ BEGIN
         , 	RelevantCategoryID 	    SMALLINT UNSIGNED
         , 	TargetCC 				SMALLINT UNSIGNED
         , 	TargetDangerLevel1 		SMALLINT 
-        ,	IsProbation 			BIT
+        ,	IsPAProbation 			BIT
         , 	WinlossStatus			SMALLINT /*LOSING  = 0,KEEPSTATE = 1, WINNING = 2;*/
         , 	IsLicensee				BIT
         ,	TurnoverRM				DECIMAL(20,4)
@@ -54,14 +54,14 @@ BEGIN
         , 	PRIMARY KEY(CustID,CategoryID)  
     );  
     
-    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, CategoryID, RelevantCategoryID,TargetCC,TargetDangerLevel1, IsProbation, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsDirect, IsDataChanged)
+    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, CategoryID, RelevantCategoryID,TargetCC,TargetDangerLevel1, IsPAProbation, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsDirect, IsDataChanged)
 	SELECT 	js.CustID
 		,	cust.CTSCustID
         ,	clss.CategoryID
         ,	cate.RelevantCategoryID
         ,	desCate.TargetCC
         ,	desCate.TargetDangerLevel1
-        ,	cate.IsProbation
+        ,	cate.IsPAProbation
 		, 	js.WinlossStatus 
         , 	js.TurnoverRM
         , 	js.WinlossRM
@@ -69,10 +69,10 @@ BEGIN
         , 	js.ActiveDays
         ,	clss.IsDirect
         ,	CASE WHEN js.WinlossStatus = 1 THEN 0 /*No Change*/
-				 WHEN js.WinlossStatus = 0 AND cate.IsProbation = 0 THEN 1  /*Lose + PA => Update */
-				 WHEN js.WinlossStatus = 0 AND cate.IsProbation = 1 THEN 0  /*Lose + Probation =>  No Change*/
-                 WHEN js.WinlossStatus = 2 AND cate.IsProbation = 0 THEN 0  /*Win + PA => No Change  */
-                 WHEN js.WinlossStatus = 2 AND cate.IsProbation = 1 THEN 1  /*Win + Probation => Update */
+				 WHEN js.WinlossStatus = 0 AND cate.IsPAProbation = 0 THEN 1  /*Lose + PA => Update */
+				 WHEN js.WinlossStatus = 0 AND cate.IsPAProbation = 1 THEN 0  /*Lose + Probation =>  No Change*/
+                 WHEN js.WinlossStatus = 2 AND cate.IsPAProbation = 0 THEN 0  /*Win + PA => No Change  */
+                 WHEN js.WinlossStatus = 2 AND cate.IsPAProbation = 1 THEN 1  /*Win + Probation => Update */
 			END AS IsDataChanged
 	FROM JSON_TABLE(ip_ProblemAccount,
 		"$[*]" COLUMNS(

@@ -23,4 +23,5 @@ SET CategoryName = 'Robot User (Losing)'
 , 	ABIDangerLevelException_Licensee = 32
 , 	ABIDangerLevelException_Credit = 32
 ,   IsProbation = 1 
+,   IsPAProbation = 1
  WHERE CategoryID = 164;

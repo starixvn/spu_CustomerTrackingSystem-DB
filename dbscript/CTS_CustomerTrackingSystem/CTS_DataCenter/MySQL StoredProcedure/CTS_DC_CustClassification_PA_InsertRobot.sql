@@ -78,6 +78,7 @@ BEGIN
         ,	CategoryID 			INT	
         , 	RelevantCategoryID 	SMALLINT UNSIGNED
         
+        , 	IsPAProbation		BIT 
         , 	IsChangeWinloss		BIT DEFAULT 0
         ,	IsRobot				BIT DEFAULT 0
         ,	IsFromTW			BIT
@@ -191,15 +192,16 @@ BEGIN
 		OR pa.IsPin = 1;
     
     /***********************Handle update existed PA by winloss*******************************/
-    INSERT IGNORE INTO Temp_ExistCate(CustID,CategoryID,RelevantCategoryID,IsChangeWinloss,IsRobot,IsFromTW,IsFromCTS,IsFromAI,IsFromTVS,TVSRequestID,IsDirect,Remark,CreatedBy,CreatedDate) 
+    INSERT IGNORE INTO Temp_ExistCate(CustID,CategoryID,RelevantCategoryID,IsPAProbation,IsChangeWinloss,IsRobot,IsFromTW,IsFromCTS,IsFromAI,IsFromTVS,TVSRequestID,IsDirect,Remark,CreatedBy,CreatedDate) 
     SELECT 	clss.CustID
 		,	clss.CategoryID
         ,	cate.RelevantCategoryID
+        ,	cate.IsPAProbation
         ,	CASE WHEN tmp.WinlossStatus = 1 THEN 0 /*No Change*/
-				 WHEN tmp.WinlossStatus = 0 AND cate.IsProbation = 0 THEN 1  /*Lose + PA => Update */
-				 WHEN tmp.WinlossStatus = 0 AND cate.IsProbation = 1 THEN 0  /*Lose + Probation =>  No Change*/
-                 WHEN tmp.WinlossStatus = 2 AND cate.IsProbation = 0 THEN 0  /*Win + PA => No Change  */
-                 WHEN tmp.WinlossStatus = 2 AND cate.IsProbation = 1 THEN 1  /*Win + Probation => Update */
+				 WHEN tmp.WinlossStatus = 0 AND cate.IsPAProbation = 0 THEN 1  /*Lose + PA => Update */
+				 WHEN tmp.WinlossStatus = 0 AND cate.IsPAProbation = 1 THEN 0  /*Lose + Probation =>  No Change*/
+                 WHEN tmp.WinlossStatus = 2 AND cate.IsPAProbation = 0 THEN 0  /*Win + PA => No Change  */
+                 WHEN tmp.WinlossStatus = 2 AND cate.IsPAProbation = 1 THEN 1  /*Win + Probation => Update */
 			END AS IsChangeWinloss
         ,	CASE WHEN clss.CategoryID IN (CONST_CATEGORYID_ROBOT,CONST_CATEGORYID_ROBOTLOSING) THEN 1
 				 ELSE 0 END AS IsRobot
@@ -222,6 +224,15 @@ BEGIN
         ,	clss.LastModifiedBy = lv_CreatedBy
     WHERE tmp.IsChangeWinloss = 1 
 		AND tmp.IsRobot = 0;
+	
+    UPDATE Temp_PA AS pa
+    SET pa.CategoryID = CONST_CATEGORYID_ROBOTLOSING
+    WHERE EXISTS (SELECT 1 
+				  FROM Temp_ExistCate AS ex
+                  WHERE ex.CustID = pa.CustID 
+					AND ex.IsChangeWinloss = 0
+                    AND ex.IsPAProbation = 1
+                    AND ex.IsRobot = 0);
   
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT  pa.CustID
