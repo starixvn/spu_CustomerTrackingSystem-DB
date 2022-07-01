@@ -20,8 +20,8 @@ BEGIN
 	DROP TABLE #PreGroupBettingTicket;
 
 	CREATE TABLE #PreGroupBettingTicket (
-		CustId			INT NOT NULL
-		,TransId		BIGINT NOT NULL
+		CustId			INT		NOT NULL
+		,TransId		BIGINT	NOT NULL
 		,TransDate		DATE	NOT NULL
 		,IsUpdateCount	BIT
 		);
@@ -58,7 +58,7 @@ BEGIN
 	GROUP BY CustId, TransDate;
 
 	UPDATE gbc
-	SET gbc.GBTicketCount = gbc.GBTicketCount + TEMP.GBTicketCount
+	SET gbc.GBTicketCount = TEMP.GBTicketCount
 		,gbc.LastModifiedDate = GETDATE()
 	FROM dbo.SPU_GroupBettingCustomer gbc WITH(UPDLOCK, ROWLOCK)
 	INNER JOIN (

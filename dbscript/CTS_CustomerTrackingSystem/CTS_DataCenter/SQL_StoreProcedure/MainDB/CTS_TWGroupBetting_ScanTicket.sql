@@ -366,7 +366,7 @@ BEGIN
 			,tfs.RuleId
 		) tempTable ON tempTable.RuleId = tcv.RuleId AND tempTable.Betteam = tcv.Betteam AND tempTable.GroupId = tcv.GroupId AND tempTable.MatchId = tcv.MatchId AND tempTable.Bettype = tcv.Bettype;
 
-	-- Delete existing ticket in last run
+	-- Delete existing ticket in SPU_GroupBettingTicket
 	DELETE st
 	FROM #TmpSuspectTicket AS st
 	INNER JOIN dbo.SPU_GroupBettingTicket gbt WITH (NOLOCK) ON st.Transid = gbt.TransId;
@@ -382,15 +382,15 @@ BEGIN
 										OR tcv.IsViolateCC = 1)
 									FOR XML RAW('TWGroupBettingTicket'), ROOT);
 
-	EXEC CTS_TWGroupBetting_SyncDataGroupBettingTicket @GBTicketXMLString;		
+	EXEC CTS_TWGroupBetting_SyncDataGroupBettingTicket @GBTicketXMLString, @MaxTransID;		
 
 	IF @ServerName = 'DB061'
 	BEGIN
-		EXEC DB06.bodb02.dbo.CTS_TWGroupBetting_SyncDataGroupBettingTicket @GBTicketXMLString;		
+		EXEC DB06.bodb02.dbo.CTS_TWGroupBetting_SyncDataGroupBettingTicket @GBTicketXMLString, @MaxTransID;		
 	END
 	ELSE IF @ServerName = 'DB062'
 	BEGIN 
-		EXEC DB061.bodb02.dbo.CTS_TWGroupBetting_SyncDataGroupBettingTicket @GBTicketXMLString;
+		EXEC DB061.bodb02.dbo.CTS_TWGroupBetting_SyncDataGroupBettingTicket @GBTicketXMLString, @MaxTransID;
 	END
 
 	DROP TABLE #TmpSuspectTicket

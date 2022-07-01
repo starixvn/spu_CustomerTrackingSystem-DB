@@ -1,6 +1,7 @@
 /*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 CREATE OR ALTER PROCEDURE [dbo].[CTS_TWGroupBetting_SyncDataGroupBettingTicket]
 		@GBTicketXMLString	VARCHAR(MAX)
+		,@RunningTransID	BIGINT
 AS
 /*
 	Created: 20220314@Harvey.Nguyen
@@ -17,8 +18,10 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
-	DECLARE @GBTicketXML	XML
-		,	@ArchivedDate	DATETIME = DATEADD(day, -3, GETDATE())
+	DECLARE @GBTicketXML				XML
+		,	@ArchivedDateTicketHistory	DATETIME = DATEADD(day, -3, GETDATE())
+		,	@DailyMidnight				DATETIME
+		,	@RunningDate				DATE
 		;
 	SET @GBTicketXML = CONVERT(XML,@GBTicketXMLString);
 
@@ -39,7 +42,7 @@ BEGIN
 	OPTION (OPTIMIZE FOR (@GBTicketXML = NULL));
 
 	DELETE FROM SPU_GroupBettingTicket_History
-	WHERE TransDate <= @ArchivedDate
+	WHERE TransDate <= @ArchivedDateTicketHistory
 
 	INSERT INTO SPU_GroupBettingTicket_History (
 		TransId
@@ -49,7 +52,17 @@ BEGIN
 		,TransDate
 	FROM #TmpGroupBettingTicket
 
-	DELETE FROM SPU_GroupBettingTicket;
+	SELECT @RunningDate = transdate
+	FROM bettrans WITH (NOLOCK)
+	WHERE transid = @RunningTransID;
+
+	SET @DailyMidnight = DATEADD(MINUTE, 30, CONVERT(SMALLDATETIME, CONVERT(DATE, @RunningDate)));
+
+	IF @RunningDate > @DailyMidnight
+	BEGIN
+		DELETE FROM SPU_GroupBettingTicket
+		WHERE TransDate = CONVERT(DATE, DATEADD(DAY,-1,GETDATE()));
+	END
 
 	INSERT INTO SPU_GroupBettingTicket (
 		CustId
