@@ -25,3 +25,8 @@ SET CategoryName = 'Robot User (Losing)'
 ,   IsProbation = 1 
 ,   IsPAProbation = 1
  WHERE CategoryID = 164;
+
+
+INSERT INTO CTS_DataCenter.StaticList(ListID,ItemID,ListName,ListNameDisplay,ItemName,ItemNameDisplay,PriorityOrder,Status,Description,CreatedDate)
+VALUES  (4,37,'Classification Source Type','Classification Source Type','Insert Robot','Insert Robot',37,1,'Insert Robot',NOW()),
+		(4,36,'Classification Source Type','Classification Source Type','Rescan Robot','Rescan Robot',36,1,'Rescan Robot',NOW());
