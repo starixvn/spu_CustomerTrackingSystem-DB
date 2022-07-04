@@ -243,11 +243,11 @@ BEGIN
 		, 	pa.CTSCustID
 		, 	cate.RelevantCategoryID
 		, 	CONST_GROUP_PA AS SportGroupID
-		, 	NOW() AS LastModifiedDate
+		, 	lv_Now AS LastModifiedDate
 		, 	lv_CreatedBy AS LastModifiedBy
 		, 	CONST_ACTIONTYPE_UPDATE AS ActionType
 		, 	1 AS IsAuto
-		, 	NOW() AS InsertDate
+		, 	lv_Now AS InsertDate
 		, 	tbl.CustomerClass AS TargetCC
 		, 	CASE WHEN cate.IsDirect = 1 THEN CONST_SOURCETYPE_PROBLEMDIRECT
 				 ELSE CONST_SOURCETYPE_PROBLEMAFFECT END AS SourceTypeID
