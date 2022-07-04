@@ -64,7 +64,7 @@ BEGIN
     SELECT DISTINCT t.CTSCustID, c.EvidenceID_Licensee, c.EvidenceID_Credit
     FROM Temp_PA AS t
 		INNER JOIN CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
-        INNER JOIN CustomerCategory AS c ON d.CategoryID = d.CategoryID
+        INNER JOIN CustomerCategory AS c ON d.CategoryID = c.CategoryID
 	WHERE t.TVSRequestID IS NOT NULL;    
     
     UPDATE Temp_PA AS t
