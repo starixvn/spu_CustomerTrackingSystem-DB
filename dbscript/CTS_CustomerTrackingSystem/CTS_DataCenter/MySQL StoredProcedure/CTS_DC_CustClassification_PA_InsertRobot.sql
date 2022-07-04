@@ -278,7 +278,7 @@ BEGIN
 
     UPDATE CTS_DataCenter.CTSCustomerClassification AS clss
     INNER JOIN Temp_PA AS pa ON  pa.CustID = clss.CustID AND clss.CategoryID IN (CONST_CATEGORYID_ROBOT,CONST_CATEGORYID_ROBOTLOSING)
-    SET 	clss.CategoryID =  clss.CategoryID   
+    SET 	clss.CategoryID =  pa.CategoryID   
 		,	clss.Remark =  CASE WHEN pa.IsFromCTS = 1 THEN pa.Remark ELSE clss.Remark END  
 		,	clss.IsFromTW =   CASE WHEN pa.IsFromTW = 1 THEN pa.IsFromTW ELSE clss.IsFromTW END  
         ,	clss.IsFromCTS =  CASE WHEN pa.IsFromCTS = 1 THEN pa.IsFromCTS ELSE clss.IsFromCTS END  
