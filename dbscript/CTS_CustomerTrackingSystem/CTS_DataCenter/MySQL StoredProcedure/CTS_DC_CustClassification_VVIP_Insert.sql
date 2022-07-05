@@ -123,7 +123,7 @@ sp: BEGIN
 	
     /****MOVE PA TO OLD PA*****/
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationOldPA(CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
-    , LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsDirect, InsertTime) 
+    , LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsDirect, InsertTime, TVSRequestID) 
     SELECT	cls.CustID
 		,	cls.CTSCustID
         ,	cls.SubscriberID
@@ -141,6 +141,7 @@ sp: BEGIN
         ,	cls.IsFromAI
         ,	cls.IsDirect
         ,	CURRENT_TIMESTAMP(3) AS InsertTime
+        ,	cls.TVSRequestID
 	FROM CTS_DataCenter.CTSCustomerClassification AS cls
 		INNER JOIN Temp_Customer AS tmpCus ON cls.CustID = tmpCus.CustID AND tmpCus.IsExistVVIP = 0;
         

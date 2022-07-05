@@ -13,6 +13,7 @@ BEGIN
 		Original:
 		Revisions:
             - 20220602@Long.Luu: Created [Redmine ID: #172561]
+            - 20220628@Long.Luu: Remove affected evidence in case of update Reason [Redmine ID: #174430]
             
         Param's Explanation (filtered by):
         
@@ -63,7 +64,7 @@ BEGIN
     SELECT DISTINCT t.CTSCustID, c.EvidenceID_Licensee, c.EvidenceID_Credit
     FROM Temp_PA AS t
 		INNER JOIN CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
-        INNER JOIN CustomerCategory AS c ON d.CategoryID = d.CategoryID
+        INNER JOIN CustomerCategory AS c ON d.CategoryID = c.CategoryID
 	WHERE t.TVSRequestID IS NOT NULL;    
     
     UPDATE Temp_PA AS t
@@ -82,7 +83,20 @@ BEGIN
     FROM Temp_ExistedEvidence AS t
 		INNER JOIN CustEvidence AS d ON t.CTSCustID = d.CTSCustID 
 			AND (t.EvidenceID_Credit = d.EvidenceID OR t.EvidenceID_Licensee = d.EvidenceID)
-	WHERE d.Level = 0;    			
+	WHERE d.Level = 0;    		
+	
+    /* REMOVE AFFECTED EVIDENCE  */ 
+    INSERT INTO CustEvidenceAffectedQueueRemove (CTSCustID,EvidenceID,Created)
+	WITH CTE_data (CTSCustID,EvidenceID) AS 
+    (
+		SELECT	t.CTSCustID
+			,	CASE WHEN d.IsLicensee = 1 THEN EvidenceID_Licensee ELSE EvidenceID_Credit END
+		FROM Temp_ExistedEvidence AS t
+			INNER JOIN CTSCustomer AS d ON t.CTSCustID = d.CTSCustID
+	)   
+    SELECT CTSCustID, EvidenceID, NOW() 
+    FROM CTE_data
+    WHERE EvidenceID IS NOT NULL;
 
 	/* LOG THE VOID REQUEST FOR FURTHER TRACKING */
     INSERT INTO TVSVoidRequest_History (TVSRequestID,CustIDs,ReasonID,CreatedBy,CreatedDate)

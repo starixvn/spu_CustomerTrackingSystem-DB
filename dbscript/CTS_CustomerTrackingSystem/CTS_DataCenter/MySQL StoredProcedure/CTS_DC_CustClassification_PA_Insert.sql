@@ -104,7 +104,7 @@ BEGIN
     CALL CTS_DC_CustClassification_PA_MappingCategory(ip_InputType,ip_ProblemAccounts);
     
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationOldPA(CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
-		, LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsDirect, InsertTime) 
+		, LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsDirect, InsertTime, TVSRequestID) 
     SELECT	tmpPA.CustID
 		,	tmpPA.CTSCustID
         ,	tmpPA.SubscriberID
@@ -121,6 +121,7 @@ BEGIN
         ,	tmpPA.IsFromCTS
         ,	tmpPA.IsDirectPA
         ,	CURRENT_TIMESTAMP(3) AS InsertTime
+        ,	tmpPA.TVSRequestID
 	FROM Temp_PA AS tmpPA
 	WHERE tmpPA.PinCTSCustID IS NOT NULL; 
     

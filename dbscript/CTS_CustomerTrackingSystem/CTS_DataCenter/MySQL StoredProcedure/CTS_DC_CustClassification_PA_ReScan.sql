@@ -15,23 +15,18 @@ sp: BEGIN
 		Revisions:  
 			- 20220520@Aries.Nguyen: Created [Redmine ID: #172561]
             - 20220616@Aries.Nguyen: Cannot mark PA (affected by uplines) correctly with First Mark [Redmine ID: #174136]
+            - 20220628@Aries.Nguyen: Update robot classification rule [Redmine ID: #174430]
 		
         Param's Explanation:
 
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_PA_ReScan("1,2,3,4");
 	*/ 
-    DECLARE	CONST_CATEGORYID_ROBOT 		INT DEFAULT 61;
-    DECLARE	CONST_CATEGORYID_BADROBOT 	INT DEFAULT 163;
-    DECLARE	CONST_CATEGORYID_GOODROBOT 	INT DEFAULT 164;
-    
-
-    DECLARE CONST_ROBOTTYPE_OBSERVED 	TINYINT UNSIGNED DEFAULT 0;
-    DECLARE CONST_ROBOTTYPE_GOOD 		TINYINT UNSIGNED DEFAULT 1;
-    DECLARE CONST_ROBOTTYPE_BAD 		TINYINT UNSIGNED DEFAULT 2;
+    DECLARE	CONST_CATEGORYID_ROBOT 			INT DEFAULT 163;
+    DECLARE	CONST_CATEGORYID_ROBOTLOSING 	INT DEFAULT 164;
     
     DECLARE	CONST_GROUP_PA 						INT DEFAULT 0;
-	DECLARE	CONST_CATEGORYGROUP_ROBOT 			INT DEFAULT 61;
+
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustID;    
 	CREATE TEMPORARY TABLE Temp_CustID (	  
@@ -69,13 +64,7 @@ sp: BEGIN
         ,	IsFromCTS 			BIT DEFAULT 0
         ,	IsFromAI 			BIT DEFAULT 0
         ,	TVSRequestID 		BIGINT UNSIGNED 
-        
-        
         ,	IsRobot 			BIT DEFAULT 0
-		,	Turnover 			DECIMAL(20,4) 
-		,	Winloss 			DECIMAL(20,4) 
-		,	BetCount 			INT 
-		,	ActiveDays 			TINYINT UNSIGNED 
         
         ,	LastModifiedDate	DATETIME
 		,	Remark				VARCHAR(500)
@@ -92,21 +81,6 @@ sp: BEGIN
 		,	PRIMARY KEY(CustID,CategoryIDSource)
 	);
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_Robot;    
-	CREATE TEMPORARY TABLE Temp_Robot (	  
-			CustID			BIGINT UNSIGNED  PRIMARY KEY 
-	);
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_RobotCate;    
-	CREATE TEMPORARY TABLE Temp_RobotCate (	  
-			CustID			BIGINT UNSIGNED 
-		, 	CategoryID		BIGINT UNSIGNED 
-		,	Turnover 		DECIMAL(20,4) 
-		,	Winloss 		DECIMAL(20,4) 
-		,	BetCount 		INT 
-		,	ActiveDays 		TINYINT UNSIGNED 
-		,	PRIMARY KEY(CustID,CategoryID)
-	);
     
     SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_CustID (CustID) VALUES ('", REPLACE(ip_CustIDs, ",", "'),('"),"');");
 	PREPARE 	stmt1 FROM @sql;
@@ -160,12 +134,12 @@ sp: BEGIN
         ,	class.IsFromCTS 
 		,	class.LastModifiedDate
         ,	class.TVSRequestID
-        ,	CASE WHEN class.CategoryID = CONST_CATEGORYGROUP_ROBOT THEN 1 ELSE 0 END AS IsRobot
+        ,	CASE WHEN class.CategoryID IN (CONST_CATEGORYID_ROBOT, CONST_CATEGORYID_ROBOTLOSING) THEN 1 ELSE 0 END AS IsRobot
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationOldPA AS class USE INDEX (PRIMARY) ON class.CustID = tmp.CustID AND class.SportGroupID = CONST_GROUP_PA
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID 
-														  AND (cate.CategoryGroup NOT IN (CONST_CATEGORYGROUP_ROBOT,CONST_CATEGORYID_BADROBOT, CONST_CATEGORYID_GOODROBOT)
-															 OR (cate.CategoryGroup IN (CONST_CATEGORYGROUP_ROBOT,CONST_CATEGORYID_BADROBOT, CONST_CATEGORYID_GOODROBOT) AND (class.IsFromCTS = 1 OR class.IsFromTVS = 1)))
+														  AND (cate.CategoryGroup NOT IN (CONST_CATEGORYID_ROBOT, CONST_CATEGORYID_ROBOTLOSING)
+															 OR (cate.CategoryGroup IN (CONST_CATEGORYID_ROBOT, CONST_CATEGORYID_ROBOTLOSING) AND (class.IsFromCTS = 1 OR class.IsFromTVS = 1)))
 	ON DUPLICATE KEY UPDATE  IsFromCTS = 1
                         ,	 Remark = class.Remark;	
     
@@ -200,12 +174,12 @@ sp: BEGIN
         ,	class.IsFromCTS 	
         ,	class.LastModifiedDate
 		,	class.TVSRequestID
-        ,	CASE WHEN class.CategoryID = CONST_CATEGORYGROUP_ROBOT THEN 1 ELSE 0 END AS IsRobot
+        ,	CASE WHEN class.CategoryID IN (CONST_CATEGORYID_ROBOT, CONST_CATEGORYID_ROBOTLOSING) THEN 1 ELSE 0 END AS IsRobot
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS class USE INDEX (PRIMARY) ON class.CustID = tmp.CustID AND class.SportGroupID = CONST_GROUP_PA AND class.IsDirect = 1
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID 
-															AND (cate.CategoryGroup NOT IN (CONST_CATEGORYGROUP_ROBOT,CONST_CATEGORYID_BADROBOT, CONST_CATEGORYID_GOODROBOT)
-															 OR (cate.CategoryGroup  IN (CONST_CATEGORYGROUP_ROBOT,CONST_CATEGORYID_BADROBOT, CONST_CATEGORYID_GOODROBOT) AND (class.IsFromCTS = 1 OR class.IsFromTVS = 1)))
+															AND (cate.CategoryGroup NOT IN (CONST_CATEGORYID_ROBOT, CONST_CATEGORYID_ROBOTLOSING)
+															 OR (cate.CategoryGroup  IN (CONST_CATEGORYID_ROBOT, CONST_CATEGORYID_ROBOTLOSING) AND (class.IsFromCTS = 1 OR class.IsFromTVS = 1)))
 	ON DUPLICATE KEY UPDATE  IsFromCTS = 1
                         ,	 Remark = class.Remark;	
 	 
@@ -230,7 +204,7 @@ sp: BEGIN
         ,	class.TVSRequestID
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationOldPA AS class USE INDEX (PRIMARY)  ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = CONST_GROUP_PA AND class.IsDirect = 1
-        STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup NOT IN (CONST_CATEGORYGROUP_ROBOT,CONST_CATEGORYID_BADROBOT, CONST_CATEGORYID_GOODROBOT)
+        STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup NOT IN (CONST_CATEGORYID_ROBOT, CONST_CATEGORYID_ROBOTLOSING)
 	WHERE NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassificationVVIP AS vv WHERE vv.CustID = class.CustID)
     ON DUPLICATE KEY UPDATE  Remark = CASE WHEN  class.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN class.Remark
 										   ELSE Temp_CustCategory.Remark END
@@ -257,7 +231,7 @@ sp: BEGIN
         ,	class.TVSRequestID
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS class USE INDEX (PRIMARY) ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = CONST_GROUP_PA AND class.IsDirect = 1
-        STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup NOT IN (CONST_CATEGORYGROUP_ROBOT,CONST_CATEGORYID_BADROBOT, CONST_CATEGORYID_GOODROBOT)
+        STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup NOT IN (CONST_CATEGORYID_ROBOT, CONST_CATEGORYID_ROBOTLOSING)
 	ON DUPLICATE KEY UPDATE  Remark = CASE WHEN  class.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN class.Remark
 										   ELSE Temp_CustCategory.Remark END
 						,	LastModifiedDate = CASE WHEN class.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN class.LastModifiedDate
@@ -283,11 +257,7 @@ sp: BEGIN
         ,	IsFromAI	
         ,	TVSRequestID
         
-        ,	IsRobot 		
-		,	Turnover 		
-		,	Winloss 		
-		,	BetCount 		
-		,	ActiveDays 		
+        ,	IsRobot 			
         
         ,  	LastModifiedDate
 		,	Remark		
