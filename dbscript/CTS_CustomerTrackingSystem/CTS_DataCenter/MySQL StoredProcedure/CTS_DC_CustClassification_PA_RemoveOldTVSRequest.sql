@@ -87,11 +87,16 @@ BEGIN
 	
     /* REMOVE AFFECTED EVIDENCE  */ 
     INSERT INTO CustEvidenceAffectedQueueRemove (CTSCustID,EvidenceID,Created)
-    SELECT	t.CTSCustID
-		,	CASE WHEN d.IsLicensee = 1 THEN EvidenceID_Licensee ELSE EvidenceID_Credit END
-        ,	NOW()
-    FROM Temp_ExistedEvidence AS t
-		INNER JOIN CTSCustomer AS d ON t.CTSCustID = d.CTSCustID;
+	WITH CTE_data (CTSCustID,EvidenceID) AS 
+    (
+		SELECT	t.CTSCustID
+			,	CASE WHEN d.IsLicensee = 1 THEN EvidenceID_Licensee ELSE EvidenceID_Credit END
+		FROM Temp_ExistedEvidence AS t
+			INNER JOIN CTSCustomer AS d ON t.CTSCustID = d.CTSCustID
+	)   
+    SELECT CTSCustID, EvidenceID, NOW() 
+    FROM CTE_data
+    WHERE EvidenceID IS NOT NULL;
 
 	/* LOG THE VOID REQUEST FOR FURTHER TRACKING */
     INSERT INTO TVSVoidRequest_History (TVSRequestID,CustIDs,ReasonID,CreatedBy,CreatedDate)
