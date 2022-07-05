@@ -32,8 +32,8 @@ sp : BEGIN
             - 20210505@Irena.Vo: Get additional CustId [Redmine ID: #152963]
 			- 20210506@Irena.Vo: Get additional CustSubId [Redmine ID: #154624]            
 			- 20220328@Aries.Nguyen: Add new category/class for PA Probation [Redmine ID: #170468]
-
 			- 20220408@Long.Luu: Get more data from AssociationGroupByAI [Redmine ID: #171222]
+			- 20220705@Aries.Nguyen: Tuning SP [Redmine ID: #174430]
             
 		Param's Explanation (filtered by):
 			- ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual, 4 - IP
@@ -128,7 +128,7 @@ sp : BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Group;
     CREATE TEMPORARY TABLE 	Temp_Group (
-			GroupID 		SMALLINT UNSIGNED PRIMARY KEY
+			GroupID 		BIGINT UNSIGNED PRIMARY KEY
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerGroup;
@@ -323,11 +323,11 @@ sp : BEGIN
         ,	cuAs.AssociationStatus
         ,	cuAs.AssociationDate
      FROM Temp_Association AS cuAs
-        INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cuAs.CTSCustID_Aff = cust.CTSCustID
-        INNER JOIN  CTS_DataCenter.StaticList AS sta ON sta.ListID = 2 AND sta.ItemID = cuAs.AssociationType 
-	    INNER JOIN  CTS_DataCenter.StaticList AS sta1 ON sta1.ListID = 1 AND sta1.ItemID = cust.CustStatusID
-        INNER JOIN  CTS_DataCenter.MappingSubscriberSite AS maSu ON maSu.SubscriberID = cust.SubscriberID AND maSu.SiteID = cust.SiteID
-        INNER JOIN CTS_DataCenter.SubscriberGroup AS sg ON sg.SubscriberGroupID = maSu.SubscriberGroupID AND sg.IsActive = 1
+        STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cust ON cuAs.CTSCustID_Aff = cust.CTSCustID
+        STRAIGHT_JOIN CTS_DataCenter.StaticList AS sta ON sta.ListID = 2 AND sta.ItemID = cuAs.AssociationType 
+	    STRAIGHT_JOIN CTS_DataCenter.StaticList AS sta1 ON sta1.ListID = 1 AND sta1.ItemID = cust.CustStatusID
+        STRAIGHT_JOIN CTS_DataCenter.MappingSubscriberSite AS maSu ON maSu.SubscriberID = cust.SubscriberID AND maSu.SiteID = cust.SiteID
+        STRAIGHT_JOIN CTS_DataCenter.SubscriberGroup AS sg ON sg.SubscriberGroupID = maSu.SubscriberGroupID AND sg.IsActive = 1
     ON DUPLICATE KEY UPDATE AssociationTypeName =  CONCAT(Temp_AssociatedAccount.AssociationTypeName, ', ', sta.ItemName),
 							AssociationDate = LEAST(Temp_AssociatedAccount.AssociationDate, cuAs.AssociationDate);
 
