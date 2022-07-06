@@ -13,13 +13,20 @@ Reviewer:
 USE CTS_DataCenter;
 /******************ALTER TABLE *************************/
 ALTER TABLE MatchMonitor
-ADD COLUMN ClassifyStatus TINYINT DEFAULT 0 COMMENT '0: Default, 1: Classify Done, 2: Ready To Classify (Match Complete)';
+ADD COLUMN ClassifyStatus TINYINT ;
+
+ALTER TABLE MatchMonitor
+MODIFY COLUMN ClassifyStatus TINYINT DEFAULT 0 COMMENT '0: Default, 1: Classify Done, 2: Ready To Classify (Match Complete)';
 
 ALTER TABLE MatchMonitor
 ADD INDEX IX_MatchMonitor_SportTypeClassifyStatus(SportType,ClassifyStatus,KickOffTime);
 
 ALTER TABLE MatchMonitorDetails
 ADD COLUMN ClassifyStatus TINYINT  DEFAULT 0 COMMENT '0: Default, 1: Classify Done';
+
+UPDATE MatchMonitor
+SET ClassifyStatus = 0
+WHERE EventDate >= DATE(NOW());
 
 /******************Init SystemParameter***************************/
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)

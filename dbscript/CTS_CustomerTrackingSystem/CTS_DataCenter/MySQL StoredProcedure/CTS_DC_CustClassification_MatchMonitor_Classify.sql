@@ -22,7 +22,7 @@ BEGIN
 	 */ 
 	DECLARE lv_PackSize INT;
 	DECLARE lv_MatchID INT;
-    DECLARE lv_LastDetailsID INT;
+    
     /*****GET SYSTEM Parameter VALUE****/
     SELECT s.ParameterValue
     INTO lv_PackSize
@@ -33,11 +33,6 @@ BEGIN
     INTO lv_MatchID
     FROM CTS_DataCenter.SystemParameter AS s
     WHERE s.ParameterID = 96;
-    
-    SELECT s.ParameterValue
-    INTO lv_LastDetailsID
-    FROM CTS_DataCenter.SystemParameter AS s
-    WHERE s.ParameterID = 97;    
     
     IF lv_MatchID IS NULL THEN    
 		SELECT mm.MatchID
@@ -73,7 +68,7 @@ BEGIN
         ,	SubscriberID	INT UNSIGNED
         ,	IsLicensee		TINYINT(1)
         
-        ,	PRIMARY KEY PK_Temp_MatchMonitorDetailsCust_CustIDMMDetailsID(CustID, MMDetailsID)
+        ,	PRIMARY KEY PK_Temp_Cust(CustID, MMDetailsID)
     );
     
     INSERT INTO Temp_MatchMonitorDetailsCust(CustID, MMDetailsID, MatchID, NoOfCust)
