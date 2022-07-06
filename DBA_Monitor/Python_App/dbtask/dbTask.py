@@ -999,9 +999,22 @@ class DBTaskHelper:
         for config in configs[0]:
             self.InsertMetric(config)
 
-    def GetMetric(self,mysqlOpt,type):
+    def CheckBackupLock(self,connOpt):
+        try:
+            query = ''' SELECT 1 AS HasBackupLock FROM performance_schema.metadata_locks WHERE OBJECT_TYPE = "BACKUP LOCK";'''
+            hasBackupLock = self.db.Execute(connOpt,query)
+            if hasBackupLock and hasBackupLock[0]['HasBackupLock'] == 1:
+                return True;
+            return False;
+        except Exception as ex:
+            raise Exception(("CheckBackupLock",ex))
+
+    def GetMetric(self,mysqlOpt):
+        if self.CheckBackupLock(mysqlOpt) == True:
+            return ['[]','[]','[]']
+
         query ='''
-                SELECT	JSON_ARRAYAGG(JSON_OBJECT(
+                SELECT (SELECT JSON_ARRAYAGG(JSON_OBJECT(
                         'Object_Schema', metric.Object_Schema 
                     ,	'Object_Name', metric.Object_Name 
                     ,	'Object_Type', metric.Object_Type 
@@ -1034,12 +1047,9 @@ class DBTaskHelper:
                     ,	'Sum_Sort_Scan', metric.Sum_Sort_Scan  
                     ,	'Sum_No_Index_Used', metric.Sum_No_Index_Used  
                     ,	'Sum_No_Good_Index_Used', metric.Sum_No_Good_Index_Used  
-                    ,	'Sum_CPU_Time', 0 )) AS SP
-                FROM  	performance_schema.events_statements_summary_by_program AS metric;
-            
-                TRUNCATE TABLE  performance_schema.events_statements_summary_by_program;
-
-                SELECT	JSON_ARRAYAGG(JSON_OBJECT(
+                    ,	'Sum_CPU_Time', 0 )) 
+                FROM  	performance_schema.events_statements_summary_by_program AS metric) AS SP,
+                (SELECT	JSON_ARRAYAGG(JSON_OBJECT(
                         'Object_Type', Object_Type
                     ,	'Object_Schema', Object_Schema 
                     ,	'Object_Name', Object_Name 
@@ -1077,11 +1087,10 @@ class DBTaskHelper:
                     ,	'Sum_Timer_Delete', Sum_Timer_Delete  
                     ,	'Min_Timer_Delete', Min_Timer_Delete  
                     ,	'Avg_Timer_Delete', Avg_Timer_Delete  
-                    ,	'Max_Timer_Delete', Max_Timer_Delete )) AS Tbl 
+                    ,	'Max_Timer_Delete', Max_Timer_Delete )) 
                 FROM performance_schema.table_io_waits_summary_by_table
-                WHERE OBJECT_SCHEMA NOT IN ('performance_schema','mysql');
-
-                SELECT	JSON_ARRAYAGG(JSON_OBJECT(
+                WHERE OBJECT_SCHEMA NOT IN ('performance_schema','mysql')) AS Tbl,
+                (SELECT	JSON_ARRAYAGG(JSON_OBJECT(
                         'Object_Type', Object_Type
                     ,	'Object_Schema', Object_Schema 
                     ,	'Object_Name', Object_Name 
@@ -1120,14 +1129,18 @@ class DBTaskHelper:
                     ,	'Sum_Timer_Delete', Sum_Timer_Delete  
                     ,	'Min_Timer_Delete', Min_Timer_Delete  
                     ,	'Avg_Timer_Delete', Avg_Timer_Delete  
-                    ,	'Max_Timer_Delete', Max_Timer_Delete )) AS Idx 
+                    ,	'Max_Timer_Delete', Max_Timer_Delete )) 
                 FROM performance_schema.table_io_waits_summary_by_index_usage
-                WHERE OBJECT_SCHEMA NOT IN ('performance_schema','mysql');
-            
-                TRUNCATE TABLE  performance_schema.table_io_waits_summary_by_table;
+                WHERE OBJECT_SCHEMA NOT IN ('performance_schema','mysql')) AS Idx;
             '''
         metric = self.db.Execute(mysqlOpt,query)
-        return [metric[0]['SP'],metric[1]['Tbl'],metric[1]['Idx']];
+
+        query='''TRUNCATE TABLE  performance_schema.events_statements_summary_by_program;'''
+        self.db.Execute(mysqlOpt,query)
+        query='''TRUNCATE TABLE  performance_schema.table_io_waits_summary_by_table;'''
+        self.db.Execute(mysqlOpt,query)
+
+        return [metric[0]['SP'],metric[0]['Tbl'],metric[0]['Idx']];
 
     def InsertMetric(self,configOjb):
         try:

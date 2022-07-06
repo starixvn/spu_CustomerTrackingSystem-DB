@@ -23,23 +23,22 @@ BEGIN
         Example:
 			- CALL MonDB.DBA_Monitor_SPMetric_Insert();
 	*/
-	INSERT INTO MonDB.Monitor_SPMetric_Master58(ServerID,Created,
-												Object_Schema, Object_Name, Object_Type,GroupID,
-												Count_Star, Sum_Timer_Wait, Min_Timer_Wait, Avg_Timer_Wait, Max_Timer_Wait,
-												Count_Statements, Sum_Statements_Wait, Min_Statements_Wait, Avg_Statements_Wait, Max_Statements_Wait,
-												Sum_Lock_Time, Sum_Errors,Sum_Warnings, 
-												Sum_Rows_Affected, Sum_Rows_Sent, Sum_Rows_Examined, 
-												Sum_Created_Tmp_Disk_Tables, Sum_Created_Tmp_Tables,
-												Sum_Select_Full_Join, Sum_Select_Full_Range_Join, Sum_Select_Range, Sum_Select_Range_Check, 
-												Sum_Select_Scan, Sum_Sort_Merge_Passes, Sum_Sort_Range, Sum_Sort_Rows, Sum_Sort_Scan,
-												Sum_No_Index_Used,Sum_No_Good_Index_Used,
-												Sum_CPU_Time)
+	INSERT INTO  MonDB.Monitor_SPMetric(ServerID,Created,
+										Object_Schema, Object_Name, Object_Type,
+										Count_Star, Sum_Timer_Wait, Min_Timer_Wait, Avg_Timer_Wait, Max_Timer_Wait,
+										Count_Statements, Sum_Statements_Wait, Min_Statements_Wait, Avg_Statements_Wait, Max_Statements_Wait,
+										Sum_Lock_Time, Sum_Errors,Sum_Warnings, 
+										Sum_Rows_Affected, Sum_Rows_Sent, Sum_Rows_Examined, 
+										Sum_Created_Tmp_Disk_Tables, Sum_Created_Tmp_Tables,
+										Sum_Select_Full_Join, Sum_Select_Full_Range_Join, Sum_Select_Range, Sum_Select_Range_Check, 
+										Sum_Select_Scan, Sum_Sort_Merge_Passes, Sum_Sort_Range, Sum_Sort_Rows, Sum_Sort_Scan,
+										Sum_No_Index_Used,Sum_No_Good_Index_Used,
+										Sum_CPU_Time)
 	SELECT	ip_ServerID AS ServerID
 		, 	CURRENT_TIMESTAMP()	AS Created
 		,	metric.Object_Schema 
 		,	metric.Object_Name 
 		,	metric.Object_Type 
-		,	metric.GroupID 
 		,	metric.Count_Star  
 		,	metric.Sum_Timer_Wait  
 		,	metric.Min_Timer_Wait  

@@ -3,7 +3,6 @@ USE MonDB;
 CREATE TABLE MonitorJob (
    ID int unsigned NOT NULL AUTO_INCREMENT,
    ServerID int unsigned DEFAULT NULL,
-   Type varchar(20),
    IsActive bit(1) DEFAULT b'1',
    Created datetime DEFAULT CURRENT_TIMESTAMP,
    Modified datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

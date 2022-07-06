@@ -24,7 +24,6 @@ BEGIN
 		,	sv.ServerPort 
 		,	sv.MysqlUser 
 		,	sv.MysqlPassword 
-        ,	job.Type
 	FROM MonDB.MonitorJob AS job
 		INNER JOIN MonDB.MysqlServer AS sv ON job.ServerID = sv.ID
 	WHERE   job.IsActive = 1

@@ -23,15 +23,15 @@ BEGIN
         Example:
 			- CALL MonDB.DBA_Monitor_TableMetric_Get();
 	*/
-	INSERT IGNORE INTO   MonDB.Monitor_TableMetric_Master58(ServerID,Created, 
-															Object_Type, Object_Schema, Object_Name,
-															Count_Star, Sum_Timer_Wait, Min_Timer_Wait, Avg_Timer_Wait, Max_Timer_Wait,
-															Count_Read, Sum_Timer_Read, Min_Timer_Read, Avg_Timer_Read, Max_Timer_Read,
-															Count_Write, Sum_Timer_Write, Min_Timer_Write, Avg_Timer_Write, Max_Timer_Write,
-															Count_Fetch, Sum_Timer_Fetch, Min_Timer_Fetch, Avg_Timer_Fetch, Max_Timer_Fetch,
-															Count_Insert, Sum_Timer_Insert, Min_Timer_Insert, Avg_Timer_Insert, Max_Timer_Insert,
-															Count_Update, Sum_Timer_Update, Min_Timer_Update, Avg_Timer_Update, Max_Timer_Update,
-															Count_Delete, Sum_Timer_Delete, Min_Timer_Delete, Avg_Timer_Delete, Max_Timer_Delete)
+	INSERT IGNORE INTO MonDB.Monitor_TableMetric(ServerID,Created, 
+												Object_Type, Object_Schema, Object_Name,
+												Count_Star, Sum_Timer_Wait, Min_Timer_Wait, Avg_Timer_Wait, Max_Timer_Wait,
+												Count_Read, Sum_Timer_Read, Min_Timer_Read, Avg_Timer_Read, Max_Timer_Read,
+												Count_Write, Sum_Timer_Write, Min_Timer_Write, Avg_Timer_Write, Max_Timer_Write,
+												Count_Fetch, Sum_Timer_Fetch, Min_Timer_Fetch, Avg_Timer_Fetch, Max_Timer_Fetch,
+												Count_Insert, Sum_Timer_Insert, Min_Timer_Insert, Avg_Timer_Insert, Max_Timer_Insert,
+												Count_Update, Sum_Timer_Update, Min_Timer_Update, Avg_Timer_Update, Max_Timer_Update,
+												Count_Delete, Sum_Timer_Delete, Min_Timer_Delete, Avg_Timer_Delete, Max_Timer_Delete)
 	SELECT	ip_ServerID AS ServerID
 		,	CURRENT_TIMESTAMP() AS Created
 		,	Object_Type
