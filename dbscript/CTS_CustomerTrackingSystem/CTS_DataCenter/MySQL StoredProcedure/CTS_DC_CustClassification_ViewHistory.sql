@@ -24,6 +24,7 @@ BEGIN
 			- 20211116@Aries.Nguyen: Return history with CTSUser is null[Redmine ID: #156935]
             - 20220510@Irena.Vo: Update for return CreatedBy [Redmine ID: #171512]
 			- 20220519@Aries.Nguyen: Renovate the Category Log History [Redmine ID: #172560]
+            - 20200705@Casey.Huynh: Add New Category LicVIP, LixBA
 		Param's Explanation (filtered by):		
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_ViewHistory(43600889);
@@ -60,6 +61,8 @@ BEGIN
             ,	temp.IsFromTW
             ,	temp.IsFromCTS
             ,	temp.IsFromAI
+			,	(CASE WHEN temp.TargetCC IN (99,100) THEN 1 ELSE 0 END) AS IsLicVIP
+            ,	(CASE WHEN temp.TargetCC IN (14) THEN 1 ELSE 0 END) AS IsLicBA
 		FROM 	CTS_DataCenter.CTSCustomerClassification_History AS temp
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS cc1 ON temp.CategoryID = cc1.CategoryID
 			LEFT JOIN CTS_DataCenter.StaticList AS s ON s.ListID = 4 AND temp.SourceTypeID = s.ItemID
