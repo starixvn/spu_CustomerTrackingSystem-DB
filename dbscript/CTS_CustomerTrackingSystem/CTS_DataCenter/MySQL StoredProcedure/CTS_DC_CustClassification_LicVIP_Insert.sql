@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_LicVIP_Inse
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_LicVIP_Insert`(
-		IN ip_CustIDList TEXT
+		IN ip_CustJson  TEXT
 )
     SQL SECURITY INVOKER
 sp: BEGIN
@@ -18,207 +18,165 @@ sp: BEGIN
 		Param's Explanation:
             
 		Example:
-			CALL CTS_DC_CustClassification_LicVIP_Insert('1,2,3,4');
-	*/
-    
+			CALL CTS_DC_CustClassification_LicVIP_Insert('[{"":,"":}]');
+	*/    
     
     DECLARE lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();
-	DECLARE lv_SPName 			VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_LicVIP_Insert';
-    DECLARE	lv_CategoryID		INT DEFAULT 210;
-    DECLARE lv_SportGroupID		INT DEFAULT 200;
-    DECLARE lv_LogTypeID		INT DEFAULT 10;
+    DECLARE lv_CustomerClass	INT;
     DECLARE lv_ActionType		INT DEFAULT 0;
 	DECLARE lv_IsAuto			INT DEFAULT 0;
-    DECLARE lv_MaxCTSCustID		BIGINT UNSIGNED;
-    DECLARE lv_SourceTypeID		INT;    
-    DECLARE lv_CustomerClass	INT; 
-
-#	INSERT INTO CaseyLog(SPName, OthersParam, JsonText)
- #   SELECT 'CTS_DC_CustClassification_VVIP_Insert', CONCAT('ip_FromAction:',ip_FromAction,' ip_UplineRoleID:', ip_UplineRoleID, ' ip_QueueID:', ip_QueueID, ' ip_AffectDownline:', ip_AffectDownline) , ip_CustJson;
+    DECLARE lv_VIPPriority		SMALLINT;
+    
+	DECLARE	CONST_GROUP_WRAPER				INT DEFAULT 100;
+    DECLARE CONST_CATEGORY_VIPPROBLEM 		INT DEFAULT 3;
+    DECLARE CONST_CATEGORY_VIPNORMAL 		INT DEFAULT 4;
+    DECLARE CONST_CC_VIPPROBLEM 			INT DEFAULT 99;
+    DECLARE CONST_CC_VIPNORMAL 				INT DEFAULT 100;
+    DECLARE CONST_SOURCETYPEID 				INT DEFAULT 38;
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
 	CREATE TEMPORARY TABLE 		Temp_Customer (
-		 	CustID			BIGINT UNSIGNED		
-         ,  CTSCustID 		BIGINT UNSIGNED
-         ,	SubscriberID 	INT UNSIGNED
-         ,	RoleID			INT	
-         ,	CreatedBy		BIGINT UNSIGNED
-         ,	Remark			VARCHAR(300)
-         ,	IsExistVVIP		BOOLEAN
-         ,	IsDirect		BOOLEAN
+		 	/*Cust info*/
+			CustID					BIGINT UNSIGNED 
+		, 	CTSCustID				BIGINT UNSIGNED
+        , 	SubscriberID			INT 
+        ,	CreatedBy 				INT UNSIGNED
          
          ,	PRIMARY KEY PK_Temp_Customer(CustID)
          ,	INDEX IX_Temp_Customer_CTSCustID(CTSCustID)
 	);
-    
-    SELECT  cat.CustomerClass
-    INTO lv_CustomerClass
+	
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustCategory;
+	CREATE TEMPORARY TABLE 		Temp_CustCategory (
+		 	/*Cust info*/
+			CustID					BIGINT UNSIGNED 
+		, 	CTSCustID				BIGINT UNSIGNED
+        , 	SubscriberID			INT 
+        ,	CreatedBy 				INT UNSIGNED
+         ,	CategoryID				INT
+         ,	IsDangerProbation		TINYINT(1)
+         ,	Priority				SMALLINT 
+         ,	CustomerClass			SMALLINT UNSIGNED
+         ,	IsDataChanged			TINYINT(1) DEFAULT 0
+         ,	PRIMARY KEY PK_Temp_Customer(CustID)
+	);
+    #=======================================================================================
+    SELECT cat.Priority
+    INTO lv_VIPPriority
     FROM CTS_DataCenter.CustomerCategory AS cat
-    WHERE cat.CategoryID = lv_CategoryID;    
+    WHERE cat.CategoryID IN (CONST_CATEGORY_VIPPROBLEM,CONST_CATEGORY_VIPNORMAL)
+    LIMIT 1;
     
-    /**************************************************************************************/
-    INSERT INTO Temp_Customer(CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, Remark, IsExistVVIP, IsDirect) 
-	SELECT 	DISTINCT temp.CustID, temp.CTSCustID, temp.SubscriberID, temp.RoleID, temp.CreatedBy, temp.Remark
-		,	(CASE WHEN cls.CustID IS NOT NULL THEN 1 ELSE 0 END) AS IsExistVVIP
-        ,	(CASE WHEN ip_FromAction = 1 THEN  1 ELSE 0 END) AS IsDirect 
+    #=======================================================================================
+    INSERT INTO Temp_Customer(CustID, CTSCustID, SubscriberID, CreatedBy) 
+	SELECT 	DISTINCT tmpJs.CustID, cus.CTSCustID, cus.SubscriberID, tmpJs.CreatedBy
 	FROM JSON_TABLE(ip_CustJson,
 		 "$[*]" COLUMNS(
-				CustID 			BIGINT UNSIGNED	PATH "$.CustID"
-			,	CTSCustID 		BIGINT UNSIGNED	PATH "$.CTSCustID"
-            ,	RoleID			INT				PATH "$.RoleID"
-            ,	SubscriberID 	INT UNSIGNED	PATH "$.SubscriberID"
-            ,	CreatedBy 		BIGINT UNSIGNED	PATH "$.CreatedBy"            
-            ,	Remark			VARCHAR(300)	PATH "$.Remark"
-		 )) AS temp
-		LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON  temp.CustID = cls.CustID AND cls.CategoryID = 210;
-	
-    SELECT MAX(tmpCus.CTSCustID)
-    INTO lv_MaxCTSCustID
-    FROM Temp_Customer AS tmpCus;
+				CustID 			BIGINT UNSIGNED		PATH "$.CustID"
+            ,	CreatedBy 		BIGINT UNSIGNED		PATH "$.CreatedBy"
+		 )) AS tmpJs
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON  tmpJs.CustID = cus.CustID AND cus.CustSubID = 0;    
     
-    /****SET SourceTypeID for write log******/
-    SET lv_SourceTypeID = CASE 	WHEN ip_FromAction = 1 THEN 13
-								WHEN ip_FromAction = 2 AND ip_UplineRoleID = 4 THEN 24
-                                WHEN ip_FromAction = 2 AND ip_UplineRoleID = 3 THEN 25
-                                WHEN ip_FromAction = 2 AND ip_UplineRoleID = 2 THEN 26
-                                WHEN ip_FromAction = 3 THEN 30
-							END;    
-    /************************************************************************************/
-	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationVVIP(CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryID, IsAffectToDownline,InsertTime, IsDirect) 
-	SELECT tmpCus.CTSCustID
+	 INSERT INTO Temp_CustCategory(CustID, CTSCustID, SubscriberID, CreatedBy, CategoryID, IsDangerProbation, Priority, CustomerClass) 
+     WITH CTE_LastCategory AS
+     (
+		 SELECT	tmpCus.CustID
+			,	tmpCus.CTSCustID
+			,	tmpCus.SubscriberID
+			,	tmpCus.CreatedBy
+			,	tmpLastCat.CategoryID
+		 FROM Temp_Customer AS tmpCus,
+		 LATERAL (
+			SELECT cls.CategoryID 
+			FROM CTS_DataCenter.CTSCustomerClassification AS cls
+			WHERE cls.CustID = tmpCus.CustID
+			ORDER BY cls.CustID, cls.LastModifiedDate DESC
+			LIMIT 1
+		 ) AS tmpLastCat
+     ) 
+     SELECT cte.CustID
+		,	cte.CTSCustID
+        ,	cte.SubscriberID
+        ,	cte.CreatedBy
+        ,	cte.CategoryID
+        ,	cat.IsDangerProbation
+        ,	cat.Priority
+        ,	cat.CustomerClass
+     FROM  CTE_LastCategory AS cte
+		LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cte.CategoryID;     
+    
+    #======NOT Update CC if Priority Value of Current Less than VIP.Priority ===========================================
+    UPDATE Temp_CustCategory AS tmpCus
+		INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc ON sc.CustID = tmpCus.CustID
+    SET tmpCus.Priority = -1;	
+    
+    UPDATE Temp_CustCategory AS tmpCus
+    SET tmpCus.IsDataChanged = 1
+        , tmpCus.CustomerClass = (CASE WHEN tmpCus.IsDangerProbation = 1 THEN CONST_CC_VIPNORMAL ELSE CONST_CC_VIPPROBLEM END)
+    WHERE tmpCus.Priority IS NULL OR tmpCus.Priority > lv_VIPPriority ; # Change CC
+    
+    #=======================================================================================
+    UPDATE CTS_DataCenter.CTSCustomer AS cus
+		INNER JOIN Temp_Customer AS tmpCus ON cus.CTSCustID = tmpCus.CTSCustID
+	SET cus.IsLicenseeVIP = 1
+		, ModifiedTime = lv_CurrentDateTime
+    WHERE cus.IsLicenseeVIP <> 1;
+    
+    #=======================================================================================
+	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CTSCustID, CustID, SubscriberID, SportGroupID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsDirect) 
+	SELECT	tmpCus.CTSCustID
 		,	tmpCus.CustID
-		,	tmpCus.RoleID
 		,	tmpCus.SubscriberID
+		,	CONST_GROUP_WRAPER
+		,	(CASE WHEN tmpCus.IsDangerProbation = 1 THEN CONST_CATEGORY_VIPNORMAL ELSE CONST_CATEGORY_VIPPROBLEM END) AS CategoryID #
+		,	lv_CurrentDateTime AS CreatedDate
 		,	tmpCus.CreatedBy
-		,	tmpCus.Remark
-		,	lv_CategoryID
-		,	ip_AffectDownline AS IsAffectToDownline
-		,	lv_CurrentDateTime AS InsertTime
-		,	tmpCus.IsDirect
-	FROM Temp_Customer AS tmpCus
-    WHERE tmpCus.IsExistVVIP = 0;
-	
-    /****MOVE PA TO OLD PA*****/
-    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationOldPA(CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
-    , LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsDirect, InsertTime, TVSRequestID) 
-    SELECT	cls.CustID
-		,	cls.CTSCustID
-        ,	cls.SubscriberID
-        ,	cls.SportGroupID
-        ,	cls.CategoryID
-        ,	cls.Remark
-        ,	cls.CreatedDate
-        ,	cls.CreatedBy
-        ,	cls.LastModifiedDate
-        ,	cls.LastModifiedBy
-        ,	cls.LastScannedDate
-        ,	cls.IsFromTVS
-        ,	cls.IsFromTW
-        ,	cls.IsFromCTS
-        ,	cls.IsFromAI
-        ,	cls.IsDirect
-        ,	CURRENT_TIMESTAMP(3) AS InsertTime
-        ,	cls.TVSRequestID
-	FROM CTS_DataCenter.CTSCustomerClassification AS cls
-		INNER JOIN Temp_Customer AS tmpCus ON cls.CustID = tmpCus.CustID AND tmpCus.IsExistVVIP = 0;
-        
-	/*****Remove all category, customer class, probation list before******/
-	DELETE cls
-    FROM CTS_DataCenter.CTSCustomerClassification AS cls
-		INNER JOIN Temp_Customer AS tmpCus ON cls.CustID = tmpCus.CustID AND tmpCus.IsExistVVIP = 0;
-	
-    DELETE pcl
-    FROM CTS_DataCenter.SpecialCustomerClass AS pcl
-		INNER JOIN Temp_Customer AS tmpCus ON pcl.CTSCustID = tmpCus.CTSCustID AND pcl.CreatedFromFunction = 1 AND tmpCus.IsExistVVIP = 0;
+		,	lv_CurrentDateTime AS LastModifiedDate
+		,	tmpCus.CreatedBy AS LastModifiedBy
+		,	DATE(lv_CurrentDateTime) LastScannedDate
+        ,	1 AS IsDirect
+	FROM Temp_CustCategory AS tmpCus;
     
-	DELETE pam
-    FROM CTS_DataCenter.ProbationAccountMonitor AS pam
-		INNER JOIN Temp_Customer AS tmpCus ON pam.CustID = tmpCus.CustID WHERE tmpCus.IsExistVVIP = 0;
-        
-	/*Insert VVIP*/
-	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification (CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsDirect)
-	SELECT 	tmpCus.CustID
-		, 	tmpCus.CTSCustID
-		, 	tmpCus.SubscriberID
-		, 	lv_CategoryID
-		,   lv_SportGroupID
-		, 	tmpCus.Remark
-		, 	lv_CurrentDateTime AS CreatedDate
-		,   tmpCus.CreatedBy
-		,   lv_CurrentDateTime AS LastModifiedDate
-		,   tmpCus.CreatedBy AS LastModifiedBy
-		,   DATE(lv_CurrentDateTime) AS LastScannedDate
-        ,	tmpCus.IsDirect
-	FROM Temp_Customer AS tmpCus
-    WHERE tmpCus.IsExistVVIP = 0;
-  
 	/*Insert VVIP history*/
-	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID , LastModifiedDate, LastModifiedBy, ActionType, IsAuto
-			, InsertDate, TargetCC, SourceTypeID, IsDataChanged, Remark, IsDirect)
+	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID , LastModifiedDate, LastModifiedBy, ActionType
+			, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, IsDirect)
 	SELECT 	tmpCus.CustID
 		, 	tmpCus.CTSCustID
-		, 	lv_CategoryID
-		, 	lv_SportGroupID
+		, 	(CASE WHEN tmpCus.IsDangerProbation = 1 THEN CONST_CATEGORY_VIPNORMAL ELSE CONST_CATEGORY_VIPPROBLEM END) AS CategoryID #
+		, 	CONST_GROUP_WRAPER
 		, 	lv_CurrentDateTime AS LastModifiedDate
 		, 	tmpCus.CreatedBy AS LastModifiedBy
 		,	lv_ActionType
 		,	lv_IsAuto
 		,   DATE(lv_CurrentDateTime) AS InsertDate
-		,   lv_CustomerClass AS TargetCC
-		,   lv_SourceTypeID AS SourceTypeID
+		,   tmpCus.CustomerClass AS TargetCC
+		,   CONST_SOURCETYPEID AS SourceTypeID
 		,	1 AS IsDataChanged
-        ,	tmpCus.Remark
-        , 	tmpCus.IsDirect
-	FROM Temp_Customer AS tmpCus
-    WHERE tmpCus.IsExistVVIP = 0;
-	
+        ,	1 AS IsDirect
+	FROM Temp_CustCategory AS tmpCus
+    WHERE  tmpCus.IsDataChanged = 1;
+
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, IsDirect)
 	SELECT 	tmpCus.CustID
 		, 	tmpCus.CTSCustID
-		, 	lv_CategoryID
-		, 	lv_SportGroupID
+		, 	(CASE WHEN tmpCus.IsDangerProbation = 1 THEN CONST_CATEGORY_VIPNORMAL ELSE CONST_CATEGORY_VIPPROBLEM END) AS CategoryID #
+		, 	CONST_GROUP_WRAPER
 		, 	lv_CurrentDateTime AS LastModifiedDate
 		, 	tmpCus.CreatedBy AS LastModifiedBy
 		,	lv_ActionType
 		,	lv_IsAuto
 		,   DATE(lv_CurrentDateTime) AS InsertDate
-		,   lv_CustomerClass AS TargetCC
-		,   lv_SourceTypeID AS SourceTypeID
-		,	1 AS IsDataChanged
-        ,	tmpCus.IsDirect
-	FROM Temp_Customer AS tmpCus
-    WHERE tmpCus.IsExistVVIP = 0;
-    
-	/*Auto Pin Category*/
-	INSERT IGNORE INTO CTS_DataCenter.PinCustomerCategory(CTSCustID, CreatedTime, CreatedBy)
-	SELECT tmpCus.CTSCustID, lv_CurrentDateTime, tmpCus.CreatedBy
-    FROM Temp_Customer AS tmpCus
-    WHERE tmpCus.IsExistVVIP = 0;  
- 
-    /*RETURN CustList: push CC to NAP */
-    SELECT	tmpCus.CustID AS CustId
-		,	lv_CustomerClass AS CustomerClass
-        ,	lv_CategoryID AS Category
-    FROM  Temp_Customer AS tmpCus
-    WHERE tmpCus.IsExistVVIP = 0;
-    
-    /*****UPDATE Queue LastID************/
-    IF ip_FromAction = 2 AND ip_QueueID IS NOT NULL THEN
-		UPDATE CTS_DataCenter.CTSCustomerClassificationQueue AS que
-		SET que.LastDownlineCTSCustID = lv_MaxCTSCustID
-		WHERE que.ID = ip_QueueID;
-    END IF;
-    
-    /********USER LOG***********************************************************************/
-    IF ip_FromAction = 1 THEN
-		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-		SELECT  lv_LogTypeID
-			, 	lv_SPName
-			, 	CONCAT('Insert VVIP: CTSCustID_', tmpCus.CTSCustID,'; RoleID_', tmpCus.RoleID, '; AffectDownline_', ip_AffectDownline,'; SubscriberID_', tmpCus.SubscriberID, '; CategoryID_', lv_CategoryID, '; Remark_', tmpCus.Remark)
-            ,	lv_CurrentDateTime AS CreatedDate
-            , 	tmpCus.CreatedBy
-        FROM Temp_Customer AS tmpCus;
-	END IF;
-    
+		,   tmpCus.CustomerClass AS TargetCC
+		,   CONST_SOURCETYPEID AS SourceTypeID
+		,	tmpCus.IsDataChanged
+        ,	1 AS IsDirect
+    FROM Temp_CustCategory AS tmpCus;
+  
+	SELECT	tmpCus.CustID
+		,   tmpCus.CustomerClass 
+        ,	tmpCus.CategoryID
+        ,	tmpCus.CreatedBy
+    FROM Temp_CustCategory AS tmpCus
+    WHERE tmpCus.IsDataChanged = 1;
 END$$
 DELIMITER ;
