@@ -271,7 +271,7 @@ class DBTaskHelper:
     def UpdateServerStatus(self,serverID, status):
         try:
             if serverID > 0:
-                query = '''Update MonDB.MysqlServer Set DBATaskStatus = "{status}" WHERE ID = {serverID} AND DBATaskStatus = "None";'''.format(status=status,serverID=serverID)
+                query = '''Update MonDB.MysqlServer Set DBATaskStatus = "{status}" WHERE ID = {serverID};'''.format(status=status,serverID=serverID)
                 self.db.Execute(self.connArchiveOpt,query);
         except Exception as ex:
             raise Exception(("UpdateServerStatus",ex,(ex,serverID,status)))
@@ -950,14 +950,21 @@ class DBTaskHelper:
             threshold = int(configOjb['Threshold'])
             thresholdApp = int(configOjb['ThresholdApp'])
             thresholdRowLocked = int(configOjb['ThresholdRowLocked'])
-            temp = 1
+   
             bigQueryList  = self.CheckQueryRunning(mysqlOpt,threshold,thresholdApp,thresholdRowLocked)
-            temp = 2
+
             if len(bigQueryList) == 0:
                 self.CheckAlertCached(configOjb['ServerID'],'CheckBigQuery', 0, 0);
                 return
-            temp = 3
+
             for queryInfo in bigQueryList:
+                sp=queryInfo["SPName"]   
+                if sp is not None:
+                    sp = sp.replace("<","&lt;").replace(">","&gt;")
+                    
+                queryText=queryInfo["Query"]        
+                if queryText is not None:
+                    queryText = queryText.replace("<","&lt;").replace(">","&gt;")
                 messText ='''<b>Big Query</b>\nServer Name: {serverName} - {serverIP}\nLatency: {latency}\nTable Locked: {tblLocked}\nRow Locked: {rowLocked}\nRow Modified: {rowModified}\nUser: {user}\nHost: {host}\nSPName: {sp}\nQueryText: {queryText}'''.format(serverName=configOjb['ServerName'],
                                                                 serverIP=configOjb['ServerIP'],
                                                                 latency=queryInfo["Latency"],
@@ -966,20 +973,198 @@ class DBTaskHelper:
                                                                 rowModified=queryInfo["Row Modified"],
                                                                 user=queryInfo["User"],
                                                                 host=queryInfo["Host"],
-                                                                sp=queryInfo["SPName"],
-                                                                queryText=queryInfo["Query"])
-                temp = 4
+                                                                sp=sp,
+                                                                queryText=queryText)
+      
                 isCached = self.CheckAlertCached(configOjb['ServerID'],'CheckBigQuery', queryInfo["ThreadID"], 1);
                 if isCached == False:
-                    temp = 5
                     self.tele.SendTelegramMessage(self.telegramOpt,messText);
         except Exception as ex:
-            self.WriteLog(("CheckBigQuery",ex,temp))
+            self.WriteLog(("CheckBigQuery",ex))
 
     def CheckBigQueryJob(self):
         configs = self.CheckBigQueryConfig()
         for config in configs[0]:
             self.CheckBigQuery(config)
+
+    def GetServerMonitor(self):
+        try:
+            listConfig = self.db.Call_SP(self.connArchiveOpt,'DBA_Monitor_Config_Get',())
+            return listConfig;  
+        except Exception as ex:
+            raise Exception(("GetServerMonitor",ex))
+
+    def MonitorJob(self):
+        configs = self.GetServerMonitor()
+        for config in configs[0]:
+            self.InsertMetric(config)
+
+    def CheckBackupLock(self,connOpt):
+        try:
+            query = ''' SELECT 1 AS HasBackupLock FROM performance_schema.metadata_locks WHERE OBJECT_TYPE = "BACKUP LOCK";'''
+            hasBackupLock = self.db.Execute(connOpt,query)
+            if hasBackupLock and hasBackupLock[0]['HasBackupLock'] == 1:
+                return True;
+            return False;
+        except Exception as ex:
+            raise Exception(("CheckBackupLock",ex))
+
+    def GetMetric(self,mysqlOpt):
+        if self.CheckBackupLock(mysqlOpt) == True:
+            return ['[]','[]','[]']
+
+        query ='''
+                SELECT (SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                        'Object_Schema', metric.Object_Schema 
+                    ,	'Object_Name', metric.Object_Name 
+                    ,	'Object_Type', metric.Object_Type 
+                    ,	'Count_Star', metric.Count_Star  
+                    ,	'Sum_Timer_Wait', metric.Sum_Timer_Wait  
+                    ,	'Min_Timer_Wait', metric.Min_Timer_Wait  
+                    ,	'Avg_Timer_Wait', metric.Avg_Timer_Wait  
+                    ,	'Max_Timer_Wait', metric.Max_Timer_Wait  
+                    ,	'Count_Statements', metric.Count_Statements  
+                    ,	'Sum_Statements_Wait', metric.Sum_Statements_Wait  
+                    ,	'Min_Statements_Wait', metric.Min_Statements_Wait  
+                    ,	'Avg_Statements_Wait', metric.Avg_Statements_Wait  
+                    ,	'Max_Statements_Wait', metric.Max_Statements_Wait  
+                    ,	'Sum_Lock_Time', metric.Sum_Lock_Time  
+                    ,	'Sum_Errors', metric.Sum_Errors  
+                    ,	'Sum_Warnings', metric.Sum_Warnings  
+                    ,	'Sum_Rows_Affected', metric.Sum_Rows_Affected  
+                    ,	'Sum_Rows_Sent', metric.Sum_Rows_Sent  
+                    ,	'Sum_Rows_Examined', metric.Sum_Rows_Examined  
+                    ,	'Sum_Created_Tmp_Disk_Tables', metric.Sum_Created_Tmp_Disk_Tables  
+                    ,	'Sum_Created_Tmp_Tables', metric.Sum_Created_Tmp_Tables  
+                    ,	'Sum_Select_Full_Join', metric.Sum_Select_Full_Join  
+                    ,	'Sum_Select_Full_Range_Join', metric.Sum_Select_Full_Range_Join  
+                    ,	'Sum_Select_Range', metric.Sum_Select_Range  
+                    ,	'Sum_Select_Range_Check', metric.Sum_Select_Range_Check  
+                    ,	'Sum_Select_Scan', metric.Sum_Select_Scan  
+                    ,	'Sum_Sort_Merge_Passes', metric.Sum_Sort_Merge_Passes  
+                    ,	'Sum_Sort_Range', metric.Sum_Sort_Range  
+                    ,	'Sum_Sort_Rows', metric.Sum_Sort_Rows  
+                    ,	'Sum_Sort_Scan', metric.Sum_Sort_Scan  
+                    ,	'Sum_No_Index_Used', metric.Sum_No_Index_Used  
+                    ,	'Sum_No_Good_Index_Used', metric.Sum_No_Good_Index_Used  
+                    ,	'Sum_CPU_Time', 0 )) 
+                FROM  	performance_schema.events_statements_summary_by_program AS metric) AS SP,
+                (SELECT	JSON_ARRAYAGG(JSON_OBJECT(
+                        'Object_Type', Object_Type
+                    ,	'Object_Schema', Object_Schema 
+                    ,	'Object_Name', Object_Name 
+                    ,	'Count_Star', Count_Star  
+                    ,	'Sum_Timer_Wait', Sum_Timer_Wait  
+                    ,	'Min_Timer_Wait', Min_Timer_Wait  
+                    ,	'Avg_Timer_Wait', Avg_Timer_Wait  
+                    ,	'Max_Timer_Wait', Max_Timer_Wait  
+                    ,	'Count_Read', Count_Read  
+                    ,	'Sum_Timer_Read', Sum_Timer_Read  
+                    ,	'Sum_Timer_Read', Min_Timer_Read  
+                    ,	'Avg_Timer_Read', Avg_Timer_Read  
+                    ,	'Max_Timer_Read', Max_Timer_Read  
+                    ,	'Count_Write', Count_Write  
+                    ,	'Sum_Timer_Write', Sum_Timer_Write  
+                    ,	'Min_Timer_Write', Min_Timer_Write  
+                    ,	'Avg_Timer_Write', Avg_Timer_Write  
+                    ,	'Max_Timer_Write', Max_Timer_Write  
+                    ,	'Count_Fetch', Count_Fetch  
+                    ,	'Sum_Timer_Fetch', Sum_Timer_Fetch  
+                    ,	'Min_Timer_Fetch', Min_Timer_Fetch  
+                    ,	'Avg_Timer_Fetch', Avg_Timer_Fetch  
+                    ,	'Max_Timer_Fetch', Max_Timer_Fetch  
+                    ,	'Count_Insert', Count_Insert  
+                    ,	'Sum_Timer_Insert', Sum_Timer_Insert  
+                    ,	'Min_Timer_Insert', Min_Timer_Insert  
+                    ,	'Avg_Timer_Insert', Avg_Timer_Insert  
+                    ,	'Max_Timer_Insert', Max_Timer_Insert  
+                    ,	'Count_Update', Count_Update  
+                    ,	'Sum_Timer_Update', Sum_Timer_Update  
+                    ,	'Min_Timer_Update', Min_Timer_Update  
+                    ,	'Avg_Timer_Update', Avg_Timer_Update  
+                    ,	'Max_Timer_Update', Max_Timer_Update  
+                    ,	'Count_Delete', Count_Delete  
+                    ,	'Sum_Timer_Delete', Sum_Timer_Delete  
+                    ,	'Min_Timer_Delete', Min_Timer_Delete  
+                    ,	'Avg_Timer_Delete', Avg_Timer_Delete  
+                    ,	'Max_Timer_Delete', Max_Timer_Delete )) 
+                FROM performance_schema.table_io_waits_summary_by_table
+                WHERE OBJECT_SCHEMA NOT IN ('performance_schema','mysql')) AS Tbl,
+                (SELECT	JSON_ARRAYAGG(JSON_OBJECT(
+                        'Object_Type', Object_Type
+                    ,	'Object_Schema', Object_Schema 
+                    ,	'Object_Name', Object_Name 
+                    ,	'Index_Name', Index_Name 
+                    ,	'Count_Star', Count_Star  
+                    ,	'Sum_Timer_Wait', Sum_Timer_Wait  
+                    ,	'Min_Timer_Wait', Min_Timer_Wait  
+                    ,	'Avg_Timer_Wait', Avg_Timer_Wait  
+                    ,	'Max_Timer_Wait', Max_Timer_Wait  
+                    ,	'Count_Read', Count_Read  
+                    ,	'Sum_Timer_Read', Sum_Timer_Read  
+                    ,	'Sum_Timer_Read', Min_Timer_Read  
+                    ,	'Avg_Timer_Read', Avg_Timer_Read  
+                    ,	'Max_Timer_Read', Max_Timer_Read  
+                    ,	'Count_Write', Count_Write  
+                    ,	'Sum_Timer_Write', Sum_Timer_Write  
+                    ,	'Min_Timer_Write', Min_Timer_Write  
+                    ,	'Avg_Timer_Write', Avg_Timer_Write  
+                    ,	'Max_Timer_Write', Max_Timer_Write  
+                    ,	'Count_Fetch', Count_Fetch  
+                    ,	'Sum_Timer_Fetch', Sum_Timer_Fetch  
+                    ,	'Min_Timer_Fetch', Min_Timer_Fetch  
+                    ,	'Avg_Timer_Fetch', Avg_Timer_Fetch  
+                    ,	'Max_Timer_Fetch', Max_Timer_Fetch  
+                    ,	'Count_Insert', Count_Insert  
+                    ,	'Sum_Timer_Insert', Sum_Timer_Insert  
+                    ,	'Min_Timer_Insert', Min_Timer_Insert  
+                    ,	'Avg_Timer_Insert', Avg_Timer_Insert  
+                    ,	'Max_Timer_Insert', Max_Timer_Insert  
+                    ,	'Count_Update', Count_Update  
+                    ,	'Sum_Timer_Update', Sum_Timer_Update  
+                    ,	'Min_Timer_Update', Min_Timer_Update  
+                    ,	'Avg_Timer_Update', Avg_Timer_Update  
+                    ,	'Max_Timer_Update', Max_Timer_Update  
+                    ,	'Count_Delete', Count_Delete  
+                    ,	'Sum_Timer_Delete', Sum_Timer_Delete  
+                    ,	'Min_Timer_Delete', Min_Timer_Delete  
+                    ,	'Avg_Timer_Delete', Avg_Timer_Delete  
+                    ,	'Max_Timer_Delete', Max_Timer_Delete )) 
+                FROM performance_schema.table_io_waits_summary_by_index_usage
+                WHERE OBJECT_SCHEMA NOT IN ('performance_schema','mysql')) AS Idx;
+            '''
+        metric = self.db.Execute(mysqlOpt,query)
+
+        query='''TRUNCATE TABLE  performance_schema.events_statements_summary_by_program;'''
+        self.db.Execute(mysqlOpt,query)
+        query='''TRUNCATE TABLE  performance_schema.table_io_waits_summary_by_table;'''
+        self.db.Execute(mysqlOpt,query)
+
+        return [metric[0]['SP'],metric[0]['Tbl'],metric[0]['Idx']];
+
+    def InsertMetric(self,configOjb):
+        try:
+            mysqlOpt = {
+                "host": configOjb['ServerIP'],
+                "user": configOjb['MysqlUser'], 
+                "password": configOjb['MysqlPassword'],
+                "db": "performance_schema",
+                "port": configOjb['ServerPort']
+            }
+            serverID = int(configOjb['ServerID'])
+        
+            metrics = self.GetMetric(mysqlOpt)
+            sp = metrics[0]
+            tbl = metrics[1]
+            idx = metrics[2]
+
+            self.db.Call_SP(self.connArchiveOpt,'DBA_Monitor_SPMetric_Insert',(sp,serverID))
+            self.db.Call_SP(self.connArchiveOpt,'DBA_Monitor_TableMetric_Insert',(tbl,serverID))
+            self.db.Call_SP(self.connArchiveOpt,'DBA_Monitor_IndexMetric_Insert',(idx,serverID))
+
+        except Exception as ex:
+            self.WriteLog(("InsertMetric"))
+
 
     def close(self):
         self.db.close()
