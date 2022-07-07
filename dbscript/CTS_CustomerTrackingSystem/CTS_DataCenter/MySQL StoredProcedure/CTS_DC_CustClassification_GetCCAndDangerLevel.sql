@@ -64,7 +64,7 @@ BEGIN
         ,	CASE WHEN clss.DangerLevel IS NULL THEN 0
 			ELSE clss.DangerLevelType END AS DangerLevelType
     FROM Temp_CustInfo AS tmp,
-		LATERAL(SELECT 	CASE WHEN clss.SportGroupID =  CONST_GROUP_PROBLEM AND  tmp.CustomerClass IS NULL THEN  CategoryGroup 
+		LATERAL(SELECT 	CASE WHEN clss.SportGroupID = CONST_GROUP_PROBLEM AND tmp.CustomerClass IS NULL THEN cate.CategoryGroup 
 							 ELSE NULL END AS CategoryID
 					,	CASE  WHEN tmp.CustomerClass IS NOT NULL THEN tmp.CustomerClass
 							  ELSE cate.CustomerClass END AS CustomerClass
