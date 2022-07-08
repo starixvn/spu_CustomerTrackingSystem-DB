@@ -16,6 +16,7 @@ BEGIN
 		Revisions: 
 			- 20220520@Aries.Nguyen: Created [Redmine ID: #172561] 
             - 20220628@Aries.Nguyen: Update robot classification rule [Redmine ID: #174430]
+            - 20220708@Aries.Nguyen: [CTS] Add new category/class for Lic BA and Lic VIP [Redmine ID: #174219]
 		
         Param's Explanation: 
 
@@ -79,6 +80,7 @@ BEGIN
 			CustID				BIGINT UNSIGNED 
         ,	CategoryID 			INT	
         , 	RelevantCategoryID 	SMALLINT UNSIGNED
+        ,	SportGroupID		SMALLINT UNSIGNED
         
         , 	IsPAProbation		BIT 
         , 	IsChangeWinloss		BIT DEFAULT 0
@@ -194,10 +196,11 @@ BEGIN
 		OR pa.IsPin = 1;
     
     /***********************Handle update existed PA by winloss*******************************/
-    INSERT IGNORE INTO Temp_ExistCate(CustID,CategoryID,RelevantCategoryID,IsPAProbation,IsChangeWinloss,IsRobot,IsFromTW,IsFromCTS,IsFromAI,IsFromTVS,TVSRequestID,IsDirect,Remark,CreatedBy,CreatedDate) 
+    INSERT IGNORE INTO Temp_ExistCate(CustID,CategoryID,RelevantCategoryID,SportGroupID,IsPAProbation,IsChangeWinloss,IsRobot,IsFromTW,IsFromCTS,IsFromAI,IsFromTVS,TVSRequestID,IsDirect,Remark,CreatedBy,CreatedDate) 
     SELECT 	clss.CustID
 		,	clss.CategoryID
         ,	cate.RelevantCategoryID
+        ,	clss.SportGroupID
         ,	cate.IsPAProbation
         ,	CASE WHEN tmp.WinlossStatus = 1 THEN 0 /*No Change*/
 				 WHEN tmp.WinlossStatus = 0 AND cate.IsPAProbation = 0 THEN 1  /*Lose + PA => Update */
@@ -217,11 +220,11 @@ BEGIN
         ,	clss.CreatedBy
         ,	clss.CreatedDate
     FROM Temp_PA AS tmp  
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CustID = tmp.CustID AND clss.SportGroupID = CONST_GROUP_PA
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CustID = tmp.CustID
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID AND cate.RelevantCategoryID IS NOT NULL;
 	
     UPDATE CTS_DataCenter.CTSCustomerClassification AS clss
-    INNER JOIN Temp_ExistCate AS tmp ON tmp.CustID = clss.CustID AND  clss.SportGroupID = CONST_GROUP_PA AND tmp.CategoryID = clss.CategoryID 
+    INNER JOIN Temp_ExistCate AS tmp ON tmp.CustID = clss.CustID AND tmp.CategoryID = clss.CategoryID 
     SET 	clss.CategoryID = tmp.RelevantCategoryID
         ,	clss.LastModifiedBy = lv_CreatedBy
     WHERE tmp.IsChangeWinloss = 1 
@@ -240,7 +243,7 @@ BEGIN
 	SELECT  pa.CustID
 		, 	pa.CTSCustID
 		, 	cate.RelevantCategoryID
-		, 	CONST_GROUP_PA AS SportGroupID
+		, 	cate.SportGroupID
 		, 	lv_Now AS LastModifiedDate
 		, 	lv_CreatedBy AS LastModifiedBy
 		, 	CONST_ACTIONTYPE_UPDATE AS ActionType
