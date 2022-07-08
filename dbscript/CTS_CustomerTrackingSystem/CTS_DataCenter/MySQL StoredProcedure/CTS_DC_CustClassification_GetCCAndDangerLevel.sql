@@ -15,6 +15,7 @@ BEGIN
 		Revisions:
 			- 20220526@Aries.Nguyen: Created [RedmineID: #172561]
             - 20220628@Aries.Nguyen: Update robot classification rule [Redmine ID: #174430]
+			- 20220705@Long.Luu: Support Licensee VIP & BA Categories [Redmine ID: #174219]
             
         Param's Explanation:     
         Example:
@@ -22,11 +23,20 @@ BEGIN
 	*/ 
 	DECLARE	CONST_GROUP_NORMAL 					INT DEFAULT 200;
     DECLARE	CONST_GROUP_PROBLEM 				INT DEFAULT 0;
+        
+    DECLARE	CONST_LICVIP_DANGEROUSCATEGORY		INT DEFAULT 3;
+    DECLARE	CONST_LICVIP_SUSPICIOUSCATEGORY		INT DEFAULT 4;
+    DECLARE	CONST_LICVIP_DANGEROUSCC 			INT DEFAULT 99;
+    DECLARE	CONST_LICVIP_SUSPICIOUSCC			INT DEFAULT 101;
+    
+    DECLARE	lv_LicVIP_DangerousCCName 			VARCHAR(50);
+    DECLARE	lv_LicVIP_SuspiciousCCName			VARCHAR(50);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;
     CREATE TEMPORARY TABLE 		Temp_CustInfo (
         	CustID				BIGINT UNSIGNED PRIMARY KEY 
-		,	IsLicensee			BIT 		
+		,	IsLicensee			BIT 
+		,	IsLicenseeVIP		BIT 				
 		,	IsRobotException 	BIT 
 		,   CustomerClass       INT  
         ,	CustomerClassName	VARCHAR(50)
@@ -36,17 +46,19 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustCateInfo;
     CREATE TEMPORARY TABLE 		Temp_CustCateInfo (
-        	CustID				BIGINT UNSIGNED PRIMARY KEY 	
+        	CustID				BIGINT UNSIGNED PRIMARY KEY
 		,	CategoryID			INT
+		,	IsDangerProbation	BIT DEFAULT 0
 		,	CustomerClass		INT
         ,	CustomerClassName  	VARCHAR(50)
         ,	DangerLevel			INT
 		,	DangerLevelType		SMALLINT  
     );    
     
-    INSERT IGNORE INTO Temp_CustInfo (CustID,IsLicensee,IsRobotException,CustomerClass)
+    INSERT IGNORE INTO Temp_CustInfo (CustID,IsLicensee,IsLicenseeVIP,IsRobotException,CustomerClass)
     SELECT  tmp.CustID
 		,	cus.IsLicensee
+        ,	cus.IsLicenseeVIP
         ,	CASE WHEN (cus.IsLicensee = 0 AND cus.SiteID = 16) OR (cus.IsLicensee = 0 AND cus.CurrencyID IN (6,13)) THEN 1
 				 ELSE 0 
 			END AS IsRobotException
@@ -54,6 +66,16 @@ BEGIN
     FROM JSON_TABLE(CONCAT('[',ip_CustIDs,']'),'$[*]' COLUMNS(NESTED PATH '$' COLUMNS (CustID BIGINT UNSIGNED PATH '$'))) AS tmp
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID AND cus.CustSubID  = 0
 		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = tmp.CustID;
+    
+    SELECT CustomerClassName
+    INTO lv_LicVIP_DangerousCCName
+    FROM CustomerCategory
+    WHERE CategoryID = CONST_LICVIP_DANGEROUSCATEGORY;
+    
+	SELECT CustomerClassName
+    INTO lv_LicVIP_SuspiciousCCName
+    FROM CustomerCategory
+    WHERE CategoryID = CONST_LICVIP_SUSPICIOUSCATEGORY;
     
     INSERT INTO Temp_CustCateInfo(CustID,CategoryID,CustomerClass,CustomerClassName,DangerLevel,DangerLevelType)
     SELECT 	tmp.CustID
@@ -66,9 +88,20 @@ BEGIN
     FROM Temp_CustInfo AS tmp,
 		LATERAL(SELECT 	CASE WHEN clss.SportGroupID = CONST_GROUP_PROBLEM AND tmp.CustomerClass IS NULL THEN cate.CategoryGroup 
 							 ELSE NULL END AS CategoryID
-					,	CASE  WHEN tmp.CustomerClass IS NOT NULL THEN tmp.CustomerClass
-							  ELSE cate.CustomerClass END AS CustomerClass
-					,	cate.CustomerClassName
+					,	CASE  
+							WHEN tmp.CustomerClass IS NULL 
+									THEN CASE
+											WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN CONST_LICVIP_SUSPICIOUSCC
+                                            WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN CONST_LICVIP_DANGEROUSCC
+                                            ELSE tmp.CustomerClass
+										END
+							ELSE cate.CustomerClass 
+						END AS CustomerClass
+					,	CASE
+							WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN lv_LicVIP_SuspiciousCCName
+							WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN lv_LicVIP_DangerousCCName
+							ELSE cate.CustomerClassName
+						END AS CustomerClassName
 					,	CASE WHEN tmp.IsLicensee = 1 THEN cate.ABIDangerLevel_Licensee
 							 WHEN tmp.IsLicensee = 0 THEN cate.ABIDangerLevel_Credit
 						 END AS DangerLevel
@@ -76,6 +109,7 @@ BEGIN
 				FROM CTS_DataCenter.CTSCustomerClassification AS clss
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID
                 WHERE clss.CustID = tmp.CustID
+					AND clss.SportGroupID IN (CONST_GROUP_PROBLEM, CONST_GROUP_NORMAL)
                 ORDER BY  cate.Priority ASC  
 						, clss.LastModifiedDate DESC
                 LIMIT 1) AS clss;
