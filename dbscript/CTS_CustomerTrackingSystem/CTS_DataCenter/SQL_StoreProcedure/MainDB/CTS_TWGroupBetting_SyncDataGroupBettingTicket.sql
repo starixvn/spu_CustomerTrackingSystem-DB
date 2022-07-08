@@ -53,7 +53,7 @@ BEGIN
 	FROM #TmpGroupBettingTicket
 
 	SELECT @RunningDate = transdate
-	FROM bettrans WITH (NOLOCK)
+	FROM dbo.bettrans WITH (NOLOCK)
 	WHERE transid = @RunningTransID;
 
 	SET @DailyMidnight = DATEADD(MINUTE, 30, CONVERT(SMALLDATETIME, CONVERT(DATE, @RunningDate)));

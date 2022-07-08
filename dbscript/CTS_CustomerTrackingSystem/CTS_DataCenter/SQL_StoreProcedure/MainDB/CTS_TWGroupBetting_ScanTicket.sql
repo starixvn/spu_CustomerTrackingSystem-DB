@@ -128,6 +128,14 @@ BEGIN
 			AND b.bettype IN (1,3,7,8,609,610)
 	ORDER BY b.transid ASC;
 
+	SELECT @MaxTransID = MAX(Transid)
+	FROM #TempTrans;
+
+	IF @MaxTransID IS NULL
+	BEGIN
+		RETURN;
+	END;
+
 	SELECT @FromTime = DATEADD(MINUTE, -1, MIN(transdate))
 	FROM #TempTrans;
 
@@ -201,9 +209,6 @@ BEGIN
 	INNER JOIN #TempTrans trans ON b.transdate BETWEEN DATEADD(SECOND,-@Step,trans.Transdate) AND trans.Transdate
 	CROSS APPLY [dbo].[SPU_GroupBettingRule] AS gbr WITH (NOLOCK)
 	ORDER BY b.transid ASC;
-                                  
-	SELECT @MaxTransID = MAX(Transid)
-	FROM #TempTrans;
 	
 	INSERT INTO #TmpSuspectTicket
 	SELECT tfs.Transid 

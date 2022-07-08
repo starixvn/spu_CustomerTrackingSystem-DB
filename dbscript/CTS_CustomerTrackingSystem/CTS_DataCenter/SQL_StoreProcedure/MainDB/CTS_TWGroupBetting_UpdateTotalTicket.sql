@@ -27,7 +27,7 @@ BEGIN
 	INSERT INTO #tmpScanningCust
 	SELECT DISTINCT CustId
 		,CONVERT(DATE, getdate()) AS 'ScanDate'
-	FROM dbo.SPU_GroupBettingCustomer
+	FROM dbo.SPU_GroupBettingCustomer WITH (NOLOCK)
 
 	INSERT INTO dbo.SPU_GroupBettingCustomer (
 		CustId
