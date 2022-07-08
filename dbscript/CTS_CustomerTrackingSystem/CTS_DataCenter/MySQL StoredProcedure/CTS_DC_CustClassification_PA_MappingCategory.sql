@@ -36,6 +36,7 @@ BEGIN
         ,	RoleID					INT
         , 	SubscriberID			INT DEFAULT 0
         ,	IsLicensee				BOOLEAN
+        ,	IsLicenseeVIP			BOOLEAN
         ,	Remark 					VARCHAR(500)        
         ,	CreatedBy 				INT UNSIGNED
         
@@ -85,7 +86,7 @@ BEGIN
 	);
    
     IF ip_InputType = 'Category' THEN    
-        INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, InputCategoryID, InputCategoryGroup,  IsLicensee, CreatedBy, Remark, IsDirectPA
+        INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, InputCategoryID, InputCategoryGroup,  IsLicensee, IsLicenseeVIP, CreatedBy, Remark, IsDirectPA
 			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsDataChanged, SpecialCC, IsProbation, RelevantCategoryID, LastModifiedDate, PinCTSCustID, MatchID)
 		SELECT 	DISTINCT tmpJs.CustID
 			,	tmpJs.CTSCustID
@@ -94,6 +95,7 @@ BEGIN
 			,	tmpJs.CategoryID
 			,	tmpJs.CategoryGroup
 			,	tmpJs.IsLicensee
+            ,	tmpJs.IsLicenseeVIP
 			,	tmpJs.CreatedBy 
 			,	(CASE WHEN tmpJs.MatchID IS NOT NULL THEN MatchID ELSE tmpJs.Remark END) AS Remark
 			,	tmpJs.IsDirectPA
@@ -123,6 +125,7 @@ BEGIN
 				,	CategoryID		BIGINT UNSIGNED		PATH "$.CategoryID"
 				,	CategoryGroup	BIGINT UNSIGNED		PATH "$.CategoryGroup"
 				,	IsLicensee		BOOLEAN				PATH "$.IsLicensee"
+				,	IsLicenseeVIP	BOOLEAN				PATH "$.IsLicenseeVIP"
 				, 	CreatedBy		INT UNSIGNED		PATH "$.CreatedBy"
 				, 	Remark			VARCHAR(500)		PATH "$.Remark"
 				, 	IsDirectPA		BOOLEAN				PATH "$.IsDirectPA"
@@ -192,7 +195,6 @@ BEGIN
     END IF;   
  
     IF ip_InputType = 'Reason' THEN    
-		INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, InputCategoryID, InputCategoryGroup,  IsLicensee, CreatedBy, Remark, IsDirectPA
 			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, SpecialCC, IsProbation, RelevantCategoryID, TVSRequestID, ReasonID, PinCTSCustID)
 		SELECT	DISTINCT tmpJs.CustID
 			,	cus.CTSCustID
@@ -201,6 +203,7 @@ BEGIN
 			,	tmpLtr.CategoryGroup AS InputCategoryID
 			,	tmpLtr.CategoryGroup AS InputCategoryGroup
 			,	cus.IsLicensee
+            ,	cus.IsLicenseeVIP
 			,	tmpJs.CreatedBy 
 			,	tmpJs.Remark
 			,	tmpJs.IsDirectPA
