@@ -43,7 +43,7 @@ BEGIN
 	FROM #PreGroupBettingTicket pgbt
 	INNER JOIN dbo.SPU_GroupBettingCustomer gbc WITH (NOLOCK) ON pgbt.CustId = gbc.CustId AND pgbt.TransDate = gbc.ScanDate ;
 
-	INSERT INTO SPU_GroupBettingCustomer (
+	INSERT INTO dbo.SPU_GroupBettingCustomer (
 		CustId
 		,GBTicketCount
 		,ScanDate

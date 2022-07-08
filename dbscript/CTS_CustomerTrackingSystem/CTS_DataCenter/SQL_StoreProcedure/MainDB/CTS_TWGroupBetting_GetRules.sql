@@ -19,5 +19,5 @@ BEGIN
 	SELECT RuleId
 		,RuleName
 		,LimitSecond
-	FROM SPU_GroupBettingRule WITH (NOLOCK);
+	FROM dbo.SPU_GroupBettingRule WITH (NOLOCK);
 END

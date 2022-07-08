@@ -118,9 +118,9 @@ BEGIN
 	SELECT TOP (@BatchSize) ROW_NUMBER() OVER (ORDER BY b.transid ASC)
 		,b.transid
 		,b.transdate
-	FROM bettrans AS b WITH (NOLOCK)
-	INNER JOIN match AS m WITH (NOLOCK) ON b.matchid = m.matchid
-	INNER JOIN Dep_CustSuper AS dCust WITH (NOLOCK) ON  dCust.custid = b.srecommend
+	FROM dbo.bettrans AS b WITH (NOLOCK)
+	INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
+	INNER JOIN dbo.Dep_CustSuper AS dCust WITH (NOLOCK) ON  dCust.custid = b.srecommend
 	WHERE b.transid > @LastTransID
 			AND b.refno = 100000000000
 			AND b.currency <> 20
@@ -168,10 +168,10 @@ BEGIN
 				ELSE 0
 				END 'IsBigLeague'
 		FROM dbo.bettrans AS b WITH (NOLOCK)
-		INNER JOIN Dep_CustSuper AS dCust WITH (NOLOCK) ON  dCust.custid = b.srecommend
-		INNER JOIN match AS m WITH (NOLOCK) ON b.matchid = m.matchid
+		INNER JOIN dbo.Dep_CustSuper AS dCust WITH (NOLOCK) ON  dCust.custid = b.srecommend
+		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 		INNER JOIN dbo.custinfo AS ci WITH (NOLOCK) ON b.custid = ci.custid
-		LEFT JOIN LicUserProfile AS pf WITH (NOLOCK) ON b.custid = pf.CustId
+		LEFT JOIN dbo.LicUserProfile AS pf WITH (NOLOCK) ON b.custid = pf.CustId
 		LEFT JOIN #TmpBigLeague AS bl WITH (NOLOCK) ON m.leagueid = bl.LeagueId
 		WHERE b.transid > (@LastTransID - 2500)
 			AND b.refno = 100000000000
@@ -199,7 +199,7 @@ BEGIN
 		,trans.GroupId
 	FROM cte_raw AS b
 	INNER JOIN #TempTrans trans ON b.transdate BETWEEN DATEADD(SECOND,-@Step,trans.Transdate) AND trans.Transdate
-	CROSS APPLY [dbo].[SPU_GroupBettingRule] AS gbr
+	CROSS APPLY [dbo].[SPU_GroupBettingRule] AS gbr WITH (NOLOCK)
 	ORDER BY b.transid ASC;
                                   
 	SELECT @MaxTransID = MAX(Transid)
@@ -223,7 +223,7 @@ BEGIN
 		,tfs.IsBigLeague
 		,tfs.GroupId
 	FROM #TmpTicketForScanning AS tfs WITH (NOLOCK)
-	INNER JOIN SPU_GroupBettingGroupingRule AS gr WITH (NOLOCK) ON tfs.RuleId = gr.RuleId
+	INNER JOIN dbo.SPU_GroupBettingGroupingRule AS gr WITH (NOLOCK) ON tfs.RuleId = gr.RuleId
 		AND tfs.IsBigLeague = gr.IsBigLeague
 		AND tfs.Bettype = gr.Bettype
 		AND tfs.Liveindicator = gr.IsLive
@@ -244,7 +244,7 @@ BEGIN
 		,COUNT(1) 'TicketCount'
 		,st.GroupId
 	FROM #TmpSuspectTicket AS st WITH (NOLOCK)
-	INNER JOIN SPU_GroupBettingRule AS gbr WITH (NOLOCK) ON st.RuleId = gbr.RuleId
+	INNER JOIN dbo.SPU_GroupBettingRule AS gbr WITH (NOLOCK) ON st.RuleId = gbr.RuleId
 	GROUP BY st.Betteam
 		,st.Matchid
 		,st.Bettype
@@ -278,7 +278,7 @@ BEGIN
 		FROM #TmpSuspectTicket tfs
 		INNER JOIN #TmpTicketCountViolation AS tcv ON tfs.RuleId = tcv.RuleId AND tfs.Matchid = tcv.MatchId AND tfs.Bettype = tcv.Bettype
 			AND tfs.Betteam = tcv.Betteam AND tfs.GroupId = tcv.GroupId
-		INNER JOIN dbo.SPU_GroupBettingRule AS gbr ON tfs.RuleId = gbr.RuleId
+		INNER JOIN dbo.SPU_GroupBettingRule AS gbr WITH (NOLOCK) ON tfs.RuleId = gbr.RuleId
 		WHERE tfs.RFM > gbr.RFMLimitValue
 		GROUP BY tcv.RuleId
 			,tcv.Betteam
@@ -316,7 +316,7 @@ BEGIN
 		FROM #TmpSuspectTicket AS tfs
 		INNER JOIN #TmpTicketCountViolation AS tcv ON tfs.RuleId = tcv.RuleId AND tfs.Matchid= tcv.MatchId AND tfs.Bettype = tcv.Bettype
 			AND tfs.Betteam = tcv.Betteam AND tfs.GroupId = tcv.GroupId
-		INNER JOIN dbo.SPU_GroupBettingRule AS gbr ON tfs.RuleId = gbr.RuleId
+		INNER JOIN dbo.SPU_GroupBettingRule AS gbr WITH (NOLOCK) ON tfs.RuleId = gbr.RuleId
 		WHERE tfs.CustomerClass NOT IN (1,2)
 		GROUP BY tcv.RuleId
 			,tcv.Betteam
@@ -354,7 +354,7 @@ BEGIN
 		FROM #TmpSuspectTicket AS tfs
 		INNER JOIN #TmpTicketCountViolation AS tcv ON tfs.RuleId = tcv.RuleId AND tfs.Matchid= tcv.MatchId AND tfs.Bettype = tcv.Bettype
 			AND tfs.Betteam = tcv.Betteam AND tfs.GroupId = tcv.GroupId
-		INNER JOIN dbo.SPU_GroupBettingRule AS gbr ON tfs.RuleId = gbr.RuleId
+		INNER JOIN dbo.SPU_GroupBettingRule AS gbr WITH (NOLOCK) ON tfs.RuleId = gbr.RuleId
 		WHERE tfs.BetFrom IN ('x','z')
 		GROUP BY tcv.RuleId
 			,tcv.Betteam
@@ -366,7 +366,7 @@ BEGIN
 			,tfs.RuleId
 		) tempTable ON tempTable.RuleId = tcv.RuleId AND tempTable.Betteam = tcv.Betteam AND tempTable.GroupId = tcv.GroupId AND tempTable.MatchId = tcv.MatchId AND tempTable.Bettype = tcv.Bettype;
 
-	-- Delete existing ticket in SPU_GroupBettingTicket
+	-- Delete existing ticket in dbo.SPU_GroupBettingTicket
 	DELETE st
 	FROM #TmpSuspectTicket AS st
 	INNER JOIN dbo.SPU_GroupBettingTicket gbt WITH (NOLOCK) ON st.Transid = gbt.TransId;

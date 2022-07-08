@@ -19,7 +19,7 @@ BEGIN
 	SET NOCOUNT ON;
 
 	DECLARE @GBTicketXML				XML
-		,	@ArchivedDateTicketHistory	DATETIME = DATEADD(day, -3, GETDATE())
+		,	@ArchivedDateTicketHistory	DATETIME = DATEADD(day, -7, GETDATE())
 		,	@DailyMidnight				DATETIME
 		,	@RunningDate				DATE
 		;
@@ -41,10 +41,10 @@ BEGIN
 	FROM @GBTicketXML.nodes('//TWGroupBettingTicket') AS T(C)
 	OPTION (OPTIMIZE FOR (@GBTicketXML = NULL));
 
-	DELETE FROM SPU_GroupBettingTicket_History
+	DELETE FROM dbo.SPU_GroupBettingTicket_History
 	WHERE TransDate <= @ArchivedDateTicketHistory
 
-	INSERT INTO SPU_GroupBettingTicket_History (
+	INSERT INTO dbo.SPU_GroupBettingTicket_History (
 		TransId
 		,TransDate
 		)
@@ -60,11 +60,11 @@ BEGIN
 
 	IF @RunningDate > @DailyMidnight
 	BEGIN
-		DELETE FROM SPU_GroupBettingTicket
+		DELETE FROM dbo.SPU_GroupBettingTicket
 		WHERE TransDate = CONVERT(DATE, DATEADD(DAY,-1,GETDATE()));
 	END
 
-	INSERT INTO SPU_GroupBettingTicket (
+	INSERT INTO dbo.SPU_GroupBettingTicket (
 		CustId
 		,TransId
 		,TransDate

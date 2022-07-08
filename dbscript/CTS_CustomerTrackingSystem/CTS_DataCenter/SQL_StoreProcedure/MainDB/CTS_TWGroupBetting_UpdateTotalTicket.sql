@@ -27,9 +27,9 @@ BEGIN
 	INSERT INTO #tmpScanningCust
 	SELECT DISTINCT CustId
 		,CONVERT(DATE, getdate()) AS 'ScanDate'
-	FROM SPU_GroupBettingCustomer
+	FROM dbo.SPU_GroupBettingCustomer
 
-	INSERT INTO SPU_GroupBettingCustomer (
+	INSERT INTO dbo.SPU_GroupBettingCustomer (
 		CustId
 		,ScanDate
 		,GBTicketCount
@@ -40,14 +40,14 @@ BEGIN
 		,0
 		,0
 	FROM #tmpScanningCust sc
-	LEFT JOIN SPU_GroupBettingCustomer gbc ON sc.CustId = gbc.CustId AND sc.ScanDate = gbc.ScanDate
+	LEFT JOIN dbo.SPU_GroupBettingCustomer AS gbc WITH (NOLOCK) ON sc.CustId = gbc.CustId AND sc.ScanDate = gbc.ScanDate
 	WHERE gbc.CustId IS NULL;
 
 	;WITH count_ticket AS (
 		SELECT bt.custid
 			,gbc.ScanDate
 			,COUNT(1) 'TicketCount'
-		FROM SPU_GroupBettingCustomer gbc WITH (NOLOCK)
+		FROM dbo.SPU_GroupBettingCustomer AS gbc WITH (NOLOCK)
 		INNER JOIN bettrans bt WITH (NOLOCK) ON gbc.CustId = bt.custid
 			AND (
 				bt.transdate >= CONVERT(DATETIME, gbc.ScanDate)
@@ -61,12 +61,12 @@ BEGIN
 	UPDATE gbc
 	SET gbc.TicketCount = ct.TicketCount
 		,gbc.LastCountTotalTicketDate = GETDATE()
-	FROM SPU_GroupBettingCustomer gbc WITH(UPDLOCK, ROWLOCK)
+	FROM dbo.SPU_GroupBettingCustomer AS gbc WITH(UPDLOCK, ROWLOCK)
 	INNER JOIN count_ticket ct WITH (NOLOCK) ON gbc.CustId = ct.custid
 		AND gbc.ScanDate = ct.ScanDate;
 
 	-- Clear unused data
-	DELETE FROM SPU_GroupBettingCustomer
+	DELETE FROM dbo.SPU_GroupBettingCustomer
 	WHERE ScanDate < DATEADD(day,-5, GETDATE()) AND TicketCount = 0 AND GBTicketCount = 0;
 
 END
