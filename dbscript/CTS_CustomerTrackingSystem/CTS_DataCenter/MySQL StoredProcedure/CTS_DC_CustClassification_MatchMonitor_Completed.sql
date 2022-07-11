@@ -41,7 +41,7 @@ BEGIN
 		WHERE mm.MatchID = ip_MatchID;
         
         UPDATE CTS_DataCenter.SystemParameter AS s
-        SET s.ParameterValue = NULL
+        SET s.ParameterValue = 0
         WHERE s.ParameterID = 96;   
 	END IF;    
 END$$

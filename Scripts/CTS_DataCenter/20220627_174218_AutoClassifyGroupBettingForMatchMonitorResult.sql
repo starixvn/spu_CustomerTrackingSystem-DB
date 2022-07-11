@@ -31,7 +31,7 @@ WHERE EventDate >= DATE(NOW());
 /******************Init SystemParameter***************************/
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
 VALUES	(95,'Classification_MatchMonitor_PackSize','Last Classification_MatchMonitor_PackSize.ID','INT','100')
-	,	(96,'Classification_MatchMonitor_InProcessMatchID','In_process MatchMonitor.MatchID','BIGINT UNSIGNED',NULL);
+	,	(96,'Classification_MatchMonitor_InProcessMatchID','In_process MatchMonitor.MatchID','INT ',0);
 
 /******************Init StaticList***************************/
 USE CTS_DataCenter;

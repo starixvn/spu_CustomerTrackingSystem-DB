@@ -34,7 +34,7 @@ BEGIN
     FROM CTS_DataCenter.SystemParameter AS s
     WHERE s.ParameterID = 96;
     
-    IF lv_MatchID IS NULL THEN    
+    IF lv_MatchID = 0 THEN    
 		SELECT mm.MatchID
         INTO lv_MatchID
         FROM CTS_DataCenter.MatchMonitor AS mm
