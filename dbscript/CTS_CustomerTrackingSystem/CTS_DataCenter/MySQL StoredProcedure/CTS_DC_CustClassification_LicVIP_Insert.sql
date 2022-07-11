@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin,ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_LicVIP_Insert`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_LicVIP_Insert_xpre`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_LicVIP_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_LicVIP_Insert_xpre`(
 		IN ip_CustJson  TEXT
 )
     SQL SECURITY INVOKER
@@ -41,9 +41,9 @@ sp: BEGIN
 		, 	CTSCustID				BIGINT UNSIGNED
         , 	SubscriberID			INT 
         ,	CreatedBy 				INT UNSIGNED
+        , 	IsLicenseeVIP				INT 
          
          ,	PRIMARY KEY PK_Temp_Customer(CustID)
-         ,	INDEX IX_Temp_Customer_CTSCustID(CTSCustID)
 	);
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_CustCategory;
@@ -58,8 +58,10 @@ sp: BEGIN
          ,	Priority				SMALLINT 
          ,	CustomerClass			SMALLINT UNSIGNED
          ,	IsDataChanged			TINYINT(1) DEFAULT 0
+         , 	IsLicenseeVIP				INT 
          ,	PRIMARY KEY PK_Temp_Customer(CustID)
-	);
+	);    
+
     #=======================================================================================
     SELECT cat.Priority
     INTO lv_VIPPriority
@@ -68,27 +70,34 @@ sp: BEGIN
     LIMIT 1;
     
     #=======================================================================================
-    INSERT INTO Temp_Customer(CustID, CTSCustID, SubscriberID, CreatedBy) 
-	SELECT 	DISTINCT tmpJs.CustID, cus.CTSCustID, cus.SubscriberID, tmpJs.CreatedBy
+    INSERT INTO Temp_Customer(CustID, CTSCustID, SubscriberID, CreatedBy, IsLicenseeVIP) 
+	SELECT 	DISTINCT tmpJs.CustID, cus.CTSCustID, cus.SubscriberID, tmpJs.CreatedBy, (CASE WHEN cls.CustID IS NULL THEN 0 ELSE 1 END) AS IsLicenseeVIP
 	FROM JSON_TABLE(ip_CustJson,
 		 "$[*]" COLUMNS(
 				CustID 			BIGINT UNSIGNED		PATH "$.CustID"
             ,	CreatedBy 		BIGINT UNSIGNED		PATH "$.CreatedBy"
 		 )) AS tmpJs
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON  tmpJs.CustID = cus.CustID AND cus.CustSubID = 0;    
-    
-	 INSERT INTO Temp_CustCategory(CustID, CTSCustID, SubscriberID, CreatedBy, CategoryID, IsDangerProbation, Priority, CustomerClass) 
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON  tmpJs.CustID = cus.CustID AND cus.CustSubID = 0
+        LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON  tmpJs.CustID = cls.CustID  AND CategoryID IN (CONST_CATEGORY_VIPPROBLEM,CONST_CATEGORY_VIPNORMAL) ;    
+
+	 INSERT INTO Temp_CustCategory(CustID, CTSCustID, SubscriberID, CreatedBy, IsLicenseeVIP, CategoryID, IsDangerProbation, Priority, CustomerClass ) 
      WITH CTE_LastCategory AS
      (
 		 SELECT	tmpCus.CustID
 			,	tmpCus.CTSCustID
 			,	tmpCus.SubscriberID
 			,	tmpCus.CreatedBy
+            ,	tmpCus.IsLicenseeVIP
 			,	tmpLastCat.CategoryID
+            ,	tmpLastCat.Priority
+            ,	tmpLastCat.IsDangerProbation
+            ,	tmpLastCat.CustomerClass
+            
 		 FROM Temp_Customer AS tmpCus,
 		 LATERAL (
-			SELECT cls.CategoryID 
+			SELECT cls.CategoryID, cat.Priority, cat.IsDangerProbation, cat.CustomerClass 
 			FROM CTS_DataCenter.CTSCustomerClassification AS cls
+				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cls.CategoryID AND cat.Priority < lv_VIPPriority
 			WHERE cls.CustID = tmpCus.CustID
 			ORDER BY cls.CustID, cls.LastModifiedDate DESC
 			LIMIT 1
@@ -98,13 +107,13 @@ sp: BEGIN
 		,	cte.CTSCustID
         ,	cte.SubscriberID
         ,	cte.CreatedBy
+        ,	cte.IsLicenseeVIP
         ,	cte.CategoryID
-        ,	cat.IsDangerProbation
-        ,	cat.Priority
-        ,	cat.CustomerClass
-     FROM  CTE_LastCategory AS cte
-		LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cte.CategoryID;     
-    
+        ,	cte.IsDangerProbation
+        ,	cte.Priority
+        ,	cte.CustomerClass
+     FROM  CTE_LastCategory AS cte;    
+     
     #======NOT Update CC if Priority Value of Current Less than VIP.Priority ===========================================
     UPDATE Temp_CustCategory AS tmpCus
 		INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc ON sc.CustID = tmpCus.CustID
@@ -113,14 +122,14 @@ sp: BEGIN
     UPDATE Temp_CustCategory AS tmpCus
     SET tmpCus.IsDataChanged = 1
         , tmpCus.CustomerClass = (CASE WHEN tmpCus.IsDangerProbation = 1 THEN CONST_CC_VIPNORMAL ELSE CONST_CC_VIPPROBLEM END)
-    WHERE tmpCus.Priority IS NULL OR tmpCus.Priority > lv_VIPPriority ; # Change CC
+    WHERE tmpCus.IsLicenseeVIP != 1 AND ( tmpCus.Priority IS NULL OR tmpCus.Priority > lv_VIPPriority); # Change CC
     
     #=======================================================================================
     UPDATE CTS_DataCenter.CTSCustomer AS cus
 		INNER JOIN Temp_Customer AS tmpCus ON cus.CTSCustID = tmpCus.CTSCustID
 	SET cus.IsLicenseeVIP = 1
-		, ModifiedTime = lv_CurrentDateTime
-    WHERE cus.IsLicenseeVIP <> 1;
+		, cus.ModifiedTime = lv_CurrentDateTime
+    WHERE cus.IsLicenseeVIP <> 1;   
     
     #=======================================================================================
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CTSCustID, CustID, SubscriberID, SportGroupID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsDirect) 
@@ -173,9 +182,6 @@ sp: BEGIN
     FROM Temp_CustCategory AS tmpCus;
   
 	SELECT	tmpCus.CustID
-		,   tmpCus.CustomerClass 
-        ,	tmpCus.CategoryID
-        ,	tmpCus.CreatedBy
     FROM Temp_CustCategory AS tmpCus
     WHERE tmpCus.IsDataChanged = 1;
 END$$
