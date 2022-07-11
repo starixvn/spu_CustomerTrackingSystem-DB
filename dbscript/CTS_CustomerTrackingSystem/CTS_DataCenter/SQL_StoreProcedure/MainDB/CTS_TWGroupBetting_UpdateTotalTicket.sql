@@ -7,8 +7,9 @@ AS
 	DB	 : DBCTS.bodb02
 
 	Revisions:
-		- 20220314@Harvey.Nguyen: Scan ticket [Redmine ID: #169671]
-		- 20220614@Harvey.Nguyen: Add rowlock in updating [Redmine ID: #169671]
+		- 20220314@Harvey.Nguyen: Scan ticket 								[Redmine ID: #169671]
+		- 20220614@Harvey.Nguyen: Add rowlock in updating 					[Redmine ID: #169671]
+		- 20220711@Harvey.Nguyen: Change solution to scan on each ticket	[Redmine ID: #169671]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_UpdateTotalTicket] @LastScannedTime = '2022-03-10 03:39:12.230'

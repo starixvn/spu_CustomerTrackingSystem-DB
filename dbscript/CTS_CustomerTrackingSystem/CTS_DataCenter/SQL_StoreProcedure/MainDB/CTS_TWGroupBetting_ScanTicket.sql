@@ -11,9 +11,10 @@ AS
 	DB	 : DBCTS.bodb02
 
 	Revisions:
-		- 20220314@Harvey.Nguyen: Scan ticket				[Redmine ID: #169671]
-		- 20220613@Harvey.Nguyen: Remove credit tickets		[Redmine ID: #169671]
-		- 20220617@Harvey.Nguyen: Fix bug wrong inner join	[Redmine ID: #169671]
+		- 20220314@Harvey.Nguyen: Scan ticket								[Redmine ID: #169671]
+		- 20220613@Harvey.Nguyen: Remove credit tickets						[Redmine ID: #169671]
+		- 20220617@Harvey.Nguyen: Fix bug wrong inner join					[Redmine ID: #169671]
+		- 20220711@Harvey.Nguyen: Change solution to scan on each ticket	[Redmine ID: #169671]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_ScanTicket] '2022-02-15 23:10:15.983','2022-02-16 02:15:20.983',10900

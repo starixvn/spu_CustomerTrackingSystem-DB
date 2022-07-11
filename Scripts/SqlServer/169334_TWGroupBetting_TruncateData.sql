@@ -1,7 +1,7 @@
 /*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 /*
-    Creator: 	20220617@Harvey.Nguyen
-    Task:	 	Bug in logic and need to clear all data   [Redmine ID: 169334]
+    Creator: 	20220711@Harvey.Nguyen
+    Task:	 	Enhance flow and need to clear all data   [Redmine ID: 169334]
     DBName:		DBCTS.bodb02
 */
 
