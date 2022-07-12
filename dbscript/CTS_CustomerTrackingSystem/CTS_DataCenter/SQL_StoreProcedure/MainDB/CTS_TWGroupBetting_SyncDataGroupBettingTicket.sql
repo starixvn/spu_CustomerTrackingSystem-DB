@@ -1,6 +1,7 @@
 /*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 CREATE OR ALTER PROCEDURE [dbo].[CTS_TWGroupBetting_SyncDataGroupBettingTicket]
 		@GBTicketXMLString	VARCHAR(MAX)
+		,@RunningTransID	BIGINT
 AS
 /*
 	Created: 20220314@Harvey.Nguyen
@@ -8,8 +9,9 @@ AS
 	DB	 : DBCTS.bodb02
 
 	Revisions:
-		- 20220314@Harvey.Nguyen: Init sp [Redmine ID: #170160]
-		- 20220505@Harvey.Nguyen: Insert GroupBetting ticket into history table
+		- 20220314@Harvey.Nguyen: Init sp 											[Redmine ID: #170160]
+		- 20220505@Harvey.Nguyen: Insert GroupBetting ticket into history table		[Redmine ID: #169671]
+		- 20220711@Harvey.Nguyen: Change solution to scan on each ticket			[Redmine ID: #169671]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_SyncDataGroupBettingTicket] 
@@ -17,8 +19,10 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
-	DECLARE @GBTicketXML	XML
-		,	@ArchivedDate	DATETIME = DATEADD(day, -3, GETDATE())
+	DECLARE @GBTicketXML				XML
+		,	@ArchivedDateTicketHistory	DATETIME = DATEADD(day, -7, GETDATE())
+		,	@DailyMidnight				DATETIME
+		,	@RunningDate				DATE
 		;
 	SET @GBTicketXML = CONVERT(XML,@GBTicketXMLString);
 
@@ -38,10 +42,10 @@ BEGIN
 	FROM @GBTicketXML.nodes('//TWGroupBettingTicket') AS T(C)
 	OPTION (OPTIMIZE FOR (@GBTicketXML = NULL));
 
-	DELETE FROM SPU_GroupBettingTicket_History
-	WHERE TransDate <= @ArchivedDate
+	DELETE FROM dbo.SPU_GroupBettingTicket_History
+	WHERE TransDate <= @ArchivedDateTicketHistory
 
-	INSERT INTO SPU_GroupBettingTicket_History (
+	INSERT INTO dbo.SPU_GroupBettingTicket_History (
 		TransId
 		,TransDate
 		)
@@ -49,9 +53,19 @@ BEGIN
 		,TransDate
 	FROM #TmpGroupBettingTicket
 
-	DELETE FROM SPU_GroupBettingTicket;
+	SELECT @RunningDate = transdate
+	FROM dbo.bettrans WITH (NOLOCK)
+	WHERE transid = @RunningTransID;
 
-	INSERT INTO SPU_GroupBettingTicket (
+	SET @DailyMidnight = DATEADD(MINUTE, 30, CONVERT(SMALLDATETIME, CONVERT(DATE, @RunningDate)));
+
+	IF @RunningDate > @DailyMidnight
+	BEGIN
+		DELETE FROM dbo.SPU_GroupBettingTicket
+		WHERE TransDate = CONVERT(DATE, DATEADD(DAY,-1,GETDATE()));
+	END
+
+	INSERT INTO dbo.SPU_GroupBettingTicket (
 		CustId
 		,TransId
 		,TransDate
