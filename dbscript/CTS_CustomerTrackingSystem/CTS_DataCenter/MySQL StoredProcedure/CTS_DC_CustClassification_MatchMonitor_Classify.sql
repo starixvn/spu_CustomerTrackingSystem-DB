@@ -17,7 +17,7 @@ BEGIN
 		Param's Explanation:
         
 		Example:
-			CALL CTS_DataCenter.CTS_DC_CustClassification_MatchMonitor_Classify();
+			CALL CTS_DataCenter.CTS_DC_CustClassification_MatchMonitor_Classify_xtest();
             CALL CTS_DataCenter.CTS_DC_CustClassification_MatchMonitor_Completed(50604006,NULL);
 	 */ 
 	DECLARE lv_PackSize INT;
@@ -33,7 +33,7 @@ BEGIN
     INTO lv_MatchID
     FROM CTS_DataCenter.SystemParameter AS s
     WHERE s.ParameterID = 96;
-    
+   
     IF lv_MatchID = 0 THEN    
 		SELECT mm.MatchID
         INTO lv_MatchID
@@ -71,6 +71,18 @@ BEGIN
         ,	PRIMARY KEY PK_Temp_Cust(CustID, MMDetailsID)
     );
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_ExcludePACategoryID;
+    CREATE TEMPORARY TABLE Temp_ExcludePACategoryID(
+    
+			CategoryID		INT UNSIGNED	       
+        ,	PRIMARY KEY PK_Temp_ExcludePA(CategoryID)
+    );
+
+	INSERT INTO Temp_ExcludePACategoryID(CategoryID)
+    SELECT CategoryID
+    FROM CTS_DataCenter.CustomerCategory AS cat
+    WHERE ParentID = 50 AND CategoryID NOT IN  (57,61,163,164);   
+    
     INSERT INTO Temp_MatchMonitorDetailsCust(CustID, MMDetailsID, MatchID, NoOfCust)
     WITH CTE_MatchMonitorDetials AS
     ( 	SELECT	mmd.ID AS MMDetailsID
@@ -90,19 +102,23 @@ BEGIN
 		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(cte.ListCustID), ',', '","'), 
 						'$[*]' COLUMNS (CustID BIGINT UNSIGNED PATH '$')
 						) js;    
-    
+
     INSERT INTO Temp_Cust(CustID, MMDetailsID, MatchID, CTSCustID, RoleID, SubscriberID, IsLicensee)
-    SELECT tmpMmc.CustID
-		, tmpMmc.MMDetailsID
-        , tmpMmc.MatchID
-        , cus.CTSCustID
-        , cus.RoleID
-        , cus.SubscriberID
-        , cus.IsLicensee
+    SELECT	tmpMmc.CustID
+		,	tmpMmc.MMDetailsID
+        ,	tmpMmc.MatchID
+        ,	cus.CTSCustID
+        ,	cus.RoleID
+        ,	cus.SubscriberID
+        ,	cus.IsLicensee
     FROM Temp_MatchMonitorDetailsCust AS tmpMmc
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpMmc.CustID = cus.CustID
+		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpMmc.CustID = cus.CustID        
 	WHERE	tmpMmc.NoOfCust > 2
-			AND cus.IsLicensee = 1;
+			AND cus.IsLicensee = 1
+            AND NOT EXISTS (SELECT 1 
+							FROM CTS_DataCenter.CTSCustomerClassification AS cls 
+								INNER JOIN Temp_ExcludePACategoryID AS exl ON cls.CategoryID = exl.CategoryID
+							WHERE cls.CustID = tmpMmc.CustID);
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_PACustGroup;
     CREATE TEMPORARY TABLE Temp_PACustGroup(MmDetailsID INT);
