@@ -75,6 +75,7 @@ BEGIN
         ,	PinCTSCustID			BIGINT UNSIGNED			
         ,	ActionType				TINYINT DEFAULT 0	#0:INSERT, 1:UPDATE
         ,	MatchID					INT
+        ,	IsLicBA					TINYINT(1)
         , 	PRIMARY KEY PK_Temp_PA(CustID,InputCategoryID)  
         ,	INDEX IX_Temp_PA(IsDataChanged,LastModifiedDate)
     );  
@@ -88,6 +89,7 @@ BEGIN
     IF ip_InputType = 'Category' THEN    
         INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, InputCategoryID, InputCategoryGroup,  IsLicensee, IsLicenseeVIP, CreatedBy, Remark, IsDirectPA
 			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsDataChanged, SpecialCC, IsProbation, RelevantCategoryID, LastModifiedDate, PinCTSCustID, MatchID)
+            , IsLicVIP, IsLicBA)
 		SELECT 	DISTINCT tmpJs.CustID
 			,	tmpJs.CTSCustID
 			,	tmpJs.RoleID
@@ -116,6 +118,7 @@ BEGIN
             ,	tmpJs.LastModifiedDate
             ,	pin.CTSCustID
 			,	tmpJs.MatchID
+            ,	pin.IsLicBA
 		FROM JSON_TABLE(ip_CustInfo,
 			"$[*]" COLUMNS(
 					CustID 			BIGINT UNSIGNED		PATH "$.CustID"
@@ -140,6 +143,7 @@ BEGIN
 				, 	IsDataChanged	BOOLEAN 			PATH "$.IsDataChanged"
 				, 	LastModifiedDate	DATETIME 		PATH "$.LastModifiedDate"
                 , 	MatchID				INT 			PATH "$.MatchID"	
+                , 	IsLicBA				TINYINT(1) 		PATH "$.IsLicBA"
 		)) AS tmpJs
 			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on tmpJs.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
 			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CTSCustID = sp.CTSCustID 

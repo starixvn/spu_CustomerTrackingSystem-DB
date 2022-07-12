@@ -18,7 +18,7 @@ sp: BEGIN
 		Param's Explanation:
             
 		Example:
-			CALL CTS_DC_CustClassification_LicVIP_Insert('[{"":,"":}]');
+			CALL CTS_DC_CustClassification_LicVIP_Insert('[{"CustID":"791050", "CreatedBy": 12345}, {"CustID":"12345", "CreatedBy": 835067}]');
 	*/    
     
     DECLARE lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();

@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_PA_Insert`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_PA_Insert_xpre`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_Insert_xpre`(
 		IN ip_InputType			VARCHAR(20) 
     ,	IN ip_IsToQueue			BOOLEAN
     ,   IN ip_ProblemAccounts 	JSON
@@ -241,10 +241,7 @@ BEGIN
 	SELECT 	tmpPA.CustID
 		,	tmpPA.CTSCustID
 		, 	tmpPA.SubscriberID
-		, 	(CASE 	WHEN tmpPA.IsProbationStatus = 1 AND tmpPA.RelevantIsProbation = 1 THEN  tmpPA.RelevantCategoryGroup
-					WHEN (tmpPA.IsProbationStatus = 0 OR tmpPA.IsProbationStatus IS NULL) THEN  tmpPA.CategoryGroup 
-					ELSE tmpPA.CategoryGroup 
-			END) AS CategoryID
+		, 	tmpPA.CategoryGroup AS CategoryID
 		, 	CONST_SPORTGROUP_PA AS SportGroupID
 		, 	NOW()
 		, 	tmpPA.CreatedBy
