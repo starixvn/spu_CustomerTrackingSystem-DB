@@ -241,7 +241,10 @@ BEGIN
 	SELECT 	tmpPA.CustID
 		,	tmpPA.CTSCustID
 		, 	tmpPA.SubscriberID
-		, 	tmpPA.CategoryGroup AS CategoryID
+		, 	(CASE 	WHEN tmpPA.IsProbationStatus = 1 AND tmpPA.RelevantIsProbation = 1 THEN  tmpPA.RelevantCategoryGroup
+					WHEN (tmpPA.IsProbationStatus = 0 OR tmpPA.IsProbationStatus IS NULL) THEN  tmpPA.CategoryGroup 
+					ELSE tmpPA.CategoryGroup 
+			END) AS CategoryID
 		, 	CONST_SPORTGROUP_PA AS SportGroupID
 		, 	NOW()
 		, 	tmpPA.CreatedBy

@@ -21,7 +21,6 @@ BEGIN
 			- 20220426@Casey.Huynh: Return CreatedBy [Redmine ID: #171512]
             - 20220519@Casey.Huynh: Renovate PA Process [Redmine ID: #172061]
             - 20220627@Casey.Huynh: Classify Match Monitor Results, Add MatchID [Redmine ID: #174218]
-            
 		Param's Explanation (filtered by):      
 			CALL CTS_DC_CustClassification_PA_MappingCategory ('Category','[{"CustID": 3679910,"ReasonID": 3679910,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10, "MatchID": 1}]');
 	*/
@@ -36,7 +35,6 @@ BEGIN
         ,	RoleID					INT
         , 	SubscriberID			INT DEFAULT 0
         ,	IsLicensee				BOOLEAN
-        ,	IsLicenseeVIP			BOOLEAN
         ,	Remark 					VARCHAR(500)        
         ,	CreatedBy 				INT UNSIGNED
         
@@ -75,7 +73,6 @@ BEGIN
         ,	PinCTSCustID			BIGINT UNSIGNED			
         ,	ActionType				TINYINT DEFAULT 0	#0:INSERT, 1:UPDATE
         ,	MatchID					INT
-        ,	IsLicBA					TINYINT(1)
         , 	PRIMARY KEY PK_Temp_PA(CustID,InputCategoryID)  
         ,	INDEX IX_Temp_PA(IsDataChanged,LastModifiedDate)
     );  
@@ -87,9 +84,8 @@ BEGIN
 	);
    
     IF ip_InputType = 'Category' THEN    
-        INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, InputCategoryID, InputCategoryGroup,  IsLicensee, IsLicenseeVIP, CreatedBy, Remark, IsDirectPA
+        INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, InputCategoryID, InputCategoryGroup,  IsLicensee, CreatedBy, Remark, IsDirectPA
 			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsDataChanged, SpecialCC, IsProbation, RelevantCategoryID, LastModifiedDate, PinCTSCustID, MatchID)
-            , IsLicVIP, IsLicBA)
 		SELECT 	DISTINCT tmpJs.CustID
 			,	tmpJs.CTSCustID
 			,	tmpJs.RoleID
@@ -97,7 +93,6 @@ BEGIN
 			,	tmpJs.CategoryID
 			,	tmpJs.CategoryGroup
 			,	tmpJs.IsLicensee
-            ,	tmpJs.IsLicenseeVIP
 			,	tmpJs.CreatedBy 
 			,	(CASE WHEN tmpJs.MatchID IS NOT NULL THEN MatchID ELSE tmpJs.Remark END) AS Remark
 			,	tmpJs.IsDirectPA
@@ -118,7 +113,6 @@ BEGIN
             ,	tmpJs.LastModifiedDate
             ,	pin.CTSCustID
 			,	tmpJs.MatchID
-            ,	pin.IsLicBA
 		FROM JSON_TABLE(ip_CustInfo,
 			"$[*]" COLUMNS(
 					CustID 			BIGINT UNSIGNED		PATH "$.CustID"
@@ -128,7 +122,6 @@ BEGIN
 				,	CategoryID		BIGINT UNSIGNED		PATH "$.CategoryID"
 				,	CategoryGroup	BIGINT UNSIGNED		PATH "$.CategoryGroup"
 				,	IsLicensee		BOOLEAN				PATH "$.IsLicensee"
-				,	IsLicenseeVIP	BOOLEAN				PATH "$.IsLicenseeVIP"
 				, 	CreatedBy		INT UNSIGNED		PATH "$.CreatedBy"
 				, 	Remark			VARCHAR(500)		PATH "$.Remark"
 				, 	IsDirectPA		BOOLEAN				PATH "$.IsDirectPA"
@@ -143,7 +136,6 @@ BEGIN
 				, 	IsDataChanged	BOOLEAN 			PATH "$.IsDataChanged"
 				, 	LastModifiedDate	DATETIME 		PATH "$.LastModifiedDate"
                 , 	MatchID				INT 			PATH "$.MatchID"	
-                , 	IsLicBA				TINYINT(1) 		PATH "$.IsLicBA"
 		)) AS tmpJs
 			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on tmpJs.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
 			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CTSCustID = sp.CTSCustID 
@@ -198,7 +190,8 @@ BEGIN
 			,	tmpPA.RelevantIsProbation = tmpCat.IsProbation;	            
     END IF;   
  
-    IF ip_InputType = 'Reason' THEN    
+    IF ip_InputType = 'Reason' THEN
+		INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, InputCategoryID, InputCategoryGroup,  IsLicensee, CreatedBy, Remark, IsDirectPA
 			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, SpecialCC, IsProbation, RelevantCategoryID, TVSRequestID, ReasonID, PinCTSCustID)
 		SELECT	DISTINCT tmpJs.CustID
 			,	cus.CTSCustID
@@ -207,7 +200,6 @@ BEGIN
 			,	tmpLtr.CategoryGroup AS InputCategoryID
 			,	tmpLtr.CategoryGroup AS InputCategoryGroup
 			,	cus.IsLicensee
-            ,	cus.IsLicenseeVIP
 			,	tmpJs.CreatedBy 
 			,	tmpJs.Remark
 			,	tmpJs.IsDirectPA
