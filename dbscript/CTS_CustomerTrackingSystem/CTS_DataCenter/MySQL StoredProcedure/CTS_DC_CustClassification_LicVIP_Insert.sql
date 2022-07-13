@@ -20,19 +20,29 @@ sp: BEGIN
 		Example:
 			CALL CTS_DC_CustClassification_LicVIP_Insert('[{"CustID":"791050", "CreatedBy": 12345}, {"CustID":"12345", "CreatedBy": 835067}]');
 	*/    
+    DECLARE	CONST_GROUP_WRAPER				INT DEFAULT 100;
+    DECLARE CONST_CATEGORY_VIPPROBLEM 		INT DEFAULT 3;
+    DECLARE CONST_CATEGORY_VIPNORMAL 		INT DEFAULT 4;
+    DECLARE CONST_SOURCETYPEID 				INT DEFAULT 38;
     
     DECLARE lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();
     DECLARE lv_CustomerClass	INT;
     DECLARE lv_ActionType		INT DEFAULT 0;
 	DECLARE lv_IsAuto			INT DEFAULT 0;
     DECLARE lv_VIPPriority		SMALLINT;
+	DECLARE lv_LicVIPProblem_CC INT;
+    DECLARE lv_LicVIPNormal_CC 	INT;
     
-	DECLARE	CONST_GROUP_WRAPER				INT DEFAULT 100;
-    DECLARE CONST_CATEGORY_VIPPROBLEM 		INT DEFAULT 3;
-    DECLARE CONST_CATEGORY_VIPNORMAL 		INT DEFAULT 4;
-    DECLARE CONST_CC_VIPPROBLEM 			INT DEFAULT 99;
-    DECLARE CONST_CC_VIPNORMAL 				INT DEFAULT 100;
-    DECLARE CONST_SOURCETYPEID 				INT DEFAULT 38;
+	SELECT cat.CustomerClass
+	INTO lv_LicVIPProblem_CC
+	FROM CTS_DataCenter.CustomerCategory AS cat
+	WHERE cat.CategoryID = CONST_CATEGORY_VIPProblem;
+	
+	SELECT cat.CustomerClass
+	INTO lv_LicVIPNormal_CC
+	FROM CTS_DataCenter.CustomerCategory AS cat
+	WHERE cat.CategoryID = CONST_CATEGORY_VIPNormal;        
+        
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
 	CREATE TEMPORARY TABLE 		Temp_Customer (
@@ -97,7 +107,7 @@ sp: BEGIN
 		 LATERAL (
 			SELECT cls.CategoryID, cat.Priority, cat.IsDangerProbation, cat.CustomerClass 
 			FROM CTS_DataCenter.CTSCustomerClassification AS cls
-				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cls.CategoryID AND cat.Priority < lv_VIPPriority
+				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cls.CategoryID # AND cat.Priority < lv_VIPPriority
 			WHERE cls.CustID = tmpCus.CustID
 			ORDER BY cls.CustID, cls.LastModifiedDate DESC
 			LIMIT 1
@@ -119,11 +129,13 @@ sp: BEGIN
 		INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc ON sc.CustID = tmpCus.CustID
     SET tmpCus.Priority = -1;	
     
+    SELECT * FROM Temp_CustCategory AS tmpCus;
+    
     UPDATE Temp_CustCategory AS tmpCus
     SET tmpCus.IsDataChanged = 1
-        , tmpCus.CustomerClass = (CASE WHEN tmpCus.IsDangerProbation = 1 THEN CONST_CC_VIPNORMAL ELSE CONST_CC_VIPPROBLEM END)
+        , tmpCus.CustomerClass = (CASE WHEN tmpCus.IsDangerProbation = 1 THEN lv_LicVIPNormal_CC ELSE lv_LicVIPProblem_CC END)
     WHERE tmpCus.IsLicenseeVIP != 1 AND ( tmpCus.Priority IS NULL OR tmpCus.Priority > lv_VIPPriority); # Change CC
-    
+      SELECT * FROM Temp_CustCategory AS tmpCus;
     #=======================================================================================
     UPDATE CTS_DataCenter.CTSCustomer AS cus
 		INNER JOIN Temp_Customer AS tmpCus ON cus.CTSCustID = tmpCus.CTSCustID

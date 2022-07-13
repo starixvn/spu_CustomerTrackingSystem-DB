@@ -29,29 +29,24 @@ BEGIN
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_ViewHistory(43600889);
 	*/   
-		DECLARE CONST_CATEGORY_NEWMEMBER 				INT DEFAULT 201;
-		DECLARE	CONST_CATEGORY_NORMALMEMBER 			INT DEFAULT 202;
-		DECLARE CONST_CATEGORY_SMART 					INT DEFAULT 203;
-		DECLARE CONST_CATEGORY_HIGHRISK 				INT DEFAULT 204;
-		DECLARE CONST_CATEGORY_VIP 						INT DEFAULT 205;
-		DECLARE CONST_CATEGORY_PROBATION				INT DEFAULT 206;
-		DECLARE CONST_CATEGORY_INACTIVE					INT DEFAULT 1000;
-        DECLARE lv_LicVIPProblem_CategoryID				SMALLINT UNSIGNED DEFAULT 3;
-        DECLARE lv_LicVIPNormal_CategoryID				SMALLINT UNSIGNED DEFAULT 4;
+        DECLARE CONST_CATEGORY_VIPProblem			SMALLINT DEFAULT 3;
+        DECLARE CONST_CATEGORY_VIPNormal				SMALLINT DEFAULT 4;
+        DECLARE lv_LicVIPProblem_CC						SMALLINT;
+        DECLARE lv_LicVIPNormal_CC						SMALLINT;
         DECLARE lv_LicVIPProblem_CategoryName			VARCHAR(50);
         DECLARE lv_LicVIPNormal_CategoryName			VARCHAR(50);
         DECLARE lv_LicBA_CategoryID						SMALLINT UNSIGNED DEFAULT 2;
         DECLARE lv_LicBA_CategoryName					VARCHAR(50);
         
-        SELECT cat.CategoryName
-        INTO lv_LicVIPProblem_CategoryName
+        SELECT cat.CategoryName, cat.CustomerClass
+        INTO lv_LicVIPProblem_CategoryName, lv_LicVIPProblem_CC
         FROM CTS_DataCenter.CustomerCategory AS cat
-        WHERE cat.CategoryID = lv_LicVIPProblem_CategoryID;
+        WHERE cat.CategoryID = CONST_CATEGORY_VIPProblem;
         
-        SELECT cat.CategoryName
-        INTO lv_LicVIPNormal_CategoryName
+        SELECT cat.CategoryName, cat.CustomerClass
+        INTO lv_LicVIPNormal_CategoryName, lv_LicVIPNormal_CC
         FROM CTS_DataCenter.CustomerCategory AS cat
-        WHERE cat.CategoryID = lv_LicVIPNormal_CategoryID;        
+        WHERE cat.CategoryID = CONST_CATEGORY_VIPNormal;        
         
         SELECT cat.CategoryName
         INTO lv_LicBA_CategoryName
@@ -82,8 +77,8 @@ BEGIN
             ,	temp.IsFromTW
             ,	temp.IsFromCTS
             ,	temp.IsFromAI
-			,	(CASE	WHEN temp.TargetCC = 99 THEN lv_LicVIPProblem_CategoryName
-						WHEN temp.TargetCC = 100 THEN lv_LicVIPNormal_CategoryName 
+			,	(CASE	WHEN temp.TargetCC = lv_LicVIPProblem_CC THEN lv_LicVIPProblem_CategoryName
+						WHEN temp.TargetCC = lv_LicVIPNormal_CC THEN lv_LicVIPNormal_CategoryName 
                         ELSE NULL END) AS LicVIP
             ,	(CASE	WHEN temp.TargetCC = 14 THEN lv_LicBA_CategoryName ELSE NULL END) AS LicBA
 		FROM 	CTS_DataCenter.CTSCustomerClassification_History AS temp
