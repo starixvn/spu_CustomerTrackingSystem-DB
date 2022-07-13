@@ -72,9 +72,10 @@ BEGIN
         
 		,	IsPin					BIT DEFAULT 0
         ,	IsVVIP					BIT DEFAULT 0
+        ,	IsLicenseeVIP			BIT DEFAULT 0
         , 	PRIMARY KEY(CustID,CategoryID)
     );  
-    
+     
     DROP TEMPORARY TABLE IF EXISTS Temp_ExistCate;    
 	CREATE TEMPORARY TABLE Temp_ExistCate(	  
 			CustID				BIGINT UNSIGNED 
@@ -97,7 +98,7 @@ BEGIN
         ,  	PRIMARY KEY(CustID,CategoryID)
     );
     
-    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, SubscriberID,IsLicensee, CategoryID,TargetCC, TurnoverRM, WinlossRM, BetCount, ActiveDays,RobotCounter,WinlossStatus, IsFromTW,IsFromCTS,IsFromAI,IsFromTVS,TVSRequestID,IsDirect,Remark,CreatedBy,IsPin,IsVVIP,CreatedDate)
+    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, SubscriberID,IsLicensee, CategoryID,TargetCC, TurnoverRM, WinlossRM, BetCount, ActiveDays,RobotCounter,WinlossStatus, IsFromTW,IsFromCTS,IsFromAI,IsFromTVS,TVSRequestID,IsDirect,Remark,CreatedBy,IsPin,IsVVIP,IsLicenseeVIP,CreatedDate)
 	SELECT	js.CustID
 		,	cus.CTSCustID
 		,	cus.SubscriberID
@@ -125,6 +126,7 @@ BEGIN
 				 ELSE 0 END AS IsPin
 		,	CASE WHEN vip.CTSCustID IS NOT NULL THEN 1 
 				 ELSE 0 END AS IsVVIP 
+		,	cus.IsLicenseeVIP
 		, lv_Now AS CreatedDate
 	FROM JSON_TABLE(ip_CustInfo,
 	"$[*]" COLUMNS( CustID 			BIGINT UNSIGNED		PATH "$.CustID"                
@@ -249,7 +251,7 @@ BEGIN
 		, 	CONST_ACTIONTYPE_UPDATE AS ActionType
 		, 	1 AS IsAuto
 		, 	lv_Now AS InsertDate
-		, 	tbl.CustomerClass AS TargetCC
+		, 	IFNULL(pa.TargetCC,tbl.CustomerClass) AS TargetCC
 		, 	CONST_SOURCETYPE_RESCANROBOT  AS SourceTypeID
 		,   IsDataChanged
         ,	CASE WHEN pa.IsLicensee = 1 THEN tbl.ABIDangerLevel_Licensee  
@@ -306,6 +308,7 @@ BEGIN
     UPDATE Temp_PA AS pa
 	INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON pa.CategoryID = cate.CategoryID
 	SET pa.TargetCC	= CASE  WHEN pa.TargetCC IS NOT NULL THEN pa.TargetCC
+							WHEN pa.IsLicenseeVIP = 1 THEN 99
 							WHEN pa.TargetCC IS NULL THEN IFNULL(cate.CustomerClass, -99) 
 							ELSE  -99 END 
 	,	pa.TargetDangerLevel = CASE WHEN pa.IsLicensee = 1 THEN cate.ABIDangerLevel_Licensee
