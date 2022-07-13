@@ -47,7 +47,7 @@ BEGIN;
 	END;
 
 	CREATE TABLE #tmpCustomers (
-			CustID			INT NOT NULL PRIMARY KEY		
+			CustID			INT	
 		,	CustSubID		INT
 		,	UserName		VARCHAR(30)
 		,	UserName2		VARCHAR(50)
@@ -62,7 +62,8 @@ BEGIN;
 		,	CreatedDate		DATETIME	
 		,	IsLicensee		BIT		
 		,	IsLicenseeVIP	BIT DEFAULT 0		
-		,	IsLicenseeBA	BIT DEFAULT 0		
+		,	IsLicenseeBA	BIT DEFAULT 0	
+		,	PRIMARY KEY		(CustID,CustSubID)		
 	);
 
 	IF (@QueryType = 1)
