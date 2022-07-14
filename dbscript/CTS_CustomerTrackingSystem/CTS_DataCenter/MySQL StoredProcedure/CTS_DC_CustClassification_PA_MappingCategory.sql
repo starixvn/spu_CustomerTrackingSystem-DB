@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin,ctsService,ctsAPIAdmin,ctsAPI,ctsWebAdmin,ctsWeb" isFunction="0" isNested="1"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_PA_MappingCategory`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_PA_MappingCategory_xpre`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_MappingCategory`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_MappingCategory_xpre`(
 		IN 		ip_InputType	VARCHAR(20)	#"Category, Reason"
     ,	IN 		ip_CustInfo 	JSON
 	
@@ -47,8 +47,7 @@ BEGIN
         
         /*Get Mapping Value*/
 		, 	InputCategoryID		    SMALLINT UNSIGNED
-        ,	InputCategoryGroup     	SMALLINT UNSIGNED      
-        ,	IsProbationStatus		BOOLEAN  NULL
+        ,	InputCategoryGroup     	SMALLINT UNSIGNED    
         , 	CategoryID		   		SMALLINT UNSIGNED
         , 	ReasonID		   		INT
         ,	CategoryGroup     		SMALLINT UNSIGNED

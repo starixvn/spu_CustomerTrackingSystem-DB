@@ -29,29 +29,30 @@ BEGIN
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_ViewHistory(43600889);
 	*/   
-        DECLARE CONST_CATEGORY_VIPProblem			SMALLINT DEFAULT 3;
-        DECLARE CONST_CATEGORY_VIPNormal				SMALLINT DEFAULT 4;
-        DECLARE lv_LicVIPProblem_CC						SMALLINT;
-        DECLARE lv_LicVIPNormal_CC						SMALLINT;
+		DECLARE CONST_LICBA_CATEGORYID				SMALLINT UNSIGNED DEFAULT 2;
+        DECLARE CONST_LICVIPPROBLEM_CATEGORYID		SMALLINT UNSIGNED DEFAULT 3;
+		DECLARE CONST_LICVIPNORMAL_CATEGORYID		SMALLINT UNSIGNED DEFAULT 4;
+		DECLARE lv_LicVIPProblem_CC					SMALLINT UNSIGNED;
+		DECLARE lv_LicVIPNormal_CC					SMALLINT UNSIGNED;
         DECLARE lv_LicVIPProblem_CategoryName			VARCHAR(50);
         DECLARE lv_LicVIPNormal_CategoryName			VARCHAR(50);
-        DECLARE lv_LicBA_CategoryID						SMALLINT UNSIGNED DEFAULT 2;
+        
         DECLARE lv_LicBA_CategoryName					VARCHAR(50);
         
         SELECT cat.CategoryName, cat.CustomerClass
         INTO lv_LicVIPProblem_CategoryName, lv_LicVIPProblem_CC
         FROM CTS_DataCenter.CustomerCategory AS cat
-        WHERE cat.CategoryID = CONST_CATEGORY_VIPProblem;
+        WHERE cat.CategoryID = CONST_LICVIPPROBLEM_CATEGORYID;
         
         SELECT cat.CategoryName, cat.CustomerClass
         INTO lv_LicVIPNormal_CategoryName, lv_LicVIPNormal_CC
         FROM CTS_DataCenter.CustomerCategory AS cat
-        WHERE cat.CategoryID = CONST_CATEGORY_VIPNormal;        
+        WHERE cat.CategoryID = CONST_LICVIPNORMAL_CATEGORYID;        
         
         SELECT cat.CategoryName
         INTO lv_LicBA_CategoryName
         FROM CTS_DataCenter.CustomerCategory AS cat
-        WHERE cat.CategoryID = lv_LicBA_CategoryID;  
+        WHERE cat.CategoryID = CONST_LICBA_CATEGORYID;  
         
 		SELECT  temp.ID
 			,	temp.LastModifiedDate AS CreatedTime
