@@ -369,7 +369,8 @@ BEGIN
         ,	tmpPA.CTSCustID
         ,	lv_CurrentDateTime AS CreatedDate
         ,	tmpPA.CreatedBy
-    FROM Temp_PA AS tmpPA;
+    FROM Temp_PA AS tmpPA
+    WHERE (tmpPA.ToEvidenceID <> 0) AND (tmpPA.ToEvidenceID IS NOT NULL);
     
     #========INSERT EVIDENCE QUEUE=========
 	 INSERT IGNORE INTO CTS_DataCenter.CustEvidenceAffectedQueueInsert(CTSCustID, EvidenceID, Remark, CreatedBy, Created)
