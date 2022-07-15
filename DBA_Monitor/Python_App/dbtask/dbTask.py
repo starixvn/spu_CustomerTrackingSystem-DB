@@ -1,12 +1,15 @@
 import json
+from unittest import result
 from db.dbHelper import DBHandler
 from datetime import  datetime, timezone, timedelta
 from config import config
 from message.messHelper import MessageHelper
 from ssh.sshHelper import SSHHandler
+from pathlib import Path
 import string    
 import random    
 import os
+import shutil
 
 class DBTaskHelper:
     db =  None
@@ -315,7 +318,6 @@ class DBTaskHelper:
                 self.db.Execute(self.connArchiveOpt,query);
         except Exception as ex:
             raise Exception(("UpdateFragmentationTableLastExecuted",ex,(ex,jobID,date)))
-
 
     def ArchivePartition(self,configOjb):
         try:
@@ -1165,6 +1167,248 @@ class DBTaskHelper:
         except Exception as ex:
             self.WriteLog(("InsertMetric"))
 
+    def UpdateBackupStatus(self,bkID, bkType, lsn, folder,time,date):
+        try:
+            self.db.Call_SP(self.connArchiveOpt,'DBA_Backup_Incremental_UpdateInfo',(bkID,bkType,lsn,folder,time,date))
+        except Exception as ex:
+            raise Exception(("UpdateBackupStatus",ex))
+
+    def GetServerInfo(self,serverID):
+        try:
+            info =  self.db.Call_SP(self.connArchiveOpt,'DBA_ServerInfo_GetByID',(serverID,))
+            return info[0][0];
+        except Exception as ex:
+            raise Exception(("GetServerInfo",ex))
+
+    def CheckDiskSize(self,sshOpt,folder,threshold):
+        try:
+            command = '''df {folder} --output=avail | tail -1 | awk '{op}print $1{cl}' '''.format(folder=folder,op="{",cl="}")
+            result = self.ssh.Exec_Command(sshOpt,command)
+            avai = int(result)
+
+            if threshold > (avai/1024/1024):
+                return False;
+            return True
+        except Exception as ex:
+            raise Exception(("CheckDiskSize",ex))
+
+    def GetUID(self,sshOpt):
+        try:
+            command = '''echo $UID'''
+            result = self.ssh.Exec_Command(sshOpt,command)
+            UID = int(result)
+            return UID
+        except Exception as ex:
+            raise Exception(("GetUID",ex))
+
+    def BackupByID(self, bkID):
+        try:   
+            configOjb = self.db.Call_SP(self.connArchiveOpt,'DBA_Backup_Config_GetByID',(bkID,))
+            if len(configOjb[0]) == 0:
+                print("Not Found")
+                return;
+            configOjb = configOjb[0][0];
+
+            notificationMetaData = json.loads(configOjb['NotificationMetaData'])
+
+            self.telegramOpt = {
+                "token": notificationMetaData["token"],
+                "chat_id": notificationMetaData["chat_id"],
+            }
+
+            sshSourceOpt = {
+                "serverIP": configOjb['Source_ServerIP'],
+                "user": configOjb['Source_SSHUser'], 
+                "keyFile": configOjb['Source_SSHKey_File'],
+            }
+            sourceUID = self.GetUID(sshSourceOpt);
+            sshSourceOpt["uid"] = sourceUID;
+
+            sshDesOpt = {
+                "serverIP": configOjb['Des_ServerIP'],
+                "user": configOjb['Des_SSHUser'], 
+                "keyFile": configOjb['Des_SSHKey_File'],
+            }
+
+            desUID = self.GetUID(sshDesOpt);
+            sshDesOpt["uid"] = desUID;
+
+            if self.CheckDiskSize(sshSourceOpt,configOjb["Source_Folder"],configOjb["DiskThreshold"]) == False:
+                raise Exception("Source Folder isn't have enough storage to backup!!!")
+            
+            if self.CheckDiskSize(sshDesOpt,configOjb["Des_RootFolder"],configOjb["DiskThreshold"]) == False:
+                raise Exception("Des Folder isn't have enough storage to backup!!!")
+
+            messText ='''<b>Full Backup</b>\nSource Server: {sourceServer}\nStorage Server: {storageServer}'''.format(sourceServer=configOjb['Source_ServerName'],storageServer=configOjb['Des_ServerName'], folder=configOjb['Des_Folder'])
+
+            self.UpdateServerStatus(configOjb['Source_ServerID'],"Backup")
+            self.tele.SendTelegramMessage(self.telegramOpt,messText +  "\nStatus: <b>Running</b>");
+
+            resultPath = self.Backup(bkID,sshSourceOpt,configOjb['Source_MysqlUser'],configOjb['Source_MysqlPassword'],
+                                    configOjb["Source_DataPath"], configOjb["Source_BinlogPath"], configOjb["Source_Folder"],
+                                    configOjb["Source_ContainerName"], configOjb["Source_ContainerNetwork"], configOjb["Source_XtrabackupImageName"],
+                                    sshDesOpt,configOjb["Des_Folder"],configOjb["Des_FolderName"],configOjb["BackupType"],configOjb["LastLSN"],configOjb["LastFolder"],
+                                    configOjb["CurrTime"],configOjb["CurrDate"])
+            
+            self.UpdateServerStatus(configOjb['Source_ServerID'],"None")
+            self.tele.SendTelegramMessage(self.telegramOpt,messText +  "\nFolder: " + resultPath + "\nStatus: <b>Done</b>");
+
+        except Exception as ex:
+            self.WriteLog(("BackupFull", ex)) 
+
+    def Backup(self, bkID,sourceSSHOpt,sourceMysqlUser,sourceMysqlPass,sourceDBPath,sourceBinLogPath,sourceBKPath,sourceContainerName,sourceContainerNetwork,xtrabackupImageName,desSSHOpt,desBKPath,desFolderName,bkType,lsn,lastFolder,currTime, currDate):
+        try:
+            isOneHost = False
+            bkOpt = ''
+            resultPath = ""
+
+            if sourceSSHOpt['serverIP'] == desSSHOpt['serverIP']:
+                isOneHost = True;
+                sourceBKPath = desBKPath
+                
+            if bkType == 'Incremental_Inc':
+                bkOpt = '''--target-dir=/xtrabackup_backupfiles --incremental-lsn={lsn}'''.format(lsn=lsn)
+                   
+            if isOneHost == True:
+                    sourceBKPath = sourceBKPath = '''{sourceBKPath}/{desFolderName}'''.format(sourceBKPath=sourceBKPath,desFolderName=desFolderName)
+            else:
+                tempFolder = self.RandomStr(6);
+                sourceBKPath = '''{sourceBKPath}/{tempFolder}'''.format(sourceBKPath=sourceBKPath,tempFolder=tempFolder)
+
+            cmdCreateSourceFolderPath = '''mkdir -p {sourceBKPath}'''.format(sourceBKPath=sourceBKPath)
+            self.ssh.Exec_Command(sourceSSHOpt,cmdCreateSourceFolderPath)
+
+            resultPath = sourceBKPath
+
+            cmdBK = '''docker run --rm -i -v {sourceDBPath}:/var/lib/mysql -v {sourceBinLogPath}:/var/log/mysql/binlog -v {sourceBKPath}:/xtrabackup_backupfiles --network {sourceContainerNetwork} {xtrabackupImageName} xtrabackup --host={sourceContainerName} --user={sourceMysqlUser} --password={sourceMysqlPass} --compress-threads=1 --parallel=2 --compress --backup {bkOpt}'''.format(
+                    sourceDBPath=sourceDBPath,
+                    sourceBinLogPath=sourceBinLogPath,
+                    sourceBKPath=sourceBKPath,
+                    sourceContainerNetwork=sourceContainerNetwork,
+                    xtrabackupImageName=xtrabackupImageName,
+                    sourceContainerName=sourceContainerName,
+                    sourceMysqlUser=sourceMysqlUser,
+                    sourceMysqlPass=sourceMysqlPass,
+                    bkOpt=bkOpt)
+
+            self.ssh.Exec_Command(sourceSSHOpt,cmdBK)
+
+            cmdChown = '''docker run --rm -i -v {sourceBKPath}:/tmp {xtrabackupImageName} chown -R {uid}:{uid} /tmp'''.format(sourceBKPath=sourceBKPath,xtrabackupImageName=xtrabackupImageName,uid=sourceSSHOpt["uid"])
+            self.ssh.Exec_Command(sourceSSHOpt,cmdChown)
+
+            cmdGetLSN = '''grep -r "to_lsn" {sourceBKPath}/xtrabackup_checkpoints | awk '{op}print $3{clo}' '''.format(sourceBKPath=sourceBKPath,op="{",clo="}")
+            LSN = int(self.ssh.Exec_Command(sourceSSHOpt,cmdGetLSN))
+
+            if isOneHost == False:
+                Path("/var/cts/monitor/backup").mkdir(parents=True, exist_ok=True)
+                self.ssh.SCP_GetFile_Recursive(sourceSSHOpt,sourceBKPath,"/var/cts/monitor/backup")
+                
+                localPath = '''/var/cts/monitor/backup/{tempFolder}'''.format(tempFolder=tempFolder)
+                localRenamePath = '''/var/cts/monitor/backup/{desFolderName}'''.format(desFolderName=desFolderName)
+                os.rename(localPath,localRenamePath)
+
+                cmdCreatDesFolderPath = '''mkdir -p {desBKPath}'''.format(desBKPath=desBKPath)
+                self.ssh.Exec_Command(desSSHOpt,cmdCreatDesFolderPath)
+
+                self.ssh.SCP_UpFile_Recursive(desSSHOpt,localRenamePath,desBKPath)
+                resultPath = '''{desBKPath}/{desFolderName}'''.format(desBKPath=desBKPath,desFolderName=desFolderName);
+
+                cmdDeleteFolderBK = '''rm -r {sourceBKPath}'''.format(sourceBKPath=sourceBKPath)
+                self.ssh.Exec_Command(sourceSSHOpt,cmdDeleteFolderBK)
+
+                if os.path.exists(localRenamePath):
+                    shutil.rmtree(localRenamePath)
+
+            self.UpdateBackupStatus(bkID,bkType,LSN,desBKPath,currTime, currDate)
+
+            if bkType == 'Incremental_Full' and lastFolder != None and len(lastFolder) > 0:
+                cmdDeleteFolderBK = '''rm -r {lastFolder}'''.format(lastFolder=lastFolder)
+                self.ssh.Exec_Command(desSSHOpt,cmdDeleteFolderBK)
+
+            return resultPath;
+        except Exception as ex:
+            self.WriteLog(("BackupFull", ex)) 
+
+    def Recover(self,localServerID, sourceServerID,desServerID, baseFolder,desFolder, incFolderList, isFullBK):
+        try:
+            sourceServerInfo = self.GetServerInfo(sourceServerID)
+            sourceSSHOpt = {
+                "serverIP": sourceServerInfo['ServerIP'],
+                "user": sourceServerInfo['SSHUser'], 
+                "keyFile": sourceServerInfo['SSHKey_File'],
+            }
+
+            xtrabackupImageName = sourceServerInfo['XtrabackupImageName'];
+
+            desServerInfo = self.GetServerInfo(desServerID)
+            desSSHOpt = {
+                "serverIP": desServerInfo['ServerIP'],
+                "user": desServerInfo['SSHUser'], 
+                "keyFile": desServerInfo['SSHKey_File'],
+            }
+
+            localServerInfo = self.GetServerInfo(localServerID)
+            localSSHOpt = {
+                "serverIP": localServerInfo['ServerIP'],
+                "user": localServerInfo['SSHUser'], 
+                "keyFile": localServerInfo['SSHKey_File'],
+            }
+            
+
+            tempFolder = self.RandomStr(6);
+
+            localTempPath = '''/var/cts/monitor/backup/{tempFolder}'''.format(tempFolder=tempFolder)
+            localBasePath = '''{localTempPath}/base'''.format(localTempPath=localTempPath)
+            localIncPath = '''{localTempPath}/inc'''.format(localTempPath=localTempPath)
+
+            cmdCreateFolderBK = '''mkdir -p {localBasePath}'''.format(localBasePath=localBasePath)
+            self.ssh.Exec_Command(localSSHOpt,cmdCreateFolderBK)
+            print(cmdCreateFolderBK)
+            cmdCreateFolderBK = '''mkdir -p {localIncPath}'''.format(localIncPath=localIncPath)
+            self.ssh.Exec_Command(localSSHOpt,cmdCreateFolderBK)
+            print(cmdCreateFolderBK)
+
+            baseFolderName = os.path.basename(baseFolder)
+            print(baseFolderName)
+            localBaseFolderPath= '''{localBasePath}/{baseFolderName}'''.format(localBasePath=localBasePath,baseFolderName=baseFolderName)
+            print(localBaseFolderPath)
+            self.ssh.SCP_GetFile_Recursive(sourceSSHOpt,baseFolder,localBasePath)
+
+            cmdDeCompress = '''docker run --rm -it --user $(id -u):$(id -g) -v {localBaseFolderPath}:/xtrabackup_backupfiles {xtrabackupImageName} xtrabackup --decompress --remove-original  --parallel=4'''.format(localBaseFolderPath=localBaseFolderPath,xtrabackupImageName=xtrabackupImageName)
+            
+            if isFullBK == True:
+                cmdPrepare = '''docker run --rm -it --user $(id -u):$(id -g) -v {localBaseFolderPath}:/xtrabackup_backupfiles {xtrabackupImageName} xtrabackup --prepare'''.format(localBaseFolderPath=localBaseFolderPath,xtrabackupImageName=xtrabackupImageName)
+            else:
+                cmdPrepare = '''docker run --rm -it --user $(id -u):$(id -g) -v {localBaseFolderPath}:/xtrabackup_backupfiles {xtrabackupImageName} xtrabackup --prepare --apply-log-only'''.format(localBaseFolderPath=localBaseFolderPath,xtrabackupImageName=xtrabackupImageName)
+            
+            os.system(cmdDeCompress)
+            os.system(cmdPrepare)
+            
+            if isFullBK == True:
+                self.ssh.SCP_UpFile_Recursive(desSSHOpt,localBaseFolderPath,desFolder)
+                if os.path.exists(localTempPath): shutil.rmtree(localTempPath)
+                return
+
+            for incFolder in incFolderList:
+                self.ssh.SCP_GetFile_Recursive(sourceSSHOpt,incFolder,localIncPath)
+                print(incFolder)
+                incFolderName = os.path.basename(incFolder)
+                print(incFolderName)
+                localIncFolderPath= '''{localIncPath}/{incFolderName}'''.format(localIncPath=localIncPath,incFolderName=incFolderName)
+                print(localIncFolderPath)
+                cmdDeCompress = '''docker run --rm -it --user $(id -u):$(id -g) -v {localIncFolderPath}:/xtrabackup_backupfiles {xtrabackupImageName} xtrabackup --decompress --remove-original  --parallel=4'''.format(localIncFolderPath=localIncFolderPath,xtrabackupImageName=xtrabackupImageName)
+                cmdPrepare = '''docker run --rm -it --user $(id -u):$(id -g) -v {localBaseFolderPath}:/tmp/base -v {localIncFolderPath}:/tmp/inc {xtrabackupImageName} xtrabackup --prepare --apply-log-only --target-dir=/tmp/base --incremental-dir=/tmp/inc'''.format(localBaseFolderPath=localBaseFolderPath,localIncFolderPath=localIncFolderPath,xtrabackupImageName=xtrabackupImageName)
+                print(cmdDeCompress)
+                print(cmdPrepare)
+                os.system(cmdDeCompress)
+                os.system(cmdPrepare)
+
+            self.ssh.SCP_UpFile_Recursive(desSSHOpt,localBaseFolderPath,desFolder)
+            if os.path.exists(localTempPath): shutil.rmtree(localTempPath)
+
+        except Exception as ex:
+            raise Exception(("Recover",ex))
+        
 
     def close(self):
         self.db.close()

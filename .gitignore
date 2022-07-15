@@ -32,3 +32,4 @@ _ReSharper*/
 packages/
 /DBA_Monitor/Python_App/.venv
 __pycache__
+/DBA_Monitor/Python_App/backup
