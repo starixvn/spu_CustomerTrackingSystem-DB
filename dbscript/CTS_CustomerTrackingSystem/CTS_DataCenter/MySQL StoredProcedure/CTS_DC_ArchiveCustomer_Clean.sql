@@ -16,6 +16,8 @@ sp: BEGIN
 			- 	20211123@Aries.Nguyen: Clean data inactive association [Redmine ID: #165001]
 			- 	20211216@Aries.Nguyen: Clean data Sum Account Login Info [Redmine ID: #165105]
             -	20220408@Casey.Huynh: Add AssociationGroupByAI [Redmine ID: #171222]
+			-	20220713@Aries.Nguyen: HotFix Customer NULL CC [Redmine ID: #175406]
+
 		Param's Explanation (filtered by):	
         
         Example:
@@ -67,6 +69,7 @@ sp: BEGIN
         ,	AccountID
     FROM CTS_DataCenter.ArchiveCustomer_CTSCustomer
     WHERE ID > lv_LastID
+		AND IsReactivated = 0
     ORDER BY ID ASC
     LIMIT lv_CustBatchSize;
 
@@ -1733,6 +1736,10 @@ sp: BEGIN
     UPDATE  CTS_DataCenter.SystemParameter 
 	SET ParameterValue = lv_NextID
 	WHERE ParameterID = 45;
+
+	UPDATE CTS_DataCenter.ArchiveCustomer_CTSCustomer AS ar 
+	SET	ar.ProcessedDate = NOW()
+    WHERE EXISTS (SELECT 1 FROM Temp_CustInfo AS tmp WHERE ar.ID = tmp.ArchiveID);
 
 
 END$$
