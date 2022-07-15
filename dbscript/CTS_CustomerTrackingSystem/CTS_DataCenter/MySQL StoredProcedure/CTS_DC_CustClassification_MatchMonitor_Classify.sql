@@ -114,11 +114,8 @@ BEGIN
     FROM Temp_MatchMonitorDetailsCust AS tmpMmc
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpMmc.CustID = cus.CustID        
 	WHERE	tmpMmc.NoOfCust > 2
-			AND cus.IsLicensee = 1
-            AND NOT EXISTS (SELECT 1 
-							FROM CTS_DataCenter.CTSCustomerClassification AS cls 
-								INNER JOIN Temp_ExcludePACategoryID AS exl ON cls.CategoryID = exl.CategoryID
-							WHERE cls.CustID = tmpMmc.CustID);
+			AND cus.IsLicensee = 1;
+      
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_PACustGroup;
     CREATE TEMPORARY TABLE Temp_PACustGroup(MmDetailsID INT);
@@ -138,7 +135,11 @@ BEGIN
         ,	52 AS CategoryID # Group Betting
         , 	52 AS CategoryGroup # Group Betting
 	FROM Temp_Cust AS tmpCust
-		INNER JOIN Temp_PACustGroup AS tmpPa ON tmpCust.MMDetailsID = tmpPa.MMDetailsID;
+		INNER JOIN Temp_PACustGroup AS tmpPa ON tmpCust.MMDetailsID = tmpPa.MMDetailsID
+	WHERE NOT EXISTS (	SELECT 1 
+						FROM CTS_DataCenter.CTSCustomerClassification AS cls 
+							INNER JOIN Temp_ExcludePACategoryID AS exl ON cls.CategoryID = exl.CategoryID
+						WHERE cls.CustID = tmpCust.CustID);
         
     SELECT GROUP_CONCAT(DISTINCT MmDetailsID) AS MmDetailsIDList
     FROM Temp_MatchMonitorDetailsCust AS tmp;
