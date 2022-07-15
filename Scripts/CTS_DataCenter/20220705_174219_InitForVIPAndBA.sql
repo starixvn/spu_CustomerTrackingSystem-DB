@@ -13,7 +13,7 @@ ALTER TABLE CTSCustomer
 	,  	ADD COLUMN IsLicenseeBA 		TINYINT(1) DEFAULT 0;
     
 ALTER TABLE CustomerCategory
-		ADD COLUMN IsDangerProbation 	BIT DEFAULT 0;
+		ADD COLUMN IsDangerProbation 	TINYINT(1) DEFAULT 0;
 
 ALTER TABLE CTSCustomer
 ADD INDEX IX_CTSCustomer_SiteID(SiteID);

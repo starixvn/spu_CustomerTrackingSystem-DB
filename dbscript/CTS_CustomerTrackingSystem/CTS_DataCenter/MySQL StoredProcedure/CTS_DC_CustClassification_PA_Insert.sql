@@ -15,7 +15,7 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original:
 		Revisions:
-            - 20220519@Casey.Huynh: Created. Renovate PA Process [RedmineID: #172061]
+			- 20220519@Casey.Huynh: Created. Renovate PA Process [RedmineID: #172061]
             - 20220627@Casey.Huynh: Add MatchID To Remark  [Redmine ID: #174218]
             - 20220801@Long.Luu: Fix cannot rescan Normal when removing PA(Losing)  [Redmine ID: #176163]
             - 20220713@Casey.Huynh: Switching for Licensee VIP & BA Categories [Redmine ID: #174219]
@@ -25,14 +25,10 @@ BEGIN
         Example:
 			
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_PA_Insert('Category',0,'[
-					{"CustID":1277,"CTSCustID":83,"RoleID":1,"SubscriberID":130,"IsLicensee":1,"IsDirectPA":1,"IsFromTVS":0,"IsFromTW":0, "IsFromPAM":1,"IsRobot":0,"CategoryID":153,"CategoryGroup":53,"Remark":"Na test"
-					,"CreatedBy":10278938,"WinlossStatus":0,"TurnoverRM":20000,"WinlossRM":-11000,"BetCount":100,"ActiveDays":10, "MatchID":123456789}]');
-             
-             SELECT * FROM Temp_PA;
-             SELECT s.Remark, s.SourceTypeID, s.* FROM CTSCustomerClassification_History  s WHERE CustID = 1277 ORDER BY ID Desc;  # 1281463;
-             SELECT s.Remark, s.SourceTypeID, s.* FROM CTSCustomerClassification_History  s  ORDER BY ID Desc;   
+					{"CustID":3679910,"CTSCustID":16,"RoleID":1,"SubscriberID":130,"IsLicensee":1,"IsDirectPA":1,"IsFromTVS":0,"IsFromTW":0, "IsFromPAM":1,"IsRobot":0,"CategoryID":92,"CategoryGroup":92,"Remark":"Na test"
+					,"CreatedBy":10278938,"WinlossStatus":0,"TurnoverRM":20000,"WinlossRM":-11000,"BetCount":100,"ActiveDays":10}]');
 	*/   
-    
+
     DECLARE lv_CurrentDateTime				DATETIME DEFAULT CURRENT_TIME(); 
     DECLARE	CONST_SPORTGROUP_PA 			TINYINT DEFAULT 0;
     DECLARE CONST_ACTIONTYPE_INSERT 		INT DEFAULT 0;
@@ -328,9 +324,9 @@ BEGIN
 		, 	tmpPa.ActionType
 		, 	NOW() AS InsertDate
 		, 	tmpPa.TargetCC
-		, 	(CASE	WHEN tmpPA.MatchID IS NOT NULL THEN 35
-					WHEN tmpPA.IsDirectPA = 1 THEN 31 
-					WHEN tmpPA.IsDirectPA = 0 THEN 32 END) AS SourceTypeID
+		, 	(CASE	WHEN tmpPa.MatchID IS NOT NULL THEN 35
+					WHEN tmpPa.IsDirectPA = 1 THEN 31 
+					WHEN tmpPa.IsDirectPA = 0 THEN 32 END) AS SourceTypeID
 		,  	1 AS IsDataChanged
 		,	tmpPa.TargetDangerLevel AS TargetDangerLevel1
 		,	tmpPa.TurnoverRM
@@ -426,9 +422,8 @@ BEGIN
         ,	tmpPa.CTSCustID
         ,	lv_CurrentDateTime AS CreatedDate
         ,	tmpPa.CreatedBy
-    FROM Temp_PA AS tmpPA
-    WHERE (tmpPA.ToEvidenceID <> 0) AND (tmpPA.ToEvidenceID IS NOT NULL);
-    
+    FROM Temp_PA AS tmpPa    
+    WHERE (tmpPa.ToEvidenceID <> 0) AND (tmpPa.ToEvidenceID IS NOT NULL);
     #========INSERT EVIDENCE QUEUE=========
 	 INSERT IGNORE INTO CTS_DataCenter.CustEvidenceAffectedQueueInsert(CTSCustID, EvidenceID, Remark, CreatedBy, Created)
 	 SELECT tmpPa.CTSCustID
