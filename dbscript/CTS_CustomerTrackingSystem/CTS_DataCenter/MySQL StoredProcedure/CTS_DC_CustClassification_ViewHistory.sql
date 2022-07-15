@@ -31,13 +31,13 @@ BEGIN
 	*/   
 		DECLARE CONST_LICBA_CATEGORYID				SMALLINT UNSIGNED DEFAULT 2;
         DECLARE CONST_LICVIPPROBLEM_CATEGORYID		SMALLINT UNSIGNED DEFAULT 3;
-		DECLARE CONST_LICVIPNORMAL_CATEGORYID		SMALLINT UNSIGNED DEFAULT 4;
+		DECLARE CONST_LICVIPNORMAL_CATEGORYID		SMALLINT UNSIGNED DEFAULT 4;        
+        
+        DECLARE lv_LicBA_CategoryName					VARCHAR(50);
 		DECLARE lv_LicVIPProblem_CC					SMALLINT UNSIGNED;
 		DECLARE lv_LicVIPNormal_CC					SMALLINT UNSIGNED;
         DECLARE lv_LicVIPProblem_CategoryName			VARCHAR(50);
-        DECLARE lv_LicVIPNormal_CategoryName			VARCHAR(50);
-        
-        DECLARE lv_LicBA_CategoryName					VARCHAR(50);
+        DECLARE lv_LicVIPNormal_CategoryName			VARCHAR(50);        
         
         SELECT cat.CategoryName, cat.CustomerClass
         INTO lv_LicVIPProblem_CategoryName, lv_LicVIPProblem_CC
