@@ -17,6 +17,7 @@ sp: BEGIN
 			- 	20211216@Aries.Nguyen: Clean data Sum Account Login Info [Redmine ID: #165105]
             -	20220408@Casey.Huynh: Add AssociationGroupByAI [Redmine ID: #171222]
 			-	20220713@Aries.Nguyen: HotFix Customer NULL CC [Redmine ID: #175406]
+			-	20220720@Aries.Nguyen: Missing remove unused columns in 'CTS_DC_ArchiveCustomer_Clean' [Redmine ID: #175631]
 
 		Param's Explanation (filtered by):	
         
@@ -1256,31 +1257,18 @@ sp: BEGIN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.RobotClassification AS ro WHERE ro.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_RobotClassification_Clean;
 			CREATE TEMPORARY TABLE Temp_RobotClassification_Clean(
-					CustID   		BIGINT UNSIGNED 
-				,	SportTypeID		SMALLINT UNSIGNED
-                ,	BetTypeID		SMALLINT UNSIGNED
-                ,	LiveIndicator 	BIT
-                ,	FromDate		DATE
-                ,	PRIMARY KEY(CustID, SportTypeID, BetTypeID, LiveIndicator, FromDate)
+					ID   BIGINT UNSIGNED  PRIMARY KEY
 			);
             
-            INSERT IGNORE INTO Temp_RobotClassification_Clean(CustID, SportTypeID, BetTypeID, LiveIndicator, FromDate)
-            SELECT 	ro.CustID
-				,	ro.SportTypeID
-                ,	ro.BetTypeID
-                ,	ro.LiveIndicator
-                ,	ro.FromDate
+            INSERT IGNORE INTO Temp_RobotClassification_Clean(ID)
+            SELECT 	ro.ID
 			FROM CTS_DataCenter.RobotClassification AS ro
 			WHERE  ro.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)
 			LIMIT lv_CleanTableBatchSize;
             
             DELETE ro
 			FROM CTS_DataCenter.RobotClassification AS ro
-				INNER JOIN Temp_RobotClassification_Clean AS tmp ON tmp.CustID = ro.CustID
-																AND tmp.SportTypeID = ro.SportTypeID
-                                                                AND tmp.BetTypeID = ro.BetTypeID
-                                                                AND tmp.LiveIndicator = ro.LiveIndicator
-                                                                AND tmp.FromDate = ro.FromDate;
+				INNER JOIN Temp_RobotClassification_Clean AS tmp ON tmp.ID = ro.ID;
 			
 			UPDATE  CTS_DataCenter.SystemParameter 
 			SET ParameterValue = 'CTS_DataCenter.RobotClassification'
