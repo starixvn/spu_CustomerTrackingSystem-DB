@@ -30,6 +30,10 @@ INSERT INTO CTS_DataCenter.CustomerCategory(CategoryID, CategoryName, CategorySp
 VALUES (4, 'VIP (Normal Member)', 'VIP (Normal Member)', 1, 101, 1, 0, NOW(), 0, 'VIP会员 (正常会员)', 99, 101, 'NAP', 101, 'Suspicious', '可疑', 101, 3, 1, 1, 99, 0, 31);
    
 UPDATE CTS_DataCenter.CustomerCategory
+SET Priority = 1
+WHERE CategoryID IN (210);
+
+UPDATE CTS_DataCenter.CustomerCategory
 SET Priority = 40
 WHERE ParentID = 50;
 

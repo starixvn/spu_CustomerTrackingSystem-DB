@@ -27,6 +27,7 @@ BEGIN
     DECLARE	CONST_LICVIP_DANGEROUSCATEGORY		INT DEFAULT 3;
     DECLARE	CONST_LICVIP_SUSPICIOUSCATEGORY		INT DEFAULT 4;
     DECLARE	CONST_LICVIP_DANGEROUSCC 			INT DEFAULT 99;
+    DECLARE	CONST_VVIPCC						INT DEFAULT 100;
     DECLARE	CONST_LICVIP_SUSPICIOUSCC			INT DEFAULT 101;
     
     DECLARE	lv_LicVIP_DangerousCCName 			VARCHAR(50);
@@ -91,6 +92,7 @@ BEGIN
 					,	CASE  
 							WHEN tmp.CustomerClass IS NULL 
 									THEN CASE
+											WHEN cate.CustomerClass = CONST_VVIPCC THEN CONST_VVIPCC
 											WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN CONST_LICVIP_SUSPICIOUSCC
                                             WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN CONST_LICVIP_DANGEROUSCC
                                             ELSE cate.CustomerClass
@@ -98,6 +100,7 @@ BEGIN
 							ELSE tmp.CustomerClass 
 						END AS CustomerClass
 					,	CASE
+							WHEN cate.CustomerClass = CONST_VVIPCC THEN cate.CustomerClassName
 							WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN lv_LicVIP_SuspiciousCCName
 							WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN lv_LicVIP_DangerousCCName
 							ELSE cate.CustomerClassName
