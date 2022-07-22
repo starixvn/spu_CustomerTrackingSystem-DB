@@ -21,7 +21,7 @@ BEGIN
         Param's Explanation: 
 
 		Example:
-			-CALL CTS_DataCenter.CTS_DC_CustClassification_PA_InsertRobot('[{"CustID":3698310,"CategoryID":61,"RobotCounter":11,"TurnoverRM":null,"WinlossRM":null,"BetCount":null,"ActiveDays":null,"IsFromTW":true,"CreatedBy":10278938},{"CustID":3698310,"CategoryID":166,"RobotCounter":null,"TurnoverRM":53580.0000,"WinlossRM":-319.0800,"BetCount":1649,"ActiveDays":16,"IsFromTVS":true,"TVSRequestID":1111,"CreatedBy":10278938}]');
+			-CALL CTS_DataCenter.CTS_DC_CustClassification_PA_InsertRobot_xpre('[{"CustID":3698310,"CategoryID":61,"RobotCounter":11,"TurnoverRM":null,"WinlossRM":null,"BetCount":null,"ActiveDays":null,"IsFromTW":true,"CreatedBy":10278938},{"CustID":3698310,"CategoryID":166,"RobotCounter":null,"TurnoverRM":53580.0000,"WinlossRM":-319.0800,"BetCount":1649,"ActiveDays":16,"IsFromTVS":true,"TVSRequestID":1111,"CreatedBy":10278938}]');
 
 */
     DECLARE	CONST_CATEGORYID_ROBOT 				INT DEFAULT 163;
@@ -109,11 +109,12 @@ BEGIN
         ,	sp.CustomerClass AS TargetCC
         , 	js.TurnoverRM
         , 	js.WinlossRM
-        , 	js.BetCount
+        , 	js.BetCount 
         , 	js.ActiveDays
         ,	js.RobotCounter
-        ,	js.WinlossStatus
-        
+        ,	CASE WHEN js.WinlossStatus IS NULL THEN 2
+			ELSE js.WinlossStatus END AS WinlossStatus
+         
         , 	IFNULL(js.IsFromTW,0) AS IsFromTW
 		,	IFNULL(js.IsFromCTS,0) AS IsFromCTS		
         ,	IFNULL(js.IsFromAI,0) AS IsFromAI
@@ -264,7 +265,8 @@ BEGIN
 		INNER JOIN Temp_PA AS pa ON pa.CustID = cate.CustID
         INNER JOIN CTS_DataCenter.CustomerCategory AS tbl ON cate.RelevantCategoryID = tbl.CategoryID 
     WHERE cate.IsChangeWinloss = 1 
-		AND IsRobot = 0;
+		AND IsRobot = 0
+        AND cate.SportGroupID != 100;
     
     DELETE
     FROM Temp_ExistCate
@@ -308,7 +310,8 @@ BEGIN
     UPDATE Temp_PA AS pa
 	INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON pa.CategoryID = cate.CategoryID
 	SET pa.TargetCC	= CASE  WHEN pa.TargetCC IS NOT NULL THEN pa.TargetCC
-							WHEN pa.IsLicenseeVIP = 1 THEN 99
+							WHEN pa.IsLicenseeVIP = 1 AND pa.CategoryID = CONST_CATEGORYID_ROBOT THEN 99
+                            WHEN pa.IsLicenseeVIP = 1 AND pa.CategoryID = CONST_CATEGORYID_ROBOTLOSING THEN 101
 							WHEN pa.TargetCC IS NULL THEN IFNULL(cate.CustomerClass, -99) 
 							ELSE  -99 END 
 	,	pa.TargetDangerLevel = CASE WHEN pa.IsLicensee = 1 THEN cate.ABIDangerLevel_Licensee
