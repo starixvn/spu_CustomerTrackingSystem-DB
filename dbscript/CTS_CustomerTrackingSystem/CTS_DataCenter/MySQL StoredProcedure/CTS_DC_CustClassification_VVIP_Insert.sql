@@ -160,7 +160,8 @@ sp: BEGIN
 	/*****Remove all category, customer class, probation list before******/
 	DELETE cls
     FROM CTS_DataCenter.CTSCustomerClassification AS cls
-		INNER JOIN Temp_Customer AS tmpCus ON cls.CustID = tmpCus.CustID AND tmpCus.IsExistVVIP = 0;
+		INNER JOIN Temp_Customer AS tmpCus ON cls.CustID = tmpCus.CustID AND tmpCus.IsExistVVIP = 0
+	WHERE NOT EXISTS (SELECT 1 FROM Temp_WrapperCategory AS tmpWr WHERE tmpWr.CategoryID = cls.CategoryID);
 	
     DELETE pcl
     FROM CTS_DataCenter.SpecialCustomerClass AS pcl
