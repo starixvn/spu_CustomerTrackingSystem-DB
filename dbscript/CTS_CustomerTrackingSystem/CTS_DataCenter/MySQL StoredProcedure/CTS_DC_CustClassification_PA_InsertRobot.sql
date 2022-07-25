@@ -27,6 +27,8 @@ BEGIN
     DECLARE	CONST_CATEGORYID_ROBOT 				INT DEFAULT 163;
     DECLARE	CONST_CATEGORYID_ROBOTLOSING 		INT DEFAULT 164;
     
+    DECLARE	CONST_CATEGORYID_VIPNORMAL 			INT DEFAULT 4;
+    
     DECLARE	CONST_GROUP_PA 						INT DEFAULT 0;
     DECLARE	CONST_GROUP_NORMAL 					INT DEFAULT 200;
     
@@ -205,7 +207,8 @@ BEGIN
         ,	cate.RelevantCategoryID
         ,	clss.SportGroupID
         ,	cate.IsPAProbation
-        ,	CASE WHEN tmp.WinlossStatus = 1 THEN 0 /*No Change*/
+        ,	CASE WHEN tmp.WinlossStatus = 1 AND clss.CategoryID IN (CONST_CATEGORYID_VIPNORMAL)  THEN 1 
+				 WHEN tmp.WinlossStatus = 1 AND clss.CategoryID NOT IN (CONST_CATEGORYID_VIPNORMAL) THEN 0 /*No Change*/
 				 WHEN tmp.WinlossStatus = 0 AND cate.IsPAProbation = 0 THEN 1  /*Lose + PA => Update */
 				 WHEN tmp.WinlossStatus = 0 AND cate.IsPAProbation = 1 THEN 0  /*Lose + Probation =>  No Change*/
                  WHEN tmp.WinlossStatus = 2 AND cate.IsPAProbation = 0 THEN 0  /*Win + PA => No Change  */
