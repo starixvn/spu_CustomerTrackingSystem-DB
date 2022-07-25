@@ -28,6 +28,7 @@ AS
 		- 20211214@Long.Luu: Return danger info [Redmine ID: #165606]
 		- 20220110@Long.Luu: Return BetId and support data for Basketbal & Esports [Redmine ID: #166986]
 		- 20220728@Long.Luu: Convert stake to RM [Redmine ID: #175913]
+		- 20220725@Long.Luu: Return More Ticket's Info [Redmine ID: #175700]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize)
@@ -121,6 +122,7 @@ BEGIN
 		,	AwayId				INT
 		,	LeagueId			INT
 		,	LeagueName			NVARCHAR(500)
+		,	IsMajorLeague		BIT
 		,	SportType			SMALLINT
 		,	BetType				SMALLINT
 		,	CustId				INT
@@ -151,7 +153,7 @@ BEGIN
 
 	IF (@QueryType = 1)
 		BEGIN
-			INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,SportType,BetType,CustId,BetTeam, BetId,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
+			INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,IsMajorLeague,SportType,BetType,CustId,BetTeam, BetId,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
 			SELECT	TOP (@BatchSize) b.transid
 				,	b.transdate
 				,	b.matchid
@@ -162,13 +164,20 @@ BEGIN
 				,	m.awayid
 				,	m.leagueid
 				,	l.leaguename
+				,	CASE 
+						WHEN l.LeagueGroupID IN (1,2,3) THEN 1
+						ELSE 0
+					END AS IsMajorLeague
 				,	m.sporttype
 				,	b.bettype
 				,	b.custid
 				,	b.betteam
 				,	b.betid
 				,	b.stake * b.actualrate
-				,	b.odds
+				,	CASE 
+						WHEN b.odds < 0 THEN 1/ABS(b.odds)
+						ELSE b.odds
+					END AS odds
 				,	b.hdp1
 				,	b.hdp2
 				,	b.livehomescore
