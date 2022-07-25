@@ -149,7 +149,8 @@ BEGIN
 				END AS WinlossStatus
 		FROM Temp_PA AS t
 			INNER JOIN CTSCustomerClassification AS c ON t.CustID = c.CustID
-            INNER JOIN CustomerCategory AS cc ON c.CategoryID = cc.CategoryID;
+            INNER JOIN CustomerCategory AS cc ON c.CategoryID = cc.CategoryID
+		WHERE c.SportGroupID = 0;
 		
 		UPDATE Temp_PA AS t
 			INNER JOIN Temp_RobotWinlossStatus AS r ON t.CustID = r.CustID
@@ -249,7 +250,8 @@ BEGIN
 				END AS WinlossStatus
 		FROM Temp_PA AS t
 			INNER JOIN CTSCustomerClassification AS c ON t.CustID = c.CustID
-            INNER JOIN CustomerCategory AS cc ON c.CategoryID = cc.CategoryID;
+            INNER JOIN CustomerCategory AS cc ON c.CategoryID = cc.CategoryID
+		WHERE c.SportGroupID = 0;
 		
 		UPDATE Temp_PA AS t
 			INNER JOIN Temp_RobotWinlossStatus AS r ON t.CustID = r.CustID
