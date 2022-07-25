@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CTSCustomer_GetBySiteName`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CTSCustomer_GetBABySiteName`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTSCustomer_GetBySiteName`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CTSCustomer_GetBABySiteName`(
 	IN ip_SiteName 		VARCHAR(50) 
 )
 	SQL SECURITY INVOKER
@@ -19,7 +19,7 @@ BEGIN
 		Param's Explanation (filtered by):
 
 		Example:
-			- CALL CTS_DC_CTSCustomer_GetBySiteName('BEST-ODDS');
+			- CALL CTS_DC_CTSCustomer_GetBABySiteName('BEST-ODDS');
 	*/
 		DECLARE lv_SiteID 		INT;
         
@@ -31,7 +31,8 @@ BEGIN
 	
 		SELECT c.CustID, c.CTSCustID, c.UserName, c.RoleID, c.SiteID, c.IsLicensee, c.IsLicenseeVIP, c.IsLicenseeBA
 		FROM CTS_DataCenter.CTSCustomer AS c
-		WHERE c.SiteID = lv_SiteID;
+		WHERE c.SiteID = lv_SiteID
+			AND IsLicenseeBA = 1;
     
 END$$
 DELIMITER ;
