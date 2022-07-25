@@ -31,7 +31,7 @@ BEGIN
 	
 		SELECT c.CustID, c.CTSCustID, c.UserName, c.RoleID, c.SiteID, c.IsLicensee, c.IsLicenseeVIP, c.IsLicenseeBA
 		FROM CTS_DataCenter.CTSCustomer AS c
-		WHERE c.Site = lv_SiteID;
+		WHERE c.SiteID = lv_SiteID;
     
 END$$
 DELIMITER ;

@@ -21,6 +21,7 @@ BEGIN
 			- 20220426@Casey.Huynh: Return CreatedBy [Redmine ID: #171512]
             - 20220519@Casey.Huynh: Renovate PA Process [Redmine ID: #172061]
             - 20220627@Casey.Huynh: Classify Match Monitor Results, Add MatchID [Redmine ID: #174218]
+            
 		Param's Explanation (filtered by):      
 			CALL CTS_DC_CustClassification_PA_MappingCategory ('Category','[{"CustID": 3679910,"ReasonID": 3679910,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10, "MatchID": 1}]');
 	*/
@@ -143,7 +144,7 @@ BEGIN
 		INSERT INTO Temp_RobotWinlossStatus(CustID, WinlossStatus)
 		SELECT DISTINCT t.CustID
 			,	CASE 
-					WHEN cc.IsPAProbation = 1 THEN 0
+					WHEN cc.IsDangerProbation = 1 THEN 0
 					ELSE 2
 				END AS WinlossStatus
 		FROM Temp_PA AS t
@@ -243,7 +244,7 @@ BEGIN
         INSERT INTO Temp_RobotWinlossStatus(CustID, WinlossStatus)
 		SELECT DISTINCT t.CustID
 			,	CASE 
-					WHEN cc.IsPAProbation = 1 THEN 0
+					WHEN cc.IsDangerProbation = 1 THEN 0
 					ELSE 2
 				END AS WinlossStatus
 		FROM Temp_PA AS t

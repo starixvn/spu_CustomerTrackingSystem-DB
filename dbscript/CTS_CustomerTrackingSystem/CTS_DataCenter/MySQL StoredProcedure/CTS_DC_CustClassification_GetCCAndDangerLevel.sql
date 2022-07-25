@@ -22,6 +22,7 @@ BEGIN
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetCCAndDangerLevel('1,2,1277,555555');
 	*/ 
 	DECLARE	CONST_GROUP_NORMAL 					INT DEFAULT 200;
+	DECLARE	CONST_GROUP_WRAPPER 				INT DEFAULT 100;
     DECLARE	CONST_GROUP_PROBLEM 				INT DEFAULT 0;
         
     DECLARE	CONST_LICVIP_DANGEROUSCATEGORY		INT DEFAULT 3;
@@ -88,7 +89,7 @@ BEGIN
 			ELSE clss.DangerLevelType END AS DangerLevelType
     FROM Temp_CustInfo AS tmp,
 		LATERAL(SELECT 	CASE WHEN clss.SportGroupID = CONST_GROUP_PROBLEM AND tmp.CustomerClass IS NULL THEN cate.CategoryGroup 
-							 ELSE cate.CategoryID END AS CategoryID
+							 ELSE NULL END AS CategoryID
 					,	CASE  
 							WHEN tmp.CustomerClass IS NULL 
 									THEN CASE
@@ -112,7 +113,7 @@ BEGIN
 				FROM CTS_DataCenter.CTSCustomerClassification AS clss
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID
                 WHERE clss.CustID = tmp.CustID
-					AND clss.SportGroupID IN (CONST_GROUP_PROBLEM, CONST_GROUP_NORMAL)
+					AND clss.SportGroupID IN (CONST_GROUP_PROBLEM, CONST_GROUP_WRAPPER, CONST_GROUP_NORMAL)
                 ORDER BY  cate.Priority ASC  
 						, clss.LastModifiedDate DESC
                 LIMIT 1) AS clss;
