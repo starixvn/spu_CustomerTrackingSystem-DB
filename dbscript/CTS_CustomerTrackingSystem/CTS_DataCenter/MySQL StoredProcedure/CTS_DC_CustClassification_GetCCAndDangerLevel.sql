@@ -84,9 +84,11 @@ BEGIN
 		,	clss.CategoryID
 		,	clss.CustomerClass
         ,	clss.CustomerClassName  
-        ,	clss.DangerLevel
-        ,	CASE WHEN clss.DangerLevel IS NULL THEN 0
-			ELSE clss.DangerLevelType END AS DangerLevelType
+        ,	dangerlvl.DangerLevel
+        ,	CASE 
+				WHEN dangerlvl.DangerLevel IS NULL THEN 0
+				ELSE dangerlvl.DangerLevelType 
+			END AS DangerLevelType
     FROM Temp_CustInfo AS tmp,
 		LATERAL(SELECT 	CASE WHEN clss.SportGroupID = CONST_GROUP_PROBLEM AND tmp.CustomerClass IS NULL THEN cate.CategoryGroup 
 							 ELSE NULL END AS CategoryID
@@ -106,17 +108,24 @@ BEGIN
 							WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN lv_LicVIP_DangerousCCName
 							ELSE cate.CustomerClassName
 						END AS CustomerClassName
-					,	CASE WHEN tmp.IsLicensee = 1 THEN cate.ABIDangerLevel_Licensee
-							 WHEN tmp.IsLicensee = 0 THEN cate.ABIDangerLevel_Credit
-						 END AS DangerLevel
-                    ,	cate.DangerLevelType 
 				FROM CTS_DataCenter.CTSCustomerClassification AS clss
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID
                 WHERE clss.CustID = tmp.CustID
 					AND clss.SportGroupID IN (CONST_GROUP_PROBLEM, CONST_GROUP_WRAPPER, CONST_GROUP_NORMAL)
                 ORDER BY  cate.Priority ASC  
 						, clss.LastModifiedDate DESC
-                LIMIT 1) AS clss;
+                LIMIT 1) AS clss,
+		LATERAL(SELECT 	CASE WHEN tmp.IsLicensee = 1 THEN cc.ABIDangerLevel_Licensee
+							 WHEN tmp.IsLicensee = 0 THEN cc.ABIDangerLevel_Credit
+						 END AS DangerLevel
+                    ,	cc.DangerLevelType 
+				FROM CTS_DataCenter.CTSCustomerClassification AS c
+					INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON c.CategoryID = cc.CategoryID
+                WHERE c.CustID = tmp.CustID
+					AND c.SportGroupID IN (CONST_GROUP_PROBLEM, CONST_GROUP_NORMAL)
+                ORDER BY  cc.Priority ASC  
+						, c.LastModifiedDate DESC
+                LIMIT 1) AS dangerlvl;
 		
 	SELECT 	tmp.CustID
 		,	cate.CategoryID
