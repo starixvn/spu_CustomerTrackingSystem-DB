@@ -255,7 +255,10 @@ BEGIN
 		, 	CONST_ACTIONTYPE_UPDATE AS ActionType
 		, 	1 AS IsAuto
 		, 	lv_Now AS InsertDate
-		, 	IFNULL(pa.TargetCC,tbl.CustomerClass) AS TargetCC
+		, 	CASE WHEN pa.TargetCC IS NOT NULL THEN pa.TargetCC
+				 WHEN pa.IsLicenseeVIP = 1 AND tbl.IsPAProbation = 0 THEN 99
+				 WHEN pa.IsLicenseeVIP = 1 AND tbl.IsPAProbation = 1 THEN 101
+			ELSE tbl.CustomerClass END AS TargetCC
 		, 	CONST_SOURCETYPE_RESCANROBOT  AS SourceTypeID
 		,   IsDataChanged
         ,	CASE WHEN pa.IsLicensee = 1 THEN tbl.ABIDangerLevel_Licensee  
