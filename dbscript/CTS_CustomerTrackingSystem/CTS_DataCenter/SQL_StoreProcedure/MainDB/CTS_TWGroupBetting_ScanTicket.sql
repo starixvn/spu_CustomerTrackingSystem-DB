@@ -30,42 +30,38 @@ BEGIN
 	SET @ServerName = @@SERVERNAME;
 
 	IF OBJECT_ID('tempdb..#TmpTicketForScanning') IS NOT NULL
-		DROP TABLE #TmpTicketForScanning;
+        DROP TABLE #TmpTicketForScanning;
 
-	CREATE TABLE #TmpTicketForScanning (
-		Transid BIGINT
-		,Transdate DATETIME
-		,Custid INT
-		,Leagueid INT
-		,Matchid INT
-		,Sporttype SMALLINT
-		,Bettype SMALLINT
-		,Currency TINYINT
-		,Betteam NVARCHAR(10)
-		,BetFrom NVARCHAR(1)
-		,Liveindicator BIT
-		,RFM INT
-		,CustomerClass SMALLINT
-		,RuleId TINYINT
-		,IsBigLeague BIT
-		,GroupId INT
-		);
+    CREATE TABLE #TmpTicketForScanning (
+        Transid BIGINT
+        ,Transdate DATETIME
+        ,Custid INT
+        ,Matchid INT
+        ,Sporttype SMALLINT
+        ,Bettype SMALLINT
+        ,Betteam NVARCHAR(10)
+        ,BetFrom NVARCHAR(1)
+        ,Liveindicator BIT
+        ,RFM INT
+        ,CustomerClass SMALLINT
+        ,RuleId TINYINT
+        ,IsBigLeague BIT
+        ,GroupId INT
+        );
 
-	CREATE INDEX IX_TicketForScanning_Transid
-		ON #TmpTicketForScanning (Transid);
+    CREATE CLUSTERED INDEX IX_TicketForScanning_Transid
+        ON #TmpTicketForScanning (Transid);
 
 	IF OBJECT_ID('tempdb..#TmpSuspectTicket') IS NOT NULL
 		DROP TABLE #TmpSuspectTicket;
 
 	CREATE TABLE #TmpSuspectTicket (
-		Transid BIGINT 
+		Transid BIGINT
 		,Transdate DATETIME
 		,Custid INT
-		,Leagueid INT
 		,Matchid INT
 		,Sporttype SMALLINT
 		,Bettype SMALLINT
-		,Currency TINYINT
 		,Betteam NVARCHAR(10)
 		,BetFrom NVARCHAR(1)
 		,Liveindicator BIT
@@ -76,8 +72,7 @@ BEGIN
 		,GroupId INT
 		);
 
-	CREATE INDEX IX_TmpSuspectTicket_Transid
-		ON #TmpSuspectTicket (Transid);
+	CREATE CLUSTERED INDEX IX_TmpSuspectTicket_Transid ON #TmpSuspectTicket (Transid);
 
 	CREATE NONCLUSTERED INDEX #IX_SuspectTicket_RuleId ON #TmpSuspectTicket (
 			RuleId		ASC
@@ -111,7 +106,7 @@ BEGIN
 
 	CREATE TABLE #TempTrans (
 		GroupId		INT
-		,TransId	BIGINT
+		,TransId	BIGINT	PRIMARY KEY
 		,Transdate	DATETIME
 		)
 
@@ -161,11 +156,9 @@ BEGIN
 		SELECT b.transid
 			,b.transdate
 			,b.custid
-			,m.leagueid
 			,m.matchid
 			,m.sporttype
 			,b.bettype
-			,b.currency
 			,b.betteam
 			,b.betfrom
 			,b.liveindicator AS islive
@@ -193,47 +186,40 @@ BEGIN
 	SELECT b.transid
 		,b.transdate
 		,b.custid
-		,b.leagueid
 		,b.matchid
 		,b.sporttype
 		,b.bettype
-		,b.currency
 		,b.betteam
 		,b.betfrom
 		,b.islive
 		,b.RFM
 		,b.CustomerClass
-		,gbr.ruleid
+		,NULL
 		,b.IsBigLeague
 		,trans.GroupId
 	FROM cte_raw AS b
-	INNER JOIN #TempTrans trans ON b.transdate BETWEEN DATEADD(SECOND,-@Step,trans.Transdate) AND trans.Transdate
-	CROSS APPLY [dbo].[SPU_GroupBettingRule] AS gbr WITH (NOLOCK)
-	ORDER BY b.transid ASC;
-	
+	INNER JOIN #TempTrans trans ON b.transdate BETWEEN DATEADD(SECOND,-@Step,trans.Transdate) AND trans.Transdate;
+
 	INSERT INTO #TmpSuspectTicket
-	SELECT tfs.Transid 
-		,tfs.Transdate
-		,tfs.Custid
-		,tfs.Leagueid
-		,tfs.Matchid
-		,tfs.Sporttype
-		,tfs.Bettype
-		,tfs.Currency
-		,tfs.Betteam
-		,tfs.BetFrom
-		,tfs.Liveindicator
-		,tfs.RFM
-		,tfs.CustomerClass
-		,tfs.RuleId
-		,tfs.IsBigLeague
-		,tfs.GroupId
-	FROM #TmpTicketForScanning AS tfs WITH (NOLOCK)
-	INNER JOIN dbo.SPU_GroupBettingGroupingRule AS gr WITH (NOLOCK) ON tfs.RuleId = gr.RuleId
-		AND tfs.IsBigLeague = gr.IsBigLeague
-		AND tfs.Bettype = gr.Bettype
-		AND tfs.Liveindicator = gr.IsLive
-		AND tfs.Sporttype = gr.Sporttype;
+    SELECT tfs.Transid 
+        ,tfs.Transdate
+        ,tfs.Custid
+        ,tfs.Matchid
+        ,tfs.Sporttype
+        ,tfs.Bettype
+        ,tfs.Betteam
+        ,tfs.BetFrom
+        ,tfs.Liveindicator
+        ,tfs.RFM
+        ,tfs.CustomerClass
+        ,gr.RuleId
+        ,tfs.IsBigLeague
+        ,tfs.GroupId
+    FROM #TmpTicketForScanning AS tfs WITH (NOLOCK)
+    INNER JOIN dbo.SPU_GroupBettingGroupingRule AS gr WITH (NOLOCK) ON tfs.IsBigLeague = gr.IsBigLeague
+        AND tfs.Bettype = gr.Bettype
+        AND tfs.Liveindicator = gr.IsLive
+        AND tfs.Sporttype = gr.Sporttype;
                                         
 	INSERT INTO #TmpTicketCountViolation (
 		RuleId
@@ -320,7 +306,7 @@ BEGIN
 				END 'IsViolateCC'
 			,tcv.GroupId
 		FROM #TmpSuspectTicket AS tfs
-		INNER JOIN #TmpTicketCountViolation AS tcv ON tfs.RuleId = tcv.RuleId AND tfs.Matchid= tcv.MatchId AND tfs.Bettype = tcv.Bettype
+		INNER JOIN #TmpTicketCountViolation AS tcv ON tfs.RuleId = tcv.RuleId AND tfs.Matchid = tcv.MatchId AND tfs.Bettype = tcv.Bettype
 			AND tfs.Betteam = tcv.Betteam AND tfs.GroupId = tcv.GroupId
 		INNER JOIN dbo.SPU_GroupBettingRule AS gbr WITH (NOLOCK) ON tfs.RuleId = gbr.RuleId
 		WHERE tfs.CustomerClass NOT IN (1,2)
@@ -358,7 +344,7 @@ BEGIN
 				END 'IsViolateBetFrom'
 			,tcv.GroupId
 		FROM #TmpSuspectTicket AS tfs
-		INNER JOIN #TmpTicketCountViolation AS tcv ON tfs.RuleId = tcv.RuleId AND tfs.Matchid= tcv.MatchId AND tfs.Bettype = tcv.Bettype
+		INNER JOIN #TmpTicketCountViolation AS tcv ON tfs.RuleId = tcv.RuleId AND tfs.Matchid = tcv.MatchId AND tfs.Bettype = tcv.Bettype
 			AND tfs.Betteam = tcv.Betteam AND tfs.GroupId = tcv.GroupId
 		INNER JOIN dbo.SPU_GroupBettingRule AS gbr WITH (NOLOCK) ON tfs.RuleId = gbr.RuleId
 		WHERE tfs.BetFrom IN ('x','z')
