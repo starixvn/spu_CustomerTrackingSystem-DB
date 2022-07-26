@@ -104,6 +104,15 @@ BEGIN
 		
         ,	PRIMARY KEY PK_Temp_CustProbationStatus_CustID(CustID)
 	);    
+    
+        
+    DROP TEMPORARY TABLE IF EXISTS Temp_LastHistory;
+    CREATE TEMPORARY TABLE Temp_LastHistory(
+			CustID		INT UNSIGNED PRIMARY KEY
+        ,	CategoryID	SMALLINT UNSIGNED
+        ,	TargetCC	SMALLINT UNSIGNED
+	);
+    
  
  /*DROP TEMPORARY TABLE IF EXISTS Temp_WrapperCategory;
     CREATE TEMPORARY TABLE Temp_WrapperCategory(
@@ -299,6 +308,21 @@ BEGIN
 	UPDATE Temp_PA AS tmpPa 
 		INNER JOIN Temp_VIPCust AS tmpVip ON tmpPa.CustID = tmpVip.CustID
 	SET tmpPa.TargetCC = tmpVip.CustomerClass;
+
+    INSERT IGNORE INTO Temp_LastHistory(CustID, CategoryID, TargetCC)
+    SELECT tmpPa.CustID, tmpHis.CategoryID, tmpHis.TargetCC
+    FROM Temp_PA AS tmpPa,
+    LATERAL (	SELECT h.CategoryID, h.TargetCC
+				FROM CTS_DataCenter.CTSCustomerClassification_History AS h
+                WHERE h.CustID = tmpPa.CustID 
+                ORDER BY ID DESC
+                LIMIT 1) AS tmpHis;
+                
+	UPDATE Temp_PA AS tmpPA
+		INNER JOIN Temp_LastHistory AS tmpHis ON tmpPA.CustID = tmpHis.CustID
+	SET tmpPA.IsDataChanged = 1
+	WHERE tmpPA.CategoryGroup <> tmpHis.CategoryID OR tmpPA.TargetCC <> tmpHis.TargetCC; 
+    
     #============INSERT NEW PA=================================    
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, 
 			CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsDirect, Remark, IsFromCTS, IsFromTVS, IsFromTW, TVSRequestID)
