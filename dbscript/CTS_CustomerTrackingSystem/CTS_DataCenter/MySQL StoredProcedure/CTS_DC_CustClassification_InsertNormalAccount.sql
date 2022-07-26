@@ -71,8 +71,10 @@ BEGIN
     DECLARE CONST_SOURCETYPE_INACTIVENORMAL 			INT DEFAULT 18;
     DECLARE CONST_SOURCETYPE_INACTIVEPROPUNTER			INT DEFAULT 19;
     
+    DECLARE	CONST_LICBACATEGORY							INT DEFAULT 2;
     DECLARE	CONST_LICVIP_DANGEROUSCATEGORY				INT DEFAULT 3;
     DECLARE	CONST_LICVIP_SUSPICIOUSCATEGORY				INT DEFAULT 4;
+    DECLARE	CONST_LICBACC 								INT DEFAULT 14;
     DECLARE	CONST_LICVIP_DANGEROUSCC 					INT DEFAULT 99;
     DECLARE	CONST_LICVIP_SUSPICIOUSCC					INT DEFAULT 101;
     
@@ -88,6 +90,7 @@ BEGIN
 		, 	SubscriberID			INT DEFAULT 0        
 		,	IsLicensee				BIT 
         ,	IsLicenseeVIP			BIT
+        ,	IsLicenseeBA			BIT
 		, 	TurnoverRM				DECIMAL(20,4)
 		, 	WinlossRM				DECIMAL(20,4)
 		, 	BetCount				BIGINT
@@ -120,7 +123,8 @@ BEGIN
         , 	CTSCustID				BIGINT
         , 	SubscriberID			INT     
         ,	IsLicensee				BIT        
-        ,	IsLicenseeVIP			BIT   
+        ,	IsLicenseeVIP			BIT       
+        ,	IsLicenseeBA			BIT    
 	); 
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ProbationCustomers;    
@@ -179,12 +183,13 @@ BEGIN
     CALL CTS_DC_ExcludeCustByCondition('Temp_NewClassification');
     
     /* 3: GENERATE CUSTOMERS' INFO */
-    INSERT IGNORE INTO Temp_ExistedCustomers(CustID, CTSCustID, SubscriberID, IsLicensee, IsLicenseeVIP)
+    INSERT IGNORE INTO Temp_ExistedCustomers(CustID, CTSCustID, SubscriberID, IsLicensee, IsLicenseeVIP, IsLicenseeBA)
     SELECT 	DISTINCT cust.CustID
 		, 	cust.CTSCustID
         , 	cust.SubscriberID
 		, 	CASE WHEN mss.SubscriberGroupID = 2 THEN 1 ELSE 0 END AS IsLicensee
         ,	cust.IsLicenseeVIP
+        ,	cust.IsLicenseeBA
     FROM Temp_NewClassification AS temp 
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.CustSubID = 0
         INNER JOIN CTS_DataCenter.MappingSubscriberSite AS mss ON mss.SiteID = cust.SiteID;
@@ -194,7 +199,8 @@ BEGIN
 	SET		temp.CTSCustID = ec.CTSCustID
 		, 	temp.SubscriberID = ec.SubscriberID
         ,	temp.IsLicensee = ec.IsLicensee
-        ,	temp.IsLicenseeVIP = ec.IsLicenseeVIP;
+        ,	temp.IsLicenseeVIP = ec.IsLicenseeVIP
+        ,	temp.IsLicenseeBA = ec.IsLicenseeBA;
     
     /*4: GET PROBATION CUSTOMERS */
     INSERT IGNORE INTO Temp_ProbationCustomers(CustID, ScanDate)
@@ -309,6 +315,7 @@ BEGIN
 	SET 	temp.TargetCC = CASE 
 								WHEN temp.IsLicenseeVIP = 1 AND temp.NewIsDangerProbation = 1 THEN CONST_LICVIP_SUSPICIOUSCC
 								WHEN temp.IsLicenseeVIP = 1 AND temp.NewIsDangerProbation = 0 THEN CONST_LICVIP_DANGEROUSCC
+								WHEN temp.IsLicenseeBA = 1 THEN CONST_LICBACC
                                 ELSE IFNULL(sp.CustomerClass, n.CustomerClass)
 							END
 	WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);
@@ -334,7 +341,8 @@ BEGIN
 	SET   	cate.CategoryID = 	CASE 
 									WHEN temp.NewIsDangerProbation = 1 THEN CONST_LICVIP_SUSPICIOUSCATEGORY
                                     ELSE CONST_LICVIP_DANGEROUSCATEGORY 
-								END;
+								END
+	WHERE cate.CategoryID IN (CONST_LICVIP_SUSPICIOUSCATEGORY,CONST_LICVIP_DANGEROUSCATEGORY);
 	
     /* 12: INSERT CTS CLASSIFICATION */
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification

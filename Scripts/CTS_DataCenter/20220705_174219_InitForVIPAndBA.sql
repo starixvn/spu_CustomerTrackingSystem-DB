@@ -51,7 +51,7 @@ WHERE CustomerClass IN (111, 112, 113, 121, 122, 123, 31, 32, 33, 51, 52, 53, 61
 
 UPDATE CTS_DataCenter.CustomerCategory
 SET Priority = 100
-WHERE CustomerClass IN (1, 2, 3, 5, 6, 7);
+WHERE CustomerClass IN (1, 2, 3, 5, 6, 7, 1001, 1002);
         
 UPDATE CustomerCategory
 SET IsDangerProbation = IsPAProbation;
