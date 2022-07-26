@@ -60,6 +60,7 @@ BEGIN
 	FROM CTS_DataCenter.CustomerCategory AS cat
 	WHERE cat.CategoryID = CONST_LICVIPNORMAL_CATEGORYID;
     
+	
 	DROP TEMPORARY TABLE IF EXISTS Temp_ExistPA ;
     CREATE TEMPORARY TABLE Temp_ExistPA(		
 			CustID 					INT UNSIGNED
@@ -103,7 +104,16 @@ BEGIN
 		
         ,	PRIMARY KEY PK_Temp_CustProbationStatus_CustID(CustID)
 	);    
-    
+ 
+ /*DROP TEMPORARY TABLE IF EXISTS Temp_WrapperCategory;
+    CREATE TEMPORARY TABLE Temp_WrapperCategory(
+		CategoryID SMALLINT UNSIGNED PRIMARY KEY
+	);
+    #=======================================================================
+    INSERT INTO Temp_WrapperCategory(CategoryID)
+    SELECT cat.CategoryID 
+    FROM CTS_DataCenter.CustomerCategory AS cat
+    WHERE cat.ParentID = 1;*/
     #================Mapping Category================
     CALL CTS_DC_CustClassification_PA_MappingCategory(ip_InputType,ip_ProblemAccounts);
     
@@ -149,8 +159,9 @@ BEGIN
     #=============REMOVE GENERAL CATEGORY BEFORE=============
     DELETE clss
     FROM CTS_DataCenter.CTSCustomerClassification AS clss
-		INNER JOIN Temp_PA AS tmpPa ON tmpPa.CustID = clss.CustID AND clss.SportGroupID = CONST_SPORTGROUP_NORMAL;        
-
+		INNER JOIN Temp_PA AS tmpPa ON tmpPa.CustID = clss.CustID AND clss.SportGroupID = CONST_SPORTGROUP_NORMAL;       
+	#WHERE NOT EXISTS (SELECT 1 FROM Temp_WrapperCategory AS tmpWr WHERE tmpWr.CategoryID = cls.CategoryID);
+    
     #=============REMOVE PA PROBATION LIST WHEN IsProbation = 0=============
     DELETE pro
     FROM CTS_DataCenter.ProbationAccountMonitor AS pro
@@ -269,27 +280,25 @@ BEGIN
 	INTO lv_LicVIP_CategoryID, lv_LicVIP_CC
     FROM Temp_PA AS tmpPa 
 		INNER JOIN CustomerCategory AS cat ON tmpPa.CategoryID
-    WHERE tmpPa.IsDataChanged = 1
     LIMIT 1;
     
 	INSERT IGNORE INTO Temp_VIPCust(CustID, CategoryID, CustomerClass, IsChanged)
-    SELECT	cls.CustID
+    SELECT	cus.CustID
 		,	lv_LicVIP_CategoryID
 		,	lv_LicVIP_CC
-        ,	(CASE WHEN cls.CategoryID <> lv_LicVIP_CategoryID THEN 1 ELSE 0 END)
-	FROM CTS_DataCenter.CTSCustomerClassification AS cls 
-		INNER JOIN Temp_PA AS tmpPa ON cls.CustID = tmpPa.CustID AND cls.CategoryID IN (CONST_LICVIPPROBLEM_CATEGORYID, CONST_LICVIPNORMAL_CATEGORYID)
-    WHERE tmpPa.IsDataChanged = 1 ;    
+        ,	(CASE WHEN (cls.CategoryID = lv_LicVIP_CategoryID) THEN 0 ELSE 1 END)
+	FROM Temp_PA AS tmpPa
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpPa.CTSCustID = cus.CTSCustID AND cus.IsLicenseeVIP = 1
+		LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = tmpPa.CustID AND cls.CategoryID IN (CONST_LICVIPPROBLEM_CATEGORYID, CONST_LICVIPNORMAL_CATEGORYID);    
 
     UPDATE CTS_DataCenter.CTSCustomerClassification AS cls
 		INNER JOIN Temp_VIPCust AS tmpVip ON cls.CustID = tmpVip.CustID AND tmpVip.IsChanged = 1
 	SET cls.CategoryID = tmpVip.CategoryID
 	WHERE cls.CategoryID IN (CONST_LICVIPPROBLEM_CATEGORYID, CONST_LICVIPNORMAL_CATEGORYID);
-
+        
 	UPDATE Temp_PA AS tmpPa 
 		INNER JOIN Temp_VIPCust AS tmpVip ON tmpPa.CustID = tmpVip.CustID
 	SET tmpPa.TargetCC = tmpVip.CustomerClass;
-    
     #============INSERT NEW PA=================================    
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, 
 			CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsDirect, Remark, IsFromCTS, IsFromTVS, IsFromTW, TVSRequestID)
