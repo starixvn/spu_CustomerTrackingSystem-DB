@@ -360,7 +360,8 @@ BEGIN
 		, 	pa.TargetCC
 		, 	CASE WHEN ip_IsRescan = 1 THEN CONST_SOURCETYPE_RESCANROBOT 
 				 ELSE CONST_SOURCETYPE_INSERTROBOT END AS SourceTypeID
-		,  	pa.IsDataChanged
+		,  	CASE WHEN ip_IsRescan = 1 THEN 1
+				 ELSE pa.IsDataChanged END AS IsDataChanged
 		,	pa.RobotCounter
 		,	pa.TargetDangerLevel AS TargetDangerLevel1
 		,	pa.TurnoverRM
@@ -375,7 +376,7 @@ BEGIN
 		,	pa.IsFromTVS
 		,	pa.TVSRequestID  
 	FROM Temp_PA AS pa
-    WHERE pa.IsDataChanged =  1; 
+    WHERE pa.IsDataChanged =  1 OR ip_IsRescan = 1; 
     
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, SourceTypeID, IsDataChanged, RobotCounter, TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays,IsDirect,Remark,IsFromTW,IsFromCTS,IsFromAI,IsFromTVS,TVSRequestID)
 	SELECT 	pa.CustID
