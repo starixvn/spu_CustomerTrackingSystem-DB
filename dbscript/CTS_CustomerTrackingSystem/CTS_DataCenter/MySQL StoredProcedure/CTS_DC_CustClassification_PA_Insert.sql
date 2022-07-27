@@ -288,7 +288,7 @@ BEGIN
 		,	(CASE WHEN cat.IsDangerProbation = 1 THEN lv_LicVIPNormal_CC ELSE lv_LicVIPProblem_CC END)
 	INTO lv_LicVIP_CategoryID, lv_LicVIP_CC
     FROM Temp_PA AS tmpPa 
-		INNER JOIN CustomerCategory AS cat ON tmpPa.CategoryID
+		INNER JOIN CustomerCategory AS cat ON tmpPa.CategoryID = cat.CategoryID
     LIMIT 1;
     
 	INSERT IGNORE INTO Temp_VIPCust(CustID, CategoryID, CustomerClass, IsChanged)
