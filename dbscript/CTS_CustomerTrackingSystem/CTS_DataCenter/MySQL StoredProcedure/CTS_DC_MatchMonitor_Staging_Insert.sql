@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Staging_Insert`;
+DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Staging_Insert_xtest`;
 DELIMITER $$
 
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Staging_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Staging_Insert_xtest`(
 		IN ip_LiveIndicator	BOOLEAN 
     ,	IN ip_TransList 	JSON
 )
@@ -20,6 +20,7 @@ BEGIN
             -	20210823@Casey.Huynh: Seperate scan for Live and NonLive [Redmine ID: 159195]
             -	20211213@Casey.Huynh: Enhance MM, Add column LeagueName [Redmine ID: 165606]
             -	20220110@Casey.Huynh: Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
+            - 	2022
 		
 		Param's Explanation (filtered by):		
 
@@ -75,12 +76,61 @@ BEGIN
 							)
 					) AS js;  
 		
+        INSERT IGNORE INTO CTS_DataCenter.MatchMonitorTransLive(TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, Odds, IsMajorLeague, InsertTime)
+		SELECT  js.TransID
+			,	js.TransDate
+            ,	js.LeagueName
+            ,	js.SportType
+			,	js.MatchID
+			,	js.HomeID
+			,	js.AwayID
+			,	js.EventStatus
+			,	js.KickOffTime
+			,	js.LeagueID
+			,	js.EventDate
+			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore END) AS LiveHomeScore
+			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveAwayScore END) AS LiveAwayScore
+			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore + js.LiveAwayScore END) AS TotalScore
+			,	js.BettypeID
+            ,	IFNULL(js.BetID,0)
+			,	js.CustID
+			,	js.Stake
+            ,	js.Betteam
+            ,	js.Odds
+            ,	js.IsMajorLeague
+			,	CURRENT_TIMESTAMP(3)
+		FROM JSON_TABLE(ip_TransList,
+						 "$[*]" COLUMNS(
+									TransID			BIGINT UNSIGNED PATH "$.TransID" 
+								,	TransDate		DATETIME(3) PATH "$.TransDate" 
+                                ,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PATH "$.LeagueName"
+                                ,	SportType		INT PATH "$.SportType"
+								,	MatchID			INT PATH "$.MatchID"
+								,	HomeID			INT	PATH "$.HomeID" 
+								,	AwayID			INT	PATH "$.AwayID" 
+								,	EventStatus		VARCHAR(50)	PATH "$.EventStatus" 
+								,	KickOffTime		DATETIME PATH "$.KickOffTime" 
+								,	LeagueID		INT	PATH "$.LeagueID"
+								,	EventDate		DATE PATH "$.EventDate"
+								,	LiveHomeScore	INT	PATH "$.LiveHomeScore" 
+								,	LiveAwayScore	INT	PATH "$.LiveAwayScore" 
+								,	BettypeID		INT	PATH "$.Bettype"
+                                ,	BetID			BIGINT	PATH "$.BetID"
+								,	CustID			INT PATH "$.CustID"
+								,	Stake			DOUBLE PATH "$.Stake" 
+                                ,	Betteam			VARCHAR(10)	PATH "$.Betteam" 
+                                ,	Odds			DECIMAL(10,4) PATH "$.Odds" 
+                                ,	IsMajorLeague	BOOLEAN	PATH "$.IsMajorLeague" 
+							)
+					) AS js
+		WHERE js.IsMajorLeague = 0;  
+        
 		#=====UPDATE SYSTEM PARAMETER===============================
 		SELECT MAX(mms.TransID)
 		INTO lv_LastTransID
 		FROM CTS_DataCenter.MatchMonitorStagingLive AS mms;  
             
-         IF lv_LastTransID > 0 THEN	   
+		IF lv_LastTransID > 0 THEN	   
 			UPDATE CTS_DataCenter.SystemParameter AS sys
 			SET sys.ParameterValue = lv_LastTransID
 			WHERE sys.ParameterID = 20;
@@ -126,10 +176,60 @@ BEGIN
                                 ,	BetID			BIGINT	PATH "$.BetID"
 								,	CustID			INT PATH "$.CustID"
 								,	Stake			DOUBLE PATH "$.Stake"
-                                ,	Betteam			VARCHAR(10)	PATH "$.Betteam" 
+                                ,	Betteam			BOOLEAN	PATH "$.Betteam" 
 							)
-					) AS js;  		
-
+					) AS js;
+		
+                    
+		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorTransNonLive(TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, Odds, IsMajorLeague, InsertTime)
+		SELECT  js.TransID
+			,	js.TransDate
+            ,	js.LeagueName
+            ,	js.SportType
+			,	js.MatchID
+			,	js.HomeID
+			,	js.AwayID
+			,	js.EventStatus
+			,	js.KickOffTime
+			,	js.LeagueID
+			,	js.EventDate
+			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore END) AS LiveHomeScore
+			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveAwayScore END) AS LiveAwayScore
+			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore + js.LiveAwayScore END) AS TotalScore
+			,	js.BettypeID
+            ,	IFNULL(js.BetID,0)
+			,	js.CustID
+			,	js.Stake
+            ,	js.Betteam
+            ,	js.Odds
+            ,	js.IsMajorLeague
+			,	CURRENT_TIMESTAMP(3)
+		FROM JSON_TABLE(ip_TransList,
+						 "$[*]" COLUMNS(
+									TransID			BIGINT UNSIGNED PATH "$.TransID" 
+								,	TransDate		DATETIME(3) PATH "$.TransDate" 
+                                ,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PATH "$.LeagueName"
+                                ,	SportType		INT PATH "$.SportType"
+								,	MatchID			INT PATH "$.MatchID"
+								,	HomeID			INT	PATH "$.HomeID" 
+								,	AwayID			INT	PATH "$.AwayID" 
+								,	EventStatus		VARCHAR(50)	PATH "$.EventStatus" 
+								,	KickOffTime		DATETIME PATH "$.KickOffTime" 
+								,	LeagueID		INT	PATH "$.LeagueID"
+								,	EventDate		DATE PATH "$.EventDate"
+								,	LiveHomeScore	INT	PATH "$.LiveHomeScore" 
+								,	LiveAwayScore	INT	PATH "$.LiveAwayScore" 
+								,	BettypeID		INT	PATH "$.Bettype"
+                                ,	BetID			BIGINT	PATH "$.BetID"
+								,	CustID			INT PATH "$.CustID"
+								,	Stake			DOUBLE PATH "$.Stake" 
+                                ,	Betteam			VARCHAR(10)	PATH "$.Betteam" 
+                                ,	Odds			DECIMAL(10,4)	PATH "$.Odds" 
+                                ,	IsMajorLeague	TINYINT(1)	PATH "$.IsMajorLeague" 
+							)
+					) AS js
+		WHERE js.IsMajorLeague = 0; 
+                    
 		#=====UPDATE SYSTEM PARAMETER===============================
 		SELECT 	MAX(mms.TransID)
 		INTO 	lv_LastTransID
