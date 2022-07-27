@@ -36,6 +36,7 @@ sp: BEGIN
             - 10220418@Casey.Huynh: Add and Remove VVIP for Downline [Redmine ID: #159013]
             - 20220519@Casey.Huynh: Renovate PA Process [RedmineID: #172061]
             - 20220713@Casey.Huynh: Switching for Licensee VIP & BA Categories [Redmine ID: #174219]
+            
 		Param's Explanation:
 			ip_FromAction: From Web(1),From Service VVIPDownLine(2), From Insert NewCustomer(3)
             ip_QueueID: From Web(NULL), From Service(<QueueID>)
@@ -155,7 +156,8 @@ sp: BEGIN
         ,	cls.TVSRequestID
 	FROM CTS_DataCenter.CTSCustomerClassification AS cls
 		INNER JOIN Temp_Customer AS tmpCus ON cls.CustID = tmpCus.CustID AND tmpCus.IsExistVVIP = 0
-	WHERE NOT EXISTS (SELECT 1 FROM Temp_WrapperCategory AS tmpWr WHERE tmpWr.CategoryID = cls.CategoryID);
+	WHERE NOT EXISTS (SELECT 1 FROM Temp_WrapperCategory AS tmpWr WHERE tmpWr.CategoryID = cls.CategoryID)
+		  AND cls.SportGroupID = 0;
         
 	/*****Remove all category, customer class, probation list before******/
 	DELETE cls
