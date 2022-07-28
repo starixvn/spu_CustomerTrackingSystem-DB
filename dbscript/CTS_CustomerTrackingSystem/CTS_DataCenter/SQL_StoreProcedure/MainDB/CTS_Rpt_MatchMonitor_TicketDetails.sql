@@ -27,6 +27,7 @@ AS
 		- 20210928@Long.Luu: Remove useless filter [Redmine ID: #159195]		
 		- 20211214@Long.Luu: Return danger info [Redmine ID: #165606]
 		- 20220110@Long.Luu: Return BetId and support data for Basketbal & Esports [Redmine ID: #166986]
+		- 20220728@Long.Luu: Convert stake to RM [Redmine ID: #175913]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize)
@@ -166,7 +167,7 @@ BEGIN
 				,	b.custid
 				,	b.betteam
 				,	b.betid
-				,	b.stake
+				,	b.stake * b.actualrate
 				,	b.odds
 				,	b.hdp1
 				,	b.hdp2
