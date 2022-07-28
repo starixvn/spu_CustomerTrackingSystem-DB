@@ -63,6 +63,7 @@ BEGIN
     DECLARE CONST_ACTIONTYPE_IGNOREPIN 					INT DEFAULT 4;
     DECLARE CONST_ACTIONTYPE_IGNOREPROBATION 			INT DEFAULT 5;
   
+    DECLARE CONST_SOURCETYPE_SAMECATEGORY 				INT DEFAULT 0;
     DECLARE CONST_SOURCETYPE_LESSTHAN10TICKETS 			INT DEFAULT 1;
 	DECLARE	CONST_SOURCETYPE_AFTER10TICKETS 			INT DEFAULT 2;
 	DECLARE CONST_SOURCETYPE_SCANONSCHEDULE				INT DEFAULT 3;
@@ -75,6 +76,7 @@ BEGIN
     DECLARE	CONST_LICVIP_DANGEROUSCATEGORY				INT DEFAULT 3;
     DECLARE	CONST_LICVIP_SUSPICIOUSCATEGORY				INT DEFAULT 4;
     DECLARE	CONST_LICBACC 								INT DEFAULT 14;
+    DECLARE	CONST_LICBAPRIORITY							INT DEFAULT 90;
     DECLARE	CONST_LICVIP_DANGEROUSCC 					INT DEFAULT 99;
     DECLARE	CONST_LICVIP_SUSPICIOUSCC					INT DEFAULT 101;
     
@@ -111,6 +113,7 @@ BEGIN
         ,	NewIsDangerProbation	BIT DEFAULT 0
 		,	SourceTypeID      		SMALLINT
 		,	IsDataChanged			BIT DEFAULT 1 /*0: No change category => No Action*/
+        ,	OldTargetCC				SMALLINT
         ,	TargetCC				SMALLINT
 		,	TargetDangerLevel		SMALLINT
 		, 	ActionType				SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN; 5: Not satisfy Pass Probation*/
@@ -145,6 +148,12 @@ BEGIN
         ,	OldCateGroup 			SMALLINT
         ,	OldCateID 				SMALLINT
         ,	OldIsDangerProbation	BIT DEFAULT 0
+	); 
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_OldCustomerClass;    
+	CREATE TEMPORARY TABLE Temp_OldCustomerClass(	  
+			CustID					BIGINT UNSIGNED	PRIMARY KEY
+        ,	CustomerClass 			SMALLINT
 	); 
     
     /* START */
@@ -293,12 +302,13 @@ BEGIN
     
     /* 7: GENERATE SOURCE TYPE */    
     UPDATE 	Temp_NewClassification AS temp 
-	SET 	temp.SourceTypeID =(CASE WHEN (temp.OldCateGroup IS NULL OR temp.OldCateGroup = CONST_CATEGORY_NEWMEMBER) AND temp.NewCateGroup = CONST_CATEGORY_NEWMEMBER THEN CONST_SOURCETYPE_LESSTHAN10TICKETS
+	SET 	temp.SourceTypeID = (CASE WHEN (temp.OldCateGroup IS NULL OR temp.OldCateGroup = CONST_CATEGORY_NEWMEMBER) AND temp.NewCateGroup = CONST_CATEGORY_NEWMEMBER THEN CONST_SOURCETYPE_LESSTHAN10TICKETS
 									 WHEN temp.OldCateGroup IN (CONST_CATEGORY_NEWMEMBER,CONST_CATEGORY_INACTIVE) AND temp.NewCateGroup NOT IN (CONST_CATEGORY_NEWMEMBER,CONST_CATEGORY_INACTIVE) THEN CONST_SOURCETYPE_AFTER10TICKETS 
 									 WHEN temp.OldCateGroup = CONST_CATEGORY_PROBATION AND temp.NewCateGroup IN (CONST_CATEGORY_SMART, CONST_CATEGORY_HIGHRISK) THEN CONST_SOURCETYPE_PASSPROBATION
 									 WHEN temp.OldCateGroup = CONST_CATEGORY_PROBATION AND temp.NewCateGroup = CONST_CATEGORY_PROBATION THEN CONST_SOURCETYPE_FAILPROBATION
                                      WHEN (temp.OldCateGroup IS NULL OR temp.OldCateGroup IN (CONST_CATEGORY_NEWMEMBER,CONST_CATEGORY_NORMALMEMBER,CONST_CATEGORY_VIP)) AND temp.NewCateGroup = CONST_CATEGORY_INACTIVE THEN CONST_SOURCETYPE_INACTIVENORMAL 
                                      WHEN temp.OldCateGroup IN (CONST_CATEGORY_SMART,CONST_CATEGORY_HIGHRISK,CONST_CATEGORY_PROBATION) AND temp.NewCateGroup = CONST_CATEGORY_INACTIVE THEN CONST_SOURCETYPE_INACTIVEPROPUNTER
+                                     WHEN temp.OldCateGroup = temp.NewCateGroup THEN CONST_SOURCETYPE_SAMECATEGORY
                                      ELSE CONST_SOURCETYPE_SCANONSCHEDULE
 								END)
 	WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);     
@@ -315,7 +325,7 @@ BEGIN
 	SET 	temp.TargetCC = CASE 
 								WHEN temp.IsLicenseeVIP = 1 AND temp.NewIsDangerProbation = 1 THEN CONST_LICVIP_SUSPICIOUSCC
 								WHEN temp.IsLicenseeVIP = 1 AND temp.NewIsDangerProbation = 0 THEN CONST_LICVIP_DANGEROUSCC
-								WHEN temp.IsLicenseeBA = 1 THEN CONST_LICBACC
+								WHEN temp.IsLicenseeBA = 1 AND n.Priority > CONST_LICBAPRIORITY THEN CONST_LICBACC
                                 ELSE IFNULL(sp.CustomerClass, n.CustomerClass)
 							END
 	WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);
@@ -384,6 +394,39 @@ BEGIN
 			OR (temp.ActionType = CONST_ACTIONTYPE_UPDATE AND temp.OldCateGroup <> CONST_CATEGORY_PROBATION));
 
     /* 15: WRITE HISTORY LOG (VIEW ON WEB) */
+    INSERT INTO Temp_OldCustomerClass(CustID)
+    SELECT DISTINCT temp.CustID
+    FROM Temp_NewClassification AS temp
+	WHERE temp.IsDataChanged  = 0;
+    
+    WITH CTE_LatestLog AS (
+		SELECT h.CustID, MAX(h.InsertDate) AS LatestInsertDate
+		FROM Temp_OldCustomerClass AS t
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS h ON t.CustID = h.CustID
+		GROUP BY h.CustID
+	),
+    CTE_LatestHistory AS (
+		SELECT h.CustID, h.TargetCC
+		FROM CTE_LatestLog AS l
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS h ON l.CustID = h.CustID AND l.LatestInsertDate = h.InsertDate
+	)
+	UPDATE CTE_LatestHistory AS l
+		INNER JOIN Temp_NewClassification AS t ON l.CustID = t.CustID
+	SET t.OldTargetCC = l.TargetCC;
+    
+    UPDATE Temp_NewClassification
+    SET IsDataChanged = 1
+		,	SourceTypeID = (CASE 
+								WHEN SourceTypeID = CONST_SOURCETYPE_SAMECATEGORY AND NewCateGroup IN (CONST_CATEGORY_SMART, CONST_CATEGORY_HIGHRISK) 
+									THEN CONST_SOURCETYPE_PASSPROBATION
+								WHEN SourceTypeID = CONST_SOURCETYPE_SAMECATEGORY AND NewCateGroup = CONST_CATEGORY_INACTIVE AND NewCateID = CONST_CATEGORY_NORMALINACTIVE 
+									THEN CONST_SOURCETYPE_INACTIVENORMAL 
+								WHEN SourceTypeID = CONST_SOURCETYPE_SAMECATEGORY AND NewCateGroup = CONST_CATEGORY_INACTIVE AND NewCateID = CONST_CATEGORY_PROPUNTERINACTIVE 
+									THEN CONST_SOURCETYPE_INACTIVEPROPUNTER
+                                ELSE SourceTypeID
+							END)
+    WHERE IsDataChanged = 0 AND TargetCC <> OldTargetCC;
+    
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
 	(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, TWBetCount, TWGroupBettingRate, TWTicketRejectRate, TWDesktopUsageRate
     , ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsDataChanged, TaggingType, TargetDangerLevel1)

@@ -46,6 +46,10 @@ SET Priority = 60
 WHERE CustomerClass IN (57, 58, 67, 68, 77, 78);
 
 UPDATE CTS_DataCenter.CustomerCategory
+SET Priority = 70
+WHERE CustomerClass IN (41, 42, 43, 44, 45, 46, 47, 48, 49);
+
+UPDATE CTS_DataCenter.CustomerCategory
 SET Priority = 80
 WHERE CustomerClass IN (111, 112, 113, 121, 122, 123, 31, 32, 33, 51, 52, 53, 61, 62, 63, 71, 72, 73);
 
