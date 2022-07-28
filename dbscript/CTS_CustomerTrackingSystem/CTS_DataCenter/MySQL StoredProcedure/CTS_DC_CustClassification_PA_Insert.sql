@@ -113,16 +113,6 @@ BEGIN
         ,	TargetCC	SMALLINT UNSIGNED
 	);
     
- 
- /*DROP TEMPORARY TABLE IF EXISTS Temp_WrapperCategory;
-    CREATE TEMPORARY TABLE Temp_WrapperCategory(
-		CategoryID SMALLINT UNSIGNED PRIMARY KEY
-	);
-    #=======================================================================
-    INSERT INTO Temp_WrapperCategory(CategoryID)
-    SELECT cat.CategoryID 
-    FROM CTS_DataCenter.CustomerCategory AS cat
-    WHERE cat.ParentID = 1;*/
     #================Mapping Category================
     CALL CTS_DC_CustClassification_PA_MappingCategory(ip_InputType,ip_ProblemAccounts);
     
@@ -284,20 +274,29 @@ BEGIN
 		,	PRIMARY KEY Temp_WrapCC(CustID)
 	);    
     
-	SELECT (CASE WHEN cat.IsDangerProbation = 1 THEN CONST_LICVIPNORMAL_CATEGORYID ELSE CONST_LICVIPPROBLEM_CATEGORYID END)
-		,	(CASE WHEN cat.IsDangerProbation = 1 THEN lv_LicVIPNormal_CC ELSE lv_LicVIPProblem_CC END)
-	INTO lv_LicVIP_CategoryID, lv_LicVIP_CC
+    DROP TEMPORARY TABLE IF EXISTS Temp_WraperCC;
+    CREATE TEMPORARY TABLE Temp_WraperCC(
+			CustID				INT UNSIGNED
+		,	LicVIP_CategoryID 	SMALLINT UNSIGNED
+        ,	LicVIP_CC 			SMALLINT UNSIGNED
+		,	PRIMARY KEY Temp_WrapCC(CustID)
+	);  
+    
+    INSERT IGNORE INTO Temp_WraperCC(CustID, LicVIP_CategoryID, LicVIP_CC)
+	SELECT	tmpPa.CustID
+		,	(CASE WHEN cat.IsDangerProbation = 1 THEN CONST_LICVIPNORMAL_CATEGORYID ELSE CONST_LICVIPPROBLEM_CATEGORYID END)
+		,	(CASE WHEN cat.IsDangerProbation = 1 THEN lv_LicVIPNormal_CC ELSE lv_LicVIPProblem_CC END)	
     FROM Temp_PA AS tmpPa 
-		INNER JOIN CustomerCategory AS cat ON tmpPa.CategoryID = cat.CategoryID
-    LIMIT 1;
+		INNER JOIN CustomerCategory AS cat ON tmpPa.CategoryID = cat.CategoryID;
     
 	INSERT IGNORE INTO Temp_VIPCust(CustID, CategoryID, CustomerClass, IsChanged)
     SELECT	cus.CustID
-		,	lv_LicVIP_CategoryID
-		,	lv_LicVIP_CC
+		,	tmp_Wr.LicVIP_CategoryID
+		,	tmp_Wr.LicVIP_CC
         ,	(CASE WHEN (cls.CategoryID = lv_LicVIP_CategoryID) THEN 0 ELSE 1 END)
 	FROM Temp_PA AS tmpPa
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpPa.CTSCustID = cus.CTSCustID AND cus.IsLicenseeVIP = 1
+        INNER JOIN Temp_WraperCC AS tmp_Wr ON tmp_Wr.CustID = tmpPa.CustID
 		LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = tmpPa.CustID AND cls.CategoryID IN (CONST_LICVIPPROBLEM_CATEGORYID, CONST_LICVIPNORMAL_CATEGORYID);    
 
     UPDATE CTS_DataCenter.CTSCustomerClassification AS cls
