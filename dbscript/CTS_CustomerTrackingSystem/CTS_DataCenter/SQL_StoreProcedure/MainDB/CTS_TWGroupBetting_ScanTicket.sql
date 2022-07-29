@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[CTS_TWGroupBetting_ScanTicket]
 		@BatchSize		INT,
 		@Step			INT,
@@ -150,7 +150,7 @@ BEGIN
 		AND b.currency <> 20
 		AND m.sporttype IN (1,2)
 		AND b.bettype IN (1,3,7,8,609,610)
-		AND b.transdate BETWEEN @FromTime AND @ToTime;
+		AND b.transdate BETWEEN @FromTime AND @ToTime; -- from & to using without value assigning?
 
 	INSERT INTO #TempTrans(GroupId,TransId,Transdate)
 	SELECT TOP (@BatchSize) ROW_NUMBER() OVER (ORDER BY t.transid ASC)
@@ -204,7 +204,7 @@ BEGIN
 		INNER JOIN dbo.SPU_GroupBettingGroupingRule AS gr WITH (NOLOCK) ON tfs.IsBigLeague = gr.IsBigLeague
 			AND tfs.Bettype = gr.Bettype
 			AND tfs.Liveindicator = gr.IsLive
-			AND tfs.Sporttype = gr.Sporttype;
+			AND tfs.Sporttype = gr.Sporttype; -- merge with the insert statement above into one
     
 	;WITH cte_filtered1 AS (
 		SELECT	st.RuleId
@@ -223,16 +223,16 @@ BEGIN
 			,	gbr.TicketCountLimit --???????????? => cai nay ko co thi ko dung column nay trong Having duoc, bua e bi Bug cho nay :D
 		HAVING COUNT(1) > gbr.TicketCountLimit
 	)
-	UPDATE t
+	UPDATE t -- missing lock
 	SET t.TicketCount = f.TicketCount
 	FROM cte_filtered1 AS f
 		INNER JOIN #TmpSuspectTicket AS t ON t.RuleId = f.RuleId AND t.Matchid = f.MatchId AND t.Bettype = f.Bettype
 			AND t.Betteam = f.Betteam AND t.GroupId = f.GroupId;
-
+-- not consistant, using CTE with betcount checking, other 3 using another one
 	-- Check RFM
 	UPDATE tfs
 	SET tfs.IsViolateRFM = tempTable.IsViolatedRFM
-	FROM #TmpSuspectTicket AS tfs WITH(NOLOCK)
+	FROM #TmpSuspectTicket AS tfs WITH(NOLOCK) -- wrong lock
 		INNER JOIN (
 			SELECT	tfs.RuleId
 				,	tfs.Betteam
@@ -269,7 +269,7 @@ BEGIN
 	-- Check CC
 	UPDATE tfs
 	SET tfs.IsViolateCC = tempTable.IsViolateCC
-	FROM #TmpSuspectTicket AS tfs WITH(NOLOCK)
+	FROM #TmpSuspectTicket AS tfs WITH(NOLOCK) -- wrong lock
 		INNER JOIN (
 			SELECT	tfs.RuleId
 				,	tfs.Betteam
@@ -306,7 +306,7 @@ BEGIN
 	-- Check BetFrom
 	UPDATE tfs
 	SET tfs.IsViolateBetFrom = tempTable.IsViolateBetFrom
-	FROM #TmpSuspectTicket AS tfs WITH(NOLOCK)
+	FROM #TmpSuspectTicket AS tfs WITH(NOLOCK) -- wrong lock
 		INNER JOIN (
 			SELECT	tfs.RuleId
 				,	tfs.Betteam
@@ -341,7 +341,7 @@ BEGIN
 				AND tempTable.GroupId = tfs.GroupId AND tempTable.MatchId = tfs.MatchId AND tempTable.Bettype = tfs.Bettype;
 
 	-- Delete existing ticket in dbo.SPU_GroupBettingTicket
-	DELETE st
+	DELETE st -- missing lock
 	FROM #TmpSuspectTicket AS st
 	INNER JOIN dbo.SPU_GroupBettingTicket gbt WITH (NOLOCK) ON st.Transid = gbt.TransId;
 
