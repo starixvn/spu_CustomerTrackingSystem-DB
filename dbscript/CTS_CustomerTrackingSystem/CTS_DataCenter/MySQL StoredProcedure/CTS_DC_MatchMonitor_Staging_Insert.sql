@@ -122,8 +122,8 @@ BEGIN
                                 ,	Odds			DECIMAL(10,4) PATH "$.Odds" 
                                 ,	IsMajorLeague	BOOLEAN	PATH "$.IsMajorLeague" 
 							)
-					) AS js
-		WHERE js.IsMajorLeague = 0;  
+					) AS js;
+		#WHERE js.IsMajorLeague = 0;  
         
 		#=====UPDATE SYSTEM PARAMETER===============================
 		SELECT MAX(mms.TransID)

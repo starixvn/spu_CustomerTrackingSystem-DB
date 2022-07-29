@@ -75,7 +75,7 @@ CREATE TABLE MatchMonitorTransNonLive (
     StatusRule02		TINYINT COMMENT 'Applied For: Fixed Game' DEFAULT 0,
 	PRIMARY KEY (TransID),
 	INDEX IX_MatchMonitorTransNonLive_TransDate (TransDate),
-	INDEX IX_MatchMonitorTransNonLive_Group (MatchID,TotalScore,BettypeID,BetID,Betteam,GroupID),
+	INDEX IX_MatchMonitorTransNonLive_Group (MatchID,TotalScore,BettypeID,BetID,Betteam,GroupID,TransDate),
     INDEX IX_MatchMonitorTransNonLive_StatusRule01(StatusRule01),
     INDEX IX_MatchMonitorTransNonLive_StatusRule02(StatusRule02)
 ) ENGINE=InnoDB;
@@ -90,8 +90,8 @@ ADD INDEX IX_MatchMonitorDetails_MatchIDBettypeIDBetIDBetteam(MatchID,BettypeID,
 ALTER TABLE MatchMonitorDetails
 DROP INDEX IX_MatchMonitorDetails_MatchID_BettypeID;
 
-/******************Init SystemParameter***************************
+#******************Init SystemParameter***************************
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
-VALUES	(95,'Classification_MatchMonitor_PackSize','Last Classification_MatchMonitor_PackSize.ID','INT','100')
-	,	(96,'Classification_MatchMonitor_InProcessMatchID','In_process MatchMonitor.MatchID','INT ',0);
-*/
+VALUES	(100,'MatchMonitor_Rule02_Process_Live','In_process MatchMonitorTransLive.TransID','BIGINT UNSIGNED','0')
+	,	(101,'MatchMonitor_Rule02_Process_NonLive','In_process MatchMonitorTransNonLive.TransID','BIGINT UNSIGNED ',0);
+
