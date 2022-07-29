@@ -265,7 +265,7 @@ BEGIN
     FROM Temp_NewClassification AS temp
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON temp.CustID = cate.CustID AND cate.SportGroupID = CONST_GROUP_NORMAL
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
-	WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT);
+	WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_IGNOREPROBATION);
     
     UPDATE Temp_NewClassification AS n
 		LEFT JOIN Temp_OldClassification AS o ON n.CustID = o.CustID
@@ -274,6 +274,12 @@ BEGIN
 		n.OldIsDangerProbation = CASE WHEN o.CustID IS NULL THEN 1 ELSE o.OldIsDangerProbation END,
         n.ActionType = CASE WHEN o.CustID IS NULL THEN CONST_ACTIONTYPE_INSERT ELSE CONST_ACTIONTYPE_UPDATE END
 	WHERE n.ActionType IN (CONST_ACTIONTYPE_INSERT);
+    
+    UPDATE Temp_NewClassification AS n
+		LEFT JOIN Temp_OldClassification AS o ON n.CustID = o.CustID
+	SET n.OldCateGroup = CASE WHEN o.CustID IS NULL THEN CONST_CATEGORY_NEWMEMBER ELSE o.OldCateGroup END,
+		n.OldCateID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGORY_NEWMEMBER ELSE o.OldCateID END
+	WHERE n.ActionType IN (CONST_ACTIONTYPE_IGNOREPROBATION);
     
     /* 6.3: UPDATE NEW CATEGORY */    
     UPDATE 	Temp_NewClassification AS temp 
@@ -417,10 +423,11 @@ BEGIN
 		INNER JOIN Temp_NewClassification AS t ON l.CustID = t.CustID
 	SET t.OldTargetCC = l.TargetCC;
     
-    UPDATE Temp_NewClassification
-    SET TargetCC = 5
-		,	NewCateID = CONST_CATEGORY_PROBATION
-        , 	NewCateGroup = CONST_CATEGORY_PROBATION
+    UPDATE Temp_NewClassification AS t
+		INNER JOIN CustomerCategory AS c ON t.OldCateID = c.CategoryID
+    SET TargetCC = c.CustomerClass
+		,	NewCateID = OldCateID
+        , 	NewCateGroup = OldCateGroup
     WHERE ActionType = CONST_ACTIONTYPE_IGNOREPROBATION;
         
     UPDATE Temp_NewClassification
@@ -438,7 +445,7 @@ BEGIN
     WHERE IsDataChanged = 0 
 		AND (TargetCC <> OldTargetCC)
 		AND (SourceTypeID = CONST_SOURCETYPE_SAMECATEGORY OR ActionType = CONST_ACTIONTYPE_IGNOREPROBATION);
-        
+
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
 	(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, TWBetCount, TWGroupBettingRate, TWTicketRejectRate, TWDesktopUsageRate
     , ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsDataChanged, TaggingType, TargetDangerLevel1)
