@@ -306,7 +306,8 @@ BEGIN
         
 	UPDATE Temp_PA AS tmpPa 
 		INNER JOIN Temp_VIPCust AS tmpVip ON tmpPa.CustID = tmpVip.CustID
-	SET tmpPa.TargetCC = tmpVip.CustomerClass;
+	SET tmpPa.TargetCC = tmpVip.CustomerClass
+    WHERE tmpPa.SpecialCC IS NOT NULL;
 
     INSERT IGNORE INTO Temp_LastHistory(CustID, CategoryID, TargetCC)
     SELECT tmpPa.CustID, tmpHis.CategoryID, tmpHis.TargetCC
