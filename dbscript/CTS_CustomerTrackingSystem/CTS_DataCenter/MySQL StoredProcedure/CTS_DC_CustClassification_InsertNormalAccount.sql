@@ -224,9 +224,8 @@ BEGIN
     SELECT DISTINCT	temp.CustID, CONST_ACTIONTYPE_IGNOREPROBATION
 	FROM 	Temp_NewClassification AS temp 
 		INNER JOIN Temp_ProbationCustomers AS pro ON temp.CustID = pro.CustID
-    WHERE 	((temp.DWCateGroup IN (CONST_CATEGORY_SMART,CONST_CATEGORY_HIGHRISK,CONST_CATEGORY_PROBATION) AND pro.ScanDate > lv_FromProbationLastDay) 
-			OR (pro.ScanDate >= lv_ToProbationLastDay))
-            AND (temp.IsLicenseeVIP = 0 AND temp.IsLicenseeBA = 0);
+    WHERE 	(temp.DWCateGroup IN (CONST_CATEGORY_SMART,CONST_CATEGORY_HIGHRISK,CONST_CATEGORY_PROBATION) AND pro.ScanDate > lv_FromProbationLastDay) 
+			OR (pro.ScanDate >= lv_ToProbationLastDay);
 
     /* 5.2: EXCLUDE PIN CATEGORY */
     INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, ActionType)
@@ -320,7 +319,8 @@ BEGIN
                                      ELSE CONST_SOURCETYPE_SCANONSCHEDULE
 								END)
 	WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);     
-
+insert into Adhoc_LongTest
+select *, lv_BatchID AS BatchID, 7 AS StepID from Temp_NewClassification;
     /* 8: GENERATE DATA NO CHANGED */   
     UPDATE 	Temp_NewClassification AS temp
 	SET 	temp.IsDataChanged = (CASE WHEN temp.NewCateID = temp.OldCateID AND temp.SourceTypeID <> CONST_SOURCETYPE_FAILPROBATION THEN 0 /*No update category*/ ELSE temp.IsDataChanged END)
@@ -338,7 +338,59 @@ BEGIN
                                 ELSE n.CustomerClass
 							END
 	WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE, CONST_ACTIONTYPE_IGNOREPROBATION);
-   
+	
+    /* 9 PLUS:  */
+    INSERT INTO Temp_OldCustomerClass(CustID)
+    SELECT DISTINCT temp.CustID
+    FROM Temp_NewClassification AS temp
+	WHERE temp.IsDataChanged  = 0;
+    
+    WITH CTE_LatestLog AS (
+		SELECT h.CustID, MAX(h.LastModifiedDate) AS LatestInsertDate
+		FROM Temp_OldCustomerClass AS t
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS h ON t.CustID = h.CustID
+		GROUP BY h.CustID
+	),
+    CTE_LatestHistory AS (
+		SELECT h.CustID, h.TargetCC
+		FROM CTE_LatestLog AS l
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS h ON l.CustID = h.CustID AND l.LatestInsertDate = h.LastModifiedDate
+	)
+	UPDATE CTE_LatestHistory AS l
+		INNER JOIN Temp_NewClassification AS t ON l.CustID = t.CustID
+	SET t.OldTargetCC = l.TargetCC;
+    
+    UPDATE Temp_NewClassification AS t
+		INNER JOIN CustomerCategory AS c ON t.OldCateID = c.CategoryID
+    SET t.TargetCC = 	CASE
+							WHEN t.IsLicenseeVIP = 1 AND c.IsDangerProbation = 1 THEN CONST_LICVIP_SUSPICIOUSCC
+							WHEN t.IsLicenseeVIP = 1 AND c.IsDangerProbation = 0 THEN CONST_LICVIP_DANGEROUSCC
+							WHEN t.IsLicenseeBA = 1 AND c.Priority > CONST_LICBAPRIORITY THEN CONST_LICBACC
+							ELSE c.CustomerClass
+						END
+		,	t.NewCateID = OldCateID
+        , 	t.NewCateGroup = OldCateGroup
+        ,	t.NewIsDangerProbation = c.IsDangerProbation
+    WHERE t.ActionType = CONST_ACTIONTYPE_IGNOREPROBATION;
+        
+    UPDATE Temp_NewClassification
+    SET IsDataChanged = 1
+		,	SourceTypeID = (CASE 
+								WHEN  NewCateGroup IN (CONST_CATEGORY_SMART, CONST_CATEGORY_HIGHRISK) 
+									THEN CONST_SOURCETYPE_PASSPROBATION
+								WHEN NewCateGroup = CONST_CATEGORY_INACTIVE AND NewCateID = CONST_CATEGORY_NORMALINACTIVE 
+									THEN CONST_SOURCETYPE_INACTIVENORMAL 
+								WHEN NewCateGroup = CONST_CATEGORY_INACTIVE AND NewCateID = CONST_CATEGORY_PROPUNTERINACTIVE 
+									THEN CONST_SOURCETYPE_INACTIVEPROPUNTER
+								ELSE CONST_SOURCETYPE_SCANONSCHEDULE
+							END)
+		,	ActionType = CONST_ACTIONTYPE_UPDATE
+    WHERE IsDataChanged = 0 
+		AND (TargetCC <> OldTargetCC)
+		AND (SourceTypeID = CONST_SOURCETYPE_SAMECATEGORY OR ActionType = CONST_ACTIONTYPE_IGNOREPROBATION);
+
+insert into Adhoc_LongTest
+select *, lv_BatchID AS BatchID, 9 AS StepID from Temp_NewClassification;        
     /* 10: GENERATE TARGET DANGER LEVEL */
     UPDATE Temp_NewClassification AS temp 
 		INNER JOIN CTS_DataCenter.CategoryToDangerLevel AS d ON d.CategoryID = temp.NewCateID AND d.IsLicensee = temp.IsLicensee AND d.TypeID = 1
@@ -401,51 +453,9 @@ BEGIN
 	WHERE temp.NewCateGroup = CONST_CATEGORY_PROBATION 
 		AND (temp.ActionType = CONST_ACTIONTYPE_INSERT 
 			OR (temp.ActionType = CONST_ACTIONTYPE_UPDATE AND temp.OldCateGroup <> CONST_CATEGORY_PROBATION));
-
+insert into Adhoc_LongTest
+select *, lv_BatchID AS BatchID, 14 AS StepID from Temp_NewClassification;
     /* 15: WRITE HISTORY LOG (VIEW ON WEB) */
-    INSERT INTO Temp_OldCustomerClass(CustID)
-    SELECT DISTINCT temp.CustID
-    FROM Temp_NewClassification AS temp
-	WHERE temp.IsDataChanged  = 0;
-    
-    WITH CTE_LatestLog AS (
-		SELECT h.CustID, MAX(h.LastModifiedDate) AS LatestInsertDate
-		FROM Temp_OldCustomerClass AS t
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS h ON t.CustID = h.CustID
-		GROUP BY h.CustID
-	),
-    CTE_LatestHistory AS (
-		SELECT h.CustID, h.TargetCC
-		FROM CTE_LatestLog AS l
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS h ON l.CustID = h.CustID AND l.LatestInsertDate = h.LastModifiedDate
-	)
-	UPDATE CTE_LatestHistory AS l
-		INNER JOIN Temp_NewClassification AS t ON l.CustID = t.CustID
-	SET t.OldTargetCC = l.TargetCC;
-    
-    UPDATE Temp_NewClassification AS t
-		INNER JOIN CustomerCategory AS c ON t.OldCateID = c.CategoryID
-    SET TargetCC = c.CustomerClass
-		,	NewCateID = OldCateID
-        , 	NewCateGroup = OldCateGroup
-    WHERE ActionType = CONST_ACTIONTYPE_IGNOREPROBATION;
-        
-    UPDATE Temp_NewClassification
-    SET IsDataChanged = 1
-		,	SourceTypeID = (CASE 
-								WHEN  NewCateGroup IN (CONST_CATEGORY_SMART, CONST_CATEGORY_HIGHRISK) 
-									THEN CONST_SOURCETYPE_PASSPROBATION
-								WHEN NewCateGroup = CONST_CATEGORY_INACTIVE AND NewCateID = CONST_CATEGORY_NORMALINACTIVE 
-									THEN CONST_SOURCETYPE_INACTIVENORMAL 
-								WHEN NewCateGroup = CONST_CATEGORY_INACTIVE AND NewCateID = CONST_CATEGORY_PROPUNTERINACTIVE 
-									THEN CONST_SOURCETYPE_INACTIVEPROPUNTER
-								ELSE CONST_SOURCETYPE_SCANONSCHEDULE
-							END)
-		,	ActionType = CONST_ACTIONTYPE_UPDATE
-    WHERE IsDataChanged = 0 
-		AND (TargetCC <> OldTargetCC)
-		AND (SourceTypeID = CONST_SOURCETYPE_SAMECATEGORY OR ActionType = CONST_ACTIONTYPE_IGNOREPROBATION);
-
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
 	(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, TWBetCount, TWGroupBettingRate, TWTicketRejectRate, TWDesktopUsageRate
     , ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsDataChanged, TaggingType, TargetDangerLevel1)

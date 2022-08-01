@@ -241,7 +241,9 @@ BEGIN
 			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on cus.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
 			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON cus.CTSCustID = sp.CTSCustID,
             LATERAL (SELECT cat.CategoryGroup, cat.RelevantCategoryID FROM CTS_DataCenter.CustomerCategory AS cat WHERE cat.ReasonID = tmpJs.ReasonID LIMIT 1) tmpLtr;
-		
+		                
+		CALL CTS_DC_CustClassification_PA_RemoveOldTVSRequest(); 
+        
         INSERT INTO Temp_RobotWinlossStatus(CustID, WinlossStatus)
 		SELECT DISTINCT t.CustID
 			,	CASE 
@@ -289,9 +291,7 @@ BEGIN
 				WHERE cat.CategoryID = tmpPA.RelevantCategoryID LIMIT 1) AS tmpCat
 		SET 	tmpPA.RelevantCategoryGroup = tmpCat.CategoryGroup	
 			,	tmpPA.RelevantCategoryID = tmpCat.CategoryGroup
-			,	tmpPA.RelevantIsProbation = tmpCat.IsProbation;
-                
-		CALL CTS_DC_CustClassification_PA_RemoveOldTVSRequest();        
+			,	tmpPA.RelevantIsProbation = tmpCat.IsProbation;       
 	END IF;
     
 END$$

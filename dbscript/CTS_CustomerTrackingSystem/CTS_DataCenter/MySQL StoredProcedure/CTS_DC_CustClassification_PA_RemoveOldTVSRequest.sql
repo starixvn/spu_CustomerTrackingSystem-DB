@@ -14,6 +14,7 @@ BEGIN
 		Revisions:
             - 20220602@Long.Luu: Created [Redmine ID: #172561]
             - 20220628@Long.Luu: Remove affected evidence in case of update Reason [Redmine ID: #174430]
+            - 20220801@Long.Luu: Adjust Winloss Status for Old Requests [Redmine ID: #174219]
             
         Param's Explanation (filtered by):
         
@@ -21,6 +22,11 @@ BEGIN
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_PA_RemoveOldTVSRequest();
             
 	*/ 
+    
+    DECLARE CONST_WINLOSSSTATUS_LOSING		SMALLINT DEFAULT 0;
+    DECLARE CONST_WINLOSSSTATUS_KEEP		SMALLINT DEFAULT 1;
+    DECLARE CONST_WINLOSSSTATUS_WINNING		SMALLINT DEFAULT 2;
+    
 	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedEvidence;    
 	CREATE TEMPORARY TABLE Temp_ExistedEvidence(	  
 			CTSCustID				BIGINT UNSIGNED 
@@ -69,7 +75,11 @@ BEGIN
     
     UPDATE Temp_PA AS t
 		INNER JOIN CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
-	SET d.IsFromTVS = 0
+	SET 	d.IsFromTVS = 0
+		,	t.WinlossStatus = 	CASE 	
+									WHEN t.WinlossStatus = CONST_WINLOSSSTATUS_KEEP THEN CONST_WINLOSSSTATUS_WINNING
+                                    ELSE t.WinlossStatus
+								END
 	WHERE t.TVSRequestID IS NOT NULL;
     
 	DELETE d
