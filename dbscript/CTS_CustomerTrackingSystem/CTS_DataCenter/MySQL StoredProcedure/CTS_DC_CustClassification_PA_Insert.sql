@@ -113,6 +113,12 @@ BEGIN
         ,	TargetCC	SMALLINT UNSIGNED
 	);
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_SpecialCC;
+    CREATE TEMPORARY TABLE Temp_SpecialCC(
+			CustID		INT UNSIGNED PRIMARY KEY
+        ,	SpecialCC	SMALLINT UNSIGNED
+	);
+    
     #================Mapping Category================
     CALL CTS_DC_CustClassification_PA_MappingCategory(ip_InputType,ip_ProblemAccounts);
     
@@ -185,12 +191,13 @@ BEGIN
         , 	cls.IsFromCTS
         ,	cat.RelevantCategoryID
         ,	0 AS IsFromOldPA
-        ,	tmpPa.SpecialCC 
-        ,	cat.CustomerClass
+        ,	IFNULL(sp.CustomerClass,tmpPa.SpecialCC)
+        ,	IFNULL(sp.CustomerClass,cat.CustomerClass)
         ,	cat.Priority
     FROM Temp_PA AS tmpPa
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON tmpPa.CustID = cls.CustID
         INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID
+        LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpPa.CustID = sp.CustID 			
 	WHERE cls.SportGroupID = CONST_SPORTGROUP_PA;
     
     UPDATE Temp_PA AS tmpPa
@@ -216,7 +223,7 @@ BEGIN
     DELETE tmpEc
     FROM Temp_ExistPA AS tmpEc
 		INNER JOIN Temp_PA AS tmpPa ON tmpPa.RelevantCategoryGroup = tmpEc.CategoryGroup AND tmpPa.WinlossStatus <> 1 AND tmpEc.IsFromOldPA = 0;
-
+    
     #======UPDATE IF Change Probation Status for Existing CategoryID
     INSERT INTO Temp_PA(CustID, CTSCustID, InputCategoryID, OldCategoryID, CategoryID, TargetCC,  TargetDangerLevel, ToEvidenceID, Remark, TurnoverRM, WinlossRM, BetCount, ActiveDays
 				, IsDirectPA, IsFromTVS, IsFromTW, IsFromCTS, IsDataChanged, DataChangeType, LastModifiedDate, CreatedBy, IsFromOldPA, IsProbation, TVSRequestID)
@@ -263,7 +270,7 @@ BEGIN
 	SET 	cls.CTSCustID = tmpPa.CTSCustID
 		,	cls.CategoryID =  tmpPa.CategoryID
 		, 	cls.LastScannedDate = DATE(lv_CurrentDateTime);
-	
+
     #================COVER WRAPER CC (VIP)================
     DROP TEMPORARY TABLE IF EXISTS Temp_VIPCust;
     CREATE TEMPORARY TABLE Temp_VIPCust(
@@ -303,12 +310,18 @@ BEGIN
 		INNER JOIN Temp_VIPCust AS tmpVip ON cls.CustID = tmpVip.CustID AND tmpVip.IsChanged = 1
 	SET cls.CategoryID = tmpVip.CategoryID
 	WHERE cls.CategoryID IN (CONST_LICVIPPROBLEM_CATEGORYID, CONST_LICVIPNORMAL_CATEGORYID);
-        
+
+    INSERT INTO Temp_SpecialCC (CustID, SpecialCC)
+    SELECT DISTINCT CustID, SpecialCC
+    FROM Temp_PA
+    WHERE SpecialCC IS NOT NULL;
+    
 	UPDATE Temp_PA AS tmpPa 
 		INNER JOIN Temp_VIPCust AS tmpVip ON tmpPa.CustID = tmpVip.CustID
-	SET tmpPa.TargetCC = tmpVip.CustomerClass
+        LEFT JOIN Temp_SpecialCC AS s ON tmpPa.CustID = s.CustID
+	SET tmpPa.TargetCC = IFNULL(s.SpecialCC, tmpVip.CustomerClass)
     WHERE tmpPa.SpecialCC IS NULL;
-	
+    
     INSERT IGNORE INTO Temp_LastHistory(CustID, CategoryID, TargetCC)
     SELECT tmpPa.CustID, tmpHis.CategoryID, tmpHis.TargetCC
     FROM Temp_PA AS tmpPa,
@@ -344,7 +357,7 @@ BEGIN
         ,	tmpPa.TVSRequestID
 	FROM Temp_PA AS tmpPa
     WHERE tmpPa.DataChangeType = 0 OR tmpPa.IsFromOldPA = 1;   
-  
+
     #=============INSERT HISTORY WHERE Category CHANGE OR Special Remove==================================================
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType
 			, InsertDate, TargetCC, SourceTypeID, IsDataChanged, TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, IsDirect, Remark, TVSRequestID, IsFromTVS, IsFromTW, IsFromCTS )
