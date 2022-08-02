@@ -19,6 +19,7 @@ BEGIN
             - 20220607@Aries.Nguyen: Renovate PA process [Redmine ID: #172561]
             - 20220628@Aries.Nguyen: Update robot classification rule [Redmine ID: #174430]
             - 20220628@Aries.Nguyen: Update robot classification rule [Redmine ID: #174430]
+			- 202208018@Long.Luu: Exclude wrapper categories from rescan PA flow [Redmine ID: #174219]
 
 		Param's Explanation (filtered by):      
 			- CALL CTS_DC_CustClassification_ProblemAccountProbation_Insert ('[{"CustID": 123,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10}]');
@@ -43,7 +44,7 @@ BEGIN
         , 	RelevantCategoryID 	    SMALLINT UNSIGNED
         , 	TargetCC 				SMALLINT UNSIGNED
         , 	TargetDangerLevel1 		SMALLINT 
-        ,	IsPAProbation 			BIT
+        ,	IsDangerProbation 		BIT
         , 	WinlossStatus			SMALLINT /*LOSING  = 0,KEEPSTATE = 1, WINNING = 2;*/
         , 	IsLicensee				BIT
         ,	TurnoverRM				DECIMAL(20,4)
@@ -55,14 +56,14 @@ BEGIN
         , 	PRIMARY KEY(CustID,CategoryID)  
     );  
     
-    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, CategoryID, RelevantCategoryID,TargetCC,TargetDangerLevel1, IsPAProbation, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsDirect, IsDataChanged)
+    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, CategoryID, RelevantCategoryID,TargetCC,TargetDangerLevel1, IsDangerProbation, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsDirect, IsDataChanged)
 	SELECT 	js.CustID
 		,	cust.CTSCustID
         ,	clss.CategoryID
         ,	cate.RelevantCategoryID
         ,	desCate.TargetCC
         ,	desCate.TargetDangerLevel1
-        ,	cate.IsPAProbation
+        ,	cate.IsDangerProbation
 		, 	js.WinlossStatus 
         , 	js.TurnoverRM
         , 	js.WinlossRM
@@ -70,10 +71,10 @@ BEGIN
         , 	js.ActiveDays
         ,	clss.IsDirect
         ,	CASE WHEN js.WinlossStatus = 1 THEN 0 /*No Change*/
-				 WHEN js.WinlossStatus = 0 AND cate.IsPAProbation = 0 THEN 1  /*Lose + PA => Update */
-				 WHEN js.WinlossStatus = 0 AND cate.IsPAProbation = 1 THEN 0  /*Lose + Probation =>  No Change*/
-                 WHEN js.WinlossStatus = 2 AND cate.IsPAProbation = 0 THEN 0  /*Win + PA => No Change  */
-                 WHEN js.WinlossStatus = 2 AND cate.IsPAProbation = 1 THEN 1  /*Win + Probation => Update */
+				 WHEN js.WinlossStatus = 0 AND cate.IsDangerProbation = 0 THEN 1  /*Lose + PA => Update */
+				 WHEN js.WinlossStatus = 0 AND cate.IsDangerProbation = 1 THEN 0  /*Lose + Probation =>  No Change*/
+                 WHEN js.WinlossStatus = 2 AND cate.IsDangerProbation = 0 THEN 0  /*Win + PA => No Change  */
+                 WHEN js.WinlossStatus = 2 AND cate.IsDangerProbation = 1 THEN 1  /*Win + Probation => Update */
 			END AS IsDataChanged
 	FROM JSON_TABLE(ip_ProblemAccount,
 		"$[*]" COLUMNS(

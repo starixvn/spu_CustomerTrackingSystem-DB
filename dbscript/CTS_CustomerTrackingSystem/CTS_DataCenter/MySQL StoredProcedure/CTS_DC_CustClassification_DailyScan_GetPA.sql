@@ -16,6 +16,7 @@ BEGIN
 		Original:
 		Revisions:
 			- 20220328@Aries.Nguyen: Created [Redmine ID: #170468]
+			- 202208018@Long.Luu: Exclude wrapper categories from rescan PA flow [Redmine ID: #174219]
 
 		Param's Explanation (filtered by):      
 			- CALL CTS_DC_CustClassification_DailyScan_GetPA (@op_LastCategoryID, @op_LastCustID);
@@ -43,7 +44,8 @@ BEGIN
     INSERT INTO Temp_Category(CategoryID)
 	SELECT CategoryID
 	FROM CustomerCategory 
-	WHERE RelevantCategoryID IS NOT NULL; 
+	WHERE ParentID <> 1
+		AND RelevantCategoryID IS NOT NULL; 
     
     SELECT ParameterValue 
     INTO lv_BatchSize 
