@@ -32,6 +32,12 @@ BEGIN
     DECLARE CONST_SOURCETYPE_PROBLEMAFFECT		INT DEFAULT 32;
     DECLARE CONST_SOURCETYPE_RESCANROBOT		INT DEFAULT 36;
     
+    DECLARE CONST_PRIORITY_LICBA				INT DEFAULT 90;
+    DECLARE CONST_CC_LICBA						INT DEFAULT 14;
+    DECLARE CONST_CC_LICVIPDANGER				INT DEFAULT 99;
+    DECLARE CONST_CC_LICVIPSUSPICIOUS			INT DEFAULT 101;    
+    DECLARE CONST_SPORTGROUP_WRAPPER			INT DEFAULT 100;
+    
 	DECLARE lv_CreatedBy 						INT DEFAULT 10278938;
     DECLARE lv_CurrentDateTime 					DATETIME DEFAULT CURRENT_TIME(); 
    
@@ -52,15 +58,18 @@ BEGIN
         , 	BetCount				BIGINT 
         , 	ActiveDays				INT 
         ,	IsDirect				BIT
+        ,	IsLicenseeVIP			BIT
+        ,	IsLicenseeBA			BIT
         , 	IsDataChanged			BIT 
         , 	PRIMARY KEY(CustID,CategoryID)  
     );  
     
-    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, CategoryID, RelevantCategoryID,TargetCC,TargetDangerLevel1, IsDangerProbation, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsDirect, IsDataChanged)
+    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, CategoryID, RelevantCategoryID, SportGroupID,TargetCC,TargetDangerLevel1, IsDangerProbation, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsDirect, IsDataChanged)
 	SELECT 	js.CustID
 		,	cust.CTSCustID
         ,	clss.CategoryID
         ,	cate.RelevantCategoryID
+        ,	clss.SportGroupID
         ,	desCate.TargetCC
         ,	desCate.TargetDangerLevel1
         ,	cate.IsDangerProbation
@@ -98,11 +107,28 @@ BEGIN
     FROM Temp_PA AS pa
     WHERE EXISTS (SELECT 1 FROM CTS_DataCenter.PinCustomerCategory AS pin WHERE pin.CTSCustID = pa.CTSCustID); 
 	
+    UPDATE Temp_PA AS t
+		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON t.CustID = c.CustID
+	SET t.IsLicenseeVIP = c.IsLicenseeVIP,
+		t.IsLicenseeBA = c.IsLicenseeBA;
+        
     UPDATE CTS_DataCenter.CTSCustomerClassification AS clss
     INNER JOIN Temp_PA AS tmp ON tmp.CustID = clss.CustID AND tmp.SportGroupID = clss.SportGroupID AND tmp.CategoryID = clss.CategoryID 
     SET 	clss.CategoryID = tmp.RelevantCategoryID
         ,	clss.LastModifiedBy = lv_CreatedBy
+        ,	tmp.CategoryID = tmp.RelevantCategoryID 
     WHERE tmp.IsDataChanged = 1;
+
+    UPDATE Temp_PA AS t 
+		INNER JOIN CTS_DataCenter.CustomerCategory AS c ON t.CategoryID = c.CategoryID AND c.RelevantCategoryID IS NOT NULL
+        LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS s ON t.CustID = s.CustID
+    SET 	t.TargetCC = 	CASE
+								WHEN s.CustomerClass IS NOT NULL THEN s.CustomerClass
+                                WHEN t.IsLicenseeVIP = 1 AND c.IsDangerProbation = 1 THEN CONST_CC_LICVIPSUSPICIOUS
+                                WHEN t.IsLicenseeVIP = 1 AND c.IsDangerProbation = 0 THEN CONST_CC_LICVIPDANGER
+                                WHEN t.IsLicenseeBA = 1 AND c.Priority > CONST_PRIORITY_LICBA THEN CONST_CC_LICBA
+                                ELSE t.TargetCC
+							END;
     
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT  CustID
@@ -125,7 +151,8 @@ BEGIN
         , 	BetCount
         , 	ActiveDays
 	FROM Temp_PA
-    WHERE IsDataChanged = 1;
+    WHERE IsDataChanged = 1
+		AND SportGroupID <> CONST_SPORTGROUP_WRAPPER;
 
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT  CustID
