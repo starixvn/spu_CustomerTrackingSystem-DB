@@ -17,6 +17,8 @@ BEGIN
 		Revisions:
             - 20220519@Casey.Huynh: Created. Renovate PA Process [RedmineID: #172061]
             - 20220627@Casey.Huynh: Add MatchID To Remark  [Redmine ID: #174218]
+            - 20220801@Long.Luu: Fix cannot rescan Normal when removing PA(Losing)  [Redmine ID: #176163]
+            
         Param's Explanation (filtered by):
 			- ip_InputType: 1: Category, 2: Reason
         Example:
@@ -133,8 +135,7 @@ BEGIN
     #=============REMOVE PA PROBATION LIST WHEN IsProbation = 0=============
     DELETE pro
     FROM CTS_DataCenter.ProbationAccountMonitor AS pro
-		INNER JOIN Temp_PA AS tmpPA ON tmpPA.CustID = pro.CustID
-	WHERE IsProbation = 0;
+		INNER JOIN Temp_PA AS tmpPA ON tmpPA.CustID = pro.CustID;
     
     #=============GET EXISTING CATEGORY=============   
     INSERT IGNORE INTO Temp_ExistCategory(CustID, CTSCustID, ExistCategoryID, CategoryID, CategoryGroup, IsProbation, LastModifiedDate, CreatedBy, Remark
