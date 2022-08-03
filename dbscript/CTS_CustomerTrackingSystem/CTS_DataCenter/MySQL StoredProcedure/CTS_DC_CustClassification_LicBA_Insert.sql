@@ -18,7 +18,7 @@ sp: BEGIN
 		Param's Explanation:
             
 		Example:
-			CALL CTS_DC_CustClassification_LicBA_Insert('[{"":,"":}]');
+			CALL CTS_DC_CustClassification_LicBA_Insert('[{"CustID":"791050", "CreatedBy": 12345}, {"CustID":"12345", "CreatedBy": 835067}]');
 	*/    
     
     DECLARE lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();
@@ -130,57 +130,75 @@ sp: BEGIN
     WHERE cus.IsLicenseeBA <> 1;   
     
     #=======================================================================================
-	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CTSCustID, CustID, SubscriberID, SportGroupID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsDirect) 
-	SELECT	tmpCus.CTSCustID
-		,	tmpCus.CustID
-		,	tmpCus.SubscriberID
-		,	CONST_GROUP_WRAPER
-		,	CONST_CATEGORY_BA AS CategoryID #
-		,	lv_CurrentDateTime AS CreatedDate
-		,	tmpCus.CreatedBy
-		,	lv_CurrentDateTime AS LastModifiedDate
-		,	tmpCus.CreatedBy AS LastModifiedBy
-		,	DATE(lv_CurrentDateTime) LastScannedDate
-        ,	1 AS IsDirect
-	FROM Temp_CustCategory AS tmpCus;
+	IF EXISTS (SELECT 1 FROM Temp_CustCategory AS tmpCus) THEN		
+		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CTSCustID, CustID, SubscriberID, SportGroupID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsDirect) 
+		SELECT	tmpCus.CTSCustID
+			,	tmpCus.CustID
+			,	tmpCus.SubscriberID
+			,	CONST_GROUP_WRAPER
+			,	CONST_CATEGORY_BA AS CategoryID #
+			,	lv_CurrentDateTime AS CreatedDate
+			,	tmpCus.CreatedBy
+			,	lv_CurrentDateTime AS LastModifiedDate
+			,	tmpCus.CreatedBy AS LastModifiedBy
+			,	DATE(lv_CurrentDateTime) LastScannedDate
+			,	1 AS IsDirect
+		FROM Temp_CustCategory AS tmpCus;
     
-	/*Insert VBA history*/
-	INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID , LastModifiedDate, LastModifiedBy, ActionType
-			, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, IsDirect)
-	SELECT 	tmpCus.CustID
-		, 	tmpCus.CTSCustID
-		, 	CONST_CATEGORY_BA AS CategoryID #
-		, 	CONST_GROUP_WRAPER
-		, 	lv_CurrentDateTime AS LastModifiedDate
-		, 	tmpCus.CreatedBy AS LastModifiedBy
-		,	lv_ActionType
-		,	lv_IsAuto
-		,   DATE(lv_CurrentDateTime) AS InsertDate
-		,   tmpCus.CustomerClass AS TargetCC
-		,   CONST_SOURCETYPEID AS SourceTypeID
-		,	1 AS IsDataChanged
-        ,	1 AS IsDirect
-	FROM Temp_CustCategory AS tmpCus
-    WHERE  tmpCus.IsDataChanged = 1;
+		/*Insert VBA history*/
+		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID , LastModifiedDate, LastModifiedBy, ActionType
+				, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, IsDirect)
+		SELECT 	tmpCus.CustID
+			, 	tmpCus.CTSCustID
+			, 	CONST_CATEGORY_BA AS CategoryID #
+			, 	CONST_GROUP_WRAPER
+			, 	lv_CurrentDateTime AS LastModifiedDate
+			, 	tmpCus.CreatedBy AS LastModifiedBy
+			,	lv_ActionType
+			,	lv_IsAuto
+			,   DATE(lv_CurrentDateTime) AS InsertDate
+			,   tmpCus.CustomerClass AS TargetCC
+			,   CONST_SOURCETYPEID AS SourceTypeID
+			,	1 AS IsDataChanged
+			,	1 AS IsDirect
+		FROM Temp_CustCategory AS tmpCus
+		WHERE  tmpCus.IsDataChanged = 1;
 
-	INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, IsDirect)
-	SELECT 	tmpCus.CustID
-		, 	tmpCus.CTSCustID
-		, 	CONST_CATEGORY_BA AS CategoryID #
-		, 	CONST_GROUP_WRAPER
-		, 	lv_CurrentDateTime AS LastModifiedDate
-		, 	tmpCus.CreatedBy AS LastModifiedBy
-		,	lv_ActionType
-		,	lv_IsAuto
-		,   DATE(lv_CurrentDateTime) AS InsertDate
-		,   tmpCus.CustomerClass AS TargetCC
-		,   CONST_SOURCETYPEID AS SourceTypeID
-		,	tmpCus.IsDataChanged
-        ,	1 AS IsDirect
-    FROM Temp_CustCategory AS tmpCus;
-  
-	SELECT	tmpCus.CustID
-    FROM Temp_CustCategory AS tmpCus
-    WHERE tmpCus.IsDataChanged = 1;
+		INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, IsDirect)
+		SELECT 	tmpCus.CustID
+			, 	tmpCus.CTSCustID
+			, 	CONST_CATEGORY_BA AS CategoryID #
+			, 	CONST_GROUP_WRAPER
+			, 	lv_CurrentDateTime AS LastModifiedDate
+			, 	tmpCus.CreatedBy AS LastModifiedBy
+			,	lv_ActionType
+			,	lv_IsAuto
+			,   DATE(lv_CurrentDateTime) AS InsertDate
+			,   tmpCus.CustomerClass AS TargetCC
+			,   CONST_SOURCETYPEID AS SourceTypeID
+			,	tmpCus.IsDataChanged
+			,	1 AS IsDirect
+		FROM Temp_CustCategory AS tmpCus;
+	  
+		SELECT	tmpCus.CustID
+		FROM Temp_CustCategory AS tmpCus
+		WHERE tmpCus.IsDataChanged = 1;
+    ELSE
+		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CTSCustID, CustID, SubscriberID, SportGroupID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsDirect) 
+		SELECT	tmpCus.CTSCustID
+			,	tmpCus.CustID
+			,	tmpCus.SubscriberID
+			,	CONST_GROUP_WRAPER
+			,	CONST_CATEGORY_BA AS CategoryID #
+			,	lv_CurrentDateTime AS CreatedDate
+			,	tmpCus.CreatedBy
+			,	lv_CurrentDateTime AS LastModifiedDate
+			,	tmpCus.CreatedBy AS LastModifiedBy
+			,	DATE(lv_CurrentDateTime) LastScannedDate
+			,	1 AS IsDirect
+		FROM Temp_Customer AS tmpCus
+        LEFT JOIN Temp_CustCategory AS tmpCat ON tmpCat.CustID = tmpCus.CustID
+        WHERE tmpCat.CustID IS NULL;
+	END IF;
 END$$
 DELIMITER ;
