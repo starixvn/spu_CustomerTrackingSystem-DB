@@ -79,6 +79,8 @@ BEGIN
     DECLARE	CONST_LICBAPRIORITY							INT DEFAULT 90;
     DECLARE	CONST_LICVIP_DANGEROUSCC 					INT DEFAULT 99;
     DECLARE	CONST_LICVIP_SUSPICIOUSCC					INT DEFAULT 101;
+    DECLARE	CONST_VVIPCC								INT DEFAULT 100;
+    
     
 	DECLARE lv_CreatedBy 								INT DEFAULT 10278938;
 	DECLARE lv_CurrentDateTime 							DATETIME DEFAULT CURRENT_TIME();
@@ -117,6 +119,9 @@ BEGIN
         ,	OldTargetCC				SMALLINT
         ,	TargetCC				SMALLINT
 		,	TargetDangerLevel		SMALLINT
+		,   SpecialCC	       		INT  
+        ,	SpecialCCName			VARCHAR(50)
+		,   SpecialCCPriority   	SMALLINT DEFAULT -1
 		, 	ActionType				SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN; 5: Not satisfy Pass Probation*/
 		, 	INDEX    			    IX_Temp_NewClassification(CustID, DWCateGroup)  
 	); 
@@ -159,7 +164,8 @@ BEGIN
     
     /* START */
 	/* 1: PARSE RAW DATA */
-	INSERT IGNORE INTO Temp_NewClassification(CustID,DWCateGroup,TurnoverRM,WinlossRM,BetCount,ActiveDays,TWBetCount,TWGroupBettingRate,TWTicketRejectRate,TWDesktopUsageRate,TaggingID,TaggingType)
+	INSERT IGNORE INTO Temp_NewClassification(CustID,DWCateGroup,TurnoverRM,WinlossRM,BetCount,ActiveDays,TWBetCount,TWGroupBettingRate,TWTicketRejectRate,TWDesktopUsageRate,
+		TaggingID,TaggingType)
 	SELECT DISTINCT temp.CustID
 				, 	temp.DWCateGroup
                 , 	temp.TurnoverRM
@@ -211,6 +217,13 @@ BEGIN
         ,	temp.IsLicensee = ec.IsLicensee
         ,	temp.IsLicenseeVIP = ec.IsLicenseeVIP
         ,	temp.IsLicenseeBA = ec.IsLicenseeBA;
+        
+	 UPDATE Temp_NewClassification AS t
+		INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = t.CustID
+		LEFT JOIN CTS_DataCenter.CustomerCategory AS c ON sp.CustomerClass = c.CustomerClass
+	SET t.SpecialCC = sp.CustomerClass,
+		t.SpecialCCName = c.CustomerClassName,
+		t.SpecialCCPriority = c.Priority;
     
     /*4: GET PROBATION CUSTOMERS */
     INSERT IGNORE INTO Temp_ProbationCustomers(CustID, ScanDate)
@@ -327,17 +340,21 @@ select *, lv_BatchID AS BatchID, 7 AS StepID from Temp_NewClassification;
 	WHERE 	temp.ActionType = CONST_ACTIONTYPE_UPDATE;     
     
     /* 9: GENERATE TARGET CC */
-    UPDATE Temp_NewClassification AS temp 
-		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = temp.CustID
-		LEFT JOIN CTS_DataCenter.CustomerCategory AS n ON n.CategoryID = temp.NewCateID
-	SET 	temp.TargetCC = CASE 
-								WHEN sp.CustomerClass IS NOT NULL THEN sp.CustomerClass
-								WHEN temp.IsLicenseeVIP = 1 AND temp.NewIsDangerProbation = 1 THEN CONST_LICVIP_SUSPICIOUSCC
-								WHEN temp.IsLicenseeVIP = 1 AND temp.NewIsDangerProbation = 0 THEN CONST_LICVIP_DANGEROUSCC
-								WHEN temp.IsLicenseeBA = 1 AND n.Priority > CONST_LICBAPRIORITY THEN CONST_LICBACC                                
-                                ELSE n.CustomerClass
+    UPDATE Temp_NewClassification AS tmp 
+		LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = tmp.NewCateID
+	SET 	tmp.TargetCC = CASE  
+								WHEN (tmp.SpecialCC IS NULL) OR (tmp.SpecialCCPriority <> -1)
+										THEN CASE
+												WHEN cate.CustomerClass = CONST_VVIPCC THEN CONST_VVIPCC
+												WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN CONST_LICVIP_SUSPICIOUSCC
+												WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN CONST_LICVIP_DANGEROUSCC
+												WHEN tmp.IsLicenseeBA = 1 AND cate.Priority > CONST_LICBAPRIORITY THEN CONST_LICBACC                                            
+												WHEN tmp.SpecialCCPriority <> -1 AND cate.Priority > tmp.SpecialCCPriority THEN tmp.SpecialCC
+												ELSE cate.CustomerClass
+											END
+								ELSE tmp.SpecialCC
 							END
-	WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE, CONST_ACTIONTYPE_IGNOREPROBATION);
+	WHERE 	tmp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE, CONST_ACTIONTYPE_IGNOREPROBATION);
 	
     /* 9 PLUS:  */
     INSERT INTO Temp_OldCustomerClass(CustID)
@@ -360,18 +377,24 @@ select *, lv_BatchID AS BatchID, 7 AS StepID from Temp_NewClassification;
 		INNER JOIN Temp_NewClassification AS t ON l.CustID = t.CustID
 	SET t.OldTargetCC = l.TargetCC;
     
-    UPDATE Temp_NewClassification AS t
-		INNER JOIN CustomerCategory AS c ON t.OldCateID = c.CategoryID
-    SET t.TargetCC = 	CASE
-							WHEN t.IsLicenseeVIP = 1 AND c.IsDangerProbation = 1 THEN CONST_LICVIP_SUSPICIOUSCC
-							WHEN t.IsLicenseeVIP = 1 AND c.IsDangerProbation = 0 THEN CONST_LICVIP_DANGEROUSCC
-							WHEN t.IsLicenseeBA = 1 AND c.Priority > CONST_LICBAPRIORITY THEN CONST_LICBACC
-							ELSE c.CustomerClass
+    UPDATE Temp_NewClassification AS tmp
+		INNER JOIN CustomerCategory AS cate ON tmp.OldCateID = cate.CategoryID
+    SET tmp.TargetCC = 	CASE  
+							WHEN (tmp.SpecialCC IS NULL) OR (tmp.SpecialCCPriority <> -1)
+									THEN CASE
+											WHEN cate.CustomerClass = CONST_VVIPCC THEN CONST_VVIPCC
+											WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN CONST_LICVIP_SUSPICIOUSCC
+											WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN CONST_LICVIP_DANGEROUSCC
+											WHEN tmp.IsLicenseeBA = 1 AND cate.Priority > CONST_LICBAPRIORITY THEN CONST_LICBACC                                            
+											WHEN tmp.SpecialCCPriority <> -1 AND cate.Priority > tmp.SpecialCCPriority THEN tmp.SpecialCC
+											ELSE cate.CustomerClass
+										END
+							ELSE tmp.SpecialCC
 						END
-		,	t.NewCateID = OldCateID
-        , 	t.NewCateGroup = OldCateGroup
-        ,	t.NewIsDangerProbation = c.IsDangerProbation
-    WHERE t.ActionType = CONST_ACTIONTYPE_IGNOREPROBATION;
+		,	tmp.NewCateID = tmp.OldCateID
+        , 	tmp.NewCateGroup = tmp.OldCateGroup
+        ,	tmp.NewIsDangerProbation = cate.IsDangerProbation
+    WHERE tmp.ActionType = CONST_ACTIONTYPE_IGNOREPROBATION;
         
     UPDATE Temp_NewClassification
     SET IsDataChanged = 1

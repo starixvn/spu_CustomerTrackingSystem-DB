@@ -40,15 +40,16 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;
     CREATE TEMPORARY TABLE 		Temp_CustInfo (
-        	CustID				BIGINT UNSIGNED PRIMARY KEY 
-		,	IsLicensee			BIT 
-		,	IsLicenseeVIP		BIT 
-		,	IsLicenseeBA		BIT 				
-		,	IsRobotException 	BIT 
-		,   CustomerClass       INT  
-        ,	CustomerClassName	VARCHAR(50)
-		,	DangerLevel			INT  
-		,	DangerLevelType		INT  
+        	CustID					BIGINT UNSIGNED PRIMARY KEY 
+		,	IsLicensee				BIT 
+		,	IsLicenseeVIP			BIT 
+		,	IsLicenseeBA			BIT 				
+		,	IsRobotException 		BIT 
+		,   SpecialCC	       		INT  
+        ,	SpecialCCName			VARCHAR(50)
+		,   SpecialCCPriority   	SMALLINT DEFAULT -1
+		,	DangerLevel				INT  
+		,	DangerLevelType			INT  
     );    
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustCateInfo;
@@ -62,7 +63,7 @@ BEGIN
 		,	DangerLevelType		SMALLINT  
     );    
     
-    INSERT IGNORE INTO Temp_CustInfo (CustID,IsLicensee,IsLicenseeVIP,IsLicenseeBA,IsRobotException,CustomerClass)
+    INSERT IGNORE INTO Temp_CustInfo (CustID,IsLicensee,IsLicenseeVIP,IsLicenseeBA,IsRobotException,SpecialCC)
     SELECT  tmp.CustID
 		,	cus.IsLicensee
         ,	cus.IsLicenseeVIP
@@ -74,6 +75,11 @@ BEGIN
     FROM JSON_TABLE(CONCAT('[',ip_CustIDs,']'),'$[*]' COLUMNS(NESTED PATH '$' COLUMNS (CustID BIGINT UNSIGNED PATH '$'))) AS tmp
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID AND cus.CustSubID  = 0
 		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = tmp.CustID;
+    
+    UPDATE Temp_CustInfo AS t
+		INNER JOIN CTS_DataCenter.CustomerCategory AS c ON t.SpecialCC = c.CustomerClass
+	SET t.SpecialCCName = c.CustomerClassName,
+		t.SpecialCCPriority = c.Priority;
     
     SELECT CustomerClassName
     INTO lv_LicVIP_DangerousCCName
@@ -101,25 +107,31 @@ BEGIN
 				ELSE dangerlvl.DangerLevelType 
 			END AS DangerLevelType
     FROM Temp_CustInfo AS tmp,
-		LATERAL(SELECT 	CASE WHEN clss.SportGroupID = CONST_GROUP_PROBLEM AND tmp.CustomerClass IS NULL THEN cate.CategoryGroup 
+		LATERAL(SELECT 	CASE WHEN clss.SportGroupID = CONST_GROUP_PROBLEM AND tmp.SpecialCC IS NULL THEN cate.CategoryGroup 
 							 ELSE NULL END AS CategoryID
 					,	CASE  
-							WHEN tmp.CustomerClass IS NULL 
+							WHEN (tmp.SpecialCC IS NULL) OR (tmp.SpecialCCPriority <> -1)
 									THEN CASE
 											WHEN cate.CustomerClass = CONST_VVIPCC THEN CONST_VVIPCC
 											WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN CONST_LICVIP_SUSPICIOUSCC
                                             WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN CONST_LICVIP_DANGEROUSCC
-                                            WHEN tmp.IsLicenseeBA = 1 AND cate.Priority > CONST_LICBAPRIORITY THEN CONST_LICBACC
+                                            WHEN tmp.IsLicenseeBA = 1 AND cate.Priority > CONST_LICBAPRIORITY THEN CONST_LICBACC                                            
+                                            WHEN tmp.SpecialCCPriority <> -1 AND cate.Priority > tmp.SpecialCCPriority THEN tmp.SpecialCC
                                             ELSE cate.CustomerClass
 										END
-							ELSE tmp.CustomerClass 
+							ELSE tmp.SpecialCC
 						END AS CustomerClass
-					,	CASE
-							WHEN cate.CustomerClass = CONST_VVIPCC THEN cate.CustomerClassName
-							WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN lv_LicVIP_SuspiciousCCName
-							WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN lv_LicVIP_DangerousCCName
-							WHEN tmp.IsLicenseeBA = 1 AND cate.Priority > CONST_LICBAPRIORITY THEN lv_LicBA_CCName
-							ELSE cate.CustomerClassName
+					,	CASE  
+							WHEN (tmp.SpecialCC IS NULL) OR (tmp.SpecialCCPriority <> -1)
+									THEN CASE
+											WHEN cate.CustomerClass = CONST_VVIPCC THEN cate.CustomerClassName
+											WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN lv_LicVIP_SuspiciousCCName
+                                            WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN lv_LicVIP_DangerousCCName
+                                            WHEN tmp.IsLicenseeBA = 1 AND cate.Priority > CONST_LICBAPRIORITY THEN lv_LicBA_CCName                                            
+                                            WHEN tmp.SpecialCCPriority <> -1 AND cate.Priority > tmp.SpecialCCPriority THEN tmp.SpecialCCName
+                                            ELSE cate.CustomerClassName
+										END
+							ELSE tmp.SpecialCCName
 						END AS CustomerClassName
 				FROM CTS_DataCenter.CTSCustomerClassification AS clss
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID

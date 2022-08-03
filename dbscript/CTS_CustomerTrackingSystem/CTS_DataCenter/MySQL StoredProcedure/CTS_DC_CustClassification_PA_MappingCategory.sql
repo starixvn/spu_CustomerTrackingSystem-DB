@@ -77,8 +77,8 @@ BEGIN
         ,	INDEX IX_Temp_PA(IsDataChanged,LastModifiedDate)
     );  
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_RobotWinlossStatus;    
-	CREATE TEMPORARY TABLE Temp_RobotWinlossStatus(	
+    DROP TEMPORARY TABLE IF EXISTS Temp_PAWinlossStatus;    
+	CREATE TEMPORARY TABLE Temp_PAWinlossStatus(	
 			CustID					BIGINT UNSIGNED PRIMARY KEY
         , 	WinlossStatus			SMALLINT /*LOSING  = 0 (PROBATION), WINNING = 2 (NOT PROBATION);*/
 	);
@@ -141,7 +141,7 @@ BEGIN
 			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CTSCustID = sp.CTSCustID 
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.CategoryID;		
     
-		INSERT INTO Temp_RobotWinlossStatus(CustID, WinlossStatus)
+		INSERT INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
 		SELECT DISTINCT t.CustID
 			,	CASE 
 					WHEN cc.IsDangerProbation = 1 THEN 0
@@ -153,7 +153,7 @@ BEGIN
 		WHERE c.SportGroupID = 0;
 		
 		UPDATE Temp_PA AS t
-			INNER JOIN Temp_RobotWinlossStatus AS r ON t.CustID = r.CustID
+			INNER JOIN Temp_PAWinlossStatus AS r ON t.CustID = r.CustID
 		SET t.WinlossStatus = r.WinlossStatus,
 			t.IsProbation = (CASE 	
 								WHEN r.WinlossStatus = 0 THEN 1  # LOSING
@@ -244,7 +244,7 @@ BEGIN
 		                
 		CALL CTS_DC_CustClassification_PA_RemoveOldTVSRequest(); 
         
-        INSERT INTO Temp_RobotWinlossStatus(CustID, WinlossStatus)
+        INSERT INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
 		SELECT DISTINCT t.CustID
 			,	CASE 
 					WHEN cc.IsDangerProbation = 1 THEN 0
@@ -256,7 +256,7 @@ BEGIN
 		WHERE c.SportGroupID = 0;
 		
 		UPDATE Temp_PA AS t
-			INNER JOIN Temp_RobotWinlossStatus AS r ON t.CustID = r.CustID
+			INNER JOIN Temp_PAWinlossStatus AS r ON t.CustID = r.CustID
 		SET t.WinlossStatus = r.WinlossStatus,
 			t.IsProbation = (CASE 	
 								WHEN r.WinlossStatus = 0 THEN 1  # LOSING
