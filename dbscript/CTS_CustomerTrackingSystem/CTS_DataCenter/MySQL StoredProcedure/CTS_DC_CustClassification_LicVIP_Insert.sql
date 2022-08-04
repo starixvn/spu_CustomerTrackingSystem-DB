@@ -24,6 +24,7 @@ sp: BEGIN
     DECLARE CONST_CATEGORY_VIPPROBLEM 		INT DEFAULT 3;
     DECLARE CONST_CATEGORY_VIPNORMAL 		INT DEFAULT 4;
     DECLARE CONST_SOURCETYPEID 				INT DEFAULT 38;
+    DECLARE CONST_USER_STARIX				BIGINT DEFAULT 10278938;
     
     DECLARE lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();
     DECLARE lv_CustomerClass	INT;
@@ -127,7 +128,8 @@ sp: BEGIN
     #======NOT Update CC if Priority Value of Current Less than VIP.Priority ===========================================
     UPDATE Temp_CustCategory AS tmpCus
 		INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc ON sc.CustID = tmpCus.CustID
-    SET tmpCus.Priority = -1;	
+    SET tmpCus.Priority = -1
+    WHERE sc.CreatedBy != CONST_USER_STARIX;	
     
     UPDATE Temp_CustCategory AS tmpCus
     SET tmpCus.IsDataChanged = 1
@@ -195,7 +197,9 @@ sp: BEGIN
 		SELECT	tmpCus.CustID
 		FROM Temp_CustCategory AS tmpCus
 		WHERE tmpCus.IsDataChanged = 1;
-	ELSE 
+        
+	ELSE
+    
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CTSCustID, CustID, SubscriberID, SportGroupID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsDirect) 
 		SELECT	tmpCus.CTSCustID
 			,	tmpCus.CustID
@@ -211,6 +215,7 @@ sp: BEGIN
 		FROM Temp_Customer AS tmpCus
         LEFT JOIN Temp_CustCategory AS tmpCat ON tmpCat.CustID = tmpCus.CustID
         WHERE tmpCat.CustID IS NULL;
+        
 	END IF;	
 END$$
 DELIMITER ;

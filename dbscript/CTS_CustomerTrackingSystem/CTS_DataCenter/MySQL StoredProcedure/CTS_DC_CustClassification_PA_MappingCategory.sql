@@ -27,6 +27,7 @@ BEGIN
 	*/
     DECLARE CONST_ROBOT				SMALLINT DEFAULT 163;
     DECLARE CONST_ROBOT_LOSING		SMALLINT DEFAULT 164;
+    DECLARE CONST_USER_STARIX		BIGINT DEFAULT 10278938;
 
     DROP TEMPORARY TABLE IF EXISTS Temp_PA;    
 	CREATE TEMPORARY TABLE Temp_PA(	  
@@ -138,7 +139,7 @@ BEGIN
                 , 	MatchID				INT 			PATH "$.MatchID"	
 		)) AS tmpJs
 			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on tmpJs.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
-			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CTSCustID = sp.CTSCustID 
+			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CTSCustID = sp.CTSCustID AND sp.CreatedBy != CONST_USER_STARIX
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.CategoryID;		
     
 		INSERT INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
@@ -239,7 +240,7 @@ BEGIN
 		)) AS tmpJs
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
 			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on cus.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
-			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON cus.CTSCustID = sp.CTSCustID,
+			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON cus.CTSCustID = sp.CTSCustID AND sp.CreatedBy != CONST_USER_STARIX,
             LATERAL (SELECT cat.CategoryGroup, cat.RelevantCategoryID FROM CTS_DataCenter.CustomerCategory AS cat WHERE cat.ReasonID = tmpJs.ReasonID LIMIT 1) tmpLtr;
 		                
 		CALL CTS_DC_CustClassification_PA_RemoveOldTVSRequest(); 
