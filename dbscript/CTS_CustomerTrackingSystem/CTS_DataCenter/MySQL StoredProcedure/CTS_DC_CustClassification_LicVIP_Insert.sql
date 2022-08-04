@@ -24,7 +24,7 @@ sp: BEGIN
     DECLARE CONST_CATEGORY_VIPPROBLEM 		INT DEFAULT 3;
     DECLARE CONST_CATEGORY_VIPNORMAL 		INT DEFAULT 4;
     DECLARE CONST_SOURCETYPEID 				INT DEFAULT 38;
-    DECLARE CONST_USER_STARIX				BIGINT DEFAULT 10278938;
+    DECLARE CONST_CATEGORY_4x 				INT DEFAULT 43;
     
     DECLARE lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();
     DECLARE lv_CustomerClass	INT;
@@ -129,7 +129,7 @@ sp: BEGIN
     UPDATE Temp_CustCategory AS tmpCus
 		INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc ON sc.CustID = tmpCus.CustID
     SET tmpCus.Priority = -1
-    WHERE sc.CreatedBy != CONST_USER_STARIX;	
+    WHERE sc.CustomerClass != CONST_CATEGORY_4x;	
     
     UPDATE Temp_CustCategory AS tmpCus
     SET tmpCus.IsDataChanged = 1

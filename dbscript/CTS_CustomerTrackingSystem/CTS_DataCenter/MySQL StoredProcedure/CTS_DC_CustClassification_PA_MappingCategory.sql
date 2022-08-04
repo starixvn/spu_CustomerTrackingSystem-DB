@@ -27,7 +27,7 @@ BEGIN
 	*/
     DECLARE CONST_ROBOT				SMALLINT DEFAULT 163;
     DECLARE CONST_ROBOT_LOSING		SMALLINT DEFAULT 164;
-    DECLARE CONST_USER_STARIX		BIGINT DEFAULT 10278938;
+    DECLARE CONST_CATEGORY_4x 		SMALLINT DEFAULT 43;
 
     DROP TEMPORARY TABLE IF EXISTS Temp_PA;    
 	CREATE TEMPORARY TABLE Temp_PA(	  
@@ -139,7 +139,7 @@ BEGIN
                 , 	MatchID				INT 			PATH "$.MatchID"	
 		)) AS tmpJs
 			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on tmpJs.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
-			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CTSCustID = sp.CTSCustID AND sp.CreatedBy != CONST_USER_STARIX
+			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CTSCustID = sp.CTSCustID AND sp.CustomerClass != CONST_CATEGORY_4x
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.CategoryID;		
     
 		INSERT INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
