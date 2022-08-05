@@ -24,8 +24,6 @@ sp: BEGIN
     DECLARE CONST_CATEGORY_VIPPROBLEM 		INT DEFAULT 3;
     DECLARE CONST_CATEGORY_VIPNORMAL 		INT DEFAULT 4;
     DECLARE CONST_SOURCETYPEID 				INT DEFAULT 38;
-    DECLARE CONST_CATEGORY_4x 				INT DEFAULT 43;
-    DECLARE CONST_CATEGORY_4x_LOSING	SMALLINT DEFAULT 45;
     
     DECLARE lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();
     DECLARE lv_CustomerClass	INT;
@@ -44,8 +42,7 @@ sp: BEGIN
 	INTO lv_LicVIPNormal_CC
 	FROM CTS_DataCenter.CustomerCategory AS cat
 	WHERE cat.CategoryID = CONST_CATEGORY_VIPNormal;        
-        
-
+    
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
 	CREATE TEMPORARY TABLE 		Temp_Customer (
 		 	/*Cust info*/
@@ -72,7 +69,24 @@ sp: BEGIN
          ,	IsDataChanged			TINYINT(1) DEFAULT 0
          , 	IsExitsVIP				TINYINT(1) 
          ,	PRIMARY KEY PK_Temp_Customer(CustID)
-	);    
+	);
+	
+    DROP TEMPORARY TABLE IF EXISTS Temp_SpecialCategory;
+    CREATE TEMPORARY TABLE Temp_SpecialCategory (
+			CategoryID 		SMALLINT UNSIGNED PRIMARY KEY
+        ,	CustomerClass	SMALLINT UNSIGNED
+        ,	Priorty 		SMALLINT
+        ,	IsDangerProbation TINYINT(1)
+        ,	INDEX IX_Temp_SpecialCategory_CustomerClass(CustomerClass)
+    );
+    #================4x======================================
+    INSERT INTO Temp_SpecialCategory( CategoryID, CustomerClass, Priorty, IsDangerProbation)
+    SELECT	cat.CategoryID
+		,	cat.CustomerClass
+		,	cat.Priority
+        ,	cat.IsDangerProbation
+	FROM CTS_DataCenter.CustomerCategory AS cat
+    WHERE cat.Priority = 55; # Handle for 4x
 
     #=======================================================================================
     SELECT cat.Priority
@@ -124,18 +138,20 @@ sp: BEGIN
         ,	cte.IsDangerProbation
         ,	cte.Priority
         ,	cte.CustomerClass
-     FROM  CTE_LastCategory AS cte;    
+     FROM  CTE_LastCategory AS cte;   
 
     #======NOT Update CC if Priority Value of Current Less than VIP.Priority ===========================================
     UPDATE Temp_CustCategory AS tmpCus
-		INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc ON sc.CustID = tmpCus.CustID AND sc.CustomerClass NOT IN (CONST_CATEGORY_4x, CONST_CATEGORY_4x_LOSING)
-    SET tmpCus.Priority = -1;	
-    
+		INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc ON sc.CustID = tmpCus.CustID
+        LEFT JOIN Temp_SpecialCategory AS tmpCat ON tmpCat.CustomerClass = sc.CustomerClass
+    SET  	tmpCus.Priority = (CASE WHEN tmpCat.CustomerClass IS NULL THEN -1 ELSE tmpCus.Priority END)
+		,	tmpCus.IsDangerProbation = (CASE WHEN tmpCat.CustomerClass IS NOT NULL THEN  tmpCat.IsDangerProbation ELSE tmpCus.IsDangerProbation END) ;	
+        
     UPDATE Temp_CustCategory AS tmpCus
     SET tmpCus.IsDataChanged = 1
         , tmpCus.CustomerClass = (CASE WHEN tmpCus.IsDangerProbation = 1 THEN lv_LicVIPNormal_CC ELSE lv_LicVIPProblem_CC END)
     WHERE tmpCus.IsExitsVIP != 1 AND ( tmpCus.Priority IS NULL OR tmpCus.Priority > lv_VIPPriority); #Change CC
-	
+
     #======================UPDATE Customer=================================================================
     UPDATE CTS_DataCenter.CTSCustomer AS cus
 		INNER JOIN Temp_Customer AS tmpCus ON cus.CTSCustID = tmpCus.CTSCustID

@@ -26,9 +26,8 @@ BEGIN
 			CALL CTS_DC_CustClassification_PA_MappingCategory ('Category','[{"CustID": 3679910,"ReasonID": 3679910,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10, "MatchID": 1}]');
 	*/
     DECLARE CONST_ROBOT					SMALLINT DEFAULT 163;
-    DECLARE CONST_ROBOT_LOSING			SMALLINT DEFAULT 164;
-    DECLARE CONST_CATEGORY_4x 			SMALLINT DEFAULT 43;
-	DECLARE CONST_CATEGORY_4x_LOSING	SMALLINT DEFAULT 45;
+    DECLARE CONST_ROBOT_LOSING			SMALLINT DEFAULT 164;    
+    #=======================================================================================================
     DROP TEMPORARY TABLE IF EXISTS Temp_PA;    
 	CREATE TEMPORARY TABLE Temp_PA(	  
 		/*Cust info*/
@@ -83,7 +82,24 @@ BEGIN
 			CustID					BIGINT UNSIGNED PRIMARY KEY
         , 	WinlossStatus			SMALLINT /*LOSING  = 0 (PROBATION), WINNING = 2 (NOT PROBATION);*/
 	);
-   
+    
+    #======================================
+	DROP TEMPORARY TABLE IF EXISTS Temp_SpecialCategory;
+    CREATE TEMPORARY TABLE Temp_SpecialCategory (
+			CategoryID 		SMALLINT UNSIGNED PRIMARY KEY
+        ,	CustomerClass	SMALLINT UNSIGNED
+        ,	Priorty 		SMALLINT
+        
+        ,	INDEX IX_Temp_SpecialCategory_CustomerClass(CustomerClass)
+    );
+    #================4x======================================
+    INSERT INTO Temp_SpecialCategory( CategoryID, CustomerClass, Priorty)
+    SELECT	cat.CategoryID
+		,	cat.CustomerClass
+		,	cat.Priority
+	FROM CTS_DataCenter.CustomerCategory AS cat
+    WHERE cat.Priority = 55; # Handle for 4x
+    
     IF ip_InputType = 'Category' THEN    
         INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, InputCategoryID, InputCategoryGroup,  IsLicensee, CreatedBy, Remark, IsDirectPA
 			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsDataChanged, SpecialCC, IsProbation, RelevantCategoryID, LastModifiedDate, PinCTSCustID, MatchID)
@@ -139,7 +155,7 @@ BEGIN
                 , 	MatchID				INT 			PATH "$.MatchID"	
 		)) AS tmpJs
 			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on tmpJs.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
-			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CTSCustID = sp.CTSCustID AND sp.CustomerClass NOT IN (CONST_CATEGORY_4x, CONST_CATEGORY_4x_LOSING)
+			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CTSCustID = sp.CTSCustID AND sp.CustomerClass NOT IN (SELECT DISTINCT tmp.CustomerClass FROM Temp_SpecialCategory AS tmp)
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.CategoryID;		
     
 		INSERT INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
