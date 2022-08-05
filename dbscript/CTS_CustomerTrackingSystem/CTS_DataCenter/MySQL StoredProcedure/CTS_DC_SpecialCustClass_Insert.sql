@@ -27,6 +27,7 @@ sp: BEGIN
 		   - 20210419@Irena.Vo: Get Category more [RedmineID: #153617]
 		   - 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
 		   - 20210920@Aries.Nguyen: Split history log  [Redmine ID: #161890]
+           - 20220805@Aries.Nguyen: New Category for CC14, 99, 101  [Redmine ID: #174219]
 
 		Param's Explanation (filtered by):
 			- Maximum Customer Class number for input param = 127 
@@ -68,6 +69,7 @@ sp: BEGIN
 		,	CustID			INT UNSIGNED
         ,	SubscriberID	INT
         ,	CustomerClass	SMALLINT
+        ,	IsDataChanged	BIT DEFAULT 0
 	);
     
     /*	CHECK VALIDATION CUSTOMER	*/
@@ -132,11 +134,12 @@ sp: BEGIN
 			AND e.CTSCustID IS NULL;
 	END IF;
 
-	INSERT INTO Temp_NewCustomerClass(CTSCustID, CustID, SubscriberID, CustomerClass)
+	INSERT INTO Temp_NewCustomerClass(CTSCustID, CustID, SubscriberID, CustomerClass, IsDataChanged)
 	SELECT 	DISTINCT t.CTSCustID
 		,	c.CustID
 		,	lv_SubscriberID
 		,	ip_CustomerClass
+        ,	CASE WHEN c.IsLicenseeVIP = 1 AND ip_CustomerClass IN (43,45,46,47) THEN 0 ELSE 1 END AS  IsDataChanged
 	FROM Temp_AffectedCustomers AS t
 		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS s ON t.CTSCustID = s.CTSCustID
 		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON t.CTSCustID = c.CTSCustID AND c.RoleID = 1
@@ -170,8 +173,9 @@ sp: BEGIN
             , DATE(lv_CurrentDateTime)
             , sp.CustomerClass
             , 10 -- item name = Add Customer Class
-            , 1 -- View History
-	FROM Temp_NewCustomerClass AS sp;
+            , 1 -- View History 
+	FROM Temp_NewCustomerClass AS sp
+    WHERE sp.IsDataChanged = 1;
 
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, LastModifiedDate, LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
     SELECT    sp.CustID
