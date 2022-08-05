@@ -66,12 +66,13 @@ sp: BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_NewCustomerClass;
     CREATE TEMPORARY TABLE Temp_NewCustomerClass(
-			CTSCustID 		BIGINT UNSIGNED PRIMARY KEY
-		,	CustID			INT UNSIGNED
-        ,	SubscriberID	INT
-        ,	CustomerClass	SMALLINT
-        ,	IsDataChanged	BIT DEFAULT 0
-        ,	Is4x			BIT DEFAULT 0
+			CTSCustID 				BIGINT UNSIGNED PRIMARY KEY
+		,	CustID					INT UNSIGNED
+        ,	SubscriberID			INT
+        ,	CustomerClass			SMALLINT
+        ,	IsDataChanged			BIT DEFAULT 0
+        ,	Is4x					BIT DEFAULT 0        
+        ,	Is4xDangerProbation		BIT DEFAULT 0
 	);
     
     /*	CHECK VALIDATION CUSTOMER	*/
@@ -136,13 +137,14 @@ sp: BEGIN
 			AND e.CTSCustID IS NULL;
 	END IF;
 
-	INSERT INTO Temp_NewCustomerClass(CTSCustID, CustID, SubscriberID, CustomerClass, IsDataChanged, Is4x)
+	INSERT INTO Temp_NewCustomerClass(CTSCustID, CustID, SubscriberID, CustomerClass, IsDataChanged, Is4x, Is4xDangerProbation)
 	SELECT 	DISTINCT t.CTSCustID
 		,	c.CustID
 		,	lv_SubscriberID
 		,	ip_CustomerClass
         ,	CASE WHEN c.IsLicenseeVIP = 1 AND ip_CustomerClass IN (43,45,46,47)  AND clss.CustID IS NULL THEN 0 ELSE 1 END AS  IsDataChanged
         ,	CASE WHEN  ip_CustomerClass IN (43,45,46,47) AND clss.CustID IS NOT NULL THEN 1 ELSE 0 END AS  Is4x
+        ,	CASE WHEN  ip_CustomerClass IN (43) THEN 1 ELSE 0 END AS Is4xDangerProbation
 	FROM Temp_AffectedCustomers AS t
 		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON t.CTSCustID = c.CTSCustID AND c.RoleID = 1
         LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CustID = c.CustID AND clss.SportGroupID = 100 AND clss.CategoryID = 4
@@ -181,8 +183,11 @@ sp: BEGIN
 			, 0  -- insert
             , 0  -- manual
             , DATE(lv_CurrentDateTime)
-            , CASE WHEN sp.Is4x = 1 THEN 99
-				   ELSE sp.CustomerClass END AS CustomerClass
+            , 	CASE 
+					WHEN sp.Is4x = 1 AND Is4xDangerProbation = 0 THEN 99
+					WHEN sp.Is4x = 1 THEN 101
+					ELSE sp.CustomerClass 
+				END AS CustomerClass
             , 10 -- item name = Add Customer Class
             , 1 -- View History 
 	FROM Temp_NewCustomerClass AS sp
@@ -196,8 +201,11 @@ sp: BEGIN
 			, 0  -- insert
             , 0  -- manual
             , DATE(lv_CurrentDateTime)
-            , CASE WHEN sp.Is4x = 1 THEN 99
-				   ELSE sp.CustomerClass END AS CustomerClass
+            , 	CASE 
+					WHEN sp.Is4x = 1 AND Is4xDangerProbation = 0 THEN 99
+					WHEN sp.Is4x = 1 THEN 101
+					ELSE sp.CustomerClass 
+				END AS CustomerClass
             , 10 -- item name = Add Customer Class
             , 1 -- View History
 	FROM Temp_NewCustomerClass AS sp;
