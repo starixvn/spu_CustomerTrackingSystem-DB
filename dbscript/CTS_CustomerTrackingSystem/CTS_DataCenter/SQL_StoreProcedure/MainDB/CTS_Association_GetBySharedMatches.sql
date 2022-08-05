@@ -150,7 +150,7 @@ BEGIN
 			CustId			DESC
 	);
 
-	INSERT INTO #tmpRawTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,SportType,BetType,CustId,BetTeam, Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
+	INSERT INTO #tmpRawTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,SportType,BetType,CustId,UserName,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
 	SELECT	b.transid
 		,	b.transdate
 		,	b.matchid
@@ -164,6 +164,7 @@ BEGIN
 		,	m.sporttype
 		,	b.bettype
 		,	b.custid
+		,	b.Username
 		,	b.betteam
 		,	b.stake
 		,	b.odds
@@ -181,7 +182,7 @@ BEGIN
 		INNER JOIN dbo.SportBettypeMatrix AS t WITH(NOLOCK) ON b.bettype = t.BetType AND t.SportType IN (1,2,43)
 	WHERE	b.Currency NOT IN (20,27,28);
 
-	INSERT INTO #tmpRawTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,SportType,BetType,CustId,BetTeam, Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
+	INSERT INTO #tmpRawTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,SportType,BetType,CustId,UserName,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
 	SELECT	b.transid
 		,	b.transdate
 		,	b.matchid
@@ -195,6 +196,7 @@ BEGIN
 		,	m.sporttype
 		,	b.bettype
 		,	b.custid
+		,	b.Username
 		,	b.betteam
 		,	b.stake
 		,	b.odds
@@ -217,13 +219,13 @@ BEGIN
 			TransDate			ASC
 	);
 
-	INSERT INTO #tmpTickets(TransId,TransDate,TransDate_Int,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,SportType,BetType,CustId,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus,LiveIndicator)
-	SELECT TransId,TransDate,DATEDIFF(ss, TransDate, @CutOffDate),MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,SportType,BetType,CustId,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus,LiveIndicator
+	INSERT INTO #tmpTickets(UserName,TransId,TransDate,TransDate_Int,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,SportType,BetType,CustId,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus,LiveIndicator)
+	SELECT UserName,TransId,TransDate,DATEDIFF(ss, TransDate, @CutOffDate),MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,SportType,BetType,CustId,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus,LiveIndicator
 	FROM #tmpRawTickets WITH(NOLOCK)
 	ORDER BY TransDate ASC;
 
-	INSERT INTO #tmpTicketsCloned(ID,TransId,TransDate,TransDate_Int,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,SportType,BetType,CustId,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus,LiveIndicator)
-	SELECT (ID - 1),TransId,TransDate,TransDate_Int,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,SportType,BetType,CustId,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus,LiveIndicator
+	INSERT INTO #tmpTicketsCloned(ID,UserName,TransId,TransDate,TransDate_Int,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,SportType,BetType,CustId,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus,LiveIndicator)
+	SELECT (ID - 1),UserName,TransId,TransDate,TransDate_Int,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,SportType,BetType,CustId,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus,LiveIndicator
 	FROM #tmpTickets WITH(NOLOCK)
 
 	IF (@IsDetecting = 1) 
