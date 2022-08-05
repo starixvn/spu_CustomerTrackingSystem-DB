@@ -37,8 +37,9 @@ sp: BEGIN
     DECLARE lv_CustID			INT UNSIGNED;
 	DECLARE lv_SubscriberID 	INT;
     DECLARE	lv_CurrentDateTime	DATETIME DEFAULT CURRENT_TIME();
-    DECLARE	lv_SPName 			VARCHAR(100) 	DEFAULT 'CTS_DC_SpecialCustClass_Insert';
-	
+    DECLARE	lv_SPName 			VARCHAR(100) 	DEFAULT 'CTS_DC_SpecialCustClass_Insert_xpre';
+	DECLARE lv_CreatedBy 		INT DEFAULT 10278938;
+    
 	DECLARE	CONST_CATEGORYID_VVIP 	INT DEFAULT 210;
     DECLARE	CONST_GROUP_NORMAL		INT DEFAULT 200;
 
@@ -70,6 +71,7 @@ sp: BEGIN
         ,	SubscriberID	INT
         ,	CustomerClass	SMALLINT
         ,	IsDataChanged	BIT DEFAULT 0
+        ,	Is4x			BIT DEFAULT 0
 	);
     
     /*	CHECK VALIDATION CUSTOMER	*/
@@ -134,16 +136,24 @@ sp: BEGIN
 			AND e.CTSCustID IS NULL;
 	END IF;
 
-	INSERT INTO Temp_NewCustomerClass(CTSCustID, CustID, SubscriberID, CustomerClass, IsDataChanged)
+	INSERT INTO Temp_NewCustomerClass(CTSCustID, CustID, SubscriberID, CustomerClass, IsDataChanged, Is4x)
 	SELECT 	DISTINCT t.CTSCustID
 		,	c.CustID
 		,	lv_SubscriberID
 		,	ip_CustomerClass
-        ,	CASE WHEN c.IsLicenseeVIP = 1 AND ip_CustomerClass IN (43,45,46,47) THEN 0 ELSE 1 END AS  IsDataChanged
+        ,	CASE WHEN c.IsLicenseeVIP = 1 AND ip_CustomerClass IN (43,45,46,47)  AND clss.CustID IS NULL THEN 0 ELSE 1 END AS  IsDataChanged
+        ,	CASE WHEN  ip_CustomerClass IN (43,45,46,47) AND clss.CustID IS NOT NULL THEN 1 ELSE 0 END AS  Is4x
 	FROM Temp_AffectedCustomers AS t
-		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS s ON t.CTSCustID = s.CTSCustID
 		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON t.CTSCustID = c.CTSCustID AND c.RoleID = 1
+        LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CustID = c.CustID AND clss.SportGroupID = 100 AND clss.CategoryID = 4
+		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS s ON t.CTSCustID = s.CTSCustID
 	WHERE s.CTSCustID IS NULL;
+    
+    UPDATE CTS_DataCenter.CTSCustomerClassification AS clss
+    INNER JOIN Temp_NewCustomerClass AS tmp ON tmp.CustID = clss.CustID AND  clss.SportGroupID = 100 AND  clss.CategoryID  = 4
+    SET 	clss.CategoryID = 3
+        ,	clss.LastModifiedBy = lv_CreatedBy
+    WHERE tmp.IsDataChanged = 1;
 
     /*	INSERT VALID SPECIAL CUSTOMER CLASS	*/
 	INSERT INTO CTS_DataCenter.SpecialCustomerClass(CTSCustID, CustID, RootCTSCustID, SubscriberID, CustomerClass, CreatedBy, CreatedDate, LastModifiedBy, LastModifiedDate, CreatedFromFunction)
@@ -171,7 +181,8 @@ sp: BEGIN
 			, 0  -- insert
             , 0  -- manual
             , DATE(lv_CurrentDateTime)
-            , sp.CustomerClass
+            , CASE WHEN sp.Is4x = 1 THEN 99
+				   ELSE sp.CustomerClass END AS CustomerClass
             , 10 -- item name = Add Customer Class
             , 1 -- View History 
 	FROM Temp_NewCustomerClass AS sp
@@ -185,7 +196,8 @@ sp: BEGIN
 			, 0  -- insert
             , 0  -- manual
             , DATE(lv_CurrentDateTime)
-            , sp.CustomerClass
+            , CASE WHEN sp.Is4x = 1 THEN 99
+				   ELSE sp.CustomerClass END AS CustomerClass
             , 10 -- item name = Add Customer Class
             , 1 -- View History
 	FROM Temp_NewCustomerClass AS sp;
