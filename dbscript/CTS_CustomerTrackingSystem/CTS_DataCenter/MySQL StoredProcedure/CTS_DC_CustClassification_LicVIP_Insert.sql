@@ -25,6 +25,7 @@ sp: BEGIN
     DECLARE CONST_CATEGORY_VIPNORMAL 		INT DEFAULT 4;
     DECLARE CONST_SOURCETYPEID 				INT DEFAULT 38;
     DECLARE CONST_CATEGORY_4x 				INT DEFAULT 43;
+    DECLARE CONST_CATEGORY_4x_LOSING	SMALLINT DEFAULT 45;
     
     DECLARE lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();
     DECLARE lv_CustomerClass	INT;
@@ -127,9 +128,8 @@ sp: BEGIN
 
     #======NOT Update CC if Priority Value of Current Less than VIP.Priority ===========================================
     UPDATE Temp_CustCategory AS tmpCus
-		INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc ON sc.CustID = tmpCus.CustID
-    SET tmpCus.Priority = -1
-    WHERE sc.CustomerClass != CONST_CATEGORY_4x;	
+		INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc ON sc.CustID = tmpCus.CustID AND sc.CustomerClass NOT IN (CONST_CATEGORY_4x, CONST_CATEGORY_4x_LOSING)
+    SET tmpCus.Priority = -1;	
     
     UPDATE Temp_CustCategory AS tmpCus
     SET tmpCus.IsDataChanged = 1
