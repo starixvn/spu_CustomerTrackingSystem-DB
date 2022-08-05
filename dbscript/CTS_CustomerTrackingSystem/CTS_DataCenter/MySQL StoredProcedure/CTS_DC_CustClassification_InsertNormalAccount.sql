@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_InsertNormalAccount`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_InsertNormalAccount_xpre`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_InsertNormalAccount`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_InsertNormalAccount_xpre`(
 		IN ip_NewClassification 	JSON
     
     ,	OUT op_ErrorMessage 		VARCHAR(200)
@@ -410,7 +410,9 @@ select *, lv_BatchID AS BatchID, 7 AS StepID from Temp_NewClassification;
 		,	ActionType = CONST_ACTIONTYPE_UPDATE
     WHERE IsDataChanged = 0 
 		AND (TargetCC <> OldTargetCC)
-		AND (SourceTypeID = CONST_SOURCETYPE_SAMECATEGORY OR ActionType = CONST_ACTIONTYPE_IGNOREPROBATION);
+		AND (SourceTypeID = CONST_SOURCETYPE_SAMECATEGORY 
+            OR SourceTypeID = CONST_SOURCETYPE_FAILPROBATION
+			OR ActionType = CONST_ACTIONTYPE_IGNOREPROBATION);
 
 insert into Adhoc_LongTest
 select *, lv_BatchID AS BatchID, 9 AS StepID from Temp_NewClassification;        
