@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_InsertNormalAccount_xpre`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_InsertNormalAccount`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_InsertNormalAccount_xpre`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_InsertNormalAccount`(
 		IN ip_NewClassification 	JSON
     
     ,	OUT op_ErrorMessage 		VARCHAR(200)
@@ -40,7 +40,7 @@ BEGIN
 		Param's Explanation (filtered by):
         
         Example:
-				- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount('[{"CustId": "43600693","CategoryId":"1000","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","TaggingID":10,"TaggingType":1}]',@or);
+				- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount_xpre('[{"CustId": "43600693","CategoryId":"1000","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","TaggingID":10,"TaggingType":1}]',@or);
 */ 
     DECLARE	CONST_GROUP_PA 								INT DEFAULT 0;
     DECLARE	CONST_GROUP_WRAPPER							INT DEFAULT 100;
@@ -158,6 +158,12 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_OldCustomerClass;    
 	CREATE TEMPORARY TABLE Temp_OldCustomerClass(	  
+			CustID					BIGINT UNSIGNED	PRIMARY KEY
+        ,	CustomerClass 			SMALLINT
+	); 
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_UpdateCustomerClass;    
+	CREATE TEMPORARY TABLE Temp_UpdateCustomerClass(	  
 			CustID					BIGINT UNSIGNED	PRIMARY KEY
         ,	CustomerClass 			SMALLINT
 	); 
@@ -362,6 +368,7 @@ select *, lv_BatchID AS BatchID, 7 AS StepID from Temp_NewClassification;
     FROM Temp_NewClassification AS temp
 	WHERE temp.IsDataChanged  = 0;
     
+    INSERT IGNORE INTO Temp_UpdateCustomerClass(CustID,CustomerClass)
     WITH CTE_LatestLog AS (
 		SELECT h.CustID, MAX(h.LastModifiedDate) AS LatestInsertDate
 		FROM Temp_OldCustomerClass AS t
@@ -373,9 +380,13 @@ select *, lv_BatchID AS BatchID, 7 AS StepID from Temp_NewClassification;
 		FROM CTE_LatestLog AS l
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS h ON l.CustID = h.CustID AND l.LatestInsertDate = h.LastModifiedDate
 	)
-	UPDATE CTE_LatestHistory AS l
-		INNER JOIN Temp_NewClassification AS t ON l.CustID = t.CustID
-	SET t.OldTargetCC = l.TargetCC;
+    SELECT 	cte.CustID
+		,	cte.TargetCC
+	FROM CTE_LatestHistory AS cte;
+        
+	UPDATE Temp_UpdateCustomerClass AS c
+		INNER JOIN Temp_NewClassification AS t ON c.CustID = t.CustID
+	SET t.OldTargetCC = c.CustomerClass;
     
     UPDATE Temp_NewClassification AS tmp
 		INNER JOIN CustomerCategory AS cate ON tmp.OldCateID = cate.CategoryID

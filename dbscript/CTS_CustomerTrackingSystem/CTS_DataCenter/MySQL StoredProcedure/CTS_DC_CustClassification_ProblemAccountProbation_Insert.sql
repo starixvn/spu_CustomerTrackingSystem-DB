@@ -64,7 +64,7 @@ BEGIN
         , 	PRIMARY KEY(CustID,CategoryID)  
     );  
     
-    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, CategoryID, RelevantCategoryID, SportGroupID,TargetCC,TargetDangerLevel1, IsDangerProbation, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsDirect, IsDataChanged)
+    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, CategoryID, RelevantCategoryID, SportGroupID,TargetCC,TargetDangerLevel1, IsDangerProbation, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsDirect,IsLicenseeVIP,IsLicenseeBA, IsDataChanged)
 	SELECT 	js.CustID
 		,	cust.CTSCustID
         ,	clss.CategoryID
@@ -79,6 +79,8 @@ BEGIN
         , 	js.BetCount
         , 	js.ActiveDays
         ,	clss.IsDirect
+        ,	cust.IsLicenseeVIP
+        ,	cust.IsLicenseeBA
         ,	CASE WHEN js.WinlossStatus = 1 THEN 0 /*No Change*/
 				 WHEN js.WinlossStatus = 0 AND cate.IsDangerProbation = 0 THEN 1  /*Lose + PA => Update */
 				 WHEN js.WinlossStatus = 0 AND cate.IsDangerProbation = 1 THEN 0  /*Lose + Probation =>  No Change*/
@@ -106,11 +108,6 @@ BEGIN
     DELETE pa
     FROM Temp_PA AS pa
     WHERE EXISTS (SELECT 1 FROM CTS_DataCenter.PinCustomerCategory AS pin WHERE pin.CTSCustID = pa.CTSCustID); 
-	
-    UPDATE Temp_PA AS t
-		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON t.CustID = c.CustID
-	SET t.IsLicenseeVIP = c.IsLicenseeVIP,
-		t.IsLicenseeBA = c.IsLicenseeBA;
         
     UPDATE CTS_DataCenter.CTSCustomerClassification AS clss
     INNER JOIN Temp_PA AS tmp ON tmp.CustID = clss.CustID AND tmp.SportGroupID = clss.SportGroupID AND tmp.CategoryID = clss.CategoryID 
