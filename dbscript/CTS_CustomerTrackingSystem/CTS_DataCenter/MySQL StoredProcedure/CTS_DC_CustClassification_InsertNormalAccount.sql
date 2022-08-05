@@ -90,40 +90,41 @@ BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;    
 	CREATE TEMPORARY TABLE Temp_NewClassification(	  	
-			CustID					BIGINT UNSIGNED	PRIMARY KEY
-		, 	CTSCustID				BIGINT DEFAULT 0
-		, 	SubscriberID			INT DEFAULT 0        
-		,	IsLicensee				BIT 
-        ,	IsLicenseeVIP			BIT
-        ,	IsLicenseeBA			BIT
-		, 	TurnoverRM				DECIMAL(20,4)
-		, 	WinlossRM				DECIMAL(20,4)
-		, 	BetCount				BIGINT
-		, 	ActiveDays				INT	
-        ,	TWBetCount				BIGINT
-        ,	TWGroupBettingRate		DECIMAL(10,4)
-        ,	TWTicketRejectRate		DECIMAL(10,4)
-        ,	TWDesktopUsageRate		DECIMAL(10,4)
-		,	TaggingID				SMALLINT
-		,	TaggingType				SMALLINT	
-		, 	DWCateGroup				SMALLINT
-		,	DWCateID				SMALLINT
-        ,	OldCateGroup 			SMALLINT
-        ,	OldCateID 				SMALLINT
-        ,	OldIsDangerProbation	BIT DEFAULT 0
-      	, 	NewCateGroup			SMALLINT
-		,	NewCateID				SMALLINT
-        ,	NewIsDangerProbation	BIT DEFAULT 0
-		,	SourceTypeID      		SMALLINT
-		,	IsDataChanged			BIT DEFAULT 1 /*0: No change category => No Action*/
-        ,	OldTargetCC				SMALLINT
-        ,	TargetCC				SMALLINT
-		,	TargetDangerLevel		SMALLINT
-		,   SpecialCC	       		INT  
-        ,	SpecialCCName			VARCHAR(50)
-		,   SpecialCCPriority   	SMALLINT DEFAULT -1
-		, 	ActionType				SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN; 5: Not satisfy Pass Probation*/
-		, 	INDEX    			    IX_Temp_NewClassification(CustID, DWCateGroup)  
+			CustID						BIGINT UNSIGNED	PRIMARY KEY
+		, 	CTSCustID					BIGINT DEFAULT 0
+		, 	SubscriberID				INT DEFAULT 0        
+		,	IsLicensee					BIT 
+        ,	IsLicenseeVIP				BIT
+        ,	IsLicenseeBA				BIT
+		, 	TurnoverRM					DECIMAL(20,4)
+		, 	WinlossRM					DECIMAL(20,4)
+		, 	BetCount					BIGINT
+		, 	ActiveDays					INT	
+        ,	TWBetCount					BIGINT
+        ,	TWGroupBettingRate			DECIMAL(10,4)
+        ,	TWTicketRejectRate			DECIMAL(10,4)
+        ,	TWDesktopUsageRate			DECIMAL(10,4)
+		,	TaggingID					SMALLINT
+		,	TaggingType					SMALLINT	
+		, 	DWCateGroup					SMALLINT
+		,	DWCateID					SMALLINT
+        ,	OldCateGroup 				SMALLINT
+        ,	OldCateID 					SMALLINT
+        ,	OldIsDangerProbation		BIT DEFAULT 0
+      	, 	NewCateGroup				SMALLINT
+		,	NewCateID					SMALLINT
+        ,	NewIsDangerProbation		BIT DEFAULT 0
+		,	SourceTypeID      			SMALLINT
+		,	IsDataChanged				BIT DEFAULT 1 /*0: No change category => No Action*/
+        ,	OldTargetCC					SMALLINT
+        ,	TargetCC					SMALLINT
+		,	TargetDangerLevel			SMALLINT
+		,   SpecialCC	       			INT  
+        ,	SpecialCCName				VARCHAR(50)
+		,   SpecialCCPriority   		SMALLINT DEFAULT -1
+		,   SpecialCCDangerProbation   	BIT DEFAULT NULL
+		, 	ActionType					SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN; 5: Not satisfy Pass Probation*/
+		, 	INDEX    			    	IX_Temp_NewClassification(CustID, DWCateGroup)  
 	); 
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedCustomers;    
@@ -229,7 +230,8 @@ BEGIN
 		LEFT JOIN CTS_DataCenter.CustomerCategory AS c ON sp.CustomerClass = c.CustomerClass
 	SET t.SpecialCC = sp.CustomerClass,
 		t.SpecialCCName = c.CustomerClassName,
-		t.SpecialCCPriority = c.Priority;
+		t.SpecialCCPriority = c.Priority,
+        t.SpecialCCDangerProbation = c.IsDangerProbation;
     
     /*4: GET PROBATION CUSTOMERS */
     INSERT IGNORE INTO Temp_ProbationCustomers(CustID, ScanDate)
@@ -338,8 +340,8 @@ BEGIN
                                      ELSE CONST_SOURCETYPE_SCANONSCHEDULE
 								END)
 	WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);     
-insert into Adhoc_LongTest
-select *, lv_BatchID AS BatchID, 7 AS StepID from Temp_NewClassification;
+#insert into Adhoc_LongTest
+#select *, lv_BatchID AS BatchID, 7 AS StepID from Temp_NewClassification;
     /* 8: GENERATE DATA NO CHANGED */   
     UPDATE 	Temp_NewClassification AS temp
 	SET 	temp.IsDataChanged = (CASE WHEN temp.NewCateID = temp.OldCateID AND temp.SourceTypeID <> CONST_SOURCETYPE_FAILPROBATION THEN 0 /*No update category*/ ELSE temp.IsDataChanged END)
@@ -351,7 +353,9 @@ select *, lv_BatchID AS BatchID, 7 AS StepID from Temp_NewClassification;
 	SET 	tmp.TargetCC = CASE  
 								WHEN (tmp.SpecialCC IS NULL) OR (tmp.SpecialCCPriority <> -1)
 										THEN CASE
-												WHEN cate.CustomerClass = CONST_VVIPCC THEN CONST_VVIPCC
+												WHEN cate.CustomerClass = CONST_VVIPCC THEN CONST_VVIPCC                                                
+												WHEN tmp.IsLicenseeVIP = 1 AND cate.Priority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation = 1 THEN CONST_LICVIP_SUSPICIOUSCC
+												WHEN tmp.IsLicenseeVIP = 1 AND cate.Priority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation IS NOT NULL THEN CONST_LICVIP_DANGEROUSCC
 												WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN CONST_LICVIP_SUSPICIOUSCC
 												WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN CONST_LICVIP_DANGEROUSCC
 												WHEN tmp.IsLicenseeBA = 1 AND cate.Priority > CONST_LICBAPRIORITY THEN CONST_LICBACC                                            
@@ -394,6 +398,8 @@ select *, lv_BatchID AS BatchID, 7 AS StepID from Temp_NewClassification;
 							WHEN (tmp.SpecialCC IS NULL) OR (tmp.SpecialCCPriority <> -1)
 									THEN CASE
 											WHEN cate.CustomerClass = CONST_VVIPCC THEN CONST_VVIPCC
+											WHEN tmp.IsLicenseeVIP = 1 AND cate.Priority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation = 1 THEN CONST_LICVIP_SUSPICIOUSCC
+											WHEN tmp.IsLicenseeVIP = 1 AND cate.Priority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation IS NOT NULL THEN CONST_LICVIP_DANGEROUSCC
 											WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN CONST_LICVIP_SUSPICIOUSCC
 											WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN CONST_LICVIP_DANGEROUSCC
 											WHEN tmp.IsLicenseeBA = 1 AND cate.Priority > CONST_LICBAPRIORITY THEN CONST_LICBACC                                            
@@ -420,13 +426,12 @@ select *, lv_BatchID AS BatchID, 7 AS StepID from Temp_NewClassification;
 							END)
 		,	ActionType = CONST_ACTIONTYPE_UPDATE
     WHERE IsDataChanged = 0 
-		AND (TargetCC <> OldTargetCC)
-		AND (SourceTypeID = CONST_SOURCETYPE_SAMECATEGORY 
-            OR SourceTypeID = CONST_SOURCETYPE_FAILPROBATION
+		AND ((TargetCC <> OldTargetCC) OR (OldCateID <> NewCateID))
+		AND (SourceTypeID IN (CONST_SOURCETYPE_SAMECATEGORY, CONST_SOURCETYPE_FAILPROBATION,CONST_SOURCETYPE_LESSTHAN10TICKETS )
 			OR ActionType = CONST_ACTIONTYPE_IGNOREPROBATION);
-
-insert into Adhoc_LongTest
-select *, lv_BatchID AS BatchID, 9 AS StepID from Temp_NewClassification;        
+            
+#insert into Adhoc_LongTest
+#select *, lv_BatchID AS BatchID, 9 AS StepID from Temp_NewClassification;        
     /* 10: GENERATE TARGET DANGER LEVEL */
     UPDATE Temp_NewClassification AS temp 
 		INNER JOIN CTS_DataCenter.CategoryToDangerLevel AS d ON d.CategoryID = temp.NewCateID AND d.IsLicensee = temp.IsLicensee AND d.TypeID = 1
@@ -489,8 +494,8 @@ select *, lv_BatchID AS BatchID, 9 AS StepID from Temp_NewClassification;
 	WHERE temp.NewCateGroup = CONST_CATEGORY_PROBATION 
 		AND (temp.ActionType = CONST_ACTIONTYPE_INSERT 
 			OR (temp.ActionType = CONST_ACTIONTYPE_UPDATE AND temp.OldCateGroup <> CONST_CATEGORY_PROBATION));
-insert into Adhoc_LongTest
-select *, lv_BatchID AS BatchID, 14 AS StepID from Temp_NewClassification;
+#insert into Adhoc_LongTest
+#select *, lv_BatchID AS BatchID, 14 AS StepID from Temp_NewClassification;
     /* 15: WRITE HISTORY LOG (VIEW ON WEB) */
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
 	(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, TWBetCount, TWGroupBettingRate, TWTicketRejectRate, TWDesktopUsageRate

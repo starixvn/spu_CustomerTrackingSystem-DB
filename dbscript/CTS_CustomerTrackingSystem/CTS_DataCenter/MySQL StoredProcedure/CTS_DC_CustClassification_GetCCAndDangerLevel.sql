@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb,ctsAPI,ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_GetCCAndDangerLevel_xpre`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_GetCCAndDangerLevel`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_GetCCAndDangerLevel_xpre`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_GetCCAndDangerLevel`(
 	IN ip_CustIDs TEXT
 )
     SQL SECURITY INVOKER
@@ -97,7 +97,7 @@ BEGIN
     INTO lv_LicBA_CCName
     FROM CustomerCategory
     WHERE CategoryID = CONST_LICBACATEGORY;
-    
+
     INSERT INTO Temp_CustCateInfo(CustID,CategoryID,CustomerClass,CustomerClassName,DangerLevel,DangerLevelType)
     SELECT 	tmp.CustID
 		,	clss.CategoryID
@@ -115,8 +115,8 @@ BEGIN
 							WHEN (tmp.SpecialCC IS NULL) OR (tmp.SpecialCCPriority <> -1)
 									THEN CASE
 											WHEN cate.CustomerClass = CONST_VVIPCC THEN CONST_VVIPCC
-											WHEN tmp.IsLicenseeVIP = 1 AND tmp.SpecialCCDangerProbation = 1 THEN CONST_LICVIP_SUSPICIOUSCC
-                                            WHEN tmp.IsLicenseeVIP = 1 AND tmp.SpecialCCDangerProbation = 0 THEN CONST_LICVIP_DANGEROUSCC
+											WHEN tmp.IsLicenseeVIP = 1 AND cate.Priority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation = 1 THEN CONST_LICVIP_SUSPICIOUSCC
+                                            WHEN tmp.IsLicenseeVIP = 1 AND cate.Priority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation IS NOT NULL THEN CONST_LICVIP_DANGEROUSCC
 											WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN CONST_LICVIP_SUSPICIOUSCC
                                             WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN CONST_LICVIP_DANGEROUSCC
                                             WHEN tmp.IsLicenseeBA = 1 AND cate.Priority > CONST_LICBAPRIORITY THEN CONST_LICBACC                                            
@@ -129,8 +129,8 @@ BEGIN
 							WHEN (tmp.SpecialCC IS NULL) OR (tmp.SpecialCCPriority <> -1)
 									THEN CASE
 											WHEN cate.CustomerClass = CONST_VVIPCC THEN cate.CustomerClassName
-											WHEN tmp.IsLicenseeVIP = 1 AND tmp.SpecialCCDangerProbation = 1 THEN lv_LicVIP_SuspiciousCCName
-                                            WHEN tmp.IsLicenseeVIP = 1 AND tmp.SpecialCCDangerProbation = 0 THEN lv_LicVIP_DangerousCCName
+											WHEN tmp.IsLicenseeVIP = 1 AND cate.Priority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation = 1 THEN lv_LicVIP_SuspiciousCCName
+                                            WHEN tmp.IsLicenseeVIP = 1 AND cate.Priority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation = 0 THEN lv_LicVIP_DangerousCCName
 											WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN lv_LicVIP_SuspiciousCCName
                                             WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN lv_LicVIP_DangerousCCName
                                             WHEN tmp.IsLicenseeBA = 1 AND cate.Priority > CONST_LICBAPRIORITY THEN lv_LicBA_CCName                                            
