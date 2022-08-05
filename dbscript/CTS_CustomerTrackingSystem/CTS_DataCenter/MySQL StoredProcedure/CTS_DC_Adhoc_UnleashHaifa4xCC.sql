@@ -15,11 +15,7 @@ BEGIN
             
 		Param's Explanation:
 	*/ 
-    DECLARE	CONST_GROUP_PA 			INT DEFAULT 0;
-    DECLARE	CONST_GROUP_WRAPPER		INT DEFAULT 100;
-    DECLARE	CONST_GROUP_NORMAL 		INT DEFAULT 200;
-    
-	DROP TEMPORARY TABLE IF EXISTS Temp_4xCCCust;
+    DROP TEMPORARY TABLE IF EXISTS Temp_4xCCCust;
 	CREATE TEMPORARY TABLE Temp_4xCCCust (
 			CustID		BIGINT UNSIGNED PRIMARY KEY
 	);
@@ -40,8 +36,8 @@ BEGIN
 	SELECT DISTINCT t.CustID
 	FROM Temp_4xCCCust AS t
 		INNER JOIN CTSCustomerClassification AS c ON t.CustID = c.CustID
-	WHERE (c.SportGroupID = CONST_GROUP_PA AND c.CategoryID < 200)
-		OR (c.SportGroupID = CONST_GROUP_WRAPPER AND c.CategoryID IN (3,4));
+	WHERE c.SportGroupID = 0
+		AND c.CategoryID < 200;
 
 	# Log Rescan to History
 	INSERT INTO CTSCustomerClassification_History(CustID,CTSCustID,TargetCC,SourceTypeID,IsAppliedCC,IsDataChanged,ActionType,IsAuto,LastModifiedDate,LastModifiedBy,InsertDate,TaggingType)
@@ -59,6 +55,6 @@ BEGIN
     INSERT INTO Adhoc_Haifa4xCCUnleashed(CustID, Username,CreatedDate,CreatedTime)
 	SELECT c.CustID, c.UserName, NOW(), NOW()
 	FROM Temp_PA4xCCCust AS t 
-		INNER JOIN CTSCustomer AS c ON t.CustID = c.CustID;    
+		INNER JOIN CTSCustomer AS c ON t.CustID = c.CustID;  
 END$$
 DELIMITER ;
