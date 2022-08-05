@@ -25,9 +25,9 @@ BEGIN
         
         SELECT SiteID
 		INTO lv_SiteID
-        FROM CTS_DataCenter.CTSCustomer
-		WHERE Site = ip_SiteName
-        LIMIT 1;
+		FROM CTS_DataCenter.MappingSubscriberSite
+		WHERE SiteName = ip_SiteName
+		LIMIT 1;
 	
 		SELECT c.CustID, c.CTSCustID, c.UserName, c.RoleID, c.SiteID, c.IsLicensee, c.IsLicenseeVIP, c.IsLicenseeBA
 		FROM CTS_DataCenter.CTSCustomer AS c

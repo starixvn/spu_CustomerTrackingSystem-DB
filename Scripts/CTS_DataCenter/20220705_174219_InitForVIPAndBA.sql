@@ -18,6 +18,9 @@ ALTER TABLE CustomerCategory
 ALTER TABLE CTSCustomer
 ADD INDEX IX_CTSCustomer_SiteID(SiteID);
 
+ALTER TABLE MappingSubscriberSite
+ADD INDEX IX_MappingSubscriberSite_SiteName(SiteName);
+
 DELETE FROM CTS_DataCenter.CustomerCategory WHERE CategoryID < 50;
 
 INSERT INTO CTS_DataCenter.CustomerCategory(CategoryID, CategoryName, CategorySpec,DisplayOrder)
