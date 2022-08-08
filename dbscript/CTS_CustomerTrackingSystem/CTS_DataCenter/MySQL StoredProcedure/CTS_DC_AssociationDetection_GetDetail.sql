@@ -106,6 +106,7 @@ sp:BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.Recommend 
 														AND cus.IsInternal = 0
                                                         AND cus.CustSubID = 0
+                                                        AND cus.RoleID = 1
                                                         AND tmp.Recommend != lv_RecommendCustID;
 
     
