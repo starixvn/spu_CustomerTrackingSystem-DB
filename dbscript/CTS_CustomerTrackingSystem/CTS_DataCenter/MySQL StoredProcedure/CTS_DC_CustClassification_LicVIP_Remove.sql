@@ -18,7 +18,7 @@ sp: BEGIN
 		Param's Explanation:
             
 		Example:
-			CALL CTS_DC_CustClassification_LicVIP_Remove_xpre('1,2,3,4');
+			CALL CTS_DC_CustClassification_LicVIP_Remove('[{"CustID":"791050", "CreatedBy": 12345}]');
 	*/
 
 	DECLARE lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();
@@ -79,7 +79,7 @@ sp: BEGIN
 		 )) AS tmpJs
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON  tmpJs.CustID = cus.CustID AND cus.CustSubID = 0
         LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON  tmpJs.CustID = cls.CustID  AND CategoryID IN (CONST_CATEGORY_VIPPROBLEM,CONST_CATEGORY_VIPNORMAL) ;    
-	
+
 	 INSERT INTO Temp_CustCategory(CustID, CTSCustID, SubscriberID, CreatedBy, IsLicenseeVIP, CategoryID, IsDangerProbation, Priority, CustomerClass ) 
      WITH CTE_LastCategory AS
      (
@@ -113,11 +113,33 @@ sp: BEGIN
         ,	cte.Priority
         ,	cte.CustomerClass
      FROM  CTE_LastCategory AS cte;    
-     
-    #======NOT Update CC if Priority Value of Current Less than VIP.Priority ===========================================
+	
+
+    INSERT IGNORE INTO Temp_CustCategory(CustID, CTSCustID, SubscriberID, CreatedBy, IsLicenseeVIP, CategoryID, IsDangerProbation, Priority, CustomerClass ) 
+    SELECT tmpCus.CustID
+		,	tmpCus.CTSCustID
+        ,	tmpCus.SubscriberID
+        ,	tmpCus.CreatedBy
+        ,	tmpCus.IsLicenseeVIP
+        ,	cat.CategoryID
+        ,	cat.IsDangerProbation
+        ,	cat.Priority
+        ,	cat.CustomerClass
+	FROM Temp_Customer AS tmpCus
+		INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc ON sc.CustID = tmpCus.CustID
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON sc.CustomerClass = cat.CustomerClass;
+ 
+	UPDATE Temp_CustCategory AS tmpCus
+		INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc ON sc.CustID = tmpCus.CustID
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON sc.CustomerClass = cat.CustomerClass
+	SET tmpCus.Priority = cat.Priority
+    WHERE cat.Priority = 55;
+    
+    #=======================================================================================
     UPDATE Temp_CustCategory AS tmpCus
 		INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc ON sc.CustID = tmpCus.CustID
-    SET tmpCus.Priority = -1;  
+    SET tmpCus.Priority = -1
+    WHERE tmpCus.Priority IS NULL;
     
     #=======================================================================================
     UPDATE CTS_DataCenter.CTSCustomer AS cus

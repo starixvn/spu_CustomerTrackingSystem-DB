@@ -47,9 +47,6 @@ BEGIN
 	DECLARE lv_CreatedBy 					INT UNSIGNED;
     DECLARE lv_NoOfCust 					INT;
     
-	INSERT INTO CTS_Log.CTSDebugLog(SPName, InsertTime, OtherText, JsonString1)
-    SELECT CONST_SPNAME, CURRENT_TIME(),CONCAT(ip_InputType,',',ip_IsToQueue), ip_ProblemAccounts;
-    
     SELECT cat.CustomerClass
 	INTO lv_LicVIPProblem_CC
 	FROM CTS_DataCenter.CustomerCategory AS cat

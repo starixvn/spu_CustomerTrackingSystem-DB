@@ -75,12 +75,12 @@ sp: BEGIN
     CREATE TEMPORARY TABLE Temp_SpecialCategory (
 			CategoryID 		SMALLINT UNSIGNED PRIMARY KEY
         ,	CustomerClass	SMALLINT UNSIGNED
-        ,	Priorty 		SMALLINT
+        ,	Priority 		SMALLINT
         ,	IsDangerProbation TINYINT(1)
         ,	INDEX IX_Temp_SpecialCategory_CustomerClass(CustomerClass)
     );
     #================4x======================================
-    INSERT INTO Temp_SpecialCategory( CategoryID, CustomerClass, Priorty, IsDangerProbation)
+    INSERT INTO Temp_SpecialCategory( CategoryID, CustomerClass, Priority, IsDangerProbation)
     SELECT	cat.CategoryID
 		,	cat.CustomerClass
 		,	cat.Priority
@@ -141,11 +141,14 @@ sp: BEGIN
      FROM  CTE_LastCategory AS cte;   
 
     #======NOT Update CC if Priority Value of Current Less than VIP.Priority ===========================================
+
     UPDATE Temp_CustCategory AS tmpCus
 		INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc ON sc.CustID = tmpCus.CustID
         LEFT JOIN Temp_SpecialCategory AS tmpCat ON tmpCat.CustomerClass = sc.CustomerClass
-    SET  	tmpCus.Priority = (CASE WHEN tmpCat.CustomerClass IS NULL THEN -1 ELSE tmpCus.Priority END)
-		,	tmpCus.IsDangerProbation = (CASE WHEN tmpCat.CustomerClass IS NOT NULL THEN  tmpCat.IsDangerProbation ELSE tmpCus.IsDangerProbation END) ;	
+    SET  	tmpCus.Priority = (CASE WHEN tmpCat.CustomerClass IS NULL THEN -1 
+									WHEN tmpCus.Priority > tmpCat.Priority THEN  tmpCat.Priority
+									ELSE tmpCus.Priority END)
+		,	tmpCus.IsDangerProbation = (CASE WHEN tmpCat.CustomerClass IS NOT NULL AND tmpCus.Priority > tmpCat.Priority  THEN  tmpCat.IsDangerProbation ELSE tmpCus.IsDangerProbation END);	
         
     UPDATE Temp_CustCategory AS tmpCus
     SET tmpCus.IsDataChanged = 1
