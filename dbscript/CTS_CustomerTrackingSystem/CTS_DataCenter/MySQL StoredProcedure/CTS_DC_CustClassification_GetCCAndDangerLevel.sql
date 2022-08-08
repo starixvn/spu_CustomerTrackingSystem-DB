@@ -62,7 +62,13 @@ BEGIN
         ,	CustomerClassName  	VARCHAR(50)
         ,	DangerLevel			INT
 		,	DangerLevelType		SMALLINT  
-    );    
+    );  
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustLatestCate;
+    CREATE TEMPORARY TABLE 		Temp_CustLatestCate (
+        	CustID				BIGINT UNSIGNED PRIMARY KEY
+		,	LatesCCPriority   	SMALLINT DEFAULT -1  
+    );  
     
     INSERT IGNORE INTO Temp_CustInfo (CustID,IsLicensee,IsLicenseeVIP,IsLicenseeBA,IsRobotException,SpecialCC)
     SELECT  tmp.CustID
@@ -81,7 +87,8 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CustomerCategory AS c ON t.SpecialCC = c.CustomerClass
 	SET t.SpecialCCName = c.CustomerClassName,
 		t.SpecialCCPriority = c.Priority,
-        t.SpecialCCDangerProbation = c.IsDangerProbation;
+        t.SpecialCCDangerProbation = c.IsDangerProbation
+	WHERE t.SpecialCC BETWEEN 40 AND 49;
     
     SELECT CustomerClassName
     INTO lv_LicVIP_DangerousCCName
@@ -98,6 +105,19 @@ BEGIN
     FROM CustomerCategory
     WHERE CategoryID = CONST_LICBACATEGORY;
 
+	INSERT INTO Temp_CustLatestCate(CustID,LatesCCPriority)
+    SELECT tmp.CustID, MIN(clss.Priority)
+    FROM Temp_CustInfo AS tmp,
+		LATERAL(SELECT 	cate.Priority
+				FROM CTS_DataCenter.CTSCustomerClassification AS clss
+					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID
+                WHERE clss.CustID = tmp.CustID
+					AND clss.SportGroupID IN (CONST_GROUP_PROBLEM, CONST_GROUP_NORMAL)
+                ORDER BY  cate.Priority ASC  
+						, clss.LastModifiedDate DESC
+                LIMIT 1) AS clss
+	GROUP BY tmp.CustID;
+                
     INSERT INTO Temp_CustCateInfo(CustID,CategoryID,CustomerClass,CustomerClassName,DangerLevel,DangerLevelType)
     SELECT 	tmp.CustID
 		,	clss.CategoryID
@@ -108,15 +128,16 @@ BEGIN
 				WHEN dangerlvl.DangerLevel IS NULL THEN 0
 				ELSE dangerlvl.DangerLevelType 
 			END AS DangerLevelType
-    FROM Temp_CustInfo AS tmp,
+    FROM Temp_CustInfo AS tmp
+		INNER JOIN Temp_CustLatestCate AS t ON tmp.CustID = t.CustID,
 		LATERAL(SELECT 	CASE WHEN clss.SportGroupID = CONST_GROUP_PROBLEM AND tmp.SpecialCC IS NULL THEN cate.CategoryGroup 
 							 ELSE NULL END AS CategoryID
 					,	CASE  
 							WHEN (tmp.SpecialCC IS NULL) OR (tmp.SpecialCCPriority <> -1)
 									THEN CASE
 											WHEN cate.CustomerClass = CONST_VVIPCC THEN CONST_VVIPCC
-											WHEN tmp.IsLicenseeVIP = 1 AND cate.Priority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation = 1 THEN CONST_LICVIP_SUSPICIOUSCC
-                                            WHEN tmp.IsLicenseeVIP = 1 AND cate.Priority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation IS NOT NULL THEN CONST_LICVIP_DANGEROUSCC
+											WHEN tmp.IsLicenseeVIP = 1 AND t.LatesCCPriority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation = 1 THEN CONST_LICVIP_SUSPICIOUSCC
+                                            WHEN tmp.IsLicenseeVIP = 1 AND t.LatesCCPriority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation IS NOT NULL THEN CONST_LICVIP_DANGEROUSCC
 											WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN CONST_LICVIP_SUSPICIOUSCC
                                             WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN CONST_LICVIP_DANGEROUSCC
                                             WHEN tmp.IsLicenseeBA = 1 AND cate.Priority > CONST_LICBAPRIORITY THEN CONST_LICBACC                                            
@@ -129,8 +150,8 @@ BEGIN
 							WHEN (tmp.SpecialCC IS NULL) OR (tmp.SpecialCCPriority <> -1)
 									THEN CASE
 											WHEN cate.CustomerClass = CONST_VVIPCC THEN cate.CustomerClassName
-											WHEN tmp.IsLicenseeVIP = 1 AND cate.Priority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation = 1 THEN lv_LicVIP_SuspiciousCCName
-                                            WHEN tmp.IsLicenseeVIP = 1 AND cate.Priority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation = 0 THEN lv_LicVIP_DangerousCCName
+											WHEN tmp.IsLicenseeVIP = 1 AND t.LatesCCPriority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation = 1 THEN lv_LicVIP_SuspiciousCCName
+                                            WHEN tmp.IsLicenseeVIP = 1 AND t.LatesCCPriority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation = 0 THEN lv_LicVIP_DangerousCCName
 											WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN lv_LicVIP_SuspiciousCCName
                                             WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN lv_LicVIP_DangerousCCName
                                             WHEN tmp.IsLicenseeBA = 1 AND cate.Priority > CONST_LICBAPRIORITY THEN lv_LicBA_CCName                                            
