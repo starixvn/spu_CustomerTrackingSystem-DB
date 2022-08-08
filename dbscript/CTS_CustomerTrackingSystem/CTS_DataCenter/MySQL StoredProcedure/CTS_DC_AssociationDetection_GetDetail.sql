@@ -35,6 +35,7 @@ sp:BEGIN
 		,	CustID 			BIGINT UNSIGNED
         ,	Username		VARCHAR(50)
         ,	Recommend		BIGINT
+        ,	RoleID			INT
         ,	INDEX			IX_Temp_Cust(CustID)
 	);
     
@@ -71,11 +72,12 @@ sp:BEGIN
 		,	AgentAssociationType	VARCHAR(50)
 	);
     
-    INSERT IGNORE INTO Temp_Cust(CTSCustID, CustID, Username, Recommend)
+    INSERT IGNORE INTO Temp_Cust(CTSCustID, CustID, Username, Recommend, RoleID)
 	SELECT 	cus.CTSCustID
 		, 	cus.CustID
         ,	cus.Username
-        ,	cus.Recommend			
+        ,	cus.Recommend	
+		,	cus.RoleID
 	FROM JSON_TABLE(CONCAT('[',ip_ListCTSCustID,']'),'$[*]' COLUMNS(NESTED PATH '$' COLUMNS (CTSCustID BIGINT UNSIGNED PATH '$'))) AS tmp
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = tmp.CTSCustID;
 
@@ -130,6 +132,41 @@ sp:BEGIN
 			INNER JOIN Temp_Cust AS cus ON ma.FromCTSCustID = cus.CTSCustID
 		WHERE ma.ToCTSCustID = ip_CTSCustID;
         
+		INSERT IGNORE INTO Temp_Level1(CTSCustID, AssociationType)
+		SELECT  tmp.CTSCustID AS OrigID
+			,	"Betting Pattern"
+		FROM CTS_DataCenter.AssociationByAI AS ai 
+			INNER JOIN Temp_Cust AS tmp ON ai.ToCustID = tmp.CustID 
+		WHERE ai.FromCustID = lv_CustID;
+		
+		INSERT IGNORE INTO Temp_Level1(CTSCustID, AssociationType)
+		SELECT  tmp.CTSCustID AS OrigID
+			,	"Betting Pattern"
+		FROM CTS_DataCenter.AssociationByAI AS ai 
+			INNER JOIN Temp_Cust AS tmp ON ai.FromCustID = tmp.CustID 
+		WHERE ai.ToCustID = lv_CustID;
+        
+        INSERT IGNORE INTO Temp_Level1(CTSCustID, AssociationType)
+		SELECT 	cus.CTSCustID
+			,	"Betting Pattern"
+		FROM AssociationGroupByAI AS aga 
+			INNER JOIN AssociationGroupByAI AS lv1 ON aga.GroupID = lv1.GroupID  
+			INNER JOIN Temp_Cust AS cus ON cus.CustID = lv1.CustID
+		WHERE aga.CustID = lv_CustID;
+        
+        INSERT IGNORE INTO Temp_Level1(CTSCustID, AssociationType)
+		SELECT  tmp.CTSCustID AS OrigID
+			,	"IP"
+		FROM CTS_DataCenter.AssociationByIP AS ip 
+			INNER JOIN Temp_Cust AS tmp ON ip.ToCustID = tmp.CustID 
+		WHERE ip.FromCustID = lv_CustID;
+		
+		INSERT IGNORE INTO Temp_Level1(CTSCustID, AssociationType)
+		SELECT  tmp.CTSCustID AS OrigID
+			,	"IP"
+		FROM CTS_DataCenter.AssociationByIP AS ip 
+			INNER JOIN Temp_Cust AS tmp ON ip.FromCustID = tmp.CustID 
+		WHERE ip.ToCustID = lv_CustID;
     END IF;
     
     IF ip_HasAgent = 1 THEN
@@ -167,7 +204,7 @@ sp:BEGIN
 			GROUP BY CTSCustID
 		) AS tbl
 			INNER JOIN Temp_Recommend AS re ON re.CTSCustID = tbl.CTSCustID
-			LEFT JOIN Temp_Cust AS cus ON cus.Recommend = re.Recommend;
+			INNER JOIN Temp_Cust AS cus ON cus.Recommend = re.Recommend AND cus.RoleID = 1;
     END IF;
     
     SELECT 	ip_CTSCustID AS FromCTSCustID

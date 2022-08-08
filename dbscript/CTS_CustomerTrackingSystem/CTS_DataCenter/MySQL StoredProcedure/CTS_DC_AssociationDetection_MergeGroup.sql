@@ -85,12 +85,19 @@ sp:BEGIN
         ,	Total 		INT
 		,	UNIQUE 	    IX_Temp_GroupCount(GroupID)
 	);
-    
+    # 1-Device, 2-Manual, 3-AI, 4-AIGroup, 5-IP, 6 - Agent, 7 - SharedIP, 8 - SharedMatches
     DROP TEMPORARY TABLE IF EXISTS Temp_Graph;
 	CREATE TEMPORARY TABLE 	Temp_Graph (
 			OrigID 				BIGINT  
 		,	DestID   			BIGINT
-		,	AssociationType		SMALLINT # 1-Device, 2-Manual, 3-AI, 4-AIGroup, 5-IP, 6 - Agent, 7 - SharedIP, 8 - SharedMatches
+        ,	HasDevice			BIT DEFAULT 0
+        ,	HasManual			BIT DEFAULT 0
+        ,	HasAI				BIT DEFAULT 0
+        ,	HasAIGroup			BIT DEFAULT 0
+        ,	HasIP				BIT DEFAULT 0
+        ,	HasAgent			BIT DEFAULT 0
+        ,	HasSharedIP			BIT DEFAULT 0
+        ,	HasSharedMatches	BIT DEFAULT 0
 		,	PRIMARY KEY(OrigID, DestID)
 		,	INDEX IX_Temp_Graph(DestID,OrigID)
 	);
@@ -99,7 +106,7 @@ sp:BEGIN
 	CREATE TEMPORARY TABLE 	Temp_Primary (
 			FromCTSCustID 		BIGINT  
 		,	ToCTSCustID   		BIGINT
-        ,	AssociationType		SMALLINT # 1-Device, 2-Manual, 3-AI, 4-AIGroup, 5-IP, 6 - SharedIP, 7 - SharedMatches
+        ,	AssociationType		SMALLINT # 1-Device, 2-Manual, 3-AI, 4-AIGroup, 5-IP, 6 - Agent, 7 - SharedIP, 8 - SharedMatches
 		,	PRIMARY KEY(FromCTSCustID, ToCTSCustID)
 		,	INDEX Temp_Primary(ToCTSCustID,FromCTSCustID)
 	);
@@ -178,47 +185,73 @@ sp:BEGIN
 	)) AS js;
     
     /*****************************Build Graph Struct**************************************************/
-    INSERT IGNORE INTO Temp_Graph(OrigID,DestID, AssociationType)
+    INSERT IGNORE INTO Temp_Graph(OrigID,DestID, HasDevice, HasManual, HasAI, HasAIGroup, HasIP)
     SELECT 	FromCTSCustID
 		,	ToCTSCustID
-        ,	AssociationType
-	FROM Temp_Primary
-    UNION ALL 
-    SELECT 	FromCTSCustID
-		,	ToCTSCustID
-		,	6 AS AssociationType
-	FROM Temp_Agent
-	UNION ALL 
-    SELECT 	FromCTSCustID
-		,	ToCTSCustID
-        ,	7 AS AssociationType
-	FROM Temp_SharedIP
-	UNION ALL 
-    SELECT 	FromCTSCustID
-		,	ToCTSCustID
-        ,	8 AS AssociationType
-	FROM Temp_SharedMatches;
+        ,	CASE WHEN AssociationType = 1 THEN 1 ELSE 0 END AS HasDevice
+        ,	CASE WHEN AssociationType = 2 THEN 1 ELSE 0 END AS HasManual
+        ,	CASE WHEN AssociationType = 3 THEN 1 ELSE 0 END AS HasAI
+        ,	CASE WHEN AssociationType = 4 THEN 1 ELSE 0 END AS HasAIGroup
+        ,	CASE WHEN AssociationType = 5 THEN 1 ELSE 0 END AS HasIP
+	FROM Temp_Primary;
     
-    INSERT IGNORE INTO Temp_Graph(OrigID,DestID,AssociationType)
-    SELECT 	ToCTSCustID 
-		,	FromCTSCustID
-		,	AssociationType
-	FROM Temp_Primary
-    UNION ALL 
-    SELECT 	ToCTSCustID 
-		,	FromCTSCustID
-        ,	6 AS AssociationType
+    INSERT IGNORE INTO Temp_Graph(OrigID,DestID,HasAgent) 
+    SELECT 	FromCTSCustID
+		,	ToCTSCustID
+        ,	1 AS HasAgent
 	FROM Temp_Agent
-	UNION ALL 
-    SELECT 	ToCTSCustID 
-		,	FromCTSCustID
-        ,	7 AS AssociationType
+    ON DUPLICATE KEY UPDATE HasAgent = 1;
+    
+	INSERT IGNORE INTO Temp_Graph(OrigID,DestID,HasSharedIP)  
+    SELECT 	FromCTSCustID
+		,	ToCTSCustID
+        ,	1 AS HasSharedIP
 	FROM Temp_SharedIP
-	UNION ALL 
+    ON DUPLICATE KEY UPDATE HasSharedIP = 1;
+    
+	INSERT IGNORE INTO Temp_Graph(OrigID,DestID,HasSharedMatches)  
+    SELECT 	FromCTSCustID
+		,	ToCTSCustID
+        ,	1 AS HasSharedMatches
+	FROM Temp_SharedMatches
+    ON DUPLICATE KEY UPDATE HasSharedMatches = 1;
+    
+    INSERT IGNORE INTO Temp_Graph(OrigID,DestID, HasDevice, HasManual, HasAI, HasAIGroup, HasIP)
+    SELECT 	ToCTSCustID
+		,	FromCTSCustID
+        ,	CASE WHEN AssociationType = 1 THEN 1 ELSE 0 END AS HasDevice
+        ,	CASE WHEN AssociationType = 2 THEN 1 ELSE 0 END AS HasManual
+        ,	CASE WHEN AssociationType = 3 THEN 1 ELSE 0 END AS HasAI
+        ,	CASE WHEN AssociationType = 4 THEN 1 ELSE 0 END AS HasAIGroup
+        ,	CASE WHEN AssociationType = 5 THEN 1 ELSE 0 END AS HasIP
+	FROM Temp_Primary AS tmp
+	ON DUPLICATE KEY UPDATE HasDevice = CASE WHEN tmp.AssociationType = 1 THEN 1 ELSE HasDevice END
+						,	HasManual = CASE WHEN tmp.AssociationType = 2 THEN 1 ELSE HasManual END
+                        ,	HasAI = CASE WHEN tmp.AssociationType = 3 THEN 1 ELSE HasAI END
+                        ,	HasAIGroup = CASE WHEN tmp.AssociationType = 4 THEN 1 ELSE HasAIGroup END
+                        ,	HasIP = CASE WHEN tmp.AssociationType = 5 THEN 1 ELSE HasIP END;
+    
+    
+    INSERT IGNORE INTO Temp_Graph(OrigID,DestID,HasAgent) 
     SELECT 	ToCTSCustID 
 		,	FromCTSCustID
-        ,	8 AS AssociationType
-	FROM Temp_SharedMatches;
+        ,	1 AS HasAgent
+	FROM Temp_Agent
+    ON DUPLICATE KEY UPDATE HasAgent = 1;
+    
+	INSERT IGNORE INTO Temp_Graph(OrigID,DestID,HasSharedIP)  
+    SELECT 	ToCTSCustID 
+		,	FromCTSCustID
+        ,	1 AS HasSharedIP
+	FROM Temp_SharedIP
+    ON DUPLICATE KEY UPDATE HasSharedIP = 1;
+    
+	INSERT IGNORE INTO Temp_Graph(OrigID,DestID,HasSharedMatches)  
+    SELECT 	ToCTSCustID 
+		,	FromCTSCustID
+        ,	1 AS HasSharedMatches
+	FROM Temp_SharedMatches
+    ON DUPLICATE KEY UPDATE HasSharedMatches = 1;
     
 
     /*****************************Merge Group**************************************************/
@@ -280,43 +313,41 @@ sp:BEGIN
     INSERT INTO Temp_DestIDCount(DestID)
     SELECT grp.DestID
     FROM Temp_Graph AS grp
-    WHERE EXISTS (SELECT 1 FROM Temp_Cust AS cus WHERE cus.CTSCustID = grp.OrigID AND grp.AssociationType IN (1,4))
+    WHERE EXISTS (SELECT 1 FROM Temp_Cust AS cus WHERE cus.CTSCustID = grp.OrigID AND (grp.HasDevice = 1 OR grp.HasAIGroup = 1))
     GROUP BY DestID
     HAVING COUNT(1) > 1;
     
-    INSERT INTO Temp_CustAssociationType(CTSCustID, AssociationType)
+    INSERT IGNORE INTO Temp_CustAssociationType(CTSCustID, AssociationType)
     SELECT 	cus.CTSCustID
 		,   'Device'
     FROM Temp_Cust AS cus
     WHERE EXISTS (SELECT 1 
 				  FROM Temp_Graph AS grp 
 					INNER JOIN Temp_DestIDCount AS des ON grp.DestID = des.DestID
-				  WHERE cus.CTSCustID = grp.OrigID AND grp.AssociationType = 1);
+				  WHERE cus.CTSCustID = grp.OrigID AND grp.HasDevice = 1);
 	
-    INSERT INTO Temp_CustAssociationType(CTSCustID, AssociationType)
+    INSERT IGNORE INTO Temp_CustAssociationType(CTSCustID, AssociationType)
     WITH CTE AS (SELECT cus.CTSCustID
-					,	CASE WHEN grp.AssociationType = 2 THEN "Manually"
-							 WHEN grp.AssociationType = 3 THEN "Betting Pattern"
-							 WHEN grp.AssociationType = 4 THEN "IP"
-							 WHEN grp.AssociationType = 6 THEN "Agent"
-							 WHEN grp.AssociationType = 7 THEN "IP(last3days)"
-							 WHEN grp.AssociationType = 8 THEN "Match"
-						 END AS AssociationType
+					,	CONCAT(IF(HasManual =1, ", Manually","")
+                              ,IF(HasAI =1, ", Betting Pattern","")
+                              ,IF(HasIP =1, ", IP","")
+                              ,IF(HasAgent =1, ", Agent","")
+                              ,IF(HasSharedIP =1, ", IP(last3days)","")
+                              ,IF(HasSharedMatches =1, ", Match","")) AS AssociationType
 				FROM Temp_Cust AS cus
-					INNER JOIN Temp_Graph AS grp ON cus.CTSCustID = grp.OrigID AND grp.AssociationType NOT IN (1,4))
+					INNER JOIN Temp_Graph AS grp ON cus.CTSCustID = grp.OrigID AND (grp.HasDevice = 0 OR grp.HasAIGroup = 0))
 	SELECT CTSCustID
-		,	GROUP_CONCAT(DISTINCT AssociationType)
-    FROM CTE
-    GROUP BY CTSCustID;
+		,	SUBSTR(AssociationType, 2)
+    FROM CTE;
     
     INSERT INTO Temp_CustAssociationType(CTSCustID, AssociationType)
     SELECT 	cus.CTSCustID
-		,   'Betting Pattern'
+		,   'Betting Pattern' 
     FROM Temp_Cust AS cus
     WHERE EXISTS (SELECT 1 
 				  FROM Temp_Graph AS grp 
 					INNER JOIN Temp_DestIDCount AS des ON grp.DestID = des.DestID
-				  WHERE cus.CTSCustID = grp.OrigID AND grp.AssociationType = 4)
+				  WHERE cus.CTSCustID = grp.OrigID AND grp.HasAIGroup = 1)
 	ON DUPLICATE KEY UPDATE AssociationType = CASE WHEN AssociationType LIKE '%Betting Pattern%' THEN AssociationType
 												   ELSE CONCAT(AssociationType,', Betting Pattern') END;
     
