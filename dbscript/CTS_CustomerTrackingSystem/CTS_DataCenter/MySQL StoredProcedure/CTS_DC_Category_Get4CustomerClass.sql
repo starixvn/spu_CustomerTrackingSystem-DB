@@ -16,11 +16,10 @@ BEGIN
 		Param's Explanation:
 	*/ 
     
-	SELECT DISTINCT c.CategoryName, c.CategoryNameCN, cc.CustomerClass
+	SELECT DISTINCT c.CategoryName, c.CategoryNameCN, c.CustomerClass
 	FROM CTS_DataCenter.CustomerCategory AS c
-		INNER JOIN CTS_DataCenter.CategoryToCustomerClass AS cc ON c.CategoryID = cc.CategoryID
-	WHERE c.CategoryNameCN IS NOT NULL AND  c.CategoryNameCN <> ""
-	ORDER BY cc.CustomerClass ASC;
+	WHERE c.CategoryNameCN IS NOT NULL AND  c.CategoryNameCN <> "" AND CustomerClass IS NOT NULL
+	ORDER BY c.CustomerClass ASC;
     
 END$$
 
