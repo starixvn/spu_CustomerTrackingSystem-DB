@@ -25,9 +25,9 @@ BEGIN
 		Param's Explanation (filtered by):      
 			CALL CTS_DC_CustClassification_PA_MappingCategory ('Category','[{"CustID": 3679910,"ReasonID": 3679910,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10, "MatchID": 1}]');
 	*/
-    DECLARE CONST_ROBOT				SMALLINT DEFAULT 163;
-    DECLARE CONST_ROBOT_LOSING		SMALLINT DEFAULT 164;
-
+    DECLARE CONST_ROBOT					SMALLINT DEFAULT 163;
+    DECLARE CONST_ROBOT_LOSING			SMALLINT DEFAULT 164;    
+    #=======================================================================================================
     DROP TEMPORARY TABLE IF EXISTS Temp_PA;    
 	CREATE TEMPORARY TABLE Temp_PA(	  
 		/*Cust info*/
@@ -48,8 +48,7 @@ BEGIN
         
         /*Get Mapping Value*/
 		, 	InputCategoryID		    SMALLINT UNSIGNED
-        ,	InputCategoryGroup     	SMALLINT UNSIGNED      
-        ,	IsProbationStatus		BOOLEAN  NULL
+        ,	InputCategoryGroup     	SMALLINT UNSIGNED    
         , 	CategoryID		   		SMALLINT UNSIGNED
         , 	ReasonID		   		INT
         ,	CategoryGroup     		SMALLINT UNSIGNED
@@ -78,12 +77,29 @@ BEGIN
         ,	INDEX IX_Temp_PA(IsDataChanged,LastModifiedDate)
     );  
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_RobotWinlossStatus;    
-	CREATE TEMPORARY TABLE Temp_RobotWinlossStatus(	
+    DROP TEMPORARY TABLE IF EXISTS Temp_PAWinlossStatus;    
+	CREATE TEMPORARY TABLE Temp_PAWinlossStatus(	
 			CustID					BIGINT UNSIGNED PRIMARY KEY
         , 	WinlossStatus			SMALLINT /*LOSING  = 0 (PROBATION), WINNING = 2 (NOT PROBATION);*/
 	);
-   
+    
+    #======================================
+	DROP TEMPORARY TABLE IF EXISTS Temp_SpecialCategory;
+    CREATE TEMPORARY TABLE Temp_SpecialCategory (
+			CategoryID 		SMALLINT UNSIGNED PRIMARY KEY
+        ,	CustomerClass	SMALLINT UNSIGNED
+        ,	Priorty 		SMALLINT
+        
+        ,	INDEX IX_Temp_SpecialCategory_CustomerClass(CustomerClass)
+    );
+    #================4x======================================
+    INSERT INTO Temp_SpecialCategory( CategoryID, CustomerClass, Priorty)
+    SELECT	cat.CategoryID
+		,	cat.CustomerClass
+		,	cat.Priority
+	FROM CTS_DataCenter.CustomerCategory AS cat
+    WHERE cat.Priority = 55; # Handle for 4x
+    
     IF ip_InputType = 'Category' THEN    
         INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, InputCategoryID, InputCategoryGroup,  IsLicensee, CreatedBy, Remark, IsDirectPA
 			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsDataChanged, SpecialCC, IsProbation, RelevantCategoryID, LastModifiedDate, PinCTSCustID, MatchID)
@@ -139,21 +155,22 @@ BEGIN
                 , 	MatchID				INT 			PATH "$.MatchID"	
 		)) AS tmpJs
 			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on tmpJs.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
-			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CTSCustID = sp.CTSCustID 
+			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CTSCustID = sp.CTSCustID AND sp.CustomerClass NOT IN (SELECT DISTINCT tmp.CustomerClass FROM Temp_SpecialCategory AS tmp)
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.CategoryID;		
     
-		INSERT INTO Temp_RobotWinlossStatus(CustID, WinlossStatus)
+		INSERT INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
 		SELECT DISTINCT t.CustID
 			,	CASE 
-					WHEN cc.IsPAProbation = 1 THEN 0
+					WHEN cc.IsDangerProbation = 1 THEN 0
 					ELSE 2
 				END AS WinlossStatus
 		FROM Temp_PA AS t
 			INNER JOIN CTSCustomerClassification AS c ON t.CustID = c.CustID
-            INNER JOIN CustomerCategory AS cc ON c.CategoryID = cc.CategoryID;
+            INNER JOIN CustomerCategory AS cc ON c.CategoryID = cc.CategoryID
+		WHERE c.SportGroupID = 0;
 		
 		UPDATE Temp_PA AS t
-			INNER JOIN Temp_RobotWinlossStatus AS r ON t.CustID = r.CustID
+			INNER JOIN Temp_PAWinlossStatus AS r ON t.CustID = r.CustID
 		SET t.WinlossStatus = r.WinlossStatus,
 			t.IsProbation = (CASE 	
 								WHEN r.WinlossStatus = 0 THEN 1  # LOSING
@@ -191,7 +208,7 @@ BEGIN
 			,	tmpPA.RelevantIsProbation = tmpCat.IsProbation;	            
     END IF;   
  
-    IF ip_InputType = 'Reason' THEN    
+    IF ip_InputType = 'Reason' THEN
 		INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, InputCategoryID, InputCategoryGroup,  IsLicensee, CreatedBy, Remark, IsDirectPA
 			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, SpecialCC, IsProbation, RelevantCategoryID, TVSRequestID, ReasonID, PinCTSCustID)
 		SELECT	DISTINCT tmpJs.CustID
@@ -239,21 +256,24 @@ BEGIN
 		)) AS tmpJs
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
 			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on cus.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
-			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON cus.CTSCustID = sp.CTSCustID,
+			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON cus.CTSCustID = sp.CTSCustID AND sp.CustomerClass NOT IN (SELECT DISTINCT tmp.CustomerClass FROM Temp_SpecialCategory AS tmp),
             LATERAL (SELECT cat.CategoryGroup, cat.RelevantCategoryID FROM CTS_DataCenter.CustomerCategory AS cat WHERE cat.ReasonID = tmpJs.ReasonID LIMIT 1) tmpLtr;
-		
-        INSERT INTO Temp_RobotWinlossStatus(CustID, WinlossStatus)
+		                
+		CALL CTS_DC_CustClassification_PA_RemoveOldTVSRequest(); 
+        
+        INSERT INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
 		SELECT DISTINCT t.CustID
 			,	CASE 
-					WHEN cc.IsPAProbation = 1 THEN 0
+					WHEN cc.IsDangerProbation = 1 THEN 0
 					ELSE 2
 				END AS WinlossStatus
 		FROM Temp_PA AS t
 			INNER JOIN CTSCustomerClassification AS c ON t.CustID = c.CustID
-            INNER JOIN CustomerCategory AS cc ON c.CategoryID = cc.CategoryID;
+            INNER JOIN CustomerCategory AS cc ON c.CategoryID = cc.CategoryID
+		WHERE c.SportGroupID = 0;
 		
 		UPDATE Temp_PA AS t
-			INNER JOIN Temp_RobotWinlossStatus AS r ON t.CustID = r.CustID
+			INNER JOIN Temp_PAWinlossStatus AS r ON t.CustID = r.CustID
 		SET t.WinlossStatus = r.WinlossStatus,
 			t.IsProbation = (CASE 	
 								WHEN r.WinlossStatus = 0 THEN 1  # LOSING
@@ -288,9 +308,7 @@ BEGIN
 				WHERE cat.CategoryID = tmpPA.RelevantCategoryID LIMIT 1) AS tmpCat
 		SET 	tmpPA.RelevantCategoryGroup = tmpCat.CategoryGroup	
 			,	tmpPA.RelevantCategoryID = tmpCat.CategoryGroup
-			,	tmpPA.RelevantIsProbation = tmpCat.IsProbation;
-                
-		CALL CTS_DC_CustClassification_PA_RemoveOldTVSRequest();        
+			,	tmpPA.RelevantIsProbation = tmpCat.IsProbation;       
 	END IF;
     
 END$$

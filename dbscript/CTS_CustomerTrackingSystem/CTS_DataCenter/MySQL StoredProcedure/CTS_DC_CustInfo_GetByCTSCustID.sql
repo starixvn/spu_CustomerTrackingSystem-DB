@@ -17,6 +17,7 @@ BEGIN
 			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
             - 20210423@Casey.Huynh: Get cust status and Danger from CTS instead of MainDB [Redmine ID: #152259] 
 			- 20220523@Aries.Nguyen: Return IsLicensee, IsInternal  [Redmine ID: #152259] 
+			- 20220707@Long.Luu: Return Licensee VIP & BA info [Redmine ID: 174219]
 
 		Param's Explanation (filtered by):
 	*/
@@ -35,8 +36,10 @@ BEGIN
 		, 	cus.Danger1
 		, 	cus.Danger2
 		, 	cus.Danger3
-		,	cus.IsLicensee
 		,	cus.IsInternal 
+		,	cus.IsLicensee
+        ,	cus.IsLicenseeVIP
+        ,	cus.IsLicenseeBA
 	FROM		CTS_DataCenter.CTSCustomer AS cus
 		INNER JOIN  CTS_Admin.Subscriber AS sub ON cus.SubscriberID	= sub.SubscriberID
 		LEFT JOIN CTS_DataCenter.StaticList AS st ON st.ListID = 1 AND cus.CustStatusID = st.ItemID

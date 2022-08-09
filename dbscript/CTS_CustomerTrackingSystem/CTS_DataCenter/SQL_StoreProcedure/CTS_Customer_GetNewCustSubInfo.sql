@@ -20,6 +20,7 @@ AS
 		- 20210115@Casey.Huynh: Created [Redmine ID: 148849]
 		- 20220122@Long.Luu:	Support for case already known list of CustID [Redmine ID: 165607]
 		- 20220616@Long.Luu:	Get Licensee Info [Redmine ID: 174136]
+		- 20220707@Long.Luu:	Get Lic VIP & BA Info [Redmine ID: 174219]
 
 	Param Explaination:
 		- @QueryType: 1 (default) get by range, 2 get by list CustId
@@ -40,8 +41,34 @@ BEGIN;
 			CustId		INT NOT NULL PRIMARY KEY
 	);
 
+	IF OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpCustomers;
+	END;
+
+	CREATE TABLE #tmpCustomers (
+			CustID			INT	
+		,	CustSubID		INT
+		,	UserName		VARCHAR(30)
+		,	UserName2		VARCHAR(50)
+		,	SiteID			INT
+		,	[Site]			VARCHAR(10)
+		,	RoleID			TINYINT
+		,	CurrencyID		TINYINT
+		,	Currency		VARCHAR(50)
+		,	SRecommend		INT
+		,	MRecommend		INT
+		,	Recommend		INT
+		,	CreatedDate		DATETIME	
+		,	IsLicensee		BIT		
+		,	IsLicenseeVIP	BIT DEFAULT 0		
+		,	IsLicenseeBA	BIT DEFAULT 0	
+		,	PRIMARY KEY		(CustID,CustSubID)		
+	);
+
 	IF (@QueryType = 1)
 		BEGIN
+			INSERT INTO #tmpCustomers(CustID,CustSubID,UserName,UserName2,SiteID,[Site],RoleID,CurrencyID,Currency,SRecommend,MRecommend,Recommend,CreatedDate,IsLicensee)
 			SELECT TOP (@rowSize) 
 					sub.custid		AS CustID
 				,	sub.subaccid	AS CustSubID
@@ -71,6 +98,7 @@ BEGIN;
 			SELECT	val AS CustId
 			FROM	bodb02.dbo.strSplit(@CustIdList, ',');
 
+			INSERT INTO #tmpCustomers(CustID,CustSubID,UserName,UserName2,SiteID,[Site],RoleID,CurrencyID,Currency,SRecommend,MRecommend,Recommend,CreatedDate,IsLicensee)
 			SELECT	sub.custid		AS CustID
 				,	sub.subaccid	AS CustSubID
 				,	sub.username	AS UserName
@@ -93,7 +121,35 @@ BEGIN;
 				LEFT JOIN dbo.Dep_CustSuper AS cs WITH(NOLOCK) ON cust.Srecommend = cs.custid
 			ORDER BY sub.subaccid;
 		END;
+	UPDATE a WITH(ROWLOCK, UPDLOCK)
+	SET a.IsLicenseeVIP = 1
+	FROM #tmpCustomers AS a
+		INNER JOIN DBCUST.custDB.dbo.Dep_CustVIP AS c WITH(NOLOCK) ON a.custid = c.CustID
+	WHERE	a.IsLicensee = 1;
 
+	UPDATE a WITH(ROWLOCK, UPDLOCK)
+	SET a.IsLicenseeBA = 1
+	FROM #tmpCustomers AS a
+		INNER JOIN DBCUST.custDB.dbo.Dep_CustBAActive AS s WITH(NOLOCK) ON a.custid = s.custid
+	WHERE	a.IsLicensee = 1;
+
+	SELECT	t.CustID
+		,	t.CustSubID
+		,	t.UserName
+		,	t.UserName2
+		,	t.SiteID
+		,	t.Site
+		,	t.RoleID
+		,	t.CurrencyID
+		,	t.Currency
+		,	t.SRecommend
+		,	t.MRecommend
+		,	t.Recommend
+		,	t.CreatedDate				
+		,	t.IsLicensee		
+		,	t.IsLicenseeVIP	
+		,	t.IsLicenseeBA
+	FROM #tmpCustomers AS t;
 END;
 
 GO

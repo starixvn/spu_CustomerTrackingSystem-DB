@@ -25,6 +25,7 @@ AS
 		- 20211214@Long.Luu:	Return more data (danger from 1 to 5) [Redmine: #165105]
 		- 20220616@Long.Luu:	Get Licensee Info [Redmine ID: 174136]
 		- 20220621@Long.Luu:	Enhance way to get licensee info [Redmine ID: 174136]
+		- 20220707@Long.Luu:	Get Lic VIP & BA Info [Redmine ID: 174219]
 
 	Developer's Notes:
 		- @sourceType: 0- GET New Customer Info, 1- Get Info Customer table, 2-Get CustInfo table, 3 GET Info CustProductStatus table
@@ -65,6 +66,8 @@ BEGIN;
 		,	Recommend		INT
 		,	CreatedDate		DATETIME	
 		,	IsLicensee		BIT		
+		,	IsLicenseeVIP	BIT DEFAULT 0		
+		,	IsLicenseeBA	BIT DEFAULT 0		
 	);
 
 	INSERT	INTO #tmpCustomers (CustId)
@@ -128,6 +131,18 @@ BEGIN;
 			INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON a.custid = c.custid
 			INNER JOIN bodb02.dbo.CustProductStatus AS s WITH(NOLOCK) ON a.custid = s.custid
 		WHERE	a.CustStatusID IS NULL;
+
+		UPDATE a WITH(ROWLOCK, UPDLOCK)
+		SET a.IsLicenseeVIP = 1
+		FROM #tmpCustomers AS a
+			INNER JOIN DBCUST.custDB.dbo.Dep_CustVIP AS c WITH(NOLOCK) ON a.custid = c.CustID
+		WHERE	a.IsLicensee = 1;
+
+		UPDATE a WITH(ROWLOCK, UPDLOCK)
+		SET a.IsLicenseeBA = 1
+		FROM #tmpCustomers AS a
+			INNER JOIN DBCUST.custDB.dbo.Dep_CustBAActive AS s WITH(NOLOCK) ON a.custid = s.custid
+		WHERE	a.IsLicensee = 1;
 	END;
 
 	IF (@sourceType = 3)
@@ -164,6 +179,8 @@ BEGIN;
 			,	a.Danger4		AS Danger4
 			,	a.Danger5		AS Danger5
 			,	a.IsLicensee	AS IsLicensee
+			,	a.IsLicenseeVIP	AS IsLicenseeVIP
+			,	a.IsLicenseeBA	AS IsLicenseeBA
 		FROM #tmpCustomers AS a WITH(NOLOCK);
 	END;
 
@@ -182,6 +199,8 @@ BEGIN;
 			,	a.Recommend		AS Recommend
 			,	a.CreatedDate	AS CreatedDate
 			,	a.IsLicensee	AS IsLicensee
+			,	a.IsLicenseeVIP	AS IsLicenseeVIP
+			,	a.IsLicenseeBA	AS IsLicenseeBA
 		FROM #tmpCustomers AS a WITH(NOLOCK)
 	END;
 

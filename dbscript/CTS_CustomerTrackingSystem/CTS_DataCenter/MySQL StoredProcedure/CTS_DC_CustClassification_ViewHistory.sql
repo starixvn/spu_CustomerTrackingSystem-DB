@@ -24,17 +24,35 @@ BEGIN
 			- 20211116@Aries.Nguyen: Return history with CTSUser is null[Redmine ID: #156935]
             - 20220510@Irena.Vo: Update for return CreatedBy [Redmine ID: #171512]
 			- 20220519@Aries.Nguyen: Renovate the Category Log History [Redmine ID: #172560]
+            - 20200705@Casey.Huynh: Add New Category LicVIP, LicBA [Redmine ID: #174219]
 		Param's Explanation (filtered by):		
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_ViewHistory(43600889);
 	*/   
-		DECLARE CONST_CATEGORY_NEWMEMBER 				INT DEFAULT 201;
-		DECLARE	CONST_CATEGORY_NORMALMEMBER 			INT DEFAULT 202;
-		DECLARE CONST_CATEGORY_SMART 					INT DEFAULT 203;
-		DECLARE CONST_CATEGORY_HIGHRISK 				INT DEFAULT 204;
-		DECLARE CONST_CATEGORY_VIP 						INT DEFAULT 205;
-		DECLARE CONST_CATEGORY_PROBATION				INT DEFAULT 206;
-		DECLARE CONST_CATEGORY_INACTIVE					INT DEFAULT 1000;
+		DECLARE CONST_LICBA_CATEGORYID				SMALLINT UNSIGNED DEFAULT 2;
+        DECLARE CONST_LICVIPPROBLEM_CATEGORYID		SMALLINT UNSIGNED DEFAULT 3;
+		DECLARE CONST_LICVIPNORMAL_CATEGORYID		SMALLINT UNSIGNED DEFAULT 4;        
+        
+        DECLARE lv_LicBA_CategoryName					VARCHAR(50);
+		DECLARE lv_LicVIPProblem_CC					SMALLINT UNSIGNED;
+		DECLARE lv_LicVIPNormal_CC					SMALLINT UNSIGNED;
+        DECLARE lv_LicVIPProblem_CategoryName			VARCHAR(50);
+        DECLARE lv_LicVIPNormal_CategoryName			VARCHAR(50);        
+        
+        SELECT cat.CategoryName, cat.CustomerClass
+        INTO lv_LicVIPProblem_CategoryName, lv_LicVIPProblem_CC
+        FROM CTS_DataCenter.CustomerCategory AS cat
+        WHERE cat.CategoryID = CONST_LICVIPPROBLEM_CATEGORYID;
+        
+        SELECT cat.CategoryName, cat.CustomerClass
+        INTO lv_LicVIPNormal_CategoryName, lv_LicVIPNormal_CC
+        FROM CTS_DataCenter.CustomerCategory AS cat
+        WHERE cat.CategoryID = CONST_LICVIPNORMAL_CATEGORYID;        
+        
+        SELECT cat.CategoryName
+        INTO lv_LicBA_CategoryName
+        FROM CTS_DataCenter.CustomerCategory AS cat
+        WHERE cat.CategoryID = CONST_LICBA_CATEGORYID;  
         
 		SELECT  temp.ID
 			,	temp.LastModifiedDate AS CreatedTime
@@ -60,6 +78,10 @@ BEGIN
             ,	temp.IsFromTW
             ,	temp.IsFromCTS
             ,	temp.IsFromAI
+			,	(CASE	WHEN temp.TargetCC = lv_LicVIPProblem_CC THEN lv_LicVIPProblem_CategoryName
+						WHEN temp.TargetCC = lv_LicVIPNormal_CC THEN lv_LicVIPNormal_CategoryName 
+                        ELSE NULL END) AS LicVIP
+            ,	(CASE	WHEN temp.TargetCC = 14 THEN lv_LicBA_CategoryName ELSE NULL END) AS LicBA
 		FROM 	CTS_DataCenter.CTSCustomerClassification_History AS temp
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS cc1 ON temp.CategoryID = cc1.CategoryID
 			LEFT JOIN CTS_DataCenter.StaticList AS s ON s.ListID = 4 AND temp.SourceTypeID = s.ItemID

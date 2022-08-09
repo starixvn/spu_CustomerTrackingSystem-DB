@@ -15,36 +15,51 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original:
 		Revisions:
-            - 20220519@Casey.Huynh: Created. Renovate PA Process [RedmineID: #172061]
+			- 20220519@Casey.Huynh: Created. Renovate PA Process [RedmineID: #172061]
             - 20220627@Casey.Huynh: Add MatchID To Remark  [Redmine ID: #174218]
             - 20220801@Long.Luu: Fix cannot rescan Normal when removing PA(Losing)  [Redmine ID: #176163]
+            - 20220713@Casey.Huynh: Switching for Licensee VIP & BA Categories [Redmine ID: #174219]
             
         Param's Explanation (filtered by):
 			- ip_InputType: 1: Category, 2: Reason
         Example:
 			
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_PA_Insert('Category',0,'[
-					{"CustID":1277,"CTSCustID":83,"RoleID":1,"SubscriberID":130,"IsLicensee":1,"IsDirectPA":1,"IsFromTVS":0,"IsFromTW":0, "IsFromPAM":1,"IsRobot":0,"CategoryID":153,"CategoryGroup":53,"Remark":"Na test"
-					,"CreatedBy":10278938,"WinlossStatus":0,"TurnoverRM":20000,"WinlossRM":-11000,"BetCount":100,"ActiveDays":10, "MatchID":123456789}]');
-             
-             SELECT * FROM Temp_PA;
-             SELECT s.Remark, s.SourceTypeID, s.* FROM CTSCustomerClassification_History  s WHERE CustID = 1277 ORDER BY ID Desc;  # 1281463;
-             SELECT s.Remark, s.SourceTypeID, s.* FROM CTSCustomerClassification_History  s  ORDER BY ID Desc;   
+					{"CustID":3679910,"CTSCustID":16,"RoleID":1,"SubscriberID":130,"IsLicensee":1,"IsDirectPA":1,"IsFromTVS":0,"IsFromTW":0, "IsFromPAM":1,"IsRobot":0,"CategoryID":92,"CategoryGroup":92,"Remark":"Na test"
+					,"CreatedBy":10278938,"WinlossStatus":0,"TurnoverRM":20000,"WinlossRM":-11000,"BetCount":100,"ActiveDays":10}]');
 	*/   
+
+    DECLARE lv_CurrentDateTime				DATETIME DEFAULT CURRENT_TIME(); 
+    DECLARE	CONST_SPORTGROUP_PA 			TINYINT DEFAULT 0;
+    DECLARE CONST_ACTIONTYPE_INSERT 		INT DEFAULT 0;
+	DECLARE	CONST_ACTIONTYPE_UPDATE 		INT DEFAULT 1;
+    DECLARE CONST_SPORTGROUP_NORMAL 		INT DEFAULT 200;
+    DECLARE CONST_USERLOG_LOGTYPE 			SMALLINT DEFAULT 32;
+    DECLARE CONST_SPNAME 					VARCHAR(100) DEFAULT 'CTS_DC_CustClassification_PA_Insert';
+	DECLARE CONST_LICVIPPROBLEM_CATEGORYID	SMALLINT UNSIGNED DEFAULT 3;
+	DECLARE CONST_LICVIPNORMAL_CATEGORYID	SMALLINT UNSIGNED DEFAULT 4;    
     
-    DECLARE lv_CurrentDateTime	DATETIME DEFAULT CURRENT_TIME(); 
-    DECLARE	CONST_SPORTGROUP_PA TINYINT DEFAULT 0;
-    DECLARE CONST_ACTIONTYPE_INSERT INT DEFAULT 0;
-	DECLARE	CONST_ACTIONTYPE_UPDATE INT DEFAULT 1;
-    DECLARE CONST_SPORTGROUP_NORMAL INT DEFAULT 200;
-    DECLARE CONST_USERLOG_LOGTYPE SMALLINT DEFAULT 32;
-    DECLARE CONST_SPNAME VARCHAR(100) DEFAULT 'CTS_DC_CustClassification_PA_Insert';
-    DECLARE lv_LogInfo VARCHAR(500);
-	DECLARE lv_CreatedBy INT UNSIGNED;
-    DECLARE lv_NoOfCust INT;
+	DECLARE lv_LicVIPProblem_CC				SMALLINT UNSIGNED;
+	DECLARE lv_LicVIPNormal_CC				SMALLINT UNSIGNED; 
+    DECLARE lv_LicVIP_CategoryID			SMALLINT UNSIGNED;
+    DECLARE lv_LicVIP_CC					SMALLINT UNSIGNED;
+    DECLARE lv_LogInfo 						VARCHAR(500);
+	DECLARE lv_CreatedBy 					INT UNSIGNED;
+    DECLARE lv_NoOfCust 					INT;
+    
+    SELECT cat.CustomerClass
+	INTO lv_LicVIPProblem_CC
+	FROM CTS_DataCenter.CustomerCategory AS cat
+	WHERE cat.CategoryID = CONST_LICVIPPROBLEM_CATEGORYID;
 	
-	DROP TEMPORARY TABLE IF EXISTS Temp_ExistCategory ;
-    CREATE TEMPORARY TABLE Temp_ExistCategory(		
+	SELECT cat.CustomerClass
+	INTO lv_LicVIPNormal_CC
+	FROM CTS_DataCenter.CustomerCategory AS cat
+	WHERE cat.CategoryID = CONST_LICVIPNORMAL_CATEGORYID;
+    
+	
+	DROP TEMPORARY TABLE IF EXISTS Temp_ExistPA ;
+    CREATE TEMPORARY TABLE Temp_ExistPA(		
 			CustID 					INT UNSIGNED
 		,	CTSCustID				BIGINT UNSIGNED
         ,	ExistCategoryID 		SMALLINT UNSIGNED
@@ -67,7 +82,9 @@ BEGIN
         ,	TVSRequestID			INT
         ,	IsFromOldPA				TINYINT(1)
         ,	SpecialCC				SMALLINT
-        ,	PRIMARY KEY PK_Temp_ExistCategory_CustID(CustID, CategoryID)
+        ,	CustomerClass			INT
+        ,	Priority				INT
+        ,	PRIMARY KEY PK_Temp_ExistPA_CustID(CustID, CategoryID)
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustProbationStatus ;
@@ -85,63 +102,78 @@ BEGIN
         ,	PRIMARY KEY PK_Temp_CustProbationStatus_CustID(CustID)
 	);    
     
-    /* Mapping Category */
+        
+    DROP TEMPORARY TABLE IF EXISTS Temp_LastHistory;
+    CREATE TEMPORARY TABLE Temp_LastHistory(
+			CustID		INT UNSIGNED PRIMARY KEY
+        ,	CategoryID	SMALLINT UNSIGNED
+        ,	TargetCC	SMALLINT UNSIGNED
+	);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_SpecialCC;
+    CREATE TEMPORARY TABLE Temp_SpecialCC(
+			CustID		INT UNSIGNED PRIMARY KEY
+        ,	SpecialCC	SMALLINT UNSIGNED
+	);
+    
+    #================Mapping Category================
     CALL CTS_DC_CustClassification_PA_MappingCategory(ip_InputType,ip_ProblemAccounts);
     
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationOldPA(CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
 		, LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsDirect, InsertTime, TVSRequestID) 
-    SELECT	tmpPA.CustID
-		,	tmpPA.CTSCustID
-        ,	tmpPA.SubscriberID
+    SELECT	tmpPa.CustID
+		,	tmpPa.CTSCustID
+        ,	tmpPa.SubscriberID
         ,	CONST_SPORTGROUP_PA AS SportGroupID
-        ,	tmpPA.CategoryID
-        ,	tmpPA.Remark
+        ,	tmpPa.CategoryID
+        ,	tmpPa.Remark
         ,	NOW() AS CreatedDate
-        ,	tmpPA.CreatedBy
+        ,	tmpPa.CreatedBy
         ,	NOW() AS LastModifiedDate
-        ,	tmpPA.CreatedBy AS LastModifiedBy
+        ,	tmpPa.CreatedBy AS LastModifiedBy
         ,	NOW() AS LastScannedDate
-        ,	tmpPA.IsFromTVS
-        ,	tmpPA.IsFromTW
-        ,	tmpPA.IsFromCTS
-        ,	tmpPA.IsDirectPA
+        ,	tmpPa.IsFromTVS
+        ,	tmpPa.IsFromTW
+        ,	tmpPa.IsFromCTS
+        ,	tmpPa.IsDirectPA
         ,	CURRENT_TIMESTAMP(3) AS InsertTime
-        ,	tmpPA.TVSRequestID
-	FROM Temp_PA AS tmpPA
-	WHERE tmpPA.PinCTSCustID IS NOT NULL; 
+        ,	tmpPa.TVSRequestID
+	FROM Temp_PA AS tmpPa
+	WHERE tmpPa.PinCTSCustID IS NOT NULL; 
     
-    DELETE tmpPA
-    FROM Temp_PA AS tmpPA
-    WHERE tmpPA.PinCTSCustID IS NOT NULL; 
+    DELETE tmpPa
+    FROM Temp_PA AS tmpPa
+    WHERE tmpPa.PinCTSCustID IS NOT NULL; 
     
 	INSERT IGNORE INTO Temp_CustProbationStatus(CustID, CTSCustID, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsProbation, WinlossStatus, IsLicensee)
-    SELECT DISTINCT tmpPA.CustID
-		,	tmpPA.CTSCustID
-		,	tmpPA.TurnoverRM
-		,	tmpPA.WinlossRM
-        ,	tmpPA.BetCount
-        ,	tmpPA.ActiveDays
-        ,	(CASE 	WHEN tmpPA.WinlossStatus = 0 THEN 1
+    SELECT DISTINCT tmpPa.CustID
+		,	tmpPa.CTSCustID
+		,	tmpPa.TurnoverRM
+		,	tmpPa.WinlossRM
+        ,	tmpPa.BetCount
+        ,	tmpPa.ActiveDays
+        ,	(CASE 	WHEN tmpPa.WinlossStatus = 0 THEN 1
 					ELSE 0 END) AS IsProbation
-		,	tmpPA.WinlossStatus
-        ,	tmpPA.IsLicensee
-	FROM Temp_PA AS tmpPA;
+		,	tmpPa.WinlossStatus
+        ,	tmpPa.IsLicensee
+	FROM Temp_PA AS tmpPa;
     
     #=============REMOVE GENERAL CATEGORY BEFORE=============
     DELETE clss
     FROM CTS_DataCenter.CTSCustomerClassification AS clss
-		INNER JOIN Temp_PA AS tmpPA ON tmpPA.CustID = clss.CustID AND clss.SportGroupID = CONST_SPORTGROUP_NORMAL;        
-
+		INNER JOIN Temp_PA AS tmpPa ON tmpPa.CustID = clss.CustID AND clss.SportGroupID = CONST_SPORTGROUP_NORMAL;       
+	#WHERE NOT EXISTS (SELECT 1 FROM Temp_WrapperCategory AS tmpWr WHERE tmpWr.CategoryID = cls.CategoryID);
+    
     #=============REMOVE PA PROBATION LIST WHEN IsProbation = 0=============
     DELETE pro
     FROM CTS_DataCenter.ProbationAccountMonitor AS pro
-		INNER JOIN Temp_PA AS tmpPA ON tmpPA.CustID = pro.CustID;
+		INNER JOIN Temp_PA AS tmpPa ON tmpPa.CustID = pro.CustID;
     
     #=============GET EXISTING CATEGORY=============   
-    INSERT IGNORE INTO Temp_ExistCategory(CustID, CTSCustID, ExistCategoryID, CategoryID, CategoryGroup, IsProbation, LastModifiedDate, CreatedBy, Remark
-			, IsDirectPA, TVSRequestID, IsFromTVS, IsFromTW, IsFromCTS, RelevantCategoryID, IsFromOldPA, SpecialCC)
-    SELECT	tmpPA.CustID
-		,	tmpPA.CTSCustID
+    INSERT IGNORE INTO Temp_ExistPA(CustID, CTSCustID, ExistCategoryID, CategoryID, CategoryGroup, IsProbation, LastModifiedDate, CreatedBy, Remark
+			, IsDirectPA, TVSRequestID, IsFromTVS, IsFromTW, IsFromCTS, RelevantCategoryID, IsFromOldPA, SpecialCC, CustomerClass, Priority)
+    SELECT	tmpPa.CustID
+		,	tmpPa.CTSCustID
         ,	cls.CategoryID AS ExistCategoryID
         ,	cat.CategoryGroup AS CategoryID
          ,	cat.CategoryGroup AS CategoryGroup
@@ -156,36 +188,39 @@ BEGIN
         , 	cls.IsFromCTS
         ,	cat.RelevantCategoryID
         ,	0 AS IsFromOldPA
-        ,	tmpPA.SpecialCC
-    FROM Temp_PA AS tmpPA
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON tmpPA.CustID = cls.CustID
+        ,	IFNULL(sp.CustomerClass,tmpPa.SpecialCC)
+        ,	IFNULL(sp.CustomerClass,cat.CustomerClass)
+        ,	cat.Priority
+    FROM Temp_PA AS tmpPa
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON tmpPa.CustID = cls.CustID
         INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID
-	WHERE EXISTS (SELECT 1 FROM Temp_CustProbationStatus AS tmpCp WHERE cls.CustID = tmpCp.CustID);
+        LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpPa.CustID = sp.CustID 			
+	WHERE cls.SportGroupID = CONST_SPORTGROUP_PA;
     
-    UPDATE Temp_PA AS tmpPA
-		INNER JOIN CTS_DataCenter.CTSCustomerClassificationOldPA AS cls ON tmpPA.CustID = cls.CustID 
+    UPDATE Temp_PA AS tmpPa
+		INNER JOIN CTS_DataCenter.CTSCustomerClassificationOldPA AS cls ON tmpPa.CustID = cls.CustID 
         INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID 
-	SET tmpPA.IsFromOldPA = 1, tmpPA.IsDataChanged = 1;
+	SET tmpPa.IsFromOldPA = 1, tmpPa.IsDataChanged = 1;
     
     #=======UPDATE IF Change Probation Status: DataChangeType = 1 AND IsDataChanged = 1=============
-	UPDATE Temp_PA AS tmpPA
-		LEFT JOIN Temp_ExistCategory AS tmpEc ON tmpPA.CustID = tmpEc.CustID AND tmpPA.CategoryGroup = tmpEc.CategoryGroup
-    SET tmpPA.IsDataChanged = 1
-    WHERE tmpPA.IsDataChanged = 0 AND tmpEc.CustID IS NULL;
+	UPDATE Temp_PA AS tmpPa
+		LEFT JOIN Temp_ExistPA AS tmpEc ON tmpPa.CustID = tmpEc.CustID AND tmpPa.CategoryGroup = tmpEc.CategoryGroup
+    SET tmpPa.IsDataChanged = 1
+    WHERE tmpPa.IsDataChanged = 0 AND tmpEc.CustID IS NULL;
     
-    UPDATE Temp_PA AS tmpPA
-		INNER JOIN Temp_ExistCategory AS tmpEc ON tmpPA.RelevantCategoryGroup = tmpEc.CategoryGroup AND tmpPA.CustID = tmpEc.CustID # AND tmpEc.IsFromOldPA = 0
-	SET 	tmpPA.DataChangeType = 1 #(CASE WHEN tmpPA.WinlossStatus = 1 THEN 2 ELSE 1 END)
-		,	tmpPA.IsDataChanged = 1 # (CASE WHEN tmpPA.WinlossStatus = 1 THEN 0 ELSE 1 END)
-        ,	tmpPA.OldCategoryID = tmpEc.ExistCategoryID
-        ,	tmpPA.LastModifiedDate = IFNULL(tmpPA.LastModifiedDate,tmpEc.LastModifiedDate)
-        ,	tmpPA.ActionType = CONST_ACTIONTYPE_UPDATE
-        ,	tmpPA.CreatedBy = tmpEc.CreatedBy;
+    UPDATE Temp_PA AS tmpPa
+		INNER JOIN Temp_ExistPA AS tmpEc ON tmpPa.RelevantCategoryGroup = tmpEc.CategoryGroup AND tmpPa.CustID = tmpEc.CustID # AND tmpEc.IsFromOldPA = 0
+	SET 	tmpPa.DataChangeType = 1 #(CASE WHEN tmpPa.WinlossStatus = 1 THEN 2 ELSE 1 END)
+		,	tmpPa.IsDataChanged = 1 # (CASE WHEN tmpPa.WinlossStatus = 1 THEN 0 ELSE 1 END)
+        ,	tmpPa.OldCategoryID = tmpEc.ExistCategoryID
+        ,	tmpPa.LastModifiedDate = IFNULL(tmpPa.LastModifiedDate,tmpEc.LastModifiedDate)
+        ,	tmpPa.ActionType = CONST_ACTIONTYPE_UPDATE
+        ,	tmpPa.CreatedBy = tmpEc.CreatedBy;  
 
     DELETE tmpEc
-    FROM Temp_ExistCategory AS tmpEc
-		INNER JOIN Temp_PA AS tmpPA ON tmpPA.RelevantCategoryGroup = tmpEc.CategoryGroup AND tmpPA.WinlossStatus <> 1 AND tmpEc.IsFromOldPA = 0;
-
+    FROM Temp_ExistPA AS tmpEc
+		INNER JOIN Temp_PA AS tmpPa ON tmpPa.RelevantCategoryGroup = tmpEc.CategoryGroup AND tmpPa.WinlossStatus <> 1 AND tmpEc.IsFromOldPA = 0;
+    
     #======UPDATE IF Change Probation Status for Existing CategoryID
     INSERT INTO Temp_PA(CustID, CTSCustID, InputCategoryID, OldCategoryID, CategoryID, TargetCC,  TargetDangerLevel, ToEvidenceID, Remark, TurnoverRM, WinlossRM, BetCount, ActiveDays
 				, IsDirectPA, IsFromTVS, IsFromTW, IsFromCTS, IsDataChanged, DataChangeType, LastModifiedDate, CreatedBy, IsFromOldPA, IsProbation, TVSRequestID)
@@ -216,7 +251,7 @@ BEGIN
             ,	tmpEc.IsFromOldPA
             ,	tmpEc.IsProbation
             ,	tmpEc.TVSRequestID
-		FROM Temp_ExistCategory AS tmpEc
+		FROM Temp_ExistPA AS tmpEc
 		INNER JOIN Temp_CustProbationStatus AS tmpCp ON tmpCp.CustID = tmpEc.CustID AND tmpCp.IsProbation <> tmpEc.IsProbation AND  tmpCp.WinlossStatus <> 1 
         , LATERAL (SELECT 	cat.CategoryGroup
 						,	cat.CustomerClass
@@ -228,129 +263,189 @@ BEGIN
 
 	# UPDATE PA WHEN CHANGE PROBATION STATUS
     UPDATE IGNORE CTS_DataCenter.CTSCustomerClassification AS cls
-        INNER JOIN Temp_PA AS tmpPA ON cls.CustID = tmpPA.CustID AND cls.CategoryID = tmpPA.OldCategoryID AND tmpPA.DataChangeType = 1
-	SET 	cls.CTSCustID = tmpPA.CTSCustID
-		,	cls.CategoryID =  tmpPA.CategoryID
-	#	, 	cls.LastModifiedBy = tmpPA.CreatedBy
-	#	,	cls.Remark = tmpPA.Remark
+        INNER JOIN Temp_PA AS tmpPa ON cls.CustID = tmpPa.CustID AND cls.CategoryID = tmpPa.OldCategoryID AND tmpPa.DataChangeType = 1
+	SET 	cls.CTSCustID = tmpPa.CTSCustID
+		,	cls.CategoryID =  tmpPa.CategoryID
 		, 	cls.LastScannedDate = DATE(lv_CurrentDateTime);
 
+    #================COVER WRAPER CC (VIP)================
+    DROP TEMPORARY TABLE IF EXISTS Temp_VIPCust;
+    CREATE TEMPORARY TABLE Temp_VIPCust(
+			CustID			INT UNSIGNED
+		,	CategoryID 		SMALLINT UNSIGNED
+        ,	CustomerClass 	SMALLINT UNSIGNED
+        ,	IsChanged		TINYINT(1)
+		,	PRIMARY KEY Temp_WrapCC(CustID)
+	);    
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_WraperCC;
+    CREATE TEMPORARY TABLE Temp_WraperCC(
+			CustID				INT UNSIGNED
+		,	LicVIP_CategoryID 	SMALLINT UNSIGNED
+        ,	LicVIP_CC 			SMALLINT UNSIGNED
+		,	PRIMARY KEY Temp_WrapCC(CustID)
+	);  
+    
+    INSERT IGNORE INTO Temp_WraperCC(CustID, LicVIP_CategoryID, LicVIP_CC)
+	SELECT	tmpPa.CustID
+		,	(CASE WHEN cat.IsDangerProbation = 1 THEN CONST_LICVIPNORMAL_CATEGORYID ELSE CONST_LICVIPPROBLEM_CATEGORYID END)
+		,	(CASE WHEN cat.IsDangerProbation = 1 THEN lv_LicVIPNormal_CC ELSE lv_LicVIPProblem_CC END)	
+    FROM Temp_PA AS tmpPa 
+		INNER JOIN CustomerCategory AS cat ON tmpPa.CategoryID = cat.CategoryID;
+    
+	INSERT IGNORE INTO Temp_VIPCust(CustID, CategoryID, CustomerClass, IsChanged)
+    SELECT	cus.CustID
+		,	tmp_Wr.LicVIP_CategoryID
+		,	tmp_Wr.LicVIP_CC
+        ,	(CASE WHEN (cls.CategoryID = lv_LicVIP_CategoryID) THEN 0 ELSE 1 END)
+	FROM Temp_PA AS tmpPa
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpPa.CTSCustID = cus.CTSCustID AND cus.IsLicenseeVIP = 1
+        INNER JOIN Temp_WraperCC AS tmp_Wr ON tmp_Wr.CustID = tmpPa.CustID
+		LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = tmpPa.CustID AND cls.CategoryID IN (CONST_LICVIPPROBLEM_CATEGORYID, CONST_LICVIPNORMAL_CATEGORYID);    
+
+    UPDATE CTS_DataCenter.CTSCustomerClassification AS cls
+		INNER JOIN Temp_VIPCust AS tmpVip ON cls.CustID = tmpVip.CustID AND tmpVip.IsChanged = 1
+	SET cls.CategoryID = tmpVip.CategoryID
+	WHERE cls.CategoryID IN (CONST_LICVIPPROBLEM_CATEGORYID, CONST_LICVIPNORMAL_CATEGORYID);
+
+    INSERT INTO Temp_SpecialCC (CustID, SpecialCC)
+    SELECT DISTINCT CustID, SpecialCC
+    FROM Temp_PA
+    WHERE SpecialCC IS NOT NULL;
+    
+	UPDATE Temp_PA AS tmpPa 
+		INNER JOIN Temp_VIPCust AS tmpVip ON tmpPa.CustID = tmpVip.CustID
+        LEFT JOIN Temp_SpecialCC AS s ON tmpPa.CustID = s.CustID
+	SET tmpPa.TargetCC = IFNULL(s.SpecialCC, tmpVip.CustomerClass)
+    WHERE tmpPa.SpecialCC IS NULL;
+    
+    INSERT IGNORE INTO Temp_LastHistory(CustID, CategoryID, TargetCC)
+    SELECT tmpPa.CustID, tmpHis.CategoryID, tmpHis.TargetCC
+    FROM Temp_PA AS tmpPa,
+    LATERAL (	SELECT h.CategoryID, h.TargetCC
+				FROM CTS_DataCenter.CTSCustomerClassification_History AS h
+                WHERE h.CustID = tmpPa.CustID 
+                ORDER BY ID DESC
+                LIMIT 1) AS tmpHis;
+                
+	UPDATE Temp_PA AS tmpPA
+		INNER JOIN Temp_LastHistory AS tmpHis ON tmpPA.CustID = tmpHis.CustID
+	SET tmpPA.IsDataChanged = 1
+	WHERE tmpPA.CategoryGroup <> tmpHis.CategoryID OR tmpPA.TargetCC <> tmpHis.TargetCC; 
+    
     #============INSERT NEW PA=================================    
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, CategoryID, SportGroupID, 
 			CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsDirect, Remark, IsFromCTS, IsFromTVS, IsFromTW, TVSRequestID)
-	SELECT 	tmpPA.CustID
-		,	tmpPA.CTSCustID
-		, 	tmpPA.SubscriberID
-		, 	(CASE 	WHEN tmpPA.IsProbationStatus = 1 AND tmpPA.RelevantIsProbation = 1 THEN  tmpPA.RelevantCategoryGroup
-					WHEN (tmpPA.IsProbationStatus = 0 OR tmpPA.IsProbationStatus IS NULL) THEN  tmpPA.CategoryGroup 
-					ELSE tmpPA.CategoryGroup 
-			END) AS CategoryID
+	SELECT 	tmpPa.CustID
+		,	tmpPa.CTSCustID
+		, 	tmpPa.SubscriberID
+		, 	tmpPa.CategoryGroup AS CategoryID
 		, 	CONST_SPORTGROUP_PA AS SportGroupID
 		, 	NOW()
-		, 	tmpPA.CreatedBy
-		, 	IFNULL(tmpPA.LastModifiedDate, NOW()) AS LastModifiedDate
-		, 	tmpPA.CreatedBy AS LastModifiedBy
+		, 	tmpPa.CreatedBy
+		, 	IFNULL(tmpPa.LastModifiedDate, NOW()) AS LastModifiedDate
+		, 	tmpPa.CreatedBy AS LastModifiedBy
 		, 	NOW() AS LastScannedDate
-        ,	tmpPA.IsDirectPA
-        ,	tmpPA.Remark
-        ,	tmpPA.IsFromCTS
-        ,	tmpPA.IsFromTVS
-        ,	tmpPA.IsFromTW
-        ,	tmpPA.TVSRequestID
-	FROM Temp_PA AS tmpPA
-    WHERE tmpPA.DataChangeType = 0 OR tmpPA.IsFromOldPA = 1;   
-  
+        ,	tmpPa.IsDirectPA
+        ,	tmpPa.Remark
+        ,	tmpPa.IsFromCTS
+        ,	tmpPa.IsFromTVS
+        ,	tmpPa.IsFromTW
+        ,	tmpPa.TVSRequestID
+	FROM Temp_PA AS tmpPa
+    WHERE tmpPa.DataChangeType = 0 OR tmpPa.IsFromOldPA = 1;   
+
     #=============INSERT HISTORY WHERE Category CHANGE OR Special Remove==================================================
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType
 			, InsertDate, TargetCC, SourceTypeID, IsDataChanged, TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, IsDirect, Remark, TVSRequestID, IsFromTVS, IsFromTW, IsFromCTS )
-	SELECT 	tmpPA.CustID
-		, 	tmpPA.CTSCustID
-		, 	tmpPA.CategoryID
+	SELECT 	tmpPa.CustID
+		, 	tmpPa.CTSCustID
+		, 	tmpPa.CategoryID
 		, 	CONST_SPORTGROUP_PA AS SportGroupID
 		, 	NOW() AS LastModifiedDate
-		, 	tmpPA.CreatedBy AS LastModifiedBy
-		, 	tmpPA.ActionType
+		, 	tmpPa.CreatedBy AS LastModifiedBy
+		, 	tmpPa.ActionType
 		, 	NOW() AS InsertDate
-		, 	tmpPA.TargetCC
-		, 	(CASE	WHEN tmpPA.MatchID IS NOT NULL THEN 35
-					WHEN tmpPA.IsDirectPA = 1 THEN 31 
-					WHEN tmpPA.IsDirectPA = 0 THEN 32 END) AS SourceTypeID
+		, 	tmpPa.TargetCC
+		, 	(CASE	WHEN tmpPa.MatchID IS NOT NULL THEN 35
+					WHEN tmpPa.IsDirectPA = 1 THEN 31 
+					WHEN tmpPa.IsDirectPA = 0 THEN 32 END) AS SourceTypeID
 		,  	1 AS IsDataChanged
-		,	tmpPA.TargetDangerLevel AS TargetDangerLevel1
-		,	tmpPA.TurnoverRM
-		,	tmpPA.WinlossRM
-		, 	tmpPA.BetCount
-		, 	tmpPA.ActiveDays
-        ,	tmpPA.IsDirectPA
-        ,	tmpPA.Remark
-        ,	tmpPA.TVSRequestID
-        ,	tmpPA.IsFromTVS
-        ,	tmpPA.IsFromTW
-        ,	tmpPA.IsFromCTS
-	FROM Temp_PA AS tmpPA
-	WHERE tmpPA.IsDataChanged = 1 #OR (tmpPA.DataChangeType = 0)
-    ORDER BY tmpPA.LastModifiedDate ASC, tmpPA.CategoryID ASC;
+		,	tmpPa.TargetDangerLevel AS TargetDangerLevel1
+		,	tmpPa.TurnoverRM
+		,	tmpPa.WinlossRM
+		, 	tmpPa.BetCount
+		, 	tmpPa.ActiveDays
+        ,	tmpPa.IsDirectPA
+        ,	tmpPa.Remark
+        ,	tmpPa.TVSRequestID
+        ,	tmpPa.IsFromTVS
+        ,	tmpPa.IsFromTW
+        ,	tmpPa.IsFromCTS
+	FROM Temp_PA AS tmpPa
+	WHERE tmpPa.IsDataChanged = 1 #OR (tmpPa.DataChangeType = 0)
+    ORDER BY tmpPa.LastModifiedDate ASC, tmpPa.CategoryID ASC;
 
 	INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate
 		, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, IsDirect, Remark, TVSRequestID, IsFromTVS, IsFromTW, IsFromCTS)
-	SELECT 		tmpPA.CustID
-		,	tmpPA.CTSCustID
-		,	tmpPA.CategoryID
+	SELECT 		tmpPa.CustID
+		,	tmpPa.CTSCustID
+		,	tmpPa.CategoryID
 		,	CONST_SPORTGROUP_PA AS SportGroupID
-		,	IFNULL(tmpPA.LastModifiedDate,NOW())
-		,	tmpPA.CreatedBy AS LastModifiedBy
-		,	tmpPA.ActionType
+		,	IFNULL(tmpPa.LastModifiedDate,NOW())
+		,	tmpPa.CreatedBy AS LastModifiedBy
+		,	tmpPa.ActionType
 		,	1 AS IsAuto 
 		,	NOW() AS InsertDate
-		,	tmpPA.TargetCC
+		,	tmpPa.TargetCC
 		,	(CASE WHEN IsDirectPA = 1 THEN 31 
 					WHEN IsDirectPA = 0 THEN 32 END) AS SourceTypeID
-		,	tmpPA.IsDataChanged
-		,	tmpPA.TargetDangerLevel
-		,	tmpPA.TurnoverRM
-		,	tmpPA.WinlossRM
-		,	tmpPA.BetCount
-		,	tmpPA.ActiveDays
-		,	tmpPA.IsDirectPA
-        ,	tmpPA.Remark
-		,	tmpPA.TVSRequestID
-        ,	tmpPA.IsFromTVS
-        ,	tmpPA.IsFromTW
-        ,	tmpPA.IsFromCTS
-	FROM Temp_PA AS tmpPA;
+		,	tmpPa.IsDataChanged
+		,	tmpPa.TargetDangerLevel
+		,	tmpPa.TurnoverRM
+		,	tmpPa.WinlossRM
+		,	tmpPa.BetCount
+		,	tmpPa.ActiveDays
+		,	tmpPa.IsDirectPA
+        ,	tmpPa.Remark
+		,	tmpPa.TVSRequestID
+        ,	tmpPa.IsFromTVS
+        ,	tmpPa.IsFromTW
+        ,	tmpPa.IsFromCTS
+	FROM Temp_PA AS tmpPa;
 
     IF (ip_IsToQueue = 1) THEN
     
 		# INSERT SMA PA TO QUEUE PA AS 
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationQueue(CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryID, CategoryGroup, LastDownlineCTSCustID
 			, IsFromTVS, IsFromTW, IsFromCTS, ActionType, InsertTime)
-		SELECT tmpPA.CTSCustID
-			,	tmpPA.CustID
-			,	tmpPA.RoleID
-			,	tmpPA.SubscriberID
-			,	tmpPA.CreatedBy
-			,	tmpPA.Remark        
-			,	tmpPA.CategoryID
-			,	tmpPA.CategoryGroup
+		SELECT tmpPa.CTSCustID
+			,	tmpPa.CustID
+			,	tmpPa.RoleID
+			,	tmpPa.SubscriberID
+			,	tmpPa.CreatedBy
+			,	tmpPa.Remark        
+			,	tmpPa.CategoryID
+			,	tmpPa.CategoryGroup
 			,	0 AS LastDownlineCTSCustID
-            ,	tmpPA.IsFromTVS AS IsFromTVS
-            ,	tmpPA.IsFromTW AS IsFromTW
-            ,	tmpPA.IsFromCTS AS IsFromCTS
+            ,	tmpPa.IsFromTVS AS IsFromTVS
+            ,	tmpPa.IsFromTW AS IsFromTW
+            ,	tmpPa.IsFromCTS AS IsFromCTS
 			,	3 AS ActionType # 0: Mark PA
 			,	CURRENT_TIMESTAMP(3) AS InsertTime
-		FROM Temp_PA AS tmpPA        
-		WHERE tmpPA.RoleID > 1
-        ORDER BY tmpPA.LastModifiedDate, tmpPA.CategoryID;
+		FROM Temp_PA AS tmpPa        
+		WHERE tmpPa.RoleID > 1
+        ORDER BY tmpPa.LastModifiedDate, tmpPa.CategoryID;
 
 		# WRITE USER LOG IF FROM PAM
          SELECT CreatedBy 
          INTO lv_CreatedBy
-         FROM Temp_PA AS tmpPA WHERE IsFromCTS = 1 LIMIT 1;
+         FROM Temp_PA AS tmpPa WHERE IsFromCTS = 1 LIMIT 1;
 
          IF (lv_CreatedBy IS NOT NULL) THEN
 			 SELECT LEFT(CONCAT('CustNo.:',COUNT(1),'_',GROUP_CONCAT(DISTINCT CTSCustID)),500)
 			 INTO lv_LogInfo
-			 FROM Temp_PA AS tmpPA;
+			 FROM Temp_PA AS tmpPa;
              
 		 INSERT IGNORE INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 		 SELECT CONST_USERLOG_LOGTYPE AS LogTypeID
@@ -363,31 +458,30 @@ BEGIN
    
     #====INSERT EVIDENCE FOR ROOT=========
     INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, `Level`, FromCustID,  CreatedDate, CreatedBy)
-    SELECT tmpPA.CTSCustID
-		,	tmpPA.ToEvidenceID
-		,	tmpPA.Remark
+    SELECT tmpPa.CTSCustID
+		,	tmpPa.ToEvidenceID
+		,	tmpPa.Remark
         ,	0 AS `Level`
-        ,	tmpPA.CTSCustID
+        ,	tmpPa.CTSCustID
         ,	lv_CurrentDateTime AS CreatedDate
-        ,	tmpPA.CreatedBy
-    FROM Temp_PA AS tmpPA
-    WHERE (tmpPA.ToEvidenceID <> 0) AND (tmpPA.ToEvidenceID IS NOT NULL);
-    
+        ,	tmpPa.CreatedBy
+    FROM Temp_PA AS tmpPa    
+    WHERE (tmpPa.ToEvidenceID <> 0) AND (tmpPa.ToEvidenceID IS NOT NULL);
     #========INSERT EVIDENCE QUEUE=========
 	 INSERT IGNORE INTO CTS_DataCenter.CustEvidenceAffectedQueueInsert(CTSCustID, EvidenceID, Remark, CreatedBy, Created)
-	 SELECT tmpPA.CTSCustID
-		,	tmpPA.ToEvidenceID
-		,	tmpPA.Remark
-        ,	tmpPA.CreatedBy
+	 SELECT tmpPa.CTSCustID
+		,	tmpPa.ToEvidenceID
+		,	tmpPa.Remark
+        ,	tmpPa.CreatedBy
         ,	lv_CurrentDateTime AS CreatedDate
-	FROM Temp_PA AS tmpPA
-	WHERE tmpPA.DataChangeType = 0 OR tmpPA.IsFromOldPA = 1;  
+	FROM Temp_PA AS tmpPa
+	WHERE tmpPa.DataChangeType = 0 OR tmpPa.IsFromOldPA = 1;  
 
 	#=====RETURN UPDATED CUSTOMERS TO SERVICE FOR FUTHER STEPS===========
 	SELECT	DISTINCT 
-			tmpPA.CustID
-		,	tmpPA.CTSCustID
-    FROM Temp_PA AS tmpPA; 
+			tmpPa.CustID
+		,	tmpPa.CTSCustID
+    FROM Temp_PA AS tmpPa; 
 
 	# INSERT INTO CTS_Log.CTSDebugLog(SPName, InsertTime, OtherText, JsonString1)
     # SELECT 'CTS_DC_CustClassification_PA_Insert_DEBUG', CURRENT_TIMESTAMP(4), CONCAT('ip_InputType:',ip_InputType,' ,ip_IsToQueue:',ip_IsToQueue),ip_ProblemAccounts;

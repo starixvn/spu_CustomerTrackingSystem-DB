@@ -17,6 +17,7 @@ sp: BEGIN
             - 20220614@Aries.Nguyen: CTS - Classify Category for new Customer (all roles) is not Latest [Redmine ID: #174084]
             - 20220616@Aries.Nguyen: Cannot mark PA (affected by uplines) correctly with First Mark [Redmine ID: #174136]
             - 20220628@Aries.Nguyen: Update robot classification rule [Redmine ID: #174430]
+			- 202208018@Long.Luu: Use IsDangerProbation in stead of IsPAProbation [Redmine ID: #174219]
 		
         Param's Explanation:
 
@@ -150,7 +151,7 @@ sp: BEGIN
 		,	tmp.CustID
         ,	class.CategoryID
         ,	CASE WHEN class.CategoryID IN (62,82,102,122,142,162) THEN 62
-				 WHEN cate.IsPAProbation = 1 THEN cate.RelevantCategoryID
+				 WHEN cate.IsDangerProbation = 1 THEN cate.RelevantCategoryID
 				 ELSE class.CategoryID END AS CategoryIDSource
         ,	cate.CategoryGroup 
         ,	class.Remark 

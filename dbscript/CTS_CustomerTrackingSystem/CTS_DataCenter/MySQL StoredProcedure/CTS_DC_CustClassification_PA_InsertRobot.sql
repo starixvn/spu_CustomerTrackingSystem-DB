@@ -16,15 +16,18 @@ BEGIN
 		Revisions: 
 			- 20220520@Aries.Nguyen: Created [Redmine ID: #172561] 
             - 20220628@Aries.Nguyen: Update robot classification rule [Redmine ID: #174430]
+            - 20220708@Aries.Nguyen: [CTS] Add new category/class for Lic BA and Lic VIP [Redmine ID: #174219]
 		
         Param's Explanation: 
 
 		Example:
-			-CALL CTS_DataCenter.CTS_DC_CustClassification_PA_InsertRobot('[{"CustID":3698310,"CategoryID":61,"RobotCounter":11,"TurnoverRM":null,"WinlossRM":null,"BetCount":null,"ActiveDays":null,"IsFromTW":true,"CreatedBy":10278938},{"CustID":3698310,"CategoryID":166,"RobotCounter":null,"TurnoverRM":53580.0000,"WinlossRM":-319.0800,"BetCount":1649,"ActiveDays":16,"IsFromTVS":true,"TVSRequestID":1111,"CreatedBy":10278938}]');
+			-CALL CTS_DataCenter.CTS_DC_CustClassification_PA_InsertRobot_xpre('[{"CustID":3698310,"CategoryID":61,"RobotCounter":11,"TurnoverRM":null,"WinlossRM":null,"BetCount":null,"ActiveDays":null,"IsFromTW":true,"CreatedBy":10278938},{"CustID":3698310,"CategoryID":166,"RobotCounter":null,"TurnoverRM":53580.0000,"WinlossRM":-319.0800,"BetCount":1649,"ActiveDays":16,"IsFromTVS":true,"TVSRequestID":1111,"CreatedBy":10278938}]');
 
 */
     DECLARE	CONST_CATEGORYID_ROBOT 				INT DEFAULT 163;
     DECLARE	CONST_CATEGORYID_ROBOTLOSING 		INT DEFAULT 164;
+    
+    DECLARE	CONST_CATEGORYID_VIPNORMAL 			INT DEFAULT 4;
     
     DECLARE	CONST_GROUP_PA 						INT DEFAULT 0;
     DECLARE	CONST_GROUP_NORMAL 					INT DEFAULT 200;
@@ -71,14 +74,16 @@ BEGIN
         
 		,	IsPin					BIT DEFAULT 0
         ,	IsVVIP					BIT DEFAULT 0
+        ,	IsLicenseeVIP			BIT DEFAULT 0
         , 	PRIMARY KEY(CustID,CategoryID)
     );  
-    
+     
     DROP TEMPORARY TABLE IF EXISTS Temp_ExistCate;    
 	CREATE TEMPORARY TABLE Temp_ExistCate(	  
 			CustID				BIGINT UNSIGNED 
         ,	CategoryID 			INT	
         , 	RelevantCategoryID 	SMALLINT UNSIGNED
+        ,	SportGroupID		SMALLINT UNSIGNED
         
         , 	IsPAProbation		BIT 
         , 	IsChangeWinloss		BIT DEFAULT 0
@@ -95,7 +100,7 @@ BEGIN
         ,  	PRIMARY KEY(CustID,CategoryID)
     );
     
-    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, SubscriberID,IsLicensee, CategoryID,TargetCC, TurnoverRM, WinlossRM, BetCount, ActiveDays,RobotCounter,WinlossStatus, IsFromTW,IsFromCTS,IsFromAI,IsFromTVS,TVSRequestID,IsDirect,Remark,CreatedBy,IsPin,IsVVIP,CreatedDate)
+    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, SubscriberID,IsLicensee, CategoryID,TargetCC, TurnoverRM, WinlossRM, BetCount, ActiveDays,RobotCounter,WinlossStatus, IsFromTW,IsFromCTS,IsFromAI,IsFromTVS,TVSRequestID,IsDirect,Remark,CreatedBy,IsPin,IsVVIP,IsLicenseeVIP,CreatedDate)
 	SELECT	js.CustID
 		,	cus.CTSCustID
 		,	cus.SubscriberID
@@ -106,11 +111,12 @@ BEGIN
         ,	sp.CustomerClass AS TargetCC
         , 	js.TurnoverRM
         , 	js.WinlossRM
-        , 	js.BetCount
+        , 	js.BetCount 
         , 	js.ActiveDays
         ,	js.RobotCounter
-        ,	js.WinlossStatus
-        
+        ,	CASE WHEN js.WinlossStatus IS NULL THEN 2
+			ELSE js.WinlossStatus END AS WinlossStatus
+         
         , 	IFNULL(js.IsFromTW,0) AS IsFromTW
 		,	IFNULL(js.IsFromCTS,0) AS IsFromCTS		
         ,	IFNULL(js.IsFromAI,0) AS IsFromAI
@@ -123,6 +129,7 @@ BEGIN
 				 ELSE 0 END AS IsPin
 		,	CASE WHEN vip.CTSCustID IS NOT NULL THEN 1 
 				 ELSE 0 END AS IsVVIP 
+		,	cus.IsLicenseeVIP
 		, lv_Now AS CreatedDate
 	FROM JSON_TABLE(ip_CustInfo,
 	"$[*]" COLUMNS( CustID 			BIGINT UNSIGNED		PATH "$.CustID"                
@@ -194,12 +201,14 @@ BEGIN
 		OR pa.IsPin = 1;
     
     /***********************Handle update existed PA by winloss*******************************/
-    INSERT IGNORE INTO Temp_ExistCate(CustID,CategoryID,RelevantCategoryID,IsPAProbation,IsChangeWinloss,IsRobot,IsFromTW,IsFromCTS,IsFromAI,IsFromTVS,TVSRequestID,IsDirect,Remark,CreatedBy,CreatedDate) 
+    INSERT IGNORE INTO Temp_ExistCate(CustID,CategoryID,RelevantCategoryID,SportGroupID,IsPAProbation,IsChangeWinloss,IsRobot,IsFromTW,IsFromCTS,IsFromAI,IsFromTVS,TVSRequestID,IsDirect,Remark,CreatedBy,CreatedDate) 
     SELECT 	clss.CustID
 		,	clss.CategoryID
         ,	cate.RelevantCategoryID
+        ,	clss.SportGroupID
         ,	cate.IsPAProbation
-        ,	CASE WHEN tmp.WinlossStatus = 1 THEN 0 /*No Change*/
+        ,	CASE WHEN tmp.WinlossStatus = 1 AND clss.CategoryID IN (CONST_CATEGORYID_VIPNORMAL)  THEN 1 
+				 WHEN tmp.WinlossStatus = 1 AND clss.CategoryID NOT IN (CONST_CATEGORYID_VIPNORMAL) THEN 0 /*No Change*/
 				 WHEN tmp.WinlossStatus = 0 AND cate.IsPAProbation = 0 THEN 1  /*Lose + PA => Update */
 				 WHEN tmp.WinlossStatus = 0 AND cate.IsPAProbation = 1 THEN 0  /*Lose + Probation =>  No Change*/
                  WHEN tmp.WinlossStatus = 2 AND cate.IsPAProbation = 0 THEN 0  /*Win + PA => No Change  */
@@ -217,11 +226,11 @@ BEGIN
         ,	clss.CreatedBy
         ,	clss.CreatedDate
     FROM Temp_PA AS tmp  
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CustID = tmp.CustID AND clss.SportGroupID = CONST_GROUP_PA
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CustID = tmp.CustID
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID AND cate.RelevantCategoryID IS NOT NULL;
 	
     UPDATE CTS_DataCenter.CTSCustomerClassification AS clss
-    INNER JOIN Temp_ExistCate AS tmp ON tmp.CustID = clss.CustID AND  clss.SportGroupID = CONST_GROUP_PA AND tmp.CategoryID = clss.CategoryID 
+    INNER JOIN Temp_ExistCate AS tmp ON tmp.CustID = clss.CustID AND tmp.CategoryID = clss.CategoryID 
     SET 	clss.CategoryID = tmp.RelevantCategoryID
         ,	clss.LastModifiedBy = lv_CreatedBy
     WHERE tmp.IsChangeWinloss = 1 
@@ -240,13 +249,16 @@ BEGIN
 	SELECT  pa.CustID
 		, 	pa.CTSCustID
 		, 	cate.RelevantCategoryID
-		, 	CONST_GROUP_PA AS SportGroupID
+		, 	cate.SportGroupID
 		, 	lv_Now AS LastModifiedDate
 		, 	lv_CreatedBy AS LastModifiedBy
 		, 	CONST_ACTIONTYPE_UPDATE AS ActionType
 		, 	1 AS IsAuto
 		, 	lv_Now AS InsertDate
-		, 	tbl.CustomerClass AS TargetCC
+		, 	CASE WHEN pa.TargetCC IS NOT NULL THEN pa.TargetCC
+				 WHEN pa.IsLicenseeVIP = 1 AND tbl.IsPAProbation = 0 THEN 99
+				 WHEN pa.IsLicenseeVIP = 1 AND tbl.IsPAProbation = 1 THEN 101
+			ELSE tbl.CustomerClass END AS TargetCC
 		, 	CONST_SOURCETYPE_RESCANROBOT  AS SourceTypeID
 		,   IsDataChanged
         ,	CASE WHEN pa.IsLicensee = 1 THEN tbl.ABIDangerLevel_Licensee  
@@ -259,7 +271,8 @@ BEGIN
 		INNER JOIN Temp_PA AS pa ON pa.CustID = cate.CustID
         INNER JOIN CTS_DataCenter.CustomerCategory AS tbl ON cate.RelevantCategoryID = tbl.CategoryID 
     WHERE cate.IsChangeWinloss = 1 
-		AND IsRobot = 0;
+		AND IsRobot = 0
+        AND cate.SportGroupID != 100;
     
     DELETE
     FROM Temp_ExistCate
@@ -302,8 +315,10 @@ BEGIN
                     
     UPDATE Temp_PA AS pa
 	INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON pa.CategoryID = cate.CategoryID
-	SET pa.TargetCC	= CASE  WHEN pa.TargetCC IS NOT NULL THEN pa.TargetCC
-							WHEN pa.TargetCC IS NULL THEN IFNULL(cate.CustomerClass, -99) 
+	SET pa.TargetCC	= CASE  WHEN pa.TargetCC IS NOT NULL AND pa.TargetCC NOT IN (43,45,46,47)  THEN pa.TargetCC
+							WHEN pa.IsLicenseeVIP = 1 AND pa.CategoryID = CONST_CATEGORYID_ROBOT THEN 99
+                            WHEN pa.IsLicenseeVIP = 1 AND pa.CategoryID = CONST_CATEGORYID_ROBOTLOSING THEN 101
+							WHEN pa.TargetCC IS NULL OR pa.TargetCC IN (43,45,46,47) THEN IFNULL(cate.CustomerClass, -99) 
 							ELSE  -99 END 
 	,	pa.TargetDangerLevel = CASE WHEN pa.IsLicensee = 1 THEN cate.ABIDangerLevel_Licensee
 									WHEN pa.IsLicensee = 0 THEN cate.ABIDangerLevel_Credit				
@@ -345,7 +360,8 @@ BEGIN
 		, 	pa.TargetCC
 		, 	CASE WHEN ip_IsRescan = 1 THEN CONST_SOURCETYPE_RESCANROBOT 
 				 ELSE CONST_SOURCETYPE_INSERTROBOT END AS SourceTypeID
-		,  	pa.IsDataChanged
+		,  	CASE WHEN ip_IsRescan = 1 THEN 1
+				 ELSE pa.IsDataChanged END AS IsDataChanged
 		,	pa.RobotCounter
 		,	pa.TargetDangerLevel AS TargetDangerLevel1
 		,	pa.TurnoverRM
@@ -360,7 +376,7 @@ BEGIN
 		,	pa.IsFromTVS
 		,	pa.TVSRequestID  
 	FROM Temp_PA AS pa
-    WHERE pa.IsDataChanged =  1; 
+    WHERE pa.IsDataChanged =  1 OR ip_IsRescan = 1; 
     
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, SourceTypeID, IsDataChanged, RobotCounter, TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays,IsDirect,Remark,IsFromTW,IsFromCTS,IsFromAI,IsFromTVS,TVSRequestID)
 	SELECT 	pa.CustID
