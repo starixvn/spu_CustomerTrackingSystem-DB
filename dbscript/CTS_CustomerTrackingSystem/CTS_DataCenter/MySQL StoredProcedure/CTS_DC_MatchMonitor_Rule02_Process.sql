@@ -1,5 +1,5 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule02_Process_xtest()`;
+DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule02_Process_xtest`;
 DELIMITER $$
 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule02_Process_xtest`(
@@ -26,15 +26,21 @@ sp: BEGIN
 		Param's Explanation (filtered by):	
 
 		Example:
-			CALL CTS_DC_MatchMonitor_Rule_Process(1,113171940189,22081995,1,1);
-			
-	*/    
-    DECLARE	CONST_RULE_HIGHSTAKE		SMALLINT DEFAULT 500;
-	DECLARE	CONST_RULE_DURATION			SMALLINT DEFAULT 7; # 7 minutes
+			CALL CTS_DC_MatchMonitor_Rule02_Process_xtest(1,113171940189,22081995,1,1);
+			SELECT * FROM MatchMonitorTransLive;
+	*/
+    DECLARE	CONST_RULE_TOTALTRANS			SMALLINT DEFAULT 40; 
+    DECLARE	CONST_RULE_HIGHSTAKE			SMALLINT DEFAULT 10;
+    DECLARE	CONST_RULE_HIGHSTAKEPERCENT		TINYINT DEFAULT 50;    
+	DECLARE	CONST_RULE_DURATION			SMALLINT DEFAULT 2; # 7 minutes
     DECLARE	CONST_RULE_ODDSPRESS_MIN	SMALLINT DEFAULT 10; 
     DECLARE	CONST_RULE_ODDSPRESS_MAX	SMALLINT DEFAULT 20;
-    DECLARE	CONST_RULE_TOTALTRANS		SMALLINT DEFAULT 40; 
-
+    
+    
+    DECLARE lv_MinTransDate DATETIME(3);
+    DECLARE lv_MaxTransDate DATETIME(3);
+	DECLARE lv_LastTransDate DATETIME(3);
+	
 	DROP TEMPORARY TABLE IF EXISTS Temp_TransGroup;
     CREATE TEMPORARY TABLE Temp_TransGroup(
 			MatchID			INT
@@ -48,16 +54,34 @@ sp: BEGIN
         ,	PRIMARY KEY PK_Temp_TransGroup(MatchID, TotalScore, BettypeID, BetID, Betteam)
 	);
     
-    INSERT INTO Temp_TransGroup(MatchID, TotalScore, BettypeID, BetID, Betteam, MinTransDate, MaxTransDate)
-    SELECT	mmt.MatchID
-		,	mmt.TotalScore
-        ,	mmt.BettypeID
-        ,	mmt.BetID
-        ,	mmt.Betteam
-        ,	mmt.MinTransDate
-        ,	mmt
-    FROM 
-    WHERE CTS_DataCenter.MatchMonitorTranLive AS mmt
+	    SELECT	MIN(TransDate), MAX(TransDate), TIMESTAMPADD(MINUTE, CONST_RULE_DURATION , MIN(TransDate)), COUNT(1),
+        (CASE WHEN  TIMESTAMPADD(MINUTE, CONST_RULE_DURATION , MIN(TransDate)) <= MAX(TransDate)  THEN TIMESTAMPADD(MINUTE, CONST_RULE_DURATION , MIN(TransDate)) ELSE NULL END) 
+    
+    FROM CTS_DataCenter.MatchMonitorTransLive AS mmt
+    WHERE mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam;
+    
+    SELECT	MIN(TransDate), (CASE WHEN  TIMESTAMPADD(MINUTE, CONST_RULE_DURATION , MIN(TransDate)) <= MAX(TransDate)  THEN TIMESTAMPADD(MINUTE, CONST_RULE_DURATION , MIN(TransDate)) ELSE NULL END) 
+    INTO lv_MinTransDate, lv_MaxTransDate
+    FROM CTS_DataCenter.MatchMonitorTransLive AS mmt
+    WHERE mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam;
+
+    
+    IF lv_MaxTransDate IS NOT NULL THEN
+		SELECT  mmt.MatchID, mmt.TotalScore, mmt.BettypeID, mmt.BetID, mmt.Betteam,
+			mmt.Odds, mmt.Stake
+		FROM CTS_DataCenter.MatchMonitorTransLive AS mmt
+		WHERE mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam
+			AND TransDate <= lv_MaxTransDate;
+    
+		SELECT  mmt.MatchID, mmt.TotalScore, mmt.BettypeID, mmt.BetID, mmt.Betteam
+			, COUNT(1) AS TotalTrans
+            , SUM(CASE WHEN mmt.Stake >= CONST_RULE_HIGHSTAKE THEN 1 ELSE 0 END) AS TotalHighStake
+            , MAX(Odds) - MIN(Odds) AS ODDSPRESS
+		FROM CTS_DataCenter.MatchMonitorTransLive AS mmt
+		WHERE mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam
+			AND TransDate <= lv_MaxTransDate
+		GROUP BY mmt.MatchID, mmt.TotalScore, mmt.BettypeID, mmt.BetID, mmt.Betteam;
+	END IF;
 	/*
     DECLARE lv_TimeCustID BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_MinTransDate DATETIME(3);

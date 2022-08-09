@@ -32,7 +32,7 @@ sp: BEGIN
 				,	mmt.BettypeID
                 ,	mmt.BetID
                 ,	mmt.Betteam
-		FROM CTS_DataCenter.MatchMonitorTranLive AS mmt
+		FROM CTS_DataCenter.MatchMonitorTransLive AS mmt
 		WHERE mmt.StatusRule02 = 0 AND mmt.IsMajorLeague = 0;
 
 	ELSE
