@@ -30,7 +30,8 @@ BEGIN
 	DECLARE @DataFromDate			SMALLDATETIME
 		,	@Today					DATE = GETDATE()
 		,	@CutOffDate				DATE = '2021-09-22';
-
+	
+	DROP TABLE IF EXISTS #tmpCustIds;
 	CREATE TABLE #tmpCustIds(
 			CustId				BIGINT NOT NULL PRIMARY KEY
 	);
@@ -38,230 +39,147 @@ BEGIN
 	IF @ListCustId <> ''
 		BEGIN
 			INSERT INTO #tmpCustIds (CustId)
-			SELECT ssk.val 
-			FROM dbo.f_SplitString(@ListCustId, ',') AS ssk
+			SELECT ssk.Value
+			FROM STRING_SPLIT(@ListCustId, ',') AS ssk
 			OPTION (MAXRECURSION 0);
 		END;
 
 	SET @DataFromDate = DATEADD(DAY, -7, @Today);
 
-	IF	OBJECT_ID('tempdb..#tmpRawTickets') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpRawTickets;
-	END;
-
+	DROP TABLE IF EXISTS #tmpRawTickets;
 	CREATE TABLE	#tmpRawTickets(
-			TransId				BIGINT
-		,	CustId				INT
-		,	UserName			NVARCHAR(50)
-		,	TransDate			DATETIME
-		,	MatchId				INT
-		,	EventDate			DATETIME
-		,	EventStatus			NVARCHAR(50)
-		,	KickOffTime			DATETIME
-		,	HomeId				INT
-		,	AwayId				INT
-		,	LeagueId			INT
-		,	LeagueName			NVARCHAR(500)
-		,	SportType			SMALLINT
-		,	BetType				SMALLINT
-		,	BetTeam				NVARCHAR(10)
-		,	Stake				MONEY
-		,	Odds				SMALLMONEY
-		,	Hdp1				SMALLMONEY
-		,	Hdp2				SMALLMONEY
-		,	LiveHomeScore		SMALLINT
-		,	LiveAwayScore		SMALLINT
-		,	LiveIndicator		BIT
-		,	TicketStatus		SMALLINT
-	);	
-
-	IF	OBJECT_ID('tempdb..#tmpTickets') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpTickets;
-	END;
-
-	CREATE TABLE	#tmpTickets(
-			ID					BIGINT IDENTITY (1,1) PRIMARY KEY
-		,	TransId				BIGINT
-		,	CustId				INT
-		,	UserName			NVARCHAR(50)
-		,	TransDate			DATETIME
+			TransID				BIGINT
 		,	TransDate_Int		BIGINT
-		,	MatchId				INT
-		,	EventDate			DATETIME
-		,	EventStatus			NVARCHAR(50)
-		,	KickOffTime			DATETIME
-		,	HomeId				INT
-		,	AwayId				INT
-		,	LeagueId			INT
-		,	LeagueName			NVARCHAR(500)
-		,	SportType			SMALLINT
+		,	CustID				INT
+		,	MatchID				INT
 		,	BetType				SMALLINT
 		,	BetTeam				NVARCHAR(10)
-		,	Stake				MONEY
-		,	Odds				SMALLMONEY
-		,	Hdp1				SMALLMONEY
-		,	Hdp2				SMALLMONEY
-		,	LiveHomeScore		SMALLINT
-		,	LiveAwayScore		SMALLINT
-		,	LiveIndicator		BIT
-		,	TicketStatus		SMALLINT
 	);	
 
-	CREATE NONCLUSTERED INDEX #CIX_tmpTickets_CustID ON #tmpTickets (
-			CustId			DESC
-	);
-
-	IF	OBJECT_ID('tempdb..#tmpTicketsCloned') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpTicketsCloned;
-	END;
-
-	CREATE TABLE	#tmpTicketsCloned(
-			ID					BIGINT PRIMARY KEY
-		,	TransId				BIGINT
-		,	CustId				INT
-		,	UserName			NVARCHAR(50)
-		,	TransDate			DATETIME
-		,	TransDate_Int		BIGINT
-		,	MatchId				INT
-		,	EventDate			DATETIME
-		,	EventStatus			NVARCHAR(50)
-		,	KickOffTime			DATETIME
+	DROP TABLE IF EXISTS #tmpAssociation;
+	CREATE TABLE	#tmpAssociation(
+			CustID1				INT
+		,	CustID2				INT		
+		,	MatchID				INT
+		,	EventDate			DATE
+		,	LeagueId			INT
 		,	HomeId				INT
 		,	AwayId				INT
-		,	LeagueId			INT
-		,	LeagueName			NVARCHAR(500)
-		,	SportType			SMALLINT
-		,	BetType				SMALLINT
-		,	BetTeam				NVARCHAR(10)
-		,	Stake				MONEY
-		,	Odds				SMALLMONEY
-		,	Hdp1				SMALLMONEY
-		,	Hdp2				SMALLMONEY
-		,	LiveHomeScore		SMALLINT
-		,	LiveAwayScore		SMALLINT
-		,	LiveIndicator		BIT
-		,	TicketStatus		SMALLINT
-	);	
-
-	CREATE NONCLUSTERED INDEX #CIX_tmpTicketsCloned_CustID ON #tmpTicketsCloned (
-			CustId			DESC
+		,	TransID1			BIGINT
+		,	TransID2			BIGINT
 	);
-
-	INSERT INTO #tmpRawTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,SportType,BetType,CustId,UserName,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
+	
+	-- Get full data from bettrans
+	INSERT INTO #tmpRawTickets(TransID,TransDate_Int,MatchID,BetType,CustID,BetTeam)
 	SELECT	b.transid
-		,	b.transdate
+		,	DATEDIFF(ss, @CutOffDate, b.transdate)
 		,	b.matchid
-		,	m.eventdate
-		,	m.Eventstatus
-		,	m.kickofftime
-		,	m.homeid
-		,	m.awayid
-		,	m.leagueid
-		,	l.leaguename
-		,	m.sporttype
 		,	b.bettype
 		,	b.custid
-		,	b.Username
 		,	b.betteam
-		,	b.stake
-		,	b.odds
-		,	b.hdp1
-		,	b.hdp2
-		,	b.livehomescore
-		,	b.liveawayscore
-		,	b.statusID
-		,	b.liveindicator
 	FROM #tmpCustIds AS a WITH(NOLOCK)
 		INNER JOIN dbo.bettrans AS b WITH(NOLOCK) ON a.CustID = b.custid
-		INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
-		INNER JOIN dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
-		INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
 		INNER JOIN dbo.SportBettypeMatrix AS t WITH(NOLOCK) ON b.bettype = t.BetType AND t.SportType IN (1,2,43)
 	WHERE	b.Currency NOT IN (20,27,28);
 
-	INSERT INTO #tmpRawTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,SportType,BetType,CustId,UserName,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
+	-- Get more data from bettrans 14
+	INSERT INTO #tmpRawTickets(TransID,TransDate_Int,MatchID,BetType,CustID,BetTeam)
 	SELECT	b.transid
-		,	b.transdate
+		,	DATEDIFF(ss, @CutOffDate, b.transdate)
 		,	b.matchid
-		,	m.eventdate
-		,	m.Eventstatus
-		,	m.kickofftime
-		,	m.homeid
-		,	m.awayid
-		,	m.leagueid
-		,	l.leaguename
-		,	m.sporttype
 		,	b.bettype
 		,	b.custid
-		,	b.Username
 		,	b.betteam
-		,	b.stake
-		,	b.odds
-		,	b.hdp1
-		,	b.hdp2
-		,	b.livehomescore
-		,	b.liveawayscore
-		,	b.statusID
-		,	b.liveindicator
 	FROM #tmpCustIds AS a WITH(NOLOCK)
 		INNER JOIN dbo.bettrans14 AS b WITH(NOLOCK) ON a.CustID = b.custid
-		INNER JOIN dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
-		INNER JOIN dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
-		INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
 		INNER JOIN dbo.SportBettypeMatrix AS t WITH(NOLOCK) ON b.bettype = t.BetType AND t.SportType IN (1,2,43)
 	WHERE	b.winlostdate > @DataFromDate
 		AND b.Currency NOT IN (20,27,28);
-	
-	CREATE NONCLUSTERED INDEX #CIX_tmpTickets_TransDate ON #tmpRawTickets (
-			TransDate			ASC
-	);
 
-	INSERT INTO #tmpTickets(UserName,TransId,TransDate,TransDate_Int,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,SportType,BetType,CustId,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus,LiveIndicator)
-	SELECT UserName,TransId,TransDate,DATEDIFF(ss, TransDate, @CutOffDate),MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,SportType,BetType,CustId,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus,LiveIndicator
-	FROM #tmpRawTickets WITH(NOLOCK)
-	ORDER BY TransDate ASC;
-
-	INSERT INTO #tmpTicketsCloned(ID,UserName,TransId,TransDate,TransDate_Int,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,SportType,BetType,CustId,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus,LiveIndicator)
-	SELECT (ID - 1),UserName,TransId,TransDate,TransDate_Int,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,SportType,BetType,CustId,BetTeam,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus,LiveIndicator
-	FROM #tmpTickets WITH(NOLOCK)
+	;WITH cte_custPerMatch AS (
+		SELECT DISTINCT c1.CustID AS CustID1, c1.MatchID, c1.Bettype, c1.BetTeam, c2.CustID AS CustID2
+		FROM #tmpRawTickets AS c1
+			INNER JOIN #tmpRawTickets AS c2 
+				ON c1.MatchID = c2.MatchID AND c1.BetType = c2.BetType
+					AND c1.BetTeam = c2.BetTeam AND c1.CustID <> c2.CustID
+	), 
+	cte_SeekPerMatch AS (
+		SELECT ck.CustID1, ck.CustID2
+		FROM cte_custPerMatch AS ck
+		GROUP BY ck.CustID1, ck.CustID2
+		HAVING COUNT(DISTINCT ck.MatchID) >= 3
+	)
+	INSERT INTO #tmpAssociation(CustID1,CustID2,TransID1,TransID2, MatchID)
+	SELECT DISTINCT CASE 
+						WHEN c.CustID1 > c.CustID2 THEN c.CustID2
+						ELSE c.CustID1
+					END AS CustID1
+				,	CASE 
+						WHEN c.CustID1 > c.CustID2 THEN c.CustID1
+						ELSE c.CustID2
+					END AS CustID2
+				,	CASE 
+						WHEN t.TransID1 > t.TransID2 THEN t.TransID2
+						ELSE t.TransID1
+					END AS TransID1
+				,	CASE 
+						WHEN t.TransID1 > t.TransID2 THEN t.TransID1
+						ELSE t.TransID2
+					END AS TransID2
+				,	m.MatchID
+	FROM cte_SeekPerMatch AS c
+		INNER JOIN cte_custPerMatch AS m ON m.CustID1 = c.CustID1 AND m.CustID2 = c.CustID2
+		CROSS APPLY (
+			SELECT c1.TransID AS TransID1, c2.TransID AS TransID2
+			FROM (
+				SELECT t1.TransID, t1.TransDate_Int
+				FROM #tmpRawTickets AS t1
+				WHERE t1.MatchID = m.MatchID AND t1.BetType = m.BetType 
+					AND t1.BetTeam = m.BetTeam AND t1.CustID IN (c.CustID1)
+			) AS c1
+			INNER JOIN (
+				SELECT t2.TransID, t2.TransDate_Int
+				FROM #tmpRawTickets AS t2
+				WHERE t2.MatchID = m.MatchID AND t2.BetType = m.BetType 
+					AND t2.BetTeam = m.BetTeam AND t2.CustID IN (c.CustID2)
+			) AS c2
+				ON ABS(c1.TransDate_Int - c2.TransDate_Int) <= @CONST_MAXTIMEINTERVAL
+		) AS t
+	;
 
 	IF (@IsDetecting = 1) 
-		BEGIN
-			;WITH CTE_coupleDetection AS (
-				SELECT CASE 
-							WHEN t.CustId > c.CustId THEN c.CustId
-							ELSE t.CustId
-						END AS CustID1
-					,	CASE 
-							WHEN t.CustId > c.CustId THEN t.CustId
-							ELSE c.CustId
-						END AS CustID2
-				FROM #tmpTickets AS t WITH(NOLOCK)
-					INNER JOIN #tmpTicketsCloned AS c WITH(NOLOCK) ON t.ID = c.ID AND t.CustId <> c.CustId
-				WHERE ABS(t.TransDate_Int - c.TransDate_Int) <= @CONST_MAXTIMEINTERVAL
-			)
+		BEGIN			
 			SELECT DISTINCT CustID1, CustID2
-			FROM CTE_coupleDetection;
+			FROM #tmpAssociation;
 		END;
 	ELSE
 		BEGIN
-			;WITH CTE_fraudTickets AS (
-				SELECT t.TransId AS TransId1, c.TransId AS TransId2
-				FROM #tmpTickets AS t WITH(NOLOCK)
-					INNER JOIN #tmpTicketsCloned AS c WITH(NOLOCK) ON t.ID = c.ID AND t.CustId <> c.CustId
-				WHERE ABS(t.TransDate_Int - c.TransDate_Int) <= @CONST_MAXTIMEINTERVAL
+			UPDATE t WITH(ROWLOCK, UPDLOCK)
+			SET t.EventDate = ISNULL(m.kickofftime,m14.kickofftime),
+				t.HomeId = ISNULL(m.homeid,m14.homeid),
+				t.AwayId = ISNULL(m.awayid,m14.awayid),
+				t.LeagueId = ISNULL(m.leagueid,m14.leagueid)
+			FROM #tmpAssociation AS t
+				INNER JOIN dbo.match AS m WITH(NOLOCK) ON t.MatchID = m.matchid
+				INNER JOIN dbo.match14 AS m14 WITH(NOLOCK) ON t.MatchID = m14.matchid;
+
+			;WITH cte_orderedMatch	AS (
+				SELECT TOP 3 MatchID
+				FROM #tmpAssociation 
+				ORDER BY EventDate
 			)
-			SELECT DISTINCT t.TransId, t.TransDate, t.UserName, t.BetType, t.BetTeam, t.Stake, t.Odds, t.LiveHomeScore, t.LiveAwayScore, t.TicketStatus, t.MatchId, t.EventDate, t.HomeId, t.AwayId, t.LeagueId
-			FROM CTE_fraudTickets AS c
-				INNER JOIN #tmpTickets AS t ON t.TransId = c.TransId1 OR t.TransId = c.TransId2;
+			SELECT b.TransId, b.TransDate, b.UserName, b.BetType, b.BetTeam, b.Stake, b.Odds, b.LiveHomeScore, b.LiveAwayScore, b.status, b.MatchId, c.EventDate, c.HomeId, c.AwayId, c.LeagueId
+			FROM cte_orderedMatch AS cte
+				INNER JOIN #tmpAssociation AS c ON cte.MatchID = c.MatchID
+				INNER JOIN dbo.bettrans AS b WITH(NOLOCK) ON b.TransId = c.TransID1 OR b.TransId = c.TransID2
+			UNION
+			SELECT b.TransId, b.TransDate, b.UserName, b.BetType, b.BetTeam, b.Stake, b.Odds, b.LiveHomeScore, b.LiveAwayScore, b.status, b.MatchId, c.EventDate, c.HomeId, c.AwayId, c.LeagueId
+			FROM cte_orderedMatch AS cte
+				INNER JOIN #tmpAssociation AS c ON cte.MatchID = c.MatchID
+				INNER JOIN dbo.bettrans14 AS b WITH(NOLOCK) ON b.TransId = c.TransID1 OR b.TransId = c.TransID2
 		END;
 
 	DROP TABLE #tmpCustIds;
 	DROP TABLE #tmpRawTickets;
-	DROP TABLE #tmpTickets;
-	DROP TABLE #tmpTicketsCloned;
 END;
 
