@@ -119,6 +119,15 @@ sp:BEGIN
         INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = ma.ToCTSCustID AND cus.IsInternal = 0;
     
     /*****************************Merge Group**************************************************/
+    DROP TEMPORARY TABLE IF EXISTS Temp_Graph_Dup;
+	CREATE TEMPORARY TABLE Temp_Graph_Dup LIKE Temp_Graph;
+	INSERT INTO Temp_Graph_Dup
+	SELECT * FROM Temp_Graph;
+	
+	INSERT IGNORE INTO Temp_Graph
+	SELECT DestID,OrigID FROM Temp_Graph_Dup;
+    
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_Group;
 	CREATE TEMPORARY TABLE 		Temp_Group (
 			CTSCustID 			BIGINT PRIMARY KEY 

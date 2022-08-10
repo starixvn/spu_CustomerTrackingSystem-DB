@@ -54,6 +54,13 @@ sp:BEGIN
         ,	UNIQUE			IX_Temp_Cust_CTSCustID(CTSCustID)
 	);
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_Cust_Dup;
+	CREATE TEMPORARY TABLE 		Temp_Cust_Dup (
+			CTSCustID		BIGINT UNSIGNED  PRIMARY KEY
+		,	CustID 			BIGINT UNSIGNED
+        ,	INDEX			IX_Temp_Cust(CustID)
+	);
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerClass;
 	CREATE TEMPORARY TABLE 		Temp_CustomerClass (
 			CTSCustID		BIGINT UNSIGNED PRIMARY KEY
@@ -107,7 +114,7 @@ sp:BEGIN
 			FromCTSCustID 		BIGINT  
 		,	ToCTSCustID   		BIGINT
         ,	AssociationType		SMALLINT # 1-Device, 2-Manual, 3-AI, 4-AIGroup, 5-IP, 6 - Agent, 7 - SharedIP, 8 - SharedMatches
-		,	PRIMARY KEY(FromCTSCustID, ToCTSCustID)
+		,	PRIMARY KEY(FromCTSCustID, ToCTSCustID, AssociationType)
 		,	INDEX Temp_Primary(ToCTSCustID,FromCTSCustID)
 	);
     
@@ -149,6 +156,12 @@ sp:BEGIN
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = tmp.CTSCustID  
         LEFT JOIN CTS_DataCenter.StaticList AS sta ON sta.ListID = 1 AND sta.ItemID = cus.CustStatusID
         LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = cus.CustID;
+    
+    INSERT IGNORE INTO Temp_Cust_Dup(CTSCustID, CustID)
+    SELECT 	CTSCustID
+		,	CustID
+    FROM Temp_Cust
+    WHERE Processed = 0;
     
     INSERT IGNORE INTO Temp_Primary(FromCTSCustID, ToCTSCustID,AssociationType)
 	SELECT	js.FromCTSCustID
@@ -193,7 +206,12 @@ sp:BEGIN
         ,	CASE WHEN AssociationType = 3 THEN 1 ELSE 0 END AS HasAI
         ,	CASE WHEN AssociationType = 4 THEN 1 ELSE 0 END AS HasAIGroup
         ,	CASE WHEN AssociationType = 5 THEN 1 ELSE 0 END AS HasIP
-	FROM Temp_Primary;
+	FROM Temp_Primary AS tmp
+    ON DUPLICATE KEY UPDATE HasDevice = CASE WHEN tmp.AssociationType = 1 THEN 1 ELSE HasDevice END
+						,	HasManual = CASE WHEN tmp.AssociationType = 2 THEN 1 ELSE HasManual END
+                        ,	HasAI = CASE WHEN tmp.AssociationType = 3 THEN 1 ELSE HasAI END
+                        ,	HasAIGroup = CASE WHEN tmp.AssociationType = 4 THEN 1 ELSE HasAIGroup END
+                        ,	HasIP = CASE WHEN tmp.AssociationType = 5 THEN 1 ELSE HasIP END;
     
     INSERT IGNORE INTO Temp_Graph(OrigID,DestID,HasAgent) 
     SELECT 	FromCTSCustID
@@ -327,18 +345,29 @@ sp:BEGIN
 				  WHERE cus.CTSCustID = grp.OrigID AND grp.HasDevice = 1);
 	
     INSERT IGNORE INTO Temp_CustAssociationType(CTSCustID, AssociationType)
+    SELECT 	cus.CTSCustID
+		,   'Agent'
+    FROM Temp_Cust AS cus
+    WHERE EXISTS (SELECT 1 
+				  FROM Temp_Graph AS grp 
+				  WHERE cus.CTSCustID = grp.OrigID AND grp.HasAgent = 1)
+	ON DUPLICATE KEY UPDATE AssociationType = CONCAT(AssociationType, ", Agent");
+	
+    INSERT IGNORE INTO Temp_CustAssociationType(CTSCustID, AssociationType)
     WITH CTE AS (SELECT cus.CTSCustID
-					,	CONCAT(IF(HasManual =1, ", Manually","")
-                              ,IF(HasAI =1, ", Betting Pattern","")
-                              ,IF(HasIP =1, ", IP","")
-                              ,IF(HasAgent =1, ", Agent","")
-                              ,IF(HasSharedIP =1, ", IP(last3days)","")
-                              ,IF(HasSharedMatches =1, ", Match","")) AS AssociationType
+					,	CONCAT(IF(MAX(HasManual) =1, ", Manual","")
+                              ,IF(MAX(HasAI) =1, ", Betting Pattern","")
+                              ,IF(MAX(HasIP) =1, ", IP","")
+                              ,IF(MAX(HasSharedIP) =1, ", IP(last3days)","")
+                              ,IF(MAX(HasSharedMatches) =1, ", Match","")) AS AssociationTypeStr
 				FROM Temp_Cust AS cus
-					INNER JOIN Temp_Graph AS grp ON cus.CTSCustID = grp.OrigID AND (grp.HasDevice = 0 OR grp.HasAIGroup = 0))
-	SELECT CTSCustID
-		,	SUBSTR(AssociationType, 2)
-    FROM CTE;
+					INNER JOIN Temp_Graph AS grp ON cus.CTSCustID = grp.OrigID AND (grp.HasDevice = 0 OR grp.HasAIGroup = 0 OR grp.HasAgent = 0)
+                    INNER JOIN Temp_Cust_Dup AS dup ON dup.CTSCustID = grp.DestID
+				GROUP BY cus.CTSCustID)
+	SELECT CTE.CTSCustID
+		,	SUBSTR(CTE.AssociationTypeStr, 2)
+    FROM CTE
+    ON DUPLICATE KEY UPDATE AssociationType = CONCAT(AssociationType, CTE.AssociationTypeStr);
     
     INSERT INTO Temp_CustAssociationType(CTSCustID, AssociationType)
     SELECT 	cus.CTSCustID

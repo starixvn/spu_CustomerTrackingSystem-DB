@@ -35,7 +35,7 @@ sp:BEGIN
 			OrigID 				BIGINT  
 		,	DestID   			BIGINT
         ,	AssociationType		SMALLINT		# 1-Device, 2-Manual, 3-AI, 4-AIGroup, 5-IP
-		,	PRIMARY KEY(OrigID, DestID)
+		,	PRIMARY KEY(OrigID, DestID, AssociationType)
 		,	INDEX IX_Temp_Graph(DestID,OrigID)
 	);
     
