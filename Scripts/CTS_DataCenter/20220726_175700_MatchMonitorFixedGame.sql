@@ -82,13 +82,19 @@ CREATE TABLE MatchMonitorTransNonLive (
 
 /******************ALTER TABLE *************************/
 ALTER TABLE MatchMonitorDetails
+DROP INDEX IX_MatchMonitorDetails_MatchID_BettypeID;
+
+ALTER TABLE MatchMonitorDetails
+DROP INDEX UK_MatchMonitorDetails_MatchDetailGroup;
+
+ALTER TABLE MatchMonitorDetails
 ADD COLUMN Betteam VARCHAR(10) DEFAULT NULL;
 
 ALTER TABLE MatchMonitorDetails
 ADD INDEX IX_MatchMonitorDetails_MatchIDBettypeIDBetIDBetteam(MatchID,BettypeID,BetID,Betteam);
 
 ALTER TABLE MatchMonitorDetails
-DROP INDEX IX_MatchMonitorDetails_MatchID_BettypeID;
+ADD UNIQUE KEY UK_MatchMonitorDetails_MatchDetailsGroup(MatchID,LiveIndicator,TotalScore,BettypeID,BetID,Betteam,GroupID);
 
 #******************Init SystemParameter***************************
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
