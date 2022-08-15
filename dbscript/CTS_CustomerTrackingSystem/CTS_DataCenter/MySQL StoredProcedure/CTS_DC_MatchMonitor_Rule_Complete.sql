@@ -24,7 +24,7 @@ BEGIN
             -	20210830@Casey.Huynh: Update Rule seperate Live and NonLive and move to Slave [Redmine ID: 159195]
             -	20211213@Casey.Huynh: Enhance MM, Add column LeagueName [Redmine ID: 165606]
 			-	20220110@Casey.Huynh: Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
-            -	202211022@Casey.Huynh: Remove DEBUG_LOG [Redmine ID: 175700]
+            
 		Param's Explanation (filtered by):			
 
 		Example:
@@ -190,6 +190,10 @@ BEGIN
     FROM CTS_DataCenter.MatchMonitorDetails AS mmd
     WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID;     
     
+    IF EXISTS (SELECT 1 FROM CTS_DataCenter.MatchMonitor) THEN 
+		SET @LogMM = 1;
+    END IF;
+    
 	DELETE mm
 	FROM CTS_DataCenter.MatchMonitor AS mm
 		LEFT JOIN Temp_MatchMonitorDetails_Reason AS tmpMmd ON mm.Reason = tmpMmd.Reason
@@ -201,6 +205,11 @@ BEGIN
 	FROM CTS_DataCenter.MatchMonitorDetails AS mmd
 		LEFT JOIN Temp_MatchMonitor_Reason AS tmpMm ON mmd.Reason = tmpMm.Reason
 	WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID;
+    
+    IF @LogMM = 1 AND NOT EXISTS (SELECT 1 FROM CTS_DataCenter.MatchMonitor) THEN
+		INSERT INTO MatchMonitor_Log(SPName) 
+		VALUES('CTS_DC_MatchMonitor_Rule_Complete');
+    END IF;
     
 END$$
 DELIMITER ;

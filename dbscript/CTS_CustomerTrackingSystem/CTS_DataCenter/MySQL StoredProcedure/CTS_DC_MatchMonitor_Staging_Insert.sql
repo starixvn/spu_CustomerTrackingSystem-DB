@@ -20,7 +20,7 @@ BEGIN
             -	20210823@Casey.Huynh: Seperate scan for Live and NonLive [Redmine ID: 159195]
             -	20211213@Casey.Huynh: Enhance MM, Add column LeagueName [Redmine ID: 165606]
             -	20220110@Casey.Huynh: Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
-            - 	2022
+            - 	20220726@Casey.Huynh: Fixed Game [Redmine ID: #175700]
 		
 		Param's Explanation (filtered by):		
 
@@ -123,12 +123,11 @@ BEGIN
                                 ,	IsMajorLeague	BOOLEAN	PATH "$.IsMajorLeague" 
 							)
 					) AS js;
-		#WHERE js.IsMajorLeague = 0;  
         
 		#=====UPDATE SYSTEM PARAMETER===============================
 		SELECT MAX(mms.TransID)
 		INTO lv_LastTransID
-		FROM CTS_DataCenter.MatchMonitorStagingLive AS mms;  
+		FROM CTS_DataCenter.MatchMonitorTransLive AS mms;  
             
 		IF lv_LastTransID > 0 THEN	   
 			UPDATE CTS_DataCenter.SystemParameter AS sys
@@ -227,13 +226,12 @@ BEGIN
                                 ,	Odds			DECIMAL(10,4)	PATH "$.Odds" 
                                 ,	IsMajorLeague	TINYINT(1)	PATH "$.IsMajorLeague" 
 							)
-					) AS js
-		WHERE js.IsMajorLeague = 0; 
+					) AS js;
                     
 		#=====UPDATE SYSTEM PARAMETER===============================
 		SELECT 	MAX(mms.TransID)
 		INTO 	lv_LastTransID
-		FROM	CTS_DataCenter.MatchMonitorStagingNonLive AS mms;  
+		FROM	CTS_DataCenter.MatchMonitorTransNonLive AS mms;  
             
         IF lv_LastTransID > 0 THEN	   
 			UPDATE 	CTS_DataCenter.SystemParameter AS sys

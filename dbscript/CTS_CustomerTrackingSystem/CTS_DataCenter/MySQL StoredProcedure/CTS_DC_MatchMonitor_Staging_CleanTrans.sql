@@ -10,77 +10,58 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Staging_CleanTrans`
 BEGIN
 	/*
 		Created:	20210526@Casey.Huynh
-		Task :		Match Monitor Insert trans ticket to Staging table
+		Task :		Match Monitor Rule
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
-			- 	20210526@Casey.Huynh: Created [Redmine ID: 159195]
-            -	20220110@Casey.Huynh: Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
+			- 20220726@Casey.Huynh: Created [Redmine ID: #175700]
             
 		Param's Explanation (filtered by):
-			CALL CTS_DC_MatchMonitor_Staging_CleanTrans_xtest(1,2);
+			CALL CTS_DC_MatchMonitor_Staging_CleanTrans(1,2);
 		Example:
 			
 	*/
-	DECLARE	lv_MaxTransID 		BIGINT;   
-    DECLARE	lv_MaxTransDate 	DATETIME(3);   
-    DECLARE	lv_LastTransID 		BIGINT;  
-    DECLARE	lv_LastTransDate	DATETIME(3);
-    DECLARE	CONST_RULE_DURATION	SMALLINT DEFAULT 7; # 7 minutes
-    
+	
+    DECLARE	lv_LastTransID 		BIGINT;    
     	
     #======Clean Staging=================================================
     IF (ip_LiveIndicator = 1) THEN		
-		SELECT 	mmt.TransDate, mmt.TransID 
-		INTO 	lv_MaxTransDate, lv_MaxTransID
-		FROM	CTS_DataCenter.MatchMonitorTransLive AS mmt
-        WHERE	mmt.TransID <= ip_MaxTransID
-        ORDER BY TransID DESC
-        LIMIT 	1;    
 		
-		SELECT  MIN(mmt.TransDate), MIN(mmt.TransID)
-		INTO 	lv_LastTransDate, lv_LastTransID
+		SELECT  MAX(mmt.TransID)
+		INTO 	lv_LastTransID
 		FROM	CTS_DataCenter.MatchMonitorTransLive AS mmt
-		WHERE   mmt.TransDate > TIMESTAMPADD(MINUTE, -CONST_RULE_DURATION, lv_MaxTransDate);  
-		
-		DELETE 	mmt
-		FROM	CTS_DataCenter.MatchMonitorTransLive AS mmt
-		WHERE	mmt.TransID < lv_LastTransID AND StatusRule02 = 1;    
+		WHERE	mmt.TransID < ip_MaxTransID AND StatusRule02 = 1; 		
         
-        /* Update Parameter*/
-        IF lv_LastTransID > 0 THEN			
+        IF lv_LastTransID > 0 THEN	
+			DELETE 	mmt
+			FROM	CTS_DataCenter.MatchMonitorTransLive AS mmt
+			WHERE	mmt.TransID <= lv_LastTransID;
+            
 			UPDATE 	CTS_DataCenter.SystemParameter AS sys
 			SET 	sys.ParameterValue = lv_LastTransID
 			WHERE 	sys.ParameterID = 100;
 		END IF;
-	END IF;
+    END IF;    
     
-    IF (ip_LiveIndicator = 0) THEN		
-		SELECT 	mmt.TransDate, mmt.TransID 
-		INTO 	lv_MaxTransDate, lv_MaxTransID
-		FROM	CTS_DataCenter.MatchMonitorNonTransLive AS mmt
-        WHERE	mmt.TransID <= ip_MaxTransID
-        ORDER BY TransID DESC
-        LIMIT 	1;    
+	IF (ip_LiveIndicator = 0) THEN		
 		
-		SELECT  MIN(mmt.TransDate), MIN(mmt.TransID)
-		INTO 	lv_LastTransDate, lv_LastTransID
-		FROM	CTS_DataCenter.MatchMonitorNonTransLive AS mmt
-		WHERE   TransDate > TIMESTAMPADD(MINUTE, -CONST_RULE_DURATION, lv_MaxTransDate);  
-		
-		DELETE 	mmt
-		FROM	CTS_DataCenter.MatchMonitorNonTransLive AS mmt
-		WHERE	mmt.TransID < lv_LastTransID AND StatusRule02 = 1;    
+		SELECT  MAX(mmt.TransID)
+		INTO 	lv_LastTransID
+		FROM	CTS_DataCenter.MatchMonitorTransNonLive AS mmt
+		WHERE	mmt.TransID < ip_MaxTransID AND StatusRule02 = 1; 		
         
-        /* Update Parameter*/
-        IF lv_LastTransID > 0 THEN			
+        IF lv_LastTransID > 0 THEN	
+			DELETE 	mmt
+			FROM	CTS_DataCenter.MatchMonitorTransNonLive AS mmt
+			WHERE	mmt.TransID <= lv_LastTransID;
+            
 			UPDATE 	CTS_DataCenter.SystemParameter AS sys
 			SET 	sys.ParameterValue = lv_LastTransID
 			WHERE 	sys.ParameterID = 101;
 		END IF;
-        
-	END IF;
+    END IF;    
+    
     
 END$$
 DELIMITER ;

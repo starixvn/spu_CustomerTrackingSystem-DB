@@ -26,23 +26,30 @@ BEGIN
 		Param's Explanation (filtered by):	
 
 		Example:
-			CALL CTS_DC_MatchMonitor_Rule02_Complete_xtest(@ip_LiveIndicator:=1,@ip_MaxTransID:=115841606929,@ip_MatchID:=1,@ip_TotalScore:=0,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a'
-				,@ip_TransGroup = '[{"Reason": 3 ,"TransIDList":"1001,1007,1008","CustIDList":"1,2"}]');
+			CALL CTS_DC_MatchMonitor_Rule02_Complete_xtest(@ip_LiveIndicator:=1,@ip_MaxTransID:=115841606929,@ip_MatchID:=1,@ip_TotalScore:=1,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a'
+				,@ip_TransGroup := '[{"Reason": 3 ,"TransIDList":"1001,1007,1008","CustIDList":"1,2"}]');
 	*/ 
-    DECLARE	lv_KickOffTime 			DATETIME;
-    DECLARE	lv_EventStatus 			VARCHAR(50);
-    DECLARE lv_HomeID 				INT UNSIGNED;
-    DECLARE lv_AwayID 				INT UNSIGNED;
-    DECLARE lv_LeagueID				INT UNSIGNED;
-    DECLARE lv_LeagueName			VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-    DECLARE	lv_Sporttype			INT;
-    DECLARE	lv_MatchDetailsID		INT;
-	DECLARE lv_EventDate 			DATE;
-    DECLARE lv_LiveHomeScore		SMALLINT UNSIGNED;
-    DECLARE lv_LiveAwayScore		SMALLINT UNSIGNED;
+    DECLARE	lv_KickOffTime 					DATETIME;
+    DECLARE	lv_EventStatus 					VARCHAR(50);
+    DECLARE lv_HomeID 						INT UNSIGNED;
+    DECLARE lv_AwayID 						INT UNSIGNED;
+    DECLARE lv_LeagueID						INT UNSIGNED;
+    DECLARE lv_LeagueName					VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    DECLARE	lv_Sporttype					INT;
+    DECLARE	lv_DetailsTransIDList			TEXT;
+    DECLARE	lv_DetailsCustIDList			TEXT;
+    DECLARE	lv_DetailsID					INT;
+	DECLARE lv_EventDate 					DATE;
+    DECLARE lv_LiveHomeScore				SMALLINT UNSIGNED;
+    DECLARE lv_LiveAwayScore				SMALLINT UNSIGNED;
+    DECLARE lv_MaxTransDate					DATETIME(3);	
+    DECLARE	lv_NewTransIDList			TEXT;
+    DECLARE	lv_NewCustIDList			TEXT;   
+    
     DECLARE	CONST_GROUPID			TINYINT DEFAULT 0;
-	DECLARE	CONST_REASON_FIXEDGAME	TINYINT DEFAULT 3; #0: Group Betting, 1: Headging, 2: Arbitrage, 3: FixedGame
-  
+	DECLARE	CONST_REASON_FIXEDGAME	TINYINT DEFAULT 3; #0: Group Betting, 1: Headging, 2: Arbitrage, 3: FixedGame	
+    DECLARE	CONST_RULE_DURATION	SMALLINT DEFAULT 7; # 7 minutes
+       
     DROP TEMPORARY TABLE IF EXISTS Temp_TransGroup;
     CREATE TEMPORARY TABLE Temp_TransGroup
     (
@@ -51,7 +58,7 @@ BEGIN
         ,	CustIDList		LONGTEXT 
     );
     
-    INSERT IGNORE INTO CTS_DataCenter.Temp_TransGroup(Reason, TransIDList, CustIDList)
+    INSERT IGNORE INTO Temp_TransGroup(Reason, TransIDList, CustIDList)
 	SELECT 	js.Reason
 		,	js.TransIDList
 		,	js.CustIDList
@@ -83,18 +90,49 @@ BEGIN
 		LIMIT 1;	 
 	END IF;	
     
-    SELECT 	mmd.ID 
-    INTO 	lv_MatchDetailsID
+    SELECT 	mmd.ID, mmd.ListTransID, mmd.ListCustID
+    INTO 	lv_DetailsID, lv_DetailsTransIDList, lv_DetailsCustIDList
 	FROM 	CTS_DataCenter.MatchMonitorDetails AS mmd
 	WHERE 	mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID
 		AND mmd.BetID = ip_BetID AND mmd.TotalScore = ip_TotalScore AND mmd.Betteam = ip_Betteam AND mmd.Reason = CONST_REASON_FIXEDGAME;
+        
+	SELECT 	tmpTg.TransIDList, tmpTg.CustIDList
+    INTO 	lv_NewTransIDList, lv_NewTransIDList
+	FROM 	Temp_TransGroup AS tmpTg;	    
     
-    IF (lv_MatchDetailsID IS NOT NULL) THEN    
+    IF (lv_DetailsID IS NOT NULL) THEN
+		
+        DROP TEMPORARY TABLE IF EXISTS Temp_DetailsTransIDList;
+        CREATE TEMPORARY TABLE Temp_DetailsTransIDList(
+			TransID BIGINT UNSIGNED PRIMARY KEY
+		);
+    
+		DROP TEMPORARY TABLE IF EXISTS Temp_DetailsCustIDList;
+        CREATE TEMPORARY TABLE Temp_DetailsCustIDList(
+			CustID INT UNSIGNED PRIMARY KEY
+		);
+        
+		SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_DetailsTransIDList (TransID) VALUES ('", REPLACE(lv_DetailsTransIDList, ",", "'),('"),"');");
+		PREPARE 	stmt1 FROM @sql;
+		EXECUTE 	stmt1;   
+        
+		SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_DetailsTransIDList (TransID) VALUES ('", REPLACE(lv_NewTransIDList, ",", "'),('"),"');");
+		PREPARE 	stmt1 FROM @sql;
+		EXECUTE 	stmt1;
+        
+		SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_DetailsCustIDList (CustID) VALUES ('", REPLACE(lv_DetailsCustIDList, ",", "'),('"),"');");
+		PREPARE 	stmt1 FROM @sql;
+		EXECUTE 	stmt1; 
+        
+        SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_DetailsCustIDList (CustID) VALUES ('", REPLACE(lv_NewTransIDList, ",", "'),('"),"');");
+		PREPARE 	stmt1 FROM @sql;
+		EXECUTE 	stmt1;  		
+    
 		UPDATE CTS_DataCenter.MatchMonitorDetails AS mmd
-			INNER JOIN CTS_DataCenter.Temp_TransGroup AS tmpTg ON mmd.Reason = tmpTg.Reason
-        SET 	mmd.ListCustID = CONCAT(mmd.ListCustID,',',tmpTg.CustIDList)
-			,	mmd.ListTransID = CONCAT(mmd.ListTransID,',',tmpTg.TransIDList)
-		WHERE mmd.ID = lv_MatchDetailsID;
+			INNER JOIN Temp_TransGroup AS tmpTg ON mmd.Reason = tmpTg.Reason
+        SET 	mmd.ListCustID = (SELECT GROUP_CONCAT(tmp.CustID) FROM Temp_DetailsCustIDList AS tmp)
+			,	mmd.ListTransID = (SELECT GROUP_CONCAT(tmp.TransID) FROM Temp_DetailsTransIDList AS tmp)
+		WHERE mmd.ID = lv_DetailsID;
         
 	ELSE  
 		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorDetails(MatchID, LiveIndicator, TotalScore, BettypeID, BetID, Betteam, EventDate, LiveHomeScore, LiveAwayScore, ListCustID, ListTransID, Reason, GroupID)
@@ -109,9 +147,31 @@ BEGIN
         
     END IF;
     
-    UPDATE CTS_DataCenter.MatchMonitorTransLive AS mmt
-    SET mmt.StatusRule02 = 1
-    WHERE mmt.TransID <= ip_MaxTransID;
+	IF (ip_LiveIndicator = 1) THEN
+		
+        SELECT MAX(TransDate)
+		INTO lv_MaxTransDate
+		FROM CTS_DataCenter.MatchMonitorTransLive AS mmt
+		WHERE mmt.TransID = ip_MaxTransID;   
+        
+		UPDATE CTS_DataCenter.MatchMonitorTransLive AS mmt
+		SET mmt.StatusRule02 = 1
+		WHERE mmt.TransDate <= TIMESTAMPADD(MINUTE,-CONST_RULE_DURATION,lv_MaxTransDate); 
+        
+	END IF;
+
+	IF (ip_LiveIndicator = 0) THEN
+    
+		 SELECT MAX(TransDate)
+		INTO lv_MaxTransDate
+		FROM CTS_DataCenter.MatchMonitorTransNonLive AS mmt
+		WHERE mmt.TransID = ip_MaxTransID;   
+        
+		UPDATE CTS_DataCenter.MatchMonitorTransNonLive AS mmt
+		SET mmt.StatusRule02 = 1
+		WHERE mmt.TransDate <= TIMESTAMPADD(MINUTE,-CONST_RULE_DURATION,lv_MaxTransDate); 	 
+	END IF;	    
+   
     
 END$$
 DELIMITER ;
