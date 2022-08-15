@@ -5,14 +5,14 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_TicketDetails]
-		@QueryType				TINYINT = 1
+		@QueryType					TINYINT = 1
 
-	,	@LastScannedTransID		BIGINT = 0
-	,	@IsLive					BIT = 1
-	,	@BatchSize				INT = 500
+	,	@LastScannedSequenceID		BIGINT = 0
+	,	@IsLive						BIT = 1
+	,	@BatchSize					INT = 500
 
-	,	@ListTransId			VARCHAR(MAX) = ''
-	,	@EventDate				DATETIME = '1900-09-22'
+	,	@ListTransId				VARCHAR(MAX) = ''
+	,	@EventDate					DATETIME = '1900-09-22'
 
 AS
 /*
@@ -112,7 +112,8 @@ BEGIN
 	END;
 
 	CREATE TABLE	#tmpTickets(
-			TransId				BIGINT
+			SequenceId			BIGINT
+		,	TransId				BIGINT
 		,	TransDate			DATETIME
 		,	MatchId				INT
 		,	EventDate			DATETIME
@@ -153,8 +154,9 @@ BEGIN
 
 	IF (@QueryType = 1)
 		BEGIN
-			INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,IsMajorLeague,SportType,BetType,CustId,BetTeam, BetId,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
-			SELECT	TOP (@BatchSize) b.transid
+			INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,SportType,BetType,CustId,BetTeam, BetId,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
+			SELECT	TOP (@BatchSize) b.sequenceid
+				,	b.transid
 				,	b.transdate
 				,	b.matchid
 				,	m.eventdate
@@ -189,7 +191,7 @@ BEGIN
 				INNER JOIN dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
 				INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
 				INNER JOIN #tmpSupportedSportBettype AS t WITH(NOLOCK) ON m.sporttype = t.SportType AND b.bettype = t.BetType
-			WHERE	b.transid > @LastScannedTransID
+			WHERE	b.sequenceid > @LastScannedSequenceID
                 AND m.eventstatus <> 'completed'
 				AND b.LiveIndicator = @IsLive
 				AND b.Currency NOT IN (20,27,28)
