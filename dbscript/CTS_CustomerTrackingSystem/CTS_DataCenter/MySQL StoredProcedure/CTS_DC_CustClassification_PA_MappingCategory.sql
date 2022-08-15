@@ -158,7 +158,7 @@ BEGIN
 			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CTSCustID = sp.CTSCustID AND sp.CustomerClass NOT IN (SELECT DISTINCT tmp.CustomerClass FROM Temp_SpecialCategory AS tmp)
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.CategoryID;		
     
-		INSERT INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
+		INSERT IGNORE INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
 		SELECT DISTINCT t.CustID
 			,	CASE 
 					WHEN cc.IsDangerProbation = 1 THEN 0

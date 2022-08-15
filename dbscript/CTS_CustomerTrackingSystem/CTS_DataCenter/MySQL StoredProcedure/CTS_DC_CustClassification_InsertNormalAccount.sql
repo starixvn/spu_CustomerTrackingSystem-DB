@@ -340,8 +340,7 @@ BEGIN
                                      ELSE CONST_SOURCETYPE_SCANONSCHEDULE
 								END)
 	WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);     
-#insert into Adhoc_LongTest
-#select *, lv_BatchID AS BatchID, 7 AS StepID from Temp_NewClassification;
+
     /* 8: GENERATE DATA NO CHANGED */   
     UPDATE 	Temp_NewClassification AS temp
 	SET 	temp.IsDataChanged = (CASE WHEN temp.NewCateID = temp.OldCateID AND temp.SourceTypeID <> CONST_SOURCETYPE_FAILPROBATION THEN 0 /*No update category*/ ELSE temp.IsDataChanged END)
@@ -432,8 +431,7 @@ BEGIN
 		AND (SourceTypeID IN (CONST_SOURCETYPE_SAMECATEGORY, CONST_SOURCETYPE_FAILPROBATION,CONST_SOURCETYPE_LESSTHAN10TICKETS )
 			OR ActionType = CONST_ACTIONTYPE_IGNOREPROBATION);
             
-#insert into Adhoc_LongTest
-#select *, lv_BatchID AS BatchID, 9 AS StepID from Temp_NewClassification;        
+     
     /* 10: GENERATE TARGET DANGER LEVEL */
     UPDATE Temp_NewClassification AS temp 
 		INNER JOIN CTS_DataCenter.CategoryToDangerLevel AS d ON d.CategoryID = temp.NewCateID AND d.IsLicensee = temp.IsLicensee AND d.TypeID = 1
@@ -456,7 +454,8 @@ BEGIN
 									WHEN temp.NewIsDangerProbation = 1 THEN CONST_LICVIP_SUSPICIOUSCATEGORY
                                     ELSE CONST_LICVIP_DANGEROUSCATEGORY 
 								END
-	WHERE cate.CategoryID IN (CONST_LICVIP_SUSPICIOUSCATEGORY,CONST_LICVIP_DANGEROUSCATEGORY);
+	WHERE cate.CategoryID IN (CONST_LICVIP_SUSPICIOUSCATEGORY,CONST_LICVIP_DANGEROUSCATEGORY)
+		AND temp.IsDataChanged = 1;
 	
     /* 12: INSERT CTS CLASSIFICATION */
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification
@@ -496,8 +495,7 @@ BEGIN
 	WHERE temp.NewCateGroup = CONST_CATEGORY_PROBATION 
 		AND (temp.ActionType = CONST_ACTIONTYPE_INSERT 
 			OR (temp.ActionType = CONST_ACTIONTYPE_UPDATE AND temp.OldCateGroup <> CONST_CATEGORY_PROBATION));
-#insert into Adhoc_LongTest
-#select *, lv_BatchID AS BatchID, 14 AS StepID from Temp_NewClassification;
+
     /* 15: WRITE HISTORY LOG (VIEW ON WEB) */
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
 	(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, TWBetCount, TWGroupBettingRate, TWTicketRejectRate, TWDesktopUsageRate
