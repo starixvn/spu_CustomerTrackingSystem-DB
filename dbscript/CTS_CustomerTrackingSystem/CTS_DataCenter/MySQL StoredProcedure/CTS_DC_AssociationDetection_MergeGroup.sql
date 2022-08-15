@@ -273,6 +273,10 @@ sp:BEGIN
     
 
     /*****************************Merge Group**************************************************/
+    UPDATE  Temp_Cust AS cus 
+    SET Processed = 1
+	WHERE NOT EXISTS (SELECT 1 FROM Temp_Graph AS tmp WHERE tmp.OrigID = cus.CTSCustID);
+    
     lp: LOOP 
 		SET lv_OrigID = NULL;
         
@@ -331,7 +335,7 @@ sp:BEGIN
     INSERT INTO Temp_DestIDCount(DestID)
     SELECT grp.DestID
     FROM Temp_Graph AS grp
-    WHERE EXISTS (SELECT 1 FROM Temp_Cust AS cus WHERE cus.CTSCustID = grp.OrigID AND (grp.HasDevice = 1 OR grp.HasAIGroup = 1))
+    WHERE EXISTS (SELECT 1 FROM Temp_Cust AS cus WHERE cus.CTSCustID = grp.OrigID AND (grp.HasDevice = 1 OR grp.HasAIGroup = 1 OR grp.HasAgent = 1 ))
     GROUP BY DestID
     HAVING COUNT(1) > 1;
     
@@ -350,6 +354,7 @@ sp:BEGIN
     FROM Temp_Cust AS cus
     WHERE EXISTS (SELECT 1 
 				  FROM Temp_Graph AS grp 
+					INNER JOIN Temp_DestIDCount AS des ON grp.DestID = des.DestID
 				  WHERE cus.CTSCustID = grp.OrigID AND grp.HasAgent = 1)
 	ON DUPLICATE KEY UPDATE AssociationType = CONCAT(AssociationType, ", Agent");
 	
