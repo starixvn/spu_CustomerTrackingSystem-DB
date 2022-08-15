@@ -22,7 +22,7 @@ sp:BEGIN
 		Param's Explanation (filtered by):
 
         Example:
-			- CALL CTS_DC_AssociationDetection_MergeGroup("1,2",'[{"F":1,"T":2,"AT":1}]','[{"F":1,"T":2,"AT":1}]','[{"F":1,"T":2,"AT":1}]','[{"F":1,"T":2,"AT":1}]' );
+			- CALL CTS_DC_AssociationDetection_MergeGroup_xtest("1,2",'[{"F":1,"T":2,"AT":1}]','[{"F":1,"T":2,"AT":1}]','[{"F":1,"T":2,"AT":1}]','[{"F":1,"T":2,"AT":1}]' );
 	*/
     DECLARE	CONST_GROUP_NORMAL 					INT DEFAULT 200;
 	DECLARE	CONST_GROUP_WRAPPER 				INT DEFAULT 100;
@@ -273,9 +273,49 @@ sp:BEGIN
     
 
     /*****************************Merge Group**************************************************/
-    UPDATE  Temp_Cust AS cus 
+	UPDATE  Temp_Cust AS cus 
     SET Processed = 1
 	WHERE NOT EXISTS (SELECT 1 FROM Temp_Graph AS tmp WHERE tmp.OrigID = cus.CTSCustID);
+    
+	DROP TEMPORARY TABLE IF EXISTS Temp_GraphIDSingle;
+	CREATE TEMPORARY TABLE 	Temp_GraphIDSingle (
+			ID 				BIGINT   PRIMARY KEY
+	);
+    
+	INSERT INTO Temp_GraphIDSingle(ID)
+	SELECT OrigID
+	FROM Temp_Graph 
+	WHERE OrigID < 0
+	GROUP BY OrigID
+	HAVING COUNT(1) = 1;
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_GrapCustIDSingle;
+	CREATE TEMPORARY TABLE 	Temp_GrapCustIDSingle (
+			CTSCustID 			BIGINT   PRIMARY KEY
+	);
+    
+    INSERT INTO Temp_GrapCustIDSingle(CTSCustID)
+	SELECT 	DISTINCT
+			cus.CTSCustID
+	FROM Temp_Cust AS cus
+    WHERE EXISTS (SELECT 1 
+				  FROM Temp_Graph AS  grp 
+					INNER JOIN Temp_GraphIDSingle as tmp on grp.DestID = tmp.ID
+				  WHERE cus.CTSCustID  = grp.OrigID);
+	
+    DROP TEMPORARY TABLE IF EXISTS Temp_GrapCustIDAlone;
+	CREATE TEMPORARY TABLE 	Temp_GrapCustIDAlone (
+			CTSCustID 			BIGINT   PRIMARY KEY
+	);
+    
+    INSERT INTO Temp_GrapCustIDAlone(CTSCustID)
+    SELECT tmp.CTSCustID
+	FROM Temp_GrapCustIDSingle as tmp
+	WHERE NOT EXISTS (SELECT 1 FROM  Temp_Graph AS  grp WHERE tmp.CTSCustID  = grp.OrigID AND  grp.DestID > 0);
+    
+	UPDATE  Temp_Cust AS cus 
+    SET Processed = 1
+	WHERE EXISTS (SELECT 1 FROM Temp_GrapCustIDAlone AS tmp WHERE tmp.CTSCustID = cus.CTSCustID);
     
     lp: LOOP 
 		SET lv_OrigID = NULL;

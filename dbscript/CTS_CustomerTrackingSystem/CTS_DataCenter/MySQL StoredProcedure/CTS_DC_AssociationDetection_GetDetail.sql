@@ -216,17 +216,17 @@ sp:BEGIN
         /*----------------------------------------------Get AssociationGroupByAI-------------------------------------------*/
         INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
 		SELECT 	cus.CTSCustID 
-			, 	-100000000000 + asg.GroupID
+			, 	-100000000000 + CAST(asg.GroupID AS SIGNED)
 		FROM CTS_DataCenter.AssociationGroupByAI AS asg 
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON asg.CustID = cus.CustID AND cus.CustSubID = 0
         WHERE asg.CustID = lv_CustID;
         
-        INSERT INTO Temp_Group_Level0(GroupID)
+        INSERT IGNORE INTO Temp_Group_Level0(GroupID)
 		SELECT 	asg.GroupID 
 		FROM CTS_DataCenter.AssociationGroupByAI AS asg 
         WHERE asg.CustID = lv_CustID;
         
-        INSERT INTO Temp_Level1(CTSCustID,AssociationType)
+        INSERT IGNORE INTO Temp_Level1(CTSCustID,AssociationType)
         SELECT 	cus.CTSCustID 
 			,	3 AS AI
         FROM CTS_DataCenter.AssociationGroupByAI AS lv1
@@ -267,7 +267,7 @@ sp:BEGIN
 		INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
 		SELECT 	ip_CTSCustID
 			, 	CTSCustID
-		FROM Temp_Level1;
+		FROM Temp_Level1; 
         
         INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
 		SELECT 	ip_CTSCustID
@@ -283,14 +283,14 @@ sp:BEGIN
               
         INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
 		SELECT 	ip_CTSCustID
-			, 	-100000000000 + asg.GroupID
+			, 	-100000000000 + CAST(asg.GroupID AS SIGNED)
 		FROM Temp_Level1 AS lv1 
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = lv1.CTSCustID
 			INNER JOIN CTS_DataCenter.AssociationGroupByAI AS asg ON cus.CustID = asg.CustID;
 		
         INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
 		SELECT 	ip_CTSCustID
-			, 	-100000000000 + asg.GroupID
+			, 	-100000000000 + CAST(asg.GroupID AS SIGNED)
 		FROM Temp_Cust AS lv1 
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = lv1.CTSCustID
 			INNER JOIN CTS_DataCenter.AssociationGroupByAI AS asg ON cus.CustID = asg.CustID;
@@ -320,7 +320,7 @@ sp:BEGIN
         FROM Temp_Graph AS grp
 			INNER JOIN Temp_GraphCount AS tmp ON grp.OrigID = ip_CTSCustID  AND grp.DestID = tmp.DestID;
         
-        INSERT INTO Temp_Association(CTSCustID,AssociationType)
+        INSERT IGNORE INTO Temp_Association(CTSCustID,AssociationType)
         SELECT 	cus.CTSCustID
 			,	""
         FROM Temp_Cust AS cus
@@ -414,7 +414,7 @@ sp:BEGIN
         FROM Temp_Graph AS grp
 			INNER JOIN Temp_GraphCount AS tmp ON grp.OrigID = lv_RecommendCTSCustID  AND grp.DestID = tmp.DestID;
         
-        INSERT INTO Temp_Association_Agent(CTSCustID,AssociationType)
+        INSERT IGNORE INTO Temp_Association_Agent(CTSCustID,AssociationType)
         SELECT 	cus.CTSCustID
 			,	""
         FROM Temp_Recommend AS cus
