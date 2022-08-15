@@ -21,19 +21,21 @@ BEGIN
             -	20211213@Casey.Huynh: Enhance MM, Add column LeagueName [Redmine ID: 165606]
             -	20220110@Casey.Huynh: Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
             - 	20220726@Casey.Huynh: Fixed Game [Redmine ID: #175700]
-		
+	-	20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
+            
 		Param's Explanation (filtered by):		
 
 		Example:
-			CALL CTS_DataCenter.CTS_DC_MatchMonitor_Staging_Insert(1,'[{"TransID": 1,"TransDate" : "2021-05-17 07:48:52.533","MatchID" : 43614953,"EventDate" : "2021-05-17 00:00:00","KickOffTime" : "2021-05-17 00:00:00","EventStatus" : "running","HomeID" : 953,"AwayID" : 113,"LeagueID" : 3,"Bettype" : 3, "BetID" : 0,  "LiveIndicator" : "1","CustID" : 12500792,"Stake" : 20,"Betteam" : "a","LiveHomeScore" : 0,"LiveAwayScore" : 2}]');;
+			CALL CTS_DataCenter.CTS_DC_MatchMonitor_Staging_Insert(1,'[{"SequenceID": 1, "TransID": 100,"TransDate" : "2021-05-17 07:48:52.533","MatchID" : 43614953,"EventDate" : "2021-05-17 00:00:00","KickOffTime" : "2021-05-17 00:00:00","EventStatus" : "running","HomeID" : 953,"AwayID" : 113,"LeagueID" : 3,"Bettype" : 3, "BetID" : 0,  "LiveIndicator" : "1","CustID" : 12500792,"Stake" : 20,"Betteam" : "a","LiveHomeScore" : 0,"LiveAwayScore" : 2}]');;
             
 	*/    
     
-    DECLARE lv_LastTransID BIGINT UNSIGNED DEFAULT 0;
+    DECLARE lv_LastSequenceID BIGINT UNSIGNED DEFAULT 0;
     
     IF ip_LiveIndicator = 1 THEN    
-		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingLive(TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
-		SELECT  js.TransID
+		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
+		SELECT  js.SequenceID
+			,	js.TransID
 			,	js.TransDate
             ,	js.LeagueName
             ,	js.SportType
@@ -55,7 +57,8 @@ BEGIN
 			,	CURRENT_TIMESTAMP(3)
 		FROM JSON_TABLE(ip_TransList,
 						 "$[*]" COLUMNS(
-									TransID			BIGINT UNSIGNED PATH "$.TransID" 
+									SequenceID		BIGINT UNSIGNED PATH "$.SequenceID" 	
+								,	TransID			BIGINT UNSIGNED PATH "$.TransID" 
 								,	TransDate		DATETIME(3) PATH "$.TransDate" 
                                 ,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PATH "$.LeagueName"
                                 ,	SportType		INT PATH "$.SportType"
@@ -126,18 +129,20 @@ BEGIN
 			WHERE js.IsMajorLeague = 0;
         
 		#=====UPDATE SYSTEM PARAMETER===============================
-		SELECT MAX(mms.TransID)
-		INTO lv_LastTransID
+		SELECT MAX(mms.SequenceID)
+		INTO lv_LastSequenceID
 		FROM CTS_DataCenter.MatchMonitorTransLive AS mms;  
             
-		IF lv_LastTransID > 0 THEN	   
+            
+         IF lv_LastSequenceID > 0 THEN	   
 			UPDATE CTS_DataCenter.SystemParameter AS sys
-			SET sys.ParameterValue = lv_LastTransID
+			SET sys.ParameterValue = lv_LastSequenceID
 			WHERE sys.ParameterID = 20;
 		END IF;        
 	ELSE
-    	INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingNonLive(TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
-		SELECT  js.TransID
+    	INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
+		SELECT  js.SequenceID
+			,	js.TransID
 			,	js.TransDate
             ,	js.LeagueName
             ,	js.SportType
@@ -158,8 +163,9 @@ BEGIN
             ,	js.Betteam
 			,	CURRENT_TIMESTAMP(3)
 		FROM JSON_TABLE(ip_TransList,
-						 "$[*]" COLUMNS(
-									TransID			BIGINT UNSIGNED PATH "$.TransID" 
+						 "$[*]" COLUMNS(                         
+									SequenceID		BIGINT PATH "$.SequenceID"
+								,	TransID			BIGINT UNSIGNED PATH "$.TransID" 
 								,	TransDate		DATETIME(3) PATH "$.TransDate"
                                 ,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PATH "$.LeagueName"
                                 ,	SportType		INT PATH "$.SportType"
@@ -231,13 +237,13 @@ BEGIN
 			WHERE js.IsMajorLeague = 0;
                     
 		#=====UPDATE SYSTEM PARAMETER===============================
-		SELECT 	MAX(mms.TransID)
-		INTO 	lv_LastTransID
+		SELECT 	MAX(mms.SequenceID)
+		INTO 	lv_LastSequenceID
 		FROM	CTS_DataCenter.MatchMonitorTransNonLive AS mms;  
             
-        IF lv_LastTransID > 0 THEN	   
+        IF lv_LastSequenceID > 0 THEN	   
 			UPDATE 	CTS_DataCenter.SystemParameter AS sys
-			SET 	sys.ParameterValue = lv_LastTransID
+			SET 	sys.ParameterValue = lv_LastSequenceID
 			WHERE 	sys.ParameterID = 29;
 		END IF; 
         
