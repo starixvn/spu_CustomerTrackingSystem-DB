@@ -4,7 +4,7 @@ DELIMITER $$
 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule_Process`(
 		IN ip_LiveIndicator		BOOLEAN
-	,	IN ip_MaxTransID		BIGINT UNSIGNED
+	,	IN ip_MaxSequenceID		BIGINT UNSIGNED
 	,	IN ip_MatchID			INT UNSIGNED
     ,	IN ip_TotalScore		INT 
     ,	IN ip_BettypeID			INT UNSIGNED
@@ -28,9 +28,10 @@ sp: BEGIN
             -	20220110@Casey.Huynh: Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
             -	20220217@Casey.Huynh: Enhance MM, Update TO >= 1000 [Redmine ID: 168736]
             - 	20220422@Irena.Vo: Mapping Is Hedging Reason (MM) from table CustomerCategory [Redmine ID: #170468]
+            -	20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
 		Param's Explanation (filtered by):	
 		Example:
-			- CALL CTS_DC_MatchMonitor_Rule_Process(1,113171940189,22081995,1,1);
+			- CALL CTS_DC_MatchMonitor_Rule_Process(1,113171940189,22081995,1,1,0);
 			
 	*/
     DECLARE lv_TimeCustID BIGINT UNSIGNED DEFAULT 0;
@@ -204,7 +205,7 @@ sp: BEGIN
             ,	mms.Stake
             ,	mms.Betteam
 		FROM CTS_DataCenter.MatchMonitorStagingLive AS mms
-        WHERE mms.TransID <= ip_MaxTransID AND mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID;
+        WHERE mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID;
         
 	ELSE 
 		INSERT INTO Temp_StagingTrans01(TransID, TransDate, CustID, OldGroupID, Stake,Betteam)
@@ -215,7 +216,7 @@ sp: BEGIN
             ,	mms.Stake
             ,	mms.Betteam
 		FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms
-        WHERE  mms.TransID <= ip_MaxTransID AND	mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID;
+        WHERE  mms.SequenceID <= ip_MaxSequenceID AND	mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID;
         
     END IF;
     

@@ -17,6 +17,7 @@ BEGIN
 		Revisions:
 			- 	20210526@Casey.Huynh: Created [Redmine ID: 159195]
             -	20220110@Casey.Huynh: Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
+            -	20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
             
 		Param's Explanation (filtered by):
 			CALL CTS_DC_MatchMonitor_Staging_Clean(1,2);
@@ -44,7 +45,7 @@ BEGIN
 		SELECT 	MAX(mms.TransDate) , MAX(mms.TransID)
 		INTO 	lv_Last3mMaxTime, lv_LastTransID
 		FROM	CTS_DataCenter.MatchMonitorStagingLive AS mms
-        WHERE	mms.TransID <= ip_MaxTransID;    
+        WHERE	mms.SequenceID <= ip_MaxSequenceID;    
 		
 		SELECT  MIN(TransDate) 
 		INTO 	lv_Last3mMinTime
@@ -65,7 +66,7 @@ BEGIN
         /* Update Parameter*/
         IF lv_LastTransID > 0 THEN			
 			UPDATE 	CTS_DataCenter.SystemParameter AS sys
-			SET 	sys.ParameterValue = ip_MaxTransID
+			SET 	sys.ParameterValue = ip_MaxSequenceID
 			WHERE 	sys.ParameterID = 47;
 		END IF;
 	END IF;
@@ -73,8 +74,9 @@ BEGIN
     IF (ip_LiveIndicator = 0) THEN		
 		SELECT 	MAX(TransDate) , MAX(TransID)
 		INTO 	lv_Last3mMaxTime, lv_LastTransID
-		FROM	CTS_DataCenter.MatchMonitorStagingNonLive;    
-		
+		FROM	CTS_DataCenter.MatchMonitorStagingNonLive
+        WHERE	mms.SequenceID <= ip_MaxSequenceID;
+        
 		SELECT  MIN(TransDate) 
 		INTO 	lv_Last3mMinTime
 		FROM	CTS_DataCenter.MatchMonitorStagingNonLive
@@ -94,7 +96,7 @@ BEGIN
         /* Update Parameter*/
         IF lv_LastTransID > 0 THEN	
 			UPDATE 	CTS_DataCenter.SystemParameter AS sys
-			SET 	sys.ParameterValue = ip_MaxTransID
+			SET 	sys.ParameterValue = ip_MaxSequenceID
 			WHERE 	sys.ParameterID = 48;
 		END IF;
         

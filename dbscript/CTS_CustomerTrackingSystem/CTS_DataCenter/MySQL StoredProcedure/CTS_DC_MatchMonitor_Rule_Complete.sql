@@ -4,7 +4,7 @@ DELIMITER $$
 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule_Complete`(
 		IN ip_LiveIndicator BOOLEAN
-	,	IN ip_MaxTransID 	BIGINT UNSIGNED
+	,	IN ip_MaxSequenceID	BIGINT UNSIGNED
 	, 	IN ip_MatchID		INT
     , 	IN ip_TotalScore	INT 
     , 	IN ip_BettypeID		INT
@@ -24,6 +24,7 @@ BEGIN
             -	20210830@Casey.Huynh: Update Rule seperate Live and NonLive and move to Slave [Redmine ID: 159195]
             -	20211213@Casey.Huynh: Enhance MM, Add column LeagueName [Redmine ID: 165606]
 			-	20220110@Casey.Huynh: Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
+            -	20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
             
 		Param's Explanation (filtered by):			
 
@@ -88,7 +89,7 @@ BEGIN
 		SELECT mms.EventDate, mms.LiveHomeScore, mms.LiveAwayScore, mms.EventDate, mms.KickOffTime, mms.EventStatus, mms.HomeID, mms.AwayID, mms.LeagueID, mms.LeagueName, mms.Sporttype
 		INTO lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName, lv_Sporttype
 		FROM CTS_DataCenter.MatchMonitorStagingLive AS mms
-		WHERE mms.TransID <= ip_MaxTransID AND mms.MatchID = ip_MatchID AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.TotalScore = ip_TotalScore
+		WHERE mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.TotalScore = ip_TotalScore
 		LIMIT 1;
 	END IF;
 
@@ -96,7 +97,7 @@ BEGIN
 		SELECT mms.EventDate, mms.LiveHomeScore, mms.LiveAwayScore, mms.EventDate, mms.KickOffTime, mms.EventStatus, mms.HomeID, mms.AwayID, mms.LeagueID, mms.LeagueName, mms.Sporttype
 		INTO lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName, lv_Sporttype
 		FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms
-		WHERE mms.TransID <= ip_MaxTransID AND mms.MatchID = ip_MatchID AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.TotalScore = ip_TotalScore
+		WHERE mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.TotalScore = ip_TotalScore
 		LIMIT 1;	 
 	END IF;
 
@@ -189,11 +190,7 @@ BEGIN
     SELECT DISTINCT Reason
     FROM CTS_DataCenter.MatchMonitorDetails AS mmd
     WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID;     
-    
-    IF EXISTS (SELECT 1 FROM CTS_DataCenter.MatchMonitor) THEN 
-		SET @LogMM = 1;
-    END IF;
-    
+       
 	DELETE mm
 	FROM CTS_DataCenter.MatchMonitor AS mm
 		LEFT JOIN Temp_MatchMonitorDetails_Reason AS tmpMmd ON mm.Reason = tmpMmd.Reason
@@ -205,11 +202,6 @@ BEGIN
 	FROM CTS_DataCenter.MatchMonitorDetails AS mmd
 		LEFT JOIN Temp_MatchMonitor_Reason AS tmpMm ON mmd.Reason = tmpMm.Reason
 	WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID;
-    
-    IF @LogMM = 1 AND NOT EXISTS (SELECT 1 FROM CTS_DataCenter.MatchMonitor) THEN
-		INSERT INTO MatchMonitor_Log(SPName) 
-		VALUES('CTS_DC_MatchMonitor_Rule_Complete');
-    END IF;
     
 END$$
 DELIMITER ;
