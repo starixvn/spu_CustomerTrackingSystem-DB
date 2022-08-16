@@ -315,7 +315,7 @@ sp:BEGIN
     
 	UPDATE  Temp_Cust AS cus 
     SET Processed = 1
-	WHERE EXISTS (SELECT 1 FROM Temp_GrapCustIDAlone AS tmp WHERE tmp.CTSCustID = cus.CTSCustID);
+	WHERE  EXISTS (SELECT 1 FROM Temp_GrapCustIDAlone AS tmp WHERE tmp.CTSCustID = cus.CTSCustID);
     
     lp: LOOP 
 		SET lv_OrigID = NULL;
@@ -394,8 +394,10 @@ sp:BEGIN
     FROM Temp_Cust AS cus
     WHERE EXISTS (SELECT 1 
 				  FROM Temp_Graph AS grp 
-					INNER JOIN Temp_DestIDCount AS des ON grp.DestID = des.DestID
-				  WHERE cus.CTSCustID = grp.OrigID AND grp.HasAgent = 1)
+					LEFT JOIN Temp_DestIDCount AS des ON grp.DestID = des.DestID
+				  WHERE cus.CTSCustID = grp.OrigID 
+					AND grp.HasAgent = 1
+					AND (grp.DestID IS NOT NULL OR grp.DestID > 0))
 	ON DUPLICATE KEY UPDATE AssociationType = CONCAT(AssociationType, ", Agent");
 	
     INSERT IGNORE INTO Temp_CustAssociationType(CTSCustID, AssociationType)

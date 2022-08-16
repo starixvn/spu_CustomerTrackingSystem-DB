@@ -21,7 +21,7 @@ sp:BEGIN
 			- CALL CTS_DataCenter.CTS_DC_AssociationDetection_Agent_Detect('1,2,3');
 	*/
     DECLARE CONST_DEVICE_RANGE 		BIGINT DEFAULT -800000000000;
-    DECLARE CONST_AGENT_RANGE 		BIGINT DEFAULT 900000000000;
+    DECLARE CONST_AGENT_RANGE 		BIGINT DEFAULT -900000000000;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
 	CREATE TEMPORARY TABLE 	Temp_Cust (
@@ -93,34 +93,41 @@ sp:BEGIN
 	FROM Temp_CustDevice;
     
     INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
-	SELECT  cus.CTSCustID
+	SELECT  CASE WHEN para.CTSCustID IS NOT NULL THEN para.CTSCustID
+				 ELSE (CONST_AGENT_RANGE + (-1*CAST(cus.CTSCustID AS SIGNED))) END AS OrigID
 		,	(CONST_DEVICE_RANGE + (-1*tmp.DCSDeviceID)) AS DestID
 	FROM Temp_Device AS tmp
 		INNER JOIN CTS_DataCenter.AssociationByDevice AS lv1 ON tmp.DCSDeviceID =  lv1.DCSDeviceID
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON lv1.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0;
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON lv1.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0
+		LEFT JOIN Temp_Cust AS para ON  para.Recommend = cus.CustID AND cus.CustSubID = 0;
         
 	
     /*******************2. Manual*************************/
 	INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
 	SELECT  tmp.CTSCustID AS OrigID
-		, 	(CONST_AGENT_RANGE + (-1*CAST(ma.FromCTSCustID AS SIGNED))) AS DestID
+		, 	CASE WHEN para.CTSCustID IS NOT NULL THEN para.CTSCustID
+				 ELSE (CONST_AGENT_RANGE + (-1*CAST(ma.FromCTSCustID AS SIGNED))) END AS DestID
 	FROM Temp_Recommend AS tmp 
 		INNER JOIN CTS_DataCenter.AssociationByManual AS ma ON ma.ToCTSCustID = tmp.CTSCustID
-        INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = ma.FromCTSCustID AND cus.IsInternal = 0;
+        INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = ma.FromCTSCustID AND cus.IsInternal = 0
+        LEFT JOIN Temp_Cust AS para ON  para.Recommend = cus.CustID AND cus.CustSubID = 0;
 			 
 	INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
 	SELECT  tmp.CTSCustID AS OrigID
-		, 	(CONST_AGENT_RANGE + (-1*CAST(ma.ToCTSCustID AS SIGNED))) AS DestID
+		, 	CASE WHEN para.CTSCustID IS NOT NULL THEN para.CTSCustID
+				 ELSE (CONST_AGENT_RANGE + (-1*CAST(ma.ToCTSCustID AS SIGNED))) END AS DestID
 	FROM Temp_Recommend AS tmp 
 		INNER JOIN CTS_DataCenter.AssociationByManual AS ma ON ma.FromCTSCustID  = tmp.CTSCustID
-        INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = ma.ToCTSCustID AND cus.IsInternal = 0;
+        INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = ma.ToCTSCustID AND cus.IsInternal = 0
+		LEFT JOIN Temp_Cust AS para ON  para.Recommend = cus.CustID AND cus.CustSubID = 0;
     
     /*******************Return Data*************************/
-	SELECT 	cus.CTSCustID AS FromID
+	SELECT 	CASE WHEN cus.CTSCustID IS NOT NULL THEN cus.CTSCustID
+				 ELSE grp.OrigID END AS FromID
         ,	grp.DestID AS ToID
     FROM Temp_Graph AS grp
-		INNER JOIN Temp_Recommend AS re ON re.CTSCustID = grp.OrigID
-        INNER JOIN Temp_Cust AS cus ON re.Recommend = cus.Recommend;
+		LEFT JOIN Temp_Recommend AS re ON re.CTSCustID = grp.OrigID
+        LEFT JOIN Temp_Cust AS cus ON re.Recommend = cus.Recommend;
     
 END$$
 
