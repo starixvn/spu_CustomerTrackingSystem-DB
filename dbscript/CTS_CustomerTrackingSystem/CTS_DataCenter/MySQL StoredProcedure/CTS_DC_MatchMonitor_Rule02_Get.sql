@@ -4,7 +4,6 @@ DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule02_Get`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule02_Get`(
 		IN	ip_LiveIndicator	BOOLEAN
-	,	IN  ip_NoOfRow 			INT
 	,	OUT	op_MaxTransID		BIGINT UNSIGNED
 )
 	SQL SECURITY INVOKER
@@ -21,7 +20,7 @@ sp: BEGIN
 		Param's Explanation (filtered by):	
 
 		Example:
-			CALL  CTS_DC_MatchMonitor_Rule02_Get(@ip_LiveIndicator:=1,@ip_NoOfRow:=500,@op_MaxTransID); SELECT @ip_LiveIndicator, @ip_NoOfRow, @op_MaxTransID;
+			CALL  CTS_DC_MatchMonitor_Rule02_Get(@ip_LiveIndicator:=1,@op_MaxTransID); SELECT @ip_LiveIndicator,  @op_MaxTransID;
 			
 	*/   
 	DECLARE lv_LastTransID BIGINT UNSIGNED;
