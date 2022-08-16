@@ -1,6 +1,5 @@
-USE [bodb02]
+/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 GO
-/****** Object:  StoredProcedure [dbo].[[CTS_Association_GetBySharedMatches]]    Script Date: 01-Aug-22 9:01:19 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -60,6 +59,9 @@ BEGIN
 		,	BetTeam				NVARCHAR(10)
 	);	
 
+	CREATE CLUSTERED INDEX CIX_tmpRawTickets
+	ON #tmpRawTickets (MatchID, Bettype, Betteam, CustID); 
+
 	DROP TABLE IF EXISTS #tmpAssociation;
 	CREATE TABLE	#tmpAssociation(
 			CustID1				INT
@@ -89,7 +91,8 @@ BEGIN
 		INNER JOIN dbo.bettrans AS b WITH(NOLOCK) ON a.CustID = b.custid		
 		INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.MatchID = m.matchid AND m.sporttype < 100		
 		INNER JOIN dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
-	WHERE b.Currency NOT IN (20,27,28)
+	WHERE b.winlostdate > @DataFromDate
+		AND b.Currency NOT IN (20,27,28)
 		AND l.LeagueGroupID NOT IN (42,72,74,108,113,122); -- exclude SABA, Virtual Sport
 
 	-- Get more data from bettrans 14
@@ -184,7 +187,7 @@ BEGIN
 			FROM cte_orderedMatch AS cte
 				INNER JOIN #tmpAssociation AS c ON cte.MatchID = c.MatchID
 				INNER JOIN dbo.bettrans AS b WITH(NOLOCK) ON b.TransId = c.TransID1 OR b.TransId = c.TransID2
-			UNION
+			UNION ALL
 			SELECT b.TransId, b.TransDate, b.UserName, b.BetType, b.BetTeam, b.Stake, b.Odds, b.LiveHomeScore, b.LiveAwayScore, b.status AS TicketStatus, b.MatchId, c.EventDate, c.HomeId, c.AwayId, c.LeagueId
 			FROM cte_orderedMatch AS cte
 				INNER JOIN #tmpAssociation AS c ON cte.MatchID = c.MatchID
