@@ -156,20 +156,22 @@ BEGIN
         
 		UPDATE CTS_DataCenter.MatchMonitorTransLive AS mmt
 		SET mmt.StatusRule02 = 1
-		WHERE mmt.TransDate <= TIMESTAMPADD(MINUTE,-CONST_RULE_DURATION,lv_MaxTransDate); 
+		WHERE mmt.TransDate <= TIMESTAMPADD(MINUTE,-CONST_RULE_DURATION,lv_MaxTransDate)
+			AND mms.MatchID = ip_MatchID AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.Betteam = ip_Betteam; 
         
 	END IF;
 
 	IF (ip_LiveIndicator = 0) THEN
     
-		 SELECT MAX(TransDate)
+		SELECT MAX(TransDate)
 		INTO lv_MaxTransDate
 		FROM CTS_DataCenter.MatchMonitorTransNonLive AS mmt
 		WHERE mmt.TransID = ip_MaxTransID;   
         
 		UPDATE CTS_DataCenter.MatchMonitorTransNonLive AS mmt
 		SET mmt.StatusRule02 = 1
-		WHERE mmt.TransDate <= TIMESTAMPADD(MINUTE,-CONST_RULE_DURATION,lv_MaxTransDate); 	 
+		WHERE mmt.TransDate <= TIMESTAMPADD(MINUTE,-CONST_RULE_DURATION,lv_MaxTransDate)
+			AND mms.MatchID = ip_MatchID AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.Betteam = ip_Betteam; 	 
 	END IF;	    
    
     

@@ -67,7 +67,7 @@ sp: BEGIN
 				,	MAX(TransDate) OVER w1  AS LastTransDate1
 				,	MIN(Odds) OVER w1 AS MinOdds1
 				, 	MAX(Odds) OVER w1  AS MaxOdds1
-				,	SUM(CASE WHEN Stake >= CONST_RULE_HIGHSTAKE THEN 1 ELSE 0 END) OVER w1  AS TotalHighStake1
+				,	SUM(CASE WHEN Stake > CONST_RULE_HIGHSTAKE THEN 1 ELSE 0 END) OVER w1  AS TotalHighStake1
 				,	COUNT(1) OVER w1  AS TotalTrans1
 			   FROM CTS_DataCenter.MatchMonitorTransLive AS mmt
 			   WHERE  mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam
@@ -94,7 +94,7 @@ sp: BEGIN
         SELECT s.ParameterValue
         INTO lv_LastTransID
         FROM CTS_DataCenter.SystemParameter AS s
-        WHERE s.ParameterID = 100;
+        WHERE s.ParameterID = 101;
 	
         INSERT INTO Temp_FixedTransRange (MinTransID, MaxTransID)
         SELECT TransID, MaxTransID1
