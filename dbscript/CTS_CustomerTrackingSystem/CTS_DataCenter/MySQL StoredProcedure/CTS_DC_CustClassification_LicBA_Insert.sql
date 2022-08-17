@@ -13,7 +13,8 @@ sp: BEGIN
 		DB:			CTS_DataCenter
 		Original: 
 		Revisions:
-			- 20200705@Casey.Huynh [Redmine ID: #174219]: Created
+			- 20200705@Casey.Huynh: Created [Redmine ID: #174219]
+            - 20200817@Casey.Huynh: Remove redundance variable [Redmine ID: #175698]
             
 		Param's Explanation:
             
@@ -30,9 +31,7 @@ sp: BEGIN
     
 	DECLARE	CONST_GROUP_WRAPER			INT DEFAULT 100;
     DECLARE CONST_CATEGORY_BA 			INT DEFAULT 2;
-    DECLARE CONST_CATEGORY_BANORMAL 	INT DEFAULT 4;
-    DECLARE CONST_CC_BA		 			INT DEFAULT 99;
-    DECLARE CONST_CC_BANORMAL 			INT DEFAULT 100;
+    DECLARE CONST_CATEGORY_BANORMAL 	INT DEFAULT 4;   
     DECLARE CONST_SOURCETYPEID 			INT DEFAULT 38;
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
