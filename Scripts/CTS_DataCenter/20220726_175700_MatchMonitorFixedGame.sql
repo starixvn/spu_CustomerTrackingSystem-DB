@@ -38,12 +38,10 @@ CREATE TABLE MatchMonitorTransLive (
 	BetID 				BIGINT DEFAULT NULL,
     IsMajorLeague		BOOLEAN,
     Odds				DECIMAL(10,4),
-    StatusRule01		TINYINT COMMENT 'Applied Reason: 0:GroupBetting, 1:Hedging, 2:Arbitrage' DEFAULT 0,
     StatusRule02		TINYINT COMMENT 'Applied Reason: 3:Fixed Game' DEFAULT 0,
 	PRIMARY KEY (TransID),
 	INDEX IX_MatchMonitorTransLive_TransDate (TransDate),
 	INDEX IX_MatchMonitorTransLive_Group (MatchID,TotalScore,BettypeID,BetID,Betteam,GroupID),
-    INDEX IX_MatchMonitorTransLive_StatusRule01(StatusRule01),
     INDEX IX_MatchMonitorTransLive_StatusRule02(StatusRule02)
 ) ENGINE=InnoDB;
 # DROP TABLE MatchMonitorTransNonLive;
@@ -71,30 +69,28 @@ CREATE TABLE MatchMonitorTransNonLive (
 	BetID 				BIGINT DEFAULT NULL,
     IsMajorLeague		BOOLEAN,
     Odds				DECIMAL(10,4),
-    StatusRule01		TINYINT COMMENT 'Applied For GroupBetting, Headging, Abitrage' DEFAULT 0,
     StatusRule02		TINYINT COMMENT 'Applied For: Fixed Game' DEFAULT 0,
 	PRIMARY KEY (TransID),
 	INDEX IX_MatchMonitorTransNonLive_TransDate (TransDate),
 	INDEX IX_MatchMonitorTransNonLive_Group (MatchID,TotalScore,BettypeID,BetID,Betteam,GroupID,TransDate),
-    INDEX IX_MatchMonitorTransNonLive_StatusRule01(StatusRule01),
     INDEX IX_MatchMonitorTransNonLive_StatusRule02(StatusRule02)
 ) ENGINE=InnoDB;
 
 /******************ALTER TABLE *************************/
 ALTER TABLE MatchMonitorDetails
+ADD COLUMN Betteam VARCHAR(10) DEFAULT NULL;
+
+ALTER TABLE MatchMonitorDetails
+ADD INDEX IX_MatchMonitorDetails_MatchGroup(MatchID,BettypeID,BetID,Betteam);
+
+ALTER TABLE MatchMonitorDetails
+ADD UNIQUE KEY UK_MatchMonitorDetails_MatchRuleGroup(MatchID,LiveIndicator,TotalScore,BettypeID,BetID,Betteam,GroupID);
+
+ALTER TABLE MatchMonitorDetails
 DROP INDEX IX_MatchMonitorDetails_MatchID_BettypeID;
 
 ALTER TABLE MatchMonitorDetails
 DROP INDEX UK_MatchMonitorDetails_MatchDetailGroup;
-
-ALTER TABLE MatchMonitorDetails
-ADD COLUMN Betteam VARCHAR(10) DEFAULT NULL;
-
-ALTER TABLE MatchMonitorDetails
-ADD INDEX IX_MatchMonitorDetails_MatchIDBettypeIDBetIDBetteam(MatchID,BettypeID,BetID,Betteam);
-
-ALTER TABLE MatchMonitorDetails
-ADD UNIQUE KEY UK_MatchMonitorDetails_MatchDetailsGroup(MatchID,LiveIndicator,TotalScore,BettypeID,BetID,Betteam,GroupID);
 
 #******************Init SystemParameter***************************
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)

@@ -66,7 +66,7 @@ sp: BEGIN
         INTO lv_LastTransID
         FROM CTS_DataCenter.SystemParameter AS s
         WHERE s.ParameterID = 100;        
-
+		
         INSERT INTO Temp_FixedTransRange (MinTransID, MaxTransID)
         SELECT TransID, MaxTransID1
 		FROM (
@@ -85,14 +85,14 @@ sp: BEGIN
 			) AS tmpTs
         WHERE tmpTs.TotalTrans1 > lv_Rule_TotalTicket
 			AND (tmpTs.TotalHighStake1/tmpTs.TotalTrans1) > lv_Rule_HighStakePercent 
-			AND tmpTs.MaxOdds1 - tmpTs.MinOdds1 BETWEEN lv_Rule_OddsSpread_Min AND lv_Rule_OddsSpread_Max;
+			AND (tmpTs.MaxOdds1 - tmpTs.MinOdds1)*100 BETWEEN lv_Rule_OddsSpread_Min AND lv_Rule_OddsSpread_Max;
 
         SELECT CONST_REASON AS Reason
 			,	GROUP_CONCAT(DISTINCT TransID) AS TransList
             ,	GROUP_CONCAT(DISTINCT CustID) AS CustIDList
         FROM CTS_DataCenter.MatchMonitorTransLive AS mmt
-		INNER JOIN 	Temp_FixedTransRange AS tmp ON mmt.TransID BETWEEN tmp.MinTransID AND MaxTransID
-			   WHERE  mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam;
+		WHERE  mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam
+				AND EXISTS (SELECT 1 FROM Temp_FixedTransRange AS tmp WHERE mmt.TransID BETWEEN tmp.MinTransID AND MaxTransID);
 		
      ELSE 
 		SELECT MAX(TransDate)
@@ -123,14 +123,14 @@ sp: BEGIN
 			) AS tmpTs
         WHERE tmpTs.TotalTrans1 >= lv_Rule_TotalTicket
 			AND (tmpTs.TotalHighStake1/tmpTs.TotalTrans1) >= lv_Rule_HighStakePercent 
-			AND tmpTs.MaxOdds1 - tmpTs.MinOdds1 BETWEEN lv_Rule_OddsSpread_Min AND lv_Rule_OddsSpread_Max;
+			AND (tmpTs.MaxOdds1 - tmpTs.MinOdds1)*100 BETWEEN lv_Rule_OddsSpread_Min AND lv_Rule_OddsSpread_Max;
 
-        SELECT CONST_REASON AS Reason
+		SELECT CONST_REASON AS Reason
 			,	GROUP_CONCAT(DISTINCT TransID) AS TransList
             ,	GROUP_CONCAT(DISTINCT CustID) AS CustIDList
         FROM CTS_DataCenter.MatchMonitorTransNonLive AS mmt
-		INNER JOIN 	Temp_FixedTransRange AS tmp ON mmt.TransID BETWEEN tmp.MinTransID AND MaxTransID
-			   WHERE  mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam; 		
+		WHERE  mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam
+				AND EXISTS (SELECT 1 FROM Temp_FixedTransRange AS tmp WHERE mmt.TransID BETWEEN tmp.MinTransID AND MaxTransID);	
  
 	END IF;
 END$$
