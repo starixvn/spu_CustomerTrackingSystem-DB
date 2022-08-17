@@ -45,6 +45,8 @@ sp: BEGIN
     CREATE TEMPORARY TABLE Temp_FixedTransRange(
 			MinTransID	BIGINT UNSIGNED
         ,	MaxTransID	BIGINT	UNSIGNED
+        
+        ,	PRIMARY KEY Temp_FixedTransRange(MinTransID,MaxTransID)
 	);
 	
     #===GET RULE FROM SystemParameter=====
