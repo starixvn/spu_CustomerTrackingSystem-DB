@@ -116,15 +116,15 @@ sp: BEGIN
 				,	MAX(TransDate) OVER w1  AS LastTransDate1
 				,	MIN(Odds) OVER w1 AS MinOdds1
 				, 	MAX(Odds) OVER w1  AS MaxOdds1
-				,	SUM(CASE WHEN Stake >= lv_Rule_HighStake THEN 1 ELSE 0 END) OVER w1  AS TotalHighStake1
+				,	SUM(CASE WHEN Stake > lv_Rule_HighStake THEN 1 ELSE 0 END) OVER w1  AS TotalHighStake1
 				,	COUNT(1) OVER w1  AS TotalTrans1
 			   FROM CTS_DataCenter.MatchMonitorTransNonLive AS mmt
 			   WHERE  mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam
 					AND mmt.TransID > lv_LastTransID AND mmt.TransID <= ip_MaxTransID AND mmt.StatusRule02 = 0
 			   WINDOW w1 AS (ORDER BY TransDate RANGE BETWEEN CURRENT ROW AND INTERVAL lv_Rule_Duration MINUTE  FOLLOWING)						
 			) AS tmpTs
-        WHERE tmpTs.TotalTrans1 >= lv_Rule_TotalTicket
-			AND (tmpTs.TotalHighStake1/tmpTs.TotalTrans1) >= lv_Rule_HighStakePercent 
+        WHERE tmpTs.TotalTrans1 > lv_Rule_TotalTicket
+			AND (tmpTs.TotalHighStake1/tmpTs.TotalTrans1) > lv_Rule_HighStakePercent 
 			AND (tmpTs.MaxOdds1 - tmpTs.MinOdds1)*100 BETWEEN lv_Rule_OddsSpread_Min AND lv_Rule_OddsSpread_Max;
 
 		SELECT CONST_REASON AS Reason
