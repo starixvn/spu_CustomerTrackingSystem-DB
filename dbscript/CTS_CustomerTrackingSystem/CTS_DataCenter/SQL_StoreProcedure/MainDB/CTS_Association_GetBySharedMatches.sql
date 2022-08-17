@@ -6,7 +6,8 @@ SET QUOTED_IDENTIFIER ON
 GO
 ALTER PROCEDURE [dbo].[CTS_Association_GetBySharedMatches]
 	@ListCustId			VARCHAR(MAX) = '',
-	@IsDetecting		BIT = FALSE
+	@RootCustId			BIGINT = 0,
+	@QueryType			TINYINT = 0
 AS
 /*
 	Created: 20220726@Long.Luu
@@ -17,9 +18,10 @@ AS
 		- 20220726@Long.Luu: Created [Redmine ID: #175701]
 
 	Params Explaination:
+		- @QueryType: 1 detect associations, 2 get fraud tickets, 3 get association custlist of a group
 
 	Example:
-		EXECUTE [dbo].[CTS_Association_GetBySharedMatches] @ListCustId = '2,3',@IsDetecting=1;
+		EXECUTE [dbo].[CTS_Association_GetBySharedMatches] @ListCustId = '2,3',@RootCustId=0,@QueryType=1;;
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -28,12 +30,28 @@ BEGIN
 
 	DECLARE @DataFromDate			SMALLDATETIME
 		,	@Today					DATE = GETDATE()
-		,	@CutOffDate				DATE = '2021-09-22';
+		,	@CutOffDate				DATE = '2021-09-22'
+		,	@BalanceUpDay			SMALLDATETIME
+		,	@MoveBetsDay			SMALLDATETIME;
 	
 	DROP TABLE IF EXISTS #tmpCustIds;
 	CREATE TABLE #tmpCustIds(
-			CustId				BIGINT NOT NULL PRIMARY KEY
+			CustId				INT NOT NULL PRIMARY KEY
 	);
+
+	DROP TABLE IF EXISTS #BUMBData;
+	CREATE TABLE	#BUMBData (
+			BUDay	SMALLDATETIME
+		,	MBDay	SMALLDATETIME
+	);
+
+	INSERT INTO #BUMBData(BUDay,MBDay)
+	EXECUTE bodb02.dbo.Age_SelBalanceUpDay;
+
+	SELECT	TOP(1)
+			@BalanceUpDay	= BUDay
+		,	@MoveBetsDay	= MBDay
+	FROM #BUMBData WITH(NOLOCK);
 
 	IF @ListCustId <> ''
 		BEGIN
@@ -74,6 +92,20 @@ BEGIN
 		,	TransID1			BIGINT
 		,	TransID2			BIGINT
 	);
+
+	CREATE CLUSTERED INDEX CIX_tmpAssociation
+	ON #tmpAssociation (MatchID, TransID1, TransID2);
+
+	CREATE NONCLUSTERED INDEX IX_tmpAssociation_CustID1
+	ON #tmpAssociation (CustID1);
+
+	CREATE NONCLUSTERED INDEX CIX_tmpAssociation_CustID2
+	ON #tmpAssociation (CustID2);
+
+	DROP TABLE IF EXISTS #tmpTopMatches;
+	CREATE TABLE	#tmpTopMatches(
+			MatchID				INT
+	);	
 	
 	-- Get full data from bettrans
 	INSERT INTO #tmpRawTickets(TransID,TransDate_Int,MatchID,BetType,CustID,BetTeam,EventDate,LeagueId,HomeId,AwayId)
@@ -91,7 +123,7 @@ BEGIN
 		INNER JOIN dbo.bettrans AS b WITH(NOLOCK) ON a.CustID = b.custid		
 		INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.MatchID = m.matchid AND m.sporttype < 100		
 		INNER JOIN dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
-	WHERE b.winlostdate > @DataFromDate
+	WHERE b.winlostdate > @MoveBetsDay
 		AND b.Currency NOT IN (20,27,28)
 		AND l.LeagueGroupID NOT IN (42,72,74,108,113,122); -- exclude SABA, Virtual Sport
 
@@ -111,7 +143,7 @@ BEGIN
 		INNER JOIN dbo.bettrans14 AS b WITH(NOLOCK) ON a.CustID = b.custid		
 		INNER JOIN dbo.match14 AS m WITH(NOLOCK) ON b.MatchID = m.matchid AND m.sporttype < 100		
 		INNER JOIN dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
-	WHERE	b.winlostdate > @DataFromDate
+	WHERE	b.winlostdate <= @MoveBetsDay AND b.winlostdate > @DataFromDate
 		AND b.Currency NOT IN (20,27,28)
 		AND l.LeagueGroupID NOT IN (42,72,74,108,113,122); -- exclude SABA, Virtual Sport
 
@@ -171,28 +203,38 @@ BEGIN
 		) AS t
 	;
 
-	IF (@IsDetecting = 1) 
+	IF (@QueryType = 1) 
 		BEGIN			
 			SELECT DISTINCT CustID1, CustID2
 			FROM #tmpAssociation;
 		END;
-	ELSE
+	ELSE IF (@QueryType = 2)
 		BEGIN
-			;WITH cte_orderedMatch	AS (
-				SELECT TOP 3 MatchID
-				FROM #tmpAssociation 
-				ORDER BY EventDate
-			)
+			INSERT INTO #tmpTopMatches(MatchID)
+			SELECT TOP 3 MatchID
+			FROM #tmpAssociation 
+			ORDER BY EventDate;
+
 			SELECT b.TransId, b.TransDate, b.UserName, b.BetType, b.BetTeam, b.Stake, b.Odds, b.LiveHomeScore, b.LiveAwayScore, b.status AS TicketStatus, b.MatchId, c.EventDate, c.HomeId, c.AwayId, c.LeagueId
-			FROM cte_orderedMatch AS cte
+			FROM #tmpTopMatches AS cte
 				INNER JOIN #tmpAssociation AS c ON cte.MatchID = c.MatchID
 				INNER JOIN dbo.bettrans AS b WITH(NOLOCK) ON b.TransId = c.TransID1 OR b.TransId = c.TransID2
 			UNION ALL
 			SELECT b.TransId, b.TransDate, b.UserName, b.BetType, b.BetTeam, b.Stake, b.Odds, b.LiveHomeScore, b.LiveAwayScore, b.status AS TicketStatus, b.MatchId, c.EventDate, c.HomeId, c.AwayId, c.LeagueId
-			FROM cte_orderedMatch AS cte
+			FROM #tmpTopMatches AS cte
 				INNER JOIN #tmpAssociation AS c ON cte.MatchID = c.MatchID
 				INNER JOIN dbo.bettrans14 AS b WITH(NOLOCK) ON b.TransId = c.TransID1 OR b.TransId = c.TransID2
-		END;
+		END
+	ELSE 
+		BEGIN			
+			SELECT CustID2 AS CustID
+			FROM #tmpAssociation
+			WHERE CustID1 = @RootCustId
+			UNION ALL
+			SELECT CustID1 AS CustID
+			FROM #tmpAssociation
+			WHERE CustID2 = @RootCustId;
+		END;;
 
 	DROP TABLE #tmpCustIds;
 	DROP TABLE #tmpRawTickets;
