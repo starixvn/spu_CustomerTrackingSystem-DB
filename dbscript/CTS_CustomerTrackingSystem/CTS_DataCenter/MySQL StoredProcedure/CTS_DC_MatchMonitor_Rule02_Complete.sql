@@ -26,30 +26,31 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule02_Complete`(
 		Param's Explanation (filtered by):	
 
 		Example:
-			CALL CTS_DC_MatchMonitor_Rule02_Complete_xtest(@ip_LiveIndicator:=1,@ip_MaxTransID:=115841606929,@ip_MatchID:=1,@ip_TotalScore:=1,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a'
-				,@ip_TransGroup := '[{"Reason": 3 ,"TransIDList":"1001,1007,1008","CustIDList":"1,2"}]');
+			CALL CTS_DC_MatchMonitor_Rule02_Complete(@ip_LiveIndicator:=1,@ip_MaxTransID:=115841606929,@ip_MatchID:=1,@ip_TotalScore:=1
+				,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a',
+                @ip_TransGroup:='[{"Reason":3 ,"TransIDList":"1001,1007,1008","CustIDList":"1,2"}]');
 	*/ 
-    DECLARE	lv_KickOffTime 					DATETIME;
-    DECLARE	lv_EventStatus 					VARCHAR(50);
-    DECLARE lv_HomeID 						INT UNSIGNED;
-    DECLARE lv_AwayID 						INT UNSIGNED;
-    DECLARE lv_LeagueID						INT UNSIGNED;
-    DECLARE lv_LeagueName					VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-    DECLARE	lv_Sporttype					INT;
-    DECLARE	lv_DetailsTransIDList			TEXT;
-    DECLARE	lv_DetailsCustIDList			TEXT;
-    DECLARE	lv_DetailsID					INT;
-	DECLARE lv_EventDate 					DATE;
-    DECLARE lv_LiveHomeScore				SMALLINT UNSIGNED;
-    DECLARE lv_LiveAwayScore				SMALLINT UNSIGNED;
-    DECLARE lv_MaxTransDate					DATETIME(3);	
-    DECLARE	lv_NewTransIDList			TEXT;
-    DECLARE	lv_NewCustIDList			TEXT;   
+    DECLARE	lv_KickOffTime 			DATETIME;
+    DECLARE	lv_EventStatus 			VARCHAR(50);
+    DECLARE lv_HomeID 				INT UNSIGNED;
+    DECLARE lv_AwayID 				INT UNSIGNED;
+    DECLARE lv_LeagueID				INT UNSIGNED;
+    DECLARE lv_LeagueName			VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    DECLARE	lv_Sporttype			INT;
+    DECLARE	lv_DetailsTransIDList	TEXT;
+    DECLARE	lv_DetailsCustIDList	TEXT;
+    DECLARE	lv_DetailsID			INT;
+	DECLARE lv_EventDate 			DATE;
+    DECLARE lv_LiveHomeScore		SMALLINT UNSIGNED;
+    DECLARE lv_LiveAwayScore		SMALLINT UNSIGNED;
+    DECLARE lv_MaxTransDate			DATETIME(3);	
+    DECLARE	lv_NewTransIDList		TEXT;
+    DECLARE	lv_NewCustIDList		TEXT;
+    DECLARE	lv_Rule_Duration		SMALLINT DEFAULT 7;
     
     DECLARE	CONST_GROUPID			TINYINT DEFAULT 0;
-	DECLARE	CONST_REASON_FIXEDGAME	TINYINT DEFAULT 3; #0: Group Betting, 1: Headging, 2: Arbitrage, 3: FixedGame	
-    DECLARE	CONST_RULE_DURATION	SMALLINT DEFAULT 7; # 7 minutes
-       
+	DECLARE	CONST_REASON_FIXEDGAME	TINYINT DEFAULT 3; #0: Group Betting, 1: Headging, 2: Arbitrage, 3: FixedGame    
+        
     DROP TEMPORARY TABLE IF EXISTS Temp_TransGroup;
     CREATE TEMPORARY TABLE Temp_TransGroup
     (
@@ -57,6 +58,8 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule02_Complete`(
         ,	TransIDList 	LONGTEXT
         ,	CustIDList		LONGTEXT 
     );
+    
+    SELECT s.ParameterValue INTO lv_Rule_Duration FROM CTS_DataCenter.SystemParameter AS s WHERE s.ParameterID = 107;
     
     INSERT IGNORE INTO Temp_TransGroup(Reason, TransIDList, CustIDList)
 	SELECT 	js.Reason
@@ -159,7 +162,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule02_Complete`(
         
 		UPDATE CTS_DataCenter.MatchMonitorTransLive AS mmt
 		SET mmt.StatusRule02 = 1
-		WHERE mmt.TransDate <= TIMESTAMPADD(MINUTE,-CONST_RULE_DURATION,lv_MaxTransDate)
+		WHERE mmt.TransDate <= TIMESTAMPADD(MINUTE,-lv_Rule_Duration,lv_MaxTransDate)
 			AND mmt.MatchID = ip_MatchID AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam; 
         
 	END IF;
@@ -173,8 +176,9 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule02_Complete`(
         
 		UPDATE CTS_DataCenter.MatchMonitorTransNonLive AS mmt
 		SET mmt.StatusRule02 = 1
-		WHERE mmt.TransDate <= TIMESTAMPADD(MINUTE,-CONST_RULE_DURATION,lv_MaxTransDate)
-			AND mmt.MatchID = ip_MatchID AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam; 	 
+		WHERE mmt.TransDate <= TIMESTAMPADD(MINUTE,-lv_Rule_Duration,lv_MaxTransDate)
+			AND mmt.MatchID = ip_MatchID AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam;
+            
 	END IF;	    
    
     
