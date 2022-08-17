@@ -4,7 +4,7 @@ DELIMITER $$
 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Staging_Clean`(
 		IN ip_LiveIndicator	BOOLEAN
-	,	IN ip_MaxTransID	BIGINT UNSIGNED
+	,	IN ip_MaxSequenceID	BIGINT UNSIGNED
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -47,10 +47,10 @@ BEGIN
 		FROM	CTS_DataCenter.MatchMonitorStagingLive AS mms
         WHERE	mms.SequenceID <= ip_MaxSequenceID;    
 		
-		SELECT  MIN(TransDate) 
+		SELECT  MIN(mms.TransDate) 
 		INTO 	lv_Last3mMinTime
-		FROM	CTS_DataCenter.MatchMonitorStagingLive
-		WHERE   TransDate > TIMESTAMPADD(SECOND, -180, lv_Last3mMaxTime);  
+		FROM	CTS_DataCenter.MatchMonitorStagingLive AS mms
+		WHERE   mms.TransDate > TIMESTAMPADD(SECOND, -180, lv_Last3mMaxTime);  
 			
 		INSERT INTO Temp_Last3mTransGroup(MatchID, TotalScore, BettypeID, BetID, GroupID)
 		SELECT 	DISTINCT mms.MatchID,  mms.TotalScore, mms.BettypeID, mms.BetID, mms.GroupID
