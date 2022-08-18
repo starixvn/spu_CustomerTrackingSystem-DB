@@ -16,13 +16,14 @@ ALTER TABLE CTS_DataCenter.CustomerCategory
 ADD COLUMN SabaSportType JSON DEFAULT NULL COMMENT '1:Soccer or 2:Basketball';
 
 
+
 UPDATE CTS_DataCenter.CustomerCategory 
 SET SabaSportType = '[1,2]'
-WHERE CustomerClass IN (8, 86, 9, 96);
+WHERE CategoryID IN (52,54,58,72,74,78,92,94,98,112,114,118,132,134,138,152,154,158);
 
 UPDATE CTS_DataCenter.CustomerCategory 
 SET SabaSportType = '[2]'
-WHERE CustomerClass IN (10, 106, 131, 132);
+WHERE CategoryID IN (53,55,59,73,75,79,93,95,99,113,115,119,133,135,139,153,155,159,163,164);
  
 
 INSERT INTO `CTS_DataCenter`.`SystemParameter` (`ParameterID`, `ParameterName`, `ParameterDesc`, `ParameterDataType`, `ParameterValue`)

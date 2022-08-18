@@ -18,22 +18,22 @@ BEGIN
         Param's Explanation: 
 
 		Example:
-			-CALL CTS_DataCenter.CTS_DC_CustClassification_SabaDangerLevel_UpdateLog('[{"CustID":1,"SportType":1,"Action":1}]');
+			-CALL CTS_DataCenter.CTS_DC_CustClassification_SabaDangerLevel_Update('[{"CustID":1,"SportType":1,"Action":1}]');
 
 	*/
     DROP TEMPORARY TABLE IF EXISTS Temp_CustSportType;
     CREATE TEMPORARY TABLE 	Temp_CustSportType (
 			CustID 			BIGINT UNSIGNED 
 		,	SportType		INT
-        ,	Action			INT
+        ,	`Action`			INT
         ,	PRIMARY KEY(CustID, SportType)
         ,	INDEX 			IX_Temp_CustSportType_Action(Action)
 	);
     
-	INSERT IGNORE INTO Temp_CustSportType(CustID, SportType, Action) 
+	INSERT IGNORE INTO Temp_CustSportType(CustID, SportType, `Action`) 
 	SELECT 	js.CustID
 		,	js.SportType
-        ,	js.Action
+        ,	js.`Action`
 	FROM JSON_TABLE(ip_CustInfo,
 		 "$[*]" COLUMNS(
 				CustID 			BIGINT UNSIGNED		PATH "$.CustID"
@@ -43,10 +43,14 @@ BEGIN
     
     
     INSERT IGNORE INTO  CTS_DataCenter.CTSCustomerSabaDangerLevel(CustID,SportType)
-    SELECT 	CustID
-		,	SportType
-    FROM Temp_CustSportType
-    WHERE Action = 1;
+    SELECT 	tmp.CustID
+		,	tmp.SportType
+    FROM Temp_CustSportType AS tmp
+    WHERE tmp.`Action` = 1
+		AND NOT EXISTS (SELECT 1 
+                        FROM CTSCustomerSabaDangerLevel AS dg 
+                        WHERE tmp.CustID = dg.CustID 
+							AND tmp.SportType = dg.SportType);
     
     DELETE 
     FROM CTS_DataCenter.CTSCustomerSabaDangerLevel AS cus
@@ -54,6 +58,6 @@ BEGIN
                   FROM Temp_CustSportType AS tmp 
                   WHERE cus.CustID = tmp.CustID
 					AND cus.SportType = tmp.SportType
-                    AND cus.Action = -1);
+                    AND tmp.`Action` = -1);
 END$$
 DELIMITER ;

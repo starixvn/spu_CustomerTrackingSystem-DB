@@ -3,8 +3,8 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_SabaDangerL
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_SabaDangerLevel_Init`(
-		OUT op_LastCategoryID 	BIGINT UNSIGNED
-	,	OUT op_LastCustID 		BIGINT UNSIGNED
+		OUT op_LastCategoryID 	INT 
+	,	OUT op_LastCustID 		BIGINT 
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -57,7 +57,7 @@ BEGIN
     INTO lv_BatchSize 
     FROM CTS_DataCenter.SystemParameter 
     WHERE ParameterID = 106;
-    
+
     SET @sql = 	CONCAT("
 		INSERT IGNORE INTO Temp_PA (CustID)
 		SELECT 	clss.CustID
@@ -68,6 +68,10 @@ BEGIN
 			,	 clss.CustID ASC
 		LIMIT ",lv_BatchSize,";");
     
+    PREPARE stmt1 FROM  @sql;
+    EXECUTE stmt1; 
+	DEALLOCATE PREPARE stmt1;
+    
     IF NOT EXISTS (SELECT 1 FROM Temp_PA) THEN
 		SELECT 	cate.CategoryID
         INTO 	lv_NextCategoryID
@@ -77,7 +81,7 @@ BEGIN
 		ORDER BY cate.CategoryID ASC
 		LIMIT 1; 
     END IF;
-    
+  
     IF lv_NextCategoryID IS NOT NULL THEN
 		SET @sql = 	CONCAT("
 		INSERT IGNORE INTO Temp_PA (CustID)
@@ -95,7 +99,7 @@ BEGIN
 	ELSE
 		SET lv_NextCategoryID = lv_LastCategoryID;
 	END IF;
-    
+
     SELECT MAX(CustID)
     INTO lv_NextCustID
     FROM Temp_PA;
@@ -109,9 +113,6 @@ BEGIN
 		SET op_LastCustID = -1;
     END IF;
     
-	SELECT 	CustID
-    FROM Temp_PA;
-    
     WITH CTE_SportType AS (
 		SELECT tbl.SportType
 		FROM CTS_DataCenter.CustomerCategory AS cate
@@ -122,8 +123,9 @@ BEGIN
     )
     SELECT 	pa.CustID
 		,	st.SportType
-        ,	1 AS ActionType
+        ,	1 AS Action
 	FROM Temp_PA AS pa
-		JOIN CTE_SportType AS st;
+		JOIN CTE_SportType AS st
+	WHERE NOT EXISTS (SELECT 1 FROM CTSCustomerSabaDangerLevel AS dg WHERE pa.CustID = dg.CustID AND st.SportType = dg.SportType);
 END$$
 DELIMITER ;

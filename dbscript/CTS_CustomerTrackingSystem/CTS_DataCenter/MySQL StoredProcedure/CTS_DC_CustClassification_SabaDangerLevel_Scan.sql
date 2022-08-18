@@ -40,8 +40,16 @@ sp: BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustSportType;
     CREATE TEMPORARY TABLE 	Temp_CustSportType (
-			CustID 			BIGINT UNSIGNED 
-		,	SportType		INT
+			CustID 			BIGINT UNSIGNED NOT NULL
+		,	SportType		INT  NOT NULL
+        ,	PRIMARY KEY(CustID, SportType)
+	);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_Result;
+    CREATE TEMPORARY TABLE 	Temp_Result (
+			CustID 			BIGINT UNSIGNED NOT NULL
+		,	SportType		INT  NOT NULL
+        ,	Action			INT
         ,	PRIMARY KEY(CustID, SportType)
 	);
     
@@ -88,21 +96,35 @@ sp: BEGIN
     SELECT 	cus.CustID
 		,	tmp.SportType
     FROM Temp_Cust AS cus
-		LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON cus.CustID = clss.clss AND clss.SportGroupID = 0
-        LEFT JOIN Temp_SabaSportType AS tmp ON clss.CategoryID = tmp.CategoryID;
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON cus.CustID = clss.CustID AND clss.SportGroupID = 0
+        INNER JOIN Temp_SabaSportType AS tmp ON clss.CategoryID = tmp.CategoryID;
     
-    SELECT 	cus.CustID
-		,	CASE WHEN cus.SportType IS NOT NULL AND dg.SportType IS NULL THEN cus.SportType
-				 WHEN cus.SportType IS NULL AND dg.SportType IS NOT NULL THEN dg.SportType
-			END AS SportType
-        ,	CASE WHEN cus.SportType IS NOT NULL AND dg.SportType IS NULL THEN 1
-				  WHEN cus.SportType IS NULL AND dg.SportType IS NOT NULL THEN -1
-			END AS Action
-    FROM Temp_CustSportType AS cus
-		LEFT JOIN CTS_DataCenter.CTSCustomerSabaDangerLevel AS lv ON cus.CustID = lv.CustID
-	WHERE cus.SportType = dg.SportType
-		OR (cus.SportType IS NOT NULL AND dg.SportType IS NULL)
-        OR (cus.SportType IS NULL AND dg.SportType IS NOT NULL);
+    #Add 
+    INSERT INTO Temp_Result(CustID,SportType,Action)
+    SELECT 	tmp.CustID
+		,	tmp.SportType
+		,	1 AS Action 
+    FROM Temp_CustSportType AS tmp
+	WHERE NOT EXISTS (SELECT 1 
+					  FROM CTS_DataCenter.CTSCustomerSabaDangerLevel AS dg 
+                      WHERE tmp.CustID = dg.CustID 
+						AND  tmp.SportType = dg.SportType);
+	
+    #Remove 
+    INSERT INTO Temp_Result(CustID,SportType,Action)
+    SELECT 	dg.CustID
+		,	dg.SportType
+		,	-1 AS Action 
+    FROM   Temp_Cust AS cus  
+		INNER JOIN CTS_DataCenter.CTSCustomerSabaDangerLevel AS dg  ON cus.CustID = dg.CustID
+		LEFT JOIN Temp_CustSportType AS tmp ON dg.CustID = tmp.CustID AND  tmp.SportType = dg.SportType
+	WHERE tmp.SportType IS NULL;
+	
+    SELECT 	CustID
+		,	SportType
+        ,	Action
+    FROM Temp_Result;
+
 
 END$$
 DELIMITER ;
