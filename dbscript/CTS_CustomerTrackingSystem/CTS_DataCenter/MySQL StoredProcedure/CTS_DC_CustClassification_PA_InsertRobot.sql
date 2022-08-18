@@ -27,6 +27,8 @@ BEGIN
 */
     DECLARE	CONST_CATEGORYID_ROBOT 				INT DEFAULT 163;
     DECLARE	CONST_CATEGORYID_ROBOTLOSING 		INT DEFAULT 164;
+    DECLARE	CONST_CATEGORYID_LICVIPPROBLEM 		INT DEFAULT 3;
+    DECLARE	CONST_CATEGORYID_LICVIP				INT DEFAULT 4;
     
     DECLARE	CONST_CATEGORYID_VIPNORMAL 			INT DEFAULT 4;
     
@@ -40,8 +42,8 @@ BEGIN
     
     DECLARE lv_Now								DATETIME DEFAULT NOW();
     DECLARE lv_CreatedBy 						INT DEFAULT 10278938;
-    DECLARE lv_CC_Robot							SMALLINT;
-    DECLARE lv_CC_RobotLosing					SMALLINT;
+    DECLARE lv_CC_LicVipProblem					SMALLINT;
+    DECLARE lv_CC_LicVip						SMALLINT;
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_PA;    
 	CREATE TEMPORARY TABLE Temp_PA(	  
@@ -113,8 +115,8 @@ BEGIN
 		CustomerClass  SMALLINT UNSIGNED PRIMARY KEY
     );
     #=================================================
-	SELECT cat.CustomerClass INTO lv_CC_Robot FROM CTS_DataCenter.CustomerCategory AS cat WHERE cat.CategoryID = CONST_CATEGORYID_ROBOT;
-    SELECT cat.CustomerClass INTO lv_CC_RobotLosing FROM CTS_DataCenter.CustomerCategory AS cat WHERE cat.CategoryID = CONST_CATEGORYID_ROBOTLOSING;
+	SELECT cat.CustomerClass INTO lv_CC_LicVipProblem FROM CTS_DataCenter.CustomerCategory AS cat WHERE cat.CategoryID = CONST_CATEGORYID_LICVIPPROBLEM;
+    SELECT cat.CustomerClass INTO lv_CC_LicVip FROM CTS_DataCenter.CustomerCategory AS cat WHERE cat.CategoryID = CONST_CATEGORYID_LICVIP;
     
     INSERT INTO Temp_4xCC(CustomerClass)
     SELECT DISTINCT CustomerClass FROM CTS_DataCenter.CustomerCategory AS cat WHERE cat.CategoryID IN (234,254,264,274);
@@ -278,8 +280,8 @@ BEGIN
 		, 	1 AS IsAuto
 		, 	lv_Now AS InsertDate
 		, 	CASE WHEN pa.TargetCC IS NOT NULL THEN pa.TargetCC
-				 WHEN pa.IsLicenseeVIP = 1 AND tbl.IsPAProbation = 0 THEN lv_CC_Robot
-				 WHEN pa.IsLicenseeVIP = 1 AND tbl.IsPAProbation = 1 THEN lv_CC_RobotLosing
+				 WHEN pa.IsLicenseeVIP = 1 AND tbl.IsDangerProbation = 0 THEN lv_CC_LicVipProblem
+				 WHEN pa.IsLicenseeVIP = 1 AND tbl.IsDangerProbation = 1 THEN lv_CC_LicVip
 			ELSE tbl.CustomerClass END AS TargetCC
 		, 	CONST_SOURCETYPE_RESCANROBOT  AS SourceTypeID
 		,   IsDataChanged
@@ -338,8 +340,8 @@ BEGIN
     UPDATE Temp_PA AS pa
 	INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON pa.CategoryID = cate.CategoryID
 	SET pa.TargetCC	= CASE  WHEN pa.TargetCC IS NOT NULL AND pa.TargetCC NOT IN (SELECT tmp.CustomerClass FROM Temp_4xCC AS tmp) THEN pa.TargetCC
-							WHEN pa.IsLicenseeVIP = 1 AND pa.CategoryID = CONST_CATEGORYID_ROBOT THEN lv_CC_Robot
-                            WHEN pa.IsLicenseeVIP = 1 AND pa.CategoryID = CONST_CATEGORYID_ROBOTLOSING THEN lv_CC_RobotLosing
+							WHEN pa.IsLicenseeVIP = 1 AND pa.CategoryID = CONST_CATEGORYID_ROBOT THEN lv_CC_LicVipProblem
+                            WHEN pa.IsLicenseeVIP = 1 AND pa.CategoryID = CONST_CATEGORYID_ROBOTLOSING THEN lv_CC_LicVip
 							WHEN pa.TargetCC IS NULL OR pa.TargetCC IN (SELECT tmp.CustomerClass FROM Temp_4xCC_02 AS tmp) THEN IFNULL(cate.CustomerClass, -99) 
 							ELSE  -99 END 
 	,	pa.TargetDangerLevel = CASE WHEN pa.IsLicensee = 1 THEN cate.ABIDangerLevel_Licensee
