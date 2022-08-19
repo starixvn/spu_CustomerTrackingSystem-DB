@@ -128,7 +128,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule02_Complete`(
 			PREPARE 	stmt1 FROM @sql;
 			EXECUTE 	stmt1; 
 			
-			SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_DetailsCustIDList (CustID) VALUES ('", REPLACE(lv_NewTransIDList, ",", "'),('"),"');");
+			SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_DetailsCustIDList (CustID) VALUES ('", REPLACE(lv_NewCustIDList, ",", "'),('"),"');");
 			PREPARE 	stmt1 FROM @sql;
 			EXECUTE 	stmt1;  		
 		
