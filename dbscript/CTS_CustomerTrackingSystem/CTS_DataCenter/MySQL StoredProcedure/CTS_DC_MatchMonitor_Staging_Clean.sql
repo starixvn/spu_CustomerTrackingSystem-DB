@@ -72,19 +72,19 @@ BEGIN
 	END IF;
     
     IF (ip_LiveIndicator = 0) THEN		
-		SELECT 	MAX(TransDate) , MAX(TransID)
+		SELECT 	MAX(mms.TransDate) , MAX(mms.TransID)
 		INTO 	lv_Last3mMaxTime, lv_LastTransID
-		FROM	CTS_DataCenter.MatchMonitorStagingNonLive
+		FROM	CTS_DataCenter.MatchMonitorStagingNonLive AS mms
         WHERE	mms.SequenceID <= ip_MaxSequenceID;
         
-		SELECT  MIN(TransDate) 
+		SELECT  MIN(mms.TransDate) 
 		INTO 	lv_Last3mMinTime
-		FROM	CTS_DataCenter.MatchMonitorStagingNonLive
-		WHERE   TransDate > TIMESTAMPADD(SECOND, -180, lv_Last3mMaxTime);  
+		FROM	CTS_DataCenter.MatchMonitorStagingNonLive AS mms
+		WHERE   mms.TransDate > TIMESTAMPADD(SECOND, -180, lv_Last3mMaxTime);  
 			
 		INSERT INTO Temp_Last3mTransGroup(MatchID, TotalScore, BettypeID, BetID, GroupID)
 		SELECT 	DISTINCT mms.MatchID,  mms.TotalScore, mms.BettypeID, mms.BetID, mms.GroupID
-		FROM 	CTS_DataCenter.MatchMonitorStagingNonLive mms
+		FROM 	CTS_DataCenter.MatchMonitorStagingNonLive AS mms
 		WHERE	mms.TransDate >= lv_Last3mMinTime AND mms.GroupID > 0;
 		
 		DELETE 	mms
