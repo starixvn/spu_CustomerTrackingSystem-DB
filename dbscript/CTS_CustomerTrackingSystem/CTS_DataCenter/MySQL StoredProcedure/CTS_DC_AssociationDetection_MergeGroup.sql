@@ -394,10 +394,7 @@ sp:BEGIN
     FROM Temp_Cust AS cus
     WHERE EXISTS (SELECT 1 
 				  FROM Temp_Graph AS grp 
-					LEFT JOIN Temp_DestIDCount AS des ON grp.DestID = des.DestID
-				  WHERE cus.CTSCustID = grp.OrigID 
-					AND grp.HasAgent = 1
-					AND (grp.DestID IS NOT NULL OR grp.DestID > 0))
+				  WHERE cus.CTSCustID = grp.OrigID AND grp.HasAgent = 1)
 	ON DUPLICATE KEY UPDATE AssociationType = CONCAT(AssociationType, ", Agent");
 	
     INSERT IGNORE INTO Temp_CustAssociationType(CTSCustID, AssociationType)
