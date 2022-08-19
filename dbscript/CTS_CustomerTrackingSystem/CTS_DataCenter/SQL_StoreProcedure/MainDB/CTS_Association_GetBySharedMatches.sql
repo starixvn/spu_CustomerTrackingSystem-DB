@@ -21,7 +21,7 @@ AS
 		- @QueryType: 1 detect associations, 2 get fraud tickets, 3 get association custlist of a group
 
 	Example:
-		EXECUTE [dbo].[CTS_Association_GetBySharedMatches] @ListCustId = '2,3',@RootCustId=0,@QueryType=1;;
+		EXECUTE [dbo].[CTS_Association_GetBySharedMatches] @ListCustId = '2,3',@RootCustId=0,@QueryType=2;
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -210,10 +210,14 @@ BEGIN
 		END;
 	ELSE IF (@QueryType = 2)
 		BEGIN
-			INSERT INTO #tmpTopMatches(MatchID)
+			;WITH cte_topMatches AS(				
+				SELECT DISTINCT MatchID, EventDate
+				FROM #tmpAssociation
+			)		
+			INSERT INTO #tmpTopMatches(MatchID)	
 			SELECT TOP 3 MatchID
-			FROM #tmpAssociation 
-			ORDER BY EventDate;
+			FROM cte_topMatches 
+			ORDER BY EventDate DESC;
 
 			SELECT b.TransId, b.TransDate, b.UserName, b.BetType, b.BetTeam, b.Stake, b.Odds, b.LiveHomeScore, b.LiveAwayScore, b.status AS TicketStatus, b.MatchId, c.EventDate, c.HomeId, c.AwayId, c.LeagueId
 			FROM #tmpTopMatches AS cte
