@@ -22,7 +22,7 @@ BEGIN
 	DECLARE @GBTicketXML				XML
 		,	@ArchivedDateTicketHistory	DATETIME = DATEADD(day, -7, GETDATE())
 		,	@DailyMidnight				DATETIME
-		,	@RunningDate				DATE
+		,	@RunningDate				DATETIME
 		;
 	SET @GBTicketXML = CONVERT(XML,@GBTicketXMLString);
 

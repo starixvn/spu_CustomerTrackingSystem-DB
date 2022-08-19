@@ -45,7 +45,7 @@ BEGIN
 	UPDATE pgbt
 	SET pgbt.IsUpdateCount = 1
 	FROM #PreGroupBettingTicket AS pgbt WITH(UPDLOCK, ROWLOCK)
-	INNER JOIN dbo.SPU_GroupBettingCustomer AS gbc ON pgbt.CustId = gbc.CustId AND pgbt.TransDate = gbc.ScanDate ;
+	INNER JOIN dbo.SPU_GroupBettingCustomer AS gbc WITH (NOLOCK) ON pgbt.CustId = gbc.CustId AND pgbt.TransDate = gbc.ScanDate ;
 
 	INSERT INTO dbo.SPU_GroupBettingCustomer (
 		CustId

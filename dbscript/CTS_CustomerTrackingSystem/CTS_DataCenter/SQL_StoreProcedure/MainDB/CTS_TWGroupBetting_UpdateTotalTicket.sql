@@ -67,7 +67,7 @@ BEGIN
 		AND gbc.ScanDate = ct.ScanDate;
 
 	-- Clear unused data
-	DELETE FROM dbo.SPU_GroupBettingCustomer
+	DELETE FROM dbo.SPU_GroupBettingCustomer WITH (ROWLOCK)
 	WHERE ScanDate < DATEADD(day,-5, GETDATE()) AND TicketCount = 0 AND GBTicketCount = 0;
 
 END
