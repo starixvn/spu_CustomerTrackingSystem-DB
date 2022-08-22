@@ -90,7 +90,7 @@ sp: BEGIN
 			AND (tmpTs.MaxOdds1 - tmpTs.MinOdds1)*100 BETWEEN lv_Rule_OddsSpread_Min AND lv_Rule_OddsSpread_Max;
 
         SELECT CONST_REASON AS Reason
-			,	GROUP_CONCAT(DISTINCT TransID) AS TransList
+			,	GROUP_CONCAT(DISTINCT TransID) AS TransIDList
             ,	GROUP_CONCAT(DISTINCT CustID) AS CustIDList
         FROM CTS_DataCenter.MatchMonitorTransLive AS mmt
 		WHERE  mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam
