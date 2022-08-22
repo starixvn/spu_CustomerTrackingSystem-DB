@@ -807,7 +807,7 @@ class DBTaskHelper:
             errorConnection = None
             errorCoordinator = None
             errorWorker = None
-            query = '''SELECT IFNULL((SELECT TIMESTAMPDIFF(MINUTE,LAST_PROCESSED_TRANSACTION_ORIGINAL_COMMIT_TIMESTAMP, LAST_PROCESSED_TRANSACTION_IMMEDIATE_COMMIT_TIMESTAMP) FROM performance_schema.replication_applier_status_by_coordinator LIMIT 1),0) AS DelayMinute;'''
+            query = '''SELECT IFNULL((SELECT TIMESTAMPDIFF(MINUTE,LAST_PROCESSED_TRANSACTION_ORIGINAL_COMMIT_TIMESTAMP, LAST_PROCESSED_TRANSACTION_END_BUFFER_TIMESTAMP) FROM performance_schema.replication_applier_status_by_coordinator LIMIT 1),0) AS DelayMinute;'''
             queryResult = self.db.Execute(mysqlOpt,query)
             delayMinute = queryResult[0]['DelayMinute']
 
