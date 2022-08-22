@@ -109,17 +109,6 @@ sp: BEGIN
         ,	INDEX IX_Temp_CustAssociation01(CustID_1, MinTransDate_1, CustID_2, MinTransDate_2)        
 	);
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_CustAssociation02;
-	CREATE TEMPORARY TABLE Temp_CustAssociation02(
-			CustID_1		BIGINT UNSIGNED
-		,	MinTransDate_1	DATETIME(3)
-		,	MaxTransDate_1	DATETIME(3)
-        ,	CustID_2		BIGINT UNSIGNED
-		,	MinTransDate_2	DATETIME(3)
-		,	MaxTransDate_2	DATETIME(3)
-        
-        ,	INDEX IX_Temp_CustAssociation02(CustID_1, MinTransDate_1, CustID_2, MinTransDate_2)        
-	);
         
 	DROP TEMPORARY TABLE IF EXISTS Temp_TransGroup;
 	CREATE TEMPORARY TABLE Temp_TransGroup(
@@ -408,8 +397,6 @@ sp: BEGIN
     FROM Temp_Association AS tmpAss
 		INNER JOIN Temp_CustTime01 AS tmpC1 ON tmpC1.CustID = tmpAss.CustID_1
         INNER JOIN Temp_CustTime02 AS tmpC2 ON tmpC2.CustID = tmpAss.CustID_2;
-	
-    INSERT INTO Temp_CustAssociation02 SELECT * FROM Temp_CustAssociation01;
 
 	lp: LOOP        
         SET lv_CustID = 0;
