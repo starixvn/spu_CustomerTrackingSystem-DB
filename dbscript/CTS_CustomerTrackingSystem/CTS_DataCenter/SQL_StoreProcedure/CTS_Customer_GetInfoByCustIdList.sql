@@ -26,6 +26,7 @@ AS
 		- 20220616@Long.Luu:	Get Licensee Info [Redmine ID: 174136]
 		- 20220621@Long.Luu:	Enhance way to get licensee info [Redmine ID: 174136]
 		- 20220707@Long.Luu:	Get Lic VIP & BA Info [Redmine ID: 174219]
+		- 20220822@Long.Luu:	Return more data [Redmine ID: 175698]
 
 	Developer's Notes:
 		- @sourceType: 0- GET New Customer Info, 1- Get Info Customer table, 2-Get CustInfo table, 3 GET Info CustProductStatus table
@@ -94,11 +95,7 @@ BEGIN;
 			LEFT JOIN dbo.Customer AS upl WITH (NOLOCK) ON cust.recommend = upl.custid
 			LEFT JOIN dbo.[Site] AS st WITH (NOLOCK) ON upl.[site] = st.[site]
 			LEFT JOIN dbo.[Site] AS st2 WITH (NOLOCK) ON cust.[site] = st2.[site];
-	END;
 
-	IF (@sourceType IN (0,2))
-	BEGIN
-		-- Get MBC's Customer Status
 		UPDATE a WITH(ROWLOCK, UPDLOCK)
 		SET a.CustStatusID = (CASE 
 								WHEN c.[Enabled] <> 1 THEN @MBC_ACCOUNTSTATUS_DISABLED
