@@ -438,7 +438,7 @@ sp:BEGIN
 				FROM CTS_DataCenter.CTSCustomerClassification AS clss
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID
                 WHERE clss.CustID = tmp.CustID
-					AND clss.SportGroupID IN (CONST_GROUP_PROBLEM, CONST_GROUP_WRAPPER, CONST_GROUP_NORMAL)
+					AND clss.SportGroupID IN (CONST_GROUP_PROBLEM, CONST_GROUP_WRAPPER,CONST_GROUP_NORMAL)
                 ORDER BY  cate.Priority ASC  
 						, clss.LastModifiedDate DESC
                 LIMIT 1) AS clss;
@@ -466,7 +466,7 @@ sp:BEGIN
 		LEFT JOIN Temp_Group AS grp ON cus.CTSCustID = grp.CTSCustID
         LEFT JOIN Temp_CustomerClass AS cusclss ON cus.CTSCustID = cusclss.CTSCustID
         LEFT JOIN  Temp_CustAssociationType AS asTy ON cus.CTSCustID = asTy.CTSCustID
-		LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON cus.CustID = clss.CustID
+		LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON cus.CustID = clss.CustID AND  clss.SportGroupID IN (CONST_GROUP_PROBLEM, CONST_GROUP_NORMAL)
         LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID
 	GROUP BY cus.RowNumber 
 		,	grp.GroupID
