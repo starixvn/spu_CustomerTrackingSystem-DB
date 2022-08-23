@@ -21,7 +21,7 @@ AS
 		- @QueryType: 1 detect associations, 2 get fraud tickets, 3 get association custlist of a group
 
 	Example:
-		EXECUTE [dbo].[CTS_Association_GetBySharedMatches] @ListCustId = '2,3',@RootCustId=0,@QueryType=2;
+		EXECUTE [dbo].[CTS_Association_GetBySharedMatches] @ListCustId = '2,3',@RootCustId=2,@QueryType=2;
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -203,6 +203,16 @@ BEGIN
 		) AS t
 	;
 
+	;WITH cte_lessThan3Matches AS (
+		SELECT CustID1, CustID2
+		FROM #tmpAssociation
+		GROUP BY CustID1, CustID2
+		HAVING COUNT(DISTINCT MatchID) < 3
+	)
+	DELETE a WITH(ROWLOCK)
+	FROM cte_lessThan3Matches AS t
+		INNER JOIN #tmpAssociation AS a ON t.CustID1 = a.CustID1 AND t.CustID2 = a.CustID2;
+
 	IF (@QueryType = 1) 
 		BEGIN			
 			SELECT DISTINCT CustID1, CustID2
@@ -231,11 +241,11 @@ BEGIN
 		END
 	ELSE 
 		BEGIN			
-			SELECT CustID2 AS CustID
+			SELECT DISTINCT CustID2 AS CustID
 			FROM #tmpAssociation
 			WHERE CustID1 = @RootCustId
 			UNION ALL
-			SELECT CustID1 AS CustID
+			SELECT DISTINCT CustID1 AS CustID
 			FROM #tmpAssociation
 			WHERE CustID2 = @RootCustId;
 		END;;
