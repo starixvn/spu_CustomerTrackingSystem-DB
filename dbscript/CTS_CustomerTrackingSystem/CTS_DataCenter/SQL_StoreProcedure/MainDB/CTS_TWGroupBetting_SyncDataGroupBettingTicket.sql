@@ -1,7 +1,7 @@
 /*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 CREATE OR ALTER PROCEDURE [dbo].[CTS_TWGroupBetting_SyncDataGroupBettingTicket]
 		@GBTicketXMLString	VARCHAR(MAX)
-		,@RunningTransID	BIGINT
+		,@RunningSequenceId	BIGINT
 AS
 /*
 	Created: 20220314@Harvey.Nguyen
@@ -55,7 +55,7 @@ BEGIN
 
 	SELECT @RunningDate = transdate
 	FROM dbo.bettrans WITH (NOLOCK)
-	WHERE transid = @RunningTransID;
+	WHERE sequenceid = @RunningSequenceId;
 
 	SET @DailyMidnight = DATEADD(MINUTE, 30, CONVERT(SMALLDATETIME, CONVERT(DATE, @RunningDate)));
 
