@@ -289,7 +289,7 @@ sp:BEGIN
 			INNER JOIN CTS_DataCenter.AssociationGroupByAI AS asg ON cus.CustID = asg.CustID;
 		
         INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
-		SELECT 	ip_CTSCustID
+		SELECT 	cus.CTSCustID
 			, 	-100000000000 + CAST(asg.GroupID AS SIGNED)
 		FROM Temp_Cust AS lv1 
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = lv1.CTSCustID
