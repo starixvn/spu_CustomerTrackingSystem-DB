@@ -77,9 +77,6 @@ BEGIN
 		,	BetTeam				NVARCHAR(10)
 	);	
 
-	CREATE CLUSTERED INDEX CIX_tmpRawTickets
-	ON #tmpRawTickets (MatchID, Bettype, Betteam, CustID); 
-
 	DROP TABLE IF EXISTS #tmpAssociation;
 	CREATE TABLE	#tmpAssociation(
 			CustID1				INT
@@ -92,15 +89,6 @@ BEGIN
 		,	TransID1			BIGINT
 		,	TransID2			BIGINT
 	);
-
-	CREATE CLUSTERED INDEX CIX_tmpAssociation
-	ON #tmpAssociation (MatchID, TransID1, TransID2);
-
-	CREATE NONCLUSTERED INDEX IX_tmpAssociation_CustID1
-	ON #tmpAssociation (CustID1);
-
-	CREATE NONCLUSTERED INDEX CIX_tmpAssociation_CustID2
-	ON #tmpAssociation (CustID2);
 
 	DROP TABLE IF EXISTS #tmpTopMatches;
 	CREATE TABLE	#tmpTopMatches(
@@ -146,6 +134,9 @@ BEGIN
 	WHERE	b.winlostdate <= @MoveBetsDay AND b.winlostdate > @DataFromDate
 		AND b.Currency NOT IN (20,27,28)
 		AND l.LeagueGroupID NOT IN (42,72,74,108,113,122); -- exclude SABA, Virtual Sport
+
+	CREATE CLUSTERED INDEX CIX_tmpRawTickets
+	ON #tmpRawTickets (MatchID, Bettype, Betteam, CustID); 
 
 	;WITH cte_custPerMatch AS (
 		SELECT DISTINCT c1.CustID AS CustID1, c1.MatchID, c1.Bettype, c1.BetTeam, c2.CustID AS CustID2
@@ -201,7 +192,16 @@ BEGIN
 			) AS c2
 				ON ABS(c1.TransDate_Int - c2.TransDate_Int) <= @CONST_MAXTIMEINTERVAL
 		) AS t
-	;
+	;	
+
+	CREATE CLUSTERED INDEX CIX_tmpAssociation
+	ON #tmpAssociation (MatchID, EventDate, TransID1, TransID2);
+
+	CREATE NONCLUSTERED INDEX IX_tmpAssociation_CustID1CustID2
+	ON #tmpAssociation (CustID1, CustID2);
+
+	CREATE NONCLUSTERED INDEX CIX_tmpAssociation_CustID2
+	ON #tmpAssociation (CustID2);
 
 	;WITH cte_lessThan3Matches AS (
 		SELECT CustID1, CustID2
@@ -248,7 +248,7 @@ BEGIN
 			SELECT DISTINCT CustID1 AS CustID
 			FROM #tmpAssociation
 			WHERE CustID2 = @RootCustId;
-		END;;
+		END;
 
 	DROP TABLE #tmpCustIds;
 	DROP TABLE #tmpRawTickets;
