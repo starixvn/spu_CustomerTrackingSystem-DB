@@ -29,11 +29,12 @@ BEGIN
             -	20220110@Casey.Huynh: Enhance MM, BetID, Reason [Redmine ID: 166986]
             - 	20220216@Casey.Huynh: Fix Issue, show IsVerified = 0 when all tickets were verified [Redmine ID: 166986]
             - 	20220325@Long.Luu: Add Reason filter [Redmine ID: 170466]
+            -	20220805@Jonas.Huynh: Add Reason Fixed Game [Redmine ID: 175700]
             
 		Param's Explanation (filtered by):
 			- ip_Market: 0 return LiveIndicator = 0, 1 return LiveIndicator = 1, NULL: Both Live And Non-Live
             - ip_LeagueName: NULL IF any ELSE LIKE %ip_LeagueName%
-            
+            - ip_Reason: 0:Group Betting, 1: Hedging, 2: Arbitrage, 3: Fixed Game
 		Example:
 			-	CALL CTS_DC_MatchMonitor_Get('2021-12-05','2021-12-08',NULL,'1,2,43', '1','1,2,3,4',NULL,'[{"BettypeID":1,"BetID":0},{"BettypeID":3,"BetID":0},{"BettypeID":7,"BetID":0}],'0,1');
 	*/
@@ -151,7 +152,7 @@ BEGIN
                 ,	s.Sporttype
 				,	s.BettypeID
                 ,	s.BetID
-				,	s.Reason		# 0:Group Betting, 1: Hedging, 2: Arbitrage
+				,	s.Reason		# 0:Group Betting, 1: Hedging, 2: Arbitrage, 3: Fixed Game
 				,	CASE WHEN NOW() BETWEEN s.KickOffTime AND TIMESTAMPADD(MINUTE, 150, s.KickOffTime ) AND LiveIndicator = 1 THEN 1 #Live
 						WHEN s.EventDate = CURDATE() AND s.KickOffTime > NOW() THEN 2 #'Today'
 						WHEN s.EventDate > CURDATE() THEN 3 #'Early'
@@ -260,7 +261,7 @@ BEGIN
 					AND tmpMm.BettypeID = tmpNv.BettypeID AND tmpMm.BetID = tmpNv.BetID AND tmpMm.Reason = tmpNv.Reason
 		WHERE tmpNv.MatchID IS NULL;
 	END IF;
-                
+                   
 END$$
 DELIMITER ;
 
