@@ -19,7 +19,8 @@ BEGIN
             - 20220607@Aries.Nguyen: Renovate PA process [Redmine ID: #172561]
             - 20220628@Aries.Nguyen: Update robot classification rule [Redmine ID: #174430]
             - 20220628@Aries.Nguyen: Update robot classification rule [Redmine ID: #174430]
-			- 202208018@Long.Luu: Exclude wrapper categories from rescan PA flow [Redmine ID: #174219]
+			- 202208018@Long.Luu: Exclude wrapper categories from rescan PA flow [Redmine ID: #174219]          
+			- 20220817@Long.Luu: Rearrange CC's IDs [Redmine ID: #175698]
 
 		Param's Explanation (filtered by):      
 			- CALL CTS_DC_CustClassification_ProblemAccountProbation_Insert ('[{"CustID": 123,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10}]');
@@ -32,14 +33,18 @@ BEGIN
     DECLARE CONST_SOURCETYPE_PROBLEMAFFECT		INT DEFAULT 32;
     DECLARE CONST_SOURCETYPE_RESCANROBOT		INT DEFAULT 36;
     
-    DECLARE CONST_PRIORITY_LICBA				INT DEFAULT 90;
-    DECLARE CONST_CC_LICBA						INT DEFAULT 14;
-    DECLARE CONST_CC_LICVIPDANGER				INT DEFAULT 99;
-    DECLARE CONST_CC_LICVIPSUSPICIOUS			INT DEFAULT 101;    
+    DECLARE	CONST_LICBACATEGORY					INT DEFAULT 2;
+    DECLARE	CONST_LICVIP_DANGEROUSCATEGORY		INT DEFAULT 3;
+    DECLARE	CONST_LICVIP_SUSPICIOUSCATEGORY		INT DEFAULT 4;    
+    DECLARE	CONST_VVIPCATEGORY					INT DEFAULT 210;   
     DECLARE CONST_SPORTGROUP_WRAPPER			INT DEFAULT 100;
     
 	DECLARE lv_CreatedBy 						INT DEFAULT 10278938;
     DECLARE lv_CurrentDateTime 					DATETIME DEFAULT CURRENT_TIME(); 
+    DECLARE lv_LicBACC							SMALLINT UNSIGNED;
+    DECLARE lv_LicBAPriority					SMALLINT UNSIGNED;
+    DECLARE lv_LicVIPCC_Danger					SMALLINT UNSIGNED;
+    DECLARE lv_LicVIPCC_Suspicious				SMALLINT UNSIGNED;
    
 	DROP TEMPORARY TABLE IF EXISTS Temp_PA;    
 	CREATE TEMPORARY TABLE Temp_PA(	  
@@ -64,6 +69,20 @@ BEGIN
         , 	PRIMARY KEY(CustID,CategoryID)  
     );  
     
+    /* INIT */    
+    SELECT CustomerClass, Priority 
+    INTO lv_LicBACC, lv_LicBAPriority
+    FROM CustomerCategory WHERE CategoryID = CONST_LICBACATEGORY;
+    
+    SELECT CustomerClass
+    INTO lv_LicVIPCC_Danger
+    FROM CustomerCategory WHERE CategoryID = CONST_LICVIP_DANGEROUSCATEGORY;
+    
+    SELECT CustomerClass
+    INTO lv_LicVIPCC_Suspicious
+    FROM CustomerCategory WHERE CategoryID = CONST_LICVIP_SUSPICIOUSCATEGORY;    
+    
+    /* START */
     INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, CategoryID, RelevantCategoryID, SportGroupID,TargetCC,TargetDangerLevel1, IsDangerProbation, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsDirect,IsLicenseeVIP,IsLicenseeBA, IsDataChanged)
 	SELECT 	js.CustID
 		,	cust.CTSCustID
@@ -121,9 +140,9 @@ BEGIN
         LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS s ON t.CustID = s.CustID
     SET 	t.TargetCC = 	CASE
 								WHEN s.CustomerClass IS NOT NULL THEN s.CustomerClass
-                                WHEN t.IsLicenseeVIP = 1 AND c.IsDangerProbation = 1 THEN CONST_CC_LICVIPSUSPICIOUS
-                                WHEN t.IsLicenseeVIP = 1 AND c.IsDangerProbation = 0 THEN CONST_CC_LICVIPDANGER
-                                WHEN t.IsLicenseeBA = 1 AND c.Priority > CONST_PRIORITY_LICBA THEN CONST_CC_LICBA
+                                WHEN t.IsLicenseeVIP = 1 AND c.IsDangerProbation = 1 THEN lv_LicVIPCC_Suspicious
+                                WHEN t.IsLicenseeVIP = 1 AND c.IsDangerProbation = 0 THEN lv_LicVIPCC_Danger
+                                WHEN t.IsLicenseeBA = 1 AND c.Priority > lv_LicBAPriority THEN lv_LicBACC
                                 ELSE t.TargetCC
 							END;
     

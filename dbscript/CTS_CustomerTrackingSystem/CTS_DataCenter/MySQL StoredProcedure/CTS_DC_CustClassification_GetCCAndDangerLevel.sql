@@ -15,7 +15,8 @@ BEGIN
 		Revisions:
 			- 20220526@Aries.Nguyen: Created [RedmineID: #172561]
             - 20220628@Aries.Nguyen: Update robot classification rule [Redmine ID: #174430]
-			- 20220705@Long.Luu: Support Licensee VIP & BA Categories [Redmine ID: #174219]
+			- 20220705@Long.Luu: Support Licensee VIP & BA Categories [Redmine ID: #174219]            
+			- 20220817@Long.Luu: Rearrange CC's IDs [Redmine ID: #175698]
             
         Param's Explanation:     
         Example:
@@ -25,18 +26,19 @@ BEGIN
 	DECLARE	CONST_GROUP_WRAPPER 				INT DEFAULT 100;
     DECLARE	CONST_GROUP_PROBLEM 				INT DEFAULT 0;
         
-    DECLARE	CONST_LICVIP_DANGEROUSCATEGORY		INT DEFAULT 3;
-    DECLARE	CONST_LICVIP_SUSPICIOUSCATEGORY		INT DEFAULT 4;
-    DECLARE	CONST_LICVIP_DANGEROUSCC 			INT DEFAULT 99;
-    DECLARE	CONST_VVIPCC						INT DEFAULT 100;
-    DECLARE	CONST_LICVIP_SUSPICIOUSCC			INT DEFAULT 101;
     DECLARE	CONST_LICBACATEGORY					INT DEFAULT 2;
-    DECLARE	CONST_LICBAPRIORITY					INT DEFAULT 90;
-    DECLARE	CONST_LICBACC						INT DEFAULT 14;
+    DECLARE	CONST_LICVIP_DANGEROUSCATEGORY		INT DEFAULT 3;
+    DECLARE	CONST_LICVIP_SUSPICIOUSCATEGORY		INT DEFAULT 4;    
+    DECLARE	CONST_VVIPCATEGORY					INT DEFAULT 210;
     
     DECLARE	lv_LicVIP_DangerousCCName 			VARCHAR(50);
     DECLARE	lv_LicVIP_SuspiciousCCName			VARCHAR(50);
-    DECLARE	lv_LicBA_CCName						VARCHAR(50);
+    DECLARE	lv_LicBACC_Name						VARCHAR(50);
+    DECLARE lv_LicBACC							SMALLINT UNSIGNED;
+    DECLARE lv_LicBAPriority					SMALLINT UNSIGNED;
+    DECLARE lv_LicVIPCC_Danger					SMALLINT UNSIGNED;
+    DECLARE lv_LicVIPCC_Suspicious				SMALLINT UNSIGNED;
+    DECLARE lv_VVIPCC							SMALLINT UNSIGNED;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;
     CREATE TEMPORARY TABLE 		Temp_CustInfo (
@@ -69,7 +71,25 @@ BEGIN
         	CustID				BIGINT UNSIGNED PRIMARY KEY
 		,	LatesCCPriority   	SMALLINT DEFAULT -1  
     );  
+     
+	/* INIT */    
+    SELECT CustomerClass, Priority, CustomerClassName
+    INTO lv_LicBACC, lv_LicBAPriority, lv_LicBACC_Name
+    FROM CustomerCategory WHERE CategoryID = CONST_LICBACATEGORY;
     
+    SELECT CustomerClass, CustomerClassName
+    INTO lv_LicVIPCC_Danger, lv_LicVIP_DangerousCCName
+    FROM CustomerCategory WHERE CategoryID = CONST_LICVIP_DANGEROUSCATEGORY;
+    
+    SELECT CustomerClass, CustomerClassName
+    INTO lv_LicVIPCC_Suspicious, lv_LicVIP_SuspiciousCCName
+    FROM CustomerCategory WHERE CategoryID = CONST_LICVIP_SUSPICIOUSCATEGORY;    
+    
+    SELECT CustomerClass
+    INTO lv_VVIPCC
+    FROM CustomerCategory WHERE CategoryID = CONST_VVIPCATEGORY;
+    
+    /* START */
     INSERT IGNORE INTO Temp_CustInfo (CustID,IsLicensee,IsLicenseeVIP,IsLicenseeBA,IsRobotException,SpecialCC)
     SELECT  tmp.CustID
 		,	cus.IsLicensee
@@ -88,22 +108,8 @@ BEGIN
 	SET t.SpecialCCName = c.CustomerClassName,
 		t.SpecialCCPriority = c.Priority,
         t.SpecialCCDangerProbation = c.IsDangerProbation
-	WHERE t.SpecialCC BETWEEN 40 AND 49;
-    
-    SELECT CustomerClassName
-    INTO lv_LicVIP_DangerousCCName
-    FROM CustomerCategory
-    WHERE CategoryID = CONST_LICVIP_DANGEROUSCATEGORY;
-    
-	SELECT CustomerClassName
-    INTO lv_LicVIP_SuspiciousCCName
-    FROM CustomerCategory
-    WHERE CategoryID = CONST_LICVIP_SUSPICIOUSCATEGORY;
-    
-    SELECT CustomerClassName
-    INTO lv_LicBA_CCName
-    FROM CustomerCategory
-    WHERE CategoryID = CONST_LICBACATEGORY;
+	WHERE t.SpecialCC BETWEEN 40 AND 49
+		OR t.SpecialCC IN (2500,2503,2504,2505);
 
 	INSERT INTO Temp_CustLatestCate(CustID,LatesCCPriority)
     SELECT tmp.CustID, MIN(clss.Priority)
@@ -135,12 +141,12 @@ BEGIN
 					,	CASE  
 							WHEN (tmp.SpecialCC IS NULL) OR (tmp.SpecialCCPriority <> -1)
 									THEN CASE
-											WHEN cate.CustomerClass = CONST_VVIPCC THEN CONST_VVIPCC
-											WHEN tmp.IsLicenseeVIP = 1 AND t.LatesCCPriority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation = 1 THEN CONST_LICVIP_SUSPICIOUSCC
-                                            WHEN tmp.IsLicenseeVIP = 1 AND t.LatesCCPriority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation IS NOT NULL THEN CONST_LICVIP_DANGEROUSCC
-											WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN CONST_LICVIP_SUSPICIOUSCC
-                                            WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN CONST_LICVIP_DANGEROUSCC
-                                            WHEN tmp.IsLicenseeBA = 1 AND cate.Priority > CONST_LICBAPRIORITY THEN CONST_LICBACC                                            
+											WHEN cate.CustomerClass = lv_VVIPCC THEN lv_VVIPCC
+											WHEN tmp.IsLicenseeVIP = 1 AND t.LatesCCPriority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation = 1 THEN lv_LicVIPCC_Suspicious
+                                            WHEN tmp.IsLicenseeVIP = 1 AND t.LatesCCPriority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation IS NOT NULL THEN lv_LicVIPCC_Danger
+											WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN lv_LicVIPCC_Suspicious
+                                            WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN lv_LicVIPCC_Danger
+                                            WHEN tmp.IsLicenseeBA = 1 AND cate.Priority > lv_LicBAPriority THEN lv_LicBACC                                            
                                             WHEN tmp.SpecialCCPriority <> -1 AND cate.Priority > tmp.SpecialCCPriority THEN tmp.SpecialCC
                                             ELSE cate.CustomerClass
 										END
@@ -149,12 +155,12 @@ BEGIN
 					,	CASE  
 							WHEN (tmp.SpecialCC IS NULL) OR (tmp.SpecialCCPriority <> -1)
 									THEN CASE
-											WHEN cate.CustomerClass = CONST_VVIPCC THEN cate.CustomerClassName
+											WHEN cate.CustomerClass = lv_VVIPCC THEN cate.CustomerClassName
 											WHEN tmp.IsLicenseeVIP = 1 AND t.LatesCCPriority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation = 1 THEN lv_LicVIP_SuspiciousCCName
                                             WHEN tmp.IsLicenseeVIP = 1 AND t.LatesCCPriority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation = 0 THEN lv_LicVIP_DangerousCCName
 											WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN lv_LicVIP_SuspiciousCCName
                                             WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN lv_LicVIP_DangerousCCName
-                                            WHEN tmp.IsLicenseeBA = 1 AND cate.Priority > CONST_LICBAPRIORITY THEN lv_LicBA_CCName                                            
+                                            WHEN tmp.IsLicenseeBA = 1 AND cate.Priority > lv_LicBAPriority THEN lv_LicBACC_Name                                            
                                             WHEN tmp.SpecialCCPriority <> -1 AND cate.Priority > tmp.SpecialCCPriority THEN tmp.SpecialCCName
                                             ELSE cate.CustomerClassName
 										END

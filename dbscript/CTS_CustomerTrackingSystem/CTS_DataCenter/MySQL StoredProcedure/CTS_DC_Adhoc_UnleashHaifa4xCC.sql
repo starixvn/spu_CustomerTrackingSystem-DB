@@ -29,7 +29,7 @@ BEGIN
 	INSERT INTO Temp_4xCCCust (CustID)
 	SELECT DISTINCT CustID
 	FROM CTS_DataCenter.SpecialCustomerClass
-	WHERE CustomerClass > 39 AND CustomerClass < 50;
+	WHERE CustomerClass IN (41,42,43,44,45,46,47,48,49,2500,2503,2504,2505);
 
 	# Check whether Cust are PA or not
 	INSERT INTO Temp_PA4xCCCust (CustID)
@@ -49,7 +49,7 @@ BEGIN
 	DELETE s
 	FROM Temp_PA4xCCCust AS t 
 		INNER JOIN CTS_DataCenter.SpecialCustomerClass AS s ON s.CustID = t.CustID
-	WHERE CustomerClass BETWEEN 40 AND 50;
+	WHERE CustomerClass IN (41,42,43,44,45,46,47,48,49,2500,2503,2504,2505);
 
 	# Results
     INSERT INTO Adhoc_Haifa4xCCUnleashed(CustID, Username,CreatedDate,CreatedTime)

@@ -4,7 +4,7 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_PA_InsertRo
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_InsertRobot`(
 		IN 		ip_CustInfo 	JSON
-	,	in		ip_IsRescan		BIT
+	,	IN		ip_IsRescan		BIT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -17,15 +17,18 @@ BEGIN
 			- 20220520@Aries.Nguyen: Created [Redmine ID: #172561] 
             - 20220628@Aries.Nguyen: Update robot classification rule [Redmine ID: #174430]
             - 20220708@Aries.Nguyen: [CTS] Add new category/class for Lic BA and Lic VIP [Redmine ID: #174219]
+            - 20200817@Casey.Huynh: Remove Hardcode CC [Redmine ID: #175698]
 		
         Param's Explanation: 
 
 		Example:
-			-CALL CTS_DataCenter.CTS_DC_CustClassification_PA_InsertRobot_xpre('[{"CustID":3698310,"CategoryID":61,"RobotCounter":11,"TurnoverRM":null,"WinlossRM":null,"BetCount":null,"ActiveDays":null,"IsFromTW":true,"CreatedBy":10278938},{"CustID":3698310,"CategoryID":166,"RobotCounter":null,"TurnoverRM":53580.0000,"WinlossRM":-319.0800,"BetCount":1649,"ActiveDays":16,"IsFromTVS":true,"TVSRequestID":1111,"CreatedBy":10278938}]');
+			CALL CTS_DataCenter.CTS_DC_CustClassification_PA_InsertRobot('[{"CustID":3698310,"CategoryID":61,"RobotCounter":11,"TurnoverRM":null,"WinlossRM":null,"BetCount":null,"ActiveDays":null,"IsFromTW":true,"CreatedBy":10278938},{"CustID":3698310,"CategoryID":166,"RobotCounter":null,"TurnoverRM":53580.0000,"WinlossRM":-319.0800,"BetCount":1649,"ActiveDays":16,"IsFromTVS":true,"TVSRequestID":1111,"CreatedBy":10278938}]', 0);
 
 */
     DECLARE	CONST_CATEGORYID_ROBOT 				INT DEFAULT 163;
     DECLARE	CONST_CATEGORYID_ROBOTLOSING 		INT DEFAULT 164;
+    DECLARE	CONST_CATEGORYID_LICVIPPROBLEM 		INT DEFAULT 3;
+    DECLARE	CONST_CATEGORYID_LICVIP				INT DEFAULT 4;
     
     DECLARE	CONST_CATEGORYID_VIPNORMAL 			INT DEFAULT 4;
     
@@ -39,6 +42,8 @@ BEGIN
     
     DECLARE lv_Now								DATETIME DEFAULT NOW();
     DECLARE lv_CreatedBy 						INT DEFAULT 10278938;
+    DECLARE lv_CC_LicVipProblem					SMALLINT;
+    DECLARE lv_CC_LicVip						SMALLINT;
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_PA;    
 	CREATE TEMPORARY TABLE Temp_PA(	  
@@ -100,6 +105,25 @@ BEGIN
         ,  	PRIMARY KEY(CustID,CategoryID)
     );
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_4xCC;    
+	CREATE TEMPORARY TABLE Temp_4xCC(
+		CustomerClass  SMALLINT UNSIGNED PRIMARY KEY
+    );
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_4xCC_02;    
+	CREATE TEMPORARY TABLE Temp_4xCC_02(
+		CustomerClass  SMALLINT UNSIGNED PRIMARY KEY
+    );
+    #=================================================
+	SELECT cat.CustomerClass INTO lv_CC_LicVipProblem FROM CTS_DataCenter.CustomerCategory AS cat WHERE cat.CategoryID = CONST_CATEGORYID_LICVIPPROBLEM;
+    SELECT cat.CustomerClass INTO lv_CC_LicVip FROM CTS_DataCenter.CustomerCategory AS cat WHERE cat.CategoryID = CONST_CATEGORYID_LICVIP;
+    
+    INSERT INTO Temp_4xCC(CustomerClass)
+    SELECT DISTINCT CustomerClass FROM CTS_DataCenter.CustomerCategory AS cat WHERE cat.CategoryID IN (234,254,264,274);
+    
+    INSERT INTO Temp_4xCC_02(CustomerClass) 
+    SELECT tmp.CustomerClass FROM Temp_4xCC AS tmp;
+    #=================================================
     INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, SubscriberID,IsLicensee, CategoryID,TargetCC, TurnoverRM, WinlossRM, BetCount, ActiveDays,RobotCounter,WinlossStatus, IsFromTW,IsFromCTS,IsFromAI,IsFromTVS,TVSRequestID,IsDirect,Remark,CreatedBy,IsPin,IsVVIP,IsLicenseeVIP,CreatedDate)
 	SELECT	js.CustID
 		,	cus.CTSCustID
@@ -256,8 +280,8 @@ BEGIN
 		, 	1 AS IsAuto
 		, 	lv_Now AS InsertDate
 		, 	CASE WHEN pa.TargetCC IS NOT NULL THEN pa.TargetCC
-				 WHEN pa.IsLicenseeVIP = 1 AND tbl.IsPAProbation = 0 THEN 99
-				 WHEN pa.IsLicenseeVIP = 1 AND tbl.IsPAProbation = 1 THEN 101
+				 WHEN pa.IsLicenseeVIP = 1 AND tbl.IsDangerProbation = 0 THEN lv_CC_LicVipProblem
+				 WHEN pa.IsLicenseeVIP = 1 AND tbl.IsDangerProbation = 1 THEN lv_CC_LicVip
 			ELSE tbl.CustomerClass END AS TargetCC
 		, 	CONST_SOURCETYPE_RESCANROBOT  AS SourceTypeID
 		,   IsDataChanged
@@ -315,10 +339,10 @@ BEGIN
                     
     UPDATE Temp_PA AS pa
 	INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON pa.CategoryID = cate.CategoryID
-	SET pa.TargetCC	= CASE  WHEN pa.TargetCC IS NOT NULL AND pa.TargetCC NOT IN (43,45,46,47)  THEN pa.TargetCC
-							WHEN pa.IsLicenseeVIP = 1 AND pa.CategoryID = CONST_CATEGORYID_ROBOT THEN 99
-                            WHEN pa.IsLicenseeVIP = 1 AND pa.CategoryID = CONST_CATEGORYID_ROBOTLOSING THEN 101
-							WHEN pa.TargetCC IS NULL OR pa.TargetCC IN (43,45,46,47) THEN IFNULL(cate.CustomerClass, -99) 
+	SET pa.TargetCC	= CASE  WHEN pa.TargetCC IS NOT NULL AND pa.TargetCC NOT IN (SELECT tmp.CustomerClass FROM Temp_4xCC AS tmp) THEN pa.TargetCC
+							WHEN pa.IsLicenseeVIP = 1 AND pa.CategoryID = CONST_CATEGORYID_ROBOT THEN lv_CC_LicVipProblem
+                            WHEN pa.IsLicenseeVIP = 1 AND pa.CategoryID = CONST_CATEGORYID_ROBOTLOSING THEN lv_CC_LicVip
+							WHEN pa.TargetCC IS NULL OR pa.TargetCC IN (SELECT tmp.CustomerClass FROM Temp_4xCC_02 AS tmp) THEN IFNULL(cate.CustomerClass, -99) 
 							ELSE  -99 END 
 	,	pa.TargetDangerLevel = CASE WHEN pa.IsLicensee = 1 THEN cate.ABIDangerLevel_Licensee
 									WHEN pa.IsLicensee = 0 THEN cate.ABIDangerLevel_Credit				

@@ -27,21 +27,26 @@ sp: BEGIN
 		   - 20210419@Irena.Vo: Get Category more [RedmineID: #153617]
 		   - 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
 		   - 20210920@Aries.Nguyen: Split history log  [Redmine ID: #161890]
-           - 20220805@Aries.Nguyen: New Category for CC14, 99, 101  [Redmine ID: #174219]
+           - 20220805@Aries.Nguyen: New Category for CC14, 99, 101  [Redmine ID: #174219]         
+		   - 20220817@Long.Luu: Rearrange CC's IDs [Redmine ID: #175698]
 
 		Param's Explanation (filtered by):
 			- Maximum Customer Class number for input param = 127 
 	*/    
     
-	DECLARE lv_CTSCustID		BIGINT UNSIGNED;
-    DECLARE lv_CustID			INT UNSIGNED;
-	DECLARE lv_SubscriberID 	INT;
-    DECLARE	lv_CurrentDateTime	DATETIME DEFAULT CURRENT_TIME();
-    DECLARE	lv_SPName 			VARCHAR(100) 	DEFAULT 'CTS_DC_SpecialCustClass_Insert';
-	DECLARE lv_CreatedBy 		INT DEFAULT 10278938;
+	DECLARE lv_CTSCustID			BIGINT UNSIGNED;
+    DECLARE lv_CustID				INT UNSIGNED;
+	DECLARE lv_SubscriberID 		INT;
+    DECLARE	lv_CurrentDateTime		DATETIME DEFAULT CURRENT_TIME();
+    DECLARE	lv_SPName 				VARCHAR(100) 	DEFAULT 'CTS_DC_SpecialCustClass_Insert';
+	DECLARE lv_CreatedBy 			INT DEFAULT 10278938;
+    DECLARE lv_LicVIPCC_Danger		SMALLINT UNSIGNED;
+    DECLARE lv_LicVIPCC_Suspicious	SMALLINT UNSIGNED;
     
 	DECLARE	CONST_CATEGORYID_VVIP 	INT DEFAULT 210;
     DECLARE	CONST_GROUP_NORMAL		INT DEFAULT 200;
+    DECLARE	CONST_LICVIP_DANGEROUSCATEGORY		INT DEFAULT 3;
+    DECLARE	CONST_LICVIP_SUSPICIOUSCATEGORY		INT DEFAULT 4;   
 
 
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
@@ -74,6 +79,15 @@ sp: BEGIN
         ,	Is4x					BIT DEFAULT 0        
         ,	Is4xDangerProbation		BIT DEFAULT 0
 	);
+    
+    /* INIT */        
+    SELECT CustomerClass
+    INTO lv_LicVIPCC_Danger
+    FROM CustomerCategory WHERE CategoryID = CONST_LICVIP_DANGEROUSCATEGORY;
+    
+    SELECT CustomerClass
+    INTO lv_LicVIPCC_Suspicious
+    FROM CustomerCategory WHERE CategoryID = CONST_LICVIP_SUSPICIOUSCATEGORY;
     
     /*	CHECK VALIDATION CUSTOMER	*/
     -- Check invalid Username for customer in CTS.
@@ -142,9 +156,9 @@ sp: BEGIN
 		,	c.CustID
 		,	lv_SubscriberID
 		,	ip_CustomerClass
-        ,	CASE WHEN c.IsLicenseeVIP = 1 AND ip_CustomerClass IN (43,45,46,47)  AND clss.CustID IS NULL THEN 0 ELSE 1 END AS  IsDataChanged
-        ,	CASE WHEN  ip_CustomerClass IN (43,45,46,47) AND clss.CustID IS NOT NULL THEN 1 ELSE 0 END AS  Is4x
-        ,	CASE WHEN  ip_CustomerClass IN (43) THEN 1 ELSE 0 END AS Is4xDangerProbation
+        ,	CASE WHEN c.IsLicenseeVIP = 1 AND ip_CustomerClass IN (43,45,46,47,2500,2503,2504,2505)  AND clss.CustID IS NULL THEN 0 ELSE 1 END AS  IsDataChanged
+        ,	CASE WHEN  ip_CustomerClass IN (43,45,46,47,2500,2503,2504,2505) AND clss.CustID IS NOT NULL THEN 1 ELSE 0 END AS  Is4x
+        ,	CASE WHEN  ip_CustomerClass IN (43,2500) THEN 1 ELSE 0 END AS Is4xDangerProbation
 	FROM Temp_AffectedCustomers AS t
 		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON t.CTSCustID = c.CTSCustID AND c.RoleID = 1
         LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CustID = c.CustID AND clss.SportGroupID = 100 AND clss.CategoryID = 4
@@ -184,8 +198,8 @@ sp: BEGIN
             , 0  -- manual
             , DATE(lv_CurrentDateTime)
             , 	CASE 
-					WHEN sp.Is4x = 1 AND Is4xDangerProbation = 0 THEN 99
-					WHEN sp.Is4x = 1 THEN 101
+					WHEN sp.Is4x = 1 AND Is4xDangerProbation = 0 THEN lv_LicVIPCC_Danger
+					WHEN sp.Is4x = 1 THEN lv_LicVIPCC_Suspicious
 					ELSE sp.CustomerClass 
 				END AS CustomerClass
             , 10 -- item name = Add Customer Class
@@ -202,8 +216,8 @@ sp: BEGIN
             , 0  -- manual
             , DATE(lv_CurrentDateTime)
             , 	CASE 
-					WHEN sp.Is4x = 1 AND Is4xDangerProbation = 0 THEN 99
-					WHEN sp.Is4x = 1 THEN 101
+					WHEN sp.Is4x = 1 AND Is4xDangerProbation = 0 THEN lv_LicVIPCC_Danger
+					WHEN sp.Is4x = 1 THEN lv_LicVIPCC_Suspicious
 					ELSE sp.CustomerClass 
 				END AS CustomerClass
             , 10 -- item name = Add Customer Class
