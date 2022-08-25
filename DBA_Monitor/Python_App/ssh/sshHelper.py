@@ -1,6 +1,8 @@
 import paramiko
 from scp import SCPClient
 from config import config
+import time
+import select
 
 class SSHHandler:
     connection = None;
@@ -21,6 +23,14 @@ class SSHHandler:
         self.CloseConnection()
         return result
 
+    def Exec_Command_NoRetr(self,sshOpt,command):
+        self.InitConnection(sshOpt)
+        result = ""
+        (ssh_stdin, ssh_stdout, ssh_stderr) = self.connection.exec_command(command)
+        for line in ssh_stdout.readlines():
+                result = line.rstrip()
+        self.CloseConnection()
+
     def SCP_GetFile(self,sshOpt,sourcePath,desPath):
         self.InitConnection(sshOpt)
         cmdScp = SCPClient(self.connection.get_transport())
@@ -28,11 +38,24 @@ class SSHHandler:
         cmdScp.close()
         self.CloseConnection()
     
+    def SCP_GetFile_Recursive(self,sshOpt,sourcePath,desPath):
+        self.InitConnection(sshOpt)
+        cmdScp = SCPClient(self.connection.get_transport())
+        cmdScp.get(sourcePath, desPath,True)
+        cmdScp.close()
+        self.CloseConnection()
+    
     def SCP_UpFile(self,sshOpt,sourcePath,desPath):
         self.InitConnection(sshOpt)
         cmdScp = SCPClient(self.connection.get_transport())
         cmdScp.put(sourcePath, desPath)
-
+        cmdScp.close()
+        self.CloseConnection()
+    
+    def SCP_UpFile_Recursive(self,sshOpt,sourcePath,desPath):
+        self.InitConnection(sshOpt)
+        cmdScp = SCPClient(self.connection.get_transport())
+        cmdScp.put(sourcePath, desPath,True)
         cmdScp.close()
         self.CloseConnection()
     

@@ -68,3 +68,11 @@ ssh -i /var/cts/monitor/keyfiles/dba_cts_aws_rsa_private_key dba_cts_aws@xx.xx.x
 
 
 /var/cts/monitor/cts_env/bin/python /var/cts/monitor/main_test.py
+
+chown -R dba_cts_replica:dba_cts_replica /tmp/bk
+
+chmod 600 /var/cts/monitor/keyfiles/dba_cts_master_rsa_private_key
+
+task.Recover(7,6,5,"/tmp/bk/BKFull_2022_07_26_13_40","/tmp/bk",[],True)
+task.Recover(7,5,6,"/tmp/bk/BKFull_2022_07_26_14_57","/tmp/bk",[],True)
+task.Recover(7,6,5,"/tmp/bk/2022_07_27/BKInc_2022_07_27-06_47","/tmp/bk",["/tmp/bk/2022_07_27/BKInc_2022_07_27-06_53","/tmp/bk/2022_07_27/BKInc_2022_07_27-06_57"],False)
