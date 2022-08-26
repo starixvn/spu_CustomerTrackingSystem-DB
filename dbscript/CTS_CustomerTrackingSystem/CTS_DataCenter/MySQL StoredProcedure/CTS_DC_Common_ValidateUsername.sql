@@ -6,7 +6,7 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Common_ValidateUsername`(
 	  IN ip_ListUsername 		LONGTEXT
 )
-SQL SECURITY INVOKER
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20210204@Long.Luu
@@ -17,6 +17,7 @@ BEGIN
 		Revisions:
 			- 20210204@Long.Luu: Created [Redmine ID: #148719]
 			- 20210729@Aries.Nguyen: Change data type param ip_ListUsername  [Redmine ID: #157086]
+            - 20220727@Aries.Nguyen: [CTS] Enhance Association Detection [Redmine ID: #175701]
 		
 		Param's Explanation (filtered by):   
             
@@ -36,6 +37,8 @@ BEGIN
 	SELECT 	c.UserName
 		,	c.CTSCustID
 		,	c.CustID
+        ,	c.RoleID
+        ,	c.IsInternal
     FROM CTS_DataCenter.CTSCustomer AS c
 		INNER JOIN Temp_Username AS t ON c.UserName = t.Username;
     
