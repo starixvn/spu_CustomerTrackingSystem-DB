@@ -163,7 +163,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule02_Complete`(
 		UPDATE CTS_DataCenter.MatchMonitorTransLive AS mmt
 		SET mmt.StatusRule02 = 1
 		WHERE mmt.TransDate <= TIMESTAMPADD(MINUTE,-lv_Rule_Duration,lv_MaxTransDate)
-			AND mmt.MatchID = ip_MatchID AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam; 
+			AND mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam;
         
 	END IF;
 
@@ -177,7 +177,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule02_Complete`(
 		UPDATE CTS_DataCenter.MatchMonitorTransNonLive AS mmt
 		SET mmt.StatusRule02 = 1
 		WHERE mmt.TransDate <= TIMESTAMPADD(MINUTE,-lv_Rule_Duration,lv_MaxTransDate)
-			AND mmt.MatchID = ip_MatchID AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam;
+			AND mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam;
             
 	END IF;	    
    
