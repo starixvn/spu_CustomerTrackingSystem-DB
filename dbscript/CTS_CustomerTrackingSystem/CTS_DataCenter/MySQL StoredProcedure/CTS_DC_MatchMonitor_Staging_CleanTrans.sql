@@ -4,7 +4,7 @@ DELIMITER $$
 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Staging_CleanTrans`(
 		IN ip_LiveIndicator	BOOLEAN
-	,	IN ip_MaxTransID	BIGINT UNSIGNED
+	,	IN ip_SequenceID	BIGINT UNSIGNED
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -23,41 +23,41 @@ BEGIN
 			
 	*/
 	
-    DECLARE	lv_LastTransID 		BIGINT;    
+    DECLARE	lv_LastSequenceID 		BIGINT;    
     	
     #======Clean Staging=================================================
     IF (ip_LiveIndicator = 1) THEN		
 		
-		SELECT  MAX(mmt.TransID)
-		INTO 	lv_LastTransID
+		SELECT  MAX(mmt.SequenceID)
+		INTO 	lv_LastSequenceID
 		FROM	CTS_DataCenter.MatchMonitorTransLive AS mmt
-		WHERE	mmt.TransID < ip_MaxTransID AND StatusRule02 = 1; 		
+		WHERE	mmt.SequenceID < ip_SequenceID AND StatusRule02 = 1; 		
         
-        IF lv_LastTransID > 0 THEN	
+        IF lv_LastSequenceID > 0 THEN	
 			DELETE 	mmt
 			FROM	CTS_DataCenter.MatchMonitorTransLive AS mmt
-			WHERE	mmt.TransID <= lv_LastTransID;
+			WHERE	mmt.SequenceID <= lv_LastSequenceID;
             
 			UPDATE 	CTS_DataCenter.SystemParameter AS sys
-			SET 	sys.ParameterValue = lv_LastTransID
+			SET 	sys.ParameterValue = lv_LastSequenceID
 			WHERE 	sys.ParameterID = 100;
 		END IF;
     END IF;    
     
 	IF (ip_LiveIndicator = 0) THEN		
 		
-		SELECT  MAX(mmt.TransID)
-		INTO 	lv_LastTransID
+		SELECT  MAX(mmt.SequenceID)
+		INTO 	lv_LastSequenceID
 		FROM	CTS_DataCenter.MatchMonitorTransNonLive AS mmt
-		WHERE	mmt.TransID < ip_MaxTransID AND StatusRule02 = 1; 		
+		WHERE	mmt.SequenceID < ip_SequenceID AND StatusRule02 = 1; 		
         
-        IF lv_LastTransID > 0 THEN	
+        IF lv_LastSequenceID > 0 THEN	
 			DELETE 	mmt
 			FROM	CTS_DataCenter.MatchMonitorTransNonLive AS mmt
-			WHERE	mmt.TransID <= lv_LastTransID;
+			WHERE	mmt.SequenceID <= lv_LastSequenceID;
             
 			UPDATE 	CTS_DataCenter.SystemParameter AS sys
-			SET 	sys.ParameterValue = lv_LastTransID
+			SET 	sys.ParameterValue = lv_LastSequenceID
 			WHERE 	sys.ParameterID = 101;
 		END IF;
     END IF;    

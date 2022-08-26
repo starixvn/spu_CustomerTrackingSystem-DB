@@ -30,6 +30,9 @@ DROP PRIMARY KEY;
 ALTER TABLE MatchMonitorStagingLive
 ADD PRIMARY KEY PK_MatchMonitorStagingLive_SequenceID(SequenceID);
 
+ALTER TABLE MatchMonitorStagingLive
+MODIFY COLUMN TransID BIGINT UNSIGNED;
+
 #=============MatchMonitorStagingNonLive 
 ALTER TABLE MatchMonitorStagingNonLive
 ADD COLUMN SequenceID BIGINT;
@@ -45,6 +48,9 @@ DROP PRIMARY KEY;
 
 ALTER TABLE MatchMonitorStagingNonLive
 ADD PRIMARY KEY PK_MatchMonitorStagingNonLive_SequenceID(SequenceID);
+
+ALTER TABLE MatchMonitorStagingNonLive
+MODIFY COLUMN TransID BIGINT UNSIGNED;
 
 #=============MatchMonitorTransLive 
 ALTER TABLE MatchMonitorTransLive
@@ -79,13 +85,11 @@ ALTER TABLE MatchMonitorTransNonLive
 ADD PRIMARY KEY PK_MatchMonitorTransLive_SequenceID(SequenceID);
 #===================================================================
 
-
 UPDATE SystemParameter
 SET ParameterName = 'MatchMonitor_StagingInsert_LiveLastSequenceID'
 	, ParameterDesc = 'MatchMonitor_StagingInsert_LiveLastSequenceID'
   #  , ParameterValue = ????
 WHERE ParameterID = 20;
-
 
 UPDATE SystemParameter
 SET ParameterName = 'MatchMonitor_StagingInsert_NonliveLastSequenceID'

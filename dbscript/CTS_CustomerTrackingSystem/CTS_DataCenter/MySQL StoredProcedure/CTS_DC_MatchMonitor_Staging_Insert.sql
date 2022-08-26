@@ -79,8 +79,9 @@ BEGIN
 							)
 					) AS js;  
 		
-        INSERT IGNORE INTO CTS_DataCenter.MatchMonitorTransLive(TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, Odds, IsMajorLeague, InsertTime)
-		SELECT  js.TransID
+        INSERT IGNORE INTO CTS_DataCenter.MatchMonitorTransLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, Odds, IsMajorLeague, InsertTime)
+		SELECT  js.SequenceID
+			,	js.TransID
 			,	js.TransDate
             ,	js.LeagueName
             ,	js.SportType
@@ -104,7 +105,8 @@ BEGIN
 			,	CURRENT_TIMESTAMP(3)
 		FROM JSON_TABLE(ip_TransList,
 						 "$[*]" COLUMNS(
-									TransID			BIGINT UNSIGNED PATH "$.TransID" 
+									SequenceID		BIGINT PATH "$.SequenceId"
+								,	TransID			BIGINT UNSIGNED PATH "$.TransID" 
 								,	TransDate		DATETIME(3) PATH "$.TransDate" 
                                 ,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PATH "$.LeagueName"
                                 ,	SportType		INT PATH "$.SportType"
@@ -187,8 +189,9 @@ BEGIN
 					) AS js;
 		
                     
-		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorTransNonLive(TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, Odds, IsMajorLeague, InsertTime)
-		SELECT  js.TransID
+		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorTransNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, Odds, IsMajorLeague, InsertTime)
+		SELECT  js.SequenceID
+			,	js.TransID
 			,	js.TransDate
             ,	js.LeagueName
             ,	js.SportType
@@ -212,7 +215,8 @@ BEGIN
 			,	CURRENT_TIMESTAMP(3)
 		FROM JSON_TABLE(ip_TransList,
 						 "$[*]" COLUMNS(
-									TransID			BIGINT UNSIGNED PATH "$.TransID" 
+									SequenceID		BIGINT PATH "$.SequenceId"
+								,	TransID			BIGINT UNSIGNED PATH "$.TransID" 
 								,	TransDate		DATETIME(3) PATH "$.TransDate" 
                                 ,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PATH "$.LeagueName"
                                 ,	SportType		INT PATH "$.SportType"

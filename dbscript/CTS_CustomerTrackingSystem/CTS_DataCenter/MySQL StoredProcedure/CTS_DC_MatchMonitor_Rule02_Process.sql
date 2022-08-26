@@ -4,7 +4,7 @@ DELIMITER $$
 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule02_Process`(
 		IN ip_LiveIndicator		BOOLEAN
-	,	IN ip_MaxTransID		BIGINT UNSIGNED
+	,	IN ip_MaxSequenceID		BIGINT UNSIGNED
 	,	IN ip_MatchID			INT UNSIGNED
     ,	IN ip_TotalScore		INT 
     ,	IN ip_BettypeID			INT UNSIGNED
@@ -25,7 +25,7 @@ sp: BEGIN
 		Param's Explanation (filtered by):	
 
 		Example:
-			CALL CTS_DC_MatchMonitor_Rule02_Process(@ip_LiveIndicator:=1,@ip_MaxTransID:=0,@ip_MatchID:=1,@ip_TotalScore:=1,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a');
+			CALL CTS_DC_MatchMonitor_Rule02_Process(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=0,@ip_MatchID:=1,@ip_TotalScore:=1,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a');
 	*/
     
     DECLARE	CONST_REASON					TINYINT DEFAULT 3; #0: Group Betting, 1: Headging, 2: Arbitrage, 3: FixedGame
@@ -34,7 +34,7 @@ sp: BEGIN
     DECLARE lv_MaxTransDate DATETIME(3);
 	DECLARE lv_LastTransDate DATETIME(3);
     DECLARE lv_FromTransDate DATETIME(3);
-    DECLARE lv_LastTransID BIGINT UNSIGNED;
+    DECLARE lv_LastSequenceID 				BIGINT UNSIGNED;
     DECLARE	lv_Rule_TotalTicket			SMALLINT; 
     DECLARE	lv_Rule_HighStake			SMALLINT;
     DECLARE	lv_Rule_HighStakePercent	DECIMAL(1,1);    
@@ -64,10 +64,10 @@ sp: BEGIN
 		SELECT MAX(TransDate)
 		INTO lv_MaxTransDate
 		FROM CTS_DataCenter.MatchMonitorTransLive AS mmt
-		WHERE mmt.TransID = ip_MaxTransID;   
+		WHERE mmt.SequenceID = ip_MaxSequenceID;   
         
         SELECT s.ParameterValue
-        INTO lv_LastTransID
+        INTO lv_LastSequenceID
         FROM CTS_DataCenter.SystemParameter AS s
         WHERE s.ParameterID = 100;        
         
@@ -90,7 +90,7 @@ sp: BEGIN
 				,	COUNT(1) OVER w1  AS TotalTrans1
 			   FROM CTS_DataCenter.MatchMonitorTransLive AS mmt
 			   WHERE  mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam
-					AND mmt.TransID > lv_LastTransID AND mmt.TransID <= ip_MaxTransID AND mmt.StatusRule02 = 0
+					AND mmt.SequenceID > lv_LastSequenceID AND mmt.SequenceID <= ip_MaxSequenceID AND mmt.StatusRule02 = 0
 			   WINDOW w1 AS (ORDER BY TransDate DESC RANGE BETWEEN CURRENT ROW AND INTERVAL lv_Rule_Duration MINUTE  FOLLOWING)						
 			) AS tmpTs
         WHERE tmpTs.TotalTrans1 > lv_Rule_TotalTicket
@@ -109,10 +109,10 @@ sp: BEGIN
 		SELECT MAX(TransDate)
 		INTO lv_MaxTransDate
 		FROM CTS_DataCenter.MatchMonitorTransNonLive AS mmt
-		WHERE mmt.TransID = ip_MaxTransID;   
+		WHERE mmt.SequenceID = ip_MaxSequenceID;   
         
         SELECT s.ParameterValue
-        INTO lv_LastTransID
+        INTO lv_LastSequenceID
         FROM CTS_DataCenter.SystemParameter AS s
         WHERE s.ParameterID = 101;
         
@@ -126,8 +126,7 @@ sp: BEGIN
         INSERT INTO Temp_FixedTransRange (MinTransID, MaxTransID)
         SELECT MinTransID1, TransID
 		FROM (
-				SELECT  
-					TransDate, TransID, CustID, Stake, Odds
+				SELECT TransDate, TransID, CustID, Stake, Odds
 				,	MIN(TransID) OVER w1 MinTransID1
 				,	MIN(Odds) OVER w1 AS MinOdds1
 				, 	MAX(Odds) OVER w1  AS MaxOdds1
@@ -135,7 +134,7 @@ sp: BEGIN
 				,	COUNT(1) OVER w1  AS TotalTrans1
 			   FROM CTS_DataCenter.MatchMonitorTransNonLive AS mmt
 			   WHERE  mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam
-					AND mmt.TransID > lv_LastTransID AND mmt.TransID <= ip_MaxTransID AND mmt.StatusRule02 = 0
+					AND mmt.SequenceID > lv_LastSequenceID AND mmt.SequenceID <= ip_MaxSequenceID AND mmt.StatusRule02 = 0
 			   WINDOW w1 AS (ORDER BY TransDate DESC RANGE BETWEEN CURRENT ROW AND INTERVAL lv_Rule_Duration MINUTE  FOLLOWING)						
 			) AS tmpTs
         WHERE tmpTs.TotalTrans1 > lv_Rule_TotalTicket
