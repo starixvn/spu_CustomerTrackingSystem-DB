@@ -277,6 +277,7 @@ sp:BEGIN
     SET Processed = 1
 	WHERE NOT EXISTS (SELECT 1 FROM Temp_Graph AS tmp WHERE tmp.OrigID = cus.CTSCustID);
     
+    /*
 	DROP TEMPORARY TABLE IF EXISTS Temp_GraphIDSingle;
 	CREATE TEMPORARY TABLE 	Temp_GraphIDSingle (
 			ID 				BIGINT   PRIMARY KEY
@@ -312,11 +313,11 @@ sp:BEGIN
     SELECT tmp.CTSCustID
 	FROM Temp_GrapCustIDSingle as tmp
 	WHERE NOT EXISTS (SELECT 1 FROM  Temp_Graph AS  grp WHERE tmp.CTSCustID  = grp.OrigID AND  grp.DestID > 0);
-    
+
 	UPDATE  Temp_Cust AS cus 
     SET Processed = 1
 	WHERE  EXISTS (SELECT 1 FROM Temp_GrapCustIDAlone AS tmp WHERE tmp.CTSCustID = cus.CTSCustID);
-    
+    */
     lp: LOOP 
 		SET lv_OrigID = NULL;
         
