@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_MatchMonitor_Classify`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_MatchMonitor_Classify_xtest`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_MatchMonitor_Classify`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_MatchMonitor_Classify_xtest`(
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -92,6 +92,7 @@ BEGIN
         WHERE mmd.MatchID = lv_MatchID
 			AND mmd.Reason = 0
 			AND mmd.ClassifyStatus = 0
+            AND mmd.IsExistingHighStake = 1
         LIMIT lv_PackSize
 	)
 	SELECT	js.CustID

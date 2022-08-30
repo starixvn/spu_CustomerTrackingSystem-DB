@@ -1,8 +1,9 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule_Complete_xtest`;
 DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule_Complete`;
 DELIMITER $$
 
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule_Complete`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule_Complete_xtest`(
 		IN ip_LiveIndicator BOOLEAN
 	,	IN ip_MaxSequenceID	BIGINT UNSIGNED
 	, 	IN ip_MatchID		INT
@@ -29,7 +30,7 @@ BEGIN
 		Param's Explanation (filtered by):			
 
 		Example:
-			CALL CTS_DC_MatchMonitor_Rule_Complete(1,114089577333,48310358,0,1,0,'[{"GroupID":4,"Reason":0,"TransList":"114089577333,114089576830","CustIDList":"55706032,55895790","OldGroupIDList":"0"}]');
+			CALL CTS_DC_MatchMonitor_Rule_Complete_xtest(1,114089577333,48310358,0,1,0,'[{"GroupID":4,"Reason":0,"TransList":"114089577333,114089576830","CustIDList":"55706032,55895790","OldGroupIDList":"0"}]');
 			
 		*/ 
     DECLARE lv_GroupID 					INT;
@@ -54,7 +55,7 @@ BEGIN
     DECLARE lv_LeagueID					INT UNSIGNED;
     DECLARE lv_LeagueName				VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
     DECLARE	lv_Sporttype				INT;
-  
+ 
     DROP TEMPORARY TABLE IF EXISTS Temp_TransGroup;
     CREATE TEMPORARY TABLE Temp_TransGroup
     (
@@ -138,7 +139,7 @@ BEGIN
             VALUES(ip_MatchID, ip_LiveIndicator, ip_TotalScore, ip_BettypeID, ip_BetID, lv_EventDate, lv_TargetGroupID, lv_LiveHomeScore, lv_LiveAwayScore, lv_CustIDList, lv_TransIDList, lv_Reason);          
             
         END IF; 
-       
+
 		IF (lv_NoOfOldGroupID = 1) THEN # UPDATE OLD GROUP	        
 			UPDATE IGNORE CTS_DataCenter.MatchMonitorDetails AS mmd
 			SET mmd.GroupID = lv_TargetGroupID, mmd.ListCustID = lv_CustIDList, mmd.ListTransID = lv_TransIDList, mmd.Reason = lv_Reason
@@ -155,24 +156,25 @@ BEGIN
 			SET mmd.GroupID = lv_TargetGroupID, mmd.ListCustID = lv_CustIDList, mmd.ListTransID = lv_TransIDList, mmd.Reason = lv_Reason
 			WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID AND mmd.TotalScore = ip_TotalScore AND mmd.GroupID = lv_TargetGroupID;
 		END IF;
-        
+
         DELETE tmptg
         FROM Temp_TransGroup AS tmptg WHERE GroupID = lv_GroupID;
-        
+
         IF(ip_LiveIndicator = 1) THEN
 			SET @sql = 	CONCAT("UPDATE CTS_DataCenter.MatchMonitorStagingLive
             SET GroupID = ",lv_TargetGroupID,"
             WHERE TransID IN (",lv_TransIDList,")");    
 		ELSE
+		
 			SET @sql = 	CONCAT("UPDATE CTS_DataCenter.MatchMonitorStagingNonLive
             SET GroupID = ",lv_TargetGroupID,"
             WHERE TransID IN (",lv_TransIDList,")");
         END IF;
-      
+
 		PREPARE 	stmt1 FROM @sql;
 		EXECUTE 	stmt1;  
     END LOOP;
-    
+
     #========UPDATE MatchMonitor===================================
     DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitor_Reason;
     CREATE TEMPORARY TABLE Temp_MatchMonitor_Reason(
@@ -183,17 +185,18 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_MatchMonitorDetails_Reason(
 		Reason TINYINT PRIMARY KEY
     );
-    
+     
     INSERT INTO Temp_MatchMonitor_Reason(Reason)
     SELECT DISTINCT Reason
     FROM CTS_DataCenter.MatchMonitor AS mm
     WHERE mm.LiveIndicator = ip_LiveIndicator AND mm.MatchID = ip_MatchID AND mm.BettypeID = ip_BettypeID AND mm.BetID = ip_BetID; 
-    
+ 
     INSERT INTO Temp_MatchMonitorDetails_Reason(Reason)
     SELECT DISTINCT Reason
     FROM CTS_DataCenter.MatchMonitorDetails AS mmd
     WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID;     
        
+
 	DELETE mm
 	FROM CTS_DataCenter.MatchMonitor AS mm
 		LEFT JOIN Temp_MatchMonitorDetails_Reason AS tmpMmd ON mm.Reason = tmpMmd.Reason
