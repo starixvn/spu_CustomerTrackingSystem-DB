@@ -79,12 +79,11 @@ sp: BEGIN
         LIMIT 1;
                         
         INSERT INTO Temp_FixedTransRange (MinTransID, MaxTransID)
-        SELECT TransID, MaxTransID1
+        SELECT  MinTransID1, TransID
 		FROM (
 				SELECT  
 					TransDate, TransID, CustID, Stake, Odds
-				,	MAX(TransID) OVER w1 MaxTransID1
-				,	MAX(TransDate) OVER w1  AS LastTransDate1
+				,	MIN(TransID) OVER w1 MinTransID1
 				,	MIN(Odds) OVER w1 AS MinOdds1
 				, 	MAX(Odds) OVER w1  AS MaxOdds1
 				,	SUM(CASE WHEN Stake > lv_Rule_HighStake THEN 1 ELSE 0 END) OVER w1  AS TotalHighStake1
@@ -125,12 +124,11 @@ sp: BEGIN
         LIMIT 1;
 	
         INSERT INTO Temp_FixedTransRange (MinTransID, MaxTransID)
-        SELECT TransID, MaxTransID1
+        SELECT MinTransID1, TransID
 		FROM (
 				SELECT  
 					TransDate, TransID, CustID, Stake, Odds
-				,	MAX(TransID) OVER w1 MaxTransID1
-				,	MAX(TransDate) OVER w1  AS LastTransDate1
+				,	MIN(TransID) OVER w1 MinTransID1
 				,	MIN(Odds) OVER w1 AS MinOdds1
 				, 	MAX(Odds) OVER w1  AS MaxOdds1
 				,	SUM(CASE WHEN Stake > lv_Rule_HighStake THEN 1 ELSE 0 END) OVER w1  AS TotalHighStake1
