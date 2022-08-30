@@ -14,7 +14,8 @@ BEGIN
 			- 20220307@Irena.Vo: Created [Redmine ID: #159014]
 			- 20220407@Irena.Vo: Change logic get [Redmine ID: #170135]
             - 20220519@Casey.Huynh: Renovate PA Process [Redmine ID: #172061]
-			- 20220628@Aries.Nguyen: Update robot classification rule [Redmine ID: #174430]
+			- 20220628@Aries.Nguyen: Update robot classification rule [Redmine ID: #174430]            
+			- 20220830@Long.Luu: update to show for System Detect Group Betting [Redmine ID: #176976]
             
 		Param's Explanation (filtered by):
         Example:
@@ -26,7 +27,7 @@ BEGIN
 		, 	cat.RelevantCategoryID AS RelevantCategoryGroup
 		, 	cat.CategoryGroup AS CategoryID
 	FROM CTS_DataCenter.CustomerCategory AS cat
-	WHERE 	(cat.CategoryID BETWEEN 52 AND 62 OR cat.CategoryID = 163)
+	WHERE 	(cat.CategoryID BETWEEN 52 AND 63 OR cat.CategoryID = 163)
 		AND cat.CategoryID NOT IN (56,60,61) 
 		AND cat.IsActive = 1;   
     
