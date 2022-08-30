@@ -21,7 +21,7 @@ sp: BEGIN
 
 		Revisions:
 			- 20220726@Casey.Huynh: Created [Redmine ID: #175700]
-            
+            - 20220726@Casey.Huynh: Handle Duaration in 7 minute [Redmine ID: #177139]
 		Param's Explanation (filtered by):	
 
 		Example:
@@ -33,6 +33,7 @@ sp: BEGIN
     DECLARE lv_MaxTransID BIGINT UNSIGNED;
     DECLARE lv_MaxTransDate DATETIME(3);
 	DECLARE lv_LastTransDate DATETIME(3);
+    DECLARE lv_FromTransDate DATETIME(3);
     DECLARE lv_LastTransID BIGINT UNSIGNED;
     DECLARE	lv_Rule_TotalTicket			SMALLINT; 
     DECLARE	lv_Rule_HighStake			SMALLINT;
@@ -40,6 +41,7 @@ sp: BEGIN
 	DECLARE	lv_Rule_Duration			SMALLINT; 
     DECLARE	lv_Rule_OddsSpread_Min		SMALLINT; 
     DECLARE	lv_Rule_OddsSpread_Max		SMALLINT;
+    
     
     DROP TEMPORARY TABLE IF EXISTS Temp_FixedTransRange;
     CREATE TEMPORARY TABLE Temp_FixedTransRange(
@@ -68,7 +70,14 @@ sp: BEGIN
         INTO lv_LastTransID
         FROM CTS_DataCenter.SystemParameter AS s
         WHERE s.ParameterID = 100;        
-		
+        
+        SELECT TIMESTAMPADD(MINUTE, lv_Rule_Duration, TransDate)
+        INTO lv_FromTransDate
+        FROM CTS_DataCenter.MatchMonitorTransLive AS mmt
+		WHERE mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam
+		ORDER BY TransDate
+        LIMIT 1;
+                        
         INSERT INTO Temp_FixedTransRange (MinTransID, MaxTransID)
         SELECT TransID, MaxTransID1
 		FROM (
@@ -83,11 +92,12 @@ sp: BEGIN
 			   FROM CTS_DataCenter.MatchMonitorTransLive AS mmt
 			   WHERE  mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam
 					AND mmt.TransID > lv_LastTransID AND mmt.TransID <= ip_MaxTransID AND mmt.StatusRule02 = 0
-			   WINDOW w1 AS (ORDER BY TransDate RANGE BETWEEN CURRENT ROW AND INTERVAL lv_Rule_Duration MINUTE  FOLLOWING)						
+			   WINDOW w1 AS (ORDER BY TransDate DESC RANGE BETWEEN CURRENT ROW AND INTERVAL lv_Rule_Duration MINUTE  FOLLOWING)						
 			) AS tmpTs
         WHERE tmpTs.TotalTrans1 > lv_Rule_TotalTicket
 			AND (tmpTs.TotalHighStake1/tmpTs.TotalTrans1) > lv_Rule_HighStakePercent 
-			AND (tmpTs.MaxOdds1 - tmpTs.MinOdds1)*100 BETWEEN lv_Rule_OddsSpread_Min AND lv_Rule_OddsSpread_Max;
+			AND (tmpTs.MaxOdds1 - tmpTs.MinOdds1)*100 BETWEEN lv_Rule_OddsSpread_Min AND lv_Rule_OddsSpread_Max
+            AND tmpTs.TransDate >= lv_FromTransDate;
 
         SELECT CONST_REASON AS Reason
 			,	GROUP_CONCAT(DISTINCT TransID) AS TransIDList
@@ -106,6 +116,13 @@ sp: BEGIN
         INTO lv_LastTransID
         FROM CTS_DataCenter.SystemParameter AS s
         WHERE s.ParameterID = 101;
+        
+        SELECT TIMESTAMPADD(MINUTE, lv_Rule_Duration, TransDate)
+        INTO lv_FromTransDate
+        FROM CTS_DataCenter.MatchMonitorTransNonLive AS mmt
+		WHERE mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam
+		ORDER BY TransDate
+        LIMIT 1;
 	
         INSERT INTO Temp_FixedTransRange (MinTransID, MaxTransID)
         SELECT TransID, MaxTransID1
@@ -121,11 +138,12 @@ sp: BEGIN
 			   FROM CTS_DataCenter.MatchMonitorTransNonLive AS mmt
 			   WHERE  mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam
 					AND mmt.TransID > lv_LastTransID AND mmt.TransID <= ip_MaxTransID AND mmt.StatusRule02 = 0
-			   WINDOW w1 AS (ORDER BY TransDate RANGE BETWEEN CURRENT ROW AND INTERVAL lv_Rule_Duration MINUTE  FOLLOWING)						
+			   WINDOW w1 AS (ORDER BY TransDate DESC RANGE BETWEEN CURRENT ROW AND INTERVAL lv_Rule_Duration MINUTE  FOLLOWING)						
 			) AS tmpTs
         WHERE tmpTs.TotalTrans1 > lv_Rule_TotalTicket
 			AND (tmpTs.TotalHighStake1/tmpTs.TotalTrans1) > lv_Rule_HighStakePercent 
-			AND (tmpTs.MaxOdds1 - tmpTs.MinOdds1)*100 BETWEEN lv_Rule_OddsSpread_Min AND lv_Rule_OddsSpread_Max;
+			AND (tmpTs.MaxOdds1 - tmpTs.MinOdds1)*100 BETWEEN lv_Rule_OddsSpread_Min AND lv_Rule_OddsSpread_Max
+            AND tmpTs.TransDate > lv_FromTransDate;
 
 		SELECT CONST_REASON AS Reason
 			,	GROUP_CONCAT(DISTINCT TransID) AS TransIDList
