@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule_Process`;
+DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule_Process_xtest`;
 DELIMITER $$
 
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule_Process`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule_Process_xtest`(
 		IN ip_LiveIndicator		BOOLEAN
 	,	IN ip_MaxSequenceID		BIGINT UNSIGNED
 	,	IN ip_MatchID			INT UNSIGNED
@@ -45,6 +45,7 @@ sp: BEGIN
     DECLARE lv_GroupID INT DEFAULT 1;
     DECLARE lv_IsHedging INT DEFAULT 0;
     DECLARE lv_CustIDList LONGTEXT;
+    DECLARE lv_HighStake DECIMAL(20,4) DEFAULT 50;
     
     #=================================================================================    
     DROP TEMPORARY TABLE IF EXISTS Temp_StagingTrans01;
@@ -447,14 +448,16 @@ sp: BEGIN
         ,	TransIDList		LONGTEXT
         ,	CustIDList		LONGTEXT
         ,	OldGroupIDList	VARCHAR(500)
+        ,	TotalHighStake	INT
     );	
 	
-    INSERT INTO Temp_ResultGroup(GroupID, Reason, TransIDList, CustIDList, OldGroupIDList)
+    INSERT INTO Temp_ResultGroup(GroupID, Reason, TransIDList, CustIDList, OldGroupIDList, TotalHighStake)
     SELECT  tmpTg.GroupID
         ,	(CASE WHEN COUNT(DISTINCT tmpSt.Betteam) > 1 THEN 2 ELSE 0 END) AS Reason
         ,	GROUP_CONCAT(tmpSt.TransID) AS TransIDList
         ,	GROUP_CONCAT(DISTINCT tmpSt.CustID) AS CustIDList
         ,	GROUP_CONCAT(DISTINCT tmpSt.OldGroupID) AS OldGroupIDList
+        ,	SUM(CASE WHEN tmpSt.Stake > lv_HighStake THEN 1 ELSE 0 END) AS TotalHighStake
     FROM 	Temp_TransGroup AS tmpTg
 		INNER JOIN Temp_StagingTrans02  AS tmpSt ON tmpSt.CustID = tmpTg.CustID AND tmpSt.TransDate BETWEEN tmpTg.MinTransDate AND tmpTg.MaxTransDate
 	GROUP BY tmpTg.GroupID
@@ -519,6 +522,7 @@ sp: BEGIN
         ,	tmpRg.TransIDList
         ,	tmpRg.CustIDList
         ,	tmpRg.OldGroupIDList
+        ,	(CASE WHEN tmpRg.TotalHighStake > 0 THEN 1 ELSE 0 END) GroupIsExistingHighStake
     FROM Temp_ResultGroup AS tmpRg;
 END$$
 DELIMITER ;

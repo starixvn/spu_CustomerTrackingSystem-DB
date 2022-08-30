@@ -25,7 +25,7 @@ BEGIN
             -	20211213@Casey.Huynh: Enhance MM, Add column LeagueName [Redmine ID: 165606]
 			-	20220110@Casey.Huynh: Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
             -	20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
-            
+            - 	20220830@Casey.Huynh: New Category for Classify Group Betting [Redmine ID: #176976]
 		Param's Explanation (filtered by):			
 
 		Example:
@@ -58,21 +58,23 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_TransGroup;
     CREATE TEMPORARY TABLE Temp_TransGroup
     (
-			GroupID 		INT
-        ,	Reason 			TINYINT
-        ,	TransIDList 	LONGTEXT
-        ,	CustIDList		LONGTEXT 
-        ,	OldGroupIDList	TEXT
+			GroupID 			INT
+        ,	Reason 				TINYINT
+        ,	TransIDList 		LONGTEXT
+        ,	CustIDList			LONGTEXT 
+        ,	OldGroupIDList		TEXT
+        ,	IsExistingHighStake	BOOLEAN
         
         ,	PRIMARY KEY Temp_TransGroup(GroupID)
     );
     
-    INSERT IGNORE INTO CTS_DataCenter.Temp_TransGroup(GroupID, Reason, TransIDList, CustIDList, OldGroupIDList)
+    INSERT IGNORE INTO CTS_DataCenter.Temp_TransGroup(GroupID, Reason, TransIDList, CustIDList, OldGroupIDList, IsExistingHighStake)
 	SELECT  js.GroupID
 		,	js.Reason
 		,	js.TransIDList
 		,	js.CustIDList
 		,	js.OldGroupIDList
+        ,	js.IsExistingHighStake
 	FROM JSON_TABLE(ip_TransGroup,
 					 "$[*]" COLUMNS(
 								GroupID			INT PATH "$.GroupID" 
@@ -80,6 +82,7 @@ BEGIN
 							,	TransIDList		LONGTEXT PATH "$.TransIDList"
 							,	CustIDList		LONGTEXT PATH "$.CustIDList" 
 							,	OldGroupIDList	TEXT PATH "$.OldGroupIDList" 
+                            ,	IsExistingHighStake	TEXT PATH "$.IsExistingHighStake" 
 						)
 				) AS js;     
      
