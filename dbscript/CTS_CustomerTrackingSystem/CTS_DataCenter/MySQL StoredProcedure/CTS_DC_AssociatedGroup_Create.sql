@@ -5,6 +5,13 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedGroup_Create`(
 		IN ip_GroupName 		VARCHAR(100)
     ,	IN ip_ABI 				INT
+    ,	IN ip_AllCredit			SMALLINT
+    ,	IN ip_AllLicensee		SMALLINT
+    ,	IN ip_Sites				LONGTEXT
+    ,	IN ip_HasDevice			TINYINT
+    ,	IN ip_HasManual			TINYINT
+    ,	IN ip_HasIP				TINYINT
+    ,	IN ip_HasAI				TINYINT
     ,	IN ip_Remark 			VARCHAR(200)
     ,	IN ip_CreatedBy 		INT UNSIGNED
 )
@@ -18,17 +25,39 @@ BEGIN
 
 		Revisions:
 			- 20220705@Aries.Nguyen: Created [Redmine ID: #167748]
+            - 20220831@Aries.Nguyen: Associated Group Enhancement [Redmine ID: #176991]
         
 		Param's Explanation (filtered by):
         
         Example: 
 			- CALL CTS_DC_AssociatedGroup_Create('Group 1', 47, 'Comment', 15471129);
 	*/
-	DECLARE lv_LogTypeID		INT DEFAULT 34;
-    INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-	VALUES(lv_LogTypeID,'CTS_DC_AssociatedGroup_Create', CONCAT('GroupName:', ip_GroupName,';ABI:', ip_ABI), NOW(), ip_CreatedBy);
+    DECLARE lv_AuditInfo 		JSON;
+    DECLARE lv_GroupID 			BIGINT UNSIGNED;
 
-    INSERT INTO CTS_DataCenter.AssociatedGroup(GroupName,ABI,Remark,CreatedBy)
-    VALUES(ip_GroupName,ip_ABI,ip_Remark,ip_CreatedBy);
+    INSERT INTO CTS_DataCenter.AssociatedGroup(GroupName,ABI,AllCredit,AllLicensee,Sites,HasDevice,HasManual,HasIP,HasAI,Remark,CreatedBy,Modified)
+    VALUES(ip_GroupName,ip_ABI,ip_AllCredit,ip_AllLicensee,ip_Sites,ip_HasDevice,ip_HasManual,ip_HasIP,ip_HasAI,ip_Remark,ip_CreatedBy,NULL);
+    
+    SELECT GroupID
+    INTO lv_GroupID
+    FROM CTS_DataCenter.AssociatedGroup
+    WHERE GroupName = ip_GroupName
+	ORDER BY GroupID DESC
+    LIMIT 1;
+    
+    SET lv_AuditInfo = JSON_OBJECT('GroupID', lv_GroupID, 
+								   'GroupName', ip_GroupName, 
+								   'ABI', ip_ABI, 
+                                   'AllCredit', ip_AllCredit, 
+                                   'AllLicensee', ip_AllLicensee, 
+                                   'Sites', ip_Sites, 
+                                   'HasDevice', ip_HasDevice, 
+                                   'HasManual', ip_HasManual, 
+                                   'HasIP', ip_HasIP, 
+								   'HasAI', ip_HasAI,
+                                   'Remark', ip_Remark);
+    
+    INSERT INTO CTS_DataCenter.CTSAuditLog(EventName,CreatedBy, Info)
+	VALUES("CTS_DC_AssociatedGroup_Create",ip_CreatedBy, lv_AuditInfo);
 END$$
 DELIMITER ;
