@@ -1,7 +1,7 @@
 /*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 CREATE OR ALTER PROCEDURE [dbo].[CTS_TWGroupBetting_SyncDataGroupBettingTicket]
 		@GBTicketXMLString	VARCHAR(MAX)
-		,@RunningTransID	BIGINT
+		,@RunningSequenceId	BIGINT
 AS
 /*
 	Created: 20220314@Harvey.Nguyen
@@ -12,6 +12,7 @@ AS
 		- 20220314@Harvey.Nguyen: Init sp 											[Redmine ID: #170160]
 		- 20220505@Harvey.Nguyen: Insert GroupBetting ticket into history table		[Redmine ID: #169671]
 		- 20220711@Harvey.Nguyen: Change solution to scan on each ticket			[Redmine ID: #169671]
+		- 20220831@Harvey.Nguyen: Update for Scale out DB Trans						[Redmine ID: #176472]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_SyncDataGroupBettingTicket] 
@@ -55,7 +56,7 @@ BEGIN
 
 	SELECT @RunningDate = transdate
 	FROM dbo.bettrans WITH (NOLOCK)
-	WHERE transid = @RunningTransID;
+	WHERE sequenceid = @RunningSequenceId;
 
 	SET @DailyMidnight = DATEADD(MINUTE, 30, CONVERT(SMALLDATETIME, CONVERT(DATE, @RunningDate)));
 
