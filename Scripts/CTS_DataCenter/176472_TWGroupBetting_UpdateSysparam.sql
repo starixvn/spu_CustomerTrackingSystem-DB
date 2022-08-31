@@ -7,4 +7,4 @@ DBName:		CTS_DataCenter
 
 USE CTS_DataCenter;
 
-UPDATE `CTS_DataCenter`.`SystemParameter` SET `ParameterName` = 'TWGroupBetting_LastSequenceId', `ParameterDesc` = 'TWGroupBetting_LastSequenceId', `ParameterValue` = '11565738' WHERE (`ParameterID` = '90');
+UPDATE `CTS_DataCenter`.`SystemParameter` SET `ParameterName` = 'TWGroupBetting_LastSequenceId', `ParameterDesc` = 'TWGroupBetting_LastSequenceId', `ParameterValue` = '116007808596' WHERE (`ParameterID` = '90');

@@ -21,6 +21,7 @@ AS
 		- 20220617@Harvey.Nguyen: Fix bug wrong inner join					[Redmine ID: #169671]
 		- 20220711@Harvey.Nguyen: Change solution to scan on each ticket	[Redmine ID: #169671]
 		- 20220801@Harvey.Nguyen: Enhance performance						[Redmine ID: #169671]
+		- 20220831@Harvey.Nguyen: Update for Scale out DB Trans				[Redmine ID: #176472]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_ScanTicket] '2022-02-15 23:10:15.983','2022-02-16 02:15:20.983',10900
@@ -286,7 +287,7 @@ BEGIN
 			,	tfs.GroupId
 		FROM #TmpSuspectTicket AS tfs WITH(NOLOCK)
 			INNER JOIN dbo.SPU_GroupBettingRule AS gbr WITH (NOLOCK) ON tfs.RuleId = gbr.RuleId
-		WHERE tfs.CustomerClass NOT IN (1,2)
+		WHERE tfs.CustomerClass NOT IN (201,2101,2201,2001,202,2102,2202,2002)
 		GROUP BY tfs.RuleId
 			,	tfs.Betteam
 			,	tfs.MatchId
