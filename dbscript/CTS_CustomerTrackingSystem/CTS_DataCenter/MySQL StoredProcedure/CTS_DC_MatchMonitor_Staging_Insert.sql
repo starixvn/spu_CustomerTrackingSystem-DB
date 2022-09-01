@@ -57,7 +57,7 @@ BEGIN
 			,	CURRENT_TIMESTAMP(3)
 		FROM JSON_TABLE(ip_TransList,
 						 "$[*]" COLUMNS(
-									SequenceID		BIGINT UNSIGNED PATH "$.SequenceId" 	
+									SequenceID		BIGINT UNSIGNED PATH "$.SequenceID" 	
 								,	TransID			BIGINT UNSIGNED PATH "$.TransID" 
 								,	TransDate		DATETIME(3) PATH "$.TransDate" 
                                 ,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PATH "$.LeagueName"
@@ -105,7 +105,7 @@ BEGIN
 			,	CURRENT_TIMESTAMP(3)
 		FROM JSON_TABLE(ip_TransList,
 						 "$[*]" COLUMNS(
-									SequenceID		BIGINT PATH "$.SequenceId"
+									SequenceID		BIGINT PATH "$.SequenceID"
 								,	TransID			BIGINT UNSIGNED PATH "$.TransID" 
 								,	TransDate		DATETIME(3) PATH "$.TransDate" 
                                 ,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PATH "$.LeagueName"
@@ -166,7 +166,7 @@ BEGIN
 			,	CURRENT_TIMESTAMP(3)
 		FROM JSON_TABLE(ip_TransList,
 						 "$[*]" COLUMNS(                         
-									SequenceID		BIGINT PATH "$.SequenceId"
+									SequenceID		BIGINT PATH "$.SequenceID"
 								,	TransID			BIGINT UNSIGNED PATH "$.TransID" 
 								,	TransDate		DATETIME(3) PATH "$.TransDate"
                                 ,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PATH "$.LeagueName"
@@ -215,7 +215,7 @@ BEGIN
 			,	CURRENT_TIMESTAMP(3)
 		FROM JSON_TABLE(ip_TransList,
 						 "$[*]" COLUMNS(
-									SequenceID		BIGINT PATH "$.SequenceId"
+									SequenceID		BIGINT PATH "$.SequenceID"
 								,	TransID			BIGINT UNSIGNED PATH "$.TransID" 
 								,	TransDate		DATETIME(3) PATH "$.TransDate" 
                                 ,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PATH "$.LeagueName"
