@@ -69,7 +69,7 @@ BEGIN
         ,	PRIMARY KEY Temp_TransGroup(GroupID)
     );
     
-    INSERT IGNORE INTO CTS_DataCenter.Temp_TransGroup(GroupID, Reason, TransIDList, CustIDList, OldGroupIDList, IsExistingHighStake)
+    INSERT IGNORE INTO Temp_TransGroup(GroupID, Reason, TransIDList, CustIDList, OldGroupIDList, IsExistingHighStake)
 	SELECT  js.GroupID
 		,	js.Reason
 		,	js.TransIDList

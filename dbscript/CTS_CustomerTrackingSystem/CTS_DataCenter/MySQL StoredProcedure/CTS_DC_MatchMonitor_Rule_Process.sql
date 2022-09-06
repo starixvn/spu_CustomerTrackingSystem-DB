@@ -522,7 +522,7 @@ sp: BEGIN
         ,	tmpRg.TransIDList
         ,	tmpRg.CustIDList
         ,	tmpRg.OldGroupIDList
-        ,	(CASE WHEN tmpRg.TotalHighStake > 0 THEN 1 ELSE 0 END) GroupIsExistingHighStake
+        ,	(CASE WHEN tmpRg.TotalHighStake > 0 THEN 1 ELSE 0 END) IsExistingHighStake
     FROM Temp_ResultGroup AS tmpRg;
 END$$
 DELIMITER ;
