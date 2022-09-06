@@ -1,9 +1,9 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule_Complete_xtest`;
+DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule_Complete`;
 DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule_Complete`;
 DELIMITER $$
 
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule_Complete_xtest`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule_Complete`(
 		IN ip_LiveIndicator BOOLEAN
 	,	IN ip_MaxSequenceID	BIGINT UNSIGNED
 	, 	IN ip_MatchID		INT
@@ -30,7 +30,7 @@ BEGIN
 		Param's Explanation (filtered by):			
 
 		Example:
-			CALL CTS_DC_MatchMonitor_Rule_Complete_xtest(1,114089577333,48310358,0,1,0,'[{"GroupID":4,"Reason":0,"TransList":"114089577333,114089576830","CustIDList":"55706032,55895790","OldGroupIDList":"0"}]');
+			CALL CTS_DC_MatchMonitor_Rule_Complete(1,114089577333,48310358,0,1,0,'[{"GroupID":4,"Reason":0,"TransList":"114089577333,114089576830","CustIDList":"55706032,55895790","OldGroupIDList":"0"}]');
 			
 		*/ 
     DECLARE lv_GroupID 					INT;
