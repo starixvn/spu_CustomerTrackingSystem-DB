@@ -22,6 +22,7 @@ sp: BEGIN
 		Revisions:
 			- 20220726@Casey.Huynh: Created [Redmine ID: #175700]
             - 20220726@Casey.Huynh: Handle Duaration in 7 minute [Redmine ID: #177139]
+            - 20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
 		Param's Explanation (filtered by):	
 
 		Example:
