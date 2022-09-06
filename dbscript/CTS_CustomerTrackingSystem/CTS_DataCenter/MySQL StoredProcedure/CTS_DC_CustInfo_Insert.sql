@@ -134,8 +134,8 @@ BEGIN
             ,   CASE WHEN js.UserName Like '%CashOut' OR 
 						  stl.ItemID IS NOT NULL OR 						 
                           js.SRecommend IN (41430709) OR 
-                          js.MRecommend IN (27899314, 11656504, 12146012) AND js.RoleID IN (1,2) OR
-                          (js.Recommend IN (52466,5707545,29270764,134456) AND js.RoleID = 1)  THEN 1 
+                          js.MRecommend IN (27899314, 11656504, 12146012) OR
+                          js.Recommend IN (52466,5707545,29270764,134456)  THEN 1 
 				ELSE 0 END AS IsInternal
 	FROM JSON_TABLE(ip_CustomerList,
 		 "$[*]" COLUMNS(
