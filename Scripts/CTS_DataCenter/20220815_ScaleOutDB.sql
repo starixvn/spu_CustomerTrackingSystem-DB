@@ -84,44 +84,43 @@ DROP PRIMARY KEY;
 ALTER TABLE MatchMonitorTransNonLive
 ADD PRIMARY KEY PK_MatchMonitorTransLive_SequenceID(SequenceID);
 #===================================================================
+#****************UPDATE Parameter Value by SequenceID*******************
+SELECT * FROM SystemParameter WHERE ParameterID IN (20,29,100,101); #Long Luu: Get SequenceID From Main DB by ParamenterValue
 
 UPDATE SystemParameter
 SET ParameterName = 'MatchMonitor_StagingInsert_LiveLastSequenceID'
 	, ParameterDesc = 'MatchMonitor_StagingInsert_LiveLastSequenceID'
-  #  , ParameterValue = ????
+    , ParameterValue = <SequenceIDForLive>
 WHERE ParameterID = 20;
 
 UPDATE SystemParameter
 SET ParameterName = 'MatchMonitor_StagingInsert_NonliveLastSequenceID'
 	, ParameterDesc = 'MatchMonitor_StagingInsert_NonliveLastSequenceID'
-   # , ParameterValue = ????
+    , ParameterValue = <SequenceIDForNonLive>
 WHERE ParameterID = 29;
+
+UPDATE SystemParameter
+SET ParameterDesc = 'MatchMonitorTransLive.SequenceID'
+WHERE ParameterID = 100
+	, ParameterValue = <SequenceIDForNonLive>;
+
+UPDATE SystemParameter
+SET ParameterDesc = 'MatchMonitorTransNonLive.SequenceID'
+WHERE ParameterID = 101
+	, ParameterValue = <SequenceIDForNonLive>;
+
+
 
 UPDATE SystemParameter
 SET ParameterName = 'MatchMonitor_RuleProcess_LiveLastSequenceID'
 	, ParameterDesc = 'MatchMonitor_RuleProcess_LiveLastSequenceID'
-    #, ParameterValue = ????
 WHERE ParameterID = 47;
 
 UPDATE SystemParameter
 SET ParameterName = 'MatchMonitor_RuleProcess_NonLiveLastSequenceID'
 	, ParameterDesc = 'MatchMonitor_RuleProcess_NonLiveLastSequenceID'
-    #, ParameterValue = ????
 WHERE ParameterID = 48;
 
-UPDATE SystemParameter
-SET ParameterName = 'MatchMonitor_RuleProcess_NonLiveLastSequenceID'
-	, ParameterDesc = 'MatchMonitor_RuleProcess_NonLiveLastSequenceID'
-  #  , ParameterValue = ????
-WHERE ParameterID = 48;
-
-UPDATE SystemParameter
-SET ParameterDesc = 'MatchMonitorTransLive.SequenceID'
-WHERE ParameterID = 100;
-
-UPDATE SystemParameter
-SET ParameterDesc = 'MatchMonitorTransNonLive.SequenceID'
-WHERE ParameterID = 101;
 
 
 
