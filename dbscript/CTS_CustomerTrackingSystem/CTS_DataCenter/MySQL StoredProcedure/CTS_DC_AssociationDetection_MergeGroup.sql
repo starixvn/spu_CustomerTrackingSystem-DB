@@ -18,6 +18,7 @@ sp:BEGIN
         
 		Revisions:
 			- 20220727@Aries.Nguyen: Created [Redmine ID: #175701]
+            - 20220907@Aries.Nguyen: CTS - Association Detection - Display in correct CC [Redmine ID: #177559]
 
 		Param's Explanation (filtered by):
 
@@ -27,12 +28,17 @@ sp:BEGIN
     DECLARE	CONST_GROUP_NORMAL 					INT DEFAULT 200;
 	DECLARE	CONST_GROUP_WRAPPER 				INT DEFAULT 100;
     DECLARE	CONST_GROUP_PROBLEM 				INT DEFAULT 0;
-        
-    DECLARE	CONST_LICVIP_DANGEROUSCC 			INT DEFAULT 99;
-    DECLARE	CONST_VVIPCC						INT DEFAULT 100;
-    DECLARE	CONST_LICVIP_SUSPICIOUSCC			INT DEFAULT 101;
-    DECLARE	CONST_LICBAPRIORITY					INT DEFAULT 90;
-    DECLARE	CONST_LICBACC						INT DEFAULT 14;
+    
+    DECLARE	CONST_LICBACATEGORY					INT DEFAULT 2;
+    DECLARE	CONST_LICVIP_DANGEROUSCATEGORY		INT DEFAULT 3;
+    DECLARE	CONST_LICVIP_SUSPICIOUSCATEGORY		INT DEFAULT 4;   
+    DECLARE	CONST_VVIPCATEGORY					INT DEFAULT 210;
+	
+    DECLARE lv_LicBACC							SMALLINT UNSIGNED;
+    DECLARE lv_LicBAPriority					SMALLINT UNSIGNED;
+    DECLARE lv_LicVIPCC_Danger					SMALLINT UNSIGNED;
+    DECLARE lv_LicVIPCC_Suspicious				SMALLINT UNSIGNED;
+    DECLARE lv_VVIPCC							SMALLINT UNSIGNED;
     
 
     DECLARE lv_OrigID 		BIGINT;
@@ -141,6 +147,23 @@ sp:BEGIN
 		,	PRIMARY KEY(FromCTSCustID, ToCTSCustID)
 		,	INDEX Temp_SharedMatches(ToCTSCustID,FromCTSCustID)
 	);
+    /* INIT */    
+    SELECT CustomerClass, Priority
+    INTO lv_LicBACC, lv_LicBAPriority
+    FROM CustomerCategory WHERE CategoryID = CONST_LICBACATEGORY;
+    
+    SELECT CustomerClass
+    INTO lv_LicVIPCC_Danger
+    FROM CustomerCategory WHERE CategoryID = CONST_LICVIP_DANGEROUSCATEGORY;
+    
+    SELECT CustomerClass
+    INTO lv_LicVIPCC_Suspicious
+    FROM CustomerCategory WHERE CategoryID = CONST_LICVIP_SUSPICIOUSCATEGORY;    
+    
+    SELECT CustomerClass
+    INTO lv_VVIPCC
+    FROM CustomerCategory WHERE CategoryID = CONST_VVIPCATEGORY;
+    
     /*****************************Extract Data From Input**************************************************/
     INSERT IGNORE INTO Temp_Cust(CTSCustID, CustID,Username,CustStatus,IsLicenseeVIP,IsLicenseeBA,CustomerClass,Processed)
 	SELECT 	tmp.CTSCustID
@@ -276,13 +299,13 @@ sp:BEGIN
 	UPDATE  Temp_Cust AS cus 
     SET Processed = 1
 	WHERE NOT EXISTS (SELECT 1 FROM Temp_Graph AS tmp WHERE tmp.OrigID = cus.CTSCustID);
-    
+	
     /*
 	DROP TEMPORARY TABLE IF EXISTS Temp_GraphIDSingle;
 	CREATE TEMPORARY TABLE 	Temp_GraphIDSingle (
 			ID 				BIGINT   PRIMARY KEY
 	);
-    
+
 	INSERT INTO Temp_GraphIDSingle(ID)
 	SELECT OrigID
 	FROM Temp_Graph 
@@ -313,11 +336,12 @@ sp:BEGIN
     SELECT tmp.CTSCustID
 	FROM Temp_GrapCustIDSingle as tmp
 	WHERE NOT EXISTS (SELECT 1 FROM  Temp_Graph AS  grp WHERE tmp.CTSCustID  = grp.OrigID AND  grp.DestID > 0);
-
+    
 	UPDATE  Temp_Cust AS cus 
     SET Processed = 1
 	WHERE  EXISTS (SELECT 1 FROM Temp_GrapCustIDAlone AS tmp WHERE tmp.CTSCustID = cus.CTSCustID);
     */
+
     lp: LOOP 
 		SET lv_OrigID = NULL;
         
@@ -430,10 +454,10 @@ sp:BEGIN
     SELECT 	tmp.CTSCustID
 		,	clss.CustomerClass
     FROM Temp_Cust AS tmp,
-		LATERAL(SELECT CASE WHEN tmp.CustomerClass IS NULL THEN CASE WHEN cate.CustomerClass = CONST_VVIPCC THEN CONST_VVIPCC
-																	 WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN CONST_LICVIP_SUSPICIOUSCC
-																	 WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN CONST_LICVIP_DANGEROUSCC
-																	 WHEN tmp.IsLicenseeBA = 1 AND cate.Priority > CONST_LICBAPRIORITY THEN CONST_LICBACC
+		LATERAL(SELECT CASE WHEN tmp.CustomerClass IS NULL THEN CASE WHEN cate.CustomerClass = lv_VVIPCC THEN lv_VVIPCC
+																	 WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN lv_LicVIPCC_Suspicious
+																	 WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN lv_LicVIPCC_Danger
+																	 WHEN tmp.IsLicenseeBA = 1 AND cate.Priority > lv_LicBAPriority THEN lv_LicBACC
 																	 ELSE cate.CustomerClass END
 						ELSE tmp.CustomerClass END AS CustomerClass
 				FROM CTS_DataCenter.CTSCustomerClassification AS clss
