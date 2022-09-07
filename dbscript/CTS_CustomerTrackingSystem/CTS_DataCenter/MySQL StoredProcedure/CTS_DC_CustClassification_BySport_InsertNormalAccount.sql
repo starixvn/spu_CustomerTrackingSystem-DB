@@ -20,148 +20,106 @@ BEGIN
 		Param's Explanation (filtered by):
         
         Example:
-				- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount_xpre('[{"CustId": "43600693","CategoryId":"1000","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","TaggingID":10,"TaggingType":1}]',@or);
+				CALL CTS_DataCenter.CTS_DC_CustClassification_BySport_InsertNormalAccount('[{"CustId": "43600693","CategoryId":"202","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","SportGroupID":10}]',@or);
 */ 
     
     DECLARE CONST_CATEGORY_NEWMEMBER 					INT DEFAULT 201;
 	DECLARE	CONST_CATEGORY_NORMALMEMBER 				INT DEFAULT 202;
 	DECLARE CONST_CATEGORY_SMART 						INT DEFAULT 203;
     DECLARE CONST_CATEGORY_HIGHRISK 					INT DEFAULT 204;
-    DECLARE CONST_CATEGORY_VIP 							INT DEFAULT 205;
     DECLARE CONST_CATEGORY_PROBATION					INT DEFAULT 206;
     
     DECLARE CONST_ACTIONTYPE_INSERT 					INT DEFAULT 0;
 	DECLARE	CONST_ACTIONTYPE_UPDATE 					INT DEFAULT 1;
 	DECLARE CONST_ACTIONTYPE_REMOVE 					INT DEFAULT 2;
-    DECLARE CONST_ACTIONTYPE_EXISTEDPA 					INT DEFAULT 3;
-    DECLARE CONST_ACTIONTYPE_IGNOREPIN 					INT DEFAULT 4;
     DECLARE CONST_ACTIONTYPE_IGNOREPROBATION 			INT DEFAULT 5;
-  
-    DECLARE CONST_SOURCETYPE_SAMECATEGORY 				INT DEFAULT 0;
-    DECLARE CONST_SOURCETYPE_LESSTHAN10TICKETS 			INT DEFAULT 1;
-	DECLARE	CONST_SOURCETYPE_AFTER10TICKETS 			INT DEFAULT 2;
-	DECLARE CONST_SOURCETYPE_SCANONSCHEDULE				INT DEFAULT 3;
-    DECLARE CONST_SOURCETYPE_PASSPROBATION 				INT DEFAULT 4;
-    DECLARE CONST_SOURCETYPE_FAILPROBATION 				INT DEFAULT 5;
-    DECLARE CONST_SOURCETYPE_INACTIVENORMAL 			INT DEFAULT 18;
-    DECLARE CONST_SOURCETYPE_INACTIVEPROPUNTER			INT DEFAULT 19;
-    
-    DECLARE	CONST_LICBACATEGORY							INT DEFAULT 2;
-    DECLARE	CONST_LICVIP_DANGEROUSCATEGORY				INT DEFAULT 3;
-    DECLARE	CONST_LICVIP_SUSPICIOUSCATEGORY				INT DEFAULT 4;    
-    DECLARE	CONST_VVIPCATEGORY							INT DEFAULT 210;    
     
 	DECLARE lv_CreatedBy 								INT DEFAULT 10278938;
 	DECLARE lv_CurrentDateTime 							DATETIME DEFAULT CURRENT_TIME();
     DECLARE lv_FromProbationLastDay 					DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 19 DAY);
 	DECLARE lv_ToProbationLastDay 						DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 2 DAY);
-    DECLARE lv_LicBACC									SMALLINT UNSIGNED;
-    DECLARE lv_LicBAPriority							SMALLINT UNSIGNED;
-    DECLARE lv_LicVIPCC_Danger							SMALLINT UNSIGNED;
-    DECLARE lv_LicVIPCC_Suspicious						SMALLINT UNSIGNED;
-    DECLARE lv_VVIPCC									SMALLINT UNSIGNED;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;    
 	CREATE TEMPORARY TABLE Temp_NewClassification(	  	
-			CustID						BIGINT UNSIGNED	PRIMARY KEY
+			CustID						BIGINT UNSIGNED
 		, 	CTSCustID					BIGINT DEFAULT 0
 		, 	TurnoverRM					DECIMAL(20,4)
 		, 	WinlossRM					DECIMAL(20,4)
 		, 	BetCount					BIGINT
 		, 	ActiveDays					INT	
+        ,	SportGroupID				SMALLINT
 		, 	DWCateGroup					SMALLINT
 		,	DWCateID					SMALLINT
         ,	OldCateGroup 				SMALLINT
         ,	OldCateID 					SMALLINT
-        ,	OldIsDangerProbation		BIT DEFAULT 0
       	, 	NewCateGroup				SMALLINT
 		,	NewCateID					SMALLINT
 		,	IsDataChanged				BIT DEFAULT 1 /*0: No change category => No Action*/
         ,	OldTargetCC					SMALLINT
         ,	TargetCC					SMALLINT
-		,   SpecialCC	       			INT  
-        ,	SpecialCCName				VARCHAR(50)
-		,   SpecialCCPriority   		SMALLINT DEFAULT -1
-		,   SpecialCCDangerProbation   	BIT DEFAULT NULL
 		, 	ActionType					SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN; 5: Not satisfy Pass Probation*/
 		, 	INDEX    			    	IX_Temp_NewClassification(CustID, DWCateGroup)  
+        ,	PRIMARY KEY (CustID, SportGroupID)
 	); 
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedCustomers;    
 	CREATE TEMPORARY TABLE Temp_ExistedCustomers(	  	
 			CustID					BIGINT UNSIGNED PRIMARY KEY
         , 	CTSCustID				BIGINT
-        , 	SubscriberID			INT     
-        ,	IsLicensee				BIT        
-        ,	IsLicenseeVIP			BIT       
-        ,	IsLicenseeBA			BIT    
 	); 
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ProbationCustomers;    
 	CREATE TEMPORARY TABLE Temp_ProbationCustomers(	  	
-			CustID					BIGINT UNSIGNED	PRIMARY KEY
-        , 	ScanDate				DATE      
+			CustID					BIGINT UNSIGNED
+		,	SportGroupID			SMALLINT
+        , 	ProbationDate			DATE      
+        ,	PRIMARY KEY (CustID, SportGroupID)
 	); 
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustIgnoranceAction;    
 	CREATE TEMPORARY TABLE Temp_CustIgnoranceAction(	  	
-			CustID					BIGINT UNSIGNED	PRIMARY KEY
+			CustID					BIGINT UNSIGNED
+		,	SportGroupID			SMALLINT
         , 	ActionType				SMALLINT      
+        ,	PRIMARY KEY (CustID, SportGroupID)
 	); 
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_OldClassification;    
 	CREATE TEMPORARY TABLE Temp_OldClassification(	  
-			CustID					BIGINT UNSIGNED	PRIMARY KEY
+			CustID					BIGINT UNSIGNED
+		,	SportGroupID			SMALLINT
         ,	OldCateGroup 			SMALLINT
         ,	OldCateID 				SMALLINT
-        ,	OldIsDangerProbation	BIT DEFAULT 0
+        ,	PRIMARY KEY (CustID, SportGroupID)
 	); 
     
     DROP TEMPORARY TABLE IF EXISTS Temp_OldCustomerClass;    
 	CREATE TEMPORARY TABLE Temp_OldCustomerClass(	  
-			CustID					BIGINT UNSIGNED	PRIMARY KEY
+			CustID					BIGINT UNSIGNED
+		,	SportGroupID			SMALLINT
         ,	CustomerClass 			SMALLINT
+        ,	PRIMARY KEY (CustID, SportGroupID)
 	); 
     
     DROP TEMPORARY TABLE IF EXISTS Temp_UpdateCustomerClass;    
 	CREATE TEMPORARY TABLE Temp_UpdateCustomerClass(	  
-			CustID					BIGINT UNSIGNED	PRIMARY KEY
+			CustID					BIGINT UNSIGNED
+		,	SportGroupID			SMALLINT
         ,	CustomerClass 			SMALLINT
+        ,	PRIMARY KEY (CustID, SportGroupID)
 	); 
     
     /* START */
-    /* INIT */    
-    SELECT CustomerClass, Priority 
-    INTO lv_LicBACC, lv_LicBAPriority
-    FROM CustomerCategory WHERE CategoryID = CONST_LICBACATEGORY;
-    
-    SELECT CustomerClass
-    INTO lv_LicVIPCC_Danger
-    FROM CustomerCategory WHERE CategoryID = CONST_LICVIP_DANGEROUSCATEGORY;
-    
-    SELECT CustomerClass
-    INTO lv_LicVIPCC_Suspicious
-    FROM CustomerCategory WHERE CategoryID = CONST_LICVIP_SUSPICIOUSCATEGORY;    
-    
-    SELECT CustomerClass
-    INTO lv_VVIPCC
-    FROM CustomerCategory WHERE CategoryID = CONST_VVIPCATEGORY;
-    
+    /* INIT */            
 	/* 1: PARSE RAW DATA */
-	INSERT IGNORE INTO Temp_NewClassification(CustID,DWCateGroup,TurnoverRM,WinlossRM,BetCount,ActiveDays,TWBetCount,TWGroupBettingRate,TWTicketRejectRate,TWDesktopUsageRate,
-		TaggingID,TaggingType)
+	INSERT IGNORE INTO Temp_NewClassification(CustID, DWCateGroup, TurnoverRM, WinlossRM, BetCount, ActiveDays, SportGroupID)
 	SELECT DISTINCT temp.CustID
 				, 	temp.DWCateGroup
                 , 	temp.TurnoverRM
                 , 	temp.WinlossRM
                 , 	temp.BetCount
                 , 	temp.ActiveDays
-                ,	temp.TWBetCount
-                , 	temp.TWGroupBettingRate
-                , 	temp.TWTicketRejectRate
-                , 	temp.TWDesktopUsageRate
-                ,	IFNULL(temp.TaggingID, -99)
-                , 	temp.TaggingType
+                , 	temp.SportGroupID
 	 FROM JSON_TABLE(ip_NewClassification,
 		"$[*]" COLUMNS(
 				CustID 					BIGINT UNSIGNED		PATH "$.CustId"
@@ -170,277 +128,152 @@ BEGIN
             , 	WinlossRM				DECIMAL(20,4)		PATH "$.WinlossRM"
             , 	BetCount				BIGINT				PATH "$.BetCount"
             , 	ActiveDays				INT					PATH "$.ActiveDays"		
-            ,	TWBetCount				BIGINT				PATH "$.TWBetCount"
-			,	TWGroupBettingRate		DECIMAL(10,4)		PATH "$.TWGroupBettingRate"
-			,	TWTicketRejectRate		DECIMAL(10,4)		PATH "$.TWTicketRejectRate"
-			,	TWDesktopUsageRate		DECIMAL(10,4)		PATH "$.TWDesktopUsageRate"
-            , 	TaggingID				SMALLINT			PATH "$.TaggingID"
-            , 	TaggingType				SMALLINT			PATH "$.TaggingType"		
+            , 	SportGroupID			SMALLINT UNSIGNED	PATH "$.SportGroupID"		
 		 )) AS 	temp
 	 WHERE temp.DWCateGroup <> 0;
 	
     /* 2: EXCLUDE INTERNAL CUSTOMERS */      
     CALL CTS_DC_ExcludeCustByCondition('Temp_NewClassification');
     
-    /* 3: GENERATE CUSTOMERS' INFO */
-    INSERT IGNORE INTO Temp_ExistedCustomers(CustID, CTSCustID, SubscriberID, IsLicensee, IsLicenseeVIP, IsLicenseeBA)
+    /* 3: GET CUSTOMER INFO */
+    INSERT IGNORE INTO Temp_ExistedCustomers(CustID, CTSCustID)
     SELECT 	DISTINCT cust.CustID
 		, 	cust.CTSCustID
-        , 	cust.SubscriberID
-		, 	CASE WHEN mss.SubscriberGroupID = 2 THEN 1 ELSE 0 END AS IsLicensee
-        ,	cust.IsLicenseeVIP
-        ,	cust.IsLicenseeBA
     FROM Temp_NewClassification AS temp 
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON temp.CustID = cust.CustID AND cust.CustSubID = 0
-        INNER JOIN CTS_DataCenter.MappingSubscriberSite AS mss ON mss.SiteID = cust.SiteID;
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cust 
+			ON temp.CustID = cust.CustID AND cust.CustSubID = 0;
         
     UPDATE Temp_NewClassification AS temp 
 		INNER JOIN Temp_ExistedCustomers AS ec ON temp.CustID = ec.CustID
-	SET		temp.CTSCustID = ec.CTSCustID
-		, 	temp.SubscriberID = ec.SubscriberID
-        ,	temp.IsLicensee = ec.IsLicensee
-        ,	temp.IsLicenseeVIP = ec.IsLicenseeVIP
-        ,	temp.IsLicenseeBA = ec.IsLicenseeBA;
-        
-	 UPDATE Temp_NewClassification AS t
-		INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = t.CustID
-		LEFT JOIN CTS_DataCenter.CustomerCategory AS c ON sp.CustomerClass = c.CustomerClass
-	SET t.SpecialCC = sp.CustomerClass,
-		t.SpecialCCName = c.CustomerClassName,
-		t.SpecialCCPriority = c.Priority,
-        t.SpecialCCDangerProbation = c.IsDangerProbation;
+	SET		temp.CTSCustID = ec.CTSCustID;
     
     /*4: GET PROBATION CUSTOMERS */
-    INSERT IGNORE INTO Temp_ProbationCustomers(CustID, ScanDate)
-    SELECT DISTINCT pro.CustID, pro.CreatedDate
+    INSERT IGNORE INTO Temp_ProbationCustomers(CustID, SportGroupID, ProbationDate)
+    SELECT DISTINCT prob.CustID, prob.SportGroupID, prob.CreatedDate
     FROM 	Temp_NewClassification AS temp
-		INNER JOIN 	ProbationAccountMonitor AS pro ON temp.CustID = pro.CustID AND pro.SportGroupID = CONST_GROUP_NORMAL;
-    
-    /* 5: EXCLUDE CATEGORIES THAT SHOULD NOT BE UPDATED */
-	/* 5.1: NOT PASS PROBATION RULES */ 
-    INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, ActionType)
-    SELECT DISTINCT	temp.CustID, CONST_ACTIONTYPE_IGNOREPROBATION
-	FROM 	Temp_NewClassification AS temp 
-		INNER JOIN Temp_ProbationCustomers AS pro ON temp.CustID = pro.CustID
-    WHERE 	(temp.DWCateGroup IN (CONST_CATEGORY_SMART,CONST_CATEGORY_HIGHRISK,CONST_CATEGORY_PROBATION) AND pro.ScanDate > lv_FromProbationLastDay) 
-			OR (pro.ScanDate >= lv_ToProbationLastDay);
+		INNER JOIN 	ProbationAccountMonitor_BySport AS prob ON temp.CustID = prob.CustID AND temp.SportGroupID =  prob.SportGroupID;
 
-    /* 5.2: EXCLUDE PIN CATEGORY */
-    INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, ActionType)
-    SELECT DISTINCT temp.CustID, CONST_ACTIONTYPE_IGNOREPIN
-	FROM Temp_NewClassification AS temp
-		INNER JOIN CTS_DataCenter.PinCustomerCategory AS pin on pin.CTSCustID = temp.CTSCustID;
+    /* 5: EXCLUDE CUSTOMERS THAT SHOULD NOT BE SCANNED */
+    INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, SportGroupID, ActionType)
+    SELECT DISTINCT	temp.CustID, temp.SportGroupID, CONST_ACTIONTYPE_IGNOREPROBATION
+	FROM 	Temp_NewClassification AS temp 
+		INNER JOIN Temp_ProbationCustomers AS pro ON temp.CustID = pro.CustID AND temp.SportGroupID =  pro.SportGroupID
+    WHERE 	(temp.DWCateGroup IN (CONST_CATEGORY_SMART, CONST_CATEGORY_HIGHRISK, CONST_CATEGORY_PROBATION) AND pro.ProbationDate > lv_FromProbationLastDay) 
+			OR (pro.ProbationDate >= lv_ToProbationLastDay);
     
-	/* 5.3: EXCLUDE PROBLEM ACCOUNTS */
-    INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, ActionType)
-    SELECT DISTINCT temp.CustID, CONST_ACTIONTYPE_EXISTEDPA
-    FROM Temp_NewClassification AS temp
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID AND cate.SportGroupID = CONST_GROUP_PA;
-     
     /* 5.4: UPDATE BACK TO Temp_NewClassification */
 	/* 5.4.1: HAS ACTION + NO VIEW LOG FAIL PROBATION FOR > 20 LAST DAYS */ 
     UPDATE Temp_NewClassification AS temp
-		INNER JOIN  Temp_ProbationCustomers AS pro ON pro.CustID = temp.CustID
+		INNER JOIN  Temp_ProbationCustomers AS pro ON pro.CustID = temp.CustID AND pro.SportGroupID = temp.SportGroupID
 	SET 	temp.IsDataChanged = 0
-    WHERE 	(temp.DWCateGroup = CONST_CATEGORY_PROBATION AND pro.ScanDate < lv_FromProbationLastDay);
+    WHERE 	(temp.DWCateGroup = CONST_CATEGORY_PROBATION AND pro.ProbationDate < lv_FromProbationLastDay);
     
     /* 5.4.2: NO ACTION + VIEW LOG FOR IGNORE CASES */ 
    	UPDATE Temp_NewClassification AS temp 
-		INNER JOIN Temp_CustIgnoranceAction AS ig ON temp.CustID = ig.CustID
+		INNER JOIN Temp_CustIgnoranceAction AS ig ON temp.CustID = ig.CustID AND temp.SportGroupID =  ig.SportGroupID
     SET 	temp.ActionType = ig.ActionType
 		, 	temp.IsDataChanged = 0;
 	
-    /* 6: GENERATE CATEGORY */
-    /* 6.1: UPDATE DW CATEGORY */
-    UPDATE Temp_NewClassification AS temp 
-		LEFT JOIN TaggingToCategory AS tag ON tag.CategoryGroup = temp.DWCateGroup AND tag.TaggingType = temp.TaggingType AND temp.TaggingID = tag.TaggingID
-	SET 	temp.DWCateID = IFNULL(tag.CategoryID,temp.DWCateGroup);
-    
+    /* 6: GENERATE CATEGORY */    
 	/* 6.2: UPDATE EXISTED CATEGORY */  
-    INSERT IGNORE INTO Temp_OldClassification(CustID, OldCateGroup, OldCateID, OldIsDangerProbation)
-    SELECT DISTINCT temp.CustID, cc.CategoryGroup, cate.CategoryID, cc.IsDangerProbation
+    INSERT IGNORE INTO Temp_OldClassification(CustID, SportGroupID, OldCateGroup, OldCateID)
+    SELECT DISTINCT temp.CustID, temp.SportGroupID, cc.CategoryGroup, cate.CategoryID
     FROM Temp_NewClassification AS temp
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON temp.CustID = cate.CustID AND cate.SportGroupID = CONST_GROUP_NORMAL
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport AS cate ON temp.CustID = cate.CustID AND cate.SportGroupID = temp.SportGroupID
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
 	WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_IGNOREPROBATION);
     
     UPDATE Temp_NewClassification AS n
-		LEFT JOIN Temp_OldClassification AS o ON n.CustID = o.CustID
+		LEFT JOIN Temp_OldClassification AS o ON n.CustID = o.CustID AND n.SportGroupID = o.SportGroupID
 	SET n.OldCateGroup = CASE WHEN o.CustID IS NULL THEN CONST_CATEGORY_NEWMEMBER ELSE o.OldCateGroup END,
 		n.OldCateID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGORY_NEWMEMBER ELSE o.OldCateID END,
-		n.OldIsDangerProbation = CASE WHEN o.CustID IS NULL THEN 1 ELSE o.OldIsDangerProbation END,
         n.ActionType = CASE WHEN o.CustID IS NULL THEN CONST_ACTIONTYPE_INSERT ELSE CONST_ACTIONTYPE_UPDATE END
 	WHERE n.ActionType IN (CONST_ACTIONTYPE_INSERT);
     
     UPDATE Temp_NewClassification AS n
-		LEFT JOIN Temp_OldClassification AS o ON n.CustID = o.CustID
+		LEFT JOIN Temp_OldClassification AS o ON n.CustID = o.CustID AND n.SportGroupID = o.SportGroupID
 	SET n.OldCateGroup = CASE WHEN o.CustID IS NULL THEN CONST_CATEGORY_NEWMEMBER ELSE o.OldCateGroup END,
 		n.OldCateID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGORY_NEWMEMBER ELSE o.OldCateID END
 	WHERE n.ActionType IN (CONST_ACTIONTYPE_IGNOREPROBATION);
     
     /* 6.3: UPDATE NEW CATEGORY */    
     UPDATE 	Temp_NewClassification AS temp 
-	SET 	temp.NewCateGroup = (CASE WHEN temp.OldCateGroup IN (CONST_CATEGORY_NEWMEMBER,CONST_CATEGORY_NORMALMEMBER,CONST_CATEGORY_VIP,CONST_CATEGORY_INACTIVE) 
+	SET 	temp.NewCateGroup = (CASE WHEN temp.OldCateGroup IN (CONST_CATEGORY_NEWMEMBER,CONST_CATEGORY_NORMALMEMBER) 
 											AND temp.DWCateGroup IN (CONST_CATEGORY_SMART,CONST_CATEGORY_HIGHRISK) THEN CONST_CATEGORY_PROBATION 
 									  ELSE temp.DWCateGroup 
 								  END)
-	 WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE, CONST_SOURCETYPE_FAILPROBATION);
-	
-    /* 6.3.1: UPDATE NEW CATEGORY - ACTIVE */    
-	UPDATE 	Temp_NewClassification AS temp 
-		LEFT JOIN TaggingToCategory AS tag ON tag.CategoryGroup = temp.NewCateGroup AND tag.TaggingType = temp.TaggingType AND temp.TaggingID = tag.TaggingID
-	SET 	temp.NewCateID = IFNULL(tag.CategoryID, temp.NewCateGroup)
-	 WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE) AND temp.DWCateGroup <> CONST_CATEGORY_INACTIVE; /*Exclude Inactive category*/
-    
-    /* 6.3.2: UPDATE NEW CATEGORY - INACTIVE */    
-    UPDATE 	Temp_NewClassification AS temp 
-    SET 	temp.NewCateID = (CASE WHEN temp.OldCateGroup IS NULL OR temp.OldCateGroup IN (CONST_CATEGORY_NEWMEMBER,CONST_CATEGORY_NORMALMEMBER,CONST_CATEGORY_VIP) THEN CONST_CATEGORY_NORMALINACTIVE
-								   WHEN temp.OldCateGroup IN (CONST_CATEGORY_SMART,CONST_CATEGORY_HIGHRISK,CONST_CATEGORY_PROBATION) THEN CONST_CATEGORY_PROPUNTERINACTIVE
-								   ELSE temp.OldCateID
-                              END)
-    WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE) AND temp.DWCateGroup = CONST_CATEGORY_INACTIVE; 
-    
-     /* 6.3.3: UPDATE NewIsDangerProbation */    
-    UPDATE 	Temp_NewClassification AS temp 
-		INNER JOIN CustomerCategory AS c ON temp.NewCateID = c.CategoryID
-    SET 	temp.NewIsDangerProbation = c.IsDangerProbation;
-    
-    /* 7: GENERATE SOURCE TYPE */    
-    UPDATE 	Temp_NewClassification AS temp 
-	SET 	temp.SourceTypeID = (CASE WHEN (temp.OldCateGroup IS NULL OR temp.OldCateGroup = CONST_CATEGORY_NEWMEMBER) AND temp.NewCateGroup = CONST_CATEGORY_NEWMEMBER THEN CONST_SOURCETYPE_LESSTHAN10TICKETS
-									 WHEN temp.OldCateGroup IN (CONST_CATEGORY_NEWMEMBER,CONST_CATEGORY_INACTIVE) AND temp.NewCateGroup NOT IN (CONST_CATEGORY_NEWMEMBER,CONST_CATEGORY_INACTIVE) THEN CONST_SOURCETYPE_AFTER10TICKETS 
-									 WHEN temp.OldCateGroup = CONST_CATEGORY_PROBATION AND temp.NewCateGroup IN (CONST_CATEGORY_SMART, CONST_CATEGORY_HIGHRISK) THEN CONST_SOURCETYPE_PASSPROBATION
-									 WHEN temp.OldCateGroup = CONST_CATEGORY_PROBATION AND temp.NewCateGroup = CONST_CATEGORY_PROBATION THEN CONST_SOURCETYPE_FAILPROBATION
-                                     WHEN (temp.OldCateGroup IS NULL OR temp.OldCateGroup IN (CONST_CATEGORY_NEWMEMBER,CONST_CATEGORY_NORMALMEMBER,CONST_CATEGORY_VIP)) AND temp.NewCateGroup = CONST_CATEGORY_INACTIVE THEN CONST_SOURCETYPE_INACTIVENORMAL 
-                                     WHEN temp.OldCateGroup IN (CONST_CATEGORY_SMART,CONST_CATEGORY_HIGHRISK,CONST_CATEGORY_PROBATION) AND temp.NewCateGroup = CONST_CATEGORY_INACTIVE THEN CONST_SOURCETYPE_INACTIVEPROPUNTER
-                                     WHEN temp.OldCateGroup = temp.NewCateGroup THEN CONST_SOURCETYPE_SAMECATEGORY
-                                     ELSE CONST_SOURCETYPE_SCANONSCHEDULE
-								END)
-	WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);     
+		  , temp.NewCateID = (CASE WHEN temp.OldCateGroup IN (CONST_CATEGORY_NEWMEMBER,CONST_CATEGORY_NORMALMEMBER) 
+											AND temp.DWCateGroup IN (CONST_CATEGORY_SMART,CONST_CATEGORY_HIGHRISK) THEN CONST_CATEGORY_PROBATION 
+									  ELSE temp.DWCateGroup 
+								  END)
+	 WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);
 
-    /* 8: GENERATE DATA NO CHANGED */   
+    /* 7: GENERATE DATA NO CHANGED */   
     UPDATE 	Temp_NewClassification AS temp
-	SET 	temp.IsDataChanged = (CASE WHEN temp.NewCateID = temp.OldCateID AND temp.SourceTypeID <> CONST_SOURCETYPE_FAILPROBATION THEN 0 /*No update category*/ ELSE temp.IsDataChanged END)
+	SET 	temp.IsDataChanged = (CASE WHEN temp.NewCateID = temp.OldCateID THEN 0 /*No update category*/ ELSE temp.IsDataChanged END)
 	WHERE 	temp.ActionType = CONST_ACTIONTYPE_UPDATE;     
     
-    /* 9: GENERATE TARGET CC */
+    /* 8: GENERATE TARGET CC */
     UPDATE Temp_NewClassification AS tmp 
 		LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = tmp.NewCateID
-	SET 	tmp.TargetCC = CASE  
-								WHEN (tmp.SpecialCC IS NULL) OR (tmp.SpecialCCPriority <> -1)
-										THEN CASE
-												WHEN cate.CustomerClass = lv_VVIPCC THEN lv_VVIPCC                                                
-												WHEN tmp.IsLicenseeVIP = 1 AND cate.Priority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation = 1 THEN lv_LicVIPCC_Suspicious
-												WHEN tmp.IsLicenseeVIP = 1 AND cate.Priority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation IS NOT NULL THEN lv_LicVIPCC_Danger
-												WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN lv_LicVIPCC_Suspicious
-												WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN lv_LicVIPCC_Danger                                                
-												WHEN tmp.IsLicenseeBA = 1 AND tmp.SpecialCCPriority <> -1 AND tmp.SpecialCCPriority < lv_LicBAPriority THEN tmp.SpecialCC  
-												WHEN tmp.IsLicenseeBA = 1 AND cate.Priority > lv_LicBAPriority THEN lv_LicBACC                                            
-												WHEN tmp.SpecialCCPriority <> -1 AND cate.Priority > tmp.SpecialCCPriority THEN tmp.SpecialCC
-												ELSE cate.CustomerClass
-											END
-								ELSE tmp.SpecialCC
-							END
+	SET 	tmp.TargetCC = cate.CustomerClass
 	WHERE 	tmp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE, CONST_ACTIONTYPE_IGNOREPROBATION);
 	
-    /* 9 PLUS:  */
-    INSERT INTO Temp_OldCustomerClass(CustID)
-    SELECT DISTINCT temp.CustID
+    /* 8 PLUS:  */
+    INSERT INTO Temp_OldCustomerClass(CustID, SportGroupID)
+    SELECT DISTINCT temp.CustID, temp.SportGroupID
     FROM Temp_NewClassification AS temp
 	WHERE temp.IsDataChanged  = 0;
     
-    INSERT IGNORE INTO Temp_UpdateCustomerClass(CustID,CustomerClass)
+    INSERT IGNORE INTO Temp_UpdateCustomerClass(CustID, SportGroupID, CustomerClass)
     WITH CTE_LatestLog AS (
-		SELECT h.CustID, MAX(h.LastModifiedDate) AS LatestInsertDate
+		SELECT h.CustID, h.SportGroupID, MAX(h.LastModifiedDate) AS LatestInsertDate
 		FROM Temp_OldCustomerClass AS t
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS h ON t.CustID = h.CustID
-		GROUP BY h.CustID
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS h ON t.CustID = h.CustID AND t.SportGroupID = h.SportGroupID
+		GROUP BY h.CustID, h.SportGroupID
 	),
     CTE_LatestHistory AS (
-		SELECT h.CustID, h.TargetCC
+		SELECT h.CustID, h.SportGroupID, h.TargetCC
 		FROM CTE_LatestLog AS l
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS h ON l.CustID = h.CustID AND l.LatestInsertDate = h.LastModifiedDate
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS h ON l.CustID = h.CustID AND l.SportGroupID = h.SportGroupID AND l.LatestInsertDate = h.LastModifiedDate
 	)
     SELECT 	cte.CustID
+		,	cte.SportGroupID
 		,	cte.TargetCC
 	FROM CTE_LatestHistory AS cte;
         
 	UPDATE Temp_UpdateCustomerClass AS c
-		INNER JOIN Temp_NewClassification AS t ON c.CustID = t.CustID
+		INNER JOIN Temp_NewClassification AS t ON c.CustID = t.CustID AND c.SportGroupID = t.SportGroupID
 	SET t.OldTargetCC = c.CustomerClass;
     
     UPDATE Temp_NewClassification AS tmp
 		INNER JOIN CustomerCategory AS cate ON tmp.OldCateID = cate.CategoryID
-    SET tmp.TargetCC = 	CASE  
-							WHEN (tmp.SpecialCC IS NULL) OR (tmp.SpecialCCPriority <> -1)
-									THEN CASE
-											WHEN cate.CustomerClass = lv_VVIPCC THEN lv_VVIPCC
-											WHEN tmp.IsLicenseeVIP = 1 AND cate.Priority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation = 1 THEN lv_LicVIPCC_Suspicious
-											WHEN tmp.IsLicenseeVIP = 1 AND cate.Priority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation IS NOT NULL THEN lv_LicVIPCC_Danger
-											WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN lv_LicVIPCC_Suspicious
-											WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN lv_LicVIPCC_Danger
-											WHEN tmp.IsLicenseeBA = 1 AND tmp.SpecialCCPriority <> -1 AND tmp.SpecialCCPriority < lv_LicBAPriority THEN tmp.SpecialCC    
-											WHEN tmp.IsLicenseeBA = 1 AND cate.Priority > lv_LicBAPriority THEN lv_LicBACC                                            
-											WHEN tmp.SpecialCCPriority <> -1 AND cate.Priority > tmp.SpecialCCPriority THEN tmp.SpecialCC
-											ELSE cate.CustomerClass
-										END
-							ELSE tmp.SpecialCC
-						END
+    SET tmp.TargetCC =	cate.CustomerClass
 		,	tmp.NewCateID = tmp.OldCateID
         , 	tmp.NewCateGroup = tmp.OldCateGroup
-        ,	tmp.NewIsDangerProbation = cate.IsDangerProbation
     WHERE tmp.ActionType = CONST_ACTIONTYPE_IGNOREPROBATION;
         
     UPDATE Temp_NewClassification
     SET IsDataChanged = 1
-		,	SourceTypeID = (CASE 
-								WHEN  NewCateGroup IN (CONST_CATEGORY_SMART, CONST_CATEGORY_HIGHRISK) 
-									THEN CONST_SOURCETYPE_PASSPROBATION
-								WHEN NewCateGroup = CONST_CATEGORY_INACTIVE AND NewCateID = CONST_CATEGORY_NORMALINACTIVE 
-									THEN CONST_SOURCETYPE_INACTIVENORMAL 
-								WHEN NewCateGroup = CONST_CATEGORY_INACTIVE AND NewCateID = CONST_CATEGORY_PROPUNTERINACTIVE 
-									THEN CONST_SOURCETYPE_INACTIVEPROPUNTER
-								ELSE CONST_SOURCETYPE_SCANONSCHEDULE
-							END)
 		,	ActionType = CONST_ACTIONTYPE_UPDATE
     WHERE IsDataChanged = 0 
 		AND ((TargetCC <> OldTargetCC) OR (OldCateID <> NewCateID))
-		AND (SourceTypeID IN (CONST_SOURCETYPE_SAMECATEGORY, CONST_SOURCETYPE_FAILPROBATION,CONST_SOURCETYPE_LESSTHAN10TICKETS )
-			OR ActionType = CONST_ACTIONTYPE_IGNOREPROBATION);
-            
-     
-    /* 10: GENERATE TARGET DANGER LEVEL */
-    UPDATE Temp_NewClassification AS temp 
-		INNER JOIN CTS_DataCenter.CategoryToDangerLevel AS d ON d.CategoryID = temp.NewCateID AND d.IsLicensee = temp.IsLicensee AND d.TypeID = 1
-    SET 	temp.TargetDangerLevel = d.DangerLevel
-    WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);
+		AND ActionType = CONST_ACTIONTYPE_IGNOREPROBATION;
     
     /* 11: UPDATE CTS CLASSIFICATION */
-    UPDATE CTS_DataCenter.CTSCustomerClassification AS cate
-		INNER JOIN Temp_NewClassification AS temp ON temp.CustID = cate.CustID AND cate.SportGroupID = CONST_GROUP_NORMAL
+    UPDATE CTS_DataCenter.CTSCustomerClassification_BySport AS cate
+		INNER JOIN Temp_NewClassification AS temp ON temp.CustID = cate.CustID AND cate.SportGroupID = temp.SportGroupID
 	SET   	cate.CTSCustID = temp.CTSCustID
-		, 	cate.SubscriberID = temp.SubscriberID
 		, 	cate.CategoryID = temp.NewCateID
 		, 	cate.LastModifiedDate = lv_CurrentDateTime
 		, 	cate.LastScannedDate = DATE(lv_CurrentDateTime)
     WHERE temp.ActionType = CONST_ACTIONTYPE_UPDATE;
-    
-    UPDATE CTS_DataCenter.CTSCustomerClassification AS cate
-		INNER JOIN Temp_NewClassification AS temp ON temp.CustID = cate.CustID AND cate.SportGroupID = CONST_GROUP_WRAPPER
-	SET   	cate.CategoryID = 	CASE 
-									WHEN temp.NewIsDangerProbation = 1 THEN CONST_LICVIP_SUSPICIOUSCATEGORY
-                                    ELSE CONST_LICVIP_DANGEROUSCATEGORY 
-								END
-	WHERE cate.CategoryID IN (CONST_LICVIP_SUSPICIOUSCATEGORY,CONST_LICVIP_DANGEROUSCATEGORY)
-		AND temp.IsDataChanged = 1;
 	
     /* 12: INSERT CTS CLASSIFICATION */
-    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification
-	(CustID,CTSCustID,SubscriberID,SportGroupID,CategoryID,CreatedDate,CreatedBy,LastModifiedDate,LastModifiedBy,LastScannedDate)
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport (CustID, CTSCustID, SportGroupID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
 	SELECT DISTINCT temp.CustID
 		, 	temp.CTSCustID
-		, 	temp.SubscriberID
-		, 	CONST_GROUP_NORMAL
+		, 	temp.SportGroupID
 		, 	temp.NewCateID
 		, 	lv_CurrentDateTime
 		, 	lv_CreatedBy
@@ -452,17 +285,17 @@ BEGIN
 
     /* 13: REMOVE DATA FOR PASS PROBATION */
     DELETE pro
-    FROM CTS_DataCenter.ProbationAccountMonitor AS pro
-		INNER JOIN Temp_NewClassification AS temp on temp.CustID = pro.CustID AND pro.SportGroupID = CONST_GROUP_NORMAL
+    FROM CTS_DataCenter.ProbationAccountMonitor_BySport AS pro
+		INNER JOIN Temp_NewClassification AS temp on temp.CustID = pro.CustID AND pro.SportGroupID = temp.SportGroupID
 	WHERE temp.ActionType = CONST_ACTIONTYPE_UPDATE AND temp.OldCateGroup = CONST_CATEGORY_PROBATION AND temp.NewCateGroup <> CONST_CATEGORY_PROBATION;
     
     /* 14: INSERT NEW PROBATION */
-    INSERT IGNORE INTO CTS_DataCenter.ProbationAccountMonitor
-	(CustID,CTSCustID,SportGroupID,TargetCategoryID,FirstMargin,CreatedDate,CreatedBy,CreatedTime,LastScannedDate) 
+    INSERT IGNORE INTO CTS_DataCenter.ProbationAccountMonitor_BySport
+	(CustID, CTSCustID, SportGroupID, TargetCategoryID, FirstMargin, CreatedDate, CreatedBy, CreatedTime, LastScannedDate) 
 	SELECT DISTINCT temp.CustID
 		, 	temp.CTSCustID
-		, 	CONST_GROUP_NORMAL
-		, 	temp.DWCateID
+		, 	temp.SportGroupID
+		, 	temp.NewCateID
 		, 	(CASE WHEN temp.TurnoverRM = 0 THEN 0 ELSE (temp.WinlossRM/temp.TurnoverRM) * 100 END) AS FirstMargin
 		, 	DATE(lv_CurrentDateTime) AS CreatedDate
 		, 	lv_CreatedBy
@@ -474,68 +307,53 @@ BEGIN
 			OR (temp.ActionType = CONST_ACTIONTYPE_UPDATE AND temp.OldCateGroup <> CONST_CATEGORY_PROBATION));
 
     /* 15: WRITE HISTORY LOG (VIEW ON WEB) */
-	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
-	(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, TWBetCount, TWGroupBettingRate, TWTicketRejectRate, TWDesktopUsageRate
-    , ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsDataChanged, TaggingType, TargetDangerLevel1)
+	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport_History
+	(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, ActionType
+		, IsAuto, InsertDate, TargetCC, FromCategoryID, ToCategoryID, IsDataChanged)
 	SELECT DISTINCT	temp.CustID
 				, 	temp.CTSCustID
 				, 	temp.NewCateID
-				, 	CONST_GROUP_NORMAL
+				, 	temp.SportGroupID
 				, 	lv_CurrentDateTime
 				, 	lv_CreatedBy
 				, 	temp.TurnoverRM
 				, 	temp.WinlossRM
 				, 	temp.BetCount
 				, 	temp.ActiveDays
-                ,	temp.TWBetCount
-                , 	temp.TWGroupBettingRate
-                , 	temp.TWTicketRejectRate
-                , 	temp.TWDesktopUsageRate
 				, 	temp.ActionType
 				, 	1
 				, 	DATE(lv_CurrentDateTime)
 				,	temp.TargetCC 
-				,   temp.SourceTypeID
 				, 	temp.OldCateID 
-				, 	temp.DWCateID
+				, 	temp.NewCateID
 				,   temp.IsDataChanged
-				,	temp.TaggingType
-				,	temp.TargetDangerLevel AS TargetDangerLevel1
 	FROM 	Temp_NewClassification AS temp
 	WHERE temp.IsDataChanged  = 1;
 	
     /* 16: WRITE HISTORY LOG (TRACE DATA) */
-	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log
-	(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, TWBetCount, TWGroupBettingRate, TWTicketRejectRate, TWDesktopUsageRate
-    , ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsDataChanged, TaggingType, TargetDangerLevel1)
+	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport_Log
+	(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, ActionType, IsAuto, InsertDate, TargetCC, FromCategoryID, ToCategoryID, IsDataChanged)
 	SELECT DISTINCT	temp.CustID
 				, 	temp.CTSCustID
 				, 	temp.NewCateID
-				, 	CONST_GROUP_NORMAL
+				, 	temp.SportGroupID
 				, 	lv_CurrentDateTime
 				, 	lv_CreatedBy
 				, 	temp.TurnoverRM
 				, 	temp.WinlossRM
 				, 	temp.BetCount
 				, 	temp.ActiveDays
-                ,	temp.TWBetCount
-                , 	temp.TWGroupBettingRate
-                , 	temp.TWTicketRejectRate
-                , 	temp.TWDesktopUsageRate
 				, 	temp.ActionType
 				, 	1
 				, 	DATE(lv_CurrentDateTime)
 				,	temp.TargetCC 
-				,   temp.SourceTypeID
 				, 	temp.OldCateID 
-				, 	temp.DWCateID
+				, 	temp.NewCateID
 				,   temp.IsDataChanged
-				,	temp.TaggingType
-				,	temp.TargetDangerLevel AS TargetDangerLevel1
 	FROM 	Temp_NewClassification AS temp;
     
 	/* 17: RETURN UPDATED CUSTOMERS TO SERVICE FOR FUTHER STEPS */
-	SELECT DISTINCT temp.CustId 
+	SELECT DISTINCT temp.CustId, temp.SportGroupID
     FROM Temp_NewClassification AS temp 
     WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);
 END$$

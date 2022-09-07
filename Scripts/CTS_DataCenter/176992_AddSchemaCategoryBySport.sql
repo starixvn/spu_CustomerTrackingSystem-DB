@@ -70,3 +70,22 @@ CREATE TABLE CTSCustomerClassification_BySport_Log (
 	,KEY IX_CTSCustomerClassification_BySport_Log_CustID(CustID)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb3 COLLATE = utf8_unicode_ci;
 
+CREATE TABLE ProbationAccountMonitor_BySport (
+	CTSCustID 			BIGINT UNSIGNED NOT NULL
+	,CustID 			INT UNSIGNED NOT NULL
+	,SportGroupID 		SMALLINT NOT NULL
+	,TargetCategoryID 	SMALLINT DEFAULT NULL
+	,FirstMargin 		DECIMAL(20, 4) DEFAULT NULL
+	,CreatedBy 			INT NOT NULL
+	,CreatedDate 		DATETIME NOT NULL
+	,CreatedTime 		DATETIME NOT NULL
+	,LastScannedDate 	DATE DEFAULT NULL
+	,PRIMARY KEY (CustID, SportGroupID)
+	,KEY IX_ProbationAccountMonitor_BySport_CustID(CustID)
+	,KEY IX_ProbationAccountMonitor_BySport_CreatedDate(CreatedDate)
+	,KEY IX_ProbationAccountMonitor_BySport_TargetCategoryID(TargetCategoryID)
+	,KEY IX_ProbationAccountMonitor_BySport_LastScannedDate(LastScannedDate)
+	,KEY IX_ProbationAccountMonitor_BySport_CTSCustID(CTSCustID)
+	) ENGINE = InnoDB DEFAULT CHARSET = utf8mb3 COLLATE = utf8_unicode_ci;
+
+
