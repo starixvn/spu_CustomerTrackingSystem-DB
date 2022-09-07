@@ -55,7 +55,7 @@ BEGIN
     DECLARE lv_LeagueID					INT UNSIGNED;
     DECLARE lv_LeagueName				VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
     DECLARE	lv_Sporttype				INT;
-    DECLARE lv_IsExistingHighStake		BOOLEAN;
+    DECLARE lv_HighStakeLicCustList		LONGTEXT;
  
     DROP TEMPORARY TABLE IF EXISTS Temp_TransGroup;
     CREATE TEMPORARY TABLE Temp_TransGroup
@@ -65,18 +65,18 @@ BEGIN
         ,	TransIDList 		LONGTEXT
         ,	CustIDList			LONGTEXT 
         ,	OldGroupIDList		TEXT
-        ,	IsExistingHighStake	BOOLEAN
+        ,	HighStakeLicCustList	LONGTEXT
         
         ,	PRIMARY KEY Temp_TransGroup(GroupID)
     );
     
-    INSERT IGNORE INTO Temp_TransGroup(GroupID, Reason, TransIDList, CustIDList, OldGroupIDList, IsExistingHighStake)
+    INSERT IGNORE INTO Temp_TransGroup(GroupID, Reason, TransIDList, CustIDList, OldGroupIDList, HighStakeLicCustList)
 	SELECT  js.GroupID
 		,	js.Reason
 		,	js.TransIDList
 		,	js.CustIDList
 		,	js.OldGroupIDList
-        ,	js.IsExistingHighStake
+        ,	js.HighStakeLicCustList
 	FROM JSON_TABLE(ip_TransGroup,
 					 "$[*]" COLUMNS(
 								GroupID			INT PATH "$.GroupID" 
@@ -84,7 +84,7 @@ BEGIN
 							,	TransIDList		LONGTEXT PATH "$.TransIDList"
 							,	CustIDList		LONGTEXT PATH "$.CustIDList" 
 							,	OldGroupIDList	TEXT PATH "$.OldGroupIDList" 
-                            ,	IsExistingHighStake	TEXT PATH "$.IsExistingHighStake" 
+                            ,	HighStakeLicCustList	TEXT PATH "$.HighStakeLicCustList" 
 						)
 				) AS js;     
      
@@ -110,8 +110,8 @@ BEGIN
     #========UPDATE MatchMonitorDetails========================
     lp: LOOP 
 		SET lv_GroupID = 0;
-        SELECT GroupID, Reason, TransIDList, CustIDList, OldGroupIDList, IsExistingHighStake
-        INTO lv_GroupID, lv_Reason, lv_TransIDList, lv_CustIDList, lv_OldGroupIDList, lv_IsExistingHighStake
+        SELECT GroupID, Reason, TransIDList, CustIDList, OldGroupIDList, HighStakeLicCustList
+        INTO lv_GroupID, lv_Reason, lv_TransIDList, lv_CustIDList, lv_OldGroupIDList, lv_HighStakeLicCustList
         FROM Temp_TransGroup
         ORDER BY GroupID LIMIT 1;        
           
@@ -136,14 +136,14 @@ BEGIN
             SET lv_TargetGroupID = IFNULL(lv_TargetGroupID,0);
 			SET lv_TargetGroupID =  lv_TargetGroupID + 1;            
    
-            INSERT IGNORE INTO CTS_DataCenter.MatchMonitorDetails(MatchID, LiveIndicator, TotalScore, BettypeID, BetID, EventDate, GroupID, LiveHomeScore, LiveAwayScore, ListCustID, ListTransID, Reason,IsExistingHighStake )
-            VALUES(ip_MatchID, ip_LiveIndicator, ip_TotalScore, ip_BettypeID, ip_BetID, lv_EventDate, lv_TargetGroupID, lv_LiveHomeScore, lv_LiveAwayScore, lv_CustIDList, lv_TransIDList, lv_Reason, lv_IsExistingHighStake);          
+            INSERT IGNORE INTO CTS_DataCenter.MatchMonitorDetails(MatchID, LiveIndicator, TotalScore, BettypeID, BetID, EventDate, GroupID, LiveHomeScore, LiveAwayScore, ListCustID, ListTransID, Reason,HighStakeLicCustList )
+            VALUES(ip_MatchID, ip_LiveIndicator, ip_TotalScore, ip_BettypeID, ip_BetID, lv_EventDate, lv_TargetGroupID, lv_LiveHomeScore, lv_LiveAwayScore, lv_CustIDList, lv_TransIDList, lv_Reason, lv_HighStakeLicCustList);          
             
         END IF; 
 
 		IF (lv_NoOfOldGroupID = 1) THEN # UPDATE OLD GROUP	        
 			UPDATE IGNORE CTS_DataCenter.MatchMonitorDetails AS mmd 
-			SET mmd.GroupID = lv_TargetGroupID, mmd.ListCustID = lv_CustIDList, mmd.ListTransID = lv_TransIDList, mmd.Reason = lv_Reason, mmd.IsExistingHighStake = lv_IsExistingHighStake
+			SET mmd.GroupID = lv_TargetGroupID, mmd.ListCustID = lv_CustIDList, mmd.ListTransID = lv_TransIDList, mmd.Reason = lv_Reason, mmd.HighStakeLicCustList = lv_HighStakeLicCustList
 			WHERE  mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID AND mmd.TotalScore = ip_TotalScore AND mmd.GroupID = lv_TargetGroupID;
 		END IF;        
         
@@ -154,7 +154,7 @@ BEGIN
 			WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID AND mmd.TotalScore = ip_TotalScore AND mmd.GroupID <> lv_TargetGroupID;
                     
 			UPDATE IGNORE CTS_DataCenter.MatchMonitorDetails AS mmd
-			SET mmd.GroupID = lv_TargetGroupID, mmd.ListCustID = lv_CustIDList, mmd.ListTransID = lv_TransIDList, mmd.Reason = lv_Reason, mmd.IsExistingHighStake = lv_IsExistingHighStake
+			SET mmd.GroupID = lv_TargetGroupID, mmd.ListCustID = lv_CustIDList, mmd.ListTransID = lv_TransIDList, mmd.Reason = lv_Reason, mmd.HighStakeLicCustList = lv_HighStakeLicCustList
 			WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID AND mmd.TotalScore = ip_TotalScore AND mmd.GroupID = lv_TargetGroupID;
 		END IF;
 

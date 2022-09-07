@@ -443,23 +443,26 @@ sp: BEGIN
     #*************************************************************************************************
     DROP TEMPORARY TABLE IF EXISTS Temp_ResultGroup;
     CREATE TEMPORARY TABLE Temp_ResultGroup(
-			GroupID			INT PRIMARY KEY
-		,	Reason			TINYINT
-        ,	TransIDList		LONGTEXT
-        ,	CustIDList		LONGTEXT
-        ,	OldGroupIDList	VARCHAR(500)
-        ,	TotalHighStake	INT
+			GroupID					INT PRIMARY KEY
+		,	Reason					TINYINT
+        ,	TransIDList				LONGTEXT
+        ,	CustIDList				LONGTEXT
+        ,	OldGroupIDList			VARCHAR(500)
+        ,	HighStakeLicCustList 	LONGTEXT
+        ,	LicenseeCustTotal		INT
     );	
-	
-    INSERT INTO Temp_ResultGroup(GroupID, Reason, TransIDList, CustIDList, OldGroupIDList, TotalHighStake)
+	    
+    INSERT INTO Temp_ResultGroup(GroupID, Reason, TransIDList, CustIDList, OldGroupIDList, HighStakeLicCustList , LicenseeCustTotal)
     SELECT  tmpTg.GroupID
         ,	(CASE WHEN COUNT(DISTINCT tmpSt.Betteam) > 1 THEN 2 ELSE 0 END) AS Reason
         ,	GROUP_CONCAT(tmpSt.TransID) AS TransIDList
         ,	GROUP_CONCAT(DISTINCT tmpSt.CustID) AS CustIDList
         ,	GROUP_CONCAT(DISTINCT tmpSt.OldGroupID) AS OldGroupIDList
-        ,	SUM(CASE WHEN tmpSt.Stake > lv_HighStake THEN 1 ELSE 0 END) AS TotalHighStake
+        ,	GROUP_CONCAT(DISTINCT (CASE WHEN tmpSt.Stake >= lv_HighStake AND cus.IsLicensee = 1 THEN tmpTg.CustID ELSE NULL END)) AS HighStakeLicCustList
+        ,	SUM(CASE WHEN cus.IsLicensee THEN 1 ELSE 0 END) AS LicenseeCustTotal
     FROM 	Temp_TransGroup AS tmpTg
 		INNER JOIN Temp_StagingTrans02  AS tmpSt ON tmpSt.CustID = tmpTg.CustID AND tmpSt.TransDate BETWEEN tmpTg.MinTransDate AND tmpTg.MaxTransDate
+        INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpTg.CustID 
 	GROUP BY tmpTg.GroupID
     HAVING SUM(Stake) >= 1000 AND COUNT(DISTINCT tmpSt.CustID) > 1;
 
@@ -522,7 +525,8 @@ sp: BEGIN
         ,	tmpRg.TransIDList
         ,	tmpRg.CustIDList
         ,	tmpRg.OldGroupIDList
-        ,	(CASE WHEN tmpRg.TotalHighStake > 0 THEN 1 ELSE 0 END) IsExistingHighStake
+        ,	(CASE WHEN tmpRg.LicenseeCustTotal >= 3 AND tmpRg.HighStakeLicCustList IS NOT NULL THEN HighStakeLicCustList ELSE NULL END) HighStakeLicCustList
     FROM Temp_ResultGroup AS tmpRg;
+    
 END$$
 DELIMITER ;

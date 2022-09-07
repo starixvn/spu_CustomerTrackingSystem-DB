@@ -86,13 +86,13 @@ BEGIN
     INSERT INTO Temp_MatchMonitorDetailsCust(CustID, MMDetailsID, MatchID, NoOfCust)
     WITH CTE_MatchMonitorDetials AS
     ( 	SELECT	mmd.ID AS MMDetailsID
-			,	mmd.ListCustID
+			,	mmd.HighStakeLicCustList
             ,	mmd.MatchID
 		FROM CTS_DataCenter.MatchMonitorDetails AS mmd
         WHERE mmd.MatchID = lv_MatchID
 			AND mmd.Reason = 0
 			AND mmd.ClassifyStatus = 0
-            AND mmd.IsExistingHighStake = 1
+            AND mmd.HighStakeLicCustList IS NOT NULL
         LIMIT lv_PackSize
 	)
 	SELECT	js.CustID
@@ -113,10 +113,7 @@ BEGIN
         ,	cus.SubscriberID
         ,	cus.IsLicensee
     FROM Temp_MatchMonitorDetailsCust AS tmpMmc
-		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpMmc.CustID = cus.CustID        
-	WHERE	tmpMmc.NoOfCust > 2
-			AND cus.IsLicensee = 1;
-      
+		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpMmc.CustID = cus.CustID;
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_PACustGroup;
     CREATE TEMPORARY TABLE Temp_PACustGroup(MmDetailsID INT);
@@ -133,8 +130,8 @@ BEGIN
         ,	tmpCust.RoleID
         ,	tmpCust.SubscriberID
         ,	tmpCust.IsLicensee
-        ,	52 AS CategoryID # Group Betting
-        , 	52 AS CategoryGroup # Group Betting
+        ,	63 AS CategoryID # Group Betting
+        , 	63 AS CategoryGroup # Group Betting
 	FROM Temp_Cust AS tmpCust
 		INNER JOIN Temp_PACustGroup AS tmpPa ON tmpCust.MMDetailsID = tmpPa.MMDetailsID
 	WHERE NOT EXISTS (	SELECT 1 

@@ -12,9 +12,11 @@ Reviewer:
 
 USE CTS_DataCenter;
 
+ALTER TABLE MatchMonitorStagingLive
+ADD COLUMN IsLicensee BOOLEAN;
+
 ALTER TABLE MatchMonitorDetails 
-ADD COLUMN IsExistingHighStake BOOLEAN DEFAULT 0
-, ADD INDEX IX_MatchMonitorDetails_IsExistingHighStake(IsExistingHighStake);
+ADD COLUMN HighStakeLicCustList LONGTEXT;
 
 # New 2 categories for System Detect Group Betting
 INSERT INTO CTS_DataCenter.CustomerCategory(CategoryID, CategoryName, CategorySpec, ParentID, DisplayOrder, IsActive, IsUsedManually, CreatedDate, ScanIntervalInSecond, CategoryNameCN, CategoryGroup, ReasonID, SourceType, CustomerClass, CustomerClassName, CustomerClassNameCN, CustomerClassException, RelevantCategoryID, IsDangerProbation, RootTaggingID, DangerLevelType, Priority, ABIDangerLevel_Licensee, ABIDangerLevel_Credit)
