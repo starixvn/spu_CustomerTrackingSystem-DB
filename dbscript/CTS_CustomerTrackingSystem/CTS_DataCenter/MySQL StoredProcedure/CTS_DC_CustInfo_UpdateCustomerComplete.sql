@@ -19,6 +19,7 @@ BEGIN
 			- 20210208@Casey.Huynh: Created [Redmine ID: 149941]
 			- 20210622@Aries.Nguyen: Update coding convention  [Redmine ID: #157203]
 			- 20220519@Aries.Nguyen: Init cust info: IsLicensee, IsInternal [Redmine ID: #202204]
+			- 20220829@Aries.Nguyen: Remove hard-coding of internal account in CTS [Redmine ID: #177042]
 
 		Param's Explanation (filtered by):
 		
@@ -75,9 +76,12 @@ BEGIN
 		,   CASE WHEN mss.SubscriberGroupID = 2 THEN 1 
 				 WHEN mss.SubscriberGroupID IS NULL THEN NULL
 			ELSE 0 END AS IsLicensee
-        ,   CASE WHEN js.UserName Like '%CashOut' OR stl.ItemID IS NOT NULL OR (js.Recommend IN (52466,5707545) AND js.RoleID = 1)
-				 THEN 1 
-			ELSE 0 END AS IsInternal
+        ,   CASE WHEN js.UserName Like '%CashOut' OR 
+						  stl.ItemID IS NOT NULL OR 						 
+                          js.SRecommend IN (41430709) OR 
+                          js.MRecommend IN (27899314, 11656504, 12146012) OR
+                          js.Recommend IN (52466,5707545,29270764,134456) THEN 1 
+				 ELSE 0 END AS IsInternal
 	FROM JSON_TABLE(ip_CustomerInfo, 
 		"$[*]" COLUMNS(
 				CustID			INT UNSIGNED	PATH "$.CustID"    

@@ -32,6 +32,7 @@ BEGIN
             - 20220519@Aries.Nguyen: Init cust info: IsLicensee, IsInternal [Redmine ID: #202204]
 			- 20220520@Aries.Nguyen: Separating insert new customer and classification [Redmine ID: #172561]
 			- 20220616@Aries.Nguyen: CTS - Problem Account Renovation Issues [Redmine ID: #174136]
+			- 20220829@Aries.Nguyen: Remove hard-coding of internal account in CTS [Redmine ID: #177042]
 
 		Param's Explanation (filtered by):
 		Example:
@@ -130,7 +131,12 @@ BEGIN
 			,	js.Recommend	
 			,	js.CreatedDate
             ,	js.IsLicensee
-            ,   CASE WHEN js.UserName Like '%CashOut' OR stl.ItemID IS NOT NULL OR (js.Recommend IN (52466,5707545) AND js.RoleID = 1) THEN 1 ELSE 0 END AS IsInternal
+            ,   CASE WHEN js.UserName Like '%CashOut' OR 
+						  stl.ItemID IS NOT NULL OR 						 
+                          js.SRecommend IN (41430709) OR 
+                          js.MRecommend IN (27899314, 11656504, 12146012) OR
+                          js.Recommend IN (52466,5707545,29270764,134456)  THEN 1 
+				ELSE 0 END AS IsInternal
 	FROM JSON_TABLE(ip_CustomerList,
 		 "$[*]" COLUMNS(
 				CustID			INT	UNSIGNED	PATH "$.CustID" 
