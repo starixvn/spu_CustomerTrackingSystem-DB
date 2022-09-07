@@ -1,5 +1,6 @@
 USE [bodb_VR2Model]
 GO
+/****** Object:  StoredProcedure [dbo].[CTS_ProblemAccountsClassification_Daily]    Script Date: 9/6/2022 11:08:29 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -36,6 +37,7 @@ BEGIN
 	CREATE TABLE #tmpRawData(
 		[CustId]			INT NOT NULL,
 		[MainDBSportId]		INT NOT NULL,
+		[SportGroup]		VARCHAR(50) NOT NULL,
 		[TurnoverRM]		MONEY NULL,
 		[WinlossRM]			MONEY NULL,
 		[TurnoverORG]		MONEY NULL,
@@ -83,9 +85,9 @@ BEGIN
 	SELECT @ListCustIds = STUFF((SELECT ',', CONVERT(VARCHAR(15), t.CustId) 
 								FROM (SELECT DISTINCT CustId FROM #tmpCustomers WITH (NOLOCK)) AS t
 								FOR XML PATH('')), 1, 1, '');
-								
+
 	-- #1: GetCustomer Accummulated data
-	INSERT INTO #tmpRawData(CustId, MainDBSportId, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDays)
+	INSERT INTO #tmpRawData(CustId, MainDBSportId, SportGroup, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDays)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @ListCustIds, @ResultDataMode = 1;	
 	
 	-- #2: Sum data by custid
