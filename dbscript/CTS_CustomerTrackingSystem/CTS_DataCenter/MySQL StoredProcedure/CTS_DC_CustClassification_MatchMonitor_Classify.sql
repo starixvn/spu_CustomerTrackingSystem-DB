@@ -13,6 +13,7 @@ BEGIN
 		Original: 
 		Revisions:
 			- 20220627@Casey.Huynh: Created [Redmine ID: #174218]
+            - 20220908@Casey.Huynh: New CC for Classify MM [Redmine ID: #176976]
             
 		Param's Explanation:
         
@@ -57,7 +58,7 @@ BEGIN
         
         ,	PRIMARY KEY PK_Temp_MatchMonitorDetailsCust(CustID, MMDetailsID)
     );
-    
+   
 	DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
     CREATE TEMPORARY TABLE Temp_Cust(
 			CustID			INT UNSIGNED
@@ -82,7 +83,7 @@ BEGIN
     SELECT CategoryID
     FROM CTS_DataCenter.CustomerCategory AS cat
     WHERE ParentID = 50 AND CategoryID NOT IN  (57,61,163,164);   
-    
+
     INSERT INTO Temp_MatchMonitorDetailsCust(CustID, MMDetailsID, MatchID, NoOfCust)
     WITH CTE_MatchMonitorDetials AS
     ( 	SELECT	mmd.ID AS MMDetailsID
