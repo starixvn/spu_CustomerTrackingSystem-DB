@@ -98,9 +98,9 @@ BEGIN
 	SELECT	js.CustID
 		,	cte.MMDetailsID
         ,	cte.MatchID
-        ,	LENGTH(cte.ListCustID) - LENGTH(REPLACE(cte.ListCustID,',','')) + 1 AS NoOfCust
+        ,	LENGTH(cte.HighStakeLicCustList) - LENGTH(REPLACE(cte.HighStakeLicCustList,',','')) + 1 AS NoOfCust
 	FROM CTE_MatchMonitorDetials AS cte
-		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(cte.ListCustID), ',', '","'), 
+		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(cte.HighStakeLicCustList), ',', '","'), 
 						'$[*]' COLUMNS (CustID BIGINT UNSIGNED PATH '$')
 						) js;    
 
