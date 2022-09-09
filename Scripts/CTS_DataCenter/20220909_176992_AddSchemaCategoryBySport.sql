@@ -22,52 +22,6 @@ CREATE TABLE CTSCustomerClassification_BySport (
 	,	KEY IX_CTSCustomerClassification_BySport_CategoryID_CustID(CategoryID, CustID, LastScannedDate)
 	) ENGINE = InnoDB;
 
-DROP TABLE IF EXISTS CTSCustomerClassification_BySport_History;
-CREATE TABLE CTSCustomerClassification_BySport_History (
-		ID 					BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
-	,	CustID 				BIGINT UNSIGNED DEFAULT NULL
-	,	CTSCustID 			BIGINT UNSIGNED DEFAULT NULL
-	,	SportID 			SMALLINT UNSIGNED DEFAULT NULL
-	,	CategoryID 			SMALLINT UNSIGNED DEFAULT NULL
-	,	TurnoverRM 			DECIMAL(20, 4) DEFAULT NULL
-	,	WinlossRM 			DECIMAL(20, 4) DEFAULT NULL
-	,	BetCount 			BIGINT DEFAULT NULL
-	,	ActiveDays 			INT DEFAULT NULL
-	,	TargetCC 			SMALLINT DEFAULT NULL
-	,	FromCategoryID 		SMALLINT UNSIGNED DEFAULT NULL
-	,	ActionType 			TINYINT DEFAULT NULL
-	,	LastModifiedDate	DATETIME DEFAULT NULL
-	,	LastModifiedBy 		INT UNSIGNED DEFAULT NULL
-	,	InsertDate 			DATETIME DEFAULT NULL
-	,	PRIMARY KEY (ID)
-	,	KEY IX_CTSCustomerClassification_BySport_History_InsertDate(InsertDate)
-	,	KEY IX_CTSCustomerClassification_BySport_History_CTSCustID(CTSCustID)
-	,	KEY IX_CTSCustomerClassification_BySport_History_CustID_Infor(CustID, SportID, LastModifiedDate)
-	) 	ENGINE = InnoDB;
-    
-
-DROP TABLE IF EXISTS CTSCustomerClassification_BySport_Log;
-CREATE TABLE CTSCustomerClassification_BySport_Log (
-	ID					BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
-	,CustID				BIGINT UNSIGNED DEFAULT NULL
-	,CTSCustID			BIGINT UNSIGNED DEFAULT NULL
-	,SportID			SMALLINT UNSIGNED DEFAULT NULL
-	,CategoryID			SMALLINT DEFAULT NULL
-	,TurnoverRM			DECIMAL(20, 4) DEFAULT NULL
-	,WinlossRM			DECIMAL(20, 4) DEFAULT NULL
-	,BetCount			BIGINT DEFAULT NULL
-	,ActiveDays			INT DEFAULT NULL
-	,TargetCC 			SMALLINT DEFAULT NULL
-	,FromCategoryID 	SMALLINT UNSIGNED DEFAULT NULL
-	,IsDataChanged		BOOLEAN DEFAULT FALSE
-	,ActionType			TINYINT DEFAULT NULL
-	,LastModifiedDate	DATETIME DEFAULT NULL
-	,LastModifiedBy		INT UNSIGNED DEFAULT NULL
-	,InsertDate			DATETIME NOT NULL
-	,PRIMARY KEY (ID, InsertDate)
-	,KEY IX_CTSCustomerClassification_BySport_Log_CustID(CustID)
-) ENGINE = InnoDB;
-
 DROP TABLE IF EXISTS ProbationAccountMonitor_BySport;
 CREATE TABLE ProbationAccountMonitor_BySport (
 	CTSCustID 			BIGINT UNSIGNED NOT NULL

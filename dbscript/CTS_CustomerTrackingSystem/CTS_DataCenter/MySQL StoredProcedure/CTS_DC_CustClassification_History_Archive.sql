@@ -1,12 +1,12 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_History_DataChanged_CleanUp`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_History_Archive`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_History_DataChanged_CleanUp`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_History_Archive`(
     	OUT	op_IsDataExist		SMALLINT
 )
     SQL SECURITY INVOKER
-sp:BEGIN
+sp:BEGIN 
 	/*
 		Created:	20210901@Aries.Nguyen	
 		Task :		Clean-up Classification History are not used. Only take 30 lastest days.

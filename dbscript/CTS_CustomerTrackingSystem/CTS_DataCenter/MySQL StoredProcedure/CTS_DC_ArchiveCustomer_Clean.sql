@@ -4,7 +4,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_ArchiveCustomer_Clean`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_ArchiveCustomer_Clean`()
     SQL SECURITY INVOKER
-sp: BEGIN
+sp: BEGIN 
 	/*
 		Created:	20210927@Aries.Nguyen
 		Task :		Archive Customer
@@ -18,6 +18,7 @@ sp: BEGIN
             -	20220408@Casey.Huynh: Add AssociationGroupByAI [Redmine ID: #171222]
 			-	20220713@Aries.Nguyen: HotFix Customer NULL CC [Redmine ID: #175406]
 			-	20220720@Aries.Nguyen: Missing remove unused columns in 'CTS_DC_ArchiveCustomer_Clean' [Redmine ID: #175631]
+            -	20220519@Aries.Nguyen: Clean data CTSCustomerClassification_BySport_History table   [Redmine ID: #176992]
 
 		Param's Explanation (filtered by):	
         
@@ -773,6 +774,41 @@ sp: BEGIN
 			SELECT COUNT(1)
             INTO lv_Count
             FROM Temp_CTSCustomerClassification_History_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
+        END IF;
+        
+        SET lv_Table = 'CTS_DataCenter.CTSCustomerClassification_BySport_History';
+	 END IF; 
+     
+     IF (lv_Table = 'CTS_DataCenter.CTSCustomerClassification_BySport_History') THEN
+		IF EXISTS (SELECT 1  FROM CTS_DataCenter.CTSCustomerClassification_BySport_History AS his WHERE his.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)) THEN
+			DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomerClassification_BySport_History_Clean;
+			CREATE TEMPORARY TABLE Temp_CTSCustomerClassification_BySport_History_Clean(
+					ID   BIGINT UNSIGNED PRIMARY KEY
+			);
+            
+            INSERT IGNORE INTO Temp_CTSCustomerClassification_BySport_History_Clean(ID)
+            SELECT 	his.ID
+			FROM CTS_DataCenter.CTSCustomerClassification_BySport_History AS his
+			WHERE  his.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)
+			LIMIT lv_CleanTableBatchSize;
+            
+            DELETE his
+			FROM CTS_DataCenter.CTSCustomerClassification_BySport_History AS his
+			WHERE  his.ID IN (SELECT tmp.ID FROM Temp_CTSCustomerClassification_BySport_History_Clean AS tmp);
+			
+			UPDATE  CTS_DataCenter.SystemParameter 
+			SET ParameterValue = 'CTS_DataCenter.CTSCustomerClassification_BySport_History'
+			WHERE ParameterID = 46;
+			
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_CTSCustomerClassification_BySport_History_Clean;
             
             IF lv_Count >= lv_CleanTableBatchSize THEN
 				LEAVE sp;
@@ -1732,4 +1768,3 @@ sp: BEGIN
 
 END$$
 DELIMITER ;
-
