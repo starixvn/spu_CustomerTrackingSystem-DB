@@ -99,8 +99,7 @@ BEGIN
 			AND clss.LastScannedDate <= '",lv_ScanDateValid,"' ","
 			AND NOT EXISTS (SELECT 1 
 							 FROM  CTS_DataCenter.ProbationAccountMonitor_BySport AS pro 
-							 WHERE pro.CustID = clss.CustID 
-								AND pro.SportGroupID = clss.SportID)
+							 WHERE pro.CustID = clss.CustID AND pro.SportID = clss.SportID)
 		ORDER BY 	clss.CategoryID ASC
 			,	 	clss.CustID ASC
             , 		clss.SportID ASC
@@ -113,16 +112,17 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM Temp_Normal) THEN
 		SELECT 	cate.CategoryID
 			,	cate.ScanDate
+            ,	clss.SportID
         INTO 	lv_NextCategoryID
 			,	lv_NextScanDateValid
+            ,	lv_NextSportID
 		FROM Temp_Category  AS cate
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport AS clss ON cate.CategoryID = clss.CategoryID 
-		WHERE cate.CategoryID > lv_LastCategoryID
+		WHERE cate.CategoryID > lv_LastCategoryID AND clss.SportID > lv_LastSportID
 			AND clss.LastScannedDate <= cate.ScanDate
 			AND NOT EXISTS (SELECT 1 
 							 FROM  CTS_DataCenter.ProbationAccountMonitor_BySport AS pro 
-							 WHERE pro.CustID = clss.CustID 
-								AND pro.SportGroupID = clss.SportID)
+							 WHERE pro.CustID = clss.CustID AND pro.SportID = clss.SportID)
 		ORDER BY cate.CategoryID ASC
 		LIMIT 1; 
     END IF;
@@ -134,8 +134,8 @@ BEGIN
 		WHERE CategoryID = lv_NextCategoryID;
         
 		SET @sql =  CONCAT("
-		INSERT IGNORE INTO Temp_Normal (CustID)
-		SELECT 	clss.CustID
+		INSERT IGNORE INTO Temp_Normal (CustID, SportID)
+		SELECT 	clss.CustID, clss.SportID
 		FROM CTS_DataCenter.CTSCustomerClassification_BySport AS clss USE INDEX(IX_CTSCustomerClassification_BySport_CategoryID_CustID)
 		WHERE clss.CustID > 0
 			AND clss.CategoryID = ", lv_NextCategoryID," ","

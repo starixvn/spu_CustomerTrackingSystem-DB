@@ -128,7 +128,7 @@ BEGIN
             , 	WinlossRM				DECIMAL(20,4)		PATH "$.WinlossRM"
             , 	BetCount				BIGINT				PATH "$.BetCount"
             , 	ActiveDays				INT					PATH "$.ActiveDays"		
-            , 	SportID					SMALLINT UNSIGNED	PATH "$.SportID"		
+            , 	SportID					SMALLINT UNSIGNED	PATH "$.SportId"		
 		 )) AS 	temp
 	 WHERE temp.DWCateGroup <> 0;
 	
