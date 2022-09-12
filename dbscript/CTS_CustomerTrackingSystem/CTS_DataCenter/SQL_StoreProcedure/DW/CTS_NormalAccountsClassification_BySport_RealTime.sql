@@ -5,7 +5,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CTS_NormalAccountsClassification_BySport_RealTime]
+ALTER PROCEDURE [dbo].[CTS_NormalAccountsClassification_BySport_RealTime]
 		@CustomersXML			XML
 AS
 /*
@@ -55,7 +55,7 @@ BEGIN
 		[Margin]			MONEY NULL,
 		[BetCount]			BIGINT NULL,
 		[ActiveDays]		INT NULL,
-		[CategoryId]		SMALLINT NULL
+		[CurrentCategoryId]	SMALLINT NULL
 	);
 
 	CREATE CLUSTERED INDEX IX_tmpCustomerAccummulatedInfo_Margin ON #tmpCustomerAccummulatedInfo(
@@ -74,16 +74,16 @@ BEGIN
 	END
 	
 	CREATE TABLE #tmpCustomers(
-			CustId			INT
-		,	SportId			SMALLINT
-		,	CategoryId		SMALLINT
+			CustId				INT
+		,	SportId				SMALLINT
+		,	CurrentCategoryId	SMALLINT
 		,	PRIMARY KEY (CustId, SportId)
 	);
 
-	INSERT INTO #tmpCustomers(CustId, SportId, CategoryId)
+	INSERT INTO #tmpCustomers(CustId, SportId, CurrentCategoryId)
 	SELECT	T.C.value('./@CustId', 'INT') AS CustId
 		,	T.C.value('./@SportId', 'SMALLINT') AS SportId
-		,	T.C.value('./@CategoryId', 'SMALLINT') AS CategoryId
+		,	T.C.value('./@CategoryId', 'SMALLINT') AS CurrentCategoryId
 	FROM @CustomersXML.nodes('//r') AS T(C)
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 	
@@ -94,10 +94,10 @@ BEGIN
 	
 	-- START	
 	-- #1: GetCustomer Accummulated data  
-	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, SportId, CategoryId, IsSpecialSite, SRecommend, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
+	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, SportId, CurrentCategoryId, IsSpecialSite, SRecommend, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
 	SELECT	a.CustId
 		,	a.SportId
-		,	c.CategoryId
+		,	c.CurrentCategoryId
 		,	CASE WHEN cu.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') THEN 1 ELSE 0 END
 		,	cu.srecommend
 		,	a.TurnoverRM
@@ -119,7 +119,7 @@ BEGIN
 	SELECT c.CustId, c.SportId, 0
 	FROM #tmpCustomers AS c WITH(NOLOCK)
 		LEFT JOIN dbo.CustomerClassification_BySport_BetCount AS v WITH(NOLOCK) ON c.CustId = v.CustId AND c.SportId = v.SportId
-	WHERE c.CategoryId IN (@CATEGORY_NORMALMEMBER, @CATEGORY_GOODMEMBER) 
+	WHERE c.CurrentCategoryId IN (@CATEGORY_NORMALMEMBER, @CATEGORY_GOODMEMBER) 
 		AND v.CustId IS NULL;
 		
 	-- #3: Remove Accounts that Ticket Count has not reach the schedule
@@ -127,14 +127,14 @@ BEGIN
 	DELETE a WITH(ROWLOCK)
 	FROM #tmpCustomerAccummulatedInfo AS a
 		LEFT JOIN dbo.CustomerClassification_BySport_BetCount AS v WITH(NOLOCK) ON a.CustId = v.CustId AND a.SportId = v.SportId
-	WHERE a.CategoryId IN (@CATEGORY_GOODMEMBER)
+	WHERE a.CurrentCategoryId IN (@CATEGORY_GOODMEMBER)
 		AND (v.CustId IS NOT NULL AND (a.BetCount - v.BetCount < 100));
 
 	-- Remove Accounts less than 20 tickets compared to last scan for Normal Member
 	DELETE a WITH(ROWLOCK)
 	FROM #tmpCustomerAccummulatedInfo AS a
 		LEFT JOIN dbo.CustomerClassification_BySport_BetCount AS v WITH(NOLOCK) ON a.CustId = v.CustId AND a.SportId = v.SportId
-	WHERE a.CategoryId IN (@CATEGORY_NORMALMEMBER)
+	WHERE a.CurrentCategoryId IN (@CATEGORY_NORMALMEMBER)
 		AND (v.CustId IS NOT NULL AND (a.BetCount - v.BetCount < 20));
 
 	-- #4: Classify GOOD, NEW, NORMAL, PROBATION MEMBER
@@ -157,7 +157,7 @@ BEGIN
 				,	a.WinlossRM
 				,	a.BetCount
 				,	a.ActiveDays
-				,	ROW_NUMBER() OVER(PARTITION BY c.CustId, c.SportId, c.CategorId ORDER BY c.Prioity DESC) AS RowNum
+				,	ROW_NUMBER() OVER(PARTITION BY a.CustId, a.SportId, r.CategorId ORDER BY r.Prioity DESC) AS RowNum
 			 FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 				INNER JOIN dbo.CustomerClassification_BySport_Rule AS r WITH(NOLOCK) ON a.SportId = r.SportId 
 			 WHERE a.BetCount < r.BetCount																										-- NEW MEMBER			
@@ -175,9 +175,9 @@ BEGIN
 	-- #8: Update last scanned ticket count back to dbo.CustomerClassification_BetCount
 	UPDATE v WITH(ROWLOCK, UPDLOCK)
 	SET v.BetCount = CASE 
-						WHEN a.CategoryId IN (@CATEGORY_GOODMEMBER) 
+						WHEN a.CurrentCategoryId IN (@CATEGORY_GOODMEMBER) 
 							THEN (a.BetCount - (a.BetCount % 100))
-						WHEN a.CategoryId IN (@CATEGORY_NORMALMEMBER) 
+						WHEN a.CurrentCategoryId IN (@CATEGORY_NORMALMEMBER) 
 							THEN (a.BetCount - (a.BetCount % 20))
 					END
 		,	v.LastScannedDate = @CurrentDateTime
