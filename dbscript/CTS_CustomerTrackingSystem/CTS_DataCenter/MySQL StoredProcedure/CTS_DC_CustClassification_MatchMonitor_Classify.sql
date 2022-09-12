@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_MatchMonitor_Classify`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_MatchMonitor_Classify_xtest`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_MatchMonitor_Classify`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_MatchMonitor_Classify_xtest`(
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -116,14 +116,15 @@ BEGIN
     FROM Temp_MatchMonitorDetailsCust AS tmpMmc
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpMmc.CustID = cus.CustID;
 	
+    /*
     DROP TEMPORARY TABLE IF EXISTS Temp_PACustGroup;
     CREATE TEMPORARY TABLE Temp_PACustGroup(MmDetailsID INT);
     
     INSERT INTO Temp_PACustGroup(MmDetailsID)
     SELECT tmpCus.MmDetailsID
     FROM Temp_Cust AS tmpCus
-    GROUP BY tmpCus.MmDetailsID
-    HAVING COUNT(1) > 2;
+    GROUP BY tmpCus.MmDetailsID;
+    */
     
     SELECT	DISTINCT tmpCust.CustID
         ,	tmpCust.MatchID
@@ -134,7 +135,7 @@ BEGIN
         ,	63 AS CategoryID # Group Betting
         , 	63 AS CategoryGroup # Group Betting
 	FROM Temp_Cust AS tmpCust
-		INNER JOIN Temp_PACustGroup AS tmpPa ON tmpCust.MMDetailsID = tmpPa.MMDetailsID
+	#	INNER JOIN Temp_PACustGroup AS tmpPa ON tmpCust.MMDetailsID = tmpPa.MMDetailsID
 	WHERE NOT EXISTS (	SELECT 1 
 						FROM CTS_DataCenter.CTSCustomerClassification AS cls 
 							INNER JOIN Temp_ExcludePACategoryID AS exl ON cls.CategoryID = exl.CategoryID
