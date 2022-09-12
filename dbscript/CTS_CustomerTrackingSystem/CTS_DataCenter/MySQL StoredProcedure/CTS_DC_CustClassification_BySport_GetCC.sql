@@ -27,7 +27,6 @@ BEGIN
         ,	PRIMARY KEY (CustID, SportID)
     );    
     
-    /* START */
     INSERT IGNORE INTO Temp_CustInfo (CustID, SportID)
     SELECT DISTINCT temp.CustID
                 , 	temp.SportID
@@ -44,7 +43,7 @@ BEGIN
 		,cate.CustomerClassName
 	FROM Temp_CustInfo temp
 	INNER JOIN CTSCustomerClassification_BySport clss ON temp.CustID = clss.CustID AND temp.SportID = clss.SportID
-	INNER JOIN CustomerCategory cate ON cate.CategoryID = class.CategoryID;
+	INNER JOIN CustomerCategory cate ON cate.CategoryID = clss.CategoryID;
 
 END$$
 
