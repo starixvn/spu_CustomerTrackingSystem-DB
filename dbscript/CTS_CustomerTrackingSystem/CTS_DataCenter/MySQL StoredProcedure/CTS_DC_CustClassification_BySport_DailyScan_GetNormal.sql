@@ -43,6 +43,7 @@ BEGIN
     CREATE TEMPORARY TABLE 	Temp_Normal (
             CustID					BIGINT UNSIGNED
 		,	SportID					SMALLINT
+        ,	CurrentCategoryID		SMALLINT
         ,	PRIMARY KEY (CustID, SportID)
 	);
     
@@ -90,8 +91,8 @@ BEGIN
     WHERE CategoryID = lv_LastCategoryID;
   
     SET @sql = 	CONCAT("
-		INSERT IGNORE INTO Temp_Normal (CustID, SportID)
-		SELECT 	clss.CustID, clss.SportID
+		INSERT IGNORE INTO Temp_Normal (CustID, SportID, CurrentCategoryID)
+		SELECT 	clss.CustID, clss.SportID, clss.CategoryID
 		FROM CTS_DataCenter.CTSCustomerClassification_BySport AS clss USE INDEX(IX_CTSCustomerClassification_BySport_CategoryID_CustID)
 		WHERE clss.CustID > ", lv_LastCustID," ","
 			AND clss.SportID = ",lv_LastSportID," ","
@@ -134,8 +135,8 @@ BEGIN
 		WHERE CategoryID = lv_NextCategoryID;
         
 		SET @sql =  CONCAT("
-		INSERT IGNORE INTO Temp_Normal (CustID, SportID)
-		SELECT 	clss.CustID, clss.SportID
+		INSERT IGNORE INTO Temp_Normal (CustID, SportID, CurrentCategoryID)
+		SELECT 	clss.CustID, clss.SportID, clss.CategoryID
 		FROM CTS_DataCenter.CTSCustomerClassification_BySport AS clss USE INDEX(IX_CTSCustomerClassification_BySport_CategoryID_CustID)
 		WHERE clss.CustID > 0
 			AND clss.CategoryID = ", lv_NextCategoryID," ","
@@ -143,8 +144,7 @@ BEGIN
 			AND clss.LastScannedDate <= '", lv_NextScanDateValid,"' ","
 			AND NOT EXISTS (SELECT 1 
 							 FROM  CTS_DataCenter.ProbationAccountMonitor_BySport AS pro 
-							 WHERE pro.CustID = clss.CustID 
-								AND pro.SportGroupID = clss.SportID)
+							 WHERE pro.CustID = clss.CustID AND pro.SportID = clss.SportID)
 		ORDER BY clss.CategoryID ASC
 			,	 clss.CustID ASC
             , 	clss.SportID ASC
@@ -182,7 +182,7 @@ BEGIN
         SET op_LastSportID = 0;
     END IF;
     
-    SELECT 	CustID, SportID
+    SELECT 	CustID, SportID, CurrentCategoryID
     FROM Temp_Normal;
 
 END$$

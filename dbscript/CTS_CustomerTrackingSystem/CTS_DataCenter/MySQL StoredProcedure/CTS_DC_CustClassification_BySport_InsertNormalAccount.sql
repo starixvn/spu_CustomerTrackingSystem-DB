@@ -347,7 +347,7 @@ BEGIN
 	FROM 	Temp_NewClassification AS temp;
     
 	/* 17: RETURN UPDATED CUSTOMERS TO SERVICE FOR FUTHER STEPS */
-	SELECT DISTINCT temp.CustId, temp.SportID
+	SELECT DISTINCT temp.CustID, temp.SportID
     FROM Temp_NewClassification AS temp 
     WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);
 END$$
