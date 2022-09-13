@@ -1,10 +1,10 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
 /*
-	Creator: 	20220909@Arise.Nguyen
+	Creator: 	20220909@Aries.Nguyen
 	Task:	 	Update sysparam [Redmine ID: 176992] 	
 	DBName:		CTS_DataCenter, CTS_Archive
 */
-USE CTS_DataCenter
+USE CTS_DataCenter;
 INSERT INTO CTS_DataCenter.SystemParameter (ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
 VALUES ('117', 'Classification_BySport_History_Archive_BatchSize', 'Classification_BySport_History_Archive_BatchSize', 'BIGINT', '1000'),
        ('118', 'Classification_BySport_History_Archive_LastestID', 'Classification_BySport_History_Archive_LastestID', 'BIGINT', '0'),
@@ -24,7 +24,6 @@ CREATE TABLE CTSCustomerClassification_BySport_History (
     BetCount BIGINT DEFAULT NULL,
     ActiveDays INT DEFAULT NULL,
     TargetCC SMALLINT DEFAULT NULL,
-    FromCategoryID SMALLINT UNSIGNED DEFAULT NULL,
     ActionType TINYINT DEFAULT NULL,
     LastModifiedDate DATETIME DEFAULT NULL,
     LastModifiedBy INT UNSIGNED DEFAULT NULL,
@@ -48,7 +47,8 @@ CREATE TABLE CTSCustomerClassification_BySport_Log (
     BetCount BIGINT DEFAULT NULL,
     ActiveDays INT DEFAULT NULL,
     TargetCC SMALLINT DEFAULT NULL,
-    FromCategoryID SMALLINT UNSIGNED DEFAULT NULL,
+    OldCategoryID SMALLINT UNSIGNED DEFAULT NULL,
+    DWCategoryID SMALLINT UNSIGNED DEFAULT NULL,
     IsDataChanged TINYINT(1) DEFAULT '0',
     ActionType TINYINT DEFAULT NULL,
     LastModifiedDate DATETIME DEFAULT NULL,
