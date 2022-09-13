@@ -167,8 +167,8 @@ BEGIN
 					OR (a.BetCount >= r.BetCount AND a.Margin < r.Margin AND (a.TurnoverRM <= r.TurnoverRM OR a.ActiveDays < r.ActiveDays))		-- NORMAL
 					OR (a.IsSpecialSite = 1 AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM <= r.WinlossRM)				-- NORMAL
 					OR (a.IsDeposit = 0 AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM < r.WinlossRM)					-- NORMAL
-					OR (a.IsDeposit = 0 AND a.Margin >= r.Margin AND a.WinlossRM >= r.WinlossRM)												-- PROBATION
-					OR (a.IsDeposit = 1 AND a.Margin >= r.Margin)																			    -- PROBATION
+					OR (a.IsDeposit = 0 AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM >= r.WinlossRM)					-- PROBATION
+					OR (a.IsDeposit = 1 AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin)													-- PROBATION
 		) as b
 	 WHERE b.RowNum = 1;
 

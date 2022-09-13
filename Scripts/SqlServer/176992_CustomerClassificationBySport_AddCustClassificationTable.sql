@@ -23,7 +23,7 @@ CREATE TABLE [dbo].[CustomerClassification_BySport](
 	[SportId] [int] NOT NULL,
 	[CategoryId] [smallint] NOT NULL,
 	[CreatedDate] [date] NOT NULL,
-	[IsApplied] [bit] NULL,
+	[IsApplied] [bit] NULL DEFAULT ((0)),
 	[CreatedTime] [datetime] NULL,
 	[TurnoverRM] [money] NULL,
 	[WinlossRM] [money] NULL,
