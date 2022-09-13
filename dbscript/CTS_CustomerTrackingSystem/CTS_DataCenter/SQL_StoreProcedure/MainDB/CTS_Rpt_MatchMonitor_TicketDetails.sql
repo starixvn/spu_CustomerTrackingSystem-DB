@@ -186,7 +186,7 @@ BEGIN
 				,	b.liveawayscore
 				,	b.statusID
 				,	b.liveindicator
-			FROM dbo.bettrans AS b WITH(NOLOCK)
+			FROM dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
 				INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
 				INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
@@ -200,7 +200,7 @@ BEGIN
 				AND b.Username NOT LIKE '%Cashout%'
 				AND l.LeagueGroupID NOT IN (42,74,108,113) -- SABA leagues
 				AND c.Site NOT IN ('NextBet','9wickets','9wsports')
-			ORDER BY b.transid ASC
+			ORDER BY b.sequenceid ASC
 				;
 		END
 	ELSE
