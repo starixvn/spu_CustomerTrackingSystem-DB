@@ -26,7 +26,7 @@ BEGIN
 			- 20220519@Aries.Nguyen: Renovate the Category Log History [Redmine ID: #172560]
             - 20200705@Casey.Huynh: Add New Category LicVIP, LicBA [Redmine ID: #174219]       
 			- 20220817@Long.Luu: Rearrange CC's IDs [Redmine ID: #175698]
-            
+            - 20220913@Casey.Huynh: Update Remark [Redmine ID: #176976]
 		Param's Explanation (filtered by):		
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_ViewHistory(43600889);
@@ -75,7 +75,7 @@ BEGIN
             ,	temp.TWGroupBettingRate
             ,	temp.TWTicketRejectRate
             ,	temp.TWDesktopUsageRate
-			,	temp.Remark
+			,	(CASE WHEN temp.Remark LIKE 'AutoMatchID:%' THEN REPLACE(temp.Remark,'AutoMatchID:','') ELSE temp.Remark END) AS Remark
 			,	temp.TVSRequestID
             ,	temp.IsFromTVS
             ,	temp.IsFromTW

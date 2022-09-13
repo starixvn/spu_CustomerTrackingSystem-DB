@@ -19,6 +19,7 @@ BEGIN
             - 20220627@Casey.Huynh: Add MatchID To Remark  [Redmine ID: #174218]
             - 20220801@Long.Luu: Fix cannot rescan Normal when removing PA(Losing)  [Redmine ID: #176163]
             - 20220713@Casey.Huynh: Switching for Licensee VIP & BA Categories [Redmine ID: #174219]
+            - 20220913@Casey.Huynh: Update Remark [Redmine ID: #176976]
             
         Param's Explanation (filtered by):
 			- ip_InputType: 1: Category, 2: Reason
@@ -367,7 +368,7 @@ BEGIN
 		, 	tmpPa.ActionType
 		, 	NOW() AS InsertDate
 		, 	tmpPa.TargetCC
-		, 	(CASE	WHEN tmpPa.MatchID IS NOT NULL THEN 35
+		, 	(CASE	WHEN tmpPa.MatchID IS NOT NULL OR Remark LIKE 'AutoMatchID:%' THEN 35
 					WHEN tmpPa.IsDirectPA = 1 THEN 31 
 					WHEN tmpPa.IsDirectPA = 0 THEN 32 END) AS SourceTypeID
 		,  	1 AS IsDataChanged
@@ -398,8 +399,9 @@ BEGIN
 		,	1 AS IsAuto 
 		,	NOW() AS InsertDate
 		,	tmpPa.TargetCC
-		,	(CASE WHEN IsDirectPA = 1 THEN 31 
-					WHEN IsDirectPA = 0 THEN 32 END) AS SourceTypeID
+        ,	(CASE	WHEN tmpPa.MatchID IS NOT NULL OR Remark LIKE 'AutoMatchID:%' THEN 35
+					WHEN tmpPa.IsDirectPA = 1 THEN 31 
+					WHEN tmpPa.IsDirectPA = 0 THEN 32 END) AS SourceTypeID
 		,	tmpPa.IsDataChanged
 		,	tmpPa.TargetDangerLevel
 		,	tmpPa.TurnoverRM
