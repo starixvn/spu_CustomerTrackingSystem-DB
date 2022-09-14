@@ -4,7 +4,7 @@ DELIMITER $$
 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Staging_Clean`(
 		IN ip_LiveIndicator	BOOLEAN
-	,	IN ip_MaxTransID	BIGINT UNSIGNED
+	,	IN ip_MaxSequenceID	BIGINT UNSIGNED
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -17,6 +17,7 @@ BEGIN
 		Revisions:
 			- 	20210526@Casey.Huynh: Created [Redmine ID: 159195]
             -	20220110@Casey.Huynh: Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
+            -	20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
             
 		Param's Explanation (filtered by):
 			CALL CTS_DC_MatchMonitor_Staging_Clean(1,2);
@@ -44,12 +45,12 @@ BEGIN
 		SELECT 	MAX(mms.TransDate) , MAX(mms.TransID)
 		INTO 	lv_Last3mMaxTime, lv_LastTransID
 		FROM	CTS_DataCenter.MatchMonitorStagingLive AS mms
-        WHERE	mms.TransID <= ip_MaxTransID;    
+        WHERE	mms.SequenceID <= ip_MaxSequenceID;    
 		
-		SELECT  MIN(TransDate) 
+		SELECT  MIN(mms.TransDate) 
 		INTO 	lv_Last3mMinTime
-		FROM	CTS_DataCenter.MatchMonitorStagingLive
-		WHERE   TransDate > TIMESTAMPADD(SECOND, -180, lv_Last3mMaxTime);  
+		FROM	CTS_DataCenter.MatchMonitorStagingLive AS mms
+		WHERE   mms.TransDate > TIMESTAMPADD(SECOND, -180, lv_Last3mMaxTime);  
 			
 		INSERT INTO Temp_Last3mTransGroup(MatchID, TotalScore, BettypeID, BetID, GroupID)
 		SELECT 	DISTINCT mms.MatchID,  mms.TotalScore, mms.BettypeID, mms.BetID, mms.GroupID
@@ -65,24 +66,25 @@ BEGIN
         /* Update Parameter*/
         IF lv_LastTransID > 0 THEN			
 			UPDATE 	CTS_DataCenter.SystemParameter AS sys
-			SET 	sys.ParameterValue = ip_MaxTransID
+			SET 	sys.ParameterValue = ip_MaxSequenceID
 			WHERE 	sys.ParameterID = 47;
 		END IF;
 	END IF;
     
     IF (ip_LiveIndicator = 0) THEN		
-		SELECT 	MAX(TransDate) , MAX(TransID)
+		SELECT 	MAX(mms.TransDate) , MAX(mms.TransID)
 		INTO 	lv_Last3mMaxTime, lv_LastTransID
-		FROM	CTS_DataCenter.MatchMonitorStagingNonLive;    
-		
-		SELECT  MIN(TransDate) 
+		FROM	CTS_DataCenter.MatchMonitorStagingNonLive AS mms
+        WHERE	mms.SequenceID <= ip_MaxSequenceID;
+        
+		SELECT  MIN(mms.TransDate) 
 		INTO 	lv_Last3mMinTime
-		FROM	CTS_DataCenter.MatchMonitorStagingNonLive
-		WHERE   TransDate > TIMESTAMPADD(SECOND, -180, lv_Last3mMaxTime);  
+		FROM	CTS_DataCenter.MatchMonitorStagingNonLive AS mms
+		WHERE   mms.TransDate > TIMESTAMPADD(SECOND, -180, lv_Last3mMaxTime);  
 			
 		INSERT INTO Temp_Last3mTransGroup(MatchID, TotalScore, BettypeID, BetID, GroupID)
 		SELECT 	DISTINCT mms.MatchID,  mms.TotalScore, mms.BettypeID, mms.BetID, mms.GroupID
-		FROM 	CTS_DataCenter.MatchMonitorStagingNonLive mms
+		FROM 	CTS_DataCenter.MatchMonitorStagingNonLive AS mms
 		WHERE	mms.TransDate >= lv_Last3mMinTime AND mms.GroupID > 0;
 		
 		DELETE 	mms
@@ -94,7 +96,7 @@ BEGIN
         /* Update Parameter*/
         IF lv_LastTransID > 0 THEN	
 			UPDATE 	CTS_DataCenter.SystemParameter AS sys
-			SET 	sys.ParameterValue = ip_MaxTransID
+			SET 	sys.ParameterValue = ip_MaxSequenceID
 			WHERE 	sys.ParameterID = 48;
 		END IF;
         

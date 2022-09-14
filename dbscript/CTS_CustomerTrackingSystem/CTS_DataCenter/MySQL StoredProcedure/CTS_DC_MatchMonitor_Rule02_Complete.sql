@@ -4,7 +4,7 @@ DELIMITER $$
 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule02_Complete`(
 		IN ip_LiveIndicator BOOLEAN
-	,	IN ip_MaxTransID 	BIGINT UNSIGNED
+	,	IN ip_MaxSequenceID BIGINT UNSIGNED
 	, 	IN ip_MatchID		INT
     , 	IN ip_TotalScore	INT 
     , 	IN ip_BettypeID		INT
@@ -22,11 +22,12 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule02_Complete`(
 
 		Revisions:
 			- 20220726@Casey.Huynh: Created [Redmine ID: #175700]
+            - 20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
             
 		Param's Explanation (filtered by):	
 
 		Example:
-			CALL CTS_DC_MatchMonitor_Rule02_Complete(@ip_LiveIndicator:=1,@ip_MaxTransID:=115841606929,@ip_MatchID:=1,@ip_TotalScore:=1
+			CALL CTS_DC_MatchMonitor_Rule02_Complete(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=115841606929,@ip_MatchID:=1,@ip_TotalScore:=1
 				,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a',
                 @ip_TransGroup:='[{"Reason":3 ,"TransIDList":"1001,1007,1008","CustIDList":"1,2"}]');
 	*/ 
@@ -84,7 +85,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule02_Complete`(
 			SELECT mms.EventDate, mms.LiveHomeScore, mms.LiveAwayScore, mms.EventDate, mms.KickOffTime, mms.EventStatus, mms.HomeID, mms.AwayID, mms.LeagueID, mms.LeagueName, mms.Sporttype
 			INTO lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName, lv_Sporttype
 			FROM CTS_DataCenter.MatchMonitorTransLive AS mms
-			WHERE mms.TransID <= ip_MaxTransID AND mms.MatchID = ip_MatchID AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.TotalScore = ip_TotalScore AND mms.Betteam = ip_Betteam
+			WHERE mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.TotalScore = ip_TotalScore AND mms.Betteam = ip_Betteam
 			LIMIT 1;
 			
 		END IF;
@@ -93,7 +94,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule02_Complete`(
 			SELECT mms.EventDate, mms.LiveHomeScore, mms.LiveAwayScore, mms.EventDate, mms.KickOffTime, mms.EventStatus, mms.HomeID, mms.AwayID, mms.LeagueID, mms.LeagueName, mms.Sporttype
 			INTO lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName, lv_Sporttype
 			FROM CTS_DataCenter.MatchMonitorTransNonLive AS mms
-			WHERE mms.TransID <= ip_MaxTransID AND mms.MatchID = ip_MatchID AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.Betteam = ip_Betteam
+			WHERE mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.Betteam = ip_Betteam
 			LIMIT 1;	 
 		END IF;	
 		
@@ -158,7 +159,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule02_Complete`(
         SELECT MAX(TransDate)
 		INTO lv_MaxTransDate
 		FROM CTS_DataCenter.MatchMonitorTransLive AS mmt
-		WHERE mmt.TransID = ip_MaxTransID;   
+		WHERE mmt.SequenceID = ip_MaxSequenceID;   
         
 		UPDATE CTS_DataCenter.MatchMonitorTransLive AS mmt
 		SET mmt.StatusRule02 = 1
@@ -172,7 +173,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule02_Complete`(
 		SELECT MAX(TransDate)
 		INTO lv_MaxTransDate
 		FROM CTS_DataCenter.MatchMonitorTransNonLive AS mmt
-		WHERE mmt.TransID = ip_MaxTransID;   
+		WHERE mmt.SequenceID = ip_MaxSequenceID;   
         
 		UPDATE CTS_DataCenter.MatchMonitorTransNonLive AS mmt
 		SET mmt.StatusRule02 = 1

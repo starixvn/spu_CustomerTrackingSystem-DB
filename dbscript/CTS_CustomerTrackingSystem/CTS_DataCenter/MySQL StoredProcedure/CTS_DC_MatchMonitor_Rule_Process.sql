@@ -4,7 +4,7 @@ DELIMITER $$
 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule_Process`(
 		IN ip_LiveIndicator		BOOLEAN
-	,	IN ip_MaxTransID		BIGINT UNSIGNED
+	,	IN ip_MaxSequenceID		BIGINT UNSIGNED
 	,	IN ip_MatchID			INT UNSIGNED
     ,	IN ip_TotalScore		INT 
     ,	IN ip_BettypeID			INT UNSIGNED
@@ -28,9 +28,10 @@ sp: BEGIN
             -	20220110@Casey.Huynh: Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
             -	20220217@Casey.Huynh: Enhance MM, Update TO >= 1000 [Redmine ID: 168736]
             - 	20220422@Irena.Vo: Mapping Is Hedging Reason (MM) from table CustomerCategory [Redmine ID: #170468]
+            -	20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
 		Param's Explanation (filtered by):	
 		Example:
-			- CALL CTS_DC_MatchMonitor_Rule_Process(1,113171940189,22081995,1,1);
+			- CALL CTS_DC_MatchMonitor_Rule_Process(1,113171940189,22081995,1,1,0);
 			
 	*/
     DECLARE lv_TimeCustID BIGINT UNSIGNED DEFAULT 0;
@@ -108,17 +109,6 @@ sp: BEGIN
         ,	INDEX IX_Temp_CustAssociation01(CustID_1, MinTransDate_1, CustID_2, MinTransDate_2)        
 	);
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_CustAssociation02;
-	CREATE TEMPORARY TABLE Temp_CustAssociation02(
-			CustID_1		BIGINT UNSIGNED
-		,	MinTransDate_1	DATETIME(3)
-		,	MaxTransDate_1	DATETIME(3)
-        ,	CustID_2		BIGINT UNSIGNED
-		,	MinTransDate_2	DATETIME(3)
-		,	MaxTransDate_2	DATETIME(3)
-        
-        ,	INDEX IX_Temp_CustAssociation02(CustID_1, MinTransDate_1, CustID_2, MinTransDate_2)        
-	);
         
 	DROP TEMPORARY TABLE IF EXISTS Temp_TransGroup;
 	CREATE TEMPORARY TABLE Temp_TransGroup(
@@ -204,7 +194,7 @@ sp: BEGIN
             ,	mms.Stake
             ,	mms.Betteam
 		FROM CTS_DataCenter.MatchMonitorStagingLive AS mms
-        WHERE mms.TransID <= ip_MaxTransID AND mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID;
+        WHERE mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID;
         
 	ELSE 
 		INSERT INTO Temp_StagingTrans01(TransID, TransDate, CustID, OldGroupID, Stake,Betteam)
@@ -215,7 +205,7 @@ sp: BEGIN
             ,	mms.Stake
             ,	mms.Betteam
 		FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms
-        WHERE  mms.TransID <= ip_MaxTransID AND	mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID;
+        WHERE  mms.SequenceID <= ip_MaxSequenceID AND	mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID;
         
     END IF;
     
@@ -407,8 +397,6 @@ sp: BEGIN
     FROM Temp_Association AS tmpAss
 		INNER JOIN Temp_CustTime01 AS tmpC1 ON tmpC1.CustID = tmpAss.CustID_1
         INNER JOIN Temp_CustTime02 AS tmpC2 ON tmpC2.CustID = tmpAss.CustID_2;
-	
-    INSERT INTO Temp_CustAssociation02 SELECT * FROM Temp_CustAssociation01;
 
 	lp: LOOP        
         SET lv_CustID = 0;

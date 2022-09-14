@@ -5,7 +5,7 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule_Get`(
 		IN	ip_LiveIndicator	BOOLEAN
 	,	IN  ip_NoOfRow 			INT
-	,	OUT	op_MaxTransID		BIGINT UNSIGNED
+	,	OUT	op_MaxSequenceID	BIGINT UNSIGNED
 )
 	SQL SECURITY INVOKER
 sp: BEGIN
@@ -19,6 +19,7 @@ sp: BEGIN
 			- 	20210924@Casey.Huynh: Created [Redmine ID: 159195]
             -	20220110@Casey.Huynh: Enhance MM(SportType, Betteam, BetID), Return BetID [Redmine ID: 166986]
             -	20220217@Casey.Huynh: Enhance MM, Update TO >= 1000 [Redmine ID: 168736]
+            -	20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
             
 		Param's Explanation (filtered by):	
 
@@ -26,58 +27,56 @@ sp: BEGIN
 			CALL  CTS_DC_MatchMonitor_Rule_Get(1,500,@MaxTrans);
 			
 	*/
-	DECLARE lv_LastTransID BIGINT UNSIGNED DEFAULT 0;
-    DECLARE lv_MaxTransID BIGINT UNSIGNED DEFAULT 0;
+	DECLARE lv_LastSequenceID BIGINT UNSIGNED DEFAULT 0;
+    DECLARE lv_MaxSequenceID BIGINT UNSIGNED DEFAULT 0;
     
 	IF ip_LiveIndicator = 1 THEN    
 		SELECT sys.ParameterValue
-        INTO lv_LastTransID
+        INTO lv_LastSequenceID
         FROM CTS_DataCenter.SystemParameter AS sys
         WHERE ParameterID = 47;
         
-        SELECT MAX(tmp.TransID)
-        INTO lv_MaxTransID
-        FROM (SELECT mms.TransID FROM CTS_DataCenter.MatchMonitorStagingLive AS mms WHERE mms.TransID > lv_LastTransID ORDER BY mms.TransID LIMIT ip_NoOfRow) AS tmp;
+        SELECT MAX(tmp.SequenceID)
+        INTO lv_MaxSequenceID
+        FROM (SELECT mms.SequenceID FROM CTS_DataCenter.MatchMonitorStagingLive AS mms WHERE mms.SequenceID > lv_LastSequenceID ORDER BY mms.SequenceID LIMIT ip_NoOfRow) AS tmp;
         
-        SET op_MaxTransID = IFNULL(lv_MaxTransID,0) ;
+        SET op_MaxSequenceID = IFNULL(lv_MaxSequenceID,0) ;
         
-        IF(lv_LastTransID < lv_MaxTransID) THEN    
+        IF(lv_LastSequenceID < lv_MaxSequenceID) THEN    
 			SELECT	mms.MatchID
 				,	mms.TotalScore
 				,	mms.BettypeID
                 ,	mms.BetID
 			FROM CTS_DataCenter.MatchMonitorStagingLive AS mms
-            WHERE mms.TransID <= lv_MaxTransID
+            WHERE mms.SequenceID <= lv_MaxSequenceID
 			GROUP BY mms.MatchID, mms.TotalScore, mms.BettypeID, mms.BetID
 			HAVING COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= 1000;      
             
 		END IF;
 	ELSE
 		SELECT sys.ParameterValue
-        INTO lv_LastTransID
+        INTO lv_LastSequenceID
         FROM CTS_DataCenter.SystemParameter AS sys
         WHERE ParameterID = 48;
         
-        SELECT MAX(tmp.TransID)
-        INTO lv_MaxTransID
-        FROM (SELECT mms.TransID FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms WHERE mms.TransID > lv_LastTransID ORDER BY mms.TransID  LIMIT ip_NoOfRow) AS tmp;
+        SELECT MAX(tmp.SequenceID)
+        INTO lv_MaxSequenceID
+        FROM (SELECT mms.SequenceID FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms WHERE mms.SequenceID > lv_LastSequenceID ORDER BY mms.SequenceID  LIMIT ip_NoOfRow) AS tmp;
 		
-		SET op_MaxTransID = IFNULL(lv_MaxTransID, 0);        
+		SET op_MaxSequenceID = IFNULL(lv_MaxSequenceID, 0);        
         
-        IF(lv_LastTransID < lv_MaxTransID) THEN            
+        IF(lv_LastSequenceID < lv_MaxSequenceID) THEN            
 			SELECT	mms.MatchID
 				,	mms.TotalScore
 				,	mms.BettypeID
                 ,	mms.BetID
 			FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms
-            WHERE mms.TransID <= lv_MaxTransID
+            WHERE mms.SequenceID <= lv_MaxSequenceID
 			GROUP BY mms.MatchID, mms.TotalScore, mms.BettypeID, mms.BetID
 			HAVING COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= 1000;            
 		END IF;
         
 	END IF;
-    
-   # INSERT INTO CTS_DataCenter.MatchMonitor_Log(SPName,ip_LiveIndicator,ip_MaxTransID, InsertTime)
-	#SELECT 'CTS_DC_MatchMonitor_Rule_Get',ip_LiveIndicator,op_MaxTransID,CURRENT_TIMESTAMP(3);
+ 
 END$$
 DELIMITER ;
