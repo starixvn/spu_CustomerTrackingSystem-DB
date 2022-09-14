@@ -18,17 +18,15 @@ AS
 		- 20200901@Jonas.Huynh: Created [Redmine ID: #176992]
 
 	Param's Explanation:
-
+				@CustomersXML = N'	<r CustId="101" SportId="2" CategoryId ="201"/>
+									<r CustId="101" SportId="1" CategoryId ="201"/>'
 	Example: 
 		exec [dbo].[CTS_NormalAccountsClassification_BySport_RealTime]
 */
 BEGIN
 	
 	SET NOCOUNT ON;
-	DECLARE @SPORT_SOCCER			SMALLINT = 1;
-	DECLARE @SPORT_BASKETBALL		SMALLINT = 2;
-	DECLARE @SPORT_ESPORT			SMALLINT = 43;
-	DECLARE @SPORT_OTHERSPORT		SMALLINT = 99;
+
 	DECLARE @FUNCTIONID				SMALLINT = 100;
 
 	DECLARE @CATEGORY_NEWMEMBER			INT = 201
@@ -157,18 +155,18 @@ BEGIN
 				,	a.WinlossRM
 				,	a.BetCount
 				,	a.ActiveDays
-				,	ROW_NUMBER() OVER(PARTITION BY a.CustId, a.SportId, r.CategorId ORDER BY r.Prioity DESC) AS RowNum
+				,	ROW_NUMBER() OVER(PARTITION BY a.CustId, a.SportId ORDER BY r.Prioity ASC) AS RowNum
 			 FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 				INNER JOIN dbo.CustomerClassification_BySport_Rule AS r WITH(NOLOCK) ON a.SportId = r.SportId 
-			 WHERE a.BetCount < r.BetCount																										-- NEW MEMBER			
-					OR (a.IsSpecialSite = 1 AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM > r.WinlossRM)					-- NEW MEMBER	
-					OR (a.BetCount > r.BetCount AND a.Margin < r.Margin AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays)		-- GOOD
-					OR (a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin < r.Margin2)												-- NORMAL
-					OR (a.BetCount >= r.BetCount AND a.Margin < r.Margin AND (a.TurnoverRM <= r.TurnoverRM OR a.ActiveDays < r.ActiveDays))		-- NORMAL
-					OR (a.IsSpecialSite = 1 AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM <= r.WinlossRM)				-- NORMAL
-					OR (a.IsDeposit = 0 AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM < r.WinlossRM)					-- NORMAL
-					OR (a.IsDeposit = 0 AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM >= r.WinlossRM)					-- PROBATION
-					OR (a.IsDeposit = 1 AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin)													-- PROBATION
+			 WHERE     (r.RuleGroupId = 1 AND a.BetCount < r.BetCount)																										-- NEW MEMBER			
+					OR (r.RuleGroupId = 2 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM > r.WinlossRM)			-- NEW MEMBER	
+					OR (r.RuleGroupId = 3 AND a.BetCount > r.BetCount AND a.Margin < r.Margin AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays)				-- GOOD
+					OR (r.RuleGroupId = 4 AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin < r.Margin2)													-- NORMAL
+					OR (r.RuleGroupId = 5 AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND NOT (a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays))		-- NORMAL
+					OR (r.RuleGroupId = 6 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM <= r.WinlossRM)		-- NORMAL
+					OR (r.RuleGroupId = 7 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM < r.WinlossRM)				-- NORMAL
+					OR (r.RuleGroupId = 9 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin)												-- PROBATION
+					OR (r.RuleGroupId = 10 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM >= r.WinlossRM)				-- PROBATION
 		) as b
 	 WHERE b.RowNum = 1;
 
