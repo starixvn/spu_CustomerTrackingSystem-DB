@@ -75,7 +75,7 @@ BEGIN
             ,	temp.TWGroupBettingRate
             ,	temp.TWTicketRejectRate
             ,	temp.TWDesktopUsageRate
-			,	(CASE WHEN temp.Remark LIKE 'AutoMatchID:%' THEN REPLACE(temp.Remark,'AutoMatchID:','') ELSE temp.Remark END) AS Remark
+			,	(CASE WHEN temp.Remark LIKE 'Auto MatchID: %' THEN REPLACE(temp.Remark,'Auto MatchID: ','') ELSE temp.Remark END) AS Remark
 			,	temp.TVSRequestID
             ,	temp.IsFromTVS
             ,	temp.IsFromTW

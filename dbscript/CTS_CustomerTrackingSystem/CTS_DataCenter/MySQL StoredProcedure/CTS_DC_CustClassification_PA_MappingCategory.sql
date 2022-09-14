@@ -112,7 +112,7 @@ BEGIN
 			,	tmpJs.CategoryGroup
 			,	tmpJs.IsLicensee
 			,	tmpJs.CreatedBy 
-			,	(CASE WHEN tmpJs.MatchID IS NOT NULL THEN CONCAT('AutoMatchID:', MatchID) ELSE tmpJs.Remark END) AS Remark
+			,	(CASE WHEN tmpJs.MatchID IS NOT NULL THEN CONCAT('Auto MatchID: ', MatchID) ELSE tmpJs.Remark END) AS Remark
 			,	tmpJs.IsDirectPA
 			, 	IFNULL(tmpJs.WinlossStatus,2) AS  WinlossStatus
 			, 	tmpJs.TurnoverRM

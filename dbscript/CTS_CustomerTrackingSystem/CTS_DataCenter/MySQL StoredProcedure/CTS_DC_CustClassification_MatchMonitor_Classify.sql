@@ -56,7 +56,7 @@ BEGIN
 		,	MatchID			INT		      
         ,	NoOfCust		INT
         
-        ,	PRIMARY KEY PK_Temp_MatchMonitorDetailsCust(CustID, MMDetailsID)
+        ,	INDEX IX_Temp_MatchMonitorDetailsCust(CustID, MMDetailsID)
     );
    
 	DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
@@ -93,7 +93,6 @@ BEGIN
         WHERE mmd.MatchID = lv_MatchID
 			AND mmd.Reason = 0
 			AND mmd.ClassifyStatus = 0
-            AND mmd.HighStakeLicCustList IS NOT NULL
         LIMIT lv_PackSize
 	)
 	SELECT	js.CustID
@@ -114,18 +113,9 @@ BEGIN
         ,	cus.SubscriberID
         ,	cus.IsLicensee
     FROM Temp_MatchMonitorDetailsCust AS tmpMmc
-		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpMmc.CustID = cus.CustID;
-	
-    /*
-    DROP TEMPORARY TABLE IF EXISTS Temp_PACustGroup;
-    CREATE TEMPORARY TABLE Temp_PACustGroup(MmDetailsID INT);
-    
-    INSERT INTO Temp_PACustGroup(MmDetailsID)
-    SELECT tmpCus.MmDetailsID
-    FROM Temp_Cust AS tmpCus
-    GROUP BY tmpCus.MmDetailsID;
-    */
-    
+		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpMmc.CustID = cus.CustID
+	WHERE tmpMmc.CustID IS NOT NULL;
+
     SELECT	DISTINCT tmpCust.CustID
         ,	tmpCust.MatchID
         ,	tmpCust.CTSCustID
@@ -135,7 +125,6 @@ BEGIN
         ,	63 AS CategoryID # Group Betting
         , 	63 AS CategoryGroup # Group Betting
 	FROM Temp_Cust AS tmpCust
-	#	INNER JOIN Temp_PACustGroup AS tmpPa ON tmpCust.MMDetailsID = tmpPa.MMDetailsID
 	WHERE NOT EXISTS (	SELECT 1 
 						FROM CTS_DataCenter.CTSCustomerClassification AS cls 
 							INNER JOIN Temp_ExcludePACategoryID AS exl ON cls.CategoryID = exl.CategoryID

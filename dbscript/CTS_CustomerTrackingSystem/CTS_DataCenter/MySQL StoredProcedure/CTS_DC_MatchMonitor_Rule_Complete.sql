@@ -1,6 +1,5 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
 DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule_Complete`;
-DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule_Complete`;
 DELIMITER $$
 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule_Complete`(

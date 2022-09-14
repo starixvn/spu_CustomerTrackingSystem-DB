@@ -368,7 +368,7 @@ BEGIN
 		, 	tmpPa.ActionType
 		, 	NOW() AS InsertDate
 		, 	tmpPa.TargetCC
-		, 	(CASE	WHEN tmpPa.MatchID IS NOT NULL OR Remark LIKE 'AutoMatchID:%' THEN 35
+		, 	(CASE	WHEN tmpPa.MatchID IS NOT NULL OR Remark LIKE 'Auto MatchID: %' THEN 35
 					WHEN tmpPa.IsDirectPA = 1 THEN 31 
 					WHEN tmpPa.IsDirectPA = 0 THEN 32 END) AS SourceTypeID
 		,  	1 AS IsDataChanged
@@ -399,7 +399,7 @@ BEGIN
 		,	1 AS IsAuto 
 		,	NOW() AS InsertDate
 		,	tmpPa.TargetCC
-        ,	(CASE	WHEN tmpPa.MatchID IS NOT NULL OR Remark LIKE 'AutoMatchID:%' THEN 35
+        ,	(CASE	WHEN tmpPa.MatchID IS NOT NULL OR Remark LIKE 'Auto MatchID: %' THEN 35
 					WHEN tmpPa.IsDirectPA = 1 THEN 31 
 					WHEN tmpPa.IsDirectPA = 0 THEN 32 END) AS SourceTypeID
 		,	tmpPa.IsDataChanged

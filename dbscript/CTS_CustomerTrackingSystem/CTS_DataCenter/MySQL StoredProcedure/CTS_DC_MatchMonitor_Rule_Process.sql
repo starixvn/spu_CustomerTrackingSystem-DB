@@ -29,6 +29,7 @@ sp: BEGIN
             -	20220217@Casey.Huynh: Enhance MM, Update TO >= 1000 [Redmine ID: 168736]
             - 	20220422@Irena.Vo: Mapping Is Hedging Reason (MM) from table CustomerCategory [Redmine ID: #170468]
             -	20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
+            - 	20220830@Casey.Huynh: New Category for Classify Group Betting [Redmine ID: #176976]
 		Param's Explanation (filtered by):	
 		Example:
 			- CALL CTS_DC_MatchMonitor_Rule_Process(1,113171940189,22081995,1,1,0);
