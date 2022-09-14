@@ -26,7 +26,7 @@ sp: BEGIN
 	SELECT 		pro.CustID
 			,	pro.SportID
             ,	clss.CategoryID
-			,	(CASE WHEN pro.CreatedDate = lv_FromLastDay THEN 1 /*Up to Smart, High Risk, VIP & Normal*/ ELSE 0 /*Up to VIP & Normal*/ END) AS IsProbationLastDay
+			,	(CASE WHEN pro.CreatedDate <= lv_FromLastDay THEN 1 /*Up to Smart, High Risk, VIP & Normal*/ ELSE 0 /*Up to VIP & Normal*/ END) AS IsProbationLastDay
     FROM		CTS_DataCenter.ProbationAccountMonitor_BySport AS pro
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport AS clss ON pro.CustID = clss.CustID AND pro.SportID = clss.SportID
 	WHERE	(pro.LastScannedDate IS NULL OR pro.LastScannedDate < lv_CurrentDate)
