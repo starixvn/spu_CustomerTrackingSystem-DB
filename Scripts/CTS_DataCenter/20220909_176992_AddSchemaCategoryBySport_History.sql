@@ -80,7 +80,6 @@ CREATE TABLE CTSCustomerClassification_BySport_History_Archive (
     BetCount BIGINT DEFAULT NULL,
     ActiveDays INT DEFAULT NULL,
     TargetCC SMALLINT DEFAULT NULL,
-    FromCategoryID SMALLINT UNSIGNED DEFAULT NULL,
     ActionType TINYINT DEFAULT NULL,
     LastModifiedDate DATETIME DEFAULT NULL,
     LastModifiedBy INT UNSIGNED DEFAULT NULL,
@@ -114,7 +113,7 @@ BEGIN
 
 	*/
 	
-    INSERT INTO CTS_Archive.CTSCustomerClassification_BySport_History_Archive(HistoryID,CustID,CTSCustID,SportID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,FromCategoryID,ActionType,LastModifiedDate,LastModifiedBy,InsertDate)
+    INSERT INTO CTS_Archive.CTSCustomerClassification_BySport_History_Archive(HistoryID,CustID,CTSCustID,SportID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate,LastModifiedBy,InsertDate)
 	SELECT	HistoryID
         ,	CustID 				
 		,	CTSCustID 			
@@ -124,8 +123,7 @@ BEGIN
 		,	WinlossRM 			
 		,	BetCount 			
 		,	ActiveDays 			
-		,	TargetCC 			
-		,	FromCategoryID 		
+		,	TargetCC 				
 		,	ActionType 			
 		,	LastModifiedDate 	
 		,	LastModifiedBy 		
@@ -142,8 +140,7 @@ BEGIN
 							,	WinlossRM 			DECIMAL(20 , 4 )	PATH "$.WinlossRM"       
 							,	BetCount 			BIGINT				PATH "$.BetCount"       
 							,	ActiveDays 			INT					PATH "$.ActiveDays"       
-							,	TargetCC 			SMALLINT			PATH "$.TargetCC"       
-							,	FromCategoryID 		SMALLINT UNSIGNED	PATH "$.FromCategoryID"       
+							,	TargetCC 			SMALLINT			PATH "$.TargetCC"            
 							,	ActionType 			TINYINT				PATH "$.ActionType"       
 							,	LastModifiedDate 	DATETIME			PATH "$.LastModifiedDate"       
 							,	LastModifiedBy 		INT UNSIGNED		PATH "$.LastModifiedBy"       

@@ -43,7 +43,6 @@ sp:BEGIN
 		,	BetCount 			BIGINT 
 		,	ActiveDays 			INT
 		,	TargetCC 			SMALLINT
-		,	FromCategoryID 		SMALLINT UNSIGNED 
 		,	ActionType 			TINYINT 
 		,	LastModifiedDate 	DATETIME 
 		,	LastModifiedBy 		INT UNSIGNED 
@@ -81,7 +80,7 @@ sp:BEGIN
 		  ORDER BY ID ASC
 		  LIMIT lv_BatchSize) AS tbl;
 
-    INSERT INTO Temp_History(ID,CustID,CTSCustID,SportID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,FromCategoryID,ActionType,LastModifiedDate,LastModifiedBy,InsertDate )
+    INSERT INTO Temp_History(ID,CustID,CTSCustID,SportID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate,LastModifiedBy,InsertDate )
     SELECT 	ID 					
 		,	CustID 				
 		,	CTSCustID 			
@@ -91,8 +90,7 @@ sp:BEGIN
 		,	WinlossRM 			
 		,	BetCount 			
 		,	ActiveDays 			
-		,	TargetCC 			
-		,	FromCategoryID 		
+		,	TargetCC 				
 		,	ActionType 			
 		,	LastModifiedDate 	
 		,	LastModifiedBy 		
