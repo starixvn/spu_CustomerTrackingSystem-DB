@@ -12,26 +12,57 @@ BEGIN
 		Original: 
 		Revisions:
 			- 20200622@Lex.Khuat: Created [Redmine ID: #133934]
-            - 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+            - 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]            
+            - 20220922@Long.Luu: adjust to be called internally inside another SP [Redmine ID: 176991]
 			
 		Param's Explanation:
+        
+        Example:
+			- CALL CTS_DC_Common_GetAllSubscriberGroups();
 	*/
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_SiteInfo;
+	CREATE TEMPORARY TABLE 		Temp_SiteInfo (
+			SiteID 					BIGINT UNSIGNED PRIMARY KEY
+        ,   SiteName 				VARCHAR(50)
+		,	SubscriberGroupID		SMALLINT UNSIGNED
+        ,	SubscriberGroupName		VARCHAR(50)
+        ,	ParentID				SMALLINT UNSIGNED
+        ,	DisplayOrder			TINYINT UNSIGNED
+        ,   IsLicensee				SMALLINT
+        ,	IsChosen				SMALLINT DEFAULT 0
+	);
+            
+	INSERT INTO Temp_SiteInfo (SiteID,SiteName,SubscriberGroupID,SubscriberGroupName,ParentID,DisplayOrder,IsLicensee)
     SELECT DISTINCT s.SiteID
 		, 	s.SiteName
         , 	s.SubscriberGroupID
         , 	sg.SubscriberGroupName
         , 	sg.ParentID
         , 	sg.DisplayOrder
-        , 	sg.IsActive
+        ,	CASE WHEN MAX(s.SubscriberGroupID) = 2 THEN 1 ELSE 0 END AS IsLicensee
     FROM CTS_DataCenter.MappingSubscriberSite AS s
 		INNER JOIN CTS_DataCenter.SubscriberGroup AS sg ON s.SubscriberGroupID = sg.SubscriberGroupID
         LEFT JOIN CTS_Admin.Subscriber AS sub ON s.SubscriberID = sub.SubscriberID
     WHERE sg.IsActive = 1
 		AND sub.IsTest = 0
         AND sub.SubscriberStatus = 1
-    ORDER BY sg.DisplayOrder ASC, s.SiteName ASC;
+	GROUP BY s.SiteID
+		, 	s.SiteName
+        , 	s.SubscriberGroupID
+        , 	sg.SubscriberGroupName
+        , 	sg.ParentID
+        , 	sg.DisplayOrder;
     
+    SELECT DISTINCT SiteID
+		, 	SiteName
+        , 	SubscriberGroupID
+        , 	SubscriberGroupName
+        , 	ParentID
+        , 	DisplayOrder
+        , 	1 AS IsActive
+	FROM Temp_SiteInfo
+    ORDER BY DisplayOrder ASC, SiteName ASC;
 END$$
 
 DELIMITER ;

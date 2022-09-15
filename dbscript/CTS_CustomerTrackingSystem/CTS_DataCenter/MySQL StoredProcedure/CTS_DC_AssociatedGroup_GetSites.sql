@@ -30,12 +30,16 @@ BEGIN
 			SiteID 		BIGINT UNSIGNED PRIMARY KEY
 	);
     
-	DROP TEMPORARY TABLE IF EXISTS Temp_Site;
-	CREATE TEMPORARY TABLE 		Temp_Site (
-			 SiteID 			BIGINT UNSIGNED PRIMARY KEY
-        ,    SiteName 			VARCHAR(50)
-        ,    IsLicensee			SMALLINT
-        ,	 IsChosen			SMALLINT DEFAULT 0
+	DROP TEMPORARY TABLE IF EXISTS Temp_SiteInfo;
+	CREATE TEMPORARY TABLE 		Temp_SiteInfo (
+			SiteID 					BIGINT UNSIGNED PRIMARY KEY
+        ,   SiteName 				VARCHAR(50)
+		,	SubscriberGroupID		SMALLINT UNSIGNED
+        ,	SubscriberGroupName		VARCHAR(50)
+        ,	ParentID				SMALLINT UNSIGNED
+        ,	DisplayOrder			TINYINT UNSIGNED
+        ,   IsLicensee				SMALLINT
+        ,	IsChosen				SMALLINT DEFAULT 0
 	);
     
     SELECT 	AllCredit
@@ -54,18 +58,9 @@ BEGIN
 		EXECUTE 	stmt1;
 	END IF;
     
-	
-    
-    INSERT IGNORE INTO Temp_Site(SiteID,SiteName,IsLicensee)
-	SELECT 	SiteID
-		,	SiteName
-		,	CASE WHEN MAX(SubscriberGroupID) = 2 THEN 1 
-			ELSE 0 END AS IsLicensee
-	FROM CTS_DataCenter.MappingSubscriberSite
-	GROUP BY SiteID
-		,	 SiteName;
+    CALL CTS_DC_Common_GetAllSubscriberGroups();
         
-	UPDATE Temp_Site AS site
+	UPDATE Temp_SiteInfo AS site
     SET IsChosen = 1
     WHERE (IsLicensee = 0 AND lv_AllCredit = 1) 
 		OR (IsLicensee = 1 AND lv_AllLicensee = 1)
@@ -75,6 +70,6 @@ BEGIN
         ,   SiteName 			
         ,   IsLicensee		
         ,	IsChosen	
-    FROM Temp_Site;
+    FROM Temp_SiteInfo;
 END$$
 DELIMITER ;
