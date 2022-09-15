@@ -19,7 +19,6 @@ BEGIN
         
 		Example:
 			CALL CTS_DataCenter.CTS_DC_CustClassification_MatchMonitor_Classify();
-            CALL CTS_DataCenter.CTS_DC_CustClassification_MatchMonitor_Completed(50604006,NULL);
 	 */ 
 	DECLARE lv_PackSize INT;
 	DECLARE lv_MatchID INT;
