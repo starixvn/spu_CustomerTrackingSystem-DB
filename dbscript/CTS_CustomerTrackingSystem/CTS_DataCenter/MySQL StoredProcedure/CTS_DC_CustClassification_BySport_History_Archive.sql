@@ -133,8 +133,7 @@ sp:BEGIN
 			,	WinlossRM 			
 			,	BetCount 			
 			,	ActiveDays 			
-			,	TargetCC 			
-			,	FromCategoryID 		
+			,	TargetCC 				
 			,	ActionType 			
 			,	LastModifiedDate 	
 			,	LastModifiedBy 		
