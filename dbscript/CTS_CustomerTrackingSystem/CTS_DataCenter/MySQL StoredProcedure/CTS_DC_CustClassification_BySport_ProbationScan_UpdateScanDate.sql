@@ -13,7 +13,7 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original:
 		Revisions:
-			- 
+			- 20220907@Harvey.Nguyen: Initial [RedmineID: #177434]
 		Param's Explanation (filtered by):
             -ip_CustSport:    
 	*/
