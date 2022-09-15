@@ -18,8 +18,10 @@ AS
 		- 20200901@Jonas.Huynh: Created [Redmine ID: #176992]
 
 	Param's Explanation:
-				@CustomersXML = N'	<r CustId="101" SportId="2" CategoryId ="201"/>
-									<r CustId="101" SportId="1" CategoryId ="201"/>'
+				@CustomersXML = N'<Root>
+										<r CustId="4345542" SportId="2" CategoryId ="201"/>
+										<r CustId="4345542" SportId="1" CategoryId ="201"/>
+								 </Root>';
 	Example: 
 		exec [dbo].[CTS_NormalAccountsClassification_BySport_RealTime]
 */
@@ -48,9 +50,9 @@ BEGIN
 		[IsSpecialSite]		BIT DEFAULT 0,
 		[IsDeposit]			BIT DEFAULT 0,
 		[SRecommend]		INT,
-		[TurnoverRM]		MONEY NULL,
-		[WinlossRM]			MONEY NULL,
-		[Margin]			MONEY NULL,
+		[TurnoverRM]		DECIMAL(19, 4) NULL,
+		[WinlossRM]			DECIMAL(19, 4) NULL,
+		[Margin]			DECIMAL(19, 4) NULL,
 		[BetCount]			BIGINT NULL,
 		[ActiveDays]		INT NULL,
 		[CurrentCategoryId]	SMALLINT NULL
@@ -161,8 +163,8 @@ BEGIN
 			 WHERE     (r.RuleGroupId = 1 AND a.BetCount < r.BetCount)																										-- NEW MEMBER			
 					OR (r.RuleGroupId = 2 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM > r.WinlossRM)			-- NEW MEMBER	
 					OR (r.RuleGroupId = 3 AND a.BetCount > r.BetCount AND a.Margin < r.Margin AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays)				-- GOOD
-					OR (r.RuleGroupId = 4 AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin < r.Margin2)													-- NORMAL
-					OR (r.RuleGroupId = 5 AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND NOT (a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays))		-- NORMAL
+					OR (r.RuleGroupId = 4 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin < r.Margin2)				-- NORMAL
+					OR (r.RuleGroupId = 5 AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND NOT (a.BetCount > r.BetCount2 AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays))		-- NORMAL
 					OR (r.RuleGroupId = 6 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM <= r.WinlossRM)		-- NORMAL
 					OR (r.RuleGroupId = 7 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM < r.WinlossRM)				-- NORMAL
 					OR (r.RuleGroupId = 9 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin)												-- PROBATION

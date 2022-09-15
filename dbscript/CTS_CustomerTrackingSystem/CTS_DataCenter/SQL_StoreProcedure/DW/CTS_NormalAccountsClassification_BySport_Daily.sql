@@ -5,7 +5,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CTS_NormalAccountsClassification_BySport_Daily]
+ALTER PROCEDURE [dbo].[CTS_NormalAccountsClassification_BySport_Daily]
 	 @CustomersXML			XML
 AS
 /*
@@ -26,14 +26,6 @@ BEGIN
 	
 	SET NOCOUNT ON;
 
-	DECLARE @GENERALCATEGORY_NEWMEMBER			INT = 201
-		,	@GENERALCATEGORY_NORMALMEMBER		INT = 202
-		,	@GENERALCATEGORY_SMARTPUNTER		INT = 203
-		,	@GENERALCATEGORY_HIGHRISKPUNTER		INT = 204
-		,	@GENERALCATEGORY_VIP				INT = 205
-		,	@GENERALCATEGORY_PROBATION			INT = 206
-		,	@GENERALCATEGORY_INACTIVE			INT = 1000;
-
 	DECLARE @SPORT_SOCCER				SMALLINT = 1;
 	DECLARE @SPORT_BASKETBALL			SMALLINT = 2;
 	DECLARE @SPORT_ESPORT				SMALLINT = 43;
@@ -41,7 +33,6 @@ BEGIN
 
 	DECLARE @CurrentDateTime		DATETIME = GETDATE();
 	DECLARE @CurrentDate			DATE	 = GETDATE();
-	DECLARE @Back3DaysFromToday		DATE	 = DATEADD(DAY, -3, @CurrentDate);	
 	DECLARE	@ToDate					DATE	 = GETDATE();
 	DECLARE	@From30Date				DATE	 = DATEADD(DAY, - 30, @ToDate);
 
@@ -216,7 +207,7 @@ BEGIN
 				,	a.WinlossRM
 				,	a.BetCount
 				,	a.ActiveDays
-				,	ROW_NUMBER() OVER(PARTITION BY a.CustId, a.SportId, r.CategorId ORDER BY r.Prioity ASC) AS RowNum
+				,	ROW_NUMBER() OVER(PARTITION BY a.CustId, a.SportId, r.CategoryId ORDER BY r.Prioity ASC) AS RowNum
 			 FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 				INNER JOIN dbo.CustomerClassification_BySport_Rule AS r WITH(NOLOCK) ON a.SportId = r.SportId 
 			 WHERE a.BetCount < r.BetCount																										-- NEW MEMBER			

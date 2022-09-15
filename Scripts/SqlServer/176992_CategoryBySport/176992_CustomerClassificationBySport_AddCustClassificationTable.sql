@@ -25,8 +25,8 @@ CREATE TABLE [dbo].[CustomerClassification_BySport](
 	[CreatedDate] [date] NOT NULL,
 	[IsApplied] [bit] NULL DEFAULT ((0)),
 	[CreatedTime] [datetime] NULL,
-	[TurnoverRM] [money] NULL,
-	[WinlossRM] [money] NULL,
+	[TurnoverRM] DECIMAL(19, 4) NULL,
+	[WinlossRM] DECIMAL(19, 4) NULL,
 	[BetCount] [bigint] NULL,
 	[ActiveDays] [int] NULL
 ) ON [PRIMARY]

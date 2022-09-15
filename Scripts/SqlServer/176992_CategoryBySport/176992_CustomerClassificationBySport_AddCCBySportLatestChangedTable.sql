@@ -21,12 +21,12 @@ GO
 CREATE TABLE [dbo].[CustomerClassification_BySport_LatestChanged](
 	[CustId] [int] NOT NULL,
 	[SportId] [int] NOT NULL,
-	[TurnoverRM] [money] NULL,
-	[WinlossRM] [money] NULL,
+	[TurnoverRM] DECIMAL(19, 4) NULL,
+	[WinlossRM] DECIMAL(19, 4) NULL,
 	[BetCount] [bigint] NULL,
 	[ActiveDays] [int] NULL,
 	[LastModifiedDate] [date] NULL,
-	[Margin] [money] NULL,
+	[Margin] DECIMAL(19, 4) NULL,
 PRIMARY KEY CLUSTERED 
 (
 	[CustId] ASC,
