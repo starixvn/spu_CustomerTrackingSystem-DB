@@ -332,15 +332,6 @@ BEGIN
 
 	EXEC CTS_TWGroupBetting_SyncDataGroupBettingTicket @GBTicketXMLString, @LastSequenceId_New;		
 
-	IF @ServerName = 'DB061'
-	BEGIN
-		EXEC DB06.bodb02.dbo.CTS_TWGroupBetting_SyncDataGroupBettingTicket @GBTicketXMLString, @LastSequenceId_New;		
-	END
-	ELSE IF @ServerName = 'DB062'
-	BEGIN 
-		EXEC DB061.bodb02.dbo.CTS_TWGroupBetting_SyncDataGroupBettingTicket @GBTicketXMLString, @LastSequenceId_New;
-	END
-
 	DROP TABLE #TmpSuspectTicket
 	DROP TABLE #TmpBigLeague;
 END;
