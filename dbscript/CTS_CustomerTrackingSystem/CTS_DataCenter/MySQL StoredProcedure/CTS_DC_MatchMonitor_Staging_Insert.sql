@@ -21,6 +21,7 @@ BEGIN
             -	20211213@Casey.Huynh: Enhance MM, Add column LeagueName [Redmine ID: 165606]
             -	20220110@Casey.Huynh: Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
             - 	20220726@Casey.Huynh: Fixed Game [Redmine ID: #175700]
+            - 	20220830@Casey.Huynh: New Category for Classify Group Betting [Redmine ID: #176976]
 	-	20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
             
 		Param's Explanation (filtered by):		
@@ -133,7 +134,7 @@ BEGIN
 		#=====UPDATE SYSTEM PARAMETER===============================
 		SELECT MAX(mms.SequenceID)
 		INTO lv_LastSequenceID
-		FROM CTS_DataCenter.MatchMonitorTransLive AS mms;  
+		FROM CTS_DataCenter.MatchMonitorStagingLive AS mms;  
             
             
          IF lv_LastSequenceID > 0 THEN	   
@@ -243,7 +244,7 @@ BEGIN
 		#=====UPDATE SYSTEM PARAMETER===============================
 		SELECT 	MAX(mms.SequenceID)
 		INTO 	lv_LastSequenceID
-		FROM	CTS_DataCenter.MatchMonitorTransNonLive AS mms;  
+		FROM	CTS_DataCenter.MatchMonitorStagingNonLive AS mms;  
             
         IF lv_LastSequenceID > 0 THEN	   
 			UPDATE 	CTS_DataCenter.SystemParameter AS sys
