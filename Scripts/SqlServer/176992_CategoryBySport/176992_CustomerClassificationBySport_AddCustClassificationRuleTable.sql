@@ -200,10 +200,10 @@ VALUES (44, 11, 99, 203, 'Smart', 2, 0, '<=', 2, '<=', 30, '>=', 10000, '>');
 
 
 INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleId, RuleGroupId, SportId, CategoryId, CategoryName, Prioity, Margin, Operator_Margin, BetCount, Operator_BetCount, WinlossRM, Operator_Winloss, WinlossRM2, Operator_Winloss2)  
-VALUES (45, 12, 43, 203, 'Smart', 2, 2, '>', 30, '>=', 0, '>', 10000, '<=');
+VALUES (45, 12, 43, 203, 'Smart', 2, 2, '>', 30, '>=', 10000, '>', 20000, '<=');
 
 INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleId, RuleGroupId, SportId, CategoryId, CategoryName, Prioity, Margin, Operator_Margin, BetCount, Operator_BetCount, WinlossRM, Operator_Winloss, WinlossRM2, Operator_Winloss2)  
-VALUES (46, 12, 99, 203, 'Smart', 2, 2, '>', 30, '>=', 0, '>', 10000, '<=');
+VALUES (46, 12, 99, 203, 'Smart', 2, 2, '>', 30, '>=', 10000, '>', 20000, '<=');
 
 
 INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleId, RuleGroupId, SportId, CategoryId, CategoryName, Prioity, Margin, Operator_Margin, BetCount, Operator_BetCount, WinlossRM, Operator_Winloss, WinlossRM2, Operator_Winloss2) 
@@ -223,13 +223,13 @@ INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleId, RuleGroupId, Sp
 VALUES (51, 14, 1, 203, 'Smart', 2, 203, 0, '>=', 1, '<=', 20, '>=', 10000, '>');
 
 INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleId, RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, Margin, Operator_Margin, Margin2, Operator_Margin2, BetCount, Operator_BetCount, WinlossRM, Operator_Winloss)   
-VALUES (52, 14, 1, 203, 'Smart', 2, 203, 0, '>=', 1, '<=', 10, '>=', 10000, '>');
+VALUES (52, 14, 2, 203, 'Smart', 2, 203, 0, '>=', 1, '<=', 10, '>=', 10000, '>');
 
 INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleId, RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, Margin, Operator_Margin, Margin2, Operator_Margin2, BetCount, Operator_BetCount, WinlossRM, Operator_Winloss)   
-VALUES (53, 14, 1, 203, 'Smart', 2, 203, 0, '>=', 2, '<=', 30, '>=', 5000, '>');
+VALUES (53, 14, 43, 203, 'Smart', 2, 203, 0, '>=', 2, '<=', 30, '>=', 5000, '>');
 
 INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleId, RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, Margin, Operator_Margin, Margin2, Operator_Margin2, BetCount, Operator_BetCount, WinlossRM, Operator_Winloss)   
-VALUES (54, 14, 1, 203, 'Smart', 2, 203, 0, '>=', 2, '<=', 30, '>=', 5000, '>');
+VALUES (54, 14, 99, 203, 'Smart', 2, 203, 0, '>=', 2, '<=', 30, '>=', 5000, '>');
 
 -- Risky
 INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleId, RuleGroupId, SportId, CategoryId, CategoryName, Prioity, Margin, Operator_Margin, BetCount, Operator_BetCount, WinlossRM, Operator_Winloss) 
@@ -249,10 +249,10 @@ INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleId, RuleGroupId, Sp
 VALUES (59, 16, 1, 204, 'Risky', 1, 204, 1, '>', 20, '>=', 10000, '>');
 
 INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleId, RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, Margin, Operator_Margin, BetCount, Operator_BetCount, WinlossRM, Operator_Winloss) 
-VALUES (60, 16, 2, 204, 'Risky', 1, 204, 1, '>', 10, '<=', 10000, '>');
+VALUES (60, 16, 2, 204, 'Risky', 1, 204, 1, '>', 10, '>=', 10000, '>');
 
 INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleId, RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, Margin, Operator_Margin, BetCount, Operator_BetCount, WinlossRM, Operator_Winloss) 
-VALUES (61, 16, 43, 204, 'Risky', 1, 204, 2, '>', 30, '<=', 10000, '>');
+VALUES (61, 16, 43, 204, 'Risky', 1, 204, 2, '>', 30, '>=', 10000, '>');
 
 INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleId, RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, Margin, Operator_Margin, BetCount, Operator_BetCount, WinlossRM, Operator_Winloss) 
-VALUES (62, 16, 99, 204, 'Risky', 1, 204, 2, '>', 30, '<=', 10000, '>');
+VALUES (62, 16, 99, 204, 'Risky', 1, 204, 2, '>', 30, '>=', 10000, '>');

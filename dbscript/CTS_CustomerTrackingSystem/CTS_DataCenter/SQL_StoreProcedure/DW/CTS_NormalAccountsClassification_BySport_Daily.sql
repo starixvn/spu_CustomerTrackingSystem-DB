@@ -18,7 +18,10 @@ AS
 		- 20200901@Jonas.Huynh: Created [Redmine ID: #176992]
 
 	Param's Explanation:
-
+				@CustomersXML = N'<Root>
+										<r CustId="4345542" SportId="2" CategoryId ="201"/>
+										<r CustId="4345542" SportId="1" CategoryId ="201"/>
+								 </Root>';
 	Example: 
 		exec [dbo].[CTS_NormalAccountsClassification_BySport_Daily]
 */
@@ -46,10 +49,10 @@ BEGIN
 		[CustId]			INT NOT NULL,
 		[SportId]			INT NOT NULL,
 		[SportGroup]		VARCHAR(50) NOT NULL,
-		[TurnoverRM]		MONEY NULL,
-		[WinlossRM]			MONEY NULL,
-		[TurnoverORG]		MONEY NULL,
-		[WinlossORG]		MONEY NULL,
+		[TurnoverRM]		DECIMAL(19, 4) NULL,
+		[WinlossRM]			DECIMAL(19, 4) NULL,
+		[TurnoverORG]		DECIMAL(19, 4) NULL,
+		[WinlossORG]		DECIMAL(19, 4) NULL,
 		[BetCount]			BIGINT NULL,
 		[ActiveDays]		INT NULL,
 		PRIMARY KEY (CustId, SportId)
@@ -65,9 +68,9 @@ BEGIN
 		[IsSpecialSite]		BIT DEFAULT 0,
 		[IsDeposit]			BIT DEFAULT 0,
 		[SRecommend]		INT,
-		[TurnoverRM]		MONEY NULL,
-		[WinlossRM]			MONEY NULL,
-		[Margin]			MONEY NULL,
+		[TurnoverRM]		DECIMAL(19, 4) NULL,
+		[WinlossRM]			DECIMAL(19, 4) NULL,
+		[Margin]			DECIMAL(19, 4) NULL,
 		[BetCount]			BIGINT NULL,
 		[ActiveDays]		INT NULL,
 		[CurrentCategoryId]	SMALLINT NULL
@@ -108,7 +111,7 @@ BEGIN
 	FROM @CustomersXML.nodes('//r') AS T(C)
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 
-	-- #1: Filter Customers
+	-- #1: Filter Inactive Customers
 	SELECT @ListCustIds = STUFF((SELECT ',', CONVERT(VARCHAR(15), CustId) 
 							FROM #tmpCustomers WITH (NOLOCK)
 							FOR XML PATH('')), 1, 1, '');
@@ -121,7 +124,7 @@ BEGIN
 	SELECT CustId, @CurrentDate, @CurrentDateTime, @FunctionId, IsActive
 	FROM #tmpInactiveMember;
 	
-	-- Remove closed & disabled accounts & SMA account & Internal Account
+	-- #2: Remove account Closed & Disabled accounts & SMA account & Internal Account
 	DELETE r WITH(ROWLOCK)
 	FROM #tmpCustomers AS r
 		INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON r.CustId = c.custid
@@ -131,13 +134,13 @@ BEGIN
 		OR c.recommend IN (52466,5707545,29270764,134456)
 		OR c.username LIKE '%CashOut';
 
-	-- Remove inactive accounts
+	---- Remove Inactive accounts
 	DELETE r WITH(ROWLOCK)
 	FROM #tmpCustomers AS r
 		INNER JOIN #tmpInactiveMember As a WITH(NOLOCK) ON r.CustId = a.CustId
 	WHERE a.IsActive = 0;
 
-	-- #2: GetCustomer Accummulated data
+	-- #3: GetCustomer Accummulated data
 	SELECT @ListCustIds = STUFF((SELECT ',', CONVERT(VARCHAR(15), CustId) 
 								FROM #tmpCustomers WITH (NOLOCK)
 								FOR XML PATH('')), 1, 1, '');
@@ -145,33 +148,37 @@ BEGIN
 	INSERT INTO #tmpRawData(CustId, SportId, SportGroup, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDays)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @ListCustIds, @ResultDataMode = 1;	
 	
-	-- #3: Remove Non-Sport
+	-- #4: Remove Non-Sport
 	DELETE r WITH(ROWLOCK)
 	FROM #tmpRawData AS r
 	WHERE SportGroup = 'NonSport'
 
-	-- #4: Update SportId for OtherSports
+	-- #5: Update SportId for OtherSports
 	UPDATE r WITH(ROWLOCK, UPDLOCK)
 	SET r.SportId = @SPORT_OTHERSPORT
 	FROM #tmpRawData AS r
 	WHERE r.SportId NOT IN (@SPORT_SOCCER, @SPORT_BASKETBALL, @SPORT_ESPORT)
 
-	-- #5: Sum data by custid, sportid
-	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, SportId, CurrentCategoryId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
+	-- #6: Sum data by custid, sportid
+	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, SportId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
 	SELECT	a.CustId
 		,	a.SportId
-		,   c.CurrentCategoryId
 		,	SUM(a.TurnoverRM)
 		,	SUM(a.WinlossRM)
 		,	CASE WHEN SUM(a.TurnoverRM) = 0 THEN 0 ELSE SUM(a.WinlossRM) / SUM(a.TurnoverRM) * 100 END
 		,	SUM(a.BetCount)
 		,	MAX(a.ActiveDays)
 	FROM #tmpRawData AS a WITH(NOLOCK)
-		INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.CustId AND a.SportId = c.SportId
 	GROUP BY a.CustId, a.SportId;
 
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
-	SET	a.Site = c.Site
+	SET a.CurrentCategoryId = c.CurrentCategoryId
+	FROM #tmpCustomerAccummulatedInfo as a
+		INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.CustId AND a.SportId = c.SportId 
+	
+	-- Get site info
+	UPDATE a WITH(ROWLOCK, UPDLOCK)
+	SET	  a.Site = c.Site
 		, a.SRecommend = c.srecommend
 		, a.IsSpecialSite = CASE WHEN c.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') THEN 1 ELSE 0 END
 	FROM #tmpCustomerAccummulatedInfo AS a
@@ -182,7 +189,7 @@ BEGIN
 	FROM #tmpCustomerAccummulatedInfo AS a
 		INNER JOIN bodb02.dbo.Dep_CustSuper AS c WITH(NOLOCK) ON a.SRecommend = c.custid;
 
-	-- #6: Remove 'Odd Feed Sites'
+	-- Remove 'Odd Feed Sites'
 	DELETE a
 	FROM  #tmpCustomerAccummulatedInfo AS a WITH(ROWLOCK)
 	WHERE (a.Site = 'NextBet' OR a.Site = '9wickets' OR a.Site = '9wsports');
@@ -202,7 +209,6 @@ BEGIN
 			SELECT a.CustId
 				,	a.SportId
 				,   r.CategoryId
-				,   r.Prioity
 				,	a.TurnoverRM
 				,	a.WinlossRM
 				,	a.BetCount
@@ -210,21 +216,22 @@ BEGIN
 				,	ROW_NUMBER() OVER(PARTITION BY a.CustId, a.SportId, r.CategoryId ORDER BY r.Prioity ASC) AS RowNum
 			 FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 				INNER JOIN dbo.CustomerClassification_BySport_Rule AS r WITH(NOLOCK) ON a.SportId = r.SportId 
-			 WHERE a.BetCount < r.BetCount																										-- NEW MEMBER			
-					OR (a.IsSpecialSite = 1 AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM > r.WinlossRM)					-- NEW MEMBER	
-					OR (a.BetCount > r.BetCount AND a.Margin < r.Margin AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays)		-- GOOD
-					OR (a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin < r.Margin2)												-- NORMAL
-					OR (a.BetCount >= r.BetCount AND a.Margin < r.Margin AND (a.TurnoverRM <= r.TurnoverRM OR a.ActiveDays < r.ActiveDays))		-- NORMAL
-					OR (a.IsSpecialSite = 1 AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM <= r.WinlossRM)				-- NORMAL
-					OR (a.IsDeposit = 0 AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM < r.WinlossRM)					-- NORMAL
-					OR (a.IsDeposit = 0 AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM >= r.WinlossRM)					-- PROBATION
-					OR (a.IsDeposit = 1 AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin)													-- PROBATION
-					OR (a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.BetCount >= r.BetCount AND a.WinlossRM <= r.WinlossRM)				-- PROBATION
-					OR (a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)				-- SMART
-					OR (a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM <= r.WinlossRM)										-- SMART
-					OR (r.CurrentCategory != NULL AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin <= r.Margin AND a.Margin <= r.Margin2 AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM) -- SMART
-					OR (a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)											-- RISKY
-					OR (r.CurrentCategory != NULL AND r.CurrentCategory = a.CurrentCategoryId AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)			-- RISKY
+			 WHERE     (r.RuleGroupId = 1 AND a.BetCount < r.BetCount)																																-- NEW MEMBER			
+					OR (r.RuleGroupId = 2 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM > r.WinlossRM)												-- NEW MEMBER	
+					OR (r.RuleGroupId = 3 AND a.BetCount > r.BetCount AND a.Margin < r.Margin AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays)										-- GOOD
+					OR (r.RuleGroupId = 4 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin < r.Margin2)										-- NORMAL
+					OR (r.RuleGroupId = 5 AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND NOT (a.BetCount > r.BetCount2 AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays))	-- NORMAL
+					OR (r.RuleGroupId = 6 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM <= r.WinlossRM)								-- NORMAL
+					OR (r.RuleGroupId = 7 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM < r.WinlossRM)										-- NORMAL
+					OR (r.RuleGroupId = 8 AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.WinlossRM <= r.WinlossRM)											-- PROBATION
+					OR (r.RuleGroupId = 9 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin)																		-- PROBATION
+					OR (r.RuleGroupId = 10 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM >= r.WinlossRM)										-- PROBATION
+					OR (r.RuleGroupId = 11 AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)											-- SMART
+					OR (r.RuleGroupId = 12 AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM AND a.WinlossRM <= r.WinlossRM2)										-- SMART
+					OR (r.RuleGroupId = 13 AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM < r.WinlossRM AND a.WinlossRM <= r.WinlossRM2)										-- SMART
+					OR (r.RuleGroupId = 14 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)-- RISKY
+					OR (r.RuleGroupId = 15 AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)																		-- RISKY
+					OR (r.RuleGroupId = 16 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)							-- RISKY
 		) as b
 	 WHERE b.RowNum = 1;
 
