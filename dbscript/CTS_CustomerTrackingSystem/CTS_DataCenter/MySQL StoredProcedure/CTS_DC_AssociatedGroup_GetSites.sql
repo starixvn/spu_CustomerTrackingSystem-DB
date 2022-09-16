@@ -58,7 +58,7 @@ BEGIN
 		EXECUTE 	stmt1;
 	END IF;
     
-    CALL CTS_DC_Common_GetAllSubscriberGroups();
+    CALL CTS_DC_Common_GetSites(1);
         
 	UPDATE Temp_SiteInfo AS site
     SET IsChosen = 1
