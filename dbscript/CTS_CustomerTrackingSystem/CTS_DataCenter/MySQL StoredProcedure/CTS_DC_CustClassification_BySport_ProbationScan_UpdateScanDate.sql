@@ -25,8 +25,8 @@ BEGIN
         ,	PRIMARY KEY (CustID, SportID)
     );     
     
-    INSERT INTO Temp_CustSport(CustID, SportGroupID) 
-	SELECT DISTINCT temp.CustID, temp.SportGroupID
+    INSERT INTO Temp_CustSport(CustID, SportID) 
+	SELECT DISTINCT temp.CustID, temp.SportID
 	FROM JSON_TABLE(ip_CustSport,
 		 "$[*]" COLUMNS(
 			  CustID 		BIGINT UNSIGNED		PATH "$.CustID"

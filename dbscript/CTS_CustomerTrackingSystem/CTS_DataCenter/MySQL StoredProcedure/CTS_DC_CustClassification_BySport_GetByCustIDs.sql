@@ -2,7 +2,7 @@
 DROP procedure IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_BySport_GetByCustIDs`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_BySport_GetByCustIDs`(
+CREATE PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_BySport_GetByCustIDs`(
 	  IN ip_CustSport      	JSON
 )
     SQL SECURITY INVOKER
@@ -19,6 +19,7 @@ BEGIN
 	
     DECLARE	CONST_CATEGORY_NEWMEMBER 	INT DEFAULT 201;
 	DECLARE	CONST_CATEGORY_NORMALMEMBER INT DEFAULT 202;
+    DECLARE	CONST_CATEGORY_GOOD			INT DEFAULT 205;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_RealtimeCustomers;
 	CREATE TEMPORARY TABLE Temp_RealtimeCustomers(
@@ -31,17 +32,17 @@ BEGIN
 	SELECT 	temp.CustID, temp.SportID
 	FROM JSON_TABLE(ip_CustSport,
 		 "$[*]" COLUMNS(
-			CustID 				BIGINT UNSIGNED		PATH "$.CustID"
-		, 	SportID				SMALLINT UNSIGNED	PATH "$.SportID"	
+			CustID 		BIGINT UNSIGNED		PATH "$.CustId"
+		, 	SportID		SMALLINT UNSIGNED	PATH "$.SportId"	
 		 )) AS temp;       
          
-	SELECT 		cate.CustID AS CustID
-			, 	cate.SportID
-			, 	cc.CategoryGroup AS CategoryID
+	SELECT 		temp.CustID
+			, 	temp.SportID
+			, 	cate.CategoryID
 	FROM Temp_RealtimeCustomers AS temp
-		INNER JOIN 	CTS_DataCenter.CTSCustomerClassification_BySport AS cate ON cate.CustID = temp.CustID AND cate.SportID = temp.SportID
-		INNER JOIN	CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
-	WHERE	cc.CategoryGroup IN (CONST_CATEGORY_NEWMEMBER, CONST_CATEGORY_NORMALMEMBER)
+	LEFT JOIN 	CTS_DataCenter.CTSCustomerClassification_BySport AS cate ON cate.CustID = temp.CustID AND cate.SportID = temp.SportID
+	WHERE	(cate.CategoryID IN (CONST_CATEGORY_NEWMEMBER, CONST_CATEGORY_NORMALMEMBER, CONST_CATEGORY_GOOD)
+			OR cate.CustID IS NULL)
 			AND NOT EXISTS (SELECT 1 
 							 FROM  CTS_DataCenter.ProbationAccountMonitor_BySport AS pro 
 							 WHERE pro.CustID = temp.CustID AND pro.SportID = temp.SportID);
