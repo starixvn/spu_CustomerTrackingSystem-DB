@@ -119,7 +119,7 @@ BEGIN
 					ELSE 0
 				END 'IsBigLeague'
 			, pf.Tag
-	FROM dbo.bettrans AS b WITH (NOLOCK)
+	FROM dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
 		INNER JOIN dbo.Dep_CustSuper AS dCust WITH (NOLOCK) ON  dCust.custid = b.srecommend
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 		LEFT JOIN dbo.LicUserProfile AS pf WITH (NOLOCK) ON b.Custid = pf.CustId
@@ -129,7 +129,7 @@ BEGIN
 		AND b.currency <> 20
 		AND m.sporttype IN (1,2)
 		AND b.bettype IN (1,3,7,8,609,610)
-	ORDER BY b.transid ASC;
+	ORDER BY b.sequenceid ASC;
 
 	---  less rows than #TmpSuspectTicket
 	UPDATE t WITH(UPDLOCK, ROWLOCK)
