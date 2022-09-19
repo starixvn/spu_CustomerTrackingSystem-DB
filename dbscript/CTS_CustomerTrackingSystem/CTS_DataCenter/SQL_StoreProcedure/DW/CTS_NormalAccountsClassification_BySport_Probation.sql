@@ -224,7 +224,7 @@ BEGIN
 					OR (r.RuleGroupId = 6 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM <= r.WinlossRM)	-- NORMAL
 					OR (r.RuleGroupId = 7 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM < r.WinlossRM)			-- NORMAL
 					OR (r.RuleGroupId = 11 AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)				-- SMART
-					OR (r.RuleGroupId = 12 AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM < r.WinlossRM AND a.WinlossRM <= r.WinlossRM2)			-- SMART
+					OR (r.RuleGroupId = 12 AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM AND a.WinlossRM <= r.WinlossRM2)			-- SMART
 					OR (r.RuleGroupId = 15 AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)											-- RISKY
 		) as b
 	 WHERE b.RowNum = 1;
