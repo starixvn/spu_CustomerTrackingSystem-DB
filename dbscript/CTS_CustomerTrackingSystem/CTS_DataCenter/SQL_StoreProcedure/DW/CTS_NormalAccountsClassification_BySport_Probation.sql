@@ -89,9 +89,10 @@ BEGIN
 	END
 	
 	CREATE TABLE #tmpCustomers(
-		[CustId]					INT PRIMARY KEY,
+		[CustId]					INT,
 		[SportId]					SMALLINT,
-		[IsProbationLastDay]		BIT DEFAULT 0
+		[IsProbationLastDay]		BIT DEFAULT 0,
+		PRIMARY KEY ([CustId],[SportId])
 	);
 
 	IF OBJECT_ID('tempdb..#tmpActiveCustomers') IS NOT NULL
@@ -102,6 +103,16 @@ BEGIN
 	CREATE TABLE #tmpActiveCustomers(
 			CustId			INT PRIMARY KEY
 		,	IsActive		BIT DEFAULT 0
+	);
+
+	IF	OBJECT_ID('tempdb..#tmpResultData') IS NOT NULL
+		DROP TABLE	#tmpResultData;
+
+	CREATE TABLE #tmpResultData(
+		[CustId]			INT NOT NULL,
+		[SportId]			INT NOT NULL,
+		[CategoryId]		SMALLINT NOT NULL,
+		PRIMARY KEY ([CustId],[SportId])
 	);
 	
 	INSERT INTO #tmpCustomers(CustId, SportId, IsProbationLastDay)
@@ -195,28 +206,17 @@ BEGIN
 		INNER JOIN #tmpCustomers as c WITH(NOLOCK) ON a.CustId = c.CustId AND a.SportId = c.SportId
 
 	-- #7: Classify GOOD, NEW, NORMAL, PROBATION, SMART, RISKY MEMBER
-	INSERT INTO dbo.CustomerClassification_BySport(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
+	INSERT INTO #tmpResultData(CustId, SportId, CategoryId)
 	SELECT  CustId
 		,	SportId
-		,	CASE WHEN b.CategoryId = NULL THEN @CATEGORY_PROBATION ELSE b.CategoryId END
-		,	@CurrentDate
-		,	@CurrentDateTime
-		,	TurnoverRM
-		,	WinlossRM
-		,	BetCount
-		,	ActiveDays
+		,	CategoryId
 	FROM (
 			SELECT a.CustId
 				,	a.SportId
 				,   r.CategoryId
-				,   r.Prioity
-				,	a.TurnoverRM
-				,	a.WinlossRM
-				,	a.BetCount
-				,	a.ActiveDays
-				,	ROW_NUMBER() OVER(PARTITION BY a.CustId, a.SportId, r.CategoryId ORDER BY r.Prioity ASC) AS RowNum
+				,	ROW_NUMBER() OVER(PARTITION BY a.CustId, a.SportId ORDER BY r.Prioity ASC) AS RowNum
 			 FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
-				LEFT JOIN dbo.CustomerClassification_BySport_Rule AS r WITH(NOLOCK) ON a.SportId = r.SportId 
+				INNER JOIN dbo.CustomerClassification_BySport_Rule AS r WITH(NOLOCK) ON a.SportId = r.SportId 
 			 WHERE 	   (r.RuleGroupId = 2 AND a.IsSpecialSite = 1 AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM > r.WinlossRM)					-- NEW MEMBER	
 					OR (r.RuleGroupId = 3 AND a.BetCount > r.BetCount AND a.Margin < r.Margin AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays)			-- GOOD
 					OR (r.RuleGroupId = 4 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin < r.Margin2)			-- NORMAL
@@ -229,7 +229,21 @@ BEGIN
 		) as b
 	 WHERE b.RowNum = 1;
 
+	INSERT INTO dbo.CustomerClassification_BySport(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
+	SELECT  a.CustId
+		,	a.SportId
+		,	CASE WHEN r.CategoryId IS NULL THEN @CATEGORY_PROBATION ELSE r.CategoryId END
+		,	@CurrentDate
+		,	@CurrentDateTime
+		,	a.TurnoverRM
+		,	a.WinlossRM
+		,	a.BetCount
+		,	a.ActiveDays
+	 FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
+	   LEFT JOIN #tmpResultData AS r WITH(NOLOCK) ON a.CustId = r.CustId AND a.SportId = r.SportId
+
 	DROP TABLE #tmpRawData;
 	DROP TABLE #tmpCustomerAccummulatedInfo;
 	DROP TABLE #tmpCustomers;
+	DROP TABLE #tmpResultData;
 END;

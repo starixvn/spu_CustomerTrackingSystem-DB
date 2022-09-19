@@ -213,7 +213,7 @@ BEGIN
 				,	a.WinlossRM
 				,	a.BetCount
 				,	a.ActiveDays
-				,	ROW_NUMBER() OVER(PARTITION BY a.CustId, a.SportId, r.CategoryId ORDER BY r.Prioity ASC) AS RowNum
+				,	ROW_NUMBER() OVER(PARTITION BY a.CustId, a.SportId ORDER BY r.Prioity ASC) AS RowNum
 			 FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 				INNER JOIN dbo.CustomerClassification_BySport_Rule AS r WITH(NOLOCK) ON a.SportId = r.SportId 
 			 WHERE     (r.RuleGroupId = 1 AND a.BetCount < r.BetCount)																																-- NEW MEMBER			
