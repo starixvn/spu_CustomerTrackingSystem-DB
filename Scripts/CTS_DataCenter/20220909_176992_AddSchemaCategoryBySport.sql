@@ -17,8 +17,7 @@ CREATE TABLE CTSCustomerClassification_BySport (
 	,	LastModifiedBy INT UNSIGNED DEFAULT NULL
 	,	LastScannedDate DATE DEFAULT NULL
 	,	PRIMARY KEY (CustID,SportID)
-	,	KEY IX_CTSCustomerClassification_BySport_CustSportGroup(CTSCustID, SportID, LastModifiedDate)
-	,	KEY IX_CTSCustomerClassification_BySport_SportID_CreatedDate(SportID, CreatedDate)
+	,	KEY IX_CTSCustomerClassification_BySport_CustSportGroup(CTSCustID)
 	,	KEY IX_CTSCustomerClassification_BySport_CategoryID_CustID(CategoryID, CustID, LastScannedDate)
 	) ENGINE = InnoDB;
 
@@ -34,7 +33,6 @@ CREATE TABLE ProbationAccountMonitor_BySport (
 	,CreatedTime 		DATETIME NOT NULL
 	,LastScannedDate 	DATE DEFAULT NULL
 	,PRIMARY KEY (CustID, SportID)
-	,KEY IX_ProbationAccountMonitor_BySport_CustID(CustID)
 	,KEY IX_ProbationAccountMonitor_BySport_CreatedDate(CreatedDate)
 	,KEY IX_ProbationAccountMonitor_BySport_TargetCategoryID(TargetCategoryID)
 	,KEY IX_ProbationAccountMonitor_BySport_LastScannedDate(LastScannedDate)

@@ -42,8 +42,8 @@ BEGIN
 		,IFNULL(cate.CustomerClass, - 1) AS CustomerClass
 		,cate.CustomerClassName
 	FROM Temp_CustInfo temp
-	INNER JOIN CTSCustomerClassification_BySport clss ON temp.CustID = clss.CustID AND temp.SportID = clss.SportID
-	INNER JOIN CustomerCategory cate ON cate.CategoryID = clss.CategoryID;
+		INNER JOIN CTSCustomerClassification_BySport clss ON temp.CustID = clss.CustID AND temp.SportID = clss.SportID
+		INNER JOIN CustomerCategory cate ON cate.CategoryID = clss.CategoryID;
 
 END$$
 
