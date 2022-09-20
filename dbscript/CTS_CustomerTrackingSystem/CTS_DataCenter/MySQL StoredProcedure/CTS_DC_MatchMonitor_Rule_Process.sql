@@ -452,7 +452,7 @@ sp: BEGIN
         ,	HighStakeLicCustList 	LONGTEXT
         ,	LicenseeCustTotal		INT
     );	
-	    
+	
     INSERT INTO Temp_ResultGroup(GroupID, Reason, TransIDList, CustIDList, OldGroupIDList, HighStakeLicCustList , LicenseeCustTotal)
     SELECT  tmpTg.GroupID
         ,	(CASE WHEN COUNT(DISTINCT tmpSt.Betteam) > 1 THEN 2 ELSE 0 END) AS Reason
@@ -460,7 +460,7 @@ sp: BEGIN
         ,	GROUP_CONCAT(DISTINCT tmpSt.CustID) AS CustIDList
         ,	GROUP_CONCAT(DISTINCT tmpSt.OldGroupID) AS OldGroupIDList
         ,	GROUP_CONCAT(DISTINCT (CASE WHEN tmpSt.Stake >= lv_HighStake AND cus.IsLicensee = 1 THEN tmpTg.CustID ELSE NULL END)) AS HighStakeLicCustList
-        ,	SUM(CASE WHEN cus.IsLicensee THEN 1 ELSE 0 END) AS LicenseeCustTotal
+        ,	COUNT(DISTINCT (CASE WHEN cus.IsLicensee = 1 THEN cus.CustID ELSE NULL END)) AS LicenseeCustTotal
     FROM 	Temp_TransGroup AS tmpTg
 		INNER JOIN Temp_StagingTrans02  AS tmpSt ON tmpSt.CustID = tmpTg.CustID AND tmpSt.TransDate BETWEEN tmpTg.MinTransDate AND tmpTg.MaxTransDate
         INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpTg.CustID 
