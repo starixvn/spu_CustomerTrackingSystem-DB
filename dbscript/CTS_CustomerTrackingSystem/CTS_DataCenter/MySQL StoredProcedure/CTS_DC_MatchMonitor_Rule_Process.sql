@@ -29,6 +29,7 @@ sp: BEGIN
             -	20220217@Casey.Huynh: Enhance MM, Update TO >= 1000 [Redmine ID: 168736]
             - 	20220422@Irena.Vo: Mapping Is Hedging Reason (MM) from table CustomerCategory [Redmine ID: #170468]
             -	20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
+            - 	20220830@Casey.Huynh: New Category for Classify Group Betting [Redmine ID: #176976]
 		Param's Explanation (filtered by):	
 		Example:
 			- CALL CTS_DC_MatchMonitor_Rule_Process(1,113171940189,22081995,1,1,0);
@@ -45,6 +46,7 @@ sp: BEGIN
     DECLARE lv_GroupID INT DEFAULT 1;
     DECLARE lv_IsHedging INT DEFAULT 0;
     DECLARE lv_CustIDList LONGTEXT;
+    DECLARE lv_HighStake DECIMAL(20,4) DEFAULT 50;
     
     #=================================================================================    
     DROP TEMPORARY TABLE IF EXISTS Temp_StagingTrans01;
@@ -442,21 +444,26 @@ sp: BEGIN
     #*************************************************************************************************
     DROP TEMPORARY TABLE IF EXISTS Temp_ResultGroup;
     CREATE TEMPORARY TABLE Temp_ResultGroup(
-			GroupID			INT PRIMARY KEY
-		,	Reason			TINYINT
-        ,	TransIDList		LONGTEXT
-        ,	CustIDList		LONGTEXT
-        ,	OldGroupIDList	VARCHAR(500)
+			GroupID					INT PRIMARY KEY
+		,	Reason					TINYINT
+        ,	TransIDList				LONGTEXT
+        ,	CustIDList				LONGTEXT
+        ,	OldGroupIDList			VARCHAR(500)
+        ,	HighStakeLicCustList 	LONGTEXT
+        ,	LicenseeCustTotal		INT
     );	
 	
-    INSERT INTO Temp_ResultGroup(GroupID, Reason, TransIDList, CustIDList, OldGroupIDList)
+    INSERT INTO Temp_ResultGroup(GroupID, Reason, TransIDList, CustIDList, OldGroupIDList, HighStakeLicCustList , LicenseeCustTotal)
     SELECT  tmpTg.GroupID
         ,	(CASE WHEN COUNT(DISTINCT tmpSt.Betteam) > 1 THEN 2 ELSE 0 END) AS Reason
         ,	GROUP_CONCAT(tmpSt.TransID) AS TransIDList
         ,	GROUP_CONCAT(DISTINCT tmpSt.CustID) AS CustIDList
         ,	GROUP_CONCAT(DISTINCT tmpSt.OldGroupID) AS OldGroupIDList
+        ,	GROUP_CONCAT(DISTINCT (CASE WHEN tmpSt.Stake >= lv_HighStake AND cus.IsLicensee = 1 THEN tmpTg.CustID ELSE NULL END)) AS HighStakeLicCustList
+        ,	COUNT(DISTINCT (CASE WHEN cus.IsLicensee = 1 THEN cus.CustID ELSE NULL END)) AS LicenseeCustTotal
     FROM 	Temp_TransGroup AS tmpTg
 		INNER JOIN Temp_StagingTrans02  AS tmpSt ON tmpSt.CustID = tmpTg.CustID AND tmpSt.TransDate BETWEEN tmpTg.MinTransDate AND tmpTg.MaxTransDate
+        INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpTg.CustID 
 	GROUP BY tmpTg.GroupID
     HAVING SUM(Stake) >= 1000 AND COUNT(DISTINCT tmpSt.CustID) > 1;
 
@@ -519,6 +526,8 @@ sp: BEGIN
         ,	tmpRg.TransIDList
         ,	tmpRg.CustIDList
         ,	tmpRg.OldGroupIDList
+        ,	(CASE WHEN tmpRg.LicenseeCustTotal >= 3 AND tmpRg.HighStakeLicCustList IS NOT NULL THEN HighStakeLicCustList ELSE NULL END) HighStakeLicCustList
     FROM Temp_ResultGroup AS tmpRg;
+    
 END$$
 DELIMITER ;

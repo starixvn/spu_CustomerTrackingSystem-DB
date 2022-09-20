@@ -21,6 +21,7 @@ BEGIN
 			- 20220426@Casey.Huynh: Return CreatedBy [Redmine ID: #171512]
             - 20220519@Casey.Huynh: Renovate PA Process [Redmine ID: #172061]
             - 20220627@Casey.Huynh: Classify Match Monitor Results, Add MatchID [Redmine ID: #174218]
+            - 20220913@Casey.Huynh: Update Remark [Redmine ID: #176976]
             
 		Param's Explanation (filtered by):      
 			CALL CTS_DC_CustClassification_PA_MappingCategory ('Category','[{"CustID": 3679910,"ReasonID": 3679910,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10, "MatchID": 1}]');
@@ -111,7 +112,7 @@ BEGIN
 			,	tmpJs.CategoryGroup
 			,	tmpJs.IsLicensee
 			,	tmpJs.CreatedBy 
-			,	(CASE WHEN tmpJs.MatchID IS NOT NULL THEN MatchID ELSE tmpJs.Remark END) AS Remark
+			,	(CASE WHEN tmpJs.MatchID IS NOT NULL THEN CONCAT('Auto MatchID: ', MatchID) ELSE tmpJs.Remark END) AS Remark
 			,	tmpJs.IsDirectPA
 			, 	IFNULL(tmpJs.WinlossStatus,2) AS  WinlossStatus
 			, 	tmpJs.TurnoverRM

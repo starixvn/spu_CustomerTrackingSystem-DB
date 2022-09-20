@@ -13,12 +13,12 @@ BEGIN
 		Original: 
 		Revisions:
 			- 20220627@Casey.Huynh: Created [Redmine ID: #174218]
+            - 20220908@Casey.Huynh: New CC for Classify MM [Redmine ID: #176976]
             
 		Param's Explanation:
         
 		Example:
-			CALL CTS_DataCenter.CTS_DC_CustClassification_MatchMonitor_Classify_xtest();
-            CALL CTS_DataCenter.CTS_DC_CustClassification_MatchMonitor_Completed(50604006,NULL);
+			CALL CTS_DataCenter.CTS_DC_CustClassification_MatchMonitor_Classify();
 	 */ 
 	DECLARE lv_PackSize INT;
 	DECLARE lv_MatchID INT;
@@ -55,9 +55,9 @@ BEGIN
 		,	MatchID			INT		      
         ,	NoOfCust		INT
         
-        ,	PRIMARY KEY PK_Temp_MatchMonitorDetailsCust(CustID, MMDetailsID)
+        ,	INDEX IX_Temp_MatchMonitorDetailsCust(CustID, MMDetailsID)
     );
-    
+   
 	DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
     CREATE TEMPORARY TABLE Temp_Cust(
 			CustID			INT UNSIGNED
@@ -82,11 +82,11 @@ BEGIN
     SELECT CategoryID
     FROM CTS_DataCenter.CustomerCategory AS cat
     WHERE ParentID = 50 AND CategoryID NOT IN  (57,61,163,164);   
-    
+
     INSERT INTO Temp_MatchMonitorDetailsCust(CustID, MMDetailsID, MatchID, NoOfCust)
     WITH CTE_MatchMonitorDetials AS
     ( 	SELECT	mmd.ID AS MMDetailsID
-			,	mmd.ListCustID
+			,	mmd.HighStakeLicCustList
             ,	mmd.MatchID
 		FROM CTS_DataCenter.MatchMonitorDetails AS mmd
         WHERE mmd.MatchID = lv_MatchID
@@ -97,9 +97,9 @@ BEGIN
 	SELECT	js.CustID
 		,	cte.MMDetailsID
         ,	cte.MatchID
-        ,	LENGTH(cte.ListCustID) - LENGTH(REPLACE(cte.ListCustID,',','')) + 1 AS NoOfCust
+        ,	LENGTH(cte.HighStakeLicCustList) - LENGTH(REPLACE(cte.HighStakeLicCustList,',','')) + 1 AS NoOfCust
 	FROM CTE_MatchMonitorDetials AS cte
-		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(cte.ListCustID), ',', '","'), 
+		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(cte.HighStakeLicCustList), ',', '","'), 
 						'$[*]' COLUMNS (CustID BIGINT UNSIGNED PATH '$')
 						) js;    
 
@@ -112,30 +112,18 @@ BEGIN
         ,	cus.SubscriberID
         ,	cus.IsLicensee
     FROM Temp_MatchMonitorDetailsCust AS tmpMmc
-		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpMmc.CustID = cus.CustID        
-	WHERE	tmpMmc.NoOfCust > 2
-			AND cus.IsLicensee = 1;
-      
-	
-    DROP TEMPORARY TABLE IF EXISTS Temp_PACustGroup;
-    CREATE TEMPORARY TABLE Temp_PACustGroup(MmDetailsID INT);
-    
-    INSERT INTO Temp_PACustGroup(MmDetailsID)
-    SELECT tmpCus.MmDetailsID
-    FROM Temp_Cust AS tmpCus
-    GROUP BY tmpCus.MmDetailsID
-    HAVING COUNT(1) > 2;
-    
+		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpMmc.CustID = cus.CustID
+	WHERE tmpMmc.CustID IS NOT NULL;
+
     SELECT	DISTINCT tmpCust.CustID
         ,	tmpCust.MatchID
         ,	tmpCust.CTSCustID
         ,	tmpCust.RoleID
         ,	tmpCust.SubscriberID
         ,	tmpCust.IsLicensee
-        ,	52 AS CategoryID # Group Betting
-        , 	52 AS CategoryGroup # Group Betting
+        ,	63 AS CategoryID # Group Betting
+        , 	63 AS CategoryGroup # Group Betting
 	FROM Temp_Cust AS tmpCust
-		INNER JOIN Temp_PACustGroup AS tmpPa ON tmpCust.MMDetailsID = tmpPa.MMDetailsID
 	WHERE NOT EXISTS (	SELECT 1 
 						FROM CTS_DataCenter.CTSCustomerClassification AS cls 
 							INNER JOIN Temp_ExcludePACategoryID AS exl ON cls.CategoryID = exl.CategoryID

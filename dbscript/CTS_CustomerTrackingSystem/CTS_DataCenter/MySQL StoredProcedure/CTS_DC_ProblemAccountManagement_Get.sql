@@ -6,6 +6,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_ProblemAccountManagement_Get`(
 		IN ip_FromDate		DATETIME
     ,	IN ip_ToDate		DATETIME
     ,	IN ip_Sites			LONGTEXT
+    ,	IN ip_CategoryIDs	TEXT
     ,	IN ip_UserName		VARCHAR(50)
     ,	IN ip_HasDownline	SMALLINT
 )
@@ -20,9 +21,11 @@ sp :BEGIN
 			- 20211130@Aries.Nguyen: Created [Redmine: #164079]
             - 20220408@Casey.Huynh: Return CreatedBy [Redmine: #171223]
             - 20220426@Casey.Huynh: Add CreatedBy [Redmine ID: #171512]
+            - 20220913@Casey.Huynh: Add CategoryID Filter  [Redmine ID: #176976]
 		Param's Explanation (filtered by):   
         Example: 
-			CALL CTS_DC_ProblemAccountManagement_Get('2022-01-10 00:00:00', '2022-05-10 00:00:00', null,null,0); 
+			CALL CTS_DC_ProblemAccountManagement_Get('2022-01-10 00:00:00', '2022-05-10 00:00:00', null,null,null,0); 
+            CALL CTS_DC_ProblemAccountManagement_Get('2022-01-10 00:00:00', '2022-05-10 00:00:00', null,'52,92,63',null,0); 
 	*/	
     DECLARE lv_CTSCustID 			BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_CustID 				BIGINT UNSIGNED DEFAULT 0;
@@ -31,7 +34,20 @@ sp :BEGIN
     CREATE TEMPORARY TABLE 		Temp_SiteID (
 			SiteID 		INT UNSIGNED
         , 	PRIMARY KEY (SiteID)
-	);   
+	);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_CategoryID;
+    CREATE TEMPORARY TABLE 		Temp_CategoryID(
+			CategoryID 		SMALLINT UNSIGNED
+        , 	PRIMARY KEY (CategoryID)
+	);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustomerCategory;
+    CREATE TEMPORARY TABLE 		Temp_CustomerCategory (
+			CategoryID 		SMALLINT UNSIGNED
+        ,   CategoryName	VARCHAR(50)
+        , 	PRIMARY KEY (CategoryID)
+	);
     
     IF ip_Sites IS NULL OR ip_Sites = '' THEN
 		INSERT IGNORE INTO Temp_SiteID(SiteID)
@@ -42,6 +58,24 @@ sp :BEGIN
 		SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_SiteID (SiteID) VALUES ('", REPLACE(ip_Sites, ",", "'),('"),"');");
 		PREPARE 	stmt1 FROM @sql;
 		EXECUTE 	stmt1;
+    END IF; 
+    
+    IF ip_CategoryIDs IS NULL OR ip_CategoryIDs = '' THEN
+		INSERT IGNORE INTO Temp_CustomerCategory(CategoryID, CategoryName)
+        SELECT 	cate.CategoryID
+			,	cate.CategoryName
+		FROM CTS_DataCenter.CustomerCategory AS cate 
+		WHERE cate.ParentID = 50;        
+	ELSE 
+		SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_CategoryID (CategoryID) VALUES ('", REPLACE(ip_CategoryIDs, ",", "'),('"),"');");
+		PREPARE 	stmt1 FROM @sql;
+		EXECUTE 	stmt1;
+        
+        INSERT IGNORE INTO Temp_CustomerCategory(CategoryID, CategoryName)
+        SELECT	cate.CategoryID
+			,	cate.CategoryName
+        FROM CTS_DataCenter.CustomerCategory AS cate
+			INNER JOIN Temp_CategoryID AS tmp ON tmp.CategoryID = cate.CategoryID;
     END IF; 
     
      IF ip_UserName IS NOT NULL AND  ip_UserName != '' THEN 
@@ -66,13 +100,13 @@ sp :BEGIN
 		, 	cus.SiteID
 		,	cus.Currency
 		,	cus.CurrencyID
-        ,	GROUP_CONCAT(DISTINCT cate.CategoryName SEPARATOR ', ') AS CategoryName
+        ,	GROUP_CONCAT(DISTINCT tmpCat.CategoryName SEPARATOR ', ') AS CategoryName
 		,	MIN(class.CreatedDate) AS CreatedDate
         ,	SUBSTRING_INDEX(GROUP_CONCAT(IFNULL(us.UserName, class.CreatedBy) ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS CreatedBy
         ,	SUBSTRING_INDEX(GROUP_CONCAT(class.Remark ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS Remark
 	FROM CTS_DataCenter.CTSCustomerClassification AS class
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON class.CTSCustID = cus.CTSCustID
-        STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON class.CategoryID = cate.CategoryID
+        STRAIGHT_JOIN CTS_DataCenter.Temp_CustomerCategory AS tmpCat ON class.CategoryID = tmpCat.CategoryID
         LEFT JOIN CTS_Admin.CTSUser AS us ON class.CreatedBy = us.UserID
 	WHERE    class.CreatedDate BETWEEN ip_FromDate AND ip_ToDate
 		AND  class.SportGroupID = 0
