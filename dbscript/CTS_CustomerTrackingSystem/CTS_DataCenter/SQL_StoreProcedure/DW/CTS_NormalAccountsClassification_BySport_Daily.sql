@@ -76,18 +76,18 @@ BEGIN
 		[CurrentCategoryId]	SMALLINT NULL
 	);
 
-	IF OBJECT_ID('tempdb..#tmpInactiveMember') IS NOT NULL
+	IF OBJECT_ID('tempdb..#tmpActiveMember') IS NOT NULL
 	BEGIN
-		DROP TABLE	#tmpInactiveMember;
+		DROP TABLE	#tmpActiveMember;
 	END
 	
-	CREATE TABLE #tmpInactiveMember(
+	CREATE TABLE #tmpActiveMember(
 			CustId				INT
 		,	IsActive			BIT DEFAULT 0
-		,	PRIMARY KEY (CustId, IsActive)
+		,	PRIMARY KEY (CustId)
 	);
 
-	CREATE NONCLUSTERED INDEX IX_tmpInactiveMember_IsActive ON #tmpInactiveMember(
+	CREATE NONCLUSTERED INDEX IX_tmpActiveMember_IsActive ON #tmpActiveMember(
 		IsActive			ASC
 	);
 	
@@ -111,18 +111,18 @@ BEGIN
 	FROM @CustomersXML.nodes('//r') AS T(C)
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 
-	-- #1: Filter Inactive Customers
-	SELECT @ListCustIds = STUFF((SELECT ',', CONVERT(VARCHAR(15), CustId) 
+	-- #1: Filter Active Customers
+	SELECT @ListCustIds = STUFF((SELECT DISTINCT ',', CONVERT(VARCHAR(15), CustId) 
 							FROM #tmpCustomers WITH (NOLOCK)
 							FOR XML PATH('')), 1, 1, '');
 
-	INSERT INTO #tmpInactiveMember(CustId, IsActive)
+	INSERT INTO #tmpActiveMember(CustId, IsActive)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @ListCustIds, @ResultDataMode = 2, @FromDate = @From30Date, @ToDate = @ToDate;	
 
 	-- Log Input Data
 	INSERT INTO dbo.CustomerClassification_InputLog(CustId,CreatedDate,CreatedTime,FunctionId,IsActive)
 	SELECT CustId, @CurrentDate, @CurrentDateTime, @FunctionId, IsActive
-	FROM #tmpInactiveMember;
+	FROM #tmpActiveMember;
 	
 	-- #2: Remove account Closed & Disabled accounts & SMA account & Internal Account
 	DELETE r WITH(ROWLOCK)
@@ -134,14 +134,14 @@ BEGIN
 		OR c.recommend IN (52466,5707545,29270764,134456)
 		OR c.username LIKE '%CashOut';
 
-	---- Remove Inactive accounts
+	---- Remove Active accounts
 	DELETE r WITH(ROWLOCK)
 	FROM #tmpCustomers AS r
-		INNER JOIN #tmpInactiveMember As a WITH(NOLOCK) ON r.CustId = a.CustId
+		INNER JOIN #tmpActiveMember As a WITH(NOLOCK) ON r.CustId = a.CustId
 	WHERE a.IsActive = 0;
 
 	-- #3: GetCustomer Accummulated data
-	SELECT @ListCustIds = STUFF((SELECT ',', CONVERT(VARCHAR(15), CustId) 
+	SELECT @ListCustIds = STUFF((SELECT DISTINCT ',', CONVERT(VARCHAR(15), CustId) 
 								FROM #tmpCustomers WITH (NOLOCK)
 								FOR XML PATH('')), 1, 1, '');
 
@@ -216,7 +216,7 @@ BEGIN
 				,	ROW_NUMBER() OVER(PARTITION BY a.CustId, a.SportId ORDER BY r.Prioity ASC) AS RowNum
 			 FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 				INNER JOIN dbo.CustomerClassification_BySport_Rule AS r WITH(NOLOCK) ON a.SportId = r.SportId 
-			 WHERE     (r.RuleGroupId = 1 AND a.BetCount < r.BetCount)																																-- NEW MEMBER			
+			 WHERE     (r.RuleGroupId = 1 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount < r.BetCount)																																-- NEW MEMBER			
 					OR (r.RuleGroupId = 2 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM > r.WinlossRM)												-- NEW MEMBER	
 					OR (r.RuleGroupId = 3 AND a.BetCount > r.BetCount AND a.Margin < r.Margin AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays)										-- GOOD
 					OR (r.RuleGroupId = 4 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin < r.Margin2)										-- NORMAL
@@ -239,5 +239,5 @@ BEGIN
 	DROP TABLE #tmpCustomerAccummulatedInfo;
 	DROP TABLE #tmpCustomers;
 	DROP TABLE #tmpRawData;
-	DROP TABLE #tmpInactiveMember;
+	DROP TABLE #tmpActiveMember;
 END;

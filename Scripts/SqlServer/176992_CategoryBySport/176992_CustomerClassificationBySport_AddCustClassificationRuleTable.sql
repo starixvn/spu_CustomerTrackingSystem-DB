@@ -56,17 +56,17 @@ CREATE NONCLUSTERED INDEX [CIX_CustomerClassification_BySport_Rule_SportId] ON [
 )
 GO
 -- New
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleId, RuleGroupId, SportId, CategoryId, CategoryName, Prioity, BetCount, Operator_BetCount) 
-VALUES (1, 1, 1, 201, 'New', 6, 10, '<');
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleId, RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, Operator_BetCount) 
+VALUES (1, 1, 1, 201, 'New', 6, 0, 10, '<');
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleId, RuleGroupId, SportId, CategoryId, CategoryName, Prioity, BetCount, Operator_BetCount) 
-VALUES (2, 1, 2, 201, 'New', 6, 10, '<');
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleId, RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, Operator_BetCount) 
+VALUES (2, 1, 2, 201, 'New', 6, 0, 10, '<');
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleId, RuleGroupId, SportId, CategoryId, CategoryName, Prioity, BetCount, Operator_BetCount) 
-VALUES (3, 1, 43, 201, 'New', 6, 20, '<');
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleId, RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, Operator_BetCount) 
+VALUES (3, 1, 43, 201, 'New', 6, 0, 20, '<');
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleId, RuleGroupId, SportId, CategoryId, CategoryName, Prioity, BetCount, Operator_BetCount) 
-VALUES (4, 1, 99, 201, 'New', 6, 20, '<');
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleId, RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, Operator_BetCount) 
+VALUES (4, 1, 99, 201, 'New', 6, 0, 20, '<');
 
 
 INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleId, RuleGroupId, SportId, CategoryId, CategoryName, Prioity, IsSpecialSite, BetCount, Operator_BetCount, Margin, Operator_Margin, WinlossRM, Operator_Winloss)
