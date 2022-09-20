@@ -3,7 +3,10 @@ DROP PROCEDURE IF EXISTS `CTS_DC_AssociatedGroup_Account_Get`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedGroup_Account_Get`(
-		IN ip_GroupID 		BIGINT UNSIGNED
+		IN 	ip_GroupID 			BIGINT UNSIGNED
+	,	OUT op_AllCredit		SMALLINT
+	,	OUT op_AllLicensee		SMALLINT
+    ,	OUT op_Sites			LONGTEXT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -15,12 +18,23 @@ BEGIN
 
 		Revisions:
 			- 20220705@Aries.Nguyen: Created [Redmine ID: #167748]
+            - 20220831@Aries.Nguyen: Associated Group Enhancement [Redmine ID: #176991]
         
 		Param's Explanation (filtered by):
         
         Example: 
-			- CALL CTS_DC_AssociatedGroup_Account_Get(3);
+			- CALL CTS_DC_AssociatedGroup_Account_Get(1,@op_AllCredit,@op_AllLicensee,@op_Sites);
 	*/
+    SELECT 	AllCredit
+		,	AllLicensee
+        ,	Sites
+	INTO
+			op_AllCredit
+		,	op_AllLicensee
+		,	op_Sites
+    FROM CTS_DataCenter.AssociatedGroup
+    WHERE GroupID = ip_GroupID;
+    
     SELECT 	cus.Username
 		,  	sta.ItemName AS AccountStatus
         ,  	cus.CreatedDate AS  AccountCreated

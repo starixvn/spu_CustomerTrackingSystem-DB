@@ -13,6 +13,7 @@ BEGIN
 
 		Revisions:
 			- 20220705@Aries.Nguyen: Created [Redmine ID: #167748]
+            - 20220831@Aries.Nguyen: Associated Group Enhancement [Redmine ID: #176991]
         
 		Param's Explanation (filtered by):
         
@@ -23,14 +24,24 @@ BEGIN
     SELECT 	grp.GroupID
 		,	grp.GroupName
         ,	grp.ABI
+        ,	grp.AllCredit
+        ,	grp.AllLicensee
+		,	grp.Sites
+        ,	grp.HasDevice
+        ,	grp.HasManual
+        ,	grp.HasIP
+        ,	grp.HasAI
         ,	(SELECT COUNT(1) 
              FROM AssociatedGroupAccount AS acc
              WHERE acc.GroupID =  grp.GroupID) AS TotalAccount
         ,	grp.Remark
         ,	grp.Created
 		,	us.UserName AS CreatedBy
+        ,	grp.Modified
+		,	us1.UserName AS ModifiedBy
     FROM CTS_DataCenter.AssociatedGroup AS grp
 		LEFT JOIN CTS_Admin.CTSUser AS us ON grp.CreatedBy = us.UserID
+        LEFT JOIN CTS_Admin.CTSUser AS us1 ON grp.ModifiedBy = us1.UserID
 	WHERE grp.IsDisable = 0;
 END$$
 DELIMITER ;
