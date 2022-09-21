@@ -26,10 +26,10 @@ CREATE TABLE [dbo].[CustomerClassification_BySport_BetCount](
 	[SportId] [smallint] NOT NULL,
 	[BetCount] [int] NULL,
 	[LastScannedDate] [datetime] NULL,
-PRIMARY KEY CLUSTERED 
-(
-	[CustId] ASC,
-	[SportId] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
+	PRIMARY KEY CLUSTERED 
+	(
+		[CustId] ASC,
+		[SportId] ASC
+	)
+)
 GO

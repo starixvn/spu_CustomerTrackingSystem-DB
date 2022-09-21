@@ -1,6 +1,6 @@
 USE [bodb_VR2Model]
 GO
-/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_BySport_Daily]    Script Date: 9/12/2022 5:07:34 PM ******/
+/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_BySport_Daily]    Script Date: 9/21/2022 6:07:03 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -28,7 +28,6 @@ AS
 BEGIN
 	
 	SET NOCOUNT ON;
-
 	DECLARE @SPORT_SOCCER				SMALLINT = 1;
 	DECLARE @SPORT_BASKETBALL			SMALLINT = 2;
 	DECLARE @SPORT_ESPORT				SMALLINT = 43;
@@ -55,7 +54,19 @@ BEGIN
 		[WinlossORG]		DECIMAL(19, 4) NULL,
 		[BetCount]			BIGINT NULL,
 		[ActiveDays]		INT NULL,
-		PRIMARY KEY (CustId, SportId)
+	);
+
+	CREATE CLUSTERED INDEX IX_tmpRawData_CustId_SportId ON #tmpRawData(
+	   [CustId],
+	   [SportId]
+	);
+
+	CREATE NONCLUSTERED INDEX IX_tmpRawData_SportId ON #tmpRawData(
+	   [SportId]
+	);
+
+	CREATE NONCLUSTERED INDEX IX_tmpRawData_SportGroup ON #tmpRawData(
+	   [SportGroup]
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpCustomerAccummulatedInfo') IS NOT NULL
@@ -76,6 +87,25 @@ BEGIN
 		[CurrentCategoryId]	SMALLINT NULL
 	);
 
+	CREATE CLUSTERED INDEX IX_tmpCustomerAccummulatedInfo_CustId_SportId_CurrentCategoryId ON #tmpCustomerAccummulatedInfo(
+		[CustId],
+		[SportId]
+	);
+
+	CREATE NONCLUSTERED INDEX IX_tmpCustomerAccummulatedInfo_SportId_CurrentCategoryId ON #tmpCustomerAccummulatedInfo(
+		[SportId],
+		[CurrentCategoryId],
+		[IsDeposit]
+	);
+
+	CREATE NONCLUSTERED INDEX IX_tmpCustomerAccummulatedInfo_Site ON #tmpCustomerAccummulatedInfo(
+		[Site]
+	);
+
+	CREATE NONCLUSTERED INDEX IX_tmpCustomerAccummulatedInfo_SRecommend ON #tmpCustomerAccummulatedInfo(
+		[SRecommend]
+	);
+
 	IF OBJECT_ID('tempdb..#tmpActiveMember') IS NOT NULL
 	BEGIN
 		DROP TABLE	#tmpActiveMember;
@@ -84,13 +114,12 @@ BEGIN
 	CREATE TABLE #tmpActiveMember(
 			CustId				INT
 		,	IsActive			BIT DEFAULT 0
-		,	PRIMARY KEY (CustId)
+		,	PRIMARY KEY CLUSTERED(CustId)
 	);
 
 	CREATE NONCLUSTERED INDEX IX_tmpActiveMember_IsActive ON #tmpActiveMember(
 		IsActive			ASC
 	);
-	
 
 	IF OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
 	BEGIN
@@ -101,7 +130,7 @@ BEGIN
 			CustId				INT
 		,	SportId				SMALLINT
 		,	CurrentCategoryId	SMALLINT
-		,	PRIMARY KEY (CustId, SportId)
+		,	PRIMARY KEY CLUSTERED (CustId, SportId)
 	);
 
 	INSERT INTO #tmpCustomers(CustId, SportId, CurrentCategoryId)
@@ -134,7 +163,7 @@ BEGIN
 		OR c.recommend IN (52466,5707545,29270764,134456)
 		OR c.username LIKE '%CashOut';
 
-	---- Remove Active accounts
+	---- Remove InActive accounts
 	DELETE r WITH(ROWLOCK)
 	FROM #tmpCustomers AS r
 		INNER JOIN #tmpActiveMember As a WITH(NOLOCK) ON r.CustId = a.CustId
@@ -216,22 +245,20 @@ BEGIN
 				,	ROW_NUMBER() OVER(PARTITION BY a.CustId, a.SportId ORDER BY r.Prioity ASC) AS RowNum
 			 FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 				INNER JOIN dbo.CustomerClassification_BySport_Rule AS r WITH(NOLOCK) ON a.SportId = r.SportId 
-			 WHERE     (r.RuleGroupId = 1 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount < r.BetCount)																																-- NEW MEMBER			
-					OR (r.RuleGroupId = 2 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM > r.WinlossRM)												-- NEW MEMBER	
-					OR (r.RuleGroupId = 3 AND a.BetCount > r.BetCount AND a.Margin < r.Margin AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays)										-- GOOD
-					OR (r.RuleGroupId = 4 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin < r.Margin2)										-- NORMAL
-					OR (r.RuleGroupId = 5 AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND NOT (a.BetCount > r.BetCount2 AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays))	-- NORMAL
-					OR (r.RuleGroupId = 6 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM <= r.WinlossRM)								-- NORMAL
-					OR (r.RuleGroupId = 7 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM < r.WinlossRM)										-- NORMAL
-					OR (r.RuleGroupId = 8 AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.WinlossRM <= r.WinlossRM)											-- PROBATION
-					OR (r.RuleGroupId = 9 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin)																		-- PROBATION
-					OR (r.RuleGroupId = 10 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM >= r.WinlossRM)										-- PROBATION
-					OR (r.RuleGroupId = 11 AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)											-- SMART
-					OR (r.RuleGroupId = 12 AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM AND a.WinlossRM <= r.WinlossRM2)										-- SMART
-					OR (r.RuleGroupId = 13 AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM AND a.WinlossRM <= r.WinlossRM2)										-- SMART
-					OR (r.RuleGroupId = 14 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)-- RISKY
-					OR (r.RuleGroupId = 15 AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)																		-- RISKY
-					OR (r.RuleGroupId = 16 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)							-- RISKY
+			 WHERE 	(r.RuleGroupId = 2 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM > r.WinlossRM)										-- NEW MEMBER	
+					OR (r.RuleGroupId = 3 AND a.BetCount > r.BetCount AND a.Margin < r.Margin AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays)											-- GOOD
+					OR (r.RuleGroupId = 4 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin < r.Margin2)											-- NORMAL
+					OR (r.RuleGroupId = 5 AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND NOT (a.BetCount > r.BetCount2 AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays))		-- NORMAL
+					OR (r.RuleGroupId = 6 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM <= r.WinlossRM)									-- NORMAL
+					OR (r.RuleGroupId = 7 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM < r.WinlossRM)											-- NORMAL
+					OR (r.RuleGroupId = 8 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.WinlossRM <= r.WinlossRM)	-- PROBATION
+					OR (r.RuleGroupId = 9 AND a.CurrentCategoryId = r.CurrentCategory AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin)																			-- PROBATION
+					OR (r.RuleGroupId = 10 AND a.CurrentCategoryId = r.CurrentCategory AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM >= r.WinlossRM)											-- PROBATION
+					OR (r.RuleGroupId = 11 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)												-- SMART
+					OR (r.RuleGroupId = 13 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM AND a.WinlossRM <= r.WinlossRM2)											-- SMART
+					OR (r.RuleGroupId = 14 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)	-- RISKY
+					OR (r.RuleGroupId = 15 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)																			-- RISKY
+					OR (r.RuleGroupId = 16 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)								-- RISKY
 		) as b
 	 WHERE b.RowNum = 1;
 

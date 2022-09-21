@@ -29,8 +29,13 @@ CREATE TABLE [dbo].[CustomerClassification_BySport](
 	[WinlossRM] DECIMAL(19, 4) NULL,
 	[BetCount] [bigint] NULL,
 	[ActiveDays] [int] NULL
-) ON [PRIMARY]
+)
 GO
+
+CREATE CLUSTERED INDEX [CIX_CustomerClassification_BySport_IsApplied] ON [dbo].[CustomerClassification_BySport]
+(
+	[IsApplied] ASC
+)
 
 CREATE NONCLUSTERED INDEX [CIX_CCustomerClassification_BySport_CreatedDate] ON [dbo].[CustomerClassification_BySport]
 (
@@ -44,16 +49,5 @@ CREATE NONCLUSTERED INDEX [CIX_CustomerClassification_BySport_CustIdSportIdCateg
 	[SportId] ASC,
 	[CategoryId] ASC
 )
-GO
 
-CREATE CLUSTERED INDEX [CIX_CustomerClassification_BySport_IsApplied] ON [dbo].[CustomerClassification_BySport]
-(
-	[IsApplied] ASC
-)
-GO
-
-CREATE NONCLUSTERED INDEX [IX_CustomerClassification_BySport_CategoryId] ON [dbo].[CustomerClassification_BySport]
-(
-	[CategoryId] ASC
-)
 GO

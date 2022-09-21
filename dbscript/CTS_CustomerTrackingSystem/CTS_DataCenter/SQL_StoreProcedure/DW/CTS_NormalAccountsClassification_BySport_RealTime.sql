@@ -1,6 +1,6 @@
 USE [bodb_VR2Model]
 GO
-/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_BySport_RealTime]    Script Date: 9/6/2022 5:07:34 PM ******/
+/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_BySport_RealTime]    Script Date: 9/21/2022 6:10:00 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -58,16 +58,22 @@ BEGIN
 		[CurrentCategoryId]	SMALLINT NULL
 	);
 
-	CREATE CLUSTERED INDEX IX_tmpCustomerAccummulatedInfo_Margin ON #tmpCustomerAccummulatedInfo(
-		Margin				ASC,
-		TurnoverRM			ASC
+	CREATE CLUSTERED INDEX IX_tmpCustomerAccummulatedInfo_CustId_SportId ON #tmpCustomerAccummulatedInfo(
+		[CustId]			ASC,
+		[SportId]			ASC,
+		[CurrentCategoryId]
 	);
 
-	CREATE NONCLUSTERED INDEX IX_tmpCustomerAccummulatedInfo_ActiveDaysBetCount ON #tmpCustomerAccummulatedInfo(
-		ActiveDays			ASC,
-		BetCount			ASC
+	CREATE NONCLUSTERED INDEX IX_tmpCustomerAccummulatedInfo_SportId_CurrentCategoryId ON #tmpCustomerAccummulatedInfo(
+		[SportId],
+		[CurrentCategoryId],
+		[IsDeposit]
 	);
 
+	CREATE NONCLUSTERED INDEX IX_tmpCustomerAccummulatedInfo_SRecommend ON #tmpCustomerAccummulatedInfo(
+		[SRecommend]
+	);
+	
 	IF OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
 	BEGIN
 		DROP TABLE	#tmpCustomers;
@@ -77,7 +83,7 @@ BEGIN
 			CustId				INT
 		,	SportId				SMALLINT
 		,	CurrentCategoryId	SMALLINT
-		,	PRIMARY KEY (CustId, SportId)
+		,	PRIMARY KEY CLUSTERED (CustId, SportId)
 	);
 
 	INSERT INTO #tmpCustomers(CustId, SportId, CurrentCategoryId)
@@ -167,8 +173,8 @@ BEGIN
 					OR (r.RuleGroupId = 5 AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND NOT (a.BetCount > r.BetCount2 AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays))		-- NORMAL
 					OR (r.RuleGroupId = 6 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM <= r.WinlossRM)		-- NORMAL
 					OR (r.RuleGroupId = 7 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM < r.WinlossRM)				-- NORMAL
-					OR (r.RuleGroupId = 9 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin)												-- PROBATION
-					OR (r.RuleGroupId = 10 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM >= r.WinlossRM)				-- PROBATION
+					OR (r.RuleGroupId = 9 AND a.CurrentCategoryId = r.CurrentCategory AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin)												-- PROBATION
+					OR (r.RuleGroupId = 10 AND a.CurrentCategoryId = r.CurrentCategory AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM >= r.WinlossRM)				-- PROBATION
 		) as b
 	 WHERE b.RowNum = 1;
 

@@ -27,10 +27,10 @@ CREATE TABLE [dbo].[CustomerClassification_BySport_LatestChanged](
 	[ActiveDays] [int] NULL,
 	[LastModifiedDate] [date] NULL,
 	[Margin] DECIMAL(19, 4) NULL,
-PRIMARY KEY CLUSTERED 
-(
-	[CustId] ASC,
-	[SportID]
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
+	PRIMARY KEY CLUSTERED 
+	(
+		[CustId] ASC,
+		[SportId]
+	)
+)
 GO
