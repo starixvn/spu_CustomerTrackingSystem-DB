@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_BySport_Get
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_BySport_Get`(
-		IN ip_CustID 	BIGINT
+		IN ip_CTSCustID 	BIGINT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -18,7 +18,7 @@ BEGIN
 		Param's Explanation (filtered by):
         
         Example:
-				CALL CTS_DataCenter.CTS_DC_CustClassification_BySport_Get(@CustID:=43600693);
+				CALL CTS_DataCenter.CTS_DC_CustClassification_BySport_Get(@CTSCustID:=572272);
 */ 
 
     SELECT	cls.SportID
@@ -26,7 +26,7 @@ BEGIN
         ,	cat.CustomerClass
     FROM	CTS_DataCenter.CTSCustomerClassification_BySport AS cls
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID
-    WHERE	cls.CustID = ip_CustID;
+    WHERE	cls.CTSCustID = ip_CTSCustID;
     
 END$$
 DELIMITER ;

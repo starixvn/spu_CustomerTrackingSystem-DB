@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_BySport_His
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_BySport_History_Get`(
-		IN ip_CustID 	BIGINT
+		IN ip_CTSCustID 	BIGINT
 	,	IN ip_SportID	INT
 )
     SQL SECURITY INVOKER
@@ -19,7 +19,8 @@ BEGIN
 		Param's Explanation:
         
         Example:
-				CALL CTS_DataCenter.CTS_DC_CustClassification_BySport_History_Get(@CustID:=43600693, @ip_SportID:=2);
+        SELECT * FROM CTSCustomerClassification_BySport_History;
+				CALL CTS_DataCenter.CTS_DC_CustClassification_BySport_History_Get(@CTSCustID:=572272, @ip_SportID:=2);
 */ 
 
     SELECT	clh.ID
@@ -38,7 +39,8 @@ BEGIN
     FROM	CTS_DataCenter.CTSCustomerClassification_BySport_History AS clh
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON clh.CategoryID = cat.CategoryID
         LEFT JOIN CTS_Admin.CTSUser AS us ON clh.LastModifiedBy = us.UserID
-    WHERE	clh.CustID = ip_CustID AND clh.SportID = ip_SportID;
+    WHERE	clh.CTSCustID = ip_CTSCustID AND clh.SportID = ip_SportID
+    ORDER BY clh.LastModifiedDate DESC;
     
 END$$
 DELIMITER ;
