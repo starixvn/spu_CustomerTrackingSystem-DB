@@ -16,6 +16,7 @@ sp:BEGIN
 		Revisions:	
 			- 20210901@Aries.Nguyen: Created [RedmineID: #160758]	
 			- 20220519@Aries.Nguyen: Renovate the Category Log History[Redmine ID: #172560]
+			- 20220909@Aries.Nguyen: Handle lv_NextLastID is null [Redmine ID: #176992] 
             
 		Param's Explanation (filtered by):
 
@@ -103,6 +104,11 @@ sp:BEGIN
 		  WHERE ID > lv_LastID
 		  ORDER BY ID ASC
 		  LIMIT lv_BatchSize) AS tbl;
+	
+	IF lv_NextLastID IS NULL THEN
+		SET op_IsDataExist = 0;
+		LEAVE sp; 
+	END IF;
 
     INSERT INTO Temp_History(ID, CustID, CTSCustID, SportGroupID, CategoryID,TurnoverRM , WinlossRM, BetCount, ActiveDays, RobotCounter, ProbationPeriodWinloss, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsAppliedCC, IsDataChanged, ActionType, IsAuto, LastModifiedDate, LastModifiedBy, InsertDate, TaggingType, TargetDangerLevel1, IsAppliedDangerLevel1, TWGroupBettingRate, TWTicketRejectRate, TWBetCount, TWDesktopUsageRate,Remark,IsDirect,TVSRequestID, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI)
     SELECT 	ID  					

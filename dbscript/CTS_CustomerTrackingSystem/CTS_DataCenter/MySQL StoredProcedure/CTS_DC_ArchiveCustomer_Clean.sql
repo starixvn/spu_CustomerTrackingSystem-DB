@@ -18,7 +18,7 @@ sp: BEGIN
             -	20220408@Casey.Huynh: Add AssociationGroupByAI [Redmine ID: #171222]
 			-	20220713@Aries.Nguyen: HotFix Customer NULL CC [Redmine ID: #175406]
 			-	20220720@Aries.Nguyen: Missing remove unused columns in 'CTS_DC_ArchiveCustomer_Clean' [Redmine ID: #175631]
-            -	20220519@Aries.Nguyen: Clean data CTSCustomerClassification_BySport_History table   [Redmine ID: #176992]
+            -	20220519@Aries.Nguyen: Clean data Classification BySport tables   [Redmine ID: #176992]
 
 		Param's Explanation (filtered by):	
         
@@ -706,7 +706,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.CTSCustomerClassification';
 	 END IF; 
 
-	/*************************************** 14. CTS_DataCenter.CTSCustomerClassification ********************/
+	/*************************************** 14. CTS_DataCenter.CTSCustomerClassification, CTSCustomerClassification_BySport ********************/
     IF (lv_Table = 'CTS_DataCenter.CTSCustomerClassification') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.CTSCustomerClassification AS clss WHERE clss.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomerClassification_Clean;
@@ -746,10 +746,49 @@ sp: BEGIN
             SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
+        SET lv_Table = 'CTS_DataCenter.CTSCustomerClassification_BySport';
+	 END IF; 
+
+     IF (lv_Table = 'CTS_DataCenter.CTSCustomerClassification_BySport') THEN
+		IF EXISTS (SELECT 1  FROM CTS_DataCenter.CTSCustomerClassification_BySport AS clss WHERE clss.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)) THEN
+			DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomerClassification_BySport_Clean;
+			CREATE TEMPORARY TABLE Temp_CTSCustomerClassification_BySport_Clean(
+					CustID   			BIGINT UNSIGNED  
+				,	SportID				BIGINT UNSIGNED
+                ,	PRIMARY KEY(CustID, SportID)
+			);
+            
+            INSERT IGNORE INTO Temp_CTSCustomerClassification_BySport_Clean(CustID, SportID)
+            SELECT 	clss.CustID
+				,	clss.SportID
+			FROM CTS_DataCenter.CTSCustomerClassification_BySport AS clss
+			WHERE  clss.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)
+			LIMIT lv_CleanTableBatchSize;
+            
+            DELETE cl
+			FROM CTS_DataCenter.CTSCustomerClassification_BySport AS cl
+				INNER JOIN Temp_CTSCustomerClassification_BySport_Clean AS tmp ON tmp.CustID = cl.CustID 
+																		AND tmp.SportID = cl.SportID;
+			
+			UPDATE  CTS_DataCenter.SystemParameter 
+			SET ParameterValue = 'CTS_DataCenter.CTSCustomerClassification_BySport'
+			WHERE ParameterID = 46;
+			
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_CTSCustomerClassification_BySport_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
+        END IF;
+        
         SET lv_Table = 'CTS_DataCenter.CTSCustomerClassification_History';
 	 END IF; 
      
-    /*************************************** 15. CTS_DataCenter.CTSCustomerClassification_History ************/
+    /*************************************** 15. CTS_DataCenter.CTSCustomerClassification_History, CTSCustomerClassification_BySport_History ************/
     IF (lv_Table = 'CTS_DataCenter.CTSCustomerClassification_History') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.CTSCustomerClassification_History AS his WHERE his.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomerClassification_History_Clean;
@@ -1208,7 +1247,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.ProbationAccountMonitor';
 	 END IF;  
      
-    /*************************************** 25. CTS_DataCenter.ProbationAccountMonitor ***********************/
+    /*************************************** 25. CTS_DataCenter.ProbationAccountMonitor, ProbationAccountMonitor_BySport ***********************/
 	IF (lv_Table = 'CTS_DataCenter.ProbationAccountMonitor') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.ProbationAccountMonitor AS pro WHERE pro.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp))  THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_ProbationAccountMonitor_Clean;
@@ -1237,6 +1276,45 @@ sp: BEGIN
 			SELECT COUNT(1)
             INTO lv_Count
             FROM Temp_ProbationAccountMonitor_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
+        END IF;
+		
+        SET lv_Table = 'CTS_DataCenter.ProbationAccountMonitor_BySport';
+	 END IF;  
+     
+	IF (lv_Table = 'CTS_DataCenter.ProbationAccountMonitor_BySport') THEN
+		IF EXISTS (SELECT 1  FROM CTS_DataCenter.ProbationAccountMonitor_BySport AS pro WHERE pro.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp))  THEN
+			DROP TEMPORARY TABLE IF EXISTS Temp_ProbationAccountMonitor_BySport_Clean;
+			CREATE TEMPORARY TABLE Temp_ProbationAccountMonitor_BySport_Clean(
+					CustID   		BIGINT UNSIGNED 
+				,	SportID			SMALLINT
+                ,	PRIMARY KEY(CustID, SportID)
+			);
+            
+            INSERT IGNORE INTO Temp_ProbationAccountMonitor_BySport_Clean(CustID, SportID)
+            SELECT 	pro.CustID
+				,	pro.SportID
+			FROM CTS_DataCenter.ProbationAccountMonitor_BySport AS pro
+			WHERE  pro.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)
+			LIMIT lv_CleanTableBatchSize;
+            
+            DELETE ev
+			FROM CTS_DataCenter.ProbationAccountMonitor_BySport AS ev
+				INNER JOIN Temp_ProbationAccountMonitor_BySport_Clean AS tmp ON tmp.CustID = ev.CustID
+																	AND tmp.SportID = ev.SportID;
+			
+			UPDATE  CTS_DataCenter.SystemParameter 
+			SET ParameterValue = 'CTS_DataCenter.ProbationAccountMonitor_BySport'
+			WHERE ParameterID = 46;
+		
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_ProbationAccountMonitor_BySport_Clean;
             
             IF lv_Count >= lv_CleanTableBatchSize THEN
 				LEAVE sp;

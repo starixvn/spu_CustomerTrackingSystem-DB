@@ -79,6 +79,11 @@ sp:BEGIN
 		  WHERE ID > lv_LastID
 		  ORDER BY ID ASC
 		  LIMIT lv_BatchSize) AS tbl;
+	
+	IF lv_NextLastID IS NULL THEN
+		SET op_IsDataExist = 0;
+		LEAVE sp; 
+	END IF;
 
     INSERT INTO Temp_History(ID,CustID,CTSCustID,SportID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate,LastModifiedBy,InsertDate )
     SELECT 	ID 					
