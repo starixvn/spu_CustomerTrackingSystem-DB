@@ -34,3 +34,8 @@ CREATE TABLE [dbo].[CustomerClassification_BySport_LatestChanged](
 	)
 )
 GO
+
+GRANT EXECUTE ON [dbo].[CTS_NormalAccountsClassification_BySport_RealTime_CheckChanges] TO [bodbSPUNet]
+GO
+GRANT VIEW DEFINITION ON [dbo].[CTS_NormalAccountsClassification_BySport_RealTime_CheckChanges] TO [bodbSPUNet]
+GO
