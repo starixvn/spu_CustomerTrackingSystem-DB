@@ -147,11 +147,6 @@ BEGIN
 
 	INSERT INTO #tmpActiveMember(CustId, IsActive)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @ListCustIds, @ResultDataMode = 2, @FromDate = @From30Date, @ToDate = @ToDate;	
-
-	-- Log Input Data
-	INSERT INTO dbo.CustomerClassification_InputLog(CustId,CreatedDate,CreatedTime,FunctionId,IsActive)
-	SELECT CustId, @CurrentDate, @CurrentDateTime, @FunctionId, IsActive
-	FROM #tmpActiveMember;
 	
 	-- #2: Remove account Closed & Disabled accounts & SMA account & Internal Account
 	DELETE r WITH(ROWLOCK)
@@ -199,6 +194,11 @@ BEGIN
 		,	MAX(a.ActiveDays)
 	FROM #tmpRawData AS a WITH(NOLOCK)
 	GROUP BY a.CustId, a.SportId;
+
+	-- Log Input Data
+	INSERT INTO dbo.CustomerClassification_BySport_InputLog(CustId, SportId, CreatedDate, CreatedTime, FunctionId, TurnoverRM, WinlossRM, BetCount, ActiveDays)
+	SELECT CustId, SportId, @CurrentDate, @CurrentDateTime, @FUNCTIONID, TurnoverRM, WinlossRM, BetCount, ActiveDays
+	FROM #tmpCustomerAccummulatedInfo;
 
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
 	SET a.CurrentCategoryId = c.CurrentCategoryId

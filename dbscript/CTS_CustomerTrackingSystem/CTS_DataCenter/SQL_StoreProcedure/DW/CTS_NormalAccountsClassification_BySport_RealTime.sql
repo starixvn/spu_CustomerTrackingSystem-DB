@@ -93,11 +93,6 @@ BEGIN
 	FROM @CustomersXML.nodes('//r') AS T(C)
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 	
-	-- LOG INPUT DATA
-	INSERT INTO dbo.CustomerClassification_InputLog(CustId,CreatedDate,CreatedTime,FunctionId)
-	SELECT DISTINCT CustId, @CurrentDate, @CurrentDateTime, @FUNCTIONID
-	FROM #tmpCustomers;	
-	
 	-- START	
 	-- #1: GetCustomer Accummulated data  
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, SportId, CurrentCategoryId, IsSpecialSite, SRecommend, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
@@ -114,6 +109,11 @@ BEGIN
 	FROM dbo.CustomerClassification_BySport_LatestChanged AS a WITH(NOLOCK)
 		INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.CustId AND a.SportId = c.SportId
 		LEFT JOIN bodb02.dbo.Customer AS cu WITH(NOLOCK) ON a.CustId = cu.custid;
+
+	-- Log Input Data
+	INSERT INTO dbo.CustomerClassification_BySport_InputLog(CustId, SportId, CreatedDate, CreatedTime, FunctionId, TurnoverRM, WinlossRM, BetCount, ActiveDays)
+	SELECT CustId, SportId, @CurrentDate, @CurrentDateTime, @FUNCTIONID, TurnoverRM, WinlossRM, BetCount, ActiveDays
+	FROM #tmpCustomerAccummulatedInfo;
 
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
 	SET a.IsDeposit = 1
