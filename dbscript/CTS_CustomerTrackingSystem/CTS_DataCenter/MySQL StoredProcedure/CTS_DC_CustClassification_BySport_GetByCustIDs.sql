@@ -41,10 +41,7 @@ BEGIN
 			, 	cate.CategoryID
 	FROM Temp_RealtimeCustomers AS temp
 		LEFT JOIN 	CTS_DataCenter.CTSCustomerClassification_BySport AS cate ON cate.CustID = temp.CustID AND cate.SportID = temp.SportID
-	WHERE	(cate.CategoryID IN (CONST_CATEGORY_NEWMEMBER, CONST_CATEGORY_NORMALMEMBER, CONST_CATEGORY_GOOD)
-			OR cate.CustID IS NULL)
-			AND NOT EXISTS (SELECT 1 
-							 FROM  CTS_DataCenter.ProbationAccountMonitor_BySport AS pro 
-							 WHERE pro.CustID = temp.CustID AND pro.SportID = temp.SportID);
+	WHERE	cate.CategoryID IN (CONST_CATEGORY_NEWMEMBER, CONST_CATEGORY_NORMALMEMBER, CONST_CATEGORY_GOOD)
+			OR cate.CustID IS NULL;
 END$$
 DELIMITER ;

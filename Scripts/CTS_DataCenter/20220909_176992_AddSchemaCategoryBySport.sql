@@ -43,6 +43,5 @@ CREATE TABLE ProbationAccountMonitor_BySport (
 INSERT INTO `CTS_DataCenter`.`SystemParameter` (`ParameterID`, `ParameterName`, `ParameterDesc`, `ParameterDataType`, `ParameterValue`) VALUES ('113', 'DailyScan_Normal_BySport_BatchSize', 'DailyScan_Normal_BySport_BatchSize', 'BIGINT', '0');
 INSERT INTO `CTS_DataCenter`.`SystemParameter` (`ParameterID`, `ParameterName`, `ParameterDesc`, `ParameterDataType`, `ParameterValue`) VALUES ('114', 'DailyScan_Normal_BySport_LastCategoryID', 'DailyScan_Normal_BySport_LastCategoryID', 'BIGINT', '0');
 INSERT INTO `CTS_DataCenter`.`SystemParameter` (`ParameterID`, `ParameterName`, `ParameterDesc`, `ParameterDataType`, `ParameterValue`) VALUES ('115', 'DailyScan_Normal_BySport_LastCustID', 'DailyScan_Normal_BySport_LastCustID', 'BIGINT', '0');
-INSERT INTO `CTS_DataCenter`.`SystemParameter` (`ParameterID`, `ParameterName`, `ParameterDesc`, `ParameterDataType`, `ParameterValue`) VALUES ('116', 'DailyScan_Normal_BySport_LastSportID', 'DailyScan_Normal_BySport_LastSportID', 'SMALLINT', '0');
 
 
