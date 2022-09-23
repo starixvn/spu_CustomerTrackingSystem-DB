@@ -60,7 +60,7 @@ BEGIN
 		AND ScanIntervalInSecond > 0; 
     
     SELECT ParameterValue 
-    INTO lv_BatchSize 
+    INTO lv_BatchSize
     FROM CTS_DataCenter.SystemParameter 
     WHERE ParameterID = 113; 
     
@@ -97,9 +97,8 @@ BEGIN
 			AND NOT EXISTS (SELECT 1 
 							 FROM  CTS_DataCenter.ProbationAccountMonitor_BySport AS pro 
 							 WHERE pro.CustID = clss.CustID AND pro.SportID = clss.SportID)
-		ORDER BY 	clss.CategoryID ASC
+		ORDER BY 	clss.CustID ASC
             , 		clss.SportID ASC
-			,	 	clss.CustID ASC
 		LIMIT ", lv_BatchSize, ";");
 
     PREPARE stmt1 FROM @sql;
@@ -138,8 +137,7 @@ BEGIN
 			AND NOT EXISTS (SELECT 1 
 							 FROM  CTS_DataCenter.ProbationAccountMonitor_BySport AS pro 
 							 WHERE pro.CustID = clss.CustID AND pro.SportID = clss.SportID)
-		ORDER BY clss.CategoryID ASC
-			,	 clss.CustID ASC
+		ORDER BY clss.CustID ASC
             , 	 clss.SportID ASC
 		LIMIT ", lv_BatchSize,";");
     
@@ -155,11 +153,13 @@ BEGIN
     FROM Temp_Normal;
     
     IF lv_NextCustID IS NOT NULL THEN
-		DELETE FROM Temp_Normal WHERE CustID = lv_NextCustID;
-        
-        SELECT MAX(CustID)
-		INTO lv_NextCustID
-		FROM Temp_Normal;	
+		IF ((SELECT COUNT(1) FROM Temp_Normal) = lv_BatchSize) THEN
+			DELETE FROM Temp_Normal WHERE CustID = lv_NextCustID;
+			
+			SELECT MAX(CustID)
+			INTO lv_NextCustID
+			FROM Temp_Normal;	
+		END IF;
         
         SET op_LastCategoryID = lv_NextCategoryID;
 		SET op_LastCustID = lv_NextCustID;
