@@ -28,7 +28,7 @@ BEGIN
 	
 	DECLARE @PARLAY_SPORTID		SMALLINT = -100
 
-	DECLARE @FUNCTIONID			SMALLINT = 102;
+	DECLARE @FUNCTIONID			SMALLINT = 2;
 
 	DECLARE @SPORT_SOCCER		SMALLINT = 1;
 	DECLARE @SPORT_BASKETBALL	SMALLINT = 2;
@@ -201,21 +201,23 @@ BEGIN
 	WHERE r.SportId NOT IN (@SPORT_SOCCER, @SPORT_BASKETBALL, @SPORT_ESPORT)
 
 	-- #6: Sum data by custid, sportid
-	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, SportId, CurrentCategoryId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
+	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, SportId, CurrentCategoryId, IsProbationLastDay, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
 	SELECT	a.CustId
 		,	a.SportId
 		,   @CATEGORY_PROBATION
+		,   c.IsProbationLastDay
 		,	SUM(a.TurnoverRM)
 		,	SUM(a.WinlossRM)
 		,	CASE WHEN SUM(a.TurnoverRM) = 0 THEN 0 ELSE SUM(a.WinlossRM) / SUM(a.TurnoverRM) * 100 END
 		,	SUM(a.BetCount)
 		,	MAX(a.ActiveDays)
 	FROM #tmpRawData AS a WITH(NOLOCK)
-	GROUP BY a.CustId, a.SportId;
+		INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.CustId AND a.SportId = c.SportId
+	GROUP BY a.CustId, a.SportId, IsProbationLastDay;
 
 	-- Log Input Data
-	INSERT INTO dbo.CustomerClassification_BySport_InputLog(CustId, SportId, CreatedDate, CreatedTime, FunctionId, TurnoverRM, WinlossRM, BetCount, ActiveDays)
-	SELECT CustId, SportId, @CurrentDate, @CurrentDateTime, @FUNCTIONID, TurnoverRM, WinlossRM, BetCount, ActiveDays
+	INSERT INTO dbo.CustomerClassification_BySport_InputLog(CustId, SportId, CreatedDate, CreatedTime, FunctionId, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId)
+	SELECT CustId, SportId, @CurrentDate, @CurrentDateTime, @FUNCTIONID, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId
 	FROM #tmpCustomerAccummulatedInfo;
 
 	-- Get site info
@@ -236,11 +238,6 @@ BEGIN
 	FROM #tmpCustomerAccummulatedInfo AS a
 		INNER JOIN bodb02.dbo.Dep_CustSuper AS c WITH(NOLOCK) ON a.SRecommend = c.custid;	
 
-	UPDATE a WITH(ROWLOCK, UPDLOCK)
-	SET a.IsProbationLastDay = c.IsProbationLastDay
-	FROM #tmpCustomerAccummulatedInfo as a
-		INNER JOIN #tmpCustomers as c WITH(NOLOCK) ON a.CustId = c.CustId AND a.SportId = c.SportId
-
 	-- #7: Classify GOOD, NEW, NORMAL, PROBATION, SMART, RISKY MEMBER
 	INSERT INTO #tmpResultData(CustId, SportId, CategoryId)
 	SELECT  CustId
@@ -256,7 +253,7 @@ BEGIN
 			 WHERE 	   (r.RuleGroupId = 2 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM > r.WinlossRM)																	-- NEW MEMBER	
 					OR (r.RuleGroupId = 3 AND a.BetCount > r.BetCount AND a.Margin < r.Margin AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays)																		-- GOOD
 					OR (r.RuleGroupId = 4 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin < r.Margin2)																		-- NORMAL
-					OR (r.RuleGroupId = 5 AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND NOT (a.BetCount > r.BetCount2 AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays))									-- NORMAL									
+					OR (r.RuleGroupId = 5 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND NOT (a.BetCount > r.BetCount2 AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays))									-- NORMAL									
 					OR (r.RuleGroupId = 6 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM <= r.WinlossRM)																-- NORMAL
 					OR (r.RuleGroupId = 7 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM < r.WinlossRM)																		-- NORMAL
 					OR (r.RuleGroupId = 11 AND r.CurrentCategory = a.CurrentCategoryId AND a.IsProbationLastDay = 1 AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)	-- SMART

@@ -20,6 +20,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 CREATE TABLE [dbo].[CustomerClassification_BySport_InputLog](
+    [ID] [int] NOT NULL IDENTITY(1,1) PRIMARY KEY,
 	[CustId] [int] NOT NULL,
 	[SportId] [int] NOT NULL,
 	[CreatedDate] [date] NOT NULL,
@@ -29,18 +30,14 @@ CREATE TABLE [dbo].[CustomerClassification_BySport_InputLog](
 	[WinlossRM] DECIMAL(19, 4) NULL,
 	[BetCount] [bigint] NULL,
 	[ActiveDays] [int] NULL,
+	[CurrentCategoryId]	SMALLINT NULL
 )
 GO
 
-CREATE CLUSTERED INDEX [IX_CustomerClassification_BySport_InputLog_CustId_FunctionId] ON [dbo].[CustomerClassification_BySport_InputLog]
+CREATE NONCLUSTERED INDEX [IX_CustomerClassification_BySport_InputLog_CustId_FunctionId] ON [dbo].[CustomerClassification_BySport_InputLog]
 (
 	[CustId],
 	[FunctionId],
 	[CreatedDate],
 	[SportId]
 )
-
-GRANT EXECUTE ON [dbo].[CTS_NormalAccountsClassification_BySport_RealTime_CheckChanges] TO [bodbSPUNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[CTS_NormalAccountsClassification_BySport_RealTime_CheckChanges] TO [bodbSPUNet]
-GO

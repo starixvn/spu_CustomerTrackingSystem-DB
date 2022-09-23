@@ -111,17 +111,17 @@ INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, C
 VALUES (4, 99, 202, 'Normal', 4, 0, 20, '>=', -2, '<=',  0, '<');
 
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, BetCount, Operator_BetCount, BetCount2, Operator_BetCount2, Margin, Operator_Margin, TurnoverRM, Operator_Turnover, ActiveDays, Operator_ActiveDate) 
-VALUES (5, 1, 202, 'Normal', 4, 10, '>=', 300, '>', -2, '<', 150000, '>', 8, '>=');
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, IsSpecialSite, BetCount, Operator_BetCount, BetCount2, Operator_BetCount2, Margin, Operator_Margin, TurnoverRM, Operator_Turnover, ActiveDays, Operator_ActiveDate) 
+VALUES (5, 1, 202, 'Normal', 4, 0, 10, '>=', 300, '>', -2, '<', 150000, '>', 8, '>=');
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, BetCount, Operator_BetCount, BetCount2, Operator_BetCount2, Margin, Operator_Margin, TurnoverRM, Operator_Turnover, ActiveDays, Operator_ActiveDate) 
-VALUES (5, 2, 202, 'Normal', 4, 10, '>=', 200, '>', -2, '<', 100000, '>', 8, '>=');
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, IsSpecialSite, BetCount, Operator_BetCount, BetCount2, Operator_BetCount2, Margin, Operator_Margin, TurnoverRM, Operator_Turnover, ActiveDays, Operator_ActiveDate) 
+VALUES (5, 2, 202, 'Normal', 4, 0, 10, '>=', 200, '>', -2, '<', 100000, '>', 8, '>=');
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, BetCount, Operator_BetCount, BetCount2, Operator_BetCount2, Margin, Operator_Margin, TurnoverRM, Operator_Turnover, ActiveDays, Operator_ActiveDate) 
-VALUES (5, 43, 202, 'Normal', 4, 20, '>=', 200, '>', -2, '<', 100000, '>', 8, '>=');
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, IsSpecialSite, BetCount, Operator_BetCount, BetCount2, Operator_BetCount2, Margin, Operator_Margin, TurnoverRM, Operator_Turnover, ActiveDays, Operator_ActiveDate) 
+VALUES (5, 43, 202, 'Normal', 4, 0, 20, '>=', 200, '>', -2, '<', 100000, '>', 8, '>=');
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, BetCount, Operator_BetCount, BetCount2, Operator_BetCount2, Margin, Operator_Margin, TurnoverRM, Operator_Turnover, ActiveDays, Operator_ActiveDate)
-VALUES (5, 99, 202, 'Normal', 4, 20, '>=', 200, '>', -2, '<', 75000, '>', 8, '>=');
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, IsSpecialSite, BetCount, Operator_BetCount, BetCount2, Operator_BetCount2, Margin, Operator_Margin, TurnoverRM, Operator_Turnover, ActiveDays, Operator_ActiveDate)
+VALUES (5, 99, 202, 'Normal', 4, 0, 20, '>=', 200, '>', -2, '<', 75000, '>', 8, '>=');
 
 
 INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, IsSpecialSite, BetCount, Operator_BetCount, Margin, Operator_Margin, WinlossRM, Operator_Winloss) 

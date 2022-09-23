@@ -38,7 +38,7 @@ BEGIN
 	DECLARE	@ToDate					DATE	 = GETDATE();
 	DECLARE	@From30Date				DATE	 = DATEADD(DAY, - 30, @ToDate);
 
-	DECLARE @FUNCTIONID				SMALLINT = 101;
+	DECLARE @FUNCTIONID				SMALLINT = 3;
 	DECLARE @ListCustIds			VARCHAR(MAX)
 
 	IF	OBJECT_ID('tempdb..#tmpRawData') IS NOT NULL
@@ -184,27 +184,24 @@ BEGIN
 	WHERE r.SportId NOT IN (@SPORT_SOCCER, @SPORT_BASKETBALL, @SPORT_ESPORT)
 
 	-- #6: Sum data by custid, sportid
-	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, SportId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
+	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, SportId, CurrentCategoryId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
 	SELECT	a.CustId
 		,	a.SportId
+		,	c.CurrentCategoryId
 		,	SUM(a.TurnoverRM)
 		,	SUM(a.WinlossRM)
 		,	CASE WHEN SUM(a.TurnoverRM) = 0 THEN 0 ELSE SUM(a.WinlossRM) / SUM(a.TurnoverRM) * 100 END
 		,	SUM(a.BetCount)
 		,	MAX(a.ActiveDays)
 	FROM #tmpRawData AS a WITH(NOLOCK)
-	GROUP BY a.CustId, a.SportId;
+		INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.CustId AND a.SportId = c.SportId
+	GROUP BY a.CustId, a.SportId, c.CurrentCategoryId;
 
 	-- Log Input Data
-	INSERT INTO dbo.CustomerClassification_BySport_InputLog(CustId, SportId, CreatedDate, CreatedTime, FunctionId, TurnoverRM, WinlossRM, BetCount, ActiveDays)
-	SELECT CustId, SportId, @CurrentDate, @CurrentDateTime, @FUNCTIONID, TurnoverRM, WinlossRM, BetCount, ActiveDays
+	INSERT INTO dbo.CustomerClassification_BySport_InputLog(CustId, SportId, CreatedDate, CreatedTime, FunctionId, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId)
+	SELECT CustId, SportId, @CurrentDate, @CurrentDateTime, @FUNCTIONID, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId
 	FROM #tmpCustomerAccummulatedInfo;
 
-	UPDATE a WITH(ROWLOCK, UPDLOCK)
-	SET a.CurrentCategoryId = c.CurrentCategoryId
-	FROM #tmpCustomerAccummulatedInfo as a
-		INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.CustId AND a.SportId = c.SportId 
-	
 	-- Get site info
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
 	SET	  a.Site = c.Site
@@ -248,7 +245,7 @@ BEGIN
 			 WHERE 	   (r.RuleGroupId = 2 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM > r.WinlossRM)											-- NEW MEMBER	
 					OR (r.RuleGroupId = 3 AND a.BetCount > r.BetCount AND a.Margin < r.Margin AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays)												-- GOOD
 					OR (r.RuleGroupId = 4 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin < r.Margin2)												-- NORMAL
-					OR (r.RuleGroupId = 5 AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND NOT (a.BetCount > r.BetCount2 AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays))			-- NORMAL
+					OR (r.RuleGroupId = 5 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND NOT (a.BetCount > r.BetCount2 AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays))			-- NORMAL
 					OR (r.RuleGroupId = 6 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM <= r.WinlossRM)										-- NORMAL
 					OR (r.RuleGroupId = 7 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM < r.WinlossRM)												-- NORMAL
 					OR (r.RuleGroupId = 8 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.WinlossRM <= r.WinlossRM)		-- PROBATION
