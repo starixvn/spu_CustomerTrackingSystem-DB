@@ -33,6 +33,7 @@ BEGIN
 			- 20220520@Aries.Nguyen: Separating insert new customer and classification [Redmine ID: #172561]
 			- 20220616@Aries.Nguyen: CTS - Problem Account Renovation Issues [Redmine ID: #174136]
 			- 20220829@Aries.Nguyen: Remove hard-coding of internal account in CTS [Redmine ID: #177042]
+            - 20220923@Aries.Nguyen: CTS - Missing Customer Info on CTS Pro [Redmine ID: #176768]
 
 		Param's Explanation (filtered by):
 		Example:
@@ -41,6 +42,7 @@ BEGIN
 				,{"BatchId":1,"CustID":15124347,"CustStatusID":1,"UserName":"HAIFARMB01554620","UserName2":"haifa$40834748","Site":"haifa","SiteID":44,"RoleID":1,"CurrencyID":13,"Currency":"RMB","SRecommend":4359240,"MRecommend":4359287,"Recommend":4359308,"CreatedDate":"2014-06-19 09:12:00.000","Danger1":0,"Danger2":0,"Danger3":0,"CustSubID":0}
 				,{"BatchId":1,"CustID":18349232,"CustStatusID":1,"UserName":"HAIFARMB01897790","UserName2":"haifa$83884255","Site":"haifa","SiteID":44,"RoleID":1,"CurrencyID":13,"Currency":"RMB","SRecommend":4359240,"MRecommend":4359287,"Recommend":4359308,"CreatedDate":"2015-06-28 07:22:00.000","Danger1":0,"Danger2":0,"Danger3":0,"CustSubID":0}]');
 	*/
+	DECLARE lv_LastArchiveID 	BIGINT UNSIGNED;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomer;    
 	CREATE TEMPORARY TABLE Temp_CTSCustomer( 	  
@@ -79,6 +81,13 @@ BEGIN
         
         ,	PRIMARY KEY PK_Temp_CustExist(CustID,CustSubID)
 	);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustArchive;    
+	CREATE TEMPORARY TABLE Temp_CustArchive(
+			CTSCustID		BIGINT UNSIGNED 
+        , 	AccountID	    BIGINT UNSIGNED
+        , 	PRIMARY KEY(CTSCustID, AccountID)
+	);
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_DupUserName;    
 	CREATE TEMPORARY TABLE Temp_DupUserName(
@@ -86,7 +95,7 @@ BEGIN
         ,	CustID			INT UNSIGNED
 		,	CustSubID		INT UNSIGNED
         ,	OldCTSCustID	BIGINT UNSIGNED
-        
+        ,	OldCustID		BIGINT UNSIGNED
         ,	PRIMARY KEY PK_Temp_DupUserName(UserName)
 	);
     
@@ -160,18 +169,19 @@ BEGIN
 			)
 	) AS js
 		LEFT JOIN CTS_DataCenter.StaticList AS stl ON stl.ItemID = js.SiteID AND stl.ListID = 11;	   
-    
+
 	INSERT INTO Temp_CustExist(CustID, CustSubID)
 	SELECT	tmpCus.CustID
 		,	tmpCus.CustSubID        
 	FROM Temp_CTSCustomer AS tmpCus
 		INNER JOIN	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID AND tmpCus.CustSubID = cus.CustSubID;
   
-	INSERT INTO Temp_DupUserName(UserName, CustID, CustSubID, OldCTSCustID)
+	INSERT INTO Temp_DupUserName(UserName, CustID, CustSubID, OldCTSCustID, OldCustID)
 	SELECT  tmpCus.UserName		
 		,	tmpCus.CustID
         ,	tmpCus.CustSubID
         ,	cus.CTSCustID
+        ,	cus.CustID
 	FROM Temp_CTSCustomer AS tmpCus
 		LEFT JOIN Temp_CustExist AS tmpEx ON tmpCus.CustID = tmpEx.CustID AND tmpCus.CustSubID = tmpEx.CustSubID
 		INNER JOIN	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.UserName = cus.UserName
@@ -214,6 +224,30 @@ BEGIN
     FROM Temp_CTSCustomer AS tmpCus
     WHERE tmpCus.DuplicateType = 2;
     
+    SELECT ParameterValue
+	INTO lv_LastArchiveID
+	FROM CTS_DataCenter.SystemParameter
+	WHERE ParameterID = 45;
+    
+    INSERT IGNORE INTO Temp_CustArchive(CTSCustID, AccountID)
+    SELECT 	arc.CTSCustID
+		,	IFNULL(arc.AccountID,0) AS AccountID
+    FROM Temp_DupUserName AS cus
+		INNER JOIN CTS_DataCenter.ArchiveCustomer_CTSCustomer AS arc ON arc.CustID = cus.OldCustID AND arc.ID > lv_LastArchiveID;
+    
+    DELETE 
+    FROM CTS_DataCenter.CTSCustomer AS cus
+    WHERE EXISTS (SELECT 1 FROM Temp_CustArchive AS arc WHERE arc.CTSCustID =  cus.CTSCustID);
+    
+    DELETE 
+    FROM DCS_DataCenter.Account AS acc
+    WHERE EXISTS (SELECT 1 FROM Temp_CustArchive AS arc WHERE arc.AccountID =  acc.AccountID);
+    
+    UPDATE Temp_CTSCustomer AS cus
+    SET cus.DuplicateType = 0
+    WHERE EXISTS  (SELECT 1 FROM Temp_CustArchive AS arc WHERE arc.CTSCustID =  cus.OldCTSCustID)
+		AND cus.DuplicateType = 2;
+
     # Remove Duplicate UserName 
     DELETE tmpCus
     FROM Temp_CTSCustomer AS tmpCus
