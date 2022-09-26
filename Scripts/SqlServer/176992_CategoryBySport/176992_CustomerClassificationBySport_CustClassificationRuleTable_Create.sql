@@ -347,11 +347,42 @@ INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, C
 VALUES (11, 99, 203, 'Smart', 2, 204, 0, '<=', 2, '<=', 30, '>=', 10000, '>');
 
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, Margin, Operator_Margin, BetCount, Operator_BetCount, WinlossRM, Operator_Winloss, WinlossRM2, Operator_Winloss2)  
-VALUES (12, 43, 203, 'Smart', 2, 2, '>', 30, '>=', 10000, '>', 20000, '<=');
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, Margin, Operator_Margin, BetCount, Operator_BetCount, WinlossRM, Operator_Winloss, WinlossRM2, Operator_Winloss2)  
+VALUES (12, 43, 203, 'Smart', 2, 0 , 2, '>', 30, '>=', 10000, '>', 20000, '<=') --NULL
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, Margin, Operator_Margin, BetCount, Operator_BetCount, WinlossRM, Operator_Winloss, WinlossRM2, Operator_Winloss2)  
-VALUES (12, 99, 203, 'Smart', 2, 2, '>', 30, '>=', 10000, '>', 20000, '<='); 
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, Margin, Operator_Margin, BetCount, Operator_BetCount, WinlossRM, Operator_Winloss, WinlossRM2, Operator_Winloss2)  
+VALUES (12, 99, 203, 'Smart', 2, 0, 2, '>', 30, '>=', 10000, '>', 20000, '<='); 
+
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, Margin, Operator_Margin, BetCount, Operator_BetCount, WinlossRM, Operator_Winloss, WinlossRM2, Operator_Winloss2)  
+VALUES (12, 43, 203, 'Smart', 2, 201, 2, '>', 30, '>=', 10000, '>', 20000, '<='); --NEW
+
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, Margin, Operator_Margin, BetCount, Operator_BetCount, WinlossRM, Operator_Winloss, WinlossRM2, Operator_Winloss2)  
+VALUES (12, 99, 203, 'Smart', 2, 201, 2, '>', 30, '>=', 10000, '>', 20000, '<='); 
+
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, Margin, Operator_Margin, BetCount, Operator_BetCount, WinlossRM, Operator_Winloss, WinlossRM2, Operator_Winloss2)  
+VALUES (12, 43, 203, 'Smart', 2, 202, 2, '>', 30, '>=', 10000, '>', 20000, '<='); --NORMAL
+
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, Margin, Operator_Margin, BetCount, Operator_BetCount, WinlossRM, Operator_Winloss, WinlossRM2, Operator_Winloss2)  
+VALUES (12, 99, 203, 'Smart', 2, 202, 2, '>', 30, '>=', 10000, '>', 20000, '<='); 
+
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, Margin, Operator_Margin, BetCount, Operator_BetCount, WinlossRM, Operator_Winloss, WinlossRM2, Operator_Winloss2)  
+VALUES (12, 43, 203, 'Smart', 2, 205, 2, '>', 30, '>=', 10000, '>', 20000, '<='); --GOOD
+
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, Margin, Operator_Margin, BetCount, Operator_BetCount, WinlossRM, Operator_Winloss, WinlossRM2, Operator_Winloss2)  
+VALUES (12, 99, 203, 'Smart', 2, 205, 2, '>', 30, '>=', 10000, '>', 20000, '<='); 
+
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, Margin, Operator_Margin, BetCount, Operator_BetCount, WinlossRM, Operator_Winloss, WinlossRM2, Operator_Winloss2)  
+VALUES (12, 43, 203, 'Smart', 2, 206, 2, '>', 30, '>=', 10000, '>', 20000, '<='); --PROBATION
+
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, Margin, Operator_Margin, BetCount, Operator_BetCount, WinlossRM, Operator_Winloss, WinlossRM2, Operator_Winloss2)  
+VALUES (12, 99, 203, 'Smart', 2, 206, 2, '>', 30, '>=', 10000, '>', 20000, '<='); 
+
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, Margin, Operator_Margin, BetCount, Operator_BetCount, WinlossRM, Operator_Winloss, WinlossRM2, Operator_Winloss2)  
+VALUES (12, 43, 203, 'Smart', 2, 203, 2, '>', 30, '>=', 10000, '>', 20000, '<='); --SMART
+
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, Margin, Operator_Margin, BetCount, Operator_BetCount, WinlossRM, Operator_Winloss, WinlossRM2, Operator_Winloss2)  
+VALUES (12, 99, 203, 'Smart', 2, 203, 2, '>', 30, '>=', 10000, '>', 20000, '<='); 
+
 
 
 INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, Margin, Operator_Margin, BetCount, Operator_BetCount, WinlossRM, Operator_Winloss, WinlossRM2, Operator_Winloss2) 

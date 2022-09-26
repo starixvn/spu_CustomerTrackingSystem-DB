@@ -26,7 +26,7 @@ AS
 		exec [dbo].[CTS_NormalAccountsClassification_BySport_Daily]
 */
 BEGIN
-	
+
 	SET NOCOUNT ON;
 	DECLARE @SPORT_SOCCER				SMALLINT = 1;
 	DECLARE @SPORT_BASKETBALL			SMALLINT = 2;
@@ -133,6 +133,16 @@ BEGIN
 		,	PRIMARY KEY CLUSTERED (CustId, SportId)
 	);
 
+	IF	OBJECT_ID('tempdb..#tmpResultData') IS NOT NULL
+	DROP TABLE	#tmpResultData;
+
+	CREATE TABLE #tmpResultData(
+		[CustId]			INT NOT NULL,
+		[SportId]			INT NOT NULL,
+		[CategoryId]		SMALLINT NOT NULL,
+		PRIMARY KEY CLUSTERED ([CustId],[SportId])
+	);
+
 	INSERT INTO #tmpCustomers(CustId, SportId, CurrentCategoryId)
 	SELECT	T.C.value('./@CustId', 'INT') AS CustId
 		,	T.C.value('./@SportId', 'SMALLINT') AS SportId
@@ -147,7 +157,7 @@ BEGIN
 
 	INSERT INTO #tmpActiveMember(CustId, IsActive)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @ListCustIds, @ResultDataMode = 2, @FromDate = @From30Date, @ToDate = @ToDate;	
-	
+
 	-- #2: Remove account Closed & Disabled accounts & SMA account & Internal Account
 	DELETE r WITH(ROWLOCK)
 	FROM #tmpCustomers AS r
@@ -171,7 +181,7 @@ BEGIN
 
 	INSERT INTO #tmpRawData(CustId, SportId, SportGroup, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDays)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @ListCustIds, @ResultDataMode = 1;	
-	
+
 	-- #4: Remove Non-Sport
 	DELETE r WITH(ROWLOCK)
 	FROM #tmpRawData AS r
@@ -221,24 +231,14 @@ BEGIN
 	WHERE (a.Site = 'NextBet' OR a.Site = '9wickets' OR a.Site = '9wsports');
 
 	-- #7: Classify GOOD, NEW, NORMAL, PROBATION, SMART, RISKY MEMBER
-	INSERT INTO dbo.CustomerClassification_BySport(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
+	INSERT INTO #tmpResultData(CustId, SportId, CategoryId)
 	SELECT  CustId
 		,	SportId
 		,	CategoryId
-		,	@CurrentDate
-		,	@CurrentDateTime
-		,	TurnoverRM
-		,	WinlossRM
-		,	BetCount
-		,	ActiveDays
 	FROM (
-			SELECT a.CustId
+			SELECT  a.CustId
 				,	a.SportId
 				,   r.CategoryId
-				,	a.TurnoverRM
-				,	a.WinlossRM
-				,	a.BetCount
-				,	a.ActiveDays
 				,	ROW_NUMBER() OVER(PARTITION BY a.CustId, a.SportId ORDER BY r.Prioity ASC) AS RowNum
 			 FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 				INNER JOIN dbo.CustomerClassification_BySport_Rule AS r WITH(NOLOCK) ON a.SportId = r.SportId 
@@ -252,13 +252,26 @@ BEGIN
 					OR (r.RuleGroupId = 9 AND a.CurrentCategoryId = r.CurrentCategory AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin)									-- PROBATION
 					OR (r.RuleGroupId = 10 AND a.CurrentCategoryId = r.CurrentCategory AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM >= r.WinlossRM)	-- PROBATION
 					OR (r.RuleGroupId = 11 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)		-- SMART
-					OR (r.RuleGroupId = 12 AND a.BetCount >= r.BetCount AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM AND a.WinlossRM <= r.WinlossRM2)												-- SMART
+					OR (r.RuleGroupId = 12 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount >= r.BetCount AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM AND a.WinlossRM <= r.WinlossRM2)												-- SMART
 					OR (r.RuleGroupId = 13 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM AND a.WinlossRM <= r.WinlossRM2)	-- SMART
 					OR (r.RuleGroupId = 14 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.WinlossRM > r.WinlossRM)									-- SMART
 					OR (r.RuleGroupId = 15 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)									-- RISKY
 					OR (r.RuleGroupId = 16 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM)																-- RISKY
 		) as b
 	 WHERE b.RowNum = 1;
+
+	INSERT INTO dbo.CustomerClassification_BySport(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
+	SELECT  a.CustId
+		,	a.SportId
+		,	CASE WHEN r.CategoryId IS NULL THEN a.CurrentCategoryId ELSE r.CategoryId END
+		,	@CurrentDate
+		,	@CurrentDateTime
+		,	a.TurnoverRM
+		,	a.WinlossRM
+		,	a.BetCount
+		,	a.ActiveDays
+	 FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
+	   LEFT JOIN #tmpResultData AS r WITH(NOLOCK) ON a.CustId = r.CustId AND a.SportId = r.SportId
 
 	
 	DROP TABLE #tmpCustomerAccummulatedInfo;

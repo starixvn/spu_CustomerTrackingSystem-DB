@@ -86,6 +86,16 @@ BEGIN
 		,	PRIMARY KEY CLUSTERED (CustId, SportId)
 	);
 
+	IF	OBJECT_ID('tempdb..#tmpResultData') IS NOT NULL
+	DROP TABLE	#tmpResultData;
+
+	CREATE TABLE #tmpResultData(
+		[CustId]			INT NOT NULL,
+		[SportId]			INT NOT NULL,
+		[CategoryId]		SMALLINT NOT NULL,
+		PRIMARY KEY CLUSTERED ([CustId],[SportId])
+	);
+
 	INSERT INTO #tmpCustomers(CustId, SportId, CurrentCategoryId)
 	SELECT	T.C.value('./@CustId', 'INT') AS CustId
 		,	T.C.value('./@SportId', 'SMALLINT') AS SportId
@@ -144,25 +154,14 @@ BEGIN
 		AND (v.CustId IS NOT NULL AND (a.BetCount - v.BetCount < 20));
 
 	-- #4: Classify GOOD, NEW, NORMAL, PROBATION MEMBER
-	INSERT INTO dbo.CustomerClassification_BySport(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
-	SELECT CustId
+	INSERT INTO #tmpResultData(CustId, SportId, CategoryId)
+	SELECT  CustId
 		,	SportId
 		,	CategoryId
-		,	@CurrentDate
-		,	@CurrentDateTime
-		,	TurnoverRM
-		,	WinlossRM
-		,	BetCount
-		,	ActiveDays
 	FROM (
 			SELECT a.CustId
 				,	a.SportId
 				,   r.CategoryId
-				,   r.Prioity
-				,	a.TurnoverRM
-				,	a.WinlossRM
-				,	a.BetCount
-				,	a.ActiveDays
 				,	ROW_NUMBER() OVER(PARTITION BY a.CustId, a.SportId ORDER BY r.Prioity ASC) AS RowNum
 			 FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 				INNER JOIN dbo.CustomerClassification_BySport_Rule AS r WITH(NOLOCK) ON a.SportId = r.SportId 
@@ -176,10 +175,23 @@ BEGIN
 					OR (r.RuleGroupId = 9 AND a.CurrentCategoryId = r.CurrentCategory AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin)										-- PROBATION
 					OR (r.RuleGroupId = 10 AND a.CurrentCategoryId = r.CurrentCategory AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM >= r.WinlossRM)		-- PROBATION
 					OR (r.RuleGroupId = 11 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)			-- SMART
-					OR (r.RuleGroupId = 12 AND a.BetCount >= r.BetCount AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM AND a.WinlossRM <= r.WinlossRM2)													-- SMART
+					OR (r.RuleGroupId = 12 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount >= r.BetCount AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM AND a.WinlossRM <= r.WinlossRM2)		-- SMART
 					OR (r.RuleGroupId = 15 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)										-- RISKY					
 		) as b
 	 WHERE b.RowNum = 1;
+
+	INSERT INTO dbo.CustomerClassification_BySport(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
+	SELECT  a.CustId
+		,	a.SportId
+		,	CASE WHEN r.CategoryId IS NULL THEN a.CurrentCategoryId ELSE r.CategoryId END
+		,	@CurrentDate
+		,	@CurrentDateTime
+		,	a.TurnoverRM
+		,	a.WinlossRM
+		,	a.BetCount
+		,	a.ActiveDays
+	 FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
+	   LEFT JOIN #tmpResultData AS r WITH(NOLOCK) ON a.CustId = r.CustId AND a.SportId = r.SportId
 
 	-- #8: Update last scanned ticket count back to dbo.CustomerClassification_BetCount
 	UPDATE v WITH(ROWLOCK, UPDLOCK)
