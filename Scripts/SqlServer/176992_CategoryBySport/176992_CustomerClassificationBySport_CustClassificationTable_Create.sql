@@ -51,3 +51,8 @@ CREATE NONCLUSTERED INDEX [CIX_CustomerClassification_BySport_CustIdSportIdCateg
 )
 
 GO
+
+GRANT EXECUTE ON [dbo].[CustomerClassification_BySport] TO [bodbSPUNet]
+GO
+GRANT VIEW DEFINITION ON [dbo].[CustomerClassification_BySport] TO [bodbSPUNet]
+GO

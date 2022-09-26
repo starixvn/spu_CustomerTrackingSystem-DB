@@ -41,3 +41,9 @@ CREATE NONCLUSTERED INDEX [IX_CustomerClassification_BySport_InputLog_CustId_Fun
 	[CreatedDate],
 	[SportId]
 )
+
+
+GRANT EXECUTE ON [dbo].[CustomerClassification_BySport_InputLog] TO [bodbSPUNet]
+GO
+GRANT VIEW DEFINITION ON [dbo].[CustomerClassification_BySport_InputLog] TO [bodbSPUNet]
+GO

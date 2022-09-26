@@ -489,3 +489,9 @@ VALUES (16, 43, 204, 'Risky', 1, 204, 2, '>', 10000, '>');
 
 INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, Margin, Operator_Margin, WinlossRM, Operator_Winloss) 
 VALUES (16, 99, 204, 'Risky', 1, 204, 2, '>', 10000, '>');
+
+
+GRANT EXECUTE ON [dbo].[CustomerClassification_BySport_Rule] TO [bodbSPUNet]
+GO
+GRANT VIEW DEFINITION ON [dbo].[CustomerClassification_BySport_Rule] TO [bodbSPUNet]
+GO

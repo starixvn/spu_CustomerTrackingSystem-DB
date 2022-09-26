@@ -33,3 +33,8 @@ CREATE TABLE [dbo].[CustomerClassification_BySport_BetCount](
 	)
 )
 GO
+
+GRANT EXECUTE ON [dbo].[CustomerClassification_BySport_BetCount] TO [bodbSPUNet]
+GO
+GRANT VIEW DEFINITION ON [dbo].[CustomerClassification_BySport_BetCount] TO [bodbSPUNet]
+GO
