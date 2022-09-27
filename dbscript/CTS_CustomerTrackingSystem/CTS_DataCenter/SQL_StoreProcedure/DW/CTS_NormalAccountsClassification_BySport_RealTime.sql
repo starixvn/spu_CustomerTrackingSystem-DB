@@ -96,6 +96,20 @@ BEGIN
 		PRIMARY KEY CLUSTERED ([CustId],[SportId])
 	);
 
+	IF	OBJECT_ID('tempdb..#tmpDeletedCustomers') IS NOT NULL
+	DROP TABLE	#tmpDeletedCustomers;
+
+	CREATE TABLE #tmpDeletedCustomers(
+		[CustId]			INT NOT NULL,
+		[SportId]			INT NOT NULL,
+		[TurnoverRM]		DECIMAL(19, 4) NULL,
+		[WinlossRM]			DECIMAL(19, 4) NULL,
+		[BetCount]			BIGINT NULL,
+		[ActiveDays]		INT NULL,
+		[CurrentCategoryId]	SMALLINT NULL
+		PRIMARY KEY CLUSTERED ([CustId],[SportId])
+	);
+
 	INSERT INTO #tmpCustomers(CustId, SportId, CurrentCategoryId)
 	SELECT	T.C.value('./@CustId', 'INT') AS CustId
 		,	T.C.value('./@SportId', 'SMALLINT') AS SportId
@@ -141,6 +155,8 @@ BEGIN
 	-- #3: Remove Accounts that Ticket Count has not reach the schedule
 	-- Remove Accounts less than 100 tickets compared to last scan for GOODMEMBER
 	DELETE a WITH(ROWLOCK)
+		OUTPUT DELETED.CustId, DELETED.SportId, DELETED.CurrentCategoryId, DELETED.WinlossRM, DELETED.TurnoverRM, DELETED.BetCount, DELETED.ActiveDays 
+		INTO #tmpDeletedCustomers(CustId, SportId, CurrentCategoryId, WinlossRM, TurnoverRM, BetCount, ActiveDays)
 	FROM #tmpCustomerAccummulatedInfo AS a
 		LEFT JOIN dbo.CustomerClassification_BySport_BetCount AS v WITH(NOLOCK) ON a.CustId = v.CustId AND a.SportId = v.SportId
 	WHERE a.CurrentCategoryId IN (@CATEGORY_GOODMEMBER)
@@ -148,10 +164,16 @@ BEGIN
 
 	-- Remove Accounts less than 20 tickets compared to last scan for Normal Member
 	DELETE a WITH(ROWLOCK)
+		OUTPUT DELETED.CustId, DELETED.SportId, DELETED.CurrentCategoryId, DELETED.WinlossRM, DELETED.TurnoverRM, DELETED.BetCount, DELETED.ActiveDays 
+		INTO #tmpDeletedCustomers(CustId, SportId, CurrentCategoryId, WinlossRM, TurnoverRM, BetCount, ActiveDays)
 	FROM #tmpCustomerAccummulatedInfo AS a
 		LEFT JOIN dbo.CustomerClassification_BySport_BetCount AS v WITH(NOLOCK) ON a.CustId = v.CustId AND a.SportId = v.SportId
 	WHERE a.CurrentCategoryId IN (@CATEGORY_NORMALMEMBER)
 		AND (v.CustId IS NOT NULL AND (a.BetCount - v.BetCount < 20));
+
+	INSERT INTO dbo.CustomerClassification_BySport(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
+	SELECT  a.CustId, a.SportId, a.CurrentCategoryId, @CurrentDate,	@CurrentDateTime, a.TurnoverRM,	a.WinlossRM, a.BetCount, a.ActiveDays
+	FROM #tmpDeletedCustomers AS a WITH(NOLOCK)
 
 	-- #4: Classify GOOD, NEW, NORMAL, PROBATION MEMBER
 	INSERT INTO #tmpResultData(CustId, SportId, CategoryId)
