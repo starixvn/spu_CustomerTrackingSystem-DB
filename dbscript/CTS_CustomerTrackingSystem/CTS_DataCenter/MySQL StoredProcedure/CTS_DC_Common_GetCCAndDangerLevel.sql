@@ -1,0 +1,208 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb,ctsAPI,ctsService" isFunction="0" isNested="1"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_Common_GetCCAndDangerLevel`;
+
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Common_GetCCAndDangerLevel`(
+	IN ip_CustIDs TEXT
+)
+    SQL SECURITY INVOKER
+BEGIN 
+	/*
+		Created:	20220930@Aries.Nguyen	
+		Task :		Renovate Association Detection
+		DB:			CTS_DataCenter  
+		Original: 
+		Revisions:
+			- 20220930@Aries.Nguyen: Created [RedmineID: #178311]
+
+        Param's Explanation:     
+        Example:
+			- CALL CTS_DataCenter.CTS_DC_Common_GetCCAndDangerLevel('1,2,1277,555555');
+	*/ 
+	DECLARE	CONST_GROUP_NORMAL 					INT DEFAULT 200;
+	DECLARE	CONST_GROUP_WRAPPER 				INT DEFAULT 100;
+    DECLARE	CONST_GROUP_PROBLEM 				INT DEFAULT 0;
+        
+    DECLARE	CONST_LICBACATEGORY					INT DEFAULT 2;
+    DECLARE	CONST_LICVIP_DANGEROUSCATEGORY		INT DEFAULT 3;
+    DECLARE	CONST_LICVIP_SUSPICIOUSCATEGORY		INT DEFAULT 4;    
+    DECLARE	CONST_VVIPCATEGORY					INT DEFAULT 210;
+    
+    DECLARE	lv_LicVIP_DangerousCCName 			VARCHAR(50);
+    DECLARE	lv_LicVIP_SuspiciousCCName			VARCHAR(50);
+    DECLARE	lv_LicBACC_Name						VARCHAR(50);
+    DECLARE lv_LicBACC							SMALLINT UNSIGNED;
+    DECLARE lv_LicBAPriority					SMALLINT UNSIGNED;
+    DECLARE lv_LicVIPCC_Danger					SMALLINT UNSIGNED;
+    DECLARE lv_LicVIPCC_Suspicious				SMALLINT UNSIGNED;
+    DECLARE lv_VVIPCC							SMALLINT UNSIGNED;
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;
+    CREATE TEMPORARY TABLE 		Temp_CustInfo (
+        	CustID						BIGINT UNSIGNED PRIMARY KEY 
+		,	IsLicensee					BIT 
+		,	IsLicenseeVIP				BIT 
+		,	IsLicenseeBA				BIT 				
+		,	IsRobotException 			BIT 
+		,   SpecialCC	       			INT  
+        ,	SpecialCCName				VARCHAR(50)
+		,   SpecialCCPriority   		SMALLINT DEFAULT -1
+		,   SpecialCCDangerProbation   	BIT DEFAULT NULL
+		,	DangerLevel					INT  
+		,	DangerLevelType				INT  
+    );    
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustCateInfo;
+    CREATE TEMPORARY TABLE 		Temp_CustCateInfo (
+        	CustID				BIGINT UNSIGNED PRIMARY KEY
+		,	CategoryID			INT
+		,	IsDangerProbation	BIT DEFAULT 0
+		,	CustomerClass		INT
+        ,	CustomerClassName  	VARCHAR(50)
+        ,	DangerLevel			INT
+		,	DangerLevelType		SMALLINT  
+    );  
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustLatestCate;
+    CREATE TEMPORARY TABLE 		Temp_CustLatestCate (
+        	CustID				BIGINT UNSIGNED PRIMARY KEY
+		,	LatesCCPriority   	SMALLINT DEFAULT -1  
+    );  
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustClassificationInfo;
+    CREATE TEMPORARY TABLE 		Temp_CustClassificationInfo (
+			ID 					BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY
+        ,	CustID				BIGINT UNSIGNED 
+		,	CategoryID			INT
+		,	CustomerClass		INT
+        ,	CustomerClassName  	VARCHAR(50)
+        ,	DangerLevel			INT
+		,	DangerLevelType		SMALLINT  
+        ,	INDEX 				IX_Temp_CustClassificationInfo_CustID(CustID)
+    );  
+     
+	/* INIT */    
+    SELECT CustomerClass, Priority, CustomerClassName
+    INTO lv_LicBACC, lv_LicBAPriority, lv_LicBACC_Name
+    FROM CustomerCategory WHERE CategoryID = CONST_LICBACATEGORY;
+    
+    SELECT CustomerClass, CustomerClassName
+    INTO lv_LicVIPCC_Danger, lv_LicVIP_DangerousCCName
+    FROM CustomerCategory WHERE CategoryID = CONST_LICVIP_DANGEROUSCATEGORY;
+    
+    SELECT CustomerClass, CustomerClassName
+    INTO lv_LicVIPCC_Suspicious, lv_LicVIP_SuspiciousCCName
+    FROM CustomerCategory WHERE CategoryID = CONST_LICVIP_SUSPICIOUSCATEGORY;    
+    
+    SELECT CustomerClass
+    INTO lv_VVIPCC
+    FROM CustomerCategory WHERE CategoryID = CONST_VVIPCATEGORY;
+    
+    /* START */
+    INSERT IGNORE INTO Temp_CustInfo (CustID,IsLicensee,IsLicenseeVIP,IsLicenseeBA,IsRobotException,SpecialCC)
+    SELECT  tmp.CustID
+		,	cus.IsLicensee
+        ,	cus.IsLicenseeVIP
+        ,	cus.IsLicenseeBA
+        ,	CASE WHEN (cus.IsLicensee = 0 AND cus.SiteID = 16) OR (cus.IsLicensee = 0 AND cus.CurrencyID IN (6,13)) THEN 1
+				 ELSE 0 
+			END AS IsRobotException
+        , 	sp.CustomerClass
+    FROM JSON_TABLE(CONCAT('[',ip_CustIDs,']'),'$[*]' COLUMNS(NESTED PATH '$' COLUMNS (CustID BIGINT UNSIGNED PATH '$'))) AS tmp
+		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID AND cus.CustSubID  = 0
+		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = tmp.CustID;
+    
+    UPDATE Temp_CustInfo AS t
+		INNER JOIN CTS_DataCenter.CustomerCategory AS c ON t.SpecialCC = c.CustomerClass
+	SET t.SpecialCCName = c.CustomerClassName,
+		t.SpecialCCPriority = c.Priority,
+        t.SpecialCCDangerProbation = c.IsDangerProbation
+	WHERE t.SpecialCC BETWEEN 40 AND 49
+		OR t.SpecialCC IN (2500,2503,2504,2505);
+
+	INSERT INTO Temp_CustLatestCate(CustID,LatesCCPriority)
+    SELECT tmp.CustID, MIN(clss.Priority)
+    FROM Temp_CustInfo AS tmp,
+		LATERAL(SELECT 	cate.Priority
+				FROM CTS_DataCenter.CTSCustomerClassification AS clss
+					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID
+                WHERE clss.CustID = tmp.CustID
+					AND clss.SportGroupID IN (CONST_GROUP_PROBLEM, CONST_GROUP_NORMAL)
+                ORDER BY  cate.Priority ASC  
+						, clss.LastModifiedDate DESC
+                LIMIT 1) AS clss
+	GROUP BY tmp.CustID;
+                
+    INSERT INTO Temp_CustCateInfo(CustID,CategoryID,CustomerClass,CustomerClassName,DangerLevel,DangerLevelType)
+    SELECT 	tmp.CustID
+		,	clss.CategoryID
+		,	clss.CustomerClass
+        ,	clss.CustomerClassName  
+        ,	dangerlvl.DangerLevel
+        ,	CASE 
+				WHEN dangerlvl.DangerLevel IS NULL THEN 0
+				ELSE dangerlvl.DangerLevelType 
+			END AS DangerLevelType
+    FROM Temp_CustInfo AS tmp
+		INNER JOIN Temp_CustLatestCate AS t ON tmp.CustID = t.CustID,
+		LATERAL(SELECT 	CASE WHEN clss.SportGroupID = CONST_GROUP_PROBLEM AND tmp.SpecialCC IS NULL THEN cate.CategoryGroup 
+							 ELSE NULL END AS CategoryID
+					,	CASE  
+							WHEN (tmp.SpecialCC IS NULL) OR (tmp.SpecialCCPriority <> -1)
+									THEN CASE
+											WHEN cate.CustomerClass = lv_VVIPCC THEN lv_VVIPCC
+											WHEN tmp.IsLicenseeVIP = 1 AND t.LatesCCPriority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation = 1 THEN lv_LicVIPCC_Suspicious
+                                            WHEN tmp.IsLicenseeVIP = 1 AND t.LatesCCPriority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation IS NOT NULL THEN lv_LicVIPCC_Danger
+											WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN lv_LicVIPCC_Suspicious
+                                            WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN lv_LicVIPCC_Danger
+                                            WHEN tmp.IsLicenseeBA = 1 AND cate.Priority > lv_LicBAPriority THEN lv_LicBACC                                            
+                                            WHEN tmp.SpecialCCPriority <> -1 AND cate.Priority > tmp.SpecialCCPriority THEN tmp.SpecialCC
+                                            ELSE cate.CustomerClass
+										END
+							ELSE tmp.SpecialCC
+						END AS CustomerClass
+					,	CASE  
+							WHEN (tmp.SpecialCC IS NULL) OR (tmp.SpecialCCPriority <> -1)
+									THEN CASE
+											WHEN cate.CustomerClass = lv_VVIPCC THEN cate.CustomerClassName
+											WHEN tmp.IsLicenseeVIP = 1 AND t.LatesCCPriority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation = 1 THEN lv_LicVIP_SuspiciousCCName
+                                            WHEN tmp.IsLicenseeVIP = 1 AND t.LatesCCPriority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation = 0 THEN lv_LicVIP_DangerousCCName
+											WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN lv_LicVIP_SuspiciousCCName
+                                            WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN lv_LicVIP_DangerousCCName
+                                            WHEN tmp.IsLicenseeBA = 1 AND cate.Priority > lv_LicBAPriority THEN lv_LicBACC_Name                                            
+                                            WHEN tmp.SpecialCCPriority <> -1 AND cate.Priority > tmp.SpecialCCPriority THEN tmp.SpecialCCName
+                                            ELSE cate.CustomerClassName
+										END
+							ELSE tmp.SpecialCCName
+						END AS CustomerClassName
+				FROM CTS_DataCenter.CTSCustomerClassification AS clss
+					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID
+                WHERE clss.CustID = tmp.CustID
+					AND clss.SportGroupID IN (CONST_GROUP_PROBLEM, CONST_GROUP_WRAPPER, CONST_GROUP_NORMAL)
+                ORDER BY  cate.Priority ASC  
+						, clss.LastModifiedDate DESC
+                LIMIT 1) AS clss,
+		LATERAL(SELECT 	CASE WHEN tmp.IsLicensee = 1 THEN cc.ABIDangerLevel_Licensee
+							 WHEN tmp.IsLicensee = 0 THEN cc.ABIDangerLevel_Credit
+						 END AS DangerLevel
+                    ,	cc.DangerLevelType 
+				FROM CTS_DataCenter.CTSCustomerClassification AS c
+					INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON c.CategoryID = cc.CategoryID
+                WHERE c.CustID = tmp.CustID
+					AND c.SportGroupID IN (CONST_GROUP_PROBLEM, CONST_GROUP_NORMAL)
+                ORDER BY  cc.Priority ASC  
+						, c.LastModifiedDate DESC
+                LIMIT 1) AS dangerlvl;
+                
+	INSERT INTO Temp_CustClassificationInfo(CustID, CategoryID, CustomerClass, CustomerClassName, DangerLevel, DangerLevelType)	
+	SELECT 	tmp.CustID
+		,	cate.CategoryID
+		,	IFNULL(cate.CustomerClass,-1) AS CustomerClass
+        ,	cate.CustomerClassName  
+        ,	cate.DangerLevel
+        ,	cate.DangerLevelType 
+    FROM Temp_CustInfo AS tmp
+		LEFT JOIN Temp_CustCateInfo AS cate ON tmp.CustID = cate.CustID;
+END$$
+
+DELIMITER ;

@@ -7,7 +7,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustInfo_UpdateCustInfoComplete`
 	,	IN ip_LastUpdateCustID	INT
 	,	IN ip_CustInfo			JSON
 )
- SQL SECURITY INVOKER
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20210208@Casey.Huynh
@@ -18,34 +18,12 @@ BEGIN
 		Revisions:
 			- 20210208@Casey.Huynh: Created [Redmine ID: 149941]
 			- 20210622@Aries.Nguyen: Update coding convention  [Redmine ID: #157203]
+            - 20220930@Aries.Nguyen: Renovate Association Detection [RedmineID: #178311]
 
 		Param's Explanation (filtered by):
 		
 		Example: 
-	*/
-	DECLARE     lv_No    INT DEFAULT 1;
-    DECLARE     lv_ErrorMessage2 VARCHAR(200) DEFAULT '';
-    DECLARE		lv_ErrorMessage	VARCHAR(200) DEFAULT '';
- 
-	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
-    BEGIN   
-		GET DIAGNOSTICS lv_No = NUMBER;
-		GET DIAGNOSTICS CONDITION lv_No 
-            lv_ErrorMessage = MESSAGE_TEXT;	
-		
-		IF(lv_No > 1) THEN
-			SET lv_No = lv_No - 1;
-			GET STACKED  DIAGNOSTICS CONDITION lv_No
-				lv_ErrorMessage2 = MESSAGE_TEXT;	
-        END IF;
-			
-		SET lv_ErrorMessage = CONCAT(lv_ErrorMessage,'; ',lv_ErrorMessage2);
-
-		CALL CTS_Log.CTS_Log_ErrorLog_Insert('CTS_DC_CTSCustomer_UpdateInfoComplete',lv_ErrorMessage, JSON_OBJECT('parameter', ip_CustInfo));
-    
-		SIGNAL SQLSTATE '99999' SET MESSAGE_TEXT = lv_ErrorMessage;
-    END;
- 
+	*/ 
 	DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomer;
 	CREATE TEMPORARY TABLE Temp_CTSCustomer(
 			CustID			INT UNSIGNED
@@ -53,26 +31,31 @@ BEGIN
 		,	Danger1			TINYINT
 		,	Danger2			TINYINT
 		,	Danger3			TINYINT
+        ,	Danger4			TINYINT
+		,	Danger5			TINYINT
   
 		,	INDEX IX_Temp_CTSCustomer_CustID(CustID)
 	);	
  
-	INSERT INTO Temp_CTSCustomer(CustID, CustStatusID, Danger1, Danger2, Danger3)
+	INSERT INTO Temp_CTSCustomer(CustID, CustStatusID, Danger1, Danger2, Danger3, Danger4, Danger5)
 	SELECT	js.CustID
 		,	js.CustStatusID
 		,	js.Danger1		
 		,	js.Danger2		
 		,	js.Danger3
-		
+		,	js.Danger4		
+		,	js.Danger5
 	FROM JSON_TABLE(ip_CustInfo, 
 		"$[*]" COLUMNS(
 				CustID			INT UNSIGNED	PATH "$.CustID"
             ,	CustStatusID	TINYINT	 		PATH "$.CustStatusID" 
 			,	Danger1			TINYINT	 		PATH "$.Danger1" 
 			,	Danger2			TINYINT	 		PATH "$.Danger2" 
-			,	Danger3			TINYINT	 		PATH "$.Danger3"				
+			,	Danger3			TINYINT	 		PATH "$.Danger3"		
+            ,	Danger4			TINYINT	 		PATH "$.Danger4" 
+			,	Danger5			TINYINT	 		PATH "$.Danger5"
 		)
-	) AS js;	
+	) AS js;	 
        
 	UPDATE 		CTS_DataCenter.CTSCustomer AS ctsCust
 		INNER JOIN 	Temp_CTSCustomer AS tempCust ON ctsCust.CustID = tempCust.CustID
@@ -80,6 +63,8 @@ BEGIN
 		,	ctsCust.Danger1 = tempCust.Danger1
 		,	ctsCust.Danger2 = tempCust.Danger2
 		,	ctsCust.Danger3 = tempCust.Danger3
+        ,	ctsCust.Danger4 = tempCust.Danger4
+		,	ctsCust.Danger5 = tempCust.Danger5
 		,	ctsCust.ModifiedTime = CURRENT_TIMESTAMP(4)
 	WHERE	ctsCust.CustSubID = 0;
     
