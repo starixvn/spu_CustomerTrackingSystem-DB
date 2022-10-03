@@ -113,17 +113,19 @@ CREATE TABLE `MatchMonitorStagingNonLive` (
   KEY `IX_MatchMonitorStagingNonLive_TransID` (`TransID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8_unicode_ci;
 */
+SELECT * FROM SystemParameter;
 #=======================INITIAL SERVICE PARAMETERs================================
 INSERT INTO SystemParameter(ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
-Values(120,'MatchMonitor_Rule03_Process_LiveLastSequenceID', 'MatchMonitor_Rule03_Process_LiveLastSequenceID','BIGINT UNSIGNED',0)
-, (121,'MatchMonitor_Rule03_Process_NonLiveLastSequenceID', 'MatchMonitor_Rule03_Process_NonLiveLastSequenceID','BIGINT UNSIGNED',0);
+Values (120,'MatchMonitor_Rule03_Process_LiveLastSequenceID', 'MatchMonitor_Rule03_Process_LiveLastSequenceID','BIGINT UNSIGNED',0)
+,	(121,'MatchMonitor_Rule03_Process_LiveLastSequenceID', 'MatchMonitor_Rule03_Process_LiveLastSequenceID','BIGINT UNSIGNED',0)
+, (122,'MatchMonitor_Rule01_Get_NoOfRow', 'MatchMonitor_Rule01_Get_NoOfRow','INT',5000);
 
 #=================Initial Rule Setting============================================
-INSERT INTO MatchMonitorRuleSetting(RuleGroupID, RuleGroupDesc, Reason, SportType, ReasonName, SportName, TimeStep, TotalStake, HighStakeValue, TotalHighStakeTicket, ModifiedDate, Comments)
-VALUES	(1, 'Rule01', 0, 1, 'Group Betting', 'Soccer', 180, 1000, NULL, NULL,  NOW(), 'Time Step In Seconds')
-	,	(1, 'Rule01', 0, 2, 'Group Betting', 'Basketball', 180, 500, NULL, NULL,  NOW(), 'Time Step In Seconds')
-    ,	(1, 'Rule01', 0, 43, 'Group Betting', 'E-Sports', 180, 500, NULL, NULL,  NOW(), 'Time Step In Seconds')
-    ,	(3, 'Rule03', 3, 1, 'Hedging', 'Soccer', 180, 2500, NULL, NULL,  NOW(), 'Time Step In Seconds');
+INSERT INTO MatchMonitorRuleSetting(RuleGroupID, RuleGroupDesc, Reason, SportType, ReasonName, SportName, TimeStep, TotalStake, ModifiedDate, Comments)
+VALUES	(1, 'Rule01', 0, 1, 'Group Betting', 'Soccer', 180, 1000, NOW(), 'Time Step In Seconds')
+	,	(1, 'Rule01', 0, 2, 'Group Betting', 'Basketball', 180, 500, NOW(), 'Time Step In Seconds')
+    ,	(1, 'Rule01', 0, 43, 'Group Betting', 'E-Sports', 180, 500, NOW(), 'Time Step In Seconds')
+    ,	(3, 'Rule03', 3, 1, 'Hedging', 'Soccer', 180, 2500, NOW(), 'Time Step In Seconds');
     
     
 CREATE TABLE `MatchMonitor` (

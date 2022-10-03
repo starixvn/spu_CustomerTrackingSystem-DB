@@ -4,7 +4,6 @@ DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule01_Get`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule01_Get`(
 		IN	ip_LiveIndicator	BOOLEAN
-	,	IN  ip_NoOfRow 			INT
 	,	OUT	op_MaxSequenceID	BIGINT UNSIGNED
 )
 	SQL SECURITY INVOKER
@@ -30,6 +29,7 @@ sp: BEGIN
 	DECLARE lv_LastSequenceID BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_MaxSequenceID BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_RuleGroupID TINYINT DEFAULT 1; #Rule 01
+    DECLARE lv_NoOfRow 	INT DEFAULT 5000;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorRuleSetting;
 	CREATE TEMPORARY TABLE Temp_MatchMonitorRuleSetting(
@@ -45,6 +45,11 @@ sp: BEGIN
     FROM CTS_DataCenter.MatchMonitorRuleSetting AS s
     WHERE s.RuleGroupID = lv_RuleGroupID;
     
+    SELECT s.ParameterValue
+    INTO lv_NoOfRow
+    FROM CTS_DataCenter.SystemParameter AS s
+    WHERE s.ParameterID = 122;
+    
 	IF ip_LiveIndicator = 1 THEN    
 		SELECT sys.ParameterValue
         INTO lv_LastSequenceID
@@ -53,7 +58,7 @@ sp: BEGIN
         
         SELECT MAX(tmp.SequenceID)
         INTO lv_MaxSequenceID
-        FROM (SELECT mms.SequenceID FROM CTS_DataCenter.MatchMonitorStagingLive AS mms WHERE mms.SequenceID > lv_LastSequenceID ORDER BY mms.SequenceID LIMIT ip_NoOfRow) AS tmp;
+        FROM (SELECT mms.SequenceID FROM CTS_DataCenter.MatchMonitorStagingLive AS mms WHERE mms.SequenceID > lv_LastSequenceID ORDER BY mms.SequenceID LIMIT lv_NoOfRow) AS tmp;
         
         SET op_MaxSequenceID = IFNULL(lv_MaxSequenceID,0) ;
         
@@ -77,7 +82,7 @@ sp: BEGIN
         
         SELECT MAX(tmp.SequenceID)
         INTO lv_MaxSequenceID
-        FROM (SELECT mms.SequenceID FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms WHERE mms.SequenceID > lv_LastSequenceID ORDER BY mms.SequenceID  LIMIT ip_NoOfRow) AS tmp;
+        FROM (SELECT mms.SequenceID FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms WHERE mms.SequenceID > lv_LastSequenceID ORDER BY mms.SequenceID  LIMIT lv_NoOfRow) AS tmp;
 		
 		SET op_MaxSequenceID = IFNULL(lv_MaxSequenceID, 0);        
         
