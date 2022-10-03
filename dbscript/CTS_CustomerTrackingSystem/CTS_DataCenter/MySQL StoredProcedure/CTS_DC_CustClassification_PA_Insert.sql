@@ -120,7 +120,7 @@ BEGIN
     #================Mapping Category================
     CALL CTS_DC_CustClassification_PA_MappingCategory(ip_InputType,ip_ProblemAccounts);
     
-	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationOldPA(CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
+	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationOldCategory(CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
 		, LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsDirect, InsertTime, TVSRequestID) 
     SELECT	tmpPa.CustID
 		,	tmpPa.CTSCustID
@@ -199,7 +199,7 @@ BEGIN
 	WHERE cls.SportGroupID = CONST_SPORTGROUP_PA;
     
     UPDATE Temp_PA AS tmpPa
-		INNER JOIN CTS_DataCenter.CTSCustomerClassificationOldPA AS cls ON tmpPa.CustID = cls.CustID 
+		INNER JOIN CTS_DataCenter.CTSCustomerClassificationOldCategory AS cls ON tmpPa.CustID = cls.CustID 
         INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID 
 	SET tmpPa.IsFromOldPA = 1, tmpPa.IsDataChanged = 1;
     

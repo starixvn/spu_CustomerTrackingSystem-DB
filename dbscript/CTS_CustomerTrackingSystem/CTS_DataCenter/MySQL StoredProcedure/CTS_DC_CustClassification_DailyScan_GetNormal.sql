@@ -38,7 +38,8 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Normal;
     CREATE TEMPORARY TABLE 	Temp_Normal (
-			CustID 			BIGINT UNSIGNED PRIMARY KEY
+			CustID 					BIGINT UNSIGNED PRIMARY KEY
+		,	CurrentCategoryID		SMALLINT
 	);
     
     INSERT INTO Temp_Category(CategoryID, ScanDate)
@@ -77,10 +78,10 @@ BEGIN
     INTO lv_ScanDateValid 
     FROM Temp_Category
     WHERE CategoryID = lv_LastCategoryID;
-  
+
     SET @sql = 	CONCAT("
-		INSERT IGNORE INTO Temp_Normal (CustID)
-		SELECT 	clss.CustID
+		INSERT IGNORE INTO Temp_Normal (CustID, CurrentCategoryID)
+		SELECT 	clss.CustID, clss.CategoryID
 		FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID_CustID)
 		WHERE clss.CustID > ", lv_LastCustID," ","
 			AND clss.CategoryID = ",lv_LastCategoryID," ","
@@ -127,8 +128,8 @@ BEGIN
 		WHERE CategoryID = lv_NextCategoryID;
         
          SET @sql =  CONCAT("
-		INSERT IGNORE INTO Temp_Normal (CustID)
-		SELECT 	clss.CustID
+		INSERT IGNORE INTO Temp_Normal (CustID, CurrentCategoryID)
+		SELECT 	clss.CustID, clss.CategoryID
 		FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID_CustID)
 		WHERE clss.CustID > 0
 			AND clss.CategoryID = ", lv_NextCategoryID," ","
@@ -170,7 +171,7 @@ BEGIN
         SET op_LastCustID = 0;
     END IF;
     
-    SELECT 	CustID
+    SELECT 	CustID, CurrentCategoryID
     FROM Temp_Normal;
 
 END$$

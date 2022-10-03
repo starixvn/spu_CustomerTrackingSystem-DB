@@ -30,7 +30,7 @@ BEGIN
 	EXECUTE 	stmt1;   
     
     DELETE clss
-    FROM CTS_DataCenter.CTSCustomerClassificationOldPA AS clss
+    FROM CTS_DataCenter.CTSCustomerClassificationOldCategory AS clss
     WHERE EXISTS (SELECT 1 FROM Temp_CustID AS tmp WHERE tmp.CustID = clss.CustID);
 END$$
 
