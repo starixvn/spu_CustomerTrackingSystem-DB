@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule_Get`;
+DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule_Get_xtest`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule_Get`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule_Get_xtest`(
 		IN	ip_LiveIndicator	BOOLEAN
 	,	IN  ip_NoOfRow 			INT
 	,	OUT	op_MaxSequenceID	BIGINT UNSIGNED
@@ -20,7 +20,7 @@ sp: BEGIN
             -	20220110@Casey.Huynh: Enhance MM(SportType, Betteam, BetID), Return BetID [Redmine ID: 166986]
             -	20220217@Casey.Huynh: Enhance MM, Update TO >= 1000 [Redmine ID: 168736]
             -	20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
-            
+            -	2022009290@Casey.Huynh: Seperate By Sport [Redmine ID: #178310]
 		Param's Explanation (filtered by):	
 
 		Example:
@@ -29,6 +29,23 @@ sp: BEGIN
 	*/
 	DECLARE lv_LastSequenceID BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_MaxSequenceID BIGINT UNSIGNED DEFAULT 0;
+    DECLARE lv_Reason INT DEFAULT 0; #Group Betting
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorRuleSetting;
+	CREATE TEMPORARY TABLE Temp_MatchMonitorRuleSetting(
+			SportType INT
+		,	TotalStake DECIMAL(20,4)
+		
+		,	PRIMARY KEY PK_Temp_MatchMonitorRuleSetting(SportType )
+	);
+    
+    INSERT INTO Temp_MatchMonitorRuleSetting(SportType, TotalStake)
+    SELECT	s.SportType
+        ,	s.TotalStake
+    FROM CTS_DataCenter.MatchMonitorRuleSetting AS s
+    WHERE s.Reason = lv_Reason;
+    
+    SELECT * FROM Temp_MatchMonitorRuleSetting;
     
 	IF ip_LiveIndicator = 1 THEN    
 		SELECT sys.ParameterValue
@@ -48,9 +65,10 @@ sp: BEGIN
 				,	mms.BettypeID
                 ,	mms.BetID
 			FROM CTS_DataCenter.MatchMonitorStagingLive AS mms
+				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType
             WHERE mms.SequenceID <= lv_MaxSequenceID
 			GROUP BY mms.MatchID, mms.TotalScore, mms.BettypeID, mms.BetID
-			HAVING COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= 1000;      
+			HAVING COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= MIN(tmpRs.TotalStake);      
             
 		END IF;
 	ELSE
@@ -71,9 +89,10 @@ sp: BEGIN
 				,	mms.BettypeID
                 ,	mms.BetID
 			FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms
+				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType
             WHERE mms.SequenceID <= lv_MaxSequenceID
 			GROUP BY mms.MatchID, mms.TotalScore, mms.BettypeID, mms.BetID
-			HAVING COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= 1000;            
+			HAVING COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= MIN(tmpRs.TotalStake);            
 		END IF;
         
 	END IF;
