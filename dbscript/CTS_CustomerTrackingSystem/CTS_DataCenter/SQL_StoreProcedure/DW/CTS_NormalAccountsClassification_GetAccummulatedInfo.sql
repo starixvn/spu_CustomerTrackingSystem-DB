@@ -1,6 +1,6 @@
 USE [bodb_VR2Model]
 GO
-/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_GetAccummulatedInfo]    Script Date: 9/28/2020 10:35:00 PM ******/
+/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_GetAccummulatedInfo]    Script Date: 9/6/2022 11:08:18 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -17,7 +17,8 @@ AS
 
 	Revisions:
 		- 20200918@Long.Luu: Created [Redmine ID: #141755]
-        - 20200924@Irena.Vo: Updated [Redmine ID: #141755]
+        - 20200924@Irena.Vo: Updated [Redmine ID: #141755]		
+		- 20201006@Long.Luu: Return more valus [Redmine ID: #142546]
         
 	Param's Explanation:
 */
@@ -36,6 +37,7 @@ BEGIN
 	CREATE TABLE #tmpCustomerAccummulatedInfo(
 		[CustId]			INT NOT NULL,
 		[SportId]			INT NOT NULL,
+		[SportGroup]		VARCHAR(50) NOT NULL,
 		[TurnoverRM]		MONEY NULL,
 		[WinlossRM]			MONEY NULL,
 		[TurnoverORG]		MONEY NULL,
@@ -104,14 +106,16 @@ BEGIN
 			  FOR XML PATH ('')), 1, 1, '');
 
 	-- Get Customer's Accummulated data
-	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, SportId, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDays)
+	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, SportId, SportGroup, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDays)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @CustIdList;
 
 	-- Filter customers by: Bet count >= 60 tickets (count from beginning) & Margin >= 0
-	WITH CTE_CustSportGroups(CustId, SportId, Margin, BetCount, ActiveDays)
+	WITH CTE_CustSportGroups(CustId, SportId, Turnover, Winloss, Margin, BetCount, ActiveDays)
 	AS(
 		SELECT	a.CustId
 			,	CASE WHEN s.SportId IS NULL THEN 5 ELSE s.SportId END
+			,	SUM(a.TurnoverRM)
+			,	SUM(a.WinlossRM)
 			,	CASE WHEN SUM(a.TurnoverRM) = 0 THEN 0 ELSE SUM(a.WinlossRM) / SUM(a.TurnoverRM) * 100 END
 			,	SUM(a.BetCount)
 			,	MAX(a.ActiveDays)
@@ -121,6 +125,8 @@ BEGIN
 		UNION
 		SELECT	s.CustId
 			,	@GENERAL_SPORTID
+			,	SUM(s.TurnoverRM)
+			,	SUM(s.WinlossRM)
 			,	CASE WHEN SUM(s.TurnoverRM) = 0 THEN 0 ELSE SUM(s.WinlossRM)/SUM(s.TurnoverRM)*100 END
 			,	SUM(s.BetCount)
 			,	MAX(s.ActiveDays)
@@ -129,6 +135,8 @@ BEGIN
 	)
 	SELECT	s.CustId
 		,	s.SportId
+		,	s.Turnover
+		,	s.Winloss
 		,	s.Margin
 		,	s.BetCount
 		,	s.ActiveDays

@@ -1,6 +1,6 @@
 USE [bodb_VR2Model]
 GO
-/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_Probation]    Script Date: 2/23/2022 3:00:47 AM ******/
+/****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_Probation]    Script Date: 9/6/2022 11:08:23 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -61,6 +61,7 @@ BEGIN
 	CREATE TABLE #tmpRawData(
 		[CustId]			INT NOT NULL,
 		[SportId]			INT NOT NULL,
+		[SportGroup]		VARCHAR(50) NOT NULL,
 		[TurnoverRM]		MONEY NULL,
 		[WinlossRM]			MONEY NULL,
 		[TurnoverORG]		MONEY NULL,
@@ -158,7 +159,7 @@ BEGIN
 			  FOR XML PATH ('')), 1, 1, '');
 
 	-- Get Customer's Accummulated data
-	INSERT INTO #tmpRawData(CustId, SportId, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDays)
+	INSERT INTO #tmpRawData(CustId, SportId, SportGroup, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDays)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @CustIdList;
 
 	-- Remove Parlay
