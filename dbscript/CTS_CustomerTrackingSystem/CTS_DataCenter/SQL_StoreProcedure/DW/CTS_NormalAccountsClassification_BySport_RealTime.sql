@@ -5,7 +5,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-ALTER PROCEDURE [dbo].[CTS_NormalAccountsClassification_BySport_RealTime]
+CREATE PROCEDURE [dbo].[CTS_NormalAccountsClassification_BySport_RealTime]
 		@CustomersXML			XML
 AS
 /*

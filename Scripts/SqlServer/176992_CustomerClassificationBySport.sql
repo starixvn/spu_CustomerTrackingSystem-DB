@@ -8,6 +8,175 @@
 USE [bodb_VR2Model]
 GO
 
+
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CustomerClassification_BySport_BetCount]') AND type in (N'U'))
+DROP TABLE [dbo].[CustomerClassification_BySport_BetCount]
+GO
+
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[CustomerClassification_BySport_BetCount](
+	[CustId] [int] NOT NULL,
+	[SportId] [smallint] NOT NULL,
+	[BetCount] [int] NULL,
+	[LastScannedDate] [datetime] NULL,
+	PRIMARY KEY CLUSTERED 
+	(
+		[CustId] ASC,
+		[SportId] ASC
+	)
+)
+GO
+
+GRANT SELECT ON [dbo].[CustomerClassification_BySport_BetCount] TO [bodbSPUNet]
+GO
+GRANT VIEW DEFINITION ON [dbo].[CustomerClassification_BySport_BetCount] TO [bodbSPUNet]
+GO
+
+
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CustomerClassification_BySport_LatestChanged]') AND type in (N'U'))
+DROP TABLE [dbo].[CustomerClassification_BySport_LatestChanged]
+GO
+
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[CustomerClassification_BySport_LatestChanged](
+	[CustId] [int] NOT NULL,
+	[SportId] [int] NOT NULL,
+	[TurnoverRM] DECIMAL(19, 4) NULL,
+	[WinlossRM] DECIMAL(19, 4) NULL,
+	[BetCount] [bigint] NULL,
+	[ActiveDays] [int] NULL,
+	[LastModifiedDate] [date] NULL,
+	[Margin] DECIMAL(19, 4) NULL,
+	PRIMARY KEY CLUSTERED 
+	(
+		[CustId] ASC,
+		[SportId]
+	)
+)
+GO
+
+GRANT CONTROL ON [dbo].[CustomerClassification_BySport_LatestChanged] TO [bodbSPUNet]
+GO
+GRANT VIEW DEFINITION ON [dbo].[CustomerClassification_BySport_LatestChanged] TO [bodbSPUNet]
+GO
+
+
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CustomerClassification_BySport]') AND type in (N'U'))
+DROP TABLE [dbo].[CustomerClassification_BySport]
+GO
+
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[CustomerClassification_BySport](
+	[CustId] [int] NOT NULL,
+	[SportId] [int] NOT NULL,
+	[CategoryId] [smallint] NOT NULL,
+	[CreatedDate] [date] NOT NULL,
+	[IsApplied] [bit] NULL DEFAULT ((0)),
+	[CreatedTime] [datetime] NULL,
+	[TurnoverRM] DECIMAL(19, 4) NULL,
+	[WinlossRM] DECIMAL(19, 4) NULL,
+	[BetCount] [bigint] NULL,
+	[ActiveDays] [int] NULL
+)
+GO
+
+CREATE CLUSTERED INDEX [CIX_CustomerClassification_BySport_IsApplied] ON [dbo].[CustomerClassification_BySport]
+(
+	[IsApplied] ASC
+)
+
+CREATE NONCLUSTERED INDEX [CIX_CCustomerClassification_BySport_CreatedDate] ON [dbo].[CustomerClassification_BySport]
+(
+	[CreatedDate] ASC
+)
+GO
+
+CREATE NONCLUSTERED INDEX [CIX_CustomerClassification_BySport_CustIdSportIdCategoryId] ON [dbo].[CustomerClassification_BySport]
+(
+	[CustId] ASC,
+	[SportId] ASC,
+	[CategoryId] ASC
+)
+
+GO
+
+GRANT SELECT ON [dbo].[CustomerClassification_BySport] TO [bodbSPUNet]
+GO
+GRANT VIEW DEFINITION ON [dbo].[CustomerClassification_BySport] TO [bodbSPUNet]
+GO
+
+
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CustomerClassification_BySport_InputLog]') AND type in (N'U'))
+DROP TABLE [dbo].[CustomerClassification_BySport_InputLog]
+GO
+
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[CustomerClassification_BySport_InputLog](
+    [ID] [int] NOT NULL IDENTITY(1,1) PRIMARY KEY,
+	[CustId] [int] NOT NULL,
+	[SportId] [int] NOT NULL,
+	[CreatedDate] [date] NOT NULL,
+	[CreatedTime] [datetime] NULL,
+	[FunctionId] [smallint] NOT NULL,
+	[TurnoverRM] DECIMAL(19, 4) NULL,
+	[WinlossRM] DECIMAL(19, 4) NULL,
+	[BetCount] [bigint] NULL,
+	[ActiveDays] [int] NULL,
+	[CurrentCategoryId]	SMALLINT NULL
+)
+GO
+
+CREATE NONCLUSTERED INDEX [IX_CustomerClassification_BySport_InputLog_CustId_FunctionId] ON [dbo].[CustomerClassification_BySport_InputLog]
+(
+	[CustId],
+	[FunctionId],
+	[CreatedDate],
+	[SportId]
+)
+
+
+GRANT SELECT ON [dbo].[CustomerClassification_BySport_InputLog] TO [bodbSPUNet]
+GO
+GRANT VIEW DEFINITION ON [dbo].[CustomerClassification_BySport_InputLog] TO [bodbSPUNet]
+GO
+
+
+
+UPDATE [dbo].[CustomerClassification_Parameter]
+SET [DataDescription] = 'Normal Accounts Classification By Sport - Realtime - Get datetime for picking up the latest customer changes',[Value] = GETDATE()
+WHERE DataId = 1;
+GO
+
+UPDATE [dbo].[CustomerClassification_Parameter]
+SET [DataDescription] = 'Normal Accounts Classification By Sport - Realtime - Backup time for finish Realtime callback.',[Value] = GETDATE()
+WHERE DataId = 2;
+GO
+
+
+
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CustomerClassification_BySport_Rule]') AND type in (N'U'))
 DROP TABLE [dbo].[CustomerClassification_BySport_Rule]
 GO
