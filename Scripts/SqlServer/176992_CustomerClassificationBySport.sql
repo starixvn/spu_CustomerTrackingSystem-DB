@@ -103,13 +103,13 @@ CREATE CLUSTERED INDEX [CIX_CustomerClassification_BySport_IsApplied] ON [dbo].[
 	[IsApplied] ASC
 )
 
-CREATE NONCLUSTERED INDEX [CIX_CCustomerClassification_BySport_CreatedDate] ON [dbo].[CustomerClassification_BySport]
+CREATE NONCLUSTERED INDEX [IX_CCustomerClassification_BySport_CreatedDate] ON [dbo].[CustomerClassification_BySport]
 (
 	[CreatedDate] ASC
 )
 GO
 
-CREATE NONCLUSTERED INDEX [CIX_CustomerClassification_BySport_CustIdSportIdCategoryId] ON [dbo].[CustomerClassification_BySport]
+CREATE NONCLUSTERED INDEX [IX_CustomerClassification_BySport_CustIdSportIdCategoryId] ON [dbo].[CustomerClassification_BySport]
 (
 	[CustId] ASC,
 	[SportId] ASC,
