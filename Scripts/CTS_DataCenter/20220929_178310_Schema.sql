@@ -23,8 +23,6 @@ CREATE TABLE MatchMonitorRuleSetting (
     ,	SportName VARCHAR(100)
     ,	TimeStep SMALLINT
     ,	TotalStake DECIMAL(20,4)
-    ,	HighStakeValue DECIMAL(20,4)
-    ,	TotalHighStakeTicket INT	
     ,	ModifiedDate DATETIME(3)
     ,	Comments VARCHAR(300)
     
@@ -52,6 +50,7 @@ CHANGE COLUMN SequenceID SequenceID BIGINT UNSIGNED FIRST
 , ADD COLUMN Rule03GroupID INT DEFAULT 0 AFTER Rule01GroupID
 , RENAME INDEX IX_MatchMonitorStagingNonLive_Group TO IX_MatchMonitorStagingNonLive_Rule01GroupID
 , ADD INDEX IX_MatchMonitorStagingNonLive_Rule03GroupID(`MatchID`,`TotalScore`,`BettypeID`,`BetID`,`Rule03GroupID`);
+
 /*
 DROP TABLE MatchMonitorStagingLive;
 CREATE TABLE `MatchMonitorStagingLive` (
@@ -115,47 +114,20 @@ CREATE TABLE `MatchMonitorStagingNonLive` (
 */
 SELECT * FROM SystemParameter;
 #=======================INITIAL SERVICE PARAMETERs================================
+# DELETE del FROM SystemParameter del WHERE ParameterID IN (120, 121, 122, 123);
 INSERT INTO SystemParameter(ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
 Values (120,'MatchMonitor_Rule03_Process_LiveLastSequenceID', 'MatchMonitor_Rule03_Process_LiveLastSequenceID','BIGINT UNSIGNED',0)
 ,	(121,'MatchMonitor_Rule03_Process_LiveLastSequenceID', 'MatchMonitor_Rule03_Process_LiveLastSequenceID','BIGINT UNSIGNED',0)
-, (122,'MatchMonitor_Rule01_Get_NoOfRow', 'MatchMonitor_Rule01_Get_NoOfRow','INT',5000);
-
+, (122,'MatchMonitor_Rule01_Get_NoOfRow', 'MatchMonitor_Rule01_Get_NoOfRow','INT',5000)
+, (123,'MatchMonitor_Rule03_Get_NoOfRow', 'MatchMonitor_Rule03_Get_NoOfRow','INT',5000);
 #=================Initial Rule Setting============================================
 INSERT INTO MatchMonitorRuleSetting(RuleGroupID, RuleGroupDesc, Reason, SportType, ReasonName, SportName, TimeStep, TotalStake, ModifiedDate, Comments)
 VALUES	(1, 'Rule01', 0, 1, 'Group Betting', 'Soccer', 180, 1000, NOW(), 'Time Step In Seconds')
 	,	(1, 'Rule01', 0, 2, 'Group Betting', 'Basketball', 180, 500, NOW(), 'Time Step In Seconds')
     ,	(1, 'Rule01', 0, 43, 'Group Betting', 'E-Sports', 180, 500, NOW(), 'Time Step In Seconds')
-    ,	(3, 'Rule03', 3, 1, 'Hedging', 'Soccer', 180, 2500, NOW(), 'Time Step In Seconds');
-    
-    
-CREATE TABLE `MatchMonitor` (
-  `ID` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `EventDate` date NOT NULL,
-  `BettypeID` int NOT NULL,
-  `MatchID` int NOT NULL,
-  `LiveIndicator` tinyint(1) NOT NULL,
-  `Reason` tinyint DEFAULT NULL,
-  `KickOffTime` datetime DEFAULT NULL,
-  `EventStatus` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `HomeID` int DEFAULT NULL,
-  `AwayID` int DEFAULT NULL,
-  `LeagueID` int DEFAULT NULL,
-  `IsVerified` tinyint(1) DEFAULT '0',
-  `VerifiedDate` datetime DEFAULT NULL,
-  `VerifiedBy` int unsigned DEFAULT NULL,
-  `LeagueName` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `SportType` int DEFAULT '1',
-  `BetID` bigint NOT NULL DEFAULT '0',
-  `ClassifyStatus` tinyint DEFAULT '0' COMMENT '0: Default, 1: Classify Done, 2: Ready To Classify (Match Complete)',
-  `InsertTime` datetime(3) DEFAULT CURRENT_TIMESTAMP(3),
-  PRIMARY KEY (`ID`),
-  UNIQUE KEY `UK_MatchMonitor_MatchGroup` (`EventDate`,`BettypeID`,`BetID`,`MatchID`,`LiveIndicator`,`Reason`),
-  KEY `IX_MatchMonitor_IsVerified` (`IsVerified`),
-  KEY `IX_MatchMonitor_MatchIDBettype` (`MatchID`,`BettypeID`,`BetID`),
-  KEY `IX_MatchMonitor_SportTypeClassifyStatus` (`SportType`,`ClassifyStatus`,`KickOffTime`)
-) ENGINE=InnoDB;
+    ,	(3, 'Rule03', 1, 1, 'Hedging', 'Soccer', 180, 2500, NOW(), 'Time Step In Seconds');    
 
-DROP PROCEDURE CTS_DC_MatchMonitor_Rule_Get;
-DROP PROCEDURE CTS_DC_MatchMonitor_Rule_Proces;
-DROP PROCEDURE CTS_DC_MatchMonitor_Rule_Complete;
+DROP PROCEDURE IF EXISTS CTS_DC_MatchMonitor_Rule_Get;
+DROP PROCEDURE IF EXISTS CTS_DC_MatchMonitor_Rule_Process;
+DROP PROCEDURE IF EXISTS CTS_DC_MatchMonitor_Rule_Complete;
 
