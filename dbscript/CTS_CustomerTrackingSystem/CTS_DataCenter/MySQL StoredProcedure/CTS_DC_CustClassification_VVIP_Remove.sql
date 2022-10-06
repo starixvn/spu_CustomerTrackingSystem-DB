@@ -2,7 +2,7 @@
 DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_VVIP_Remove`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_VVIP_Remove`(
+CREATE PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_VVIP_Remove`(
     	IN ip_FromAction		TINYINT
 	,	IN ip_UplineRoleID		TINYINT
     ,	IN ip_QueueID			BIGINT
@@ -51,10 +51,11 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
 	CREATE TEMPORARY TABLE 		Temp_Customer (
-		 	CustID			BIGINT UNSIGNED		
-         ,  CTSCustID 		BIGINT UNSIGNED
-         ,	CreatedBy		BIGINT UNSIGNED
-         ,	IsExistVVIP		BOOLEAN
+		 	CustID				BIGINT UNSIGNED		
+         ,  CTSCustID 			BIGINT UNSIGNED
+         ,	CurrentCategoryID	SMALLINT UNSIGNED
+         ,	CreatedBy			BIGINT UNSIGNED
+         ,	IsExistVVIP			BOOLEAN
          
          ,	PRIMARY KEY PK_Temp_Customer(CustID)
          ,	INDEX IX_Temp_Customer_CTSCustID(CTSCustID)
@@ -75,7 +76,11 @@ BEGIN
 		 )) AS temp
 		LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON  temp.CustID = cls.CustID AND cls.CategoryID = 210;      
 
-	SELECT MAX(tmpCus.CTSCustID)
+	UPDATE Temp_Customer cus
+		INNER JOIN CTS_DataCenter.CTSCustomerClassificationOldCategory oldCate ON cus.CustID = oldCate.CustID AND oldCate.SportGroupID = 200
+	SET cus.CurrentCategoryID = oldCate.CategoryID;
+    
+    SELECT MAX(tmpCus.CTSCustID)
     INTO lv_MaxCTSCustID
     FROM Temp_Customer AS tmpCus;
     
@@ -133,7 +138,7 @@ BEGIN
 		INNER JOIN Temp_Customer AS tmpCus ON clv.CTSCustID = tmpCus.CTSCustID AND tmpCus.IsExistVVIP = 1;
         
 	/*Return Remove VVIP List to Rescan*/
-    SELECT tmpCus.CustID
+    SELECT tmpCus.CustID, tmpCus.CurrentCategoryID
 	FROM Temp_Customer AS tmpCus;
 
     /*****UPDATE Queue LastID************/

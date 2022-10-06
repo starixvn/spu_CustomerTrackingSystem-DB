@@ -46,16 +46,19 @@ sp: BEGIN
 		Example:
 			CALL CTS_DC_CustClassification_VVIP_Insert(1,NULL,NULL,1,'[{"CustID":722,"CTSCustID":722,"SubscriberID":2,"CategoryID":210,"CreatedBy":169368,"Remark":"Test Insert 01"}]');
 	*/
-    DECLARE lv_CurrentDateTime 	DATETIME DEFAULT CURRENT_TIME();
-	DECLARE lv_SPName 			VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_VVIP_Insert';
-    DECLARE	lv_CategoryID		INT DEFAULT 210;
-    DECLARE lv_SportGroupID		INT DEFAULT 200;
-    DECLARE lv_LogTypeID		INT DEFAULT 10;
-    DECLARE lv_ActionType		INT DEFAULT 0;
-	DECLARE lv_IsAuto			INT DEFAULT 0;
-    DECLARE lv_MaxCTSCustID		BIGINT UNSIGNED;
-    DECLARE lv_SourceTypeID		INT;    
-    DECLARE lv_CustomerClass	INT; 
+    DECLARE lv_CurrentDateTime 		DATETIME DEFAULT CURRENT_TIME();
+	DECLARE lv_SPName 				VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_VVIP_Insert';
+    DECLARE	lv_CategoryID			INT DEFAULT 210;
+    DECLARE lv_SportGroupID			INT DEFAULT 200;
+    DECLARE lv_LogTypeID			INT DEFAULT 10;
+    DECLARE lv_ActionType			INT DEFAULT 0;
+	DECLARE lv_IsAuto				INT DEFAULT 0;
+    DECLARE lv_MaxCTSCustID			BIGINT UNSIGNED;
+    DECLARE lv_SourceTypeID			INT;    
+    DECLARE lv_CustomerClass		INT; 
+    
+    DECLARE	CONST_CATEGORY_RISKY 	INT DEFAULT 203;
+    DECLARE	CONST_CATEGORY_SMART	INT DEFAULT 204;
 
 #	INSERT INTO CaseyLog(SPName, OthersParam, JsonText)
  #   SELECT 'CTS_DC_CustClassification_VVIP_Insert', CONCAT('ip_FromAction:',ip_FromAction,' ip_UplineRoleID:', ip_UplineRoleID, ' ip_QueueID:', ip_QueueID, ' ip_AffectDownline:', ip_AffectDownline) , ip_CustJson;
@@ -132,7 +135,7 @@ sp: BEGIN
 	FROM Temp_Customer AS tmpCus
     WHERE tmpCus.IsExistVVIP = 0;
 	
-    /****MOVE PA TO OLD PA*****/ 
+    /**** MOVE PA/RISKY/SMART TO CTSCustomerClassificationOldCategory *****/ 
     
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationOldCategory(CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
     , LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsDirect, InsertTime, TVSRequestID) 
@@ -157,7 +160,8 @@ sp: BEGIN
 	FROM CTS_DataCenter.CTSCustomerClassification AS cls
 		INNER JOIN Temp_Customer AS tmpCus ON cls.CustID = tmpCus.CustID AND tmpCus.IsExistVVIP = 0
 	WHERE NOT EXISTS (SELECT 1 FROM Temp_WrapperCategory AS tmpWr WHERE tmpWr.CategoryID = cls.CategoryID)
-		  AND cls.SportGroupID = 0;
+		  AND (cls.SportGroupID = 0 
+			OR (cls.SportGroupID = 200 AND cls.CategoryID IN (CONST_CATEGORY_RISKY, CONST_CATEGORY_SMART)));
         
 	/*****Remove all category, customer class, probation list before******/
 	DELETE cls
