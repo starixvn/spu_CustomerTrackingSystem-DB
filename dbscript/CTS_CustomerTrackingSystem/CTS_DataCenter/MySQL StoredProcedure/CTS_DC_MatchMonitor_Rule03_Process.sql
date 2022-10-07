@@ -26,33 +26,33 @@ sp: BEGIN
 			- CALL CTS_DC_MatchMonitor_Rule03_Process(1,113171940189,22081995,1,1,0);
 			
 	*/
-    DECLARE lv_TimeStep SMALLINT;
-    DECLARE lv_RuleTotalStake SMALLINT;
-	DECLARE lv_RuleGroupID SMALLINT DEFAULT 3;  
-    DECLARE lv_Reason TINYINT DEFAULT 1;
-    DECLARE lv_RuleSportType INT ;  
-    DECLARE lv_CustIDList TEXT;
-    DECLARE lv_IsHedging BOOLEAN;
+    DECLARE CONS_SITE789 				INT DEFAULT  3;
     
-    #=================================================================================    
+    DECLARE lv_TimeStep 				SMALLINT;
+    DECLARE lv_RuleTotalStake 			SMALLINT;
+	DECLARE lv_RuleGroupID 				SMALLINT DEFAULT 3;  
+    DECLARE lv_Reason 					TINYINT DEFAULT 1;
+    DECLARE lv_RuleSportType 			INT;  
+    DECLARE lv_CustIDList 				TEXT;
+    DECLARE lv_IsHedging 				BOOLEAN;
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_StagingTrans;
     CREATE TEMPORARY TABLE Temp_StagingTrans(
-			TransID			BIGINT UNSIGNED NOT NULL
+			TransID			BIGINT UNSIGNED NOT NULL PRIMARY KEY
         ,	TransDate		DATETIME(3)  NOT NULL
         ,	TransDateSecond	BIGINT UNSIGNED
-        ,	CustID			BIGINT  NOT NULL
+        ,	CustID			BIGINT NOT NULL
         ,	CTSCustID		BIGINT UNSIGNED
-        ,	SiteID			INT
-        , 	Recommend		INT
+        , 	AgentCTSCustID	BIGINT UNSIGNED
         ,	OldGroupID		INT 
         ,	Stake			DECIMAL(20,4)
         ,	Betteam			VARCHAR(10)
         ,	GroupID			INT
+        , 	Processed		BIT DEFAULT 0
         
-        ,	PRIMARY KEY PK_Temp_StagingTrans(TransID)
-        ,	INDEX IX_Temp_StagingTrans(CustID)
-        ,	INDEX IX_Temp_StagingTrans(CTSCustID) 
-        
+        ,	INDEX IX_Temp_StagingTrans_CTSCustID(CTSCustID) 
+        ,	INDEX IX_Temp_StagingTrans_AgentCTSCustID(AgentCTSCustID) 
+        ,	INDEX IX_Temp_StagingTrans_Processed(Processed) 
     );	
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ResultGroup;
@@ -71,59 +71,88 @@ sp: BEGIN
 			GroupID	INT PRIMARY KEY
 	);    
     
-    #******** GET STAGING TRANS ******************************************************************
-    #*********************************************************************************************   
+    #******************************* GET STAGING TRANS *******************************************
     
-    IF (ip_LiveIndicator = 1)
-    THEN
-		SELECT mms.SportType INTO lv_RuleSportType FROM CTS_DataCenter.MatchMonitorStagingLive AS mms WHERE mms.MatchID = ip_MatchID LIMIT 1;
+    IF (ip_LiveIndicator = 1) THEN
+		SELECT mms.SportType 
+        INTO lv_RuleSportType 
+        FROM CTS_DataCenter.MatchMonitorStagingLive AS mms 
+        WHERE mms.MatchID = ip_MatchID 
+        LIMIT 1;
 
-		INSERT INTO Temp_StagingTrans(TransID, TransDate, TransDateSecond, CustID, CTSCustID, SiteID, Recommend, OldGroupID, Stake, Betteam)
+		INSERT INTO Temp_StagingTrans(TransID, TransDate, TransDateSecond, CustID, CTSCustID, AgentCTSCustID, OldGroupID, Stake, Betteam)
         SELECT	mms.TransID
 			,	mms.TransDate
             ,	TO_SECONDS(mms.TransDate) AS TransDateSecond
             ,	mms.CustID
             ,	cus.CTSCustID
-            ,	cus.SiteID
-            ,	cus.Recommend            
+            ,	agent.CTSCustID  AS AgentCTSCustID       
             ,	mms.Rule03GroupID
             ,	mms.Stake
             ,	mms.Betteam
 		FROM CTS_DataCenter.MatchMonitorStagingLive AS mms			
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = mms.CustID AND cus.CustSubID = 0
-        WHERE mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND cus.IsLicensee = 0;
+            LEFT JOIN CTS_DataCenter.CTSCustomer AS agent ON agent.CustID = cus.Recommend 
+															AND agent.CustSubID = 0 
+                                                            AND cus.RoleID = 1
+															AND agent.IsInternal = 0 												
+                                                            AND cus.SiteID = CONS_SITE789
+        WHERE mms.SequenceID <= ip_MaxSequenceID 
+			AND mms.MatchID = ip_MatchID 
+            AND mms.TotalScore = ip_TotalScore 
+            AND mms.BettypeID = ip_BettypeID
+            AND mms.BetID = ip_BetID 
+            AND cus.IsLicensee = 0;
         
 	ELSE 
-		SELECT mms.SportType INTO lv_RuleSportType FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms WHERE mms.MatchID = ip_MatchID LIMIT 1;
+		SELECT mms.SportType 
+        INTO lv_RuleSportType 
+        FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms 
+        WHERE mms.MatchID = ip_MatchID 
+        LIMIT 1;
 	  
-		INSERT INTO Temp_StagingTrans(TransID, TransDate, TransDateSecond, CustID, SiteID, Recommend, CTSCustID, OldGroupID, Stake, Betteam)
+		INSERT INTO Temp_StagingTrans(TransID, TransDate, TransDateSecond, CustID, AgentCTSCustID, CTSCustID, OldGroupID, Stake, Betteam)
         SELECT	mms.TransID
 			,	mms.TransDate
             ,	TO_SECONDS(mms.TransDate) AS TransDateSecond
             ,	mms.CustID
             ,	cus.CTSCustID
-            ,	cus.SiteID
-            ,	cus.Recommend
+            ,	agent.CTSCustID  AS AgentCTSCustID 
             ,	mms.Rule03GroupID
             ,	mms.Stake
             ,	mms.Betteam
 		FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = mms.CustID AND cus.CustSubID = 0
-        WHERE  mms.SequenceID <= ip_MaxSequenceID AND	mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND cus.IsLicensee = 0;
+            LEFT JOIN CTS_DataCenter.CTSCustomer AS agent ON agent.CustID = cus.Recommend 
+															AND agent.CustSubID = 0 
+                                                            AND cus.RoleID = 1
+															AND agent.IsInternal = 0 												
+                                                            AND cus.SiteID = CONS_SITE789
+        WHERE  mms.SequenceID <= ip_MaxSequenceID 
+			AND	mms.MatchID = ip_MatchID 
+            AND mms.TotalScore = ip_TotalScore 
+            AND mms.BettypeID = ip_BettypeID 
+            AND mms.BetID = ip_BetID 
+            AND cus.IsLicensee = 0;
         
     END IF;
 	
-    SELECT st.TimeStep, st.TotalStake
-    INTO lv_TimeStep, lv_RuleTotalStake
+    SELECT 	st.TimeStep
+		, 	st.TotalStake
+    INTO 	lv_TimeStep
+		, 	lv_RuleTotalStake
     FROM MatchMonitorRuleSetting AS st 
-    WHERE st.RuleGroupID = lv_RuleGroupID AND st.SportType = lv_RuleSportType AND  st.Reason = lv_Reason;
+    WHERE 	st.RuleGroupID = lv_RuleGroupID 
+		AND st.SportType = lv_RuleSportType 
+        AND st.Reason = lv_Reason;
     
-    #========Association Group Level 2 by lv_TimeStep second====================
-    # CALL CTS_DC_TransAssociation_Test(lv_TimeStep);
-    UPDATE Temp_StagingTrans
-    SET GroupID = 1;  
-    SELECT * FROM Temp_StagingTrans;
-    SELECT  tmpSt.GroupID, SUM(tmpSt.Stake) AS SUMStake, COUNT(DISTINCT tmpSt.CustID) AS COUNT_CustID
+    #========Detect group by assocation and transdate====================
+    CALL CTS_DC_MatchMonitor_DetectGroup(lv_TimeStep);
+ 
+ 
+    SELECT  tmpSt.GroupID
+		, 	SUM(tmpSt.Stake) AS SUMStake
+        , 	COUNT(DISTINCT tmpSt.CustID) AS COUNT_CustID
         ,	GROUP_CONCAT(tmpSt.TransID) AS TransIDList
         ,	GROUP_CONCAT(DISTINCT tmpSt.CustID) AS CustIDList
         ,	GROUP_CONCAT(DISTINCT tmpSt.OldGroupID) AS OldGroupIDList
@@ -138,11 +167,13 @@ sp: BEGIN
         ,	GROUP_CONCAT(DISTINCT tmpSt.OldGroupID) AS OldGroupIDList
     FROM 	Temp_StagingTrans  AS tmpSt
 	GROUP BY tmpSt.GroupID
-    HAVING SUM(tmpSt.Stake) >= lv_RuleTotalStake AND COUNT(DISTINCT tmpSt.CustID) > 1;
+    HAVING SUM(tmpSt.Stake) >= lv_RuleTotalStake 
+		AND COUNT(DISTINCT tmpSt.CustID) > 1;
         
     #=======CHECK Hedging GROUP: IF GroupCusts Is Hedging====================================		
 	INSERT IGNORE INTO Temp_GroupHedging(GroupID)
-	SELECT DISTINCT tmpSt.GroupID 
+	SELECT 	DISTINCT 
+			tmpSt.GroupID 
 	FROM Temp_StagingTrans AS tmpSt
 	WHERE EXISTS (	SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
@@ -159,9 +190,13 @@ sp: BEGIN
     labelGroup: LOOP
 		SET lv_RuleGroupID = NULL;
         
-		SELECT tmpRg.GroupID, tmpRg.CustIDList
-        INTO lv_RuleGroupID, lv_CustIDList
-        FROM Temp_ResultGroup AS tmpRg WHERE tmpRg.Reason IS NULL LIMIT 1;
+		SELECT 	tmpRg.GroupID
+			, 	tmpRg.CustIDList
+        INTO 	lv_RuleGroupID
+			, 	lv_CustIDList
+        FROM Temp_ResultGroup AS tmpRg 
+        WHERE tmpRg.Reason IS NULL 
+        LIMIT 1;
 
 		IF lv_RuleGroupID IS NULL THEN 
 			LEAVE labelGroup;
