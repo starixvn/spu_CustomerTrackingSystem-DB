@@ -35,6 +35,8 @@ BEGIN
     DECLARE CONST_ACTIONTYPE_INSERT 		INT DEFAULT 0;
 	DECLARE	CONST_ACTIONTYPE_UPDATE 		INT DEFAULT 1;
     DECLARE CONST_SPORTGROUP_NORMAL 		INT DEFAULT 200;
+    DECLARE	CONST_CATEGORY_RISKY 			INT DEFAULT 203;
+    DECLARE	CONST_CATEGORY_SMART			INT DEFAULT 204;
     DECLARE CONST_USERLOG_LOGTYPE 			SMALLINT DEFAULT 32;
     DECLARE CONST_SPNAME 					VARCHAR(100) DEFAULT 'CTS_DC_CustClassification_PA_Insert';
 	DECLARE CONST_LICVIPPROBLEM_CATEGORYID	SMALLINT UNSIGNED DEFAULT 3;
@@ -158,8 +160,31 @@ BEGIN
 		,	tmpPa.WinlossStatus
         ,	tmpPa.IsLicensee
 	FROM Temp_PA AS tmpPa;
-    
+
     #=============REMOVE GENERAL CATEGORY BEFORE=============
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationOldCategory(CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
+		, LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsDirect, InsertTime, TVSRequestID) 
+	SELECT clss.CustID
+		, clss.CTSCustID
+        , clss.SubscriberID
+        , clss.SportGroupID
+        , clss.CategoryID
+        , clss.Remark
+        , clss.CreatedDate
+        , clss.CreatedBy
+        , clss.LastModifiedDate
+        , clss.LastModifiedBy
+        , clss.LastScannedDate
+        , clss.IsFromTVS
+        , clss.IsFromTW
+        , clss.IsFromCTS
+        , clss.IsDirect
+        , CURRENT_TIMESTAMP(3) AS InsertTime
+        , clss.TVSRequestID
+    FROM CTS_DataCenter.CTSCustomerClassification AS clss
+		INNER JOIN Temp_PA AS tmpPa ON tmpPa.CustID = clss.CustID AND clss.SportGroupID = CONST_SPORTGROUP_NORMAL
+	WHERE clss.CategoryID IN (CONST_CATEGORY_RISKY, CONST_CATEGORY_SMART);
+    
     DELETE clss
     FROM CTS_DataCenter.CTSCustomerClassification AS clss
 		INNER JOIN Temp_PA AS tmpPa ON tmpPa.CustID = clss.CustID AND clss.SportGroupID = CONST_SPORTGROUP_NORMAL;       

@@ -29,6 +29,9 @@ BEGIN
     DECLARE	CONST_CATEGORYID_ROBOTLOSING 		INT DEFAULT 164;
     DECLARE	CONST_CATEGORYID_LICVIPPROBLEM 		INT DEFAULT 3;
     DECLARE	CONST_CATEGORYID_LICVIP				INT DEFAULT 4;
+    DECLARE CONST_SPORTGROUP_NORMAL 			INT DEFAULT 200;
+    DECLARE	CONST_CATEGORY_RISKY 				INT DEFAULT 203;
+    DECLARE	CONST_CATEGORY_SMART				INT DEFAULT 204;
     
     DECLARE	CONST_CATEGORYID_VIPNORMAL 			INT DEFAULT 4;
     
@@ -253,6 +256,29 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CustID = tmp.CustID
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID AND cate.RelevantCategoryID IS NOT NULL;
 	
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationOldCategory(CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
+		, LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsDirect, InsertTime, TVSRequestID) 
+	SELECT clss.CustID
+		, clss.CTSCustID
+        , clss.SubscriberID
+        , clss.SportGroupID
+        , clss.CategoryID
+        , clss.Remark
+        , clss.CreatedDate
+        , clss.CreatedBy
+        , clss.LastModifiedDate
+        , clss.LastModifiedBy
+        , clss.LastScannedDate
+        , clss.IsFromTVS
+        , clss.IsFromTW
+        , clss.IsFromCTS
+        , clss.IsDirect
+        , CURRENT_TIMESTAMP(3) AS InsertTime
+        , clss.TVSRequestID
+    FROM CTS_DataCenter.CTSCustomerClassification AS clss
+		INNER JOIN Temp_PA AS tmpPa ON tmpPa.CustID = clss.CustID AND clss.SportGroupID = CONST_SPORTGROUP_NORMAL
+	WHERE clss.CategoryID IN (CONST_CATEGORY_RISKY, CONST_CATEGORY_SMART);
+    
     UPDATE CTS_DataCenter.CTSCustomerClassification AS clss
     INNER JOIN Temp_ExistCate AS tmp ON tmp.CustID = clss.CustID AND tmp.CategoryID = clss.CategoryID 
     SET 	clss.CategoryID = tmp.RelevantCategoryID

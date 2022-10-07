@@ -2,7 +2,7 @@
 DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_VVIP_Remove`;
 
 DELIMITER $$
-CREATE PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_VVIP_Remove`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_VVIP_Remove`(
     	IN ip_FromAction		TINYINT
 	,	IN ip_UplineRoleID		TINYINT
     ,	IN ip_QueueID			BIGINT
