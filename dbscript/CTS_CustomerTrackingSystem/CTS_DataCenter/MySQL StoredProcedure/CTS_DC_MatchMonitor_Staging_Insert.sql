@@ -75,7 +75,7 @@ BEGIN
 								,	BettypeID		INT	PATH "$.Bettype"
                                 ,	BetID			BIGINT	PATH "$.BetID"
 								,	CustID			INT PATH "$.CustID"
-								,	Stake			DOUBLE PATH "$.Stake" 
+								,	Stake			DECIMAL(20,4) PATH "$.Stake" 
                                 ,	Betteam			VARCHAR(10)	PATH "$.Betteam" 
 							)
 					) AS js;  
@@ -123,7 +123,7 @@ BEGIN
 								,	BettypeID		INT	PATH "$.Bettype"
                                 ,	BetID			BIGINT	PATH "$.BetID"
 								,	CustID			INT PATH "$.CustID"
-								,	Stake			DOUBLE PATH "$.Stake" 
+								,	Stake			DECIMAL(20,4) PATH "$.Stake" 
                                 ,	Betteam			VARCHAR(10)	PATH "$.Betteam" 
                                 ,	Odds			DECIMAL(10,4) PATH "$.Odds" 
                                 ,	IsMajorLeague	BOOLEAN	PATH "$.IsMajorLeague" 
@@ -184,8 +184,8 @@ BEGIN
 								,	BettypeID		INT	PATH "$.Bettype"
                                 ,	BetID			BIGINT	PATH "$.BetID"
 								,	CustID			INT PATH "$.CustID"
-								,	Stake			DOUBLE PATH "$.Stake"
-                                ,	Betteam			BOOLEAN	PATH "$.Betteam" 
+								,	Stake			DECIMAL(20,4) PATH "$.Stake"
+                                ,	Betteam			VARCHAR(10)	PATH "$.Betteam"  
 							)
 					) AS js;
 		
@@ -233,7 +233,7 @@ BEGIN
 								,	BettypeID		INT	PATH "$.Bettype"
                                 ,	BetID			BIGINT	PATH "$.BetID"
 								,	CustID			INT PATH "$.CustID"
-								,	Stake			DOUBLE PATH "$.Stake" 
+								,	Stake			DECIMAL(20,4) PATH "$.Stake" 
                                 ,	Betteam			VARCHAR(10)	PATH "$.Betteam" 
                                 ,	Odds			DECIMAL(10,4)	PATH "$.Odds" 
                                 ,	IsMajorLeague	TINYINT(1)	PATH "$.IsMajorLeague" 

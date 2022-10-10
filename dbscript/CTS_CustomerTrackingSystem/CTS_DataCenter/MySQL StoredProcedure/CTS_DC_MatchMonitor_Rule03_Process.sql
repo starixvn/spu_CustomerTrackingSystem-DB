@@ -136,7 +136,7 @@ sp: BEGIN
             AND cus.IsLicensee = 0;
         
     END IF;
-	
+
     SELECT 	st.TimeStep
 		, 	st.TotalStake
     INTO 	lv_TimeStep
@@ -145,19 +145,10 @@ sp: BEGIN
     WHERE 	st.RuleGroupID = lv_RuleGroupID 
 		AND st.SportType = lv_RuleSportType 
         AND st.Reason = lv_Reason;
-    
+
     #========Detect group by assocation and transdate====================
     CALL CTS_DC_MatchMonitor_DetectGroup(lv_TimeStep);
- 
- 
-    SELECT  tmpSt.GroupID
-		, 	SUM(tmpSt.Stake) AS SUMStake
-        , 	COUNT(DISTINCT tmpSt.CustID) AS COUNT_CustID
-        ,	GROUP_CONCAT(tmpSt.TransID) AS TransIDList
-        ,	GROUP_CONCAT(DISTINCT tmpSt.CustID) AS CustIDList
-        ,	GROUP_CONCAT(DISTINCT tmpSt.OldGroupID) AS OldGroupIDList
-    FROM 	Temp_StagingTrans  AS tmpSt
-	GROUP BY tmpSt.GroupID;
+
 	#===============================================================================
 
     INSERT INTO Temp_ResultGroup(GroupID, TransIDList, CustIDList, OldGroupIDList)
