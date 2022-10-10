@@ -43,7 +43,6 @@ sp: BEGIN
 	DECLARE	lv_Rule_Duration			SMALLINT; 
     DECLARE	lv_Rule_OddsSpread_Min		SMALLINT; 
     
-    
     DROP TEMPORARY TABLE IF EXISTS Temp_FixedTransRange;
     CREATE TEMPORARY TABLE Temp_FixedTransRange(
 			MinTransID	BIGINT UNSIGNED
