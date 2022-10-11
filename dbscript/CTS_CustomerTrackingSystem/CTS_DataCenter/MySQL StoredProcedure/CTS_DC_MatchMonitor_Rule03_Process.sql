@@ -111,7 +111,7 @@ sp: BEGIN
         WHERE mms.MatchID = ip_MatchID 
         LIMIT 1;
 	  
-		INSERT INTO Temp_StagingTrans(TransID, TransDate, TransDateSecond, CustID, AgentCTSCustID, CTSCustID, OldGroupID, Stake, Betteam)
+		INSERT INTO Temp_StagingTrans(TransID, TransDate, TransDateSecond, CustID,  CTSCustID, AgentCTSCustID, OldGroupID, Stake, Betteam)
         SELECT	mms.TransID
 			,	mms.TransDate
             ,	TO_SECONDS(mms.TransDate) AS TransDateSecond
@@ -148,7 +148,6 @@ sp: BEGIN
 
     #========Detect group by assocation and transdate====================
     CALL CTS_DC_MatchMonitor_DetectGroup(lv_TimeStep);
-
 	#===============================================================================
 
     INSERT INTO Temp_ResultGroup(GroupID, TransIDList, CustIDList, OldGroupIDList)
@@ -159,7 +158,7 @@ sp: BEGIN
     FROM 	Temp_StagingTrans  AS tmpSt
 	GROUP BY tmpSt.GroupID
     HAVING SUM(tmpSt.Stake) >= lv_RuleTotalStake 
-		AND COUNT(DISTINCT tmpSt.CustID) > 1;
+		AND COUNT(DISTINCT tmpSt.CustID) > 1 AND tmpSt.GroupID IS NOT NULL;
         
     #=======CHECK Hedging GROUP: IF GroupCusts Is Hedging====================================		
 	INSERT IGNORE INTO Temp_GroupHedging(GroupID)
