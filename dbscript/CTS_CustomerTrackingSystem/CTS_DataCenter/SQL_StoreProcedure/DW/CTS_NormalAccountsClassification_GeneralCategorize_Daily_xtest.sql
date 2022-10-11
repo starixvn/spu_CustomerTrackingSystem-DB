@@ -40,12 +40,16 @@ BEGIN
 	
 	SET NOCOUNT ON;
 
-	DECLARE @GENERALCATEGORY_INACTIVE	INT = 1000;
+	DECLARE @CATEGORY_NORMALINACTIVE	INT = 1001
+	   	,   @CATEGORY_SMARTINACTIVE		INT = 1002
+		,	@CATEGORY_SMARTPUNTER		INT = 203
+		,	@CATEGORY_RISKY				INT = 204
+		,	@CATEGORY_PROBATION			INT = 206
 	DECLARE @FUNCTION_NEWCUSTOMER		INT = 4;
-	DECLARE @CurrentDateTime			DATETIME = GETDATE();
-	DECLARE @CurrentDate				DATE	 = GETDATE();
-	DECLARE	@ToDate						DATE	 = GETDATE();
-	DECLARE	@From30Date					DATE	 = DATEADD(DAY, - 30, @ToDate);
+	DECLARE @CurrentDateTime			DATETIME = GETDATE()
+	    ,   @CurrentDate				DATE	 = GETDATE()
+	    ,	@ToDate						DATE	 = GETDATE();
+	DECLARE @From30Date					DATE	 = DATEADD(DAY, - 30, @ToDate);
 	DECLARE @ListCustIds				VARCHAR(MAX);
 
 
@@ -219,15 +223,16 @@ BEGIN
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT	c.CustId
 		,	200
-		,	@GENERALCATEGORY_INACTIVE AS CategoryId
+		,	CASE WHEN c.CurrentCategoryId IN (@CATEGORY_SMARTPUNTER, @CATEGORY_RISKY, @CATEGORY_PROBATION) THEN @CATEGORY_SMARTINACTIVE ELSE @CATEGORY_NORMALINACTIVE END AS CategoryId
 		,	@CurrentDate AS CreatedDate
 		,	@CurrentDateTime AS CreatedTime
 		,	0
 		,	0
 		,	0
 		,	0
-	FROM #tmpActiveMember AS c WITH(NOLOCK)
-	WHERE c.IsActive = 0;
+	FROM #tmpActiveMember AS a WITH(NOLOCK)
+			INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.custid
+	WHERE a.IsActive = 0;
 
 	-- #6: Classify General Category
 	INSERT INTO #tmpResultData(CustId, CategoryId)
