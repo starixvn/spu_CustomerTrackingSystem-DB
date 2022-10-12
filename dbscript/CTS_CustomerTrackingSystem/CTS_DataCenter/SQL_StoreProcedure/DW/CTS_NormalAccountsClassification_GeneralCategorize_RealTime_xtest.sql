@@ -33,11 +33,11 @@ AS
 BEGIN
 	
 	SET NOCOUNT ON;
+
 	DECLARE @GENERAL_SPORTID	SMALLINT = 200;
 	DECLARE @FUNCTIONID			SMALLINT = 1;
 
-	DECLARE @CATEGORY_NEWMEMBER			INT = 201
-		,	@CATEGORY_NORMALMEMBER		INT = 202
+	DECLARE @CATEGORY_NORMALMEMBER		INT = 202
 		,	@CATEGORY_GOODMEMBER		INT = 205
 
 	DECLARE	@CurrentDateTime			DATETIME = GETDATE()
@@ -117,15 +117,8 @@ BEGIN
 		,	T.C.value('./@CategoryId', 'SMALLINT') AS CurrentCategoryId
 	FROM @CustomersXML.nodes('//r') AS T(C)
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
-	
-
-	-- LOG INPUT DATA
-	INSERT INTO dbo.CustomerClassification_InputLog(CustId,CreatedDate,CreatedTime,FunctionId)
-	SELECT DISTINCT CustId, @CurrentDate, @CurrentDateTime, @FUNCTIONID
-	FROM #tmpCustomers;	
-	
-	-- START	
-	-- #1: GetCustomer Accummulated data  
+		
+	-- #2: GetCustomer Accummulated data  
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, Site, SRecommend, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays, CurrentCategoryId)
 	SELECT	a.CustId
 		,	cu.Site
@@ -145,7 +138,12 @@ BEGIN
 	FROM #tmpCustomerAccummulatedInfo AS a
 		INNER JOIN bodb02.dbo.Dep_CustSuper AS c WITH(NOLOCK) ON a.SRecommend = c.custid;
 
-	-- #2: Insert Accounts's BetCount
+	---- Log Data
+	INSERT INTO dbo.CustomerClassification_InputLog(CustId, CreatedDate, CreatedTime, FunctionId, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId, IsActive)
+	SELECT CustId, @CurrentDate, @CurrentDateTime, @FUNCTIONID, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId, 1
+	FROM #tmpCustomerAccummulatedInfo;
+
+	-- #3: Insert Accounts's BetCount
 	INSERT INTO dbo.CustomerClassification_BetCount(CustId, SportId, BetCount)
 	SELECT c.CustId, @GENERAL_SPORTID, 0
 	FROM #tmpCustomers AS c WITH(NOLOCK)
@@ -153,8 +151,8 @@ BEGIN
 	WHERE c.CurrentCategoryId IN (@CATEGORY_NORMALMEMBER, @CATEGORY_GOODMEMBER)
 		AND v.CustId IS NULL;
 
-	-- #3: Remove Accounts that Ticket Count has not reach the schedule
-	-- Remove Accounts less than 100 tickets compared to last scan for VIP
+	--#4: Remove Accounts that Ticket Count has not reach the schedule
+	---- Remove Accounts less than 100 tickets compared to last scan for VIP
 	DELETE a WITH(ROWLOCK)
 	OUTPUT DELETED.CustId, DELETED.CurrentCategoryId, DELETED.WinlossRM, DELETED.TurnoverRM, DELETED.BetCount, DELETED.ActiveDays 
 		INTO #tmpDeletedCustomers(CustId, CurrentCategoryId, WinlossRM, TurnoverRM, BetCount, ActiveDays)
@@ -163,7 +161,7 @@ BEGIN
 	WHERE a.CurrentCategoryId IN (@CATEGORY_GOODMEMBER)
 		AND (v.CustId IS NOT NULL AND (a.BetCount - v.BetCount < 100));
 
-	-- Remove Accounts less than 20 tickets compared to last scan for Normal Member
+	---- Remove Accounts less than 20 tickets compared to last scan for Normal Member
 	DELETE a WITH(ROWLOCK)
 	OUTPUT DELETED.CustId, DELETED.CurrentCategoryId, DELETED.WinlossRM, DELETED.TurnoverRM, DELETED.BetCount, DELETED.ActiveDays 
 		INTO #tmpDeletedCustomers(CustId, CurrentCategoryId, WinlossRM, TurnoverRM, BetCount, ActiveDays)
@@ -171,12 +169,8 @@ BEGIN
 		LEFT JOIN dbo.CustomerClassification_BetCount AS v WITH(NOLOCK) ON a.CustId = v.CustId
 	WHERE a.CurrentCategoryId IN (@CATEGORY_NORMALMEMBER)
 		AND (v.CustId IS NOT NULL AND (a.BetCount - v.BetCount < 20));
-
-	-- #5: Classify Normal Member, Smart Punter & High Risk Punter
-	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
-	SELECT  a.CustId, @GENERAL_SPORTID, a.CurrentCategoryId, @CurrentDate,	@CurrentDateTime, a.TurnoverRM,	a.WinlossRM, a.BetCount, a.ActiveDays
-	FROM #tmpDeletedCustomers AS a WITH(NOLOCK)
-
+	
+	-- #5: Classify classification by general rule
 	INSERT INTO #tmpResultData(CustId, CategoryId)
 	SELECT  CustId
 		,	CategoryId
@@ -196,13 +190,14 @@ BEGIN
 					OR (r.RuleGroupId = 10 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin)												-- PROBATION
 					OR (r.RuleGroupId = 11 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM >= r.WinlossRM)				-- PROBATION
 					OR (r.RuleGroupId = 12 AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.WinlossRM > r.WinlossRM)					-- SMART
-					OR (r.RuleGroupId = 16 AND a.BetCount >= r.BetCount AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM))										-- RISKY
+					OR (r.RuleGroupId = 16 AND a.BetCount >= r.BetCount AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM))												-- RISKY
 		) as b
 	 WHERE b.RowNum = 1;
 
+	 --#6: Insert to CustomerClassification
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT	a.CustId
-		,	200
+		,	@GENERAL_SPORTID
 		,	CASE WHEN r.CategoryId IS NULL THEN a.CurrentCategoryId ELSE r.CategoryId END
 		,	@CurrentDate AS CreatedDate
 		,	@CurrentDateTime AS CreatedTime
@@ -213,7 +208,11 @@ BEGIN
 	FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 	    LEFT JOIN #tmpResultData AS r WITH(NOLOCK) ON a.CustId = r.CustId
 
-	-- #8: Update last scanned ticket count back to dbo.CustomerClassification_BetCount
+	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
+	SELECT  a.CustId, @GENERAL_SPORTID, a.CurrentCategoryId, @CurrentDate,	@CurrentDateTime, a.TurnoverRM,	a.WinlossRM, a.BetCount, a.ActiveDays
+	FROM #tmpDeletedCustomers AS a WITH(NOLOCK)
+
+	-- #7: Update last scanned ticket count 
 	UPDATE v WITH(ROWLOCK, UPDLOCK)
 	SET v.BetCount = CASE 
 						WHEN a.CurrentCategoryId IN (@CATEGORY_GOODMEMBER) 

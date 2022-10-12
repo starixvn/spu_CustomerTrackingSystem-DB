@@ -72,7 +72,6 @@ BEGIN
 
 	CREATE TABLE #tmpCustomerAccummulatedInfo(
 		[CustId]				INT NOT NULL,
-		[Site]					VARCHAR (10) NULL,
 		[IsSpecialSite]			BIT DEFAULT 0,
 		[IsDeposit]				BIT DEFAULT 0,
 		[SRecommend]			INT,
@@ -97,12 +96,12 @@ BEGIN
 		[SRecommend]
 	);
 
-	IF OBJECT_ID('tempdb..#tmpCustomer') IS NOT NULL
+	IF OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
 	BEGIN
-		DROP TABLE	#tmpCustomer;
+		DROP TABLE	#tmpCustomers;
 	END
 
-	CREATE TABLE #tmpCustomer(
+	CREATE TABLE #tmpCustomers(
 		[CustId]				INT PRIMARY KEY,
 		[IsProbationLastDay]	BIT DEFAULT 0,
 	);
@@ -129,7 +128,7 @@ BEGIN
 	);
 
 	--#1: Filter customers info
-	INSERT INTO #tmpCustomer(CustId, IsProbationLastDay)
+	INSERT INTO #tmpCustomers(CustId, IsProbationLastDay)
 	SELECT	T.C.value('./@CustId', 'INT') AS CustId
 		,	T.C.value('./@IsProbationLastDay', 'BIT') AS IsProbationLastDay
 	FROM @CustomersXML.nodes('//ProbationModel') AS T(C)
@@ -137,7 +136,7 @@ BEGIN
 
 	--#2: Check inactive customers
 	SELECT @CustIdList = STUFF((SELECT DISTINCT ',' + CAST(CustId AS VARCHAR(10))
-			  FROM #tmpCustomer
+			  FROM #tmpCustomers
 			  FOR XML PATH ('')), 1, 1, '');
 
 	INSERT INTO #tmpActiveCustomer(CustId, IsActive)
@@ -161,34 +160,31 @@ BEGIN
 	DELETE FROM #tmpRawData
 	WHERE SportId = @PARLAY_SPORTID;
 
-	--#5: Sum Data
-	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, CurrentCategoryId, IsProbationLastDay, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
+	--#5: Sum data by custid
+	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, CurrentCategoryId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
 	SELECT	r.CustId
 	    ,	@CATEGORY_PROBATION
-		,	c.IsProbationLastDay
 		,	SUM(r.TurnoverRM)
 		,	SUM(r.WinlossRM)
 		,	CASE WHEN SUM(r.TurnoverRM) = 0 THEN 0 ELSE SUM(r.WinlossRM) / SUM(r.TurnoverRM) * 100 END
 		,	SUM(r.BetCount)
 		,	MAX(r.ActiveDays)
 	FROM #tmpRawData AS r WITH(NOLOCK)
-		INNER JOIN #tmpCustomer AS c WITH(NOLOCK) ON r.CustId = c.CustId
 	GROUP BY r.CustId;
 
 	---- Log Data
-	INSERT INTO dbo.CustomerClassification_InputLog(CustId, CreatedDate, CreatedTime, FunctionId, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId)
-	SELECT CustId, @CurrentDate, @CurrentDateTime, @FUNCTIONID, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId
+	INSERT INTO dbo.CustomerClassification_InputLog(CustId, CreatedDate, CreatedTime, FunctionId, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId, IsActive)
+	SELECT CustId, @CurrentDate, @CurrentDateTime, @FUNCTIONID, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId, 1
 	FROM #tmpCustomerAccummulatedInfo;
 
-	INSERT INTO dbo.CustomerClassification_InputLog(CustId, CreatedDate, CreatedTime, FunctionId, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId)
-	SELECT CustId, @CurrentDate, @CurrentDateTime, @FUNCTIONID, 0, 0, 0, 0, @CATEGORY_SMARTINACTIVE
+	INSERT INTO dbo.CustomerClassification_InputLog(CustId, CreatedDate, CreatedTime, FunctionId, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId, IsActive)
+	SELECT CustId, @CurrentDate, @CurrentDateTime, @FUNCTIONID, NULL, NULL, NULL, NULL, NULL, 0
 	FROM #tmpActiveCustomer 
 	WHERE IsActive = 0;
 
 	--#6 Get cust info
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
-	SET    a.site = c.site
-	   ,   a.SRecommend = c.srecommend
+	SET    a.SRecommend = c.srecommend
 	   ,   a.IsSpecialSite = CASE WHEN c.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') THEN 1 ELSE 0 END
 	FROM #tmpCustomerAccummulatedInfo AS a
 		LEFT JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON a.CustId = c.custid;
@@ -197,6 +193,11 @@ BEGIN
 	SET a.IsDeposit = 1
 	FROM #tmpCustomerAccummulatedInfo AS a
 		INNER JOIN bodb02.dbo.Dep_CustSuper AS c WITH(NOLOCK) ON a.SRecommend = c.custid;		
+
+	UPDATE a WITH(ROWLOCK, UPDLOCK)
+	SET a.IsProbationLastDay = c.IsProbationLastDay
+	FROM #tmpCustomerAccummulatedInfo AS a
+		INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.custid;
 
 	--#7: Classify classification by general rule
 	INSERT INTO #tmpResultData(CustId, CategoryId, IsProbationLastDay, IsPassed)
@@ -253,12 +254,12 @@ BEGIN
 	--#9: Return results
 	SELECT	c.CustId	AS 'CustId'
 		,	CASE WHEN (r.CategoryId IS NOT NULL) THEN 1 ELSE 0 END	AS 'IsPassed'
-	FROM #tmpCustomer as c WITH(NOLOCK)
+	FROM #tmpCustomers as c WITH(NOLOCK)
 		 LEFT JOIN #tmpResultData AS r WITH(NOLOCK) ON r.CustId = r.CustId
 
 	DROP TABLE #tmpRawData;
 	DROP TABLE #tmpCustomerAccummulatedInfo;
-	DROP TABLE #tmpCustomer;
+	DROP TABLE #tmpCustomers;
 	DROP TABLE #tmpResultData;
 	DROP TABLE #tmpActiveCustomer;
 END;
