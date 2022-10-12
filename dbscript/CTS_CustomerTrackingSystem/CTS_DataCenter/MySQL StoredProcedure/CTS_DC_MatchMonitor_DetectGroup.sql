@@ -54,11 +54,11 @@ BEGIN
 		,	Info 		JSON
 	);
     
-    SELECT	JSON_ARRAYAGG(JSON_OBJECT('CTSCustID', CTSCustID ,'CustID', CTSCustID ,'Weight', TransDateSecond,'ParentOrigID', 0 )) AS CustJson
+    SELECT	JSON_ARRAYAGG(JSON_OBJECT('CTSCustID', CTSCustID ,'CustID', CustID ,'Weight', TransDateSecond,'ParentOrigID', 0 )) AS CustJson
 	INTO lv_CTSCustIDs
     FROM Temp_StagingTrans;  
     
-	SELECT	JSON_ARRAYAGG(JSON_OBJECT('CTSCustID', CTSCustID ,'CustID', CTSCustID ,'Weight', TransDateSecond, 'ParentOrigID', AgentCTSCustID)) AS CustJson 
+	SELECT	JSON_ARRAYAGG(JSON_OBJECT('CTSCustID', CTSCustID ,'CustID', CustID ,'Weight', TransDateSecond, 'ParentOrigID', AgentCTSCustID)) AS CustJson 
     INTO lv_CTSCustIDAgents
     FROM Temp_StagingTrans  
 	WHERE AgentCTSCustID IS NOT NULL;
@@ -112,6 +112,7 @@ BEGIN
 												OR CTE_Group.ParentOrigID IS NULL 
 												OR (CTE_Group.ParentOrigID = grp.ParentOrigID AND grp.IsRoot = 0) 
                                                 OR (CTE_Group.ParentOrigID != grp.ParentOrigID AND grp.IsRoot = 1))
+				LIMIT 1000000
 		) 
 		SELECT OrigID
 			,  Weight
