@@ -156,20 +156,20 @@ BEGIN
 			,	js.KickOffTime
 			,	js.LeagueID
 			,	js.EventDate
-			,	js.LiveHomeScore
-			,	js.LiveAwayScore
-			,	js.LiveHomeScore + js.LiveAwayScore AS TotalScore
+			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore END) AS LiveHomeScore
+			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveAwayScore END) AS LiveAwayScore
+			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore + js.LiveAwayScore END) AS TotalScore
 			,	js.BettypeID
-            ,	js.BetID
+            ,	IFNULL(js.BetID,0)
 			,	js.CustID
 			,	js.Stake
             ,	js.Betteam
 			,	CURRENT_TIMESTAMP(3)
 		FROM JSON_TABLE(ip_TransList,
-						 "$[*]" COLUMNS(                         
-									SequenceID		BIGINT PATH "$.SequenceID"
+						 "$[*]" COLUMNS(
+									SequenceID		BIGINT UNSIGNED PATH "$.SequenceID" 	
 								,	TransID			BIGINT UNSIGNED PATH "$.TransID" 
-								,	TransDate		DATETIME(3) PATH "$.TransDate"
+								,	TransDate		DATETIME(3) PATH "$.TransDate" 
                                 ,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PATH "$.LeagueName"
                                 ,	SportType		INT PATH "$.SportType"
 								,	MatchID			INT PATH "$.MatchID"
@@ -184,10 +184,10 @@ BEGIN
 								,	BettypeID		INT	PATH "$.Bettype"
                                 ,	BetID			BIGINT	PATH "$.BetID"
 								,	CustID			INT PATH "$.CustID"
-								,	Stake			DECIMAL(20,4) PATH "$.Stake"
-                                ,	Betteam			VARCHAR(10)	PATH "$.Betteam"  
+								,	Stake			DECIMAL(20,4) PATH "$.Stake" 
+                                ,	Betteam			VARCHAR(10)	PATH "$.Betteam" 
 							)
-					) AS js;
+					) AS js;  
 		
                     
 		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorTransNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, Odds, IsMajorLeague, InsertTime)
@@ -236,7 +236,7 @@ BEGIN
 								,	Stake			DECIMAL(20,4) PATH "$.Stake" 
                                 ,	Betteam			VARCHAR(10)	PATH "$.Betteam" 
                                 ,	Odds			DECIMAL(10,4)	PATH "$.Odds" 
-                                ,	IsMajorLeague	TINYINT(1)	PATH "$.IsMajorLeague" 
+                                ,	IsMajorLeague	BOOLEAN	PATH "$.IsMajorLeague" 
 							)
 					) AS js
 			WHERE js.IsMajorLeague = 0;
