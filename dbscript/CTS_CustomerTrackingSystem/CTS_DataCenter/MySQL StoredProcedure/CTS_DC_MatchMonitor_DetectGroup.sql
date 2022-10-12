@@ -24,23 +24,12 @@ BEGIN
     
     DECLARE CONS_Range 			BIGINT DEFAULT 30000000000;
 
-
-    
     DECLARE lv_OrigID 				BIGINT;
 	DECLARE lv_Weight 				BIGINT;
     DECLARE lv_ParentOrigID			BIGINT;
     DECLARE lv_GroupID 				INT DEFAULT 1;
     DECLARE lv_CTSCustIDs 			JSON;
     DECLARE lv_CTSCustIDAgents 		LONGTEXT;
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_GraphRoot;
-	CREATE TEMPORARY TABLE 	Temp_GraphRoot (
-			OrigID 				BIGINT  
-		,	DestID   			BIGINT
-        ,	AssociationType   	SMALLINT
-		,	PRIMARY KEY(OrigID, DestID, AssociationType)
-		,	INDEX IX_Temp_GraphRoot(DestID)
-	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Group;
 	CREATE TEMPORARY TABLE 		Temp_Group (
@@ -73,9 +62,9 @@ BEGIN
     INTO lv_CTSCustIDAgents
     FROM Temp_StagingTrans  
 	WHERE AgentCTSCustID IS NOT NULL;
-    
+
     CALL CTS_DataCenter.CTS_DC_AssociationDetection_GetNode(lv_CTSCustIDs,lv_CTSCustIDAgents,1,1,1,1);
-        
+  
 	DROP TEMPORARY TABLE IF EXISTS Temp_Graph_Dup;
 	CREATE TEMPORARY TABLE Temp_Graph_Dup LIKE Temp_Graph;
     INSERT INTO Temp_Graph_Dup SELECT * FROM Temp_Graph;
@@ -83,8 +72,8 @@ BEGIN
 	INSERT IGNORE INTO Temp_Graph(OrigID, DestID, Weight,ParentOrigID, IsRoot, AssociationType)
 	SELECT 	DestID 
 		,	OrigID
-        ,	Weight
-        ,	ParentOrigID
+        ,	0 AS Weight
+        ,	NULL AS ParentOrigID
         ,	0 AS IsRoot
         ,	AssociationType
     FROM Temp_Graph_Dup;
@@ -110,21 +99,22 @@ BEGIN
         THEN 
             LEAVE lp; 
         END IF;
-        
+
         INSERT IGNORE INTO Temp_Group(CTSCustID,Weight,GroupID)
         WITH RECURSIVE CTE_Group AS ( 
-				SELECT lv_OrigID AS OrigID, lv_Weight AS Weight , lv_ParentOrigID AS ParentOrigID, 0 AS ParentOrigID2, 1 AS IsRoot
+				SELECT lv_OrigID AS OrigID, lv_Weight AS Weight, lv_ParentOrigID AS ParentOrigID
 				UNION
-				SELECT grp.OrigID,  grp.Weight, grp.ParentOrigID, grp.ParentOrigID2,  grp.IsRoot
+				SELECT grp.OrigID,  CASE WHEN grp.Weight = 0 THEN CTE_Group.Weight ELSE grp.Weight END AS Weight, IFNULL(grp.ParentOrigID, CTE_Group.ParentOrigID)
 				FROM Temp_Graph  AS grp
 					INNER JOIN CTE_Group ON CTE_Group.OrigID = grp.DestID 
-										AND ABS(grp.Weight - CTE_Group.Weight) <= ip_Duration
-                                        AND (grp.IsRoot = 0 
-											 OR (CTE_Group.ParentOrigID2 != 0 AND  CTE_Group.ParentOrigID2 != grp.ParentOrigID AND grp.IsRoot = 1)
+										AND (grp.Weight = 0  OR ABS(grp.Weight - CAST(CTE_Group.Weight AS SIGNED)) <= ip_Duration)
+                                        AND (grp.ParentOrigID IS NULL 
+												OR CTE_Group.ParentOrigID IS NULL 
+												OR (CTE_Group.ParentOrigID = grp.ParentOrigID AND grp.IsRoot = 0) 
                                                 OR (CTE_Group.ParentOrigID != grp.ParentOrigID AND grp.IsRoot = 1))
-		) 					
-		SELECT cte.OrigID
-			,  cte.Weight
+		) 
+		SELECT OrigID
+			,  Weight
             ,  lv_GroupID AS GroupID
         FROM CTE_Group AS cte
         WHERE EXISTS (SELECT 1 FROM Temp_StagingTrans AS tmp WHERE tmp.CTSCustID = cte.OrigID AND tmp.TransDateSecond = cte.Weight);
