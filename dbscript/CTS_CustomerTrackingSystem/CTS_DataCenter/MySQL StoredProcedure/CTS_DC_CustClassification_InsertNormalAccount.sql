@@ -41,7 +41,7 @@ BEGIN
 		Param's Explanation (filtered by):
         
         Example:
-				- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount_xpre('[{"CustId": "43600693","CategoryId":"1000","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","TaggingID":10,"TaggingType":1}]',@or);
+				- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount_xtest('[{"CustId":1,"SportGroupId":2,"CategoryId":201,"CreatedTime":"2022-10-13T12:04:51.660133+07:00","TurnoverRM":1.0,"WinlossRM":1.0,"BetCount":1,"ActiveDays":1,"LastXDaysMargin":1.0,"ProbationPeriodWinloss":0.0,"IsGeneralCategory":true,"TaggingID":0,"TaggingType":1,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0}]', @op_ErrorMessage);
 */ 
     DECLARE	CONST_GROUP_PA 								INT DEFAULT 0;
     DECLARE	CONST_GROUP_WRAPPER							INT DEFAULT 100;
@@ -327,7 +327,7 @@ BEGIN
 	 WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE, CONST_SOURCETYPE_FAILPROBATION);
      
      UPDATE Temp_NewClassification AS temp 
-		INNER JOIN CTSCustomerClassificationOldCategory oldCate ON temp.CustID = oldcate.CustID AND oldCate.SportGroupID = CONST_GROUP_NORMAL
+		INNER JOIN CTSCustomerClassificationOldCategory oldCate ON temp.CustID = oldCate.CustID AND oldCate.SportGroupID = CONST_GROUP_NORMAL
      SET temp.NewCateGroup = CASE WHEN temp.NewCateGroup = CONST_CATEGORY_PROBATION 
 								THEN oldCate.CategoryID
                                 ELSE temp.NewCateGroup 
@@ -335,7 +335,7 @@ BEGIN
 
      DELETE temp 
      FROM Temp_NewClassification temp 
-		INNER JOIN CTSCustomerClassificationOldCategory oldCate ON temp.CustID = oldcate.CustID AND oldCate.SportGroupID = CONST_GROUP_NORMAL;
+		INNER JOIN CTSCustomerClassificationOldCategory oldCate ON temp.CustID = oldCate.CustID AND oldCate.SportGroupID = CONST_GROUP_NORMAL;
 	
     /* 6.3.1: UPDATE NEW CATEGORY - ACTIVE */    
 	UPDATE 	Temp_NewClassification AS temp 
