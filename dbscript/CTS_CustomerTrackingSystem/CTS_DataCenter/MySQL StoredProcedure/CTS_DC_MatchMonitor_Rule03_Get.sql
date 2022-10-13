@@ -30,13 +30,15 @@ sp: BEGIN
 	CREATE TEMPORARY TABLE Temp_MatchMonitorRuleSetting(
 			SportType INT
 		,	TotalStake DECIMAL(20,4)
+        ,	HighStake DECIMAL(20,4)
 		
-		,	PRIMARY KEY PK_Temp_MatchMonitorRuleSetting(SportType )
+		,	PRIMARY KEY PK_Temp_MatchMonitorRuleSetting(SportType)
 	);
     
-    INSERT INTO Temp_MatchMonitorRuleSetting(SportType, TotalStake)
+    INSERT INTO Temp_MatchMonitorRuleSetting(SportType, TotalStake, HighStake)
     SELECT	s.SportType
         ,	s.TotalStake
+        ,	s.HighStake
     FROM CTS_DataCenter.MatchMonitorRuleSetting AS s
     WHERE s.RuleGroupID = lv_RuleGroupID;
     
@@ -65,7 +67,7 @@ sp: BEGIN
                 ,	mms.BetID
 			FROM CTS_DataCenter.MatchMonitorStagingLive AS mms
 				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType
-            WHERE mms.SequenceID <= lv_MaxSequenceID AND mms.Rule03GroupID >= 0 
+            WHERE mms.SequenceID <= lv_MaxSequenceID AND mms.Rule03GroupID >= 0 AND mms.Stake >= tmpRs.HighStake
 			GROUP BY mms.MatchID, mms.TotalScore, mms.BettypeID, mms.BetID
 			HAVING COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= MIN(tmpRs.TotalStake);      
             
@@ -89,7 +91,7 @@ sp: BEGIN
                 ,	mms.BetID
 			FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms
 				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType
-            WHERE mms.SequenceID <= lv_MaxSequenceID AND mms.Rule03GroupID >= 0
+            WHERE mms.SequenceID <= lv_MaxSequenceID AND mms.Rule03GroupID >= 0 AND mms.Stake >= tmpRs.HighStake
 			GROUP BY mms.MatchID, mms.TotalScore, mms.BettypeID, mms.BetID
 			HAVING COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= MIN(tmpRs.TotalStake);            
 		END IF;        

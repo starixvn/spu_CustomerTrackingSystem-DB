@@ -29,7 +29,8 @@ sp: BEGIN
     DECLARE CONS_SITE789 				INT DEFAULT  3;
     
     DECLARE lv_TimeStep 				SMALLINT;
-    DECLARE lv_RuleTotalStake 			SMALLINT;
+    DECLARE lv_RuleTotalStake 			DECIMAL(20,4);
+    DECLARE lv_RuleHighStake 			DECIMAL(20,4);
 	DECLARE lv_RuleGroupID 				SMALLINT DEFAULT 3;  
     DECLARE lv_Reason 					TINYINT DEFAULT 1;
     DECLARE lv_RuleSportType 			INT;  
@@ -102,7 +103,8 @@ sp: BEGIN
             AND mms.TotalScore = ip_TotalScore 
             AND mms.BettypeID = ip_BettypeID
             AND mms.BetID = ip_BetID 
-            AND cus.IsLicensee = 0;
+            AND cus.IsLicensee = 0
+            AND mms.Stake >= lv_RuleHighStake;
         
 	ELSE 
 		SELECT mms.SportType 
@@ -133,7 +135,8 @@ sp: BEGIN
             AND mms.TotalScore = ip_TotalScore 
             AND mms.BettypeID = ip_BettypeID 
             AND mms.BetID = ip_BetID 
-            AND cus.IsLicensee = 0;
+            AND cus.IsLicensee = 0
+            AND mms.Stake >= lv_RuleHighStake;
         
     END IF;
 
