@@ -102,7 +102,7 @@ sp:BEGIN
 			,	(CONS_Range1 + tmp.DCSDeviceID) AS DestID
 			,	IFNULL(para.Weight,0) AS Weight
             ,	IFNULL(para.IsRoot,0) AS IsRoot
-			,	1 AS AssociationType
+			,	1 AS AssociationType 
 		FROM Temp_Device AS tmp
 			INNER JOIN CTS_DataCenter.AssociationByDevice AS lv1 ON tmp.DCSDeviceID =  lv1.DCSDeviceID
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON lv1.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0
@@ -281,8 +281,5 @@ sp:BEGIN
         ,	1 AS IsRoot
         , 	60
 	FROM Temp_CustParam AS cus;
-         
-         
-	
 END$$
 DELIMITER ;
