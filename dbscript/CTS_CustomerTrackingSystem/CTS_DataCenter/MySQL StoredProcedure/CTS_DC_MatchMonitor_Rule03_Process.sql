@@ -73,13 +73,23 @@ sp: BEGIN
 	);    
     
     #******************************* GET STAGING TRANS *******************************************
-    
     IF (ip_LiveIndicator = 1) THEN
 		SELECT mms.SportType 
         INTO lv_RuleSportType 
         FROM CTS_DataCenter.MatchMonitorStagingLive AS mms 
         WHERE mms.MatchID = ip_MatchID 
         LIMIT 1;
+        
+        SELECT 	st.TimeStep
+		, 	st.TotalStake
+        , 	st.HighStake
+		INTO 	lv_TimeStep
+			, 	lv_RuleTotalStake
+			,	lv_RuleHighStake
+		FROM MatchMonitorRuleSetting AS st 
+		WHERE 	st.RuleGroupID = lv_RuleGroupID 
+		AND st.SportType = lv_RuleSportType 
+        AND st.Reason = lv_Reason;
 
 		INSERT INTO Temp_StagingTrans(TransID, TransDate, TransDateSecond, CustID, CTSCustID, AgentCTSCustID, OldGroupID, Stake, Betteam)
         SELECT	mms.TransID
@@ -112,6 +122,17 @@ sp: BEGIN
         FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms 
         WHERE mms.MatchID = ip_MatchID 
         LIMIT 1;
+        
+        SELECT 	st.TimeStep
+			, 	st.TotalStake
+			, 	st.HighStake
+		INTO 	lv_TimeStep
+			, 	lv_RuleTotalStake
+			,	lv_RuleHighStake
+		FROM MatchMonitorRuleSetting AS st 
+		WHERE 	st.RuleGroupID = lv_RuleGroupID 
+			AND st.SportType = lv_RuleSportType 
+			AND st.Reason = lv_Reason;
 	  
 		INSERT INTO Temp_StagingTrans(TransID, TransDate, TransDateSecond, CustID,  CTSCustID, AgentCTSCustID, OldGroupID, Stake, Betteam)
         SELECT	mms.TransID
@@ -139,15 +160,6 @@ sp: BEGIN
             AND mms.Stake >= lv_RuleHighStake;
         
     END IF;
-
-    SELECT 	st.TimeStep
-		, 	st.TotalStake
-    INTO 	lv_TimeStep
-		, 	lv_RuleTotalStake
-    FROM MatchMonitorRuleSetting AS st 
-    WHERE 	st.RuleGroupID = lv_RuleGroupID 
-		AND st.SportType = lv_RuleSportType 
-        AND st.Reason = lv_Reason;
 
     #========Detect group by assocation and transdate====================
     CALL CTS_DC_MatchMonitor_DetectGroup(lv_TimeStep);
