@@ -78,7 +78,7 @@ BEGIN
 		 ,	INDEX 				IX_Temp_StagingTrans_AgentCTSCustID(CTSCustID)
 	 );	
      
-     INSERT INTO Temp_Parent(AgentCTSCustID,CTSCustID,TransDateSecond)
+     INSERT IGNORE INTO Temp_Parent(AgentCTSCustID,CTSCustID,TransDateSecond)
      SELECT AgentCTSCustID
 		, 	CTSCustID
         , 	TransDateSecond
@@ -206,12 +206,12 @@ BEGIN
             ,  lv_GroupID AS GroupID
         FROM CTE_Group AS cte
         WHERE EXISTS (SELECT 1 FROM Temp_Parent AS tmp WHERE tmp.AgentCTSCustID = cte.OrigID AND tmp.TransDateSecond = cte.Weight);
-        
+
         UPDATE Temp_Parent AS tmp
         SET tmp.Processed = 1
         WHERE  (tmp.AgentCTSCustID = lv_OrigID AND tmp.TransDateSecond = lv_Weight)
-			OR EXISTS (SELECT 1 FROM Temp_GroupParentPrepare AS gp WHERE  gp.CTSCustID = tmp.CTSCustID AND gp.Weight = tmp.TransDateSecond);
-    
+			OR EXISTS (SELECT 1 FROM Temp_GroupParentPrepare AS gp WHERE  gp.CTSCustID = tmp.AgentCTSCustID AND gp.Weight = tmp.TransDateSecond);
+
         SELECT 	COUNT(1)
 			,	COUNT(DISTINCT CTSCustID)
         INTO 	lv_Count1
