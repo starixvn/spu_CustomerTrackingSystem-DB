@@ -5,7 +5,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_RealTime_xtest]
+ALTER PROCEDURE [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_RealTime_xtest]
 		@CustomersXML			XML
 AS
 /*
@@ -89,19 +89,6 @@ BEGIN
 	);
 
 	
-	IF	OBJECT_ID('tempdb..#tmpDeletedCustomers') IS NOT NULL
-	DROP TABLE	#tmpDeletedCustomers;
-
-	CREATE TABLE #tmpDeletedCustomers(
-		[CustId]			INT NOT NULL,
-		[TurnoverRM]		DECIMAL(19, 4) NULL,
-		[WinlossRM]			DECIMAL(19, 4) NULL,
-		[BetCount]			BIGINT NULL,
-		[ActiveDays]		INT NULL,
-		[CurrentCategoryId]	SMALLINT NULL
-		PRIMARY KEY CLUSTERED ([CustId])
-	);
-
 	IF	OBJECT_ID('tempdb..#tmpResultData') IS NOT NULL
 	DROP TABLE	#tmpResultData;
 
@@ -154,8 +141,6 @@ BEGIN
 	--#4: Remove Accounts that Ticket Count has not reach the schedule
 	---- Remove Accounts less than 100 tickets compared to last scan for VIP
 	DELETE a WITH(ROWLOCK)
-	OUTPUT DELETED.CustId, DELETED.CurrentCategoryId, DELETED.WinlossRM, DELETED.TurnoverRM, DELETED.BetCount, DELETED.ActiveDays 
-		INTO #tmpDeletedCustomers(CustId, CurrentCategoryId, WinlossRM, TurnoverRM, BetCount, ActiveDays)
 	FROM #tmpCustomerAccummulatedInfo AS a
 		LEFT JOIN dbo.CustomerClassification_BetCount AS v WITH(NOLOCK) ON a.CustId = v.CustId
 	WHERE a.CurrentCategoryId IN (@CATEGORY_GOODMEMBER)
@@ -163,8 +148,6 @@ BEGIN
 
 	---- Remove Accounts less than 20 tickets compared to last scan for Normal Member
 	DELETE a WITH(ROWLOCK)
-	OUTPUT DELETED.CustId, DELETED.CurrentCategoryId, DELETED.WinlossRM, DELETED.TurnoverRM, DELETED.BetCount, DELETED.ActiveDays 
-		INTO #tmpDeletedCustomers(CustId, CurrentCategoryId, WinlossRM, TurnoverRM, BetCount, ActiveDays)
 	FROM #tmpCustomerAccummulatedInfo AS a
 		LEFT JOIN dbo.CustomerClassification_BetCount AS v WITH(NOLOCK) ON a.CustId = v.CustId
 	WHERE a.CurrentCategoryId IN (@CATEGORY_NORMALMEMBER)
@@ -208,10 +191,6 @@ BEGIN
 	FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 	    LEFT JOIN #tmpResultData AS r WITH(NOLOCK) ON a.CustId = r.CustId
 
-	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
-	SELECT  a.CustId, @GENERAL_SPORTID, a.CurrentCategoryId, @CurrentDate,	@CurrentDateTime, a.TurnoverRM,	a.WinlossRM, a.BetCount, a.ActiveDays
-	FROM #tmpDeletedCustomers AS a WITH(NOLOCK)
-
 	-- #7: Update last scanned ticket count 
 	UPDATE v WITH(ROWLOCK, UPDLOCK)
 	SET v.BetCount = CASE 
@@ -225,7 +204,6 @@ BEGIN
 		INNER JOIN dbo.CustomerClassification_BetCount AS v ON a.CustId = v.CustId;
 
 	DROP TABLE #tmpCustomerAccummulatedInfo;
-	DROP TABLE #tmpDeletedCustomers;
 	DROP TABLE #tmpCustomers;
 	DROP TABLE #tmpResultData;
 END;
