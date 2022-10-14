@@ -31,6 +31,8 @@ sp: BEGIN
 	*/
     
     DECLARE	CONST_REASON					TINYINT DEFAULT 3; #0: Group Betting, 1: Headging, 2: Arbitrage, 3: FixedGame
+    
+    DECLARE lv_MaxTransID BIGINT UNSIGNED;
     DECLARE lv_MaxTransDate DATETIME(3);
 	DECLARE lv_LastTransDate DATETIME(3);
     DECLARE lv_FromTransDate DATETIME(3);
@@ -40,6 +42,7 @@ sp: BEGIN
     DECLARE	lv_Rule_HighStakePercent	DECIMAL(4,4);    
 	DECLARE	lv_Rule_Duration			SMALLINT; 
     DECLARE	lv_Rule_OddsSpread_Min		SMALLINT; 
+    
     
     DROP TEMPORARY TABLE IF EXISTS Temp_FixedTransRange;
     CREATE TEMPORARY TABLE Temp_FixedTransRange(
@@ -58,6 +61,10 @@ sp: BEGIN
 
     IF (ip_LiveIndicator = 1) THEN
 		
+		SELECT MAX(TransDate)
+		INTO lv_MaxTransDate
+		FROM CTS_DataCenter.MatchMonitorTransLive AS mmt
+		WHERE mmt.SequenceID = ip_MaxSequenceID;   
   
         SELECT s.ParameterValue
         INTO lv_LastSequenceID
@@ -98,7 +105,11 @@ sp: BEGIN
 				AND EXISTS (SELECT 1 FROM Temp_FixedTransRange AS tmp WHERE mmt.TransID BETWEEN tmp.MinTransID AND MaxTransID);
 		
      ELSE 
-
+		SELECT MAX(TransDate)
+		INTO lv_MaxTransDate
+		FROM CTS_DataCenter.MatchMonitorTransNonLive AS mmt
+		WHERE mmt.SequenceID = ip_MaxSequenceID;   
+        
         SELECT s.ParameterValue
         INTO lv_LastSequenceID
         FROM CTS_DataCenter.SystemParameter AS s
