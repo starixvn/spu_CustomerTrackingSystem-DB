@@ -29,6 +29,7 @@ BEGIN
     DECLARE lv_GroupID 				INT DEFAULT 1;
 	DECLARE lv_Count1 				INT;
     DECLARE lv_Count2 				INT;
+    DECLARE lv_Count3 				INT;
     DECLARE lv_CTSCustIDs 			JSON;
     DECLARE lv_CTSCustIDAgents 		LONGTEXT;
     
@@ -40,7 +41,7 @@ BEGIN
         ,	PRIMARY KEY			PK_Temp_Group(CTSCustID,Weight,GroupID)
 		,	INDEX			    IX_Temp_Group(GroupID)
 	);
-    
+     
     DROP TEMPORARY TABLE IF EXISTS Temp_GroupProcess;
 	CREATE TEMPORARY TABLE 		Temp_GroupProcess (
 			CTSCustID 			BIGINT 
@@ -101,10 +102,11 @@ BEGIN
         ,	AssociationType
     FROM Temp_Graph_Dup;
     
+    
     lp: LOOP 
 		SET lv_OrigID = NULL;
         SET lv_Weight = NULL;
-
+		SET @crr = CURRENT_TIMESTAMP(3);
         SELECT 	CTSCustID
 			,  	TransDateSecond AS Weight
         INTO 	lv_OrigID	
@@ -135,8 +137,6 @@ BEGIN
         FROM CTE_Group AS cte
         WHERE EXISTS (SELECT 1 FROM Temp_StagingTrans AS tmp WHERE tmp.CTSCustID = cte.OrigID AND tmp.TransDateSecond = cte.Weight);
           
-		
-        
         UPDATE Temp_StagingTrans AS tmp
         SET tmp.Processed = 1
         WHERE  (tmp.CTSCustID = lv_OrigID AND tmp.TransDateSecond = lv_Weight)
@@ -146,7 +146,7 @@ BEGIN
         INTO lv_Count1
 		FROM Temp_Group 
 		WHERE GroupID = lv_GroupID;
-
+        
 		SELECT COUNT(1)
         INTO lv_Count2
 		FROM Temp_StagingTrans AS trans
@@ -156,11 +156,23 @@ BEGIN
 		GROUP BY trans.AgentCTSCustID
 		LIMIT 1; 
         
-        IF lv_Count1 IS NOT NULL AND lv_Count2 IS NOT NULL AND lv_Count1 = lv_Count2 THEN
+        SELECT COUNT(1)
+        INTO lv_Count3
+		FROM Temp_Group 
+		WHERE GroupID = lv_GroupID
+        GROUP BY CTSCustID 
+        LIMIT 1; 
+        
+        IF lv_Count1 IS NOT NULL AND lv_Count1 IN (lv_Count2, lv_Count3) THEN
 			DELETE 
             FROM Temp_Group
             WHERE GroupID = lv_GroupID;
         END IF;
+        
+        SET lv_GroupId = lv_GroupId + 1;
+        SET @crr2 = ROUND(TIMESTAMPDIFF(MICROSECOND, CURRENT_TIMESTAMP(3),@crr)/1000);
+        SET @lv_AuditInfo = JSON_OBJECT('GroupID', lv_GroupId, 'OrigID', lv_OrigID, 'Weight', lv_Weight, 'Duaration',@crr2);
+		INSERT INTO Temp_Monitor(Info) VALUES(@lv_AuditInfo);
      
         SET lv_GroupID = lv_GroupID + 1; 
     END LOOP;
