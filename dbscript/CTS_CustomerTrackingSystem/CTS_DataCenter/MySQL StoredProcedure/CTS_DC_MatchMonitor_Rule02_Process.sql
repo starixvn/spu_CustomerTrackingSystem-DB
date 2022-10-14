@@ -23,6 +23,7 @@ sp: BEGIN
 			- 20220726@Casey.Huynh: Created [Redmine ID: #175700]
             - 20220726@Casey.Huynh: Handle Duaration in 7 minute [Redmine ID: #177139]
             - 20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
+            - 20221023@Casey.Huynh: Adjust Odds Range Rule, fix Data Type HighStake, Get Trans >= lv_FromTransDate for Non-Live [Redmine ID: #179065]
 		Param's Explanation (filtered by):	
 
 		Example:
@@ -38,10 +39,9 @@ sp: BEGIN
     DECLARE lv_LastSequenceID 				BIGINT UNSIGNED;
     DECLARE	lv_Rule_TotalTicket			SMALLINT; 
     DECLARE	lv_Rule_HighStake			SMALLINT;
-    DECLARE	lv_Rule_HighStakePercent	DECIMAL(1,1);    
+    DECLARE	lv_Rule_HighStakePercent	DECIMAL(4,4);    
 	DECLARE	lv_Rule_Duration			SMALLINT; 
     DECLARE	lv_Rule_OddsSpread_Min		SMALLINT; 
-    DECLARE	lv_Rule_OddsSpread_Max		SMALLINT;
     
     
     DROP TEMPORARY TABLE IF EXISTS Temp_FixedTransRange;
@@ -58,15 +58,14 @@ sp: BEGIN
     SELECT s.ParameterValue INTO lv_Rule_TotalTicket FROM CTS_DataCenter.SystemParameter AS s WHERE s.ParameterID = 109;
     SELECT s.ParameterValue INTO lv_Rule_HighStakePercent FROM CTS_DataCenter.SystemParameter AS s WHERE s.ParameterID = 110;
     SELECT s.ParameterValue INTO lv_Rule_OddsSpread_Min FROM CTS_DataCenter.SystemParameter AS s WHERE s.ParameterID = 111;
-    SELECT s.ParameterValue INTO lv_Rule_OddsSpread_Max FROM CTS_DataCenter.SystemParameter AS s WHERE s.ParameterID = 112;
-    
+
     IF (ip_LiveIndicator = 1) THEN
 		
 		SELECT MAX(TransDate)
 		INTO lv_MaxTransDate
 		FROM CTS_DataCenter.MatchMonitorTransLive AS mmt
 		WHERE mmt.SequenceID = ip_MaxSequenceID;   
-        
+  
         SELECT s.ParameterValue
         INTO lv_LastSequenceID
         FROM CTS_DataCenter.SystemParameter AS s
@@ -78,17 +77,16 @@ sp: BEGIN
 		WHERE mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam
 		ORDER BY TransDate
         LIMIT 1;
-                        
+                 
         INSERT INTO Temp_FixedTransRange (MinTransID, MaxTransID)
         SELECT  MinTransID1, TransID
 		FROM (
-				SELECT  
-					TransDate, TransID, CustID, Stake, Odds
-				,	MIN(TransID) OVER w1 MinTransID1
-				,	MIN(Odds) OVER w1 AS MinOdds1
-				, 	MAX(Odds) OVER w1  AS MaxOdds1
-				,	SUM(CASE WHEN Stake > lv_Rule_HighStake THEN 1 ELSE 0 END) OVER w1  AS TotalHighStake1
-				,	COUNT(1) OVER w1  AS TotalTrans1
+				SELECT  TransDate, TransID, CustID, Stake, Odds
+					,	MIN(TransID) OVER w1 MinTransID1
+					,	MIN(Odds) OVER w1 AS MinOdds1
+					, 	MAX(Odds) OVER w1  AS MaxOdds1
+					,	SUM(CASE WHEN Stake > lv_Rule_HighStake THEN 1 ELSE 0 END) OVER w1  AS TotalHighStake1
+					,	COUNT(1) OVER w1  AS TotalTrans1
 			   FROM CTS_DataCenter.MatchMonitorTransLive AS mmt
 			   WHERE  mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam
 					AND mmt.SequenceID > lv_LastSequenceID AND mmt.SequenceID <= ip_MaxSequenceID AND mmt.StatusRule02 = 0
@@ -96,7 +94,7 @@ sp: BEGIN
 			) AS tmpTs
         WHERE tmpTs.TotalTrans1 > lv_Rule_TotalTicket
 			AND (tmpTs.TotalHighStake1/tmpTs.TotalTrans1) > lv_Rule_HighStakePercent 
-			AND (tmpTs.MaxOdds1 - tmpTs.MinOdds1)*100 BETWEEN lv_Rule_OddsSpread_Min AND lv_Rule_OddsSpread_Max
+			AND (tmpTs.MaxOdds1 - tmpTs.MinOdds1)*100 >= lv_Rule_OddsSpread_Min
             AND tmpTs.TransDate >= lv_FromTransDate;
 
         SELECT CONST_REASON AS Reason
@@ -128,11 +126,11 @@ sp: BEGIN
         SELECT MinTransID1, TransID
 		FROM (
 				SELECT TransDate, TransID, CustID, Stake, Odds
-				,	MIN(TransID) OVER w1 MinTransID1
-				,	MIN(Odds) OVER w1 AS MinOdds1
-				, 	MAX(Odds) OVER w1  AS MaxOdds1
-				,	SUM(CASE WHEN Stake > lv_Rule_HighStake THEN 1 ELSE 0 END) OVER w1  AS TotalHighStake1
-				,	COUNT(1) OVER w1  AS TotalTrans1
+					,	MIN(TransID) OVER w1 MinTransID1
+					,	MIN(Odds) OVER w1 AS MinOdds1
+					, 	MAX(Odds) OVER w1  AS MaxOdds1
+					,	SUM(CASE WHEN Stake > lv_Rule_HighStake THEN 1 ELSE 0 END) OVER w1  AS TotalHighStake1
+					,	COUNT(1) OVER w1  AS TotalTrans1
 			   FROM CTS_DataCenter.MatchMonitorTransNonLive AS mmt
 			   WHERE  mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam
 					AND mmt.SequenceID > lv_LastSequenceID AND mmt.SequenceID <= ip_MaxSequenceID AND mmt.StatusRule02 = 0
@@ -140,8 +138,8 @@ sp: BEGIN
 			) AS tmpTs
         WHERE tmpTs.TotalTrans1 > lv_Rule_TotalTicket
 			AND (tmpTs.TotalHighStake1/tmpTs.TotalTrans1) > lv_Rule_HighStakePercent 
-			AND (tmpTs.MaxOdds1 - tmpTs.MinOdds1)*100 BETWEEN lv_Rule_OddsSpread_Min AND lv_Rule_OddsSpread_Max
-            AND tmpTs.TransDate > lv_FromTransDate;
+			AND (tmpTs.MaxOdds1 - tmpTs.MinOdds1)*100 >= lv_Rule_OddsSpread_Min
+            AND tmpTs.TransDate >= lv_FromTransDate;
 
 		SELECT CONST_REASON AS Reason
 			,	GROUP_CONCAT(DISTINCT TransID) AS TransIDList
