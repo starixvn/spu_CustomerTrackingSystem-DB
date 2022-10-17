@@ -100,44 +100,40 @@ sp:BEGIN
 		INSERT IGNORE INTO Temp_Graph(OrigID,DestID,Weight,AssociationType)
 		SELECT  (CONS_Range0 + tmp.CTSCustID) AS OrigID
 			, 	(CONS_Range0 + ma.FromCTSCustID) AS DestID
-			,	IFNULL(para.Weight,0) AS Weight
+			,	IFNULL(tmp.Weight,0) AS Weight
 			,	2 AS AssociationType
-		FROM Temp_Cust AS tmp 
+		FROM Temp_CustParam AS tmp 
 			INNER JOIN CTS_DataCenter.AssociationByManual AS ma ON ma.ToCTSCustID = tmp.CTSCustID
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = ma.FromCTSCustID AND cus.IsInternal = 0
-            LEFT JOIN Temp_CustParam AS para ON para.CTSCustID = cus.CTSCustID;
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = ma.FromCTSCustID AND cus.IsInternal = 0;
 			
 		INSERT IGNORE INTO Temp_Graph(OrigID,DestID,Weight,AssociationType)
 		SELECT  (CONS_Range0 + tmp.CTSCustID) AS OrigID
 			, 	(CONS_Range0 + ma.ToCTSCustID) AS DestID
-			,	IFNULL(para.Weight,0) AS Weight
+			,	IFNULL(tmp.Weight,0) AS Weight
 			,	2 AS AssociationType
-		FROM Temp_Cust AS tmp 
+		FROM Temp_CustParam AS tmp 
 			INNER JOIN CTS_DataCenter.AssociationByManual AS ma ON ma.FromCTSCustID  = tmp.CTSCustID
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = ma.ToCTSCustID AND cus.IsInternal = 0
-            LEFT JOIN Temp_CustParam AS para ON para.CTSCustID = cus.CTSCustID;
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = ma.ToCTSCustID AND cus.IsInternal = 0;
     END IF; 
     /*******************3. AI*************************/
     IF ip_HasAI = 1 THEN
 		INSERT IGNORE INTO Temp_Graph(OrigID,DestID,Weight,AssociationType)
 		SELECT  (CONS_Range0 + tmp.CTSCustID) AS OrigID
 			, 	(CONS_Range0 + cus.CTSCustID) AS DestID
-			,	IFNULL(para.Weight,0) AS Weight
+			,	IFNULL(tmp.Weight,0) AS Weight
 			,	3 AS AssociationType
-		FROM Temp_Cust AS tmp 
+		FROM Temp_CustParam AS tmp 
 			INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.FromCustID = tmp.CustID
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ai.ToCustID AND cus.CustSubID = 0 AND cus.IsInternal = 0
-            LEFT JOIN Temp_CustParam AS para ON para.CTSCustID = cus.CTSCustID;
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ai.ToCustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
 			
 		INSERT IGNORE INTO Temp_Graph(OrigID,DestID,Weight,AssociationType)
 		SELECT  (CONS_Range0 + tmp.CTSCustID) AS OrigID
 			, 	(CONS_Range0 + cus.CTSCustID) AS DestID
-			,	IFNULL(para.Weight,0) AS Weight
+			,	IFNULL(tmp.Weight,0) AS Weight
 			,	3 AS AssociationType
-		FROM Temp_Cust AS tmp 
+		FROM Temp_CustParam AS tmp 
 			INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.ToCustID = tmp.CustID
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ai.FromCustID AND cus.CustSubID = 0 AND cus.IsInternal = 0
-            LEFT JOIN Temp_CustParam AS para ON para.CTSCustID = cus.CTSCustID;
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ai.FromCustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
 		
 		/*******************4. Group AI*************************/
 		DROP TEMPORARY TABLE IF EXISTS Temp_AIGroup;
@@ -166,22 +162,20 @@ sp:BEGIN
 		INSERT IGNORE INTO Temp_Graph(OrigID,DestID,Weight,AssociationType)
 		SELECT  (CONS_Range0 + tmp.CTSCustID) AS OrigID
 			, 	(CONS_Range0 + cus.CTSCustID) AS DestID
-			,	IFNULL(para.Weight,0) AS Weight
+			,	IFNULL(tmp.Weight,0) AS Weight
 			,	5 AS AssociationType
-		FROM Temp_Cust AS tmp 
+		FROM Temp_CustParam AS tmp 
 			INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.FromCustID = tmp.CustID
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ip.ToCustID AND cus.CustSubID = 0 AND cus.IsInternal = 0
-            LEFT JOIN Temp_CustParam AS para ON para.CTSCustID = cus.CTSCustID;
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ip.ToCustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
 			
 		INSERT IGNORE INTO Temp_Graph(OrigID,DestID,Weight,AssociationType)
 		SELECT  (CONS_Range0 + tmp.CTSCustID) AS OrigID
 			, 	(CONS_Range0 + cus.CTSCustID) AS DestID
-			,	IFNULL(para.Weight,0) AS Weight
+			,	IFNULL(tmp.Weight,0) AS Weight
 			,	5 AS AssociationType
-		FROM Temp_Cust AS tmp 
+		FROM Temp_CustParam AS tmp 
 			INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.ToCustID = tmp.CustID
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ip.FromCustID AND cus.CustSubID = 0 AND cus.IsInternal = 0
-            LEFT JOIN Temp_CustParam AS para ON para.CTSCustID = cus.CTSCustID;
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ip.FromCustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
 	END IF;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Graph_Dup;
