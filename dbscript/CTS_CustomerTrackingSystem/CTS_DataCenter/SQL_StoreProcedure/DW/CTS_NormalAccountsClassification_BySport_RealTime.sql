@@ -15,8 +15,9 @@ AS
 	Original:
 
 	Revisions:
-		- 20200901@Jonas.Huynh: Created [Redmine ID: #176992]
-
+		- 20220831@Jonas.Huynh: Created [Redmine ID: #176992]
+		- 20221017@Jonas.Huynh: Fix issue ineligible customer classification
+		
 	Param's Explanation:
 				@CustomersXML = N'<Root>
 										<r CustId="4345542" SportId="2" CategoryId ="201"/>
