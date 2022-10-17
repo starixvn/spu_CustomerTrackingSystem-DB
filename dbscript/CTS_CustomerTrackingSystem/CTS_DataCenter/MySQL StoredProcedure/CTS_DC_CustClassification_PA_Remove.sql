@@ -16,6 +16,7 @@ BEGIN
 		Original:
 		Revisions:
             - 20220519@Casey.Huynh: Renovate PA Process [Redmine ID: #172561]
+            - 20221007@Harvey.Nguyen: Return CurrentCategoryID [Redmine ID: #178022]
             
         Param's Explanation (filtered by):
 			- ip_ByType: 1: Category, 2: Reason

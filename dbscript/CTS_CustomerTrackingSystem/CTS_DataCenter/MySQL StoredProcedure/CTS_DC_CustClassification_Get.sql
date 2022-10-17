@@ -32,6 +32,7 @@ BEGIN
 			- 20211115@Irena.Vo: Re-priortize Robot and other PA categories  [Redmine ID: #164344]
 			- 20220328@Aries.Nguyen: Add new category/class for PA Probation [Redmine ID: #170468]
 			- 20220531@Aries.Nguyen: Renovate process PA [Redmine ID: #172561]
+            - 20221007@Harvey.Nguyen: Change input from Single to Multilple custs [Redmine ID: #178022]
             
 		Param's Explanation:
         
@@ -49,6 +50,12 @@ BEGIN
     CREATE TEMPORARY TABLE TempCusts (
 			ID				BIGINT UNSIGNED PRIMARY KEY
 		,	CTSCustID 		BIGINT UNSIGNED
+        ,	CustID 			BIGINT UNSIGNED
+    );
+    
+    DROP TEMPORARY TABLE IF EXISTS TempCusts_Info;
+    CREATE TEMPORARY TABLE TempCusts_Info (
+			CTSCustID 		BIGINT UNSIGNED PRIMARY KEY
         ,	CustID 			BIGINT UNSIGNED
     );
     
@@ -70,13 +77,21 @@ BEGIN
     
     IF ip_IsCTSCustID = 1 
     THEN 
+		INSERT INTO TempCusts_Info (CTSCustID, CustID)
+        SELECT cus.CTSCustID, cus.CustID
+        FROM TempCusts AS temp INNER JOIN CTSCustomer AS cus ON temp.ID = cus.CTSCustID;
+        
 		UPDATE TempCusts AS temp
-		INNER JOIN CTSCustomer AS cus ON temp.ID = cus.CTSCustID
+		INNER JOIN TempCusts_Info AS cus ON temp.ID = cus.CTSCustID
 		SET 	temp.CTSCustID = cus.CTSCustID
 			,	temp.CustID = cus.CustID;
     ELSE 
+		INSERT INTO TempCusts_Info (CTSCustID, CustID)
+        SELECT cus.CTSCustID, cus.CustID
+        FROM TempCusts AS temp INNER JOIN CTSCustomer AS cus ON temp.ID = cus.CustID AND cus.CustSubID = 0;
+        
 		UPDATE TempCusts AS temp
-		INNER JOIN CTSCustomer AS cus ON temp.ID = cus.CustID AND cus.CustSubID = 0
+		INNER JOIN TempCusts_Info AS cus ON temp.ID = cus.CustID
 		SET 	temp.CTSCustID = cus.CTSCustID
 			,	temp.CustID = cus.CustID;
     END IF;

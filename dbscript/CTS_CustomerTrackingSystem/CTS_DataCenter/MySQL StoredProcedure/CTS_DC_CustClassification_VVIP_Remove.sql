@@ -29,6 +29,7 @@ BEGIN
 			- 20210920@Aries.Nguyen: Split history log  [Redmine ID: #161890]
             - 20220418@Casey.Huynh: Add and Remove VVIP for Downline [Redmine ID: #159013]
             - 20220519@Casey.Huynh: Renovate PA Process [RedmineID: #172061]
+            - 20221007@Harvey.Nguyen: Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory [Redmine ID: #178022]
             
 		Param's Explanation:
 			ip_FromAction: 1 From Web, 2 From Service

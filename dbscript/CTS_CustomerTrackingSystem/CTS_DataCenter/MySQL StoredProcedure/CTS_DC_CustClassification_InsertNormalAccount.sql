@@ -37,6 +37,7 @@ BEGIN
 				- 20211122@Irena.Vo: Process Licensee info by site [Redmine ID: #161665]
                 - 20220705@Long.Luu: Switching for Licensee VIP & BA Categories [Redmine ID: #174219]                
                 - 20220817@Long.Luu: Rearrange CC's IDs [Redmine ID: #175698]
+                - 20221007@Harvey.Nguyen: Update logic for checking Category in OldCategory table [Redmine ID: #178022]
                 
 		Param's Explanation (filtered by):
         

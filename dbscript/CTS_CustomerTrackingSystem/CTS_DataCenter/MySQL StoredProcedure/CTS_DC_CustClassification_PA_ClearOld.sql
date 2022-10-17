@@ -14,6 +14,7 @@ BEGIN
 		Original: 
 		Revisions: 
 			- 20220520@Aries.Nguyen: Created [Redmine ID: #172561]
+            - 20221007@Harvey.Nguyen: Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory [Redmine ID: #178022]
 		
         Param's Explanation:
 

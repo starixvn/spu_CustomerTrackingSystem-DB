@@ -36,6 +36,7 @@ sp: BEGIN
             - 10220418@Casey.Huynh: Add and Remove VVIP for Downline [Redmine ID: #159013]
             - 20220519@Casey.Huynh: Renovate PA Process [RedmineID: #172061]
             - 20220713@Casey.Huynh: Switching for Licensee VIP & BA Categories [Redmine ID: #174219]
+            - 20221007@Harvey.Nguyen: Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory [Redmine ID: #178022]
             
 		Param's Explanation:
 			ip_FromAction: From Web(1),From Service VVIPDownLine(2), From Insert NewCustomer(3)

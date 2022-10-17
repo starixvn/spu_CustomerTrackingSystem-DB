@@ -17,6 +17,7 @@ sp: BEGIN
             - 20220616@Aries.Nguyen: Cannot mark PA (affected by uplines) correctly with First Mark [Redmine ID: #174136]
             - 20220628@Aries.Nguyen: Update robot classification rule [Redmine ID: #174430]
 			- 20220705@Long.Luu: Return IsLicenseeVIP info [Redmine ID: #174219]
+            - 20221007@Harvey.Nguyen: Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory [Redmine ID: #178022]
 		
         Param's Explanation:
 

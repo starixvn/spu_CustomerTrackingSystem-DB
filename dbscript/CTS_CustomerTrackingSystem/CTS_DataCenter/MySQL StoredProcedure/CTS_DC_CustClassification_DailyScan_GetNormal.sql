@@ -17,6 +17,7 @@ BEGIN
 		Original:
 		Revisions:
 			- 20220328@Aries.Nguyen: Created [Redmine ID: #170468]
+            - 20221007@Harvey.Nguyen: Return CurrentCategoryID [Redmine ID: #178022]
 
 		Param's Explanation (filtered by):      
 			- CALL CTS_DC_CustClassification_DailyScan_GetNormal (@op_LastCategoryID, @op_LastCustID);

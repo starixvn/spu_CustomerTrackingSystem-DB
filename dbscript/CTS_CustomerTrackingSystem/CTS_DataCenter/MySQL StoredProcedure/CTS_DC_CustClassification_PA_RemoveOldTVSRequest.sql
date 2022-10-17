@@ -15,6 +15,7 @@ BEGIN
             - 20220602@Long.Luu: Created [Redmine ID: #172561]
             - 20220628@Long.Luu: Remove affected evidence in case of update Reason [Redmine ID: #174430]
             - 20220801@Long.Luu: Adjust Winloss Status for Old Requests [Redmine ID: #174219]
+            - 20221007@Harvey.Nguyen: Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory [Redmine ID: #178022]
             
         Param's Explanation (filtered by):
         

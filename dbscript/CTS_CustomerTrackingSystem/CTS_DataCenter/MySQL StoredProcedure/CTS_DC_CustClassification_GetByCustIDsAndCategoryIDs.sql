@@ -21,6 +21,7 @@ BEGIN
             - 20210608@Casey.Huynh: Return Category Group AND Hardcode RealTime CategoryGroup List [Redmine ID: 156465]
 			- 20210722@Irena.Vo: Refactor SP [Redmine ID: 157203]  
             - 20220826@Long.Luu: Fix issue leaving blank for should-not-be-classified customer [Redmine ID: 176782]  
+            - 20221007@Harvey.Nguyen: Return CurrentCategoryID [Redmine ID: #178022]
             
 		Param's Explanation (filtered by):    
 	*/  
@@ -49,7 +50,7 @@ BEGIN
 					WHEN cc.CategoryGroup IN (CONST_CATEGORY_NEWMEMBER, CONST_CATEGORY_NORMALMEMBER, CONST_CATEGORY_VIP, CONST_CATEGORY_INACTIVE)
 						THEN cc.CategoryGroup
                     ELSE -1 
-				END AS CategoryID
+				END AS CurrentCategoryID
 	FROM Temp_RealtimeCustomers AS temp
 		INNER JOIN 	CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID
 		INNER JOIN	CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID

@@ -18,6 +18,7 @@ BEGIN
             - 20220628@Aries.Nguyen: Update robot classification rule [Redmine ID: #174430]
             - 20220708@Aries.Nguyen: [CTS] Add new category/class for Lic BA and Lic VIP [Redmine ID: #174219]
             - 20200817@Casey.Huynh: Remove Hardcode CC [Redmine ID: #175698]
+            - 20221007@Harvey.Nguyen: Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory [Redmine ID: #178022]
 		
         Param's Explanation: 
 

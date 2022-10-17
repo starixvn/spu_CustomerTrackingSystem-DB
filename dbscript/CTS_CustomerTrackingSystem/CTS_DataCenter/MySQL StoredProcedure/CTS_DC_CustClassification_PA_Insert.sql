@@ -20,6 +20,7 @@ BEGIN
             - 20220801@Long.Luu: Fix cannot rescan Normal when removing PA(Losing)  [Redmine ID: #176163]
             - 20220713@Casey.Huynh: Switching for Licensee VIP & BA Categories [Redmine ID: #174219]
             - 20220913@Casey.Huynh: Update Remark [Redmine ID: #176976]
+            - 20221007@Harvey.Nguyen: Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory [Redmine ID: #178022]
             
         Param's Explanation (filtered by):
 			- ip_InputType: 1: Category, 2: Reason
