@@ -333,7 +333,7 @@ BEGIN
                                 ELSE temp.NewCateGroup 
 							END;
 
-     DELETE temp 
+     DELETE oldCate 
      FROM Temp_NewClassification temp 
 		INNER JOIN CTSCustomerClassificationOldCategory oldCate ON temp.CustID = oldCate.CustID AND oldCate.SportGroupID = CONST_GROUP_NORMAL;
 	
