@@ -38,8 +38,9 @@ CHANGE COLUMN SequenceID SequenceID BIGINT UNSIGNED FIRST
 , CHANGE COLUMN Betteam Betteam VARCHAR(10) AFTER BetID
 , CHANGE COLUMN GroupID Rule01GroupID INT DEFAULT 0 AFTER Stake
 , ADD COLUMN Rule03GroupID INT DEFAULT 0 AFTER Rule01GroupID
-, RENAME INDEX IX_MatchMonitorStagingLive_Group TO IX_MatchMonitorStagingLive_Rule01GroupID
-, ADD INDEX IX_MatchMonitorStagingLive_Rule03GroupID(`MatchID`,`TotalScore`,`BettypeID`,`BetID`,`Rule03GroupID`);
+, RENAME INDEX IX_MatchMonitorStagingLive_Group TO IX_MatchMonitorStagingLive_GroupRule01
+, ADD INDEX IX_MatchMonitorStagingLive_GroupRule03(`MatchID`,`TotalScore`,`BettypeID`,`BetID`,`Rule03GroupID`)
+, ADD INDEX IX_MatchMonitorStagingLive_RuleGroupID(Rule01GroupID, Rule03GroupID);
 
 #===========================================================================
 ALTER TABLE MatchMonitorStagingNonLive
@@ -49,8 +50,9 @@ CHANGE COLUMN SequenceID SequenceID BIGINT UNSIGNED FIRST
 , CHANGE COLUMN Betteam Betteam VARCHAR(10) AFTER BetID
 , CHANGE COLUMN GroupID Rule01GroupID INT DEFAULT 0 AFTER Stake
 , ADD COLUMN Rule03GroupID INT DEFAULT 0 AFTER Rule01GroupID
-, RENAME INDEX IX_MatchMonitorStagingNonLive_Group TO IX_MatchMonitorStagingNonLive_Rule01GroupID
-, ADD INDEX IX_MatchMonitorStagingNonLive_Rule03GroupID(`MatchID`,`TotalScore`,`BettypeID`,`BetID`,`Rule03GroupID`);
+, RENAME INDEX IX_MatchMonitorStagingNonLive_Group TO IX_MatchMonitorStagingNonLive_GroupRule01
+, ADD INDEX IX_MatchMonitorStagingNonLive_GroupRule03(`MatchID`,`TotalScore`,`BettypeID`,`BetID`,`Rule03GroupID`)
+, ADD INDEX IX_MatchMonitorStagingNonLive_RuleGroupID(Rule01GroupID, Rule03GroupID);
 
 /*
 DROP TABLE MatchMonitorStagingLive;
