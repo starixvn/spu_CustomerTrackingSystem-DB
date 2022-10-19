@@ -121,6 +121,7 @@ BEGIN
 		INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.MatchID = m.matchid AND m.sporttype < 100		
 		INNER JOIN dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
 	WHERE b.winlostdate > @MoveBetsDay
+		AND m.eventstatus = 'Completed'
 		AND b.Currency NOT IN (20,27,28)
 		AND l.LeagueGroupID NOT IN (42,72,74,108,113,122) -- exclude SABA, Virtual Sport
 		AND (b.stake * b.actualrate >= @CONST_STAKETHRESHOLD)
@@ -144,6 +145,7 @@ BEGIN
 		INNER JOIN dbo.match14 AS m WITH(NOLOCK) ON b.MatchID = m.matchid AND m.sporttype < 100		
 		INNER JOIN dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
 	WHERE	b.winlostdate <= @MoveBetsDay AND b.winlostdate > @DataFromDate
+		AND m.eventstatus = 'Completed'
 		AND b.Currency NOT IN (20,27,28)
 		AND l.LeagueGroupID NOT IN (42,72,74,108,113,122) -- exclude SABA, Virtual Sport		
 		AND (b.stake * b.actualrate >= @CONST_STAKETHRESHOLD)
