@@ -409,11 +409,11 @@ sp: BEGIN
 
     INSERT INTO Temp_CustTime02 SELECT * FROM Temp_CustTime01;	
 
-    INSERT INTO Temp_CustAssociation(CustID_1, CustID_2)
+    INSERT IGNORE INTO Temp_CustAssociation(CustID_1, CustID_2)
     SELECT DISTINCT CustID_2, CustID_1
     FROM Temp_Association;
 
-    INSERT INTO Temp_CustAssociation(CustID_1, CustID_2)
+    INSERT IGNORE INTO Temp_CustAssociation(CustID_1, CustID_2)
     SELECT DISTINCT CustID_1, CustID_1
     FROM Temp_Association;
 
