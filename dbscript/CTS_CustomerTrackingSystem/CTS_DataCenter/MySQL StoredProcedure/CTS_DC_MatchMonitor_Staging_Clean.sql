@@ -86,7 +86,7 @@ BEGIN
 			IF lv_LastTransID > 0 THEN	
 				UPDATE 	CTS_DataCenter.SystemParameter AS sys
 				SET 	sys.ParameterValue = ip_MaxSequenceID
-				WHERE 	sys.ParameterID = 48;
+				WHERE 	sys.ParameterID = 47;
 			END IF;
 		END IF;   
             
@@ -115,11 +115,11 @@ BEGIN
         
 	END IF;
     
-    IF (ip_LiveIndicator = 0) THEN		
+    IF (ip_LiveIndicator = 0) THEN        
 		SELECT 	MAX(mms.TransDate) , MAX(mms.TransID)
 		INTO 	lv_Last3mMaxTime, lv_LastTransID
 		FROM	CTS_DataCenter.MatchMonitorStagingNonLive AS mms
-        WHERE	mms.SequenceID <= ip_MaxSequenceID;    
+        WHERE	mms.SequenceID <= ip_MaxSequenceID;      
 		
 		SELECT  MIN(mms.TransDate) 
 		INTO 	lv_Last3mMinTime
@@ -138,7 +138,14 @@ BEGIN
 				AND mms.TotalScore = tmpTg.TotalScore AND mms.BettypeID = tmpTg.BettypeID AND mms.BetID = tmpTg.BetID  AND mms.Rule01GroupID = tmpTg.GroupID
 			SET mms.Rule01GroupID = -1
 			WHERE	mms.TransDate < lv_Last3mMinTime  AND tmpTg.GroupID IS NULL; 
-		END IF;
+            
+			IF lv_LastTransID > 0 THEN	
+				UPDATE 	CTS_DataCenter.SystemParameter AS sys
+				SET 	sys.ParameterValue = ip_MaxSequenceID
+				WHERE 	sys.ParameterID = 48;
+			END IF;
+		END IF;   
+            
         
 		IF(ip_RuleGroupID = 3) THEN
 			INSERT INTO Temp_Last3mTransGroup(MatchID, TotalScore, BettypeID, BetID, GroupID)
@@ -151,16 +158,15 @@ BEGIN
 				AND mms.TotalScore = tmpTg.TotalScore AND mms.BettypeID = tmpTg.BettypeID AND mms.BetID = tmpTg.BetID  AND mms.Rule03GroupID = tmpTg.GroupID
 			SET mms.Rule03GroupID = -1
 			WHERE	mms.TransDate < lv_Last3mMinTime  AND tmpTg.GroupID IS NULL; 
-		END IF; 
+            
+            IF lv_LastTransID > 0 THEN	
+				UPDATE 	CTS_DataCenter.SystemParameter AS sys
+				SET 	sys.ParameterValue = ip_MaxSequenceID
+				WHERE 	sys.ParameterID = 121;
+			END IF;
+		END IF;             
         
-        /* Update Parameter*/
-        IF lv_LastTransID > 0 THEN	
-			UPDATE 	CTS_DataCenter.SystemParameter AS sys
-			SET 	sys.ParameterValue = ip_MaxSequenceID
-			WHERE 	sys.ParameterID = 48;
-		END IF;
-        
-		DELETE mms FROM CTS_DataCenter.MatchMonitorStagingLive AS mms    
+        DELETE mms FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms    
         WHERE mms.Rule01GroupID = -1 AND mms.Rule03GroupID = -1;
         
 	END IF;
