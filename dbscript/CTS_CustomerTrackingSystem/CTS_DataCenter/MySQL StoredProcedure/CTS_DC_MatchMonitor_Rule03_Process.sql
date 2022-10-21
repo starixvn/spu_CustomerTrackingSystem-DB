@@ -9,6 +9,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule03_Process`(
     ,	IN ip_TotalScore		INT 
     ,	IN ip_BettypeID			INT UNSIGNED
     ,	IN ip_BetID				BIGINT
+    ,	IN ip_Betteam			VARCHAR(10)
 )
     SQL SECURITY INVOKER
 sp: BEGIN
@@ -21,6 +22,7 @@ sp: BEGIN
 		Revisions:
 			- 	20210526@Casey.Huynh: Created [Redmine ID: 152883]
             -	20221021@Casey.Huynh: Fixed Clean Data Staging [Redmine ID: #179427]
+            - 	202201021@Casey.Huynh: Group By Betteam [Redmine ID: #179439]
             
 		Param's Explanation (filtered by):	
 		Example:
@@ -114,6 +116,7 @@ sp: BEGIN
             AND mms.TotalScore = ip_TotalScore 
             AND mms.BettypeID = ip_BettypeID
             AND mms.BetID = ip_BetID 
+            AND mms.Betteam = ip_Betteam
             AND cus.IsLicensee = 0
             AND mms.Stake >= lv_RuleHighStake
             AND mms.Rule03GroupID >=0;
@@ -157,7 +160,8 @@ sp: BEGIN
 			AND	mms.MatchID = ip_MatchID 
             AND mms.TotalScore = ip_TotalScore 
             AND mms.BettypeID = ip_BettypeID 
-            AND mms.BetID = ip_BetID 
+            AND mms.BetID = ip_BetID
+            AND mms.Betteam = ip_Betteam
             AND cus.IsLicensee = 0
             AND mms.Stake >= lv_RuleHighStake
             AND mms.Rule03GroupID >=0;

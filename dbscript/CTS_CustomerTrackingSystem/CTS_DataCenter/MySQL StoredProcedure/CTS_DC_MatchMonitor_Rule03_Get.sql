@@ -16,6 +16,8 @@ sp: BEGIN
 
 		Revisions:
 			- 	202200929@Casey.Huynh: Created [Redmine ID: #178310]
+            - 	202201021@Casey.Huynh: Group By Betteam [Redmine ID: #179439]
+            
 		Param's Explanation (filtered by):	
 
 		Example:
@@ -65,6 +67,7 @@ sp: BEGIN
 				,	mms.TotalScore
 				,	mms.BettypeID
                 ,	mms.BetID
+                ,	mms.Betteam
 			FROM CTS_DataCenter.MatchMonitorStagingLive AS mms
 				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType
             WHERE mms.SequenceID <= lv_MaxSequenceID AND mms.Rule03GroupID >= 0 AND mms.Stake >= tmpRs.HighStake
@@ -89,6 +92,7 @@ sp: BEGIN
 				,	mms.TotalScore
 				,	mms.BettypeID
                 ,	mms.BetID
+                ,	mms.Betteam
 			FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms
 				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType
             WHERE mms.SequenceID <= lv_MaxSequenceID AND mms.Rule03GroupID >= 0 AND mms.Stake >= tmpRs.HighStake
