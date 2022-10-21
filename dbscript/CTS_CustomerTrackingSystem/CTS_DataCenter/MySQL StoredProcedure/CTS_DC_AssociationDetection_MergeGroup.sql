@@ -24,7 +24,7 @@ sp:BEGIN
 		Param's Explanation (filtered by):
 
         Example:
-			- CALL CTS_DC_AssociationDetection_MergeGroup_xtest("1,2",'[{"F":1,"T":2,"AT":1}]','[{"F":1,"T":2,"AT":1}]','[{"F":1,"T":2,"AT":1}]','[{"F":1,"T":2,"AT":1}]' );
+			- CALL CTS_DC_AssociationDetection_MergeGroup("1,2",'[{"F":1,"T":2,"AT":1}]','[{"F":1,"T":2,"AT":1}]','[{"F":1,"T":2,"AT":1}]','[{"F":1,"T":2,"AT":1}]' );
 	*/
     DECLARE	CONST_GROUP_NORMAL 					INT DEFAULT 200;
     DECLARE	CONST_GROUP_PROBLEM 				INT DEFAULT 0;
@@ -473,8 +473,10 @@ sp:BEGIN
         ,	cus.Danger5
         ,	cus.CreatedDate
         
+        ,	re.CTSCustID AS AgentCTSCustID
         ,	re.Username AS AgentUsername
         ,	re.Evidence AS AgentEvidence
+        
         
         ,	(SELECT GROUP_CONCAT(DISTINCT ' ',ev.EvidenceCode) 
 			 FROM CTS_DataCenter.CustEvidence AS ce  
@@ -508,6 +510,7 @@ sp:BEGIN
         ,	cus.Danger4
         ,	cus.Danger5
         ,	cus.CreatedDate
+        ,	re.CTSCustID
         ,	re.Username
         ,	re.Evidence;
 	
