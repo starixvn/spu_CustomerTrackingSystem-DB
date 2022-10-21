@@ -22,7 +22,8 @@ BEGIN
             -	20220110@Casey.Huynh: Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
             - 	20220726@Casey.Huynh: Fixed Game [Redmine ID: #175700]
             - 	20220830@Casey.Huynh: New Category for Classify Group Betting [Redmine ID: #176976]
-	-	20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
+			-	20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
+            -	20221021@Casey.Huynh: Fixed Clean Data Staging [Redmine ID: #179427]
             
 		Param's Explanation (filtered by):		
 
@@ -34,7 +35,7 @@ BEGIN
     DECLARE lv_LastSequenceID BIGINT UNSIGNED DEFAULT 0;
     
     IF ip_LiveIndicator = 1 THEN    
-		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
+		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, Rule03GroupID, InsertTime)
 		SELECT  js.SequenceID
 			,	js.TransID
 			,	js.TransDate
@@ -55,6 +56,7 @@ BEGIN
 			,	js.CustID
 			,	js.Stake
             ,	js.Betteam
+            ,	(CASE WHEN js.SportType = 1 THEN 0 ELSE -1 END) AS Rule03GroupID
 			,	CURRENT_TIMESTAMP(3)
 		FROM JSON_TABLE(ip_TransList,
 						 "$[*]" COLUMNS(
@@ -143,7 +145,7 @@ BEGIN
 			WHERE sys.ParameterID = 20;
 		END IF;        
 	ELSE
-    	INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
+    	INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, Rule03GroupID, InsertTime)
 		SELECT  js.SequenceID
 			,	js.TransID
 			,	js.TransDate
@@ -164,6 +166,7 @@ BEGIN
 			,	js.CustID
 			,	js.Stake
             ,	js.Betteam
+            ,	(CASE WHEN js.SportType = 1 THEN 0 ELSE -1 END) AS Rule03GroupID
 			,	CURRENT_TIMESTAMP(3)
 		FROM JSON_TABLE(ip_TransList,
 						 "$[*]" COLUMNS(

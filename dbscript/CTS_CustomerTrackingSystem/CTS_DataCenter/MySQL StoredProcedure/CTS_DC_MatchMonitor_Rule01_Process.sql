@@ -31,6 +31,7 @@ sp: BEGIN
             -	20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
             - 	20220830@Casey.Huynh: New Category for Classify Group Betting [Redmine ID: #176976]
             -	202200929@Casey.Huynh: Seperate By Sport [Redmine ID: #178310]
+            -	20221021@Casey.Huynh: Fixed Clean Data Staging [Redmine ID: #179427]
 		Param's Explanation (filtered by):	
 		Example:
 			- CALL CTS_DC_MatchMonitor_Rule01_Process(1,113171940189,22081995,1,1,0);
@@ -209,7 +210,7 @@ sp: BEGIN
             ,	mms.Stake
             ,	mms.Betteam
 		FROM CTS_DataCenter.MatchMonitorStagingLive AS mms
-        WHERE mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID;
+        WHERE mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.Rule01GroupID >=0;
         
 	ELSE 
 		SELECT mms.SportType INTO lv_SportType FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms WHERE mms.MatchID = ip_MatchID LIMIT 1;
@@ -222,7 +223,7 @@ sp: BEGIN
             ,	mms.Stake
             ,	mms.Betteam
 		FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms
-        WHERE  mms.SequenceID <= ip_MaxSequenceID AND	mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID;
+        WHERE  mms.SequenceID <= ip_MaxSequenceID AND	mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.Rule01GroupID >=0;
         
     END IF;
     

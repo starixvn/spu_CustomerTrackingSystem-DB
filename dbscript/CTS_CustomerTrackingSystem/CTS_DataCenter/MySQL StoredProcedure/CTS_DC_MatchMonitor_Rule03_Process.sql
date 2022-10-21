@@ -20,6 +20,7 @@ sp: BEGIN
 
 		Revisions:
 			- 	20210526@Casey.Huynh: Created [Redmine ID: 152883]
+            -	20221021@Casey.Huynh: Fixed Clean Data Staging [Redmine ID: #179427]
             
 		Param's Explanation (filtered by):	
 		Example:
@@ -114,7 +115,8 @@ sp: BEGIN
             AND mms.BettypeID = ip_BettypeID
             AND mms.BetID = ip_BetID 
             AND cus.IsLicensee = 0
-            AND mms.Stake >= lv_RuleHighStake;
+            AND mms.Stake >= lv_RuleHighStake
+            AND mms.Rule03GroupID >=0;
         
 	ELSE 
 		SELECT mms.SportType 
@@ -157,7 +159,8 @@ sp: BEGIN
             AND mms.BettypeID = ip_BettypeID 
             AND mms.BetID = ip_BetID 
             AND cus.IsLicensee = 0
-            AND mms.Stake >= lv_RuleHighStake;
+            AND mms.Stake >= lv_RuleHighStake
+            AND mms.Rule03GroupID >=0;
         
     END IF;
 
