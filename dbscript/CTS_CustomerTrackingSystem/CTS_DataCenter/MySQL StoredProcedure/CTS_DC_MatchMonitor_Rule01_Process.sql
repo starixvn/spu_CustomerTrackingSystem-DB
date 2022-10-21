@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule_Process`;
+DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule01_Process`;
 DELIMITER $$
 
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule_Process`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule01_Process`(
 		IN ip_LiveIndicator		BOOLEAN
 	,	IN ip_MaxSequenceID		BIGINT UNSIGNED
 	,	IN ip_MatchID			INT UNSIGNED
@@ -30,9 +30,10 @@ sp: BEGIN
             - 	20220422@Irena.Vo: Mapping Is Hedging Reason (MM) from table CustomerCategory [Redmine ID: #170468]
             -	20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
             - 	20220830@Casey.Huynh: New Category for Classify Group Betting [Redmine ID: #176976]
+            -	202200929@Casey.Huynh: Seperate By Sport [Redmine ID: #178310]
 		Param's Explanation (filtered by):	
 		Example:
-			- CALL CTS_DC_MatchMonitor_Rule_Process(1,113171940189,22081995,1,1,0);
+			- CALL CTS_DC_MatchMonitor_Rule01_Process(1,113171940189,22081995,1,1,0);
 			
 	*/
     DECLARE lv_TimeCustID BIGINT UNSIGNED DEFAULT 0;
@@ -46,11 +47,14 @@ sp: BEGIN
     DECLARE lv_GroupID INT DEFAULT 1;
     DECLARE lv_IsHedging INT DEFAULT 0;
     DECLARE lv_CustIDList LONGTEXT;
-    DECLARE lv_HighStake DECIMAL(20,4) DEFAULT 50;
-    
+    DECLARE lv_ClassifyHighStake DECIMAL(20,4) DEFAULT 50;
+    DECLARE lv_Rule_TotalStake DECIMAL(20,4);
+    DECLARE lv_Rule_TimeStep SMALLINT;
+    DECLARE lv_SportType SMALLINT;
+    DECLARE lv_Rule_Reason TINYINT DEFAULT 0; #0: Group Betting 
     #=================================================================================    
-    DROP TEMPORARY TABLE IF EXISTS Temp_StagingTrans01;
-    CREATE TEMPORARY TABLE Temp_StagingTrans01(
+    DROP TEMPORARY TABLE IF EXISTS Temp_StagingTrans;
+    CREATE TEMPORARY TABLE Temp_StagingTrans(
 			TransID		BIGINT UNSIGNED NOT NULL
         ,	TransDate	DATETIME(3)  NOT NULL
         ,	CustID		BIGINT  NOT NULL
@@ -58,8 +62,8 @@ sp: BEGIN
         ,	Stake		DECIMAL(20,4)
         ,	Betteam		VARCHAR(10)
         
-        ,	PRIMARY KEY PK_Temp_StagingTrans01(CustID, TransDate, Stake, TransID)
-        ,	INDEX IX_Temp_StagingTrans01(TransID)
+        ,	PRIMARY KEY PK_Temp_StagingTrans(CustID, TransDate, Stake, TransID)
+        ,	INDEX IX_Temp_StagingTrans(TransID)
     );
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_StagingTrans02;
@@ -136,7 +140,14 @@ sp: BEGIN
 		 ,	INDEX IX_Temp_Association_CustID1_CustID2(CustID_1,CustID_2)
          ,	INDEX IX_Temp_Association_CustID2(CustID_2)
 	);
-
+	
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustAssociation;
+	CREATE TEMPORARY TABLE 		Temp_CustAssociation (
+			CustID_1 			BIGINT UNSIGNED
+		 ,	CustID_2 	    	BIGINT UNSIGNED
+		 ,	PRIMARY KEY IX_Temp_Association_CTSCustID1_CTSCustID2(CustID_1, CustID_2)
+	);
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_Association_Remove;
 	CREATE TEMPORARY TABLE 		Temp_Association_Remove (
 			CTSCustID_1 		BIGINT UNSIGNED 
@@ -188,22 +199,26 @@ sp: BEGIN
     
     IF (ip_LiveIndicator = 1)
     THEN
-		INSERT INTO Temp_StagingTrans01(TransID, TransDate, CustID, OldGroupID, Stake,Betteam)
+		SELECT mms.SportType INTO lv_SportType FROM CTS_DataCenter.MatchMonitorStagingLive AS mms WHERE mms.MatchID = ip_MatchID LIMIT 1;
+        
+		INSERT INTO Temp_StagingTrans(TransID, TransDate, CustID, OldGroupID, Stake,Betteam)
         SELECT	mms.TransID
 			,	mms.TransDate
             ,	mms.CustID
-            ,	mms.GroupID
+            ,	mms.Rule01GroupID
             ,	mms.Stake
             ,	mms.Betteam
 		FROM CTS_DataCenter.MatchMonitorStagingLive AS mms
         WHERE mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID;
         
 	ELSE 
-		INSERT INTO Temp_StagingTrans01(TransID, TransDate, CustID, OldGroupID, Stake,Betteam)
+		SELECT mms.SportType INTO lv_SportType FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms WHERE mms.MatchID = ip_MatchID LIMIT 1;
+	  
+		INSERT INTO Temp_StagingTrans(TransID, TransDate, CustID, OldGroupID, Stake,Betteam)
         SELECT	mms.TransID
 			,	mms.TransDate
             ,	mms.CustID
-            ,	mms.GroupID
+            ,	mms.Rule01GroupID
             ,	mms.Stake
             ,	mms.Betteam
 		FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms
@@ -211,17 +226,22 @@ sp: BEGIN
         
     END IF;
     
-    INSERT INTO Temp_StagingTrans02 SELECT * FROM Temp_StagingTrans01;
+	SELECT rs.TotalStake, rs.TimeStep
+    INTO lv_Rule_TotalStake, lv_Rule_TimeStep
+    FROM CTS_DataCenter.MatchMonitorRuleSetting AS rs
+    WHERE rs.Reason = lv_Rule_Reason AND rs.SportType = lv_SportType;
+    
+    INSERT INTO Temp_StagingTrans02 SELECT * FROM Temp_StagingTrans;
     
     #******** CACULATE TIME GROUP BY CUSTID AND IN 3 MINUTES *****************************************************************
     #*************************************************************************************************************************   
-    WHILE EXISTS ( SELECT 1 FROM Temp_StagingTrans01)
+    WHILE EXISTS ( SELECT 1 FROM Temp_StagingTrans)
     DO
 		SET lv_TimeGroupID = lv_TimeGroupID + 1;
         
 		SELECT tmpTs.CustID, tmpTs.TransDate, Stake, TransID
 		INTO lv_TimeCustID, lv_MinTransDate, lv_Stake, lv_TransID
-		FROM Temp_StagingTrans01  AS tmpTs
+		FROM Temp_StagingTrans  AS tmpTs
 		ORDER BY CustID, TransDate
 		LIMIT 1;
         
@@ -234,21 +254,21 @@ sp: BEGIN
                 ,	lv_TransID AS TransID
 			UNION
 			SELECT	tmpSt.CustID
-				,	tmpSt.TransDate AS MinTransDate
+				,	CTE_Group.MinTransDate
                 ,	tmpSt.TransDate
                 ,  	tmpSt.Stake
                 ,	tmpSt.TransID
-			FROM Temp_StagingTrans01  AS tmpSt
-				JOIN CTE_Group ON CTE_Group.CustID = tmpSt.CustID AND TIMESTAMPDIFF(SECOND, CTE_Group.MinTransDate, tmpSt.TransDate) <= 180
+			FROM Temp_StagingTrans  AS tmpSt
+				JOIN CTE_Group ON CTE_Group.CustID = tmpSt.CustID AND TIMESTAMPDIFF(SECOND, CTE_Group.MinTransDate, tmpSt.TransDate) <= lv_Rule_TimeStep
 		) 
 		SELECT CustID, TransDate, Stake, TransID, lv_TimeGroupID FROM CTE_Group;
         
         DELETE tmpSt
-        FROM Temp_StagingTrans01 AS tmpSt
+        FROM Temp_StagingTrans AS tmpSt
         INNER JOIN Temp_CustTimeGroup AS ctg ON ctg.TransID = tmpSt.TransID;
-  
+	
     END WHILE;
-    
+        
     INSERT INTO Temp_CustTime01(CustID, MinTransDate, MaxTransDate)
     SELECT	tmpCt.CustID
 		,	MIN(tmpCt.TransDate)
@@ -286,7 +306,7 @@ sp: BEGIN
 	INSERT INTO Temp_CustDevice_Duplicate 
 	SELECT * FROM Temp_CustDevice;
 
-	INSERT INTO Temp_Association(CTSCustID_1, CTSCustID_2, AssociationType)
+	INSERT IGNORE INTO Temp_Association(CTSCustID_1, CTSCustID_2, AssociationType)
 	SELECT DISTINCT dv.CTSCustID,  dv1.CTSCustID  , 1
 	FROM Temp_CustDevice AS dv
 		INNER JOIN Temp_CustDevice_Duplicate AS dv1 ON dv.DCSDeviceID = dv1.DCSDeviceID AND dv.CTSCustID != dv1.CTSCustID;
@@ -387,8 +407,16 @@ sp: BEGIN
     FROM Temp_Association AS ass
 	WHERE EXISTS (SELECT 1 FROM Temp_Association_Remove AS rm WHERE  rm.CTSCustID_1 = ass.CTSCustID_2 AND rm.CTSCustID_2 = ass.CTSCustID_1);
 
-    INSERT INTO Temp_CustTime02 SELECT * FROM Temp_CustTime01;
-    
+    INSERT INTO Temp_CustTime02 SELECT * FROM Temp_CustTime01;	
+
+    INSERT IGNORE INTO Temp_CustAssociation(CustID_1, CustID_2)
+    SELECT DISTINCT CustID_2, CustID_1
+    FROM Temp_Association;
+
+    INSERT IGNORE INTO Temp_CustAssociation(CustID_1, CustID_2)
+    SELECT DISTINCT CustID_1, CustID_1
+    FROM Temp_Association;
+
     INSERT INTO Temp_CustAssociation01(CustID_1,MinTransDate_1,MaxTransDate_1,CustID_2,MinTransDate_2,MaxTransDate_2)
     SELECT 	tmpC1.CustID
 		,	tmpC1.MinTransDate
@@ -396,7 +424,7 @@ sp: BEGIN
         ,	tmpC2.CustID
 		,	tmpC2.MinTransDate
         ,	tmpC2.MaxTransDate
-    FROM Temp_Association AS tmpAss
+    FROM Temp_CustAssociation AS tmpAss
 		INNER JOIN Temp_CustTime01 AS tmpC1 ON tmpC1.CustID = tmpAss.CustID_1
         INNER JOIN Temp_CustTime02 AS tmpC2 ON tmpC2.CustID = tmpAss.CustID_2;
 
@@ -413,7 +441,7 @@ sp: BEGIN
         THEN			
             LEAVE lp; 
         END IF;
-       
+	
         INSERT INTO Temp_TransGroup(CustID, MinTransDate, MaxTransDate, GroupID)
 		WITH RECURSIVE CTE_Group AS ( 
 			SELECT lv_CustID AS CustID, lv_MinTransDate AS MinTransDate, lv_MaxTransDate AS MaxTransDate  
@@ -422,10 +450,10 @@ sp: BEGIN
             FROM Temp_CustAssociation01  AS tmpCa
 				JOIN CTE_Group ON CTE_Group.CustID = tmpCa.CustID_1 
                 AND (
-						ABS(TIMESTAMPDIFF(SECOND,tmpCa.MinTransDate_2,MaxTransDate))  <= 180 
-					OR	ABS(TIMESTAMPDIFF(SECOND,tmpCa.MaxTransDate_2,MinTransDate))  <= 180 
-                    OR	ABS(TIMESTAMPDIFF(SECOND,tmpCa.MinTransDate_2,MinTransDate))  <= 180
-                    OR 	ABS(TIMESTAMPDIFF(SECOND,tmpCa.MaxTransDate_2,MaxTransDate))  <= 180  
+						ABS(TIMESTAMPDIFF(SECOND,tmpCa.MinTransDate_2,MaxTransDate))  <= lv_Rule_TimeStep 
+					OR	ABS(TIMESTAMPDIFF(SECOND,tmpCa.MaxTransDate_2,MinTransDate))  <= lv_Rule_TimeStep 
+                    OR	ABS(TIMESTAMPDIFF(SECOND,tmpCa.MinTransDate_2,MinTransDate))  <= lv_Rule_TimeStep
+                    OR 	ABS(TIMESTAMPDIFF(SECOND,tmpCa.MaxTransDate_2,MaxTransDate))  <= lv_Rule_TimeStep  
                 )
 		) 
 		SELECT	CustID, MinTransDate, MaxTransDate, lv_GroupID 
@@ -459,37 +487,39 @@ sp: BEGIN
         ,	GROUP_CONCAT(tmpSt.TransID) AS TransIDList
         ,	GROUP_CONCAT(DISTINCT tmpSt.CustID) AS CustIDList
         ,	GROUP_CONCAT(DISTINCT tmpSt.OldGroupID) AS OldGroupIDList
-        ,	GROUP_CONCAT(DISTINCT (CASE WHEN tmpSt.Stake >= lv_HighStake AND cus.IsLicensee = 1 THEN tmpTg.CustID ELSE NULL END)) AS HighStakeLicCustList
+        ,	GROUP_CONCAT(DISTINCT (CASE WHEN tmpSt.Stake >= lv_ClassifyHighStake AND cus.IsLicensee = 1 THEN tmpTg.CustID ELSE NULL END)) AS HighStakeLicCustList
         ,	COUNT(DISTINCT (CASE WHEN cus.IsLicensee = 1 THEN cus.CustID ELSE NULL END)) AS LicenseeCustTotal
     FROM 	Temp_TransGroup AS tmpTg
 		INNER JOIN Temp_StagingTrans02  AS tmpSt ON tmpSt.CustID = tmpTg.CustID AND tmpSt.TransDate BETWEEN tmpTg.MinTransDate AND tmpTg.MaxTransDate
         INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpTg.CustID 
 	GROUP BY tmpTg.GroupID
-    HAVING SUM(Stake) >= 1000 AND COUNT(DISTINCT tmpSt.CustID) > 1;
+    HAVING SUM(Stake) >= lv_Rule_TotalStake AND COUNT(DISTINCT tmpSt.CustID) > 1;
 
     DELETE tmpTg
     FROM Temp_TransGroup AS tmpTg
 		INNER JOIN Temp_ResultGroup AS tmpRg ON tmpTg.GroupID = tmpRg.GroupID AND tmpRg.Reason = 2;
         
     #=======CHECK Hedging GROUP: IF GroupCusts Is Hedging====================================
-    INSERT IGNORE INTO Temp_GroupHedging(GroupID)
-    SELECT DISTINCT GroupID 
-    FROM Temp_TransGroup AS grp
-	WHERE EXISTS (	SELECT 1 
-					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
-						INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID
-                    WHERE cla.CustID = grp.CustID
-						AND cla.SportGroupID = 0
-                        AND cc.IsHedgingReasonMM = 1);
-    
-    UPDATE Temp_ResultGroup AS tmpRg
-		INNER JOIN Temp_GroupHedging AS tmpGh ON tmpRg.GroupID = tmpGh.GroupID
-	SET tmpRg.Reason = 1;
-    
-    DELETE tmpTg
-    FROM Temp_TransGroup AS tmpTg
-		INNER JOIN Temp_ResultGroup AS tmpRg ON tmpTg.GroupID = tmpRg.GroupID AND tmpRg.Reason = 1;
-    
+    IF lv_SportType <> 1 THEN # Exclude Hedging for Soccer
+		
+		INSERT IGNORE INTO Temp_GroupHedging(GroupID)
+		SELECT DISTINCT GroupID 
+		FROM Temp_TransGroup AS grp
+		WHERE EXISTS (	SELECT 1 
+						FROM CTS_DataCenter.CTSCustomerClassification AS cla 
+							INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID
+						WHERE cla.CustID = grp.CustID
+							AND cla.SportGroupID = 0
+							AND cc.IsHedgingReasonMM = 1);
+		
+		UPDATE Temp_ResultGroup AS tmpRg
+			INNER JOIN Temp_GroupHedging AS tmpGh ON tmpRg.GroupID = tmpGh.GroupID
+		SET tmpRg.Reason = 1;
+		
+		DELETE tmpTg
+		FROM Temp_TransGroup AS tmpTg
+			INNER JOIN Temp_ResultGroup AS tmpRg ON tmpTg.GroupID = tmpRg.GroupID AND tmpRg.Reason = 1;
+	
    #=======CHECK Hedging GROUP: IF AssocitionCust of GroupCusts Is Hedging====================================
     SET lv_GroupID = NULL;
 
@@ -520,7 +550,8 @@ sp: BEGIN
         WHERE tmpTg.GroupID = lv_GroupID;
         
 	END LOOP labelGroup;
-
+	END IF;
+    
 	SELECT	tmpRg.GroupID
 		,	tmpRg.Reason
         ,	tmpRg.TransIDList
