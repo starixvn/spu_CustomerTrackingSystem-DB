@@ -39,6 +39,7 @@ sp: BEGIN
     DECLARE lv_RuleSportType 			INT;  
     DECLARE lv_CustIDList 				TEXT;
     DECLARE lv_IsHedging 				BOOLEAN;
+    DECLARE lv_LastSequenceID 			BIGINT UNSIGNED;  
     
     DROP TEMPORARY TABLE IF EXISTS Temp_StagingTrans;
     CREATE TEMPORARY TABLE Temp_StagingTrans(
@@ -52,7 +53,7 @@ sp: BEGIN
         ,	Stake			DECIMAL(20,4)
         ,	Betteam			VARCHAR(10)
         ,	GroupID			INT
-        , 	Processed		BIT DEFAULT 0
+        , 	Processed		TINYINT
         
         ,	INDEX IX_Temp_StagingTrans_CTSCustID(CTSCustID) 
         ,	INDEX IX_Temp_StagingTrans_AgentCTSCustID(AgentCTSCustID) 
@@ -75,8 +76,15 @@ sp: BEGIN
 			GroupID	INT PRIMARY KEY
 	);    
     
+    
+    
     #******************************* GET STAGING TRANS *******************************************
     IF (ip_LiveIndicator = 1) THEN
+		SELECT ParameterValue
+        INTO lv_LastSequenceID
+		FROM CTS_DataCenter.SystemParameter AS sys
+		WHERE ParameterID = 120;
+    
 		SELECT mms.SportType 
         INTO lv_RuleSportType 
         FROM CTS_DataCenter.MatchMonitorStagingLive AS mms 
@@ -84,8 +92,8 @@ sp: BEGIN
         LIMIT 1;
         
         SELECT 	st.TimeStep
-		, 	st.TotalStake
-        , 	st.HighStake
+			, 	st.TotalStake
+			, 	st.HighStake
 		INTO 	lv_TimeStep
 			, 	lv_RuleTotalStake
 			,	lv_RuleHighStake
@@ -94,7 +102,7 @@ sp: BEGIN
 		AND st.SportType = lv_RuleSportType 
         AND st.Reason = lv_Reason;
 
-		INSERT INTO Temp_StagingTrans(TransID, TransDate, TransDateSecond, CustID, CTSCustID, AgentCTSCustID, OldGroupID, Stake, Betteam)
+		INSERT INTO Temp_StagingTrans(TransID, TransDate, TransDateSecond, CustID, CTSCustID, AgentCTSCustID, OldGroupID, Stake, Betteam, Processed )
         SELECT	mms.TransID
 			,	mms.TransDate
             ,	TO_SECONDS(mms.TransDate) AS TransDateSecond
@@ -104,6 +112,7 @@ sp: BEGIN
             ,	mms.Rule03GroupID
             ,	mms.Stake
             ,	mms.Betteam
+            ,	(CASE WHEN mms.SequenceID > lv_LastSequenceID THEN 0 ELSE 1 END) AS Processed
 		FROM CTS_DataCenter.MatchMonitorStagingLive AS mms			
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = mms.CustID AND cus.CustSubID = 0
             LEFT JOIN CTS_DataCenter.CTSCustomer AS agent ON agent.CustID = cus.Recommend 
@@ -122,6 +131,11 @@ sp: BEGIN
             AND mms.Rule03GroupID >=0;
         
 	ELSE 
+		SELECT ParameterValue
+        INTO lv_LastSequenceID
+		FROM CTS_DataCenter.SystemParameter AS sys
+		WHERE ParameterID = 121;
+        
 		SELECT mms.SportType 
         INTO lv_RuleSportType 
         FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms 
@@ -139,7 +153,7 @@ sp: BEGIN
 			AND st.SportType = lv_RuleSportType 
 			AND st.Reason = lv_Reason;
 	  
-		INSERT INTO Temp_StagingTrans(TransID, TransDate, TransDateSecond, CustID,  CTSCustID, AgentCTSCustID, OldGroupID, Stake, Betteam)
+		INSERT INTO Temp_StagingTrans(TransID, TransDate, TransDateSecond, CustID,  CTSCustID, AgentCTSCustID, OldGroupID, Stake, Betteam, Processed)
         SELECT	mms.TransID
 			,	mms.TransDate
             ,	TO_SECONDS(mms.TransDate) AS TransDateSecond
@@ -149,6 +163,7 @@ sp: BEGIN
             ,	mms.Rule03GroupID
             ,	mms.Stake
             ,	mms.Betteam
+            ,	(CASE WHEN mms.SequenceID > lv_LastSequenceID THEN 0 ELSE 1 END) AS Processed
 		FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = mms.CustID AND cus.CustSubID = 0
             LEFT JOIN CTS_DataCenter.CTSCustomer AS agent ON agent.CustID = cus.Recommend 
