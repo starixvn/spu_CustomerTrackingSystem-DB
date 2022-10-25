@@ -57,20 +57,19 @@ sp: BEGIN
         
         SELECT MAX(tmp.SequenceID)
         INTO lv_MaxSequenceID
-        FROM (SELECT mms.SequenceID FROM CTS_DataCenter.MatchMonitorStagingLive AS mms WHERE mms.SequenceID > lv_LastSequenceID AND mms.Rule03GroupID >= 0 ORDER BY mms.SequenceID LIMIT lv_NoOfRow) AS tmp;
+        FROM (SELECT mms.SequenceID FROM CTS_DataCenter.MatchMonitorStagingLive03 AS mms WHERE mms.SequenceID > lv_LastSequenceID ORDER BY mms.SequenceID LIMIT lv_NoOfRow) AS tmp;
         
         SET op_MaxSequenceID = IFNULL(lv_MaxSequenceID,0) ;
                 
-        IF(lv_LastSequenceID < lv_MaxSequenceID) THEN  
-        
+        IF(lv_LastSequenceID < lv_MaxSequenceID) THEN          
 			SELECT	mms.MatchID
 				,	mms.TotalScore
 				,	mms.BettypeID
                 ,	mms.BetID
                 ,	mms.Betteam
-			FROM CTS_DataCenter.MatchMonitorStagingLive AS mms
+			FROM CTS_DataCenter.MatchMonitorStagingLive03 AS mms
 				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType
-            WHERE mms.SequenceID <= lv_MaxSequenceID AND mms.Rule03GroupID >= 0 AND mms.Stake >= tmpRs.HighStake
+            WHERE mms.SequenceID <= lv_MaxSequenceID AND mms.Stake >= tmpRs.HighStake
 			GROUP BY mms.MatchID, mms.TotalScore, mms.BettypeID, mms.BetID
 			HAVING COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= MIN(tmpRs.TotalStake);      
             
@@ -83,7 +82,7 @@ sp: BEGIN
         
         SELECT MAX(tmp.SequenceID)
         INTO lv_MaxSequenceID
-        FROM (SELECT mms.SequenceID FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms WHERE mms.SequenceID > lv_LastSequenceID AND mms.Rule03GroupID >= 0 ORDER BY mms.SequenceID  LIMIT lv_NoOfRow) AS tmp;
+        FROM (SELECT mms.SequenceID FROM CTS_DataCenter.MatchMonitorStagingNonLive03 AS mms WHERE mms.SequenceID > lv_LastSequenceID ORDER BY mms.SequenceID  LIMIT lv_NoOfRow) AS tmp;
 		
 		SET op_MaxSequenceID = IFNULL(lv_MaxSequenceID, 0);        
         
@@ -93,9 +92,9 @@ sp: BEGIN
 				,	mms.BettypeID
                 ,	mms.BetID
                 ,	mms.Betteam
-			FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms
+			FROM CTS_DataCenter.MatchMonitorStagingNonLive03 AS mms
 				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType
-            WHERE mms.SequenceID <= lv_MaxSequenceID AND mms.Rule03GroupID >= 0 AND mms.Stake >= tmpRs.HighStake
+            WHERE mms.SequenceID <= lv_MaxSequenceID AND mms.Stake >= tmpRs.HighStake
 			GROUP BY mms.MatchID, mms.TotalScore, mms.BettypeID, mms.BetID
 			HAVING COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= MIN(tmpRs.TotalStake);            
 		END IF;        
