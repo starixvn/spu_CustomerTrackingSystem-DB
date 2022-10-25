@@ -96,7 +96,7 @@ BEGIN
     IF (ip_LiveIndicator = 1) THEN
 		SELECT mms.EventDate, mms.LiveHomeScore, mms.LiveAwayScore, mms.EventDate, mms.KickOffTime, mms.EventStatus, mms.HomeID, mms.AwayID, mms.LeagueID, mms.LeagueName, mms.Sporttype
 		INTO lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName, lv_Sporttype
-		FROM CTS_DataCenter.MatchMonitorStagingLive AS mms
+		FROM CTS_DataCenter.MatchMonitorStagingLive03 AS mms
 		WHERE mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.Betteam = ip_Betteam AND mms.TotalScore = ip_TotalScore
 		LIMIT 1;
 	END IF;
@@ -104,7 +104,7 @@ BEGIN
 	IF (ip_LiveIndicator = 0) THEN
 		SELECT mms.EventDate, mms.LiveHomeScore, mms.LiveAwayScore, mms.EventDate, mms.KickOffTime, mms.EventStatus, mms.HomeID, mms.AwayID, mms.LeagueID, mms.LeagueName, mms.Sporttype
 		INTO lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName, lv_Sporttype
-		FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms
+		FROM CTS_DataCenter.MatchMonitorStagingNonLive03 AS mms
 		WHERE mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID  AND mms.Betteam = ip_Betteam AND mms.TotalScore = ip_TotalScore
 		LIMIT 1;	 
 	END IF;
@@ -165,13 +165,13 @@ BEGIN
         FROM Temp_TransGroup AS tmptg WHERE GroupID = lv_GroupID;
 
         IF(ip_LiveIndicator = 1) THEN
-			SET @sql = 	CONCAT("UPDATE CTS_DataCenter.MatchMonitorStagingLive
-            SET Rule03GroupID = ",lv_TargetGroupID,"
+			SET @sql = 	CONCAT("UPDATE CTS_DataCenter.MatchMonitorStagingLive03
+            SET GroupID = ",lv_TargetGroupID,"
             WHERE TransID IN (",lv_TransIDList,")");    
 		ELSE
 		
-			SET @sql = 	CONCAT("UPDATE CTS_DataCenter.MatchMonitorStagingNonLive
-            SET Rule03GroupID = ",lv_TargetGroupID,"
+			SET @sql = 	CONCAT("UPDATE CTS_DataCenter.MatchMonitorStagingNonLive03
+            SET GroupID = ",lv_TargetGroupID,"
             WHERE TransID IN (",lv_TransIDList,")");
         END IF;
 
