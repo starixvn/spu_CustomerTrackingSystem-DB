@@ -30,6 +30,7 @@ BEGIN
 	DECLARE	lv_LastTransID 		BIGINT;   
 	DECLARE lv_Reason INT DEFAULT 0; #Group Betting
     DECLARE lv_LastSequenceID INT; #Group Betting
+	DECLARE lv_RuleGroupID INT DEFAULT 1; #Group Betting
     
     DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorRuleSetting;
 	CREATE TEMPORARY TABLE Temp_MatchMonitorRuleSetting(
@@ -43,7 +44,7 @@ BEGIN
     SELECT	s.SportType
         ,	s.TimeStep
     FROM CTS_DataCenter.MatchMonitorRuleSetting AS s
-    WHERE s.RuleGroupID = ip_RuleGroupID;
+    WHERE s.RuleGroupID = lv_RuleGroupID;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Last3mTransGroup;
     CREATE TEMPORARY TABLE Temp_Last3mTransGroup
@@ -67,6 +68,7 @@ BEGIN
 		SELECT  MIN(mms.TransDate) 
 		INTO 	lv_Last3mMinTime
 		FROM	CTS_DataCenter.MatchMonitorStagingLive AS mms
+			INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType AND tmpRs.RuleGroupID = lv_RuleGroupID
 		WHERE   mms.TransDate > TIMESTAMPADD(SECOND, -tmpRs.TimeStep, lv_Last3mMaxTime);  
 		
 		INSERT INTO Temp_Last3mTransGroup(MatchID, TotalScore, BettypeID, BetID, GroupID)
@@ -95,6 +97,7 @@ BEGIN
 		SELECT  MIN(mms.TransDate) 
 		INTO 	lv_Last3mMinTime
 		FROM	CTS_DataCenter.MatchMonitorStagingNonLive AS mms
+			INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType AND tmpRs.RuleGroupID = lv_RuleGroupID
 		WHERE   mms.TransDate > TIMESTAMPADD(SECOND, -tmpRs.TimeStep, lv_Last3mMaxTime);  
 		
 		INSERT INTO Temp_Last3mTransGroup(MatchID, TotalScore, BettypeID, BetID, GroupID)
