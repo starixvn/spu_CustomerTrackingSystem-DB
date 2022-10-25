@@ -18,6 +18,7 @@ sp:BEGIN
         
 		Revisions:
 			- 20221006@Aries.Nguyen: Created [Redmine ID: #178310]
+			- 20221025@Aries.Nguyen: Tuning performance: Skip the processed trans  [Redmine ID: #179439]
 
 		Param's Explanation (filtered by):
 
@@ -49,6 +50,7 @@ sp:BEGIN
 			OrigID 				BIGINT  
 		,	DestID   			BIGINT
 		,	Weight 				BIGINT 
+        ,	MaxWeight 			BIGINT 
 		,	AssociationType		SMALLINT 
 		,	PRIMARY KEY(OrigID, DestID,Weight,AssociationType)
 		,	INDEX IX_Temp_Graph(DestID)
