@@ -60,7 +60,6 @@ BEGIN
 
 	CREATE TABLE #tmpCustomerAccummulatedInfo(
 		[CustId]			INT NOT NULL,
-		[Site]				VARCHAR (10) NULL,
 		[IsSpecialSite]		BIT DEFAULT 0,
 		[IsDeposit]			BIT DEFAULT 0,
 		[SRecommend]		INT,
@@ -74,10 +73,6 @@ BEGIN
 
 	CREATE CLUSTERED INDEX CIX_tmpCustomerAccummulatedInfo_CustId ON #tmpCustomerAccummulatedInfo(
 		[CustId]
-	);
-
-	CREATE NONCLUSTERED INDEX IX_tmpCustomerAccummulatedInfo_Site ON #tmpCustomerAccummulatedInfo(
-		[Site]	ASC
 	);
 
 	CREATE NONCLUSTERED INDEX IX_tmpCustomerAccummulatedInfo_CurrentCategoryId_IsDeposit ON #tmpCustomerAccummulatedInfo(
@@ -106,16 +101,16 @@ BEGIN
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 		
 	-- #2: GetCustomer Accummulated data  
-	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, Site, SRecommend, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays, CurrentCategoryId)
+	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, CurrentCategoryId, IsSpecialSite, SRecommend, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
 	SELECT	a.CustId
-		,	cu.Site
+		,	c.CurrentCategoryId
+		,	CASE WHEN cu.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') THEN 1 ELSE 0 END
 		,	cu.srecommend
 		,	a.TurnoverRM
 		,	a.WinlossRM
 		,	a.Margin
 		,	a.BetCount
 		,	a.ActiveDays
-		,	c.CurrentCategoryId
 	FROM dbo.CustomerClassification_LatestGeneralChanged AS a WITH(NOLOCK)
 		INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.CustId
 		LEFT JOIN bodb02.dbo.Customer AS cu WITH(NOLOCK) ON a.CustId = cu.custid;
