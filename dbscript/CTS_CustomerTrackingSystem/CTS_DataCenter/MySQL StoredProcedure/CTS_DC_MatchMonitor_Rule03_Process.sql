@@ -109,11 +109,11 @@ sp: BEGIN
             ,	mms.CustID
             ,	cus.CTSCustID
             ,	agent.CTSCustID  AS AgentCTSCustID       
-            ,	mms.Rule03GroupID
+            ,	mms.GroupID
             ,	mms.Stake
             ,	mms.Betteam
             ,	(CASE WHEN mms.SequenceID > lv_LastSequenceID THEN 0 ELSE 1 END) AS Processed
-		FROM CTS_DataCenter.MatchMonitorStagingLive AS mms			
+		FROM CTS_DataCenter.MatchMonitorStagingLive03 AS mms			
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = mms.CustID AND cus.CustSubID = 0
             LEFT JOIN CTS_DataCenter.CTSCustomer AS agent ON agent.CustID = cus.Recommend 
 															AND agent.CustSubID = 0 
@@ -127,8 +127,7 @@ sp: BEGIN
             AND mms.BetID = ip_BetID 
             AND mms.Betteam = ip_Betteam
             AND cus.IsLicensee = 0
-            AND mms.Stake >= lv_RuleHighStake
-            AND mms.Rule03GroupID >=0;
+            AND mms.Stake >= lv_RuleHighStake;
         
 	ELSE 
 		SELECT ParameterValue
@@ -160,7 +159,7 @@ sp: BEGIN
             ,	mms.CustID
             ,	cus.CTSCustID
             ,	agent.CTSCustID  AS AgentCTSCustID 
-            ,	mms.Rule03GroupID
+            ,	mms.GroupID
             ,	mms.Stake
             ,	mms.Betteam
             ,	(CASE WHEN mms.SequenceID > lv_LastSequenceID THEN 0 ELSE 1 END) AS Processed
@@ -178,8 +177,7 @@ sp: BEGIN
             AND mms.BetID = ip_BetID
             AND mms.Betteam = ip_Betteam
             AND cus.IsLicensee = 0
-            AND mms.Stake >= lv_RuleHighStake
-            AND mms.Rule03GroupID >=0;
+            AND mms.Stake >= lv_RuleHighStake;
         
     END IF;
 

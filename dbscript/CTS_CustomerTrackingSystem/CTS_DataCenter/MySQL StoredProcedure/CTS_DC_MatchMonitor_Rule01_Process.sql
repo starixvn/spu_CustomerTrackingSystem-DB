@@ -206,11 +206,11 @@ sp: BEGIN
         SELECT	mms.TransID
 			,	mms.TransDate
             ,	mms.CustID
-            ,	mms.Rule01GroupID
+            ,	mms.GroupID
             ,	mms.Stake
             ,	mms.Betteam
 		FROM CTS_DataCenter.MatchMonitorStagingLive AS mms
-        WHERE mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.Rule01GroupID >=0;
+        WHERE mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.GroupID >=0;
         
 	ELSE 
 		SELECT mms.SportType INTO lv_SportType FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms WHERE mms.MatchID = ip_MatchID LIMIT 1;
@@ -219,11 +219,11 @@ sp: BEGIN
         SELECT	mms.TransID
 			,	mms.TransDate
             ,	mms.CustID
-            ,	mms.Rule01GroupID
+            ,	mms.GroupID
             ,	mms.Stake
             ,	mms.Betteam
 		FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms
-        WHERE  mms.SequenceID <= ip_MaxSequenceID AND	mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.Rule01GroupID >=0;
+        WHERE  mms.SequenceID <= ip_MaxSequenceID AND	mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.GroupID >=0;
         
     END IF;
     

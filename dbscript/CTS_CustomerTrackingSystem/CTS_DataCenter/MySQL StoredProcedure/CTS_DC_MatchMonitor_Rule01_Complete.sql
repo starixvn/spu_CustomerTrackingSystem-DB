@@ -162,12 +162,11 @@ BEGIN
 
         IF(ip_LiveIndicator = 1) THEN
 			SET @sql = 	CONCAT("UPDATE CTS_DataCenter.MatchMonitorStagingLive
-            SET Rule01GroupID = ",lv_TargetGroupID,"
+            SET GroupID = ",lv_TargetGroupID,"
             WHERE TransID IN (",lv_TransIDList,")");    
-		ELSE
-		
+		ELSE		
 			SET @sql = 	CONCAT("UPDATE CTS_DataCenter.MatchMonitorStagingNonLive
-            SET Rule01GroupID = ",lv_TargetGroupID,"
+            SET GroupID = ",lv_TargetGroupID,"
             WHERE TransID IN (",lv_TransIDList,")");
         END IF;
 
