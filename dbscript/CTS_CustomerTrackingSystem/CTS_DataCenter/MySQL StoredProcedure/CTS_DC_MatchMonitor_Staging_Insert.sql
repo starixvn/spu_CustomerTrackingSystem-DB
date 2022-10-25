@@ -190,7 +190,7 @@ BEGIN
 			WHERE sys.ParameterID = 20;
 		END IF;        
 	ELSE
-    	INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, Rule03GroupID, InsertTime)
+    	INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
 		SELECT  js.SequenceID
 			,	js.TransID
 			,	js.TransDate
@@ -211,7 +211,6 @@ BEGIN
 			,	js.CustID
 			,	js.Stake
             ,	js.Betteam
-            ,	(CASE WHEN js.SportType = 1 THEN 0 ELSE -1 END) AS Rule03GroupID
 			,	CURRENT_TIMESTAMP(3)
 		FROM JSON_TABLE(ip_TransList,
 						 "$[*]" COLUMNS(
