@@ -75,7 +75,7 @@ BEGIN
 		[CustId]
 	);
 
-	CREATE NONCLUSTERED INDEX IX_tmpCustomerAccummulatedInfo_CurrentCategoryId_IsDeposit ON #tmpCustomerAccummulatedInfo(
+	CREATE NONCLUSTERED INDEX IX_tmpCustomerAccummulatedInfo_CurrentCategoryId ON #tmpCustomerAccummulatedInfo(
 		[CurrentCategoryId]
 	);
 
