@@ -5,6 +5,7 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedGroup_Create`(
 		IN ip_GroupName 		VARCHAR(100)
     ,	IN ip_ABI 				INT
+    ,	IN ip_Danger1 			INT
     ,	IN ip_AllCredit			SMALLINT
     ,	IN ip_AllLicensee		SMALLINT
     ,	IN ip_Sites				LONGTEXT
@@ -26,6 +27,7 @@ BEGIN
 		Revisions:
 			- 20220705@Aries.Nguyen: Created [Redmine ID: #167748]
             - 20220831@Aries.Nguyen: Associated Group Enhancement [Redmine ID: #176991]
+            - 20221025@Harvey.Nguyen: Associated Group Enhancement [Redmine ID: #179398]
         
 		Param's Explanation (filtered by):
         
@@ -35,8 +37,8 @@ BEGIN
     DECLARE lv_AuditInfo 		JSON;
     DECLARE lv_GroupID 			BIGINT UNSIGNED;
 
-    INSERT INTO CTS_DataCenter.AssociatedGroup(GroupName,ABI,AllCredit,AllLicensee,Sites,HasDevice,HasManual,HasIP,HasAI,Remark,CreatedBy,Modified)
-    VALUES(ip_GroupName,ip_ABI,ip_AllCredit,ip_AllLicensee,ip_Sites,ip_HasDevice,ip_HasManual,ip_HasIP,ip_HasAI,ip_Remark,ip_CreatedBy,NULL);
+    INSERT INTO CTS_DataCenter.AssociatedGroup(GroupName, ABI, Danger1,AllCredit,AllLicensee,Sites,HasDevice,HasManual,HasIP,HasAI,Remark,CreatedBy,Modified)
+    VALUES(ip_GroupName, ip_ABI, ip_Danger1 ,ip_AllCredit,ip_AllLicensee,ip_Sites,ip_HasDevice,ip_HasManual,ip_HasIP,ip_HasAI,ip_Remark,ip_CreatedBy,NULL);
     
     SELECT GroupID
     INTO lv_GroupID
@@ -48,6 +50,7 @@ BEGIN
     SET lv_AuditInfo = JSON_OBJECT('GroupID', lv_GroupID, 
 								   'GroupName', ip_GroupName, 
 								   'ABI', ip_ABI, 
+                                   'Danger1', ip_Danger1, 
                                    'AllCredit', ip_AllCredit, 
                                    'AllLicensee', ip_AllLicensee, 
                                    'Sites', ip_Sites, 

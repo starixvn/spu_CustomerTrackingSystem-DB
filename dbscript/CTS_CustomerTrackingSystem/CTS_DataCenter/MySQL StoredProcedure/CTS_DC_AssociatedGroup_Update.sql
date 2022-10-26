@@ -6,6 +6,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedGroup_Update`(
 		IN ip_GroupID 			BIGINT UNSIGNED
 	,	IN ip_GroupName 		VARCHAR(100)
     ,	IN ip_ABI 				INT
+    ,	IN ip_Danger1 			INT
     ,	IN ip_AllCredit			TINYINT
     ,	IN ip_AllLicensee		TINYINT
     ,	IN ip_Sites				LONGTEXT
@@ -25,6 +26,7 @@ BEGIN
 		Original: 
 		Revisions: 
 			- 20220831@Aries.Nguyen: Created [Redmine ID: #176991] 
+            - 20221025@Harvey.Nguyen: Associated Group Enhancement [Redmine ID: #179398]
 		
         Param's Explanation: 
 
@@ -36,6 +38,7 @@ BEGIN
     SET lv_AuditInfo = JSON_OBJECT('GroupID', ip_GroupID, 
 								   'GroupName', ip_GroupName, 
 								   'ABI', ip_ABI, 
+                                   'Danger1', ip_Danger1, 
                                    'AllCredit', ip_AllCredit, 
                                    'AllLicensee', ip_AllLicensee, 
                                    'Sites', ip_Sites, 
@@ -51,6 +54,7 @@ BEGIN
     UPDATE CTS_DataCenter.AssociatedGroup
     SET  	GroupName =  ip_GroupName
 		,	ABI = ip_ABI
+        ,	Danger1 = ip_Danger1
 		,	AllCredit = ip_AllCredit
 		,	AllLicensee = ip_AllLicensee
 		,	Sites = ip_Sites
