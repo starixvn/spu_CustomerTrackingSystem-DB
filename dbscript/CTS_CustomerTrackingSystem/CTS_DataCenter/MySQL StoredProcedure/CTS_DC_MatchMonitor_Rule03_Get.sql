@@ -6,7 +6,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule03_Get`(
 		IN	ip_LiveIndicator	BOOLEAN
 	,	OUT	op_MaxSequenceID	BIGINT UNSIGNED
 )
-	SQL SECURITY INVOKER
+    SQL SECURITY INVOKER
 sp: BEGIN
 	/*
 		Created:	202200929@Casey.Huynh
@@ -70,7 +70,7 @@ sp: BEGIN
 			FROM CTS_DataCenter.MatchMonitorStagingLive03 AS mms
 				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType
             WHERE mms.SequenceID <= lv_MaxSequenceID AND mms.Stake >= tmpRs.HighStake
-			GROUP BY mms.MatchID, mms.TotalScore, mms.BettypeID, mms.BetID
+			GROUP BY mms.MatchID, mms.TotalScore, mms.BettypeID, mms.BetID,	mms.Betteam
 			HAVING COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= MIN(tmpRs.TotalStake);      
             
 		END IF;
@@ -95,7 +95,7 @@ sp: BEGIN
 			FROM CTS_DataCenter.MatchMonitorStagingNonLive03 AS mms
 				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType
             WHERE mms.SequenceID <= lv_MaxSequenceID AND mms.Stake >= tmpRs.HighStake
-			GROUP BY mms.MatchID, mms.TotalScore, mms.BettypeID, mms.BetID
+			GROUP BY mms.MatchID, mms.TotalScore, mms.BettypeID, mms.BetID,	mms.Betteam
 			HAVING COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= MIN(tmpRs.TotalStake);            
 		END IF;        
 	END IF;
