@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Details_Verify_xtest`;
+DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Details_Verify`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Details_Verify_xtest`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Details_Verify`(
 		IN ip_MatchID 		BIGINT UNSIGNED   
     ,	IN ip_LiveIndicator	BOOLEAN      
     ,	IN ip_BettypeID		INT UNSIGNED

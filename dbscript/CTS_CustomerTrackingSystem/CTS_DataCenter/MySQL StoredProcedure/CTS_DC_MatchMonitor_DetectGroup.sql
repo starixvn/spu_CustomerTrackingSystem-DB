@@ -83,6 +83,7 @@ BEGIN
 			AgentCTSCustID		BIGINT UNSIGNED
 		 ,	CTSCustID			BIGINT UNSIGNED
 		 ,	TransDateSecond		BIGINT UNSIGNED
+         ,	OldGroupID			INT 
 		 , 	Processed			BIT DEFAULT 0
 		 ,	PRIMARY KEY 		PK_Temp_StagingTrans(AgentCTSCustID, TransDateSecond)
 		 ,	INDEX 				IX_Temp_StagingTrans_AgentCTSCustID(CTSCustID)
@@ -113,15 +114,16 @@ BEGIN
 		,	MAX(Weight)
     FROM Temp_GroupResult
     GROUP BY GroupID;
-     
+       
      
      /******************************************Detect group******************************************/
-    SELECT	JSON_ARRAYAGG(JSON_OBJECT('CTSCustID', CTSCustID ,'CustID', CustID ,'Weight', TransDateSecond)) AS CustJson
+    SELECT	JSON_ARRAYAGG(JSON_OBJECT('CTSCustID', trans.CTSCustID ,'CustID', trans.CustID ,'Weight', trans.TransDateSecond,'MaxWeight', tmp.Weight )) AS CustJson
 	INTO lv_CTSCustIDs
-    FROM Temp_StagingTrans;  
-    
+    FROM Temp_StagingTrans AS trans
+		LEFT JOIN Temp_GroupPrecessed AS tmp ON trans.OldGroupID = tmp.GroupID;  
+
     CALL CTS_DataCenter.CTS_DC_AssociationDetection_GetNode(lv_CTSCustIDs,1,1,1,1);
-    
+
     INSERT IGNORE INTO Temp_Graph(OrigID, DestID, Weight, MaxWeight, AssociationType)
 	SELECT	grp.CTSCustID 
 		,	(-1*grp.GroupID) 
@@ -139,7 +141,7 @@ BEGIN
         ,	-1 AS AssociationType
     FROM Temp_GroupResult AS grp
 		INNER JOIN Temp_GroupPrecessed AS tmp ON tmp.GroupID = grp.GroupID;
-    
+
     lp: LOOP 
 		SET lv_OrigID = NULL;
         SET lv_Weight = NULL;
@@ -219,16 +221,18 @@ BEGIN
     END LOOP;
     
 	/******************************************Detect group by agent******************************************/
-    INSERT IGNORE INTO Temp_Parent(AgentCTSCustID,CTSCustID,TransDateSecond)
+    INSERT IGNORE INTO Temp_Parent(AgentCTSCustID,CTSCustID,TransDateSecond,OldGroupID)
      SELECT AgentCTSCustID
 		, 	CTSCustID
         , 	TransDateSecond
+        ,	OldGroupID
      FROM Temp_StagingTrans
      WHERE AgentCTSCustID IS NOT NULL;
-     
-    SELECT	JSON_ARRAYAGG(JSON_OBJECT('CTSCustID', AgentCTSCustID ,'CustID', NULL ,'Weight', TransDateSecond)) AS CustJson
+	
+    SELECT	JSON_ARRAYAGG(JSON_OBJECT('CTSCustID', trans.AgentCTSCustID ,'CustID', NULL ,'Weight', trans.TransDateSecond,'MaxWeight', tmp.Weight )) AS CustJson
 	INTO lv_CTSCustIDs
-    FROM Temp_Parent; 
+    FROM Temp_Parent AS trans
+		LEFT JOIN Temp_GroupPrecessed AS tmp ON trans.OldGroupID = tmp.GroupID;  
     
 	CALL CTS_DataCenter.CTS_DC_AssociationDetection_GetNode(lv_CTSCustIDs,1,1,0,0);
     
@@ -253,7 +257,7 @@ BEGIN
 		INNER JOIN Temp_GroupPrecessed AS tmp ON tmp.GroupID = grp.GroupID
 	WHERE grp.IsOld = 1 
 		AND grp.AgentCTSCustID IS NOT NULL;
-    
+
     lp: LOOP 
 		SET lv_OrigID = NULL;
         SET lv_Weight = NULL;
