@@ -37,7 +37,7 @@ BEGIN
             - ip_LeagueName: NULL IF any ELSE LIKE %ip_LeagueName%
             - ip_Reason: 0:Group Betting, 1: Hedging, 2: Arbitrage, 3: Fixed Game
 		Example:
-			-	CALL CTS_DC_MatchMonitor_Get('2021-12-05','2021-12-08',NULL,'1,2,43', '1','1,2,3,4',NULL,'[{"BettypeID":1,"BetID":0},{"BettypeID":3,"BetID":0},{"BettypeID":7,"BetID":0}],'0,1');
+			-	CALL CTS_DC_MatchMonitor_Get('2021-12-05','2021-12-08',NULL,'1,2,43', '1','1,2,3,4',NULL,'[{"BettypeID":1,"BetID":0},{"BettypeID":3,"BetID":0},{"BettypeID":7,"BetID":0}]','0,1');
 	*/
       
 	DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitor;
@@ -171,7 +171,7 @@ BEGIN
 			AND tmp.LiveIndicator = IFNULL(ip_Market, tmp.LiveIndicator);
     
     INSERT IGNORE INTO Temp_VerfiedTrans(TransID, Reason)
-    SELECT js.TransID
+    SELECT js.TransID, mdv.Reason
     FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans AS mdv
     INNER JOIN Temp_MatchMonitor AS tmpMm ON mdv.MatchID = tmpMm.MatchID AND mdv.LiveIndicator = tmpMm.LiveIndicator AND mdv.BettypeID = tmpMm.BettypeID AND mdv.BetID = tmpMm.BetID AND mdv.Reason = tmpMm.Reason
 		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mdv.ListTransID), ',', '","'), 
@@ -198,8 +198,8 @@ BEGIN
 		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mmd.ListTransID), ',', '","'), 
 						'$[*]' COLUMNS (TransID BIGINT UNSIGNED PATH '$')
 						) js
-	WHERE NOT EXISTS (SELECT 1 FROM Temp_VerfiedTrans AS tmpVt WHERE js.TransID = tmpVt.TransID);    
-   
+	WHERE NOT EXISTS (SELECT 1 FROM Temp_VerfiedTrans AS tmpVt WHERE js.TransID = tmpVt.TransID AND mmd.Reason = tmpVt.Reason);    
+
     IF (ip_IsVerified IS NULL)
     THEN
 		SELECT	tmpMm.ID

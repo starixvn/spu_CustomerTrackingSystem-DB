@@ -13,8 +13,7 @@ Reviewer:
 USE CTS_DataCenter;
 
 ALTER TABLE MatchMonitorDetailsVerifiedTrans 
-		ADD COLUMN Betteam VARCHAR(10)
-	,	ADD COLUMN Reason TINYINT(10);
+	ADD COLUMN Reason TINYINT(10);
 
 ALTER TABLE MatchMonitorStagingLive
 	DROP COLUMN Rule03GroupID

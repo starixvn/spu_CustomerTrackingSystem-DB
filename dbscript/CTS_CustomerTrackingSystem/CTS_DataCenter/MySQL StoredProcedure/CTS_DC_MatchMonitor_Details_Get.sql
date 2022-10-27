@@ -38,13 +38,14 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ReasonGroup;
     CREATE TEMPORARY TABLE Temp_ReasonGroup(
-		GroupID 	BIGINT UNSIGNED
+			GroupID BIGINT UNSIGNED
 	);
-    
+           
 	#======Score not include in Rule of (baseketball)
 	IF ip_ScoreList IS NULL THEN 
 		SET ip_ScoreList = '0';
     END IF;
+    
     #============================================
 	SET @sql = CONCAT("INSERT INTO Temp_Score (TotalScore) VALUES ('", REPLACE(ip_ScoreList, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
@@ -69,7 +70,8 @@ BEGIN
 		AND d.Reason = ip_Reason;
 	
 	SELECT	js.TransID
-			, VerifiedDate
+			, mdv.Reason
+			, mdv.VerifiedDate
             , (SELECT UserName FROM CTS_Admin.CTSUser WHERE UserID = VerifiedBy) AS VerifiedBy
 	FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans AS mdv
 		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mdv.ListTransID), ',', '","'), 
@@ -78,7 +80,8 @@ BEGIN
 	WHERE  	mdv.MatchID = ip_MatchID
 		AND mdv.LiveIndicator = ip_LiveIndicator
         AND	mdv.BettypeID = ip_BettypeID
-        AND	mdv.BetID = ip_BetID;
+        AND	mdv.BetID = ip_BetID
+        AND mdv.Reason = ip_Reason;
         
 END$$
 DELIMITER ;
