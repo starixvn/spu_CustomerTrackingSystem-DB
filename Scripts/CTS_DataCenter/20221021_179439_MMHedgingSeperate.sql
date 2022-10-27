@@ -16,17 +16,13 @@ ALTER TABLE MatchMonitorStagingLive
 	DROP COLUMN Rule03GroupID
 ,	DROP INDEX IX_MatchMonitorStagingLive_GroupRule03
 ,	DROP INDEX IX_MatchMonitorStagingLive_RuleGroupID
-,	RENAME COLUMN Rule01GroupID TO GroupID
-,	ADD INDEX IX_MatchMonitorStagingLive_GroupID(GroupID);
-
+,	RENAME COLUMN Rule01GroupID TO GroupID;
 
 ALTER TABLE MatchMonitorStagingNonLive
 	DROP COLUMN Rule03GroupID
 ,	DROP INDEX IX_MatchMonitorStagingNonLive_GroupRule03
 ,	DROP INDEX IX_MatchMonitorStagingNonLive_RuleGroupID
-,	RENAME COLUMN Rule01GroupID TO GroupID
-,	ADD INDEX IX_MatchMonitorStagingNonLive_GroupID(GroupID);
-
+,	RENAME COLUMN Rule01GroupID TO GroupID;
 
 CREATE TABLE `MatchMonitorStagingLive03` (
   `SequenceID` bigint unsigned NOT NULL,
@@ -54,11 +50,8 @@ CREATE TABLE `MatchMonitorStagingLive03` (
   PRIMARY KEY (`SequenceID`),
   INDEX `IX_MatchMonitorStagingLive03_TransDate` (`TransDate`),
   INDEX `IX_MatchMonitorStagingLive03_GroupRule01` (`MatchID`,`TotalScore`,`BettypeID`,`BetID`,`GroupID`),
-  INDEX `IX_MatchMonitorStagingLive03_TransID` (`TransID`),
-  INDEX `IX_MatchMonitorStagingLive03_GroupID` (`GroupID`)
+  INDEX `IX_MatchMonitorStagingLive03_TransID` (`TransID`)
 ) ENGINE=InnoDB;
-
-
 
 CREATE TABLE `MatchMonitorStagingNonLive03` (
   `SequenceID` bigint unsigned NOT NULL,
@@ -86,6 +79,5 @@ CREATE TABLE `MatchMonitorStagingNonLive03` (
   PRIMARY KEY (`SequenceID`),
   INDEX `IX_MatchMonitorStagingNonLive03_TransDate` (`TransDate`),
   INDEX `IX_MatchMonitorStagingNonLive03_GroupRule01` (`MatchID`,`TotalScore`,`BettypeID`,`BetID`,`GroupID`),
-  INDEX `IX_MatchMonitorStagingNonLive03_TransID` (`TransID`),
-  INDEX `IX_MatchMonitorStagingNonLive03_GroupID` (`GroupID`)
+  INDEX `IX_MatchMonitorStagingNonLive03_TransID` (`TransID`)
 ) ENGINE=InnoDB;
