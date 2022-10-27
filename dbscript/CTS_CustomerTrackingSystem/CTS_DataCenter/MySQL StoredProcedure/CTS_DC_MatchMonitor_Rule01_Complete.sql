@@ -184,17 +184,17 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_MatchMonitorDetails_Reason(
 		Reason TINYINT PRIMARY KEY
     );
-     
+
     INSERT INTO Temp_MatchMonitor_Reason(Reason)
     SELECT DISTINCT Reason
     FROM CTS_DataCenter.MatchMonitor AS mm
     WHERE mm.LiveIndicator = ip_LiveIndicator AND mm.MatchID = ip_MatchID AND mm.BettypeID = ip_BettypeID AND mm.BetID = ip_BetID; 
- 
+       
     INSERT INTO Temp_MatchMonitorDetails_Reason(Reason)
     SELECT DISTINCT Reason
     FROM CTS_DataCenter.MatchMonitorDetails AS mmd
-    WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID;            
-
+    WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID;           
+    
 	DELETE mm
 	FROM CTS_DataCenter.MatchMonitor AS mm
 		LEFT JOIN Temp_MatchMonitorDetails_Reason AS tmpMmd ON mm.Reason = tmpMmd.Reason
@@ -206,6 +206,6 @@ BEGIN
 	FROM CTS_DataCenter.MatchMonitorDetails AS mmd
 		LEFT JOIN Temp_MatchMonitor_Reason AS tmpMm ON mmd.Reason = tmpMm.Reason
 	WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID;
-	
+    
 END$$
 DELIMITER ;
