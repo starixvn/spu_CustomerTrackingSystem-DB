@@ -16,17 +16,20 @@ AS
 
 	Revisions:
 		- 20220726@Long.Luu: Created [Redmine ID: #175701]
+		- 20220929@Long.Luu: Adjust the asssociation rule [Redmine ID: #178331]
 
 	Params Explaination:
-		- @QueryType: 1 detect associations, 2 get fraud tickets, 3 get association custlist of a group
+		- @QueryType: 1 detect associations, 2 get fraud tickets, 3 get association custlist of a group, 4 get fraud tickets of a custgroup
 
 	Example:
-		EXECUTE [dbo].[CTS_Association_GetBySharedMatches] @ListCustId = '2,3',@RootCustId=2,@QueryType=2;
+		EXECUTE [dbo].[CTS_Association_GetBySharedMatches] @ListCustId = '2,3',@RootCustId=2,@QueryType=1;
 */
 BEGIN
 	SET NOCOUNT ON;
 
 	DECLARE @CONST_MAXTIMEINTERVAL	SMALLINT = 180; -- 180 Seconds = 3 minutes
+	DECLARE @CONST_MATCHSHARED		SMALLINT = 3;
+	DECLARE @CONST_STAKETHRESHOLD	SMALLINT = 1000;
 
 	DECLARE @DataFromDate			SMALLDATETIME
 		,	@Today					DATE = GETDATE()
@@ -75,6 +78,8 @@ BEGIN
 		,	AwayId				INT
 		,	BetType				SMALLINT
 		,	BetTeam				NVARCHAR(10)
+		,	LiveHomeScore		SMALLINT
+		,	LiveAwayScore		SMALLINT
 	);	
 
 	DROP TABLE IF EXISTS #tmpAssociation;
@@ -88,15 +93,17 @@ BEGIN
 		,	AwayId				INT
 		,	TransID1			BIGINT
 		,	TransID2			BIGINT
+		,	LiveHomeScore		SMALLINT
+		,	LiveAwayScore		SMALLINT
 	);
 
-	DROP TABLE IF EXISTS #tmpTopMatches;
-	CREATE TABLE	#tmpTopMatches(
-			MatchID				INT
+	DROP TABLE IF EXISTS #tmpRootCustIDMatches;
+	CREATE TABLE	#tmpRootCustIDMatches(
+			MatchID				INT PRIMARY KEY
 	);	
 	
 	-- Get full data from bettrans
-	INSERT INTO #tmpRawTickets(TransID,TransDate_Int,MatchID,BetType,CustID,BetTeam,EventDate,LeagueId,HomeId,AwayId)
+	INSERT INTO #tmpRawTickets(TransID,TransDate_Int,MatchID,BetType,CustID,BetTeam,EventDate,LeagueId,HomeId,AwayId,LiveHomeScore,LiveAwayScore)
 	SELECT	b.transid
 		,	DATEDIFF(ss, @CutOffDate, b.transdate)
 		,	b.matchid
@@ -107,16 +114,20 @@ BEGIN
 		,	m.leagueid
 		,	m.homeid
 		,	m.awayid
+		,	b.livehomescore
+		,	b.liveawayscore
 	FROM #tmpCustIds AS a WITH(NOLOCK)
 		INNER JOIN dbo.bettrans AS b WITH(NOLOCK) ON a.CustID = b.custid		
 		INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.MatchID = m.matchid AND m.sporttype < 100		
 		INNER JOIN dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
 	WHERE b.winlostdate > @MoveBetsDay
+		AND m.eventstatus = 'Completed'
 		AND b.Currency NOT IN (20,27,28)
-		AND l.LeagueGroupID NOT IN (42,72,74,108,113,122); -- exclude SABA, Virtual Sport
+		AND l.LeagueGroupID NOT IN (42,72,74,108,113,122) -- exclude SABA, Virtual Sport
+		AND (b.stake * b.actualrate >= @CONST_STAKETHRESHOLD)
 
 	-- Get more data from bettrans 14
-	INSERT INTO #tmpRawTickets(TransID,TransDate_Int,MatchID,BetType,CustID,BetTeam,EventDate,LeagueId,HomeId,AwayId)
+	INSERT INTO #tmpRawTickets(TransID,TransDate_Int,MatchID,BetType,CustID,BetTeam,EventDate,LeagueId,HomeId,AwayId,LiveHomeScore,LiveAwayScore)
 	SELECT	b.transid
 		,	DATEDIFF(ss, @CutOffDate, b.transdate)
 		,	b.matchid
@@ -127,30 +138,35 @@ BEGIN
 		,	m.leagueid
 		,	m.homeid
 		,	m.awayid
+		,	b.livehomescore
+		,	b.liveawayscore
 	FROM #tmpCustIds AS a WITH(NOLOCK)
 		INNER JOIN dbo.bettrans14 AS b WITH(NOLOCK) ON a.CustID = b.custid		
 		INNER JOIN dbo.match14 AS m WITH(NOLOCK) ON b.MatchID = m.matchid AND m.sporttype < 100		
 		INNER JOIN dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
 	WHERE	b.winlostdate <= @MoveBetsDay AND b.winlostdate > @DataFromDate
+		AND m.eventstatus = 'Completed'
 		AND b.Currency NOT IN (20,27,28)
-		AND l.LeagueGroupID NOT IN (42,72,74,108,113,122); -- exclude SABA, Virtual Sport
+		AND l.LeagueGroupID NOT IN (42,72,74,108,113,122) -- exclude SABA, Virtual Sport		
+		AND (b.stake * b.actualrate >= @CONST_STAKETHRESHOLD)
 
 	CREATE CLUSTERED INDEX CIX_tmpRawTickets
 	ON #tmpRawTickets (MatchID, Bettype, Betteam, CustID); 
 
 	;WITH cte_custPerMatch AS (
 		SELECT DISTINCT c1.CustID AS CustID1, c1.MatchID, c1.Bettype, c1.BetTeam, c2.CustID AS CustID2
-			,	c1.EventDate, c1.LeagueId, c1.HomeId, c1.AwayId
+			,	c1.EventDate, c1.LeagueId, c1.HomeId, c1.AwayId, c1.LiveHomeScore, c1.LiveAwayScore
 		FROM #tmpRawTickets AS c1
 			INNER JOIN #tmpRawTickets AS c2 
 				ON c1.MatchID = c2.MatchID AND c1.BetType = c2.BetType
-					AND c1.BetTeam = c2.BetTeam AND c1.CustID <> c2.CustID
+					AND c1.BetTeam = c2.BetTeam AND c1.LiveHomeScore = c2.LiveHomeScore
+					AND c1.LiveAwayScore = c2.LiveAwayScore AND  c1.CustID <> c2.CustID
 	), 
 	cte_SeekPerMatch AS (
 		SELECT ck.CustID1, ck.CustID2
 		FROM cte_custPerMatch AS ck
 		GROUP BY ck.CustID1, ck.CustID2
-		HAVING COUNT(DISTINCT ck.MatchID) >= 3
+		HAVING COUNT(DISTINCT ck.MatchID) >= @CONST_MATCHSHARED
 	)
 	INSERT INTO #tmpAssociation(CustID1,CustID2,TransID1,TransID2, MatchID, EventDate, LeagueId, HomeId, AwayId)
 	SELECT DISTINCT CASE 
@@ -182,13 +198,15 @@ BEGIN
 				SELECT t1.TransID, t1.TransDate_Int
 				FROM #tmpRawTickets AS t1
 				WHERE t1.MatchID = m.MatchID AND t1.BetType = m.BetType 
-					AND t1.BetTeam = m.BetTeam AND t1.CustID IN (c.CustID1)
+					AND t1.BetTeam = m.BetTeam AND t1.LiveHomeScore = m.LiveHomeScore
+					AND t1.LiveAwayScore = m.LiveAwayScore AND t1.CustID IN (c.CustID1)
 			) AS c1
 			INNER JOIN (
 				SELECT t2.TransID, t2.TransDate_Int
 				FROM #tmpRawTickets AS t2
 				WHERE t2.MatchID = m.MatchID AND t2.BetType = m.BetType 
-					AND t2.BetTeam = m.BetTeam AND t2.CustID IN (c.CustID2)
+					AND t2.BetTeam = m.BetTeam AND t2.LiveHomeScore = m.LiveHomeScore
+					AND t2.LiveAwayScore = m.LiveAwayScore  AND t2.CustID IN (c.CustID2)
 			) AS c2
 				ON ABS(c1.TransDate_Int - c2.TransDate_Int) <= @CONST_MAXTIMEINTERVAL
 		) AS t
@@ -207,7 +225,7 @@ BEGIN
 		SELECT CustID1, CustID2
 		FROM #tmpAssociation
 		GROUP BY CustID1, CustID2
-		HAVING COUNT(DISTINCT MatchID) < 3
+		HAVING COUNT(DISTINCT MatchID) < @CONST_MATCHSHARED
 	)
 	DELETE a WITH(ROWLOCK)
 	FROM cte_lessThan3Matches AS t
@@ -220,27 +238,16 @@ BEGIN
 		END;
 	ELSE IF (@QueryType = 2)
 		BEGIN
-			;WITH cte_topMatches AS(				
-				SELECT DISTINCT MatchID, EventDate
-				FROM #tmpAssociation
-			)		
-			INSERT INTO #tmpTopMatches(MatchID)	
-			SELECT TOP 3 MatchID
-			FROM cte_topMatches 
-			ORDER BY EventDate DESC;
-
 			SELECT b.TransId, b.TransDate, b.UserName, b.BetType, b.BetTeam, b.Stake, b.Odds, b.LiveHomeScore, b.LiveAwayScore, b.status AS TicketStatus, b.MatchId, c.EventDate, c.HomeId, c.AwayId, c.LeagueId
-			FROM #tmpTopMatches AS cte
-				INNER JOIN #tmpAssociation AS c ON cte.MatchID = c.MatchID
+			FROM #tmpAssociation AS c
 				INNER JOIN dbo.bettrans AS b WITH(NOLOCK) ON b.TransId = c.TransID1 OR b.TransId = c.TransID2
 			UNION ALL
 			SELECT b.TransId, b.TransDate, b.UserName, b.BetType, b.BetTeam, b.Stake, b.Odds, b.LiveHomeScore, b.LiveAwayScore, b.status AS TicketStatus, b.MatchId, c.EventDate, c.HomeId, c.AwayId, c.LeagueId
-			FROM #tmpTopMatches AS cte
-				INNER JOIN #tmpAssociation AS c ON cte.MatchID = c.MatchID
+			FROM #tmpAssociation AS c
 				INNER JOIN dbo.bettrans14 AS b WITH(NOLOCK) ON b.TransId = c.TransID1 OR b.TransId = c.TransID2
 		END
-	ELSE 
-		BEGIN			
+	ELSE IF (@QueryType = 3)
+		BEGIN
 			SELECT DISTINCT CustID2 AS CustID
 			FROM #tmpAssociation
 			WHERE CustID1 = @RootCustId
@@ -248,6 +255,23 @@ BEGIN
 			SELECT DISTINCT CustID1 AS CustID
 			FROM #tmpAssociation
 			WHERE CustID2 = @RootCustId;
+		END
+	ELSE 
+		BEGIN	
+			INSERT INTO #tmpRootCustIDMatches(MatchID)	
+			SELECT DISTINCT MatchID
+			FROM #tmpAssociation				
+			WHERE CustID1 = @RootCustId OR CustID2 = @RootCustId;
+
+			SELECT b.TransId, b.TransDate, b.UserName, b.BetType, b.BetTeam, b.Stake, b.Odds, b.LiveHomeScore, b.LiveAwayScore, b.status AS TicketStatus, b.MatchId, c.EventDate, c.HomeId, c.AwayId, c.LeagueId
+			FROM #tmpRootCustIDMatches AS cte
+				INNER JOIN #tmpAssociation AS c ON cte.MatchID = c.MatchID
+				INNER JOIN dbo.bettrans AS b WITH(NOLOCK) ON b.TransId = c.TransID1 OR b.TransId = c.TransID2
+			UNION ALL
+			SELECT b.TransId, b.TransDate, b.UserName, b.BetType, b.BetTeam, b.Stake, b.Odds, b.LiveHomeScore, b.LiveAwayScore, b.status AS TicketStatus, b.MatchId, c.EventDate, c.HomeId, c.AwayId, c.LeagueId
+			FROM #tmpRootCustIDMatches AS cte
+				INNER JOIN #tmpAssociation AS c ON cte.MatchID = c.MatchID
+				INNER JOIN dbo.bettrans14 AS b WITH(NOLOCK) ON b.TransId = c.TransID1 OR b.TransId = c.TransID2
 		END;
 
 	DROP TABLE #tmpCustIds;

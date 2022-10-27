@@ -19,30 +19,19 @@ sp:BEGIN
 		Revisions:
 			- 20220727@Aries.Nguyen: Created [Redmine ID: #175701]
             - 20220907@Aries.Nguyen: CTS - Association Detection - Display in correct CC [Redmine ID: #177559]
+            - 20220930@Aries.Nguyen: Renovate Association Detection [RedmineID: #178311]
 
 		Param's Explanation (filtered by):
 
         Example:
-			- CALL CTS_DC_AssociationDetection_MergeGroup_xtest("1,2",'[{"F":1,"T":2,"AT":1}]','[{"F":1,"T":2,"AT":1}]','[{"F":1,"T":2,"AT":1}]','[{"F":1,"T":2,"AT":1}]' );
+			- CALL CTS_DC_AssociationDetection_MergeGroup("1,2",'[{"F":1,"T":2,"AT":1}]','[{"F":1,"T":2,"AT":1}]','[{"F":1,"T":2,"AT":1}]','[{"F":1,"T":2,"AT":1}]' );
 	*/
     DECLARE	CONST_GROUP_NORMAL 					INT DEFAULT 200;
-	DECLARE	CONST_GROUP_WRAPPER 				INT DEFAULT 100;
     DECLARE	CONST_GROUP_PROBLEM 				INT DEFAULT 0;
     
-    DECLARE	CONST_LICBACATEGORY					INT DEFAULT 2;
-    DECLARE	CONST_LICVIP_DANGEROUSCATEGORY		INT DEFAULT 3;
-    DECLARE	CONST_LICVIP_SUSPICIOUSCATEGORY		INT DEFAULT 4;   
-    DECLARE	CONST_VVIPCATEGORY					INT DEFAULT 210;
-	
-    DECLARE lv_LicBACC							SMALLINT UNSIGNED;
-    DECLARE lv_LicBAPriority					SMALLINT UNSIGNED;
-    DECLARE lv_LicVIPCC_Danger					SMALLINT UNSIGNED;
-    DECLARE lv_LicVIPCC_Suspicious				SMALLINT UNSIGNED;
-    DECLARE lv_VVIPCC							SMALLINT UNSIGNED;
-    
-
     DECLARE lv_OrigID 		BIGINT;
     DECLARE lv_GroupId 		INT DEFAULT 1;
+    DECLARE lv_CustIDs 		LONGTEXT;
 
     DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
 	CREATE TEMPORARY TABLE 		Temp_Cust (
@@ -51,9 +40,14 @@ sp:BEGIN
 		,	CustID 			BIGINT UNSIGNED
         ,	Username		VARCHAR(50)
         ,	CustStatus		VARCHAR(50)
-        ,	CustomerClass 	INT
-        ,	IsLicenseeVIP	BIT
-        ,	IsLicenseeBA	BIT
+        ,	Recommend		BIGINT UNSIGNED
+        ,	Danger1			TINYINT
+        ,	Danger2			TINYINT
+        ,	Danger3			TINYINT
+        ,	Danger4			TINYINT
+        ,	Danger5			TINYINT
+        ,	RoleID			TINYINT
+        ,	CreatedDate		DATETIME
         ,	Processed 		BIT DEFAULT 0
         ,	INDEX			IX_Temp_Cust(CustID)
         ,	INDEX			IX_Temp_Cust_Processed(Processed)
@@ -67,10 +61,14 @@ sp:BEGIN
         ,	INDEX			IX_Temp_Cust(CustID)
 	);
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_CustomerClass;
-	CREATE TEMPORARY TABLE 		Temp_CustomerClass (
-			CTSCustID		BIGINT UNSIGNED PRIMARY KEY
-		,	CustomerClass 	INT
+    DROP TEMPORARY TABLE IF EXISTS Temp_Recommend;
+	CREATE TEMPORARY TABLE 	Temp_Recommend (
+			CTSCustID  			BIGINT  UNSIGNED PRIMARY KEY 
+        ,	CustID				BIGINT  UNSIGNED UNSIGNED
+        ,	Username			VARCHAR(50)
+        ,	Evidence			LONGTEXT
+        ,	MemberCTSCustID		BIGINT
+        ,	INDEX 				IX_Temp_Recommend_MemberCTSCustID(MemberCTSCustID)
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustAssociationType;
@@ -147,45 +145,49 @@ sp:BEGIN
 		,	PRIMARY KEY(FromCTSCustID, ToCTSCustID)
 		,	INDEX Temp_SharedMatches(ToCTSCustID,FromCTSCustID)
 	);
-    /* INIT */    
-    SELECT CustomerClass, Priority
-    INTO lv_LicBACC, lv_LicBAPriority
-    FROM CustomerCategory WHERE CategoryID = CONST_LICBACATEGORY;
-    
-    SELECT CustomerClass
-    INTO lv_LicVIPCC_Danger
-    FROM CustomerCategory WHERE CategoryID = CONST_LICVIP_DANGEROUSCATEGORY;
-    
-    SELECT CustomerClass
-    INTO lv_LicVIPCC_Suspicious
-    FROM CustomerCategory WHERE CategoryID = CONST_LICVIP_SUSPICIOUSCATEGORY;    
-    
-    SELECT CustomerClass
-    INTO lv_VVIPCC
-    FROM CustomerCategory WHERE CategoryID = CONST_VVIPCATEGORY;
+
     
     /*****************************Extract Data From Input**************************************************/
-    INSERT IGNORE INTO Temp_Cust(CTSCustID, CustID,Username,CustStatus,IsLicenseeVIP,IsLicenseeBA,CustomerClass,Processed)
+    INSERT IGNORE INTO Temp_Cust(CTSCustID, CustID,Username,CustStatus,Recommend,Danger1,Danger2,Danger3,Danger4,Danger5,RoleID,CreatedDate,Processed)
 	SELECT 	tmp.CTSCustID
 		, 	cus.CustID
         ,	cus.Username
         ,	sta.ItemName AS CustStatus
-        ,	cus.IsLicenseeVIP
-        ,	cus.IsLicenseeBA
-        ,	sp.CustomerClass
+        ,	cus.Recommend
+        ,	cus.Danger1
+        ,	cus.Danger2
+        ,	cus.Danger3
+        ,	cus.Danger4
+        ,	cus.Danger5
+        ,	cus.RoleID
+        ,	cus.CreatedDate
         ,	CASE WHEN cus.CTSCustID IS NULL OR cus.IsInternal = 1 THEN 1
 			ELSE 0 END AS Processed
 	FROM JSON_TABLE(CONCAT('[',ip_CTSCustIDs,']'),'$[*]' COLUMNS(NESTED PATH '$' COLUMNS (CTSCustID BIGINT UNSIGNED PATH '$'))) AS tmp
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = tmp.CTSCustID  
-        LEFT JOIN CTS_DataCenter.StaticList AS sta ON sta.ListID = 1 AND sta.ItemID = cus.CustStatusID
-        LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = cus.CustID;
-    
+        LEFT JOIN CTS_DataCenter.StaticList AS sta ON sta.ListID = 1 AND sta.ItemID = cus.CustStatusID;
+
     INSERT IGNORE INTO Temp_Cust_Dup(CTSCustID, CustID)
     SELECT 	CTSCustID
 		,	CustID
     FROM Temp_Cust
     WHERE Processed = 0;
     
+    INSERT IGNORE INTO Temp_Recommend(CTSCustID,CustID,Username,Evidence,MemberCTSCustID)
+    SELECT 	cus.CTSCustID
+		,	cus.CustID
+		,	cus.Username
+        ,	(SELECT GROUP_CONCAT(DISTINCT ' ',ev.EvidenceCode) 
+			 FROM CTS_DataCenter.CustEvidence AS ce  
+				LEFT JOIN CTS_DataCenter.Evidence AS ev ON ev.EvidenceID = ce.EvidenceID
+             WHERE cus.CTSCustID = ce.CTSCustID) AS Evidence
+		,	tmp.CTSCustID
+    FROM Temp_Cust AS tmp
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.Recommend 
+														AND cus.IsInternal = 0
+                                                        AND cus.CustSubID = 0
+    WHERE tmp.RoleID = 1;
+
     INSERT IGNORE INTO Temp_Primary(FromCTSCustID, ToCTSCustID,AssociationType)
 	SELECT	js.FromCTSCustID
 		,	js.ToCTSCustID
@@ -195,7 +197,7 @@ sp:BEGIN
 					,	ToCTSCustID			BIGINT 		PATH "$.T"
 					,	AssociationType		INT			PATH "$.A"
 	)) AS js;
-    
+
     INSERT IGNORE INTO Temp_Agent(FromCTSCustID, ToCTSCustID)
 	SELECT	js.FromCTSCustID
 		,	js.ToCTSCustID
@@ -450,31 +452,31 @@ sp:BEGIN
 												   ELSE CONCAT(AssociationType,', Betting Pattern') END;
     
     /*****************************Handle CustomerClass Info**************************************************/
-    INSERT INTO Temp_CustomerClass(CTSCustID,CustomerClass)
-    SELECT 	tmp.CTSCustID
-		,	clss.CustomerClass
-    FROM Temp_Cust AS tmp,
-		LATERAL(SELECT CASE WHEN tmp.CustomerClass IS NULL THEN CASE WHEN cate.CustomerClass = lv_VVIPCC THEN lv_VVIPCC
-																	 WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN lv_LicVIPCC_Suspicious
-																	 WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN lv_LicVIPCC_Danger
-																	 WHEN tmp.IsLicenseeBA = 1 AND cate.Priority > lv_LicBAPriority THEN lv_LicBACC
-																	 ELSE cate.CustomerClass END
-						ELSE tmp.CustomerClass END AS CustomerClass
-				FROM CTS_DataCenter.CTSCustomerClassification AS clss
-					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID
-                WHERE clss.CustID = tmp.CustID
-					AND clss.SportGroupID IN (CONST_GROUP_PROBLEM, CONST_GROUP_WRAPPER,CONST_GROUP_NORMAL)
-                ORDER BY  cate.Priority ASC  
-						, clss.LastModifiedDate DESC
-                LIMIT 1) AS clss;
+    SELECT GROUP_CONCAT(DISTINCT CustID) 
+    INTO lv_CustIDs
+    FROM Temp_Cust;
+    
+    CALL CTS_DataCenter.CTS_DC_Common_GetCCAndDangerLevel(lv_CustIDs);
     
     SELECT 	cus.RowNumber 
 		,	grp.GroupID
+        ,	asTy.AssociationType
+        
 		,	cus.CTSCustID
         ,	cus.CustID
         ,	cus.Username
         ,	cus.CustStatus
-        ,	asTy.AssociationType
+        ,	cus.Danger1
+        ,	cus.Danger2
+        ,	cus.Danger3
+        ,	cus.Danger4
+        ,	cus.Danger5
+        ,	cus.CreatedDate
+        
+        ,	re.CTSCustID AS AgentCTSCustID
+        ,	re.Username AS AgentUsername
+        ,	re.Evidence AS AgentEvidence
+        
         
         ,	(SELECT GROUP_CONCAT(DISTINCT ' ',ev.EvidenceCode) 
 			 FROM CTS_DataCenter.CustEvidence AS ce  
@@ -487,10 +489,12 @@ sp:BEGIN
         ,   MAX(cat.IsPAProbation) AS IsPAProbation
         
         ,	cusclss.CustomerClass
+
     FROM Temp_Cust AS cus
 		LEFT JOIN Temp_Group AS grp ON cus.CTSCustID = grp.CTSCustID
-        LEFT JOIN Temp_CustomerClass AS cusclss ON cus.CTSCustID = cusclss.CTSCustID
+        LEFT JOIN Temp_CustClassificationInfo AS cusclss ON cus.CustID = cusclss.CustID
         LEFT JOIN  Temp_CustAssociationType AS asTy ON cus.CTSCustID = asTy.CTSCustID
+        LEFT JOIN Temp_Recommend AS re ON cus.CTSCustID = re.MemberCTSCustID
 		LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON cus.CustID = clss.CustID AND  clss.SportGroupID IN (CONST_GROUP_PROBLEM, CONST_GROUP_NORMAL)
         LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID
 	GROUP BY cus.RowNumber 
@@ -499,7 +503,16 @@ sp:BEGIN
         ,	cus.CustID
         ,	cus.Username
         ,	cus.CustStatus
-        ,	cusclss.CustomerClass;
+        ,	cusclss.CustomerClass
+        ,	cus.Danger1
+        ,	cus.Danger2
+        ,	cus.Danger3
+        ,	cus.Danger4
+        ,	cus.Danger5
+        ,	cus.CreatedDate
+        ,	re.CTSCustID
+        ,	re.Username
+        ,	re.Evidence;
 	
 END$$
 
