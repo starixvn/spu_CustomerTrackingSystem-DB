@@ -30,6 +30,7 @@ BEGIN
             - 	20220216@Casey.Huynh: Fix Issue, show IsVerified = 0 when all tickets were verified [Redmine ID: 166986]
             - 	20220325@Long.Luu: Add Reason filter [Redmine ID: 170466]
             -	20220805@Jonas.Huynh: Add Reason Fixed Game [Redmine ID: 175700]
+            -	20221027@Casey.Huynh: Update Verify By Reason and Betteam [RedmineID: 179427]
             
 		Param's Explanation (filtered by):
 			- ip_Market: 0 return LiveIndicator = 0, 1 return LiveIndicator = 1, NULL: Both Live And Non-Live
@@ -101,7 +102,8 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_VerfiedTrans;
     CREATE TEMPORARY TABLE Temp_VerfiedTrans(
-        TransID	BIGINT UNSIGNED PRIMARY KEY
+			TransID	BIGINT UNSIGNED PRIMARY KEY
+        ,	Reason	TINYINT
 	);
     
     INSERT IGNORE INTO Temp_Bettype(BettypeID, BetID)
@@ -168,20 +170,20 @@ BEGIN
        WHERE  (ip_LeagueName IS NULL OR (tmp.LeagueName LIKE CONCAT('%',ip_LeagueName,'%')))
 			AND tmp.LiveIndicator = IFNULL(ip_Market, tmp.LiveIndicator);
     
-    INSERT IGNORE INTO Temp_VerfiedTrans(TransID)
+    INSERT IGNORE INTO Temp_VerfiedTrans(TransID, Reason)
     SELECT js.TransID
     FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans AS mdv
-    INNER JOIN Temp_MatchMonitor AS tmpMm ON mdv.MatchID = tmpMm.MatchID AND mdv.LiveIndicator = tmpMm.LiveIndicator AND mdv.BettypeID = tmpMm.BettypeID AND mdv.BetID = tmpMm.BetID
+    INNER JOIN Temp_MatchMonitor AS tmpMm ON mdv.MatchID = tmpMm.MatchID AND mdv.LiveIndicator = tmpMm.LiveIndicator AND mdv.BettypeID = tmpMm.BettypeID AND mdv.BetID = tmpMm.BetID AND mdv.Reason = tmpMm.Reason
 		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mdv.ListTransID), ',', '","'), 
 						'$[*]' COLUMNS (TransID BIGINT UNSIGNED PATH '$')
 						) js;
 	
     INSERT IGNORE INTO Temp_MatchGroup(MatchID, LiveIndicator, BettypeID, BetID, Reason)
     SELECT	tmpMm.MatchID
-				,	tmpMm.LiveIndicator
-				,	tmpMm.BettypeID
-                ,	tmpMm.BetID
-				,	tmpMm.Reason
+			,	tmpMm.LiveIndicator
+			,	tmpMm.BettypeID
+            ,	tmpMm.BetID
+			,	tmpMm.Reason
 	FROM Temp_MatchMonitor AS tmpMm;
     
 	INSERT INTO Temp_MatchGroup_NotVerified(MatchID, LiveIndicator, BettypeID, BetID, Reason)
@@ -191,7 +193,7 @@ BEGIN
         ,	tmpMg.BetID
 		,	tmpMg.Reason
     FROM Temp_MatchGroup AS tmpMg
-		INNER JOIN CTS_DataCenter.MatchMonitorDetails AS mmd ON tmpMg.MatchID = mmd.MatchID AND tmpMg.LiveIndicator = mmd.LiveIndicator 
+		INNER JOIN CTS_DataCenter.MatchMonitorDetails AS mmd ON tmpMg.MatchID = mmd.MatchID AND tmpMg.LiveIndicator = mmd.LiveIndicator
 				AND tmpMg.BettypeID = mmd.BettypeID AND tmpMg.BetID = mmd.BetID AND tmpMg.Reason = mmd.Reason
 		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mmd.ListTransID), ',', '","'), 
 						'$[*]' COLUMNS (TransID BIGINT UNSIGNED PATH '$')
