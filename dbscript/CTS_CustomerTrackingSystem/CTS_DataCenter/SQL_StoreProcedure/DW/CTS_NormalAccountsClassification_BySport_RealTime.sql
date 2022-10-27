@@ -31,6 +31,7 @@ BEGIN
 	SET NOCOUNT ON;
 
 	DECLARE @FUNCTIONID					SMALLINT = 1;
+	DECLARE @SPORT_ESPORT				SMALLINT = 43;
 
 	DECLARE @CATEGORY_NEWMEMBER			INT = 201
 		,	@CATEGORY_NORMALMEMBER		INT = 202
@@ -110,7 +111,11 @@ BEGIN
 	SELECT	a.CustId
 		,	a.SportId
 		,	c.CurrentCategoryId
-		,	CASE WHEN cu.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') THEN 1 ELSE 0 END
+		,	CASE
+				WHEN a.SportId = @SPORT_ESPORT AND cu.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada', 'WINHX1') THEN 1
+				WHEN a.SportId <> @SPORT_ESPORT AND cu.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') THEN 1
+				ELSE 0
+			END		
 		,	cu.srecommend
 		,	a.TurnoverRM
 		,	a.WinlossRM

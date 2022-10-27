@@ -216,7 +216,11 @@ BEGIN
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
 	SET	  a.Site = c.Site
 		, a.SRecommend = c.srecommend
-		, a.IsSpecialSite = CASE WHEN c.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') THEN 1 ELSE 0 END
+		, a.IsSpecialSite = CASE
+								WHEN a.SportId = @SPORT_ESPORT AND c.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada', 'WINHX1') THEN 1
+								WHEN a.SportId <> @SPORT_ESPORT AND c.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') THEN 1
+								ELSE 0
+							END		
 	FROM #tmpCustomerAccummulatedInfo AS a
 		LEFT JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON a.CustId = c.custid;
 
