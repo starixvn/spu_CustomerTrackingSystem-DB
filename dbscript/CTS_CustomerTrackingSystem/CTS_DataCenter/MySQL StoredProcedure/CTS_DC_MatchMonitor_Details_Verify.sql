@@ -22,7 +22,7 @@ BEGIN
 		- 	20211213@Casey.Huynh: Created [Redmine ID: 165606]
         -	20220110@Casey.Huynh: Enhance MM, Add BetID [RedmineID: 166986]
         -	20221027@Casey.Huynh: Update Verify By Reason and Betteam [RedmineID: 179427]
-	
+		
 	Param's Explanation (filtered by):	
 
 	Example: 

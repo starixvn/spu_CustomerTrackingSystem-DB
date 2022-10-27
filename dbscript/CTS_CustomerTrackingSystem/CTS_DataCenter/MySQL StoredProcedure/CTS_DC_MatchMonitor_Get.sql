@@ -102,8 +102,9 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_VerfiedTrans;
     CREATE TEMPORARY TABLE Temp_VerfiedTrans(
-			TransID	BIGINT UNSIGNED PRIMARY KEY
+			TransID	BIGINT UNSIGNED
         ,	Reason	TINYINT
+        ,	PRIMARY KEY PK_Temp_VerfiedTrans(TransID,Reason)
 	);
     
     INSERT IGNORE INTO Temp_Bettype(BettypeID, BetID)
