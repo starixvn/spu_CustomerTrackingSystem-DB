@@ -53,9 +53,10 @@ BEGIN
         ,	TotalScore SMALLINT
         ,	BettypeID INT
         ,	BetID BIGINT
+        ,	Betteam VARCHAR(10)
         ,   GroupID INT
         
-        ,	PRIMARY KEY (MatchID,TotalScore,BettypeID, BetID, GroupID)
+        ,	PRIMARY KEY (MatchID,TotalScore,BettypeID, BetID, Betteam, GroupID)
     );
 
     #======Clean Staging=================================================
@@ -71,14 +72,14 @@ BEGIN
 			INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType
 		WHERE   mms.TransDate > TIMESTAMPADD(SECOND, -tmpRs.TimeStep, lv_Last3mMaxTime);  
 		
-		INSERT INTO Temp_Last3mTransGroup(MatchID, TotalScore, BettypeID, BetID, GroupID)
-		SELECT 	DISTINCT mms.MatchID,  mms.TotalScore, mms.BettypeID, mms.BetID, mms.GroupID
+		INSERT INTO Temp_Last3mTransGroup(MatchID, TotalScore, BettypeID, BetID, Betteam, GroupID)
+		SELECT 	DISTINCT mms.MatchID,  mms.TotalScore, mms.BettypeID, mms.BetID, mms.Betteam, mms.GroupID
 		FROM 	CTS_DataCenter.MatchMonitorStagingLive03 mms
 		WHERE	mms.TransDate >= lv_Last3mMinTime;
 		
 		DELETE mms
 		FROM CTS_DataCenter.MatchMonitorStagingLive03 AS mms            
-			LEFT JOIN Temp_Last3mTransGroup AS tmpTg ON mms.MatchID = tmpTg.MatchID AND mms.TotalScore = tmpTg.TotalScore AND mms.BettypeID = tmpTg.BettypeID AND mms.BetID = tmpTg.BetID  AND mms.GroupID = tmpTg.GroupID
+			LEFT JOIN Temp_Last3mTransGroup AS tmpTg ON mms.MatchID = tmpTg.MatchID AND mms.TotalScore = tmpTg.TotalScore AND mms.BettypeID = tmpTg.BettypeID AND mms.BetID = tmpTg.BetID AND mms.Betteam = tmpTg.Betteam AND mms.GroupID = tmpTg.GroupID
 		WHERE	mms.TransDate < lv_Last3mMinTime  AND tmpTg.GroupID IS NULL;
 		
 		IF lv_LastTransID > 0 THEN	
@@ -100,14 +101,14 @@ BEGIN
 			INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType
 		WHERE   mms.TransDate > TIMESTAMPADD(SECOND, -tmpRs.TimeStep, lv_Last3mMaxTime);  
 		
-		INSERT INTO Temp_Last3mTransGroup(MatchID, TotalScore, BettypeID, BetID, GroupID)
-		SELECT 	DISTINCT mms.MatchID,  mms.TotalScore, mms.BettypeID, mms.BetID, mms.GroupID
+		INSERT INTO Temp_Last3mTransGroup(MatchID, TotalScore, BettypeID, BetID, Betteam, GroupID)
+		SELECT 	DISTINCT mms.MatchID,  mms.TotalScore, mms.BettypeID, mms.BetID, mms.Betteam, mms.GroupID
 		FROM 	CTS_DataCenter.MatchMonitorStagingNonLive03 mms
 		WHERE	mms.TransDate >= lv_Last3mMinTime;
 		
 		DELETE mms
 		FROM CTS_DataCenter.MatchMonitorStagingNonLive03 AS mms            
-			LEFT JOIN Temp_Last3mTransGroup AS tmpTg ON mms.MatchID = tmpTg.MatchID AND mms.TotalScore = tmpTg.TotalScore AND mms.BettypeID = tmpTg.BettypeID AND mms.BetID = tmpTg.BetID  AND mms.GroupID = tmpTg.GroupID
+			LEFT JOIN Temp_Last3mTransGroup AS tmpTg ON mms.MatchID = tmpTg.MatchID AND mms.TotalScore = tmpTg.TotalScore AND mms.BettypeID = tmpTg.BettypeID AND mms.BetID = tmpTg.BetID AND mms.Betteam = tmpTg.Betteam  AND mms.GroupID = tmpTg.GroupID
 		WHERE	mms.TransDate < lv_Last3mMinTime  AND tmpTg.GroupID IS NULL;
             
 		IF lv_LastTransID > 0 THEN	
