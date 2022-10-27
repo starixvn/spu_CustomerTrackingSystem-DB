@@ -809,7 +809,7 @@ class DBTaskHelper:
             errorConnection = None
             errorCoordinator = None
             errorWorker = None
-            query = '''SELECT IFNULL((SELECT TIMESTAMPDIFF(MINUTE,LAST_PROCESSED_TRANSACTION_ORIGINAL_COMMIT_TIMESTAMP, LAST_PROCESSED_TRANSACTION_END_BUFFER_TIMESTAMP) FROM performance_schema.replication_applier_status_by_coordinator LIMIT 1),0) AS DelayMinute;'''
+            query = '''SELECT IFNULL((SELECT TIMESTAMPDIFF(MINUTE,LAST_PROCESSED_TRANSACTION_ORIGINAL_COMMIT_TIMESTAMP, LAST_PROCESSED_TRANSACTION_IMMEDIATE_COMMIT_TIMESTAMP) FROM performance_schema.replication_applier_status_by_coordinator LIMIT 1),0) AS DelayMinute;'''
             queryResult = self.db.Execute(mysqlOpt,query)
             delayMinute = queryResult[0]['DelayMinute']
 
@@ -1314,16 +1314,18 @@ class DBTaskHelper:
                 resultPath = '''{desBKPath}/{desFolderName}'''.format(desBKPath=desBKPath,desFolderName=desFolderName);
 
                 cmdDeleteFolderBK = '''rm -r {sourceBKPath}'''.format(sourceBKPath=sourceBKPath)
-                self.ssh.Exec_Command(sourceSSHOpt,cmdDeleteFolderBK)
-
+                #self.ssh.Exec_Command(sourceSSHOpt,cmdDeleteFolderBK)
+                print(cmdDeleteFolderBK)
                 if os.path.exists(localRenamePath):
-                    shutil.rmtree(localRenamePath)
+                    #shutil.rmtree(localRenamePath)
+                    print(localRenamePath)
 
             self.UpdateBackupStatus(bkID,bkType,LSN,desBKPath,currTime, currDate)
 
             if bkType == 'Incremental_Full' and lastFolder != None and len(lastFolder) > 0:
                 cmdDeleteFolderBK = '''rm -r {lastFolder}'''.format(lastFolder=lastFolder)
-                self.ssh.Exec_Command(desSSHOpt,cmdDeleteFolderBK)
+                #self.ssh.Exec_Command(desSSHOpt,cmdDeleteFolderBK)
+                print(cmdDeleteFolderBK)
 
             return resultPath;
         except Exception as ex:
@@ -1409,7 +1411,37 @@ class DBTaskHelper:
         except Exception as ex:
             raise Exception(("Recover",ex))
         
+    def MMTJob(self):
+        configs = self.GetMMTJobConfig()
+        for config in configs[0]:
+            self.InsertMMTMetric(config)   
 
+    def GetMMTJobConfig(self):
+        try:
+            listConfig = self.db.Call_SP(self.connArchiveOpt,'DBA_MMT_Config_Get',())
+            return listConfig;  
+        except Exception as ex:
+            raise Exception(("GetMMTJobConfig",ex))
+
+    def InsertMMTMetric(self,configOjb):
+        try:
+            mysqlOpt = {
+                "host": configOjb['ServerIP'],
+                "user": configOjb['MysqlUser'], 
+                "password": configOjb['MysqlPassword'],
+                "db":  configOjb['DBName'],
+                "port": configOjb['ServerPort']
+            }
+            serverID = int(configOjb['ServerID'])
+            jobID = int(configOjb['JobID'])
+            query = configOjb['Query']
+        
+            metrics = self.db.Execute(mysqlOpt,query)
+
+            self.db.Call_SP(self.connArchiveOpt,'DBA_Monitor_MMTMetric_Insert',(metrics[0]['Metric'],serverID,jobID))
+
+        except Exception as ex:
+            self.WriteLog(("InsertMMTMetric",ex))		
     def close(self):
         self.db.close()
         self.ssh.close()
