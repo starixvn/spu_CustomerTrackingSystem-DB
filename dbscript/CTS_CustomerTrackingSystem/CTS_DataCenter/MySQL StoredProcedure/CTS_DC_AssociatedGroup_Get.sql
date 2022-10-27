@@ -27,6 +27,11 @@ BEGIN
         ,	grp.AllCredit
         ,	grp.AllLicensee
 		,	grp.Sites
+        ,	grp.Danger1 AS 'Ori'
+        ,	cate.CategoryName
+        ,	grp.PAAllCredit
+        ,	grp.PAAllLicensee
+		,	grp.PASites
         ,	grp.HasDevice
         ,	grp.HasManual
         ,	grp.HasIP
@@ -42,6 +47,7 @@ BEGIN
     FROM CTS_DataCenter.AssociatedGroup AS grp
 		LEFT JOIN CTS_Admin.CTSUser AS us ON grp.CreatedBy = us.UserID
         LEFT JOIN CTS_Admin.CTSUser AS us1 ON grp.ModifiedBy = us1.UserID
+        LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON grp.PACategoryID = cate.CategoryID
 	WHERE grp.IsDisable = 0;
 END$$
 DELIMITER ;
