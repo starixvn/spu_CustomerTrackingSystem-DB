@@ -86,6 +86,12 @@ BEGIN
     
     SELECT 	tmp.CTSCustID
 		,	CASE WHEN site.SiteID IS NULL THEN 0 ELSE 1 END AS 'IsSyncPA'
+        ,	tmp.CustID
+        ,	tmp.RoleID
+        ,	tmp.SubscriberID
+        ,	tmp.IsLicensee
+        ,	lv_PACategoryID AS 'CategoryID'
+        ,	lv_PACategoryID AS 'CategoryGroup'
     FROM Temp_Cust AS tmp 
 		LEFT JOIN Temp_PASite AS site ON tmp.SiteID = site.SiteID;
 END$$
