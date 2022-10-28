@@ -75,7 +75,7 @@ BEGIN
 		INSERT INTO Temp_Last3mTransGroup(MatchID, TotalScore, BettypeID, BetID, Betteam, GroupID)
 		SELECT 	DISTINCT mms.MatchID,  mms.TotalScore, mms.BettypeID, mms.BetID, mms.Betteam, mms.GroupID
 		FROM 	CTS_DataCenter.MatchMonitorStagingLive03 mms
-		WHERE	mms.TransDate >= lv_Last3mMinTime;
+		WHERE	mms.TransDate >= lv_Last3mMinTime AND mms.GroupID > 0; 
 		
 		DELETE mms
 		FROM CTS_DataCenter.MatchMonitorStagingLive03 AS mms            
@@ -104,7 +104,7 @@ BEGIN
 		INSERT INTO Temp_Last3mTransGroup(MatchID, TotalScore, BettypeID, BetID, Betteam, GroupID)
 		SELECT 	DISTINCT mms.MatchID,  mms.TotalScore, mms.BettypeID, mms.BetID, mms.Betteam, mms.GroupID
 		FROM 	CTS_DataCenter.MatchMonitorStagingNonLive03 mms
-		WHERE	mms.TransDate >= lv_Last3mMinTime;
+		WHERE	mms.TransDate >= lv_Last3mMinTime AND mms.GroupID > 0;
 		
 		DELETE mms
 		FROM CTS_DataCenter.MatchMonitorStagingNonLive03 AS mms            
