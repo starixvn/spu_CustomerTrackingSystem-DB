@@ -87,7 +87,7 @@ sp: BEGIN
     
 		SELECT mms.SportType 
         INTO lv_RuleSportType 
-        FROM CTS_DataCenter.MatchMonitorStagingLive AS mms 
+        FROM CTS_DataCenter.MatchMonitorStagingLive03 AS mms 
         WHERE mms.MatchID = ip_MatchID 
         LIMIT 1;
         
@@ -137,7 +137,7 @@ sp: BEGIN
         
 		SELECT mms.SportType 
         INTO lv_RuleSportType 
-        FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms 
+        FROM CTS_DataCenter.MatchMonitorStagingNonLive03 AS mms 
         WHERE mms.MatchID = ip_MatchID 
         LIMIT 1;
         
@@ -163,7 +163,7 @@ sp: BEGIN
             ,	mms.Stake
             ,	mms.Betteam
             ,	(CASE WHEN mms.SequenceID > lv_LastSequenceID THEN 0 ELSE 1 END) AS Processed
-		FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms
+		FROM CTS_DataCenter.MatchMonitorStagingNonLive03 AS mms
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = mms.CustID AND cus.CustSubID = 0
             LEFT JOIN CTS_DataCenter.CTSCustomer AS agent ON agent.CustID = cus.Recommend 
 															AND agent.CustSubID = 0 
