@@ -37,7 +37,7 @@ BEGIN
 	VALUES("CTS_DC_AssociatedGroup_SetPA",ip_ModifiedBy, lv_AuditInfo);
 	
     UPDATE CTS_DataCenter.AssociatedGroup
-    SET  	PACategoryID =  ip_PACategoryID
+    SET  	PACategoryID = CASE WHEN ip_PACategoryID = -1 THEN NULL ELSE ip_PACategoryID END
 		,	PAAllCredit = ip_PAAllCredit
         ,	PAAllLicensee = ip_PAAllLicensee
 		,	PASites = ip_PASites
