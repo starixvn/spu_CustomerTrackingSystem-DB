@@ -30,7 +30,7 @@ BEGIN
             - 	20220216@Casey.Huynh: Fix Issue, show IsVerified = 0 when all tickets were verified [Redmine ID: 166986]
             - 	20220325@Long.Luu: Add Reason filter [Redmine ID: 170466]
             -	20220805@Jonas.Huynh: Add Reason Fixed Game [Redmine ID: 175700]
-            -	20221027@Casey.Huynh: Update Verify By Reason and Betteam [RedmineID: 179427]
+            -	20221027@Casey.Huynh: Update Verify By Reason and Betteam [RedmineID: 179439]
             
 		Param's Explanation (filtered by):
 			- ip_Market: 0 return LiveIndicator = 0, 1 return LiveIndicator = 1, NULL: Both Live And Non-Live

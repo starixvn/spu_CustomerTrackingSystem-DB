@@ -20,6 +20,7 @@ BEGIN
             -	20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
             -	202200929@Casey.Huynh: Seperate By Sport [Redmine ID: #178310]
             -	20221021@Casey.Huynh: Fixed Clean Data Staging [Redmine ID: #179427]
+            -	20221027@Casey.Huynh: Seperate pool Staging [RedmineID: 179439]
 		Param's Explanation (filtered by):
 			CALL CTS_DC_MatchMonitor_Staging_Clean(1,2);
 		Example:

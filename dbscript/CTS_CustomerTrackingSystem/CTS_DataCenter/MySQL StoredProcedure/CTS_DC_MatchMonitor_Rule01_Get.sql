@@ -20,6 +20,7 @@ sp: BEGIN
             -	20220217@Casey.Huynh: Enhance MM, Update TO >= 1000 [Redmine ID: 168736]
             -	20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
             -	202200929@Casey.Huynh: Seperate By Sport [Redmine ID: #178310]
+            - 	202201021@Casey.Huynh: Group By Betteam [Redmine ID: #179439]
 		Param's Explanation (filtered by):	
 
 		Example:

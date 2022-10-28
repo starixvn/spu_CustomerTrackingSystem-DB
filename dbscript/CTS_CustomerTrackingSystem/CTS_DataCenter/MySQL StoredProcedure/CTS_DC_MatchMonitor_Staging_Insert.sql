@@ -24,6 +24,7 @@ BEGIN
             - 	20220830@Casey.Huynh: New Category for Classify Group Betting [Redmine ID: #176976]
 			-	20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
             -	20221021@Casey.Huynh: Fixed Clean Data Staging [Redmine ID: #179427]
+            - 	202201021@Casey.Huynh: Seperate pool Staging [Redmine ID: #179439]
             
 		Param's Explanation (filtered by):		
 

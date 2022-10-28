@@ -27,6 +27,7 @@ BEGIN
             -	20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
             - 	20220830@Casey.Huynh: New Category for Classify Group Betting [Redmine ID: #176976]
             -	202200929@Casey.Huynh: Seperate By Sport [Redmine ID: #178310]
+            - 	202201021@Casey.Huynh: Group By Betteam [Redmine ID: #179439]
 		Param's Explanation (filtered by):			
 
 		Example:

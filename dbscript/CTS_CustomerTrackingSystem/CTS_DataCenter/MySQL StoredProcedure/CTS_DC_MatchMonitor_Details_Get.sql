@@ -24,7 +24,7 @@ BEGIN
 			- 	20210526@Long.Luu: Created [Redmine ID: 152883]
 			-	20211213@Casey.Huynh: Enhance MM, Return more data 'Verified Trans List', Remove input Parameter ip_EventDate [Redmine ID: 165606]
             -	20220110@Casey.Huynh: Enhance MM, BetID, Reason [Redmine ID: 166986]
-            -	20221027@Casey.Huynh: Update Verify By Reason and Betteam [RedmineID: 179427]
+            -	20221027@Casey.Huynh: Update Verify By Reason and Betteam [RedmineID: 179439]
 		Param's Explanation (filtered by):
 		
 		Example:
@@ -71,7 +71,6 @@ BEGIN
 		AND d.Reason = ip_Reason;
 	
 	SELECT	js.TransID
-			, mdv.Reason
 			, mdv.VerifiedDate
             , (SELECT UserName FROM CTS_Admin.CTSUser WHERE UserID = VerifiedBy) AS VerifiedBy
 	FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans AS mdv
