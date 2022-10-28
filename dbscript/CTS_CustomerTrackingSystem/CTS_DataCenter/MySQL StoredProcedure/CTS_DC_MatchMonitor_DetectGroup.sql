@@ -97,7 +97,8 @@ BEGIN
 		,	OldGroupID
         ,	1 AS IsOld
      FROM Temp_StagingTrans 
-     WHERE OldGroupID IS NOT NULL;
+     WHERE OldGroupID IS NOT NULL
+        AND OldGroupID != 0;
      
      SELECT MAX(GroupID)
      INTO lv_GroupID
