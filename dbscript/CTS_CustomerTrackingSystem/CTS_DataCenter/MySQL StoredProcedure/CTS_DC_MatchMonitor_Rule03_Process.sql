@@ -53,7 +53,7 @@ sp: BEGIN
         ,	OldGroupID		INT 
         ,	Stake			DECIMAL(20,4)
         ,	Betteam			VARCHAR(10)
-        ,	GroupID			INT
+        ,	GroupID			INT DEFAULT 0
         , 	Processed		TINYINT
         
         ,	INDEX IX_Temp_StagingTrans_CTSCustID(CTSCustID) 
@@ -188,7 +188,7 @@ sp: BEGIN
     #========Detect group by assocation and transdate====================
     CALL CTS_DC_MatchMonitor_DetectGroup(lv_TimeStep);
 	#===============================================================================
-
+	
     INSERT INTO Temp_ResultGroup(GroupID, TransIDList, CustIDList, OldGroupIDList)
     SELECT  tmpSt.GroupID
         ,	GROUP_CONCAT(tmpSt.TransID) AS TransIDList
