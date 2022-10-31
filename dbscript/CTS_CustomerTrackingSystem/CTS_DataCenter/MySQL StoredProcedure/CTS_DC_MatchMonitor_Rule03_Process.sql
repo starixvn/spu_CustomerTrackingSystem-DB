@@ -193,7 +193,7 @@ sp: BEGIN
     SELECT  tmpSt.GroupID
         ,	GROUP_CONCAT(tmpSt.TransID) AS TransIDList
         ,	GROUP_CONCAT(DISTINCT tmpSt.CustID) AS CustIDList
-        ,	GROUP_CONCAT(DISTINCT tmpSt.OldGroupID) AS OldGroupIDList
+        ,	GROUP_CONCAT(DISTINCT CASE WHEN tmpSt.OldGroupID > 0 THEN tmpSt.OldGroupID ELSE 0 END) AS OldGroupIDList
     FROM 	Temp_StagingTrans  AS tmpSt
 	GROUP BY tmpSt.GroupID
     HAVING SUM(tmpSt.Stake) >= lv_RuleTotalStake 
@@ -251,13 +251,13 @@ sp: BEGIN
 		UPDATE CTS_DataCenter.MatchMonitorStagingLive03 AS mms
 			INNER JOIN CTS_DataCenter.Temp_StagingTrans AS tmpSt ON mms.SequenceID = tmpSt.SequenceID
 			LEFT JOIN Temp_ResultGroup AS tmpRg ON tmpSt.GroupID = tmpRg.GroupID
-		SET mms.GroupID = tmpSt.GroupID
+		SET mms.GroupID = -tmpSt.GroupID
 		WHERE tmpRg.GroupID IS NULL;
 	ELSE
 		UPDATE CTS_DataCenter.MatchMonitorStagingNonLive03 AS mms
 			INNER JOIN CTS_DataCenter.Temp_StagingTrans AS tmpSt ON mms.SequenceID = tmpSt.SequenceID
 			LEFT JOIN Temp_ResultGroup AS tmpRg ON tmpSt.GroupID = tmpRg.GroupID
-		SET mms.GroupID = tmpSt.GroupID
+		SET mms.GroupID = -tmpSt.GroupID
 		WHERE tmpRg.GroupID IS NULL;
 	END IF;
     
