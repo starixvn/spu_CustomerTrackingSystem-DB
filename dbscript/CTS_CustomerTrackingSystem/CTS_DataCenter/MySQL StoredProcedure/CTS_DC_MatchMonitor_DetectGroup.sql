@@ -104,7 +104,7 @@ BEGIN
      INTO lv_GroupID
      FROM Temp_GroupResult;
      
-     IF lv_GroupID IS NULL THEN
+     IF lv_GroupID IS NULL OR lv_GroupID <= 0  THEN
 		SET lv_GroupID = 1;
 	ELSE
 		SET lv_GroupID = lv_GroupID + 1;
