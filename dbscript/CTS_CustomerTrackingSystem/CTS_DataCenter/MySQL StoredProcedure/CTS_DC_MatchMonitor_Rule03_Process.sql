@@ -197,7 +197,7 @@ sp: BEGIN
     FROM 	Temp_StagingTrans  AS tmpSt
 	GROUP BY tmpSt.GroupID
     HAVING SUM(tmpSt.Stake) >= lv_RuleTotalStake 
-		AND COUNT(DISTINCT tmpSt.CustID) > 1 AND tmpSt.GroupID IS NOT NULL;
+		AND COUNT(DISTINCT tmpSt.CustID) > 1 AND tmpSt.GroupID > 0;
         
     #=======CHECK Hedging GROUP: IF GroupCusts Is Hedging====================================		
 	INSERT IGNORE INTO Temp_GroupHedging(GroupID)
