@@ -72,7 +72,7 @@ sp: BEGIN
 				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType
             WHERE mms.SequenceID <= lv_MaxSequenceID
 			GROUP BY mms.MatchID, mms.TotalScore, mms.BettypeID, mms.BetID
-			HAVING COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= MIN(tmpRs.TotalStake);      
+			HAVING COUNT(DISTINCT mms.CustID) > 1;      
             
 		END IF;
 	ELSE
@@ -96,7 +96,7 @@ sp: BEGIN
 				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType
             WHERE mms.SequenceID <= lv_MaxSequenceID
 			GROUP BY mms.MatchID, mms.TotalScore, mms.BettypeID, mms.BetID
-			HAVING COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= MIN(tmpRs.TotalStake);            
+			HAVING COUNT(DISTINCT mms.CustID) > 1 ;            
 		END IF;        
 	END IF;
  
