@@ -5,6 +5,7 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedGroup_Scan`(
 		OUT	op_GroupID			BIGINT
 	,	OUT	op_ABI				INT
+    ,	OUT	op_Ori				INT
     ,	OUT	op_PACategoryID		SMALLINT
     ,	OUT op_LastCTSCustID	BIGINT
 )
@@ -19,6 +20,7 @@ sp : BEGIN
 		Revisions:
 			- 20220705@Aries.Nguyen: Created [Redmine ID: #167748]
             - 20220831@Aries.Nguyen: Associated Group Enhancement [Redmine ID: #176991]
+            - 20221028@Harvey.Nguyen: Check PA site [Redmine ID: #179398]
         
 		Param's Explanation (filtered by):
 
@@ -132,6 +134,7 @@ sp : BEGIN
     END IF;
     
     SELECT 	ABI  
+		,	Danger1
 		,	PACategoryID
 		,	AllCredit
         ,	AllLicensee
@@ -142,6 +145,7 @@ sp : BEGIN
         ,	HasIP
         ,	HasAI
     INTO 	op_ABI
+		,	op_Ori
 		,	op_PACategoryID
 		,	lv_AllCredit
         ,	lv_AllLicensee
