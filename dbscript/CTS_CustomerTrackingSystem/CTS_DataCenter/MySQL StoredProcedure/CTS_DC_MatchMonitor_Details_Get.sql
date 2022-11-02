@@ -81,7 +81,7 @@ BEGIN
 		AND mdv.LiveIndicator = ip_LiveIndicator
         AND	mdv.BettypeID = ip_BettypeID
         AND	mdv.BetID = ip_BetID
-        AND mdv.Reason = ip_Reason;
+        AND ((mdv.Reason = ip_Reason) OR mdv.Reason IS NULL);
         
 END$$
 DELIMITER ;

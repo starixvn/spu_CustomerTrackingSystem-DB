@@ -104,7 +104,7 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_VerfiedTrans(
 			TransID	BIGINT UNSIGNED
         ,	Reason	TINYINT
-        ,	PRIMARY KEY PK_Temp_VerfiedTrans(TransID,Reason)
+        ,	INDEX IX_Temp_VerfiedTrans(TransID,Reason)
 	);
     
     INSERT IGNORE INTO Temp_Bettype(BettypeID, BetID)
@@ -174,11 +174,12 @@ BEGIN
     INSERT IGNORE INTO Temp_VerfiedTrans(TransID, Reason)
     SELECT js.TransID, mdv.Reason
     FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans AS mdv
-    INNER JOIN Temp_MatchMonitor AS tmpMm ON mdv.MatchID = tmpMm.MatchID AND mdv.LiveIndicator = tmpMm.LiveIndicator AND mdv.BettypeID = tmpMm.BettypeID AND mdv.BetID = tmpMm.BetID AND mdv.Reason = tmpMm.Reason
+    INNER JOIN Temp_MatchMonitor AS tmpMm ON mdv.MatchID = tmpMm.MatchID AND mdv.LiveIndicator = tmpMm.LiveIndicator AND mdv.BettypeID = tmpMm.BettypeID AND mdv.BetID = tmpMm.BetID 
+		AND ((mdv.Reason = tmpMm.Reason) OR mdv.Reason IS NULL)
 		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mdv.ListTransID), ',', '","'), 
 						'$[*]' COLUMNS (TransID BIGINT UNSIGNED PATH '$')
 						) js;
-	
+                        
     INSERT IGNORE INTO Temp_MatchGroup(MatchID, LiveIndicator, BettypeID, BetID, Reason)
     SELECT	tmpMm.MatchID
 			,	tmpMm.LiveIndicator
@@ -199,7 +200,7 @@ BEGIN
 		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mmd.ListTransID), ',', '","'), 
 						'$[*]' COLUMNS (TransID BIGINT UNSIGNED PATH '$')
 						) js
-	WHERE NOT EXISTS (SELECT 1 FROM Temp_VerfiedTrans AS tmpVt WHERE js.TransID = tmpVt.TransID AND mmd.Reason = tmpVt.Reason);    
+	WHERE NOT EXISTS (SELECT 1 FROM Temp_VerfiedTrans AS tmpVt WHERE js.TransID = tmpVt.TransID AND ((mmd.Reason = tmpVt.Reason) OR tmpVt.Reason IS NULL));    
 
     IF (ip_IsVerified IS NULL)
     THEN
