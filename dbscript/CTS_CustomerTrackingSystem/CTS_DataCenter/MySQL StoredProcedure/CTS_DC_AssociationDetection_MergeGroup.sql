@@ -20,6 +20,7 @@ sp:BEGIN
 			- 20220727@Aries.Nguyen: Created [Redmine ID: #175701]
             - 20220907@Aries.Nguyen: CTS - Association Detection - Display in correct CC [Redmine ID: #177559]
             - 20220930@Aries.Nguyen: Renovate Association Detection [RedmineID: #178311]
+            - 20221101@Aries.Nguyen: Return IsLicensee value [RedmineID: #178311]
 
 		Param's Explanation (filtered by):
 
@@ -48,6 +49,7 @@ sp:BEGIN
         ,	Danger5			TINYINT
         ,	RoleID			TINYINT
         ,	CreatedDate		DATETIME
+        ,   IsLicensee      BIT 
         ,	Processed 		BIT DEFAULT 0
         ,	INDEX			IX_Temp_Cust(CustID)
         ,	INDEX			IX_Temp_Cust_Processed(Processed)
@@ -148,7 +150,7 @@ sp:BEGIN
 
     
     /*****************************Extract Data From Input**************************************************/
-    INSERT IGNORE INTO Temp_Cust(CTSCustID, CustID,Username,CustStatus,Recommend,Danger1,Danger2,Danger3,Danger4,Danger5,RoleID,CreatedDate,Processed)
+    INSERT IGNORE INTO Temp_Cust(CTSCustID, CustID,Username,CustStatus,Recommend,Danger1,Danger2,Danger3,Danger4,Danger5,RoleID,CreatedDate,Processed,IsLicensee)
 	SELECT 	tmp.CTSCustID
 		, 	cus.CustID
         ,	cus.Username
@@ -163,6 +165,7 @@ sp:BEGIN
         ,	cus.CreatedDate
         ,	CASE WHEN cus.CTSCustID IS NULL OR cus.IsInternal = 1 THEN 1
 			ELSE 0 END AS Processed
+        ,   cus.IsLicensee
 	FROM JSON_TABLE(CONCAT('[',ip_CTSCustIDs,']'),'$[*]' COLUMNS(NESTED PATH '$' COLUMNS (CTSCustID BIGINT UNSIGNED PATH '$'))) AS tmp
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = tmp.CTSCustID  
         LEFT JOIN CTS_DataCenter.StaticList AS sta ON sta.ListID = 1 AND sta.ItemID = cus.CustStatusID;
@@ -186,7 +189,8 @@ sp:BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.Recommend 
 														AND cus.IsInternal = 0
                                                         AND cus.CustSubID = 0
-    WHERE tmp.RoleID = 1;
+    WHERE tmp.RoleID = 1
+        AND tmp.IsLicensee = 0;
 
     INSERT IGNORE INTO Temp_Primary(FromCTSCustID, ToCTSCustID,AssociationType)
 	SELECT	js.FromCTSCustID
@@ -471,6 +475,7 @@ sp:BEGIN
         ,	cus.Danger3
         ,	cus.Danger4
         ,	cus.Danger5
+        ,	cus.IsLicensee
         ,	cus.CreatedDate
         
         ,	re.CTSCustID AS AgentCTSCustID
@@ -509,6 +514,7 @@ sp:BEGIN
         ,	cus.Danger3
         ,	cus.Danger4
         ,	cus.Danger5
+        ,	cus.IsLicensee
         ,	cus.CreatedDate
         ,	re.CTSCustID
         ,	re.Username
