@@ -17,6 +17,7 @@ AS
 	Revisions:
 		- 20220726@Long.Luu: Created [Redmine ID: #175701]
 		- 20220929@Long.Luu: Adjust the asssociation rule [Redmine ID: #178331]
+		- 20221101@Long.Luu: Update the threshold [Redmine ID: #178333]
 
 	Params Explaination:
 		- @QueryType: 1 detect associations, 2 get fraud tickets, 3 get association custlist of a group, 4 get fraud tickets of a custgroup
@@ -29,7 +30,7 @@ BEGIN
 
 	DECLARE @CONST_MAXTIMEINTERVAL	SMALLINT = 180; -- 180 Seconds = 3 minutes
 	DECLARE @CONST_MATCHSHARED		SMALLINT = 3;
-	DECLARE @CONST_STAKETHRESHOLD	SMALLINT = 1000;
+	DECLARE @CONST_STAKETHRESHOLD	SMALLINT = 500;
 
 	DECLARE @DataFromDate			SMALLDATETIME
 		,	@Today					DATE = GETDATE()
