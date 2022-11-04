@@ -5,7 +5,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 ALTER PROCEDURE [dbo].[CTS_Rpt_RobotDetection_TicketDetails]
-		@ListTransId			VARCHAR(MAX) = ''
+		@ListTransId		VARCHAR(MAX) = ''
+	,	@MatchBatchSize		INT = 50
 
 AS
 /*
@@ -15,6 +16,7 @@ AS
 
 	Revisions:
 		- 20211111@Long.Luu: Created [Redmine ID: #162341]
+		- 20221103@Long.Luu: Get full betlist for SCE Robot [Redmine ID: #179498]
 
 	Params Explaination:
 
@@ -79,7 +81,7 @@ BEGIN
 	IF @ListTransId <> ''
 	BEGIN
 		INSERT INTO #tmpTransIds (TransId)
-		SELECT ssk.val FROM dbo.f_SplitString(@ListTransId, ',') ssk
+		SELECT value FROM STRING_SPLIT(@ListTransId, ',')
 		OPTION (MAXRECURSION 0);
 	END;
 
@@ -177,7 +179,7 @@ BEGIN
 	FROM #tmpTickets WITH(NOLOCK);
 
 	DELETE FROM #tmpMatch
-	WHERE RankNo > 50;
+	WHERE RankNo > @MatchBatchSize;
 
 	-- Return data
 	SELECT DISTINCT t.TransId
