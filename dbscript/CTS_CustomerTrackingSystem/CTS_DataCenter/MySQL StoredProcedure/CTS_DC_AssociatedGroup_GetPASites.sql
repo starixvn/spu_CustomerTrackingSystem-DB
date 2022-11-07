@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_AssociatedGroup_GetPASites`;
+DROP PROCEDURE IF EXISTS `CTS_DC_AssociatedGroup_GetPASites_xtest`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedGroup_GetPASites`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedGroup_GetPASites_xtest`(
 		IN ip_GroupID 			BIGINT UNSIGNED
 )
     SQL SECURITY INVOKER
@@ -51,7 +51,7 @@ BEGIN
 	FROM  CTS_DataCenter.AssociatedGroup
     WHERE GroupID = ip_GroupID
 	LIMIT 1;
-    
+   
     IF lv_Sites IS NOT NULL AND lv_Sites != "" THEN
 		SET @sql= CONCAT("INSERT IGNORE INTO Temp_GroupSite (SiteID) VALUES ('", REPLACE(lv_Sites, ',', "'),('"),"');");
 		PREPARE 	stmt1 FROM @sql;
@@ -59,6 +59,11 @@ BEGIN
 	END IF;
     
     CALL CTS_DC_Common_GetSites(1);
+    
+    DELETE si
+	FROM Temp_SiteInfo AS si
+	LEFT JOIN Temp_GroupSite AS gs ON si.SiteID = gs.SiteID
+	WHERE gs.SiteID IS NULL;
         
 	UPDATE Temp_SiteInfo AS site
     SET IsChosen = 1
