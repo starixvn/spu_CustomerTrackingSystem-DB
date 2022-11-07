@@ -30,7 +30,7 @@ AS
 	Param's Explanation:
 
 	Example:
-		EXEC [dbo].[CTS_NormalAccountsClassification_Probation] @CustomersXML='<root> <ProbationModel CustId="123" SportGroupId="200" IsProbationLastDay="2" /> </root>';
+		EXEC [dbo].[CTS_NormalAccountsClassification_Probation] @CustomersXML='<ProbationModel CustId="123" SportGroupId="200" IsProbationLastDay="2" />';
 */
 BEGIN
 	
@@ -106,12 +106,12 @@ BEGIN
 		[IsProbationLastDay]	BIT DEFAULT 0,
 	);
 
-	IF OBJECT_ID('tempdb..#tmpActiveCustomer') IS NOT NULL
+	IF OBJECT_ID('tempdb..#tmpActiveMember') IS NOT NULL
 	BEGIN
-		DROP TABLE	#tmpActiveCustomer;
+		DROP TABLE	#tmpActiveMember;
 	END
 	
-	CREATE TABLE #tmpActiveCustomer(
+	CREATE TABLE #tmpActiveMember(
 		[CustId]		INT PRIMARY KEY,
 		[IsActive]		BIT DEFAULT 0
 	);
@@ -139,18 +139,18 @@ BEGIN
 			  FROM #tmpCustomers
 			  FOR XML PATH ('')), 1, 1, '');
 
-	INSERT INTO #tmpActiveCustomer(CustId, IsActive)
+	INSERT INTO #tmpActiveMember(CustId, IsActive)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @CustIdList, @ResultDataMode = 2, @FromDate = @From30Date, @ToDate = @ToDate;	
 
 	--#3: Remove disable account
 	DELETE r WITH(ROWLOCK)
-	FROM #tmpActiveCustomer AS r
+	FROM #tmpActiveMember AS r
 		INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON r.CustId = c.custid
 	WHERE c.[Enabled] = 0
 	
 	--#4: Get Customer's Accummulated data
 	SELECT @CustIdList = STUFF((SELECT DISTINCT ',' + CAST(CustId AS VARCHAR(10))
-			  FROM #tmpActiveCustomer WITH (NOLOCK)
+			  FROM #tmpActiveMember WITH (NOLOCK)
 			  WHERE IsActive = 1
 			  FOR XML PATH ('')), 1, 1, '');
 
@@ -179,7 +179,7 @@ BEGIN
 
 	INSERT INTO dbo.CustomerClassification_InputLog(CustId, CreatedDate, CreatedTime, FunctionId, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId, IsActive)
 	SELECT CustId, @CurrentDate, @CurrentDateTime, @FUNCTIONID, NULL, NULL, NULL, NULL, NULL, 0
-	FROM #tmpActiveCustomer 
+	FROM #tmpActiveMember 
 	WHERE IsActive = 0;
 
 	--#6 Get cust info
@@ -248,18 +248,18 @@ BEGIN
 		,  0
 		,  0
 		,  0
-	FROM #tmpActiveCustomer
+	FROM #tmpActiveMember
 	WHERE IsActive = 0;
 	
 	--#9: Return results
-	SELECT	c.CustId	AS 'CustId'
+	SELECT	DISTINCT c.CustId	AS 'CustId'
 		,	CASE WHEN (r.CategoryId IS NOT NULL) THEN 1 ELSE 0 END	AS 'IsPassed'
 	FROM #tmpCustomers as c WITH(NOLOCK)
-		 LEFT JOIN #tmpResultData AS r WITH(NOLOCK) ON r.CustId = r.CustId
+		 LEFT JOIN #tmpResultData AS r WITH(NOLOCK) ON r.CustId = c.CustId
 
 	DROP TABLE #tmpRawData;
 	DROP TABLE #tmpCustomerAccummulatedInfo;
 	DROP TABLE #tmpCustomers;
 	DROP TABLE #tmpResultData;
-	DROP TABLE #tmpActiveCustomer;
+	DROP TABLE #tmpActiveMember;
 END;
