@@ -4,6 +4,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_AssociatedGroup_Scan`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedGroup_Scan`(
 		OUT	op_GroupID			BIGINT
+	,	OUT	op_GroupName		VARCHAR(100)
 	,	OUT	op_ABI				INT
     ,	OUT	op_Ori				INT
     ,	OUT	op_PACategoryID		SMALLINT
@@ -133,7 +134,8 @@ sp : BEGIN
         LEAVE sp;
     END IF;
     
-    SELECT 	ABI  
+    SELECT 	GroupName
+		,	ABI  
 		,	Danger1
 		,	PACategoryID
 		,	AllCredit
@@ -144,7 +146,8 @@ sp : BEGIN
         ,	HasManual
         ,	HasIP
         ,	HasAI
-    INTO 	op_ABI
+    INTO 	op_GroupName
+		,	op_ABI
 		,	op_Ori
 		,	op_PACategoryID
 		,	lv_AllCredit
