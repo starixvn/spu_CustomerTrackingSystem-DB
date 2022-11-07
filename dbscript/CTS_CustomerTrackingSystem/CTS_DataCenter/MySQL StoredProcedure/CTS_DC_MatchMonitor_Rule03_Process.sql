@@ -23,6 +23,7 @@ sp: BEGIN
 			- 	20210526@Casey.Huynh: Created [Redmine ID: 152883]
             -	20221021@Casey.Huynh: Fixed Clean Data Staging [Redmine ID: #179427]
             - 	202201021@Casey.Huynh: Group By Betteam [Redmine ID: #179439]
+            -   20221107@Aries.Nguyen: Tuning performance of Hedging Detection  [Redmine ID: #180185]
             
 		Param's Explanation (filtered by):	
 		Example:
@@ -46,10 +47,10 @@ sp: BEGIN
 			SequenceID		BIGINT UNSIGNED NOT NULL
 		,	TransID			BIGINT UNSIGNED NOT NULL PRIMARY KEY
         ,	TransDate		DATETIME(3)  NOT NULL
-        ,	TransDateSecond	BIGINT UNSIGNED
+        ,	TransDateSecond	BIGINT 
         ,	CustID			BIGINT NOT NULL
-        ,	CTSCustID		BIGINT UNSIGNED
-        , 	AgentCTSCustID	BIGINT UNSIGNED
+        ,	CTSCustID		BIGINT 
+        , 	AgentCTSCustID	BIGINT 
         ,	OldGroupID		INT 
         ,	Stake			DECIMAL(20,4)
         ,	Betteam			VARCHAR(10)
