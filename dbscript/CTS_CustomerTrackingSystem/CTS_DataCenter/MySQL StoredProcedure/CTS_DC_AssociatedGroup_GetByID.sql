@@ -25,6 +25,7 @@ BEGIN
     SELECT 	grp.GroupID
 		,	grp.GroupName
         ,	grp.ABI
+        ,	grp.Danger1 AS 'Ori'
         ,	grp.AllCredit
         ,	grp.AllLicensee
 		,	grp.Sites
