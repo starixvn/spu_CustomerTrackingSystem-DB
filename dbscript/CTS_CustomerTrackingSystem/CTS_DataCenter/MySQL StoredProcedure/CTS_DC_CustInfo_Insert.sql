@@ -35,6 +35,7 @@ BEGIN
 			- 20220829@Aries.Nguyen: Remove hard-coding of internal account in CTS [Redmine ID: #177042]
             - 20220923@Aries.Nguyen: CTS - Missing Customer Info on CTS Pro [Redmine ID: #176768]
             - 20220930@Aries.Nguyen: Renovate Association Detection [RedmineID: #178311]
+            - 20221107@Casey.Huynh: Log DCSAccount Transform to CTS  [Redmine ID: #180182]
 
 		Param's Explanation (filtered by):
 		Example:
@@ -343,7 +344,16 @@ BEGIN
 		,	RoleID
     	,	CustSubID 
 	FROM Temp_Result;
-
-  
+	
+    INSERT INTO CTS_Log.CTSCustomer_Log(CTSCustID, SubscriberID, CustID, UserName, RegisterName, RoleID, CustSubID)
+    SELECT	CTSCustID
+		,	SubscriberID
+    	,	CustID
+		,	UserName
+    	,	RegisterName
+		,	RoleID
+    	,	CustSubID 
+	FROM Temp_Result;
+    
 END$$
 DELIMITER ;

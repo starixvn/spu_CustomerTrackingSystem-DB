@@ -15,7 +15,7 @@ BEGIN
 
 		Revisions:
 			- 20210705@Aries.Nguyen: Created
-			
+			- 20221107@Casey.Huynh: Log DCSAccount Transform to CTS  [Redmine ID: #180182]
 		Param's Explanation (filtered by):
 	*/ 
    
@@ -38,11 +38,16 @@ BEGIN
     
     UPDATE DCS_DataCenter.Account 	AS acc
         INNER JOIN	Temp_AccountTransformStatus AS tll ON acc.AccountID = tll.AccountID
-	SET	 acc.IsCTSTransformed = tll.IsCTSTransformed; 
+	SET	 acc.IsCTSTransformed = tll.IsCTSTransformed;    
+    
+    #LOG: Start
+		UPDATE CTS_Log.AccountTransformStatus_Log AS acc
+        INNER JOIN	Temp_AccountTransformStatus AS tll ON acc.AccountID = tll.AccountID
+		SET	 acc.UpdateIsCTSTransformed = tll.IsCTSTransformed;    
+    #LOG: END 
     
     DELETE FROM DCS_DataCenter.AccountTransformStatus AS acc
-    WHERE acc.ID IN (SELECT ID FROM Temp_AccountTransformStatus);
-    
-
+    WHERE acc.ID IN (SELECT ID FROM Temp_AccountTransformStatus);    
+	
 END$$
 DELIMITER ;

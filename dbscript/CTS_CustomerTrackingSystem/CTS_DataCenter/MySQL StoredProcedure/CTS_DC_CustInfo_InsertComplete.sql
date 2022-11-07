@@ -20,6 +20,7 @@ BEGIN
             - 20210506@Casey.Huynh: LastCustID is sent from MainDB. Add Input Parameter ip_LastCustID [Redmine ID: 154633]
 			- 20210622@Aries.Nguyen: Update coding convention and improve locking [Redmine ID: #157203]
 			- 20211220@Harvey.Nguyen: Add ip_IsInsertMissing for insert missing customer [Redmine ID: #166173]
+            - 20221107@Casey.Huynh: Log DCSAccount Transform to CTS  [Redmine ID: #180182]
 
 		Param's Explanation (filtered by):
         
@@ -28,6 +29,8 @@ BEGIN
 	*/
     DECLARE lv_LastInsertCustID INT;
     DECLARE lv_LastInsertCustSubID INT;   
+    
+	DECLARE lv_Log_MaxID BIGINT UNSIGNED;   
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomer;
     
@@ -63,13 +66,17 @@ BEGIN
     
     
    #=====ReTransform==============================
+    #LOG: Start
+		SELECT IFNULL(MAX(ID),0) INTO lv_Log_MaxID FROM DCS_DataCenter.AccountTransformStatus;        
+    #LOG: END
+    
 	INSERT INTO DCS_DataCenter.AccountTransformStatus(AccountID, IsCTSTransformed)
 	SELECT	acc.AccountID
 		,	0
 	FROM  DCS_DataCenter.Account AS acc
 		INNER JOIN	Temp_CTSCustomer AS tmpCus ON acc.LoginName = tmpCus.RegisterName AND	acc.SubscriberID = tmpCus.SubscriberID
 	WHERE acc.IsCTSTransformed = -1; 
-  
+    
     INSERT INTO DCS_DataCenter.AccountTransformStatus(AccountID, IsCTSTransformed)
 	SELECT	acc.AccountID
 		,	0
@@ -95,5 +102,10 @@ BEGIN
 			WHERE	s.ParameterID = 8; # s.ParameterName = 'CTSCustomer_LastInsertCustSubID';
 		END IF;
     END IF;
+
+    #LOG: Start
+		INSERT IGNORE INTO CTS_Log.AccountTransformStatus_Log(ID, AccountID, IsCTSTransformed) SELECT ID, AccountID, IsCTSTransformed FROM DCS_DataCenter.AccountTransformStatus WHERE ID > lv_Log_MaxID;    
+    #LOG: END
+
 END$$
 DELIMITER ;
