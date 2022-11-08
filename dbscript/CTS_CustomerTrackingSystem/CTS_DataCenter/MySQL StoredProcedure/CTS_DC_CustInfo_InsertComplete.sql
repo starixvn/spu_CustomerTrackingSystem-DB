@@ -32,8 +32,12 @@ BEGIN
     
 	DECLARE lv_Log_MaxID BIGINT UNSIGNED;   
     
-	DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomer;
+    /*LOG: Start*/
+    INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText, JsonString1)
+    SELECT 'CTS_DC_CustInfo_InsertComplete',CURRENT_TIMESTAMP(4), CONCAT('ip_LastInsertCustID:',ip_LastInsertCustID,', ip_IsInsertMissing:',ip_IsInsertMissing), ip_Customer;
+    /*LOG: END*/  
     
+	DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomer;    
 	CREATE TEMPORARY TABLE Temp_CTSCustomer( 		
 			CTSCustID		BIGINT UNSIGNED NOT NULL
 		, 	CustID			BIGINT
@@ -104,7 +108,9 @@ BEGIN
     END IF;
 
     #LOG: Start
-		INSERT IGNORE INTO CTS_Log.AccountTransformStatus_Log(ID, AccountID, IsCTSTransformed) SELECT ID, AccountID, IsCTSTransformed FROM DCS_DataCenter.AccountTransformStatus WHERE ID > lv_Log_MaxID;    
+		INSERT IGNORE INTO CTS_Log.AccountTransformStatus_Log(ID, AccountID, IsCTSTransformed) 
+        SELECT ID, AccountID, IsCTSTransformed FROM DCS_DataCenter.AccountTransformStatus 
+        WHERE ID > lv_Log_MaxID;    
     #LOG: END
 
 END$$

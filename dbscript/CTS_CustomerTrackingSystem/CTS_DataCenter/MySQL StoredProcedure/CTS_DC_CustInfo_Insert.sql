@@ -46,6 +46,11 @@ BEGIN
 	*/
 	DECLARE lv_LastArchiveID 	BIGINT UNSIGNED;
     
+    /*LOG: Start*/
+    INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, JsonString1)
+    SELECT 'CTS_DC_CustInfo_Insert',CURRENT_TIMESTAMP(4), ip_CustomerList;
+    /*LOG: END*/  
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomer;    
 	CREATE TEMPORARY TABLE Temp_CTSCustomer( 	  
 			SubscriberID 	INT 			
