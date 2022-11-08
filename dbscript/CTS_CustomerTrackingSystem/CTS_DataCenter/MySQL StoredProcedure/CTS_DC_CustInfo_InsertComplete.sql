@@ -6,6 +6,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustInfo_InsertComplete`(
 		IN ip_LastInsertCustID  BIGINT UNSIGNED
 	,	IN ip_Customer			JSON
     ,	IN ip_IsInsertMissing	BOOLEAN
+    , 	IN ip_LogFlow VARCHAR(100)
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -34,7 +35,7 @@ BEGIN
     
     /*LOG: Start*/
     INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText, JsonString1)
-    SELECT 'CTS_DC_CustInfo_InsertComplete',CURRENT_TIMESTAMP(4), CONCAT('ip_LastInsertCustID:',ip_LastInsertCustID,', ip_IsInsertMissing:',ip_IsInsertMissing), ip_Customer;
+    SELECT 'CTS_DC_CustInfo_InsertComplete',CURRENT_TIMESTAMP(4), CONCAT(', ip_LogFlow:',IFNULL(ip_LogFlow,'Unknow'), 'ip_LastInsertCustID:',ip_LastInsertCustID,', ip_IsInsertMissing:',ip_IsInsertMissing), ip_Customer;
     /*LOG: END*/  
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomer;    

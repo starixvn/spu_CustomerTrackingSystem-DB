@@ -4,6 +4,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_CustInfo_Insert`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustInfo_Insert`(
 	IN ip_CustomerList JSON
+    , IN ip_LogFlow VARCHAR(100)
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -47,8 +48,8 @@ BEGIN
 	DECLARE lv_LastArchiveID 	BIGINT UNSIGNED;
     
     /*LOG: Start*/
-    INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, JsonString1)
-    SELECT 'CTS_DC_CustInfo_Insert',CURRENT_TIMESTAMP(4), ip_CustomerList;
+    INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText, JsonString1)
+    SELECT 'CTS_DC_CustInfo_Insert',CURRENT_TIMESTAMP(4), ip_LogFlow, ip_CustomerList;
     /*LOG: END*/  
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomer;    
@@ -207,8 +208,8 @@ BEGIN
     UPDATE Temp_CTSCustomer AS tmpCus
 		INNER JOIN Temp_DupUserName AS tmpDun ON tmpCus.UserName = tmpDun.UserName
     SET tmpCus.DuplicateType = 2
-		, tmpCus.OldCTSCustID = tmpDun.OldCTSCustID;
-     
+		, tmpCus.OldCTSCustID = tmpDun.OldCTSCustID;	
+    
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerDuplicate(SubscriberID, CustID, CustSubID, UserName, UserName2, SiteID, Site, RoleID, Currency, CurrencyID
 			, SRecommend, MRecommend, Recommend, CreatedDate , RegisterName , CustStatusID , Danger1 ,Danger2 , Danger3 , InsertedTime , ModifiedTime, DuplicateType, OldCTSCustID)
 	SELECT    tmpCus.SubscriberID
@@ -312,7 +313,6 @@ BEGIN
             , IsInternal
     FROM	Temp_CTSCustomer AS tmpCus
     WHERE	tmpCus.DuplicateType = 0;
-
 
 	INSERT INTO Temp_Result(CTSCustID,SubscriberID,CustID,UserName,RegisterName,RoleID,CustSubID)
 	SELECT	cus.CTSCustID
