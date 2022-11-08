@@ -14,6 +14,7 @@ BEGIN
 		Original: 
 		Revisions: 
 			- 20220831@Aries.Nguyen: Created [Redmine ID: #176991] 
+            - 20221025@Harvey.Nguyen: Get Ori value [Redmine ID: #179398]
 		
         Param's Explanation: 
 

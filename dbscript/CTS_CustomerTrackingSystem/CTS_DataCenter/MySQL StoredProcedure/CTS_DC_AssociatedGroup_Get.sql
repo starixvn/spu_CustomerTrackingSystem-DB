@@ -14,6 +14,7 @@ BEGIN
 		Revisions:
 			- 20220705@Aries.Nguyen: Created [Redmine ID: #167748]
             - 20220831@Aries.Nguyen: Associated Group Enhancement [Redmine ID: #176991]
+            - 20221025@Harvey.Nguyen: Get more info for PA setting [Redmine ID: #179398]
         
 		Param's Explanation (filtered by):
         

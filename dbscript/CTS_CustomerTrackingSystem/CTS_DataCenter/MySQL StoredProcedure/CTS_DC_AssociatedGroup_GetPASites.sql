@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_AssociatedGroup_GetPASites_xtest`;
+DROP PROCEDURE IF EXISTS `CTS_DC_AssociatedGroup_GetPASites`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedGroup_GetPASites_xtest`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedGroup_GetPASites`(
 		IN ip_GroupID 			BIGINT UNSIGNED
 )
     SQL SECURITY INVOKER
