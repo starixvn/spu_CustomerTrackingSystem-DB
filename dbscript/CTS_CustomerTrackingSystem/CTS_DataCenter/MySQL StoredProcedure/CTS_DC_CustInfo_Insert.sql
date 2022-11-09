@@ -4,7 +4,6 @@ DROP PROCEDURE IF EXISTS `CTS_DC_CustInfo_Insert`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustInfo_Insert`(
 	IN ip_CustomerList JSON
-    , IN ip_LogFlow VARCHAR(100)
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -36,7 +35,6 @@ BEGIN
 			- 20220829@Aries.Nguyen: Remove hard-coding of internal account in CTS [Redmine ID: #177042]
             - 20220923@Aries.Nguyen: CTS - Missing Customer Info on CTS Pro [Redmine ID: #176768]
             - 20220930@Aries.Nguyen: Renovate Association Detection [RedmineID: #178311]
-            - 20221107@Casey.Huynh: Log DCSAccount Transform to CTS  [Redmine ID: #180182]
 
 		Param's Explanation (filtered by):
 		Example:
@@ -46,11 +44,6 @@ BEGIN
 				,{"BatchId":1,"CustID":18349232,"CustStatusID":1,"UserName":"HAIFARMB01897790","UserName2":"haifa$83884255","Site":"haifa","SiteID":44,"RoleID":1,"CurrencyID":13,"Currency":"RMB","SRecommend":4359240,"MRecommend":4359287,"Recommend":4359308,"CreatedDate":"2015-06-28 07:22:00.000","Danger1":0,"Danger2":0,"Danger3":0,"CustSubID":0}]');
 	*/
 	DECLARE lv_LastArchiveID 	BIGINT UNSIGNED;
-    
-    /*LOG: Start*/
-    INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText, JsonString1)
-    SELECT 'CTS_DC_CustInfo_Insert',CURRENT_TIMESTAMP(4), ip_LogFlow, ip_CustomerList;
-    /*LOG: END*/  
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomer;    
 	CREATE TEMPORARY TABLE Temp_CTSCustomer( 	  
@@ -208,8 +201,8 @@ BEGIN
     UPDATE Temp_CTSCustomer AS tmpCus
 		INNER JOIN Temp_DupUserName AS tmpDun ON tmpCus.UserName = tmpDun.UserName
     SET tmpCus.DuplicateType = 2
-		, tmpCus.OldCTSCustID = tmpDun.OldCTSCustID;	
-    
+		, tmpCus.OldCTSCustID = tmpDun.OldCTSCustID;
+     
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerDuplicate(SubscriberID, CustID, CustSubID, UserName, UserName2, SiteID, Site, RoleID, Currency, CurrencyID
 			, SRecommend, MRecommend, Recommend, CreatedDate , RegisterName , CustStatusID , Danger1 ,Danger2 , Danger3 , InsertedTime , ModifiedTime, DuplicateType, OldCTSCustID)
 	SELECT    tmpCus.SubscriberID
@@ -314,6 +307,7 @@ BEGIN
     FROM	Temp_CTSCustomer AS tmpCus
     WHERE	tmpCus.DuplicateType = 0;
 
+
 	INSERT INTO Temp_Result(CTSCustID,SubscriberID,CustID,UserName,RegisterName,RoleID,CustSubID)
 	SELECT	cus.CTSCustID
 		,	cus.SubscriberID
@@ -349,16 +343,7 @@ BEGIN
 		,	RoleID
     	,	CustSubID 
 	FROM Temp_Result;
-	
-    INSERT INTO CTS_Log.CTSCustomer_Log(CTSCustID, SubscriberID, CustID, UserName, RegisterName, RoleID, CustSubID)
-    SELECT	CTSCustID
-		,	SubscriberID
-    	,	CustID
-		,	UserName
-    	,	RegisterName
-		,	RoleID
-    	,	CustSubID 
-	FROM Temp_Result;
-    
+
+  
 END$$
 DELIMITER ;
