@@ -13,6 +13,33 @@
 
 USE CTS_Adhoc; 
 
+#===============2022-11-09=======================================================================
+CREATE TABLE AccountNotTransform_180182_2(
+	AccountID BIGINT UNSIGNED PRIMARY KEY
+    ,	CTSCustID BIGINT UNSIGNED
+	) 
+ENGINE=InnoDB;
+
+#=============================================================
+INSERT INTO CTS_Adhoc.AccountNotTransform_180182_2(AccountID, CTSCustID)
+SELECT DISTINCT a.AccountID, c.CTSCustID
+FROM CTS_DataCenter.CTSCustomer  c
+	INNER JOIN DCS_DataCenter.Account a ON a.LoginName = c.RegisterName AND a.SubscriberID = c.SubscriberID
+WHERE a.IsCTSTransformed = -1 AND c.CTSCustID >= 80610857;
+
+INSERT INTO CTS_Adhoc.AccountNotTransform_180182_2(AccountID, CTSCustID)
+SELECT DISTINCT a.AccountID, c.CTSCustID
+FROM CTS_DataCenter.CTSCustomer  c
+	INNER JOIN DCS_DataCenter.Account a ON a.LoginName = c.UserName AND a.SubscriberID = c.SubscriberID
+WHERE a.IsCTSTransformed = -1 AND c.CTSCustID >= 80610857;
+
+#=============================================================
+UPDATE DCS_DataCenter.Account acc
+INNER JOIN AccountNotTransform_180182_2 AS ant ON acc.AccountID = ant.AccountID
+SET acc.IsCTSTransformed = 0;
+
+#=============================================================================================================================
+/*===============2022-11-07=======================================================================
 CREATE TABLE AccountNotTransform_180182(
 	AccountID BIGINT UNSIGNED PRIMARY KEY
     ,	CTSCustID BIGINT UNSIGNED
@@ -38,3 +65,4 @@ WHERE a.IsCTSTransformed = -1;
 UPDATE DCS_DataCenter.Account acc
 INNER JOIN AccountNotTransform_180182 AS ant ON acc.AccountID = ant.AccountID
 SET acc.IsCTSTransformed = 0;
+*/
