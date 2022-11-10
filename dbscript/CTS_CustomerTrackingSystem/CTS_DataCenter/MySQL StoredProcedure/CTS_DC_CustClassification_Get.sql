@@ -3,8 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_Get`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Get`(
-		IN ip_ListID 			TEXT
-    ,	IN ip_IsCTSCustID		BIT
+	IN ip_CTSCustID 		BIGINT UNSIGNED
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -32,12 +31,11 @@ BEGIN
 			- 20211115@Irena.Vo: Re-priortize Robot and other PA categories  [Redmine ID: #164344]
 			- 20220328@Aries.Nguyen: Add new category/class for PA Probation [Redmine ID: #170468]
 			- 20220531@Aries.Nguyen: Renovate process PA [Redmine ID: #172561]
-            - 20221007@Harvey.Nguyen: Change input from Single to Multilple custs [Redmine ID: #178022]
             
 		Param's Explanation:
         
 		Example:
-			- CALL CTS_DataCenter.CTS_DC_CustClassification_Get('1',1);
+			- CALL CTS_DataCenter.CTS_DC_CustClassification_Get('1');
 	 */ 	
     DECLARE	CONST_GROUP_NORMAL 		INT DEFAULT 200;
     DECLARE	CONST_GROUP_PA 			INT DEFAULT 50;
@@ -46,60 +44,18 @@ BEGIN
     DECLARE	CONST_CATEGORYGROUP_BADROBOT 	INT DEFAULT 163;
     DECLARE	CONST_CATEGORYGROUP_GOODROBOT	INT DEFAULT 164;
     
-    DROP TEMPORARY TABLE IF EXISTS TempCusts;
-    CREATE TEMPORARY TABLE TempCusts (
-			ID				BIGINT UNSIGNED PRIMARY KEY
-		,	CTSCustID 		BIGINT UNSIGNED
-        ,	CustID 			BIGINT UNSIGNED
-    );
-    
-    DROP TEMPORARY TABLE IF EXISTS TempCusts_Info;
-    CREATE TEMPORARY TABLE TempCusts_Info (
-			CTSCustID 		BIGINT UNSIGNED PRIMARY KEY
-        ,	CustID 			BIGINT UNSIGNED
-    );
-    
 	DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory;
     CREATE TEMPORARY TABLE Temp_LatestRecordOfCategory(
-			CustID	 		BIGINT UNSIGNED
-        ,   CTSCustID		BIGINT UNSIGNED 
-		,	CategoryID		SMALLINT UNSIGNED
+			CategoryID		SMALLINT UNSIGNED
 		,   CategoryName   	VARCHAR(200) 
         ,	CategoryGroup   SMALLINT UNSIGNED
 		,   CategoryType    SMALLINT UNSIGNED /*1: ParentID = 200, 2: ParentID = 50*/
 		,	ParentID		SMALLINT UNSIGNED
 		,	IsProbation		BIT DEFAULT 0
     );
-    
-    SET @sql = CONCAT("INSERT INTO TempCusts (ID) VALUES ('", REPLACE(ip_ListID, ",", "'),('"),"');");
-	PREPARE stmt1 FROM @sql;
-	EXECUTE stmt1;
-    
-    IF ip_IsCTSCustID = 1 
-    THEN 
-		INSERT INTO TempCusts_Info (CTSCustID, CustID)
-        SELECT cus.CTSCustID, cus.CustID
-        FROM TempCusts AS temp INNER JOIN CTSCustomer AS cus ON temp.ID = cus.CTSCustID;
-        
-		UPDATE TempCusts AS temp
-		INNER JOIN TempCusts_Info AS cus ON temp.ID = cus.CTSCustID
-		SET 	temp.CTSCustID = cus.CTSCustID
-			,	temp.CustID = cus.CustID;
-    ELSE 
-		INSERT INTO TempCusts_Info (CTSCustID, CustID)
-        SELECT cus.CTSCustID, cus.CustID
-        FROM TempCusts AS temp INNER JOIN CTSCustomer AS cus ON temp.ID = cus.CustID AND cus.CustSubID = 0;
-        
-		UPDATE TempCusts AS temp
-		INNER JOIN TempCusts_Info AS cus ON temp.ID = cus.CustID
-		SET 	temp.CTSCustID = cus.CTSCustID
-			,	temp.CustID = cus.CustID;
-    END IF;
-       
-	INSERT INTO Temp_LatestRecordOfCategory(CustID, CTSCustID, CategoryID, CategoryName, CategoryGroup, CategoryType, ParentID, IsProbation)
-	SELECT DISTINCT temp.CustID
-				,	temp.CTSCustID
-				,	(CASE 
+   
+	INSERT INTO Temp_LatestRecordOfCategory(CategoryID, CategoryName,CategoryGroup, CategoryType, ParentID, IsProbation)
+	SELECT DISTINCT (CASE 
                         WHEN cc.ParentID = CONST_GROUP_PA THEN cc.CategoryGroup
                         ELSE cate.CategoryID 
 					END)
@@ -109,32 +65,28 @@ BEGIN
 				,	cc.ParentID
 				,	IsPAProbation AS IsProbation
 	FROM	CTS_DataCenter.CTSCustomerClassification AS cate
-		INNER JOIN TempCusts AS temp ON temp.CTSCustID = cate.CTSCustID
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
-    WHERE cc.ParentID IN (CONST_GROUP_PA, CONST_GROUP_NORMAL)
+    WHERE	cate.CTSCustID = ip_CTSCustID 
+		AND cc.ParentID IN (CONST_GROUP_PA, CONST_GROUP_NORMAL)
         AND cc.IsActive = 1;
     
     IF (SELECT COUNT(DISTINCT ParentID) FROM Temp_LatestRecordOfCategory) > 1 THEN
 		DELETE FROM Temp_LatestRecordOfCategory WHERE ParentID = CONST_GROUP_NORMAL;
     END IF;
     
-    IF EXISTS (SELECT 1 FROM CTS_DataCenter.PinCustomerCategory AS pinCate
-					INNER JOIN TempCusts AS temp ON temp.CTSCustID = pinCate.CTSCustID) THEN 
+    IF EXISTS (SELECT 1 FROM CTS_DataCenter.PinCustomerCategory WHERE CTSCustID = ip_CTSCustID) THEN 
 		SELECT 1 AS IsPinCategory;
 	ELSE 
 		SELECT 0 AS IsPinCategory;
 	END IF;
         
-	IF EXISTS (SELECT 1 FROM CTS_DataCenter.TaggingExclusion AS tagExclusion
-					INNER JOIN TempCusts AS temp ON temp.CTSCustID = tagExclusion.CTSCustID) THEN 
+	IF EXISTS (SELECT 1 FROM CTS_DataCenter.TaggingExclusion WHERE CTSCustID = ip_CTSCustID) THEN 
 		SELECT 1 AS IsExcludedTagAssPA;
 	ELSE 
 		SELECT 0 AS IsExcludedTagAssPA;
 	END IF; 
 
-	SELECT	CTSCustID
-		,	CustID
-		,	CategoryType 
+	SELECT	CategoryType 
 		,	CategoryID
 		,	CategoryName
         ,	CategoryGroup

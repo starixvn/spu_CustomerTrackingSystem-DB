@@ -29,7 +29,6 @@ BEGIN
 			- 20210920@Aries.Nguyen: Split history log  [Redmine ID: #161890]
             - 20220418@Casey.Huynh: Add and Remove VVIP for Downline [Redmine ID: #159013]
             - 20220519@Casey.Huynh: Renovate PA Process [RedmineID: #172061]
-            - 20221007@Harvey.Nguyen: Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory [Redmine ID: #178022]
             
 		Param's Explanation:
 			ip_FromAction: 1 From Web, 2 From Service
@@ -52,11 +51,10 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
 	CREATE TEMPORARY TABLE 		Temp_Customer (
-		 	CustID				BIGINT UNSIGNED		
-         ,  CTSCustID 			BIGINT UNSIGNED
-         ,	CurrentCategoryID	SMALLINT UNSIGNED
-         ,	CreatedBy			BIGINT UNSIGNED
-         ,	IsExistVVIP			BOOLEAN
+		 	CustID			BIGINT UNSIGNED		
+         ,  CTSCustID 		BIGINT UNSIGNED
+         ,	CreatedBy		BIGINT UNSIGNED
+         ,	IsExistVVIP		BOOLEAN
          
          ,	PRIMARY KEY PK_Temp_Customer(CustID)
          ,	INDEX IX_Temp_Customer_CTSCustID(CTSCustID)
@@ -77,11 +75,7 @@ BEGIN
 		 )) AS temp
 		LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON  temp.CustID = cls.CustID AND cls.CategoryID = 210;      
 
-	UPDATE Temp_Customer cus
-		INNER JOIN CTS_DataCenter.CTSCustomerClassificationOldCategory oldCate ON cus.CustID = oldCate.CustID AND oldCate.SportGroupID = 200
-	SET cus.CurrentCategoryID = oldCate.CategoryID;
-    
-    SELECT MAX(tmpCus.CTSCustID)
+	SELECT MAX(tmpCus.CTSCustID)
     INTO lv_MaxCTSCustID
     FROM Temp_Customer AS tmpCus;
     
@@ -139,7 +133,7 @@ BEGIN
 		INNER JOIN Temp_Customer AS tmpCus ON clv.CTSCustID = tmpCus.CTSCustID AND tmpCus.IsExistVVIP = 1;
         
 	/*Return Remove VVIP List to Rescan*/
-    SELECT tmpCus.CustID, tmpCus.CurrentCategoryID
+    SELECT tmpCus.CustID
 	FROM Temp_Customer AS tmpCus;
 
     /*****UPDATE Queue LastID************/

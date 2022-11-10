@@ -16,7 +16,6 @@ BEGIN
 		Original:
 		Revisions:
             - 20220519@Casey.Huynh: Renovate PA Process [Redmine ID: #172561]
-            - 20221007@Harvey.Nguyen: Return CurrentCategoryID [Redmine ID: #178022]
             
         Param's Explanation (filtered by):
 			- ip_ByType: 1: Category, 2: Reason
@@ -40,7 +39,6 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_InputCust(
 			CustID					BIGINT UNSIGNED 
 		, 	CTSCustID				BIGINT UNSIGNED DEFAULT 0
-        ,	CurrentCategoryID		SMALLINT UNSIGNED
         ,	RoleID					INT
         , 	SubscriberID			INT DEFAULT 0
         ,	Remark 					VARCHAR(500)        
@@ -103,10 +101,6 @@ BEGIN
 	)) AS tmpJs
     LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on tmpJs.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category;
     WHERE pin.CTSCustID IS NULL;
-    
-    UPDATE Temp_InputCust cus
-		INNER JOIN CTS_DataCenter.CTSCustomerClassificationOldCategory oldCate ON cus.CustID = oldCate.CustID AND oldCate.SportGroupID = CONST_NORMAL_SPORTGROUP
-	SET cus.CurrentCategoryID = oldCate.CategoryID;
 
    INSERT IGNORE INTO Temp_CustPA(CustID, CTSCustID, CategoryID, EvidenceID_Licensee, EvidenceID_Credit
 					, RoleID, SubscriberID, CreatedBy, Remark, IsDirectPA, IsRemovedPA)
@@ -249,7 +243,6 @@ BEGIN
 	SELECT	DISTINCT 
 			tmpCp.CustID
 		,	tmpCp.CTSCustID
-        ,	tmpCp.CurrentCategoryID
         ,	tmpCp.IsRemovedPA
     FROM Temp_InputCust AS tmpCp; 
 	

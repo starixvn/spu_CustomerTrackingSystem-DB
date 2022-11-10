@@ -37,12 +37,11 @@ BEGIN
 				- 20211122@Irena.Vo: Process Licensee info by site [Redmine ID: #161665]
                 - 20220705@Long.Luu: Switching for Licensee VIP & BA Categories [Redmine ID: #174219]                
                 - 20220817@Long.Luu: Rearrange CC's IDs [Redmine ID: #175698]
-                - 20221007@Harvey.Nguyen: Update logic for checking Category in OldCategory table [Redmine ID: #178022]
                 
 		Param's Explanation (filtered by):
         
         Example:
-				- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount_xtest('[{"CustId":1,"SportGroupId":2,"CategoryId":201,"CreatedTime":"2022-10-13T12:04:51.660133+07:00","TurnoverRM":1.0,"WinlossRM":1.0,"BetCount":1,"ActiveDays":1,"LastXDaysMargin":1.0,"ProbationPeriodWinloss":0.0,"IsGeneralCategory":true,"TaggingID":0,"TaggingType":1,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0}]', @op_ErrorMessage);
+				- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount_xpre('[{"CustId": "43600693","CategoryId":"1000","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","TaggingID":10,"TaggingType":1}]',@or);
 */ 
     DECLARE	CONST_GROUP_PA 								INT DEFAULT 0;
     DECLARE	CONST_GROUP_WRAPPER							INT DEFAULT 100;
@@ -52,7 +51,7 @@ BEGIN
 	DECLARE	CONST_CATEGORY_NORMALMEMBER 				INT DEFAULT 202;
 	DECLARE CONST_CATEGORY_SMART 						INT DEFAULT 203;
     DECLARE CONST_CATEGORY_HIGHRISK 					INT DEFAULT 204;
-    DECLARE CONST_CATEGORY_GOOD							INT DEFAULT 205;
+    DECLARE CONST_CATEGORY_VIP 							INT DEFAULT 205;
     DECLARE CONST_CATEGORY_PROBATION					INT DEFAULT 206;
     DECLARE CONST_CATEGORY_INACTIVE						INT DEFAULT 1000;
     DECLARE CONST_CATEGORY_NORMALINACTIVE				INT DEFAULT 1001;
@@ -321,22 +320,11 @@ BEGIN
     
     /* 6.3: UPDATE NEW CATEGORY */    
     UPDATE 	Temp_NewClassification AS temp 
-	SET 	temp.NewCateGroup = (CASE WHEN temp.OldCateGroup IN (CONST_CATEGORY_NEWMEMBER, CONST_CATEGORY_NORMALMEMBER, CONST_CATEGORY_GOOD, CONST_CATEGORY_INACTIVE) 
+	SET 	temp.NewCateGroup = (CASE WHEN temp.OldCateGroup IN (CONST_CATEGORY_NEWMEMBER,CONST_CATEGORY_NORMALMEMBER,CONST_CATEGORY_VIP,CONST_CATEGORY_INACTIVE) 
 											AND temp.DWCateGroup IN (CONST_CATEGORY_SMART,CONST_CATEGORY_HIGHRISK) THEN CONST_CATEGORY_PROBATION 
 									  ELSE temp.DWCateGroup 
 								  END)
 	 WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE, CONST_SOURCETYPE_FAILPROBATION);
-     
-     UPDATE Temp_NewClassification AS temp 
-		INNER JOIN CTSCustomerClassificationOldCategory oldCate ON temp.CustID = oldCate.CustID AND oldCate.SportGroupID = CONST_GROUP_NORMAL
-     SET temp.NewCateGroup = CASE WHEN temp.NewCateGroup = CONST_CATEGORY_PROBATION 
-								THEN oldCate.CategoryID
-                                ELSE temp.NewCateGroup 
-							END;
-
-     DELETE oldCate 
-     FROM Temp_NewClassification temp 
-		INNER JOIN CTSCustomerClassificationOldCategory oldCate ON temp.CustID = oldCate.CustID AND oldCate.SportGroupID = CONST_GROUP_NORMAL;
 	
     /* 6.3.1: UPDATE NEW CATEGORY - ACTIVE */    
 	UPDATE 	Temp_NewClassification AS temp 
@@ -346,8 +334,11 @@ BEGIN
     
     /* 6.3.2: UPDATE NEW CATEGORY - INACTIVE */    
     UPDATE 	Temp_NewClassification AS temp 
-    SET 	temp.NewCateID = temp.DWCateGroup
-    WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE) AND temp.DWCateGroup IN (CONST_CATEGORY_PROPUNTERINACTIVE, CONST_CATEGORY_NORMALINACTIVE); 
+    SET 	temp.NewCateID = (CASE WHEN temp.OldCateGroup IS NULL OR temp.OldCateGroup IN (CONST_CATEGORY_NEWMEMBER,CONST_CATEGORY_NORMALMEMBER,CONST_CATEGORY_VIP) THEN CONST_CATEGORY_NORMALINACTIVE
+								   WHEN temp.OldCateGroup IN (CONST_CATEGORY_SMART,CONST_CATEGORY_HIGHRISK,CONST_CATEGORY_PROBATION) THEN CONST_CATEGORY_PROPUNTERINACTIVE
+								   ELSE temp.OldCateID
+                              END)
+    WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE) AND temp.DWCateGroup = CONST_CATEGORY_INACTIVE; 
     
      /* 6.3.3: UPDATE NewIsDangerProbation */    
     UPDATE 	Temp_NewClassification AS temp 
@@ -360,7 +351,7 @@ BEGIN
 									 WHEN temp.OldCateGroup IN (CONST_CATEGORY_NEWMEMBER,CONST_CATEGORY_INACTIVE) AND temp.NewCateGroup NOT IN (CONST_CATEGORY_NEWMEMBER,CONST_CATEGORY_INACTIVE) THEN CONST_SOURCETYPE_AFTER10TICKETS 
 									 WHEN temp.OldCateGroup = CONST_CATEGORY_PROBATION AND temp.NewCateGroup IN (CONST_CATEGORY_SMART, CONST_CATEGORY_HIGHRISK) THEN CONST_SOURCETYPE_PASSPROBATION
 									 WHEN temp.OldCateGroup = CONST_CATEGORY_PROBATION AND temp.NewCateGroup = CONST_CATEGORY_PROBATION THEN CONST_SOURCETYPE_FAILPROBATION
-                                     WHEN (temp.OldCateGroup IS NULL OR temp.OldCateGroup IN (CONST_CATEGORY_NEWMEMBER,CONST_CATEGORY_NORMALMEMBER,CONST_CATEGORY_GOOD)) AND temp.NewCateGroup = CONST_CATEGORY_INACTIVE THEN CONST_SOURCETYPE_INACTIVENORMAL 
+                                     WHEN (temp.OldCateGroup IS NULL OR temp.OldCateGroup IN (CONST_CATEGORY_NEWMEMBER,CONST_CATEGORY_NORMALMEMBER,CONST_CATEGORY_VIP)) AND temp.NewCateGroup = CONST_CATEGORY_INACTIVE THEN CONST_SOURCETYPE_INACTIVENORMAL 
                                      WHEN temp.OldCateGroup IN (CONST_CATEGORY_SMART,CONST_CATEGORY_HIGHRISK,CONST_CATEGORY_PROBATION) AND temp.NewCateGroup = CONST_CATEGORY_INACTIVE THEN CONST_SOURCETYPE_INACTIVEPROPUNTER
                                      WHEN temp.OldCateGroup = temp.NewCateGroup THEN CONST_SOURCETYPE_SAMECATEGORY
                                      ELSE CONST_SOURCETYPE_SCANONSCHEDULE
