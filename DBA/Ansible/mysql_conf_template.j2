@@ -1,0 +1,121 @@
+[client]
+default-character-set       = {{ client_default_character_set }}
+
+[mysql]
+default-character-set       = {{ mysql_default_character_set }}
+
+[mysqld]
+#--------------------------Character-------------------------- 
+character-set-server        = {{ character_set_server }}
+collation-server            = {{ collation_server }}
+
+
+#--------------------------Client connection-------------------------- 
+report_host={{ ansible_host }}
+report_port={{ mysql_client_port }}
+
+port={{ mysql_client_port }}
+mysqlx_port={{ mysqlx_client_port }}
+
+key_buffer_size             = {{ key_buffer_size }}
+max_allowed_packet          = {{ max_allowed_packet }}
+thread_cache_size           = {{ thread_cache_size }}
+max_connections             = {{ max_connections }}
+
+
+
+#--------------------------InnoDB-------------------------- 
+innodb_buffer_pool_chunk_size={{ innodb_buffer_pool_chunk_size }}
+innodb_buffer_pool_instances={{ innodb_buffer_pool_instances }}
+innodb_buffer_pool_size={{ innodb_buffer_pool_size }}
+
+innodb_buffer_pool_dump_pct = {{ innodb_buffer_pool_dump_pct }}
+innodb_old_blocks_pct={{ innodb_old_blocks_pct }}
+
+innodb_read_io_threads = {{ innodb_read_io_threads }}
+innodb_write_io_threads = {{ innodb_write_io_threads }}
+innodb_io_capacity={{ innodb_io_capacity }}
+
+innodb_file_per_table={{ innodb_file_per_table }}
+innodb_stats_on_metadata = {{ innodb_stats_on_metadata }}
+
+innodb_log_file_size = {{ innodb_log_file_size }}
+
+innodb_flush_log_at_trx_commit = {{ innodb_flush_log_at_trx_commit }}
+innodb_flush_method = {{ innodb_flush_method }}
+
+innodb_read_ahead_threshold={{ innodb_read_ahead_threshold }} 
+innodb_random_read_ahead={{ innodb_random_read_ahead }}
+
+
+#--------------------------Tmp--------------------------
+secure-file-priv = {{ secure_file_priv }}
+tmp_table_size={{ tmp_table_size }} 
+tmpdir = {{ tmpdir }}
+
+
+
+
+#--------------------------Binlog--------------------------
+log_bin = {{ log_bin }}
+relay_log = {{ relay_log }}
+binlog_expire_logs_seconds={{ binlog_expire_logs_seconds }}
+max_binlog_size   = {{ max_binlog_size }}
+
+
+
+
+#--------------------------Logs--------------------------
+log_output = {{ log_output }}
+
+general_log = {{ general_log }}
+general_log_file = {{ general_log_file }}
+
+log_error={{ log_error }}
+log_error_verbosity = {{ log_error_verbosity }}
+
+slow_query_log = {{ slow_query_log }}
+slow_query_log_file = {{ slow_query_log_file }}
+long_query_time = {{ long_query_time }}
+
+
+
+
+
+#--------------------------SQL Query--------------------------
+transaction_isolation = {{ transaction_isolation }}
+
+group_concat_max_len        = {{ group_concat_max_len }}
+
+
+
+# --------------------------Security Configuration--------------------------
+default_authentication_plugin={{ default_authentication_plugin }}
+activate_all_roles_on_login = {{ activate_all_roles_on_login }}
+
+
+
+
+#--------------------------Group Replication--------------------------
+server_id = {{ server_mysql_id }}
+
+disabled_storage_engines="MyISAM,BLACKHOLE,FEDERATED,ARCHIVE,MEMORY"
+#plugin_load_add='group_replication.so'
+#group_replication_start_on_boot=off
+#group_replication_local_address= {{ group_replication_local_address }} 
+#group_replication_bootstrap_group=off
+
+gtid_mode={{ gtid_mode }}
+enforce_gtid_consistency={{ enforce_gtid_consistency }}
+
+
+
+binlog_format={{ binlog_format }}
+binlog_transaction_dependency_tracking={{ binlog_transaction_dependency_tracking }}
+
+slave_parallel_type={{ slave_parallel_type }}
+slave_preserve_commit_order={{ slave_preserve_commit_order }}
+
+read_only = {{ read_only }}
+super_read_only = {{ super_read_only }}
+event_scheduler = {{ event_scheduler }}

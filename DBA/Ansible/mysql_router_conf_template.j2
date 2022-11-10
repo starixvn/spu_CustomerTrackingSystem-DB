@@ -1,0 +1,54 @@
+[DEFAULT]
+logging_folder= {{ logging_folder }}
+runtime_folder= {{ runtime_folder }}
+data_folder= {{ runtime_folder }}
+keyring_path= {{ runtime_folder }} 
+master_key_path= {{ runtime_folder }}
+connect_timeout= {{ runtime_folder }}
+read_timeout= {{ runtime_folder }}
+dynamic_state= {{ runtime_folder }}
+
+[logger]
+level = INFO
+
+[metadata_cache:myCluster]
+cluster_type=gr
+router_id=1
+user=routerfriend
+metadata_cluster=myCluster
+ttl=0.5
+auth_cache_ttl=-1
+auth_cache_refresh_interval=2
+use_gr_notifications=0
+
+[routing:myCluster_rw]
+bind_address=0.0.0.0
+bind_port=6446
+socket=/tmp/myrouter/mysql.sock
+destinations=metadata-cache://myCluster/?role=PRIMARY
+routing_strategy=first-available
+protocol=classic
+
+[routing:myCluster_ro]
+bind_address=0.0.0.0
+bind_port=6447
+socket=/tmp/myrouter/mysqlro.sock
+destinations=metadata-cache://myCluster/?role=SECONDARY
+routing_strategy=round-robin-with-fallback
+protocol=classic
+
+[routing:myCluster_x_rw]
+bind_address=0.0.0.0
+bind_port=6448
+socket=/tmp/myrouter/mysqlx.sock
+destinations=metadata-cache://myCluster/?role=PRIMARY
+routing_strategy=first-available
+protocol=x
+
+[routing:myCluster_x_ro]
+bind_address=0.0.0.0
+bind_port=6449
+socket=/tmp/myrouter/mysqlx.sock
+destinations=metadata-cache://myCluster/?role=SECONDARY
+routing_strategy=round-robin-with-fallback
+protocol=x

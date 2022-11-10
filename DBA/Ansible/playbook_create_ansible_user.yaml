@@ -1,0 +1,62 @@
+- name: Install Docker
+  hosts: all
+  become: yes
+  tasks:
+  - name: Import variables
+    include_vars: variables_create_ansible_user.yaml
+
+  - name: Create user ansible
+    ansible.builtin.user:
+     name: "{{ user_name }}"
+     shell: /bin/bash
+     comment: user ansible
+     password: "{{ user_pass | password_hash('sha512') }}"
+     groups: sudo
+     append: yes
+     generate_ssh_key: yes
+    register: result_userinfo
+
+  - name: Rename private key
+    ansible.builtin.shell: mv /home/{{ user_name }}/.ssh/id_rsa /home/{{ user_name }}/.ssh/{{ user_name }}_{{ serveralias }}_rsa_private_key
+
+  - name: Rename public key
+    ansible.builtin.shell: mv /home/{{ user_name }}/.ssh/id_rsa.pub /home/{{ user_name }}/.ssh/authorized_keys
+  
+  - name: Set the permissions private key to 600
+    ansible.builtin.file:
+     path: "/home/{{ user_name }}/.ssh/authorized_keys"
+     state: touch
+     mode: u=rw,g=-,o=-
+  
+  - name: Set the permissions pulib key to 600
+    ansible.builtin.file:
+     path: "/home/{{ user_name }}/.ssh/{{ user_name }}_{{ serveralias }}_rsa_private_key"
+     state: touch
+     mode: u=rw,g=-,o=-
+
+  - name: Copy private key
+    ansible.builtin.fetch:
+     src: "/home/{{ user_name }}/.ssh/{{ user_name }}_{{ serveralias }}_rsa_private_key"
+     dest: "{{ pathSSHKey }}/"
+     flat: true
+
+ 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+    

@@ -1,0 +1,29 @@
+all:
+ children:
+  prod:
+   hosts: 
+    cts_master159:
+     ansible_host: 10.40.40.159
+     ansible_ssh_private_key_file: ./sshkey/cts_ansible_local_dev_rsa_private_key 
+    cts_replica58:
+     ansible_host: 10.40.40.58
+     ansible_ssh_private_key_file: ./sshkey/cts_ansible_local_dev_rsa_private_key
+    cts_achive59:
+     ansible_host: 10.40.40.59
+     ansible_ssh_private_key_file: ./sshkey/cts_ansible_local_dev_rsa_private_key        
+  local:
+   hosts: 
+    cts_master70:
+     ansible_host: 10.18.200.70
+     ansible_ssh_private_key_file: ./sshkey/cts_ansible_local_master_rsa_private_key
+     
+    cts_replica71:
+     ansible_host: 10.18.200.71
+     ansible_ssh_private_key_file: ./sshkey/cts_ansible_local_replica_rsa_private_key
+     ansible_ssh_user: cts_ansible_local
+     
+    cts_dev72:
+     ansible_host: 10.18.200.72
+     ansible_ssh_private_key_file: ./sshkey/cts_ansible_local_dev_rsa_private_key
+
+    

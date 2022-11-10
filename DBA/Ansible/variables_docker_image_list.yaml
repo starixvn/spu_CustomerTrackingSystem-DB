@@ -1,0 +1,17 @@
+images:
+  - "mysql:8.0.25"
+  - "mysql:8.0.31"
+  - "mysql/mysql-router:8.0.31"
+
+  - "percona/percona-xtrabackup:8.0.25-17"
+  - "perconalab/percona-toolkit:3.2.1"
+  - "percona/pmm-client:2.31"
+  - "percona/pmm-server:2.31"
+
+  - "prom/prometheus:v2.40.0"
+  - "prom/node-exporter:v1.4.0"
+  - "prom/mysqld-exporter:v0.14.0"
+  - "google/cadvisor:v0.33.0"
+  
+  
+  

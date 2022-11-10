@@ -1,0 +1,143 @@
+- name: Create MySQL Router
+  hosts: cts_replica71
+  become: yes
+  tasks:
+  - name: Import playbook variables
+    include_vars: variables_mysqlrouter.yaml
+
+  - name: Get docker container info
+    docker_container_info :
+     name: "{{ container_name }}"
+    register: container_instance
+
+  - name: Check container existed 
+    fail:
+     msg: The container is existed
+    when: container_instance.exists == True
+  
+  - name: Set variable
+    ansible.builtin.set_fact: 
+     volume_folder="{{ data_folder }}/{{ container_name }}"
+     data_volume_folder="{{ data_folder }}/{{ container_name }}/data"
+     config_folder="{{ data_folder }}/{{ container_name }}/config"
+     container_user_name="{{ container_name }}_user"
+     container_volume_name="{{ container_name }}_data"
+
+  - name: Create volume folder
+    file:
+     path: "{{ volume_folder }}"
+     state: directory
+    
+  - name: Create config folder
+    file:
+     path: "{{ config_folder }}"
+     state: directory
+  
+  - name: Create data folder
+    file:
+     path: "{{ data_volume_folder }}"
+     state: directory
+    
+  - name: Create user run container
+    ansible.builtin.user:
+     name: "{{ container_user_name }}"
+     shell: /bin/bash
+     comment: user mysql router container
+     password: "{{ user_pass | password_hash('sha512') }}"
+    register: result_userinfo
+
+  - name: Set user_uid value
+    ansible.builtin.set_fact: user_uid="{{ result_userinfo.uid }}"
+  
+  - name: Set group_uid value
+    ansible.builtin.set_fact: group_uid="{{ result_userinfo.group }}"
+     
+  - name: Create docker volume
+    docker_volume:
+     name: "{{ container_volume_name }}"
+     driver_options:
+      type: none
+      device: "{{data_volume_folder }}"
+      o: bind
+    
+  - name: "Print a variable value"
+    debug:
+     msg: "Variable value is {{ user_uid }},  {{ group_uid }}"
+  
+  - name: Change volume folder ownership, group
+    ansible.builtin.file:
+     path: "{{ volume_folder }}"
+     recurse: yes
+     owner: "{{ user_uid }}"
+     group: "{{ group_uid }}"
+     
+  - name: "Create Container"
+    docker_compose:
+     project_name: mysqlrouter_docker
+     definition:
+      version: '3.8'
+      services:
+       mysqlrouter:
+        image: "{{ mysqlrouter_image }}"
+        container_name: "{{ container_name }}"
+        hostname: "{{ container_name }}"
+        user: "{{user_uid}}:{{group_uid}}"
+
+        volumes:
+         - app_volume:/tmp/mysqlrouter:rw
+         - "{{ config_folder }}:/etc/mysqlrouter"
+
+        environment:
+         - TZ=America/La_Paz
+         - "MYSQL_HOST={{ MYSQL_HOST }}"
+         - "MYSQL_PORT={{ MYSQL_PORT }}" 
+         - "MYSQL_USER={{ MYSQL_USER }}"
+         - "MYSQL_PASSWORD={{ MYSQL_PASSWORD }}" 
+         - "MYSQL_CREATE_ROUTER_USER={{ MYSQL_CREATE_ROUTER_USER }}"
+
+        ports:
+         - "{{ mysqlrouter_rw_port }}:{{ mysqlrouter_rw_port }}"
+         - "{{ mysqlrouter_ro_port }}:{{ mysqlrouter_ro_port }}"
+         - "{{ mysqlxrouter_rw_port }}:{{ mysqlxrouter_rw_port }}"
+         - "{{ mysqlxrouter_ro_port }}:{{ mysqlxrouter_ro_port }}"
+
+      volumes:
+       app_volume:
+        external: true
+        name: "{{ container_volume_name }}"
+  
+  - name: Change volume data folder ownership, group
+    ansible.builtin.file:
+     path: "{{ data_volume_folder }}"
+     recurse: yes
+     owner: "{{ user_uid }}"
+     group: "{{ group_uid }}"
+     mode: '750'
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+    

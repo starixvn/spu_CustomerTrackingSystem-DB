@@ -1,0 +1,22 @@
+
+#***********************Host***********************
+user_pass: password
+
+
+#***********************docker compose***********************
+container_name: cts_router
+
+data_folder: /volumes
+
+mysqlrouter_image: "mysql/mysql-router:8.0.30"
+mysqlrouter_rw_port: 6446
+mysqlrouter_ro_port: 6447
+mysqlxrouter_rw_port: 6448
+mysqlxrouter_ro_port: 6449
+
+#***********************docker compose env***********************
+MYSQL_HOST: 10.18.200.71 
+MYSQL_PORT: 3309 
+MYSQL_USER: ctsRouter
+MYSQL_PASSWORD: password 
+MYSQL_CREATE_ROUTER_USER: 0

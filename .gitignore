@@ -33,3 +33,4 @@ packages/
 /DBA_Monitor/Python_App/.venv
 __pycache__
 /DBA_Monitor/Python_App/backup
+/DBA/Python_App/.venv

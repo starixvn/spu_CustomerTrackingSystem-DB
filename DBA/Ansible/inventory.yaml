@@ -1,0 +1,21 @@
+all:
+ children:  
+  local:
+   hosts: 
+    mas70:
+     ansible_host: 10.18.200.70
+     ansible_ssh_private_key_file: ./sshkey/cts_ansible_local_master_rsa_private_key
+     ansible_ssh_user: cts_ansible_local
+     
+    rep71:
+     ansible_host: 10.18.200.71
+     ansible_ssh_private_key_file: ./sshkey/cts_ansible_test22_replica71_rsa_private_key
+     ansible_ssh_user: cts_ansible_test22
+     
+    dev72:
+     ansible_host: 10.18.200.72
+     ansible_ssh_private_key_file: ./sshkey/cts_ansible_test_dev72_rsa_private_key
+     ansible_ssh_user: cts_ansible_test
+     ansible_python_interpreter: /home/cts_ansible_test/python_interpreter/bin/python
+
+    

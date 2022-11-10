@@ -1,0 +1,14 @@
+- name: Create docker overlay network
+  hosts: all
+  become: yes
+  tasks:
+  - name: Import variables
+    include_vars: variables_docker_overplay_network.yaml
+
+  - name: Create docker overlay network
+    docker_network:
+     name: "{{ container_overlay_network }}"
+     driver: "overlay"
+     attachable: yes
+
+

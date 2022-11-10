@@ -1,0 +1,17 @@
+- name: Test playbook
+  hosts: cts_replica71
+  become: yes
+  tasks:
+  - name: Import variables
+    include_vars: variables_install_docker.yaml
+    
+  - name: Get docker version
+    command: "echo {{ docker_repo }}"
+    register: info
+
+  - name: Prints two lines of messages, but only if there is an environment value set
+    ansible.builtin.debug:
+     msg:
+     - "{{ ansible_architecture }} {{ ansible_distribution }} {{ansible_distribution_release}}"
+
+  

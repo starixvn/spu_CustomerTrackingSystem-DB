@@ -1,0 +1,42 @@
+- name: Install Interpreter Python for Ansible User
+  hosts: all
+  become: yes
+  tasks:
+  - name: Import variables
+    include_vars: variables_create_pythoninterpreter_env.yaml
+
+  - name: Run venv activate
+    command: "source {{ path }}/python_interpreter/bin/activate"
+    ignore_errors: yes
+    register: python310_valid
+  
+  - name: Check python venv is already installed 
+    fail:
+     msg: "Python venv is already installed "
+    when: not python310_valid.failed
+
+  - name: Set variable
+    ansible.builtin.set_fact: 
+     python_interpreter_folder="{{ path }}/python_interpreter"
+     python_interpreter="{{ path }}/python_interpreter/bin/python"
+     pip_interpreter="{{ path }}/python_interpreter/bin/pip"
+
+  - name: Create python interpreter folder
+    file:
+     path: "{{ path }}"
+     state: directory
+
+  - name: Create python virtual environment
+    ansible.builtin.command:  "python3.10 -m venv {{ python_interpreter_folder }}"
+
+  - name: Install pip
+    ansible.builtin.command:  "{{ python_interpreter }} -m pip install --upgrade pip"
+
+  - name: Install python docker
+    ansible.builtin.command:  "{{ pip_interpreter }} install docker"
+
+  - name: Install python docker compose
+    ansible.builtin.command:  "{{ pip_interpreter }} install docker-compose "
+
+
+

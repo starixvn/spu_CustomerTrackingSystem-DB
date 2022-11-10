@@ -1,0 +1,145 @@
+#***********************Validate***********************
+free_space_require: 30 #Gb
+
+
+#***********************Host***********************
+user_pass: password
+server_mysql_id: "40114"
+group_replication_local_address: "cts_slave_mysql80_test2:33111"
+
+#***********************docker compose***********************
+container_name: cts_slave_mysql80_test2
+container_bridge_network: cts_slave_mysql80_test2
+container_overlay_network: cts_overlay
+
+data_folder: /volumes
+requirement_disk_size: 25 #Gb
+
+mysql_image: "mysql:8.0.25"
+mysql_client_port: 3310
+mysqlx_client_port: 33110
+
+
+
+#***********************[client] docker compose*********************** 
+client_default_character_set: utf8
+
+
+
+#***********************[mysql] docker compose*********************** 
+mysql_default_character_set: utf8
+
+
+
+#***********************[mysqld] docker compose***********************  
+#--------------------------Character-------------------------- 
+character_set_server: utf8
+collation_server: utf8_unicode_ci
+
+
+#--------------------------Client connection-------------------------- 
+report_host: 10.18.200.71
+report_port: 3309
+
+
+key_buffer_size: 6M
+max_allowed_packet: 32M
+thread_cache_size: 4
+max_connections: 200
+
+
+
+#--------------------------InnoDB-------------------------- 
+innodb_buffer_pool_chunk_size: 1G
+innodb_buffer_pool_instances: 1
+innodb_buffer_pool_size: 1G
+
+innodb_buffer_pool_dump_pct: 100
+innodb_old_blocks_pct: 10
+
+innodb_read_io_threads: 4
+innodb_write_io_threads: 4
+innodb_io_capacity: 500
+
+innodb_file_per_table: "ON"
+innodb_stats_on_metadata: "OFF"
+
+innodb_log_file_size: 512M
+
+innodb_flush_log_at_trx_commit: 1
+innodb_flush_method: O_DIRECT
+
+innodb_read_ahead_threshold: 32
+innodb_random_read_ahead: "ON"
+
+
+#--------------------------Tmp--------------------------
+secure_file_priv: /var/log/mysql/tmp
+tmp_table_size: 67108864 
+tmpdir: /var/log/mysql/tmp
+
+
+
+
+#--------------------------Binlog--------------------------
+log_bin: /var/log/mysql/binlog/binlog.log
+relay_log: /var/log/mysql/binlog/replay-bin.log
+binlog_expire_logs_seconds: 259200
+max_binlog_size: 300M
+
+
+
+
+#--------------------------Logs--------------------------
+log_output: TABLE
+
+general_log: 0
+general_log_file: /var/log/mysql/general.log
+
+log_error: /var/log/mysql/error.log
+log_error_verbosity: 1
+
+slow_query_log: 1
+slow_query_log_file: /var/log/mysql/slow_query.log
+long_query_time: 60
+
+
+
+
+
+#--------------------------SQL Query--------------------------
+transaction_isolation: '"READ-COMMITTED"'
+
+group_concat_max_len: 1048576
+
+
+# --------------------------Security Configuration--------------------------
+default_authentication_plugin: mysql_native_password
+activate_all_roles_on_login: 1
+
+
+
+
+#--------------------------Group Replication--------------------------
+
+disabled_storage_engines: '"MyISAM,BLACKHOLE,FEDERATED,ARCHIVE,MEMORY"'
+#plugin_load_add='group_replication.so'
+#group_replication_start_on_boot=off
+#group_replication_local_address= cts_slave_mysql80_test2:33091 
+#group_replication_bootstrap_group=off
+
+gtid_mode: "ON"
+enforce_gtid_consistency: "ON"
+
+
+
+
+binlog_format: ROW
+binlog_transaction_dependency_tracking: WRITESET
+
+slave_parallel_type: LOGICAL_CLOCK
+slave_preserve_commit_order: "ON"
+
+read_only: "OFF"
+super_read_only: "OFF"
+event_scheduler: "OFF"
