@@ -1,0 +1,4 @@
+serveralias: dev72
+user_name: cts_ansible_test
+user_pass: password
+pathSSHKey: ./sshkey

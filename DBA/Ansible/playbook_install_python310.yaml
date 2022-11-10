@@ -1,0 +1,26 @@
+- name: Install Python 3.10
+  hosts: all
+  become: yes
+  tasks:
+  - name: Run python3.10 --version
+    command: python3.10 --version
+    register: python310_valid
+    ignore_errors: yes
+  
+  - name: Check Python is already installed 
+    fail:
+     msg: "will run if docker is installed"
+    when: not python310_valid.failed
+  
+  - name: Install required system packages for python
+    apt: name=software-properties-common state=latest update_cache=yes
+  
+  - name: Add python stable repository from PPA
+    apt_repository:
+     repo: 'ppa:deadsnakes/ppa'
+  
+  - name: Install Python 3.10
+    apt: name=python3.10 state=latest update_cache=yes
+  
+  - name: Install Python 3.10 venv
+    apt: name=python3.10-venv state=latest

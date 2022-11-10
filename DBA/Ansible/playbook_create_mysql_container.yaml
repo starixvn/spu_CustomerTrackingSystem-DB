@@ -1,0 +1,204 @@
+- name: Create MySQL Container
+  hosts: all
+  become: yes
+  tasks:
+  - name: Import playbook variables
+    include_vars: variables_create_mysql_container_dba.yaml
+
+  - name: Get docker container info
+    docker_container_info :
+     name: "{{ container_name }}"
+    register: container_instance
+
+  - name: Check container existed 
+    fail:
+     msg: The container is existed
+    when: container_instance.exists == True
+  
+  - name: Getting available space {{data_folder}} folder 
+    shell: df {{ data_folder }} --output\=avail | tail -1
+    register: tmp_freespace
+      
+  - name: Checking free space {{data_folder}} folder  is grater than {{requirement_disk_size}}GB
+    fail:
+     msg: Folder does not have the minimum space required.
+    when: tmp_freespace.stdout|float < requirement_disk_size * 1024*1024
+  
+  - name: Set variable
+    ansible.builtin.set_fact: 
+     volume_folder="{{ data_folder }}/{{ container_name }}"
+     config_folder="{{ data_folder }}/{{ container_name }}/config"
+     binlog_folder="{{ data_folder }}/{{ container_name }}/binlog"
+     tmp_folder="{{ data_folder }}/{{ container_name }}/tmp"
+     log_folder="{{ data_folder }}/{{ container_name }}/log"
+     data_volume_folder="{{ data_folder }}/{{ container_name }}/data"
+     project_name="{{ container_name }}_project"
+     container_user_name="{{ container_name }}_user"
+     container_volume_name="{{ container_name }}_data"
+
+
+  - name: Create volume folder
+    file:
+     path: "{{ volume_folder }}"
+     state: directory
+    
+  - name: Create config folder
+    file:
+     path: "{{ config_folder }}"
+     state: directory
+  
+  - name: Creating mysql config file
+    template:
+      src: mysql_conf_template.j2
+      dest: "{{ config_folder }}/config.cnf"
+    
+  - name: Create binlog folder
+    file:
+     path: "{{ binlog_folder }}"
+     state: directory
+
+  - name: Create log folder
+    file:
+     path: "{{ log_folder }}"
+     state: directory
+    
+  - name: Create data folder
+    file:
+     path: "{{ data_volume_folder }}"
+     state: directory
+    
+  - name: Create tmp folder
+    file:
+     path: "{{ tmp_folder }}"
+     state: directory
+    
+  - name: Create user run container
+    ansible.builtin.user:
+     name: "{{ container_user_name }}"
+     shell: /bin/bash
+     comment: user mysql container
+     password: "{{ user_pass | password_hash('sha512') }}"
+    register: result_userinfo
+
+  - name: Set user_uid value
+    ansible.builtin.set_fact: user_uid="{{ result_userinfo.uid }}"
+  
+  - name: Set group_uid value
+    ansible.builtin.set_fact: group_uid="{{ result_userinfo.group }}"
+     
+  - name: Create docker volume
+    docker_volume:
+     name: "{{ container_volume_name }}"
+     driver_options:
+      type: none
+      device: "{{data_volume_folder }}"
+      o: bind
+      
+  - name: Create docker bridge network
+    docker_network:
+     name: "{{ container_bridge_network }}"
+  
+  #- name: Create docker overlay network
+  #  docker_network:
+  #   name: "{{ container_overlay_network }}"
+  #   driver: "overlay"
+    
+  - name: "Print a variable value"
+    debug:
+     msg: "Variable value is {{ user_uid }},  {{ group_uid }}"
+  
+  - name: Change volume folder ownership, group
+    ansible.builtin.file:
+     path: "{{ volume_folder }}"
+     recurse: yes
+     owner: "{{ user_uid }}"
+     group: "{{ group_uid }}"
+     
+  - name: "Create Container"
+    docker_compose:
+     project_name: "{{ project_name }}"
+     definition:
+      version: '3.8'
+      networks:
+       app_network:
+        external: true
+        name: "{{ container_bridge_network }}"
+        driver: bridge
+       
+       overlay_network:
+        external: true
+        name: "{{ container_overlay_network }}" 
+        driver: overlay
+
+      services:
+       mysql:
+        image: "{{ mysql_image }}"
+        container_name: "{{ container_name }}"
+        hostname: "{{ container_name }}"
+        user: "{{user_uid}}:{{group_uid}}"
+        cap_add:
+         - SYS_NICE  
+
+        volumes:
+         - app_volume:/var/lib/mysql:rw
+         - "{{ log_folder }}:/var/log/mysql:rw"
+         - "{{ config_folder }}/config.cnf:/etc/mysql/conf.d/config.cnf:ro"
+         - "{{ tmp_folder }}:/var/log/mysql/tmp:rw"
+         - "{{ binlog_folder }}:/var/log/mysql/binlog:rw"
+
+        environment:
+         - TZ=America/La_Paz
+         - MYSQL_ROOT_PASSWORD=password
+
+        ports:
+         - "{{ mysql_client_port }}:{{ mysql_client_port }}"
+         - "{{ mysqlx_client_port }}:{{ mysqlx_client_port }}"
+
+        networks:
+         app_network:
+          aliases: 
+           - "{{ container_name }}"
+         overlay_network:
+          aliases: 
+           - "{{ container_name }}"
+        restart: always
+
+      volumes:
+       app_volume:
+        external: true
+        name: "{{ container_volume_name }}"
+  
+  - name: Change volume data folder ownership, group
+    ansible.builtin.file:
+     path: "{{ data_volume_folder }}"
+     owner: "{{ user_uid }}"
+     group: "{{ group_uid }}"
+     mode: '750'
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+    

@@ -1,0 +1,14 @@
+#***********************Validate***********************
+free_space_require: 20 #Gb
+
+#***********************docker compose***********************
+container_name: cts_monitor_server
+container_bridge_network: cts_monitor_server_network
+user_pass: password
+
+data_folder: /volumes
+requirement_disk_size: 20 #Gb
+
+image: "percona/pmm-server:2.31.0"
+
+client_port: 3443

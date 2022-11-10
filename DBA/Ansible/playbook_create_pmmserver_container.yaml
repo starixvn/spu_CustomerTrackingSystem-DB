@@ -1,0 +1,123 @@
+- name: Create Percona monitor management container
+  hosts: all
+  become: yes
+  tasks:
+  - name: Import playbook variables
+    include_vars: variables_create_pmmserver.yaml
+
+  - name: Get docker container info
+    docker_container_info :
+     name: "{{ container_name }}"
+    register: container_instance
+
+  - name: Check container existed 
+    fail:
+     msg: The container is existed
+    when: container_instance.exists == True
+  
+  - name: Getting available space {{data_folder}} folder 
+    shell: df {{ data_folder }} --output\=avail | tail -1
+    register: tmp_freespace
+      
+  - name: Checking free space {{data_folder}} folder  is grater than {{requirement_disk_size}}GB
+    fail:
+     msg: Folder does not have the minimum space required.
+    when: tmp_freespace.stdout|float < requirement_disk_size * 1024*1024
+  
+  - name: Set variable
+    ansible.builtin.set_fact: 
+     volume_folder="{{ data_folder }}/{{ container_name }}"
+     container_user_name="{{ ansible_ssh_user }}"
+     project_name="{{ container_name }}_project"
+     container_volume_name="{{ container_name }}_data"
+     data_volume_folder="{{ data_folder }}/{{ container_name }}/data"
+
+
+  - name: Create volume folder
+    file:
+     path: "{{ volume_folder }}"
+     state: directory
+
+  - name: Create data folder
+    file:
+     path: "{{ data_volume_folder }}"
+     state: directory
+
+  - name: Create docker volume
+    docker_volume:
+     name: "{{ container_volume_name }}"
+     driver_options:
+      type: none
+      device: "{{data_volume_folder }}"
+      o: bind
+      
+  - name: Create docker bridge network
+    docker_network:
+     name: "{{ container_bridge_network }}"
+  
+  - name: "Create Container"
+    docker_compose:
+     project_name: "{{ project_name }}"
+     definition:
+      version: '3.8'
+      networks:
+       app_network:
+        external: true
+        name: "{{ container_bridge_network }}"
+        driver: bridge
+      
+      services:
+       mysql:
+        image: "{{ image }}"
+        container_name: "{{ container_name }}"
+        hostname: "{{ container_name }}"
+
+        volumes:
+         - app_volume:/srv:rw
+
+        ports:
+         - "{{ client_port }}:443"
+
+        networks:
+         app_network:
+          aliases: 
+           - "{{ container_name }}"
+        restart: always
+
+      volumes:
+       app_volume:
+        external: true
+        name: "{{ container_volume_name }}"
+
+  - name: Set password admin
+    community.docker.docker_container_exec:  
+     container: "{{ container_name }}"
+     command: change-admin-password "{{ user_pass }}"
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+    

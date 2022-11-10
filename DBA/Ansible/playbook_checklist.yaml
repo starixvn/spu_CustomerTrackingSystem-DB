@@ -1,0 +1,47 @@
+- name: Check requirements for database system 
+  hosts: all
+  tasks:
+  - name: Import variables
+    include_vars: variables_checklist.yaml
+
+  - name: Run python3.10 --version
+    ansible.builtin.command: 
+     cmd: python3.10 --version
+    ignore_errors: yes
+    register: py
+  
+  - name: Run python3.10 venv help
+    ansible.builtin.command: 
+     cmd: python3.10 -m venv --help
+    ignore_errors: yes
+    register: pyvenv
+
+  - name: Run docker --version
+    shell: docker --version
+    ignore_errors: yes
+    register: docker
+  
+  - name: Run getent passwd 
+    shell: getent passwd {{ user_ansible }}
+    ignore_errors: yes
+    register: user
+
+  - name: Check python3.10 installed
+    debug:
+      msg: "Python 3.10 isn't installed"
+    when: py is failed
+  
+  - name: Check python3.10-venv installed
+    debug:
+      msg: "Python3.10-venv isn't installed"
+    when: pyvenv is failed
+
+  - name: Check docker installed
+    debug:
+      msg: "Docker isn't installed"
+    when: docker is failed
+
+  - name: Check user ansible exist
+    debug:
+      msg: "The {{ user_ansible }} user isn't exist"
+    when: user is failed

@@ -1,0 +1,62 @@
+- name: Get OS info
+  hosts: all
+  tasks:
+  - name: Get OS version
+    debug:
+     msg:
+     - "ansible_distribution {{ hostvars[inventory_hostname].ansible_distribution }}"
+     - "major version {{ hostvars[inventory_hostname].ansible_distribution_major_version }}"
+     - "version {{ hostvars[inventory_hostname].ansible_distribution_version }}"
+
+  - name: Get Python 3 version
+    shell: python3 --version
+    register: py3
+  - name: Print Python 3 version
+    debug:
+      msg: "{{py3.stdout}}"
+    when: py3 is defined
+
+  - name: Get Python 2 version
+    shell: python --version
+    register: py2
+   
+  - name: Print Python 2 version
+    debug:
+      msg: "{{py2.stderr}}"
+    when: py2 is defined
+
+  - name: Get Python 3.10 version
+    shell: python3.10 --version
+    ignore_errors: yes
+    register: py310
+  - name: Print Python 3.10 version
+    debug:
+      msg: "Python 3.10 is installed"
+    when: py310 is succeeded
+
+  - name: Get Docker version
+    shell: docker --version
+    ignore_errors: yes
+    register: docker
+  - name: Print Docker version
+    debug:
+      msg: "{{docker.stdout}}"
+    when: docker is succeeded
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+    

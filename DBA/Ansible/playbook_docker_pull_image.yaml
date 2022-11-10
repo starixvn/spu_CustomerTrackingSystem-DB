@@ -1,0 +1,14 @@
+- name: Pull an images
+  hosts: all
+  become: yes
+  tasks:
+  - name: Import variables
+    include_vars: variables_docker_image_list.yaml
+
+  - name: Pull images
+    community.docker.docker_image:
+     name: "{{ item }}"
+     source: pull
+    loop: "{{ images }}"
+
+
