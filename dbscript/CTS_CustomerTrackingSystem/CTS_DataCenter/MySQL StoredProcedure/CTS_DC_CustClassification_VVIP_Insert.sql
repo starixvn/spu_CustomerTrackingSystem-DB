@@ -160,10 +160,11 @@ sp: BEGIN
         ,	cls.TVSRequestID
 	FROM CTS_DataCenter.CTSCustomerClassification AS cls
 		INNER JOIN Temp_Customer AS tmpCus ON cls.CustID = tmpCus.CustID AND tmpCus.IsExistVVIP = 0
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cls.CategoryID
 	WHERE NOT EXISTS (SELECT 1 FROM Temp_WrapperCategory AS tmpWr WHERE tmpWr.CategoryID = cls.CategoryID)
 		  AND (cls.SportGroupID = 0 
-			OR (cls.SportGroupID = 200 AND cls.CategoryID IN (CONST_CATEGORY_RISKY, CONST_CATEGORY_SMART)));
-        
+			OR (cls.SportGroupID = 200 AND cc.CategoryGroup IN (CONST_CATEGORY_RISKY, CONST_CATEGORY_SMART)));
+     
 	/*****Remove all category, customer class, probation list before******/
 	DELETE cls
     FROM CTS_DataCenter.CTSCustomerClassification AS cls

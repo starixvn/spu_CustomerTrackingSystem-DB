@@ -14,7 +14,7 @@ BEGIN
 		Original: 
 		Revisions: 
 			- 20220520@Aries.Nguyen: Created [Redmine ID: #172561]
-            - 20221007@Harvey.Nguyen: Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory [Redmine ID: #178022]
+            - 20221007@Harvey.Nguyen: Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory and delete PA only [Redmine ID: #178022]
 		
         Param's Explanation:
 
@@ -32,7 +32,9 @@ BEGIN
     
     DELETE clss
     FROM CTS_DataCenter.CTSCustomerClassificationOldCategory AS clss
-    WHERE EXISTS (SELECT 1 FROM Temp_CustID AS tmp WHERE tmp.CustID = clss.CustID);
+    WHERE EXISTS (SELECT 1 FROM Temp_CustID AS tmp WHERE tmp.CustID = clss.CustID)
+		AND clss.SportGroupID = 0;
+        
 END$$
 
 DELIMITER ;

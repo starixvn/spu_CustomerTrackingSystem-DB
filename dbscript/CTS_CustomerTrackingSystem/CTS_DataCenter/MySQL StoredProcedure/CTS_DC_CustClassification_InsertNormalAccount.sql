@@ -37,11 +37,12 @@ BEGIN
 				- 20211122@Irena.Vo: Process Licensee info by site [Redmine ID: #161665]
                 - 20220705@Long.Luu: Switching for Licensee VIP & BA Categories [Redmine ID: #174219]                
                 - 20220817@Long.Luu: Rearrange CC's IDs [Redmine ID: #175698]
+                - 20221110@Casey.Huynh: Update logic for checking Category in OldCategory table [Redmine ID: #178022]
                 
 		Param's Explanation (filtered by):
         
         Example:
-				- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount_xpre('[{"CustId": "43600693","CategoryId":"1000","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","TaggingID":10,"TaggingType":1}]',@or);
+				- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount('[{"CustId": "43600693","CategoryId":"1000","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","TaggingID":10,"TaggingType":1}]',@or);
 */ 
     DECLARE	CONST_GROUP_PA 								INT DEFAULT 0;
     DECLARE	CONST_GROUP_WRAPPER							INT DEFAULT 100;
@@ -304,6 +305,31 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
 	WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_IGNOREPROBATION);
     
+    #====GET OLD LASTEST CATEGORY FROM OLD CATEGORY IS NORMAL CATEGORY========
+    DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomerClassificationOldCategory;
+    CREATE TEMPORARY TABLE Temp_CTSCustomerClassificationOldCategory(
+			CustID		BIGINT UNSIGNED
+		,	CategoryID	INT
+    );
+    
+    INSERT INTO Temp_CTSCustomerClassificationOldCategory(CustID, CategoryID, SportGroupID)
+    SELECT tmpLtr.CustID
+		,  tmpLtr.CategoryID
+    FROM Temp_NewClassification AS temp
+	, LATERAL	
+        (	SELECT CustID, CategoryID, SportGroupID
+			FROM CTS_DataCenter.CTSCustomerClassificationOldCategory AS cate 
+			WHERE temp.CustID = cate.CustID
+			ORDER BY cate.CreatedDate DESC
+       ) tmpLtr 
+	WHERE tmpLtr.SportGroupID = CONST_GROUP_NORMAL AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_IGNOREPROBATION);
+    
+    INSERT IGNORE INTO Temp_OldClassification(CustID, OldCateGroup, OldCateID, OldIsDangerProbation)
+    SELECT DISTINCT temp.CustID, cc.CategoryGroup, cc.CategoryID, cc.IsDangerProbation
+    FROM Temp_NewClassification AS temp
+		INNER JOIN Temp_CTSCustomerClassificationOldCategory AS tmpOc ON temp.CustID = tmpOc.CustID
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = tmpOc.CategoryID;
+    #===========================================================================
     UPDATE Temp_NewClassification AS n
 		LEFT JOIN Temp_OldClassification AS o ON n.CustID = o.CustID
 	SET n.OldCateGroup = CASE WHEN o.CustID IS NULL THEN CONST_CATEGORY_NEWMEMBER ELSE o.OldCateGroup END,
