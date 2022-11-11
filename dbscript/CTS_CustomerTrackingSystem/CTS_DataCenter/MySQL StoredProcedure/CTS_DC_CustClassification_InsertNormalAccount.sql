@@ -312,7 +312,7 @@ BEGIN
 		,	CategoryID	INT
     );
     
-    INSERT INTO Temp_CTSCustomerClassificationOldCategory(CustID, CategoryID, SportGroupID)
+    INSERT IGNORE INTO Temp_CTSCustomerClassificationOldCategory(CustID, CategoryID, SportGroupID)
     SELECT tmpLtr.CustID
 		,  tmpLtr.CategoryID
     FROM Temp_NewClassification AS temp
@@ -516,11 +516,18 @@ BEGIN
 	 FROM Temp_NewClassification AS temp
      WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT; 
 
-    /* 13: REMOVE DATA FOR PASS PROBATION */
+    /* 13: REMOVE DATA */
+    # DELETE FOR OLD PA 
+    DELETE del
+    FROM CTS_DataCenter.CTSCustomerClassificationOldCategory AS del
+		INNER JOIN Temp_NewClassification AS temp ON clo.CustID = tmp.CustID AND del.SportGroupID = CONST_GROUP_NORMAL
+    WHERE clo.CONST_ACTIONTYPE_INSERT;
+    
+    # FOR PASS PROBATION    
     DELETE pro
     FROM CTS_DataCenter.ProbationAccountMonitor AS pro
 		INNER JOIN Temp_NewClassification AS temp on temp.CustID = pro.CustID AND pro.SportGroupID = CONST_GROUP_NORMAL
-	WHERE temp.ActionType = CONST_ACTIONTYPE_UPDATE AND temp.OldCateGroup = CONST_CATEGORY_PROBATION AND temp.NewCateGroup <> CONST_CATEGORY_PROBATION;
+	WHERE temp.ActionType = CONST_ACTIONTYPE_UPDATE AND temp.OldCateGroup = CONST_CATEGORY_PROBATION AND temp.NewCateGroup <> CONST_CATEGORY_PROBATION;   
     
     /* 14: INSERT NEW PROBATION */
     INSERT IGNORE INTO CTS_DataCenter.ProbationAccountMonitor
