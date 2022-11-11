@@ -5,7 +5,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CTS_NormalAccountsClassification_BySport_Probation]
+ALTER PROCEDURE [dbo].[CTS_NormalAccountsClassification_BySport_Probation]
 		@CustomersXML			XML
 AS
 /*
@@ -16,6 +16,7 @@ AS
 
 	Revisions:
 		- 20200901@Jonas.Huynh: Created [Redmine ID: #176992]
+		- 20221111@Jonas.Huynh: Adjust Eport Rules [Redmine ID: #179501]
 
 	Param's Explanation:
 
@@ -242,7 +243,7 @@ BEGIN
 	FROM #tmpCustomerAccummulatedInfo AS a
 		INNER JOIN bodb02.dbo.Dep_CustSuper AS c WITH(NOLOCK) ON a.SRecommend = c.custid;	
 
-	-- #7: Classify GOOD, NEW, NORMAL, PROBATION, SMART, RISKY MEMBER
+	-- #7: Classify Probation Category
 	INSERT INTO #tmpResultData(CustId, SportId, CategoryId)
 	SELECT  CustId
 		,	SportId

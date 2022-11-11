@@ -5,7 +5,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CTS_NormalAccountsClassification_BySport_RealTime]
+ALTER PROCEDURE [dbo].[CTS_NormalAccountsClassification_BySport_RealTime]
 		@CustomersXML			XML
 AS
 /*
@@ -17,7 +17,8 @@ AS
 	Revisions:
 		- 20220831@Jonas.Huynh: Created [Redmine ID: #176992]
 		- 20221017@Jonas.Huynh: Fix issue ineligible customer classification
-		
+		- 20221111@Jonas.Huynh: Adjust Eport Rules [Redmine ID: #179501]
+	
 	Param's Explanation:
 				@CustomersXML = N'<Root>
 										<r CustId="4345542" SportId="2" CategoryId ="201"/>
@@ -159,7 +160,7 @@ BEGIN
 	WHERE a.CurrentCategoryId IN (@CATEGORY_NORMALMEMBER)
 		AND (v.CustId IS NOT NULL AND (a.BetCount - v.BetCount < 20));
 
-	-- #4: Classify GOOD, NEW, NORMAL, PROBATION MEMBER
+	-- #4: Classify NULL, GOOD, NEW, NORMAL Category
 	INSERT INTO #tmpResultData(CustId, SportId, CategoryId)
 	SELECT  CustId
 		,	SportId
@@ -182,9 +183,8 @@ BEGIN
 					OR (r.RuleGroupId = 11 AND a.CurrentCategoryId = r.CurrentCategory AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM >= r.WinlossRM)		-- PROBATION
 					OR (r.RuleGroupId = 12 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)			-- SMART
 					OR (r.RuleGroupId = 13 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount >= r.BetCount AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM AND a.WinlossRM <= r.WinlossRM2)		-- SMART
-					OR (r.RuleGroupId = 17 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)										-- RISKY	
-					OR (r.RuleGroupId = 19 AND a.BetCount < r.BetCount AND a.Margin > r.Margin AND a.Margin <= r.Margin2)																						-- NEW MEMBER
-					OR (r.RuleGroupId = 20 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount > r.BetCount AND a.Margin > r.Margin)																		-- PROBATION
+					OR (r.RuleGroupId = 17 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)										-- RISKY
+					OR (r.RuleGroupId = 19 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount > r.BetCount AND a.Margin > r.Margin)																		-- PROBATION
 		) as b
 	 WHERE b.RowNum = 1;
 

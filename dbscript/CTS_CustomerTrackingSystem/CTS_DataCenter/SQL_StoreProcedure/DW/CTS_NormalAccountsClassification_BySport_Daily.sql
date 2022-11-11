@@ -5,7 +5,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CTS_NormalAccountsClassification_BySport_Daily]
+ALTER PROCEDURE [dbo].[CTS_NormalAccountsClassification_BySport_Daily]
 	 @CustomersXML			XML
 AS
 /*
@@ -16,6 +16,7 @@ AS
 
 	Revisions:
 		- 20200901@Jonas.Huynh: Created [Redmine ID: #176992]
+		- 20221111@Jonas.Huynh: Adjust Eport Rules [Redmine ID: #179501]
 
 	Param's Explanation:
 				@CustomersXML = N'<Root>
@@ -234,7 +235,7 @@ BEGIN
 	FROM  #tmpCustomerAccummulatedInfo AS a WITH(ROWLOCK)
 	WHERE (a.Site = 'NextBet' OR a.Site = '9wickets' OR a.Site = '9wsports');
 
-	-- #7: Classify GOOD, NEW, NORMAL, PROBATION, SMART, RISKY MEMBER
+	-- #7: Classify GOOD, NORMAL, SMART, RISKY MEMBER
 	INSERT INTO #tmpResultData(CustId, SportId, CategoryId)
 	SELECT  CustId
 		,	SportId
