@@ -82,7 +82,7 @@ BEGIN
 
     SET @sql = 	CONCAT("
 		INSERT IGNORE INTO Temp_Normal (CustID, CurrentCategoryID)
-		SELECT 	clss.CustID, clss.CategoryID
+		SELECT clss.CustID, clss.CategoryID
 		FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID_CustID)
 		WHERE clss.CustID > ", lv_LastCustID," ","
 			AND clss.CategoryID = ",lv_LastCategoryID," ","
@@ -172,8 +172,10 @@ BEGIN
         SET op_LastCustID = 0;
     END IF;
     
-    SELECT 	CustID, CurrentCategoryID
-    FROM Temp_Normal;
+    SELECT DISTINCT	tmpNr.CustID
+		,	cc.CategoryGroup AS CurrentCategoryID
+    FROM Temp_Normal AS tmpNr
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON tmpNr.CurrentCategoryID = cc.CategoryID;
 
 END$$
 DELIMITER ;

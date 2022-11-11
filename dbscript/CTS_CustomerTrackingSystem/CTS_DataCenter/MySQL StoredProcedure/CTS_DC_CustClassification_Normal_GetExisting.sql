@@ -53,8 +53,7 @@ BEGIN
         FROM Temp_InputCust AS tmpIc
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpIc.CustID = cus.CustID AND cus.CustSubID = 0
 			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin ON pin.CTSCustID = cus.CTSCustID
-			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = tmpIc.CustID
-		WHERE pin.CTSCustID IS NULL AND sp.CustID IS NULL;
+		WHERE pin.CTSCustID IS NULL;
 
     END IF;	
 	
