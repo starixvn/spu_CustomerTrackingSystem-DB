@@ -193,6 +193,11 @@ BEGIN
 	FROM #tmpRawData AS a WITH(NOLOCK)
 	GROUP BY a.CustId;
 	
+	UPDATE a WITH(ROWLOCK, UPDLOCK)
+	SET a.CurrentCategoryId = c.CurrentCategoryId
+	FROM #tmpCustomerAccummulatedInfo AS a
+		INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.custid;
+
 	---- Log Data
 	INSERT INTO dbo.CustomerClassification_InputLog(CustId, CreatedDate, CreatedTime, FunctionId, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId, IsActive)
 	SELECT CustId, @CurrentDate, @CurrentDateTime, @FUNCTIONID, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId, 1
@@ -219,11 +224,6 @@ BEGIN
 	SET a.IsDeposit = 1
 	FROM #tmpCustomerAccummulatedInfo AS a
 		INNER JOIN bodb02.dbo.Dep_CustSuper AS c WITH(NOLOCK) ON a.SRecommend = c.custid;
-
-	UPDATE a WITH(ROWLOCK, UPDLOCK)
-	SET a.CurrentCategoryId = c.CurrentCategoryId
-	FROM #tmpCustomerAccummulatedInfo AS a
-		INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.custid;
 	
 	--#7: Classify classification by general rule
 	INSERT INTO #tmpResultData(CustId, CategoryId)
