@@ -517,7 +517,7 @@ BEGIN
      WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT; 
 
     /* 13: REMOVE DATA */
-    # DELETE FOR OLD PA 
+    # DELETE FOR OLD NORMAL 
     DELETE del
     FROM CTS_DataCenter.CTSCustomerClassificationOldCategory AS del
 		INNER JOIN Temp_NewClassification AS temp ON del.CustID = temp.CustID AND del.SportGroupID = CONST_GROUP_NORMAL
