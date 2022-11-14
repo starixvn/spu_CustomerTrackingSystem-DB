@@ -278,7 +278,8 @@ BEGIN
         , clss.TVSRequestID
     FROM CTS_DataCenter.CTSCustomerClassification AS clss
 		INNER JOIN Temp_PA AS tmpPa ON tmpPa.CustID = clss.CustID AND clss.SportGroupID = CONST_SPORTGROUP_NORMAL
-	WHERE clss.CategoryID IN (CONST_CATEGORY_RISKY, CONST_CATEGORY_SMART);
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = clss.CategoryID
+	WHERE cc.CategoryGroup IN (CONST_CATEGORY_RISKY, CONST_CATEGORY_SMART);
     
     UPDATE CTS_DataCenter.CTSCustomerClassification AS clss
     INNER JOIN Temp_ExistCate AS tmp ON tmp.CustID = clss.CustID AND tmp.CategoryID = clss.CategoryID 

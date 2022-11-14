@@ -304,7 +304,7 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON temp.CustID = cate.CustID AND cate.SportGroupID = CONST_GROUP_NORMAL
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
 	WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_IGNOREPROBATION);
-    
+
     #====GET OLD LASTEST CATEGORY FROM OLD CATEGORY IS NORMAL CATEGORY========
     DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomerClassificationOldCategory;
     CREATE TEMPORARY TABLE Temp_CTSCustomerClassificationOldCategory(
@@ -312,9 +312,9 @@ BEGIN
 		,	CategoryID	INT
     );
     
-    INSERT IGNORE INTO Temp_CTSCustomerClassificationOldCategory(CustID, CategoryID, SportGroupID)
+    INSERT IGNORE INTO Temp_CTSCustomerClassificationOldCategory(CustID, CategoryID)
     SELECT tmpLtr.CustID
-		,  tmpLtr.CategoryID
+		,  tmpLtr.CategoryID        
     FROM Temp_NewClassification AS temp
 	, LATERAL	
         (	SELECT CustID, CategoryID, SportGroupID
@@ -323,7 +323,7 @@ BEGIN
 			ORDER BY cate.CreatedDate DESC
        ) tmpLtr 
 	WHERE tmpLtr.SportGroupID = CONST_GROUP_NORMAL AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_IGNOREPROBATION);
-    
+
     INSERT IGNORE INTO Temp_OldClassification(CustID, OldCateGroup, OldCateID, OldIsDangerProbation)
     SELECT DISTINCT temp.CustID, cc.CategoryGroup, cc.CategoryID, cc.IsDangerProbation
     FROM Temp_NewClassification AS temp
@@ -520,8 +520,8 @@ BEGIN
     # DELETE FOR OLD PA 
     DELETE del
     FROM CTS_DataCenter.CTSCustomerClassificationOldCategory AS del
-		INNER JOIN Temp_NewClassification AS temp ON clo.CustID = tmp.CustID AND del.SportGroupID = CONST_GROUP_NORMAL
-    WHERE clo.CONST_ACTIONTYPE_INSERT;
+		INNER JOIN Temp_NewClassification AS temp ON del.CustID = temp.CustID AND del.SportGroupID = CONST_GROUP_NORMAL
+    WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT;
     
     # FOR PASS PROBATION    
     DELETE pro
