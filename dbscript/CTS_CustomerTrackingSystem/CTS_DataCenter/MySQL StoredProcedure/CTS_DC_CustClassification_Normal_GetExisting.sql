@@ -59,7 +59,7 @@ BEGIN
 	
     #===========GET LASTEST EXISTING CATEGORY====================================
 	INSERT INTO Temp_CustCategory(CustID, CategoryID, SportGroupID)
-	SELECT 	cls.CustID
+	SELECT 	tmpIc.CustID
 		,	cls.CategoryID
         ,	cls.SportGroupID
 	FROM Temp_Cust AS tmpIc
@@ -76,9 +76,9 @@ BEGIN
 
     #=========RETURN CUST IF LASTEST Category is Normal OR Not Existing any Category
 	SELECT	DISTINCT tmpCc.CustID
-		,	cc.CategoryGroup AS CategoryID
+		,	IFNULL(cc.CategoryGroup,0) AS CategoryID
 	FROM Temp_CustCategory AS tmpCc
-		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON tmpCc.CategoryID = cc.CategoryID
-    WHERE tmpCc.SportGroupID = CONST_GROUP_NORMAL OR tmpCc.SportGroupID IS NULL;
+		LEFT JOIN CTS_DataCenter.CustomerCategory AS cc ON tmpCc.CategoryID = cc.CategoryID
+    WHERE tmpCc.SportGroupID = CONST_GROUP_NORMAL OR cc.CategoryID IS NULL;
 END$$
 DELIMITER ;
