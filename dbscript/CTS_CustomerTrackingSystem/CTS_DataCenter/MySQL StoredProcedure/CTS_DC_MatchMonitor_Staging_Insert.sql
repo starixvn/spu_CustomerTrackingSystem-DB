@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Staging_Insert`;
+DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Staging_Insert_xtest`;
 DELIMITER $$
 
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Staging_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Staging_Insert_xtest`(
 		IN ip_LiveIndicator	BOOLEAN 
     ,	IN ip_TransList 	JSON
 )
@@ -25,11 +25,12 @@ BEGIN
 			-	20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
             -	20221021@Casey.Huynh: Fixed Clean Data Staging [Redmine ID: #179427]
             - 	202201021@Casey.Huynh: Seperate pool Staging [Redmine ID: #179439]
+            - 	20221115@Casey.Huynh: Detect Irrgation Rule [Redmine ID: #179499]
             
 		Param's Explanation (filtered by):		
 
 		Example:
-			CALL CTS_DataCenter.CTS_DC_MatchMonitor_Staging_Insert(1,'[{"SequenceID": 1, "TransID": 100,"TransDate" : "2021-05-17 07:48:52.533","MatchID" : 43614953,"EventDate" : "2021-05-17 00:00:00","KickOffTime" : "2021-05-17 00:00:00","EventStatus" : "running","HomeID" : 953,"AwayID" : 113,"LeagueID" : 3,"Bettype" : 3, "BetID" : 0,  "LiveIndicator" : "1","CustID" : 12500792,"Stake" : 20,"Betteam" : "a","LiveHomeScore" : 0,"LiveAwayScore" : 2}]');;
+			CALL CTS_DataCenter.CTS_DC_MatchMonitor_Staging_Insert(0,'[{"SportType": 1,"SequenceID": 1,"TransID": 100,"TransDate" : "2021-05-17 07:48:52.533","MatchID" : 43614953,"EventDate" : "2021-05-17 00:00:00","KickOffTime" : "2021-05-17 00:00:00","EventStatus" : "running","HomeID" : 953,"AwayID" : 113,"LeagueID" : 3,"Bettype" : 3, "BetID" : 0,  "LiveIndicator" : "1","CustID" : 12500792,"Stake" : 20,"Betteam" : "a","LiveHomeScore" : 0,"LiveAwayScore" : 2,"LeagueName":"ABC League"}]');;
             
 	*/    
     
@@ -178,7 +179,7 @@ BEGIN
 							,	Betteam			VARCHAR(10)	PATH "$.Betteam" 
 						)
 					) AS js
-		WHERE js.SportType = 1;
+		WHERE js.SportType = 1;        
         
 		#=====UPDATE SYSTEM PARAMETER===============================
 		SELECT MAX(mms.SequenceID)
@@ -335,6 +336,54 @@ BEGIN
 						)
 					) AS js
 		WHERE js.SportType = 1;
+        
+		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingIrrigationNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
+		SELECT  js.SequenceID
+			,	js.TransID
+			,	js.TransDate
+            ,	js.LeagueName
+            ,	js.SportType
+			,	js.MatchID
+			,	js.HomeID
+			,	js.AwayID
+			,	js.EventStatus
+			,	js.KickOffTime
+			,	js.LeagueID
+			,	js.EventDate
+			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore END) AS LiveHomeScore
+			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveAwayScore END) AS LiveAwayScore
+			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore + js.LiveAwayScore END) AS TotalScore
+			,	js.BettypeID
+            ,	IFNULL(js.BetID,0)
+			,	js.CustID
+			,	js.Stake
+            ,	js.Betteam
+			,	CURRENT_TIMESTAMP(3)
+		FROM JSON_TABLE(ip_TransList,
+					 "$[*]" COLUMNS(
+								SequenceID		BIGINT UNSIGNED PATH "$.SequenceID" 	
+							,	TransID			BIGINT UNSIGNED PATH "$.TransID" 
+							,	TransDate		DATETIME(3) PATH "$.TransDate" 
+							,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PATH "$.LeagueName"
+							,	SportType		INT PATH "$.SportType"
+							,	MatchID			INT PATH "$.MatchID"
+							,	HomeID			INT	PATH "$.HomeID" 
+							,	AwayID			INT	PATH "$.AwayID" 
+							,	EventStatus		VARCHAR(50)	PATH "$.EventStatus" 
+							,	KickOffTime		DATETIME PATH "$.KickOffTime" 
+							,	LeagueID		INT	PATH "$.LeagueID"
+							,	EventDate		DATE PATH "$.EventDate"
+							,	LiveHomeScore	INT	PATH "$.LiveHomeScore" 
+							,	LiveAwayScore	INT	PATH "$.LiveAwayScore" 
+							,	BettypeID		INT	PATH "$.Bettype"
+							,	BetID			BIGINT	PATH "$.BetID"
+							,	CustID			INT PATH "$.CustID"
+							,	Stake			DECIMAL(20,4) PATH "$.Stake" 
+							,	Betteam			VARCHAR(10)	PATH "$.Betteam" 
+						)
+					) AS js
+		WHERE js.SportType = 1;
+        
                     
 		#=====UPDATE SYSTEM PARAMETER===============================
 		SELECT 	MAX(mms.SequenceID)
