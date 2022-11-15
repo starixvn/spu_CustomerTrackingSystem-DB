@@ -3,8 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_InsertNorma
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_InsertNormalAccount`(
-		IN ip_NewClassification 	JSON
-    
+		IN ip_NewClassification 	JSON    
     ,	OUT op_ErrorMessage 		VARCHAR(200)
 )
     SQL SECURITY INVOKER
@@ -156,6 +155,7 @@ BEGIN
         ,	OldCateGroup 			SMALLINT
         ,	OldCateID 				SMALLINT
         ,	OldIsDangerProbation	BIT DEFAULT 0
+        ,	FromOldCategory			BOOLEAN DEFAULT 0	
 	); 
     
     DROP TEMPORARY TABLE IF EXISTS Temp_OldCustomerClass;    
@@ -169,7 +169,7 @@ BEGIN
 			CustID					BIGINT UNSIGNED	PRIMARY KEY
         ,	CustomerClass 			SMALLINT
 	); 
-    
+     
     /* START */
     /* INIT */    
     SELECT CustomerClass, Priority 
@@ -324,8 +324,8 @@ BEGIN
        ) tmpLtr 
 	WHERE tmpLtr.SportGroupID = CONST_GROUP_NORMAL AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_IGNOREPROBATION);
 
-    INSERT IGNORE INTO Temp_OldClassification(CustID, OldCateGroup, OldCateID, OldIsDangerProbation)
-    SELECT DISTINCT temp.CustID, cc.CategoryGroup, cc.CategoryID, cc.IsDangerProbation
+    INSERT IGNORE INTO Temp_OldClassification(CustID, OldCateGroup, OldCateID, OldIsDangerProbation, FromOldCategory)
+    SELECT DISTINCT temp.CustID, cc.CategoryGroup, cc.CategoryID, cc.IsDangerProbation, 1 AS FromOldCategory
     FROM Temp_NewClassification AS temp
 		INNER JOIN Temp_CTSCustomerClassificationOldCategory AS tmpOc ON temp.CustID = tmpOc.CustID
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = tmpOc.CategoryID;
@@ -335,7 +335,7 @@ BEGIN
 	SET n.OldCateGroup = CASE WHEN o.CustID IS NULL THEN CONST_CATEGORY_NEWMEMBER ELSE o.OldCateGroup END,
 		n.OldCateID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGORY_NEWMEMBER ELSE o.OldCateID END,
 		n.OldIsDangerProbation = CASE WHEN o.CustID IS NULL THEN 1 ELSE o.OldIsDangerProbation END,
-        n.ActionType = CASE WHEN o.CustID IS NULL THEN CONST_ACTIONTYPE_INSERT ELSE CONST_ACTIONTYPE_UPDATE END
+        n.ActionType = CASE WHEN o.CustID IS NULL OR FromOldCategory = 1 THEN CONST_ACTIONTYPE_INSERT ELSE CONST_ACTIONTYPE_UPDATE END
 	WHERE n.ActionType IN (CONST_ACTIONTYPE_INSERT);
     
     UPDATE Temp_NewClassification AS n
@@ -481,6 +481,7 @@ BEGIN
     SET 	temp.TargetDangerLevel = d.DangerLevel
     WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);
     
+    
     /* 11: UPDATE CTS CLASSIFICATION */
     UPDATE CTS_DataCenter.CTSCustomerClassification AS cate
 		INNER JOIN Temp_NewClassification AS temp ON temp.CustID = cate.CustID AND cate.SportGroupID = CONST_GROUP_NORMAL
@@ -577,6 +578,7 @@ BEGIN
 	FROM 	Temp_NewClassification AS temp
 	WHERE temp.IsDataChanged  = 1;
 	
+
     /* 16: WRITE HISTORY LOG (TRACE DATA) */
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log
 	(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, TWBetCount, TWGroupBettingRate, TWTicketRejectRate, TWDesktopUsageRate
@@ -611,5 +613,6 @@ BEGIN
 	SELECT DISTINCT temp.CustId 
     FROM Temp_NewClassification AS temp 
     WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);
+    
 END$$
 DELIMITER ;
