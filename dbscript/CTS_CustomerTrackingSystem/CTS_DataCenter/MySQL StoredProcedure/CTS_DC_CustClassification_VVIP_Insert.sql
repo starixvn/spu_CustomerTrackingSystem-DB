@@ -58,8 +58,10 @@ sp: BEGIN
     DECLARE lv_SourceTypeID			INT;    
     DECLARE lv_CustomerClass		INT; 
     
-    DECLARE	CONST_CATEGORY_RISKY 	INT DEFAULT 203;
-    DECLARE	CONST_CATEGORY_SMART	INT DEFAULT 204;
+    DECLARE	CONST_CATEGORY_RISKY 		INT DEFAULT 203;
+    DECLARE	CONST_CATEGORY_SMART		INT DEFAULT 204;
+    DECLARE	CONST_CATEGORY_ROBOT 		INT DEFAULT 163;
+    DECLARE	CONST_CATEGORY_ROBOTLOSING	INT DEFAULT 164;
 
 #	INSERT INTO CaseyLog(SPName, OthersParam, JsonText)
  #   SELECT 'CTS_DC_CustClassification_VVIP_Insert', CONCAT('ip_FromAction:',ip_FromAction,' ip_UplineRoleID:', ip_UplineRoleID, ' ip_QueueID:', ip_QueueID, ' ip_AffectDownline:', ip_AffectDownline) , ip_CustJson;
@@ -137,7 +139,7 @@ sp: BEGIN
     WHERE tmpCus.IsExistVVIP = 0;
 	
     /**** MOVE PA/RISKY/SMART TO CTSCustomerClassificationOldCategory *****/ 
-    
+
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationOldCategory(CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
     , LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsDirect, InsertTime, TVSRequestID) 
     SELECT	cls.CustID
@@ -162,7 +164,7 @@ sp: BEGIN
 		INNER JOIN Temp_Customer AS tmpCus ON cls.CustID = tmpCus.CustID AND tmpCus.IsExistVVIP = 0
         INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cls.CategoryID
 	WHERE NOT EXISTS (SELECT 1 FROM Temp_WrapperCategory AS tmpWr WHERE tmpWr.CategoryID = cls.CategoryID)
-		  AND (cls.SportGroupID = 0 
+		  AND (cls.SportGroupID = 0 AND cc.CategoryGroup NOT IN (CONST_CATEGORY_ROBOT, CONST_CATEGORY_ROBOTLOSING)
 			OR (cls.SportGroupID = 200 AND cc.CategoryGroup IN (CONST_CATEGORY_RISKY, CONST_CATEGORY_SMART)));
      
 	/*****Remove all category, customer class, probation list before******/
