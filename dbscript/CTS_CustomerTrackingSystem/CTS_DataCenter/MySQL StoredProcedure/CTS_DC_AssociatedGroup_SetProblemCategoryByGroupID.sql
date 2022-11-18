@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_AssociatedGroup_SetProblemCategoryByGroupID_xtest`;
+DROP PROCEDURE IF EXISTS `CTS_DC_AssociatedGroup_SetProblemCategoryByGroupID`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedGroup_SetProblemCategoryByGroupID_xtest`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedGroup_SetProblemCategoryByGroupID`(
 		IN ip_GroupID 			BIGINT UNSIGNED
     ,	IN ip_PACategoryID		INT
     ,	IN ip_PACreditSites		TEXT
@@ -32,7 +32,7 @@ BEGIN
     DECLARE lv_PALicenseeSites TEXT;
     DECLARE lv_NewPALicenseeSites TEXT;
     
-    SET lv_AuditInfo = JSON_OBJECT('CTS_DC_AssociatedGroup_SetProblemCategoryByGroupID_xtest, GroupID', ip_GroupID, 
+    SET lv_AuditInfo = JSON_OBJECT('CTS_DC_AssociatedGroup_SetProblemCategoryByGroupID, GroupID', ip_GroupID, 
 								   'PACategoryID', ip_PACategoryID, 
 								   'PACreditSites', ip_PACreditSites, 
                                    'PALicenseeSites', ip_PALicenseeSites, 

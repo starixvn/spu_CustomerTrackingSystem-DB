@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_AssociatedGroup_GetProblemCategoryByGroupID_xtest`;
+DROP PROCEDURE IF EXISTS `CTS_DC_AssociatedGroup_GetProblemCategoryByGroupID`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedGroup_GetProblemCategoryByGroupID_xtest`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedGroup_GetProblemCategoryByGroupID`(
 		IN 		ip_GroupID 		BIGINT UNSIGNED
         
         
