@@ -65,5 +65,7 @@ BEGIN
 		,	Remark =  ip_Remark
         ,	ModifiedBy = ip_ModifiedBy
     WHERE GroupID = ip_GroupID;
+    
+    
 END$$
 DELIMITER ;

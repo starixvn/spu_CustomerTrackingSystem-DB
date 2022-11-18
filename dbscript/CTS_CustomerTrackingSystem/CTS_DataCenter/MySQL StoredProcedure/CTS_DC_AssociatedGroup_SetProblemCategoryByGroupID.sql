@@ -20,11 +20,14 @@ BEGIN
             - 20221025@Harvey.Nguyen: Update PA for group [Redmine ID: #179398]
 		
         Param's Explanation: 
-
+			- ip_PACategoryID: 
+				>0: Update Sites and PA Category
+                -1: Remove PA For Site
+                -2: Remove PA Site WHEN Group Site Remove
 		Example:
-			- CALL CTS_DC_AssociatedGroup_SetProblemCategoryByGroupID(@ip_GroupID:=1, @ip_PACategoryID:=52, @ip_PACreditSites:='1,2,3', @ip_PALicenseeSites:='4,5,6',8 );
+			- CALL CTS_DC_AssociatedGroup_SetProblemCategoryByGroupID(@ip_GroupID:=14, @ip_PACategoryID:=-2, @ip_PACreditSites:=NULL, @ip_PALicenseeSites:=NULL,8 );
 
-*/    #Error Code: 1327. Undeclared variable: lv_NewPALicenseeSites
+*/  
 
 	DECLARE lv_AuditInfo JSON;
     DECLARE lv_PACreditSites TEXT;
@@ -40,15 +43,19 @@ BEGIN
     
     INSERT INTO CTS_DataCenter.CTSAuditLog(EventName,CreatedBy, Info)
 	VALUES("CTS_DC_AssociatedGroup_SetProblemCategoryByGroupID",ip_ModifiedBy, lv_AuditInfo);
-	
-    IF ip_PACategoryID <> -1 THEN    
+
+    #============SET Sites and PA =========================
+    IF ip_PACategoryID >=0 THEN    
 		UPDATE CTS_DataCenter.AssociatedGroup
 		SET  	PACategoryID = ip_PACategoryID
 			,	PACreditSites = ip_PACreditSites
 			,	PALicenseeSites = ip_PALicenseeSites
 			,	ModifiedBy = ip_ModifiedBy
 		WHERE GroupID = ip_GroupID;
-	ELSE
+	END IF;
+    
+    #==================REMOVE PACategory For Site=======================================
+	IF ip_PACategoryID = -1 THEN  
 		#========Credit Sites=======================
 		SELECT ag.PACreditSites 
 		INTO lv_PACreditSites 
@@ -62,11 +69,11 @@ BEGIN
 			EXECUTE stmt1;
         END IF;
         
-		DROP TEMPORARY TABLE IF EXISTS Temp_RemovePACreditSites;
-        CREATE TEMPORARY TABLE Temp_RemovePACreditSites(SiteID INT PRIMARY KEY);
+		DROP TEMPORARY TABLE IF EXISTS Temp_NewCreditSites;
+        CREATE TEMPORARY TABLE Temp_NewCreditSites(SiteID INT PRIMARY KEY);
         
         IF (ip_PACreditSites IS NOT NULL) THEN
-			SET @sql = CONCAT("INSERT INTO Temp_RemovePACreditSites (SiteID) VALUES ('", REPLACE(ip_PACreditSites, ",", "'),('"),"');");        
+			SET @sql = CONCAT("INSERT INTO Temp_NewCreditSites (SiteID) VALUES ('", REPLACE(ip_PACreditSites, ",", "'),('"),"');");        
 			PREPARE stmt1 FROM @sql;
 			EXECUTE stmt1;
         END IF;
@@ -74,7 +81,7 @@ BEGIN
 		SELECT GROUP_CONCAT(tmpPs.SiteID)
         INTO lv_NewPACreditSites
         FROM Temp_PACreditSites AS tmpPs
-			LEFT JOIN Temp_RemovePACreditSites AS tmpRev ON tmpPs.SiteID = tmpRev.SiteID
+			LEFT JOIN Temp_NewCreditSites AS tmpRev ON tmpPs.SiteID = tmpRev.SiteID
 		WHERE tmpRev.SiteID IS NULL;
 		
         UPDATE CTS_DataCenter.AssociatedGroup AS ag
@@ -94,11 +101,11 @@ BEGIN
 			EXECUTE stmt1;
         END IF;
         
-		DROP TEMPORARY TABLE IF EXISTS Temp_RemovePALicenseeSites;
-        CREATE TEMPORARY TABLE Temp_RemovePALicenseeSites(SiteID INT PRIMARY KEY);
+		DROP TEMPORARY TABLE IF EXISTS Temp_NewLicenseeSites;
+        CREATE TEMPORARY TABLE Temp_NewLicenseeSites(SiteID INT PRIMARY KEY);
         
         IF (ip_PALicenseeSites IS NOT NULL) THEN
-			SET @sql = CONCAT("INSERT INTO Temp_RemovePALicenseeSites (SiteID) VALUES ('", REPLACE(ip_PALicenseeSites, ",", "'),('"),"');");        
+			SET @sql = CONCAT("INSERT INTO Temp_NewLicenseeSites (SiteID) VALUES ('", REPLACE(ip_PALicenseeSites, ",", "'),('"),"');");        
 			PREPARE stmt1 FROM @sql;
 			EXECUTE stmt1;
         END IF;
@@ -106,7 +113,7 @@ BEGIN
 		SELECT GROUP_CONCAT(tmpPs.SiteID)
         INTO lv_NewPALicenseeSites
         FROM Temp_PALicenseeSites AS tmpPs
-			LEFT JOIN Temp_RemovePALicenseeSites AS tmpRev ON tmpPs.SiteID = tmpRev.SiteID
+			LEFT JOIN Temp_NewLicenseeSites AS tmpRev ON tmpPs.SiteID = tmpRev.SiteID
 		WHERE tmpRev.SiteID IS NULL;
 		
         UPDATE CTS_DataCenter.AssociatedGroup AS ag
@@ -121,5 +128,79 @@ BEGIN
 			WHERE ag.GroupID = ip_GroupID;
 		END IF;
 	END IF;
+    
+    #==================REMOVE PASites IF GroupSites Is Remove=======================================
+    IF ip_PACategoryID = -2 THEN   
+    #========Credit Sites=======================
+		SELECT ag.PACreditSites 
+		INTO lv_PACreditSites 
+        FROM CTS_DataCenter.AssociatedGroup AS ag WHERE ag.GroupID = ip_GroupID; 		
+        
+		DROP TEMPORARY TABLE IF EXISTS Temp_PACreditSites;
+		CREATE TEMPORARY TABLE Temp_PACreditSites(SiteID INT PRIMARY KEY);
+        IF (lv_PACreditSites IS NOT NULL) THEN
+			SET @sql = CONCAT("INSERT INTO Temp_PACreditSites (SiteID) VALUES ('", REPLACE(lv_PACreditSites, ",", "'),('"),"');");
+			PREPARE stmt1 FROM @sql;
+			EXECUTE stmt1;
+        END IF;
+        
+		DROP TEMPORARY TABLE IF EXISTS Temp_NewCreditSites;
+        CREATE TEMPORARY TABLE Temp_NewCreditSites(SiteID INT PRIMARY KEY);
+        
+        IF (ip_PACreditSites IS NOT NULL) THEN
+			SET @sql = CONCAT("INSERT INTO Temp_NewCreditSites (SiteID) VALUES ('", REPLACE(ip_PACreditSites, ",", "'),('"),"');");        
+			PREPARE stmt1 FROM @sql;
+			EXECUTE stmt1;
+        END IF;
+
+		SELECT GROUP_CONCAT(tmpPs.SiteID)
+        INTO lv_NewPACreditSites
+        FROM Temp_PACreditSites AS tmpPs
+			INNER JOIN Temp_NewCreditSites AS tmpRev ON tmpPs.SiteID = tmpRev.SiteID;
+		
+        UPDATE CTS_DataCenter.AssociatedGroup AS ag
+		SET ag.PACreditSites = lv_NewPACreditSites
+		WHERE ag.GroupID = ip_GroupID;
+        
+        #========Licensee Sites=======================
+		SELECT ag.PALicenseeSites 
+		INTO lv_PALicenseeSites 
+        FROM CTS_DataCenter.AssociatedGroup AS ag WHERE ag.GroupID = ip_GroupID; 		
+        
+		DROP TEMPORARY TABLE IF EXISTS Temp_PALicenseeSites;
+		CREATE TEMPORARY TABLE Temp_PALicenseeSites(SiteID INT PRIMARY KEY);
+        IF (lv_PALicenseeSites IS NOT NULL) THEN
+			SET @sql = CONCAT("INSERT INTO Temp_PALicenseeSites (SiteID) VALUES ('", REPLACE(lv_PALicenseeSites, ",", "'),('"),"');");
+			PREPARE stmt1 FROM @sql;
+			EXECUTE stmt1;
+        END IF;
+        
+		DROP TEMPORARY TABLE IF EXISTS Temp_NewLicenseeSites;
+        CREATE TEMPORARY TABLE Temp_NewLicenseeSites(SiteID INT PRIMARY KEY);
+        
+        IF (ip_PALicenseeSites IS NOT NULL) THEN
+			SET @sql = CONCAT("INSERT INTO Temp_NewLicenseeSites (SiteID) VALUES ('", REPLACE(ip_PALicenseeSites, ",", "'),('"),"');");        
+			PREPARE stmt1 FROM @sql;
+			EXECUTE stmt1;
+        END IF;
+	
+		SELECT GROUP_CONCAT(tmpPs.SiteID)
+        INTO lv_NewPALicenseeSites
+        FROM Temp_PALicenseeSites AS tmpPs
+			INNER JOIN Temp_NewLicenseeSites AS tmpRev ON tmpPs.SiteID = tmpRev.SiteID;
+		
+        UPDATE CTS_DataCenter.AssociatedGroup AS ag
+		SET ag.PALicenseeSites = lv_NewPALicenseeSites
+		WHERE ag.GroupID = ip_GroupID;
+        
+        #==============================
+        IF lv_NewPALicenseeSites IS NULL AND lv_NewPACreditSites IS NULL
+        THEN
+			UPDATE CTS_DataCenter.AssociatedGroup AS ag
+			SET ag.PACategoryID = NULL
+			WHERE ag.GroupID = ip_GroupID;
+		END IF;
+    
+    END IF;
 END$$
 DELIMITER ;

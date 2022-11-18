@@ -9,7 +9,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedGroup_Scan`(
     ,	OUT	op_Ori				INT
     ,	OUT	op_PACategoryID		SMALLINT
     ,	OUT op_LastCTSCustID	BIGINT
-)
+) 
     SQL SECURITY INVOKER
 sp : BEGIN
 	/* 
@@ -26,7 +26,7 @@ sp : BEGIN
 		Param's Explanation (filtered by):
 
 		Example:
-			- CALL CTS_DC_AssociatedGroup_Scan(@op_GroupID,@op_ABI,@op_LastCTSCustID);
+			- CALL  CTS_DC_AssociatedGroup_Scan(@op_GroupID,@op_GroupName,@op_ABI,@op_Ori,@op_PACategoryID,@op_LastCTSCustID);
 	*/
     DECLARE lv_BatchSize 		BIGINT;
     DECLARE lv_LastGroupID 		BIGINT;
@@ -105,7 +105,7 @@ sp : BEGIN
         
         SET lv_LastCTSCustID = 0;
 	END  IF;
-    
+
     INSERT INTO Temp_Cust(CTSCustID, CustID, AddGroupDate)
     SELECT 	acc.CTSCustID
 		,	cus.CustID
@@ -141,7 +141,7 @@ sp : BEGIN
 		,	AllCredit
         ,	AllLicensee
         ,	Sites
-        ,	PASites
+        ,	CONCAT(IFNULL(ag.PACreditSites,''),',',IFNULL(ag.PALicenseeSites,'')) AS PASites
         ,	HasDevice
         ,	HasManual
         ,	HasIP
@@ -158,7 +158,7 @@ sp : BEGIN
         ,	lv_HasManual
         ,	lv_HasIP
         ,	lv_HasAI
-	FROM  CTS_DataCenter.AssociatedGroup
+	FROM  CTS_DataCenter.AssociatedGroup AS ag
     WHERE GroupID = lv_LastGroupID
 	LIMIT 1;
     
@@ -346,5 +346,6 @@ sp : BEGIN
 	WHERE  (cus.IsLicensee = 0 AND lv_AllCredit = 1) 
 		OR (cus.IsLicensee = 1 AND lv_AllLicensee = 1)
         OR EXISTS (SELECT 1 FROM Temp_Site AS site WHERE site.SiteID = cus.SiteID);
+    
 END$$
 DELIMITER ;

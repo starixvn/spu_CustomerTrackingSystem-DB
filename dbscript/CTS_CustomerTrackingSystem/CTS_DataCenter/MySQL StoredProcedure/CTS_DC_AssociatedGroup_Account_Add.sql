@@ -51,14 +51,14 @@ BEGIN
     FROM JSON_TABLE(CONCAT('[',ip_CTSCustIDs,']'),'$[*]' COLUMNS(NESTED PATH '$' COLUMNS (CTSCustID BIGINT UNSIGNED PATH '$'))) AS tmp
 		INNER JOIN CTSCustomer cus ON tmp.CTSCustID = cus.CTSCustID;
     
-    SELECT 		PASites
-			, 	PACategoryID
+    SELECT 		CONCAT(IFNULL(ag.PACreditSites,''),',',IFNULL(ag.PACreditSites,''))
+			, 	ag.PACategoryID
     INTO 		lv_Sites
 			, 	lv_PACategoryID
-	FROM  CTS_DataCenter.AssociatedGroup
+	FROM  CTS_DataCenter.AssociatedGroup AS ag
     WHERE GroupID = ip_GroupID LIMIT 1;
     
-    IF lv_Sites IS NOT NULL AND lv_Sites != "" THEN
+    IF lv_Sites IS NOT NULL AND lv_Sites != "," THEN
 		SET @sql= CONCAT("INSERT IGNORE INTO Temp_PASite (SiteID) VALUES ('", REPLACE(lv_Sites, ',', "'),('"),"');");
 		PREPARE 	stmt1 FROM @sql;
 		EXECUTE 	stmt1;

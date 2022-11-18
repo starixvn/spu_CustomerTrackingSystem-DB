@@ -42,13 +42,13 @@ BEGIN
         ,	IsChosen				SMALLINT DEFAULT 0
 	);
     
-    SELECT 	CONCAT(ag.PACreditSites,',',ag.PALicenseeSites)
+    SELECT 	CONCAT(IFNULL(ag.PACreditSites,''),',',IFNULL(ag.PALicenseeSites,''))
     INTO 	lv_Sites
 	FROM  CTS_DataCenter.AssociatedGroup AS ag
     WHERE GroupID = ip_GroupID
 	LIMIT 1;
-
-    IF lv_Sites IS NOT NULL AND lv_Sites != "" THEN
+	
+    IF lv_Sites IS NOT NULL AND lv_Sites != "," THEN
 		SET @sql= CONCAT("INSERT IGNORE INTO Temp_GroupSite (SiteID) VALUES ('", REPLACE(lv_Sites, ',', "'),('"),"');");
 		PREPARE 	stmt1 FROM @sql;
 		EXECUTE 	stmt1;
