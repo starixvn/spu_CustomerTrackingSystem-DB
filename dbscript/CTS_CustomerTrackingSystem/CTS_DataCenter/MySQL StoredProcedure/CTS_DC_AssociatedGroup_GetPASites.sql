@@ -42,16 +42,12 @@ BEGIN
         ,	IsChosen				SMALLINT DEFAULT 0
 	);
     
-    SELECT 	PAAllCredit
-        ,	PAAllLicensee
-        ,	PASites
-    INTO 	lv_AllCredit
-        ,	lv_AllLicensee
-        ,	lv_Sites
-	FROM  CTS_DataCenter.AssociatedGroup
+    SELECT 	CONCAT(ag.PACreditSites,',',ag.PALicenseeSites)
+    INTO 	lv_Sites
+	FROM  CTS_DataCenter.AssociatedGroup AS ag
     WHERE GroupID = ip_GroupID
 	LIMIT 1;
-   
+
     IF lv_Sites IS NOT NULL AND lv_Sites != "" THEN
 		SET @sql= CONCAT("INSERT IGNORE INTO Temp_GroupSite (SiteID) VALUES ('", REPLACE(lv_Sites, ',', "'),('"),"');");
 		PREPARE 	stmt1 FROM @sql;
@@ -65,16 +61,14 @@ BEGIN
 	LEFT JOIN Temp_GroupSite AS gs ON si.SiteID = gs.SiteID
 	WHERE gs.SiteID IS NULL;
         
-	UPDATE Temp_SiteInfo AS site
-    SET IsChosen = 1
-    WHERE (IsLicensee = 0 AND lv_AllCredit = 1) 
-		OR (IsLicensee = 1 AND lv_AllLicensee = 1)
-        OR EXISTS (SELECT 1 FROM Temp_GroupSite AS tmp WHERE site.SiteID = tmp.SiteID);
+	UPDATE Temp_SiteInfo AS tmpSi
+    INNER JOIN Temp_GroupSite AS tmpGs ON tmpGs.SiteID = tmpSi.SiteID
+    SET tmpSi.IsChosen = 1;
 	
-    SELECT 	SiteID 			
-        ,   SiteName 			
-        ,   IsLicensee		
-        ,	IsChosen	
-    FROM Temp_SiteInfo;
+    SELECT 	tmpSi.SiteID 			
+        ,   tmpSi.SiteName 			
+        ,   tmpSi.IsLicensee		
+        ,	tmpSi.IsChosen	
+    FROM Temp_SiteInfo AS tmpSi;
 END$$
 DELIMITER ;

@@ -1,9 +1,11 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_AssociatedGroup_GetProblemCategoryByGroupID`;
+DROP PROCEDURE IF EXISTS `CTS_DC_AssociatedGroup_GetProblemCategoryByGroupID_xtest`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedGroup_GetProblemCategoryByGroupID`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedGroup_GetProblemCategoryByGroupID_xtest`(
 		IN 		ip_GroupID 		BIGINT UNSIGNED
+        
+        
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -24,9 +26,8 @@ BEGIN
     
     SELECT 	grp.GroupID
         ,	grp.PACategoryID
-        ,	grp.PAAllCredit
-        ,	grp.PAAllLicensee
-		,	grp.PASites
+        ,	grp.PACreditSites
+        ,	grp.PALicenseeSites
 		,	us1.UserName AS ModifiedBy
     FROM CTS_DataCenter.AssociatedGroup AS grp
         LEFT JOIN CTS_Admin.CTSUser AS us1 ON grp.ModifiedBy = us1.UserID

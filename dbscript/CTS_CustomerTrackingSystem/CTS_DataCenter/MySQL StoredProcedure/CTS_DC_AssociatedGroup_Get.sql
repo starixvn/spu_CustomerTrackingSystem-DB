@@ -30,9 +30,8 @@ BEGIN
 		,	grp.Sites
         ,	grp.Danger1 AS 'Ori'
         ,	cate.CategoryName
-        ,	grp.PAAllCredit
-        ,	grp.PAAllLicensee
-		,	grp.PASites
+        ,	(CASE WHEN grp.PACreditSites IS NULL THEN 0 ELSE 1 END) AS IsPACreditSite
+        ,	(CASE WHEN grp.PALicenseeSites IS NULL THEN 0 ELSE 1 END) AS IsPALicenseeSite
         ,	grp.HasDevice
         ,	grp.HasManual
         ,	grp.HasIP
