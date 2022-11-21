@@ -11,8 +11,9 @@ ALTER TABLE `CTS_DataCenter`.`AssociatedGroup`
 ADD COLUMN `Danger1` SMALLINT NULL DEFAULT NULL AFTER `ABI`,
 ADD COLUMN `PACategoryID` SMALLINT NULL DEFAULT NULL AFTER `ModifiedBy`,
 ADD COLUMN `PACreditSites` TEXT NULL DEFAULT NULL AFTER `PACategoryID`,
-ADD COLUMN `PALicenseeSites` TEXT NULL DEFAULT NULL AFTER `PACreditSites`
+ADD COLUMN `PALicenseeSites` TEXT NULL DEFAULT NULL AFTER `PACreditSites`;
 
+#========================================
 USE CTS_Admin;
 ALTER TABLE UserLog
-ADD Column EventName
+MODIFY COLUMN LogInfo LONGTEXT;

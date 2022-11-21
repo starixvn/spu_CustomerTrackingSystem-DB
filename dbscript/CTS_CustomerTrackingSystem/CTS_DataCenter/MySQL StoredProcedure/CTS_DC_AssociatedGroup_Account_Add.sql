@@ -25,11 +25,14 @@ BEGIN
 		Param's Explanation (filtered by):
 
         Example: 
-			- CALL CTS_DC_AssociatedGroup_Account_Add(1,"1,2",0,"comment",169368);
+			- CALL CTS_DC_AssociatedGroup_Account_Add(@ip_GroupID:=14,@ip_CTSCustIDs:='9,10',@ip_IsAuto:=1,@ip_Remark:="Test Remark",@ip_CreatedBy:=169368);
 	*/
-    DECLARE lv_AuditInfo 		JSON;
     DECLARE lv_Sites			LONGTEXT;
     DECLARE lv_PACategoryID		SMALLINT;
+    
+    DECLARE lv_LogInfo JSON;
+    DECLARE CONST_USERLOG_LOGTYPE SMALLINT DEFAULT 34;
+    DECLARE CONST_SPNAME VARCHAR(100) DEFAULT 'CTS_DC_AssociatedGroup_Account_Add';
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
 	CREATE TEMPORARY TABLE 	Temp_Cust (
@@ -45,6 +48,22 @@ BEGIN
 	CREATE TEMPORARY TABLE 	Temp_PASite (
 			SiteID 		BIGINT UNSIGNED PRIMARY KEY
 	);
+    
+	IF ip_IsAuto = 0 THEN
+		#============USER LOG====================================
+		SET lv_LogInfo = JSON_OBJECT('GroupID', ip_GroupID, 
+									   'CTSCustIDs', ip_CTSCustIDs, 
+									   'IsAuto', ip_IsAuto, 
+									   'Remark', ip_Remark);
+									   
+		 INSERT IGNORE INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
+		 SELECT CONST_USERLOG_LOGTYPE AS LogTypeID
+				,	CONST_SPNAME AS SPName
+				,	lv_LogInfo AS LogInfo
+				,	NOW() AS CreatedDate
+				,	ip_CreatedBy AS CreatedBy;      
+    END IF;
+    
     
     INSERT INTO Temp_Cust(CTSCustID, CustID, SiteID, RoleID, SubscriberID, IsLicensee)
     SELECT cus.CTSCustID, cus.CustID, cus.SiteID, cus.RoleID, cus.SubscriberID, cus.IsLicensee
@@ -63,18 +82,6 @@ BEGIN
 		PREPARE 	stmt1 FROM @sql;
 		EXECUTE 	stmt1;
 	END IF;
-    
-	IF ip_IsAuto = 1 THEN
-		SET ip_CreatedBy = 10278938;
-    END IF;
-    
-    SET lv_AuditInfo = JSON_OBJECT('GroupID', ip_GroupID, 
-								   'CTSCustIDs', ip_CTSCustIDs, 
-								   'IsAuto', ip_IsAuto, 
-                                   'Remark', ip_Remark);
-    
-    INSERT INTO CTS_DataCenter.CTSAuditLog(EventName,CreatedBy, Info)
-	VALUES("CTS_DC_AssociatedGroup_Account_Add",ip_CreatedBy, lv_AuditInfo);
     
     INSERT IGNORE INTO CTS_DataCenter.AssociatedGroupAccount(GroupID,CTSCustID,IsAuto,Remark,CreatedBy)
     SELECT 	ip_GroupID AS GroupID
