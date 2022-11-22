@@ -22,6 +22,7 @@ AS
 		- 20220711@Harvey.Nguyen: Change solution to scan on each ticket	[Redmine ID: #169671]
 		- 20220801@Harvey.Nguyen: Enhance performance						[Redmine ID: #169671]
 		- 20220831@Harvey.Nguyen: Update for Scale out DB Trans				[Redmine ID: #176472]
+		- 20221122@Long.Luu:	  Exclude WC Leagues						[Redmine ID: #181229]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_ScanTicket] '2022-02-15 23:10:15.983','2022-02-16 02:15:20.983',10900
@@ -55,11 +56,8 @@ BEGIN
         ,	RFM				INT
         ,	CustomerClass	SMALLINT
         ,	IsBigLeague		BIT
+		,	IsWCLeague		BIT DEFAULT 0
     );
-
-	CREATE CLUSTERED INDEX #CIX_TmpRawTicket_Transdate ON #TmpRawTicket (TransdateSec ASC);
-
-	CREATE NONCLUSTERED INDEX IX_TmpRawTicket_CustID ON #TmpRawTicket (Custid ASC);
 
 	IF OBJECT_ID('tempdb..#TmpSuspectTicket') IS NOT NULL
 		DROP TABLE #TmpSuspectTicket;
@@ -89,7 +87,7 @@ BEGIN
 		DROP TABLE #TmpBigLeague;
 
 	CREATE TABLE #TmpBigLeague (
-			LeagueId	INT
+			LeagueId	INT PRIMARY KEY
 		,	Sporttype	TINYINT
 	);
 
@@ -101,7 +99,19 @@ BEGIN
 	SELECT	*, 2 -- Basketball
 	FROM (VALUES (56038),(56053),(95746),(86331),(56046),(56049),(78717),(7391),(44735),(11548),(63021),(44721),(44737),(11550),(81263),(52821),(88529),(93817),(102499),(82879),(82880),(82881),(101655),(82883),(82884),(82885),(82886),(82783),(82864),(82784),(101684),(82786),(82787),(82788),(82865),(82789),(82866),(82790),(101685),(82792),(82793),(82794),(82867),(82795),(82868),(82796),(101686),(82798),(82799),(82800),(82869),(82801),(82870),(82802),(101687),(82804),(82805),(82806),(82871),(82807),(82872),(82808),(101688),(82810),(82811),(82812),(82873),(82757),(96709),(56054),(56069),(99367),(99352),(56062),(99366),(56065),(56066),(56067),(56071),(99232),(99321),(99329),(99326),(99327),(99324),(99328),(99325),(56027),(24567),(75146),(48649),(93818),(102501),(7390),(7361),(7363),(44719),(95440),(104895),(95441),(104897),(93816),(102500),(99520),(99518),(82862),(82918),(55716),(83031),(83089),(83114),(82779),(82778),(101700),(101701),(64977),(95442),(104898),(95443),(104899),(99368),(99926),(82229),(92117),(100569),(92558),(99331),(99970),(99444),(100003),(100505),(99438),(100096),(99528),(95432),(103857),(95444),(104896),(95445),(104900),(99519)) AS X(a);
 
-	INSERT INTO #TmpRawTicket (SequenceId, Transid, TransdateSec, Custid, Matchid, Sporttype, Bettype, Betteam, BetFrom, Liveindicator, IsBigLeague, RFM)
+	IF OBJECT_ID('tempdb..#Tmp_WCLeagues') IS NOT NULL
+		DROP TABLE #Tmp_WCLeagues;
+
+	CREATE TABLE #Tmp_WCLeagues (
+			LeagueId	INT PRIMARY KEY
+	);
+
+	INSERT INTO #Tmp_WCLeagues(LeagueId)
+	SELECT DISTINCT LeagueId
+	FROM dbo.league WITH(NOLOCK)
+	WHERE ProgramID = '2022' AND DisplayMode = 2;
+
+	INSERT INTO #TmpRawTicket (SequenceId, Transid, TransdateSec, Custid, Matchid, Sporttype, Bettype, Betteam, BetFrom, Liveindicator, IsBigLeague, IsWCLeague, RFM)
 	SELECT	TOP(@BatchSize)
 				b.sequenceid
 			,	b.transid
@@ -118,25 +128,51 @@ BEGIN
 						THEN 1
 					ELSE 0
 				END 'IsBigLeague'
+			,	CASE 
+					WHEN wc.LeagueId IS NOT NULL
+						THEN 1
+					ELSE 0
+				END 'IsWCLeague'
 			, pf.Tag
 	FROM dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
 		INNER JOIN dbo.Dep_CustSuper AS dCust WITH (NOLOCK) ON  dCust.custid = b.srecommend
 		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 		LEFT JOIN dbo.LicUserProfile AS pf WITH (NOLOCK) ON b.Custid = pf.CustId
 		LEFT JOIN #TmpBigLeague AS bl WITH (NOLOCK) ON m.leagueid = bl.LeagueId
+		LEFT JOIN #Tmp_WCLeagues AS wc WITH(NOLOCK) ON m.leagueid = wc.LeagueId
 	WHERE b.sequenceid > @LastSequenceId
 		AND b.refno = 100000000000
 		AND b.currency <> 20
 		AND m.sporttype IN (1,2)
 		AND b.bettype IN (1,3,7,8,609,610)
-	ORDER BY b.sequenceid ASC;
+	ORDER BY b.sequenceid ASC;		
+
+	CREATE CLUSTERED INDEX #CIX_TmpRawTicket_Transdate ON #TmpRawTicket (TransdateSec ASC);
+	CREATE NONCLUSTERED INDEX IX_TmpRawTicket_CustID ON #TmpRawTicket (Custid ASC);
+	CREATE NONCLUSTERED INDEX IX_TmpRawTicket_IsWCLeague ON #TmpRawTicket (IsWCLeague ASC);
+
+	SET @SkipTransCount_New = 0;
+	;WITH cte_stats AS (
+		SELECT TOP(@Step) TransdateSec
+			, COUNT(1) AS BetCount
+			, MIN(SequenceId) AS MaxSequenceId
+			, ROW_NUMBER() OVER (ORDER BY TransdateSec DESC) AS Rid
+		FROM #TmpRawTicket
+		GROUP BY TransdateSec
+	)
+	SELECT @LastSequenceId_New = MaxSequenceId
+		, @LastTransSec_New = CASE WHEN Rid = 1 Then TransdateSec ELSE @LastTransSec_New END
+		, @SkipTransCount_New += BetCount
+	FROM cte_stats;
+
+	DELETE FROM #TmpRawTicket WITH(ROWLOCK)
+	WHERE IsWCLeague = 1;
 
 	---  less rows than #TmpSuspectTicket
 	UPDATE t WITH(UPDLOCK, ROWLOCK)
 	SET t.CustomerClass = ci.CustomerClass
 	FROM #TmpRawTicket t
 	INNER JOIN dbo.custinfo ci WITH (NOLOCK) ON ci.custid = t.Custid;
-
 
 	INSERT INTO #TmpSuspectTicket (Transid, TransdateSec, Custid, Matchid, Sporttype, Bettype, Betteam, BetFrom, Liveindicator, RFM, CustomerClass, RuleId, IsBigLeague, GroupId)
     SELECT	rawTrans.Transid 
@@ -315,20 +351,6 @@ BEGIN
 									OR tfs.IsViolateRFM = 1
 									OR tfs.IsViolateCC = 1)
 								FOR XML RAW('TWGroupBettingTicket'), ROOT);
-
-	SET @SkipTransCount_New = 0;
-	;WITH cte_stats AS (
-		SELECT TOP(@Step) TransdateSec
-			, COUNT(1) AS BetCount
-			, MIN(SequenceId) AS MaxSequenceId
-			, ROW_NUMBER() OVER (ORDER BY TransdateSec DESC) AS Rid
-		FROM #TmpRawTicket
-		GROUP BY TransdateSec
-	)
-	SELECT @LastSequenceId_New = MaxSequenceId
-		, @LastTransSec_New = CASE WHEN Rid = 1 Then TransdateSec ELSE @LastTransSec_New END
-		, @SkipTransCount_New += BetCount
-	FROM cte_stats;
 
 	EXEC CTS_TWGroupBetting_SyncDataGroupBettingTicket @GBTicketXMLString, @LastSequenceId_New;		
 
