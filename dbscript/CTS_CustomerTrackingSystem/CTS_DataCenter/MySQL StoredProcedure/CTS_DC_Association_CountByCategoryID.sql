@@ -94,7 +94,7 @@ BEGIN
 		INNER JOIN CTSCustomer AS cus ON dv.CTSCustID = cus.CTSCustID
 	WHERE EXISTS (SELECT 1 
                   FROM CTSCustomerClassification AS clss 
-					  INNER JOIN Temp_CategoryID AS cate ON cate.CategoryID = clss.CategoryID
+					  STRAIGHT_JOIN Temp_CategoryID AS cate ON cate.CategoryID = clss.CategoryID
                   WHERE clss.CustID = cus.CustID);
                   
 	INSERT IGNORE INTO Temp_CustClass(CustID,CustID_Level1)
@@ -113,7 +113,7 @@ BEGIN
         INNER JOIN CTSCustomer AS cus ON ma.ToCTSCustID = cus.CTSCustID
 	WHERE EXISTS (SELECT 1 
                   FROM CTSCustomerClassification AS clss 
-					  INNER JOIN Temp_CategoryID AS cate ON cate.CategoryID = clss.CategoryID
+					  STRAIGHT_JOIN Temp_CategoryID AS cate ON cate.CategoryID = clss.CategoryID
                   WHERE clss.CustID = cus.CustID);
     
     INSERT IGNORE INTO Temp_CustClass(CustID,CustID_Level1)
@@ -124,7 +124,7 @@ BEGIN
         INNER JOIN CTSCustomer AS cus ON ma.FromCTSCustID = cus.CTSCustID
 	WHERE EXISTS (SELECT 1 
                   FROM CTSCustomerClassification AS clss 
-					  INNER JOIN Temp_CategoryID AS cate ON cate.CategoryID = clss.CategoryID
+					  STRAIGHT_JOIN Temp_CategoryID AS cate ON cate.CategoryID = clss.CategoryID
                   WHERE clss.CustID = cus.CustID);
     
     /**************************************  AI  ************************************************/
@@ -135,7 +135,7 @@ BEGIN
 		INNER JOIN AssociationByAI AS ai ON ai.FromCustID = pa.CustID
 	WHERE EXISTS (SELECT 1 
                   FROM CTSCustomerClassification AS clss 
-					  INNER JOIN Temp_CategoryID AS cate ON cate.CategoryID = clss.CategoryID
+					  STRAIGHT_JOIN Temp_CategoryID AS cate ON cate.CategoryID = clss.CategoryID
                   WHERE clss.CustID = ai.ToCustID);
     
 	INSERT IGNORE INTO Temp_CustClass(CustID,CustID_Level1)
@@ -145,7 +145,7 @@ BEGIN
 		INNER JOIN AssociationByAI AS ai ON ai.ToCustID  = pa.CustID
 	WHERE EXISTS (SELECT 1 
                   FROM CTSCustomerClassification AS clss 
-					  INNER JOIN Temp_CategoryID AS cate ON cate.CategoryID = clss.CategoryID
+					  STRAIGHT_JOIN Temp_CategoryID AS cate ON cate.CategoryID = clss.CategoryID
                   WHERE clss.CustID = ai.FromCustID);
     
     /**************************************  AI Group ************************************************/
@@ -188,7 +188,7 @@ BEGIN
 		INNER JOIN CTS_DataCenter.AssociationGroupByAI AS grp ON tmp.GroupID = grp.GroupID
 	WHERE EXISTS (SELECT 1 
                   FROM CTSCustomerClassification AS clss 
-					  INNER JOIN Temp_CategoryID AS cate ON cate.CategoryID = clss.CategoryID
+					  STRAIGHT_JOIN Temp_CategoryID AS cate ON cate.CategoryID = clss.CategoryID
                   WHERE clss.CustID = grp.CustID);
     
     INSERT IGNORE INTO Temp_CustClass(CustID,CustID_Level1)
@@ -205,7 +205,7 @@ BEGIN
 		INNER JOIN AssociationByIP AS ip ON ip.FromCustID = pa.CustID
 	WHERE EXISTS (SELECT 1 
                   FROM CTSCustomerClassification AS clss 
-					  INNER JOIN Temp_CategoryID AS cate ON cate.CategoryID = clss.CategoryID
+					  STRAIGHT_JOIN Temp_CategoryID AS cate ON cate.CategoryID = clss.CategoryID
                   WHERE clss.CustID = ip.ToCustID);
     
 	INSERT IGNORE INTO Temp_CustClass(CustID,CustID_Level1)
@@ -215,9 +215,10 @@ BEGIN
 		INNER JOIN AssociationByIP AS ip ON ip.ToCustID  = pa.CustID
 	WHERE EXISTS (SELECT 1 
                   FROM CTSCustomerClassification AS clss 
-					  INNER JOIN Temp_CategoryID AS cate ON cate.CategoryID = clss.CategoryID
+					  STRAIGHT_JOIN Temp_CategoryID AS cate ON cate.CategoryID = clss.CategoryID
                   WHERE clss.CustID = ip.FromCustID);
 	
+    /**************************************  Return  ************************************************/
     SELECT 	CustID
 		,	(SELECT COUNT(1) 
 			 FROM Temp_CustClass AS clss 
