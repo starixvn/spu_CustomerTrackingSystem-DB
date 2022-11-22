@@ -10,6 +10,8 @@
     Reviewer:
 */
 /************************ Alter schema MatchMonitor  ****************************/
+USE CTS_DataCenter;
+
 ALTER TABLE MatchMonitor 
 DROP PRIMARY KEY,
 ADD PRIMARY KEY(ID,InsertTime),
@@ -111,6 +113,15 @@ RENAME TABLE MatchMonitorDetails TO MatchMonitorDetails_Archive;
 RENAME TABLE MatchMonitorDetailsVerifiedTrans TO MatchMonitorDetailsVerifiedTrans_Archive;
 
 /************************Check Data ****************************/
+USE CTS_DataCenter;
+SELECT COUNT(1) FROM MatchMonitor;
+SELECT COUNT(1) FROM MatchMonitorDetails;
+SELECT COUNT(1) FROM MatchMonitorDetailsVerifiedTrans;
+
+USE CTS_Archive;
+SELECT COUNT(1) FROM MatchMonitor_Archive;
+SELECT COUNT(1) FROM MatchMonitorDetails_Archive;
+SELECT COUNT(1) FROM MatchMonitorDetailsVerifiedTrans_Archive;
 
 
 /************************Drop Partition MatchMonitor Unused****************************/
@@ -128,8 +139,8 @@ WHERE TABLE_CATALOG = 'def'
 SELECT CONCAT("ALTER TABLE MatchMonitor_Archive DROP PARTITION ", GROUP_CONCAT(PARTITION_NAME),";") AS script 
 FROM information_schema.partitions
 WHERE TABLE_CATALOG = 'def'
-	AND TABLE_SCHEMA = 'CTS_DataCenter'
-    AND TABLE_NAME = 'MatchMonitor'
+	AND TABLE_SCHEMA = 'CTS_Archive'
+    AND TABLE_NAME = 'MatchMonitor_Archive'
     AND PARTITION_DESCRIPTION > YEARWEEK(NOW()) - 5
     AND PARTITION_DESCRIPTION != 'MAXVALUE';
 
@@ -144,18 +155,24 @@ WHERE TABLE_CATALOG = 'def'
     AND PARTITION_DESCRIPTION <= YEARWEEK(NOW()) - 5
     AND PARTITION_DESCRIPTION != 'MAXVALUE';
 	
-## MatchMonitorDetails Archive 59	
+## MatchMonitorDetails_Archive Archive 59	
 SELECT CONCAT("ALTER TABLE MatchMonitorDetails_Archive DROP PARTITION ", GROUP_CONCAT(PARTITION_NAME),";") AS script 
 FROM information_schema.partitions
 WHERE TABLE_CATALOG = 'def'
-	AND TABLE_SCHEMA = 'CTS_DataCenter'
-    AND TABLE_NAME = 'MatchMonitorDetails'
+	AND TABLE_SCHEMA = 'CTS_Archive'
+    AND TABLE_NAME = 'MatchMonitorDetails_Archive'
     AND PARTITION_DESCRIPTION > YEARWEEK(NOW()) - 5
-    AND PARTITION_DESCRIPTION != 'MAXVALUE';	
+    AND PARTITION_DESCRIPTION != 'MAXVALUE';
 	
 /************************ Add config ****************************/	
 	
-INSERT INTO `MonDB`.`ArchivePartitionJob` (`SourceServerID`, `SourceMasterServerID`, `SourceDatabase`, `SourceTable`, `DesServerID`, `DesDatabase`, `DesTable`, `PartitionType`, `PartitionPrefix`, `PartitionDelimiter`, `PartitionMax`, `KeepDataRange`, `DateExecute`, `TimeExecute`, `HasDropPartitionSourceTable`, `NotificationChannelID`, `HasAlert_Pre`, `IsAlerted_Pre`, `HasAlert_Done`, `RunType`) 
-VALUES ('5', '9', 'CTS_DataCenter', 'MatchMonitor', '7', 'CTS_Archive', 'MatchMonitor_Archive', 'Weekly', 'pw', '#p#', 'pw999999', '30', '2', '08:00:00', '1', '3', '1', '1', '1', 'Job'),
-	   ('5', '9', 'CTS_DataCenter', 'MatchMonitorDetails', '7', 'CTS_Archive', 'MatchMonitorDetails_Archive', 'Weekly', 'pw', '#p#', 'pw999999', '30', '2', '08:00:00', '1', '3', '1', '1', '1', 'Job'),
-       ('5', '9', 'CTS_DataCenter', 'MatchMonitorDetailsVerifiedTrans', '7', 'CTS_Archive', 'MatchMonitorDetailsVerifiedTrans_Archive', 'Weekly', 'pw', '#p#', 'pw999999', '30', '2', '08:00:00', '1', '3', '1', '1', '1', 'Job');
+INSERT INTO `MonDB`.`ArchivePartitionJob` (`SourceServerID`, `SourceMasterServerID`, `SourceDatabase`, `SourceTable`, `DesServerID`, `DesDatabase`, `DesTable`, `PartitionType`, `PartitionPrefix`, `PartitionDelimiter`, `PartitionMax`, `KeepDataRange`, `DateExecute`, `TimeExecute`, `HasDropPartitionSourceTable`, `NotificationChannelID`, `HasAlert_Pre`, `IsAlerted_Pre`, `HasAlert_Done`, `RunType`,`LastExecuted`) 
+VALUES ('5', '9', 'CTS_DataCenter', 'MatchMonitor', '7', 'CTS_Archive', 'MatchMonitor_Archive', 'Weekly', 'pw', '#p#', 'pw999999', '30', '2', '08:00:00', 1, '3', 1, 1, 1, 'Job','2022-01-01 00:00:00'),
+	   ('5', '9', 'CTS_DataCenter', 'MatchMonitorDetails', '7',  'CTS_Archive', 'MatchMonitorDetails_Archive', 'Weekly', 'pw', '#p#', 'pw999999', '30', '2', '08:00:00', 1, '3', 1, 1, 1, 'Job','2022-01-01 00:00:00'),
+       ('5', '9', 'CTS_DataCenter', 'MatchMonitorDetailsVerifiedTrans', '7', 'CTS_Archive', 'MatchMonitorDetailsVerifiedTrans_Archive', 'Weekly', 'pw', '#p#', 'pw999999', '30', '2', '08:00:00', 1, '3', 1, 1, 1, 'Job','2022-01-01 00:00:00');
+
+
+       INSERT INTO `MonDB`.`ReOrganizePartitionJob` (`ServerID`, `Database`, `Table`, `PartitionType`, `PartitionPrefix`, `PartitionMax`, `DayRange`, `DateExecute`, `TimeExecute`, `NotificationChannelID`, `HasAlert`,`LastExecuted`)  
+VALUES ('9', 'CTS_DataCenter', 'MatchMonitor', 'Weekly', 'pw', 'pw999999', '14', '2', '08:00:00', '2', 1,'2022-01-01 00:00:00'),
+	   ('9', 'CTS_DataCenter', 'MatchMonitorDetails', 'Weekly', 'pw', 'pw999999', '14', '2', '08:00:00', '2', 1,'2022-01-01 00:00:00'),
+       ('9', 'CTS_DataCenter', 'MatchMonitorDetailsVerifiedTrans', 'Weekly', 'pw', 'pw999999', '14', '2', '08:00:00', '2', 1,'2022-01-01 00:00:00');

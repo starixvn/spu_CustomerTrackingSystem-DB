@@ -18,7 +18,8 @@ INSERT INTO CTS_DataCenter.StaticList(ListID,ItemID,ListName,ListNameDisplay,Ite
 VALUES (16,1,'Match Monitor Reason', 'Reason', 'Group Betting', 'Group Betting','0','1',1,1,NOW()),
 	   (16,2,'Match Monitor Reason', 'Reason', 'Hedging', 'Hedging','1','1',2,1,NOW()),
        (16,3,'Match Monitor Reason', 'Reason', 'Arbitrage', 'Arbitrage','2','1',3,1,NOW()),
-       (16,4,'Match Monitor Reason', 'Reason', 'Fixed Game', 'Fixed Game','3','1',4,1,NOW());
+       (16,4,'Match Monitor Reason', 'Reason', 'Fixed Game', 'Fixed Game','3','1',4,1,NOW()),
+       (16,5,'Match Monitor Reason', 'Reason', 'Irrigation', 'Irrigation ','58','1',4,1,NOW());
 
 INSERT INTO CTS_DataCenter.StaticList(ListID,ItemID,ListName,ListNameDisplay,ItemName,ItemNameDisplay,ItemValue,ItemDefaultValue,PriorityOrder,Status,CreatedDate)
 VALUES (17,1,'Match Monitor Sport', 'Sport', 'Soccer', 'Soccer','1','1',1,1,NOW()),
