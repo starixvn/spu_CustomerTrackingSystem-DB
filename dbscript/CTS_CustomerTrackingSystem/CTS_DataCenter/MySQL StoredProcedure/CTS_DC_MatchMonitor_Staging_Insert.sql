@@ -36,8 +36,33 @@ BEGIN
     
     DECLARE lv_LastSequenceID BIGINT UNSIGNED DEFAULT 0;
     
-    IF ip_LiveIndicator = 1 THEN    
-		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
+	CREATE TEMPORARY TABLE Temp_Staging(
+			SequenceID		BIGINT UNSIGNED NOT NULL
+		,	TransID			BIGINT UNSIGNED NOT NULL
+		,	TransDATE		DATETIME(3) DEFAULT NULL
+		,	MatchID			INT DEFAULT NULL
+		,	SportType		INT DEFAULT NULL
+		,	TotalScore		INT DEFAULT NULL
+		,	BettypeID		INT DEFAULT NULL
+		,	BetID			BIGINT DEFAULT NULL
+		,	Betteam			VARCHAR(10)
+		,	CustID			BIGINT UNSIGNED DEFAULT NULL
+		,	Stake			DECIMAL(20,4) DEFAULT NULL
+		,	GroupID			INT DEFAULT '0'
+		,	LiveHomeScore	INT DEFAULT NULL
+		,	LiveAwayScore	INT DEFAULT NULL
+		,	EventDATE		DATE DEFAULT NULL
+		,	KickOffTime		DATETIME DEFAULT NULL
+		,	EventStatus		VARCHAR(50)DEFAULT NULL
+		,	HomeID			INT DEFAULT NULL
+		,	AwayID			INT DEFAULT NULL
+		,	LeagueID		INT DEFAULT NULL
+		,	LeagueName		VARCHAR(500) DEFAULT NULL
+        ,	IsMajorLeague	BOOLEAN
+		,	PRIMARY KEY (SequenceID)
+	) ENGINE=InnoDB;
+	
+    INSERT IGNORE INTO Temp_Staging(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, IsMajorLeague)
 		SELECT  js.SequenceID
 			,	js.TransID
 			,	js.TransDate
@@ -58,7 +83,7 @@ BEGIN
 			,	js.CustID
 			,	js.Stake
             ,	js.Betteam
-			,	CURRENT_TIMESTAMP(3)
+            ,	js.IsMajorLeague
 		FROM JSON_TABLE(ip_TransList,
 					 "$[*]" COLUMNS(
 								SequenceID		BIGINT UNSIGNED PATH "$.SequenceID" 	
@@ -79,112 +104,94 @@ BEGIN
 							,	BetID			BIGINT	PATH "$.BetID"
 							,	CustID			INT PATH "$.CustID"
 							,	Stake			DECIMAL(20,4) PATH "$.Stake" 
-							,	Betteam			VARCHAR(10)	PATH "$.Betteam" 
+							,	Betteam			VARCHAR(10)	PATH "$.Betteam"
+                            ,	IsMajorLeague	BOOLEAN	PATH "$.IsMajorLeague" 
 						)
 					) AS js;  
 		
+    
+    IF ip_LiveIndicator = 1 THEN 
+		#=====Staging: Group Betting(Soccer(1), Basketball(2), E-Sport(43)), Hedging(Basketball(2), E-Sport(43)), Arbitrage(Soccer(1), Basketball(2), E-Sport(43)) ================================
+		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
+		SELECT	tmpSt.SequenceID
+			,	tmpSt.TransID
+			,	tmpSt.TransDate
+			,	tmpSt.LeagueName
+			,	tmpSt.SportType
+			,	tmpSt.MatchID
+			,	tmpSt.HomeID
+			,	tmpSt.AwayID
+			,	tmpSt.EventStatus
+			,	tmpSt.KickOffTime
+			,	tmpSt.LeagueID
+			,	tmpSt.EventDate
+			,	tmpSt.LiveHomeScore
+			,	tmpSt.LiveAwayScore
+			,	tmpSt.TotalScore
+			,	tmpSt.BettypeID
+			,	tmpSt.BetID
+			,	tmpSt.CustID
+			,	tmpSt.Stake
+			,	tmpSt.Betteam
+			,	CURRENT_TIMESTAMP(3) AS InsertTime
+		FROM Temp_Staging AS tmpSt;  
+		
+        #=====Staging Fixed Game Betting================================
         INSERT IGNORE INTO CTS_DataCenter.MatchMonitorTransLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, Odds, IsMajorLeague, InsertTime)
-		SELECT  js.SequenceID
-			,	js.TransID
-			,	js.TransDate
-            ,	js.LeagueName
-            ,	js.SportType
-			,	js.MatchID
-			,	js.HomeID
-			,	js.AwayID
-			,	js.EventStatus
-			,	js.KickOffTime
-			,	js.LeagueID
-			,	js.EventDate
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore END) AS LiveHomeScore
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveAwayScore END) AS LiveAwayScore
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore + js.LiveAwayScore END) AS TotalScore
-			,	js.BettypeID
-            ,	IFNULL(js.BetID,0)
-			,	js.CustID
-			,	js.Stake
-            ,	js.Betteam
-            ,	js.Odds
-            ,	js.IsMajorLeague
-			,	CURRENT_TIMESTAMP(3)
-		FROM JSON_TABLE(ip_TransList,
-						 "$[*]" COLUMNS(
-									SequenceID		BIGINT PATH "$.SequenceID"
-								,	TransID			BIGINT UNSIGNED PATH "$.TransID" 
-								,	TransDate		DATETIME(3) PATH "$.TransDate" 
-                                ,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PATH "$.LeagueName"
-                                ,	SportType		INT PATH "$.SportType"
-								,	MatchID			INT PATH "$.MatchID"
-								,	HomeID			INT	PATH "$.HomeID" 
-								,	AwayID			INT	PATH "$.AwayID" 
-								,	EventStatus		VARCHAR(50)	PATH "$.EventStatus" 
-								,	KickOffTime		DATETIME PATH "$.KickOffTime" 
-								,	LeagueID		INT	PATH "$.LeagueID"
-								,	EventDate		DATE PATH "$.EventDate"
-								,	LiveHomeScore	INT	PATH "$.LiveHomeScore" 
-								,	LiveAwayScore	INT	PATH "$.LiveAwayScore" 
-								,	BettypeID		INT	PATH "$.Bettype"
-                                ,	BetID			BIGINT	PATH "$.BetID"
-								,	CustID			INT PATH "$.CustID"
-								,	Stake			DECIMAL(20,4) PATH "$.Stake" 
-                                ,	Betteam			VARCHAR(10)	PATH "$.Betteam" 
-                                ,	Odds			DECIMAL(10,4) PATH "$.Odds" 
-                                ,	IsMajorLeague	BOOLEAN	PATH "$.IsMajorLeague" 
-							)
-					) AS js
-			WHERE js.IsMajorLeague = 0;
-            
-		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingLive03(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
-		SELECT  js.SequenceID
-			,	js.TransID
-			,	js.TransDate
-            ,	js.LeagueName
-            ,	js.SportType
-			,	js.MatchID
-			,	js.HomeID
-			,	js.AwayID
-			,	js.EventStatus
-			,	js.KickOffTime
-			,	js.LeagueID
-			,	js.EventDate
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore END) AS LiveHomeScore
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveAwayScore END) AS LiveAwayScore
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore + js.LiveAwayScore END) AS TotalScore
-			,	js.BettypeID
-            ,	IFNULL(js.BetID,0)
-			,	js.CustID
-			,	js.Stake
-            ,	js.Betteam
-			,	CURRENT_TIMESTAMP(3)
-		FROM JSON_TABLE(ip_TransList,
-					 "$[*]" COLUMNS(
-								SequenceID		BIGINT UNSIGNED PATH "$.SequenceID" 	
-							,	TransID			BIGINT UNSIGNED PATH "$.TransID" 
-							,	TransDate		DATETIME(3) PATH "$.TransDate" 
-							,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PATH "$.LeagueName"
-							,	SportType		INT PATH "$.SportType"
-							,	MatchID			INT PATH "$.MatchID"
-							,	HomeID			INT	PATH "$.HomeID" 
-							,	AwayID			INT	PATH "$.AwayID" 
-							,	EventStatus		VARCHAR(50)	PATH "$.EventStatus" 
-							,	KickOffTime		DATETIME PATH "$.KickOffTime" 
-							,	LeagueID		INT	PATH "$.LeagueID"
-							,	EventDate		DATE PATH "$.EventDate"
-							,	LiveHomeScore	INT	PATH "$.LiveHomeScore" 
-							,	LiveAwayScore	INT	PATH "$.LiveAwayScore" 
-							,	BettypeID		INT	PATH "$.Bettype"
-							,	BetID			BIGINT	PATH "$.BetID"
-							,	CustID			INT PATH "$.CustID"
-							,	Stake			DECIMAL(20,4) PATH "$.Stake" 
-							,	Betteam			VARCHAR(10)	PATH "$.Betteam" 
-						)
-					) AS js
-		WHERE js.SportType = 1;        
+		SELECT	tmpSt.SequenceID
+			,	tmpSt.TransID
+			,	tmpSt.TransDate
+			,	tmpSt.LeagueName
+			,	tmpSt.SportType
+			,	tmpSt.MatchID
+			,	tmpSt.HomeID
+			,	tmpSt.AwayID
+			,	tmpSt.EventStatus
+			,	tmpSt.KickOffTime
+			,	tmpSt.LeagueID
+			,	tmpSt.EventDate
+			,	tmpSt.LiveHomeScore
+			,	tmpSt.LiveAwayScore
+			,	tmpSt.TotalScore
+			,	tmpSt.BettypeID
+			,	tmpSt.BetID
+			,	tmpSt.CustID
+			,	tmpSt.Stake
+			,	tmpSt.Betteam
+			,	CURRENT_TIMESTAMP(3) AS InsertTime
+		FROM Temp_Staging AS tmpSt
+		WHERE tmpSt.IsMajorLeague = 0;
         
-		#=====UPDATE SYSTEM PARAMETER===============================
+        #=====Staging Hedging Soccer================================
+		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingLive03(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
+		SELECT	tmpSt.SequenceID
+			,	tmpSt.TransID
+			,	tmpSt.TransDate
+			,	tmpSt.LeagueName
+			,	tmpSt.SportType
+			,	tmpSt.MatchID
+			,	tmpSt.HomeID
+			,	tmpSt.AwayID
+			,	tmpSt.EventStatus
+			,	tmpSt.KickOffTime
+			,	tmpSt.LeagueID
+			,	tmpSt.EventDate
+			,	tmpSt.LiveHomeScore
+			,	tmpSt.LiveAwayScore
+			,	tmpSt.TotalScore
+			,	tmpSt.BettypeID
+			,	tmpSt.BetID
+			,	tmpSt.CustID
+			,	tmpSt.Stake
+			,	tmpSt.Betteam
+			,	CURRENT_TIMESTAMP(3) AS InsertTime
+		FROM Temp_Staging AS tmpSt
+		WHERE tmpSt.SportType = 1;   
+        
+		#=====UPDATE SYSTEM PARAMETER: THE LAST TRANS GET FROM MAINDB===============================
 		SELECT MAX(mms.SequenceID)
 		INTO lv_LastSequenceID
-		FROM CTS_DataCenter.MatchMonitorStagingLive AS mms;              
+		FROM Temp_Staging AS tmpSt;              
             
 		IF lv_LastSequenceID > 0 THEN	   
 			UPDATE CTS_DataCenter.SystemParameter AS sys
@@ -192,209 +199,119 @@ BEGIN
 			WHERE sys.ParameterID = 20;
 		END IF;        
 	ELSE
-    	INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
-		SELECT  js.SequenceID
-			,	js.TransID
-			,	js.TransDate
-            ,	js.LeagueName
-            ,	js.SportType
-			,	js.MatchID
-			,	js.HomeID
-			,	js.AwayID
-			,	js.EventStatus
-			,	js.KickOffTime
-			,	js.LeagueID
-			,	js.EventDate
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore END) AS LiveHomeScore
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveAwayScore END) AS LiveAwayScore
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore + js.LiveAwayScore END) AS TotalScore
-			,	js.BettypeID
-            ,	IFNULL(js.BetID,0)
-			,	js.CustID
-			,	js.Stake
-            ,	js.Betteam
-			,	CURRENT_TIMESTAMP(3)
-		FROM JSON_TABLE(ip_TransList,
-						 "$[*]" COLUMNS(
-									SequenceID		BIGINT UNSIGNED PATH "$.SequenceID" 	
-								,	TransID			BIGINT UNSIGNED PATH "$.TransID" 
-								,	TransDate		DATETIME(3) PATH "$.TransDate" 
-                                ,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PATH "$.LeagueName"
-                                ,	SportType		INT PATH "$.SportType"
-								,	MatchID			INT PATH "$.MatchID"
-								,	HomeID			INT	PATH "$.HomeID" 
-								,	AwayID			INT	PATH "$.AwayID" 
-								,	EventStatus		VARCHAR(50)	PATH "$.EventStatus" 
-								,	KickOffTime		DATETIME PATH "$.KickOffTime" 
-								,	LeagueID		INT	PATH "$.LeagueID"
-								,	EventDate		DATE PATH "$.EventDate"
-								,	LiveHomeScore	INT	PATH "$.LiveHomeScore" 
-								,	LiveAwayScore	INT	PATH "$.LiveAwayScore" 
-								,	BettypeID		INT	PATH "$.Bettype"
-                                ,	BetID			BIGINT	PATH "$.BetID"
-								,	CustID			INT PATH "$.CustID"
-								,	Stake			DECIMAL(20,4) PATH "$.Stake" 
-                                ,	Betteam			VARCHAR(10)	PATH "$.Betteam" 
-							)
-					) AS js;  
+    	#=====Staging: Group Betting(Soccer(1), Basketball(2), E-Sport(43)), Hedging(Basketball(2), E-Sport(43)), Arbitrage(Soccer(1), Basketball(2), E-Sport(43)) ================================
+		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
+		SELECT	tmpSt.SequenceID
+			,	tmpSt.TransID
+			,	tmpSt.TransDate
+			,	tmpSt.LeagueName
+			,	tmpSt.SportType
+			,	tmpSt.MatchID
+			,	tmpSt.HomeID
+			,	tmpSt.AwayID
+			,	tmpSt.EventStatus
+			,	tmpSt.KickOffTime
+			,	tmpSt.LeagueID
+			,	tmpSt.EventDate
+			,	tmpSt.LiveHomeScore
+			,	tmpSt.LiveAwayScore
+			,	tmpSt.TotalScore
+			,	tmpSt.BettypeID
+			,	tmpSt.BetID
+			,	tmpSt.CustID
+			,	tmpSt.Stake
+			,	tmpSt.Betteam
+			,	CURRENT_TIMESTAMP(3) AS InsertTime
+		FROM Temp_Staging AS tmpSt;  
 		
-                    
-		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorTransNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, Odds, IsMajorLeague, InsertTime)
-		SELECT  js.SequenceID
-			,	js.TransID
-			,	js.TransDate
-            ,	js.LeagueName
-            ,	js.SportType
-			,	js.MatchID
-			,	js.HomeID
-			,	js.AwayID
-			,	js.EventStatus
-			,	js.KickOffTime
-			,	js.LeagueID
-			,	js.EventDate
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore END) AS LiveHomeScore
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveAwayScore END) AS LiveAwayScore
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore + js.LiveAwayScore END) AS TotalScore
-			,	js.BettypeID
-            ,	IFNULL(js.BetID,0)
-			,	js.CustID
-			,	js.Stake
-            ,	js.Betteam
-            ,	js.Odds
-            ,	js.IsMajorLeague
-			,	CURRENT_TIMESTAMP(3)
-		FROM JSON_TABLE(ip_TransList,
-						 "$[*]" COLUMNS(
-									SequenceID		BIGINT PATH "$.SequenceID"
-								,	TransID			BIGINT UNSIGNED PATH "$.TransID" 
-								,	TransDate		DATETIME(3) PATH "$.TransDate" 
-                                ,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PATH "$.LeagueName"
-                                ,	SportType		INT PATH "$.SportType"
-								,	MatchID			INT PATH "$.MatchID"
-								,	HomeID			INT	PATH "$.HomeID" 
-								,	AwayID			INT	PATH "$.AwayID" 
-								,	EventStatus		VARCHAR(50)	PATH "$.EventStatus" 
-								,	KickOffTime		DATETIME PATH "$.KickOffTime" 
-								,	LeagueID		INT	PATH "$.LeagueID"
-								,	EventDate		DATE PATH "$.EventDate"
-								,	LiveHomeScore	INT	PATH "$.LiveHomeScore" 
-								,	LiveAwayScore	INT	PATH "$.LiveAwayScore" 
-								,	BettypeID		INT	PATH "$.Bettype"
-                                ,	BetID			BIGINT	PATH "$.BetID"
-								,	CustID			INT PATH "$.CustID"
-								,	Stake			DECIMAL(20,4) PATH "$.Stake" 
-                                ,	Betteam			VARCHAR(10)	PATH "$.Betteam" 
-                                ,	Odds			DECIMAL(10,4)	PATH "$.Odds" 
-                                ,	IsMajorLeague	BOOLEAN	PATH "$.IsMajorLeague" 
-							)
-					) AS js
-			WHERE js.IsMajorLeague = 0;
-		
-        INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingNonLive03(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
-		SELECT  js.SequenceID
-			,	js.TransID
-			,	js.TransDate
-            ,	js.LeagueName
-            ,	js.SportType
-			,	js.MatchID
-			,	js.HomeID
-			,	js.AwayID
-			,	js.EventStatus
-			,	js.KickOffTime
-			,	js.LeagueID
-			,	js.EventDate
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore END) AS LiveHomeScore
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveAwayScore END) AS LiveAwayScore
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore + js.LiveAwayScore END) AS TotalScore
-			,	js.BettypeID
-            ,	IFNULL(js.BetID,0)
-			,	js.CustID
-			,	js.Stake
-            ,	js.Betteam
-			,	CURRENT_TIMESTAMP(3)
-		FROM JSON_TABLE(ip_TransList,
-					 "$[*]" COLUMNS(
-								SequenceID		BIGINT UNSIGNED PATH "$.SequenceID" 	
-							,	TransID			BIGINT UNSIGNED PATH "$.TransID" 
-							,	TransDate		DATETIME(3) PATH "$.TransDate" 
-							,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PATH "$.LeagueName"
-							,	SportType		INT PATH "$.SportType"
-							,	MatchID			INT PATH "$.MatchID"
-							,	HomeID			INT	PATH "$.HomeID" 
-							,	AwayID			INT	PATH "$.AwayID" 
-							,	EventStatus		VARCHAR(50)	PATH "$.EventStatus" 
-							,	KickOffTime		DATETIME PATH "$.KickOffTime" 
-							,	LeagueID		INT	PATH "$.LeagueID"
-							,	EventDate		DATE PATH "$.EventDate"
-							,	LiveHomeScore	INT	PATH "$.LiveHomeScore" 
-							,	LiveAwayScore	INT	PATH "$.LiveAwayScore" 
-							,	BettypeID		INT	PATH "$.Bettype"
-							,	BetID			BIGINT	PATH "$.BetID"
-							,	CustID			INT PATH "$.CustID"
-							,	Stake			DECIMAL(20,4) PATH "$.Stake" 
-							,	Betteam			VARCHAR(10)	PATH "$.Betteam" 
-						)
-					) AS js
-		WHERE js.SportType = 1;
+        #=====Staging Fixed Game Betting================================
+        INSERT IGNORE INTO CTS_DataCenter.MatchMonitorTransNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, Odds, IsMajorLeague, InsertTime)
+		SELECT	tmpSt.SequenceID
+			,	tmpSt.TransID
+			,	tmpSt.TransDate
+			,	tmpSt.LeagueName
+			,	tmpSt.SportType
+			,	tmpSt.MatchID
+			,	tmpSt.HomeID
+			,	tmpSt.AwayID
+			,	tmpSt.EventStatus
+			,	tmpSt.KickOffTime
+			,	tmpSt.LeagueID
+			,	tmpSt.EventDate
+			,	tmpSt.LiveHomeScore
+			,	tmpSt.LiveAwayScore
+			,	tmpSt.TotalScore
+			,	tmpSt.BettypeID
+			,	tmpSt.BetID
+			,	tmpSt.CustID
+			,	tmpSt.Stake
+			,	tmpSt.Betteam
+			,	CURRENT_TIMESTAMP(3) AS InsertTime
+		FROM Temp_Staging AS tmpSt
+		WHERE tmpSt.IsMajorLeague = 0;
         
+        #=====Staging Hedging Soccer================================
+		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingNonLive03(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
+		SELECT	tmpSt.SequenceID
+			,	tmpSt.TransID
+			,	tmpSt.TransDate
+			,	tmpSt.LeagueName
+			,	tmpSt.SportType
+			,	tmpSt.MatchID
+			,	tmpSt.HomeID
+			,	tmpSt.AwayID
+			,	tmpSt.EventStatus
+			,	tmpSt.KickOffTime
+			,	tmpSt.LeagueID
+			,	tmpSt.EventDate
+			,	tmpSt.LiveHomeScore
+			,	tmpSt.LiveAwayScore
+			,	tmpSt.TotalScore
+			,	tmpSt.BettypeID
+			,	tmpSt.BetID
+			,	tmpSt.CustID
+			,	tmpSt.Stake
+			,	tmpSt.Betteam
+			,	CURRENT_TIMESTAMP(3) AS InsertTime
+		FROM Temp_Staging AS tmpSt
+		WHERE tmpSt.SportType = 1;   
+        
+        #=====Staging - Irrigation - Soccer================================
 		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingIrrigationNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
-		SELECT  js.SequenceID
-			,	js.TransID
-			,	js.TransDate
-            ,	js.LeagueName
-            ,	js.SportType
-			,	js.MatchID
-			,	js.HomeID
-			,	js.AwayID
-			,	js.EventStatus
-			,	js.KickOffTime
-			,	js.LeagueID
-			,	js.EventDate
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore END) AS LiveHomeScore
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveAwayScore END) AS LiveAwayScore
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore + js.LiveAwayScore END) AS TotalScore
-			,	js.BettypeID
-            ,	IFNULL(js.BetID,0)
-			,	js.CustID
-			,	js.Stake
-            ,	js.Betteam
-			,	CURRENT_TIMESTAMP(3)
-		FROM JSON_TABLE(ip_TransList,
-					 "$[*]" COLUMNS(
-								SequenceID		BIGINT UNSIGNED PATH "$.SequenceID" 	
-							,	TransID			BIGINT UNSIGNED PATH "$.TransID" 
-							,	TransDate		DATETIME(3) PATH "$.TransDate" 
-							,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PATH "$.LeagueName"
-							,	SportType		INT PATH "$.SportType"
-							,	MatchID			INT PATH "$.MatchID"
-							,	HomeID			INT	PATH "$.HomeID" 
-							,	AwayID			INT	PATH "$.AwayID" 
-							,	EventStatus		VARCHAR(50)	PATH "$.EventStatus" 
-							,	KickOffTime		DATETIME PATH "$.KickOffTime" 
-							,	LeagueID		INT	PATH "$.LeagueID"
-							,	EventDate		DATE PATH "$.EventDate"
-							,	LiveHomeScore	INT	PATH "$.LiveHomeScore" 
-							,	LiveAwayScore	INT	PATH "$.LiveAwayScore" 
-							,	BettypeID		INT	PATH "$.Bettype"
-							,	BetID			BIGINT	PATH "$.BetID"
-							,	CustID			INT PATH "$.CustID"
-							,	Stake			DECIMAL(20,4) PATH "$.Stake" 
-							,	Betteam			VARCHAR(10)	PATH "$.Betteam" 
-						)
-					) AS js
-		WHERE js.SportType = 1;
+		SELECT	tmpSt.SequenceID
+			,	tmpSt.TransID
+			,	tmpSt.TransDate
+			,	tmpSt.LeagueName
+			,	tmpSt.SportType
+			,	tmpSt.MatchID
+			,	tmpSt.HomeID
+			,	tmpSt.AwayID
+			,	tmpSt.EventStatus
+			,	tmpSt.KickOffTime
+			,	tmpSt.LeagueID
+			,	tmpSt.EventDate
+			,	tmpSt.LiveHomeScore
+			,	tmpSt.LiveAwayScore
+			,	tmpSt.TotalScore
+			,	tmpSt.BettypeID
+			,	tmpSt.BetID
+			,	tmpSt.CustID
+			,	tmpSt.Stake
+			,	tmpSt.Betteam
+			,	CURRENT_TIMESTAMP(3) AS InsertTime
+		FROM Temp_Staging AS tmpSt
+		WHERE tmpSt.SportType = 1;   
         
-                    
-		#=====UPDATE SYSTEM PARAMETER===============================
-		SELECT 	MAX(mms.SequenceID)
-		INTO 	lv_LastSequenceID
-		FROM	CTS_DataCenter.MatchMonitorStagingNonLive AS mms;  
+		#=====UPDATE SYSTEM PARAMETER: THE LAST TRANS GET FROM MAINDB===============================
+		SELECT MAX(mms.SequenceID)
+		INTO lv_LastSequenceID
+		FROM Temp_Staging AS tmpSt;              
             
-        IF lv_LastSequenceID > 0 THEN	   
-			UPDATE 	CTS_DataCenter.SystemParameter AS sys
-			SET 	sys.ParameterValue = lv_LastSequenceID
-			WHERE 	sys.ParameterID = 29;
-		END IF; 
+		IF lv_LastSequenceID > 0 THEN	   
+			UPDATE CTS_DataCenter.SystemParameter AS sys
+			SET sys.ParameterValue = lv_LastSequenceID
+			WHERE sys.ParameterID = 29;
+		END IF;
         
 	END IF;
     
