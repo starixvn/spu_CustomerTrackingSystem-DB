@@ -42,7 +42,7 @@ BEGIN TRY
     --Add schedule to job
     EXEC dbo.sp_add_jobschedule 
 			@job_id=@jobId, 
-			@name=N'08:00 AM, every day', 
+			@name=N'09:00 PM GMT-4, every day', 
 			@enabled=1,
             @freq_type=4, 
             @freq_interval=1, 
@@ -52,7 +52,7 @@ BEGIN TRY
             @freq_recurrence_factor=0, 
             @active_start_date=NULL, 
             @active_end_date=99991231, 
-            @active_start_time=080000, 
+            @active_start_time=210000, 
             @active_end_time=235959
 
 	--Add schedule to job server
