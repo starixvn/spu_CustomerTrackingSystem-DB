@@ -24,6 +24,7 @@ CREATE TABLE MatchMonitorStagingIrrigationNonLive (
   Betteam VARCHAR(10) DEFAULT NULL,
   CustID BIGINT unsigned DEFAULT NULL,
   Stake DECIMAL(20,4) DEFAULT NULL,
+  Odds	DECIMAL(10,4) DEFAULT NULL,
   GroupID INT DEFAULT '0',
   LiveHomeScore INT DEFAULT NULL,
   LiveAwayScore INT DEFAULT NULL,
@@ -36,20 +37,17 @@ CREATE TABLE MatchMonitorStagingIrrigationNonLive (
   InsertTime DateTIME(3) DEFAULT NULL,
   LeagueName VARCHAR(500) DEFAULT NULL,
   PRIMARY KEY (SequenceID),
-  INDEX IX_MMStaging_Irrigation_NonLive_TransDate (TransDate),
-  INDEX IX_MMStaging_Irrigation_NonLive_GroupRule01 (MatchID,TotalScore,BettypeID,BetID,GroupID),
-  INDEX IX_MMStaging_Irrigation_NonLive_TransID (TransID)
+  INDEX IX_MMStaging_Irrigation_NonLive_GroupGroupID (MatchID,TotalScore,BettypeID,BetID,CustID)
 ) ENGINE=InnoDB;
 
 ALTER TABLE MatchMonitorRuleSetting
-ADD COLUMN OddsSpread INT AFTER HighStake ;
+ADD COLUMN OddsSpread DECIMAL(4,2) AFTER HighStake ;
 
 INSERT INTO CTS_DataCenter.MatchMonitorRuleSetting(RuleGroupID, RuleGroupDesc, Reason, SportType, ReasonName, SportName, TimeStep, TotalStake, HighStake, OddsSpread, ModifiedDate, Comments)
 VALUES (4, 'Irrigation Detect', 58 , 1, 'Irrigation', 'Soccer', 180, 1000, NULL, 28, CURRENT_TIMESTAMP(), NULL);
 
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
-VALUES	(124,'MatchMonitorIrrigation_Rule_Get_NoOfRow','MatchMonitorIrrigation_Rule_Get_NoOfRow','INT','5000')
+VALUES	(124,'MatchMonitorIrrigation_Rule_BatchSize','MatchMonitorIrrigation_Rule_BatchSize','INT','5000')
 	,	(125,'MatchMonitorIrrigation_Rule_LastSequenceID','MatchMonitorIrrigation_Rule_LastSequenceID','BIGINT UNSIGNED','0');
-    
     
 SELECT * FROM CTS_DataCenter.SystemParameter ;

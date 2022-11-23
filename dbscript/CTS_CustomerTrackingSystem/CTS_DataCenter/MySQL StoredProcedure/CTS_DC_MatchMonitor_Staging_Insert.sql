@@ -246,6 +246,8 @@ BEGIN
 			,	tmpSt.CustID
 			,	tmpSt.Stake
 			,	tmpSt.Betteam
+            ,	tmpSt.Odds
+            ,	tmpSt.IsMajorLeague
 			,	CURRENT_TIMESTAMP(3) AS InsertTime
 		FROM Temp_Staging AS tmpSt
 		WHERE tmpSt.IsMajorLeague = 0;
@@ -277,7 +279,7 @@ BEGIN
 		WHERE tmpSt.SportType = 1;   
         
         #=====Staging - Irrigation - Soccer================================
-		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingIrrigationNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
+		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingIrrigationNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, Odds, InsertTime)
 		SELECT	tmpSt.SequenceID
 			,	tmpSt.TransID
 			,	tmpSt.TransDate
@@ -298,6 +300,7 @@ BEGIN
 			,	tmpSt.CustID
 			,	tmpSt.Stake
 			,	tmpSt.Betteam
+            ,	tmpSt.Odds
 			,	CURRENT_TIMESTAMP(3) AS InsertTime
 		FROM Temp_Staging AS tmpSt
 		WHERE tmpSt.SportType = 1;   
