@@ -41,7 +41,7 @@ CREATE TABLE MatchMonitorStagingIrrigationNonLive (
 ) ENGINE=InnoDB;
 
 ALTER TABLE MatchMonitorRuleSetting
-ADD COLUMN OddsSpread DECIMAL(4,2) AFTER HighStake ;
+ADD COLUMN OddsSpread DECIMAL(4,2) AFTER HighStake;
 
 INSERT INTO CTS_DataCenter.MatchMonitorRuleSetting(RuleGroupID, RuleGroupDesc, Reason, SportType, ReasonName, SportName, TimeStep, TotalStake, HighStake, OddsSpread, ModifiedDate, Comments)
 VALUES (4, 'Irrigation Detect', 58 , 1, 'Irrigation', 'Soccer', 180, 1000, NULL, 28, CURRENT_TIMESTAMP(), NULL);

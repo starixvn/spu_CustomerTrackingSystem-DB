@@ -3,9 +3,9 @@ DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_RuleIrrigation_Process`;
 DELIMITER $$
 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleIrrigation_Process`(
-		IN ip_LiveIndicator		BOOLEAN
-	,	IN ip_SportType			INT
+		IN ip_LiveIndicator		BOOLEAN	
 	,	IN ip_MaxSequenceID		BIGINT UNSIGNED
+    ,	IN ip_SportType			INT
 	,	IN ip_MatchID			INT UNSIGNED
     ,	IN ip_TotalScore		INT 
     ,	IN ip_BettypeID			INT UNSIGNED
@@ -16,7 +16,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleIrrigation_Proc
 sp: BEGIN
 	/*
 		Created:	20211122@Casey.Huynh
-		Task :		Match Monitor Rule Irrigation Get
+		Task :		Match Monitor Rule Irrigation Process
 		DB:			CTS_DataCenter
 		Original:
 
@@ -26,7 +26,7 @@ sp: BEGIN
 		Param's Explanation (filtered by):	
 			
 		Example:
-			CALL CTS_DC_MatchMonitor_RuleIrrigation_Process(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=0,@ip_MatchID:=1,@ip_TotalScore:=1,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a',@ip_SportType:=1);
+			CALL CTS_DC_MatchMonitor_RuleIrrigation_Process(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=0,@ip_SportType:=1,@ip_MatchID:=1,@ip_TotalScore:=1,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a');
 	*/
     DECLARE CONST_RULE_GROUPID INT DEFAULT 4;
     
@@ -59,7 +59,7 @@ sp: BEGIN
 
 	#=====GET Previous Cust BY Step Time
     SELECT	mms.CustID
-		,	GROUP_CONCAT(CASE WHEN GroupID IS NULL THEN TransID END) AS NewTransList
+		,	GROUP_CONCAT(CASE WHEN GroupID IS NULL THEN TransID END) AS TransList
         ,	MAX(mms.GroupID) AS OldGroupID
     FROM CTS_DataCenter.MatchMonitorStagingIrrigationNonLive AS mms
     WHERE mms.SequenceID <= ip_MaxSequenceID
@@ -69,5 +69,3 @@ sp: BEGIN
     
 END$$
 DELIMITER ;
-
-CALL CTS_DC_MatchMonitor_RuleIrrigation_Process(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=0,@ip_MatchID:=1,@ip_TotalScore:=1,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a',@ip_SportType:=1);
