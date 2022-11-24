@@ -176,3 +176,11 @@ VALUES ('5', '9', 'CTS_DataCenter', 'MatchMonitor', '7', 'CTS_Archive', 'MatchMo
 VALUES ('9', 'CTS_DataCenter', 'MatchMonitor', 'Weekly', 'pw', 'pw999999', '14', '2', '08:00:00', '2', 1,'2022-01-01 00:00:00'),
 	   ('9', 'CTS_DataCenter', 'MatchMonitorDetails', 'Weekly', 'pw', 'pw999999', '14', '2', '08:00:00', '2', 1,'2022-01-01 00:00:00'),
        ('9', 'CTS_DataCenter', 'MatchMonitorDetailsVerifiedTrans', 'Weekly', 'pw', 'pw999999', '14', '2', '08:00:00', '2', 1,'2022-01-01 00:00:00');
+
+
+
+
+/************************ Grant permission ****************************/	
+GRANT DROP, ALTER ON `CTS_DataCenter`.`MatchMonitor` TO `DBMaintance`@`%`;
+GRANT DROP, ALTER ON `CTS_DataCenter`.`MatchMonitorDetails` TO `DBMaintance`@`%`;
+GRANT DROP, ALTER ON `CTS_DataCenter`.`MatchMonitorDetailsVerifiedTrans` TO `DBMaintance`@`%`;
