@@ -30,28 +30,30 @@ BEGIN
 		Param's Explanation (filtered by):		
 
 		Example:
-			CALL CTS_DataCenter.CTS_DC_MatchMonitor_Staging_Insert(0,'[{"SportType": 1,"SequenceID": 1,"TransID": 100,"TransDate" : "2021-05-17 07:48:52.533","MatchID" : 43614953,"EventDate" : "2021-05-17 00:00:00","KickOffTime" : "2021-05-17 00:00:00","EventStatus" : "running","HomeID" : 953,"AwayID" : 113,"LeagueID" : 3,"Bettype" : 3, "BetID" : 0,  "LiveIndicator" : "1","CustID" : 12500792,"Stake" : 20,"Betteam" : "a","LiveHomeScore" : 0,"LiveAwayScore" : 2,"LeagueName":"ABC League"}]');;
+			CALL CTS_DataCenter.CTS_DC_MatchMonitor_Staging_Insert(0,'[{"SportType": 1,"SequenceID": 1,"TransID": 100,"TransDate" : "2021-05-17 07:48:52.533","MatchID" : 43614953,"EventDate" : "2021-05-17 00:00:00","KickOffTime" : "2021-05-17 00:00:00","EventStatus" : "running","HomeID" : 953,"AwayID" : 113,"LeagueID" : 3,"Bettype" : 3, "BetID" : 0,  "LiveIndicator" : "1","CustID" : 12500792,"Stake" : 20,"Betteam" : "a", "Odds" : "0.1","LiveHomeScore" : 0,"LiveAwayScore" : 2,"LeagueName":"ABC League"}]');;
             
 	*/    
     
     DECLARE lv_LastSequenceID BIGINT UNSIGNED DEFAULT 0;
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_Staging;
 	CREATE TEMPORARY TABLE Temp_Staging(
 			SequenceID		BIGINT UNSIGNED NOT NULL
 		,	TransID			BIGINT UNSIGNED NOT NULL
-		,	TransDATE		DATETIME(3) DEFAULT NULL
+		,	TransDate		DATETIME(3) DEFAULT NULL
 		,	MatchID			INT DEFAULT NULL
 		,	SportType		INT DEFAULT NULL
 		,	TotalScore		INT DEFAULT NULL
 		,	BettypeID		INT DEFAULT NULL
 		,	BetID			BIGINT DEFAULT NULL
 		,	Betteam			VARCHAR(10)
+        ,	Odds			DECIMAL(10,4) DEFAULT NULL
 		,	CustID			BIGINT UNSIGNED DEFAULT NULL
 		,	Stake			DECIMAL(20,4) DEFAULT NULL
 		,	GroupID			INT DEFAULT '0'
 		,	LiveHomeScore	INT DEFAULT NULL
 		,	LiveAwayScore	INT DEFAULT NULL
-		,	EventDATE		DATE DEFAULT NULL
+		,	EventDate		DATE DEFAULT NULL
 		,	KickOffTime		DATETIME DEFAULT NULL
 		,	EventStatus		VARCHAR(50)DEFAULT NULL
 		,	HomeID			INT DEFAULT NULL
@@ -62,7 +64,7 @@ BEGIN
 		,	PRIMARY KEY (SequenceID)
 	) ENGINE=InnoDB;
 	
-    INSERT IGNORE INTO Temp_Staging(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, IsMajorLeague)
+    INSERT IGNORE INTO Temp_Staging(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, Odds, IsMajorLeague)
 		SELECT  js.SequenceID
 			,	js.TransID
 			,	js.TransDate
@@ -83,6 +85,7 @@ BEGIN
 			,	js.CustID
 			,	js.Stake
             ,	js.Betteam
+            ,	js.Odds
             ,	js.IsMajorLeague
 		FROM JSON_TABLE(ip_TransList,
 					 "$[*]" COLUMNS(
@@ -105,6 +108,7 @@ BEGIN
 							,	CustID			INT PATH "$.CustID"
 							,	Stake			DECIMAL(20,4) PATH "$.Stake" 
 							,	Betteam			VARCHAR(10)	PATH "$.Betteam"
+                            ,	Odds			DECIMAL(10,2) PATH "$.Odds"
                             ,	IsMajorLeague	BOOLEAN	PATH "$.IsMajorLeague" 
 						)
 					) AS js;  
@@ -189,7 +193,7 @@ BEGIN
 		WHERE tmpSt.SportType = 1;   
         
 		#=====UPDATE SYSTEM PARAMETER: THE LAST TRANS GET FROM MAINDB===============================
-		SELECT MAX(mms.SequenceID)
+		SELECT MAX(tmpSt.SequenceID)
 		INTO lv_LastSequenceID
 		FROM Temp_Staging AS tmpSt;              
             
@@ -306,7 +310,7 @@ BEGIN
 		WHERE tmpSt.SportType = 1;   
         
 		#=====UPDATE SYSTEM PARAMETER: THE LAST TRANS GET FROM MAINDB===============================
-		SELECT MAX(mms.SequenceID)
+		SELECT MAX(tmpSt.SequenceID)
 		INTO lv_LastSequenceID
 		FROM Temp_Staging AS tmpSt;              
             

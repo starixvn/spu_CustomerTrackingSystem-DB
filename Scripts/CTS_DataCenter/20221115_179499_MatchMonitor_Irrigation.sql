@@ -48,6 +48,6 @@ VALUES (4, 'Irrigation Detect', 58 , 1, 'Irrigation', 'Soccer', 180, 1000, NULL,
 
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
 VALUES	(124,'MatchMonitorIrrigation_Rule_BatchSize','MatchMonitorIrrigation_Rule_BatchSize','INT','5000')
-	,	(125,'MatchMonitorIrrigation_Rule_LastSequenceID','MatchMonitorIrrigation_Rule_LastSequenceID','BIGINT UNSIGNED','0');
+	,	(125,'MatchMonitorIrrigation_RuleNonLive_LastSequenceID','MatchMonitorIrrigation_RuleNonLive_LastSequenceID','BIGINT UNSIGNED','0');
     
 SELECT * FROM CTS_DataCenter.SystemParameter ;

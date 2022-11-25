@@ -59,7 +59,7 @@ BEGIN
     IF (ip_LiveIndicator = 0) THEN 		
 		SELECT 	MAX(mms.TransDate) , MAX(mms.TransID)
 		INTO 	lv_LastMaxTime, lv_LastTransID
-		FROM	CTS_DataCenter.MatchMonitorStagingLive03 AS mms
+		FROM	CTS_DataCenter.MatchMonitorStagingIrrigationNonLive AS mms
         WHERE	mms.SequenceID <= ip_MaxSequenceID;      
 		
 		SELECT  MIN(mms.TransDate) 
@@ -81,11 +81,9 @@ BEGIN
 		IF lv_LastTransID > 0 THEN	
 			UPDATE 	CTS_DataCenter.SystemParameter AS sys
 			SET 	sys.ParameterValue = ip_MaxSequenceID
-			WHERE 	sys.ParameterID = 120;
+			WHERE 	sys.ParameterID = 125;
 		END IF;        
 	END IF;
-    
-    
     
 END$$
 DELIMITER ;

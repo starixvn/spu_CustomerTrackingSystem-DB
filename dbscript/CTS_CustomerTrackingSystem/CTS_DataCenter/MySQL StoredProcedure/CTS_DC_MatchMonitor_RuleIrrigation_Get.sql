@@ -53,11 +53,14 @@ sp: BEGIN
         SELECT TIMESTAMPADD(SECOND, lv_Rule_MinTimeStep, mms.TransDate)
         INTO lv_MaxTransDate
         FROM CTS_DataCenter.MatchMonitorStagingIrrigationNonLive AS mms
-        WHERE mms.SequenceID = lv_LastSequenceID;        
-        
+        WHERE mms.SequenceID > lv_LastSequenceID
+        ORDER BY mms.SequenceID
+        LIMIT 1;        
+    
         SELECT MAX(temp.SequenceID)
         INTO op_MaxSequenceID
-        FROM (	SELECT mms.SequenceID FROM CTS_DataCenter.MatchMonitorStagingIrrigationNonLive AS mms
+        FROM (	SELECT mms.SequenceID
+				FROM CTS_DataCenter.MatchMonitorStagingIrrigationNonLive AS mms
 				WHERE mms.SequenceID > lv_LastSequenceID AND mms.TransDate <= lv_MaxTransDate
 				ORDER BY mms.SequenceID
 				LIMIT lv_BatchSize) AS temp;
