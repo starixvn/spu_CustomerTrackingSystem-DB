@@ -3,9 +3,9 @@ DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_RuleIrrigation_Complete`;
 DELIMITER $$
 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleIrrigation_Complete`(
-		IN ip_LiveIndicator BOOLEAN	
-    ,	IN ip_SportType     INT
+		IN ip_LiveIndicator BOOLEAN    
 	,	IN ip_MaxSequenceID BIGINT UNSIGNED
+    ,	IN ip_SportType     INT
 	, 	IN ip_MatchID		INT
     , 	IN ip_TotalScore	INT 
     , 	IN ip_BettypeID		INT
@@ -28,8 +28,9 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleIrrigation_Comp
 		Param's Explanation (filtered by):	
 			
 		Example:
-			CALL CTS_DC_MatchMonitor_RuleIrrigation_Complete(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=0,@ip_SportType:=1,ip_MatchID:=1,@ip_TotalScore:=1,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a',
-            @ip_TransGroup:='[{"CustID":3,"TransIDList":"1,2,3","OldGroupID":1}]');
+			CALL CTS_DC_MatchMonitor_RuleIrrigation_Complete_xtest(@ip_LiveIndicator:=0,@ip_MaxSequenceID:=0,@ip_SportType:=1,ip_MatchID:=1
+            ,@ip_TotalScore:=1,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a',
+            @ip_TransGroup:= '[]';''[{"CustID":3,"TransIDList":"1,2,3","OldGroupID":1}]');
 	*/
     DECLARE	CONST_GROUPID	TINYINT DEFAULT 4;
     
@@ -45,6 +46,13 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleIrrigation_Comp
 	DECLARE lv_LiveHomeScore  SMALLINT UNSIGNED;
 	DECLARE lv_LiveAwayScore  SMALLINT UNSIGNED;
     
+	#===================LOG=======================================
+
+	INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText, JsonString1 )
+    SELECT'CTS_DC_MatchMonitor_RuleIrrigation_Complete', current_timestamp(), 
+    CONCAT('ip_LiveIndicator:',ip_LiveIndicator,' ip_MaxSequenceID:',ip_MaxSequenceID,' ip_SportType:',ip_SportType,' ip_MatchID:',ip_MatchID
+    ,' ip_TotalScore:',ip_TotalScore,' ip_BettypeID:',ip_BettypeID,' ip_BetID:',ip_BetID,' ip_Betteam:',ip_Betteam), ip_TransGroup;
+
     DROP TEMPORARY TABLE IF EXISTS Temp_InputTransGroup;
     CREATE TEMPORARY TABLE Temp_InputTransGroup
     (

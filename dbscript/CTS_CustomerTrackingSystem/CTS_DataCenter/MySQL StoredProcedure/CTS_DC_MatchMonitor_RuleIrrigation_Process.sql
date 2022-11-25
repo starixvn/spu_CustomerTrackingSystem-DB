@@ -36,6 +36,11 @@ sp: BEGIN
 	DECLARE lv_LastSequenceID	BIGINT UNSIGNED;
 	DECLARE lv_LastTransDate	DATETIME(3); 
     
+    #===================LOG=======================================
+	INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
+    SELECT'CTS_DC_MatchMonitor_RuleIrrigation_Process', current_timestamp(), CONCAT('ip_LiveIndicator:',ip_LiveIndicator
+    ,' ip_SportType:',ip_SportType,' ip_MatchID:',ip_MatchID,' ip_TotalScore:',ip_TotalScore,' ip_BettypeID:',ip_BettypeID,' ip_BetID:',ip_BetID,' ip_Betteam:',ip_Betteam);
+        
     DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorRuleSetting;   
     CREATE TEMPORARY TABLE Temp_MatchMonitorRuleSetting(
 			SportType	INT NOT NULL
@@ -59,7 +64,7 @@ sp: BEGIN
 
 	#=====GET Previous Cust BY Step Time
     SELECT	mms.CustID
-		,	GROUP_CONCAT(CASE WHEN GroupID IS NULL THEN TransID END) AS TransList
+		,	GROUP_CONCAT(CASE WHEN GroupID = 0 THEN mms.TransID END) AS TransIDList
         ,	MAX(mms.GroupID) AS OldGroupID
     FROM CTS_DataCenter.MatchMonitorStagingIrrigationNonLive AS mms
     WHERE mms.SequenceID <= ip_MaxSequenceID
