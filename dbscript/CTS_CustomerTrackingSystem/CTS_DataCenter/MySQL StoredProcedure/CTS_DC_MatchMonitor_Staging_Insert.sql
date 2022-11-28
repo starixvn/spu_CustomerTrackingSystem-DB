@@ -139,7 +139,7 @@ BEGIN
 			,	tmpSt.Betteam
 			,	CURRENT_TIMESTAMP(3) AS InsertTime
 		FROM Temp_Staging AS tmpSt;  
-		
+
         #=====Staging Fixed Game Betting================================
         INSERT IGNORE INTO CTS_DataCenter.MatchMonitorTransLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, Odds, IsMajorLeague, InsertTime)
 		SELECT	tmpSt.SequenceID
@@ -162,6 +162,8 @@ BEGIN
 			,	tmpSt.CustID
 			,	tmpSt.Stake
 			,	tmpSt.Betteam
+            ,	tmpSt.Odds
+            ,	tmpSt.IsMajorLeague
 			,	CURRENT_TIMESTAMP(3) AS InsertTime
 		FROM Temp_Staging AS tmpSt
 		WHERE tmpSt.IsMajorLeague = 0;
@@ -191,7 +193,7 @@ BEGIN
 			,	CURRENT_TIMESTAMP(3) AS InsertTime
 		FROM Temp_Staging AS tmpSt
 		WHERE tmpSt.SportType = 1;   
-        
+
 		#=====UPDATE SYSTEM PARAMETER: THE LAST TRANS GET FROM MAINDB===============================
 		SELECT MAX(tmpSt.SequenceID)
 		INTO lv_LastSequenceID
