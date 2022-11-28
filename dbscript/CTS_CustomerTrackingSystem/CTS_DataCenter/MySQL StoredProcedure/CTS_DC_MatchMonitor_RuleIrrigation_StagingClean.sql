@@ -24,13 +24,12 @@ BEGIN
 			
 	*/
 	DECLARE	CONST_GROUPID	TINYINT DEFAULT 4;
-    DECLARE lv_LastTransID BIGINT UNSIGNED;
     DECLARE lv_LastMaxTime DATETIME(4);
     DECLARE lv_LastMinTime DATETIME(4);
     
     #===================LOG=======================================
     INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
-    SELECT'CTS_DC_MatchMonitor_RuleIrrigation_StagingClean', current_timestamp(), CONCAT('ip_LiveIndicator:',ip_LiveIndicator,'op_MaxSequenceID:',op_MaxSequenceID);
+    SELECT'CTS_DC_MatchMonitor_RuleIrrigation_StagingClean', current_timestamp(), CONCAT('ip_LiveIndicator:',ip_LiveIndicator,'op_MaxSequenceID:',ip_MaxSequenceID);
     
     
     DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorRuleSetting;
@@ -62,8 +61,8 @@ BEGIN
 
     #======Clean Staging=================================================
     IF (ip_LiveIndicator = 0) THEN 		
-		SELECT 	MAX(mms.TransDate) , MAX(mms.TransID)
-		INTO 	lv_LastMaxTime, lv_LastTransID
+		SELECT 	MAX(mms.TransDate) 
+		INTO 	lv_LastMaxTime
 		FROM	CTS_DataCenter.MatchMonitorStagingIrrigationNonLive AS mms
         WHERE	mms.SequenceID <= ip_MaxSequenceID;      
 		
@@ -82,8 +81,8 @@ BEGIN
 		FROM CTS_DataCenter.MatchMonitorStagingIrrigationNonLive AS mms            
 			LEFT JOIN Temp_LastTransGroup AS tmpTg ON mms.MatchID = tmpTg.MatchID AND mms.TotalScore = tmpTg.TotalScore AND mms.BettypeID = tmpTg.BettypeID AND mms.BetID = tmpTg.BetID AND mms.Betteam = tmpTg.Betteam AND mms.GroupID = tmpTg.GroupID
 		WHERE	mms.TransDate < lv_LastMinTime  AND tmpTg.GroupID IS NULL;
-		
-		IF lv_LastTransID > 0 THEN	
+
+		IF ip_MaxSequenceID > 0 THEN	
 			UPDATE 	CTS_DataCenter.SystemParameter AS sys
 			SET 	sys.ParameterValue = ip_MaxSequenceID
 			WHERE 	sys.ParameterID = 125;

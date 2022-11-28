@@ -60,7 +60,7 @@ sp: BEGIN
         WHERE mms.SequenceID > lv_LastSequenceID
         ORDER BY mms.SequenceID
         LIMIT 1;        
-    
+
         SELECT MAX(temp.SequenceID)
         INTO op_MaxSequenceID
         FROM (	SELECT mms.SequenceID

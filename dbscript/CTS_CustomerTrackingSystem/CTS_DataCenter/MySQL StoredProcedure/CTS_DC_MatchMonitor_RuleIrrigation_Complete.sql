@@ -94,7 +94,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleIrrigation_Comp
 							,	OldGroupID		INT PATH "$.OldGroupID" 
 						)
 				) AS js;               
-		
+	
     #=======UPDATE OLD GROUP====================================	
 	UPDATE CTS_DataCenter.MatchMonitorDetails AS mmd
 		INNER JOIN Temp_InputTransGroup AS tmp ON mmd.GroupID = tmp.OldGroupID 
@@ -106,13 +106,13 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleIrrigation_Comp
     INTO lv_MaxGroupID
     FROM CTS_DataCenter.MatchMonitorDetails AS mmd
     WHERE mmd.MatchID = ip_MatchID AND mmd.TotalScore = ip_TotalScore AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID AND mmd.Betteam = ip_Betteam AND mmd.Reason = lv_Rule_Reason;
-    
+
     INSERT INTO Temp_NewGroup(CustID, TransIDList)
     SELECT	tmpTg.CustID
 		,	tmpTg.TransIDList
     FROM Temp_InputTransGroup AS tmpTg
-    WHERE tmpTg.OldGroupID IS NULL;
-
+    WHERE tmpTg.OldGroupID = 0;
+	
     UPDATE Temp_NewGroup AS tmpNg
     SET tmpNg.GroupID = tmpNg.ID + lv_MaxGroupID;
     
@@ -123,14 +123,15 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleIrrigation_Comp
 		WHERE mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.Betteam = ip_Betteam
 		LIMIT 1;
 	END IF;
-    
+
     INSERT IGNORE INTO CTS_DataCenter.MatchMonitorDetails(MatchID, LiveIndicator, TotalScore, BettypeID, BetID, Betteam, EventDate, LiveHomeScore, LiveAwayScore, ListCustID, ListTransID, GroupID, Reason)
 	SELECT	ip_MatchID, ip_LiveIndicator, ip_TotalScore, ip_BettypeID, ip_BetID, ip_Betteam, lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, tmpNg.CustID, tmpNg.TransIDList, tmpNg.GroupID, lv_Rule_Reason
 	FROM 	Temp_NewGroup AS tmpNg;
     
     INSERT IGNORE INTO CTS_DataCenter.MatchMonitor(MatchID, BettypeID, BetID, LiveIndicator, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueName, Sporttype, Reason)
 	SELECT	ip_MatchID, ip_BettypeID, ip_BetID, ip_LiveIndicator, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName, ip_SportType,	lv_Rule_Reason
-	FROM Temp_TransGroup AS tmpTg;
+	FROM Temp_NewGroup AS tmpTg
+    WHERE tmpTg.GroupID = 1;
     
 	#=======Existing Group==========
 	INSERT INTO Temp_TransGroup(TransID, GroupID)

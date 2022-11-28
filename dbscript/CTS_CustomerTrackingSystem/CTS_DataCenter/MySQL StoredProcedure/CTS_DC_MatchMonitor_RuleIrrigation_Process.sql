@@ -54,6 +54,7 @@ sp: BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_OldCustGroup;   
     CREATE TEMPORARY TABLE Temp_OldCustGroup(
 			CustID	BIGINT UNSIGNED
+		,	MaxTransDate DATETIME(3)
 		,	PRIMARY KEY (CustID)
 	) ENGINE=InnoDB;
     
@@ -63,14 +64,19 @@ sp: BEGIN
     WHERE RuleGroupID = CONST_RULE_GROUPID AND mst.SportType = ip_SportType;
 
 	#=====GET Previous Cust BY Step Time
-    SELECT	mms.CustID
-		,	GROUP_CONCAT(CASE WHEN GroupID = 0 THEN mms.TransID END) AS TransIDList
-        ,	MAX(mms.GroupID) AS OldGroupID
-    FROM CTS_DataCenter.MatchMonitorStagingIrrigationNonLive AS mms
-    WHERE mms.SequenceID <= ip_MaxSequenceID
-		AND mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.Betteam = ip_Betteam
-	GROUP BY mms.CustID
-    HAVING SUM(mms.Stake) >= lv_Rule_TotalStake AND (MAX(mms.Odds) - MIN(mms.Odds))*100 >= lv_Rule_OddsSpread;    
+    SELECT tmpRs.CustID
+		, tmpRs.TransIDList
+        , tmpRs.OldGroupID
+    FROM (
+			SELECT	mms.CustID
+				,	GROUP_CONCAT(CASE WHEN GroupID = 0 THEN mms.TransID END) AS TransIDList
+				,	MAX(mms.GroupID) AS OldGroupID
+			FROM CTS_DataCenter.MatchMonitorStagingIrrigationNonLive AS mms
+			WHERE mms.SequenceID <= ip_MaxSequenceID
+				AND mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.Betteam = ip_Betteam
+			GROUP BY mms.CustID
+			HAVING SUM(mms.Stake) >= lv_Rule_TotalStake AND (MAX(mms.Odds) - MIN(mms.Odds))*100 >= lv_Rule_OddsSpread) AS tmpRs
+	WHERE tmpRs.TransIDList IS NOT NULL;    
     
 END$$
 DELIMITER ;
