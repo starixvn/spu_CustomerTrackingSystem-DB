@@ -5,7 +5,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-ALTER PROCEDURE [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_Daily_xtest]
+ALTER PROCEDURE [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_Daily]
 	@CustomersXML			XML,
 	@FunctionId				SMALLINT = -1
 AS
