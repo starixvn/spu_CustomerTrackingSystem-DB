@@ -30,11 +30,15 @@ BEGIN
 		Param's Explanation (filtered by):		
 
 		Example:
-			CALL CTS_DataCenter.CTS_DC_MatchMonitor_Staging_Insert(0,'[{"SportType": 1,"SequenceID": 1,"TransID": 100,"TransDate" : "2021-05-17 07:48:52.533","MatchID" : 43614953,"EventDate" : "2021-05-17 00:00:00","KickOffTime" : "2021-05-17 00:00:00","EventStatus" : "running","HomeID" : 953,"AwayID" : 113,"LeagueID" : 3,"Bettype" : 3, "BetID" : 0,  "LiveIndicator" : "1","CustID" : 12500792,"Stake" : 20,"Betteam" : "a", "Odds" : "0.1","LiveHomeScore" : 0,"LiveAwayScore" : 2,"LeagueName":"ABC League"}]');;
+			CALL CTS_DataCenter.CTS_DC_MatchMonitor_Staging_Insert(0,'[{"SportType": 1,"SequenceID": 1003,"IsMajorLeague": 0,"TransID": 1003,"TransDate" : "2021-05-17 07:48:52.533","MatchID" : 43614953,"EventDate" : "2021-05-17 00:00:00","KickOffTime" : "2021-05-17 00:00:00","EventStatus" : "running","HomeID" : 953,"AwayID" : 113,"LeagueID" : 3,"Bettype" : 3, "BetID" : 0,  "LiveIndicator" : "1","CustID" : 12500792,"Stake" : 20,"Betteam" : "a", "Odds" : "0.1","LiveHomeScore" : 0,"LiveAwayScore" : 2,"LeagueName":"ABC League"}]');
+			CALL CTS_DataCenter.CTS_DC_MatchMonitor_Staging_Insert(0,'[{"SportType": 0,"SequenceID": 1004,"IsMajorLeague": 0,"TransID": 1004,"TransDate" : "2021-05-17 07:48:52.533","MatchID" : 43614953,"EventDate" : "2021-05-17 00:00:00","KickOffTime" : "2021-05-17 00:00:00","EventStatus" : "running","HomeID" : 953,"AwayID" : 113,"LeagueID" : 3,"Bettype" : 3, "BetID" : 0,  "LiveIndicator" : "1","CustID" : 12500792,"Stake" : 20,"Betteam" : "a", "Odds" : "0.1","LiveHomeScore" : 0,"LiveAwayScore" : 2,"LeagueName":"ABC League"}]');
             
 	*/    
     
     DECLARE lv_LastSequenceID BIGINT UNSIGNED DEFAULT 0;
+
+	INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText, JsonString1)
+    SELECT'CTS_DC_MatchMonitor_Staging_Insert_xtest1', current_timestamp(),ip_LiveIndicator,ip_TransList;     
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Staging;
 	CREATE TEMPORARY TABLE Temp_Staging(
