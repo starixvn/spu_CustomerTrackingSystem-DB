@@ -98,7 +98,7 @@ sp: BEGIN
 	FROM CTS_DataCenter.MatchMonitorStagingIrrigationNonLive AS mms
     WHERE 	mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore 
 			AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.Betteam = ip_Betteam;
-    
+
     SELECT mst.TotalStake,	mst.OddsSpread, mst.TimeStep
     INTO lv_Rule_TotalStake, lv_Rule_OddsSpread, lv_Rule_TimeStep
 	FROM CTS_DataCenter.MatchMonitorRuleSetting AS mst
@@ -139,16 +139,28 @@ sp: BEGIN
     WHERE tmpTs.SequenceID > lv_LastSequenceID AND tmpTs.SequenceID <= ip_MaxSequenceID AND tmpTs.GroupID = 0
     GROUP BY tmpTs.CustID;    
 
+	IF EXISTS(SELECT 1 FROM Temp_OldCustGroup) THEN
+		
+		UPDATE Temp_Trans AS tmpTs
+		SET tmpTs.GroupID = 1
+		WHERE tmpTs.OldGroupID = 0
+			AND tmpTs.CustID IN (	SELECT DISTINCT tmpNg.CustID
+									FROM Temp_NewCustGroup AS tmpNg
+										LEFT JOIN Temp_OldCustGroup AS tmpOg ON tmpNg.CustID = tmpOg.CustID
+									WHERE	tmpNg.MinTransDateSec - tmpOg.MaxTransDateSec <= lv_Rule_TimeStep 
+										AND tmpNg.TotalStake + tmpOg.TotalStake >= lv_Rule_TotalStake
+										AND (GREATEST(tmpNg.MaxOdds,tmpOg.MaxOdds) - LEAST(tmpNg.MinOdds,tmpOg.MinOdds))*100 >= lv_Rule_OddsSpread); 
+	END IF; 
+ 
     UPDATE Temp_Trans AS tmpTs
 	SET tmpTs.GroupID = 1
-    WHERE tmpTs.OldGroupID = 0
-		AND tmpTs.CustID IN (	SELECT DISTINCT tmpNg.CustID
-								FROM Temp_NewCustGroup AS tmpNg
-									INNER JOIN Temp_OldCustGroup AS tmpOg ON tmpNg.CustID = tmpOg.CustID
-								WHERE	tmpNg.MinTransDateSec - tmpOg.MaxTransDateSec <= lv_Rule_TimeStep 
-									AND tmpNg.TotalStake + tmpOg.TotalStake >= lv_Rule_TotalStake
-                                     AND (GREATEST(tmpNg.MaxOdds,tmpOg.MaxOdds) - LEAST(tmpNg.MinOdds,tmpOg.MinOdds))*100 >= lv_Rule_OddsSpread); 
-
+    WHERE EXISTS (	SELECT 1
+					FROM Temp_NewCustGroup AS tmpNg
+                    WHERE (tmpNg.MaxOdds-MinOdds)*100 >= lv_Rule_OddsSpread
+							AND tmpNg.TotalStake >= lv_Rule_TotalStake
+                            AND tmpTs.CustID = tmpNg.CustID )
+					AND tmpTs.SequenceID > lv_LastSequenceID AND tmpTs.SequenceID <= ip_MaxSequenceID AND tmpTs.GroupID = 0;
+    
 	#=====GET Previous Cust BY Step Time
     SELECT	tmpTs.CustID
 		,	GROUP_CONCAT(tmpTs.TransID) AS TransIDList
@@ -159,3 +171,4 @@ sp: BEGIN
     
 END$$
 DELIMITER ;
+
