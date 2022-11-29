@@ -29,8 +29,7 @@ BEGIN
     
     #===================LOG=======================================
     INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
-    SELECT'CTS_DC_MatchMonitor_RuleIrrigation_StagingClean', current_timestamp(), CONCAT('ip_LiveIndicator:',ip_LiveIndicator,'op_MaxSequenceID:',ip_MaxSequenceID);
-    
+    SELECT'CTS_DC_MatchMonitor_RuleIrrigation_StagingClean', current_timestamp(), CONCAT('ip_LiveIndicator:',ip_LiveIndicator,'op_MaxSequenceID:',ip_MaxSequenceID);    
     
     DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorRuleSetting;
 	CREATE TEMPORARY TABLE Temp_MatchMonitorRuleSetting(
@@ -66,22 +65,11 @@ BEGIN
 		FROM	CTS_DataCenter.MatchMonitorStagingIrrigationNonLive AS mms
         WHERE	mms.SequenceID <= ip_MaxSequenceID;      
 		
-		SELECT  MIN(mms.TransDate) 
-		INTO 	lv_LastMinTime
-		FROM	CTS_DataCenter.MatchMonitorStagingIrrigationNonLive AS mms
-			INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType
-		WHERE   mms.TransDate > TIMESTAMPADD(SECOND, -tmpRs.TimeStep, lv_LastMaxTime);  
-		
-		INSERT INTO Temp_LastTransGroup(MatchID, TotalScore, BettypeID, BetID, Betteam, GroupID)
-		SELECT 	DISTINCT mms.MatchID,  mms.TotalScore, mms.BettypeID, mms.BetID, mms.Betteam, mms.GroupID
-		FROM 	CTS_DataCenter.MatchMonitorStagingIrrigationNonLive mms
-		WHERE	mms.TransDate >= lv_LastMinTime AND mms.GroupID <> 0; 
-		
 		DELETE mms
-		FROM CTS_DataCenter.MatchMonitorStagingIrrigationNonLive AS mms            
-			LEFT JOIN Temp_LastTransGroup AS tmpTg ON mms.MatchID = tmpTg.MatchID AND mms.TotalScore = tmpTg.TotalScore AND mms.BettypeID = tmpTg.BettypeID AND mms.BetID = tmpTg.BetID AND mms.Betteam = tmpTg.Betteam AND mms.GroupID = tmpTg.GroupID
-		WHERE	mms.TransDate < lv_LastMinTime  AND tmpTg.GroupID IS NULL;
-
+        FROM CTS_DataCenter.MatchMonitorStagingIrrigationNonLive AS mms
+			INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType
+		WHERE   mms.TransDate < TIMESTAMPADD(SECOND, -tmpRs.TimeStep, lv_LastMaxTime);  
+		
 		IF ip_MaxSequenceID > 0 THEN	
 			UPDATE 	CTS_DataCenter.SystemParameter AS sys
 			SET 	sys.ParameterValue = ip_MaxSequenceID
