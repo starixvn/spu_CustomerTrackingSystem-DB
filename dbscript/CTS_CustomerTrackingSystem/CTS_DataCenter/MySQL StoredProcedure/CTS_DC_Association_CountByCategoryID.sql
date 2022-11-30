@@ -101,7 +101,7 @@ BEGIN
     SELECT 	cus.CustID
 		,	clss.CustID
     FROM Temp_CustDevice AS cus 
-		INNER JOIN Temp_DeviceClass AS clss ON cus.DCSDeviceID = cus.DCSDeviceID AND cus.CustID != cus.CustID;
+		INNER JOIN Temp_DeviceClass AS clss ON cus.DCSDeviceID = cus.DCSDeviceID AND cus.CustID != clss.CustID;
     
     /**************************************  Manual ************************************************/
     
