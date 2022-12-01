@@ -38,6 +38,7 @@ CREATE TABLE MatchMonitorStagingIrrigationNonLive (
   LeagueName VARCHAR(500) DEFAULT NULL,
   PRIMARY KEY (SequenceID),
   INDEX IX_MMStaging_Irrigation_NonLive_GroupGroupID (MatchID,TotalScore,BettypeID,BetID,CustID)
+  , INDEX IX_MatchMonitorStagingIrrigationNonLive_TransID(TransID)
 ) ENGINE=InnoDB;
 
 ALTER TABLE MatchMonitorRuleSetting
