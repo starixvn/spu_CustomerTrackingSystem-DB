@@ -14,15 +14,13 @@ USE CTS_DataCenter;
 
 ALTER TABLE MatchMonitor 
 DROP PRIMARY KEY,
-ADD PRIMARY KEY(ID,InsertTime),
-DROP INDEX UK_MatchMonitor_MatchGroup,
-ADD UNIQUE UK_MatchMonitor_MatchGroup(EventDate,BettypeID,BetID,MatchID,LiveIndicator,Reason,InsertTime);
+ADD PRIMARY KEY(ID,EventDate);
 
-SELECT MIN(InsertTime)
-INTO @min_InsertTime
+SELECT MIN(EventDate)
+INTO @min_EventDate
 FROM MatchMonitor;
 
-SET @from_week = YEARWEEK(@min_InsertTime);
+SET @from_week = YEARWEEK(@min_EventDate);
 SET @to_week = YEARWEEK(NOW());
 WITH RECURSIVE CTE (pw) AS
 (
@@ -30,7 +28,7 @@ WITH RECURSIVE CTE (pw) AS
   UNION ALL
   SELECT pw + 1 FROM CTE WHERE pw < @to_week + 2
 )
-SELECT CONCAT("ALTER TABLE MatchMonitor \n PARTITION BY RANGE(yearweek(`InsertTime`,0)) \n (" 
+SELECT CONCAT("ALTER TABLE MatchMonitor \n PARTITION BY RANGE(yearweek(`EventDate`,0)) \n (" 
 		,GROUP_CONCAT(CONCAT("PARTITION pw", pw," VALUES LESS THAN (",pw+1,") ENGINE = InnoDB,") SEPARATOR  '\n')
         ,"\n PARTITION pw999999 VALUES LESS THAN MAXVALUE ENGINE = InnoDB) ;") AS script 
 FROM CTE;
@@ -40,15 +38,15 @@ FROM CTE;
 
 ALTER TABLE MatchMonitorDetails 
 DROP PRIMARY KEY,
-ADD PRIMARY KEY(ID,InsertTime),
+ADD PRIMARY KEY(ID,EventDate),
 DROP INDEX UK_MatchMonitorDetails_MatchRuleGroup,
-ADD UNIQUE UK_MatchMonitorDetails_MatchRuleGroup(MatchID,LiveIndicator,TotalScore,BettypeID,BetID,Betteam,GroupID,InsertTime);
+ADD UNIQUE UK_MatchMonitorDetails_MatchRuleGroup(MatchID,LiveIndicator,TotalScore,BettypeID,BetID,Betteam,GroupID,EventDate);
 
-SELECT MIN(InsertTime)
-INTO @min_InsertTime
+SELECT MIN(EventDate)
+INTO @min_EventDate
 FROM MatchMonitorDetails;
 
-SET @from_week = YEARWEEK(@min_InsertTime);
+SET @from_week = YEARWEEK(@min_EventDate);
 SET @to_week = YEARWEEK(NOW());
 WITH RECURSIVE CTE (pw) AS
 (
@@ -56,7 +54,7 @@ WITH RECURSIVE CTE (pw) AS
   UNION ALL
   SELECT pw + 1 FROM CTE WHERE pw < @to_week + 2
 )
-SELECT CONCAT("ALTER TABLE MatchMonitorDetails \n PARTITION BY RANGE(yearweek(`InsertTime`,0)) \n (" 
+SELECT CONCAT("ALTER TABLE MatchMonitorDetails \n PARTITION BY RANGE(yearweek(`EventDate`,0)) \n (" 
 		,GROUP_CONCAT(CONCAT("PARTITION pw", pw," VALUES LESS THAN (",pw+1,") ENGINE = InnoDB,") SEPARATOR  '\n')
         ,"\n PARTITION pw999999 VALUES LESS THAN MAXVALUE ENGINE = InnoDB) ;") AS script 
 FROM CTE;
