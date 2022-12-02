@@ -15,7 +15,7 @@ sp: BEGIN
 		Original:
 
 		Revisions:
-			- 20211122@Casey.Huynh: Created [Redmine ID: #179499]
+			- 20221122@Casey.Huynh: Created [Redmine ID: #179499]
             
 		Param's Explanation (filtered by):	
 			
@@ -70,7 +70,7 @@ sp: BEGIN
 				LIMIT lv_BatchSize) AS temp;
         
         SELECT DISTINCT	mmt.MatchID
-				,	mmt.TotalScore
+				,	mmt.ScoreDiff
 				,	mmt.BettypeID
                 ,	mmt.BetID
                 ,	mmt.Betteam

@@ -7,7 +7,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleIrrigation_Proc
 	,	IN ip_MaxSequenceID		BIGINT UNSIGNED
     ,	IN ip_SportType			INT
 	,	IN ip_MatchID			INT UNSIGNED
-    ,	IN ip_TotalScore		INT 
+    ,	IN ip_ScoreDiff			INT 
     ,	IN ip_BettypeID			INT UNSIGNED
     ,	IN ip_BetID				BIGINT
     ,	IN ip_Betteam			VARCHAR(50)    
@@ -21,12 +21,12 @@ sp: BEGIN
 		Original:
 
 		Revisions:
-			- 20211122@Casey.Huynh: Created [Redmine ID: #179499]
+			- 20221122@Casey.Huynh: Created [Redmine ID: #179499]
             
 		Param's Explanation (filtered by):	
 			
 		Example:
-			CALL CTS_DC_MatchMonitor_RuleIrrigation_Process(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=0,@ip_SportType:=1,@ip_MatchID:=1,@ip_TotalScore:=1,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a');
+			CALL CTS_DC_MatchMonitor_RuleIrrigation_Process(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=0,@ip_SportType:=1,@ip_MatchID:=1,@ip_ScoreDiff:=1,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a');
 	*/
     DECLARE CONST_RULE_GROUPID INT DEFAULT 4;
     
@@ -40,7 +40,7 @@ sp: BEGIN
     #===================LOG=======================================
 	INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
     SELECT'CTS_DC_MatchMonitor_RuleIrrigation_Process', current_timestamp(), CONCAT('ip_LiveIndicator:',ip_LiveIndicator
-    ,' ip_SportType:',ip_SportType,' ip_MatchID:',ip_MatchID,' ip_TotalScore:',ip_TotalScore,' ip_BettypeID:',ip_BettypeID,' ip_BetID:',ip_BetID,' ip_Betteam:',ip_Betteam);
+    ,' ip_SportType:',ip_SportType,' ip_MatchID:',ip_MatchID,' ip_ScoreDiff:',ip_ScoreDiff,' ip_BettypeID:',ip_BettypeID,' ip_BetID:',ip_BetID,' ip_Betteam:',ip_Betteam);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorRuleSetting;   
     CREATE TEMPORARY TABLE Temp_MatchMonitorRuleSetting(
@@ -96,7 +96,7 @@ sp: BEGIN
         ,	mms.Odds
         ,	mms.GroupID AS OldGroupID        
 	FROM CTS_DataCenter.MatchMonitorStagingIrrigationNonLive AS mms
-    WHERE 	mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore 
+    WHERE 	mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.ScoreDiff = ip_ScoreDiff 
 			AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.Betteam = ip_Betteam;
 
     SELECT mst.TotalStake,	mst.OddsSpread, mst.TimeStep

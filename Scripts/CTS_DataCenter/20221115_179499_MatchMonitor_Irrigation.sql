@@ -6,7 +6,7 @@ Server:  	Master
 DBName:		CTS_DataCenter
 
 Revisions: 
-		- 20211213@Casey.Huynh: Created [Redmine ID: #179499]
+		- 202211213@Casey.Huynh: Created [Redmine ID: #179499]
 Reviewer:
 */
 
@@ -18,7 +18,7 @@ CREATE TABLE MatchMonitorStagingIrrigationNonLive (
   TransDate DateTIME(3) DEFAULT NULL,
   MatchID INT DEFAULT NULL,
   SportType INT DEFAULT NULL,
-  TotalScore INT DEFAULT NULL,
+  ScoreDiff INT DEFAULT NULL,
   BettypeID INT DEFAULT NULL,
   BetID BIGINT DEFAULT NULL,
   Betteam VARCHAR(10) DEFAULT NULL,
@@ -37,7 +37,7 @@ CREATE TABLE MatchMonitorStagingIrrigationNonLive (
   InsertTime DateTIME(3) DEFAULT NULL,
   LeagueName VARCHAR(500) DEFAULT NULL,
   PRIMARY KEY (SequenceID),
-  INDEX IX_MMStaging_Irrigation_NonLive_GroupGroupID (MatchID,TotalScore,BettypeID,BetID,CustID)
+  INDEX IX_MatchMonitorStagingIrrigationNonLive_GroupID (MatchID,ScoreDiff,BettypeID,BetID,CustID)
   , INDEX IX_MatchMonitorStagingIrrigationNonLive_TransID(TransID)
 ) ENGINE=InnoDB;
 
@@ -51,4 +51,6 @@ INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDe
 VALUES	(124,'MatchMonitorIrrigation_Rule_BatchSize','MatchMonitorIrrigation_Rule_BatchSize','INT','5000')
 	,	(125,'MatchMonitorIrrigation_RuleNonLive_LastSequenceID','MatchMonitorIrrigation_RuleNonLive_LastSequenceID','BIGINT UNSIGNED','0');
     
-SELECT * FROM CTS_DataCenter.SystemParameter ;
+ALTER TABLE MatchMonitorDetails
+	ADD COLUMN ScoreDiff INT
+, 	ADD UNIQUE KEY `UK_MatchMonitorDetails_RuleGroup` (`MatchID`,`LiveIndicator`,`ScoreDiff`,`BettypeID`,`BetID`,`Betteam`,`GroupID`,`EventDate`);

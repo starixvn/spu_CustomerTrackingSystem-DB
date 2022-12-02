@@ -7,7 +7,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleIrrigation_Comp
 	,	IN ip_MaxSequenceID BIGINT UNSIGNED
     ,	IN ip_SportType     INT
 	, 	IN ip_MatchID		INT
-    , 	IN ip_TotalScore	INT 
+    , 	IN ip_ScoreDiff		INT 
     , 	IN ip_BettypeID		INT
     ,	IN ip_BetID			BIGINT
     ,	IN ip_Betteam		VARCHAR(10)
@@ -23,14 +23,14 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleIrrigation_Comp
 		Original:
 
 		Revisions:
-			- 20211122@Casey.Huynh: Created [Redmine ID: #179499]
+			- 20221122@Casey.Huynh: Created [Redmine ID: #179499]
             
 		Param's Explanation (filtered by):	
 			
 		Example:
-			CALL CTS_DC_MatchMonitor_RuleIrrigation_Complete_xtest(@ip_LiveIndicator:=0,@ip_MaxSequenceID:=0,@ip_SportType:=1,ip_MatchID:=1
-            ,@ip_TotalScore:=1,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a',
-            @ip_TransGroup:= '[]';''[{"CustID":3,"TransIDList":"1,2,3","OldGroupID":1}]');
+			CALL CTS_DC_MatchMonitor_RuleIrrigation_Complete(@ip_LiveIndicator:=0,@ip_MaxSequenceID:=0,@ip_SportType:=1,@ip_MatchID:=1
+            ,@ip_ScoreDiff:=1,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a',
+            @ip_TransGroup:='[{"CustID":3,"TransIDList":"1,2,3","OldGroupID":1}]');
 	*/
     DECLARE	CONST_GROUPID	TINYINT DEFAULT 4;
     
@@ -51,7 +51,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleIrrigation_Comp
 	INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText, JsonString1 )
     SELECT'CTS_DC_MatchMonitor_RuleIrrigation_Complete', current_timestamp(), 
     CONCAT('ip_LiveIndicator:',ip_LiveIndicator,' ip_MaxSequenceID:',ip_MaxSequenceID,' ip_SportType:',ip_SportType,' ip_MatchID:',ip_MatchID
-    ,' ip_TotalScore:',ip_TotalScore,' ip_BettypeID:',ip_BettypeID,' ip_BetID:',ip_BetID,' ip_Betteam:',ip_Betteam), ip_TransGroup;
+    ,' ip_ScoreDiff:',ip_ScoreDiff,' ip_BettypeID:',ip_BettypeID,' ip_BetID:',ip_BetID,' ip_Betteam:',ip_Betteam), ip_TransGroup;
 
     DROP TEMPORARY TABLE IF EXISTS Temp_InputTransGroup;
     CREATE TEMPORARY TABLE Temp_InputTransGroup
@@ -99,13 +99,13 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleIrrigation_Comp
 	UPDATE CTS_DataCenter.MatchMonitorDetails AS mmd
 		INNER JOIN Temp_InputTransGroup AS tmp ON mmd.GroupID = tmp.OldGroupID 
     SET ListTransID = CONCAT(ListTransID,',',TransIDList)
-	WHERE mmd.MatchID = ip_MatchID AND mmd.TotalScore = ip_TotalScore AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID AND mmd.Betteam = ip_Betteam AND mmd.Reason = lv_Rule_Reason;
+	WHERE mmd.MatchID = ip_MatchID AND mmd.ScoreDiff = ip_ScoreDiff AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID AND mmd.Betteam = ip_Betteam AND mmd.Reason = lv_Rule_Reason;
 	
     #=======INSERT NEW GROUP===================================
     SELECT IFNULL(MAX(mmd.GroupID),0)
     INTO lv_MaxGroupID
     FROM CTS_DataCenter.MatchMonitorDetails AS mmd
-    WHERE mmd.MatchID = ip_MatchID AND mmd.TotalScore = ip_TotalScore AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID AND mmd.Betteam = ip_Betteam AND mmd.Reason = lv_Rule_Reason;
+    WHERE mmd.MatchID = ip_MatchID AND mmd.ScoreDiff = ip_ScoreDiff AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID AND mmd.Betteam = ip_Betteam AND mmd.Reason = lv_Rule_Reason;
 
     INSERT INTO Temp_NewGroup(CustID, TransIDList)
     SELECT	tmpTg.CustID
@@ -124,8 +124,8 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleIrrigation_Comp
 		LIMIT 1;
 	END IF;
 
-    INSERT IGNORE INTO CTS_DataCenter.MatchMonitorDetails(MatchID, LiveIndicator, TotalScore, BettypeID, BetID, Betteam, EventDate, LiveHomeScore, LiveAwayScore, ListCustID, ListTransID, GroupID, Reason)
-	SELECT	ip_MatchID, ip_LiveIndicator, ip_TotalScore, ip_BettypeID, ip_BetID, ip_Betteam, lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, tmpNg.CustID, tmpNg.TransIDList, tmpNg.GroupID, lv_Rule_Reason
+    INSERT IGNORE INTO CTS_DataCenter.MatchMonitorDetails(MatchID, LiveIndicator, ScoreDiff, BettypeID, BetID, Betteam, EventDate, LiveHomeScore, LiveAwayScore, ListCustID, ListTransID, GroupID, Reason)
+	SELECT	ip_MatchID, ip_LiveIndicator, ip_ScoreDiff, ip_BettypeID, ip_BetID, ip_Betteam, lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, tmpNg.CustID, tmpNg.TransIDList, tmpNg.GroupID, lv_Rule_Reason
 	FROM 	Temp_NewGroup AS tmpNg;
     
     INSERT IGNORE INTO CTS_DataCenter.MatchMonitor(MatchID, BettypeID, BetID, LiveIndicator, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueName, Sporttype, Reason)

@@ -15,7 +15,7 @@ BEGIN
 		Original:
 
 		Revisions:
-			- 20211122@Casey.Huynh: Created [Redmine ID: #179499]
+			- 20221122@Casey.Huynh: Created [Redmine ID: #179499]
             
 		Param's Explanation (filtered by):	
 			
@@ -45,19 +45,6 @@ BEGIN
     FROM CTS_DataCenter.MatchMonitorRuleSetting AS s
     WHERE s.RuleGroupID = CONST_GROUPID;
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_LastTransGroup;
-    CREATE TEMPORARY TABLE Temp_LastTransGroup
-    (
-			MatchID INT
-        ,	TotalScore SMALLINT
-        ,	BettypeID INT
-        ,	BetID BIGINT
-        ,	Betteam VARCHAR(10)
-        ,   GroupID INT
-        
-        ,	PRIMARY KEY (MatchID,TotalScore,BettypeID, BetID, Betteam, GroupID)
-    );
-
     #======Clean Staging=================================================
     IF (ip_LiveIndicator = 0) THEN 		
 		SELECT 	MAX(mms.TransDate) 
