@@ -21,7 +21,6 @@ ALTER TABLE MatchMonitor
 	ADD COLUMN IsMajorLeage BOOLEAN AFTER MatchID
 ,	ADD COLUMN HDP DECIMAL (8,4) AFTER BettypeID;
 
-
 ALTER TABLE MatchMonitorDetails
 	ADD COLUMN IsMajorLeage BOOLEAN AFTER MatchID
 ,	ADD COLUMN HDP DECIMAL (8,4) AFTER BettypeID
@@ -35,17 +34,19 @@ ALTER TABLE MatchMonitorTransNonLive
 	ADD COLUMN HDP DECIMAL (8,4) AFTER BettypeID
 ,	RENAME TO MatchMonitorStagingFixedGameNonLive;
 
+ALTER TABLE MatchMonitorStagingLive
+RENAME MatchMonitorStagingGroupBettingLive;
+
+ALTER TABLE MatchMonitorStagingNonLive
+RENAME MatchMonitorStagingGroupBettingNonLive;
+
+ALTER TABLE MatchMonitorStagingLive03
+RENAME MatchMonitorStagingHedgingLive;
+
+ALTER TABLE MatchMonitorStagingNonLive03
+RENAME MatchMonitorStagingHedgingNonLive;
+
 #======INITAIL============================================================
-
-#========Parameter Batch Size
-INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
-VALUES	(126,'MatchMonitorFixedGame_RuleLive_BatchSize','MatchMonitorFixedGame_RuleLive_BatchSize','INT','5000')
-	,	(127,'MatchMonitorFixedGame_RuleNonLive_BatchSize','MatchMonitorFixedGame_RuleNonLive_BatchSize','INT','5000')
-    ,	(128,'MatchMonitorArbitrage_RuleNonLive_BatchSize','MatchMonitorArbitrage_RuleNonLive_BatchSize','INT','5000');
-
-
-SELECT * FROM SystemParameter WHERE ParameterName like '%MatchMonitor%';
-SELECT * FROM CTS_DataCenter.MatchMonitorRuleSetting;
 
 #========Move Parameter From System Parameter To MatchMonitorRuleSetting
 ALTER TABLE MatchMonitorRuleSetting
@@ -56,6 +57,49 @@ ALTER TABLE MatchMonitorRuleSetting
 , DROP PRIMARY KEY 
 , ADD PRIMARY KEY  PK_MatchMonitorRuleSetting(RuleGroupID,Reason,SportType, IsMajorLeague);
 
+#=================Fixed Game==========================
+INSERT INTO CTS_DataCenter.MatchMonitorRuleSetting(RuleGroupID, RuleGroupDesc, Reason, SportType, ReasonName, SportName, TimeStep, HighStake, MinOdds, MaxOdds, ModifiedDate)
+VALUES (5, 'Fixed Game Detect', 3 , 1, 'Fixed Game', 'Soccer', 420, 500, 0.5, 2, CURRENT_TIMESTAMP())
+	, (5, 'Fixed Game Detect', 3 , 2, 'Fixed Game', 'Basketball', 420, 500, 0.5, 2, CURRENT_TIMESTAMP())
+    , (5, 'Fixed Game Detect', 3 , 43, 'Fixed Game', 'E-Sports', 420, 500, 0.5, 2, CURRENT_TIMESTAMP());
+    
+#=================Arbitrage==========================
+INSERT INTO CTS_DataCenter.MatchMonitorRuleSetting(RuleGroupID, RuleGroupDesc, Reason, SportType, ReasonName, SportName, TimeStep, TotalStake, IsMajorLeague, ModifiedDate)
+VALUES (6, 'Arbitrage Detect', 2 , 1, 'Arbitrage', 'Soccer', 180, 5000, 1, CURRENT_TIMESTAMP())
+	, (6, 'Arbitrage Detect', 2 , 1, 'Arbitrage', 'Soccer', 180, 1000, 2, CURRENT_TIMESTAMP());    
+
+UPDATE CTS_DataCenter.MatchMonitorRuleSetting
+SET RuleGroupDesc = 'Group Betting Detect'
+WHERE RuleGroupID = 1;
+
+UPDATE CTS_DataCenter.MatchMonitorRuleSetting
+SET RuleGroupDesc = 'Hedging Detect'
+WHERE RuleGroupID = 3;
+
+#========Parameter Batch Size
+INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
+VALUES	(126,'MatchMonitorFixedGame_RuleLive_BatchSize','MatchMonitorFixedGame_RuleLive_BatchSize','INT','5000')
+	,	(127,'MatchMonitorFixedGame_RuleNonLive_BatchSize','MatchMonitorFixedGame_RuleNonLive_BatchSize','INT','5000')
+    ,	(128,'MatchMonitorArbitrage_RuleNonLive_BatchSize','MatchMonitorArbitrage_RuleNonLive_BatchSize','INT','5000');
+    
+    
+    /*
+DROP PROCEDURE CTS_DC_MatchMonitor_Rule01_Complete ;
+DROP PROCEDURE CTS_DC_MatchMonitor_Rule01_Get ;
+DROP PROCEDURE CTS_DC_MatchMonitor_Rule01_Process;
+DROP PROCEDURE CTS_DC_MatchMonitor_Rule01_StagingClean;
+
+DROP PROCEDURE CTS_DC_MatchMonitor_Rule02_Complete;
+DROP PROCEDURE CTS_DC_MatchMonitor_Rule02_Get;
+DROP PROCEDURE CTS_DC_MatchMonitor_Rule02_Process;
+DROP PROCEDURE CTS_DC_MatchMonitor_Staging_CleanTrans;
+
+DROP PROCEDURE CTS_DC_MatchMonitor_Rule03_Complete;
+DROP PROCEDURE CTS_DC_MatchMonitor_Rule03_Process;
+DROP PROCEDURE CTS_DC_MatchMonitor_Rule03_Get;
+DROP PROCEDURE CTS_DC_MatchMonitor_Rule03_StagingClean;
+
+*/
 /*
 DROP TABLE MatchMonitorRuleSetting;
 CREATE TABLE MatchMonitorRuleSetting (
@@ -81,22 +125,3 @@ ENCLOSED BY '"'
 LINES TERMINATED BY '\n'
 IGNORE 1 ROWS;
 */
-#=================Fixed Game==========================
-INSERT INTO CTS_DataCenter.MatchMonitorRuleSetting(RuleGroupID, RuleGroupDesc, Reason, SportType, ReasonName, SportName, TimeStep, HighStake, MinOdds, MaxOdds, ModifiedDate)
-VALUES (5, 'Fixed Game Detect', 3 , 1, 'Fixed Game', 'Soccer', 420, 500, 0.5, 2, CURRENT_TIMESTAMP())
-	, (5, 'Fixed Game Detect', 3 , 2, 'Fixed Game', 'Basketball', 420, 500, 0.5, 2, CURRENT_TIMESTAMP())
-    , (5, 'Fixed Game Detect', 3 , 43, 'Fixed Game', 'E-Sports', 420, 500, 0.5, 2, CURRENT_TIMESTAMP());
-    
-#=================Arbitrage==========================
-INSERT INTO CTS_DataCenter.MatchMonitorRuleSetting(RuleGroupID, RuleGroupDesc, Reason, SportType, ReasonName, SportName, TimeStep, TotalStake, IsMajorLeague, ModifiedDate)
-VALUES (6, 'Arbitrage Detect', 2 , 1, 'Arbitrage', 'Soccer', 180, 5000, 1, CURRENT_TIMESTAMP())
-	, (6, 'Arbitrage Detect', 2 , 1, 'Arbitrage', 'Soccer', 180, 1000, 2, CURRENT_TIMESTAMP());
-    
-
-UPDATE CTS_DataCenter.MatchMonitorRuleSetting
-SET RuleGroupDesc = 'Group Betting Detect'
-WHERE RuleGroupID = 1;
-
-UPDATE CTS_DataCenter.MatchMonitorRuleSetting
-SET RuleGroupDesc = 'Hedging Detect'
-WHERE RuleGroupID = 3;

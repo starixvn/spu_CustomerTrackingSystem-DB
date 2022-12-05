@@ -1,12 +1,12 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule01_Process`;
+DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_RuleGroupBetting_Process`;
 DELIMITER $$
 
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule01_Process`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleGroupBetting_Process`(
 		IN ip_LiveIndicator		BOOLEAN
 	,	IN ip_MaxSequenceID		BIGINT UNSIGNED
 	,	IN ip_MatchID			INT UNSIGNED
-    ,	IN ip_TotalScore		INT 
+    ,	IN ip_ScoreDiff			INT 
     ,	IN ip_BettypeID			INT UNSIGNED
     ,	IN ip_BetID				BIGINT
 )
@@ -33,9 +33,10 @@ sp: BEGIN
             -	202200929@Casey.Huynh: Seperate By Sport [Redmine ID: #178310]
             -	20221021@Casey.Huynh: Fixed Clean Data Staging [Redmine ID: #179427]
             -	20221027@Casey.Huynh: Seperate pool Staging [RedmineID: 179439]
+            -	20221205@Casey.Huynh: Rename Table [Redmine ID: #179502]
 		Param's Explanation (filtered by):	
 		Example:
-			- CALL CTS_DC_MatchMonitor_Rule01_Process(1,113171940189,22081995,1,1,0);
+			- CALL CTS_DC_MatchMonitor_RuleGroupBetting_Process(1,113171940189,22081995,1,1,0);
 			
 	*/
     DECLARE lv_TimeCustID BIGINT UNSIGNED DEFAULT 0;
@@ -217,7 +218,7 @@ sp: BEGIN
     
     IF (ip_LiveIndicator = 1)
     THEN
-		SELECT mms.SportType INTO lv_SportType FROM CTS_DataCenter.MatchMonitorStagingLive AS mms WHERE mms.MatchID = ip_MatchID LIMIT 1;
+		SELECT mms.SportType INTO lv_SportType FROM CTS_DataCenter.MatchMonitorStagingGroupBettingLive AS mms WHERE mms.MatchID = ip_MatchID LIMIT 1;
         
 		INSERT INTO Temp_StagingTrans(TransID, SequenceID, TransDate, CustID, OldGroupID, Stake,Betteam)
         SELECT	mms.TransID
@@ -227,11 +228,11 @@ sp: BEGIN
             ,	mms.GroupID
             ,	mms.Stake
             ,	mms.Betteam
-		FROM CTS_DataCenter.MatchMonitorStagingLive AS mms
-        WHERE mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID;
+		FROM CTS_DataCenter.MatchMonitorStagingGroupBettingLive AS mms
+        WHERE mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.ScoreDiff = ip_ScoreDiff AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID;
         
 	ELSE 
-		SELECT mms.SportType INTO lv_SportType FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms WHERE mms.MatchID = ip_MatchID LIMIT 1;
+		SELECT mms.SportType INTO lv_SportType FROM CTS_DataCenter.MatchMonitorStagingGroupBettingNonLive AS mms WHERE mms.MatchID = ip_MatchID LIMIT 1;
 	  
 		INSERT INTO Temp_StagingTrans(TransID, SequenceID, TransDate, CustID, OldGroupID, Stake,Betteam)
         SELECT	mms.TransID
@@ -241,8 +242,8 @@ sp: BEGIN
             ,	mms.GroupID
             ,	mms.Stake
             ,	mms.Betteam
-		FROM CTS_DataCenter.MatchMonitorStagingNonLive AS mms
-        WHERE  mms.SequenceID <= ip_MaxSequenceID AND	mms.MatchID = ip_MatchID AND mms.TotalScore = ip_TotalScore AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID;        
+		FROM CTS_DataCenter.MatchMonitorStagingGroupBettingNonLive AS mms
+        WHERE  mms.SequenceID <= ip_MaxSequenceID AND	mms.MatchID = ip_MatchID AND mms.ScoreDiff = ip_ScoreDiff AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID;        
     END IF;
     
 	SELECT rs.TotalStake, rs.TimeStep
@@ -580,12 +581,12 @@ sp: BEGIN
 	WHERE tmpRg.GroupID IS NULL;
 	
 	IF (ip_LiveIndicator = 1) THEN 
-		UPDATE CTS_DataCenter.MatchMonitorStagingLive AS mms
+		UPDATE CTS_DataCenter.MatchMonitorStagingGroupBettingLive AS mms
 			INNER JOIN Temp_StagingTrans02 AS tmpSt ON mms.SequenceID = tmpSt.SequenceID
 		SET mms.GroupID = tmpSt.OldGroupID
 		WHERE tmpSt.OldGroupID < 0 and mms.GroupID <= 0;
 	ELSE
-		UPDATE CTS_DataCenter.MatchMonitorStagingNonLive AS mms
+		UPDATE CTS_DataCenter.MatchMonitorStagingGroupBettingNonLive AS mms
 			INNER JOIN Temp_StagingTrans02 AS tmpSt ON mms.SequenceID = tmpSt.SequenceID
 		SET mms.GroupID = tmpSt.OldGroupID
 		WHERE tmpSt.OldGroupID < 0 and mms.GroupID <= 0;

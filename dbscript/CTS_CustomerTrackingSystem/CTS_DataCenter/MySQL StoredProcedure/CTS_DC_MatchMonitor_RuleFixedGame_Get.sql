@@ -17,6 +17,7 @@ sp: BEGIN
 		Revisions:
 			- 20220726@Casey.Huynh: Created [Redmine ID: #175700]
             - 20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
+            - 20221205@Casey.Huynh: Rename Table [Redmine ID: #181205]
             
 		Param's Explanation (filtered by):	
 
@@ -38,7 +39,7 @@ sp: BEGIN
         FROM CTS_DataCenter.MatchMonitorStagingFixedGameLive AS mmt;
         
         SELECT DISTINCT mmt.MatchID
-				,	mmt.TotalScore
+				,	mmt.ScoreDiff
 				,	mmt.BettypeID
                 ,	mmt.BetID
                 ,	mmt.Betteam			
@@ -57,7 +58,7 @@ sp: BEGIN
         FROM CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mmt;
         
         SELECT DISTINCT mmt.MatchID
-				,	mmt.TotalScore
+				,	mmt.ScoreDiff
 				,	mmt.BettypeID
                 ,	mmt.BetID
                 ,	mmt.Betteam
