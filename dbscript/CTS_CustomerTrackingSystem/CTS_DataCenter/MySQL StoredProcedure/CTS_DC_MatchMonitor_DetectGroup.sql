@@ -17,6 +17,7 @@ BEGIN
 			- 	20221006@Aries.Nguyen: Created [Redmine ID: 178310]
             -   20221025@Aries.Nguyen: Tuning performance: Skip the processed trans  [Redmine ID: #179439]
             -   20221107@Aries.Nguyen: Tuning performance of Hedging Detection  [Redmine ID: #180185]
+            - 	20221205@Aries.Nguyen: Re-arrange type options on Association Detection  [Redmine ID: #181207]
 
 		Param's Explanation (filtered by):
 			- 	Temp_StagingTrans tbl: CustID,CTSCustID,TransDateSecond,AgentCTSCustID,Processed,GroupID
@@ -46,15 +47,15 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_GroupPrecessed;
 	CREATE TEMPORARY TABLE 		Temp_GroupPrecessed (
 			Weight 				BIGINT
-		,	GroupID 			INT
+		,	GroupID 			BIGINT
         ,	PRIMARY KEY			PK_Temp_Group(GroupID)
-	);
+	); 
     
     DROP TEMPORARY TABLE IF EXISTS Temp_GroupPrepare;
 	CREATE TEMPORARY TABLE 		Temp_GroupPrepare (
 			CTSCustID 			BIGINT 
 		,	Weight 				BIGINT
-		,	GroupID 			INT
+		,	GroupID 			BIGINT
         ,	PRIMARY KEY			PK_Temp_Group(CTSCustID,Weight)
 		,	INDEX			    IX_Temp_Group(GroupID)
 	);
@@ -68,7 +69,7 @@ BEGIN
 	CREATE TEMPORARY TABLE 		Temp_GroupParentPrepare (
 			CTSCustID 			BIGINT 
 		,	Weight 				BIGINT
-		,	GroupID 			INT
+		,	GroupID 			BIGINT
         ,	PRIMARY KEY			PK_Temp_Group(CTSCustID,Weight)
 		,	INDEX			    IX_Temp_Group(GroupID)
 	);
@@ -82,7 +83,7 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_GroupID;
 	CREATE TEMPORARY TABLE 		Temp_GroupID (
-			GroupID 			INT PRIMARY KEY	
+			GroupID 			BIGINT PRIMARY KEY	
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Parent;
@@ -90,7 +91,7 @@ BEGIN
 			AgentCTSCustID		BIGINT 
 		 ,	CTSCustID			BIGINT 
 		 ,	TransDateSecond		BIGINT 
-         ,	OldGroupID			INT 
+         ,	OldGroupID			BIGINT 
 		 , 	Processed			BIT DEFAULT 0
 		 ,	PRIMARY KEY 		PK_Temp_StagingTrans(AgentCTSCustID, TransDateSecond)
 		 ,	INDEX 				IX_Temp_StagingTrans_AgentCTSCustID(CTSCustID)
@@ -132,26 +133,22 @@ BEGIN
 			,	CustID
         FROM Temp_StagingTrans
     )
-    SELECT JSON_ARRAYAGG(JSON_OBJECT('CTSCustID', CTSCustID ,'CustID', CustID ,'Weight', 0 ,'MaxWeight', 0)) AS CustJson
+    SELECT JSON_ARRAYAGG(JSON_OBJECT('CTSCustID', CTSCustID ,'CustID', CustID)) AS CustJson
 	INTO lv_CTSCustIDs	
     FROM CTE;
 
-    CALL CTS_DataCenter.CTS_DC_AssociationDetection_GetNode(lv_CTSCustIDs,1,1,1,1);
+    CALL CTS_DataCenter.CTS_DC_AssociationDetection_GetEdge(lv_CTSCustIDs,1,1,1);
 
-    INSERT IGNORE INTO Temp_Graph(OrigID, DestID, Weight, MaxWeight, AssociationType)
+    INSERT IGNORE INTO Temp_Graph(OrigID, DestID, AssociationType)
 	SELECT	grp.CTSCustID 
 		,	(-1*grp.OldGroupID) 
-        ,	grp.Weight
-        ,	tmp.Weight AS MaxWeight
         ,	-1 AS AssociationType
     FROM Temp_GroupResult AS grp
 		INNER JOIN Temp_GroupPrecessed AS tmp ON tmp.GroupID = grp.OldGroupID;
     
-    INSERT IGNORE INTO Temp_Graph(OrigID, DestID, Weight, MaxWeight, AssociationType)
+    INSERT IGNORE INTO Temp_Graph(OrigID, DestID, AssociationType)
 	SELECT	(-1*grp.OldGroupID) 
 		,	grp.CTSCustID
-        ,	grp.Weight
-        ,	tmp.Weight AS MaxWeight
         ,	-1 AS AssociationType
     FROM Temp_GroupResult AS grp
 		INNER JOIN Temp_GroupPrecessed AS tmp ON tmp.GroupID = grp.OldGroupID;
@@ -254,28 +251,24 @@ BEGIN
 				AgentCTSCustID AS CTSCustID
         FROM Temp_Parent
     )
-    SELECT JSON_ARRAYAGG(JSON_OBJECT('CTSCustID', CTSCustID ,'CustID', NULL ,'Weight', 0 ,'MaxWeight', 0)) AS CustJson
+    SELECT JSON_ARRAYAGG(JSON_OBJECT('CTSCustID', CTSCustID ,'CustID', NULL)) AS CustJson
 	INTO lv_CTSCustIDs	
     FROM CTE;
     
-	CALL CTS_DataCenter.CTS_DC_AssociationDetection_GetNode(lv_CTSCustIDs,1,1,0,0);
+	CALL CTS_DataCenter.CTS_DC_AssociationDetection_GetEdge(lv_CTSCustIDs,1,0,0);
     
-    INSERT IGNORE INTO Temp_Graph(OrigID, DestID, Weight, MaxWeight, AssociationType)
+    INSERT IGNORE INTO Temp_Graph(OrigID, DestID, AssociationType)
 	SELECT	grp.AgentCTSCustID 
 		,	(-1*grp.OldGroupID) 
-        ,	grp.Weight
-        ,	tmp.Weight AS MaxWeight
         ,	-1 AS AssociationType
     FROM Temp_GroupResult AS grp
 		INNER JOIN Temp_GroupPrecessed AS tmp ON tmp.GroupID = grp.OldGroupID
 	WHERE grp.IsOld = 1 
 		AND grp.AgentCTSCustID IS NOT NULL;
     
-    INSERT IGNORE INTO Temp_Graph(OrigID, DestID, Weight, MaxWeight, AssociationType)
+    INSERT IGNORE INTO Temp_Graph(OrigID, DestID, AssociationType)
 	SELECT	(-1*grp.OldGroupID) 
 		,	grp.AgentCTSCustID
-        ,	grp.Weight
-        ,	tmp.Weight AS MaxWeight
         ,	-1 AS AssociationType
     FROM Temp_GroupResult AS grp
 		INNER JOIN Temp_GroupPrecessed AS tmp ON tmp.GroupID = grp.OldGroupID
@@ -306,9 +299,6 @@ BEGIN
                 SELECT 	grp.OrigID
 				FROM Temp_Graph  AS grp
 					INNER JOIN CTE_Group ON CTE_Group.OrigID = grp.DestID 
-										AND (grp.Weight = 0  
-												OR ABS(grp.Weight - lv_Weight) <= ip_Duration		
-												OR ABS(grp.MaxWeight - lv_Weight) <= ip_Duration)
 		) 
 		SELECT OrigID AS CTSCustID
         FROM CTE_Group AS cte
