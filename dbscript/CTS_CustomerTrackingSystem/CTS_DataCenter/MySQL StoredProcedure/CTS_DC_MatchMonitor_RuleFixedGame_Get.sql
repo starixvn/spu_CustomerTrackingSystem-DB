@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule02_Get`;
+DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_RuleFixedGame_Get`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule02_Get`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleFixedGame_Get`(
 		IN	ip_LiveIndicator	BOOLEAN
 	,	OUT	op_MaxSequenceID	BIGINT UNSIGNED
 )
@@ -21,7 +21,7 @@ sp: BEGIN
 		Param's Explanation (filtered by):	
 
 		Example:
-			CALL  CTS_DC_MatchMonitor_Rule02_Get(@ip_LiveIndicator:=1,@op_MaxSequenceID); SELECT @ip_LiveIndicator,  @op_MaxSequenceID;
+			CALL  CTS_DC_MatchMonitor_RuleFixedGame_Get(@ip_LiveIndicator:=1,@op_MaxSequenceID); SELECT @ip_LiveIndicator,  @op_MaxSequenceID;
 			
 	*/   
 	DECLARE lv_LastSequenceID BIGINT UNSIGNED;
@@ -35,14 +35,14 @@ sp: BEGIN
         
         SELECT MAX(mmt.SequenceID)
         INTO op_MaxSequenceID
-        FROM CTS_DataCenter.MatchMonitorTransLive AS mmt;
+        FROM CTS_DataCenter.MatchMonitorStagingFixedGameLive AS mmt;
         
         SELECT DISTINCT mmt.MatchID
 				,	mmt.TotalScore
 				,	mmt.BettypeID
                 ,	mmt.BetID
                 ,	mmt.Betteam			
-		FROM CTS_DataCenter.MatchMonitorTransLive AS mmt
+		FROM CTS_DataCenter.MatchMonitorStagingFixedGameLive AS mmt
 		WHERE mmt.StatusRule02 = 0 AND mmt.IsMajorLeague = 0
 			AND mmt.SequenceID > lv_LastSequenceID;       
 
@@ -54,14 +54,14 @@ sp: BEGIN
         
 		SELECT MAX(mmt.SequenceID)
         INTO op_MaxSequenceID
-        FROM CTS_DataCenter.MatchMonitorTransNonLive AS mmt;
+        FROM CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mmt;
         
         SELECT DISTINCT mmt.MatchID
 				,	mmt.TotalScore
 				,	mmt.BettypeID
                 ,	mmt.BetID
                 ,	mmt.Betteam
-		FROM CTS_DataCenter.MatchMonitorTransNonLive AS mmt
+		FROM CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mmt
 		WHERE mmt.StatusRule02 = 0 AND mmt.IsMajorLeague = 0
 			AND mmt.SequenceID > lv_LastSequenceID;       
         

@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Staging_CleanTrans`;
+DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_RuleFixedGame_StagingClean`;
 DELIMITER $$
 
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Staging_CleanTrans`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleFixedGame_StagingClean`(
 		IN ip_LiveIndicator	BOOLEAN
 	,	IN ip_SequenceID	BIGINT UNSIGNED
 )
@@ -19,7 +19,7 @@ BEGIN
             - 20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
             
 		Param's Explanation (filtered by):
-			CALL CTS_DC_MatchMonitor_Staging_CleanTrans(1,2);
+			CALL CTS_DC_MatchMonitor_RuleFixedGame_StagingClean(1,2);
 		Example:
 			
 	*/
@@ -49,12 +49,12 @@ BEGIN
 		
 		SELECT  MAX(mmt.SequenceID)
 		INTO 	lv_LastSequenceID
-		FROM	CTS_DataCenter.MatchMonitorTransNonLive AS mmt
+		FROM	CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mmt
 		WHERE	mmt.SequenceID < ip_SequenceID AND StatusRule02 = 1; 		
         
         IF lv_LastSequenceID > 0 THEN	
 			DELETE 	mmt
-			FROM	CTS_DataCenter.MatchMonitorTransNonLive AS mmt
+			FROM	CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mmt
 			WHERE	mmt.SequenceID <= lv_LastSequenceID;
             
 			UPDATE 	CTS_DataCenter.SystemParameter AS sys

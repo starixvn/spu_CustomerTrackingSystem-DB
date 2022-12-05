@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule02_Process`;
+DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_RuleFixedGame_Process`;
 DELIMITER $$
 
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule02_Process`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleFixedGame_Process`(
 		IN ip_LiveIndicator		BOOLEAN
 	,	IN ip_MaxSequenceID		BIGINT UNSIGNED
 	,	IN ip_MatchID			INT UNSIGNED
@@ -27,7 +27,7 @@ sp: BEGIN
 		Param's Explanation (filtered by):	
 
 		Example:
-			CALL CTS_DC_MatchMonitor_Rule02_Process(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=0,@ip_MatchID:=1,@ip_TotalScore:=1,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a');
+			CALL CTS_DC_MatchMonitor_RuleFixedGame_Process(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=0,@ip_MatchID:=1,@ip_TotalScore:=1,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a');
 	*/
     
     DECLARE	CONST_REASON					TINYINT DEFAULT 3; #0: Group Betting, 1: Headging, 2: Arbitrage, 3: FixedGame
@@ -63,7 +63,7 @@ sp: BEGIN
 		
 		SELECT MAX(TransDate)
 		INTO lv_MaxTransDate
-		FROM CTS_DataCenter.MatchMonitorTransLive AS mmt
+		FROM CTS_DataCenter.MatchMonitorStagingFixedGameLive AS mmt
 		WHERE mmt.SequenceID = ip_MaxSequenceID;   
   
         SELECT s.ParameterValue
@@ -73,7 +73,7 @@ sp: BEGIN
         
         SELECT TIMESTAMPADD(MINUTE, lv_Rule_Duration, TransDate)
         INTO lv_FromTransDate
-        FROM CTS_DataCenter.MatchMonitorTransLive AS mmt
+        FROM CTS_DataCenter.MatchMonitorStagingFixedGameLive AS mmt
 		WHERE mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam
 		ORDER BY TransDate
         LIMIT 1;
@@ -87,7 +87,7 @@ sp: BEGIN
 					, 	MAX(Odds) OVER w1  AS MaxOdds1
 					,	SUM(CASE WHEN Stake > lv_Rule_HighStake THEN 1 ELSE 0 END) OVER w1  AS TotalHighStake1
 					,	COUNT(1) OVER w1  AS TotalTrans1
-			   FROM CTS_DataCenter.MatchMonitorTransLive AS mmt
+			   FROM CTS_DataCenter.MatchMonitorStagingFixedGameLive AS mmt
 			   WHERE  mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam
 					AND mmt.SequenceID > lv_LastSequenceID AND mmt.SequenceID <= ip_MaxSequenceID AND mmt.StatusRule02 = 0
 			   WINDOW w1 AS (ORDER BY TransDate DESC RANGE BETWEEN CURRENT ROW AND INTERVAL lv_Rule_Duration MINUTE  FOLLOWING)						
@@ -100,14 +100,14 @@ sp: BEGIN
         SELECT CONST_REASON AS Reason
 			,	GROUP_CONCAT(DISTINCT TransID) AS TransIDList
             ,	GROUP_CONCAT(DISTINCT CustID) AS CustIDList
-        FROM CTS_DataCenter.MatchMonitorTransLive AS mmt
+        FROM CTS_DataCenter.MatchMonitorStagingFixedGameLive AS mmt
 		WHERE  mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam
 				AND EXISTS (SELECT 1 FROM Temp_FixedTransRange AS tmp WHERE mmt.TransID BETWEEN tmp.MinTransID AND MaxTransID);
 		
      ELSE 
 		SELECT MAX(TransDate)
 		INTO lv_MaxTransDate
-		FROM CTS_DataCenter.MatchMonitorTransNonLive AS mmt
+		FROM CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mmt
 		WHERE mmt.SequenceID = ip_MaxSequenceID;   
         
         SELECT s.ParameterValue
@@ -117,7 +117,7 @@ sp: BEGIN
         
         SELECT TIMESTAMPADD(MINUTE, lv_Rule_Duration, TransDate)
         INTO lv_FromTransDate
-        FROM CTS_DataCenter.MatchMonitorTransNonLive AS mmt
+        FROM CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mmt
 		WHERE mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam
 		ORDER BY TransDate
         LIMIT 1;
@@ -131,7 +131,7 @@ sp: BEGIN
 					, 	MAX(Odds) OVER w1  AS MaxOdds1
 					,	SUM(CASE WHEN Stake > lv_Rule_HighStake THEN 1 ELSE 0 END) OVER w1  AS TotalHighStake1
 					,	COUNT(1) OVER w1  AS TotalTrans1
-			   FROM CTS_DataCenter.MatchMonitorTransNonLive AS mmt
+			   FROM CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mmt
 			   WHERE  mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam
 					AND mmt.SequenceID > lv_LastSequenceID AND mmt.SequenceID <= ip_MaxSequenceID AND mmt.StatusRule02 = 0
 			   WINDOW w1 AS (ORDER BY TransDate DESC RANGE BETWEEN CURRENT ROW AND INTERVAL lv_Rule_Duration MINUTE  FOLLOWING)						
@@ -144,7 +144,7 @@ sp: BEGIN
 		SELECT CONST_REASON AS Reason
 			,	GROUP_CONCAT(DISTINCT TransID) AS TransIDList
             ,	GROUP_CONCAT(DISTINCT CustID) AS CustIDList
-        FROM CTS_DataCenter.MatchMonitorTransNonLive AS mmt
+        FROM CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mmt
 		WHERE  mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam
 				AND EXISTS (SELECT 1 FROM Temp_FixedTransRange AS tmp WHERE mmt.TransID BETWEEN tmp.MinTransID AND MaxTransID);	
  

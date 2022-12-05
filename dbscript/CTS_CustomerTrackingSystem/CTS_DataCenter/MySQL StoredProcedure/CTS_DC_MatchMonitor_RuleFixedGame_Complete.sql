@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule02_Complete`;
+DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_RuleFixedGame_Complete`;
 DELIMITER $$
 
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule02_Complete`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleFixedGame_Complete`(
 		IN ip_LiveIndicator BOOLEAN
 	,	IN ip_MaxSequenceID BIGINT UNSIGNED
 	, 	IN ip_MatchID		INT
@@ -27,7 +27,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule02_Complete`(
 		Param's Explanation (filtered by):	
 
 		Example:
-			CALL CTS_DC_MatchMonitor_Rule02_Complete(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=115841606929,@ip_MatchID:=1,@ip_TotalScore:=1
+			CALL CTS_DC_MatchMonitor_RuleFixedGame_Complete(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=115841606929,@ip_MatchID:=1,@ip_TotalScore:=1
 				,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a',
                 @ip_TransGroup:='[{"Reason":3 ,"TransIDList":"1001,1007,1008","CustIDList":"1,2"}]');
 	*/ 
@@ -84,7 +84,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule02_Complete`(
 		
 			SELECT mms.EventDate, mms.LiveHomeScore, mms.LiveAwayScore, mms.EventDate, mms.KickOffTime, mms.EventStatus, mms.HomeID, mms.AwayID, mms.LeagueID, mms.LeagueName, mms.Sporttype
 			INTO lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName, lv_Sporttype
-			FROM CTS_DataCenter.MatchMonitorTransLive AS mms
+			FROM CTS_DataCenter.MatchMonitorStagingFixedGameLive AS mms
 			WHERE mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.TotalScore = ip_TotalScore AND mms.Betteam = ip_Betteam
 			LIMIT 1;
 			
@@ -93,7 +93,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule02_Complete`(
 		IF (ip_LiveIndicator = 0) THEN
 			SELECT mms.EventDate, mms.LiveHomeScore, mms.LiveAwayScore, mms.EventDate, mms.KickOffTime, mms.EventStatus, mms.HomeID, mms.AwayID, mms.LeagueID, mms.LeagueName, mms.Sporttype
 			INTO lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName, lv_Sporttype
-			FROM CTS_DataCenter.MatchMonitorTransNonLive AS mms
+			FROM CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mms
 			WHERE mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.Betteam = ip_Betteam
 			LIMIT 1;	 
 		END IF;	
@@ -158,10 +158,10 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule02_Complete`(
 		
         SELECT MAX(TransDate)
 		INTO lv_MaxTransDate
-		FROM CTS_DataCenter.MatchMonitorTransLive AS mmt
+		FROM CTS_DataCenter.MatchMonitorStagingFixedGameLive AS mmt
 		WHERE mmt.SequenceID = ip_MaxSequenceID;   
         
-		UPDATE CTS_DataCenter.MatchMonitorTransLive AS mmt
+		UPDATE CTS_DataCenter.MatchMonitorStagingFixedGameLive AS mmt
 		SET mmt.StatusRule02 = 1
 		WHERE mmt.TransDate <= TIMESTAMPADD(MINUTE,-lv_Rule_Duration,lv_MaxTransDate)
 			AND mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam;
@@ -172,10 +172,10 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule02_Complete`(
     
 		SELECT MAX(TransDate)
 		INTO lv_MaxTransDate
-		FROM CTS_DataCenter.MatchMonitorTransNonLive AS mmt
+		FROM CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mmt
 		WHERE mmt.SequenceID = ip_MaxSequenceID;   
         
-		UPDATE CTS_DataCenter.MatchMonitorTransNonLive AS mmt
+		UPDATE CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mmt
 		SET mmt.StatusRule02 = 1
 		WHERE mmt.TransDate <= TIMESTAMPADD(MINUTE,-lv_Rule_Duration,lv_MaxTransDate)
 			AND mmt.MatchID = ip_MatchID AND mmt.TotalScore = ip_TotalScore AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam;
