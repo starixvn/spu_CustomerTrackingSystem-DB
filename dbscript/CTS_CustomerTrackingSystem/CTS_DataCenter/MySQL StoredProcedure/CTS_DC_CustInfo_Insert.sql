@@ -35,6 +35,7 @@ BEGIN
 			- 20220829@Aries.Nguyen: Remove hard-coding of internal account in CTS [Redmine ID: #177042]
             - 20220923@Aries.Nguyen: CTS - Missing Customer Info on CTS Pro [Redmine ID: #176768]
             - 20220930@Aries.Nguyen: Renovate Association Detection [RedmineID: #178311]
+            - 20221202@Victoria.Le:	 Add columns Danger6 (Saba Soccer) and Danger7 (Saba Baseketball) [Redmine ID: #181208]
 
 		Param's Explanation (filtered by):
 		Example:
@@ -55,6 +56,8 @@ BEGIN
         ,	Danger3			TINYINT
         ,	Danger4			TINYINT
         ,	Danger5			TINYINT
+		,	Danger6			TINYINT
+		,	Danger7			TINYINT
 		,	CustSubID		INT UNSIGNED			
 		,	UserName		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 		,	UserName2		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
@@ -124,7 +127,7 @@ BEGIN
 		,	INDEX			IX_Temp_Result_CustID(CustID,CustSubID)
 	);
 
-    INSERT INTO Temp_CTSCustomer(CustID, CustStatusID, Danger1, Danger2, Danger3, Danger4, Danger5, CustSubID, UserName, UserName2, SiteID, Site, RoleID, Currency, CurrencyID, SRecommend, MRecommend, Recommend, CreatedDate,IsLicensee,IsInternal)
+    INSERT INTO Temp_CTSCustomer(CustID, CustStatusID, Danger1, Danger2, Danger3, Danger4, Danger5, Danger6, Danger7, CustSubID, UserName, UserName2, SiteID, Site, RoleID, Currency, CurrencyID, SRecommend, MRecommend, Recommend, CreatedDate,IsLicensee,IsInternal)
 	SELECT		js.CustID	
 			,	js.CustStatusID
 			,	js.Danger1
@@ -132,6 +135,8 @@ BEGIN
 			,	js.Danger3	
             ,	js.Danger4
 			,	js.Danger5	
+			,	js.Danger6
+			,	js.Danger7
 			,	js.CustSubID		
 			,	js.UserName		
 			,	(CASE WHEN js.UserName2 = 'null' THEN NULL ELSE js.UserName2 END) AS UserName2
@@ -160,6 +165,8 @@ BEGIN
 			,	Danger3			TINYINT		 	PATH "$.Danger3" 
             ,	Danger4			TINYINT		 	PATH "$.Danger4" 
 			,	Danger5			TINYINT		 	PATH "$.Danger5" 
+			,	Danger6			TINYINT		 	PATH "$.Danger6" 
+			,	Danger7			TINYINT		 	PATH "$.Danger7" 
 			,	CustSubID		INT	UNSIGNED	PATH "$.CustSubID" 
 			,	UserName		VARCHAR(50)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	PATH "$.UserName"
 			,	UserName2		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'	PATH "$.UserName2" 
@@ -278,7 +285,7 @@ BEGIN
 		, tmpCus.RegisterName = cus.RegisterName;      
 	
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomer(SubscriberID, CustID, CustSubID, UserName, UserName2, SiteID, Site, RoleID, Currency, CurrencyID
-			, SRecommend, MRecommend, Recommend, CreatedDate , RegisterName , CustStatusID , Danger1 ,Danger2 , Danger3 ,Danger4 , Danger5 , InsertedTime , ModifiedTime, IsLicensee, IsInternal)
+			, SRecommend, MRecommend, Recommend, CreatedDate , RegisterName , CustStatusID , Danger1 ,Danger2 , Danger3 , Danger4 , Danger5, Danger6, Danger7 , InsertedTime , ModifiedTime, IsLicensee, IsInternal)
 	SELECT    tmpCus.SubscriberID
 			, tmpCus.CustID
             , tmpCus.CustSubID
@@ -300,6 +307,8 @@ BEGIN
             , tmpCus.Danger3
             , tmpCus.Danger4
             , tmpCus.Danger5
+			, tmpCus.Danger6
+			, tmpCus.Danger7
             , CURRENT_TIMESTAMP(4) AS InsertedTime
             , CURRENT_TIMESTAMP(4) AS ModifiedTime
             , IsLicensee

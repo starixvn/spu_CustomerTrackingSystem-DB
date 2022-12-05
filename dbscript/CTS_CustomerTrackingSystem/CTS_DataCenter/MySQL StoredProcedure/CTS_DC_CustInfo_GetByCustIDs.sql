@@ -17,6 +17,7 @@ BEGIN
 			- 20210115@Casey.Huynh: Created [Redmine ID: 148849]
             - 20210208@Casey.Huynh: Implement Get info by Update from Customer_History [Redmine ID: 149941]
             - 20210423@CaseyHuynh: Update CTSCustomer (Credit Cust Status) by CustProductStatus_History [Redmine ID: #152259]
+			- 20221205@Victoria.Le:	 Get more data: danger4, dange5, danger6 (Saba Soccer) and danger7 (Saba Baseketball) [Redmine ID: #181208]
             
 		Param's Explanation (filtered by):
 			ip_CustIDList: String (custid01,custid02, custid03)
@@ -40,6 +41,10 @@ BEGIN
 				,	Danger1
 				,	Danger2
 				,	Danger3
+				,	Danger4
+				,	Danger5
+				,	Danger6
+				,	Danger7
 			FROM		CTS_DataCenter.CTSCustomer AS cus
 				INNER JOIN	TempItemTable AS tmpCus ON cus.CustID = tmpCus.Item
 			WHERE		CustSubID = 0;
