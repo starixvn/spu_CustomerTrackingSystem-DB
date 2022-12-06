@@ -12,92 +12,94 @@ Reviewer:
 
 USE CTS_DataCenter;
 
-UPDATE MatchMonitorDetails
-SET ScoreDiff = TotalScore
-WHERE ScoreDiff IS NULL;
 #============================
+ALTER TABLE MatchMonitorStagingLive
+	RENAME MatchMonitorStagingGroupBettingLive
+	,	RENAME COLUMN TotalScore TO ScoreDiff
+    ,	ADD COLUMN IsMajorLeague BOOLEAN
+    ,	ADD COLUMN Odds DECIMAL(10,4)
+    ,	ADD COLUMN Hdp DECIMAL(8,4)
+    ,	ADD COLUMN Hdp1 DECIMAL(8,4)
+    ,	ADD COLUMN Hdp2 DECIMAL(8,4);
+    
+    
+ALTER TABLE MatchMonitorStagingNonLive
+	RENAME MatchMonitorStagingGroupBettingNonLive
+	,	RENAME COLUMN TotalScore TO ScoreDiff
+    ,	ADD COLUMN IsMajorLeague BOOLEAN
+    ,	ADD COLUMN Odds DECIMAL(10,4)
+    ,	ADD COLUMN Hdp DECIMAL(8,4)
+    ,	ADD COLUMN Hdp1 DECIMAL(8,4)
+    ,	ADD COLUMN Hdp2 DECIMAL(8,4);
+
+ALTER TABLE MatchMonitorTransLive
+	RENAME MatchMonitorStagingFixedGameLive
+	,	Change COLUMN TotalScore  ScoreDiff INT
+    ,	ADD COLUMN Hdp DECIMAL(8,4)
+    ,	ADD COLUMN Hdp1 DECIMAL(8,4)
+    ,	ADD COLUMN Hdp2 DECIMAL(8,4);
+    
+ALTER TABLE MatchMonitorTransNonLive
+	RENAME MatchMonitorStagingFixedGameNonLive
+    ,	Change COLUMN TotalScore  ScoreDiff INT
+    ,	ADD COLUMN Hdp DECIMAL(8,4)
+    ,	ADD COLUMN Hdp1 DECIMAL(8,4)
+    ,	ADD COLUMN Hdp2 DECIMAL(8,4);
+
+ALTER TABLE MatchMonitorStagingLive03
+	RENAME MatchMonitorStagingHedgingLive
+	,	RENAME COLUMN TotalScore TO ScoreDiff;
+
+ALTER TABLE MatchMonitorStagingNonLive03
+	RENAME MatchMonitorStagingHedgingNonLive
+	,	RENAME COLUMN TotalScore TO ScoreDiff;
+#============================================================
 ALTER TABLE MatchMonitor
 	ADD COLUMN IsMajorLeage BOOLEAN AFTER MatchID
 ,	ADD COLUMN HDP DECIMAL (8,4) AFTER BettypeID;
+
+UPDATE MatchMonitorDetails
+SET ScoreDiff = TotalScore
+WHERE ScoreDiff IS NULL;
 
 ALTER TABLE MatchMonitorDetails
 	ADD COLUMN IsMajorLeage BOOLEAN AFTER MatchID
 ,	ADD COLUMN HDP DECIMAL (8,4) AFTER BettypeID
 ,	DROP COLUMN TotalScore;
+#====================================================================
 
-ALTER TABLE MatchMonitorTransLive
-	ADD COLUMN HDP DECIMAL (8,4) AFTER BettypeID
-,	RENAME TO MatchMonitorStagingFixedGameLive;
-
-ALTER TABLE MatchMonitorTransNonLive
-	ADD COLUMN HDP DECIMAL (8,4) AFTER BettypeID
-,	RENAME TO MatchMonitorStagingFixedGameNonLive;
-
-ALTER TABLE MatchMonitorStagingLive
-RENAME MatchMonitorStagingGroupBettingLive;
-
-ALTER TABLE MatchMonitorStagingNonLive
-RENAME MatchMonitorStagingGroupBettingNonLive;
-
-ALTER TABLE MatchMonitorStagingLive03
-RENAME MatchMonitorStagingHedgingLive;
-
-ALTER TABLE MatchMonitorStagingNonLive03
-RENAME MatchMonitorStagingHedgingNonLive;
-
-ALTER TABLE MatchMonitorStagingFixedGameLive
-	RENAME  COLUMN TotalScore TO ScoreDiff;
-
-ALTER TABLE MatchMonitorStagingFixedGameNonLive
-	RENAME  COLUMN TotalScore TO ScoreDiff;
-
-ALTER TABLE MatchMonitorStagingGroupBettingLive
-	RENAME  COLUMN TotalScore TO ScoreDiff;
-    
-ALTER TABLE MatchMonitorStagingGroupBettingNonLive
-	RENAME  COLUMN TotalScore TO ScoreDiff;
-
-ALTER TABLE MatchMonitorStagingHedgingLive
-	RENAME  COLUMN TotalScore TO ScoreDiff;
-
-ALTER TABLE MatchMonitorStagingHedgingNonLive
-	RENAME  COLUMN TotalScore TO ScoreDiff;
-
-ALTER TABLE MatchMonitorStagingIrrigationNonLive
-	RENAME  COLUMN TotalScore TO ScoreDiff;
-
-
-CREATE TABLE `MatchMonitorStagingArbitrageNonLive` (
-  `SequenceID` bigint unsigned NOT NULL,
-  `TransID` bigint unsigned NOT NULL,
-  `TransDate` datetime(3) DEFAULT NULL,
-  `MatchID` int DEFAULT NULL,
-  IsMajorLeague BOOLEAN,
-  `SportType` int DEFAULT NULL,
-  `ScoreDiff` int DEFAULT NULL,
-  `BettypeID` int DEFAULT NULL,
-  `BetID` bigint DEFAULT NULL,
-  HDP	DECIMAL(8,4),
-  `Betteam` varchar(10) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `CustID` bigint unsigned DEFAULT NULL,
-  `Stake` decimal(20,4) DEFAULT NULL,
-  `GroupID` int DEFAULT '0',
-  `LiveHomeScore` int DEFAULT NULL,
-  `LiveAwayScore` int DEFAULT NULL,
-  `EventDate` date DEFAULT NULL,
-  `KickOffTime` datetime DEFAULT NULL,
-  `EventStatus` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `HomeID` int DEFAULT NULL,
-  `AwayID` int DEFAULT NULL,
-  `LeagueID` int DEFAULT NULL,
-  `InsertTime` datetime(3) DEFAULT NULL,
-  `LeagueName` varchar(500) COLLATE utf8_unicode_ci DEFAULT NULL,
-  PRIMARY KEY (`SequenceID`),
-  KEY `IX_MatchMonitorStagingNonLive03_TransDate` (`TransDate`),
-  KEY `IX_MatchMonitorStagingNonLive03_GroupRule01` (`MatchID`,`ScoreDiff`,`BettypeID`,`BetID`,`GroupID`),
-  KEY `IX_MatchMonitorStagingNonLive03_TransID` (`TransID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8_unicode_ci;
-
+CREATE TABLE MatchMonitorStagingArbitrageNonLive (
+	SequenceID bigint unsigned NOT NULL,
+	TransID bigint unsigned NOT NULL,
+	TransDate datetime(3) DEFAULT NULL,
+	MatchID int DEFAULT NULL,
+	IsMajorLeague BOOLEAN,
+	SportType int DEFAULT NULL,
+	ScoreDiff int DEFAULT NULL,
+	BettypeID int DEFAULT NULL,
+	BetID bigint DEFAULT NULL,
+	HDP	DECIMAL(8,4),	
+	Betteam varchar(10) DEFAULT NULL,
+	CustID bigint unsigned DEFAULT NULL,
+	Stake decimal(20,4) DEFAULT NULL,
+	GroupID int DEFAULT '0',
+	LiveHomeScore int DEFAULT NULL,
+	LiveAwayScore int DEFAULT NULL,
+	EventDate date DEFAULT NULL,
+	KickOffTime datetime DEFAULT NULL,
+	EventStatus varchar(50) DEFAULT NULL,
+	HomeID int DEFAULT NULL,
+	AwayID int DEFAULT NULL,
+	LeagueID int DEFAULT NULL,
+	InsertTime datetime(3) DEFAULT NULL,
+	LeagueName varchar(500) DEFAULT NULL,
+	Hdp1	DECIMAL(8,4),
+	Hdp2	DECIMAL(8,4),
+	PRIMARY KEY (SequenceID),
+	KEY IX_MMStagingArbitrageNonLive_TransDate(TransDate),
+	KEY IX_MMStagingArbitrageNonLive_RuleGroup(MatchID,ScoreDiff,BettypeID,BetID,HDP,GroupID,IsMajorLeague),
+	KEY IX_MMStagingArbitrageNonLive_TransID(TransID)
+) ENGINE=InnoDB;
 
 #======INITAIL============================================================
 
@@ -106,9 +108,9 @@ ALTER TABLE MatchMonitorRuleSetting
   ADD COLUMN HighStakePercent DECIMAL(6,2) AFTER HighStake
 , ADD COLUMN MinOdds DECIMAL(10,4) AFTER HighStakePercent
 , ADD COLUMN MaxOdds DECIMAL(10,4) AFTER MinOdds 
-, ADD COLUMN IsMajorLeague SMALLINT DEFAULT 0 COMMENT '0: All Types, 1: Major League, 2: Other Leagues'  AFTER SportType 
+, ADD COLUMN LeagueType TINYINT DEFAULT 2 COMMENT '0: Others League, 1: Major League, 2: Any League'  AFTER SportType 
 , DROP PRIMARY KEY 
-, ADD PRIMARY KEY  PK_MatchMonitorRuleSetting(RuleGroupID,Reason,SportType, IsMajorLeague);
+, ADD PRIMARY KEY  PK_MatchMonitorRuleSetting(RuleGroupID,Reason,SportType,LeagueType);
 
 #=================Fixed Game==========================
 INSERT INTO CTS_DataCenter.MatchMonitorRuleSetting(RuleGroupID, RuleGroupDesc, Reason, SportType, ReasonName, SportName, TimeStep, HighStake, MinOdds, MaxOdds, ModifiedDate)
@@ -117,9 +119,9 @@ VALUES (5, 'Fixed Game Detect', 3 , 1, 'Fixed Game', 'Soccer', 420, 500, 0.5, 2,
     , (5, 'Fixed Game Detect', 3 , 43, 'Fixed Game', 'E-Sports', 420, 500, 0.5, 2, CURRENT_TIMESTAMP());
     
 #=================Arbitrage==========================
-INSERT INTO CTS_DataCenter.MatchMonitorRuleSetting(RuleGroupID, RuleGroupDesc, Reason, SportType, ReasonName, SportName, TimeStep, TotalStake, IsMajorLeague, ModifiedDate)
+INSERT INTO CTS_DataCenter.MatchMonitorRuleSetting(RuleGroupID, RuleGroupDesc, Reason, SportType, ReasonName, SportName, TimeStep, TotalStake, LeagueType, ModifiedDate)
 VALUES (6, 'Arbitrage Detect', 2 , 1, 'Arbitrage', 'Soccer', 180, 5000, 1, CURRENT_TIMESTAMP())
-	, (6, 'Arbitrage Detect', 2 , 1, 'Arbitrage', 'Soccer', 180, 1000, 2, CURRENT_TIMESTAMP());    
+	, (6, 'Arbitrage Detect', 2 , 1, 'Arbitrage', 'Soccer', 180, 1000, 0, CURRENT_TIMESTAMP());    
 
 UPDATE CTS_DataCenter.MatchMonitorRuleSetting
 SET RuleGroupDesc = 'Group Betting Detect'
@@ -135,7 +137,7 @@ VALUES	(126,'MatchMonitorFixedGame_RuleLive_BatchSize','MatchMonitorFixedGame_Ru
 	,	(127,'MatchMonitorFixedGame_RuleNonLive_BatchSize','MatchMonitorFixedGame_RuleNonLive_BatchSize','INT','5000')
     ,	(128,'MatchMonitorArbitrage_RuleNonLive_BatchSize','MatchMonitorArbitrage_RuleNonLive_BatchSize','INT','5000');
     
-    
+ SELECT * FROM CTS_DataCenter.MatchMonitorRuleSetting;   
     /*
 DROP PROCEDURE CTS_DC_MatchMonitor_Rule01_Complete ;
 DROP PROCEDURE CTS_DC_MatchMonitor_Rule01_Get ;
