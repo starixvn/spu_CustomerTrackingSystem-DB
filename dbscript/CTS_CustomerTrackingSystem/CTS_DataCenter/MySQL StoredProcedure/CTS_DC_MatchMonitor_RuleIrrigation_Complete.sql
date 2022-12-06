@@ -49,7 +49,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleIrrigation_Comp
 	#===================LOG=======================================
 
 	INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText, JsonString1 )
-    SELECT'CTS_DC_MatchMonitor_RuleIrrigation_Complete', current_timestamp(), 
+    SELECT'CTS_DC_MatchMonitor_RuleIrrigation_Complete1', current_timestamp(), 
     CONCAT('ip_LiveIndicator:',ip_LiveIndicator,' ip_MaxSequenceID:',ip_MaxSequenceID,' ip_SportType:',ip_SportType,' ip_MatchID:',ip_MatchID
     ,' ip_ScoreDiff:',ip_ScoreDiff,' ip_BettypeID:',ip_BettypeID,' ip_BetID:',ip_BetID,' ip_Betteam:',ip_Betteam), ip_TransGroup;
 
@@ -73,7 +73,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleIrrigation_Comp
     CREATE TEMPORARY TABLE Temp_TransGroup
     (
 			TransID 	BIGINT UNSIGNED PRIMARY KEY
-        ,	GroupID 	LONGTEXT
+        ,	GroupID 	INT
     );
     
     #===========GET RULE SETTING==================================================
@@ -150,14 +150,18 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleIrrigation_Comp
 	FROM Temp_NewGroup AS tmpNg
 	JOIN JSON_TABLE(REPLACE(JSON_ARRAY(tmpNg.TransIDList), ',', '","'), 
 					'$[*]' COLUMNS (TransID BIGINT UNSIGNED PATH '$')
-					) js;
-        
+					) js;    
+
+    INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
+    SELECT'CTS_DC_MatchMonitor_RuleIrrigation_Complete2', current_timestamp(), (SELECT group_concat(TransID) FROM Temp_TransGroup);
+    
 	IF (ip_LiveIndicator = 0) THEN
 		#=======UPDATE GROUPID TO STAGING TABLE===================
 		UPDATE CTS_DataCenter.MatchMonitorStagingIrrigationNonLive AS mms
 			INNER JOIN Temp_TransGroup as tmpTg ON mms.TransID = tmpTg.TransID
 		SET mms.GroupID = tmpTg.GroupID;     
 	END IF;	
-    
+	INSERT INTO CTS_Log.CTSLog(LogName, InsertTime)
+    SELECT'CTS_DC_MatchMonitor_RuleIrrigation_Complete3', current_timestamp();
 END$$
 DELIMITER ;
