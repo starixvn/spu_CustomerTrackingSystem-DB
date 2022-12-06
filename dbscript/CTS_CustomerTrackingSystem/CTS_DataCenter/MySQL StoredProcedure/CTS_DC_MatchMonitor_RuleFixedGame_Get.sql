@@ -17,7 +17,7 @@ sp: BEGIN
 		Revisions:
 			- 20220726@Casey.Huynh: Created [Redmine ID: #175700]
             - 20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
-            - 20221205@Casey.Huynh: Rename Table [Redmine ID: #181205]
+            - 20221205@Casey.Huynh: Rename Table and update rule [Redmine ID: #181205]
             
 		Param's Explanation (filtered by):	
 

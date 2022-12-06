@@ -113,15 +113,15 @@ ALTER TABLE MatchMonitorRuleSetting
 , ADD PRIMARY KEY  PK_MatchMonitorRuleSetting(RuleGroupID,Reason,SportType,LeagueType);
 
 #=================Fixed Game==========================
-INSERT INTO CTS_DataCenter.MatchMonitorRuleSetting(RuleGroupID, RuleGroupDesc, Reason, SportType, ReasonName, SportName, TimeStep, HighStake, MinOdds, MaxOdds, ModifiedDate)
-VALUES (5, 'Fixed Game Detect', 3 , 1, 'Fixed Game', 'Soccer', 420, 500, 0.5, 2, CURRENT_TIMESTAMP())
-	, (5, 'Fixed Game Detect', 3 , 2, 'Fixed Game', 'Basketball', 420, 500, 0.5, 2, CURRENT_TIMESTAMP())
-    , (5, 'Fixed Game Detect', 3 , 43, 'Fixed Game', 'E-Sports', 420, 500, 0.5, 2, CURRENT_TIMESTAMP());
+INSERT INTO CTS_DataCenter.MatchMonitorRuleSetting(RuleGroupID, RuleGroupDesc, Reason, SportType, ReasonName, SportName, TimeStep, HighStake, MinOdds, MaxOdds, LeagueType, ModifiedDate)
+VALUES (2, 'Fixed Game Detect', 3 , 1, 'Fixed Game', 'Soccer', 420, 500, 0.5, 2, 0, CURRENT_TIMESTAMP())
+	, (2, 'Fixed Game Detect', 3 , 2, 'Fixed Game', 'Basketball', 420, 500, 0.5, 2, 0,  CURRENT_TIMESTAMP())
+    , (2, 'Fixed Game Detect', 3 , 43, 'Fixed Game', 'E-Sports', 420, 500, 0.5, 2, 0,  CURRENT_TIMESTAMP());
     
 #=================Arbitrage==========================
 INSERT INTO CTS_DataCenter.MatchMonitorRuleSetting(RuleGroupID, RuleGroupDesc, Reason, SportType, ReasonName, SportName, TimeStep, TotalStake, LeagueType, ModifiedDate)
-VALUES (6, 'Arbitrage Detect', 2 , 1, 'Arbitrage', 'Soccer', 180, 5000, 1, CURRENT_TIMESTAMP())
-	, (6, 'Arbitrage Detect', 2 , 1, 'Arbitrage', 'Soccer', 180, 1000, 0, CURRENT_TIMESTAMP());    
+VALUES (5, 'Arbitrage Detect', 2 , 1, 'Arbitrage', 'Soccer', 180, 5000, 1, CURRENT_TIMESTAMP())
+	, (5, 'Arbitrage Detect', 2 , 1, 'Arbitrage', 'Soccer', 180, 1000, 0, CURRENT_TIMESTAMP());    
 
 UPDATE CTS_DataCenter.MatchMonitorRuleSetting
 SET RuleGroupDesc = 'Group Betting Detect'
