@@ -7,8 +7,9 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleFixedGame_Compl
 	,	IN ip_MaxSequenceID BIGINT UNSIGNED
 	, 	IN ip_MatchID		INT
     , 	IN ip_ScoreDiff		INT 
-    , 	IN ip_BettypeID		INT
+    , 	IN ip_BettypeID		INT    
     ,	IN ip_BetID			BIGINT
+    , 	IN ip_HDP			DECIMAL (8,4)
     ,	IN ip_Betteam		VARCHAR(10)
     , 	IN ip_TransGroup	JSON
 )

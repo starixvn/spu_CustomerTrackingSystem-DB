@@ -42,6 +42,7 @@ sp: BEGIN
 				,	mmt.ScoreDiff
 				,	mmt.BettypeID
                 ,	mmt.BetID
+                ,	mmt.HDP
                 ,	mmt.Betteam			
 		FROM CTS_DataCenter.MatchMonitorStagingFixedGameLive AS mmt
 		WHERE mmt.StatusRule02 = 0 AND mmt.IsMajorLeague = 0
@@ -61,6 +62,7 @@ sp: BEGIN
 				,	mmt.ScoreDiff
 				,	mmt.BettypeID
                 ,	mmt.BetID
+                ,	mmt.HDP
                 ,	mmt.Betteam
 		FROM CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mmt
 		WHERE mmt.StatusRule02 = 0 AND mmt.IsMajorLeague = 0
