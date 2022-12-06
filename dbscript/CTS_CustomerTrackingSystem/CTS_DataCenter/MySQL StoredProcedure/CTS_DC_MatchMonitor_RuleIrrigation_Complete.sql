@@ -152,12 +152,15 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleIrrigation_Comp
 					) js;    
 
 
+    SELECT'CTS_DC_MatchMonitor_RuleIrrigation_Complete2', current_timestamp(), (SELECT group_concat(TransID) FROM Temp_TransGroup);
+    
 	IF (ip_LiveIndicator = 0) THEN
 		#=======UPDATE GROUPID TO STAGING TABLE===================
 		UPDATE CTS_DataCenter.MatchMonitorStagingIrrigationNonLive AS mms
 			INNER JOIN Temp_TransGroup as tmpTg ON mms.TransID = tmpTg.TransID
 		SET mms.GroupID = tmpTg.GroupID;     
 	END IF;	
-    
+	INSERT INTO CTS_Log.CTSLog(LogName, InsertTime)
+    SELECT'CTS_DC_MatchMonitor_RuleIrrigation_Complete3', current_timestamp();
 END$$
 DELIMITER ;
