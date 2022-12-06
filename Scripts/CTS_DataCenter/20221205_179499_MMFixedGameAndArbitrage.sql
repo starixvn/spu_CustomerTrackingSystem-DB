@@ -15,7 +15,6 @@ USE CTS_DataCenter;
 UPDATE MatchMonitorDetails
 SET ScoreDiff = TotalScore
 WHERE ScoreDiff IS NULL;
-
 #============================
 ALTER TABLE MatchMonitor
 	ADD COLUMN IsMajorLeage BOOLEAN AFTER MatchID
@@ -45,6 +44,60 @@ RENAME MatchMonitorStagingHedgingLive;
 
 ALTER TABLE MatchMonitorStagingNonLive03
 RENAME MatchMonitorStagingHedgingNonLive;
+
+ALTER TABLE MatchMonitorStagingFixedGameLive
+	RENAME  COLUMN TotalScore TO ScoreDiff;
+
+ALTER TABLE MatchMonitorStagingFixedGameNonLive
+	RENAME  COLUMN TotalScore TO ScoreDiff;
+
+ALTER TABLE MatchMonitorStagingGroupBettingLive
+	RENAME  COLUMN TotalScore TO ScoreDiff;
+    
+ALTER TABLE MatchMonitorStagingGroupBettingNonLive
+	RENAME  COLUMN TotalScore TO ScoreDiff;
+
+ALTER TABLE MatchMonitorStagingHedgingLive
+	RENAME  COLUMN TotalScore TO ScoreDiff;
+
+ALTER TABLE MatchMonitorStagingHedgingNonLive
+	RENAME  COLUMN TotalScore TO ScoreDiff;
+
+ALTER TABLE MatchMonitorStagingIrrigationNonLive
+	RENAME  COLUMN TotalScore TO ScoreDiff;
+
+
+CREATE TABLE `MatchMonitorStagingArbitrageNonLive` (
+  `SequenceID` bigint unsigned NOT NULL,
+  `TransID` bigint unsigned NOT NULL,
+  `TransDate` datetime(3) DEFAULT NULL,
+  `MatchID` int DEFAULT NULL,
+  IsMajorLeague BOOLEAN,
+  `SportType` int DEFAULT NULL,
+  `ScoreDiff` int DEFAULT NULL,
+  `BettypeID` int DEFAULT NULL,
+  `BetID` bigint DEFAULT NULL,
+  HDP	DECIMAL(8,4),
+  `Betteam` varchar(10) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `CustID` bigint unsigned DEFAULT NULL,
+  `Stake` decimal(20,4) DEFAULT NULL,
+  `GroupID` int DEFAULT '0',
+  `LiveHomeScore` int DEFAULT NULL,
+  `LiveAwayScore` int DEFAULT NULL,
+  `EventDate` date DEFAULT NULL,
+  `KickOffTime` datetime DEFAULT NULL,
+  `EventStatus` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `HomeID` int DEFAULT NULL,
+  `AwayID` int DEFAULT NULL,
+  `LeagueID` int DEFAULT NULL,
+  `InsertTime` datetime(3) DEFAULT NULL,
+  `LeagueName` varchar(500) COLLATE utf8_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`SequenceID`),
+  KEY `IX_MatchMonitorStagingNonLive03_TransDate` (`TransDate`),
+  KEY `IX_MatchMonitorStagingNonLive03_GroupRule01` (`MatchID`,`ScoreDiff`,`BettypeID`,`BetID`,`GroupID`),
+  KEY `IX_MatchMonitorStagingNonLive03_TransID` (`TransID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8_unicode_ci;
+
 
 #======INITAIL============================================================
 
