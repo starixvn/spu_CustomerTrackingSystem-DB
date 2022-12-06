@@ -26,13 +26,13 @@ BEGIN
             -	20221021@Casey.Huynh: Fixed Clean Data Staging [Redmine ID: #179427]
             - 	202201021@Casey.Huynh: Seperate pool Staging [Redmine ID: #179439]
             - 	20221115@Casey.Huynh: Detect Irrgation Rule [Redmine ID: #179499]
+            - 	20221206@Casey.Huynh: Change Table Nane, ScoreDiff and add HDP [Redmine ID: #181205]
             
 		Param's Explanation (filtered by):		
 
 		Example:
 			CALL CTS_DataCenter.CTS_DC_MatchMonitor_Staging_Insert(0,'[{"SportType": 1,"SequenceID": 1003,"IsMajorLeague": 0,"TransID": 1003,"TransDate" : "2021-05-17 07:48:52.533","MatchID" : 43614953,"EventDate" : "2021-05-17 00:00:00","KickOffTime" : "2021-05-17 00:00:00","EventStatus" : "running","HomeID" : 953,"AwayID" : 113,"LeagueID" : 3,"Bettype" : 3, "BetID" : 0,  "LiveIndicator" : "1","CustID" : 12500792,"Stake" : 20,"Betteam" : "a", "Odds" : "0.1","LiveHomeScore" : 0,"LiveAwayScore" : 2,"LeagueName":"ABC League"}]');
-			CALL CTS_DataCenter.CTS_DC_MatchMonitor_Staging_Insert(0,'[{"SportType": 0,"SequenceID": 1004,"IsMajorLeague": 0,"TransID": 1004,"TransDate" : "2021-05-17 07:48:52.533","MatchID" : 43614953,"EventDate" : "2021-05-17 00:00:00","KickOffTime" : "2021-05-17 00:00:00","EventStatus" : "running","HomeID" : 953,"AwayID" : 113,"LeagueID" : 3,"Bettype" : 3, "BetID" : 0,  "LiveIndicator" : "1","CustID" : 12500792,"Stake" : 20,"Betteam" : "a", "Odds" : "0.1","LiveHomeScore" : 0,"LiveAwayScore" : 2,"LeagueName":"ABC League"}]');
-            
+		
 	*/    
     
     DECLARE lv_LastSequenceID BIGINT UNSIGNED DEFAULT 0;
@@ -47,7 +47,7 @@ BEGIN
 		,	TransDate		DATETIME(3) DEFAULT NULL
 		,	MatchID			INT DEFAULT NULL
 		,	SportType		INT DEFAULT NULL
-		,	TotalScore		INT DEFAULT NULL
+		,	ScoreDiff		INT DEFAULT NULL
 		,	BettypeID		INT DEFAULT NULL
 		,	BetID			BIGINT DEFAULT NULL
 		,	Betteam			VARCHAR(10)
@@ -65,10 +65,11 @@ BEGIN
 		,	LeagueID		INT DEFAULT NULL
 		,	LeagueName		VARCHAR(500) DEFAULT NULL
         ,	IsMajorLeague	BOOLEAN
+        ,	HDP				DECIMAL(8,4)
 		,	PRIMARY KEY (SequenceID)
 	) ENGINE=InnoDB;
 	
-    INSERT IGNORE INTO Temp_Staging(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, Odds, IsMajorLeague)
+    INSERT IGNORE INTO Temp_Staging(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, Odds, IsMajorLeague, HDP)
 		SELECT  js.SequenceID
 			,	js.TransID
 			,	js.TransDate
@@ -83,7 +84,7 @@ BEGIN
 			,	js.EventDate
 			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore END) AS LiveHomeScore
 			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveAwayScore END) AS LiveAwayScore
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore + js.LiveAwayScore END) AS TotalScore
+			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore - js.LiveAwayScore END) AS ScoreDiff
 			,	js.BettypeID
             ,	IFNULL(js.BetID,0)
 			,	js.CustID
@@ -91,6 +92,7 @@ BEGIN
             ,	js.Betteam
             ,	js.Odds
             ,	js.IsMajorLeague
+            ,	(js.Hdp1 - js.Hdp2) AS HDP
 		FROM JSON_TABLE(ip_TransList,
 					 "$[*]" COLUMNS(
 								SequenceID		BIGINT UNSIGNED PATH "$.SequenceID" 	
@@ -114,13 +116,15 @@ BEGIN
 							,	Betteam			VARCHAR(10)	PATH "$.Betteam"
                             ,	Odds			DECIMAL(10,2) PATH "$.Odds"
                             ,	IsMajorLeague	BOOLEAN	PATH "$.IsMajorLeague" 
+                            ,	Hdp1			DECIMAL(8,4) PATH "$.Hdp1" 
+                            ,	Hdp2			DECIMAL(8,4) PATH "$.Hdp2" 
 						)
 					) AS js;  
 		
     
     IF ip_LiveIndicator = 1 THEN 
 		#=====Staging: Group Betting(Soccer(1), Basketball(2), E-Sport(43)), Hedging(Basketball(2), E-Sport(43)), Arbitrage(Soccer(1), Basketball(2), E-Sport(43)) ================================
-		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
+		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingGroupBettingLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
 		SELECT	tmpSt.SequenceID
 			,	tmpSt.TransID
 			,	tmpSt.TransDate
@@ -135,7 +139,7 @@ BEGIN
 			,	tmpSt.EventDate
 			,	tmpSt.LiveHomeScore
 			,	tmpSt.LiveAwayScore
-			,	tmpSt.TotalScore
+			,	tmpSt.ScoreDiff
 			,	tmpSt.BettypeID
 			,	tmpSt.BetID
 			,	tmpSt.CustID
@@ -145,7 +149,7 @@ BEGIN
 		FROM Temp_Staging AS tmpSt;  
 
         #=====Staging Fixed Game Betting================================
-        INSERT IGNORE INTO CTS_DataCenter.MatchMonitorTransLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, Odds, IsMajorLeague, InsertTime)
+        INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingFixedGameLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, Odds, IsMajorLeague, HDP, InsertTime)
 		SELECT	tmpSt.SequenceID
 			,	tmpSt.TransID
 			,	tmpSt.TransDate
@@ -160,7 +164,7 @@ BEGIN
 			,	tmpSt.EventDate
 			,	tmpSt.LiveHomeScore
 			,	tmpSt.LiveAwayScore
-			,	tmpSt.TotalScore
+			,	tmpSt.ScoreDiff
 			,	tmpSt.BettypeID
 			,	tmpSt.BetID
 			,	tmpSt.CustID
@@ -168,12 +172,13 @@ BEGIN
 			,	tmpSt.Betteam
             ,	tmpSt.Odds
             ,	tmpSt.IsMajorLeague
+            ,	tmpSt.HDP
 			,	CURRENT_TIMESTAMP(3) AS InsertTime
 		FROM Temp_Staging AS tmpSt
 		WHERE tmpSt.IsMajorLeague = 0;
         
         #=====Staging Hedging Soccer================================
-		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingLive03(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
+		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingHedgingLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
 		SELECT	tmpSt.SequenceID
 			,	tmpSt.TransID
 			,	tmpSt.TransDate
@@ -188,7 +193,7 @@ BEGIN
 			,	tmpSt.EventDate
 			,	tmpSt.LiveHomeScore
 			,	tmpSt.LiveAwayScore
-			,	tmpSt.TotalScore
+			,	tmpSt.ScoreDiff
 			,	tmpSt.BettypeID
 			,	tmpSt.BetID
 			,	tmpSt.CustID
@@ -210,7 +215,7 @@ BEGIN
 		END IF;        
 	ELSE
     	#=====Staging: Group Betting(Soccer(1), Basketball(2), E-Sport(43)), Hedging(Basketball(2), E-Sport(43)), Arbitrage(Soccer(1), Basketball(2), E-Sport(43)) ================================
-		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
+		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingGroupBettingNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
 		SELECT	tmpSt.SequenceID
 			,	tmpSt.TransID
 			,	tmpSt.TransDate
@@ -225,7 +230,7 @@ BEGIN
 			,	tmpSt.EventDate
 			,	tmpSt.LiveHomeScore
 			,	tmpSt.LiveAwayScore
-			,	tmpSt.TotalScore
+			,	tmpSt.ScoreDiff
 			,	tmpSt.BettypeID
 			,	tmpSt.BetID
 			,	tmpSt.CustID
@@ -235,7 +240,7 @@ BEGIN
 		FROM Temp_Staging AS tmpSt;  
 		
         #=====Staging Fixed Game Betting================================
-        INSERT IGNORE INTO CTS_DataCenter.MatchMonitorTransNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, Odds, IsMajorLeague, InsertTime)
+        INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingFixedGameNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, Odds, IsMajorLeague, HDP, InsertTime)
 		SELECT	tmpSt.SequenceID
 			,	tmpSt.TransID
 			,	tmpSt.TransDate
@@ -250,7 +255,7 @@ BEGIN
 			,	tmpSt.EventDate
 			,	tmpSt.LiveHomeScore
 			,	tmpSt.LiveAwayScore
-			,	tmpSt.TotalScore
+			,	tmpSt.ScoreDiff
 			,	tmpSt.BettypeID
 			,	tmpSt.BetID
 			,	tmpSt.CustID
@@ -258,12 +263,13 @@ BEGIN
 			,	tmpSt.Betteam
             ,	tmpSt.Odds
             ,	tmpSt.IsMajorLeague
+            ,	tmpSt.HDP
 			,	CURRENT_TIMESTAMP(3) AS InsertTime
 		FROM Temp_Staging AS tmpSt
 		WHERE tmpSt.IsMajorLeague = 0;
         
         #=====Staging Hedging Soccer================================
-		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingNonLive03(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, TotalScore, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
+		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingHedgingNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
 		SELECT	tmpSt.SequenceID
 			,	tmpSt.TransID
 			,	tmpSt.TransDate
@@ -278,7 +284,7 @@ BEGIN
 			,	tmpSt.EventDate
 			,	tmpSt.LiveHomeScore
 			,	tmpSt.LiveAwayScore
-			,	tmpSt.TotalScore
+			,	tmpSt.ScoreDiff
 			,	tmpSt.BettypeID
 			,	tmpSt.BetID
 			,	tmpSt.CustID
@@ -304,7 +310,7 @@ BEGIN
 			,	tmpSt.EventDate
 			,	tmpSt.LiveHomeScore
 			,	tmpSt.LiveAwayScore
-			,	tmpSt.TotalScore
+			,	tmpSt.ScoreDiff
 			,	tmpSt.BettypeID
 			,	tmpSt.BetID
 			,	tmpSt.CustID
@@ -314,6 +320,34 @@ BEGIN
 			,	CURRENT_TIMESTAMP(3) AS InsertTime
 		FROM Temp_Staging AS tmpSt
 		WHERE tmpSt.SportType = 1;   
+
+		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingArbitrageNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, IsMajorLeague, HDP, InsertTime)
+		SELECT	tmpSt.SequenceID
+			,	tmpSt.TransID
+			,	tmpSt.TransDate
+			,	tmpSt.LeagueName
+			,	tmpSt.SportType
+			,	tmpSt.MatchID
+			,	tmpSt.HomeID
+			,	tmpSt.AwayID
+			,	tmpSt.EventStatus
+			,	tmpSt.KickOffTime
+			,	tmpSt.LeagueID
+			,	tmpSt.EventDate
+			,	tmpSt.LiveHomeScore
+			,	tmpSt.LiveAwayScore
+			,	tmpSt.ScoreDiff
+			,	tmpSt.BettypeID
+			,	tmpSt.BetID
+			,	tmpSt.CustID
+			,	tmpSt.Stake
+			,	tmpSt.Betteam
+            ,	tmpSt.IsMajorLeague
+            ,	tmpSt.HDP
+			,	CURRENT_TIMESTAMP(3) AS InsertTime
+		FROM Temp_Staging AS tmpSt
+		WHERE tmpSt.SportType = 1;   
+        
         
 		#=====UPDATE SYSTEM PARAMETER: THE LAST TRANS GET FROM MAINDB===============================
 		SELECT MAX(tmpSt.SequenceID)
