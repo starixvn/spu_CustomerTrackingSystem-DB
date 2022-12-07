@@ -49,7 +49,7 @@ CREATE TABLE [dbo].[CustomerClassification_Rule](
 	)
 ) ON [PRIMARY]
 
-CREATE CLUSTERED INDEX [IX_CustomerClassification_Rule_CurrentCategory_RuleGroupId] ON [dbo].[CustomerClassification_Rule]
+CREATE CLUSTERED INDEX [CIX_CustomerClassification_Rule_CurrentCategory_RuleGroupId] ON [dbo].[CustomerClassification_Rule]
 (
 	[CurrentCategory],
 	[RuleGroupId] ASC 
