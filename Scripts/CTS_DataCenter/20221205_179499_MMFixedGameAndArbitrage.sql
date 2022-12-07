@@ -37,14 +37,16 @@ ALTER TABLE MatchMonitorTransLive
 	,	Change COLUMN TotalScore  ScoreDiff INT
     ,	ADD COLUMN Hdp DECIMAL(8,4)
     ,	ADD COLUMN Hdp1 DECIMAL(8,4)
-    ,	ADD COLUMN Hdp2 DECIMAL(8,4);
-    
+    ,	ADD COLUMN Hdp2 DECIMAL(8,4)
+	,	DROP COLUMN StatusRule02;
+
 ALTER TABLE MatchMonitorTransNonLive
 	RENAME MatchMonitorStagingFixedGameNonLive
     ,	Change COLUMN TotalScore  ScoreDiff INT
     ,	ADD COLUMN Hdp DECIMAL(8,4)
     ,	ADD COLUMN Hdp1 DECIMAL(8,4)
-    ,	ADD COLUMN Hdp2 DECIMAL(8,4);
+    ,	ADD COLUMN Hdp2 DECIMAL(8,4)
+    ,	DROP COLUMN StatusRule02;
 
 ALTER TABLE MatchMonitorStagingLive03
 	RENAME MatchMonitorStagingHedgingLive
@@ -113,10 +115,10 @@ ALTER TABLE MatchMonitorRuleSetting
 , ADD PRIMARY KEY  PK_MatchMonitorRuleSetting(RuleGroupID,Reason,SportType,LeagueType);
 
 #=================Fixed Game==========================
-INSERT INTO CTS_DataCenter.MatchMonitorRuleSetting(RuleGroupID, RuleGroupDesc, Reason, SportType, ReasonName, SportName, TimeStep, HighStake, MinOdds, MaxOdds, LeagueType, ModifiedDate)
-VALUES (2, 'Fixed Game Detect', 3 , 1, 'Fixed Game', 'Soccer', 420, 500, 0.5, 2, 0, CURRENT_TIMESTAMP())
-	, (2, 'Fixed Game Detect', 3 , 2, 'Fixed Game', 'Basketball', 420, 500, 0.5, 2, 0,  CURRENT_TIMESTAMP())
-    , (2, 'Fixed Game Detect', 3 , 43, 'Fixed Game', 'E-Sports', 420, 500, 0.5, 2, 0,  CURRENT_TIMESTAMP());
+INSERT INTO CTS_DataCenter.MatchMonitorRuleSetting(RuleGroupID, RuleGroupDesc, Reason, SportType, ReasonName, SportName, TimeStep, HighStake, MinOdds, MaxOdds, OddsSpread, LeagueType, ModifiedDate)
+VALUES (2, 'Fixed Game Detect', 3 , 1, 'Fixed Game', 'Soccer', 420, 500, 0.5, 2, 10, 0, CURRENT_TIMESTAMP())
+	, (2, 'Fixed Game Detect', 3 , 2, 'Fixed Game', 'Basketball', 420, 500, 0.5, 2, 10, 0,  CURRENT_TIMESTAMP())
+    , (2, 'Fixed Game Detect', 3 , 43, 'Fixed Game', 'E-Sports', 420, 500, 0.5, 2, 10, 0,  CURRENT_TIMESTAMP());
     
 #=================Arbitrage==========================
 INSERT INTO CTS_DataCenter.MatchMonitorRuleSetting(RuleGroupID, RuleGroupDesc, Reason, SportType, ReasonName, SportName, TimeStep, TotalStake, LeagueType, ModifiedDate)
