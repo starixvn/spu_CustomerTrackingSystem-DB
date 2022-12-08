@@ -114,7 +114,7 @@ BEGIN;
 								WHEN DangerLevel IS NOT NULL THEN DangerLevel&15
 								ELSE 0 END)
 			,	a.Danger7 = (CASE 
-								WHEN DangerLevel IS NOT NULL THEN DangerLevel&240/16
+								WHEN DangerLevel IS NOT NULL THEN (DangerLevel&240)/16
 								ELSE 0 END)
 			,	a.IsLicensee = 1
 		FROM #tmpCustomers AS a
@@ -136,7 +136,7 @@ BEGIN;
 								WHEN DangerLevel IS NOT NULL THEN DangerLevel&15
 								ELSE 0 END)
 			,	a.Danger7 = (CASE 
-								WHEN DangerLevel IS NOT NULL THEN DangerLevel&240/16
+								WHEN DangerLevel IS NOT NULL THEN (DangerLevel&240)/16
 								ELSE 0 END)
 			,	a.IsLicensee = 0
 		FROM #tmpCustomers AS a
