@@ -203,7 +203,7 @@ sp:BEGIN
                 FROM Temp_GraphOrig
 				UNION ALL
                 SELECT 	grp.DestID       #CONCAT(CTE_Group.CurPath, ' -> ', grp.DestID)
-                    ,	CASE WHEN grp.DestID > CONS_RangeDevice  OR EXISTS (SELECT 1 FROM Temp_Cust AS cus WHERE cus.CTSCustID = grp.DestID) THEN CTE_Group.Transitive
+                    ,	CASE WHEN grp.DestID > CONS_RangeDevice OR CTE_Group.Transitive != 0 THEN CTE_Group.Transitive
 							 ELSE grp.DestID END AS Transitive
 					,   CASE WHEN  CTE_Group.AssociationType1 > 0 THEN CTE_Group.AssociationType1  
                              WHEN  CTE_Group.AssociationType1 = 0 AND  grp.DestID < CONS_RangeDevice THEN grp.AssociationType 
@@ -230,7 +230,7 @@ sp:BEGIN
 		INTO lv_AgentCTSCustIDs
 		FROM Temp_Recommend;
 		
-        CALL CTS_DataCenter.CTS_DC_AssociationDetection_GetEdgeByCust(lv_RecommendCTSCustID,lv_AgentCTSCustIDs,ip_HasDevice,ip_HasAI,ip_HasIP);
+        CALL CTS_DataCenter.CTS_DC_AssociationDetection_GetEdgeByCust(lv_RecommendCTSCustID,lv_AgentCTSCustIDs,1,0,0);
         
         INSERT INTO Temp_GraphOrig(OrigID, DestID, AssociationType)
 		SELECT 	OrigID
@@ -250,7 +250,7 @@ sp:BEGIN
 					FROM Temp_GraphOrig
 					UNION ALL
 					SELECT 	grp.DestID       #CONCAT(CTE_Group.CurPath, ' -> ', grp.DestID)
-						,	CASE WHEN grp.DestID > CONS_RangeDevice  OR EXISTS (SELECT 1 FROM Temp_Recommend AS cus WHERE cus.CTSCustID = grp.DestID) THEN CTE_Group.Transitive
+						,	CASE WHEN grp.DestID > CONS_RangeDevice  OR CTE_Group.Transitive != 0 THEN CTE_Group.Transitive
 								 ELSE grp.DestID END AS Transitive
 						,   CASE WHEN  CTE_Group.AssociationType1 > 0 THEN CTE_Group.AssociationType1  
 								 WHEN  CTE_Group.AssociationType1 = 0 AND  grp.DestID < CONS_RangeDevice THEN grp.AssociationType 
@@ -297,9 +297,10 @@ sp:BEGIN
 			LATERAL(SELECT 	tmp.Transitive
 						,	tmp.AssociationType1
 						,	tmp.AssociationType2
-					FROM Temp_Association AS tmp 
+					FROM Temp_AgentAssociation AS tmp 
 					WHERE tmp.CTSCustID = cus.CTSCustID
-						AND tmp.Transitive != 0
+						AND tmp.AssociationType1 != 0
+						AND tmp.AssociationType2 != 0
 					ORDER BY tmp.Transitive ASC
 						,	 tmp.AssociationType1 ASC
 						,	 tmp.AssociationType1 ASC
@@ -358,7 +359,8 @@ sp:BEGIN
                     ,	tmp.AssociationType2
 			    FROM Temp_Association AS tmp 
                 WHERE tmp.CTSCustID = cus.CTSCustID
-					AND tmp.Transitive != 0
+					AND tmp.AssociationType1 != 0
+					AND tmp.AssociationType2 != 0
 				ORDER BY tmp.Transitive ASC
 					,	 tmp.AssociationType1 ASC
                     ,	 tmp.AssociationType1 ASC
