@@ -137,11 +137,32 @@ WHERE RuleGroupID = 3;
 
 #========Parameter Batch Size
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
-VALUES	(126,'MatchMonitorFixedGame_RuleLive_BatchSize','MatchMonitorFixedGame_RuleLive_BatchSize','INT','5000')
-	,	(127,'MatchMonitorFixedGame_RuleNonLive_BatchSize','MatchMonitorFixedGame_RuleNonLive_BatchSize','INT','5000')
-    ,	(128,'MatchMonitorArbitrage_RuleNonLive_BatchSize','MatchMonitorArbitrage_RuleNonLive_BatchSize','INT','5000');
+VALUES	(126,'MatchMonitor_FixedGameLive_BatchSize',NULL,'INT','5000')
+	,	(127,'MatchMonitor_FixedGameNonLive_BatchSize',NULL,'INT','5000')
+     ,	(128,'MatchMonitor_ArbitrageNonLive_LastSequenceID','MatchMonitorStagingArbitrageNonLive.SequenceID','BIGINT UNSINGED','5000')
+    ,	(129,'MatchMonitor_ArbitrageNonLive_BatchSize',NULL,'INT','5000');
     
+#=====UPDATE NAME OF SYSTEM PARAMETER=============
+#=====Group betting===================================    
+UPDATE  CTS_DataCenter.SystemParameter SET ParameterName = 'MatchMonitor_GroupBettingLive_LastSequenceID', ParameterDesc = 'MatchMonitorStagingGroupBettingLive.SequenceID' WHERE ParameterID = 47 ;
+UPDATE  CTS_DataCenter.SystemParameter SET ParameterName = 'MatchMonitor_GroupBettingNonLive_LastSequenceID', ParameterDesc = 'MatchMonitorStagingGroupBettingNonLive.SequenceID' WHERE ParameterID = 48 ;
+UPDATE  CTS_DataCenter.SystemParameter SET ParameterName = 'MatchMonitor_GroupBetting_BatchSize',  ParameterDesc = NULL WHERE ParameterID = 122 ;
+
+#=====FixGame===================================    
+UPDATE  CTS_DataCenter.SystemParameter SET ParameterName = 'MatchMonitor_FixedGameLive_LastSequenceID', ParameterDesc = 'MatchMonitorStagingFixedGameLive.SequenceID' WHERE ParameterID = 100 ;
+UPDATE  CTS_DataCenter.SystemParameter SET ParameterName = 'MatchMonitor_FixedGameNonLive_LastSequenceID', ParameterDesc = 'MatchMonitorStagingFixedGameNonLive.SequenceID' WHERE ParameterID = 101 ;
+UPDATE  CTS_DataCenter.SystemParameter SET ParameterName = 'MatchMonitor_FixedGameLive_BatchSize',  ParameterDesc = NULL WHERE ParameterID = 126 ;
+UPDATE  CTS_DataCenter.SystemParameter SET ParameterName = 'MatchMonitor_FixedGameNonLive_BatchSize',  ParameterDesc = NULL WHERE ParameterID = 127 ;
+
+#=====Heding===================================    
+UPDATE  CTS_DataCenter.SystemParameter SET ParameterName = 'MatchMonitor_HedgingLive_LastSequenceID', ParameterDesc = 'MatchMonitorStagingHedgingLive.SequenceID' WHERE ParameterID = 120 ;
+UPDATE  CTS_DataCenter.SystemParameter SET ParameterName = 'MatchMonitor_HedgingNonLive_LastSequenceID', ParameterDesc = 'MatchMonitorStagingHedgingNonLive.SequenceID' WHERE ParameterID = 121 ;
+UPDATE  CTS_DataCenter.SystemParameter SET ParameterName = 'MatchMonitor_Hedging_BatchSize',  ParameterDesc = NULL WHERE ParameterID = 123 ;
+
+    
+ INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)   
  SELECT * FROM CTS_DataCenter.MatchMonitorRuleSetting;   
+ SELECT * FROM SystemParameter WHERE ParameterName LIKE '%MatchMonitor%'
     /*
 DROP PROCEDURE CTS_DC_MatchMonitor_Rule01_Complete ;
 DROP PROCEDURE CTS_DC_MatchMonitor_Rule01_Get ;
