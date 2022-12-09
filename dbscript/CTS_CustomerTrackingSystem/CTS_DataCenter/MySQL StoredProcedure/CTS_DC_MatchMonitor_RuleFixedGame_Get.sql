@@ -24,8 +24,15 @@ sp: BEGIN
 		Example:
 			CALL  CTS_DC_MatchMonitor_RuleFixedGame_Get(@ip_LiveIndicator:=1,@op_MaxSequenceID); SELECT @ip_LiveIndicator,  @op_MaxSequenceID;
 			
-	*/   
-	DECLARE lv_LastSequenceID BIGINT UNSIGNED;
+	*/  
+	DECLARE CONST_RULE_GROUPID_FIXEDGAME INT DEFAULT 2;
+    DECLARE lv_LastSequenceID BIGINT UNSIGNED;   
+    DECLARE lv_BatchSize INT UNSIGNED;
+    
+    #============DEBUG LOG========================
+    DECLARE SPName VARCHAR(200) DEFAULT 'CTS_DC_MatchMonitor_RuleFixedGame_Get';
+	INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
+    SELECT SPName, current_timestamp(),ip_LiveIndicator;   
     
 	IF ip_LiveIndicator = 1 THEN
 		
@@ -34,19 +41,25 @@ sp: BEGIN
         FROM CTS_DataCenter.SystemParameter AS s
         WHERE s.ParameterID = 100;
         
-        SELECT MAX(mmt.SequenceID)
+		SELECT s.ParameterValue
+        INTO lv_BatchSize
+        FROM CTS_DataCenter.SystemParameter AS s
+        WHERE s.ParameterID = 126;        
+
+        SELECT MAX(mms.SequenceID)
         INTO op_MaxSequenceID
-        FROM CTS_DataCenter.MatchMonitorStagingFixedGameLive AS mmt;
+        FROM CTS_DataCenter.MatchMonitorStagingFixedGameLive AS mms
+        WHERE mms.SequenceID > lv_LastSequenceID
+        LIMIT lv_BatchSize;
         
         SELECT DISTINCT mmt.MatchID
-				,	mmt.ScoreDiff
-				,	mmt.BettypeID
-                ,	mmt.BetID
-                ,	mmt.HDP
-                ,	mmt.Betteam			
+			,	mmt.ScoreDiff
+			,	mmt.BettypeID
+			,	mmt.BetID
+			,	mmt.HDP
+			,	mmt.Betteam			
 		FROM CTS_DataCenter.MatchMonitorStagingFixedGameLive AS mmt
-		WHERE mmt.StatusRule02 = 0 AND mmt.IsMajorLeague = 0
-			AND mmt.SequenceID > lv_LastSequenceID;       
+		WHERE mmt.SequenceID > lv_LastSequenceID AND mmt.SequenceID <= op_MaxSequenceID;          
 
 	ELSE
 		SELECT s.ParameterValue
@@ -54,20 +67,25 @@ sp: BEGIN
         FROM CTS_DataCenter.SystemParameter AS s
         WHERE s.ParameterID = 101;
         
-		SELECT MAX(mmt.SequenceID)
+		SELECT s.ParameterValue
+        INTO lv_BatchSize
+        FROM CTS_DataCenter.SystemParameter AS s
+        WHERE s.ParameterID = 127;        
+                  
+        SELECT MAX(mms.SequenceID)
         INTO op_MaxSequenceID
-        FROM CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mmt;
+        FROM CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mms
+        WHERE mms.SequenceID > lv_LastSequenceID
+        LIMIT lv_BatchSize;
         
         SELECT DISTINCT mmt.MatchID
-				,	mmt.ScoreDiff
-				,	mmt.BettypeID
-                ,	mmt.BetID
-                ,	mmt.HDP
-                ,	mmt.Betteam
+			,	mmt.ScoreDiff
+			,	mmt.BettypeID
+			,	mmt.BetID
+			,	mmt.HDP
+			,	mmt.Betteam			
 		FROM CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mmt
-		WHERE mmt.StatusRule02 = 0 AND mmt.IsMajorLeague = 0
-			AND mmt.SequenceID > lv_LastSequenceID;       
-        
+		WHERE mmt.SequenceID > lv_LastSequenceID AND mmt.SequenceID <= op_MaxSequenceID;   
 	END IF;
 
 END$$

@@ -45,40 +45,41 @@ BEGIN
     DECLARE lv_Rule_FixedGame_MaxOdds	DECIMAL(10,2);
     
 	#============DEBUG LOG========================
+    DECLARE SPName VARCHAR(200) DEFAULT 'CTS_DC_MatchMonitor_Staging_Insert';
 	INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText, JsonString1)
-    SELECT'CTS_DC_MatchMonitor_Staging_Insert_xtest1', current_timestamp(),ip_LiveIndicator,ip_TransList;   
+    SELECT SPName, current_timestamp(),ip_LiveIndicator,ip_TransList;   
      ===================LOG=======================================*/
     #==========================================================================
     DROP TEMPORARY TABLE IF EXISTS Temp_Staging;
 	CREATE TEMPORARY TABLE Temp_Staging(
 			SequenceID		BIGINT UNSIGNED NOT NULL
+		,	SportType		INT NOT NULL
+        ,	IsMajorLeague	BOOLEAN NOT NULL
+        ,	Odds			DECIMAL(10,4) NOT NULL
 		,	TransID			BIGINT UNSIGNED NOT NULL
-		,	TransDate		DATETIME(3) DEFAULT NULL
-		,	MatchID			INT DEFAULT NULL
-		,	SportType		INT DEFAULT NULL
-		,	ScoreDiff		INT DEFAULT NULL
-		,	BettypeID		INT DEFAULT NULL
-		,	BetID			BIGINT DEFAULT NULL
-		,	Betteam			VARCHAR(10)
-        ,	Odds			DECIMAL(10,4) DEFAULT NULL
-		,	CustID			BIGINT UNSIGNED DEFAULT NULL
-		,	Stake			DECIMAL(20,4) DEFAULT NULL
+		,	TransDate		DATETIME(3) NULL
+		,	MatchID			INT NULL		
+		,	ScoreDiff		INT NULL
+		,	BettypeID		INT NULL
+		,	BetID			BIGINT NULL
+		,	Betteam			VARCHAR(10) NULL        
+		,	CustID			BIGINT UNSIGNED NULL
+		,	Stake			DECIMAL(20,4) NULL
 		,	GroupID			INT DEFAULT '0'
-		,	LiveHomeScore	INT DEFAULT NULL
-		,	LiveAwayScore	INT DEFAULT NULL
-		,	EventDate		DATE DEFAULT NULL
-		,	KickOffTime		DATETIME DEFAULT NULL
-		,	EventStatus		VARCHAR(50)DEFAULT NULL
-		,	HomeID			INT DEFAULT NULL
-		,	AwayID			INT DEFAULT NULL
-		,	LeagueID		INT DEFAULT NULL
-		,	LeagueName		VARCHAR(500) DEFAULT NULL
-        ,	IsMajorLeague	BOOLEAN
-        ,	HDP				DECIMAL(8,4)
-        ,	Hdp1			DECIMAL(8,4)
-        ,	Hdp2			DECIMAL(8,4)
-		,	PRIMARY KEY (SequenceID)
-        ,	INDEX IX_SportType(SportType, IsMajorLeague)
+		,	LiveHomeScore	INT NULL
+		,	LiveAwayScore	INT NULL
+		,	EventDate		DATE NULL
+		,	KickOffTime		DATETIME NULL
+		,	EventStatus		VARCHAR(50) NULL
+		,	HomeID			INT NULL
+		,	AwayID			INT NULL
+		,	LeagueID		INT NULL
+		,	LeagueName		VARCHAR(500) NULL        
+        ,	HDP				DECIMAL(8,4) NULL
+        ,	Hdp1			DECIMAL(8,4) NULL
+        ,	Hdp2			DECIMAL(8,4) NULL
+		,	PRIMARY KEY (SportType, IsMajorLeague, Odds, SequenceID)
+   #     ,	INDEX IX_SportType(SportType, IsMajorLeague, Odds)
 	) ENGINE=InnoDB;
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorRuleSetting;
@@ -158,6 +159,7 @@ BEGIN
     	
     IF ip_LiveIndicator = 1 THEN 
 		#=====Staging: Group Betting(Soccer(1), Basketball(2), E-Sport(43)), Hedging(Basketball(2), E-Sport(43)), Arbitrage(Soccer(1), Basketball(2), E-Sport(43)) ================================
+		#=====GROUP BETTING===================
 		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingGroupBettingLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, Odds, IsMajorLeague, Hdp1, Hdp2, HDP, InsertTime)
 		SELECT	tmpSt.SequenceID
 			,	tmpSt.TransID
@@ -221,7 +223,7 @@ BEGIN
 			INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_FIXEDGAME
 						AND tmpMst.SportType = tmpSt.SportType AND (tmpMst.LeagueType = 2 OR (tmpMst.LeagueType = tmpSt.IsMajorLeague))
                         AND tmpSt.Odds BETWEEN tmpMst.MinOdds AND tmpMst.MaxOdds;
-        
+
         #=====Staging Hedging Soccer================================
 		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingHedgingLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
 		SELECT	tmpSt.SequenceID
@@ -260,9 +262,22 @@ BEGIN
 			WHERE sys.ParameterID = 20;
 		END IF;        
 	ELSE
-		
+
     	#=====Staging: Group Betting(Soccer(1), Basketball(2), E-Sport(43)), Hedging(Basketball(2), E-Sport(43)), Arbitrage(Soccer(1), Basketball(2), E-Sport(43)) ================================
-		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingGroupBettingNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam,	Odds, IsMajorLeague, Hdp1, Hdp2, HDP, InsertTime)
+		
+        #=====GROUP BETTING===================
+        DROP TEMPORARY TABLE IF Exists Temp_RuleGroupBetting;
+        CREATE TEMPORARY TABLE Temp_RuleGroupBetting
+        (
+			SportType INT PRIMARY KEY
+        );
+        
+        INSERT INTO Temp_RuleGroupBetting(SportType)
+        SELECT DISTINCT SportType 
+        FROM CTS_DataCenter.MatchMonitorRuleSetting  AS mst
+        WHERE mst.RuleGroupID = CONST_RULE_GROUPID_GROUPBETTING AND mst.RuleStatus = 1;
+        
+        INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingGroupBettingNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam,	Odds, IsMajorLeague, Hdp1, Hdp2, HDP, InsertTime)
 		SELECT	tmpSt.SequenceID
 			,	tmpSt.TransID
 			,	tmpSt.TransDate
@@ -290,10 +305,30 @@ BEGIN
             ,	tmpSt.HDP
 			,	CURRENT_TIMESTAMP(3) AS InsertTime
 		FROM Temp_Staging AS tmpSt
-			INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_GROUPBETTING
-						AND tmpMst.SportType = tmpSt.SportType AND (tmpMst.LeagueType = 2 OR (tmpMst.LeagueType = tmpSt.IsMajorLeague));   
+			INNER JOIN Temp_RuleGroupBetting AS tmpMst ON tmpMst.SportType = tmpSt.SportType;   
 
         #=====Staging Fixed Game Betting================================
+        
+        #=====FIXED GAME===================
+        DROP TEMPORARY TABLE IF Exists Temp_RuleFixedGame;
+        CREATE TEMPORARY TABLE Temp_RuleFixedGame
+        (
+				SportType 	INT
+            ,	LeagueType 	TINYINT
+            ,	MinOdds 	DECIMAL(10,4)
+            ,	MaxOdds 	DECIMAL(10,4)
+            
+            ,	PRIMARY KEY (SportType, LeagueType, MinOdds, MaxOdds)
+        );
+        
+        INSERT INTO Temp_RuleFixedGame(SportType, LeagueType, MinOdds, MaxOdds)
+        SELECT	mst.SportType
+			,	mst.LeagueType
+            ,	mst.MinOdds
+            ,	mst.MaxOdds
+        FROM CTS_DataCenter.MatchMonitorRuleSetting  AS mst
+        WHERE mst.RuleGroupID = CONST_RULE_GROUPID_FIXEDGAME AND mst.RuleStatus = 1;
+        
         INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingFixedGameNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, Odds, IsMajorLeague, Hdp1, Hdp2, HDP, InsertTime)
 		SELECT	tmpSt.SequenceID
 			,	tmpSt.TransID
@@ -322,11 +357,21 @@ BEGIN
             ,	tmpSt.HDP
 			,	CURRENT_TIMESTAMP(3) AS InsertTime
 		FROM Temp_Staging AS tmpSt
-			INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_FIXEDGAME
-				AND tmpMst.SportType = tmpSt.SportType AND (tmpMst.LeagueType = 2 OR (tmpMst.LeagueType = tmpSt.IsMajorLeague))
+			INNER JOIN Temp_RuleFixedGame AS tmpMst ON tmpMst.SportType = tmpSt.SportType AND tmpMst.LeagueType = tmpSt.IsMajorLeague
 				AND tmpSt.Odds BETWEEN tmpMst.MinOdds AND tmpMst.MaxOdds;
+
+         #=====GROUP BETTING===================
+        DROP TEMPORARY TABLE IF Exists Temp_RuleHedging;
+        CREATE TEMPORARY TABLE Temp_RuleHedging
+        (
+			SportType INT PRIMARY KEY
+        );
         
-        #=====Staging Hedging Soccer================================
+        INSERT INTO Temp_RuleHedging(SportType)
+        SELECT DISTINCT SportType 
+        FROM CTS_DataCenter.MatchMonitorRuleSetting  AS mst
+        WHERE mst.RuleGroupID = CONST_RULE_GROUPID_HEDGING AND mst.RuleStatus = 1;        
+
 		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingHedgingNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
 		SELECT	tmpSt.SequenceID
 			,	tmpSt.TransID
@@ -350,10 +395,20 @@ BEGIN
 			,	tmpSt.Betteam
 			,	CURRENT_TIMESTAMP(3) AS InsertTime
 		FROM Temp_Staging AS tmpSt
-			INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_HEDGING
-				AND tmpMst.SportType = tmpSt.SportType AND (tmpMst.LeagueType = 2 OR (tmpMst.LeagueType = tmpSt.IsMajorLeague));   
-        
+			INNER JOIN Temp_RuleHedging AS tmpMst ON  tmpMst.SportType = tmpSt.SportType;   
+
         #=====Staging - Irrigation - Soccer================================
+		DROP TEMPORARY TABLE IF Exists Temp_RuleIrrigation;
+        CREATE TEMPORARY TABLE Temp_RuleIrrigation
+        (
+			SportType INT PRIMARY KEY
+        );
+        
+        INSERT INTO Temp_RuleIrrigation(SportType)
+        SELECT DISTINCT SportType 
+        FROM CTS_DataCenter.MatchMonitorRuleSetting  AS mst
+        WHERE mst.RuleGroupID = CONST_RULE_GROUPID_IRRIGATION AND mst.RuleStatus = 1;         
+
 		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingIrrigationNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, Odds, InsertTime)
 		SELECT	tmpSt.SequenceID
 			,	tmpSt.TransID
@@ -378,9 +433,24 @@ BEGIN
             ,	tmpSt.Odds
 			,	CURRENT_TIMESTAMP(3) AS InsertTime
 		FROM Temp_Staging AS tmpSt
-			INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_IRRIGATION
-				AND tmpMst.SportType = tmpSt.SportType AND (tmpMst.LeagueType = 2 OR (tmpMst.LeagueType = tmpSt.IsMajorLeague));   
-
+			INNER JOIN Temp_RuleIrrigation AS tmpMst ON  tmpMst.SportType = tmpSt.SportType;   
+		
+        #=====Staging - Arbitrage - Soccer================================
+		DROP TEMPORARY TABLE IF Exists Temp_RuleArbitrage;
+        CREATE TEMPORARY TABLE Temp_RuleArbitrage
+        (
+				SportType 	INT 
+            ,	LeagueType 	TINYINT
+            
+			,	PRIMARY KEY (SportType,LeagueType)            
+        );
+        
+        INSERT INTO Temp_RuleArbitrage(SportType, LeagueType)
+        SELECT DISTINCT	mst.SportType 
+			,	mst.LeagueType
+        FROM CTS_DataCenter.MatchMonitorRuleSetting  AS mst
+        WHERE mst.RuleGroupID = CONST_RULE_GROUPID_ARBITRAGE AND mst.RuleStatus = 1;    
+        
 		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingArbitrageNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, IsMajorLeague, Hdp1, Hdp2, HDP, InsertTime)
 		SELECT	tmpSt.SequenceID
 			,	tmpSt.TransID
@@ -409,8 +479,8 @@ BEGIN
 			,	CURRENT_TIMESTAMP(3) AS InsertTime
 		FROM Temp_Staging AS tmpSt
 			INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_ARBITRAGE
-				AND tmpMst.SportType = tmpSt.SportType AND (tmpMst.LeagueType = 2 OR (tmpMst.LeagueType = tmpSt.IsMajorLeague));        
-        
+				AND tmpMst.SportType = tmpSt.SportType AND tmpMst.LeagueType = tmpSt.IsMajorLeague;        
+
 		#=====UPDATE SYSTEM PARAMETER: THE LAST TRANS GET FROM MAINDB===============================
 		SELECT MAX(tmpSt.SequenceID)
 		INTO lv_LastSequenceID

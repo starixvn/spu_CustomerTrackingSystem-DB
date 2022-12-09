@@ -25,7 +25,7 @@ ALTER TABLE MatchMonitorStagingLive
     
 ALTER TABLE MatchMonitorStagingNonLive
 	RENAME MatchMonitorStagingGroupBettingNonLive
-	,	RENAME COLUMN TotalScore TO ScoreDiff
+	,	RENAME COLUMN TotalScore TO ScoreDiff5
     ,	ADD COLUMN IsMajorLeague BOOLEAN
     ,	ADD COLUMN Odds DECIMAL(10,4)
     ,	ADD COLUMN Hdp DECIMAL(8,4)
@@ -107,18 +107,20 @@ CREATE TABLE MatchMonitorStagingArbitrageNonLive (
 
 #========Move Parameter From System Parameter To MatchMonitorRuleSetting
 ALTER TABLE MatchMonitorRuleSetting
-  ADD COLUMN HighStakePercent DECIMAL(6,2) AFTER HighStake
-, ADD COLUMN MinOdds DECIMAL(10,4) AFTER HighStakePercent
-, ADD COLUMN MaxOdds DECIMAL(10,4) AFTER MinOdds 
-, ADD COLUMN LeagueType TINYINT DEFAULT 2 COMMENT '0: Others League, 1: Major League, 2: Any League'  AFTER SportType 
-, DROP PRIMARY KEY 
-, ADD PRIMARY KEY  PK_MatchMonitorRuleSetting(RuleGroupID,Reason,SportType,LeagueType);
+	ADD COLUMN RuleStatus INT DEFAULT 1 COMMENT '1:Active, 0:Inactive' AFTER RuleGroupID 
+,	ADD COLUMN TotalTicket INT AFTER TotalStake
+,	ADD COLUMN HighStakeTicketPercent DECIMAL(6,2) AFTER HighStake
+,	ADD COLUMN MinOdds DECIMAL(10,4) AFTER HighStakeTicketPercent
+,	ADD COLUMN MaxOdds DECIMAL(10,4) AFTER MinOdds 
+,	ADD COLUMN LeagueType TINYINT DEFAULT 2 COMMENT '0: Others League, 1: Major League, 2: Any League'  AFTER SportType 
+,	DROP PRIMARY KEY 
+,	ADD PRIMARY KEY  PK_MatchMonitorRuleSetting(RuleGroupID,Reason,SportType,LeagueType);
 
 #=================Fixed Game==========================
-INSERT INTO CTS_DataCenter.MatchMonitorRuleSetting(RuleGroupID, RuleGroupDesc, Reason, SportType, ReasonName, SportName, TimeStep, HighStake, MinOdds, MaxOdds, OddsSpread, LeagueType, ModifiedDate)
-VALUES (2, 'Fixed Game Detect', 3 , 1, 'Fixed Game', 'Soccer', 420, 500, 0.5, 2, 10, 0, CURRENT_TIMESTAMP())
-	, (2, 'Fixed Game Detect', 3 , 2, 'Fixed Game', 'Basketball', 420, 500, 0.5, 2, 10, 0,  CURRENT_TIMESTAMP())
-    , (2, 'Fixed Game Detect', 3 , 43, 'Fixed Game', 'E-Sports', 420, 500, 0.5, 2, 10, 0,  CURRENT_TIMESTAMP());
+INSERT INTO CTS_DataCenter.MatchMonitorRuleSetting(RuleGroupID, RuleGroupDesc, Reason, SportType, ReasonName, SportName, TotalTicket, TimeStep, HighStake, HighStakeTicketPercent, MinOdds, MaxOdds, OddsSpread, LeagueType, ModifiedDate)
+VALUES (2, 'Fixed Game Detect', 3 , 1, 'Fixed Game', 'Soccer', 40, 420, 500, 0.35, 0.5, 2, 10, 0, CURRENT_TIMESTAMP())
+	, (2, 'Fixed Game Detect', 3 , 2, 'Fixed Game', 'Basketball', 40, 420, 500, 0.35, 0.5, 2, 10, 0,  CURRENT_TIMESTAMP())
+    , (2, 'Fixed Game Detect', 3 , 43, 'Fixed Game', 'E-Sports', 40, 420, 500, 0.35, 0.5, 2, 10, 0,  CURRENT_TIMESTAMP());
     
 #=================Arbitrage==========================
 INSERT INTO CTS_DataCenter.MatchMonitorRuleSetting(RuleGroupID, RuleGroupDesc, Reason, SportType, ReasonName, SportName, TimeStep, TotalStake, LeagueType, ModifiedDate)
