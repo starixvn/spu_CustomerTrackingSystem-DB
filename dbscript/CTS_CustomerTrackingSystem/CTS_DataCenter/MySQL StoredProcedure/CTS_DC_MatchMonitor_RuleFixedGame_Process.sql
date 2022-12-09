@@ -11,7 +11,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleFixedGame_Proce
     ,	IN ip_BetID				BIGINT
     ,	IN ip_HDP				DECIMAL (8,4)
     ,	IN ip_Betteam			VARCHAR(50)
-)
+)   
     SQL SECURITY INVOKER
 sp: BEGIN
 		/*
@@ -49,6 +49,12 @@ sp: BEGIN
     DECLARE	lv_Rule_OddsSpread				SMALLINT;
     DECLARE	lv_Rule_Reason					TINYINT;
 	
+    #============DEBUG LOG============================================================
+    DECLARE SPName VARCHAR(200) DEFAULT 'CTS_DC_MatchMonitor_RuleFixedGame_Process';
+	INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
+    SELECT SPName, CURRENT_TIMESTAMP(),CONCAT('ip_LiveIndicator:',ip_LiveIndicator,',ip_MaxSequenceID:',ip_MaxSequenceID
+		,',ip_MatchID:',ip_MatchID,',ip_ScoreDiff:',ip_ScoreDiff,',ip_BettypeID:',',ip_BetID:',ip_BetID,',ip_HDP:',ip_HDP,',ip_Betteam:',ip_Betteam); 
+    #================================================================================
     
     DROP TEMPORARY TABLE IF EXISTS Temp_FixedTransRange;
     CREATE TEMPORARY TABLE Temp_FixedTransRange(
@@ -56,16 +62,11 @@ sp: BEGIN
         ,	MaxTransID	BIGINT	UNSIGNED
         
         ,	PRIMARY KEY Temp_FixedTransRange(MinTransID,MaxTransID)
-	);
-	
+	);   
+    
     #===GET RULE FROM SystemParameter=====
     
     IF (ip_LiveIndicator = 1) THEN
-      
-		SELECT MAX(TransDate)
-		INTO lv_MaxTransDate
-		FROM CTS_DataCenter.MatchMonitorStagingFixedGameLive AS mmt
-		WHERE mmt.SequenceID = ip_MaxSequenceID;   
         
         SELECT s.ParameterValue
         INTO lv_LastSequenceID
@@ -81,7 +82,7 @@ sp: BEGIN
 		SELECT mst.TimeStep, mst.TotalTicket, mst.HighStake, mst.HighStakeTicketPercent, mst.OddsSpread, mst.Reason
         INTO lv_Rule_TimeStep, lv_Rule_TotalTicket, lv_Rule_HighStake, lv_Rule_HighStakeTicketPercent, lv_Rule_OddsSpread, lv_Rule_Reason  
         FROM CTS_DataCenter.MatchMonitorRuleSetting AS mst
-        WHERE mst.SportType = lv_SportType AND  mst.LeagueType = lv_IsMajorLeague AND mst.RuleGroupID = CONST_RULE_GROUPID_FIXEDGAME;    
+        WHERE mst.SportType = lv_SportType AND  mst.LeagueType = lv_IsMajorLeague AND mst.RuleGroupID = CONST_RULE_GROUPID_FIXEDGAME AND mst.RuleStatus = 1;     
         
         SELECT TIMESTAMPADD(SECOND, lv_Rule_TimeStep, TransDate)
         INTO lv_FromTransDate
@@ -119,11 +120,6 @@ sp: BEGIN
 	END IF;
  
     IF (ip_LiveIndicator = 0) THEN
-      
-		SELECT MAX(TransDate)
-		INTO lv_MaxTransDate
-		FROM CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mmt
-		WHERE mmt.SequenceID = ip_MaxSequenceID;   
         
         SELECT s.ParameterValue
         INTO lv_LastSequenceID
@@ -139,7 +135,7 @@ sp: BEGIN
 		SELECT mst.TimeStep, mst.TotalTicket, mst.HighStake, mst.HighStakeTicketPercent, mst.OddsSpread, mst.Reason
         INTO lv_Rule_TimeStep, lv_Rule_TotalTicket, lv_Rule_HighStake, lv_Rule_HighStakeTicketPercent, lv_Rule_OddsSpread, lv_Rule_Reason  
         FROM CTS_DataCenter.MatchMonitorRuleSetting AS mst
-        WHERE mst.SportType = lv_SportType AND  mst.LeagueType = lv_IsMajorLeague AND mst.RuleGroupID = CONST_RULE_GROUPID_FIXEDGAME;    
+        WHERE mst.SportType = lv_SportType AND  mst.LeagueType = lv_IsMajorLeague AND mst.RuleGroupID = CONST_RULE_GROUPID_FIXEDGAME AND mst.RuleStatus = 1;    
         
         SELECT TIMESTAMPADD(SECOND, lv_Rule_TimeStep, TransDate)
         INTO lv_FromTransDate
@@ -171,7 +167,7 @@ sp: BEGIN
 			,	GROUP_CONCAT(DISTINCT TransID) AS TransIDList
             ,	GROUP_CONCAT(DISTINCT CustID) AS CustIDList
         FROM CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mmt
-		WHERE  mmt.MatchID = ip_MatchID AND mmt.ScoreDiff = ip_ScoreDiff AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam
+		WHERE  mmt.MatchID = ip_MatchID AND mmt.ScoreDiff = ip_ScoreDiff AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam AND mmt.Hdp = ip_HDP
 				AND EXISTS (SELECT 1 FROM Temp_FixedTransRange AS tmp WHERE mmt.TransID BETWEEN tmp.MinTransID AND MaxTransID);	
  
 	END IF;

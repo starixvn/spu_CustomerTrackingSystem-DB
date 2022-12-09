@@ -85,7 +85,8 @@ sp: BEGIN
 			,	mmt.HDP
 			,	mmt.Betteam			
 		FROM CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mmt
-		WHERE mmt.SequenceID > lv_LastSequenceID AND mmt.SequenceID <= op_MaxSequenceID;   
+		WHERE mmt.SequenceID > lv_LastSequenceID AND mmt.SequenceID <= op_MaxSequenceID;  
+        
 	END IF;
 
 END$$

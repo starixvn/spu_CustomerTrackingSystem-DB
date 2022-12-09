@@ -4,7 +4,7 @@ DELIMITER $$
 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleFixedGame_StagingClean`(
 		IN ip_LiveIndicator	BOOLEAN
-	,	IN ip_SequenceID	BIGINT UNSIGNED
+	,	IN ip_MaxSequenceID	BIGINT UNSIGNED
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -24,44 +24,53 @@ BEGIN
 		Example:
 			
 	*/
+	DECLARE	CONST_RULE_GROUPID_FIXEDGAME TINYINT DEFAULT 2;
+    
+    DECLARE	lv_Rule_TimeStep 		INT;   
+    DECLARE	lv_ClearTransDate 		DATETIME; 
+    
+	#============DEBUG LOG============================================================
+    DECLARE SPName VARCHAR(200) DEFAULT 'CTS_DC_MatchMonitor_RuleFixedGame_StagingClean';
+	INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
+    SELECT SPName, CURRENT_TIMESTAMP(),CONCAT('ip_LiveIndicator:',ip_LiveIndicator,',ip_MaxSequenceID:',ip_MaxSequenceID); 
+    #================================================================================
+    
+    SELECT MAX(mst.TimeStep)
+	INTO lv_Rule_TimeStep 
+	FROM CTS_DataCenter.MatchMonitorRuleSetting AS mst
+	WHERE mst.RuleGroupID = CONST_RULE_GROUPID_FIXEDGAME AND mst.RuleStatus = 1;  
 	
-    DECLARE	lv_LastSequenceID 		BIGINT;    
-    	
     #======Clean Staging=================================================
-    IF (ip_LiveIndicator = 1) THEN		
+    IF (ip_LiveIndicator = 1) THEN
 		
-		SELECT  MAX(mmt.SequenceID)
-		INTO 	lv_LastSequenceID
-		FROM	CTS_DataCenter.MatchMonitorTransLive AS mmt
-		WHERE	mmt.SequenceID < ip_SequenceID AND StatusRule02 = 1; 		
-        
-        IF lv_LastSequenceID > 0 THEN	
-			DELETE 	mmt
-			FROM	CTS_DataCenter.MatchMonitorTransLive AS mmt
-			WHERE	mmt.SequenceID <= lv_LastSequenceID;
-            
-			UPDATE 	CTS_DataCenter.SystemParameter AS sys
-			SET 	sys.ParameterValue = lv_LastSequenceID
-			WHERE 	sys.ParameterID = 100;
-		END IF;
+        SELECT  TIMESTAMPADD(SECOND,-lv_Rule_TimeStep, TransDate)
+		INTO 	lv_ClearTransDate
+		FROM	CTS_DataCenter.MatchMonitorStagingFixedGameLive AS mmt
+		WHERE	mmt.SequenceID = ip_MaxSequenceID; 	
+                    
+		DELETE 	mmt
+		FROM	CTS_DataCenter.MatchMonitorStagingFixedGameLive AS mmt
+		WHERE	mmt.SequenceID <= ip_MaxSequenceID AND mmt.TransDate < lv_ClearTransDate;
+		
+		UPDATE 	CTS_DataCenter.SystemParameter AS sys
+		SET 	sys.ParameterValue = ip_MaxSequenceID
+		WHERE 	sys.ParameterID = 100;
     END IF;    
     
 	IF (ip_LiveIndicator = 0) THEN		
 		
-		SELECT  MAX(mmt.SequenceID)
-		INTO 	lv_LastSequenceID
+		SELECT  TIMESTAMPADD(SECOND,-lv_Rule_TimeStep, TransDate)
+		INTO 	lv_ClearTransDate
 		FROM	CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mmt
-		WHERE	mmt.SequenceID < ip_SequenceID AND StatusRule02 = 1; 		
-        
-        IF lv_LastSequenceID > 0 THEN	
-			DELETE 	mmt
-			FROM	CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mmt
-			WHERE	mmt.SequenceID <= lv_LastSequenceID;
-            
-			UPDATE 	CTS_DataCenter.SystemParameter AS sys
-			SET 	sys.ParameterValue = lv_LastSequenceID
-			WHERE 	sys.ParameterID = 101;
-		END IF;
+		WHERE	mmt.SequenceID = ip_MaxSequenceID; 	   
+                    
+		DELETE 	mmt
+		FROM	CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mmt
+		WHERE	mmt.SequenceID <= ip_MaxSequenceID AND mmt.TransDate < lv_ClearTransDate;
+		
+		UPDATE 	CTS_DataCenter.SystemParameter AS sys
+		SET 	sys.ParameterValue = ip_MaxSequenceID
+		WHERE 	sys.ParameterID = 101;
     END IF;    
     
     

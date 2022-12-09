@@ -65,7 +65,7 @@ SET ScoreDiff = TotalScore
 WHERE ScoreDiff IS NULL;
 
 ALTER TABLE MatchMonitorDetails
-	ADD COLUMN IsMajorLeage BOOLEAN AFTER MatchID
+	ADD COLUMN IsMajorLeague BOOLEAN AFTER MatchID
 ,	ADD COLUMN HDP DECIMAL (8,4) AFTER BettypeID
 ,	DROP COLUMN TotalScore;
 #====================================================================
