@@ -21,11 +21,10 @@ ALTER TABLE MatchMonitorStagingLive
     ,	ADD COLUMN Hdp DECIMAL(8,4)
     ,	ADD COLUMN Hdp1 DECIMAL(8,4)
     ,	ADD COLUMN Hdp2 DECIMAL(8,4);
-    
-    
+
 ALTER TABLE MatchMonitorStagingNonLive
 	RENAME MatchMonitorStagingGroupBettingNonLive
-	,	RENAME COLUMN TotalScore TO ScoreDiff5
+	,	RENAME COLUMN TotalScore TO ScoreDiff
     ,	ADD COLUMN IsMajorLeague BOOLEAN
     ,	ADD COLUMN Odds DECIMAL(10,4)
     ,	ADD COLUMN Hdp DECIMAL(8,4)
@@ -67,7 +66,8 @@ WHERE ScoreDiff IS NULL;
 ALTER TABLE MatchMonitorDetails
 	ADD COLUMN IsMajorLeague BOOLEAN AFTER MatchID
 ,	ADD COLUMN HDP DECIMAL (8,4) AFTER BettypeID
-,	DROP COLUMN TotalScore;
+,	DROP COLUMN TotalScore
+,   DROP INDEX UK_MatchMonitorDetails_MatchRuleGroup;
 #====================================================================
 
 CREATE TABLE MatchMonitorStagingArbitrageNonLive (
@@ -157,10 +157,8 @@ UPDATE  CTS_DataCenter.SystemParameter SET ParameterName = 'MatchMonitor_FixedGa
 #=====Heding===================================    
 UPDATE  CTS_DataCenter.SystemParameter SET ParameterName = 'MatchMonitor_HedgingLive_LastSequenceID', ParameterDesc = 'MatchMonitorStagingHedgingLive.SequenceID' WHERE ParameterID = 120 ;
 UPDATE  CTS_DataCenter.SystemParameter SET ParameterName = 'MatchMonitor_HedgingNonLive_LastSequenceID', ParameterDesc = 'MatchMonitorStagingHedgingNonLive.SequenceID' WHERE ParameterID = 121 ;
-UPDATE  CTS_DataCenter.SystemParameter SET ParameterName = 'MatchMonitor_Hedging_BatchSize',  ParameterDesc = NULL WHERE ParameterID = 123 ;
+UPDATE  CTS_DataCenter.SystemParameter SET ParameterName = 'MatchMonitor_Hedging_BatchSize',  ParameterDesc = NULL WHERE ParameterID = 123 ;    
 
-    
- INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)   
  SELECT * FROM CTS_DataCenter.MatchMonitorRuleSetting;   
  SELECT * FROM SystemParameter WHERE ParameterName LIKE '%MatchMonitor%'
     /*

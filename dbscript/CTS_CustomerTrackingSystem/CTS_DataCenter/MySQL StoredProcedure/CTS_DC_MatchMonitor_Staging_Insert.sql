@@ -117,7 +117,7 @@ BEGIN
 			,	js.EventDate
 			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore END) AS LiveHomeScore
 			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveAwayScore END) AS LiveAwayScore
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore - js.LiveAwayScore END) AS ScoreDiff
+			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE (js.LiveHomeScore*10000) + js.LiveAwayScore END) AS ScoreDiff
 			,	js.BettypeID
             ,	IFNULL(js.BetID,0)
 			,	js.CustID

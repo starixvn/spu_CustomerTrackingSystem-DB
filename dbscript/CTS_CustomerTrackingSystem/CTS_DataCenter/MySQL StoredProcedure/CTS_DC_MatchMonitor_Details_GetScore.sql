@@ -20,6 +20,7 @@ BEGIN
 		Revisions:
 			- 	20210526@Long.Luu: Created [Redmine ID: 152883]
             -	20211213@Casey.Huynh: Enhance MM, Remove input Parameter ip_EventDate [Redmine ID: 165606]
+            - 	20221122@Casey.Huynh: Update TotalScore to ScoreDiff [Redmine ID: #179499]
 		
 		Param's Explanation (filtered by):
 		
@@ -27,7 +28,7 @@ BEGIN
 			-	CALL CTS_DC_MatchMonitor_Details_GetScore(12345,1,0,1,1);
 	*/
     
-	SELECT 	DISTINCT s.TotalScore
+	SELECT 	DISTINCT s.ScoreDiff
 		,	s.LiveHomeScore
         ,	s.LiveAwayScore
 	FROM   CTS_DataCenter.MatchMonitorDetails AS s

@@ -22,14 +22,15 @@ BEGIN
 			- 	20210526@Long.Luu: Created [Redmine ID: 152883]
 			- -	20210823@Casey.Huynh: Remove ListCustID from return result[Redmine ID: 159195]
             -	20211213@Casey.Huynh: Enhance MM, Remove input Parameter ip_EventDate [Redmine ID: 165606]
-            -	20220110@Casey.Huynh: Enhance MM, BetID, Reason [Redmine ID: 166986]
+            -	20220110@Casey.Huynh: Enhance MM, BetID, Reason [Redmine ID: 166986]\
+            - 	20221122@Casey.Huynh: Update TotalScore to ScoreDiff [Redmine ID: #179499]
 		Param's Explanation (filtered by): 
 		
 		Example:
 			-	CALL CTS_DC_MatchMonitor_Details_GetReasonGroup(48995415,1,0,1,0);;
 	*/
 	
-	SELECT 	mm.TotalScore
+	SELECT 	mm.ScoreDiff
 		, 	mm.GroupID
 	FROM   CTS_DataCenter.MatchMonitorDetails AS mm
 	WHERE  	mm.BettypeID = ip_BettypeID
