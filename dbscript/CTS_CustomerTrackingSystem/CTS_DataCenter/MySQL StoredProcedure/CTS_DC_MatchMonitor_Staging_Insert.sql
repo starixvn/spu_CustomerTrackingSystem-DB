@@ -79,7 +79,7 @@ BEGIN
         ,	Hdp1			DECIMAL(8,4) NULL
         ,	Hdp2			DECIMAL(8,4) NULL
 		,	PRIMARY KEY (SportType, IsMajorLeague, Odds, SequenceID)
-   #     ,	INDEX IX_SportType(SportType, IsMajorLeague, Odds)
+		,	INDEX SequenceID(SequenceID)
 	) ENGINE=InnoDB;
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorRuleSetting;
