@@ -27,7 +27,7 @@ AS
 		- 20220621@Long.Luu:	Enhance way to get licensee info [Redmine ID: 174136]
 		- 20220707@Long.Luu:	Get Lic VIP & BA Info [Redmine ID: 174219]
 		- 20220822@Long.Luu:	Return more data [Redmine ID: 175698]
-		- 20221205@Victoria.Le:	Return more data: danger6 (Saba Soccer) and danger7 (Saba Baseketball) [Redmine ID: #181208]
+		- 20221205@Victoria.Le:	Return more data: DangerSabaSc (Saba Soccer) and DangerSabaBkb (Saba Baseketball) [Redmine ID: #181208]
 
 	Developer's Notes:
 		- @sourceType: 0- GET New Customer Info, 1- Get Info Customer table, 2-Get CustInfo table, 3 GET Info CustProductStatus table
@@ -56,8 +56,8 @@ BEGIN;
 		,	Danger3			TINYINT NULL		
 		,	Danger4			TINYINT NULL
 		,	Danger5			TINYINT NULL
-		,	Danger6			TINYINT NULL	
-		,	Danger7			TINYINT NULL
+		,	DangerSabaSc	TINYINT NULL	
+		,	DangerSabaBkb	TINYINT NULL
 		,	Username		VARCHAR(30)
 		,	Username2		VARCHAR(50)
 		,	SiteId			INT
@@ -110,12 +110,12 @@ BEGIN;
 			,	a.Danger3 = c.danger3
 			,	a.Danger4 = c.Danger4
 			,	a.Danger5 = c.Danger5
-			,	a.Danger6 = (CASE 
-								WHEN DangerLevel IS NOT NULL THEN DangerLevel&15
-								ELSE 0 END)
-			,	a.Danger7 = (CASE 
-								WHEN DangerLevel IS NOT NULL THEN (DangerLevel&240)/16
-								ELSE 0 END)
+			,	a.DangerSabaSc = (CASE 
+									WHEN DangerLevel IS NOT NULL THEN DangerLevel&15
+									ELSE 0 END)
+			,	a.DangerSabaBkb = (CASE 
+									WHEN DangerLevel IS NOT NULL THEN (DangerLevel&240)/16
+									ELSE 0 END)
 			,	a.IsLicensee = 1
 		FROM #tmpCustomers AS a
 			INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON a.custid = c.custid
@@ -132,12 +132,12 @@ BEGIN;
 			,	a.Danger3 = c.danger3
 			,	a.Danger4 = c.Danger4
 			,	a.Danger5 = c.Danger5
-			,	a.Danger6 = (CASE 
-								WHEN DangerLevel IS NOT NULL THEN DangerLevel&15
-								ELSE 0 END)
-			,	a.Danger7 = (CASE 
-								WHEN DangerLevel IS NOT NULL THEN (DangerLevel&240)/16
-								ELSE 0 END)
+			,	a.DangerSabaSc = (CASE 
+									WHEN DangerLevel IS NOT NULL THEN DangerLevel&15
+									ELSE 0 END)
+			,	a.DangerSabaBkb = (CASE 
+									WHEN DangerLevel IS NOT NULL THEN (DangerLevel&240)/16
+									ELSE 0 END)
 			,	a.IsLicensee = 0
 		FROM #tmpCustomers AS a
 			INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON a.custid = c.custid
@@ -190,8 +190,8 @@ BEGIN;
 			,	a.Danger3		AS Danger3			
 			,	a.Danger4		AS Danger4
 			,	a.Danger5		AS Danger5
-			,	a.Danger6		AS Danger6
-			,	a.Danger7		AS Danger7
+			,	a.DangerSabaSc	AS DangerSabaSc
+			,	a.DangerSabaBkb	AS DangerSabaBkb
 			,	a.IsLicensee	AS IsLicensee
 			,	a.IsLicenseeVIP	AS IsLicenseeVIP
 			,	a.IsLicenseeBA	AS IsLicenseeBA
@@ -227,8 +227,8 @@ BEGIN;
 			,	a.Danger3		AS Danger3		
 			,	a.Danger4		AS Danger4
 			,	a.Danger5		AS Danger5
-			,	a.Danger6		AS Danger6
-			,	a.Danger7		AS Danger7
+			,	a.DangerSabaSc	AS DangerSabaSc
+			,	a.DangerSabaBkb	AS DangerSabaBkb
 		FROM #tmpCustomers AS a WITH(NOLOCK);
 	END;
 	

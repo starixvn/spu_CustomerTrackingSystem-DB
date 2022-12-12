@@ -19,7 +19,7 @@ BEGIN
 			- 20210208@Casey.Huynh: Created [Redmine ID: 149941]
 			- 20210622@Aries.Nguyen: Update coding convention  [Redmine ID: #157203]
             - 20220930@Aries.Nguyen: Renovate Association Detection [RedmineID: #178311]
-			- 20221205@Victoria.Le:	 Get more data: danger6 (Saba Soccer) and danger7 (Saba Baseketball) [Redmine ID: #181208]
+			- 20221205@Victoria.Le:	 Get more data: DangerSabaSc (Saba Soccer) and DangerSabaBkb (Saba Baseketball) [Redmine ID: #181208]
 
 		Param's Explanation (filtered by):
 		
@@ -34,13 +34,13 @@ BEGIN
 		,	Danger3			TINYINT
         ,	Danger4			TINYINT
 		,	Danger5			TINYINT
-		,	Danger6			TINYINT
-		,	Danger7			TINYINT
+		,	DangerSabaSc	TINYINT
+		,	DangerSabaBkb	TINYINT
   
 		,	INDEX IX_Temp_CTSCustomer_CustID(CustID)
 	);	
  
-	INSERT INTO Temp_CTSCustomer(CustID, CustStatusID, Danger1, Danger2, Danger3, Danger4, Danger5, Danger6, Danger7)
+	INSERT INTO Temp_CTSCustomer(CustID, CustStatusID, Danger1, Danger2, Danger3, Danger4, Danger5, DangerSabaSc, DangerSabaBkb)
 	SELECT	js.CustID
 		,	js.CustStatusID
 		,	js.Danger1		
@@ -48,8 +48,8 @@ BEGIN
 		,	js.Danger3
 		,	js.Danger4		
 		,	js.Danger5
-		,	js.Danger6
-		,	js.Danger7
+		,	js.DangerSabaSc
+		,	js.DangerSabaBkb
 	FROM JSON_TABLE(ip_CustInfo, 
 		"$[*]" COLUMNS(
 				CustID			INT UNSIGNED	PATH "$.CustID"
@@ -59,22 +59,22 @@ BEGIN
 			,	Danger3			TINYINT	 		PATH "$.Danger3"		
             ,	Danger4			TINYINT	 		PATH "$.Danger4" 
 			,	Danger5			TINYINT	 		PATH "$.Danger5"
-			,	Danger6			TINYINT	 		PATH "$.Danger6"
-			,	Danger7			TINYINT	 		PATH "$.Danger7"
+			,	DangerSabaSc	TINYINT	 		PATH "$.DangerSabaSc"
+			,	DangerSabaBkb	TINYINT	 		PATH "$.DangerSabaBkb"
 		)
 	) AS js;	 
        
 	UPDATE 		CTS_DataCenter.CTSCustomer AS ctsCust
 		INNER JOIN 	Temp_CTSCustomer AS tempCust ON ctsCust.CustID = tempCust.CustID
-	SET		ctsCust.CustStatusID = tempCust.CustStatusID
-		,	ctsCust.Danger1 = tempCust.Danger1
-		,	ctsCust.Danger2 = tempCust.Danger2
-		,	ctsCust.Danger3 = tempCust.Danger3
-        ,	ctsCust.Danger4 = tempCust.Danger4
-		,	ctsCust.Danger5 = tempCust.Danger5
-		,	ctsCust.Danger6 = tempCust.Danger6
-		,	ctsCust.Danger7 = tempCust.Danger7
-		,	ctsCust.ModifiedTime = CURRENT_TIMESTAMP(4)
+	SET		ctsCust.CustStatusID 	= tempCust.CustStatusID
+		,	ctsCust.Danger1 		= tempCust.Danger1
+		,	ctsCust.Danger2 		= tempCust.Danger2
+		,	ctsCust.Danger3 		= tempCust.Danger3
+        ,	ctsCust.Danger4 		= tempCust.Danger4
+		,	ctsCust.Danger5 		= tempCust.Danger5
+		,	ctsCust.DangerSabaSc 	= tempCust.DangerSabaSc
+		,	ctsCust.DangerSabaBkb 	= tempCust.DangerSabaBkb
+		,	ctsCust.ModifiedTime 	= CURRENT_TIMESTAMP(4)
 	WHERE	ctsCust.CustSubID = 0;
     
     #==================================================    	

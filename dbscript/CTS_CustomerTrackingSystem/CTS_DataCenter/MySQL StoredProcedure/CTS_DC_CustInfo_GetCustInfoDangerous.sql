@@ -29,8 +29,8 @@ BEGIN
 			,	Danger3
 			,	Danger4
 			,	Danger5
-			,	Danger6
-			,	Danger7
+			,	DangerSabaSc
+			,	DangerSabaBkb
 		FROM	CTS_DataCenter.CTSCustomer AS cus
 			INNER JOIN	TempItemTable AS tmpCus ON cus.CustID = tmpCus.Item;
 END$$
