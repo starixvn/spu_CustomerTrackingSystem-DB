@@ -201,7 +201,7 @@ sp:BEGIN
                     ,	CASE WHEN DestID < CONS_RangeDevice THEN AssociationType ELSE 0 END AS AssociationType1
                     ,	0 AS AssociationType2
                 FROM Temp_GraphOrig
-				UNION ALL
+				UNION 
                 SELECT 	grp.DestID       #CONCAT(CTE_Group.CurPath, ' -> ', grp.DestID)
                     ,	CASE WHEN grp.DestID > CONS_RangeDevice OR CTE_Group.Transitive != 0 THEN CTE_Group.Transitive
 							 ELSE grp.DestID END AS Transitive
@@ -248,7 +248,7 @@ sp:BEGIN
 							 END AS AssociationType1
 						,	0 AS AssociationType2
 					FROM Temp_GraphOrig
-					UNION ALL
+					UNION 
 					SELECT 	grp.DestID       #CONCAT(CTE_Group.CurPath, ' -> ', grp.DestID)
 						,	CASE WHEN grp.DestID > CONS_RangeDevice  OR CTE_Group.Transitive != 0 THEN CTE_Group.Transitive
 								 ELSE grp.DestID END AS Transitive

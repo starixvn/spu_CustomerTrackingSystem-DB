@@ -328,8 +328,7 @@ sp:BEGIN
                                                             AND cus.IsInternal = 0 
                                                             AND ai.ToCustID != lv_CustID
 															AND ai.FromCustID != lv_CustID
-		WHERE NOT EXISTS (SELECT 1 FROM Temp_Transitive AS tr WHERE tr.Transitive = tmp.CTSCustID)
-			AND NOT EXISTS (SELECT 1 FROM Temp_CustNode_Dup AS dup WHERE dup.CTSCustID = cus.CTSCustID);
+		WHERE EXISTS (SELECT 1 FROM Temp_Transitive AS tr WHERE tr.Transitive = cus.CTSCustID);
 		
         #Add Edge 2
 		INSERT IGNORE INTO Temp_Graph(OrigID,DestID,AssociationType)
@@ -343,11 +342,10 @@ sp:BEGIN
                                                             AND cus.IsInternal = 0  
                                                             AND ai.FromCustID != lv_CustID
                                                             AND ai.ToCustID != lv_CustID
-		WHERE NOT EXISTS (SELECT 1 FROM Temp_Transitive AS tr WHERE tr.Transitive = tmp.CTSCustID)
-			AND NOT EXISTS (SELECT 1 FROM Temp_CustNode_Dup AS dup WHERE dup.CTSCustID = cus.CTSCustID);
+		WHERE EXISTS (SELECT 1 FROM Temp_Transitive AS tr WHERE tr.Transitive = cus.CTSCustID);
         
         
-        #Add Edge 3
+        #AI Group ----- Add Edge 3
         INSERT IGNORE INTO Temp_Graph(OrigID,DestID,AssociationType)
 		SELECT  edge.CTSCustID  AS OrigID
 			,	(CONS_RangeAIGroup + edge.GroupID) AS DestID
@@ -382,9 +380,8 @@ sp:BEGIN
                                                             AND cus.IsInternal = 0
                                                             AND ip.FromCustID != lv_CustID
                                                             AND ip.ToCustID != lv_CustID
-		WHERE NOT EXISTS (SELECT 1 FROM Temp_Transitive AS tr WHERE tr.Transitive = tmp.CTSCustID)
-			AND NOT EXISTS (SELECT 1 FROM Temp_CustNode_Dup AS dup WHERE dup.CTSCustID = cus.CTSCustID);
-            
+		WHERE EXISTS (SELECT 1 FROM Temp_Transitive AS tr WHERE tr.Transitive = cus.CTSCustID);
+		
         #Add Edge 2     
 		INSERT IGNORE INTO Temp_Graph(OrigID,DestID,AssociationType)
 		SELECT  cus.CTSCustID AS OrigID  
@@ -397,8 +394,8 @@ sp:BEGIN
                                                             AND cus.IsInternal = 0
                                                             AND ip.ToCustID != lv_CustID
                                                             AND ip.FromCustID != lv_CustID
-		WHERE NOT EXISTS (SELECT 1 FROM Temp_Transitive AS tr WHERE tr.Transitive = tmp.CTSCustID)
-			AND NOT EXISTS (SELECT 1 FROM Temp_CustNode_Dup AS dup WHERE dup.CTSCustID = cus.CTSCustID);
+		WHERE EXISTS (SELECT 1 FROM Temp_Transitive AS tr WHERE tr.Transitive = cus.CTSCustID);
+		
     END IF;
 END$$
 
