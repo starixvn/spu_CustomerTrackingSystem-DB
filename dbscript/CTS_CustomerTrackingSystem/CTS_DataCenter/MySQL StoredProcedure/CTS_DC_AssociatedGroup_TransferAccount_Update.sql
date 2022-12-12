@@ -34,6 +34,7 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
 	CREATE TEMPORARY TABLE 	Temp_Cust (
 			CTSCustID 		BIGINT UNSIGNED PRIMARY KEY
+		,	CustID			INT	UNSIGNED
 		,	Danger1			TINYINT DEFAULT NULL
         ,	Danger2			TINYINT DEFAULT NULL
 	);
@@ -46,8 +47,8 @@ BEGIN
     SET lv_AssociatedGroup_ABI = IFNULL(lv_AssociatedGroup_ABI,0);
     SET lv_AssociatedGroup_Ori = IFNULL(lv_AssociatedGroup_Ori,0);
     
-    INSERT INTO Temp_Cust (CTSCustID, Danger1, Danger2)
-    SELECT cus.CTSCustID, cus.Danger1, cus.Danger2
+    INSERT INTO Temp_Cust (CTSCustID, CustID, Danger1, Danger2)
+    SELECT cus.CTSCustID, cus.CustID, cus.Danger1, cus.Danger2
     FROM JSON_TABLE(CONCAT('[',ip_CTSCustIDs,']'),'$[*]' COLUMNS(NESTED PATH '$' COLUMNS (CTSCustID BIGINT UNSIGNED PATH '$'))) AS temp
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON temp.CTSCustID = cus.CTSCustID;
         
@@ -67,5 +68,7 @@ BEGIN
 		WHERE IFNULL(temp.Danger1,0) = 0 OR IFNULL(temp.Danger2,0) = 0;
 	END IF;
 	
+	SELECT GROUP_CONCAT(CustID) AS CustIDs, lv_AssociatedGroup_Ori AS Ori, lv_AssociatedGroup_ABI AS ABI
+	FROM Temp_Cust;
 END$$
 DELIMITER ;
