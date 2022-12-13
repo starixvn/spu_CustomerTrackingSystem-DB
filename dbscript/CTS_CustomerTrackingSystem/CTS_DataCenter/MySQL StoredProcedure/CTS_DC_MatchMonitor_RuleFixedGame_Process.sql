@@ -162,13 +162,17 @@ sp: BEGIN
 			AND (tmpTs.TotalHighStake1/tmpTs.TotalTrans1) > lv_Rule_HighStakeTicketPercent 
 			AND (tmpTs.MaxOdds1 - tmpTs.MinOdds1)*100 >= lv_Rule_OddsSpread
             AND tmpTs.TransDate >= lv_FromTransDate;
-            
-		SELECT lv_Rule_Reason AS Reason
-			,	GROUP_CONCAT(DISTINCT TransID) AS TransIDList
-            ,	GROUP_CONCAT(DISTINCT CustID) AS CustIDList
-        FROM CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mmt
-		WHERE  mmt.MatchID = ip_MatchID AND mmt.ScoreDiff = ip_ScoreDiff AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam AND mmt.Hdp = ip_HDP
-				AND EXISTS (SELECT 1 FROM Temp_FixedTransRange AS tmp WHERE mmt.TransID BETWEEN tmp.MinTransID AND MaxTransID);	
+        
+        SELECT lv_Rule_Reason AS Reason
+			,	tmp.TransIDList
+            ,	tmp.CustIDList
+        FROM (
+				SELECT  GROUP_CONCAT(DISTINCT TransID) AS TransIDList
+					,	GROUP_CONCAT(DISTINCT CustID) AS CustIDList
+				FROM CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mmt
+				WHERE  mmt.MatchID = ip_MatchID AND mmt.ScoreDiff = ip_ScoreDiff AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam AND mmt.Hdp = ip_HDP
+						AND EXISTS (SELECT 1 FROM Temp_FixedTransRange AS tmp WHERE mmt.TransID BETWEEN tmp.MinTransID AND MaxTransID)
+				) AS tmp;	
  
 	END IF;
 END$$
