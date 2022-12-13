@@ -58,15 +58,6 @@ BEGIN
 		,	acc.LastModifiedDate = NOW()
         ,	acc.LastModifiedBy = ip_ModifiedBy
     WHERE acc.GroupID = ip_FromGroupID;
-    
-    /*Member has no ABI, Ori: auto-sync a corresponding ABI, Ori of the new group*/
-    IF (lv_AssociatedGroup_ABI > 0 OR lv_AssociatedGroup_Ori > 0) THEN
-		UPDATE CTS_DataCenter.CTSCustomer AS cus
-			INNER JOIN Temp_Cust AS temp ON temp.CTSCustID = cus.CTSCustID
-		SET 	cus.Danger1 = CASE WHEN IFNULL(temp.Danger1,0) = 0 THEN lv_AssociatedGroup_Ori ELSE cus.Danger1 END
-			,	cus.Danger2 = CASE WHEN IFNULL(temp.Danger2,0) = 0 THEN lv_AssociatedGroup_ABI ELSE cus.Danger2 END
-		WHERE IFNULL(temp.Danger1,0) = 0 OR IFNULL(temp.Danger2,0) = 0;
-	END IF;
 	
 	SELECT GROUP_CONCAT(CustID) AS CustIDs, lv_AssociatedGroup_Ori AS Ori, lv_AssociatedGroup_ABI AS ABI
 	FROM Temp_Cust;
