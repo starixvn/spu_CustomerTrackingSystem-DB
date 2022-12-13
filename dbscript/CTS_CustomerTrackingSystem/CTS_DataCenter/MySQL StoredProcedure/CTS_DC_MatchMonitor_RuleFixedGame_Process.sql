@@ -172,7 +172,8 @@ sp: BEGIN
 				FROM CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mmt
 				WHERE  mmt.MatchID = ip_MatchID AND mmt.ScoreDiff = ip_ScoreDiff AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam AND mmt.Hdp = ip_HDP
 						AND EXISTS (SELECT 1 FROM Temp_FixedTransRange AS tmp WHERE mmt.TransID BETWEEN tmp.MinTransID AND MaxTransID)
-				) AS tmp;	
+				) AS tmp
+		WHERE tmp.TransIDList IS NOT NULL;	
  
 	END IF;
 END$$
