@@ -102,14 +102,14 @@ sp: BEGIN
 					,	COUNT(1) OVER w1  AS TotalTrans1
 			   FROM CTS_DataCenter.MatchMonitorStagingFixedGameLive AS mmt
 			   WHERE  mmt.MatchID = ip_MatchID AND mmt.ScoreDiff = ip_ScoreDiff AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam AND mmt.Hdp = ip_HDP
-					AND mmt.SequenceID > lv_LastSequenceID AND mmt.SequenceID <= ip_MaxSequenceID
+					AND mmt.SequenceID <= ip_MaxSequenceID
 			   WINDOW w1 AS (ORDER BY TransDate DESC RANGE BETWEEN CURRENT ROW AND INTERVAL lv_Rule_TimeStep SECOND FOLLOWING)						
 			) AS tmpTs
         WHERE tmpTs.TotalTrans1 > lv_Rule_TotalTicket
 			AND (tmpTs.TotalHighStake1/tmpTs.TotalTrans1) > lv_Rule_HighStakeTicketPercent 
 			AND (tmpTs.MaxOdds1 - tmpTs.MinOdds1)*100 >= lv_Rule_OddsSpread
             AND tmpTs.TransDate >= lv_FromTransDate;
-            
+   
 		SELECT lv_Rule_Reason AS Reason
 			,	GROUP_CONCAT(DISTINCT TransID) AS TransIDList
             ,	GROUP_CONCAT(DISTINCT CustID) AS CustIDList
@@ -155,14 +155,14 @@ sp: BEGIN
 					,	COUNT(1) OVER w1  AS TotalTrans1
 			   FROM CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mmt
 			   WHERE  mmt.MatchID = ip_MatchID AND mmt.ScoreDiff = ip_ScoreDiff AND mmt.BettypeID = ip_BettypeID AND mmt.BetID = ip_BetID AND mmt.Betteam = ip_Betteam AND mmt.Hdp = ip_HDP
-					AND mmt.SequenceID > lv_LastSequenceID AND mmt.SequenceID <= ip_MaxSequenceID
+					AND mmt.SequenceID <= ip_MaxSequenceID
 			   WINDOW w1 AS (ORDER BY TransDate DESC RANGE BETWEEN CURRENT ROW AND INTERVAL lv_Rule_TimeStep SECOND FOLLOWING)						
 			) AS tmpTs
         WHERE tmpTs.TotalTrans1 > lv_Rule_TotalTicket
 			AND (tmpTs.TotalHighStake1/tmpTs.TotalTrans1) > lv_Rule_HighStakeTicketPercent 
 			AND (tmpTs.MaxOdds1 - tmpTs.MinOdds1)*100 >= lv_Rule_OddsSpread
             AND tmpTs.TransDate >= lv_FromTransDate;
-        
+     
         SELECT lv_Rule_Reason AS Reason
 			,	tmp.TransIDList
             ,	tmp.CustIDList

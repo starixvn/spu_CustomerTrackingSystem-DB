@@ -56,7 +56,7 @@ ALTER TABLE MatchMonitorStagingNonLive03
 	,	RENAME COLUMN TotalScore TO ScoreDiff;
 #============================================================
 ALTER TABLE MatchMonitor
-	ADD COLUMN IsMajorLeage BOOLEAN AFTER MatchID
+	ADD COLUMN IsMajorLeague BOOLEAN AFTER MatchID
 ,	ADD COLUMN HDP DECIMAL (8,4) AFTER BettypeID;
 
 UPDATE MatchMonitorDetails
