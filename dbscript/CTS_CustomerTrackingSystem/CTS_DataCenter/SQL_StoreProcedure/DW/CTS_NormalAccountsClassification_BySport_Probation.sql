@@ -281,7 +281,6 @@ BEGIN
 					OR (r.RuleGroupId = 13 AND r.CurrentCategory = a.CurrentCategoryId AND a.IsProbationLastDay = 1 AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM AND a.WinlossRM <= r.WinlossRM2)		-- SMART
 					OR (r.RuleGroupId = 17 AND r.CurrentCategory = a.CurrentCategoryId AND a.IsProbationLastDay = 1 AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)										-- RISKY
 					OR (r.RuleGroupId = 20 AND a.CurrentCategoryId = r.CurrentCategory AND a.IsProbationLastDay = 1 AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM AND a.WinDayRate > r.WinDayRate)		-- SMART
-					OR (r.RuleGroupId = 21 AND a.CurrentCategoryId = r.CurrentCategory AND a.IsProbationLastDay = 1 AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM <= r.WinlossRM AND a.WinDayRate > r.WinDayRate)								-- SMART
 					OR (r.RuleGroupId = 22 AND a.CurrentCategoryId = r.CurrentCategory AND a.IsProbationLastDay = 1 AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM AND a.WinDayRate > r.WinDayRate)									-- RISKY
 		) as b
 	 WHERE b.RowNum = 1;
