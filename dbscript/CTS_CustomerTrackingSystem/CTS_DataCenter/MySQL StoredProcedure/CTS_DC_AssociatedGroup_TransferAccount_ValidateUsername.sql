@@ -26,37 +26,54 @@ BEGIN
 	*/
     DROP TEMPORARY TABLE IF EXISTS Temp_Username;
     CREATE TEMPORARY TABLE Temp_Username(
-			Username 	VARCHAR(50) PRIMARY KEY
+		Username 	VARCHAR(50) PRIMARY KEY 
+    );
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
+    CREATE TEMPORARY TABLE Temp_Cust(
+			Username 	VARCHAR(50) PRIMARY KEY 
 		,	CTSCustID	BIGINT DEFAULT NULL
 		,	CustID 		INT	DEFAULT NULL
         ,	IsValid		BIT DEFAULT 0
         ,	IsExist		BIT DEFAULT 0
 	);
     
-	SET @sql = CONCAT("INSERT INTO Temp_Username (Username) VALUES ('", REPLACE(ip_ListUsername, ",", "'),('"),"');");
+    DROP TEMPORARY TABLE IF EXISTS Temp_AssociationGroupAccount;
+    CREATE TEMPORARY TABLE Temp_AssociationGroupAccount(
+			CTSCustID	BIGINT PRIMARY KEY
+	);
+    
+    SET @sql = CONCAT("INSERT IGNORE INTO Temp_Username (Username) VALUES ('", REPLACE(ip_ListUsername, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
     
-    UPDATE Temp_Username AS temp
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON  temp.Username = cus.Username
-	SET		temp.CTSCustID = cus.CTSCustID
-		,	temp.CustID = cus.CustID
-        ,	temp.IsValid = 1;
-    
-    /*Check the exist in current group*/
-    UPDATE Temp_Username AS temp
-		INNER JOIN CTS_DataCenter.AssociatedGroupAccount AS acc ON acc.CTSCustID = temp.CTSCustID
-        INNER JOIN CTS_DataCenter.AssociatedGroup AS grp ON grp.GroupID = acc.GroupID AND grp.IsDisable = 0
-    SET temp.IsExist = 1
-    WHERE temp.IsValid = 1 
+    INSERT IGNORE INTO Temp_Cust (Username, CTSCustID, CustID, IsValid)
+    SELECT 	tmp.Username
+		,	cus.CTSCustID
+        ,	cus.CustID
+        ,	CASE WHEN cus.Username IS NOT NULL THEN 1
+			ELSE 0 END
+    FROM Temp_Username tmp
+		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON tmp.Username = cus.Username;
+        
+	INSERT INTO Temp_AssociationGroupAccount (CTSCustID)
+	SELECT acc.CTSCustID
+    FROM Temp_Cust tmp
+        INNER JOIN CTS_DataCenter.AssociatedGroupAccount AS acc ON acc.CTSCustID = tmp.CTSCustID
+        INNER JOIN CTS_DataCenter.AssociatedGroup AS grp ON grp.GroupID = acc.GroupID AND grp.IsDisable = 0 
+	WHERE tmp.IsValid = 1
 		AND grp.GroupID = ip_GroupID;
-	
+        
+	UPDATE Temp_Cust tmp1
+		INNER JOIN Temp_AssociationGroupAccount tmp2 ON tmp2.CTSCustID = tmp1.CTSCustID
+	SET IsExist = 1;
+        
     SELECT 	temp.Username
 		,	temp.CTSCustID
         ,	temp.CustID
         ,	CASE WHEN temp.IsValid = 0 OR temp.IsExist = 0 THEN "Invalid Account"
 			ELSE NULL END AS ErrorMsg
-    FROM Temp_Username AS temp;
+    FROM Temp_Cust AS temp;
     
 END$$
 DELIMITER ;
