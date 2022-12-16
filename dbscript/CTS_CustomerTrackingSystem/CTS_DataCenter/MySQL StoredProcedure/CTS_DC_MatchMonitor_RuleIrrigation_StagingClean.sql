@@ -27,10 +27,10 @@ BEGIN
     DECLARE lv_LastMaxTime DATETIME(4);
     DECLARE lv_LastMinTime DATETIME(4);
     
-    #===================LOG=======================================
+    /*===================LOG=======================================
     INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
     SELECT'CTS_DC_MatchMonitor_RuleIrrigation_StagingClean', current_timestamp(), CONCAT('ip_LiveIndicator:',ip_LiveIndicator,'op_MaxSequenceID:',ip_MaxSequenceID);    
-    
+   ===================LOG=======================================*/
     DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorRuleSetting;
 	CREATE TEMPORARY TABLE Temp_MatchMonitorRuleSetting(
 			SportType INT

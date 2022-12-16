@@ -36,10 +36,10 @@ BEGIN
 	*/    
     
     DECLARE lv_LastSequenceID BIGINT UNSIGNED DEFAULT 0;
-
+	/*===================LOG=======================================
 	INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText, JsonString1)
     SELECT'CTS_DC_MatchMonitor_Staging_Insert_xtest1', current_timestamp(),ip_LiveIndicator,ip_TransList;     
-    
+     ===================LOG=======================================*/
     DROP TEMPORARY TABLE IF EXISTS Temp_Staging;
 	CREATE TEMPORARY TABLE Temp_Staging(
 			SequenceID		BIGINT UNSIGNED NOT NULL

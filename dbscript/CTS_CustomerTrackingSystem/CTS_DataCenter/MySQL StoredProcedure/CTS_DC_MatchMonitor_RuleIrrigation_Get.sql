@@ -37,10 +37,10 @@ sp: BEGIN
 	FROM CTS_DataCenter.MatchMonitorRuleSetting AS mst
 	WHERE mst.RuleGroupID = CONST_RULE_GROUPID;    
 	
-	#===================LOG=======================================
+	/*===================LOG=======================================
     INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
     SELECT'CTS_DC_MatchMonitor_RuleIrrigation_Get', current_timestamp(), CONCAT('ip_LiveIndicator:',ip_LiveIndicator,'op_MaxSequenceID:',op_MaxSequenceID);
-    
+    ===================LOG=======================================*/
 	IF ip_LiveIndicator = 0 THEN		
 
         #===GET BATCH SIZE AND THE LAST SEQUENCEID =====

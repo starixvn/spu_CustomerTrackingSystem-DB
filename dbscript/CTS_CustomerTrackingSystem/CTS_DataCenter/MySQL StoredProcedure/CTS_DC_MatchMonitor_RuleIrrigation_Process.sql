@@ -37,11 +37,11 @@ sp: BEGIN
 	DECLARE lv_LastSequenceID	BIGINT UNSIGNED;
 	DECLARE lv_LastTransDate	DATETIME(3); 
     
-    #===================LOG=======================================
+    /*===================LOG=======================================
 	INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
     SELECT'CTS_DC_MatchMonitor_RuleIrrigation_Process1', current_timestamp(), CONCAT('ip_LiveIndicator:',ip_LiveIndicator
     ,' ip_SportType:',ip_SportType,' ip_MatchID:',ip_MatchID,' ip_ScoreDiff:',ip_ScoreDiff,' ip_BettypeID:',ip_BettypeID,' ip_BetID:',ip_BetID,' ip_Betteam:',ip_Betteam);
-    
+    ===================LOG=======================================*/
     DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorRuleSetting;   
     CREATE TEMPORARY TABLE Temp_MatchMonitorRuleSetting(
 			SportType	INT NOT NULL
@@ -168,13 +168,13 @@ sp: BEGIN
 	FROM Temp_Trans AS tmpTs 
 	WHERE tmpTs.GroupID > 0
 	GROUP BY tmpTs.CustID;
-    
+    /*===================LOG=======================================
     INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
     SELECT'CTS_DC_MatchMonitor_RuleIrrigation_Process2', current_timestamp(), 
     (SELECT GROUP_CONCAT(', CustID:', tmpTs.CustID, ', TransID:', tmpTs.TransID) AS TransIDList
 	FROM Temp_Trans AS tmpTs 
 	WHERE tmpTs.GroupID > 0);
-    
+     ===================LOG=======================================*/
 END$$
 DELIMITER ;
 
