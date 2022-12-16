@@ -50,41 +50,18 @@ sp: BEGIN
     SELECT s.ParameterValue
     INTO lv_NoOfRow
     FROM CTS_DataCenter.SystemParameter AS s
-    WHERE s.ParameterID = 122;
+    WHERE s.ParameterID = 129;
     
-	IF ip_LiveIndicator = 1 THEN    
+	IF ip_LiveIndicator = 0 THEN    
+		
 		SELECT sys.ParameterValue
         INTO lv_LastSequenceID
         FROM CTS_DataCenter.SystemParameter AS sys
-        WHERE ParameterID = 47;
+        WHERE ParameterID = 128;
         
         SELECT MAX(tmp.SequenceID)
         INTO lv_MaxSequenceID
-        FROM (SELECT mms.SequenceID FROM CTS_DataCenter.MatchMonitorStagingGroupBettingLive AS mms WHERE mms.SequenceID > lv_LastSequenceID ORDER BY mms.SequenceID LIMIT lv_NoOfRow) AS tmp;
-        
-        SET op_MaxSequenceID = IFNULL(lv_MaxSequenceID,0) ;
-        
-        IF(lv_LastSequenceID < lv_MaxSequenceID) THEN    
-     		SELECT	mms.MatchID
-				,	mms.ScoreDiff
-				,	mms.BettypeID
-                ,	mms.BetID
-			FROM CTS_DataCenter.MatchMonitorStagingGroupBettingLive AS mms
-				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType
-            WHERE mms.SequenceID <= lv_MaxSequenceID
-			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID
-			HAVING COUNT(DISTINCT mms.CustID) > 1;      
-            
-		END IF;
-	ELSE
-		SELECT sys.ParameterValue
-        INTO lv_LastSequenceID
-        FROM CTS_DataCenter.SystemParameter AS sys
-        WHERE ParameterID = 48;
-        
-        SELECT MAX(tmp.SequenceID)
-        INTO lv_MaxSequenceID
-        FROM (SELECT mms.SequenceID FROM CTS_DataCenter.MatchMonitorStagingGroupBettingNonLive AS mms WHERE mms.SequenceID > lv_LastSequenceID AND mms.GroupID >= 0 ORDER BY mms.SequenceID  LIMIT lv_NoOfRow) AS tmp;
+        FROM (SELECT mms.SequenceID FROM CTS_DataCenter.MatchMonitorStagingArbitrageNonLive AS mms WHERE mms.SequenceID > lv_LastSequenceID AND mms.GroupID >= 0 ORDER BY mms.SequenceID  LIMIT lv_NoOfRow) AS tmp;
 		
 		SET op_MaxSequenceID = IFNULL(lv_MaxSequenceID, 0);        
         
@@ -95,11 +72,12 @@ sp: BEGIN
 				,	mms.BettypeID
                 ,	mms.BetID
                 ,	mms.HDP
-			FROM CTS_DataCenter.MatchMonitorStagingGroupBettingNonLive AS mms
+			FROM CTS_DataCenter.MatchMonitorStagingArbitrageNonLive AS mms
 				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType
             WHERE mms.SequenceID <= lv_MaxSequenceID
 			GROUP BY mms.MatchID, mms.ScoreDiff, mms.IsMajorLeague, mms.BettypeID, mms.BetID, mms.HDP
-			HAVING COUNT(DISTINCT mms.CustID) > 1 ;            
+			HAVING COUNT(DISTINCT mms.CustID) > 1 
+					AND COUNT(DISTINCT mms.Betteam) = 2;            
 		END IF;        
 	END IF;
  
