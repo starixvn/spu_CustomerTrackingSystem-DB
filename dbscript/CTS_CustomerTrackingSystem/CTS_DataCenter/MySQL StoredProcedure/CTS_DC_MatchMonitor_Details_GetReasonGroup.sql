@@ -38,8 +38,8 @@ BEGIN
         AND mm.MatchID = ip_MatchID
         AND mm.LiveIndicator = ip_LiveIndicator
         AND mm.Reason = ip_Reason
-	GROUP BY mm.TotalScore,	mm.GroupID
-	ORDER BY mm.TotalScore, mm.GroupID;
+	GROUP BY mm.ScoreDiff,	mm.GroupID
+	ORDER BY mm.ScoreDiff, mm.GroupID;
     
 END$$
 DELIMITER ;
