@@ -74,9 +74,9 @@ CREATE TABLE `MatchMonitorStagingFixedGameLive` (
   `Hdp1` decimal(8,4) DEFAULT NULL,
   `Hdp2` decimal(8,4) DEFAULT NULL,
   PRIMARY KEY (`SequenceID`),
-  KEY `IX_MatchMonitorTransLive_TransDate` (`TransDate`),
-  KEY `IX_MatchMonitorTransLive_Group` (`MatchID`,`ScoreDiff`,`BettypeID`,`BetID`,`Betteam`,`GroupID`),
-  KEY `IX_MatchMonitorTransLive_TransID` (`TransID`)
+  KEY `IX_MatchMonitorStagingFixedGameLive_TransDate` (`TransDate`),
+  KEY `IX_MMatchMonitorStagingFixedGameLive_RuleGroup` (`MatchID`,`ScoreDiff`,`BettypeID`,`BetID`,`Betteam`, `HDP`, `GroupID`),
+  KEY `IX_MatchMonitorStagingFixedGameLive_TransID` (`TransID`)
 ) ENGINE=InnoDB ;
 
 CREATE TABLE `MatchMonitorStagingFixedGameNonLive` (
@@ -108,9 +108,9 @@ CREATE TABLE `MatchMonitorStagingFixedGameNonLive` (
   `Hdp1` decimal(8,4) DEFAULT NULL,
   `Hdp2` decimal(8,4) DEFAULT NULL,
   PRIMARY KEY (`SequenceID`),
-  KEY `IX_MatchMonitorTransNonLive_TransDate` (`TransDate`),
-  KEY `IX_MatchMonitorTransNonLive_Group` (`MatchID`,`ScoreDiff`,`BettypeID`,`BetID`,`Betteam`,`GroupID`,`TransDate`),
-  KEY `IX_MatchMonitorTransNonLive_TransID` (`TransID`)
+  KEY `IX_MatchMonitorStagingFixedGameNonLive_TransDate` (`TransDate`),
+  KEY `IX_MatchMonitorStagingFixedGameNonLive` (`MatchID`,`ScoreDiff`,`BettypeID`,`BetID`,`Betteam`, `HDP`, `GroupID`),
+  KEY `IX_MatchMonitorStagingFixedGameNonLive_TransID` (`TransID`)
 ) ENGINE=InnoDB ;
 
 CREATE TABLE `MatchMonitorStagingGroupBettingLive` (
@@ -142,9 +142,9 @@ CREATE TABLE `MatchMonitorStagingGroupBettingLive` (
   `Hdp1` decimal(8,4) DEFAULT NULL,
   `Hdp2` decimal(8,4) DEFAULT NULL,
   PRIMARY KEY (`SequenceID`),
-  KEY `IX_MatchMonitorStagingLive_TransDate` (`TransDate`),
-  KEY `IX_MatchMonitorStagingLive_GroupRule01` (`MatchID`,`ScoreDiff`,`BettypeID`,`BetID`,`GroupID`),
-  KEY `IX_MatchMonitorStagingLive_TransID` (`TransID`)
+  KEY `IX_MatchMonitorStagingGroupBettingLive_TransDate` (`TransDate`),
+  KEY `IX_MatchMonitorStagingGroupBettingLive_RuleGroup` (`MatchID`,`ScoreDiff`,`BettypeID`,`BetID`,`GroupID`),
+  KEY `IX_MatchMonitorStagingGroupBettingLive_TransID` (`TransID`)
 ) ENGINE=InnoDB ;
 
 CREATE TABLE `MatchMonitorStagingGroupBettingNonLive` (
@@ -176,43 +176,9 @@ CREATE TABLE `MatchMonitorStagingGroupBettingNonLive` (
   `Hdp1` decimal(8,4) DEFAULT NULL,
   `Hdp2` decimal(8,4) DEFAULT NULL,
   PRIMARY KEY (`SequenceID`),
-  KEY `IX_MatchMonitorStagingNonLive_TransDate` (`TransDate`),
-  KEY `IX_MatchMonitorStagingNonLive_GroupRule01` (`MatchID`,`ScoreDiff`,`BettypeID`,`BetID`,`GroupID`),
-  KEY `IX_MatchMonitorStagingNonLive_TransID` (`TransID`)
-) ENGINE=InnoDB ;
-
-CREATE TABLE `MatchMonitorStagingGroupBettingNonLive` (
-  `SequenceID` bigint unsigned NOT NULL,
-  `TransID` bigint unsigned NOT NULL,
-  `TransDate` datetime(3) DEFAULT NULL,
-  `MatchID` int DEFAULT NULL,
-  `SportType` int DEFAULT NULL,
-  `ScoreDiff` int DEFAULT NULL,
-  `BettypeID` int DEFAULT NULL,
-  `BetID` bigint DEFAULT NULL,
-  `Betteam` varchar(10) DEFAULT NULL,
-  `CustID` bigint unsigned DEFAULT NULL,
-  `Stake` decimal(20,4) DEFAULT NULL,
-  `GroupID` int DEFAULT '0',
-  `LiveHomeScore` int DEFAULT NULL,
-  `LiveAwayScore` int DEFAULT NULL,
-  `EventDate` date DEFAULT NULL,
-  `KickOffTime` datetime DEFAULT NULL,
-  `EventStatus` varchar(50) DEFAULT NULL,
-  `HomeID` int DEFAULT NULL,
-  `AwayID` int DEFAULT NULL,
-  `LeagueID` int DEFAULT NULL,
-  `InsertTime` datetime(3) DEFAULT NULL,
-  `LeagueName` varchar(500) DEFAULT NULL,
-  `IsMajorLeague` tinyint(1) DEFAULT NULL,
-  `Odds` decimal(10,4) DEFAULT NULL,
-  `Hdp` decimal(8,4) DEFAULT NULL,
-  `Hdp1` decimal(8,4) DEFAULT NULL,
-  `Hdp2` decimal(8,4) DEFAULT NULL,
-  PRIMARY KEY (`SequenceID`),
-  KEY `IX_MatchMonitorStagingNonLive_TransDate` (`TransDate`),
-  KEY `IX_MatchMonitorStagingNonLive_GroupRule01` (`MatchID`,`ScoreDiff`,`BettypeID`,`BetID`,`GroupID`),
-  KEY `IX_MatchMonitorStagingNonLive_TransID` (`TransID`)
+  KEY `IX_MatchMonitorStagingGroupBettingNonLive_TransDate` (`TransDate`),
+  KEY `IX_MatchMonitorStagingGroupBettingNonLive_RuleGroup` (`MatchID`,`ScoreDiff`,`BettypeID`,`BetID`,`GroupID`),
+  KEY `IX_MatchMonitorStagingGroupBettingNonLive_TransID` (`TransID`)
 ) ENGINE=InnoDB ;
 
 CREATE TABLE `MatchMonitorStagingHedgingLive` (
@@ -239,9 +205,9 @@ CREATE TABLE `MatchMonitorStagingHedgingLive` (
   `InsertTime` datetime(3) DEFAULT NULL,
   `LeagueName` varchar(500) DEFAULT NULL,
   PRIMARY KEY (`SequenceID`),
-  KEY `IX_MatchMonitorStagingLive03_TransDate` (`TransDate`),
-  KEY `IX_MatchMonitorStagingLive03_GroupRule01` (`MatchID`,`ScoreDiff`,`BettypeID`,`BetID`,`GroupID`),
-  KEY `IX_MatchMonitorStagingLive03_TransID` (`TransID`)
+  KEY `IX_MatchMonitorStagingHedgingLive_TransDate` (`TransDate`),
+  KEY `IX_MatchMonitorStagingHedgingLive_RuleGroup` (`MatchID`,`ScoreDiff`,`BettypeID`,`BetID`,`GroupID`),
+  KEY `IX_MatchMonitorStagingHedgingLive_TransID` (`TransID`)
 ) ENGINE=InnoDB ;
 
 CREATE TABLE `MatchMonitorStagingHedgingNonLive` (
@@ -268,15 +234,14 @@ CREATE TABLE `MatchMonitorStagingHedgingNonLive` (
   `InsertTime` datetime(3) DEFAULT NULL,
   `LeagueName` varchar(500) DEFAULT NULL,
   PRIMARY KEY (`SequenceID`),
-  KEY `IX_MatchMonitorStagingNonLive03_TransDate` (`TransDate`),
-  KEY `IX_MatchMonitorStagingNonLive03_GroupRule01` (`MatchID`,`ScoreDiff`,`BettypeID`,`BetID`,`GroupID`),
-  KEY `IX_MatchMonitorStagingNonLive03_TransID` (`TransID`)
+  KEY `IX_MatchMonitorStagingHedgingNonLive_TransDate` (`TransDate`),
+  KEY `IX_MatchMonitorStagingHedgingNonLive_RuleGroup` (`MatchID`,`ScoreDiff`,`BettypeID`,`BetID`,`GroupID`),
+  KEY `IX_MatchMonitorStagingHedgingNonLive_TransID` (`TransID`)
 ) ENGINE=InnoDB ;
 
 #============================================================
 ALTER TABLE MatchMonitor
-	ADD COLUMN IsMajorLeague BOOLEAN AFTER MatchID
-,	ADD COLUMN HDP DECIMAL (8,4) AFTER BettypeID;
+	ADD COLUMN IsMajorLeague BOOLEAN AFTER MatchID;
 
 UPDATE MatchMonitorDetails
 SET ScoreDiff = TotalScore
@@ -285,6 +250,7 @@ WHERE ScoreDiff IS NULL;
 ALTER TABLE MatchMonitorDetails
 	ADD COLUMN IsMajorLeague BOOLEAN AFTER MatchID
 ,	ADD COLUMN HDP DECIMAL (8,4) AFTER BettypeID
+,	ADD UNIQUE KEY `UK_MatchMonitorDetails_RuleGroup` (`MatchID`,`LiveIndicator`,`ScoreDiff`,`BettypeID`,`BetID`,`Betteam`,`GroupID`,`EventDate`)
 ,	DROP COLUMN TotalScore
 ,   DROP INDEX UK_MatchMonitorDetails_MatchRuleGroup;
 #====================================================================
@@ -380,7 +346,7 @@ UPDATE  CTS_DataCenter.SystemParameter SET ParameterName = 'MatchMonitor_Hedging
 
  SELECT * FROM CTS_DataCenter.MatchMonitorRuleSetting;   
  SELECT * FROM SystemParameter WHERE ParameterName LIKE '%MatchMonitor%'
-    /*
+/*    
 DROP PROCEDURE CTS_DC_MatchMonitor_Rule01_Complete ;
 DROP PROCEDURE CTS_DC_MatchMonitor_Rule01_Get ;
 DROP PROCEDURE CTS_DC_MatchMonitor_Rule01_Process;
