@@ -152,7 +152,6 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleIrrigation_Comp
 					) js;    
 
 
-
 	IF (ip_LiveIndicator = 0) THEN
 		#=======UPDATE GROUPID TO STAGING TABLE===================
 		UPDATE CTS_DataCenter.MatchMonitorStagingIrrigationNonLive AS mms

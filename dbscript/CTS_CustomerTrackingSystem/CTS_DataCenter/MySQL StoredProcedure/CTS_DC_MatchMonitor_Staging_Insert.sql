@@ -48,7 +48,7 @@ BEGIN
     DECLARE SPName VARCHAR(200) DEFAULT 'CTS_DC_MatchMonitor_Staging_Insert';
 	INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText, JsonString1)
     SELECT SPName, CURRENT_TIMESTAMP(),ip_LiveIndicator,ip_TransList;   
-     ===================LOG=======================================*/
+    
     #==========================================================================
     DROP TEMPORARY TABLE IF EXISTS Temp_Staging;
 	CREATE TEMPORARY TABLE Temp_Staging(
