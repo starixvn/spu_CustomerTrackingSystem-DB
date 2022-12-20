@@ -32,10 +32,8 @@ AS
 BEGIN
 	
 	SET NOCOUNT ON;
-	DECLARE @GENERAL_SPORTID		SMALLINT = 200;
-	DECLARE @FUNCTIONID				SMALLINT = 1,
-			@GeneralParameterId		SMALLINT = 6,
-		    @MaxId					BIGINT;
+	DECLARE @GENERAL_SPORTID	SMALLINT = 200;
+	DECLARE @FUNCTIONID			SMALLINT = 1;
 
 	DECLARE @GENERALCATEGORY_NEWMEMBER			INT = 201
 		,	@GENERALCATEGORY_NORMALMEMBER		INT = 202
@@ -127,21 +125,7 @@ BEGIN
 	FROM #tmpCustomers;	
 	
 	-- START	
-	-- #1: Get MaxID
-	SELECT @MaxId = CAST(a.Value AS BIGINT)
-	FROM [dbo].CustomerClassification_Parameter AS a WITH(NOLOCK)
-	WHERE a.DataId = @GeneralParameterId;
-
-	-- #2: GetCustomer Accummulated data
-	WITH cte_rawData AS  (  
-					SELECT  *
-					FROM (
-							SELECT *, ROW_NUMBER() OVER(PARTITION BY a.CustId ORDER BY a.ID DESC) AS RowNum
-							FROM [dbo].[CustomerClassification_LatestChanged] AS a WITH(NOLOCK)
-							WHERE a.ID <= @MaxId
-						) as b
-					WHERE b.RowNum = 1
-		) 
+	-- #1: GetCustomer Accummulated data  
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, Site, SRecommend, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays, CategoryId)
 	SELECT	a.CustId
 		,	cu.Site
@@ -152,7 +136,7 @@ BEGIN
 		,	a.BetCount
 		,	a.ActiveDays
 		,	c.CategoryId
-	FROM cte_rawData AS a WITH(NOLOCK)
+	FROM dbo.CustomerClassification_LatestGeneralChanged AS a WITH(NOLOCK)
 		INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.CustId
 		LEFT JOIN bodb02.dbo.Customer AS cu WITH(NOLOCK) ON a.CustId = cu.custid;
 
@@ -165,7 +149,7 @@ INSERT INTO dbo.CustomerClassification_InputLog_RealTime(CustId,CreatedDate,Crea
 SELECT DISTINCT CustId, @CurrentDate, @CurrentDateTime, 1
 FROM #tmpCustomerAccummulatedInfo;	
 */
-	-- #3: Insert Accounts's BetCount
+	-- #2: Insert Accounts's BetCount
 	INSERT INTO dbo.CustomerClassification_BetCount(CustId, SportId, BetCount)
 	SELECT c.CustId, @GENERAL_SPORTID, 0
 	FROM #tmpCustomers AS c WITH(NOLOCK)
@@ -177,7 +161,7 @@ INSERT INTO dbo.CustomerClassification_InputLog_RealTime(CustId,CreatedDate,Crea
 SELECT DISTINCT CustId, @CurrentDate, @CurrentDateTime, 3
 FROM #tmpCustomers;	
 */
-	-- #4: Remove Accounts that Ticket Count has not reach the schedule
+	-- #3: Remove Accounts that Ticket Count has not reach the schedule
 	-- Remove Accounts less than 100 tickets compared to last scan for VIP
 	DELETE a WITH(ROWLOCK)
 	FROM #tmpCustomerAccummulatedInfo AS a
@@ -196,7 +180,7 @@ INSERT INTO dbo.CustomerClassification_InputLog_RealTime(CustId,CreatedDate,Crea
 SELECT DISTINCT CustId, @CurrentDate, @CurrentDateTime, 5
 FROM #tmpCustomerAccummulatedInfo;	
 */	
-	-- #5: Classify New Member
+	-- #4: Classify New Member
 	DELETE	a WITH(ROWLOCK)
 	OUTPUT	DELETED.CustId
 		,	DELETED.TurnoverRM
@@ -211,7 +195,7 @@ INSERT INTO dbo.CustomerClassification_InputLog_RealTime(CustId,CreatedDate,Crea
 SELECT DISTINCT CustId, @CurrentDate, @CurrentDateTime, 7
 FROM #tmpCustomerAccummulatedInfo;	
 */	
-	-- #6: Classify Normal Member, Smart Punter & High Risk Punter
+	-- #5: Classify Normal Member, Smart Punter & High Risk Punter
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT	a.CustId
 		,	@GENERAL_SPORTID
@@ -238,7 +222,7 @@ INSERT INTO dbo.CustomerClassification_InputLog_RealTime(CustId,CreatedDate,Crea
 SELECT DISTINCT CustId, @CurrentDate, @CurrentDateTime, 9
 FROM #tmpCustomerAccummulatedInfo;	
 */
-	-- #7: Insert new members
+	-- #6: Insert new members
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT	v.CustId, @GENERAL_SPORTID
 		,	@GENERALCATEGORY_NEWMEMBER 
@@ -250,7 +234,7 @@ INSERT INTO dbo.CustomerClassification_InputLog_RealTime(CustId,CreatedDate,Crea
 SELECT DISTINCT CustId, @CurrentDate, @CurrentDateTime, 11
 FROM #tmpNewCustomer;	
 */
-	-- #8: Log Dangerous Customers for tracking
+	-- #7: Log Dangerous Customers for tracking
 	INSERT INTO dbo.CustomerClassification_DangerousCustomerLog(CustId, ScannedTime)
 	SELECT	t.CustId
 		,	GETDATE()
@@ -258,7 +242,7 @@ FROM #tmpNewCustomer;
 		LEFT JOIN dbo.CustomerClassification_DangerousCustomerLog AS d WITH(NOLOCK) ON t.CustId = d.CustId
 	WHERE d.CustId IS NULL;
 
-	-- #9: Update last scanned ticket count back to dbo.CustomerClassification_BetCount
+	-- #8: Update last scanned ticket count back to dbo.CustomerClassification_BetCount
 	UPDATE v WITH(ROWLOCK, UPDLOCK)
 	SET v.BetCount = CASE 
 						WHEN a.CategoryId IN (@GENERALCATEGORY_VIP) 
