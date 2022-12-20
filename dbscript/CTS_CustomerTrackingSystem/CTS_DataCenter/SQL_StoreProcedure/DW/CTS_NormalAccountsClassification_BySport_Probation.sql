@@ -5,7 +5,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CTS_NormalAccountsClassification_BySport_Probation]
+ALTER PROCEDURE [dbo].[CTS_NormalAccountsClassification_BySport_Probation]
 		@CustomersXML			XML
 AS
 /*
@@ -16,6 +16,7 @@ AS
 
 	Revisions:
 		- 20200901@Jonas.Huynh: Created [Redmine ID: #176992]
+		- 20221111@Jonas.Huynh: Adjust Eport Rules [Redmine ID: #179501]
 
 	Param's Explanation:
 
@@ -224,7 +225,11 @@ BEGIN
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
 	SET   a.Site = c.site
 	    , a.SRecommend = c.srecommend
-		, a.IsSpecialSite = CASE WHEN c.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') THEN 1 ELSE 0 END
+		, a.IsSpecialSite = CASE
+								WHEN a.SportId = @SPORT_ESPORT AND c.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada', 'WINHX1') THEN 1
+								WHEN a.SportId <> @SPORT_ESPORT AND c.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') THEN 1
+								ELSE 0
+							END	
 	FROM #tmpCustomerAccummulatedInfo AS a
 		LEFT JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON a.CustId = c.custid;
 
@@ -238,7 +243,7 @@ BEGIN
 	FROM #tmpCustomerAccummulatedInfo AS a
 		INNER JOIN bodb02.dbo.Dep_CustSuper AS c WITH(NOLOCK) ON a.SRecommend = c.custid;	
 
-	-- #7: Classify GOOD, NEW, NORMAL, PROBATION, SMART, RISKY MEMBER
+	-- #7: Classify Probation Category
 	INSERT INTO #tmpResultData(CustId, SportId, CategoryId)
 	SELECT  CustId
 		,	SportId
