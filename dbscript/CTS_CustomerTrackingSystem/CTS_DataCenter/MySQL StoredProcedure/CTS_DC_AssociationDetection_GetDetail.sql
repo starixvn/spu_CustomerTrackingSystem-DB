@@ -5,7 +5,9 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociationDetection_GetDetail`(
 		IN	ip_CTSCustID 				BIGINT UNSIGNED
 	,	IN	ip_ListCTSCustID 			LONGTEXT
-	,	IN	ip_HasPrimary 				BIT 
+	,   IN  ip_HasDevice				BIT
+    ,   IN  ip_HasAI					BIT
+    ,   IN  ip_HasIP					BIT 
     ,	IN	ip_HasAgent 				BIT 
 )
     SQL SECURITY INVOKER
@@ -17,12 +19,16 @@ sp:BEGIN
         
 		Revisions:
 			- 20220727@Aries.Nguyen: Created [Redmine ID: #175701]
+            - 20221205@Aries.Nguyen: Re-arrange type options on Association Detection  [Redmine ID: #181207]
 
 		Param's Explanation (filtered by):
 
         Example:
-			- CALL CTS_DataCenter.CTS_DC_AssociationDetection_GetCust(1,'1,2',1,1,1,1,1);
+			- CALL CTS_DataCenter.CTS_DC_AssociationDetection_GetDetail(1,'1,2',1,1,1,1,1);
 	*/
+    DECLARE CONS_RangeDevice 		BIGINT DEFAULT 10000000000;
+    DECLARE lv_CTSCustIDs 			JSON;
+    DECLARE lv_AgentCTSCustIDs 		JSON;
     DECLARE lv_CustID 				BIGINT UNSIGNED;
     DECLARE lv_RoleID 				INT;
     DECLARE lv_Username 			VARCHAR(50);
@@ -40,6 +46,11 @@ sp:BEGIN
         ,	INDEX			IX_Temp_Cust(CustID)
 	);
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_Cust_Dup;
+	CREATE TEMPORARY TABLE 		Temp_Cust_Dup (
+			CTSCustID		BIGINT UNSIGNED PRIMARY KEY
+	);
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_Recommend;
 	CREATE TEMPORARY TABLE 	Temp_Recommend (
 			CTSCustID 			BIGINT  PRIMARY KEY 
@@ -47,65 +58,78 @@ sp:BEGIN
         ,	Username			VARCHAR(50)
         ,	INDEX 				IX_Temp_Recommend_Recommend(Recommend)
 	);
-
-    DROP TEMPORARY TABLE IF EXISTS Temp_Device_Level0;
-	CREATE TEMPORARY TABLE 		Temp_Device_Level0 (
-		    DCSDeviceID			BIGINT PRIMARY KEY
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_Recommend_Dup;
+	CREATE TEMPORARY TABLE 	Temp_Recommend_Dup (
+			CTSCustID 			BIGINT  PRIMARY KEY 
 	);
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_Group_Level0;
-	CREATE TEMPORARY TABLE 		Temp_Group_Level0 (
-		    GroupID			BIGINT PRIMARY KEY
-	);
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_Level1;
-	CREATE TEMPORARY TABLE 		Temp_Level1 (
-		    CTSCustID			BIGINT UNSIGNED 
-		,	AssociationType		SMALLINT 
-        ,	PRIMARY KEY(CTSCustID, AssociationType) # 1-Device, 2-Manual, 3-AI, 4-AIGroup, 5-IP, 6 - Agent, 7 - SharedIP, 8 - SharedMatches		
-	);
-
-    DROP TEMPORARY TABLE IF EXISTS Temp_Graph;
-	CREATE TEMPORARY TABLE 	Temp_Graph (
+    DROP TEMPORARY TABLE IF EXISTS Temp_GraphOrig;
+    CREATE TEMPORARY TABLE 	Temp_GraphOrig (
 			OrigID 				BIGINT  
 		,	DestID   			BIGINT
-        ,	INDEX				IX_Temp_Graph_DestID(DestID)
-        ,	PRIMARY KEY(OrigID, DestID)
-	);
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_GraphCount;
-	CREATE TEMPORARY TABLE 	Temp_GraphCount (
-			DestID   			BIGINT PRIMARY KEY
-	);
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_GraphGroupAss;
-	CREATE TEMPORARY TABLE 	Temp_GraphGroupAss (
-			DestID   			BIGINT PRIMARY KEY
+		,	AssociationType		SMALLINT 
+		,	PRIMARY KEY(OrigID, DestID,AssociationType)
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Association;
-	CREATE TEMPORARY TABLE 		Temp_Association (
-			CTSCustID			BIGINT UNSIGNED
-		,	AssociationType		VARCHAR(15)
-        ,	PRIMARY KEY(CTSCustID, AssociationType)
+    CREATE TEMPORARY TABLE 	Temp_Association (
+			CTSCustID 				BIGINT  
+		,	Transitive   			BIGINT
+		,	AssociationType1		SMALLINT 
+        ,	AssociationType2		SMALLINT 
+        ,	PRIMARY KEY(CTSCustID, Transitive, AssociationType1, AssociationType2)
 	);
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_Association_Agent;
-	CREATE TEMPORARY TABLE 		Temp_Association_Agent (
-			CTSCustID			BIGINT UNSIGNED
-		,	AssociationType		VARCHAR(15)
-        ,	PRIMARY KEY(CTSCustID, AssociationType)
+    DROP TEMPORARY TABLE IF EXISTS Temp_AgentAssociation;
+    CREATE TEMPORARY TABLE 	Temp_AgentAssociation (
+			CTSCustID 				BIGINT  
+		,	Transitive   			BIGINT
+		,	AssociationType1		SMALLINT 
+        ,	AssociationType2		SMALLINT 
+        ,	PRIMARY KEY(CTSCustID, Transitive, AssociationType1, AssociationType2)
 	);
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_Level1;
+    CREATE TEMPORARY TABLE 	Temp_Level1 (
+			CTSCustID 				BIGINT  PRIMARY KEY
+		,	AssociationType			VARCHAR(100) 
+	);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_Level2;
+    CREATE TEMPORARY TABLE 	Temp_Level2 (
+			CTSCustID 				BIGINT  PRIMARY KEY
+		,	Transitive				BIGINT
+		,	AssociationType1		VARCHAR(100) 
+        ,	AssociationType2		VARCHAR(100) 
+	);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_AgentLevel1;
+    CREATE TEMPORARY TABLE 	Temp_AgentLevel1 (
+			CTSCustID 				BIGINT  PRIMARY KEY
+		,	AssociationType			VARCHAR(100) 
+	);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_AgentLevel2;
+    CREATE TEMPORARY TABLE 	Temp_AgentLevel2 (
+			CTSCustID 				BIGINT  PRIMARY KEY
+		,	Transitive				BIGINT
+		,	AssociationType1		VARCHAR(100) 
+        ,	AssociationType2		VARCHAR(100) 
+	);
+   
     DROP TEMPORARY TABLE IF EXISTS Temp_AgentResult;
 	CREATE TEMPORARY TABLE 		Temp_AgentResult (
 			CTSCustID				BIGINT UNSIGNED PRIMARY KEY
 		,	CustID					BIGINT UNSIGNED
 		,	Username				VARCHAR(50)
 		,	AgentUsername			VARCHAR(50)	
-		,	AgentAssociationType	VARCHAR(50)
+        ,	TransitiveCTSCustID		BIGINT
+        ,	TransitiveUsername		VARCHAR(50)
+		,	AssociationType1		VARCHAR(100) 
+        ,	AssociationType2		VARCHAR(100) 
 	);
-    
+
     INSERT IGNORE INTO Temp_Cust(CTSCustID, CustID, Username, Recommend, RoleID)
 	SELECT 	cus.CTSCustID
 		, 	cus.CustID
@@ -114,7 +138,11 @@ sp:BEGIN
 		,	cus.RoleID
 	FROM JSON_TABLE(CONCAT('[',ip_ListCTSCustID,']'),'$[*]' COLUMNS(NESTED PATH '$' COLUMNS (CTSCustID BIGINT UNSIGNED PATH '$'))) AS tmp
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = tmp.CTSCustID;
-
+	
+    INSERT INTO Temp_Cust_Dup(CTSCustID)
+    SELECT CTSCustID
+    FROM Temp_Cust;
+    
     SELECT 	CustID
 		,	Username
         ,	Recommend
@@ -143,298 +171,208 @@ sp:BEGIN
 														AND cus.IsInternal = 0
                                                         AND cus.CustSubID = 0
                                                         AND tmp.Recommend != lv_RecommendCustID;
+	INSERT IGNORE INTO Temp_Recommend_Dup(CTSCustID)
+    SELECT CTSCustID
+    FROM Temp_Recommend;
     
-    IF ip_HasPrimary = 1 THEN
-		/*---------------------------------------------Get Device--------------------------------------- */
-		INSERT INTO Temp_Device_Level0(DCSDeviceID)
-		SELECT 	dv.DCSDeviceID
-		FROM CTS_DataCenter.AssociationByDevice AS dv 
-        WHERE dv.CTSCustID = ip_CTSCustID;
-        
-        INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
-		SELECT 	ip_CTSCustID
-			, 	-1 * DCSDeviceID
-		FROM Temp_Device_Level0;
-        
-        INSERT IGNORE INTO Temp_Level1(CTSCustID,AssociationType)
-        SELECT 	lv1.CTSCustID 
-			,	1 AS Device
-        FROM CTS_DataCenter.AssociationByDevice AS lv1
-        WHERE EXISTS (SELECT 1 FROM Temp_Device_Level0 AS dv WHERE lv1.DCSDeviceID = dv.DCSDeviceID)
-			AND lv1.CTSCustID != ip_CTSCustID;
-      
-        /*---------------------------------------------Get Association Manual --------------------------------------- */
-		INSERT IGNORE INTO Temp_Level1(CTSCustID, AssociationType)
-		SELECT  CASE WHEN ma.FromCTSCustID = ip_CTSCustID THEN ma.ToCTSCustID
-					 ELSE  ma.FromCTSCustID END CTSCustID
-			,  	2 AS Manual
-		FROM CTS_DataCenter.AssociationByManual AS ma 
-		WHERE ma.FromCTSCustID = ip_CTSCustID 
-			OR ma.ToCTSCustID = ip_CTSCustID;
-            
-		INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
-		SELECT  ma.FromCTSCustID
-			,	ma.ToCTSCustID
-		FROM Temp_Cust AS tmp
-			INNER JOIN CTS_DataCenter.AssociationByManual AS ma ON ma.FromCTSCustID = tmp.CTSCustID;
-		
-		INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
-		SELECT  ma.ToCTSCustID 
-			,	ma.FromCTSCustID
-		FROM Temp_Cust AS tmp
-			INNER JOIN CTS_DataCenter.AssociationByManual AS ma ON ma.ToCTSCustID = tmp.CTSCustID;
-
-        /*----------------------------------------------Get association by AI-------------------------------------------*/
-		INSERT IGNORE INTO Temp_Level1(CTSCustID, AssociationType)
-		SELECT  cus.CTSCustID
-			,  	3 AS AI
-		FROM CTS_DataCenter.AssociationByAI AS ai
-            INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ai.ToCustID = cus.CustID AND cus.CustSubID = 0
-		WHERE ai.FromCustID = lv_CustID;
-		
-		INSERT IGNORE INTO Temp_Level1(CTSCustID, AssociationType)
-		SELECT  cus.CTSCustID
-			,  	3 AS AI
-		FROM CTS_DataCenter.AssociationByAI AS ai 
-            INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ai.FromCustID = cus.CustID AND cus.CustSubID = 0
-		WHERE ai.ToCustID = lv_CustID;
-        
-		INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
-		SELECT  tmp.CTSCustID
-			,	cus.CTSCustID
-		FROM Temp_Cust AS tmp
-			INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.FromCustID = tmp.CustID
-            INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ai.ToCustID = cus.CustID AND cus.CustSubID = 0;
-		
-		INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
-		SELECT  tmp.CTSCustID
-			,	cus.CTSCustID
-		FROM Temp_Cust AS tmp
-			INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.ToCustID = tmp.CustID
-            INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ai.FromCustID = cus.CustID AND cus.CustSubID = 0;
-
-        /*----------------------------------------------Get AssociationGroupByAI-------------------------------------------*/
-        INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
-		SELECT 	cus.CTSCustID 
-			, 	-100000000000 + CAST(asg.GroupID AS SIGNED)
-		FROM CTS_DataCenter.AssociationGroupByAI AS asg 
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON asg.CustID = cus.CustID AND cus.CustSubID = 0
-        WHERE asg.CustID = lv_CustID;
-        
-        INSERT IGNORE INTO Temp_Group_Level0(GroupID)
-		SELECT 	asg.GroupID 
-		FROM CTS_DataCenter.AssociationGroupByAI AS asg 
-        WHERE asg.CustID = lv_CustID;
-        
-        INSERT IGNORE INTO Temp_Level1(CTSCustID,AssociationType)
-        SELECT 	cus.CTSCustID 
-			,	3 AS AI
-        FROM CTS_DataCenter.AssociationGroupByAI AS lv1
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON lv1.CustID = cus.CustID AND cus.CustSubID = 0
-        WHERE EXISTS (SELECT 1 FROM Temp_Group_Level0 AS asg WHERE lv1.GroupID = asg.GroupID)
-			AND lv1.CustID != lv_CustID;
-            
-        /*------------------------------------------Get association by IP-------------------------------------------------*/
-        INSERT IGNORE INTO Temp_Level1(CTSCustID, AssociationType)
-		SELECT  cus.CTSCustID
-			,  	4 AS IP
-		FROM CTS_DataCenter.AssociationByIP AS ip
-            INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ip.ToCustID = cus.CustID AND cus.CustSubID = 0
-		WHERE ip.FromCustID = lv_CustID;
-		
-		INSERT IGNORE INTO Temp_Level1(CTSCustID, AssociationType)
-		SELECT  cus.CTSCustID
-			,  	4 AS IP
-		FROM CTS_DataCenter.AssociationByIP AS ip 
-            INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ip.FromCustID = cus.CustID AND cus.CustSubID = 0
-		WHERE ip.ToCustID = lv_CustID;
-        
-        INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
-		SELECT  tmp.CTSCustID
-			,	cus.CTSCustID
-		FROM Temp_Cust AS tmp
-			INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.FromCustID = tmp.CustID
-            INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ip.ToCustID = cus.CustID AND cus.CustSubID = 0;
-		
-		INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
-		SELECT  tmp.CTSCustID
-			,	cus.CTSCustID
-		FROM Temp_Cust AS tmp
-			INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.ToCustID = tmp.CustID
-            INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ip.FromCustID = cus.CustID AND cus.CustSubID = 0;
-				
-        /*------------------------------------------Build Graph Table-------------------------------------------------*/
-		INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
-		SELECT 	ip_CTSCustID
-			, 	CTSCustID
-		FROM Temp_Level1; 
-        
-        INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
-		SELECT 	ip_CTSCustID
-			, 	-1 * dv.DCSDeviceID
-		FROM CTS_DataCenter.AssociationByDevice AS dv 
-			INNER JOIN Temp_Level1 AS lv1 ON dv.CTSCustID = lv1.CTSCustID;
-		
-        INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
-		SELECT 	cus.CTSCustID
-			, 	-1 * dv.DCSDeviceID
-		FROM CTS_DataCenter.AssociationByDevice AS dv 
-			INNER JOIN Temp_Cust AS cus ON dv.CTSCustID = cus.CTSCustID;
-              
-        INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
-		SELECT 	ip_CTSCustID
-			, 	-100000000000 + CAST(asg.GroupID AS SIGNED)
-		FROM Temp_Level1 AS lv1 
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = lv1.CTSCustID
-			INNER JOIN CTS_DataCenter.AssociationGroupByAI AS asg ON cus.CustID = asg.CustID;
-		
-        INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
-		SELECT 	cus.CTSCustID
-			, 	-100000000000 + CAST(asg.GroupID AS SIGNED)
-		FROM Temp_Cust AS lv1 
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = lv1.CTSCustID
-			INNER JOIN CTS_DataCenter.AssociationGroupByAI AS asg ON cus.CustID = asg.CustID;
-        
-        INSERT IGNORE INTO Temp_Association(CTSCustID,AssociationType)
-        SELECT 	lv1.CTSCustID
-			,	CASE WHEN lv1.AssociationType = 1 THEN "Device"
-					 WHEN lv1.AssociationType = 2 THEN "Manual"
-					 WHEN lv1.AssociationType = 3 THEN "Betting Pattern"
-					 WHEN lv1.AssociationType = 4 THEN "IP"
-                ELSE "N/A" END AssociationType
-        FROM  Temp_Level1 AS lv1  
-		WHERE EXISTS (SELECT 1 FROM Temp_Cust AS cus WHERE lv1.CTSCustID = cus.CTSCustID);
-
-        DELETE 
-        FROM Temp_Graph AS grp
-        WHERE EXISTS (SELECT 1 FROM Temp_Association AS lv1 WHERE lv1.CTSCustID = grp.OrigID);
-        
-        INSERT INTO Temp_GraphCount(DestID)
-        SELECT DestID
-        FROM Temp_Graph
-        GROUP BY DestID
-        HAVING COUNT(1) > 1;
-        
-        INSERT IGNORE INTO Temp_GraphGroupAss(DestID)
-        SELECT grp.DestID
-        FROM Temp_Graph AS grp
-			INNER JOIN Temp_GraphCount AS tmp ON grp.OrigID = ip_CTSCustID  AND grp.DestID = tmp.DestID;
-        
-        INSERT IGNORE INTO Temp_Association(CTSCustID,AssociationType)
-        SELECT 	cus.CTSCustID
-			,	""
-        FROM Temp_Cust AS cus
-			INNER JOIN Temp_Graph AS grp ON cus.CTSCustID = grp.OrigID
-            INNER JOIN Temp_GraphGroupAss AS tmp ON tmp.DestID = grp.DestID;
-    END IF;
+    WITH CTE AS (
+		SELECT 	DISTINCT
+				CTSCustID
+			,	CustID
+        FROM Temp_Cust
+    )
+    SELECT JSON_ARRAYAGG(JSON_OBJECT('CTSCustID', CTSCustID ,'CustID', CustID)) AS CustJson
+	INTO lv_CTSCustIDs	
+    FROM CTE;
+    
+    CALL CTS_DataCenter.CTS_DC_AssociationDetection_GetEdgeByCust(ip_CTSCustID,lv_CTSCustIDs,ip_HasDevice,ip_HasAI,ip_HasIP);
+	
+    INSERT INTO Temp_GraphOrig(OrigID, DestID, AssociationType)
+	SELECT 	OrigID
+		,	DestID
+        ,	AssociationType
+    FROM Temp_Graph 
+    WHERE	OrigID = ip_CTSCustID;
+    
+    INSERT IGNORE INTO Temp_Association(CTSCustID, Transitive, AssociationType1, AssociationType2)
+    WITH RECURSIVE CTE_Group AS ( 
+				SELECT 	DestID     #CAST(CONCAT(OrigID, ' -> ', DestID) AS CHAR(2000)) AS CurPath
+                    , 	CASE WHEN DestID < CONS_RangeDevice THEN DestID ELSE 0 END AS Transitive
+                    ,	CASE WHEN DestID < CONS_RangeDevice THEN AssociationType ELSE 0 END AS AssociationType1
+                    ,	0 AS AssociationType2
+                FROM Temp_GraphOrig
+				UNION 
+                SELECT 	grp.DestID       #CONCAT(CTE_Group.CurPath, ' -> ', grp.DestID)
+                    ,	CASE WHEN grp.DestID > CONS_RangeDevice OR CTE_Group.Transitive != 0 THEN CTE_Group.Transitive
+							 ELSE grp.DestID END AS Transitive
+					,   CASE WHEN  CTE_Group.AssociationType1 > 0 THEN CTE_Group.AssociationType1  
+                             WHEN  CTE_Group.AssociationType1 = 0 AND  grp.DestID < CONS_RangeDevice THEN grp.AssociationType 
+							 ELSE 0 
+                             END AS AssociationType1
+				    ,   CASE WHEN grp.DestID < CONS_RangeDevice AND CTE_Group.AssociationType1 > 0 THEN grp.AssociationType 
+							 ELSE 0 
+							 END AS AssociationType2
+				FROM Temp_Graph  AS grp
+					INNER JOIN CTE_Group ON grp.OrigID = CTE_Group.DestID
+				LIMIT 1000000
+	) 
+	SELECT 	cte.DestID
+		,	cte.Transitive
+        ,	cte.AssociationType1
+        ,	cte.AssociationType2
+	FROM CTE_Group AS cte
+	WHERE EXISTS (SELECT 1 FROM Temp_Cust_Dup AS tmp WHERE tmp.CTSCustID = cte.DestID);
     
     IF ip_HasAgent = 1 AND lv_RoleID = 1 THEN
-		TRUNCATE TABLE Temp_Graph;
-        TRUNCATE TABLE Temp_Device_Level0;
-        TRUNCATE TABLE Temp_Level1;
-        TRUNCATE TABLE Temp_GraphCount;
-		TRUNCATE TABLE  Temp_GraphGroupAss;
+		TRUNCATE TABLE Temp_GraphOrig;
         
-        INSERT INTO Temp_Device_Level0(DCSDeviceID)
-		SELECT 	dv.DCSDeviceID
-		FROM CTS_DataCenter.AssociationByDevice AS dv 
-        WHERE dv.CTSCustID = lv_RecommendCTSCustID;
-        
-        INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
-		SELECT 	lv_RecommendCTSCustID 
-			, 	-1 * DCSDeviceID
-		FROM Temp_Device_Level0;
-        
-        INSERT IGNORE INTO Temp_Level1(CTSCustID,AssociationType)
-        SELECT 	lv1.CTSCustID 
-			,	1 AS Device
-        FROM CTS_DataCenter.AssociationByDevice AS lv1
-        WHERE EXISTS (SELECT 1 FROM Temp_Device_Level0 AS dv WHERE lv1.DCSDeviceID = dv.DCSDeviceID)
-			AND lv1.CTSCustID != lv_RecommendCTSCustID;
-        
-        /*---------------------------------------------Get Association Manual --------------------------------------- */
-		INSERT IGNORE INTO Temp_Level1(CTSCustID, AssociationType)
-		SELECT  CASE WHEN ma.FromCTSCustID = lv_RecommendCTSCustID THEN ma.ToCTSCustID
-					 ELSE  ma.FromCTSCustID END CTSCustID
-			,  	2 AS Manual
-		FROM CTS_DataCenter.AssociationByManual AS ma 
-		WHERE ma.FromCTSCustID = lv_RecommendCTSCustID 
-			OR ma.ToCTSCustID = lv_RecommendCTSCustID;
-            
-		INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
-		SELECT  ma.FromCTSCustID
-			,	ma.ToCTSCustID
-		FROM Temp_Recommend AS tmp
-			INNER JOIN CTS_DataCenter.AssociationByManual AS ma ON ma.FromCTSCustID = tmp.CTSCustID;
+		SELECT 	JSON_ARRAYAGG(JSON_OBJECT('CTSCustID', CTSCustID ,'CustID', NULL)) AS CustJson
+		INTO lv_AgentCTSCustIDs
+		FROM Temp_Recommend;
 		
-		INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
-		SELECT  ma.ToCTSCustID 
-			,	ma.FromCTSCustID
-		FROM Temp_Recommend AS tmp
-			INNER JOIN CTS_DataCenter.AssociationByManual AS ma ON ma.ToCTSCustID = tmp.CTSCustID;
-		
-        /*------------------------------------------Build Graph Table-------------------------------------------------*/
-		INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
-		SELECT 	lv_RecommendCTSCustID
-			, 	CTSCustID
-		FROM Temp_Level1;
+        CALL CTS_DataCenter.CTS_DC_AssociationDetection_GetEdgeByCust(lv_RecommendCTSCustID,lv_AgentCTSCustIDs,1,0,0);
         
-        INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
-		SELECT 	lv_RecommendCTSCustID
-			, 	-1 * dv.DCSDeviceID
-		FROM CTS_DataCenter.AssociationByDevice AS dv 
-			INNER JOIN Temp_Level1 AS lv1 ON dv.CTSCustID = lv1.CTSCustID;
-		
-        INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
+        INSERT INTO Temp_GraphOrig(OrigID, DestID, AssociationType)
+		SELECT 	OrigID
+			,	DestID
+			,	AssociationType
+		FROM Temp_Graph 
+		WHERE	OrigID = lv_RecommendCTSCustID;
+        
+        INSERT IGNORE INTO Temp_AgentAssociation(CTSCustID, Transitive, AssociationType1, AssociationType2)
+		WITH RECURSIVE CTE_Group AS ( 
+					SELECT 	DestID     #CAST(CONCAT(OrigID, ' -> ', DestID) AS CHAR(2000)) AS CurPath
+						, 	0 AS Transitive
+						,	 CASE WHEN DestID < CONS_RangeDevice THEN AssociationType 
+								  ELSE 0 
+							 END AS AssociationType1
+						,	0 AS AssociationType2
+					FROM Temp_GraphOrig
+					UNION 
+					SELECT 	grp.DestID       #CONCAT(CTE_Group.CurPath, ' -> ', grp.DestID)
+						,	CASE WHEN grp.DestID > CONS_RangeDevice  OR CTE_Group.Transitive != 0 THEN CTE_Group.Transitive
+								 ELSE grp.DestID END AS Transitive
+						,   CASE WHEN  CTE_Group.AssociationType1 > 0 THEN CTE_Group.AssociationType1  
+								 WHEN  CTE_Group.AssociationType1 = 0 AND  grp.DestID < CONS_RangeDevice THEN grp.AssociationType 
+								 ELSE 0 
+								 END AS AssociationType1
+						,   CASE WHEN grp.DestID < CONS_RangeDevice AND CTE_Group.AssociationType1 > 0 THEN grp.AssociationType 
+								 ELSE 0 
+								 END AS AssociationType2
+					FROM Temp_Graph  AS grp
+						INNER JOIN CTE_Group ON grp.OrigID = CTE_Group.DestID
+					LIMIT 1000000
+		) 
+		SELECT 	cte.DestID
+			,	cte.Transitive 
+			,	cte.AssociationType1
+			,	cte.AssociationType2
+		FROM CTE_Group AS cte
+		WHERE EXISTS (SELECT 1 FROM Temp_Recommend_Dup AS tmp WHERE tmp.CTSCustID = cte.DestID);
+        
+        INSERT INTO Temp_AgentLevel1(CTSCustID,AssociationType)
+		SELECT 	lv1.CTSCustID
+			,	GROUP_CONCAT(DISTINCT CASE WHEN lv1.AssociationType1 = 1 THEN "Device"
+										   WHEN lv1.AssociationType1 = 2 THEN "Manual"
+										   WHEN lv1.AssociationType1 IN (3,4) THEN "Betting Pattern"
+										   WHEN lv1.AssociationType1 = 5 THEN "IP" 
+									   END) AS AssociationType
+		FROM Temp_AgentAssociation AS lv1
+		WHERE lv1.AssociationType1 != 0
+			AND lv1.AssociationType2 = 0
+		GROUP BY lv1.CTSCustID;
+        
+        INSERT IGNORE INTO Temp_AgentLevel2(CTSCustID,Transitive,AssociationType1,AssociationType2)
 		SELECT 	cus.CTSCustID
-			, 	-1 * dv.DCSDeviceID
-		FROM CTS_DataCenter.AssociationByDevice AS dv 
-			INNER JOIN Temp_Recommend AS cus ON dv.CTSCustID = cus.CTSCustID;
-
-        INSERT IGNORE INTO Temp_Association_Agent(CTSCustID,AssociationType)
-        SELECT 	lv1.CTSCustID
-			,	CASE WHEN lv1.AssociationType = 1 THEN "Device"
-					 WHEN lv1.AssociationType = 2 THEN "Manual"
-                ELSE "N/A" END AssociationType
-        FROM  Temp_Level1 AS lv1  
-		WHERE EXISTS (SELECT 1 FROM Temp_Recommend AS cus WHERE lv1.CTSCustID = cus.CTSCustID);
+			,	lv2.Transitive
+			,	CASE WHEN lv2.AssociationType1 = 1 THEN "Device"
+					 WHEN lv2.AssociationType1 IN (3,4) THEN "Betting Pattern"
+					 WHEN lv2.AssociationType1 = 5 THEN "IP" 
+				END AS AssociationType1
+			,	CASE WHEN lv2.AssociationType2 = 1 THEN "Device"
+					 WHEN lv2.AssociationType2 IN (3,4) THEN "Betting Pattern"
+					 WHEN lv2.AssociationType2 = 5 THEN "IP" 
+				END AS AssociationType2
+		FROM Temp_Recommend AS cus,
+			LATERAL(SELECT 	tmp.Transitive
+						,	tmp.AssociationType1
+						,	tmp.AssociationType2
+					FROM Temp_AgentAssociation AS tmp 
+					WHERE tmp.CTSCustID = cus.CTSCustID
+						AND tmp.AssociationType1 != 0
+						AND tmp.AssociationType2 != 0
+					ORDER BY tmp.Transitive ASC
+						,	 tmp.AssociationType1 ASC
+						,	 tmp.AssociationType1 ASC
+					LIMIT 1) AS lv2
+		WHERE NOT EXISTS (SELECT 1 FROM Temp_AgentLevel1 AS lv1 WHERE cus.CTSCustID = lv1.CTSCustID);
+		
+		INSERT IGNORE INTO Temp_AgentLevel2(CTSCustID,Transitive,AssociationType1,AssociationType2)
+		SELECT 	CTSCustID
+			,	0 AS Transitive
+			,	AssociationType AS AssociationType1
+			,	"" AS AssociationType2
+		FROM Temp_AgentLevel1;
         
-        DELETE 
-        FROM Temp_Graph AS grp
-        WHERE EXISTS (SELECT 1 FROM Temp_Association_Agent AS lv1 WHERE lv1.CTSCustID = grp.OrigID);
-        
-        INSERT INTO Temp_GraphCount(DestID)
-        SELECT DestID
-        FROM Temp_Graph
-        GROUP BY DestID
-        HAVING COUNT(1) > 1;
-        
-        INSERT IGNORE INTO Temp_GraphGroupAss(DestID)
-        SELECT grp.DestID
-        FROM Temp_Graph AS grp
-			INNER JOIN Temp_GraphCount AS tmp ON grp.OrigID = lv_RecommendCTSCustID  AND grp.DestID = tmp.DestID;
-        
-        INSERT IGNORE INTO Temp_Association_Agent(CTSCustID,AssociationType)
-        SELECT 	cus.CTSCustID
-			,	""
-        FROM Temp_Recommend AS cus
-			INNER JOIN Temp_Graph AS grp ON cus.CTSCustID = grp.OrigID
-            INNER JOIN Temp_GraphGroupAss AS tmp ON tmp.DestID = grp.DestID;
-    
-        INSERT IGNORE INTO Temp_AgentResult(CTSCustID,CustID,Username,AgentUsername,AgentAssociationType)
+		INSERT IGNORE INTO Temp_AgentResult( CTSCustID,CustID,Username,AgentUsername,TransitiveCTSCustID,TransitiveUsername,AssociationType1,AssociationType2)
         SELECT 	cus.CTSCustID
 			,	cus.CustID 
 			,	cus.Username
-			,	re.Username
-			,	tbl.AgentAssociationType
-		FROM(SELECT 	CTSCustID
-				,		GROUP_CONCAT(DISTINCT AssociationType) AS AgentAssociationType
-			FROM Temp_Association_Agent
-			GROUP BY CTSCustID
-		) AS tbl
-			INNER JOIN Temp_Recommend AS re ON re.CTSCustID = tbl.CTSCustID
-			INNER JOIN Temp_Cust AS cus ON cus.Recommend = re.Recommend AND cus.RoleID = 1;
+			,	re.Username AS AgentUsername
+            ,	transitive.CTSCustID AS TransitiveCTSCustID
+            ,	transitive.Username AS TransitiveUsername
+			,	lv.AssociationType1
+            ,	lv.AssociationType2
+		FROM Temp_AgentLevel2 AS lv
+			INNER JOIN Temp_Recommend AS re ON re.CTSCustID = lv.CTSCustID
+			INNER JOIN Temp_Cust AS cus ON cus.Recommend = re.Recommend AND cus.RoleID = 1
+			LEFT JOIN CTSCustomer AS transitive ON transitive.CTSCustID = lv.Transitive;
+
     END IF;
+   
+    INSERT INTO Temp_Level1(CTSCustID,AssociationType)
+    SELECT 	lv1.CTSCustID
+		,	GROUP_CONCAT(DISTINCT CASE WHEN lv1.AssociationType1 = 1 THEN "Device"
+									   WHEN lv1.AssociationType1 = 2 THEN "Manual"
+									   WHEN lv1.AssociationType1 IN (3,4) THEN "Betting Pattern"
+									   WHEN lv1.AssociationType1 = 5 THEN "IP" 
+								   END) AS AssociationType
+    FROM Temp_Association AS lv1
+    WHERE lv1.AssociationType1 != 0
+		AND lv1.AssociationType2 = 0
+	GROUP BY lv1.CTSCustID;
+    
+    INSERT IGNORE INTO Temp_Level2(CTSCustID,Transitive,AssociationType1,AssociationType2)
+    SELECT 	cus.CTSCustID
+		,	lv2.Transitive
+        ,	CASE WHEN lv2.AssociationType1 = 1 THEN "Device"
+				 WHEN lv2.AssociationType1 IN (3,4) THEN "Betting Pattern"
+				 WHEN lv2.AssociationType1 = 5 THEN "IP" 
+			END AS AssociationType1
+		,	CASE WHEN lv2.AssociationType2 = 1 THEN "Device"
+				 WHEN lv2.AssociationType2 IN (3,4) THEN "Betting Pattern"
+				 WHEN lv2.AssociationType2 = 5 THEN "IP" 
+			END AS AssociationType2
+    FROM Temp_Cust AS cus,
+		LATERAL(SELECT 	tmp.Transitive
+					,	tmp.AssociationType1
+                    ,	tmp.AssociationType2
+			    FROM Temp_Association AS tmp 
+                WHERE tmp.CTSCustID = cus.CTSCustID
+					AND tmp.AssociationType1 != 0
+					AND tmp.AssociationType2 != 0
+				ORDER BY tmp.Transitive ASC
+					,	 tmp.AssociationType1 ASC
+                    ,	 tmp.AssociationType1 ASC
+				LIMIT 1) AS lv2
+	WHERE NOT EXISTS (SELECT 1 FROM Temp_Level1 AS lv1 WHERE cus.CTSCustID = lv1.CTSCustID);
+    
+    INSERT INTO Temp_Level2(CTSCustID,Transitive,AssociationType1,AssociationType2)
+    SELECT 	CTSCustID
+		,	0 AS Transitive
+        ,	AssociationType AS AssociationType1
+        ,	"" AS AssociationType2
+    FROM Temp_Level1;
     
     SELECT 	ip_CTSCustID AS FromCTSCustID
 		,	lv_CustID AS FromCustID
@@ -446,12 +384,18 @@ sp:BEGIN
         ,	cus.Username AS ToUsername
         ,	re.Username AS ToAgentUsername
         
-        ,	lv.AssociationType
-        ,	"" AS AgentAssociationType
-    FROM Temp_Association AS lv
+        ,	lv.AssociationType1
+        ,	lv.AssociationType2
+        ,	"" AS AgentAssociationType1
+        ,	"" AS AgentAssociationType2
+        
+        ,	lv.Transitive AS TransitiveCTSCustID
+        ,	transitive.Username AS TransitiveUsername	
+    FROM Temp_Level2 AS lv
 		LEFT JOIN Temp_Cust AS cus ON cus.CTSCustID = lv.CTSCustID
         LEFT JOIN Temp_Recommend AS re ON re.CTSCustID = lv.CTSCustID
-        
+        LEFT JOIN CTSCustomer AS transitive ON transitive.CTSCustID = lv.Transitive
+	 
 	UNION ALL
     
     SELECT	ip_CTSCustID AS FromCTSCustID
@@ -464,10 +408,15 @@ sp:BEGIN
         ,	ag.Username AS ToUsername
         ,	ag.AgentUsername AS ToAgentUsername
         
-        ,	"Agent" AS AssociationType
-        ,	ag.AgentAssociationType
+        ,	"" AS AssociationType1
+        ,	"" AS AssociationType2
+        ,	ag.AssociationType1 AS AgentAssociationType1
+        ,	ag.AssociationType2 AS AgentAssociationType2
+        
+        ,	ag.TransitiveCTSCustID
+        ,	ag.TransitiveUsername	
     FROM Temp_AgentResult AS ag;
-    
+
 END$$
 
 DELIMITER ;
