@@ -31,7 +31,7 @@ sp: BEGIN
 	DECLARE lv_LastSequenceID BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_MaxSequenceID BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_RuleGroupID TINYINT DEFAULT 1; #Rule 01
-    DECLARE lv_NoOfRow 	INT DEFAULT 5000;
+    DECLARE lv_BatchSize 	INT DEFAULT 5000;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorRuleSetting;
 	CREATE TEMPORARY TABLE Temp_MatchMonitorRuleSetting(
@@ -48,7 +48,7 @@ sp: BEGIN
     WHERE s.RuleGroupID = lv_RuleGroupID;
     
     SELECT s.ParameterValue
-    INTO lv_NoOfRow
+    INTO lv_BatchSize
     FROM CTS_DataCenter.SystemParameter AS s
     WHERE s.ParameterID = 129;
     
@@ -61,7 +61,7 @@ sp: BEGIN
         
         SELECT MAX(tmp.SequenceID)
         INTO lv_MaxSequenceID
-        FROM (SELECT mms.SequenceID FROM CTS_DataCenter.MatchMonitorStagingArbitrageNonLive AS mms WHERE mms.SequenceID > lv_LastSequenceID AND mms.GroupID >= 0 ORDER BY mms.SequenceID  LIMIT lv_NoOfRow) AS tmp;
+        FROM (SELECT mms.SequenceID FROM CTS_DataCenter.MatchMonitorStagingArbitrageNonLive AS mms WHERE mms.SequenceID > lv_LastSequenceID AND mms.GroupID >= 0 ORDER BY mms.SequenceID  LIMIT lv_BatchSize) AS tmp;
 		
 		SET op_MaxSequenceID = IFNULL(lv_MaxSequenceID, 0);        
         
