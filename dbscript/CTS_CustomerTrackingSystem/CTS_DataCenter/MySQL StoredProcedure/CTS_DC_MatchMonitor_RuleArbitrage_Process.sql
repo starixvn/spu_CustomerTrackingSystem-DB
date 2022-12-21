@@ -16,31 +16,17 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleArbitrage_Proce
     SQL SECURITY INVOKER
 sp: BEGIN
 	/*
-		Created:	20210526@Casey.Huynh
-		Task :		Match Monitor Rule Process
+		Created:	202212216@Casey.Huynh
+		Task :		Match Monitor Arbitrage Rule
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
-			- 	20210526@Casey.Huynh: Created [Redmine ID: 152883]
-			-	20210719@Casey.Huynh: Fix Issue Rule Trans.StepTime and AssGroup [Redmine ID: 158946]
-            -	20210830@Casey.Huynh: Update Rule seperate Live and NonLive and move to Slave [Redmine ID: 159195]
-			-	20211019@Aries.Nguyen: Use FEDERATED  table [Redmine ID: 163400]
-			-	20211102@Aries.Nguyen: Fix FEDERATED connection fail[Redmine ID: 163400]
-            -	20211111@Casey.Huynh: Fix Issue Trans of the same Cust not merge Group [Redmine ID: 164558]
-            -	20220110@Casey.Huynh: Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
-            -	20220217@Casey.Huynh: Enhance MM, Update TO >= 1000 [Redmine ID: 168736]
-            - 	20220422@Irena.Vo: Mapping Is Hedging Reason (MM) from table CustomerCategory [Redmine ID: #170468]
-            -	20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
-            - 	20220830@Casey.Huynh: New Category for Classify Group Betting [Redmine ID: #176976]
-            -	202200929@Casey.Huynh: Seperate By Sport [Redmine ID: #178310]
-            -	20221021@Casey.Huynh: Fixed Clean Data Staging [Redmine ID: #179427]
-            -	20221027@Casey.Huynh: Seperate pool Staging [RedmineID: 179439]
-            -	20221205@Casey.Huynh: Refine Arbitrage [Redmine ID: #179502]
-		Param's Explanation (filtered by):	
-		Example:
-			-  CALL CTS_DC_MatchMonitor_RuleArbitrage_Process(@ip_LiveIndicator:=0,@ip_MaxSequenceID:=113171940189,@ip_MatchID:=1,@ip_IsMajorLeague:=1,@ip_ScoreDiff:=0,@ip_BettypeID:=0,@ip_BetID:=0,@ip_HDP:=0);
-			
+			- 	202212216@Casey.Huynh: Created [Redmine ID: 179502]
+            
+		Param's Explanation (filtered by):
+			CALL CTS_DC_MatchMonitor_RuleArbitrage_StagingClean(0,2);
+		Example:		
 	*/
     DECLARE CONST_RULE_GROUPID 			INT DEFAULT 5;
     DECLARE CONS_SITE789 				INT DEFAULT  3;

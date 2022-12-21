@@ -9,23 +9,17 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleArbitrage_Stagi
     SQL SECURITY INVOKER
 BEGIN
 	/*
-		Created:	20210526@Casey.Huynh
-		Task :		Match Monitor Insert trans ticket to Staging table
+		Created:	202212216@Casey.Huynh
+		Task :		Match Monitor Arbitrage Rule
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
-			- 	20210526@Casey.Huynh: Created [Redmine ID: 159195]
-            -	20220110@Casey.Huynh: Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
-            -	20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
-            -	202200929@Casey.Huynh: Seperate By Sport [Redmine ID: #178310]
-            -	20221021@Casey.Huynh: Fixed Clean Data Staging [Redmine ID: #179427]
-            -	20221027@Casey.Huynh: Seperate pool Staging [RedmineID: 179439]
-            -	20221205@Casey.Huynh: Rename Table [Redmine ID: #179502]
+			- 	202212216@Casey.Huynh: Created [Redmine ID: 179502]
+            
 		Param's Explanation (filtered by):
-			CALL CTS_DC_MatchMonitor_RuleHedging_StagingClean(1,2);
-		Example:
-			
+			CALL CTS_DC_MatchMonitor_RuleArbitrage_StagingClean(0,2);
+		Example:			
 	*/
     DECLARE CONST_RULE_GROUPID INT DEFAULT 5;
     
@@ -34,21 +28,23 @@ BEGIN
 	DECLARE	lv_LastTransID 		BIGINT;   
 	DECLARE lv_Reason INT DEFAULT 0; #Group Betting
     DECLARE lv_LastSequenceID INT; #Group Betting
-    
+
     DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorRuleSetting;
 	CREATE TEMPORARY TABLE Temp_MatchMonitorRuleSetting(
 			SportType INT
-		,	TimeStep INT
+		,	IsMajorLeague BOOLEAN
+        ,	TimeStep INT
 		
-		,	PRIMARY KEY PK_Temp_MatchMonitorRuleSetting(SportType )
+		,	PRIMARY KEY PK_Temp_MatchMonitorRuleSetting(SportType,IsMajorLeague )
 	);
-    
-    INSERT INTO Temp_MatchMonitorRuleSetting(SportType, TimeStep)
+	
+    INSERT INTO Temp_MatchMonitorRuleSetting(SportType, IsMajorLeague, TimeStep)
     SELECT	s.SportType
+		,	s.LeagueType
         ,	s.TimeStep
     FROM CTS_DataCenter.MatchMonitorRuleSetting AS s
     WHERE s.RuleGroupID = CONST_RULE_GROUPID;
-    
+
     DROP TEMPORARY TABLE IF EXISTS Temp_LastGroup;
     CREATE TEMPORARY TABLE Temp_LastGroup
     (
@@ -74,14 +70,14 @@ BEGIN
 		SELECT  MIN(mms.TransDate) 
 		INTO 	lv_MinTime
 		FROM	CTS_DataCenter.MatchMonitorStagingArbitrageNonLive AS mms
-			INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType
+			INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType AND mms.IsMajorLeague = tmpRs.IsMajorLeague
 		WHERE   mms.TransDate > TIMESTAMPADD(SECOND, -tmpRs.TimeStep, lv_MaxTime);  
 		
 		INSERT INTO Temp_LastGroup(MatchID, ScoreDiff, BettypeID, BetID, Betteam, HDP, GroupID)
 		SELECT 	DISTINCT mms.MatchID,  mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, HDP, mms.GroupID
 		FROM 	CTS_DataCenter.MatchMonitorStagingArbitrageNonLive mms
 		WHERE	mms.TransDate >= lv_MinTime AND mms.GroupID <> 0;
-		
+	
 		DELETE mms
 		FROM CTS_DataCenter.MatchMonitorStagingArbitrageNonLive AS mms            
 			LEFT JOIN Temp_LastGroup AS tmpTg ON mms.MatchID = tmpTg.MatchID AND mms.ScoreDiff = tmpTg.ScoreDiff AND mms.BettypeID = tmpTg.BettypeID AND mms.BetID = tmpTg.BetID AND mms.Betteam = tmpTg.Betteam  AND mms.HDP = tmpTg.HDP AND mms.GroupID = tmpTg.GroupID

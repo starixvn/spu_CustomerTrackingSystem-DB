@@ -9,24 +9,17 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleArbitrage_Get`(
 	SQL SECURITY INVOKER
 sp: BEGIN
 	/*
-		Created:	20210526@Casey.Huynh
-		Task :		Match Monitor Rule
+		Created:	202212216@Casey.Huynh
+		Task :		Match Monitor Arbitrage Rule
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
-			- 	20210924@Casey.Huynh: Created [Redmine ID: 159195]
-            -	20220110@Casey.Huynh: Enhance MM(SportType, Betteam, BetID), Return BetID [Redmine ID: 166986]
-            -	20220217@Casey.Huynh: Enhance MM, Update TO >= 1000 [Redmine ID: 168736]
-            -	20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
-            -	202200929@Casey.Huynh: Seperate By Sport [Redmine ID: #178310]
-            - 	202201021@Casey.Huynh: Group By Betteam [Redmine ID: #179439]
-            -	20221205@Casey.Huynh: Rename Table [Redmine ID: #179502]
-		Param's Explanation (filtered by):	
-
-		Example:
-			CALL  CTS_DC_MatchMonitor_RuleArbitrage_Get(0,@op_MaxSequenceID);
-			
+			- 	202212216@Casey.Huynh: Created [Redmine ID: 179502]
+            
+		Param's Explanation (filtered by):
+			CALL CTS_DC_MatchMonitor_RuleArbitrage_StagingClean(0,2);
+		Example:			
 	*/
 	DECLARE lv_LastSequenceID BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_MaxSequenceID BIGINT UNSIGNED DEFAULT 0;

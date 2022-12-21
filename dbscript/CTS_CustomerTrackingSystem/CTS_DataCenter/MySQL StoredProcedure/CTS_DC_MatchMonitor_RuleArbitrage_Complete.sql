@@ -16,29 +16,19 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleArbitrage_Compl
 )
   SQL SECURITY INVOKER
 BEGIN
-		/*Created:	20210526@Casey.Huynh
-		Task :		Match Monitor Insert trans ticket to Staging table
+	/* 
+    		Created:	202212216@Casey.Huynh
+		Task :		Match Monitor Arbitrage Rule
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
-			- 	20210526@Casey.Huynh: Created [Redmine ID: 152883]
-            -	20210719@Casey.Huynh: Fix Issue Rule Trans.StepTime and AssGroup [Redmine ID: 158946]
-            -	20210830@Casey.Huynh: Update Rule seperate Live and NonLive and move to Slave [Redmine ID: 159195]
-            -	20211213@Casey.Huynh: Enhance MM, Add column LeagueName [Redmine ID: 165606]
-			-	20220110@Casey.Huynh: Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
-            -	20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
-            - 	20220830@Casey.Huynh: New Category for Classify Group Betting [Redmine ID: #176976]
-            -	202200929@Casey.Huynh: Seperate By Sport [Redmine ID: #178310]
-            - 	202201021@Casey.Huynh: Group By Betteam [Redmine ID: #179439]
-            -	20221205@Casey.Huynh: Rename Table [Redmine ID: #179502]
-		Param's Explanation (filtered by):			
-
-		Example:
-        
-			CALL CTS_DC_MatchMonitor_RuleHedging_Complete(1,114089577333,48310358,0,1,0,'[{"GroupID":4,"Reason":0,"TransIDList":"114089577333,114089576830","CustIDList":"55706032,55895790","OldGroupIDList":"0"}]');
-			
-		*/ 
+			- 	202212216@Casey.Huynh: Created [Redmine ID: 179502]
+            
+		Param's Explanation (filtered by):
+			CALL CTS_DC_MatchMonitor_RuleArbitrage_StagingClean(0,2);
+		Example:		
+	*/ 
    
     DECLARE lv_GroupID 					INT;
 	DECLARE lv_Reason 					BOOLEAN;
@@ -62,6 +52,7 @@ BEGIN
     DECLARE lv_LeagueID					INT UNSIGNED;
     DECLARE lv_LeagueName				VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
     DECLARE	lv_Sporttype				INT;
+	DECLARE	lv_IsMajorLeague			INT;
 
  
     DROP TEMPORARY TABLE IF EXISTS Temp_TransGroup;
@@ -94,8 +85,8 @@ BEGIN
     
     #======Update MatchMonitorDetails====================================  
 	IF (ip_LiveIndicator = 0) THEN
-		SELECT mms.EventDate, mms.LiveHomeScore, mms.LiveAwayScore, mms.EventDate, mms.KickOffTime, mms.EventStatus, mms.HomeID, mms.AwayID, mms.LeagueID, mms.LeagueName, mms.Sporttype
-		INTO lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName, lv_Sporttype
+		SELECT mms.EventDate, mms.LiveHomeScore, mms.LiveAwayScore, mms.EventDate, mms.KickOffTime, mms.EventStatus, mms.HomeID, mms.AwayID, mms.LeagueID, mms.LeagueName, mms.Sporttype,IsMajorLeague
+		INTO lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName, lv_Sporttype, lv_IsMajorLeague
 		FROM CTS_DataCenter.MatchMonitorStagingArbitrageNonLive AS mms
 		WHERE mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.ScoreDiff = ip_ScoreDiff AND mms.HDP = ip_HDP
 		LIMIT 1;	 
@@ -115,7 +106,7 @@ BEGIN
         END IF;
 		
         CALL CTS_DC_Sys_SplitStringToTempItemTable(lv_OldGroupIDList,',','INT');
-        SELECT * FROM TempItemTable;
+
         SELECT Item INTO lv_TargetGroupID FROM TempItemTable WHERE Item <> 0 ORDER BY Item LIMIT 1;
         SELECT COUNT(1) INTO lv_NoOfOldGroupID FROM TempItemTable WHERE Item <> 0;
 		SET lv_TargetGroupID = IFNULL(lv_TargetGroupID,0);
@@ -130,8 +121,8 @@ BEGIN
             SET lv_TargetGroupID = IFNULL(lv_TargetGroupID,0);
 			SET lv_TargetGroupID =  lv_TargetGroupID + 1;            
 
-            INSERT IGNORE INTO CTS_DataCenter.MatchMonitorDetails(MatchID, LiveIndicator, ScoreDiff, HDP, BettypeID, BetID, EventDate, GroupID, LiveHomeScore, LiveAwayScore, ListCustID, ListTransID, Reason )
-            VALUES(ip_MatchID, ip_LiveIndicator, ip_ScoreDiff, ip_HDP, ip_BettypeID, ip_BetID, lv_EventDate, lv_TargetGroupID, lv_LiveHomeScore, lv_LiveAwayScore, lv_CustIDList, lv_TransIDList, lv_Reason);          
+            INSERT IGNORE INTO CTS_DataCenter.MatchMonitorDetails(MatchID, IsMajorLeague, LiveIndicator, ScoreDiff, HDP, BettypeID, BetID, EventDate, GroupID, LiveHomeScore, LiveAwayScore, ListCustID, ListTransID, Reason )
+            VALUES(ip_MatchID, lv_IsMajorLeague, ip_LiveIndicator, ip_ScoreDiff, ip_HDP, ip_BettypeID, ip_BetID, lv_EventDate, lv_TargetGroupID, lv_LiveHomeScore, lv_LiveAwayScore, lv_CustIDList, lv_TransIDList, lv_Reason);          
  
         END IF; 
 
@@ -166,8 +157,9 @@ BEGIN
     END LOOP;
     
     #========UPDATE MatchMonitor===================================    
-    INSERT IGNORE INTO CTS_DataCenter.MatchMonitor(MatchID, BettypeID, BetID, LiveIndicator, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueName, Sporttype, Reason)
-    SELECT	ip_MatchID, ip_BettypeID, ip_BetID, ip_LiveIndicator, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName, lv_Sporttype
+ 
+    INSERT IGNORE INTO CTS_DataCenter.MatchMonitor(MatchID, BettypeID, BetID, LiveIndicator, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueName, Sporttype, IsMajorLeague, Reason)
+    SELECT	ip_MatchID, ip_BettypeID, ip_BetID, ip_LiveIndicator, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName, lv_Sporttype, lv_IsMajorLeague
 		,	mmd.Reason
 	FROM CTS_DataCenter.MatchMonitorDetails AS mmd
 	WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID AND mmd.Reason = lv_Reason;
