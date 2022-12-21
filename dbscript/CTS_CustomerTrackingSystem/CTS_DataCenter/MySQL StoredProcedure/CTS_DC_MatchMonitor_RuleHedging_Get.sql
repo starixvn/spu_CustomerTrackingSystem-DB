@@ -58,7 +58,7 @@ sp: BEGIN
         
         SELECT MAX(tmp.SequenceID)
         INTO lv_MaxSequenceID
-        FROM (SELECT mms.SequenceID FROM CTS_DataCenter.MatchMonitorStagingLive03 AS mms WHERE mms.SequenceID > lv_LastSequenceID ORDER BY mms.SequenceID LIMIT lv_NoOfRow) AS tmp;
+        FROM (SELECT mms.SequenceID FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms WHERE mms.SequenceID > lv_LastSequenceID ORDER BY mms.SequenceID LIMIT lv_NoOfRow) AS tmp;
         
         SET op_MaxSequenceID = IFNULL(lv_MaxSequenceID,0) ;
                 
@@ -68,7 +68,7 @@ sp: BEGIN
 				,	mms.BettypeID
                 ,	mms.BetID
                 ,	mms.Betteam
-			FROM CTS_DataCenter.MatchMonitorStagingLive03 AS mms
+			FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms
 				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType
             WHERE mms.SequenceID <= lv_MaxSequenceID AND mms.Stake >= tmpRs.HighStake
 			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID,	mms.Betteam
@@ -83,7 +83,7 @@ sp: BEGIN
         
         SELECT MAX(tmp.SequenceID)
         INTO lv_MaxSequenceID
-        FROM (SELECT mms.SequenceID FROM CTS_DataCenter.MatchMonitorStagingNonLive03 AS mms WHERE mms.SequenceID > lv_LastSequenceID ORDER BY mms.SequenceID  LIMIT lv_NoOfRow) AS tmp;
+        FROM (SELECT mms.SequenceID FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms WHERE mms.SequenceID > lv_LastSequenceID ORDER BY mms.SequenceID  LIMIT lv_NoOfRow) AS tmp;
 		
 		SET op_MaxSequenceID = IFNULL(lv_MaxSequenceID, 0);        
         
@@ -93,7 +93,7 @@ sp: BEGIN
 				,	mms.BettypeID
                 ,	mms.BetID
                 ,	mms.Betteam
-			FROM CTS_DataCenter.MatchMonitorStagingNonLive03 AS mms
+			FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
 				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType
             WHERE mms.SequenceID <= lv_MaxSequenceID AND mms.Stake >= tmpRs.HighStake
 			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID,	mms.Betteam

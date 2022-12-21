@@ -90,7 +90,7 @@ sp: BEGIN
     
 		SELECT mms.SportType 
         INTO lv_RuleSportType 
-        FROM CTS_DataCenter.MatchMonitorStagingLive03 AS mms 
+        FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms 
         WHERE mms.MatchID = ip_MatchID 
         LIMIT 1;
         
@@ -117,7 +117,7 @@ sp: BEGIN
             ,	mms.Stake
             ,	mms.Betteam
             ,	(CASE WHEN mms.SequenceID > lv_LastSequenceID THEN 0 ELSE 1 END) AS Processed
-		FROM CTS_DataCenter.MatchMonitorStagingLive03 AS mms			
+		FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms			
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = mms.CustID AND cus.CustSubID = 0
             LEFT JOIN CTS_DataCenter.CTSCustomer AS agent ON agent.CustID = cus.Recommend 
 															AND agent.CustSubID = 0 
@@ -141,7 +141,7 @@ sp: BEGIN
         
 		SELECT mms.SportType 
         INTO lv_RuleSportType 
-        FROM CTS_DataCenter.MatchMonitorStagingNonLive03 AS mms 
+        FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms 
         WHERE mms.MatchID = ip_MatchID 
         LIMIT 1;
         
@@ -168,7 +168,7 @@ sp: BEGIN
             ,	mms.Stake
             ,	mms.Betteam
             ,	(CASE WHEN mms.SequenceID > lv_LastSequenceID THEN 0 ELSE 1 END) AS Processed
-		FROM CTS_DataCenter.MatchMonitorStagingNonLive03 AS mms
+		FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = mms.CustID AND cus.CustSubID = 0
             LEFT JOIN CTS_DataCenter.CTSCustomer AS agent ON agent.CustID = cus.Recommend 
 															AND agent.CustSubID = 0 
@@ -249,13 +249,13 @@ sp: BEGIN
 	END LOOP labelGroup;    
     
 	IF (ip_LiveIndicator = 1) THEN 
-		UPDATE CTS_DataCenter.MatchMonitorStagingLive03 AS mms
+		UPDATE CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms
 			INNER JOIN CTS_DataCenter.Temp_StagingTrans AS tmpSt ON mms.SequenceID = tmpSt.SequenceID
 			LEFT JOIN Temp_ResultGroup AS tmpRg ON tmpSt.GroupID = tmpRg.GroupID
 		SET mms.GroupID = -tmpSt.GroupID
 		WHERE tmpRg.GroupID IS NULL;
 	ELSE
-		UPDATE CTS_DataCenter.MatchMonitorStagingNonLive03 AS mms
+		UPDATE CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
 			INNER JOIN CTS_DataCenter.Temp_StagingTrans AS tmpSt ON mms.SequenceID = tmpSt.SequenceID
 			LEFT JOIN Temp_ResultGroup AS tmpRg ON tmpSt.GroupID = tmpRg.GroupID
 		SET mms.GroupID = -tmpSt.GroupID
