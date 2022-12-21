@@ -5,14 +5,13 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleArbitrage_Process`(
 		IN ip_LiveIndicator		BOOLEAN
 	,	IN ip_MaxSequenceID		BIGINT UNSIGNED
-	,	IN ip_MatchID			INT UNSIGNED
+	,	IN ip_MatchID			INT 
     ,	IN ip_IsMajorLeague 	BOOLEAN
     ,	IN ip_ScoreDiff			INT 
-    ,	IN ip_BettypeID			INT UNSIGNED
+    ,	IN ip_BettypeID			INT
     ,	IN ip_BetID				BIGINT
-    ,	IN ip_HDP				DECIMAL(8,4)
-    
-    
+    ,	IN ip_HDP				DECIMAL(8,4)   
+   
 )
     SQL SECURITY INVOKER
 sp: BEGIN
@@ -40,10 +39,10 @@ sp: BEGIN
             -	20221205@Casey.Huynh: Refine Arbitrage [Redmine ID: #179502]
 		Param's Explanation (filtered by):	
 		Example:
-			- CALL CTS_DC_MatchMonitor_RuleArbitrage_Process(1,113171940189,22081995,1,1,0);
+			-  CALL CTS_DC_MatchMonitor_RuleArbitrage_Process(@ip_LiveIndicator:=0,@ip_MaxSequenceID:=113171940189,@ip_MatchID:=1,@ip_IsMajorLeague:=1,@ip_ScoreDiff:=0,@ip_BettypeID:=0,@ip_BetID:=0,@ip_HDP:=0);
 			
 	*/
-    DECLARE CONST_RULE_GROUPID INT DEFAULT 5;
+    DECLARE CONST_RULE_GROUPID 			INT DEFAULT 5;
     DECLARE CONS_SITE789 				INT DEFAULT  3;
     
     DECLARE lv_RuleTimeStep 			SMALLINT;
@@ -52,6 +51,13 @@ sp: BEGIN
     DECLARE lv_RuleSportType 			INT;  
     DECLARE lv_CustIDList 				TEXT;
     DECLARE lv_LastSequenceID 			BIGINT UNSIGNED;  
+    
+    #==================LOG=======================================================
+    DECLARE SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleArbitrage_Process';
+    INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
+    SELECT SPName, CURRENT_TIMESTAMP(), CONCAT('@ip_LiveIndicator:=',ip_LiveIndicator,',@ip_MaxSequenceID:=',ip_MaxSequenceID,',@ip_MatchID:=',ip_MatchID
+    ,',@ip_IsMajorLeague:=',ip_IsMajorLeague,',@ip_ScoreDiff:=',ip_ScoreDiff,',@ip_BettypeID:=',ip_BettypeID,',@ip_BetID:=',ip_BetID,',@ip_HDP:=',ip_HDP);
+    #==================LOG=======================================================   
     
     DROP TEMPORARY TABLE IF EXISTS Temp_StagingTrans;
     CREATE TEMPORARY TABLE Temp_StagingTrans(
@@ -141,7 +147,9 @@ sp: BEGIN
             AND mms.ScoreDiff = ip_ScoreDiff 
             AND mms.BettypeID = ip_BettypeID
             AND mms.BetID = ip_BetID 
-            AND mms.HDP = ip_HDP;        
+            AND mms.HDP = ip_HDP;       
+            
+		SELECT * FROM Temp_StagingTrans;
     END IF;
 
     #========Detect group by assocation and transdate====================
@@ -156,19 +164,10 @@ sp: BEGIN
     FROM 	Temp_StagingTrans  AS tmpSt
 	GROUP BY tmpSt.GroupID
     HAVING SUM(tmpSt.Stake) >= lv_RuleTotalStake 
-		AND COUNT(DISTINCT tmpSt.CustID) > 1 AND COUNT(DISTINCT tmpSt.Betteam) > 1 AND tmpSt.GroupID > 0;
-        
+		AND COUNT(DISTINCT tmpSt.CustID) > 1 AND COUNT(DISTINCT tmpSt.Betteam) > 1 AND tmpSt.GroupID > 0;        
                         
-	IF (ip_LiveIndicator = 0) THEN 
-		UPDATE CTS_DataCenter.MatchMonitorStagingArbitrageNonLive AS mms
-			INNER JOIN CTS_DataCenter.Temp_StagingTrans AS tmpSt ON mms.SequenceID = tmpSt.SequenceID
-			LEFT JOIN Temp_ResultGroup AS tmpRg ON tmpSt.GroupID = tmpRg.GroupID
-		SET mms.GroupID = -tmpSt.GroupID
-		WHERE tmpRg.GroupID IS NULL;
-	END IF;
-    
 	SELECT	tmpRg.GroupID
-		,	tmpRg.Reason
+		,	lv_RuleReason AS Reason
         ,	tmpRg.TransIDList
         ,	tmpRg.CustIDList
         ,	tmpRg.OldGroupIDList

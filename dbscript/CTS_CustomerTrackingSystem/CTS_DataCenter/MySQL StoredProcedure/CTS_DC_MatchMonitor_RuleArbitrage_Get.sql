@@ -25,7 +25,7 @@ sp: BEGIN
 		Param's Explanation (filtered by):	
 
 		Example:
-			CALL  CTS_DC_MatchMonitor_RuleArbitrage_Get(1,@op_MaxSequenceID);
+			CALL  CTS_DC_MatchMonitor_RuleArbitrage_Get(0,@op_MaxSequenceID);
 			
 	*/
 	DECLARE lv_LastSequenceID BIGINT UNSIGNED DEFAULT 0;

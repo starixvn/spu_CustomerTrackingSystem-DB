@@ -156,7 +156,6 @@ BEGIN
 						)
 					) AS js;  
 		
-    	
     IF ip_LiveIndicator = 1 THEN 
 		#=====Staging: Group Betting(Soccer(1), Basketball(2), E-Sport(43)), Hedging(Basketball(2), E-Sport(43)), Arbitrage(Soccer(1), Basketball(2), E-Sport(43)) ================================
 		#=====GROUP BETTING===================
