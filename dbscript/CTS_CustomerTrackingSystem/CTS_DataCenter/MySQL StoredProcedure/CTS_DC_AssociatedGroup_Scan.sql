@@ -4,9 +4,12 @@ DROP PROCEDURE IF EXISTS `CTS_DC_AssociatedGroup_Scan`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedGroup_Scan`(
 		OUT	op_GroupID			BIGINT
+	,	OUT	op_GroupName		VARCHAR(100)
 	,	OUT	op_ABI				INT
+    ,	OUT	op_Ori				INT
+    ,	OUT	op_PACategoryID		SMALLINT
     ,	OUT op_LastCTSCustID	BIGINT
-)
+) 
     SQL SECURITY INVOKER
 sp : BEGIN
 	/* 
@@ -18,11 +21,12 @@ sp : BEGIN
 		Revisions:
 			- 20220705@Aries.Nguyen: Created [Redmine ID: #167748]
             - 20220831@Aries.Nguyen: Associated Group Enhancement [Redmine ID: #176991]
+            - 20221028@Harvey.Nguyen: Check PA site [Redmine ID: #179398]
         
 		Param's Explanation (filtered by):
 
 		Example:
-			- CALL CTS_DC_AssociatedGroup_Scan(@op_GroupID,@op_ABI,@op_LastCTSCustID);
+			- CALL  CTS_DC_AssociatedGroup_Scan(@op_GroupID,@op_GroupName,@op_ABI,@op_Ori,@op_PACategoryID,@op_LastCTSCustID);
 	*/
     DECLARE lv_BatchSize 		BIGINT;
     DECLARE lv_LastGroupID 		BIGINT;
@@ -30,6 +34,7 @@ sp : BEGIN
     DECLARE lv_AllCredit		SMALLINT;
 	DECLARE lv_AllLicensee		SMALLINT;
     DECLARE lv_Sites			LONGTEXT;
+    DECLARE lv_PASites			LONGTEXT;
     DECLARE lv_HasDevice		BIT;
     DECLARE lv_HasManual		BIT;
 	DECLARE lv_HasIP			BIT;
@@ -48,11 +53,18 @@ sp : BEGIN
 			SiteID 		BIGINT UNSIGNED PRIMARY KEY
 	);
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_PASite;
+	CREATE TEMPORARY TABLE 		Temp_PASite (
+			SiteID 		BIGINT UNSIGNED PRIMARY KEY
+	);
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_CustDetected;
 	CREATE TEMPORARY TABLE 		Temp_CustDetected (
 			CTSCustID 			BIGINT UNSIGNED PRIMARY KEY
 		,  	CustID 				BIGINT UNSIGNED 
-        ,	SiteID 				BIGINT UNSIGNED
+		,	SiteID				INT	UNSIGNED        
+        ,	RoleID				TINYINT
+        ,	SubscriberID		INT
         ,	IsLicensee			BIT
 	);
     
@@ -93,8 +105,8 @@ sp : BEGIN
         
         SET lv_LastCTSCustID = 0;
 	END  IF;
-    
-    INSERT INTO Temp_Cust(CTSCustID,CustID,AddGroupDate)
+
+    INSERT INTO Temp_Cust(CTSCustID, CustID, AddGroupDate)
     SELECT 	acc.CTSCustID
 		,	cus.CustID
 		,	acc.Created
@@ -107,8 +119,10 @@ sp : BEGIN
     IF NOT EXISTS (SELECT 1 FROM Temp_Cust) THEN
 		SELECT 	GroupID  
 			,	ABI
+            ,	PACategoryID
 		INTO 	op_GroupID
 			,	op_ABI
+            ,	op_PACategoryID
 		FROM  CTS_DataCenter.AssociatedGroup
         WHERE IsDisable = 0
 			AND GroupID > lv_LastGroupID
@@ -120,28 +134,42 @@ sp : BEGIN
         LEAVE sp;
     END IF;
     
-    SELECT 	ABI  
+    SELECT 	GroupName
+		,	ABI  
+		,	Danger1
+		,	PACategoryID
 		,	AllCredit
         ,	AllLicensee
         ,	Sites
+        ,	CONCAT(IFNULL(ag.PACreditSites,''),',',IFNULL(ag.PALicenseeSites,'')) AS PASites
         ,	HasDevice
         ,	HasManual
         ,	HasIP
         ,	HasAI
-    INTO 	op_ABI
+    INTO 	op_GroupName
+		,	op_ABI
+		,	op_Ori
+		,	op_PACategoryID
 		,	lv_AllCredit
         ,	lv_AllLicensee
         ,	lv_Sites
+        ,	lv_PASites
         ,	lv_HasDevice
         ,	lv_HasManual
         ,	lv_HasIP
         ,	lv_HasAI
-	FROM  CTS_DataCenter.AssociatedGroup
+	FROM  CTS_DataCenter.AssociatedGroup AS ag
     WHERE GroupID = lv_LastGroupID
 	LIMIT 1;
     
     IF lv_Sites IS NOT NULL AND lv_Sites != "" THEN
 		SET @sql= CONCAT("INSERT IGNORE INTO Temp_Site (SiteID) VALUES ('", REPLACE(lv_Sites, ',', "'),('"),"');");
+		PREPARE 	stmt1 FROM @sql;
+		EXECUTE 	stmt1;
+	END IF;
+    
+    IF lv_PASites IS NOT NULL AND lv_PASites != "" THEN
+		SET @sql= CONCAT("INSERT IGNORE INTO Temp_PASite (SiteID) VALUES ('", REPLACE(lv_PASites, ',', "'),('"),"');");
 		PREPARE 	stmt1 FROM @sql;
 		EXECUTE 	stmt1;
 	END IF;
@@ -155,10 +183,12 @@ sp : BEGIN
 			INNER JOIN CTS_DataCenter.AssociationByDevice AS dv ON  dv.CTSCustID = tmp.CTSCustID
 		GROUP BY dv.DCSDeviceID; 
 		
-		INSERT IGNORE INTO Temp_CustDetected(CTSCustID,CustID,SiteID,IsLicensee)
+		INSERT IGNORE INTO Temp_CustDetected(CTSCustID,CustID,SiteID, RoleID, SubscriberID,IsLicensee)
 		SELECT 	cus.CTSCustID
 			,	cus.CustID
             ,	cus.SiteID
+            ,	cus.RoleID
+			,	cus.SubscriberID
             ,	cus.IsLicensee
 		FROM  Temp_Device AS dv
 			STRAIGHT_JOIN CTS_DataCenter.AssociationByDevice AS lv1 ON dv.DCSDeviceID = lv1.DCSDeviceID
@@ -172,10 +202,12 @@ sp : BEGIN
     
     /**************************Manual*******************************/
     IF lv_HasManual = 1 THEN
-		INSERT IGNORE INTO Temp_CustDetected(CTSCustID,CustID,SiteID,IsLicensee)
+		INSERT IGNORE INTO Temp_CustDetected(CTSCustID,CustID,SiteID, RoleID, SubscriberID,IsLicensee)
 		SELECT  cus.CTSCustID
 			,	cus.CustID
 			,	cus.SiteID
+            ,	cus.RoleID
+			,	cus.SubscriberID
             ,	cus.IsLicensee
 		FROM Temp_Cust AS tmp 
 			STRAIGHT_JOIN CTS_DataCenter.AssociationByManual AS ma ON ma.ToCTSCustID = tmp.CTSCustID
@@ -186,10 +218,12 @@ sp : BEGIN
 							INNER JOIN CTS_DataCenter.AssociatedGroup AS ag ON acc.GroupID =  ag.GroupID AND ag.IsDisable = 0
 						  WHERE ma.FromCTSCustID = acc.CTSCustID);
 		
-		INSERT IGNORE INTO Temp_CustDetected(CTSCustID,CustID,SiteID,IsLicensee)
+		INSERT IGNORE INTO Temp_CustDetected(CTSCustID, CustID, SiteID, RoleID, SubscriberID, IsLicensee)
 		SELECT  cus.CTSCustID
 			,	cus.CustID
             ,	cus.SiteID
+            ,	cus.RoleID
+			,	cus.SubscriberID
             ,	cus.IsLicensee
 		FROM Temp_Cust AS tmp 
 			STRAIGHT_JOIN CTS_DataCenter.AssociationByManual AS ma ON ma.FromCTSCustID  = tmp.CTSCustID
@@ -203,10 +237,12 @@ sp : BEGIN
     
     IF lv_HasAI = 1 THEN
 		/**************************AI*******************************/
-		INSERT IGNORE INTO Temp_CustDetected(CTSCustID,CustID,SiteID,IsLicensee)
+		INSERT IGNORE INTO Temp_CustDetected(CTSCustID, CustID, SiteID, RoleID, SubscriberID, IsLicensee)
 		SELECT  cus.CTSCustID
 			,	cus.CustID
             ,	cus.SiteID
+            ,	cus.RoleID
+			,	cus.SubscriberID
             ,	cus.IsLicensee
 		FROM Temp_Cust AS tmp 
 			STRAIGHT_JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.FromCustID = tmp.CustID
@@ -217,10 +253,12 @@ sp : BEGIN
 							INNER JOIN CTS_DataCenter.AssociatedGroup AS ag ON acc.GroupID =  ag.GroupID AND ag.IsDisable = 0
 						  WHERE cus.CTSCustID = acc.CTSCustID);
 		
-		INSERT IGNORE INTO Temp_CustDetected(CTSCustID,CustID,SiteID,IsLicensee)
+		INSERT IGNORE INTO Temp_CustDetected(CTSCustID, CustID, SiteID, RoleID, SubscriberID, IsLicensee)
 		SELECT  cus.CTSCustID
 			,	cus.CustID
             ,	cus.SiteID
+            ,	cus.RoleID
+			,	cus.SubscriberID
             ,	cus.IsLicensee
 		FROM Temp_Cust AS tmp 
 			STRAIGHT_JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.ToCustID = tmp.CustID
@@ -239,10 +277,12 @@ sp : BEGIN
 			INNER JOIN CTS_DataCenter.AssociationGroupByAI AS asg ON  asg.CustID = tmp.CustID
 		GROUP BY asg.GroupID; 
 		
-		INSERT IGNORE INTO Temp_CustDetected(CTSCustID,CustID,SiteID,IsLicensee)
+		INSERT IGNORE INTO Temp_CustDetected(CTSCustID, CustID, SiteID, RoleID, SubscriberID, IsLicensee)
 		SELECT 	cus.CTSCustID
 			,	cus.CustID
             ,	cus.SiteID
+            ,	cus.RoleID
+			,	cus.SubscriberID
             ,	cus.IsLicensee
 		FROM  Temp_AIGroup AS gp
 			STRAIGHT_JOIN CTS_DataCenter.AssociationGroupByAI AS lv1 ON gp.GroupID = lv1.GroupID
@@ -256,10 +296,12 @@ sp : BEGIN
     
     /**************************IP*******************************/
     IF lv_HasIP = 1 THEN
-		INSERT IGNORE INTO Temp_CustDetected(CTSCustID,CustID,SiteID,IsLicensee)
+		INSERT IGNORE INTO Temp_CustDetected(CTSCustID, CustID, SiteID, RoleID, SubscriberID, IsLicensee)
 		SELECT  cus.CTSCustID
 			,	cus.CustID
             ,	cus.SiteID
+            ,	cus.RoleID
+			,	cus.SubscriberID
             ,	cus.IsLicensee
 		FROM Temp_Cust AS tmp 
 			STRAIGHT_JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.FromCustID = tmp.CustID
@@ -270,10 +312,12 @@ sp : BEGIN
 							INNER JOIN CTS_DataCenter.AssociatedGroup AS ag ON acc.GroupID =  ag.GroupID AND ag.IsDisable = 0
 						  WHERE cus.CTSCustID = acc.CTSCustID);
 		
-		INSERT IGNORE INTO Temp_CustDetected(CTSCustID,CustID,SiteID,IsLicensee)
+		INSERT IGNORE INTO Temp_CustDetected(CTSCustID, CustID, SiteID, RoleID, SubscriberID, IsLicensee)
 		SELECT  cus.CTSCustID
 			,	cus.CustID
             ,	cus.SiteID
+            ,	cus.RoleID
+			,	cus.SubscriberID
             ,	cus.IsLicensee
 		FROM Temp_Cust AS tmp 
 			STRAIGHT_JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.ToCustID = tmp.CustID
@@ -293,9 +337,15 @@ sp : BEGIN
 
     SELECT 	cus.CTSCustID
 		,	cus.CustID
+        ,	CASE WHEN paSite.SiteID IS NULL THEN 0 ELSE 1 END AS 'IsSyncPA'
+        ,	cus.RoleID
+        ,	cus.SubscriberID
+        ,	cus.IsLicensee
     FROM Temp_CustDetected AS cus
+		LEFT JOIN Temp_PASite AS paSite ON cus.SiteID = paSite.SiteID
 	WHERE  (cus.IsLicensee = 0 AND lv_AllCredit = 1) 
 		OR (cus.IsLicensee = 1 AND lv_AllLicensee = 1)
         OR EXISTS (SELECT 1 FROM Temp_Site AS site WHERE site.SiteID = cus.SiteID);
+    
 END$$
 DELIMITER ;

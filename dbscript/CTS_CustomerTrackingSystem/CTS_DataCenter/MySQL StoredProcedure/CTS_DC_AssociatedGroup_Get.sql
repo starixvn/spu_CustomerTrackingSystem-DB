@@ -14,6 +14,7 @@ BEGIN
 		Revisions:
 			- 20220705@Aries.Nguyen: Created [Redmine ID: #167748]
             - 20220831@Aries.Nguyen: Associated Group Enhancement [Redmine ID: #176991]
+            - 20221025@Harvey.Nguyen: Get more info for PA setting [Redmine ID: #179398]
         
 		Param's Explanation (filtered by):
         
@@ -27,6 +28,10 @@ BEGIN
         ,	grp.AllCredit
         ,	grp.AllLicensee
 		,	grp.Sites
+        ,	grp.Danger1 AS 'Ori'
+        ,	cate.CategoryName
+        ,	(CASE WHEN grp.PACreditSites IS NULL THEN 0 ELSE 1 END) AS IsPACreditSite
+        ,	(CASE WHEN grp.PALicenseeSites IS NULL THEN 0 ELSE 1 END) AS IsPALicenseeSite
         ,	grp.HasDevice
         ,	grp.HasManual
         ,	grp.HasIP
@@ -42,6 +47,7 @@ BEGIN
     FROM CTS_DataCenter.AssociatedGroup AS grp
 		LEFT JOIN CTS_Admin.CTSUser AS us ON grp.CreatedBy = us.UserID
         LEFT JOIN CTS_Admin.CTSUser AS us1 ON grp.ModifiedBy = us1.UserID
+        LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON grp.PACategoryID = cate.CategoryID
 	WHERE grp.IsDisable = 0;
 END$$
 DELIMITER ;
