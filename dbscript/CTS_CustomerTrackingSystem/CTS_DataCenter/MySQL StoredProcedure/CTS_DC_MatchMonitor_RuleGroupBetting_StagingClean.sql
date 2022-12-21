@@ -91,7 +91,7 @@ BEGIN
 	END IF;
     
     IF (ip_LiveIndicator = 0) THEN        
-				SELECT 	MAX(mms.TransDate) , MAX(mms.TransID)
+		SELECT 	MAX(mms.TransDate) , MAX(mms.TransID)
 		INTO 	lv_Last3mMaxTime, lv_LastTransID
 		FROM	CTS_DataCenter.MatchMonitorStagingGroupBettingNonLive AS mms
         WHERE	mms.SequenceID <= ip_MaxSequenceID;      

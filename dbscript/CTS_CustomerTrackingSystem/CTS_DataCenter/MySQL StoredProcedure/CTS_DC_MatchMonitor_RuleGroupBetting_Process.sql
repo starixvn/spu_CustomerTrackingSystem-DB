@@ -33,12 +33,14 @@ sp: BEGIN
             -	202200929@Casey.Huynh: Seperate By Sport [Redmine ID: #178310]
             -	20221021@Casey.Huynh: Fixed Clean Data Staging [Redmine ID: #179427]
             -	20221027@Casey.Huynh: Seperate pool Staging [RedmineID: 179439]
-            -	20221205@Casey.Huynh: Rename Table [Redmine ID: #179502]
+            -	20221205@Casey.Huynh: Rename Table and remove (Arbitrage,Hedging) [Redmine ID: #179502]
 		Param's Explanation (filtered by):	
 		Example:
 			- CALL CTS_DC_MatchMonitor_RuleGroupBetting_Process(1,113171940189,22081995,1,1,0);
 			
 	*/
+    DECLARE CONST_RULE_GROUPID 	INT DEFAULT 1;
+    
     DECLARE lv_TimeCustID BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_MinTransDate DATETIME(3);
     DECLARE lv_MaxTransDate DATETIME(3);
@@ -246,10 +248,10 @@ sp: BEGIN
         WHERE  mms.SequenceID <= ip_MaxSequenceID AND	mms.MatchID = ip_MatchID AND mms.ScoreDiff = ip_ScoreDiff AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID;        
     END IF;
     
-	SELECT rs.TotalStake, rs.TimeStep
-    INTO lv_Rule_TotalStake, lv_Rule_TimeStep
+	SELECT rs.TotalStake, rs.TimeStep, rs.Reason
+    INTO lv_Rule_TotalStake, lv_Rule_TimeStep, lv_Rule_Reason
     FROM CTS_DataCenter.MatchMonitorRuleSetting AS rs
-    WHERE rs.Reason = lv_Rule_Reason AND rs.SportType = lv_SportType;
+    WHERE rs.RuleGroupID = CONST_RULE_GROUPID AND rs.SportType = lv_SportType;
     
     INSERT INTO Temp_StagingTrans02 SELECT * FROM Temp_StagingTrans;
     
@@ -499,81 +501,21 @@ sp: BEGIN
         ,	TransIDList				LONGTEXT
         ,	CustIDList				LONGTEXT
         ,	OldGroupIDList			VARCHAR(500)
-        ,	HighStakeLicCustList 	LONGTEXT
         ,	LicenseeCustTotal		INT
     );	
 	
-    INSERT INTO Temp_ResultGroup(GroupID, Reason, TransIDList, CustIDList, OldGroupIDList, HighStakeLicCustList , LicenseeCustTotal)
+    INSERT INTO Temp_ResultGroup(GroupID, Reason, TransIDList, CustIDList, OldGroupIDList, LicenseeCustTotal)
     SELECT  tmpTg.GroupID
-        ,	(CASE WHEN COUNT(DISTINCT tmpSt.Betteam) > 1 THEN 2 ELSE 0 END) AS Reason
+        ,	lv_Rule_Reason AS Reason
         ,	GROUP_CONCAT(tmpSt.TransID) AS TransIDList
         ,	GROUP_CONCAT(DISTINCT tmpSt.CustID) AS CustIDList
         ,	GROUP_CONCAT(DISTINCT CASE WHEN tmpSt.OldGroupID > 0 THEN tmpSt.OldGroupID ELSE 0 END) AS OldGroupIDList 
-        ,	GROUP_CONCAT(DISTINCT (CASE WHEN tmpSt.Stake >= lv_ClassifyHighStake AND cus.IsLicensee = 1 THEN tmpTg.CustID ELSE NULL END)) AS HighStakeLicCustList
-        ,	COUNT(DISTINCT (CASE WHEN cus.IsLicensee = 1 THEN cus.CustID ELSE NULL END)) AS LicenseeCustTotal
     FROM 	Temp_TransGroup AS tmpTg
 		INNER JOIN Temp_StagingTrans02  AS tmpSt ON tmpSt.CustID = tmpTg.CustID AND tmpSt.TransDate BETWEEN tmpTg.MinTransDate AND tmpTg.MaxTransDate
         INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpTg.CustID 
 	GROUP BY tmpTg.GroupID
     HAVING SUM(Stake) >= lv_Rule_TotalStake AND COUNT(DISTINCT tmpSt.CustID) > 1;
 
-    DELETE tmpTg
-    FROM Temp_TransGroup AS tmpTg
-		INNER JOIN Temp_ResultGroup AS tmpRg ON tmpTg.GroupID = tmpRg.GroupID AND tmpRg.Reason = 2;
-        
-    #=======CHECK Hedging GROUP: IF GroupCusts Is Hedging====================================
-    IF lv_SportType <> 1 THEN # Exclude Hedging for Soccer
-		
-		INSERT IGNORE INTO Temp_GroupHedging(GroupID)
-		SELECT DISTINCT GroupID 
-		FROM Temp_TransGroup AS grp
-		WHERE EXISTS (	SELECT 1 
-						FROM CTS_DataCenter.CTSCustomerClassification AS cla 
-							INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID
-						WHERE cla.CustID = grp.CustID
-							AND cla.SportGroupID = 0
-							AND cc.IsHedgingReasonMM = 1);
-		
-		UPDATE Temp_ResultGroup AS tmpRg
-			INNER JOIN Temp_GroupHedging AS tmpGh ON tmpRg.GroupID = tmpGh.GroupID
-		SET tmpRg.Reason = 1;
-		
-		DELETE tmpTg
-		FROM Temp_TransGroup AS tmpTg
-			INNER JOIN Temp_ResultGroup AS tmpRg ON tmpTg.GroupID = tmpRg.GroupID AND tmpRg.Reason = 1;
-	
-   #=======CHECK Hedging GROUP: IF AssocitionCust of GroupCusts Is Hedging====================================
-    SET lv_GroupID = NULL;
-
-    labelGroup: LOOP
-        SET lv_GroupID = (SELECT tmpTg.GroupID FROM Temp_TransGroup AS tmpTg LIMIT 1);
-
-		IF lv_GroupID IS NULL THEN 
-			LEAVE labelGroup;
-		END IF;
-        
-		TRUNCATE TABLE Temp_Cust;       
-        
-        SET lv_CustIDList = (SELECT GROUP_CONCAT(tmpTg.CustID)
-            FROM Temp_TransGroup AS tmpTg 
-            WHERE tmpTg.GroupID = lv_GroupID);
-         
-        CALL CTS_DC_Association_IsAssociatedHedgingCustByCustIDList(lv_CustIDList, lv_IsHedging);
-       
-        IF lv_IsHedging = 1 THEN
-			UPDATE Temp_ResultGroup AS tmpRg
-            SET	tmpRg.Reason = 1
-            WHERE tmpRg.GroupID = lv_GroupID;
-        END IF;
-        
-		#==========================
-        DELETE tmpTg
-        FROM Temp_TransGroup AS tmpTg
-        WHERE tmpTg.GroupID = lv_GroupID;
-        
-	END LOOP labelGroup;
-	END IF;
- 
     UPDATE Temp_StagingTrans02 AS mms
 		INNER JOIN Temp_TransGroup02 AS tmpSt ON  mms.CustID = tmpSt.CustID AND mms.TransDate BETWEEN tmpSt.MinTransDate AND tmpSt.MaxTransDate
 		LEFT JOIN Temp_ResultGroup AS tmpRg ON tmpSt.GroupID = tmpRg.GroupID
@@ -597,7 +539,6 @@ sp: BEGIN
         ,	tmpRg.TransIDList
         ,	tmpRg.CustIDList
         ,	tmpRg.OldGroupIDList
-        ,	(CASE WHEN tmpRg.LicenseeCustTotal >= 3 AND tmpRg.HighStakeLicCustList IS NOT NULL THEN HighStakeLicCustList ELSE NULL END) HighStakeLicCustList
     FROM Temp_ResultGroup AS tmpRg;
     
 END$$
