@@ -48,9 +48,10 @@ sp: BEGIN
 
         SELECT MAX(mms.SequenceID)
         INTO op_MaxSequenceID
-        FROM CTS_DataCenter.MatchMonitorStagingFixedGameLive AS mms
-        WHERE mms.SequenceID > lv_LastSequenceID
-        LIMIT lv_BatchSize;
+        FROM (	SELECT mms.SequenceID
+				FROM CTS_DataCenter.MatchMonitorStagingFixedGameLive AS mms
+				WHERE mms.SequenceID > lv_LastSequenceID
+				LIMIT lv_BatchSize) AS tmp;
         
         SELECT DISTINCT mmt.MatchID
 			,	mmt.ScoreDiff
@@ -72,11 +73,12 @@ sp: BEGIN
         FROM CTS_DataCenter.SystemParameter AS s
         WHERE s.ParameterID = 127;        
                   
-        SELECT MAX(mms.SequenceID)
+		SELECT MAX(mms.SequenceID)
         INTO op_MaxSequenceID
-        FROM CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mms
-        WHERE mms.SequenceID > lv_LastSequenceID
-        LIMIT lv_BatchSize;
+        FROM (	SELECT mms.SequenceID
+				FROM CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mms
+				WHERE mms.SequenceID > lv_LastSequenceID
+				LIMIT lv_BatchSize) AS tmp;
         
         SELECT DISTINCT mmt.MatchID
 			,	mmt.ScoreDiff

@@ -93,7 +93,3 @@ BEGIN
     
 END$$
 DELIMITER ;
-
-    
-END$$
-DELIMITER ;
