@@ -15,6 +15,7 @@ BEGIN
             - 20220602@Long.Luu: Created [Redmine ID: #172561]
             - 20220628@Long.Luu: Remove affected evidence in case of update Reason [Redmine ID: #174430]
             - 20220801@Long.Luu: Adjust Winloss Status for Old Requests [Redmine ID: #174219]
+            - 20221007@Harvey.Nguyen: Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory [Redmine ID: #178022]
             
         Param's Explanation (filtered by):
         
@@ -49,13 +50,13 @@ BEGIN
     
     /* REMOVE FROM OLD PA  */
     UPDATE Temp_PA AS t
-		INNER JOIN CTSCustomerClassificationOldPA AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
+		INNER JOIN CTSCustomerClassificationOldCategory AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
 	SET d.IsFromTVS = 0
 	WHERE t.TVSRequestID IS NOT NULL;
     
     DELETE d
     FROM Temp_PA AS t
-		INNER JOIN CTSCustomerClassificationOldPA AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
+		INNER JOIN CTSCustomerClassificationOldCategory AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
 	WHERE t.TVSRequestID IS NOT NULL
 		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0);
     

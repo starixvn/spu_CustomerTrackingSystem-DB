@@ -17,6 +17,7 @@ AS
 		- 20200901@Long.Luu: Created [Redmine ID: #137550]
 		- 20210730@John.Ngo: [CTS] New way to store Closed Status [Redmine ID: #152259]
 		- 20280628@Long.Luu: Exclude more Internal Accounts [Redmine ID: #174430]
+		- 20221006@Jonas.Huynh: New Rule for General Customer Classifiation [Redmine ID: #178022]
 
 	Param's Explanation:
 */
@@ -39,10 +40,10 @@ BEGIN
 		[CustId]			INT NOT NULL,
 		[MainDBSportId]		INT NOT NULL,
 		[SportGroup]		VARCHAR(50) NOT NULL,
-		[TurnoverRM]		MONEY NULL,
-		[WinlossRM]			MONEY NULL,
-		[TurnoverORG]		MONEY NULL,
-		[WinlossORG]		MONEY NULL,
+		[TurnoverRM]		DECIMAL(19, 4) NULL,
+		[WinlossRM]			DECIMAL(19, 4) NULL,
+		[TurnoverORG]		DECIMAL(19, 4) NULL,
+		[WinlossORG]		DECIMAL(19, 4) NULL,
 		[BetCount]			BIGINT NULL,
 		[ActiveDays]		INT NULL,
 		PRIMARY KEY (CustId, MainDBSportId)
@@ -57,7 +58,7 @@ BEGIN
 	DELETE r WITH(ROWLOCK)
 	FROM #tmpRawData AS r
 		LEFT JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON r.CustId = c.custid
-	WHERE c.[Enabled] = 0 OR c.roleid <> 1;
+	WHERE c.roleid <> 1;
 	
 	-- #2: Remove Internal Accounts
 	DELETE r WITH(ROWLOCK)
@@ -84,9 +85,10 @@ BEGIN
 	GROUP BY a.CustId;
 
 	-- #4: Store Last Scanned Datetime
-	UPDATE dbo.CustomerClassification_Parameter WITH(ROWLOCK, UPDLOCK)
-	SET [Value] = @tmpLastScannedDatetime
-	WHERE DataId = 4;
+	IF (@tmpLastScannedDatetime IS NOT NULL)
+		UPDATE dbo.CustomerClassification_Parameter WITH(ROWLOCK, UPDLOCK)
+		SET [Value] = CONVERT(VARCHAR(200), @tmpLastScannedDatetime, 121)
+		WHERE DataId = 4;
 
 	-- #5: return the results
 	SELECT DISTINCT CustId

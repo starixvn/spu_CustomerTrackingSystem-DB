@@ -20,6 +20,7 @@ BEGIN
             - 20220801@Long.Luu: Fix cannot rescan Normal when removing PA(Losing)  [Redmine ID: #176163]
             - 20220713@Casey.Huynh: Switching for Licensee VIP & BA Categories [Redmine ID: #174219]
             - 20220913@Casey.Huynh: Update Remark [Redmine ID: #176976]
+            - 20221007@Harvey.Nguyen: Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory [Redmine ID: #178022]
             
         Param's Explanation (filtered by):
 			- ip_InputType: 1: Category, 2: Reason
@@ -35,6 +36,8 @@ BEGIN
     DECLARE CONST_ACTIONTYPE_INSERT 		INT DEFAULT 0;
 	DECLARE	CONST_ACTIONTYPE_UPDATE 		INT DEFAULT 1;
     DECLARE CONST_SPORTGROUP_NORMAL 		INT DEFAULT 200;
+    DECLARE	CONST_CATEGORY_RISKY 			INT DEFAULT 203;
+    DECLARE	CONST_CATEGORY_SMART			INT DEFAULT 204;
     DECLARE CONST_USERLOG_LOGTYPE 			SMALLINT DEFAULT 32;
     DECLARE CONST_SPNAME 					VARCHAR(100) DEFAULT 'CTS_DC_CustClassification_PA_Insert';
 	DECLARE CONST_LICVIPPROBLEM_CATEGORYID	SMALLINT UNSIGNED DEFAULT 3;
@@ -120,7 +123,7 @@ BEGIN
     #================Mapping Category================
     CALL CTS_DC_CustClassification_PA_MappingCategory(ip_InputType,ip_ProblemAccounts);
     
-	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationOldPA(CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
+	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationOldCategory(CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
 		, LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsDirect, InsertTime, TVSRequestID) 
     SELECT	tmpPa.CustID
 		,	tmpPa.CTSCustID
@@ -158,8 +161,32 @@ BEGIN
 		,	tmpPa.WinlossStatus
         ,	tmpPa.IsLicensee
 	FROM Temp_PA AS tmpPa;
-    
+
     #=============REMOVE GENERAL CATEGORY BEFORE=============
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationOldCategory(CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
+		, LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsDirect, InsertTime, TVSRequestID) 
+	SELECT clss.CustID
+		, clss.CTSCustID
+        , clss.SubscriberID
+        , clss.SportGroupID
+        , cc.CategoryID
+        , clss.Remark
+        , clss.CreatedDate
+        , clss.CreatedBy
+        , clss.LastModifiedDate
+        , clss.LastModifiedBy
+        , clss.LastScannedDate
+        , clss.IsFromTVS
+        , clss.IsFromTW
+        , clss.IsFromCTS
+        , clss.IsDirect
+        , CURRENT_TIMESTAMP(3) AS InsertTime
+        , clss.TVSRequestID
+    FROM CTS_DataCenter.CTSCustomerClassification AS clss
+		INNER JOIN Temp_PA AS tmpPa ON tmpPa.CustID = clss.CustID AND clss.SportGroupID = CONST_SPORTGROUP_NORMAL
+        INNER JOIN CTS_DataCenter.CustomerCategory cc ON cc.CategoryID = clss.CategoryID
+	WHERE cc.CategoryGroup IN (CONST_CATEGORY_RISKY, CONST_CATEGORY_SMART);
+    
     DELETE clss
     FROM CTS_DataCenter.CTSCustomerClassification AS clss
 		INNER JOIN Temp_PA AS tmpPa ON tmpPa.CustID = clss.CustID AND clss.SportGroupID = CONST_SPORTGROUP_NORMAL;       
@@ -199,7 +226,7 @@ BEGIN
 	WHERE cls.SportGroupID = CONST_SPORTGROUP_PA;
     
     UPDATE Temp_PA AS tmpPa
-		INNER JOIN CTS_DataCenter.CTSCustomerClassificationOldPA AS cls ON tmpPa.CustID = cls.CustID 
+		INNER JOIN CTS_DataCenter.CTSCustomerClassificationOldCategory AS cls ON tmpPa.CustID = cls.CustID 
         INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID 
 	SET tmpPa.IsFromOldPA = 1, tmpPa.IsDataChanged = 1;
     

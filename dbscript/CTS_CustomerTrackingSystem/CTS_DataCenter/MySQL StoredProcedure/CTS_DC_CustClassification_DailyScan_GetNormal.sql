@@ -17,6 +17,7 @@ BEGIN
 		Original:
 		Revisions:
 			- 20220328@Aries.Nguyen: Created [Redmine ID: #170468]
+            - 20221007@Harvey.Nguyen: Return CurrentCategoryID [Redmine ID: #178022]
 
 		Param's Explanation (filtered by):      
 			- CALL CTS_DC_CustClassification_DailyScan_GetNormal (@op_LastCategoryID, @op_LastCustID);
@@ -38,7 +39,8 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Normal;
     CREATE TEMPORARY TABLE 	Temp_Normal (
-			CustID 			BIGINT UNSIGNED PRIMARY KEY
+			CustID 					BIGINT UNSIGNED PRIMARY KEY
+		,	CurrentCategoryID		SMALLINT
 	);
     
     INSERT INTO Temp_Category(CategoryID, ScanDate)
@@ -77,10 +79,10 @@ BEGIN
     INTO lv_ScanDateValid 
     FROM Temp_Category
     WHERE CategoryID = lv_LastCategoryID;
-  
+
     SET @sql = 	CONCAT("
-		INSERT IGNORE INTO Temp_Normal (CustID)
-		SELECT 	clss.CustID
+		INSERT IGNORE INTO Temp_Normal (CustID, CurrentCategoryID)
+		SELECT clss.CustID, clss.CategoryID
 		FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID_CustID)
 		WHERE clss.CustID > ", lv_LastCustID," ","
 			AND clss.CategoryID = ",lv_LastCategoryID," ","
@@ -127,8 +129,8 @@ BEGIN
 		WHERE CategoryID = lv_NextCategoryID;
         
          SET @sql =  CONCAT("
-		INSERT IGNORE INTO Temp_Normal (CustID)
-		SELECT 	clss.CustID
+		INSERT IGNORE INTO Temp_Normal (CustID, CurrentCategoryID)
+		SELECT 	clss.CustID, clss.CategoryID
 		FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID_CustID)
 		WHERE clss.CustID > 0
 			AND clss.CategoryID = ", lv_NextCategoryID," ","
@@ -170,8 +172,10 @@ BEGIN
         SET op_LastCustID = 0;
     END IF;
     
-    SELECT 	CustID
-    FROM Temp_Normal;
+    SELECT DISTINCT	tmpNr.CustID
+		,	cc.CategoryGroup AS CurrentCategoryID
+    FROM Temp_Normal AS tmpNr
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON tmpNr.CurrentCategoryID = cc.CategoryID;
 
 END$$
 DELIMITER ;

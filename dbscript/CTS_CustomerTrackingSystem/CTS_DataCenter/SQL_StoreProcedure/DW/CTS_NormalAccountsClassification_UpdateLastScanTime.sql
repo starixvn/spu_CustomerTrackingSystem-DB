@@ -6,7 +6,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 ALTER PROCEDURE [dbo].[CTS_NormalAccountsClassification_UpdateLastScanTime]
-	@IsGeneralCategory		BIT = 0
 AS
 /*
 	Created: 20200901@Long.Luu
@@ -16,7 +15,8 @@ AS
 
 	Revisions:
 		- 20200901@Long.Luu: Created [Redmine ID: #137550]
-
+		- 20221006@Jonas.Huynh: New Rule for General Customer Classifiation [Redmine ID: #178022]
+	
 	Param's Explanation:
 */
 
@@ -24,16 +24,10 @@ BEGIN
 	
 	SET NOCOUNT ON;
 
-	DECLARE @RealValueId	INT  = 1
-		,	@BackUpValueId	SMALLINT = 2;
+	DECLARE @RealValueId	INT  = 3
+		,	@BackUpValueId	SMALLINT = 4;
 
-	DECLARE	@LastScanTime DATETIME;
-
-	IF (@IsGeneralCategory = 1)
-	BEGIN
-		SET @RealValueId = 3
-		SET @BackUpValueId = 4;
-	END;
+	DECLARE	@LastScanTime VARCHAR(200);
 
 	SELECT @LastScanTime = [Value]
 	FROM dbo.CustomerClassification_Parameter WITH (NOLOCK)

@@ -17,6 +17,7 @@ sp: BEGIN
             - 20220616@Aries.Nguyen: Cannot mark PA (affected by uplines) correctly with First Mark [Redmine ID: #174136]
             - 20220628@Aries.Nguyen: Update robot classification rule [Redmine ID: #174430]
 			- 20220705@Long.Luu: Return IsLicenseeVIP info [Redmine ID: #174219]
+            - 20221007@Harvey.Nguyen: Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory [Redmine ID: #178022]
 		
         Param's Explanation:
 
@@ -142,7 +143,7 @@ sp: BEGIN
         ,	class.TVSRequestID
         ,	CASE WHEN class.CategoryID IN (CONST_CATEGORYID_ROBOT, CONST_CATEGORYID_ROBOTLOSING) THEN 1 ELSE 0 END AS IsRobot
     FROM Temp_CustInfo AS tmp    
-		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationOldPA AS class USE INDEX (PRIMARY) ON class.CustID = tmp.CustID AND class.SportGroupID = CONST_GROUP_PA
+		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationOldCategory AS class USE INDEX (PRIMARY) ON class.CustID = tmp.CustID AND class.SportGroupID = CONST_GROUP_PA
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID 
 														  AND (cate.CategoryGroup NOT IN (CONST_CATEGORYID_ROBOT, CONST_CATEGORYID_ROBOTLOSING)
 															 OR (cate.CategoryGroup IN (CONST_CATEGORYID_ROBOT, CONST_CATEGORYID_ROBOTLOSING) AND (class.IsFromCTS = 1 OR class.IsFromTVS = 1)))
@@ -211,7 +212,7 @@ sp: BEGIN
         ,	class.LastModifiedDate
         ,	class.TVSRequestID
     FROM Temp_CustInfo AS tmp    
-		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationOldPA AS class USE INDEX (PRIMARY)  ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = CONST_GROUP_PA AND class.IsDirect = 1
+		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationOldCategory AS class USE INDEX (PRIMARY)  ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = CONST_GROUP_PA AND class.IsDirect = 1
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup NOT IN (CONST_CATEGORYID_ROBOT, CONST_CATEGORYID_ROBOTLOSING)
 	WHERE NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassificationVVIP AS vv WHERE vv.CustID = class.CustID)
     ON DUPLICATE KEY UPDATE  Remark = CASE WHEN  class.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN class.Remark
