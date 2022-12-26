@@ -24,15 +24,19 @@ sp: BEGIN
 		Example:
 			CALL  CTS_DC_MatchMonitor_RuleFixedGame_Get(@ip_LiveIndicator:=1,@op_MaxSequenceID); SELECT @ip_LiveIndicator,  @op_MaxSequenceID;
 			
-	*/  
-	DECLARE CONST_RULE_GROUPID_FIXEDGAME INT DEFAULT 2;
-    DECLARE lv_LastSequenceID BIGINT UNSIGNED;   
-    DECLARE lv_BatchSize INT UNSIGNED;
+	*/
+    DECLARE CONS_LOG 						TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
+	DECLARE CONST_RULE_GROUPID_FIXEDGAME 	INT DEFAULT 2;
     
-    #============DEBUG LOG========================
-    DECLARE SPName VARCHAR(200) DEFAULT 'CTS_DC_MatchMonitor_RuleFixedGame_Get';
-	INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
-    SELECT SPName, current_timestamp(),ip_LiveIndicator;   
+    DECLARE lv_LastSequenceID	BIGINT UNSIGNED;   
+    DECLARE lv_BatchSize 		INT UNSIGNED;
+    
+    #============DEBUG LOG========================  
+    DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleFixedGame_Get';
+	IF CONS_LOG = 1 THEN 
+		INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
+		SELECT lv_SPName, current_timestamp(),CONCAT('ip_LiveIndicator:');
+	END IF;
     
 	IF ip_LiveIndicator = 1 THEN
 		
@@ -46,7 +50,7 @@ sp: BEGIN
         FROM CTS_DataCenter.SystemParameter AS s
         WHERE s.ParameterID = 126;        
 
-        SELECT MAX(mms.SequenceID)
+        SELECT MAX(tmp.SequenceID)
         INTO op_MaxSequenceID
         FROM (	SELECT mms.SequenceID
 				FROM CTS_DataCenter.MatchMonitorStagingFixedGameLive AS mms
@@ -73,7 +77,7 @@ sp: BEGIN
         FROM CTS_DataCenter.SystemParameter AS s
         WHERE s.ParameterID = 127;        
                   
-		SELECT MAX(mms.SequenceID)
+		SELECT MAX(tmp.SequenceID)
         INTO op_MaxSequenceID
         FROM (	SELECT mms.SequenceID
 				FROM CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mms
