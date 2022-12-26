@@ -37,7 +37,8 @@ sp: BEGIN
 		INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
 		SELECT lv_SPName, current_timestamp(),CONCAT('ip_LiveIndicator:');
 	END IF;
-    
+       #============DEBUG LOG========================  
+       
 	IF ip_LiveIndicator = 1 THEN
 		
         SELECT s.ParameterValue
@@ -56,7 +57,7 @@ sp: BEGIN
 				FROM CTS_DataCenter.MatchMonitorStagingFixedGameLive AS mms
 				WHERE mms.SequenceID > lv_LastSequenceID
 				LIMIT lv_BatchSize) AS tmp;
-        
+                
         SELECT DISTINCT mmt.MatchID
 			,	mmt.ScoreDiff
 			,	mmt.BettypeID
