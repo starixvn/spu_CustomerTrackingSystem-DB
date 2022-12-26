@@ -33,7 +33,8 @@ BEGIN
 		Example:
 			CALL CTS_DataCenter.CTS_DC_MatchMonitor_Staging_Insert(0,'[{"SportType": 1,"SequenceID": 1003,"IsMajorLeague": 0,"TransID": 1003,"TransDate" : "2021-05-17 07:48:52.533","MatchID" : 43614953,"EventDate" : "2021-05-17 00:00:00","KickOffTime" : "2021-05-17 00:00:00","EventStatus" : "running","HomeID" : 953,"AwayID" : 113,"LeagueID" : 3,"Bettype" : 3, "BetID" : 0,  "LiveIndicator" : "1","CustID" : 12500792,"Stake" : 20,"Betteam" : "a", "Odds" : "0.1","LiveHomeScore" : 0,"LiveAwayScore" : 2,"LeagueName":"ABC League"}]');
 		
-	*/    
+	*/
+    DECLARE CONS_LOG 						TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
 	DECLARE CONST_RULE_GROUPID_GROUPBETTING	INT DEFAULT 1;
     DECLARE CONST_RULE_GROUPID_FIXEDGAME	INT DEFAULT 2;
     DECLARE CONST_RULE_GROUPID_HEDGING		INT DEFAULT 3;
@@ -44,11 +45,13 @@ BEGIN
     DECLARE lv_Rule_FixedGame_MinOdds	DECIMAL(10,2);
     DECLARE lv_Rule_FixedGame_MaxOdds	DECIMAL(10,2);
     
-	#============DEBUG LOG========================
-    DECLARE SPName VARCHAR(200) DEFAULT 'CTS_DC_MatchMonitor_Staging_Insert';
-	INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText, JsonString1)
-    SELECT SPName, CURRENT_TIMESTAMP(),ip_LiveIndicator,ip_TransList;   
-    
+    #==================LOG=======================================================
+    DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_Staging_Insert';
+    IF CONS_LOG = 1 THEN     
+		INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
+		SELECT lv_SPName, CURRENT_TIMESTAMP(), CONCAT('@ip_LiveIndicator:=',ip_LiveIndicator);
+    END IF;
+    #==================LOG=======================================================   
     #==========================================================================
     DROP TEMPORARY TABLE IF EXISTS Temp_Staging;
 	CREATE TEMPORARY TABLE Temp_Staging(
@@ -155,9 +158,8 @@ BEGIN
                             ,	Hdp2			DECIMAL(8,4) PATH "$.Hdp2" 
 						)
 					) AS js;  
-		
+
     IF ip_LiveIndicator = 1 THEN 
-		#=====Staging: Group Betting(Soccer(1), Basketball(2), E-Sport(43)), Hedging(Basketball(2), E-Sport(43)), Arbitrage(Soccer(1), Basketball(2), E-Sport(43)) ================================
 		#=====GROUP BETTING===================
 		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingGroupBettingLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, Odds, IsMajorLeague, Hdp1, Hdp2, HDP, InsertTime)
 		SELECT	tmpSt.SequenceID
@@ -261,9 +263,6 @@ BEGIN
 			WHERE sys.ParameterID = 20;
 		END IF;        
 	ELSE
-
-    	#=====Staging: Group Betting(Soccer(1), Basketball(2), E-Sport(43)), Hedging(Basketball(2), E-Sport(43)), Arbitrage(Soccer(1), Basketball(2), E-Sport(43)) ================================
-		
         #=====GROUP BETTING===================
         DROP TEMPORARY TABLE IF Exists Temp_RuleGroupBetting;
         CREATE TEMPORARY TABLE Temp_RuleGroupBetting
