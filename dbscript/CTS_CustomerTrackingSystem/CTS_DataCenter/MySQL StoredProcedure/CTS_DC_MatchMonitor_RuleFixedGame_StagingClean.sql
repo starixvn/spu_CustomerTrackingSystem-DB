@@ -24,15 +24,18 @@ BEGIN
 		Example:
 			
 	*/
-	DECLARE	CONST_RULE_GROUPID_FIXEDGAME TINYINT DEFAULT 2;
+    DECLARE CONS_LOG 						TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
+	DECLARE	CONST_RULE_GROUPID_FIXEDGAME 	TINYINT DEFAULT 2;
     
     DECLARE	lv_Rule_TimeStep 		INT;   
     DECLARE	lv_ClearTransDate 		DATETIME; 
     
 	#============DEBUG LOG============================================================
-    DECLARE SPName VARCHAR(200) DEFAULT 'CTS_DC_MatchMonitor_RuleFixedGame_StagingClean';
-	INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
-    SELECT SPName, CURRENT_TIMESTAMP(),CONCAT('ip_LiveIndicator:',ip_LiveIndicator,',ip_MaxSequenceID:',ip_MaxSequenceID); 
+    DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleFixedGame_StagingClean';
+    IF CONS_LOG = 1 THEN
+		INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
+		SELECT lv_SPName, CURRENT_TIMESTAMP(),CONCAT('ip_LiveIndicator:',ip_LiveIndicator,',ip_MaxSequenceID:',ip_MaxSequenceID); 
+	END IF;
     #================================================================================
     
     SELECT MAX(mst.TimeStep)

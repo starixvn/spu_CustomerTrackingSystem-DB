@@ -27,12 +27,22 @@ BEGIN
 		Example:
 			
 	*/
+    DECLARE CONS_LOG 			TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
+    
 	DECLARE	lv_Last3mMinTime 	DATETIME(3);
     DECLARE	lv_Last3mMaxTime 	DATETIME(3);  
 	DECLARE	lv_LastTransID 		BIGINT;   
 	DECLARE lv_Reason INT DEFAULT 0; #Group Betting
     DECLARE lv_LastSequenceID INT; #Group Betting
 	DECLARE lv_RuleGroupID INT DEFAULT 1; #Group Betting
+    
+    #==================LOG=======================================================
+    DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleGroupBetting_StagingClean';
+    IF CONS_LOG = 1 THEN     
+		INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
+		SELECT lv_SPName, CURRENT_TIMESTAMP(), CONCAT('@ip_LiveIndicator:=',ip_LiveIndicator,',@ip_MaxSequenceID:=',ip_MaxSequenceID);
+    END IF;
+    #==================LOG======================================================= 
     
     DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorRuleSetting;
 	CREATE TEMPORARY TABLE Temp_MatchMonitorRuleSetting(

@@ -26,7 +26,7 @@ BEGIN
 			- 	202212216@Casey.Huynh: Created [Redmine ID: 179502]
             
 		Param's Explanation (filtered by):
-			CALL CTS_DC_MatchMonitor_RuleArbitrage_StagingClean(0,2);
+			CALL CTS_DC_MatchMonitor_RuleArbitrage_Complete(0,2);
 		Example:		
 	*/ 
    

@@ -11,7 +11,8 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleArbitrage_Proce
     ,	IN ip_BettypeID			INT
     ,	IN ip_BetID				BIGINT
     ,	IN ip_HDP				DECIMAL(8,4)   
-   
+
+		
 )
     SQL SECURITY INVOKER
 sp: BEGIN
@@ -25,11 +26,14 @@ sp: BEGIN
 			- 	202212216@Casey.Huynh: Created [Redmine ID: 179502]
             
 		Param's Explanation (filtered by):
-			CALL CTS_DC_MatchMonitor_RuleArbitrage_StagingClean(0,2);
+			CALL CTS_DC_MatchMonitor_RuleArbitrage_Process(@ip_LiveIndicator:=0,@ip_MaxSequenceID:=@op_MaxSequenceID,@ip_MatchID:=110100,@ip_IsMajorLeague:=0,@ip_ScoreDiff:=-2,@ip_BettypeID:=1,@ip_BetID:=0, @ip_HDP=-0.2500);
+	
 		Example:		
 	*/
+    DECLARE CONS_LOG 					TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
     DECLARE CONST_RULE_GROUPID 			INT DEFAULT 5;
     DECLARE CONS_SITE789 				INT DEFAULT  3;
+    
     
     DECLARE lv_RuleTimeStep 			SMALLINT;
     DECLARE lv_RuleTotalStake 			DECIMAL(20,4);
@@ -39,10 +43,12 @@ sp: BEGIN
     DECLARE lv_LastSequenceID 			BIGINT UNSIGNED;  
     
     #==================LOG=======================================================
-    DECLARE SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleArbitrage_Process';
-    INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
-    SELECT SPName, CURRENT_TIMESTAMP(), CONCAT('@ip_LiveIndicator:=',ip_LiveIndicator,',@ip_MaxSequenceID:=',ip_MaxSequenceID,',@ip_MatchID:=',ip_MatchID
-    ,',@ip_IsMajorLeague:=',ip_IsMajorLeague,',@ip_ScoreDiff:=',ip_ScoreDiff,',@ip_BettypeID:=',ip_BettypeID,',@ip_BetID:=',ip_BetID,',@ip_HDP:=',ip_HDP);
+    DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleArbitrage_Process';
+    IF CONS_LOG = 1 THEN     
+		INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
+		SELECT lv_SPName, CURRENT_TIMESTAMP(), CONCAT('@ip_LiveIndicator:=',ip_LiveIndicator,',@ip_MaxSequenceID:=',ip_MaxSequenceID,',@ip_MatchID:=',ip_MatchID
+		,',@ip_IsMajorLeague:=',ip_IsMajorLeague,',@ip_ScoreDiff:=',ip_ScoreDiff,',@ip_BettypeID:=',ip_BettypeID,',@ip_BetID:=',ip_BetID,',@ip_HDP:=',ip_HDP);
+    END IF;
     #==================LOG=======================================================   
     
     DROP TEMPORARY TABLE IF EXISTS Temp_StagingTrans;
@@ -134,8 +140,6 @@ sp: BEGIN
             AND mms.BettypeID = ip_BettypeID
             AND mms.BetID = ip_BetID 
             AND mms.HDP = ip_HDP;       
-            
-		SELECT * FROM Temp_StagingTrans;
     END IF;
 
     #========Detect group by assocation and transdate====================

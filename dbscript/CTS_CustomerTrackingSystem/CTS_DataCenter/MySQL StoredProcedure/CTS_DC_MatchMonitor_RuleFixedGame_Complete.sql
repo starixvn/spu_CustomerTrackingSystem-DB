@@ -33,6 +33,10 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleFixedGame_Compl
 				,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a',
                 @ip_TransGroup:='[{"Reason":3 ,"TransIDList":"1001,1007,1008","CustIDList":"1,2"}]');
 	*/ 
+	DECLARE CONS_LOG 				TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
+    DECLARE	CONST_GROUPID			TINYINT DEFAULT 0;
+	DECLARE	CONST_REASON_FIXEDGAME	TINYINT DEFAULT 3; #0: Group Betting, 1: Headging, 2: Arbitrage, 3: FixedGame  
+    
     DECLARE	lv_KickOffTime 			DATETIME;
     DECLARE	lv_EventStatus 			VARCHAR(50);
     DECLARE lv_HomeID 				INT UNSIGNED;
@@ -50,16 +54,15 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleFixedGame_Compl
     DECLARE lv_MaxTransDate			DATETIME(3);	
     DECLARE	lv_NewTransIDList		TEXT;
     DECLARE	lv_NewCustIDList		TEXT;
-    DECLARE	lv_Rule_Duration		SMALLINT DEFAULT 7;
+    DECLARE	lv_Rule_Duration		SMALLINT; 
     
-    DECLARE	CONST_GROUPID			TINYINT DEFAULT 0;
-	DECLARE	CONST_REASON_FIXEDGAME	TINYINT DEFAULT 3; #0: Group Betting, 1: Headging, 2: Arbitrage, 3: FixedGame    
-    
-    #============DEBUG LOG============================================================
-    DECLARE SPName VARCHAR(200) DEFAULT 'CTS_DC_MatchMonitor_RuleFixedGame_Complete';
-	INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText, JsonString1)
-    SELECT SPName, CURRENT_TIMESTAMP(),CONCAT('ip_LiveIndicator:',ip_LiveIndicator,',ip_MaxSequenceID:',ip_MaxSequenceID
-		,',ip_MatchID:',ip_MatchID,',ip_ScoreDiff:',ip_ScoreDiff,',ip_BettypeID:',',ip_BetID:',ip_BetID,',ip_HDP:',ip_HDP,',ip_Betteam:',ip_Betteam),ip_TransGroup; 
+    #============ LOG============================================================
+    DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleFixedGame_Complete';
+    IF CONS_LOG = 1 THEN
+		INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText, JsonString1)
+		SELECT lv_SPName, CURRENT_TIMESTAMP(),CONCAT('ip_LiveIndicator:',ip_LiveIndicator,',ip_MaxSequenceID:',ip_MaxSequenceID
+			,',ip_MatchID:',ip_MatchID,',ip_ScoreDiff:',ip_ScoreDiff,',ip_BettypeID:',',ip_BetID:',ip_BetID,',ip_HDP:',ip_HDP,',ip_Betteam:',ip_Betteam),ip_TransGroup; 
+	END IF;
     #================================================================================  
     
     DROP TEMPORARY TABLE IF EXISTS Temp_TransGroup;

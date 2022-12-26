@@ -10,6 +10,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleGroupBetting_Co
     , 	IN ip_BettypeID		INT
     ,	IN ip_BetID			BIGINT
     , 	IN ip_TransGroup	JSON
+    
 )
   SQL SECURITY INVOKER
 BEGIN
@@ -34,7 +35,8 @@ BEGIN
 		Example:
 			CALL CTS_DC_MatchMonitor_RuleGroupBetting_Complete(1,114089577333,48310358,0,1,0,'[{"GroupID":4,"Reason":0,"TransList":"114089577333,114089576830","CustIDList":"55706032,55895790","OldGroupIDList":"0"}]');
 			
-		*/ 
+		*/
+	DECLARE CONS_LOG 					TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
     DECLARE lv_GroupID 					INT;
 	DECLARE lv_Reason 					BOOLEAN;
     DECLARE lv_TransIDList 				LONGTEXT;
@@ -52,7 +54,15 @@ BEGIN
     DECLARE lv_LeagueID					INT UNSIGNED;
     DECLARE lv_LeagueName				VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
     DECLARE	lv_Sporttype				INT;
- 
+	
+	#==================LOG=======================================================
+	DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleGroupBetting_Complete';
+    IF CONS_LOG = 1 THEN
+		INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText, JsonString1)
+		SELECT lv_SPName, CURRENT_TIMESTAMP(),CONCAT('ip_LiveIndicator:',ip_LiveIndicator,',ip_MaxSequenceID:',ip_MaxSequenceID
+			,',ip_MatchID:',ip_MatchID,',ip_ScoreDiff:',ip_ScoreDiff,',ip_BettypeID:',',ip_BetID:',ip_BetID),ip_TransGroup; 
+	END IF;
+    #==================LOG=======================================================
     DROP TEMPORARY TABLE IF EXISTS Temp_TransGroup;
     CREATE TEMPORARY TABLE Temp_TransGroup
     (

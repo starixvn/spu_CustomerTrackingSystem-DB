@@ -28,10 +28,20 @@ sp: BEGIN
 			CALL  CTS_DC_MatchMonitor_RuleGroupBetting_Get(1,@op_MaxSequenceID);
 			
 	*/
+    DECLARE CONS_LOG 					TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
+    
 	DECLARE lv_LastSequenceID BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_MaxSequenceID BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_RuleGroupID TINYINT DEFAULT 1; #Rule 01
     DECLARE lv_NoOfRow 	INT DEFAULT 5000;
+    
+    #==================LOG=======================================================
+    DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleGroupBetting_Get';
+    IF CONS_LOG = 1 THEN     
+		INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
+		SELECT lv_SPName, CURRENT_TIMESTAMP(), CONCAT('@ip_LiveIndicator:=',ip_LiveIndicator);
+    END IF;
+    #==================LOG======================================================= 
     
     DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorRuleSetting;
 	CREATE TEMPORARY TABLE Temp_MatchMonitorRuleSetting(

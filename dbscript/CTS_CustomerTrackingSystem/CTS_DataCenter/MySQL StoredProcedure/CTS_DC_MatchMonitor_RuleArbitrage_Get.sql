@@ -18,7 +18,7 @@ sp: BEGIN
 			- 	202212216@Casey.Huynh: Created [Redmine ID: 179502]
             
 		Param's Explanation (filtered by):
-			CALL CTS_DC_MatchMonitor_RuleArbitrage_StagingClean(0,2);
+			CALL CTS_DC_MatchMonitor_RuleArbitrage_Get(0,@op_MaxSequenceID);
 		Example:			
 	*/
 	DECLARE lv_LastSequenceID BIGINT UNSIGNED DEFAULT 0;

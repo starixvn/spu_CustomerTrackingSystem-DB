@@ -13,6 +13,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleGroupBetting_Pr
     SQL SECURITY INVOKER
 sp: BEGIN
 	/*
+    
 		Created:	20210526@Casey.Huynh
 		Task :		Match Monitor Rule Process
 		DB:			CTS_DataCenter
@@ -39,6 +40,7 @@ sp: BEGIN
 			- CALL CTS_DC_MatchMonitor_RuleGroupBetting_Process(1,113171940189,22081995,1,1,0);
 			
 	*/
+    DECLARE CONS_LOG 			TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
     DECLARE CONST_RULE_GROUPID 	INT DEFAULT 1;
     
     DECLARE lv_TimeCustID BIGINT UNSIGNED DEFAULT 0;
@@ -57,7 +59,16 @@ sp: BEGIN
     DECLARE lv_Rule_TimeStep SMALLINT;
     DECLARE lv_SportType SMALLINT;
     DECLARE lv_Rule_Reason TINYINT DEFAULT 0; #0: Group Betting 
+    
+    #==================LOG=======================================================
+    DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleGroupBetting_Process';
+    IF CONS_LOG = 1 THEN     
+		INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
+		SELECT lv_SPName, CURRENT_TIMESTAMP(), CONCAT('@ip_LiveIndicator:=',ip_LiveIndicator,',@ip_MaxSequenceID:=',ip_MaxSequenceID,',@ip_MatchID:=',ip_MatchID
+		,@ip_ScoreDiff:=',ip_ScoreDiff,',@ip_BettypeID:=',ip_BettypeID,',@ip_BetID:=',ip_BetID');
+    END IF;
     #=================================================================================    
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_StagingTrans;
     CREATE TEMPORARY TABLE Temp_StagingTrans(
 			TransID		BIGINT UNSIGNED NOT NULL

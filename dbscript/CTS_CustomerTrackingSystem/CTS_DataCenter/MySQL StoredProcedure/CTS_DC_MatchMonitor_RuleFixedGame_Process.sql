@@ -29,11 +29,11 @@ sp: BEGIN
 		Param's Explanation (filtered by):	
 
 		Example:
-			CALL CTS_DC_MatchMonitor_RuleFixedGame_Process(@ip_LiveIndicator:=0,@ip_MaxSequenceID:=@op_MaxSequenceID,@ip_MatchID:=110100,@ip_ScoreDiff:=-2,@ip_BettypeID:=1,@ip_BetID:=0, @HDP=-0.2500, @ip_Betteam:='h');
+			CALL CTS_DC_MatchMonitor_RuleFixedGame_Process(@ip_LiveIndicator:=0,@ip_MaxSequenceID:=@op_MaxSequenceID,@ip_MatchID:=110100,@ip_ScoreDiff:=-2,@ip_BettypeID:=1,@ip_BetID:=0, @ip_HDP:=-0.2500, @ip_Betteam:='h');
 	*/
-    
-    DECLARE	CONST_RULE_GROUPID_FIXEDGAME TINYINT DEFAULT 2;
-
+    DECLARE CONS_LOG 						TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
+    DECLARE	CONST_RULE_GROUPID_FIXEDGAME 	TINYINT DEFAULT 2;
+	
     DECLARE	lv_SportType					INT;
     DECLARE	lv_IsMajorLeague				BOOLEAN;
     DECLARE lv_MaxTransID 					BIGINT UNSIGNED;
@@ -50,10 +50,12 @@ sp: BEGIN
     DECLARE	lv_Rule_Reason					TINYINT;
 	
     #============DEBUG LOG============================================================
-    DECLARE SPName VARCHAR(200) DEFAULT 'CTS_DC_MatchMonitor_RuleFixedGame_Process';
-	INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
-    SELECT SPName, CURRENT_TIMESTAMP(),CONCAT('ip_LiveIndicator:',ip_LiveIndicator,',ip_MaxSequenceID:',ip_MaxSequenceID
-		,',ip_MatchID:',ip_MatchID,',ip_ScoreDiff:',ip_ScoreDiff,',ip_BettypeID:',',ip_BetID:',ip_BetID,',ip_HDP:',ip_HDP,',ip_Betteam:',ip_Betteam); 
+    DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleFixedGame_Process';
+    IF CONS_LOG = 1 THEN 
+		INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
+		SELECT lv_SPName, CURRENT_TIMESTAMP(),CONCAT('ip_LiveIndicator:',ip_LiveIndicator,',ip_MaxSequenceID:',ip_MaxSequenceID
+			,',ip_MatchID:',ip_MatchID,',ip_ScoreDiff:',ip_ScoreDiff,',ip_BettypeID:',',ip_BetID:',ip_BetID,',ip_HDP:',ip_HDP,',ip_Betteam:',ip_Betteam); 
+	END IF;
     #================================================================================
     
     DROP TEMPORARY TABLE IF EXISTS Temp_FixedTransRange;

@@ -11,6 +11,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleHedging_Process
     ,	IN ip_BetID				BIGINT
     ,	IN ip_Betteam			VARCHAR(10)
 )
+      
     SQL SECURITY INVOKER
 sp: BEGIN
 	/*
@@ -27,9 +28,10 @@ sp: BEGIN
             -	20221205@Casey.Huynh: Rename Table [Redmine ID: #179502]
 		Param's Explanation (filtered by):	
 		Example:
-			- CALL CTS_DC_MatchMonitor_RuleHedging_Process(1,113171940189,22081995,1,1,0,'a');
+			- CALL CTS_DC_MatchMonitor_RuleHedging_Process(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=113171940189,@ip_MatchID:=22081995,@ip_ScoreDiff:=1,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a');
 			
 	*/
+    DECLARE CONS_LOG 					TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
     DECLARE CONS_SITE789 				INT DEFAULT  3;
     
     DECLARE lv_TimeStep 				SMALLINT;
@@ -41,6 +43,15 @@ sp: BEGIN
     DECLARE lv_CustIDList 				TEXT;
     DECLARE lv_IsHedging 				BOOLEAN;
     DECLARE lv_LastSequenceID 			BIGINT UNSIGNED;  
+    
+    #==================LOG=======================================================
+    DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleHedging_Process';
+    IF CONS_LOG = 1 THEN     
+		INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
+		SELECT lv_SPName, CURRENT_TIMESTAMP(), CONCAT('@ip_LiveIndicator:=',ip_LiveIndicator,',@ip_MaxSequenceID:=',ip_MaxSequenceID,',@ip_MatchID:=',ip_MatchID
+		,',@ip_ScoreDiff:=',ip_ScoreDiff,',@ip_BettypeID:=',ip_BettypeID,',@ip_BetID:=',ip_Betteam,',@ip_HDP:=',ip_Betteam);
+    END IF;
+    #==================LOG======================================================= 
     
     DROP TEMPORARY TABLE IF EXISTS Temp_StagingTrans;
     CREATE TEMPORARY TABLE Temp_StagingTrans(
