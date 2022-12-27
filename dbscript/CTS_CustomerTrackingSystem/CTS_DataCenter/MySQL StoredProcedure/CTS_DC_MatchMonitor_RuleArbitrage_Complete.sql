@@ -6,7 +6,6 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleArbitrage_Compl
 		IN ip_LiveIndicator BOOLEAN
 	,	IN ip_MaxSequenceID	BIGINT UNSIGNED
 	, 	IN ip_MatchID		INT
-    ,	IN ip_IsMajorLeague BOOLEAN
     , 	IN ip_ScoreDiff		INT 
     , 	IN ip_BettypeID		INT
     ,	IN ip_BetID			BIGINT
@@ -14,6 +13,8 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleArbitrage_Compl
     , 	IN ip_TransGroup	JSON
     
 )
+
+
   SQL SECURITY INVOKER
 BEGIN
 	/* 
@@ -25,9 +26,11 @@ BEGIN
 		Revisions:
 			- 	202212216@Casey.Huynh: Created [Redmine ID: 179502]
             
-		Param's Explanation (filtered by):
-			CALL CTS_DC_MatchMonitor_RuleArbitrage_Complete(0,2);
+		Param's Explanation (filtered by):            
 		Example:		
+        CALL CTS_DC_MatchMonitor_RuleArbitrage_Complete(@ip_LiveIndicator:=0,@ip_MaxSequenceID:=2,@ip_MatchID:=1,@ip_ScoreDiff:=1,@ip_BettypeID:=1,@ip_BetID:=0,@ip_HDP:=0.025
+			,@ip_TransGroup:='[{"Reason":2,"TransIDList":"1,2","CustIDList":"1,2","OldGroupIDList":0}]');
+
 	*/ 
    
     DECLARE lv_GroupID 					INT;
