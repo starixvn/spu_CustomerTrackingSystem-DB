@@ -20,7 +20,7 @@ VALUES (5, 'Normal Accounts Classification - Realtime - Get datetime for picking
 GO
 
 INSERT INTO [dbo].[CustomerClassification_Parameter] ([DataId], [DataDescription], [DataType], [Value]) 
-VALUES (6, 'Normal Accounts Classification - Realtime - General - Get max ID of processed record', 'VARCHAR(20)', '0');
+VALUES (6, 'Normal Accounts Classification - Realtime - General - Get max ID of processed records', 'VARCHAR(20)', '0');
 GO
 
 INSERT INTO [dbo].[CustomerClassification_Parameter] ([DataId], [DataDescription], [DataType], [Value]) 
