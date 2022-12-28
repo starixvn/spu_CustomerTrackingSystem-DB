@@ -27,6 +27,7 @@ AS
 		- 20220222@Long.Luu: Remove 10k Probation rule for Credit [Redmine ID: #168988]
 		- 20220325@Long.Luu: Update TicketCount rescan for Normal Member from 100 to 20 [Redmine ID: #170465]
 		- 20221006@Jonas.Huynh: New Rule for General Customer Classifiation [Redmine ID: #178022]
+		- 20221125@Jonas.Huynh: Combine Realtime Flow of General CC and By Sport [Redmine ID: #180805]
 
 	Param's Explanation:
 */
@@ -34,14 +35,16 @@ BEGIN
 	
 	SET NOCOUNT ON;
 
-	DECLARE @GENERAL_SPORTID	SMALLINT = 200;
-	DECLARE @FUNCTIONID			SMALLINT = 1;
+	DECLARE @GENERAL_SPORTID		SMALLINT = 200;
+	DECLARE @FUNCTIONID				SMALLINT = 1,
+			@GeneralParameterId		SMALLINT = 6,
+		    @MaxScannedId			BIGINT;
 
-	DECLARE @CATEGORY_NORMALMEMBER		INT = 202
-		,	@CATEGORY_GOODMEMBER		INT = 205
+	DECLARE @CATEGORY_NORMALMEMBER	INT = 202
+		,	@CATEGORY_GOODMEMBER	INT = 205
 
-	DECLARE	@CurrentDateTime			DATETIME = GETDATE()
-		,	@CurrentDate				DATE = GETDATE();
+	DECLARE	@CurrentDateTime		DATETIME = GETDATE()
+		,	@CurrentDate			DATE = GETDATE();
 
 
 	IF OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
@@ -99,8 +102,22 @@ BEGIN
 		,	T.C.value('./@CategoryId', 'SMALLINT') AS CurrentCategoryId
 	FROM @CustomersXML.nodes('//r') AS T(C)
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
-		
-	-- #2: GetCustomer Accummulated data  
+	
+	-- #2: Get MaxScannedId
+	SELECT @MaxScannedId = CAST(a.Value AS BIGINT)
+	FROM [dbo].CustomerClassification_Parameter AS a WITH(NOLOCK)
+	WHERE a.DataId = @GeneralParameterId;
+	
+	-- #3: GetCustomer Accummulated data
+	WITH cte_rawData AS  (  
+					SELECT  *
+					FROM (
+							SELECT *, ROW_NUMBER() OVER(PARTITION BY a.CustId ORDER BY a.ID DESC) AS RowNum
+							FROM [dbo].[CustomerClassification_LatestChanged] AS a WITH(NOLOCK)
+							WHERE a.ID <= @MaxScannedId
+						) AS b
+					WHERE b.RowNum = 1
+		) 
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, CurrentCategoryId, IsSpecialSite, SRecommend, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
 	SELECT	a.CustId
 		,	c.CurrentCategoryId
@@ -111,7 +128,7 @@ BEGIN
 		,	a.Margin
 		,	a.BetCount
 		,	a.ActiveDays
-	FROM dbo.CustomerClassification_LatestGeneralChanged AS a WITH(NOLOCK)
+	FROM cte_rawData AS a WITH(NOLOCK)
 		INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.CustId
 		LEFT JOIN bodb02.dbo.Customer AS cu WITH(NOLOCK) ON a.CustId = cu.custid;
 
@@ -125,7 +142,7 @@ BEGIN
 	SELECT CustId, @CurrentDate, @CurrentDateTime, @FUNCTIONID, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId, 1
 	FROM #tmpCustomerAccummulatedInfo;
 
-	-- #3: Insert Accounts's BetCount
+	-- #4: Insert Accounts's BetCount
 	INSERT INTO dbo.CustomerClassification_BetCount(CustId, SportId, BetCount)
 	SELECT c.CustId, @GENERAL_SPORTID, 0
 	FROM #tmpCustomers AS c WITH(NOLOCK)
@@ -133,7 +150,7 @@ BEGIN
 	WHERE c.CurrentCategoryId IN (@CATEGORY_NORMALMEMBER, @CATEGORY_GOODMEMBER)
 		AND v.CustId IS NULL;
 
-	--#4: Remove Accounts that Ticket Count has not reach the schedule
+	--#5: Remove Accounts that Ticket Count has not reach the schedule
 	---- Remove Accounts less than 100 tickets compared to last scan for VIP
 	DELETE a WITH(ROWLOCK)
 	FROM #tmpCustomerAccummulatedInfo AS a
@@ -148,7 +165,7 @@ BEGIN
 	WHERE a.CurrentCategoryId IN (@CATEGORY_NORMALMEMBER)
 		AND (v.CustId IS NOT NULL AND (a.BetCount - v.BetCount < 20));
 	
-	-- #5: Classify classification by general rule
+	-- #6: Classify classification by general rule
 	INSERT INTO #tmpResultData(CustId, CategoryId)
 	SELECT  CustId
 		,	CategoryId
@@ -172,7 +189,7 @@ BEGIN
 		) as b
 	 WHERE b.RowNum = 1;
 
-	 --#6: Insert to CustomerClassification
+	 --#7: Insert to CustomerClassification
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT	a.CustId
 		,	@GENERAL_SPORTID
@@ -186,7 +203,7 @@ BEGIN
 	FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 	    LEFT JOIN #tmpResultData AS r WITH(NOLOCK) ON a.CustId = r.CustId
 
-	-- #7: Update last scanned ticket count 
+	-- #8: Update last scanned ticket count 
 	UPDATE v WITH(ROWLOCK, UPDLOCK)
 	SET v.BetCount = CASE 
 						WHEN a.CurrentCategoryId IN (@CATEGORY_GOODMEMBER) 

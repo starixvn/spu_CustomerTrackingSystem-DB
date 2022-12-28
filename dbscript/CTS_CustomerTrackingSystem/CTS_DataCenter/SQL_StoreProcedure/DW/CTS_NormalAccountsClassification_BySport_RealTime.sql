@@ -18,7 +18,8 @@ AS
 		- 20220831@Jonas.Huynh: Created [Redmine ID: #176992]
 		- 20221017@Jonas.Huynh: Fix issue ineligible customer classification
 		- 20221111@Jonas.Huynh: Adjust Eport Rules [Redmine ID: #179501]
-	
+		- 20221125@Jonas.Huynh: Combine Realtime Flow of General CC and By Sport [Redmine ID: #180805]
+		
 	Param's Explanation:
 				@CustomersXML = N'<Root>
 										<r CustId="4345542" SportId="2" CategoryId ="201"/>
@@ -31,8 +32,10 @@ BEGIN
 	
 	SET NOCOUNT ON;
 
-	DECLARE @FUNCTIONID					SMALLINT = 1;
-	DECLARE @SPORT_ESPORT				SMALLINT = 43;
+	DECLARE @SPORT_ESPORT				SMALLINT = 43,
+			@FUNCTIONID					SMALLINT = 1,
+			@BySportParameterId			SMALLINT = 7,
+		    @MaxScannedId				BIGINT;
 
 	DECLARE @CATEGORY_NEWMEMBER			INT = 201
 		,	@CATEGORY_NORMALMEMBER		INT = 202
@@ -107,7 +110,21 @@ BEGIN
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 	
 	-- START	
-	-- #1: GetCustomer Accummulated data  
+	-- #1: Get MaxScannedId
+	SELECT @MaxScannedId = CAST(a.Value AS BIGINT)
+	FROM [dbo].CustomerClassification_Parameter AS a WITH(NOLOCK)
+	WHERE a.DataId = @BySportParameterId;
+
+	-- #2: GetCustomer Accummulated data  
+	WITH cte_rawData AS  (  
+					SELECT  *
+					FROM (
+							SELECT *, ROW_NUMBER() OVER(PARTITION BY a.CustId, a.SportId ORDER BY a.ID DESC) AS RowNum
+							FROM [dbo].[CustomerClassification_BySport_LatestChanged] AS a WITH(NOLOCK)
+							WHERE a.ID <= @MaxScannedId
+						) as b
+					WHERE b.RowNum = 1
+		)  
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, SportId, CurrentCategoryId, IsSpecialSite, SRecommend, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
 	SELECT	a.CustId
 		,	a.SportId
@@ -123,7 +140,7 @@ BEGIN
 		,	a.Margin
 		,	a.BetCount
 		,	a.ActiveDays
-	FROM dbo.CustomerClassification_BySport_LatestChanged AS a WITH(NOLOCK)
+	FROM cte_rawData AS a WITH(NOLOCK)
 		INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.CustId AND a.SportId = c.SportId
 		LEFT JOIN bodb02.dbo.Customer AS cu WITH(NOLOCK) ON a.CustId = cu.custid;
 
@@ -137,7 +154,7 @@ BEGIN
 	FROM #tmpCustomerAccummulatedInfo AS a
 		INNER JOIN bodb02.dbo.Dep_CustSuper AS c WITH(NOLOCK) ON a.SRecommend = c.custid;
 
-	-- #2: Insert Accounts's BetCount
+	-- #3: Insert Accounts's BetCount
 	INSERT INTO dbo.CustomerClassification_BySport_BetCount(CustId, SportId, BetCount)
 	SELECT c.CustId, c.SportId, 0
 	FROM #tmpCustomers AS c WITH(NOLOCK)
@@ -145,7 +162,7 @@ BEGIN
 	WHERE c.CurrentCategoryId IN (@CATEGORY_NORMALMEMBER, @CATEGORY_GOODMEMBER) 
 		AND v.CustId IS NULL;
 		
-	-- #3: Remove Accounts that Ticket Count has not reach the schedule
+	-- #4: Remove Accounts that Ticket Count has not reach the schedule
 	-- Remove Accounts less than 100 tickets compared to last scan for GOODMEMBER
 	DELETE a WITH(ROWLOCK)
 	FROM #tmpCustomerAccummulatedInfo AS a
@@ -160,7 +177,7 @@ BEGIN
 	WHERE a.CurrentCategoryId IN (@CATEGORY_NORMALMEMBER)
 		AND (v.CustId IS NOT NULL AND (a.BetCount - v.BetCount < 20));
 
-	-- #4: Classify NULL, GOOD, NEW, NORMAL Category
+	-- #5: Classify NULL, GOOD, NEW, NORMAL Category
 	INSERT INTO #tmpResultData(CustId, SportId, CategoryId)
 	SELECT  CustId
 		,	SportId
@@ -201,7 +218,7 @@ BEGIN
 	 FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 	   LEFT JOIN #tmpResultData AS r WITH(NOLOCK) ON a.CustId = r.CustId AND a.SportId = r.SportId
 
-	-- #8: Update last scanned ticket count back to dbo.CustomerClassification_BetCount
+	-- #6: Update last scanned ticket count back to dbo.CustomerClassification_BetCount
 	UPDATE v WITH(ROWLOCK, UPDLOCK)
 	SET v.BetCount = CASE 
 						WHEN a.CurrentCategoryId IN (@CATEGORY_GOODMEMBER) 
