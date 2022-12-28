@@ -38,7 +38,7 @@ BEGIN
 	DECLARE @GENERAL_SPORTID		SMALLINT = 200;
 	DECLARE @FUNCTIONID				SMALLINT = 1,
 			@GeneralParameterId		SMALLINT = 6,
-		    @MaxId					BIGINT;
+		    @MaxScannedId			BIGINT;
 
 	DECLARE @CATEGORY_NORMALMEMBER	INT = 202
 		,	@CATEGORY_GOODMEMBER	INT = 205
@@ -103,8 +103,8 @@ BEGIN
 	FROM @CustomersXML.nodes('//r') AS T(C)
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 	
-	-- #2: Get MaxID
-	SELECT @MaxId = CAST(a.Value AS BIGINT)
+	-- #2: Get MaxScannedId
+	SELECT @MaxScannedId = CAST(a.Value AS BIGINT)
 	FROM [dbo].CustomerClassification_Parameter AS a WITH(NOLOCK)
 	WHERE a.DataId = @GeneralParameterId;
 	
@@ -114,8 +114,8 @@ BEGIN
 					FROM (
 							SELECT *, ROW_NUMBER() OVER(PARTITION BY a.CustId ORDER BY a.ID DESC) AS RowNum
 							FROM [dbo].[CustomerClassification_LatestChanged] AS a WITH(NOLOCK)
-							WHERE a.ID <= @MaxId
-						) as b
+							WHERE a.ID <= @MaxScannedId
+						) AS b
 					WHERE b.RowNum = 1
 		) 
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, CurrentCategoryId, IsSpecialSite, SRecommend, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)

@@ -35,7 +35,7 @@ BEGIN
 	DECLARE @SPORT_ESPORT				SMALLINT = 43,
 			@FUNCTIONID					SMALLINT = 1,
 			@BySportParameterId			SMALLINT = 7,
-		    @MaxId						BIGINT;
+		    @MaxScannedId				BIGINT;
 
 	DECLARE @CATEGORY_NEWMEMBER			INT = 201
 		,	@CATEGORY_NORMALMEMBER		INT = 202
@@ -110,8 +110,8 @@ BEGIN
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 	
 	-- START	
-	-- #1: Get MaxID
-	SELECT @MaxId = CAST(a.Value AS BIGINT)
+	-- #1: Get MaxScannedId
+	SELECT @MaxScannedId = CAST(a.Value AS BIGINT)
 	FROM [dbo].CustomerClassification_Parameter AS a WITH(NOLOCK)
 	WHERE a.DataId = @BySportParameterId;
 
@@ -121,7 +121,7 @@ BEGIN
 					FROM (
 							SELECT *, ROW_NUMBER() OVER(PARTITION BY a.CustId, a.SportId ORDER BY a.ID DESC) AS RowNum
 							FROM [dbo].[CustomerClassification_BySport_LatestChanged] AS a WITH(NOLOCK)
-							WHERE a.ID <= @MaxId
+							WHERE a.ID <= @MaxScannedId
 						) as b
 					WHERE b.RowNum = 1
 		)  

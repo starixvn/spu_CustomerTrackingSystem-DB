@@ -49,12 +49,6 @@ CREATE TABLE [dbo].[CustomerClassification_LatestChanged](
 )
 GO
 
-CREATE NONCLUSTERED INDEX [IX_CustomerClassificationLatestChanged_CustId] ON [dbo].[CustomerClassification_LatestChanged]
-(
-	[CustId]
-)
-
-
 GRANT SELECT ON [dbo].[CustomerClassification_LatestChanged] TO [bodbSPUNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[CustomerClassification_LatestChanged] TO [bodbSPUNet]
@@ -78,12 +72,6 @@ CREATE TABLE [dbo].[CustomerClassification_BySport_LatestChanged](
 	CONSTRAINT [CIX_CustomerClassificationBySportLatestChanged_ID] PRIMARY KEY CLUSTERED (ID)
 )
 GO
-
-CREATE NONCLUSTERED INDEX [IX_CustomerClassificationBySportLatestChanged_CustId_SportId] ON [dbo].[CustomerClassification_BySport_LatestChanged]
-(
-	[CustId],
-	[SportId]
-)
 
 GRANT SELECT ON [dbo].[CustomerClassification_BySport_LatestChanged] TO [bodbSPUNet]
 GO
