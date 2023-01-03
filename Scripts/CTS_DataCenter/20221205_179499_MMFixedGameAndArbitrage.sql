@@ -1,7 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
 /*
 Creator:	20221115@Casey.Huynh
-Task:	 	Match Monitor Irrigation
+Task:	 	Match Monitor Arbitrage and fixed game
 Server:  	Master
 DBName:		CTS_DataCenter
 
