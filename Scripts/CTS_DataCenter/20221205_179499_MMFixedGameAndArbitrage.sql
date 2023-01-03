@@ -216,7 +216,7 @@ WHERE ScoreDiff IS NULL;
 ALTER TABLE MatchMonitorDetails
 	ADD COLUMN IsMajorLeague BOOLEAN AFTER MatchID
 ,	ADD COLUMN HDP DECIMAL (8,4) AFTER BettypeID
-,	ADD UNIQUE KEY UK_MatchMonitorDetails_RuleGroup (MatchID,LiveIndicator,ScoreDiff,BettypeID,BetID,Betteam, Reason, GroupID,EventDate)
+,	ADD UNIQUE KEY UK_MatchMonitorDetails_RuleGroup (MatchID,LiveIndicator,ScoreDiff,BettypeID,BetID,Betteam,HDP, Reason, GroupID,EventDate)
 ,	DROP COLUMN TotalScore
 ,   DROP INDEX UK_MatchMonitorDetails_MatchGroup;
 #====================================================================
