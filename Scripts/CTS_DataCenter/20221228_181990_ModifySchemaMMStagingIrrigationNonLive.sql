@@ -8,9 +8,7 @@
 USE CTS_DataCenter;
 
 ALTER TABLE CTS_DataCenter.MatchMonitorStagingIrrigationNonLive 
-ADD COLUMN Hdp 	DECIMAL(8,4) DEFAULT NULL,
-ADD COLUMN Hdp1 DECIMAL(8,4) DEFAULT NULL,
-ADD COLUMN Hdp2 DECIMAL(8,4) DEFAULT NULL;
+ADD COLUMN Hdp 	DECIMAL(8,4) DEFAULT NULL;
 
 ALTER TABLE CTS_DataCenter.MatchMonitorStagingIrrigationNonLive 
 DROP INDEX IX_MatchMonitorStagingIrrigationNonLive_GroupID,
