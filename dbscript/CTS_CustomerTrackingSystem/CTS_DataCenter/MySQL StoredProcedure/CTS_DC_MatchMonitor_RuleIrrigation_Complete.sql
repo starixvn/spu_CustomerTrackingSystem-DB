@@ -10,6 +10,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleIrrigation_Comp
     , 	IN ip_ScoreDiff		INT 
     , 	IN ip_BettypeID		INT
     ,	IN ip_BetID			BIGINT
+	,	IN ip_HDP			DECIMAL(8,4)
     ,	IN ip_Betteam		VARCHAR(10)
     , 	IN ip_TransGroup	JSON
     
@@ -24,6 +25,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleIrrigation_Comp
 
 		Revisions:
 			- 20221122@Casey.Huynh: Created [Redmine ID: #179499]
+			- 20221228@Victoria.Le:	Add HDP for Irrigation rule [Redmine ID: #181990]
             
 		Param's Explanation (filtered by):	
 			
@@ -98,13 +100,25 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleIrrigation_Comp
 	UPDATE CTS_DataCenter.MatchMonitorDetails AS mmd
 		INNER JOIN Temp_InputTransGroup AS tmp ON mmd.GroupID = tmp.OldGroupID 
     SET ListTransID = CONCAT(ListTransID,',',TransIDList)
-	WHERE mmd.MatchID = ip_MatchID AND mmd.ScoreDiff = ip_ScoreDiff AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID AND mmd.Betteam = ip_Betteam AND mmd.Reason = lv_Rule_Reason;
+	WHERE mmd.MatchID = ip_MatchID 
+		AND mmd.ScoreDiff = ip_ScoreDiff 
+		AND mmd.BettypeID = ip_BettypeID 
+		AND mmd.BetID = ip_BetID 
+		AND mmd.HDP = ip_HDP
+		AND mmd.Betteam = ip_Betteam
+		AND mmd.Reason = lv_Rule_Reason;
 	
     #=======INSERT NEW GROUP===================================
     SELECT IFNULL(MAX(mmd.GroupID),0)
     INTO lv_MaxGroupID
     FROM CTS_DataCenter.MatchMonitorDetails AS mmd
-    WHERE mmd.MatchID = ip_MatchID AND mmd.ScoreDiff = ip_ScoreDiff AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID AND mmd.Betteam = ip_Betteam AND mmd.Reason = lv_Rule_Reason;
+    WHERE mmd.MatchID = ip_MatchID 
+		AND mmd.ScoreDiff = ip_ScoreDiff 
+		AND mmd.BettypeID = ip_BettypeID 
+		AND mmd.BetID = ip_BetID
+		AND mmd.HDP = ip_HDP
+		AND mmd.Betteam = ip_Betteam 
+		AND mmd.Reason = lv_Rule_Reason;
 
     INSERT INTO Temp_NewGroup(CustID, TransIDList)
     SELECT	tmpTg.CustID
@@ -119,12 +133,17 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleIrrigation_Comp
 		SELECT mms.EventDate, mms.LiveHomeScore, mms.LiveAwayScore, mms.EventDate, mms.KickOffTime, mms.EventStatus, mms.HomeID, mms.AwayID, mms.LeagueID, mms.LeagueName
 		INTO lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName
 		FROM CTS_DataCenter.MatchMonitorStagingIrrigationNonLive AS mms
-		WHERE mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.Betteam = ip_Betteam
+		WHERE mms.SequenceID <= ip_MaxSequenceID 
+			AND mms.MatchID = ip_MatchID 
+			AND mms.BettypeID = ip_BettypeID 
+			AND mms.BetID = ip_BetID 
+			AND mms.Hdp = ip_HDP
+			AND mms.Betteam = ip_Betteam
 		LIMIT 1;
 	END IF;
 
-    INSERT IGNORE INTO CTS_DataCenter.MatchMonitorDetails(MatchID, LiveIndicator, ScoreDiff, BettypeID, BetID, Betteam, EventDate, LiveHomeScore, LiveAwayScore, ListCustID, ListTransID, GroupID, Reason)
-	SELECT	ip_MatchID, ip_LiveIndicator, ip_ScoreDiff, ip_BettypeID, ip_BetID, ip_Betteam, lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, tmpNg.CustID, tmpNg.TransIDList, tmpNg.GroupID, lv_Rule_Reason
+    INSERT IGNORE INTO CTS_DataCenter.MatchMonitorDetails(MatchID, LiveIndicator, ScoreDiff, BettypeID, BetID, HDP, Betteam, EventDate, LiveHomeScore, LiveAwayScore, ListCustID, ListTransID, GroupID, Reason)
+	SELECT	ip_MatchID, ip_LiveIndicator, ip_ScoreDiff, ip_BettypeID, ip_BetID, ip_HDP, ip_Betteam, lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, tmpNg.CustID, tmpNg.TransIDList, tmpNg.GroupID, lv_Rule_Reason
 	FROM 	Temp_NewGroup AS tmpNg;
     
     INSERT IGNORE INTO CTS_DataCenter.MatchMonitor(MatchID, BettypeID, BetID, LiveIndicator, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueName, Sporttype, Reason)

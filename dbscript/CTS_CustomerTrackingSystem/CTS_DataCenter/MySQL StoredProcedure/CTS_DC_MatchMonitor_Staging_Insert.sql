@@ -27,6 +27,7 @@ BEGIN
             - 	202201021@Casey.Huynh: Seperate pool Staging [Redmine ID: #179439]
             - 	20221115@Casey.Huynh: Detect Irrgation Rule [Redmine ID: #179499]
             - 	20221206@Casey.Huynh: Change Table Nane, ScoreDiff and add HDP, Odds range for Fixed Game [Redmine ID: #181205]
+			- 	20221228@Victoria.Le: Add HDP for Irrgation Rule [Redmine ID: #181990]
             
 		Param's Explanation (filtered by):		
 
@@ -407,7 +408,7 @@ BEGIN
         FROM CTS_DataCenter.MatchMonitorRuleSetting  AS mst
         WHERE mst.RuleGroupID = CONST_RULE_GROUPID_IRRIGATION AND mst.RuleStatus = 1;         
 
-		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingIrrigationNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, Odds, InsertTime)
+		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingIrrigationNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, Odds, Hdp1, Hdp2, Hdp, InsertTime)
 		SELECT	tmpSt.SequenceID
 			,	tmpSt.TransID
 			,	tmpSt.TransDate
@@ -429,6 +430,9 @@ BEGIN
 			,	tmpSt.Stake
 			,	tmpSt.Betteam
             ,	tmpSt.Odds
+			,	tmpSt.Hdp1
+            ,	tmpSt.Hdp2
+            ,	tmpSt.HDP
 			,	CURRENT_TIMESTAMP(3) AS InsertTime
 		FROM Temp_Staging AS tmpSt
 			INNER JOIN Temp_RuleIrrigation AS tmpMst ON  tmpMst.SportType = tmpSt.SportType;   

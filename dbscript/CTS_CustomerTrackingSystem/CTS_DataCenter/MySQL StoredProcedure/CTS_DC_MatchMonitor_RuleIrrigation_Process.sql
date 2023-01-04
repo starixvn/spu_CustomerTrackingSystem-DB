@@ -10,6 +10,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleIrrigation_Proc
     ,	IN ip_ScoreDiff			INT 
     ,	IN ip_BettypeID			INT UNSIGNED
     ,	IN ip_BetID				BIGINT
+	,	IN ip_HDP				DECIMAL(8,4)
     ,	IN ip_Betteam			VARCHAR(50)    
 )
     SQL SECURITY INVOKER
@@ -21,7 +22,8 @@ sp: BEGIN
 		Original:
 
 		Revisions:
-			- 20221122@Casey.Huynh: Created [Redmine ID: #179499]
+			- 20221122@Casey.Huynh: 	Created [Redmine ID: #179499]
+			- 20221228@Victoria.Le:		Add HDP for Irrigation rule [Redmine ID: #181990]
             
 		Param's Explanation (filtered by):	
 			
@@ -96,8 +98,13 @@ sp: BEGIN
         ,	mms.Odds
         ,	mms.GroupID AS OldGroupID        
 	FROM CTS_DataCenter.MatchMonitorStagingIrrigationNonLive AS mms
-    WHERE 	mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.ScoreDiff = ip_ScoreDiff 
-			AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.Betteam = ip_Betteam;
+    WHERE 	mms.SequenceID <= ip_MaxSequenceID 
+		AND mms.MatchID = ip_MatchID 
+		AND mms.ScoreDiff = ip_ScoreDiff 
+		AND mms.BettypeID = ip_BettypeID 
+		AND mms.BetID = ip_BetID 
+		AND mms.Betteam = ip_Betteam
+		AND mms.Hdp = ip_HDP;
 
     SELECT mst.TotalStake,	mst.OddsSpread, mst.TimeStep
     INTO lv_Rule_TotalStake, lv_Rule_OddsSpread, lv_Rule_TimeStep
