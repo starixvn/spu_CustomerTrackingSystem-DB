@@ -29,7 +29,8 @@ AS
 		- 20220222@Long.Luu: Remove 10k Probation rule for Credit [Redmine ID: #168988]
 		- 20280628@Long.Luu: Exclude more Internal Accounts [Redmine ID: #174430]
 		- 20221006@Jonas.Huynh: New Rule for General Customer Classifiation [Redmine ID: #178022]
-		
+		- 20221118@Jonas.Huynh: Update parameter of DW SP GetCustAccumulatedInfo [Redmine ID: #179500]
+
 	Param's Explanation:
 				@CustomersXML = N'<Root>
 										<r CustId="4345542" SportId="2" CategoryId ="201"/>
@@ -84,33 +85,39 @@ BEGIN
 		DROP TABLE	#tmpRawData;
 
 	CREATE TABLE #tmpRawData(
-		[CustId]			INT NOT NULL,
-		[SportId]			INT NOT NULL,
-		[SportGroup]		VARCHAR(50) NOT NULL,
-		[TurnoverRM]		DECIMAL(19, 4) NULL,
-		[WinlossRM]			DECIMAL(19, 4) NULL,
-		[TurnoverORG]		DECIMAL(19, 4) NULL,
-		[WinlossORG]		DECIMAL(19, 4) NULL,
-		[BetCount]			BIGINT NULL,
-		[ActiveDays]		INT NULL,
-		PRIMARY KEY (CustId, SportId)
+		CustId					INT				NOT NULL,
+		SportId					INT				NOT NULL,
+		TurnoverRM				DECIMAL(19, 4)	NULL,
+		WinlossRM				DECIMAL(19, 4)	NULL,
+		TurnoverORG				DECIMAL(19, 4)	NULL,
+		WinlossORG				DECIMAL(19, 4)	NULL,
+		BetCount				BIGINT			NULL,
+		ActiveDaysCustID		INT				NOT NULL,
+        ActiveDaysSportGroup	INT				NOT NULL,
+        WindaysCustID			INT				NOT NULL,
+        WinDaysSportGroup		INT				NOT NULL
+	);
+
+	CREATE CLUSTERED INDEX CIX_tmpRawData_CustId_SportId ON #tmpRawData(
+		CustId, 
+		SportId
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpCustomerAccummulatedInfo') IS NOT NULL
 		DROP TABLE	#tmpCustomerAccummulatedInfo;
 
 	CREATE TABLE #tmpCustomerAccummulatedInfo(
-		[CustId]			INT NOT NULL,
-		[Site]				VARCHAR (10) NULL,
-		[IsSpecialSite]		BIT DEFAULT 0,
-		[IsDeposit]			BIT DEFAULT 0,
-		[SRecommend]		INT,
-		[TurnoverRM]		DECIMAL(19, 4) NULL,
-		[WinlossRM]			DECIMAL(19, 4) NULL,
-		[Margin]			DECIMAL(19, 4) NULL,
-		[BetCount]			BIGINT NULL,
-		[ActiveDays]		INT NULL,
-		[CurrentCategoryId]	SMALLINT NULL
+		CustId				INT				NOT NULL,
+		CurrentCategoryId	SMALLINT		NULL,
+		[Site]				VARCHAR (10)	NULL,
+		IsSpecialSite		BIT DEFAULT 0,
+		IsDeposit			BIT DEFAULT 0,
+		SRecommend			INT,
+		TurnoverRM			DECIMAL(19, 4)	NULL,
+		WinlossRM			DECIMAL(19, 4)	NULL,
+		Margin				DECIMAL(19, 4)	NULL,
+		BetCount			BIGINT			NULL,
+		ActiveDays			INT				NULL	
 	);
 
 	CREATE CLUSTERED INDEX CIX_tmpCustomerAccummulatedInfo_CustId ON #tmpCustomerAccummulatedInfo(
@@ -179,7 +186,7 @@ BEGIN
 								WHERE IsActive = 1
 								FOR XML PATH('')), 1, 1, '');
 
-	INSERT INTO #tmpRawData(CustId, SportId, SportGroup, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDays)
+	INSERT INTO #tmpRawData(CustId, SportId, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDaysCustID, ActiveDaysSportGroup, WindaysCustID, WinDaysSportGroup)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @ListCustIds, @ResultDataMode = 1;	
 	
 	-- #5: Sum data by custid
@@ -189,7 +196,7 @@ BEGIN
 		,	SUM(a.WinlossRM)
 		,	CASE WHEN SUM(a.TurnoverRM) = 0 THEN 0 ELSE SUM(a.WinlossRM) / SUM(a.TurnoverRM) * 100 END
 		,	SUM(a.BetCount)
-		,	MAX(a.ActiveDays)
+		,	MAX(a.ActiveDaysCustID)
 	FROM #tmpRawData AS a WITH(NOLOCK)
 	GROUP BY a.CustId;
 	

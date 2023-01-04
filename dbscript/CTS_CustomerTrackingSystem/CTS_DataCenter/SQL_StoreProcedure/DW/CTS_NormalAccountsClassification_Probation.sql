@@ -26,6 +26,7 @@ AS
 		- 20210818@Long.Luu: Check Winloss on probation assessment [Redmine ID: #159709]
 		- 20220222@Long.Luu: Remove 10k Probation rule for Credit [Redmine ID: #168988]
         - 20221006@Jonas.Huynh: New Rule for General Customer Classifiation [Redmine ID: #178022]
+		- 20221118@Jonas.Huynh: Update parameter of DW SP GetCustAccumulatedInfo [Redmine ID: #179500]
 
 	Param's Explanation:
 
@@ -36,52 +37,55 @@ BEGIN
 	
 	SET NOCOUNT ON;
 	
-	DECLARE @PARLAY_SPORTID		SMALLINT = -100
-		,	@GENERAL_SPORTID	SMALLINT = 200;
+	DECLARE	@GENERAL_SPORTID			SMALLINT = 200;
+	DECLARE @FUNCTIONID					SMALLINT = 2;
+	DECLARE @CATEGORY_PROBATION			INT		 = 206,
+			@CATEGORY_SMARTINACTIVE		INT		 = 1002;
 
-	DECLARE @FUNCTIONID			SMALLINT = 2;
-
-	DECLARE @CATEGORY_PROBATION			INT = 206,
-			@CATEGORY_SMARTINACTIVE		INT = 1002;
-
-	DECLARE	@CustIdList			VARCHAR(MAX)	
-		,	@CurrentDateTime	DATETIME = GETDATE()
-		,	@CurrentDate		DATE	 = GETDATE()
-		,	@ToDate				DATE	 = GETDATE();
+	DECLARE	@CustIdList					VARCHAR(MAX)	
+		,	@CurrentDateTime			DATETIME = GETDATE()
+		,	@CurrentDate				DATE	 = GETDATE()
+		,	@ToDate						DATE	 = GETDATE();
 	
-	DECLARE	@From30Date			DATE	 = DATEADD(DAY, - 30, @ToDate);
+	DECLARE	@From30Date					DATE	 = DATEADD(DAY, - 30, @ToDate);
 	
 	IF	OBJECT_ID('tempdb..#tmpRawData') IS NOT NULL
 		DROP TABLE	#tmpRawData;
 
 	CREATE TABLE #tmpRawData(
-		[CustId]			INT NOT NULL,
-		[SportId]			INT NOT NULL,
-		[SportGroup]		VARCHAR(50) NOT NULL,
-		[TurnoverRM]		DECIMAL(19, 4) NULL,
-		[WinlossRM]			DECIMAL(19, 4) NULL,
-		[TurnoverORG]		DECIMAL(19, 4) NULL,
-		[WinlossORG]		DECIMAL(19, 4) NULL,
-		[BetCount]			BIGINT NULL,
-		[ActiveDays]		INT NULL,
-		PRIMARY KEY ([CustId],[SportId])
+		CustId					INT				NOT NULL,
+		SportId					INT				NOT NULL,
+		TurnoverRM				DECIMAL(19, 4)	NULL,
+		WinlossRM				DECIMAL(19, 4)	NULL,
+		TurnoverORG				DECIMAL(19, 4)	NULL,
+		WinlossORG				DECIMAL(19, 4)	NULL,
+		BetCount				BIGINT			NULL,
+		ActiveDaysCustID		INT				NOT NULL,
+        ActiveDaysSportGroup	INT				NOT NULL,
+        WindaysCustID			INT				NOT NULL,
+        WinDaysSportGroup		INT				NOT NULL
+	);
+
+	CREATE CLUSTERED INDEX CIX_tmpRawData_CustId_SportId ON #tmpRawData(
+		CustId, 
+		SportId
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpCustomerAccummulatedInfo') IS NOT NULL
 	DROP TABLE	#tmpCustomerAccummulatedInfo;
 
 	CREATE TABLE #tmpCustomerAccummulatedInfo(
-		[CustId]				INT NOT NULL,
-		[IsSpecialSite]			BIT DEFAULT 0,
-		[IsDeposit]				BIT DEFAULT 0,
-		[SRecommend]			INT,
-		[TurnoverRM]			DECIMAL(19, 4) NULL,
-		[WinlossRM]				DECIMAL(19, 4) NULL,
-		[Margin]				DECIMAL(19, 4) NULL,
-		[BetCount]				BIGINT NULL,
-		[ActiveDays]			INT NULL,
-		[CurrentCategoryId]	    SMALLINT NULL,
-		[IsProbationLastDay]	BIT DEFAULT 0,
+		CustId				INT				NOT NULL,
+		CurrentCategoryId	SMALLINT		NULL,
+		IsSpecialSite		BIT DEFAULT 0,
+		IsDeposit			BIT DEFAULT 0,
+		SRecommend			INT,
+		TurnoverRM			DECIMAL(19, 4)	NULL,
+		WinlossRM			DECIMAL(19, 4)	NULL,
+		Margin				DECIMAL(19, 4)	NULL,
+		BetCount			BIGINT			NULL,
+		ActiveDays			INT				NULL,	
+		IsProbationLastDay	BIT DEFAULT 0,
 	);
 	
 	CREATE CLUSTERED INDEX CIX_tmpCustomerAccummulatedInfo_CustId ON #tmpCustomerAccummulatedInfo(
@@ -154,11 +158,8 @@ BEGIN
 			  WHERE IsActive = 1
 			  FOR XML PATH ('')), 1, 1, '');
 
-	INSERT INTO #tmpRawData(CustId, SportId, SportGroup, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDays)
-	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @CustIdList;
-
-	DELETE FROM #tmpRawData
-	WHERE SportId = @PARLAY_SPORTID;
+	INSERT INTO #tmpRawData(CustId, SportId, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDaysCustID, ActiveDaysSportGroup, WindaysCustID, WinDaysSportGroup)
+	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @CustIdList, @ResultDataMode = 1;
 
 	--#5: Sum data by custid
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, CurrentCategoryId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
@@ -168,7 +169,7 @@ BEGIN
 		,	SUM(r.WinlossRM)
 		,	CASE WHEN SUM(r.TurnoverRM) = 0 THEN 0 ELSE SUM(r.WinlossRM) / SUM(r.TurnoverRM) * 100 END
 		,	SUM(r.BetCount)
-		,	MAX(r.ActiveDays)
+		,	MAX(r.ActiveDaysCustID)
 	FROM #tmpRawData AS r WITH(NOLOCK)
 	GROUP BY r.CustId;
 

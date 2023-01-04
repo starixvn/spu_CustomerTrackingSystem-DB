@@ -19,7 +19,8 @@ AS
 		- 20221017@Jonas.Huynh: Fix issue ineligible customer classification
 		- 20221111@Jonas.Huynh: Adjust Eport Rules [Redmine ID: #179501]
 		- 20221125@Jonas.Huynh: Combine Realtime Flow of General CC and By Sport [Redmine ID: #180805]
-		
+		- 20221213@Jonas.Huynh: Support Non-Sport [Redmine ID: #179500]
+	
 	Param's Explanation:
 				@CustomersXML = N'<Root>
 										<r CustId="4345542" SportId="2" CategoryId ="201"/>
@@ -33,38 +34,41 @@ BEGIN
 	SET NOCOUNT ON;
 
 	DECLARE @SPORT_ESPORT				SMALLINT = 43,
-			@FUNCTIONID					SMALLINT = 1,
+			@SPORT_NONSPORT				SMALLINT = 229;
+
+	DECLARE	@FUNCTIONID					SMALLINT = 1,
 			@BySportParameterId			SMALLINT = 7,
 		    @MaxScannedId				BIGINT;
 
-	DECLARE @CATEGORY_NEWMEMBER			INT = 201
-		,	@CATEGORY_NORMALMEMBER		INT = 202
-		,	@CATEGORY_SMARTPUNTER		INT = 203
-		,	@CATEGORY_HIGHRISKPUNTER	INT = 204
-		,	@CATEGORY_GOODMEMBER		INT = 205
-		,	@CATEGORY_PROBATION			INT = 206
+	DECLARE @CATEGORY_NEWMEMBER			INT		 = 201
+		,	@CATEGORY_NORMALMEMBER		INT		 = 202
+		,	@CATEGORY_SMARTPUNTER		INT		 = 203
+		,	@CATEGORY_HIGHRISKPUNTER	INT		 = 204
+		,	@CATEGORY_GOODMEMBER		INT		 = 205
+		,	@CATEGORY_PROBATION			INT		 = 206
 
 	DECLARE	@CurrentDateTime			DATETIME = GETDATE()
-		,	@CurrentDate				DATE = GETDATE();
+		,	@CurrentDate				DATE	 = GETDATE();
 
 	IF	OBJECT_ID('tempdb..#tmpCustomerAccummulatedInfo') IS NOT NULL
 		DROP TABLE	#tmpCustomerAccummulatedInfo;
 
 	CREATE TABLE #tmpCustomerAccummulatedInfo(
-		[CustId]			INT NOT NULL,
-		[SportId]			INT NOT NULL,
-		[IsSpecialSite]		BIT DEFAULT 0,
-		[IsDeposit]			BIT DEFAULT 0,
-		[SRecommend]		INT,
-		[TurnoverRM]		DECIMAL(19, 4) NULL,
-		[WinlossRM]			DECIMAL(19, 4) NULL,
-		[Margin]			DECIMAL(19, 4) NULL,
-		[BetCount]			BIGINT NULL,
-		[ActiveDays]		INT NULL,
-		[CurrentCategoryId]	SMALLINT NULL
+		CustId					INT				NOT NULL,
+		SportId					INT				NOT NULL,
+		CurrentCategoryId		SMALLINT		NULL,
+		IsSpecialSite			BIT				DEFAULT 0,
+		IsDeposit				BIT				DEFAULT 0,
+		SRecommend				INT,
+		TurnoverRM				DECIMAL(19, 4)	NULL,
+		WinlossRM				DECIMAL(19, 4)	NULL,
+		Margin					DECIMAL(19, 4)	NULL,
+		BetCount				BIGINT			NULL,
+		ActiveDays				INT				NULL,
+		WinDaysRate				DECIMAL(5,2)	NULL
 	);
 
-	CREATE CLUSTERED INDEX IX_tmpCustomerAccummulatedInfo_CustId_SportId ON #tmpCustomerAccummulatedInfo(
+	CREATE CLUSTERED INDEX CIX_tmpCustomerAccummulatedInfo_CustId_SportId_CurrentCategoryId ON #tmpCustomerAccummulatedInfo(
 		[CustId]			ASC,
 		[SportId]			ASC,
 		[CurrentCategoryId]
@@ -96,10 +100,10 @@ BEGIN
 	DROP TABLE	#tmpResultData;
 
 	CREATE TABLE #tmpResultData(
-		[CustId]			INT NOT NULL,
-		[SportId]			INT NOT NULL,
-		[CategoryId]		SMALLINT NOT NULL,
-		PRIMARY KEY CLUSTERED ([CustId],[SportId])
+		CustId			INT		  NOT NULL,
+		SportId			INT		  NOT NULL,
+		CategoryId		SMALLINT  NOT NULL,
+		PRIMARY KEY CLUSTERED (CustId, SportId)
 	);
 
 	INSERT INTO #tmpCustomers(CustId, SportId, CurrentCategoryId)
@@ -125,11 +129,12 @@ BEGIN
 						) as b
 					WHERE b.RowNum = 1
 		)  
-	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, SportId, CurrentCategoryId, IsSpecialSite, SRecommend, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
+	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, SportId, CurrentCategoryId, IsSpecialSite, SRecommend, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays, WinDaysRate)
 	SELECT	a.CustId
 		,	a.SportId
 		,	c.CurrentCategoryId
 		,	CASE
+				WHEN a.SportId = @SPORT_NONSPORT THEN NULL
 				WHEN a.SportId = @SPORT_ESPORT AND cu.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada', 'WINHX1') THEN 1
 				WHEN a.SportId <> @SPORT_ESPORT AND cu.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') THEN 1
 				ELSE 0
@@ -140,13 +145,14 @@ BEGIN
 		,	a.Margin
 		,	a.BetCount
 		,	a.ActiveDays
+		,	a.WinDaysRate
 	FROM cte_rawData AS a WITH(NOLOCK)
 		INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.CustId AND a.SportId = c.SportId
 		LEFT JOIN bodb02.dbo.Customer AS cu WITH(NOLOCK) ON a.CustId = cu.custid;
 
 	-- Log Input Data
-	INSERT INTO dbo.CustomerClassification_BySport_InputLog(CustId, SportId, CreatedDate, CreatedTime, FunctionId, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId)
-	SELECT CustId, SportId, @CurrentDate, @CurrentDateTime, @FUNCTIONID, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId
+	INSERT INTO dbo.CustomerClassification_BySport_InputLog(CustId, SportId, CreatedDate, CreatedTime, FunctionId, TurnoverRM, WinlossRM, BetCount, CurrentCategoryId, ActiveDays, WinDaysRate)
+	SELECT CustId, SportId, @CurrentDate, @CurrentDateTime, @FUNCTIONID, TurnoverRM, WinlossRM, BetCount, CurrentCategoryId, ActiveDays, WinDaysRate
 	FROM #tmpCustomerAccummulatedInfo;
 
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
@@ -192,8 +198,8 @@ BEGIN
 			 WHERE     (r.RuleGroupId = 1 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount < r.BetCount)																								-- NEW MEMBER			
 					OR (r.RuleGroupId = 2 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM > r.WinlossRM)												-- NEW MEMBER	
 					OR (r.RuleGroupId = 3 AND a.BetCount > r.BetCount AND a.Margin < r.Margin AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays)													-- GOOD
-					OR (r.RuleGroupId = 4 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin < r.Margin2)													-- NORMAL
-					OR (r.RuleGroupId = 5 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND NOT (a.BetCount > r.BetCount2 AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays))				-- NORMAL
+					OR (r.RuleGroupId = 4 AND (a.IsSpecialSite IS NULL OR a.IsSpecialSite = r.IsSpecialSite) AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin < r.Margin2)					-- NORMAL
+					OR (r.RuleGroupId = 5 AND (a.IsSpecialSite IS NULL OR a.IsSpecialSite = r.IsSpecialSite) AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND NOT (a.BetCount > r.BetCount2 AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays))	-- NORMAL
 					OR (r.RuleGroupId = 6 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM <= r.WinlossRM)											-- NORMAL
 					OR (r.RuleGroupId = 7 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM < r.WinlossRM)													-- NORMAL
 					OR (r.RuleGroupId = 10 AND a.CurrentCategoryId = r.CurrentCategory AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin)										-- PROBATION
@@ -202,6 +208,8 @@ BEGIN
 					OR (r.RuleGroupId = 13 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount >= r.BetCount AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM AND a.WinlossRM <= r.WinlossRM2)		-- SMART
 					OR (r.RuleGroupId = 17 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)										-- RISKY
 					OR (r.RuleGroupId = 19 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount > r.BetCount AND a.Margin > r.Margin)																		-- PROBATION
+					OR (r.RuleGroupId = 20 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM AND a.WinDaysRate > r.WinDaysRate)		-- SMART
+					OR (r.RuleGroupId = 22 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM AND a.WinDaysRate > r.WinDaysRate)								-- RISKY
 		) as b
 	 WHERE b.RowNum = 1;
 

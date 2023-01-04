@@ -17,7 +17,7 @@ AS
 
 	Revisions:
 		- 20220328@Long.Luu: Created [Redmine ID: #170468]
-		
+		- 20221118@Jonas.Huynh: Update parameter of DW SP GetCustAccumulatedInfo [Redmine ID: #179500]
 	Param's Explanation:
 */
 BEGIN
@@ -35,16 +35,18 @@ BEGIN
 		DROP TABLE	#tmpRawData;
 
 	CREATE TABLE #tmpRawData(
-		[CustId]			INT NOT NULL,
-		[MainDBSportId]		INT NOT NULL,
-		[SportGroup]		VARCHAR(50) NOT NULL,
-		[TurnoverRM]		MONEY NULL,
-		[WinlossRM]			MONEY NULL,
-		[TurnoverORG]		MONEY NULL,
-		[WinlossORG]		MONEY NULL,
-		[BetCount]			BIGINT NULL,
-		[ActiveDays]		INT NULL,
-		PRIMARY KEY (CustId, MainDBSportId)
+		CustId					INT				NOT NULL,
+		SportId					INT				NOT NULL,
+		TurnoverRM				DECIMAL(19, 4)	NULL,
+		WinlossRM				DECIMAL(19, 4)	NULL,
+		TurnoverORG				DECIMAL(19, 4)	NULL,
+		WinlossORG				DECIMAL(19, 4)	NULL,
+		BetCount				BIGINT			NULL,
+		ActiveDaysCustID		INT				NOT NULL,
+        ActiveDaysSportGroup	INT				NOT NULL,
+        WindaysCustID			INT				NOT NULL,
+        WinDaysSportGroup		INT				NOT NULL
+		PRIMARY KEY CLUSTERED (CustId, SportId)
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpCustomerAccummulatedInfo') IS NOT NULL
@@ -87,7 +89,7 @@ BEGIN
 								FOR XML PATH('')), 1, 1, '');
 
 	-- #1: GetCustomer Accummulated data
-	INSERT INTO #tmpRawData(CustId, MainDBSportId, SportGroup, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDays)
+	INSERT INTO #tmpRawData(CustId, SportId, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDaysCustID, ActiveDaysSportGroup, WindaysCustID, WinDaysSportGroup)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @ListCustIds, @ResultDataMode = 1;	
 	
 	-- #2: Sum data by custid
@@ -96,7 +98,7 @@ BEGIN
 		,	SUM(a.TurnoverRM)
 		,	SUM(a.WinlossRM)
 		,	SUM(a.BetCount)
-		,	MAX(a.ActiveDays)
+		,	MAX(a.ActiveDaysCustID)
 	FROM #tmpRawData AS a WITH(NOLOCK)
 	GROUP BY a.CustId;
 
