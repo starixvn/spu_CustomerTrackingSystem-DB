@@ -258,7 +258,8 @@ CREATE TABLE MatchMonitorStagingArbitrageNonLive (
 
 #========Move Parameter From System Parameter To MatchMonitorRuleSetting
 ALTER TABLE MatchMonitorRuleSetting
-	ADD COLUMN RuleStatus INT DEFAULT 1 COMMENT '1:Active, 0:Inactive' AFTER RuleGroupID 
+	MODIFY COLUMN Reason INT
+,	ADD COLUMN RuleStatus INT DEFAULT 1 COMMENT '1:Active, 0:Inactive' AFTER RuleGroupID 
 ,	ADD COLUMN TotalTicket INT AFTER TotalStake
 ,	ADD COLUMN HighStakeTicketPercent DECIMAL(6,2) AFTER HighStake
 ,	ADD COLUMN MinOdds DECIMAL(10,4) AFTER HighStakeTicketPercent

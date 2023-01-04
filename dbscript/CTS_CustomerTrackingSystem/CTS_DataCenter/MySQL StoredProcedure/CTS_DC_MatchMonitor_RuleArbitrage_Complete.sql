@@ -34,7 +34,7 @@ BEGIN
 	*/ 
    
     DECLARE lv_GroupID 					INT;
-	DECLARE lv_Reason 					BOOLEAN;
+	DECLARE lv_Reason 					INT;
     DECLARE lv_TransIDList 				LONGTEXT;
     DECLARE lv_CustIDList				LONGTEXT;
     DECLARE lv_OldGroupIDList			TEXT;
@@ -62,7 +62,7 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_TransGroup
     (
 			GroupID 			INT
-        ,	Reason 				TINYINT
+        ,	Reason 				INT
         ,	TransIDList 		LONGTEXT
         ,	CustIDList			LONGTEXT 
         ,	OldGroupIDList		TEXT
@@ -79,7 +79,7 @@ BEGIN
 	FROM JSON_TABLE(ip_TransGroup,
 					 "$[*]" COLUMNS(
 								GroupID			INT PATH "$.GroupID" 
-							,	Reason			TINYINT PATH "$.Reason" 
+							,	Reason			INT PATH "$.Reason" 
 							,	TransIDList		LONGTEXT PATH "$.TransIDList"
 							,	CustIDList		LONGTEXT PATH "$.CustIDList" 
 							,	OldGroupIDList	TEXT PATH "$.OldGroupIDList" 
@@ -119,7 +119,7 @@ BEGIN
 			SELECT 	MAX(mmd.GroupID)
 			INTO 	lv_TargetGroupID
 			FROM 	CTS_DataCenter.MatchMonitorDetails AS mmd
-            WHERE 	mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID AND mmd.ScoreDiff = ip_ScoreDiff AND mmd.HDP = ip_HDP AND mmd.Reason = 1; 
+            WHERE 	mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID AND mmd.ScoreDiff = ip_ScoreDiff AND mmd.HDP = ip_HDP AND mmd.Reason = lv_Reason; 
 			
             SET lv_TargetGroupID = IFNULL(lv_TargetGroupID,0);
 			SET lv_TargetGroupID =  lv_TargetGroupID + 1;            
@@ -132,7 +132,7 @@ BEGIN
 		IF (lv_NoOfOldGroupID = 1) THEN # UPDATE OLD GROUP         
 			UPDATE IGNORE CTS_DataCenter.MatchMonitorDetails AS mmd 
 			SET mmd.GroupID = lv_TargetGroupID, mmd.ListCustID = lv_CustIDList, mmd.ListTransID = lv_TransIDList, mmd.Reason = lv_Reason
-			WHERE  mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID AND mmd.ScoreDiff = ip_ScoreDiff AND mmd.HDP = ip_HDP AND mmd.GroupID = lv_TargetGroupID  AND mmd.Reason = 1;
+			WHERE  mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID AND mmd.ScoreDiff = ip_ScoreDiff AND mmd.HDP = ip_HDP AND mmd.GroupID = lv_TargetGroupID  AND mmd.Reason = lv_Reason;
         END IF;        
   
         IF (lv_NoOfOldGroupID > 1) THEN # MERGE GROUP        
