@@ -197,7 +197,7 @@ BEGIN
 		,	CASE WHEN a.TurnoverRM = 0 THEN 0 ELSE a.WinlossRM / a.TurnoverRM * 100 END
 		,	a.BetCount
 		,	a.ActiveDaysSportGroup
-		,	((a.WinDaysSportGroup * 1.0) / a.ActiveDaysSportGroup) * 100
+		,	CASE WHEN a.ActiveDaysSportGroup = 0 THEN 0 ELSE ((a.WinDaysSportGroup * 1.0) / a.ActiveDaysSportGroup) * 100 END
 	FROM #tmpRawData AS a WITH(NOLOCK)
 		INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.CustId AND a.SportId = c.SportId;
 
@@ -274,6 +274,7 @@ BEGIN
 	DROP TABLE #tmpActiveMember;
 	DROP TABLE #tmpResultData;
 END;
+GO 
 
 GRANT EXECUTE ON [dbo].[CTS_NormalAccountsClassification_BySport_Probation] TO [bodbSPUNet]
 GO
