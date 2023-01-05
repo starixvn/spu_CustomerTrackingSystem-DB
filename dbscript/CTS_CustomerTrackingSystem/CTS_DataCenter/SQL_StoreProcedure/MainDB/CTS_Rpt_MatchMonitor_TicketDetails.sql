@@ -133,6 +133,7 @@ BEGIN
 		,	BetTeam				NVARCHAR(10)
 		,	BetId				BIGINT
 		,	Stake				MONEY
+		,	OrgStake			MONEY
 		,	Odds				SMALLMONEY
 		,	Hdp1				SMALLMONEY
 		,	Hdp2				SMALLMONEY
