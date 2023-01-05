@@ -43,7 +43,7 @@ BEGIN
     SELECT	s.SportType
         ,	s.TimeStep
     FROM CTS_DataCenter.MatchMonitorRuleSetting AS s
-    WHERE s.RuleGroupID = CONST_GROUPID;
+    WHERE s.RuleGroupID = CONST_GROUPID AND s.RuleStatus = 1;
     
     #======Clean Staging=================================================
     IF (ip_LiveIndicator = 0) THEN 		

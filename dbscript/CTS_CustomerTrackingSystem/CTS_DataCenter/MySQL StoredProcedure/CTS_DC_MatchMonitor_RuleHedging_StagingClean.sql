@@ -28,12 +28,12 @@ BEGIN
 			
 	*/
     DECLARE CONS_LOG 			TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
+    DECLARE CONST_RULE_GROUPID  TINYINT DEFAULT 3; # Hedging
+    
 	DECLARE	lv_Last3mMinTime 	DATETIME(3);
     DECLARE	lv_Last3mMaxTime 	DATETIME(3);  
-	DECLARE	lv_LastTransID 		BIGINT;   
-	DECLARE lv_Reason INT DEFAULT 0; #Group Betting
-    DECLARE lv_LastSequenceID INT; #Group Betting
-	DECLARE lv_RuleGroupID INT DEFAULT 3; #Group Betting
+	DECLARE	lv_LastTransID 		BIGINT; 
+	
     
     #==================LOG=======================================================
     DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleHedging_StagingClean';
@@ -55,7 +55,7 @@ BEGIN
     SELECT	s.SportType
         ,	s.TimeStep
     FROM CTS_DataCenter.MatchMonitorRuleSetting AS s
-    WHERE s.RuleGroupID = lv_RuleGroupID;
+    WHERE s.RuleGroupID = CONST_RULE_GROUPID AND s.RuleStatus = 1;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Last3mTransGroup;
     CREATE TEMPORARY TABLE Temp_Last3mTransGroup

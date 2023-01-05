@@ -79,7 +79,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleIrrigation_Comp
     SELECT mst.Reason
     INTO lv_Rule_Reason
     FROM CTS_DataCenter.MatchMonitorRuleSetting AS mst
-    WHERE mst.RuleGroupID = 4 AND mst.SportType = ip_SportType;
+    WHERE mst.RuleGroupID = 4 AND mst.SportType = ip_SportType AND mst.RuleStatus = 1;
     
     #=============================================================================
     INSERT IGNORE INTO Temp_InputTransGroup(CustID, TransIDList, OldGroupID)

@@ -25,7 +25,6 @@ sp: BEGIN
 	*/ 
     DECLARE CONST_RULE_GROUPID INT DEFAULT 4;
     
-    DECLARE	lv_Rule_Reason		TINYINT;
     DECLARE lv_Rule_MinTimeStep	SMALLINT;    
     
 	DECLARE lv_BatchSize 		BIGINT UNSIGNED;
@@ -35,7 +34,7 @@ sp: BEGIN
 	SELECT MIN(mst.TimeStep)
 	INTO lv_Rule_MinTimeStep
 	FROM CTS_DataCenter.MatchMonitorRuleSetting AS mst
-	WHERE mst.RuleGroupID = CONST_RULE_GROUPID;    
+	WHERE mst.RuleGroupID = CONST_RULE_GROUPID AND mst.RuleStatus = 1;    
 	
 	/*===================LOG=======================================
     INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
