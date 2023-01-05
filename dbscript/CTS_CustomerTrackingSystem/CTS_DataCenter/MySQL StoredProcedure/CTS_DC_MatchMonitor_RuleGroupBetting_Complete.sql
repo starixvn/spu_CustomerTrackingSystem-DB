@@ -38,7 +38,7 @@ BEGIN
 		*/
 	DECLARE CONS_LOG 					TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
     DECLARE lv_GroupID 					INT;
-	DECLARE lv_Reason 					BOOLEAN;
+	DECLARE lv_Reason 					INT;
     DECLARE lv_TransIDList 				LONGTEXT;
     DECLARE lv_CustIDList				LONGTEXT;
     DECLARE lv_OldGroupIDList			TEXT;
@@ -67,7 +67,7 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_TransGroup
     (
 			GroupID 			INT
-        ,	Reason 				TINYINT
+        ,	Reason 				INT
         ,	TransIDList 		LONGTEXT
         ,	CustIDList			LONGTEXT 
         ,	OldGroupIDList		TEXT
@@ -84,7 +84,7 @@ BEGIN
 	FROM JSON_TABLE(ip_TransGroup,
 					 "$[*]" COLUMNS(
 								GroupID			INT PATH "$.GroupID" 
-							,	Reason			TINYINT PATH "$.Reason" 
+							,	Reason			INT PATH "$.Reason" 
 							,	TransIDList		LONGTEXT PATH "$.TransIDList"
 							,	CustIDList		LONGTEXT PATH "$.CustIDList" 
 							,	OldGroupIDList	TEXT PATH "$.OldGroupIDList"

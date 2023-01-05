@@ -48,8 +48,7 @@ sp: BEGIN
     DECLARE	lv_Rule_HighStakeTicketPercent	DECIMAL(6,2);    
 	DECLARE	lv_Rule_TimeStep				INT; 
     DECLARE	lv_Rule_OddsSpread				SMALLINT;
-    DECLARE	lv_Rule_Reason					TINYINT;
-	DECLARE	lv_Rule_TimeStep1				INT; 
+    DECLARE	lv_Rule_Reason					INT;
 	
     #============DEBUG LOG============================================================
     DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleFixedGame_Process';
@@ -124,7 +123,7 @@ sp: BEGIN
 		SELECT mst.TimeStep, mst.TotalTicket, mst.HighStake, mst.HighStakeTicketPercent, mst.OddsSpread, mst.Reason
         INTO lv_Rule_TimeStep, lv_Rule_TotalTicket, lv_Rule_HighStake, lv_Rule_HighStakeTicketPercent, lv_Rule_OddsSpread, lv_Rule_Reason  
         FROM CTS_DataCenter.MatchMonitorRuleSetting AS mst
-        WHERE mst.SportType = lv_SportType AND  mst.LeagueType = lv_IsMajorLeague AND mst.RuleGroupID = CONST_RULE_GROUPID_FIXEDGAME AND mst.RuleStatus = 1;     
+        WHERE mst.SportType = lv_SportType AND mst.RuleGroupID = CONST_RULE_GROUPID_FIXEDGAME AND mst.RuleStatus = 1;     
         
         SELECT TO_SECONDS(TIMESTAMPADD(SECOND, lv_Rule_TimeStep, TransDate))
         INTO lv_FromTransDate
@@ -160,7 +159,7 @@ sp: BEGIN
 		SELECT mst.TimeStep, mst.TotalTicket, mst.HighStake, mst.HighStakeTicketPercent, mst.OddsSpread, mst.Reason
         INTO lv_Rule_TimeStep, lv_Rule_TotalTicket, lv_Rule_HighStake, lv_Rule_HighStakeTicketPercent, lv_Rule_OddsSpread, lv_Rule_Reason  
         FROM CTS_DataCenter.MatchMonitorRuleSetting AS mst
-        WHERE mst.SportType = lv_SportType AND  mst.LeagueType = lv_IsMajorLeague AND mst.RuleGroupID = CONST_RULE_GROUPID_FIXEDGAME AND mst.RuleStatus = 1;     
+        WHERE mst.SportType = lv_SportType AND mst.RuleGroupID = CONST_RULE_GROUPID_FIXEDGAME AND mst.RuleStatus = 1;     
         
         SELECT TO_SECONDS(TIMESTAMPADD(SECOND, lv_Rule_TimeStep, TransDate))
         INTO lv_FromTransDate

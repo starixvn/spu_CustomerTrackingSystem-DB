@@ -58,7 +58,7 @@ sp: BEGIN
     DECLARE lv_Rule_TotalStake DECIMAL(20,4);
     DECLARE lv_Rule_TimeStep SMALLINT;
     DECLARE lv_SportType SMALLINT;
-    DECLARE lv_Rule_Reason TINYINT DEFAULT 0; #0: Group Betting 
+    DECLARE lv_Rule_Reason INT DEFAULT 0; #0: Group Betting 
     
     #==================LOG=======================================================
     DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleGroupBetting_Process';
@@ -143,7 +143,7 @@ sp: BEGIN
 		,	MinTransDate	DATETIME(3)
 		,	MaxTransDate	DATETIME(3)
 		,	GroupID			INT
-        , 	Reason			BOOLEAN DEFAULT 0        
+        , 	Reason			INT DEFAULT 0        
         
         ,	PRIMARY KEY PK_Temp_TransGroup(CustID, MinTransDate)
 	);    
@@ -155,10 +155,22 @@ sp: BEGIN
 		,	MinTransDate	DATETIME(3)
 		,	MaxTransDate	DATETIME(3)
 		,	GroupID			INT
-        , 	Reason			BOOLEAN DEFAULT 0        
+        , 	Reason			INT DEFAULT 0        
         
         ,	PRIMARY KEY PK_Temp_TransGroup(CustID, MinTransDate)
 	);
+    
+    
+	DROP TEMPORARY TABLE IF EXISTS Temp_ResultGroup;
+    CREATE TEMPORARY TABLE Temp_ResultGroup(
+			GroupID					INT PRIMARY KEY
+		,	Reason					INT
+        ,	TransIDList				LONGTEXT
+        ,	CustIDList				LONGTEXT
+        ,	OldGroupIDList			VARCHAR(500)
+        ,	LicenseeCustTotal		INT
+    );	
+	
     
     #-------------------------------------------------------------------
     DROP TEMPORARY TABLE IF EXISTS Temp_Association;
@@ -208,13 +220,6 @@ sp: BEGIN
 		 ,	TotalCust			INT
 	);
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_Group;
-	CREATE TEMPORARY TABLE 		Temp_Group (
-		    CustID 				BIGINT UNSIGNED 
-		 ,	GroupID 			INT
-         ,	Reason			BIT DEFAULT 0
-		 ,	PRIMARY KEY (CustID)
-	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_GroupHedging;
 	CREATE TEMPORARY TABLE 	Temp_GroupHedging (
@@ -262,7 +267,7 @@ sp: BEGIN
 	SELECT rs.TotalStake, rs.TimeStep, rs.Reason
     INTO lv_Rule_TotalStake, lv_Rule_TimeStep, lv_Rule_Reason
     FROM CTS_DataCenter.MatchMonitorRuleSetting AS rs
-    WHERE rs.RuleGroupID = CONST_RULE_GROUPID AND rs.SportType = lv_SportType;
+    WHERE rs.RuleGroupID = CONST_RULE_GROUPID AND rs.SportType = lv_SportType AND rs.RuleStatus = 1;
     
     INSERT INTO Temp_StagingTrans02 SELECT * FROM Temp_StagingTrans;
     
@@ -505,16 +510,7 @@ sp: BEGIN
     INSERT INTO Temp_TransGroup02 SELECT * From Temp_TransGroup;
     
     #*************************************************************************************************
-    DROP TEMPORARY TABLE IF EXISTS Temp_ResultGroup;
-    CREATE TEMPORARY TABLE Temp_ResultGroup(
-			GroupID					INT PRIMARY KEY
-		,	Reason					TINYINT
-        ,	TransIDList				LONGTEXT
-        ,	CustIDList				LONGTEXT
-        ,	OldGroupIDList			VARCHAR(500)
-        ,	LicenseeCustTotal		INT
-    );	
-	
+
     INSERT INTO Temp_ResultGroup(GroupID, Reason, TransIDList, CustIDList, OldGroupIDList, LicenseeCustTotal)
     SELECT  tmpTg.GroupID
         ,	lv_Rule_Reason AS Reason

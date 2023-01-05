@@ -55,7 +55,7 @@ sp: BEGIN
     SELECT	s.SportType
         ,	s.TotalStake
     FROM CTS_DataCenter.MatchMonitorRuleSetting AS s
-    WHERE s.RuleGroupID = lv_RuleGroupID;
+    WHERE s.RuleGroupID = lv_RuleGroupID AND s.RuleStatus = 1;
     
     SELECT s.ParameterValue
     INTO lv_NoOfRow

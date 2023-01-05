@@ -37,7 +37,7 @@ sp: BEGIN
     
     DECLARE lv_RuleTimeStep 			SMALLINT;
     DECLARE lv_RuleTotalStake 			DECIMAL(20,4);
-    DECLARE lv_RuleReason 				TINYINT;
+    DECLARE lv_RuleReason 				INT;
     DECLARE lv_RuleSportType 			INT;  
     DECLARE lv_CustIDList 				TEXT;
     DECLARE lv_LastSequenceID 			BIGINT UNSIGNED;  
@@ -76,7 +76,7 @@ sp: BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_ResultGroup;
     CREATE TEMPORARY TABLE Temp_ResultGroup(
 			GroupID					INT PRIMARY KEY
-		,	Reason					TINYINT
+		,	Reason					INT
         ,	TransIDList				LONGTEXT NOT NULL
         ,	CustIDList				LONGTEXT NOT NULL
         ,	OldGroupIDList			VARCHAR(500)
@@ -110,10 +110,11 @@ sp: BEGIN
 		INTO 	lv_RuleTimeStep
 			, 	lv_RuleTotalStake
 			,	lv_RuleReason
-		FROM 	MatchMonitorRuleSetting AS st 
+		FROM 	CTS_DataCenter.MatchMonitorRuleSetting AS st 
 		WHERE 	st.RuleGroupID = CONST_RULE_GROUPID 
-		AND st.SportType = lv_RuleSportType 
-        AND (st.LeagueType = ip_IsMajorLeague OR st.LeagueType = 2);
+			AND st.SportType = lv_RuleSportType 
+			AND (st.LeagueType = ip_IsMajorLeague OR st.LeagueType = 2)
+            AND st.RuleStatus = 1;
 
 		INSERT INTO Temp_StagingTrans(TransID, SequenceID, TransDate, TransDateSecond, CustID, CTSCustID, AgentCTSCustID, OldGroupID, Stake, Betteam, Processed)
         SELECT	mms.TransID

@@ -35,7 +35,6 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleFixedGame_Compl
 	*/ 
 	DECLARE CONS_LOG 				TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
     DECLARE	CONST_GROUPID			TINYINT DEFAULT 0;
-	DECLARE	CONST_REASON_FIXEDGAME	TINYINT DEFAULT 3; #0: Group Betting, 1: Headging, 2: Arbitrage, 3: FixedGame  
     
     DECLARE	lv_KickOffTime 			DATETIME;
     DECLARE	lv_EventStatus 			VARCHAR(50);
@@ -55,6 +54,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleFixedGame_Compl
     DECLARE	lv_NewTransIDList		TEXT;
     DECLARE	lv_NewCustIDList		TEXT;
     DECLARE	lv_Rule_Duration		SMALLINT; 
+    DECLARE	lv_Reason				INT;
     
     #============ LOG============================================================
     DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleFixedGame_Complete';
@@ -81,14 +81,14 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleFixedGame_Compl
 		,	js.CustIDList
 	FROM JSON_TABLE(ip_TransGroup,
 					 "$[*]" COLUMNS(
-								Reason			TINYINT PATH "$.Reason" 
+								Reason			INT PATH "$.Reason" 
 							,	TransIDList		LONGTEXT PATH "$.TransIDList"
 							,	CustIDList		LONGTEXT PATH "$.CustIDList" 
 						)
 				) AS js;     
                 
-	SELECT 	tmpTg.TransIDList, tmpTg.CustIDList
-    INTO 	lv_NewTransIDList, lv_NewCustIDList
+	SELECT 	tmpTg.TransIDList, tmpTg.CustIDList, tmpTg.Reason
+    INTO 	lv_NewTransIDList, lv_NewCustIDList, lv_Reason
 	FROM 	Temp_TransGroup AS tmpTg;	
     
 	IF lv_NewTransIDList IS NOT NULL THEN	
@@ -115,7 +115,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleFixedGame_Compl
 		INTO 	lv_DetailsID, lv_DetailsTransIDList, lv_DetailsCustIDList
 		FROM 	CTS_DataCenter.MatchMonitorDetails AS mmd
 		WHERE 	mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID
-			AND mmd.BetID = ip_BetID AND mmd.ScoreDiff = ip_ScoreDiff AND mmd.Betteam = ip_Betteam AND mmd.HDP = ip_HDP  AND mmd.Reason = CONST_REASON_FIXEDGAME;
+			AND mmd.BetID = ip_BetID AND mmd.ScoreDiff = ip_ScoreDiff AND mmd.Betteam = ip_Betteam AND mmd.HDP = ip_HDP  AND mmd.Reason = lv_Reason;
 			
 		
 		IF (lv_DetailsID IS NOT NULL) THEN

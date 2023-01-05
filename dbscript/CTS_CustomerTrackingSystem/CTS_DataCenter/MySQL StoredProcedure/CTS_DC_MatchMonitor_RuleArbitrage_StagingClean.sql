@@ -52,7 +52,8 @@ BEGIN
 		,	s.LeagueType
         ,	s.TimeStep
     FROM CTS_DataCenter.MatchMonitorRuleSetting AS s
-    WHERE s.RuleGroupID = CONST_RULE_GROUPID;
+    WHERE s.RuleGroupID = CONST_RULE_GROUPID
+		AND s.RuleStatus = 1;
 
     DROP TEMPORARY TABLE IF EXISTS Temp_LastGroup;
     CREATE TEMPORARY TABLE Temp_LastGroup

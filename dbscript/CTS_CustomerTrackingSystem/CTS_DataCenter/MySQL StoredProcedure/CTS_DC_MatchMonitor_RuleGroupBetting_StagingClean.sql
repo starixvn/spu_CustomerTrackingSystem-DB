@@ -56,7 +56,7 @@ BEGIN
     SELECT	s.SportType
         ,	s.TimeStep
     FROM CTS_DataCenter.MatchMonitorRuleSetting AS s
-    WHERE s.RuleGroupID = lv_RuleGroupID;
+    WHERE s.RuleGroupID = lv_RuleGroupID AND s.RuleStatus = 1;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Last3mTransGroup;
     CREATE TEMPORARY TABLE Temp_Last3mTransGroup
