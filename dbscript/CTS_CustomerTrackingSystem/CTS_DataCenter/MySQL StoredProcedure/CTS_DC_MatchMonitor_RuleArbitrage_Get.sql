@@ -31,25 +31,23 @@ sp: BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorRuleSetting;
 	CREATE TEMPORARY TABLE Temp_MatchMonitorRuleSetting(
 			SportType INT
-		,	TotalStake DECIMAL(20,4)
 		
-		,	PRIMARY KEY PK_Temp_MatchMonitorRuleSetting(SportType )
+		,	PRIMARY KEY PK_Temp_MatchMonitorRuleSetting(SportType)
 	);
     
-    INSERT INTO Temp_MatchMonitorRuleSetting(SportType, TotalStake)
-    SELECT	s.SportType
-        ,	s.TotalStake
+    INSERT INTO Temp_MatchMonitorRuleSetting(SportType)
+    SELECT DISTINCT s.SportType
     FROM CTS_DataCenter.MatchMonitorRuleSetting AS s
     WHERE s.RuleGroupID = CONST_RULE_GROUPID
-		AND s.RuleStatus = 1;
+		AND s.RuleStatus = 1;    
     
-    SELECT s.ParameterValue
-    INTO lv_BatchSize
-    FROM CTS_DataCenter.SystemParameter AS s
-    WHERE s.ParameterID = 129;
+	IF ip_LiveIndicator = 0 THEN
     
-	IF ip_LiveIndicator = 0 THEN    
-		
+		SELECT s.ParameterValue
+		INTO lv_BatchSize
+		FROM CTS_DataCenter.SystemParameter AS s
+		WHERE s.ParameterID = 129;
+        
 		SELECT sys.ParameterValue
         INTO lv_LastSequenceID
         FROM CTS_DataCenter.SystemParameter AS sys
