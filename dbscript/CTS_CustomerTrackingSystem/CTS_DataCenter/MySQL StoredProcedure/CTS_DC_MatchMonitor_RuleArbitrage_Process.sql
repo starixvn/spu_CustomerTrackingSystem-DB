@@ -84,13 +84,6 @@ sp: BEGIN
         ,	INDEX IX_Temp_ResultGroup(Reason)
     );	
 	
-    DROP TEMPORARY TABLE IF EXISTS Temp_GroupHedging;
-	CREATE TEMPORARY TABLE 	Temp_GroupHedging (
-			GroupID	INT PRIMARY KEY
-	);    
-    
-    
-    
     #******************************* GET STAGING TRANS *******************************************
     IF (ip_LiveIndicator = 0) THEN
 		SELECT ParameterValue
