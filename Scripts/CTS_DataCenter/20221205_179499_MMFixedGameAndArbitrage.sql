@@ -12,6 +12,40 @@ Reviewer:
 
 USE CTS_DataCenter;
 #================staging table====================
+
+CREATE TABLE MatchMonitorStagingArbitrageNonLive (
+	SequenceID bigint unsigned NOT NULL,
+	TransID bigint unsigned NOT NULL,
+	TransDate datetime(3) DEFAULT NULL,
+	MatchID int DEFAULT NULL,
+	IsMajorLeague BOOLEAN,
+	SportType int DEFAULT NULL,
+	ScoreDiff int DEFAULT NULL,
+	BettypeID int DEFAULT NULL,
+	BetID bigint DEFAULT NULL,
+	HDP	DECIMAL(8,4),	
+	Betteam varchar(10) DEFAULT NULL,
+	CustID bigint unsigned DEFAULT NULL,
+	Stake decimal(20,4) DEFAULT NULL,
+	GroupID int DEFAULT '0',
+	LiveHomeScore int DEFAULT NULL,
+	LiveAwayScore int DEFAULT NULL,
+	EventDate date DEFAULT NULL,
+	KickOffTime datetime DEFAULT NULL,
+	EventStatus varchar(50) DEFAULT NULL,
+	HomeID int DEFAULT NULL,
+	AwayID int DEFAULT NULL,
+	LeagueID int DEFAULT NULL,
+	InsertTime datetime(3) DEFAULT NULL,
+	LeagueName varchar(500) DEFAULT NULL,
+	Hdp1	DECIMAL(8,4),
+	Hdp2	DECIMAL(8,4),
+	PRIMARY KEY (SequenceID),
+	KEY IX_MMStagingArbitrageNonLive_TransDate(TransDate),
+	KEY IX_MMStagingArbitrageNonLive_RuleGroup(MatchID,ScoreDiff,BettypeID,BetID,HDP,GroupID,IsMajorLeague),
+	KEY IX_MMStagingArbitrageNonLive_TransID(TransID)
+) ENGINE=InnoDB;
+
 CREATE TABLE MatchMonitorStagingFixedGameLive (
   TransID BIGINT unsigned NOT NULL,
   TransDate DATETIME(3) DEFAULT NULL,
@@ -209,50 +243,17 @@ CREATE TABLE MatchMonitorStagingHedgingNonLive (
 ALTER TABLE MatchMonitor
 	ADD COLUMN IsMajorLeague BOOLEAN AFTER MatchID;
 
-UPDATE MatchMonitorDetails
-SET ScoreDiff = TotalScore
-WHERE ScoreDiff IS NULL;
+UPDATE MatchMonitorDetails AS mmd
+	INNER JOIN MatchMonitor AS mm ON mmd.MatchID = mm.MatchID
+SET mmd.ScoreDiff = (CASE WHEN mm.SportType = 2 THEN 0 ELSE (LiveHomeScore*10000) + LiveAwayScore END)
+WHERE mmd.ScoreDiff IS NULL;
 
 ALTER TABLE MatchMonitorDetails
 	ADD COLUMN IsMajorLeague BOOLEAN AFTER MatchID
 ,	ADD COLUMN HDP DECIMAL (8,4) AFTER BettypeID
 ,	ADD UNIQUE KEY UK_MatchMonitorDetails_RuleGroup (MatchID,LiveIndicator,ScoreDiff,BettypeID,BetID,Betteam,HDP, Reason, GroupID,EventDate)
-,	DROP COLUMN TotalScore
 ,   DROP INDEX UK_MatchMonitorDetails_MatchGroup;
 #====================================================================
-
-CREATE TABLE MatchMonitorStagingArbitrageNonLive (
-	SequenceID bigint unsigned NOT NULL,
-	TransID bigint unsigned NOT NULL,
-	TransDate datetime(3) DEFAULT NULL,
-	MatchID int DEFAULT NULL,
-	IsMajorLeague BOOLEAN,
-	SportType int DEFAULT NULL,
-	ScoreDiff int DEFAULT NULL,
-	BettypeID int DEFAULT NULL,
-	BetID bigint DEFAULT NULL,
-	HDP	DECIMAL(8,4),	
-	Betteam varchar(10) DEFAULT NULL,
-	CustID bigint unsigned DEFAULT NULL,
-	Stake decimal(20,4) DEFAULT NULL,
-	GroupID int DEFAULT '0',
-	LiveHomeScore int DEFAULT NULL,
-	LiveAwayScore int DEFAULT NULL,
-	EventDate date DEFAULT NULL,
-	KickOffTime datetime DEFAULT NULL,
-	EventStatus varchar(50) DEFAULT NULL,
-	HomeID int DEFAULT NULL,
-	AwayID int DEFAULT NULL,
-	LeagueID int DEFAULT NULL,
-	InsertTime datetime(3) DEFAULT NULL,
-	LeagueName varchar(500) DEFAULT NULL,
-	Hdp1	DECIMAL(8,4),
-	Hdp2	DECIMAL(8,4),
-	PRIMARY KEY (SequenceID),
-	KEY IX_MMStagingArbitrageNonLive_TransDate(TransDate),
-	KEY IX_MMStagingArbitrageNonLive_RuleGroup(MatchID,ScoreDiff,BettypeID,BetID,HDP,GroupID,IsMajorLeague),
-	KEY IX_MMStagingArbitrageNonLive_TransID(TransID)
-) ENGINE=InnoDB;
 
 #======INITAIL============================================================
 
@@ -312,8 +313,20 @@ UPDATE  CTS_DataCenter.SystemParameter SET ParameterName = 'MatchMonitor_Hedging
 UPDATE  CTS_DataCenter.SystemParameter SET ParameterName = 'MatchMonitor_Hedging_BatchSize',  ParameterDesc = NULL WHERE ParameterID = 123 ;    
 
  SELECT * FROM CTS_DataCenter.MatchMonitorRuleSetting;   
- SELECT * FROM SystemParameter WHERE ParameterName LIKE '%MatchMonitor%'
-/*    
+ SELECT * FROM SystemParameter WHERE ParameterName LIKE '%MatchMonitor%' 
+ 
+/*   After Launch Pro and monitor/verifry Successfully, remove table, colunm and sp
+
+DROP TABLE MatchMonitorTransLive;
+DROP TABLE MatchMonitorTransNonLive;
+DROP TABLE MatchMonitorStagingLive03;
+DROP TABLE MatchMonitorStagingNonLive03;
+DROP TABLE MatchMonitorStagingLive;
+DROP TABLE MatchMonitorStagingNonLive;
+
+ALTER TABLE MatchMonitorDetails 
+	DROP COLUMN TotalScore;
+
 DROP PROCEDURE CTS_DC_MatchMonitor_Rule01_Complete ;
 DROP PROCEDURE CTS_DC_MatchMonitor_Rule01_Get ;
 DROP PROCEDURE CTS_DC_MatchMonitor_Rule01_Process;
@@ -329,29 +342,4 @@ DROP PROCEDURE CTS_DC_MatchMonitor_Rule03_Process;
 DROP PROCEDURE CTS_DC_MatchMonitor_Rule03_Get;
 DROP PROCEDURE CTS_DC_MatchMonitor_Rule03_StagingClean;
 
-*/
-/*
-DROP TABLE MatchMonitorRuleSetting;
-CREATE TABLE MatchMonitorRuleSetting (
-  RuleGroupID tinyint NOT NULL,
-  RuleGroupDesc varchar(100) COLLATE utf8_unicode_ci DEFAULT NULL,
-  Reason tinyint NOT NULL,
-  SportType int NOT NULL,
-  ReasonName varchar(100) COLLATE utf8_unicode_ci DEFAULT NULL,
-  SportName varchar(100) COLLATE utf8_unicode_ci DEFAULT NULL,
-  TimeStep smallint DEFAULT NULL,
-  TotalStake decimal(20,4) DEFAULT NULL,
-  HighStake decimal(20,4) DEFAULT NULL,
-  OddsSpread decimal(4,2) DEFAULT NULL,
-  ModifiedDate datetime(3) DEFAULT NULL,
-  Comments varchar(300) COLLATE utf8_unicode_ci DEFAULT NULL,
-  PRIMARY KEY (RuleGroupID,Reason,SportType)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8_unicode_ci;
-
-LOAD DATA LOCAL INFILE 'D:/SPU/Test/MMRuleSetting.csv'
-INTO TABLE CTS_DataCenter.MatchMonitorRuleSetting
-FIELDS TERMINATED BY ',' 
-ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
-IGNORE 1 ROWS;
 */
