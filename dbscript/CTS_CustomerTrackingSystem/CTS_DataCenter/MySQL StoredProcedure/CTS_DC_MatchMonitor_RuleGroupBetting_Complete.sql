@@ -33,12 +33,13 @@ BEGIN
 		Param's Explanation (filtered by):			
 
 		Example:
-			CALL CTS_DC_MatchMonitor_RuleGroupBetting_Complete(1,114089577333,48310358,0,1,0,'[{"GroupID":4,"Reason":0,"TransList":"114089577333,114089576830","CustIDList":"55706032,55895790","OldGroupIDList":"0"}]');
+			CALL CTS_DC_MatchMonitor_RuleGroupBetting_Complete(1,114089577333,48310358,0,1,0,'[{"GroupID":4,"Reason":0,"TransIDList":"114089577333,114089576830","CustIDList":"55706032,55895790","OldGroupIDList":"0"}]');
 			
 		*/
 	DECLARE CONS_LOG 					TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
+    DECLARE CONST_RULE_GROUPID 			INT DEFAULT 1;
+    
     DECLARE lv_GroupID 					INT;
-	DECLARE lv_Reason 					INT;
     DECLARE lv_TransIDList 				LONGTEXT;
     DECLARE lv_CustIDList				LONGTEXT;
     DECLARE lv_OldGroupIDList			TEXT;
@@ -54,7 +55,7 @@ BEGIN
     DECLARE lv_LeagueID					INT UNSIGNED;
     DECLARE lv_LeagueName				VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
     DECLARE	lv_Sporttype				INT;
-	
+	DECLARE lv_Rule_Reason				INT;
 	#==================LOG=======================================================
 	DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleGroupBetting_Complete';
     IF CONS_LOG = 1 THEN
@@ -90,7 +91,7 @@ BEGIN
 							,	OldGroupIDList	TEXT PATH "$.OldGroupIDList"
 						)
 				) AS js;     
-    
+
     #======Update MatchMonitorDetails====================================  
 
     IF (ip_LiveIndicator = 1) THEN
@@ -108,24 +109,12 @@ BEGIN
 		WHERE mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.ScoreDiff = ip_ScoreDiff
 		LIMIT 1;	 
 	END IF;
-	#=======REASON=================================
-    DROP TEMPORARY TABLE IF EXISTS Temp_Reason;
-	CREATE TEMPORARY TABLE Temp_Reason(Reason INT PRIMARY KEY);
-    IF lv_Sporttype = 1 THEN
-		INSERT INTO Temp_Reason(Reason)
-        VALUES	(0)
-			,	(2);
-	ELSE
-		INSERT INTO Temp_Reason(Reason)
-        VALUES	(0)
-			,	(1)
-            ,	(2);
-	END IF;
+
     #========UPDATE MatchMonitorDetails========================
     lp: LOOP 
 		SET lv_GroupID = 0;
         SELECT GroupID, Reason, TransIDList, CustIDList, OldGroupIDList
-        INTO lv_GroupID, lv_Reason, lv_TransIDList, lv_CustIDList, lv_OldGroupIDList
+        INTO lv_GroupID, lv_Rule_Reason, lv_TransIDList, lv_CustIDList, lv_OldGroupIDList
         FROM Temp_TransGroup
         ORDER BY GroupID LIMIT 1;        
           
@@ -145,35 +134,31 @@ BEGIN
 			SELECT 	MAX(mmd.GroupID)
 			INTO 	lv_TargetGroupID
 			FROM 	CTS_DataCenter.MatchMonitorDetails AS mmd
-				INNER JOIN Temp_Reason AS tmpR ON mmd.Reason = tmpR.Reason
-            WHERE 	mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID AND mmd.ScoreDiff = ip_ScoreDiff ; 
+            WHERE 	mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID AND mmd.ScoreDiff = ip_ScoreDiff AND mmd.Reason = lv_Rule_Reason; 
 			
             SET lv_TargetGroupID = IFNULL(lv_TargetGroupID,0);
 			SET lv_TargetGroupID =  lv_TargetGroupID + 1;            
    
             INSERT IGNORE INTO CTS_DataCenter.MatchMonitorDetails(MatchID, LiveIndicator, ScoreDiff, BettypeID, BetID, EventDate, GroupID, LiveHomeScore, LiveAwayScore, ListCustID, ListTransID, Reason )
-            VALUES(ip_MatchID, ip_LiveIndicator, ip_ScoreDiff, ip_BettypeID, ip_BetID, lv_EventDate, lv_TargetGroupID, lv_LiveHomeScore, lv_LiveAwayScore, lv_CustIDList, lv_TransIDList, lv_Reason);          
+            VALUES(ip_MatchID, ip_LiveIndicator, ip_ScoreDiff, ip_BettypeID, ip_BetID, lv_EventDate, lv_TargetGroupID, lv_LiveHomeScore, lv_LiveAwayScore, lv_CustIDList, lv_TransIDList, lv_Rule_Reason);          
             
         END IF; 
     
 		IF (lv_NoOfOldGroupID = 1) THEN # UPDATE OLD GROUP	        
 			UPDATE IGNORE CTS_DataCenter.MatchMonitorDetails AS mmd 
-				INNER JOIN Temp_Reason AS tmpR ON mmd.Reason = tmpR.Reason
-			SET mmd.GroupID = lv_TargetGroupID, mmd.ListCustID = lv_CustIDList, mmd.ListTransID = lv_TransIDList, mmd.Reason = lv_Reason
-			WHERE  mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID AND mmd.ScoreDiff = ip_ScoreDiff AND mmd.GroupID = lv_TargetGroupID;
+			SET mmd.GroupID = lv_TargetGroupID, mmd.ListCustID = lv_CustIDList, mmd.ListTransID = lv_TransIDList
+			WHERE  mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID AND mmd.ScoreDiff = ip_ScoreDiff AND mmd.GroupID = lv_TargetGroupID AND mmd.Reason = lv_Rule_Reason;
 		END IF;        
         
         IF (lv_NoOfOldGroupID > 1) THEN # MERGE GROUP        
             DELETE mmd
             FROM CTS_DataCenter.MatchMonitorDetails AS mmd
-				INNER JOIN Temp_Reason AS tmpR ON mmd.Reason = tmpR.Reason
 				INNER JOIN TempItemTable AS tmpIt ON mmd.GroupID = tmpIt.Item
-			WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID AND mmd.ScoreDiff = ip_ScoreDiff AND mmd.GroupID <> lv_TargetGroupID;
+			WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID AND mmd.ScoreDiff = ip_ScoreDiff AND mmd.GroupID <> lv_TargetGroupID AND mmd.Reason = lv_Rule_Reason;
                     
 			UPDATE IGNORE CTS_DataCenter.MatchMonitorDetails AS mmd
-				INNER JOIN Temp_Reason AS tmpR ON mmd.Reason = tmpR.Reason
-			SET mmd.GroupID = lv_TargetGroupID, mmd.ListCustID = lv_CustIDList, mmd.ListTransID = lv_TransIDList, mmd.Reason = lv_Reason
-			WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID AND mmd.ScoreDiff = ip_ScoreDiff AND mmd.GroupID = lv_TargetGroupID;
+			SET mmd.GroupID = lv_TargetGroupID, mmd.ListCustID = lv_CustIDList, mmd.ListTransID = lv_TransIDList
+			WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID AND mmd.ScoreDiff = ip_ScoreDiff AND mmd.GroupID = lv_TargetGroupID AND mmd.Reason = lv_Rule_Reason;
 		END IF;
 
         DELETE tmptg
@@ -193,42 +178,13 @@ BEGIN
 		EXECUTE 	stmt1;  
     END LOOP;
 
-    #========UPDATE MatchMonitor===================================
-    DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitor_Reason;
-    CREATE TEMPORARY TABLE Temp_MatchMonitor_Reason(
-		Reason TINYINT PRIMARY KEY
-    );
+    #========INSERT MatchMonitor===================================      
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorDetails_Reason;
-    CREATE TEMPORARY TABLE Temp_MatchMonitorDetails_Reason(
-		Reason TINYINT PRIMARY KEY
-    );
-
-    INSERT INTO Temp_MatchMonitor_Reason(Reason)
-    SELECT DISTINCT mm.Reason
-    FROM CTS_DataCenter.MatchMonitor AS mm
-		INNER JOIN Temp_Reason AS tmpR ON mm.Reason = tmpR.Reason
-    WHERE mm.LiveIndicator = ip_LiveIndicator AND mm.MatchID = ip_MatchID AND mm.BettypeID = ip_BettypeID AND mm.BetID = ip_BetID; 
-       
-    INSERT INTO Temp_MatchMonitorDetails_Reason(Reason)
-    SELECT DISTINCT mmd.Reason
-    FROM CTS_DataCenter.MatchMonitorDetails AS mmd
-		INNER JOIN Temp_Reason AS tmpR ON mmd.Reason = tmpR.Reason
-    WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID;           
-    
-	DELETE mm
-	FROM CTS_DataCenter.MatchMonitor AS mm
-		INNER JOIN Temp_Reason AS tmpR ON mm.Reason = tmpR.Reason
-		LEFT JOIN Temp_MatchMonitorDetails_Reason AS tmpMmd ON mm.Reason = tmpMmd.Reason
-	WHERE mm.LiveIndicator = ip_LiveIndicator AND mm.MatchID = ip_MatchID AND mm.BettypeID = ip_BettypeID AND mm.BetID = ip_BetID AND tmpMmd.Reason IS NULL;    
-    
-    INSERT IGNORE INTO CTS_DataCenter.MatchMonitor(MatchID, BettypeID, BetID, LiveIndicator, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueName, Sporttype, Reason)
-    SELECT	ip_MatchID, ip_BettypeID, ip_BetID, ip_LiveIndicator, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName, lv_Sporttype
-		,	mmd.Reason
-	FROM CTS_DataCenter.MatchMonitorDetails AS mmd
-		INNER JOIN Temp_Reason AS tmpR ON mmd.Reason = tmpR.Reason
-		LEFT JOIN Temp_MatchMonitor_Reason AS tmpMm ON mmd.Reason = tmpMm.Reason
-	WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID;
+    IF NOT EXISTS( SELECT 1 FROM CTS_DataCenter.MatchMonitor AS mm WHERE mm.LiveIndicator = ip_LiveIndicator AND mm.MatchID = ip_MatchID AND mm.BettypeID = ip_BettypeID AND mm.BetID = ip_BetID AND mm.Reason = lv_Rule_Reason LIMIT 1)
+    THEN
+		INSERT IGNORE INTO CTS_DataCenter.MatchMonitor(MatchID, BettypeID, BetID, LiveIndicator, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueName, Sporttype, Reason)
+		SELECT	ip_MatchID, ip_BettypeID, ip_BetID, ip_LiveIndicator, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName, lv_Sporttype, lv_Rule_Reason;
+	END IF;
     
 END$$
 DELIMITER ;
