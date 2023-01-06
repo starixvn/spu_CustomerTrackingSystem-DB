@@ -168,6 +168,7 @@ sp: BEGIN
         ,	TransIDList				LONGTEXT
         ,	CustIDList				LONGTEXT
         ,	OldGroupIDList			VARCHAR(500)
+        ,	HighStakeLicCustList 	LONGTEXT
         ,	LicenseeCustTotal		INT
     );	
 	
@@ -510,13 +511,14 @@ sp: BEGIN
     INSERT INTO Temp_TransGroup02 SELECT * From Temp_TransGroup;
     
     #*************************************************************************************************
-
-    INSERT INTO Temp_ResultGroup(GroupID, Reason, TransIDList, CustIDList, OldGroupIDList, LicenseeCustTotal)
+	INSERT INTO Temp_ResultGroup(GroupID, Reason, TransIDList, CustIDList, OldGroupIDList, HighStakeLicCustList , LicenseeCustTotal)
     SELECT  tmpTg.GroupID
         ,	lv_Rule_Reason AS Reason
         ,	GROUP_CONCAT(tmpSt.TransID) AS TransIDList
         ,	GROUP_CONCAT(DISTINCT tmpSt.CustID) AS CustIDList
         ,	GROUP_CONCAT(DISTINCT CASE WHEN tmpSt.OldGroupID > 0 THEN tmpSt.OldGroupID ELSE 0 END) AS OldGroupIDList 
+        ,	GROUP_CONCAT(DISTINCT (CASE WHEN tmpSt.Stake >= lv_ClassifyHighStake AND cus.IsLicensee = 1 THEN tmpTg.CustID ELSE NULL END)) AS HighStakeLicCustList
+        ,	COUNT(DISTINCT (CASE WHEN cus.IsLicensee = 1 THEN cus.CustID ELSE NULL END)) AS LicenseeCustTotal
     FROM 	Temp_TransGroup AS tmpTg
 		INNER JOIN Temp_StagingTrans02  AS tmpSt ON tmpSt.CustID = tmpTg.CustID AND tmpSt.TransDate BETWEEN tmpTg.MinTransDate AND tmpTg.MaxTransDate
         INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpTg.CustID 
@@ -546,6 +548,7 @@ sp: BEGIN
         ,	tmpRg.TransIDList
         ,	tmpRg.CustIDList
         ,	tmpRg.OldGroupIDList
+        ,	(CASE WHEN tmpRg.LicenseeCustTotal >= 3 AND tmpRg.HighStakeLicCustList IS NOT NULL THEN HighStakeLicCustList ELSE NULL END) HighStakeLicCustList
     FROM Temp_ResultGroup AS tmpRg;
     
 END$$
