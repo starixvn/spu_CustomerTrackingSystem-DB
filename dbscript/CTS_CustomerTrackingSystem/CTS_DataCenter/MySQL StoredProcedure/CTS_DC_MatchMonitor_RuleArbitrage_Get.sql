@@ -21,9 +21,11 @@ sp: BEGIN
 			CALL CTS_DC_MatchMonitor_RuleArbitrage_Get(0,@op_MaxSequenceID);
 		Example:			
 	*/
+    
+    DECLARE CONST_RULE_GROUPID 	INT DEFAULT 5;
+    
 	DECLARE lv_LastSequenceID BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_MaxSequenceID BIGINT UNSIGNED DEFAULT 0;
-    DECLARE lv_RuleGroupID TINYINT DEFAULT 1; #Rule 01
     DECLARE lv_BatchSize 	INT DEFAULT 5000;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorRuleSetting;
@@ -38,7 +40,7 @@ sp: BEGIN
     SELECT	s.SportType
         ,	s.TotalStake
     FROM CTS_DataCenter.MatchMonitorRuleSetting AS s
-    WHERE s.RuleGroupID = lv_RuleGroupID
+    WHERE s.RuleGroupID = CONST_RULE_GROUPID
 		AND s.RuleStatus = 1;
     
     SELECT s.ParameterValue
