@@ -4,8 +4,8 @@ DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Get`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Get`(
 		IN	ip_DateType			TINYINT(1) #1: InsertDate, 2: EvenDate
-	,	IN 	ip_FromDate 		DATE
-    ,	IN 	ip_ToDate 			DATE
+	,	IN 	ip_FromDate 		DATETIME
+    ,	IN 	ip_ToDate 			DATETIME
     ,	IN	ip_SportType		VARCHAR(500)
     , 	IN	ip_Market 			TINYINT			# NULL if Both (Live and NonLive)
     , 	IN	ip_MatchSection		VARCHAR(50)
@@ -13,6 +13,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Get`(
     ,	IN 	ip_Bettypes 		JSON # BettypeID and BetID       
     ,	IN	ip_Reason			VARCHAR(50)
 )
+
     SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -38,7 +39,8 @@ BEGIN
             - ip_Reason: 0:Group Betting, 1: Hedging, 2: Arbitrage, 3: Fixed Game
             - ip_DateType: 1: by InsertDate, 2:EventDate
 		Example:
-			-	CALL CTS_DC_MatchMonitor_Get('2021-12-05','2021-12-08',NULL,'1,2,43', '1','1,2,3,4',NULL,'[{"BettypeID":1,"BetID":0},{"BettypeID":3,"BetID":0},{"BettypeID":7,"BetID":0}]','0,1');
+			-	CALL CTS_DC_MatchMonitor_Get (@ip_DateType:=1,@ip_FromDate:='2023-01-05',@ip_ToDate:='2023-01-8',@ip_SportType:=1,@ip_Market:=1,@ip_MatchSection:='1,2,3,4',@ip_IsVerified:=NULL
+				,@ip_Bettypes:='[{"BettypeID":1,"BetID":0},{"BettypeID":3,"BetID":0},{"BettypeID":7,"BetID":0}]',@ip_Reason:='0,1,2');
 	*/
       
 	DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitor;
@@ -50,7 +52,7 @@ BEGIN
         ,	HomeID			INT
         ,	AwayID			INT
         ,	LeagueID		INT
-        ,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+        ,	LeagueName		VARCHAR(500) 
         ,	Sporttype		INT
         ,	BettypeID		INT
         ,	BetID			BIGINT
@@ -86,6 +88,7 @@ BEGIN
 		,	BettypeID		INT
         ,	BetID			INT
         ,	Reason			INT
+        ,	VerifiedBy		VARCHAR(1000)
         
         ,	PRIMARY KEY PK_Temp_MatchTrans(MatchID,LiveIndicator,BettypeID, BetID, Reason)
 	);
@@ -103,9 +106,15 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_VerfiedTrans;
     CREATE TEMPORARY TABLE Temp_VerfiedTrans(
-			TransID	BIGINT UNSIGNED
-        ,	Reason	TINYINT
+			TransID			BIGINT UNSIGNED
+        ,	Reason			TINYINT        
+		,	MatchID 		INT
+        ,	LiveIndicator	TINYINT
+		,	BettypeID		INT
+        ,	BetID			INT
+        ,	VerifiedBy 		VARCHAR(50)
         ,	INDEX IX_Temp_VerfiedTrans(TransID,Reason)
+        ,	INDEX IX_Temp_MatchGroup(MatchID,LiveIndicator,BettypeID, BetID, Reason)
 	);
     
     INSERT IGNORE INTO Temp_Bettype(BettypeID, BetID)
@@ -214,22 +223,26 @@ BEGIN
 		   WHERE tmp.LiveIndicator = IFNULL(ip_Market, tmp.LiveIndicator);
     END IF;
     
-    INSERT IGNORE INTO Temp_VerfiedTrans(TransID, Reason)
-    SELECT js.TransID, mdv.Reason
+    INSERT IGNORE INTO Temp_VerfiedTrans(TransID, Reason, VerifiedBy, MatchID,LiveIndicator,BettypeID, BetID)
+    SELECT js.TransID, mdv.Reason, us.UserName, mdv.MatchID, mdv.LiveIndicator, mdv.BettypeID, mdv.BetID
     FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans AS mdv
-    INNER JOIN Temp_MatchMonitor AS tmpMm ON mdv.MatchID = tmpMm.MatchID AND mdv.LiveIndicator = tmpMm.LiveIndicator AND mdv.BettypeID = tmpMm.BettypeID AND mdv.BetID = tmpMm.BetID 
-		AND ((mdv.Reason = tmpMm.Reason) OR mdv.Reason IS NULL)
-		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mdv.ListTransID), ',', '","'), 
+		INNER JOIN CTS_Admin.CTSUser AS us ON us.UserID = mdv.VerifiedBy
+		INNER JOIN Temp_MatchMonitor AS tmpMm ON mdv.MatchID = tmpMm.MatchID AND mdv.LiveIndicator = tmpMm.LiveIndicator AND mdv.BettypeID = tmpMm.BettypeID AND mdv.BetID = tmpMm.BetID 
+			AND ((mdv.Reason = tmpMm.Reason) OR mdv.Reason IS NULL)
+			JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mdv.ListTransID), ',', '","'), 
 						'$[*]' COLUMNS (TransID BIGINT UNSIGNED PATH '$')
 						) js;
-                        
-    INSERT IGNORE INTO Temp_MatchGroup(MatchID, LiveIndicator, BettypeID, BetID, Reason)
+    
+    INSERT INTO Temp_MatchGroup(MatchID, LiveIndicator, BettypeID, BetID, Reason, VerifiedBy)
     SELECT	tmpMm.MatchID
 			,	tmpMm.LiveIndicator
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
 			,	tmpMm.Reason
-	FROM Temp_MatchMonitor AS tmpMm;
+            ,	GROUP_CONCAT(DISTINCT tmpVt.VerifiedBy)
+	FROM Temp_MatchMonitor AS tmpMm
+		LEFT JOIN Temp_VerfiedTrans AS tmpVt ON tmpVt.MatchID = tmpMm.MatchID AND tmpVt.LiveIndicator = tmpMm.LiveIndicator AND tmpVt.BettypeID = tmpMm.BettypeID AND tmpVt.BetID = tmpMm.BetID AND tmpVt.Reason = tmpMm.Reason
+	GROUP BY MatchID, LiveIndicator, BettypeID, BetID, Reason; 
     
 	INSERT INTO Temp_MatchGroup_NotVerified(MatchID, LiveIndicator, BettypeID, BetID, Reason)
     SELECT DISTINCT	tmpMg.MatchID
@@ -261,7 +274,10 @@ BEGIN
 			,	tmpMm.Reason
 			,	tmpMm.MatchSection 
 			,	(CASE WHEN tmpNv.MatchID IS NULL THEN 1 ELSE 0 END) IsVerified
+            ,	tmpMg.VerifiedBy
 		FROM Temp_MatchMonitor AS tmpMm
+			LEFT JOIN Temp_MatchGroup AS tmpMg ON tmpMm.MatchID = tmpMg.MatchID AND tmpMm.LiveIndicator = tmpMg.LiveIndicator 
+					AND tmpMm.BettypeID = tmpMg.BettypeID AND tmpMm.BetID = tmpMg.BetID AND tmpMm.Reason = tmpMg.Reason
         	LEFT JOIN Temp_MatchGroup_NotVerified AS tmpNv ON tmpMm.MatchID = tmpNv.MatchID AND tmpMm.LiveIndicator = tmpNv.LiveIndicator 
 					AND tmpMm.BettypeID = tmpNv.BettypeID AND tmpMm.BetID = tmpNv.BetID AND tmpMm.Reason = tmpNv.Reason;
 	END IF;
@@ -282,6 +298,7 @@ BEGIN
 			,	tmpMm.Reason
 			,	tmpMm.MatchSection 
 			,	0 AS  IsVerified
+			,	NULL AS VerifiedBy
 		FROM Temp_MatchMonitor AS tmpMm
 		INNER JOIN Temp_MatchGroup_NotVerified AS tmpNv ON tmpMm.MatchID = tmpNv.MatchID AND tmpMm.LiveIndicator = tmpNv.LiveIndicator 
 					AND tmpMm.BettypeID = tmpNv.BettypeID AND tmpMm.BetID = tmpNv.BetID AND tmpMm.Reason = tmpNv.Reason;
@@ -303,7 +320,10 @@ BEGIN
 			,	tmpMm.Reason
 			,	tmpMm.MatchSection 
 			,	1 AS  IsVerified
+            ,	tmpMg.VerifiedBy
 		FROM Temp_MatchMonitor AS tmpMm
+		INNER JOIN Temp_MatchGroup AS tmpMg ON tmpMm.MatchID = tmpMg.MatchID AND tmpMm.LiveIndicator = tmpMg.LiveIndicator 
+					AND tmpMm.BettypeID = tmpMg.BettypeID AND tmpMm.BetID = tmpMg.BetID AND tmpMm.Reason = tmpMg.Reason
 		LEFT JOIN Temp_MatchGroup_NotVerified AS tmpNv ON tmpMm.MatchID = tmpNv.MatchID AND tmpMm.LiveIndicator = tmpNv.LiveIndicator 
 					AND tmpMm.BettypeID = tmpNv.BettypeID AND tmpMm.BetID = tmpNv.BetID AND tmpMm.Reason = tmpNv.Reason
 		WHERE tmpNv.MatchID IS NULL;
@@ -311,5 +331,4 @@ BEGIN
                    
 END$$
 DELIMITER ;
-
 
