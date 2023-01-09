@@ -66,7 +66,7 @@ BEGIN
         ,	HDP	DECIMAL(8,2)
         ,   GroupID INT
         
-        ,	PRIMARY KEY (MatchID,ScoreDiff,BettypeID, BetID, Betteam, GroupID)
+        ,	PRIMARY KEY (MatchID,ScoreDiff,BettypeID, BetID, Betteam, HDP, GroupID)
     );
 
     #======Clean Staging=================================================
