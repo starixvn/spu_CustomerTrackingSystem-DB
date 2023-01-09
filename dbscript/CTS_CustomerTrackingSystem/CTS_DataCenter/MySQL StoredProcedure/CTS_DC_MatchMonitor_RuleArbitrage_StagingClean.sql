@@ -16,6 +16,7 @@ BEGIN
 
 		Revisions:
 			- 	202212216@Casey.Huynh: Created [Redmine ID: 179502]
+            -	20230109@Casey.Huynh: UpdateSoreDiff [Redmine ID: #182637]
             
 		Param's Explanation (filtered by):
 			CALL CTS_DC_MatchMonitor_RuleArbitrage_StagingClean(0,2);
@@ -59,7 +60,7 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_LastGroup
     (
 			MatchID INT
-        ,	ScoreDiff SMALLINT
+        ,	ScoreDiff INT
         ,	BettypeID INT
         ,	BetID BIGINT
         ,	Betteam VARCHAR(10)
