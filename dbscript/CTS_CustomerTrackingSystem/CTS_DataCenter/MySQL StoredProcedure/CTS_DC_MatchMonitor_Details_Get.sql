@@ -26,6 +26,7 @@ BEGIN
             -	20220110@Casey.Huynh: Enhance MM, BetID, Reason [Redmine ID: 166986]
             -	20221027@Casey.Huynh: Update Verify By Reason and Betteam [RedmineID: 179439]
             - 	20221122@Casey.Huynh: Update TotalScore to ScoreDiff [Redmine ID: #179499]
+             -	20230109@Casey.Huynh: UpdateSoreDiff [Redmine ID: #182637]
 		Param's Explanation (filtered by):
 		
 		Example:
@@ -35,7 +36,7 @@ BEGIN
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Score;
     CREATE TEMPORARY TABLE Temp_Score(
-		ScoreDiff 	SMALLINT UNSIGNED
+		ScoreDiff 	INT
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ReasonGroup;

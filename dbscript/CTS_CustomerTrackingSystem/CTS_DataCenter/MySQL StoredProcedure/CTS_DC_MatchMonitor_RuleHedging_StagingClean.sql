@@ -22,6 +22,7 @@ BEGIN
             -	20221021@Casey.Huynh: Fixed Clean Data Staging [Redmine ID: #179427]
             -	20221027@Casey.Huynh: Seperate pool Staging [RedmineID: 179439]
             -	20221205@Casey.Huynh: Rename Table [Redmine ID: #179502]
+            -	20230109@Casey.Huynh: UpdateSoreDiff [Redmine ID: #182637]
 		Param's Explanation (filtered by):
 			CALL CTS_DC_MatchMonitor_RuleHedging_StagingClean(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=2);
 		Example:
@@ -61,7 +62,7 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_Last3mTransGroup
     (
 			MatchID INT
-        ,	ScoreDiff SMALLINT
+        ,	ScoreDiff INT
         ,	BettypeID INT
         ,	BetID BIGINT
         ,	Betteam VARCHAR(10)
