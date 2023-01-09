@@ -25,6 +25,7 @@ BEGIN
 			-	20211213@Casey.Huynh: Enhance MM, Return more data 'Verified Trans List', Remove input Parameter ip_EventDate [Redmine ID: 165606]
             -	20220110@Casey.Huynh: Enhance MM, BetID, Reason [Redmine ID: 166986]
             -	20221027@Casey.Huynh: Update Verify By Reason and Betteam [RedmineID: 179439]
+            - 	20221122@Casey.Huynh: Update TotalScore to ScoreDiff [Redmine ID: #179499]
 		Param's Explanation (filtered by):
 		
 		Example:
@@ -34,7 +35,7 @@ BEGIN
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Score;
     CREATE TEMPORARY TABLE Temp_Score(
-		TotalScore 	SMALLINT UNSIGNED
+		ScoreDiff 	SMALLINT UNSIGNED
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ReasonGroup;
@@ -48,7 +49,7 @@ BEGIN
     END IF;
     
     #============================================
-	SET @sql = CONCAT("INSERT INTO Temp_Score (TotalScore) VALUES ('", REPLACE(ip_ScoreList, ",", "'),('"),"');");
+	SET @sql = CONCAT("INSERT INTO Temp_Score (ScoreDiff) VALUES ('", REPLACE(ip_ScoreList, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
     
@@ -60,9 +61,9 @@ BEGIN
 		,	d.ListTransID
 		,	d.GroupID
 		,	d.Reason
-		,	d.TotalScore
+		,	d.ScoreDiff
 	FROM   CTS_DataCenter.MatchMonitorDetails AS d
-		INNER JOIN Temp_Score AS s ON s.TotalScore = d.TotalScore
+		INNER JOIN Temp_Score AS s ON s.ScoreDiff = d.ScoreDiff
 		INNER JOIN Temp_ReasonGroup AS r ON r.GroupID = d.GroupID
 	WHERE 	d.BettypeID = ip_BettypeID
 		AND d.BetID = ip_BetID

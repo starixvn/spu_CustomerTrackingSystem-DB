@@ -1,16 +1,17 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule03_Process`;
+DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_RuleHedging_Process`;
 DELIMITER $$
 
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule03_Process`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleHedging_Process`(
 		IN ip_LiveIndicator		BOOLEAN
 	,	IN ip_MaxSequenceID		BIGINT UNSIGNED
 	,	IN ip_MatchID			INT UNSIGNED
-    ,	IN ip_TotalScore		INT 
+    ,	IN ip_ScoreDiff			INT 
     ,	IN ip_BettypeID			INT UNSIGNED
     ,	IN ip_BetID				BIGINT
     ,	IN ip_Betteam			VARCHAR(10)
 )
+      
     SQL SECURITY INVOKER
 sp: BEGIN
 	/*
@@ -24,23 +25,33 @@ sp: BEGIN
             -	20221021@Casey.Huynh: Fixed Clean Data Staging [Redmine ID: #179427]
             - 	202201021@Casey.Huynh: Group By Betteam [Redmine ID: #179439]
             -   20221107@Aries.Nguyen: Tuning performance of Hedging Detection  [Redmine ID: #180185]
-            
+            -	20221205@Casey.Huynh: Rename Table [Redmine ID: #179502]
 		Param's Explanation (filtered by):	
 		Example:
-			- CALL CTS_DC_MatchMonitor_Rule03_Process(1,113171940189,22081995,1,1,0,'a');
+			- CALL CTS_DC_MatchMonitor_RuleHedging_Process(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=113171940189,@ip_MatchID:=22081995,@ip_ScoreDiff:=1,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a');
 			
 	*/
+    DECLARE CONS_LOG 					TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
     DECLARE CONS_SITE789 				INT DEFAULT  3;
     
     DECLARE lv_TimeStep 				SMALLINT;
     DECLARE lv_RuleTotalStake 			DECIMAL(20,4);
     DECLARE lv_RuleHighStake 			DECIMAL(20,4);
 	DECLARE lv_RuleGroupID 				SMALLINT DEFAULT 3;  
-    DECLARE lv_Reason 					TINYINT DEFAULT 1;
+    DECLARE lv_Reason 					INT DEFAULT 1;
     DECLARE lv_RuleSportType 			INT;  
     DECLARE lv_CustIDList 				TEXT;
     DECLARE lv_IsHedging 				BOOLEAN;
     DECLARE lv_LastSequenceID 			BIGINT UNSIGNED;  
+    
+    #==================LOG=======================================================
+    DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleHedging_Process';
+    IF CONS_LOG = 1 THEN     
+		INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
+		SELECT lv_SPName, CURRENT_TIMESTAMP(), CONCAT('@ip_LiveIndicator:=',ip_LiveIndicator,',@ip_MaxSequenceID:=',ip_MaxSequenceID,',@ip_MatchID:=',ip_MatchID
+		,',@ip_ScoreDiff:=',ip_ScoreDiff,',@ip_BettypeID:=',ip_BettypeID,',@ip_BetID:=',ip_Betteam,',@ip_HDP:=',ip_Betteam);
+    END IF;
+    #==================LOG======================================================= 
     
     DROP TEMPORARY TABLE IF EXISTS Temp_StagingTrans;
     CREATE TEMPORARY TABLE Temp_StagingTrans(
@@ -66,7 +77,7 @@ sp: BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_ResultGroup;
     CREATE TEMPORARY TABLE Temp_ResultGroup(
 			GroupID					INT PRIMARY KEY
-		,	Reason					TINYINT
+		,	Reason					INT
         ,	TransIDList				LONGTEXT NOT NULL
         ,	CustIDList				LONGTEXT NOT NULL
         ,	OldGroupIDList			VARCHAR(500)
@@ -90,7 +101,7 @@ sp: BEGIN
     
 		SELECT mms.SportType 
         INTO lv_RuleSportType 
-        FROM CTS_DataCenter.MatchMonitorStagingLive03 AS mms 
+        FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms 
         WHERE mms.MatchID = ip_MatchID 
         LIMIT 1;
         
@@ -100,10 +111,10 @@ sp: BEGIN
 		INTO 	lv_TimeStep
 			, 	lv_RuleTotalStake
 			,	lv_RuleHighStake
-		FROM MatchMonitorRuleSetting AS st 
+		FROM CTS_DataCenter.MatchMonitorRuleSetting AS st 
 		WHERE 	st.RuleGroupID = lv_RuleGroupID 
-		AND st.SportType = lv_RuleSportType 
-        AND st.Reason = lv_Reason;
+				AND st.SportType = lv_RuleSportType 
+				AND st.Reason = lv_Reason AND st.RuleStatus = 1;
 
 		INSERT INTO Temp_StagingTrans(TransID, SequenceID, TransDate, TransDateSecond, CustID, CTSCustID, AgentCTSCustID, OldGroupID, Stake, Betteam, Processed )
         SELECT	mms.TransID
@@ -117,7 +128,7 @@ sp: BEGIN
             ,	mms.Stake
             ,	mms.Betteam
             ,	(CASE WHEN mms.SequenceID > lv_LastSequenceID THEN 0 ELSE 1 END) AS Processed
-		FROM CTS_DataCenter.MatchMonitorStagingLive03 AS mms			
+		FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms			
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = mms.CustID AND cus.CustSubID = 0
             LEFT JOIN CTS_DataCenter.CTSCustomer AS agent ON agent.CustID = cus.Recommend 
 															AND agent.CustSubID = 0 
@@ -126,7 +137,7 @@ sp: BEGIN
                                                             AND cus.SiteID = CONS_SITE789
         WHERE mms.SequenceID <= ip_MaxSequenceID 
 			AND mms.MatchID = ip_MatchID 
-            AND mms.TotalScore = ip_TotalScore 
+            AND mms.ScoreDiff = ip_ScoreDiff 
             AND mms.BettypeID = ip_BettypeID
             AND mms.BetID = ip_BetID 
             AND mms.Betteam = ip_Betteam
@@ -141,7 +152,7 @@ sp: BEGIN
         
 		SELECT mms.SportType 
         INTO lv_RuleSportType 
-        FROM CTS_DataCenter.MatchMonitorStagingNonLive03 AS mms 
+        FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms 
         WHERE mms.MatchID = ip_MatchID 
         LIMIT 1;
         
@@ -151,10 +162,10 @@ sp: BEGIN
 		INTO 	lv_TimeStep
 			, 	lv_RuleTotalStake
 			,	lv_RuleHighStake
-		FROM MatchMonitorRuleSetting AS st 
+		FROM CTS_DataCenter.MatchMonitorRuleSetting AS st 
 		WHERE 	st.RuleGroupID = lv_RuleGroupID 
 			AND st.SportType = lv_RuleSportType 
-			AND st.Reason = lv_Reason;
+			AND st.Reason = lv_Reason AND st.RuleStatus = 1;
 	
 		INSERT INTO Temp_StagingTrans(TransID, SequenceID, TransDate, TransDateSecond, CustID, CTSCustID, AgentCTSCustID, OldGroupID, Stake, Betteam, Processed )
         SELECT	mms.TransID
@@ -168,7 +179,7 @@ sp: BEGIN
             ,	mms.Stake
             ,	mms.Betteam
             ,	(CASE WHEN mms.SequenceID > lv_LastSequenceID THEN 0 ELSE 1 END) AS Processed
-		FROM CTS_DataCenter.MatchMonitorStagingNonLive03 AS mms
+		FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = mms.CustID AND cus.CustSubID = 0
             LEFT JOIN CTS_DataCenter.CTSCustomer AS agent ON agent.CustID = cus.Recommend 
 															AND agent.CustSubID = 0 
@@ -177,7 +188,7 @@ sp: BEGIN
                                                             AND cus.SiteID = CONS_SITE789
         WHERE  mms.SequenceID <= ip_MaxSequenceID 
 			AND	mms.MatchID = ip_MatchID 
-            AND mms.TotalScore = ip_TotalScore 
+            AND mms.ScoreDiff = ip_ScoreDiff 
             AND mms.BettypeID = ip_BettypeID 
             AND mms.BetID = ip_BetID
             AND mms.Betteam = ip_Betteam
@@ -249,13 +260,13 @@ sp: BEGIN
 	END LOOP labelGroup;    
     
 	IF (ip_LiveIndicator = 1) THEN 
-		UPDATE CTS_DataCenter.MatchMonitorStagingLive03 AS mms
+		UPDATE CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms
 			INNER JOIN CTS_DataCenter.Temp_StagingTrans AS tmpSt ON mms.SequenceID = tmpSt.SequenceID
 			LEFT JOIN Temp_ResultGroup AS tmpRg ON tmpSt.GroupID = tmpRg.GroupID
 		SET mms.GroupID = -tmpSt.GroupID
 		WHERE tmpRg.GroupID IS NULL;
 	ELSE
-		UPDATE CTS_DataCenter.MatchMonitorStagingNonLive03 AS mms
+		UPDATE CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
 			INNER JOIN CTS_DataCenter.Temp_StagingTrans AS tmpSt ON mms.SequenceID = tmpSt.SequenceID
 			LEFT JOIN Temp_ResultGroup AS tmpRg ON tmpSt.GroupID = tmpRg.GroupID
 		SET mms.GroupID = -tmpSt.GroupID

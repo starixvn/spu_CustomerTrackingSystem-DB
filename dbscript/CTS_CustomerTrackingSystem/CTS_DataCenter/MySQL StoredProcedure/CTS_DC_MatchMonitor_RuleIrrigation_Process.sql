@@ -102,7 +102,7 @@ sp: BEGIN
     SELECT mst.TotalStake,	mst.OddsSpread, mst.TimeStep
     INTO lv_Rule_TotalStake, lv_Rule_OddsSpread, lv_Rule_TimeStep
 	FROM CTS_DataCenter.MatchMonitorRuleSetting AS mst
-    WHERE RuleGroupID = CONST_RULE_GROUPID AND mst.SportType = ip_SportType;
+    WHERE mst.RuleGroupID = CONST_RULE_GROUPID AND mst.SportType = ip_SportType AND mst.RuleStatus = 1;
 	
     #=================GET OLD GROUP=============================================
     SELECT ParameterValue

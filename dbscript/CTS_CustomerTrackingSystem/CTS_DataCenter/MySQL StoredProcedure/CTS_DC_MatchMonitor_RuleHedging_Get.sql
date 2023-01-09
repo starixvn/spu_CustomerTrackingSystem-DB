@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Rule03_Get`;
+DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_RuleHedging_Get`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Rule03_Get`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleHedging_Get`(
 		IN	ip_LiveIndicator	BOOLEAN
 	,	OUT	op_MaxSequenceID	BIGINT UNSIGNED
 )
@@ -17,16 +17,27 @@ sp: BEGIN
 		Revisions:
 			- 	202200929@Casey.Huynh: Created [Redmine ID: #178310]
             - 	202201021@Casey.Huynh: Group By Betteam [Redmine ID: #179439]
+            -	20221205@Casey.Huynh: Rename Table [Redmine ID: #179502]
             
 		Param's Explanation (filtered by):	
 
 		Example:
-			CALL  CTS_DC_MatchMonitor_Rule03_Get_xtest(1,@MaxTrans);
+			CALL  CTS_DC_MatchMonitor_RuleHedging_Get(1,@MaxTrans);
 	*/
-	DECLARE lv_LastSequenceID BIGINT UNSIGNED DEFAULT 0;
-    DECLARE lv_MaxSequenceID BIGINT UNSIGNED DEFAULT 0;
-    DECLARE lv_RuleGroupID TINYINT DEFAULT 3; #Rule 01
-    DECLARE lv_NoOfRow 	INT DEFAULT 5000;
+    DECLARE CONS_LOG 	TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
+    
+	DECLARE lv_LastSequenceID	BIGINT UNSIGNED DEFAULT 0;
+    DECLARE lv_MaxSequenceID	BIGINT UNSIGNED DEFAULT 0;
+    DECLARE lv_RuleGroupID		TINYINT DEFAULT 3; #Rule 01
+    DECLARE lv_NoOfRow			INT DEFAULT 5000;
+    
+    #==================LOG=======================================================
+    DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleHedging_Get';
+    IF CONS_LOG = 1 THEN     
+		INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
+		SELECT lv_SPName, CURRENT_TIMESTAMP(), CONCAT('@ip_LiveIndicator:=',ip_LiveIndicator);
+    END IF;
+    #==================LOG======================================================= 
     
     DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorRuleSetting;
 	CREATE TEMPORARY TABLE Temp_MatchMonitorRuleSetting(
@@ -42,7 +53,7 @@ sp: BEGIN
         ,	s.TotalStake
         ,	s.HighStake
     FROM CTS_DataCenter.MatchMonitorRuleSetting AS s
-    WHERE s.RuleGroupID = lv_RuleGroupID;
+    WHERE s.RuleGroupID = lv_RuleGroupID AND s.RuleStatus=1;
     
     SELECT s.ParameterValue
     INTO lv_NoOfRow
@@ -57,20 +68,20 @@ sp: BEGIN
         
         SELECT MAX(tmp.SequenceID)
         INTO lv_MaxSequenceID
-        FROM (SELECT mms.SequenceID FROM CTS_DataCenter.MatchMonitorStagingLive03 AS mms WHERE mms.SequenceID > lv_LastSequenceID ORDER BY mms.SequenceID LIMIT lv_NoOfRow) AS tmp;
+        FROM (SELECT mms.SequenceID FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms WHERE mms.SequenceID > lv_LastSequenceID ORDER BY mms.SequenceID LIMIT lv_NoOfRow) AS tmp;
         
         SET op_MaxSequenceID = IFNULL(lv_MaxSequenceID,0) ;
                 
         IF(lv_LastSequenceID < lv_MaxSequenceID) THEN          
 			SELECT	mms.MatchID
-				,	mms.TotalScore
+				,	mms.ScoreDiff
 				,	mms.BettypeID
                 ,	mms.BetID
                 ,	mms.Betteam
-			FROM CTS_DataCenter.MatchMonitorStagingLive03 AS mms
+			FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms
 				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType
             WHERE mms.SequenceID <= lv_MaxSequenceID AND mms.Stake >= tmpRs.HighStake
-			GROUP BY mms.MatchID, mms.TotalScore, mms.BettypeID, mms.BetID,	mms.Betteam
+			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID,	mms.Betteam
 			HAVING COUNT(DISTINCT mms.CustID) > 1;      
             
 		END IF;
@@ -82,20 +93,20 @@ sp: BEGIN
         
         SELECT MAX(tmp.SequenceID)
         INTO lv_MaxSequenceID
-        FROM (SELECT mms.SequenceID FROM CTS_DataCenter.MatchMonitorStagingNonLive03 AS mms WHERE mms.SequenceID > lv_LastSequenceID ORDER BY mms.SequenceID  LIMIT lv_NoOfRow) AS tmp;
+        FROM (SELECT mms.SequenceID FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms WHERE mms.SequenceID > lv_LastSequenceID ORDER BY mms.SequenceID  LIMIT lv_NoOfRow) AS tmp;
 		
 		SET op_MaxSequenceID = IFNULL(lv_MaxSequenceID, 0);        
         
         IF(lv_LastSequenceID < lv_MaxSequenceID) THEN            
 			SELECT	mms.MatchID
-				,	mms.TotalScore
+				,	mms.ScoreDiff
 				,	mms.BettypeID
                 ,	mms.BetID
                 ,	mms.Betteam
-			FROM CTS_DataCenter.MatchMonitorStagingNonLive03 AS mms
+			FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
 				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType
             WHERE mms.SequenceID <= lv_MaxSequenceID AND mms.Stake >= tmpRs.HighStake
-			GROUP BY mms.MatchID, mms.TotalScore, mms.BettypeID, mms.BetID,	mms.Betteam
+			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID,	mms.Betteam
 			HAVING COUNT(DISTINCT mms.CustID) > 1;            
 		END IF;        
 	END IF;
