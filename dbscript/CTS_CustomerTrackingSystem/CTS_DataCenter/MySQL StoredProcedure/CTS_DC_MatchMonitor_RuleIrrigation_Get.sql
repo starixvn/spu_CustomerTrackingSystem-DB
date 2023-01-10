@@ -15,7 +15,8 @@ sp: BEGIN
 		Original:
 
 		Revisions:
-			- 20221122@Casey.Huynh: Created [Redmine ID: #179499]
+			- 20221122@Casey.Huynh: 	Created [Redmine ID: #179499]
+			- 20221228@Victoria.Le:		Add HDP for Irrigation rule [Redmine ID: #181990]
             
 		Param's Explanation (filtered by):	
 			
@@ -72,6 +73,7 @@ sp: BEGIN
 				,	mmt.ScoreDiff
 				,	mmt.BettypeID
                 ,	mmt.BetID
+				,	mmt.Hdp
                 ,	mmt.Betteam
                 ,	mmt.SportType
 		FROM CTS_DataCenter.MatchMonitorStagingIrrigationNonLive AS mmt
