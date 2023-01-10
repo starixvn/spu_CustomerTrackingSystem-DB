@@ -267,8 +267,8 @@ BEGIN
 
     IF (ip_IsVerified IS NULL)
     THEN
-		SELECT	tmpMm.ID
-			,	tmpMm.MatchID
+		SELECT	tmpMm.MatchID
+            ,	tmpMm.MatchSection
 			,	tmpMm.EventDate
             ,	tmpMm.KickOffTime
 			,	tmpMm.LiveIndicator AS Market
@@ -279,15 +279,25 @@ BEGIN
             ,	tmpMm.Sporttype
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
-			,	tmpMm.Reason
-			,	tmpMm.MatchSection
-			,	(CASE WHEN tmpNv.MatchID IS NULL THEN 1 ELSE 0 END) IsVerified
-            ,	tmpMg.VerifiedBy
+			,	GROUP_CONCAT(DISTINCT tmpMm.Reason)	AS Reason		
+			,	(SELECT 0 FROM Temp_MatchGroup_NotVerified AS tmpNv WHERE tmpMm.MatchID = tmpNv.MatchID AND tmpMm.LiveIndicator = tmpNv.LiveIndicator 
+					AND tmpMm.BettypeID = tmpNv.BettypeID AND tmpMm.BetID = tmpNv.BetID LIMIT 1) IsVerified
+            ,	GROUP_CONCAT(DISTINCT tmpMg.VerifiedBy)	AS VerifiedBy
 		FROM Temp_MatchMonitor AS tmpMm
 			LEFT JOIN Temp_MatchGroup AS tmpMg ON tmpMm.MatchID = tmpMg.MatchID AND tmpMm.LiveIndicator = tmpMg.LiveIndicator 
-					AND tmpMm.BettypeID = tmpMg.BettypeID AND tmpMm.BetID = tmpMg.BetID AND tmpMm.Reason = tmpMg.Reason
-        	LEFT JOIN Temp_MatchGroup_NotVerified AS tmpNv ON tmpMm.MatchID = tmpNv.MatchID AND tmpMm.LiveIndicator = tmpNv.LiveIndicator 
-					AND tmpMm.BettypeID = tmpNv.BettypeID AND tmpMm.BetID = tmpNv.BetID AND tmpMm.Reason = tmpNv.Reason;
+					AND tmpMm.BettypeID = tmpMg.BettypeID AND tmpMm.BetID = tmpMg.BetID 
+		GROUP BY tmpMm.MatchID
+            ,	tmpMm.MatchSection
+			,	tmpMm.EventDate
+            ,	tmpMm.KickOffTime
+			,	tmpMm.LiveIndicator
+			,	tmpMm.HomeID
+			,	tmpMm.AwayID
+			,	tmpMm.LeagueID                
+			,	tmpMm.LeagueName
+            ,	tmpMm.Sporttype
+			,	tmpMm.BettypeID
+            ,	tmpMm.BetID;
 	END IF;
     
 	IF (ip_IsVerified = 0)
@@ -315,8 +325,8 @@ BEGIN
     
     IF (ip_IsVerified = 1)
     THEN
-		SELECT	tmpMm.ID
-			,	tmpMm.MatchID
+		SELECT	tmpMm.MatchID
+            ,	tmpMm.MatchSection
 			,	tmpMm.EventDate
             ,	tmpMm.KickOffTime
 			,	tmpMm.LiveIndicator AS Market
@@ -324,19 +334,29 @@ BEGIN
 			,	tmpMm.AwayID
 			,	tmpMm.LeagueID                
 			,	tmpMm.LeagueName
-			,	tmpMm.Sporttype
+            ,	tmpMm.Sporttype
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
-			,	tmpMm.Reason
-			,	tmpMm.MatchSection 
-			,	1 AS  IsVerified
-            ,	tmpMg.VerifiedBy
+			,	GROUP_CONCAT(DISTINCT tmpMm.Reason)	AS Reason		
+			,	1 AS IsVerified
+            ,	GROUP_CONCAT(DISTINCT tmpMg.VerifiedBy)	AS VerifiedBy
 		FROM Temp_MatchMonitor AS tmpMm
 		INNER JOIN Temp_MatchGroup AS tmpMg ON tmpMm.MatchID = tmpMg.MatchID AND tmpMm.LiveIndicator = tmpMg.LiveIndicator 
 					AND tmpMm.BettypeID = tmpMg.BettypeID AND tmpMm.BetID = tmpMg.BetID AND tmpMm.Reason = tmpMg.Reason
-		LEFT JOIN Temp_MatchGroup_NotVerified AS tmpNv ON tmpMm.MatchID = tmpNv.MatchID AND tmpMm.LiveIndicator = tmpNv.LiveIndicator 
-					AND tmpMm.BettypeID = tmpNv.BettypeID AND tmpMm.BetID = tmpNv.BetID AND tmpMm.Reason = tmpNv.Reason
-		WHERE tmpNv.MatchID IS NULL;
+		WHERE NOT EXISTS(SELECT 1 FROM Temp_MatchGroup_NotVerified AS tmpNv WHERE tmpMm.MatchID = tmpNv.MatchID AND tmpMm.LiveIndicator = tmpNv.LiveIndicator 
+					AND tmpMm.BettypeID = tmpNv.BettypeID AND tmpMm.BetID = tmpNv.BetID)
+        GROUP BY tmpMm.MatchID
+            ,	tmpMm.MatchSection
+			,	tmpMm.EventDate
+            ,	tmpMm.KickOffTime
+			,	tmpMm.LiveIndicator
+			,	tmpMm.HomeID
+			,	tmpMm.AwayID
+			,	tmpMm.LeagueID                
+			,	tmpMm.LeagueName
+            ,	tmpMm.Sporttype
+			,	tmpMm.BettypeID
+            ,	tmpMm.BetID;
 	END IF;
                    
 END$$
