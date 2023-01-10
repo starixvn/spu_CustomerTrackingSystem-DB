@@ -3,14 +3,11 @@ DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Details_Get`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Details_Get`(
-		IN ip_MatchID 			BIGINT UNSIGNED    
+		IN ip_MatchID 			BIGINT UNSIGNED   
+	,	IN ip_LiveIndicator		BOOLEAN   
     ,	IN ip_BettypeID			INT UNSIGNED
     ,	IN ip_BetID				BIGINT
-    ,	IN ip_LiveIndicator		BOOLEAN     
-    ,	IN ip_Reason			INT  
-    ,	IN ip_ScoreList			VARCHAR(500)     
-    ,	IN ip_GroupIDList		VARCHAR(2000)
-    
+       
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -27,55 +24,27 @@ BEGIN
             -	20221027@Casey.Huynh: Update Verify By Reason and Betteam [RedmineID: 179439]
             - 	20221122@Casey.Huynh: Update TotalScore to ScoreDiff [Redmine ID: #179499]
              -	20230109@Casey.Huynh: UpdateSoreDiff [Redmine ID: #182637]
+             -	20230105@Casey.Huynh: Enhance Report [Redmine ID: #181995]
             
 		Param's Explanation (filtered by):
 		
 		Example:
-			CALL CTS_DC_MatchMonitor_Details_Get(48995415,1,0,1,0,3,'1,2,3');
+			CALL CTS_DC_MatchMonitor_Details_Get(@ip_MatchID:=62357347,@ip_LiveIndicator:=1,@ip_BettypeID:=3,@ip_BetID:=0);
 
 	*/   
-	
-	DROP TEMPORARY TABLE IF EXISTS Temp_Score;
-    CREATE TEMPORARY TABLE Temp_Score(
-		ScoreDiff 	INT
-	);
-    /*
-    DROP TEMPORARY TABLE IF EXISTS Temp_ReasonGroup;
-    CREATE TEMPORARY TABLE Temp_ReasonGroup(
-			GroupID BIGINT UNSIGNED
-	);
-    */       
-	#======Score not include in Rule of (baseketball)
-	IF ip_ScoreList IS NULL THEN 
-		SET ip_ScoreList = '0';
-    END IF;
     
-    #============================================
-	SET @sql = CONCAT("INSERT INTO Temp_Score (ScoreDiff) VALUES ('", REPLACE(ip_ScoreList, ",", "'),('"),"');");
-	PREPARE stmt1 FROM @sql;
-	EXECUTE stmt1;
-    /*
-    SET @sql = CONCAT("INSERT INTO Temp_ReasonGroup (GroupID) VALUES ('", REPLACE(ip_GroupIDList, ",", "'),('"),"');");
-	PREPARE stmt1 FROM @sql;
-	EXECUTE stmt1;
-    */
 	SELECT 	d.ListCustID
 		,	d.ListTransID
 		,	d.GroupID
 		,	d.Reason
 		,	d.ScoreDiff
 	FROM   CTS_DataCenter.MatchMonitorDetails AS d
-		INNER JOIN Temp_Score AS s ON s.ScoreDiff = d.ScoreDiff
-	#	INNER JOIN Temp_ReasonGroup AS r ON r.GroupID = d.GroupID
 	WHERE 	d.BettypeID = ip_BettypeID
 		AND d.BetID = ip_BetID
 		AND d.MatchID = ip_MatchID
-		AND d.LiveIndicator = ip_LiveIndicator
-		AND d.Reason = ip_Reason;
+		AND d.LiveIndicator = ip_LiveIndicator;
 	
-	SELECT	js.TransID
-			, mdv.VerifiedDate
-            , (SELECT UserName FROM CTS_Admin.CTSUser WHERE UserID = VerifiedBy) AS VerifiedBy
+	SELECT	js.TransID AS VerifiedTransID
 	FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans AS mdv
 		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mdv.ListTransID), ',', '","'), 
 						'$[*]' COLUMNS (TransID BIGINT UNSIGNED PATH '$')
@@ -83,8 +52,7 @@ BEGIN
 	WHERE  	mdv.MatchID = ip_MatchID
 		AND mdv.LiveIndicator = ip_LiveIndicator
         AND	mdv.BettypeID = ip_BettypeID
-        AND	mdv.BetID = ip_BetID
-        AND ((mdv.Reason = ip_Reason) OR mdv.Reason IS NULL);
+        AND	mdv.BetID = ip_BetID;
         
 END$$
 DELIMITER ;
