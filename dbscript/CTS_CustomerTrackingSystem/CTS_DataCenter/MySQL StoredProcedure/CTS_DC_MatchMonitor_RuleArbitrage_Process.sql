@@ -24,9 +24,9 @@ sp: BEGIN
 
 		Revisions:
 			- 	202212216@Casey.Huynh: Created [Redmine ID: 179502]
-            
+            - 	202301096@Casey.Huynh: Created [Redmine ID: 182639]
 		Param's Explanation (filtered by):
-			CALL CTS_DC_MatchMonitor_RuleArbitrage_Process(@ip_LiveIndicator:=0,@ip_MaxSequenceID:=@op_MaxSequenceID,@ip_MatchID:=110100,@ip_IsMajorLeague:=0,@ip_ScoreDiff:=-2,@ip_BettypeID:=1,@ip_BetID:=0, @ip_HDP=-0.2500);
+			CALL CTS_DC_MatchMonitor_RuleArbitrage_Process(@ip_LiveIndicator:=0,@ip_MaxSequenceID:=@op_MaxSequenceID,@ip_MatchID:=110100,@ip_IsMajorLeague:=0,@ip_ScoreDiff:=-2,@ip_BettypeID:=1,@ip_BetID:=0, @ip_HDP:=-0.2500);
 	
 		Example:		
 	*/
@@ -49,6 +49,7 @@ sp: BEGIN
 		SELECT lv_SPName, CURRENT_TIMESTAMP(), CONCAT('@ip_LiveIndicator:=',ip_LiveIndicator,',@ip_MaxSequenceID:=',ip_MaxSequenceID,',@ip_MatchID:=',ip_MatchID
 		,',@ip_IsMajorLeague:=',ip_IsMajorLeague,',@ip_ScoreDiff:=',ip_ScoreDiff,',@ip_BettypeID:=',ip_BettypeID,',@ip_BetID:=',ip_BetID,',@ip_HDP:=',ip_HDP);
     END IF;
+    
     #==================LOG=======================================================   
     
     DROP TEMPORARY TABLE IF EXISTS Temp_StagingTrans;
@@ -139,17 +140,23 @@ sp: BEGIN
     #========Detect group by assocation and transdate====================
     CALL CTS_DC_MatchMonitor_DetectGroup(lv_RuleTimeStep);
 	#===============================================================================
-	
+    
     INSERT INTO Temp_ResultGroup(GroupID, TransIDList, CustIDList, OldGroupIDList)
-    SELECT  tmpSt.GroupID
-        ,	GROUP_CONCAT(tmpSt.TransID) AS TransIDList
-        ,	GROUP_CONCAT(DISTINCT tmpSt.CustID) AS CustIDList
-        ,	GROUP_CONCAT(DISTINCT CASE WHEN tmpSt.OldGroupID > 0 THEN tmpSt.OldGroupID ELSE 0 END) AS OldGroupIDList
-    FROM 	Temp_StagingTrans  AS tmpSt
-	GROUP BY tmpSt.GroupID
-    HAVING SUM(tmpSt.Stake) >= lv_RuleTotalStake 
-		AND COUNT(DISTINCT tmpSt.CustID) > 1 AND COUNT(DISTINCT tmpSt.Betteam) > 1 AND tmpSt.GroupID > 0;        
-                        
+    SELECT  tmp.GroupID
+        ,	GROUP_CONCAT(tmp.TransID) AS TransIDList
+        ,	GROUP_CONCAT(DISTINCT tmp.CustID) AS CustIDList
+        ,	GROUP_CONCAT(DISTINCT tmp.OldGroupID) AS OldGroupIDList
+    FROM 	(	SELECT  tmpSt.GroupID, tmpSt.CustID, tmpSt.Betteam
+					,	SUM(tmpSt.Stake)
+                    ,	GROUP_CONCAT(tmpSt.TransID) AS TransID
+                    ,	GROUP_CONCAT(DISTINCT CASE WHEN tmpSt.OldGroupID > 0 THEN tmpSt.OldGroupID ELSE 0 END) AS OldGroupID
+				FROM Temp_StagingTrans  AS tmpSt
+				GROUP BY tmpSt.GroupID, tmpSt.CustID, tmpSt.Betteam
+                HAVING SUM(tmpSt.Stake) >= lv_RuleTotalStake AND tmpSt.GroupID > 0
+			) tmp
+	GROUP BY tmp.GroupID
+	HAVING COUNT(DISTINCT tmp.CustID) > 1 AND COUNT(DISTINCT tmp.Betteam) > 1;  
+                   
 	SELECT	tmpRg.GroupID
 		,	lv_RuleReason AS Reason
         ,	tmpRg.TransIDList
