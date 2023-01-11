@@ -13,6 +13,7 @@ AS
 	Revisions:
 		- 20210304@John.Ngo: Display betting pattern details [Redmine ID: #151156]
 		- 20220408@Long.Luu: Get more data from AssociationGroupByAI [Redmine ID: #171222]
+		- 20230111@John.Ngo: Get more data for Association betting pattern details [Redmine ID: #181994]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_Rpt_BettingPattern_TicketDetails] @EventDate = '2021-02-23 00:00:00.000', @MatchId = 40391219, @CustId1 = 46777100, @CustId2 = 47717138, @Bettypes = '1,3'
@@ -94,6 +95,9 @@ BEGIN
 		,	Odds				SMALLMONEY
 		,	LiveHomeScore		SMALLINT
 		,	LiveAwayScore		SMALLINT
+		,	Currency			TINYINT
+		,	IP					VARCHAR(45)
+		,	ActualRate			FLOAT
 	);	
 	
 	CREATE CLUSTERED INDEX #CIX_tmpMatchDetailsIdx ON #tmpMatchDetails (
@@ -126,7 +130,10 @@ BEGIN
 			,	Stake
 			,	Odds
 			,	LiveHomeScore
-			,	LiveAwayScore)
+			,	LiveAwayScore
+			,	Currency
+			,	IP
+			,	ActualRate)
 		SELECT	b.custid
 			,	b.matchid
 			,	b.winlostdate
@@ -138,6 +145,9 @@ BEGIN
 			,	b.odds
 			,	b.livehomescore
 			,	b.liveawayscore
+			,	b.currency
+			,	b.ip
+			,	b.actualrate
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH(NOLOCK)
 			INNER JOIN #tmpCustIds AS c WITH(NOLOCK) ON b.custid = c.CustId
 			LEFT JOIN #tmpBettypes AS tbt WITH(NOLOCK) ON tbt.BettypeId = b.bettype
@@ -159,7 +169,10 @@ BEGIN
 			,	Stake
 			,	Odds
 			,	LiveHomeScore
-			,	LiveAwayScore)
+			,	LiveAwayScore
+			,	Currency
+			,	IP
+			,	ActualRate)
 		SELECT	b.custid
 			,	b.matchid
 			,	b.winlostdate
@@ -171,6 +184,9 @@ BEGIN
 			,	b.odds
 			,	b.livehomescore
 			,	b.liveawayscore
+			,	b.currency
+			,	b.ip
+			,	b.actualrate
 		FROM bodb02.dbo.bettrans14 AS b WITH(NOLOCK)
 			INNER JOIN #tmpCustIds AS c WITH(NOLOCK) ON b.custid = c.CustId
 			LEFT JOIN #tmpBettypes AS tbt WITH(NOLOCK) ON tbt.BettypeId = b.bettype
@@ -192,7 +208,10 @@ BEGIN
 			,	Stake
 			,	Odds
 			,	LiveHomeScore
-			,	LiveAwayScore)
+			,	LiveAwayScore
+			,	Currency
+			,	IP
+			,	ActualRate)
 		SELECT	b.custid
 			,	b.matchid
 			,	b.winlostdate
@@ -204,6 +223,9 @@ BEGIN
 			,	b.odds
 			,	b.livehomescore
 			,	b.liveawayscore
+			,	b.currency
+			,	b.ip
+			,	b.actualrate
 		FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 			INNER JOIN #tmpCustIds AS c WITH(NOLOCK) ON b.custid = c.CustId
 			LEFT JOIN #tmpBettypes AS tbt WITH(NOLOCK) ON tbt.BettypeId = b.bettype
@@ -219,13 +241,17 @@ BEGIN
 		,	m.TransId
 		,	bt.typenamee AS TypeName
 		,	m.BetTeam
+		,	m.Stake*m.ActualRate AS StakeRM
 		,	m.Stake
+		,	e.currency AS CurrencyName
 		,	m.Odds
 		,	m.LiveHomeScore
 		,	m.LiveAwayScore
+		,	m.IP
 	FROM #tmpMatchDetails AS m WITH(NOLOCK)
 		INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON c.custid = m.CustId
 		INNER JOIN bodb02.dbo.bettype AS bt WITH(NOLOCK) ON bt.typeid = m.BetType
+		LEFT JOIN bodb02.dbo.Exchange AS e WITH(NOLOCK) ON e.ExchangeId = m.Currency
 	ORDER BY m.TransDate DESC;
 	
 	DROP TABLE #tmpMatchDetails;
