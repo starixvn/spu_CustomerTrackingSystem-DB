@@ -20,5 +20,5 @@ UPDATE StaticList SET ItemNameDisplay = 'GB' WHERE ListID = 16 AND ItemID = 1;
 UPDATE StaticList SET ItemNameDisplay = 'HED' WHERE ListID = 16 AND ItemID = 2;
 UPDATE StaticList SET ItemNameDisplay = 'ARB' WHERE ListID = 16 AND ItemID = 3;
 UPDATE StaticList SET ItemNameDisplay = 'FG' WHERE ListID = 16 AND ItemID = 4;
-UPDATE StaticList SET ItemNameDisplay = 'IRR' WHERE ListID = 16 AND ItemID = 5;
+UPDATE StaticList SET ItemNameDisplay = 'IRR' , PriorityOrder = 5 WHERE ListID = 16 AND ItemID = 5;
 
