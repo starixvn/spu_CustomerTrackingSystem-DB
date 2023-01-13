@@ -14,6 +14,7 @@ BEGIN
 		Revisions:
 			- 20220627@Casey.Huynh: Created [Redmine ID: #174218]
             - 20220908@Casey.Huynh: New CC for Classify MM [Redmine ID: #176976]
+            - 20220113@Casey.Huynh: Rename Table [Redmine ID: #179502]
             
 		Param's Explanation:
         
@@ -38,7 +39,7 @@ BEGIN
 		SELECT mm.MatchID
         INTO lv_MatchID
         FROM CTS_DataCenter.MatchMonitor AS mm
-        WHERE mm.ClassifyStatus = 2	AND SportType = 1 # Match Completed (EventStatus = Completed AND NOT Existing IN MatchMonitorStagingLive)
+        WHERE mm.ClassifyStatus = 2	AND SportType = 1 
         ORDER BY mm.KickOffTime ASC
         LIMIT 1;
         
