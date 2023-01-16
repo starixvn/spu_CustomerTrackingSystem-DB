@@ -22,6 +22,7 @@ BEGIN
 			- 20210722@Irena.Vo: Refactor SP [Redmine ID: 157203]  
             - 20220826@Long.Luu: Fix issue leaving blank for should-not-be-classified customer [Redmine ID: 176782]  
             - 20221007@Harvey.Nguyen: Return CurrentCategoryID [Redmine ID: #178022]
+            - 20230116@Long.Luu: Return CategoryID for Inactive accounts instead of CategoryGroup [Redmine ID: 0000] 
             
 		Param's Explanation (filtered by):    
 			CALL CTS_DC_CustClassification_GetByCustIDsAndCategoryIDs('[{"CustId":7681925}]')
@@ -58,8 +59,10 @@ BEGIN
 	SELECT 		cate.CustID AS CustID
 			, 	CONST_GROUP_NORMAL AS SportGroupID  
 			, 	CASE 
-					WHEN cc.CategoryGroup IN (CONST_CATEGORY_NEWMEMBER, CONST_CATEGORY_NORMALMEMBER, CONST_CATEGORY_GOODMEMBER, CONST_CATEGORY_INACTIVE)
+					WHEN cc.CategoryGroup IN (CONST_CATEGORY_NEWMEMBER, CONST_CATEGORY_NORMALMEMBER, CONST_CATEGORY_GOODMEMBER)
 						THEN cc.CategoryGroup
+					WHEN cc.CategoryGroup IN (CONST_CATEGORY_INACTIVE)
+						THEN cc.CategoryID
                     ELSE -1 
 				END AS CurrentCategoryID
 	FROM Temp_RealtimeCustomers AS temp
@@ -74,12 +77,14 @@ BEGIN
 	SELECT 		temp.CustID AS CustID
 			, 	CONST_GROUP_NORMAL AS SportGroupID  
 			, 	CASE 
-					WHEN tmpLr.CategoryGroup IN (CONST_CATEGORY_NEWMEMBER, CONST_CATEGORY_NORMALMEMBER, CONST_CATEGORY_GOODMEMBER, CONST_CATEGORY_INACTIVE)
+					WHEN tmpLr.CategoryGroup IN (CONST_CATEGORY_NEWMEMBER, CONST_CATEGORY_NORMALMEMBER, CONST_CATEGORY_GOODMEMBER)
 						THEN tmpLr.CategoryGroup
+					WHEN tmpLr.CategoryGroup IN (CONST_CATEGORY_INACTIVE)
+						THEN tmpLr.CategoryID
                     ELSE -1 
 				END AS CurrentCategoryID
 	FROM Temp_RealtimeCustomers AS temp
-    ,	LATERAL (	SELECT cate.CustID, cate.SportGroupID, cc.CategoryGroup, cate.CTSCustID
+    ,	LATERAL (	SELECT cate.CustID, cate.SportGroupID, cc.CategoryGroup, cc.CategoryID, cate.CTSCustID
 					FROM CTS_DataCenter.CTSCustomerClassificationOldCategory AS cate						
 						INNER JOIN	CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
                     WHERE cate.CustID = temp.CustID
