@@ -24,7 +24,7 @@ BEGIN
             -	20221027@Casey.Huynh: Update Verify By Reason and Betteam [RedmineID: 179439]
             - 	20221122@Casey.Huynh: Update TotalScore to ScoreDiff [Redmine ID: #179499]
              -	20230109@Casey.Huynh: UpdateSoreDiff [Redmine ID: #182637]
-             -	20230105@Casey.Huynh: Enhance Report [Redmine ID: #181995]
+             -	20230105@Casey.Huynh: Enhance Report, Seperate CustID List and TransID List [Redmine ID: #181995]
             
 		Param's Explanation (filtered by):
 		
@@ -33,17 +33,33 @@ BEGIN
 
 	*/   
     
-	SELECT 	d.ListCustID
-		,	d.ListTransID
-		,	d.GroupID
-		,	d.Reason
-		,	d.ScoreDiff
-	FROM   CTS_DataCenter.MatchMonitorDetails AS d
-	WHERE 	d.BettypeID = ip_BettypeID
-		AND d.BetID = ip_BetID
-		AND d.MatchID = ip_MatchID
-		AND d.LiveIndicator = ip_LiveIndicator;
+	SELECT 	DISTINCT cus.CTSCustID
+        ,	cus.CustID
+	FROM   CTS_DataCenter.MatchMonitorDetails AS mmd
+		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mmd.ListCustID), ',', '","'), 
+						'$[*]' COLUMNS (CustID BIGINT UNSIGNED PATH '$')
+						) js
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON js.CustID = cus.CustID
+	WHERE 	mmd.BettypeID = ip_BettypeID
+		AND mmd.BetID = ip_BetID
+		AND mmd.MatchID = ip_MatchID
+		AND mmd.LiveIndicator = ip_LiveIndicator
+	ORDER BY CustID;
 	
+	SELECT 	js.TransID		
+        ,	mmd.ScoreDiff
+        ,	GROUP_CONCAT(mmd.Reason) AS ReasonList
+	FROM   CTS_DataCenter.MatchMonitorDetails AS mmd
+		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mmd.ListTransID), ',', '","'), 
+						'$[*]' COLUMNS (TransID BIGINT UNSIGNED PATH '$')
+						) js
+	WHERE 	mmd.BettypeID = ip_BettypeID
+		AND mmd.BetID = ip_BetID
+		AND mmd.MatchID = ip_MatchID
+		AND mmd.LiveIndicator = ip_LiveIndicator
+	GROUP BY js.TransID, mmd.ScoreDiff
+    ORDER BY js.TransID;
+    
 	SELECT	js.TransID AS VerifiedTransID
 	FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans AS mdv
 		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mdv.ListTransID), ',', '","'), 
@@ -52,7 +68,7 @@ BEGIN
 	WHERE  	mdv.MatchID = ip_MatchID
 		AND mdv.LiveIndicator = ip_LiveIndicator
         AND	mdv.BettypeID = ip_BettypeID
-        AND	mdv.BetID = ip_BetID;
-        
+        AND	mdv.BetID = ip_BetID;          
+	
 END$$
 DELIMITER ;
