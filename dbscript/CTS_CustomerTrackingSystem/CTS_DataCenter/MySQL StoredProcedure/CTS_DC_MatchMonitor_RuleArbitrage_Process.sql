@@ -24,7 +24,9 @@ sp: BEGIN
 
 		Revisions:
 			- 	202212216@Casey.Huynh: Created [Redmine ID: 179502]
-            - 	202301096@Casey.Huynh: Created [Redmine ID: 182639]
+            - 	20230109@Casey.Huynh: SumStake by CustID [Redmine ID: 182639]
+            - 	20230111@Casey.Huynh: SumStake by CustID not group by Betteam [Redmine ID: 182639]
+            
 		Param's Explanation (filtered by):
 			CALL CTS_DC_MatchMonitor_RuleArbitrage_Process(@ip_LiveIndicator:=0,@ip_MaxSequenceID:=@op_MaxSequenceID,@ip_MatchID:=110100,@ip_IsMajorLeague:=0,@ip_ScoreDiff:=-2,@ip_BettypeID:=1,@ip_BetID:=0, @ip_HDP:=-0.2500);
 	
@@ -141,21 +143,23 @@ sp: BEGIN
     CALL CTS_DC_MatchMonitor_DetectGroup(lv_RuleTimeStep);
 	#===============================================================================
     
-    INSERT INTO Temp_ResultGroup(GroupID, TransIDList, CustIDList, OldGroupIDList)
+	INSERT INTO Temp_ResultGroup(GroupID, TransIDList, CustIDList, OldGroupIDList)
     SELECT  tmp.GroupID
         ,	GROUP_CONCAT(tmp.TransID) AS TransIDList
         ,	GROUP_CONCAT(DISTINCT tmp.CustID) AS CustIDList
         ,	GROUP_CONCAT(DISTINCT tmp.OldGroupID) AS OldGroupIDList
-    FROM 	(	SELECT  tmpSt.GroupID, tmpSt.CustID, tmpSt.Betteam
+    FROM 	(	SELECT  tmpSt.GroupID, tmpSt.CustID 
 					,	SUM(tmpSt.Stake)
                     ,	GROUP_CONCAT(tmpSt.TransID) AS TransID
                     ,	GROUP_CONCAT(DISTINCT CASE WHEN tmpSt.OldGroupID > 0 THEN tmpSt.OldGroupID ELSE 0 END) AS OldGroupID
+                    ,	MIN(Betteam) AS MinBetteam
+                    ,	MAX(Betteam) AS MaxBetteam
 				FROM Temp_StagingTrans  AS tmpSt
-				GROUP BY tmpSt.GroupID, tmpSt.CustID, tmpSt.Betteam
+				GROUP BY tmpSt.GroupID, tmpSt.CustID
                 HAVING SUM(tmpSt.Stake) >= lv_RuleTotalStake AND tmpSt.GroupID > 0
 			) tmp
 	GROUP BY tmp.GroupID
-	HAVING COUNT(DISTINCT tmp.CustID) > 1 AND COUNT(DISTINCT tmp.Betteam) > 1;  
+	HAVING COUNT(DISTINCT tmp.CustID) > 1 AND MIN(tmp.MinBetteam) <> MAX(tmp.MaxBetteam);
                    
 	SELECT	tmpRg.GroupID
 		,	lv_RuleReason AS Reason
