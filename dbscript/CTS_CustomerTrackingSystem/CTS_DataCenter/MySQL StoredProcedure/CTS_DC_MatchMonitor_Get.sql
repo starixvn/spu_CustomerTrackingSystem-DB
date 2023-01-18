@@ -248,7 +248,7 @@ BEGIN
 			,	tmpMm.Reason
             ,	GROUP_CONCAT(DISTINCT tmpVt.VerifiedBy)
 	FROM Temp_MatchMonitor AS tmpMm
-		LEFT JOIN Temp_VerfiedTrans AS tmpVt ON tmpVt.MatchID = tmpMm.MatchID AND tmpVt.LiveIndicator = tmpMm.LiveIndicator AND tmpVt.BettypeID = tmpMm.BettypeID AND tmpVt.BetID = tmpMm.BetID AND tmpVt.Reason = tmpMm.Reason
+		LEFT JOIN Temp_VerfiedTrans AS tmpVt ON tmpVt.MatchID = tmpMm.MatchID AND tmpVt.LiveIndicator = tmpMm.LiveIndicator AND tmpVt.BettypeID = tmpMm.BettypeID AND tmpVt.BetID = tmpMm.BetID 
 	GROUP BY MatchID, LiveIndicator, BettypeID, BetID, Reason; 
     
 	INSERT INTO Temp_MatchGroup_NotVerified(MatchID, LiveIndicator, BettypeID, BetID, Reason)
