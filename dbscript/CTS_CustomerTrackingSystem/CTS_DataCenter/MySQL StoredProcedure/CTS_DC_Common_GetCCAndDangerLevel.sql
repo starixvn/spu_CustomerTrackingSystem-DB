@@ -13,7 +13,8 @@ BEGIN
 		DB:			CTS_DataCenter  
 		Original: 
 		Revisions:
-			- 20220930@Aries.Nguyen: Created [RedmineID: #178311]
+			- 20220930@Aries.Nguyen: 	Created [RedmineID: #178311]
+			- 20230118@Victoria.Le: 	Return IsNormalLinkedPA to definite whether Customer is Normal Categories links with PA [RedmineID: #181995]
 
         Param's Explanation:     
         Example:
@@ -27,6 +28,10 @@ BEGIN
     DECLARE	CONST_LICVIP_DANGEROUSCATEGORY		INT DEFAULT 3;
     DECLARE	CONST_LICVIP_SUSPICIOUSCATEGORY		INT DEFAULT 4;    
     DECLARE	CONST_VVIPCATEGORY					INT DEFAULT 210;
+	
+	DECLARE	CONST_NORMAL 						INT DEFAULT 200;
+	DECLARE	CONST_Tagging_WithPA 				INT DEFAULT 1;
+	
     
     DECLARE	lv_LicVIP_DangerousCCName 			VARCHAR(50);
     DECLARE	lv_LicVIP_SuspiciousCCName			VARCHAR(50);
@@ -59,6 +64,7 @@ BEGIN
 		,	IsDangerProbation	BIT DEFAULT 0
 		,	CustomerClass		INT
         ,	CustomerClassName  	VARCHAR(50)
+		,	IsNormalLinkedPA	TINYINT
         ,	DangerLevel			INT
 		,	DangerLevelType		SMALLINT  
     );  
@@ -76,6 +82,7 @@ BEGIN
 		,	CategoryID			INT
 		,	CustomerClass		INT
         ,	CustomerClassName  	VARCHAR(50)
+		,	IsNormalLinkedPA	TINYINT
         ,	DangerLevel			INT
 		,	DangerLevelType		SMALLINT  
         ,	INDEX 				IX_Temp_CustClassificationInfo_CustID(CustID)
@@ -133,11 +140,12 @@ BEGIN
                 LIMIT 1) AS clss
 	GROUP BY tmp.CustID;
                 
-    INSERT INTO Temp_CustCateInfo(CustID,CategoryID,CustomerClass,CustomerClassName,DangerLevel,DangerLevelType)
+    INSERT INTO Temp_CustCateInfo(CustID,CategoryID,CustomerClass,CustomerClassName,IsNormalLinkedPA,DangerLevel,DangerLevelType)
     SELECT 	tmp.CustID
 		,	clss.CategoryID
 		,	clss.CustomerClass
         ,	clss.CustomerClassName  
+		,	clss.IsNormalLinkedPA
         ,	dangerlvl.DangerLevel
         ,	CASE 
 				WHEN dangerlvl.DangerLevel IS NULL THEN 0
@@ -175,6 +183,9 @@ BEGIN
 										END
 							ELSE tmp.SpecialCCName
 						END AS CustomerClassName
+					,	CASE 
+							WHEN (cate.ParentID = CONST_GROUP_NORMAL AND cate.TaggingType = CONST_Tagging_WithPA) THEN 1
+							ELSE NULL END AS IsNormalLinkedPA
 				FROM CTS_DataCenter.CTSCustomerClassification AS clss
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID
                 WHERE clss.CustID = tmp.CustID
@@ -194,11 +205,12 @@ BEGIN
 						, c.LastModifiedDate DESC
                 LIMIT 1) AS dangerlvl;
                 
-	INSERT INTO Temp_CustClassificationInfo(CustID, CategoryID, CustomerClass, CustomerClassName, DangerLevel, DangerLevelType)	
+	INSERT INTO Temp_CustClassificationInfo(CustID, CategoryID, CustomerClass, CustomerClassName, IsNormalLinkedPA, DangerLevel, DangerLevelType)	
 	SELECT 	tmp.CustID
 		,	cate.CategoryID
 		,	IFNULL(cate.CustomerClass,-1) AS CustomerClass
         ,	cate.CustomerClassName  
+		,	cate.IsNormalLinkedPA
         ,	cate.DangerLevel
         ,	cate.DangerLevelType 
     FROM Temp_CustInfo AS tmp
