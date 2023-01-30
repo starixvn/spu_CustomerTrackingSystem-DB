@@ -14,13 +14,15 @@ BEGIN
 		Original: 
 		Revisions:
 			- 20200423@Casey.Huynh [Redmine ID: #178022]: Created 
+			- 20230120@Long.Luu [Redmine ID: #182997]: Support special case for Inactive (return CategoryID instead of CategoryGroup) 
            
 		Param's Explanation:
         
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_Normal_GetExisting('5941,5942,100,7681925');
 	 */ 	
-    DECLARE	CONST_GROUP_NORMAL 	INT DEFAULT 200;
+    DECLARE	CONST_GROUP_NORMAL 		INT DEFAULT 200;
+    DECLARE	CONST_GROUP_INACTIVE 	INT DEFAULT 1000;
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_InputCust;
     CREATE TEMPORARY TABLE Temp_InputCust(
@@ -76,7 +78,11 @@ BEGIN
 
     #=========RETURN CUST IF LASTEST Category is Normal OR Not Existing any Category
 	SELECT	DISTINCT tmpCc.CustID
-		,	IFNULL(cc.CategoryGroup,0) AS CategoryID
+		,	CASE
+				WHEN cc.CategoryGroup IS NULL THEN 0
+                WHEN cc.CategoryGroup = CONST_GROUP_INACTIVE THEN cc.CategoryID
+                ELSE cc.CategoryGroup
+			END AS CategoryID
 	FROM Temp_CustCategory AS tmpCc
 		LEFT JOIN CTS_DataCenter.CustomerCategory AS cc ON tmpCc.CategoryID = cc.CategoryID
     WHERE tmpCc.SportGroupID = CONST_GROUP_NORMAL OR cc.CategoryID IS NULL;
