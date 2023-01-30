@@ -22,7 +22,7 @@ BEGIN
 			- 20210722@Irena.Vo: Refactor SP [Redmine ID: 157203]  
             - 20220826@Long.Luu: Fix issue leaving blank for should-not-be-classified customer [Redmine ID: 176782]  
             - 20221007@Harvey.Nguyen: Return CurrentCategoryID [Redmine ID: #178022]
-            - 20230116@Long.Luu: Return CategoryID for Inactive accounts instead of CategoryGroup [Redmine ID: 0000] 
+			- 20230120@Long.Luu: Support special case for Inactive (return CategoryID instead of CategoryGroup)  [Redmine ID: #182997]
             
 		Param's Explanation (filtered by):    
 			CALL CTS_DC_CustClassification_GetByCustIDsAndCategoryIDs('[{"CustId":7681925}]')
@@ -97,7 +97,7 @@ BEGIN
     SELECT 	tmpNc.CustID
 		,	tmpNc.SportGroupID
         ,	tmpNc.CurrentCategoryID
-	FROM Temp_NormalCustomer AS tmpNc;    
+	FROM Temp_NormalCustomer AS tmpNc;   
 	
 END$$
 DELIMITER ;
