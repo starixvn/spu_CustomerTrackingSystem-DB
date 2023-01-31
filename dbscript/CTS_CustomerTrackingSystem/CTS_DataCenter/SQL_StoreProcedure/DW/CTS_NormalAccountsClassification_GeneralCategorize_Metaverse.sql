@@ -155,7 +155,7 @@ BEGIN
 		m.IsActive = a.IsActive
 	FROM #tmpCustomers AS m
 		INNER JOIN #tmpActiveMember AS a ON m.CustId = a.CustId
-		INNER JOIN bodb02.dbo.vw_Customer AS c WITH(NOLOCK) ON m.CustId = c.custid;
+		INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON m.CustId = c.custid;
 
 	-- #4: Get Customer's Accummulated data
 	INSERT INTO #tmpRawData(CustId, SportId, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDaysCustID, ActiveDaysSportGroup, WindaysCustID, WinDaysSportGroup)
@@ -181,7 +181,7 @@ BEGIN
 		a.IsActive = c.IsActive
 	FROM #tmpCustomerAccummulatedInfo AS a
 		INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.custid
-		INNER JOIN bodb02.dbo.vw_Customer AS vc WITH(NOLOCK) ON a.CustId = vc.custid;
+		INNER JOIN bodb02.dbo.Customer AS vc WITH(NOLOCK) ON a.CustId = vc.custid;
 				
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
 	SET a.IsDeposit = 1
