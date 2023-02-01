@@ -33,8 +33,8 @@ AS
 
 	Param's Explanation:
 				@CustomersXML = N'<Root>
-										<r CustId="4345542" SportId="2" CategoryId ="201"/>
-										<r CustId="4345542" SportId="1" CategoryId ="201"/>
+										<r CustId="4345542" CategoryId ="201"/>
+										<r CustId="4345541" CategoryId ="201"/>
 								 </Root>';
 */
 BEGIN
@@ -48,8 +48,7 @@ BEGIN
 		,	@CATEGORY_PROBATION			INT = 206
 		,	@CATEGORY_NEWMEMBER			INT = 201;
 	
-	DECLARE @FUNCTION_NEWCUSTOMER_WITHOUT30DAYS		INT = 0
-		,	@FUNCTION_NEWCUSTOMER_WITHIN30DAYS		INT = 4;
+	DECLARE @FUNCTION_NEWCUSTOMER		INT = 4;
 
 	DECLARE @GENERAL_SPORTID			SMALLINT = 200;
 	DECLARE @CurrentDateTime			DATETIME = GETDATE()
@@ -157,7 +156,7 @@ BEGIN
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 
 	--#2: Check inactive customers
-	IF (@FunctionId = @FUNCTION_NEWCUSTOMER_WITHIN30DAYS) 
+	IF (@FunctionId = @FUNCTION_NEWCUSTOMER) 
 		BEGIN
 			INSERT INTO #tmpActiveMember(CustId, IsActive)
 			SELECT CustId, 1
@@ -208,7 +207,7 @@ BEGIN
 	FROM #tmpCustomerAccummulatedInfo AS a
 		INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.custid;
 
-	IF (@FunctionId = @FUNCTION_NEWCUSTOMER_WITHIN30DAYS OR @FunctionId = @FUNCTION_NEWCUSTOMER_WITHOUT30DAYS) 
+	IF (@FunctionId = @FUNCTION_NEWCUSTOMER) 
 		BEGIN
 			INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 			SELECT	t.CustId
