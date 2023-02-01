@@ -194,7 +194,7 @@ BEGIN
 
 	--#7: Log Data
 	INSERT INTO dbo.CustomerClassification_InputLog(CustId, CreatedDate, CreatedTime, FunctionId, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId, IsActive)
-	SELECT t.CustId, @CurrentDate, @CurrentDateTime, @FUNCTIONID, ISNULL(TurnoverRM,0), ISNULL(WinlossRM,0), ISNULL(BetCount,0), ISNULL(ActiveDays,0), ISNULL(CurrentCategoryId,0), IsActive
+	SELECT t.CustId, @CurrentDate, @CurrentDateTime, @FUNCTIONID, ISNULL(TurnoverRM,0), ISNULL(WinlossRM,0), ISNULL(BetCount,0), ISNULL(ActiveDays,0), ISNULL(t.CurrentCategoryId,0), t.IsActive
 	FROM #tmpCustomers AS t
 		LEFT JOIN #tmpCustomerAccummulatedInfo AS c ON t.CustId = c.CustId;
 
