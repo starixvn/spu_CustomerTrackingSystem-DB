@@ -277,3 +277,9 @@ BEGIN
 	DROP TABLE #tmpRawData;
 	DROP TABLE #tmpActiveMember;
 END;
+GO
+
+GRANT EXECUTE ON [dbo].[CTS_NormalAccountsClassification_BySport_UpdateAppliedStatus] TO [bodbSPUNet]
+GO
+GRANT VIEW DEFINITION ON [dbo].[CTS_NormalAccountsClassification_BySport_UpdateAppliedStatus] TO [bodbSPUNet]
+GO
