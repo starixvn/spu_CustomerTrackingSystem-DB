@@ -45,10 +45,13 @@ BEGIN
 	   	,   @CATEGORY_SMARTINACTIVE		INT = 1002
 		,	@CATEGORY_SMARTPUNTER		INT = 203
 		,	@CATEGORY_RISKY				INT = 204
-		,	@CATEGORY_PROBATION			INT = 206;
+		,	@CATEGORY_PROBATION			INT = 206
+		,	@CATEGORY_NEWMEMBER			INT = 201;
+	
+	DECLARE @FUNCTION_NEWCUSTOMER_WITHOUT30DAYS		INT = 0
+		,	@FUNCTION_NEWCUSTOMER_WITHIN30DAYS		INT = 4;
 
 	DECLARE @GENERAL_SPORTID			SMALLINT = 200;
-	DECLARE @FUNCTION_NEWCUSTOMER		INT = 4;
 	DECLARE @CurrentDateTime			DATETIME = GETDATE()
 	    ,   @CurrentDate				DATE	 = GETDATE()
 	    ,	@ToDate						DATE	 = GETDATE();
@@ -154,7 +157,7 @@ BEGIN
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 
 	--#2: Check inactive customers
-	IF (@FunctionId = @FUNCTION_NEWCUSTOMER) 
+	IF (@FunctionId = @FUNCTION_NEWCUSTOMER_WITHIN30DAYS) 
 		BEGIN
 			INSERT INTO #tmpActiveMember(CustId, IsActive)
 			SELECT CustId, 1
@@ -204,6 +207,24 @@ BEGIN
 	SET a.CurrentCategoryId = c.CurrentCategoryId
 	FROM #tmpCustomerAccummulatedInfo AS a
 		INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.custid;
+
+	IF (@FunctionId = @FUNCTION_NEWCUSTOMER_WITHIN30DAYS OR @FunctionId = @FUNCTION_NEWCUSTOMER_WITHOUT30DAYS) 
+		BEGIN
+			INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
+			SELECT	t.CustId
+				,	@GENERAL_SPORTID
+				,	@CATEGORY_NEWMEMBER
+				,	@CurrentDate AS CreatedDate
+				,	@CurrentDateTime AS CreatedTime
+				,	0
+				,	0
+				,	0
+				,	0
+			FROM #tmpCustomers AS t
+				LEFT JOIN #tmpCustomerAccummulatedInfo AS c ON t.CustId = c.CustId
+			WHERE c.CustId IS NULL;
+		END;
+	
 
 	---- Log Data
 	INSERT INTO dbo.CustomerClassification_InputLog(CustId, CreatedDate, CreatedTime, FunctionId, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId, IsActive)
