@@ -325,8 +325,8 @@ BEGIN
     
 	IF (ip_IsVerified = 0)
     THEN
-		SELECT	tmpMm.ID
-			,	tmpMm.MatchID
+		SELECT	tmpMm.MatchID
+			,	tmpMm.MatchSection
 			,	tmpMm.EventDate
             ,	tmpMm.KickOffTime
 			,	tmpMm.LiveIndicator AS Market
@@ -337,13 +337,24 @@ BEGIN
             ,	tmpMm.Sporttype
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
-			,	tmpMm.Reason
-			,	tmpMm.MatchSection
+			,	GROUP_CONCAT(DISTINCT tmpMm.Reason)	AS Reason
 			,	0 AS  IsVerified
 			,	NULL AS VerifiedBy
 		FROM Temp_MatchMonitor AS tmpMm
 		INNER JOIN Temp_MatchGroup_NotVerified AS tmpNv ON tmpMm.MatchID = tmpNv.MatchID AND tmpMm.LiveIndicator = tmpNv.LiveIndicator 
-					AND tmpMm.BettypeID = tmpNv.BettypeID AND tmpMm.BetID = tmpNv.BetID;
+					AND tmpMm.BettypeID = tmpNv.BettypeID AND tmpMm.BetID = tmpNv.BetID
+		GROUP BY tmpMm.MatchID
+            ,	tmpMm.MatchSection
+			,	tmpMm.EventDate
+            ,	tmpMm.KickOffTime
+			,	tmpMm.LiveIndicator
+			,	tmpMm.HomeID
+			,	tmpMm.AwayID
+			,	tmpMm.LeagueID                
+			,	tmpMm.LeagueName
+            ,	tmpMm.Sporttype
+			,	tmpMm.BettypeID
+            ,	tmpMm.BetID;
 	END IF;
     
     IF (ip_IsVerified = 1)
