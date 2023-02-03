@@ -6,45 +6,42 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 ALTER PROCEDURE [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_Metaverse]
-	@CustomersXML			XML,
-	@FunctionId				SMALLINT = 0 -- from metaverse
+	@CustomersXML			XML
 AS
 /*
 	Created: 20220118@Long.Luu
-	Task : Classify Customer Generally -  Daily
+	Task : Classify Normal Customer Generally -  Metaverse (Support rescan normal for null/wrong customer category)
 	DB: bodb_VR2Model
 	Original:
 
 	Revisions:
 		- 20220118@Long.Luu: Created [Redmine ID: #0000]
+		- 20230203@Jonas.Huynh: Update logic [Redmine ID: #0000]
 
 	Param's Explanation:
 				@CustomersXML = N'<Root>
-										<r CustId="4345542" SportId="2" CategoryId ="201"/>
-										<r CustId="4345542" SportId="1" CategoryId ="201"/>
+										<r CustId="4345542" CategoryId ="201"/>
+										<r CustId="4345541" CategoryId ="201"/>
 								 </Root>';
 */
 BEGIN
 	
 	SET NOCOUNT ON;
 
-	DECLARE @CATEGORY_NORMALINACTIVE	INT = 1001
-	   	,   @CATEGORY_SMARTINACTIVE		INT = 1002
-		,	@CATEGORY_SMARTPUNTER		INT = 203
-		,	@CATEGORY_RISKY				INT = 204
-		,	@CATEGORY_PROBATION			INT = 206
-		,	@CATEGORY_NEWMEMBER			INT = 201;
+	DECLARE @FUNCTIONID					SMALLINT = 0; -- From metaverse
+	DECLARE @CATEGORY_NORMALINACTIVE	INT		 = 1001
+	   	,   @CATEGORY_SMARTINACTIVE		INT		 = 1002
+		,	@CATEGORY_SMARTPUNTER		INT		 = 203
+		,	@CATEGORY_RISKY				INT		 = 204
+		,	@CATEGORY_PROBATION			INT		 = 206
+		,	@CATEGORY_NEWMEMBER			INT		 = 201;
 	
-	DECLARE @FUNCTION_NEWCUSTOMER_WITHOUT30DAYS		INT = 0
-		,	@FUNCTION_NEWCUSTOMER_WITHIN30DAYS		INT = 4;
-
 	DECLARE @GENERAL_SPORTID			SMALLINT = 200;
 	DECLARE @CurrentDateTime			DATETIME = GETDATE()
 	    ,   @CurrentDate				DATE	 = GETDATE()
 	    ,	@ToDate						DATE	 = GETDATE();
 	DECLARE @From30Date					DATE	 = DATEADD(DAY, - 30, @ToDate);
 	DECLARE @ListCustIds				VARCHAR(MAX);
-
 
 	IF OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
 	BEGIN
@@ -54,8 +51,15 @@ BEGIN
 	CREATE TABLE #tmpCustomers(
 			CustId					INT PRIMARY KEY
 		,	CurrentCategoryId		SMALLINT
-		,	IsActive				BIT DEFAULT 0
-		,	IsCreatedWithin30Days	BIT DEFAULT 0
+		,	SiteName				VARCHAR (10)	NULL
+		,	IsSpecialSite			BIT				DEFAULT 0
+		,	SRecommend				INT
+		,	IsActive				BIT				DEFAULT 0
+		,	IsCreatedWithin30Days	BIT				DEFAULT 0
+	);
+
+	CREATE NONCLUSTERED INDEX IX_tmpCustomers_SiteName ON #tmpCustomers(
+		SiteName
 	);
 
 	IF OBJECT_ID('tempdb..#tmpActiveMember') IS NOT NULL
@@ -141,8 +145,22 @@ BEGIN
 		OR c.mrecommend IN (27899314,11656504,12146012)
 		OR c.recommend IN (52466,5707545,29270764,134456)
 		OR c.username LIKE '%CashOut';
+	
+	-- #3: Get relevant info
+	UPDATE m WITH(ROWLOCK, UPDLOCK)
+	SET m.IsCreatedWithin30Days = CASE WHEN DATEDIFF(DAY, c.creatdate, GETDATE()) <= 30 THEN 1 ELSE 0 END,
+		m.SiteName = c.site,
+		m.SRecommend = c.SRecommend,
+		m.IsSpecialSite = CASE WHEN c.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') THEN 1 ELSE 0 END
+	FROM #tmpCustomers AS m
+		INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON m.CustId = c.custid;
 
-	--#3: Check inactive customers
+	-- #4: Remove oddsfeed site
+	DELETE r WITH(ROWLOCK)
+	FROM  #tmpCustomers AS r WITH(ROWLOCK)
+	WHERE (r.SiteName = 'NextBet' OR r.SiteName = '9wickets' OR r.SiteName = '9wsports');
+
+	--#5: Check inactive customers
 	SELECT @ListCustIds = STUFF((	SELECT DISTINCT ',', CONVERT(VARCHAR(15), CustId) 
 									FROM #tmpCustomers WITH (NOLOCK)
 									FOR XML PATH('')), 1, 1, '');
@@ -150,18 +168,17 @@ BEGIN
 	INSERT INTO #tmpActiveMember(CustId, IsActive)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @ListCustIds, @ResultDataMode = 2, @FromDate = @From30Date, @ToDate = @ToDate;	
 
-	UPDATE m WITH(ROWLOCK, UPDLOCK)
-	SET m.IsCreatedWithin30Days = CASE WHEN DATEDIFF(DAY, c.creatdate, GETDATE()) <= 30 THEN 1 ELSE 0 END,
-		m.IsActive = a.IsActive
-	FROM #tmpCustomers AS m
-		INNER JOIN #tmpActiveMember AS a ON m.CustId = a.CustId
-		INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON m.CustId = c.custid;
+	UPDATE c WITH(ROWLOCK, UPDLOCK)
+	SET c.IsActive = a.IsActive
+	FROM #tmpCustomers AS c
+		INNER JOIN #tmpActiveMember AS a WITH(NOLOCK) ON c.CustId = a.custid;
 
-	-- #4: Get Customer's Accummulated data
+	-- #6: Get Customer's Accummulated data
+	-- get more performance for null customer classification (over 30days & in 30days)
 	INSERT INTO #tmpRawData(CustId, SportId, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDaysCustID, ActiveDaysSportGroup, WindaysCustID, WinDaysSportGroup)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @ListCustIds, @ResultDataMode = 1;	
 	
-	-- #5: Sum data by custid
+	-- #7: Sum data by custid
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
 	SELECT	a.CustId
 		,	SUM(a.TurnoverRM)
@@ -172,33 +189,28 @@ BEGIN
 	FROM #tmpRawData AS a WITH(NOLOCK)
 	GROUP BY a.CustId;
 	
-	--#6: Get relevant info
+	--#8: Update customer info
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
 	SET a.CurrentCategoryId = c.CurrentCategoryId,
-		a.SiteName = vc.site,
-		a.SRecommend = vc.SRecommend,
-		a.IsSpecialSite = CASE WHEN vc.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') THEN 1 ELSE 0 END,
-		a.IsActive = c.IsActive
+		a.IsActive = c.IsActive,
+		a.SiteName = c.SiteName,
+		a.SRecommend = c.SRecommend,
+		a.IsSpecialSite = c.IsSpecialSite
 	FROM #tmpCustomerAccummulatedInfo AS a
-		INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.custid
-		INNER JOIN bodb02.dbo.Customer AS vc WITH(NOLOCK) ON a.CustId = vc.custid;
-				
+		INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.custid;	
+	
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
 	SET a.IsDeposit = 1
 	FROM #tmpCustomerAccummulatedInfo AS a
 		INNER JOIN bodb02.dbo.Dep_CustSuper AS c WITH(NOLOCK) ON a.SRecommend = c.custid;
 
-	DELETE a
-	FROM  #tmpCustomerAccummulatedInfo AS a WITH(ROWLOCK)
-	WHERE (a.SiteName = 'NextBet' OR a.SiteName = '9wickets' OR a.SiteName = '9wsports');
-
-	--#7: Log Data
+	--#9: Log Data
 	INSERT INTO dbo.CustomerClassification_InputLog(CustId, CreatedDate, CreatedTime, FunctionId, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId, IsActive)
 	SELECT t.CustId, @CurrentDate, @CurrentDateTime, @FUNCTIONID, ISNULL(TurnoverRM,0), ISNULL(WinlossRM,0), ISNULL(BetCount,0), ISNULL(ActiveDays,0), ISNULL(t.CurrentCategoryId,0), t.IsActive
 	FROM #tmpCustomers AS t
 		LEFT JOIN #tmpCustomerAccummulatedInfo AS c ON t.CustId = c.CustId;
 
-	--#8: Insert for newly customer
+	--#10: Insert for newly customer
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT	t.CustId
 		,	@GENERAL_SPORTID
@@ -213,7 +225,7 @@ BEGIN
 		LEFT JOIN #tmpCustomerAccummulatedInfo AS c ON t.CustId = c.CustId
 	WHERE c.CustId IS NULL;	
 	
-	--#9: Classify classification by general rule
+	--#11: Classify classification by general rule
 	UPDATE t WITH(ROWLOCK, UPDLOCK)
 	SET t.NewCategoryId = b.CategoryId,
 		t.CurrentCategoryId = ISNULL(t.CurrentCategoryId,b.CategoryId)
@@ -244,7 +256,7 @@ BEGIN
 		INNER JOIN #tmpCustomerAccummulatedInfo AS t ON b.CustId = t.CustId
 	 WHERE b.RowNum = 1;
 
-	 --#10: Insert to CustomerClassification
+	 --#12: Insert to CustomerClassification
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT	a.CustId
 		,	@GENERAL_SPORTID
@@ -271,15 +283,13 @@ BEGIN
 	FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 	WHERE a.IsActive = 0
 	
-
 	DROP TABLE #tmpCustomerAccummulatedInfo;
 	DROP TABLE #tmpCustomers;
 	DROP TABLE #tmpRawData;
 	DROP TABLE #tmpActiveMember;
 END;
 GO
-
-GRANT EXECUTE ON [dbo].[CTS_NormalAccountsClassification_BySport_UpdateAppliedStatus] TO [bodbSPUNet]
+GRANT EXECUTE ON [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_Metaverse] TO [bodbSPUNet]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CTS_NormalAccountsClassification_BySport_UpdateAppliedStatus] TO [bodbSPUNet]
+GRANT VIEW DEFINITION ON [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_Metaverse] TO [bodbSPUNet]
 GO
