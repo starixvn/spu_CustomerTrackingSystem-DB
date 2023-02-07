@@ -39,10 +39,9 @@ BEGIN
 	) AS info
 	WHERE info.RoleID = 1 AND info.CustSubID = 0;
     
-    INSERT INTO CTS_Archive.CTSCustomerAssociationStatus(CTSCustID, CustID, LastTicketDate)
+    INSERT INTO CTS_Archive.CTSCustomerAssociationStatus(CTSCustID, CustID)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
-        ,	NOW()
 	FROM Temp_Cust AS tmp
     WHERE NOT EXISTS (SELECT 1 FROM CTS_Archive.CTSCustomerAssociationStatus AS arc  WHERE arc.CTSCustID = tmp.CTSCustID);
     

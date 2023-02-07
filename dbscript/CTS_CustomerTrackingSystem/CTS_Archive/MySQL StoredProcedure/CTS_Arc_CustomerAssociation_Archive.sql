@@ -82,7 +82,7 @@ sp : BEGIN
 			,	cus.CustID
             ,	lv_NowToDays - TO_DAYS(LastTicketDate) 
         FROM CTS_Archive.CTSCustomerAssociationStatus AS cus 
-        WHERE cus.LastTicketDate <= lv_DateValid
+        WHERE IFNULL(cus.LastTicketDate, cus.Created) <= lv_DateValid
 			AND cus.CTSCustID > lv_LastCTSCust
             AND cus.IsArchived = 0
         ORDER BY cus.CTSCustID ASC
