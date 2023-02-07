@@ -81,13 +81,23 @@ BEGIN
 				WHEN cc.CategoryID = CONST_CATEGORYGROUP_GOODROBOT THEN CONST_ROBOTTYPE_GOOD
 				ELSE CONST_ROBOTTYPE_NOTROBOT
 			END AS RobotType
-		,	CASE
-				WHEN cc.CategoryID IN (CONST_CATEGORYGROUP_BADROBOT,CONST_CATEGORYGROUP_GOODROBOT) THEN 1
-				ELSE 0
-			END AS IsRobot
+		,	1 AS IsRobot
     FROM Temp_Trans AS t
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CustID = t.CustID
-		STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = clss.CategoryID;    
+		STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = clss.CategoryID
+	WHERE cc.CategoryID IN (CONST_CATEGORYGROUP_BADROBOT,CONST_CATEGORYGROUP_GOODROBOT);    
+    
+    DELETE t
+    FROM Temp_Trans AS t
+		INNER JOIN Temp_Result AS r ON t.CustID = r.CustID;
+    
+    INSERT INTO Temp_Result(CustID, TransID, TransDate, RobotType, IsRobot)    
+    SELECT	t.CustID
+		,	t.TransID
+        ,	t.TransDate
+		,	CONST_ROBOTTYPE_NOTROBOT AS RobotType
+		,	0 AS IsRobot
+    FROM Temp_Trans AS t;
     
     SELECT 	r.TransID
 		,	r.RobotType
