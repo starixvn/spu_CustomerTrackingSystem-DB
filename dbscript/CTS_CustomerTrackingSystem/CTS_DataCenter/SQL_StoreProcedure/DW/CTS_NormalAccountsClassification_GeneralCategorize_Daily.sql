@@ -33,8 +33,8 @@ AS
 
 	Param's Explanation:
 				@CustomersXML = N'<Root>
-										<r CustId="4345542" SportId="2" CategoryId ="201"/>
-										<r CustId="4345542" SportId="1" CategoryId ="201"/>
+										<r CustId="4345542" CategoryId ="201"/>
+										<r CustId="4345541" CategoryId ="201"/>
 								 </Root>';
 */
 BEGIN
@@ -45,10 +45,12 @@ BEGIN
 	   	,   @CATEGORY_SMARTINACTIVE		INT = 1002
 		,	@CATEGORY_SMARTPUNTER		INT = 203
 		,	@CATEGORY_RISKY				INT = 204
-		,	@CATEGORY_PROBATION			INT = 206;
+		,	@CATEGORY_PROBATION			INT = 206
+		,	@CATEGORY_NEWMEMBER			INT = 201;
+	
+	DECLARE @FUNCTION_NEWCUSTOMER		INT = 4;
 
 	DECLARE @GENERAL_SPORTID			SMALLINT = 200;
-	DECLARE @FUNCTION_NEWCUSTOMER		INT = 4;
 	DECLARE @CurrentDateTime			DATETIME = GETDATE()
 	    ,   @CurrentDate				DATE	 = GETDATE()
 	    ,	@ToDate						DATE	 = GETDATE();
@@ -204,6 +206,24 @@ BEGIN
 	SET a.CurrentCategoryId = c.CurrentCategoryId
 	FROM #tmpCustomerAccummulatedInfo AS a
 		INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.custid;
+
+	IF (@FunctionId = @FUNCTION_NEWCUSTOMER) 
+		BEGIN
+			INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
+			SELECT	t.CustId
+				,	@GENERAL_SPORTID
+				,	@CATEGORY_NEWMEMBER
+				,	@CurrentDate AS CreatedDate
+				,	@CurrentDateTime AS CreatedTime
+				,	0
+				,	0
+				,	0
+				,	0
+			FROM #tmpCustomers AS t
+				LEFT JOIN #tmpCustomerAccummulatedInfo AS c ON t.CustId = c.CustId
+			WHERE c.CustId IS NULL;
+		END;
+	
 
 	---- Log Data
 	INSERT INTO dbo.CustomerClassification_InputLog(CustId, CreatedDate, CreatedTime, FunctionId, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId, IsActive)
