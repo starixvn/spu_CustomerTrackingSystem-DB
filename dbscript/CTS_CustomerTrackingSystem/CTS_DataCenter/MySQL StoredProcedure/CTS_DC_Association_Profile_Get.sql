@@ -129,6 +129,7 @@ sp : BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Group;
     CREATE TEMPORARY TABLE 	Temp_Group (
 			GroupID 		BIGINT UNSIGNED PRIMARY KEY
+		,	OriginGroupID	BIGINT UNSIGNED
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerGroup;
@@ -209,8 +210,8 @@ sp : BEGIN
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asAI.FromCustID AND cust.CustSubID = 0
 		WHERE	asAI.ToCustID =  lv_CustID;
         
-        INSERT INTO Temp_Group(GroupID)
-        SELECT DISTINCT GroupID
+        INSERT INTO Temp_Group(GroupID, OriginGroupID)
+        SELECT DISTINCT GroupID, OriginGroupID
         FROM CTS_DataCenter.AssociationGroupByAI
         WHERE CustID = lv_CustID;
         
@@ -218,7 +219,8 @@ sp : BEGIN
         SELECT  g.CustID
 			,	MIN(g.CreatedDate)
             ,	GROUP_CONCAT(g.GroupID SEPARATOR ',')            
-            ,	GROUP_CONCAT(g.OriginGroupID SEPARATOR ',')
+            ,	CONCAT(GROUP_CONCAT(g.OriginGroupID SEPARATOR ','), ',', GROUP_CONCAT(t.OriginGroupID SEPARATOR ','))
+            #,	GROUP_CONCAT(g.OriginGroupID SEPARATOR ',')
 		FROM Temp_Group AS t
 			INNER JOIN CTS_DataCenter.AssociationGroupByAI AS g ON t.GroupID = g.GroupID AND g.CustID <> lv_CustID
 		GROUP BY g.CustID;
