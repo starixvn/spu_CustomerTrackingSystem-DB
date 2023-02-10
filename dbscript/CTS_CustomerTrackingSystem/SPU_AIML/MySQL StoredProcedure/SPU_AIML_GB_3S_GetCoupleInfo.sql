@@ -25,26 +25,38 @@ BEGIN
     
     DECLARE lv_ToDate 			DATE DEFAULT NOW();
     DECLARE lv_FromDate			DATE;
+    DECLARE lv_FromDate60		DATE;
     DECLARE lv_TotalCount		BIGINT DEFAULT 0;
-    
-    SET lv_FromDate = DATE_SUB(lv_ToDate, INTERVAL 31 DAY);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_GB3S_CoupleInfo;
 	CREATE TEMPORARY TABLE Temp_GB3S_CoupleInfo( 		
+			CoupleInfoID		BIGINT NOT NULL AUTO_INCREMENT
+		,	CoupleID			BIGINT UNSIGNED NOT NULL
+		, 	CreatedDate			DATE
+        ,	IsShow				TINYINT DEFAULT 0
+        ,	PRIMARY KEY (CoupleInfoID)
+        ,	INDEX IX_Temp_GB3S_CoupleInfo_CC (CoupleID,CreatedDate)
+    );
+    
+	DROP TEMPORARY TABLE IF EXISTS Temp_GB3S_CoupleInfo_Copy;
+	CREATE TEMPORARY TABLE Temp_GB3S_CoupleInfo_Copy( 		
 			CoupleID			BIGINT UNSIGNED NOT NULL
 		, 	CreatedDate			DATE
-        ,	IsShow				SMALLINT DEFAULT 0
-        ,	PRIMARY KEY (CoupleID,CreatedDate)
+        ,	FirstCreatedDate	DATE
     );
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_GB3S_CoupleInfoDetails;
 	CREATE TEMPORARY TABLE Temp_GB3S_CoupleInfoDetails( 		
-			CoupleID			BIGINT UNSIGNED NOT NULL
+			MatchID				BIGINT UNSIGNED
+        ,	StateID				BIGINT UNSIGNED
+		,	CoupleID			BIGINT UNSIGNED NOT NULL
 		, 	CreatedDate			DATE
-        ,	FraudTransList		VARCHAR(3000)
-        ,	Rn					BIGINT
+        ,	PRIMARY KEY (MatchID,StateID)
+        ,	INDEX IX_Temp_GB3S_CoupleInfoDetails_CC (CoupleID,CreatedDate)
     );
     
+	SET lv_FromDate 	= 	DATE_SUB(lv_ToDate, INTERVAL 31 DAY);
+	SET lv_FromDate60 	=	DATE_SUB(lv_ToDate, INTERVAL 61 DAY);
     
     INSERT INTO Temp_GB3S_CoupleInfo
     (
@@ -56,7 +68,8 @@ BEGIN
 	FROM SPU_AIML.GB_3S_CoupleInfo
 	WHERE CustID1 = ip_CustID1
 		AND CustID2 = ip_CustID2
-		AND CreatedDate BETWEEN lv_FromDate AND lv_ToDate;
+		AND CreatedDate BETWEEN lv_FromDate AND lv_ToDate
+	ORDER BY CreatedDate DESC;
         
 	SELECT COUNT(1)
     INTO lv_TotalCount
@@ -65,27 +78,66 @@ BEGIN
     SET lv_TotalCount = IFNULL(lv_TotalCount,0);
     
     IF lv_TotalCount > 0 THEN
-        INSERT INTO Temp_GB3S_CoupleInfoDetails 
+        INSERT IGNORE INTO Temp_GB3S_CoupleInfoDetails 
         (
-				CoupleID
+				MatchID
+            ,	StateID
+			,	CoupleID
 			,	CreatedDate
-			,	FraudTransList
-			,	Rn
         )
-        SELECT	cfi.CoupleID	
-			,	temp.CreatedDate
-            ,	cfi.FraudTransList
-			,	ROW_NUMBER() OVER (PARTITION BY cfi.FraudTransList ORDER BY cfi.CreatedDate DESC)
+        SELECT	cfi.MatchID
+            ,	cfi.StateID
+			,	cfi.CoupleID	
+			,	cfi.CreatedDate
 		FROM SPU_AIML.GB_3S_CoupleFraudInfo AS cfi
 			INNER JOIN Temp_GB3S_CoupleInfo AS temp ON temp.CoupleID = cfi.CoupleID
-		WHERE cfi.CreatedDate BETWEEN lv_FromDate AND lv_ToDate;
-
-		UPDATE Temp_GB3S_CoupleInfo AS temp1
-			INNER JOIN Temp_GB3S_CoupleInfoDetails AS temp2 ON temp2.CoupleID = temp1.CoupleID 
-															AND temp2.CreatedDate = temp1.CreatedDate
-		SET 	temp1.IsShow = 1
-        WHERE 	temp2.Rn = 1;
+														AND temp.CreatedDate = cfi.CreatedDate
+		WHERE cfi.CreatedDate BETWEEN lv_FromDate AND lv_ToDate
+        ORDER BY temp.CoupleInfoID;
         
+        WITH CTE AS
+        (
+			SELECT DISTINCT CoupleID,CreatedDate
+            FROM Temp_GB3S_CoupleInfoDetails
+        )
+        UPDATE Temp_GB3S_CoupleInfo AS temp1
+			INNER JOIN CTE AS temp2 ON temp2.CoupleID = temp1.CoupleID
+										AND temp2.CreatedDate = temp1.CreatedDate
+		SET temp1.IsShow = 1;
+        
+        INSERT INTO Temp_GB3S_CoupleInfo_Copy
+        (
+				CoupleID
+            ,	CreatedDate
+            ,	FirstCreatedDate
+        )
+        WITH CTE2 AS
+        (
+			SELECT 	tmp.CoupleID
+				,	tmp.CreatedDate
+				,	MIN(cfi.CreatedDate) OVER (PARTITION BY cfi.MatchID,cfi.StateID) AS FirstCreatedDate
+			FROM Temp_GB3S_CoupleInfoDetails AS tmp
+				INNER JOIN SPU_AIML.GB_3S_CoupleFraudInfo AS cfi ON tmp.MatchID = cfi.MatchID
+																	AND tmp.StateID = cfi.StateID
+				INNER JOIN SPU_AIML.GB_3S_CoupleInfo AS ci ON ci.CoupleID = cfi.CoupleID
+																AND ci.CreatedDate = cfi.CreatedDate
+			WHERE ci.CustID1 = ip_CustID1 AND ci.CustID2 = ip_CustID2
+				AND ci.CreatedDate BETWEEN lv_FromDate60 AND lv_ToDate
+		)
+        SELECT CoupleID, CreatedDate, MIN(FirstCreatedDate) AS FirstCreatedDate
+        FROM CTE2
+        GROUP BY CoupleID, CreatedDate;
+        
+        SELECT 	tmp1.CoupleInfoID
+			,	tmp1.CoupleID
+			,	tmp1.CreatedDate
+            ,	tmp2.FirstCreatedDate
+		FROM Temp_GB3S_CoupleInfo AS tmp1
+			INNER JOIN Temp_GB3S_CoupleInfo_Copy AS tmp2 ON tmp2.CoupleID = tmp1.CoupleID
+														AND tmp2.CreatedDate = tmp1.CreatedDate
+		WHERE IsShow = 1
+		ORDER BY CoupleInfoID;
+		
 	ELSE
 		INSERT INTO Temp_GB3S_CoupleInfo
 		(
@@ -102,14 +154,15 @@ BEGIN
 			AND CreatedDate < lv_FromDate
 		ORDER BY CreatedDate DESC
 		LIMIT 1;
+
+		SELECT 	CoupleInfoID
+			,	CoupleID
+			,	CreatedDate
+            ,	CreatedDate AS FirstCreatedDate
+		FROM Temp_GB3S_CoupleInfo;
         
     END IF;
-    
-    SELECT 	CoupleID
-		,	DATE_SUB(CreatedDate, INTERVAL 30 DAY) AS FromDate
-        ,	CreatedDate AS ToDate
-	FROM 	Temp_GB3S_CoupleInfo
-	WHERE 	IsShow = 1;
+
     
 END$$
 DELIMITER ;
