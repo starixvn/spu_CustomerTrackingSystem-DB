@@ -15,8 +15,10 @@ sp : BEGIN
 		DB:			CTS_DataCenter
         
 		Revisions:
-			- 20210330@Aries.Nguyen: Created [Redmine ID: #152507]
-            - 20220408@Casey.Huynh: Add AssociationGroupByAI [Redmine ID: #171222]
+			- 20210330@Aries.Nguyen: 	Created [Redmine ID: #152507]
+			- 20220408@Casey.Huynh: 	Add AssociationGroupByAI [Redmine ID: #171222]
+			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
+			
         Param's Explanation (filtered by):
 			- ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual, 4 - IP
             - ip_AssociationStatus: 0 - All, 1 - Linked, 2 - UnLinked
@@ -116,7 +118,8 @@ sp : BEGIN
 			,	asAI.CreatedDate
 		FROM CTS_DataCenter.AssociationByAI AS asAI 
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asAI.ToCustID AND cust.CustSubID = 0
-		WHERE	asAI.FromCustID =  ip_CustID;
+		WHERE	asAI.FromCustID =  ip_CustID
+			AND asAI.AssType = 2;
         
         INSERT IGNORE INTO Temp_CustAssociation(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
 		SELECT 
@@ -126,7 +129,8 @@ sp : BEGIN
 			,	asAI.CreatedDate
 		FROM CTS_DataCenter.AssociationByAI AS asAI 
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asAI.FromCustID AND cust.CustSubID = 0
-		WHERE	asAI.ToCustID =  ip_CustID;
+		WHERE	asAI.ToCustID =  ip_CustID
+			AND asAI.AssType = 2;
         
         #==================GET association from AssociationGroupByAI===============================================
         INSERT IGNORE INTO Temp_AssGroupByAI(GroupID, CreatedDate)

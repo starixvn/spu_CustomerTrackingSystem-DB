@@ -21,22 +21,24 @@ sp: BEGIN
 		Original:
 
 		Revisions:
-			- 	20210526@Casey.Huynh: Created [Redmine ID: 152883]
-			-	20210719@Casey.Huynh: Fix Issue Rule Trans.StepTime and AssGroup [Redmine ID: 158946]
-            -	20210830@Casey.Huynh: Update Rule seperate Live and NonLive and move to Slave [Redmine ID: 159195]
-			-	20211019@Aries.Nguyen: Use FEDERATED  table [Redmine ID: 163400]
-			-	20211102@Aries.Nguyen: Fix FEDERATED connection fail[Redmine ID: 163400]
-            -	20211111@Casey.Huynh: Fix Issue Trans of the same Cust not merge Group [Redmine ID: 164558]
-            -	20220110@Casey.Huynh: Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
-            -	20220217@Casey.Huynh: Enhance MM, Update TO >= 1000 [Redmine ID: 168736]
-            - 	20220422@Irena.Vo: Mapping Is Hedging Reason (MM) from table CustomerCategory [Redmine ID: #170468]
-            -	20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
-            - 	20220830@Casey.Huynh: New Category for Classify Group Betting [Redmine ID: #176976]
-            -	202200929@Casey.Huynh: Seperate By Sport [Redmine ID: #178310]
-            -	20221021@Casey.Huynh: Fixed Clean Data Staging [Redmine ID: #179427]
-            -	20221027@Casey.Huynh: Seperate pool Staging [RedmineID: 179439]
-            -	20221205@Casey.Huynh: Rename Table and remove (Arbitrage,Hedging) [Redmine ID: #179502]
-            -	20230221@Casey.Huynh: Update Rule, The same Choice [Redmine ID: #184041]
+			- 	20210526@Casey.Huynh: 	Created [Redmine ID: 152883]
+			-	20210719@Casey.Huynh: 	Fix Issue Rule Trans.StepTime and AssGroup [Redmine ID: 158946]
+			-	20210830@Casey.Huynh: 	Update Rule seperate Live and NonLive and move to Slave [Redmine ID: 159195]
+			-	20211019@Aries.Nguyen: 	Use FEDERATED  table [Redmine ID: 163400]
+			-	20211102@Aries.Nguyen: 	Fix FEDERATED connection fail[Redmine ID: 163400]
+			-	20211111@Casey.Huynh: 	Fix Issue Trans of the same Cust not merge Group [Redmine ID: 164558]
+			-	20220110@Casey.Huynh: 	Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
+			-	20220217@Casey.Huynh: 	Enhance MM, Update TO >= 1000 [Redmine ID: 168736]
+			- 	20220422@Irena.Vo: 	Mapping Is Hedging Reason (MM) from table CustomerCategory [Redmine ID: #170468]
+			-	20220815@Casey.Huynh: 	Scale Out DB [Redmine ID: #176472]
+			- 	20220830@Casey.Huynh: 	New Category for Classify Group Betting [Redmine ID: #176976]
+			-	202200929@Casey.Huynh: 	Seperate By Sport [Redmine ID: #178310]
+			-	20221021@Casey.Huynh: 	Fixed Clean Data Staging [Redmine ID: #179427]
+			-	20221027@Casey.Huynh: 	Seperate pool Staging [RedmineID: 179439]
+			-	20221205@Casey.Huynh: 	Rename Table and remove (Arbitrage,Hedging) [Redmine ID: #179502]
+            		-	20230221@Casey.Huynh: 	Update Rule, The same Choice [Redmine ID: #184041]
+            		- 	20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
+			
 		Param's Explanation (filtered by):	
 		Example:
 			- CALL CTS_DC_MatchMonitor_RuleGroupBetting_Process(1,113171940189,22081995,1,1,0,'a');
@@ -388,24 +390,28 @@ sp: BEGIN
 	SELECT  cus.CustID,  ai.ToCustID, 3
 	FROM Temp_Cust AS cus
 		INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.FromCustID = cus.CustID
+															AND ai.AssType = 2
 	WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tic WHERE tic.CustID = ai.ToCustID);
 
 	INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType)
 	SELECT   ai.ToCustID, cus.CustID,  3
 	FROM Temp_Cust AS cus
 		INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.FromCustID = cus.CustID
+															AND ai.AssType = 2
 	WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tic WHERE tic.CustID = ai.ToCustID);
 
 	INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType)
 	SELECT  cus.CustID,  ai.FromCustID, 3
 	FROM Temp_Cust AS cus 
 		INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.ToCustID = cus.CustID
+															AND ai.AssType = 2
 	WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tic WHERE tic.CustID = ai.FromCustID);
 
 	INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType)
 	SELECT   ai.FromCustID, cus.CustID,  3
 	FROM Temp_Cust AS cus 
 		INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.ToCustID = cus.CustID
+															AND ai.AssType = 2
 	WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tic WHERE tic.CustID = ai.FromCustID);
 	
 	#-----------------------------------------------------------Update CustId, CTSCustID of Association table------------------------------------------------

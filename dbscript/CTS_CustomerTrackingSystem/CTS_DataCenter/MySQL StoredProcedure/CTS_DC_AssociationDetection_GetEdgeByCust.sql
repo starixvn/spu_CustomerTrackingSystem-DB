@@ -17,7 +17,8 @@ sp:BEGIN
 		DB:			CTS_DataCenter
         
 		Revisions:
-			- 20221207@Aries.Nguyen: Created [Redmine ID: #181207]
+			- 20221207@Aries.Nguyen: 	Created [Redmine ID: #181207]
+			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
 
 		Param's Explanation (filtered by): 
 
@@ -162,14 +163,16 @@ sp:BEGIN
 		SELECT  cus.CTSCustID AS DestID
 		FROM CTS_DataCenter.AssociationByAI AS ai
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ai.ToCustID AND cus.CustSubID = 0 AND cus.IsInternal = 0
-		WHERE ai.FromCustID = lv_CustID;
+		WHERE ai.FromCustID = lv_CustID
+			AND ai.AssType = 2;
         
 		#Add Edge 1
         INSERT IGNORE INTO Temp_AIEdge1(DestID)
 		SELECT  cus.CTSCustID AS DestID
 		FROM CTS_DataCenter.AssociationByAI AS ai
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ai.FromCustID AND cus.CustSubID = 0 AND cus.IsInternal = 0
-		WHERE ai.ToCustID = lv_CustID;
+		WHERE ai.ToCustID = lv_CustID
+			AND ai.AssType = 2;
         
         INSERT IGNORE INTO Temp_Transitive(Transitive)
         SELECT 	DISTINCT
@@ -323,7 +326,8 @@ sp:BEGIN
 			,	3 AS AssociationType
 		FROM Temp_CustNode AS tmp 
 			INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.FromCustID = tmp.CustID
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON 	cus.CustID = ai.ToCustID 
+																AND ai.AssType = 2
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ai.ToCustID 
 															AND cus.CustSubID = 0 
                                                             AND cus.IsInternal = 0 
                                                             AND ai.ToCustID != lv_CustID
@@ -337,7 +341,8 @@ sp:BEGIN
 			,	3 AS AssociationType
 		FROM Temp_CustNode AS tmp 
 			INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.ToCustID = tmp.CustID
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON 	cus.CustID = ai.FromCustID 
+																AND ai.AssType = 2
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ai.FromCustID 
 															AND cus.CustSubID = 0 
                                                             AND cus.IsInternal = 0  
                                                             AND ai.FromCustID != lv_CustID

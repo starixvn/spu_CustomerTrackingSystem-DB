@@ -16,9 +16,10 @@ sp:BEGIN
 		DB:			CTS_DataCenter
         
 		Revisions:
-			- 20221006@Aries.Nguyen: Created [Redmine ID: #178310]
-			- 20221025@Aries.Nguyen: Tuning performance: Skip the processed trans  [Redmine ID: #179439]
-            - 20221205@Aries.Nguyen: Re-arrange type options on Association Detection  [Redmine ID: #181207]
+			- 20221006@Aries.Nguyen: 	Created [Redmine ID: #178310]
+			- 20221025@Aries.Nguyen: 	Tuning performance: Skip the processed trans  [Redmine ID: #179439]
+			- 20221205@Aries.Nguyen: 	Re-arrange type options on Association Detection  [Redmine ID: #181207]
+			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
 
 		Param's Explanation (filtered by):
 
@@ -82,7 +83,7 @@ sp:BEGIN
 			, 	cus.CTSCustID AS DestID
 			,	3 AS AssociationType
 		FROM Temp_CustNode AS tmp 
-			INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.FromCustID = tmp.CustID
+			INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.FromCustID = tmp.CustID AND ai.AssType = 2
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ai.ToCustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
 			
 		INSERT IGNORE INTO Temp_Graph(OrigID,DestID,AssociationType)
@@ -90,7 +91,7 @@ sp:BEGIN
 			, 	cus.CTSCustID AS DestID
 			,	3 AS AssociationType
 		FROM Temp_CustNode AS tmp 
-			INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.ToCustID = tmp.CustID
+			INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.ToCustID = tmp.CustID AND ai.AssType = 2
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ai.FromCustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
 		
 		/*******************4. Group AI*************************/

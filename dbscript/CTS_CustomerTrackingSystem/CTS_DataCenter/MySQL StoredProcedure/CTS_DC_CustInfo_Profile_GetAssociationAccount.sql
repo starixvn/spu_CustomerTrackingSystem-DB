@@ -13,9 +13,11 @@ BEGIN
 		DB:			CTS_DataCenter
 		
 		Revisions: Fix get assocition account  incorrect
-			- 20211214@Aries.Nguyen: Created [Redmine ID: #165105]
-            - 20211229@Aries.Nguyen:  Fix get assocition account  incorrect [Redmine ID: #165105]
-            - 20220408@Casey.Huynh: Add AssociationGroupByAI [Redmine ID: #171222]
+			- 20211214@Aries.Nguyen: 	Created [Redmine ID: #165105]
+			- 20211229@Aries.Nguyen:  	Fix get assocition account  incorrect [Redmine ID: #165105]
+			- 20220408@Casey.Huynh: 	Add AssociationGroupByAI [Redmine ID: #171222]
+			- 20230112@Victoria.Le: 		Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
+			
 		Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustInfo_Profile_GetAssociationAccount(10832);
@@ -125,7 +127,8 @@ BEGIN
     FROM CTS_DataCenter.AssociationByAI AS ai
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = ai.ToCustID AND cust.CustSubID = 0
     WHERE ai.FromCustID = lv_CustID
-		AND  ai.ToCustID NOT IN (SELECT rm.CustID FROM Temp_AssociationRemove AS rm)
+		AND ai.AssType = 2
+		AND ai.ToCustID NOT IN (SELECT rm.CustID FROM Temp_AssociationRemove AS rm)
         AND cust.CustStatusID IN (SELECT sta.AccountStatusID FROM Temp_AccountStatusID AS sta)
         AND (cust.SiteID,cust.SubscriberID) IN (SELECT subInfo.SiteID, subInfo.SubscriberID FROM Temp_SubscriberSiteID AS subInfo);   
 	
@@ -134,7 +137,8 @@ BEGIN
     FROM CTS_DataCenter.AssociationByAI AS ai
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = ai.FromCustID AND cust.CustSubID = 0
     WHERE ai.ToCustID = lv_CustID
-		AND  ai.FromCustID NOT IN (SELECT rm.CustID FROM Temp_AssociationRemove AS rm)
+		AND ai.AssType = 2
+		AND ai.FromCustID NOT IN (SELECT rm.CustID FROM Temp_AssociationRemove AS rm)
         AND cust.CustStatusID IN (SELECT sta.AccountStatusID FROM Temp_AccountStatusID AS sta)
         AND (cust.SiteID,cust.SubscriberID) IN (SELECT subInfo.SiteID, subInfo.SubscriberID FROM Temp_SubscriberSiteID AS subInfo);
     

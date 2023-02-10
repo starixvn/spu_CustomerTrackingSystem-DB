@@ -21,19 +21,20 @@ sp : BEGIN
 		Task:		Get association account 
 		DB:			CTS_DataCenter
 		Revisions:
-			- 20210202@Aries.Nguyen: Created [Redmine ID: #148908]
-            - 20210221@Aries.Nguyen: Fix get wrong first association date by device [Redmine ID: #150223]
-            - 20210316@Casey.Huynh: Get Customer Category Info [Redmine ID: #150457]
-            - 20210317@Casey.Huynh: Count AssociationByIP to lv_TotalAccounts [Redmine ID: #131662]
-            - 20210330@Jonas.Huynh: Replace Site filter by Subscriber [Redmine ID: #152252]
-			- 20210415@Aries.Nguyen: Fix show duplicated records at Associated Accounts [Redmine ID: #153511]
-	        - 20210419@Irena.Vo: Ignore get CC on Associated Accounts tab [Redmine ID: #152250]
-			- 20210420@Irena.Vo: Get data for Sub Account on Associated Accounts tab [Redmine ID: #152963]
-            - 20210505@Irena.Vo: Get additional CustId [Redmine ID: #152963]
-			- 20210506@Irena.Vo: Get additional CustSubId [Redmine ID: #154624]            
-			- 20220328@Aries.Nguyen: Add new category/class for PA Probation [Redmine ID: #170468]
-			- 20220408@Long.Luu: Get more data from AssociationGroupByAI [Redmine ID: #171222]
-			- 20220705@Aries.Nguyen: Tuning SP [Redmine ID: #174430]
+			- 20210202@Aries.Nguyen: 	Created [Redmine ID: #148908]
+			- 20210221@Aries.Nguyen: 	Fix get wrong first association date by device [Redmine ID: #150223]
+			- 20210316@Casey.Huynh: 	Get Customer Category Info [Redmine ID: #150457]
+			- 20210317@Casey.Huynh: 	Count AssociationByIP to lv_TotalAccounts [Redmine ID: #131662]
+			- 20210330@Jonas.Huynh: 	Replace Site filter by Subscriber [Redmine ID: #152252]
+			- 20210415@Aries.Nguyen: 	Fix show duplicated records at Associated Accounts [Redmine ID: #153511]
+			- 20210419@Irena.Vo: 		Ignore get CC on Associated Accounts tab [Redmine ID: #152250]
+			- 20210420@Irena.Vo: 		Get data for Sub Account on Associated Accounts tab [Redmine ID: #152963]
+			- 20210505@Irena.Vo: 		Get additional CustId [Redmine ID: #152963]
+			- 20210506@Irena.Vo: 		Get additional CustSubId [Redmine ID: #154624]            
+			- 20220328@Aries.Nguyen: 	Add new category/class for PA Probation [Redmine ID: #170468]
+			- 20220408@Long.Luu: 		Get more data from AssociationGroupByAI [Redmine ID: #171222]
+			- 20220705@Aries.Nguyen: 	Tuning SP [Redmine ID: #174430]
+			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
             
 		Param's Explanation (filtered by):
 			- ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual, 4 - IP
@@ -199,7 +200,8 @@ sp : BEGIN
 			,	asAI.CreatedDate
 		FROM CTS_DataCenter.AssociationByAI AS asAI 
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asAI.ToCustID AND cust.CustSubID = 0
-		WHERE	asAI.FromCustID =  lv_CustID;
+		WHERE	asAI.FromCustID =  lv_CustID
+			AND asAI.AssType = 2;
         
         INSERT IGNORE INTO Temp_Association(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
 		SELECT  cust.CTSCustID 
@@ -208,7 +210,8 @@ sp : BEGIN
 			,	asAI.CreatedDate
 		FROM CTS_DataCenter.AssociationByAI AS asAI 
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asAI.FromCustID AND cust.CustSubID = 0
-		WHERE	asAI.ToCustID =  lv_CustID;
+		WHERE	asAI.ToCustID =  lv_CustID
+			AND asAI.AssType = 2;
         
         INSERT INTO Temp_Group(GroupID, OriginGroupID)
         SELECT DISTINCT GroupID, OriginGroupID

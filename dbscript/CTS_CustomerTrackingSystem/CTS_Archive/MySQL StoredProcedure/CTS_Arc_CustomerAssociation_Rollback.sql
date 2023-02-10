@@ -11,8 +11,10 @@ sp : BEGIN
 		DB:			CTS_Archive
 		Original:
 		Revisions:
-			- 20211026@Aries.Nguyen [Redmine ID: #163087]: Created
-            - 20220408@Casey.Huynh: Add AssociationGroupByAI [Redmine ID: #171222]
+			- 20211026@Aries.Nguyen 	[Redmine ID: #163087]: Created
+			- 20220408@Casey.Huynh: 	Add AssociationGroupByAI [Redmine ID: #171222]
+			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
+			
         Param's Explanation (filtered by):
 
         Example:  
@@ -66,29 +68,34 @@ sp : BEGIN
 		IF EXISTS (SELECT 1  FROM CTS_Archive.AssociationByAI_Arc AS ai WHERE EXISTS (SELECT 1 FROM CTS_Archive.CTSCustomerAssociationRollBack_Process AS pro WHERE ai.FromCustID = pro.CustID )) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByAI_Clean;
 			CREATE TEMPORARY TABLE Temp_AssociationByAI_Clean(
-					FromCustID   	BIGINT UNSIGNED  
-				,	ToCustID		BIGINT UNSIGNED
+					AssID			BIGINT		UNSIGNED
+				,	AssType			SMALLINT	UNSIGNED
+				,	FromCustID   	BIGINT 		UNSIGNED  
+				,	ToCustID		BIGINT 		UNSIGNED
                 ,	AssociationDate	DATETIME
-                ,	PRIMARY KEY(FromCustID, ToCustID)
+                ,	PRIMARY KEY(AssID)
 			);
             
-            INSERT IGNORE INTO Temp_AssociationByAI_Clean(FromCustID, ToCustID, AssociationDate)
-            SELECT 	ai.FromCustID
+            INSERT IGNORE INTO Temp_AssociationByAI_Clean(AssID, AssType, FromCustID, ToCustID, AssociationDate)
+            SELECT 	ai.ID
+				,	ai.AssType
+				,	ai.FromCustID
 				,	ai.ToCustID
                 ,	ai.AssociationDate
 			FROM CTS_Archive.AssociationByAI_Arc  AS ai
 			WHERE EXISTS (SELECT 1 FROM CTS_Archive.CTSCustomerAssociationRollBack_Process AS pro WHERE ai.FromCustID = pro.CustID)
             LIMIT lv_BatchSize_AssData;
             
-            INSERT IGNORE INTO CTS_DataCenter.AssociationByAI(FromCustID, ToCustID, CreatedDate)
-            SELECT	FromCustID
+            INSERT IGNORE INTO CTS_DataCenter.AssociationByAI(AssType, FromCustID, ToCustID, CreatedDate)
+            SELECT	AssType
+				,	FromCustID
 				,	ToCustID
                 ,	AssociationDate
 			FROM Temp_AssociationByAI_Clean;
             
             DELETE ass
 			FROM CTS_Archive.AssociationByAI_Arc AS ass
-				INNER JOIN Temp_AssociationByAI_Clean AS tmp ON tmp.FromCustID = ass.FromCustID AND tmp.ToCustID = ass.ToCustID;
+				INNER JOIN Temp_AssociationByAI_Clean AS tmp ON tmp.AssID = ass.ID;
 			
 			UPDATE  CTS_Archive.SystemParameter 
 			SET ParameterValue = 'AssociationByAI-From'
@@ -113,29 +120,34 @@ sp : BEGIN
 		IF EXISTS (SELECT 1  FROM CTS_Archive.AssociationByAI_Arc AS ai WHERE EXISTS (SELECT 1 FROM CTS_Archive.CTSCustomerAssociationRollBack_Process AS pro WHERE ai.ToCustID = pro.CustID )) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByAI_Clean;
 			CREATE TEMPORARY TABLE Temp_AssociationByAI_Clean(
-					FromCustID   	BIGINT UNSIGNED  
-				,	ToCustID		BIGINT UNSIGNED
+					AssID			BIGINT		UNSIGNED
+				,	AssType			SMALLINT	UNSIGNED
+				,	FromCustID   	BIGINT 		UNSIGNED  
+				,	ToCustID		BIGINT 		UNSIGNED
                 ,	AssociationDate	DATETIME
-                ,	PRIMARY KEY(FromCustID, ToCustID)
+                ,	PRIMARY KEY(AssID)
 			);
             
-            INSERT IGNORE INTO Temp_AssociationByAI_Clean(FromCustID, ToCustID, AssociationDate)
-            SELECT 	ai.FromCustID
+            INSERT IGNORE INTO Temp_AssociationByAI_Clean(AssID, AssType, FromCustID, ToCustID, AssociationDate)
+            SELECT 	ai.ID
+				,	ai.AssType
+				,	ai.FromCustID
 				,	ai.ToCustID
-                ,	ai.AssociationDate
+                ,	ai.CreatedDate
 			FROM CTS_Archive.AssociationByAI_Arc  AS ai
 			WHERE EXISTS (SELECT 1 FROM CTS_Archive.CTSCustomerAssociationRollBack_Process AS pro WHERE ai.ToCustID = pro.CustID)
             LIMIT lv_BatchSize_AssData;
             
-            INSERT IGNORE INTO CTS_DataCenter.AssociationByAI(FromCustID, ToCustID, CreatedDate)
-            SELECT	FromCustID
+            INSERT IGNORE INTO CTS_DataCenter.AssociationByAI(AssType, FromCustID, ToCustID, CreatedDate)
+            SELECT	AssType
+				,	FromCustID
 				,	ToCustID
                 ,	AssociationDate
 			FROM Temp_AssociationByAI_Clean;
             
             DELETE ass
 			FROM CTS_Archive.AssociationByAI_Arc AS ass
-				INNER JOIN Temp_AssociationByAI_Clean AS tmp ON tmp.FromCustID = ass.FromCustID AND tmp.ToCustID = ass.ToCustID;
+				INNER JOIN Temp_AssociationByAI_Clean AS tmp ON tmp.AssID = ass.ID;
 			
 			UPDATE  CTS_Archive.SystemParameter 
 			SET ParameterValue = 'AssociationByAI-To'

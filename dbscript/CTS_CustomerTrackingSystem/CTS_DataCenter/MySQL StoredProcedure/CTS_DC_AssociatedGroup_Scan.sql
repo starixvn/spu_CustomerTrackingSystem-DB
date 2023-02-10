@@ -19,9 +19,10 @@ sp : BEGIN
 		Original:
 
 		Revisions:
-			- 20220705@Aries.Nguyen: Created [Redmine ID: #167748]
-            - 20220831@Aries.Nguyen: Associated Group Enhancement [Redmine ID: #176991]
-            - 20221028@Harvey.Nguyen: Check PA site [Redmine ID: #179398]
+			- 20220705@Aries.Nguyen: 	Created [Redmine ID: #167748]
+			- 20220831@Aries.Nguyen: 	Associated Group Enhancement [Redmine ID: #176991]
+			- 20221028@Harvey.Nguyen: 	Check PA site [Redmine ID: #179398]
+			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
         
 		Param's Explanation (filtered by):
 
@@ -245,7 +246,7 @@ sp : BEGIN
 			,	cus.SubscriberID
             ,	cus.IsLicensee
 		FROM Temp_Cust AS tmp 
-			STRAIGHT_JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.FromCustID = tmp.CustID
+			STRAIGHT_JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.FromCustID = tmp.CustID AND ai.AssType = 2
 			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ai.ToCustID AND cus.CustSubID = 0
 			STRAIGHT_JOIN CTS_Archive.CTSCustomerAssociationStatus AS tkd ON tkd.CTSCustID = cus.CTSCustID AND tkd.LastTicketDate >= tmp.AddGroupDate 
 		WHERE NOT EXISTS (SELECT 1 
@@ -261,7 +262,7 @@ sp : BEGIN
 			,	cus.SubscriberID
             ,	cus.IsLicensee
 		FROM Temp_Cust AS tmp 
-			STRAIGHT_JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.ToCustID = tmp.CustID
+			STRAIGHT_JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.ToCustID = tmp.CustID AND ai.AssType = 2
 			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ai.FromCustID AND cus.CustSubID = 0
 			STRAIGHT_JOIN CTS_Archive.CTSCustomerAssociationStatus AS tkd ON tkd.CTSCustID = cus.CTSCustID AND tkd.LastTicketDate >= tmp.AddGroupDate 
 		WHERE NOT EXISTS (SELECT 1 
