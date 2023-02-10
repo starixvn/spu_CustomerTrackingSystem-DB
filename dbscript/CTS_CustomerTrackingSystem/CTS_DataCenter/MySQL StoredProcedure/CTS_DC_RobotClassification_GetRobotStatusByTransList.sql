@@ -17,7 +17,7 @@ BEGIN
 			- 20210907@Long.Luu: 		Update Robot Users rules  [Redmine ID: #161232]
 			- 20220214@Long.Luu: 		Support new category for Good & Bad Robot User [Redmine ID: #167726]
 			- 20220603@Long.Luu: 		Merge Robot AI & Robot TW [Redmine ID: #172561]
-			- 20230119@Victoria.Le		Change to check IsRobot from CTSCustomerClassification instead of RobotDetection [Redmine ID: #181994]
+			- 20230119@Victoria.Le		Change to check IsRobot from CTSCustomerClassification instead of RobotDetection [Redmine ID: #181995]
             
 		Explanation:
 			- RobotType: 2-Bad | 1-Good | 0-Observed | -1-No classification | -2-Not Robot
