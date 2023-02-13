@@ -6,7 +6,6 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE PROCEDURE [dbo].[CTS_TicketDetails_Get]
 		@ListTransId		VARCHAR(MAX) = ''
-	,	@MatchBatchSize		INT = 50
 
 AS
 /*
@@ -24,8 +23,6 @@ AS
 */
 BEGIN
 	SET NOCOUNT ON;
-
-	DECLARE @Last90Days DATE = DATEADD(DAY,-90,GETDATE());
 
 	IF	OBJECT_ID('tempdb..#tmpTransIds') IS NOT NULL
 	BEGIN
@@ -66,18 +63,6 @@ BEGIN
 		,	IP					VARCHAR(45)
 		,	ActualRate			FLOAT
 	);	
-
-	IF	OBJECT_ID('tempdb..#tmpMatch') IS NOT NULL
-	BEGIN
-		DROP TABLE #tmpMatch;
-	END;
-
-	CREATE TABLE #tmpMatch(
-			MatchId				INT
-		,	EventDate			DATETIME
-		,	RankNo				INT
-		,	PRIMARY KEY (MatchId, EventDate, RankNo)
-	);
 	
 	-- START --
 	IF @ListTransId <> ''
@@ -254,18 +239,8 @@ BEGIN
 		,	b.actualrate
 	FROM #tmpTransIds AS t WITH(NOLOCK)
 		INNER JOIN bodb_Archive.dbo.bettrans_bk AS b WITH(NOLOCK) ON t.TransId = b.transid
-		INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.matchid = m.matchid	
-	WHERE m.EventDate > @Last90Days;
+		INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.matchid = m.matchid
 	;
-
-	INSERT INTO #tmpMatch(MatchId, EventDate, RankNo)
-	SELECT DISTINCT MatchId
-		,	EventDate
-		,	ROW_NUMBER() OVER(ORDER BY EventDate ASC)
-	FROM #tmpTickets WITH(NOLOCK);
-
-	DELETE FROM #tmpMatch
-	WHERE RankNo > @MatchBatchSize;
 
 	-- Return data
 	SELECT DISTINCT t.TransId
@@ -294,7 +269,6 @@ BEGIN
 		,	t.LiveIndicator
 		,	t.IP
 	FROM #tmpTickets AS t WITH(NOLOCK)
-		INNER JOIN 	#tmpMatch AS m WITH(NOLOCK) ON t.MatchId = m.MatchId
 		INNER JOIN 	bodb02.dbo.custInfo AS c WITH(NOLOCK) ON c.custid = t.CustId
 		INNER JOIN 	bodb02.dbo.bettype AS bt WITH(NOLOCK) ON bt.typeid = t.BetType
 		LEFT JOIN 	bodb02.dbo.Exchange AS e WITH(NOLOCK) ON e.ExchangeId = t.Currency;
