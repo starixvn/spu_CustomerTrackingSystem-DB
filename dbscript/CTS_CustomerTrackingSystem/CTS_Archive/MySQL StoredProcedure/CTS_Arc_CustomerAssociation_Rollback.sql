@@ -133,7 +133,7 @@ sp : BEGIN
 				,	ai.AssType
 				,	ai.FromCustID
 				,	ai.ToCustID
-                ,	ai.CreatedDate
+                ,	ai.AssociationDate
 			FROM CTS_Archive.AssociationByAI_Arc  AS ai
 			WHERE EXISTS (SELECT 1 FROM CTS_Archive.CTSCustomerAssociationRollBack_Process AS pro WHERE ai.ToCustID = pro.CustID)
             LIMIT lv_BatchSize_AssData;
