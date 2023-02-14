@@ -17,6 +17,7 @@ sp:BEGIN
 			- 20210901@Aries.Nguyen: Created [RedmineID: #160758]	
 			- 20220519@Aries.Nguyen: Renovate the Category Log History[Redmine ID: #172560]
 			- 20220909@Aries.Nguyen: Handle lv_NextLastID is null [Redmine ID: #176992] 
+			- 20230210@Long.Luu: Fix Customer Classification Log [Redmine ID: #183279] 
             
 		Param's Explanation (filtered by):
 
@@ -75,8 +76,13 @@ sp:BEGIN
 		,	KEY 					IX_CTSCustomerClassification_History_CustID (CustID)
 	);
     
-	DROP TEMPORARY TABLE IF EXISTS Temp_History_Remove;
-    CREATE TEMPORARY TABLE Temp_History_Remove (
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustDataShouldBeRemoved;
+    CREATE TEMPORARY TABLE Temp_CustDataShouldBeRemoved (
+			CustID  				BIGINT UNSIGNED PRIMARY KEY
+    ); 
+    
+	DROP TEMPORARY TABLE IF EXISTS Temp_HistoryShouldNotBeRemoved;
+    CREATE TEMPORARY TABLE Temp_HistoryShouldNotBeRemoved (
 			ID  BIGINT UNSIGNED PRIMARY KEY
     );            
 
@@ -150,35 +156,101 @@ sp:BEGIN
 	FROM CTS_DataCenter.CTSCustomerClassification_History
     WHERE ID BETWEEN lv_LastID AND lv_NextLastID
 		AND IsDataChanged = 1
-        AND InsertDate <= lv_DateValid;
+        AND InsertDate <= lv_DateValid;    
     
     IF EXISTS (SELECT 1 FROM Temp_History) THEN
+		# Keep the max pointer
 		SELECT MAX(ID)
 		INTO lv_LastIDValid
 		FROM Temp_History;
+    
+		ALTER TABLE Temp_History ADD INDEX IX_Temp_History_LastModifiedDate (`LastModifiedDate`);
+		
+        # Find custs who have the log ahead --> all logs at this phase should be removed
+		INSERT INTO Temp_CustDataShouldBeRemoved(CustID)
+		WITH cte_CurrentCust (CustID) AS
+		(
+			SELECT DISTINCT CustID
+			FROM Temp_History
+		)
+		SELECT DISTINCT c.CustID
+		FROM cte_CurrentCust AS c
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS h ON c.CustID = h.CustID
+		WHERE h.ID > lv_NextLastID
+			AND h.IsDataChanged = 1;
         
-		INSERT INTO Temp_History_Remove(ID)
-		SELECT tmp.ID
-		FROM Temp_History AS tmp
-		WHERE EXISTS(SELECT 1 
-					 FROM CTS_DataCenter.CTSCustomerClassification_History AS his
-					 WHERE his.CustID = tmp.CustID
-						AND his.IsDataChanged = 1
-						AND his.ID > tmp.ID);
+        # find latest log to keep (not be removed)
+        INSERT INTO Temp_HistoryShouldNotBeRemoved(ID)
+        WITH cte_CustLogOrdered (CustID, ID, row_num) AS
+		(
+			SELECT 	t.CustID
+				, 	t.ID
+                , 	ROW_NUMBER() OVER(PARTITION BY t.CustID ORDER BY t.LastModifiedDate DESC) AS row_num  
+			FROM Temp_History AS t
+				LEFT JOIN Temp_CustDataShouldBeRemoved AS r ON t.CustID = r.CustID
+			WHERE r.CustID IS NULL
+		)
+        SELECT ID
+        FROM cte_CustLogOrdered
+        WHERE row_num = 1;
     
 		DELETE  
-		FROM Temp_History AS his
-		WHERE NOT EXISTS (SELECT 1 
-						  FROM Temp_History_Remove AS rm 
-						  WHERE rm.ID = his.ID);
-	
+		FROM Temp_History AS h
+		WHERE EXISTS (	SELECT 1 
+						FROM Temp_HistoryShouldNotBeRemoved AS k 
+						WHERE k.ID = h.ID);		
+        
+        # take back the old log for the new active ones
+        INSERT INTO Temp_History(ID, CustID, CTSCustID, SportGroupID, CategoryID,TurnoverRM , WinlossRM, BetCount, ActiveDays, RobotCounter, ProbationPeriodWinloss, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsAppliedCC, IsDataChanged, ActionType, IsAuto, LastModifiedDate, LastModifiedBy, InsertDate, TaggingType, TargetDangerLevel1, IsAppliedDangerLevel1, TWGroupBettingRate, TWTicketRejectRate, TWBetCount, TWDesktopUsageRate,Remark,IsDirect,TVSRequestID, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI)
+		SELECT 	ID  					
+			,	CustID  				
+			,	CTSCustID  				
+			,	SportGroupID  			
+			,	CategoryID  			
+			,	TurnoverRM  			
+			,	WinlossRM  				
+			,	BetCount  				
+			,	ActiveDays  			
+			,	RobotCounter  		
+			,	ProbationPeriodWinloss  
+			,	TargetCC  				
+			,	SourceTypeID  			
+			,	FromCategoryID  		
+			,	ToCategoryID  			
+			,	IsAppliedCC  			
+			,	IsDataChanged  			
+			,	ActionType  			
+			,	IsAuto  				
+			,	LastModifiedDate  		
+			,	LastModifiedBy  		
+			,	InsertDate  			
+			,	TaggingType  			
+			,	TargetDangerLevel1  	
+			,	IsAppliedDangerLevel1  	
+			,	TWGroupBettingRate  	
+			,	TWTicketRejectRate  	
+			,	TWBetCount  			
+			,	TWDesktopUsageRate  
+			,	Remark 			
+			,	IsDirect
+			,	TVSRequestID
+			,	IsFromTVS 				 
+			,	IsFromTW 				
+			,	IsFromCTS 				
+			,	IsFromAI 				 
+		FROM Temp_CustDataShouldBeRemoved AS k
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS h ON k.CustID = h.CustID
+		WHERE h.ID < lv_LastID
+			AND h.IsDataChanged = 1
+			AND InsertDate <= lv_DateValid;     
+            
 		DELETE  
-		FROM CTS_DataCenter.CTSCustomerClassification_History AS his
+		FROM CTS_DataCenter.CTSCustomerClassification_History AS h
 		WHERE EXISTS (SELECT 1 
-					  FROM Temp_History_Remove AS rm 
-					  WHERE rm.ID = his.ID);
+					  FROM Temp_History AS r 
+					  WHERE r.ID = h.ID);
     
-		 SELECT ID  					
+		SELECT	ID  					
 			,	CustID  				
 			,	CTSCustID  				
 			,	SportGroupID  			

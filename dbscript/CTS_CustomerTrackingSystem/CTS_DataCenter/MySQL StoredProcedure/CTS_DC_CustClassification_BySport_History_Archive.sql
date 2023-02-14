@@ -14,7 +14,8 @@ sp:BEGIN
 		Original:
 		
 		Revisions:	
-			- 20220909@Aries.Nguyen:Created  [Redmine ID: #176992] 
+			- 20220909@Aries.Nguyen:	Created  [Redmine ID: #176992] 
+			- 20230210@Long.Luu: 		Fix Customer Classification Log [Redmine ID: #183279] 
             
 		Param's Explanation (filtered by):
 
@@ -47,13 +48,20 @@ sp:BEGIN
 		,	LastModifiedDate 	DATETIME 
 		,	LastModifiedBy 		INT UNSIGNED 
 		,	InsertDate 			DATETIME 
-		,	KEY 				IX_Temp_History_CustID (CustID)
+		,	KEY 				IX_Temp_History_CustIDSportID (CustID, SportID)
 	);
     
-	DROP TEMPORARY TABLE IF EXISTS Temp_History_Remove;
-    CREATE TEMPORARY TABLE Temp_History_Remove (
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustDataShouldBeRemoved;
+    CREATE TEMPORARY TABLE Temp_CustDataShouldBeRemoved (
+			CustID  			BIGINT UNSIGNED
+		,	SportID				SMALLINT UNSIGNED
+        ,	PRIMARY KEY (CustID, SportID)
+    ); 
+    
+	DROP TEMPORARY TABLE IF EXISTS Temp_HistoryShouldNotBeRemoved;
+    CREATE TEMPORARY TABLE Temp_HistoryShouldNotBeRemoved (
 			ID  BIGINT UNSIGNED PRIMARY KEY
-    );            
+    );                   
 	
     SELECT ParameterValue
 	INTO lv_BatchSize
@@ -85,7 +93,7 @@ sp:BEGIN
 		LEAVE sp; 
 	END IF;
 
-    INSERT INTO Temp_History(ID,CustID,CTSCustID,SportID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate,LastModifiedBy,InsertDate )
+    INSERT INTO Temp_History(ID,CustID,CTSCustID,SportID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate,LastModifiedBy,InsertDate)
     SELECT 	ID 					
 		,	CustID 				
 		,	CTSCustID 			
@@ -105,29 +113,74 @@ sp:BEGIN
         AND InsertDate <= lv_DateValid;
     
     IF EXISTS (SELECT 1 FROM Temp_History) THEN
+		# Keep the max pointer
 		SELECT MAX(ID)
 		INTO lv_LastIDValid
 		FROM Temp_History;
         
-		INSERT INTO Temp_History_Remove(ID)
-		SELECT tmp.ID
-		FROM Temp_History AS tmp
-		WHERE EXISTS(SELECT 1 
-					 FROM CTS_DataCenter.CTSCustomerClassification_BySport_History AS his
-					 WHERE his.CustID = tmp.CustID
-						AND his.ID > tmp.ID);
+		ALTER TABLE Temp_History ADD INDEX IX_Temp_History_LastModifiedDate (`LastModifiedDate`);
+        
+        # Find custs who have the log ahead --> all logs at this phase should be removed
+		INSERT INTO Temp_CustDataShouldBeRemoved(CustID, SportID)
+		WITH cte_CurrentCust (CustID, SportID) AS
+		(
+			SELECT DISTINCT CustID, SportID
+			FROM Temp_History
+		)
+		SELECT DISTINCT c.CustID, c.SportID
+		FROM cte_CurrentCust AS c
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport_History AS h ON c.CustID = h.CustID AND c.SportID = h.SportID
+		WHERE h.ID > lv_NextLastID;
+        
+        # find latest log to keep (not be removed)
+        INSERT INTO Temp_HistoryShouldNotBeRemoved(ID)
+        WITH cte_CustLogOrdered (CustID, SportID, ID, row_num) AS
+		(
+			SELECT 	t.CustID
+				,	t.SportID
+				, 	t.ID
+                , 	ROW_NUMBER() OVER(PARTITION BY t.CustID, t.SportID ORDER BY t.LastModifiedDate DESC) AS row_num  
+			FROM Temp_History AS t
+				LEFT JOIN Temp_CustDataShouldBeRemoved AS r ON t.CustID = r.CustID AND t.SportID = r.SportID
+			WHERE r.CustID IS NULL
+				AND r.SportID IS NULL
+		)
+        SELECT ID
+        FROM cte_CustLogOrdered
+        WHERE row_num = 1;
     
 		DELETE  
-		FROM Temp_History AS his
-		WHERE NOT EXISTS (SELECT 1 
-						  FROM Temp_History_Remove AS rm 
-						  WHERE rm.ID = his.ID);
+		FROM Temp_History AS h
+		WHERE EXISTS (	SELECT 1 
+						FROM Temp_HistoryShouldNotBeRemoved AS k 
+						WHERE k.ID = h.ID);		
+        
+        # take back the old log for the new active ones
+        INSERT INTO Temp_History(ID,CustID,CTSCustID,SportID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate,LastModifiedBy,InsertDate )
+		SELECT 	h.ID 					
+			,	h.CustID 				
+			,	h.CTSCustID 			
+			,	h.SportID 			
+			,	h.CategoryID 			
+			,	h.TurnoverRM 			
+			,	h.WinlossRM 			
+			,	h.BetCount 			
+			,	h.ActiveDays 			
+			,	h.TargetCC 				
+			,	h.ActionType 			
+			,	h.LastModifiedDate 	
+			,	h.LastModifiedBy 		
+			,	h.InsertDate 				 		 
+		FROM Temp_CustDataShouldBeRemoved AS k
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport_History AS h ON k.CustID = h.CustID AND k.SportID = h.SportID
+		WHERE h.ID < lv_LastID
+			AND h.InsertDate <= lv_DateValid;    
 	
 		DELETE  
-		FROM CTS_DataCenter.CTSCustomerClassification_BySport_History AS his
+		FROM CTS_DataCenter.CTSCustomerClassification_BySport_History AS h
 		WHERE EXISTS (SELECT 1 
-					  FROM Temp_History_Remove AS rm 
-					  WHERE rm.ID = his.ID);
+					  FROM Temp_History AS r 
+					  WHERE r.ID = h.ID);
     
 		 SELECT ID 					
 			,	CustID 				
