@@ -13,7 +13,8 @@ BEGIN
 		DB:			CTS_Archive
 		Original:
 		Revisions:
-			- 20211026@Aries.Nguyen: Created [Redmine ID: #163087]
+			- 20211026@Aries.Nguyen: Created [Redmine ID: #163087]         
+			- 20230207@Long.Luu: Get exact lastticketdate [Redmine ID: #183281]
             
         Param's Explanation (filtered by):
         

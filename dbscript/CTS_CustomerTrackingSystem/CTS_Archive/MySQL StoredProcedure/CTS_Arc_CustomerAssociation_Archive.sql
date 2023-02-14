@@ -12,7 +12,9 @@ sp : BEGIN
 		Original:
 		Revisions:
 			- 20211026@Aries.Nguyen [Redmine ID: #163087]: Created
-            - 20220408@Casey.Huynh: Add AssociationGroupByAI [Redmine ID: #171222]
+            - 20220408@Casey.Huynh: Add AssociationGroupByAI [Redmine ID: #171222]         
+			- 20230207@Long.Luu: Get exact lastticketdate [Redmine ID: #183281]
+			
         Param's Explanation (filtered by):
 
         Example:  
@@ -80,7 +82,7 @@ sp : BEGIN
         INSERT INTO Temp_CustNoBet(CTSCustID, CustID, Days)
         SELECT  cus.CTSCustID
 			,	cus.CustID
-            ,	lv_NowToDays - TO_DAYS(LastTicketDate) 
+            ,	lv_NowToDays - TO_DAYS(IFNULL(cus.LastTicketDate, cus.Created)) 
         FROM CTS_Archive.CTSCustomerAssociationStatus AS cus 
         WHERE IFNULL(cus.LastTicketDate, cus.Created) <= lv_DateValid
 			AND cus.CTSCustID > lv_LastCTSCust
