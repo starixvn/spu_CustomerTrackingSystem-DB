@@ -235,10 +235,11 @@ BEGIN
 		,	b.statusID
 		,	b.liveindicator
 		,	b.currency
-		,	b.ip
+		,	dp.ip
 		,	b.actualrate
 	FROM #tmpTransIds AS t WITH(NOLOCK)
 		INNER JOIN bodb_Archive.dbo.bettrans_bk AS b WITH(NOLOCK) ON t.TransId = b.transid
+		CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 		INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.matchid = m.matchid
 	;
 

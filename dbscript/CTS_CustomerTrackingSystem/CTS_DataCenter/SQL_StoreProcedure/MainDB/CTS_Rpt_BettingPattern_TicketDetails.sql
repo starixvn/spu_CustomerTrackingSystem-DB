@@ -146,9 +146,10 @@ BEGIN
 			,	b.livehomescore
 			,	b.liveawayscore
 			,	b.currency
-			,	b.ip
+			,	dp.ip
 			,	b.actualrate
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH(NOLOCK)
+			CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
 			INNER JOIN #tmpCustIds AS c WITH(NOLOCK) ON b.custid = c.CustId
 			LEFT JOIN #tmpBettypes AS tbt WITH(NOLOCK) ON tbt.BettypeId = b.bettype
 		WHERE	b.winlostdate = @EventDate
