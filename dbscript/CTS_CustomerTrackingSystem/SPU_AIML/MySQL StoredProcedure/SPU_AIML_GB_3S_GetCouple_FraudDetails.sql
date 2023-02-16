@@ -2,9 +2,7 @@ DROP PROCEDURE IF EXISTS `SPU_AIML_GB_3S_GetCouple_FraudDetails`;
 
 DELIMITER $$
 CREATE DEFINER=`AIMLOwner`@`%` PROCEDURE `SPU_AIML_GB_3S_GetCouple_FraudDetails`(
-		IN 	ip_CoupleID				BIGINT UNSIGNED
-	,	IN 	ip_CreatedDate			DATE
-	,	IN 	ip_CoupleInfoDetails	JSON
+		IN 	ip_CoupleInfoDetails	JSON
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -20,17 +18,16 @@ BEGIN
         Param's Explanation (filtered by):
 			
 		Example:
-			CALL SPU_AIML.SPU_AIML_GB_3S_GetCouple_FraudDetails (@ip_CoupleID := 1, @ip_CreatedDate := '2022-06-15', @ip_CoupleInfoDetails := '[{"CoupleInfoID" : 1,"CoupleID" : 5,"CreatedDate" : "2023-01-20"},{"CoupleInfoID" : 2,"CoupleID" : 4,"CreatedDate" : "2023-01-18"}]');
+			CALL SPU_AIML.SPU_AIML_GB_3S_GetCouple_FraudDetails (@ip_CoupleInfoDetails := '[{"CoupleID" : 17,"CreatedDate" : "2023-02-12", "TypeIPEntanglement:": 2},{"CoupleID" : 95,"CreatedDate" : "2023-02-11", "TypeIPEntanglement:": 2}]');
 	*/
-    DECLARE lv_CoupleInfoID	BIGINT UNSIGNED;
 	
-	DROP TEMPORARY TABLE IF EXISTS Temp_GB3S_CoupleInfo;
+	 DROP TEMPORARY TABLE IF EXISTS Temp_GB3S_CoupleInfo;
 	CREATE TEMPORARY TABLE Temp_GB3S_CoupleInfo( 		
-			CoupleInfoID		BIGINT NOT NULL AUTO_INCREMENT
-		,	CoupleID			BIGINT UNSIGNED NOT NULL
+			CoupleID			BIGINT UNSIGNED NOT NULL
         , 	CreatedDate			DATE
-        ,	PRIMARY KEY (CoupleInfoID)
-        ,	INDEX IX_Temp_GB3S_CoupleInfo_CC (CoupleID,CreatedDate)
+		,	TypeIPEntanglement	SMALLINT
+		
+        ,	PRIMARY KEY (CoupleID,CreatedDate)
     );
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_GB3S_CoupleDetails;
@@ -48,75 +45,64 @@ BEGIN
 	
 	INSERT INTO Temp_GB3S_CoupleInfo
 	(
-			CoupleInfoID
-		,	CoupleID
+			CoupleID
         ,	CreatedDate
+		,	TypeIPEntanglement
 	)
-	SELECT 	tmp.CoupleInfoID
-		,	tmp.CoupleID
+	SELECT 	tmp.CoupleID
         ,	tmp.CreatedDate
-	FROM JSON_TABLE(ip_CoupleInfoDetails,'$[*]' COLUMNS(CoupleInfoID	BIGINT 	PATH '$.CoupleInfoID' 
-													,	CoupleID		BIGINT	PATH '$.CoupleID'
-                                                    ,	CreatedDate		DATE	PATH '$.CreatedDate'
+		,	tmp.TypeIPEntanglement
+	FROM JSON_TABLE(ip_CoupleInfoDetails,'$[*]' COLUMNS(CoupleID			BIGINT		PATH '$.CoupleID'
+                                                    ,	CreatedDate			DATE		PATH '$.CreatedDate'
+													,	TypeIPEntanglement	SMALLINT	PATH '$.TypeIPEntanglement'
 					)) AS tmp;
+	
+	
+	INSERT IGNORE INTO Temp_GB3S_CoupleDetails
+	(
+			MatchID
+		,	StateID
+		,	CoupleID
+		,	CreatedDate
+		,	SumStake
+		,	BetCount
+		,	EventDate
+		,	FraudTransList
+	)
+	SELECT 	cfi.MatchID
+		,	cfi.StateID
+		,	cfi.CoupleID
+		,	cfi.CreatedDate
+		,	s.SumStake
+		,	s.BetCount
+		,	cfi.EventDate
+		,	cfi.FraudTransList
+	FROM SPU_AIML.GB_3S_CoupleFraudInfo AS cfi
+		INNER JOIN SPU_AIML.GB_3S_State AS s ON s.StateID = cfi.StateID
+		INNER JOIN Temp_GB3S_CoupleInfo AS temp ON temp.CoupleID = cfi.CoupleID
+													AND temp.CreatedDate = cfi.CreatedDate
+	WHERE s.StateID <> 0
+	ORDER BY temp.CreatedDate DESC;
+	
+	INSERT INTO Temp_GB3S_StateSingleCust (MatchID,StateID)
+	WITH CTE AS (
+		SELECT 	ei.MatchID
+			,	ei.StateID
+			,	COUNT(ei.CustID) AS CntMatchIDStateID
+		FROM SPU_AIML.GB_3S_EventInfo AS ei
+			INNER JOIN Temp_GB3S_CoupleDetails AS tmp ON tmp.StateID = ei.StateID
+														AND tmp.MatchID = ei.MatchID
+		GROUP BY 	ei.MatchID
+				,	ei.StateID
+	)
+	SELECT MatchID,StateID
+	FROM CTE
+	WHERE CntMatchIDStateID = 1;
 
-    SELECT CoupleInfoID
-    INTO lv_CoupleInfoID
-    FROM Temp_GB3S_CoupleInfo
-    WHERE CoupleID = ip_CoupleID;
-    
-    IF (lv_CoupleInfoID = 1) THEN
-		INSERT IGNORE INTO Temp_GB3S_CoupleDetails
-		(
-				MatchID
-			,	StateID
-			,	CoupleID
-            ,	CreatedDate
-			,	SumStake
-			,	BetCount
-			,	EventDate
-			,	FraudTransList
-		)
-		SELECT 	cfi.MatchID
-			,	cfi.StateID
-			,	cfi.CoupleID
-            ,	cfi.CreatedDate
-			,	s.SumStake
-			,	s.BetCount
-			,	cfi.EventDate
-			,	cfi.FraudTransList
-		FROM SPU_AIML.GB_3S_CoupleFraudInfo AS cfi
-			INNER JOIN SPU_AIML.GB_3S_State AS s ON s.StateID = cfi.StateID
-		WHERE cfi.CoupleID = ip_CoupleID
-			AND cfi.CreatedDate = ip_CreatedDate;
-        
-	ELSE
-		INSERT IGNORE INTO Temp_GB3S_CoupleDetails
-		(
-				MatchID
-			,	StateID
-			,	CoupleID
-            ,	CreatedDate
-			,	SumStake
-			,	BetCount
-			,	EventDate
-			,	FraudTransList
-		)
-		SELECT 	cfi.MatchID
-			,	cfi.StateID
-			,	cfi.CoupleID
-            ,	cfi.CreatedDate
-			,	s.SumStake
-			,	s.BetCount
-			,	cfi.EventDate
-			,	cfi.FraudTransList
-        FROM SPU_AIML.GB_3S_CoupleFraudInfo AS cfi
-			INNER JOIN SPU_AIML.GB_3S_State AS s ON s.StateID = cfi.StateID
-            INNER JOIN Temp_GB3S_CoupleInfo AS temp ON temp.CoupleID = cfi.CoupleID
-														AND temp.CreatedDate = cfi.CreatedDate
-		ORDER BY temp.CoupleInfoID;
-        
-    END IF;
+	DELETE tc
+	FROM Temp_GB3S_CoupleDetails AS tc
+		INNER JOIN Temp_GB3S_StateSingleCust AS ts ON ts.StateID = tc.StateID
+														AND ts.MatchID = tc.MatchID;
     
 	SELECT 	StateID
 		,	SumStake
@@ -124,9 +110,10 @@ BEGIN
         ,	MatchID
         ,	EventDate
         ,	FraudTransList
+		,	CoupleID
+		,	CreatedDate
     FROM Temp_GB3S_CoupleDetails
-    WHERE CoupleID = ip_CoupleID
-		AND CreatedDate = ip_CreatedDate;
+    ORDER BY CreatedDate DESC;
     
 END$$
 DELIMITER ;
