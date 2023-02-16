@@ -30,6 +30,7 @@ AS
 		- 20280628@Long.Luu: Exclude more Internal Accounts [Redmine ID: #174430]
 		- 20221006@Jonas.Huynh: New Rule for General Customer Classifiation [Redmine ID: #178022]
 		- 20221118@Jonas.Huynh: Update parameter of DW SP GetCustAccumulatedInfo [Redmine ID: #179500]
+		- 20230208@Jonas.Huynh: Check createdDate customer to rescan inactive [Redmine ID: #183582]
 
 	Param's Explanation:
 				@CustomersXML = N'<Root>
@@ -48,13 +49,11 @@ BEGIN
 		,	@CATEGORY_PROBATION			INT = 206
 		,	@CATEGORY_NEWMEMBER			INT = 201;
 	
-	DECLARE @FUNCTION_NEWCUSTOMER		INT = 4;
-
-	DECLARE @GENERAL_SPORTID			SMALLINT = 200;
-	DECLARE @CurrentDateTime			DATETIME = GETDATE()
-	    ,   @CurrentDate				DATE	 = GETDATE()
-	    ,	@ToDate						DATE	 = GETDATE();
-	DECLARE @From30Date					DATE	 = DATEADD(DAY, - 30, @ToDate);
+	DECLARE @GENERAL_SPORTID			SMALLINT	= 200;
+	DECLARE @CurrentDateTime			DATETIME	= GETDATE()
+	    ,   @CurrentDate				DATE		= GETDATE()
+	    ,	@ToDate						DATE		= GETDATE();
+	DECLARE @From30Date					DATE		= DATEADD(DAY, - 30, @ToDate);
 	DECLARE @ListCustIds				VARCHAR(MAX);
 
 
@@ -64,8 +63,13 @@ BEGIN
 	END
 
 	CREATE TABLE #tmpCustomers(
-			CustId				INT PRIMARY KEY
-		,	CurrentCategoryId	SMALLINT
+			CustId					INT PRIMARY KEY
+		,	CurrentCategoryId		SMALLINT
+		,	SiteName				VARCHAR (10)	NULL
+		,	IsSpecialSite			BIT				DEFAULT 0
+		,	SRecommend				INT
+		,	IsPlaceBetWithin30Days	BIT				DEFAULT 0
+		,	IsCreatedWithin30Days	BIT				DEFAULT 0
 	);
 
 	IF OBJECT_ID('tempdb..#tmpActiveMember') IS NOT NULL
@@ -74,13 +78,13 @@ BEGIN
 	END
 	
 	CREATE TABLE #tmpActiveMember(
-		CustId				INT,
-		IsActive			BIT DEFAULT 0
+		CustId						INT,
+		IsPlaceBetWithin30Days		BIT DEFAULT 0
 		PRIMARY KEY CLUSTERED (CustId)
 	);
 
-	CREATE NONCLUSTERED INDEX IX_tmpActiveMember_IsActive ON #tmpActiveMember(
-		IsActive			ASC
+	CREATE NONCLUSTERED INDEX IX_tmpActiveMember_IsPlaceBetWithin30Days ON #tmpActiveMember(
+		IsPlaceBetWithin30Days		ASC
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpRawData') IS NOT NULL
@@ -109,43 +113,30 @@ BEGIN
 		DROP TABLE	#tmpCustomerAccummulatedInfo;
 
 	CREATE TABLE #tmpCustomerAccummulatedInfo(
-		CustId				INT				NOT NULL,
-		CurrentCategoryId	SMALLINT		NULL,
-		[Site]				VARCHAR (10)	NULL,
-		IsSpecialSite		BIT DEFAULT 0,
-		IsDeposit			BIT DEFAULT 0,
-		SRecommend			INT,
-		TurnoverRM			DECIMAL(19, 4)	NULL,
-		WinlossRM			DECIMAL(19, 4)	NULL,
-		Margin				DECIMAL(19, 4)	NULL,
-		BetCount			BIGINT			NULL,
-		ActiveDays			INT				NULL	
+		CustId					INT				NOT NULL,
+		CurrentCategoryId		SMALLINT		NULL,
+		NewCategoryId			SMALLINT		NULL,
+		IsPlaceBetWithin30Days	BIT				DEFAULT 0,
+		IsSpecialSite			BIT				DEFAULT 0,
+		IsDeposit				BIT				DEFAULT 0,
+		SRecommend				INT,
+		TurnoverRM				DECIMAL(19, 4)	NULL,
+		WinlossRM				DECIMAL(19, 4)	NULL,
+		Margin					DECIMAL(19, 4)	NULL,
+		BetCount				BIGINT			NULL,
+		ActiveDays				INT				NULL	
 	);
 
 	CREATE CLUSTERED INDEX CIX_tmpCustomerAccummulatedInfo_CustId ON #tmpCustomerAccummulatedInfo(
-		[CustId]
-	);
-
-	CREATE NONCLUSTERED INDEX IX_tmpCustomerAccummulatedInfo_Site ON #tmpCustomerAccummulatedInfo(
-		[Site]	ASC
+		CustId
 	);
 
 	CREATE NONCLUSTERED INDEX IX_tmpCustomerAccummulatedInfo_CurrentCategoryId ON #tmpCustomerAccummulatedInfo(
-		[CurrentCategoryId]
+		CurrentCategoryId
 	);
 
 	CREATE NONCLUSTERED INDEX IX_tmpCustomerAccummulatedInfo_SRecommend ON #tmpCustomerAccummulatedInfo(
-		[SRecommend]
-	);
-
-
-	IF	OBJECT_ID('tempdb..#tmpResultData') IS NOT NULL
-	DROP TABLE	#tmpResultData;
-
-	CREATE TABLE #tmpResultData(
-		[CustId]			INT NOT NULL,
-		[CategoryId]		SMALLINT NOT NULL,
-		PRIMARY KEY CLUSTERED ([CustId])
+		SRecommend
 	);
 	
 	-- #1: Filter Customers
@@ -155,26 +146,9 @@ BEGIN
 	FROM @CustomersXML.nodes('//r') AS T(C)
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 
-	--#2: Check inactive customers
-	IF (@FunctionId = @FUNCTION_NEWCUSTOMER) 
-		BEGIN
-			INSERT INTO #tmpActiveMember(CustId, IsActive)
-			SELECT CustId, 1
-			FROM #tmpCustomers
-		END
-	ELSE
-		BEGIN
-			SELECT @ListCustIds = STUFF((SELECT DISTINCT ',', CONVERT(VARCHAR(15), CustId) 
-						FROM #tmpCustomers WITH (NOLOCK)
-						FOR XML PATH('')), 1, 1, '');
-
-			INSERT INTO #tmpActiveMember(CustId, IsActive)
-			EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @ListCustIds, @ResultDataMode = 2, @FromDate = @From30Date, @ToDate = @ToDate;	
-		END;
-
-	--#3: Remove closed & disabled accounts, SMA account, Internal Account
+	-- #2: Remove closed & disabled accounts, SMA account, Internal Account
 	DELETE r WITH(ROWLOCK)
-	FROM #tmpActiveMember AS r
+	FROM #tmpCustomers AS r
 		INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON r.CustId = c.custid
 	WHERE (c.[Enabled] = 0 OR c.roleid <> 1)
 		OR c.srecommend IN (41430709)
@@ -182,16 +156,38 @@ BEGIN
 		OR c.recommend IN (52466,5707545,29270764,134456)
 		OR c.username LIKE '%CashOut';
 
-	-- #4: Get Customer's Accummulated data
-	SELECT @ListCustIds = STUFF((SELECT DISTINCT ',', CONVERT(VARCHAR(15), CustId) 
-								FROM #tmpActiveMember WITH (NOLOCK)
-								WHERE IsActive = 1
-								FOR XML PATH('')), 1, 1, '');
+    -- #3: Get relevant info
+	UPDATE a WITH(ROWLOCK, UPDLOCK)
+	SET	    a.IsCreatedWithin30Days = CASE WHEN DATEDIFF(DAY, c.creatdate, GETDATE()) <= 30 THEN 1 ELSE 0 END
+	   ,	a.SiteName = c.site
+	   ,	a.SRecommend = c.srecommend
+	   ,	a.IsSpecialSite = CASE WHEN c.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') THEN 1 ELSE 0 END
+	FROM #tmpCustomers AS a
+		INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON a.CustId = c.custid;
+	
+	-- #4: Remove oddsfeed site
+	DELETE a
+	FROM  #tmpCustomers AS a WITH(ROWLOCK)
+	WHERE (a.SiteName = 'NextBet' OR a.SiteName = '9wickets' OR a.SiteName = '9wsports');
 
+	--#5: Check inactive customers
+	SELECT @ListCustIds = STUFF((	SELECT DISTINCT ',', CONVERT(VARCHAR(15), CustId) 
+									FROM #tmpCustomers WITH (NOLOCK)
+									FOR XML PATH('')), 1, 1, '');
+
+	INSERT INTO #tmpActiveMember(CustId, IsPlaceBetWithin30Days)
+	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @ListCustIds, @ResultDataMode = 2, @FromDate = @From30Date, @ToDate = @ToDate;	
+
+	UPDATE c WITH(ROWLOCK, UPDLOCK)
+	SET c.IsPlaceBetWithin30Days = a.IsPlaceBetWithin30Days
+	FROM #tmpCustomers AS c
+		INNER JOIN #tmpActiveMember AS a WITH(NOLOCK) ON c.CustId = a.custid;
+
+	-- #6: Get Customer's Accummulated performance for active member in 30days
 	INSERT INTO #tmpRawData(CustId, SportId, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDaysCustID, ActiveDaysSportGroup, WindaysCustID, WinDaysSportGroup)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @ListCustIds, @ResultDataMode = 1;	
 	
-	-- #5: Sum data by custid
+	-- #7: Sum data by custid
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays)
 	SELECT	a.CustId
 		,	SUM(a.TurnoverRM)
@@ -202,60 +198,45 @@ BEGIN
 	FROM #tmpRawData AS a WITH(NOLOCK)
 	GROUP BY a.CustId;
 	
+	--#8: Update customer info
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
-	SET a.CurrentCategoryId = c.CurrentCategoryId
+	SET a.CurrentCategoryId = c.CurrentCategoryId,
+		a.IsPlaceBetWithin30Days = c.IsPlaceBetWithin30Days,
+		a.SRecommend = c.SRecommend,
+		a.IsSpecialSite = c.IsSpecialSite
 	FROM #tmpCustomerAccummulatedInfo AS a
 		INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.custid;
-
-	IF (@FunctionId = @FUNCTION_NEWCUSTOMER) 
-		BEGIN
-			INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
-			SELECT	t.CustId
-				,	@GENERAL_SPORTID
-				,	@CATEGORY_NEWMEMBER
-				,	@CurrentDate AS CreatedDate
-				,	@CurrentDateTime AS CreatedTime
-				,	0
-				,	0
-				,	0
-				,	0
-			FROM #tmpCustomers AS t
-				LEFT JOIN #tmpCustomerAccummulatedInfo AS c ON t.CustId = c.CustId
-			WHERE c.CustId IS NULL;
-		END;
-	
-
-	---- Log Data
-	INSERT INTO dbo.CustomerClassification_InputLog(CustId, CreatedDate, CreatedTime, FunctionId, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId, IsActive)
-	SELECT CustId, @CurrentDate, @CurrentDateTime, @FUNCTIONID, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId, 1
-	FROM #tmpCustomerAccummulatedInfo;
-
-	INSERT INTO dbo.CustomerClassification_InputLog(CustId, CreatedDate, CreatedTime, FunctionId, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId, IsActive)
-	SELECT CustId, @CurrentDate, @CurrentDateTime, @FUNCTIONID, NULL, NULL, NULL, NULL, NULL, 0
-	FROM #tmpActiveMember
-	WHERE IsActive = 0;
-
-	--#6 Get cust info
-	UPDATE a WITH(ROWLOCK, UPDLOCK)
-	SET	   a.site = c.site
-	   ,   a.SRecommend = c.srecommend
-	   ,   a.IsSpecialSite = CASE WHEN c.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') THEN 1 ELSE 0 END
-	FROM #tmpCustomerAccummulatedInfo AS a
-		LEFT JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON a.CustId = c.custid;
-		
-	DELETE a
-	FROM  #tmpCustomerAccummulatedInfo AS a WITH(ROWLOCK)
-	WHERE (a.Site = 'NextBet' OR a.Site = '9wickets' OR a.Site = '9wsports');
 
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
 	SET a.IsDeposit = 1
 	FROM #tmpCustomerAccummulatedInfo AS a
 		INNER JOIN bodb02.dbo.Dep_CustSuper AS c WITH(NOLOCK) ON a.SRecommend = c.custid;
-	
+
+	--#9: Log Data
+	INSERT INTO dbo.CustomerClassification_InputLog(CustId, CreatedDate, CreatedTime, FunctionId, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId, IsActive)
+	SELECT t.CustId, @CurrentDate, @CurrentDateTime, @FUNCTIONID, TurnoverRM, WinlossRM, BetCount, ActiveDays, t.CurrentCategoryId, t.IsPlaceBetWithin30Days
+	FROM #tmpCustomers AS t
+		LEFT JOIN #tmpCustomerAccummulatedInfo AS c ON t.CustId = c.CustId;
+
+	--#10: Insert for newly customer
+	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
+	SELECT	t.CustId
+		,	@GENERAL_SPORTID
+		,	CASE WHEN t.IsCreatedWithin30Days = 1 THEN @CATEGORY_NEWMEMBER ELSE @CATEGORY_NORMALINACTIVE END
+		,	@CurrentDate AS CreatedDate
+		,	@CurrentDateTime AS CreatedTime
+		,	NULL
+		,	NULL
+		,	NULL
+		,	NULL
+	FROM #tmpCustomers AS t
+		LEFT JOIN #tmpCustomerAccummulatedInfo AS c ON t.CustId = c.CustId
+	WHERE c.CustId IS NULL;	
+
 	--#7: Classify classification by general rule
-	INSERT INTO #tmpResultData(CustId, CategoryId)
-	SELECT  CustId
-		,	CategoryId
+	UPDATE t WITH(ROWLOCK, UPDLOCK)
+	SET t.NewCategoryId = b.CategoryId,
+		t.CurrentCategoryId = ISNULL(t.CurrentCategoryId, b.CategoryId)
 	FROM (
 			SELECT  a.CustId
 				,   r.CategoryId
@@ -280,13 +261,14 @@ BEGIN
 					OR (r.RuleGroupId = 16 AND a.BetCount >= r.BetCount AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM)												-- RISKY
 					OR (r.RuleGroupId = 17 AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM))																			-- RISKY
 		) as b
+			INNER JOIN #tmpCustomerAccummulatedInfo AS t ON t.CustId = b.CustId
 	 WHERE b.RowNum = 1;
 
 	 --#8: Insert to CustomerClassification
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT	a.CustId
 		,	@GENERAL_SPORTID
-		,	CASE WHEN r.CategoryId IS NULL THEN a.CurrentCategoryId ELSE r.CategoryId END
+		,	CASE WHEN a.NewCategoryId IS NULL THEN a.CurrentCategoryId ELSE a.NewCategoryId END
 		,	@CurrentDate AS CreatedDate
 		,	@CurrentDateTime AS CreatedTime
 		,	a.TurnoverRM
@@ -294,29 +276,26 @@ BEGIN
 		,	a.BetCount
 		,	a.ActiveDays
 	FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
-	    LEFT JOIN #tmpResultData AS r WITH(NOLOCK) ON a.CustId = r.CustId
+	WHERE a.IsPlaceBetWithin30Days = 1;
 
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
-	SELECT	c.CustId
+	SELECT	a.CustId
 		,	@GENERAL_SPORTID
-		,	CASE WHEN c.CurrentCategoryId IN (@CATEGORY_SMARTPUNTER, @CATEGORY_RISKY, @CATEGORY_PROBATION) THEN @CATEGORY_SMARTINACTIVE ELSE @CATEGORY_NORMALINACTIVE END AS CategoryId
+		,	CASE WHEN a.CurrentCategoryId IN (@CATEGORY_SMARTPUNTER, @CATEGORY_RISKY, @CATEGORY_PROBATION) THEN @CATEGORY_SMARTINACTIVE ELSE @CATEGORY_NORMALINACTIVE END AS CategoryId
 		,	@CurrentDate AS CreatedDate
 		,	@CurrentDateTime AS CreatedTime
-		,	0
-		,	0
-		,	0
-		,	0
-	FROM #tmpActiveMember AS a WITH(NOLOCK)
-			INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.custid
-	WHERE a.IsActive = 0
+		,	a.TurnoverRM
+		,	a.WinlossRM
+		,	a.BetCount
+		,	a.ActiveDays
+	FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
+	WHERE a.IsPlaceBetWithin30Days = 0;
 	
 
 	DROP TABLE #tmpCustomerAccummulatedInfo;
 	DROP TABLE #tmpCustomers;
 	DROP TABLE #tmpRawData;
-	DROP TABLE #tmpActiveMember;
-	DROP TABLE #tmpResultData;
-		
+	DROP TABLE #tmpActiveMember;		
 
 	-- #7: Delete old data
 /*	WHILE(1 = 1)
