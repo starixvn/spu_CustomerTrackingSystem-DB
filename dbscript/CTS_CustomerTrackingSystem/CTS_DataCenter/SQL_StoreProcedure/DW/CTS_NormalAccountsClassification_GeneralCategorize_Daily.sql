@@ -222,7 +222,7 @@ BEGIN
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT	t.CustId
 		,	@GENERAL_SPORTID
-		,	CASE WHEN t.IsCreatedWithin30Days = 1 THEN @CATEGORY_NEWMEMBER ELSE @CATEGORY_NORMALINACTIVE END
+		,	CASE WHEN (t.IsCreatedWithin30Days = 1 OR @FunctionId = 4) THEN @CATEGORY_NEWMEMBER ELSE @CATEGORY_NORMALINACTIVE END
 		,	@CurrentDate AS CreatedDate
 		,	@CurrentDateTime AS CreatedTime
 		,	NULL
