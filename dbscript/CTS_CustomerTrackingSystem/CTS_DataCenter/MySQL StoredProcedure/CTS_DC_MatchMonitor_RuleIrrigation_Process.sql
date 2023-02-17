@@ -62,7 +62,7 @@ sp: BEGIN
 		,	CustID				BIGINT UNSIGNED
 		,	TransDateSec		BIGINT        
         ,	Stake				DECIMAL(20,4)
-        ,	Odds				DECIMAL(4,2)
+        ,	Odds				DECIMAL(10,4)
         ,	OldGroupID			INT         
         ,	GroupID				INT DEFAULT 0
 		,	SignNumber			TINYINT 
@@ -76,8 +76,8 @@ sp: BEGIN
 		,	MaxTransDateSec		BIGINT
         ,	OldGroupID 			INT
         ,	TotalStake			DECIMAL(20,4)
-        ,	MinOdds				DECIMAL(4,2)
-        ,	MaxOdds				DECIMAL(4,2)
+        ,	MinOdds				DECIMAL(10,4)
+        ,	MaxOdds				DECIMAL(10,4)
 		,	MinSignNumber		TINYINT
 		,	MaxSignNumber		TINYINT
 		,	PRIMARY KEY (CustID)
@@ -88,8 +88,8 @@ sp: BEGIN
 			CustID				BIGINT UNSIGNED
 		,	MinTransDateSec		BIGINT
         ,	TotalStake			DECIMAL(20,4)
-        ,	MinOdds				DECIMAL(4,2)
-        ,	MaxOdds				DECIMAL(4,2)
+        ,	MinOdds				DECIMAL(10,4)
+        ,	MaxOdds				DECIMAL(10,4)
 		,	MinSignNumber		TINYINT
 		,	MaxSignNumber		TINYINT
 		,	PRIMARY KEY (CustID)

@@ -44,8 +44,8 @@ BEGIN
     DECLARE CONST_RULE_GROUPID_ARBITRAGE	INT DEFAULT 5;
     
     DECLARE lv_LastSequenceID 			BIGINT UNSIGNED DEFAULT 0; 
-    DECLARE lv_Rule_FixedGame_MinOdds	DECIMAL(10,2);
-    DECLARE lv_Rule_FixedGame_MaxOdds	DECIMAL(10,2);
+    DECLARE lv_Rule_FixedGame_MinOdds	DECIMAL(10,4);
+    DECLARE lv_Rule_FixedGame_MaxOdds	DECIMAL(10,4);
     
     #==================LOG=======================================================
     DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_Staging_Insert';
@@ -154,7 +154,7 @@ BEGIN
 							,	CustID			INT PATH "$.CustID"
 							,	Stake			DECIMAL(20,4) PATH "$.Stake" 
 							,	Betteam			VARCHAR(10)	PATH "$.Betteam"
-                            ,	Odds			DECIMAL(10,2) PATH "$.Odds"
+                            ,	Odds			DECIMAL(10,4) PATH "$.Odds"
                             ,	IsMajorLeague	BOOLEAN	PATH "$.IsMajorLeague" 
                             ,	Hdp1			DECIMAL(8,4) PATH "$.Hdp1" 
                             ,	Hdp2			DECIMAL(8,4) PATH "$.Hdp2" 
