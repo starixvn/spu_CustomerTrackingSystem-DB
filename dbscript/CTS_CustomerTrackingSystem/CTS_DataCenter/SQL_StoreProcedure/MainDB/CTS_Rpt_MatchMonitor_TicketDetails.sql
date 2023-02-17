@@ -187,11 +187,11 @@ BEGIN
 													WHEN b.odds <= 1 THEN b.odds
 													WHEN b.odds > 1 THEN -(1/b.odds) END)
 						-- Indonesia
-						WHEN b.oddstype = 3 THEN -(1/b.odds)
+						WHEN b.oddstype = 3 THEN -(1/NULLIF(b.odds,0))
 						-- Malaysian & Myanmar
 						WHEN b.oddstype IN (4,6) THEN b.odds
 						-- US
-						WHEN b.oddstype = 5 THEN -(100/b.odds)
+						WHEN b.oddstype = 5 THEN -(100/NULLIF(b.odds,0))
 					END AS odds
 				,	b.hdp1
 				,	b.hdp2
