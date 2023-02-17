@@ -24,20 +24,21 @@ sp: BEGIN
 		Revisions:
 			- 20221122@Casey.Huynh: 	Created [Redmine ID: #179499]
 			- 20221228@Victoria.Le:		Add HDP for Irrigation rule [Redmine ID: #181990]
+			- 20230206@Victoria.Le:		Change formula for OddsSpread [Redmine ID: #183277]
             
 		Param's Explanation (filtered by):	
 			
 		Example:
 			CALL CTS_DC_MatchMonitor_RuleIrrigation_Process(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=0,@ip_SportType:=1,@ip_MatchID:=1,@ip_ScoreDiff:=1,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a');
 	*/
-    DECLARE CONST_RULE_GROUPID INT DEFAULT 4;
-    
-    DECLARE lv_Rule_TotalStake		DECIMAL(20,4);
-    DECLARE lv_Rule_OddsSpread		DECIMAL(4,2);
-    DECLARE lv_Rule_TimeStep		INT;
-    
-	DECLARE lv_LastSequenceID	BIGINT UNSIGNED;
-	DECLARE lv_LastTransDate	DATETIME(3); 
+	DECLARE CONST_RULE_GROUPID 		INT DEFAULT 4;
+
+	DECLARE lv_Rule_TotalStake		DECIMAL(20,4);
+	DECLARE lv_Rule_OddsSpread		DECIMAL(4,2);
+	DECLARE lv_Rule_TimeStep		INT;
+
+	DECLARE lv_LastSequenceID		BIGINT UNSIGNED;
+	DECLARE lv_LastTransDate		DATETIME(3); 
     
     /*===================LOG=======================================
 	INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
@@ -64,6 +65,7 @@ sp: BEGIN
         ,	Odds				DECIMAL(4,2)
         ,	OldGroupID			INT         
         ,	GroupID				INT DEFAULT 0
+		,	SignNumber			TINYINT 
 		,	PRIMARY KEY (SequenceID)
 		,	INDEX IX_Temp_Trans_Cust(CustID)
 	) ENGINE=InnoDB;
@@ -76,27 +78,32 @@ sp: BEGIN
         ,	TotalStake			DECIMAL(20,4)
         ,	MinOdds				DECIMAL(4,2)
         ,	MaxOdds				DECIMAL(4,2)
+		,	MinSignNumber		TINYINT
+		,	MaxSignNumber		TINYINT
 		,	PRIMARY KEY (CustID)
 	) ENGINE=InnoDB;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_NewCustGroup;   
     CREATE TEMPORARY TABLE Temp_NewCustGroup(    
-			CustID			BIGINT UNSIGNED
-		,	MinTransDateSec	BIGINT
-        ,	TotalStake		DECIMAL(20,4)
+			CustID				BIGINT UNSIGNED
+		,	MinTransDateSec		BIGINT
+        ,	TotalStake			DECIMAL(20,4)
         ,	MinOdds				DECIMAL(4,2)
         ,	MaxOdds				DECIMAL(4,2)
+		,	MinSignNumber		TINYINT
+		,	MaxSignNumber		TINYINT
 		,	PRIMARY KEY (CustID)
 	) ENGINE=InnoDB;
     
-    INSERT INTO Temp_Trans(SequenceID, TransID, CustID, TransDateSec, Stake, Odds,OldGroupID)
+    INSERT INTO Temp_Trans(SequenceID, TransID, CustID, TransDateSec, Stake, Odds,OldGroupID, SignNumber)
     SELECT	mms.SequenceID
         ,	mms.TransID
 		,	mms.CustID
 		,	TO_SECONDS(mms.TransDate) AS TransDateSec
         ,	mms.Stake        
         ,	mms.Odds
-        ,	mms.GroupID AS OldGroupID        
+        ,	mms.GroupID AS OldGroupID     
+		,	SIGN(mms.Odds) AS SignNumber
 	FROM CTS_DataCenter.MatchMonitorStagingIrrigationNonLive AS mms
     WHERE 	mms.SequenceID <= ip_MaxSequenceID 
 		AND mms.MatchID = ip_MatchID 
@@ -117,13 +124,15 @@ sp: BEGIN
     FROM CTS_DataCenter.SystemParameter AS s
     WHERE ParameterID = 125;
     
-    INSERT INTO Temp_OldCustGroup(CustID, MaxTransDateSec, OldGroupID, TotalStake, MinOdds, MaxOdds)
+    INSERT INTO Temp_OldCustGroup(CustID, MaxTransDateSec, OldGroupID, TotalStake, MinOdds, MaxOdds, MinSignNumber, MaxSignNumber)
     SELECT	tmpTs.CustID
 		,	MAX(tmpTs.TransDateSec) AS MaxTransDateSec
         ,	MAX(tmpTs.OldGroupID) AS OldGroupID
 		,	SUM(tmpTs.Stake) AS TotalStake
-        ,	MIN(Odds) AS MinOdds
-        ,	MAX(Odds) AS MaxOdds
+        ,	MIN(tmpTs.Odds) AS MinOdds
+        ,	MAX(tmpTs.Odds) AS MaxOdds
+		,	MIN(tmpTs.SignNumber) AS MinSignNumber
+		,	MAX(tmpTs.SignNumber) AS MaxSignNumber
     FROM Temp_Trans AS tmpTs
     WHERE tmpTs.SequenceID <= lv_LastSequenceID
     GROUP BY tmpTs.CustID;      
@@ -136,18 +145,21 @@ sp: BEGIN
 		 AND tmpTs.TransDateSec - tmpOg.MaxTransDateSec <= lv_Rule_TimeStep;
          
 	#=================GET NEW GROUP=============================================
-	INSERT INTO Temp_NewCustGroup(CustID, MinTransDateSec, TotalStake, MinOdds, MaxOdds)
+	INSERT INTO Temp_NewCustGroup(CustID, MinTransDateSec, TotalStake, MinOdds, MaxOdds, MinSignNumber, MaxSignNumber)
     SELECT 	tmpTs.CustID
 		,	MIN(tmpTs.TransDateSec) AS MinTransDateSec
 		,	SUM(tmpTs.Stake) AS TotalStake
-        ,	MIN(Odds) AS MinOdds
-        ,	MAX(Odds) AS MaxOdds
+        ,	MIN(tmpTs.Odds) AS MinOdds
+        ,	MAX(tmpTs.Odds) AS MaxOdds
+		,	MIN(tmpTs.SignNumber) AS MinSignNumber
+		,	MAX(tmpTs.SignNumber) AS MaxSignNumber
     FROM Temp_Trans AS tmpTs
     WHERE tmpTs.SequenceID > lv_LastSequenceID AND tmpTs.SequenceID <= ip_MaxSequenceID AND tmpTs.GroupID = 0
     GROUP BY tmpTs.CustID;    
 
 	IF EXISTS(SELECT 1 FROM Temp_OldCustGroup) THEN
 		
+		# The same sign
 		UPDATE Temp_Trans AS tmpTs
 		SET tmpTs.GroupID = 1
 		WHERE tmpTs.OldGroupID = 0
@@ -156,17 +168,54 @@ sp: BEGIN
 										LEFT JOIN Temp_OldCustGroup AS tmpOg ON tmpNg.CustID = tmpOg.CustID
 									WHERE	tmpNg.MinTransDateSec - tmpOg.MaxTransDateSec <= lv_Rule_TimeStep 
 										AND tmpNg.TotalStake + tmpOg.TotalStake >= lv_Rule_TotalStake
-										AND (GREATEST(tmpNg.MaxOdds,tmpOg.MaxOdds) - LEAST(tmpNg.MinOdds,tmpOg.MinOdds))*100 >= lv_Rule_OddsSpread); 
+										AND tmpNg.MinSignNumber = tmpNg.MaxSignNumber
+										AND tmpOg.MinSignNumber = tmpOg.MaxSignNumber
+										AND tmpNg.MinSignNumber = tmpOg.MinSignNumber
+										AND ABS(ABS(GREATEST(tmpNg.MaxOdds,tmpOg.MaxOdds)) - ABS(LEAST(tmpNg.MinOdds,tmpOg.MinOdds)))*100 >= lv_Rule_OddsSpread
+								); 
+			
+		# The different sign
+		UPDATE Temp_Trans AS tmpTs
+		SET tmpTs.GroupID = 1
+		WHERE tmpTs.OldGroupID = 0
+			AND tmpTs.CustID IN (	SELECT DISTINCT tmpNg.CustID
+									FROM Temp_NewCustGroup AS tmpNg
+										LEFT JOIN Temp_OldCustGroup AS tmpOg ON tmpNg.CustID = tmpOg.CustID
+									WHERE	tmpNg.MinTransDateSec - tmpOg.MaxTransDateSec <= lv_Rule_TimeStep 
+										AND tmpNg.TotalStake + tmpOg.TotalStake >= lv_Rule_TotalStake
+										AND (tmpNg.MinSignNumber != tmpNg.MaxSignNumber
+												OR tmpOg.MinSignNumber != tmpOg.MaxSignNumber
+												OR tmpNg.MinSignNumber != tmpOg.MinSignNumber
+												OR tmpNg.MaxSignNumber != tmpOg.MaxSignNumber)
+										AND ((1-ABS(GREATEST(tmpNg.MaxOdds,tmpOg.MaxOdds)))+(1-ABS(LEAST(tmpNg.MinOdds,tmpOg.MinOdds))))*100 >= lv_Rule_OddsSpread
+								);
 	END IF; 
  
+	# The same sign
     UPDATE Temp_Trans AS tmpTs
 	SET tmpTs.GroupID = 1
-    WHERE EXISTS (	SELECT 1
-					FROM Temp_NewCustGroup AS tmpNg
-                    WHERE (tmpNg.MaxOdds-MinOdds)*100 >= lv_Rule_OddsSpread
+    WHERE EXISTS 	(	SELECT 1
+						FROM Temp_NewCustGroup AS tmpNg
+						WHERE ABS(ABS(tmpNg.MaxOdds) - ABS(tmpNg.MinOdds))*100 >= lv_Rule_OddsSpread
 							AND tmpNg.TotalStake >= lv_Rule_TotalStake
-                            AND tmpTs.CustID = tmpNg.CustID )
-					AND tmpTs.SequenceID > lv_LastSequenceID AND tmpTs.SequenceID <= ip_MaxSequenceID AND tmpTs.GroupID = 0;
+							AND tmpTs.CustID = tmpNg.CustID
+							AND tmpNg.MinSignNumber = tmpNg.MaxSignNumber
+					)
+			AND tmpTs.SequenceID > lv_LastSequenceID AND tmpTs.SequenceID <= ip_MaxSequenceID AND tmpTs.GroupID = 0
+			;
+			
+	# The different sign
+	UPDATE Temp_Trans AS tmpTs
+	SET tmpTs.GroupID = 1
+    WHERE EXISTS 	(	SELECT 1
+						FROM Temp_NewCustGroup AS tmpNg
+						WHERE ((1 - ABS(tmpNg.MaxOdds)) + (1 - ABS(tmpNg.MinOdds)))*100 >= lv_Rule_OddsSpread
+							AND tmpNg.TotalStake >= lv_Rule_TotalStake
+							AND tmpTs.CustID = tmpNg.CustID
+							AND tmpNg.MinSignNumber != tmpNg.MaxSignNumber
+					)
+			AND tmpTs.SequenceID > lv_LastSequenceID AND tmpTs.SequenceID <= ip_MaxSequenceID AND tmpTs.GroupID = 0
+			;
     
 	#=====GET Previous Cust BY Step Time
     SELECT	tmpTs.CustID

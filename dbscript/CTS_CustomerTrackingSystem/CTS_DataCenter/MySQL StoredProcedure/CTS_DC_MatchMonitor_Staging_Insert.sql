@@ -28,6 +28,7 @@ BEGIN
             - 	20221115@Casey.Huynh: Detect Irrgation Rule [Redmine ID: #179499]
             - 	20221206@Casey.Huynh: Change Table Nane, ScoreDiff and add HDP, Odds range for Fixed Game [Redmine ID: #181205]
 			- 	20221228@Victoria.Le: Add HDP for Irrgation Rule [Redmine ID: #181990]
+			-	20230203@Victoria.Le: Change Odds Range for Fixed Game Rule - Malayisan Odds [Redmine ID: #183277]
             
 		Param's Explanation (filtered by):		
 
@@ -224,7 +225,7 @@ BEGIN
 		FROM Temp_Staging AS tmpSt
 			INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_FIXEDGAME
 						AND tmpMst.SportType = tmpSt.SportType AND (tmpMst.LeagueType = 2 OR (tmpMst.LeagueType = tmpSt.IsMajorLeague))
-                        AND tmpSt.Odds BETWEEN tmpMst.MinOdds AND tmpMst.MaxOdds;
+                        AND ABS(tmpSt.Odds) >= tmpMst.MinOdds;
 
         #=====Staging Hedging Soccer================================
 		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingHedgingLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
@@ -357,7 +358,7 @@ BEGIN
 			,	CURRENT_TIMESTAMP(3) AS InsertTime
 		FROM Temp_Staging AS tmpSt
 			INNER JOIN Temp_RuleFixedGame AS tmpMst ON tmpMst.SportType = tmpSt.SportType AND tmpMst.LeagueType = tmpSt.IsMajorLeague
-				AND tmpSt.Odds BETWEEN tmpMst.MinOdds AND tmpMst.MaxOdds;
+				AND ABS(tmpSt.Odds) >= tmpMst.MinOdds;
 
          #=====GROUP BETTING===================
         DROP TEMPORARY TABLE IF Exists Temp_RuleHedging;

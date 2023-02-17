@@ -21,12 +21,13 @@ sp: BEGIN
 		Original:
 
 		Revisions:
-			- 20220726@Casey.Huynh: Created [Redmine ID: #175700]
-            - 20220726@Casey.Huynh: Handle Duaration in 7 SECOND [Redmine ID: #177139]
-            - 20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
-            - 20221023@Casey.Huynh: Adjust Odds Range Rule, fix Data Type HighStake, Get Trans >= lv_FromTransDate for Non-Live [Redmine ID: #179065]
-            - 20221227@Casey.Huynh: Rename Table and Tunning Performance [Redmine ID: #181205, #181914]
-            - 20230112@Casey.Huynh: Fix issue not return full TransID [Redmine ID: #182814]
+			- 20220726@Casey.Huynh: 	Created [Redmine ID: #175700]
+			- 20220726@Casey.Huynh: 	Handle Duaration in 7 SECOND [Redmine ID: #177139]
+			- 20220815@Casey.Huynh: 	Scale Out DB [Redmine ID: #176472]
+			- 20221023@Casey.Huynh: 	Adjust Odds Range Rule, fix Data Type HighStake, Get Trans >= lv_FromTransDate for Non-Live [Redmine ID: #179065]
+			- 20221227@Casey.Huynh: 	Rename Table and Tunning Performance [Redmine ID: #181205, #181914]
+			- 20230112@Casey.Huynh: 	Fix issue not return full TransID [Redmine ID: #182814]
+			- 20230206@Victoria.Le:		Change formula for OddsSpread [Redmine ID: #183277]
         
 		Param's Explanation (filtered by):	
 
@@ -38,7 +39,7 @@ sp: BEGIN
 	
     DECLARE	lv_SportType					INT;
     DECLARE	lv_IsMajorLeague				BOOLEAN;
-    DECLARE lv_MaxSequenceID 					BIGINT UNSIGNED;
+    DECLARE lv_MaxSequenceID 				BIGINT UNSIGNED;
     DECLARE lv_MaxTransDate 				DATETIME(3);
 	DECLARE lv_LastTransDate 				DATETIME(3);
     DECLARE lv_FromTransDate 				BIGINT UNSIGNED;
@@ -79,31 +80,36 @@ sp: BEGIN
             ,	CustID			BIGINT
             , 	Stake			DECIMAL(20,4)
             ,	Odds			DECIMAL(10,4)
+			,	SignNumber		TINYINT
             ,	PRIMARY KEY (TimeToSecond, SequenceID, TransID, CustID)
             
         );
         
         DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorGroupInSecond;
         CREATE TEMPORARY TABLE Temp_MatchMonitorGroupInSecond(				
-            	TimeToSecond	BIGINT UNSIGNED
-            ,	TotalTicket		INT
-            , 	TotalHighStake	DECIMAL(20,4)
-            ,	MinOdds			DECIMAL(10,4)
-            ,	MaxOdds			DECIMAL(10,4)
-            ,	MinSequenceID	BIGINT UNSIGNED
-            ,	MaxSequenceID	BIGINT UNSIGNED
+            	TimeToSecond		BIGINT UNSIGNED
+            ,	TotalTicket			INT
+            , 	TotalHighStake		DECIMAL(20,4)
+            ,	MinOdds				DECIMAL(10,4)
+            ,	MaxOdds				DECIMAL(10,4)
+            ,	MinSequenceID		BIGINT UNSIGNED
+            ,	MaxSequenceID		BIGINT UNSIGNED 
+			,	MinSignNumber		TINYINT
+			,	MaxSignNumber		TINYINT
             ,	PRIMARY KEY (TimeToSecond)
         );    
         
         DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorGroup;
         CREATE TEMPORARY TABLE Temp_MatchMonitorGroup(				
-            	TimeToSecond	BIGINT UNSIGNED
-            ,	TotalTicket		INT
-            , 	TotalHighStake	DECIMAL(20,4)
-            ,	MinOdds			DECIMAL(10,4)
-            ,	MaxOdds			DECIMAL(10,4)
+            	TimeToSecond		BIGINT UNSIGNED
+            ,	TotalTicket			INT
+            , 	TotalHighStake		DECIMAL(20,4)
+            ,	MinOdds				DECIMAL(10,4)
+            ,	MaxOdds				DECIMAL(10,4)
             ,	MinSequenceID		BIGINT UNSIGNED
-            ,	MaxSequenceID		BIGINT UNSIGNED
+            ,	MaxSequenceID		BIGINT UNSIGNED 
+			,	MinSignNumber		TINYINT
+			,	MaxSignNumber		TINYINT
             ,	PRIMARY KEY (TimeToSecond)
         );  
     
@@ -134,13 +140,14 @@ sp: BEGIN
 		ORDER BY TransDate
         LIMIT 1;        
        
-		INSERT INTO Temp_Trans(TimeToSecond, TransID, SequenceID, CustID, Stake, Odds)
+		INSERT INTO Temp_Trans(TimeToSecond, TransID, SequenceID, CustID, Stake, Odds, SignNumber)
         SELECT 	TO_SECONDS(TransDate) AS TimeToSecond
 			,	mms.TransID
 			,	mms.SequenceID
             ,	mms.CustID
 			,	mms.Stake
 			,	mms.Odds
+			,	SIGN(mms.Odds) AS SignNumber
         FROM CTS_DataCenter.MatchMonitorStagingFixedGameLive AS mms
         WHERE mms.MatchID = ip_MatchID AND mms.ScoreDiff = ip_ScoreDiff AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.Betteam = ip_Betteam AND mms.Hdp = ip_HDP AND mms.SequenceID <= ip_MaxSequenceID;
 	END IF; 
@@ -170,19 +177,20 @@ sp: BEGIN
 		ORDER BY TransDate
         LIMIT 1;        
        
-		INSERT INTO Temp_Trans(TimeToSecond, TransID, SequenceID, CustID, Stake, Odds)
+		INSERT INTO Temp_Trans(TimeToSecond, TransID, SequenceID, CustID, Stake, Odds, SignNumber)
         SELECT 	TO_SECONDS(TransDate) AS TimeToSecond
 			,	mms.TransID
 			,	mms.SequenceID
             ,	mms.CustID
 			,	mms.Stake
 			,	mms.Odds
+			,	SIGN(mms.Odds) AS SignNumber
         FROM CTS_DataCenter.MatchMonitorStagingFixedGameNonLive AS mms
         WHERE mms.MatchID = ip_MatchID AND mms.ScoreDiff = ip_ScoreDiff AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.Betteam = ip_Betteam AND mms.Hdp = ip_HDP AND mms.SequenceID <= ip_MaxSequenceID;
 	
 	END IF;
 
-	INSERT INTO Temp_MatchMonitorGroupInSecond(TimeToSecond, TotalTicket, TotalHighStake, MinOdds, MaxOdds, MinSequenceID, MaxSequenceID)
+	INSERT INTO Temp_MatchMonitorGroupInSecond(TimeToSecond, TotalTicket, TotalHighStake, MinOdds, MaxOdds, MinSequenceID, MaxSequenceID, MinSignNumber, MaxSignNumber)
 	SELECT	tmpTs.TimeToSecond
 		,	COUNT(1) AS TotalTicket
 		,	SUM(CASE WHEN tmpTs.Stake >= lv_Rule_HighStake THEN 1 ELSE 0 END) AS TotalHighStake
@@ -190,25 +198,30 @@ sp: BEGIN
 		,	MAX(tmpTs.Odds) AS MaxOdds
 		,	MIN(SequenceID) AS MinSequenceID
 		,	MAX(SequenceID) AS MaxSequenceID
+		,	MIN(tmpTs.SignNumber) AS MinSignNumber
+		,	MAX(tmpTs.SignNumber) AS MaxSignNumber
 	FROM Temp_Trans AS tmpTs
 	GROUP BY tmpTs.TimeToSecond;
     
     SET  @sqlString = CONCAT('
-    INSERT INTO Temp_MatchMonitorGroup(TimeToSecond, TotalTicket, TotalHighStake, MinOdds, MaxOdds, MinSequenceID, MaxSequenceID)
+    INSERT INTO Temp_MatchMonitorGroup(TimeToSecond, TotalTicket, TotalHighStake, MinOdds, MaxOdds, MinSequenceID, MinSignNumber, MaxSignNumber, MaxSequenceID)
     SELECT  tmpMg.TimeToSecond
-				,	SUM(tmpMg.TotalTicket)   OVER w1  AS TotalTrans                
-				,	SUM(tmpMg.TotalHighStake)   OVER w1  AS TotalHighStake				
-				,	MIN(tmpMg.MinOdds) OVER w1  AS MinOdds
-				, 	MAX(tmpMg.MaxOdds) OVER w1  AS MaxOdds
-                ,	MIN(tmpMg.MinSequenceID) OVER w1  AS MinSequenceID
-                ,	tmpMg.MaxSequenceID				
-		   FROM Temp_MatchMonitorGroupInSecond AS tmpMg
-		   WINDOW w1 AS (ORDER BY TimeToSecond DESC RANGE BETWEEN CURRENT ROW AND  ',lv_Rule_TimeStep,'  FOLLOWING)');
+		,	SUM(tmpMg.TotalTicket)   OVER w1  AS TotalTrans                
+		,	SUM(tmpMg.TotalHighStake)   OVER w1  AS TotalHighStake				
+		,	MIN(tmpMg.MinOdds) OVER w1  AS MinOdds
+		, 	MAX(tmpMg.MaxOdds) OVER w1  AS MaxOdds
+		,	MIN(tmpMg.MinSequenceID) OVER w1  AS MinSequenceID
+		,	MIN(tmpMg.MinSignNumber) OVER w1 AS MinSignNumber
+		,	MAX(tmpMg.MaxSignNumber) OVER w1 AS MaxSignNumber
+		,	tmpMg.MaxSequenceID	
+	FROM Temp_MatchMonitorGroupInSecond AS tmpMg
+	WINDOW w1 AS (ORDER BY TimeToSecond DESC RANGE BETWEEN CURRENT ROW AND  ',lv_Rule_TimeStep,'  FOLLOWING)');
 	  
     PREPARE stmt1 FROM @sqlString;
 
 	EXECUTE stmt1;
 
+	# The same sign
 	INSERT INTO Temp_FixedTransRange (TimeToSecond,MinSequenceID, MaxSequenceID)
 	SELECT	tmpMg.TimeToSecond
 		,	tmpMg.MinSequenceID
@@ -216,8 +229,21 @@ sp: BEGIN
 	FROM	Temp_MatchMonitorGroup AS tmpMg
 	WHERE tmpMg.TotalTicket > lv_Rule_TotalTicket
 		AND (tmpMg.TotalHighStake/tmpMg.TotalTicket) > lv_Rule_HighStakeTicketPercent 
-		AND (tmpMg.MaxOdds - tmpMg.MinOdds)*100 >= lv_Rule_OddsSpread
-		AND tmpMg.TimeToSecond >= lv_FromTransDate;
+		AND ABS(ABS(tmpMg.MaxOdds) - ABS(tmpMg.MinOdds))*100 >= lv_Rule_OddsSpread
+		AND tmpMg.TimeToSecond >= lv_FromTransDate
+		AND tmpMg.MinSignNumber = tmpMg.MaxSignNumber;
+		
+	# The different sign
+	INSERT INTO Temp_FixedTransRange (TimeToSecond,MinSequenceID, MaxSequenceID)
+	SELECT	tmpMg.TimeToSecond
+		,	tmpMg.MinSequenceID
+        ,	tmpMg.MaxSequenceID
+	FROM	Temp_MatchMonitorGroup AS tmpMg
+	WHERE tmpMg.TotalTicket > lv_Rule_TotalTicket
+		AND (tmpMg.TotalHighStake/tmpMg.TotalTicket) > lv_Rule_HighStakeTicketPercent 
+		AND ((1-ABS(tmpMg.MaxOdds))+(1-ABS(tmpMg.MinOdds)))*100 >= lv_Rule_OddsSpread
+		AND tmpMg.TimeToSecond >= lv_FromTransDate
+		AND tmpMg.MinSignNumber != tmpMg.MaxSignNumber;
 
 	SELECT lv_Rule_Reason AS Reason
 		,	tmp.TransIDList
