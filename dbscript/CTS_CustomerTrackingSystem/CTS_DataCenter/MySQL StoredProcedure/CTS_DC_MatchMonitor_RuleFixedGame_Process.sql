@@ -49,7 +49,7 @@ sp: BEGIN
     DECLARE	lv_Rule_HighStake				SMALLINT;
     DECLARE	lv_Rule_HighStakeTicketPercent	DECIMAL(6,2);    
 	DECLARE	lv_Rule_TimeStep				INT; 
-    DECLARE	lv_Rule_OddsSpread				SMALLINT;
+    DECLARE	lv_Rule_OddsSpread				DECIMAL(4,2);
     DECLARE	lv_Rule_Reason					INT;
 	
     #============DEBUG LOG============================================================
