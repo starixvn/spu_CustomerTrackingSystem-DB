@@ -21,14 +21,15 @@ AS
 	DB	 : bodb02
 
 	Revisions:
-		- 20210526@Long.Luu: Created [Redmine ID: #152883]
-		- 20210728@Long.Luu: Exclude SABA's leaguegroup [Redmine ID: #159187]		
-		- 20210820@Long.Luu: Separate Live/Nonlive ticket selection [Redmine ID: #159195]
-		- 20210928@Long.Luu: Remove useless filter [Redmine ID: #159195]		
-		- 20211214@Long.Luu: Return danger info [Redmine ID: #165606]
-		- 20220110@Long.Luu: Return BetId and support data for Basketbal & Esports [Redmine ID: #166986]
-		- 20220728@Long.Luu: Convert stake to RM [Redmine ID: #175913]
-		- 20220725@Long.Luu: Return More Ticket's Info [Redmine ID: #175700]
+		- 20210526@Long.Luu:	Created [Redmine ID: #152883]
+		- 20210728@Long.Luu:	Exclude SABA's leaguegroup [Redmine ID: #159187]		
+		- 20210820@Long.Luu:	Separate Live/Nonlive ticket selection [Redmine ID: #159195]
+		- 20210928@Long.Luu:	Remove useless filter [Redmine ID: #159195]		
+		- 20211214@Long.Luu:	Return danger info [Redmine ID: #165606]
+		- 20220110@Long.Luu:	Return BetId and support data for Basketbal & Esports [Redmine ID: #166986]
+		- 20220728@Long.Luu:	Convert stake to RM [Redmine ID: #175913]
+		- 20220725@Long.Luu:	Return More Ticket's Info [Redmine ID: #175700]
+		- 20230203@Victoria.Le	Various Odds will be converted to a unique one - Malaysian Odds [Redmine ID: #183277]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize)
@@ -154,7 +155,7 @@ BEGIN
 
 	IF (@QueryType = 1)
 		BEGIN
-			INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,IsMajorLeague,SportType,BetType,CustId,BetTeam, BetId,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
+			INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,IsMajorLeague,SportType,BetType,CustId,BetTeam,BetId,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus,LiveIndicator)
 			SELECT	TOP (@BatchSize) b.sequenceid
 				,	b.transid
 				,	b.transdate
@@ -177,8 +178,20 @@ BEGIN
 				,	b.betid
 				,	b.stake * b.actualrate
 				,	CASE 
-						WHEN b.odds < 0 THEN 1/ABS(b.odds)
-						ELSE b.odds
+						-- Decimal
+						WHEN b.oddstype = 1 THEN (CASE	
+													WHEN b.odds <= 2 THEN (b.odds - 1)
+													WHEN b.odds > 2 THEN -(1/(b.odds - 1)) END)
+						-- Hong Kong
+						WHEN b.oddstype = 2 THEN (CASE	
+													WHEN b.odds <= 1 THEN b.odds
+													WHEN b.odds > 1 THEN -(1/b.odds) END)
+						-- Indonesia
+						WHEN b.oddstype = 3 THEN -(1/NULLIF(b.odds,0))
+						-- Malaysian & Myanmar
+						WHEN b.oddstype IN (4,6) THEN b.odds
+						-- US
+						WHEN b.oddstype = 5 THEN -(100/NULLIF(b.odds,0))
 					END AS odds
 				,	b.hdp1
 				,	b.hdp2
@@ -200,6 +213,7 @@ BEGIN
 				AND b.Username NOT LIKE '%Cashout%'
 				AND l.LeagueGroupID NOT IN (42,74,108,113) -- SABA leagues
 				AND c.Site NOT IN ('NextBet','9wickets','9wsports')
+				AND ISNULL(b.oddstype,0) <> 0
 			ORDER BY b.sequenceid ASC
 				;
 		END
