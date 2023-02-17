@@ -21,7 +21,7 @@ BEGIN
 			CALL SPU_AIML.SPU_AIML_GB_3S_GetCouple_FraudDetails (@ip_CoupleInfoDetails := '[{"CoupleID" : 17,"CreatedDate" : "2023-02-12", "TypeIPEntanglement:": 2},{"CoupleID" : 95,"CreatedDate" : "2023-02-11", "TypeIPEntanglement:": 2}]');
 	*/
 	
-	 DROP TEMPORARY TABLE IF EXISTS Temp_GB3S_CoupleInfo;
+	DROP TEMPORARY TABLE IF EXISTS Temp_GB3S_CoupleInfo;
 	CREATE TEMPORARY TABLE Temp_GB3S_CoupleInfo( 		
 			CoupleID			BIGINT UNSIGNED NOT NULL
         , 	CreatedDate			DATE
@@ -41,6 +41,12 @@ BEGIN
 		,	EventDate			DATE
 		,	FraudTransList		TEXT
         ,	PRIMARY KEY (MatchID,StateID)
+	);
+    
+	DROP TEMPORARY TABLE IF EXISTS Temp_GB3S_StateSingleCust;
+	CREATE TEMPORARY TABLE Temp_GB3S_StateSingleCust(
+			MatchID				BIGINT
+		,	StateID				BIGINT
 	);
 	
 	INSERT INTO Temp_GB3S_CoupleInfo
