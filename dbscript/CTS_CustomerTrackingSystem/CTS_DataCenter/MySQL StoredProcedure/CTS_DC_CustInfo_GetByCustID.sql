@@ -18,7 +18,7 @@ BEGIN
 			- 	20210720@Long.Luu: 		Change datatype from varchar(8k) to longtext [Redmine ID: 152883]
             -	20211213@Casey.Huynh: 	Enhance MM, return result (remove Danger Level) [Redmine ID: 165606]
             - 	20221118@Aries.Nguyen: 	Support suspicious Irrigation in Match Monitor [Redmine ID: #179499]
-			- 	20230118@Victoria.Le: 	Return IsNormalLinkedPA to definite whether Customer is Normal Categories links with PA [RedmineID: #181995]
+			- 	20230118@Victoria.Le: 	Return ParentID & TaggingType to definite whether Customer is Problem Account/Normal Categories links with PA [RedmineID: #181995]
 			
 		Param's Explanation (filtered by):
         		
@@ -46,7 +46,8 @@ BEGIN
 		,	c.Currency
 		,	CASE WHEN s.SubscriberType = 0 THEN 'C' ELSE 'L' END AS SubscriberType
         ,	clss.CustomerClass
-		,	clss.IsNormalLinkedPA
+		,	clss.ParentID
+		,	clss.TaggingType
 	FROM Temp_CustID AS t 
 		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON t.CustID = c.CustID AND CustSubID = 0
 		INNER JOIN CTS_Admin.Subscriber AS s ON c.SubscriberID	= s.SubscriberID
