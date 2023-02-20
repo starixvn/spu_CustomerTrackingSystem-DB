@@ -203,7 +203,7 @@ sp:BEGIN
         # take back the old log for the new active ones
         INSERT INTO Temp_History(ID, CustID, CTSCustID, SportGroupID, CategoryID,TurnoverRM , WinlossRM, BetCount, ActiveDays, RobotCounter, ProbationPeriodWinloss, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsAppliedCC, IsDataChanged, ActionType, IsAuto, LastModifiedDate, LastModifiedBy, InsertDate, TaggingType, TargetDangerLevel1, IsAppliedDangerLevel1, TWGroupBettingRate, TWTicketRejectRate, TWBetCount, TWDesktopUsageRate,Remark,IsDirect,TVSRequestID, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI)
 		SELECT 	ID  					
-			,	CustID  				
+			,	h.CustID  				
 			,	CTSCustID  				
 			,	SportGroupID  			
 			,	CategoryID  			
