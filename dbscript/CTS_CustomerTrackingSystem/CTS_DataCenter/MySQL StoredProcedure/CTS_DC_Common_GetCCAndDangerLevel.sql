@@ -138,7 +138,7 @@ BEGIN
                 LIMIT 1) AS clss
 	GROUP BY tmp.CustID;
                 
-    INSERT INTO Temp_CustCateInfo(CustID,CategoryID,CustomerClass,CustomerClassName,IsNormalLinkedPA,DangerLevel,DangerLevelType)
+    INSERT INTO Temp_CustCateInfo(CustID,CategoryID,CustomerClass,CustomerClassName,ParentID,TaggingType,DangerLevel,DangerLevelType)
     SELECT 	tmp.CustID
 		,	clss.CategoryID
 		,	clss.CustomerClass
