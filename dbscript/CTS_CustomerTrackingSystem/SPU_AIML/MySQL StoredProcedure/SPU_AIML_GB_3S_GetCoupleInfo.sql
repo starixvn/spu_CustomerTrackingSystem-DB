@@ -4,7 +4,6 @@ DELIMITER $$
 CREATE DEFINER=`AIMLOwner`@`%` PROCEDURE `SPU_AIML_GB_3S_GetCoupleInfo`(
 		IN 	ip_CustID1			BIGINT UNSIGNED
 	,	IN 	ip_CustID2			BIGINT UNSIGNED
-	,	OUT op_FirstCreatedDate	DATE
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -20,8 +19,7 @@ BEGIN
         Param's Explanation (filtered by):
 			ID pf ip_CustID1 < ID of ip_CustID2
 		Example:
-			CALL SPU_AIML.SPU_AIML_GB_3S_GetCoupleInfo (@ip_CustID1 := 62218173, @ip_CustID2:=66688622, @op_FirstCreatedDate);
-			SELECT @op_FirstCreatedDate;
+			CALL SPU_AIML.SPU_AIML_GB_3S_GetCoupleInfo (@ip_CustID1 := 62218173, @ip_CustID2:=66688622);
 			
 	*/
     
@@ -48,14 +46,6 @@ BEGIN
 			MatchID				BIGINT
 		,	StateID				BIGINT
 	);
-    
-	SELECT CreatedDate
-	INTO op_FirstCreatedDate
-	FROM CTS_DataCenter.AssociationByAI
-	WHERE FromCustID = ip_CustID1
-		AND ToCustID = ip_CustID2
-		AND AssType = 2; -- 1: OTGB; 2: 5G3S
-	
     
     INSERT INTO Temp_GB3S_CoupleInfo
 	(
