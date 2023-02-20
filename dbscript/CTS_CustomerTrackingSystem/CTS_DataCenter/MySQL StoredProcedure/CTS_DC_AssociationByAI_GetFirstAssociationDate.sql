@@ -3,10 +3,10 @@ DROP PROCEDURE IF EXISTS `CTS_DC_AssociationByAI_GetFirstAssociationDate`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociationByAI_GetFirstAssociationDate`(
-		IN 	ip_CustID1			BIGINT 		UNSIGNED
-	,	IN 	ip_CustID2			BIGINT 		UNSIGNED
-	,	IN 	ip_AssType			SMALLINT 	UNSIGNED
-	,	OUT op_FirstCreatedDate	DATE
+		IN 	ip_CustID1				BIGINT 		UNSIGNED
+	,	IN 	ip_CustID2				BIGINT 		UNSIGNED
+	,	IN 	ip_AssType				SMALLINT 	UNSIGNED
+	,	OUT op_FirstAssociationDate	DATE
 )
     SQL SECURITY INVOKER
 sp:BEGIN  
@@ -22,12 +22,12 @@ sp:BEGIN
 			- ip_AssType: 1: OTGB; 2: 5G3S
 
         Example:
-			- CALL CTS_DataCenter.CTS_DC_Association_GetAssociationDate(@ip_CustID1 := 62218173, @ip_CustID2:=66688622, @ip_AssType := 2, @op_FirstCreatedDate);
-			- SELECT @op_FirstCreatedDate;
+			- CALL CTS_DataCenter.CTS_DC_Association_GetAssociationDate(@ip_CustID1 := 62218173, @ip_CustID2:=66688622, @ip_AssType := 2, @op_FirstAssociationDate);
+			- SELECT @op_FirstAssociationDate;
 	*/   
 	
     SELECT CreatedDate
-	INTO op_FirstCreatedDate
+	INTO op_FirstAssociationDate
 	FROM CTS_DataCenter.AssociationByAI
 	WHERE FromCustID = ip_CustID1
 		AND ToCustID = ip_CustID2
