@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/ 
-DROP PROCEDURE IF EXISTS `CTS_DC_Association_GetAssociationDate`;
+DROP PROCEDURE IF EXISTS `CTS_DC_AssociationByAI_GetFirstAssociationDate`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_GetAssociationDate`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociationByAI_GetFirstAssociationDate`(
 		IN 	ip_CustID1			BIGINT 		UNSIGNED
 	,	IN 	ip_CustID2			BIGINT 		UNSIGNED
 	,	IN 	ip_AssType			SMALLINT 	UNSIGNED
