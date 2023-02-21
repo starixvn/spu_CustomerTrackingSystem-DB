@@ -22,6 +22,7 @@ sp: BEGIN
             -	202200929@Casey.Huynh: Seperate By Sport [Redmine ID: #178310]
             - 	202201021@Casey.Huynh: Group By Betteam [Redmine ID: #179439]
             -	20221205@Casey.Huynh: Rename Table [Redmine ID: #179502]
+            -	20230221@Casey.Huynh: Update Rule, The same Choice [Redmine ID: #184041]
 		Param's Explanation (filtered by):	
 
 		Example:
@@ -79,10 +80,11 @@ sp: BEGIN
 				,	mms.ScoreDiff
 				,	mms.BettypeID
                 ,	mms.BetID
+                ,	mms.Betteam
 			FROM CTS_DataCenter.MatchMonitorStagingGroupBettingLive AS mms
 				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType
             WHERE mms.SequenceID <= lv_MaxSequenceID
-			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID
+			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam
 			HAVING COUNT(DISTINCT mms.CustID) > 1;      
             
 		END IF;
@@ -103,10 +105,11 @@ sp: BEGIN
 				,	mms.ScoreDiff
 				,	mms.BettypeID
                 ,	mms.BetID
+                ,	mms.Betteam
 			FROM CTS_DataCenter.MatchMonitorStagingGroupBettingNonLive AS mms
 				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType
             WHERE mms.SequenceID <= lv_MaxSequenceID
-			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID
+			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam
 			HAVING COUNT(DISTINCT mms.CustID) > 1 ;            
 		END IF;        
 	END IF;

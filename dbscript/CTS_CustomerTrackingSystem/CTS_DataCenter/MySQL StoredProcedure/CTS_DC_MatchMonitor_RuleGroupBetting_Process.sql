@@ -9,6 +9,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleGroupBetting_Pr
     ,	IN ip_ScoreDiff			INT 
     ,	IN ip_BettypeID			INT UNSIGNED
     ,	IN ip_BetID				BIGINT
+    ,	IN ip_Betteam			VARCHAR(10)
 )
     SQL SECURITY INVOKER
 sp: BEGIN
@@ -35,9 +36,10 @@ sp: BEGIN
             -	20221021@Casey.Huynh: Fixed Clean Data Staging [Redmine ID: #179427]
             -	20221027@Casey.Huynh: Seperate pool Staging [RedmineID: 179439]
             -	20221205@Casey.Huynh: Rename Table and remove (Arbitrage,Hedging) [Redmine ID: #179502]
+            -	20230221@Casey.Huynh: Update Rule, The same Choice [Redmine ID: #184041]
 		Param's Explanation (filtered by):	
 		Example:
-			- CALL CTS_DC_MatchMonitor_RuleGroupBetting_Process(1,113171940189,22081995,1,1,0);
+			- CALL CTS_DC_MatchMonitor_RuleGroupBetting_Process(1,113171940189,22081995,1,1,0,'a');
 			
 	*/
     DECLARE CONS_LOG 			TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
@@ -239,7 +241,7 @@ sp: BEGIN
     THEN
 		SELECT mms.SportType INTO lv_SportType FROM CTS_DataCenter.MatchMonitorStagingGroupBettingLive AS mms WHERE mms.MatchID = ip_MatchID LIMIT 1;
         
-		INSERT INTO Temp_StagingTrans(TransID, SequenceID, TransDate, CustID, OldGroupID, Stake,Betteam)
+		INSERT INTO Temp_StagingTrans(TransID, SequenceID, TransDate, CustID, OldGroupID, Stake, Betteam)
         SELECT	mms.TransID
 			,	mms.SequenceID
 			,	mms.TransDate
@@ -248,7 +250,7 @@ sp: BEGIN
             ,	mms.Stake
             ,	mms.Betteam
 		FROM CTS_DataCenter.MatchMonitorStagingGroupBettingLive AS mms
-        WHERE mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.ScoreDiff = ip_ScoreDiff AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID;
+        WHERE mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.ScoreDiff = ip_ScoreDiff AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.Betteam = ip_Betteam;
         
 	ELSE 
 		SELECT mms.SportType INTO lv_SportType FROM CTS_DataCenter.MatchMonitorStagingGroupBettingNonLive AS mms WHERE mms.MatchID = ip_MatchID LIMIT 1;
@@ -262,7 +264,7 @@ sp: BEGIN
             ,	mms.Stake
             ,	mms.Betteam
 		FROM CTS_DataCenter.MatchMonitorStagingGroupBettingNonLive AS mms
-        WHERE  mms.SequenceID <= ip_MaxSequenceID AND	mms.MatchID = ip_MatchID AND mms.ScoreDiff = ip_ScoreDiff AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID;        
+        WHERE  mms.SequenceID <= ip_MaxSequenceID AND	mms.MatchID = ip_MatchID AND mms.ScoreDiff = ip_ScoreDiff AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID AND mms.Betteam = ip_Betteam;        
     END IF;
     
 	SELECT rs.TotalStake, rs.TimeStep, rs.Reason
