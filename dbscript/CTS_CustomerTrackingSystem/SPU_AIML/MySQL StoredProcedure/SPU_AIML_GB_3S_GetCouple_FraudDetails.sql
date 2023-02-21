@@ -21,6 +21,9 @@ BEGIN
 			CALL SPU_AIML.SPU_AIML_GB_3S_GetCouple_FraudDetails (@ip_CoupleInfoDetails := '[{"CoupleID" : 17,"CreatedDate" : "2023-02-12", "TypeIPEntanglement:": 2},{"CoupleID" : 95,"CreatedDate" : "2023-02-11", "TypeIPEntanglement:": 2}]');
 	*/
 	
+	DECLARE lv_CustID1 BIGINT;
+	DECLARE lv_CustID2 BIGINT;
+	
 	DROP TEMPORARY TABLE IF EXISTS Temp_GB3S_CoupleInfo;
 	CREATE TEMPORARY TABLE Temp_GB3S_CoupleInfo( 		
 			CoupleID			BIGINT UNSIGNED NOT NULL
@@ -45,8 +48,8 @@ BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_GB3S_StateSingleCust;
 	CREATE TEMPORARY TABLE Temp_GB3S_StateSingleCust(
-			MatchID				BIGINT
-		,	StateID				BIGINT
+			StateID				BIGINT 	PRIMARY KEY
+		,	CntCustID			SMALLINT
 	);
 	
 	INSERT INTO Temp_GB3S_CoupleInfo
@@ -63,6 +66,12 @@ BEGIN
 													,	TypeIPEntanglement	SMALLINT	PATH '$.TypeIPEntanglement'
 					)) AS tmp;
 	
+		
+	SELECT CustID1,	CustID2
+	INTO lv_CustID1, lv_CustID2
+	FROM SPU_AIML.GB_3S_CoupleInfo AS ci
+		INNER JOIN Temp_GB3S_CoupleInfo AS temp ON temp.CoupleID = ci.CoupleID
+	LIMIT 1;
 	
 	INSERT IGNORE INTO Temp_GB3S_CoupleDetails
 	(
@@ -90,25 +99,26 @@ BEGIN
 	WHERE s.StateID <> 0
 	ORDER BY temp.CreatedDate DESC;
 	
-	INSERT INTO Temp_GB3S_StateSingleCust (MatchID,StateID)
+	INSERT INTO Temp_GB3S_StateSingleCust (StateID,CntCustID)
 	WITH CTE AS (
-		SELECT 	ei.MatchID
-			,	ei.StateID
-			,	COUNT(ei.CustID) AS CntMatchIDStateID
+		SELECT 	
+			DISTINCT 
+				ei.StateID
+			,	ei.CustID
 		FROM SPU_AIML.GB_3S_EventInfo AS ei
 			INNER JOIN Temp_GB3S_CoupleDetails AS tmp ON tmp.StateID = ei.StateID
-														AND tmp.MatchID = ei.MatchID
-		GROUP BY 	ei.MatchID
-				,	ei.StateID
+		WHERE ei.CustID = lv_CustID1 
+			OR ei.CustID = lv_CustID2
 	)
-	SELECT MatchID,StateID
-	FROM CTE
-	WHERE CntMatchIDStateID = 1;
+	SELECT 	StateID
+		,	COUNT(CustID) AS CntCustID
+	FROM 	CTE
+	GROUP BY StateID;
 
 	DELETE tc
 	FROM Temp_GB3S_CoupleDetails AS tc
 		INNER JOIN Temp_GB3S_StateSingleCust AS ts ON ts.StateID = tc.StateID
-														AND ts.MatchID = tc.MatchID;
+	WHERE ts.CntCustID = 1;
     
 	SELECT 	StateID
 		,	SumStake
