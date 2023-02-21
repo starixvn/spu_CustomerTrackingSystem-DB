@@ -30,6 +30,7 @@ AS
 		- 20220728@Long.Luu:	Convert stake to RM [Redmine ID: #175913]
 		- 20220725@Long.Luu:	Return More Ticket's Info [Redmine ID: #175700]
 		- 20230203@Victoria.Le	Various Odds will be converted to a unique one - Malaysian Odds [Redmine ID: #183277]
+		- 20230220@Victoria.Le	Modify Formula to calculate Odds [Redmine ID: #184080]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize)
@@ -179,9 +180,11 @@ BEGIN
 				,	b.stake * b.actualrate
 				,	CASE 
 						-- Decimal
-						WHEN b.oddstype = 1 THEN (CASE	
-													WHEN b.odds <= 2 THEN (b.odds - 1)
-													WHEN b.odds > 2 THEN -(1/(b.odds - 1)) END)
+						WHEN b.oddstype = 1 THEN (CASE
+													WHEN ot.OddsType IS NOT NULL THEN (CASE 
+																						WHEN b.odds <= 2 THEN (b.odds - 1)
+																						WHEN b.odds > 2 THEN -(1/(b.odds - 1)) END)
+													ELSE b.odds END)
 						-- Hong Kong
 						WHEN b.oddstype = 2 THEN (CASE	
 													WHEN b.odds <= 1 THEN b.odds
@@ -204,6 +207,7 @@ BEGIN
 				INNER JOIN dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
 				INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
 				INNER JOIN #tmpSupportedSportBettype AS t WITH(NOLOCK) ON m.sporttype = t.SportType AND b.bettype = t.BetType
+				LEFT JOIN bodb02.dbo.f_Set_OddsTypeBettypes() AS ot ON ot.BetType = t.BetType
 			WHERE	b.sequenceid > @LastScannedSequenceID
                 AND m.eventstatus <> 'completed'
 				AND b.LiveIndicator = @IsLive
