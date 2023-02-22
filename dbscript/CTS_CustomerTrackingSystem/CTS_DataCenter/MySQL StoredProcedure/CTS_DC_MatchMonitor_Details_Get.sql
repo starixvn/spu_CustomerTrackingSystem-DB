@@ -46,9 +46,11 @@ BEGIN
 		AND mmd.LiveIndicator = ip_LiveIndicator
 	ORDER BY CustID;
 	
-	SELECT 	js.TransID		
+	SELECT 	js.TransId
+		,	mmd.Reason		
+        ,	mmd.ID AS GroupID
         ,	mmd.ScoreDiff
-        ,	GROUP_CONCAT(mmd.Reason) AS ReasonList
+        ,	mmd.Betteam
 	FROM   CTS_DataCenter.MatchMonitorDetails AS mmd
 		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mmd.ListTransID), ',', '","'), 
 						'$[*]' COLUMNS (TransID BIGINT UNSIGNED PATH '$')
@@ -56,9 +58,7 @@ BEGIN
 	WHERE 	mmd.BettypeID = ip_BettypeID
 		AND mmd.BetID = ip_BetID
 		AND mmd.MatchID = ip_MatchID
-		AND mmd.LiveIndicator = ip_LiveIndicator
-	GROUP BY js.TransID, mmd.ScoreDiff
-    ORDER BY js.TransID;
+		AND mmd.LiveIndicator = ip_LiveIndicator;
     
 	SELECT	js.TransID AS VerifiedTransID
 	FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans AS mdv
