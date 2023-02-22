@@ -25,7 +25,7 @@ BEGIN
             - 	20221122@Casey.Huynh: Update TotalScore to ScoreDiff [Redmine ID: #179499]
              -	20230109@Casey.Huynh: UpdateSoreDiff [Redmine ID: #182637]
              -	20230105@Casey.Huynh: Enhance Report, Seperate CustID List and TransID List [Redmine ID: #181995]
-            
+            - 	20230222@Casey.Huynh: For Merge Reason Group, Return All Trans [Redmine ID: 181995]
 		Param's Explanation (filtered by):
 		
 		Example:
@@ -46,11 +46,10 @@ BEGIN
 		AND mmd.LiveIndicator = ip_LiveIndicator
 	ORDER BY CustID;
 	
-	SELECT 	js.TransId
+	SELECT 	js.TransID
 		,	mmd.Reason		
         ,	mmd.ID AS GroupID
         ,	mmd.ScoreDiff
-        ,	mmd.Betteam
 	FROM   CTS_DataCenter.MatchMonitorDetails AS mmd
 		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mmd.ListTransID), ',', '","'), 
 						'$[*]' COLUMNS (TransID BIGINT UNSIGNED PATH '$')
