@@ -110,7 +110,7 @@ sp:BEGIN
 		,	InsertDate 				 
 	FROM CTS_DataCenter.CTSCustomerClassification_BySport_History
     WHERE ID BETWEEN lv_LastID AND lv_NextLastID
-        AND InsertDate <= lv_DateValid;
+        AND InsertDate < lv_DateValid;
     
     IF EXISTS (SELECT 1 FROM Temp_History) THEN
 		# Keep the max pointer
@@ -118,7 +118,7 @@ sp:BEGIN
 		INTO lv_LastIDValid
 		FROM Temp_History;
         
-		ALTER TABLE Temp_History ADD INDEX IX_Temp_History_LastModifiedDate (`LastModifiedDate`);
+		ALTER TABLE Temp_History ADD INDEX IX_Temp_History_InsertDate (`InsertDate`);
         
         # Find custs who have the log ahead --> all logs at this phase should be removed
 		INSERT INTO Temp_CustDataShouldBeRemoved(CustID, SportID)
@@ -130,7 +130,7 @@ sp:BEGIN
 		SELECT DISTINCT c.CustID, c.SportID
 		FROM cte_CurrentCust AS c
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport_History AS h ON c.CustID = h.CustID AND c.SportID = h.SportID
-		WHERE h.ID > lv_NextLastID;
+		WHERE h.ID > lv_LastIDValid;
         
         # find latest log to keep (not be removed)
         INSERT INTO Temp_HistoryShouldNotBeRemoved(ID)
@@ -139,7 +139,7 @@ sp:BEGIN
 			SELECT 	t.CustID
 				,	t.SportID
 				, 	t.ID
-                , 	ROW_NUMBER() OVER(PARTITION BY t.CustID, t.SportID ORDER BY t.LastModifiedDate DESC) AS row_num  
+                , 	ROW_NUMBER() OVER(PARTITION BY t.CustID, t.SportID ORDER BY t.InsertDate DESC) AS row_num  
 			FROM Temp_History AS t
 				LEFT JOIN Temp_CustDataShouldBeRemoved AS r ON t.CustID = r.CustID AND t.SportID = r.SportID
 			WHERE r.CustID IS NULL
