@@ -17,6 +17,7 @@ BEGIN
 			- 20210907@Long.Luu: Update Robot Users rules  [Redmine ID: #161232]            
 			- 20220211@Long.Luu: Remove detailed robot classification  [Redmine ID: #167726]
 			- 20220603@Long.Luu: Merge Robot AI & Robot TW [Redmine ID: #172561]
+			- 20230207@Long.Luu: Get robot classification [Redmine ID: #183281]
             
 		Explanation:
 			- RobotType: 2-Bad | 1-Good | 0-Observed | -1-No classification | -2-Not Robot
@@ -27,33 +28,23 @@ BEGIN
     
     DECLARE CONST_ROBOTTYPE_BAD 			INT DEFAULT 2;
 	DECLARE	CONST_ROBOTTYPE_GOOD 			INT DEFAULT 1;
-	DECLARE CONST_ROBOTTYPE_OBSERVED 		INT DEFAULT 0;
-    DECLARE CONST_ROBOTTYPE_NOTYPE 			INT DEFAULT -1;
-    DECLARE CONST_ROBOTTYPE_NOTROBOT 		INT DEFAULT -2;
-        
-    DECLARE	CONST_CATEGORYGROUP_ROBOT 		INT DEFAULT 61;
+    DECLARE CONST_ROBOTTYPE_NOTROBOT 		INT DEFAULT 0;
+    
     DECLARE	CONST_CATEGORYGROUP_BADROBOT 	INT DEFAULT 163;
     DECLARE	CONST_CATEGORYGROUP_GOODROBOT	INT DEFAULT 164;
     
-    SET @LatestRobotType = -1;
-    SET @IsRobot = EXISTS(
-							SELECT 1 
-                            FROM CTSCustomerClassification 
-                            WHERE CustID = ip_CustID
-								AND CategoryID IN (CONST_CATEGORYGROUP_ROBOT, 81, 161, CONST_CATEGORYGROUP_BADROBOT, CONST_CATEGORYGROUP_GOODROBOT)
-					);
-                    
-	SELECT RobotType
-    INTO @LatestRobotType
-    FROM RobotClassification
+    SET @IsRobot = 0;
+    
+    SELECT CategoryID
+	INTO @IsRobot
+	FROM CTSCustomerClassification 
 	WHERE CustID = ip_CustID
-    ORDER BY FromDate DESC
-    LIMIT 1;
+		AND CategoryID IN (CONST_CATEGORYGROUP_BADROBOT, CONST_CATEGORYGROUP_GOODROBOT);
     
     SELECT 	ip_CustID
 		, 	CASE 
-				WHEN @LatestRobotType IN (CONST_ROBOTTYPE_BAD,CONST_ROBOTTYPE_GOOD,CONST_ROBOTTYPE_OBSERVED) THEN @LatestRobotType
-                WHEN @IsRobot = 1 THEN CONST_ROBOTTYPE_NOTYPE
+				WHEN @IsRobot = CONST_CATEGORYGROUP_BADROBOT THEN CONST_ROBOTTYPE_BAD
+                WHEN @IsRobot = CONST_CATEGORYGROUP_GOODROBOT THEN CONST_ROBOTTYPE_GOOD
                 ELSE CONST_ROBOTTYPE_NOTROBOT
 			END AS 'RobotType';
     

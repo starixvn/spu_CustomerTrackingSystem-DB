@@ -16,7 +16,9 @@ sp:BEGIN
 		Revisions:
 			- 20220316@Irena.Vo: Created [Redmine ID: #169960]
 			- 20220328@Irena.Vo: Fix bug return LastCreatedDate is NULL OR LastCTSCustID is NULL  [Redmine ID: #170610]
-            - 20220331@Aries.Nguyen: Fix performance issue  [Redmine ID: #170769]
+            - 20220331@Aries.Nguyen: Fix performance issue  [Redmine ID: #170769]            
+			- 20230207@Long.Luu: Get exact lastticketdate [Redmine ID: #183281]
+            
 		Param's Explanation (filtered by):
 		Example: 
 			- CALL CTS_DC_CustClassification_DailyScan_GetInactiveNewMember (@op_LastCategoryID, @op_LastCustID);
@@ -74,7 +76,7 @@ sp:BEGIN
 			AND NOT EXISTS (SELECT 1 
 							FROM  CTS_Archive.CTSCustomerAssociationStatus AS ticket 
 							WHERE ticket.CTSCustID = clss.CTSCustID
-								AND ticket.LastTicketDate > '",lv_ScanDateValid,"')
+								AND IFNULL(ticket.LastTicketDate, ticket.Created) > '",lv_ScanDateValid,"')
 		ORDER BY clss.CategoryID ASC
 			,	 clss.CustID ASC
 		LIMIT ",lv_BatchSize,";");
@@ -94,7 +96,7 @@ sp:BEGIN
             AND NOT EXISTS (SELECT 1 
 							FROM  CTS_Archive.CTSCustomerAssociationStatus AS ticket 
 							WHERE ticket.CTSCustID = clss.CTSCustID
-								AND ticket.LastTicketDate > lv_ScanDateValid)
+								AND IFNULL(ticket.LastTicketDate, ticket.Created) > lv_ScanDateValid)
 		ORDER BY cate.CategoryID ASC
 		LIMIT 1; 
     END IF;
@@ -110,7 +112,7 @@ sp:BEGIN
 			AND NOT EXISTS (SELECT 1 
 							FROM  CTS_Archive.CTSCustomerAssociationStatus AS ticket 
 							WHERE ticket.CTSCustID = clss.CTSCustID
-								AND ticket.LastTicketDate > '",lv_ScanDateValid,"')
+								AND IFNULL(ticket.LastTicketDate, ticket.Created) > '",lv_ScanDateValid,"')
 		ORDER BY clss.CategoryID ASC
 			,	 clss.CustID ASC
 		LIMIT ", lv_BatchSize,";");
