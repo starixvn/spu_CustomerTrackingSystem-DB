@@ -68,8 +68,7 @@ BEGIN
 	IF @ListTransId <> ''
 	BEGIN
 		INSERT INTO #tmpTransIds (TransId)
-		SELECT value FROM STRING_SPLIT(@ListTransId, ',')
-		OPTION (MAXRECURSION 0);
+		SELECT value FROM STRING_SPLIT(@ListTransId, ',');
 	END;
 
 	INSERT INTO #tmpTickets
