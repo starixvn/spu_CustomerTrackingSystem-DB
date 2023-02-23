@@ -5,6 +5,7 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_InsertAssociationByAI`(
 		IN 	ip_DailyStats 		JSON
 	,	IN 	ip_ScanDate			DATETIME
+    ,	IN	ip_AssociationType	SMALLINT
 	
 	,	OUT op_ErrorMessage 	VARCHAR(200)
 )
@@ -19,6 +20,7 @@ BEGIN
 		Revisions:
 			- 20210217@Long.Luu: Created [Redmine ID: #0000]
 			- 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
+			- 20220116@Long.Luu: Support AssociationType [Redmine ID: #181994]
             
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_Association_InsertAssociationByAI ('[{"C1": 43600693, "C2": 45}]', '2021-01-11', @ErrorMessage);    
@@ -29,10 +31,11 @@ BEGIN
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
     
-	INSERT IGNORE INTO CTS_DataCenter.AssociationByAI(FromCustID, ToCustID, CreatedDate)
+	INSERT IGNORE INTO CTS_DataCenter.AssociationByAI(FromCustID, ToCustID, CreatedDate, AssType)
 	SELECT 	tmpTable.CustID1
 		, 	tmpTable.CustID2
         ,	ip_ScanDate
+		,	ip_AssociationType
 	FROM JSON_TABLE(ip_DailyStats,
 		 "$[*]" COLUMNS(
 			  CustID1 		BIGINT UNSIGNED		PATH "$.C1"

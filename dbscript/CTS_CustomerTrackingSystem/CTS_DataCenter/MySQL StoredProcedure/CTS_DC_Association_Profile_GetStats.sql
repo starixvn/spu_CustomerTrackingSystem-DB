@@ -12,9 +12,11 @@ BEGIN
 		Task:		Get association statistics 
 		DB:			CTS_DataCenter
 		Revisions:
-			- 20210202@Aries.Nguyen: Created [Redmine ID: #148908]
-            - 20210317@Casey.Huynh: Count AssociationByIP to lv_TotalAccounts [Redmine ID: #131662]
-			- 20210423@Irena.Vo: Get condition more with AccountStatus, SubscriberID & SiteID [Redmine ID: #152963]
+			- 20210202@Aries.Nguyen: 	Created [Redmine ID: #148908]
+			- 20210317@Casey.Huynh: 	Count AssociationByIP to lv_TotalAccounts [Redmine ID: #131662]
+			- 20210423@Irena.Vo: 		Get condition more with AccountStatus, SubscriberID & SiteID [Redmine ID: #152963]
+			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
+			
 		Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DataCenter.CTS_DC_Association_Profile_GetStats(221882500);
@@ -83,6 +85,7 @@ BEGIN
 		FROM  CTS_DataCenter.AssociationByAI AS asAI
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asAI.ToCustID AND cust.CustSubID = 0
 		WHERE asAI.FromCustID =  lv_CustID
+			AND asAI.AssType = 2
         
         UNION
         
@@ -90,6 +93,7 @@ BEGIN
 		FROM  CTS_DataCenter.AssociationByAI AS asAI 
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asAI.FromCustID AND cust.CustSubID = 0
 		WHERE asAI.ToCustID =  lv_CustID
+			AND asAI.AssType = 2
         
         UNION
         

@@ -12,13 +12,14 @@ sp: BEGIN
 		Original:
 
 		Revisions:
-			- 	20210927@Aries.Nguyen: Created [Redmine ID: #162277]
-			- 	20211123@Aries.Nguyen: Clean data inactive association [Redmine ID: #165001]
-			- 	20211216@Aries.Nguyen: Clean data Sum Account Login Info [Redmine ID: #165105]
-            -	20220408@Casey.Huynh: Add AssociationGroupByAI [Redmine ID: #171222]
-			-	20220713@Aries.Nguyen: HotFix Customer NULL CC [Redmine ID: #175406]
-			-	20220720@Aries.Nguyen: Missing remove unused columns in 'CTS_DC_ArchiveCustomer_Clean' [Redmine ID: #175631]
-            -	20220519@Aries.Nguyen: Clean data Classification BySport tables   [Redmine ID: #176992]
+			- 	20210927@Aries.Nguyen: 	Created [Redmine ID: #162277]
+			- 	20211123@Aries.Nguyen: 	Clean data inactive association [Redmine ID: #165001]
+			- 	20211216@Aries.Nguyen: 	Clean data Sum Account Login Info [Redmine ID: #165105]
+			-	20220408@Casey.Huynh: 	Add AssociationGroupByAI [Redmine ID: #171222]
+			-	20220713@Aries.Nguyen: 	HotFix Customer NULL CC [Redmine ID: #175406]
+			-	20220720@Aries.Nguyen: 	Missing remove unused columns in 'CTS_DC_ArchiveCustomer_Clean' [Redmine ID: #175631]
+			-	20220519@Aries.Nguyen: 	Clean data Classification BySport tables   [Redmine ID: #176992]
+			- 	20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
 
 		Param's Explanation (filtered by):	
         
@@ -330,21 +331,18 @@ sp: BEGIN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.AssociationByAI AS ai WHERE  ai.FromCustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByAI_Clean;
 			CREATE TEMPORARY TABLE Temp_AssociationByAI_Clean(
-					FromCustID   	BIGINT UNSIGNED  
-				,	ToCustID		BIGINT UNSIGNED
-                ,	PRIMARY KEY(FromCustID, ToCustID)
+					AssID	BIGINT UNSIGNED PRIMARY KEY
 			);
             
-            INSERT IGNORE INTO Temp_AssociationByAI_Clean(FromCustID, ToCustID)
-            SELECT 	ai.FromCustID
-				,	ai.ToCustID
+            INSERT IGNORE INTO Temp_AssociationByAI_Clean(AssID)
+            SELECT 	ai.AssID
 			FROM CTS_DataCenter.AssociationByAI  AS ai
 			WHERE  ai.FromCustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)
             LIMIT lv_CleanTableBatchSize;
             
             DELETE ass
 			FROM CTS_DataCenter.AssociationByAI AS ass
-				INNER JOIN Temp_AssociationByAI_Clean AS tmp ON tmp.FromCustID = ass.FromCustID AND tmp.ToCustID = ass.ToCustID;
+				INNER JOIN Temp_AssociationByAI_Clean AS tmp ON tmp.AssID = ass.AssID;
 			
 			UPDATE  CTS_DataCenter.SystemParameter 
 			SET ParameterValue = 'CTS_DataCenter.AssociationByAI-From'
@@ -368,21 +366,18 @@ sp: BEGIN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.AssociationByAI AS ai WHERE  ai.ToCustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByAI_Clean;
 			CREATE TEMPORARY TABLE Temp_AssociationByAI_Clean(
-					FromCustID   	BIGINT UNSIGNED  
-				,	ToCustID		BIGINT UNSIGNED
-                ,	PRIMARY KEY(FromCustID, ToCustID)
+					AssID	BIGINT UNSIGNED PRIMARY KEY
 			);
             
-            INSERT IGNORE INTO Temp_AssociationByAI_Clean(FromCustID, ToCustID)
-            SELECT 	ai.FromCustID
-				,	ai.ToCustID
+            INSERT IGNORE INTO Temp_AssociationByAI_Clean(AssID)
+            SELECT 	ai.AssID
 			FROM CTS_DataCenter.AssociationByAI AS ai
 			WHERE  ai.ToCustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)
             LIMIT lv_CleanTableBatchSize;
             
             DELETE ass
 			FROM CTS_DataCenter.AssociationByAI AS ass
-				INNER JOIN Temp_AssociationByAI_Clean AS tmp ON tmp.FromCustID = ass.FromCustID AND tmp.ToCustID = ass.ToCustID;
+				INNER JOIN Temp_AssociationByAI_Clean AS tmp ON tmp.AssID = ass.AssID;
 			
 			UPDATE  CTS_DataCenter.SystemParameter 
 			SET ParameterValue = 'CTS_DataCenter.AssociationByAI-To'

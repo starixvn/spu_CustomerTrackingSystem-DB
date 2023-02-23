@@ -15,9 +15,11 @@ sp: BEGIN
 		Original:
 
 		Revisions:
-			- 20210526@Casey.Huynh: Created (MatchMonitor Rule) [Redmine ID: 166986]
-            - 20220226@Casey.Huynh: Created (MatchMonitor Rule) [Redmine ID: 166986]
-            - 20220422@Irena.Vo: Mapping Is Hedging Reason (MM) from table CustomerCategory [Redmine ID: #170468]
+			- 20210526@Casey.Huynh: 	Created (MatchMonitor Rule) [Redmine ID: 166986]
+			- 20220226@Casey.Huynh: 	Created (MatchMonitor Rule) [Redmine ID: 166986]
+			- 20220422@Irena.Vo: 		Mapping Is Hedging Reason (MM) from table CustomerCategory [Redmine ID: #170468]
+			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
+			
 		Param's Explanation (filtered by):			
         Example:
 			CALL CTS_DC_Association_IsAssociatedHedgingCustByCustIDList('37144067,37144068', @op_IsHedging);
@@ -112,7 +114,7 @@ sp: BEGIN
     SELECT  1
 	INTO op_IsHedging
 	FROM Temp_Cust AS tmpCus
-		INNER JOIN CTS_DataCenter.AssociationByAI AS ma ON ma.FromCustID = tmpCus.CustID
+		INNER JOIN CTS_DataCenter.AssociationByAI AS ma ON ma.FromCustID = tmpCus.CustID AND ma.AssType = 2
         LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.LeastCustID AND ar.LeastCustSubID = 0 AND ma.ToCustID = ar.GreatestCustID AND ar.GreatestCustSubID = 0
 	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.LeastCustID IS NULL
 		AND	EXISTS(	SELECT 1 
@@ -128,7 +130,7 @@ sp: BEGIN
     SELECT  1
 	INTO op_IsHedging
 	FROM Temp_Cust AS tmpCus
-		INNER JOIN CTS_DataCenter.AssociationByAI AS ma ON ma.ToCustID = tmpCus.CustID
+		INNER JOIN CTS_DataCenter.AssociationByAI AS ma ON ma.ToCustID = tmpCus.CustID AND ma.AssType = 2
         LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.LeastCustID AND ar.LeastCustSubID = 0 AND ma.ToCustID = ar.GreatestCustID AND ar.GreatestCustSubID = 0
 	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.LeastCustID IS NULL
 		AND	EXISTS(	SELECT 1 

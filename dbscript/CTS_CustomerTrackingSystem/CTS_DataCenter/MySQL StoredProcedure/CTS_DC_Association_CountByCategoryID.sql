@@ -15,7 +15,8 @@ BEGIN
 		Original:
 
 		Revisions:
-			- 	20221118@Aries.Nguyen: Created [Redmine ID: #179499]
+			- 	20221118@Aries.Nguyen: 	Created [Redmine ID: #179499]
+			- 	20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
             
 		Param's Explanation (filtered by):
         
@@ -132,7 +133,7 @@ BEGIN
     SELECT 	pa.CustID
 		,	ai.ToCustID
     FROM Temp_CustParam AS pa 
-		INNER JOIN AssociationByAI AS ai ON ai.FromCustID = pa.CustID
+		INNER JOIN AssociationByAI AS ai ON ai.FromCustID = pa.CustID AND ai.AssType = 2
 	WHERE EXISTS (SELECT 1 
                   FROM CTSCustomerClassification AS clss 
 					  STRAIGHT_JOIN Temp_CategoryID AS cate ON cate.CategoryID = clss.CategoryID
@@ -142,7 +143,7 @@ BEGIN
     SELECT 	pa.CustID
 		,	ai.FromCustID
     FROM Temp_CustParam AS pa 
-		INNER JOIN AssociationByAI AS ai ON ai.ToCustID  = pa.CustID
+		INNER JOIN AssociationByAI AS ai ON ai.ToCustID  = pa.CustID AND ai.AssType = 2
 	WHERE EXISTS (SELECT 1 
                   FROM CTSCustomerClassification AS clss 
 					  STRAIGHT_JOIN Temp_CategoryID AS cate ON cate.CategoryID = clss.CategoryID
