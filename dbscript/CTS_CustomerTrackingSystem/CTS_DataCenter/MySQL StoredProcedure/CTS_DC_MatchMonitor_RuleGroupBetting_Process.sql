@@ -29,15 +29,15 @@ sp: BEGIN
 			-	20211111@Casey.Huynh: 	Fix Issue Trans of the same Cust not merge Group [Redmine ID: 164558]
 			-	20220110@Casey.Huynh: 	Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
 			-	20220217@Casey.Huynh: 	Enhance MM, Update TO >= 1000 [Redmine ID: 168736]
-			- 	20220422@Irena.Vo: 	Mapping Is Hedging Reason (MM) from table CustomerCategory [Redmine ID: #170468]
+			- 	20220422@Irena.Vo: 		Mapping Is Hedging Reason (MM) from table CustomerCategory [Redmine ID: #170468]
 			-	20220815@Casey.Huynh: 	Scale Out DB [Redmine ID: #176472]
 			- 	20220830@Casey.Huynh: 	New Category for Classify Group Betting [Redmine ID: #176976]
 			-	202200929@Casey.Huynh: 	Seperate By Sport [Redmine ID: #178310]
 			-	20221021@Casey.Huynh: 	Fixed Clean Data Staging [Redmine ID: #179427]
 			-	20221027@Casey.Huynh: 	Seperate pool Staging [RedmineID: 179439]
 			-	20221205@Casey.Huynh: 	Rename Table and remove (Arbitrage,Hedging) [Redmine ID: #179502]
-            		-	20230221@Casey.Huynh: 	Update Rule, The same Choice [Redmine ID: #184041]
-            		- 	20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
+			-	20230221@Casey.Huynh: 	Update Rule, The same Choice [Redmine ID: #184041]
+			- 	20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
 			
 		Param's Explanation (filtered by):	
 		Example:
