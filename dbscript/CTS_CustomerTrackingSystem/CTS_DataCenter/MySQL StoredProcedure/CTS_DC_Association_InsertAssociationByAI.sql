@@ -31,7 +31,7 @@ BEGIN
         GET DIAGNOSTICS CONDITION 1 op_ErrorMessage = MESSAGE_TEXT;
     END;
     
-	INSERT IGNORE INTO CTS_DataCenter.AssociationByAI_OTGB(FromCustID, ToCustID, CreatedDate, AssType)
+	INSERT IGNORE INTO CTS_DataCenter.AssociationByAI(FromCustID, ToCustID, CreatedDate, AssType)
 	SELECT 	tmpTable.CustID1
 		, 	tmpTable.CustID2
         ,	ip_ScanDate
