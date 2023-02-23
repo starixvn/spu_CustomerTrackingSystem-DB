@@ -34,17 +34,12 @@ BEGIN
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_GB3S_CoupleDetails;
 	CREATE TEMPORARY TABLE Temp_GB3S_CoupleDetails(
-			MatchID				BIGINT
+			MatchID				INT
 		,	StateID				BIGINT
 		,	CoupleID			BIGINT
         ,	CreatedDate			DATE
-        ,	PRIMARY KEY (MatchID,StateID)
-	);
-	
-	DROP TEMPORARY TABLE IF EXISTS Temp_GB3S_StateSingleCust;
-	CREATE TEMPORARY TABLE Temp_GB3S_StateSingleCust(
-			StateID				BIGINT 	PRIMARY KEY
-		,	CntCustID			SMALLINT
+        ,	PRIMARY KEY (StateID,MatchID)
+		,	INDEX IX_Temp_GB3S_CoupleDetails (CoupleID,CreatedDate)
 	);
     
     INSERT INTO Temp_GB3S_CoupleInfo
@@ -78,26 +73,6 @@ BEGIN
 	WHERE s.StateID <> 0
 	ORDER BY tmp.CreatedDate DESC;
 	
-	INSERT INTO Temp_GB3S_StateSingleCust (StateID,CntCustID)
-	WITH CTE AS (
-		SELECT 	
-			DISTINCT 
-				ei.StateID
-			,	ei.CustID
-		FROM SPU_AIML.GB_3S_EventInfo AS ei
-			INNER JOIN Temp_GB3S_CoupleDetails AS tmp ON tmp.StateID = ei.StateID
-		WHERE ei.CustID = ip_CustID1 
-			OR ei.CustID = ip_CustID2
-	)
-	SELECT 	StateID
-		,	COUNT(CustID) AS CntCustID
-	FROM 	CTE
-	GROUP BY StateID;
-
-	DELETE tc
-	FROM Temp_GB3S_CoupleDetails AS tc
-		INNER JOIN Temp_GB3S_StateSingleCust AS ts ON ts.StateID = tc.StateID
-	WHERE ts.CntCustID = 1;
     
 	SELECT 	
 		DISTINCT 
