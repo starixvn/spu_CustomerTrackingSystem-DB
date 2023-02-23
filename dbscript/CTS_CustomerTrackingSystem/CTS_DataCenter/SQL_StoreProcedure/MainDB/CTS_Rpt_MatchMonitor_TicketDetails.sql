@@ -30,7 +30,8 @@ AS
 		- 20220728@Long.Luu:	Convert stake to RM [Redmine ID: #175913]
 		- 20220725@Long.Luu:	Return More Ticket's Info [Redmine ID: #175700]
 		- 20230203@Victoria.Le	Various Odds will be converted to a unique one - Malaysian Odds [Redmine ID: #183277]
-		- 20230220@Victoria.Le	Modify Formula to calculate Odds [Redmine ID: #184080]
+		- 20230220@Victoria.Le	Modify Formula to calculate Odds - For Decimal Odds [Redmine ID: #184080]
+		- 202302220@Victoria.Le	Modify Formula to calculate Odds - For US Odds [Redmine ID: #184041]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize)
@@ -194,7 +195,7 @@ BEGIN
 						-- Malaysian & Myanmar
 						WHEN b.oddstype IN (4,6) THEN b.odds
 						-- US
-						WHEN b.oddstype = 5 THEN -(100/NULLIF(b.odds,0))
+						WHEN b.oddstype = 5 THEN -(1/NULLIF(b.odds,0))
 					END AS odds
 				,	b.hdp1
 				,	b.hdp2
