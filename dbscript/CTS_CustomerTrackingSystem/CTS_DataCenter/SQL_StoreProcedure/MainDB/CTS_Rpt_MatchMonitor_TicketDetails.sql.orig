@@ -29,13 +29,15 @@ AS
 		- 20220110@Long.Luu:	Return BetId and support data for Basketbal & Esports [Redmine ID: #166986]
 		- 20220728@Long.Luu:	Convert stake to RM [Redmine ID: #175913]
 		- 20220725@Long.Luu:	Return More Ticket's Info [Redmine ID: #175700]
-<<<<<<< HEAD
 		- 20230203@Victoria.Le	Various Odds will be converted to a unique one - Malaysian Odds [Redmine ID: #183277]
-		- 20230220@Victoria.Le	Modify Formula to calculate Odds [Redmine ID: #184080]
+<<<<<<< HEAD
+		- 20230220@Victoria.Le	Modify Formula to calculate Odds - For Decimal Odds [Redmine ID: #184080]
+		- 202302220@Victoria.Le	Modify Formula to calculate Odds - For US Odds [Redmine ID: #184041]
 =======
+		- 20230220@Victoria.Le	Modify Formula to calculate Odds [Redmine ID: #184080]
 		- 20230105@Victoria.Le	Get GlobalShowTime instead of KickOffTime
 								Return StakeRM [Redmine ID: #181995]
->>>>>>> 6961830a (181995-Modify SP)
+>>>>>>> 195ba015 (181995-MainDB-ModifySP)
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize)
@@ -162,11 +164,7 @@ BEGIN
 
 	IF (@QueryType = 1)
 		BEGIN
-<<<<<<< HEAD
-			INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,IsMajorLeague,SportType,BetType,CustId,BetTeam,BetId,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus,LiveIndicator)
-=======
 			INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,IsMajorLeague,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus,LiveIndicator)
->>>>>>> 6961830a (181995-Modify SP)
 			SELECT	TOP (@BatchSize) b.sequenceid
 				,	b.transid
 				,	b.transdate
@@ -205,7 +203,7 @@ BEGIN
 						-- Malaysian & Myanmar
 						WHEN b.oddstype IN (4,6) THEN b.odds
 						-- US
-						WHEN b.oddstype = 5 THEN -(100/NULLIF(b.odds,0))
+						WHEN b.oddstype = 5 THEN -(1/NULLIF(b.odds,0))
 					END AS odds
 				,	b.hdp1
 				,	b.hdp2

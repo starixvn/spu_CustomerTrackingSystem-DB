@@ -32,6 +32,8 @@ AS
 		- 20230203@Victoria.Le	Various Odds will be converted to a unique one - Malaysian Odds [Redmine ID: #183277]
 		- 20230220@Victoria.Le	Modify Formula to calculate Odds - For Decimal Odds [Redmine ID: #184080]
 		- 202302220@Victoria.Le	Modify Formula to calculate Odds - For US Odds [Redmine ID: #184041]
+		- 20230105@Victoria.Le	Get GlobalShowTime instead of KickOffTime
+								Return StakeRM [Redmine ID: #181995]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize)
@@ -158,14 +160,14 @@ BEGIN
 
 	IF (@QueryType = 1)
 		BEGIN
-			INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,IsMajorLeague,SportType,BetType,CustId,BetTeam,BetId,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus,LiveIndicator)
+			INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,IsMajorLeague,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus,LiveIndicator)
 			SELECT	TOP (@BatchSize) b.sequenceid
 				,	b.transid
 				,	b.transdate
 				,	b.matchid
 				,	m.eventdate
 				,	m.Eventstatus
-				,	m.kickofftime
+				,	m.GlobalShowTime
 				,	m.homeid
 				,	m.awayid
 				,	m.leagueid
@@ -180,6 +182,7 @@ BEGIN
 				,	b.betteam
 				,	b.betid
 				,	b.stake * b.actualrate
+				,	b.stake
 				,	CASE 
 						-- Decimal
 						WHEN b.oddstype = 1 THEN (CASE
@@ -235,13 +238,13 @@ BEGIN
 			-- START --
 			IF @IsGetDataFromBK = 1
 			BEGIN
-				INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
+				INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus,LiveIndicator)
 				SELECT	b.transid
 					,	b.transdate
 					,	b.matchid
 					,	m.eventdate
 					,	m.Eventstatus
-					,	m.kickofftime
+					,	m.GlobalShowTime
 					,	m.homeid
 					,	m.awayid
 					,	m.leagueid
@@ -250,6 +253,7 @@ BEGIN
 					,	b.custid
 					,	b.betteam
 					,	b.betid
+					,	b.stake * b.actualrate 
 					,	b.stake
 					,	b.odds
 					,	b.hdp1
@@ -266,13 +270,13 @@ BEGIN
 
 			IF	@IsGetDataFrom14 = 1
 			BEGIN
-				INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
+				INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus,LiveIndicator)
 				SELECT	b.transid
 					,	b.transdate
 					,	b.matchid
 					,	m.eventdate
 					,	m.Eventstatus
-					,	m.kickofftime
+					,	m.GlobalShowTime
 					,	m.homeid
 					,	m.awayid
 					,	m.leagueid
@@ -281,6 +285,7 @@ BEGIN
 					,	b.custid
 					,	b.betteam
 					,	b.betid
+					,	b.stake * b.actualrate 
 					,	b.stake
 					,	b.odds
 					,	b.hdp1
@@ -297,13 +302,13 @@ BEGIN
 
 			IF	@IsGetDataFromOrigin = 1
 			BEGIN
-				INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
+				INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
 				SELECT	b.transid
 					,	b.transdate
 					,	b.matchid
 					,	m.eventdate
 					,	m.Eventstatus
-					,	m.kickofftime
+					,	m.GlobalShowTime
 					,	m.homeid
 					,	m.awayid
 					,	m.leagueid
@@ -312,6 +317,7 @@ BEGIN
 					,	b.custid
 					,	b.betteam
 					,	b.betid
+					,	b.stake * b.actualrate 
 					,	b.stake
 					,	b.odds
 					,	b.hdp1
