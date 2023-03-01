@@ -38,7 +38,7 @@ BEGIN
 			)
 	) AS js;
 
-	INSERT INTO CTSCustomerClassification_IncorrectData_Monitor(CustID, CategoryID, CreatedDate, InvalidType)
+	INSERT INTO CTSCustomerClassification_IncorrectCategoryMonitor(CustID, CategoryID, CreatedDate, InvalidType)
 	SELECT 		CustID
 			, 	CategoryID
 			,	NOW()

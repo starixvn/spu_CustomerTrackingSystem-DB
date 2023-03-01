@@ -10,14 +10,9 @@ GO
 
 
 CREATE TABLE [dbo].[CustomerClassification_Monitor_Realtime](
-	[ID] [bigint]				NOT NULL IDENTITY(1,1),
 	[CustId] [int]				NOT NULL,
 	[CreatedDate] [Datetime]	NOT NULL
-	PRIMARY KEY NONCLUSTERED
-	(
-		[ID] ASC
-	)
-) ON [PRIMARY]
+)
 
 CREATE NONCLUSTERED INDEX [IX_CustomerClassification_Monitor_Realtime_CreatedDate] ON [dbo].[CustomerClassification_Monitor_Realtime]
 (

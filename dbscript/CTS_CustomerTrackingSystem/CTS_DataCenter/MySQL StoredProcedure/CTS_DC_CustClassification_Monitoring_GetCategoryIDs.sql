@@ -50,21 +50,6 @@ BEGIN
 		INNER JOIN 	CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID
 		INNER JOIN	CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID;
         
-  
-	INSERT IGNORE INTO Temp_CustomerCategory(CustID, SportGroupID, CurrentCategoryID)
-	SELECT 		temp.CustID AS CustID
-			, 	tmpLr.SportGroupID 	AS SportGroupID  
-			, 	CASE 
-					WHEN tmpLr.CategoryGroup IN (CONST_CATEGORY_INACTIVE) THEN tmpLr.CategoryID
-                    ELSE tmpLr.CategoryGroup
-				END AS CurrentCategoryID
-	FROM Temp_Customers AS temp
-    ,	LATERAL (	SELECT cate.CustID, cate.SportGroupID, cc.CategoryGroup, cc.CategoryID
-					FROM CTS_DataCenter.CTSCustomerClassificationOldCategory AS cate						
-						INNER JOIN	CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
-                    WHERE cate.CustID = temp.CustID
-					ORDER BY cate.CreatedDate DESC) tmpLr;
-	
     SELECT 	cust.CustID AS CustID
 		,	cate.SportGroupID AS SportGroupID
         ,	cate.CurrentCategoryID AS CurrentCategoryID
