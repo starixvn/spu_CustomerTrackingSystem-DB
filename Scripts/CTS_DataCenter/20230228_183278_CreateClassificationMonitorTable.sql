@@ -21,3 +21,9 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomerClassification_IncorrectDat
 	, 	INDEX			IX_CTSCustomerClassification_IncorrectData_Monitor_CreatedDate(CreatedDate)
     , 	INDEX			IX_CTSCustomerClassification_IncorrectData_Monitor_IsResolved(IsResolved)
 ) ENGINE=INNODB AUTO_INCREMENT=1;
+
+
+INSERT INTO `CTS_DataCenter`.`SystemParameter` (`ParameterID`, `ParameterName`, `ParameterDesc`, `ParameterDataType`, `ParameterValue`) 
+VALUES ('116', 'MonitorRealtimeInactiveCategory_LastScannedDate', 'Mornitor customer with inactive category places new bets', 'DATETIME', '2022-03-01 00:00:00');
+
+
