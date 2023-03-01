@@ -1,0 +1,23 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
+/*
+Creator: 20230228@Jonas.Huynh
+Task:	 	Job Monitoring Category and Customer
+Server:  	Master
+DBName:		CTS_DataCenter
+
+Revisions: 
+		- 20230228@Jonas.Huynh: Created [#183278]
+Reviewer:
+*/
+
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomerClassification_IncorrectData_Monitor (
+		ID				BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+    ,	CustID			BIGINT UNSIGNED NOT NULL
+    , 	CategoryID		SMALLINT UNSIGNED
+    , 	CreatedDate		DATETIME NOT NULL
+	, 	IsResolved		BOOLEAN DEFAULT FALSE
+    ,	InvalidType		SMALLINT NOT NULL COMMENT '1:New Customer with null category - 2:New placebet with inactive category'
+    ,	INDEX			IX_CTSCustomerClassification_IncorrectData_Monitor_CustIDCreatedDate(CustID, CreatedDate)
+	, 	INDEX			IX_CTSCustomerClassification_IncorrectData_Monitor_CreatedDate(CreatedDate)
+    , 	INDEX			IX_CTSCustomerClassification_IncorrectData_Monitor_IsResolved(IsResolved)
+) ENGINE=INNODB AUTO_INCREMENT=1;

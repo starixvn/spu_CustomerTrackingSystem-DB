@@ -15,6 +15,7 @@ BEGIN
 
 		Revisions:
 			- 20211213@Harvey: Initial
+			- 20230228@Jonas.Huynh: Update SP [Redmine ID: 183278]
 		Param's Explanation (filtered by):
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustInfo_Monitoring_CompareData ('');
@@ -36,12 +37,14 @@ BEGIN
 				CustID			INT			UNSIGNED		PATH "$.CustID" 
 			,	CustSubID		INT			UNSIGNED		PATH "$.CustSubID"
             ,	UserName		VARCHAR(50)					PATH "$.UserName"
+            ,	CreatedDate		DATETIME					PATH "$.CreatedDate"
 			)
 	) AS js;
     
     SELECT tcust.CustID
 		,	tcust.CustSubID
         ,	tcust.UserName
+        ,	tcust.CreatedDate
 	FROM Temp_CTSCustomer tcust
 	LEFT JOIN CTSCustomer cust ON tcust.CustID = cust.CustID
 		AND tcust.CustSubID = cust.CustSubID
