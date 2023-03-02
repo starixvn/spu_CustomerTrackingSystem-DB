@@ -3,14 +3,13 @@ DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Get`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Get`(
-		IN	ip_DateType			TINYINT(1) #1: InsertDate, 2: EvenDate
+		IN	ip_MatchInfos		JSON			# MatchID, EventDate, KickOffTime, MatchSection
 	,	IN 	ip_FromDate 		DATETIME
     ,	IN 	ip_ToDate 			DATETIME
     ,	IN	ip_SportType		VARCHAR(500)
-    , 	IN	ip_Market 			TINYINT			# NULL if Both (Live and NonLive)
-    , 	IN	ip_MatchSection		VARCHAR(50)
+    , 	IN	ip_Market 			TINYINT			# NULL if Both (Live and NonLive))
     ,	IN 	ip_IsVerified 		TINYINT(1)
-    ,	IN 	ip_Bettypes 		JSON # BettypeID and BetID       
+    ,	IN 	ip_Bettypes 		JSON 			# BettypeID and BetID       
     ,	IN	ip_Reason			VARCHAR(50)
 )
 
@@ -23,50 +22,27 @@ BEGIN
 		Original:
 
 		Revisions:
-			- 	20210526@Long.Luu: Created [Redmine ID: 152883]
-            -	20210823@Casey.Huynh: Return Market value [Redmine ID: 159195]
-            - 	20220107@Casey.Huynh: Fix Issue get data for Verified Trans [Redmine ID: 167192]
-			-	20211213@Casey.Huynh: Enhance MM, Add column LeagueName, reset IsVerified = 0 [Redmine ID: 165606]
-            -	20220110@Casey.Huynh: Enhance MM, BetID, Reason [Redmine ID: 166986]
-            - 	20220216@Casey.Huynh: Fix Issue, show IsVerified = 0 when all tickets were verified [Redmine ID: 166986]
-            - 	20220325@Long.Luu: Add Reason filter [Redmine ID: 170466]
-            -	20220805@Jonas.Huynh: Add Reason Fixed Game [Redmine ID: 175700]
-            -	20221027@Casey.Huynh: Update Verify By Reason and Betteam [RedmineID: 179439]
-            -	20230105@Casey.Huynh: Add search by InsertDate and remove ip_LeagueName [Redmine ID: #181995]
+			- 	20210526@Long.Luu: 		Created [Redmine ID: 152883]
+			-	20210823@Casey.Huynh: 	Return Market value [Redmine ID: 159195]
+			- 	20220107@Casey.Huynh: 	Fix Issue get data for Verified Trans [Redmine ID: 167192]
+			-	20211213@Casey.Huynh: 	Enhance MM, Add column LeagueName, reset IsVerified = 0 [Redmine ID: 165606]
+			-	20220110@Casey.Huynh: 	Enhance MM, BetID, Reason [Redmine ID: 166986]
+			- 	20220216@Casey.Huynh: 	Fix Issue, show IsVerified = 0 when all tickets were verified [Redmine ID: 166986]
+			- 	20220325@Long.Luu: 		Add Reason filter [Redmine ID: 170466]
+			-	20220805@Jonas.Huynh: 	Add Reason Fixed Game [Redmine ID: 175700]
+			-	20221027@Casey.Huynh: 	Update Verify By Reason and Betteam [RedmineID: 179439]
+			-	20230105@Casey.Huynh: 	Add search by InsertDate and remove ip_LeagueName [Redmine ID: #181995]
+			-	20230214@Victoria.Le	Add ip_MatchInfos to get latest EventDate and KickOffTime (GolobalShowTime) when search by EventDate 
+										Remove ip_DateType, ip_MatchSection [RedmineID: #183280]
+			
             
 		Param's Explanation (filtered by):
-			- ip_Market: 0 return LiveIndicator = 0, 1 return LiveIndicator = 1, NULL: Both Live And Non-Live
-            - ip_Reason: 0:Group Betting, 1: Hedging, 2: Arbitrage, 3: Fixed Game
-            - ip_DateType: 1: by InsertDate, 2:EventDate
+			- ip_Market: 		0 return LiveIndicator = 0, 1 return LiveIndicator = 1, NULL: Both Live And Non-Live
+            - ip_Reason: 		0:Group Betting, 1: Hedging, 2: Arbitrage, 3: Fixed Game
+			- ip_MatchInfos: 	= NULL: search by InsertDate
+								<> NULL: search by EventDate
 		Example:
-			-	CALL CTS_DC_MatchMonitor_Get(@ip_DateType:=1,@ip_FromDate:='2023-01-05',@ip_ToDate:='2023-01-8',@ip_SportType:=1,@ip_Market:=1,@ip_MatchSection:='1,2,3,4',@ip_IsVerified:=NULL
-				,@ip_Bettypes:='[{"BettypeID":1,"BetID":0},{"BettypeID":3,"BetID":0},{"BettypeID":7,"BetID":0}]',@ip_Reason:='0,1,2');
-	*/
-      
-	/*
-		Created:	20210526@Long.Luu
-		Task :		Get Match Monitor report
-		DB:			CTS_DataCenter
-		Original:
-
-		Revisions:
-			- 	20210526@Long.Luu: Created [Redmine ID: 152883]
-            -	20210823@Casey.Huynh: Return Market value [Redmine ID: 159195]
-            - 	20220107@Casey.Huynh: Fix Issue get data for Verified Trans [Redmine ID: 167192]
-			-	20211213@Casey.Huynh: Enhance MM, Add column LeagueName, reset IsVerified = 0 [Redmine ID: 165606]
-            -	20220110@Casey.Huynh: Enhance MM, BetID, Reason [Redmine ID: 166986]
-            - 	20220216@Casey.Huynh: Fix Issue, show IsVerified = 0 when all tickets were verified [Redmine ID: 166986]
-            - 	20220325@Long.Luu: Add Reason filter [Redmine ID: 170466]
-            -	20220805@Jonas.Huynh: Add Reason Fixed Game [Redmine ID: 175700]
-            -	20221027@Casey.Huynh: Update Verify By Reason and Betteam [RedmineID: 179439]
-            -	20230105@Casey.Huynh: Add search by InsertDate and remove ip_LeagueName [Redmine ID: #181995]
-            
-		Param's Explanation (filtered by):
-			- ip_Market: 0 return LiveIndicator = 0, 1 return LiveIndicator = 1, NULL: Both Live And Non-Live
-            - ip_Reason: 0:Group Betting, 1: Hedging, 2: Arbitrage, 3: Fixed Game
-            - ip_DateType: 1: by InsertDate, 2:EventDate
-		Example:
-			-	CALL CTS_DC_MatchMonitor_Get_xtest(@ip_DateType:=1,@ip_FromDate:='2023-01-05',@ip_ToDate:='2023-01-8',@ip_SportType:=1,@ip_Market:=1,@ip_MatchSection:='1,2,3,4',@ip_IsVerified:=NULL
+			-	CALL CTS_DC_MatchMonitor_Get_xtest(@ip_MatchInfos:=NULL,@ip_FromDate:='2023-01-05',@ip_ToDate:='2023-01-8',@ip_SportType:=1,@ip_Market:=1,@ip_MatchSection:='1,2,3,4',@ip_IsVerified:=NULL
 				,@ip_Bettypes:='[{"BettypeID":1,"BetID":0},{"BettypeID":3,"BetID":0},{"BettypeID":7,"BetID":0}]',@ip_Reason:='0,1,2');
 	*/
       
@@ -84,8 +60,8 @@ BEGIN
         ,	BettypeID		INT
         ,	BetID			BIGINT
         ,	Reason			TINYINT
-        ,	MatchSection	INT   
-        ,	KickOffTime		DATETIME
+        ,	MatchSection	INT DEFAULT NULL
+        ,	KickOffTime		DATETIME DEFAULT NULL
     );
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Bettype;
@@ -102,11 +78,6 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Reason;
     CREATE TEMPORARY TABLE Temp_Reason(
 			ReasonID 	INT
-	);
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_MatchSection;
-    CREATE TEMPORARY TABLE Temp_MatchSection(
-		MatchSection 	TINYINT
 	);
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_MatchGroup;
@@ -153,10 +124,6 @@ BEGIN
 							,	BetID			BIGINT	PATH "$.BetID"
 						)
 				) AS js;  
-          
-	SET @sql = CONCAT("INSERT INTO Temp_MatchSection (MatchSection) VALUES ('", REPLACE(ip_MatchSection, ",", "'),('"),"');");
-	PREPARE stmt1 FROM @sql;
-	EXECUTE stmt1; 
     
     SET @sql = CONCAT("INSERT INTO Temp_Sporttype (Sporttype) VALUES ('", REPLACE(ip_Sporttype, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
@@ -166,92 +133,73 @@ BEGIN
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1; 
     
-    IF (ip_DateType = 1) THEN # Search by Insert Date
+    IF (IFNULL(ip_MatchInfos,'') = '') THEN # Search by Insert Date
+		INSERT INTO Temp_MatchMonitor(ID, MatchID, EventDate, LiveIndicator, HomeID, AwayID, LeagueID, LeagueName, Sporttype, BettypeID, BetID, Reason)    
+		SELECT 	s.ID
+			,	s.MatchID
+			,	s.EventDate
+			,	s.LiveIndicator
+			,	s.HomeID
+			,	s.AwayID
+			,	s.LeagueID                
+			,	s.LeagueName
+			,	s.Sporttype
+			,	s.BettypeID
+			,	s.BetID
+			,	s.Reason		# 0:Group Betting, 1: Hedging, 2: Arbitrage, 3: Fixed Game , 58: Irrigition
+		FROM   CTS_DataCenter.MatchMonitor AS s
+			INNER JOIN Temp_Bettype AS tmpBt ON s.BettypeID = tmpBt.BettypeID AND s.BetID = tmpBt.BetID
+			INNER JOIN Temp_Sporttype AS tmpSt ON s.Sporttype = tmpSt.SportType
+			INNER JOIN Temp_Reason AS r ON r.ReasonID = s.Reason
+		WHERE s.InsertDate BETWEEN ip_FromDate AND ip_ToDate
+			AND s.LiveIndicator = IFNULL(ip_Market, s.LiveIndicator);
+    ELSE #ip_MatchInfos <> '' THEN # Search by Event Date
+		
+		DROP TEMPORARY TABLE IF EXISTS Temp_MatchInfo;
+		CREATE TEMPORARY TABLE Temp_MatchInfo(
+				MatchId 		INT
+			,	EventDate		DATETIME
+			,	KickOffTime		DATETIME
+			,	MatchSection	TINYINT
+            
+			,	PRIMARY KEY PK_Temp_MatchInfo(MatchID)
+		);
+		
+		INSERT IGNORE INTO Temp_MatchInfo(MatchId, EventDate, KickOffTime, MatchSection)
+		SELECT  js.MatchId
+			,	js.EventDate
+			,	js.KickOffTime
+			,	js.MatchSection
+		FROM JSON_TABLE(ip_MatchInfos,
+						 "$[*]" COLUMNS(
+									MatchId			INT			PATH "$.MatchId"
+								,	EventDate		DATETIME	PATH "$.EventDate"
+								,	KickOffTime		DATETIME	PATH "$.KickOffTime"
+								,	MatchSection	TINYINT		PATH "$.MatchSection"
+							)
+					) AS js;
+	
 		INSERT INTO Temp_MatchMonitor(ID, MatchID, EventDate, LiveIndicator, HomeID, AwayID, LeagueID, LeagueName, Sporttype, BettypeID, BetID, Reason, MatchSection, KickOffTime)    
-		SELECT	tmp.ID
-			,	tmp.MatchID
-			,	tmp.EventDate
-			,	tmp.LiveIndicator
-			,	tmp.HomeID
-			,	tmp.AwayID
-			,	tmp.LeagueID                
-			,	tmp.LeagueName
-			,	tmp.Sporttype
-			,	tmp.BettypeID
-			,	tmp.BetID
-			,	tmp.Reason
-			,	tmp.MatchSection
-            ,	tmp.KickOffTime
-		FROM ( 
-				SELECT 	s.ID
-					,	s.MatchID
-					,	s.EventDate
-					,	s.LiveIndicator
-					,	s.HomeID
-					,	s.AwayID
-					,	s.LeagueID                
-					,	s.LeagueName
-					,	s.Sporttype
-					,	s.BettypeID
-					,	s.BetID
-					,	s.Reason		# 0:Group Betting, 1: Hedging, 2: Arbitrage, 3: Fixed Game , 58: Irrigition
-					,	CASE WHEN NOW() BETWEEN s.KickOffTime AND TIMESTAMPADD(MINUTE, 150, s.KickOffTime ) AND LiveIndicator = 1 THEN 1 #Live
-							WHEN s.EventDate = CURDATE() AND s.KickOffTime > NOW() THEN 2 #'Today'
-							WHEN s.EventDate > CURDATE() THEN 3 #'Early'
-							ELSE 4 #'Closed'
-						END	AS MatchSection
-					,	s.KickOffTime
-				FROM   CTS_DataCenter.MatchMonitor AS s
-					INNER JOIN Temp_Bettype AS tmpBt ON s.BettypeID = tmpBt.BettypeID AND s.BetID = tmpBt.BetID
-					INNER JOIN Temp_Sporttype AS tmpSt ON s.Sporttype = tmpSt.SportType
-					INNER JOIN Temp_Reason AS r ON r.ReasonID = s.Reason
-				WHERE s.InsertDate BETWEEN ip_FromDate AND ip_ToDate
-				) AS tmp
-				INNER JOIN Temp_MatchSection AS tmpMst ON tmpMst.MatchSection = tmp.MatchSection
-		   WHERE tmp.LiveIndicator = IFNULL(ip_Market, tmp.LiveIndicator);
-    ELSE #ip_DateType = 2 THEN # Search by Event Date
-		INSERT INTO Temp_MatchMonitor(ID, MatchID, EventDate, LiveIndicator, HomeID, AwayID, LeagueID, LeagueName, Sporttype, BettypeID, BetID, Reason, MatchSection, KickOffTime)    
-		SELECT	tmp.ID
-			,	tmp.MatchID
-			,	tmp.EventDate
-			,	tmp.LiveIndicator
-			,	tmp.HomeID
-			,	tmp.AwayID
-			,	tmp.LeagueID                
-			,	tmp.LeagueName
-			,	tmp.Sporttype
-			,	tmp.BettypeID
-			,	tmp.BetID
-			,	tmp.Reason
-			,	tmp.MatchSection
-            ,	tmp.KickOffTime
-		FROM ( 
-				SELECT 	s.ID
-					,	s.MatchID
-					,	s.EventDate
-					,	s.LiveIndicator
-					,	s.HomeID
-					,	s.AwayID
-					,	s.LeagueID                
-					,	s.LeagueName
-					,	s.Sporttype
-					,	s.BettypeID
-					,	s.BetID
-					,	s.Reason		# 0:Group Betting, 1: Hedging, 2: Arbitrage, 3: Fixed Game
-					,	CASE WHEN NOW() BETWEEN s.KickOffTime AND TIMESTAMPADD(MINUTE, 150, s.KickOffTime ) AND LiveIndicator = 1 THEN 1 #Live
-							WHEN s.EventDate = CURDATE() AND s.KickOffTime > NOW() THEN 2 #'Today'
-							WHEN s.EventDate > CURDATE() THEN 3 #'Early'
-							ELSE 4 #'Closed'
-						END	AS MatchSection
-					, s.KickOffTime
-				FROM   CTS_DataCenter.MatchMonitor AS s
-					INNER JOIN Temp_Bettype AS tmpBt ON s.BettypeID = tmpBt.BettypeID AND s.BetID = tmpBt.BetID
-					INNER JOIN Temp_Sporttype AS tmpSt ON s.Sporttype = tmpSt.SportType
-					INNER JOIN Temp_Reason AS r ON r.ReasonID = s.Reason
-				WHERE s.EventDate BETWEEN ip_FromDate AND ip_ToDate
-				) AS tmp
-				INNER JOIN Temp_MatchSection AS tmpMst ON tmpMst.MatchSection = tmp.MatchSection
-		   WHERE tmp.LiveIndicator = IFNULL(ip_Market, tmp.LiveIndicator);
+		SELECT 	s.ID
+			,	s.MatchID
+			,	tmpMi.EventDate
+			,	s.LiveIndicator
+			,	s.HomeID
+			,	s.AwayID
+			,	s.LeagueID                
+			,	s.LeagueName
+			,	s.Sporttype
+			,	s.BettypeID
+			,	s.BetID
+			,	s.Reason		# 0:Group Betting, 1: Hedging, 2: Arbitrage, 3: Fixed Game
+			,	tmpMi.MatchSection
+			, 	tmpMi.KickOffTime
+		FROM   CTS_DataCenter.MatchMonitor AS s
+			INNER JOIN Temp_MatchInfo AS tmpMi ON tmpMi.MatchId = s.MatchId
+			INNER JOIN Temp_Bettype AS tmpBt ON s.BettypeID = tmpBt.BettypeID AND s.BetID = tmpBt.BetID
+			INNER JOIN Temp_Sporttype AS tmpSt ON s.Sporttype = tmpSt.SportType
+			INNER JOIN Temp_Reason AS r ON r.ReasonID = s.Reason
+		WHERE s.LiveIndicator = IFNULL(ip_Market, s.LiveIndicator);
     END IF;
     
     INSERT IGNORE INTO Temp_VerfiedTrans(TransID, Reason, VerifiedBy, MatchID,LiveIndicator,BettypeID, BetID)
