@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CustInfo_Monitoring_CompareData`;
+DROP PROCEDURE IF EXISTS `CTS_DC_Monitoring_CheckMissingCustomer`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustInfo_Monitoring_CompareData`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Monitoring_CheckMissingCustomer`(
 	IN ip_CustomerList JSON
 )
     SQL SECURITY INVOKER
@@ -18,7 +18,7 @@ BEGIN
 			- 20230228@Jonas.Huynh: Update SP [Redmine ID: 183278]
 		Param's Explanation (filtered by):
 		Example:
-			- CALL CTS_DataCenter.CTS_DC_CustInfo_Monitoring_CompareData ('');
+			- CALL CTS_DataCenter.CTS_DC_Monitoring_CheckMissingCustomer ('');
 
 	*/
 	DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomer;    

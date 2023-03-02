@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CustInfo_Monitoring_InsertMissingCust`;
+DROP PROCEDURE IF EXISTS `CTS_DC_Monitoring_InsertMissingCustomer`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustInfo_Monitoring_InsertMissingCust`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Monitoring_InsertMissingCustomer`(
 		IN 	ip_CustomerList 	JSON
 	,	IN	ip_ScannedDate		DATETIME
 )
@@ -19,7 +19,7 @@ BEGIN
             - 20230228@Jonas.Huynh: Update SP [Redmine ID: 183278]
 		Param's Explanation (filtered by):
 		Example:
-			- CALL CTS_DataCenter.CTS_DC_CustInfo_Monitoring_InsertMissingCust ('');
+			- CALL CTS_DataCenter.CTS_DC_Monitoring_InsertMissingCustomer ('');
 
 	*/
 	DROP TEMPORARY TABLE IF EXISTS Temp_MissingCust;    

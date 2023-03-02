@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP procedure IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_Monitoring_GetCategoryIDs`;
+DROP procedure IF EXISTS `CTS_DataCenter`.`CTS_DC_Monitoring_GetCategoryByCustIDs`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_Monitoring_GetCategoryIDs`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_Monitoring_GetCategoryByCustIDs`(
 	  IN ip_CustIDs TEXT
 ) 
     SQL SECURITY INVOKER
@@ -16,7 +16,7 @@ BEGIN
 			- 20230227@Jonas.Huynh: Created SP to get customer category [RedmineID: #183278]
             
 		Param's Explanation (filtered by):    
-			CALL CTS_DC_CustClassification_Monitoring_GetCategoryIDs('123,456')
+			CALL CTS_DC_Monitoring_GetCategoryByCustIDs('123,456')
 	*/  
     DECLARE CONST_CATEGORY_INACTIVE		INT DEFAULT 1000;
 
