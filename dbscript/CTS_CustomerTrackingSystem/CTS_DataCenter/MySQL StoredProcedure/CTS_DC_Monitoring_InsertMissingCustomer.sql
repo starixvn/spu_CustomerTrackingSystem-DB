@@ -19,7 +19,7 @@ BEGIN
             - 20230228@Jonas.Huynh: Update SP [Redmine ID: 183278]
 		Param's Explanation (filtered by):
 		Example:
-			- CALL CTS_DataCenter.CTS_DC_Monitoring_InsertMissingCustomer ('');
+			- CALL CTS_DataCenter.CTS_DC_Monitoring_InsertMissingCustomer ('[{"CustID":82355839,"CustSubID":0,"UserName":"Jo01","CreatedDate":"2023-03-01T22:10:00"}]');
 
 	*/
 	DROP TEMPORARY TABLE IF EXISTS Temp_MissingCust;    
@@ -44,7 +44,7 @@ BEGIN
 			)
 	) AS js;
     
-    INSERT INTO CTSCustomer_Missing(CustID, CustSubID, UserName, CreatedDate, ScannedDate)
+    INSERT IGNORE INTO CTSCustomer_Missing(CustID, CustSubID ,UserName, CreatedDate, ScannedTime)
     SELECT 		CustID	
 			,	CustSubID
             ,	UserName

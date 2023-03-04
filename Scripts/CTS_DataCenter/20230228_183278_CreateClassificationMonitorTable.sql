@@ -11,20 +11,26 @@ Reviewer:
 */
 
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomerClassification_IncorrectCategoryMonitor (
-		ID				BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY
-    ,	CustID			BIGINT UNSIGNED NOT NULL
+    	CustID			BIGINT UNSIGNED NOT NULL
     , 	CategoryID		SMALLINT UNSIGNED
-    , 	CreatedDate		DATETIME NOT NULL
+    , 	ScannedTime		DATETIME NOT NULL
+    , 	CreatedTime		DATETIME NOT NULL
 	, 	IsResolved		BOOLEAN DEFAULT FALSE
     ,	InvalidType		SMALLINT NOT NULL COMMENT '1:New Customer with null category - 2:New placebet with inactive category - 3:Customer placebet with null category' 
-    ,	INDEX			IX_CTSCustomerClassification_Monitor_CustIDCreatedDate(CustID, CreatedDate)
-	, 	INDEX			IX_CTSCustomerClassification_Monitor_CreatedDate(CreatedDate)
+	, 	INDEX			IX_CTSCustomerClassification_Monitor_CustID(CustID)
+    , 	INDEX			IX_CTSCustomerClassification_Monitor_ScannedTime(ScannedTime)
     , 	INDEX			IX_CTSCustomerClassification_Monitor_IsResolved(IsResolved)
-) ENGINE=INNODB AUTO_INCREMENT=1;
+) ENGINE=INNODB;
 
 
 INSERT INTO `CTS_DataCenter`.`SystemParameter` (`ParameterID`, `ParameterName`, `ParameterDesc`, `ParameterDataType`, `ParameterValue`) 
 VALUES ('130', 'MonitorRealtimeCategory_LastScannedDate', 'Mornitor customer places new bets', 'DATETIME', '2022-03-01 00:00:00');
 
 DROP PROCEDURE IF EXISTS CTS_DC_CustInfo_Monitoring_CompareData; 
-DROP PROCEDURE IF EXISTS CTS_DC_CustInfo_Monitoring_InsertMissingCust; 
+DROP PROCEDURE IF EXISTS CTS_DC_CustInfo_Monitoring_InsertMissingCust;
+
+ALTER TABLE CTS_DataCenter.CTSCustomer_Missing RENAME COLUMN IsResync TO IsResolved; 
+ALTER TABLE CTS_DataCenter.CTSCustomer_Missing RENAME COLUMN ScannedDate TO ScannedTime; 
+ALTER TABLE CTS_DataCenter.CTSCustomer_Missing MODIFY COLUMN IsResolved BOOLEAN DEFAULT FALSE;
+ALTER TABLE CTS_DataCenter.CTSCustomer_Missing MODIFY COLUMN ScannedTime DATETIME NOT NULL;
+CREATE INDEX IX_CTSCustomer_Missing_ScannedDate ON CTSCustomer_Missing (ScannedTime);

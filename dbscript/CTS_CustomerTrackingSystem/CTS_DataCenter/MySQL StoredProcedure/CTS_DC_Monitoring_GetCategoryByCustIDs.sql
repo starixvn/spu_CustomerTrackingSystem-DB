@@ -41,7 +41,7 @@ BEGIN
          
 	INSERT IGNORE INTO Temp_CustomerCategory(CustID, SportGroupID, CurrentCategoryID)
 	SELECT 		cate.CustID AS CustID
-			, 	cc.SportGroupID AS SportGroupID  
+			, 	cate.SportGroupID AS SportGroupID  
 			, 	CASE 
 					WHEN cc.CategoryGroup IN (CONST_CATEGORY_INACTIVE) THEN cc.CategoryID
                     ELSE cc.CategoryGroup
