@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomerClassification_IncorrectCat
 
 
 INSERT INTO `CTS_DataCenter`.`SystemParameter` (`ParameterID`, `ParameterName`, `ParameterDesc`, `ParameterDataType`, `ParameterValue`) 
-VALUES ('130', 'MonitorRealtimeCategory_LastScannedDate', 'Mornitor customer places new bets', 'DATETIME', '2022-03-01 00:00:00');
+VALUES ('130', 'MonitorRealtimeCategory_LastScannedDate', 'Monitoring customer places new bets', 'DATETIME', '2022-03-01 00:00:00');
 
 DROP PROCEDURE IF EXISTS CTS_DC_CustInfo_Monitoring_CompareData; 
 DROP PROCEDURE IF EXISTS CTS_DC_CustInfo_Monitoring_InsertMissingCust;
