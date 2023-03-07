@@ -180,9 +180,11 @@ BEGIN
 				,	m.EventDate
 				,	m.GlobalShowTime
 				,	CASE
-						WHEN m.eventstatus <> 'completed' AND m.GlobalShowTime <= GETDATE() THEN 1 --LIVE
-						WHEN m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN 2 --TODAY
-						WHEN m.EventDate > @Today THEN 3 -- EARLY
+						WHEN m.eventstatus <> 'completed' THEN (CASE 
+																	WHEN m.GlobalShowTime <= GETDATE() THEN 1 --LIVE
+																	WHEN m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN 2 --TODAY
+																	WHEN m.EventDate > @Today THEN 3 -- EARLY
+																END)
 						ELSE 4 -- CLOSED
 					END
 			FROM bodb_Archive.dbo.match_bk AS m WITH(NOLOCK)
@@ -198,9 +200,11 @@ BEGIN
 				,	m.EventDate
 				,	m.GlobalShowTime
 				,	CASE
-						WHEN m.eventstatus <> 'completed' AND m.GlobalShowTime <= GETDATE() THEN 1 --LIVE
-						WHEN m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN 2 --TODAY
-						WHEN m.EventDate > @Today THEN 3 -- EARLY
+						WHEN m.eventstatus <> 'completed' THEN (CASE 
+																	WHEN m.GlobalShowTime <= GETDATE() THEN 1 --LIVE
+																	WHEN m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN 2 --TODAY
+																	WHEN m.EventDate > @Today THEN 3 -- EARLY
+																END)
 						ELSE 4 -- CLOSED
 					END
 			FROM bodb02.dbo.match14 AS m WITH(NOLOCK)
@@ -215,9 +219,11 @@ BEGIN
 				,	m.EventDate
 				,	m.GlobalShowTime
 				,	CASE
-						WHEN m.eventstatus <> 'completed' AND m.GlobalShowTime <= GETDATE() THEN 1 --LIVE
-						WHEN m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN 2 --TODAY
-						WHEN m.EventDate > @Today THEN 3 -- EARLY
+						WHEN m.eventstatus <> 'completed' THEN (CASE 
+																	WHEN m.GlobalShowTime <= GETDATE() THEN 1 --LIVE
+																	WHEN m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN 2 --TODAY
+																	WHEN m.EventDate > @Today THEN 3 -- EARLY
+																END)
 						ELSE 4 -- CLOSED
 					END
 			FROM bodb02.dbo.Match AS m WITH(NOLOCK)
@@ -249,11 +255,13 @@ BEGIN
 			,	m.EventDate
 			,	m.GlobalShowTime
 			,	CASE
-						WHEN m.eventstatus <> 'completed' AND m.GlobalShowTime <= GETDATE() THEN 1 --LIVE
-						WHEN m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN 2 --TODAY
-						WHEN m.EventDate > @Today THEN 3 -- EARLY
-						ELSE 4 -- CLOSED
-					END
+					WHEN m.eventstatus <> 'completed' THEN (CASE 
+																WHEN m.GlobalShowTime <= GETDATE() THEN 1 --LIVE
+																WHEN m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN 2 --TODAY
+																WHEN m.EventDate > @Today THEN 3 -- EARLY
+															END)
+					ELSE 4 -- CLOSED
+				END
 		FROM #tmpMatches AS tm 
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON tm.MatchId = m.matchid
 		
@@ -267,11 +275,13 @@ BEGIN
 			,	m.EventDate
 			,	m.GlobalShowTime
 			,	CASE
-						WHEN m.eventstatus <> 'completed' AND m.GlobalShowTime <= GETDATE() THEN 1 --LIVE
-						WHEN m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN 2 --TODAY
-						WHEN m.EventDate > @Today THEN 3 -- EARLY
-						ELSE 4 -- CLOSED
-					END
+					WHEN m.eventstatus <> 'completed' THEN (CASE 
+																WHEN m.GlobalShowTime <= GETDATE() THEN 1 --LIVE
+																WHEN m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN 2 --TODAY
+																WHEN m.EventDate > @Today THEN 3 -- EARLY
+															END)
+					ELSE 4 -- CLOSED
+				END
 		FROM #tmpMatches AS tm 
 			INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON tm.MatchId = m.matchid
 
@@ -285,11 +295,13 @@ BEGIN
 			,	m.EventDate
 			,	m.GlobalShowTime
 			,	CASE
-						WHEN m.eventstatus <> 'completed' AND m.GlobalShowTime <= GETDATE() THEN 1 --LIVE
-						WHEN m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN 2 --TODAY
-						WHEN m.EventDate > @Today THEN 3 -- EARLY
-						ELSE 4 -- CLOSED
-					END
+					WHEN m.eventstatus <> 'completed' THEN (CASE 
+																WHEN m.GlobalShowTime <= GETDATE() THEN 1 --LIVE
+																WHEN m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN 2 --TODAY
+																WHEN m.EventDate > @Today THEN 3 -- EARLY
+															END)
+					ELSE 4 -- CLOSED
+				END
 		FROM #tmpMatches AS tm
 			INNER JOIN bodb02.dbo.Match AS m WITH(NOLOCK) ON tm.MatchId = m.matchid
 
