@@ -81,20 +81,37 @@ BEGIN
 		INNER JOIN CTS_DataCenter.RobotDetection AS r ON r.CustID = t.CustID
 	WHERE r.IsDisabled = 1;
 
-    INSERT INTO CTS_DataCenter.RobotDetection(CustID,PeriodRangeType,IsDisabled,CreatedDate,LastModifiedDate)
-    SELECT 	t.CustID
-		, 	t.PeriodRangeType
-        ,	CASE WHEN d.CustID IS NULL THEN 0 ELSE 1 END
-        , 	lv_CurrentDateTime
-        , 	lv_CurrentDateTime #ip_ScanDate, lv_CurrentDateTime
-    FROM Temp_RobotInfo AS t
-		LEFT JOIN Temp_DisabledRobot AS d ON t.CustID = d.CustID
-    WHERE t.IsNewRange = 1;
-    
-    UPDATE CTS_DataCenter.RobotDetection AS r
-		INNER JOIN Temp_RobotInfo AS t ON r.CustID = t.CustID AND r.PeriodRangeType = t.PeriodRangeType
-	SET r.LastModifiedDate = lv_CurrentDateTime
-    WHERE t.IsNewRange = 0;
+	IF ((SELECT PeriodRangeType FROM Temp_RobotInfo LIMIT 1) <> 200) THEN
+		INSERT INTO CTS_DataCenter.RobotDetection(CustID,PeriodRangeType,IsDisabled,CreatedDate,LastModifiedDate)
+		SELECT 	t.CustID
+			, 	t.PeriodRangeType
+			,	CASE WHEN d.CustID IS NULL THEN 0 ELSE 1 END
+			, 	lv_CurrentDateTime
+			, 	lv_CurrentDateTime #ip_ScanDate, lv_CurrentDateTime
+		FROM Temp_RobotInfo AS t
+			LEFT JOIN Temp_DisabledRobot AS d ON t.CustID = d.CustID
+		WHERE t.IsNewRange = 1;
+		
+		UPDATE CTS_DataCenter.RobotDetection AS r
+			INNER JOIN Temp_RobotInfo AS t ON r.CustID = t.CustID AND r.PeriodRangeType = t.PeriodRangeType
+		SET r.LastModifiedDate = lv_CurrentDateTime
+		WHERE t.IsNewRange = 0;
+    ELSE
+		INSERT INTO CTS_DataCenter.RobotDetection_OCRD(CustID,PeriodRangeType,IsDisabled,CreatedDate,LastModifiedDate)
+		SELECT 	t.CustID
+			, 	t.PeriodRangeType
+			,	CASE WHEN d.CustID IS NULL THEN 0 ELSE 1 END
+			, 	lv_CurrentDateTime
+			, 	lv_CurrentDateTime #ip_ScanDate, lv_CurrentDateTime
+		FROM Temp_RobotInfo AS t
+			LEFT JOIN Temp_DisabledRobot AS d ON t.CustID = d.CustID
+		WHERE t.IsNewRange = 1;
+		
+		UPDATE CTS_DataCenter.RobotDetection_OCRD AS r
+			INNER JOIN Temp_RobotInfo AS t ON r.CustID = t.CustID AND r.PeriodRangeType = t.PeriodRangeType
+		SET r.LastModifiedDate = lv_CurrentDateTime
+		WHERE t.IsNewRange = 0;
+	END IF;
     
     SELECT CustID, PeriodRangeType, IsNewRobot
     FROM Temp_RobotInfo;
