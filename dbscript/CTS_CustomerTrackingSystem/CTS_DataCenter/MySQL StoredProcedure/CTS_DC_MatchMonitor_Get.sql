@@ -157,37 +157,28 @@ BEGIN
 		
 		DROP TEMPORARY TABLE IF EXISTS Temp_MatchInfo;
 		CREATE TEMPORARY TABLE Temp_MatchInfo(
-				MatchId 		INT
+				ID				BIGINT UNSIGNED
+			,	MatchID 		INT
 			,	EventDate		DATETIME
+			,	LiveIndicator	TINYINT
+			,	HomeID			INT
+			,	AwayID			INT
+			,	LeagueID		INT
+			,	LeagueName		VARCHAR(500) 
+			,	Sporttype		INT
+			,	BettypeID		INT
+			,	BetID			BIGINT
+			,	Reason			TINYINT
+			,	MatchSection	INT 
 			,	KickOffTime		DATETIME
-			,	MatchSection	TINYINT
             
 			,	PRIMARY KEY PK_Temp_MatchInfo(MatchID)
 		);
 		
-		INSERT IGNORE INTO Temp_MatchInfo(MatchId, EventDate, KickOffTime, MatchSection)
-		SELECT  js.MatchId
+		INSERT IGNORE INTO Temp_MatchInfo (ID, MatchID, EventDate, LiveIndicator, HomeID, AwayID, LeagueID, LeagueName, Sporttype, BettypeID, BetID, Reason, MatchSection, KickOffTime)
+		SELECT  s.ID
+			,	js.MatchId
 			,	js.EventDate
-			,	js.KickOffTime
-			,	js.MatchSection
-		FROM JSON_TABLE(ip_MatchInfos,
-						 "$[*]" COLUMNS(
-									MatchId			INT			PATH "$.MatchId"
-								,	EventDate		DATETIME	PATH "$.EventDate"
-								,	KickOffTime		DATETIME	PATH "$.KickOffTime"
-								,	MatchSection	TINYINT		PATH "$.MatchSection"
-							)
-					) AS js;
-					
-		DELETE tmpMi
-        FROM Temp_MatchInfo AS tmpMi
-			LEFT JOIN CTS_DataCenter.MatchMonitor AS s ON s.MatchId = tmpMi.MatchId
-		WHERE s.MatchId IS NULL;
-	
-		INSERT INTO Temp_MatchMonitor(ID, MatchID, EventDate, LiveIndicator, HomeID, AwayID, LeagueID, LeagueName, Sporttype, BettypeID, BetID, Reason, MatchSection, KickOffTime)    
-		SELECT 	s.ID
-			,	s.MatchID
-			,	tmpMi.EventDate
 			,	s.LiveIndicator
 			,	s.HomeID
 			,	s.AwayID
@@ -197,14 +188,38 @@ BEGIN
 			,	s.BettypeID
 			,	s.BetID
 			,	s.Reason		# 0:Group Betting, 1: Hedging, 2: Arbitrage, 3: Fixed Game
-			,	tmpMi.MatchSection
-			, 	tmpMi.KickOffTime
-		FROM   CTS_DataCenter.MatchMonitor AS s
-			INNER JOIN Temp_MatchInfo AS tmpMi ON tmpMi.MatchId = s.MatchId
+			,	js.MatchSection
+			, 	js.KickOffTime
+		FROM CTS_DataCenter.MatchMonitor AS s
+			INNER JOIN JSON_TABLE(ip_MatchInfos,
+									 "$[*]" COLUMNS(
+												MatchId			INT			PATH "$.MatchId"
+											,	EventDate		DATETIME	PATH "$.EventDate"
+											,	KickOffTime		DATETIME	PATH "$.KickOffTime"
+											,	MatchSection	TINYINT		PATH "$.MatchSection"
+										)
+								) AS js ON js.MatchId = s.MatchId
 			INNER JOIN Temp_Bettype AS tmpBt ON s.BettypeID = tmpBt.BettypeID AND s.BetID = tmpBt.BetID
-			INNER JOIN Temp_Sporttype AS tmpSt ON s.Sporttype = tmpSt.SportType
 			INNER JOIN Temp_Reason AS r ON r.ReasonID = s.Reason
 		WHERE s.LiveIndicator = IFNULL(ip_Market, s.LiveIndicator);
+	
+		INSERT INTO Temp_MatchMonitor(ID, MatchID, EventDate, LiveIndicator, HomeID, AwayID, LeagueID, LeagueName, Sporttype, BettypeID, BetID, Reason, MatchSection, KickOffTime)    
+		SELECT 	tmpMi.ID
+			,	tmpMi.MatchID
+			,	tmpMi.EventDate
+			,	tmpMi.LiveIndicator
+			,	tmpMi.HomeID
+			,	tmpMi.AwayID
+			,	tmpMi.LeagueID                
+			,	tmpMi.LeagueName
+			,	tmpMi.Sporttype
+			,	tmpMi.BettypeID
+			,	tmpMi.BetID
+			,	tmpMi.Reason		# 0:Group Betting, 1: Hedging, 2: Arbitrage, 3: Fixed Game
+			,	tmpMi.MatchSection
+			, 	tmpMi.KickOffTime
+		FROM   Temp_MatchInfo AS tmpMi 
+			INNER JOIN Temp_Sporttype AS tmpSt ON tmpMi.Sporttype = tmpSt.SportType;
     END IF;
     
     INSERT IGNORE INTO Temp_VerfiedTrans(TransID, Reason, VerifiedBy, MatchID,LiveIndicator,BettypeID, BetID)
