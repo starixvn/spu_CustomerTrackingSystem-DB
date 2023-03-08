@@ -313,7 +313,7 @@ BEGIN
 		,	tmi.KickOffTime
 		,	tmi.MatchSection
 	FROM #tmpMatchesInfo AS tmi
-		LEFT JOIN #tmpMatchSection AS tms ON tmi.MatchSection = tms.MatchSection
+		INNER JOIN #tmpMatchSection AS tms ON tmi.MatchSection = tms.MatchSection
 
 	DROP TABLE #tmpMatchesInfo
 	DROP TABLE #tmpMatchSection
