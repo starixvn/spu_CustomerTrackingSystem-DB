@@ -3,9 +3,10 @@
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
 GO
-CREATE PROCEDURE	CTS_Customer_Monitoring_GetCustSubInfo
-		@FromDate	DATETIME
-	,	@ToDate		DATETIME
+ALTER PROCEDURE CTS_Customer_Monitoring_GetCustSubInfo
+		@LastCustSubId	INT = 0
+	,	@RowSize		INT = 500
+	,	@MaxScannedDate	DATETIME
 AS
 /*
 	Creator:	20210115@CaseyHuynh
@@ -14,36 +15,48 @@ AS
 	
 	Revisions:
 		- 20211210@Harvey:		Initial - [Redmine: #165607]
+		- 20230307@Jonas.Huynh:	Enhance monitoring customer service [Redmine:]
 
 	Developer's Notes:
-		- @Example:			NULL		- Explaination [DEFAULT]
 
-	exec CTS_Customer_Monitoring_GetCustSubInfo 10,10
+		exec [dbo].[CTS_Customer_Monitoring_GetCustSubInfo] 27, 500, '2003-10-23 21:06:00'
 		
 */
 BEGIN;
 	SET NOCOUNT ON;
 
-	SELECT
-			sub.custid		AS CustID
-		,	sub.subaccid	AS CustSubID
-		,	sub.username	AS UserName
-		,	sub.username2	AS UserName2
-		,	st.siteid		AS SiteID
-		,	cust.site		AS 'Site'
-		,	cust.roleid		AS RoleID
-		,	cust.currency	AS 'CurrencyID'
-		,	ex.currency		AS Currency
-		,	cust.srecommend AS SRecommend
-		,	cust.mrecommend AS MRecommend
-		,	cust.recommend	AS Recommend
-		,	sub.createdate	AS CreatedDate
-	FROM dbo.custSub sub WITH (NOLOCK)
-		INNER JOIN dbo.Customer cust WITH (NOLOCK) ON sub.custid = cust.custid
-		INNER JOIN dbo.Exchange ex WITH (NOLOCK) ON cust.currency = ex.exchangeid
-		INNER JOIN dbo.Site st WITH (NOLOCK) ON cust.site = st.site
-	WHERE sub.createdate > @FromDate AND sub.createdate < @ToDate
-	ORDER BY sub.subaccid
+	IF OBJECT_ID('tempdb..#tmpNewCustSub') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpNewCustSub;
+	END;
 
+	CREATE TABLE #tmpNewCustSub (
+			CustID			INT	
+		,	CustSubID		INT
+		,	UserName		VARCHAR(30)
+		,	CreatedDate		DATETIME	
+		,	PRIMARY KEY		(CustID,CustSubID)		
+	);
+
+	INSERT INTO #tmpNewCustSub(CustID, CustSubID, UserName, CreatedDate)
+	SELECT	TOP (@RowSize)
+			sub.custid
+		,	sub.subaccid
+		,	sub.username
+		,	sub.createdate			
+	FROM dbo.custSub sub WITH (NOLOCK)
+	WHERE sub.subaccid > @LastCustSubId
+		AND sub.createdate <= @MaxScannedDate
+	ORDER BY sub.subaccid ASC;
+
+	SELECT MAX(CustSubID) AS MaxScannedCustSubID
+	FROM #tmpNewCustSub;
+
+	SELECT	CustID
+		,	CustSubID
+		,	UserName
+		,	CreatedDate
+	FROM #tmpNewCustSub;
+	
 END;
 GO
