@@ -178,6 +178,11 @@ BEGIN
 								,	MatchSection	TINYINT		PATH "$.MatchSection"
 							)
 					) AS js;
+					
+		DELETE tmpMi
+        FROM Temp_MatchInfo AS tmpMi
+			LEFT JOIN CTS_DataCenter.MatchMonitor AS s ON s.MatchId = tmpMi.MatchId
+		WHERE s.MatchId IS NULL;
 	
 		INSERT INTO Temp_MatchMonitor(ID, MatchID, EventDate, LiveIndicator, HomeID, AwayID, LeagueID, LeagueName, Sporttype, BettypeID, BetID, Reason, MatchSection, KickOffTime)    
 		SELECT 	s.ID
