@@ -45,6 +45,25 @@ BEGIN
 			-	CALL CTS_DC_MatchMonitor_Get_xtest(@ip_MatchInfos:=NULL,@ip_FromDate:='2023-01-05',@ip_ToDate:='2023-01-8',@ip_SportType:=1,@ip_Market:=1,@ip_MatchSection:='1,2,3,4',@ip_IsVerified:=NULL
 				,@ip_Bettypes:='[{"BettypeID":1,"BetID":0},{"BettypeID":3,"BetID":0},{"BettypeID":7,"BetID":0}]',@ip_Reason:='0,1,2');
 	*/
+	
+	DECLARE lv_IsLog TINYINT DEFAULT 0;    
+	DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_Get';
+    DECLARE lv_LogInfo TEXT;
+	
+	#==================LOG=======================================================
+	IF lv_IsLog = 1 THEN
+		SET lv_LogInfo = CONCAT('@ip_FromDate:=''',IFNULL(ip_FromDate,'NULL'),''''
+								,',@ip_ToDate:=''',IFNULL(ip_ToDate,'NULL'),''''
+								,',@ip_SportType:=''',IFNULL(ip_SportType,'NULL'),''''
+								,',@ip_Market:=''',IFNULL(ip_Market,'NULL'),''''
+								,',@ip_IsVerified:=''',IFNULL(ip_IsVerified,'NULL'),''''
+								,',@ip_Bettypes:=''',IFNULL(ip_Bettypes,'NULL'),''''
+								,',@ip_Reason:=''',IFNULL(ip_Reason,'NULL'),'''');
+		
+		INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText, JsonString1)
+		SELECT lv_SPName, CURRENT_TIMESTAMP(), lv_LogInfo, ip_MatchInfos; 
+	END IF;  
+	#==================LOG=======================================================  
       
 	DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitor;
     CREATE TEMPORARY TABLE Temp_MatchMonitor(
