@@ -172,7 +172,7 @@ BEGIN
 			,	MatchSection	INT 
 			,	KickOffTime		DATETIME
             
-			,	PRIMARY KEY PK_Temp_MatchInfo(MatchID)
+			,	INDEX IDX_Temp_MatchInfo(MatchID)
 		);
 		
 		INSERT IGNORE INTO Temp_MatchInfo (ID, MatchID, EventDate, LiveIndicator, HomeID, AwayID, LeagueID, LeagueName, Sporttype, BettypeID, BetID, Reason, MatchSection, KickOffTime)
