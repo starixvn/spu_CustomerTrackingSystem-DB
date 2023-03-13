@@ -16,12 +16,17 @@ BEGIN
 			- 20211214@Aries.Nguyen: 	Created [Redmine ID: #165105]
 			- 20211229@Aries.Nguyen:  	Fix get assocition account  incorrect [Redmine ID: #165105]
 			- 20220408@Casey.Huynh: 	Add AssociationGroupByAI [Redmine ID: #171222]
-			- 20230112@Victoria.Le: 		Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
-			
+			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
+			- 20220313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
+            
 		Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustInfo_Profile_GetAssociationAccount(10832);
 	*/
+	DECLARE CONS_ASSBYAI_ASSTYPEID INT DEFAULT 2;
+	DECLARE CONS_ASSBYAI_STATUS INT DEFAULT 1;	
+	#=================================================
+    
     DECLARE lv_CustID 		BIGINT UNSIGNED;
 	DECLARE lv_Count_AI 	INT;   
     DECLARE lv_Count_Manual INT;
@@ -60,6 +65,17 @@ BEGIN
 			CustID 	BIGINT UNSIGNED
 		, 	PRIMARY KEY (CustID)
 	);
+    	
+	DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByAI_AssType;
+	CREATE TEMPORARY TABLE 	Temp_AssociationByAI_AssType (
+			AssTypeItemValue INT PRIMARY KEY            
+	);
+    
+    #===========GET AssociationByAI status is Applied==============================================    
+    INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
+    SELECT atd.AssTypeItemValue
+    FROM CTS_DataCenter.AssociationTypeDetails AS atd
+    WHERE atd.AssTypeID = CONS_ASSBYAI_ASSTYPEID AND atd.AssTypeItemStatus = CONS_ASSBYAI_STATUS;
     
     #==========================================    
     INSERT IGNORE INTO Temp_AccountStatusID (AccountStatusID)
@@ -127,7 +143,7 @@ BEGIN
     FROM CTS_DataCenter.AssociationByAI AS ai
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = ai.ToCustID AND cust.CustSubID = 0
     WHERE ai.FromCustID = lv_CustID
-		AND ai.AssType = 2
+        AND ai.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByAI_AssType AS tmpAt)
 		AND ai.ToCustID NOT IN (SELECT rm.CustID FROM Temp_AssociationRemove AS rm)
         AND cust.CustStatusID IN (SELECT sta.AccountStatusID FROM Temp_AccountStatusID AS sta)
         AND (cust.SiteID,cust.SubscriberID) IN (SELECT subInfo.SiteID, subInfo.SubscriberID FROM Temp_SubscriberSiteID AS subInfo);   
@@ -137,7 +153,7 @@ BEGIN
     FROM CTS_DataCenter.AssociationByAI AS ai
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = ai.FromCustID AND cust.CustSubID = 0
     WHERE ai.ToCustID = lv_CustID
-		AND ai.AssType = 2
+		AND ai.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByAI_AssType AS tmpAt)
 		AND ai.FromCustID NOT IN (SELECT rm.CustID FROM Temp_AssociationRemove AS rm)
         AND cust.CustStatusID IN (SELECT sta.AccountStatusID FROM Temp_AccountStatusID AS sta)
         AND (cust.SiteID,cust.SubscriberID) IN (SELECT subInfo.SiteID, subInfo.SubscriberID FROM Temp_SubscriberSiteID AS subInfo);
