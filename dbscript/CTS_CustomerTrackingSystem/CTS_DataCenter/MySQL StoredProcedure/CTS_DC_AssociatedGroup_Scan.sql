@@ -29,6 +29,9 @@ sp : BEGIN
 		Example:
 			- CALL  CTS_DC_AssociatedGroup_Scan(@op_GroupID,@op_GroupName,@op_ABI,@op_Ori,@op_PACategoryID,@op_LastCTSCustID);
 	*/
+	DECLARE CONS_ASSBYAI_ASSTYPEID INT DEFAULT 2;
+	DECLARE CONS_ASSBYAI_STATUS INT DEFAULT 1;
+    #=================================================
     DECLARE lv_BatchSize 		BIGINT;
     DECLARE lv_LastGroupID 		BIGINT;
     DECLARE lv_LastCTSCustID 	BIGINT;
@@ -80,6 +83,18 @@ sp : BEGIN
 			GroupID				BIGINT UNSIGNED PRIMARY KEY
 		,	AddGroupDate 		DATETIME
 	);
+    
+    #=============================================================
+    DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByAI_AssType;
+	CREATE TEMPORARY TABLE 	Temp_AssociationByAI_AssType (
+			AssTypeItemValue INT PRIMARY KEY            
+	);
+    
+    #===========GET AssociationByAI status is Applied==============================================    
+    INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
+    SELECT atd.AssTypeItemValue
+    FROM CTS_DataCenter.AssociationTypeDetails AS atd
+    WHERE atd.AssTypeID = CONS_ASSBYAI_ASSTYPEID AND atd.AssTypeItemStatus = CONS_ASSBYAI_STATUS; 
     
 	SELECT ParameterValue 
     INTO lv_BatchSize 
@@ -246,11 +261,13 @@ sp : BEGIN
 			,	cus.SubscriberID
             ,	cus.IsLicensee
 		FROM Temp_Cust AS tmp 
-			STRAIGHT_JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.FromCustID = tmp.CustID AND ai.AssType = 2
-			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ai.ToCustID AND cus.CustSubID = 0
+		,	LATERAL (	SELECT DISTINCT ai.ToCustID 
+						FROM CTS_DataCenter.AssociationByAI AS ai
+							INNER JOIN Temp_AssociationByAI_AssType AS tmpAt ON ai.FromCustID = tmp.CustID AND ai.AssType = tmpAt.AssType) AS ltr
+			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ltr.ToCustID AND cus.CustSubID = 0
 			STRAIGHT_JOIN CTS_Archive.CTSCustomerAssociationStatus AS tkd ON tkd.CTSCustID = cus.CTSCustID AND tkd.LastTicketDate >= tmp.AddGroupDate 
 		WHERE NOT EXISTS (SELECT 1 
-						  FROM AssociatedGroupAccount AS acc
+						  FROM CTS_DataCenter.AssociatedGroupAccount AS acc
 							INNER JOIN CTS_DataCenter.AssociatedGroup AS ag ON acc.GroupID =  ag.GroupID AND ag.IsDisable = 0
 						  WHERE cus.CTSCustID = acc.CTSCustID);
 		
@@ -261,9 +278,11 @@ sp : BEGIN
             ,	cus.RoleID
 			,	cus.SubscriberID
             ,	cus.IsLicensee
-		FROM Temp_Cust AS tmp 
-			STRAIGHT_JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.ToCustID = tmp.CustID AND ai.AssType = 2
-			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ai.FromCustID AND cus.CustSubID = 0
+		FROM Temp_Cust AS tmp
+			,	LATERAL (	SELECT DISTINCT ai.FromCustID 
+							FROM CTS_DataCenter.AssociationByAI AS ai
+								INNER JOIN Temp_AssociationByAI_AssType AS tmpAt ON ai.ToCustID = tmp.CustID AND ai.AssType = tmpAt.AssType) AS ltr
+			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ltr.FromCustID AND cus.CustSubID = 0
 			STRAIGHT_JOIN CTS_Archive.CTSCustomerAssociationStatus AS tkd ON tkd.CTSCustID = cus.CTSCustID AND tkd.LastTicketDate >= tmp.AddGroupDate 
 		WHERE NOT EXISTS (SELECT 1 
 						  FROM AssociatedGroupAccount AS acc 
