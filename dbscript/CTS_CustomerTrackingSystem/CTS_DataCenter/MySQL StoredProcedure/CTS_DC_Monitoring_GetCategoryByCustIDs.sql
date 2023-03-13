@@ -3,7 +3,8 @@ DROP procedure IF EXISTS `CTS_DataCenter`.`CTS_DC_Monitoring_GetCategoryByCustID
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_Monitoring_GetCategoryByCustIDs`(
-	  IN ip_CustIDs TEXT
+	  IN ip_CustIDs 		TEXT,
+      IN ip_IsCheckInternal BOOLEAN
 ) 
     SQL SECURITY INVOKER
 BEGIN
@@ -16,7 +17,7 @@ BEGIN
 			- 20230227@Jonas.Huynh: Created SP to get customer category [RedmineID: #183278]
             
 		Param's Explanation (filtered by):    
-			CALL CTS_DC_Monitoring_GetCategoryByCustIDs('123,456')
+			CALL CTS_DC_Monitoring_GetCategoryByCustIDs('123,456', false)
 	*/  
     DECLARE CONST_CATEGORY_INACTIVE		INT DEFAULT 1000;
 
@@ -38,7 +39,14 @@ BEGIN
 			'$[*]' COLUMNS(NESTED PATH '$' COLUMNS (
 				CustID 		BIGINT UNSIGNED PATH '$'
 			))) AS temp;
-         
+
+	IF ip_IsCheckInternal THEN
+		DELETE temp
+        FROM Temp_Customers AS temp
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID = temp.CustID AND cust.CustSubID = 0
+		WHERE IsInternal = 1; 
+	END IF;
+
 	INSERT IGNORE INTO Temp_CustomerCategory(CustID, SportGroupID, CurrentCategoryID)
 	SELECT 		cate.CustID AS CustID
 			, 	cate.SportGroupID AS SportGroupID  
