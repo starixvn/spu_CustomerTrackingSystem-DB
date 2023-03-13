@@ -23,7 +23,7 @@ sp : BEGIN
 			- 20220831@Aries.Nguyen: 	Associated Group Enhancement [Redmine ID: #176991]
 			- 20221028@Harvey.Nguyen: 	Check PA site [Redmine ID: #179398]
 			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
-        
+			- 20220313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
 		Param's Explanation (filtered by):
 
 		Example:
@@ -93,7 +93,7 @@ sp : BEGIN
     #===========GET AssociationByAI status is Applied==============================================    
     INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
     SELECT atd.AssTypeItemValue
-    FROM CTS_DataCenter.AssociationTypeDetails AS atd
+    FROM CTS_DataCenter.AssociationTypeSetting AS atd
     WHERE atd.AssTypeID = CONS_ASSBYAI_ASSTYPEID AND atd.AssTypeItemStatus = CONS_ASSBYAI_STATUS; 
     
 	SELECT ParameterValue 
