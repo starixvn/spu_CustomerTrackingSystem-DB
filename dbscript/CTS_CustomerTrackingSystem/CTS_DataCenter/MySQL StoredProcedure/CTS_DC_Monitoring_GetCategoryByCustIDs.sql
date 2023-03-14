@@ -23,7 +23,7 @@ BEGIN
 
     DROP TEMPORARY TABLE IF EXISTS Temp_Customers;
 	CREATE TEMPORARY TABLE Temp_Customers(
-			CustID				BIGINT UNSIGNED
+			CustID				BIGINT UNSIGNED PRIMARY KEY
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerCategory;
@@ -31,6 +31,7 @@ BEGIN
 			CustID				BIGINT UNSIGNED
 		,	SportGroupID		INT
         ,	CurrentCategoryID 	INT
+        ,	INDEX IX_Temp_CustomerCategory_CustID(CustID)
 	);
 
     INSERT INTO Temp_Customers (CustID)

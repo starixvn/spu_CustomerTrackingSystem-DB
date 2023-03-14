@@ -28,6 +28,7 @@ BEGIN
 		,	CustSubID 		INT	UNSIGNED
         ,	UserName 		VARCHAR(50)
         ,	CreatedDate		DATETIME
+        ,	PRIMARY KEY (CustID, CustSubID)
 	);
 
     INSERT INTO Temp_CTSCustomer(CustID, CustSubID, UserName, CreatedDate)
