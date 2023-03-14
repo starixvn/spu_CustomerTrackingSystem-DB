@@ -15,7 +15,7 @@ AS
 	
 	Revisions:
 		- 20211210@Harvey:		Initial - [Redmine: #165607]
-		- 20230307@Jonas.Huynh:	Enhance monitoring customer service [Redmine:]
+		- 20230307@Jonas.Huynh:	Enhance monitoring customer service [Redmine:#183278]
 
 	Developer's Notes:
 

@@ -15,16 +15,15 @@ AS
 	
 	Revisions:
 		- 20211210@Harvey:		Initial - [Redmine: #165607]
-		- 20230307@Jonas.Huynh:	Enhance monitoring customer service [Redmine:]
+		- 20230307@Jonas.Huynh:	Enhance monitoring customer service [Redmine:#183278]
 	Developer's Notes:
 		
 
-	exec [dbo].[CTS_Customer_Monitoring_GetCustomerInfo_xtest] 27, 500, '2023-03-07 06:00:23.000'
+	exec [dbo].[CTS_Customer_Monitoring_GetCustomerInfo] 27, 500, '2023-03-07 06:00:23.000'
 		
 */
 BEGIN;
 	SET NOCOUNT ON;
-
 	IF	OBJECT_ID('tempdb..#tmpNewCust') IS NOT NULL
 		DROP TABLE	#tmpNewCust;
 
