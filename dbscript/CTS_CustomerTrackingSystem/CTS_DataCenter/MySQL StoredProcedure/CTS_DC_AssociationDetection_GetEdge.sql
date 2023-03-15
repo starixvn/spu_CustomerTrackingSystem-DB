@@ -20,12 +20,16 @@ sp:BEGIN
 			- 20221025@Aries.Nguyen: 	Tuning performance: Skip the processed trans  [Redmine ID: #179439]
 			- 20221205@Aries.Nguyen: 	Re-arrange type options on Association Detection  [Redmine ID: #181207]
 			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
-
+			- 20220313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
+            
 		Param's Explanation (filtered by):
 
         Example:
-			- CALL CTS_DataCenter.CTS_DC_AssociationDetection_GetEdge(lv_CTSCustIDs,1,1,1);
-	*/   
+			CALL CTS_DataCenter.CTS_DC_AssociationDetection_GetEdge('[{"CTSCustID":5422,"CustID":169686},{"CTSCustID":5424,"CustID":169689}]',1,1,1); SELECT * FROM Temp_Graph;
+	*/
+	DECLARE CONS_ASSBYAI_ASSTYPEID INT DEFAULT 2;
+	DECLARE CONS_ASSBYAI_STATUS INT DEFAULT 1;	
+	#=================================================
     DECLARE CONS_RangeDevice 			BIGINT DEFAULT 10000000000;
 	DECLARE CONS_RangeAIGroup 			BIGINT DEFAULT 20000000000;
     
@@ -44,7 +48,18 @@ sp:BEGIN
 		,	PRIMARY KEY(OrigID, DestID,AssociationType)
 		,	INDEX IX_Temp_Graph(DestID)
 	);
-                        
+
+	DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByAI_AssType;
+	CREATE TEMPORARY TABLE 	Temp_AssociationByAI_AssType (
+			AssTypeItemValue INT PRIMARY KEY            
+	);
+    
+	#===========GET AssociationByAI status is Applied==============================================    
+	INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
+	SELECT atd.AssTypeItemValue
+	FROM CTS_DataCenter.AssociationTypeSetting AS atd
+	WHERE atd.AssTypeID = CONS_ASSBYAI_ASSTYPEID AND atd.AssTypeItemStatus = CONS_ASSBYAI_STATUS; 
+
     INSERT IGNORE INTO Temp_CustNode(CTSCustID, CustID)
 	SELECT 	js.CTSCustID
 		, 	js.CustID
@@ -83,17 +98,17 @@ sp:BEGIN
 			, 	cus.CTSCustID AS DestID
 			,	3 AS AssociationType
 		FROM Temp_CustNode AS tmp 
-			INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.FromCustID = tmp.CustID AND ai.AssType = 2
+			INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.FromCustID = tmp.CustID AND ai.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByAI_AssType AS tmpAt)
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ai.ToCustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
-			
+
 		INSERT IGNORE INTO Temp_Graph(OrigID,DestID,AssociationType)
 		SELECT  tmp.CTSCustID AS OrigID
 			, 	cus.CTSCustID AS DestID
 			,	3 AS AssociationType
 		FROM Temp_CustNode AS tmp 
-			INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.ToCustID = tmp.CustID AND ai.AssType = 2
+			INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.ToCustID = tmp.CustID AND ai.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByAI_AssType AS tmpAt)
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ai.FromCustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
-		
+
 		/*******************4. Group AI*************************/
 		DROP TEMPORARY TABLE IF EXISTS Temp_AIGroup;
 		CREATE TEMPORARY TABLE 	Temp_AIGroup (
@@ -114,7 +129,7 @@ sp:BEGIN
 			INNER JOIN CTS_DataCenter.AssociationGroupByAI AS asg ON tmp.GroupID = asg.GroupID
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = asg.CustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
     END IF;
-   
+
     /*******************5. IP*************************/
     IF ip_HasIP = 1 THEN
 		INSERT IGNORE INTO Temp_Graph(OrigID,DestID,AssociationType)

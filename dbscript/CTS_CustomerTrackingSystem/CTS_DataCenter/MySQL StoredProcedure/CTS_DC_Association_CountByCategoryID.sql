@@ -17,12 +17,17 @@ BEGIN
 		Revisions:
 			- 	20221118@Aries.Nguyen: 	Created [Redmine ID: #179499]
 			- 	20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
+            -	20220313@Casey.Huynh:	Applied Betting Parten OTGB [Redmine ID: #184791]
             
 		Param's Explanation (filtered by):
-        
+			CALL CTS_DC_Association_CountByCategoryID('169686,169689,894977','201,205')
 		Example:
         
 	*/
+	DECLARE CONS_ASSBYAI_ASSTYPEID 	INT DEFAULT 2;
+	DECLARE CONS_ASSBYAI_STATUS 	INT DEFAULT 1;
+	#=============================================================================
+    
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustParam;
     CREATE TEMPORARY TABLE Temp_CustParam (
         	CTSCustID 		BIGINT UNSIGNED PRIMARY KEY 
@@ -42,6 +47,17 @@ BEGIN
 		,	CustID_Level1			BIGINT UNSIGNED 
         ,	PRIMARY KEY(CustID, CustID_Level1)
     );
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByAI_AssType;
+	CREATE TEMPORARY TABLE 	Temp_AssociationByAI_AssType (
+		AssTypeItemValue INT PRIMARY KEY            
+	);
+    
+	#===========GET AssociationByAI status is Applied==============================================    
+	INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
+	SELECT atd.AssTypeItemValue
+	FROM CTS_DataCenter.AssociationTypeSetting AS atd
+	WHERE atd.AssTypeID = CONS_ASSBYAI_ASSTYPEID AND atd.AssTypeItemStatus = CONS_ASSBYAI_STATUS;
     
     INSERT IGNORE INTO Temp_CustParam(CustID, CTSCustID)
     SELECT  cus.CustID
@@ -133,22 +149,22 @@ BEGIN
     SELECT 	pa.CustID
 		,	ai.ToCustID
     FROM Temp_CustParam AS pa 
-		INNER JOIN AssociationByAI AS ai ON ai.FromCustID = pa.CustID AND ai.AssType = 2
+		INNER JOIN AssociationByAI AS ai ON ai.FromCustID = pa.CustID AND ai.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByAI_AssType AS tmpAt)
 	WHERE EXISTS (SELECT 1 
                   FROM CTSCustomerClassification AS clss 
 					  STRAIGHT_JOIN Temp_CategoryID AS cate ON cate.CategoryID = clss.CategoryID
                   WHERE clss.CustID = ai.ToCustID);
-    
+
 	INSERT IGNORE INTO Temp_CustClass(CustID,CustID_Level1)
     SELECT 	pa.CustID
 		,	ai.FromCustID
     FROM Temp_CustParam AS pa 
-		INNER JOIN AssociationByAI AS ai ON ai.ToCustID  = pa.CustID AND ai.AssType = 2
+		INNER JOIN AssociationByAI AS ai ON ai.ToCustID  = pa.CustID AND ai.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByAI_AssType AS tmpAt)
 	WHERE EXISTS (SELECT 1 
                   FROM CTSCustomerClassification AS clss 
 					  STRAIGHT_JOIN Temp_CategoryID AS cate ON cate.CategoryID = clss.CategoryID
                   WHERE clss.CustID = ai.FromCustID);
-    
+
     /**************************************  AI Group ************************************************/
     DROP TEMPORARY TABLE IF EXISTS Temp_CustGroup;
     CREATE TEMPORARY TABLE Temp_CustGroup (

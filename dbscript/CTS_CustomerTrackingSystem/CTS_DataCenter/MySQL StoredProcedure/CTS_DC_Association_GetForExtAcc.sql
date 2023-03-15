@@ -18,15 +18,19 @@ sp : BEGIN
 			- 20210330@Aries.Nguyen: 	Created [Redmine ID: #152507]
 			- 20220408@Casey.Huynh: 	Add AssociationGroupByAI [Redmine ID: #171222]
 			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
+            - 20220313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
 			
         Param's Explanation (filtered by):
 			- ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual, 4 - IP
             - ip_AssociationStatus: 0 - All, 1 - Linked, 2 - UnLinked
         Example:
-			- CALL CTS_DataCenter.CTS_DC_Association_GetForExtAcc(33, 1, 1);
+			- CALL CTS_DataCenter.CTS_DC_Association_GetForExtAcc(169686, 2, 0);
 	*/
+	DECLARE CONS_ASSBYAI_ASSTYPEID 	INT DEFAULT 2;
+	DECLARE CONS_ASSBYAI_STATUS 	INT DEFAULT 1;
+	#=============================================================================
 	DECLARE lv_CTSCustID INT;
-
+	
     DROP TEMPORARY TABLE IF EXISTS Temp_Accounts;
     CREATE TEMPORARY TABLE 		Temp_Accounts (
 			CustID 				BIGINT UNSIGNED
@@ -62,7 +66,18 @@ sp : BEGIN
 		,	CreatedDate	DATETIME
         
         , 	PRIMARY KEY (GroupID)
-	);  
+	);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByAI_AssType;
+	CREATE TEMPORARY TABLE 	Temp_AssociationByAI_AssType (
+		AssTypeItemValue INT PRIMARY KEY            
+	);
+    
+	#===========GET AssociationByAI status is Applied==============================================    
+	INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
+	SELECT atd.AssTypeItemValue
+	FROM CTS_DataCenter.AssociationTypeSetting AS atd
+	WHERE atd.AssTypeID = CONS_ASSBYAI_ASSTYPEID AND atd.AssTypeItemStatus = CONS_ASSBYAI_STATUS;
     
     /*<Customer Category Rule/>*/    
     SELECT CTSCustID 
@@ -119,7 +134,7 @@ sp : BEGIN
 		FROM CTS_DataCenter.AssociationByAI AS asAI 
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asAI.ToCustID AND cust.CustSubID = 0
 		WHERE	asAI.FromCustID =  ip_CustID
-			AND asAI.AssType = 2;
+			AND asAI.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByAI_AssType AS tmpAt);
         
         INSERT IGNORE INTO Temp_CustAssociation(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
 		SELECT 
@@ -130,7 +145,7 @@ sp : BEGIN
 		FROM CTS_DataCenter.AssociationByAI AS asAI 
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asAI.FromCustID AND cust.CustSubID = 0
 		WHERE	asAI.ToCustID =  ip_CustID
-			AND asAI.AssType = 2;
+			AND asAI.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByAI_AssType AS tmpAt);
         
         #==================GET association from AssociationGroupByAI===============================================
         INSERT IGNORE INTO Temp_AssGroupByAI(GroupID, CreatedDate)
@@ -206,7 +221,7 @@ sp : BEGIN
 	DELETE cuAs 
 	FROM Temp_CustAssociation AS cuAs 
 	WHERE cuAs.CTSCustID_Aff IN (SELECT CTSCustID_Aff FROM Temp_CustAssociationUnlinked);
-        
+       
 	INSERT IGNORE INTO Temp_CustAssociation(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
 	SELECT CTSCustID_Aff
 		,	AssociationType
@@ -225,7 +240,7 @@ sp : BEGIN
         FROM Temp_CustAssociation  AS cuAs
             INNER JOIN Temp_CustAssociationUnlinked AS un ON un.CTSCustID_Aff = cuAs.CTSCustID_Aff AND un.AssociationStatus = cuAs.AssociationStatus;
      END IF;     
-     
+
      INSERT IGNORE INTO Temp_Accounts(CTSCustID, CustId, CustSubID, AssociationType, AssociationDate)
      SELECT cust.CTSCustID
 		,	cust.CustId
@@ -234,8 +249,8 @@ sp : BEGIN
         ,	cuAs.AssociationDate
      FROM Temp_CustAssociation AS cuAs
         INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cuAs.CTSCustID_Aff = cust.CTSCustID
-     ON DUPLICATE KEY UPDATE AssociationDate = LEAST(Temp_Accounts.AssociationDate, cuAs.AssociationDate);
-                             
+     ON DUPLICATE KEY UPDATE AssociationDate = LEAST(Temp_Accounts.AssociationDate, cuAs.AssociationDate) ;
+
      SELECT CTSCustID
 		,	CustId 				
         ,	CustSubID 			AS 'CustSubId'

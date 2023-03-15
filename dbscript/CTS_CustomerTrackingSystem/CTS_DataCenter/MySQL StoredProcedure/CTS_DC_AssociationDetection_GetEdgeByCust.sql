@@ -1,4 +1,4 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/ 
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="1"></info>*/ 
 DROP PROCEDURE IF EXISTS `CTS_DC_AssociationDetection_GetEdgeByCust`;
 
 DELIMITER $$
@@ -19,12 +19,16 @@ sp:BEGIN
 		Revisions:
 			- 20221207@Aries.Nguyen: 	Created [Redmine ID: #181207]
 			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
+            - 20220313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
 
 		Param's Explanation (filtered by): 
 
         Example:
-			- CALL CTS_DataCenter.CTS_DC_AssociationDetection_GetEdgeByCust(lv_CTSCustIDs,1,1,1,1);
-	*/   
+			- CALL CTS_DataCenter.CTS_DC_AssociationDetection_GetEdgeByCust(11140, '[{"CTSCustID":5422,"CustID":169686},{"CTSCustID":5424,"CustID":169689}]' ,1,1,1); SELECT * FROM Temp_Graph;
+	*/
+	DECLARE CONS_ASSBYAI_ASSTYPEID 	INT DEFAULT 2;
+	DECLARE CONS_ASSBYAI_STATUS 	INT DEFAULT 1;	
+	#=============================================================================
     DECLARE CONS_RangeDevice 			BIGINT DEFAULT 10000000000;
 	DECLARE CONS_RangeAIGroup 			BIGINT DEFAULT 20000000000;
     DECLARE lv_CustID		 			BIGINT;
@@ -54,6 +58,17 @@ sp:BEGIN
 	CREATE TEMPORARY TABLE 		Temp_Transitive (
 			Transitive	BIGINT PRIMARY KEY
 	);
+    
+	DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByAI_AssType;
+	CREATE TEMPORARY TABLE 	Temp_AssociationByAI_AssType (
+		AssTypeItemValue INT PRIMARY KEY            
+	);
+    
+	#===========GET AssociationByAI status is Applied==============================================    
+	INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
+	SELECT atd.AssTypeItemValue
+	FROM CTS_DataCenter.AssociationTypeSetting AS atd
+	WHERE atd.AssTypeID = CONS_ASSBYAI_ASSTYPEID AND atd.AssTypeItemStatus = CONS_ASSBYAI_STATUS; 
                         
     INSERT IGNORE INTO Temp_CustNode(CTSCustID, CustID)
 	SELECT 	js.CTSCustID
@@ -158,13 +173,13 @@ sp:BEGIN
 				DestID			BIGINT PRIMARY KEY	
 		);
         
-         #Add Edge 1
+        #Add Edge 1
 		INSERT IGNORE INTO Temp_AIEdge1(DestID)
 		SELECT  cus.CTSCustID AS DestID
 		FROM CTS_DataCenter.AssociationByAI AS ai
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ai.ToCustID AND cus.CustSubID = 0 AND cus.IsInternal = 0
 		WHERE ai.FromCustID = lv_CustID
-			AND ai.AssType = 2;
+			AND ai.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByAI_AssType AS tmpAt);
         
 		#Add Edge 1
         INSERT IGNORE INTO Temp_AIEdge1(DestID)
@@ -172,7 +187,7 @@ sp:BEGIN
 		FROM CTS_DataCenter.AssociationByAI AS ai
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ai.FromCustID AND cus.CustSubID = 0 AND cus.IsInternal = 0
 		WHERE ai.ToCustID = lv_CustID
-			AND ai.AssType = 2;
+			AND ai.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByAI_AssType AS tmpAt);
         
         INSERT IGNORE INTO Temp_Transitive(Transitive)
         SELECT 	DISTINCT

@@ -19,12 +19,15 @@ sp: BEGIN
 			- 20220226@Casey.Huynh: 	Created (MatchMonitor Rule) [Redmine ID: 166986]
 			- 20220422@Irena.Vo: 		Mapping Is Hedging Reason (MM) from table CustomerCategory [Redmine ID: #170468]
 			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
+            - 20220313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
 			
 		Param's Explanation (filtered by):			
         Example:
-			CALL CTS_DC_Association_IsAssociatedHedgingCustByCustIDList('37144067,37144068', @op_IsHedging);
+			CALL CTS_DC_Association_IsAssociatedHedgingCustByCustIDList('169686,169689,894977,65391526', @op_IsHedging); SELECT @op_IsHedging;
 	*/
-    
+	DECLARE CONS_ASSBYAI_ASSTYPEID 	INT DEFAULT 2;
+	DECLARE CONS_ASSBYAI_STATUS 	INT DEFAULT 1;
+	#=============================================================================
     DROP TEMPORARY TABLE IF EXISTS Temp_InputCust;
 	CREATE TEMPORARY TABLE 		Temp_InputCust (
 			CustID 	BIGINT UNSIGNED PRIMARY KEY
@@ -67,7 +70,18 @@ sp: BEGIN
         
         ,	PRIMARY KEY	IX_Temp_AssociationRemove_FromCTSCustID(FromCTSCustID,ToCTSCustID)
 	);   
-   
+
+	DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByAI_AssType;
+	CREATE TEMPORARY TABLE 	Temp_AssociationByAI_AssType (
+		AssTypeItemValue INT PRIMARY KEY            
+	);
+    
+	#===========GET AssociationByAI status is Applied==============================================    
+	INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
+	SELECT atd.AssTypeItemValue
+	FROM CTS_DataCenter.AssociationTypeSetting AS atd
+	WHERE atd.AssTypeID = CONS_ASSBYAI_ASSTYPEID AND atd.AssTypeItemStatus = CONS_ASSBYAI_STATUS; 
+       
     SET @sql = CONCAT("INSERT IGNORE INTO Temp_InputCust(CustID) VALUES ('", REPLACE(ip_CustIDList, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
@@ -114,15 +128,15 @@ sp: BEGIN
     SELECT  1
 	INTO op_IsHedging
 	FROM Temp_Cust AS tmpCus
-		INNER JOIN CTS_DataCenter.AssociationByAI AS ma ON ma.FromCustID = tmpCus.CustID AND ma.AssType = 2
+		INNER JOIN CTS_DataCenter.AssociationByAI AS ma ON ma.FromCustID = tmpCus.CustID AND AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByAI_AssType AS tmpAt)
         LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.LeastCustID AND ar.LeastCustSubID = 0 AND ma.ToCustID = ar.GreatestCustID AND ar.GreatestCustSubID = 0
 	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.LeastCustID IS NULL
 		AND	EXISTS(	SELECT 1 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
 						INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID
 					WHERE cla.CustID = ma.ToCustID AND cla.SportGroupID = 0 AND cc.IsHedgingReasonMM = 1)
-	LIMIT 1;
-
+	LIMIT 1;    
+    
 	IF op_IsHedging IS NOT NULL THEN 
 		LEAVE sp;
 	END IF;
@@ -130,7 +144,7 @@ sp: BEGIN
     SELECT  1
 	INTO op_IsHedging
 	FROM Temp_Cust AS tmpCus
-		INNER JOIN CTS_DataCenter.AssociationByAI AS ma ON ma.ToCustID = tmpCus.CustID AND ma.AssType = 2
+		INNER JOIN CTS_DataCenter.AssociationByAI AS ma ON ma.ToCustID = tmpCus.CustID AND ma.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByAI_AssType AS tmpAt)
         LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.LeastCustID AND ar.LeastCustSubID = 0 AND ma.ToCustID = ar.GreatestCustID AND ar.GreatestCustSubID = 0
 	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.LeastCustID IS NULL
 		AND	EXISTS(	SELECT 1 
