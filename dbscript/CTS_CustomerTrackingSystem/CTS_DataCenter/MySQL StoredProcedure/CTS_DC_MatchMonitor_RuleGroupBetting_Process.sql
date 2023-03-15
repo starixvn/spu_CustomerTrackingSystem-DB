@@ -248,7 +248,7 @@ sp: BEGIN
     #===========GET AssociationByAI status is Applied==============================================    
     INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
     SELECT atd.AssTypeItemValue
-    FROM CTS_DataCenter.AssociationTypeDetails AS atd
+    FROM CTS_DataCenter.AssociationTypeSetting AS atd
     WHERE atd.AssTypeID = CONS_ASSBYAI_ASSTYPEID AND atd.AssTypeItemStatus = CONS_ASSBYAI_STATUS; 
     
     #******** GET STAGING TRANS ******************************************************************

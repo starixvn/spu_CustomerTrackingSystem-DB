@@ -12,7 +12,7 @@ Reviewer:
 
 USE CTS_DataCenter;
 
-CREATE TABLE AssociationTypeDetails(
+CREATE TABLE AssociationTypeSetting(
 		ID INT auto_increment primary key
 	,	AssGroupName VARCHAR(100)
     ,	AssTypeID	INT
@@ -27,7 +27,7 @@ CREATE TABLE AssociationTypeDetails(
    ,	INDEX IX_AssociationTypeSetting_AssType(AssTypeID, AssTypeItemStatus)
 );
 
-INSERT INTO AssociationTypeDetails(ID, AssGroupName, AssTypeID, AssTypeName,  AssTypeItemValue, AssTypeItemName, AssTypeItemStatus, CreatedDate, Comments)
+INSERT INTO AssociationTypeSetting(ID, AssGroupName, AssTypeID, AssTypeName,  AssTypeItemValue, AssTypeItemName, AssTypeItemStatus, CreatedDate, Comments)
 VALUE	(1,'Association By Device',1,'AssociationByDevice',1,'Association By Device',2,CURRENT_DATE(),NULL)
 	,	(2,'Betting Patern',2,'AssociationByAI',1,'OTGB',2,CURRENT_DATE(),NULL)
     ,	(3,'Association By IP',3,'AssociationByIP',1,'Association By IP',2,CURRENT_DATE(),NULL)
