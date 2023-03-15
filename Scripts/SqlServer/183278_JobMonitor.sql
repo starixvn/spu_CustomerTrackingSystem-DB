@@ -14,7 +14,7 @@ CREATE TABLE [dbo].[CustomerClassification_Monitor_Realtime](
 	[CreatedDate] [Datetime]	NOT NULL
 )
 
-CREATE NONCLUSTERED INDEX [IX_CustomerClassification_Monitor_Realtime_CreatedDate] ON [dbo].[CustomerClassification_Monitor_Realtime]
+CREATE CLUSTERED INDEX [CIX_CustomerClassification_Monitor_Realtime_CreatedDate] ON [dbo].[CustomerClassification_Monitor_Realtime]
 (
 	[CreatedDate] ASC
 )
