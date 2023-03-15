@@ -27,7 +27,7 @@ sp : BEGIN
 		Param's Explanation (filtered by):
 
 		Example:
-			- CALL  CTS_DC_AssociatedGroup_Scan_xtest(@op_GroupID,@op_GroupName,@op_ABI,@op_Ori,@op_PACategoryID,@op_LastCTSCustID);
+			- CALL  CTS_DC_AssociatedGroup_Scan(@op_GroupID,@op_GroupName,@op_ABI,@op_Ori,@op_PACategoryID,@op_LastCTSCustID);
 	*/
 	DECLARE CONS_ASSBYAI_ASSTYPEID INT DEFAULT 2;
 	DECLARE CONS_ASSBYAI_STATUS INT DEFAULT 1;
@@ -263,7 +263,7 @@ sp : BEGIN
 		FROM Temp_Cust AS tmp 
 		,	LATERAL (	SELECT DISTINCT ai.ToCustID 
 						FROM CTS_DataCenter.AssociationByAI AS ai
-							INNER JOIN Temp_AssociationByAI_AssType AS tmpAt ON ai.FromCustID = tmp.CustID AND ai.AssType = tmpAt.AssType) AS ltr
+							INNER JOIN Temp_AssociationByAI_AssType AS tmpAt ON ai.FromCustID = tmp.CustID AND ai.AssType = tmpAt.AssTypeItemValue) AS ltr
 			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ltr.ToCustID AND cus.CustSubID = 0
 			STRAIGHT_JOIN CTS_Archive.CTSCustomerAssociationStatus AS tkd ON tkd.CTSCustID = cus.CTSCustID AND tkd.LastTicketDate >= tmp.AddGroupDate 
 		WHERE NOT EXISTS (SELECT 1 
