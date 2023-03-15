@@ -11,7 +11,8 @@ Reviewer:
 */
 
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomerClassification_IncorrectCategoryMonitor (
-    	CustID			BIGINT UNSIGNED NOT NULL
+		ID				BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY 
+    ,	CustID			BIGINT UNSIGNED NOT NULL
     , 	CategoryID		SMALLINT UNSIGNED
     , 	ScannedTime		DATETIME NOT NULL
     , 	CreatedTime		DATETIME NOT NULL

@@ -45,13 +45,12 @@ BEGIN
 			)
 	) AS js;
     
-    SELECT tcust.CustID
+    SELECT 	tcust.CustID
 		,	tcust.CustSubID
         ,	tcust.UserName
         ,	tcust.CreatedDate
 	FROM Temp_CTSCustomer AS tcust
-	LEFT JOIN CTSCustomer cust ON tcust.CustID = cust.CustID
-		AND tcust.CustSubID = cust.CustSubID
+		LEFT JOIN CTSCustomer AS cust ON tcust.CustID = cust.CustID	AND tcust.CustSubID = cust.CustSubID
 	WHERE cust.CustID IS NULL;
 
 END$$
