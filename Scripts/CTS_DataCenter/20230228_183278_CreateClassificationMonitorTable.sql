@@ -24,17 +24,17 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomerClassification_IncorrectCat
 
 
 INSERT INTO `CTS_DataCenter`.`SystemParameter` (`ParameterID`, `ParameterName`, `ParameterDesc`, `ParameterDataType`, `ParameterValue`) 
-VALUES ('130', 'MonitorRealtimeCategory_LastScannedDate', 'Monitoring customer places new bets', 'DATETIME', '2022-03-14 23:00:00');
+VALUES ('130', 'MonitorRealtimeCategory_LastScannedDate', 'Monitoring customer places new bets', 'DATETIME', '2023-03-14 23:00:00');
 
 INSERT INTO `CTS_DataCenter`.`SystemParameter` (`ParameterID`, `ParameterName`, `ParameterDesc`, `ParameterDataType`, `ParameterValue`) 
-VALUES ('131', 'MonitorInsertCustomer_LastScannedCustID', 'Monitoring new customer', 'BIGINT UNSIGNED', '83827279');
+VALUES ('131', 'MonitorInsertCustomer_LastScannedCustID', 'Monitoring new customer', 'BIGINT UNSIGNED', '83894715');
 
 INSERT INTO `CTS_DataCenter`.`SystemParameter` (`ParameterID`, `ParameterName`, `ParameterDesc`, `ParameterDataType`, `ParameterValue`) 
-VALUES ('132', 'MonitorInsertCustomer_LastScannedCustSubID', 'Monitoring new custSub', 'BIGINT UNSIGNED', '1855677');
+VALUES ('132', 'MonitorInsertCustomer_LastScannedCustSubID', 'Monitoring new custSub', 'BIGINT UNSIGNED', '1856119');
 
 -- Old Value = 2022-11-22 08:21:07
 UPDATE CTS_DataCenter.SystemParameter
-SET ParameterValue = '2022-03-14 23:00:00'
+SET ParameterValue = '2023-03-14 23:00:00'
 WHERE ParameterID = 67;
 
 DROP PROCEDURE IF EXISTS CTS_DC_CustInfo_Monitoring_CompareData; 
