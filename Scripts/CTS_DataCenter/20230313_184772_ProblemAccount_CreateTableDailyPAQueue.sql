@@ -25,3 +25,5 @@ DROP PROCEDURE IF EXISTS CTS_DC_CustClassification_GetByCustIDsAndCategoryIDs;
 DROP PROCEDURE IF EXISTS CTS_DC_CustClassification_GetByCustIDsAndCategoryIDs_xtest;
 
 DELETE FROM CTS_DataCenter.SystemParameter WHERE ParameterID in (88, 89);
+INSERT INTO `CTS_DataCenter`.`SystemParameter` (`ParameterID`, `ParameterName`, `ParameterDesc`, `ParameterDataType`, `ParameterValue`) 
+VALUES ('88', 'DailyScan_PA_LastScannedTime', 'Last Scanned Time Daily ScanPA', 'DATETIME', '2023-03-14 21:00:00');
