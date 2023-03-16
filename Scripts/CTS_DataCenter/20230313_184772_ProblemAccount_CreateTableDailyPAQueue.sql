@@ -15,4 +15,13 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomerClassification_DailyPAQueue
     ,	CustID			BIGINT UNSIGNED NOT NULL
     , 	CreatedTime		DATETIME NOT NULL
 	, 	INDEX			IX_CTSCustomerClassification_DailyPAQueue_CreatedTime(CreatedTime)
+	, 	INDEX			IX_CTSCustomerClassification_DailyPAQueue_CustID(CustID)
 ) ENGINE=INNODB;
+
+DROP PROCEDURE IF EXISTS CTS_DC_CustClassification_DailyScan_GetPA;
+DROP PROCEDURE IF EXISTS CTS_DC_CustClassification_DailyScan_GetPA_xtest;
+
+DROP PROCEDURE IF EXISTS CTS_DC_CustClassification_GetByCustIDsAndCategoryIDs;
+DROP PROCEDURE IF EXISTS CTS_DC_CustClassification_GetByCustIDsAndCategoryIDs_xtest;
+
+DELETE FROM CTS_DataCenter.SystemParameter WHERE ParameterID in (88, 89);

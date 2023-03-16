@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_DailyScanPA
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_DailyScanPA_InsertToQueue`(
-		IN ip_CustIDs 	TEXT
+		IN ip_CustIDs 		TEXT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -31,7 +31,7 @@ BEGIN
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
     
-    INSERT INTO CTS_DataCenter.CTS_DC_CustClassification_DailyScanPA_InsertToQueue(CTSCustID, CreatedTime)
+    INSERT INTO CTS_DataCenter.CTSCustomerClassification_DailyPAQueue(CTSCustID, CreatedTime)
 	SELECT  CustID
         ,	@lv_CurrentDateTime
 	FROM Temp_CustIDs;
