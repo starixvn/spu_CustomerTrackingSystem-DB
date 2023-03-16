@@ -19,7 +19,7 @@ CREATE TABLE AssociationTypeSetting(
 	,	AssTypeName VARCHAR(100)	
     ,	AssTypeItemValue INT
     ,	AssTypeItemName VARCHAR(100)
-    ,	AssTypeItemStatus TINYINT COMMENT '1: New, 2:Applied, 3: Closed'
+    ,	AssTypeItemStatus TINYINT COMMENT '0: New, 1:Applied, -1: Closed'
     ,	CreatedDate	DATETIME
     ,	Comments VARCHAR(500)
     
@@ -28,10 +28,10 @@ CREATE TABLE AssociationTypeSetting(
 );
 
 INSERT INTO AssociationTypeSetting(ID, AssGroupName, AssTypeID, AssTypeName,  AssTypeItemValue, AssTypeItemName, AssTypeItemStatus, CreatedDate, Comments)
-VALUE	(1,'Association By Device',1,'AssociationByDevice',1,'Association By Device',2,CURRENT_DATE(),NULL)
-	,	(2,'Betting Patern',2,'AssociationByAI',1,'OTGB',2,CURRENT_DATE(),NULL)
-    ,	(3,'Association By IP',3,'AssociationByIP',1,'Association By IP',2,CURRENT_DATE(),NULL)
-    ,	(4,'AssociationByManual',4,'Association By Manual',1,'Association By Manual',3,CURRENT_DATE(),NULL)
-    ,	(5,'Betting Patern',5,'AssociationGroupByAI',1,'Association Group By AI',2,CURRENT_DATE(),NULL)
-    ,	(6,'Betting Patern',2,'AssociationByAI',2,'5G3S',2,CURRENT_DATE(),NULL);
+VALUE	(1,'Association By Device',1,'AssociationByDevice',1,'Association By Device',1,CURRENT_DATE(),NULL)
+	,	(2,'Betting Patern',2,'AssociationByAI',1,'OTGB',1,CURRENT_DATE(),NULL)
+    ,	(3,'Association By IP',3,'AssociationByIP',1,'Association By IP',1,CURRENT_DATE(),NULL)
+    ,	(4,'AssociationByManual',4,'Association By Manual',1,'Association By Manual',-1,CURRENT_DATE(),NULL)
+    ,	(5,'Betting Patern',5,'AssociationGroupByAI',1,'Association Group By AI',1,CURRENT_DATE(),NULL)
+    ,	(6,'Betting Patern',2,'AssociationByAI',2,'5G3S',1,CURRENT_DATE(),NULL);
 
