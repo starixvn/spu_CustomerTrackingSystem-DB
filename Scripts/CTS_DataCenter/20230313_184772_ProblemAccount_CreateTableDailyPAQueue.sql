@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomerClassification_DailyPAQueue
     , 	CreatedTime		DATETIME NOT NULL
 	, 	INDEX			IX_CTSCustomerClassification_DailyPAQueue_CreatedTime(CreatedTime)
 	, 	INDEX			IX_CTSCustomerClassification_DailyPAQueue_CustID(CustID)
-) ENGINE=INNODB;
+) ENGINE=INNODB, AUTO_INCREMENT = 1;
 
 DROP PROCEDURE IF EXISTS CTS_DC_CustClassification_DailyScan_GetPA;
 DROP PROCEDURE IF EXISTS CTS_DC_CustClassification_DailyScan_GetPA_xtest;

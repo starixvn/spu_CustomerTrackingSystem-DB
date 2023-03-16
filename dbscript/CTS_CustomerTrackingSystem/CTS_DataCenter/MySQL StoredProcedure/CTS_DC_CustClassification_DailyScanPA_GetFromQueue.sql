@@ -15,7 +15,7 @@ BEGIN
             - 20230313@Jonas.Huynh: Get PA category for daily scan PA [Redmine ID: #184772]
             
 		Param's Explanation (filtered by):    
-			CALL CTS_DC_CustClassification_DailyScanPA_GetFromQueue('2023-03-24 00:00:00')
+			CALL CTS_DC_CustClassification_DailyScanPA_GetFromQueue()
 	*/ 
    
     DECLARE lv_BatchSize 			INT;
@@ -33,10 +33,13 @@ BEGIN
 	
     SET lv_LastScannedTime = DATE_ADD(lv_LastScannedTime, INTERVAL 24 HOUR);
     
-    SELECT DISTINCT TOP(lv_BatchSize) CustID
-	FROM CTS_DataCenter.CTSCustomerClassification_DailyPAQueue
-    WHERE CreatedTime <= lv_LastScannedTime
-    ORDER BY ID ASC;
+	WITH cte AS ( 
+		SELECT ID, CustID
+		FROM CTS_DataCenter.CTSCustomerClassification_DailyPAQueue
+		WHERE CreatedTime <= lv_LastScannedTime
+		ORDER BY ID ASC
+		LIMIT lv_BatchSize)
+	SELECT DISTINCT CustID FROM cte;
     
 END$$
 DELIMITER ;

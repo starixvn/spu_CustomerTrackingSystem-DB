@@ -49,6 +49,7 @@ BEGIN
         ,	CategoryID 				INT
         ,	CategoryGroup 			SMALLINT UNSIGNED
         ,	RelevantCategoryID 		SMALLINT UNSIGNED
+        ,	IsOldCategory	 		BOOLEAN DEFAULT FALSE
         , 	INDEX IX_Temp_CustomerCategory_CustID(CustID)
 	);      
 	
@@ -60,29 +61,31 @@ BEGIN
 			))) AS temp;
             
     -- #1: Get customer category
-	INSERT INTO Temp_CustomerCategory(CustID, SportGroupID, CategoryID, CategoryGroup, RelevantCategoryID)
+	INSERT INTO Temp_CustomerCategory(CustID, SportGroupID, CategoryID, CategoryGroup, RelevantCategoryID, IsOldCategory)
 	SELECT 		temp.CustID
 			, 	cate.SportGroupID
             ,	cate.CategoryID
             ,	cc.CategoryGroup
             ,	cc.RelevantCategoryID
+            ,	FALSE
 	FROM Temp_Customers AS temp
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID
         INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
 	WHERE cate.SportGroupID in (CONST_GROUP_NORMAL, CONST_GROUP_PA);
 
-	INSERT INTO Temp_CustomerCategory(CustID, SportGroupID, CategoryID, CategoryGroup, RelevantCategoryID)
+	INSERT INTO Temp_CustomerCategory(CustID, SportGroupID, CategoryID, CategoryGroup, RelevantCategoryID, IsOldCategory)
 	SELECT 		temp.CustID
 			, 	cate.SportGroupID
 			, 	cate.CategoryID
             ,	cc.CategoryGroup
             ,	cc.RelevantCategoryID
+            , 	TRUE
 	FROM Temp_Customers AS temp
 		INNER JOIN CTS_DataCenter.CTSCustomerClassificationOldCategory AS cate ON cate.CustID = temp.CustID
         INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID;
 	
     -- #2: Return customer category for realtime classification
-    SELECT 	temp.CustID AS CustID
+    SELECT 	DISTINCT temp.CustID AS CustID
 		,	CASE 
 				WHEN cate.CategoryID IS NULL THEN NULL
 				WHEN cate.CategoryGroup IN (CONST_CATEGORY_NEWMEMBER, CONST_CATEGORY_NORMALMEMBER, CONST_CATEGORY_GOODMEMBER) THEN cate.CategoryGroup
@@ -96,7 +99,8 @@ BEGIN
 	SELECT DISTINCT CustID
     FROM Temp_CustomerCategory 
     WHERE SportGroupID = CONST_GROUP_PA
-		AND RelevantCategoryID IS NOT NULL;
+		AND RelevantCategoryID IS NOT NULL
+        AND IsOldCategory = FALSE;
 	
 END$$
 DELIMITER ;

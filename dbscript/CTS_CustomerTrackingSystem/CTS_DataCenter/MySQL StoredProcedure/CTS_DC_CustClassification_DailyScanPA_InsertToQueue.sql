@@ -17,7 +17,7 @@ BEGIN
 			- 20230313@Jonas.Huynh: Created [Redmine ID: #184772]
 
 		Param's Explanation (filtered by):      
-			- CALL CTS_DC_CustClassification_DailyScanPA_InsertToQueue ('123,455');
+				CALL CTS_DC_CustClassification_DailyScanPA_InsertToQueue ('123,455');
 	*/
     
 	SET @lv_CurrentDateTime	= NOW(); 
@@ -31,7 +31,7 @@ BEGIN
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
     
-    INSERT INTO CTS_DataCenter.CTSCustomerClassification_DailyPAQueue(CTSCustID, CreatedTime)
+    INSERT INTO CTS_DataCenter.CTSCustomerClassification_DailyPAQueue(CustID, CreatedTime)
 	SELECT  CustID
         ,	@lv_CurrentDateTime
 	FROM Temp_CustIDs;
