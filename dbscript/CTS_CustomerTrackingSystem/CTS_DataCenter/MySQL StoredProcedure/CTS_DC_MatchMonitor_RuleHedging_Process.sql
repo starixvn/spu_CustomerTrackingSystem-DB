@@ -21,28 +21,31 @@ sp: BEGIN
 		Original:
 
 		Revisions:
-			- 	20210526@Casey.Huynh: Created [Redmine ID: 152883]
-            -	20221021@Casey.Huynh: Fixed Clean Data Staging [Redmine ID: #179427]
-            - 	202201021@Casey.Huynh: Group By Betteam [Redmine ID: #179439]
-            -   20221107@Aries.Nguyen: Tuning performance of Hedging Detection  [Redmine ID: #180185]
-            -	20221205@Casey.Huynh: Rename Table [Redmine ID: #179502]
+			- 	20210526@Casey.Huynh: 	Created [Redmine ID: 152883]
+			-	20221021@Casey.Huynh: 	Fixed Clean Data Staging [Redmine ID: #179427]
+			- 	202201021@Casey.Huynh: 	Group By Betteam [Redmine ID: #179439]
+			-   20221107@Aries.Nguyen: 	Tuning performance of Hedging Detection  [Redmine ID: #180185]
+			-	20221205@Casey.Huynh: 	Rename Table [Redmine ID: #179502]
+			-	20230310@Victoria.Le:	Credit Scale Out - Split 789y Site [Redmine ID: #183140]
+			
 		Param's Explanation (filtered by):	
 		Example:
 			- CALL CTS_DC_MatchMonitor_RuleHedging_Process(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=113171940189,@ip_MatchID:=22081995,@ip_ScoreDiff:=1,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a');
 			
 	*/
-    DECLARE CONS_LOG 					TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
-    DECLARE CONS_SITE789 				INT DEFAULT  3;
-    
-    DECLARE lv_TimeStep 				SMALLINT;
-    DECLARE lv_RuleTotalStake 			DECIMAL(20,4);
-    DECLARE lv_RuleHighStake 			DECIMAL(20,4);
+	DECLARE CONS_LOG 					TINYINT DEFAULT 	0; 		#0:LogOff, 1:LogOn
+	DECLARE CONS_SubscriberID_Alpha		INT 	DEFAULT  	168;
+	DECLARE CONS_SubscriberID_Maxbet	INT 	DEFAULT  	169;
+
+	DECLARE lv_TimeStep 				SMALLINT;
+	DECLARE lv_RuleTotalStake 			DECIMAL(20,4);
+	DECLARE lv_RuleHighStake 			DECIMAL(20,4);
 	DECLARE lv_RuleGroupID 				SMALLINT DEFAULT 3;  
-    DECLARE lv_Reason 					INT DEFAULT 1;
-    DECLARE lv_RuleSportType 			INT;  
-    DECLARE lv_CustIDList 				TEXT;
-    DECLARE lv_IsHedging 				BOOLEAN;
-    DECLARE lv_LastSequenceID 			BIGINT UNSIGNED;  
+	DECLARE lv_Reason 					INT DEFAULT 1;
+	DECLARE lv_RuleSportType 			INT;  
+	DECLARE lv_CustIDList 				TEXT;
+	DECLARE lv_IsHedging 				BOOLEAN;
+	DECLARE lv_LastSequenceID 			BIGINT UNSIGNED;  
     
     #==================LOG=======================================================
     DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleHedging_Process';
@@ -134,7 +137,7 @@ sp: BEGIN
 															AND agent.CustSubID = 0 
                                                             AND cus.RoleID = 1
 															AND agent.IsInternal = 0 												
-                                                            AND cus.SiteID = CONS_SITE789
+                                                            AND cus.SubscriberID IN (CONS_SubscriberID_Alpha,CONS_SubscriberID_Maxbet)
         WHERE mms.SequenceID <= ip_MaxSequenceID 
 			AND mms.MatchID = ip_MatchID 
             AND mms.ScoreDiff = ip_ScoreDiff 
@@ -185,7 +188,7 @@ sp: BEGIN
 															AND agent.CustSubID = 0 
                                                             AND cus.RoleID = 1
 															AND agent.IsInternal = 0 												
-                                                            AND cus.SiteID = CONS_SITE789
+                                                            AND cus.SubscriberID IN (CONS_SubscriberID_Alpha,CONS_SubscriberID_Maxbet)
         WHERE  mms.SequenceID <= ip_MaxSequenceID 
 			AND	mms.MatchID = ip_MatchID 
             AND mms.ScoreDiff = ip_ScoreDiff 

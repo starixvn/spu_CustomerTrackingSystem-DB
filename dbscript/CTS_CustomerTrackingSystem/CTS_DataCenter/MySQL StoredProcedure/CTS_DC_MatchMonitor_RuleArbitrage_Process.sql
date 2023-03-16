@@ -23,18 +23,21 @@ sp: BEGIN
 		Original:
 
 		Revisions:
-			- 	202212216@Casey.Huynh: Created [Redmine ID: 179502]
-            - 	20230109@Casey.Huynh: SumStake by CustID [Redmine ID: 182639]
-            - 	20230111@Casey.Huynh: SumStake by CustID not group by Betteam [Redmine ID: 182639]
+			- 	202212216@Casey.Huynh: 	Created [Redmine ID: 179502]
+			- 	20230109@Casey.Huynh: 	SumStake by CustID [Redmine ID: 182639]
+			- 	20230111@Casey.Huynh: 	SumStake by CustID not group by Betteam [Redmine ID: 182639]
+			-	20230310@Victoria.Le:	Credit Scale Out - Split 789y Site [Redmine ID: #183140]
+			
             
 		Param's Explanation (filtered by):
 			CALL CTS_DC_MatchMonitor_RuleArbitrage_Process(@ip_LiveIndicator:=0,@ip_MaxSequenceID:=@op_MaxSequenceID,@ip_MatchID:=110100,@ip_IsMajorLeague:=0,@ip_ScoreDiff:=-2,@ip_BettypeID:=1,@ip_BetID:=0, @ip_HDP:=-0.2500);
 	
 		Example:		
 	*/
-    DECLARE CONS_LOG 					TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
-    DECLARE CONST_RULE_GROUPID 			INT DEFAULT 5;
-    DECLARE CONS_SITE789 				INT DEFAULT  3;
+	DECLARE CONS_LOG 					TINYINT DEFAULT 	0; #0:LogOff, 1:LogOn
+	DECLARE CONST_RULE_GROUPID 			INT 	DEFAULT 	5;
+	DECLARE CONS_SubscriberID_Alpha		INT 	DEFAULT  	168;
+	DECLARE CONS_SubscriberID_Maxbet	INT 	DEFAULT  	169;
     
     
     DECLARE lv_RuleTimeStep 			SMALLINT;
@@ -130,7 +133,7 @@ sp: BEGIN
 															AND agent.CustSubID = 0 
                                                             AND cus.RoleID = 1
 															AND agent.IsInternal = 0 												
-                                                            AND cus.SiteID = CONS_SITE789
+                                                            AND cus.SubscriberID IN (CONS_SubscriberID_Alpha,CONS_SubscriberID_Maxbet)
         WHERE mms.SequenceID <= ip_MaxSequenceID 
 			AND mms.MatchID = ip_MatchID 
             AND mms.ScoreDiff = ip_ScoreDiff 
