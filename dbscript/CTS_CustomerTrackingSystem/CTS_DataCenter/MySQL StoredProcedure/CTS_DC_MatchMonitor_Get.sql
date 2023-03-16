@@ -69,7 +69,7 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_MatchMonitor(
 			ID				BIGINT UNSIGNED
         ,	MatchID 		INT
-        ,	EventDate		DATETIME
+        ,	EventDate		DATETIME DEFAULT NULL
         ,	LiveIndicator	TINYINT
         ,	HomeID			INT
         ,	AwayID			INT
@@ -153,10 +153,9 @@ BEGIN
 	EXECUTE stmt1; 
     
     IF (IFNULL(ip_MatchInfos,'') = '') THEN # Search by Insert Date
-		INSERT INTO Temp_MatchMonitor(ID, MatchID, EventDate, LiveIndicator, HomeID, AwayID, LeagueID, LeagueName, Sporttype, BettypeID, BetID, Reason)    
+		INSERT INTO Temp_MatchMonitor(ID, MatchID, LiveIndicator, HomeID, AwayID, LeagueID, LeagueName, Sporttype, BettypeID, BetID, Reason)    
 		SELECT 	s.ID
 			,	s.MatchID
-			,	s.EventDate
 			,	s.LiveIndicator
 			,	s.HomeID
 			,	s.AwayID
