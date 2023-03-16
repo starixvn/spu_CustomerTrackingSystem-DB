@@ -27,9 +27,9 @@ BEGIN
             - 20230313@Jonas.Huynh: Get PA category for daily scan PA [Redmine ID: #184772]
             
 		Param's Explanation (filtered by):    
-			CALL CTS_DC_CustClassification_Realtime_GetCategory('7681925')
+			CALL CTS_DC_CustClassification_Realtime_GetCategory('761925')
 	*/  
-	DECLARE	CONST_GROUP_NORMAL 			INT DEFAULT 200;
+    DECLARE	CONST_GROUP_NORMAL 			INT DEFAULT 200;
 	DECLARE	CONST_GROUP_PA 				INT DEFAULT 0;
 	
     DECLARE	CONST_CATEGORY_NEWMEMBER 	INT DEFAULT 201;
@@ -46,7 +46,6 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_CustomerCategory(
 			CustID					BIGINT UNSIGNED NOT NULL
 		,	SportGroupID			INT
-        ,	CategoryID 				INT
         ,	CategoryID 				INT
         ,	CategoryGroup 			SMALLINT UNSIGNED
         ,	RelevantCategoryID 		SMALLINT UNSIGNED
@@ -70,7 +69,7 @@ BEGIN
 	FROM Temp_Customers AS temp
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID
         INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
-	WHERE temp.SportGroupID in (CONST_GROUP_NORMAL, CONST_GROUP_PA);
+	WHERE cate.SportGroupID in (CONST_GROUP_NORMAL, CONST_GROUP_PA);
 
 	INSERT INTO Temp_CustomerCategory(CustID, SportGroupID, CategoryID, CategoryGroup, RelevantCategoryID)
 	SELECT 		temp.CustID
@@ -89,7 +88,7 @@ BEGIN
 				WHEN cate.CategoryGroup IN (CONST_CATEGORY_NEWMEMBER, CONST_CATEGORY_NORMALMEMBER, CONST_CATEGORY_GOODMEMBER) THEN cate.CategoryGroup
 				WHEN cate.CategoryGroup IN (CONST_CATEGORY_INACTIVE) THEN cate.CategoryID
 				ELSE -1
-			END AS CurrentCategoryID
+			END AS CategoryId
 	FROM Temp_Customers AS temp
 		LEFT JOIN Temp_CustomerCategory AS cate ON cate.CustID = temp.CustID;
 	

@@ -3,7 +3,6 @@ DROP procedure IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_DailyScanPA
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_DailyScanPA_GetFromQueue`(
-      IN ip_MaxScanTime		DATETIME
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -20,15 +19,23 @@ BEGIN
 	*/ 
    
     DECLARE lv_BatchSize 			INT;
+    DECLARE lv_LastScannedTime		DATETIME;
 	
 	SELECT ParameterValue 
     INTO lv_BatchSize 
     FROM CTS_DataCenter.SystemParameter 
     WHERE ParameterID = 87;
+    
+    SELECT ParameterValue 
+    INTO lv_LastScannedTime 
+    FROM CTS_DataCenter.SystemParameter 
+    WHERE ParameterID = 88;
 	
+    SET lv_LastScannedTime = DATE_ADD(lv_LastScannedTime, INTERVAL 24 HOUR);
+    
     SELECT DISTINCT TOP(lv_BatchSize) CustID
 	FROM CTS_DataCenter.CTSCustomerClassification_DailyPAQueue
-    WHERE CreatedTime <= ip_MaxScanTime
+    WHERE CreatedTime <= lv_LastScannedTime
     ORDER BY ID ASC;
     
 END$$

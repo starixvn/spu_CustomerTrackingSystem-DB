@@ -1,10 +1,9 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_DailyScanPA_RemoveFromQueue`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_DailyScanPA_Complete`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_DailyScanPA_RemoveFromQueue`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_DailyScanPA_Complete`(
 		IN ip_CustIDs      			TEXT
-	,	IN ip_MaxScannedTime		DATETIME
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -17,9 +16,10 @@ BEGIN
             - 20230313@Jonas.Huynh: Get PA category for daily scan PA [Redmine ID: #184772]
 
 		Param's Explanation (filtered by):      
-			- CALL CTS_DC_CustClassification_DailyScanPA_RemoveFromQueue ('123,455', '2023-03-14 00:00:00');
+			- CALL CTS_DC_CustClassification_DailyScanPA_Complete ('123,455', '2023-03-14 00:00:00');
 	*/
-    
+	DECLARE lv_LastScannedTime		DATETIME;
+     
     DROP TEMPORARY TABLE IF EXISTS Temp_Customers;
 	CREATE TEMPORARY TABLE Temp_Customers (
 		 	CustID			BIGINT UNSIGNED	PRIMARY KEY
@@ -31,11 +31,24 @@ BEGIN
 			'$[*]' COLUMNS(NESTED PATH '$' COLUMNS (
 				CustID 		BIGINT UNSIGNED PATH '$'
 			))) AS temp;
-            
-    DELETE queue
-    FROM CTS_DataCenter.CTSCustomerClassification_DailyPAQueue AS queue 
-    WHERE queue.CreatedTime <= ip_MaxScannedTime
+    
+	IF ((SELECT COUNT(1) FROM Temp_Customers) > 0) THEN
+        DELETE queue
+		FROM CTS_DataCenter.CTSCustomerClassification_DailyPAQueue AS queue 
+		WHERE queue.CreatedTime <= ip_MaxScannedTime
 		AND EXISTS (SELECT 1 FROM Temp_Customers AS tmp WHERE tmp.CustID = clss.CustID);
+    ELSE
+        SELECT ParameterValue 
+		INTO lv_LastScannedTime 
+		FROM CTS_DataCenter.SystemParameter 
+		WHERE ParameterID = 88;
+		
+		SET lv_LastScannedTime = DATE_ADD(lv_LastScannedTime, INTERVAL 24 HOUR);
+        
+		UPDATE CTS_DataCenter.SystemParameter
+        SET ParameterValue = lv_LastScannedTime
+        WHERE ParameterID = 88;
+    END IF;
     
 END$$
 DELIMITER ;
