@@ -14,10 +14,11 @@ sp:BEGIN
 		Original:
 		
 		Revisions:	
-			- 20210901@Aries.Nguyen: Created [RedmineID: #160758]	
-			- 20220519@Aries.Nguyen: Renovate the Category Log History[Redmine ID: #172560]
-			- 20220909@Aries.Nguyen: Handle lv_NextLastID is null [Redmine ID: #176992] 
-			- 20230210@Long.Luu: Fix Customer Classification Log [Redmine ID: #183279] 
+			- 20210901@Aries.Nguyen: 	Created [RedmineID: #160758]	
+			- 20220519@Aries.Nguyen: 	Renovate the Category Log History[Redmine ID: #172560]
+			- 20220909@Aries.Nguyen: 	Handle lv_NextLastID is null [Redmine ID: #176992] 
+			- 20230210@Long.Luu: Fix 	Customer Classification Log [Redmine ID: #183279] 
+			- 20230315@Victoria.Le:		Add Robot Imperva [Redmine ID: #184773]
             
 		Param's Explanation (filtered by):
 
@@ -72,6 +73,7 @@ sp:BEGIN
 		,	IsFromTW 				BIT
 		,	IsFromCTS 				BIT
 		,	IsFromAI 				BIT 
+		,	IsFromImpreva			BIT
 		,	PRIMARY KEY (ID)
 		,	KEY 					IX_CTSCustomerClassification_History_CustID (CustID)
 	);
@@ -116,7 +118,41 @@ sp:BEGIN
 		LEAVE sp; 
 	END IF;
 
-    INSERT INTO Temp_History(ID, CustID, CTSCustID, SportGroupID, CategoryID,TurnoverRM , WinlossRM, BetCount, ActiveDays, RobotCounter, ProbationPeriodWinloss, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsAppliedCC, IsDataChanged, ActionType, IsAuto, LastModifiedDate, LastModifiedBy, InsertDate, TaggingType, TargetDangerLevel1, IsAppliedDangerLevel1, TWGroupBettingRate, TWTicketRejectRate, TWBetCount, TWDesktopUsageRate,Remark,IsDirect,TVSRequestID, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI)
+    INSERT INTO Temp_History(	
+			ID
+		,	CustID
+		,	CTSCustID
+		,	SportGroupID
+		,	CategoryID,TurnoverRM 
+		,	WinlossRM
+		,	BetCount
+		,	ActiveDays
+		,	RobotCounter
+		,	ProbationPeriodWinloss
+		,	TargetCC
+		,	SourceTypeID
+		,	FromCategoryID
+		,	ToCategoryID
+		,	IsAppliedCC
+		,	IsDataChanged
+		,	ActionType
+		,	IsAuto
+		,	LastModifiedDate
+		,	LastModifiedBy
+		,	InsertDate
+		,	TaggingType
+		,	TargetDangerLevel1
+		,	IsAppliedDangerLevel1
+		,	TWGroupBettingRate
+		,	TWTicketRejectRate
+		,	TWBetCount
+		,	TWDesktopUsageRate,Remark,IsDirect,TVSRequestID
+		,	IsFromTVS
+		,	IsFromTW
+		,	IsFromCTS
+		,	IsFromAI
+		,	IsFromImpreva
+	)
     SELECT 	ID  					
 		,	CustID  				
 		,	CTSCustID  				
@@ -152,7 +188,8 @@ sp:BEGIN
 		,	IsFromTVS 				 
 		,	IsFromTW 				
 		,	IsFromCTS 				
-		,	IsFromAI 				 
+		,	IsFromAI 	
+		,	IsFromImpreva
 	FROM CTS_DataCenter.CTSCustomerClassification_History
     WHERE ID BETWEEN lv_LastID AND lv_NextLastID
 		AND IsDataChanged = 1
@@ -201,7 +238,41 @@ sp:BEGIN
 						WHERE k.ID = h.ID);		
         
         # take back the old log for the new active ones
-        INSERT INTO Temp_History(ID, CustID, CTSCustID, SportGroupID, CategoryID,TurnoverRM , WinlossRM, BetCount, ActiveDays, RobotCounter, ProbationPeriodWinloss, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsAppliedCC, IsDataChanged, ActionType, IsAuto, LastModifiedDate, LastModifiedBy, InsertDate, TaggingType, TargetDangerLevel1, IsAppliedDangerLevel1, TWGroupBettingRate, TWTicketRejectRate, TWBetCount, TWDesktopUsageRate,Remark,IsDirect,TVSRequestID, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI)
+        INSERT INTO Temp_History(
+				ID
+			,	CustID
+			,	CTSCustID
+			,	SportGroupID
+			,	CategoryID,TurnoverRM 
+			,	WinlossRM
+			,	BetCount
+			,	ActiveDays
+			,	RobotCounter
+			,	ProbationPeriodWinloss
+			,	TargetCC
+			,	SourceTypeID
+			,	FromCategoryID
+			,	ToCategoryID
+			,	IsAppliedCC
+			,	IsDataChanged
+			,	ActionType
+			,	IsAuto
+			,	LastModifiedDate
+			,	LastModifiedBy
+			,	InsertDate
+			,	TaggingType
+			,	TargetDangerLevel1
+			,	IsAppliedDangerLevel1
+			,	TWGroupBettingRate
+			,	TWTicketRejectRate
+			,	TWBetCount
+			,	TWDesktopUsageRate,Remark,IsDirect,TVSRequestID
+			,	IsFromTVS
+			,	IsFromTW
+			,	IsFromCTS
+			,	IsFromAI
+			,	IsFromImpreva
+		)
 		SELECT 	ID  					
 			,	h.CustID  				
 			,	CTSCustID  				
@@ -237,7 +308,8 @@ sp:BEGIN
 			,	IsFromTVS 				 
 			,	IsFromTW 				
 			,	IsFromCTS 				
-			,	IsFromAI 				 
+			,	IsFromAI 	
+			,	IsFromImpreva
 		FROM Temp_CustDataShouldBeRemoved AS k
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS h ON k.CustID = h.CustID
 		WHERE h.ID < lv_LastID
@@ -285,7 +357,8 @@ sp:BEGIN
             ,	IsFromTVS 				 
 			,	IsFromTW 				
 			,	IsFromCTS 				
-			,	IsFromAI 		
+			,	IsFromAI 	
+			,	IsFromImpreva
 		FROM Temp_History;
 		
 		UPDATE CTS_DataCenter.SystemParameter

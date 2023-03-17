@@ -7,7 +7,6 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_RobotDetection_Get`(
     
     ,	OUT op_FirstRobotDate		TIMESTAMP(3)
     ,	OUT op_LastRobotDate		TIMESTAMP(3)    
-    ,	OUT op_RobotType			INT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -18,39 +17,15 @@ BEGIN
 		Original: 
 
 		Revisions:
-			- 20221027@Long.Luu: Created [Redmine ID: #179498]
-			- 20221027@Long.Luu: Support SCE Robots [Redmine ID: #179498]
+			- 20221027@Long.Luu: 		Created [Redmine ID: #179498]
+			- 20221027@Long.Luu: 		Support SCE Robots [Redmine ID: #179498]
+			- 20230315@Victoria.Le:		Add Robot Imperva [Redmine ID: #184773]
             
 		Example:
-			call CTS_DataCenter.CTS_DC_RobotDetection_Get (123,@a,@b,@c);  select @a,@b,@c;
+			call CTS_DataCenter.CTS_DC_RobotDetection_Get (123,@a,@b);  select @a,@b;
 	*/    
-    DECLARE CONST_ROBOTTYPE_BAD 		INT DEFAULT 2;
-	DECLARE	CONST_ROBOTTYPE_GOOD 		INT DEFAULT 1;
-	DECLARE CONST_ROBOTTYPE_OBSERVED 	INT DEFAULT 0;
-    DECLARE CONST_ROBOTTYPE_NOTYPE 		INT DEFAULT -1;
-    DECLARE CONST_ROBOTTYPE_NOTROBOT 	INT DEFAULT -2;
-    
-    SET @LatestRobotType = -2;
-    SET @IsRobotBetting = EXISTS(
-								SELECT 1 
-								FROM RobotDetection 
-								WHERE CustID = ip_CustID
-							);
-                            
-	SELECT RobotType
-    INTO @LatestRobotType
-    FROM RobotClassification
-	WHERE CustID = ip_CustID
-    ORDER BY FromDate DESC
-    LIMIT 1;
-    
-    SET op_RobotType = 	CASE 
-							WHEN @LatestRobotType IN (CONST_ROBOTTYPE_BAD,CONST_ROBOTTYPE_GOOD,CONST_ROBOTTYPE_OBSERVED) THEN @LatestRobotType
-							WHEN @IsRobotBetting = 1 THEN CONST_ROBOTTYPE_NOTYPE
-							ELSE CONST_ROBOTTYPE_NOTROBOT
-						END;
-    
-    SELECT 	MIN(CreatedDate), MAX(LastModifiedDate)
+	
+	SELECT 	MIN(CreatedDate), MAX(LastModifiedDate)
     INTO op_FirstRobotDate, op_LastRobotDate
     FROM RobotDetection
     WHERE CustID = ip_CustID;
@@ -69,6 +44,12 @@ BEGIN
 			END AS PeriodRangeName
     FROM RobotDetection
     WHERE CustID = ip_CustID;
+	
+	SELECT 	CustID
+		,	CreateTime
+		,	Platform
+	FROM RobotImperva
+	WHERE CustID = ip_CustID;
     
 END$$	
 DELIMITER ;

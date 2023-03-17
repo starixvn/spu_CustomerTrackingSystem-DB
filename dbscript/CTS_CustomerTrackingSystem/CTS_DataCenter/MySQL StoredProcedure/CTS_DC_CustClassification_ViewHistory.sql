@@ -13,20 +13,23 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original:
 		Revisions:
-            - 20210105@Irena.Vo: Created. Update logic SP [RedmineID: #145951]
-			- 20210226@Irena.Vo: Get TaggingType flag for log [RedmineID: #150454]
-            - 20210401@Irena.Vo: Update View Log [RedmineID: #152249]
-            - 20210525@Irena.Vo: Change view log: CustID -> CTSCustID [RedmineID: #152965] 
-			- 20210610@Irena.Vo: Write log for Inactive Account [RedmineID: #156465] 
-            - 20210722@Irena.Vo: Refactor SP [RedmineID: #157203] 
-            - 20210727@Long.Luu: Return more data for TW's categories [RedmineID: #155956] 
-			- 20210907@Long.Luu: Update Robot Users rules  [Redmine ID: #161232]
-			- 20211116@Aries.Nguyen: Return history with CTSUser is null[Redmine ID: #156935]
-            - 20220510@Irena.Vo: Update for return CreatedBy [Redmine ID: #171512]
-			- 20220519@Aries.Nguyen: Renovate the Category Log History [Redmine ID: #172560]
-            - 20200705@Casey.Huynh: Add New Category LicVIP, LicBA [Redmine ID: #174219]       
-			- 20220817@Long.Luu: Rearrange CC's IDs [Redmine ID: #175698]
-            - 20220913@Casey.Huynh: Update Remark [Redmine ID: #176976]
+			- 20210105@Irena.Vo: 		Created. Update logic SP [RedmineID: #145951]
+			- 20210226@Irena.Vo: 		Get TaggingType flag for log [RedmineID: #150454]
+			- 20210401@Irena.Vo: 		Update View Log [RedmineID: #152249]
+			- 20210525@Irena.Vo: 		Change view log: CustID -> CTSCustID [RedmineID: #152965] 
+			- 20210610@Irena.Vo: 		Write log for Inactive Account [RedmineID: #156465] 
+			- 20210722@Irena.Vo: 		Refactor SP [RedmineID: #157203] 
+			- 20210727@Long.Luu: 		Return more data for TW's categories [RedmineID: #155956] 
+			- 20210907@Long.Luu: 		Update Robot Users rules  [Redmine ID: #161232]
+			- 20211116@Aries.Nguyen: 	Return history with CTSUser is null[Redmine ID: #156935]
+			- 20220510@Irena.Vo: 		Update for return CreatedBy [Redmine ID: #171512]
+			- 20220519@Aries.Nguyen: 	Renovate the Category Log History [Redmine ID: #172560]
+			- 20200705@Casey.Huynh: 	Add New Category LicVIP, LicBA [Redmine ID: #174219]       
+			- 20220817@Long.Luu: 		Rearrange CC's IDs [Redmine ID: #175698]
+			- 20220913@Casey.Huynh: 	Update Remark [Redmine ID: #176976]
+			- 20230315@Victoria.Le:		Add Robot Imperva [Redmine ID: #184773]
+			
+			
 		Param's Explanation (filtered by):		
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_ViewHistory(43600889);
@@ -81,6 +84,7 @@ BEGIN
             ,	temp.IsFromTW
             ,	temp.IsFromCTS
             ,	temp.IsFromAI
+			,	temp.IsFromImpreva
 			,	(CASE	WHEN temp.TargetCC = lv_LicVIPProblem_CC THEN lv_LicVIPProblem_CategoryName
 						WHEN temp.TargetCC = lv_LicVIPNormal_CC THEN lv_LicVIPNormal_CategoryName 
                         ELSE NULL END) AS LicVIP
