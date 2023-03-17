@@ -59,7 +59,7 @@ BEGIN
     FROM Temp_PA AS t
 		INNER JOIN CTSCustomerClassificationOldCategory AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
 	WHERE t.TVSRequestID IS NOT NULL
-		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0 AND d.IsFromImpreva = 0);
+		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0 AND d.IsFromImperva = 0);
     
     /* REMOVE FROM CLASSIFICATION HISTORY  */    
 	DELETE d
@@ -88,7 +88,7 @@ BEGIN
     FROM Temp_PA AS t
 		INNER JOIN CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
 	WHERE t.TVSRequestID IS NOT NULL
-		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0 AND d.IsFromImpreva = 0);
+		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0 AND d.IsFromImperva = 0);
       
 	/* REMOVE FROM CUSTOMER EVIDENCE  */ 
     DELETE d

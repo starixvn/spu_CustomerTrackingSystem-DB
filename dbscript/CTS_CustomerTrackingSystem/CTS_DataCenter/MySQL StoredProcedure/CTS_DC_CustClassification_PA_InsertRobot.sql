@@ -72,7 +72,7 @@ BEGIN
         ,	IsFromCTS				BIT
         ,	IsFromAI				BIT
         ,	IsFromTVS				BIT
-		,	IsFromImpreva			BIT
+		,	IsFromImperva			BIT
 		
         ,	TVSRequestID			BIGINT UNSIGNED 
         ,	IsDirect				BIT
@@ -104,7 +104,7 @@ BEGIN
 		,	IsFromCTS			BIT
         ,	IsFromAI			BIT
         ,	IsFromTVS			BIT
-		,	IsFromImpreva		BIT
+		,	IsFromImperva		BIT
         ,	TVSRequestID		BIGINT UNSIGNED 
         ,	IsDirect			BIT
         ,	Remark				VARCHAR(500)
@@ -149,7 +149,7 @@ BEGIN
 		,	IsFromCTS
 		,	IsFromAI
 		,	IsFromTVS
-		,	IsFromImpreva
+		,	IsFromImperva
 		,	TVSRequestID
 		,	IsDirect
 		,	Remark
@@ -179,7 +179,7 @@ BEGIN
 		,	IFNULL(js.IsFromCTS,0) AS IsFromCTS		
         ,	IFNULL(js.IsFromAI,0) AS IsFromAI
         ,	IFNULL(js.IsFromTVS,0) AS IsFromTVS 		
-		,	IFNULL(js.IsFromImpreva,0) AS IsFromImpreva 
+		,	IFNULL(js.IsFromImperva,0) AS IsFromImperva 
         ,	js.TVSRequestID	
         ,	IFNULL(js.IsDirect,0) AS IsDirect	
         ,	js.Remark
@@ -204,7 +204,7 @@ BEGIN
 				, 	IsFromCTS		BOOLEAN 			PATH "$.IsFromCTS"
 				, 	IsFromAI		BOOLEAN 			PATH "$.IsFromAI"
 				, 	IsFromTVS		BOOLEAN 			PATH "$.IsFromTVS"
-				,	IsFromImpreva	BOOLEAN				PATH "$.IsFromImpreva"
+				,	IsFromImperva	BOOLEAN				PATH "$.IsFromImperva"
 				, 	TVSRequestID	BIGINT UNSIGNED 	PATH "$.TVSRequestID"
 				, 	IsDirect		BOOLEAN 			PATH "$.IsDirect"
 
@@ -224,7 +224,7 @@ BEGIN
 						,	IsFromCTS = CASE WHEN js.IsFromCTS = 1 THEN 1 ELSE Temp_PA.IsFromCTS END
 						,	IsFromAI = CASE WHEN js.IsFromAI = 1 THEN 1 ELSE Temp_PA.IsFromAI END
 						,	IsFromTVS = CASE WHEN js.IsFromTVS = 1 THEN 1 ELSE Temp_PA.IsFromTVS END
-						,	IsFromImpreva = CASE WHEN js.IsFromImpreva = 1 THEN 1 ELSE Temp_PA.IsFromImpreva END
+						,	IsFromImperva = CASE WHEN js.IsFromImperva = 1 THEN 1 ELSE Temp_PA.IsFromImperva END
 						,	TVSRequestID = CASE WHEN js.TVSRequestID IS NOT NULL AND Temp_PA.TVSRequestID IS NULL  THEN js.TVSRequestID ELSE Temp_PA.TVSRequestID END
 						,	IsDirect = CASE WHEN js.IsDirect = 1 THEN 1 ELSE Temp_PA.IsDirect END
 						,	Remark = CASE WHEN js.IsFromCTS = 1 THEN js.Remark ELSE Temp_PA.Remark END
@@ -242,7 +242,7 @@ BEGIN
 		,	IsFromCTS
 		,	IsFromAI
 		,	IsFromTVS
-		,	IsFromImpreva
+		,	IsFromImperva
 		,	TVSRequestID
 		, 	IsDirect
 		,	Remark
@@ -263,7 +263,7 @@ BEGIN
 		,	pa.IsFromCTS
 		,	pa.IsFromAI
 		,	pa.IsFromTVS
-		,	pa.IsFromImpreva
+		,	pa.IsFromImperva
 		,	pa.TVSRequestID
 		,	pa.IsDirect
 		,	pa.Remark
@@ -295,7 +295,7 @@ BEGIN
 		,	IsFromCTS
 		,	IsFromAI
 		,	IsFromTVS
-		,	IsFromImpreva
+		,	IsFromImperva
 		,	TVSRequestID
 		,	IsDirect
 		,	Remark
@@ -320,7 +320,7 @@ BEGIN
 		, 	clss.IsFromCTS	
 		, 	clss.IsFromAI	
 		, 	clss.IsFromTVS
-		,	clss.IsFromImpreva
+		,	clss.IsFromImperva
 		, 	clss.TVSRequestID	
 		, 	clss.IsDirect	
 		,	clss.Remark
@@ -449,12 +449,12 @@ BEGIN
     UPDATE CTS_DataCenter.CTSCustomerClassification AS clss
 		INNER JOIN Temp_PA AS pa ON  pa.CustID = clss.CustID AND clss.CategoryID IN (CONST_CATEGORYID_ROBOT,CONST_CATEGORYID_ROBOTLOSING)
     SET 	clss.CategoryID =  pa.CategoryID   
-		,	clss.Remark =  CASE WHEN pa.IsFromCTS = 1 OR pa.IsFromImpreva = 1 THEN pa.Remark ELSE clss.Remark END  
+		,	clss.Remark =  CASE WHEN pa.IsFromCTS = 1 OR pa.IsFromImperva = 1 THEN pa.Remark ELSE clss.Remark END  
 		,	clss.IsFromTW =   CASE WHEN pa.IsFromTW = 1 THEN pa.IsFromTW ELSE clss.IsFromTW END  
 		,	clss.IsFromCTS =  CASE WHEN pa.IsFromCTS = 1 THEN pa.IsFromCTS ELSE clss.IsFromCTS END  
 		,	clss.IsFromAI =  CASE WHEN pa.IsFromAI = 1 THEN pa.IsFromAI ELSE clss.IsFromAI END  
 		,	clss.IsFromTVS =  CASE WHEN pa.IsFromTVS = 1 THEN pa.IsFromTVS ELSE clss.IsFromTVS END  
-		,	clss.IsFromImpreva =  CASE WHEN pa.IsFromImpreva = 1 THEN pa.IsFromImpreva ELSE clss.IsFromImpreva END  
+		,	clss.IsFromImperva =  CASE WHEN pa.IsFromImperva = 1 THEN pa.IsFromImperva ELSE clss.IsFromImperva END  
 		,	clss.TVSRequestID =  CASE WHEN pa.TVSRequestID IS NOT NULL AND pa.TVSRequestID != 0 THEN pa.TVSRequestID ELSE clss.TVSRequestID END  
 		,	clss.IsDirect = CASE WHEN pa.IsDirect = 1 THEN pa.IsDirect ELSE clss.IsDirect END
 		,	pa.IsExisted = 1;
@@ -495,7 +495,7 @@ BEGIN
 		,	IsFromCTS
 		,	IsFromAI
 		,	IsFromTVS
-		,	IsFromImpreva
+		,	IsFromImperva
 		,	TVSRequestID
 		, 	IsDirect
 		,	Remark
@@ -515,7 +515,7 @@ BEGIN
 		,	pa.IsFromCTS
 		,	pa.IsFromAI
 		,	pa.IsFromTVS
-		,	pa.IsFromImpreva
+		,	pa.IsFromImperva
 		,	pa.TVSRequestID
 		,	pa.IsDirect
 		,	pa.Remark
@@ -553,7 +553,7 @@ BEGIN
 		,	IsFromCTS
 		,	IsFromAI
 		,	IsFromTVS
-		,	IsFromImpreva
+		,	IsFromImperva
 		,	TVSRequestID
 	)
 	SELECT 	pa.CustID
@@ -581,7 +581,7 @@ BEGIN
 		,	pa.IsFromCTS
 		,	pa.IsFromAI
 		,	pa.IsFromTVS
-		,	pa.IsFromImpreva
+		,	pa.IsFromImperva
 		,	pa.TVSRequestID  
 	FROM Temp_PA AS pa
     WHERE pa.IsDataChanged =  1 OR ip_IsRescan = 1; 
@@ -610,7 +610,7 @@ BEGIN
 		,	IsFromCTS
 		,	IsFromAI
 		,	IsFromTVS
-		,	IsFromImpreva
+		,	IsFromImperva
 		,	TVSRequestID
 	)
 	SELECT 	pa.CustID
@@ -637,7 +637,7 @@ BEGIN
 		,	pa.IsFromCTS
 		,	pa.IsFromAI
 		,	pa.IsFromTVS
-		,	pa.IsFromImpreva
+		,	pa.IsFromImperva
 		,	pa.TVSRequestID
 	FROM Temp_PA AS pa;
 

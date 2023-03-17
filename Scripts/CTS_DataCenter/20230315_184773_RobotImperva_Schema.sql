@@ -27,16 +27,16 @@ CREATE TABLE RobotImperva
 );
 
 ALTER TABLE CTSCustomerClassification
-ADD COLUMN IsFromImpreva BIT(1) DEFAULT 0;
+ADD COLUMN IsFromImperva BIT(1) DEFAULT 0;
 
 ALTER TABLE CTSCustomerClassificationOldCategory
-ADD COLUMN IsFromImpreva BIT(1) DEFAULT 0;
+ADD COLUMN IsFromImperva BIT(1) DEFAULT 0;
 
 ALTER TABLE CTSCustomerClassification_History
-ADD COLUMN IsFromImpreva BIT(1) DEFAULT 0;
+ADD COLUMN IsFromImperva BIT(1) DEFAULT 0;
 
 ALTER TABLE CTSCustomerClassification_Log
-ADD COLUMN IsFromImpreva BIT(1) DEFAULT 0;
+ADD COLUMN IsFromImperva BIT(1) DEFAULT 0;
 
 -- --------------------------------------------------
 INSERT INTO CTS_DataCenter.SystemParameter (ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)

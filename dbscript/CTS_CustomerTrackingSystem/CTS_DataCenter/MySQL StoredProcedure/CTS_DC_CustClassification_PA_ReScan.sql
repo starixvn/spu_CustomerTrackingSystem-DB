@@ -69,7 +69,7 @@ sp: BEGIN
         ,	IsFromTW 			BIT DEFAULT 0
         ,	IsFromCTS 			BIT DEFAULT 0
         ,	IsFromAI 			BIT DEFAULT 0
-		,	IsFromImpreva		BIT DEFAULT 0
+		,	IsFromImperva		BIT DEFAULT 0
 		
         ,	TVSRequestID 		BIGINT UNSIGNED 
         ,	IsRobot 			BIT DEFAULT 0
@@ -135,12 +135,12 @@ sp: BEGIN
 		,	CONST_CATEGORYID_ROBOT AS CategoryID
         ,	CONST_CATEGORYID_ROBOT AS CategoryIDSource
         ,	CONST_CATEGORYID_ROBOT AS CategoryGroup
-        ,	1 AS IsFromImpreva
+        ,	1 AS IsFromImperva
         ,	1 AS IsDirect
         ,	1 AS IsRobot
     FROM  Temp_CustInfo AS tmp
 	WHERE EXISTS (SELECT 1 FROM CTS_DataCenter.RobotImperva AS ri WHERE ri.CustID = tmp.CustID AND ri.IsScan = 1)
-	ON DUPLICATE KEY UPDATE IsFromImpreva = 1;
+	ON DUPLICATE KEY UPDATE IsFromImperva = 1;
 	
      /***********************Check PA from Old table****************************/
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,IsLicenseeVIP,CategoryID,CategoryIDSource,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID,IsRobot)
@@ -287,7 +287,7 @@ sp: BEGIN
         ,	IsFromTW 		
         ,	IsFromCTS 	
         ,	IsFromAI	
-		,	IsFromImpreva
+		,	IsFromImperva
         ,	TVSRequestID
         
         ,	IsRobot 			

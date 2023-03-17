@@ -73,7 +73,7 @@ sp:BEGIN
 		,	IsFromTW 				BIT
 		,	IsFromCTS 				BIT
 		,	IsFromAI 				BIT 
-		,	IsFromImpreva			BIT
+		,	IsFromImperva			BIT
 		,	PRIMARY KEY (ID)
 		,	KEY 					IX_CTSCustomerClassification_History_CustID (CustID)
 	);
@@ -151,7 +151,7 @@ sp:BEGIN
 		,	IsFromTW
 		,	IsFromCTS
 		,	IsFromAI
-		,	IsFromImpreva
+		,	IsFromImperva
 	)
     SELECT 	ID  					
 		,	CustID  				
@@ -189,7 +189,7 @@ sp:BEGIN
 		,	IsFromTW 				
 		,	IsFromCTS 				
 		,	IsFromAI 	
-		,	IsFromImpreva
+		,	IsFromImperva
 	FROM CTS_DataCenter.CTSCustomerClassification_History
     WHERE ID BETWEEN lv_LastID AND lv_NextLastID
 		AND IsDataChanged = 1
@@ -271,7 +271,7 @@ sp:BEGIN
 			,	IsFromTW
 			,	IsFromCTS
 			,	IsFromAI
-			,	IsFromImpreva
+			,	IsFromImperva
 		)
 		SELECT 	ID  					
 			,	h.CustID  				
@@ -309,7 +309,7 @@ sp:BEGIN
 			,	IsFromTW 				
 			,	IsFromCTS 				
 			,	IsFromAI 	
-			,	IsFromImpreva
+			,	IsFromImperva
 		FROM Temp_CustDataShouldBeRemoved AS k
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS h ON k.CustID = h.CustID
 		WHERE h.ID < lv_LastID
@@ -358,7 +358,7 @@ sp:BEGIN
 			,	IsFromTW 				
 			,	IsFromCTS 				
 			,	IsFromAI 	
-			,	IsFromImpreva
+			,	IsFromImperva
 		FROM Temp_History;
 		
 		UPDATE CTS_DataCenter.SystemParameter

@@ -84,7 +84,7 @@ BEGIN
             ,	temp.IsFromTW
             ,	temp.IsFromCTS
             ,	temp.IsFromAI
-			,	temp.IsFromImpreva
+			,	temp.IsFromImperva
 			,	(CASE	WHEN temp.TargetCC = lv_LicVIPProblem_CC THEN lv_LicVIPProblem_CategoryName
 						WHEN temp.TargetCC = lv_LicVIPNormal_CC THEN lv_LicVIPNormal_CategoryName 
                         ELSE NULL END) AS LicVIP

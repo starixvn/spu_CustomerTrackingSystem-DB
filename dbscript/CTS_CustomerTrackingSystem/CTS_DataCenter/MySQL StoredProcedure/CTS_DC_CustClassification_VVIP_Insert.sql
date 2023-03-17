@@ -160,7 +160,7 @@ sp: BEGIN
 		,	IsDirect
 		,	InsertTime
 		,	TVSRequestID
-		,	IsFromImpreva
+		,	IsFromImperva
 		) 
     SELECT	cls.CustID
 		,	cls.CTSCustID
@@ -180,13 +180,13 @@ sp: BEGIN
         ,	cls.IsDirect
         ,	CURRENT_TIMESTAMP(3) AS InsertTime
         ,	cls.TVSRequestID
-		,	cls.IsFromImpreva
+		,	cls.IsFromImperva
 	FROM CTS_DataCenter.CTSCustomerClassification AS cls
 		INNER JOIN Temp_Customer AS tmpCus ON cls.CustID = tmpCus.CustID AND tmpCus.IsExistVVIP = 0
         INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cls.CategoryID
 	WHERE NOT EXISTS (SELECT 1 FROM Temp_WrapperCategory AS tmpWr WHERE tmpWr.CategoryID = cls.CategoryID)
 		  AND ((cls.SportGroupID = 0 AND cc.CategoryGroup NOT IN (CONST_CATEGORY_ROBOT, CONST_CATEGORY_ROBOTLOSING)) 
-			OR (cc.CategoryGroup IN (CONST_CATEGORY_ROBOT, CONST_CATEGORY_ROBOTLOSING) AND cls.IsFromAI = 0 AND cls.IsFromTW = 0 AND cls.IsFromImpreva = 0)
+			OR (cc.CategoryGroup IN (CONST_CATEGORY_ROBOT, CONST_CATEGORY_ROBOTLOSING) AND cls.IsFromAI = 0 AND cls.IsFromTW = 0 AND cls.IsFromImperva = 0)
 			OR (cls.SportGroupID = 200 AND cc.CategoryGroup IN (CONST_CATEGORY_RISKY, CONST_CATEGORY_SMART)));
      
 	/*****Remove all category, customer class, probation list before******/
