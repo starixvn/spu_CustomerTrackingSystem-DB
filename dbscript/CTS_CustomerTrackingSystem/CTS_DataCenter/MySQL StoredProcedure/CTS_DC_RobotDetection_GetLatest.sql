@@ -35,10 +35,6 @@ BEGIN
 	WHERE CreateTime >= ip_LatestTimeImperva
 		AND IsScan = 0
 	LIMIT CONST_BATCHSIZE;
-	
-	UPDATE CTS_DataCenter.RobotImperva AS r
-		INNER JOIN Temp_RobotImperva AS tmp ON tmp.LogID = r.LogID
-	SET r.IsScan = 1;
     
     SELECT CustID, MAX(LastModifiedDate) AS LastModifiedDate
     FROM CTS_DataCenter.RobotDetection
@@ -47,11 +43,9 @@ BEGIN
 	GROUP BY CustID
     LIMIT CONST_BATCHSIZE;
 
-	SELECT r.CustID, MAX(r.CreateTime) AS LastCreateTime
+	SELECT r.LogID, r.CustID, r.CreateTime AS LastCreateTime
 	FROM CTS_DataCenter.RobotImperva AS r
-		INNER JOIN Temp_RobotImperva AS tmp ON tmp.LogID = r.LogID
-	GROUP BY r.CustID;
-
+		INNER JOIN Temp_RobotImperva AS tmp ON tmp.LogID = r.LogID;
 
 END$$	
 DELIMITER ;
