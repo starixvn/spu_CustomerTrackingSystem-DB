@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_RobotImperva_Transform_Update`
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_RobotImperva_Transform_Update`(	
-		IN ip_RobotInfo		TEXT
+		IN ip_LogIDs		TEXT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -26,7 +26,7 @@ BEGIN
 			LogID		BIGINT	PRIMARY KEY
 	);
 
-	SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_RobotImperva (LogID) VALUES ('", REPLACE(ip_RobotInfo, ",", "'),('"),"');");
+	SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_RobotImperva (LogID) VALUES ('", REPLACE(ip_LogIDs, ",", "'),('"),"');");
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1;   
     
