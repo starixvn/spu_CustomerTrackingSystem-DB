@@ -16,5 +16,4 @@
 	WHERE SiteLabel IS NOT NULL
 		AND siteid <> 3
 		AND IsActive = 1
-		AND islicensee = 0
-	FOR JSON AUTO
+		AND islicensee = 0;

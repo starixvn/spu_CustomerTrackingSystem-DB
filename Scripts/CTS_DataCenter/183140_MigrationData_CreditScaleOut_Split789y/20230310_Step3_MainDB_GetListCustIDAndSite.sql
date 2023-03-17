@@ -13,17 +13,22 @@
 PART 1: Customer - Headline
 ***************************/
 IF	OBJECT_ID('tempdb..#Cust_Headline') IS NOT NULL
+BEGIN
 	DROP TABLE	#Cust_Headline;
+END;
 
 CREATE TABLE #Cust_Headline (
 		custid			INT 
 	,	roleid			TINYINT
 	,	headline		VARCHAR(100)
 	,	newSite			VARCHAR(50)
-	,	isfinished		BIT DEFAULT(0))
+	,	isfinished		BIT DEFAULT(0)
+);
 
 IF	OBJECT_ID('tempdb..#tblCust_Super') IS NOT NULL
-	DROP TABLE	#tblCust_Super
+BEGIN
+	DROP TABLE	#tblCust_Super;
+END;
 
 CREATE TABLE #tblCust_Super (
 		custid			INT PRIMARY KEY
@@ -31,10 +36,12 @@ CREATE TABLE #tblCust_Super (
 	,	oldSite			VARCHAR(10)
 	,	isDummy			BIT DEFAULT(0)
 	,	newSite			VARCHAR(50)
-)
+);
 
 IF	OBJECT_ID('tempdb..#tblCust_Master') IS NOT NULL
-	DROP TABLE	#tblCust_Master
+BEGIN
+	DROP TABLE	#tblCust_Master;
+END;
 
 CREATE TABLE #tblCust_Master (
 		custid			INT PRIMARY KEY
@@ -42,10 +49,12 @@ CREATE TABLE #tblCust_Master (
 	,	oldSite			VARCHAR(10)
 	,	isDummy			BIT DEFAULT(0)
 	,	newSite			VARCHAR(50)
-)
+);
 
 IF	OBJECT_ID('tempdb..#tblCust_Agent') IS NOT NULL
-	DROP TABLE	#tblCust_Agent
+BEGIN
+	DROP TABLE	#tblCust_Agent;
+END;
 
 CREATE TABLE #tblCust_Agent (
 		custid			INT PRIMARY KEY
@@ -53,10 +62,12 @@ CREATE TABLE #tblCust_Agent (
 	,	oldSite			VARCHAR(10)
 	,	isDummy			BIT DEFAULT(0)
 	,	newSite			VARCHAR(50)
-)
+);
 
 IF	OBJECT_ID('tempdb..#tblCust_Member') IS NOT NULL
+BEGIN
 	DROP TABLE	#tblCust_Member;
+END;
 
 CREATE TABLE #tblCust_Member (
 		custid			INT PRIMARY KEY
@@ -64,16 +75,18 @@ CREATE TABLE #tblCust_Member (
 	,	oldSite			VARCHAR(10)
 	,	isDummy			BIT DEFAULT(0)
 	,	newSite			VARCHAR(50)
-)
+);
 
 IF	OBJECT_ID('tempdb..#tblCust') IS NOT NULL
+BEGIN
 	DROP TABLE	#tblCust;
+END;
 
 CREATE TABLE #tblCust
 (
 		CustID			INT PRIMARY KEY
 	,	SiteName		VARCHAR(50)
-)
+);
 
 -- ---------------------------------------------
 INSERT INTO #Cust_Headline (custid, roleid, headline, newSite)

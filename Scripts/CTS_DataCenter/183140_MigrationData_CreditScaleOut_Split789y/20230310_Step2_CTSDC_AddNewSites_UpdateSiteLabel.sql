@@ -62,6 +62,6 @@ SELECT SubscriberID,SubscriberName,RoleMapping,SubscriberType,SubscriberStatus
 FROM Temp_MappingSubscriberSite;
 
 UPDATE MappingSubscriberSite AS m
-	INNER JOIN Temp_Sites as s ON s.SiteID = m.SiteID
+	INNER JOIN Temp_Sites AS s ON s.SiteID = m.SiteID
 SET m.SiteLabel = s.SiteLabel
 WHERE s.SiteLabel <> '789y';
