@@ -1,5 +1,5 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP procedure IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_DailyScanPA_GetFromQueue`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_DailyScanPA_GetFromQueue`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_DailyScanPA_GetFromQueue`(
@@ -39,7 +39,8 @@ BEGIN
 		WHERE CreatedTime <= lv_LastScannedTime
 		ORDER BY ID ASC
 		LIMIT lv_BatchSize)
-	SELECT DISTINCT CustID FROM cte;
+	SELECT DISTINCT CustID 
+    FROM cte;
     
 END$$
 DELIMITER ;
