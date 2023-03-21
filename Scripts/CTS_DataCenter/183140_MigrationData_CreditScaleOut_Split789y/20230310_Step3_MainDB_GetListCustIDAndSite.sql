@@ -1,11 +1,11 @@
 /*<info serverAlias="DBCTS-bodb02" executers="" viewers="" isFunction="0"></info>*/
 
 /*
-	Creator:	20230310@victoria.le
+	Creator:	20230310@Victoria.le
 	Task:	 	Scale out - Split 789y Site
 
 	 Revisions:
-		- 20230310@victoria.le: 	STEP 3: GET List CustID and Site [Redmine ID: #183140]
+		- 20230310@Victoria.le: 	STEP 3: GET List CustID and Site [Redmine ID: #183140]
 								
 */
 
@@ -372,8 +372,24 @@ WHERE c.site = '789y'
 /**************************
 PART 3: Check Consistency - Will be run when MainDB finish migration data
 ***************************/
+/*
 ------------------ Temporary table
+-- Check count
+DROP TABLE IF EXISTS #tmp_Cust_Result_CC_Site;
 
+SELECT newSite,COUNT(1) AS CC
+INTO #tmp_Cust_Result_CC_Site
+FROM #tmp_Cust_Result
+GROUP BY newSite;
+
+DROP TABLE IF EXISTS #tmp_Cust_Result_CC_Site_RoleId;
+
+SELECT newSite,roleid,COUNT(1) AS CC
+INTO #tmp_Cust_Result_CC_Site_RoleId
+FROM #tmp_Cust_NonHeadLine
+GROUP BY newSite,roleid;
+
+-- Checksum
 DROP TABLE IF EXISTS #tmp_Cust_Result_CS_Site;
 
 SELECT newSite,CHECKSUM_AGG( CHECKSUM(custid,roleid,newSite)) AS CS
@@ -388,7 +404,25 @@ INTO #tmp_Cust_Result_CS_Site_RoleId
 FROM #tmp_Cust_NonHeadLine
 GROUP BY newSite,roleid;
 
------------------- base table
+------------------ Base table
+-- Check count
+DROP TABLE IF EXISTS #Cust_Result_CC_Site;
+
+SELECT c.site,COUNT(1) AS CC
+INTO #Cust_Result_CC_Site
+FROM #tmp_Cust_Result AS tmp
+	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = tmp.custid
+GROUP BY c.site;
+
+DROP TABLE IF EXISTS #Cust_Result_CC_Site_RoleId;
+
+SELECT c.site,c.roleid,COUNT(1) AS CC
+INTO #Cust_Result_CC_Site_RoleId
+FROM #tmp_Cust_NonHeadLine AS tmp
+	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = tmp.custid
+GROUP BY c.site,c.roleid;
+
+-- Checksum
 DROP TABLE IF EXISTS #Cust_Result_CS_Site;
 
 SELECT c.site,CHECKSUM_AGG( CHECKSUM(c.custid, c.site)) AS CS
@@ -406,22 +440,38 @@ FROM #tmp_Cust_NonHeadLine AS tmp
 GROUP BY c.site,c.roleid;
 
 ------------------ Comparation
+-- Check count
+SELECT *
+FROM #tmp_Cust_Result_CC_Site AS tmp
+	LEFT JOIN #Cust_Result_CC_Site AS b ON tmp.newSite = b.site
+WHERE tmp.newSite IS NULL
+	OR b.site IS NULL
+	OR b.CC <> tmp.CC;
+	
+SELECT *
+FROM #tmp_Cust_Result_CC_Site_RoleId AS tmp
+	LEFT JOIN #Cust_Result_CC_Site_RoleId AS b ON tmp.newSite = b.site AND b.roleid = tmp.roleid
+WHERE tmp.newSite IS NULL
+	OR b.site IS NULL
+	OR b.CC <> tmp.CC;
+	
+
+-- Checksum
 SELECT *
 FROM #tmp_Cust_Result_CS_Site AS tmp
 	LEFT JOIN #Cust_Result_CS_Site AS b ON tmp.newSite = b.site
 WHERE tmp.newSite IS NULL
 	OR b.site IS NULL
-	OR b.CS <> tmp.CS
-;
+	OR b.CS <> tmp.CS;
 
 SELECT *
 FROM #tmp_Cust_Result_CS_Site_RoleId AS tmp
 	LEFT JOIN #Cust_Result_CS_Site_RoleId AS b ON tmp.newSite = b.site AND b.roleid = tmp.roleid
 WHERE tmp.newSite IS NULL
 	OR b.site IS NULL
-	OR b.CS <> tmp.CS
-;
+	OR b.CS <> tmp.CS;
 
+-- Diff Site
 SELECT c.custid, c.site, tmp.newSite
 FROM #tmp_Cust_Result AS tmp
 	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = tmp.custid
@@ -431,5 +481,8 @@ SELECT c.custid, c.site, tmp.newSite
 FROM #tmp_Cust_NonHeadLine AS tmp
 	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = tmp.custid
 WHERE tmp.newSite <> c.site;
+*/
+
+
 
 
