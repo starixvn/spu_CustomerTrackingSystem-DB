@@ -77,6 +77,7 @@ BEGIN
 	CREATE TABLE	#tmp_Association (
 			CustID1			INT
 		,	CustID2			INT
+		,	IP				VARCHAR(45)
 	);
 
 	INSERT INTO #tmp_CustID (CustID)
@@ -123,9 +124,10 @@ BEGIN
 			FROM #tmp_Bettrans WITH(NOLOCK)	
 			WHERE TransDate = @lv_ProcessingDate;
 
-			INSERT INTO #tmp_Association(CustID1, CustID2)
+			INSERT INTO #tmp_Association(CustID1, CustID2, IP)
 			SELECT	CASE WHEN t1.CustID > t2.CustID THEN t2.CustID ELSE t1.CustID END AS CustID1
 				,	CASE WHEN t1.CustID > t2.CustID THEN t1.CustID ELSE t2.CustID END AS CustID2
+				,	t1.IP
 			FROM #tmp_CustID_IP AS t1 WITH(NOLOCK)
 				INNER JOIN #tmp_CustID_IP AS t2 WITH(NOLOCK) ON t1.IP = t2.IP
 			WHERE t1.CustID <> t2.CustID;
@@ -133,7 +135,7 @@ BEGIN
 			DELETE FROM #tmp_Last3Days WHERE EventDate = @lv_ProcessingDate;
 		END;
 
-	SELECT DISTINCT CustID1, CustID2
+	SELECT DISTINCT CustID1, CustID2, IP
 	FROM #tmp_Association WITH(NOLOCK);
 	
 	DROP TABLE #tmp_Bettrans;
