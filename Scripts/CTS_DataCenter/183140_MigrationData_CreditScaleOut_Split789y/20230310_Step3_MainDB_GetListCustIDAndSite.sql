@@ -130,11 +130,11 @@ SELECT  c.custid
 				ELSE 'yOther'										-- Group 4
 		END 
 FROM CustDB.dbo.CustAccount AS ca WITH (NOLOCK)					
-	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = ca.custid						
+	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = ca.custid	
+	INNER JOIN CustDB.dbo.Site AS s WITH (NOLOCK) ON s.site = c.site
 	LEFT JOIN CustDB.dbo.CustGroupHeadline AS h WITH (NOLOCK) ON h.GroupID = ca.groupID				
 	LEFT JOIN CustDB.dbo.Customer AS ch WITH (NOLOCK) ON ch.custid = h.CustID				
-WHERE c.site='789y'
-	AND c.currency <> 20				
+WHERE s.SiteLabel = '789y'				
 	-- AND c.currency = 20
 	AND ca.groupID <> 0
 	-- AND ch.username is not null
@@ -336,7 +336,7 @@ SELECT custid, roleid, newSite
 FROM #tmp_Cust_Dummy
 WHERE newSite IN ('y789','y889','yUT','yOther');
 
-SELECT * FROM #tmp_Cust_Result;
+SELECT custid,newSite FROM #tmp_Cust_Result;
 
 /**************************
 PART 2: Customer - NonHeadline
@@ -368,6 +368,7 @@ WHERE c.site = '789y'
 	AND c.currency <> 20
 	AND tmp.custid IS NULL;
 
+SELECT custid,newSite FROM #tmp_Cust_NonHeadLine;
 
 /**************************
 PART 3: Check Consistency - Will be run when MainDB finish migration data
