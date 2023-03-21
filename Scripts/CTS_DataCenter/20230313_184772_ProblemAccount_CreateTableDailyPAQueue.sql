@@ -14,8 +14,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomerClassification_DailyPAQueue
 		ID				BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY 
     ,	CustID			BIGINT UNSIGNED NOT NULL
     , 	CreatedTime		DATETIME NOT NULL
-	, 	INDEX			IX_CTSCustomerClassification_DailyPAQueue_CreatedTime(CreatedTime)
-	, 	INDEX			IX_CTSCustomerClassification_DailyPAQueue_CustID(CustID)
+	, 	INDEX			IX_CTSCustomerClassification_DailyPAQueue_CreatedTime_CustID(CreatedTime, CustID)
 ) ENGINE=INNODB, AUTO_INCREMENT = 1;
 
 DROP PROCEDURE IF EXISTS CTS_DC_CustClassification_DailyScan_GetPA;
@@ -26,4 +25,4 @@ DROP PROCEDURE IF EXISTS CTS_DC_CustClassification_GetByCustIDsAndCategoryIDs_xt
 
 DELETE FROM CTS_DataCenter.SystemParameter WHERE ParameterID in (88, 89);
 INSERT INTO `CTS_DataCenter`.`SystemParameter` (`ParameterID`, `ParameterName`, `ParameterDesc`, `ParameterDataType`, `ParameterValue`) 
-VALUES ('88', 'DailyScan_PA_LastScannedTime', 'Last Scanned Time Daily ScanPA', 'DATETIME', '2023-03-14 21:00:00');
+VALUES ('88', 'DailyScan_PA_LastScannedTime', 'Last Scanned Time Daily ScanPA', 'DATETIME', '2023-03-20 21:00:00');
