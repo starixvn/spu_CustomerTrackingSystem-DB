@@ -10,10 +10,10 @@ Revisions:
 Reviewer:
 */
 
--- drop table DCS_DataCenter.AbnormalTransasction
 CREATE TABLE IF NOT EXISTS DCS_DataCenter.AbnormalTransasction(
 		ID					BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
 	, 	TransID				BIGINT UNSIGNED NOT NULL
+	, 	AccountID			BIGINT UNSIGNED NOT NULL
 	, 	LoginName			VARCHAR(100) NOT NULL
 	, 	TransTime			TIMESTAMP(4) NOT NULL
 	, 	UserAgentKey		VARCHAR(32) NOT NULL

@@ -493,6 +493,7 @@ BEGIN
         /*****Add Into Abnormal Transaction****************************************************/
         INSERT IGNORE INTO DCS_DataCenter.AbnormalTransasction(
 				TransID
+            , 	AccountID
             , 	LoginName
             ,	TransTime
             ,	UserAgentKey
@@ -500,6 +501,7 @@ BEGIN
             ,	CreatedDate
 		)
 		SELECT 	trans.TransID
+			,	trans.AccountID
 			,	trans.LoginName
             ,	trans.TransTime
             ,	trans.UserAgentKey
