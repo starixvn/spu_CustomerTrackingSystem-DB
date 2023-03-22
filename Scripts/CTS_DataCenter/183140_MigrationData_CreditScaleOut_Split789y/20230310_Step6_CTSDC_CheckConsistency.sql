@@ -18,22 +18,26 @@ WHERE SiteID = 3;
 SELECT Site, COUNT(1) AS CC
 FROM CTS_DataCenter.CTSCustomer
 WHERE CurrencyID <> 20
+	AND SiteID IN (1045,1046,1047,1048)
 GROUP BY Site;
 
 SELECT Site, RoleID, COUNT(1) AS CC
 FROM CTS_DataCenter.CTSCustomer
 WHERE CurrencyID <> 20
+	AND SiteID IN (1045,1046,1047,1048)
 GROUP BY Site, RoleID;
 
 -- For test currency ==>  Currency = 20
 SELECT Site, COUNT(1) AS CC
 FROM CTS_DataCenter.CTSCustomer
 WHERE CurrencyID = 20
+	AND SiteID IN (1045,1046,1047,1048)
 GROUP BY Site;
 
 SELECT Site, RoleID, COUNT(1) AS CC
 FROM CTS_DataCenter.CTSCustomer
 WHERE CurrencyID = 20
+	AND SiteID IN (1045,1046,1047,1048)
 GROUP BY Site, RoleID;
 
 
