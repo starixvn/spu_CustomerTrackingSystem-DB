@@ -51,17 +51,17 @@ INSERT INTO Temp_MappingSubscriberSite (SubscriberID,SubscriberName,RoleMapping,
 SELECT	m.SubscriberID,m.SubscriberName,m.RoleMapping,m.SubscriberType,m.SubscriberStatus
 		,m.SubscriberGroupID,s.SiteID,s.SiteName,m.Comments,s.SiteLabel
 FROM Temp_Sites AS s
-	CROSS JOIN MappingSubscriberSite AS m 
+	CROSS JOIN CTS_DataCenter.MappingSubscriberSite AS m 
 WHERE s.SiteLabel = '789y'
 	AND m.SiteID = 3;
 	
-INSERT INTO MappingSubscriberSite (SubscriberID,SubscriberName,RoleMapping,SubscriberType,SubscriberStatus
+INSERT INTO CTS_DataCenter.MappingSubscriberSite (SubscriberID,SubscriberName,RoleMapping,SubscriberType,SubscriberStatus
 									,SubscriberGroupID,SiteID,SiteName,Comments,SiteLabel)
 SELECT SubscriberID,SubscriberName,RoleMapping,SubscriberType,SubscriberStatus
 		,SubscriberGroupID,SiteID,SiteName,Comments,SiteLabel
 FROM Temp_MappingSubscriberSite;
 
-UPDATE MappingSubscriberSite AS m
+UPDATE CTS_DataCenter.MappingSubscriberSite AS m
 	INNER JOIN Temp_Sites AS s ON s.SiteID = m.SiteID
 SET m.SiteLabel = s.SiteLabel
 WHERE s.SiteLabel <> '789y';

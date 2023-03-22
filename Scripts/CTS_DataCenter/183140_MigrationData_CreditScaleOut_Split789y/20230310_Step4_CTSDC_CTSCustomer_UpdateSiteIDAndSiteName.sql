@@ -23,10 +23,10 @@ CREATE TEMPORARY TABLE Temp_CTSCustomer(
 INSERT IGNORE INTO Temp_CTSCustomer (CustID, SiteName, SiteID)
 SELECT 	js.CustID
 	,	js.SiteName
-    ,	CASE 	WHEN js.SiteName = 'yUT' 	THEN 1040
-				WHEN js.SiteName = 'y789' 	THEN 1041
-                WHEN js.SiteName = 'y889' 	THEN 1042
-                WHEN js.SiteName = 'yOther' THEN 1043
+    ,	CASE 	WHEN js.SiteName = 'yUT' 	THEN 1045
+				WHEN js.SiteName = 'y789' 	THEN 1046
+                WHEN js.SiteName = 'y889' 	THEN 1047
+                WHEN js.SiteName = 'yOther' THEN 1048
 		END
 FROM JSON_TABLE(@CustListInfo,
 				"$[*]" COLUMNS(
@@ -35,7 +35,7 @@ FROM JSON_TABLE(@CustListInfo,
 								)
 				) AS js; 
                 
-UPDATE CTSCustomer AS c
+UPDATE CTS_DataCenter.CTSCustomer AS c
 	INNER JOIN Temp_CTSCustomer AS tmp ON tmp.CustID = c.CustID
 SET 	c.SiteID = tmp.SiteID
 	,	c.Site = tmp.SiteName

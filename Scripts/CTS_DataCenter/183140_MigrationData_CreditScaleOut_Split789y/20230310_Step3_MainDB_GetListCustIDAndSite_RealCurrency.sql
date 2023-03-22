@@ -8,6 +8,36 @@
 		- 20230310@Victoria.le: 	STEP 3: GET List CustID and Site [Redmine ID: #183140]
 								
 */
+/**************************
+PART 0: Customer - Get all data
+***************************/
+IF	OBJECT_ID('tempdb..#tmp_Cust_789y') IS NOT NULL
+BEGIN
+	DROP TABLE #tmp_Cust_789y;
+END;
+
+CREATE TABLE #tmp_Cust_789y (
+		custid			INT PRIMARY KEY
+	,	roleid			TINYINT
+	,	site			VARCHAR(10)
+	
+	,	INDEX IX_tmp_Cust_789y_Site (site)
+	
+);
+
+INSERT INTO #tmp_Cust_789y
+(
+		custid
+	,	roleid
+	,	site
+)
+SELECT 	c.custid
+	,	c.roleid
+	,	c.site
+FROM CustDB.dbo.Customer AS c WITH (NOLOCK) 
+	INNER JOIN CustDB.dbo.Site AS s WITH (NOLOCK) ON s.site = c.site			
+WHERE s.SiteLabel = '789y'				
+	AND c.currency <> 20;
 
 /**************************
 PART 1: Customer - Headline
@@ -135,7 +165,7 @@ FROM CustDB.dbo.CustAccount AS ca WITH (NOLOCK)
 	LEFT JOIN CustDB.dbo.CustGroupHeadline AS h WITH (NOLOCK) ON h.GroupID = ca.groupID				
 	LEFT JOIN CustDB.dbo.Customer AS ch WITH (NOLOCK) ON ch.custid = h.CustID				
 WHERE s.SiteLabel = '789y'				
-	-- AND c.currency = 20
+	AND c.currency <> 20
 	AND ca.groupID <> 0
 	-- AND ch.username is not null
 ;
@@ -336,7 +366,7 @@ SELECT custid, roleid, newSite
 FROM #tmp_Cust_Dummy
 WHERE newSite IN ('y789','y889','yUT','yOther');
 
-SELECT custid,newSite FROM #tmp_Cust_Result;
+SELECT custid AS CustID, newSite AS SiteName FROM #tmp_Cust_Result;
 
 /**************************
 PART 2: Customer - NonHeadline
@@ -363,18 +393,32 @@ SELECT 	c.custid
 	,	c.roleid
 	,	'yOther' AS newSite
 FROM CustDB.dbo.Customer AS c WITH (NOLOCK)
+	INNER JOIN CustDB.dbo.Site AS s WITH (NOLOCK) ON s.site = c.site			
 	LEFT JOIN #tmp_Cust_Result AS tmp ON tmp.custid = c.custid
-WHERE c.site = '789y'
+WHERE s.SiteLabel = '789y'
 	AND c.currency <> 20
 	AND tmp.custid IS NULL;
 
-SELECT custid,newSite FROM #tmp_Cust_NonHeadLine;
+SELECT custid AS CustID,newSite AS SiteName FROM #tmp_Cust_NonHeadLine;
 
 /**************************
 PART 3: Check Consistency - Will be run when MainDB finish migration data
 ***************************/
 /*
 ------------------ Temporary table
+-- Check count total
+DECLARE @cnt_789y 			BIGINT;
+DECLARE @cnt_Headline 		BIGINT;
+DECLARE @cnt_NonHeadline 	BIGINT;
+
+SELECT @cnt_789y = COUNT(1) FROM #tmp_Cust_789y;
+
+SELECT @cnt_Headline = COUNT(1) FROM #tmp_Cust_Result;
+
+SELECT @cnt_NonHeadline = COUNT(1) FROM #tmp_Cust_NonHeadLine;
+
+SELECT ISNULL(@cnt_789y,0) AS 'Before', (ISNULL(@cnt_Headline,0)+ ISNULL(@cnt_NonHeadline,0)) AS 'After' ;
+
 -- Check count
 DROP TABLE IF EXISTS #tmp_Cust_Result_CC_Site;
 
@@ -483,7 +527,3 @@ FROM #tmp_Cust_NonHeadLine AS tmp
 	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = tmp.custid
 WHERE tmp.newSite <> c.site;
 */
-
-
-
-
