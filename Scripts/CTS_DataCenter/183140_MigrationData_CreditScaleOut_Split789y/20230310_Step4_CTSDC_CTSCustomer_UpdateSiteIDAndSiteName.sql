@@ -23,10 +23,11 @@ CREATE TEMPORARY TABLE Temp_CTSCustomer(
 INSERT IGNORE INTO Temp_CTSCustomer (CustID, SiteName, SiteID)
 SELECT 	js.CustID
 	,	js.SiteName
-    ,	CASE 	WHEN js.SiteName = 'yUT' 	THEN 1045
-				WHEN js.SiteName = 'y789' 	THEN 1046
-                WHEN js.SiteName = 'y889' 	THEN 1047
-                WHEN js.SiteName = 'yOther' THEN 1048
+	,	CASE 	
+			WHEN js.SiteName = 'yUT' 	THEN 1045
+			WHEN js.SiteName = 'y789' 	THEN 1046
+			WHEN js.SiteName = 'y889' 	THEN 1047
+			WHEN js.SiteName = 'yOther' THEN 1048
 		END
 FROM JSON_TABLE(@CustListInfo,
 				"$[*]" COLUMNS(
