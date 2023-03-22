@@ -406,7 +406,7 @@ PART 3: Check Consistency - Will be run when MainDB finish migration data
 ***************************/
 /*
 ------------------ Temporary table
--- Check count total
+----- 0. Check count total
 DECLARE @cnt_789y 			BIGINT;
 DECLARE @cnt_Headline 		BIGINT;
 DECLARE @cnt_NonHeadline 	BIGINT;
@@ -419,104 +419,209 @@ SELECT @cnt_NonHeadline = COUNT(1) FROM #tmp_Cust_NonHeadLine;
 
 SELECT ISNULL(@cnt_789y,0) AS 'Before', (ISNULL(@cnt_Headline,0)+ ISNULL(@cnt_NonHeadline,0)) AS 'After' ;
 
--- Check count
-DROP TABLE IF EXISTS #tmp_Cust_Result_CC_Site;
+----- 1. Check count - group by site
+-- 1.1 Headline
+DROP TABLE IF EXISTS #tmp_Cust_Result_CC_Site_HL;
 
 SELECT newSite,COUNT(1) AS CC
-INTO #tmp_Cust_Result_CC_Site
+INTO #tmp_Cust_Result_CC_Site_HL
 FROM #tmp_Cust_Result
 GROUP BY newSite;
 
-DROP TABLE IF EXISTS #tmp_Cust_Result_CC_Site_RoleId;
-
-SELECT newSite,roleid,COUNT(1) AS CC
-INTO #tmp_Cust_Result_CC_Site_RoleId
-FROM #tmp_Cust_NonHeadLine
-GROUP BY newSite,roleid;
-
--- Checksum
-DROP TABLE IF EXISTS #tmp_Cust_Result_CS_Site;
-
-SELECT newSite,CHECKSUM_AGG( CHECKSUM(custid,roleid,newSite)) AS CS
-INTO #tmp_Cust_Result_CS_Site
-FROM #tmp_Cust_Result
-GROUP BY newSite;
-
-DROP TABLE IF EXISTS #tmp_Cust_Result_CS_Site_RoleId;
-
-SELECT newSite,roleid,CHECKSUM_AGG( CHECKSUM(custid,roleid,newSite)) AS CS
-INTO #tmp_Cust_Result_CS_Site_RoleId
-FROM #tmp_Cust_NonHeadLine
-GROUP BY newSite,roleid;
-
------------------- Base table
--- Check count
-DROP TABLE IF EXISTS #Cust_Result_CC_Site;
+DROP TABLE IF EXISTS #Cust_Result_CC_Site_HL;
 
 SELECT c.site,COUNT(1) AS CC
-INTO #Cust_Result_CC_Site
+INTO #Cust_Result_CC_Site_HL
 FROM #tmp_Cust_Result AS tmp
 	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = tmp.custid
 GROUP BY c.site;
 
-DROP TABLE IF EXISTS #Cust_Result_CC_Site_RoleId;
+-- Compare
+SELECT *
+FROM #tmp_Cust_Result_CC_Site_HL AS tmptbl
+	LEFT JOIN #Cust_Result_CC_Site_HL AS basetbl ON tmptbl.newSite = basetbl.site
+WHERE tmptbl.newSite IS NULL
+	OR basetbl.site IS NULL
+	OR tmptbl.CC <> basetbl.CC;
+
+-- 1.2 NONHeadline
+DROP TABLE IF EXISTS #tmp_Cust_Result_CC_Site_NonHL;
+
+SELECT newSite,COUNT(1) AS CC
+INTO #tmp_Cust_Result_CC_Site_NonHL
+FROM #tmp_Cust_NonHeadLine
+GROUP BY newSite;
+
+DROP TABLE IF EXISTS #Cust_Result_CC_Site_NonHL;
+
+SELECT c.site,COUNT(1) AS CC
+INTO #Cust_Result_CC_Site_NonHL
+FROM #tmp_Cust_NonHeadLine AS tmp
+	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = tmp.custid
+GROUP BY c.site;
+
+-- Compare
+SELECT *
+FROM #tmp_Cust_Result_CC_Site_NonHL AS tmptbl
+	LEFT JOIN #Cust_Result_CC_Site_NonHL AS basetbl ON tmptbl.newSite = basetbl.site
+WHERE tmptbl.newSite IS NULL
+	OR basetbl.site IS NULL
+	OR tmptbl.CC <> basetbl.CC;
+
+----- 2. Check count - group by site,roleid
+-- 2.1 Headline
+DROP TABLE IF EXISTS #tmp_Cust_Result_CC_Site_RoleID_HL;
+
+SELECT newSite,roleid,COUNT(1) AS CC
+INTO #tmp_Cust_Result_CC_Site_RoleID_HL
+FROM #tmp_Cust_Result
+GROUP BY newSite,roleid;
+
+DROP TABLE IF EXISTS #Cust_Result_CC_Site_RoleID_HL;
 
 SELECT c.site,c.roleid,COUNT(1) AS CC
-INTO #Cust_Result_CC_Site_RoleId
+INTO #Cust_Result_CC_Site_RoleID_HL
+FROM #tmp_Cust_Result AS tmp
+	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = tmp.custid
+GROUP BY c.site,c.roleid;
+
+-- Compare
+SELECT *
+FROM #tmp_Cust_Result_CC_Site_RoleID_HL AS tmptbl
+	LEFT JOIN #Cust_Result_CC_Site_RoleID_HL AS basetbl ON tmptbl.newSite = basetbl.site 
+															AND tmptbl.roleid = basetbl.roleid 
+WHERE tmptbl.newSite IS NULL
+	OR basetbl.site IS NULL
+	OR tmptbl.CC <> basetbl.CC;
+
+-- 2.2 NONHeadline
+DROP TABLE IF EXISTS #tmp_Cust_Result_CC_Site_RoleID_NonHL;
+
+SELECT newSite,roleid,COUNT(1) AS CC
+INTO #tmp_Cust_Result_CC_Site_RoleID_NonHL
+FROM #tmp_Cust_NonHeadLine
+GROUP BY newSite,roleid;
+
+DROP TABLE IF EXISTS #Cust_Result_CC_Site_RoleID_NonHL;
+
+SELECT c.site,c.roleid,COUNT(1) AS CC
+INTO #Cust_Result_CC_Site_RoleID_NonHL
 FROM #tmp_Cust_NonHeadLine AS tmp
 	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = tmp.custid
 GROUP BY c.site,c.roleid;
 
--- Checksum
-DROP TABLE IF EXISTS #Cust_Result_CS_Site;
+-- Compare
+SELECT *
+FROM #tmp_Cust_Result_CC_Site_RoleID_NonHL AS tmptbl
+	LEFT JOIN #Cust_Result_CC_Site_RoleID_NonHL AS basetbl ON tmptbl.newSite = basetbl.site 
+															AND tmptbl.roleid = basetbl.roleid 
+WHERE tmptbl.newSite IS NULL
+	OR basetbl.site IS NULL
+	OR tmptbl.CC <> basetbl.CC;
 
-SELECT c.site,CHECKSUM_AGG( CHECKSUM(c.custid, c.site)) AS CS
-INTO #Cust_Result_CS_Site
+----- 3. Checksum - group by site
+-- 3.1 Headline
+DROP TABLE IF EXISTS #tmp_Cust_Result_CS_Site_HL;
+
+SELECT newSite,CHECKSUM_AGG( CHECKSUM(custid,roleid,newSite)) AS CS
+INTO #tmp_Cust_Result_CS_Site_HL
+FROM #tmp_Cust_Result
+GROUP BY newSite;
+
+DROP TABLE IF EXISTS #Cust_Result_CS_Site_HL;
+
+SELECT c.site,CHECKSUM_AGG( CHECKSUM(c.custid,c.roleid,c.site)) AS CS
+INTO #Cust_Result_CS_Site_HL
 FROM #tmp_Cust_Result AS tmp
 	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = tmp.custid
 GROUP BY c.site;
 
-DROP TABLE IF EXISTS #Cust_Result_CS_Site_RoleId;
+-- Compare
+SELECT *
+FROM #tmp_Cust_Result_CS_Site_HL AS tmptbl
+	LEFT JOIN #Cust_Result_CS_Site_HL AS basetbl ON tmptbl.newSite = basetbl.site 
+WHERE tmptbl.newSite IS NULL
+	OR basetbl.site IS NULL
+	OR tmptbl.CS <> basetbl.CS;
 
-SELECT c.site,c.roleid,CHECKSUM_AGG( CHECKSUM(c.custid, c.site)) AS CS
-INTO #Cust_Result_CS_Site_RoleId
+-- 3.2 NONHeadline
+DROP TABLE IF EXISTS #tmp_Cust_Result_CS_Site_NonHL;
+
+SELECT newSite,CHECKSUM_AGG( CHECKSUM(custid,roleid,newSite)) AS CS
+INTO #tmp_Cust_Result_CS_Site_NonHL
+FROM #tmp_Cust_NonHeadLine
+GROUP BY newSite;
+
+DROP TABLE IF EXISTS #Cust_Result_CS_Site_NonHL;
+
+SELECT c.site,CHECKSUM_AGG( CHECKSUM(c.custid,c.roleid, c.site)) AS CS
+INTO #Cust_Result_CS_Site_NonHL
+FROM #tmp_Cust_NonHeadLine AS tmp
+	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = tmp.custid
+GROUP BY c.site;
+
+-- Compare
+SELECT *
+FROM #tmp_Cust_Result_CS_Site_NonHL AS tmptbl
+	LEFT JOIN #Cust_Result_CS_Site_NonHL AS basetbl ON tmptbl.newSite = basetbl.site 
+WHERE tmptbl.newSite IS NULL
+	OR basetbl.site IS NULL
+	OR tmptbl.CS <> basetbl.CS;
+
+----- 4. Checksum - group by site,roleid
+-- 4.1 Headline
+DROP TABLE IF EXISTS #tmp_Cust_Result_CS_Site_RoleID_HL;
+
+SELECT newSite,roleid,CHECKSUM_AGG( CHECKSUM(custid,roleid,newSite)) AS CS
+INTO #tmp_Cust_Result_CS_Site_RoleID_HL
+FROM #tmp_Cust_Result
+GROUP BY newSite,roleid;
+
+DROP TABLE IF EXISTS #Cust_Result_CS_Site_RoleID_HL;
+
+SELECT c.site,c.roleid,CHECKSUM_AGG( CHECKSUM(c.custid,c.roleid,c.site)) AS CS
+INTO #Cust_Result_CS_Site_RoleID_HL
+FROM #tmp_Cust_Result AS tmp
+	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = tmp.custid
+GROUP BY c.site,c.roleid;
+
+-- Compare
+SELECT *
+FROM #tmp_Cust_Result_CS_Site_RoleID_HL AS tmptbl
+	LEFT JOIN #Cust_Result_CS_Site_RoleID_HL AS basetbl ON tmptbl.newSite = basetbl.site 
+															AND tmptbl.roleid = basetbl.roleid 
+WHERE tmptbl.newSite IS NULL
+	OR basetbl.site IS NULL
+	OR tmptbl.CS <> basetbl.CS;
+
+-- 4.2 NONHeadline
+DROP TABLE IF EXISTS #tmp_Cust_Result_CS_Site_RoleID_NonHL;
+
+SELECT newSite,roleid,CHECKSUM_AGG( CHECKSUM(custid,roleid,newSite)) AS CS
+INTO #tmp_Cust_Result_CS_Site_RoleID_NonHL
+FROM #tmp_Cust_NonHeadLine
+GROUP BY newSite,roleid;
+
+DROP TABLE IF EXISTS #Cust_Result_CS_Site_RoleID_NonHL;
+
+SELECT c.site,c.roleid,CHECKSUM_AGG( CHECKSUM(c.custid,c.roleid, c.site)) AS CS
+INTO #Cust_Result_CS_Site_RoleID_NonHL
 FROM #tmp_Cust_NonHeadLine AS tmp
 	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = tmp.custid
 GROUP BY c.site,c.roleid;
 
------------------- Comparation
--- Check count
+-- Compare
 SELECT *
-FROM #tmp_Cust_Result_CC_Site AS tmp
-	LEFT JOIN #Cust_Result_CC_Site AS b ON tmp.newSite = b.site
-WHERE tmp.newSite IS NULL
-	OR b.site IS NULL
-	OR b.CC <> tmp.CC;
-	
-SELECT *
-FROM #tmp_Cust_Result_CC_Site_RoleId AS tmp
-	LEFT JOIN #Cust_Result_CC_Site_RoleId AS b ON tmp.newSite = b.site AND b.roleid = tmp.roleid
-WHERE tmp.newSite IS NULL
-	OR b.site IS NULL
-	OR b.CC <> tmp.CC;
-	
+FROM #tmp_Cust_Result_CS_Site_RoleID_NonHL AS tmptbl
+	LEFT JOIN #Cust_Result_CS_Site_RoleID_NonHL AS basetbl ON tmptbl.newSite = basetbl.site 
+																AND tmptbl.roleid = basetbl.roleid 
+WHERE tmptbl.newSite IS NULL
+	OR basetbl.site IS NULL
+	OR tmptbl.CS <> basetbl.CS;
 
--- Checksum
-SELECT *
-FROM #tmp_Cust_Result_CS_Site AS tmp
-	LEFT JOIN #Cust_Result_CS_Site AS b ON tmp.newSite = b.site
-WHERE tmp.newSite IS NULL
-	OR b.site IS NULL
-	OR b.CS <> tmp.CS;
 
-SELECT *
-FROM #tmp_Cust_Result_CS_Site_RoleId AS tmp
-	LEFT JOIN #Cust_Result_CS_Site_RoleId AS b ON tmp.newSite = b.site AND b.roleid = tmp.roleid
-WHERE tmp.newSite IS NULL
-	OR b.site IS NULL
-	OR b.CS <> tmp.CS;
+----- 5. Check for each custid - Diff Site
 
--- Diff Site
 SELECT c.custid, c.site, tmp.newSite
 FROM #tmp_Cust_Result AS tmp
 	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = tmp.custid
