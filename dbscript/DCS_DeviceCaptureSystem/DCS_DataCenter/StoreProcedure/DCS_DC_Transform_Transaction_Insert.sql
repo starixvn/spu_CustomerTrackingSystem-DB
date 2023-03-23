@@ -27,6 +27,7 @@ BEGIN
 		    - 20210510@Aries.Nguyen: Remove insert log zzTracePerformance [Redmine ID: #154792]
             - 20210622@Aries.Nguyen: Update coding convention and improve locking [Redmine ID: #157203]
 			- 20211129@Casey.Huynh: Remove FingerprintMoreInfo Column [Redmine ID: #165167]
+			- 20230323@Terry.Nguyen: Get InsertTime from RawTransaction [Redmine Id: #185185]
 	    Param's Explanation (filtered by):
 		
         Example:
@@ -212,7 +213,7 @@ BEGIN
 
     #================================================================
     
-	INSERT IGNORE INTO DCS_DataCenter.ProcessedTransaction( LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent , IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID)
+	INSERT IGNORE INTO DCS_DataCenter.ProcessedTransaction( LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent , IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID, InsertTime)
 	SELECT  rt.LoginName
         ,   rt.SubscriberName
         ,   rt.TransTime
@@ -231,6 +232,7 @@ BEGIN
         ,   rt.TransStatus
         ,   rt.IsProcessed
         ,   rt.TransID
+		,	rt.InsertTime
 	FROM DCS_DataCenter.RawTransaction AS rt
 	    INNER JOIN	Temp_RawTransaction	AS tmp_rm ON	rt.TransID = tmp_rm.TransID AND rt.CreatedDate = tmp_rm.CreatedDate;
         
