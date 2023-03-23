@@ -14,7 +14,6 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_Profile_Get`(
     
     ,	OUT op_TotalItems		INT
 )
-
     SQL SECURITY INVOKER
 sp : BEGIN
 	/*
@@ -59,7 +58,7 @@ sp : BEGIN
 	DECLARE lv_CustID INT;
     
     #=====================DEBUG LOG===========================================
-	DECLARE lv_IsLog BOOLEAN DEFAULT 0;    
+	DECLARE lv_IsLog BOOLEAN DEFAULT 1;    
 	DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_Association_Profile_Get';
 	IF lv_IsLog = 1 THEN
 		SET @LogInfo = CONCAT('@ip_CTSCustID:=''',IFNULL(ip_CTSCustID,'NULL'),''''
