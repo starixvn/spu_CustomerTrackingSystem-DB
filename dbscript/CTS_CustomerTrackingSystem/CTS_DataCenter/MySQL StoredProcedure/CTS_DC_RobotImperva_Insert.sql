@@ -34,7 +34,7 @@ BEGIN
 					"$[*]" COLUMNS( 	LogID 			BIGINT		PATH "$.LogID"                
 									,	CustID			INT 		PATH "$.CustID"
 									,	Platform		SMALLINT	PATH "$.Platform"
-									,	CreateTime		DATETIME	PATH "$.CreateTime"
+									,	CreateTime		DATETIME(3)	PATH "$.CreateTime"
 					)) AS js
 	ON DUPLICATE KEY UPDATE LastModifiedDate = js.CreateTime;
 END$$

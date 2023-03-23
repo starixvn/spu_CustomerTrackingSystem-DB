@@ -17,9 +17,9 @@ CREATE TABLE RobotImperva
 		LogID				BIGINT	
 	,	CustID				INT
     ,	Platform			SMALLINT
-	,	CreateTime			DATETIME
+	,	CreateTime			DATETIME(3)
 	,	IsScan				TINYINT DEFAULT 0
-    ,	LastModifiedDate	DATETIME DEFAULT NULL
+    ,	LastModifiedDate	DATETIME(3) DEFAULT NULL
 
 	,	PRIMARY KEY PK_RobotImperva (CustID,Platform)
     ,	INDEX IX_RobotImperva_CreateTime (CreateTime)
