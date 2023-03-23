@@ -226,9 +226,9 @@ BEGIN
 						,	IsFromTVS = CASE WHEN js.IsFromTVS = 1 THEN 1 ELSE Temp_PA.IsFromTVS END
 						,	IsFromImperva = CASE WHEN js.IsFromImperva = 1 THEN 1 ELSE Temp_PA.IsFromImperva END
 						,	TVSRequestID = CASE WHEN js.TVSRequestID IS NOT NULL AND Temp_PA.TVSRequestID IS NULL  THEN js.TVSRequestID ELSE Temp_PA.TVSRequestID END
-						,	IsDirect = CASE WHEN js.IsDirect = 1 THEN 1 ELSE Temp_PA.IsDirect END
-						,	Remark = CASE WHEN js.IsFromCTS = 1 THEN js.Remark ELSE Temp_PA.Remark END
-						,	CreatedBy = CASE WHEN js.IsFromCTS = 1 THEN js.CreatedBy ELSE Temp_PA.CreatedBy END;
+						,	IsDirect = CASE WHEN js.IsDirect = 1 THEN 1 ELSE Temp_PA.IsDirect END;
+						-- ,	Remark = CASE WHEN js.IsFromCTS = 1 THEN js.Remark ELSE Temp_PA.Remark END
+						-- ,	CreatedBy = CASE WHEN js.IsFromCTS = 1 THEN js.CreatedBy ELSE Temp_PA.CreatedBy END;
 
     CALL CTS_DataCenter.CTS_DC_CustClassification_PA_RemoveOldTVSRequest();
     
