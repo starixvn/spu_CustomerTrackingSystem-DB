@@ -107,6 +107,24 @@ sp: BEGIN
     FROM Temp_CustID AS tmp
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
     
+	/***********************Check Robot Imperva****************************/
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID,RoleID,SubscriberID,IsLicensee,IsLicenseeVIP,CategoryID,CategoryIDSource, CategoryGroup,IsFromImperva,IsDirect,IsRobot,Remark)
+    SELECT 	tmp.CTSCustID
+		,	tmp.CustID
+        ,	tmp.RoleID 
+        ,	tmp.SubscriberID
+		,	tmp.IsLicensee
+        ,	tmp.IsLicenseeVIP
+		,	CONST_CATEGORYID_ROBOT AS CategoryID
+        ,	CONST_CATEGORYID_ROBOT AS CategoryIDSource
+        ,	CONST_CATEGORYID_ROBOT AS CategoryGroup
+        ,	1 AS IsFromImperva
+        ,	1 AS IsDirect
+        ,	1 AS IsRobot
+		,	'Imperva' AS Remark
+    FROM  Temp_CustInfo AS tmp
+	WHERE EXISTS (SELECT 1 FROM CTS_DataCenter.RobotImperva AS ri WHERE ri.CustID = tmp.CustID AND ri.IsScan = 1);
+	
     /***********************Check Robot betting****************************/
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID,RoleID,SubscriberID,IsLicensee,IsLicenseeVIP,CategoryID,CategoryIDSource, CategoryGroup,IsFromAI,IsDirect,IsRobot)
     SELECT 	tmp.CTSCustID
@@ -122,25 +140,8 @@ sp: BEGIN
         ,	1 AS IsDirect
         ,	1 AS IsRobot
     FROM  Temp_CustInfo AS tmp
-    WHERE EXISTS (SELECT 1 FROM CTS_DataCenter.RobotDetection AS rb WHERE rb.CustID = tmp.CustID AND rb.IsDisabled = 0);
-
-	/***********************Check Robot Imperva****************************/
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID,RoleID,SubscriberID,IsLicensee,IsLicenseeVIP,CategoryID,CategoryIDSource, CategoryGroup,IsFromImperva,IsDirect,IsRobot)
-    SELECT 	tmp.CTSCustID
-		,	tmp.CustID
-        ,	tmp.RoleID 
-        ,	tmp.SubscriberID
-		,	tmp.IsLicensee
-        ,	tmp.IsLicenseeVIP
-		,	CONST_CATEGORYID_ROBOT AS CategoryID
-        ,	CONST_CATEGORYID_ROBOT AS CategoryIDSource
-        ,	CONST_CATEGORYID_ROBOT AS CategoryGroup
-        ,	1 AS IsFromImperva
-        ,	1 AS IsDirect
-        ,	1 AS IsRobot
-    FROM  Temp_CustInfo AS tmp
-	WHERE EXISTS (SELECT 1 FROM CTS_DataCenter.RobotImperva AS ri WHERE ri.CustID = tmp.CustID AND ri.IsScan = 1)
-	ON DUPLICATE KEY UPDATE IsFromImperva = 1;
+    WHERE EXISTS (SELECT 1 FROM CTS_DataCenter.RobotDetection AS rb WHERE rb.CustID = tmp.CustID AND rb.IsDisabled = 0)
+	ON DUPLICATE KEY UPDATE IsFromAI = 1;
 	
      /***********************Check PA from Old table****************************/
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,IsLicenseeVIP,CategoryID,CategoryIDSource,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID,IsRobot)
