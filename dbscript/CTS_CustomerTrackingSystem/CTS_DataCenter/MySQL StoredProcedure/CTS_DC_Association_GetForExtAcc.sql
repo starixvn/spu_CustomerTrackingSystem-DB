@@ -18,7 +18,7 @@ sp : BEGIN
 			- 20210330@Aries.Nguyen: 	Created [Redmine ID: #152507]
 			- 20220408@Casey.Huynh: 	Add AssociationGroupByAI [Redmine ID: #171222]
 			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
-            - 20220313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
+            - 20230313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
 			
         Param's Explanation (filtered by):
 			- ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual, 4 - IP
@@ -26,8 +26,8 @@ sp : BEGIN
         Example:
 			- CALL CTS_DataCenter.CTS_DC_Association_GetForExtAcc(169686, 2, 0);
 	*/
-	DECLARE CONS_ASSBYAI_ASSTYPEID 	INT DEFAULT 2;
-	DECLARE CONS_ASSBYAI_STATUS 	INT DEFAULT 1;
+	DECLARE CONST_ASSTYPE_BETTINGPATTERN 	INT DEFAULT 2;
+	DECLARE CONST_ASSBYAI_ACTIVESTATUS 		INT DEFAULT 1;
 	#=============================================================================
 	DECLARE lv_CTSCustID INT;
 	
@@ -77,7 +77,7 @@ sp : BEGIN
 	INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
 	SELECT atd.AssTypeItemValue
 	FROM CTS_DataCenter.AssociationTypeSetting AS atd
-	WHERE atd.AssTypeID = CONS_ASSBYAI_ASSTYPEID AND atd.AssTypeItemStatus = CONS_ASSBYAI_STATUS;
+	WHERE atd.AssTypeID = CONST_ASSTYPE_BETTINGPATTERN AND atd.AssTypeItemStatus = CONST_ASSBYAI_ACTIVESTATUS;
     
     /*<Customer Category Rule/>*/    
     SELECT CTSCustID 

@@ -20,15 +20,15 @@ sp:BEGIN
 			- 20221025@Aries.Nguyen: 	Tuning performance: Skip the processed trans  [Redmine ID: #179439]
 			- 20221205@Aries.Nguyen: 	Re-arrange type options on Association Detection  [Redmine ID: #181207]
 			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
-			- 20220313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
+			- 20230313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
             
 		Param's Explanation (filtered by):
 
         Example:
 			CALL CTS_DataCenter.CTS_DC_AssociationDetection_GetEdge('[{"CTSCustID":5422,"CustID":169686},{"CTSCustID":5424,"CustID":169689}]',1,1,1); SELECT * FROM Temp_Graph;
 	*/
-	DECLARE CONS_ASSBYAI_ASSTYPEID INT DEFAULT 2;
-	DECLARE CONS_ASSBYAI_STATUS INT DEFAULT 1;	
+	DECLARE CONST_ASSTYPE_BETTINGPATTERN 	INT DEFAULT 2;
+	DECLARE CONST_ASSBYAI_ACTIVESTATUS 		INT DEFAULT 1;	
 	#=================================================
     DECLARE CONS_RangeDevice 			BIGINT DEFAULT 10000000000;
 	DECLARE CONS_RangeAIGroup 			BIGINT DEFAULT 20000000000;
@@ -58,7 +58,7 @@ sp:BEGIN
 	INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
 	SELECT atd.AssTypeItemValue
 	FROM CTS_DataCenter.AssociationTypeSetting AS atd
-	WHERE atd.AssTypeID = CONS_ASSBYAI_ASSTYPEID AND atd.AssTypeItemStatus = CONS_ASSBYAI_STATUS; 
+	WHERE atd.AssTypeID = CONST_ASSTYPE_BETTINGPATTERN AND atd.AssTypeItemStatus = CONST_ASSBYAI_ACTIVESTATUS; 
 
     INSERT IGNORE INTO Temp_CustNode(CTSCustID, CustID)
 	SELECT 	js.CTSCustID

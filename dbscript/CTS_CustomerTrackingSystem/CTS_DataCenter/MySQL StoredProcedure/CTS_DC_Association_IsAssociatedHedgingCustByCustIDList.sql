@@ -19,14 +19,14 @@ sp: BEGIN
 			- 20220226@Casey.Huynh: 	Created (MatchMonitor Rule) [Redmine ID: 166986]
 			- 20220422@Irena.Vo: 		Mapping Is Hedging Reason (MM) from table CustomerCategory [Redmine ID: #170468]
 			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
-            - 20220313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
+            - 20230313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
 			
 		Param's Explanation (filtered by):			
         Example:
 			CALL CTS_DC_Association_IsAssociatedHedgingCustByCustIDList('169686,169689,894977,65391526', @op_IsHedging); SELECT @op_IsHedging;
 	*/
-	DECLARE CONS_ASSBYAI_ASSTYPEID 	INT DEFAULT 2;
-	DECLARE CONS_ASSBYAI_STATUS 	INT DEFAULT 1;
+	DECLARE CONST_ASSTYPE_BETTINGPATTERN 	INT DEFAULT 2;
+	DECLARE CONST_ASSBYAI_ACTIVESTATUS 		INT DEFAULT 1;
 	#=============================================================================
     DROP TEMPORARY TABLE IF EXISTS Temp_InputCust;
 	CREATE TEMPORARY TABLE 		Temp_InputCust (
@@ -80,7 +80,7 @@ sp: BEGIN
 	INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
 	SELECT atd.AssTypeItemValue
 	FROM CTS_DataCenter.AssociationTypeSetting AS atd
-	WHERE atd.AssTypeID = CONS_ASSBYAI_ASSTYPEID AND atd.AssTypeItemStatus = CONS_ASSBYAI_STATUS; 
+	WHERE atd.AssTypeID = CONST_ASSTYPE_BETTINGPATTERN AND atd.AssTypeItemStatus = CONST_ASSBYAI_ACTIVESTATUS; 
        
     SET @sql = CONCAT("INSERT IGNORE INTO Temp_InputCust(CustID) VALUES ('", REPLACE(ip_CustIDList, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;

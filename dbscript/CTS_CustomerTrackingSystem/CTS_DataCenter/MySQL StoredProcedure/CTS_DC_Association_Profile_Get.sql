@@ -35,7 +35,7 @@ sp : BEGIN
 			- 20220408@Long.Luu: 		Get more data from AssociationGroupByAI [Redmine ID: #171222]
 			- 20220705@Aries.Nguyen: 	Tuning SP [Redmine ID: #174430]
 			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
-            - 20220313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
+            - 20230313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
             
 		Param's Explanation (filtered by):
 			- ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual, 4 - IP
@@ -52,13 +52,13 @@ sp : BEGIN
 				 ,0,50000, @op_TotalItems);
 			   select @op_TotalItems; 
 	*/
-	DECLARE CONS_ASSBYAI_ASSTYPEID INT DEFAULT 2;
-    DECLARE CONS_ASSBYAI_STATUS INT DEFAULT 1;
+	DECLARE CONST_ASSTYPE_BETTINGPATTERN INT DEFAULT 2;
+    DECLARE CONS_ASSBYAI_ACTIVESTATUS INT DEFAULT 1;
     #==================================================
 	DECLARE lv_CustID INT;
     
     #=====================DEBUG LOG===========================================
-	DECLARE lv_IsLog BOOLEAN DEFAULT 1;    
+	DECLARE lv_IsLog BOOLEAN DEFAULT 0;    
 	DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_Association_Profile_Get';
 	IF lv_IsLog = 1 THEN
 		SET @LogInfo = CONCAT('@ip_CTSCustID:=''',IFNULL(ip_CTSCustID,'NULL'),''''
@@ -171,7 +171,7 @@ sp : BEGIN
     INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
     SELECT atd.AssTypeItemValue
     FROM CTS_DataCenter.AssociationTypeSetting AS atd
-    WHERE atd.AssTypeID = CONS_ASSBYAI_ASSTYPEID AND atd.AssTypeItemStatus = CONS_ASSBYAI_STATUS;
+    WHERE atd.AssTypeID = CONST_ASSTYPE_BETTINGPATTERN AND atd.AssTypeItemStatus = CONS_ASSBYAI_ACTIVESTATUS;
     
 	SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_SubscriberID (SubscriberID) VALUES ('", REPLACE(ip_SubscriberIDs, ",", "'),('"),"');");
 	PREPARE 	stmt1 FROM @sql;
@@ -227,8 +227,8 @@ sp : BEGIN
     IF ip_AssociationType = 0 OR ip_AssociationType = 2 THEN
 		INSERT IGNORE INTO Temp_Association(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
 		SELECT  cust.CTSCustID 
-			,	CONS_ASSBYAI_ASSTYPEID AS AssociationType
-            ,	CONS_ASSBYAI_STATUS AS AssociationStatus
+			,	CONST_ASSTYPE_BETTINGPATTERN AS AssociationType
+            ,	CONS_ASSBYAI_ACTIVESTATUS AS AssociationStatus
 			,	asAI.CreatedDate
 		FROM CTS_DataCenter.AssociationByAI AS asAI 
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asAI.ToCustID AND cust.CustSubID = 0
@@ -238,8 +238,8 @@ sp : BEGIN
         
         INSERT IGNORE INTO Temp_Association(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
 		SELECT  cust.CTSCustID 
-			,	CONS_ASSBYAI_ASSTYPEID AS AssociationType
-            ,	CONS_ASSBYAI_STATUS AS AssociationStatus
+			,	CONST_ASSTYPE_BETTINGPATTERN AS AssociationType
+            ,	CONS_ASSBYAI_ACTIVESTATUS AS AssociationStatus
 			,	asAI.CreatedDate
 		FROM CTS_DataCenter.AssociationByAI AS asAI 
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asAI.FromCustID AND cust.CustSubID = 0

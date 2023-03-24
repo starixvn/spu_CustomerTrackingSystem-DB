@@ -16,7 +16,7 @@ sp:BEGIN
 		DB:			CTS_DataCenter
         
 		Revisions:
-			- 20220313@Casey.Huynh:	Applied Betting Parten OTGB [Redmine ID: #184791]
+			- 20230313@Casey.Huynh:	Applied Betting Parten OTGB [Redmine ID: #184791]
 
 		Param's Explanation (filtered by): 
 			- ip_FraudType: 0:ALL, 1:ScoreRound1, 2:ScoreRound2, 3:ScoreRound3

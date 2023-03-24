@@ -38,17 +38,17 @@ sp: BEGIN
 			-	20221205@Casey.Huynh: 	Rename Table and remove (Arbitrage,Hedging) [Redmine ID: #179502]
 			-	20230221@Casey.Huynh: 	Update Rule, The same Choice [Redmine ID: #184041]
 			- 	20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
-            -	20220313@Casey.Huynh:	Applied Betting Parten OTGB [Redmine ID: #184791]
+            -	20230313@Casey.Huynh:	Applied Betting Parten OTGB [Redmine ID: #184791]
 			
 		Param's Explanation (filtered by):	
 		Example:
 			- CALL CTS_DC_MatchMonitor_RuleGroupBetting_Process(1,113171940189,22081995,1,1,0,'a');
 			
 	*/
-    DECLARE CONS_LOG 				TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
-    DECLARE CONST_RULE_GROUPID 		INT DEFAULT 1;
-	DECLARE CONS_ASSBYAI_ASSTYPEID 	INT DEFAULT 2;
-	DECLARE CONS_ASSBYAI_STATUS 	INT DEFAULT 1;	
+    DECLARE CONS_LOG 						TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
+    DECLARE CONST_RULE_GROUPID 				INT DEFAULT 1;
+	DECLARE CONST_ASSTYPE_BETTINGPATTERN 	INT DEFAULT 2;
+	DECLARE CONST_ASSBYAI_ACTIVESTATUS 		INT DEFAULT 1;	
 	#=================================================
     DECLARE lv_TimeCustID BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_MinTransDate DATETIME(3);
@@ -249,7 +249,7 @@ sp: BEGIN
     INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
     SELECT atd.AssTypeItemValue
     FROM CTS_DataCenter.AssociationTypeSetting AS atd
-    WHERE atd.AssTypeID = CONS_ASSBYAI_ASSTYPEID AND atd.AssTypeItemStatus = CONS_ASSBYAI_STATUS; 
+    WHERE atd.AssTypeID = CONST_ASSTYPE_BETTINGPATTERN AND atd.AssTypeItemStatus = CONST_ASSBYAI_ACTIVESTATUS; 
     
     #******** GET STAGING TRANS ******************************************************************
     #*********************************************************************************************    

@@ -17,15 +17,15 @@ BEGIN
 		Revisions:
 			- 	20221118@Aries.Nguyen: 	Created [Redmine ID: #179499]
 			- 	20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
-            -	20220313@Casey.Huynh:	Applied Betting Parten OTGB [Redmine ID: #184791]
+            -	20230313@Casey.Huynh:	Applied Betting Parten OTGB [Redmine ID: #184791]
             
 		Param's Explanation (filtered by):
 			CALL CTS_DC_Association_CountByCategoryID('169686,169689,894977','201,205')
 		Example:
         
 	*/
-	DECLARE CONS_ASSBYAI_ASSTYPEID 	INT DEFAULT 2;
-	DECLARE CONS_ASSBYAI_STATUS 	INT DEFAULT 1;
+	DECLARE CONST_ASSTYPE_BETTINGPATTERN 	INT DEFAULT 2;
+	DECLARE CONST_ASSBYAI_ACTIVESTATUS 		INT DEFAULT 1;
 	#=============================================================================
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustParam;
@@ -57,7 +57,7 @@ BEGIN
 	INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
 	SELECT atd.AssTypeItemValue
 	FROM CTS_DataCenter.AssociationTypeSetting AS atd
-	WHERE atd.AssTypeID = CONS_ASSBYAI_ASSTYPEID AND atd.AssTypeItemStatus = CONS_ASSBYAI_STATUS;
+	WHERE atd.AssTypeID = CONST_ASSTYPE_BETTINGPATTERN AND atd.AssTypeItemStatus = CONST_ASSBYAI_ACTIVESTATUS;
     
     INSERT IGNORE INTO Temp_CustParam(CustID, CTSCustID)
     SELECT  cus.CustID

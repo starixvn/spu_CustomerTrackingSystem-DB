@@ -17,14 +17,14 @@ BEGIN
 			- 20211229@Aries.Nguyen:  	Fix get assocition account  incorrect [Redmine ID: #165105]
 			- 20220408@Casey.Huynh: 	Add AssociationGroupByAI [Redmine ID: #171222]
 			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
-			- 20220313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
+			- 20230313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
             
 		Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustInfo_Profile_GetAssociationAccount(10832);
 	*/
-	DECLARE CONS_ASSBYAI_ASSTYPEID INT DEFAULT 2;
-	DECLARE CONS_ASSBYAI_STATUS INT DEFAULT 1;	
+	DECLARE CONST_ASSTYPE_BETTINGPATTERN	INT DEFAULT 2;
+	DECLARE CONST_ASSBYAI_ACTIVESTATUS		INT DEFAULT 1;	
 	#=================================================
     
     DECLARE lv_CustID 		BIGINT UNSIGNED;
@@ -75,7 +75,7 @@ BEGIN
     INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
     SELECT atd.AssTypeItemValue
     FROM CTS_DataCenter.AssociationTypeSetting AS atd
-    WHERE atd.AssTypeID = CONS_ASSBYAI_ASSTYPEID AND atd.AssTypeItemStatus = CONS_ASSBYAI_STATUS;
+    WHERE atd.AssTypeID = CONST_ASSTYPE_BETTINGPATTERN AND atd.AssTypeItemStatus = CONST_ASSBYAI_ACTIVESTATUS;
     
     #==========================================    
     INSERT IGNORE INTO Temp_AccountStatusID (AccountStatusID)

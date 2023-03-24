@@ -23,14 +23,14 @@ sp : BEGIN
 			- 20220831@Aries.Nguyen: 	Associated Group Enhancement [Redmine ID: #176991]
 			- 20221028@Harvey.Nguyen: 	Check PA site [Redmine ID: #179398]
 			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
-			- 20220313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
+			- 20230313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
 		Param's Explanation (filtered by):
 
 		Example:
 			- CALL  CTS_DC_AssociatedGroup_Scan(@op_GroupID,@op_GroupName,@op_ABI,@op_Ori,@op_PACategoryID,@op_LastCTSCustID);
 	*/
-	DECLARE CONS_ASSBYAI_ASSTYPEID INT DEFAULT 2;
-	DECLARE CONS_ASSBYAI_STATUS INT DEFAULT 1;
+	DECLARE CONST_ASSTYPE_BETTINGPATTERN 	INT DEFAULT 2;
+	DECLARE CONST_ASSBYAI_ACTIVESTATUS 				INT DEFAULT 1;
     #=================================================
     DECLARE lv_BatchSize 		BIGINT;
     DECLARE lv_LastGroupID 		BIGINT;
@@ -94,7 +94,7 @@ sp : BEGIN
     INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
     SELECT atd.AssTypeItemValue
     FROM CTS_DataCenter.AssociationTypeSetting AS atd
-    WHERE atd.AssTypeID = CONS_ASSBYAI_ASSTYPEID AND atd.AssTypeItemStatus = CONS_ASSBYAI_STATUS; 
+    WHERE atd.AssTypeID = CONST_ASSTYPE_BETTINGPATTERN AND atd.AssTypeItemStatus = CONST_ASSBYAI_ACTIVESTATUS; 
     
 	SELECT ParameterValue 
     INTO lv_BatchSize 
