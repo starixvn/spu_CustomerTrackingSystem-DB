@@ -108,7 +108,7 @@ sp: BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
     
 	/***********************Check Robot Imperva****************************/
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID,RoleID,SubscriberID,IsLicensee,IsLicenseeVIP,CategoryID,CategoryIDSource, CategoryGroup,IsFromImperva,IsDirect,IsRobot,Remark)
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID,RoleID,SubscriberID,IsLicensee,IsLicenseeVIP,CategoryID,CategoryIDSource, CategoryGroup,IsFromImperva,IsDirect,IsRobot,Remark,LastModifiedDate)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
         ,	tmp.RoleID 
@@ -122,11 +122,17 @@ sp: BEGIN
         ,	1 AS IsDirect
         ,	1 AS IsRobot
 		,	'Imperva' AS Remark
-    FROM  Temp_CustInfo AS tmp
-	WHERE EXISTS (SELECT 1 FROM CTS_DataCenter.RobotImperva AS ri WHERE ri.CustID = tmp.CustID AND ri.IsScan = 1);
+        ,	ri.CreateTime
+    FROM  Temp_CustInfo AS tmp,
+    LATERAL (SELECT CreateTime
+			FROM CTS_DataCenter.RobotImperva
+            WHERE CustID = tmp.CustID 
+				AND IsScan = 1
+			ORDER BY CreateTime DESC
+			LIMIT 1) AS ri;
 	
     /***********************Check Robot betting****************************/
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID,RoleID,SubscriberID,IsLicensee,IsLicenseeVIP,CategoryID,CategoryIDSource, CategoryGroup,IsFromAI,IsDirect,IsRobot)
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID,RoleID,SubscriberID,IsLicensee,IsLicenseeVIP,CategoryID,CategoryIDSource, CategoryGroup,IsFromAI,IsDirect,IsRobot,Remark,LastModifiedDate)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
         ,	tmp.RoleID 
@@ -139,9 +145,18 @@ sp: BEGIN
         ,	1 AS IsFromAI
         ,	1 AS IsDirect
         ,	1 AS IsRobot
-    FROM  Temp_CustInfo AS tmp
-    WHERE EXISTS (SELECT 1 FROM CTS_DataCenter.RobotDetection AS rb WHERE rb.CustID = tmp.CustID AND rb.IsDisabled = 0)
-	ON DUPLICATE KEY UPDATE IsFromAI = 1;
+        ,	NULL AS Remark
+        ,	rd.LastModifiedDate
+    FROM  Temp_CustInfo AS tmp,
+    LATERAL (SELECT LastModifiedDate
+			FROM CTS_DataCenter.RobotDetection 
+            WHERE CustID = tmp.CustID
+				AND  IsDisabled = 0
+			ORDER BY LastModifiedDate DESC
+			LIMIT 1) AS rd
+	ON DUPLICATE KEY UPDATE IsFromAI = 1
+						,	Remark = CASE WHEN rd.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN NULL ELSE Temp_CustCategory.Remark END
+						,	LastModifiedDate = CASE WHEN rd.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN rd.LastModifiedDate ELSE Temp_CustCategory.LastModifiedDate END;
 	
      /***********************Check PA from Old table****************************/
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,IsLicenseeVIP,CategoryID,CategoryIDSource,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID,IsRobot)
