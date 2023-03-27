@@ -109,7 +109,7 @@ BEGIN
 							,	WinlossRM				DECIMAL(20 , 4 ) 	PATH "$.WinlossRM"
 							,	BetCount				BIGINT 				PATH "$.BetCount"
                             ,	ActiveDays				INT					PATH "$.ActiveDays"
-                            ,	RobotCounter			DECIMAL(20 , 4 )	PATH "$.RobotCounter"
+                            ,	RobotCounter			SMALLINT			PATH "$.RobotCounter"
 							,	ProbationPeriodWinloss	DECIMAL(20 , 4 ) 	PATH "$.ProbationPeriodWinloss"
 							,	TargetCC				SMALLINT 			PATH "$.TargetCC"
                             ,	SourceTypeID			SMALLINT UNSIGNED	PATH "$.SourceTypeID"
