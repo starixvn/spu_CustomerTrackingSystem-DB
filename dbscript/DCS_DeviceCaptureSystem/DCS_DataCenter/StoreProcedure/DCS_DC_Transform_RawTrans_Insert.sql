@@ -17,6 +17,7 @@ BEGIN
 			- 20201006@CaseyHuynh: Move New Server, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_DataCenter" [Redmine ID: #143011]
 			- 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
             - 20211129@Casey.Huynh: Remove FingerprintMoreInfo Column [Redmine ID: #165167]
+			- 20230327@Terry.Nguyen: Add InsertTime [Redmine ID: #185185]
 
 		Param's Explanation (filtered by):
 			
@@ -85,7 +86,7 @@ BEGIN
 				)
 		   ) AS  rt; 
 	
-	INSERT INTO DCS_DataCenter.RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus)
+	INSERT INTO DCS_DataCenter.RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, InsertTime)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -102,6 +103,7 @@ BEGIN
 		,	rt.ActionResult
         ,	rt.InvalidDevice
         ,	rt.TransStatus
+		,	CURRENT_TIMESTAMP(4) as InsertTime
 	FROM Temp_Transactions AS rt;
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_Transactions;
