@@ -18,7 +18,15 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.AbnormalTransasction(
 	, 	TransTime			TIMESTAMP(4) NOT NULL
 	, 	UserAgentKey		VARCHAR(32) NOT NULL
 	, 	IP					VARCHAR(50) NOT NULL
+	,	Status 				TINYINT COMMENT '0: Not Send\n1: Sended\n-1: Send error'
 	, 	CreatedDate			DATETIME
 	,	PRIMARY KEY (`Id`)
 	,	UNIQUE KEY `UX_AbnormalTransasction_TransID` (`TransID`)
 ) ENGINE=InnoDB;
+
+
+INSERT INTO DCS_DataCenter.SystemSetting(VGroup, VName, VValue, UpdatedTime)
+VALUES ('DCS_AbnormalTransaction_Transform', 'MaxTransId', '0', NOW());
+
+INSERT INTO DCS_DataCenter.SystemSetting(VGroup, VName, VValue, UpdatedTime)
+VALUES ('DCS_AbnormalTransaction_Processed', 'MaxID', '0', NOW());

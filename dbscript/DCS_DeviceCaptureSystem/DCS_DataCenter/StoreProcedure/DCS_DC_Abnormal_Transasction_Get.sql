@@ -21,6 +21,11 @@ BEGIN
 	Example:
 		- CALL DCS_DataCenter.DCS_DC_Abnormal_Transasction_Get(10);
 	*/
+    DECLARE lv_SystemSettingVGroup VARCHAR(128) DEFAULT 'DCS_AbnormalTransaction_Processed';
+    DECLARE lv_SystemSettingVName VARCHAR(128) DEFAULT 'MaxID';
+    DECLARE lv_SystemSettingVValue BIGINT UNSIGNED;
+    
+    SET lv_SystemSettingVValue 	= IFNULL((SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE VGroup=lv_SystemSettingVGroup AND VName=lv_SystemSettingVName), 0);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Transaction;
     
@@ -35,10 +40,15 @@ BEGIN
 		,	trans.AccountID
         ,	COUNT(ass.AssociationID) AS CountDevice
 	FROM DCS_DataCenter.AbnormalTransasction AS trans
-		INNER JOIN DCS_DataCenter.Association AS ass ON ass.AccountID = trans.AccountID
+		LEFT JOIN DCS_DataCenter.Association AS ass ON ass.AccountID = trans.AccountID
+	WHERE trans.ID > lv_SystemSettingVValue
 	GROUP BY trans.ID, trans.AccountID
     ORDER BY trans.ID
     LIMIT ip_Size;
+    
+    UPDATE Temp_Transaction AS tmp
+		INNER JOIN DCS_DataCenter.AbnormalTransasction AS trans ON trans.ID = tmp.ID
+    SET trans.Status = 0;
     
     SELECT 	trans.ID
 		,	trans.TransID
@@ -54,6 +64,6 @@ BEGIN
 		INNER JOIN DCS_DataCenter.AbnormalTransasction AS trans ON trans.ID = tmp.ID
 		LEFT JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = trans.UserAgentKey
 		LEFT JOIN DCS_DataCenter.DeviceType AS dt ON dt.DeviceTypeID = ua.DeviceTypeID;
-	
+    
 END$$
 DELIMITER ;
