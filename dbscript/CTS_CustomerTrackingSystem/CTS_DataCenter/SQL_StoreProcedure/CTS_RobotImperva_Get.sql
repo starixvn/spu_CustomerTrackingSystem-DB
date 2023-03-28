@@ -64,11 +64,21 @@ BEGIN
 			FROM #tmp_CustLoginLog_ABP;
 		END;
 
+	WITH CTE_block AS
+	(
+		SELECT	LogID
+			,	CustID
+			,	Platform
+			,	CreateTime
+			,	ROW_NUMBER() OVER (PARTITION BY CustID,Platform ORDER BY LogID DESC) AS RowNumber 
+		FROM #tmp_CustLoginLog_ABP
+		WHERE ActionMode = 'block'
+	)
 	SELECT	LogID
 		,	CustID
 		,	Platform
 		,	CreateTime
-	FROM #tmp_CustLoginLog_ABP
-	WHERE ActionMode = 'block';
+	FROM CTE_block
+	WHERE RowNumber = 1;
 
 END
