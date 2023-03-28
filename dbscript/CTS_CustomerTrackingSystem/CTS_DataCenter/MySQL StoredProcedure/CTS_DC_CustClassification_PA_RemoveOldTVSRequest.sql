@@ -12,10 +12,11 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original:
 		Revisions:
-            - 20220602@Long.Luu: Created [Redmine ID: #172561]
-            - 20220628@Long.Luu: Remove affected evidence in case of update Reason [Redmine ID: #174430]
-            - 20220801@Long.Luu: Adjust Winloss Status for Old Requests [Redmine ID: #174219]
-            - 20221007@Harvey.Nguyen: Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory [Redmine ID: #178022]
+			- 20220602@Long.Luu: 		Created [Redmine ID: #172561]
+			- 20220628@Long.Luu: 		Remove affected evidence in case of update Reason [Redmine ID: #174430]
+			- 20220801@Long.Luu: 		Adjust Winloss Status for Old Requests [Redmine ID: #174219]
+			- 20221007@Harvey.Nguyen: 	Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory [Redmine ID: #178022]
+			- 20230315@Victoria.Le:		Add Robot Imperva [Redmine ID: #184773]
             
         Param's Explanation (filtered by):
         
@@ -58,7 +59,7 @@ BEGIN
     FROM Temp_PA AS t
 		INNER JOIN CTSCustomerClassificationOldCategory AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
 	WHERE t.TVSRequestID IS NOT NULL
-		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0);
+		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0 AND d.IsFromImperva = 0);
     
     /* REMOVE FROM CLASSIFICATION HISTORY  */    
 	DELETE d
@@ -87,7 +88,7 @@ BEGIN
     FROM Temp_PA AS t
 		INNER JOIN CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
 	WHERE t.TVSRequestID IS NOT NULL
-		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0);
+		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0 AND d.IsFromImperva = 0);
       
 	/* REMOVE FROM CUSTOMER EVIDENCE  */ 
     DELETE d

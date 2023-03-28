@@ -17,26 +17,27 @@ sp: BEGIN
 		DB:			CTS_DataCenter
 		Original: 
 		Revisions:
-			- 20200423@Long.Luu [Redmine ID: #132623]: Created 
-			- 20200608@Casey.Huynh [Redmine ID: #]: Add parameter ip_CustID
-					+ Rule "Delete Category "New Member" When Add Manaual Caterory" 
-            - 20200701@Casey.Huynh [Redmine ID: #]: 
-					+ Remove Rule "Delete Category "New Member" When Add Manaual Caterory"
-                    + Update History table
-					+ Remove Verify VIP vs Smartpunter 
-			- [20200908@Irena.Vo][141020]: Enhance insert manual for VVIP (include CustomerClass) . Add categoryid = 207 for VVIP (general)
-            - [20200921@Irena.Vo][141755]: Enhance SP & insert Probation Management flow.
-            - [20200923@Irena.Vo][141755]: Enhance SP
-            - 20201202@Lex.Khuat: Disable detail categories & clean up wrong syntax [Redmine ID: #145954]
-            - 20201214-20201229@Irena.Vo: Insert History Log & Auto Pin [RedmineID: #145951]
-            - 20210226@Irena.Vo: Update CategoryID from VVIP [RedmineID: #150454]
-            - 20210419@Irena.Vo: Get Category more [RedmineID: #153617]
-            - 20210525@Irena.Vo: Change col name PinCustomerCategory: CustID -> CTSCustID [RedmineID: #152965] 
-			- 20210920@Aries.Nguyen: Split history log  [Redmine ID: #161890]
-            - 10220418@Casey.Huynh: Add and Remove VVIP for Downline [Redmine ID: #159013]
-            - 20220519@Casey.Huynh: Renovate PA Process [RedmineID: #172061]
-            - 20220713@Casey.Huynh: Switching for Licensee VIP & BA Categories [Redmine ID: #174219]
-            - 20221007@Harvey.Nguyen: Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory [Redmine ID: #178022]
+			- 20200423@Long.Luu 			[Redmine ID: #132623]: Created 
+			- 20200608@Casey.Huynh 			[Redmine ID: #]: Add parameter ip_CustID
+											+ Rule "Delete Category "New Member" When Add Manaual Caterory" 
+			- 20200701@Casey.Huynh 			[Redmine ID: #]: 
+											+ Remove Rule "Delete Category "New Member" When Add Manaual Caterory"
+											+ Update History table
+											+ Remove Verify VIP vs Smartpunter 
+			- [20200908@Irena.Vo][141020]: 	Enhance insert manual for VVIP (include CustomerClass) . Add categoryid = 207 for VVIP (general)
+			- [20200921@Irena.Vo][141755]: 	Enhance SP & insert Probation Management flow.
+			- [20200923@Irena.Vo][141755]: 	Enhance SP
+			- 20201202@Lex.Khuat: 			Disable detail categories & clean up wrong syntax [Redmine ID: #145954]
+			- 20201214-20201229@Irena.Vo: 	Insert History Log & Auto Pin [RedmineID: #145951]
+			- 20210226@Irena.Vo: 			Update CategoryID from VVIP [RedmineID: #150454]
+			- 20210419@Irena.Vo: 			Get Category more [RedmineID: #153617]
+			- 20210525@Irena.Vo: 			Change col name PinCustomerCategory: CustID -> CTSCustID [RedmineID: #152965] 
+			- 20210920@Aries.Nguyen: 		Split history log  [Redmine ID: #161890]
+			- 10220418@Casey.Huynh: 		Add and Remove VVIP for Downline [Redmine ID: #159013]
+			- 20220519@Casey.Huynh: 		Renovate PA Process [RedmineID: #172061]
+			- 20220713@Casey.Huynh: 		Switching for Licensee VIP & BA Categories [Redmine ID: #174219]
+			- 20221007@Harvey.Nguyen: 		Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory [Redmine ID: #178022]
+			- 20230315@Victoria.Le:			Add Robot Imperva [Redmine ID: #184773]
             
 		Param's Explanation:
 			ip_FromAction: From Web(1),From Service VVIPDownLine(2), From Insert NewCustomer(3)
@@ -140,8 +141,27 @@ sp: BEGIN
 	
     /**** MOVE PA/RISKY/SMART TO CTSCustomerClassificationOldCategory *****/ 
 
-    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationOldCategory(CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
-    , LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsDirect, InsertTime, TVSRequestID) 
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationOldCategory(	
+			CustID
+		,	CTSCustID
+		,	SubscriberID
+		,	SportGroupID
+		,	CategoryID
+		,	Remark
+		,	CreatedDate
+		,	CreatedBy
+		,	LastModifiedDate
+		,	LastModifiedBy
+		,	LastScannedDate
+		,	IsFromTVS
+		,	IsFromTW
+		,	IsFromCTS
+		,	IsFromAI
+		,	IsDirect
+		,	InsertTime
+		,	TVSRequestID
+		,	IsFromImperva
+		) 
     SELECT	cls.CustID
 		,	cls.CTSCustID
         ,	cls.SubscriberID
@@ -160,12 +180,13 @@ sp: BEGIN
         ,	cls.IsDirect
         ,	CURRENT_TIMESTAMP(3) AS InsertTime
         ,	cls.TVSRequestID
+		,	cls.IsFromImperva
 	FROM CTS_DataCenter.CTSCustomerClassification AS cls
 		INNER JOIN Temp_Customer AS tmpCus ON cls.CustID = tmpCus.CustID AND tmpCus.IsExistVVIP = 0
         INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cls.CategoryID
 	WHERE NOT EXISTS (SELECT 1 FROM Temp_WrapperCategory AS tmpWr WHERE tmpWr.CategoryID = cls.CategoryID)
 		  AND ((cls.SportGroupID = 0 AND cc.CategoryGroup NOT IN (CONST_CATEGORY_ROBOT, CONST_CATEGORY_ROBOTLOSING)) 
-			OR (cc.CategoryGroup IN (CONST_CATEGORY_ROBOT, CONST_CATEGORY_ROBOTLOSING) AND cls.IsFromAI = 0 AND cls.IsFromTW = 0)
+			OR (cc.CategoryGroup IN (CONST_CATEGORY_ROBOT, CONST_CATEGORY_ROBOTLOSING) AND cls.IsFromAI = 0 AND cls.IsFromTW = 0 AND cls.IsFromImperva = 0)
 			OR (cls.SportGroupID = 200 AND cc.CategoryGroup IN (CONST_CATEGORY_RISKY, CONST_CATEGORY_SMART)));
      
 	/*****Remove all category, customer class, probation list before******/

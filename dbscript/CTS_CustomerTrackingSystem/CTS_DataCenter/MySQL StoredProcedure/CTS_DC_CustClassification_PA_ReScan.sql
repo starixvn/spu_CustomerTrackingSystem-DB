@@ -13,11 +13,12 @@ sp: BEGIN
 		DB:			CTS_DataCenter 
 		Original: 
 		Revisions:  
-			- 20220520@Aries.Nguyen: Created [Redmine ID: #172561]
-            - 20220616@Aries.Nguyen: Cannot mark PA (affected by uplines) correctly with First Mark [Redmine ID: #174136]
-            - 20220628@Aries.Nguyen: Update robot classification rule [Redmine ID: #174430]
-			- 20220705@Long.Luu: Return IsLicenseeVIP info [Redmine ID: #174219]
-            - 20221007@Harvey.Nguyen: Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory [Redmine ID: #178022]
+			- 20220520@Aries.Nguyen: 	Created [Redmine ID: #172561]
+            - 20220616@Aries.Nguyen: 	Cannot mark PA (affected by uplines) correctly with First Mark [Redmine ID: #174136]
+            - 20220628@Aries.Nguyen: 	Update robot classification rule [Redmine ID: #174430]
+			- 20220705@Long.Luu: 		Return IsLicenseeVIP info [Redmine ID: #174219]
+            - 20221007@Harvey.Nguyen: 	Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory [Redmine ID: #178022]
+			- 20230315@Victoria.Le:		Add Robot Imperva [Redmine ID: #184773]
 		
         Param's Explanation:
 
@@ -27,12 +28,12 @@ sp: BEGIN
     DECLARE	CONST_CATEGORYID_ROBOT 			INT DEFAULT 163;
     DECLARE	CONST_CATEGORYID_ROBOTLOSING 	INT DEFAULT 164;
     
-    DECLARE	CONST_GROUP_PA 						INT DEFAULT 0;
+    DECLARE	CONST_GROUP_PA 					INT DEFAULT 0;
 
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustID;    
 	CREATE TEMPORARY TABLE Temp_CustID (	  
-			 CustID              BIGINT UNSIGNED PRIMARY KEY 
+			CustID              BIGINT UNSIGNED PRIMARY KEY 
      );
      
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;    
@@ -63,10 +64,13 @@ sp: BEGIN
         ,   CategoryID			INT
         ,   CategoryIDSource	INT 
         ,	IsDirect			BIT
+		
         ,	IsFromTVS 			BIT DEFAULT 0
         ,	IsFromTW 			BIT DEFAULT 0
         ,	IsFromCTS 			BIT DEFAULT 0
         ,	IsFromAI 			BIT DEFAULT 0
+		,	IsFromImperva		BIT DEFAULT 0
+		
         ,	TVSRequestID 		BIGINT UNSIGNED 
         ,	IsRobot 			BIT DEFAULT 0
         
@@ -103,8 +107,32 @@ sp: BEGIN
     FROM Temp_CustID AS tmp
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
     
+	/***********************Check Robot Imperva****************************/
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID,RoleID,SubscriberID,IsLicensee,IsLicenseeVIP,CategoryID,CategoryIDSource, CategoryGroup,IsFromImperva,IsDirect,IsRobot,Remark,LastModifiedDate)
+    SELECT 	tmp.CTSCustID
+		,	tmp.CustID
+        ,	tmp.RoleID 
+        ,	tmp.SubscriberID
+		,	tmp.IsLicensee
+        ,	tmp.IsLicenseeVIP
+		,	CONST_CATEGORYID_ROBOT AS CategoryID
+        ,	CONST_CATEGORYID_ROBOT AS CategoryIDSource
+        ,	CONST_CATEGORYID_ROBOT AS CategoryGroup
+        ,	1 AS IsFromImperva
+        ,	1 AS IsDirect
+        ,	1 AS IsRobot
+		,	'Imperva' AS Remark
+        ,	ri.CreateTime
+    FROM  Temp_CustInfo AS tmp,
+    LATERAL (SELECT CreateTime
+			FROM CTS_DataCenter.RobotImperva
+            WHERE CustID = tmp.CustID 
+				AND IsScanned = 1
+			ORDER BY CreateTime DESC
+			LIMIT 1) AS ri;
+	
     /***********************Check Robot betting****************************/
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID,RoleID,SubscriberID,IsLicensee,IsLicenseeVIP,CategoryID,CategoryIDSource, CategoryGroup,IsFromAI,IsDirect,IsRobot)
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID,RoleID,SubscriberID,IsLicensee,IsLicenseeVIP,CategoryID,CategoryIDSource, CategoryGroup,IsFromAI,IsDirect,IsRobot,Remark,LastModifiedDate)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
         ,	tmp.RoleID 
@@ -117,10 +145,19 @@ sp: BEGIN
         ,	1 AS IsFromAI
         ,	1 AS IsDirect
         ,	1 AS IsRobot
-    FROM  Temp_CustInfo AS tmp
-    WHERE EXISTS (SELECT 1 FROM CTS_DataCenter.RobotDetection AS rb WHERE rb.CustID = tmp.CustID AND rb.IsDisabled = 0);
-
-		
+        ,	NULL AS Remark
+        ,	rd.LastModifiedDate
+    FROM  Temp_CustInfo AS tmp,
+    LATERAL (SELECT LastModifiedDate
+			FROM CTS_DataCenter.RobotDetection 
+            WHERE CustID = tmp.CustID
+				AND  IsDisabled = 0
+			ORDER BY LastModifiedDate DESC
+			LIMIT 1) AS rd
+	ON DUPLICATE KEY UPDATE IsFromAI = 1
+						,	Remark = CASE WHEN rd.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN NULL ELSE Temp_CustCategory.Remark END
+						,	LastModifiedDate = CASE WHEN rd.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN rd.LastModifiedDate ELSE Temp_CustCategory.LastModifiedDate END;
+	
      /***********************Check PA from Old table****************************/
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,IsLicenseeVIP,CategoryID,CategoryIDSource,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID,IsRobot)
     SELECT 	tmp.CTSCustID
@@ -266,6 +303,7 @@ sp: BEGIN
         ,	IsFromTW 		
         ,	IsFromCTS 	
         ,	IsFromAI	
+		,	IsFromImperva
         ,	TVSRequestID
         
         ,	IsRobot 			

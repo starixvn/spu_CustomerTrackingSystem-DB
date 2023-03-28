@@ -12,7 +12,8 @@ sp: BEGIN
 		Original:
 
 		Revisions:
-			- 	20211110@Casey.Huynh: Created [Redmine ID: 164148]
+			- 	20211110@Casey.Huynh: 	Created [Redmine ID: 164148]
+			-	20230317@Victoria.Le:	Remove surplusage for not using - table CategoryToCustomerClass [Redmine ID: #184773]
             
 		Param's Explanation (filtered by):	
 
@@ -87,7 +88,6 @@ sp: BEGIN
 		FROM Temp_Scan AS tmpS
 			INNER JOIN CTS_DataCenter.TWProblemDetectionMonitor AS tpd ON tpd.CustID = tmpS.CustID
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS ccl ON tpd.CustID = ccl.CustID 
-			INNER JOIN CTS_DataCenter.CategoryToCustomerClass AS ctc ON ccl.CategoryID = ctc.CategoryID
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON ccl.CategoryID = cc.CategoryID
 		GROUP BY cc.ParentID, tpd.CustID, tpd.UserName, tpd.RoleID, tpd.ReasonID, tpd.PreventActionID, tpd.Comment, tpd.VoidTime, tpd.LimitAmount, tpd.UserID, tpd.IP; 			
 	ELSE 
