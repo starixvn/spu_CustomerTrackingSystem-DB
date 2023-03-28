@@ -100,7 +100,7 @@ BEGIN
 	SELECT t.CustID, CAST(b.transdate AS DATE), b.IP
 	FROM #tmp_CustID AS t
 		INNER JOIN dbo.bettrans AS b WITH(NOLOCK) ON b.CustID = t.CustID	
-		INNER JOIN bodb02.dbo.vw_Customer AS c WITH(NOLOCK) on b.custid = c.custid	
+		INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) on b.custid = c.custid	
 	WHERE b.username NOT LIKE '%CashOut' 
 		AND b.srecommend NOT IN (41430709) 
 		AND b.mrecommend NOT IN (27899314,11656504,12146012) 
@@ -115,7 +115,7 @@ BEGIN
 
 	WHILE EXISTS(SELECT 1 FROM #tmp_Last3Days WITH(NOLOCK))
 		BEGIN
-			SELECT @lv_ProcessingDate = EventDate FROM #tmp_Last3Days WITH(NOLOCK);
+			SELECT TOP 1 @lv_ProcessingDate = EventDate FROM #tmp_Last3Days WITH(NOLOCK);
 
 			TRUNCATE TABLE #tmp_CustID_IP;
 
