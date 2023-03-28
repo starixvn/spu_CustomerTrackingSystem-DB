@@ -33,7 +33,7 @@ BEGIN
 	SELECT LogID
 	FROM CTS_DataCenter.RobotImperva
 	WHERE CreateTime >= ip_LatestTimeImperva
-		AND IsScan = 0
+		AND IsScanned = 0
 	LIMIT CONST_BATCHSIZE;
     
     SELECT CustID, MAX(LastModifiedDate) AS LastModifiedDate

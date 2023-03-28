@@ -32,8 +32,8 @@ BEGIN
     
     UPDATE CTS_DataCenter.RobotImperva AS r
 		INNER JOIN Temp_RobotImperva AS tmp ON tmp.LogID = r.LogID
-	SET r.IsScan = 1
-    WHERE r.IsScan = 0;
+	SET r.IsScanned = 1
+    WHERE r.IsScanned = 0;
     
 END$$
 DELIMITER ;
