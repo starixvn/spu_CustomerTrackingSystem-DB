@@ -256,9 +256,13 @@ BEGIN
 	END
 	ELSE
 	BEGIN
-		DECLARE @TopTransRemaining	INT = 0;
-		DECLARE @TopTransDeleted	INT = 0;
-		DECLARE @IsExit				INT = 0;
+		DECLARE @TopTransRemaining	INT = 0
+			,	@TopTransDeleted	INT = 0
+			,	@IsExit				INT = 0
+			,	@MinEventDate		DATETIME = NULL
+			,	@MinMatchId			INT = NULL
+			;
+		
 		
 		IF	OBJECT_ID('tempdb..#tmpTransMatch') IS NOT NULL
 		BEGIN
@@ -343,6 +347,21 @@ BEGIN
 		FROM #tmpTransMatch AS t1
 			LEFT JOIN #tmpMatchIds AS t2 WITH(NOLOCK) ON t2.MatchId = t1.MatchId
 		WHERE t2.MatchId IS NULL;
+
+		SELECT TOP (1)	@MinEventDate = t.EventDate
+					,	@MinMatchId = t.MatchId
+		FROM #tmpTransMatch AS t
+			CROSS APPLY (	SELECT TOP (@TransSize) EventDate, MatchId
+							FROM #tmpTransMatch
+							ORDER BY EventDate DESC, MatchId DESC) AS c
+		WHERE t.EventDate = c.EventDate
+			AND t.MatchId = c.MatchId
+		ORDER BY t.EventDate ASC, t.MatchId ASC;
+
+		DELETE t WITH (ROWLOCK)
+		FROM #tmpTransMatch AS t
+		WHERE t.EventDate <= @MinEventDate
+			AND t.MatchId < @MinMatchId;
 
 		INSERT INTO #tmpTickets
 		(
