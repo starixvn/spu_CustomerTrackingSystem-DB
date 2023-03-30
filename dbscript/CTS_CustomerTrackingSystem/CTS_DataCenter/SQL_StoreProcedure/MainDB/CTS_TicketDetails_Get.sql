@@ -595,5 +595,10 @@ BEGIN
 		INNER JOIN 	bodb02.dbo.bettype AS bt WITH(NOLOCK) ON bt.typeid = t.BetType
 		LEFT JOIN 	bodb02.dbo.Exchange AS e WITH(NOLOCK) ON e.ExchangeId = t.Currency;
 
+	DROP TABLE IF EXISTS #tmpTickets;
+	DROP TABLE IF EXISTS #tmpTransIds;
+	DROP TABLE IF EXISTS #tmpTransMatch;
+	DROP TABLE IF EXISTS #tmpMatchIds;
+
 END;
 GO
