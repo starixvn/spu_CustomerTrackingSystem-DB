@@ -2,7 +2,7 @@
 DROP PROCEDURE IF EXISTS `SPU_AIML_OTGB_GetCouple_FraudDetails`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `SPU_AIML_OTGB_GetCouple_FraudDetails`(
+CREATE DEFINER=`AIMLOwner`@`%` PROCEDURE `SPU_AIML_OTGB_GetCouple_FraudDetails`(
 		IN 	ip_FraudType	TINYINT
 	,	IN 	ip_CustID1		BIGINT UNSIGNED
 	,	IN 	ip_CustID2		BIGINT UNSIGNED
