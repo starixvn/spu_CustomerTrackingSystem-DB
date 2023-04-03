@@ -26,7 +26,7 @@ BEGIN
     DECLARE lv_CurrentDatetime DATETIME DEFAULT CURRENT_TIMESTAMP();
     
     DECLARE lv_SystemSettingVGroup VARCHAR(128) DEFAULT 'DCS_AbnormalTransaction_Transform';
-    DECLARE lv_SystemSettingVName VARCHAR(128) DEFAULT 'MaxTransId';
+    DECLARE lv_SystemSettingVName VARCHAR(128) DEFAULT 'MaxTransID';
     DECLARE lv_SystemSettingVValue BIGINT UNSIGNED;
     
     SET lv_SystemSettingVValue 	= IFNULL((SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE VGroup=lv_SystemSettingVGroup AND VName=lv_SystemSettingVName), 0);
@@ -71,6 +71,7 @@ BEGIN
 		,	TransTime
 		,	UserAgentKey
 		,	IP
+		,	Status
 		,	CreatedDate
 	)
 	SELECT 	tmp.TransID
@@ -79,18 +80,21 @@ BEGIN
 		,	tmp.TransTime
 		,	tmp.UserAgentKey
 		,	tmp.IP
+		,	0 AS Status
 		,	lv_CurrentDatetime AS CreatedDate
 	FROM Temp_Transaction AS tmp;
     
     /*****UPDATE MaxTransID in SystemSetting****************************************************/
-    SELECT MAX(TransID)
+    SELECT IFNULL(MAX(TransID),0)
     INTO lv_SystemSettingVValue
 	FROM Temp_Transaction;
     
-    UPDATE DCS_DataCenter.SystemSetting AS ss
-	SET 	ss.VValue = CONCAT('', lv_SystemSettingVValue)
-	   ,	ss.UpdatedTime = lv_CurrentDatetime
-    WHERE VGroup=lv_SystemSettingVGroup 
-		AND VName=lv_SystemSettingVName;
+    IF lv_SystemSettingVValue > 0 THEN
+		UPDATE DCS_DataCenter.SystemSetting AS ss
+		SET 	ss.VValue = CONCAT('', lv_SystemSettingVValue)
+		   ,	ss.UpdatedTime = lv_CurrentDatetime
+		WHERE VGroup=lv_SystemSettingVGroup 
+			AND VName=lv_SystemSettingVName;
+    END IF;
 END$$
 DELIMITER ;

@@ -15,10 +15,10 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.AbnormalTransasction(
 	, 	TransID				BIGINT UNSIGNED NOT NULL
 	, 	AccountID			BIGINT UNSIGNED NOT NULL
 	, 	LoginName			VARCHAR(100) NOT NULL
-	, 	TransTime			TIMESTAMP(4) NOT NULL
+	, 	TransTime			DATETIME(4) NOT NULL
 	, 	UserAgentKey		VARCHAR(32) NOT NULL
 	, 	IP					VARCHAR(50) NOT NULL
-	,	Status 				TINYINT COMMENT '0: Not Send\n1: Sended\n-1: Send error'
+	,	Status 				TINYINT COMMENT '0: Not Send\n1: Sended'
 	, 	CreatedDate			DATETIME
 	,	PRIMARY KEY (`Id`)
 	,	UNIQUE KEY `UX_AbnormalTransasction_TransID` (`TransID`)
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS DCS_DataCenter.AbnormalTransasction(
 
 
 INSERT INTO DCS_DataCenter.SystemSetting(VGroup, VName, VValue, UpdatedTime)
-VALUES ('DCS_AbnormalTransaction_Transform', 'MaxTransId', '0', NOW());
+VALUES ('DCS_AbnormalTransaction_Transform', 'MaxTransID', '0', NOW());
 
 INSERT INTO DCS_DataCenter.SystemSetting(VGroup, VName, VValue, UpdatedTime)
 VALUES ('DCS_AbnormalTransaction_Processed', 'MaxID', '0', NOW());
