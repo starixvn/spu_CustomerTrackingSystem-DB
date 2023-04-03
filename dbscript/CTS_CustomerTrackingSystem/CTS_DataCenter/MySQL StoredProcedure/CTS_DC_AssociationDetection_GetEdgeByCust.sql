@@ -341,7 +341,7 @@ sp:BEGIN
 			,	3 AS AssociationType
 		FROM Temp_CustNode AS tmp 
 			INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.FromCustID = tmp.CustID
-																AND ai.AssType = 2
+																AND ai.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByAI_AssType AS tmpAt)
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ai.ToCustID 
 															AND cus.CustSubID = 0 
                                                             AND cus.IsInternal = 0 
@@ -356,7 +356,7 @@ sp:BEGIN
 			,	3 AS AssociationType
 		FROM Temp_CustNode AS tmp 
 			INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.ToCustID = tmp.CustID
-																AND ai.AssType = 2
+																AND ai.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByAI_AssType AS tmpAt)
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ai.FromCustID 
 															AND cus.CustSubID = 0 
                                                             AND cus.IsInternal = 0  
