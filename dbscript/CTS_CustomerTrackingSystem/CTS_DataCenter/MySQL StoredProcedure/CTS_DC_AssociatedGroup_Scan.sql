@@ -23,12 +23,15 @@ sp : BEGIN
 			- 20220831@Aries.Nguyen: 	Associated Group Enhancement [Redmine ID: #176991]
 			- 20221028@Harvey.Nguyen: 	Check PA site [Redmine ID: #179398]
 			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
-        
+			- 20230313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
 		Param's Explanation (filtered by):
 
 		Example:
 			- CALL  CTS_DC_AssociatedGroup_Scan(@op_GroupID,@op_GroupName,@op_ABI,@op_Ori,@op_PACategoryID,@op_LastCTSCustID);
 	*/
+	DECLARE CONST_ASSTYPE_BETTINGPATTERN 	INT DEFAULT 2;
+	DECLARE CONST_ASSBYAI_ACTIVESTATUS 				INT DEFAULT 1;
+    #=================================================
     DECLARE lv_BatchSize 		BIGINT;
     DECLARE lv_LastGroupID 		BIGINT;
     DECLARE lv_LastCTSCustID 	BIGINT;
@@ -80,6 +83,18 @@ sp : BEGIN
 			GroupID				BIGINT UNSIGNED PRIMARY KEY
 		,	AddGroupDate 		DATETIME
 	);
+    
+    #=============================================================
+    DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByAI_AssType;
+	CREATE TEMPORARY TABLE 	Temp_AssociationByAI_AssType (
+			AssTypeItemValue INT PRIMARY KEY            
+	);
+    
+    #===========GET AssociationByAI status is Applied==============================================    
+    INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
+    SELECT atd.AssTypeItemValue
+    FROM CTS_DataCenter.AssociationTypeSetting AS atd
+    WHERE atd.AssTypeID = CONST_ASSTYPE_BETTINGPATTERN AND atd.AssTypeItemStatus = CONST_ASSBYAI_ACTIVESTATUS; 
     
 	SELECT ParameterValue 
     INTO lv_BatchSize 
@@ -235,8 +250,9 @@ sp : BEGIN
 							INNER JOIN CTS_DataCenter.AssociatedGroup AS ag ON acc.GroupID =  ag.GroupID AND ag.IsDisable = 0
 						  WHERE ma.ToCTSCustID = acc.CTSCustID);
     END IF;
-    
+
     IF lv_HasAI = 1 THEN
+
 		/**************************AI*******************************/
 		INSERT IGNORE INTO Temp_CustDetected(CTSCustID, CustID, SiteID, RoleID, SubscriberID, IsLicensee)
 		SELECT  cus.CTSCustID
@@ -245,15 +261,19 @@ sp : BEGIN
             ,	cus.RoleID
 			,	cus.SubscriberID
             ,	cus.IsLicensee
-		FROM Temp_Cust AS tmp 
-			STRAIGHT_JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.FromCustID = tmp.CustID AND ai.AssType = 2
-			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ai.ToCustID AND cus.CustSubID = 0
-			STRAIGHT_JOIN CTS_Archive.CTSCustomerAssociationStatus AS tkd ON tkd.CTSCustID = cus.CTSCustID AND tkd.LastTicketDate >= tmp.AddGroupDate 
+		FROM (	SELECT * 
+				FROM Temp_Cust AS tmp 
+					,	LATERAL (	SELECT DISTINCT ai.ToCustID 
+									FROM CTS_DataCenter.AssociationByAI AS ai
+										INNER JOIN Temp_AssociationByAI_AssType AS tmpAt ON ai.FromCustID = tmp.CustID AND ai.AssType = tmpAt.AssTypeItemValue) AS ltr
+			) AS tmpAi
+			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpAi.ToCustID AND cus.CustSubID = 0
+			STRAIGHT_JOIN CTS_Archive.CTSCustomerAssociationStatus AS tkd ON tkd.CTSCustID = cus.CTSCustID AND tkd.LastTicketDate >= tmpAi.AddGroupDate 
 		WHERE NOT EXISTS (SELECT 1 
-						  FROM AssociatedGroupAccount AS acc
+						  FROM CTS_DataCenter.AssociatedGroupAccount AS acc
 							INNER JOIN CTS_DataCenter.AssociatedGroup AS ag ON acc.GroupID =  ag.GroupID AND ag.IsDisable = 0
 						  WHERE cus.CTSCustID = acc.CTSCustID);
-		
+
 		INSERT IGNORE INTO Temp_CustDetected(CTSCustID, CustID, SiteID, RoleID, SubscriberID, IsLicensee)
 		SELECT  cus.CTSCustID
 			,	cus.CustID
@@ -261,15 +281,19 @@ sp : BEGIN
             ,	cus.RoleID
 			,	cus.SubscriberID
             ,	cus.IsLicensee
-		FROM Temp_Cust AS tmp 
-			STRAIGHT_JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.ToCustID = tmp.CustID AND ai.AssType = 2
-			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ai.FromCustID AND cus.CustSubID = 0
-			STRAIGHT_JOIN CTS_Archive.CTSCustomerAssociationStatus AS tkd ON tkd.CTSCustID = cus.CTSCustID AND tkd.LastTicketDate >= tmp.AddGroupDate 
+		FROM (	SELECT * 
+				FROM Temp_Cust AS tmp
+				,	LATERAL (	SELECT DISTINCT ai.FromCustID 
+								FROM CTS_DataCenter.AssociationByAI AS ai
+									INNER JOIN Temp_AssociationByAI_AssType AS tmpAt ON ai.ToCustID = tmp.CustID AND ai.AssType = tmpAt.AssTypeItemValue) AS ltr
+			) AS tmpAi
+			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpAi.FromCustID AND cus.CustSubID = 0
+			STRAIGHT_JOIN CTS_Archive.CTSCustomerAssociationStatus AS tkd ON tkd.CTSCustID = cus.CTSCustID AND tkd.LastTicketDate >= tmpAi.AddGroupDate 
 		WHERE NOT EXISTS (SELECT 1 
 						  FROM AssociatedGroupAccount AS acc 
 							INNER JOIN CTS_DataCenter.AssociatedGroup AS ag ON acc.GroupID =  ag.GroupID AND ag.IsDisable = 0
-						  WHERE cus.CTSCustID = acc.CTSCustID);
-		
+                             WHERE cus.CTSCustID = acc.CTSCustID);
+
 		/**************************AI Group*******************************/
 		INSERT IGNORE INTO Temp_AIGroup(GroupID,AddGroupDate)
 		SELECT asg.GroupID 
