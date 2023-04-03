@@ -12,13 +12,14 @@ BEGIN
 		Original: 
 		Revisions:
 			- 20201216@Long.Luu [Redmine ID: #132623]: Created 
+            - 20230403@Jonas.Huynh [Redmine ID: #132623]: Return more field (className) 
             
 		Param's Explanation:
 	*/ 
     
-	SELECT DISTINCT c.CategoryName, c.CategoryNameCN, c.CustomerClass
+	SELECT DISTINCT c.CategoryName, c.CategoryNameCN, c.CustomerClass, c.CustomerClassName
 	FROM CTS_DataCenter.CustomerCategory AS c
-	WHERE c.CategoryNameCN IS NOT NULL AND  c.CategoryNameCN <> "" AND CustomerClass IS NOT NULL
+	WHERE c.CategoryNameCN IS NOT NULL AND c.CategoryNameCN <> "" AND CustomerClass IS NOT NULL
 	ORDER BY c.CustomerClass ASC;
     
 END$$
