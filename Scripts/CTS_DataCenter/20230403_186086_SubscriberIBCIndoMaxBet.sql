@@ -121,12 +121,13 @@ UPDATE CTS_DataCenter.CTSCustomerClassificationVVIP AS t
 SET t.SubscriberID = s.ToSubscriberID;
 
 #====================2.1.10 UPDATE Subscriber for CTSCustomerDuplicate===================================
-SELECT COUNT(1) FROM CTS_DataCenter.CTSCustomerDuplicate AS t INNER JOIN CTS_Adhoc.zz186086_CTSCustomer AS s WHERE s.CustID = t.CustID AND s.CustSubID = t.CustSubID;
-SELECT * FROM CTS_DataCenter.CTSCustomerDuplicate AS t INNER JOIN CTS_Adhoc.zz186086_CTSCustomer AS s WHERE s.CustID = t.CustID AND s.CustSubID = t.CustSubID;
+UPDATE CTS_DataCenter.CTSCustomerDuplicate AS t 
+SET t.SubscriberID = 13658
+WHERE Site = '76666B' AND RoleID = 1;
 
 UPDATE CTS_DataCenter.CTSCustomerDuplicate AS t 
-	INNER JOIN CTS_Adhoc.zz186086_CTSCustomer AS s ON s.CustID = t.CustID AND s.CustSubID = t.CustSubID    
-SET t.SubscriberID = s.ToSubscriberID;
+SET t.SubscriberID = 13659
+WHERE Site = '76666B' AND RoleID > 1;
 
 #====================2.1.11 UPDATE Subscriber for CustDCSAccount===================================
 SELECT COUNT(1) FROM CTS_DataCenter.CustDCSAccount AS t INNER JOIN CTS_Adhoc.zz186086_CTSCustomer AS s WHERE s.CTSCustID = t.CTSCustID;
