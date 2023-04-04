@@ -36,6 +36,7 @@ DROP TABLE IF EXISTS zz186086_CTSCustomer;
 CREATE TABLE zz186086_CTSCustomer(
 		CTSCustID BIGINT PRIMARY KEY
 	,	CustID BIGINT
+    ,	CustSubID BIGINT
     ,	RoleID INT
     ,	SubscriberID INT
     ,	SiteID INT
@@ -44,14 +45,14 @@ CREATE TABLE zz186086_CTSCustomer(
 );
 
 USE CTS_DataCenter;
-INSERT INTO CTS_Adhoc.zz186086_CTSCustomer (CTSCustID, CustID, RoleID, SubscriberID, SiteID, ToSubscriberID)
-SELECT CTSCustID, CustID, RoleID, SubscriberID, SiteID
+INSERT INTO CTS_Adhoc.zz186086_CTSCustomer (CTSCustID, CustID, CustSubID, RoleID, SubscriberID, SiteID, ToSubscriberID)
+SELECT CTSCustID, CustID, CustSubID, RoleID, SubscriberID, SiteID
 	, 13658 AS ToSubscriberID
 FROM CTS_DataCenter.CTSCustomer AS cus
 WHERE SiteID = 547 AND SubscriberID = 130;
 
-INSERT INTO CTS_Adhoc.zz186086_CTSCustomer (CTSCustID, CustID, RoleID, SubscriberID, SiteID, ToSubscriberID)
-SELECT CTSCustID, CustID, RoleID, SubscriberID, SiteID
+INSERT INTO CTS_Adhoc.zz186086_CTSCustomer (CTSCustID, CustID, CustSubID, RoleID, SubscriberID, SiteID, ToSubscriberID)
+SELECT CTSCustID, CustID, CustSubID, RoleID, SubscriberID, SiteID
 	, 13659 AS ToSubscriberID
 FROM CTS_DataCenter.CTSCustomer AS cus
 WHERE SiteID = 547 AND SubscriberID = 2;
@@ -119,20 +120,12 @@ UPDATE CTS_DataCenter.CTSCustomerClassificationVVIP AS t
 	INNER JOIN CTS_Adhoc.zz186086_CTSCustomer AS s ON s.CTSCustID = t.CTSCustID
 SET t.SubscriberID = s.ToSubscriberID;
 
-#====================2.1.9 UPDATE Subscriber for CTSCustomerClassificationVVIPQueue===================================
-SELECT COUNT(1) FROM CTS_DataCenter.CTSCustomerClassificationVVIPQueue AS t INNER JOIN CTS_Adhoc.zz186086_CTSCustomer AS s WHERE s.CTSCustID = t.CTSCustID;
-SELECT * FROM CTS_DataCenter.CTSCustomerClassificationVVIPQueue AS t INNER JOIN CTS_Adhoc.zz186086_CTSCustomer AS s WHERE s.CTSCustID = t.CTSCustID;
-
-UPDATE CTS_DataCenter.CTSCustomerClassificationVVIPQueue AS t 
-	INNER JOIN CTS_Adhoc.zz186086_CTSCustomer AS s ON s.CTSCustID = t.CTSCustID
-SET t.SubscriberID = s.ToSubscriberID;
-
 #====================2.1.10 UPDATE Subscriber for CTSCustomerDuplicate===================================
-SELECT COUNT(1) FROM CTS_DataCenter.CTSCustomerDuplicate AS t INNER JOIN CTS_Adhoc.zz186086_CTSCustomer AS s WHERE s.CTSCustID = t.CTSCustID;
-SELECT * FROM CTS_DataCenter.CTSCustomerDuplicate AS t INNER JOIN CTS_Adhoc.zz186086_CTSCustomer AS s WHERE s.CTSCustID = t.CTSCustID;
+SELECT COUNT(1) FROM CTS_DataCenter.CTSCustomerDuplicate AS t INNER JOIN CTS_Adhoc.zz186086_CTSCustomer AS s WHERE s.CustID = t.CustID AND s.CustSubID = t.CustSubID;
+SELECT * FROM CTS_DataCenter.CTSCustomerDuplicate AS t INNER JOIN CTS_Adhoc.zz186086_CTSCustomer AS s WHERE s.CustID = t.CustID AND s.CustSubID = t.CustSubID;
 
 UPDATE CTS_DataCenter.CTSCustomerDuplicate AS t 
-	INNER JOIN CTS_Adhoc.zz186086_CTSCustomer AS s ON s.CTSCustID = t.CTSCustID    
+	INNER JOIN CTS_Adhoc.zz186086_CTSCustomer AS s ON s.CustID = t.CustID AND s.CustSubID = t.CustSubID    
 SET t.SubscriberID = s.ToSubscriberID;
 
 #====================2.1.11 UPDATE Subscriber for CustDCSAccount===================================
@@ -250,3 +243,8 @@ SELECT COUNT(1) FROM DCS_DataCenter.`Account` WHERE SubscriberID IN (13658, 1365
 UPDATE DCS_DataCenter.`Account` AS acc
 SET acc.IsCTSTransformed = 0
 WHERE SubscriberID IN (13658, 13659) AND IsCTSTransformed = -1;
+
+#=================4. DROP ===========================================
+DROP PROCEDURE CTS_DC_CustClassification_RemoveVVIP_xtest;
+DROP PROCEDURE CTS_DC_CustClassification_RemoveVVIP;
+DROP TABLE CTSCustomerClassificationVVIPQueue;
