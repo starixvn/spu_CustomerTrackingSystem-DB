@@ -8,17 +8,17 @@ CREATE DEFINER=`AIMLOwner`@`%` PROCEDURE `SPU_AIML_OCRD_GetMatchByCust`(
     SQL SECURITY INVOKER
 sp:BEGIN  
 	/*  
-		Created:	20220404@Casey.Huynh
+		Created:	20230404@Casey.Huynh
 		Task:		GET OCRD Match of Customer
 		DB:			CTS_DataCenter
         
 		Revisions:
-			- 20230313@Casey.Huynh: Created [Redmine ID: #184791]
+			- 20230404@Casey.Huynh: Created [Redmine ID: #185777]
 
 		Param's Explanation (filtered by): 
         
         Example:
-			CALL SPU_AIML_OCRD_GetMatchByCust(@ip_CustID:=933725);
+			CALL SPU_AIML_OCRD_GetMatchByCust(@ip_CustID:=2211693);
 	*/   
     DECLARE CONST_PERIODRANGETYPE_OCRD INT DEFAULT 200;
     

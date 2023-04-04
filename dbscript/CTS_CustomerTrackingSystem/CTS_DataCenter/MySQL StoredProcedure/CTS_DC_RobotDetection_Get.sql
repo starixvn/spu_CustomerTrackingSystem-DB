@@ -20,36 +20,37 @@ BEGIN
 			- 20221027@Long.Luu: 		Created [Redmine ID: #179498]
 			- 20221027@Long.Luu: 		Support SCE Robots [Redmine ID: #179498]
 			- 20230315@Victoria.Le:		Add Robot Imperva [Redmine ID: #184773]
-            
+            - 20230404@Casey.Huynh:		Return RobotDetection.PeriodRangeName for PeriodRangeType = 200 [Redmine ID: #185777]
 		Example:
-			call CTS_DataCenter.CTS_DC_RobotDetection_Get (123,@a,@b);  select @a,@b;
+			call CTS_DataCenter.CTS_DC_RobotDetection_Get (2211693,@a,@b);  select @a,@b;
 	*/    
 	
-	SELECT 	MIN(CreatedDate), MAX(LastModifiedDate)
+	SELECT 	MIN(rd.CreatedDate), MAX(rd.LastModifiedDate)
     INTO op_FirstRobotDate, op_LastRobotDate
-    FROM RobotDetection
-    WHERE CustID = ip_CustID;
+    FROM CTS_DataCenter.RobotDetection AS rd
+    WHERE rd.CustID = ip_CustID;
     
-    SELECT 	CustID
-		,	PeriodRangeType
+    SELECT 	rd.CustID
+		,	rd.PeriodRangeType
 		,	CASE 
-				WHEN PeriodRangeType = 1 THEN 'Tickets with Time Interval <= 1s'
-				WHEN PeriodRangeType = 3 THEN 'Tickets with 1s < Time Interval < 10s'
-				WHEN PeriodRangeType = 5 THEN 'Tickets with 10s <= Time Interval < 20s'
-				WHEN PeriodRangeType = 10 THEN 'Tickets with Time Interval >= 45s'
-				WHEN PeriodRangeType = 20 THEN 'Unconsecutive Tickets with Time Deviation < 2s'
-				WHEN PeriodRangeType = 40 THEN 'Consecutive Tickets with Time Deviation < 2s'                
-				WHEN PeriodRangeType = 100 THEN 'More than 5/30 Days with Consecutive Tickets > 24 hours'
-				WHEN PeriodRangeType = 101 THEN 'Consecutive Tickets > 24 Hours and High Ugly Stake Tickets'
+				WHEN rd.PeriodRangeType = 1 THEN 'Tickets with Time Interval <= 1s'
+				WHEN rd.PeriodRangeType = 3 THEN 'Tickets with 1s < Time Interval < 10s'
+				WHEN rd.PeriodRangeType = 5 THEN 'Tickets with 10s <= Time Interval < 20s'
+				WHEN rd.PeriodRangeType = 10 THEN 'Tickets with Time Interval >= 45s'
+				WHEN rd.PeriodRangeType = 20 THEN 'Unconsecutive Tickets with Time Deviation < 2s'
+				WHEN rd.PeriodRangeType = 40 THEN 'Consecutive Tickets with Time Deviation < 2s'                
+				WHEN rd.PeriodRangeType = 100 THEN 'More than 5/30 Days with Consecutive Tickets > 24 hours'
+				WHEN rd.PeriodRangeType = 101 THEN 'Consecutive Tickets > 24 Hours and High Ugly Stake Tickets'
+                WHEN rd.PeriodRangeType = 200 THEN 'Consecutive Tickets per Match <= 2 mins and Stake per Ticket < 30 RM'
 			END AS PeriodRangeName
-    FROM RobotDetection
-    WHERE CustID = ip_CustID;
+    FROM CTS_DataCenter.RobotDetection AS rd
+    WHERE rd.CustID = ip_CustID;
 	
-	SELECT 	CustID
-		,	CreateTime
-		,	Platform
-	FROM RobotImperva
-	WHERE CustID = ip_CustID;
+	SELECT 	ri.CustID
+		,	ri.CreateTime
+		,	ri.Platform
+	FROM CTS_DataCenter.RobotImperva AS ri
+	WHERE ri.CustID = ip_CustID;
     
 END$$	
 DELIMITER ;

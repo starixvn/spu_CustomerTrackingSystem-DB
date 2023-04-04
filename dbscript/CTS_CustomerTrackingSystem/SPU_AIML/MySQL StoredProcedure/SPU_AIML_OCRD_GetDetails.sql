@@ -1,25 +1,25 @@
 
-DROP PROCEDURE IF EXISTS `SPU_AIML_OCRD_GetCustMatchDetails`;
+DROP PROCEDURE IF EXISTS `SPU_AIML_OCRD_GetDetails`;
 
 DELIMITER $$
-CREATE DEFINER=`AIMLOwner`@`%` PROCEDURE `SPU_AIML_OCRD_GetCustMatchDetails`(
+CREATE DEFINER=`AIMLOwner`@`%` PROCEDURE `SPU_AIML_OCRD_GetDetails`(
 		IN 	ip_CustID	BIGINT
 	,	IN 	ip_MatchID	BIGINT
 )
     SQL SECURITY INVOKER
 sp:BEGIN  
 	/*  
-		Created:	20220404@Casey.Huynh
+		Created:	20230404@Casey.Huynh
 		Task:		GET OCRD Match of Customer
 		DB:			CTS_DataCenter
         
 		Revisions:
-			- 20230313@Casey.Huynh: Created [Redmine ID: #184791]
+			- 20230404@Casey.Huynh: Created [Redmine ID: #185777]
 
 		Param's Explanation (filtered by): 
         
         Example:
-			CALL SPU_AIML_OCRD_GetCustMatchDetails(@ip_CustID:=933725,@ip_MatchID:=64841081);
+			CALL SPU_AIML_OCRD_GetDetails_xtest(@ip_CustID:=2211693, @ip_MatchID:=70087424);
 	*/   
     DECLARE CONST_PERIODRANGETYPE_OCRD INT DEFAULT 200;
     
