@@ -28,6 +28,7 @@ AS
 		- 20220325@Long.Luu: Update TicketCount rescan for Normal Member from 100 to 20 [Redmine ID: #170465]
 		- 20221006@Jonas.Huynh: New Rule for General Customer Classifiation [Redmine ID: #178022]
 		- 20221125@Jonas.Huynh: Combine Realtime Flow of General CC and By Sport [Redmine ID: #180805]
+		- 20230403@Jonas.Huynh: Enhance BetCount logic for Normal & Good Member [Redmine ID: #185633]
 
 	Param's Explanation:
 */
@@ -142,30 +143,16 @@ BEGIN
 	SELECT CustId, @CurrentDate, @CurrentDateTime, @FUNCTIONID, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId, 1
 	FROM #tmpCustomerAccummulatedInfo;
 
-	-- #4: Insert Accounts's BetCount
-	INSERT INTO dbo.CustomerClassification_BetCount(CustId, SportId, BetCount)
-	SELECT c.CustId, @GENERAL_SPORTID, 0
-	FROM #tmpCustomers AS c WITH(NOLOCK)
-		LEFT JOIN dbo.CustomerClassification_BetCount AS v WITH(NOLOCK) ON c.CustId = v.CustId
-	WHERE c.CurrentCategoryId IN (@CATEGORY_NORMALMEMBER, @CATEGORY_GOODMEMBER)
-		AND v.CustId IS NULL;
-
-	--#5: Remove Accounts that Ticket Count has not reach the schedule
-	---- Remove Accounts less than 100 tickets compared to last scan for VIP
+	-- #4: Remove Accounts that settle ticket Count has not reach the schedule
+	---- less than 100 settle tickets compared to last scan for Good Member
+	---- less than 20 settle tickets compared to last scan for Normal Member
 	DELETE a WITH(ROWLOCK)
 	FROM #tmpCustomerAccummulatedInfo AS a
-		LEFT JOIN dbo.CustomerClassification_BetCount AS v WITH(NOLOCK) ON a.CustId = v.CustId
-	WHERE a.CurrentCategoryId IN (@CATEGORY_GOODMEMBER)
-		AND (v.CustId IS NOT NULL AND (a.BetCount - v.BetCount < 100));
-
-	---- Remove Accounts less than 20 tickets compared to last scan for Normal Member
-	DELETE a WITH(ROWLOCK)
-	FROM #tmpCustomerAccummulatedInfo AS a
-		LEFT JOIN dbo.CustomerClassification_BetCount AS v WITH(NOLOCK) ON a.CustId = v.CustId
-	WHERE a.CurrentCategoryId IN (@CATEGORY_NORMALMEMBER)
-		AND (v.CustId IS NOT NULL AND (a.BetCount - v.BetCount < 20));
+		INNER JOIN dbo.CustomerClassification_BetCount AS b WITH(NOLOCK) ON a.CustId = b.CustId
+	WHERE  (a.CurrentCategoryId = @CATEGORY_GOODMEMBER AND a.BetCount - b.BetCount < 100)
+		OR (a.CurrentCategoryId = @CATEGORY_NORMALMEMBER AND a.BetCount - b.BetCount < 20);
 	
-	-- #6: Classify classification by general rule
+	-- #5: Classify classification by general rule
 	INSERT INTO #tmpResultData(CustId, CategoryId)
 	SELECT  CustId
 		,	CategoryId
@@ -189,7 +176,7 @@ BEGIN
 		) as b
 	 WHERE b.RowNum = 1;
 
-	 --#7: Insert to CustomerClassification
+	 --#6: Insert to CustomerClassification
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT	a.CustId
 		,	@GENERAL_SPORTID
@@ -203,17 +190,23 @@ BEGIN
 	FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 	    LEFT JOIN #tmpResultData AS r WITH(NOLOCK) ON a.CustId = r.CustId
 
-	-- #8: Update last scanned ticket count 
-	UPDATE v WITH(ROWLOCK, UPDLOCK)
-	SET v.BetCount = CASE 
-						WHEN a.CurrentCategoryId IN (@CATEGORY_GOODMEMBER) 
-							THEN (a.BetCount - (a.BetCount % 100))
-						WHEN a.CurrentCategoryId IN (@CATEGORY_NORMALMEMBER) 
-							THEN (a.BetCount - (a.BetCount % 20))
-					END
-		,	v.LastScannedDate = @CurrentDateTime
+	-- #7: Update/Insert last settle betcounts
+	UPDATE b WITH(ROWLOCK, UPDLOCK)
+	SET		b.BetCount = a.BetCount
+		,	b.LastScannedDate = @CurrentDateTime
 	FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
-		INNER JOIN dbo.CustomerClassification_BetCount AS v ON a.CustId = v.CustId;
+		INNER JOIN dbo.CustomerClassification_BetCount AS b ON b.CustId = a.CustId
+	WHERE a.CurrentCategoryId IN (@CATEGORY_NORMALMEMBER, @CATEGORY_GOODMEMBER);
+
+	INSERT INTO dbo.CustomerClassification_BetCount(CustId, SportId, BetCount)
+	SELECT a.CustId, @GENERAL_SPORTID, a.BetCount
+	FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
+	WHERE a.CurrentCategoryId IN (@CATEGORY_NORMALMEMBER, @CATEGORY_GOODMEMBER)
+		AND NOT EXISTS 
+		( 
+			SELECT a.CustId FROM #tmpCustomerAccummulatedInfo AS a
+			INNER JOIN dbo.CustomerClassification_BetCount AS b WITH(NOLOCK) ON b.CustId = a.CustId
+		);
 
 	DROP TABLE #tmpCustomerAccummulatedInfo;
 	DROP TABLE #tmpCustomers;
