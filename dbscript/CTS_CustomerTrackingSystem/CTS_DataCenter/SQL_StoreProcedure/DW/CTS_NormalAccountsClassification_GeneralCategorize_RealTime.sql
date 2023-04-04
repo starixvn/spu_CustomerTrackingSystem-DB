@@ -28,9 +28,13 @@ AS
 		- 20220325@Long.Luu: Update TicketCount rescan for Normal Member from 100 to 20 [Redmine ID: #170465]
 		- 20221006@Jonas.Huynh: New Rule for General Customer Classifiation [Redmine ID: #178022]
 		- 20221125@Jonas.Huynh: Combine Realtime Flow of General CC and By Sport [Redmine ID: #180805]
-		- 20230403@Jonas.Huynh: Enhance BetCount logic for Normal & Good Member [Redmine ID: #185633]
+		- 20230403@Jonas.Huynh: Modify betcount schedule for Normal & Good Member [Redmine ID: #185633]
 
 	Param's Explanation:
+			@CustomersXML = N'<Root>
+										<r CustId="4345542" CategoryId ="201"/>
+										<r CustId="4345541" CategoryId ="201"/>
+								 </Root>';
 */
 BEGIN
 	
@@ -63,16 +67,16 @@ BEGIN
 		DROP TABLE	#tmpCustomerAccummulatedInfo;
 
 	CREATE TABLE #tmpCustomerAccummulatedInfo(
-		[CustId]			INT NOT NULL,
-		[IsSpecialSite]		BIT DEFAULT 0,
-		[IsDeposit]			BIT DEFAULT 0,
+		[CustId]			INT				NOT NULL,
+		[IsSpecialSite]		BIT				DEFAULT 0,
+		[IsDeposit]			BIT				DEFAULT 0,
 		[SRecommend]		INT,
-		[TurnoverRM]		DECIMAL(19, 4) NULL,
-		[WinlossRM]			DECIMAL(19, 4) NULL,
-		[Margin]			DECIMAL(19, 4) NULL,
-		[BetCount]			BIGINT NULL,
-		[ActiveDays]		INT NULL,
-		[CurrentCategoryId]	SMALLINT NULL
+		[TurnoverRM]		DECIMAL(19, 4)	NULL,
+		[WinlossRM]			DECIMAL(19, 4)	NULL,
+		[Margin]			DECIMAL(19, 4)	NULL,
+		[BetCount]			BIGINT			NULL,
+		[ActiveDays]		INT				NULL,
+		[CurrentCategoryId]	SMALLINT		NULL
 	);
 
 	CREATE CLUSTERED INDEX CIX_tmpCustomerAccummulatedInfo_CustId ON #tmpCustomerAccummulatedInfo(
@@ -92,9 +96,19 @@ BEGIN
 	DROP TABLE	#tmpResultData;
 
 	CREATE TABLE #tmpResultData(
-		[CustId]			INT NOT NULL,
-		[CategoryId]		SMALLINT NOT NULL,
+		[CustId]			INT				NOT NULL,
+		[CategoryId]		SMALLINT		NOT NULL,
 		PRIMARY KEY CLUSTERED ([CustId])
+	);
+
+	IF	OBJECT_ID('tempdb..#tmpBetCount') IS NOT NULL
+	DROP TABLE	#tmpBetCount;
+
+	CREATE TABLE #tmpBetCount(
+		CustId					INT			NOT NULL,
+		CategoryId				SMALLINT	NOT NULL,
+		BetCount				BIGINT		NULL
+		PRIMARY KEY CLUSTERED (CustId)
 	);
 
 	-- #1: Filter Customers
@@ -178,6 +192,7 @@ BEGIN
 
 	 --#6: Insert to CustomerClassification
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
+	OUTPUT INSERTED.CustId, INSERTED.CategoryId, INSERTED.BetCount INTO #tmpBetCount  
 	SELECT	a.CustId
 		,	@GENERAL_SPORTID
 		,	CASE WHEN r.CategoryId IS NULL THEN a.CurrentCategoryId ELSE r.CategoryId END
@@ -190,25 +205,11 @@ BEGIN
 	FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 	    LEFT JOIN #tmpResultData AS r WITH(NOLOCK) ON a.CustId = r.CustId
 
-	-- #7: Update/Insert last settle betcounts
-	UPDATE b WITH(ROWLOCK, UPDLOCK)
-	SET		b.BetCount = a.BetCount
-		,	b.LastScannedDate = @CurrentDateTime
-	FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
-		INNER JOIN dbo.CustomerClassification_BetCount AS b ON b.CustId = a.CustId
-	WHERE a.CurrentCategoryId IN (@CATEGORY_NORMALMEMBER, @CATEGORY_GOODMEMBER);
-
-	INSERT INTO dbo.CustomerClassification_BetCount(CustId, SportId, BetCount)
-	SELECT a.CustId, @GENERAL_SPORTID, a.BetCount
-	FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
-	WHERE a.CurrentCategoryId IN (@CATEGORY_NORMALMEMBER, @CATEGORY_GOODMEMBER)
-		AND NOT EXISTS 
-		( 
-			SELECT a.CustId FROM #tmpCustomerAccummulatedInfo AS a
-			INNER JOIN dbo.CustomerClassification_BetCount AS b WITH(NOLOCK) ON b.CustId = a.CustId
-		);
+	-- #7: Update last settle betcounts
+	EXEC dbo.CTS_NormalAccountsClassification_BetCount_Update @CurrentDateTime = @CurrentDateTime, @IsGeneralFlow = 1;
 
 	DROP TABLE #tmpCustomerAccummulatedInfo;
 	DROP TABLE #tmpCustomers;
 	DROP TABLE #tmpResultData;
+	DROP TABLE #tmpBetCount;
 END;

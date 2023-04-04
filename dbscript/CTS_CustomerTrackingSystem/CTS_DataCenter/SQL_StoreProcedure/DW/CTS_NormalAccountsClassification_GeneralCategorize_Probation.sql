@@ -5,7 +5,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-ALTER PROCEDURE [dbo].[CTS_NormalAccountsClassification_Probation]
+CREATE PROCEDURE [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_Probation]
 		@CustomersXML			XML
 AS
 /*
@@ -27,7 +27,8 @@ AS
 		- 20220222@Long.Luu: Remove 10k Probation rule for Credit [Redmine ID: #168988]
         - 20221006@Jonas.Huynh: New Rule for General Customer Classifiation [Redmine ID: #178022]
 		- 20221118@Jonas.Huynh: Update parameter of DW SP GetCustAccumulatedInfo [Redmine ID: #179500]
-
+		- 20230403@Jonas.Huynh: Modify betcount schedule for Normal & Good Member [Redmine ID: #185633]
+		
 	Param's Explanation:
 
 	Example:
@@ -77,15 +78,15 @@ BEGIN
 	CREATE TABLE #tmpCustomerAccummulatedInfo(
 		CustId				INT				NOT NULL,
 		CurrentCategoryId	SMALLINT		NULL,
-		IsSpecialSite		BIT DEFAULT 0,
-		IsDeposit			BIT DEFAULT 0,
+		IsSpecialSite		BIT				DEFAULT 0,
+		IsDeposit			BIT				DEFAULT 0,
 		SRecommend			INT,
 		TurnoverRM			DECIMAL(19, 4)	NULL,
 		WinlossRM			DECIMAL(19, 4)	NULL,
 		Margin				DECIMAL(19, 4)	NULL,
 		BetCount			BIGINT			NULL,
 		ActiveDays			INT				NULL,	
-		IsProbationLastDay	BIT DEFAULT 0,
+		IsProbationLastDay	BIT				DEFAULT 0,
 	);
 	
 	CREATE CLUSTERED INDEX CIX_tmpCustomerAccummulatedInfo_CustId ON #tmpCustomerAccummulatedInfo(
@@ -124,11 +125,21 @@ BEGIN
 	DROP TABLE	#tmpResultData;
 
 	CREATE TABLE #tmpResultData(
-		[CustId]				INT NOT NULL,
-		[CategoryId]			SMALLINT NOT NULL,
-		[IsProbationLastDay]	BIT DEFAULT 0,
-		[IsPassed]				BIT DEFAULT 0
+		[CustId]				INT			NOT NULL,
+		[CategoryId]			SMALLINT	NOT NULL,
+		[IsProbationLastDay]	BIT			DEFAULT 0,
+		[IsPassed]				BIT			DEFAULT 0
 		PRIMARY KEY CLUSTERED ([CustId])
+	);
+
+	IF	OBJECT_ID('tempdb..#tmpBetCount') IS NOT NULL
+	DROP TABLE	#tmpBetCount;
+
+	CREATE TABLE #tmpBetCount(
+		CustId					INT			NOT NULL,
+		CategoryId				SMALLINT	NOT NULL,
+		BetCount				BIGINT		NULL
+		PRIMARY KEY CLUSTERED (CustId)
 	);
 
 	--#1: Filter customers info
@@ -173,7 +184,7 @@ BEGIN
 	FROM #tmpRawData AS r WITH(NOLOCK)
 	GROUP BY r.CustId;
 
-	---- Log Data
+	--#6: Log Data
 	INSERT INTO dbo.CustomerClassification_InputLog(CustId, CreatedDate, CreatedTime, FunctionId, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId, IsActive)
 	SELECT CustId, @CurrentDate, @CurrentDateTime, @FUNCTIONID, TurnoverRM, WinlossRM, BetCount, ActiveDays, CurrentCategoryId, 1
 	FROM #tmpCustomerAccummulatedInfo;
@@ -183,7 +194,7 @@ BEGIN
 	FROM #tmpActiveMember 
 	WHERE IsActive = 0;
 
-	--#6 Get cust info
+	--#7: Get cust info
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
 	SET    a.SRecommend = c.srecommend
 	   ,   a.IsSpecialSite = CASE WHEN c.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') THEN 1 ELSE 0 END
@@ -200,7 +211,7 @@ BEGIN
 	FROM #tmpCustomerAccummulatedInfo AS a
 		INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.custid;
 
-	--#7: Classify classification by general rule
+	--#8: Classify classification by general rule
 	INSERT INTO #tmpResultData(CustId, CategoryId, IsProbationLastDay, IsPassed)
 	SELECT  CustId
 		,	CategoryId
@@ -224,8 +235,9 @@ BEGIN
 		) as b
 	 WHERE b.RowNum = 1;
 
-	 --#8: Insert to CustomerClassification
+	 --#9.1: Insert to CustomerClassification
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
+	OUTPUT INSERTED.CustId, INSERTED.CategoryId, INSERTED.BetCount INTO #tmpBetCount  
 	SELECT	a.CustId
 		,	@GENERAL_SPORTID
 		,	CASE WHEN r.CategoryId IS NULL THEN a.CurrentCategoryId ELSE r.CategoryId END
@@ -238,7 +250,7 @@ BEGIN
 	FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 	    LEFT JOIN #tmpResultData AS r WITH(NOLOCK) ON a.CustId = r.CustId
 
-	---- Insert inactive customers
+	--#9.2: Insert inactive customers
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT  CustId
 		,  @GENERAL_SPORTID
@@ -252,7 +264,10 @@ BEGIN
 	FROM #tmpActiveMember
 	WHERE IsActive = 0;
 	
-	--#9: Return results
+	--#10: Update/Insert last settle betcounts
+	EXEC dbo.CTS_NormalAccountsClassification_BetCount_Update @CurrentDateTime = @CurrentDateTime, @IsGeneralFlow = 1;
+
+	--#11: Return results
 	SELECT	DISTINCT c.CustId	AS 'CustId'
 		,	CASE WHEN (r.CategoryId IS NOT NULL) THEN 1 ELSE 0 END	AS 'IsPassed'
 	FROM #tmpCustomers as c WITH(NOLOCK)
@@ -263,4 +278,11 @@ BEGIN
 	DROP TABLE #tmpCustomers;
 	DROP TABLE #tmpResultData;
 	DROP TABLE #tmpActiveMember;
+	DROP TABLE #tmpBetCount;
 END;
+GO
+
+GRANT EXECUTE ON [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_Probation] TO [bodbSPUNet]
+GO
+GRANT VIEW DEFINITION ON [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_Probation] TO [bodbSPUNet]
+GO
