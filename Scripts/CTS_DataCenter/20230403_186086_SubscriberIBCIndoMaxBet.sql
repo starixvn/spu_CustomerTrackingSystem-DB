@@ -26,7 +26,6 @@ SET SubscriberID = 13658
 WHERE SiteName = '76666B' AND RoleMapping = 1;
 
 SELECT * FROM CTS_DataCenter.MappingSubscriberSite WHERE SubscriberName IN ( 'IBCIndo', 'AlphaIBCIndo');
-#====================================================================================================================================================
 
 #======================================2. CORRECT SubscriberID FOR '76666B' Customer======================================
 
@@ -37,7 +36,6 @@ DROP TABLE IF EXISTS zz186086_CTSCustomer;
 CREATE TABLE zz186086_CTSCustomer(
 		CTSCustID BIGINT PRIMARY KEY
 	,	CustID BIGINT
-    ,	CustSubID BIGINT
     ,	RoleID INT
     ,	SubscriberID INT
     ,	SiteID INT
