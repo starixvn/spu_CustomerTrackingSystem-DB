@@ -1,7 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
 /*
 Creator:	202304035@Casey.Huynh
-Task:	 	Update Setting mapping sub-site and correct data
+Task:	 	Update Setting mapping sub-site and correct data for Member '76666B' only
 Server:  	Master
 DBName:		CTS_DataCenter
 
@@ -14,18 +14,12 @@ USE CTS_DataCenter;
 
 #==================================1. UPDATE TABLE MappingSubscriberSite=============================================================================
 UPDATE CTS_DataCenter.MappingSubscriberSite 
-SET SubscriberID = 13659
-	,	SubscriberName = 'AlphaIBCIndo'
-    ,	Comments = CONCAT(current_date(),'#186086')
-WHERE SiteName = '76666B' AND RoleMapping = 2;
-
-UPDATE CTS_DataCenter.MappingSubscriberSite 
 SET SubscriberID = 13658
 	,	SubscriberName = 'IBCIndo'
     ,	Comments = CONCAT(current_date(),'#186086')
 WHERE SiteName = '76666B' AND RoleMapping = 1;
 
-SELECT * FROM CTS_DataCenter.MappingSubscriberSite WHERE SubscriberName IN ( 'IBCIndo', 'AlphaIBCIndo');
+SELECT * FROM CTS_DataCenter.MappingSubscriberSite WHERE SubscriberName IN ( 'IBCIndo');
 
 #======================================2. CORRECT SubscriberID FOR '76666B' Customer======================================
 
@@ -50,12 +44,6 @@ SELECT CTSCustID, CustID, CustSubID, RoleID, SubscriberID, SiteID
 	, 13658 AS ToSubscriberID
 FROM CTS_DataCenter.CTSCustomer AS cus
 WHERE SiteID = 547 AND SubscriberID = 130;
-
-INSERT INTO CTS_Adhoc.zz186086_CTSCustomer (CTSCustID, CustID, CustSubID, RoleID, SubscriberID, SiteID, ToSubscriberID)
-SELECT CTSCustID, CustID, CustSubID, RoleID, SubscriberID, SiteID
-	, 13659 AS ToSubscriberID
-FROM CTS_DataCenter.CTSCustomer AS cus
-WHERE SiteID = 547 AND SubscriberID = 2;
 
 SELECT * FROM CTS_Adhoc.zz186086_CTSCustomer;
 
@@ -125,10 +113,6 @@ UPDATE CTS_DataCenter.CTSCustomerDuplicate AS t
 SET t.SubscriberID = 13658
 WHERE Site = '76666B' AND RoleID = 1;
 
-UPDATE CTS_DataCenter.CTSCustomerDuplicate AS t 
-SET t.SubscriberID = 13659
-WHERE Site = '76666B' AND RoleID > 1;
-
 #====================2.1.11 UPDATE Subscriber for CustDCSAccount===================================
 SELECT COUNT(1) FROM CTS_DataCenter.CustDCSAccount AS t INNER JOIN CTS_Adhoc.zz186086_CTSCustomer AS s WHERE s.CTSCustID = t.CTSCustID;
 SELECT * FROM CTS_DataCenter.CustDCSAccount AS t INNER JOIN CTS_Adhoc.zz186086_CTSCustomer AS s WHERE s.CTSCustID = t.CTSCustID;
@@ -189,7 +173,7 @@ DB Name: bodb_Customer
 
 SELECT CustID, RoleID, Site
 FROM bodb_Customer.dbo.Customer_Old 
-WHERE Site = '76666B';
+WHERE Site = '76666B' AND RoleID = 1;
 #======================================================================================
 USE CTS_DataCenter;
 INSERT INTO CTS_Adhoc.zz186086_ArchiveCTSCustomer (CTSCustID, CustID, CustSubID, RoleID, SubscriberID, SiteID, ToSubscriberID)
@@ -199,13 +183,6 @@ FROM CTS_DataCenter.ArchiveCustomer_CTSCustomer AS cus
 	INNER JOIN CTS_Adhoc.zz186086_ArchiveCustMainDB AS arc ON cus.CustID = arc.CustID
 WHERE arc.RoleID = 1;
 
-INSERT INTO CTS_Adhoc.zz186086_ArchiveCTSCustomer (CTSCustID, CustID, CustSubID, RoleID, SubscriberID, SiteID, ToSubscriberID)
-SELECT cus.CTSCustID, cus.CustID, cus.CustSubID, cus.RoleID, cus.SubscriberID, 547 AS SiteID
-	, 13659 AS ToSubscriberID
-FROM CTS_DataCenter.ArchiveCustomer_CTSCustomer AS cus
-	INNER JOIN CTS_Adhoc.zz186086_ArchiveCustMainDB AS arc ON cus.CustID = arc.CustID
-WHERE arc.RoleID > 1;
-
 SELECT * FROM CTS_Adhoc.zz186086_ArchiveCTSCustomer;
 #======================================================================================
 SELECT COUNT(1) FROM CTS_DataCenter.ArchiveCustomer_CTSCustomer AS t INNER JOIN CTS_Adhoc.zz186086_ArchiveCTSCustomer AS s WHERE s.CTSCustID = t.CTSCustID;
@@ -213,13 +190,7 @@ SELECT * FROM CTS_DataCenter.ArchiveCustomer_CTSCustomer AS t INNER JOIN CTS_Adh
 
 UPDATE CTS_DataCenter.ArchiveCustomer_CTSCustomer AS t 
 	INNER JOIN CTS_Adhoc.zz186086_ArchiveCTSCustomer AS s ON s.CTSCustID = t.CTSCustID
-SET t.SubscriberID = 13658
-WHERE s.RoleID = 1;
-
-UPDATE CTS_DataCenter.ArchiveCustomer_CTSCustomer AS t 
-	INNER JOIN CTS_Adhoc.zz186086_ArchiveCTSCustomer AS s ON s.CTSCustID = t.CTSCustID
-SET t.SubscriberID = 13659
-WHERE s.RoleID IN (2,3,4);
+SET t.SubscriberID = 13658;
 
 UPDATE DCS_DataCenter.Account AS acc
 	INNER JOIN CTS_DataCenter.ArchiveCustomer_CTSCustomer AS t ON acc.AccountID = t.AccountID
@@ -239,11 +210,11 @@ SET t.AccountID = acc.AccountID;
 #=**********************************************************************************************************************==#
 #===================3. Re-Transform DCS ===============================================================================
 USE DCS_DataCenter;
-SELECT COUNT(1) FROM DCS_DataCenter.`Account` WHERE SubscriberID IN (13658, 13659) AND IsCTSTransformed = -1;
+SELECT COUNT(1) FROM DCS_DataCenter.`Account` WHERE SubscriberID IN (13658) AND IsCTSTransformed = -1;
 
 UPDATE DCS_DataCenter.`Account` AS acc
 SET acc.IsCTSTransformed = 0
-WHERE SubscriberID IN (13658, 13659) AND IsCTSTransformed = -1;
+WHERE SubscriberID IN (13658) AND IsCTSTransformed = -1;
 
 #=================4. DROP ===========================================
 DROP PROCEDURE CTS_DC_CustClassification_RemoveVVIP_xtest;
