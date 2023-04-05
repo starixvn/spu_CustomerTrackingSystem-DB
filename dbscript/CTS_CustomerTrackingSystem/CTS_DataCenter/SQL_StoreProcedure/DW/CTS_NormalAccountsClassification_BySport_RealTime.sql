@@ -20,6 +20,7 @@ AS
 		- 20221111@Jonas.Huynh: Adjust Eport Rules [Redmine ID: #179501]
 		- 20221125@Jonas.Huynh: Combine Realtime Flow of General CC and By Sport [Redmine ID: #180805]
 		- 20221213@Jonas.Huynh: Support Non-Sport [Redmine ID: #179500]
+		- 20230405@Jonas.Huynh: Modify betcount schedule for Normal & Good Member [Redmine ID: #185633]
 	
 	Param's Explanation:
 				@CustomersXML = N'<Root>
@@ -101,9 +102,20 @@ BEGIN
 
 	CREATE TABLE #tmpResultData(
 		CustId			INT		  NOT NULL,
-		SportId			INT		  NOT NULL,
+		SportId			SMALLINT  NOT NULL,
 		CategoryId		SMALLINT  NOT NULL,
 		PRIMARY KEY CLUSTERED (CustId, SportId)
+	);
+
+	IF	OBJECT_ID('tempdb..#tmpBetCount') IS NOT NULL
+	DROP TABLE	#tmpBetCount;
+
+	CREATE TABLE #tmpBetCount(
+		CustId			INT			NOT NULL,
+		SportId			SMALLINT,
+		CategoryId		SMALLINT	NOT NULL,
+		BetCount		BIGINT		NULL
+		PRIMARY KEY CLUSTERED (CustId)
 	);
 
 	INSERT INTO #tmpCustomers(CustId, SportId, CurrentCategoryId)
@@ -150,40 +162,27 @@ BEGIN
 		INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.CustId AND a.SportId = c.SportId
 		LEFT JOIN bodb02.dbo.Customer AS cu WITH(NOLOCK) ON a.CustId = cu.custid;
 
-	-- Log Input Data
+	-- #3: Log Input Data
 	INSERT INTO dbo.CustomerClassification_BySport_InputLog(CustId, SportId, CreatedDate, CreatedTime, FunctionId, TurnoverRM, WinlossRM, BetCount, CurrentCategoryId, ActiveDays, WinDaysRate)
 	SELECT CustId, SportId, @CurrentDate, @CurrentDateTime, @FUNCTIONID, TurnoverRM, WinlossRM, BetCount, CurrentCategoryId, ActiveDays, WinDaysRate
 	FROM #tmpCustomerAccummulatedInfo;
 
+	-- #4: Get Cust Info
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
 	SET a.IsDeposit = 1
 	FROM #tmpCustomerAccummulatedInfo AS a
 		INNER JOIN bodb02.dbo.Dep_CustSuper AS c WITH(NOLOCK) ON a.SRecommend = c.custid;
 
-	-- #3: Insert Accounts's BetCount
-	INSERT INTO dbo.CustomerClassification_BySport_BetCount(CustId, SportId, BetCount)
-	SELECT c.CustId, c.SportId, 0
-	FROM #tmpCustomers AS c WITH(NOLOCK)
-		LEFT JOIN dbo.CustomerClassification_BySport_BetCount AS v WITH(NOLOCK) ON c.CustId = v.CustId AND c.SportId = v.SportId
-	WHERE c.CurrentCategoryId IN (@CATEGORY_NORMALMEMBER, @CATEGORY_GOODMEMBER) 
-		AND v.CustId IS NULL;
-		
-	-- #4: Remove Accounts that Ticket Count has not reach the schedule
-	-- Remove Accounts less than 100 tickets compared to last scan for GOODMEMBER
+	-- #5: Remove Accounts that settle ticket Count has not reach the schedule
+	---- less than 100 settle tickets compared to last scan for Good Member
+	---- less than 20 settle tickets compared to last scan for Normal Member
 	DELETE a WITH(ROWLOCK)
 	FROM #tmpCustomerAccummulatedInfo AS a
-		LEFT JOIN dbo.CustomerClassification_BySport_BetCount AS v WITH(NOLOCK) ON a.CustId = v.CustId AND a.SportId = v.SportId
-	WHERE a.CurrentCategoryId IN (@CATEGORY_GOODMEMBER)
-		AND (v.CustId IS NOT NULL AND (a.BetCount - v.BetCount < 100));
+		INNER JOIN dbo.CustomerClassification_BySport_BetCount AS b WITH(NOLOCK) ON a.CustId = b.CustId AND a.SportId = b.SportId
+	WHERE  (a.CurrentCategoryId = @CATEGORY_GOODMEMBER AND a.BetCount - b.BetCount < 100)
+		OR (a.CurrentCategoryId = @CATEGORY_NORMALMEMBER AND a.BetCount - b.BetCount < 20);
 
-	-- Remove Accounts less than 20 tickets compared to last scan for Normal Member
-	DELETE a WITH(ROWLOCK)
-	FROM #tmpCustomerAccummulatedInfo AS a
-		LEFT JOIN dbo.CustomerClassification_BySport_BetCount AS v WITH(NOLOCK) ON a.CustId = v.CustId AND a.SportId = v.SportId
-	WHERE a.CurrentCategoryId IN (@CATEGORY_NORMALMEMBER)
-		AND (v.CustId IS NOT NULL AND (a.BetCount - v.BetCount < 20));
-
-	-- #5: Classify NULL, GOOD, NEW, NORMAL Category
+	-- #6: Classify NULL, GOOD, NEW, NORMAL Category
 	INSERT INTO #tmpResultData(CustId, SportId, CategoryId)
 	SELECT  CustId
 		,	SportId
@@ -214,6 +213,7 @@ BEGIN
 	 WHERE b.RowNum = 1;
 
 	INSERT INTO dbo.CustomerClassification_BySport(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
+	OUTPUT INSERTED.CustId, INSERTED.SportId, INSERTED.CategoryId, INSERTED.BetCount INTO #tmpBetCount  
 	SELECT  a.CustId
 		,	a.SportId
 		,	CASE WHEN r.CategoryId IS NULL THEN a.CurrentCategoryId ELSE r.CategoryId END
@@ -226,21 +226,13 @@ BEGIN
 	 FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 	   LEFT JOIN #tmpResultData AS r WITH(NOLOCK) ON a.CustId = r.CustId AND a.SportId = r.SportId
 
-	-- #6: Update last scanned ticket count back to dbo.CustomerClassification_BetCount
-	UPDATE v WITH(ROWLOCK, UPDLOCK)
-	SET v.BetCount = CASE 
-						WHEN a.CurrentCategoryId IN (@CATEGORY_GOODMEMBER) 
-							THEN (a.BetCount - (a.BetCount % 100))
-						WHEN a.CurrentCategoryId IN (@CATEGORY_NORMALMEMBER) 
-							THEN (a.BetCount - (a.BetCount % 20))
-					END
-		,	v.LastScannedDate = @CurrentDateTime
-	FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
-		INNER JOIN dbo.CustomerClassification_BySport_BetCount AS v ON a.CustId = v.CustId AND a.SportId = v.SportId;
-	
+	-- #7: Update last settle betcounts
+	EXEC dbo.CTS_NormalAccountsClassification_BetCount_Update @CurrentDateTime = @CurrentDateTime, @IsGeneralFlow = 0;
+
 	DROP TABLE #tmpCustomerAccummulatedInfo;
 	DROP TABLE #tmpCustomers;
 	DROP TABLE #tmpResultData;
+	DROP TABLE #tmpBetCount;
 END;
 
 GRANT EXECUTE ON [dbo].[CTS_NormalAccountsClassification_BySport_RealTime] TO [bodbSPUNet]

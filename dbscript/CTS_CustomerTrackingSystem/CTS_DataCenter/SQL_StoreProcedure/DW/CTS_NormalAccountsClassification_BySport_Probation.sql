@@ -18,6 +18,7 @@ AS
 		- 20200901@Jonas.Huynh: Created [Redmine ID: #176992]
 		- 20221111@Jonas.Huynh: Adjust Eport Rules [Redmine ID: #179501]
 		- 20221118@Jonas.Huynh: Support Non-Sport [Redmine ID: #179500]
+		- 20230405@Jonas.Huynh: Modify betcount schedule for Normal & Good Member [Redmine ID: #185633]
 
 	Param's Explanation:
 
@@ -147,6 +148,17 @@ BEGIN
 		PRIMARY KEY CLUSTERED (CustId, SportId)
 	);
 	
+	IF	OBJECT_ID('tempdb..#tmpBetCount') IS NOT NULL
+	DROP TABLE	#tmpBetCount;
+
+	CREATE TABLE #tmpBetCount(
+		CustId					INT			NOT NULL,
+		SportId					SMALLINT,
+		CategoryId				SMALLINT	NOT NULL,
+		BetCount				BIGINT		NULL
+		PRIMARY KEY CLUSTERED (CustId)
+	);
+	
 	INSERT INTO #tmpCustomers(CustId, SportId, IsProbationLastDay)
 	SELECT	T.C.value('./@CustId', 'INT')			  AS CustId
 		,	T.C.value('./@SportId', 'SMALLINT')		  AS SportId
@@ -162,7 +174,7 @@ BEGIN
 	INSERT INTO #tmpActiveMember(CustId, IsActive)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @CustIdList, @ResultDataMode = 2, @FromDate = @From30Date, @ToDate = @ToDate;	
 
-	-- #2: Remove account Closed & Disabled accounts & SMA account & Internal Account
+	-- #2.1: Remove account Closed & Disabled accounts & SMA account & Internal Account
 	DELETE r WITH(ROWLOCK)
 	FROM #tmpCustomers AS r
 		INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON r.CustId = c.custid
@@ -171,8 +183,8 @@ BEGIN
 		OR c.mrecommend IN (27899314,11656504,12146012)
 		OR c.recommend IN (52466,5707545,29270764,134456)
 		OR c.username LIKE '%CashOut';
-
-	---- Remove Inactive accounts
+	
+	-- #2.2: Remove Inactive accounts
 	DELETE r WITH(ROWLOCK)
 	FROM #tmpCustomers AS r
 		INNER JOIN #tmpActiveMember AS a WITH(NOLOCK) ON a.CustId = r.CustId
@@ -201,12 +213,12 @@ BEGIN
 	FROM #tmpRawData AS a WITH(NOLOCK)
 		INNER JOIN #tmpCustomers AS c WITH(NOLOCK) ON a.CustId = c.CustId AND a.SportId = c.SportId;
 
-	-- Log Input Data
+	-- #5: Log Input Data
 	INSERT INTO dbo.CustomerClassification_BySport_InputLog(CustId, SportId, CreatedDate, CreatedTime, FunctionId, TurnoverRM, WinlossRM, BetCount, CurrentCategoryId, ActiveDays, WinDaysRate)
 	SELECT CustId, SportId, @CurrentDate, @CurrentDateTime, @FUNCTIONID, TurnoverRM, WinlossRM, BetCount, CurrentCategoryId, ActiveDays, WinDaysRate
 	FROM #tmpCustomerAccummulatedInfo;
 
-	-- Get site info
+	-- #6: Get site info and 
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
 	SET	  a.Site = c.Site
 		, a.SRecommend = c.srecommend
@@ -219,7 +231,7 @@ BEGIN
 	FROM #tmpCustomerAccummulatedInfo AS a
 		LEFT JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON a.CustId = c.custid;
 
-	-- Remove 'Odd Feed Sites'
+	-- #7: Remove 'Odd Feed Sites'
 	DELETE a
 	FROM  #tmpCustomerAccummulatedInfo AS a WITH(ROWLOCK)
 	WHERE (a.Site = 'NextBet' OR a.Site = '9wickets' OR a.Site = '9wsports');
@@ -229,7 +241,7 @@ BEGIN
 	FROM #tmpCustomerAccummulatedInfo AS a
 		INNER JOIN bodb02.dbo.Dep_CustSuper AS c WITH(NOLOCK) ON a.SRecommend = c.custid;	
 
-	-- #7: Classify Probation Category
+	-- #8: Classify Probation Category
 	INSERT INTO #tmpResultData(CustId, SportId, CategoryId)
 	SELECT  CustId
 		,	SportId
@@ -256,6 +268,7 @@ BEGIN
 	 WHERE b.RowNum = 1;
 
 	INSERT INTO dbo.CustomerClassification_BySport(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
+	OUTPUT INSERTED.CustId, INSERTED.SportId, INSERTED.CategoryId, INSERTED.BetCount INTO #tmpBetCount  
 	SELECT  a.CustId
 		,	a.SportId
 		,	CASE WHEN r.CategoryId IS NULL THEN a.CurrentCategoryId ELSE r.CategoryId END
@@ -268,11 +281,15 @@ BEGIN
 	 FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 	   LEFT JOIN #tmpResultData AS r WITH(NOLOCK) ON a.CustId = r.CustId AND a.SportId = r.SportId
 
+	-- #9: Update last settle betcounts
+	EXEC dbo.CTS_NormalAccountsClassification_BetCount_Update @CurrentDateTime = @CurrentDateTime, @IsGeneralFlow = 0;
+
 	DROP TABLE #tmpRawData;
 	DROP TABLE #tmpCustomerAccummulatedInfo;
 	DROP TABLE #tmpCustomers;
 	DROP TABLE #tmpActiveMember;
 	DROP TABLE #tmpResultData;
+	DROP TABLE #tmpBetCount;
 END;
 GO 
 

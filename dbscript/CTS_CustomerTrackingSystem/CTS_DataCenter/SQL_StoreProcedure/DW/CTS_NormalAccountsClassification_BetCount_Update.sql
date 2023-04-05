@@ -44,8 +44,9 @@ BEGIN
 			WHERE a.CategoryId IN (@CATEGORY_NORMALMEMBER, @CATEGORY_GOODMEMBER)
 				AND NOT EXISTS 
 				( 
-					SELECT a.CustId FROM #tmpBetCount AS a
-					INNER JOIN dbo.CustomerClassification_BetCount AS b WITH(NOLOCK) ON b.CustId = a.CustId
+					SELECT a.CustId 
+					FROM #tmpBetCount AS a
+						INNER JOIN dbo.CustomerClassification_BetCount AS b WITH(NOLOCK) ON b.CustId = a.CustId
 				);
 
 			DELETE b WITH(ROWLOCK)
@@ -56,7 +57,29 @@ BEGIN
 		END;
 	ELSE
 		BEGIN
-			select * from #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK);
+			UPDATE b WITH(ROWLOCK, UPDLOCK)
+			SET		b.BetCount = a.BetCount
+				,	b.LastScannedDate = @CurrentDateTime
+			FROM #tmpBetCount AS a WITH(NOLOCK)
+				INNER JOIN dbo.CustomerClassification_BySport_BetCount AS b ON b.CustId = a.CustId AND b.SportId = a.SportId
+			WHERE a.CategoryId IN (@CATEGORY_NORMALMEMBER, @CATEGORY_GOODMEMBER)
+
+			INSERT INTO dbo.CustomerClassification_BySport_BetCount(CustId, SportId, BetCount, LastScannedDate)
+			SELECT a.CustId, a.SportId, a.BetCount, @CurrentDateTime
+			FROM #tmpBetCount AS a WITH(NOLOCK)
+			WHERE a.CategoryId IN (@CATEGORY_NORMALMEMBER, @CATEGORY_GOODMEMBER)
+				AND NOT EXISTS 
+				( 
+					SELECT a.CustId, a.SportId 
+					FROM #tmpBetCount AS a
+						INNER JOIN dbo.CustomerClassification_BetCount AS b WITH(NOLOCK) ON b.CustId = a.CustId AND b.SportId = a.SportId
+				);
+
+			DELETE b WITH(ROWLOCK)
+			FROM #tmpBetCount AS a WITH(NOLOCK) 
+				INNER JOIN dbo.CustomerClassification_BySport_BetCount as b ON b.CustId = a.CustId AND b.SportId = a.SportId
+			WHERE a.CategoryId NOT IN (@CATEGORY_NORMALMEMBER, @CATEGORY_GOODMEMBER)
+				AND b.LastScannedDate >= @CurrentDateTime ;
 		END;
 END;
 GO
