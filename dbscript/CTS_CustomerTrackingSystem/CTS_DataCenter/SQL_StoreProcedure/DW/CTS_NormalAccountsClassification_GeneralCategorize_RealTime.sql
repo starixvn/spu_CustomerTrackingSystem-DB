@@ -96,8 +96,8 @@ BEGIN
 	DROP TABLE	#tmpResultData;
 
 	CREATE TABLE #tmpResultData(
-		[CustId]			INT				NOT NULL,
-		[CategoryId]		SMALLINT		NOT NULL,
+		[CustId]			INT			NOT NULL,
+		[CategoryId]		SMALLINT	NOT NULL,
 		PRIMARY KEY CLUSTERED ([CustId])
 	);
 
@@ -105,9 +105,10 @@ BEGIN
 	DROP TABLE	#tmpBetCount;
 
 	CREATE TABLE #tmpBetCount(
-		CustId					INT			NOT NULL,
-		CategoryId				SMALLINT	NOT NULL,
-		BetCount				BIGINT		NULL
+		CustId				INT			NOT NULL,
+		SportId				SMALLINT,
+		CategoryId			SMALLINT	NOT NULL,
+		BetCount			BIGINT		NULL
 		PRIMARY KEY CLUSTERED (CustId)
 	);
 
@@ -192,7 +193,7 @@ BEGIN
 
 	 --#6: Insert to CustomerClassification
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
-	OUTPUT INSERTED.CustId, INSERTED.CategoryId, INSERTED.BetCount INTO #tmpBetCount  
+	OUTPUT INSERTED.CustId, @GENERAL_SPORTID, INSERTED.CategoryId, INSERTED.BetCount INTO #tmpBetCount  
 	SELECT	a.CustId
 		,	@GENERAL_SPORTID
 		,	CASE WHEN r.CategoryId IS NULL THEN a.CurrentCategoryId ELSE r.CategoryId END

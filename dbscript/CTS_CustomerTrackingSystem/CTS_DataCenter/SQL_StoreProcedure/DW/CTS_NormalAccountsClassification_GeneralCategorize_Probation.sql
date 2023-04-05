@@ -1,4 +1,4 @@
-USE [bodb_VR2Model]
+	USE [bodb_VR2Model]
 GO
 /****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_Probation]    Script Date: 9/6/2022 11:08:23 PM ******/
 SET ANSI_NULLS ON
@@ -137,6 +137,7 @@ BEGIN
 
 	CREATE TABLE #tmpBetCount(
 		CustId					INT			NOT NULL,
+		SportId					SMALLINT,
 		CategoryId				SMALLINT	NOT NULL,
 		BetCount				BIGINT		NULL
 		PRIMARY KEY CLUSTERED (CustId)
@@ -252,7 +253,7 @@ BEGIN
 
 	--#9.2: Insert inactive customers
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
-	OUTPUT INSERTED.CustId, INSERTED.CategoryId, INSERTED.BetCount INTO #tmpBetCount
+	OUTPUT INSERTED.CustId, @GENERAL_SPORTID, INSERTED.CategoryId, INSERTED.BetCount INTO #tmpBetCount
 	SELECT  CustId
 		,  @GENERAL_SPORTID
 	   ,   @CATEGORY_SMARTINACTIVE
