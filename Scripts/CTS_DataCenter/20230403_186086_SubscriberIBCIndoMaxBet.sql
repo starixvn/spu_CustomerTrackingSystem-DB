@@ -35,7 +35,7 @@ CREATE TABLE zz186086_CTSCustomer(
     ,	SubscriberID INT
     ,	SiteID INT
     ,	ToSubscriberID INT
-    ,	INDEX zz186086_CTSCustomer_SubscriberID(SubscriberID)
+    ,	INDEX IX_zz186086_CTSCustomer_SubscriberID(SubscriberID)
 );
 
 USE CTS_DataCenter;
