@@ -4,7 +4,6 @@ DROP PROCEDURE IF EXISTS `DCS_DC_Transaction_GetHistory`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transaction_GetHistory`(
 		IN	ip_DateRange	INT
-    ,	IN	ip_SubscriberId INT
     ,	IN	ip_CTSCustId 	BIGINT    
     ,	IN	ip_Skip			INT
     ,	IN	ip_Take			INT
@@ -40,7 +39,7 @@ proc_label: BEGIN
 	SELECT 	cusAcc.AccountID 
 	FROM	CTS_DataCenter.CustDCSAccount cusAcc 
 	WHERE 	cusAcc.CTSCustID = ip_CTSCustId;
-            
+		
     SET lv_ToDate = CURRENT_DATE();
     SET lv_FromDate = CASE 
 						WHEN ip_DateRange = 1 THEN DATE_ADD(lv_ToDate, INTERVAL -1 DAY)
@@ -77,7 +76,7 @@ proc_label: BEGIN
 			FROM	DCS_DataCenter.Transaction07 trs 
 				LEFT JOIN DCS_DataCenter.UserAgent AS uag ON trs.UserAgentKey = uag.UserAgentKey
 				LEFT JOIN DCS_DataCenter.ActionResult AS ar ON trs.ActionResultID = ar.ActionResultID
-				LEFT JOIN DCS_DataCenter.URL AS ur ON trs.URLID = ur.URLID AND trs.SubscriberID = ur.SubscriberID
+				LEFT JOIN DCS_DataCenter.URL AS ur ON trs.URLID = ur.URLID
 			WHERE trs.AccountID IN (SELECT AccountID FROM Temp_Account)
 				AND trs.CreatedDate BETWEEN lv_FromDate AND lv_ToDate
 			) AS tmp
