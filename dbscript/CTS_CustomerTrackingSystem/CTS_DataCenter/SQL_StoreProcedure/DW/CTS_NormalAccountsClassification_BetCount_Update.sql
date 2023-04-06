@@ -48,12 +48,6 @@ BEGIN
 					FROM #tmpBetCount AS a
 						INNER JOIN dbo.CustomerClassification_BetCount AS b WITH(NOLOCK) ON b.CustId = a.CustId
 				);
-
-			DELETE b WITH(ROWLOCK)
-			FROM #tmpBetCount AS a WITH(NOLOCK) 
-				INNER JOIN dbo.CustomerClassification_BetCount as b ON b.CustId = a.CustId
-			WHERE a.CategoryId NOT IN (@CATEGORY_NORMALMEMBER, @CATEGORY_GOODMEMBER)
-				AND b.LastScannedDate <= @CurrentDateTime ;
 		END;
 	ELSE
 		BEGIN
@@ -74,12 +68,6 @@ BEGIN
 					FROM #tmpBetCount AS a
 						INNER JOIN dbo.CustomerClassification_BetCount AS b WITH(NOLOCK) ON b.CustId = a.CustId AND b.SportId = a.SportId
 				);
-
-			DELETE b WITH(ROWLOCK)
-			FROM #tmpBetCount AS a WITH(NOLOCK) 
-				INNER JOIN dbo.CustomerClassification_BySport_BetCount as b ON b.CustId = a.CustId AND b.SportId = a.SportId
-			WHERE a.CategoryId NOT IN (@CATEGORY_NORMALMEMBER, @CATEGORY_GOODMEMBER)
-				AND b.LastScannedDate <= @CurrentDateTime ;
 		END;
 END;
 GO
