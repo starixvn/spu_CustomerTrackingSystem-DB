@@ -53,7 +53,7 @@ BEGIN
 			FROM #tmpBetCount AS a WITH(NOLOCK) 
 				INNER JOIN dbo.CustomerClassification_BetCount as b ON b.CustId = a.CustId
 			WHERE a.CategoryId NOT IN (@CATEGORY_NORMALMEMBER, @CATEGORY_GOODMEMBER)
-				AND b.LastScannedDate >= @CurrentDateTime ;
+				AND b.LastScannedDate <= @CurrentDateTime ;
 		END;
 	ELSE
 		BEGIN
@@ -79,7 +79,7 @@ BEGIN
 			FROM #tmpBetCount AS a WITH(NOLOCK) 
 				INNER JOIN dbo.CustomerClassification_BySport_BetCount as b ON b.CustId = a.CustId AND b.SportId = a.SportId
 			WHERE a.CategoryId NOT IN (@CATEGORY_NORMALMEMBER, @CATEGORY_GOODMEMBER)
-				AND b.LastScannedDate >= @CurrentDateTime ;
+				AND b.LastScannedDate <= @CurrentDateTime ;
 		END;
 END;
 GO
