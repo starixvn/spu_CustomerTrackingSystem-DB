@@ -40,44 +40,44 @@ BEGIN
     
     /* REMOVE FROM QUEUE  */
     UPDATE Temp_PA AS t
-		INNER JOIN CTSCustomerClassificationQueue AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
+		INNER JOIN CTS_DataCenter.CTSCustomerClassificationQueue AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
 	SET d.IsFromTVS = 0
 	WHERE t.TVSRequestID IS NOT NULL;
         
     DELETE d
     FROM Temp_PA AS t
-		INNER JOIN CTSCustomerClassificationQueue AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
+		INNER JOIN CTS_DataCenter.CTSCustomerClassificationQueue AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
 	WHERE t.TVSRequestID IS NOT NULL
 		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0);
     
     /* REMOVE FROM OLD PA  */
     UPDATE Temp_PA AS t
-		INNER JOIN CTSCustomerClassificationOldCategory AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
+		INNER JOIN CTS_DataCenter.CTSCustomerClassificationOldCategory AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
 	SET d.IsFromTVS = 0
 	WHERE t.TVSRequestID IS NOT NULL;
     
     DELETE d
     FROM Temp_PA AS t
-		INNER JOIN CTSCustomerClassificationOldCategory AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
+		INNER JOIN CTS_DataCenter.CTSCustomerClassificationOldCategory AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
 	WHERE t.TVSRequestID IS NOT NULL
 		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0 AND d.IsFromImperva = 0);
     
     /* REMOVE FROM CLASSIFICATION HISTORY  */    
 	DELETE d
     FROM Temp_PA AS t
-		INNER JOIN CTSCustomerClassification_History AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
 	WHERE t.TVSRequestID IS NOT NULL;
         
     /* REMOVE FROM CLASSIFICATION  */
     INSERT INTO Temp_ExistedEvidence(CTSCustID, EvidenceID_Licensee, EvidenceID_Credit)
     SELECT DISTINCT t.CTSCustID, c.EvidenceID_Licensee, c.EvidenceID_Credit
     FROM Temp_PA AS t
-		INNER JOIN CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
-        INNER JOIN CustomerCategory AS c ON d.CategoryID = c.CategoryID
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
+        INNER JOIN CTS_DataCenter.CustomerCategory AS c ON d.CategoryID = c.CategoryID
 	WHERE t.TVSRequestID IS NOT NULL;    
     
     UPDATE Temp_PA AS t
-		INNER JOIN CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
 	SET 	d.IsFromTVS = 0
 		,	t.WinlossStatus = 	CASE 	
 									WHEN t.WinlossStatus = CONST_WINLOSSSTATUS_KEEP THEN CONST_WINLOSSSTATUS_WINNING
@@ -87,19 +87,19 @@ BEGIN
     
 	DELETE d
     FROM Temp_PA AS t
-		INNER JOIN CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
 	WHERE t.TVSRequestID IS NOT NULL
 		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0 AND d.IsFromImperva = 0);
       
 	/* REMOVE FROM CUSTOMER EVIDENCE  */ 
     DELETE d
     FROM Temp_ExistedEvidence AS t
-		INNER JOIN CustEvidence AS d ON t.CTSCustID = d.CTSCustID 
+		INNER JOIN CTS_DataCenter.CustEvidence AS d ON t.CTSCustID = d.CTSCustID 
 			AND (t.EvidenceID_Credit = d.EvidenceID OR t.EvidenceID_Licensee = d.EvidenceID)
 	WHERE d.Level = 0;    		
 	
     /* REMOVE AFFECTED EVIDENCE  */ 
-    INSERT INTO CustEvidenceAffectedQueueRemove (CTSCustID,EvidenceID,Created)
+    INSERT INTO CTS_DataCenter.CustEvidenceAffectedQueueRemove (CTSCustID,EvidenceID,Created)
 	WITH CTE_data (CTSCustID,EvidenceID) AS 
     (
 		SELECT	t.CTSCustID
@@ -112,7 +112,7 @@ BEGIN
     WHERE EvidenceID IS NOT NULL;
 
 	/* LOG THE VOID REQUEST FOR FURTHER TRACKING */
-	INSERT INTO TVSVoidRequest_History (TVSRequestID,CustIDs,ReasonID,CreatedBy,CreatedDate,IsParlay,SportType,IssueTypeID)
+	INSERT INTO CTS_DataCenter.TVSVoidRequest_History (TVSRequestID,CustIDs,ReasonID,CreatedBy,CreatedDate,IsParlay,SportType,IssueTypeID)
 	SELECT TVSRequestID, GROUP_CONCAT(DISTINCT CustID), ReasonID, CreatedBy, NOW(),IsParlay,SportType,IssueTypeID
 	FROM Temp_PA
 	WHERE IsFromTVS = 1
