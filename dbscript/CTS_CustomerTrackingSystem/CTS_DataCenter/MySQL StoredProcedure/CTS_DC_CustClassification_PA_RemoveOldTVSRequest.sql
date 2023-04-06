@@ -17,6 +17,7 @@ BEGIN
 			- 20220801@Long.Luu: 		Adjust Winloss Status for Old Requests [Redmine ID: #174219]
 			- 20221007@Harvey.Nguyen: 	Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory [Redmine ID: #178022]
 			- 20230315@Victoria.Le:		Add Robot Imperva [Redmine ID: #184773]
+			- 20230404@Victoria.Le		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeID [Redmine ID: #185319] 
             
         Param's Explanation (filtered by):
         
@@ -111,10 +112,11 @@ BEGIN
     WHERE EvidenceID IS NOT NULL;
 
 	/* LOG THE VOID REQUEST FOR FURTHER TRACKING */
-    INSERT INTO TVSVoidRequest_History (TVSRequestID,CustIDs,ReasonID,CreatedBy,CreatedDate)
-    SELECT TVSRequestID, GROUP_CONCAT(DISTINCT CustID), ReasonID, CreatedBy, NOW()
-    FROM Temp_PA
-    GROUP BY TVSRequestID, ReasonID, CreatedBy;
+	INSERT INTO TVSVoidRequest_History (TVSRequestID,CustIDs,ReasonID,CreatedBy,CreatedDate,IsParlay,SportType,IssueTypeID)
+	SELECT TVSRequestID, GROUP_CONCAT(DISTINCT CustID), ReasonID, CreatedBy, NOW(),IsParlay,SportType,IssueTypeID
+	FROM Temp_PA
+	WHERE IsFromTVS = 1
+	GROUP BY TVSRequestID, ReasonID, CreatedBy, IsParlay, SportType, IssueTypeID;
     
 END$$
 DELIMITER ;

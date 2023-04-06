@@ -18,10 +18,12 @@ sp :BEGIN
 		DB:			CTS_DataCenter
 		Original:
 		Revisions:
-			- 20211130@Aries.Nguyen: Created [Redmine: #164079]
-            - 20220408@Casey.Huynh: Return CreatedBy [Redmine: #171223]
-            - 20220426@Casey.Huynh: Add CreatedBy [Redmine ID: #171512]
-            - 20220913@Casey.Huynh: Add CategoryID Filter  [Redmine ID: #176976]
+			- 20211130@Aries.Nguyen: 	Created [Redmine: #164079]
+			- 20220408@Casey.Huynh: 	Return CreatedBy [Redmine: #171223]
+			- 20220426@Casey.Huynh: 	Add CreatedBy [Redmine ID: #171512]
+			- 20220913@Casey.Huynh: 	Add CategoryID Filter  [Redmine ID: #176976]
+			- 20230404@Victoria.Le		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeId [Redmine ID: #185319] 
+
 		Param's Explanation (filtered by):   
         Example: 
 			CALL CTS_DC_ProblemAccountManagement_Get('2022-01-10 00:00:00', '2022-05-10 00:00:00', null,null,null,0); 
@@ -104,6 +106,10 @@ sp :BEGIN
 		,	MIN(class.CreatedDate) AS CreatedDate
         ,	SUBSTRING_INDEX(GROUP_CONCAT(IFNULL(us.UserName, class.CreatedBy) ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS CreatedBy
         ,	SUBSTRING_INDEX(GROUP_CONCAT(class.Remark ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS Remark
+		,	SUBSTRING_INDEX(GROUP_CONCAT(class.TVSRequestID ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS TVSRequestID
+		,	SUBSTRING_INDEX(GROUP_CONCAT(class.IsParlay ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS IsParlay
+		,	SUBSTRING_INDEX(GROUP_CONCAT(class.SportType ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS SportType
+		,	SUBSTRING_INDEX(GROUP_CONCAT(class.IssueTypeID ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS IssueTypeID
 	FROM CTS_DataCenter.CTSCustomerClassification AS class
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON class.CTSCustID = cus.CTSCustID
         STRAIGHT_JOIN CTS_DataCenter.Temp_CustomerCategory AS tmpCat ON class.CategoryID = tmpCat.CategoryID

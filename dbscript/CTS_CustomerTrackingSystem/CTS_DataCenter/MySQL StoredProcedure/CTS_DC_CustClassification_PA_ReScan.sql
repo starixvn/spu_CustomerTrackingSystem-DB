@@ -19,6 +19,7 @@ sp: BEGIN
 			- 20220705@Long.Luu: 		Return IsLicenseeVIP info [Redmine ID: #174219]
             - 20221007@Harvey.Nguyen: 	Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory [Redmine ID: #178022]
 			- 20230315@Victoria.Le:		Add Robot Imperva [Redmine ID: #184773]
+			- 20230404@Victoria.Le		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeId [Redmine ID: #185319] 
 		
         Param's Explanation:
 
@@ -54,7 +55,6 @@ sp: BEGIN
 	CREATE TEMPORARY TABLE Temp_CustCategory (	  
 			CTSCustID			BIGINT UNSIGNED
         ,   CustID				BIGINT UNSIGNED 
-        
         ,	RoleID 				TINYINT 
 		, 	SubscriberID		INT 
         ,	IsLicensee			BIT
@@ -73,9 +73,12 @@ sp: BEGIN
 		
         ,	TVSRequestID 		BIGINT UNSIGNED 
         ,	IsRobot 			BIT DEFAULT 0
-        
+
         ,	LastModifiedDate	DATETIME
 		,	Remark				VARCHAR(500)
+		,	IsParlay 			BIT DEFAULT NULL 
+		,	SportType			SMALLINT DEFAULT NULL 
+		,	IssueTypeID 		TINYINT DEFAULT NULL
 		,	PRIMARY KEY(CustID,CategoryIDSource)
 	);
     
@@ -159,7 +162,8 @@ sp: BEGIN
 						,	LastModifiedDate = CASE WHEN rd.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN rd.LastModifiedDate ELSE Temp_CustCategory.LastModifiedDate END;
 	
      /***********************Check PA from Old table****************************/
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,IsLicenseeVIP,CategoryID,CategoryIDSource,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID,IsRobot)
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,IsLicenseeVIP,CategoryID,CategoryIDSource,CategoryGroup, IsDirect, Remark,IsFromTVS
+										,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID,IsRobot,IsParlay,SportType,IssueTypeID)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
         ,	tmp.RoleID
@@ -179,6 +183,9 @@ sp: BEGIN
 		,	class.LastModifiedDate
         ,	class.TVSRequestID
         ,	CASE WHEN class.CategoryID IN (CONST_CATEGORYID_ROBOT, CONST_CATEGORYID_ROBOTLOSING) THEN 1 ELSE 0 END AS IsRobot
+		,	class.IsParlay
+		,	class.SportType
+		,	class.IssueTypeID
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationOldCategory AS class USE INDEX (PRIMARY) ON class.CustID = tmp.CustID AND class.SportGroupID = CONST_GROUP_PA
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID 
@@ -200,7 +207,8 @@ sp: BEGIN
     WHERE IsDirect = 0;
 	
 	
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,IsLicenseeVIP,CategoryID,CategoryIDSource,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID,IsRobot)
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,IsLicenseeVIP,CategoryID,CategoryIDSource,CategoryGroup, IsDirect, Remark,IsFromTVS
+										,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID,IsRobot,IsParlay,SportType,IssueTypeID)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
         ,	tmp.RoleID
@@ -220,6 +228,9 @@ sp: BEGIN
         ,	class.LastModifiedDate
 		,	class.TVSRequestID
         ,	CASE WHEN class.CategoryID IN (CONST_CATEGORYID_ROBOT, CONST_CATEGORYID_ROBOTLOSING) THEN 1 ELSE 0 END AS IsRobot
+		,	class.IsParlay
+		,	class.SportType
+		,	class.IssueTypeID
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS class USE INDEX (PRIMARY) ON class.CustID = tmp.CustID AND class.SportGroupID = CONST_GROUP_PA AND class.IsDirect = 1
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID 
@@ -229,7 +240,8 @@ sp: BEGIN
                         ,	 Remark = class.Remark;	
 	 
     /***********************Check affected PA from Upline****************************/
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,IsLicenseeVIP,CategoryID,CategoryIDSource,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID)
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,IsLicenseeVIP,CategoryID,CategoryIDSource,CategoryGroup, IsDirect, Remark,IsFromTVS
+										,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID,IsParlay,SportType,IssueTypeID)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
         ,	tmp.RoleID
@@ -248,6 +260,9 @@ sp: BEGIN
         ,	class.IsFromCTS 	
         ,	class.LastModifiedDate
         ,	class.TVSRequestID
+		,	class.IsParlay
+		,	class.SportType
+		,	class.IssueTypeID
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationOldCategory AS class USE INDEX (PRIMARY)  ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = CONST_GROUP_PA AND class.IsDirect = 1
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup NOT IN (CONST_CATEGORYID_ROBOT, CONST_CATEGORYID_ROBOTLOSING)
@@ -257,7 +272,8 @@ sp: BEGIN
 						,	LastModifiedDate = CASE WHEN class.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN class.LastModifiedDate
 													ELSE Temp_CustCategory.LastModifiedDate END;
     
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,IsLicenseeVIP,CategoryID,CategoryIDSource,CategoryGroup, IsDirect, Remark,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID)
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID,CustID,RoleID,SubscriberID,IsLicensee,IsLicenseeVIP,CategoryID,CategoryIDSource,CategoryGroup, IsDirect, Remark,IsFromTVS
+										,IsFromTW,IsFromCTS,LastModifiedDate,TVSRequestID,IsParlay,SportType,IssueTypeID)
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
         ,	tmp.RoleID
@@ -276,6 +292,9 @@ sp: BEGIN
         ,	class.IsFromCTS 	
         ,	class.LastModifiedDate
         ,	class.TVSRequestID
+		,	class.IsParlay
+		,	class.SportType
+		,	class.IssueTypeID
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS class USE INDEX (PRIMARY) ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = CONST_GROUP_PA AND class.IsDirect = 1
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup NOT IN (CONST_CATEGORYID_ROBOT, CONST_CATEGORYID_ROBOTLOSING)
@@ -305,11 +324,13 @@ sp: BEGIN
         ,	IsFromAI	
 		,	IsFromImperva
         ,	TVSRequestID
-        
         ,	IsRobot 			
         
         ,  	LastModifiedDate
-		,	Remark		
+		,	Remark
+		,	IsParlay
+		,	SportType
+		,	IssueTypeID		
     FROM Temp_CustCategory;
  
 END$$

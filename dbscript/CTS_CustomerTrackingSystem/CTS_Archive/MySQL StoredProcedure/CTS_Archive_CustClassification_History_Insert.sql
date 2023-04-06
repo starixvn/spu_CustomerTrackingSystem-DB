@@ -16,6 +16,7 @@ BEGIN
 	Revisions:
 		- 20201006@Aries.Nguyen:	Created  [Redmine ID: #160758] 
 		- 20230315@Victoria.Le:		Add Robot Imperva [Redmine ID: #184773]
+		- 20230404@Victoria.Le		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeId [Redmine ID: #185319] 
 		
 	Param's Explanation (filtered by):
 
@@ -59,6 +60,9 @@ BEGIN
 		,	IsFromCTS 				
 		,	IsFromAI
 		,	IsFromImperva
+		,	IsParlay
+		,	SportType
+		,	IssueTypeID
 	)
 	SELECT	HistoryID
         ,	CustID
@@ -97,6 +101,9 @@ BEGIN
 		,	IsFromCTS 				
 		,	IsFromAI 	
 		,	IsFromImperva
+		,	IsParlay
+		,	SportType
+		,	IssueTypeID
 	FROM JSON_TABLE(
 			ip_HistoryJson,
 			 "$[*]" COLUMNS(
@@ -137,6 +144,9 @@ BEGIN
 			                ,	IsFromCTS 				BOOLEAN 	        PATH "$.IsFromCTS"   
 			                ,	IsFromAI 	            BOOLEAN 	        PATH "$.IsFromAI"  
 							,	IsFromImperva			BOOLEAN 	        PATH "$.IsFromImperva"  
+							,	IsParlay				BOOLEAN				PATH "$.IsParlay"  
+							,	SportType				SMALLINT			PATH "$.SportType"  
+							,	IssueTypeID				TINYINT				PATH "$.IssueTypeID"  
 							)
 		   ) AS  tbl; 
 

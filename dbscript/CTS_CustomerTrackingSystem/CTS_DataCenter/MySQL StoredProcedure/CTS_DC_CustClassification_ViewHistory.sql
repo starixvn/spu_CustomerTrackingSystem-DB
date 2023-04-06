@@ -28,6 +28,7 @@ BEGIN
 			- 20220817@Long.Luu: 		Rearrange CC's IDs [Redmine ID: #175698]
 			- 20220913@Casey.Huynh: 	Update Remark [Redmine ID: #176976]
 			- 20230315@Victoria.Le:		Add Robot Imperva [Redmine ID: #184773]
+			- 20230404@Victoria.Le		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeId [Redmine ID: #185319] 
 			
 			
 		Param's Explanation (filtered by):		
@@ -89,6 +90,9 @@ BEGIN
 						WHEN temp.TargetCC = lv_LicVIPNormal_CC THEN lv_LicVIPNormal_CategoryName 
                         ELSE NULL END) AS LicVIP
             ,	(CASE	WHEN temp.TargetCC = lv_LicBA_CC THEN lv_LicBA_CategoryName ELSE NULL END) AS LicBA
+			,	temp.IsParlay
+			,	temp.SportType
+			,	temp.IssueTypeID
 		FROM 	CTS_DataCenter.CTSCustomerClassification_History AS temp
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS cc1 ON temp.CategoryID = cc1.CategoryID
 			LEFT JOIN CTS_DataCenter.StaticList AS s ON s.ListID = 4 AND temp.SourceTypeID = s.ItemID

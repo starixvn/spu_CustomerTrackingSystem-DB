@@ -38,7 +38,8 @@ sp: BEGIN
 			- 20220713@Casey.Huynh: 		Switching for Licensee VIP & BA Categories [Redmine ID: #174219]
 			- 20221007@Harvey.Nguyen: 		Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory [Redmine ID: #178022]
 			- 20230315@Victoria.Le:			Add Robot Imperva [Redmine ID: #184773]
-            
+			- 20230404@Victoria.Le:			TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeId [Redmine ID: #185319] 
+
 		Param's Explanation:
 			ip_FromAction: From Web(1),From Service VVIPDownLine(2), From Insert NewCustomer(3)
             ip_QueueID: From Web(NULL), From Service(<QueueID>)
@@ -161,6 +162,9 @@ sp: BEGIN
 		,	InsertTime
 		,	TVSRequestID
 		,	IsFromImperva
+		,	IsParlay
+		,	SportType
+		,	IssueTypeID
 		) 
     SELECT	cls.CustID
 		,	cls.CTSCustID
@@ -181,6 +185,9 @@ sp: BEGIN
         ,	CURRENT_TIMESTAMP(3) AS InsertTime
         ,	cls.TVSRequestID
 		,	cls.IsFromImperva
+		,	cls.IsParlay
+		,	cls.SportType
+		,	cls.IssueTypeId
 	FROM CTS_DataCenter.CTSCustomerClassification AS cls
 		INNER JOIN Temp_Customer AS tmpCus ON cls.CustID = tmpCus.CustID AND tmpCus.IsExistVVIP = 0
         INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cls.CategoryID

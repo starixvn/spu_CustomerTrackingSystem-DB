@@ -16,18 +16,17 @@ BEGIN
         
 		Original:
 		Revisions:
-			- 20220328@Aries.Nguyen: Created [Redmine ID: #170468]
-            - 20220505@Aries.Nguyen: Classification History - Wrong store Source Type for mark/remove PA [Redmine ID: #172401]
-			- 20220426@Casey.Huynh: Return CreatedBy [Redmine ID: #171512]
-            - 20220519@Casey.Huynh: Renovate PA Process [Redmine ID: #172061]
-            - 20220627@Casey.Huynh: Classify Match Monitor Results, Add MatchID [Redmine ID: #174218]
-            - 20220913@Casey.Huynh: Update Remark [Redmine ID: #176976]
+			- 20220328@Aries.Nguyen: 	Created [Redmine ID: #170468]
+			- 20220505@Aries.Nguyen: 	Classification History - Wrong store Source Type for mark/remove PA [Redmine ID: #172401]
+			- 20220426@Casey.Huynh: 	Return CreatedBy [Redmine ID: #171512]
+			- 20220519@Casey.Huynh: 	Renovate PA Process [Redmine ID: #172061]
+			- 20220627@Casey.Huynh: 	Classify Match Monitor Results, Add MatchID [Redmine ID: #174218]
+			- 20220913@Casey.Huynh: 	Update Remark [Redmine ID: #176976]
+			- 20230404@Victoria.Le		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeID [Redmine ID: #185319] 
             
 		Param's Explanation (filtered by):      
 			CALL CTS_DC_CustClassification_PA_MappingCategory ('Category','[{"CustID": 3679910,"ReasonID": 3679910,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10, "MatchID": 1}]');
 	*/
-    DECLARE CONST_ROBOT					SMALLINT DEFAULT 163;
-    DECLARE CONST_ROBOT_LOSING			SMALLINT DEFAULT 164;    
     #=======================================================================================================
     DROP TEMPORARY TABLE IF EXISTS Temp_PA;    
 	CREATE TEMPORARY TABLE Temp_PA(	  
@@ -68,12 +67,15 @@ BEGIN
         ,	DataChangeType			TINYINT DEFAULT 0	# 0: New OR Change Category, 1: Change Probation Status, 2: NOT CHANGE
         ,	OldCategoryID		    SMALLINT
         ,	SpecialCC				SMALLINT UNSIGNED
-        ,	TVSRequestID			INT NULL
+        ,	TVSRequestID			INT DEFAULT NULL
         ,	LastModifiedDate		DATETIME
         ,	IsFromOldPA				BOOLEAN
         ,	PinCTSCustID			BIGINT UNSIGNED			
         ,	ActionType				TINYINT DEFAULT 0	#0:INSERT, 1:UPDATE
         ,	MatchID					INT
+		,	IsParlay 				BIT DEFAULT NULL
+		,	SportType				SMALLINT DEFAULT NULL 
+		,	IssueTypeID 			TINYINT DEFAULT NULL 
         , 	PRIMARY KEY PK_Temp_PA(CustID,InputCategoryID)  
         ,	INDEX IX_Temp_PA(IsDataChanged,LastModifiedDate)
     );  
@@ -211,7 +213,8 @@ BEGIN
  
     IF ip_InputType = 'Reason' THEN
 		INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, InputCategoryID, InputCategoryGroup,  IsLicensee, CreatedBy, Remark, IsDirectPA
-			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, SpecialCC, IsProbation, RelevantCategoryID, TVSRequestID, ReasonID, PinCTSCustID)
+			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, SpecialCC, IsProbation, RelevantCategoryID
+			, TVSRequestID, ReasonID, PinCTSCustID, IsParlay, SportType, IssueTypeID)
 		SELECT	DISTINCT tmpJs.CustID
 			,	cus.CTSCustID
 			,	cus.RoleID
@@ -238,6 +241,9 @@ BEGIN
             ,	tmpJs.TVSRequestID
             ,	tmpJs.ReasonID
             ,	pin.CTSCustID
+			,	tmpJs.IsParlay
+			,	tmpJs.SportType
+			,	tmpJs.IssueTypeID
             FROM JSON_TABLE(ip_CustInfo,
 			"$[*]" COLUMNS(
 					CustID 			BIGINT UNSIGNED		PATH "$.CustID"
@@ -254,11 +260,18 @@ BEGIN
 				, 	IsFromCTS		BOOLEAN 			PATH "$.IsFromCTS"
                 , 	TVSRequestID	INT 				PATH "$.TVSRequestID"
                 , 	Remark			VARCHAR(500) 		PATH "$.Remark"
+				,	IsParlay		BOOLEAN 			PATH "$.IsParlay"
+				,	SportType		SMALLINT 			PATH "$.SportType"
+				,	IssueTypeID		TINYINT 			PATH "$.IssueTypeID"
 		)) AS tmpJs
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
-			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on cus.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
-			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON cus.CTSCustID = sp.CTSCustID AND sp.CustomerClass NOT IN (SELECT DISTINCT tmp.CustomerClass FROM Temp_SpecialCategory AS tmp),
-            LATERAL (SELECT cat.CategoryGroup, cat.RelevantCategoryID FROM CTS_DataCenter.CustomerCategory AS cat WHERE cat.ReasonID = tmpJs.ReasonID LIMIT 1) tmpLtr;
+			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin ON cus.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
+			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON cus.CTSCustID = sp.CTSCustID 
+																	AND sp.CustomerClass NOT IN (SELECT DISTINCT tmp.CustomerClass FROM Temp_SpecialCategory AS tmp),
+            LATERAL (SELECT cat.CategoryGroup, cat.RelevantCategoryID 
+					 FROM CTS_DataCenter.CustomerCategory AS cat 
+					 WHERE cat.ReasonID = tmpJs.ReasonID 
+					 LIMIT 1) tmpLtr;
 		                
 		CALL CTS_DC_CustClassification_PA_RemoveOldTVSRequest(); 
         

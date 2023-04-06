@@ -19,6 +19,7 @@ sp:BEGIN
 			- 20220909@Aries.Nguyen: 	Handle lv_NextLastID is null [Redmine ID: #176992] 
 			- 20230210@Long.Luu: Fix 	Customer Classification Log [Redmine ID: #183279] 
 			- 20230315@Victoria.Le:		Add Robot Imperva [Redmine ID: #184773]
+			- 20230404@Victoria.Le		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeID [Redmine ID: #185319] 
             
 		Param's Explanation (filtered by):
 
@@ -74,6 +75,9 @@ sp:BEGIN
 		,	IsFromCTS 				BIT
 		,	IsFromAI 				BIT 
 		,	IsFromImperva			BIT
+		,	IsParlay				BIT
+		,	SportType				SMALLINT
+		,	IssueTypeID				TINYINT
 		,	PRIMARY KEY (ID)
 		,	KEY 					IX_CTSCustomerClassification_History_CustID (CustID)
 	);
@@ -152,6 +156,9 @@ sp:BEGIN
 		,	IsFromCTS
 		,	IsFromAI
 		,	IsFromImperva
+		,	IsParlay
+		,	SportType
+		,	IssueTypeID
 	)
     SELECT 	ID  					
 		,	CustID  				
@@ -190,6 +197,9 @@ sp:BEGIN
 		,	IsFromCTS 				
 		,	IsFromAI 	
 		,	IsFromImperva
+		,	IsParlay
+		,	SportType
+		,	IssueTypeID
 	FROM CTS_DataCenter.CTSCustomerClassification_History
     WHERE ID BETWEEN lv_LastID AND lv_NextLastID
 		AND IsDataChanged = 1
@@ -272,6 +282,9 @@ sp:BEGIN
 			,	IsFromCTS
 			,	IsFromAI
 			,	IsFromImperva
+			,	IsParlay
+			,	SportType
+			,	IssueTypeID
 		)
 		SELECT 	ID  					
 			,	h.CustID  				
@@ -310,6 +323,9 @@ sp:BEGIN
 			,	IsFromCTS 				
 			,	IsFromAI 	
 			,	IsFromImperva
+			,	IsParlay
+			,	SportType
+			,	IssueTypeID
 		FROM Temp_CustDataShouldBeRemoved AS k
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS h ON k.CustID = h.CustID
 		WHERE h.ID < lv_LastID
@@ -359,6 +375,9 @@ sp:BEGIN
 			,	IsFromCTS 				
 			,	IsFromAI 	
 			,	IsFromImperva
+			,	IsParlay
+			,	SportType
+			,	IssueTypeID
 		FROM Temp_History;
 		
 		UPDATE CTS_DataCenter.SystemParameter

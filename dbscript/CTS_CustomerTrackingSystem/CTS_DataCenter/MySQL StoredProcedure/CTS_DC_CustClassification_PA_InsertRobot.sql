@@ -20,6 +20,7 @@ BEGIN
 			- 20200817@Casey.Huynh: 	Remove Hardcode CC [Redmine ID: #175698]
 			- 20221007@Harvey.Nguyen: 	Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory [Redmine ID: #178022]
 			- 20230315@Victoria.Le:		Add Robot Imperva [Redmine ID: #184773]
+			- 20230404@Victoria.Le		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeID [Redmine ID: #185319] 
 		
         Param's Explanation: 
 
@@ -86,6 +87,9 @@ BEGIN
 		,	IsPin					BIT DEFAULT 0
         ,	IsVVIP					BIT DEFAULT 0
         ,	IsLicenseeVIP			BIT DEFAULT 0
+		,	IsParlay 				BIT DEFAULT NULL 
+		,	SportType				SMALLINT DEFAULT NULL 
+		,	IssueTypeID 			TINYINT DEFAULT NULL 
         
 		, 	PRIMARY KEY(CustID,CategoryID)
     );  
@@ -110,6 +114,9 @@ BEGIN
         ,	Remark				VARCHAR(500)
 		,	CreatedBy			INT UNSIGNED
         ,	CreatedDate			DATETIME
+		,	IsParlay 			BIT DEFAULT NULL 
+		,	SportType			SMALLINT DEFAULT NULL 
+		,	IssueTypeID 		TINYINT DEFAULT NULL 
         ,  	PRIMARY KEY(CustID,CategoryID)
     );
     
@@ -158,38 +165,45 @@ BEGIN
 		,	IsVVIP
 		,	IsLicenseeVIP
 		,	CreatedDate
+		,	IsParlay
+		,	SportType
+		,	IssueTypeID
 	)
 	SELECT	js.CustID
 		,	cus.CTSCustID
 		,	cus.SubscriberID
-        ,	cus.IsLicensee
-        
+		,	cus.IsLicensee
+
 		, 	CASE WHEN js.WinlossStatus = 0 THEN CONST_CATEGORYID_ROBOTLOSING
 			ELSE CONST_CATEGORYID_ROBOT END AS CategoryID
-        ,	sp.CustomerClass AS TargetCC
-        , 	js.TurnoverRM
-        , 	js.WinlossRM
-        , 	js.BetCount 
-        , 	js.ActiveDays
-        ,	js.RobotCounter
-        ,	CASE WHEN js.WinlossStatus IS NULL THEN 2
+		,	sp.CustomerClass AS TargetCC
+		, 	js.TurnoverRM
+		, 	js.WinlossRM
+		, 	js.BetCount 
+		, 	js.ActiveDays
+		,	js.RobotCounter
+		,	CASE WHEN js.WinlossStatus IS NULL THEN 2
 			ELSE js.WinlossStatus END AS WinlossStatus
-         
-        , 	IFNULL(js.IsFromTW,0) AS IsFromTW
+		 
+		, 	IFNULL(js.IsFromTW,0) AS IsFromTW
 		,	IFNULL(js.IsFromCTS,0) AS IsFromCTS		
-        ,	IFNULL(js.IsFromAI,0) AS IsFromAI
-        ,	IFNULL(js.IsFromTVS,0) AS IsFromTVS 		
+		,	IFNULL(js.IsFromAI,0) AS IsFromAI
+		,	IFNULL(js.IsFromTVS,0) AS IsFromTVS 		
 		,	IFNULL(js.IsFromImperva,0) AS IsFromImperva 
-        ,	js.TVSRequestID	
-        ,	IFNULL(js.IsDirect,0) AS IsDirect	
-        ,	js.Remark
-        ,	js.CreatedBy
-        ,	CASE WHEN pin.CTSCustID IS NOT NULL THEN 1 
+		,	js.TVSRequestID
+
+		,	IFNULL(js.IsDirect,0) AS IsDirect	
+		,	js.Remark
+		,	js.CreatedBy
+		,	CASE WHEN pin.CTSCustID IS NOT NULL THEN 1 
 				 ELSE 0 END AS IsPin
 		,	CASE WHEN vip.CTSCustID IS NOT NULL THEN 1 
 				 ELSE 0 END AS IsVVIP 
 		,	cus.IsLicenseeVIP
-		, lv_Now AS CreatedDate
+		, 	lv_Now AS CreatedDate
+		,	js.IsParlay
+		,	js.SportType
+		,	js.IssueTypeID
 	FROM JSON_TABLE(ip_CustInfo,
 	"$[*]" COLUMNS( CustID 			BIGINT UNSIGNED		PATH "$.CustID"                
 				,	RobotCounter	INT 				PATH "$.RobotCounter"
@@ -210,6 +224,9 @@ BEGIN
 
 				, 	Remark			VARCHAR(500)		PATH "$.Remark"
 				, 	CreatedBy		INT UNSIGNED		PATH "$.CreatedBy"
+				,	IsParlay		BOOLEAN				PATH "$.IsParlay"
+				,	SportType		SMALLINT			PATH "$.SportType"
+				,	IssueTypeID		TINYINT				PATH "$.IssueTypeID"
 	)) AS js 
 		INNER JOIN  CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = js.CustID AND cus.CustSubID = 0 AND cus.IsInternal = 0
 		LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on cus.CTSCustID = pin.CTSCustID
@@ -225,10 +242,29 @@ BEGIN
 						,	IsFromAI = CASE WHEN js.IsFromAI = 1 THEN 1 ELSE Temp_PA.IsFromAI END
 						,	IsFromTVS = CASE WHEN js.IsFromTVS = 1 THEN 1 ELSE Temp_PA.IsFromTVS END
 						,	IsFromImperva = CASE WHEN js.IsFromImperva = 1 THEN 1 ELSE Temp_PA.IsFromImperva END
-						,	TVSRequestID = CASE WHEN js.TVSRequestID IS NOT NULL AND Temp_PA.TVSRequestID IS NULL  THEN js.TVSRequestID ELSE Temp_PA.TVSRequestID END
-						,	IsDirect = CASE WHEN js.IsDirect = 1 THEN 1 ELSE Temp_PA.IsDirect END;
-						-- ,	Remark = CASE WHEN js.IsFromCTS = 1 THEN js.Remark ELSE Temp_PA.Remark END
-						-- ,	CreatedBy = CASE WHEN js.IsFromCTS = 1 THEN js.CreatedBy ELSE Temp_PA.CreatedBy END;
+						,	IsDirect = CASE WHEN js.IsDirect = 1 THEN 1 ELSE Temp_PA.IsDirect END
+						,	IsParlay = CASE WHEN Temp_PA.TVSRequestID IS NULL 
+													AND (js.TVSRequestID > 0 OR (js.TVSRequestID IS NULL AND js.IssueTypeID = 11))
+														THEN js.IsParlay 
+												ELSE Temp_PA.IsParlay END
+						,	SportType = CASE WHEN Temp_PA.TVSRequestID IS NULL 
+													AND (js.TVSRequestID > 0 OR (js.TVSRequestID IS NULL AND js.IssueTypeID = 11))
+														THEN js.SportType 
+												ELSE Temp_PA.SportType END
+						,	CreatedBy = CASE WHEN Temp_PA.TVSRequestID IS NULL 
+													AND (js.TVSRequestID > 0 OR (js.TVSRequestID IS NULL AND js.IssueTypeID = 11))
+														THEN js.CreatedBy 
+												ELSE Temp_PA.CreatedBy END
+						,	IssueTypeID = CASE WHEN Temp_PA.TVSRequestID IS NULL 
+													AND (js.TVSRequestID > 0 OR (js.TVSRequestID IS NULL AND js.IssueTypeID = 11))
+														THEN js.IssueTypeID 
+												ELSE Temp_PA.IssueTypeID END
+						,	TVSRequestID = CASE WHEN Temp_PA.TVSRequestID IS NULL 
+													AND (js.TVSRequestID > 0 OR (js.TVSRequestID IS NULL AND js.IssueTypeID = 11))
+														THEN js.TVSRequestID 
+												ELSE Temp_PA.TVSRequestID END
+						;
+						-- ,	Remark = CASE WHEN js.IsFromCTS = 1 THEN js.Remark ELSE Temp_PA.Remark END;
 
     CALL CTS_DataCenter.CTS_DC_CustClassification_PA_RemoveOldTVSRequest();
     
@@ -251,6 +287,9 @@ BEGIN
 		, 	LastModifiedDate
 		, 	LastModifiedBy
 		, 	LastScannedDate
+		,	IsParlay
+		,	SportType
+		,	IssueTypeID
 	)
 			
 	SELECT 	pa.CustID
@@ -273,6 +312,9 @@ BEGIN
 		, 	lv_Now AS LastModifiedDate
 		, 	CreatedBy AS  LastModifiedBy
 		, 	DATE(lv_Now) AS LastScannedDate
+		,	pa.IsParlay
+		,	pa.SportType
+		,	pa.IssueTypeID
 	FROM Temp_PA AS pa
     WHERE pa.IsFromTVS = 1 
 		AND (pa.IsVVIP =  1 OR pa.IsPin = 1);
@@ -301,6 +343,9 @@ BEGIN
 		,	Remark
 		,	CreatedBy
 		,	CreatedDate
+		,	IsParlay
+		,	SportType
+		,	IssueTypeID
 	) 
     SELECT 	clss.CustID
 		,	clss.CategoryID
@@ -321,11 +366,14 @@ BEGIN
 		, 	clss.IsFromAI	
 		, 	clss.IsFromTVS
 		,	clss.IsFromImperva
-		, 	clss.TVSRequestID	
+		, 	clss.TVSRequestID
 		, 	clss.IsDirect	
 		,	clss.Remark
 		,	clss.CreatedBy
 		,	clss.CreatedDate
+		,	clss.IsParlay
+		,	clss.SportType
+		,	clss.IssueTypeID
     FROM Temp_PA AS tmp  
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CustID = tmp.CustID
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID AND cate.RelevantCategoryID IS NOT NULL;
@@ -348,6 +396,9 @@ BEGIN
 		, 	IsDirect
 		, 	InsertTime
 		, 	TVSRequestID
+		,	IsParlay
+		,	SportType
+		,	IssueTypeID
 	) 
 	SELECT 	clss.CustID
 		, 	clss.CTSCustID
@@ -366,6 +417,9 @@ BEGIN
 		, 	clss.IsDirect
 		, 	CURRENT_TIMESTAMP(3) AS InsertTime
 		, 	clss.TVSRequestID
+		,	clss.IsParlay
+		,	clss.SportType
+		,	clss.IssueTypeID
     FROM CTS_DataCenter.CTSCustomerClassification AS clss
 		INNER JOIN Temp_PA AS tmpPa ON tmpPa.CustID = clss.CustID AND clss.SportGroupID = CONST_SPORTGROUP_NORMAL
         INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = clss.CategoryID
@@ -405,6 +459,18 @@ BEGIN
 		, 	WinlossRM
 		, 	BetCount
 		, 	ActiveDays
+		
+		,	IsDirect
+		,	Remark
+		,	IsFromTW
+		,	IsFromCTS
+		,	IsFromAI
+		,	IsFromTVS
+		,	IsFromImperva
+		,	TVSRequestID
+		,	IsParlay
+		,	SportType
+		,	IssueTypeID
 	)
 	SELECT  pa.CustID
 		, 	pa.CTSCustID
@@ -427,6 +493,18 @@ BEGIN
 		,	pa.WinlossRM
 		, 	pa.BetCount
 		, 	pa.ActiveDays
+		
+		,	pa.IsDirect
+		,	pa.Remark
+		,	pa.IsFromTW
+		,	pa.IsFromCTS
+		,	pa.IsFromAI
+		,	pa.IsFromTVS
+		,	pa.IsFromImperva
+		,	pa.TVSRequestID
+		,	pa.IsParlay
+		,	pa.SportType
+		,	pa.IssueTypeID
 	FROM Temp_ExistCate AS cate
 		INNER JOIN Temp_PA AS pa ON pa.CustID = cate.CustID
         INNER JOIN CTS_DataCenter.CustomerCategory AS tbl ON cate.RelevantCategoryID = tbl.CategoryID 
@@ -455,9 +533,9 @@ BEGIN
 		,	clss.IsFromAI =  CASE WHEN pa.IsFromAI = 1 THEN pa.IsFromAI ELSE clss.IsFromAI END  
 		,	clss.IsFromTVS =  CASE WHEN pa.IsFromTVS = 1 THEN pa.IsFromTVS ELSE clss.IsFromTVS END  
 		,	clss.IsFromImperva =  CASE WHEN pa.IsFromImperva = 1 THEN pa.IsFromImperva ELSE clss.IsFromImperva END  
-		,	clss.TVSRequestID =  CASE WHEN pa.TVSRequestID IS NOT NULL AND pa.TVSRequestID != 0 THEN pa.TVSRequestID ELSE clss.TVSRequestID END  
 		,	clss.IsDirect = CASE WHEN pa.IsDirect = 1 THEN pa.IsDirect ELSE clss.IsDirect END
-		,	pa.IsExisted = 1;
+		,	pa.IsExisted = 1
+		;
     
 	DELETE 
     FROM CTS_DataCenter.CTSCustomerClassification AS clss
@@ -504,6 +582,9 @@ BEGIN
 		, 	LastModifiedDate
 		, 	LastModifiedBy
 		, 	LastScannedDate
+		,	IsParlay
+		,	SportType
+		,	IssueTypeID
 	)
 	SELECT 	pa.CustID
 		,	pa.CTSCustID
@@ -525,6 +606,9 @@ BEGIN
 		, 	lv_Now AS LastModifiedDate
 		, 	CreatedBy AS  LastModifiedBy
 		, 	DATE(lv_Now) AS LastScannedDate
+		,	pa.IsParlay
+		,	pa.SportType
+		,	pa.IssueTypeID
 	FROM Temp_PA AS pa
     WHERE pa.IsDataChanged =  1
 		AND pa.IsExisted = 0;
@@ -555,6 +639,9 @@ BEGIN
 		,	IsFromTVS
 		,	IsFromImperva
 		,	TVSRequestID
+		,	IsParlay
+		,	SportType
+		,	IssueTypeID
 	)
 	SELECT 	pa.CustID
 		, 	pa.CTSCustID
@@ -583,6 +670,9 @@ BEGIN
 		,	pa.IsFromTVS
 		,	pa.IsFromImperva
 		,	pa.TVSRequestID  
+		,	pa.IsParlay
+		,	pa.SportType
+		,	pa.IssueTypeID
 	FROM Temp_PA AS pa
     WHERE pa.IsDataChanged =  1 OR ip_IsRescan = 1; 
     
@@ -612,6 +702,9 @@ BEGIN
 		,	IsFromTVS
 		,	IsFromImperva
 		,	TVSRequestID
+		,	IsParlay
+		,	SportType
+		,	IssueTypeID
 	)
 	SELECT 	pa.CustID
 		, 	pa.CTSCustID
@@ -639,6 +732,9 @@ BEGIN
 		,	pa.IsFromTVS
 		,	pa.IsFromImperva
 		,	pa.TVSRequestID
+		,	pa.IsParlay
+		,	pa.SportType
+		,	pa.IssueTypeID
 	FROM Temp_PA AS pa;
 
 
