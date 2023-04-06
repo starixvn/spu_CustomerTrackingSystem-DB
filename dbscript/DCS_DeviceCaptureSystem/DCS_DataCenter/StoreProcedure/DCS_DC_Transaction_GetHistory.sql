@@ -43,7 +43,7 @@ proc_label: BEGIN
     SET lv_ToDate = CURRENT_DATE();
     SET lv_FromDate = CASE 
 						WHEN ip_DateRange = 1 THEN DATE_ADD(lv_ToDate, INTERVAL -1 DAY)
-                        WHEN ip_DateRange = 7 THEN DATE_ADD(lv_ToDate, INTERVAL -7 DAY)
+                        WHEN ip_DateRange = 14 THEN DATE_ADD(lv_ToDate, INTERVAL -14 DAY)
                         ELSE lv_ToDate
 					END;                
 	
