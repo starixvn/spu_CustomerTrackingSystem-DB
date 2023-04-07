@@ -12,6 +12,21 @@ ALTER TABLE [dbo].[CustomerClassification]
 ADD ID BIGINT NOT NULL IDENTITY(1,1) PRIMARY KEY;
 GO
 
+ALTER TABLE [dbo].[CustomerClassification_BySport]
+ADD ID BIGINT NOT NULL IDENTITY(1,1) PRIMARY KEY;
+GO
+
 INSERT INTO [dbo].[CustomerClassification_Parameter] ([DataId], [DataDescription], [DataType], [Value]) 
-VALUES (1, 'Normal Accounts Classification - Get processed MaxID from normal pool', 'BIGINT','0');
+VALUES (1, 'Normal Accounts Classification - General - Get processed MaxID from normal pool', 'BIGINT','0');
+GO
+
+INSERT INTO [dbo].[CustomerClassification_Parameter] ([DataId], [DataDescription], [DataType], [Value]) 
+VALUES (2, 'Normal Accounts Classification - BySport - Get processed MaxID from normal pool', 'BIGINT','0');
+GO
+
+-- Remove unused SPs
+DROP PROCEDURE [dbo].[CTS_NormalAccountsClassification_Probation];
+GO
+
+DROP PROCEDURE [dbo].[CTS_NormalAccountsClassification_Probation_xtest];
 GO

@@ -253,7 +253,6 @@ BEGIN
 
 	--#9.2: Insert inactive customers
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
-	OUTPUT INSERTED.CustId, @GENERAL_SPORTID, INSERTED.CategoryId, INSERTED.BetCount INTO #tmpBetCount
 	SELECT  CustId
 		,  @GENERAL_SPORTID
 	   ,   @CATEGORY_SMARTINACTIVE
