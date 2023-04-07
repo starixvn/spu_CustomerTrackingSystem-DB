@@ -4,7 +4,6 @@ DROP PROCEDURE IF EXISTS `DCS_DC_Transaction_GetHistory`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transaction_GetHistory`(
 		IN	ip_DateRange	INT
-    ,	IN	ip_SubscriberId INT
     ,	IN	ip_CTSCustId 	BIGINT    
     ,	IN	ip_Skip			INT
     ,	IN	ip_Take			INT
@@ -22,6 +21,8 @@ proc_label: BEGIN
 			- 20200518@lex.khuat: Update robot description from Green to Human [Redmine ID: #133934]
 			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
 			- 20210629@Casey.Huynh: Enhance SP and Return Flagged Value (Web will show type of robot) [Redmine ID: 157085]
+            - 20230406@Casey.Huynh: Show trans cross subscriber [Redmine ID: 186086]
+            
 		Param's Explanation (filtered by):
 	*/ 
 	DECLARE lv_FromRow INT;
@@ -37,13 +38,12 @@ proc_label: BEGIN
     INSERT INTO Temp_Account 
 	SELECT 	cusAcc.AccountID 
 	FROM	CTS_DataCenter.CustDCSAccount cusAcc 
-	WHERE 	cusAcc.CTSCustID = ip_CTSCustId	
-			AND cusAcc.SubscriberID = ip_SubscriberId;
-            
+	WHERE 	cusAcc.CTSCustID = ip_CTSCustId;
+		
     SET lv_ToDate = CURRENT_DATE();
     SET lv_FromDate = CASE 
 						WHEN ip_DateRange = 1 THEN DATE_ADD(lv_ToDate, INTERVAL -1 DAY)
-                        WHEN ip_DateRange = 7 THEN DATE_ADD(lv_ToDate, INTERVAL -7 DAY)
+                        WHEN ip_DateRange = 14 THEN DATE_ADD(lv_ToDate, INTERVAL -14 DAY)
                         ELSE lv_ToDate
 					END;                
 	
@@ -76,9 +76,8 @@ proc_label: BEGIN
 			FROM	DCS_DataCenter.Transaction07 trs 
 				LEFT JOIN DCS_DataCenter.UserAgent AS uag ON trs.UserAgentKey = uag.UserAgentKey
 				LEFT JOIN DCS_DataCenter.ActionResult AS ar ON trs.ActionResultID = ar.ActionResultID
-				LEFT JOIN DCS_DataCenter.URL AS ur ON trs.URLID = ur.URLID AND trs.SubscriberID = ur.SubscriberID
+				LEFT JOIN DCS_DataCenter.URL AS ur ON trs.URLID = ur.URLID
 			WHERE trs.AccountID IN (SELECT AccountID FROM Temp_Account)
-				AND trs.SubscriberID = ip_SubscriberId 
 				AND trs.CreatedDate BETWEEN lv_FromDate AND lv_ToDate
 			) AS tmp
 		ORDER BY TransTime DESC            
