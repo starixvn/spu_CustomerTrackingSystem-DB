@@ -7,7 +7,7 @@ CREATE DEFINER=`AIMLOwner`@`%` PROCEDURE `SPU_AIML_OCRD_GetDetails`(
 	,	IN 	ip_MatchID	BIGINT
 )
     SQL SECURITY INVOKER
-sp:BEGIN  
+BEGIN  
 	/*  
 		Created:	20230404@Casey.Huynh
 		Task:		GET OCRD Match of Customer
@@ -29,9 +29,9 @@ sp:BEGIN
 		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(rs.SuspiciousTransList), ',', '","'), 
 							'$[*]' COLUMNS (TransID BIGINT UNSIGNED PATH '$')
 							) js
-    WHERE rs.CustID = ip_CustID
-		AND rs.MatchID = ip_MatchID
-		AND rs.PeriodRangeType = CONST_PERIODRANGETYPE_OCRD;
+    WHERE rs.CustID = ip_CustID	
+		AND rs.PeriodRangeType = CONST_PERIODRANGETYPE_OCRD 
+        AND rs.MatchID = ip_MatchID;		
 END$$
 
 DELIMITER ;
