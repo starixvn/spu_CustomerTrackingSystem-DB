@@ -43,7 +43,6 @@ BEGIN
     DECLARE tab_name varchar(128) DEFAULT '';
     DECLARE col_name varchar(128) DEFAULT '';
     DECLARE sp_name varchar(128) DEFAULT 'DCS_DC_TransformData_Device_Insert';
-    DECLARE lv_DeviceStatusNewDevice INT DEFAULT 1;
 	
     # STATS count
     DECLARE insertionTime TIMESTAMP(4);
@@ -131,14 +130,13 @@ BEGIN
         , FirstDeviceCode		VARCHAR(32)
         , DeviceStatus			TINYINT
         , DeviceFingerprintID	BIGINT UNSIGNED
-        , RawTransID			BIGINT UNSIGNED
         , INDEX 				IX_Temp_Transaction_DeviceCode(DeviceCode)
         , INDEX 				IX_Temp_Transaction_AccountID(AccountID, DeviceCode, FingerprintCode)
 	) ENGINE = MEMORY DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
     
 	#========GET INPUT DATA===========================
     set start_time  = CURRENT_TIMESTAMP(4);
-	INSERT INTO Temp_Transaction(TransID, AccountID, SubscriberID, UserAgentKey, DeviceCode, CreatedDate, TransTime,  FingerprintCode, RawTransID)
+	INSERT INTO Temp_Transaction(TransID, AccountID, SubscriberID, UserAgentKey, DeviceCode, CreatedDate, TransTime,  FingerprintCode)
     WITH CTE_Trans AS (
 		SELECT TransID
 		FROM JSON_TABLE(
@@ -156,7 +154,6 @@ BEGIN
 		, CreatedDate
 		, TransTime
 		,  (CASE WHEN tmpTrans.FingerprintCode IS NULL THEN NULL ELSE tmpTrans.FingerprintCode END) AS FingerprintCode
-        , tmpTrans.RawTransID
 	FROM DCS_DataCenter.Transaction tmpTrans
 	INNER JOIN CTE_Trans t ON tmpTrans.TransId = t.TransId
     ORDER BY t.TransId ASC;
@@ -489,34 +486,6 @@ BEGIN
 		INNER JOIN Temp_Transaction AS tmp_rm
 			ON	ts.TransID = tmp_rm.TransID
 		WHERE tmp_rm.DeviceID IS NOT NULL;
-        
-        /*****Add Into Abnormal Transaction****************************************************/
-        INSERT IGNORE INTO DCS_DataCenter.AbnormalTransasction(
-				TransID
-            , 	AccountID
-            , 	LoginName
-            ,	TransTime
-            ,	UserAgentKey
-            ,	IP
-            ,	CreatedDate
-		)
-		SELECT 	trans.TransID
-			,	trans.AccountID
-			,	trans.LoginName
-            ,	trans.TransTime
-            ,	trans.UserAgentKey
-            ,	trans.IP
-            ,	CURRENT_TIMESTAMP AS CreatedDate
-		FROM Temp_Transaction AS tmp
-			INNER JOIN DCS_DataCenter.Transaction07 AS trans ON trans.RawTransID = ifnull(tmp.RawTransID, tmp.TransID)
-		WHERE tmp.DeviceID IS NOT NULL
-			AND trans.DeviceStatus = lv_DeviceStatusNewDevice
-            AND trans.SubscriberID IN (2,168,271,2339,13659);
-			/*2  Alpha
-			168  Alpha789y
-			271  ALPHA88
-			2339  AlphaCN88
-			13659  AlphaIBCIndo*/
 
 		#DELETE Transaction
 		DELETE ts
