@@ -278,7 +278,7 @@ BEGIN
 
 	 --#12: Insert to CustomerClassification
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
-	OUTPUT INSERTED.CustId, INSERTED.CategoryId, INSERTED.BetCount INTO #tmpBetCount
+	OUTPUT INSERTED.CustId, @GENERAL_SPORTID, INSERTED.CategoryId, INSERTED.BetCount INTO #tmpBetCount
 	SELECT	a.CustId
 		,	@GENERAL_SPORTID
 		,	CASE WHEN a.NewCategoryId IS NULL THEN a.CurrentCategoryId ELSE a.NewCategoryId END
@@ -292,7 +292,6 @@ BEGIN
 	WHERE a.IsPlaceBetWithin30Days = 1;
 
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
-	OUTPUT INSERTED.CustId, @GENERAL_SPORTID, INSERTED.CategoryId, INSERTED.BetCount INTO #tmpBetCount
 	SELECT	a.CustId
 		,	@GENERAL_SPORTID
 		,	CASE WHEN a.CurrentCategoryId IN (@CATEGORY_SMARTPUNTER, @CATEGORY_RISKY, @CATEGORY_PROBATION) THEN @CATEGORY_SMARTINACTIVE ELSE @CATEGORY_NORMALINACTIVE END AS CategoryId

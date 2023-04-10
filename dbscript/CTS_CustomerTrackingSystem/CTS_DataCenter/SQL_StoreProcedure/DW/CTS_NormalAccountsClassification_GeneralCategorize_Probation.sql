@@ -238,7 +238,7 @@ BEGIN
 
 	 --#9.1: Insert to CustomerClassification
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
-	OUTPUT INSERTED.CustId, INSERTED.CategoryId, INSERTED.BetCount INTO #tmpBetCount  
+	OUTPUT INSERTED.CustId, @GENERAL_SPORTID, INSERTED.CategoryId, INSERTED.BetCount INTO #tmpBetCount  
 	SELECT	a.CustId
 		,	@GENERAL_SPORTID
 		,	CASE WHEN r.CategoryId IS NULL THEN a.CurrentCategoryId ELSE r.CategoryId END
