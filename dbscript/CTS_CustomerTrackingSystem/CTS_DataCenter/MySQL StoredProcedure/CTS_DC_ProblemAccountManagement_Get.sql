@@ -107,7 +107,7 @@ sp :BEGIN
         ,	SUBSTRING_INDEX(GROUP_CONCAT(IFNULL(us.UserName, class.CreatedBy) ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS CreatedBy
         ,	SUBSTRING_INDEX(GROUP_CONCAT(class.Remark ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS Remark
 		,	SUBSTRING_INDEX(GROUP_CONCAT(class.TVSRequestID ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS TVSRequestID
-		,	SUBSTRING_INDEX(GROUP_CONCAT(class.IsParlay ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS IsParlay
+		,	CAST(SUBSTRING_INDEX(GROUP_CONCAT(class.IsParlay ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS UNSIGNED) AS IsParlay
 		,	SUBSTRING_INDEX(GROUP_CONCAT(class.SportType ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS SportType
 		,	SUBSTRING_INDEX(GROUP_CONCAT(class.IssueTypeID ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS IssueTypeID
 	FROM CTS_DataCenter.CTSCustomerClassification AS class
