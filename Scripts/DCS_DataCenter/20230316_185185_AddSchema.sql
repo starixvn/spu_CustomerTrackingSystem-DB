@@ -10,23 +10,32 @@ Revisions:
 Reviewer:
 */
 
-CREATE TABLE IF NOT EXISTS DCS_DataCenter.AbnormalTransasction(
-		ID					BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
-	, 	TransID				BIGINT UNSIGNED NOT NULL
+DROP TABLE IF EXISTS DCS_DataCenter.AbnormalTransasction;
+DROP TABLE IF EXISTS DCS_DataCenter.NewAccountDevice;
+
+CREATE TABLE DCS_DataCenter.NewAccountDevice(
+		AssociationID		BIGINT UNSIGNED NOT NULL
 	, 	AccountID			BIGINT UNSIGNED NOT NULL
-	, 	LoginName			VARCHAR(100) NOT NULL
-	, 	TransTime			DATETIME(4) NOT NULL
-	, 	UserAgentKey		VARCHAR(32) NOT NULL
-	, 	IP					VARCHAR(50) NOT NULL
-	,	Status 				TINYINT COMMENT '0: Not Send\n1: Sended'
+	, 	DeviceID			BIGINT UNSIGNED NOT NULL
+	, 	RawTransID			BIGINT UNSIGNED NOT NULL
+	, 	RawCreatedDate		DATETIME
+	, 	LoginName			VARCHAR(100)
+	, 	TransTime			DATETIME(4)
+	, 	UserAgentKey		VARCHAR(32)
+	, 	IP					VARCHAR(50)
+	,	Status 				TINYINT COMMENT '0: Default\n1: Sent\n2:Not send'
 	, 	CreatedDate			DATETIME
-	,	PRIMARY KEY (`Id`)
-	,	UNIQUE KEY `UX_AbnormalTransasction_TransID` (`TransID`)
+	, 	ModifiedDate		DATETIME
+	,	PRIMARY KEY (`AssociationID`)
+	,	UNIQUE KEY `UX_AbnormalTransasction_AccountID_DeviceID` (`AccountID`, `DeviceID`)
+	,	INDEX `UX_AbnormalTransasction_AccountID` (`AccountID`)
 ) ENGINE=InnoDB;
-
-
-INSERT INTO DCS_DataCenter.SystemSetting(VGroup, VName, VValue, UpdatedTime)
-VALUES ('DCS_AbnormalTransaction_Transform', 'MaxTransID', '0', NOW());
 
 INSERT INTO DCS_DataCenter.SystemSetting(VGroup, VName, VValue, UpdatedTime)
 VALUES ('DCS_AbnormalTransaction_Processed', 'MaxID', '0', NOW());
+
+INSERT INTO DCS_DataCenter.SystemSetting(VGroup, VName, VValue, UpdatedTime)
+VALUES ('DCS_AbnormalTransaction_Transform', 'MaxAssociationID', '0', NOW());
+
+DROP PROCEDURE IF EXISTS `DCS_DC_Abnormal_Transasction_Delete`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Abnormal_Transasction_Transform`;
