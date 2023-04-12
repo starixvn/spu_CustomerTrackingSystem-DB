@@ -156,7 +156,7 @@ BEGIN
 		SportId					SMALLINT,
 		CategoryId				SMALLINT	NOT NULL,
 		BetCount				BIGINT		NULL
-		PRIMARY KEY CLUSTERED (CustId)
+		PRIMARY KEY CLUSTERED (CustId, SportId)
 	);
 
 	-- #1: Filter Active Customers

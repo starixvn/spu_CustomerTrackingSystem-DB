@@ -66,7 +66,7 @@ BEGIN
 				( 
 					SELECT a.CustId, a.SportId 
 					FROM #tmpBetCount AS a
-						INNER JOIN dbo.CustomerClassification_BetCount AS b WITH(NOLOCK) ON b.CustId = a.CustId AND b.SportId = a.SportId
+						INNER JOIN dbo.CustomerClassification_BySport_BetCount AS b WITH(NOLOCK) ON b.CustId = a.CustId AND b.SportId = a.SportId
 				);
 		END;
 END;

@@ -115,7 +115,7 @@ BEGIN
 		SportId			SMALLINT,
 		CategoryId		SMALLINT	NOT NULL,
 		BetCount		BIGINT		NULL
-		PRIMARY KEY CLUSTERED (CustId)
+		PRIMARY KEY CLUSTERED (CustId, SportId)
 	);
 
 	INSERT INTO #tmpCustomers(CustId, SportId, CurrentCategoryId)
