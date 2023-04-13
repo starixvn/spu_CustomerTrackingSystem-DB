@@ -26,10 +26,20 @@ CREATE TABLE DCS_DataCenter.NewAccountDevice(
 	,	Status 				TINYINT COMMENT '0: Default\n1: Sent\n2:Not send'
 	, 	CreatedDate			DATETIME
 	, 	ModifiedDate		DATETIME
-	,	PRIMARY KEY (`AssociationID`)
-	,	UNIQUE KEY `UX_AbnormalTransasction_AccountID_DeviceID` (`AccountID`, `DeviceID`)
-	,	INDEX `UX_AbnormalTransasction_AccountID` (`AccountID`)
+	,	PRIMARY KEY (`AssociationID`, `Status`, `CreatedDate`)
+	,	INDEX `IX_AbnormalTransasction_AccountID_DeviceID` (`AccountID`, `DeviceID`)
 ) ENGINE=InnoDB;
+ALTER TABLE NewAccountDevice
+    PARTITION BY RANGE(Status*10000000+YEARWEEK(createdDate))(
+	PARTITION p10000000 VALUES LESS THAN (10000000),
+    PARTITION p10202314 VALUES LESS THAN (10202314),
+    PARTITION p10202315 VALUES LESS THAN (10202315),
+    PARTITION p10202316 VALUES LESS THAN (10202316),
+    PARTITION p10202317 VALUES LESS THAN (10202317),
+    PARTITION p10202318 VALUES LESS THAN (10202318),
+    PARTITION p10202319 VALUES LESS THAN (10202319),
+    PARTITION p10202320 VALUES LESS THAN (10202320),
+	PARTITION p19999999 VALUES LESS THAN MAXVALUE);
 
 INSERT INTO DCS_DataCenter.SystemSetting(VGroup, VName, VValue, UpdatedTime)
 VALUES ('DCS_AbnormalTransaction_Processed', 'MaxID', '0', NOW());
