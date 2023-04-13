@@ -58,7 +58,7 @@ BEGIN
         ,	IsLicensee				BIT
         
 		,	CategoryID 				INT	
-        ,	ReasonID				INT DEFAULT 36     
+        ,	ReasonID				INT 
         ,	TargetCC				SMALLINT
 		,	TargetDangerLevel		SMALLINT UNSIGNED
         
@@ -168,6 +168,7 @@ BEGIN
 		,	IsParlay
 		,	SportType
 		,	IssueTypeID
+		,	ReasonID
 	)
 	SELECT	js.CustID
 		,	cus.CTSCustID
@@ -204,6 +205,8 @@ BEGIN
 		,	js.IsParlay
 		,	js.SportType
 		,	js.IssueTypeID
+		,	CASE WHEN js.IssueTypeID = 13 THEN 105
+				 ELSE 36 END AS ReasonID
 	FROM JSON_TABLE(ip_CustInfo,
 	"$[*]" COLUMNS( CustID 			BIGINT UNSIGNED		PATH "$.CustID"                
 				,	RobotCounter	INT 				PATH "$.RobotCounter"
