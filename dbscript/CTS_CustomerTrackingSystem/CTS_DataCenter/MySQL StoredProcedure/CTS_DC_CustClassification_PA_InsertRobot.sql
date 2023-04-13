@@ -494,17 +494,17 @@ BEGIN
 		, 	pa.BetCount
 		, 	pa.ActiveDays
 		
-		,	pa.IsDirect
-		,	pa.Remark
-		,	pa.IsFromTW
-		,	pa.IsFromCTS
-		,	pa.IsFromAI
-		,	pa.IsFromTVS
-		,	pa.IsFromImperva
-		,	pa.TVSRequestID
-		,	pa.IsParlay
-		,	pa.SportType
-		,	pa.IssueTypeID
+		,	cate.IsDirect
+		,	cate.Remark
+		,	cate.IsFromTW
+		,	cate.IsFromCTS
+		,	cate.IsFromAI
+		,	cate.IsFromTVS
+		,	cate.IsFromImperva
+		,	cate.TVSRequestID
+		,	cate.IsParlay
+		,	cate.SportType
+		,	cate.IssueTypeID
 	FROM Temp_ExistCate AS cate
 		INNER JOIN Temp_PA AS pa ON pa.CustID = cate.CustID
         INNER JOIN CTS_DataCenter.CustomerCategory AS tbl ON cate.RelevantCategoryID = tbl.CategoryID 
