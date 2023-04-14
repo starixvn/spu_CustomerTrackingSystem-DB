@@ -6,13 +6,13 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_ArchiveData_NewAccountDevice`()
     SQL SECURITY INVOKER
 sp:BEGIN
 	/*
-		Created:	202304130@Jonathan.Doan
+		Created:	20230413@Jonathan.Doan
 		Task:		Archive Sent Transactions
 		DB:			DCS_DataCenter
 		Original:
 
 		Revisions:
-			- 202304130@Jonathan.Doan: Created [Redmine ID: #185185]
+			- 20230413@Jonathan.Doan: Created [Redmine ID: #185185]
 		Param's Explanation (filtered by):
 
 		Example:
@@ -23,7 +23,7 @@ sp:BEGIN
     DECLARE lv_LastWeekDate			DATETIME DEFAULT DATE_SUB(lv_CurrentDate, INTERVAL 1 WEEK);
     DECLARE lv_CurrentPartition		VARCHAR(50) DEFAULT CONCAT('p',10000000+YEARWEEK(lv_LastWeekDate));
     
-    DECLARE lv_DeletePartition		LONGTEXT;
+    DECLARE lv_DropPartition		LONGTEXT;
     DECLARE lv_AlterPartition		LONGTEXT;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Partition;
@@ -42,39 +42,43 @@ sp:BEGIN
 		AND p.`TABLE_NAME` = 'NewAccountDevice';
         
 	SELECT GROUP_CONCAT(tmp.PartitionName SEPARATOR ',')
-    INTO lv_DeletePartition
+    INTO lv_DropPartition
     FROM Temp_Partition AS tmp
-    WHERE tmp.PartitionName <= lv_CurrentPartition;
+    WHERE tmp.PartitionName <= lv_CurrentPartition
+		AND tmp.PartitionName <> 'p10000000';
     
-	SET @sql = CONCAT('DELETE FROM NewAccountDevice PARTITION (',lv_DeletePartition,');');
-
-	PREPARE stmt1 FROM  @sql;
-	EXECUTE stmt1; 
-	DEALLOCATE PREPARE stmt1;
+    IF lv_DropPartition IS NOT NULL THEN        
+		SET @sql = CONCAT('ALTER TABLE DCS_DataCenter.NewAccountDevice DROP PARTITION ',lv_DropPartition,';');
+		PREPARE stmt FROM  @sql;
+		EXECUTE stmt; 
+		DEALLOCATE PREPARE stmt;
+    END IF;    
     
     WITH RECURSIVE week_numbers AS (
-		SELECT 10000000+YEARWEEK(lv_CurrentDate) AS week_number, 1 AS rn
+		SELECT 10000000+YEARWEEK(lv_CurrentDate) AS week_number, CONCAT('p',10000000+YEARWEEK(lv_CurrentDate)) AS partition_name, 1 AS rn
 		UNION ALL
-		SELECT 10000000+YEARWEEK(DATE_ADD(lv_CurrentDate, INTERVAL rn WEEK)) AS week_number, rn + 1
+		SELECT 10000000+YEARWEEK(DATE_ADD(lv_CurrentDate, INTERVAL rn WEEK)) AS week_number, CONCAT('p',10000000+YEARWEEK(DATE_ADD(lv_CurrentDate, INTERVAL rn WEEK))) AS partition_name, rn + 1
 		FROM week_numbers
 		WHERE rn < 10
 	)
-	SELECT GROUP_CONCAT(CONCAT('PARTITION p',week_number,' VALUES LESS THAN (',week_number,')') SEPARATOR ',')
+	SELECT GROUP_CONCAT(CONCAT('PARTITION ',partition_name,' VALUES LESS THAN (',week_number,')') SEPARATOR ',')
     INTO lv_AlterPartition
-	FROM week_numbers;
+	FROM week_numbers AS wno
+		LEFT JOIN Temp_Partition AS tmp ON tmp.PartitionName = wno.partition_name
+	WHERE tmp.PartitionOrdinalPosition IS NULL;
     
-    SET @sqlAlterTable = CONCAT('
-		ALTER TABLE DCS_DataCenter.NewAccountDevice
-		PARTITION BY RANGE(Status*10000000+YEARWEEK(createdDate))(  
-		PARTITION p10000000 VALUES LESS THAN (10000000),     
-		',lv_AlterPartition,',
-		PARTITION p19999999 VALUES LESS THAN MAXVALUE) 
-		;
-    ');
-    
-	PREPARE stmt2 FROM  @sqlAlterTable;
-	EXECUTE stmt2; 
-	DEALLOCATE PREPARE stmt2;
+    IF lv_AlterPartition IS NOT NULL THEN
+		SET @sql = CONCAT('
+			ALTER TABLE DCS_DataCenter.NewAccountDevice
+			REORGANIZE PARTITION p19999999 INTO (    
+			',lv_AlterPartition,',
+			PARTITION p19999999 VALUES LESS THAN MAXVALUE) 
+			;
+		');
+		PREPARE stmt FROM  @sql;
+		EXECUTE stmt; 
+		DEALLOCATE PREPARE stmt;
+    END IF;
     
 END$$
 

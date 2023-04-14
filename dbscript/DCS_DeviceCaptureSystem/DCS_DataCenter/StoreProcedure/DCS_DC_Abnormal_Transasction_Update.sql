@@ -25,7 +25,6 @@ BEGIN
 	*/
     DECLARE lv_SystemSettingVGroup VARCHAR(128) DEFAULT 'DCS_AbnormalTransaction_Processed';
     DECLARE lv_SystemSettingVName VARCHAR(128) DEFAULT 'MaxID';
-    DECLARE lv_StatusNotSend INT DEFAULT 2;
     
     DECLARE lv_CurrentDatetime DATETIME DEFAULT CURRENT_TIMESTAMP();
     
@@ -59,8 +58,7 @@ BEGIN
     
     /*****UPDATE status for Trans not send****************************************************/
 	UPDATE DCS_DataCenter.NewAccountDevice AS trans
-	SET trans.Status = lv_StatusNotSend
-	,	trans.ModifiedDate = lv_CurrentDatetime
+	SET trans.ModifiedDate = lv_CurrentDatetime
     WHERE trans.AssociationID BETWEEN ip_MinID AND ip_MaxID
 		AND trans.AssociationID NOT IN (SELECT AssociationID FROM Temp_InputTrans);
     

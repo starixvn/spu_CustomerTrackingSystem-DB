@@ -43,7 +43,10 @@ BEGIN
     DECLARE tab_name varchar(128) DEFAULT '';
     DECLARE col_name varchar(128) DEFAULT '';
     DECLARE sp_name varchar(128) DEFAULT 'DCS_DC_TransformData_Device_Insert';
+    
 	DECLARE lv_MaxAssociationID BIGINT UNSIGNED;
+	DECLARE lv_AbnormalTransaction_VGroup VARCHAR(128) DEFAULT 'DCS_AbnormalTransaction_Transform';
+	DECLARE lv_AbnormalTransaction_VName VARCHAR(128) DEFAULT 'MaxAssociationID';
 	
     # STATS count
     DECLARE insertionTime TIMESTAMP(4);
@@ -500,7 +503,7 @@ BEGIN
 			,	INDEX `UX_Temp_NewAccountDevice_AccountID` (`AccountID`)
 		) ENGINE = MEMORY;
 		
-        SET lv_MaxAssociationID = IFNULL((SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE VGroup='DCS_AbnormalTransaction_Transform' AND VName='MaxAssociationID'), 0);
+        SET lv_MaxAssociationID = IFNULL((SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE VGroup=lv_AbnormalTransaction_VGroup AND VName=lv_AbnormalTransaction_VName), 0);
             
 		INSERT INTO Temp_NewAccountDevice(AssociationID, AccountID, DeviceID, TransID)
         WITH cte_device AS(
@@ -543,8 +546,8 @@ BEGIN
         IF lv_MaxAssociationID IS NOT NULL AND lv_MaxAssociationID > 0 THEN
 			UPDATE DCS_DataCenter.SystemSetting
 			SET VValue = lv_MaxAssociationID
-			WHERE VGroup='DCS_AbnormalTransaction_Transform' 
-				AND VName='MaxAssociationID';
+			WHERE VGroup=lv_AbnormalTransaction_VGroup
+				AND VName=lv_AbnormalTransaction_VName;
 		END IF;
         
 		/*****END Add NewAccountDevice****************************************************/

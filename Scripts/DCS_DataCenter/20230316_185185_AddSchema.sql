@@ -10,6 +10,8 @@ Revisions:
 Reviewer:
 */
 
+USE DCS_DataCenter;
+
 DROP TABLE IF EXISTS DCS_DataCenter.AbnormalTransasction;
 DROP TABLE IF EXISTS DCS_DataCenter.NewAccountDevice;
 
@@ -23,11 +25,11 @@ CREATE TABLE DCS_DataCenter.NewAccountDevice(
 	, 	TransTime			DATETIME(4)
 	, 	UserAgentKey		VARCHAR(32)
 	, 	IP					VARCHAR(50)
-	,	Status 				TINYINT COMMENT '0: Default\n1: Sent\n2:Not send'
+	,	Status 				TINYINT COMMENT '0: Default|Not send\n1: Sent'
 	, 	CreatedDate			DATETIME
 	, 	ModifiedDate		DATETIME
 	,	PRIMARY KEY (`AssociationID`, `Status`, `CreatedDate`)
-	,	INDEX `IX_AbnormalTransasction_AccountID_DeviceID` (`AccountID`, `DeviceID`)
+	,	INDEX `IX_NewAccountDevice_AccountID_DeviceID` (`AccountID`, `DeviceID`)
 ) ENGINE=InnoDB;
 ALTER TABLE NewAccountDevice
     PARTITION BY RANGE(Status*10000000+YEARWEEK(createdDate))(

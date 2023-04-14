@@ -59,7 +59,7 @@ BEGIN
     INSERT INTO Temp_NewAccountDevice(AssociationID, AccountID)
     SELECT 	AssociationID
 		,	AccountID
-	FROM DCS_DataCenter.NewAccountDevice
+	FROM DCS_DataCenter.NewAccountDevice PARTITION(p10000000)
 	WHERE AssociationID > lv_SystemSettingVValue
 		AND status = 0
     ORDER BY AssociationID
@@ -79,7 +79,7 @@ BEGIN
     SELECT 	nad.AccountID
 		,	COUNT(nad.AssociationID) AS Count
     FROM cte_AccountID AS cte
-		INNER JOIN DCS_DataCenter.NewAccountDevice AS nad ON nad.AccountID = cte.AccountID
+		INNER JOIN DCS_DataCenter.NewAccountDevice PARTITION(p10000000) AS nad ON nad.AccountID = cte.AccountID
 	WHERE nad.AssociationID < lv_MinID
 	GROUP BY nad.AccountID;
     
@@ -117,7 +117,7 @@ BEGIN
 		,	ua.Browser
 		,	dt.DeviceTypeName
 	FROM Temp_NewAccountDevice_Validated AS tmp
-		INNER JOIN DCS_DataCenter.NewAccountDevice AS nad ON nad.AssociationID = tmp.AssociationID
+		INNER JOIN DCS_DataCenter.NewAccountDevice PARTITION(p10000000) AS nad ON nad.AssociationID = tmp.AssociationID
 		LEFT JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = nad.UserAgentKey
 		LEFT JOIN DCS_DataCenter.DeviceType AS dt ON dt.DeviceTypeID = ua.DeviceTypeID;
         
