@@ -249,7 +249,16 @@ BEGIN
                         END) AS IsProbation			
             ,	tmpLtr.RelevantCategoryID
             ,	tmpJs.TVSRequestID
-            ,	tmpJs.ReasonID
+            ,	CASE WHEN tmpJs.ReasonID = 39 	THEN 3900	-- Abnormal
+					 WHEN tmpJs.ReasonID = 100 	THEN 10000	-- Group Betting
+					 WHEN tmpJs.ReasonID = 101 	THEN 10100	-- Hedging
+					 WHEN tmpJs.ReasonID = 102 	THEN 10200	-- Arbitrage
+					 WHEN tmpJs.ReasonID = 103 	THEN 10300	-- Fixed Game
+					 WHEN tmpJs.ReasonID = 104 	THEN 10400	-- AB Bet
+					 WHEN tmpJs.ReasonID = 105 	THEN 10500	-- Robot User
+					 WHEN tmpJs.ReasonID = 106 	THEN 10600	-- Irrigation Bet
+					 WHEN tmpJs.ReasonID = 107 	THEN 10700	-- System Formula Bet
+					 ELSE tmpJs.ReasonID END
             ,	pin.CTSCustID
 			,	tmpJs.IsParlay
 			,	tmpJs.SportType
