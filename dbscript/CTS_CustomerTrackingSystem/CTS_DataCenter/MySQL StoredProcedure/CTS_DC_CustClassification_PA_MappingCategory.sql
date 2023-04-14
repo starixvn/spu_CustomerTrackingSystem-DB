@@ -105,7 +105,8 @@ BEGIN
     
     IF ip_InputType = 'Category' THEN    
         INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, InputCategoryID, InputCategoryGroup,  IsLicensee, CreatedBy, Remark, IsDirectPA
-			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsDataChanged, SpecialCC, IsProbation, RelevantCategoryID, LastModifiedDate, PinCTSCustID, MatchID)
+			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsDataChanged, SpecialCC, IsProbation, RelevantCategoryID
+			, LastModifiedDate, PinCTSCustID, MatchID, TVSRequestID, IsParlay, SportType, IssueTypeID)
 		SELECT 	DISTINCT tmpJs.CustID
 			,	tmpJs.CTSCustID
 			,	tmpJs.RoleID
@@ -133,29 +134,37 @@ BEGIN
             ,	tmpJs.LastModifiedDate
             ,	pin.CTSCustID
 			,	tmpJs.MatchID
+			,	tmpJs.TVSRequestID
+			,	tmpJs.IsParlay
+			,	tmpJs.SportType
+			,	tmpJs.IssueTypeID
 		FROM JSON_TABLE(ip_CustInfo,
 			"$[*]" COLUMNS(
-					CustID 			BIGINT UNSIGNED		PATH "$.CustID"
-				,	CTSCustID 		BIGINT UNSIGNED		PATH "$.CTSCustID"
-				,	RoleID 			INT					PATH "$.RoleID" 
-				,	SubscriberID 	BIGINT UNSIGNED		PATH "$.SubscriberID"
-				,	CategoryID		BIGINT UNSIGNED		PATH "$.CategoryID"
-				,	CategoryGroup	BIGINT UNSIGNED		PATH "$.CategoryGroup"
-				,	IsLicensee		BOOLEAN				PATH "$.IsLicensee"
-				, 	CreatedBy		INT UNSIGNED		PATH "$.CreatedBy"
-				, 	Remark			VARCHAR(500)		PATH "$.Remark"
-				, 	IsDirectPA		BOOLEAN				PATH "$.IsDirectPA"
-				,	WinlossStatus	SMALLINT 			PATH "$.WinlossStatus" 
-				,	TurnoverRM		DECIMAL(20,4)		PATH "$.TurnoverRM"
-				,	WinlossRM		DECIMAL(20,4) 		PATH "$.WinlossRM"
-				, 	BetCount		BIGINT 				PATH "$.BetCount"
-				, 	ActiveDays		INT 				PATH "$.ActiveDays"
-				, 	IsFromTVS		BOOLEAN 			PATH "$.IsFromTVS"
-				, 	IsFromTW		BOOLEAN 			PATH "$.IsFromTW"
-				, 	IsFromCTS		BOOLEAN 			PATH "$.IsFromCTS"
-				, 	IsDataChanged	BOOLEAN 			PATH "$.IsDataChanged"
-				, 	LastModifiedDate	DATETIME 		PATH "$.LastModifiedDate"
-                , 	MatchID				INT 			PATH "$.MatchID"	
+							CustID 				BIGINT UNSIGNED		PATH "$.CustID"
+						,	CTSCustID 			BIGINT UNSIGNED		PATH "$.CTSCustID"
+						,	RoleID 				INT					PATH "$.RoleID" 
+						,	SubscriberID 		BIGINT UNSIGNED		PATH "$.SubscriberID"
+						,	CategoryID			BIGINT UNSIGNED		PATH "$.CategoryID"
+						,	CategoryGroup		BIGINT UNSIGNED		PATH "$.CategoryGroup"
+						,	IsLicensee			BOOLEAN				PATH "$.IsLicensee"
+						, 	CreatedBy			INT UNSIGNED		PATH "$.CreatedBy"
+						, 	Remark				VARCHAR(500)		PATH "$.Remark"
+						, 	IsDirectPA			BOOLEAN				PATH "$.IsDirectPA"
+						,	WinlossStatus		SMALLINT 			PATH "$.WinlossStatus" 
+						,	TurnoverRM			DECIMAL(20,4)		PATH "$.TurnoverRM"
+						,	WinlossRM			DECIMAL(20,4) 		PATH "$.WinlossRM"
+						, 	BetCount			BIGINT 				PATH "$.BetCount"
+						, 	ActiveDays			INT 				PATH "$.ActiveDays"
+						, 	IsFromTVS			BOOLEAN 			PATH "$.IsFromTVS"
+						, 	IsFromTW			BOOLEAN 			PATH "$.IsFromTW"
+						, 	IsFromCTS			BOOLEAN 			PATH "$.IsFromCTS"
+						, 	IsDataChanged		BOOLEAN 			PATH "$.IsDataChanged"
+						, 	LastModifiedDate	DATETIME 			PATH "$.LastModifiedDate"
+						, 	MatchID				INT 				PATH "$.MatchID"	
+						, 	TVSRequestID		INT 				PATH "$.TVSRequestID"
+						,	IsParlay			BOOLEAN 			PATH "$.IsParlay"
+						,	SportType			SMALLINT 			PATH "$.SportType"
+						,	IssueTypeID			TINYINT 			PATH "$.IssueTypeID"
 		)) AS tmpJs
 			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on tmpJs.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
 			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CTSCustID = sp.CTSCustID AND sp.CustomerClass NOT IN (SELECT DISTINCT tmp.CustomerClass FROM Temp_SpecialCategory AS tmp)
