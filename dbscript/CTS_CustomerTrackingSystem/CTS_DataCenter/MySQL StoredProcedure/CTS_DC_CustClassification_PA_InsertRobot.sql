@@ -205,7 +205,7 @@ BEGIN
 		,	js.IsParlay
 		,	js.SportType
 		,	js.IssueTypeID
-		,	CASE WHEN js.IssueTypeID = 13 THEN 105
+		,	CASE WHEN js.IssueTypeID = 13 THEN 10500
 				 ELSE 36 END AS ReasonID
 	FROM JSON_TABLE(ip_CustInfo,
 	"$[*]" COLUMNS( CustID 			BIGINT UNSIGNED		PATH "$.CustID"                

@@ -95,6 +95,7 @@ BEGIN
         
         ,	INDEX IX_Temp_SpecialCategory_CustomerClass(CustomerClass)
     );
+	
     #================4x======================================
     INSERT INTO Temp_SpecialCategory( CategoryID, CustomerClass, Priorty)
     SELECT	cat.CategoryID
@@ -279,7 +280,16 @@ BEGIN
 																	AND sp.CustomerClass NOT IN (SELECT DISTINCT tmp.CustomerClass FROM Temp_SpecialCategory AS tmp),
             LATERAL (SELECT cat.CategoryGroup, cat.RelevantCategoryID 
 					 FROM CTS_DataCenter.CustomerCategory AS cat 
-					 WHERE cat.ReasonID = tmpJs.ReasonID 
+					 WHERE cat.ReasonID = CASE WHEN tmpJs.ReasonID = 39 	THEN 3900	-- Abnormal
+											   WHEN tmpJs.ReasonID = 100 	THEN 10000	-- Group Betting
+											   WHEN tmpJs.ReasonID = 101 	THEN 10100	-- Hedging
+											   WHEN tmpJs.ReasonID = 102 	THEN 10200	-- Arbitrage
+											   WHEN tmpJs.ReasonID = 103 	THEN 10300	-- Fixed Game
+											   WHEN tmpJs.ReasonID = 104 	THEN 10400	-- AB Bet
+											   WHEN tmpJs.ReasonID = 105 	THEN 10500	-- Robot User
+											   WHEN tmpJs.ReasonID = 106 	THEN 10600	-- Irrigation Bet
+											   WHEN tmpJs.ReasonID = 107 	THEN 10700	-- System Formula Bet
+											   ELSE tmpJs.ReasonID END
 					 LIMIT 1) tmpLtr;
 		                
 		CALL CTS_DC_CustClassification_PA_RemoveOldTVSRequest(); 
