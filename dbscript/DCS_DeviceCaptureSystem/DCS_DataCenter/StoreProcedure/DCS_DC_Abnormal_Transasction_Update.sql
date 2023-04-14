@@ -24,7 +24,7 @@ BEGIN
 		- CALL DCS_DataCenter.DCS_DC_Abnormal_Transasction_Update('[{"ID":3,"Status":1}]', 1, 10);
 	*/
     DECLARE lv_SystemSettingVGroup VARCHAR(128) DEFAULT 'DCS_AbnormalTransaction_Processed';
-    DECLARE lv_SystemSettingVName VARCHAR(128) DEFAULT 'MaxID';
+    DECLARE lv_SystemSettingVName VARCHAR(128) DEFAULT 'MaxAssociationIDProcessed';
     
     DECLARE lv_CurrentDatetime DATETIME DEFAULT CURRENT_TIMESTAMP();
     

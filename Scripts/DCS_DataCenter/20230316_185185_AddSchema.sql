@@ -25,7 +25,7 @@ CREATE TABLE DCS_DataCenter.NewAccountDevice(
 	, 	TransTime			DATETIME(4)
 	, 	UserAgentKey		VARCHAR(32)
 	, 	IP					VARCHAR(50)
-	,	Status 				TINYINT COMMENT '0: Default|Not send\n1: Sent'
+	,	Status 				BIT COMMENT '0: Default|Not send\n1: Sent'
 	, 	CreatedDate			DATETIME
 	, 	ModifiedDate		DATETIME
 	,	PRIMARY KEY (`AssociationID`, `Status`, `CreatedDate`)
@@ -43,8 +43,11 @@ ALTER TABLE NewAccountDevice
     PARTITION p10202320 VALUES LESS THAN (10202320),
 	PARTITION p19999999 VALUES LESS THAN MAXVALUE);
 
+DELETE FROM DCS_DataCenter.SystemSetting
+WHERE VGroup LIKE 'DCS_AbnormalTransaction%';
+
 INSERT INTO DCS_DataCenter.SystemSetting(VGroup, VName, VValue, UpdatedTime)
-VALUES ('DCS_AbnormalTransaction_Processed', 'MaxID', '0', NOW());
+VALUES ('DCS_AbnormalTransaction_Processed', 'MaxAssociationIDProcessed', '0', NOW());
 
 INSERT INTO DCS_DataCenter.SystemSetting(VGroup, VName, VValue, UpdatedTime)
 VALUES ('DCS_AbnormalTransaction_Transform', 'MaxAssociationID', '0', NOW());
