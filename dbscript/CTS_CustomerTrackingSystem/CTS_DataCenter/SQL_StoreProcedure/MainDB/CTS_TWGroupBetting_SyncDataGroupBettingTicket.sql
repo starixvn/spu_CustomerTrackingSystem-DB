@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
-CREATE OR ALTER PROCEDURE [dbo].[CTS_TWGroupBetting_SyncDataGroupBettingTicket]
+ALTER PROCEDURE [dbo].[CTS_TWGroupBetting_SyncDataGroupBettingTicket]
 		@GBTicketXMLString	VARCHAR(MAX)
 		,@RunningSequenceId	BIGINT
 AS
@@ -50,9 +50,11 @@ BEGIN
 		TransId
 		,TransDate
 		)
-	SELECT TransId
-		,TransDate
-	FROM #TmpGroupBettingTicket
+	SELECT tmp.TransId
+		,tmp.TransDate
+	FROM #TmpGroupBettingTicket AS tmp
+		LEFT JOIN dbo.SPU_GroupBettingTicket_History AS his ON tmp.TransID = his.TransID
+	WHERE his.TransID IS NULL;
 
 	SELECT @RunningDate = transdate
 	FROM dbo.bettrans WITH (NOLOCK)
