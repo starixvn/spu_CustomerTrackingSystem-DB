@@ -159,6 +159,10 @@ BEGIN
 		PRIMARY KEY CLUSTERED (CustId, SportId)
 	);
 
+	CREATE NONCLUSTERED INDEX IX_tmpBetCount_CategoryId ON #tmpBetCount(
+		CategoryId
+	);
+
 	-- #1: Filter Active Customers
 	SELECT @ListCustIds = STUFF((SELECT DISTINCT ',', CONVERT(VARCHAR(15), CustId) 
 							FROM #tmpCustomers WITH (NOLOCK)

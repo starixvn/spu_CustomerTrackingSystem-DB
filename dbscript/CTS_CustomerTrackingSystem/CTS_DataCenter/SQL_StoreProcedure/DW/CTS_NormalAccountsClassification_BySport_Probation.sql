@@ -159,6 +159,10 @@ BEGIN
 		PRIMARY KEY CLUSTERED (CustId, SportId)
 	);
 	
+	CREATE NONCLUSTERED INDEX IX_tmpBetCount_CategoryId ON #tmpBetCount(
+		CategoryId
+	);
+
 	INSERT INTO #tmpCustomers(CustId, SportId, IsProbationLastDay)
 	SELECT	T.C.value('./@CustId', 'INT')			  AS CustId
 		,	T.C.value('./@SportId', 'SMALLINT')		  AS SportId

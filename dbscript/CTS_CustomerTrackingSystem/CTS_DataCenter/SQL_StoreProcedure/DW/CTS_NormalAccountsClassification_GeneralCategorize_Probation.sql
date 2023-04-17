@@ -5,7 +5,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_Probation]
+ALTER PROCEDURE [dbo].[CTS_NormalAccountsClassification_GeneralCategorize_Probation]
 		@CustomersXML			XML
 AS
 /*
@@ -141,6 +141,10 @@ BEGIN
 		CategoryId				SMALLINT	NOT NULL,
 		BetCount				BIGINT		NULL
 		PRIMARY KEY CLUSTERED (CustId)
+	);
+
+	CREATE NONCLUSTERED INDEX IX_tmpBetCount_CategoryId ON #tmpBetCount(
+		CategoryId
 	);
 
 	--#1: Filter customers info

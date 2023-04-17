@@ -151,6 +151,10 @@ BEGIN
 		PRIMARY KEY CLUSTERED (CustId)
 	);
 
+	CREATE NONCLUSTERED INDEX IX_tmpBetCount_CategoryId ON #tmpBetCount(
+		CategoryId
+	);
+
 	-- #1: Filter Customers
 	INSERT INTO #tmpCustomers(CustId, CurrentCategoryId)
 	SELECT	T.C.value('./@CustId', 'INT')		   AS CustId
