@@ -298,7 +298,7 @@ BEGIN
 			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin ON cus.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
 			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON cus.CTSCustID = sp.CTSCustID 
 																	AND sp.CustomerClass NOT IN (SELECT DISTINCT tmp.CustomerClass FROM Temp_SpecialCategory AS tmp)
-			LEFT JOIN Temp_MappingReason AS tmpR ON tmpR.ReasonID = tmpJs.ReasonID
+			LEFT JOIN Temp_MappingReason AS tmpR ON tmpR.ReasonID = tmpJs.ReasonID,
             LATERAL (SELECT cat.CategoryGroup, cat.RelevantCategoryID 
 					 FROM CTS_DataCenter.CustomerCategory AS cat 
 					 WHERE cat.ReasonID = CASE WHEN tmpJs.IssueTypeID = 13 AND tmpR.ReasonID IS NOT NULL THEN tmpR.MappingReasonID
