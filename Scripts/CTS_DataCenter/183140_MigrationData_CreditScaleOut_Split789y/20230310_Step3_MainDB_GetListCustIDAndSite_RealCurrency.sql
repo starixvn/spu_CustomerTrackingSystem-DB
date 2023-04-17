@@ -11,6 +11,8 @@
 /**************************
 PART 0: Customer - Get all data
 ***************************/
+DECLARE @max_custid INT;
+
 IF	OBJECT_ID('tempdb..#tmp_Cust_789y') IS NOT NULL
 BEGIN
 	DROP TABLE #tmp_Cust_789y;
@@ -25,6 +27,11 @@ CREATE TABLE #tmp_Cust_789y (
 	
 );
 
+SELECT @max_custid = MAX(custid)
+FROM CustDB.dbo.[vw_Customer];
+
+SELECT @max_custid AS Max_CustID;
+
 INSERT INTO #tmp_Cust_789y
 (
 		custid
@@ -34,10 +41,11 @@ INSERT INTO #tmp_Cust_789y
 SELECT 	c.custid
 	,	c.roleid
 	,	c.site
-FROM CustDB.dbo.Customer AS c WITH (NOLOCK) 
+FROM CustDB.dbo.[vw_Customer] AS c WITH (NOLOCK) 
 	INNER JOIN CustDB.dbo.Site AS s WITH (NOLOCK) ON s.site = c.site			
 WHERE s.SiteLabel = '789y'				
-	AND c.currency <> 20;
+	AND c.currency <> 20
+	AND c.custid <= @max_custid;
 
 /**************************
 PART 1: Customer - Headline
@@ -159,14 +167,15 @@ SELECT  c.custid
 											THEN 'y889'             -- Group 2
 				ELSE 'yOther'										-- Group 4
 		END 
-FROM CustDB.dbo.CustAccount AS ca WITH (NOLOCK)					
-	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = ca.custid	
+FROM CustDB.dbo.[vw_CustAccount] AS ca WITH (NOLOCK)					
+	INNER JOIN CustDB.dbo.[vw_Customer]  AS c WITH (NOLOCK) ON c.custid = ca.custid	
 	INNER JOIN CustDB.dbo.Site AS s WITH (NOLOCK) ON s.site = c.site
 	LEFT JOIN CustDB.dbo.CustGroupHeadline AS h WITH (NOLOCK) ON h.GroupID = ca.groupID				
-	LEFT JOIN CustDB.dbo.Customer AS ch WITH (NOLOCK) ON ch.custid = h.CustID				
+	LEFT JOIN CustDB.dbo.[vw_Customer]  AS ch WITH (NOLOCK) ON ch.custid = h.CustID				
 WHERE s.SiteLabel = '789y'				
 	AND c.currency <> 20
 	AND ca.groupID <> 0
+	AND c.custid <= @max_custid
 	-- AND ch.username is not null
 ;
 	
@@ -177,7 +186,7 @@ SET tmp.ssite = CASE WHEN tmp.roleid = 4 THEN tmp.newSite
 					 ELSE c.site
 				END
 FROM #tmp_Cust_Headline AS tmp
-	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = tmp.srecommend;
+	INNER JOIN CustDB.dbo.[vw_Customer] AS c WITH (NOLOCK) ON c.custid = tmp.srecommend;
 	
 -- Master
 UPDATE tmp
@@ -185,7 +194,7 @@ SET tmp.msite = CASE WHEN tmp.roleid = 3 THEN tmp.newSite
 					 ELSE c.site
 				END
 FROM #tmp_Cust_Headline AS tmp
-	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = tmp.mrecommend;
+	INNER JOIN CustDB.dbo.[vw_Customer] AS c WITH (NOLOCK) ON c.custid = tmp.mrecommend;
 	
 -- Agent
 UPDATE tmp
@@ -193,7 +202,7 @@ SET tmp.asite = CASE WHEN tmp.roleid = 2 THEN tmp.newSite
 					 ELSE c.site
 				END
 FROM #tmp_Cust_Headline AS tmp
-	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = tmp.recommend;	
+	INNER JOIN CustDB.dbo.[vw_Customer] AS c WITH (NOLOCK) ON c.custid = tmp.recommend;	
 
 ------------------ DISTINCT
 INSERT INTO #tmp_Cust_Super (custid)
@@ -230,7 +239,7 @@ SELECT 	c.custid
 	, 	c.site
 	, 	tmp.newSite
 FROM #tmp_Cust_Headline AS tmp
-	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.srecommend = tmp.custid
+	INNER JOIN CustDB.dbo.[vw_Customer] AS c WITH (NOLOCK) ON c.srecommend = tmp.custid
 	LEFT JOIN #tmp_Cust_Master AS tmpM ON tmpM.custid = c.custid
 	LEFT JOIN #tmp_Cust_Agent AS tmpA ON tmpA.custid = c.custid
 	LEFT JOIN #tmp_Cust_Member AS tmpMM ON tmpMM.custid = c.custid
@@ -253,7 +262,7 @@ SELECT 	c.custid
 	, 	c.site
 	, 	tmp.newSite
 FROM #tmp_Cust_Headline AS tmp
-	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.mrecommend = tmp.custid
+	INNER JOIN CustDB.dbo.[vw_Customer] AS c WITH (NOLOCK) ON c.mrecommend = tmp.custid
 	LEFT JOIN #tmp_Cust_Agent AS tmpA ON tmpA.custid = c.custid
 	LEFT JOIN #tmp_Cust_Member AS tmpMM ON tmpMM.custid = c.custid
 WHERE tmp.roleid = 3
@@ -274,7 +283,7 @@ SELECT 	c.custid
 	, 	c.site
 	, 	tmp.newSite
 FROM #tmp_Cust_Headline AS tmp
-	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.recommend = tmp.custid
+	INNER JOIN CustDB.dbo.[vw_Customer] AS c WITH (NOLOCK) ON c.recommend = tmp.custid
 	LEFT JOIN #tmp_Cust_Member AS tmpMM ON tmpMM.custid = c.custid
 WHERE tmp.roleid = 2
 	AND (	c.roleid = 2
@@ -293,7 +302,7 @@ SELECT 	c.custid
 	, 	c.site
 	, 	tmp.newSite
 FROM #tmp_Cust_Headline AS tmp
-	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = tmp.custid
+	INNER JOIN CustDB.dbo.[vw_Customer] AS c WITH (NOLOCK) ON c.custid = tmp.custid
 WHERE tmp.roleid = 1;
 
 ------------------ Dummy - Upline
@@ -392,12 +401,13 @@ INSERT INTO #tmp_Cust_NonHeadLine
 SELECT 	c.custid
 	,	c.roleid
 	,	'yOther' AS newSite
-FROM CustDB.dbo.Customer AS c WITH (NOLOCK)
+FROM CustDB.dbo.[vw_Customer]  AS c WITH (NOLOCK)
 	INNER JOIN CustDB.dbo.Site AS s WITH (NOLOCK) ON s.site = c.site			
 	LEFT JOIN #tmp_Cust_Result AS tmp ON tmp.custid = c.custid
 WHERE s.SiteLabel = '789y'
 	AND c.currency <> 20
-	AND tmp.custid IS NULL;
+	AND tmp.custid IS NULL
+	AND c.custid <= @max_custid;
 
 SELECT custid AS CustID,newSite AS SiteName FROM #tmp_Cust_NonHeadLine;
 
@@ -433,7 +443,7 @@ DROP TABLE IF EXISTS #Cust_Result_CC_Site_HL;
 SELECT c.site,COUNT(1) AS CC
 INTO #Cust_Result_CC_Site_HL
 FROM #tmp_Cust_Result AS tmp
-	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = tmp.custid
+	INNER JOIN CustDB.dbo.[vw_Customer]  AS c WITH (NOLOCK) ON c.custid = tmp.custid
 GROUP BY c.site;
 
 -- Compare
@@ -457,7 +467,7 @@ DROP TABLE IF EXISTS #Cust_Result_CC_Site_NonHL;
 SELECT c.site,COUNT(1) AS CC
 INTO #Cust_Result_CC_Site_NonHL
 FROM #tmp_Cust_NonHeadLine AS tmp
-	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = tmp.custid
+	INNER JOIN CustDB.dbo.[vw_Customer]  AS c WITH (NOLOCK) ON c.custid = tmp.custid
 GROUP BY c.site;
 
 -- Compare
@@ -482,7 +492,7 @@ DROP TABLE IF EXISTS #Cust_Result_CC_Site_RoleID_HL;
 SELECT c.site,c.roleid,COUNT(1) AS CC
 INTO #Cust_Result_CC_Site_RoleID_HL
 FROM #tmp_Cust_Result AS tmp
-	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = tmp.custid
+	INNER JOIN CustDB.dbo.[vw_Customer]  AS c WITH (NOLOCK) ON c.custid = tmp.custid
 GROUP BY c.site,c.roleid;
 
 -- Compare
@@ -507,7 +517,7 @@ DROP TABLE IF EXISTS #Cust_Result_CC_Site_RoleID_NonHL;
 SELECT c.site,c.roleid,COUNT(1) AS CC
 INTO #Cust_Result_CC_Site_RoleID_NonHL
 FROM #tmp_Cust_NonHeadLine AS tmp
-	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = tmp.custid
+	INNER JOIN CustDB.dbo.[vw_Customer]  AS c WITH (NOLOCK) ON c.custid = tmp.custid
 GROUP BY c.site,c.roleid;
 
 -- Compare
@@ -533,7 +543,7 @@ DROP TABLE IF EXISTS #Cust_Result_CS_Site_HL;
 SELECT c.site,CHECKSUM_AGG( CHECKSUM(c.custid,c.roleid,c.site)) AS CS
 INTO #Cust_Result_CS_Site_HL
 FROM #tmp_Cust_Result AS tmp
-	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = tmp.custid
+	INNER JOIN CustDB.dbo.[vw_Customer]  AS c WITH (NOLOCK) ON c.custid = tmp.custid
 GROUP BY c.site;
 
 -- Compare
@@ -557,7 +567,7 @@ DROP TABLE IF EXISTS #Cust_Result_CS_Site_NonHL;
 SELECT c.site,CHECKSUM_AGG( CHECKSUM(c.custid,c.roleid, c.site)) AS CS
 INTO #Cust_Result_CS_Site_NonHL
 FROM #tmp_Cust_NonHeadLine AS tmp
-	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = tmp.custid
+	INNER JOIN CustDB.dbo.[vw_Customer]  AS c WITH (NOLOCK) ON c.custid = tmp.custid
 GROUP BY c.site;
 
 -- Compare
@@ -582,7 +592,7 @@ DROP TABLE IF EXISTS #Cust_Result_CS_Site_RoleID_HL;
 SELECT c.site,c.roleid,CHECKSUM_AGG( CHECKSUM(c.custid,c.roleid,c.site)) AS CS
 INTO #Cust_Result_CS_Site_RoleID_HL
 FROM #tmp_Cust_Result AS tmp
-	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = tmp.custid
+	INNER JOIN CustDB.dbo.[vw_Customer]  AS c WITH (NOLOCK) ON c.custid = tmp.custid
 GROUP BY c.site,c.roleid;
 
 -- Compare
@@ -607,7 +617,7 @@ DROP TABLE IF EXISTS #Cust_Result_CS_Site_RoleID_NonHL;
 SELECT c.site,c.roleid,CHECKSUM_AGG( CHECKSUM(c.custid,c.roleid, c.site)) AS CS
 INTO #Cust_Result_CS_Site_RoleID_NonHL
 FROM #tmp_Cust_NonHeadLine AS tmp
-	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = tmp.custid
+	INNER JOIN CustDB.dbo.[vw_Customer]  AS c WITH (NOLOCK) ON c.custid = tmp.custid
 GROUP BY c.site,c.roleid;
 
 -- Compare
@@ -624,11 +634,11 @@ WHERE tmptbl.newSite IS NULL
 
 SELECT c.custid, c.site, tmp.newSite
 FROM #tmp_Cust_Result AS tmp
-	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = tmp.custid
+	INNER JOIN CustDB.dbo.[vw_Customer]  AS c WITH (NOLOCK) ON c.custid = tmp.custid
 WHERE tmp.newSite <> c.site;
 
 SELECT c.custid, c.site, tmp.newSite
 FROM #tmp_Cust_NonHeadLine AS tmp
-	INNER JOIN CustDB.dbo.Customer AS c WITH (NOLOCK) ON c.custid = tmp.custid
+	INNER JOIN CustDB.dbo.[vw_Customer]  AS c WITH (NOLOCK) ON c.custid = tmp.custid
 WHERE tmp.newSite <> c.site;
 */
