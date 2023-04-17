@@ -105,12 +105,12 @@ sp :BEGIN
 	,	GROUP_CONCAT(DISTINCT tmpCat.CategoryName SEPARATOR ', ') AS CategoryName
 	,	MIN(class.CreatedDate) AS CreatedDate
 	,	SUBSTRING_INDEX(GROUP_CONCAT(IFNULL(us.UserName, class.CreatedBy) ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS CreatedBy
-	,	SUBSTRING_INDEX(GROUP_CONCAT(class.Remark ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS Remark
+	,	SUBSTRING_INDEX(GROUP_CONCAT(IFNULL(class.Remark,'') ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS Remark
 	,	CAST(SUBSTRING_INDEX(GROUP_CONCAT(class.IsFromTVS ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS UNSIGNED) AS IsFromTVS
-	,	SUBSTRING_INDEX(GROUP_CONCAT(class.TVSRequestID ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS TVSRequestID
+	,	SUBSTRING_INDEX(GROUP_CONCAT(IFNULL(class.TVSRequestID,0) ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS TVSRequestID
 	,	CAST(SUBSTRING_INDEX(GROUP_CONCAT(class.IsParlay ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS UNSIGNED) AS IsParlay
-	,	SUBSTRING_INDEX(GROUP_CONCAT(class.SportType ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS SportType
-	,	SUBSTRING_INDEX(GROUP_CONCAT(class.IssueTypeID ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS IssueTypeID
+	,	SUBSTRING_INDEX(GROUP_CONCAT(IFNULL(class.SportType,0) ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS SportType
+	,	SUBSTRING_INDEX(GROUP_CONCAT(IFNULL(class.IssueTypeID,0) ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS IssueTypeID
 	FROM CTS_DataCenter.CTSCustomerClassification AS class
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON class.CTSCustID = cus.CTSCustID
         STRAIGHT_JOIN CTS_DataCenter.Temp_CustomerCategory AS tmpCat ON class.CategoryID = tmpCat.CategoryID
