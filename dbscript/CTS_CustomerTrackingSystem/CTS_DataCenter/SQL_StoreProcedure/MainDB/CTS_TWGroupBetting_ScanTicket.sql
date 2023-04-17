@@ -51,7 +51,7 @@ BEGIN
         ,	Sporttype		SMALLINT
         ,	Bettype			SMALLINT
         ,	Betteam			NVARCHAR(10)
-        ,	BetFrom			NVARCHAR(1)
+        ,	BetFrom			NVARCHAR(4)
         ,	Liveindicator	BIT
         ,	RFM				INT
         ,	CustomerClass	SMALLINT
@@ -70,7 +70,7 @@ BEGIN
 		,	Sporttype			SMALLINT
 		,	Bettype				SMALLINT
 		,	Betteam				NVARCHAR(10)
-		,	BetFrom				NVARCHAR(1)
+		,	BetFrom				NVARCHAR(4)
 		,	Liveindicator		BIT
 		,	RFM					INT
 		,	CustomerClass		SMALLINT
