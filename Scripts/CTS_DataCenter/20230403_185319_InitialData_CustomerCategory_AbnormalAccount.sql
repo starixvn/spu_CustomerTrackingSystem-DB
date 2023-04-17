@@ -40,6 +40,22 @@ Revisions:
 							WHEN CategoryID = 98 THEN 10600 -- Irrigation Bet (Probation)
 							WHEN CategoryID = 99 THEN 10700 -- System Formula Bet (Probation)
 					 END
+		, DisplayOrder = CASE 	WHEN CategoryID = 51 THEN 39 -- Abnormal
+								WHEN CategoryID = 52 THEN 100 -- Group Betting
+								WHEN CategoryID = 53 THEN 101 -- Hedging
+								WHEN CategoryID = 54 THEN 102 -- Arbitrage
+								WHEN CategoryID = 55 THEN 103 -- Fixed Game
+								WHEN CategoryID = 56 THEN 104 -- AB Bet
+								WHEN CategoryID = 61 THEN 173 -- Robot User
+								WHEN CategoryID = 58 THEN 106 -- Irrigation Bet
+								WHEN CategoryID = 59 THEN 107 -- System Formula Bet
+								WHEN CategoryID = 92 THEN 255 -- Group Betting (Probation)
+								WHEN CategoryID = 93 THEN 255 -- Hedging (Probation)
+								WHEN CategoryID = 94 THEN 255 -- Arbitrage (Probation)
+								WHEN CategoryID = 95 THEN 255 -- Fixed Game (Probation)
+								WHEN CategoryID = 98 THEN 255 -- Irrigation Bet (Probation)
+								WHEN CategoryID = 99 THEN 255 -- System Formula Bet (Probation)
+						END
 		, CategoryID = CASE WHEN CategoryID = 51 THEN 165 -- Abnormal
 							WHEN CategoryID = 52 THEN 166 -- Group Betting
 							WHEN CategoryID = 53 THEN 167 -- Hedging
