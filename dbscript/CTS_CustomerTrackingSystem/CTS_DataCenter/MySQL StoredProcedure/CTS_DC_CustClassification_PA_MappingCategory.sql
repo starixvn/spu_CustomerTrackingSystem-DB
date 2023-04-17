@@ -96,6 +96,13 @@ BEGIN
         ,	INDEX IX_Temp_SpecialCategory_CustomerClass(CustomerClass)
     );
 	
+    #======================================
+	DROP TEMPORARY TABLE IF EXISTS Temp_MappingReason;
+    CREATE TEMPORARY TABLE Temp_MappingReason (
+			ReasonID		INT
+        ,	MappingReasonID	INT
+    );
+	
     #================4x======================================
     INSERT INTO Temp_SpecialCategory( CategoryID, CustomerClass, Priorty)
     SELECT	cat.CategoryID
@@ -103,6 +110,18 @@ BEGIN
 		,	cat.Priority
 	FROM CTS_DataCenter.CustomerCategory AS cat
     WHERE cat.Priority = 55; # Handle for 4x
+	
+	INSERT INTO Temp_MappingReason (ReasonID, MappingReasonID)
+	VALUES 	(39, 3900)		-- Abnormal
+		,	(100, 10000)	-- Group Betting
+		,	(101, 10100)	-- Hedging
+		,	(102, 10200)	-- Arbitrage
+		,	(103, 10300)	-- Fixed Game
+		,	(104, 10400)	-- AB Bet
+		,	(105, 10500)	-- Robot User
+		,	(106, 10600)	-- Irrigation Bet
+		,	(107, 10700)	-- System Formula Bet
+	;
     
     IF ip_InputType = 'Category' THEN    
         INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, InputCategoryID, InputCategoryGroup,  IsLicensee, CreatedBy, Remark, IsDirectPA
@@ -249,15 +268,7 @@ BEGIN
                         END) AS IsProbation			
             ,	tmpLtr.RelevantCategoryID
             ,	tmpJs.TVSRequestID
-            ,	CASE WHEN tmpJs.ReasonID = 39 	THEN 3900	-- Abnormal
-					 WHEN tmpJs.ReasonID = 100 	THEN 10000	-- Group Betting
-					 WHEN tmpJs.ReasonID = 101 	THEN 10100	-- Hedging
-					 WHEN tmpJs.ReasonID = 102 	THEN 10200	-- Arbitrage
-					 WHEN tmpJs.ReasonID = 103 	THEN 10300	-- Fixed Game
-					 WHEN tmpJs.ReasonID = 104 	THEN 10400	-- AB Bet
-					 WHEN tmpJs.ReasonID = 105 	THEN 10500	-- Robot User
-					 WHEN tmpJs.ReasonID = 106 	THEN 10600	-- Irrigation Bet
-					 WHEN tmpJs.ReasonID = 107 	THEN 10700	-- System Formula Bet
+            ,	CASE WHEN tmpJs.IssueTypeID = 13 AND tmpR.ReasonID IS NOT NULL THEN tmpR.MappingReasonID
 					 ELSE tmpJs.ReasonID END
             ,	pin.CTSCustID
 			,	tmpJs.IsParlay
@@ -286,18 +297,11 @@ BEGIN
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
 			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin ON cus.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
 			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON cus.CTSCustID = sp.CTSCustID 
-																	AND sp.CustomerClass NOT IN (SELECT DISTINCT tmp.CustomerClass FROM Temp_SpecialCategory AS tmp),
+																	AND sp.CustomerClass NOT IN (SELECT DISTINCT tmp.CustomerClass FROM Temp_SpecialCategory AS tmp)
+			LEFT JOIN Temp_MappingReason AS tmpR ON tmpR.ReasonID = tmpJs.ReasonID
             LATERAL (SELECT cat.CategoryGroup, cat.RelevantCategoryID 
 					 FROM CTS_DataCenter.CustomerCategory AS cat 
-					 WHERE cat.ReasonID = CASE WHEN tmpJs.ReasonID = 39 	THEN 3900	-- Abnormal
-											   WHEN tmpJs.ReasonID = 100 	THEN 10000	-- Group Betting
-											   WHEN tmpJs.ReasonID = 101 	THEN 10100	-- Hedging
-											   WHEN tmpJs.ReasonID = 102 	THEN 10200	-- Arbitrage
-											   WHEN tmpJs.ReasonID = 103 	THEN 10300	-- Fixed Game
-											   WHEN tmpJs.ReasonID = 104 	THEN 10400	-- AB Bet
-											   WHEN tmpJs.ReasonID = 105 	THEN 10500	-- Robot User
-											   WHEN tmpJs.ReasonID = 106 	THEN 10600	-- Irrigation Bet
-											   WHEN tmpJs.ReasonID = 107 	THEN 10700	-- System Formula Bet
+					 WHERE cat.ReasonID = CASE WHEN tmpJs.IssueTypeID = 13 AND tmpR.ReasonID IS NOT NULL THEN tmpR.MappingReasonID
 											   ELSE tmpJs.ReasonID END
 					 LIMIT 1) tmpLtr;
 		                
