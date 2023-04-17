@@ -95,88 +95,41 @@ sp :BEGIN
 		END IF;
      END IF;
 	
-	WITH CTE_CategoryName AS
-	(
-		SELECT 	cus.CTSCustID
-			, 	cus.CustID
-			, 	cus.UserName
-			, 	cus.Site
-			, 	cus.SiteID
-			,	cus.Currency
-			,	cus.CurrencyID
-			,	GROUP_CONCAT(DISTINCT tmpCat.CategoryName SEPARATOR ', ') AS CategoryName
-			,	MIN(class.CreatedDate) AS CreatedDate
-		FROM CTS_DataCenter.CTSCustomerClassification AS class
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON class.CTSCustID = cus.CTSCustID
-			STRAIGHT_JOIN CTS_DataCenter.Temp_CustomerCategory AS tmpCat ON class.CategoryID = tmpCat.CategoryID
-		WHERE    class.CreatedDate BETWEEN ip_FromDate AND ip_ToDate
-			AND  class.SportGroupID = 0
-			AND  cus.SiteID IN (SELECT st.SiteID FROM Temp_SiteID AS st)
-			AND  (lv_CTSCustID = 0 OR cus.CTSCustID = lv_CTSCustID
-								   OR (ip_HasDownline = 1 
-										AND (cus.SRecommend = lv_CustID 
-											OR cus.MRecommend = lv_CustID 
-											OR cus.Recommend = lv_CustID)))
-		GROUP BY 	cus.CTSCustID
-				, 	cus.CustID
-				, 	cus.UserName
-				, 	cus.Site
-				, 	cus.SiteID
-				,	cus.Currency
-				,	cus.CurrencyID
-	), CTE_First AS
-    (
-		SELECT 	cus.CTSCustID
-			, 	cus.CustID
-			,	class.CategoryID
-			,	tmp.ID AS HistoryID
-			,	ROW_NUMBER() OVER (PARTITION BY cus.CTSCustID, cus.CustID ORDER BY tmp.ID) AS RowNumber
-        FROM CTS_DataCenter.CTSCustomerClassification AS class
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON class.CTSCustID = cus.CTSCustID,
-            LATERAL (	SELECT h.ID
-						FROM CTS_DataCenter.CTSCustomerClassification_History AS h
-                        WHERE h.CTSCustID = class.CTSCustID
-							AND h.CustID = class.CustID
-                            AND h.CategoryID = class.CategoryID
-                            AND h.IsDataChanged = 1
-                            ORDER BY h.ID ASC
-                            LIMIT 1) AS tmp
-		WHERE    class.CreatedDate BETWEEN ip_FromDate AND ip_ToDate
-			AND  class.SportGroupID = 0
-			AND  (lv_CTSCustID = 0 OR cus.CTSCustID = lv_CTSCustID
-								   OR (ip_HasDownline = 1 
-										AND (cus.SRecommend = lv_CustID 
-											OR cus.MRecommend = lv_CustID 
-											OR cus.Recommend = lv_CustID)))
-		GROUP BY 	cus.CTSCustID
-				, 	cus.CustID
-				,	class.CategoryID
-				,	tmp.ID
-            
-    )
-    SELECT 	DISTINCT 
-				tmp1.CTSCustID
-			, 	tmp1.CustID
-			, 	tmp1.UserName
-			, 	tmp1.Site
-			, 	tmp1.SiteID
-			,	tmp1.Currency
-			,	tmp1.CurrencyID
-			,	tmp1.CategoryName
-			,	tmp1.CreatedDate
-			,	IFNULL(us.UserName, class.CreatedBy) AS CreatedBy
-			,	class.IsFromTVS
-			,	class.Remark
-			,	class.TVSRequestID
-			,	class.IsParlay
-			,	class.SportType
-			,	class.IssueTypeID
-			,	tmp2.HistoryID
-    FROM CTE_CategoryName AS tmp1
-		INNER JOIN CTE_First AS tmp2 ON tmp2.CTSCustID = tmp1.CTSCustID AND tmp2.CustID = tmp1.CustID
-        STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS class ON class.CTSCustID = tmp1.CTSCustID AND class.CustID = tmp1.CustID AND class.CategoryID = tmp2.CategoryID
-		LEFT JOIN CTS_Admin.CTSUser AS us ON class.CreatedBy = us.UserID
-	WHERE tmp2.RowNumber = 1;
+	SELECT 	cus.CTSCustID
+	, 	cus.CustID
+	, 	cus.UserName
+	, 	cus.Site
+	, 	cus.SiteID
+	,	cus.Currency
+	,	cus.CurrencyID
+	,	GROUP_CONCAT(DISTINCT tmpCat.CategoryName SEPARATOR ', ') AS CategoryName
+	,	MIN(class.CreatedDate) AS CreatedDate
+	,	SUBSTRING_INDEX(GROUP_CONCAT(IFNULL(us.UserName, class.CreatedBy) ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS CreatedBy
+	,	SUBSTRING_INDEX(GROUP_CONCAT(class.Remark ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS Remark
+	,	CAST(SUBSTRING_INDEX(GROUP_CONCAT(class.IsFromTVS ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS UNSIGNED) AS IsFromTVS
+	,	SUBSTRING_INDEX(GROUP_CONCAT(class.TVSRequestID ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS TVSRequestID
+	,	CAST(SUBSTRING_INDEX(GROUP_CONCAT(class.IsParlay ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS UNSIGNED) AS IsParlay
+	,	SUBSTRING_INDEX(GROUP_CONCAT(class.SportType ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS SportType
+	,	SUBSTRING_INDEX(GROUP_CONCAT(class.IssueTypeID ORDER BY class.CreatedDate SEPARATOR ', '),',',1) AS IssueTypeID
+	FROM CTS_DataCenter.CTSCustomerClassification AS class
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON class.CTSCustID = cus.CTSCustID
+        STRAIGHT_JOIN CTS_DataCenter.Temp_CustomerCategory AS tmpCat ON class.CategoryID = tmpCat.CategoryID
+        LEFT JOIN CTS_Admin.CTSUser AS us ON class.CreatedBy = us.UserID
+	WHERE    class.CreatedDate BETWEEN ip_FromDate AND ip_ToDate
+		AND  class.SportGroupID = 0
+		AND  cus.SiteID IN (SELECT st.SiteID FROM Temp_SiteID AS st)
+		AND  (lv_CTSCustID = 0 OR cus.CTSCustID = lv_CTSCustID
+							   OR (ip_HasDownline = 1 
+									AND (cus.SRecommend = lv_CustID 
+										OR cus.MRecommend = lv_CustID 
+										OR cus.Recommend = lv_CustID)))
+	GROUP BY cus.CTSCustID
+		, 	cus.CustID
+		, 	cus.UserName
+		, 	cus.Site
+		, 	cus.SiteID
+		,	cus.Currency
+		,	cus.CurrencyID;
 	
 END$$
 DELIMITER ;
