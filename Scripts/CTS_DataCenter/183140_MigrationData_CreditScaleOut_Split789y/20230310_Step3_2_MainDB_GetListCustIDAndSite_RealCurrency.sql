@@ -11,7 +11,7 @@
 /**************************
 PART 0: Customer - Get all data
 ***************************/
-DECLARE @max_custid INT;
+DECLARE @max_custid INT = XXXXX;
 
 IF	OBJECT_ID('tempdb..#tmp_Cust_789y') IS NOT NULL
 BEGIN
@@ -27,11 +27,6 @@ CREATE TABLE #tmp_Cust_789y (
 	
 );
 
-SELECT @max_custid = MAX(custid)
-FROM CustDB.dbo.[vw_Customer];
-
-SELECT @max_custid AS Max_CustID;
-
 INSERT INTO #tmp_Cust_789y
 (
 		custid
@@ -45,7 +40,7 @@ FROM CustDB.dbo.[vw_Customer] AS c WITH (NOLOCK)
 	INNER JOIN CustDB.dbo.Site AS s WITH (NOLOCK) ON s.site = c.site			
 WHERE s.SiteLabel = '789y'				
 	AND c.currency <> 20
-	AND c.custid <= @max_custid;
+	AND c.custid > @max_custid;
 
 /**************************
 PART 1: Customer - Headline
@@ -116,21 +111,6 @@ END;
 
 CREATE TABLE #tmp_Cust_Member (custid INT PRIMARY KEY);
 
-
-IF	OBJECT_ID('tempdb..#tmp_Cust_Dummy') IS NOT NULL
-BEGIN
-	DROP TABLE #tmp_Cust_Dummy;
-END;
-
-CREATE TABLE #tmp_Cust_Dummy 
-(
-		custid			INT PRIMARY KEY
-	,	roleid			TINYINT
-	,	newSite			VARCHAR(10)
-	
-	-- ,	INDEX IX_tmp_Cust_Dummy_CustID_RoleID (custid,roleid)
-);
-
 IF	OBJECT_ID('tempdb..#tmp_Cust_Result') IS NOT NULL
 BEGIN
 	DROP TABLE #tmp_Cust_Result;
@@ -175,7 +155,6 @@ FROM CustDB.dbo.[vw_CustAccount] AS ca WITH (NOLOCK)
 WHERE s.SiteLabel = '789y'				
 	AND c.currency <> 20
 	AND ca.groupID <> 0
-	AND c.custid <= @max_custid
 	-- AND ch.username is not null
 ;
 	
@@ -186,15 +165,17 @@ SET tmp.ssite = CASE WHEN tmp.roleid = 4 THEN tmp.newSite
 					 ELSE c.site
 				END
 FROM #tmp_Cust_Headline AS tmp
-	INNER JOIN CustDB.dbo.[vw_Customer] AS c WITH (NOLOCK) ON c.custid = tmp.srecommend;
-	
+	INNER JOIN CustDB.dbo.[vw_Customer] AS c WITH (NOLOCK) ON c.custid = tmp.srecommend
+WHERE c.custid > @max_custid;
+
 -- Master
 UPDATE tmp
 SET tmp.msite = CASE WHEN tmp.roleid = 3 THEN tmp.newSite
 					 ELSE c.site
 				END
 FROM #tmp_Cust_Headline AS tmp
-	INNER JOIN CustDB.dbo.[vw_Customer] AS c WITH (NOLOCK) ON c.custid = tmp.mrecommend;
+	INNER JOIN CustDB.dbo.[vw_Customer] AS c WITH (NOLOCK) ON c.custid = tmp.mrecommend
+WHERE c.custid > @max_custid;
 	
 -- Agent
 UPDATE tmp
@@ -202,7 +183,8 @@ SET tmp.asite = CASE WHEN tmp.roleid = 2 THEN tmp.newSite
 					 ELSE c.site
 				END
 FROM #tmp_Cust_Headline AS tmp
-	INNER JOIN CustDB.dbo.[vw_Customer] AS c WITH (NOLOCK) ON c.custid = tmp.recommend;	
+	INNER JOIN CustDB.dbo.[vw_Customer] AS c WITH (NOLOCK) ON c.custid = tmp.recommend
+WHERE c.custid > @max_custid;
 
 ------------------ DISTINCT
 INSERT INTO #tmp_Cust_Super (custid)
@@ -243,7 +225,8 @@ FROM #tmp_Cust_Headline AS tmp
 	LEFT JOIN #tmp_Cust_Master AS tmpM ON tmpM.custid = c.custid
 	LEFT JOIN #tmp_Cust_Agent AS tmpA ON tmpA.custid = c.custid
 	LEFT JOIN #tmp_Cust_Member AS tmpMM ON tmpMM.custid = c.custid
-WHERE tmp.roleid = 4
+WHERE c.custid > @max_custid
+	AND tmp.roleid = 4
 	AND (	c.roleid = 4
 		OR (c.roleid = 3 AND tmpM.custid IS NULL)
 		OR (c.roleid = 2 AND tmpA.custid IS NULL)
@@ -265,7 +248,8 @@ FROM #tmp_Cust_Headline AS tmp
 	INNER JOIN CustDB.dbo.[vw_Customer] AS c WITH (NOLOCK) ON c.mrecommend = tmp.custid
 	LEFT JOIN #tmp_Cust_Agent AS tmpA ON tmpA.custid = c.custid
 	LEFT JOIN #tmp_Cust_Member AS tmpMM ON tmpMM.custid = c.custid
-WHERE tmp.roleid = 3
+WHERE c.custid > @max_custid
+	AND tmp.roleid = 3
 	AND (	c.roleid = 3
 		OR (c.roleid = 2 AND tmpA.custid IS NULL)
 		OR (c.roleid = 1 AND tmpMM.custid IS NULL));
@@ -285,7 +269,8 @@ SELECT 	c.custid
 FROM #tmp_Cust_Headline AS tmp
 	INNER JOIN CustDB.dbo.[vw_Customer] AS c WITH (NOLOCK) ON c.recommend = tmp.custid
 	LEFT JOIN #tmp_Cust_Member AS tmpMM ON tmpMM.custid = c.custid
-WHERE tmp.roleid = 2
+WHERE c.custid > @max_custid
+	AND tmp.roleid = 2
 	AND (	c.roleid = 2
 		OR (c.roleid = 1 AND tmpMM.custid IS NULL));
 
@@ -303,77 +288,13 @@ SELECT 	c.custid
 	, 	tmp.newSite
 FROM #tmp_Cust_Headline AS tmp
 	INNER JOIN CustDB.dbo.[vw_Customer] AS c WITH (NOLOCK) ON c.custid = tmp.custid
-WHERE tmp.roleid = 1;
-
------------------- Dummy - Upline
--- Super
-INSERT INTO #tmp_Cust_Dummy
-(
-		custid			
-	,	roleid	
-	,	newSite
-)
-SELECT DISTINCT
-		tmp1.srecommend
-	,	4
-	,	CASE 
-			WHEN tmp1.ssite = '789y' THEN 'yOther'
-			ELSE tmp1.ssite 
-		END
-FROM #tmp_Cust_Headline AS tmp1
-	LEFT JOIN #tmp_Cust_Super AS tmpS ON tmpS.custid = tmp1.srecommend
-WHERE tmpS.custid IS NULL
-	AND ISNULL(tmp1.srecommend,0) <> 0;
-							
--- Master 
-INSERT INTO #tmp_Cust_Dummy
-(
-		custid			
-	,	roleid				
-	,	newSite
-)
-SELECT DISTINCT
-		tmp1.mrecommend
-	,	3
-	,	CASE 
-			WHEN tmp1.msite = '789y' THEN 'yOther'
-			ELSE tmp1.msite 
-		END
-FROM #tmp_Cust_Headline AS tmp1
-	LEFT JOIN #tmp_Cust_Master AS tmpM ON tmpM.custid = tmp1.mrecommend
-	LEFT JOIN #tmp_Cust_Super AS tmpS ON tmpS.custid = tmp1.srecommend
-WHERE tmpM.custid IS NULL AND tmpS.custid IS NULL
-	AND ISNULL(tmp1.mrecommend,0) <> 0;
-
--- Agent
-INSERT INTO #tmp_Cust_Dummy
-(
-		custid			
-	,	roleid				
-	,	newSite
-)
-SELECT DISTINCT
-		tmp1.recommend
-	,	2
-	,	CASE 
-			WHEN tmp1.asite = '789y' THEN 'yOther'
-			ELSE tmp1.asite 
-		END
-FROM #tmp_Cust_Headline AS tmp1
-	LEFT JOIN #tmp_Cust_Agent AS tmpA ON tmpA.custid = tmp1.recommend
-	LEFT JOIN #tmp_Cust_Master AS tmpM ON tmpM.custid = tmp1.mrecommend
-	LEFT JOIN #tmp_Cust_Super AS tmpS ON tmpS.custid = tmp1.srecommend
-WHERE tmpA.custid IS NULL AND tmpM.custid IS NULL  AND tmpS.custid IS NULL 
-	AND ISNULL(tmp1.recommend,0) <> 0;
+WHERE c.custid > @max_custid
+	AND tmp.roleid = 1;
 
 ------------------ Result
 INSERT INTO #tmp_Cust_Result (custid, roleid, newSite)
 SELECT custid, roleid, newSite
 FROM #tmp_Cust
-UNION
-SELECT custid, roleid, newSite
-FROM #tmp_Cust_Dummy
-WHERE newSite IN ('y789','y889','yUT','yOther');
 
 SELECT custid AS CustID, newSite AS SiteName FROM #tmp_Cust_Result;
 
@@ -407,7 +328,7 @@ FROM CustDB.dbo.[vw_Customer]  AS c WITH (NOLOCK)
 WHERE s.SiteLabel = '789y'
 	AND c.currency <> 20
 	AND tmp.custid IS NULL
-	AND c.custid <= @max_custid;
+	AND c.custid > @max_custid;
 
 SELECT custid AS CustID,newSite AS SiteName FROM #tmp_Cust_NonHeadLine;
 
