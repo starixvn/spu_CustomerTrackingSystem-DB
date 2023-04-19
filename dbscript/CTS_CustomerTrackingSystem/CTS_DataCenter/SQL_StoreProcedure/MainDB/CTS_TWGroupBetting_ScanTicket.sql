@@ -23,6 +23,7 @@ AS
 		- 20220801@Harvey.Nguyen: Enhance performance						[Redmine ID: #169671]
 		- 20220831@Harvey.Nguyen: Update for Scale out DB Trans				[Redmine ID: #176472]
 		- 20221122@Long.Luu:	  Exclude WC Leagues						[Redmine ID: #181229]
+		- 20230417@Casey.Huynh: Change betfrom datatype	to NVARCHAR(4)		[Redmine ID: #187030]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_ScanTicket] '2022-02-15 23:10:15.983','2022-02-16 02:15:20.983',10900
@@ -51,7 +52,7 @@ BEGIN
         ,	Sporttype		SMALLINT
         ,	Bettype			SMALLINT
         ,	Betteam			NVARCHAR(10)
-        ,	BetFrom			NVARCHAR(1)
+        ,	BetFrom			NVARCHAR(4)
         ,	Liveindicator	BIT
         ,	RFM				INT
         ,	CustomerClass	SMALLINT
@@ -70,7 +71,7 @@ BEGIN
 		,	Sporttype			SMALLINT
 		,	Bettype				SMALLINT
 		,	Betteam				NVARCHAR(10)
-		,	BetFrom				NVARCHAR(1)
+		,	BetFrom				NVARCHAR(4)
 		,	Liveindicator		BIT
 		,	RFM					INT
 		,	CustomerClass		SMALLINT

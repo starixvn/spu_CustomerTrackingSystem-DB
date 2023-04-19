@@ -1,5 +1,5 @@
 /*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
-CREATE OR ALTER PROCEDURE [dbo].[CTS_TWGroupBetting_SyncDataGroupBettingTicket]
+ALTER PROCEDURE [dbo].[CTS_TWGroupBetting_SyncDataGroupBettingTicket]
 		@GBTicketXMLString	VARCHAR(MAX)
 		,@RunningSequenceId	BIGINT
 AS
@@ -13,6 +13,7 @@ AS
 		- 20220505@Harvey.Nguyen: Insert GroupBetting ticket into history table		[Redmine ID: #169671]
 		- 20220711@Harvey.Nguyen: Change solution to scan on each ticket			[Redmine ID: #169671]
 		- 20220831@Harvey.Nguyen: Update for Scale out DB Trans						[Redmine ID: #176472]
+		- 20230417@Casey.Huynh: Ignore Duplicate TransID 							[Redmine ID: #187030]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_SyncDataGroupBettingTicket] 
@@ -50,9 +51,11 @@ BEGIN
 		TransId
 		,TransDate
 		)
-	SELECT TransId
-		,TransDate
-	FROM #TmpGroupBettingTicket
+	SELECT tmp.TransId
+		,tmp.TransDate
+	FROM #TmpGroupBettingTicket AS tmp
+		LEFT JOIN dbo.SPU_GroupBettingTicket_History AS his WITH(NOLOCK) ON tmp.TransID = his.TransID
+	WHERE his.TransID IS NULL;
 
 	SELECT @RunningDate = transdate
 	FROM dbo.bettrans WITH (NOLOCK)
