@@ -39,7 +39,8 @@ sp: BEGIN
 			-	20230221@Casey.Huynh: 	Update Rule, The same Choice [Redmine ID: #184041]
 			- 	20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
             -	20230313@Casey.Huynh:	Applied Betting Parten OTGB [Redmine ID: #184791]
-			
+			-	20230421@Casey.Huynh:	Enhance Rule for System Detect Classification [Redmine ID: #186814]
+            
 		Param's Explanation (filtered by):	
 		Example:
 			- CALL CTS_DC_MatchMonitor_RuleGroupBetting_Process(1,113171940189,22081995,1,1,0,'a');
@@ -61,7 +62,7 @@ sp: BEGIN
     DECLARE lv_GroupID INT DEFAULT 1;
     DECLARE lv_IsHedging INT DEFAULT 0;
     DECLARE lv_CustIDList LONGTEXT;
-    DECLARE lv_ClassifyHighStake DECIMAL(20,4) DEFAULT 50;
+    DECLARE lv_ClassifyTotalStake DECIMAL(20,4) DEFAULT 80;
     DECLARE lv_Rule_TotalStake DECIMAL(20,4);
     DECLARE lv_Rule_TimeStep SMALLINT;
     DECLARE lv_SportType SMALLINT;
@@ -176,7 +177,7 @@ sp: BEGIN
         ,	CustIDList				LONGTEXT
         ,	OldGroupIDList			VARCHAR(500)
         ,	HighStakeLicCustList 	LONGTEXT
-        ,	LicenseeCustTotal		INT
+        ,	LicCustTotalStake		INT
     );	
 	
     
@@ -534,14 +535,14 @@ sp: BEGIN
     INSERT INTO Temp_TransGroup02 SELECT * From Temp_TransGroup;
     
     #*************************************************************************************************
-	INSERT INTO Temp_ResultGroup(GroupID, Reason, TransIDList, CustIDList, OldGroupIDList, HighStakeLicCustList , LicenseeCustTotal)
+	INSERT INTO Temp_ResultGroup(GroupID, Reason, TransIDList, CustIDList, OldGroupIDList, HighStakeLicCustList , LicCustTotalStake)
     SELECT  tmpTg.GroupID
         ,	lv_Rule_Reason AS Reason
         ,	GROUP_CONCAT(tmpSt.TransID) AS TransIDList
         ,	GROUP_CONCAT(DISTINCT tmpSt.CustID) AS CustIDList
         ,	GROUP_CONCAT(DISTINCT CASE WHEN tmpSt.OldGroupID > 0 THEN tmpSt.OldGroupID ELSE 0 END) AS OldGroupIDList 
-        ,	GROUP_CONCAT(DISTINCT (CASE WHEN tmpSt.Stake >= lv_ClassifyHighStake AND cus.IsLicensee = 1 THEN tmpTg.CustID ELSE NULL END)) AS HighStakeLicCustList
-        ,	COUNT(DISTINCT (CASE WHEN cus.IsLicensee = 1 THEN cus.CustID ELSE NULL END)) AS LicenseeCustTotal
+        ,	GROUP_CONCAT(DISTINCT (CASE WHEN cus.IsLicensee = 1 THEN tmpTg.CustID ELSE NULL END)) AS HighStakeLicCustList
+        ,	SUM(DISTINCT (CASE WHEN cus.IsLicensee = 1 THEN tmpSt.Stake ELSE 0 END)) AS LicCustTotalStake
     FROM 	Temp_TransGroup AS tmpTg
 		INNER JOIN Temp_StagingTrans02  AS tmpSt ON tmpSt.CustID = tmpTg.CustID AND tmpSt.TransDate BETWEEN tmpTg.MinTransDate AND tmpTg.MaxTransDate
         INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpTg.CustID 
@@ -571,7 +572,7 @@ sp: BEGIN
         ,	tmpRg.TransIDList
         ,	tmpRg.CustIDList
         ,	tmpRg.OldGroupIDList
-        ,	(CASE WHEN tmpRg.LicenseeCustTotal >= 3 AND tmpRg.HighStakeLicCustList IS NOT NULL THEN HighStakeLicCustList ELSE NULL END) HighStakeLicCustList
+        ,	(CASE WHEN tmpRg.LicCustTotalStake >= lv_ClassifyTotalStake AND (LENGTH(TRIM(tmpRg.HighStakeLicCustList)) - LENGTH(REPLACE(TRIM(tmpRg.HighStakeLicCustList),',','')) + 1) >= 3 THEN HighStakeLicCustList ELSE NULL END) HighStakeLicCustList
     FROM Temp_ResultGroup AS tmpRg;
     
 END$$
