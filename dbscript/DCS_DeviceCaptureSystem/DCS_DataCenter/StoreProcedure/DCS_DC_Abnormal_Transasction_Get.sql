@@ -21,8 +21,8 @@ BEGIN
 	Example:
 		- CALL DCS_DataCenter.DCS_DC_Abnormal_Transasction_Get(10);
 	*/
-    DECLARE lv_SystemSettingVGroup VARCHAR(128) DEFAULT 'DCS_AbnormalTransaction_Processed';
-    DECLARE lv_SystemSettingVName VARCHAR(128) DEFAULT 'MaxAssociationIDProcessed';
+    DECLARE lv_SystemSettingVGroup VARCHAR(128) DEFAULT 'DCS_AbnormalTransaction';
+    DECLARE lv_SystemSettingVName VARCHAR(128) DEFAULT 'MaxAssociationID_Pushed';
     DECLARE lv_SystemSettingVValue BIGINT UNSIGNED;
     DECLARE lv_MinID BIGINT UNSIGNED;
     DECLARE lv_MaxID BIGINT UNSIGNED;
@@ -56,7 +56,7 @@ BEGIN
         ,	AccountID 		BIGINT UNSIGNED
     );
     
-    INSERT INTO Temp_NewAccountDevice(AssociationID, AccountID)
+    INSERT IGNORE INTO Temp_NewAccountDevice(AssociationID, AccountID)
     SELECT 	AssociationID
 		,	AccountID
 	FROM DCS_DataCenter.NewAccountDevice PARTITION(p10000000)

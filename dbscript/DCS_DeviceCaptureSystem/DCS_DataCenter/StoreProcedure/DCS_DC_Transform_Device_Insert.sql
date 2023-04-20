@@ -22,6 +22,7 @@ BEGIN
             - 20210510@Aries.Nguyen: Remove insert log dba_SP_PerformanceStats [Redmine ID: #154792]
             - 20211129@Casey.Huynh: Remove Transaction07.FingerprintMoreInfo AND Devicefingerprint.CreatedDate Column [Redmine ID: #165167]
 			- 20211201@Casey.Huynh: Fix Issue Devicefingerprint.DeviceID = 0 [Redmine ID: #165164]
+			- 20230316@Jonathan.Doan: Support return new device login for Alpha [Redmine ID: #185185]
 			- 20230426@Jonathan.Doan: Get BotDetectionValue from RawTransaction [Redmine ID: #186644]
 	    Param's Explanation (filtered by):
         
@@ -45,8 +46,8 @@ BEGIN
     DECLARE sp_name varchar(128) DEFAULT 'DCS_DC_TransformData_Device_Insert';
     
 	DECLARE lv_MaxAssociationID BIGINT UNSIGNED;
-	DECLARE lv_AbnormalTransaction_VGroup VARCHAR(128) DEFAULT 'DCS_AbnormalTransaction_Transform';
-	DECLARE lv_AbnormalTransaction_VName VARCHAR(128) DEFAULT 'MaxAssociationID';
+	DECLARE lv_AbnormalTransaction_VGroup VARCHAR(128) DEFAULT 'DCS_AbnormalTransaction';
+	DECLARE lv_AbnormalTransaction_VName VARCHAR(128) DEFAULT 'MaxAssociationID_NewAccountDevice';
 	
     # STATS count
     DECLARE insertionTime TIMESTAMP(4);
@@ -537,7 +538,8 @@ BEGIN
             ,	0 AS Status
             ,	insertionTime AS CreatedDate
 		FROM Temp_NewAccountDevice AS tmp
-            INNER JOIN DCS_DataCenter.Transaction AS trans ON trans.TransID = tmp.TransID;
+            INNER JOIN DCS_DataCenter.Transaction AS trans ON trans.TransID = tmp.TransID
+		WHERE NOT EXISTS (SELECT 1 FROM DCS_DataCenter.NewAccountDevice AS nad WHERE nad.AssociationID = tmp.AssociationID);
             
 		SELECT MAX(AssociationID)
         INTO lv_MaxAssociationID

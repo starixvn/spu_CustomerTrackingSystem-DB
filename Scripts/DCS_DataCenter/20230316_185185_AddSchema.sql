@@ -43,14 +43,15 @@ ALTER TABLE NewAccountDevice
     PARTITION p10202320 VALUES LESS THAN (10202320),
 	PARTITION p19999999 VALUES LESS THAN MAXVALUE);
 
+SET sql_safe_updates = 0;
 DELETE FROM DCS_DataCenter.SystemSetting
 WHERE VGroup LIKE 'DCS_AbnormalTransaction%';
 
-INSERT INTO DCS_DataCenter.SystemSetting(VGroup, VName, VValue, UpdatedTime)
-VALUES ('DCS_AbnormalTransaction_Processed', 'MaxAssociationIDProcessed', '0', NOW());
+INSERT IGNORE INTO DCS_DataCenter.SystemSetting(VGroup, VName, VValue, UpdatedTime)
+VALUES ('DCS_AbnormalTransaction', 'MaxAssociationID_NewAccountDevice', '0', NOW());
 
-INSERT INTO DCS_DataCenter.SystemSetting(VGroup, VName, VValue, UpdatedTime)
-VALUES ('DCS_AbnormalTransaction_Transform', 'MaxAssociationID', '0', NOW());
+INSERT IGNORE INTO DCS_DataCenter.SystemSetting(VGroup, VName, VValue, UpdatedTime)
+VALUES ('DCS_AbnormalTransaction', 'MaxAssociationID_Pushed', '0', NOW());
 
 DROP PROCEDURE IF EXISTS `DCS_DC_Abnormal_Transasction_Delete`;
 DROP PROCEDURE IF EXISTS `DCS_DC_Abnormal_Transasction_Transform`;

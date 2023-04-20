@@ -21,7 +21,7 @@ sp:BEGIN
 	
     DECLARE lv_CurrentDate			DATETIME DEFAULT NOW();
     DECLARE lv_LastWeekDate			DATETIME DEFAULT DATE_SUB(lv_CurrentDate, INTERVAL 1 WEEK);
-    DECLARE lv_CurrentPartition		VARCHAR(50) DEFAULT CONCAT('p',10000000+YEARWEEK(lv_LastWeekDate));
+    DECLARE lv_LastPartition		VARCHAR(50) DEFAULT CONCAT('p',10000000+YEARWEEK(lv_LastWeekDate));
     
     DECLARE lv_DropPartition		LONGTEXT;
     DECLARE lv_AlterPartition		LONGTEXT;
@@ -44,7 +44,7 @@ sp:BEGIN
 	SELECT GROUP_CONCAT(tmp.PartitionName SEPARATOR ',')
     INTO lv_DropPartition
     FROM Temp_Partition AS tmp
-    WHERE tmp.PartitionName <= lv_CurrentPartition
+    WHERE tmp.PartitionName <= lv_LastPartition
 		AND tmp.PartitionName <> 'p10000000';
     
     IF lv_DropPartition IS NOT NULL THEN        
