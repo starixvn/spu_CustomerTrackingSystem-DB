@@ -1,7 +1,7 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_AssociationByIP_AssType_Get`;
 
-DROP PROCEDURE IF EXISTS `CTS_DC_AssociationByIP_AssType_Get`;
-
-DELIMITER $$
+DELIMITER $$ 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociationByIP_AssType_Get`(
 		IN 	ip_CustID	BIGINT    
 )
@@ -13,7 +13,7 @@ BEGIN
 		DB:			CTS_DataCenter
         
 		Revisions:
-			- 20230420@Casey.Huynh: Created [Redmine ID: #185783]
+			- 20230421@Casey.Huynh: Created [Redmine ID: #185783]
 
 		Param's Explanation (filtered by): 
         
@@ -21,13 +21,13 @@ BEGIN
 			CALL CTS_DC_AssociationByIP_AssType_Get(@ip_CustID:=55013011);
 	*/   
 
-    SELECT	ai.AssType		
-    FROM CTS_DataCenter.AssociationByIP AS ai
-    WHERE ai.FromCustID = ip_CustID
+    SELECT	ap.AssType		
+    FROM CTS_DataCenter.AssociationByIP AS ap
+    WHERE ap.FromCustID = ip_CustID
     UNION
-    SELECT	ai.AssType		
-    FROM CTS_DataCenter.AssociationByIP AS ai
-    WHERE ai.ToCustID = ip_CustID;
+    SELECT	ap.AssType		
+    FROM CTS_DataCenter.AssociationByIP AS ap
+    WHERE ap.ToCustID = ip_CustID;
     
 END$$
 
