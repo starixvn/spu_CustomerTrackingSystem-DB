@@ -20,7 +20,8 @@ sp:BEGIN
 			- 20221207@Aries.Nguyen: 	Created [Redmine ID: #181207]
 			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
             - 20230313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
-
+			- 20230421@Casey.Huynh: 	Add AssType to AssociationByIP [Redmine ID: #185783]
+            
 		Param's Explanation (filtered by): 
 
         Example:
@@ -28,6 +29,9 @@ sp:BEGIN
 	*/
 	DECLARE CONST_ASSTYPE_BETTINGPATTERN 	INT DEFAULT 2;
 	DECLARE CONST_ASSBYAI_ACTIVESTATUS 		INT DEFAULT 1;	
+    
+    DECLARE CONST_ASSTYPE_IP 				INT DEFAULT 3;
+	DECLARE CONST_ASSBYIP_ACTIVESTATUS 		INT DEFAULT 1;    
 	#=============================================================================
     DECLARE CONS_RangeDevice 			BIGINT DEFAULT 10000000000;
 	DECLARE CONS_RangeAIGroup 			BIGINT DEFAULT 20000000000;
@@ -63,6 +67,18 @@ sp:BEGIN
 	CREATE TEMPORARY TABLE 	Temp_AssociationByAI_AssType (
 		AssTypeItemValue INT PRIMARY KEY            
 	);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByIP_AssType;
+	CREATE TEMPORARY TABLE 	Temp_AssociationByIP_AssType (
+		AssTypeItemValue INT PRIMARY KEY            
+	);
+    
+    #===========GET AssociationByIP status is Applied==============================================   
+	INSERT INTO Temp_AssociationByIP_AssType(AssTypeItemValue)
+	SELECT atd.AssTypeItemValue
+	FROM CTS_DataCenter.AssociationTypeSetting AS atd
+	WHERE atd.AssTypeID = CONST_ASSTYPE_IP 
+		AND atd.AssTypeItemStatus = CONST_ASSBYIP_ACTIVESTATUS;
     
 	#===========GET AssociationByAI status is Applied==============================================    
 	INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
@@ -290,14 +306,16 @@ sp:BEGIN
 		SELECT  cus.CTSCustID AS DestID
 		FROM CTS_DataCenter.AssociationByIP AS ip
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ip.ToCustID AND cus.CustSubID = 0 AND cus.IsInternal = 0
-		WHERE ip.FromCustID = lv_CustID;
+		WHERE ip.FromCustID = lv_CustID
+			AND ip.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByIP_AssType AS tmpAt);
         
 		#Add Edge 1
         INSERT IGNORE INTO Temp_IPEdge1(DestID)
 		SELECT  cus.CTSCustID AS DestID
 		FROM CTS_DataCenter.AssociationByIP AS ip
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ip.FromCustID AND cus.CustSubID = 0 AND cus.IsInternal = 0
-		WHERE ip.ToCustID = lv_CustID;
+		WHERE ip.ToCustID = lv_CustID
+			AND ip.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByIP_AssType AS tmpAt);
         
         INSERT IGNORE INTO Temp_Transitive(Transitive)
         SELECT 	DISTINCT
@@ -394,7 +412,7 @@ sp:BEGIN
 			, 	tmp.CTSCustID AS DestID
 			,	5 AS AssociationType
 		FROM Temp_CustNode AS tmp 
-			INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.ToCustID = tmp.CustID
+			INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.ToCustID = tmp.CustID AND ip.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByIP_AssType AS tmpAt)
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ip.FromCustID 
 															AND cus.CustSubID = 0 
                                                             AND cus.IsInternal = 0
@@ -408,7 +426,7 @@ sp:BEGIN
 			, 	tmp.CTSCustID AS DestID
 			,	5 AS AssociationType
 		FROM Temp_CustNode AS tmp 
-			INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.FromCustID = tmp.CustID
+			INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.FromCustID = tmp.CustID AND ip.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByIP_AssType AS tmpAt)
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ip.ToCustID 
 															AND cus.CustSubID = 0 
                                                             AND cus.IsInternal = 0
