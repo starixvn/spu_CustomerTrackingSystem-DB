@@ -8,21 +8,22 @@
 USE [bodb_VR2Model]
 GO
 
+-- #1. New table CustomerClassification_NormalPool
 CREATE TABLE [dbo].[CustomerClassification_NormalPool](
 	ID			BIGINT	 PRIMARY KEY IDENTITY(1,1),
 	CustId		INT		 NOT NULL,
 	[Priority]	TINYINT	 NOT NULL,
-	IsProcessed	BIT		 DEFAULT 0,
 	CreatedTime	Datetime NOT NULL
 )
 
-CREATE NONCLUSTERED INDEX [IX_CustomerClassification_NormalPool_Priority_IsProcessed] ON [dbo].[CustomerClassification_NormalPool]
+CREATE NONCLUSTERED INDEX [IX_CustomerClassification_NormalPool_Priority] ON [dbo].[CustomerClassification_NormalPool]
 (
 	[Priority]	ASC,
-	IsProcessed ASC
+	CustId
 )
 GO
 
+-- #2. New table CustomerClassification_LastTransDate
 CREATE TABLE [dbo].[CustomerClassification_LastTransDate](
 	CustId		  INT  PRIMARY KEY,
 	LastTransDate DATE NOT NULL
@@ -34,6 +35,7 @@ CREATE NONCLUSTERED INDEX [IX_CustomerClassification_LastTransDate] ON [dbo].[Cu
 )
 GO
 
+-- #3. New table CustomerClassification_ScannedDailyCust
 CREATE TABLE [dbo].[CustomerClassification_ScannedDailyCust](
 	CustId		INT	 PRIMARY KEY,
 	CreatedDate DATE NOT NULL
@@ -45,6 +47,7 @@ CREATE NONCLUSTERED INDEX [IX_CustomerClassification_ScannedDailyCust_CreatedDat
 )
 GO
 
+-- #4. New table CustomerClassification_Log
 CREATE TABLE [dbo].[CustomerClassification_Log](
 	ID			BIGINT	 PRIMARY KEY IDENTITY(1,1),
 	CustId		INT		 NOT NULL,
@@ -59,13 +62,34 @@ CREATE NONCLUSTERED INDEX [IX_CustomerClassification_Log_CustId_CreatedTime] ON 
 )
 GO
 
+-- #5. New table CustomerClassification_RealtimeChanges
+CREATE TABLE [dbo].[CustomerClassification_RealtimeChanges](
+	ID			BIGINT	 PRIMARY KEY IDENTITY(1,1),
+	CustId		INT		 NOT NULL,
+	CreatedTime	DATETIME NOT NULL
+)
+
+-- #6. Add new column
 ALTER TABLE [dbo].[CustomerClassification] ADD PerformanceDateTime DateTime NULL
 GO
 
-INSERT INTO [dbo].[CustomerClassification_Parameter] ([DataId], [DataDescription], [DataType], [Value]) 
-VALUES (3, 'Normal Accounts Classification - General - Get processed MaxID from normal pool classification', 'BIGINT', 0);
+-- #7. New table CustomerClassification_Priority
+CREATE TABLE [dbo].[CustomerClassification_Priority](
+	GoupId	   BIGINT		NOT NULL,
+	GoupName   NVARCHAR(10)	NOT NULL,
+	ItemID     INT			NOT NULL,
+	ItemName   NVARCHAR(10)	NOT NULL,
+	[Priority] SMALLINT		NOT NULL
+)
+
+CREATE CLUSTERED INDEX [CIX_CustomerClassification_Priority_GoupId_ItemID] ON [dbo].[CustomerClassification_Priority]
+(
+	GoupId,
+	ItemID
+)
 GO
 
+-- #8. Grant permissions
 GRANT SELECT ON [dbo].[CustomerClassification_NormalPool] TO [bodbSPUNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[CustomerClassification_NormalPool] TO [bodbSPUNet]
@@ -84,4 +108,9 @@ GO
 GRANT SELECT ON [dbo].[CustomerClassification_Log] TO [bodbSPUNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[CustomerClassification_Log] TO [bodbSPUNet]
+GO
+
+GRANT SELECT ON [dbo].[CustomerClassification_RealtimeChanges] TO [bodbSPUNet]
+GO
+GRANT VIEW DEFINITION ON [dbo].[CustomerClassification_RealtimeChanges] TO [bodbSPUNet]
 GO
