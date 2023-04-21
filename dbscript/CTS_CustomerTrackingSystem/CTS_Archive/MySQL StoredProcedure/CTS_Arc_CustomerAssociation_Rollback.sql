@@ -14,7 +14,7 @@ sp : BEGIN
 			- 20211026@Aries.Nguyen 	[Redmine ID: #163087]: Created
 			- 20220408@Casey.Huynh: 	Add AssociationGroupByAI [Redmine ID: #171222]
 			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
-			
+			- 20230421@Casey.Huynh: 	Add AssType to AssociationByIP [Redmine ID: #185783]
         Param's Explanation (filtered by):
 
         Example:  
@@ -274,13 +274,15 @@ sp : BEGIN
 			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByIP_Clean;
 			CREATE TEMPORARY TABLE Temp_AssociationByIP_Clean(
 					ID   			BIGINT UNSIGNED PRIMARY KEY
+				,	AssType			SMALLINT UNSIGNED
 				,	FromCustID		BIGINT UNSIGNED
                 ,	ToCustID		BIGINT UNSIGNED
                 ,	AssociationDate	DATETIME
 			);
             
-            INSERT IGNORE INTO Temp_AssociationByIP_Clean(ID, FromCustID, ToCustID, AssociationDate)
+            INSERT IGNORE INTO Temp_AssociationByIP_Clean(ID, AssType, FromCustID, ToCustID, AssociationDate)
             SELECT 	ip.ID
+				,	ip.AssType
 				,	ip.FromCustID
                 ,	ip.ToCustID
                 ,	ip.AssociationDate
@@ -288,13 +290,14 @@ sp : BEGIN
 			WHERE EXISTS (SELECT 1 FROM CTS_Archive.CTSCustomerAssociationRollBack_Process AS pro WHERE ip.FromCustID = pro.CustID)
 			LIMIT lv_BatchSize_AssData;
             
-            INSERT IGNORE INTO CTS_DataCenter.AssociationByIP(FromCustID, ToCustID, CreatedDate)
-            SELECT 	FromCustID
-				,	ToCustID
-                ,	AssociationDate
-            FROM Temp_AssociationByIP_Clean;
+            INSERT IGNORE INTO CTS_DataCenter.AssociationByIP(AssType, FromCustID, ToCustID, CreatedDate)
+            SELECT 	tmp.AssType
+				,	tmp.FromCustID
+				,	tmp.ToCustID
+                ,	tmp.AssociationDate
+            FROM Temp_AssociationByIP_Clean AS tmp;
             
-            DELETE 
+            DELETE ip
 			FROM CTS_Archive.AssociationByIP_Arc AS ip
 			WHERE  EXISTS (SELECT 1 FROM Temp_AssociationByIP_Clean AS cln WHERE cln.ID = ip.ID);
 			
@@ -321,13 +324,15 @@ sp : BEGIN
 			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByIP_Clean;
 			CREATE TEMPORARY TABLE Temp_AssociationByIP_Clean(
 					ID   			BIGINT UNSIGNED PRIMARY KEY
+				,	AssType			SMALLINT UNSIGNED
 				,	FromCustID		BIGINT UNSIGNED
                 ,	ToCustID		BIGINT UNSIGNED
                 ,	AssociationDate	DATETIME
 			);
             
-            INSERT IGNORE INTO Temp_AssociationByIP_Clean(ID, FromCustID, ToCustID, AssociationDate)
+            INSERT IGNORE INTO Temp_AssociationByIP_Clean(ID, AssType, FromCustID, ToCustID, AssociationDate)
             SELECT 	ip.ID
+				,	ip.AssType
 				,	ip.FromCustID
                 ,	ip.ToCustID
                 ,	ip.AssociationDate
@@ -335,13 +340,14 @@ sp : BEGIN
 			WHERE EXISTS (SELECT 1 FROM CTS_Archive.CTSCustomerAssociationRollBack_Process AS pro WHERE ip.ToCustID = pro.CustID)
 			LIMIT lv_BatchSize_AssData;
             
-            INSERT IGNORE INTO CTS_DataCenter.AssociationByIP(FromCustID, ToCustID, CreatedDate)
-            SELECT 	FromCustID
-				,	ToCustID
-                ,	AssociationDate
-            FROM Temp_AssociationByIP_Clean;
+            INSERT IGNORE INTO CTS_DataCenter.AssociationByIP(AssType, FromCustID, ToCustID, CreatedDate)
+            SELECT 	tmp.AssType
+				,	tmp.FromCustID
+				,	tmp.ToCustID
+                ,	tmp.AssociationDate
+            FROM Temp_AssociationByIP_Clean AS tmp;
             
-            DELETE 
+            DELETE ip
 			FROM CTS_Archive.AssociationByIP_Arc AS ip
 			WHERE  EXISTS (SELECT 1 FROM Temp_AssociationByIP_Clean AS cln WHERE cln.ID = ip.ID);
 			
