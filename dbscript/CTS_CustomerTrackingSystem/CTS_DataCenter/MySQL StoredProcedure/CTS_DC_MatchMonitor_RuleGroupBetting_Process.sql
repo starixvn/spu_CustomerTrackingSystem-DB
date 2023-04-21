@@ -542,7 +542,7 @@ sp: BEGIN
         ,	GROUP_CONCAT(DISTINCT tmpSt.CustID) AS CustIDList
         ,	GROUP_CONCAT(DISTINCT CASE WHEN tmpSt.OldGroupID > 0 THEN tmpSt.OldGroupID ELSE 0 END) AS OldGroupIDList 
         ,	GROUP_CONCAT(DISTINCT (CASE WHEN cus.IsLicensee = 1 THEN tmpTg.CustID ELSE NULL END)) AS HighStakeLicCustList
-        ,	SUM(DISTINCT (CASE WHEN cus.IsLicensee = 1 THEN tmpSt.Stake ELSE 0 END)) AS LicCustTotalStake
+        ,	SUM((CASE WHEN cus.IsLicensee = 1 THEN tmpSt.Stake ELSE 0 END)) AS LicCustTotalStake
     FROM 	Temp_TransGroup AS tmpTg
 		INNER JOIN Temp_StagingTrans02  AS tmpSt ON tmpSt.CustID = tmpTg.CustID AND tmpSt.TransDate BETWEEN tmpTg.MinTransDate AND tmpTg.MaxTransDate
         INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpTg.CustID 
