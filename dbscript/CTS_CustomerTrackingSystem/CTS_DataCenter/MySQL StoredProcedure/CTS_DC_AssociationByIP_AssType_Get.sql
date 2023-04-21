@@ -1,9 +1,10 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_AssociationByIP_AssType_Get`;
+DROP PROCEDURE IF EXISTS `CTS_DC_AssociationByIP_AssType_Get`;
 
 DELIMITER $$ 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociationByIP_AssType_Get`(
-		IN 	ip_CustID	BIGINT    
+		IN 	ip_FromCustID	BIGINT 
+	,	IN 	ip_ToCustID	BIGINT   
 )
     SQL SECURITY INVOKER
 BEGIN  
@@ -18,16 +19,17 @@ BEGIN
 		Param's Explanation (filtered by): 
         
         Example:
-			CALL CTS_DC_AssociationByIP_AssType_Get(@ip_CustID:=55013011);
+			CALL CTS_DC_AssociationByIP_AssType_Get(@ip_FromCustID:=1234, @ip_FromCustID:=1277);
 	*/   
-
+	DECLARE lv_FromCustID BIGINT;
+    DECLARE lv_ToCustID BIGINT;
+    
+    SET lv_FromCustID = LEAST(ip_FromCustID, ip_ToCustID);
+    SET lv_ToCustID = GREATEST(ip_FromCustID, ip_ToCustID);
+    
     SELECT	ap.AssType		
     FROM CTS_DataCenter.AssociationByIP AS ap
-    WHERE ap.FromCustID = ip_CustID
-    UNION
-    SELECT	ap.AssType		
-    FROM CTS_DataCenter.AssociationByIP AS ap
-    WHERE ap.ToCustID = ip_CustID;
+    WHERE ap.FromCustID = lv_FromCustID AND ap.ToCustID = lv_ToCustID;
     
 END$$
 
