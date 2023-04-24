@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_AssociationByIP_AssType_Get`;
+DROP PROCEDURE IF EXISTS `CTS_DC_AssociationByIP_GetAssType`;
 
 DELIMITER $$ 
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociationByIP_AssType_Get`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociationByIP_GetAssType`(
 		IN 	ip_FromCustID	BIGINT 
 	,	IN 	ip_ToCustID	BIGINT   
 )
