@@ -10,13 +10,13 @@ GO
 
 -- #1. New table CustomerClassification_NormalPool
 CREATE TABLE [dbo].[CustomerClassification_NormalPool](
-	ID			BIGINT	 PRIMARY KEY IDENTITY(1,1),
+	ID			BIGINT   PRIMARY KEY IDENTITY(1,1),
 	CustId		INT		 NOT NULL,
-	[Priority]	TINYINT	 NOT NULL,
+	[Priority]	TINYINT  NOT NULL,
 	CreatedTime	Datetime NOT NULL
 )
 
-CREATE NONCLUSTERED INDEX [IX_CustomerClassification_NormalPool_Priority] ON [dbo].[CustomerClassification_NormalPool]
+CREATE NONCLUSTERED INDEX [IX_CustomerClassification_NormalPool_Priority_CustId] ON [dbo].[CustomerClassification_NormalPool]
 (
 	[Priority]	ASC,
 	CustId
@@ -70,7 +70,7 @@ CREATE TABLE [dbo].[CustomerClassification_RealtimeChanges](
 )
 
 -- #6. Add new column
-ALTER TABLE [dbo].[CustomerClassification] ADD PerformanceDateTime DateTime NULL
+ALTER TABLE [dbo].[CustomerClassification] ADD PerformanceTime DateTime NULL
 GO
 
 -- #7. New table CustomerClassification_Priority
@@ -89,6 +89,14 @@ CREATE CLUSTERED INDEX [CIX_CustomerClassification_Priority_GoupId_ItemID] ON [d
 )
 GO
 
+-- #8. Add new column IsProbation21Days
+ALTER TABLE [dbo].[CustomerClassification_Rule] ADD IsProbation21Days BIT DEFAULT NULL;
+GO
+
+UPDATE [dbo].[CustomerClassification_Rule] WITH(ROWLOCK, UPDLOCK) 
+SET IsProbation21Days = 1 
+WHERE RuleId IN (74, 85);
+GO
 -- #8. Grant permissions
 GRANT SELECT ON [dbo].[CustomerClassification_NormalPool] TO [bodbSPUNet]
 GO

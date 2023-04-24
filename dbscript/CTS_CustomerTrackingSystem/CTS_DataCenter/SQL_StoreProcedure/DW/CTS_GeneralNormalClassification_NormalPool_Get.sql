@@ -34,7 +34,7 @@ BEGIN
 	DROP TABLE	#tmpCustomers;
 
 	CREATE TABLE #tmpCustomers(
-		CustId	   INT  PRIMARY KEY
+		CustId	INT PRIMARY KEY
 	);
 
 	-- #1: Get Scanned MaxID
@@ -52,6 +52,12 @@ BEGIN
 				WHERE c.ID <= @ScannedMaxId
 			 ) AS b
 		WHERE b.RowNum = 1;
+
+		--INSERT INTO #tmpCustomers(CustId)
+		--SELECT DISTINCT TOP(@BatchSize) c.CustId
+		--FROM dbo.CustomerClassification_NormalPool AS c WITH(NOLOCK)
+		--WHERE c.ID <= @ScannedMaxId
+		--ORDER BY c.[Priority] ASC
 	END
 
 	-- #3: Return dataset
