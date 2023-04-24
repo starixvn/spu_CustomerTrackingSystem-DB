@@ -60,7 +60,7 @@ BEGIN
         
         , 	que.CreatedBy, IFNULL(que.Remark,'') AS Remark
         
-        , 	IFNULL(que.IsExceptDirectDownline,0) AS IsExceptDirectDownline, que.IsFromTVS, que.IsFromTW, que.IsFromCTS, IFNULL(que.TVSRequestID,-1) AS TVSRequestID
+        , 	IFNULL(que.IsExceptDirectDownline,0) AS IsExceptDirectDownline, que.IsFromTVS, que.IsFromTW, que.IsFromCTS, IFNULL(que.TVSRequestID,0) AS TVSRequestID
     INTO 	lv_QueueID, lv_LastDownlineCTSCustID, lv_ActionType
 		
         , 	lv_CTSCustID, lv_CustID , lv_SubscriberID, lv_RoleID
