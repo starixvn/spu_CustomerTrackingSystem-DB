@@ -23,13 +23,13 @@ CREATE NONCLUSTERED INDEX [IX_CustomerClassification_NormalPool_Priority_CustId]
 )
 GO
 
--- #2. New table CustomerClassification_LastTransDate
-CREATE TABLE [dbo].[CustomerClassification_LastTransDate](
+-- #2. New table [CustomerClassification_LatestActiveDay]
+CREATE TABLE [dbo].[CustomerClassification_LatestActiveDay](
 	CustId		  INT  PRIMARY KEY,
 	LastTransDate DATE NOT NULL
 )
 
-CREATE NONCLUSTERED INDEX [IX_CustomerClassification_LastTransDate] ON [dbo].[CustomerClassification_LastTransDate]
+CREATE NONCLUSTERED INDEX [CustomerClassification_LatestActiveDay] ON [dbo].[CustomerClassification_LatestActiveDay]
 (
 	LastTransDate ASC
 )
@@ -98,9 +98,9 @@ GO
 GRANT VIEW DEFINITION ON [dbo].[CustomerClassification_NormalPool] TO [bodbSPUNet]
 GO
 
-GRANT SELECT ON [dbo].[CustomerClassification_LastTransDate] TO [bodbSPUNet]
+GRANT SELECT ON [dbo].[CustomerClassification_LatestActiveDay] TO [bodbSPUNet]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CustomerClassification_LastTransDate] TO [bodbSPUNet]
+GRANT VIEW DEFINITION ON [dbo].[CustomerClassification_LatestActiveDay] TO [bodbSPUNet]
 GO
 
 GRANT SELECT ON [dbo].[CustomerClassification_ScannedDailyCust] TO [bodbSPUNet]
@@ -116,4 +116,9 @@ GO
 GRANT SELECT ON [dbo].[CustomerClassification_RealtimeChanges] TO [bodbSPUNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[CustomerClassification_RealtimeChanges] TO [bodbSPUNet]
+GO
+
+GRANT SELECT ON [dbo].[CustomerClassification_Priority] TO [bodbSPUNet]
+GO
+GRANT VIEW DEFINITION ON [dbo].[CustomerClassification_Priority] TO [bodbSPUNet]
 GO

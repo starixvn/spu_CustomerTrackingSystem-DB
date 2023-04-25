@@ -60,7 +60,7 @@ BEGIN
 
 	CREATE TABLE #tmpRawData(
 		CustId				 INT			NOT NULL,
-		SportId				 INT			NOT NULL,
+		SportGroup			 INT			NOT NULL,
 		TurnoverRM			 DECIMAL(19, 4)	NOT NULL,
 		WinlossRM			 DECIMAL(19, 4)	NOT NULL,
 		TurnoverORG			 DECIMAL(19, 4)	NOT NULL,
@@ -75,7 +75,7 @@ BEGIN
 
 	CREATE CLUSTERED INDEX CIX_tmpRawData_CustId_SportId ON #tmpRawData(
 		CustId, 
-		SportId
+		SportGroup
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpCustomerAccummulatedInfo') IS NOT NULL
@@ -134,7 +134,7 @@ BEGIN
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 	
 	-- #2: Get accummulated performance
-	INSERT INTO #tmpRawData(CustId, SportId, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDaysCustID, ActiveDaysSportGroup, WindaysCustID, WinDaysSportGroup, ProcessedTime)
+	INSERT INTO #tmpRawData(CustId, SportGroup, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDaysCustID, ActiveDaysSportGroup, WindaysCustID, WinDaysSportGroup, ProcessedTime)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_CTS_GetCustAccumulatedInfo @ListCustID = @ListCustIds;
 
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays, PerformanceTime)
@@ -169,7 +169,7 @@ BEGIN
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
 	SET a.IsPlaceBetWithin30Days = 1
 	FROM #tmpCustomerAccummulatedInfo AS a
-		INNER JOIN dbo.CustomerClassification_LastTransDate AS c WITH(NOLOCK) ON a.CustId = c.CustId
+		INNER JOIN dbo.CustomerClassification_LatestActiveDay AS c WITH(NOLOCK) ON a.CustId = c.CustId
 	WHERE c.LastTransDate >= @From30Date;
 
 	-- #5: Classify customer without performance 
