@@ -50,6 +50,9 @@ sp: BEGIN
     DECLARE CONST_RULE_GROUPID 				INT DEFAULT 1;
 	DECLARE CONST_ASSTYPE_BETTINGPATTERN 	INT DEFAULT 2;
 	DECLARE CONST_ASSBYAI_ACTIVESTATUS 		INT DEFAULT 1;	
+    DECLARE CONST_CLASSIFYTOTALSTAKE		DECIMAL(20,4) DEFAULT 80;
+	DECLARE CONST_CLASSIFYTOTALCUST			INT DEFAULT 3;	
+    
 	#=================================================
     DECLARE lv_TimeCustID BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_MinTransDate DATETIME(3);
@@ -61,8 +64,7 @@ sp: BEGIN
     DECLARE lv_CTSCustID BIGINT UNSIGNED;
     DECLARE lv_GroupID INT DEFAULT 1;
     DECLARE lv_IsHedging INT DEFAULT 0;
-    DECLARE lv_CustIDList LONGTEXT;
-    DECLARE lv_ClassifyTotalStake DECIMAL(20,4) DEFAULT 80;
+    DECLARE lv_CustIDList LONGTEXT;    
     DECLARE lv_Rule_TotalStake DECIMAL(20,4);
     DECLARE lv_Rule_TimeStep SMALLINT;
     DECLARE lv_SportType SMALLINT;
@@ -176,8 +178,9 @@ sp: BEGIN
         ,	TransIDList				LONGTEXT
         ,	CustIDList				LONGTEXT
         ,	OldGroupIDList			VARCHAR(500)
-        ,	HighStakeLicCustList 	LONGTEXT
+        ,	LicCustList 			LONGTEXT
         ,	LicCustTotalStake		INT
+        ,	LicCustTotal			INT
     );	
 	
     
@@ -535,14 +538,15 @@ sp: BEGIN
     INSERT INTO Temp_TransGroup02 SELECT * From Temp_TransGroup;
     
     #*************************************************************************************************
-	INSERT INTO Temp_ResultGroup(GroupID, Reason, TransIDList, CustIDList, OldGroupIDList, HighStakeLicCustList , LicCustTotalStake)
+	INSERT INTO Temp_ResultGroup(GroupID, Reason, TransIDList, CustIDList, OldGroupIDList, LicCustList , LicCustTotalStake, LicCustTotal)
     SELECT  tmpTg.GroupID
         ,	lv_Rule_Reason AS Reason
         ,	GROUP_CONCAT(tmpSt.TransID) AS TransIDList
         ,	GROUP_CONCAT(DISTINCT tmpSt.CustID) AS CustIDList
         ,	GROUP_CONCAT(DISTINCT CASE WHEN tmpSt.OldGroupID > 0 THEN tmpSt.OldGroupID ELSE 0 END) AS OldGroupIDList 
-        ,	GROUP_CONCAT(DISTINCT (CASE WHEN cus.IsLicensee = 1 THEN tmpTg.CustID ELSE NULL END)) AS HighStakeLicCustList
+        ,	GROUP_CONCAT(DISTINCT (CASE WHEN cus.IsLicensee = 1 THEN tmpTg.CustID ELSE NULL END)) AS LicCustList
         ,	SUM((CASE WHEN cus.IsLicensee = 1 THEN tmpSt.Stake ELSE 0 END)) AS LicCustTotalStake
+        ,	COUNT(DISTINCT (CASE WHEN cus.IsLicensee = 1 THEN cus.CustID ELSE NULL END)) AS LicCustTotal
     FROM 	Temp_TransGroup AS tmpTg
 		INNER JOIN Temp_StagingTrans02  AS tmpSt ON tmpSt.CustID = tmpTg.CustID AND tmpSt.TransDate BETWEEN tmpTg.MinTransDate AND tmpTg.MaxTransDate
         INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpTg.CustID 
@@ -572,7 +576,7 @@ sp: BEGIN
         ,	tmpRg.TransIDList
         ,	tmpRg.CustIDList
         ,	tmpRg.OldGroupIDList
-        ,	(CASE WHEN tmpRg.LicCustTotalStake >= lv_ClassifyTotalStake AND (LENGTH(TRIM(tmpRg.HighStakeLicCustList)) - LENGTH(REPLACE(TRIM(tmpRg.HighStakeLicCustList),',','')) + 1) >= 3 THEN HighStakeLicCustList ELSE NULL END) HighStakeLicCustList
+        ,	(CASE WHEN tmpRg.LicCustTotalStake >= CONST_CLASSIFYTOTALSTAKE AND LicCustTotal >= CONST_CLASSIFYTOTALCUST THEN LicCustList ELSE NULL END) HighStakeLicCustList
     FROM Temp_ResultGroup AS tmpRg;
     
 END$$
