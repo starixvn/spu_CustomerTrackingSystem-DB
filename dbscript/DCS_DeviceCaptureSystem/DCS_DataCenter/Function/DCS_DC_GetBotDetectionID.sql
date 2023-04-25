@@ -11,7 +11,7 @@ RETURNS BIT(20)
 
 DETERMINISTIC
 
-BEGIN 
+BEGIN  
 /*
 	Created: 20230425@Jonathan.Doan
 	Task : Return ID of BotDetection
