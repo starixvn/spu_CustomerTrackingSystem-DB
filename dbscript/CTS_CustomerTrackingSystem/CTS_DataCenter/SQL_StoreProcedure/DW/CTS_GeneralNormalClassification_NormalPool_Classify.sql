@@ -95,7 +95,7 @@ BEGIN
 		Margin				   DECIMAL(19, 4) NOT NULL,
 		BetCount			   BIGINT		  NOT NULL,
 		ActiveDays			   INT			  NOT NULL,
-		ProcessedTime          DATETIME       NOT NULL
+		PerformanceTime        DATETIME       NOT NULL
 	);
 
 	CREATE CLUSTERED INDEX CIX_tmpCustomerAccummulatedInfo_CustId ON #tmpCustomerAccummulatedInfo(
@@ -137,7 +137,7 @@ BEGIN
 	INSERT INTO #tmpRawData(CustId, SportId, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDaysCustID, ActiveDaysSportGroup, WindaysCustID, WinDaysSportGroup, ProcessedTime)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_CTS_GetCustAccumulatedInfo @ListCustID = @ListCustIds;
 
-	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays, ProcessedTime)
+	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays, PerformanceTime)
 	SELECT a.CustId,
 		   SUM(a.TurnoverRM),
 		   SUM(a.WinlossRM),
@@ -231,7 +231,7 @@ BEGIN
 		,  a.WinlossRM
 		,  a.BetCount
 		,  a.ActiveDays
-		,  a.ProcessedTime
+		,  a.PerformanceTime
 	FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 	WHERE a.IsPlaceBetWithin30Days = 1;
 
@@ -245,7 +245,7 @@ BEGIN
 		,  a.WinlossRM
 		,  a.BetCount
 		,  a.ActiveDays
-		,  a.ProcessedTime
+		,  a.PerformanceTime
 	FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 	WHERE a.IsPlaceBetWithin30Days = 0;
 	

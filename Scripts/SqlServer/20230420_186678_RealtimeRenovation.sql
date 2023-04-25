@@ -89,7 +89,10 @@ CREATE CLUSTERED INDEX [CIX_CustomerClassification_Priority_GoupId_ItemID] ON [d
 )
 GO
 
--- #8. Grant permissions
+-- #8. Remove unused system paramter
+DELETE FROM dbo.CustomerClassification_Parameter WHERE DataId = 1;
+
+-- #9. Grant permissions
 GRANT SELECT ON [dbo].[CustomerClassification_NormalPool] TO [bodbSPUNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[CustomerClassification_NormalPool] TO [bodbSPUNet]
