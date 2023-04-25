@@ -89,14 +89,6 @@ CREATE CLUSTERED INDEX [CIX_CustomerClassification_Priority_GoupId_ItemID] ON [d
 )
 GO
 
--- #8. Add new column IsProbation21Days
-ALTER TABLE [dbo].[CustomerClassification_Rule] ADD IsProbation21Days BIT DEFAULT NULL;
-GO
-
-UPDATE [dbo].[CustomerClassification_Rule] WITH(ROWLOCK, UPDLOCK) 
-SET IsProbation21Days = 1 
-WHERE RuleId IN (74, 85);
-GO
 -- #8. Grant permissions
 GRANT SELECT ON [dbo].[CustomerClassification_NormalPool] TO [bodbSPUNet]
 GO

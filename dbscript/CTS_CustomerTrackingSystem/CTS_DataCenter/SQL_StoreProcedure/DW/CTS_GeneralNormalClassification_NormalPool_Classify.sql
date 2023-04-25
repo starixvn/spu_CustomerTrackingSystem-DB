@@ -23,8 +23,8 @@ AS
     Script:
         EXEC bodb_VR2Model.dbo.CTS_GeneralNormalClassification_NormalPool_Classify 
 			@CustomersXML = N'<Root>
-								<r CustId="4345542" CategoryId ="0" IsCreated30Days="1" IsProbation21Days=null/>
-								<r CustId="4345541" CategoryId ="201" IsCreated30Days="0" IsProbation21Days=null/>
+								<r CustId="4345542" CategoryId ="0" IsNewCreated="1"/>
+								<r CustId="4345541" CategoryId ="201" IsNewCreated="0"/>
 							</Root>';
 */
 BEGIN
@@ -52,8 +52,7 @@ BEGIN
 	CREATE TABLE #tmpCustomers(
 		CustId				  INT PRIMARY KEY,
 		CurrentCategoryId	  SMALLINT			NOT NULL,
-		IsCreatedWithin30Days BIT				DEFAULT 0,
-		IsProbation21Days	  BIT				DEFAULT NULL
+		IsCreatedWithin30Days BIT				DEFAULT 0
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpRawData') IS NOT NULL
@@ -130,8 +129,7 @@ BEGIN
 	INSERT INTO #tmpCustomers(CustId, CurrentCategoryId, IsCreatedWithin30Days)
 	SELECT	T.C.value('./@CustId', 'INT')		   AS CustId
 		,	T.C.value('./@CategoryId', 'SMALLINT') AS CurrentCategoryId
-		,	T.C.value('./@IsCreated30Days', 'BIT') AS IsCreatedWithin30Days
-		,	T.C.value('./@IsProbation21Days', 'BIT') AS IsProbation21Days
+		,	T.C.value('./@IsNewCreated', 'BIT') AS IsCreatedWithin30Days
 	FROM @CustomersXML.nodes('//r') AS T(C)
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 	
@@ -211,11 +209,11 @@ BEGIN
 					OR (r.RuleGroupId = 9 AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.WinlossRM <= r.WinlossRM)					-- PROBATION
 					OR (r.RuleGroupId = 10 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin)												-- PROBATION
 					OR (r.RuleGroupId = 11 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM >= r.WinlossRM)				-- PROBATION
-					OR (r.RuleGroupId = 12 AND ((a.IsProbation21Days = r.IsProbation21Days) OR r.IsProbation21Days = NULL) AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.WinlossRM > r.WinlossRM)					-- SMART
+					OR (r.RuleGroupId = 12 AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.WinlossRM > r.WinlossRM)					-- SMART
 					OR (r.RuleGroupId = 13 AND a.BetCount >= r.BetCount AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM AND a.WinlossRM <= r.WinlossRM2)				-- SMART
 					OR (r.RuleGroupId = 14 AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM AND a.WinlossRM <= r.WinlossRM2)											-- SMART
 					OR (r.RuleGroupId = 15 AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.WinlossRM > r.WinlossRM)												-- SMART
-					OR (r.RuleGroupId = 16 AND ((a.IsProbation21Days = r.IsProbation21Days) OR r.IsProbation21Days = NULL) AND a.BetCount >= r.BetCount AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM) -- RISKY
+					OR (r.RuleGroupId = 16 AND a.BetCount >= r.BetCount AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM) -- RISKY
 					OR (r.RuleGroupId = 17 AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM))																			-- RISKY
 		) as b
 		INNER JOIN #tmpCustomerAccummulatedInfo AS t ON t.CustId = b.CustId
