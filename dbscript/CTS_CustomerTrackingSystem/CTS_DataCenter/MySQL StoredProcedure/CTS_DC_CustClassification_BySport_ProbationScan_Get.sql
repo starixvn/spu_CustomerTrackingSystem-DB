@@ -14,13 +14,14 @@ sp: BEGIN
 		Original:
 		Revisions:
 			- [20200923@Irena.Vo][141755]: Enhance SP.
+			- 202230426@Long.Luu: Adjust Probation's period from 20 to 15 [Redmine ID: #187433]
 
 		Param's Explanation (filtered by):
 			- CALL CTS_DC_CustClassification_BySport_ProbationScan_Get (100);
 	*/
     
     DECLARE lv_CurrentDate 		DATE DEFAULT CURRENT_DATE();
-    DECLARE lv_FromLastDay 		DATE DEFAULT DATE_SUB(lv_CurrentDate, INTERVAL 19 DAY); /*Up to 20 Last Day*/
+    DECLARE lv_FromLastDay 		DATE DEFAULT DATE_SUB(lv_CurrentDate, INTERVAL 14 DAY); /*Up to 15 Last Day*/
     DECLARE lv_ToLastDay 		DATE DEFAULT DATE_SUB(lv_CurrentDate, INTERVAL 2 DAY); /*Up to 3 Last Day*/
     
 	SELECT 		pro.CustID
@@ -28,7 +29,7 @@ sp: BEGIN
 			,	(CASE WHEN pro.CreatedDate <= lv_FromLastDay THEN 1 /*Up to Smart, High Risk, VIP & Normal*/ ELSE 0 /*Up to VIP & Normal*/ END) AS IsProbationLastDay
     FROM		CTS_DataCenter.ProbationAccountMonitor_BySport AS pro
 	WHERE	(pro.LastScannedDate IS NULL OR pro.LastScannedDate < lv_CurrentDate)
-			AND (pro.CreatedDate < lv_ToLastDay)
+			AND (pro.CreatedDate < lv_ToLastDay) -- and pro.CustID = -1
 	LIMIT	ip_NoOfRecord;
 END$$
 DELIMITER ;

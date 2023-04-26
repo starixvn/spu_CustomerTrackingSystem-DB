@@ -37,6 +37,7 @@ BEGIN
                 - 20220705@Long.Luu: Switching for Licensee VIP & BA Categories [Redmine ID: #174219]                
                 - 20220817@Long.Luu: Rearrange CC's IDs [Redmine ID: #175698]
                 - 20221110@Casey.Huynh: Update logic for checking Category in OldCategory table [Redmine ID: #178022]
+				- 202230426@Long.Luu: Adjust Probation's period from 20 to 15 [Redmine ID: #187433]
                 
 		Param's Explanation (filtered by):
         
@@ -80,7 +81,7 @@ BEGIN
     
 	DECLARE lv_CreatedBy 								INT DEFAULT 10278938;
 	DECLARE lv_CurrentDateTime 							DATETIME DEFAULT CURRENT_TIME();
-    DECLARE lv_FromProbationLastDay 					DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 19 DAY);
+    DECLARE lv_FromProbationLastDay 					DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 14 DAY);
 	DECLARE lv_ToProbationLastDay 						DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 2 DAY);
     DECLARE lv_LicBACC									SMALLINT UNSIGNED;
     DECLARE lv_LicBAPriority							SMALLINT UNSIGNED;

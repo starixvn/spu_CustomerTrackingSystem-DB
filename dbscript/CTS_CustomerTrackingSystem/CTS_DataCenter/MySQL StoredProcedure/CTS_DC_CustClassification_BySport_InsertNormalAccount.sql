@@ -16,6 +16,7 @@ BEGIN
 		Original:
 		Revisions: 
 				- 20220830@Harvey.Nguyen: Created [Redmine ID: #177434]
+				- 202230426@Long.Luu: Adjust Probation's period from 20 to 15 [Redmine ID: #187433]
                 
 		Param's Explanation (filtered by):
         
@@ -37,7 +38,7 @@ BEGIN
     
 	DECLARE lv_CreatedBy 								INT DEFAULT 10278938;
 	DECLARE lv_CurrentDateTime 							DATETIME DEFAULT CURRENT_TIME();
-    DECLARE lv_FromProbationLastDay 					DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 19 DAY);
+    DECLARE lv_FromProbationLastDay 					DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 14 DAY);
 	DECLARE lv_ToProbationLastDay 						DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 2 DAY);
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;    
