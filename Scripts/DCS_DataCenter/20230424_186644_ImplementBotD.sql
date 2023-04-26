@@ -17,7 +17,8 @@ CREATE TABLE `BotKind` (
   `ID` INT UNSIGNED NOT NULL,
   `Name` VARCHAR(100) NOT NULL,
   `CreatedDate` DATETIME NULL,
-  PRIMARY KEY (`ID`)
+  PRIMARY KEY (`ID`),
+  KEY `IX_BotKind_Name` (`Name`)
 ) ENGINE=InnoDB;
 
 INSERT INTO DCS_DataCenter.BotKind(ID, Name, CreatedDate)
@@ -45,10 +46,11 @@ VALUES	(2, 'awesomium', NOW())
 DROP TABLE IF EXISTS DCS_DataCenter.BotDetection;
 
 CREATE TABLE `BotDetection` (
-  `Value` BIT(20) NOT NULL,
+  `Value` BIT(32) NOT NULL,
   `Name` VARCHAR(100) NOT NULL,
   `CreatedDate` DATETIME NULL,
-  PRIMARY KEY (`Value`)
+  PRIMARY KEY (`Value`),
+  KEY `IX_BotDetection_Name` (`Name`)
 ) ENGINE=InnoDB;
 
 INSERT INTO DCS_DataCenter.BotDetection(Value, Name, CreatedDate)
@@ -70,7 +72,18 @@ VALUES 	(1,'detectAppVersion', NOW())
 	,	(32768,'detectMimeTypesConsistent', NOW())
 	,	(65536,'detectProductSub', NOW())
 	,	(131072,'detectDistinctiveProperties', NOW())
+	,	(262144,'detectPlatform', NOW())
+	,	(524288,'detectVmFromMemoryScreenDimensions', NOW())
 ;
 
 ALTER TABLE `DCS_DataCenter`.`RawTransaction` 
-ADD COLUMN `Value` BIT(20) NULL;
+ADD COLUMN `BotDetectionValue` BIT(32) NULL;
+
+ALTER TABLE `DCS_DataCenter`.`Transaction` 
+ADD COLUMN `BotDetectionValue` BIT(32) NULL;
+
+ALTER TABLE `DCS_DataCenter`.`ProcessedTransaction` 
+ADD COLUMN `BotDetectionValue` BIT(32) NULL;
+
+ALTER TABLE `DCS_DataCenter`.`Transaction07` 
+ADD COLUMN `BotDetectionValue` BIT(32) NULL;
