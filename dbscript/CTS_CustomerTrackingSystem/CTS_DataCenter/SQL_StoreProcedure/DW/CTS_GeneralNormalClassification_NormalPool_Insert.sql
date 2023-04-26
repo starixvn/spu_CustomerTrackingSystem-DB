@@ -6,8 +6,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE PROCEDURE [dbo].[CTS_GeneralNormalClassification_NormalPool_Insert]
-	@ListCustID		VARCHAR(MAX),
-	@FunctionId		SMALLINT NOT NULL
+	@ListCustId		VARCHAR(MAX),
+	@FunctionId		SMALLINT
 AS
 /*
 	Created: 20230420@Jonas.Huynh
@@ -19,11 +19,11 @@ AS
 		- 20230420@Jonas.Huynh: Created [Redmine ID: #186678]
 
 	Param's Explanation:
-        @ListCustID:	This parameter is used to insert customer into normal pool for classification
+        @ListCustId:	This parameter is used to insert customer into normal pool for classification
         @FunctionId:	Being used to log info, map priority
 
     Script:
-        EXEC bodb_VR2Model.dbo.CTS_GeneralNormalClassification_NormalPool_Insert @ListCustID = '1,2,3',
+        EXEC bodb_VR2Model.dbo.CTS_GeneralNormalClassification_NormalPool_Insert @ListCustId = '1,2,3',
                                                                                  @FunctionId = 1;
 */
 BEGIN
@@ -31,7 +31,7 @@ BEGIN
 	SET NOCOUNT ON;
 		
 	DECLARE	@CurrentDateTime DATETIME = GETDATE();
-	DECLARE @Priority		 SMALLINT NOT NULL;
+	DECLARE @Priority		 SMALLINT;
 
 	IF OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
 	BEGIN
@@ -43,7 +43,7 @@ BEGIN
 	-- #1: Get Customers
     INSERT INTO  #tmpCustomers (CustID) 
 	SELECT DISTINCT CAST(val AS INT) CustID 
-	FROM bodb02.dbo.SPU_StrSplit(@ListCustID, ',');
+	FROM bodb02.dbo.SPU_StrSplit(@ListCustId, ',');
 
 	 -- #2: Insert Log
 	INSERT INTO dbo.CustomerClassification_Log(CustId, FunctionId, CreatedTime)

@@ -44,6 +44,8 @@ BEGIN
 			@CATEGORY_PROBATION		 SMALLINT = 206,
 			@CATEGORY_NEWMEMBER		 SMALLINT = 201;
 
+	DECLARE @ListCustIds			 VARCHAR(MAX);
+
 	IF OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
 	BEGIN
 		DROP TABLE	#tmpCustomers;
@@ -133,6 +135,10 @@ BEGIN
 	FROM @CustomersXML.nodes('//r') AS T(C)
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 	
+	SELECT @ListCustIds = STUFF((	SELECT DISTINCT ',', CONVERT(VARCHAR(15), CustId) 
+									FROM #tmpCustomers WITH (NOLOCK)
+									FOR XML PATH('')), 1, 1, '');
+
 	-- #2: Get accummulated performance
 	INSERT INTO #tmpRawData(CustId, SportGroup, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDaysCustID, ActiveDaysSportGroup, WindaysCustID, WinDaysSportGroup, ProcessedTime)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_CTS_GetCustAccumulatedInfo @ListCustID = @ListCustIds;
