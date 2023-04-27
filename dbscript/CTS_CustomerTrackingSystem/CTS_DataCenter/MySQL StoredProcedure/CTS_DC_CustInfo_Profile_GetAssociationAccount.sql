@@ -79,18 +79,6 @@ BEGIN
 		AssTypeItemValue INT PRIMARY KEY            
 	);
 	
-    DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByIP_AssType;
-	CREATE TEMPORARY TABLE 	Temp_AssociationByIP_AssType (
-		AssTypeItemValue INT PRIMARY KEY            
-	);
-    
-    #===========GET AssociationByIP status is Applied==============================================   
-	INSERT INTO Temp_AssociationByIP_AssType(AssTypeItemValue)
-	SELECT atd.AssTypeItemValue
-	FROM CTS_DataCenter.AssociationTypeSetting AS atd
-	WHERE atd.AssTypeID = CONST_ASSTYPE_IP 
-		AND atd.AssTypeItemStatus = CONST_ASSBYIP_ACTIVESTATUS;  
-        
     #===========GET AssociationByIP status is Applied==============================================   
 	INSERT INTO Temp_AssociationByIP_AssType(AssTypeItemValue)
 	SELECT atd.AssTypeItemValue
@@ -102,7 +90,8 @@ BEGIN
     INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
     SELECT atd.AssTypeItemValue
     FROM CTS_DataCenter.AssociationTypeSetting AS atd
-    WHERE atd.AssTypeID = CONST_ASSTYPE_BETTINGPATTERN AND atd.AssTypeItemStatus = CONST_ASSBYAI_ACTIVESTATUS;
+    WHERE atd.AssTypeID = CONST_ASSTYPE_BETTINGPATTERN 
+		AND atd.AssTypeItemStatus = CONST_ASSBYAI_ACTIVESTATUS;
     
     #==========================================    
     INSERT IGNORE INTO Temp_AccountStatusID (AccountStatusID)

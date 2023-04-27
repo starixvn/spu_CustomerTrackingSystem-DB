@@ -24,6 +24,8 @@ sp : BEGIN
 			- 20221028@Harvey.Nguyen: 	Check PA site [Redmine ID: #179398]
 			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
 			- 20230313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
+            - 20230421@Casey.Huynh: 	Add AssType to AssociationByIP [Redmine ID: #185783]
+            
 		Param's Explanation (filtered by):
 
 		Example:

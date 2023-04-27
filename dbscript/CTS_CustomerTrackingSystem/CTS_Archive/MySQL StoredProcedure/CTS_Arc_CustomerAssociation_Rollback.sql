@@ -15,6 +15,7 @@ sp : BEGIN
 			- 20220408@Casey.Huynh: 	Add AssociationGroupByAI [Redmine ID: #171222]
 			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
 			- 20230421@Casey.Huynh: 	Add AssType to AssociationByIP [Redmine ID: #185783]
+            
         Param's Explanation (filtered by):
 
         Example:  

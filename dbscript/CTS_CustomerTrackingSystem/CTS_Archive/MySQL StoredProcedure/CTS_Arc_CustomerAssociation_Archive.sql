@@ -16,10 +16,11 @@ sp : BEGIN
 			- 20230207@Long.Luu: 		Get exact lastticketdate [Redmine ID: #183281]
 			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
 			- 20230421@Casey.Huynh: 	Add AssType to AssociationByIP [Redmine ID: #185783]
+            
         Param's Explanation (filtered by):
 
         Example:  
-			- CALL CTS_Arc_CustomerAssociation_Archive(@IsDataExist);
+			- CALL CTS_Arc_CustomerAssociation_Archive();
 */   
     DECLARE	CONST_15Days 			    INT DEFAULT 15; 
     DECLARE	CONST_30Days 				INT DEFAULT 30;
