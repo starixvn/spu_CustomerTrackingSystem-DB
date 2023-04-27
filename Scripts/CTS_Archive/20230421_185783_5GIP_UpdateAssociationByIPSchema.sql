@@ -10,8 +10,8 @@ ALTER TABLE AssociationByIP_Arc
 		ADD AssType SMALLINT UNSIGNED AFTER ID
 	,	DROP INDEX UX_AssociationByAI_FromCustIDToCustID
     ,	DROP INDEX UX_AssociationByAI_ToCustIDFromCustID
-    ,	ADD UNIQUE KEY UX_AssociationByIP_FromCustIDToCustID (FromCustID,ToCustID,AssType)
-    ,	ADD	INDEX IX_AssociationByAI_ToCustIDFromCustID(ToCustID,FromCustID);
+    ,	ADD UNIQUE KEY UX_AssociationByIP_FromCustIDToCustIDAssType(FromCustID,ToCustID,AssType)
+    ,	ADD	INDEX IX_AssociationByIP_ToCustIDFromCustID(ToCustID,FromCustID);
 
 UPDATE AssociationByIP_Arc
 SET AssType = 1;
