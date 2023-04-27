@@ -18,13 +18,16 @@ BEGIN
 			- 20220408@Casey.Huynh: 	Add AssociationGroupByAI [Redmine ID: #171222]
 			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
 			- 20230313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
+			- 20230421@Casey.Huynh: 	Add AssType to AssociationByIP [Redmine ID: #185783]
             
 		Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustInfo_Profile_GetAssociationAccount(10832);
 	*/
 	DECLARE CONST_ASSTYPE_BETTINGPATTERN	INT DEFAULT 2;
-	DECLARE CONST_ASSBYAI_ACTIVESTATUS		INT DEFAULT 1;	
+	DECLARE CONST_ASSBYAI_ACTIVESTATUS		INT DEFAULT 1;
+    DECLARE CONST_ASSTYPE_IP 				INT DEFAULT 4;
+	DECLARE CONST_ASSBYIP_ACTIVESTATUS 		INT DEFAULT 1;
 	#=================================================
     
     DECLARE lv_CustID 		BIGINT UNSIGNED;
@@ -71,6 +74,30 @@ BEGIN
 			AssTypeItemValue INT PRIMARY KEY            
 	);
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByIP_AssType;
+	CREATE TEMPORARY TABLE 	Temp_AssociationByIP_AssType (
+		AssTypeItemValue INT PRIMARY KEY            
+	);
+	
+    DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByIP_AssType;
+	CREATE TEMPORARY TABLE 	Temp_AssociationByIP_AssType (
+		AssTypeItemValue INT PRIMARY KEY            
+	);
+    
+    #===========GET AssociationByIP status is Applied==============================================   
+	INSERT INTO Temp_AssociationByIP_AssType(AssTypeItemValue)
+	SELECT atd.AssTypeItemValue
+	FROM CTS_DataCenter.AssociationTypeSetting AS atd
+	WHERE atd.AssTypeID = CONST_ASSTYPE_IP 
+		AND atd.AssTypeItemStatus = CONST_ASSBYIP_ACTIVESTATUS;  
+        
+    #===========GET AssociationByIP status is Applied==============================================   
+	INSERT INTO Temp_AssociationByIP_AssType(AssTypeItemValue)
+	SELECT atd.AssTypeItemValue
+	FROM CTS_DataCenter.AssociationTypeSetting AS atd
+	WHERE atd.AssTypeID = CONST_ASSTYPE_IP 
+		AND atd.AssTypeItemStatus = CONST_ASSBYIP_ACTIVESTATUS; 
+        
     #===========GET AssociationByAI status is Applied==============================================    
     INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
     SELECT atd.AssTypeItemValue
@@ -175,23 +202,26 @@ BEGIN
     
     SELECT COUNT(1)
     INTO lv_Count_AI
-    FROM Temp_AssCustByAI;    
+    FROM Temp_AssCustByAI;  
+    
     /*============================================================*/
-    SELECT COUNT(1)
+    SELECT COUNT(DISTINCT ip.ToCustID)
     INTO lv_Count_IP
     FROM CTS_DataCenter.AssociationByIP AS ip
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = ip.ToCustID AND cust.CustSubID = 0
-    WHERE ip.FromCustID = lv_CustID
-		AND  ip.ToCustID NOT IN (SELECT rm.CustID FROM Temp_AssociationRemove AS rm)
+    WHERE 	ip.FromCustID = lv_CustID
+		AND ip.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByIP_AssType AS tmpAt)
+		AND ip.ToCustID NOT IN (SELECT rm.CustID FROM Temp_AssociationRemove AS rm)
         AND cust.CustStatusID IN (SELECT sta.AccountStatusID FROM Temp_AccountStatusID AS sta)
         AND (cust.SiteID,cust.SubscriberID) IN (SELECT subInfo.SiteID, subInfo.SubscriberID FROM Temp_SubscriberSiteID AS subInfo);
 	 
-    SELECT COUNT(1) + lv_Count_IP
+    SELECT COUNT(DISTINCT ip.ToCustID) + lv_Count_IP
     INTO lv_Count_IP
     FROM CTS_DataCenter.AssociationByIP AS ip
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = ip.FromCustID AND cust.CustSubID = 0
-    WHERE ip.ToCustID = lv_CustID
-		AND  ip.FromCustID NOT IN (SELECT rm.CustID FROM Temp_AssociationRemove AS rm)
+    WHERE 	ip.ToCustID = lv_CustID
+		AND ip.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByIP_AssType AS tmpAt)
+		AND ip.FromCustID NOT IN (SELECT rm.CustID FROM Temp_AssociationRemove AS rm)
         AND cust.CustStatusID IN (SELECT sta.AccountStatusID FROM Temp_AccountStatusID AS sta)
         AND (cust.SiteID,cust.SubscriberID) IN (SELECT subInfo.SiteID, subInfo.SubscriberID FROM Temp_SubscriberSiteID AS subInfo);
 	

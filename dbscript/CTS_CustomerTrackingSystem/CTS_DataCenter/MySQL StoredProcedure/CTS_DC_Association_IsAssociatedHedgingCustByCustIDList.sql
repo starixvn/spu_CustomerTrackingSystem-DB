@@ -20,14 +20,14 @@ sp: BEGIN
 			- 20220422@Irena.Vo: 		Mapping Is Hedging Reason (MM) from table CustomerCategory [Redmine ID: #170468]
 			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
             - 20230313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
-			
+			- 20230421@Casey.Huynh: 	Add AssType to AssociationByIP [Redmine ID: #185783]
 		Param's Explanation (filtered by):			
         Example:
 			CALL CTS_DC_Association_IsAssociatedHedgingCustByCustIDList('169686,169689,894977,65391526', @op_IsHedging); SELECT @op_IsHedging;
 	*/
 	DECLARE CONST_ASSTYPE_BETTINGPATTERN 	INT DEFAULT 2;
 	DECLARE CONST_ASSBYAI_ACTIVESTATUS 		INT DEFAULT 1;    
-	DECLARE CONST_ASSTYPE_IP 				INT DEFAULT 3;
+	DECLARE CONST_ASSTYPE_IP 				INT DEFAULT 4;
 	DECLARE CONST_ASSBYIP_ACTIVESTATUS 		INT DEFAULT 1;
     
 	#=============================================================================
@@ -79,12 +79,17 @@ sp: BEGIN
 		AssTypeItemValue INT PRIMARY KEY            
 	);
     
-	#===========GET AssociationByAI status is Applied==============================================    
-	INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
+    DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByIP_AssType;
+	CREATE TEMPORARY TABLE 	Temp_AssociationByIP_AssType (
+		AssTypeItemValue INT PRIMARY KEY            
+	);
+    
+    #===========GET AssociationByIP status is Applied==============================================   
+	INSERT INTO Temp_AssociationByIP_AssType(AssTypeItemValue)
 	SELECT atd.AssTypeItemValue
 	FROM CTS_DataCenter.AssociationTypeSetting AS atd
-	WHERE atd.AssTypeID = CONST_ASSTYPE_IP AND atd.AssTypeItemStatus = CONST_ASSBYIP_ACTIVESTATUS; 
-    
+	WHERE atd.AssTypeID = CONST_ASSTYPE_IP 
+		AND atd.AssTypeItemStatus = CONST_ASSBYIP_ACTIVESTATUS;    
 	#===========GET AssociationByAI status is Applied==============================================    
 	INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
 	SELECT atd.AssTypeItemValue
@@ -105,7 +110,7 @@ sp: BEGIN
     SELECT  1
 	INTO op_IsHedging
 	FROM Temp_Cust AS tmpCus
-		INNER JOIN CTS_DataCenter.AssociationByIP AS ma ON ma.FromCustID = tmpCus.CustID AND AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByIP_AssType AS tmpAt)
+		INNER JOIN CTS_DataCenter.AssociationByIP AS ma ON ma.FromCustID = tmpCus.CustID AND ma.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByIP_AssType AS tmpAt)
         LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.LeastCustID AND ar.LeastCustSubID = 0 AND ma.ToCustID = ar.GreatestCustID AND ar.GreatestCustSubID = 0
 	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.LeastCustID IS NULL
 		AND	EXISTS(	SELECT 1 
@@ -121,7 +126,7 @@ sp: BEGIN
     SELECT  1
 	INTO op_IsHedging
 	FROM Temp_Cust AS tmpCus
-		INNER JOIN CTS_DataCenter.AssociationByIP AS ma ON ma.ToCustID = tmpCus.CustID AND AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByIP_AssType AS tmpAt)
+		INNER JOIN CTS_DataCenter.AssociationByIP AS ma ON ma.ToCustID = tmpCus.CustID AND ma.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByIP_AssType AS tmpAt)
         LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.LeastCustID AND ar.LeastCustSubID = 0 AND ma.ToCustID = ar.GreatestCustID AND ar.GreatestCustSubID = 0
 	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.LeastCustID IS NULL
 		AND	EXISTS(	SELECT 1 
@@ -137,7 +142,7 @@ sp: BEGIN
     SELECT  1
 	INTO op_IsHedging
 	FROM Temp_Cust AS tmpCus
-		INNER JOIN CTS_DataCenter.AssociationByAI AS ma ON ma.FromCustID = tmpCus.CustID AND AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByAI_AssType AS tmpAt)
+		INNER JOIN CTS_DataCenter.AssociationByAI AS ma ON ma.FromCustID = tmpCus.CustID AND ma.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByAI_AssType AS tmpAt)
         LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.LeastCustID AND ar.LeastCustSubID = 0 AND ma.ToCustID = ar.GreatestCustID AND ar.GreatestCustSubID = 0
 	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.LeastCustID IS NULL
 		AND	EXISTS(	SELECT 1 

@@ -18,6 +18,7 @@ BEGIN
 			- 	20221118@Aries.Nguyen: 	Created [Redmine ID: #179499]
 			- 	20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
             -	20230313@Casey.Huynh:	Applied Betting Parten OTGB [Redmine ID: #184791]
+            -	20230421@Casey.Huynh: 	Add AssType to AssociationByIP [Redmine ID: #185783]
             
 		Param's Explanation (filtered by):
 			CALL CTS_DC_Association_CountByCategoryID('169686,169689,894977','201,205')
@@ -26,6 +27,8 @@ BEGIN
 	*/
 	DECLARE CONST_ASSTYPE_BETTINGPATTERN 	INT DEFAULT 2;
 	DECLARE CONST_ASSBYAI_ACTIVESTATUS 		INT DEFAULT 1;
+    DECLARE CONST_ASSTYPE_IP 				INT DEFAULT 4;
+	DECLARE CONST_ASSBYIP_ACTIVESTATUS 		INT DEFAULT 1; 
 	#=============================================================================
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustParam;
@@ -53,6 +56,13 @@ BEGIN
 		AssTypeItemValue INT PRIMARY KEY            
 	);
     
+	#===========GET AssociationByIP status is Applied==============================================   
+	INSERT INTO Temp_AssociationByIP_AssType(AssTypeItemValue)
+	SELECT atd.AssTypeItemValue
+	FROM CTS_DataCenter.AssociationTypeSetting AS atd
+	WHERE atd.AssTypeID = CONST_ASSTYPE_IP 
+		AND atd.AssTypeItemStatus = CONST_ASSBYIP_ACTIVESTATUS;
+        
 	#===========GET AssociationByAI status is Applied==============================================    
 	INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
 	SELECT atd.AssTypeItemValue
@@ -219,7 +229,7 @@ BEGIN
     SELECT 	pa.CustID
 		,	ip.ToCustID
     FROM Temp_CustParam AS pa 
-		INNER JOIN AssociationByIP AS ip ON ip.FromCustID = pa.CustID
+		INNER JOIN AssociationByIP AS ip ON ip.FromCustID = pa.CustID AND ip.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByIP_AssType AS tmpAt)
 	WHERE EXISTS (SELECT 1 
                   FROM CTSCustomerClassification AS clss 
 					  STRAIGHT_JOIN Temp_CategoryID AS cate ON cate.CategoryID = clss.CategoryID
@@ -229,7 +239,7 @@ BEGIN
     SELECT 	pa.CustID
 		,	ip.FromCustID
     FROM Temp_CustParam AS pa 
-		INNER JOIN AssociationByIP AS ip ON ip.ToCustID  = pa.CustID
+		INNER JOIN AssociationByIP AS ip ON ip.ToCustID  = pa.CustID AND ip.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByIP_AssType AS tmpAt)
 	WHERE EXISTS (SELECT 1 
                   FROM CTSCustomerClassification AS clss 
 					  STRAIGHT_JOIN Temp_CategoryID AS cate ON cate.CategoryID = clss.CategoryID

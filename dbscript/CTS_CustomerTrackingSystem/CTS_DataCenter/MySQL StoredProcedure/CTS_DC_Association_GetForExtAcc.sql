@@ -19,6 +19,7 @@ sp : BEGIN
 			- 20220408@Casey.Huynh: 	Add AssociationGroupByAI [Redmine ID: #171222]
 			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
             - 20230313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
+			- 20230421@Casey.Huynh: 	Add AssType to AssociationByIP [Redmine ID: #185783]
 			
         Param's Explanation (filtered by):
 			- ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual, 4 - IP
@@ -28,6 +29,8 @@ sp : BEGIN
 	*/
 	DECLARE CONST_ASSTYPE_BETTINGPATTERN 	INT DEFAULT 2;
 	DECLARE CONST_ASSBYAI_ACTIVESTATUS 		INT DEFAULT 1;
+	DECLARE CONST_ASSTYPE_IP 				INT DEFAULT 4;
+	DECLARE CONST_ASSBYIP_ACTIVESTATUS 		INT DEFAULT 1;    
 	#=============================================================================
 	DECLARE lv_CTSCustID INT;
 	
@@ -72,7 +75,18 @@ sp : BEGIN
 	CREATE TEMPORARY TABLE 	Temp_AssociationByAI_AssType (
 		AssTypeItemValue INT PRIMARY KEY            
 	);
+	
+    DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByIP_AssType;
+	CREATE TEMPORARY TABLE 	Temp_AssociationByIP_AssType (
+		AssTypeItemValue INT PRIMARY KEY            
+	);
     
+    #===========GET AssociationByIP status is Applied==============================================   
+	INSERT INTO Temp_AssociationByIP_AssType(AssTypeItemValue)
+	SELECT atd.AssTypeItemValue
+	FROM CTS_DataCenter.AssociationTypeSetting AS atd
+	WHERE atd.AssTypeID = CONST_ASSTYPE_IP 
+		AND atd.AssTypeItemStatus = CONST_ASSBYIP_ACTIVESTATUS;
 	#===========GET AssociationByAI status is Applied==============================================    
 	INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
 	SELECT atd.AssTypeItemValue
@@ -174,7 +188,8 @@ sp : BEGIN
 			,	asIP.CreatedDate
 		FROM CTS_DataCenter.AssociationByIP AS asIP 
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asIP.ToCustID AND cust.CustSubID = 0
-		WHERE	asIP.FromCustID =  ip_CustID;
+		WHERE	asIP.FromCustID =  ip_CustID
+			AND asIP.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByIP_AssType AS tmpAt);
         
         INSERT IGNORE INTO Temp_CustAssociation(CTSCustID_Aff, AssociationType, AssociationStatus, AssociationDate)
 		SELECT 
@@ -184,7 +199,8 @@ sp : BEGIN
 			,	asIP.CreatedDate
 		FROM CTS_DataCenter.AssociationByIP AS asIP 
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = asIP.FromCustID AND cust.CustSubID = 0
-		WHERE	asIP.ToCustID =  ip_CustID;
+		WHERE	asIP.ToCustID =  ip_CustID
+			AND asIP.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByIP_AssType AS tmpAt);
     END IF;
     
 

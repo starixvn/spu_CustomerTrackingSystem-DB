@@ -28,7 +28,9 @@ sp:BEGIN
 			CALL CTS_DataCenter.CTS_DC_AssociationDetection_GetEdge('[{"CTSCustID":5422,"CustID":169686},{"CTSCustID":5424,"CustID":169689}]',1,1,1); SELECT * FROM Temp_Graph;
 	*/
 	DECLARE CONST_ASSTYPE_BETTINGPATTERN 	INT DEFAULT 2;
-	DECLARE CONST_ASSBYAI_ACTIVESTATUS 		INT DEFAULT 1;	
+	DECLARE CONST_ASSBYAI_ACTIVESTATUS 		INT DEFAULT 1;	    
+	DECLARE CONST_ASSTYPE_IP 				INT DEFAULT 4;
+	DECLARE CONST_ASSBYIP_ACTIVESTATUS 		INT DEFAULT 1;
 	#=================================================
     DECLARE CONS_RangeDevice 			BIGINT DEFAULT 10000000000;
 	DECLARE CONS_RangeAIGroup 			BIGINT DEFAULT 20000000000;
@@ -53,6 +55,17 @@ sp:BEGIN
 	CREATE TEMPORARY TABLE 	Temp_AssociationByAI_AssType (
 			AssTypeItemValue INT PRIMARY KEY            
 	);
+	#=============================================================
+    DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByIP_AssType;
+	CREATE TEMPORARY TABLE 	Temp_AssociationByIP_AssType (
+			AssTypeItemValue INT PRIMARY KEY            
+	);
+    
+    #===========GET AssociationByIP status is Applied==============================================    
+    INSERT INTO Temp_AssociationByIP_AssType(AssTypeItemValue)
+    SELECT atd.AssTypeItemValue
+    FROM CTS_DataCenter.AssociationTypeSetting AS atd
+    WHERE atd.AssTypeID = CONST_ASSTYPE_IP AND atd.AssTypeItemStatus = CONST_ASSBYIP_ACTIVESTATUS; 
     
 	#===========GET AssociationByAI status is Applied==============================================    
 	INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
@@ -137,7 +150,7 @@ sp:BEGIN
 			, 	cus.CTSCustID AS DestID
 			,	5 AS AssociationType
 		FROM Temp_CustNode AS tmp 
-			INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.FromCustID = tmp.CustID
+			INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.FromCustID = tmp.CustID AND ip.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByIP_AssType AS tmpAt)
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ip.ToCustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
 			
 		INSERT IGNORE INTO Temp_Graph(OrigID,DestID,AssociationType)
@@ -145,7 +158,7 @@ sp:BEGIN
 			, 	cus.CTSCustID AS DestID
 			,	5 AS AssociationType
 		FROM Temp_CustNode AS tmp 
-			INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.ToCustID = tmp.CustID
+			INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.ToCustID = tmp.CustID AND ip.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByIP_AssType AS tmpAt)
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ip.FromCustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
 	END IF;
   

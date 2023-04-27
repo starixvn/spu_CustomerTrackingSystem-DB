@@ -30,7 +30,9 @@ sp : BEGIN
 			- CALL  CTS_DC_AssociatedGroup_Scan(@op_GroupID,@op_GroupName,@op_ABI,@op_Ori,@op_PACategoryID,@op_LastCTSCustID);
 	*/
 	DECLARE CONST_ASSTYPE_BETTINGPATTERN 	INT DEFAULT 2;
-	DECLARE CONST_ASSBYAI_ACTIVESTATUS 				INT DEFAULT 1;
+	DECLARE CONST_ASSBYAI_ACTIVESTATUS 		INT DEFAULT 1;
+	DECLARE CONST_ASSTYPE_IP 				INT DEFAULT 4;
+	DECLARE CONST_ASSBYIP_ACTIVESTATUS 		INT DEFAULT 1;
     #=================================================
     DECLARE lv_BatchSize 		BIGINT;
     DECLARE lv_LastGroupID 		BIGINT;
@@ -89,6 +91,17 @@ sp : BEGIN
 	CREATE TEMPORARY TABLE 	Temp_AssociationByAI_AssType (
 			AssTypeItemValue INT PRIMARY KEY            
 	);
+	#=============================================================
+    DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByIP_AssType;
+	CREATE TEMPORARY TABLE 	Temp_AssociationByIP_AssType (
+			AssTypeItemValue INT PRIMARY KEY            
+	);
+    
+    #===========GET AssociationByIP status is Applied==============================================    
+    INSERT INTO Temp_AssociationByIP_AssType(AssTypeItemValue)
+    SELECT atd.AssTypeItemValue
+    FROM CTS_DataCenter.AssociationTypeSetting AS atd
+    WHERE atd.AssTypeID = CONST_ASSTYPE_IP AND atd.AssTypeItemStatus = CONST_ASSBYIP_ACTIVESTATUS; 
     
     #===========GET AssociationByAI status is Applied==============================================    
     INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
@@ -328,8 +341,12 @@ sp : BEGIN
             ,	cus.RoleID
 			,	cus.SubscriberID
             ,	cus.IsLicensee
-		FROM Temp_Cust AS tmp 
-			STRAIGHT_JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.FromCustID = tmp.CustID
+		FROM (	SELECT * 
+				FROM Temp_Cust AS tmp 
+					,	LATERAL (	SELECT DISTINCT ip.ToCustID 
+									FROM CTS_DataCenter.AssociationByIp AS ip
+										INNER JOIN Temp_AssociationByIp_AssType AS tmpAt ON ip.FromCustID = tmp.CustID AND ip.AssType = tmpAt.AssTypeItemValue) AS ltr
+			 ) AS tmpIp
 			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ip.ToCustID AND cus.CustSubID = 0
 			STRAIGHT_JOIN CTS_Archive.CTSCustomerAssociationStatus AS tkd ON tkd.CTSCustID = cus.CTSCustID AND tkd.LastTicketDate >= tmp.AddGroupDate 
 		WHERE NOT EXISTS (SELECT 1 
@@ -344,8 +361,12 @@ sp : BEGIN
             ,	cus.RoleID
 			,	cus.SubscriberID
             ,	cus.IsLicensee
-		FROM Temp_Cust AS tmp 
-			STRAIGHT_JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.ToCustID = tmp.CustID
+		FROM (	SELECT * 
+				FROM Temp_Cust AS tmp 
+					,	LATERAL (	SELECT DISTINCT ip.FromCustID 
+									FROM CTS_DataCenter.AssociationByIp AS ip
+										INNER JOIN Temp_AssociationByIp_AssType AS tmpAt ON ip.ToCustID = tmp.CustID AND ip.AssType = tmpAt.AssTypeItemValue) AS ltr
+			 ) AS tmpIp
 			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ip.FromCustID AND cus.CustSubID = 0
 			STRAIGHT_JOIN CTS_Archive.CTSCustomerAssociationStatus AS tkd ON tkd.CTSCustID = cus.CTSCustID AND tkd.LastTicketDate >= tmp.AddGroupDate 
 		WHERE NOT EXISTS (SELECT 1 
