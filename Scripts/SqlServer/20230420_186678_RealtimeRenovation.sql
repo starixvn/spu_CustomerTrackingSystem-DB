@@ -13,6 +13,7 @@ CREATE TABLE [dbo].[CustomerClassification_NormalPool](
 	ID			BIGINT   PRIMARY KEY IDENTITY(1,1),
 	CustId		INT		 NOT NULL,
 	[Priority]	TINYINT  NOT NULL,
+	FunctionId	SMALLINT NOT NULL,
 	CreatedTime	Datetime NOT NULL
 )
 
@@ -21,6 +22,7 @@ CREATE NONCLUSTERED INDEX [IX_CustomerClassification_NormalPool_Priority_CustId]
 	[Priority]	ASC,
 	CustId
 )
+
 GO
 
 -- #2. New table [CustomerClassification_LatestActiveDay]

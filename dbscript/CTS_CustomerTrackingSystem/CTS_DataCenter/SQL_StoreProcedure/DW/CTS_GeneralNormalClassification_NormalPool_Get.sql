@@ -34,34 +34,29 @@ BEGIN
 	DROP TABLE	#tmpCustomers;
 
 	CREATE TABLE #tmpCustomers(
-		CustId	INT PRIMARY KEY
+		CustId			INT PRIMARY KEY,
+		IsCheckBetCount BIT DEFAULT(0)
 	);
 
 	-- #1: Get Scanned MaxID
 	SELECT @ScannedMaxId = MAX(c.ID)
-	FROM dbo.CustomerClassification_NormalPool AS c WITH(NOLOCK)
+	FROM dbo.CustomerClassification_NormalPool AS c WITH(NOLOCK);
 
-	-- #2: Get top customers by priority
+	-- #1: Get top customers by priority
 	IF(@ScannedMaxId IS NOT NULL)
 	BEGIN
-		INSERT INTO #tmpCustomers(CustId)
-		SELECT DISTINCT TOP(@BatchSize) b.CustId
-		FROM (
-				SELECT c.CustId, ROW_NUMBER() OVER(PARTITION BY c.CustId ORDER BY c.[Priority] ASC) AS RowNum
-				FROM dbo.CustomerClassification_NormalPool AS c WITH(NOLOCK)
-				WHERE c.ID <= @ScannedMaxId
-			 ) AS b
-		WHERE b.RowNum = 1;
-
-		--INSERT INTO #tmpCustomers(CustId)
-		--SELECT DISTINCT TOP(@BatchSize) c.CustId
-		--FROM dbo.CustomerClassification_NormalPool AS c WITH(NOLOCK)
-		--WHERE c.ID <= @ScannedMaxId
-		--ORDER BY c.[Priority] ASC
+		INSERT INTO #tmpCustomers(CustId, IsCheckBetCount)
+		SELECT TOP(@BatchSize) c.CustId,
+			   CASE WHEN COUNT(c.FunctionId) = 1 AND SUM(c.FunctionId) = 1 THEN 1 ELSE 0 END
+		FROM dbo.CustomerClassification_NormalPool AS c WITH(NOLOCK)
+		WHERE c.ID <= @ScannedMaxId
+		GROUP BY c.CustId
+		ORDER BY Min(c.Priority) ASC
 	END
 
 	-- #3: Return dataset
-	SELECT CustId AS CustIds
+	SELECT CustId		   AS CustId, 
+		   IsCheckBetCount AS IsCheckBetCount
 	FROM #tmpCustomers
 	
 	DROP TABLE #tmpCustomers;

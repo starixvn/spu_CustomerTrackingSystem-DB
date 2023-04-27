@@ -23,8 +23,8 @@ AS
     Script:
         EXEC bodb_VR2Model.dbo.CTS_GeneralNormalClassification_NormalPool_Classify 
 			@CustomersXML = N'<Root>
-								<r CustId="4345542" CategoryId ="0" IsNewCreated="1"/>
-								<r CustId="4345541" CategoryId ="201" IsNewCreated="0"/>
+								<r CustId="4345542" CategoryId ="0" IsNewCreated="1" IsCheckBetCount = "1"/>
+								<r CustId="4345541" CategoryId ="201" IsNewCreated="0" IsCheckBetCount = "0"/>
 							</Root>';
 */
 BEGIN
@@ -39,10 +39,12 @@ BEGIN
 
 	DECLARE @CATEGORY_NORMALINACTIVE SMALLINT = 1001,
 	   	    @CATEGORY_SMARTINACTIVE	 SMALLINT = 1002,
+			@CATEGORY_NEWMEMBER		 SMALLINT = 201,
+			@CATEGORY_NORMALMEMBER	 SMALLINT = 202,
 			@CATEGORY_SMARTPUNTER	 SMALLINT = 203,
 			@CATEGORY_RISKY			 SMALLINT = 204,
-			@CATEGORY_PROBATION		 SMALLINT = 206,
-			@CATEGORY_NEWMEMBER		 SMALLINT = 201;
+			@CATEGORY_GOODMEMBER	 SMALLINT = 205,
+			@CATEGORY_PROBATION		 SMALLINT = 206;
 
 	DECLARE @ListCustIds			 VARCHAR(MAX);
 
@@ -54,7 +56,8 @@ BEGIN
 	CREATE TABLE #tmpCustomers(
 		CustId				  INT PRIMARY KEY,
 		CurrentCategoryId	  SMALLINT			NOT NULL,
-		IsCreatedWithin30Days BIT				DEFAULT 0
+		IsCreatedWithin30Days BIT				DEFAULT 0,
+		IsCheckBetCount		  BIT				DEFAULT 0
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpRawData') IS NOT NULL
@@ -88,7 +91,7 @@ BEGIN
 		CurrentCategoryId	   SMALLINT		  NOT NULL,
 		NewCategoryId		   SMALLINT		  NOT NULL,
 		IsPlaceBetWithin30Days BIT			  DEFAULT 0,
-		IsProbation21Days	  BIT			  DEFAULT NULL,
+		IsCheckBetCount		   BIT			  DEFAULT 0,
 		IsSpecialSite		   BIT			  DEFAULT 0,
 		IsDeposit			   BIT			  DEFAULT 0,
 		SRecommend			   INT,
@@ -127,22 +130,31 @@ BEGIN
 		CategoryId
 	);
 
+	IF	OBJECT_ID('tempdb..#tmpRemoveCust') IS NOT NULL
+	DROP TABLE	#tmpRemoveCust;
+
+	CREATE TABLE #tmpRemoveCust(
+		CustId INT PRIMARY KEY
+	);
+
 	-- #1: Get list customers
-	INSERT INTO #tmpCustomers(CustId, CurrentCategoryId, IsCreatedWithin30Days)
+	INSERT INTO #tmpCustomers(CustId, CurrentCategoryId, IsCreatedWithin30Days, IsCheckBetCount)
 	SELECT	T.C.value('./@CustId', 'INT')		   AS CustId
 		,	T.C.value('./@CategoryId', 'SMALLINT') AS CurrentCategoryId
-		,	T.C.value('./@IsNewCreated', 'BIT') AS IsCreatedWithin30Days
+		,	T.C.value('./@IsNewCreated', 'BIT')	   AS IsCreatedWithin30Days
+		,	T.C.value('./@IsCheckBetCount', 'BIT') AS IsCheckBetCount
 	FROM @CustomersXML.nodes('//r') AS T(C)
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 	
-	SELECT @ListCustIds = STUFF((	SELECT DISTINCT ',', CONVERT(VARCHAR(15), CustId) 
-									FROM #tmpCustomers WITH (NOLOCK)
-									FOR XML PATH('')), 1, 1, '');
+	SELECT @ListCustIds = STUFF(( SELECT DISTINCT ',', CONVERT(VARCHAR(15), CustId) 
+								  FROM #tmpCustomers WITH (NOLOCK)
+								  FOR XML PATH('')), 1, 1, '');
 
 	-- #2: Get accummulated performance
 	INSERT INTO #tmpRawData(CustId, SportGroup, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDaysCustID, ActiveDaysSportGroup, WindaysCustID, WinDaysSportGroup, ProcessedTime)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_CTS_GetCustAccumulatedInfo @ListCustID = @ListCustIds;
 
+	-- #3: Pre-process customer accumulated performance data
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays, PerformanceTime)
 	SELECT a.CustId,
 		   SUM(a.TurnoverRM),
@@ -154,7 +166,32 @@ BEGIN
 	FROM #tmpRawData AS a
 	GROUP BY a.CustId;
 
-	-- #3: Get relevant customer info
+	UPDATE a WITH(ROWLOCK, UPDLOCK)
+	SET a.CurrentCategoryId = c.CurrentCategoryId,
+		a.IsCheckBetCount = c.IsCheckBetCount
+	FROM #tmpCustomerAccummulatedInfo AS a
+		INNER JOIN #tmpCustomers AS c ON a.CustId = c.custid;
+
+	-- #4: Remove accounts with settle bet count has not reach the schedule (FOR REALTIME ONLY)
+	---- less than 100 settle tickets compared to last scan for Good Member
+	---- less than 20 settle tickets compared to last scan for Normal Member
+	INSERT INTO #tmpRemoveCust(CustId)
+	SELECT a.CustId
+	FROM #tmpCustomerAccummulatedInfo AS a
+		INNER JOIN dbo.CustomerClassification_BetCount AS b WITH(NOLOCK) ON a.CustId = b.CustId
+	WHERE a.IsCheckBetCount = 1 
+		  AND ((a.CurrentCategoryId = @CATEGORY_GOODMEMBER AND a.BetCount - b.BetCount < 100)
+		  OR (a.CurrentCategoryId = @CATEGORY_NORMALMEMBER AND a.BetCount - b.BetCount < 20));
+	
+	DELETE a WITH (ROWLOCK)
+	FROM #tmpCustomerAccummulatedInfo AS a
+		INNER JOIN #tmpRemoveCust AS b ON a.CustId = b.CustId
+
+	DELETE a WITH (ROWLOCK)
+	FROM #tmpCustomers AS a
+		INNER JOIN #tmpRemoveCust AS b ON a.CustId = b.CustId
+
+	-- #5: Get relevant customer info
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
 	SET	   a.SRecommend = c.srecommend,
 	       a.IsSpecialSite = CASE WHEN c.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') THEN 1 ELSE 0 END
@@ -166,19 +203,14 @@ BEGIN
 	FROM #tmpCustomerAccummulatedInfo AS a
 		INNER JOIN bodb02.dbo.Dep_CustSuper AS c WITH(NOLOCK) ON a.SRecommend = c.custid;
 
-	UPDATE a WITH(ROWLOCK, UPDLOCK)
-	SET a.CurrentCategoryId = c.CurrentCategoryId
-	FROM #tmpCustomerAccummulatedInfo AS a
-		INNER JOIN #tmpCustomers AS c ON a.CustId = c.custid;
-
-	-- #4: Check active customer
+	-- #6: Check active customer
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
 	SET a.IsPlaceBetWithin30Days = 1
 	FROM #tmpCustomerAccummulatedInfo AS a
 		INNER JOIN dbo.CustomerClassification_LatestActiveDay AS c WITH(NOLOCK) ON a.CustId = c.CustId
 	WHERE c.LastTransDate >= @From30Date;
 
-	-- #5: Classify customer without performance 
+	-- #7: Classify customer without performance 
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
 	SELECT t.CustId
 		,  @GENERAL_SPORTID
@@ -194,7 +226,7 @@ BEGIN
 		LEFT JOIN #tmpCustomerAccummulatedInfo AS c ON t.CustId = c.CustId
 	WHERE c.CustId IS NULL;	
 
-	-- #6: Classify classification by general rule
+	-- #8: Classify classification by general rule
 	UPDATE t WITH(ROWLOCK, UPDLOCK)
 	SET t.NewCategoryId = b.CategoryId,
 		t.CurrentCategoryId = ISNULL(t.CurrentCategoryId, b.CategoryId)
@@ -225,7 +257,7 @@ BEGIN
 		INNER JOIN #tmpCustomerAccummulatedInfo AS t ON t.CustId = b.CustId
 	 WHERE b.RowNum = 1;
 
-	--#7: Insert to CustomerClassification
+	--#9: Insert to CustomerClassification
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
 	OUTPUT INSERTED.CustId, @GENERAL_SPORTID, INSERTED.CategoryId, INSERTED.BetCount INTO #tmpBetCount
 	SELECT a.CustId
@@ -255,7 +287,7 @@ BEGIN
 	FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 	WHERE a.IsPlaceBetWithin30Days = 0;
 	
-	-- #8: Update last settle betcounts
+	-- #10: Update last settle betcounts
 	EXEC dbo.CTS_NormalAccountsClassification_BetCount_Update @CurrentDateTime = @CurrentDateTime, @IsGeneralFlow = 1;
 
 	DROP TABLE #tmpCustomerAccummulatedInfo;
