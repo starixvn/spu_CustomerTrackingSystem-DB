@@ -20,7 +20,8 @@ sp:BEGIN
 			- 20230210@Long.Luu: Fix 	Customer Classification Log [Redmine ID: #183279] 
 			- 20230315@Victoria.Le:		Add Robot Imperva [Redmine ID: #184773]
 			- 20230404@Victoria.Le		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeID [Redmine ID: #185319] 
-            
+			- 20230428@Jonas.Huynh: 	Realtime Renovation [Redmine ID: #186678]
+             
 		Param's Explanation (filtered by):
 
 		Example:
@@ -78,6 +79,7 @@ sp:BEGIN
 		,	IsParlay				BIT
 		,	SportType				SMALLINT
 		,	IssueTypeID				TINYINT
+        ,	PerformanceTime			DATETIME
 		,	PRIMARY KEY (ID)
 		,	KEY 					IX_CTSCustomerClassification_History_CustID (CustID)
 	);
@@ -159,6 +161,7 @@ sp:BEGIN
 		,	IsParlay
 		,	SportType
 		,	IssueTypeID
+        ,	PerformanceTime
 	)
     SELECT 	ID  					
 		,	CustID  				
@@ -200,6 +203,7 @@ sp:BEGIN
 		,	IsParlay
 		,	SportType
 		,	IssueTypeID
+        ,	PerformanceTime
 	FROM CTS_DataCenter.CTSCustomerClassification_History
     WHERE ID BETWEEN lv_LastID AND lv_NextLastID
 		AND IsDataChanged = 1
@@ -285,6 +289,7 @@ sp:BEGIN
 			,	IsParlay
 			,	SportType
 			,	IssueTypeID
+            ,	PerformanceTime
 		)
 		SELECT 	ID  					
 			,	h.CustID  				
@@ -326,6 +331,7 @@ sp:BEGIN
 			,	IsParlay
 			,	SportType
 			,	IssueTypeID
+            ,	PerformanceTime
 		FROM Temp_CustDataShouldBeRemoved AS k
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS h ON k.CustID = h.CustID
 		WHERE h.ID < lv_LastID
@@ -378,6 +384,7 @@ sp:BEGIN
 			,	IsParlay
 			,	SportType
 			,	IssueTypeID
+            ,	PerformanceTime
 		FROM Temp_History;
 		
 		UPDATE CTS_DataCenter.SystemParameter

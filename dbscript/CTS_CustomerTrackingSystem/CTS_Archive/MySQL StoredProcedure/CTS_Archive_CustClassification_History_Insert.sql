@@ -17,7 +17,8 @@ BEGIN
 		- 20201006@Aries.Nguyen:	Created  [Redmine ID: #160758] 
 		- 20230315@Victoria.Le:		Add Robot Imperva [Redmine ID: #184773]
 		- 20230404@Victoria.Le		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeId [Redmine ID: #185319] 
-		
+		- 20230428@Jonas.Huynh: 	Realtime Renovation [Redmine ID: #186678]
+        
 	Param's Explanation (filtered by):
 
 */
@@ -63,6 +64,7 @@ BEGIN
 		,	IsParlay
 		,	SportType
 		,	IssueTypeID
+        ,	PerformanceTime
 	)
 	SELECT	HistoryID
         ,	CustID
@@ -104,6 +106,7 @@ BEGIN
 		,	IsParlay
 		,	SportType
 		,	IssueTypeID
+        ,	PerformanceTime
 	FROM JSON_TABLE(
 			ip_HistoryJson,
 			 "$[*]" COLUMNS(
@@ -147,6 +150,7 @@ BEGIN
 							,	IsParlay				BOOLEAN				PATH "$.IsParlay"  
 							,	SportType				SMALLINT			PATH "$.SportType"  
 							,	IssueTypeID				TINYINT				PATH "$.IssueTypeID"  
+                            ,	PerformanceTime			DATETIME			PATH "$.PerformanceTime"  
 							)
 		   ) AS  tbl; 
 

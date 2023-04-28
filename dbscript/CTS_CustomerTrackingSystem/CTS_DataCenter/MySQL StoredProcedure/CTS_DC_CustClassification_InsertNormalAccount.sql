@@ -38,11 +38,12 @@ BEGIN
                 - 20220817@Long.Luu: Rearrange CC's IDs [Redmine ID: #175698]
                 - 20221110@Casey.Huynh: Update logic for checking Category in OldCategory table [Redmine ID: #178022]
 				- 202230426@Long.Luu: Adjust Probation's period from 20 to 15 [Redmine ID: #187433]
+                - 20230428@Jonas.Huynh: Realtime Renovation [Redmine ID: #186678]
                 
 		Param's Explanation (filtered by):
         
         Example:
-				- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount('[{"CustId": "43600693","CategoryId":"1000","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","TaggingID":10,"TaggingType":1}]',@or);
+				- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount('[{"CustId": "43600693","CategoryId":"1000","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","TaggingID":10,"TaggingType":1,"PerformanceTime":"2021-03-31 00:00:00"}]',@or);
 */ 
     DECLARE	CONST_GROUP_PA 								INT DEFAULT 0;
     DECLARE	CONST_GROUP_WRAPPER							INT DEFAULT 100;
@@ -125,6 +126,7 @@ BEGIN
 		,   SpecialCCPriority   		SMALLINT DEFAULT -1
 		,   SpecialCCDangerProbation   	BIT DEFAULT NULL
 		, 	ActionType					SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN; 5: Not satisfy Pass Probation*/
+        ,	PerformanceTime				DATETIME
 		, 	INDEX    			    	IX_Temp_NewClassification(CustID, DWCateGroup)  
 	); 
     
@@ -191,7 +193,7 @@ BEGIN
     
 	/* 1: PARSE RAW DATA */
 	INSERT IGNORE INTO Temp_NewClassification(CustID,DWCateGroup,TurnoverRM,WinlossRM,BetCount,ActiveDays,TWBetCount,TWGroupBettingRate,TWTicketRejectRate,TWDesktopUsageRate,
-		TaggingID,TaggingType)
+		TaggingID,TaggingType,PerformanceTime)
 	SELECT DISTINCT temp.CustID
 				, 	temp.DWCateGroup
                 , 	temp.TurnoverRM
@@ -204,6 +206,7 @@ BEGIN
                 , 	temp.TWDesktopUsageRate
                 ,	IFNULL(temp.TaggingID, -99)
                 , 	temp.TaggingType
+                ,	temp.PerformanceTime
 	 FROM JSON_TABLE(ip_NewClassification,
 		"$[*]" COLUMNS(
 				CustID 					BIGINT UNSIGNED		PATH "$.CustId"
@@ -217,7 +220,8 @@ BEGIN
 			,	TWTicketRejectRate		DECIMAL(10,4)		PATH "$.TWTicketRejectRate"
 			,	TWDesktopUsageRate		DECIMAL(10,4)		PATH "$.TWDesktopUsageRate"
             , 	TaggingID				SMALLINT			PATH "$.TaggingID"
-            , 	TaggingType				SMALLINT			PATH "$.TaggingType"		
+            , 	TaggingType				SMALLINT			PATH "$.TaggingType"	
+			, 	PerformanceTime			DATETIME			PATH "$.PerformanceTime"
 		 )) AS 	temp
 	 WHERE temp.DWCateGroup <> 0;
 	
@@ -551,7 +555,7 @@ BEGIN
     /* 15: WRITE HISTORY LOG (VIEW ON WEB) */
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
 	(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, TWBetCount, TWGroupBettingRate, TWTicketRejectRate, TWDesktopUsageRate
-    , ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsDataChanged, TaggingType, TargetDangerLevel1)
+    , ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsDataChanged, TaggingType, TargetDangerLevel1, PerformanceTime)
 	SELECT DISTINCT	temp.CustID
 				, 	temp.CTSCustID
 				, 	temp.NewCateID
@@ -576,6 +580,7 @@ BEGIN
 				,   temp.IsDataChanged
 				,	temp.TaggingType
 				,	temp.TargetDangerLevel AS TargetDangerLevel1
+                ,	temp.PerformanceTime
 	FROM 	Temp_NewClassification AS temp
 	WHERE temp.IsDataChanged  = 1;
 	
@@ -583,7 +588,7 @@ BEGIN
     /* 16: WRITE HISTORY LOG (TRACE DATA) */
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log
 	(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, TWBetCount, TWGroupBettingRate, TWTicketRejectRate, TWDesktopUsageRate
-    , ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsDataChanged, TaggingType, TargetDangerLevel1)
+    , ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsDataChanged, TaggingType, TargetDangerLevel1, PerformanceTime)
 	SELECT DISTINCT	temp.CustID
 				, 	temp.CTSCustID
 				, 	temp.NewCateID
@@ -608,6 +613,7 @@ BEGIN
 				,   temp.IsDataChanged
 				,	temp.TaggingType
 				,	temp.TargetDangerLevel AS TargetDangerLevel1
+                ,	temp.PerformanceTime
 	FROM 	Temp_NewClassification AS temp;
     
 	/* 17: RETURN UPDATED CUSTOMERS TO SERVICE FOR FUTHER STEPS */
