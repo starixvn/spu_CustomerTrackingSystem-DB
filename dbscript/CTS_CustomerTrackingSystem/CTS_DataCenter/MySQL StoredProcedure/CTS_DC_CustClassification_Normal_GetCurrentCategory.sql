@@ -68,7 +68,7 @@ BEGIN
 	SELECT 	tmpIc.CustID
 		,	cls.CategoryID
         ,	cls.SportGroupID
-        ,   tmIc.CreatedDate
+        ,   tmpIc.CreatedDate
 	FROM Temp_Cust AS tmpIc
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls  ON cls.CustID = tmpIc.CustID
 	WHERE cls.SportGroupID = CONST_GROUP_NORMAL;
