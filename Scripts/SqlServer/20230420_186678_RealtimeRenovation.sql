@@ -91,10 +91,7 @@ CREATE CLUSTERED INDEX [CIX_CustomerClassification_Priority_GoupId_ItemID] ON [d
 )
 GO
 
--- #8. Remove unused system paramter
-DELETE FROM dbo.CustomerClassification_Parameter WHERE DataId = 1;
-
--- #9. New system parameter
+-- #8. New system parameter
 DECLARE @Value DATETIME2;
 
 SELECT @Value = CONVERT(DATETIME2, [Value], 121)
@@ -102,14 +99,14 @@ FROM dbo.CustomerClassification_Parameter WITH(NOLOCK)
 WHERE DataId = 5;
 
 INSERT INTO [dbo].[CustomerClassification_Parameter] ([DataId], [DataDescription], [DataType], [Value]) 
-VALUES (9, 'Normal Accounts Classification - Realtime Check Changes - Get LastScannedTime', 'DATETIME', CONVERT( [varchar](200), @Value, 121));
+VALUES (3, 'Normal Accounts Classification - Realtime Check Changes - Get LastScannedTime', 'DATETIME', CONVERT( [varchar](200), @Value, 121));
 GO
 
 INSERT INTO [dbo].[CustomerClassification_Parameter] ([DataId], [DataDescription], [DataType], [Value]) 
-VALUES (10, 'Normal Accounts Classification - Realtime Check Changes - Step minute jump for retrieving customer performance', 'INT', '15');
+VALUES (4, 'Normal Accounts Classification - Realtime Check Changes - Step minute jump for retrieving customer performance', 'TINYINT', '15');
 GO
 
--- #10. Grant permissions
+-- #9. Grant permissions
 GRANT SELECT ON [dbo].[CustomerClassification_NormalPool] TO [bodbSPUNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[CustomerClassification_NormalPool] TO [bodbSPUNet]
