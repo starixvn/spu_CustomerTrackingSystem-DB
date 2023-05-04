@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_AssociatedGroup_Scan`;
+DROP PROCEDURE IF EXISTS `CTS_DC_AssociatedGroup_Scan_xtest`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedGroup_Scan`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedGroup_Scan_xtest`(
 		OUT	op_GroupID			BIGINT
 	,	OUT	op_GroupName		VARCHAR(100)
 	,	OUT	op_ABI				INT
@@ -29,7 +29,7 @@ sp : BEGIN
 		Param's Explanation (filtered by):
 
 		Example:
-			- CALL  CTS_DC_AssociatedGroup_Scan(@op_GroupID,@op_GroupName,@op_ABI,@op_Ori,@op_PACategoryID,@op_LastCTSCustID);
+			- CALL  CTS_DC_AssociatedGroup_Scan_xtest(@op_GroupID,@op_GroupName,@op_ABI,@op_Ori,@op_PACategoryID,@op_LastCTSCustID);
 	*/
 	DECLARE CONST_ASSTYPE_BETTINGPATTERN 	INT DEFAULT 2;
 	DECLARE CONST_ASSBYAI_ACTIVESTATUS 		INT DEFAULT 1;
@@ -346,8 +346,8 @@ sp : BEGIN
 		FROM (	SELECT * 
 				FROM Temp_Cust AS tmp 
 					,	LATERAL (	SELECT DISTINCT ip.ToCustID 
-									FROM CTS_DataCenter.AssociationByIp AS ip
-										INNER JOIN Temp_AssociationByIp_AssType AS tmpAt ON ip.FromCustID = tmp.CustID AND ip.AssType = tmpAt.AssTypeItemValue) AS ltr
+									FROM CTS_DataCenter.AssociationByIP AS ip
+										INNER JOIN Temp_AssociationByIP_AssType AS tmpAt ON ip.FromCustID = tmp.CustID AND ip.AssType = tmpAt.AssTypeItemValue) AS ltr
 			 ) AS tmpIp
 			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ip.ToCustID AND cus.CustSubID = 0
 			STRAIGHT_JOIN CTS_Archive.CTSCustomerAssociationStatus AS tkd ON tkd.CTSCustID = cus.CTSCustID AND tkd.LastTicketDate >= tmp.AddGroupDate 
@@ -366,8 +366,8 @@ sp : BEGIN
 		FROM (	SELECT * 
 				FROM Temp_Cust AS tmp 
 					,	LATERAL (	SELECT DISTINCT ip.FromCustID 
-									FROM CTS_DataCenter.AssociationByIp AS ip
-										INNER JOIN Temp_AssociationByIp_AssType AS tmpAt ON ip.ToCustID = tmp.CustID AND ip.AssType = tmpAt.AssTypeItemValue) AS ltr
+									FROM CTS_DataCenter.AssociationByIP AS ip
+										INNER JOIN Temp_AssociationByIP_AssType AS tmpAt ON ip.ToCustID = tmp.CustID AND ip.AssType = tmpAt.AssTypeItemValue) AS ltr
 			 ) AS tmpIp
 			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ip.FromCustID AND cus.CustSubID = 0
 			STRAIGHT_JOIN CTS_Archive.CTSCustomerAssociationStatus AS tkd ON tkd.CTSCustID = cus.CTSCustID AND tkd.LastTicketDate >= tmp.AddGroupDate 
