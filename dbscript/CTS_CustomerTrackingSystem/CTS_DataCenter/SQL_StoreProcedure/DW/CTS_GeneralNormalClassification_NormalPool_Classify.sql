@@ -192,9 +192,16 @@ BEGIN
 		INNER JOIN #tmpRemoveCust AS b ON a.CustId = b.CustId
 
 	-- #5: Insert scanned cust daily
+	UPDATE b WITH(ROWLOCK, UPDLOCK)
+	SET	b.CreatedDate = @CurrentDate
+	FROM #tmpCustomers AS a
+		INNER JOIN dbo.CustomerClassification_ScannedDailyCust AS b ON b.CustId = a.CustId
+
 	INSERT INTO dbo.CustomerClassification_ScannedDailyCust(CustId, CreatedDate)
 	SELECT a.CustId, @CurrentDate
 	FROM #tmpCustomers AS a
+		LEFT JOIN dbo.CustomerClassification_ScannedDailyCust AS b WITH(NOLOCK) ON b.CustId = a.CustId
+	WHERE b.CustId IS NULL  
 
 	-- #6: Get relevant customer info
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
@@ -293,7 +300,7 @@ BEGIN
 	WHERE a.IsPlaceBetWithin30Days = 0;
 	
 	-- #11: Update last settle betcounts
-	EXEC dbo.CTS_NormalAccountsClassification_BetCount_Update @CurrentDateTime = @CurrentDateTime, @IsGeneralFlow = 1;
+	EXEC dbo.CTS_NormalClassification_BetCount_Update @CurrentDateTime = @CurrentDateTime, @IsGeneralFlow = 1;
 
 	DROP TABLE #tmpCustomerAccummulatedInfo;
 	DROP TABLE #tmpCustomers;

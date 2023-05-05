@@ -77,18 +77,22 @@ GO
 
 -- #7. New table CustomerClassification_Priority
 CREATE TABLE [dbo].[CustomerClassification_Priority](
-	GoupId	   BIGINT		NOT NULL,
-	GoupName   NVARCHAR(10)	NOT NULL,
-	ItemID     INT			NOT NULL,
-	ItemName   NVARCHAR(10)	NOT NULL,
-	[Priority] SMALLINT		NOT NULL
+	GoupId	     BIGINT		  NOT NULL,
+	GoupName     NVARCHAR(10) NOT NULL,
+	FunctionId   INT		  NOT NULL,
+	FunctionName NVARCHAR(50) NOT NULL,
+	[Priority]   SMALLINT	  NOT NULL
 )
 
-CREATE CLUSTERED INDEX [CIX_CustomerClassification_Priority_GoupId_ItemID] ON [dbo].[CustomerClassification_Priority]
+CREATE CLUSTERED INDEX [CIX_CustomerClassification_Priority_GoupId_FunctionId] ON [dbo].[CustomerClassification_Priority]
 (
 	GoupId,
-	ItemID
+	FunctionId
 )
+GO
+
+INSERT INTO [dbo].[CustomerClassification_Priority] (GoupId, GoupName, FunctionId, FunctionName, [Priority]) 
+VALUES (1, 'ByFlow', 1, 'Realtime', 100)
 GO
 
 -- #8. New system parameter
