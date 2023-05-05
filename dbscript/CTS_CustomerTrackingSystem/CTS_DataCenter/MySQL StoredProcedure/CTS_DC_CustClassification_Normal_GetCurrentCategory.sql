@@ -77,7 +77,7 @@ BEGIN
 	SELECT 	tmpIc.CustID
 		, 	IFNULL(cls.CategoryID, 0) 
         ,	cls.SportGroupID
-        ,	tmIc.CreatedDate
+        ,	tmpIc.CreatedDate
 	FROM Temp_Cust AS tmpIc
 		LEFT JOIN CTS_DataCenter.CTSCustomerClassificationOldCategory  AS cls ON cls.CustID = tmpIc.CustID
 	ORDER BY cls.CreatedDate DESC;
