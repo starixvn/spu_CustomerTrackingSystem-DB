@@ -30,8 +30,8 @@ BEGIN
 	
 	SET NOCOUNT ON;
 		
-	DECLARE	@CurrentDateTime DATETIME = GETDATE();
-	DECLARE @Priority		 SMALLINT;
+	DECLARE	@CurrentTime DATETIME = GETDATE();
+	DECLARE @Priority	 SMALLINT;
 
 	IF OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
 	BEGIN
@@ -49,7 +49,7 @@ BEGIN
 	INSERT INTO dbo.CustomerClassification_Log(CustId, FunctionId, CreatedTime)
 	SELECT	a.CustId
 		,	@FunctionId
-		,	@CurrentDateTime
+		,	@CurrentTime
 	FROM #tmpCustomers AS a;
 
 	-- #3: Get priority by FunctionId
@@ -62,7 +62,7 @@ BEGIN
 	SELECT	a.CustId
 		,	@Priority
 		,	@FunctionId
-		,	@CurrentDateTime
+		,	@CurrentTime
 	FROM #tmpCustomers AS a
 		
 	DROP TABLE #tmpCustomers;

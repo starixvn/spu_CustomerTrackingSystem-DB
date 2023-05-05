@@ -31,7 +31,7 @@ CREATE TABLE [dbo].[CustomerClassification_LatestActiveDay](
 	LastTransDate DATE NOT NULL
 )
 
-CREATE NONCLUSTERED INDEX [CustomerClassification_LatestActiveDay] ON [dbo].[CustomerClassification_LatestActiveDay]
+CREATE NONCLUSTERED INDEX [IX_CustomerClassification_LatestActiveDay_LastTransDate] ON [dbo].[CustomerClassification_LatestActiveDay]
 (
 	LastTransDate ASC
 )
