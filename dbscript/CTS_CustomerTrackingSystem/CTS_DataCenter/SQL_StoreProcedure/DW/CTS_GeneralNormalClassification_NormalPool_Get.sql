@@ -47,11 +47,11 @@ BEGIN
 	BEGIN
 		INSERT INTO #tmpCustomers(CustId, IsCheckBetCount)
 		SELECT TOP(@BatchSize) c.CustId,
-			   CASE WHEN COUNT(c.FunctionId) = 1 AND SUM(c.FunctionId) = 1 THEN 1 ELSE 0 END
+			   CASE WHEN (COUNT(c.CustId) = COUNT(c.FunctionId)) AND (COUNT(c.FunctionId) = SUM(c.FunctionId)) THEN 1 ELSE 0 END
 		FROM dbo.CustomerClassification_NormalPool AS c WITH(NOLOCK)
 		WHERE c.ID <= @ScannedMaxId
 		GROUP BY c.CustId
-		ORDER BY Min(c.Priority) ASC
+		ORDER BY Min(c.Priority) ASC, Min(c.ID) ASC
 	END
 
 	-- #3: Return dataset

@@ -23,8 +23,10 @@ AS
     Script:
         EXEC bodb_VR2Model.dbo.CTS_GeneralNormalClassification_NormalPool_Classify 
 			@CustomersXML = N'<Root>
-								<r CustId="4345542" CategoryId ="0" IsNewCreated="1" IsCheckBetCount = "1"/>
-								<r CustId="4345541" CategoryId ="201" IsNewCreated="0" IsCheckBetCount = "0"/>
+								<r CustId="5002646" CategoryId ="201" IsNewCreated="0" IsCheckBetCount = "0"/>
+								<r CustId="5022391" CategoryId ="0"  IsNewCreated="1" IsCheckBetCount = "1"/>
+								<r CustId="1275" CategoryId ="205"  IsNewCreated="0" IsCheckBetCount = "1"/>
+								<r CustId="1280" CategoryId ="202"  IsNewCreated="1" IsCheckBetCount = "1"/>
 							</Root>';
 */
 BEGIN
@@ -54,10 +56,10 @@ BEGIN
 	END
 
 	CREATE TABLE #tmpCustomers(
-		CustId				  INT PRIMARY KEY,
-		CurrentCategoryId	  SMALLINT			NOT NULL,
-		IsCreatedWithin30Days BIT				DEFAULT 0,
-		IsCheckBetCount		  BIT				DEFAULT 0
+		CustId			  INT PRIMARY KEY,
+		CurrentCategoryId SMALLINT NOT NULL,
+		IsNewCreated	  BIT	   NOT NULL DEFAULT 0,
+		IsCheckBetCount	  BIT	   NOT NULL DEFAULT 0
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpRawData') IS NOT NULL
@@ -78,22 +80,19 @@ BEGIN
 		ProcessedTime        DATETIME       NOT NULL
 	);
 
-	CREATE CLUSTERED INDEX CIX_tmpRawData_CustId_SportId ON #tmpRawData(
-		CustId, 
-		SportGroup
-	);
+	CREATE CLUSTERED INDEX CIX_tmpRawData_CustId ON #tmpRawData(CustId);
 
 	IF	OBJECT_ID('tempdb..#tmpCustomerAccummulatedInfo') IS NOT NULL
 		DROP TABLE	#tmpCustomerAccummulatedInfo;
 
 	CREATE TABLE #tmpCustomerAccummulatedInfo(
 		CustId				   INT			  NOT NULL,
-		CurrentCategoryId	   SMALLINT		  NOT NULL,
-		NewCategoryId		   SMALLINT		  NOT NULL,
-		IsPlaceBetWithin30Days BIT			  DEFAULT 0,
-		IsCheckBetCount		   BIT			  DEFAULT 0,
-		IsSpecialSite		   BIT			  DEFAULT 0,
-		IsDeposit			   BIT			  DEFAULT 0,
+		CurrentCategoryId	   SMALLINT		  NOT NULL DEFAULT 0,
+		NewCategoryId		   SMALLINT		  NULL,
+		IsPlaceBetWithin30Days BIT			  NOT NULL DEFAULT 0,
+		IsCheckBetCount		   BIT			  NOT NULL DEFAULT 0,
+		IsSpecialSite		   BIT			  NOT NULL DEFAULT 0,
+		IsDeposit			   BIT			  NOT NULL DEFAULT 0,
 		SRecommend			   INT,
 		TurnoverRM			   DECIMAL(19, 4) NOT NULL,
 		WinlossRM			   DECIMAL(19, 4) NOT NULL,
@@ -116,14 +115,13 @@ BEGIN
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpBetCount') IS NOT NULL
-	DROP TABLE	#tmpBetCount;
+		DROP TABLE	#tmpBetCount;
 
 	CREATE TABLE #tmpBetCount(
-		CustId					INT			NOT NULL,
-		SportId					SMALLINT,
-		CategoryId				SMALLINT	NOT NULL,
-		BetCount				BIGINT		NULL
-		PRIMARY KEY CLUSTERED (CustId)
+		CustId		INT	PRIMARY KEY,
+		SportId		SMALLINT,
+		CategoryId	SMALLINT  NOT NULL,
+		BetCount	BIGINT	  NULL
 	);
 
 	CREATE NONCLUSTERED INDEX IX_tmpBetCount_CategoryId ON #tmpBetCount(
@@ -138,10 +136,10 @@ BEGIN
 	);
 
 	-- #1: Get list customers
-	INSERT INTO #tmpCustomers(CustId, CurrentCategoryId, IsCreatedWithin30Days, IsCheckBetCount)
+	INSERT INTO #tmpCustomers(CustId, CurrentCategoryId, IsNewCreated, IsCheckBetCount)
 	SELECT	T.C.value('./@CustId', 'INT')		   AS CustId
 		,	T.C.value('./@CategoryId', 'SMALLINT') AS CurrentCategoryId
-		,	T.C.value('./@IsNewCreated', 'BIT')	   AS IsCreatedWithin30Days
+		,	T.C.value('./@IsNewCreated', 'BIT')	   AS IsNewCreated
 		,	T.C.value('./@IsCheckBetCount', 'BIT') AS IsCheckBetCount
 	FROM @CustomersXML.nodes('//r') AS T(C)
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
@@ -154,7 +152,7 @@ BEGIN
 	INSERT INTO #tmpRawData(CustId, SportGroup, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDaysCustID, ActiveDaysSportGroup, WindaysCustID, WinDaysSportGroup, ProcessedTime)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_CTS_GetCustAccumulatedInfo @ListCustID = @ListCustIds;
 
-	-- #3: Pre-process customer accumulated performance data
+	-- #3: Calculate customer accumulated performance data
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays, PerformanceTime)
 	SELECT a.CustId,
 		   SUM(a.TurnoverRM),
@@ -226,14 +224,14 @@ BEGIN
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
 	SELECT t.CustId
 		,  @GENERAL_SPORTID
-		,  CASE WHEN (t.IsCreatedWithin30Days = 1) THEN @CATEGORY_NEWMEMBER ELSE @CATEGORY_NORMALINACTIVE END
+		,  CASE WHEN (t.IsNewCreated = 1) THEN @CATEGORY_NEWMEMBER ELSE @CATEGORY_NORMALINACTIVE END
 		,  @CurrentDate AS CreatedDate
 		,  @CurrentDateTime AS CreatedTime
 		,  NULL
 		,  NULL
 		,  NULL
 		,  NULL
-		,  NULL
+		,  @CurrentDateTime
 	FROM #tmpCustomers AS t
 		LEFT JOIN #tmpCustomerAccummulatedInfo AS c ON t.CustId = c.CustId
 	WHERE c.CustId IS NULL;	
@@ -281,7 +279,7 @@ BEGIN
 		,  a.WinlossRM
 		,  a.BetCount
 		,  a.ActiveDays
-		,  a.PerformanceTime
+		,  ISNULL(a.PerformanceTime, @CurrentDateTime)
 	FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 	WHERE a.IsPlaceBetWithin30Days = 1;
 
@@ -295,7 +293,7 @@ BEGIN
 		,  a.WinlossRM
 		,  a.BetCount
 		,  a.ActiveDays
-		,  a.PerformanceTime
+		,  ISNULL(a.PerformanceTime, @CurrentDateTime)
 	FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 	WHERE a.IsPlaceBetWithin30Days = 0;
 	
