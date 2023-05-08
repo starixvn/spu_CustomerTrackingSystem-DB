@@ -8,6 +8,13 @@
 USE [bodb_VR2Model]
 GO
 
+-- #0. Update Indexes
+DROP INDEX CIX_CustomerClassification_IsApplied  ON [dbo].[CustomerClassification];  
+CREATE CLUSTERED INDEX CIX_CustomerClassification_IsApplied_Id ON [dbo].[CustomerClassification] (
+	IsApplied ASC,
+	Id ASC
+);
+
 -- #1. New table CustomerClassification_NormalPool
 CREATE TABLE [dbo].[CustomerClassification_NormalPool](
 	ID			BIGINT   PRIMARY KEY IDENTITY(1,1),
