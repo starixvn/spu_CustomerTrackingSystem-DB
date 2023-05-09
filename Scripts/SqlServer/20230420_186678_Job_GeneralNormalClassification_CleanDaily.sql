@@ -5,7 +5,7 @@
 	Original:
 
 	Revisions:
-		- 20230420@Jonas.Huynh: Created Job
+		- 20230420@Jonas.Huynh: Created Job [Redmine ID: #186678]
 
 	Param's Explanation:
 	Example: 
@@ -20,7 +20,7 @@ BEGIN TRY
 
     --Add job
     EXEC dbo.sp_add_job 
-		@job_name=N'SPU : Clean-up daily data,
+		@job_name=N'SPU: General Normal Classification - Daily Cleanup data',
 		@description=N'Daily scan to remove unused data from normal classification flow',
 		@enabled=1,
 		@job_id=@jobId OUTPUT
@@ -42,7 +42,7 @@ BEGIN TRY
     --Add schedule to job
     EXEC dbo.sp_add_jobschedule 
 			@job_id=@jobId, 
-			@name=N'09:00 PM GMT-4, every day', 
+			@name=N'00:00 PM GMT-4, every day', 
 			@enabled=1,
             @freq_type=4, 
             @freq_interval=1, 
@@ -52,7 +52,7 @@ BEGIN TRY
             @freq_recurrence_factor=0, 
             @active_start_date=NULL, 
             @active_end_date=99991231, 
-            @active_start_time=210000, 
+            @active_start_time=000000, 
             @active_end_time=235959
 
 	--Add schedule to job server
