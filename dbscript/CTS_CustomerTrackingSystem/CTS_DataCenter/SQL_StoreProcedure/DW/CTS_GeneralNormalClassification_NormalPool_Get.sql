@@ -34,7 +34,8 @@ BEGIN
 	DROP TABLE	#tmpCustomers;
 
 	CREATE TABLE #tmpCustomers(
-		CustId			INT PRIMARY KEY,
+		Id				BIGINT PRIMARY KEY IDENTITY(1,1),
+		CustId			INT UNIQUE NOT NULL,
 		IsCheckBetCount BIT DEFAULT(0)
 	);
 
@@ -42,7 +43,7 @@ BEGIN
 	SELECT @ScannedMaxId = MAX(c.ID)
 	FROM dbo.CustomerClassification_NormalPool AS c WITH(NOLOCK);
 
-	-- #1: Get top customers by priority
+	-- #2: Get top customers by priority
 	IF(@ScannedMaxId IS NOT NULL)
 	BEGIN
 		INSERT INTO #tmpCustomers(CustId, IsCheckBetCount)
