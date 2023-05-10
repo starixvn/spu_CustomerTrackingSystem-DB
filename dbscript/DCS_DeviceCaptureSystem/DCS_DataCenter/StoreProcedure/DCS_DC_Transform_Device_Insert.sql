@@ -22,6 +22,7 @@ BEGIN
             - 20210510@Aries.Nguyen: Remove insert log dba_SP_PerformanceStats [Redmine ID: #154792]
             - 20211129@Casey.Huynh: Remove Transaction07.FingerprintMoreInfo AND Devicefingerprint.CreatedDate Column [Redmine ID: #165167]
 			- 20211201@Casey.Huynh: Fix Issue Devicefingerprint.DeviceID = 0 [Redmine ID: #165164]
+			- 20230426@Jonathan.Doan: Get BotDetectionValue from RawTransaction [Redmine ID: #186644]
 	    Param's Explanation (filtered by):
         
         Example:
@@ -458,12 +459,29 @@ BEGIN
     /*****MOVE TRans competed to Trans07****************************************************/
     IF err_no = 0 THEN
 		SET start_time = CURRENT_TIMESTAMP(4);
-		INSERT IGNORE INTO  DCS_DataCenter.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID
-			, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID
-			, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue)
-		SELECT 	ifnull(ts.RawTransID, ts.TransID), ts.LoginName, ts.TransTime, ts.SubscriberID, ts.AccountID, ts.URLID
-			, tmp_rm.DeviceCodeID, tmp_rm.DeviceID, tmp_rm.FirstDeviceCode, tmp_rm.DeviceStatus, tmp_rm.DeviceFingerprintID
-			, ts.UserAgentKey, ts.IP, ts.IPID, ts.ActionResultID, ts.Flagged, ts.PluginID, ts.TransStatus, ts.CreatedDate, ts.InsertTime, ts.BotDetectionValue
+		INSERT IGNORE INTO  DCS_DataCenter.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID)
+		SELECT 	ifnull(ts.RawTransID, ts.TransID)
+			,	ts.LoginName
+            ,	ts.TransTime
+            ,	ts.SubscriberID
+            ,	ts.AccountID
+            ,	ts.URLID
+            ,	tmp_rm.DeviceCodeID
+            ,	tmp_rm.DeviceID
+            ,	tmp_rm.FirstDeviceCode
+            ,	tmp_rm.DeviceStatus
+            ,	tmp_rm.DeviceFingerprintID
+            ,	ts.UserAgentKey
+            ,	ts.IP
+            ,	ts.IPID
+            ,	ts.ActionResultID
+            ,	ts.Flagged
+            ,	ts.PluginID
+            ,	ts.TransStatus
+            ,	ts.CreatedDate
+            ,	ts.InsertTime
+            ,	ts.BotDetectionValue
+            ,	ts.BotComponentID
 		FROM DCS_DataCenter.Transaction AS ts
 		INNER JOIN Temp_Transaction AS tmp_rm
 			ON	ts.TransID = tmp_rm.TransID

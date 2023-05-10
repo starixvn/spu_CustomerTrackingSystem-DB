@@ -23,11 +23,12 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_DC_Transform_RawTrans_Insert ('[{"Action" : "login","ActionResult" : "login -> successfully","DeviceCode" : "6f6bea6ce7074622bc18a921f8be1e60","FingerprintCode" : "ade5b939c13195aaae06466b6757754413fcdc2a;0423c13edf617398aed953a6fd4e7d24","InvalidDevice" : null,"IP" : "14.167.17.120","IPId" : 245830008,"LoginName" : "U702202002","PluginID" : null,"SubscriberName" : "MAXBET789Y","TransStatus" : "0","TransTime" : "2021-11-21 00:00:00.0201","URL" : "http://m122.viva88.net:806/FpsHandler","UserAgent" : "Mozilla/5.0 (iPhone; CPU iPhone OS 15_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.1 Mobile/15E148 Safari/604.1","BotKind":"headless_chrome", "BotDetection":"detectAppVersion,detectUserAgent"},{"Action" : "login","ActionResult" : "login -> successfully","DeviceCode" : "a707e6620cce48a4ada3cd3887e5d77f","FingerprintCode" : "f4cf2f4634bfd83191d70c4f1913cc79878cce5f;4c7acb513373c49e797f2f35c6e1f99d","InvalidDevice" : null,"IP" : "103.199.41.17","IPId" : 1741105425,"LoginName" : "Khanh1973","PluginID" : null,"SubscriberName" : "11BET","TransStatus" : "0","TransTime" : "2021-11-21 00:00:00.2418","URL" : "http://l9j7ma.cx5888.com/FpsHandler","UserAgent" : "Mozilla/5.0 (Linux; Android 11; CPH2113) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Mobile Safari/537.36","BotKind":"unknown", "BotDetection":""}]');
+			CALL DCS_DC_Transform_RawTrans_Insert ('[{"Action" : "login","ActionResult" : "login -> successfully","DeviceCode" : "6f6bea6ce7074622bc18a921f8be1e60","FingerprintCode" : "ade5b939c13195aaae06466b6757754413fcdc2a;0423c13edf617398aed953a6fd4e7d24","InvalidDevice" : null,"IP" : "14.167.17.120","IPId" : 245830008,"LoginName" : "U702202002","PluginID" : null,"SubscriberName" : "MAXBET789Y","TransStatus" : "0","TransTime" : "2021-11-21 00:00:00.0201","URL" : "http://m122.viva88.net:806/FpsHandler","UserAgent" : "Mozilla/5.0 (iPhone; CPU iPhone OS 15_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.1 Mobile/15E148 Safari/604.1","FlaggedCode":"headless_chrome", "BotDetection":"detectAppVersion,detectUserAgent"},{"Action" : "login","ActionResult" : "login -> successfully","DeviceCode" : "a707e6620cce48a4ada3cd3887e5d77f","FingerprintCode" : "f4cf2f4634bfd83191d70c4f1913cc79878cce5f;4c7acb513373c49e797f2f35c6e1f99d","InvalidDevice" : null,"IP" : "103.199.41.17","IPId" : 1741105425,"LoginName" : "Khanh1973","PluginID" : null,"SubscriberName" : "11BET","TransStatus" : "0","TransTime" : "2021-11-21 00:00:00.2418","URL" : "http://l9j7ma.cx5888.com/FpsHandler","UserAgent" : "Mozilla/5.0 (Linux; Android 11; CPH2113) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Mobile Safari/537.36","FlaggedCode":"unknown", "BotDetection":""}]');
 
 	*/
 	
     DECLARE lv_FlaggedHuman	INT UNSIGNED DEFAULT 1;
+    DECLARE lv_InsertionTime TIMESTAMP(4) DEFAULT CURRENT_TIMESTAMP(4);
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Transactions;
 	CREATE TEMPORARY TABLE Temp_Transactions(
@@ -46,9 +47,14 @@ BEGIN
 		,	ActionResult				VARCHAR(100) 						NULL
 		,	InvalidDevice				VARCHAR(1000)						CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NULL
 		,	TransStatus					BIT(16)								NULL
-        ,	BotKind						VARCHAR(100)						NULL		COMMENT 'BotKind.Name | None'
-        ,	BotDetection				LONGTEXT							NULL		
-        ,	BotDetectionValue			BIT(20)								NULL		DEFAULT 0		
+        ,	FlaggedCode					VARCHAR(100)						NULL
+        ,	BotDetection				LONGTEXT							NULL
+        ,	BotDetectionValue			BIT(20)								NULL		DEFAULT 0
+        ,	BotComponentID				BIGINT UNSIGNED						NULL
+        ,	BotComponent				LONGTEXT							NULL
+        ,	BotComponentCode			VARCHAR(100)						NULL
+        
+		,	INDEX IX_Temp_Transactions_BotComponentCode(BotComponentCode)
     );     
         
 	DROP TEMPORARY TABLE IF EXISTS Temp_BotDetection;
@@ -57,7 +63,7 @@ BEGIN
         ,	BotDetectionValue			BIT(20)		NULL		DEFAULT 0		
     );     
 		
-	INSERT INTO Temp_Transactions(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, BotKind, BotDetection)
+	INSERT INTO Temp_Transactions(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -71,9 +77,11 @@ BEGIN
 		,	(CASE WHEN rt.Action IS NULL THEN NULL ELSE rt.Action END) AS Action
 		,	(CASE WHEN rt.ActionResult IS NULL THEN NULL ELSE rt.ActionResult END) AS ActionResult
 		,	LEFT((CASE WHEN rt.InvalidDevice IS NULL THEN NULL ELSE rt.InvalidDevice END),1000) AS InvalidDevice
-		,	TransStatus
-		,	BotKind
-		,	BotDetection
+		,	rt.TransStatus
+		,	rt.FlaggedCode
+		,	rt.BotDetection
+		,	rt.BotComponent
+		,	MD5(rt.BotComponent) AS BotComponentCode
 	FROM	JSON_TABLE(
 			ip_RawTransJson,
 			 "$[*]" COLUMNS(
@@ -91,8 +99,9 @@ BEGIN
 							,	ActionResult			VARCHAR(100) 	PATH "$.ActionResult"
                             ,	InvalidDevice			TEXT			CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' PATH "$.InvalidDevice"
                             ,	TransStatus				BIT(16)			PATH "$.TransStatus"
-                            ,	BotKind					VARCHAR(100)	PATH "$.BotKind"
+                            ,	FlaggedCode				VARCHAR(100)	PATH "$.FlaggedCode"
                             ,	BotDetection			LONGTEXT		PATH "$.BotDetection"
+                            ,	BotComponent			LONGTEXT		PATH "$.BotComponent"
 				)
 		   ) AS  rt; 
            
@@ -106,8 +115,25 @@ BEGIN
 	UPDATE Temp_Transactions AS tmp
 		INNER JOIN Temp_BotDetection tmpBD ON tmpBD.ID = tmp.ID
 	SET tmp.BotDetectionValue = tmpBD.BotDetectionValue;
+    
+    INSERT IGNORE INTO DCS_DataCenter.BotComponent(Code, Component, CreatedDate)
+    WITH cte_BotComponent AS (
+		SELECT 	DISTINCT 
+				BotComponentCode AS Code
+			,	BotComponent AS Component
+		FROM Temp_Transactions AS tmp
+    )
+    SELECT 	cte.Code
+		,	cte.Component
+		,	lv_InsertionTime AS CreatedDate
+    FROM cte_BotComponent AS cte
+    WHERE NOT EXISTS (SELECT 1 FROM DCS_DataCenter.BotComponent bc WHERE bc.Code = cte.Code);
+    
+    UPDATE Temp_Transactions AS tmp
+		INNER JOIN DCS_DataCenter.BotComponent AS bds ON bds.Code = tmp.BotComponentCode
+	SET tmp.BotComponentID = bds.ID;
 	
-	INSERT INTO DCS_DataCenter.RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, InsertTime, BotDetectionValue)
+	INSERT INTO DCS_DataCenter.RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, InsertTime, BotDetectionValue, BotComponentID)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -117,17 +143,18 @@ BEGIN
 		,	rt.UserAgent
 		,	rt.IP
         ,	rt.IPID
-        ,	CASE WHEN bk.ID IS NULL THEN lv_FlaggedHuman ELSE bk.ID END AS Flagged
+        ,	flg.ID AS Flagged
 		,	rt.PluginID
 		,	rt.URL
         ,	rt.Action
 		,	rt.ActionResult
         ,	rt.InvalidDevice
         ,	rt.TransStatus
-		,	CURRENT_TIMESTAMP(4) as InsertTime
+		,	lv_InsertionTime as InsertTime
 		,	rt.BotDetectionValue
+		,	rt.BotComponentID
 	FROM Temp_Transactions AS rt
-		LEFT JOIN DCS_DataCenter.BotKind AS bk ON bk.Name = rt.BotKind;
+		LEFT JOIN DCS_DataCenter.Flagged AS flg ON flg.Code = rt.FlaggedCode;
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_Transactions;
 END$$
