@@ -121,7 +121,7 @@ BEGIN
     SELECT  rm.FromCTSCustID
 		,	cus.CustID
     FROM  CTS_DataCenter.AssociationRemove AS rm
-		INNER JOIN CTSCustomer AS cus ON cus.CTSCustID = rm.FromCTSCustID
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = rm.FromCTSCustID
     WHERE rm.ToCTSCustID = ip_CTSCustID;
    
     SELECT COUNT(DISTINCT acc.CTSCustID)
@@ -204,7 +204,7 @@ BEGIN
         AND cust.CustStatusID IN (SELECT sta.AccountStatusID FROM Temp_AccountStatusID AS sta)
         AND (cust.SiteID,cust.SubscriberID) IN (SELECT subInfo.SiteID, subInfo.SubscriberID FROM Temp_SubscriberSiteID AS subInfo);
 	 
-    SELECT COUNT(DISTINCT ip.ToCustID) + lv_Count_IP
+    SELECT COUNT(DISTINCT ip.FromCustID) + lv_Count_IP
     INTO lv_Count_IP
     FROM CTS_DataCenter.AssociationByIP AS ip
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID  = ip.FromCustID AND cust.CustSubID = 0
