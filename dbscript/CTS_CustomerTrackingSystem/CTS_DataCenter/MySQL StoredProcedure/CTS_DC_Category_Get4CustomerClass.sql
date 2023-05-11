@@ -17,7 +17,7 @@ BEGIN
 		Param's Explanation:
 	*/ 
     
-	SELECT DISTINCT c.CategoryName, c.CategoryNameCN, c.CustomerClass, c.CustomerClassName
+	SELECT DISTINCT c.CategoryName, c.CategoryNameCN, c.CustomerClass, c.CustomerClassName, c.CustomerClassNameCN
 	FROM CTS_DataCenter.CustomerCategory AS c
 	WHERE c.CategoryNameCN IS NOT NULL AND c.CategoryNameCN <> "" AND CustomerClass IS NOT NULL
 	ORDER BY c.CustomerClass ASC;
