@@ -42,6 +42,7 @@ BEGIN
 				WHEN rd.PeriodRangeType = 100 THEN 'More than 5/30 Days with Consecutive Tickets > 24 hours'
 				WHEN rd.PeriodRangeType = 101 THEN 'Consecutive Tickets > 24 Hours and High Ugly Stake Tickets'
                 WHEN rd.PeriodRangeType = 200 THEN 'Consecutive Tickets per Match <= 2 mins and Stake per Ticket < 30 RM'
+                WHEN rd.PeriodRangeType = 300 THEN 'Time Discretization'
 			END AS PeriodRangeName
     FROM CTS_DataCenter.RobotDetection AS rd
     WHERE rd.CustID = ip_CustID;
