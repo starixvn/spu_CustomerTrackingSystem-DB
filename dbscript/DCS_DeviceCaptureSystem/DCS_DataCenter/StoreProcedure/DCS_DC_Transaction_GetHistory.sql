@@ -22,6 +22,7 @@ proc_label: BEGIN
 			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
 			- 20210629@Casey.Huynh: Enhance SP and Return Flagged Value (Web will show type of robot) [Redmine ID: 157085]
             - 20230406@Casey.Huynh: Show trans cross subscriber [Redmine ID: 186086]
+            - 20230512@Jonas.Huynh: BOTTD transactions [Redmine ID: 185792]
             
 		Param's Explanation (filtered by):
 	*/ 
@@ -49,17 +50,17 @@ proc_label: BEGIN
 	
     SET @TotalRow = 0;
 	
-    SELECT 	tmp.TransID
-		,	tmp.TransTime
-		,	tmp.FirstDeviceCode
-		,	tmp.IP
-		,	tmp.IPID
-		,	tmp.Flagged
-		,	tmp.Action
-		,	tmp.ActionResult
-		,	tmp.OS
-		,	tmp.Browser
-		,	tmp.URLDetails
+    SELECT 	tmp.TransID			AS TransID
+		,	tmp.TransTime		AS TransTime
+		,	tmp.FirstDeviceCode	AS FirstDeviceCode
+		,	tmp.IP				AS IP
+		,	tmp.IPID			AS IPID
+		,	tmp.ItemName		AS Flagged
+		,	tmp.Action			AS Action
+		,	tmp.ActionResult	AS ActionResult
+		,	tmp.OS				AS OS
+		,	tmp.Browser			AS Browser
+		,	tmp.URLDetails		AS URLDetails
 	FROM	(
 			SELECT 	@TotalRow := @TotalRow + 1
 				,	trs.TransID
@@ -67,7 +68,7 @@ proc_label: BEGIN
 				,	trs.FirstDeviceCode
 				,	trs.IP
 				,	trs.IPID
-				,	trs.Flagged
+				,	s.ItemName
 				,	ar.Action
 				,	ar.ActionResult
 				,	uag.OS
@@ -77,6 +78,7 @@ proc_label: BEGIN
 				LEFT JOIN DCS_DataCenter.UserAgent AS uag ON trs.UserAgentKey = uag.UserAgentKey
 				LEFT JOIN DCS_DataCenter.ActionResult AS ar ON trs.ActionResultID = ar.ActionResultID
 				LEFT JOIN DCS_DataCenter.URL AS ur ON trs.URLID = ur.URLID
+                LEFT JOIN DCS_DataCenter.StaticList AS s ON s.ListID = 1 AND s.ItemID = trs.Flagged AND s.Status = 1
 			WHERE trs.AccountID IN (SELECT AccountID FROM Temp_Account)
 				AND trs.CreatedDate BETWEEN lv_FromDate AND lv_ToDate
 			) AS tmp

@@ -20,6 +20,7 @@ BEGIN
 			- 20211006@Aries.Nguyen: Fix issue performance when filter sub SM88  [Redmine ID: #162888]
 			- 20211123@Aries.Nguyen: Fix issue performance when filter sub AlphaIBCIndo  [Redmine ID: #162888]
 			- 20230411@Casey.Huynh: Tunning Performance  [Redmine ID: #186129]
+            - 20230512@Jonas.Huynh: BOTTD transactions [Redmine ID: 185792]
             
 		Param's Explanation (filtered by):
 
@@ -86,7 +87,7 @@ BEGIN
 			,	ts.TransTime
 			,	ts.FirstDeviceCode
 			,	ts.IP
-			,	ts.Flagged
+			,	s.ItemName AS Flagged
 			,	ar.Action
 			,	ar.ActionResult
 			,	ua.OS
@@ -99,6 +100,7 @@ BEGIN
 			LEFT JOIN DCS_DataCenter.ActionResult AS ar ON ts.ActionResultID = ar.ActionResultID
 			LEFT JOIN DCS_DataCenter.URL AS ur ON ts.URLID = ur.URLID AND ts.SubscriberID = ur.SubscriberID
             LEFT JOIN CTS_Admin.Subscriber AS sb ON cus.SubscriberID = sb.SubscriberID		
+            LEFT JOIN DCS_DataCenter.StaticList AS s ON s.ListID = 1 AND s.ItemID = ts.Flagged AND s.Status = 1
 		WHERE ts.SubscriberID = ",ip_SubscriberId," OR ",ip_SubscriberId," = -1
         ORDER BY ts.TransTime DESC
         LIMIT ",lv_LimitTrans);
