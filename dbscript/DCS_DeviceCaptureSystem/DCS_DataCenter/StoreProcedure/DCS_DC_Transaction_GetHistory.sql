@@ -18,12 +18,19 @@ proc_label: BEGIN
 		Original:
 
 		Revisions:
-			- 20200518@lex.khuat: Update robot description from Green to Human [Redmine ID: #133934]
-			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
-			- 20210629@Casey.Huynh: Enhance SP and Return Flagged Value (Web will show type of robot) [Redmine ID: 157085]
-            - 20230406@Casey.Huynh: Show trans cross subscriber [Redmine ID: 186086]
-            - 20230512@Jonas.Huynh: BOTD transactions [Redmine ID: 185792]
+		- 20200518@lex.khuat: 		Update robot description from Green to Human [Redmine ID: #133934]
+		- 20210121@John.Ngo: 		Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
+		- 20210629@Casey.Huynh: 	Enhance SP and Return Flagged Value (Web will show type of robot) [Redmine ID: 157085]
+		- 20230406@Casey.Huynh: 	Show trans cross subscriber [Redmine ID: 186086]
+		- 20230512@Jonas.Huynh: 	BOTD transactions [Redmine ID: 185792]
+		- 20230512@Victoria.Le:		Add option "Last 5 weeks" for ip_DateRange [Redmine ID: 187979]
             
+		Param's Explanation (filtered by):
+			- ip_DateRange
+				= 1: 	Last 24 hours
+				= 14: 	Last 14 days
+				= 35:	Last 5 weeks            
+			
 		Param's Explanation (filtered by):
 	*/ 
 	DECLARE lv_FromRow INT;
@@ -41,12 +48,11 @@ proc_label: BEGIN
 	FROM	CTS_DataCenter.CustDCSAccount cusAcc 
 	WHERE 	cusAcc.CTSCustID = ip_CTSCustId;
 		
-    SET lv_ToDate = CURRENT_DATE();
-    SET lv_FromDate = CASE 
-						WHEN ip_DateRange = 1 THEN DATE_ADD(lv_ToDate, INTERVAL -1 DAY)
-                        WHEN ip_DateRange = 14 THEN DATE_ADD(lv_ToDate, INTERVAL -14 DAY)
-                        ELSE lv_ToDate
-					END;                
+	SET lv_ToDate 	= 	CURRENT_DATE();
+	SET lv_FromDate = 	CASE 
+							WHEN ip_DateRange > 0 THEN DATE_ADD(lv_ToDate, INTERVAL - ip_DateRange DAY)
+							ELSE lv_ToDate
+						END;                
 	
     SET @TotalRow = 0;
 	
