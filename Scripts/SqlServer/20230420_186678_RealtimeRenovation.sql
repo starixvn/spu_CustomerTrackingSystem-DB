@@ -9,11 +9,11 @@ USE [bodb_VR2Model]
 GO
 
 -- #0. Update Indexes
---DROP INDEX CIX_CustomerClassification_IsApplied  ON [dbo].[CustomerClassification];  
---CREATE CLUSTERED INDEX CIX_CustomerClassification_IsApplied_Id ON [dbo].[CustomerClassification] (
---	IsApplied ASC,
---	Id ASC
---);
+DROP INDEX CIX_CustomerClassification_IsApplied  ON [dbo].[CustomerClassification];  
+CREATE CLUSTERED INDEX CIX_CustomerClassification_IsApplied_Id ON [dbo].[CustomerClassification] (
+	IsApplied ASC,
+	Id ASC
+);
 
 -- #1. New table CustomerClassification_NormalPool
 CREATE TABLE [dbo].[CustomerClassification_NormalPool](
@@ -21,7 +21,7 @@ CREATE TABLE [dbo].[CustomerClassification_NormalPool](
 	CustId		INT		 NOT NULL,
 	[Priority]	TINYINT  NOT NULL,
 	FunctionId	SMALLINT NOT NULL,
-	CreatedTime	Datetime NOT NULL
+	CreatedTime	DATETIME NOT NULL
 )
 
 CREATE NONCLUSTERED INDEX [IX_CustomerClassification_NormalPool_Priority_CustId] ON [dbo].[CustomerClassification_NormalPool]
@@ -35,7 +35,9 @@ GO
 -- #2. New table [CustomerClassification_LatestActiveDay]
 CREATE TABLE [dbo].[CustomerClassification_LatestActiveDay](
 	CustId		  INT  PRIMARY KEY,
-	LastTransDate DATE NOT NULL
+	LastTransDate DATE	   NOT NULL,
+	LastTransTime DATETIME NOT NULL,
+	CreatedTime	  DATETIME NOT NULL
 )
 
 CREATE NONCLUSTERED INDEX [IX_CustomerClassification_LatestActiveDay_LastTransDate] ON [dbo].[CustomerClassification_LatestActiveDay]
