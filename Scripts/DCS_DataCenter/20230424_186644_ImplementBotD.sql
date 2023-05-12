@@ -12,49 +12,53 @@
 USE DCS_DataCenter;
 
 DROP TABLE IF EXISTS DCS_DataCenter.Flagged;
+DROP TABLE IF EXISTS DCS_DataCenter.StaticList;
 
-CREATE TABLE `Flagged` (
-  `ID` INT UNSIGNED NOT NULL,
-  `Code` VARCHAR(100) NOT NULL,
-  `Name` VARCHAR(100) NOT NULL,
-  `Status` BOOLEAN NOT NULL DEFAULT 1,
-  `CreatedDate` DATETIME NULL,
-  PRIMARY KEY (`ID`),
-  KEY `IX_Flagged_Code` (`Code`)
+CREATE TABLE `StaticList` (
+  `ListID` int NOT NULL,
+  `ItemID` smallint NOT NULL,
+  `ListCode` varchar(100) DEFAULT NULL,
+  `ListName` varchar(200) DEFAULT NULL,
+  `ItemCode` varchar(100) DEFAULT NULL,
+  `ItemName` varchar(200) DEFAULT NULL,
+  `Status` tinyint(1) DEFAULT NULL,
+  `Description` varchar(200) DEFAULT NULL,
+  `CreatedDate` datetime DEFAULT NULL,
+  PRIMARY KEY (`ListID`,`ItemID`),
+  UNIQUE KEY `UX_StaticList_ListCode_ItemCode` (`ListCode`, `ItemCode`)
 ) ENGINE=InnoDB;
 
-INSERT INTO DCS_DataCenter.Flagged(ID, Code, Name, CreatedDate)
-VALUES	(1, 'Human', 'Human', NOW())
-	, 	(2, 'EmptyToken', 'EmptyToken', NOW())
-	, 	(3, 'InvalidToken', 'InvalidToken', NOW())
-	, 	(4, 'EmptyAnalysis', 'EmptyAnalysis', NOW())
-	, 	(5, 'InvalidAnalysis', 'InvalidAnalysis', NOW())
-	, 	(6, 'EmptyDevice', 'EmptyDevice', NOW())
-	, 	(7, 'InvalidDevice', 'InvalidDevice', NOW())
-	, 	(8, 'EmptyUserAgent', 'EmptyUserAgent', NOW())
-	, 	(9, 'Headless', 'Headless', NOW())
-	, 	(10, 'awesomium', 'Awesomium', NOW())
-	, 	(11, 'cef', 'Cef', NOW())
-	, 	(12, 'cefsharp', 'CefSharp', NOW())
-	, 	(13, 'coachjs', 'CoachJS', NOW())
-	, 	(14, 'electron', 'Electron', NOW())
-	, 	(15, 'fminer', 'FMiner', NOW())
-	, 	(16, 'geb', 'Geb', NOW())
-	, 	(17, 'nightmarejs', 'NightmareJS', NOW())
-	, 	(18, 'phantomas', 'Phantomas', NOW())
-	, 	(19, 'phantomjs', 'PhantomJS', NOW())
-	, 	(20, 'rhino', 'Rhino', NOW())
-	, 	(21, 'selenium', 'Selenium', NOW())
-	, 	(22, 'sequentum', 'Sequentum', NOW())
-	, 	(23, 'slimerjs', 'SlimerJS', NOW())
-	, 	(24, 'webdriverio', 'WebDriverIO', NOW())
-	, 	(25, 'webdriver', 'WebDriver', NOW())
-	, 	(26, 'headless_chrome', 'HeadlessChrome', NOW())
-	, 	(27, 'unknown', 'Unknown', NOW())
-;
+INSERT INTO DCS_DataCenter.StaticList(ListID, ListCode, ListName, ItemID, ItemCode, ItemName, Status, CreatedDate) VALUES
+(1,'Flagged','Flagged', 1, 'Human', 'Human', 1, NOW())
+, (1,'Flagged','Flagged', 2, 'EmptyToken', 'EmptyToken', 1, NOW())
+, (1,'Flagged','Flagged', 3, 'InvalidToken', 'InvalidToken', 1, NOW())
+, (1,'Flagged','Flagged', 4, 'EmptyAnalysis', 'EmptyAnalysis', 1, NOW())
+, (1,'Flagged','Flagged', 5, 'InvalidAnalysis', 'InvalidAnalysis', 1, NOW())
+, (1,'Flagged','Flagged', 6, 'EmptyDevice', 'EmptyDevice', 1, NOW())
+, (1,'Flagged','Flagged', 7, 'InvalidDevice', 'InvalidDevice', 1, NOW())
+, (1,'Flagged','Flagged', 8, 'EmptyUserAgent', 'EmptyUserAgent', 1, NOW())
+, (1,'Flagged','Flagged', 9, 'Headless', 'Headless', 1, NOW())
+, (1,'Flagged','Flagged', 10, 'awesomium', 'Awesomium', 1, NOW())
+, (1,'Flagged','Flagged', 11, 'cef', 'Cef', 1, NOW())
+, (1,'Flagged','Flagged', 12, 'cefsharp', 'CefSharp', 1, NOW())
+, (1,'Flagged','Flagged', 13, 'coachjs', 'CoachJS', 1, NOW())
+, (1,'Flagged','Flagged', 14, 'electron', 'Electron', 1, NOW())
+, (1,'Flagged','Flagged', 15, 'fminer', 'FMiner', 1, NOW())
+, (1,'Flagged','Flagged', 16, 'geb', 'Geb', 1, NOW())
+, (1,'Flagged','Flagged', 17, 'nightmarejs', 'NightmareJS', 1, NOW())
+, (1,'Flagged','Flagged', 18, 'phantomas', 'Phantomas', 1, NOW())
+, (1,'Flagged','Flagged', 19, 'phantomjs', 'PhantomJS', 1, NOW())
+, (1,'Flagged','Flagged', 20, 'rhino', 'Rhino', 1, NOW())
+, (1,'Flagged','Flagged', 21, 'selenium', 'Selenium', 1, NOW())
+, (1,'Flagged','Flagged', 22, 'sequentum', 'Sequentum', 1, NOW())
+, (1,'Flagged','Flagged', 23, 'slimerjs', 'SlimerJS', 1, NOW())
+, (1,'Flagged','Flagged', 24, 'webdriverio', 'WebDriverIO', 1, NOW())
+, (1,'Flagged','Flagged', 25, 'webdriver', 'WebDriver', 1, NOW())
+, (1,'Flagged','Flagged', 26, 'headless_chrome', 'HeadlessChrome', 1, NOW())
+, (1,'Flagged','Flagged', 27, 'unknown', 'Unknown', 1, NOW());
+
 
 DROP TABLE IF EXISTS DCS_DataCenter.BotDetection;
-
 CREATE TABLE `BotDetection` (
   `Value` BIT(32) NOT NULL,
   `Name` VARCHAR(100) NOT NULL,
@@ -87,15 +91,15 @@ VALUES 	(1,'detectAppVersion', NOW())
 ;
 
 DROP TABLE IF EXISTS DCS_DataCenter.BotComponent;
-
 CREATE TABLE `BotComponent` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `Code` VARCHAR(100) NOT NULL,
   `Component` LONGTEXT NOT NULL,
   `CreatedDate` DATETIME NULL,
   PRIMARY KEY (`ID`),
-  UNIQUE KEY `IX_BotComponent_Code` (`Code`)
+  UNIQUE KEY `UX_BotComponent_Code` (`Code`)
 ) ENGINE=InnoDB;
+
 
 ALTER TABLE `DCS_DataCenter`.`RawTransaction` 
 ADD COLUMN `BotDetectionValue` BIT(32) NULL,
