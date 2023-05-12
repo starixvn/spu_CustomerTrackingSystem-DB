@@ -20,7 +20,7 @@ BEGIN
 			- 20211006@Aries.Nguyen: Fix issue performance when filter sub SM88  [Redmine ID: #162888]
 			- 20211123@Aries.Nguyen: Fix issue performance when filter sub AlphaIBCIndo  [Redmine ID: #162888]
 			- 20230411@Casey.Huynh: Tunning Performance  [Redmine ID: #186129]
-            - 20230512@Jonas.Huynh: BOTTD transactions [Redmine ID: 185792]
+            - 20230512@Jonas.Huynh: BOTD transactions [Redmine ID: 185792]
             
 		Param's Explanation (filtered by):
 
