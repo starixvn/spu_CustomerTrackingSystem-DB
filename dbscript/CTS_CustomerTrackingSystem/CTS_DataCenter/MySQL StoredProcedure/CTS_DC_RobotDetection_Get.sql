@@ -21,6 +21,8 @@ BEGIN
 			- 20221027@Long.Luu: 		Support SCE Robots [Redmine ID: #179498]
 			- 20230315@Victoria.Le:		Add Robot Imperva [Redmine ID: #184773]
             - 20230404@Casey.Huynh:		Return RobotDetection.PeriodRangeName for PeriodRangeType = 200 [Redmine ID: #185777]
+            - 20230512@Casey.Huynh:		Return RobotDetection.PeriodRangeName for PeriodRangeType = 300 [Redmine ID: #186992]
+
 		Example:
 			call CTS_DataCenter.CTS_DC_RobotDetection_Get (2211693,@a,@b);  select @a,@b;
 	*/    
