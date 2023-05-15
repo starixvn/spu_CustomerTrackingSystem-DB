@@ -15,9 +15,10 @@ AS
 	DB	 : bodb02
 
 	Revisions:
-		- 20220726@Long.Luu: Created [Redmine ID: #175701]
-		- 20220929@Long.Luu: Adjust the asssociation rule [Redmine ID: #178331]
-		- 20221101@Long.Luu: Update the threshold [Redmine ID: #178333]
+		- 20220726@Long.Luu: 		Created [Redmine ID: #175701]
+		- 20220929@Long.Luu: 		Adjust the asssociation rule [Redmine ID: #178331]
+		- 20221101@Long.Luu: 		Update the threshold [Redmine ID: #178333]
+		- 20230512@Victoria.Le:		Change condition with ticket stake for each cust [Redmine ID: #187978]
 
 	Params Explaination:
 		- @QueryType: 1 detect associations, 2 get fraud tickets, 3 get association custlist of a group, 4 get fraud tickets of a custgroup
@@ -28,15 +29,17 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
-	DECLARE @CONST_MAXTIMEINTERVAL	SMALLINT = 180; -- 180 Seconds = 3 minutes
-	DECLARE @CONST_MATCHSHARED		SMALLINT = 3;
-	DECLARE @CONST_STAKETHRESHOLD	SMALLINT = 500;
+	DECLARE @CONST_MAXTIMEINTERVAL					SMALLINT = 180; -- 180 Seconds = 3 minutes
+	DECLARE @CONST_MATCHSHARED						SMALLINT = 3;
+	DECLARE @CONST_STAKETHRESHOLD_SOCCER			SMALLINT = 500;
+	DECLARE @CONST_STAKETHRESHOLD_BASKETBALL		SMALLINT = 300;
+	DECLARE @CONST_STAKETHRESHOLD_OTHER				SMALLINT = 150;
 
-	DECLARE @DataFromDate			SMALLDATETIME
-		,	@Today					DATE = GETDATE()
-		,	@CutOffDate				DATE = '2021-09-22'
-		,	@BalanceUpDay			SMALLDATETIME
-		,	@MoveBetsDay			SMALLDATETIME;
+	DECLARE @DataFromDate							SMALLDATETIME
+		,	@Today									DATE = GETDATE()
+		,	@CutOffDate								DATE = '2021-09-22'
+		,	@BalanceUpDay							SMALLDATETIME
+		,	@MoveBetsDay							SMALLDATETIME;
 	
 	DROP TABLE IF EXISTS #tmpCustIds;
 	CREATE TABLE #tmpCustIds(
@@ -81,6 +84,12 @@ BEGIN
 		,	BetTeam				NVARCHAR(10)
 		,	LiveHomeScore		SMALLINT
 		,	LiveAwayScore		SMALLINT
+		,	TransDate			DATETIME
+		,	UserName			VARCHAR(30)
+		,	Odds				SMALLMONEY
+		,	Stake				MONEY
+		,	Status				NVARCHAR(10)
+		,	INDEX IX_tmpRawTickets_TransID (TransID)
 	);	
 
 	DROP TABLE IF EXISTS #tmpAssociation;
@@ -103,8 +112,41 @@ BEGIN
 			MatchID				INT PRIMARY KEY
 	);	
 	
+	DROP TABLE IF EXISTS #tmpStakeThredsHold;
+	CREATE TABLE	#tmpStakeThredsHold(
+			SportType			SMALLINT NOT NULL PRIMARY KEY
+		,	StakeRM				SMALLINT				
+	);	
+	
+	INSERT INTO #tmpStakeThredsHold (SportType, StakeRM)
+	SELECT 	SportType
+		, 	CASE WHEN SportType = 1 THEN @CONST_STAKETHRESHOLD_SOCCER
+				 WHEN SportType = 2 THEN @CONST_STAKETHRESHOLD_BASKETBALL
+				 ELSE @CONST_STAKETHRESHOLD_OTHER						
+			END
+	FROM dbo.sports WITH (NOLOCK)
+	WHERE SportType < 100;
+	
 	-- Get full data from bettrans
-	INSERT INTO #tmpRawTickets(TransID,TransDate_Int,MatchID,BetType,CustID,BetTeam,EventDate,LeagueId,HomeId,AwayId,LiveHomeScore,LiveAwayScore)
+	INSERT INTO #tmpRawTickets(
+			TransID
+		,	TransDate_Int
+		,	MatchID
+		,	BetType
+		,	CustID
+		,	BetTeam
+		,	EventDate
+		,	LeagueId
+		,	HomeId
+		,	AwayId
+		,	LiveHomeScore
+		,	LiveAwayScore
+		,	TransDate
+		,	UserName
+		,	Odds
+		,	Stake
+		,	Status
+	)
 	SELECT	b.transid
 		,	DATEDIFF(ss, @CutOffDate, b.transdate)
 		,	b.matchid
@@ -117,18 +159,42 @@ BEGIN
 		,	m.awayid
 		,	b.livehomescore
 		,	b.liveawayscore
+		,	b.transdate
+		,	b.UserName
+		,	b.Odds
+		,	b.Stake
+		,	b.Status
 	FROM #tmpCustIds AS a WITH(NOLOCK)
 		INNER JOIN dbo.bettrans AS b WITH(NOLOCK) ON a.CustID = b.custid		
-		INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.MatchID = m.matchid AND m.sporttype < 100		
+		INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.MatchID = m.matchid 
+		INNER JOIN #tmpStakeThredsHold AS s WITH(NOLOCK) ON s.SportType = m.sporttype
 		INNER JOIN dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
 	WHERE b.winlostdate > @MoveBetsDay
 		AND m.eventstatus = 'Completed'
 		AND b.Currency NOT IN (20,27,28)
 		AND l.LeagueGroupID NOT IN (42,72,74,108,113,122) -- exclude SABA, Virtual Sport
-		AND (b.stake * b.actualrate >= @CONST_STAKETHRESHOLD)
+		AND (b.stake * b.actualrate >= s.StakeRM)
 
 	-- Get more data from bettrans 14
-	INSERT INTO #tmpRawTickets(TransID,TransDate_Int,MatchID,BetType,CustID,BetTeam,EventDate,LeagueId,HomeId,AwayId,LiveHomeScore,LiveAwayScore)
+	INSERT INTO #tmpRawTickets(
+			TransID
+		,	TransDate_Int
+		,	MatchID
+		,	BetType
+		,	CustID
+		,	BetTeam
+		,	EventDate
+		,	LeagueId
+		,	HomeId
+		,	AwayId
+		,	LiveHomeScore
+		,	LiveAwayScore
+		,	TransDate
+		,	UserName
+		,	Odds
+		,	Stake
+		,	Status
+	)
 	SELECT	b.transid
 		,	DATEDIFF(ss, @CutOffDate, b.transdate)
 		,	b.matchid
@@ -141,15 +207,21 @@ BEGIN
 		,	m.awayid
 		,	b.livehomescore
 		,	b.liveawayscore
+		,	b.transdate
+		,	b.UserName
+		,	b.Odds
+		,	b.Stake
+		,	b.Status
 	FROM #tmpCustIds AS a WITH(NOLOCK)
 		INNER JOIN dbo.bettrans14 AS b WITH(NOLOCK) ON a.CustID = b.custid		
-		INNER JOIN dbo.match14 AS m WITH(NOLOCK) ON b.MatchID = m.matchid AND m.sporttype < 100		
+		INNER JOIN dbo.match14 AS m WITH(NOLOCK) ON b.MatchID = m.matchid
+		INNER JOIN #tmpStakeThredsHold AS s WITH(NOLOCK) ON s.SportType = m.sporttype
 		INNER JOIN dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
 	WHERE	b.winlostdate <= @MoveBetsDay AND b.winlostdate > @DataFromDate
 		AND m.eventstatus = 'Completed'
 		AND b.Currency NOT IN (20,27,28)
 		AND l.LeagueGroupID NOT IN (42,72,74,108,113,122) -- exclude SABA, Virtual Sport		
-		AND (b.stake * b.actualrate >= @CONST_STAKETHRESHOLD)
+		AND (b.stake * b.actualrate >= s.StakeRM)
 
 	CREATE CLUSTERED INDEX CIX_tmpRawTickets
 	ON #tmpRawTickets (MatchID, Bettype, Betteam, CustID); 
@@ -241,11 +313,7 @@ BEGIN
 		BEGIN
 			SELECT b.TransId, b.TransDate, b.UserName, b.BetType, b.BetTeam, b.Stake, b.Odds, b.LiveHomeScore, b.LiveAwayScore, b.status AS TicketStatus, b.MatchId, c.EventDate, c.HomeId, c.AwayId, c.LeagueId
 			FROM #tmpAssociation AS c
-				INNER JOIN dbo.bettrans AS b WITH(NOLOCK) ON b.TransId = c.TransID1 OR b.TransId = c.TransID2
-			UNION ALL
-			SELECT b.TransId, b.TransDate, b.UserName, b.BetType, b.BetTeam, b.Stake, b.Odds, b.LiveHomeScore, b.LiveAwayScore, b.status AS TicketStatus, b.MatchId, c.EventDate, c.HomeId, c.AwayId, c.LeagueId
-			FROM #tmpAssociation AS c
-				INNER JOIN dbo.bettrans14 AS b WITH(NOLOCK) ON b.TransId = c.TransID1 OR b.TransId = c.TransID2
+				INNER JOIN #tmpRawTickets AS b WITH(NOLOCK) ON b.TransId = c.TransID1 OR b.TransId = c.TransID2
 		END
 	ELSE IF (@QueryType = 3)
 		BEGIN
@@ -267,15 +335,15 @@ BEGIN
 			SELECT b.TransId, b.TransDate, b.UserName, b.BetType, b.BetTeam, b.Stake, b.Odds, b.LiveHomeScore, b.LiveAwayScore, b.status AS TicketStatus, b.MatchId, c.EventDate, c.HomeId, c.AwayId, c.LeagueId
 			FROM #tmpRootCustIDMatches AS cte
 				INNER JOIN #tmpAssociation AS c ON cte.MatchID = c.MatchID
-				INNER JOIN dbo.bettrans AS b WITH(NOLOCK) ON b.TransId = c.TransID1 OR b.TransId = c.TransID2
-			UNION ALL
-			SELECT b.TransId, b.TransDate, b.UserName, b.BetType, b.BetTeam, b.Stake, b.Odds, b.LiveHomeScore, b.LiveAwayScore, b.status AS TicketStatus, b.MatchId, c.EventDate, c.HomeId, c.AwayId, c.LeagueId
-			FROM #tmpRootCustIDMatches AS cte
-				INNER JOIN #tmpAssociation AS c ON cte.MatchID = c.MatchID
-				INNER JOIN dbo.bettrans14 AS b WITH(NOLOCK) ON b.TransId = c.TransID1 OR b.TransId = c.TransID2
+				INNER JOIN #tmpRawTickets AS b WITH(NOLOCK) ON b.TransId = c.TransID1 OR b.TransId = c.TransID2
 		END;
-
+	
+	DROP TABLE #BUMBData;
 	DROP TABLE #tmpCustIds;
 	DROP TABLE #tmpRawTickets;
+	DROP TABLE #tmpAssociation;
+	DROP TABLE #tmpRootCustIDMatches;
+	DROP TABLE #tmpStakeThredsHold;
+	
 END;
 
