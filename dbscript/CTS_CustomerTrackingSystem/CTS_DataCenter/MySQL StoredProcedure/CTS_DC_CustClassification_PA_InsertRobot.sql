@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_PA_InsertRobot`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_PA_InsertRobot_xtest`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_InsertRobot`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_InsertRobot_xtest`(
 		IN 		ip_CustInfo 	JSON
 	,	IN		ip_IsRescan		BIT
 )
@@ -20,16 +20,22 @@ BEGIN
 			- 20200817@Casey.Huynh: 	Remove Hardcode CC [Redmine ID: #175698]
 			- 20221007@Harvey.Nguyen: 	Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory [Redmine ID: #178022]
 			- 20230315@Victoria.Le:		Add Robot Imperva [Redmine ID: #184773]
-			- 20230404@Victoria.Le		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeID [Redmine ID: #185319] 
+			- 20230404@Victoria.Le:		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeID [Redmine ID: #185319] 
+            - 20230516@Casey.Huynh:		New Category for Robot OCRD
 		
         Param's Explanation: 
 
 		Example:
-			CALL CTS_DataCenter.CTS_DC_CustClassification_PA_InsertRobot('[{"CustID":3698310,"CategoryID":61,"RobotCounter":11,"TurnoverRM":null,"WinlossRM":null,"BetCount":null,"ActiveDays":null,"IsFromTW":true,"CreatedBy":10278938},{"CustID":3698310,"CategoryID":166,"RobotCounter":null,"TurnoverRM":53580.0000,"WinlossRM":-319.0800,"BetCount":1649,"ActiveDays":16,"IsFromTVS":true,"TVSRequestID":1111,"CreatedBy":10278938}]', 0);
+			CALL CTS_DataCenter.CTS_DC_CustClassification_PA_InsertRobot('[
+            {"CustID":3698310,"CategoryID":61,"RobotCounter":11,"TurnoverRM":null,"WinlossRM":null,"BetCount":null,"ActiveDays":null,"IsFromTW":true,"CreatedBy":10278938}
+            ,{"CustID":3698310,"CategoryID":166,"RobotCounter":null,"TurnoverRM":53580.0000,"WinlossRM":-319.0800,"BetCount":1649,"ActiveDays":16,"IsFromTVS":true,"TVSRequestID":1111,"CreatedBy":10278938}]', 0);
 
 */
-    DECLARE	CONST_CATEGORYID_ROBOT 				INT DEFAULT 163;
-    DECLARE	CONST_CATEGORYID_ROBOTLOSING 		INT DEFAULT 164;
+    DECLARE	CONST_CATEGORYID_ROBOTUSER 				INT DEFAULT 163;
+    DECLARE	CONST_CATEGORYID_ROBOTUSER_LOSING 		INT DEFAULT 164;
+	DECLARE	CONST_CATEGORYID_ROBOTOCRD 				INT DEFAULT 165;
+    DECLARE	CONST_CATEGORYID_ROBOTOCRD_LOSING 		INT DEFAULT 166;
+    
     DECLARE	CONST_CATEGORYID_LICVIPPROBLEM 		INT DEFAULT 3;
     DECLARE	CONST_CATEGORYID_LICVIP				INT DEFAULT 4;
     DECLARE CONST_SPORTGROUP_NORMAL 			INT DEFAULT 200;
@@ -91,7 +97,7 @@ BEGIN
 		,	SportType				SMALLINT DEFAULT NULL 
 		,	IssueTypeID 			TINYINT DEFAULT NULL 
         
-		, 	PRIMARY KEY(CustID,CategoryID)
+		, 	PRIMARY KEY(CustID, CategoryID)
     );  
      
     DROP TEMPORARY TABLE IF EXISTS Temp_ExistCate;    
@@ -138,7 +144,8 @@ BEGIN
     
     INSERT INTO Temp_4xCC_02(CustomerClass) 
     SELECT tmp.CustomerClass FROM Temp_4xCC AS tmp;
-    #=================================================
+   
+   #=================================================
     INSERT IGNORE INTO Temp_PA(
 			CustID
 		, 	CTSCustID
@@ -174,9 +181,11 @@ BEGIN
 		,	cus.CTSCustID
 		,	cus.SubscriberID
 		,	cus.IsLicensee
-
-		, 	CASE WHEN js.WinlossStatus = 0 THEN CONST_CATEGORYID_ROBOTLOSING
-			ELSE CONST_CATEGORYID_ROBOT END AS CategoryID
+		, 	(CASE WHEN js.CategoryID = CONST_CATEGORYID_ROBOTOCRD  AND js.WinlossStatus > 0 THEN CONST_CATEGORYID_ROBOTOCRD
+				 WHEN js.CategoryID = CONST_CATEGORYID_ROBOTOCRD  AND js.WinlossStatus = 0 THEN CONST_CATEGORYID_ROBOTOCRD_LOSING 
+                 WHEN js.WinlossStatus > 0 THEN CONST_CATEGORYID_ROBOTUSER
+				 WHEN js.WinlossStatus = 0 THEN CONST_CATEGORYID_ROBOTUSER_LOSING 
+                 END) AS CategoryID
 		,	sp.CustomerClass AS TargetCC
 		, 	js.TurnoverRM
 		, 	js.WinlossRM
@@ -210,7 +219,8 @@ BEGIN
 	FROM JSON_TABLE(ip_CustInfo,
 	"$[*]" COLUMNS( CustID 			BIGINT UNSIGNED		PATH "$.CustID"                
 				,	RobotCounter	INT 				PATH "$.RobotCounter"
-
+				,	CategoryID	    SMALLINT UNSIGNED	PATH "$.CategoryID"
+                
 				,	WinlossStatus	SMALLINT 			PATH "$.WinlossStatus"	
 				,	TurnoverRM		DECIMAL(20,4)		PATH "$.TurnoverRM"
 				,	WinlossRM		DECIMAL(20,4) 		PATH "$.WinlossRM"
@@ -362,7 +372,7 @@ BEGIN
 				 WHEN tmp.WinlossStatus = 2 AND cate.IsPAProbation = 0 THEN 0  /*Win + PA => No Change  */
 				 WHEN tmp.WinlossStatus = 2 AND cate.IsPAProbation = 1 THEN 1  /*Win + Probation => Update */
 			END AS IsChangeWinloss
-		,	CASE WHEN clss.CategoryID IN (CONST_CATEGORYID_ROBOT,CONST_CATEGORYID_ROBOTLOSING) THEN 1
+		,	CASE WHEN clss.CategoryID IN (CONST_CATEGORYID_ROBOTUSER,CONST_CATEGORYID_ROBOTUSER_LOSING) THEN clss.CategoryID
 				 ELSE 0 END AS IsRobot
 		,	clss.IsFromTW		
 		, 	clss.IsFromCTS	
@@ -436,7 +446,7 @@ BEGIN
 		AND tmp.IsRobot = 0;
 	
     UPDATE Temp_PA AS pa
-    SET pa.CategoryID = CONST_CATEGORYID_ROBOTLOSING
+    SET pa.CategoryID = CONST_CATEGORYID_ROBOTUSER_LOSING
     WHERE EXISTS (SELECT 1 
 				  FROM Temp_ExistCate AS ex
                   WHERE ex.CustID = pa.CustID 
@@ -528,7 +538,7 @@ BEGIN
 									ELSE 0 END;
 
     UPDATE CTS_DataCenter.CTSCustomerClassification AS clss
-		INNER JOIN Temp_PA AS pa ON  pa.CustID = clss.CustID AND clss.CategoryID IN (CONST_CATEGORYID_ROBOT,CONST_CATEGORYID_ROBOTLOSING)
+		INNER JOIN Temp_PA AS pa ON  pa.CustID = clss.CustID AND clss.CategoryID IN (CONST_CATEGORYID_ROBOTUSER,CONST_CATEGORYID_ROBOTUSER_LOSING,CONST_CATEGORYID_ROBOTOCRD,CONST_CATEGORYID_ROBOTOCRD_LOSING)
     SET 	clss.CategoryID =  pa.CategoryID   
 		-- ,	clss.Remark =  CASE WHEN pa.IsFromCTS = 1 OR pa.IsFromImperva = 1 THEN pa.Remark ELSE clss.Remark END  
 		,	clss.IsFromTW =   CASE WHEN pa.IsFromTW = 1 THEN pa.IsFromTW ELSE clss.IsFromTW END  
@@ -554,12 +564,12 @@ BEGIN
 				  FROM  Temp_PA AS pa  
                   WHERE pa.CustID = pro.CustID  
 					AND pa.IsDataChanged = 1);
-                    
+        
     UPDATE Temp_PA AS pa
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON pa.CategoryID = cate.CategoryID
 	SET pa.TargetCC	= CASE  WHEN pa.TargetCC IS NOT NULL AND pa.TargetCC NOT IN (SELECT tmp.CustomerClass FROM Temp_4xCC AS tmp) THEN pa.TargetCC
-							WHEN pa.IsLicenseeVIP = 1 AND pa.CategoryID = CONST_CATEGORYID_ROBOT THEN lv_CC_LicVipProblem
-                            WHEN pa.IsLicenseeVIP = 1 AND pa.CategoryID = CONST_CATEGORYID_ROBOTLOSING THEN lv_CC_LicVip
+							WHEN pa.IsLicenseeVIP = 1 AND pa.CategoryID IN (CONST_CATEGORYID_ROBOTUSER,CONST_CATEGORYID_ROBOTOCRD) THEN lv_CC_LicVipProblem
+                            WHEN pa.IsLicenseeVIP = 1 AND pa.CategoryID IN (CONST_CATEGORYID_ROBOTUSER_LOSING,CONST_CATEGORYID_ROBOTOCRD_LOSING) THEN lv_CC_LicVip
 							WHEN pa.TargetCC IS NULL OR pa.TargetCC IN (SELECT tmp.CustomerClass FROM Temp_4xCC_02 AS tmp) THEN IFNULL(cate.CustomerClass, -99) 
 							ELSE  -99 END 
 	,	pa.TargetDangerLevel = CASE WHEN pa.IsLicensee = 1 THEN cate.ABIDangerLevel_Licensee
