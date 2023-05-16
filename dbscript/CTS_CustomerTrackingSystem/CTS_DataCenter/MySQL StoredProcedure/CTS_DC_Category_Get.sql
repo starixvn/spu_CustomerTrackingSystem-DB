@@ -14,6 +14,7 @@ BEGIN
 			- 20210316@Casey.Huynh: Created [Redmine ID: #150457]
             - 20210727@Irena.Vo: Enhance Category filter [Redmine ID: #159142]
 			- 20210805@Irena.Vo: Update get Category filter [Redmine ID: #155956]
+			
 		Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DC_Category_Get();
@@ -32,6 +33,7 @@ BEGIN
 		,	GROUP_CONCAT(cat.CategoryID SEPARATOR ',')  AS CategoryIDs  
 	FROM	CTS_DataCenter.CustomerCategory AS cat
 	WHERE 	cat.ParentID = 50
+		AND cat.IsActive = 1
 	GROUP BY cat.CategoryName, cat.CategoryGroup
     UNION
 	SELECT	CASE WHEN ttc.TaggingType = 1 THEN 'PA Associated Category' 
@@ -43,6 +45,7 @@ BEGIN
 	FROM	CTS_DataCenter.CustomerCategory AS cat
 		LEFT JOIN CTS_DataCenter.TaggingToCategory AS ttc ON ttc.CategoryID = cat.CategoryID	
 	WHERE 	cat.ParentID = 200
+		AND cat.IsActive = 1
 	UNION
     SELECT 'Others'  AS CategoryGroup
 		,  'No Category' AS CategoryName
