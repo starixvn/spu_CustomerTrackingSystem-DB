@@ -119,7 +119,7 @@ INSERT INTO [dbo].[CustomerClassification_Parameter] ([DataId], [DataDescription
 VALUES (4, 'Normal Accounts Classification - Realtime Check Changes - Step minute jump for retrieving customer performance', 'TINYINT', '15');
 GO
 
--- #9. Grant permissions
+-- #10. Grant permissions
 GRANT SELECT ON [dbo].[CustomerClassification_NormalPool] TO [bodbSPUNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[CustomerClassification_NormalPool] TO [bodbSPUNet]
@@ -149,3 +149,24 @@ GRANT SELECT ON [dbo].[CustomerClassification_Priority] TO [bodbSPUNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[CustomerClassification_Priority] TO [bodbSPUNet]
 GO
+
+-- #11. Init Data
+IF	OBJECT_ID('tempdb..#tmpInitData') IS NOT NULL
+	DROP TABLE	#tmpInitData;
+
+CREATE TABLE #tmpInitData(
+	[CustID]			INT	PRIMARY KEY,
+	[lasttransdate]		DATETIME		
+);
+
+INSERT INTO #tmpInitData([CustID], [lasttransdate])
+EXEC bodb_Adhoc.dbo.Ned_Acc_Rpt_CTS_GetLastTransDate;
+
+INSERT INTO dbo.CustomerClassification_LatestActiveDay (CustId, LastTransTime, LastTransDate, CreatedTime)
+SELECT	a.CustID
+	,	a.lasttransdate
+	,	a.lasttransdate
+	,	GETDATE()
+FROM #tmpInitData AS a
+
+DROP TABLE #tmpInitData; 
