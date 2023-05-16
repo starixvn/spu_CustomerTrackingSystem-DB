@@ -86,21 +86,21 @@ GO
 
 -- #7. New table CustomerClassification_Priority
 CREATE TABLE [dbo].[CustomerClassification_Priority](
-	GoupId	     BIGINT		  NOT NULL,
-	GoupName     NVARCHAR(10) NOT NULL,
+	GroupId	     BIGINT		  NOT NULL,
+	GroupName    NVARCHAR(10) NOT NULL,
 	FunctionId   INT		  NOT NULL,
 	FunctionName NVARCHAR(50) NOT NULL,
 	[Priority]   SMALLINT	  NOT NULL
 )
 
-CREATE CLUSTERED INDEX [CIX_CustomerClassification_Priority_GoupId_FunctionId] ON [dbo].[CustomerClassification_Priority]
+CREATE CLUSTERED INDEX [CIX_CustomerClassification_Priority_GroupId_FunctionId] ON [dbo].[CustomerClassification_Priority]
 (
-	GoupId,
+	GroupId,
 	FunctionId
 )
 GO
 
-INSERT INTO [dbo].[CustomerClassification_Priority] (GoupId, GoupName, FunctionId, FunctionName, [Priority]) 
+INSERT INTO [dbo].[CustomerClassification_Priority] (GroupId, GroupName, FunctionId, FunctionName, [Priority]) 
 VALUES (1, 'ByFlow', 1, 'Realtime', 100)
 GO
 

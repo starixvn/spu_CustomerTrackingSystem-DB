@@ -55,7 +55,7 @@ BEGIN
 	-- #3: Get priority by FunctionId
 	SELECT @Priority = p.[Priority]
 	FROM dbo.CustomerClassification_Priority AS p WITH(NOLOCK)
-	WHERE p.GoupId = 1 AND p.FunctionId = @FunctionId 
+	WHERE p.GroupId = 1 AND p.FunctionId = @FunctionId 
 
 	-- #4: Insert to normal pool
 	INSERT INTO dbo.CustomerClassification_NormalPool(CustId, [Priority], FunctionId, CreatedTime)
