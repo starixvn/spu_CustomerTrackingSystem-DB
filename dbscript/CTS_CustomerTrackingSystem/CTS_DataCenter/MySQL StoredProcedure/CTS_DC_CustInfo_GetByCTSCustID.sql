@@ -19,6 +19,7 @@ BEGIN
 		- 20220523@Aries.Nguyen: 	Return IsLicensee, IsInternal  [Redmine ID: #152259] 
 		- 20220707@Long.Luu: 		Return Licensee VIP & BA info [Redmine ID: 174219]
 		- 20221227@Victoria.Le: 	Return SiteName info [Redmine ID: #181993]
+		- 20230516@Victoria.Le: 	Return DangerousScore [Redmine ID: #186191]
 
 	Param's Explanation (filtered by):
 */
@@ -42,10 +43,11 @@ BEGIN
 		,	cus.IsLicensee
         ,	cus.IsLicenseeVIP
         ,	cus.IsLicenseeBA
+		,	CASE WHEN cds.DangerousScore IS NOT NULL THEN cds.DangerousScore ELSE NULL END AS DangerousScore
 	FROM	CTS_DataCenter.CTSCustomer AS cus
 		INNER JOIN	CTS_DataCenter.MappingSubscriberSite AS sub ON cus.SubscriberID	= sub.SubscriberID AND cus.SiteID = sub.SiteID
 		LEFT JOIN	CTS_DataCenter.StaticList AS st ON st.ListID = 1 AND cus.CustStatusID = st.ItemID
-	WHERE	cus.CTSCustID = ip_CTSCustID;
-    
+		LEFT JOIN	CTS_DataCenter.Customer_DangerousScore AS cds ON cds.CustID = cus.CustID AND cus.IsLicensee = 0
+	WHERE	cus.CTSCustID = ip_CTSCustID;                                                                  
 END$$
 DELIMITER ;
