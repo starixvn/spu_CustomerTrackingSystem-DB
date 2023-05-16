@@ -143,7 +143,7 @@ BEGIN
 		,	rt.UserAgent
 		,	rt.IP
         ,	rt.IPID
-        ,	flg.ID AS Flagged
+        ,	sl.ItemID AS Flagged
 		,	rt.PluginID
 		,	rt.URL
         ,	rt.Action
@@ -154,7 +154,8 @@ BEGIN
 		,	rt.BotDetectionValue
 		,	rt.BotComponentID
 	FROM Temp_Transactions AS rt
-		LEFT JOIN DCS_DataCenter.Flagged AS flg ON flg.Code = rt.FlaggedCode;
+		LEFT JOIN DCS_DataCenter.StaticList AS sl 	ON sl.ListCode = 'Flagged'
+													AND sl.ItemCode = rt.FlaggedCode;
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_Transactions;
 END$$
