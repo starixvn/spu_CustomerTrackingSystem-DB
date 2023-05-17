@@ -21,7 +21,7 @@ BEGIN
 			- 20221007@Harvey.Nguyen: 	Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory [Redmine ID: #178022]
 			- 20230315@Victoria.Le:		Add Robot Imperva [Redmine ID: #184773]
 			- 20230404@Victoria.Le:		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeID [Redmine ID: #185319] 
-            - 20230516@Casey.Huynh:		New Category for Robot OCRD
+            - 20230516@Casey.Huynh:		New Category for Robot OCRD [RedmineID: #186991]
 		
         Param's Explanation: 
 
@@ -578,10 +578,7 @@ BEGIN
 	,	pa.TargetDangerLevel = CASE WHEN pa.IsLicensee = 1 THEN cate.ABIDangerLevel_Licensee
 									WHEN pa.IsLicensee = 0 THEN cate.ABIDangerLevel_Credit				
 						END;
-	SELECT 	pa.IsDataChanged, pa.IsExisted, pa.*
-	FROM Temp_PA AS pa
-    WHERE pa.IsDataChanged =  1
-		AND pa.IsExisted = 0;
+
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
 			CustID
 		, 	CTSCustID

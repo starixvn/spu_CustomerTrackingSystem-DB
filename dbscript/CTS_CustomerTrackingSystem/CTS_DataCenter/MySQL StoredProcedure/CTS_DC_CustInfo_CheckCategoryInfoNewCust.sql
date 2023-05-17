@@ -18,6 +18,7 @@ sp: BEGIN
             - 20220616@Aries.Nguyen: Cannot mark PA (affected by uplines) correctly with First Mark [Redmine ID: #174136]
             - 20220628@Aries.Nguyen: Update robot classification rule [Redmine ID: #174430]
 			- 202208018@Long.Luu: Use IsDangerProbation in stead of IsPAProbation [Redmine ID: #174219]
+            - 20230515@Casey.Huynh:	New Category for Robot OCRD [Redmine ID: #186991]
 		
         Param's Explanation:
 
@@ -162,7 +163,7 @@ sp: BEGIN
         ,	class.LastModifiedDate
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS class USE INDEX (PRIMARY) ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = 0 
-        STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup != 163;
+        STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup NOT IN (163,165);
 	 
     SELECT	tmp.CTSCustID
 		,	tmp.CustID          

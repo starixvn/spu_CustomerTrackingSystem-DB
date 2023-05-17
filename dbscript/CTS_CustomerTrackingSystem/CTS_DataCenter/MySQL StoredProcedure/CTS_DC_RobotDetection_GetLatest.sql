@@ -17,7 +17,7 @@ BEGIN
 		Revisions:
 			- 20220523@Long.Luu: 		Created -  Robot Detection [Redmine ID: #172561]
 			- 20230315@Victoria.Le:		Get Robot Imperva [Redmine ID: #184773]
-            - 20230515@Casey.Huynh:		New Category for Robot OCRD [Redmine ID: #186991]
+            - 20230517@Casey.Huynh:		New Category for Robot OCRD [Redmine ID: #186991]
             
 		Example:
 			CALL CTS_DataCenter.CTS_DC_RobotDetection_GetLatest (@ip_LatestTimeAI:='2022-01-01 02:02:02.000', @ip_LatestTimeImperva:='2022-01-01 02:02:02.000');
