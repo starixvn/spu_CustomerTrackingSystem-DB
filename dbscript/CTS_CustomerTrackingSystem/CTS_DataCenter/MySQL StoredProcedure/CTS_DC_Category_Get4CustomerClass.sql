@@ -26,7 +26,10 @@ BEGIN
                 ,	c.SabaIntelligent_RiskLevel_TCN	AS SabaRiskLevelTCN
                 ,	c.SabaIntelligent_RiskLevel_SCN	AS SabaRiskLevelSCN
 	FROM CTS_DataCenter.CustomerCategory AS c
-	WHERE c.CategoryNameCN IS NOT NULL AND c.CategoryNameCN <> "" AND CustomerClass IS NOT NULL
+	WHERE c.IsActive = 1
+		AND c.CategoryNameCN IS NOT NULL 
+        AND c.CategoryNameCN <> "" 
+        AND CustomerClass IS NOT NULL
 	ORDER BY c.CustomerClass ASC;
     
 END$$
