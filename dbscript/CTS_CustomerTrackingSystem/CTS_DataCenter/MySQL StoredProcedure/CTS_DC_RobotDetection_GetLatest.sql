@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_RobotDetection_GetLatest_xtest`;
+DROP PROCEDURE IF EXISTS `CTS_DC_RobotDetection_GetLatest`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_RobotDetection_GetLatest_xtest`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_RobotDetection_GetLatest`(
 		IN 	ip_LatestTimeAI					DATETIME
 	,	IN	ip_LatestTimeImperva			DATETIME		
 )

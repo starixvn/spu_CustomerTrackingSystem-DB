@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_PA_InsertRobot_xtest`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_PA_InsertRobot`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_InsertRobot_xtest`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_InsertRobot`(
 		IN 		ip_CustInfo 	JSON
 	,	IN		ip_IsRescan		BIT
 )
@@ -109,7 +109,7 @@ BEGIN
         
         , 	IsPAProbation		BIT 
         , 	IsChangeWinloss		BIT DEFAULT 0
-        ,	IsRobot				BIT DEFAULT 0
+        ,	RobotCategoryID		BIT DEFAULT 0
         ,	IsFromTW			BIT
 		,	IsFromCTS			BIT
         ,	IsFromAI			BIT
@@ -345,7 +345,7 @@ BEGIN
 		,	SportGroupID
 		,	IsPAProbation
 		,	IsChangeWinloss
-		,	IsRobot
+		,	RobotCategoryID
 		,	IsFromTW
 		,	IsFromCTS
 		,	IsFromAI
@@ -372,8 +372,8 @@ BEGIN
 				 WHEN tmp.WinlossStatus = 2 AND cate.IsPAProbation = 0 THEN 0  /*Win + PA => No Change  */
 				 WHEN tmp.WinlossStatus = 2 AND cate.IsPAProbation = 1 THEN 1  /*Win + Probation => Update */
 			END AS IsChangeWinloss
-		,	CASE WHEN clss.CategoryID IN (CONST_CATEGORYID_ROBOTUSER,CONST_CATEGORYID_ROBOTUSER_LOSING) THEN clss.CategoryID
-				 ELSE 0 END AS IsRobot
+		,	CASE WHEN clss.CategoryID IN (CONST_CATEGORYID_ROBOTUSER,CONST_CATEGORYID_ROBOTUSER_LOSING,CONST_CATEGORYID_ROBOTOCRD,CONST_CATEGORYID_ROBOTOCRD_LOSING) THEN clss.CategoryID
+				 ELSE 0 END AS RobotCategoryID
 		,	clss.IsFromTW		
 		, 	clss.IsFromCTS	
 		, 	clss.IsFromAI	
@@ -443,16 +443,17 @@ BEGIN
     SET 	clss.CategoryID = tmp.RelevantCategoryID
         ,	clss.LastModifiedBy = lv_CreatedBy
     WHERE tmp.IsChangeWinloss = 1 
-		AND tmp.IsRobot = 0;
+		AND tmp.RobotCategoryID = 0;
 	
     UPDATE Temp_PA AS pa
-    SET pa.CategoryID = CONST_CATEGORYID_ROBOTUSER_LOSING
+    SET pa.CategoryID = CASE WHEN pa.CategoryID = CONST_CATEGORYID_ROBOTUSER THEN CONST_CATEGORYID_ROBOTUSER_LOSING
+							WHEN pa.CategoryID = CONST_CATEGORYID_ROBOTOCRD THEN CONST_CATEGORYID_ROBOTOCRD_LOSING END	
     WHERE EXISTS (SELECT 1 
 				  FROM Temp_ExistCate AS ex
                   WHERE ex.CustID = pa.CustID 
 					AND ex.IsChangeWinloss = 0
                     AND ex.IsPAProbation = 1
-                    AND ex.IsRobot = 0);
+                    AND ex.RobotCategoryID = 0);
   
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(
 			CustID
@@ -522,12 +523,12 @@ BEGIN
 		INNER JOIN Temp_PA AS pa ON pa.CustID = cate.CustID
         INNER JOIN CTS_DataCenter.CustomerCategory AS tbl ON cate.RelevantCategoryID = tbl.CategoryID 
     WHERE cate.IsChangeWinloss = 1 
-		AND IsRobot = 0
+		AND RobotCategoryID = 0
         AND cate.SportGroupID != 100;
     
     DELETE
     FROM Temp_ExistCate
-    WHERE IsRobot = 0;
+    WHERE RobotCategoryID = 0;
     
     /***********************Handle update/insert Robot by winloss*******************************/
     UPDATE IGNORE Temp_PA AS pa
@@ -538,7 +539,9 @@ BEGIN
 									ELSE 0 END;
 
     UPDATE CTS_DataCenter.CTSCustomerClassification AS clss
-		INNER JOIN Temp_PA AS pa ON  pa.CustID = clss.CustID AND clss.CategoryID IN (CONST_CATEGORYID_ROBOTUSER,CONST_CATEGORYID_ROBOTUSER_LOSING,CONST_CATEGORYID_ROBOTOCRD,CONST_CATEGORYID_ROBOTOCRD_LOSING)
+		INNER JOIN Temp_PA AS pa ON  pa.CustID = clss.CustID 
+					AND ((clss.CategoryID IN (CONST_CATEGORYID_ROBOTUSER,CONST_CATEGORYID_ROBOTUSER_LOSING) AND pa.CategoryID IN (CONST_CATEGORYID_ROBOTUSER,CONST_CATEGORYID_ROBOTUSER_LOSING))
+                    OR (clss.CategoryID IN (CONST_CATEGORYID_ROBOTOCRD,CONST_CATEGORYID_ROBOTOCRD_LOSING) AND pa.CategoryID IN (CONST_CATEGORYID_ROBOTOCRD,CONST_CATEGORYID_ROBOTOCRD_LOSING)))
     SET 	clss.CategoryID =  pa.CategoryID   
 		-- ,	clss.Remark =  CASE WHEN pa.IsFromCTS = 1 OR pa.IsFromImperva = 1 THEN pa.Remark ELSE clss.Remark END  
 		,	clss.IsFromTW =   CASE WHEN pa.IsFromTW = 1 THEN pa.IsFromTW ELSE clss.IsFromTW END  
@@ -549,7 +552,7 @@ BEGIN
 		,	clss.IsDirect = CASE WHEN pa.IsDirect = 1 THEN pa.IsDirect ELSE clss.IsDirect END
 		,	pa.IsExisted = 1
 		;
-    
+
 	DELETE 
     FROM CTS_DataCenter.CTSCustomerClassification AS clss
     WHERE EXISTS (SELECT 1 
@@ -574,8 +577,11 @@ BEGIN
 							ELSE  -99 END 
 	,	pa.TargetDangerLevel = CASE WHEN pa.IsLicensee = 1 THEN cate.ABIDangerLevel_Licensee
 									WHEN pa.IsLicensee = 0 THEN cate.ABIDangerLevel_Credit				
-								END;
-    
+						END;
+	SELECT 	pa.IsDataChanged, pa.IsExisted, pa.*
+	FROM Temp_PA AS pa
+    WHERE pa.IsDataChanged =  1
+		AND pa.IsExisted = 0;
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
 			CustID
 		, 	CTSCustID
