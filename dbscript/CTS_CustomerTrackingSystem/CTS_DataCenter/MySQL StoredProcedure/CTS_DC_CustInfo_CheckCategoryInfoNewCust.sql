@@ -25,6 +25,9 @@ sp: BEGIN
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustInfo_CheckCategoryInfoNewCust(@op_LastCTSCustID);SELECT @op_LastCTSCustID;
 	*/
+    DECLARE CONST_CATEGORYID_ROBOTUSER	INT DEFAULT 163;
+    DECLARE CONST_CATEGORYID_ROBOTOCRD	INT DEFAULT 165;
+    
     DECLARE lv_LastCTSCustID 	BIGINT UNSIGNED;
     DECLARE lv_BatchSize 		INT UNSIGNED;
     DECLARE lv_MaxCTSCustID 	BIGINT UNSIGNED;
@@ -163,7 +166,7 @@ sp: BEGIN
         ,	class.LastModifiedDate
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS class USE INDEX (PRIMARY) ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = 0 
-        STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup NOT IN (163,165);
+        STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup NOT IN (CONST_CATEGORYID_ROBOTUSER,CONST_CATEGORYID_ROBOTOCRD);
 	 
     SELECT	tmp.CTSCustID
 		,	tmp.CustID          
