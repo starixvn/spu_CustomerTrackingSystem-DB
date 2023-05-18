@@ -46,7 +46,7 @@ BEGIN
 	SELECT ri.LogID
 	FROM CTS_DataCenter.RobotImperva AS ri
 	WHERE ri.CreateTime >= ip_LatestTimeImperva
-		AND IsScanned = 0
+		AND ri.IsScanned = 0
 	ORDER BY ri.CreateTime ASC
 	LIMIT CONST_BATCHSIZE;     
     
