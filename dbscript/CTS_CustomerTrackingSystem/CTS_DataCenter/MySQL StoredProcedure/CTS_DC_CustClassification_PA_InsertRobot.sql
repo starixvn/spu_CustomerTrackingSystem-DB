@@ -109,7 +109,7 @@ BEGIN
         
         , 	IsPAProbation		BIT 
         , 	IsChangeWinloss		BIT DEFAULT 0
-        ,	RobotCategoryID		BIT DEFAULT 0
+        ,	RobotCategoryID		SMALLINT UNSIGNED
         ,	IsFromTW			BIT
 		,	IsFromCTS			BIT
         ,	IsFromAI			BIT
