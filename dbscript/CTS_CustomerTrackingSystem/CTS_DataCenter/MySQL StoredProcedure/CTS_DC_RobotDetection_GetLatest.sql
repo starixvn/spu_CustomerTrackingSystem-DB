@@ -20,7 +20,7 @@ BEGIN
             - 20230517@Casey.Huynh:		New Category for Robot OCRD [Redmine ID: #186991]
             
 		Example:
-			CALL CTS_DataCenter.CTS_DC_RobotDetection_GetLatest (@ip_LatestTimeAI:='2022-01-01 02:02:02.000', @ip_LatestTimeImperva:='2022-01-01 02:02:02.000');
+			CALL CTS_DataCenter.CTS_DC_RobotDetection_GetLatest(@ip_LatestTimeAI:='2022-01-01 02:02:02.000', @ip_LatestTimeImperva:='2022-01-01 02:02:02.000');
 	*/    
     
     DECLARE CONST_BATCHSIZE 			INT UNSIGNED DEFAULT(5000);
@@ -35,27 +35,31 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_RobotDetection;    
 	CREATE TEMPORARY TABLE Temp_RobotDetection(	  
 			CustID				BIGINT UNSIGNED NOT NULL        
+        ,	PeriodRangeType		SMALLINT UNSIGNED
         ,	CategoryID			SMALLINT UNSIGNED NOT NULL
         ,	LastModifiedDate	DATETIME(3)
-        ,	PRIMARY KEY PK_Temp_RobotDetection_CustIDCategoryID(CustID,CategoryID,LastModifiedDate)
+        ,	PRIMARY KEY PK_Temp_RobotDetection_CustIDCategoryID(CustID,PeriodRangeType)
+        ,	INDEX IX_Temp_RobotDetection_CustIDCategoryID(CustID,CategoryID)
 	);
     
 	INSERT INTO Temp_RobotImperva (LogID)
-	SELECT LogID
-	FROM CTS_DataCenter.RobotImperva
-	WHERE CreateTime >= ip_LatestTimeImperva
+	SELECT ri.LogID
+	FROM CTS_DataCenter.RobotImperva AS ri
+	WHERE ri.CreateTime >= ip_LatestTimeImperva
 		AND IsScanned = 0
-	LIMIT CONST_BATCHSIZE;
+	ORDER BY ri.CreateTime ASC
+	LIMIT CONST_BATCHSIZE;     
     
-    INSERT INTO Temp_RobotDetection(CustID, CategoryID, LastModifiedDate)
+    INSERT INTO Temp_RobotDetection(CustID, PeriodRangeType, CategoryID, LastModifiedDate)
     SELECT	rd.CustID
+		,	PeriodRangeType
 		, 	(CASE WHEN rd.PeriodRangeType = 200 THEN CONST_CATEGORYID_ROBOTOCRD 
 				ELSE CONST_CATEGORYID_ROBOTUSER END) AS CategoryID
         ,	rd.LastModifiedDate
     FROM CTS_DataCenter.RobotDetection AS rd
-    WHERE rd.LastModifiedDate >= ip_LatestTimeAI    
-    LIMIT CONST_BATCHSIZE
-    on duplicate key update LastModifiedDate = rd.LastModifiedDate;    
+    WHERE rd.LastModifiedDate >= ip_LatestTimeAI AND rd.IsDisabled = 0
+    ORDER BY rd.LastModifiedDate ASC
+    LIMIT CONST_BATCHSIZE;    
 
 	SELECT	tmpRd.CustID
 		,	tmpRd.CategoryID
