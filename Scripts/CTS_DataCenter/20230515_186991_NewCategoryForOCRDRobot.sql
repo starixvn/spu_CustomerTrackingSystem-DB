@@ -15,7 +15,7 @@ USE CTS_DataCenter;
 #=================================================
 ALTER TABLE RobotDetection
 		DROP PRIMARY KEY 
-    ,	ADD ID BIGINT UNSIGNED  AUTO_INCREMENT PRIMARY KEY
+    ,	ADD ID BIGINT UNSIGNED  AUTO_INCREMENT PRIMARY KEY FIRST
     ,	ADD UNIQUE KEY UK_RobotDetection_CustIDPeriodRangeType(CustID,PeriodRangeType);
     
 ALTER TABLE RobotImperva
