@@ -133,7 +133,6 @@ sp: BEGIN
     LATERAL (SELECT CreateTime
 			FROM CTS_DataCenter.RobotImperva
             WHERE CustID = tmp.CustID 
-				AND IsScanned = 1
 			ORDER BY CreateTime DESC
 			LIMIT 1) AS ri;
 	
