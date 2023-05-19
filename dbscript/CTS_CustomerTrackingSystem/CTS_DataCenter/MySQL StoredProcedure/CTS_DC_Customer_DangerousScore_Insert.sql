@@ -3,6 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_Customer_DangerousScore_Insert`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Customer_DangerousScore_Insert`(
 		IN 	ip_CustInfo 		JSON
+	,	OUT op_ErrorMessage 	VARCHAR(200)
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -16,7 +17,7 @@ BEGIN
 				- 20230515@Victoria.le:		Initial Writing [Redmine ID: #186191]
 
 		Example:
-			CALL CTS_DC_Customer_DangerousScore_Insert (@ip_CustInfo := '[{"CustID":3451523,"DangerousScore":0.0074},{"CustID":3448918,"DangerousScore":0.0386},{"CustID":66984,"DangerousScore":0.5426},{"CustID":3818259,"DangerousScore":0.0022},{"CustID":2713661,"DangerousScore":0.2338},{"CustID":3833463,"DangerousScore":0.0058}]');
+			CALL CTS_DC_Customer_DangerousScore_Insert ('[{"CustID":3451523,"DangerousScore":0.0074},{"CustID":3448918,"DangerousScore":0.0386},{"CustID":66984,"DangerousScore":0.5426},{"CustID":3818259,"DangerousScore":0.0022},{"CustID":2713661,"DangerousScore":0.2338},{"CustID":3833463,"DangerousScore":0.0058}]');
 
 	*/
 	DECLARE lv_CreateTime DATETIME(3);
