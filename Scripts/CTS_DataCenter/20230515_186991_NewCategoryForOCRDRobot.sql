@@ -23,7 +23,7 @@ ALTER TABLE RobotImperva
     ,	ADD PRIMARY KEY(LogID)
     ,	DROP COLUMN IsScanned
     ,	ADD UNIQUE KEY UK_RobotDetection_CustIDPeriodRangeType(CustID,Platform);
- 
+#========================================================= 
 SET @MaxID = (SELECT MAX(ID) FROM CTS_DataCenter.RobotDetection);
 
 SET @MaxLogID = (SELECT MAX(LogID) FROM CTS_DataCenter.RobotImperva);
@@ -42,10 +42,10 @@ SET ParameterValue = @MaxLogID
     , ParameterDataType = 'BIGINT UNSIGNED'
 WHERE ParameterID = 134;
 
-SELECT * FROM CTS_DataCenter.SystemParameter WHERE ParameterID IN (94,134);
+INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
+VALUES(140,'BettingService_BatchSize','','INT',5000);
 
-DROP PROCEDURE CTS_DC_RobotImperva_Transform_Update;
-
+SELECT * FROM CTS_DataCenter.SystemParameter WHERE ParameterID IN (94,134, 140);
 #===========================================
 INSERT INTO CTS_DataCenter.CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CreatedBy,LastModifiedDate,LastModifiedBy,ScanIntervalInSecond,CategoryNameCN,CategoryGroup,TaggingID,TaggingType,ReasonID,SourceType,AFCFraudID,EvidenceID_Licensee,EvidenceCode_Licensee,EvidenceID_Credit,EvidenceCode_Credit,CustomerClass,CustomerClassName,CustomerClassNameCN,CustomerClassException,RelevantCategoryID,ABIDangerLevel_Licensee,ABIDangerLevelException_Licensee,ABIDangerLevel_Credit,ABIDangerLevelException_Credit,IsProbation,ProblemCaseID,IsHedgingReasonMM
 	, RootTaggingID,IsPAProbation,DangerLevelType,Priority,IsDangerProbation,SabaSportType,OldCustomerClass,SabaIntelligent_RiskLevel,SabaIntelligent_RiskLevel_TCN,SabaIntelligent_RiskLevel_SCN)
@@ -53,3 +53,6 @@ VALUES	(165,'Odds Crawler Robot','Odds Crawler Robot',50,165,1,0,NOW(),NULL,NULL
 	,	(166,'Odds Crawler Robot (Losing)','Odds Crawler Robot (Losing)',50,166,1,0,NOW(),NULL,NULL,NULL,0,'机械爬虫 (输钱)',166,NULL,NULL,166,'AI',NULL,NULL,NULL,NULL,NULL,3200,'Robot','機械',3200,165,NULL,NULL,NULL,NULL,1,1,NULL,13,1,2,45,1,'[2]',132,'Robot','機械','机械');
 
 SELECT c.Priority, c.* FROM CustomerCategory c WHERE CategoryID IN (132,152,163,164,165,166);
+
+#=============================================
+DROP PROCEDURE CTS_DC_RobotImperva_Transform_Update;
