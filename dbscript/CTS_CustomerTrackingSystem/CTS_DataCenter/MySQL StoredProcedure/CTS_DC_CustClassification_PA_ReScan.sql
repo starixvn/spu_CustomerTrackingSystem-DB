@@ -144,24 +144,45 @@ sp: BEGIN
         ,	tmp.SubscriberID
 		,	tmp.IsLicensee
         ,	tmp.IsLicenseeVIP
-		,	CategoryID
-		,	CategoryID AS CategoryIDSource
-		,	CategoryID AS CategoryGroup
+		,	CONST_CATEGORYID_ROBOTOCRD
+		,	CONST_CATEGORYID_ROBOTOCRD AS CategoryIDSource
+		,	CONST_CATEGORYID_ROBOTOCRD AS CategoryGroup
         ,	1 AS IsFromAI
         ,	1 AS IsDirect
         ,	1 AS IsRobot
         ,	NULL AS Remark
         ,	rd.LastModifiedDate
     FROM  Temp_CustInfo AS tmp,
-    LATERAL (SELECT LastModifiedDate,
-					CASE WHEN PeriodRangeType = 200 THEN CONST_CATEGORYID_ROBOTOCRD
-						 ELSE CONST_CATEGORYID_ROBOTUSER END AS CategoryID,
-					CASE WHEN PeriodRangeType = 200 THEN 1
-						 ELSE 0 END AS IsPriority
+    LATERAL (SELECT LastModifiedDate
 			FROM CTS_DataCenter.RobotDetection 
             WHERE CustID = tmp.CustID
+				AND  PeriodRangeType = 200
 				AND  IsDisabled = 0
-			ORDER BY LastModifiedDate DESC, IsPriority DESC
+			ORDER BY LastModifiedDate DESC
+			LIMIT 1) AS rd;
+			
+	INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID,RoleID,SubscriberID,IsLicensee,IsLicenseeVIP,CategoryID,CategoryIDSource, CategoryGroup,IsFromAI,IsDirect,IsRobot,Remark,LastModifiedDate)
+    SELECT 	tmp.CTSCustID
+		,	tmp.CustID
+        ,	tmp.RoleID 
+        ,	tmp.SubscriberID
+		,	tmp.IsLicensee
+        ,	tmp.IsLicenseeVIP
+		,	CONST_CATEGORYID_ROBOTUSER
+		,	CONST_CATEGORYID_ROBOTUSER AS CategoryIDSource
+		,	CONST_CATEGORYID_ROBOTUSER AS CategoryGroup
+        ,	1 AS IsFromAI
+        ,	1 AS IsDirect
+        ,	1 AS IsRobot
+        ,	NULL AS Remark
+        ,	rd.LastModifiedDate
+    FROM  Temp_CustInfo AS tmp,
+    LATERAL (SELECT LastModifiedDate
+			FROM CTS_DataCenter.RobotDetection 
+            WHERE CustID = tmp.CustID
+				AND  PeriodRangeType <> 200
+				AND  IsDisabled = 0
+			ORDER BY LastModifiedDate DESC
 			LIMIT 1) AS rd
 	ON DUPLICATE KEY UPDATE IsFromAI = 1
 						,	Remark = CASE WHEN rd.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN NULL ELSE Temp_CustCategory.Remark END
