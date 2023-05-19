@@ -26,10 +26,13 @@ BEGIN
         Param's Explanation: 
 
 		Example:
-			CALL CTS_DataCenter.CTS_DC_CustClassification_PA_InsertRobot('[
-            {"CustID":3698310,"CategoryID":61,"RobotCounter":11,"TurnoverRM":null,"WinlossRM":null,"BetCount":null,"ActiveDays":null,"IsFromTW":true,"CreatedBy":10278938}
-            ,{"CustID":3698310,"CategoryID":166,"RobotCounter":null,"TurnoverRM":53580.0000,"WinlossRM":-319.0800,"BetCount":1649,"ActiveDays":16,"IsFromTVS":true,"TVSRequestID":1111,"CreatedBy":10278938}]', 0);
-
+			CALL CTS_DC_CustClassification_PA_InsertRobot_xtest('[{"CustID":1309,"CategoryID":163,"RobotCounter":null,"IsFromTW":false,
+				"IsFromCTS":false,"IsFromAI":true,"IsFromImperva":true,"IsFromTVS":false,"TVSRequestID":0,"IsParlay":null,"SportType":null,
+				"IssueTypeID":0,"IsDirect":true,"Remark":"Imperva","CreatedBy":10278938,"TurnoverRM":null,"WinlossRM":null,"WinlossStatus":null,
+				"BetCount":null,"ActiveDays":null}
+				,{"CustID":1309,"CategoryID":165,"RobotCounter":null,"IsFromTW":false,"IsFromCTS":false,"IsFromAI":true,
+				"IsFromImperva":false,"IsFromTVS":false,"TVSRequestID":0,"IsParlay":null,"SportType":null,"IssueTypeID":0,"IsDirect":true,"Remark":null,
+				"CreatedBy":10278938,"TurnoverRM":null,"WinlossRM":null,"WinlossStatus":null,"BetCount":null,"ActiveDays":null}]', true);
 */
     DECLARE	CONST_CATEGORYID_ROBOTUSER 				INT DEFAULT 163;
     DECLARE	CONST_CATEGORYID_ROBOTUSER_LOSING 		INT DEFAULT 164;
@@ -181,9 +184,9 @@ BEGIN
 		,	cus.CTSCustID
 		,	cus.SubscriberID
 		,	cus.IsLicensee
-		, 	(CASE WHEN js.CategoryID = CONST_CATEGORYID_ROBOTOCRD  AND js.WinlossStatus > 0 THEN CONST_CATEGORYID_ROBOTOCRD
+		, 	(CASE WHEN js.CategoryID = CONST_CATEGORYID_ROBOTOCRD  AND (js.WinlossStatus != 0 OR js.WinlossStatus IS NULL) THEN CONST_CATEGORYID_ROBOTOCRD
 				 WHEN js.CategoryID = CONST_CATEGORYID_ROBOTOCRD  AND js.WinlossStatus = 0 THEN CONST_CATEGORYID_ROBOTOCRD_LOSING 
-                 WHEN js.WinlossStatus > 0 THEN CONST_CATEGORYID_ROBOTUSER
+                 WHEN (js.WinlossStatus != 0 OR js.WinlossStatus IS NULL) THEN CONST_CATEGORYID_ROBOTUSER
 				 WHEN js.WinlossStatus = 0 THEN CONST_CATEGORYID_ROBOTUSER_LOSING 
                  END) AS CategoryID
 		,	sp.CustomerClass AS TargetCC
@@ -752,7 +755,6 @@ BEGIN
 		,	pa.SportType
 		,	pa.IssueTypeID
 	FROM Temp_PA AS pa;
-
 
 	SELECT 	DISTINCT 
 			CTSCustID
