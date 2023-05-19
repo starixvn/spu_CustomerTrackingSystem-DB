@@ -3,8 +3,8 @@ DROP PROCEDURE IF EXISTS `CTS_DC_RobotDetection_GetLatest`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_RobotDetection_GetLatest`(
-		IN 	ip_LatestTimeAI					DATETIME
-	,	IN	ip_LatestTimeImperva			DATETIME		
+		IN 	ip_RobotDetectionLastID		BIGINT UNSIGNED
+	,	IN	ip_RobotImpervaLastLogID	BIGINT		
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -33,43 +33,39 @@ BEGIN
 	);	
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_RobotDetection;    
-	CREATE TEMPORARY TABLE Temp_RobotDetection(	  
-			CustID				BIGINT UNSIGNED NOT NULL        
-        ,	PeriodRangeType		SMALLINT UNSIGNED
+	CREATE TEMPORARY TABLE Temp_RobotDetection(
+			ID					BIGINT UNSIGNED 
+		,	CustID				BIGINT UNSIGNED  
         ,	CategoryID			SMALLINT UNSIGNED NOT NULL
         ,	LastModifiedDate	DATETIME(3)
-        ,	PRIMARY KEY PK_Temp_RobotDetection_CustIDCategoryID(CustID,PeriodRangeType)
+        ,	PRIMARY KEY PK_Temp_RobotDetection_ID(ID)
         ,	INDEX IX_Temp_RobotDetection_CustIDCategoryID(CustID,CategoryID)
 	);
     
-	INSERT INTO Temp_RobotImperva (LogID)
-	SELECT ri.LogID
-	FROM CTS_DataCenter.RobotImperva AS ri
-	WHERE ri.CreateTime >= ip_LatestTimeImperva
-		AND ri.IsScanned = 0
-	ORDER BY ri.CreateTime ASC
-	LIMIT CONST_BATCHSIZE;     
-    
-    INSERT INTO Temp_RobotDetection(CustID, PeriodRangeType, CategoryID, LastModifiedDate)
-    SELECT	rd.CustID
-		,	PeriodRangeType
+    INSERT INTO Temp_RobotDetection(ID, CustID, CategoryID, LastModifiedDate)
+    SELECT	rd.ID
+		,	rd.CustID
 		, 	(CASE WHEN rd.PeriodRangeType = 200 THEN CONST_CATEGORYID_ROBOTOCRD 
 				ELSE CONST_CATEGORYID_ROBOTUSER END) AS CategoryID
-        ,	rd.LastModifiedDate
+		,	rd.LastModifiedDate
     FROM CTS_DataCenter.RobotDetection AS rd
-    WHERE rd.LastModifiedDate >= ip_LatestTimeAI AND rd.IsDisabled = 0
-    ORDER BY rd.LastModifiedDate ASC
+    WHERE rd.ID > ip_RobotDetectionLastID
+		AND rd.IsDisabled = 0
+    ORDER BY rd.ID ASC
     LIMIT CONST_BATCHSIZE;    
 
 	SELECT	tmpRd.CustID
 		,	tmpRd.CategoryID
-        ,	MAX(tmpRd.LastModifiedDate) AS LastModifiedDate
+        ,	MAX(tmpRd.ID) AS RobotDetectionID
+        , 	MAX(tmpRd.LastModifiedDate) AS LastModifiedDate
     FROM Temp_RobotDetection AS tmpRd
     GROUP BY tmpRd.CustID, tmpRd.CategoryID;
 
-	SELECT r.LogID, r.CustID, r.CreateTime AS LastCreateTime
-	FROM CTS_DataCenter.RobotImperva AS r
-		INNER JOIN Temp_RobotImperva AS tmp ON tmp.LogID = r.LogID;
+	SELECT ri.LogID AS RobotImpervaLogID, ri.CustID, ri.CreateTime AS LastCreateTime
+	FROM CTS_DataCenter.RobotImperva AS ri
+    WHERE ri.LogID > ip_RobotImpervaLastLogID		
+	ORDER BY ri.LogID ASC
+	LIMIT CONST_BATCHSIZE;    
 
 END$$	
 DELIMITER ;
