@@ -145,26 +145,24 @@ sp: BEGIN
         ,	tmp.SubscriberID
 		,	tmp.IsLicensee
         ,	tmp.IsLicenseeVIP
-		,	CASE 	WHEN rd.PeriodRangeType = 200 THEN CONST_CATEGORYID_ROBOTOCRD
-					ELSE CONST_CATEGORYID_ROBOTUSER
-			END AS CategoryID
-		,	CASE 	WHEN rd.PeriodRangeType = 200 THEN CONST_CATEGORYID_ROBOTOCRD
-					ELSE CONST_CATEGORYID_ROBOTUSER
-			END AS CategoryIDSource
-		,	CASE 	WHEN rd.PeriodRangeType = 200 THEN CONST_CATEGORYID_ROBOTOCRD
-					ELSE CONST_CATEGORYID_ROBOTUSER
-			END AS CategoryGroup
+		,	CategoryID
+		,	CategoryID AS CategoryIDSource
+		,	CategoryID AS CategoryGroup
         ,	1 AS IsFromAI
         ,	1 AS IsDirect
         ,	1 AS IsRobot
         ,	NULL AS Remark
         ,	rd.LastModifiedDate
     FROM  Temp_CustInfo AS tmp,
-    LATERAL (SELECT PeriodRangeType,LastModifiedDate
+    LATERAL (SELECT LastModifiedDate,
+					CASE WHEN PeriodRangeType = 200 THEN CONST_CATEGORYID_ROBOTOCRD
+						 ELSE CONST_CATEGORYID_ROBOTUSER END AS CategoryID,
+					CASE WHEN PeriodRangeType = 200 THEN 1
+						 ELSE 0 END AS IsPriority
 			FROM CTS_DataCenter.RobotDetection 
             WHERE CustID = tmp.CustID
 				AND  IsDisabled = 0
-			ORDER BY LastModifiedDate DESC
+			ORDER BY LastModifiedDate DESC, IsPriority DESC
 			LIMIT 1) AS rd
 	ON DUPLICATE KEY UPDATE IsFromAI = 1
 						,	Remark = CASE WHEN rd.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN NULL ELSE Temp_CustCategory.Remark END
