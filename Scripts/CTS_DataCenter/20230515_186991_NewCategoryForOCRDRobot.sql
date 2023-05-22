@@ -30,20 +30,20 @@ SET @MaxLogID = (SELECT MAX(LogID) FROM CTS_DataCenter.RobotImperva);
 
 UPDATE CTS_DataCenter.SystemParameter
 SET ParameterValue = @MaxID
-	, ParameterName = 'BettingService_RobotDetection_LastID'
+	, ParameterName = 'RobotAIImpervaService_RobotDetection_LastID'
     , ParameterDesc = 'Last RobotDetection.ID'
     , ParameterDataType = 'BIGINT UNSIGNED'
 WHERE ParameterID = 94;
 
 UPDATE CTS_DataCenter.SystemParameter
 SET ParameterValue = @MaxLogID
-	, ParameterName = 'BettingService_RobotImperva_LastID'
+	, ParameterName = 'RobotAIImpervaService_RobotImperva_LastID'
     , ParameterDesc = 'Last RobotImperva.LogID'
     , ParameterDataType = 'BIGINT UNSIGNED'
 WHERE ParameterID = 134;
 
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
-VALUES(140,'BettingService_BatchSize','','INT',5000);
+VALUES(140,'RobotAIImpervaService_BatchSize','','INT',5000);
 
 SELECT * FROM CTS_DataCenter.SystemParameter WHERE ParameterID IN (94,134, 140);
 #===========================================
