@@ -42,8 +42,8 @@ BEGIN
 
 	-- #1: Get Customers
     INSERT INTO  #tmpCustomers (CustID) 
-	SELECT DISTINCT CAST(val AS INT) CustID 
-	FROM bodb02.dbo.SPU_StrSplit(@ListCustId, ',');
+	SELECT DISTINCT CAST(value AS INT) CustID 
+	FROM STRING_SPLIT(@ListCustId, ',');
 
 	 -- #2: Insert Log
 	INSERT INTO dbo.CustomerClassification_Log(CustId, FunctionId, CreatedTime)
