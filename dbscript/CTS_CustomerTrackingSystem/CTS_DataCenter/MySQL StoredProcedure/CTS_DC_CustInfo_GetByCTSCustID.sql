@@ -43,11 +43,12 @@ BEGIN
 		,	cus.IsLicensee
         ,	cus.IsLicenseeVIP
         ,	cus.IsLicenseeBA
-		,	CASE WHEN cds.DangerousScore IS NOT NULL THEN cds.DangerousScore ELSE NULL END AS DangerousScore
+		,	CASE WHEN cds.DangerousScore IS NOT NULL THEN (cds.DangerousScore * 100) ELSE NULL END AS DangerousScore
 	FROM	CTS_DataCenter.CTSCustomer AS cus
 		INNER JOIN	CTS_DataCenter.MappingSubscriberSite AS sub ON cus.SubscriberID	= sub.SubscriberID AND cus.SiteID = sub.SiteID
 		LEFT JOIN	CTS_DataCenter.StaticList AS st ON st.ListID = 1 AND cus.CustStatusID = st.ItemID
-		LEFT JOIN	CTS_DataCenter.Customer_DangerousScore AS cds ON cds.CustID = cus.CustID AND cus.IsLicensee = 0
-	WHERE	cus.CTSCustID = ip_CTSCustID;                                                                  
+		LEFT JOIN	CTS_DataCenter.Customer_DangerousScore AS cds ON cds.CustID = cus.CustID
+	WHERE	cus.CTSCustID = ip_CTSCustID;          
+	
 END$$
 DELIMITER ;
