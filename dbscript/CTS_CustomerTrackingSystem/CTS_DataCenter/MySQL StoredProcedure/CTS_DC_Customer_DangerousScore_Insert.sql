@@ -20,27 +20,27 @@ BEGIN
 			CALL CTS_DC_Customer_DangerousScore_Insert ('[{"CustID":3451523,"DangerousScore":0.0074},{"CustID":3448918,"DangerousScore":0.0386},{"CustID":66984,"DangerousScore":0.5426},{"CustID":3818259,"DangerousScore":0.0022},{"CustID":2713661,"DangerousScore":0.2338},{"CustID":3833463,"DangerousScore":0.0058}]');
 
 	*/
-	DECLARE lv_CreateTime DATETIME(3);
+	DECLARE lv_CreatedTime DATETIME(3);
 	
-	SET lv_CreateTime = CURRENT_TIMESTAMP();
+	SET lv_CreatedTime = CURRENT_TIMESTAMP();
 	
     INSERT INTO CTS_DataCenter.Customer_DangerousScore 
     (
 			CustID
 		,	DangerousScore
-		,	CreateTime		
+		,	CreatedTime		
 		,	LastModifiedDate	
     )
     SELECT 	js.CustID		
 		,	js.DangerousScore		
-		,	lv_CreateTime
-		,	lv_CreateTime
+		,	lv_CreatedTime
+		,	lv_CreatedTime
 	FROM JSON_TABLE(ip_CustInfo,
 					"$[*]" COLUMNS( 	CustID				INT 			PATH "$.CustID"
 									,	DangerousScore		DECIMAL(6,4)	PATH "$.DangerousScore"
 					)) AS js
 	ON DUPLICATE KEY UPDATE DangerousScore 		= js.DangerousScore
-						,	LastModifiedDate 	= lv_CreateTime;
+						,	LastModifiedDate 	= lv_CreatedTime;
 	
 END$$
 DELIMITER ;

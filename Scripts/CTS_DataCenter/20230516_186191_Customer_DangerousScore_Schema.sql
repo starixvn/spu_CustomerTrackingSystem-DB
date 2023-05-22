@@ -15,12 +15,12 @@ Revisions:
 	CREATE TABLE Customer_DangerousScore
 	(
 			ID					BIGINT			NOT NULL AUTO_INCREMENT
-		,	CustID				BIGINT			NOT NULL
+		,	CustID				BIGINT UNSIGNED	NOT NULL 
 		,	DangerousScore		DECIMAL(6,4) 	NOT NULL
-		,	CreateTime			DATETIME(3) 	NOT NULL
+		,	CreatedTime			DATETIME(3) 	NOT NULL
 		,	LastModifiedDate	DATETIME(3) 	NOT NULL
 
 		,	PRIMARY KEY PK_Customer_DangerousScore (ID)
         ,	UNIQUE KEY UX_Customer_DangerousScore_CustID (CustID)
-		,	INDEX IX_Customer_DangerousScore_CreateTime_LastModifiedDate (CustID, CreateTime, LastModifiedDate)
+		,	INDEX IX_Customer_DangerousScore_CreateTime_LastModifiedDate (CustID, CreatedTime, LastModifiedDate)
 	);
