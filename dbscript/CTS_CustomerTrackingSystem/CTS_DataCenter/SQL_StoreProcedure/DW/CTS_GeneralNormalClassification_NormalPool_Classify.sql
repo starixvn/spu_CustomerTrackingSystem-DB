@@ -5,7 +5,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CTS_GeneralNormalClassification_NormalPool_Classify]
+ALTER PROCEDURE [dbo].[CTS_GeneralNormalClassification_NormalPool_Classify]
 		@CustomersXML	XML
 AS
 /*
@@ -56,10 +56,11 @@ BEGIN
 	END
 
 	CREATE TABLE #tmpCustomers(
-		CustId			  INT PRIMARY KEY,
-		CurrentCategoryId SMALLINT NOT NULL,
-		IsNewCreated	  BIT	   NOT NULL DEFAULT 0,
-		IsCheckBetCount	  BIT	   NOT NULL DEFAULT 0
+		CustId			       INT PRIMARY KEY,
+		CurrentCategoryId      SMALLINT NOT NULL,
+		IsNewCreated	       BIT	    NOT NULL DEFAULT 0,
+		IsCheckBetCount		   BIT	    NOT NULL DEFAULT 0,
+		IsPlaceBetWithin30Days BIT		NOT NULL DEFAULT 0,
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpRawData') IS NOT NULL
@@ -164,13 +165,21 @@ BEGIN
 	FROM #tmpRawData AS a
 	GROUP BY a.CustId;
 
+	-- #4: Check active customer
+	UPDATE a WITH(ROWLOCK, UPDLOCK)
+	SET a.IsPlaceBetWithin30Days = 1
+	FROM #tmpCustomers AS a
+		INNER JOIN dbo.CustomerClassification_LatestActiveDay AS c WITH(NOLOCK) ON a.CustId = c.CustId
+	WHERE c.LastTransDate >= @From30Date;
+
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
 	SET a.CurrentCategoryId = c.CurrentCategoryId,
-		a.IsCheckBetCount = c.IsCheckBetCount
+		a.IsCheckBetCount = c.IsCheckBetCount,
+		a.IsPlaceBetWithin30Days = c.IsPlaceBetWithin30Days
 	FROM #tmpCustomerAccummulatedInfo AS a
 		INNER JOIN #tmpCustomers AS c ON a.CustId = c.custid;
 
-	-- #4: Remove accounts with settle bet count has not reach the schedule (FOR REALTIME ONLY)
+	-- #5: Remove accounts with settle bet count has not reach the schedule (FOR REALTIME ONLY)
 	---- less than 100 settle tickets compared to last scan for Good Member
 	---- less than 20 settle tickets compared to last scan for Normal Member
 	INSERT INTO #tmpRemoveCust(CustId)
@@ -189,7 +198,7 @@ BEGIN
 	FROM #tmpCustomers AS a
 		INNER JOIN #tmpRemoveCust AS b ON a.CustId = b.CustId
 
-	-- #5: Insert scanned cust daily
+	-- #6: Insert scanned cust daily
 	UPDATE b WITH(ROWLOCK, UPDLOCK)
 	SET	b.CreatedDate = @CurrentDate
 	FROM #tmpCustomers AS a
@@ -201,7 +210,7 @@ BEGIN
 		LEFT JOIN dbo.CustomerClassification_ScannedDailyCust AS b WITH(NOLOCK) ON b.CustId = a.CustId
 	WHERE b.CustId IS NULL  
 
-	-- #6: Get relevant customer info
+	-- #7: Get relevant customer info
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
 	SET	   a.SRecommend = c.srecommend,
 	       a.IsSpecialSite = CASE WHEN c.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') THEN 1 ELSE 0 END
@@ -213,18 +222,11 @@ BEGIN
 	FROM #tmpCustomerAccummulatedInfo AS a
 		INNER JOIN bodb02.dbo.Dep_CustSuper AS c WITH(NOLOCK) ON a.SRecommend = c.custid;
 
-	-- #7: Check active customer
-	UPDATE a WITH(ROWLOCK, UPDLOCK)
-	SET a.IsPlaceBetWithin30Days = 1
-	FROM #tmpCustomerAccummulatedInfo AS a
-		INNER JOIN dbo.CustomerClassification_LatestActiveDay AS c WITH(NOLOCK) ON a.CustId = c.CustId
-	WHERE c.LastTransDate >= @From30Date;
-
 	-- #8: Classify customer without performance 
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
 	SELECT t.CustId
 		,  @GENERAL_SPORTID
-		,  CASE WHEN (t.IsNewCreated = 1) THEN @CATEGORY_NEWMEMBER ELSE @CATEGORY_NORMALINACTIVE END
+		,  CASE WHEN (t.IsNewCreated = 1 OR t.IsPlaceBetWithin30Days = 1) THEN @CATEGORY_NEWMEMBER ELSE @CATEGORY_NORMALINACTIVE END
 		,  @CurrentDate AS CreatedDate
 		,  @CurrentDateTime AS CreatedTime
 		,  NULL
