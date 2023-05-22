@@ -16,6 +16,7 @@ AS
 
 	Revisions:
 		- 20230421@Jonas.Huynh: Created [Redmine ID: #186678]
+		- 20230519@Jonas.Huynh: HF Wrong inactive category with new placebet [Redmine ID: #188464]
 
 	Param's Explanation:
 		@CustomersXML	 : This parameter is used to classify customer perf which bases on currentCategory
