@@ -445,8 +445,7 @@ BEGIN
     INNER JOIN Temp_ExistCate AS tmp ON tmp.CustID = clss.CustID AND tmp.CategoryID = clss.CategoryID 
     SET 	clss.CategoryID = tmp.RelevantCategoryID
         ,	clss.LastModifiedBy = lv_CreatedBy
-    WHERE tmp.IsChangeWinloss = 1 
-		AND tmp.RobotCategoryID = 0;
+    WHERE tmp.IsChangeWinloss = 1;
 	
     UPDATE Temp_PA AS pa
     SET pa.CategoryID = CASE WHEN pa.CategoryID = CONST_CATEGORYID_ROBOTUSER THEN CONST_CATEGORYID_ROBOTUSER_LOSING
