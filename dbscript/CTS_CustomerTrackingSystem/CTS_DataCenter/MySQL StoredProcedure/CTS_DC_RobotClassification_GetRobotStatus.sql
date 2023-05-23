@@ -24,7 +24,7 @@ BEGIN
 			- RobotType: 2-Bad | 1-Good | 0-Observed | -1-No classification | -2-Not Robot
             
         Example:
-			- CALL CTS_DataCenter.CTS_DC_RobotClassification_GetRobotStatus(3698310);
+			- CALL CTS_DataCenter.CTS_DC_RobotClassification_GetRobotStatus(2550565);
 	*/
     
     DECLARE CONST_ROBOTTYPE_BAD 			INT DEFAULT 2;
@@ -38,11 +38,12 @@ BEGIN
     
     SET @IsRobot = 0;
     
-    SELECT CategoryID
+    SELECT cls.CategoryID
 	INTO @IsRobot
-	FROM CTSCustomerClassification 
-	WHERE CustID = ip_CustID
-		AND CategoryID IN (CONST_CATEGORYID_ROBOTUSER, CONST_CATEGORYID_ROBOTUSER_LOSING);
+	FROM CTS_DataCenter.CTSCustomerClassification AS cls
+	WHERE cls.CustID = ip_CustID
+		AND CategoryID IN (CONST_CATEGORYID_ROBOTUSER, CONST_CATEGORYID_ROBOTUSER_LOSING,CONST_CATEGORYID_ROBOTOCRD,CONST_CATEGORYID_ROBOTOCRD_LOSING)
+	LIMIT 1;
     
     SELECT 	ip_CustID
 		, 	CASE 
