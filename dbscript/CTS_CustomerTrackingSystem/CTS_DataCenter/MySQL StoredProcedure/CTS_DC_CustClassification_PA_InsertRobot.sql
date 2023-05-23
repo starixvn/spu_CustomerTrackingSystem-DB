@@ -537,9 +537,16 @@ BEGIN
     /***********************Handle update/insert Robot by winloss*******************************/
     UPDATE IGNORE Temp_PA AS pa
 		INNER JOIN Temp_ExistCate AS ex ON pa.CustID = ex.CustID  
-    SET 	pa.CategoryID =  CASE WHEN pa.WinlossStatus =  1 THEN ex.CategoryID
+    SET 	pa.CategoryID =  CASE WHEN pa.WinlossStatus =  1 
+											AND pa.CategoryID IN (CONST_CATEGORYID_ROBOTUSER,CONST_CATEGORYID_ROBOTUSER_LOSING) 
+                                            AND ex.CategoryID IN (CONST_CATEGORYID_ROBOTUSER,CONST_CATEGORYID_ROBOTUSER_LOSING) 
+											THEN ex.CategoryID
+									WHEN pa.WinlossStatus =  1 
+											AND pa.CategoryID IN (CONST_CATEGORYID_ROBOTOCRD,CONST_CATEGORYID_ROBOTOCRD_LOSING)
+											AND ex.CategoryID IN (CONST_CATEGORYID_ROBOTOCRD,CONST_CATEGORYID_ROBOTOCRD_LOSING) 
+											THEN ex.CategoryID
 							 ELSE pa.CategoryID END
-		,   pa.IsDataChanged = CASE WHEN pa.WinlossStatus != 1 AND pa.CategoryID != ex.CategoryID  THEN 1
+		,   pa.IsDataChanged = CASE WHEN pa.WinlossStatus != 1 OR pa.CategoryID != ex.CategoryID  THEN 1
 									ELSE 0 END;
 
     UPDATE CTS_DataCenter.CTSCustomerClassification AS clss
