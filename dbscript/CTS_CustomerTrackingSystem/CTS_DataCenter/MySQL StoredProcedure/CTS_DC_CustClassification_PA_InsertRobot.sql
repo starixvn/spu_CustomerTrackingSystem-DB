@@ -526,7 +526,6 @@ BEGIN
 		INNER JOIN Temp_PA AS pa ON pa.CustID = cate.CustID
         INNER JOIN CTS_DataCenter.CustomerCategory AS tbl ON cate.RelevantCategoryID = tbl.CategoryID 
     WHERE cate.IsChangeWinloss = 1 
-		AND RobotCategoryID = 0
         AND cate.SportGroupID != 100;
     
     DELETE
