@@ -528,21 +528,17 @@ BEGIN
     WHERE cate.IsChangeWinloss = 1 
         AND cate.SportGroupID != 100;
     
-    DELETE
-    FROM Temp_ExistCate
-    WHERE RobotCategoryID = 0;
+    DELETE tmp
+    FROM Temp_ExistCate AS tmp
+    WHERE tmp.RobotCategoryID = 0;
     
     /***********************Handle update/insert Robot by winloss*******************************/
     UPDATE IGNORE Temp_PA AS pa
 		INNER JOIN Temp_ExistCate AS ex ON pa.CustID = ex.CustID  
-    SET 	pa.CategoryID =  CASE WHEN pa.WinlossStatus =  1 
-											AND pa.CategoryID IN (CONST_CATEGORYID_ROBOTUSER,CONST_CATEGORYID_ROBOTUSER_LOSING) 
-                                            AND ex.CategoryID IN (CONST_CATEGORYID_ROBOTUSER,CONST_CATEGORYID_ROBOTUSER_LOSING) 
-											THEN ex.CategoryID
-									WHEN pa.WinlossStatus =  1 
-											AND pa.CategoryID IN (CONST_CATEGORYID_ROBOTOCRD,CONST_CATEGORYID_ROBOTOCRD_LOSING)
-											AND ex.CategoryID IN (CONST_CATEGORYID_ROBOTOCRD,CONST_CATEGORYID_ROBOTOCRD_LOSING) 
-											THEN ex.CategoryID
+    SET 	pa.CategoryID =  CASE 	WHEN pa.WinlossStatus =  1 AND ex.CategoryID = CONST_CATEGORYID_ROBOTUSER	AND pa.CategoryID  IN (CONST_CATEGORYID_ROBOTOCRD, CONST_CATEGORYID_ROBOTOCRD_LOSING) THEN CONST_CATEGORYID_ROBOTOCRD
+									WHEN pa.WinlossStatus =  1 AND ex.CategoryID = CONST_CATEGORYID_ROBOTUSER_LOSING	AND pa.CategoryID  IN (CONST_CATEGORYID_ROBOTOCRD, CONST_CATEGORYID_ROBOTOCRD_LOSING) THEN CONST_CATEGORYID_ROBOTOCRD_LOSING         
+									WHEN pa.WinlossStatus =  1 AND ex.CategoryID = CONST_CATEGORYID_ROBOTOCRD	AND pa.CategoryID IN (CONST_CATEGORYID_ROBOTUSER, CONST_CATEGORYID_ROBOTUSER_LOSING) THEN CONST_CATEGORYID_ROBOTUSER  
+									WHEN pa.WinlossStatus =  1 AND ex.CategoryID = CONST_CATEGORYID_ROBOTOCRD_LOSING	AND pa.CategoryID IN (CONST_CATEGORYID_ROBOTUSER, CONST_CATEGORYID_ROBOTUSER_LOSING) THEN CONST_CATEGORYID_ROBOTUSER_LOSING  
 							 ELSE pa.CategoryID END
 		,   pa.IsDataChanged = CASE WHEN pa.WinlossStatus != 1 OR pa.CategoryID != ex.CategoryID  THEN 1
 									ELSE 0 END;
