@@ -39,7 +39,8 @@ sp: BEGIN
 			- 20221007@Harvey.Nguyen: 		Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory [Redmine ID: #178022]
 			- 20230315@Victoria.Le:			Add Robot Imperva [Redmine ID: #184773]
 			- 20230404@Victoria.Le:			TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeId [Redmine ID: #185319] 
-
+			- 20230516@Casey.Huynh:			New Category for Robot OCRD [RedmineID: #186991]
+            
 		Param's Explanation:
 			ip_FromAction: From Web(1),From Service VVIPDownLine(2), From Insert NewCustomer(3)
             ip_QueueID: From Web(NULL), From Service(<QueueID>)

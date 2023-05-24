@@ -695,7 +695,7 @@ BEGIN
 		,	pa.SportType
 		,	pa.IssueTypeID
 	FROM Temp_PA AS pa
-    WHERE pa.IsDataChanged =  1 OR ip_IsRescan = 1; 
+    WHERE (pa.IsDataChanged =  1 AND pa.IsExisted = 0)  OR ip_IsRescan = 1; 
     
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(
 			CustID
