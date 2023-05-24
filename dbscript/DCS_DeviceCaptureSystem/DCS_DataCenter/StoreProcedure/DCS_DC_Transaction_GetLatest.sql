@@ -21,6 +21,7 @@ BEGIN
 			- 20211123@Aries.Nguyen: Fix issue performance when filter sub AlphaIBCIndo  [Redmine ID: #162888]
 			- 20230411@Casey.Huynh: Tunning Performance  [Redmine ID: #186129]
             - 20230512@Jonas.Huynh: BOTD transactions [Redmine ID: 185792]
+            - 20230524@Jonas.Huynh: Fix issue wrong data type [Redmine ID: 188680]
             
 		Param's Explanation (filtered by):
 
@@ -42,7 +43,7 @@ BEGIN
 		,	TransTime		DATETIME(4)     
 		,	FirstDeviceCode	VARCHAR(64)
 		,	IP				VARCHAR(50)
-		,	Flagged			SMALLINT
+		,	Flagged			VARCHAR(200)
 		,	Action			VARCHAR(100)
 		,	ActionResult	VARCHAR(100)
 		,	OS				VARCHAR(100)		
