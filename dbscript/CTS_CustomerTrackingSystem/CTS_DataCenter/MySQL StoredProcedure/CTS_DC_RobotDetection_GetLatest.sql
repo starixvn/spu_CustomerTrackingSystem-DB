@@ -3,8 +3,8 @@ DROP PROCEDURE IF EXISTS `CTS_DC_RobotDetection_GetLatest`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_RobotDetection_GetLatest`(
-		IN 	ip_LatestTimeAI					DATETIME
-	,	IN	ip_LatestTimeImperva			DATETIME		
+		IN 	ip_RobotDetectionLastID		BIGINT UNSIGNED
+	,	IN	ip_RobotImpervaLastLogID	BIGINT		
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -17,35 +17,64 @@ BEGIN
 		Revisions:
 			- 20220523@Long.Luu: 		Created -  Robot Detection [Redmine ID: #172561]
 			- 20230315@Victoria.Le:		Get Robot Imperva [Redmine ID: #184773]
+            - 20230517@Casey.Huynh:		New Category for Robot OCRD [Redmine ID: #186991]
             
 		Example:
-			call CTS_DataCenter.CTS_DC_RobotDetection_GetLatest ('2022-01-01 02:02:02.000','2022-01-01 02:02:02.000');
+			CALL CTS_DataCenter.CTS_DC_RobotDetection_GetLatest(@ip_LatestTimeAI:='2022-01-01 02:02:02.000', @ip_LatestTimeImperva:='2022-01-01 02:02:02.000');
 	*/    
     
-    DECLARE CONST_BATCHSIZE 	INT UNSIGNED DEFAULT(5000);
-	
+    DECLARE CONST_CATEGORYID_ROBOTUSER	INT DEFAULT 163;
+    DECLARE CONST_CATEGORYID_ROBOTOCRD	INT DEFAULT 165;    
+    
+    DECLARE lv_BatchSize INT;
+    
 	DROP TEMPORARY TABLE IF EXISTS Temp_RobotImperva;    
 	CREATE TEMPORARY TABLE Temp_RobotImperva(	  
 			LogID		BIGINT
-	);
-	
-	INSERT INTO Temp_RobotImperva (LogID)
-	SELECT LogID
-	FROM CTS_DataCenter.RobotImperva
-	WHERE CreateTime >= ip_LatestTimeImperva
-		AND IsScanned = 0
-	LIMIT CONST_BATCHSIZE;
+	);	
     
-    SELECT CustID, MAX(LastModifiedDate) AS LastModifiedDate
-    FROM CTS_DataCenter.RobotDetection
-    WHERE LastModifiedDate >= ip_LatestTimeAI
-		AND IsDisabled = 0
-	GROUP BY CustID
-    LIMIT CONST_BATCHSIZE;
+	DROP TEMPORARY TABLE IF EXISTS Temp_RobotDetection;    
+	CREATE TEMPORARY TABLE Temp_RobotDetection(
+			ID					BIGINT UNSIGNED 
+		,	CustID				BIGINT UNSIGNED  
+        ,	CategoryID			SMALLINT UNSIGNED NOT NULL
+        ,	LastModifiedDate	DATETIME(3)
+        ,	PRIMARY KEY PK_Temp_RobotDetection_ID(ID)
+        ,	INDEX IX_Temp_RobotDetection_CustIDCategoryID(CustID,CategoryID)
+	);
+    
+    #======================================================================    
+    SELECT s.ParameterValue
+    INTO lv_BatchSize
+    FROM CTS_DataCenter.SystemParameter AS s
+    WHERE ParameterID = 140;
+    
+    INSERT INTO Temp_RobotDetection(ID, CustID, CategoryID, LastModifiedDate)
+    SELECT	rd.ID
+		,	rd.CustID
+		, 	(CASE WHEN rd.PeriodRangeType = 200 THEN CONST_CATEGORYID_ROBOTOCRD 
+				ELSE CONST_CATEGORYID_ROBOTUSER END) AS CategoryID
+		,	rd.LastModifiedDate
+    FROM CTS_DataCenter.RobotDetection AS rd
+    WHERE rd.ID > ip_RobotDetectionLastID
+		AND rd.IsDisabled = 0
+    ORDER BY rd.ID ASC
+    LIMIT lv_BatchSize;    
 
-	SELECT r.LogID, r.CustID, r.CreateTime AS LastCreateTime
-	FROM CTS_DataCenter.RobotImperva AS r
-		INNER JOIN Temp_RobotImperva AS tmp ON tmp.LogID = r.LogID;
+	SELECT	tmpRd.CustID
+		,	tmpRd.CategoryID
+        ,	MAX(tmpRd.ID) AS RobotDetectionID
+        , 	MAX(tmpRd.LastModifiedDate) AS LastModifiedDate
+    FROM Temp_RobotDetection AS tmpRd
+    GROUP BY tmpRd.CustID, tmpRd.CategoryID;
+
+	SELECT 	ri.LogID AS RobotImpervaLogID
+		,	ri.CustID
+        ,	ri.CreateTime AS LastCreateTime
+	FROM CTS_DataCenter.RobotImperva AS ri
+    WHERE ri.LogID > ip_RobotImpervaLastLogID		
+	ORDER BY ri.LogID ASC
+	LIMIT lv_BatchSize;    
 
 END$$	
 DELIMITER ;
