@@ -19,6 +19,7 @@ BEGIN
 			- 20220603@Long.Luu: 		Merge Robot AI & Robot TW [Redmine ID: #172561]
 			- 20230119@Victoria.Le		Change to check IsRobot from CTSCustomerClassification instead of RobotDetection [Redmine ID: #181995]
 			- 20230517@Victoria.Le		New Category for Robot OCRD [Redmine ID: #186991]
+            - 20230530@Victoria.Le		Hotfix to resolve duplicate primary key [Redmine ID: #188921]
             
 		Explanation:
 			- RobotType: 2-Bad | 1-Good | 0-Observed | -1-No classification | -2-Not Robot
@@ -75,7 +76,7 @@ BEGIN
 						)
 				) AS js;
 				
-	INSERT INTO Temp_Result(CustID, TransID, TransDate, RobotType, IsRobot)    
+	INSERT IGNORE INTO Temp_Result(CustID, TransID, TransDate, RobotType, IsRobot)    
     SELECT	t.CustID
 		,	t.TransID
         ,	t.TransDate
