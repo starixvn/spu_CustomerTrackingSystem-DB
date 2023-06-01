@@ -16,7 +16,7 @@ BEGIN
 		Original:
 		Revisions:
             - 20220519@Casey.Huynh: Renovate PA Process [Redmine ID: #172561]
-            
+            - 20230530@Casey.Huynh: Return IsCleanPA (1: Remove All PA, 0: Exists PA)
         Param's Explanation (filtered by):
 			- ip_ByType: 1: Category, 2: Reason
         Example:
@@ -243,8 +243,9 @@ BEGIN
 	SELECT	DISTINCT 
 			tmpCp.CustID
 		,	tmpCp.CTSCustID
-        ,	tmpCp.IsRemovedPA
-    FROM Temp_InputCust AS tmpCp; 
+        ,	(CASE WHEN tmpKd.CustID IS NULL THEN 1 ELSE 0 END) AS IsCleanPA        
+    FROM Temp_InputCust AS tmpCp
+		LEFT JOIN Temp_KeepDirect AS tmpKd ON tmpCp.CustID = tmpKd.CustID; 
 	
 END$$
 DELIMITER ;
