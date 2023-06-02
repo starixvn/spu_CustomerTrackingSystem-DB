@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_Association_GetAssociationAccountByCustSubscriber`;
+DROP PROCEDURE IF EXISTS `CTS_DC_Association_GetAssociationListByCustSubscriber`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_GetAssociationAccountByCustSubscriber`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_GetAssociationListAccountByCustSubscriber`(
 		IN ip_SubscriberID		INT
 	,	IN ip_CTSCustID			BIGINT UNSIGNED
 	,	IN ip_Skip				INT
@@ -13,7 +13,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_GetAssociationAccoun
 BEGIN
 	/*
 		Created:	20230601@Casey.Huynh
-		Task :		Search Customer by UserName in subscribers
+		Task :		Get Association Account List
 		DB:			CTS_DataCenter
 		Original:
 
@@ -23,17 +23,14 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL CTS_DC_Association_GetAssociationAccountByCustSubscriber(@ip_SubscriberID:=6,@ip_CTSCustID:=14417,@ip_Skip:=0, @ip_Take:=10, @op_TotalItem); SELECT @op_TotalItem ;
-
-			SELECT * FROM CTS_DataCenter.AssociationByDevice WHERE SubscriberID = 6 ORDER BY CTSAssDevID DESC;
-            INSERT INTO CTS_DataCenter.AssociationByDevice(CTSCustID, DCSDeviceID, SubscriberID, CreatedTime, InsertTime)            
-            SELECT CTSCustID, CTSCustID,6,NOW()-1,NOW()-1 FROM CTS_DataCenter.CTSCustomer WHERE SubscriberID = 6 LIMIT 40;
+			CALL CTS_DC_Association_GetAssociationListAccountByCustSubscriber(@ip_SubscriberID:=6,@ip_CTSCustID:=14417,@ip_Skip:=0, @ip_Take:=10, @op_TotalItem); SELECT @op_TotalItem;
 	*/
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Association01;
 	CREATE TEMPORARY TABLE Temp_Association01(
-			CTSCustID BIGINT UNSIGNED
-        ,	DCSDeviceID BIGINT
+			CTSCustID	BIGINT UNSIGNED
+        ,	DCSDeviceID	BIGINT
+        ,	CreatedTime	DATETIME(4)
         
         ,	PRIMARY KEY PK_Temp_Association01(CTSCustID, DCSDeviceID)
         ,	INDEX IX_Temp_Association01_DCSDeviceID(DCSDeviceID)
@@ -41,8 +38,9 @@ BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Association02;
 	CREATE TEMPORARY TABLE Temp_Association02(
-			CTSCustID BIGINT UNSIGNED
-        ,	DCSDeviceID BIGINT
+			CTSCustID	BIGINT UNSIGNED
+        ,	DCSDeviceID	BIGINT
+        ,	CreatedTime	DATETIME(4)
         
         ,	PRIMARY KEY PK_Temp_Association02(DCSDeviceID,CTSCustID)
         ,	INDEX IX_Temp_Association02_DCSDeviceID(CTSCustID)
@@ -53,17 +51,22 @@ BEGIN
 		CTSCustID	BIGINT UNSIGNED
     );
     
-	DROP TEMPORARY TABLE IF EXISTS Temp_Association;
-	CREATE TEMPORARY TABLE Temp_Association(
-			CTSCustID	BIGINT UNSIGNED
-        ,	DCSDeviceID BIGINT
+	DROP TEMPORARY TABLE IF EXISTS Temp_AssociationAccount;
+    CREATE TEMPORARY TABLE Temp_AssociationAccount(
+			CTSCustID			BIGINT UNSIGNED PRIMARY KEY
+        ,	DeviceInCommon		INT
+        ,	OtherDeives			INT
+        ,	AssociatedAccount	INT
+        ,	IsFirstCust			BOOLEAN
+        ,	MaxCreatedTime		DATETIME(4)
         
-        
+        ,	INDEX IX_Temp_AssociationAccount(IsFirstCust DESC, MaxCreatedTime DESC)
     );
-    
     #======GET ACCOUNT LIST: ip_CTSCustID AND ASSOCIATED CUSTOMER=======================================    
-    INSERT INTO Temp_Association01(CTSCustID, DCSDeviceID)
-    SELECT abd.CTSCustID, abd.DCSDeviceID
+    INSERT INTO Temp_Association01(CTSCustID, DCSDeviceID, CreatedTime)
+    SELECT	abd.CTSCustID
+		,	abd.DCSDeviceID
+        ,	abd.CreatedTime
     FROM CTS_DataCenter.AssociationByDevice AS abd
     WHERE abd.SubscriberID = ip_SubscriberID AND abd.CTSCustID = ip_CTSCustID;
     
@@ -73,31 +76,26 @@ BEGIN
 		INNER JOIN Temp_Association01 AS tmpAs1 ON abd.DCSDeviceID = tmpAs1.DCSDeviceID AND abd.SubscriberID = ip_SubscriberID;
     
     #=====GET ASSOCIATION LIST===============================================================================
-    INSERT INTO Temp_Association01(CTSCustID, DCSDeviceID)
-    SELECT abd.CTSCustID, abd.DCSDeviceID
+    INSERT INTO Temp_Association01(CTSCustID, DCSDeviceID, CreatedTime)
+    SELECT	abd.CTSCustID
+		,	abd.DCSDeviceID
+        ,	abd.CreatedTime
     FROM CTS_DataCenter.AssociationByDevice AS abd
 		INNER JOIN Temp_Customer AS tmpCus ON abd.SubscriberID = ip_SubscriberID AND abd.CTSCustID = tmpCus.CTSCustID AND abd.CTSCustID <> ip_CTSCustID;
     
-    INSERT INTO Temp_Association02(CTSCustID, DCSDeviceID)
-    SELECT 	tmpAs1.CTSCustID
+    INSERT INTO Temp_Association02(CTSCustID, DCSDeviceID, CreatedTime)
+    SELECT	tmpAs1.CTSCustID
 		,	tmpAs1.DCSDeviceID
+        ,	tmpAs1.CreatedTime
     FROM Temp_Association01 AS tmpAs1;
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_AssociationAccount;
-    CREATE TEMPORARY TABLE Temp_AssociationAccount(
-			CTSCustID	BIGINT UNSIGNED PRIMARY KEY
-        ,	DeviceInCommon INT
-        ,	OtherDeives	INT
-        ,	AssociatedAccount INT
-        ,	IsFirstCust BOOLEAN
-    );
-    
-    INSERT INTO Temp_AssociationAccount(CTSCustID, DeviceInCommon, OtherDeives, AssociatedAccount, IsFirstCust)
+    INSERT INTO Temp_AssociationAccount(CTSCustID, DeviceInCommon, OtherDeives, AssociatedAccount, IsFirstCust, MaxCreatedTime)
     SELECT	tmpAs1.CTSCustID
 		,	COUNT(DISTINCT(CASE WHEN tmpAs2.CTSCustID IS NOT NULL THEN tmpAs2.DCSDeviceID ELSE NULL END)) AS DeviceInCommon
         ,	COUNT(DISTINCT(CASE WHEN tmpAs2.CTSCustID IS NULL THEN tmpAs1.DCSDeviceID ELSE NULL END)) AS OtherDevices
 		,	COUNT(DISTINCT(CASE WHEN tmpAs2.CTSCustID IS NOT NULL THEN tmpAs2.CTSCustID ELSE NULL END)) AS AsscociatedAccount
         ,	MAX(CASE WHEN tmpAs1.CTSCustID = ip_CTSCustID THEN 1 ELSE 0 END) AS IsFirstCust
+        ,	MAX(tmpAs1.CreatedTime) AS MaxCreatedTime
     FROM Temp_Association01 AS tmpAs1
 		LEFT JOIN Temp_Association02 AS tmpAs2 ON tmpAs1.DCSDeviceID = tmpAs2.DCSDeviceID AND tmpAs1.CTSCustID <> tmpAs2.CTSCustID
 	GROUP BY tmpAs1.CTSCustID;
@@ -112,7 +110,7 @@ BEGIN
 		,	tmpAa.AssociatedAccount
     FROM Temp_AssociationAccount AS tmpAa
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpAa.CTSCustID = cus.CTSCustID
-	ORDER BY IsFirstCust DESC, UserName ASC
+	ORDER BY IsFirstCust DESC, MaxCreatedTime DESC
     LIMIT ip_Skip, ip_Take;
 	
 END$$
