@@ -36,6 +36,7 @@ BEGIN
             - 20220923@Aries.Nguyen: CTS - Missing Customer Info on CTS Pro [Redmine ID: #176768]
             - 20220930@Aries.Nguyen: Renovate Association Detection [RedmineID: #178311]
             - 20221202@Victoria.Le:	 Add columns DangerSabaSc (Saba Soccer) and DangerSabaBkb (Saba Baseketball) [Redmine ID: #181208]
+			- 20230602@Long.Luu:	Add new agent as internal account [Redmine ID: #188554]
 
 		Param's Explanation (filtered by):
 		Example:
@@ -153,8 +154,8 @@ BEGIN
             ,   CASE WHEN js.UserName Like '%CashOut' OR 
 						  stl.ItemID IS NOT NULL OR 						 
                           js.SRecommend IN (41430709) OR 
-                          js.MRecommend IN (27899314, 11656504, 12146012) OR
-                          js.Recommend IN (52466,5707545,29270764,134456)  THEN 1 
+                          js.MRecommend IN (27899314,11656504,12146012) OR
+                          js.Recommend IN (52466,5707545,29270764,134456,27787409)  THEN 1 
 				ELSE 0 END AS IsInternal
 	FROM JSON_TABLE(ip_CustomerList,
 		 "$[*]" COLUMNS(

@@ -19,11 +19,14 @@ AS
 		- 20221111@Jonas.Huynh: Adjust Eport Rules [Redmine ID: #179501]
 		- 20221118@Jonas.Huynh: Support Non-Sport [Redmine ID: #179500]
 		- 20230405@Jonas.Huynh: Modify betcount schedule for Normal & Good Member [Redmine ID: #185633]
+		- 20230602@Long.Luu:	Add new agent as internal account [Redmine ID: #188554]
+
 	Param's Explanation:
 				@CustomersXML = N'<Root>
 										<r CustId="4345542" SportId="2" CategoryId ="201"/>
 										<r CustId="4345542" SportId="1" CategoryId ="201"/>
 								 </Root>';
+
 	Example: 
 		exec [dbo].[CTS_NormalAccountsClassification_BySport_Daily] @CustomersXML = N'<Root> <r CustId="4345542" SportId="2" CategoryId ="201"/> </Root>';
 */
@@ -178,7 +181,7 @@ BEGIN
 	WHERE (c.[Enabled] = 0 OR c.roleid <> 1)
 		OR c.srecommend IN (41430709)
 		OR c.mrecommend IN (27899314,11656504,12146012)
-		OR c.recommend IN (52466,5707545,29270764,134456)
+		OR c.recommend IN (52466,5707545,29270764,134456,27787409)
 		OR c.username LIKE '%CashOut';
 
 	-- #2.2 Remove Inactive accounts

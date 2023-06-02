@@ -19,6 +19,7 @@ AS
 		- 20220929@Long.Luu: 		Adjust the asssociation rule [Redmine ID: #178331]
 		- 20221101@Long.Luu: 		Update the threshold [Redmine ID: #178333]
 		- 20230512@Victoria.Le:		Change condition with ticket stake for each cust [Redmine ID: #187978]
+		- 20230602@Long.Luu:		Add new agent as internal account [Redmine ID: #188554]
 
 	Params Explaination:
 		- @QueryType: 1 detect associations, 2 get fraud tickets, 3 get association custlist of a group, 4 get fraud tickets of a custgroup
@@ -169,11 +170,17 @@ BEGIN
 		INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.MatchID = m.matchid 
 		INNER JOIN #tmpStakeThredsHold AS s WITH(NOLOCK) ON s.SportType = m.sporttype
 		INNER JOIN dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
+		INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) on b.custid = c.custid	
 	WHERE b.winlostdate > @MoveBetsDay
+		AND b.srecommend NOT IN (41430709) 
+		AND b.mrecommend NOT IN (27899314,11656504,12146012) 
+		AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409)		
+		AND b.username NOT LIKE '%CashOut' 
+		AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 		AND m.eventstatus = 'Completed'
 		AND b.Currency NOT IN (20,27,28)
 		AND l.LeagueGroupID NOT IN (42,72,74,108,113,122) -- exclude SABA, Virtual Sport
-		AND (b.stake * b.actualrate >= s.StakeRM)
+		AND (b.stake * b.actualrate >= s.StakeRM);
 
 	-- Get more data from bettrans 14
 	INSERT INTO #tmpRawTickets(
