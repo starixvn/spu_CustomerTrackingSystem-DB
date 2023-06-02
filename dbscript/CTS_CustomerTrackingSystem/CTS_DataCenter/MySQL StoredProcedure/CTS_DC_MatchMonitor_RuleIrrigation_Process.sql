@@ -25,6 +25,7 @@ sp: BEGIN
 			- 20221122@Casey.Huynh: 	Created [Redmine ID: #179499]
 			- 20221228@Victoria.Le:		Add HDP for Irrigation rule [Redmine ID: #181990]
 			- 20230206@Victoria.Le:		Change formula for OddsSpread [Redmine ID: #183277]
+			- 20230602@Long.Luu:		Change formula for OddsSpread [Redmine ID: #189072]
             
 		Param's Explanation (filtered by):	
 			
@@ -78,6 +79,8 @@ sp: BEGIN
         ,	TotalStake			DECIMAL(20,4)
         ,	MinOdds				DECIMAL(10,4)
         ,	MaxOdds				DECIMAL(10,4)
+		,	MinNegativeOdds		DECIMAL(10,4)
+		,	MinPositiveOdds		DECIMAL(10,4)
 		,	MinSignNumber		TINYINT
 		,	MaxSignNumber		TINYINT
 		,	PRIMARY KEY (CustID)
@@ -90,6 +93,8 @@ sp: BEGIN
         ,	TotalStake			DECIMAL(20,4)
         ,	MinOdds				DECIMAL(10,4)
         ,	MaxOdds				DECIMAL(10,4)
+		,	MinNegativeOdds		DECIMAL(10,4)
+		,	MinPositiveOdds		DECIMAL(10,4)
 		,	MinSignNumber		TINYINT
 		,	MaxSignNumber		TINYINT
 		,	PRIMARY KEY (CustID)
@@ -124,13 +129,15 @@ sp: BEGIN
     FROM CTS_DataCenter.SystemParameter AS s
     WHERE ParameterID = 125;
     
-    INSERT INTO Temp_OldCustGroup(CustID, MaxTransDateSec, OldGroupID, TotalStake, MinOdds, MaxOdds, MinSignNumber, MaxSignNumber)
+    INSERT INTO Temp_OldCustGroup(CustID, MaxTransDateSec, OldGroupID, TotalStake, MinOdds, MaxOdds, MinNegativeOdds, MinPositiveOdds, MinSignNumber, MaxSignNumber)
     SELECT	tmpTs.CustID
 		,	MAX(tmpTs.TransDateSec) AS MaxTransDateSec
         ,	MAX(tmpTs.OldGroupID) AS OldGroupID
 		,	SUM(tmpTs.Stake) AS TotalStake
         ,	MIN(tmpTs.Odds) AS MinOdds
         ,	MAX(tmpTs.Odds) AS MaxOdds
+		,	MIN(CASE WHEN SIGN(tmpTs.Odds) = -1 THEN tmpTs.Odds ELSE 0 END) AS MinNegativeOdds
+		,	MIN(CASE WHEN SIGN(tmpTs.Odds) = 1 THEN tmpTs.Odds ELSE 999999 END) AS MinPositiveOdds
 		,	MIN(tmpTs.SignNumber) AS MinSignNumber
 		,	MAX(tmpTs.SignNumber) AS MaxSignNumber
     FROM Temp_Trans AS tmpTs
@@ -145,12 +152,14 @@ sp: BEGIN
 		 AND tmpTs.TransDateSec - tmpOg.MaxTransDateSec <= lv_Rule_TimeStep;
          
 	#=================GET NEW GROUP=============================================
-	INSERT INTO Temp_NewCustGroup(CustID, MinTransDateSec, TotalStake, MinOdds, MaxOdds, MinSignNumber, MaxSignNumber)
+	INSERT INTO Temp_NewCustGroup(CustID, MinTransDateSec, TotalStake, MinOdds, MaxOdds, MinNegativeOdds, MinPositiveOdds, MinSignNumber, MaxSignNumber)
     SELECT 	tmpTs.CustID
 		,	MIN(tmpTs.TransDateSec) AS MinTransDateSec
 		,	SUM(tmpTs.Stake) AS TotalStake
         ,	MIN(tmpTs.Odds) AS MinOdds
         ,	MAX(tmpTs.Odds) AS MaxOdds
+		,	MIN(CASE WHEN SIGN(tmpTs.Odds) = -1 THEN tmpTs.Odds ELSE 0 END) AS MinNegativeOdds
+		,	MIN(CASE WHEN SIGN(tmpTs.Odds) = 1 THEN tmpTs.Odds ELSE 999999 END) AS MinPositiveOdds
 		,	MIN(tmpTs.SignNumber) AS MinSignNumber
 		,	MAX(tmpTs.SignNumber) AS MaxSignNumber
     FROM Temp_Trans AS tmpTs
@@ -187,7 +196,7 @@ sp: BEGIN
 												OR tmpOg.MinSignNumber != tmpOg.MaxSignNumber
 												OR tmpNg.MinSignNumber != tmpOg.MinSignNumber
 												OR tmpNg.MaxSignNumber != tmpOg.MaxSignNumber)
-										AND ((1-ABS(GREATEST(tmpNg.MaxOdds,tmpOg.MaxOdds)))+(1-ABS(LEAST(tmpNg.MinOdds,tmpOg.MinOdds))))*100 >= lv_Rule_OddsSpread
+										AND ((1-ABS(LEAST(tmpNg.MinPositiveOdds,tmpOg.MinPositiveOdds)))+(1-ABS(LEAST(tmpNg.MinNegativeOdds,tmpOg.MinNegativeOdds))))*100 >= lv_Rule_OddsSpread
 								);
 	END IF; 
  
