@@ -5,9 +5,10 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CTS_GeneralNormalClassification_NormalPool_Insert]
-	@ListCustId		VARCHAR(MAX),
-	@FunctionId		SMALLINT
+ALTER PROCEDURE [dbo].[CTS_GeneralNormalClassification_NormalPool_Insert]
+		@ListCustId		VARCHAR(MAX),
+		@FunctionId		SMALLINT,
+		@Priority		SMALLINT
 AS
 /*
 	Created: 20230420@Jonas.Huynh
@@ -19,19 +20,19 @@ AS
 		- 20230420@Jonas.Huynh: Created [Redmine ID: #186678]
 
 	Param's Explanation:
-        @ListCustId:	This parameter is used to insert customer into normal pool for classification
-        @FunctionId:	Being used to log info, map priority
-
+        @ListCustId		: This parameter is used to insert customer into normal pool for classification
+        @FunctionId		: Being used to log particular function
+		@Priority		: Being used to prioritize group functions
     Script:
         EXEC bodb_VR2Model.dbo.CTS_GeneralNormalClassification_NormalPool_Insert @ListCustId = '1,2,3',
-                                                                                 @FunctionId = 1;
+                                                                                 @FunctionId = 1,
+																				 @Priority = 1;
 */
 BEGIN
 	
 	SET NOCOUNT ON;
 		
 	DECLARE	@CurrentTime DATETIME = GETDATE();
-	DECLARE @Priority	 SMALLINT;
 
 	IF OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
 	BEGIN
@@ -52,12 +53,7 @@ BEGIN
 		,	@CurrentTime
 	FROM #tmpCustomers AS a;
 
-	-- #3: Get priority by FunctionId
-	SELECT @Priority = p.[Priority]
-	FROM dbo.CustomerClassification_Priority AS p WITH(NOLOCK)
-	WHERE p.GroupId = 1 AND p.FunctionId = @FunctionId 
-
-	-- #4: Insert to normal pool
+	-- #3: Insert to normal pool
 	INSERT INTO dbo.CustomerClassification_NormalPool(CustId, [Priority], FunctionId, CreatedTime)
 	SELECT	a.CustId
 		,	@Priority
