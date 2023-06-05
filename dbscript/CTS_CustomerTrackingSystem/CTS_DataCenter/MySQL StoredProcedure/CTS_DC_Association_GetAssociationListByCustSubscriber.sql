@@ -2,7 +2,7 @@
 DROP PROCEDURE IF EXISTS `CTS_DC_Association_GetAssociationListByCustSubscriber`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_GetAssociationListAccountByCustSubscriber`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_GetAssociationListByCustSubscriber`(
 		IN ip_SubscriberID		INT
 	,	IN ip_CTSCustID			BIGINT UNSIGNED
 	,	IN ip_Skip				INT
