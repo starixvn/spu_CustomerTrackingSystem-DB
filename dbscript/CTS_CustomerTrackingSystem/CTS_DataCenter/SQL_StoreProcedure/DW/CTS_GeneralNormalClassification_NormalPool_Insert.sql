@@ -17,6 +17,7 @@ AS
 
 	Revisions:
 		- 20230420@Jonas.Huynh: Created [Redmine ID: #186678]
+		- 20230601@Jonas.Huynh: Normal Renovation (Phase2) [Redmine ID: #186684]
 
 	Param's Explanation:
         @FunctionId		: Being used to log particular function

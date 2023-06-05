@@ -18,6 +18,8 @@ AS
 	Revisions:
 		- 20220328@Long.Luu: Created [Redmine ID: #170468]
 		- 20221118@Jonas.Huynh: Update parameter of DW SP GetCustAccumulatedInfo [Redmine ID: #179500]
+		- 20230601@Jonas.Huynh: Update SP get accumulated performance (Renovate Phase2) [Redmine ID: #186684]
+
 	Param's Explanation:
 */
 BEGIN
@@ -35,18 +37,19 @@ BEGIN
 		DROP TABLE	#tmpRawData;
 
 	CREATE TABLE #tmpRawData(
-		CustId					INT				NOT NULL,
-		SportId					INT				NOT NULL,
-		TurnoverRM				DECIMAL(19, 4)	NULL,
-		WinlossRM				DECIMAL(19, 4)	NULL,
-		TurnoverORG				DECIMAL(19, 4)	NULL,
-		WinlossORG				DECIMAL(19, 4)	NULL,
-		BetCount				BIGINT			NULL,
-		ActiveDaysCustID		INT				NOT NULL,
-        ActiveDaysSportGroup	INT				NOT NULL,
-        WindaysCustID			INT				NOT NULL,
-        WinDaysSportGroup		INT				NOT NULL
-		PRIMARY KEY CLUSTERED (CustId, SportId)
+		CustId				 INT			NOT NULL,
+		SportGroup			 INT			NOT NULL,
+		TurnoverRM			 DECIMAL(19, 4)	NOT NULL,
+		WinlossRM			 DECIMAL(19, 4)	NOT NULL,
+		TurnoverORG			 DECIMAL(19, 4)	NOT NULL,
+		WinlossORG			 DECIMAL(19, 4)	NOT NULL,
+		BetCount			 BIGINT			NOT NULL,
+		ActiveDaysCustID	 INT			NOT NULL,
+        ActiveDaysSportGroup INT			NOT NULL,
+        WindaysCustID		 INT			NOT NULL,
+        WinDaysSportGroup	 INT			NOT NULL,
+		ProcessedTime        DATETIME       NOT NULL
+		PRIMARY KEY CLUSTERED (CustId, SportGroup)
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpCustomerAccummulatedInfo') IS NOT NULL
@@ -89,9 +92,9 @@ BEGIN
 								FOR XML PATH('')), 1, 1, '');
 
 	-- #1: GetCustomer Accummulated data
-	INSERT INTO #tmpRawData(CustId, SportId, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDaysCustID, ActiveDaysSportGroup, WindaysCustID, WinDaysSportGroup)
-	EXEC bodb_dwrs.dbo.Acc_Rpt_GetCustAccumulatedInfo_Realtime_ByListCustID  @ListCustID = @ListCustIds, @ResultDataMode = 1;	
-	
+	INSERT INTO #tmpRawData(CustId, SportGroup, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDaysCustID, ActiveDaysSportGroup, WindaysCustID, WinDaysSportGroup, ProcessedTime)
+	EXEC bodb_dwrs.dbo.Acc_Rpt_CTS_GetCustAccumulatedInfo @ListCustID = @ListCustIds;
+
 	-- #2: Sum data by custid
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT	a.CustId
