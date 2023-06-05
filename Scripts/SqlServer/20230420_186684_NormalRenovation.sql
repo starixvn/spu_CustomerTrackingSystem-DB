@@ -47,3 +47,12 @@ GO
 INSERT INTO [dbo].[CustomerClassification_Priority] (GroupId, GroupName, FunctionId, FunctionName, [Priority]) 
 VALUES (1, 'ByFlow', 7, 'Rescan Unknown Action', 9999)
 GO
+
+-- #3. Add Column
+ALTER TABLE [dbo].[CustomerClassification_Rule]
+ADD IsProbationLastDay BIT DEFAULT(0);
+GO
+
+UPDATE [dbo].[CustomerClassification_Rule]
+SET IsProbationLastDay = 1
+WHERE RuleId IN (74, 85);

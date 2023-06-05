@@ -31,7 +31,7 @@ AS
 BEGIN
 	
 	SET NOCOUNT ON;
-		
+	
 	DECLARE	@CurrentTime DATETIME = GETDATE();
 
 	IF OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL

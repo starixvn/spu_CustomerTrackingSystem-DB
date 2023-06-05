@@ -17,6 +17,7 @@ AS
 	Revisions:
 		- 20230421@Jonas.Huynh: Created [Redmine ID: #186678]
 		- 20230519@Jonas.Huynh: HF Wrong inactive category with new placebet [Redmine ID: #188464]
+		- 20230601@Jonas.Huynh: Normal Renovation [Redmine ID: #186684]
 
 	Param's Explanation:
 		@CustomersXML	 : This parameter is used to classify customer perf which bases on currentCategory
@@ -24,10 +25,10 @@ AS
     Script:
         EXEC bodb_VR2Model.dbo.CTS_GeneralNormalClassification_NormalPool_Classify 
 			@CustomersXML = N'<Root>
-								<r CustId="5002646" CategoryId ="201" IsNewCreated="0" IsCheckBetCount = "0"/>
-								<r CustId="5022391" CategoryId ="0"  IsNewCreated="1" IsCheckBetCount = "1"/>
-								<r CustId="1275" CategoryId ="205"  IsNewCreated="0" IsCheckBetCount = "1"/>
-								<r CustId="1280" CategoryId ="202"  IsNewCreated="1" IsCheckBetCount = "1"/>
+								<r CustId="5002646" CategoryId="201" IsNewCreated="0" IsCheckBetCount= "0" IsProbationLastDay="0"/>
+								<r CustId="5022391" CategoryId="0"  IsNewCreated="1" IsCheckBetCount= "1" IsProbationLastDay="0"/>
+								<r CustId="1275" CategoryId="205"  IsNewCreated="0" IsCheckBetCount= "1" IsProbationLastDay="1"/>
+								<r CustId="1280" CategoryId="202"  IsNewCreated="1" IsCheckBetCount= "1" IsProbationLastDay="1"/>
 							</Root>';
 */
 BEGIN
@@ -62,6 +63,7 @@ BEGIN
 		IsNewCreated	       BIT	    NOT NULL DEFAULT 0,
 		IsCheckBetCount		   BIT	    NOT NULL DEFAULT 0,
 		IsPlaceBetWithin30Days BIT		NOT NULL DEFAULT 0,
+		IsProbationLastDay	   BIT		NOT NULL DEFAULT 0,
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpRawData') IS NOT NULL
@@ -92,6 +94,7 @@ BEGIN
 		CurrentCategoryId	   SMALLINT		  NOT NULL DEFAULT 0,
 		NewCategoryId		   SMALLINT		  NULL,
 		IsPlaceBetWithin30Days BIT			  NOT NULL DEFAULT 0,
+		IsProbationLastDay	   BIT			  NOT NULL DEFAULT 0,
 		IsCheckBetCount		   BIT			  NOT NULL DEFAULT 0,
 		IsSpecialSite		   BIT			  NOT NULL DEFAULT 0,
 		IsDeposit			   BIT			  NOT NULL DEFAULT 0,
@@ -138,11 +141,12 @@ BEGIN
 	);
 
 	-- #1: Get list customers
-	INSERT INTO #tmpCustomers(CustId, CurrentCategoryId, IsNewCreated, IsCheckBetCount)
-	SELECT	T.C.value('./@CustId', 'INT')		   AS CustId
-		,	T.C.value('./@CategoryId', 'SMALLINT') AS CurrentCategoryId
-		,	T.C.value('./@IsNewCreated', 'BIT')	   AS IsNewCreated
-		,	T.C.value('./@IsCheckBetCount', 'BIT') AS IsCheckBetCount
+	INSERT INTO #tmpCustomers(CustId, CurrentCategoryId, IsNewCreated, IsCheckBetCount, IsProbationLastDay)
+	SELECT	T.C.value('./@CustId', 'INT')				AS CustId
+		,	T.C.value('./@CategoryId', 'SMALLINT')		AS CurrentCategoryId
+		,	T.C.value('./@IsNewCreated', 'BIT')			AS IsNewCreated
+		,	T.C.value('./@IsCheckBetCount', 'BIT')		AS IsCheckBetCount
+		,	T.C.value('./@IsProbationLastDay', 'BIT')	AS IsProbationLastDay
 	FROM @CustomersXML.nodes('//r') AS T(C)
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 	
@@ -154,7 +158,7 @@ BEGIN
 	INSERT INTO #tmpRawData(CustId, SportGroup, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDaysCustID, ActiveDaysSportGroup, WindaysCustID, WinDaysSportGroup, ProcessedTime)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_CTS_GetCustAccumulatedInfo @ListCustID = @ListCustIds;
 
-	-- #3: Calculate customer accumulated performance data
+	-- #3: Calculate accumulated customer performance data
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays, PerformanceTime)
 	SELECT a.CustId,
 		   SUM(a.TurnoverRM),
@@ -176,7 +180,8 @@ BEGIN
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
 	SET a.CurrentCategoryId = c.CurrentCategoryId,
 		a.IsCheckBetCount = c.IsCheckBetCount,
-		a.IsPlaceBetWithin30Days = c.IsPlaceBetWithin30Days
+		a.IsPlaceBetWithin30Days = c.IsPlaceBetWithin30Days,
+		a.IsProbationLastDay = c.IsProbationLastDay
 	FROM #tmpCustomerAccummulatedInfo AS a
 		INNER JOIN #tmpCustomers AS c ON a.CustId = c.custid;
 
@@ -260,13 +265,13 @@ BEGIN
 					OR (r.RuleGroupId = 9 AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.WinlossRM <= r.WinlossRM)					-- PROBATION
 					OR (r.RuleGroupId = 10 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin)												-- PROBATION
 					OR (r.RuleGroupId = 11 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM >= r.WinlossRM)				-- PROBATION
-					OR (r.RuleGroupId = 12 AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.WinlossRM > r.WinlossRM)					-- SMART
+					OR (r.RuleGroupId = 12 AND (a.IsProbationLastDay IS NULL OR (a.IsProbationLastDay IS NOT NULL AND a.IsProbationLastDay = r.IsProbationLastDay) AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.WinlossRM > r.WinlossRM) -- SMART
 					OR (r.RuleGroupId = 13 AND a.BetCount >= r.BetCount AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM AND a.WinlossRM <= r.WinlossRM2)				-- SMART
 					OR (r.RuleGroupId = 14 AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM AND a.WinlossRM <= r.WinlossRM2)											-- SMART
 					OR (r.RuleGroupId = 15 AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.WinlossRM > r.WinlossRM)												-- SMART
-					OR (r.RuleGroupId = 16 AND a.BetCount >= r.BetCount AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM) -- RISKY
+					OR (r.RuleGroupId = 16 AND (a.IsProbationLastDay IS NULL OR (a.IsProbationLastDay IS NOT NULL AND a.IsProbationLastDay = r.IsProbationLastDay) AND a.BetCount >= r.BetCount AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM) -- RISKY
 					OR (r.RuleGroupId = 17 AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM))																			-- RISKY
-		) as b
+		) AS b
 		INNER JOIN #tmpCustomerAccummulatedInfo AS t ON t.CustId = b.CustId
 	 WHERE b.RowNum = 1;
 
