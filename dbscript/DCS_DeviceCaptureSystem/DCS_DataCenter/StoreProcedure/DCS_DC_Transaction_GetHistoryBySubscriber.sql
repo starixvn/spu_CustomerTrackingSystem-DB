@@ -7,6 +7,8 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transaction_GetHistoryBySubscrib
     ,	IN	ip_FromDate		DATETIME
     ,	IN	ip_ToDate 		DATETIME
     ,	IN	ip_CTSCustID	BIGINT UNSIGNED
+    ,	IN  ip_UserName		VARCHAR(50)
+    ,	IN	ip_IsPartial	BOOLEAN
     ,	IN	ip_Skip			INT
     ,	IN	ip_Take			INT
     ,	OUT	op_TotalItem	INT
@@ -25,23 +27,79 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_DC_Transaction_GetHistoryBySubscriber(@ip_SubscriberID:=6,@ip_FromDate:='2023-01-01',@ip_ip_ToDate:='2023-01-15',@ip_CTSCustID:=NULL,@ip_Skip:=0, @ip_Take:=2000, @op_TotalItem); SELECT @op_TotalItem;
-			CALL DCS_DC_Transaction_GetHistoryBySubscriber(@ip_SubscriberID:=6,@ip_FromDate:='2023-01-01',@ip_ip_ToDate:='2023-01-15',@ip_CTSCustID:=5560,@ip_Skip:=0, @ip_Take:=2000, @op_TotalItem); SELECT @op_TotalItem;    
+			CALL DCS_DC_Transaction_GetHistoryBySubscriber(@ip_SubscriberID:=6,@ip_FromDate:='2023-01-01',@ip_ip_ToDate:='2023-01-15'
+            ,@ip_CTSCustID:=null,@ip_UserName:=null,@ip_IsPartial:=null,@ip_Skip:=0, @ip_Take:=2000, @op_TotalItem); SELECT @op_TotalItem;
+			CALL DCS_DC_Transaction_GetHistoryBySubscriber(@ip_SubscriberID:=6,@ip_FromDate:='2023-01-01',@ip_ip_ToDate:='2023-01-15',@ip_CTSCustID:=5560,@ip_UserName:=null,@ip_IsPartial:=null,@ip_Skip:=0, @ip_Take:=2000, @op_TotalItem); SELECT @op_TotalItem;    
     */
+
 	DROP TEMPORARY TABLE IF EXISTS Temp_Account;
 	CREATE TEMPORARY TABLE Temp_Account(
 		AccountID INT PRIMARY KEY
 	);
     
-    IF (ip_CTSCustID IS NOT NULL) THEN
+    IF (ip_CTSCustID IS NOT NULL) THEN #Account Details Page
     
 		INSERT INTO Temp_Account(AccountID)
 		SELECT	cda.AccountID
 		FROM	CTS_DataCenter.CustDCSAccount AS cda
 		WHERE	cda.CTSCustID = ip_CTSCustID
 			AND cda.SubscriberID = ip_SubscriberID;
+            
+	ELSE # Transaction History Report
+		# GET SEARCH ACCOUNT
+        #=============GET CUSTOMER BY SEARCH====================================
+		DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
+		CREATE TEMPORARY TABLE Temp_Customer(
+				CTSCustID		BIGINT UNSIGNED PRIMARY KEY
+		);
 		
-		IF EXISTS(SELECT 1 FROM Temp_Account LIMIT 1) THEN 
+		DROP TEMPORARY TABLE IF EXISTS Temp_UserName;
+		CREATE TEMPORARY TABLE Temp_UserName(
+				UserName		VARCHAR(50)  PRIMARY KEY        
+		);
+
+		#============================================
+        IF ip_UserName IS NOT NULL THEN			
+			SET @sql = CONCAT("INSERT INTO Temp_UserName (UserName) VALUES ('", REPLACE(ip_UserName, ",", "'),('"),"');");
+			PREPARE stmt1 FROM @sql;
+			EXECUTE stmt1;
+		END IF;	
+        
+        IF(ip_IsPartial = 1) THEN #SEARCH PARTIAL
+			#========SEARCH BY USERNAME=====================
+			INSERT INTO Temp_Customer (CTSCustID)
+			SELECT	cus.CTSCustID
+			FROM CTS_DataCenter.CTSCustomer AS cus
+				INNER JOIN Temp_UserName AS tmp ON  cus.SubscriberID = ip_SubscriberID AND cus.UserName LIKE CONCAT(tmp.UserName,'%') AND cus.IsInternal = 0 AND cus.LastLoginTime IS NOT NULL;
+				
+			#========SEARCH BY USERNAME2=====================
+			INSERT IGNORE INTO Temp_Customer (CTSCustID)
+			SELECT	cus.CTSCustID
+			FROM CTS_DataCenter.CTSCustomer AS cus
+				INNER JOIN Temp_UserName AS tmp ON cus.SubscriberID = ip_SubscriberID AND cus.UserName2 LIKE CONCAT(tmp.UserName,'%') AND cus.IsInternal = 0 AND cus.LastLoginTime IS NOT NULL;
+		ELSE #SEARCH EXACTLY
+			#========SEARCH BY USERNAME=====================
+			INSERT INTO Temp_Customer (CTSCustID)
+			SELECT	cus.CTSCustID
+			FROM CTS_DataCenter.CTSCustomer AS cus
+				INNER JOIN Temp_UserName AS tmp ON  cus.SubscriberID = ip_SubscriberID AND cus.UserName = tmp.UserName AND cus.IsInternal = 0 AND cus.LastLoginTime IS NOT NULL;
+				
+			#========SEARCH BY USERNAME2=====================
+			INSERT IGNORE INTO Temp_Customer (CTSCustID)
+			SELECT	cus.CTSCustID
+			FROM CTS_DataCenter.CTSCustomer AS cus
+				INNER JOIN Temp_UserName AS tmp ON cus.SubscriberID = ip_SubscriberID AND cus.RegisterName =  tmp.UserName AND cus.IsInternal = 0 AND cus.LastLoginTime IS NOT NULL;
+        END IF;
+        
+		INSERT INTO Temp_Account(AccountID)
+		SELECT	cda.AccountID
+		FROM	CTS_DataCenter.CustDCSAccount AS cda
+			INNER JOIN Temp_Customer AS tmp ON cda.CTSCustID = tmp.CTSCustID
+		WHERE	cda.SubscriberID = ip_SubscriberID;
+        
+    END IF;
+		
+	IF EXISTS(SELECT 1 FROM Temp_Account LIMIT 1) AND (ip_CTSCustID IS NOT NULL OR ip_UserNameList IS NOT NULL) THEN 
 			SET @TotalRow = 0;
 			SELECT 	tmp.TransID			AS TransID
 				,	tmp.TransTime		AS TransTime
@@ -76,8 +134,7 @@ BEGIN
 				LIMIT ip_Skip, ip_Take;
 			
 			SET op_TotalItem = @TotalRow;
-		END IF;
-	ELSE
+	ELSE # Transaction History Report    
 		SET @TotalRow = 0;
 		SELECT 	tmp.TransTime		AS TransTime
 			,	tmp.TransID			AS TransID
@@ -108,12 +165,13 @@ BEGIN
 					LEFT JOIN DCS_DataCenter.ActionResult AS ar ON trs.ActionResultID = ar.ActionResultID
 					LEFT JOIN DCS_DataCenter.URL AS ur ON trs.URLID = ur.URLID
 				WHERE trs.CreatedDate BETWEEN ip_FromDate AND ip_ToDate
+					AND trs.SubscriberID = ip_SubscriberID
 				) AS tmp
 			ORDER BY TransTime DESC            
 			LIMIT ip_Skip, ip_Take;
 			
 			SET op_TotalItem = @TotalRow;
-		END IF;
+	END IF;
 END$$
 
 DELIMITER ;
