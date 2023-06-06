@@ -33,8 +33,11 @@ BEGIN
         ,	RegisterName	VARCHAR(50)
         ,	CTSCustID		BIGINT UNSIGNED
         ,	SubscriberID	INT
+        ,	LastLoginTime	DATETIME(4)
         
+        ,	INDEX IX_Temp_Customer_LastLoginTime(LastLoginTime)
 	);
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_UserName;
     CREATE TEMPORARY TABLE Temp_UserName(
 			UserName		VARCHAR(50)  PRIMARY KEY        
@@ -46,22 +49,24 @@ BEGIN
 	EXECUTE stmt1;
 
     #========SEARCH BY USERNAME=====================
-    INSERT INTO Temp_Customer (CTSCustID, Username, RegisterName, SubscriberID)
+    INSERT INTO Temp_Customer (CTSCustID, Username, RegisterName, SubscriberID, LastLoginTime)
     SELECT	cus.CTSCustID
 		,	cus.Username
         ,	cus.RegisterName
         ,	cus.SubscriberID
+        ,	cus.LastLoginTime
     FROM CTS_DataCenter.CTSCustomer AS cus
-		INNER JOIN Temp_UserName AS tmp ON  cus.SubscriberID = ip_SubscriberID AND cus.UserName LIKE CONCAT(tmp.UserName,'%') ;
+		INNER JOIN Temp_UserName AS tmp ON  cus.SubscriberID = ip_SubscriberID AND cus.UserName LIKE CONCAT(tmp.UserName,'%') AND cus.IsInternal = 0 AND cus.LastLoginTime IS NOT NULL;
         
 	#========SEARCH BY USERNAME2=====================
-	INSERT IGNORE INTO Temp_Customer (CTSCustID, Username, RegisterName, SubscriberID)
+	INSERT IGNORE INTO Temp_Customer (CTSCustID, Username, RegisterName, SubscriberID, LastLoginTime)
     SELECT	cus.CTSCustID
 		,	cus.Username
         ,	cus.RegisterName
         ,	cus.SubscriberID
+        ,	cus.LastLoginTime
     FROM CTS_DataCenter.CTSCustomer AS cus
-		INNER JOIN Temp_UserName AS tmp ON cus.SubscriberID = ip_SubscriberID AND cus.UserName2 LIKE CONCAT(tmp.UserName,'%') ;
+		INNER JOIN Temp_UserName AS tmp ON cus.SubscriberID = ip_SubscriberID AND cus.UserName2 LIKE CONCAT(tmp.UserName,'%') AND cus.IsInternal = 0 AND cus.LastLoginTime IS NOT NULL;
     
     SET op_TotalItem = (SELECT COUNT(1) FROM Temp_Customer);
     
@@ -70,8 +75,8 @@ BEGIN
         ,	tmpCus.RegisterName
         ,	tmpCus.SubscriberID
     FROM Temp_Customer AS tmpCus
-    ORDER BY tmpCus.CTSCustID DESC
-	LIMIT ip_Skip, ip_Take ;
+    ORDER BY tmpCus.LastLoginTime DESC
+	LIMIT ip_Skip, ip_Take;
     
 END$$
 DELIMITER ;

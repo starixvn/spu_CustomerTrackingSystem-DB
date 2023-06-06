@@ -49,7 +49,7 @@ BEGIN
         ,	cus.RegisterName
         ,	cus.SubscriberID
     FROM CTS_DataCenter.CTSCustomer AS cus
-		INNER JOIN Temp_UserName AS tmp ON cus.SubscriberID = ip_SubscriberID AND tmp.UserName = cus.RegisterName;
+		INNER JOIN Temp_UserName AS tmp ON cus.SubscriberID = ip_SubscriberID AND tmp.UserName = cus.RegisterName AND cus.IsInternal = 0;
         
     DELETE tmpNm
     FROM Temp_UserName AS tmpNm
@@ -62,7 +62,7 @@ BEGIN
         ,	cus.RegisterName
         ,	cus.SubscriberID
     FROM CTS_DataCenter.CTSCustomer AS cus
-		INNER JOIN Temp_UserName AS tmp ON cus.SubscriberID = ip_SubscriberID AND tmp.UserName = cus.UserName;
+		INNER JOIN Temp_UserName AS tmp ON cus.SubscriberID = ip_SubscriberID AND tmp.UserName = cus.UserName AND cus.IsInternal = 0;
     
     SELECT	tmpCus.CTSCustID
 		,	tmpCus.Username

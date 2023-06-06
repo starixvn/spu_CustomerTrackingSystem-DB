@@ -109,7 +109,7 @@ BEGIN
 		,	tmpAa.OtherDeives
 		,	tmpAa.AssociatedAccount
     FROM Temp_AssociationAccount AS tmpAa
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpAa.CTSCustID = cus.CTSCustID
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpAa.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0
 	ORDER BY IsFirstCust DESC, MaxCreatedTime DESC
     LIMIT ip_Skip, ip_Take;
 	

@@ -103,7 +103,7 @@ BEGIN
 					,	trs.IP
 				FROM	DCS_DataCenter.Transaction07 trs 
 					INNER JOIN CTS_DataCenter.CustDCSAccount AS ca ON trs.AccountID = ca.AccountID AND ca.SubscriberID = trs.SubscriberID
-					INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ca.CTSCustID = cus.CTSCustID 
+					INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ca.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0
 					LEFT JOIN DCS_DataCenter.UserAgent AS uag ON trs.UserAgentKey = uag.UserAgentKey
 					LEFT JOIN DCS_DataCenter.ActionResult AS ar ON trs.ActionResultID = ar.ActionResultID
 					LEFT JOIN DCS_DataCenter.URL AS ur ON trs.URLID = ur.URLID

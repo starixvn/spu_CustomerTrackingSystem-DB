@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Transaction_GetLastestBySubscriber`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Transaction_GetLatestBySubscriber`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transaction_GetLastestBySubscriber`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transaction_GetLatestBySubscriber`(
 		IN	ip_SubscriberID	INT	
     ,	IN	ip_Length		INT
     ,	IN	ip_Skip			INT
@@ -84,7 +84,7 @@ BEGIN
             ,	ts.IP
 		FROM DCS_DataCenter.Transaction07 PARTITION(",lv_Partition,") AS ts
 			INNER JOIN CTS_DataCenter.CustDCSAccount AS ca ON ts.AccountID = ca.AccountID AND ca.SubscriberID = ts.SubscriberID
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ca.CTSCustID = cus.CTSCustID 
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ca.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0
 			LEFT JOIN DCS_DataCenter.UserAgent AS ua ON ts.UserAgentKey = ua.UserAgentKey
 			LEFT JOIN DCS_DataCenter.ActionResult AS ar ON ts.ActionResultID = ar.ActionResultID
 			LEFT JOIN DCS_DataCenter.URL AS ur ON ts.URLID = ur.URLID AND ts.SubscriberID = ur.SubscriberID
