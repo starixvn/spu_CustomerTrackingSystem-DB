@@ -4,7 +4,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CTS_Association_IpSharedLast3Days]
+ALTER PROCEDURE [dbo].[CTS_Association_IpSharedLast3Days]
 		@ListCustId				VARCHAR(MAX) = ''
 
 AS
@@ -15,6 +15,7 @@ AS
 
 	Revisions:
 		- 20230314@Long.Luu:	Created [Redmine ID: #184771]
+		- 20230602@Long.Luu:	Add new agent as internal account [Redmine ID: #188554]
 
 	Params Explaination:
 
@@ -101,12 +102,12 @@ BEGIN
 	FROM #tmp_CustID AS t
 		INNER JOIN dbo.bettrans AS b WITH(NOLOCK) ON b.CustID = t.CustID	
 		INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) on b.custid = c.custid	
-	WHERE b.username NOT LIKE '%CashOut' 
-		AND b.srecommend NOT IN (41430709) 
+	WHERE b.srecommend NOT IN (41430709) 
 		AND b.mrecommend NOT IN (27899314,11656504,12146012) 
-		AND b.recommend NOT IN (52466, 5707545,29270764,134456)
-		AND b.currency NOT IN (20,27,28)
+		AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409)
+		AND b.username NOT LIKE '%CashOut' 
 		AND c.site NOT IN ('Nextbet','9wickets','9wsports')
+		AND b.currency NOT IN (20,27,28)
 		AND b.IP IS NOT NULL;
 
 	CREATE CLUSTERED INDEX #CIX_tmp_Bettrans ON #tmp_Bettrans (

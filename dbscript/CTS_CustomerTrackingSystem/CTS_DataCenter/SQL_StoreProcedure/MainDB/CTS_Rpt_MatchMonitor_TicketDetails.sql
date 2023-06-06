@@ -34,6 +34,7 @@ AS
 		- 202302220@Victoria.Le	Modify Formula to calculate Odds - For US Odds [Redmine ID: #184041]
 		- 20230105@Victoria.Le	Get GlobalShowTime instead of KickOffTime
 								Return StakeRM [Redmine ID: #181995]
+		- 20230602@Long.Luu:	Add new agent as internal account [Redmine ID: #188554]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize)
@@ -218,10 +219,12 @@ BEGIN
 				AND b.LiveIndicator = @IsLive
 				AND b.Currency NOT IN (20,27,28)
 				AND b.BetFrom NOT IN ('p','m','w','0','3','6')
-				AND b.recommend NOT IN (52466,5707545) -- 8RM, BARM
 				AND b.Username NOT LIKE '%Cashout%'
+				AND b.srecommend NOT IN (41430709) 
+				AND b.mrecommend NOT IN (27899314,11656504,12146012) 
+				AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409)		
+				AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 				AND l.LeagueGroupID NOT IN (42,74,108,113) -- SABA leagues
-				AND c.Site NOT IN ('NextBet','9wickets','9wsports')
 				AND ISNULL(b.oddstype,0) <> 0
 			ORDER BY b.sequenceid ASC
 				;

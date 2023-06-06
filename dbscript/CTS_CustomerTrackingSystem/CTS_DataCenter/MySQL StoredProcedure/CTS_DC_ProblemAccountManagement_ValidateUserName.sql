@@ -15,6 +15,7 @@ BEGIN
 		Revisions:
 			- 20220307@Irena.Vo: Created [Redmine ID: #159014]
             - 20220518@Casey.Huynh: Renovate PA Process [Redmine ID: #172561]
+            
 		Param's Explanation (filtered by):
         Example:
 			CALL CTS_DC_ProblemAccountManagement_ValidateUserName('338HK,338HK,188HK,SMMH,djjdhdh,078HK,078HKSub01,BODOGACCAUD,BODOGACCUS$88,SA-SD$CashOut'); #--> Return Error

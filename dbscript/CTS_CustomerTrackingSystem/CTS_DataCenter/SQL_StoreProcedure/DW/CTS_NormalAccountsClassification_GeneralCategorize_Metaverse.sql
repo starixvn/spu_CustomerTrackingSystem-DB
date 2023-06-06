@@ -17,6 +17,7 @@ AS
 	Revisions:
 		- 20220118@Long.Luu: Created [Redmine ID: #0000]
 		- 20230203@Jonas.Huynh: Update logic [Redmine ID: #0000]
+		- 20230602@Long.Luu:	Add new agent as internal account [Redmine ID: #188554]
 
 	Param's Explanation:
 				@CustomersXML = N'<Root>
@@ -143,7 +144,7 @@ BEGIN
 	WHERE (c.[Enabled] = 0 OR c.roleid <> 1)
 		OR c.srecommend IN (41430709)
 		OR c.mrecommend IN (27899314,11656504,12146012)
-		OR c.recommend IN (52466,5707545,29270764,134456)
+		OR c.recommend IN (52466,5707545,29270764,134456,27787409)
 		OR c.username LIKE '%CashOut';
 	
 	-- #3: Get relevant info

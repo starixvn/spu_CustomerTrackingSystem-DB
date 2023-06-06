@@ -31,7 +31,8 @@ AS
 		- 20221006@Jonas.Huynh: New Rule for General Customer Classifiation [Redmine ID: #178022]
 		- 20221118@Jonas.Huynh: Update parameter of DW SP GetCustAccumulatedInfo [Redmine ID: #179500]
 		- 20230208@Jonas.Huynh: Check createdDate customer to rescan inactive [Redmine ID: #183582]
-		- 20230403@Jonas.Huynh: Modify betcount schedule for Normal & Good Member [Redmine ID: #185633]
+		- 20230403@Jonas.Huynh: Modify betcount schedule for Normal & Good Member [Redmine ID: #185633]		
+		- 20230602@Long.Luu:	Add new agent as internal account [Redmine ID: #188554]
 
 	Param's Explanation:
 				@CustomersXML = N'<Root>
@@ -169,7 +170,7 @@ BEGIN
 	WHERE (c.[Enabled] = 0 OR c.roleid <> 1)
 		OR c.srecommend IN (41430709)
 		OR c.mrecommend IN (27899314,11656504,12146012)
-		OR c.recommend IN (52466,5707545,29270764,134456)
+		OR c.recommend IN (52466,5707545,29270764,134456,27787409)
 		OR c.username LIKE '%CashOut';
 
     -- #3: Get relevant info
