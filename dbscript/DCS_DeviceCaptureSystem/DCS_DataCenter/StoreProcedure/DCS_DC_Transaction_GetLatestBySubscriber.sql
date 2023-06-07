@@ -23,7 +23,7 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_DC_Transaction_GetLastestBySubscriber(@ip_SubscriberID:=6,@ip_Length:=2000,@ip_Skip:=2, @ip_Take:=20, @op_TotalItem); SELECT @op_TotalItem;
+			CALL DCS_DC_Transaction_GetLatestBySubscriber(@ip_SubscriberID:=6,@ip_Length:=2000,@ip_Skip:=2, @ip_Take:=20, @op_TotalItem); SELECT @op_TotalItem;
             SELECT * FROM DCS_DataCenter.Transaction07 WHERE SubscriberID = 6;
 */
 	DECLARE lv_Partition		VARCHAR(50);
@@ -34,6 +34,8 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_Transaction(	
 			TransID			BIGINT UNSIGNED
         ,	LoginName		VARCHAR(50)
+        ,	SubscriberID	INT
+        ,	CTSCustID		BIGINT UNSIGNED
 		,	TransTime		DATETIME(4)     
 		,	FirstDeviceCode	VARCHAR(64)
 		,	IP				VARCHAR(50)
@@ -71,9 +73,11 @@ BEGIN
 	WHILE (lv_LimitTrans > 0 AND lv_Partition IS NOT NULL) DO
 
         SET @sql = 	CONCAT("
-		INSERT INTO Temp_Transaction(TransTime, TransID, LoginName, FirstDeviceCode, Action, ActionResult, OS, Browser, URLDetails, IP)
-        SELECT	ts.TransTime
+		INSERT INTO Temp_Transaction(TransTime, TransID, SubscriberID, CTSCustID, LoginName, FirstDeviceCode, Action, ActionResult, OS, Browser, URLDetails, IP)
+        SELECT	ts.TransTime			
 			,	ts.TransID
+            ,	ts.SubscriberID
+            ,	ca.CTSCustID
 			,	ts.LoginName
 			,	ts.FirstDeviceCode
 			,	ar.Action
@@ -115,6 +119,8 @@ BEGIN
     
 	SELECT 	tmp.TransTime		AS TransTime
 		,	tmp.TransID			AS TransID
+        ,	tmp.SubscriberID	AS SubscriberID
+        ,	tmp.CTSCustID		AS CTSCustID
 		,	tmp.LoginName		AS LoginName
 		,	tmp.FirstDeviceCode	AS FirstDeviceCode
 		,	tmp.Action			AS Action

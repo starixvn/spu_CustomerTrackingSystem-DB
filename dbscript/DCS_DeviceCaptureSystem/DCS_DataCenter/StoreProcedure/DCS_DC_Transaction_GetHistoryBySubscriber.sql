@@ -33,7 +33,8 @@ BEGIN
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_Account;
 	CREATE TEMPORARY TABLE Temp_Account(
-		AccountID INT PRIMARY KEY
+			AccountID BIGINT UNSIGNED PRIMARY KEY
+        ,	CTSCustID BIGINT UNSIGNED
 	);
     
 	#=============GET CUSTOMER BY SEARCH====================================
@@ -69,14 +70,17 @@ BEGIN
 		WHERE cus.SubscriberID = ip_SubscriberID AND cus.RegisterName =  ip_UserName AND cus.IsInternal = 0;
 	END IF;
         
-	INSERT INTO Temp_Account(AccountID)
+	INSERT INTO Temp_Account(AccountID, CTSCustID)
 	SELECT	cda.AccountID
+		,	cda.CTSCustID
 	FROM CTS_DataCenter.CustDCSAccount AS cda
 		INNER JOIN Temp_Customer AS tmp ON cda.CTSCustID = tmp.CTSCustID;
         		
 	IF ip_UserName IS NOT NULL THEN 
 			SET @TotalRow = 0;
 			SELECT 	tmp.TransID			AS TransID
+				,	tmp.CTSCustID		AS CTSCustID
+                ,	ip_SubscriberID		AS SubscriberID
 				,	tmp.LoginName		AS RegisterName
 				,	tmp.TransTime		AS TransTime
 				,	tmp.FirstDeviceCode	AS FirstDeviceCode
@@ -89,6 +93,7 @@ BEGIN
 			FROM	(
 					SELECT 	@TotalRow := @TotalRow + 1
 						,	trs.TransTime
+                        ,	tmpAcc.CTSCustID
                         ,	trs.LoginName
 						,	trs.TransID
 						,	trs.FirstDeviceCode
@@ -112,6 +117,8 @@ BEGIN
 	ELSE # Transaction History Report    
 		SET @TotalRow = 0;
 		SELECT 	tmp.TransTime		AS TransTime
+			,	tmp.CTSCustID		AS CTSCustID
+             ,	ip_SubscriberID		AS SubscriberID
 			,	tmp.TransID			AS TransID
 			,	tmp.LoginName		AS LoginName
 			,	tmp.FirstDeviceCode	AS FirstDeviceCode
@@ -124,6 +131,7 @@ BEGIN
 		FROM	(
 				SELECT 	@TotalRow := @TotalRow + 1
 					,	trs.TransTime
+                    ,	ca.CTSCustID
 					,	trs.TransID
 					,	trs.LoginName
 					,	trs.FirstDeviceCode
