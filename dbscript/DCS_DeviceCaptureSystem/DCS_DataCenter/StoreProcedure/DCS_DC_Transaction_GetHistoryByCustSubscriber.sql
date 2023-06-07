@@ -2,7 +2,7 @@
 DROP PROCEDURE IF EXISTS `DCS_DC_Transaction_GetHistoryByCustSubscriber`;
 
 DELIMITER $$
-CREATE DEFINER=`casey.vn`@`%` PROCEDURE `DCS_DC_Transaction_GetHistoryByCustSubscriber`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transaction_GetHistoryByCustSubscriber`(
 		IN	ip_SubscriberID	INT	
     ,	IN	ip_FromDate		DATETIME
     ,	IN	ip_ToDate 		DATETIME
@@ -25,7 +25,7 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_DC_Transaction_GetHistoryBySubscriber(@ip_SubscriberID:=6,@ip_FromDate:='2023-01-01',@ip_ip_ToDate:='2023-01-15',@ip_CTSCustID:=5560,@ip_Skip:=0, @ip_Take:=2000, @op_TotalItem); SELECT @op_TotalItem;    
+			CALL DCS_DC_Transaction_GetHistoryByCustSubscriber(@ip_SubscriberID:=6,@ip_FromDate:='2023-01-01',@ip_ip_ToDate:='2023-01-15',@ip_CTSCustID:=1373636,@ip_Skip:=0, @ip_Take:=2000, @op_TotalItem); SELECT @op_TotalItem;    
     */
 	DROP TEMPORARY TABLE IF EXISTS Temp_Account;
 	CREATE TEMPORARY TABLE Temp_Account(

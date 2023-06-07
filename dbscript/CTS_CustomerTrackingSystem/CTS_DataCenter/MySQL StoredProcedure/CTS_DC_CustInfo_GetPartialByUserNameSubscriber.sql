@@ -23,7 +23,7 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL CTS_DataCenter.CTS_DC_CustInfo_GetPartialByUserNameSubscriber(@ip_SubscriberID:=6,@ip_NameList:='12BetAu', @ip_Skip:=0, @ip_Take:=100, @op_TotalItem1); SELECT @op_TotalItem1;
+			CALL CTS_DC_CustInfo_GetPartialByUserNameSubscriber(@ip_SubscriberID:=6,@ip_NameList:='12BetAu', @ip_Skip:=0, @ip_Take:=100, @op_TotalItem1); SELECT @op_TotalItem1;
 
 	*/   
 	
@@ -38,16 +38,6 @@ BEGIN
         ,	INDEX IX_Temp_Customer_LastLoginTime(LastLoginTime)
 	);
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_UserName;
-    CREATE TEMPORARY TABLE Temp_UserName(
-			UserName		VARCHAR(50)  PRIMARY KEY        
-	);
-
-	#============================================
-	SET @sql = CONCAT("INSERT INTO Temp_UserName (UserName) VALUES ('", REPLACE(ip_UserName, ",", "'),('"),"');");
-	PREPARE stmt1 FROM @sql;
-	EXECUTE stmt1;
-
     #========SEARCH BY USERNAME=====================
     INSERT INTO Temp_Customer (CTSCustID, Username, RegisterName, SubscriberID, LastLoginTime)
     SELECT	cus.CTSCustID
@@ -56,8 +46,8 @@ BEGIN
         ,	cus.SubscriberID
         ,	cus.LastLoginTime
     FROM CTS_DataCenter.CTSCustomer AS cus
-		INNER JOIN Temp_UserName AS tmp ON  cus.SubscriberID = ip_SubscriberID AND cus.UserName LIKE CONCAT(tmp.UserName,'%') AND cus.IsInternal = 0 AND cus.LastLoginTime IS NOT NULL;
-        
+    WHERE cus.SubscriberID = ip_SubscriberID AND cus.RegisterName LIKE CONCAT(ip_UserName,'%') AND cus.IsInternal = 0 AND cus.LastLoginTime IS NOT NULL;
+    
 	#========SEARCH BY USERNAME2=====================
 	INSERT IGNORE INTO Temp_Customer (CTSCustID, Username, RegisterName, SubscriberID, LastLoginTime)
     SELECT	cus.CTSCustID
@@ -66,7 +56,7 @@ BEGIN
         ,	cus.SubscriberID
         ,	cus.LastLoginTime
     FROM CTS_DataCenter.CTSCustomer AS cus
-		INNER JOIN Temp_UserName AS tmp ON cus.SubscriberID = ip_SubscriberID AND cus.UserName2 LIKE CONCAT(tmp.UserName,'%') AND cus.IsInternal = 0 AND cus.LastLoginTime IS NOT NULL;
+	WHERE cus.SubscriberID = ip_SubscriberID AND cus.UserName LIKE CONCAT(ip_UserName,'%') AND cus.IsInternal = 0 AND cus.LastLoginTime IS NOT NULL;
     
     SET op_TotalItem = (SELECT COUNT(1) FROM Temp_Customer);
     

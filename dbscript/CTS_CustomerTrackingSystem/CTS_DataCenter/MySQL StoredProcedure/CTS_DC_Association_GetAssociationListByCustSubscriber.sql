@@ -23,7 +23,7 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL CTS_DC_Association_GetAssociationListAccountByCustSubscriber(@ip_SubscriberID:=6,@ip_CTSCustID:=14417,@ip_Skip:=0, @ip_Take:=10, @op_TotalItem); SELECT @op_TotalItem;
+			CALL CTS_DC_Association_GetAssociationListByCustSubscriber(@ip_SubscriberID:=6,@ip_CTSCustID:=1379028,@ip_Skip:=0, @ip_Take:=10, @op_TotalItem); SELECT @op_TotalItem;
 	*/
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Association01;
@@ -62,6 +62,7 @@ BEGIN
         
         ,	INDEX IX_Temp_AssociationAccount(IsFirstCust DESC, MaxCreatedTime DESC)
     );
+    
     #======GET ACCOUNT LIST: ip_CTSCustID AND ASSOCIATED CUSTOMER=======================================    
     INSERT INTO Temp_Association01(CTSCustID, DCSDeviceID, CreatedTime)
     SELECT	abd.CTSCustID
@@ -76,7 +77,7 @@ BEGIN
 		INNER JOIN Temp_Association01 AS tmpAs1 ON abd.DCSDeviceID = tmpAs1.DCSDeviceID AND abd.SubscriberID = ip_SubscriberID;
     
     #=====GET ASSOCIATION LIST===============================================================================
-    INSERT INTO Temp_Association01(CTSCustID, DCSDeviceID, CreatedTime)
+    INSERT IGNORE INTO Temp_Association01(CTSCustID, DCSDeviceID, CreatedTime)
     SELECT	abd.CTSCustID
 		,	abd.DCSDeviceID
         ,	abd.CreatedTime

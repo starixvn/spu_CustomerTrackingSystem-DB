@@ -3,8 +3,8 @@ DROP PROCEDURE IF EXISTS `CTS_DC_CustInfo_GetByNameSubscriber`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustInfo_GetByNameSubscriber`(
-		IN ip_SubscriberID		INT
-	,	IN ip_UserNameList		TEXT       
+		IN ip_SubscriberID	INT
+	,	IN ip_UserName		VARCHAR(50)
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -20,28 +20,18 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL CTS_DC_CustInfo_GetByNameSubscriber(@ip_SubscriberID:=6,@ip_NameList:='12Bet-Collection USD,12Bet12MoonstoneTransUS$,12BETAFF1287CashOut,12BETAUD01042,mummy');
-
+			CALL CTS_DC_CustInfo_GetByNameSubscriber(@ip_SubscriberID:=6,@ip_UserName:='12BETAUD01005');
+			CALL CTS_DC_CustInfo_GetByNameSubscriber(@ip_SubscriberID:=6,@ip_UserName:='wintiger');
 	*/   
-	DROP TEMPORARY TABLE IF EXISTS Temp_UserName;
-    CREATE TEMPORARY TABLE Temp_UserName(
-			UserName 	VARCHAR(100)
-	);
-	
+
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
     CREATE TEMPORARY TABLE Temp_Customer(
 			UserName		VARCHAR(50)  PRIMARY KEY
         ,	RegisterName	VARCHAR(50)
         ,	CTSCustID		BIGINT UNSIGNED
-        ,	SubscriberID	INT
-        
+        ,	SubscriberID	INT        
 	);
     
-	#============================================
-	SET @sql = CONCAT("INSERT INTO Temp_UserName (UserName) VALUES ('", REPLACE(ip_UserNameList, ",", "'),('"),"');");
-	PREPARE stmt1 FROM @sql;
-	EXECUTE stmt1;
-	
 	#========SEARCH BY USERNAME2=====================
 	INSERT IGNORE INTO Temp_Customer (CTSCustID, Username, RegisterName, SubscriberID)
     SELECT	cus.CTSCustID
@@ -49,11 +39,7 @@ BEGIN
         ,	cus.RegisterName
         ,	cus.SubscriberID
     FROM CTS_DataCenter.CTSCustomer AS cus
-		INNER JOIN Temp_UserName AS tmp ON cus.SubscriberID = ip_SubscriberID AND tmp.UserName = cus.RegisterName AND cus.IsInternal = 0;
-        
-    DELETE tmpNm
-    FROM Temp_UserName AS tmpNm
-		INNER JOIN Temp_Customer AS tmpCus ON tmpNm.UserName = tmpCus.UserName;
+	WHERE cus.SubscriberID = ip_SubscriberID AND cus.RegisterName = ip_UserName AND cus.IsInternal = 0;        
         
 	#========SEARCH BY USERNAME=====================
     INSERT INTO Temp_Customer (CTSCustID, Username, RegisterName, SubscriberID)
@@ -62,7 +48,7 @@ BEGIN
         ,	cus.RegisterName
         ,	cus.SubscriberID
     FROM CTS_DataCenter.CTSCustomer AS cus
-		INNER JOIN Temp_UserName AS tmp ON cus.SubscriberID = ip_SubscriberID AND tmp.UserName = cus.UserName AND cus.IsInternal = 0;
+	WHERE cus.SubscriberID = ip_SubscriberID AND cus.Username = ip_UserName AND cus.IsInternal = 0;
     
     SELECT	tmpCus.CTSCustID
 		,	tmpCus.Username
