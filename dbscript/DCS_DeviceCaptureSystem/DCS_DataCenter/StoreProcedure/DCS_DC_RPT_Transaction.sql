@@ -21,7 +21,7 @@ BEGIN
 
 	    Revisions:		    
 			-	20210930@Casey.Huynh: Created [Redmine ID: 161528]
-			-	20230606@Jonathan.Doan: Monitor Transaction Level Subscriber [Redmine ID: 189323]
+            -	20230606@Jonathan.Doan: Monitor Transaction Level Subscriber [Redmine ID: 189323]
             
 	    Param's Explanation (filtered by):
         
@@ -63,11 +63,10 @@ BEGIN
 		,	SUM(IFNULL(ts.ValidDeviceStatusOld,0)) AS 'ValidTransOldDevice'
 		,	SUM(IFNULL(ts.ValidDeviceStatusRecover,0)) AS 'ValidTransRecoverDevice'
 		,	SUM(IFNULL(ts.ValidNoDevice,0)) AS 'ValidTransNoDevice'  
-		,	SUM(IFNULL(rt.TransTotal,0)) - SUM(IFNULL(ts.ValidTotal,0)) AS 'InvalidTrans'  
+		,	SUM(IFNULL(rt.TransTotal,0)) - SUM(IFNULL(ts.ValidTotal,0)) AS 'InvalidTrans'
 		,	SUM(IFNULL(ts.ValidBrowserless,0)) AS 'ValidBrowserless'
 	FROM Temp_Subscriber AS tmpSb
-		LEFT JOIN DCS_DataCenter.SumRawTransaction AS rt ON rt.SubscriberID = tmpSb.SubscriberID 
-														AND rt.TransDate BETWEEN ip_FromDate AND ip_ToDate
+		LEFT JOIN DCS_DataCenter.SumRawTransaction AS rt ON rt.SubscriberID = tmpSb.SubscriberID AND rt.TransDate BETWEEN ip_FromDate AND ip_ToDate
 		LEFT JOIN DCS_DataCenter.SumTransaction AS ts ON rt.TransDate = ts.TransDate AND rt.SubscriberID = ts.SubscriberID
 	GROUP BY tmpSb.SubscriberID, tmpSb.SubscriberName;
     

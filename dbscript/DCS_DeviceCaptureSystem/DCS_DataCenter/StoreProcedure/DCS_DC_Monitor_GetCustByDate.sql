@@ -1,9 +1,9 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Monitor_CustDaily`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Monitor_GetCustByDate`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Monitor_CustDaily`(
-		IN ip_Date 			DATE
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Monitor_GetCustByDate`(
+		IN ip_TransDate 		DATE
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -18,13 +18,17 @@ BEGIN
             
 	    Param's Explanation (filtered by):
         
-        Example: CALL DCS_DC_Monitor_CustDaily('2023-06-06');
+        Example: CALL DCS_DC_Monitor_GetCustByDate('2023-06-06');
     */    
+    
+    DECLARE lv_LastMillisecondOfDate DATETIME(4);
+    
+    SET lv_LastMillisecondOfDate = CONCAT(DATE_FORMAT(ip_TransDate, '%Y-%m-%d'), ' 23:59:59.9999');
     
     SELECT DISTINCT cus.CTSCustID
 	FROM DCS_DataCenter.Transaction07 AS trans
 		INNER JOIN CTS_DataCenter.CustDCSAccount AS cus ON cus.AccountID = trans.AccountID
-	WHERE trans.TransTime BETWEEN ip_Date AND '2023-04-01 23:59:59.9999';
+	WHERE trans.TransTime BETWEEN ip_TransDate AND lv_LastMillisecondOfDate;
     
 END$$
 DELIMITER ;
