@@ -25,7 +25,9 @@ BEGIN
 			- 	20230601@Casey.Huynh: Created [Redmine ID: 185787]
 			
 		Param's Explanation (filtered by):
-			
+			ip_CTSCustID: null from Transaction History Report else from Details Page > Transaction History table
+            ip_UserName: not null from Transaction History Report else from Details Page > Transaction History table
+            ip_IsPartial: not null from Transaction History Report else from Details Page > Transaction History table
 		Example:
 			CALL DCS_DC_Transaction_GetHistoryBySubscriber(@ip_SubscriberID:=6,@ip_FromDate:='2023-01-01',@ip_ip_ToDate:='2023-01-15'
             ,@ip_CTSCustID:=null,@ip_UserName:=null,@ip_IsPartial:=null,@ip_Skip:=0, @ip_Take:=2000, @op_TotalItem); SELECT @op_TotalItem;
