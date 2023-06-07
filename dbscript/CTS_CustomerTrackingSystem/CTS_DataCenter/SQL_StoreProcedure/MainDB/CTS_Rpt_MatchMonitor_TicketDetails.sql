@@ -35,6 +35,7 @@ AS
 		- 20230105@Victoria.Le	Get GlobalShowTime instead of KickOffTime
 								Return StakeRM [Redmine ID: #181995]
 		- 20230602@Long.Luu:	Add new agent as internal account [Redmine ID: #188554]
+		- 20230607@Long.Luu:	Exclude more Saba's LeagueGroupID [Redmine ID: #189439]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize)
@@ -224,7 +225,7 @@ BEGIN
 				AND b.mrecommend NOT IN (27899314,11656504,12146012) 
 				AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409)		
 				AND c.site NOT IN ('Nextbet','9wickets','9wsports')
-				AND l.LeagueGroupID NOT IN (42,74,108,113) -- SABA leagues
+				AND l.LeagueGroupID NOT IN (42,74,108,113,122,151) -- SABA leagues
 				AND ISNULL(b.oddstype,0) <> 0
 			ORDER BY b.sequenceid ASC
 				;
