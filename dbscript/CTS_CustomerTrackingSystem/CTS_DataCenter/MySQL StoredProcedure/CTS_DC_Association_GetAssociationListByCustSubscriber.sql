@@ -28,9 +28,11 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Association01;
 	CREATE TEMPORARY TABLE Temp_Association01(
-			CTSCustID	BIGINT UNSIGNED
-        ,	DCSDeviceID	BIGINT
-        ,	CreatedTime	DATETIME(4)
+			CTSCustID		BIGINT UNSIGNED
+        ,	DCSDeviceID		BIGINT
+        ,	CreatedTime		DATETIME(4)
+		,	UserName 		VARCHAR(50)
+        ,	RegisterName	VARCHAR(50)
         
         ,	PRIMARY KEY PK_Temp_Association01(CTSCustID, DCSDeviceID)
         ,	INDEX IX_Temp_Association01_DCSDeviceID(DCSDeviceID)
@@ -41,6 +43,8 @@ BEGIN
 			CTSCustID	BIGINT UNSIGNED
         ,	DCSDeviceID	BIGINT
         ,	CreatedTime	DATETIME(4)
+		,	UserName 		VARCHAR(50)
+        ,	RegisterName	VARCHAR(50)
         
         ,	PRIMARY KEY PK_Temp_Association02(DCSDeviceID,CTSCustID)
         ,	INDEX IX_Temp_Association02_DCSDeviceID(CTSCustID)
@@ -48,12 +52,15 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
 	CREATE TEMPORARY TABLE Temp_Customer(
-		CTSCustID	BIGINT UNSIGNED
+			CTSCustID		BIGINT UNSIGNED PRIMARY KEY        
     );
-    
+    #Error Code: 1054. Unknown column 'tmpAa.CTSCustID' in 'on clause'
+
 	DROP TEMPORARY TABLE IF EXISTS Temp_AssociationAccount;
     CREATE TEMPORARY TABLE Temp_AssociationAccount(
 			CTSCustID			BIGINT UNSIGNED PRIMARY KEY
+		,	UserName 			VARCHAR(50)
+        ,	RegisterName		VARCHAR(50)
         ,	DeviceInCommon		INT
         ,	OtherDeives			INT
         ,	AssociatedAccount	INT
@@ -64,34 +71,40 @@ BEGIN
     );
     
     #======GET ACCOUNT LIST: ip_CTSCustID AND ASSOCIATED CUSTOMER=======================================    
-    INSERT INTO Temp_Association01(CTSCustID, DCSDeviceID, CreatedTime)
+    INSERT INTO Temp_Association01(CTSCustID, DCSDeviceID, CreatedTime, UserName, RegisterName)
     SELECT	abd.CTSCustID
 		,	abd.DCSDeviceID
         ,	abd.CreatedTime
+        ,	cus.UserName
+        ,	cus.RegisterName
     FROM CTS_DataCenter.AssociationByDevice AS abd
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON abd.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0
     WHERE abd.SubscriberID = ip_SubscriberID AND abd.CTSCustID = ip_CTSCustID;
     
     INSERT INTO Temp_Customer(CTSCustID)
-    SELECT abd.CTSCustID
+    SELECT DISTINCT abd.CTSCustID
     FROM CTS_DataCenter.AssociationByDevice AS abd
-		INNER JOIN Temp_Association01 AS tmpAs1 ON abd.DCSDeviceID = tmpAs1.DCSDeviceID AND abd.SubscriberID = ip_SubscriberID;
-    
+		INNER JOIN Temp_Association01 AS tmpAs1 ON abd.DCSDeviceID = tmpAs1.DCSDeviceID AND abd.SubscriberID = ip_SubscriberID;    
+
     #=====GET ASSOCIATION LIST===============================================================================
+
     INSERT IGNORE INTO Temp_Association01(CTSCustID, DCSDeviceID, CreatedTime)
     SELECT	abd.CTSCustID
 		,	abd.DCSDeviceID
         ,	abd.CreatedTime
     FROM CTS_DataCenter.AssociationByDevice AS abd
 		INNER JOIN Temp_Customer AS tmpCus ON abd.SubscriberID = ip_SubscriberID AND abd.CTSCustID = tmpCus.CTSCustID AND abd.CTSCustID <> ip_CTSCustID;
-    
+
     INSERT INTO Temp_Association02(CTSCustID, DCSDeviceID, CreatedTime)
     SELECT	tmpAs1.CTSCustID
 		,	tmpAs1.DCSDeviceID
         ,	tmpAs1.CreatedTime
     FROM Temp_Association01 AS tmpAs1;
-    
-    INSERT INTO Temp_AssociationAccount(CTSCustID, DeviceInCommon, OtherDeives, AssociatedAccount, IsFirstCust, MaxCreatedTime)
+
+    INSERT INTO Temp_AssociationAccount(CTSCustID, UserName, RegisterName, DeviceInCommon, OtherDeives, AssociatedAccount, IsFirstCust, MaxCreatedTime)
     SELECT	tmpAs1.CTSCustID
+		,	tmpAs1.UserName
+        ,	tmpAs2.RegisterName
 		,	COUNT(DISTINCT(CASE WHEN tmpAs2.CTSCustID IS NOT NULL THEN tmpAs2.DCSDeviceID ELSE NULL END)) AS DeviceInCommon
         ,	COUNT(DISTINCT(CASE WHEN tmpAs2.CTSCustID IS NULL THEN tmpAs1.DCSDeviceID ELSE NULL END)) AS OtherDevices
 		,	COUNT(DISTINCT(CASE WHEN tmpAs2.CTSCustID IS NOT NULL THEN tmpAs2.CTSCustID ELSE NULL END)) AS AsscociatedAccount
@@ -99,18 +112,17 @@ BEGIN
         ,	MAX(tmpAs1.CreatedTime) AS MaxCreatedTime
     FROM Temp_Association01 AS tmpAs1
 		LEFT JOIN Temp_Association02 AS tmpAs2 ON tmpAs1.DCSDeviceID = tmpAs2.DCSDeviceID AND tmpAs1.CTSCustID <> tmpAs2.CTSCustID
-	GROUP BY tmpAs1.CTSCustID;
-    
+	GROUP BY tmpAs1.CTSCustID, tmpAs1.UserName, tmpAs2.RegisterName;
+
     SET op_TotalItem = (SELECT COUNT(1) FROM Temp_AssociationAccount);
-    
+
 	SELECT	tmpAa.CTSCustID
-		,	cus.UserName
-        ,	cus.RegisterName
+		,	tmpAa.UserName
+        ,	tmpAa.RegisterName
 		,	tmpAa.DeviceInCommon
 		,	tmpAa.OtherDeives
 		,	tmpAa.AssociatedAccount
-    FROM Temp_AssociationAccount AS tmpAa
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpAa.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0
+    FROM Temp_AssociationAccount AS tmpAa		
 	ORDER BY IsFirstCust DESC, MaxCreatedTime DESC
     LIMIT ip_Skip, ip_Take;
 	
