@@ -265,11 +265,11 @@ BEGIN
 					OR (r.RuleGroupId = 9 AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.WinlossRM <= r.WinlossRM)					-- PROBATION
 					OR (r.RuleGroupId = 10 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin)												-- PROBATION
 					OR (r.RuleGroupId = 11 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM >= r.WinlossRM)				-- PROBATION
-					OR (r.RuleGroupId = 12 AND (a.IsProbationLastDay IS NULL OR (a.IsProbationLastDay IS NOT NULL AND a.IsProbationLastDay = r.IsProbationLastDay) AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.WinlossRM > r.WinlossRM) -- SMART
+					OR (r.RuleGroupId = 12 AND (a.IsProbationLastDay IS NULL OR (a.IsProbationLastDay IS NOT NULL AND a.IsProbationLastDay = r.IsProbationLastDay)) AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.WinlossRM > r.WinlossRM) -- SMART
 					OR (r.RuleGroupId = 13 AND a.BetCount >= r.BetCount AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM AND a.WinlossRM <= r.WinlossRM2)				-- SMART
 					OR (r.RuleGroupId = 14 AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM AND a.WinlossRM <= r.WinlossRM2)											-- SMART
 					OR (r.RuleGroupId = 15 AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.WinlossRM > r.WinlossRM)												-- SMART
-					OR (r.RuleGroupId = 16 AND (a.IsProbationLastDay IS NULL OR (a.IsProbationLastDay IS NOT NULL AND a.IsProbationLastDay = r.IsProbationLastDay) AND a.BetCount >= r.BetCount AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM) -- RISKY
+					OR (r.RuleGroupId = 16 AND (a.IsProbationLastDay IS NULL OR (a.IsProbationLastDay IS NOT NULL AND a.IsProbationLastDay = r.IsProbationLastDay)) AND a.BetCount >= r.BetCount AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM) -- RISKY
 					OR (r.RuleGroupId = 17 AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM))																			-- RISKY
 		) AS b
 		INNER JOIN #tmpCustomerAccummulatedInfo AS t ON t.CustId = b.CustId
