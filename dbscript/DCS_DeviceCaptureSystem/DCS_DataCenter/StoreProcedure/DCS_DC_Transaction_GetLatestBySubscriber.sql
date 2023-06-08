@@ -34,6 +34,7 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_Transaction(	
 			TransID			BIGINT UNSIGNED
         ,	LoginName		VARCHAR(50)
+        ,	UserName		VARCHAR(50)
         ,	SubscriberID	INT
         ,	CTSCustID		BIGINT UNSIGNED
 		,	TransTime		DATETIME(4)     
@@ -73,12 +74,13 @@ BEGIN
 	WHILE (lv_LimitTrans > 0 AND lv_Partition IS NOT NULL) DO
 
         SET @sql = 	CONCAT("
-		INSERT INTO Temp_Transaction(TransTime, TransID, SubscriberID, CTSCustID, LoginName, FirstDeviceCode, Action, ActionResult, OS, Browser, URLDetails, IP)
+		INSERT INTO Temp_Transaction(TransTime, TransID, SubscriberID, CTSCustID, LoginName, UserName, FirstDeviceCode, Action, ActionResult, OS, Browser, URLDetails, IP)
         SELECT	ts.TransTime			
 			,	ts.TransID
             ,	ts.SubscriberID
             ,	ca.CTSCustID
 			,	ts.LoginName
+            ,	cus.UserName
 			,	ts.FirstDeviceCode
 			,	ar.Action
 			,	ar.ActionResult
@@ -122,6 +124,7 @@ BEGIN
         ,	tmp.SubscriberID	AS SubscriberID
         ,	tmp.CTSCustID		AS CTSCustID
 		,	tmp.LoginName		AS LoginName
+        ,	tmp.UserName		AS UserName
 		,	tmp.FirstDeviceCode	AS FirstDeviceCode
 		,	tmp.Action			AS Action
 		,	tmp.ActionResult	AS ActionResult
