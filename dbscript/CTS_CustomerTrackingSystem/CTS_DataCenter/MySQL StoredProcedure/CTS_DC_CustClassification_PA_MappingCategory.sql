@@ -23,6 +23,7 @@ BEGIN
 			- 20220627@Casey.Huynh: 	Classify Match Monitor Results, Add MatchID [Redmine ID: #174218]
 			- 20220913@Casey.Huynh: 	Update Remark [Redmine ID: #176976]
 			- 20230404@Victoria.Le		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeID [Redmine ID: #185319] 
+			- 20230601@Victoria.Le:		Add TVSRequestID <> 0 for TVSRequestID IS NOT NULL [Redmine ID: #189023]
             
 		Param's Explanation (filtered by):      
 			CALL CTS_DC_CustClassification_PA_MappingCategory ('Category','[{"CustID": 3679910,"ReasonID": 3679910,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10, "MatchID": 1}]');
@@ -67,7 +68,7 @@ BEGIN
         ,	DataChangeType			TINYINT DEFAULT 0	# 0: New OR Change Category, 1: Change Probation Status, 2: NOT CHANGE
         ,	OldCategoryID		    SMALLINT
         ,	SpecialCC				SMALLINT UNSIGNED
-        ,	TVSRequestID			INT DEFAULT NULL
+        ,	TVSRequestID			BIGINT UNSIGNED
         ,	LastModifiedDate		DATETIME
         ,	IsFromOldPA				BOOLEAN
         ,	PinCTSCustID			BIGINT UNSIGNED			
@@ -154,7 +155,8 @@ BEGIN
             ,	tmpJs.LastModifiedDate
             ,	pin.CTSCustID
 			,	tmpJs.MatchID
-			,	tmpJs.TVSRequestID
+			,	CASE WHEN IFNULL(tmpJs.TVSRequestID,0) = 0 AND tmpJs.IsFromTVS = 0 THEN NULL
+					 ELSE tmpJs.TVSRequestID END
 			,	tmpJs.IsParlay
 			,	tmpJs.SportType
 			,	tmpJs.IssueTypeID
@@ -181,7 +183,7 @@ BEGIN
 						, 	IsDataChanged		BOOLEAN 			PATH "$.IsDataChanged"
 						, 	LastModifiedDate	DATETIME 			PATH "$.LastModifiedDate"
 						, 	MatchID				INT 				PATH "$.MatchID"	
-						, 	TVSRequestID		INT 				PATH "$.TVSRequestID"
+						, 	TVSRequestID		BIGINT UNSIGNED		PATH "$.TVSRequestID"
 						,	IsParlay			BOOLEAN 			PATH "$.IsParlay"
 						,	SportType			SMALLINT 			PATH "$.SportType"
 						,	IssueTypeID			TINYINT 			PATH "$.IssueTypeID"
@@ -267,7 +269,8 @@ BEGIN
                         ELSE 0  # NOT PROBATION (WinlossStatus IN (1, NULL, 2))
                         END) AS IsProbation			
             ,	tmpLtr.RelevantCategoryID
-            ,	tmpJs.TVSRequestID
+            ,	CASE WHEN IFNULL(tmpJs.TVSRequestID,0) = 0 AND tmpJs.IsFromTVS = 0 THEN NULL
+					 ELSE tmpJs.TVSRequestID END
             ,	CASE WHEN tmpJs.IssueTypeID = 13 AND tmpR.ReasonID IS NOT NULL THEN tmpR.MappingReasonID
 					 ELSE tmpJs.ReasonID END
             ,	pin.CTSCustID
@@ -288,7 +291,7 @@ BEGIN
 				, 	IsFromTVS		BOOLEAN 			PATH "$.IsFromTVS"
 				, 	IsFromTW		BOOLEAN 			PATH "$.IsFromTW"
 				, 	IsFromCTS		BOOLEAN 			PATH "$.IsFromCTS"
-                , 	TVSRequestID	INT 				PATH "$.TVSRequestID"
+                , 	TVSRequestID	BIGINT UNSIGNED		PATH "$.TVSRequestID"
                 , 	Remark			VARCHAR(500) 		PATH "$.Remark"
 				,	IsParlay		BOOLEAN 			PATH "$.IsParlay"
 				,	SportType		SMALLINT 			PATH "$.SportType"

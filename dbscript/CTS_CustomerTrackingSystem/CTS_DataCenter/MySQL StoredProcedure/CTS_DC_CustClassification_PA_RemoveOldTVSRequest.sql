@@ -17,7 +17,8 @@ BEGIN
 			- 20220801@Long.Luu: 		Adjust Winloss Status for Old Requests [Redmine ID: #174219]
 			- 20221007@Harvey.Nguyen: 	Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory [Redmine ID: #178022]
 			- 20230315@Victoria.Le:		Add Robot Imperva [Redmine ID: #184773]
-			- 20230404@Victoria.Le		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeID [Redmine ID: #185319] 
+			- 20230404@Victoria.Le:		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeID [Redmine ID: #185319] 
+			- 20230601@Victoria.Le:		Add TVSRequestID <> 0 for TVSRequestID IS NOT NULL [Redmine ID: #189023]
             
         Param's Explanation (filtered by):
         
@@ -42,31 +43,31 @@ BEGIN
     UPDATE Temp_PA AS t
 		INNER JOIN CTS_DataCenter.CTSCustomerClassificationQueue AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
 	SET d.IsFromTVS = 0
-	WHERE t.TVSRequestID IS NOT NULL;
+	WHERE IFNULL(t.TVSRequestID,0) <> 0;
         
     DELETE d
     FROM Temp_PA AS t
 		INNER JOIN CTS_DataCenter.CTSCustomerClassificationQueue AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
-	WHERE t.TVSRequestID IS NOT NULL
+	WHERE IFNULL(t.TVSRequestID,0) <> 0
 		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0);
     
     /* REMOVE FROM OLD PA  */
     UPDATE Temp_PA AS t
 		INNER JOIN CTS_DataCenter.CTSCustomerClassificationOldCategory AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
 	SET d.IsFromTVS = 0
-	WHERE t.TVSRequestID IS NOT NULL;
+	WHERE IFNULL(t.TVSRequestID,0) <> 0;
     
     DELETE d
     FROM Temp_PA AS t
 		INNER JOIN CTS_DataCenter.CTSCustomerClassificationOldCategory AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
-	WHERE t.TVSRequestID IS NOT NULL
+	WHERE IFNULL(t.TVSRequestID,0) <> 0
 		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0 AND d.IsFromImperva = 0);
     
     /* REMOVE FROM CLASSIFICATION HISTORY  */    
 	DELETE d
     FROM Temp_PA AS t
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
-	WHERE t.TVSRequestID IS NOT NULL;
+	WHERE IFNULL(t.TVSRequestID,0) <> 0;
         
     /* REMOVE FROM CLASSIFICATION  */
     INSERT INTO Temp_ExistedEvidence(CTSCustID, EvidenceID_Licensee, EvidenceID_Credit)
@@ -74,7 +75,7 @@ BEGIN
     FROM Temp_PA AS t
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
         INNER JOIN CTS_DataCenter.CustomerCategory AS c ON d.CategoryID = c.CategoryID
-	WHERE t.TVSRequestID IS NOT NULL;    
+	WHERE IFNULL(t.TVSRequestID,0) <> 0;    
     
     UPDATE Temp_PA AS t
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
@@ -83,12 +84,12 @@ BEGIN
 									WHEN t.WinlossStatus = CONST_WINLOSSSTATUS_KEEP THEN CONST_WINLOSSSTATUS_WINNING
                                     ELSE t.WinlossStatus
 								END
-	WHERE t.TVSRequestID IS NOT NULL;
+	WHERE IFNULL(t.TVSRequestID,0) <> 0;
     
 	DELETE d
     FROM Temp_PA AS t
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
-	WHERE t.TVSRequestID IS NOT NULL
+	WHERE IFNULL(t.TVSRequestID,0) <> 0
 		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0 AND d.IsFromImperva = 0);
       
 	/* REMOVE FROM CUSTOMER EVIDENCE  */ 

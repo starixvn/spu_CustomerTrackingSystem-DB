@@ -22,6 +22,7 @@ BEGIN
 			- 20220913@Casey.Huynh: 		Update Remark [Redmine ID: #176976]
 			- 20221007@Harvey.Nguyen: 		Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory [Redmine ID: #178022]
 			- 20230404@Victoria.Le			TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeID [Redmine ID: #185319] 
+			- 20230601@Victoria.Le:			Add TVSRequestID <> 0 for TVSRequestID IS NOT NULL [Redmine ID: #189023]
             
         Param's Explanation (filtered by):
 			- ip_InputType: 1: Category, 2: Reason
@@ -82,7 +83,7 @@ BEGIN
 		,	IsFromTVS				BOOLEAN DEFAULT 0
         ,	IsFromTW				BOOLEAN DEFAULT 0
         ,	IsFromCTS				BOOLEAN DEFAULT 0
-        ,	TVSRequestID			INT
+        ,	TVSRequestID			BIGINT UNSIGNED
         ,	IsFromOldPA				TINYINT(1)
         ,	SpecialCC				SMALLINT
         ,	CustomerClass			INT
