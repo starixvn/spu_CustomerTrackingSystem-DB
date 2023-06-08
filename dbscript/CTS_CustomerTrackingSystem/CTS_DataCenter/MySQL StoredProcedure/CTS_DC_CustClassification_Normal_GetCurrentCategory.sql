@@ -87,10 +87,10 @@ BEGIN
 	WHERE cls.SportGroupID = CONST_GROUP_NORMAL;
     
     #3. Get Probation info
-    UPDATE Temp_CustCategory AS tmp
+    UPDATE Temp_CustCategory AS tmpCc
 		INNER JOIN CTS_DataCenter.ProbationAccountMonitor AS pro ON pro.CustID = tmpCc.CustID
 	SET IsProbationLastDay = (CASE WHEN pro.CreatedDate <= lv_LastDayProbation THEN 1 /*Up to Smart, Risky*/ ELSE 0 END)
-	WHERE tmp.CategoryGroup = CATEGORY_GROUP_PROBATION;
+	WHERE tmpCc.CategoryGroup = CATEGORY_GROUP_PROBATION;
     
     #4. Return data set
 	SELECT	DISTINCT tmpCust.CustID
@@ -100,7 +100,7 @@ BEGIN
                 ELSE tmpCc.CategoryGroup
 			END AS CategoryID
 		,   CASE WHEN tmpCust.CreatedDate >= DATE_SUB(lv_CurrentTime, INTERVAL 29 DAY) THEN 1 ELSE 0 END AS IsNewCreated
-        ,	ISNULL(tmpCc.IsProbationLastDay, 0) AS IsProbationLastDay
+        ,	CASE WHEN tmpCc.IsProbationLastDay <> NULL THEN tmpCc.IsProbationLastDay ELSE 0 END AS IsProbationLastDay
 	FROM Temp_Cust AS tmpCust
 		LEFT JOIN Temp_CustCategory AS tmpCc ON tmpCc.CustID = tmpCust.CustID;
 END$$
