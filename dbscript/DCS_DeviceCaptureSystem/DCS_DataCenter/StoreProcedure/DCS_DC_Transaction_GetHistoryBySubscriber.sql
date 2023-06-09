@@ -35,44 +35,59 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_Account(
 			AccountID BIGINT UNSIGNED PRIMARY KEY
         ,	CTSCustID BIGINT UNSIGNED
+		,   UserName		VARCHAR(50)
+		,	RegisterName	VARCHAR(50)
 	);
     
 	#=============GET CUSTOMER BY SEARCH====================================
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
 	CREATE TEMPORARY TABLE Temp_Customer(
 			CTSCustID		BIGINT UNSIGNED PRIMARY KEY
+		,   UserName		VARCHAR(50)
+		,	RegisterName	VARCHAR(50)
 	);
 	
 	# GET SEARCH ACCOUNT
 	IF(ip_IsPartial = 1) THEN #SEARCH PARTIAL
 		#========SEARCH BY USERNAME=====================
-		INSERT INTO Temp_Customer (CTSCustID)
+		INSERT INTO Temp_Customer (CTSCustID, UserName, RegisterName)
 		SELECT	cus.CTSCustID
+			,	cus.UserName
+            ,	cus.RegisterName
 		FROM CTS_DataCenter.CTSCustomer AS cus
 		WHERE cus.SubscriberID = ip_SubscriberID AND cus.UserName LIKE CONCAT(ip_UserName,'%') AND cus.IsInternal = 0;
 			
 		#========SEARCH BY USERNAME2=====================
-		INSERT IGNORE INTO Temp_Customer (CTSCustID)
+		INSERT IGNORE INTO Temp_Customer (CTSCustID, UserName, RegisterName)
 		SELECT	cus.CTSCustID
+        	,	cus.UserName
+            ,	cus.RegisterName
 		FROM CTS_DataCenter.CTSCustomer AS cus
 		WHERE cus.SubscriberID = ip_SubscriberID AND cus.RegisterName LIKE CONCAT(ip_UserName,'%') AND cus.IsInternal = 0;
+
 	ELSE #SEARCH EXACTLY
 		#========SEARCH BY USERNAME=====================
-		INSERT INTO Temp_Customer (CTSCustID)
+		INSERT INTO Temp_Customer (CTSCustID, UserName, RegisterName)
 		SELECT	cus.CTSCustID
+			,	cus.UserName
+            ,	cus.RegisterName
 		FROM CTS_DataCenter.CTSCustomer AS cus
 		WHERE cus.SubscriberID = ip_SubscriberID AND cus.UserName = ip_UserName AND cus.IsInternal = 0;
 			
 		#========SEARCH BY USERNAME2=====================
-		INSERT IGNORE INTO Temp_Customer (CTSCustID)
+		INSERT IGNORE INTO Temp_Customer (CTSCustID, UserName, RegisterName)
 		SELECT	cus.CTSCustID
+			,	cus.UserName
+            ,	cus.RegisterName
 		FROM CTS_DataCenter.CTSCustomer AS cus
 		WHERE cus.SubscriberID = ip_SubscriberID AND cus.RegisterName =  ip_UserName AND cus.IsInternal = 0;
 	END IF;
         
-	INSERT INTO Temp_Account(AccountID, CTSCustID)
+	INSERT INTO Temp_Account(AccountID, CTSCustID, UserName, RegisterName)
 	SELECT	cda.AccountID
 		,	cda.CTSCustID
+        ,	tmp.UserName
+		,	tmp.RegisterName
 	FROM CTS_DataCenter.CustDCSAccount AS cda
 		INNER JOIN Temp_Customer AS tmp ON cda.CTSCustID = tmp.CTSCustID;
         		
@@ -81,7 +96,8 @@ BEGIN
 			SELECT 	tmp.TransID			AS TransID
 				,	tmp.CTSCustID		AS CTSCustID
                 ,	ip_SubscriberID		AS SubscriberID
-				,	tmp.LoginName		AS RegisterName
+				,	tmp.RegisterName	AS RegisterName
+                ,	tmp.UserName		AS UserName
 				,	tmp.TransTime		AS TransTime
 				,	tmp.FirstDeviceCode	AS FirstDeviceCode
 				,	tmp.Action			AS Action
@@ -94,7 +110,8 @@ BEGIN
 					SELECT 	@TotalRow := @TotalRow + 1
 						,	trs.TransTime
                         ,	tmpAcc.CTSCustID
-                        ,	trs.LoginName
+                        ,	tmpAcc.RegisterName	AS RegisterName
+						,	tmpAcc.UserName		AS UserName
 						,	trs.TransID
 						,	trs.FirstDeviceCode
 						,	ar.Action
@@ -120,7 +137,8 @@ BEGIN
 			,	tmp.CTSCustID		AS CTSCustID
              ,	ip_SubscriberID		AS SubscriberID
 			,	tmp.TransID			AS TransID
-			,	tmp.LoginName		AS LoginName
+			,	tmp.RegisterName	AS RegisterName
+			,	tmp.UserName		AS UserName
 			,	tmp.FirstDeviceCode	AS FirstDeviceCode
 			,	tmp.Action			AS Action
 			,	tmp.ActionResult	AS ActionResult
@@ -133,7 +151,8 @@ BEGIN
 					,	trs.TransTime
                     ,	ca.CTSCustID
 					,	trs.TransID
-					,	trs.LoginName
+					,	cus.RegisterName
+                    ,	cus.UserName
 					,	trs.FirstDeviceCode
 					,	ar.Action
 					,	ar.ActionResult
