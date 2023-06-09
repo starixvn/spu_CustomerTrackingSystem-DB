@@ -25,9 +25,10 @@ BEGIN
     
     SET lv_LastMillisecondOfDate = CONCAT(DATE_FORMAT(ip_TransDate, '%Y-%m-%d'), ' 23:59:59.9999');
     
-    SELECT DISTINCT cus.CTSCustID
+    SELECT DISTINCT cus.CustID
 	FROM DCS_DataCenter.Transaction07 AS trans
-		INNER JOIN CTS_DataCenter.CustDCSAccount AS cus ON cus.AccountID = trans.AccountID
+		INNER JOIN CTS_DataCenter.CustDCSAccount AS cda ON cda.AccountID = trans.AccountID
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = cda.CTSCustID AND cus.RoleID = 1
 	WHERE trans.TransTime BETWEEN ip_TransDate AND lv_LastMillisecondOfDate;
     
 END$$
