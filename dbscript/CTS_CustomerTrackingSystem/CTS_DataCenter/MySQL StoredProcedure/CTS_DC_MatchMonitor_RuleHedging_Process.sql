@@ -231,7 +231,7 @@ sp: BEGIN
 	UPDATE Temp_ResultGroup AS tmpRg
 		INNER JOIN Temp_GroupHedging AS tmpGh ON tmpRg.GroupID = tmpGh.GroupID
 	SET tmpRg.Reason = 1;
-		
+    
    #=======CHECK Hedging GROUP: IF AssocitionCust of GroupCusts Is Hedging====================================
     labelGroup: LOOP
 		SET lv_RuleGroupID = NULL;
@@ -253,22 +253,19 @@ sp: BEGIN
         IF lv_IsHedging = 1 THEN
 			UPDATE Temp_ResultGroup AS tmpRg
             SET	tmpRg.Reason = 1
-            WHERE tmpRg.GroupID = lv_RuleGroupID;
-            
-            #=====LOG185793: START===========================================================            
-			UPDATE Temp_ResultGroup AS tmpRg            
-			SET tmpRg.LogInfo = (SELECT GROUP_CONCAT(CTSCustID) FROM Temp_LogAsscust AS tmpAss WHERE tmpAss.GroupID = tmpRg.GroupID);
-			#=====LOG185793: END=============================================================
-            
-        ELSE 		
-            
+            WHERE tmpRg.GroupID = lv_RuleGroupID;          
+        ELSE            
             DELETE tmpRg
 			FROM Temp_ResultGroup AS tmpRg
-			WHERE tmpRg.GroupID = lv_RuleGroupID;            
-            
+			WHERE tmpRg.GroupID = lv_RuleGroupID;           
         END IF;
-
-	END LOOP labelGroup;    
+		
+        
+	END LOOP labelGroup; 
+	#=====LOG185793: START===========================================================            
+	UPDATE Temp_ResultGroup AS tmpRg            
+	SET tmpRg.LogInfo = (SELECT GROUP_CONCAT(CustID) FROM Temp_LogAsscust AS tmpAss WHERE tmpAss.GroupID = tmpRg.GroupID);
+	#=====LOG185793: END=============================================================
     
 	IF (ip_LiveIndicator = 1) THEN 
 		UPDATE CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms

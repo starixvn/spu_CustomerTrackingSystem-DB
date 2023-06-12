@@ -157,8 +157,9 @@ BEGIN
     #=====LOG185793: START====================================================
     IF (ip_IsLog = 1) THEN
 		DROP TEMPORARY TABLE IF EXISTS Temp_LogAsscust;
-		CREATE TABLE Temp_LogAsscust(
+		CREATE TEMPORARY TABLE Temp_LogAsscust(
 				CTSCustID BIGINT UNSIGNED
+			,	CustID	BIGINT UNSIGNED
 			,	GroupID	INT
 			,	PRIMARY KEY (CTSCustID, GroupID)
 		);
@@ -239,10 +240,12 @@ BEGIN
         
 		#=====LOG185793: START====================================================
 		IF (ip_IsLog = 1) THEN
-			INSERT INTO Temp_LogAsscust(CTSCustID, GroupID)
+			INSERT IGNORE INTO Temp_LogAsscust(CTSCustID, CustID, GroupID)
 			SELECT 	tmp.CTSCustID
-				, 	lv_GroupID
-			FROM Temp_GroupCTSCustID AS tmp;
+				, 	tmpTs.CustID
+                ,	lv_GroupID
+			FROM Temp_GroupCTSCustID AS tmp
+                INNER JOIN Temp_StagingTrans  AS tmpTs  ON tmpTs.CTSCustID = tmp.CTSCustID ;
         END IF;
 		#=====LOG185793: END====================================================
         
@@ -374,11 +377,13 @@ BEGIN
         
 		#=====LOG185793: START===========================================================
         IF (ip_IsLog = 1) THEN
-			INSERT INTO Temp_LogAsscust(CTSCustID, GroupID)
-			SELECT 	trans.CTSCustID
+			INSERT IGNORE INTO Temp_LogAsscust(CTSCustID, CustID, GroupID)
+			SELECT 	tmpTs.CTSCustID
+				,	tmpTs.CustID
 				, 	lv_GroupID
 			FROM Temp_GroupCTSCustID AS tmp
-				INNER JOIN Temp_Parent  AS trans  ON trans.AgentCTSCustID = tmp.CTSCustID;
+				INNER JOIN Temp_Parent  AS trans  ON trans.AgentCTSCustID = tmp.CTSCustID
+                INNER JOIN Temp_StagingTrans  AS tmpTs  ON tmpTs.CTSCustID = tmp.CTSCustID ;
 		END IF;
 		#=====LOG185793: END=============================================================
         
