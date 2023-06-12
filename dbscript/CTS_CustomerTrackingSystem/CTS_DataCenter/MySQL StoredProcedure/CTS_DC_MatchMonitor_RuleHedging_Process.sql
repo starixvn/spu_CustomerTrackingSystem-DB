@@ -27,6 +27,7 @@ sp: BEGIN
 			-   20221107@Aries.Nguyen: 	Tuning performance of Hedging Detection  [Redmine ID: #180185]
 			-	20221205@Casey.Huynh: 	Rename Table [Redmine ID: #179502]
 			-	20230310@Victoria.Le:	Credit Scale Out - Split 789y Site [Redmine ID: #183140]
+            -	20230612@Casey.Huynh: 	LogInfo [Redmine ID: #185793]
 			
 		Param's Explanation (filtered by):	
 		Example:
@@ -84,6 +85,7 @@ sp: BEGIN
         ,	TransIDList				LONGTEXT NOT NULL
         ,	CustIDList				LONGTEXT NOT NULL
         ,	OldGroupIDList			VARCHAR(500)
+        ,	LogInfo					LONGTEXT    
         
         ,	INDEX IX_Temp_ResultGroup(Reason)
     );	
@@ -201,7 +203,7 @@ sp: BEGIN
     END IF;
 
     #========Detect group by assocation and transdate====================
-    CALL CTS_DC_MatchMonitor_DetectGroup(lv_TimeStep);
+    CALL CTS_DC_MatchMonitor_DetectGroup(lv_TimeStep, 1);
 	#===============================================================================
 	
     INSERT INTO Temp_ResultGroup(GroupID, TransIDList, CustIDList, OldGroupIDList)
@@ -252,6 +254,12 @@ sp: BEGIN
 			UPDATE Temp_ResultGroup AS tmpRg
             SET	tmpRg.Reason = 1
             WHERE tmpRg.GroupID = lv_RuleGroupID;
+            
+            #=====LOG185793: START===========================================================            
+			UPDATE Temp_ResultGroup AS tmpRg            
+			SET tmpRg.LogInfo = (SELECT GROUP_CONCAT(CTSCustID) FROM Temp_LogAsscust AS tmpAss WHERE tmpAss.GroupID = tmpRg.GroupID);
+			#=====LOG185793: END=============================================================
+            
         ELSE 		
             
             DELETE tmpRg
@@ -282,6 +290,7 @@ sp: BEGIN
         ,	tmpRg.CustIDList
         ,	tmpRg.OldGroupIDList
         ,	NULL AS HighStakeLicCustList
+        ,	tmpRg.LogInfo
     FROM Temp_ResultGroup AS tmpRg;   
     
 END$$
