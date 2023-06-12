@@ -46,7 +46,20 @@ BEGIN
 		,   UserName		VARCHAR(50)
 		,	RegisterName	VARCHAR(50)
 	);
-	
+	#================================================================
+	DROP TEMPORARY TABLE IF EXISTS Temp_Flagged;
+	CREATE TEMPORARY TABLE Temp_Flagged(
+			Flagged 	SMALLINT PRIMARY KEY
+        ,	DisplayName VARCHAR(200)
+	);
+    
+    INSERT INTO Temp_Flagged(Flagged, DisplayName)
+    SELECT	stl.ItemID
+		,	stl.ItemName
+    FROM DCS_DataCenter.StaticList AS stl
+    WHERE stl.ListID = 1;
+    
+	#================================================================================
 	# GET SEARCH ACCOUNT
 	IF(ip_IsPartial = 1) THEN #SEARCH PARTIAL
 		#========SEARCH BY USERNAME=====================
@@ -106,6 +119,7 @@ BEGIN
 				,	tmp.Browser			AS Browser
 				,	tmp.URLDetails		AS URLDetails
 				,	tmp.IP				AS IP
+                ,	tmp.DisplayName		AS RobotTracking
 			FROM	(
 					SELECT 	@TotalRow := @TotalRow + 1
 						,	trs.TransTime
@@ -120,11 +134,13 @@ BEGIN
 						,	uag.Browser
 						,	ur.URLDetails
 						,	trs.IP
+                        ,	tmpFg.DisplayName
 					FROM	DCS_DataCenter.Transaction07 trs
                     	INNER JOIN  Temp_Account AS tmpAcc ON trs.AccountID = tmpAcc.AccountID
 						LEFT JOIN DCS_DataCenter.UserAgent AS uag ON trs.UserAgentKey = uag.UserAgentKey
 						LEFT JOIN DCS_DataCenter.ActionResult AS ar ON trs.ActionResultID = ar.ActionResultID
 						LEFT JOIN DCS_DataCenter.URL AS ur ON trs.URLID = ur.URLID
+                        LEFT JOIN Temp_Flagged AS tmpFg ON trs.Flagged = tmpFg.Flagged
 					WHERE trs.CreatedDate BETWEEN ip_FromDate AND ip_ToDate
 					) AS tmp
 				ORDER BY TransTime DESC            
@@ -146,6 +162,7 @@ BEGIN
 			,	tmp.Browser			AS Browser
 			,	tmp.URLDetails		AS URLDetails
 			,	tmp.IP				AS IP
+            ,	tmp.DisplayName		AS RobotTracking
 		FROM	(
 				SELECT 	@TotalRow := @TotalRow + 1
 					,	trs.TransTime
@@ -160,12 +177,14 @@ BEGIN
 					,	uag.Browser
 					,	ur.URLDetails
 					,	trs.IP
+                    ,	tmpFg.DisplayName
 				FROM	DCS_DataCenter.Transaction07 trs 
 					INNER JOIN CTS_DataCenter.CustDCSAccount AS ca ON trs.AccountID = ca.AccountID
 					INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ca.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0
 					LEFT JOIN DCS_DataCenter.UserAgent AS uag ON trs.UserAgentKey = uag.UserAgentKey
 					LEFT JOIN DCS_DataCenter.ActionResult AS ar ON trs.ActionResultID = ar.ActionResultID
 					LEFT JOIN DCS_DataCenter.URL AS ur ON trs.URLID = ur.URLID
+                    LEFT JOIN Temp_Flagged AS tmpFg ON trs.Flagged = tmpFg.Flagged
 				WHERE trs.CreatedDate BETWEEN ip_FromDate AND ip_ToDate
 					AND trs.SubscriberID = ip_SubscriberID
 				) AS tmp

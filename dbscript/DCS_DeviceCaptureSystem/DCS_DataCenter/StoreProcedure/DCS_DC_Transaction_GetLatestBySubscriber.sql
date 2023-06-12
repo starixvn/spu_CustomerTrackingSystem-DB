@@ -23,7 +23,7 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_DC_Transaction_GetLatestBySubscriber_xtest(@ip_SubscriberID:=6,@ip_Length:=2000,@ip_Skip:=2, @ip_Take:=20, @op_TotalItem); SELECT @op_TotalItem;
+			CALL DCS_DC_Transaction_GetLatestBySubscriber(@ip_SubscriberID:=6,@ip_Length:=2000,@ip_Skip:=2, @ip_Take:=20, @op_TotalItem); SELECT @op_TotalItem;
             SELECT * FROM DCS_DataCenter.Transaction07 WHERE SubscriberID = 6;
 */
 	DECLARE lv_Partition		VARCHAR(50);
@@ -57,6 +57,19 @@ BEGIN
         ,	INDEX IX_Temp_Partition_PartitionName(PartitionName)
     );
     
+    #================================================================
+	DROP TEMPORARY TABLE IF EXISTS Temp_Flagged;
+	CREATE TEMPORARY TABLE Temp_Flagged(
+			Flagged 	SMALLINT PRIMARY KEY
+        ,	DisplayName VARCHAR(200)
+	);
+    
+    INSERT INTO Temp_Flagged(Flagged, DisplayName)
+    SELECT	stl.ItemID
+		,	stl.ItemName
+    FROM DCS_DataCenter.StaticList AS stl
+    WHERE stl.ListID = 1;
+    
     INSERT INTO Temp_Partition(PartitionOrdinalPosition, PartitionName)
     SELECT	p.Partition_Ordinal_Position
 		,	p.Partition_Name 
@@ -88,12 +101,14 @@ BEGIN
 			,	ua.Browser
 			,	ur.URLDetails
             ,	ts.IP
+            ,	tmpFg.DisplayName AS RobotTracking
 		FROM DCS_DataCenter.Transaction07 PARTITION(",lv_Partition,") AS ts
 			INNER JOIN CTS_DataCenter.CustDCSAccount AS ca ON ts.AccountID = ca.AccountID AND ca.SubscriberID = ts.SubscriberID
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ca.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0
 			LEFT JOIN DCS_DataCenter.UserAgent AS ua ON ts.UserAgentKey = ua.UserAgentKey
 			LEFT JOIN DCS_DataCenter.ActionResult AS ar ON ts.ActionResultID = ar.ActionResultID
 			LEFT JOIN DCS_DataCenter.URL AS ur ON ts.URLID = ur.URLID AND ts.SubscriberID = ur.SubscriberID
+            LEFT JOIN Temp_Flagged AS tmpFg ON ts.Flagged = tmpFg.Flagged
 		WHERE ts.SubscriberID = ",ip_SubscriberId,"
         ORDER BY ts.TransTime DESC
         LIMIT ",lv_LimitTrans);
