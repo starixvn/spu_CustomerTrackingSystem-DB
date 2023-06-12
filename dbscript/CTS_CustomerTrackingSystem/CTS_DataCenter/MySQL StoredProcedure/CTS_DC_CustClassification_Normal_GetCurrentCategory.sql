@@ -100,7 +100,7 @@ BEGIN
                 ELSE tmpCc.CategoryGroup
 			END AS CategoryID
 		,   CASE WHEN tmpCust.CreatedDate >= DATE_SUB(lv_CurrentTime, INTERVAL 29 DAY) THEN 1 ELSE 0 END AS IsNewCreated
-        ,	CASE WHEN tmpCc.IsProbationLastDay <> NULL THEN tmpCc.IsProbationLastDay ELSE 0 END AS IsProbationLastDay
+        ,	tmpCc.IsProbationLastDay AS IsProbationLastDay
 	FROM Temp_Cust AS tmpCust
 		LEFT JOIN Temp_CustCategory AS tmpCc ON tmpCc.CustID = tmpCust.CustID;
 END$$
