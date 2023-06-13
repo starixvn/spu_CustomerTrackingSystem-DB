@@ -150,6 +150,7 @@ BEGIN
 		,	tmp.IP				AS IP
         ,	tmp.RobotTracking	AS RobotTracking
 	FROM Temp_Transaction AS tmp
+    ORDER BY TransTime DESC
     LIMIT ip_Skip, ip_Take;
     
 END$$
