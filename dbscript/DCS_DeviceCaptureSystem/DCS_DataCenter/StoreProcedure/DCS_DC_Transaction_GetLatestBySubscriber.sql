@@ -45,6 +45,7 @@ BEGIN
 		,	OS				VARCHAR(100)		
 		,	Browser			VARCHAR(100)
 		,	URLDetails		VARCHAR(250)
+        ,	RobotTracking	VARCHAR(200)
         
         ,	PRIMARY KEY PK_Temp_Transaction(TransID)
     );
@@ -87,7 +88,7 @@ BEGIN
 	WHILE (lv_LimitTrans > 0 AND lv_Partition IS NOT NULL) DO
 
         SET @sql = 	CONCAT("
-		INSERT INTO Temp_Transaction(TransTime, TransID, SubscriberID, CTSCustID, RegisterName, UserName, FirstDeviceCode, Action, ActionResult, OS, Browser, URLDetails, IP)
+		INSERT INTO Temp_Transaction(TransTime, TransID, SubscriberID, CTSCustID, RegisterName, UserName, FirstDeviceCode, Action, ActionResult, OS, Browser, URLDetails, IP, RobotTracking)
         SELECT	ts.TransTime			
 			,	ts.TransID
             ,	ts.SubscriberID
@@ -147,6 +148,7 @@ BEGIN
 		,	tmp.Browser			AS Browser
 		,	tmp.URLDetails		AS URLDetails
 		,	tmp.IP				AS IP
+        ,	tmp.RobotTracking	AS RobotTracking
 	FROM Temp_Transaction AS tmp
     LIMIT ip_Skip, ip_Take;
     
