@@ -25,21 +25,22 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Association;
 	CREATE TEMPORARY TABLE Temp_Association(
-			CTSCustID BIGINT UNSIGNED
-        ,	DCSDeviceID BIGINT
+			CTSCustID	BIGINT UNSIGNED
+        ,	DCSDeviceID	BIGINT
+        ,	CreatedTime	DATETIME(4)
         
         ,	PRIMARY KEY PK_Temp_Association(DCSDeviceID, CTSCustID)
     ); 
     
     #======GET ACCOUNT LIST: ip_CTSCustID AND ASSOCIATED CUSTOMER=======================================    
-    INSERT INTO Temp_Association(CTSCustID, DCSDeviceID)
-    SELECT abd.CTSCustID, abd.DCSDeviceID
-    FROM CTS_DataCenter.AssociationByDevice AS abd
+    INSERT INTO Temp_Association(CTSCustID, DCSDeviceID, CreatedTime)
+    SELECT abd.CTSCustID, abd.DCSDeviceID, CreatedTime
+	FROM CTS_DataCenter.AssociationByDevice AS abd
     WHERE abd.SubscriberID = ip_SubscriberID AND abd.CTSCustID = ip_CTSCustID;
 
     SELECT 	COUNT(DISTINCT tmpAs1.DCSDeviceID) AssociatedDevices
 		,	COUNT(DISTINCT abd.CTSCustID) AS AssociatedAccounts
-        ,	MIN(CreatedTime) AS FirstLogin
+        ,	MIN(tmpAs1.CreatedTime) AS FirstLogin
     FROM Temp_Association AS tmpAs1
 		LEFT JOIN CTS_DataCenter.AssociationByDevice AS abd ON tmpAs1.DCSDeviceID = abd.DCSDeviceID AND tmpAs1.CTSCustID <> abd.CTSCustID AND abd.SubscriberID = ip_SubscriberID;   
     
