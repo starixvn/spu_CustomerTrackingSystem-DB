@@ -12,7 +12,7 @@ Reviewer:
 
 USE CTS_DataCenter;
 ALTER TABLE MatchMonitorDetails
-	ADD COLUMN LogInfo TEXT;
+	ADD COLUMN LogInfo LONGTEXT;
     
     
     
