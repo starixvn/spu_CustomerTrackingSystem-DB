@@ -31,6 +31,7 @@ BEGIN
             -	202200929@Casey.Huynh: Seperate By Sport [Redmine ID: #178310]
             - 	202201021@Casey.Huynh: Group By Betteam [Redmine ID: #179439]
             -	20221205@Casey.Huynh: Rename Table [Redmine ID: #179502]
+            -	20230612@Casey.Huynh: LogInfo [Redmine ID: #185793]
 		Param's Explanation (filtered by):			
 
 		Example:
