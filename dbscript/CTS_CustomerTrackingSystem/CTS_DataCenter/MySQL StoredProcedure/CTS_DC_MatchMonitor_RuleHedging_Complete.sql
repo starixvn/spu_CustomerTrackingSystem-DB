@@ -163,7 +163,7 @@ BEGIN
 
 		IF (lv_NoOfOldGroupID = 1) THEN # UPDATE OLD GROUP         
 			UPDATE IGNORE CTS_DataCenter.MatchMonitorDetails AS mmd 
-			SET mmd.GroupID = lv_TargetGroupID, mmd.ListCustID = lv_CustIDList, mmd.ListTransID = lv_TransIDList, mmd.Reason = lv_Reason, mmd.HighStakeLicCustList = lv_HighStakeLicCustList, LogInfo =  lv_Log_Info##LOG185793
+			SET mmd.GroupID = lv_TargetGroupID, mmd.ListCustID = lv_CustIDList, mmd.ListTransID = lv_TransIDList, mmd.Reason = lv_Reason, mmd.HighStakeLicCustList = lv_HighStakeLicCustList, LogInfo =  IFNULL(lv_LogInfo,LogInfo)##LOG185793
 			WHERE  mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID AND mmd.Betteam = ip_Betteam AND mmd.ScoreDiff = ip_ScoreDiff AND mmd.GroupID = lv_TargetGroupID  AND mmd.Reason = lv_Reason;
 
         END IF;        
@@ -175,7 +175,7 @@ BEGIN
 			WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID AND mmd.Betteam = ip_Betteam AND mmd.ScoreDiff = ip_ScoreDiff AND mmd.GroupID <> lv_TargetGroupID AND mmd.Reason = lv_Reason;
                     
 			UPDATE IGNORE CTS_DataCenter.MatchMonitorDetails AS mmd
-			SET mmd.GroupID = lv_TargetGroupID, mmd.ListCustID = lv_CustIDList, mmd.ListTransID = lv_TransIDList, mmd.HighStakeLicCustList = lv_HighStakeLicCustList, LogInfo =  lv_Log_Info
+			SET mmd.GroupID = lv_TargetGroupID, mmd.ListCustID = lv_CustIDList, mmd.ListTransID = lv_TransIDList, mmd.HighStakeLicCustList = lv_HighStakeLicCustList, LogInfo =  IFNULL(lv_LogInfo,LogInfo)
 			WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID AND mmd.Betteam = ip_Betteam AND mmd.ScoreDiff = ip_ScoreDiff AND mmd.GroupID = lv_TargetGroupID  AND mmd.Reason = lv_Reason;
 		END IF;
         
