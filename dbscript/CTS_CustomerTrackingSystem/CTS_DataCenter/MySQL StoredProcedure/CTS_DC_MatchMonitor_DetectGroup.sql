@@ -325,6 +325,18 @@ BEGIN
 		SELECT OrigID AS CTSCustID
         FROM CTE_Group AS cte
         WHERE EXISTS (SELECT 1 FROM Temp_Parent AS tmp WHERE tmp.AgentCTSCustID = cte.OrigID);
+        
+		#=====LOG185793: START===========================================================
+        IF (ip_IsLog = 1) THEN
+			INSERT IGNORE INTO Temp_LogAsscust(CTSCustID, CustID, GroupID)
+			SELECT 	tmpTs.CTSCustID
+				,	tmpTs.CustID
+				, 	lv_GroupID
+			FROM Temp_GroupCTSCustID AS tmp
+				INNER JOIN Temp_Parent  AS trans  ON trans.AgentCTSCustID = tmp.CTSCustID
+                INNER JOIN Temp_StagingTrans  AS tmpTs  ON tmpTs.CTSCustID = trans.CTSCustID ;
+		END IF;
+		#=====LOG185793: END=============================================================
 	
         INSERT IGNORE INTO Temp_GroupParentPrepare(CTSCustID,Weight,GroupID)
         SELECT 	trans.AgentCTSCustID
@@ -375,17 +387,7 @@ BEGIN
             ,	lv_GroupID
         FROM Temp_ParentCust;
         
-		#=====LOG185793: START===========================================================
-        IF (ip_IsLog = 1) THEN
-			INSERT IGNORE INTO Temp_LogAsscust(CTSCustID, CustID, GroupID)
-			SELECT 	tmpTs.CTSCustID
-				,	tmpTs.CustID
-				, 	lv_GroupID
-			FROM Temp_GroupCTSCustID AS tmp
-				INNER JOIN Temp_Parent  AS trans  ON trans.AgentCTSCustID = tmp.CTSCustID
-                INNER JOIN Temp_StagingTrans  AS tmpTs  ON tmpTs.CTSCustID = tmp.CTSCustID ;
-		END IF;
-		#=====LOG185793: END=============================================================
+
         
         SET lv_GroupID = lv_GroupID + 1; 
         
