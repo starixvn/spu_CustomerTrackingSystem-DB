@@ -31,3 +31,5 @@ CREATE TABLE `MonitorTransaction` (
   PRIMARY KEY (`ID`),
   UNIQUE KEY `UX_MonitorTransaction_CustID` (`CustID`)
 ) ENGINE=InnoDB;
+
+DROP PROCEDURE IF EXISTS `DCS_DC_Monitor_GetCustByDate`;
