@@ -19,7 +19,7 @@ BEGIN
             -   20221025@Aries.Nguyen: Tuning performance: Skip the processed trans  [Redmine ID: #179439]
             -   20221107@Aries.Nguyen: Tuning performance of Hedging Detection  [Redmine ID: #180185]
             - 	20221205@Aries.Nguyen: Re-arrange type options on Association Detection  [Redmine ID: #181207]
-            -	20230612@Casey.Huynh: LogInfo [Redmine ID: #185793]
+            -	20230612@Casey.Huynh: LogInfo [RedmineID: #185793]
 
 		Param's Explanation (filtered by):
 			- 	Temp_StagingTrans tbl: CustID,CTSCustID,TransDateSecond,AgentCTSCustID,Processed,GroupID
