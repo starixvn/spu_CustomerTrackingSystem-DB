@@ -32,4 +32,19 @@ CREATE TABLE `MonitorTransaction` (
   UNIQUE KEY `UX_MonitorTransaction_CustID` (`CustID`)
 ) ENGINE=InnoDB;
 
+DROP TABLE IF EXISTS DCS_DataCenter.NotifyMessage;
+CREATE TABLE `NotifyMessage` (
+  `ID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `NotifyType` VARCHAR(100) NULL,
+  `Title` VARCHAR(1000) NULL,
+  `Message` LONGTEXT NULL,
+  `MoreInfo` LONGTEXT NULL,
+  `CreatedDate` DATETIME NULL,
+  `IsNotified` BOOLEAN,
+  `SentDate` DATETIME NULL,
+  PRIMARY KEY (`ID`),
+  KEY `IX_NotifyMessage_NotifyType` (`NotifyType`),
+  KEY `IX_NotifyMessage_SentDate` (`SentDate`)
+) ENGINE=InnoDB;
+
 DROP PROCEDURE IF EXISTS `DCS_DC_Monitor_GetCustByDate`;

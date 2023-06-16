@@ -63,18 +63,28 @@ BEGIN
 		,	tmp.CreatedDate = cts.CreatedDate
 		,	tmp.FirstLoginDate = acc.CreatedDate
 		,	tmp.LastLoginDate = acc.LastLoginTime
-		,	tmp.LastTicketDate = cas.LastTicketDate
 		,	tmp.LastTicketDate = cas.LastTicketDate;
     
-	INSERT INTO DCS_DataCenter.MonitorTransaction(CustID, UserName, MainSite, FirstScanDate, ScanCounter)
+	INSERT INTO DCS_DataCenter.MonitorTransaction(CustID, UserName, LoginName, SubscriberID, CTSSiteID, CTSSite, MainSite, CreatedDate, FirstLoginDate, LastLoginDate, LastTicketDate, FirstScanDate, LastScanDate, ScanCounter)
     SELECT	tmp.CustID
 		,	tmp.UserName
+		,	tmp.LoginName
+		,	tmp.SubscriberID
+		,	tmp.CTSSiteID
+		,	tmp.CTSSite
 		,	tmp.MainSite
+		,	tmp.CreatedDate
+		,	tmp.FirstLoginDate
+		,	tmp.LastLoginDate
+		,	tmp.LastTicketDate
 		,	ip_RptDate AS FirstScanDate
+		,	ip_RptDate AS LastScanDate
 		,	1 AS ScanCounter
     FROM Temp_InputTrans AS tmp
-    ON DUPLICATE KEY UPDATE LastScanDate = ip_RptDate,
-							ScanCounter = ScanCounter + 1;
+    ON DUPLICATE KEY UPDATE LastLoginDate = tmp.LastLoginDate
+						,	LastTicketDate = tmp.LastTicketDate
+						,	LastScanDate = ip_RptDate
+						,	ScanCounter = ScanCounter + 1;
     
 END$$
 DELIMITER ;

@@ -3,7 +3,11 @@ DROP PROCEDURE IF EXISTS `DCS_DC_Monitor_Transaction_Get`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Monitor_Transaction_Get`(
-		IN ip_TransDate 		DATE
+		IN ip_RptDate 			DATE
+	,	IN ip_BactchSize 		DATE
+        
+	,	OUT op_CountResult 		INT UNSIGNED
+	,	OUT op_ListUserName 	VARCHAR(2000)
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -21,15 +25,26 @@ BEGIN
         Example: CALL DCS_DC_Monitor_Transaction_Get('2023-06-06');
     */    
     
-    DECLARE lv_LastMillisecondOfDate DATETIME(4);
+	DROP TEMPORARY TABLE IF EXISTS Temp_MonitorTransaction;
+    CREATE TEMPORARY TABLE Temp_MonitorTransaction(
+			CustID		 	INT UNSIGNED PRIMARY KEY 
+        ,	UserName		VARCHAR(50) NULL
+    );
     
-    SET lv_LastMillisecondOfDate = CONCAT(DATE_FORMAT(ip_TransDate, '%Y-%m-%d'), ' 23:59:59.9999');
+    INSERT INTO Temp_MonitorTransaction(CustID, UserName)
+    SELECT	CustID
+		,	UserName
+	FROM DCS_DataCenter.MonitorTransaction
+	WHERE LastScanDate = ip_TransDate;
     
-    SELECT DISTINCT cus.CustID
-	FROM DCS_DataCenter.Transaction07 AS trans
-		INNER JOIN CTS_DataCenter.CustDCSAccount AS cda ON cda.AccountID = trans.AccountID
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = cda.CTSCustID AND cus.RoleID = 1
-	WHERE trans.TransTime BETWEEN ip_TransDate AND lv_LastMillisecondOfDate;
+    SELECT COUNT(CustID)
+    INTO op_CountResult
+    FROM Temp_MonitorTransaction;
+    
+	SELECT REPLACE(GROUP_CONCAT(UserName ORDER BY CustID ASC), ',', ', ')
+    INTO op_ListUserName
+    FROM Temp_MonitorTransaction
+    LIMIT ip_BactchSize;
     
 END$$
 DELIMITER ;
