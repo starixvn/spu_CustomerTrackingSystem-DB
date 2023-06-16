@@ -42,7 +42,7 @@ BEGIN
 		,	COUNT(DISTINCT abd.CTSCustID) AS AssociatedAccounts
         ,	MIN(tmpAs1.CreatedTime) AS FirstLogin
     FROM Temp_Association AS tmpAs1
-		LEFT JOIN CTS_DataCenter.AssociationByDevice AS abd ON tmpAs1.DCSDeviceID = abd.DCSDeviceID AND tmpAs1.CTSCustID <> abd.CTSCustID AND abd.SubscriberID = ip_SubscriberID;   
-    
+		LEFT JOIN CTS_DataCenter.AssociationByDevice AS abd ON tmpAs1.DCSDeviceID = abd.DCSDeviceID AND tmpAs1.CTSCustID <> abd.CTSCustID AND abd.SubscriberID = ip_SubscriberID   
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON abd.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0;
 END$$
 DELIMITER ;

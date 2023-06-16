@@ -105,8 +105,9 @@ BEGIN
         ,	MAX(CASE WHEN tmpAs.CTSCustID = ip_CTSCustID THEN 1 ELSE 0 END) AS IsFirstCust
         ,	MAX(tmpAs.CreatedTime) AS MaxCreatedTime
     FROM Temp_Association AS tmpAs
-		LEFT JOIN CTS_DataCenter.AssociationByDevice AS abd ON abd.SubscriberID = ip_SubscriberID AND tmpAs.DCSDeviceID = abd.DCSDeviceID AND tmpAs.CTSCustID <> abd.CTSCustID
-	GROUP BY tmpAs.CTSCustID;
+        LEFT JOIN CTS_DataCenter.AssociationByDevice AS abd ON abd.SubscriberID = ip_SubscriberID AND tmpAs.DCSDeviceID = abd.DCSDeviceID AND tmpAs.CTSCustID <> abd.CTSCustID
+        INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON abd.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0
+	GROUP BY tmpAs.CTSCustID;    
 
     SET op_TotalItem = (SELECT COUNT(1) FROM Temp_AssociationAccount);
 
