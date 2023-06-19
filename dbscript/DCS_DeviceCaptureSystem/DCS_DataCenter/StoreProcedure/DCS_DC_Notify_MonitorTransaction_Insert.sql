@@ -4,7 +4,8 @@ DROP PROCEDURE IF EXISTS `DCS_DC_Notify_MonitorTransaction_Insert`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Notify_MonitorTransaction_Insert`(
 		IN ip_RptDate 			DATE
-	,	IN ip_BactchSize 		INT UNSIGNED
+	,	IN ip_NotifyType		VARCHAR(100)
+	,	IN ip_BatchSize 		INT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -19,7 +20,7 @@ BEGIN
             
 	    Param's Explanation (filtered by):
         
-        Example: CALL DCS_DC_Notify_MonitorTransaction_Insert('2023-04-01', 3);
+        Example: CALL DCS_DC_Notify_MonitorTransaction_Insert('2023-04-01', 'MonitorTransaction', 3);
     */    
     DECLARE lv_Title VARCHAR(1000);
     DECLARE lv_Message LONGTEXT;
@@ -49,7 +50,7 @@ BEGIN
 		SELECT UserName
 		FROM Temp_MonitorTransaction
         ORDER BY CustID
-		LIMIT ip_BactchSize
+		LIMIT ip_BatchSize
     )
 	SELECT REPLACE(GROUP_CONCAT(UserName), ',', ', ')
     INTO lv_ListUserName
@@ -57,14 +58,14 @@ BEGIN
     
     SET lv_Message = 'Please kindly check the following Usersname without Transaction';
     SET lv_Message = CONCAT(lv_Message,'\n - Total Usernames: ', lv_CountResult);
-    SET lv_Message = CONCAT(lv_Message,'\n - Top ',ip_BactchSize,' Usernames: ',lv_ListUserName, lv_CountResult);
+    SET lv_Message = CONCAT(lv_Message,'\n - Top ',ip_BatchSize,' Usernames: ',lv_ListUserName, lv_CountResult);
     
-    INSERT INTO DCS_DataCenter.NotifyMessage(Title, Message, CreatedDate, IsNotified)
-    SELECT	lv_Title AS Title
+    INSERT INTO DCS_DataCenter.NotifyMessage(NotifyType, Title, Message, CreatedDate, IsNotified)
+    SELECT	ip_NotifyType AS NotifyType
+		,	lv_Title AS Title
 		,	lv_Message AS Message
 		,	lv_CurDate AS CreatedDate
 		,	0 AS IsNotified;
-    
     
 END$$
 DELIMITER ;
