@@ -29,7 +29,10 @@ CREATE TABLE `MonitorTransaction` (
   `LastScanDate` DATETIME NULL,
   `ScanCounter` SMALLINT NULL,
   PRIMARY KEY (`ID`),
-  UNIQUE KEY `UX_MonitorTransaction_CustID` (`CustID`)
+  UNIQUE KEY `UX_MonitorTransaction_CustID` (`CustID`),
+  KEY `IX_MonitorTransaction_FirstLoginDate` (`FirstLoginDate`),
+  KEY `IX_MonitorTransaction_SubscriberID` (`SubscriberID`),
+  KEY `IX_MonitorTransaction_LastScanDate` (`LastScanDate`)
 ) ENGINE=InnoDB;
 
 DROP TABLE IF EXISTS DCS_DataCenter.NotifyMessage;

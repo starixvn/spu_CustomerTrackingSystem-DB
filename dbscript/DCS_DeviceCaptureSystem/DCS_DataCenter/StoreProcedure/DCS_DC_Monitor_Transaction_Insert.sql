@@ -22,6 +22,9 @@ BEGIN
         Example: CALL DCS_DC_Monitor_Transaction_Insert('[]');
     */    
     DECLARE lv_CurrentDate DATETIME DEFAULT CURRENT_TIMESTAMP();
+    DECLARE lv_LastMillisecondOfDate DATETIME(4);
+    
+    SET lv_LastMillisecondOfDate = CONCAT(DATE_FORMAT(ip_RptDate, '%Y-%m-%d'), ' 23:59:59.9999');
     
      DROP TEMPORARY TABLE IF EXISTS Temp_InputTrans;
      CREATE TEMPORARY TABLE Temp_InputTrans(
@@ -50,6 +53,18 @@ BEGIN
 						,	SiteName			VARCHAR(50)		PATH "$.SiteName"
 					)
 		) AS tmp;
+        
+	DELETE tmp
+    FROM Temp_InputTrans AS tmp
+		INNER JOIN DCS_DataCenter.MonitorTransaction AS mt ON mt.CustID = tmp.CustID
+	WHERE mt.LastScanDate = ip_RptDate;
+    
+    DELETE tmp
+    FROM Temp_InputTrans AS tmp
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID
+		INNER JOIN CTS_DataCenter.CustDCSAccount AS cda ON cda.CTSCustID = cus.CTSCustID
+		INNER JOIN DCS_DataCenter.Transaction07 AS trans ON trans.AccountID = cda.AccountID
+    WHERE trans.TransTime BETWEEN ip_RptDate AND lv_LastMillisecondOfDate;
         
     UPDATE Temp_InputTrans AS tmp
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cts ON cts.CustID = tmp.CustID
