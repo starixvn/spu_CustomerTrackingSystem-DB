@@ -80,7 +80,7 @@ BEGIN
 				LEFT JOIN DCS_DataCenter.ActionResult AS ar ON trs.ActionResultID = ar.ActionResultID
 				LEFT JOIN DCS_DataCenter.URL AS ur ON trs.URLID = ur.URLID
                 LEFT JOIN Temp_Flagged AS tmpFg ON trs.Flagged = tmpFg.Flagged
-			WHERE trs.CreatedDate BETWEEN ip_FromDate AND ip_ToDate
+			WHERE trs.TransTime BETWEEN ip_FromDate AND ip_ToDate
 			) AS tmp
 		ORDER BY TransTime DESC            
 		LIMIT ip_Skip, ip_Take;
