@@ -6,6 +6,8 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Notify_MonitorTransaction_Insert
 		IN ip_RptDate 			DATE
 	,	IN ip_NotifyType		VARCHAR(100)
 	,	IN ip_BatchSize 		INT
+    
+	,	OUT op_NotifyMessageID 	INT UNSIGNED
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -66,6 +68,7 @@ BEGIN
 		,	lv_Message AS Message
 		,	lv_CurDate AS CreatedDate
 		,	0 AS IsNotified;
-    
+        
+    SET op_NotifyMessageID = LAST_INSERT_ID();
 END$$
 DELIMITER ;
