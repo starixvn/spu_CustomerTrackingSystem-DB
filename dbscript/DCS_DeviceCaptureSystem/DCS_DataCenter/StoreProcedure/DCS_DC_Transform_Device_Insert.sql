@@ -108,6 +108,7 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_RecoverDeviceByBet;
 	DROP TEMPORARY TABLE IF EXISTS Temp_Transaction;
     DROP TEMPORARY TABLE IF EXISTS Temp_PerformanceStats;
+	DROP TEMPORARY TABLE IF EXISTS Temp_NewAccountDevice;
     #==============================================
     
     SET call_time = CURRENT_TIMESTAMP(4);
@@ -119,6 +120,16 @@ BEGIN
         diff_time int,
         stats varchar(1000)
     ) ENGINE = MEMORY;
+    
+	CREATE TEMPORARY TABLE Temp_NewAccountDevice(
+			AssociationID		BIGINT UNSIGNED PRIMARY KEY
+		, 	AccountID			BIGINT UNSIGNED NOT NULL
+		, 	DeviceID			BIGINT UNSIGNED NOT NULL
+		, 	TransID				BIGINT UNSIGNED NOT NULL
+
+		,	UNIQUE KEY `UX_Temp_NewAccountDevice_AccountID_DeviceID` (`AccountID`, `DeviceID`)
+		,	INDEX `UX_Temp_NewAccountDevice_AccountID` (`AccountID`)
+	) ENGINE = MEMORY;
     
 	#======GET DATA FROM RAW TRANSACTION===========================
 	CREATE TEMPORARY TABLE Temp_Transaction(
@@ -492,18 +503,7 @@ BEGIN
 			ON	ts.TransID = tmp_rm.TransID
 		WHERE tmp_rm.DeviceID IS NOT NULL;
         
-		/*****Add NewAccountDevice****************************************************/
-		DROP TEMPORARY TABLE IF EXISTS Temp_NewAccountDevice;
-		CREATE TEMPORARY TABLE Temp_NewAccountDevice(
-				AssociationID		BIGINT UNSIGNED PRIMARY KEY
-			, 	AccountID			BIGINT UNSIGNED NOT NULL
-			, 	DeviceID			BIGINT UNSIGNED NOT NULL
-			, 	TransID				BIGINT UNSIGNED NOT NULL
-
-			,	UNIQUE KEY `UX_Temp_NewAccountDevice_AccountID_DeviceID` (`AccountID`, `DeviceID`)
-			,	INDEX `UX_Temp_NewAccountDevice_AccountID` (`AccountID`)
-		) ENGINE = MEMORY;
-		
+		/*****Add NewAccountDevice****************************************************/		
         SET lv_MaxAssociationID = IFNULL((SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE VGroup=lv_AbnormalTransaction_VGroup AND VName=lv_AbnormalTransaction_VName), 0);
             
 		INSERT INTO Temp_NewAccountDevice(AssociationID, AccountID, DeviceID, TransID)

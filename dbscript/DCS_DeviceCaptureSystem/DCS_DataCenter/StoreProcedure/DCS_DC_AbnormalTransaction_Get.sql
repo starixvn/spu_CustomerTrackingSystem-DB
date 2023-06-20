@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Abnormal_Transasction_Get`;
+DROP PROCEDURE IF EXISTS `DCS_DC_AbnormalTransaction_Get`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Abnormal_Transasction_Get`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_AbnormalTransaction_Get`(
 		IN ip_Size INT
 )
 SQL SECURITY INVOKER
@@ -19,15 +19,16 @@ BEGIN
 	Param's Explanation (filtered by):
 
 	Example:
-		- CALL DCS_DataCenter.DCS_DC_Abnormal_Transasction_Get(10);
+		- CALL DCS_DataCenter.DCS_DC_AbnormalTransaction_Get(10);
 	*/
-    DECLARE lv_SystemSettingVGroup VARCHAR(128) DEFAULT 'DCS_AbnormalTransaction';
-    DECLARE lv_SystemSettingVName VARCHAR(128) DEFAULT 'MaxAssociationID_Pushed';
-    DECLARE lv_SystemSettingVValue BIGINT UNSIGNED;
+    DECLARE lv_MaxAssociationID_VGroup VARCHAR(128) DEFAULT 'DCS_AbnormalTransaction';
+    DECLARE lv_MaxAssociationID_VName VARCHAR(128) DEFAULT 'MaxAssociationID_Pushed';
+    
+    DECLARE lv_MaxAssociationID BIGINT UNSIGNED;
     DECLARE lv_MinID BIGINT UNSIGNED;
     DECLARE lv_MaxID BIGINT UNSIGNED;
     
-    SET lv_SystemSettingVValue = IFNULL((SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE VGroup=lv_SystemSettingVGroup AND VName=lv_SystemSettingVName), 0);
+    SET lv_MaxAssociationID = IFNULL((SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE VGroup = lv_MaxAssociationID_VGroup AND VName = lv_MaxAssociationID_VName), 0);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_NewAccountDevice;
     DROP TEMPORARY TABLE IF EXISTS Temp_NewAccountDevice_Validated;
@@ -48,7 +49,6 @@ BEGIN
     
     CREATE TEMPORARY TABLE Temp_Account_Count_Device_History(
 			AccountID 		BIGINT UNSIGNED PRIMARY KEY
-        ,	Count 			INT UNSIGNED DEFAULT 0
     );
     
     CREATE TEMPORARY TABLE Temp_Account_MinID(
@@ -60,7 +60,7 @@ BEGIN
     SELECT 	AssociationID
 		,	AccountID
 	FROM DCS_DataCenter.NewAccountDevice PARTITION(p10000000)
-	WHERE AssociationID > lv_SystemSettingVValue
+	WHERE AssociationID > lv_MaxAssociationID
 		AND status = 0
     ORDER BY AssociationID
     LIMIT ip_Size;
@@ -71,13 +71,12 @@ BEGIN
 		,	lv_MaxID
 	FROM Temp_NewAccountDevice;
     
-    INSERT INTO Temp_Account_Count_Device_History(AccountID, Count)
+    INSERT INTO Temp_Account_Count_Device_History(AccountID)
     WITH cte_AccountID AS (
 		SELECT DISTINCT AccountID
         FROM Temp_NewAccountDevice
     )
     SELECT 	nad.AccountID
-		,	COUNT(nad.AssociationID) AS Count
     FROM cte_AccountID AS cte
 		INNER JOIN DCS_DataCenter.NewAccountDevice PARTITION(p10000000) AS nad ON nad.AccountID = cte.AccountID
 	WHERE nad.AssociationID < lv_MinID
@@ -93,7 +92,7 @@ BEGIN
     FROM Temp_NewAccountDevice AS tmp
 		INNER JOIN Temp_NewAccountDevice_Validated AS tmpV ON tmpV.AssociationID = tmp.AssociationID;
         
-    /*****Check INTO BATCH****************************************************/
+    /*****Check inside BATCH ONLY****************************************************/
     INSERT INTO Temp_Account_MinID(MinID, AccountID)
     SELECT 	MIN(tmp.AssociationID) as MinID
 		,	tmp.AccountID
@@ -104,7 +103,8 @@ BEGIN
     SELECT 	tmp.AssociationID
 		,	tmp.AccountID
     FROM Temp_NewAccountDevice AS tmp
-	WHERE tmp.AssociationID NOT IN (SELECT MinID FROM Temp_Account_MinID);
+		LEFT JOIN Temp_Account_MinID AS tmpAM ON tmpAM.MinID = tmp.AssociationID
+	WHERE tmpAM.MinID IS NULL;
         
     /*****Return DATA****************************************************/
     SELECT 	nad.AssociationID
