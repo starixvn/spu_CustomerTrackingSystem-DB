@@ -27,6 +27,7 @@ sp: BEGIN
 			-   20221107@Aries.Nguyen: 	Tuning performance of Hedging Detection  [Redmine ID: #180185]
 			-	20221205@Casey.Huynh: 	Rename Table [Redmine ID: #179502]
 			-	20230310@Victoria.Le:	Credit Scale Out - Split 789y Site [Redmine ID: #183140]
+            -	20230612@Casey.Huynh: 	LogInfo [Redmine ID: #185793]
 			
 		Param's Explanation (filtered by):	
 		Example:
@@ -84,6 +85,7 @@ sp: BEGIN
         ,	TransIDList				LONGTEXT NOT NULL
         ,	CustIDList				LONGTEXT NOT NULL
         ,	OldGroupIDList			VARCHAR(500)
+        ,	LogInfo					LONGTEXT    
         
         ,	INDEX IX_Temp_ResultGroup(Reason)
     );	
@@ -201,7 +203,7 @@ sp: BEGIN
     END IF;
 
     #========Detect group by assocation and transdate====================
-    CALL CTS_DC_MatchMonitor_DetectGroup(lv_TimeStep);
+    CALL CTS_DC_MatchMonitor_DetectGroup(lv_TimeStep, 1);
 	#===============================================================================
 	
     INSERT INTO Temp_ResultGroup(GroupID, TransIDList, CustIDList, OldGroupIDList)
@@ -229,7 +231,7 @@ sp: BEGIN
 	UPDATE Temp_ResultGroup AS tmpRg
 		INNER JOIN Temp_GroupHedging AS tmpGh ON tmpRg.GroupID = tmpGh.GroupID
 	SET tmpRg.Reason = 1;
-		
+    
    #=======CHECK Hedging GROUP: IF AssocitionCust of GroupCusts Is Hedging====================================
     labelGroup: LOOP
 		SET lv_RuleGroupID = NULL;
@@ -251,16 +253,19 @@ sp: BEGIN
         IF lv_IsHedging = 1 THEN
 			UPDATE Temp_ResultGroup AS tmpRg
             SET	tmpRg.Reason = 1
-            WHERE tmpRg.GroupID = lv_RuleGroupID;
-        ELSE 		
-            
+            WHERE tmpRg.GroupID = lv_RuleGroupID;          
+        ELSE            
             DELETE tmpRg
 			FROM Temp_ResultGroup AS tmpRg
-			WHERE tmpRg.GroupID = lv_RuleGroupID;            
-            
+			WHERE tmpRg.GroupID = lv_RuleGroupID;           
         END IF;
-
-	END LOOP labelGroup;    
+		
+        
+	END LOOP labelGroup; 
+	#=====LOG185793: START===========================================================            
+	UPDATE Temp_ResultGroup AS tmpRg            
+	SET tmpRg.LogInfo = (SELECT GROUP_CONCAT(CustID) FROM Temp_LogAsscust AS tmpAss WHERE tmpAss.GroupID = tmpRg.GroupID);
+	#=====LOG185793: END=============================================================
     
 	IF (ip_LiveIndicator = 1) THEN 
 		UPDATE CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms
@@ -282,6 +287,7 @@ sp: BEGIN
         ,	tmpRg.CustIDList
         ,	tmpRg.OldGroupIDList
         ,	NULL AS HighStakeLicCustList
+        ,	tmpRg.LogInfo
     FROM Temp_ResultGroup AS tmpRg;   
     
 END$$

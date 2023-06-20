@@ -27,7 +27,7 @@ sp: BEGIN
 			- 	20230109@Casey.Huynh: 	SumStake by CustID [Redmine ID: 182639]
 			- 	20230111@Casey.Huynh: 	SumStake by CustID not group by Betteam [Redmine ID: 182639]
 			-	20230310@Victoria.Le:	Credit Scale Out - Split 789y Site [Redmine ID: #183140]
-			
+			-	20230612@Casey.Huynh: 	LogInfo [Redmine ID: #185793]
             
 		Param's Explanation (filtered by):
 			CALL CTS_DC_MatchMonitor_RuleArbitrage_Process(@ip_LiveIndicator:=0,@ip_MaxSequenceID:=@op_MaxSequenceID,@ip_MatchID:=110100,@ip_IsMajorLeague:=0,@ip_ScoreDiff:=-2,@ip_BettypeID:=1,@ip_BetID:=0, @ip_HDP:=-0.2500);
@@ -143,7 +143,7 @@ sp: BEGIN
     END IF;
 
     #========Detect group by assocation and transdate====================
-    CALL CTS_DC_MatchMonitor_DetectGroup(lv_RuleTimeStep);
+    CALL CTS_DC_MatchMonitor_DetectGroup(lv_RuleTimeStep, 0);
 	#===============================================================================
     
 	INSERT INTO Temp_ResultGroup(GroupID, TransIDList, CustIDList, OldGroupIDList)

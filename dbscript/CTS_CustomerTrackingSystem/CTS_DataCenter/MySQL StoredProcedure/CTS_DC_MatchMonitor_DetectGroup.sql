@@ -3,7 +3,8 @@ DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_DetectGroup`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_DetectGroup`(
-		IN 	ip_Duration  INT UNSIGNED
+		IN 	ip_Duration	INT UNSIGNED
+	,	IN	ip_IsLog	BOOLEAN
 )
     SQL SECURITY INVOKER
 BEGIN 
@@ -18,6 +19,7 @@ BEGIN
             -   20221025@Aries.Nguyen: Tuning performance: Skip the processed trans  [Redmine ID: #179439]
             -   20221107@Aries.Nguyen: Tuning performance of Hedging Detection  [Redmine ID: #180185]
             - 	20221205@Aries.Nguyen: Re-arrange type options on Association Detection  [Redmine ID: #181207]
+            -	20230612@Casey.Huynh: LogInfo [RedmineID: #185793]
 
 		Param's Explanation (filtered by):
 			- 	Temp_StagingTrans tbl: CustID,CTSCustID,TransDateSecond,AgentCTSCustID,Processed,GroupID
@@ -30,7 +32,6 @@ BEGIN
 	DECLARE lv_Count1 				INT;
     DECLARE lv_Count2 				INT;
     DECLARE lv_CTSCustIDs 			JSON;
-
     
     DROP TEMPORARY TABLE IF EXISTS Temp_GroupResult;
 	CREATE TEMPORARY TABLE 		Temp_GroupResult (
@@ -152,7 +153,19 @@ BEGIN
         ,	-1 AS AssociationType
     FROM Temp_GroupResult AS grp
 		INNER JOIN Temp_GroupPrecessed AS tmp ON tmp.GroupID = grp.OldGroupID;
-
+	
+    #=====LOG185793: START====================================================
+    IF (ip_IsLog = 1) THEN
+		DROP TEMPORARY TABLE IF EXISTS Temp_LogAsscust;
+		CREATE TEMPORARY TABLE Temp_LogAsscust(
+				CTSCustID BIGINT UNSIGNED
+			,	CustID	BIGINT UNSIGNED
+			,	GroupID	INT
+			,	PRIMARY KEY (CTSCustID, GroupID)
+		);
+    END IF;
+    #=====LOG185793: END====================================================
+    
     lp: LOOP 
 		SET lv_OrigID = NULL;
         SET lv_Weight = NULL;
@@ -195,8 +208,7 @@ BEGIN
 			INNER JOIN Temp_StagingTrans  AS trans  ON trans.CTSCustID = tmp.CTSCustID 
             LEFT JOIN Temp_GroupPrecessed AS grp ON trans.OldGroupID = grp.GroupID
 		WHERE ABS(lv_Weight - trans.TransDateSecond) <= ip_Duration	
-			OR ABS(lv_Weight - IFNULL(grp.Weight,0)) <= ip_Duration;
-          
+			OR ABS(lv_Weight - IFNULL(grp.Weight,0)) <= ip_Duration;          
 												
         SELECT 	COUNT(1)
 			,	COUNT(DISTINCT CTSCustID)
@@ -220,11 +232,22 @@ BEGIN
             WHERE EXISTS (SELECT 1 FROM Temp_GroupID AS tmp WHERE gr.GroupID = tmp.GroupID);
         END IF;
         
-        INSERT IGNORE Temp_GroupResult(CTSCustID,Weight,GroupID)
+        INSERT IGNORE Temp_GroupResult(CTSCustID, Weight, GroupID)
         SELECT 	CTSCustID
 			,	Weight
             ,	GroupID
         FROM Temp_GroupPrepare;
+        
+		#=====LOG185793: START====================================================
+		IF (ip_IsLog = 1) THEN
+			INSERT IGNORE INTO Temp_LogAsscust(CTSCustID, CustID, GroupID)
+			SELECT 	tmp.CTSCustID
+				, 	tmpTs.CustID
+                ,	lv_GroupID
+			FROM Temp_GroupCTSCustID AS tmp
+                INNER JOIN Temp_StagingTrans  AS tmpTs  ON tmpTs.CTSCustID = tmp.CTSCustID ;
+        END IF;
+		#=====LOG185793: END====================================================
         
         UPDATE Temp_StagingTrans AS tmp
         SET tmp.Processed = 1
@@ -234,8 +257,7 @@ BEGIN
         TRUNCATE TABLE Temp_GroupCTSCustID;
         TRUNCATE TABLE Temp_GroupPrepare;
         TRUNCATE TABLE Temp_GroupID;
-    END LOOP;
-    
+    END LOOP;   
 
 	/******************************************Detect group by agent******************************************/
     INSERT IGNORE INTO Temp_Parent(AgentCTSCustID,CTSCustID,TransDateSecond,OldGroupID)
@@ -303,6 +325,18 @@ BEGIN
 		SELECT OrigID AS CTSCustID
         FROM CTE_Group AS cte
         WHERE EXISTS (SELECT 1 FROM Temp_Parent AS tmp WHERE tmp.AgentCTSCustID = cte.OrigID);
+        
+		#=====LOG185793: START===========================================================
+        IF (ip_IsLog = 1) THEN
+			INSERT IGNORE INTO Temp_LogAsscust(CTSCustID, CustID, GroupID)
+			SELECT 	tmpTs.CTSCustID
+				,	tmpTs.CustID
+				, 	lv_GroupID
+			FROM Temp_GroupCTSCustID AS tmp
+				INNER JOIN Temp_Parent  AS trans  ON trans.AgentCTSCustID = tmp.CTSCustID
+                INNER JOIN Temp_StagingTrans  AS tmpTs  ON tmpTs.CTSCustID = trans.CTSCustID ;
+		END IF;
+		#=====LOG185793: END=============================================================
 	
         INSERT IGNORE INTO Temp_GroupParentPrepare(CTSCustID,Weight,GroupID)
         SELECT 	trans.AgentCTSCustID
@@ -313,7 +347,7 @@ BEGIN
             LEFT JOIN Temp_GroupPrecessed AS grp ON trans.OldGroupID = grp.GroupID
 		WHERE ABS(lv_Weight - trans.TransDateSecond) <= ip_Duration
 			OR  ABS(lv_Weight - IFNULL(grp.Weight,0)) <= ip_Duration;
-
+		
         UPDATE Temp_Parent AS tmp
         SET tmp.Processed = 1
         WHERE  (tmp.AgentCTSCustID = lv_OrigID AND tmp.TransDateSecond = lv_Weight)
@@ -352,6 +386,8 @@ BEGIN
 			,	Weight
             ,	lv_GroupID
         FROM Temp_ParentCust;
+        
+
         
         SET lv_GroupID = lv_GroupID + 1; 
         
