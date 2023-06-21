@@ -1,10 +1,10 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Monitor_Transaction_Get`;
+DROP PROCEDURE IF EXISTS `DCS_DC_MonitorTransaction_Get`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Monitor_Transaction_Get`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_MonitorTransaction_Get`(
 		IN ip_RptDate 			DATE
-	,	IN ip_BactchSize 		DATE
+	,	IN ip_LimitShowCust 	INT
         
 	,	OUT op_CountResult 		INT UNSIGNED
 	,	OUT op_ListUserName 	VARCHAR(2000)
@@ -22,7 +22,7 @@ BEGIN
             
 	    Param's Explanation (filtered by):
         
-        Example: CALL DCS_DC_Monitor_Transaction_Get('2023-06-06');
+        Example: CALL DCS_DC_MonitorTransaction_Get('2023-06-06');
     */    
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_MonitorTransaction;
@@ -44,7 +44,7 @@ BEGIN
 	SELECT REPLACE(GROUP_CONCAT(UserName ORDER BY CustID ASC), ',', ', ')
     INTO op_ListUserName
     FROM Temp_MonitorTransaction
-    LIMIT ip_BactchSize;
+    LIMIT ip_LimitShowCust;
     
 END$$
 DELIMITER ;

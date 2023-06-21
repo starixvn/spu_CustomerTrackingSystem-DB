@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Monitor_Transaction_Insert`;
+DROP PROCEDURE IF EXISTS `DCS_DC_MonitorTransaction_Insert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Monitor_Transaction_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_MonitorTransaction_Insert`(
 		IN ip_RptDate DATE,
 		IN ip_TransJson LONGTEXT
 )
@@ -19,7 +19,7 @@ BEGIN
             
 	    Param's Explanation (filtered by):
         
-        Example: CALL DCS_DC_Monitor_Transaction_Insert('[]');
+        Example: CALL DCS_DC_MonitorTransaction_Insert('[]');
     */    
     DECLARE lv_CurrentDate DATETIME DEFAULT CURRENT_TIMESTAMP();
     DECLARE lv_LastMillisecondOfDate DATETIME(4);
