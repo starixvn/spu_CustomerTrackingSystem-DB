@@ -22,6 +22,7 @@ BEGIN
             - 20210510@Aries.Nguyen: Remove insert log dba_SP_PerformanceStats [Redmine ID: #154792]
             - 20211129@Casey.Huynh: Remove Transaction07.FingerprintMoreInfo AND Devicefingerprint.CreatedDate Column [Redmine ID: #165167]
 			- 20211201@Casey.Huynh: Fix Issue Devicefingerprint.DeviceID = 0 [Redmine ID: #165164]
+			- 20230316@Jonathan.Doan: Support return new device login for Alpha [Redmine ID: #185185]
 			- 20230426@Jonathan.Doan: Get BotDetectionValue from RawTransaction [Redmine ID: #186644]
 	    Param's Explanation (filtered by):
         
@@ -43,6 +44,10 @@ BEGIN
     DECLARE tab_name varchar(128) DEFAULT '';
     DECLARE col_name varchar(128) DEFAULT '';
     DECLARE sp_name varchar(128) DEFAULT 'DCS_DC_TransformData_Device_Insert';
+    
+	DECLARE lv_MaxAssociationID BIGINT UNSIGNED;
+	DECLARE lv_AbnormalTransaction_VGroup VARCHAR(128) DEFAULT 'DCS_AbnormalTransaction';
+	DECLARE lv_AbnormalTransaction_VName VARCHAR(128) DEFAULT 'MaxAssociationID_NewAccountDevice';
 	
     # STATS count
     DECLARE insertionTime TIMESTAMP(4);
@@ -103,6 +108,7 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_RecoverDeviceByBet;
 	DROP TEMPORARY TABLE IF EXISTS Temp_Transaction;
     DROP TEMPORARY TABLE IF EXISTS Temp_PerformanceStats;
+	DROP TEMPORARY TABLE IF EXISTS Temp_NewAccountDevice;
     #==============================================
     
     SET call_time = CURRENT_TIMESTAMP(4);
@@ -114,6 +120,16 @@ BEGIN
         diff_time int,
         stats varchar(1000)
     ) ENGINE = MEMORY;
+    
+	CREATE TEMPORARY TABLE Temp_NewAccountDevice(
+			AssociationID		BIGINT UNSIGNED PRIMARY KEY
+		, 	AccountID			BIGINT UNSIGNED NOT NULL
+		, 	DeviceID			BIGINT UNSIGNED NOT NULL
+		, 	TransID				BIGINT UNSIGNED NOT NULL
+
+		,	UNIQUE KEY `UX_Temp_NewAccountDevice_AccountID_DeviceID` (`AccountID`, `DeviceID`)
+		,	INDEX `UX_Temp_NewAccountDevice_AccountID` (`AccountID`)
+	) ENGINE = MEMORY;
     
 	#======GET DATA FROM RAW TRANSACTION===========================
 	CREATE TEMPORARY TABLE Temp_Transaction(
@@ -486,7 +502,57 @@ BEGIN
 		INNER JOIN Temp_Transaction AS tmp_rm
 			ON	ts.TransID = tmp_rm.TransID
 		WHERE tmp_rm.DeviceID IS NOT NULL;
-
+        
+		/*****Add NewAccountDevice****************************************************/		
+        SET lv_MaxAssociationID = IFNULL((SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE VGroup=lv_AbnormalTransaction_VGroup AND VName=lv_AbnormalTransaction_VName), 0);
+            
+		INSERT INTO Temp_NewAccountDevice(AssociationID, AccountID, DeviceID, TransID)
+        WITH cte_device AS(
+			SELECT 	tmpD.DeviceID
+				,	tmp.AccountID
+                ,	MIN(tmp.TransID) AS TransID
+			FROM Temp_Transaction AS tmp
+				INNER JOIN Temp_ExistedDevice AS tmpD ON tmpD.DeviceCode = tmp.DeviceCode
+			WHERE tmp.SubscriberID IN (2,168,271,2339,13659) /*Sub Alpha*/
+			GROUP BY tmpD.DeviceID, tmp.AccountID
+        )
+        SELECT 	ass.AssociationID
+			,	cte.AccountID
+			,	cte.DeviceID
+            ,	cte.TransID
+        FROM cte_device AS cte
+			INNER JOIN DCS_DataCenter.Association AS ass ON ass.AssociationID > lv_MaxAssociationID
+														AND ass.AccountID = cte.AccountID 
+														AND ass.DeviceID = cte.DeviceID;
+        
+		INSERT IGNORE INTO DCS_DataCenter.NewAccountDevice(AssociationID, AccountID, DeviceID, RawTransID, RawCreatedDate, LoginName, TransTime, UserAgentKey, IP, Status, CreatedDate)
+		SELECT 	tmp.AssociationID
+			, 	tmp.AccountID
+			, 	tmp.DeviceID
+			, 	trans.RawTransID
+			, 	trans.CreatedDate AS RawCreatedDate
+			, 	trans.LoginName
+			, 	trans.TransTime
+			, 	trans.UserAgentKey
+			, 	trans.IP
+            ,	0 AS Status
+            ,	insertionTime AS CreatedDate
+		FROM Temp_NewAccountDevice AS tmp
+            INNER JOIN DCS_DataCenter.Transaction AS trans ON trans.TransID = tmp.TransID
+		WHERE NOT EXISTS (SELECT 1 FROM DCS_DataCenter.NewAccountDevice AS nad WHERE nad.AssociationID = tmp.AssociationID);
+            
+		SELECT MAX(AssociationID)
+        INTO lv_MaxAssociationID
+        FROM Temp_NewAccountDevice;
+        
+        IF lv_MaxAssociationID IS NOT NULL AND lv_MaxAssociationID > 0 THEN
+			UPDATE DCS_DataCenter.SystemSetting
+			SET VValue = lv_MaxAssociationID
+			WHERE VGroup=lv_AbnormalTransaction_VGroup
+				AND VName=lv_AbnormalTransaction_VName;
+		END IF;
+        
+		/*****END Add NewAccountDevice****************************************************/
 		#DELETE Transaction
 		DELETE ts
 		FROM DCS_DataCenter.Transaction AS ts
