@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Abnormal_Transaction_Update`;
+DROP PROCEDURE IF EXISTS `DCS_DC_AbnormalTransaction_Update`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Abnormal_Transaction_Update`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_AbnormalTransaction_Update`(
 	IN ip_TransJson LONGTEXT,
     IN ip_MinID BIGINT UNSIGNED,
     IN ip_MaxID BIGINT UNSIGNED
@@ -21,7 +21,7 @@ BEGIN
 	Param's Explanation (filtered by):
 
 	Example:
-		- CALL DCS_DataCenter.DCS_DC_Abnormal_Transaction_Update('[{"ID":3,"Status":1}]', 1, 10);
+		- CALL DCS_DataCenter.DCS_DC_AbnormalTransaction_Update('[{"ID":3,"Status":1}]', 1, 10);
 	*/
     DECLARE lv_MaxAssociationID_VGroup VARCHAR(128) DEFAULT 'DCS_AbnormalTransaction';
     DECLARE lv_MaxAssociationID_VName VARCHAR(128) DEFAULT 'MaxAssociationID_Pushed';
