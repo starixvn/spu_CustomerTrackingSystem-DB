@@ -6,7 +6,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_NotifyMessage_InsertMonitorTrans
 		IN ip_RptDate 			DATE
 	,	IN ip_NotifyType		VARCHAR(100)
 	,	IN ip_GroupId			VARCHAR(100)
-	,	IN ip_BatchSize 		INT
+	,	IN ip_LimitShowCust		INT
     
 	,	OUT op_NotifyMessageID 	INT UNSIGNED
 )
@@ -31,8 +31,6 @@ BEGIN
     DECLARE lv_ListUserName VARCHAR(2000);
     DECLARE lv_CurDate DATETIME DEFAULT CURRENT_TIMESTAMP();
     
-    SET lv_Title = CONCAT('FPS-Cust-MissedTrans ', DATE_FORMAT(ip_RptDate, '%m/%d/%Y'));
-    
     DROP TEMPORARY TABLE IF EXISTS Temp_MonitorTransaction;
     CREATE TEMPORARY TABLE Temp_MonitorTransaction(
 			CustID		 	INT UNSIGNED PRIMARY KEY 
@@ -52,16 +50,17 @@ BEGIN
     WITH cte_GroupUserName AS (
 		SELECT UserName
 		FROM Temp_MonitorTransaction
-        ORDER BY CustID
-		LIMIT ip_BatchSize
+        ORDER BY CustID ASC
+		LIMIT ip_LimitShowCust
     )
-	SELECT REPLACE(GROUP_CONCAT(UserName), ',', ', ')
+	SELECT GROUP_CONCAT(UserName SEPARATOR ', ')
     INTO lv_ListUserName
     FROM cte_GroupUserName;
     
+    SET lv_Title = CONCAT('FPS-Cust-MissedTrans ', DATE_FORMAT(ip_RptDate, '%m/%d/%Y'));
     SET lv_Message = 'Please kindly check the following Usersname without Transaction';
     SET lv_Message = CONCAT(lv_Message,'\n - Total Usernames: ', lv_CountResult);
-    SET lv_Message = CONCAT(lv_Message,'\n - Top ',ip_BatchSize,' Usernames: ',lv_ListUserName, lv_CountResult);
+    SET lv_Message = CONCAT(lv_Message,'\n - Top ',ip_LimitShowCust,' Usernames: ',lv_ListUserName, (CASE WHEN lv_CountResult > ip_LimitShowCust THEN ', ...' ELSE '' END));
     
     INSERT INTO DCS_DataCenter.NotifyMessage(NotifyType, GroupId, Title, Message, CreatedDate, IsNotified)
     SELECT	ip_NotifyType AS NotifyType

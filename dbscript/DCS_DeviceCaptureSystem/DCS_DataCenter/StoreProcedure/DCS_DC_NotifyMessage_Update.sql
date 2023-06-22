@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_NotifyMessage_Update`;
+DROP PROCEDURE IF EXISTS `DCS_DC_NotifyMessage_UpdateNotified`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_NotifyMessage_Update`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_NotifyMessage_UpdateNotified`(
 		IN ip_IDs LONGTEXT
 )
     SQL SECURITY INVOKER
@@ -18,7 +18,7 @@ BEGIN
             
 	    Param's Explanation (filtered by):
         
-        Example: CALL DCS_DC_NotifyMessage_Update('1,2');
+        Example: CALL DCS_DC_NotifyMessage_UpdateNotified('1,2');
     */
     DECLARE lv_CurrentDate DATETIME DEFAULT CURRENT_TIMESTAMP();
     

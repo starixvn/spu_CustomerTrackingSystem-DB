@@ -1,10 +1,9 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_NotifyMessage_Get`;
+DROP PROCEDURE IF EXISTS `DCS_DC_NotifyMessage_GetByNotifyType`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_NotifyMessage_Get`(
-		IN ip_NotifyMessageID	INT UNSIGNED
-	,	IN ip_NotifyType		VARCHAR(100)
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_NotifyMessage_GetByNotifyType`(
+		IN ip_NotifyType		VARCHAR(100)
 	,	IN ip_BatchSize 		INT
 )
     SQL SECURITY INVOKER
@@ -20,8 +19,9 @@ BEGIN
             
 	    Param's Explanation (filtered by):
         
-        Example: CALL DCS_DC_NotifyMessage_Get('MonitorTransaction', 3);
+        Example: CALL DCS_DC_NotifyMessage_GetByNotifyType('MonitorTransaction', 3);
     */
+    DECLARE lv_NotSent TINYINT(1) DEFAULT 0;
     
 	SELECT	ID
 		,	GroupID
@@ -30,8 +30,8 @@ BEGIN
 		,	MoreInfo
     FROM DCS_DataCenter.NotifyMessage
     WHERE NotifyType = ip_NotifyType
-		AND IsNotified = 0
-		AND (ip_NotifyMessageID IS NULL OR ID = ip_NotifyMessageID)
+		AND IsNotified = lv_NotSent
+	ORDER BY ID ASC
     LIMIT ip_BatchSize;
     
 END$$
