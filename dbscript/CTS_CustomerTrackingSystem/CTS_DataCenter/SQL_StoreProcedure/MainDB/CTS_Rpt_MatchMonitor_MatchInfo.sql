@@ -18,6 +18,7 @@ AS
 
 	Revisions:
 		- 20230214@Victoria.Le:			Initial Writing [Redmine ID: #183280]
+		- 20230601@Victoria.Le:			Return IsGetDataFromOrigin [Redmine ID: #185793]
 
 	Params Explaination:
 		- @MatchIds:
@@ -53,6 +54,7 @@ BEGIN
 		,	EventDate			DATETIME
 		,	KickOffTime			DATETIME
 		,	MatchSection		TINYINT
+		,	IsGetDataFromOrigin	BIT
 	)
 
 	INSERT INTO #tmpMatchSection (MatchSection)
@@ -175,7 +177,7 @@ BEGIN
 
 		IF	@IsGetDataFromBK = 1
 		BEGIN
-			INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection)
+			INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin)
 			SELECT	m.MatchId
 				,	m.EventDate
 				,	m.GlobalShowTime
@@ -187,6 +189,7 @@ BEGIN
 																END)
 						ELSE 4 -- CLOSED
 					END
+				,	0 AS IsGetDataFromOrigin
 			FROM bodb_Archive.dbo.match_bk AS m WITH(NOLOCK)
 			WHERE m.EventDate BETWEEN @FromDateBK AND @ToDateBK
 				AND m.sporttype IN (1,2,43) --1: Soccer; 2: Baseketball, 43: ESport
@@ -195,7 +198,7 @@ BEGIN
 
 		IF	@IsGetDataFrom14 = 1
 		BEGIN
-			INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection)
+			INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin)
 			SELECT	m.MatchId
 				,	m.EventDate
 				,	m.GlobalShowTime
@@ -207,6 +210,7 @@ BEGIN
 																END)
 						ELSE 4 -- CLOSED
 					END
+				,	0 AS IsGetDataFromOrigin
 			FROM bodb02.dbo.match14 AS m WITH(NOLOCK)
 			WHERE m.EventDate BETWEEN @FromDate14 AND @ToDate14
 				AND m.sporttype IN (1,2,43) --1: Soccer; 2: Baseketball, 43: ESport
@@ -214,7 +218,7 @@ BEGIN
 
 		IF	@IsGetDataFromOrigin = 1
 		BEGIN
-			INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection)
+			INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin)
 			SELECT	m.MatchId
 				,	m.EventDate
 				,	m.GlobalShowTime
@@ -226,6 +230,7 @@ BEGIN
 																END)
 						ELSE 4 -- CLOSED
 					END
+				,	@IsGetDataFromOrigin AS IsGetDataFromOrigin
 			FROM bodb02.dbo.Match AS m WITH(NOLOCK)
 			WHERE m.EventDate BETWEEN @FromDateOrigin AND @ToDateOrigin
 				AND m.sporttype IN (1,2,43) --1: Soccer; 2: Baseketball, 43: ESport
@@ -250,7 +255,7 @@ BEGIN
 		SELECT ssk.value FROM STRING_SPLIT (@MatchIds, ',') ssk
 
 		--FromBK
-		INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection)
+		INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin)
 		SELECT	m.MatchId
 			,	m.EventDate
 			,	m.GlobalShowTime
@@ -262,6 +267,7 @@ BEGIN
 															END)
 					ELSE 4 -- CLOSED
 				END
+			,	0 AS IsGetDataFromOrigin
 		FROM #tmpMatches AS tm 
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON tm.MatchId = m.matchid
 		
@@ -270,7 +276,7 @@ BEGIN
 		INNER JOIN #tmpMatchesInfo AS m ON tm.MatchId = m.matchid
 
 		--From14
-		INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection)
+		INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin)
 		SELECT	m.MatchId
 			,	m.EventDate
 			,	m.GlobalShowTime
@@ -282,6 +288,7 @@ BEGIN
 															END)
 					ELSE 4 -- CLOSED
 				END
+			,	0 AS IsGetDataFromOrigin
 		FROM #tmpMatches AS tm 
 			INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON tm.MatchId = m.matchid
 
@@ -290,7 +297,7 @@ BEGIN
 		INNER JOIN #tmpMatchesInfo AS m ON tm.MatchId = m.matchid
 
 		-- FromOrigin
-		INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection)
+		INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin)
 		SELECT	m.MatchId
 			,	m.EventDate
 			,	m.GlobalShowTime
@@ -302,6 +309,7 @@ BEGIN
 															END)
 					ELSE 4 -- CLOSED
 				END
+			,	1 AS IsGetDataFromOrigin
 		FROM #tmpMatches AS tm
 			INNER JOIN bodb02.dbo.Match AS m WITH(NOLOCK) ON tm.MatchId = m.matchid
 
@@ -312,6 +320,7 @@ BEGIN
 		,	tmi.EventDate
 		,	tmi.KickOffTime
 		,	tmi.MatchSection
+		,	tmi.IsGetDataFromOrigin
 	FROM #tmpMatchesInfo AS tmi
 		INNER JOIN #tmpMatchSection AS tms ON tmi.MatchSection = tms.MatchSection
 

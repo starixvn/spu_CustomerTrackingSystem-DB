@@ -13,6 +13,17 @@ ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_TicketDetails]
 
 	,	@ListTransId				VARCHAR(MAX) = ''
 	,	@EventDate					DATETIME = '1900-09-22'
+	,	@MatchID					INT = 0
+	,	@BetType					SMALLINT = 0
+	,	@IsLiencee					BIT = NULL
+	,	@ListCurrency				VARCHAR(MAX) = NULL
+	,	@ListHDP					VARCHAR(MAX) = NULL
+	,	@ListScore					VARCHAR(MAX) = NULL
+	,	@FromStakeRM				MONEY = NULL
+	,	@ToStakeRM					MONEY = NULL
+	,	@MinSequenceIDTotalAll		BIGINT = NULL OUTPUT
+
+	
 
 AS
 /*
@@ -36,13 +47,19 @@ AS
 								Return StakeRM [Redmine ID: #181995]
 		- 20230602@Long.Luu:	Add new agent as internal account [Redmine ID: #188554]
 		- 20230607@Long.Luu:	Exclude more Saba's LeagueGroupID [Redmine ID: #189439]
+		- 20230601@Victoria.Le	Show all tickets [Redmine ID: #185793]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize)
 					  2 - to show on report (get tickets by @EventDate & @ListTransId)
-
+					  3	- to show on report (get all tickets by @MatchID, @BetType, @IsLive, @LastScannedSequenceID, @BatchSize, @IsLiencee, @ListCurrency, @ListHDP, @ListScore, @FromStakeRM, @ToStakeRM)
+							+ @BatchSize = 0 ==> @MinSequenceIDTotalAll: Total tickets
+							+ @BatchSize > 0 ==> @MinSequenceIDTotalAll: Min SequenceId
+							+ @BatchSize = 0 & @ListTransId <> '' ==> get total tickets (excluded  @ListTransId)
 	Example:
-		EXECUTE [dbo].[CTS_Rpt_MatchMonitor_TicketDetails] @QueryType = 1, @LastScannedTransID = 0, @IsLive = 1,	@BatchSize = 500;
+		DECLARE @MinTotal BIGINT;
+		EXEC [dbo].[CTS_Rpt_MatchMonitor_TicketDetails] @QueryType = 3,@LastScannedSequenceID = 117286612760,@IsLive = 1,@BatchSize = 4000,@MatchID = 70099921,@BetType = 1, @IsLiencee = 1, @ListCurrency = '1',@ListHDP = '0.18,0.17',@ListScore = '0 - 0, 3 - 3',@FromStakeRM = NULL,@ToStakeRM = NULL,@MinSequenceIDTotalAll = @MinTotal OUTPUT;
+		SELECT @MinTotal;
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -105,6 +122,34 @@ BEGIN
 			SportType			SMALLINT
 		,	BetType				SMALLINT
 	);
+	
+	IF	OBJECT_ID('tempdb..#tmpSupportedCurrency') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpSupportedCurrency;
+	END;
+
+	CREATE TABLE	#tmpSupportedCurrency(
+			CurrencyId			TINYINT
+	);
+
+	IF	OBJECT_ID('tempdb..#tmpSupportedHDP') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpSupportedHDP;
+	END;
+
+	CREATE TABLE	#tmpSupportedHDP(
+			Hdp					SMALLMONEY
+	);
+
+	IF	OBJECT_ID('tempdb..#tmpSupportedScore') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpSupportedScore;
+	END;
+
+	CREATE TABLE	#tmpSupportedScore(
+			LiveHomeScore		SMALLINT
+		,	LiveAwayScore		SMALLINT
+	);
 
 	INSERT INTO #tmpSupportedSportBettype(SportType,BetType)
 	VALUES (1,1),(1,3),(1,7),(1,8); -- Soccer
@@ -150,6 +195,11 @@ BEGIN
 		,	Danger3				TINYINT
 		,	Danger4				TINYINT
 		,	Danger5				TINYINT
+		,	CustomerClass		SMALLINT
+		,	CurrencyName		NVARCHAR(100)
+		,	CurrencyId			TINYINT
+		,	Hdp					SMALLMONEY
+		,	IsLicensee			BIT
 	);	
 
 	CREATE CLUSTERED INDEX #CIX_tmpTickets_CustID ON #tmpTickets (
@@ -159,6 +209,13 @@ BEGIN
 	CREATE NONCLUSTERED INDEX #IX_tmpTickets_LeagueId ON #tmpTickets (
 			LeagueId		DESC
 	);
+
+	IF @ListTransId <> ''
+		BEGIN
+			INSERT INTO #tmpTransIds (TransId)
+			SELECT ssk.val FROM dbo.f_SplitString(@ListTransId, ',') ssk
+			OPTION (MAXRECURSION 0);
+		END;
 
 	IF (@QueryType = 1)
 		BEGIN
@@ -230,19 +287,12 @@ BEGIN
 			ORDER BY b.sequenceid ASC
 				;
 		END
-	ELSE
+	ELSE IF (@QueryType = 2)
 		BEGIN
-			IF @ListTransId <> ''
-			BEGIN
-				INSERT INTO #tmpTransIds (TransId)
-				SELECT ssk.val FROM dbo.f_SplitString(@ListTransId, ',') ssk
-				OPTION (MAXRECURSION 0);
-			END;
-
 			-- START --
 			IF @IsGetDataFromBK = 1
 			BEGIN
-				INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus,LiveIndicator)
+				INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus,LiveIndicator,CurrencyName,CurrencyId)
 				SELECT	b.transid
 					,	b.transdate
 					,	b.matchid
@@ -266,15 +316,18 @@ BEGIN
 					,	b.liveawayscore
 					,	b.statusID
 					,	b.liveindicator
+					,	e.currency
+					,	e.ExchangeId
 				FROM bodb_Archive.dbo.bettrans_bk AS b WITH(NOLOCK)
 					INNER JOIN #tmpTransIds AS t WITH(NOLOCK) ON t.TransId = b.transid
 					INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.matchid = m.matchid
+					INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 				;
 			END;
 
 			IF	@IsGetDataFrom14 = 1
 			BEGIN
-				INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus,LiveIndicator)
+				INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus,LiveIndicator,CurrencyName,CurrencyId)
 				SELECT	b.transid
 					,	b.transdate
 					,	b.matchid
@@ -298,6 +351,8 @@ BEGIN
 					,	b.liveawayscore
 					,	b.statusID
 					,	b.liveindicator
+					,	b.CurrencyName
+					,	b.currency
 				FROM dbo.bettrans14 AS b WITH(NOLOCK)
 					INNER JOIN #tmpTransIds AS t WITH(NOLOCK) ON t.TransId = b.transid
 					INNER JOIN dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
@@ -306,7 +361,7 @@ BEGIN
 
 			IF	@IsGetDataFromOrigin = 1
 			BEGIN
-				INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator)
+				INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId)
 				SELECT	b.transid
 					,	b.transdate
 					,	b.matchid
@@ -330,6 +385,8 @@ BEGIN
 					,	b.liveawayscore
 					,	b.statusID
 					,	b.liveindicator
+					,	b.CurrencyName
+					,	b.currency
 				FROM dbo.bettrans AS b WITH(NOLOCK)
 					INNER JOIN #tmpTransIds AS t WITH(NOLOCK) ON t.TransId = b.transid
 					INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
@@ -343,17 +400,218 @@ BEGIN
 				,	t.Danger4 = c.Danger4
 				,	t.Danger5 = c.Danger5
 				,	t.LeagueName = l.leaguename
+				,	t.CustomerClass	= c.CustomerClass
 			FROM #tmpTickets AS t
 				INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON t.LeagueId = l.leagueid
 				INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid;
 		END;	
+	ELSE IF (@QueryType = 3)
+		BEGIN
+			IF (@BatchSize = 0)
+				BEGIN
+					INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp)
+					SELECT b.sequenceid
+						,	b.transid
+						,	b.transdate
+						,	b.matchid
+						,	m.eventdate
+						,	m.Eventstatus
+						,	m.GlobalShowTime
+						,	m.homeid
+						,	m.awayid
+						,	m.leagueid
+						,	m.sporttype
+						,	b.bettype
+						,	b.custid
+						,	b.betteam
+						,	b.betid
+						,	b.stake * b.actualrate 
+						,	b.stake
+						,	b.odds
+						,	b.hdp1
+						,	b.hdp2
+						,	b.livehomescore
+						,	b.liveawayscore
+						,	b.statusID
+						,	b.liveindicator
+						,	b.CurrencyName
+						,	b.currency
+						,	ABS(CASE WHEN @BetType IN (3,8,610)	THEN Hdp1
+								 ELSE (CASE	WHEN BetTeam = 'h'	THEN (Hdp2 - Hdp1)
+											WHEN BetTeam = 'a'	THEN (Hdp1 - Hdp2)
+										END)
+								 END)
+					FROM dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
+						INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
+						INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
+						LEFT JOIN #tmpTransIds AS t ON t.TransId = b.TransId
+					WHERE	b.matchid = @MatchID
+						AND b.liveindicator = @IsLive
+						AND b.bettype = @BetType
+						AND b.sequenceid < @LastScannedSequenceID
+						AND b.Currency NOT IN (20,27,28)
+						AND b.BetFrom NOT IN ('p','m','w','0','3','6')
+						AND b.Username NOT LIKE '%Cashout%'
+						AND b.srecommend NOT IN (41430709) 
+						AND b.mrecommend NOT IN (27899314,11656504,12146012) 
+						AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409)		
+						AND c.site NOT IN ('Nextbet','9wickets','9wsports')
+						AND ISNULL(b.oddstype,0) <> 0
+						AND t.TransId IS NULL;
+				END
+			ELSE 
+				BEGIN
+					INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp)
+					SELECT TOP (@BatchSize) b.sequenceid
+						,	b.transid
+						,	b.transdate
+						,	b.matchid
+						,	m.eventdate
+						,	m.Eventstatus
+						,	m.GlobalShowTime
+						,	m.homeid
+						,	m.awayid
+						,	m.leagueid
+						,	m.sporttype
+						,	b.bettype
+						,	b.custid
+						,	b.betteam
+						,	b.betid
+						,	b.stake * b.actualrate 
+						,	b.stake
+						,	b.odds
+						,	b.hdp1
+						,	b.hdp2
+						,	b.livehomescore
+						,	b.liveawayscore
+						,	b.statusID
+						,	b.liveindicator
+						,	b.CurrencyName
+						,	b.currency
+						,	ABS(CASE WHEN @BetType IN (3,8,610)	THEN Hdp1
+								 ELSE (CASE	WHEN BetTeam = 'h'	THEN (Hdp2 - Hdp1)
+											WHEN BetTeam = 'a'	THEN (Hdp1 - Hdp2)
+										END)
+								 END)
+					FROM dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
+						INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
+						INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
+					WHERE	b.matchid = @MatchID
+						AND b.liveindicator = @IsLive
+						AND b.bettype = @BetType
+						AND b.sequenceid < @LastScannedSequenceID
+						AND b.Currency NOT IN (20,27,28)
+						AND b.BetFrom NOT IN ('p','m','w','0','3','6')
+						AND b.Username NOT LIKE '%Cashout%'
+						AND b.srecommend NOT IN (41430709) 
+						AND b.mrecommend NOT IN (27899314,11656504,12146012) 
+						AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409)		
+						AND c.site NOT IN ('Nextbet','9wickets','9wsports')
+						AND ISNULL(b.oddstype,0) <> 0
+					ORDER BY b.sequenceid DESC;
+
+					SET @MinSequenceIDTotalAll = (SELECT MIN(SequenceId) FROM #tmpTickets);
+				END;
+
+			UPDATE t WITH(ROWLOCK, UPDLOCK)
+			SET t.IsLicensee = 1
+			FROM #tmpTickets AS t
+				INNER JOIN dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
+				INNER JOIN dbo.Dep_CustSuper AS cs WITH (NOLOCK) ON cs.custid = c.srecommend;
+
+			UPDATE t WITH(ROWLOCK, UPDLOCK)
+			SET t.IsLicensee = 0
+			FROM #tmpTickets AS t
+				INNER JOIN dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
+				INNER JOIN dbo.CustProductStatus AS s WITH (NOLOCK) ON s.custid = c.custid
+			WHERE t.IsLicensee IS NULL;
+
+			IF (@IsLiencee IS NOT NULL)
+			BEGIN
+				DELETE t
+				FROM #tmpTickets AS t
+				WHERE t.IsLicensee != @IsLiencee;
+			END;
+
+			IF (@FromStakeRM IS NOT NULL AND @ToStakeRM IS NOT NULL)
+			BEGIN
+				DELETE t
+				FROM #tmpTickets AS t
+				WHERE t.Stake < @FromStakeRM
+					OR t.Stake > @ToStakeRM;
+			END;
+
+			IF (@ListCurrency IS NOT NULL)
+			BEGIN
+				INSERT INTO #tmpSupportedCurrency (CurrencyId)
+				SELECT ssk.val 
+				FROM dbo.f_SplitString(@ListCurrency, ',') AS ssk;
+
+				DELETE t
+				FROM #tmpTickets AS t
+					LEFT JOIN #tmpSupportedCurrency AS curr ON curr.CurrencyId = t.CurrencyId
+				WHERE curr.CurrencyId IS NULL;
+			END;
+
+			IF (@ListScore IS NOT NULL)
+			BEGIN
+				INSERT INTO #tmpSupportedScore (LiveHomeScore,LiveAwayScore)
+				SELECT cas.LiveHomeScore, cas.LiveAwayScore
+				FROM dbo.f_SplitString(@ListScore, ',') AS ssk
+					CROSS APPLY (SELECT	LiveHomeScore = xDim.value('/x[1]','varchar(max)')
+									,	LiveAwayScore = xDim.value('/x[2]','varchar(max)')
+								From (SELECT CAST('<x>' + REPLACE(REPLACE(ssk.val,'-',''),'  ','</x><x>')+'</x>' AS XML) AS xDim) AS s
+								) AS cas;
+
+				DELETE t
+				FROM #tmpTickets AS t
+					LEFT JOIN #tmpSupportedScore AS s ON s.LiveHomeScore = t.LiveHomeScore AND s.LiveAwayScore = t.LiveAwayScore
+				WHERE s.LiveHomeScore IS NULL;
+			END;
+
+			IF (@ListHDP IS NOT NULL)
+			BEGIN
+				INSERT INTO #tmpSupportedHDP (Hdp)
+				SELECT ssk.val 
+				FROM dbo.f_SplitString(@ListHDP, ',') AS ssk;
+
+				DELETE t
+				FROM #tmpTickets AS t
+					LEFT JOIN #tmpSupportedHDP AS h ON h.Hdp = t.Hdp
+				WHERE h.Hdp IS NULL;
+			END;
+
+			UPDATE	t WITH(ROWLOCK, UPDLOCK)
+			SET		t.Danger1		= c.danger
+				,	t.Danger2		= c.danger2
+				,	t.Danger3		= c.danger3
+				,	t.Danger4		= c.Danger4
+				,	t.Danger5		= c.Danger5
+				,	t.LeagueName	= l.leaguename
+				,	t.CustomerClass	= c.CustomerClass
+			FROM #tmpTickets AS t
+				INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON t.LeagueId = l.leagueid
+				INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid;
+		END;
 
 	-- Return data
-	SELECT	*
-	FROM #tmpTickets AS m WITH(NOLOCK);
+	IF (@QueryType = 3 AND @BatchSize = 0)
+		BEGIN
+			SET @MinSequenceIDTotalAll = (SELECT COUNT(1) FROM #tmpTickets);
+		END
+	ELSE
+		BEGIN
+			SELECT	*
+			FROM #tmpTickets AS m WITH(NOLOCK);
+		END;
 	
-	DROP TABLE #tmpTransIds;
-	DROP TABLE #tmpTickets;
+	DROP TABLE IF EXISTS #tmpTransIds;
+	DROP TABLE IF EXISTS #tmpTickets;
+	DROP TABLE IF EXISTS #tmpSupportedSportBettype;
+	DROP TABLE IF EXISTS #tmpSupportedCurrency;
+	DROP TABLE IF EXISTS #tmpSupportedHDP;
+	DROP TABLE IF EXISTS #tmpSupportedScore;
+
 END;
 
 GO
