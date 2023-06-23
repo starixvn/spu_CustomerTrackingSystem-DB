@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_Common_GetCCAndDangerLevel`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Common_GetCCAndDangerLevel`(
-	IN ip_CustIDs TEXT
+	IN ip_CustIDs LONGTEXT
 )
     SQL SECURITY INVOKER
 BEGIN 
