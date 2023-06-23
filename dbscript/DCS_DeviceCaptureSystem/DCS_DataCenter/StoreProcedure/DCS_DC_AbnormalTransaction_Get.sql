@@ -4,6 +4,9 @@ DROP PROCEDURE IF EXISTS `DCS_DC_AbnormalTransaction_Get`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_AbnormalTransaction_Get`(
 		IN ip_Size INT
+        
+	,	OUT op_MinID BIGINT UNSIGNED
+	,	OUT op_MaxID BIGINT UNSIGNED
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -15,20 +18,19 @@ BEGIN
 
 	Revisions:
 		- 20230316@Jonathan.Doan: Get Data [Redmine ID: 185185]
+		- 20230623@Jonathan.Doan: Add Field ID AUTO_INCREMENT  [Redmine ID: #190217]
 		
 	Param's Explanation (filtered by):
 
 	Example:
-		- CALL DCS_DataCenter.DCS_DC_AbnormalTransaction_Get(10);
+		- CALL DCS_DataCenter.DCS_DC_Abnormal_Transasction_Get(10, @minID, @maxID); SELECT @minID, @maxID
 	*/
-    DECLARE lv_MaxAssociationID_VGroup VARCHAR(128) DEFAULT 'DCS_AbnormalTransaction';
-    DECLARE lv_MaxAssociationID_VName VARCHAR(128) DEFAULT 'MaxAssociationID_Pushed';
+    DECLARE lv_MaxID_VGroup VARCHAR(128) DEFAULT 'DCS_AbnormalTransaction';
+    DECLARE lv_MaxID_VName VARCHAR(128) DEFAULT 'MaxID_Pushed';
     
-    DECLARE lv_MaxAssociationID BIGINT UNSIGNED;
-    DECLARE lv_MinID BIGINT UNSIGNED;
     DECLARE lv_MaxID BIGINT UNSIGNED;
     
-    SET lv_MaxAssociationID = IFNULL((SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE VGroup = lv_MaxAssociationID_VGroup AND VName = lv_MaxAssociationID_VName), 0);
+    SET lv_MaxID = IFNULL((SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE VGroup = lv_MaxID_VGroup AND VName = lv_MaxID_VName), 0);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_NewAccountDevice;
     DROP TEMPORARY TABLE IF EXISTS Temp_NewAccountDevice_Validated;
@@ -36,14 +38,14 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Account_MinID;
     
     CREATE TEMPORARY TABLE Temp_NewAccountDevice(
-			AssociationID BIGINT UNSIGNED PRIMARY KEY
-        ,	AccountID BIGINT UNSIGNED
+			ID				BIGINT UNSIGNED PRIMARY KEY
+        ,	AccountID 		BIGINT UNSIGNED
         
         ,	INDEX 	IX_Temp_NewAccountDevice_AccountID(AccountID)
     );
     
     CREATE TEMPORARY TABLE Temp_NewAccountDevice_Validated(
-			AssociationID 	BIGINT UNSIGNED PRIMARY KEY
+			ID			 	BIGINT UNSIGNED PRIMARY KEY
         ,	AccountID 		BIGINT UNSIGNED
     );
     
@@ -56,19 +58,19 @@ BEGIN
         ,	AccountID 		BIGINT UNSIGNED
     );
     
-    INSERT IGNORE INTO Temp_NewAccountDevice(AssociationID, AccountID)
-    SELECT 	AssociationID
+    INSERT IGNORE INTO Temp_NewAccountDevice(ID, AccountID)
+    SELECT 	ID
 		,	AccountID
 	FROM DCS_DataCenter.NewAccountDevice PARTITION(p10000000)
-	WHERE AssociationID > lv_MaxAssociationID
+	WHERE ID > lv_MaxID
 		AND status = 0
-    ORDER BY AssociationID
+    ORDER BY ID ASC
     LIMIT ip_Size;
     
-    SELECT	IFNULL(MIN(AssociationID),0)
-		,	IFNULL(MAX(AssociationID),0)
-    INTO 	lv_MinID
-		,	lv_MaxID
+    SELECT	IFNULL(MIN(ID),0)
+		,	IFNULL(MAX(ID),0)
+    INTO 	op_MinID
+		,	op_MaxID
 	FROM Temp_NewAccountDevice;
     
     INSERT INTO Temp_Account_Count_Device_History(AccountID)
@@ -79,36 +81,35 @@ BEGIN
     SELECT 	nad.AccountID
     FROM cte_AccountID AS cte
 		INNER JOIN DCS_DataCenter.NewAccountDevice PARTITION(p10000000) AS nad ON nad.AccountID = cte.AccountID
-	WHERE nad.AssociationID < lv_MinID
+	WHERE nad.ID < op_MinID
 	GROUP BY nad.AccountID;
     
-    INSERT INTO Temp_NewAccountDevice_Validated(AssociationID, AccountID)
-    SELECT 	tmp.AssociationID
+    INSERT INTO Temp_NewAccountDevice_Validated(ID, AccountID)
+    SELECT 	tmp.ID
 		,	tmp.AccountID
 	FROM Temp_Account_Count_Device_History AS tmpH
 		INNER JOIN Temp_NewAccountDevice AS tmp ON tmp.AccountID = tmpH.AccountID;
         
 	DELETE tmp
     FROM Temp_NewAccountDevice AS tmp
-		INNER JOIN Temp_NewAccountDevice_Validated AS tmpV ON tmpV.AssociationID = tmp.AssociationID;
+		INNER JOIN Temp_NewAccountDevice_Validated AS tmpV ON tmpV.ID = tmp.ID;
         
     /*****Check inside BATCH ONLY****************************************************/
     INSERT INTO Temp_Account_MinID(MinID, AccountID)
-    SELECT 	MIN(tmp.AssociationID) as MinID
+    SELECT 	MIN(tmp.ID) as MinID
 		,	tmp.AccountID
 	FROM Temp_NewAccountDevice AS tmp
 	GROUP BY tmp.AccountID;
     
-    INSERT INTO Temp_NewAccountDevice_Validated(AssociationID, AccountID)
-    SELECT 	tmp.AssociationID
+    INSERT INTO Temp_NewAccountDevice_Validated(ID, AccountID)
+    SELECT 	tmp.ID
 		,	tmp.AccountID
     FROM Temp_NewAccountDevice AS tmp
-		LEFT JOIN Temp_Account_MinID AS tmpAM ON tmpAM.MinID = tmp.AssociationID
+		LEFT JOIN Temp_Account_MinID AS tmpAM ON tmpAM.MinID = tmp.ID
 	WHERE tmpAM.MinID IS NULL;
         
     /*****Return DATA****************************************************/
-    SELECT 	nad.AssociationID
-		,	nad.RawTransID AS TransID
+    SELECT 	nad.ID
 		,	nad.LoginName
 		,	nad.TransTime
 		,	nad.IP
@@ -117,11 +118,8 @@ BEGIN
 		,	ua.Browser
 		,	dt.DeviceTypeName
 	FROM Temp_NewAccountDevice_Validated AS tmp
-		INNER JOIN DCS_DataCenter.NewAccountDevice PARTITION(p10000000) AS nad ON nad.AssociationID = tmp.AssociationID
+		INNER JOIN DCS_DataCenter.NewAccountDevice PARTITION(p10000000) AS nad ON nad.ID = tmp.ID
 		LEFT JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = nad.UserAgentKey
 		LEFT JOIN DCS_DataCenter.DeviceType AS dt ON dt.DeviceTypeID = ua.DeviceTypeID;
-        
-	SELECT 	lv_MinID AS MinID
-		,	lv_MaxID AS MaxID;
 END$$
 DELIMITER ;
