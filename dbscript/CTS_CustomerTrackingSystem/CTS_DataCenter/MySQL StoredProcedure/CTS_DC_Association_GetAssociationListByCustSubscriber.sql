@@ -96,19 +96,19 @@ BEGIN
         ,	abd.CreatedTime
     FROM CTS_DataCenter.AssociationByDevice AS abd
 		INNER JOIN Temp_Customer AS tmpCus ON abd.SubscriberID = ip_SubscriberID AND abd.CTSCustID = tmpCus.CTSCustID AND abd.CTSCustID <> ip_CTSCustID;
-
-    INSERT INTO Temp_AssociationAccount(CTSCustID, DeviceInCommon, OtherDeives, AssociatedAccount, IsFirstCust, MaxCreatedTime)
+	
+	INSERT INTO Temp_AssociationAccount(CTSCustID, DeviceInCommon, OtherDeives, AssociatedAccount, IsFirstCust, MaxCreatedTime)
     SELECT	tmpAs.CTSCustID
-		,	COUNT(DISTINCT(CASE WHEN abd.CTSCustID IS NOT NULL THEN abd.DCSDeviceID ELSE NULL END)) AS DeviceInCommon
-        ,	COUNT(DISTINCT(CASE WHEN abd.CTSCustID IS NULL THEN tmpAs.DCSDeviceID ELSE NULL END)) AS OtherDevices
-		,	COUNT(DISTINCT(CASE WHEN abd.CTSCustID IS NOT NULL THEN abd.CTSCustID ELSE NULL END)) AS AsscociatedAccount
+		,	COUNT(DISTINCT CASE WHEN cus.CTSCustID > 0 THEN tmpAs.DCSDeviceID ELSE NULL END) AS DeviceInCommon
+        ,	COUNT(DISTINCT tmpAs.DCSDeviceID) - COUNT(DISTINCT CASE WHEN cus.CTSCustID > 0 THEN tmpAs.DCSDeviceID ELSE NULL END) AS OtherDevices
+		,	COUNT(DISTINCT cus.CTSCustID) AS AsscociatedAccount
         ,	MAX(CASE WHEN tmpAs.CTSCustID = ip_CTSCustID THEN 1 ELSE 0 END) AS IsFirstCust
         ,	MAX(tmpAs.CreatedTime) AS MaxCreatedTime
     FROM Temp_Association AS tmpAs
         LEFT JOIN CTS_DataCenter.AssociationByDevice AS abd ON abd.SubscriberID = ip_SubscriberID AND tmpAs.DCSDeviceID = abd.DCSDeviceID AND tmpAs.CTSCustID <> abd.CTSCustID
-        INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON abd.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0
-	GROUP BY tmpAs.CTSCustID;    
-
+        LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON abd.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0
+	GROUP BY tmpAs.CTSCustID;
+    
     SET op_TotalItem = (SELECT COUNT(1) FROM Temp_AssociationAccount);
 
 	SELECT	tmpAa.CTSCustID
