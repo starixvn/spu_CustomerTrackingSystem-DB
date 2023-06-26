@@ -39,10 +39,10 @@ BEGIN
     WHERE abd.SubscriberID = ip_SubscriberID AND abd.CTSCustID = ip_CTSCustID;
 
     SELECT 	COUNT(DISTINCT tmpAs1.DCSDeviceID) AssociatedDevices
-		,	COUNT(DISTINCT abd.CTSCustID) AS AssociatedAccounts
+		,	COUNT(DISTINCT cus.CTSCustID) AS AssociatedAccounts
         ,	MIN(tmpAs1.CreatedTime) AS FirstLogin
     FROM Temp_Association AS tmpAs1
 		LEFT JOIN CTS_DataCenter.AssociationByDevice AS abd ON tmpAs1.DCSDeviceID = abd.DCSDeviceID AND tmpAs1.CTSCustID <> abd.CTSCustID AND abd.SubscriberID = ip_SubscriberID   
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON abd.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0;
+		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON abd.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0;
 END$$
 DELIMITER ;
