@@ -15,7 +15,7 @@ ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_TicketDetails]
 	,	@EventDate					DATETIME = '1900-09-22'
 	,	@MatchID					INT = 0
 	,	@BetType					SMALLINT = 0
-	,	@IsLiencee					BIT = NULL
+	,	@IsLicensee					BIT = NULL
 	,	@ListCurrency				VARCHAR(MAX) = NULL
 	,	@ListHDP					VARCHAR(MAX) = NULL
 	,	@ListScore					VARCHAR(MAX) = NULL
@@ -52,13 +52,13 @@ AS
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize)
 					  2 - to show on report (get tickets by @EventDate & @ListTransId)
-					  3	- to show on report (get all tickets by @MatchID, @BetType, @IsLive, @LastScannedSequenceID, @BatchSize, @IsLiencee, @ListCurrency, @ListHDP, @ListScore, @FromStakeRM, @ToStakeRM)
+					  3	- to show on report (get all tickets by @MatchID, @BetType, @IsLive, @LastScannedSequenceID, @BatchSize, @IsLicensee, @ListCurrency, @ListHDP, @ListScore, @FromStakeRM, @ToStakeRM)
 							+ @BatchSize = 0 ==> @MinSequenceIDTotalAll: Total tickets
 							+ @BatchSize > 0 ==> @MinSequenceIDTotalAll: Min SequenceId
 							+ @BatchSize = 0 & @ListTransId <> '' ==> get total tickets (excluded  @ListTransId)
 	Example:
 		DECLARE @MinTotal BIGINT;
-		EXEC [dbo].[CTS_Rpt_MatchMonitor_TicketDetails] @QueryType = 3,@LastScannedSequenceID = 117286612760,@IsLive = 1,@BatchSize = 4000,@MatchID = 70099921,@BetType = 1, @IsLiencee = 1, @ListCurrency = '1',@ListHDP = '0.18,0.17',@ListScore = '0 - 0, 3 - 3',@FromStakeRM = NULL,@ToStakeRM = NULL,@MinSequenceIDTotalAll = @MinTotal OUTPUT;
+		EXEC [dbo].[CTS_Rpt_MatchMonitor_TicketDetails] @QueryType = 3,@LastScannedSequenceID = 117286612760,@IsLive = 1,@BatchSize = 4000,@MatchID = 70099921,@BetType = 1, @IsLicensee = 1, @ListCurrency = '1',@ListHDP = '0.18,0.17',@ListScore = '0 - 0, 3 - 3',@FromStakeRM = NULL,@ToStakeRM = NULL,@MinSequenceIDTotalAll = @MinTotal OUTPUT;
 		SELECT @MinTotal;
 */
 BEGIN
@@ -526,11 +526,11 @@ BEGIN
 				INNER JOIN dbo.CustProductStatus AS s WITH (NOLOCK) ON s.custid = c.custid
 			WHERE t.IsLicensee IS NULL;
 
-			IF (@IsLiencee IS NOT NULL)
+			IF (@IsLicensee IS NOT NULL)
 			BEGIN
 				DELETE t
 				FROM #tmpTickets AS t
-				WHERE t.IsLicensee != @IsLiencee;
+				WHERE t.IsLicensee != @IsLicensee;
 			END;
 
 			IF (@FromStakeRM IS NOT NULL AND @ToStakeRM IS NOT NULL)
