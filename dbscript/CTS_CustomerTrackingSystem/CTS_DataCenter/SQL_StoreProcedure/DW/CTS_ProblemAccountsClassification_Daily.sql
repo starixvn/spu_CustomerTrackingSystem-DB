@@ -19,6 +19,7 @@ AS
 		- 20220328@Long.Luu: Created [Redmine ID: #170468]
 		- 20221118@Jonas.Huynh: Update parameter of DW SP GetCustAccumulatedInfo [Redmine ID: #179500]
 		- 20230601@Jonas.Huynh: Update SP get accumulated performance (Renovate Phase2) [Redmine ID: #186684]
+		- 20230627@Jonas.Huynh: Implement Inactive Normal to New [Redmine ID: #189876]
 
 	Param's Explanation:
 */
@@ -93,7 +94,7 @@ BEGIN
 
 	-- #1: GetCustomer Accummulated data
 	INSERT INTO #tmpRawData(CustId, SportGroup, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDaysCustID, ActiveDaysSportGroup, WindaysCustID, WinDaysSportGroup, ProcessedTime)
-	EXEC bodb_dwrs.dbo.Acc_Rpt_CTS_GetCustAccumulatedInfo @ListCustID = @ListCustIds;
+	EXEC bodb_dwrs.dbo.Acc_Rpt_CTS_GetCustAccumulatedInfo @ListCustID = @ListCustIds, @isResetBalance = 1;
 
 	-- #2: Sum data by custid
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, BetCount, ActiveDays)
