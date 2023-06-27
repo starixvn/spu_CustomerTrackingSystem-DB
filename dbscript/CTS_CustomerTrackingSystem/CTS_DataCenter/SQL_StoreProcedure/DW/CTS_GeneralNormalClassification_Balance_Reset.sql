@@ -44,7 +44,7 @@ BEGIN
 	SET rb.ResetDate = @YesterdayDate,
 		rb.CreatedTime = @CurrentDateTime
 	FROM #tmpResetBalance AS a
-		INNER JOIN dbo.CustomerClassification_ResetBalance AS rb WITH(NOLOCK) ON rb.CustId = a.CustId
+		INNER JOIN dbo.CustomerClassification_ResetBalance AS rb ON rb.CustId = a.CustId
 
 	INSERT INTO dbo.CustomerClassification_ResetBalance (CustId, ResetDate, CreatedTime)
 	SELECT a.CustId, @YesterdayDate, @CurrentDateTime
