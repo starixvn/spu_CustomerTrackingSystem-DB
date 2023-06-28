@@ -1,8 +1,8 @@
-/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin,ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Transform_Device_GetPackage`;
+/*<info serverAlias="CTSMain-DCS_Extra" databaseType="2" executers="ctsServiceAdmin,ctsService" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `DCS_ET_Transform_Device_GetPackage`;
 
 DELIMITER $$
-CREATE DEFINER=`dcsService`@`%` PROCEDURE `DCS_DC_Transform_Device_GetPackage`(
+CREATE DEFINER=`dcsService`@`%` PROCEDURE `DCS_ET_Transform_Device_GetPackage`(
         IN ip_NoOfTickets INT
     ,   IN ip_NoOfBatch INT
 )
@@ -11,7 +11,7 @@ BEGIN
 	/*
 	    Created: 20200908@Bobby.Nguyen
 	    Task : Get List TransID to process Device Transform
-	    DB: DCS_DataCenter
+	    DB: DCS_Extra
 	    Original:
 
 	    Revisions:
@@ -42,7 +42,7 @@ BEGIN
 	SET lv_TotalRecord 	    = ip_NoOfTickets*ip_NoOfBatch;
     SET lv_GroupLookup 	    = 'DCS_Device_Transform';
     SET lv_KeyLookup 		= 'MinTransId';
-    SET lv_FromTransID 	    = IFNULL((SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE VGroup=lv_GroupLookup AND VName=lv_KeyLookup), 0);
+    SET lv_FromTransID 	    = IFNULL((SELECT CAST(VValue AS UNSIGNED) FROM DCS_Extra.SystemSetting WHERE VGroup=lv_GroupLookup AND VName=lv_KeyLookup), 0);
     
 
 	SET @RowId = 0;
@@ -55,7 +55,7 @@ BEGIN
 		    ,   ts.TransID
             ,   ts.CreatedDate
 		    ,   ceil(@RowId/ip_NoOfTickets) AS BatchID
-		FROM DCS_DataCenter.Transaction AS ts
+		FROM DCS_Extra.Transaction AS ts
 		WHERE ts.TransId >= lv_FromTransID
 		LIMIT lv_TotalRecord
     ) AS t;
@@ -63,7 +63,7 @@ BEGIN
     SET lv_FromTransID = IFNULL((SELECT MIN(TransID) FROM Temp_Trans), lv_FromTransID); 
     SET lv_FromCreatedDate = IFNULL((SELECT MIN(CreatedDate) FROM Temp_Trans), date_add(CURRENT_TIMESTAMP(), INTERVAL -2 WEEK));
 
-    INSERT INTO DCS_DataCenter.SystemSetting (VGroup, VName, VValue, UpdatedTime)
+    INSERT INTO DCS_Extra.SystemSetting (VGroup, VName, VValue, UpdatedTime)
     SELECT VGroup, VName, VValue, UpdatedTime
     FROM (
         SELECT lv_GroupLookup AS VGroup

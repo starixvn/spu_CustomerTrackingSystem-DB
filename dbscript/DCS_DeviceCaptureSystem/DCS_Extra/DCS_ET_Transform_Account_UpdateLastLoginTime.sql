@@ -1,8 +1,8 @@
-/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Transform_Account_UpdateLastLoginTime`;
+/*<info serverAlias="CTSMain-DCS_Extra" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `DCS_ET_Transform_Account_UpdateLastLoginTime`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_Account_UpdateLastLoginTime`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_ET_Transform_Account_UpdateLastLoginTime`(
 		IN BatchSize 	INT
 )
     SQL SECURITY INVOKER
@@ -10,7 +10,7 @@ BEGIN
 	/*
 		Created:	20210705@Aries.Nguyen
 		Task:		Fix deadlock issue [Redmine ID: #157203]
-		DB:			DCS_DataCenter
+		DB:			DCS_Extra
 		Original:
 
 		Revisions:
@@ -32,15 +32,15 @@ BEGIN
     SELECT 	acc.ID
 		,	acc.AccountID
         ,	acc.LastLoginTime
-    FROM DCS_DataCenter.AccountLastLoginTimeProcess AS acc
+    FROM DCS_Extra.AccountLastLoginTimeProcess AS acc
     ORDER BY acc.ID ASC
     LIMIT BatchSize;
     
-    UPDATE DCS_DataCenter.Account 	AS acc
+    UPDATE DCS_Extra.Account 	AS acc
         INNER JOIN	Temp_AccountLastLoginTimeProcess AS tll ON acc.AccountID = tll.AccountID
 	SET	 acc.LastLoginTime = tll.LastLoginTime; 
     
-    DELETE FROM DCS_DataCenter.AccountLastLoginTimeProcess AS acc
+    DELETE FROM DCS_Extra.AccountLastLoginTimeProcess AS acc
     WHERE acc.ID IN (SELECT ID FROM Temp_AccountLastLoginTimeProcess);
     
     ###########################################################
@@ -64,7 +64,7 @@ BEGIN
     SELECT 	cus.ID
 		,	cus.CTSCustID
         ,	cus.LastLoginTime
-    FROM DCS_DataCenter.CTSCustomerLastLoginTimeProcess AS cus
+    FROM DCS_Extra.CTSCustomerLastLoginTimeProcess AS cus
     ORDER BY cus.ID ASC
     LIMIT BatchSize;
     
@@ -82,7 +82,7 @@ BEGIN
         INNER JOIN 	Temp_CTSCustomerLastLoginTimeProcess AS tmp_cus ON cus.CTSCustID = tmp_cus.CTSCustID AND tmp_cus.IsValid = 1
 	 SET cus.LastLoginTime = tmp_cus.LastLoginTime;
      
-	DELETE FROM DCS_DataCenter.CTSCustomerLastLoginTimeProcess AS cust
+	DELETE FROM DCS_Extra.CTSCustomerLastLoginTimeProcess AS cust
     WHERE cust.ID IN (SELECT ID FROM Temp_CTSCustomerLastLoginTimeProcess);
 
 END$$

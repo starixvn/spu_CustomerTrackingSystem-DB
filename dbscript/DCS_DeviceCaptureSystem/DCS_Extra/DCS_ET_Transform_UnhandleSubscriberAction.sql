@@ -1,8 +1,8 @@
-/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Transform_UnhandleSubscriberAction`;
+/*<info serverAlias="CTSMain-DCS_Extra" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `DCS_ET_Transform_UnhandleSubscriberAction`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_UnhandleSubscriberAction`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_ET_Transform_UnhandleSubscriberAction`(
         IN ip_FromTransID       BIGINT UNSIGNED
     ,   IN ip_ToTransID         BIGINT UNSIGNED
 )
@@ -15,7 +15,7 @@ BEGIN
 	    Original:
 
 	    Revisions:
-	        - 20201006@CaseyHuynh: Move New Server, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_DataCenter" [Redmine ID: #143011]
+	        - 20201006@CaseyHuynh: Move New Server, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_Extra" [Redmine ID: #143011]
             - 20201019@CaseyHuynh:	Move Server, Phase 2 [Redmine ID: #143011]
             - 20201111@CaseyHuynh: Remove code  "Insert New Subscriber To Subscriber table when Subscriber Is Invalid" [Redmine ID: #144307]
             - 20210510@Aries.Nguyen: Remove insert log zzTracePerformance [Redmine ID: #154792]
@@ -57,15 +57,15 @@ BEGIN
         ,   su.SubscriberStatus
         ,   ActionResultID
         ,   ActionResultStatus
-	FROM	DCS_DataCenter.RawTransaction AS rt
+	FROM	DCS_Extra.RawTransaction AS rt
 	    LEFT JOIN	CTS_Admin.Subscriber AS su ON rt.SubscriberName = su.SubscriberName AND su.DCSStatus = 1
-	    LEFT JOIN	DCS_DataCenter.ActionResult AS ar ON rt.Action = ar.Action AND rt.ActionResult = ar.ActionResult
+	    LEFT JOIN	DCS_Extra.ActionResult AS ar ON rt.Action = ar.Action AND rt.ActionResult = ar.ActionResult
     WHERE	rt.TransID BETWEEN ip_FromTransID AND ip_ToTransID
 	    AND rt.IsProcessed = 0;       
    
    
     #==UNHANDLE ACTION================================================================    
-	INSERT IGNORE INTO DCS_DataCenter.ActionResult (Action, ActionResult, CreatedDate, ActionResultStatus)
+	INSERT IGNORE INTO DCS_Extra.ActionResult (Action, ActionResult, CreatedDate, ActionResultStatus)
 	SELECT  Action 
 	    ,   ts.ActionResult AS ActionResult
 	    ,   MIN(ts.CreatedDate)	AS CreatedDate
@@ -75,7 +75,7 @@ BEGIN
         ,    ts.ActionResult;
 	
 	
-    SET lv_NotTransformedStatus = DCS_DC_GetTransStatus_NotTransformed();
+    SET lv_NotTransformedStatus = DCS_ET_GetTransStatus_NotTransformed();
 
     #===Update NOT Transform status for the Invalid Transaction (Invalid Subscriber)
     UPDATE Temp_Transaction AS ts
@@ -89,7 +89,7 @@ BEGIN
     WHERE   ts.ActionResultID IS NULL
 	    OR  ts.ActionResultStatus = lv_UnhandleStatus; 
    
-    UPDATE DCS_DataCenter.RawTransaction AS rt
+    UPDATE DCS_Extra.RawTransaction AS rt
         INNER JOIN	Temp_Transaction AS ts ON rt.TransID = ts.TransID
 	SET     rt.IsProcessed = CASE WHEN (ts.TransStatus & lv_NotTransformedStatus) != 0 THEN -1 ELSE rt.IsProcessed END 
 	    ,   rt.TransStatus = ts.TransStatus;

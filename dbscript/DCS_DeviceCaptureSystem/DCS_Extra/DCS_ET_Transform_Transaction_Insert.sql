@@ -1,8 +1,8 @@
-/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Transform_Transaction_Insert`;
+/*<info serverAlias="CTSMain-DCS_Extra" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `DCS_ET_Transform_Transaction_Insert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_Transaction_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_ET_Transform_Transaction_Insert`(
         IN ip_FromTransID   BIGINT UNSIGNED
     ,   IN ip_ToTransID     BIGINT UNSIGNED
 )
@@ -11,16 +11,16 @@ BEGIN
     /*
 	    Created: 20190730@Casey.Huynh
 	    Task : Insert Transaction
-	    DB: DCS_DataCenter
+	    DB: DCS_Extra
 	    Original:
 
 	    Revisions:
 		    - 20191217@CaseyHuynh: Implement LastLoginTime [RedmineID: #125530]
-            - 20200416@Terry: Archive Completed RawTransaction to DCS_DataCenter.ProcessedTransaction.
-		    - 20200506@CaseyHuynh: Not Deposit Account. Insert Ignore On Duplicate, Update (LastLoginTime, IsCTSTransfromed). Remove code "INSERT IGNORE INTO DCS_DataCenter.TransactionIP_TransformTemp" [RedmineID: #133486]
+            - 20200416@Terry: Archive Completed RawTransaction to DCS_Extra.ProcessedTransaction.
+		    - 20200506@CaseyHuynh: Not Deposit Account. Insert Ignore On Duplicate, Update (LastLoginTime, IsCTSTransfromed). Remove code "INSERT IGNORE INTO DCS_Extra.TransactionIP_TransformTemp" [RedmineID: #133486]
 		    - 20200515@CaseyHuynh: Update LastLoginTime [RedmineID: #133263]
             - 20200918@CaseyHuynh: Change column TransID to RawTransID [RedmineID: #137963]
-            - 20201006@CaseyHuynh: Move New Server, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_DataCenter" [RedmineID: #143011]
+            - 20201006@CaseyHuynh: Move New Server, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_Extra" [RedmineID: #143011]
             - 20201019@CaseyHuynh: Move Server, Phase 2	 [RedmineID: #143011]
             - 20201112@CaseyHuynh: GET Lastest Code Move Server P3, update Permission and Add Meta data, Update login Retry for unsuccsess Transform (-1,-2,-3) (SET IsCTSTransformed = 0 instead of -1) [RedmineID: #145271]
 		    - 20201119@CaseyHuynh: Enhance New Retry transform association/account Flow, change log to CTS_Log DB [RedmineID: #145271]
@@ -31,7 +31,7 @@ BEGIN
 			- 20230426@Jonathan.Doan: Get BotDetectionValue from RawTransaction [Redmine ID: #186644]
 	    Param's Explanation (filtered by):
 		Example:
-			CALL DCS_DC_Transform_Transaction_Insert(1,200);
+			CALL DCS_ET_Transform_Transaction_Insert(1,200);
     */
 	DECLARE		lv_SysMinCreatedDate	DATETIME;
     
@@ -91,7 +91,7 @@ BEGIN
    
     SELECT DATE(VValue)
     INTO lv_SysMinCreatedDate
-    FROM DCS_DataCenter.SystemSetting 
+    FROM DCS_Extra.SystemSetting 
     WHERE VGroup = "DCS_Device_Transform" 
         AND VName = "MinCreatedDate";
 
@@ -114,15 +114,15 @@ BEGIN
         ,   rt.FingerprintCode
         ,   rt.BotDetectionValue
         ,   rt.BotComponentID
-	FROM		DCS_DataCenter.RawTransaction AS rt
+	FROM		DCS_Extra.RawTransaction AS rt
         INNER JOIN	CTS_Admin.Subscriber AS su ON	rt.SubscriberName = su.SubscriberName
-	    INNER JOIN	DCS_DataCenter.ActionResult AS ar ON	rt.Action = ar.Action AND IFNULL(rt.ActionResult,'') = ar.ActionResult
+	    INNER JOIN	DCS_Extra.ActionResult AS ar ON	rt.Action = ar.Action AND IFNULL(rt.ActionResult,'') = ar.ActionResult
 	WHERE   rt.IsProcessed = 0
 	    AND rt.TransID BETWEEN ip_FromTransID AND ip_ToTransID
         AND rt.CreatedDate 	>=	lv_SysMinCreatedDate;
 
     #===INSERT SUBCRIBERURL    
-    INSERT IGNORE INTO DCS_DataCenter.URL(URLDetails, SubscriberID, CreatedDate)
+    INSERT IGNORE INTO DCS_Extra.URL(URLDetails, SubscriberID, CreatedDate)
 	SELECT	trt.URLDetails
         ,   trt.SubscriberID
         ,   MIN(trt.CreatedDate)
@@ -131,7 +131,7 @@ BEGIN
         ,    trt.URLDetails;    
     
 	# Insert New Account
-    INSERT IGNORE INTO DCS_DataCenter.Account(LoginName, SubscriberID, SubscriberType, CreatedDate, InsertTime, CreatedTime, LastLoginTime)
+    INSERT IGNORE INTO DCS_Extra.Account(LoginName, SubscriberID, SubscriberType, CreatedDate, InsertTime, CreatedTime, LastLoginTime)
     SELECT  trt.LoginName
 	    ,   trt.SubscriberID
 	    ,   trt.SubscriberType
@@ -140,7 +140,7 @@ BEGIN
         ,   MIN(trt.TransTime) AS CreatedTime
         ,   MAX(trt.TransTime) AS LastLoginTime
     FROM Temp_RawTransaction AS trt
-    WHERE NOT EXISTS (SELECT 1 FROM DCS_DataCenter.Account AS acc  where trt.LoginName = acc.LoginName and trt.SubscriberID = acc.SubscriberID)
+    WHERE NOT EXISTS (SELECT 1 FROM DCS_Extra.Account AS acc  where trt.LoginName = acc.LoginName and trt.SubscriberID = acc.SubscriberID)
     GROUP BY trt.SubscriberID
         ,    trt.LoginName
         ,    trt.SubscriberType;
@@ -151,8 +151,8 @@ BEGIN
         ,   ac.AccountID
         ,   ur.URLID
     FROM Temp_RawTransaction AS trt
-        INNER JOIN	DCS_DataCenter.Account AS ac ON trt.SubscriberID = ac.SubscriberID  AND trt.LoginName = ac.LoginName
-	    LEFT JOIN	DCS_DataCenter.URL	AS ur ON trt.URLDetails = ur.URLDetails;
+        INNER JOIN	DCS_Extra.Account AS ac ON trt.SubscriberID = ac.SubscriberID  AND trt.LoginName = ac.LoginName
+	    LEFT JOIN	DCS_Extra.URL	AS ur ON trt.URLDetails = ur.URLDetails;
 
     UPDATE Temp_RawTransaction AS trt
         INNER JOIN	Temp_RawTransactionInfo AS info ON trt.TransID = info.TransID  
@@ -164,7 +164,7 @@ BEGIN
     FROM	Temp_RawTransaction AS trt
     WHERE 	trt.AccountID IS NULL;       
     
-    UPDATE 	DCS_DataCenter.Association AS ass
+    UPDATE 	DCS_Extra.Association AS ass
         INNER JOIN	(SELECT DISTINCT AccountID FROM Temp_RawTransaction trt) AS trtAcc ON ass.AccountID = trtAcc.AccountID
         INNER JOIN	CTS_DataCenter.CustDCSAccount AS acc ON ass.AccountID = acc.AccountID
 	SET ass.IsCTSTransformed = 0
@@ -174,7 +174,7 @@ BEGIN
     SELECT  acc.SubscriberID
         ,   acc.AccountID
         ,   tac.LastLoginTime
-    FROM DCS_DataCenter.Account 	AS acc
+    FROM DCS_Extra.Account 	AS acc
         INNER JOIN (SELECT trt.AccountID, MAX(trt.TransTime) AS LastLoginTime FROM Temp_RawTransaction AS trt GROUP BY trt.AccountID) AS tac ON	acc.AccountID = tac.AccountID
     WHERE tac.LastLoginTime > acc.LastLoginTime;    
 
@@ -185,17 +185,17 @@ BEGIN
         INNER JOIN  CTS_DataCenter.CustDCSAccount AS cus ON lgn.AccountID = cus.AccountID
 	GROUP BY 	cus.CTSCustID;    
 	
-    INSERT INTO DCS_DataCenter.AccountLastLoginTimeProcess(AccountID, LastLoginTime)
+    INSERT INTO DCS_Extra.AccountLastLoginTimeProcess(AccountID, LastLoginTime)
     SELECT  tll.AccountID
         ,   tll.LastLoginTime
     FROM Temp_LastLoginTime AS tll;
 
-    INSERT INTO DCS_DataCenter.CTSCustomerLastLoginTimeProcess(CTSCustID, LastLoginTime)
+    INSERT INTO DCS_Extra.CTSCustomerLastLoginTimeProcess(CTSCustID, LastLoginTime)
     SELECT  CTSCustID
         ,   LastLoginTime
     FROM  Temp_LastLoginTimeCTSCust AS tmp_cus;
 
-    INSERT IGNORE INTO  DCS_DataCenter.Transaction(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey , IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, FingerprintCode, BotDetectionValue, BotComponentID)
+    INSERT IGNORE INTO  DCS_Extra.Transaction(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey , IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, FingerprintCode, BotDetectionValue, BotComponentID)
    	SELECT  trt.TransID
 	    ,   trt.LoginName
         ,   trt.TransTime                
@@ -219,7 +219,7 @@ BEGIN
 
     #================================================================
     
-	INSERT IGNORE INTO DCS_DataCenter.ProcessedTransaction( LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent , IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID, InsertTime, BotDetectionValue, BotComponentID)
+	INSERT IGNORE INTO DCS_Extra.ProcessedTransaction( LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent , IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID, InsertTime, BotDetectionValue, BotComponentID)
 	SELECT  rt.LoginName
         ,   rt.SubscriberName
         ,   rt.TransTime
@@ -241,11 +241,11 @@ BEGIN
 		,	rt.InsertTime
 		,	rt.BotDetectionValue
 		,	rt.BotComponentID
-	FROM DCS_DataCenter.RawTransaction AS rt
+	FROM DCS_Extra.RawTransaction AS rt
 	    INNER JOIN	Temp_RawTransaction	AS tmp_rm ON	rt.TransID = tmp_rm.TransID AND rt.CreatedDate = tmp_rm.CreatedDate;
         
 	DELETE rt
-	FROM DCS_DataCenter.RawTransaction AS rt
+	FROM DCS_Extra.RawTransaction AS rt
 	    INNER JOIN	Temp_RawTransaction	AS tmp_rm ON rt.TransID = tmp_rm.TransID AND rt.CreatedDate = tmp_rm.CreatedDate;
     
 

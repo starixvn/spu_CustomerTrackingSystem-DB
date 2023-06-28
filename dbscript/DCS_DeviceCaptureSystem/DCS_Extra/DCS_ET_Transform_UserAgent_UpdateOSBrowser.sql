@@ -1,8 +1,8 @@
-/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Transform_UserAgent_UpdateOSBrowser`;
+/*<info serverAlias="CTSMain-DCS_Extra" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `DCS_ET_Transform_UserAgent_UpdateOSBrowser`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_UserAgent_UpdateOSBrowser`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_ET_Transform_UserAgent_UpdateOSBrowser`(
 		IN ip_UserAgentJson JSON
 )
     SQL SECURITY INVOKER
@@ -10,7 +10,7 @@ BEGIN
 	/*
 		Created:	20190815@Terry.Nguyen
 		Task :		Update User Agent (OS, Browser)
-		DB:			DCS_DataCenter
+		DB:			DCS_Extra
 		Original:
 
 		Revisions:
@@ -58,21 +58,21 @@ BEGIN
 	#=======================
 	
 	# Insert Browser
-	INSERT IGNORE INTO DCS_DataCenter.Browser(BrowserName, CreatedDate)
+	INSERT IGNORE INTO DCS_Extra.Browser(BrowserName, CreatedDate)
 	SELECT	tmpBr.BrowserName
 		,	MIN(CreatedDate) 
     FROM Temp_UserAgent AS tmpBr 
     GROUP BY 	tmpBr.BrowserName;
 
 	# Insert OS
-	INSERT IGNORE INTO DCS_DataCenter.OS(OSName, CreatedDate)
+	INSERT IGNORE INTO DCS_Extra.OS(OSName, CreatedDate)
 	SELECT	tmpOs.OSName
 		,	MIN(CreatedDate) 
 	FROM Temp_UserAgent AS tmpOs 
     GROUP BY tmpOs.OSName;
     
     # Insert Device Type
-	INSERT IGNORE INTO DCS_DataCenter.DeviceType(DeviceTypeName, GroupName, Created)
+	INSERT IGNORE INTO DCS_Extra.DeviceType(DeviceTypeName, GroupName, Created)
 	SELECT	tmpDv.DeviceTypeName
 		,	'Others'
 		,	NOW() 
@@ -81,15 +81,15 @@ BEGIN
 	
 	# Update Browser and OS Id into temporary table
 	UPDATE Temp_UserAgent as tmpAU 
-		INNER JOIN	DCS_DataCenter.OS AS os ON tmpAU.OSName = os.OSName
-		INNER JOIN	DCS_DataCenter.Browser AS br ON tmpAU.BrowserName = br.BrowserName
-        INNER JOIN	DCS_DataCenter.DeviceType AS dv ON tmpAU.DeviceTypeName = dv.DeviceTypeName
+		INNER JOIN	DCS_Extra.OS AS os ON tmpAU.OSName = os.OSName
+		INNER JOIN	DCS_Extra.Browser AS br ON tmpAU.BrowserName = br.BrowserName
+        INNER JOIN	DCS_Extra.DeviceType AS dv ON tmpAU.DeviceTypeName = dv.DeviceTypeName
 	SET		tmpAU.BrowserID = br.BrowserID
 		,	tmpAU.OSID = os.OSID
         ,	tmpAU.DeviceTypeID = dv.DeviceTypeID;    
                 
 	# Update Browser and OS into User Agent table
-	UPDATE DCS_DataCenter.UserAgent AS us 
+	UPDATE DCS_Extra.UserAgent AS us 
 		INNER JOIN	Temp_UserAgent AS tmp ON us.UserAgentKey = tmp.UserAgentKey
 	SET		us.BrowserID = tmp.BrowserID
 		,	us.OSID = tmp.OSID

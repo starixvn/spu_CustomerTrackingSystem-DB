@@ -1,8 +1,8 @@
-/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin,ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Transform_RawTrans_GetPackage`;
+/*<info serverAlias="CTSMain-DCS_Extra" databaseType="2" executers="ctsServiceAdmin,ctsService" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `DCS_ET_Transform_RawTrans_GetPackage`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_RawTrans_GetPackage` (
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_ET_Transform_RawTrans_GetPackage` (
         IN ip_IsProcessed   TINYINT
     ,   IN ip_NoOfTickets   INT
     ,   IN ip_NoOfBatch     INT
@@ -16,7 +16,7 @@ BEGIN
 	    Original:
 
 	    Revisions:
-		    - 20201006@CaseyHuynh: Move New Server Phase 1, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_DataCenter" [Redmine ID: #143011]
+		    - 20201006@CaseyHuynh: Move New Server Phase 1, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_Extra" [Redmine ID: #143011]
 		    - 20201006@Bobby:Move New Server Phase 2, Enhance Performance [Redmine ID: #143011]
 			- 20210510@Aries.Nguyen: Remove insert log dba_SP_PerformanceStats [Redmine ID: #154792]
             - 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
@@ -41,7 +41,7 @@ BEGIN
     SET lv_TotalRecord 	= ip_NoOfTickets*ip_NoOfBatch;
     SET lv_GroupLookup 	= 'DCS_RawTrans_Transform';
     SET lv_KeyLookup	= 'MinRawTransId';
-    SET lv_FromTransID 	= IFNULL((SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE VGroup=lv_GroupLookup AND VName=lv_KeyLookup	), 0);
+    SET lv_FromTransID 	= IFNULL((SELECT CAST(VValue AS UNSIGNED) FROM DCS_Extra.SystemSetting WHERE VGroup=lv_GroupLookup AND VName=lv_KeyLookup	), 0);
 
     SET lv_TotalRecord = ip_NoOfTickets * ip_NoOfBatch;
 	set @RowId = 0;
@@ -54,7 +54,7 @@ BEGIN
 		SELECT	@RowId := @RowId+1
 			,   rt.TransID	
 			,   CEIL(@RowId/ip_NoOfTickets) as batchID
-		FROM 	DCS_DataCenter.RawTransaction AS rt
+		FROM 	DCS_Extra.RawTransaction AS rt
 		WHERE	rt.TransID >= lv_FromTransID
 		    AND rt.IsProcessed = ip_IsProcessed
 		LIMIT	 lv_TotalRecord
@@ -63,7 +63,7 @@ BEGIN
     
 
     SET lv_FromTransID = IFNULL((SELECT MIN(MinTransID) FROM Temp_Transaction), lv_FromTransID);
-    INSERT INTO DCS_DataCenter.SystemSetting (VGroup, VName, VValue, UpdatedTime)
+    INSERT INTO DCS_Extra.SystemSetting (VGroup, VName, VValue, UpdatedTime)
     SELECT  VGroup
         ,   VName
         ,   VValue
