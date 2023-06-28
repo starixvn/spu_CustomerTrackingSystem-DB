@@ -26,23 +26,27 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Association;
 	CREATE TEMPORARY TABLE Temp_Association(
 			CTSCustID	BIGINT UNSIGNED
-        ,	DCSDeviceID	BIGINT
+		,	AccountID	BIGINT UNSIGNED
+        ,	DeviceID	BIGINT 
         ,	CreatedTime	DATETIME(4)
         
-        ,	PRIMARY KEY PK_Temp_Association(DCSDeviceID, CTSCustID)
+        ,	PRIMARY KEY PK_Temp_Association(DeviceID, AccountID)
+        ,	INDEX IX_Temp_Association(CTSCustID)
     ); 
     
     #======GET ACCOUNT LIST: ip_CTSCustID AND ASSOCIATED CUSTOMER=======================================    
-    INSERT INTO Temp_Association(CTSCustID, DCSDeviceID, CreatedTime)
-    SELECT abd.CTSCustID, abd.DCSDeviceID, CreatedTime
-	FROM CTS_DataCenter.AssociationByDevice AS abd
-    WHERE abd.SubscriberID = ip_SubscriberID AND abd.CTSCustID = ip_CTSCustID;
+    INSERT INTO Temp_Association(CTSCustID, AccountID, DeviceID, CreatedTime)
+    SELECT cda.CTSCustID, cda.AccountID, ass.DeviceID, ass.CreatedTime
+	FROM CTS_DataCenter.CustDCSAccount AS cda 
+        INNER JOIN DCS_DataCenter.Association AS ass ON cda.AccountID = ass.AccountID 
+    WHERE cda.SubscriberID = ip_SubscriberID AND cda.CTSCustID = ip_CTSCustID;
 
-    SELECT 	COUNT(DISTINCT tmpAs1.DCSDeviceID) AssociatedDevices
+    SELECT 	COUNT(DISTINCT tmpAs1.DeviceID) AssociatedDevices
 		,	COUNT(DISTINCT cus.CTSCustID) AS AssociatedAccounts
         ,	MIN(tmpAs1.CreatedTime) AS FirstLogin
     FROM Temp_Association AS tmpAs1
-		LEFT JOIN CTS_DataCenter.AssociationByDevice AS abd ON tmpAs1.DCSDeviceID = abd.DCSDeviceID AND tmpAs1.CTSCustID <> abd.CTSCustID AND abd.SubscriberID = ip_SubscriberID   
-		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON abd.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0;
+		LEFT JOIN DCS_DataCenter.Association AS ass ON tmpAs1.DeviceID = ass.DeviceID AND tmpAs1.AccountID <> ass.AccountID AND ass.SubscriberID = ip_SubscriberID   
+        LEFT JOIN CTS_DataCenter.CustDCSAccount AS cda ON cda.AccountID = ass.AccountID
+		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cda.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0;
 END$$
 DELIMITER ;
