@@ -16,6 +16,7 @@ ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_TicketDetails]
 	,	@MatchID					INT = 0
 	,	@BetType					SMALLINT = 0
 	,	@IsLicensee					BIT = NULL
+	,	@IsExclTestCurr				BIT = 0
 	,	@ListCurrency				VARCHAR(MAX) = NULL
 	,	@ListHDP					VARCHAR(MAX) = NULL
 	,	@ListScore					VARCHAR(MAX) = NULL
@@ -448,6 +449,7 @@ BEGIN
 						AND b.liveindicator = @IsLive
 						AND b.bettype = @BetType
 						AND b.sequenceid < @LastScannedSequenceID
+						AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
 						AND t.TransId IS NULL;
 				END
 			ELSE 
@@ -490,6 +492,7 @@ BEGIN
 						AND b.liveindicator = @IsLive
 						AND b.bettype = @BetType
 						AND b.sequenceid < @LastScannedSequenceID
+						AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
 					ORDER BY b.sequenceid DESC;
 
 					SET @MinSequenceIDTotalAll = (SELECT MIN(SequenceId) FROM #tmpTickets);

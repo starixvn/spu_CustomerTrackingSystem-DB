@@ -8,6 +8,7 @@ CREATE PROCEDURE [dbo].[CTS_TicketDetails_Info]
 		@MatchID					INT = 0
 	,	@BetType					SMALLINT = 0
 	,	@IsLive						BIT = 0
+	,	@IsExclTestCurr				BIT = 0
 	,	@MaxSequenceId				BIGINT OUTPUT
 	,	@TotalTicketAll				BIGINT OUTPUT
 	,	@TotalTicketLicensee		BIGINT OUTPUT
@@ -129,7 +130,8 @@ BEGIN
 		INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 	WHERE b.matchid = @MatchID
 		AND b.bettype = @BetType
-		AND b.liveindicator = @IsLive;
+		AND b.liveindicator = @IsLive
+		AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)));
 
 	UPDATE t WITH(ROWLOCK, UPDLOCK)
 	SET t.IsLicensee = 1
