@@ -22,12 +22,12 @@ BEGIN
             - 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
             
 	    Param's Explanation (filtered by):
+        Example:
 	*/
-
-	DECLARE		lv_TotalRecord		        INT UNSIGNED DEFAULT 0;
-    DECLARE 	lv_FromTransID		        BIGINT UNSIGNED;
-    DECLARE		lv_GroupLookup		        VARCHAR(128);
-    DECLARE		lv_KeyLookup			    VARCHAR(128);
+	DECLARE	lv_TotalRecord	INT UNSIGNED DEFAULT 0;
+    DECLARE lv_FromTransID	BIGINT UNSIGNED;
+    DECLARE	lv_GroupLookup	VARCHAR(128);
+    DECLARE	lv_KeyLookup	VARCHAR(128);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Transaction; 
     
@@ -39,9 +39,9 @@ BEGIN
 	
 
     SET lv_TotalRecord 	= ip_NoOfTickets*ip_NoOfBatch;
-    SET lv_GroupLookup 	= 'DCS_RawTrans_Transform';
-    SET lv_KeyLookup	= 'MinRawTransId';
-    SET lv_FromTransID 	= IFNULL((SELECT CAST(VValue AS UNSIGNED) FROM DCS_Extra.SystemSetting WHERE VGroup=lv_GroupLookup AND VName=lv_KeyLookup	), 0);
+   # SET lv_GroupLookup 	= 'DCS_RawTrans_Transform';
+   # SET lv_KeyLookup	= 'MinRawTransId';
+    SET lv_FromTransID 	= IFNULL((SELECT CAST(VValue AS UNSIGNED) FROM DCS_Extra.SystemSetting WHERE ID = 3), 0);
 
     SET lv_TotalRecord = ip_NoOfTickets * ip_NoOfBatch;
 	set @RowId = 0;
@@ -59,24 +59,13 @@ BEGIN
 		    AND rt.IsProcessed = ip_IsProcessed
 		LIMIT	 lv_TotalRecord
 	) AS t
-	GROUP BY batchID;
-    
+	GROUP BY batchID;    
 
     SET lv_FromTransID = IFNULL((SELECT MIN(MinTransID) FROM Temp_Transaction), lv_FromTransID);
-    INSERT INTO DCS_Extra.SystemSetting (VGroup, VName, VValue, UpdatedTime)
-    SELECT  VGroup
-        ,   VName
-        ,   VValue
-        ,   UpdatedTime
-    FROM (
-        SELECT lv_GroupLookup AS VGroup
-		    ,   lv_KeyLookup AS VName
-		    ,   CONCAT('', lv_FromTransID) AS VValue
-            ,   CURRENT_TIMESTAMP() AS UpdatedTime
-	) AS t
-	ON DUPLICATE KEY UPDATE  VValue = t.VValue
-		                    ,UpdatedTime = t.UpdatedTime;
-
+    UPDATE DCS_Extra.SystemSetting 
+    SET 	VValue = CONCAT('', lv_FromTransID)
+		,	UpdatedTime = CURRENT_TIMESTAMP()	
+    WHERE ID = 3;
     
 	#RETURN OUTPUT
     SELECT	tmpTT.MinTransID

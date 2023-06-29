@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_Extra" databaseType="2" executers="ctsServiceAdmin,ctsService" isFunction="1" isNested="0"></info>*/
-DROP FUNCTION IF EXISTS DCS_DC_IsListsMatchByItem;
+DROP FUNCTION IF EXISTS DCS_ET_IsListsMatchByItem;
 DELIMITER $$
 
-CREATE DEFINER=`ctsOwner`@`%` FUNCTION DCS_DC_IsListsMatchByItem(ip_seperator VARCHAR(5), ip_List01 VARCHAR(5000), ip_List02 VARCHAR(5000))
+CREATE DEFINER=`ctsOwner`@`%` FUNCTION DCS_ET_IsListsMatchByItem(ip_seperator VARCHAR(5), ip_List01 VARCHAR(5000), ip_List02 VARCHAR(5000))
 
 RETURNS TINYINT
 
@@ -20,8 +20,8 @@ BEGIN
         
 	Param's Explanation (filtered by):
     Example: 
-		SELECT DCS_DC_IsListsMatchByItem(',','1,2,3,4','8,3,7,4,7');
-		SELECT DCS_DC_IsListsMatchByItem(',','1,2,3,4','8,6,7,5,7');
+		SELECT DCS_ET_IsListsMatchByItem(',','1,2,3,4','8,3,7,4,7');
+		SELECT DCS_ET_IsListsMatchByItem(',','1,2,3,4','8,6,7,5,7');
 */
 
 	DECLARE i 		INT;

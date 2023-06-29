@@ -13,6 +13,33 @@ Reviewer:
 CREATE DATABASE `DCS_Extra` /*!40100 DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
 
 USE DCS_Extra;
+CREATE TABLE `ActionResult` (
+  `ActionResultID` int NOT NULL AUTO_INCREMENT,
+  `Action` varchar(100) NOT NULL,
+  `ActionResult` varchar(100) NOT NULL,
+  `ActionResultStatus` tinyint NOT NULL COMMENT '0: Inactive; 1: Active; -1: Unhandled(Action has not defined in Intergrated Action List)',
+  `CreatedDate` datetime NOT NULL COMMENT 'Date Only',
+  PRIMARY KEY (`ActionResultID`),
+  UNIQUE KEY `UK_ActionResult_ActionResultDetails` (`Action`,`ActionResult`)
+) ENGINE=InnoDB;
+
+CREATE TABLE `Subscriber` (
+  `SubscriberID` int NOT NULL AUTO_INCREMENT,
+  `SubscriberName` varchar(50) DEFAULT NULL,
+  `SubscriberPrefix` varchar(30) DEFAULT NULL,
+  `SubscriberType` tinyint unsigned DEFAULT NULL COMMENT ' 0: Credit, 1: Deposit, 2: SUB not have Customer in MainDB (ex: CTMAX, AGENTCTMAX)',
+  `SubscriberStatus` tinyint NOT NULL COMMENT '0: Inactive; 1: Active',
+  `CreatedDate` datetime DEFAULT NULL,
+  `CreatedBy` int DEFAULT NULL,
+  `IsTest` tinyint DEFAULT NULL,
+  `IntegrationDate` datetime DEFAULT NULL,
+  `TerminatedDate` datetime DEFAULT NULL,
+  PRIMARY KEY (`SubscriberID`),
+  UNIQUE KEY `IX_Subscriber_SubscriberName_SubScriberPrefix` (`SubscriberName`,`SubscriberPrefix`),
+  KEY `IX_Subscriber_SubscriberPrefix` (`SubscriberPrefix`),
+  KEY `IX_Subscriber` (`SubscriberStatus`)
+) ENGINE=InnoDB;
+    
 CREATE TABLE `Account` (
   `AccountID` bigint unsigned NOT NULL AUTO_INCREMENT,
   `LoginName` varchar(100) NOT NULL,
@@ -360,7 +387,11 @@ CREATE TABLE `SystemSetting` (
   UNIQUE KEY `UN_Group_Name` (`VName`,`VGroup`)
 ) ENGINE=InnoDB;
 #==========================================================================
-#==========================================================================
+#==========================INITIAL DATA================================================
+
+INSERT INTO DCS_Extra.Subscriber(SubscriberID, SubscriberName, SubscriberPrefix, SubscriberType, SubscriberStatus, CreatedDate, CreatedBy, IsTest, IntegrationDate, TerminatedDate)
+VALUES (8000001,'CTMAX','',10,1,NOW(),NULL,0,NOW(),NULL)
+	,  (8000002,'Velki','',10,1,NOW(),NULL,0,NOW(),NULL);
 
 LOAD DATA LOCAL INFILE 'D:/SPU/FPSChangeSource/DCS_Extra/DeviceType.csv'
 INTO TABLE DCS_Extra.DeviceType

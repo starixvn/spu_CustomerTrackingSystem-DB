@@ -29,6 +29,8 @@ BEGIN
 			- 20211129@Casey.Huynh: Remove FingerprintMoreInfo Column [Redmine ID: #165167]
 			- 20230323@Terry.Nguyen: Get InsertTime from RawTransaction [Redmine Id: #185185]
 			- 20230426@Jonathan.Doan: Get BotDetectionValue from RawTransaction [Redmine ID: #186644]
+            - 2023292023@Casey.Huynh: CTMAX, Velki, Remove insert into CTSCustomerLastLoginTimeProcess [RedmineID: #190188]
+            
 	    Param's Explanation (filtered by):
 		Example:
 			CALL DCS_ET_Transform_Transaction_Insert(1,200);
@@ -92,8 +94,7 @@ BEGIN
     SELECT DATE(VValue)
     INTO lv_SysMinCreatedDate
     FROM DCS_Extra.SystemSetting 
-    WHERE VGroup = "DCS_Device_Transform" 
-        AND VName = "MinCreatedDate";
+    WHERE ID = 2;
 
 	INSERT INTO Temp_RawTransaction(TransID, LoginName, TransTime, SubscriberID, SubscriberType, DeviceCode , URLDetails, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, FingerprintCode, BotDetectionValue, BotComponentID)
 	SELECT  rt.TransID
@@ -115,7 +116,7 @@ BEGIN
         ,   rt.BotDetectionValue
         ,   rt.BotComponentID
 	FROM		DCS_Extra.RawTransaction AS rt
-        INNER JOIN	CTS_Admin.Subscriber AS su ON	rt.SubscriberName = su.SubscriberName
+        INNER JOIN	DCS_Extra.Subscriber AS su ON	rt.SubscriberName = su.SubscriberName
 	    INNER JOIN	DCS_Extra.ActionResult AS ar ON	rt.Action = ar.Action AND IFNULL(rt.ActionResult,'') = ar.ActionResult
 	WHERE   rt.IsProcessed = 0
 	    AND rt.TransID BETWEEN ip_FromTransID AND ip_ToTransID
@@ -178,22 +179,10 @@ BEGIN
         INNER JOIN (SELECT trt.AccountID, MAX(trt.TransTime) AS LastLoginTime FROM Temp_RawTransaction AS trt GROUP BY trt.AccountID) AS tac ON	acc.AccountID = tac.AccountID
     WHERE tac.LastLoginTime > acc.LastLoginTime;    
 
-    INSERT INTO Temp_LastLoginTimeCTSCust(CTSCustID, LastLoginTime)
-    SELECT  cus.CTSCustID
-	    ,   MAX(lgn.LastLoginTime)
-    FROM Temp_LastLoginTime AS lgn
-        INNER JOIN  CTS_DataCenter.CustDCSAccount AS cus ON lgn.AccountID = cus.AccountID
-	GROUP BY 	cus.CTSCustID;    
-	
     INSERT INTO DCS_Extra.AccountLastLoginTimeProcess(AccountID, LastLoginTime)
     SELECT  tll.AccountID
         ,   tll.LastLoginTime
     FROM Temp_LastLoginTime AS tll;
-
-    INSERT INTO DCS_Extra.CTSCustomerLastLoginTimeProcess(CTSCustID, LastLoginTime)
-    SELECT  CTSCustID
-        ,   LastLoginTime
-    FROM  Temp_LastLoginTimeCTSCust AS tmp_cus;
 
     INSERT IGNORE INTO  DCS_Extra.Transaction(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey , IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, FingerprintCode, BotDetectionValue, BotComponentID)
    	SELECT  trt.TransID

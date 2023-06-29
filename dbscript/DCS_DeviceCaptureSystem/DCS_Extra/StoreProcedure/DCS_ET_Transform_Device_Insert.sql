@@ -1,11 +1,11 @@
 /*<info serverAlias="CTSMain-DCS_Extra" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_ET_TransformData_Device_Insert`;
+DROP PROCEDURE IF EXISTS `DCS_ET_Transform_Device_Insert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_ET_TransformData_Device_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_ET_Transform_Device_Insert`(
     IN ip_TransJson LONGTEXT
 )
-SQL SECURITY INVOKER
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 	    Created: 20200730@Bobby.Nguyen
@@ -20,8 +20,15 @@ BEGIN
 		    - 20201019@CaseyHuynh:	Move Server, Phase 2 [Redmine ID: 143011]	
             - 20201020@CaseyHuynh: Update Owner, metadata [Redmine ID: 145271]
             - 20210510@Aries.Nguyen: Remove insert log dba_SP_PerformanceStats [Redmine ID: #154792]
-
+            - 20211129@Casey.Huynh: Remove Transaction07.FingerprintMoreInfo AND Devicefingerprint.CreatedDate Column [Redmine ID: #165167]
+			- 20211201@Casey.Huynh: Fix Issue Devicefingerprint.DeviceID = 0 [Redmine ID: #165164]
+			- 20230316@Jonathan.Doan: Support return new device login for Alpha [Redmine ID: #185185]
+			- 20230426@Jonathan.Doan: Get BotDetectionValue from RawTransaction [Redmine ID: #186644]
+            - 2023292023@Casey.Huynh: CTMAX, Velki [RedmineID: #190188]
 	    Param's Explanation (filtered by):
+        
+        Example:
+			CALL DCS_ET_Transform_Device_Insert('[{"TransId": 1},{"TransId": 2}]');
 	*/
 
 	DECLARE vrDeviceStatusNew			TINYINT DEFAULT 1;			# New Device
@@ -38,7 +45,8 @@ BEGIN
     DECLARE tab_name varchar(128) DEFAULT '';
     DECLARE col_name varchar(128) DEFAULT '';
     DECLARE sp_name varchar(128) DEFAULT 'DCS_ET_TransformData_Device_Insert';
-	
+    
+
     # STATS count
     DECLARE insertionTime TIMESTAMP(4);
 	DECLARE	batchCount INT;
@@ -85,7 +93,7 @@ BEGIN
 		)
         SELECT step_name, start_time, diff_time, stats
         FROM CTE_Stats;
-        
+
         SET sch_name = IF(LENGTH(sch_name) > 0, sch_name, 'DCS_Extra');
         INSERT INTO MonDB.dba_SP_PerformanceStats (sch_name, sp_name, step_id, step_name, start_time, diff_time, stats, call_time, end_time)
         SELECT sch_name, sp_name, step_id, step_name, start_time, diff_time, stats, call_time, CURRENT_TIMESTAMP(4) as end_time
@@ -109,7 +117,7 @@ BEGIN
         diff_time int,
         stats varchar(1000)
     ) ENGINE = MEMORY;
-    
+       
 	#======GET DATA FROM RAW TRANSACTION===========================
 	CREATE TEMPORARY TABLE Temp_Transaction(
 		 TransID				BIGINT	UNSIGNED PRIMARY KEY
@@ -118,7 +126,6 @@ BEGIN
         , UserAgentKey			VARCHAR(32)
 		, DeviceCode			VARCHAR(32) 
 		, FingerprintCode		VARCHAR(620)
-        , FingerprintMoreInfo	VARCHAR(250)
 		, CreatedDate			DATETIME
 		, TransTime				TIMESTAMP(4) 
         , DeviceCodeID			BIGINT UNSIGNED
@@ -132,7 +139,7 @@ BEGIN
     
 	#========GET INPUT DATA===========================
     set start_time  = CURRENT_TIMESTAMP(4);
-	INSERT INTO Temp_Transaction(TransID, AccountID, SubscriberID, UserAgentKey, DeviceCode, CreatedDate, TransTime,  FingerprintCode, FingerprintMoreInfo)
+	INSERT INTO Temp_Transaction(TransID, AccountID, SubscriberID, UserAgentKey, DeviceCode, CreatedDate, TransTime,  FingerprintCode)
     WITH CTE_Trans AS (
 		SELECT TransID
 		FROM JSON_TABLE(
@@ -145,12 +152,11 @@ BEGIN
     SELECT t.TransID
 		, AccountID
 		, SubscriberID
-		, (CASE WHEN tmpTrans.UserAgentKey ="null" THEN NULL ELSE tmpTrans.UserAgentKey END) AS UserAgentKey
-		, (CASE WHEN tmpTrans.DeviceCode ="null" THEN NULL ELSE tmpTrans.DeviceCode END) AS DeviceCode
+		, (CASE WHEN tmpTrans.UserAgentKey IS NULL THEN NULL ELSE tmpTrans.UserAgentKey END) AS UserAgentKey
+		, (CASE WHEN tmpTrans.DeviceCode IS NULL THEN NULL ELSE tmpTrans.DeviceCode END) AS DeviceCode
 		, CreatedDate
 		, TransTime
-		,  (CASE WHEN tmpTrans.FingerprintCode ="null" THEN NULL ELSE tmpTrans.FingerprintCode END) AS FingerprintCode
-		,  (CASE WHEN tmpTrans.FingerprintMoreInfo ="null" THEN NULL ELSE tmpTrans.FingerprintMoreInfo END) AS FingerprintMoreInfo
+		,  (CASE WHEN tmpTrans.FingerprintCode IS NULL THEN NULL ELSE tmpTrans.FingerprintCode END) AS FingerprintCode
 	FROM DCS_Extra.Transaction tmpTrans
 	INNER JOIN CTE_Trans t ON tmpTrans.TransId = t.TransId
     ORDER BY t.TransId ASC;
@@ -383,23 +389,17 @@ BEGIN
     
     # INSERT new DeviceFingerprint
     SET start_time = CURRENT_TIMESTAMP(4);
-	INSERT IGNORE INTO DCS_Extra.DeviceFingerprint(FingerprintCode, DeviceID, FingerprintMoreInfo, CreatedTime, CreatedDate, InsertTime)
-    WITH CTE_DeviceCode AS (
-		SELECT DISTINCT DeviceCode, DeviceID FROM Temp_ExistedDevice
-        UNION
-        SELECT DISTINCT DeviceCode, DeviceID FROM Temp_RecoveredDevice
-    )
+    
+    INSERT IGNORE INTO DCS_Extra.DeviceFingerprint(FingerprintCode, DeviceID, CreatedTime, InsertTime)
 	SELECT tts.FingerprintCode
-		, de.DeviceID
-		, MIN(tts.FingerprintMoreInfo) AS FingerprintMoreInfo
+		, tmpEd.DeviceID
 		, MIN(tts.TransTime) AS CreatedTime
-		, MIN(tts.CreatedDate) AS CreatedDate
 		, insertionTime	AS InsertTime
     FROM Temp_Transaction AS tts
-    INNER JOIN CTE_DeviceCode AS de ON de.DeviceCode = tts.DeviceCode
+    INNER JOIN Temp_ExistedDevice AS tmpEd ON tmpEd.DeviceCode = tts.DeviceCode
     WHERE tts.FingerprintCode IS NOT NULL
-    GROUP BY tts.FingerprintCode, de.DeviceID;
-   
+    GROUP BY tts.FingerprintCode, tmpEd.DeviceID;
+    
     GET DIAGNOSTICS rowCount = ROW_COUNT;
     INSERT INTO Temp_PerformanceStats(step_name, start_time, diff_time, stats)
     WITH CTE_Stats AS (
@@ -462,17 +462,34 @@ BEGIN
     /*****MOVE TRans competed to Trans07****************************************************/
     IF err_no = 0 THEN
 		SET start_time = CURRENT_TIMESTAMP(4);
-		INSERT IGNORE INTO  DCS_Extra.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID
-			, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID
-			, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime)
-		SELECT 	ifnull(ts.RawTransID, ts.TransID), ts.LoginName, ts.TransTime, ts.SubscriberID, ts.AccountID, ts.URLID
-			, tmp_rm.DeviceCodeID, tmp_rm.DeviceID, tmp_rm.FirstDeviceCode, tmp_rm.DeviceStatus, tmp_rm.DeviceFingerprintID
-			, ts.UserAgentKey, ts.IP, ts.IPID, ts.ActionResultID, ts.Flagged, ts.PluginID, ts.TransStatus, ts.CreatedDate, ts.InsertTime
+		INSERT IGNORE INTO  DCS_Extra.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID)
+		SELECT 	ifnull(ts.RawTransID, ts.TransID)
+			,	ts.LoginName
+            ,	ts.TransTime
+            ,	ts.SubscriberID
+            ,	ts.AccountID
+            ,	ts.URLID
+            ,	tmp_rm.DeviceCodeID
+            ,	tmp_rm.DeviceID
+            ,	tmp_rm.FirstDeviceCode
+            ,	tmp_rm.DeviceStatus
+            ,	tmp_rm.DeviceFingerprintID
+            ,	ts.UserAgentKey
+            ,	ts.IP
+            ,	ts.IPID
+            ,	ts.ActionResultID
+            ,	ts.Flagged
+            ,	ts.PluginID
+            ,	ts.TransStatus
+            ,	ts.CreatedDate
+            ,	ts.InsertTime
+            ,	ts.BotDetectionValue
+            ,	ts.BotComponentID
 		FROM DCS_Extra.Transaction AS ts
 		INNER JOIN Temp_Transaction AS tmp_rm
 			ON	ts.TransID = tmp_rm.TransID
 		WHERE tmp_rm.DeviceID IS NOT NULL;
-
+        
 		#DELETE Transaction
 		DELETE ts
 		FROM DCS_Extra.Transaction AS ts

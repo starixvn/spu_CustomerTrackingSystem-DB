@@ -58,7 +58,7 @@ BEGIN
         ,   ActionResultID
         ,   ActionResultStatus
 	FROM	DCS_Extra.RawTransaction AS rt
-	    LEFT JOIN	CTS_Admin.Subscriber AS su ON rt.SubscriberName = su.SubscriberName AND su.DCSStatus = 1
+	    LEFT JOIN	DCS_Extra.Subscriber AS su ON rt.SubscriberName = su.SubscriberName AND su.SubscriberStatus = 1
 	    LEFT JOIN	DCS_Extra.ActionResult AS ar ON rt.Action = ar.Action AND rt.ActionResult = ar.ActionResult
     WHERE	rt.TransID BETWEEN ip_FromTransID AND ip_ToTransID
 	    AND rt.IsProcessed = 0;       
