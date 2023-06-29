@@ -443,20 +443,11 @@ BEGIN
 								 END)
 					FROM dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
 						INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
-						INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
 						LEFT JOIN #tmpTransIds AS t ON t.TransId = b.TransId
 					WHERE	b.matchid = @MatchID
 						AND b.liveindicator = @IsLive
 						AND b.bettype = @BetType
 						AND b.sequenceid < @LastScannedSequenceID
-						AND b.Currency NOT IN (20,27,28)
-						AND b.BetFrom NOT IN ('p','m','w','0','3','6')
-						AND b.Username NOT LIKE '%Cashout%'
-						AND b.srecommend NOT IN (41430709) 
-						AND b.mrecommend NOT IN (27899314,11656504,12146012) 
-						AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409)		
-						AND c.site NOT IN ('Nextbet','9wickets','9wsports')
-						AND ISNULL(b.oddstype,0) <> 0
 						AND t.TransId IS NULL;
 				END
 			ELSE 
@@ -495,19 +486,10 @@ BEGIN
 								 END)
 					FROM dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
 						INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
-						INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
 					WHERE	b.matchid = @MatchID
 						AND b.liveindicator = @IsLive
 						AND b.bettype = @BetType
 						AND b.sequenceid < @LastScannedSequenceID
-						AND b.Currency NOT IN (20,27,28)
-						AND b.BetFrom NOT IN ('p','m','w','0','3','6')
-						AND b.Username NOT LIKE '%Cashout%'
-						AND b.srecommend NOT IN (41430709) 
-						AND b.mrecommend NOT IN (27899314,11656504,12146012) 
-						AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409)		
-						AND c.site NOT IN ('Nextbet','9wickets','9wsports')
-						AND ISNULL(b.oddstype,0) <> 0
 					ORDER BY b.sequenceid DESC;
 
 					SET @MinSequenceIDTotalAll = (SELECT MIN(SequenceId) FROM #tmpTickets);
