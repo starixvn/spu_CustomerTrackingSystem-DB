@@ -15,7 +15,7 @@ AS
 	Original:
 
 	Revisions:
-		- 20230627@Jonas.Huynh: Implement Credit with Inactive Normal to New [Redmine ID: #189876]
+		- 20230627@Jonas.Huynh: Reset Balance for Credit with Inactive Normal with new place-bet [Redmine ID: #189876]
 
 	Param's Explanation:
 		
@@ -38,7 +38,8 @@ BEGIN
 	FROM #tmpCustomers AS a 
 	WHERE a.CurrentCategoryId = @CATEGORY_NORMALINACTIVE 
 		AND a.IsDeposit = 0
-		AND a.IsPlaceBetWithin30Days = 1; 
+		AND a.IsPlaceBetWithin30Days = 1
+		AND a.IsNewCreated = 0; 
 
 	UPDATE rb WITH(ROWLOCK, UPDLOCK)
 	SET rb.ResetDate = @YesterdayDate,

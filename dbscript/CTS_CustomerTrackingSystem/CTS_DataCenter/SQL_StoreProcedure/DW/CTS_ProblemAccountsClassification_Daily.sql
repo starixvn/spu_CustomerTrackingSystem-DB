@@ -19,7 +19,7 @@ AS
 		- 20220328@Long.Luu: Created [Redmine ID: #170468]
 		- 20221118@Jonas.Huynh: Update parameter of DW SP GetCustAccumulatedInfo [Redmine ID: #179500]
 		- 20230601@Jonas.Huynh: Update SP get accumulated performance (Renovate Phase2) [Redmine ID: #186684]
-		- 20230627@Jonas.Huynh: Implement Inactive Normal to New [Redmine ID: #189876]
+		- 20230627@Jonas.Huynh: Reset Balance for Credit with Inactive Normal with new place-bet [Redmine ID: #189876]
 
 	Param's Explanation:
 */
