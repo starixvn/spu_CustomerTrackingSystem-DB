@@ -12,7 +12,7 @@ BEGIN
 /*
 	Created: 20190610@Casey.Huynh
 	Task : Return the value of all TransStatus that Not Transform
-	DB: DCS_DataCenter
+	DB: DCS_Extra
 	Original:
 
 	Revisions:
@@ -32,7 +32,7 @@ BEGIN
 	
 	INSERT INTO Temp_NotTransformedStatus(TransStatus)
 	SELECT  StatusValue
-	FROM 	DCS_DataCenter.TransStatus
+	FROM 	DCS_Extra.TransStatus
 	WHERE	IsTransformed = 0;
 
 	WHILE EXISTS (SELECT 1 FROM Temp_NotTransformedStatus LIMIT 1)

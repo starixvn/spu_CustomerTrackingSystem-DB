@@ -13,6 +13,14 @@ Reviewer:
 CREATE DATABASE `DCS_Extra` /*!40100 DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
 
 USE DCS_Extra;
+CREATE TABLE `Browser` (
+  `BrowserID` int unsigned NOT NULL AUTO_INCREMENT,
+  `BrowserName` varchar(100) NOT NULL,
+  `CreatedDate` datetime NOT NULL,
+  PRIMARY KEY (`BrowserID`),
+  UNIQUE KEY `UK_BrowserName` (`BrowserName`)
+) ENGINE=InnoDB ;
+
 CREATE TABLE `ActionResult` (
   `ActionResultID` int NOT NULL AUTO_INCREMENT,
   `Action` varchar(100) NOT NULL,
@@ -56,16 +64,6 @@ CREATE TABLE `Account` (
   KEY `IXF_Account_LastLoginTime` ((cast(`LastLoginTime` as date)))
 ) ENGINE=InnoDB ;
 
-CREATE TABLE `AccountDevice` (
-  `ID` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `AccountID` bigint unsigned NOT NULL,
-  `DeviceID` bigint unsigned NOT NULL,
-  `LastTransDate` date NOT NULL,
-  `Created` datetime DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`ID`),
-  UNIQUE KEY `UN_AccountDevice_AccountID_DeviceID` (`AccountID`,`DeviceID`),
-  KEY `IX_AccountDevice_LastTransDate` (`LastTransDate`)
-) ENGINE=InnoDB ;
 
 CREATE TABLE `AccountLastLoginTimeProcess` (
   `ID` bigint unsigned NOT NULL AUTO_INCREMENT,

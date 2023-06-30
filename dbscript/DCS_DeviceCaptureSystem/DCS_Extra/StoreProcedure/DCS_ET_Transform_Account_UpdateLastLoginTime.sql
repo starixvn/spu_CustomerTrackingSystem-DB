@@ -8,13 +8,13 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_ET_Transform_Account_UpdateLastLogi
     SQL SECURITY INVOKER
 BEGIN
 	/*
-		Created:	20210705@Aries.Nguyen
-		Task:		Fix deadlock issue [Redmine ID: #157203]
+		Created:	20230630@Casey.Huynh
+		Task:		Transform CTSMax, Velki
 		DB:			DCS_Extra
 		Original:
 
 		Revisions:
-			- 20210705@Aries.Nguyen: Created
+			- 20230630@Casey.Huynh: Created [RedmineID: #190188]
 			
 		Param's Explanation (filtered by):
 	*/ 
@@ -43,47 +43,5 @@ BEGIN
     DELETE FROM DCS_Extra.AccountLastLoginTimeProcess AS acc
     WHERE acc.ID IN (SELECT ID FROM Temp_AccountLastLoginTimeProcess);
     
-    ###########################################################
-	DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomerLastLoginTimeProcess;  
-	CREATE TEMPORARY TABLE Temp_CTSCustomerLastLoginTimeProcess(
-			ID 				BIGINT UNSIGNED
-		,	CTSCustID 		BIGINT UNSIGNED
-		,	LastLoginTime 	TIMESTAMP(4) NOT NULL
-        ,	IsValid			BIT DEFAULT 1
-		,	PRIMARY KEY (ID)     
-        ,	INDEX 			IX_Temp_CTSCustomerLastLoginTimeProcess_CTSCustID(CTSCustID)
-    );
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustInvalid;  
-	CREATE TEMPORARY TABLE Temp_CTSCustInvalid(
-			CTSCustID 		BIGINT UNSIGNED
-        ,	INDEX 			IX_Temp_CTSCustInvalid_CTSCustID(CTSCustID)
-    );
-    
-    INSERT INTO Temp_CTSCustomerLastLoginTimeProcess(ID, CTSCustID, LastLoginTime)
-    SELECT 	cus.ID
-		,	cus.CTSCustID
-        ,	cus.LastLoginTime
-    FROM DCS_Extra.CTSCustomerLastLoginTimeProcess AS cus
-    ORDER BY cus.ID ASC
-    LIMIT BatchSize;
-    
-    INSERT INTO Temp_CTSCustInvalid(CTSCustID)
-    SELECT cus.CTSCustID
-    FROM CTS_DataCenter.CTSCustomer  cus
-		INNER JOIN 	Temp_CTSCustomerLastLoginTimeProcess AS tmp_cus ON cus.CTSCustID = tmp_cus.CTSCustID
-	WHERE cus.LastLoginTime > tmp_cus.LastLoginTime;
-    
-    UPDATE Temp_CTSCustomerLastLoginTimeProcess AS cust
-    SET cust.IsValid = 0
-    WHERE cust.CTSCustID IN (SELECT CTSCustID FROM Temp_CTSCustInvalid);
-	
-     UPDATE CTS_DataCenter.CTSCustomer  cus
-        INNER JOIN 	Temp_CTSCustomerLastLoginTimeProcess AS tmp_cus ON cus.CTSCustID = tmp_cus.CTSCustID AND tmp_cus.IsValid = 1
-	 SET cus.LastLoginTime = tmp_cus.LastLoginTime;
-     
-	DELETE FROM DCS_Extra.CTSCustomerLastLoginTimeProcess AS cust
-    WHERE cust.ID IN (SELECT ID FROM Temp_CTSCustomerLastLoginTimeProcess);
-
 END$$
 DELIMITER ;
