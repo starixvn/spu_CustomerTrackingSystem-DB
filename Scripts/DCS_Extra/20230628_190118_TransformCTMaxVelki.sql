@@ -19,7 +19,7 @@ CREATE TABLE `BotComponent` (
   `Component` LONGTEXT NOT NULL,
   `CreatedDate` DATETIME DEFAULT NULL,
   PRIMARY KEY (`ID`),
-  UNIQUE KEY `IX_BotComponent_Code` (`Code`)
+  UNIQUE KEY `UX_BotComponent_Code` (`Code`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE `BotDetection` (
@@ -35,7 +35,7 @@ CREATE TABLE `Browser` (
   `BrowserName` VARCHAR(100) NOT NULL,
   `CreatedDate` DATETIME NOT NULL,
   PRIMARY KEY (`BrowserID`),
-  UNIQUE KEY `UK_BrowserName` (`BrowserName`)
+  UNIQUE KEY `UX_Browser_BrowserName` (`BrowserName`)
 ) ENGINE=InnoDB ;
 
 CREATE TABLE `ActionResult` (
@@ -45,7 +45,7 @@ CREATE TABLE `ActionResult` (
   `ActionResultStatus` TINYINT NOT NULL COMMENT '0: Inactive; 1: Active; -1: Unhandled(Action has not defined in INTergrated Action List)',
   `CreatedDate` DATETIME NOT NULL COMMENT 'Date Only',
   PRIMARY KEY (`ActionResultID`),
-  UNIQUE KEY `UK_ActionResult_ActionResultDetails` (`Action`,`ActionResult`)
+  UNIQUE KEY `UX_ActionResult_Action_ActionResult` (`Action`,`ActionResult`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE `Subscriber` (
@@ -57,12 +57,12 @@ CREATE TABLE `Subscriber` (
   `CreatedDate` DATETIME DEFAULT NULL,
   `CreatedBy` INT DEFAULT NULL,
   `IsTest` TINYINT DEFAULT NULL,
-  `INTegrationDate` DATETIME DEFAULT NULL,
+  `IntegrationDate` DATETIME DEFAULT NULL,
   `TerminatedDate` DATETIME DEFAULT NULL,
   PRIMARY KEY (`SubscriberID`),
-  UNIQUE KEY `IX_Subscriber_SubscriberName_SubScriberPrefix` (`SubscriberName`,`SubscriberPrefix`),
+  UNIQUE KEY `UX_Subscriber_SubscriberName_SubScriberPrefix` (`SubscriberName`,`SubscriberPrefix`),
   KEY `IX_Subscriber_SubscriberPrefix` (`SubscriberPrefix`),
-  KEY `IX_Subscriber` (`SubscriberStatus`)
+  KEY `IX_Subscriber_SubscriberStatus` (`SubscriberStatus`)
 ) ENGINE=InnoDB;
     
 CREATE TABLE `Account` (
@@ -71,34 +71,33 @@ CREATE TABLE `Account` (
   `SubscriberID` INT NOT NULL,
   `SubscriberType` TINYINT NOT NULL,
   `CreatedTime` TIMESTAMP(4) NOT NULL,
-  `LastLogINTime` TIMESTAMP(4) NOT NULL,
+  `LastLoginTime` TIMESTAMP(4) NOT NULL,
   `CreatedDate` DATETIME NOT NULL,
   `InsertTime` TIMESTAMP(4) NOT NULL,
   PRIMARY KEY (`AccountID`),
-  UNIQUE KEY `UK_Account_SubscriberIDLoginName` (`SubscriberID`,`LoginName`),
-  KEY `IXF_Account_LastLogINTime` ((cast(`LastLogINTime` AS DATE)))
+  UNIQUE KEY `UX_Account_SubscriberID_LoginName` (`SubscriberID`,`LoginName`),
+  KEY `IX_Account_LastLoginTime` ((cast(`LastLoginTime` AS DATE)))
 ) ENGINE=InnoDB ;
 
 
-CREATE TABLE `AccountLastLogINTimeProcess` (
+CREATE TABLE `AccountLastLoginTimeProcess` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `AccountID` BIGINT UNSIGNED DEFAULT NULL,
-  `LastLogINTime` TIMESTAMP(4) NOT NULL,
+  `LastLoginTime` TIMESTAMP(4) NOT NULL,
   PRIMARY KEY (`ID`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE `Association` (
-  `AssociationID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `DeviceID` BIGINT UNSIGNED NOT NULL,
-  `AccountID` BIGINT UNSIGNED NOT NULL,
-  `SubscriberID` INT NOT NULL,
-  `CreatedTime` TIMESTAMP(4) NOT NULL,
-  `CreatedDate` TIMESTAMP(4) NOT NULL,
-  `InsertTime` TIMESTAMP(4) NOT NULL,
+  `AssociationID` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `DeviceID` bigint unsigned NOT NULL,
+  `AccountID` bigint unsigned NOT NULL,
+  `SubscriberID` int NOT NULL,
+  `CreatedTime` timestamp(4) NOT NULL,
+  `CreatedDate` timestamp(4) NOT NULL,
+  `InsertTime` timestamp(4) NOT NULL,
   PRIMARY KEY (`AccountID`,`DeviceID`),
-  KEY `IX_Association_SubscriberID_AccountID_DeviceID` (`SubscriberID`,`AccountID`,`DeviceID`),
-  KEY `IX_Association_DeviceID_AccountID` (`DeviceID`,`AccountID`),
-  KEY `KEY_AssociationID` (`AssociationID`)
+  UNIQUE KEY `UX_Association_AssociationID` (`AssociationID`),
+  KEY `IX_Association_SubscriberID_AccountID_DeviceID` (`SubscriberID`,`AccountID`,`DeviceID`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE `Device` (
@@ -110,7 +109,7 @@ CREATE TABLE `Device` (
   `CreatedDate` DATETIME NOT NULL COMMENT 'Date Only, Date of First Transaction',
   `InsertTime` TIMESTAMP(4) NOT NULL COMMENT 'DATETIME, the time that data Insert to Table',
   PRIMARY KEY (`DeviceID`),
-  UNIQUE KEY `UK_Device_FirstDeviceCode` (`FirstDeviceCode`),
+  UNIQUE KEY `UX_Device_FirstDeviceCode` (`FirstDeviceCode`),
   KEY `IX_Device_CreatedDate` (`CreatedDate`)
 ) ENGINE=InnoDB;
 
@@ -123,19 +122,19 @@ CREATE TABLE `DeviceCode` (
   `CreatedDate` DATETIME NOT NULL,
   `InsertTime` TIMESTAMP(4) NOT NULL,
   PRIMARY KEY (`DeviceCodeID`),
-  UNIQUE KEY `UK_DeviceCode_DeviceID` (`DeviceCode`,`DeviceID`),
+  UNIQUE KEY `UX_DeviceCode_DeviceCode_DeviceID` (`DeviceCode`,`DeviceID`),
   KEY `IX_DeviceCode_CreatedDate` (`CreatedDate`),
   KEY `IX_DeviceCode_DeviceID` (`DeviceID`)
 ) ENGINE=InnoDB;
 
-CREATE TABLE `DeviceFingerprINT` (
-  `DeviceFingerprINTID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+CREATE TABLE `DeviceFingerprint` (
+  `DeviceFingerprintID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `DeviceID` BIGINT UNSIGNED NOT NULL,
-  `FingerprINTCode` VARCHAR(620) NOT NULL,
+  `FingerprintCode` VARCHAR(620) NOT NULL,
   `CreatedTime` TIMESTAMP(4) NOT NULL,
   `InsertTime` TIMESTAMP(4) NOT NULL,
-  PRIMARY KEY (`DeviceID`,`FingerprINTCode`),
-  KEY `KEY_DeviceFingerprINTID` (`DeviceFingerprINTID`)
+  PRIMARY KEY (`DeviceID`,`FingerprintCode`),
+  KEY `IX_DeviceFingerprint_DeviceFingerprintID` (`DeviceFingerprintID`)
 ) ENGINE=InnoDB ;
 
 CREATE TABLE `DeviceType` (
@@ -144,7 +143,7 @@ CREATE TABLE `DeviceType` (
   `GroupName` VARCHAR(20) NOT NULL,
   `Created` DATETIME DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`DeviceTypeID`),
-  UNIQUE KEY `UK_DeviceTypeName` (`DeviceTypeName`)
+  UNIQUE KEY `UX_DeviceType_DeviceTypeName` (`DeviceTypeName`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE `OS` (
@@ -152,7 +151,7 @@ CREATE TABLE `OS` (
   `OSName` VARCHAR(100) NOT NULL,
   `CreatedDate` DATETIME NOT NULL,
   PRIMARY KEY (`OSID`),
-  UNIQUE KEY `UK_OSName` (`OSName`)
+  UNIQUE KEY `UX_OS_OSName` (`OSName`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE `ProcessedTransaction` (
@@ -161,8 +160,8 @@ CREATE TABLE `ProcessedTransaction` (
   `TransTime` TIMESTAMP(4) NOT NULL,
   `CreatedDate` DATETIME NOT NULL COMMENT 'Date Only',
   `DeviceCode` VARCHAR(32) DEFAULT NULL,
-  `FingerprINTCode` VARCHAR(620) DEFAULT NULL,
-  `FingerprINTMoreInfo` VARCHAR(250) DEFAULT NULL,
+  `FingerprintCode` VARCHAR(620) DEFAULT NULL,
+  `FingerprintMoreInfo` VARCHAR(250) DEFAULT NULL,
   `UserAgent` VARCHAR(1000) DEFAULT NULL,
   `IP` VARCHAR(50) DEFAULT NULL,
   `IPID` DECIMAL(50,0) DEFAULT NULL,
@@ -180,9 +179,9 @@ CREATE TABLE `ProcessedTransaction` (
   `BotDetectionValue` BIT(32) DEFAULT NULL,
   `BotComponentID` BIGINT UNSIGNED DEFAULT NULL,
   PRIMARY KEY (`TransID`,`CreatedDate`),
-  KEY `IX_RawTransaction_IsProcessed` (`IsProcessed`),
-  KEY `IX_RawTransaction_TransTime` (`CreatedDate`),
-  KEY `IX_RawTransaction_SubscriberName_CreatedDate` (`SubscriberName`,`CreatedDate`)
+  KEY `IX_ProcessedTransaction_IsProcessed` (`IsProcessed`),
+  KEY `IX_ProcessedTransaction_TransTime` (`CreatedDate`),
+  KEY `IX_ProcessedTransaction_SubscriberName_CreatedDate` (`SubscriberName`,`CreatedDate`)
 ) ENGINE=InnoDB 
 /*!50100 PARTITION BY RANGE (yearweek(`CreatedDate`,0))
 (PARTITION pw202301 VALUES LESS THAN (202302) ENGINE = InnoDB,
@@ -206,8 +205,8 @@ CREATE TABLE `RawTransaction` (
   `TransTime` TIMESTAMP(4) NOT NULL,
   `CreatedDate` DATETIME NOT NULL COMMENT 'Date Only',
   `DeviceCode` VARCHAR(32) DEFAULT NULL,
-  `FingerprINTCode` VARCHAR(620) DEFAULT NULL,
-  `FingerprINTMoreInfo` VARCHAR(250) DEFAULT NULL,
+  `FingerprintCode` VARCHAR(620) DEFAULT NULL,
+  `FingerprintMoreInfo` VARCHAR(250) DEFAULT NULL,
   `UserAgent` VARCHAR(1000) DEFAULT NULL,
   `IP` VARCHAR(50) DEFAULT NULL,
   `IPID` DECIMAL(50,0) DEFAULT NULL,
@@ -272,7 +271,7 @@ CREATE TABLE `Transaction` (
   `DeviceID` BIGINT UNSIGNED DEFAULT NULL,
   `FirstDeviceCode` VARCHAR(64) DEFAULT NULL,
   `DeviceStatus` TINYINT DEFAULT NULL,
-  `DeviceFingerprINTID` BIGINT UNSIGNED DEFAULT NULL,
+  `DeviceFingerprintID` BIGINT UNSIGNED DEFAULT NULL,
   `UserAgentKey` VARCHAR(32) DEFAULT NULL,
   `IP` VARCHAR(50) DEFAULT NULL,
   `IPID` DECIMAL(50,0) DEFAULT NULL,
@@ -283,13 +282,13 @@ CREATE TABLE `Transaction` (
   `CreatedDate` DATETIME NOT NULL COMMENT 'Date Only',
   `InsertTime` TIMESTAMP(4) NOT NULL,
   `DeviceCode` VARCHAR(32) DEFAULT NULL,
-  `FingerprINTCode` VARCHAR(620) DEFAULT NULL,
-  `FingerprINTMoreInfo` VARCHAR(250) DEFAULT NULL,
+  `FingerprintCode` VARCHAR(620) DEFAULT NULL,
+  `FingerprintMoreInfo` VARCHAR(250) DEFAULT NULL,
   `RawTransID` BIGINT UNSIGNED NOT NULL,
   `BotDetectionValue` BIT(32) DEFAULT NULL,
   `BotComponentID` BIGINT UNSIGNED DEFAULT NULL,
   PRIMARY KEY (`TransID`),
-  UNIQUE KEY `UN_RawTransID` (`RawTransID`)
+  UNIQUE KEY `UX_Transaction_RawTransID` (`RawTransID`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE `Transaction07` (
@@ -303,7 +302,7 @@ CREATE TABLE `Transaction07` (
   `DeviceID` BIGINT UNSIGNED DEFAULT NULL,
   `FirstDeviceCode` VARCHAR(64) DEFAULT NULL,
   `DeviceStatus` TINYINT DEFAULT NULL,
-  `DeviceFingerprINTID` BIGINT UNSIGNED DEFAULT NULL,
+  `DeviceFingerprintID` BIGINT UNSIGNED DEFAULT NULL,
   `UserAgentKey` VARCHAR(32) DEFAULT NULL,
   `IP` VARCHAR(50) DEFAULT NULL,
   `IPID` DECIMAL(50,0) DEFAULT NULL,
@@ -366,7 +365,7 @@ CREATE TABLE `URL` (
   `URLDetails` VARCHAR(250) DEFAULT NULL,
   `CreatedDate` DATETIME DEFAULT NULL,
   PRIMARY KEY (`URLID`),
-  UNIQUE KEY `UK_URL_URLDetails` (`URLDetails`)
+  UNIQUE KEY `UX_URL_URLDetails` (`URLDetails`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE `UserAgent` (
@@ -381,7 +380,7 @@ CREATE TABLE `UserAgent` (
   `Created` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `Modified` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`UserAgentKey`),
-  KEY `IX_BrowserID_OSID` (`BrowserID`,`OSID`) /*!80000 INVISIBLE */,
+  KEY `IX_UserAgent_BrowserID_OSID` (`BrowserID`,`OSID`),# /*!80000 INVISIBLE */,
   KEY `IX_UserAgent_BrowserID` (`BrowserID`),
   KEY `IX_UserAgent_OSID` (`OSID`),
   KEY `IX_UserAgent_DeviceTypeID` (`DeviceTypeID`)
@@ -394,15 +393,18 @@ CREATE TABLE `SystemSetting` (
   `VValue` VARCHAR(255) DEFAULT NULL,
   `UpdatedTime` DATETIME DEFAULT NULL,
   PRIMARY KEY (`ID`),
-  UNIQUE KEY `VName_UNIQUE` (`VName`),
-  UNIQUE KEY `UN_Group_Name` (`VName`,`VGroup`)
+  UNIQUE KEY `UX_SystemSetting_VName_VGroup` (`VName`,`VGroup`)
 ) ENGINE=InnoDB;
 #==========================================================================
 #==========================INITIAL DATA================================================
 
 INSERT INTO DCS_Extra.Subscriber(SubscriberID, SubscriberName, SubscriberPrefix, SubscriberType, SubscriberStatus, CreatedDate, CreatedBy, IsTest, INTegrationDate, TerminatedDate)
-VALUES (8000001,'CTMAX','',10,1,NOW(),NULL,0,NOW(),NULL)
-	,  (8000002,'Velki','',10,1,NOW(),NULL,0,NOW(),NULL);
+VALUES (8000001,'CTMax','',10,1,NOW(),NULL,0,NOW(),NULL)
+	,  (8000002,'Velki','',10,1,NOW(),NULL,0,NOW(),NULL)
+    ,  (8000003,'Sky','',10,1,NOW(),NULL,0,NOW(),NULL)
+    ,  (8000004,'AgentSky','',10,1,NOW(),NULL,0,NOW(),NULL)
+    ,  (8000005,'AgentCTMax','',10,1,NOW(),NULL,0,NOW(),NULL)
+    ,  (8000006,'AgentVelki','',10,1,NOW(),NULL,0,NOW(),NULL);
 
 #=============COPY DATA FILE FROM git ...Scripts\DCS_Extra== to 'D:/SPU/DCS_Extra/..' then import======================
 
@@ -446,7 +448,34 @@ IGNORE 1 ROWS
 (@Value, Name, CreatedDate) SET
 	Value=Cast(@Value as signed);
 
-
-SELECT * FROM DCS_DataCenter.BotDetection;
 #==============================DEPLOY EVENT "EV_DCS_Extra_Account_UpdateLastLogINTime" (Refer GIT: ..\dbscript\DCS_DeviceCaptureSystem\DCS_Extra\Event\..)========================================================
 SHOW Events;
+DROP EVENT IF EXISTS EV_DCS_Extra_Account_UpdateLastLoginTime;
+DELIMITER //
+
+/*
+	Creator:	20230628@Casey.Huynh
+	Task:	 	New DB DCS_Extra
+	Server:  	Master
+	DBName:		DCS_Extra
+
+	Revisions: 
+			- 20230628@Casey.Huynh: Created [Redmine ID: #190118]
+		Reviewer:
+*/
+CREATE DEFINER=`DBMaintainer`@`%` EVENT `EV_DCS_Extra_Account_UpdateLastLoginTime` ON SCHEDULE EVERY 4 SECOND STARTS '2023-06-30 00:00:00' ON COMPLETION NOT PRESERVE ENABLE DO BEGIN
+	IF EXISTS(SELECT 1 FROM CTS_DataCenter.SystemEventStatus WHERE EventName = 'EV_DCS_Extra_Account_UpdateLastLoginTime' AND Status = 'Stop') THEN
+		UPDATE CTS_DataCenter.SystemEventStatus 
+		SET Status = 'Start' 
+		WHERE EventName = 'EV_DCS_Extra_Account_UpdateLastLoginTime' ;
+
+		CALL DCS_Extra.DCS_ET_Transform_Account_UpdateLastLoginTime(1000); 
+
+		UPDATE CTS_DataCenter.SystemEventStatus 
+		SET Status = 'Stop' 
+		WHERE EventName = 'EV_DCS_Extra_Account_UpdateLastLoginTime' ;
+
+	END IF;
+      
+END //
+DELIMITER ;

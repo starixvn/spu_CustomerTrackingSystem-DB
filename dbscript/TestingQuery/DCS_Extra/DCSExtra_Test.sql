@@ -15,6 +15,7 @@ TRUNCATE TABLE DCS_Extra.Transaction;
 TRUNCATE TABLE DCS_Extra.Transaction07;
 TRUNCATE TABLE DCS_Extra.URL;
 TRUNCATE TABLE DCS_Extra.UserAgent;
+TRUNCATE TABLE DCS_Extra.BotComponent;
 
 #===============Generate for RawTransaction===============================================================
 TRUNCATE TABLE RawTransaction;
@@ -46,9 +47,9 @@ CALL DCS_ET_Transform_RawTrans_Insert (@ip_RawTransJson:='[
 ]');
 
 BEGIN;
-DROP  temporary table  If exists Temp_UserAgent;
-Create temporary table Temp_UserAgent(ID INT auto_increment Primary Key, UserAgent VARCHAR(10000));
-Insert into Temp_UserAgent (UserAgent)
+DROP  temporary table  If exists Temp_DataUserAgent;
+Create temporary table Temp_DataUserAgent(ID INT auto_increment Primary Key, UserAgent VARCHAR(10000));
+Insert into Temp_DataUserAgent (UserAgent)
 VALUES('Mozilla/5.0 (Linux; Android 10; CPH2185 Build/QP1A.190711.020; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/83.0.4103.106 Mobile Safari/537.36 MMWEBID/6297 MicroMessenger/7.0.21.1783(0x27001543) Process/tools WeChat/arm64 Weixin GPVersio...')
 ,('Mozilla/5.0 (Linux; Android 8.1.0; CPH1901 Build/OPM1.171019.026; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/114.0.5735.60 Mobile Safari/537.36 [FB_IAB/FB4A;FBAV/418.0.0.33.69;]')
 ,('Mozilla/5.0 (Linux; Android 10; SKR-A0 Build/G66X2106040CN00MQ5; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/81.0.4044.138 Mobile Safari/537.36 game_portal/4 game_platform/3 HTTP_BB_FORWARDED/6f7q6xsMVrRu6P436ESVeg==')
@@ -170,11 +171,12 @@ VALUES('Mozilla/5.0 (Linux; Android 10; CPH2185 Build/QP1A.190711.020; wv) Apple
 ,('Mozilla/5.0 (SMART-TV; Linux; Tizen 7.0) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/6.0 Chrome/94.0.4606.31 TV Safari/537.36')
 ,('Mozilla/5.0 (Linux; Andr0id 9; BRAVIA 4K UR2 Build/PTT1.190515.001.S65) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36 OPR/46.0.2207.0 OMI/4.13.5.431.DIA5HBBTV.161 Model/Sony-BRAVIA-4K-UR2');
 END;
-SELECT * FROM Temp_UserAgent;
+SELECT MIN(ID), Max(ID) FROM Temp_DataUserAgent;
 
-SELECT * FROM RawTransaction;
+SELECT COUNT(1) FROM RawTransaction_bk;
+
 SET @TransID = 0;
-UPDATE RawTransaction
+UPDATE RawTransaction_bk
 SET LoginName = CONCAT(ELT(0.5 + RAND()*47,'Affecting','Exciting','Heated','Hysterical','Impassioned','Moving','Nervous','Passionate','Poignant','Sensitive','Sentimental','Spontaneous','Touching','Ardent','Disturbed','Ecstatic','Emotive','Enthusiastic','Excitable','Falling Apart','Fanatical','Feeling','Fervent','Fervid','Fickle','Fiery','Heartwarming','Histrionic','Histrionical','Hot-Blooded','Impetuous','Impulsive','Irrational','Overwrought','Pathetic','Responsive','Roused','Sentient','Stirred','Stirring','Susceptible','Tear-Jerking','Temperamental','Tender','Thrilling','Warm','Zealous')
 			,ELT(0.5 + RAND()*8,'1','2','3','4','5','6','7','8'))
 	, SubscriberName = ELT(0.5 + RAND()*20,'Velki','CTMAX','Velki','CTMAX','Velki','NoName','CTMAX','Velki','CTMAX','Velki','CTMAX','Velki','CTMAX','Velki','CTMAX','Velki','CTMAX','Velki','CTMAX','Velki','CTMAX')
@@ -187,9 +189,24 @@ SET LoginName = CONCAT(ELT(0.5 + RAND()*47,'Affecting','Exciting','Heated','Hyst
  	, FingerprintCode = CONCAT(ELT(0.5 + RAND()*99,'df101aacddef6aaae06466b6757754413fcdc2a','df102aacddef6aaae06466b6757754413fcdc2a','df103aacddef6aaae06466b6757754413fcdc2a','df104aacddef6aaae06466b6757754413fcdc2a','df105aacddef6aaae06466b6757754413fcdc2a','df106aacddef6aaae06466b6757754413fcdc2a','df107aacddef6aaae06466b6757754413fcdc2a','df108aacddef6aaae06466b6757754413fcdc2a','df109aacddef6aaae06466b6757754413fcdc2a','df110aacddef6aaae06466b6757754413fcdc2a','df111aacddef6aaae06466b6757754413fcdc2a','df112aacddef6aaae06466b6757754413fcdc2a','df113aacddef6aaae06466b6757754413fcdc2a','df114aacddef6aaae06466b6757754413fcdc2a','df115aacddef6aaae06466b6757754413fcdc2a','df116aacddef6aaae06466b6757754413fcdc2a','df117aacddef6aaae06466b6757754413fcdc2a','df118aacddef6aaae06466b6757754413fcdc2a','df119aacddef6aaae06466b6757754413fcdc2a','df120aacddef6aaae06466b6757754413fcdc2a','df121aacddef6aaae06466b6757754413fcdc2a','df122aacddef6aaae06466b6757754413fcdc2a','df123aacddef6aaae06466b6757754413fcdc2a','df124aacddef6aaae06466b6757754413fcdc2a','df125aacddef6aaae06466b6757754413fcdc2a','df126aacddef6aaae06466b6757754413fcdc2a','df127aacddef6aaae06466b6757754413fcdc2a','df128aacddef6aaae06466b6757754413fcdc2a','df129aacddef6aaae06466b6757754413fcdc2a','df130aacddef6aaae06466b6757754413fcdc2a','df131aacddef6aaae06466b6757754413fcdc2a','df132aacddef6aaae06466b6757754413fcdc2a','df133aacddef6aaae06466b6757754413fcdc2a','df134aacddef6aaae06466b6757754413fcdc2a','df135aacddef6aaae06466b6757754413fcdc2a','df136aacddef6aaae06466b6757754413fcdc2a','df137aacddef6aaae06466b6757754413fcdc2a','df138aacddef6aaae06466b6757754413fcdc2a','df139aacddef6aaae06466b6757754413fcdc2a','df140aacddef6aaae06466b6757754413fcdc2a','df141aacddef6aaae06466b6757754413fcdc2a','df142aacddef6aaae06466b6757754413fcdc2a','df143aacddef6aaae06466b6757754413fcdc2a','df144aacddef6aaae06466b6757754413fcdc2a','df145aacddef6aaae06466b6757754413fcdc2a','df146aacddef6aaae06466b6757754413fcdc2a','df147aacddef6aaae06466b6757754413fcdc2a','df148aacddef6aaae06466b6757754413fcdc2a','df149aacddef6aaae06466b6757754413fcdc2a','df150aacddef6aaae06466b6757754413fcdc2a','df151aacddef6aaae06466b6757754413fcdc2a','df152aacddef6aaae06466b6757754413fcdc2a','df153aacddef6aaae06466b6757754413fcdc2a','df154aacddef6aaae06466b6757754413fcdc2a','df155aacddef6aaae06466b6757754413fcdc2a','df156aacddef6aaae06466b6757754413fcdc2a','df157aacddef6aaae06466b6757754413fcdc2a','df158aacddef6aaae06466b6757754413fcdc2a','df159aacddef6aaae06466b6757754413fcdc2a','df160aacddef6aaae06466b6757754413fcdc2a','df161aacddef6aaae06466b6757754413fcdc2a','df162aacddef6aaae06466b6757754413fcdc2a','df163aacddef6aaae06466b6757754413fcdc2a','df164aacddef6aaae06466b6757754413fcdc2a','df165aacddef6aaae06466b6757754413fcdc2a','df166aacddef6aaae06466b6757754413fcdc2a','df167aacddef6aaae06466b6757754413fcdc2a','df168aacddef6aaae06466b6757754413fcdc2a','df169aacddef6aaae06466b6757754413fcdc2a','df170aacddef6aaae06466b6757754413fcdc2a','df171aacddef6aaae06466b6757754413fcdc2a','df172aacddef6aaae06466b6757754413fcdc2a','df173aacddef6aaae06466b6757754413fcdc2a','df174aacddef6aaae06466b6757754413fcdc2a','df175aacddef6aaae06466b6757754413fcdc2a','df176aacddef6aaae06466b6757754413fcdc2a','df177aacddef6aaae06466b6757754413fcdc2a','df178aacddef6aaae06466b6757754413fcdc2a','df179aacddef6aaae06466b6757754413fcdc2a','df180aacddef6aaae06466b6757754413fcdc2a','df181aacddef6aaae06466b6757754413fcdc2a','df182aacddef6aaae06466b6757754413fcdc2a','df183aacddef6aaae06466b6757754413fcdc2a','df184aacddef6aaae06466b6757754413fcdc2a','df185aacddef6aaae06466b6757754413fcdc2a','df186aacddef6aaae06466b6757754413fcdc2a','df187aacddef6aaae06466b6757754413fcdc2a','df188aacddef6aaae06466b6757754413fcdc2a','df189aacddef6aaae06466b6757754413fcdc2a','df190aacddef6aaae06466b6757754413fcdc2a','df191aacddef6aaae06466b6757754413fcdc2a','df192aacddef6aaae06466b6757754413fcdc2a','df193aacddef6aaae06466b6757754413fcdc2a','df194aacddef6aaae06466b6757754413fcdc2a','df195aacddef6aaae06466b6757754413fcdc2a','df196aacddef6aaae06466b6757754413fcdc2a','df197aacddef6aaae06466b6757754413fcdc2a','df198aacddef6aaae06466b6757754413fcdc2a','df199aacddef6aaae06466b6757754413fcdc2a')
 			,ELT(0.5 + RAND()*99,'df101oocddef6aaae06466b6757754413fcdc2a','df102oocddef6aaae06466b6757754413fcdc2a','df103oocddef6aaae06466b6757754413fcdc2a','df104oocddef6aaae06466b6757754413fcdc2a','df105oocddef6aaae06466b6757754413fcdc2a','df106oocddef6aaae06466b6757754413fcdc2a','df107oocddef6aaae06466b6757754413fcdc2a','df108oocddef6aaae06466b6757754413fcdc2a','df109oocddef6aaae06466b6757754413fcdc2a','df110oocddef6aaae06466b6757754413fcdc2a','df111oocddef6aaae06466b6757754413fcdc2a','df112oocddef6aaae06466b6757754413fcdc2a','df113oocddef6aaae06466b6757754413fcdc2a','df114oocddef6aaae06466b6757754413fcdc2a','df115oocddef6aaae06466b6757754413fcdc2a','df116oocddef6aaae06466b6757754413fcdc2a','df117oocddef6aaae06466b6757754413fcdc2a','df118oocddef6aaae06466b6757754413fcdc2a','df119oocddef6aaae06466b6757754413fcdc2a','df120oocddef6aaae06466b6757754413fcdc2a','df121oocddef6aaae06466b6757754413fcdc2a','df122oocddef6aaae06466b6757754413fcdc2a','df123oocddef6aaae06466b6757754413fcdc2a','df124oocddef6aaae06466b6757754413fcdc2a','df125oocddef6aaae06466b6757754413fcdc2a','df126oocddef6aaae06466b6757754413fcdc2a','df127oocddef6aaae06466b6757754413fcdc2a','df128oocddef6aaae06466b6757754413fcdc2a','df129oocddef6aaae06466b6757754413fcdc2a','df130oocddef6aaae06466b6757754413fcdc2a','df131oocddef6aaae06466b6757754413fcdc2a','df132oocddef6aaae06466b6757754413fcdc2a','df133oocddef6aaae06466b6757754413fcdc2a','df134oocddef6aaae06466b6757754413fcdc2a','df135oocddef6aaae06466b6757754413fcdc2a','df136oocddef6aaae06466b6757754413fcdc2a','df137oocddef6aaae06466b6757754413fcdc2a','df138oocddef6aaae06466b6757754413fcdc2a','df139oocddef6aaae06466b6757754413fcdc2a','df140oocddef6aaae06466b6757754413fcdc2a','df141oocddef6aaae06466b6757754413fcdc2a','df142oocddef6aaae06466b6757754413fcdc2a','df143oocddef6aaae06466b6757754413fcdc2a','df144oocddef6aaae06466b6757754413fcdc2a','df145oocddef6aaae06466b6757754413fcdc2a','df146oocddef6aaae06466b6757754413fcdc2a','df147oocddef6aaae06466b6757754413fcdc2a','df148oocddef6aaae06466b6757754413fcdc2a','df149oocddef6aaae06466b6757754413fcdc2a','df150oocddef6aaae06466b6757754413fcdc2a','df151oocddef6aaae06466b6757754413fcdc2a','df152oocddef6aaae06466b6757754413fcdc2a','df153oocddef6aaae06466b6757754413fcdc2a','df154oocddef6aaae06466b6757754413fcdc2a','df155oocddef6aaae06466b6757754413fcdc2a','df156oocddef6aaae06466b6757754413fcdc2a','df157oocddef6aaae06466b6757754413fcdc2a','df158oocddef6aaae06466b6757754413fcdc2a','df159oocddef6aaae06466b6757754413fcdc2a','df160oocddef6aaae06466b6757754413fcdc2a','df161oocddef6aaae06466b6757754413fcdc2a','df162oocddef6aaae06466b6757754413fcdc2a','df163oocddef6aaae06466b6757754413fcdc2a','df164oocddef6aaae06466b6757754413fcdc2a','df165oocddef6aaae06466b6757754413fcdc2a','df166oocddef6aaae06466b6757754413fcdc2a','df167oocddef6aaae06466b6757754413fcdc2a','df168oocddef6aaae06466b6757754413fcdc2a','df169oocddef6aaae06466b6757754413fcdc2a','df170oocddef6aaae06466b6757754413fcdc2a','df171oocddef6aaae06466b6757754413fcdc2a','df172oocddef6aaae06466b6757754413fcdc2a','df173oocddef6aaae06466b6757754413fcdc2a','df174oocddef6aaae06466b6757754413fcdc2a','df175oocddef6aaae06466b6757754413fcdc2a','df176oocddef6aaae06466b6757754413fcdc2a','df177oocddef6aaae06466b6757754413fcdc2a','df178oocddef6aaae06466b6757754413fcdc2a','df179oocddef6aaae06466b6757754413fcdc2a','df180oocddef6aaae06466b6757754413fcdc2a','df181oocddef6aaae06466b6757754413fcdc2a','df182oocddef6aaae06466b6757754413fcdc2a','df183oocddef6aaae06466b6757754413fcdc2a','df184oocddef6aaae06466b6757754413fcdc2a','df185oocddef6aaae06466b6757754413fcdc2a','df186oocddef6aaae06466b6757754413fcdc2a','df187oocddef6aaae06466b6757754413fcdc2a','df188oocddef6aaae06466b6757754413fcdc2a','df189oocddef6aaae06466b6757754413fcdc2a','df190oocddef6aaae06466b6757754413fcdc2a','df191oocddef6aaae06466b6757754413fcdc2a','df192oocddef6aaae06466b6757754413fcdc2a','df193oocddef6aaae06466b6757754413fcdc2a','df194oocddef6aaae06466b6757754413fcdc2a','df195oocddef6aaae06466b6757754413fcdc2a','df196oocddef6aaae06466b6757754413fcdc2a','df197oocddef6aaae06466b6757754413fcdc2a','df198oocddef6aaae06466b6757754413fcdc2a','df199oocddef6aaae06466b6757754413fcdc2a')
 			)
-WHERE TransID > 22
+	, UserAgent = (SELECT  t.UserAgent FROM Temp_DataUserAgent t WHERE id = FLOOR(RAND()*(120-1)+1 ) LIMIT 1)
+WHERE TransID > 22 and UserAgent Is NULL
 ;
-#===============================================================================================================================
+Insert into RawTransaction (LoginName,SubscriberName,TransTime,CreatedDate,DeviceCode,FingerprintCode,FingerprintMoreInfo,UserAgent,IP,IPID,PluginID,URL,Action,ActionResult,InvalidDevice,TransStatus,FPSTransID,Flagged,IsProcessed,InsertTime,BotDetectionValue,BotComponentID)SELECT LoginName,SubscriberName,TransTime,CreatedDate,DeviceCode,FingerprintCode,FingerprintMoreInfo,UserAgent,IP,IPID,PluginID,URL,Action,ActionResult,InvalidDevice,TransStatus,FPSTransID,Flagged,IsProcessed,InsertTime,BotDetectionValue,BotComponentID FROM RawTransaction_bk;
+
+SELECT COUNT(1) FROM RawTransaction WHERE IsProcessed = 0;
+SELECT COUNT(1) FROM Transaction ;
+SELECT COUNT(1) FROM Transaction07;
+SELECT COUNT(1) FROM ProcessedTransaction;
+
+
+SELECT FLOOR(RAND()*(120-1)+1 );
+SELECT ID, length(UserAgent), UserAgent FROM Temp_UserAgent WHERE UserAgent is null;
+SELECT t.UserAgent, t.* FROM RawTransaction t WHERE UserAgent is null;
+
+
+
+#====================================================
 SELECT * FROM SystemSetting;
 SELECT * FROM DCS_Extra.AccountDevice;
 SELECT * FROM DCS_Extra.AccountLastLoginTimeProcess;
@@ -217,25 +234,29 @@ UPDATE SystemSetting SET VValue = 0 WHERE ID = 3;
     CALL DCS_Extra.DCS_ET_Transform_RawTrans_GetPackage(@ip_IsProcessed:=0, @ip_NoOfTickets:=10, @ip_NoOfBatch:=2); 
 	
     SELECT * FROM SystemSetting WHERE ID = 3; #Expected: value = SELECT MIN(transID) FROM RawTransaction WHERE  IsProcessed = 0;
-    '1', '10'
-	'11', '20'
 
-	#=====2.1.a TRANSFORM BATCH 1
+	#=====2.1.a TRANSFORM BATCH 1;
 		CALL DCS_ET_Transform_UnhandleSubscriberAction(@ip_FromTransID:=1, @ip_ToTransID:=10);
 			Check SELECT TransStatus, IsProcessed, TransID, r.* FROM RawTransaction r; SELECT * FROM DCS_Extra.ActionResult;
         CALL DCS_ET_Transform_UserAgent_Insert(@ip_FromTransID:=1, @ip_ToTransID:=10); 
 			Check SELECT * FROM UserAgent;
-        CALL DCS_ET_Transform_Transaction_Insert(@ip_FromTransID:=1, @ip_ToTransID:=10); 
+        CALL DCS_ET_Transform_Transaction_Insert(@ip_FromTransID:=11, @ip_ToTransID:=147); 
 			SELECT * FROM Account; 
             SELECT * FROM AccountLastLoginTimeProcess ; --> Insert Exsisting Account to update LastLoginTime
             SELECT transid, rawtransid, t.* FROM Transaction t; ---> Insert 
             SELECT * FROM ProcessedTransaction; --> Insert 
             SELECT TransID, IsProcessed, TransStatus, r.* FROM RawTransaction r;
-
+SELECT  *
+	FROM		DCS_Extra.RawTransaction AS rt
+        #INNER JOIN	DCS_Extra.Subscriber AS su ON	rt.SubscriberName = su.SubscriberName
+	    INNER JOIN	DCS_Extra.ActionResult AS ar ON	rt.Action = ar.Action AND IFNULL(rt.ActionResult,'') = ar.ActionResult
+	WHERE   rt.IsProcessed = 0
+	    AND rt.TransID BETWEEN 11 AND 147;
+       # AND rt.CreatedDate 	>=	'2001-01-01 00:00:00';
     #=====2.1.b TRANSFORM BATCH 2
-		CALL DCS_ET_Transform_UnhandleSubscriberAction(@ip_FromTransID:=11, @ip_ToTransID:=20); 
-        CALL DCS_ET_Transform_UserAgent_Insert(@ip_FromTransID:=11, @ip_ToTransID:=20);
-        CALL DCS_ET_Transform_Transaction_Insert(@ip_FromTransID:=11, @ip_ToTransID:=20); 
+		CALL DCS_ET_Transform_UnhandleSubscriberAction(@ip_FromTransID:=11, @ip_ToTransID:=167); 
+        CALL DCS_ET_Transform_UserAgent_Insert(@ip_FromTransID:=11, @ip_ToTransID:=167);
+        CALL DCS_ET_Transform_Transaction_Insert(@ip_FromTransID:=11, @ip_ToTransID:=167); 
 
 	#2.2 Next round Service Call:
 	CALL DCS_Extra.DCS_ET_Transform_RawTrans_GetPackage(@ip_IsProcessed:=0, @ip_NoOfTickets:=10, @ip_NoOfBatch:=2); 
