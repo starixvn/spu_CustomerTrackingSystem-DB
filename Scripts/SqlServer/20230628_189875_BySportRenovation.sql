@@ -108,9 +108,9 @@ ALTER TABLE [dbo].[CustomerClassification_BySport_Rule]
 ADD IsProbationLastDay BIT DEFAULT(0);
 GO
 
---UPDATE [dbo].[CustomerClassification_BySport_Rule]
---SET IsProbationLastDay = 1
---WHERE RuleId IN (74, 85);
+UPDATE [dbo].[CustomerClassification_BySport_Rule]
+SET IsProbationLastDay = 1
+WHERE RuleId IN (85,86,88,87,101,102,136,134,133,135,257,264);
 
 -- #8. Grant permissions
 GRANT SELECT ON [dbo].[CustomerClassification_BySport_NormalPool] TO [bodbSPUNet]
