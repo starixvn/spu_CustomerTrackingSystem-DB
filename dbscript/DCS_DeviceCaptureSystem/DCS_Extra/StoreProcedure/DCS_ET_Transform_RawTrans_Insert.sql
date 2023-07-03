@@ -19,6 +19,7 @@ BEGIN
             - 20211129@Casey.Huynh: Remove FingerprintMoreInfo Column [Redmine ID: #165167]
 			- 20230327@Terry.Nguyen: Add InsertTime [Redmine ID: #185185]
 			- 20230426@Jonathan.Doan: Add BotD [Redmine ID: #186644]
+            - 2023292023@Casey.Huynh: CTMAX, Velki [RedmineID: #190118]
 
 		Param's Explanation (filtered by):
 			

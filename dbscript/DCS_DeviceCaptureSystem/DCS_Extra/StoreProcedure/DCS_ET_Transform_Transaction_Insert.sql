@@ -29,7 +29,7 @@ BEGIN
 			- 20211129@Casey.Huynh: Remove FingerprintMoreInfo Column [Redmine ID: #165167]
 			- 20230323@Terry.Nguyen: Get InsertTime from RawTransaction [Redmine Id: #185185]
 			- 20230426@Jonathan.Doan: Get BotDetectionValue from RawTransaction [Redmine ID: #186644]
-            - 2023292023@Casey.Huynh: CTMAX, Velki, Remove insert into CTSCustomerLastLoginTimeProcess [RedmineID: #190188]
+            - 2023292023@Casey.Huynh: CTMAX, Velki, Remove insert into CTSCustomerLastLoginTimeProcess [RedmineID: #190118]
             
 	    Param's Explanation (filtered by):
 		Example:
@@ -82,12 +82,6 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_LastLoginTime(
 		    SubscriberID	INT
         ,   AccountID		BIGINT UNSIGNED
-        ,   LastLoginTime	TIMESTAMP(4)
-    );
-   
-    DROP TEMPORARY TABLE IF EXISTS Temp_LastLoginTimeCTSCust;
-    CREATE TEMPORARY TABLE Temp_LastLoginTimeCTSCust(
-		    CTSCustID		BIGINT UNSIGNED
         ,   LastLoginTime	TIMESTAMP(4)
     );
    
@@ -164,13 +158,7 @@ BEGIN
     DELETE 	trt
     FROM	Temp_RawTransaction AS trt
     WHERE 	trt.AccountID IS NULL;       
-    
-    UPDATE 	DCS_Extra.Association AS ass
-        INNER JOIN	(SELECT DISTINCT AccountID FROM Temp_RawTransaction trt) AS trtAcc ON ass.AccountID = trtAcc.AccountID
-        INNER JOIN	CTS_DataCenter.CustDCSAccount AS acc ON ass.AccountID = acc.AccountID
-	SET ass.IsCTSTransformed = 0
-    WHERE ass.IsCTSTransformed < 0;			
-  
+      
     INSERT INTO Temp_LastLoginTime(SubscriberID, AccountID, LastLoginTime)   
     SELECT  acc.SubscriberID
         ,   acc.AccountID
@@ -236,8 +224,6 @@ BEGIN
 	DELETE rt
 	FROM DCS_Extra.RawTransaction AS rt
 	    INNER JOIN	Temp_RawTransaction	AS tmp_rm ON rt.TransID = tmp_rm.TransID AND rt.CreatedDate = tmp_rm.CreatedDate;
-    
-
     
 END$$
 DELIMITER ;

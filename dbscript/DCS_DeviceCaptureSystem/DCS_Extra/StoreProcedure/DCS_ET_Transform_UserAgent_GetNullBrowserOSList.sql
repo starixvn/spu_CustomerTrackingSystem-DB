@@ -20,6 +20,7 @@ BEGIN
 			- 20210914@Casey.Huynh: BrowserID and OSID Exceed DataRange [#161576]
 			- 20210916@Aries.Nguyen: Update sp [#161576]
 			- 20211214@Aries.Nguyen: Enrich the information on customer profile [Redmine ID: #165105]
+            - 2023292023@Casey.Huynh: CTMAX, Velki [RedmineID: #190118]
 
 		Param's Explanation (filtered by):
 	*/

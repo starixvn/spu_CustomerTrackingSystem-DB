@@ -16,7 +16,8 @@ BEGIN
 	Original:
 
 	Revisions:
-		- 20190610@Casey.Huynh: Created [RedmineID: 190188]
+		- 20190610@Casey.Huynh: Created [RedmineID: 190118]
+        
 	Param's Explanation (filtered by):
     
     Example: SELECT DCS_ET_GetTransStatus_NotTransformed();

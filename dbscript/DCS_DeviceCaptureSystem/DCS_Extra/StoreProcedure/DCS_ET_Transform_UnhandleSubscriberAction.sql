@@ -20,6 +20,7 @@ BEGIN
             - 20201111@CaseyHuynh: Remove code  "Insert New Subscriber To Subscriber table when Subscriber Is Invalid" [Redmine ID: #144307]
             - 20210510@Aries.Nguyen: Remove insert log zzTracePerformance [Redmine ID: #154792]
             - 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
+            - 2023292023@Casey.Huynh: CTMAX, Velki [RedmineID: #190118]
 
 	    Param's Explanation (filtered by):
 	*/

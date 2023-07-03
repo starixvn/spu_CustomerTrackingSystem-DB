@@ -24,7 +24,8 @@ BEGIN
 			- 20211201@Casey.Huynh: Fix Issue Devicefingerprint.DeviceID = 0 [Redmine ID: #165164]
 			- 20230316@Jonathan.Doan: Support return new device login for Alpha [Redmine ID: #185185]
 			- 20230426@Jonathan.Doan: Get BotDetectionValue from RawTransaction [Redmine ID: #186644]
-            - 2023292023@Casey.Huynh: CTMAX, Velki [RedmineID: #190188]
+            - 2023292023@Casey.Huynh: CTMAX, Velki [RedmineID: #190118]
+            
 	    Param's Explanation (filtered by):
         
         Example:

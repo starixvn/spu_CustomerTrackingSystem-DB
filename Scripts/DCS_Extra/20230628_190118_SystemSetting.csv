@@ -1,0 +1,4 @@
+ID,VGroup,VName,VValue,UpdatedTime
+1,DCS_Device_Transform,MinTransId,0,"2002-01-01 04:13:42"
+2,DCS_Device_Transform,MinCreatedDate,2002-01-01,"2002-01-01 04:13:42"
+3,DCS_RawTrans_Transform,MinRawTransId,0,"2002-01-01 04:16:36"

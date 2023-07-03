@@ -20,7 +20,8 @@ BEGIN
 			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: @148723]
 			- 20210510@Aries.Nguyen: Remove insert log zzTracePerformance [Redmine ID: #154792]
             - 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
-
+			- 2023292023@Casey.Huynh: CTMAX, Velki [RedmineID: #190118]
+            
 	    Param's Explanation (filtered by):
     */
 

@@ -20,7 +20,7 @@ BEGIN
 		    - 20201006@Bobby:Move New Server Phase 2, Enhance Performance [Redmine ID: #143011]
 			- 20210510@Aries.Nguyen: Remove insert log dba_SP_PerformanceStats [Redmine ID: #154792]
             - 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
-            
+            - 2023292023@Casey.Huynh: CTMAX, Velki [RedmineID: #190118]
 	    Param's Explanation (filtered by):
         Example:
 	*/

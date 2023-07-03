@@ -8,7 +8,7 @@ DELIMITER //
 	DBName:		DCS_Extra
 
 	Revisions: 
-			- 20230628@Casey.Huynh: Created [Redmine ID: #190188]
+			- 20230628@Casey.Huynh: Created [Redmine ID: #190118]
 		Reviewer:
 */
 CREATE DEFINER=`DBMaintainer`@`%` EVENT `EV_DCS_Extra_Account_UpdateLastLoginTime` ON SCHEDULE EVERY 4 SECOND STARTS '2023-06-30 00:00:00' ON COMPLETION NOT PRESERVE ENABLE DO BEGIN
