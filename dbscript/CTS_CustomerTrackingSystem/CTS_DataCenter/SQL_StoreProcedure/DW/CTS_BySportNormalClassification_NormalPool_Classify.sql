@@ -32,7 +32,7 @@ AS
 BEGIN
 	
 	SET NOCOUNT ON;
-	
+
 	DECLARE	@CATEGORY_NORMALMEMBER	SMALLINT = 202,
 			@CATEGORY_GOODMEMBER	SMALLINT = 205;
 
@@ -56,7 +56,7 @@ BEGIN
 
 	CREATE TABLE #tmpCustomers(
 		CustId			       INT,
-		SportGroup			   INT,
+		SportGroup			   SMALLINT,
 		CurrentCategoryId      SMALLINT NOT NULL,
 		IsCheckBetCount		   BIT	    NOT NULL DEFAULT 0,
 		IsProbationLastDay	   BIT		NOT NULL DEFAULT 0,
@@ -68,7 +68,7 @@ BEGIN
 
 	CREATE TABLE #tmpRawData(
 		CustId				 INT			NOT NULL,
-		SportGroup			 INT			NOT NULL,
+		SportGroup			 SMALLINT		NOT NULL,
 		TurnoverRM			 DECIMAL(19, 4)	NOT NULL,
 		WinlossRM			 DECIMAL(19, 4)	NOT NULL,
 		TurnoverORG			 DECIMAL(19, 4)	NOT NULL,
@@ -83,12 +83,16 @@ BEGIN
 
 	CREATE CLUSTERED INDEX CIX_tmpRawData_CustId ON #tmpRawData(CustId, SportGroup);
 
+	CREATE NONCLUSTERED INDEX IX_tmpRawData_BetCount ON #tmpRawData(
+		BetCount
+	);
+
 	IF	OBJECT_ID('tempdb..#tmpCustomerAccummulatedInfo') IS NOT NULL
 		DROP TABLE	#tmpCustomerAccummulatedInfo;
 
 	CREATE TABLE #tmpCustomerAccummulatedInfo(
 		CustId				   INT			  NOT NULL,
-		SportGroup			   INT			  NOT NULL,
+		SportGroup			   SMALLINT		  NOT NULL,
 		CurrentCategoryId	   SMALLINT		  NOT NULL DEFAULT 0,
 		NewCategoryId		   SMALLINT		  NULL,
 		IsProbationLastDay	   BIT			  NOT NULL DEFAULT 0,
@@ -103,10 +107,7 @@ BEGIN
 		ActiveDays			   INT			  NOT NULL,
 		WinDaysRate			   DECIMAL(5,2)	  NULL,
 		PerformanceTime        DATETIME       NOT NULL
-	);
-
-	CREATE CLUSTERED INDEX CIX_tmpCustomerAccummulatedInfo_CustId ON #tmpCustomerAccummulatedInfo(
-		CustId
+		PRIMARY KEY(CustId, SportGroup)
 	);
 
 	CREATE NONCLUSTERED INDEX IX_tmpCustomerAccummulatedInfo_CurrentCategoryId ON #tmpCustomerAccummulatedInfo(
@@ -121,10 +122,11 @@ BEGIN
 		DROP TABLE	#tmpBetCount;
 
 	CREATE TABLE #tmpBetCount(
-		CustId		INT	PRIMARY KEY,
-		SportGroup	INT,
+		CustId		INT,
+		SportGroup	SMALLINT,
 		CategoryId	SMALLINT  NOT NULL,
-		BetCount	BIGINT	  NULL
+		BetCount	BIGINT	  NULL,
+		PRIMARY KEY (CustId, SportGroup)
 	);
 
 	CREATE NONCLUSTERED INDEX IX_tmpBetCount_CategoryId ON #tmpBetCount(

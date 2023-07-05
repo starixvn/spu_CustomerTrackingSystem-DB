@@ -25,9 +25,9 @@ AS
     Script:
         EXEC bodb_VR2Model.dbo.CTS_BySportNormalClassification_NormalPool_Clear 
 		@ScannedMaxId = 989347,
-		@CustomersXML = '@CustomersXML = N'<Root>
+		@CustomersXML = N'<Root>
 								<r CustId="5002646" SportGroup="201"/>
-								<r CustId="5002646" SportGroup="201"/>
+								<r CustId="5002645" SportGroup="201"/>
 							</Root>';
 																				
 */
@@ -42,14 +42,14 @@ BEGIN
 
 	CREATE TABLE #tmpCustomers(
 		CustId			INT,
-		SportGroup		INT,
+		SportGroup		SMALLINT,
 		PRIMARY KEY(CustId, SportGroup)
 	);
 
 	-- #1: Get list customers
 	INSERT INTO #tmpCustomers(CustId, SportGroup)
-	SELECT	T.C.value('./@CustId', 'INT')		AS CustId
-		,	T.C.value('./@SportGroup', 'INT')	AS SportGroup
+	SELECT	T.C.value('./@CustId', 'INT')			AS CustId
+		,	T.C.value('./@SportGroup', 'SMALLINT')	AS SportGroup
 	FROM @CustomersXML.nodes('//r') AS T(C)
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 

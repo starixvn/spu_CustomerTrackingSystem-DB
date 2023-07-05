@@ -18,7 +18,8 @@ BEGIN
 		Param's Explanation:
         
 		Example:
-			- CALL CTS_DataCenter.CTS_DC_CustClassification_BySport_GetCurrentCategory('5941,5942,100,7681925');
+			- call CTS_DataCenter.CTS_DC_CustClassification_BySport_GetCurrentCategory('[{"CustId": 5941, "SportGroup": 10}]');
+            
 	 */ 	
     DECLARE	CONST_GROUP_NORMAL 			INT DEFAULT 200;
 	DECLARE	CATEGORY_GROUP_PROBATION	INT DEFAULT 206;
@@ -29,34 +30,36 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
     CREATE TEMPORARY TABLE Temp_Cust(
 			CustID				BIGINT UNSIGNED
-		,	SportID				SMALLINT
-        ,	PRIMARY KEY (CustID, SportID)
+		,	SportGroup			SMALLINT
+        ,	PRIMARY KEY (CustID, SportGroup)
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustCategory;
     CREATE TEMPORARY TABLE Temp_CustCategory (
-			CustID 				BIGINT UNSIGNED PRIMARY KEY
+			CustID 				BIGINT UNSIGNED
+        ,	SportGroup			SMALLINT
         ,	CategoryID			INT
         ,	CategoryGroup		SMALLINT
         ,	IsProbationLastDay	BIT DEFAULT(0)
+        ,   PRIMARY KEY (CustID, SportGroup)
 		,	INDEX IX_Temp_CustCategory_CategoryGroup(CategoryGroup)
     );
     
     #1. Get valid customers
-    IF ip_CustIDList IS NOT NULL THEN        
+    IF ip_CustSport IS NOT NULL THEN        
        
-        INSERT INTO Temp_Cust(CustID, SportID)
-		SELECT 	temp.CustID, temp.SportID
+        INSERT INTO Temp_Cust(CustID, SportGroup)
+		SELECT 	temp.CustID, temp.SportGroup
 		FROM JSON_TABLE(ip_CustSport,
 			 "$[*]" COLUMNS(
 				CustID 		BIGINT UNSIGNED		PATH "$.CustId"
-			, 	SportID		SMALLINT UNSIGNED	PATH "$.SportId"	
+			, 	SportGroup	SMALLINT UNSIGNED	PATH "$.SportGroup"	
 			 )) AS temp;       
 		
-        DELETE r
-        FROM Temp_InputCust AS tmpIc
-			LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpIc.CustID = cus.CustID AND cus.CustSubID = 0
-		WHERE cus IS NULL;
+--         DELETE r
+--         FROM Temp_Cust AS r
+-- 			LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON r.CustID = cus.CustID AND cus.CustSubID = 0
+-- 		   WHERE cus IS NULL;
         
     END IF;	
 	
@@ -66,9 +69,8 @@ BEGIN
 		,	cls.CategoryID
         ,	cc.CategoryGroup
 	FROM Temp_Cust AS tmpIc
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport AS cls ON cls.CustID = tmpIc.CustID
-        INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cls.CategoryID
-	WHERE cls.SportGroupID = CONST_GROUP_NORMAL;
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport AS cls ON cls.CustID = tmpIc.CustID AND cls.SportID = tmpIc.SportGroup
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cls.CategoryID;
     
     #3. Get Probation info
     UPDATE Temp_CustCategory AS tmpCc
@@ -78,10 +80,9 @@ BEGIN
     
     #4. Return data set
 	SELECT	DISTINCT tmpCust.CustID
-		,	CASE
-				WHEN tmpCc.CategoryGroup IS NULL THEN 0 ELSE tmpCc.CategoryGroup
-			END AS CategoryID
-        ,	tmpCc.IsProbationLastDay AS IsProbationLastDay
+		,	tmpCust.SportGroup
+		,	CASE WHEN tmpCc.CategoryGroup IS NULL THEN 0 ELSE tmpCc.CategoryGroup END AS CategoryID
+        ,	CASE WHEN tmpCc.IsProbationLastDay IS NULL THEN 0 ELSE tmpCc.IsProbationLastDay END AS IsProbationLastDay
 	FROM Temp_Cust AS tmpCust
 		LEFT JOIN Temp_CustCategory AS tmpCc ON tmpCc.CustID = tmpCust.CustID;
 END$$

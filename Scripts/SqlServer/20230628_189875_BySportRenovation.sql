@@ -22,7 +22,7 @@ GO
 CREATE TABLE [dbo].[CustomerClassification_BySport_NormalPool](
 	ID			BIGINT   PRIMARY KEY IDENTITY(1,1),
 	CustId		INT		 NOT NULL,
-	SportGroup	INT		 NOT NULL,
+	SportGroup	SMALLINT NOT NULL,
 	[Priority]	SMALLINT NOT NULL,
 	FunctionId	SMALLINT NOT NULL,
 	CreatedTime	DATETIME NOT NULL
@@ -39,7 +39,7 @@ GO
 -- #2. New table CustomerClassification_ScannedDailyCust
 CREATE TABLE [dbo].[CustomerClassification_BySport_ScannedDailyCust](
 	CustId		INT,
-	SportGroup	INT,
+	SportGroup	SMALLINT,
 	CreatedDate DATE NOT NULL
 	PRIMARY KEY (CustId, SportGroup)
 )
@@ -54,7 +54,7 @@ GO
 CREATE TABLE [dbo].[CustomerClassification_BySport_Log](
 	ID			BIGINT	 PRIMARY KEY IDENTITY(1,1),
 	CustId		INT		 NOT NULL,
-	SportGroup	INT		 NOT NULL,
+	SportGroup	SMALLINT NOT NULL,
 	FunctionId	SMALLINT NOT NULL,
 	CreatedTime	DATETIME NOT NULL
 )
@@ -71,7 +71,7 @@ GO
 CREATE TABLE [dbo].[CustomerClassification_BySport_RealtimeChanges](
 	ID			BIGINT	 PRIMARY KEY IDENTITY(1,1),
 	CustId		INT		 NOT NULL,
-	SportGroup	INT		 NOT NULL,
+	SportGroup	SMALLINT NOT NULL,
 	CreatedTime	DATETIME NOT NULL
 )
 

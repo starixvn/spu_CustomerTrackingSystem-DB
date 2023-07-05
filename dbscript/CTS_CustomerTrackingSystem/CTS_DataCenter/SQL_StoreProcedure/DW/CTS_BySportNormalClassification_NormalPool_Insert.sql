@@ -22,8 +22,7 @@ AS
         @FunctionId		: Being used to log particular function
 		@Priority		: Being used to prioritize group functions
     Script:
-        EXEC bodb_VR2Model.dbo.CTS_BySportNormalClassification_NormalPool_Insert @FunctionId = 1,
-																				 @Priority = 1;
+        EXEC bodb_VR2Model.dbo.CTS_BySportNormalClassification_NormalPool_Insert @FunctionId = 1, @Priority = 1;
 */
 BEGIN
 	

@@ -5,7 +5,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-ALTER PROCEDURE [dbo].[CTS_BySportNormalClassification_NormalPool_Get]
+CREATE PROCEDURE [dbo].[CTS_BySportNormalClassification_NormalPool_Get]
 	@ScannedMaxId BIGINT OUTPUT
 AS
 /*
@@ -35,8 +35,8 @@ BEGIN
 
 	CREATE TABLE #tmpCustomers(
 		Id				BIGINT PRIMARY KEY IDENTITY(1,1),
-		CustId			INT UNIQUE NOT NULL,
-		SportGroup		INT NOT NULL,
+		CustId			INT NOT NULL,
+		SportGroup		SMALLINT NOT NULL,
 		IsCheckBetCount BIT DEFAULT(0)
 	);
 
