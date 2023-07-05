@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_BySport_InsertNormalAccount`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_BySport_InsertNormalAccount_xtest`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_BySport_InsertNormalAccount`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_BySport_InsertNormalAccount_xtest`(
 		IN ip_NewClassification 	JSON
     
     ,	OUT op_ErrorMessage 		VARCHAR(200)
@@ -17,11 +17,13 @@ BEGIN
 		Revisions: 
 				- 20220830@Harvey.Nguyen: Created [Redmine ID: #177434]
 				- 202230426@Long.Luu: Adjust Probation's period from 20 to 15 [Redmine ID: #187433]
+                - 20230704@Jonas.Huynh: Normal Renovation [Redmine ID: #189875]
                 
 		Param's Explanation (filtered by):
         
         Example:
-				CALL CTS_DataCenter.CTS_DC_CustClassification_BySport_InsertNormalAccount('[{"CustId": "43600693","CategoryId":"203","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","SportID":10}]',@or);
+				CALL CTS_DataCenter.CTS_DC_CustClassification_BySport_InsertNormalAccount
+                ('[{"CustId": "43600693", "SportGroup":10, "CategoryId":"203", "TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10", "PerformanceTime":"2021-03-31 00:00:00"}]',@or);
 */ 
     
     DECLARE CONST_CATEGORY_NEWMEMBER 					INT DEFAULT 201;
@@ -45,11 +47,11 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_NewClassification(	  	
 			CustID						BIGINT UNSIGNED
 		, 	CTSCustID					BIGINT DEFAULT 0
+        ,	SportID						SMALLINT
 		, 	TurnoverRM					DECIMAL(20,4)
 		, 	WinlossRM					DECIMAL(20,4)
 		, 	BetCount					BIGINT
 		, 	ActiveDays					INT	
-        ,	SportID						SMALLINT
 		,	DWCateID					SMALLINT
         ,	OldCateGroup 				SMALLINT
         ,	OldCateID 					SMALLINT
@@ -59,6 +61,7 @@ BEGIN
         ,	OldTargetCC					SMALLINT
         ,	TargetCC					SMALLINT
 		, 	ActionType					SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN; 5: Not satisfy Pass Probation*/
+        ,	PerformanceTime				DATETIME
 		, 	INDEX    			    	IX_Temp_NewClassification(CustID, DWCateID)  
         ,	PRIMARY KEY (CustID, SportID)
 	); 
@@ -113,23 +116,25 @@ BEGIN
     /* START */
     /* INIT */            
 	/* 1: PARSE RAW DATA */
-	INSERT IGNORE INTO Temp_NewClassification(CustID, DWCateID, TurnoverRM, WinlossRM, BetCount, ActiveDays, SportID)
+	INSERT IGNORE INTO Temp_NewClassification(CustID, SportID, DWCateID, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
 	SELECT DISTINCT temp.CustID
+                , 	temp.SportID
 				, 	temp.DWCateID
                 , 	temp.TurnoverRM
                 , 	temp.WinlossRM
                 , 	temp.BetCount
                 , 	temp.ActiveDays
-                , 	temp.SportID
+                ,	temp.PerformanceTime
 	 FROM JSON_TABLE(ip_NewClassification,
 		"$[*]" COLUMNS(
 				CustID 					BIGINT UNSIGNED		PATH "$.CustId"
+            , 	SportID					SMALLINT UNSIGNED	PATH "$.SportGroup"
 			, 	DWCateID				SMALLINT UNSIGNED	PATH "$.CategoryId"
             , 	TurnoverRM				DECIMAL(20,4)		PATH "$.TurnoverRM"
             , 	WinlossRM				DECIMAL(20,4)		PATH "$.WinlossRM"
             , 	BetCount				BIGINT				PATH "$.BetCount"
             , 	ActiveDays				INT					PATH "$.ActiveDays"		
-            , 	SportID					SMALLINT UNSIGNED	PATH "$.SportId"		
+            ,	PerformanceTime			DATETIME			PATH "$.PerformanceTime"
 		 )) AS 	temp
 	 WHERE temp.DWCateID <> 0;
 	
@@ -309,7 +314,7 @@ BEGIN
 
     /* 15: WRITE HISTORY LOG (VIEW ON WEB) */
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport_History
-	(CustID, CTSCustID, CategoryID, SportID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, ActionType, InsertDate, TargetCC)
+	(CustID, CTSCustID, CategoryID, SportID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, ActionType, InsertDate, TargetCC, PerformanceTime)
 	SELECT DISTINCT	temp.CustID
 				, 	temp.CTSCustID
 				, 	temp.NewCateID
@@ -323,12 +328,13 @@ BEGIN
 				, 	temp.ActionType
 				, 	DATE(lv_CurrentDateTime)
 				,	temp.TargetCC 
+                ,	temp.PerformanceTime	
 	FROM 	Temp_NewClassification AS temp
 	WHERE temp.IsDataChanged  = 1;
 	
     /* 16: WRITE HISTORY LOG (TRACE DATA) */
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport_Log
-	(CustID, CTSCustID, CategoryID, SportID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, ActionType, InsertDate, TargetCC, OldCategoryID, DWCategoryID, IsDataChanged)
+	(CustID, CTSCustID, CategoryID, SportID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, ActionType, InsertDate, TargetCC, OldCategoryID, DWCategoryID, IsDataChanged, PerformanceTime)
 	SELECT DISTINCT	temp.CustID
 				, 	temp.CTSCustID
 				, 	temp.NewCateID
@@ -345,6 +351,7 @@ BEGIN
 				, 	temp.OldCateID 
                 , 	temp.DWCateID
 				,   temp.IsDataChanged
+                ,	temp.PerformanceTime
 	FROM 	Temp_NewClassification AS temp;
     
 	/* 17: RETURN UPDATED CUSTOMERS TO SERVICE FOR FUTHER STEPS */
