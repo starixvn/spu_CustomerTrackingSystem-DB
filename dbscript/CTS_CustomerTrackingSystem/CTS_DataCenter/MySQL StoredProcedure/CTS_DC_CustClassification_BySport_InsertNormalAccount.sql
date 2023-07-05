@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_BySport_InsertNormalAccount_xtest`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_BySport_InsertNormalAccount`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_BySport_InsertNormalAccount_xtest`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_BySport_InsertNormalAccount`(
 		IN ip_NewClassification 	JSON
     
     ,	OUT op_ErrorMessage 		VARCHAR(200)
@@ -23,7 +23,7 @@ BEGIN
         
         Example:
 				CALL CTS_DataCenter.CTS_DC_CustClassification_BySport_InsertNormalAccount
-                ('[{"CustId": "43600693", "SportGroup":10, "CategoryId":"203", "TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10", "PerformanceTime":"2021-03-31 00:00:00"}]',@or);
+				('[{"CustId": "4345542", "SportGroup":1, "CategoryId":"203", "TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10", "PerformanceTime":"2021-03-31 00:00:00"}]',@or);
 */ 
     
     DECLARE CONST_CATEGORY_NEWMEMBER 					INT DEFAULT 201;
@@ -355,7 +355,7 @@ BEGIN
 	FROM 	Temp_NewClassification AS temp;
     
 	/* 17: RETURN UPDATED CUSTOMERS TO SERVICE FOR FUTHER STEPS */
-	SELECT DISTINCT temp.CustID, temp.SportID
+	SELECT DISTINCT temp.CustID, temp.SportID AS SportGroup
     FROM Temp_NewClassification AS temp 
     WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);
 END$$
