@@ -37,9 +37,8 @@ BEGIN
 		, 	SportID		SMALLINT UNSIGNED	PATH "$.SportGroup"	
 		 )) AS temp;       
          
-	SELECT 		temp.CustID
-			, 	temp.SportID
-			, 	cate.CategoryID
+	SELECT 		temp.CustID  AS CustId
+			, 	temp.SportID AS SportGroup
 	FROM Temp_RealtimeCustomers AS temp
 		LEFT JOIN 	CTS_DataCenter.CTSCustomerClassification_BySport AS cate ON cate.CustID = temp.CustID AND cate.SportID = temp.SportID
 	WHERE	cate.CategoryID IN (CONST_CATEGORY_NEWMEMBER, CONST_CATEGORY_NORMALMEMBER, CONST_CATEGORY_GOOD)
