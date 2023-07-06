@@ -16,37 +16,53 @@ BEGIN
 
 		Revisions:
 			- 	20230601@Casey.Huynh: Created [Redmine ID: 185787]
+            -	20230706@Casey.Huynh: Show Device Association Info [Redmine ID: 190950]
 			
 		Param's Explanation (filtered by):
 			
 		Example:
 			CALL CTS_DC_Association_GetAccountInfoByCustSubscriber(@ip_SubscriberID:=6,@ip_CTSCustID:=14417);
 	*/
+    DECLARE lv_FirstDeviceID BIGINT UNSIGNED;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Association;
-	CREATE TEMPORARY TABLE Temp_Association(
+	CREATE TEMPORARY TABLE Temp_Association(		
 			CTSCustID	BIGINT UNSIGNED
 		,	AccountID	BIGINT UNSIGNED
         ,	DeviceID	BIGINT 
         ,	CreatedTime	DATETIME(4)
+        ,	AssociationID BIGINT UNSIGNED
         
         ,	PRIMARY KEY PK_Temp_Association(DeviceID, AccountID)
-        ,	INDEX IX_Temp_Association(CTSCustID)
+        ,	INDEX IX_Temp_Association_CTSCustID(CTSCustID)
+        ,	INDEX IX_Temp_Association_AssociationID(AssociationID)
     ); 
     
     #======GET ACCOUNT LIST: ip_CTSCustID AND ASSOCIATED CUSTOMER=======================================    
-    INSERT INTO Temp_Association(CTSCustID, AccountID, DeviceID, CreatedTime)
-    SELECT cda.CTSCustID, cda.AccountID, ass.DeviceID, ass.CreatedTime
+    INSERT INTO Temp_Association(CTSCustID, AccountID, DeviceID, CreatedTime, AssociationID)
+    SELECT	cda.CTSCustID
+		,	cda.AccountID
+        ,	ass.DeviceID
+        ,	ass.CreatedTime
+        ,	ass.AssociationID
 	FROM CTS_DataCenter.CustDCSAccount AS cda 
         INNER JOIN DCS_DataCenter.Association AS ass ON cda.AccountID = ass.AccountID 
     WHERE cda.SubscriberID = ip_SubscriberID AND cda.CTSCustID = ip_CTSCustID;
+    
+    SELECT tmpAss.DeviceID
+    INTO lv_FirstDeviceID
+    FROM Temp_Association AS tmpAss
+    ORDER BY AssociationID ASC
+    LIMIT 1;
 
     SELECT 	COUNT(DISTINCT tmpAs1.DeviceID) AssociatedDevices
 		,	COUNT(DISTINCT cus.CTSCustID) AS AssociatedAccounts
         ,	MIN(tmpAs1.CreatedTime) AS FirstLogin
+        ,	(SELECT dv.FirstDeviceCode FROM DCS_DataCenter.Device AS dv WHERE dv.DeviceID = lv_FirstDeviceID) AS FirstDevice
     FROM Temp_Association AS tmpAs1
 		LEFT JOIN DCS_DataCenter.Association AS ass ON tmpAs1.DeviceID = ass.DeviceID AND tmpAs1.AccountID <> ass.AccountID AND ass.SubscriberID = ip_SubscriberID   
         LEFT JOIN CTS_DataCenter.CustDCSAccount AS cda ON cda.AccountID = ass.AccountID
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cda.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0;
+        
 END$$
 DELIMITER ;
