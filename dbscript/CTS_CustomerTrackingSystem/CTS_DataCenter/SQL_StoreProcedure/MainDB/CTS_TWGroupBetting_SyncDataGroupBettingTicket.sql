@@ -14,6 +14,8 @@ AS
 		- 20220711@Harvey.Nguyen: Change solution to scan on each ticket			[Redmine ID: #169671]
 		- 20220831@Harvey.Nguyen: Update for Scale out DB Trans						[Redmine ID: #176472]
 		- 20230417@Casey.Huynh: Ignore Duplicate TransID 							[Redmine ID: #187030]
+		- 20230626@Victoria.Le: Add new columns	RulesType,IsRule1[tag by %RFM],IsRule2[tag by %CC],IsRule3[tag by %Betfrom]
+																			[Redmine ID: #189505]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_SyncDataGroupBettingTicket] 
@@ -35,12 +37,20 @@ BEGIN
 		TransId		BIGINT	PRIMARY KEY
 		,CustId		INT
 		,TransDate	DATE
+		,RuleId				TINYINT
+		,IsViolateRFM		BIT
+		,IsViolateCC		BIT
+		,IsViolateBetFrom	BIT
 	);
 
-	INSERT INTO #TmpGroupBettingTicket (TransId, Custid, TransDate)
+	INSERT INTO #TmpGroupBettingTicket (TransId, Custid, TransDate, RuleId, IsViolateRFM, IsViolateCC, IsViolateBetFrom)
 	SELECT	T.C.value('./@TransId', 'BIGINT') AS TransId
 		,	T.C.value('./@CustId', 'INT') AS CustId
 		,	T.C.value('./@TransDate', 'DATE') AS TransDate
+		,	T.C.value('./@RuleId', 'TINYINT') AS RuleId
+		,	T.C.value('./@IsViolateRFM', 'BIT') AS IsViolateRFM
+		,	T.C.value('./@IsViolateCC', 'BIT') AS IsViolateCC
+		,	T.C.value('./@IsViolateBetFrom', 'BIT') AS IsViolateBetFrom
 	FROM @GBTicketXML.nodes('//TWGroupBettingTicket') AS T(C)
 	OPTION (OPTIMIZE FOR (@GBTicketXML = NULL));
 
@@ -48,12 +58,21 @@ BEGIN
 	WHERE TransDate <= @ArchivedDateTicketHistory
 
 	INSERT INTO dbo.SPU_GroupBettingTicket_History (
-		TransId
-		,TransDate
+			TransId
+		,	TransDate
+		,	RulesType
+		,	IsRule1
+		,	IsRule2
+		,	IsRule3
 		)
-	SELECT tmp.TransId
-		,tmp.TransDate
+	SELECT 	tmp.TransId
+		,	tmp.TransDate
+		,	gbr.RuleName
+		,	tmp.IsViolateRFM
+		,	tmp.IsViolateCC
+		,	tmp.IsViolateBetFrom
 	FROM #TmpGroupBettingTicket AS tmp
+		INNER JOIN dbo.SPU_GroupBettingRule	AS gbr WITH(NOLOCK) ON tmp.RuleId = gbr.RuleId
 		LEFT JOIN dbo.SPU_GroupBettingTicket_History AS his WITH(NOLOCK) ON tmp.TransID = his.TransID
 	WHERE his.TransID IS NULL;
 
