@@ -1,5 +1,5 @@
 TransStatusName,StatusValue,Notes,IsTransformed,CreatedDate
-"Valid Transaction",0,,1,"2019-12-10 00:00:00"
+"Valid Transaction",0,,1,"2019-12-11 00:00:00"
 "Invalid Subscriber",1,"Handle At SP DCS_DC_TransformData_UnhandleSubscriberAction",0,"2019-12-10 00:00:00"
 "Invalid Action Result",2,"Handle At SP DCS_DC_TransformData_UnhandleSubscriberAction",1,"2019-12-10 00:00:00"
 "Invalid Devicode_Empty",4,"Handle At Web: json insert to Raw Master",1,"2019-12-10 00:00:00"
