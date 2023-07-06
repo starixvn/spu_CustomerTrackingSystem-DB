@@ -19,6 +19,13 @@ AS
 */
 BEGIN
 	SET NOCOUNT ON;
+	
+	DECLARE @Today DATE = GETDATE()
+		,	@MinDateScanned	DATETIME
+		,	@MaxDateScanned	DATETIME;
+
+	SET @MinDateScanned = @Today;
+	SET @MaxDateScanned = DATEADD(DAY,1,@Today);
 
 	IF OBJECT_ID('tempdb..#tmpScanningCust') IS NOT NULL
 		DROP TABLE #tmpScanningCust;
@@ -26,8 +33,8 @@ BEGIN
 	CREATE TABLE #tmpScanningCust(
 			CustId		INT
 		,	ScanDate	DATE
-		,	CONSTRAINT PK_tmpScanningCust PRIMARY KEY (CustId,ScanDate)
-	)
+		,	PRIMARY KEY (CustId,ScanDate)
+	);
 
 	IF OBJECT_ID('tempdb..#Tmp_WCLeagues') IS NOT NULL
 		DROP TABLE #Tmp_WCLeagues;
@@ -43,6 +50,20 @@ BEGIN
 			BetFrom		VARCHAR(5) PRIMARY KEY
 	);
 
+	IF OBJECT_ID('tempdb..#Tmp_Trans') IS NOT NULL
+		DROP TABLE #Tmp_Trans;
+
+	CREATE TABLE #Tmp_Trans (
+			transid			BIGINT PRIMARY KEY
+		,	transdate		DATETIME
+		,	winlostdate		SMALLDATETIME
+		,	custid			INT
+		,	bettype			SMALLINT
+		,	statusID		TINYINT
+		,	matchid		    INT
+		,	betfrom		    NVARCHAR(4)
+	);
+
 	INSERT INTO #Tmp_WCLeagues(LeagueId)
 	SELECT DISTINCT LeagueId
 	FROM dbo.league WITH(NOLOCK)
@@ -53,10 +74,27 @@ BEGIN
 	FROM DBWH.bodb_account.dbo.tbl_Betfrom AS b WITH (NOLOCK)
 	WHERE b.platform2 = 'Desktop';
 
+	INSERT INTO #Tmp_Trans (transid,transdate,winlostdate,custid,matchid,bettype,statusID,betfrom)
+	SELECT bt.transid, bt.transdate, bt.winlostdate, bt.custid, bt.matchid, bt.bettype, bt.statusID, bt.betfrom
+	FROM dbo.bettrans AS bt WITH(NOLOCK, INDEX=IX_sequenceid)
+		INNER JOIN dbo.Dep_CustSuper AS dCust WITH (NOLOCK) ON  dCust.custid = bt.srecommend
+	WHERE bt.sequenceid > 0
+		AND bt.transdate >= @MinDateScanned
+		AND bt.transdate < @MaxDateScanned;
+
 	INSERT INTO #tmpScanningCust(CustId,ScanDate)
 	SELECT DISTINCT CustId
-		,	CONVERT(DATE, GETDATE()) AS 'ScanDate'
-	FROM dbo.SPU_GroupBettingCustomer WITH(NOLOCK);
+		, @Today AS 'ScanDate'
+	FROM dbo.SPU_GroupBettingCustomer WITH(NOLOCK)
+	;
+
+	INSERT INTO #tmpScanningCust(CustId,ScanDate)
+	SELECT DISTINCT tmp_trans.custid
+		, @Today AS 'ScanDate'
+	FROM #Tmp_Trans AS tmp_trans
+		LEFT JOIN #tmpScanningCust AS tmp_cust ON tmp_cust.CustId = tmp_trans.custid
+	WHERE tmp_cust.CustId IS NULL
+	;
 
 	INSERT INTO dbo.SPU_GroupBettingCustomer(CustId,ScanDate,GBTicketCount,TicketCount,ParlayTicketCount,RejectTicketCount,DesktopTicketCount)
 	SELECT	sc.CustId
@@ -85,11 +123,7 @@ BEGIN
 			,	SUM(CASE WHEN (m.matchid IS NULL AND bt.matchid = 29 AND bt.bettype = 29) OR (m.matchid IS NOT NULL AND bt.bettype = 38) THEN 1
 						 ELSE 0 END) OVER (PARTITION BY bt.custid,gbc.ScanDate) AS 'ParlayTicketCount'	
 		FROM dbo.SPU_GroupBettingCustomer AS gbc WITH (NOLOCK)
-			INNER JOIN dbo.bettrans AS bt WITH (NOLOCK) ON gbc.CustId = bt.custid
-				AND (
-						bt.transdate >= CONVERT(DATETIME, gbc.ScanDate)
-						AND bt.transdate < DATEADD(DAY, 1, CONVERT(DATETIME, gbc.ScanDate))
-					)			
+			INNER JOIN #Tmp_Trans AS bt WITH (NOLOCK) ON gbc.CustId = bt.custid	
 			LEFT JOIN dbo.match AS m WITH (NOLOCK) ON bt.matchid = m.matchid AND m.sporttype < 100
 			LEFT JOIN #Tmp_PlatformDesktop AS b WITH (NOLOCK) ON b.BetFrom = bt.betfrom
 			LEFT JOIN #Tmp_WCLeagues AS wc WITH(NOLOCK) ON m.leagueid = wc.LeagueId
