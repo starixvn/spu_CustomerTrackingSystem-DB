@@ -48,12 +48,13 @@ BEGIN
 	IF(@ScannedMaxId IS NOT NULL)
 	BEGIN
 		INSERT INTO #tmpCustomers(CustId, SportGroup, IsCheckBetCount)
-		SELECT TOP(@BatchSize) c.CustId, c.SportGroup,
-			   CASE WHEN (COUNT(c.CustId) = COUNT(c.FunctionId)) AND (COUNT(c.FunctionId) = SUM(c.FunctionId)) THEN 1 ELSE 0 END
-		FROM dbo.CustomerClassification_BySport_NormalPool AS c WITH(NOLOCK)
-		WHERE c.ID <= @ScannedMaxId
-		GROUP BY c.CustId, c.SportGroup
-		ORDER BY Min(c.Priority) ASC, Min(c.ID) ASC
+		SELECT TOP(@BatchSize) np.CustId, np.SportGroup,
+			   CASE WHEN (COUNT(np.CustId) = COUNT(np.FunctionId)) AND (COUNT(np.FunctionId) = SUM(np.FunctionId)) THEN 1 ELSE 0 END
+		FROM dbo.CustomerClassification_BySport_NormalPool AS np WITH(NOLOCK)
+		WHERE np.ID <= @ScannedMaxId 
+			AND NOT EXISTS (SELECT 1 FROM dbo.CustomerClassification_BySport AS cc WITH (NOLOCK) WHERE cc.IsApplied = 0 AND cc.CustId = np.CustId AND cc.SportId = np.SportGroup)
+		GROUP BY np.CustId, np.SportGroup
+		ORDER BY Min(np.Priority) ASC, Min(np.ID) ASC
 	END
 
 	-- #3: Return dataset
