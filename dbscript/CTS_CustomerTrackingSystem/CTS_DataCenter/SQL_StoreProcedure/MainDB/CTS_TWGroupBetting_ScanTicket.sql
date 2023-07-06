@@ -24,6 +24,8 @@ AS
 		- 20220831@Harvey.Nguyen: Update for Scale out DB Trans				[Redmine ID: #176472]
 		- 20221122@Long.Luu:	  Exclude WC Leagues						[Redmine ID: #181229]
 		- 20230417@Casey.Huynh: Change betfrom datatype	to NVARCHAR(4)		[Redmine ID: #187030]
+		- 20230626@Victoria.Le: Add new columns	RulesType,IsRule1[tag by %RFM],IsRule2[tag by %CC],IsRule3[tag by %Betfrom]
+																			[Redmine ID: #189505]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_ScanTicket] '2022-02-15 23:10:15.983','2022-02-16 02:15:20.983',10900
@@ -343,15 +345,30 @@ BEGIN
 	DELETE st WITH(ROWLOCK)
 	FROM #TmpSuspectTicket AS st
 	INNER JOIN dbo.SPU_GroupBettingTicket gbt WITH (NOLOCK) ON st.Transid = gbt.TransId;
-
-	SET @GBTicketXMLString = (SELECT DISTINCT		tfs.Custid AS 'CustId'
-												,	tfs.Transid AS 'TransId'
-												,	CONVERT(DATE, DATEADD(SECOND, tfs.TransdateSec, @CutOffDate)) AS 'TransDate'
-								FROM #TmpSuspectTicket AS tfs WITH (NOLOCK)
-								WHERE (tfs.IsViolateBetFrom = 1
-									OR tfs.IsViolateRFM = 1
-									OR tfs.IsViolateCC = 1)
-								FOR XML RAW('TWGroupBettingTicket'), ROOT);
+								
+	WITH CTE_1 AS
+	(
+		SELECT 	tfs.Custid AS 'CustId'
+			,	tfs.Transid AS 'TransId'
+			,	CONVERT(DATE, DATEADD(SECOND, tfs.TransdateSec, @CutOffDate)) AS 'TransDate'
+			,	RuleId AS 'RuleId'
+			,	IsViolateRFM AS 'IsViolateRFM'
+			,	IsViolateCC AS 'IsViolateCC'
+			,	IsViolateBetFrom AS 'IsViolateBetFrom'
+			,	(ISNULL(CONVERT(SMALLINT,IsViolateRFM),0) + ISNULL(CONVERT(SMALLINT,IsViolateCC),0) + ISNULL(CONVERT(SMALLINT,IsViolateBetFrom),0)) AS 'SumIsViolate'
+		FROM #TmpSuspectTicket AS tfs WITH (NOLOCK)
+		WHERE (tfs.IsViolateBetFrom = 1 OR tfs.IsViolateRFM = 1 OR tfs.IsViolateCC = 1)
+				
+	), CTE_2 AS
+	(
+		SELECT 	CustId,TransId,TransDate,RuleId,IsViolateRFM,IsViolateCC,IsViolateBetFrom
+			,	ROW_NUMBER() OVER (PARTITION BY CustId,TransId,TransDate,RuleId ORDER BY SumIsViolate DESC) AS RN
+		FROM CTE_1
+	)
+	SELECT @GBTicketXMLString = (SELECT CustId,TransId,TransDate,RuleId,IsViolateRFM,IsViolateCC,IsViolateBetFrom
+								 FROM CTE_2
+								 WHERE RN = 1
+								 FOR XML RAW('TWGroupBettingTicket'), ROOT);
 
 	EXEC CTS_TWGroupBetting_SyncDataGroupBettingTicket @GBTicketXMLString, @LastSequenceId_New;		
 
