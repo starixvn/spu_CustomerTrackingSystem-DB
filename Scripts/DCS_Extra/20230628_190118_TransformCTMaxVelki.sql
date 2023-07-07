@@ -471,7 +471,7 @@ CREATE DEFINER=`DBMaintainer`@`%` EVENT `EV_DCS_Extra_Account_UpdateLastLoginTim
 		CALL DCS_Extra.DCS_ET_Transform_Account_UpdateLastLoginTime(1000); 
 
 		UPDATE CTS_DataCenter.SystemEventStatus 
-		SET Status = 'Stop' 
+		SET Status = 'Stop' ,  LastExecTime = NOW()
 		WHERE EventName = 'EV_DCS_Extra_Account_UpdateLastLoginTime' ;
 
 	END IF;
