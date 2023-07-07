@@ -112,7 +112,7 @@ BEGIN
 	DELETE tmp_trans
 	FROM #Tmp_Trans AS tmp_trans
 		LEFT JOIN #tmp_match AS tmp_match ON tmp_match.MatchId = tmp_trans.MatchId
-	WHERE tmp_match.MatchId IS NULL;
+	WHERE tmp_trans.Matchid <> 29 AND tmp_match.MatchId IS NULL;
 
 	INSERT INTO #tmpScanningCust(CustId,ScanDate,IsInserted)
 	SELECT DISTINCT tmp_trans.Custid
