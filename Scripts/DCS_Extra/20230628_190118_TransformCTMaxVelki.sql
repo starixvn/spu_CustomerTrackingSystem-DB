@@ -462,7 +462,7 @@ DELIMITER //
 			- 20230628@Casey.Huynh: Created [Redmine ID: #190118]
 		Reviewer:
 */
-CREATE DEFINER=`DBMaintainer`@`%` EVENT `EV_DCS_Extra_Account_UpdateLastLoginTime` ON SCHEDULE EVERY 4 SECOND STARTS '2023-06-30 00:00:00' ON COMPLETION NOT PRESERVE ENABLE DO BEGIN
+CREATE DEFINER=`vndbaDeployment`@`%` EVENT `EV_DCS_Extra_Account_UpdateLastLoginTime` ON SCHEDULE EVERY 4 SECOND STARTS '2023-06-30 00:00:00' ON COMPLETION NOT PRESERVE ENABLE DO BEGIN
 	IF EXISTS(SELECT 1 FROM CTS_DataCenter.SystemEventStatus WHERE EventName = 'EV_DCS_Extra_Account_UpdateLastLoginTime' AND Status = 'Stop') THEN
 		UPDATE CTS_DataCenter.SystemEventStatus 
 		SET Status = 'Start',  LastExecTime = NOW()
