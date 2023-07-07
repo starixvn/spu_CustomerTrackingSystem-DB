@@ -402,6 +402,9 @@ VALUES (8000001,'CTMax','',10,1,NOW(),NULL,0,NOW(),NULL)
     ,  (8000005,'AgentCTMax','',10,1,NOW(),NULL,0,NOW(),NULL)
     ,  (8000006,'AgentVelki','',10,1,NOW(),NULL,0,NOW(),NULL);
 
+INSERT INTO CTS_DataCenter.SystemEventStatus(EventName,Status,LastExecTime)
+VALUES('EV_DCS_Extra_Account_UpdateLastLoginTime','Stop',NOW());
+
 #=============COPY DATA FILE FROM git ...Scripts\DCS_Extra== to 'D:/SPU/DCS_Extra/..' then import======================
 
 LOAD DATA LOCAL INFILE 'D:/SPU/DCS_Extra/20230628_190118_DeviceType.csv'
@@ -462,7 +465,7 @@ DELIMITER //
 CREATE DEFINER=`DBMaintainer`@`%` EVENT `EV_DCS_Extra_Account_UpdateLastLoginTime` ON SCHEDULE EVERY 4 SECOND STARTS '2023-06-30 00:00:00' ON COMPLETION NOT PRESERVE ENABLE DO BEGIN
 	IF EXISTS(SELECT 1 FROM CTS_DataCenter.SystemEventStatus WHERE EventName = 'EV_DCS_Extra_Account_UpdateLastLoginTime' AND Status = 'Stop') THEN
 		UPDATE CTS_DataCenter.SystemEventStatus 
-		SET Status = 'Start' 
+		SET Status = 'Start',  LastExecTime = NOW()
 		WHERE EventName = 'EV_DCS_Extra_Account_UpdateLastLoginTime' ;
 
 		CALL DCS_Extra.DCS_ET_Transform_Account_UpdateLastLoginTime(1000); 
