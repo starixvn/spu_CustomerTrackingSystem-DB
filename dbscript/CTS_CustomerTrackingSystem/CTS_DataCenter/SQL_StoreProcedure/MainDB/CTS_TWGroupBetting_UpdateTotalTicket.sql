@@ -64,6 +64,13 @@ BEGIN
 		,	ScanDate		DATE
 		,	IsLicensee		BIT
 	);
+	
+	IF OBJECT_ID('tempdb..#tmp_match') IS NOT NULL
+		DROP TABLE #tmp_match;
+
+	CREATE TABLE #tmp_match (
+			MatchId		INT PRIMARY KEY
+	);	
 
 	INSERT INTO #Tmp_WCLeagues(LeagueId)
 	SELECT DISTINCT LeagueId
@@ -94,13 +101,27 @@ BEGIN
 	SET @LastSequenceId_New = ISNULL(@LastSequenceId_New,@LastSequenceId);
 
 	DELETE FROM #Tmp_Trans WHERE ScanDate <> @Today OR IsLicensee = 0;
+	
+	INSERT INTO #tmp_match (MatchId)
+	SELECT DISTINCT tmp_trans.Matchid 
+	FROM #Tmp_Trans AS tmp_trans
+		INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = tmp_trans.MatchId
+		LEFT JOIN #Tmp_WCLeagues AS wc WITH(NOLOCK) ON m.leagueid = wc.LeagueId
+	WHERE tmp_trans.Matchid <> 29 
+		AND m.Sporttype < 100
+		AND wc.LeagueId IS NULL;
+		
+	DELETE tmp_trans
+	FROM #Tmp_Trans AS tmp_trans
+		LEFT JOIN #tmp_match AS tmp_match ON tmp_match.MatchId = tmp_trans.MatchId
+	WHERE tmp_match.MatchId IS NULL;
 
 	INSERT INTO #tmpScanningCust(CustId,ScanDate,IsInserted)
-	SELECT DISTINCT tmp_trans.custid
+	SELECT DISTINCT tmp_trans.Custid
 		, @Today AS 'ScanDate'
-		, CASE WHEN tmp_trans.custid IS NOT NULL AND gbc.CustId IS NULL THEN 1 ELSE 0 END AS 'IsInserted'
+		, CASE WHEN tmp_trans.Custid IS NOT NULL AND gbc.CustId IS NULL THEN 1 ELSE 0 END AS 'IsInserted'
 	FROM #Tmp_Trans AS tmp_trans
-		LEFT JOIN dbo.SPU_GroupBettingCustomer AS gbc WITH(NOLOCK)  ON gbc.CustId = tmp_trans.custid AND gbc.ScanDate = tmp_trans.scandate;
+		LEFT JOIN dbo.SPU_GroupBettingCustomer AS gbc WITH(NOLOCK)  ON gbc.CustId = tmp_trans.Custid AND gbc.ScanDate = tmp_trans.ScanDate;
 
 	INSERT INTO dbo.SPU_GroupBettingCustomer(CustId,ScanDate,GBTicketCount,TicketCount,ParlayTicketCount,RejectTicketCount,DesktopTicketCount)
 	SELECT	sc.CustId
@@ -117,24 +138,15 @@ BEGIN
 	;WITH cte_TicketCount AS (
 		SELECT DISTINCT bt.Custid
 			,	gbc.ScanDate
-			,	SUM(CASE WHEN (m.matchid IS NULL AND bt.Matchid = 29 AND bt.Bettype = 29) OR (m.matchid IS NOT NULL) THEN 1
-						 ELSE 0 END) OVER (PARTITION BY bt.Custid,gbc.ScanDate) AS 'TicketCount'
-			,	SUM(CASE WHEN bt.StatusID = 101 THEN (CASE WHEN (m.matchid IS NULL AND bt.Matchid = 29 AND bt.Bettype = 29) OR (m.matchid IS NOT NULL) THEN 1
-													  ELSE 0 END)
-					ELSE 0 END) OVER (PARTITION BY bt.Custid,gbc.ScanDate) AS 'RejectTicketCount'
-			,	SUM(CASE WHEN b.BetFrom IS NOT NULL THEN (CASE WHEN (m.matchid IS NULL AND bt.Matchid = 29 AND bt.Bettype = 29) OR (m.matchid IS NOT NULL) THEN 1
-													  ELSE 0 END)
-					ELSE 0 END) OVER (PARTITION BY bt.Custid,gbc.ScanDate) AS 'DesktopTicketCount'		
-			,	SUM(CASE WHEN (m.matchid IS NULL AND bt.Matchid = 29 AND bt.Bettype = 29) OR (m.matchid IS NOT NULL AND bt.Bettype = 38) THEN 1
-						 ELSE 0 END) OVER (PARTITION BY bt.Custid,gbc.ScanDate) AS 'ParlayTicketCount'		
+			,	COUNT(1) OVER (PARTITION BY bt.Custid,gbc.ScanDate) AS 'TicketCount'
+			,	SUM(CASE WHEN bt.StatusID = 101 THEN 1 ELSE 0 END) OVER (PARTITION BY bt.Custid,gbc.ScanDate) AS 'RejectTicketCount'
+			,	SUM(CASE WHEN b.BetFrom IS NOT NULL THEN 1 ELSE 0 END) OVER (PARTITION BY bt.Custid,gbc.ScanDate) AS 'DesktopTicketCount'		
+			,	SUM(CASE WHEN bt.Bettype IN (29,38) THEN 1 ELSE 0 END) OVER (PARTITION BY bt.Custid,gbc.ScanDate) AS 'ParlayTicketCount'		
 		FROM dbo.SPU_GroupBettingCustomer AS gbc WITH (NOLOCK)
 			INNER JOIN #Tmp_Trans AS bt WITH (NOLOCK) ON gbc.CustId = bt.Custid	AND bt.ScanDate = gbc.ScanDate
-			LEFT JOIN dbo.match AS m WITH (NOLOCK) ON bt.Matchid = m.matchid AND m.sporttype < 100
 			LEFT JOIN #Tmp_PlatformDesktop AS b WITH (NOLOCK) ON b.BetFrom = bt.BetFrom
-			LEFT JOIN #Tmp_WCLeagues AS wc WITH(NOLOCK) ON m.leagueid = wc.LeagueId
 		WHERE (gbc.LastCountTotalTicketDate IS NULL
 			OR (gbc.LastCountTotalTicketDate BETWEEN gbc.ScanDate AND DATEADD(MINUTE, 1470, CONVERT(DATETIME,gbc.ScanDate))))
-			AND wc.LeagueId IS NULL
 	)
 	UPDATE gbc WITH(UPDLOCK, ROWLOCK)
 	SET		gbc.TicketCount = CASE WHEN sc.IsInserted = 1 THEN ct.TicketCount ELSE (gbc.TicketCount + ct.TicketCount) END
