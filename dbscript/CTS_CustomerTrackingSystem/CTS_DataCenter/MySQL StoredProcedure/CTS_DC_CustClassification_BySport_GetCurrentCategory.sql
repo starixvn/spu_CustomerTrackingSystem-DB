@@ -56,10 +56,9 @@ BEGIN
 			, 	SportGroup	SMALLINT UNSIGNED	PATH "$.SportGroup"	
 			 )) AS temp;       
 		
---         DELETE r
---         FROM Temp_Cust AS r
--- 			LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON r.CustID = cus.CustID AND cus.CustSubID = 0
--- 		   WHERE cus IS NULL;
+        DELETE r
+		FROM Temp_Cust AS r
+        WHERE NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomer AS c WHERE c.CustID = r.CustID AND cus.CustSubID = 0);
         
     END IF;	
 	
