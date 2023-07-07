@@ -1,10 +1,8 @@
 /*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[CTS_TWGroupBetting_UpdateTotalTicket]
-(
 		@BatchSize				INT,
 		@LastSequenceId			BIGINT,
 		@LastSequenceId_New		BIGINT OUTPUT
-)
 AS
 /*
 	Created: 20220314@Harvey.Nguyen
