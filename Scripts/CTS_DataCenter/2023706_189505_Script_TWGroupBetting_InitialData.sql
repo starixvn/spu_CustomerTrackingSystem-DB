@@ -22,4 +22,7 @@ INSERT INTO SystemParameter (ParameterID, ParameterName, ParameterDesc, Paramete
 VALUES (136, 'TWGroupBetting_CountTotalTicket_LastSequenceId', 'TWGroupBetting_CountTotalTicket_LastSequenceId','BIGINT',0);
 
 
-
+UPDATE SystemParameter
+SET ParameterValue = 118169863455 -- MAX(SequenceID) WITH transdate >= '2023-07-09 23:59:00' and transdate < '2023-07-10'
+WHERE ParameterID = 136 
+;
