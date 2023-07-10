@@ -90,8 +90,7 @@ BEGIN
 		,	bt.transdate
 		,	CASE WHEN dCust.custid IS NOT NULL THEN 1 ELSE 0 END
 	FROM dbo.bettrans AS bt WITH(NOLOCK)
-		INNER JOIN dbo.Customer AS cust WITH (NOLOCK) ON cust.custid = bt.custid
-		LEFT JOIN dbo.Dep_CustSuper AS dCust WITH (NOLOCK) ON dCust.custid = cust.srecommend
+		LEFT JOIN dbo.Dep_CustSuper AS dCust WITH (NOLOCK) ON dCust.custid = bt.srecommend
 	WHERE bt.sequenceid > @LastSequenceId
 	ORDER BY bt.sequenceid ASC;
 
