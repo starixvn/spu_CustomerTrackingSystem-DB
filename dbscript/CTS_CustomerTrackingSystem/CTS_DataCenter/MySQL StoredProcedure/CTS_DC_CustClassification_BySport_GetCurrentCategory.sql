@@ -8,7 +8,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_BySport_GetCu
     SQL SECURITY INVOKER
 BEGIN
 	/*
-		Created:	20221110@Jonas.Huynh
+		Created:	20230703@Jonas.Huynh
 		Task :		Get Existing Category (Normal BySport Flow)
 		DB:			CTS_DataCenter
 		Original: 
@@ -58,7 +58,7 @@ BEGIN
 		
         DELETE r
 		FROM Temp_Cust AS r
-        WHERE NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomer AS c WHERE c.CustID = r.CustID AND cus.CustSubID = 0);
+        WHERE NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomer AS c WHERE c.CustID = r.CustID AND c.CustSubID = 0);
         
     END IF;	
 	
