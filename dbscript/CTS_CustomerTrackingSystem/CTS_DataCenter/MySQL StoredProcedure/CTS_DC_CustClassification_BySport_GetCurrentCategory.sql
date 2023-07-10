@@ -63,8 +63,9 @@ BEGIN
     END IF;	
 	
     #2. Get latest normal category
-	INSERT INTO Temp_CustCategory(CustID, CategoryID, CategoryGroup)
+	INSERT INTO Temp_CustCategory(CustID, SportGroup, CategoryID, CategoryGroup)
 	SELECT 	tmpIc.CustID
+		,	tmpIc.SportGroup
 		,	cls.CategoryID
         ,	cc.CategoryGroup
 	FROM Temp_Cust AS tmpIc
@@ -83,6 +84,6 @@ BEGIN
 		,	CASE WHEN tmpCc.CategoryGroup IS NULL THEN 0 ELSE tmpCc.CategoryGroup END AS CategoryID
         ,	CASE WHEN tmpCc.IsProbationLastDay IS NULL THEN 0 ELSE tmpCc.IsProbationLastDay END AS IsProbationLastDay
 	FROM Temp_Cust AS tmpCust
-		LEFT JOIN Temp_CustCategory AS tmpCc ON tmpCc.CustID = tmpCust.CustID;
+		LEFT JOIN Temp_CustCategory AS tmpCc ON tmpCc.CustID = tmpCust.CustID AND tmpCc.SportGroup = tmpCust.SportGroup;
 END$$
 DELIMITER ;
