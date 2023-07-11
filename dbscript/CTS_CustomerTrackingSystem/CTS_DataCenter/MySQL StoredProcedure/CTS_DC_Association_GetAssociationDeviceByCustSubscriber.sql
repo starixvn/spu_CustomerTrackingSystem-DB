@@ -21,22 +21,7 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL CTS_DC_Association_GetAssociationDeviceByCustSubscriber_Casey(@ip_SubscriberID:=6,@ip_CTSCustID:=1379028,@ip_NoOfRecord:=15); 
-   
-	*/
-    /*
-		Created:	20230601@Casey.Huynh
-		Task :		Get Association Devices List
-		DB:			CTS_DataCenter
-		Original:
-
-		Revisions:
-			- 	20230601@Casey.Huynh: Created [Redmine ID: 185787]
-			
-		Param's Explanation (filtered by):
-			
-		Example:
-			CALL CTS_DC_Association_GetAssociationDeviceByCustSubscriber_Casey(@ip_SubscriberID:=6,@ip_CTSCustID:=1379028,@ip_NoOfRecord:=15); 
+			CALL CTS_DC_Association_GetAssociationDeviceByCustSubscriber(@ip_SubscriberID:=6,@ip_CTSCustID:=2605665,@ip_NoOfRecord:=15); 
    
 	*/
     
@@ -104,7 +89,7 @@ BEGIN
     FROM CTS_DataCenter.CustDCSAccount AS cda
 		INNER JOIN DCS_DataCenter.Association AS ass ON cda.AccountID = ass.AccountID
     WHERE cda.SubscriberID = ip_SubscriberID AND cda.CTSCustID = ip_CTSCustID
-    ORDER BY AssociationID DESC
+    ORDER BY CreatedTime DESC
     LIMIT ip_NoOfRecord;    
     
     INSERT INTO Temp_AssociatedDevice(AccountID, DeviceID, CTSCustID,  CreatedTime)
@@ -115,12 +100,11 @@ BEGIN
     FROM Temp_Device AS tmpDv
 		INNER JOIN DCS_DataCenter.Association AS ass ON ass.DeviceID = tmpDv.DeviceID AND ass.SubscriberID = ip_SubscriberID 
         INNER JOIN CTS_DataCenter.CustDCSAccount AS cda ON cda.AccountID = ass.AccountID
-        INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = cda.CTSCustID AND cus.IsInternal = 0
-	WHERE cus.CTSCustID <> ip_CTSCustID;
+        INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = cda.CTSCustID AND cus.IsInternal = 0;
         
 	INSERT INTO Temp_Account(AccountID,CTSCustID)
     SELECT DISTINCT AccountID, CTSCustID
-    FROM Temp_AssociatedDevice;
+    FROM Temp_AssociatedDevice;    
     
     INSERT INTO Temp_AssociatedAccount(AccountID, DeviceID, CTSCustID, CreatedTime)
     SELECT	tmpAc.AccountID
