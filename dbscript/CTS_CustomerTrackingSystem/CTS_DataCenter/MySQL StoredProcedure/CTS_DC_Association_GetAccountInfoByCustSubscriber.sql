@@ -52,7 +52,7 @@ BEGIN
     SELECT tmpAss.DeviceID
     INTO lv_FirstDeviceID
     FROM Temp_Association AS tmpAss
-    ORDER BY AssociationID ASC
+    ORDER BY ass.CreatedTime ASC
     LIMIT 1;
 
     SELECT 	COUNT(DISTINCT tmpAs1.DeviceID) AssociatedDevices
