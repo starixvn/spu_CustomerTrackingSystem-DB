@@ -15,7 +15,10 @@ CREATE CLUSTERED INDEX CIX_CustomerClassification_BySport_IsApplied_Id ON  [dbo]
 	Id ASC
 );
 
-ALTER TABLE [dbo].[CustomerClassification_BySport] ADD PerformanceTime DateTime NULL
+ALTER TABLE [dbo].[CustomerClassification_BySport] ADD PerformanceTime DATETIME NULL
+GO
+
+ALTER TABLE [dbo].[CustomerClassification_BySport] ADD CurrentCategoryId SMALLINT NULL
 GO
 
 -- #1. New table CustomerClassification_BySport_NormalPool
@@ -112,7 +115,7 @@ UPDATE [dbo].[CustomerClassification_BySport_Rule]
 SET IsProbationLastDay = 1
 WHERE RuleId IN (85,86,88,87,101,102,136,134,133,135,257,264);
 
--- #8. Grant permissions
+-- #7. Grant permissions
 GRANT SELECT ON [dbo].[CustomerClassification_BySport_NormalPool] TO [bodbSPUNet]
 GO
 GRANT VIEW DEFINITION ON [dbo].[CustomerClassification_BySport_NormalPool] TO [bodbSPUNet]
