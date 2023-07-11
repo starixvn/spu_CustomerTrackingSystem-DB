@@ -117,7 +117,7 @@ BEGIN
     INSERT INTO Temp_AssociatedDeviceInfo(DeviceID, AssociatedAccounts, AssociatedDevices)
 	SELECT	tmpAd.DeviceID
 		,	COUNT(DISTINCT tmpAa.AccountID) AS AssociatedAccounts
-        ,	COUNT(DISTINCT tmpAa.DeviceID) AS AssociatedDevices
+        ,	COUNT(DISTINCT tmpAa.DeviceID)-1 AS AssociatedDevices
     FROM Temp_AssociatedDevice AS tmpAd
 		INNER JOIN Temp_AssociatedAccount AS tmpAa ON tmpAd.AccountID = tmpAa.AccountID
 	GROUP BY tmpAd.DeviceID;   
