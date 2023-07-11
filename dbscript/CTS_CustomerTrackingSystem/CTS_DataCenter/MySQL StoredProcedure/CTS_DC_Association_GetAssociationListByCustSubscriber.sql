@@ -5,9 +5,7 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_GetAssociationListByCustSubscriber`(
 		IN ip_SubscriberID		INT
 	,	IN ip_CTSCustID			BIGINT UNSIGNED
-	,	IN ip_Skip				INT
-    ,	IN ip_Take				INT
-    ,	OUT	op_TotalItem		INT
+	,	IN ip_NoOfRecord		INT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -23,7 +21,7 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL CTS_DC_Association_GetAssociationListByCustSubscriber(@ip_SubscriberID:=6,@ip_CTSCustID:=1379028,@ip_Skip:=0, @ip_Take:=10, @op_TotalItem); SELECT @op_TotalItem;
+			CALL CTS_DC_Association_GetAssociationListByCustSubscriber(@ip_SubscriberID:=6,@ip_CTSCustID:=1379028,@ip_NoOfRecord:=16); 
    
 	*/
     
@@ -96,7 +94,8 @@ BEGIN
         ,	cus.RegisterName
 	FROM Temp_AccountID AS tmp
 		INNER JOIN CTS_DataCenter.CustDCSAccount AS cda ON tmp.AccountID = cda.AccountID
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cda.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0;
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cda.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0
+	LIMIT ip_NoOfRecord;
         
 	DELETE tmpAs
     FROM Temp_Association AS tmpAs
@@ -129,8 +128,6 @@ BEGIN
         ,	MAX(tmpAs.CreatedTime) AS MaxCreatedTime
     FROM Temp_AssCust AS tmpAs
     GROUP BY RootCTSCustID;
-   
-    SET op_TotalItem = (SELECT COUNT(1) FROM Temp_AssociatedCustomer);
 
 	SELECT	tmpAa.CTSCustID
 		,	tmpCs.UserName
@@ -140,8 +137,7 @@ BEGIN
 		,	tmpAa.AssociatedAccount
     FROM Temp_AssociatedCustomer AS tmpAa		
 		INNER JOIN Temp_AssociatedAccount AS tmpCs ON tmpAa.CTSCustID = tmpCs.CTSCustID
-	ORDER BY IsFirstCust DESC, MaxCreatedTime DESC
-    LIMIT ip_Skip, ip_Take;
+	ORDER BY IsFirstCust DESC, MaxCreatedTime DESC;
 	
 END$$
 DELIMITER ;

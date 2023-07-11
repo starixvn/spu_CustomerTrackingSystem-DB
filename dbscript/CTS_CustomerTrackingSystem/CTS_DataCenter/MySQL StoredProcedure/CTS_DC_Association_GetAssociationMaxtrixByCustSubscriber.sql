@@ -22,116 +22,93 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-				CALL CTS_DC_Association_GetAssociationMaxtrixByCustSubscriber(@ip_SubscriberID:=6,@ip_CTSCustID:=1379028,@ip_NoOfCustomer:=15);
+				CALL CTS_DC_Association_GetAssociationMaxtrixByCustSubscriber(@ip_SubscriberID:=6,@ip_CTSCustID:=2614369,@ip_NoOfCustomer:=16, @ip_NoOfDevice:=100);
    
 	*/
-        
-    DROP TEMPORARY TABLE IF EXISTS Temp_Association;
-	CREATE TEMPORARY TABLE Temp_Association(
-			AccountID		BIGINT UNSIGNED
-		,	DeviceID		BIGINT UNSIGNED
-        ,	CTSCustID		BIGINT UNSIGNED
+   
+    #======GET Cust Association LIST: ip_CTSCustID AND ASSOCIATED CUSTOMER=======================================  
+    DROP TEMPORARY TABLE IF EXISTS Temp_Matrix;
+    CREATE TEMPORARY TABLE Temp_Matrix(
+			DeviceID		BIGINT UNSIGNED		
         ,	CreatedTime		DATETIME(4)
+        ,	FirstDeviceCode	VARCHAR(32)
+        ,	CTSCustID 		BIGINT UNSIGNED
+        ,	Username		VARCHAR(50)
+        ,	RegisterName	VARCHAR(50)        
+        ,	AssCreatedTime	DATETIME(4)
         
-        ,	PRIMARY KEY PK_Temp_Association(AccountID, DeviceID)
-        ,	INDEX IX_Temp_Association_DeviceID(DeviceID)
-        ,	INDEX IX_Temp_Association_CTSCustID(CTSCustID)
-    ); 
+        ,	PRIMARY KEY (DeviceID, CTSCustID)
         
-	DROP TEMPORARY TABLE IF EXISTS Temp_AccountID;
-	CREATE TEMPORARY TABLE Temp_AccountID(
-			AccountID		BIGINT UNSIGNED PRIMARY KEY
+	);
+    
+	DROP TEMPORARY TABLE IF EXISTS Temp_RootDevice;
+    CREATE TEMPORARY TABLE Temp_RootDevice(
+			DeviceID	BIGINT UNSIGNED	PRIMARY KEY
+        ,   FirstDeviceCode	VARCHAR(32)
+        ,	CreatedTime DATETIME(4)
     );
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_AssociatedAccount;
-	CREATE TEMPORARY TABLE Temp_AssociatedAccount(
-			AccountID		BIGINT UNSIGNED PRIMARY KEY
-		,	CTSCustID		BIGINT UNSIGNED
-		,	UserName 		VARCHAR(50)
-        ,	RegisterName	VARCHAR(50)
-    );
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_LimitCustomer;
-	CREATE TEMPORARY TABLE Temp_LimitCustomer(
+    DROP TEMPORARY TABLE IF EXISTS Temp_AssCustomer;
+    CREATE TEMPORARY TABLE Temp_AssCustomer(
 			CTSCustID BIGINT UNSIGNED PRIMARY KEY
-		,	IsFirstCust BOOLEAN
-        ,	MaxCreatedTime DATETIME(4)
-	);        
+		,	IsFirstCust		BOOLEAN
+		,	LastAssCreatedTime DATETIME(4)
+	);
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_LimitDevice;
-	CREATE TEMPORARY TABLE Temp_LimitDevice(
-			DeviceID BIGINT UNSIGNED PRIMARY KEY
-		,	MaxCreatedTime DATETIME(4)
-	);   
-    
-    #======GET Cust Association LIST: ip_CTSCustID AND ASSOCIATED CUSTOMER=======================================    
-    INSERT INTO Temp_Association(AccountID, DeviceID, CTSCustID,  CreatedTime)
-    SELECT	ass.AccountID
-		,	ass.DeviceID
-		,	cda.CTSCustID
-        ,	ass.CreatedTime
-    FROM CTS_DataCenter.CustDCSAccount AS cda
-		INNER JOIN DCS_DataCenter.Association AS ass ON cda.AccountID = ass.AccountID
-    WHERE cda.SubscriberID = ip_SubscriberID AND cda.CTSCustID = ip_CTSCustID;
-    
-    INSERT INTO Temp_AccountID(AccountID)
-    SELECT DISTINCT ass.AccountID
-    FROM DCS_DataCenter.Association AS ass
-		INNER JOIN Temp_Association AS tmpAs ON ass.DeviceID = tmpAs.DeviceID AND ass.SubscriberID = ip_SubscriberID;    
-
-	INSERT INTO Temp_AssociatedAccount(AccountID, CTSCustID, UserName, RegisterName)
-    SELECT	tmp.AccountID
-		,	cus.CTSCustID
+    #==============================================
+    INSERT IGNORE INTO Temp_Matrix(DeviceID, FirstDeviceCode, CreatedTime, CTSCustID, UserName, RegisterName, AssCreatedTime )
+    SELECT  ass.DeviceID
+		,	dv.FirstDeviceCode
+		,	dv.CreatedTime
+        ,	cus.CTSCustID
         ,	cus.UserName
         ,	cus.RegisterName
-	FROM Temp_AccountID AS tmp
-		INNER JOIN CTS_DataCenter.CustDCSAccount AS cda ON tmp.AccountID = cda.AccountID
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cda.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0;
-        
-	DELETE tmpAs
-    FROM Temp_Association AS tmpAs
-		LEFT JOIN Temp_AssociatedAccount AS tmpCs ON tmpAs.AccountID = tmpCs.AccountID
-	WHERE tmpCs.CTSCustID IS NULL;
-
-    #=====GET ASSOCIATION LIST OF ALL Association Cust===============================================================================
-
-    INSERT IGNORE INTO Temp_Association(AccountID, DeviceID, CTSCustID,  CreatedTime)
-    SELECT	ass.AccountID
-		,	ass.DeviceID
-        ,	tmpAcc.CTSCustID
         ,	ass.CreatedTime
-    FROM DCS_DataCenter.Association AS ass
-		INNER JOIN Temp_AssociatedAccount AS tmpAcc ON ass.SubscriberID = ip_SubscriberID AND ass.AccountID = tmpAcc.AccountID AND tmpAcc.CTSCustID <> ip_CTSCustID;
+	FROM CTS_DataCenter.CTSCustomer AS cus
+		INNER JOIN CTS_DataCenter.CustDCSAccount AS cda ON cda.CTSCustID = cus.CTSCustID
+		INNER JOIN DCS_DataCenter.Association AS ass ON ass.AccountID = cda.AccountID
+        INNER JOIN DCS_DataCenter.Device AS dv ON ass.DeviceID = dv.DeviceID
+    WHERE cus.SubscriberID = ip_SubscriberID AND cda.CTSCustID = ip_CTSCustID
+    ORDER BY ass.CreatedTime DESC
+    LIMIT ip_NoOfDevice;    
+
+    INSERT INTO Temp_RootDevice(DeviceID,FirstDeviceCode,CreatedTime)
+    SELECT	tmpMt.DeviceID
+		,	tmpMt.FirstDeviceCode
+        ,	tmpMt.CreatedTime
+    FROM Temp_Matrix AS tmpMt;
     
-    INSERT INTO Temp_LimitCustomer(CTSCustID, IsFirstCust,MaxCreatedTime)
-    SELECT	tmpAs.CTSCustID
-		,	(CASE WHEN tmpAs.CTSCustID = ip_CTSCustID THEN 1 ELSE 0 END) AS IsFirstCust
-        , 	MAX(tmpAs.CreatedTime) AS MaxCreatedTime
-    FROM Temp_Association AS tmpAs
-    GROUP BY tmpAs.CTSCustID
-    ORDER BY IsFirstCust DESC, MaxCreatedTime DESC
+	INSERT IGNORE INTO Temp_Matrix(DeviceID, FirstDeviceCode, CreatedTime, CTSCustID, UserName, RegisterName, AssCreatedTime)
+    SELECT  tmpRd.DeviceID
+		,	tmpRd.FirstDeviceCode
+		,	tmpRd.CreatedTime
+        ,	cus.CTSCustID
+        ,	cus.UserName
+        ,	cus.RegisterName
+        ,	ass.CreatedTime
+	FROM Temp_RootDevice AS tmpRd
+		INNER JOIN DCS_DataCenter.Association AS ass ON tmpRd.DeviceID = ass.DeviceID AND ass.SubscriberID = ip_SubscriberID
+		INNER JOIN CTS_DataCenter.CustDCSAccount AS cda ON cda.AccountID = ass.AccountID
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = cda.CTSCustID AND IsInternal = 0
+    ORDER BY ass.CreatedTime DESC
     LIMIT ip_NoOfCustomer;
-       
-	INSERT INTO Temp_LimitDevice(DeviceID, MaxCreatedTime)
-    SELECT	tmpAs.DeviceID
-		, 	MAX(tmpAs.CreatedTime) AS MaxCreatedTime
-    FROM Temp_Association AS tmpAs
-    GROUP BY tmpAs.DeviceID
-    ORDER BY MaxCreatedTime DESC
-    LIMIT ip_NoOfDevice;
-    
-	SELECT	 tmpAc.CTSCustID
-		,	tmpCs.UserName
-        ,	tmpCs.RegisterName
-		,	dv.DeviceID
-		,	dv.FirstDeviceCode
-		,	(CASE WHEN dv.DeviceID > 0 THEN tmpAc.CreatedTime ELSE NULL END) AS CreatedTime
-    FROM Temp_Association AS tmpAc
-		INNER JOIN Temp_LimitCustomer AS tmpCus ON tmpCus.CTSCustID = tmpAc.CTSCustID
-        LEFT JOIN Temp_LimitDevice AS tmpDv ON tmpDv.DeviceID = tmpAc.DeviceID
-        INNER JOIN Temp_AssociatedAccount AS tmpCs ON tmpCs.CTSCustID = tmpAc.CTSCustID
-        LEFT JOIN DCS_DataCenter.Device AS dv ON dv.DeviceID = tmpDv.DeviceID
-	ORDER BY tmpCus.IsFirstCust DESC, tmpCus.MaxCreatedTime DESC;    
+ 
+	INSERT INTO Temp_AssCustomer(CTSCustID, IsFirstCust, LastAssCreatedTime)
+    SELECT	tmpMt.CTSCustID
+		,	(CASE WHEN tmpMt.CTSCustID = ip_CTSCustID THEN 1 ELSE 0 END) AS IsFirstCust
+		,	MAX(AssCreatedTime) AS LastAssCreatedTime
+	FROM Temp_Matrix AS tmpMt
+    GROUP BY CTSCustID;    
+
+    SELECT	tmpMt.CTSCustID
+		,	tmpMt.UserName
+        ,	tmpMt.RegisterName
+        ,	tmpMt.DeviceID
+        ,	tmpMt.FirstDeviceCode
+        ,	tmpMt.CreatedTime
+    FROM Temp_Matrix AS tmpMt
+		INNER JOIN Temp_AssCustomer AS tmpAc ON tmpAc.CTSCustID = tmpMt.CTSCustID
+    ORDER BY tmpAc.IsFirstCust DESC, tmpAc.LastAssCreatedTime DESC;
     
 END$$
 DELIMITER ;
