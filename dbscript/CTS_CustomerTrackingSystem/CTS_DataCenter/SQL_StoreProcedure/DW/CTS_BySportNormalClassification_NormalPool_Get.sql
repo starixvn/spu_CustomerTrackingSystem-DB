@@ -62,6 +62,7 @@ BEGIN
 		   SportGroup	   AS SportGroup,
 		   IsCheckBetCount AS IsCheckBetCount
 	FROM #tmpCustomers
+	ORDER BY CustId;
 	
 	DROP TABLE #tmpCustomers;
 END;

@@ -104,7 +104,7 @@ BEGIN
 		NewCategoryId		   SMALLINT		  NULL,
 		IsProbationLastDay	   BIT			  NOT NULL DEFAULT 0,
 		IsCheckBetCount		   BIT			  NOT NULL DEFAULT 0,
-		IsSpecialSite		   BIT			  NOT NULL DEFAULT 0,
+		IsSpecialSite		   BIT			  DEFAULT 0,
 		IsDeposit			   BIT			  NOT NULL DEFAULT 0,
 		SRecommend			   INT,
 		TurnoverRM			   DECIMAL(19, 4) NOT NULL,
@@ -180,7 +180,8 @@ BEGIN
 		   a.ActiveDaysSportGroup,
 		   CASE WHEN  a.ActiveDaysSportGroup = 0 THEN 0 ELSE ((a.WinDaysSportGroup * 1.0) / a.ActiveDaysSportGroup) * 100 END,
 		   a.ProcessedTime
-	FROM #tmpRawData AS a;
+	FROM #tmpRawData AS a
+		INNER JOIN #tmpCustomers AS c ON c.CustId = a.CustId AND c.SportGroup = a.SportGroup;
 
 	-- #6: Mapping customer info
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
