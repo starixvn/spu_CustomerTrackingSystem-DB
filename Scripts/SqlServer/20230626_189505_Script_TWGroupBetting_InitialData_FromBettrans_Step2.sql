@@ -277,7 +277,6 @@ BEGIN
 		,	gbc.DesktopTicketCount = gbc.DesktopTicketCount + b.DesktopTicketCount
 		,	gbc.ParlayTicketCount = gbc.ParlayTicketCount + b.ParlayTicketCount
 		,	gbc.LastCountTotalTicketDate = @Today
-		,	gbc.LastCountTotalTicketDate = @Today
 		FROM dbo.SPU_GroupBettingCustomer AS gbc
 			INNER JOIN #tmp_batch_updated AS b ON gbc.CustId = b.CustId AND gbc.ScanDate = b.ScanDate
 		WHERE b.IsInserted = 0;
