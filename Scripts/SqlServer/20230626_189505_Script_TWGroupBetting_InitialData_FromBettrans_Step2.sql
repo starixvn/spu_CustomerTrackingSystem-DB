@@ -157,7 +157,7 @@ BEGIN
 		,	bt.BetFrom
 		,	bt.transdate
 		,	CASE WHEN dCust.custid IS NOT NULL THEN 1 ELSE 0 END
-	FROM dbo.bettrans AS bt WITH(NOLOCK)
+	FROM dbo.bettrans AS bt WITH(NOLOCK, INDEX = IX_winlostdate)
 		LEFT JOIN dbo.Dep_CustSuper AS dCust WITH (NOLOCK) ON dCust.custid = bt.srecommend
 	WHERE bt.winlostdate = @ScannedDate;
 
@@ -277,13 +277,13 @@ BEGIN
 		,	gbc.DesktopTicketCount = gbc.DesktopTicketCount + b.DesktopTicketCount
 		,	gbc.ParlayTicketCount = gbc.ParlayTicketCount + b.ParlayTicketCount
 		,	gbc.LastCountTotalTicketDate = @Today
-		,	gbc.LastModifiedDate = @Today
+		,	gbc.LastCountTotalTicketDate = @Today
 		FROM dbo.SPU_GroupBettingCustomer AS gbc
 			INNER JOIN #tmp_batch_updated AS b ON gbc.CustId = b.CustId AND gbc.ScanDate = b.ScanDate
 		WHERE b.IsInserted = 0;
 	
-		INSERT INTO dbo.SPU_GroupBettingCustomer (CustId, ScanDate, TicketCount, RejectTicketCount, DesktopTicketCount, ParlayTicketCount, GBTicketCount)
-		SELECT b.CustId, b.ScanDate, b.TicketCount, b.RejectTicketCount, b.DesktopTicketCount, b.ParlayTicketCount, 0
+		INSERT INTO dbo.SPU_GroupBettingCustomer (CustId, ScanDate, TicketCount, RejectTicketCount, DesktopTicketCount, ParlayTicketCount, GBTicketCount, LastCountTotalTicketDate)
+		SELECT b.CustId, b.ScanDate, b.TicketCount, b.RejectTicketCount, b.DesktopTicketCount, b.ParlayTicketCount, 0, @Today
 		FROM #tmp_batch_updated AS b
 		WHERE b.IsInserted = 1;
 	
