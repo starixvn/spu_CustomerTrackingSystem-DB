@@ -22,7 +22,7 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-				CALL CTS_DC_Association_GetAssociationMaxtrixByCustSubscriber(@ip_SubscriberID:=6,@ip_CTSCustID:=2614369,@ip_NoOfCustomer:=16, @ip_NoOfDevice:=100);
+				CALL CTS_DC_Association_GetAssociationMaxtrixByCustSubscriber(@ip_SubscriberID:=120,@ip_CTSCustID:=2614369,@ip_NoOfCustomer:=16, @ip_NoOfDevice:=100);
    
 	*/
    
@@ -69,7 +69,7 @@ BEGIN
 		INNER JOIN DCS_DataCenter.Association AS ass ON ass.AccountID = cda.AccountID
         INNER JOIN DCS_DataCenter.Device AS dv ON ass.DeviceID = dv.DeviceID
     WHERE cus.SubscriberID = ip_SubscriberID AND cda.CTSCustID = ip_CTSCustID
-    ORDER BY ass.CreatedTime DESC
+    ORDER BY ass.CreatedDate, ass.CreatedTime DESC
     LIMIT ip_NoOfDevice;    
 
     INSERT INTO Temp_RootDevice(DeviceID,FirstDeviceCode,CreatedTime)
@@ -77,7 +77,7 @@ BEGIN
 		,	tmpMt.FirstDeviceCode
         ,	tmpMt.CreatedTime
     FROM Temp_Matrix AS tmpMt;
-    
+
 	INSERT IGNORE INTO Temp_Matrix(DeviceID, FirstDeviceCode, CreatedTime, CTSCustID, UserName, RegisterName, AssCreatedTime)
     SELECT  tmpRd.DeviceID
 		,	tmpRd.FirstDeviceCode
@@ -89,16 +89,16 @@ BEGIN
 	FROM Temp_RootDevice AS tmpRd
 		INNER JOIN DCS_DataCenter.Association AS ass ON tmpRd.DeviceID = ass.DeviceID AND ass.SubscriberID = ip_SubscriberID
 		INNER JOIN CTS_DataCenter.CustDCSAccount AS cda ON cda.AccountID = ass.AccountID
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = cda.CTSCustID AND IsInternal = 0
-    ORDER BY ass.CreatedTime DESC
-    LIMIT ip_NoOfCustomer;
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = cda.CTSCustID AND IsInternal = 0;    
  
 	INSERT INTO Temp_AssCustomer(CTSCustID, IsFirstCust, LastAssCreatedTime)
     SELECT	tmpMt.CTSCustID
 		,	(CASE WHEN tmpMt.CTSCustID = ip_CTSCustID THEN 1 ELSE 0 END) AS IsFirstCust
 		,	MAX(AssCreatedTime) AS LastAssCreatedTime
 	FROM Temp_Matrix AS tmpMt
-    GROUP BY CTSCustID;    
+    GROUP BY CTSCustID
+    ORDER BY LastAssCreatedTime DESC
+    LIMIT ip_NoOfCustomer;    
 
     SELECT	tmpMt.CTSCustID
 		,	tmpMt.UserName
