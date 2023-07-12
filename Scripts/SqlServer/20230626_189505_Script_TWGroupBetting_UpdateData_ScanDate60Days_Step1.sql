@@ -7,13 +7,13 @@
 	Description: 
 
 	Revisions:	
-		- 20230626@Victoria.Le: 	Initial Writing - Update Data for ScanDate < '2023-07-10' AND ScanDate >  DATEADD(DAY,-60,'2023-07-10')
+		- 20230626@Victoria.Le: 	Initial Writing - Update Data for ScanDate < '2023-07-12' AND ScanDate >  DATEADD(DAY,-60,'2023-07-12')
 									[Redmine ID: #189505]
 */
 
 USE [bodb02]
 
-DECLARE	@ReleasedDate DATE = '2023-07-10'
+DECLARE	@ReleasedDate DATE = '2023-07-12'
 	,	@Day60 SMALLDATETIME
 	,	@ScannedDate SMALLDATETIME
 	,	@StartRow INT = 1
