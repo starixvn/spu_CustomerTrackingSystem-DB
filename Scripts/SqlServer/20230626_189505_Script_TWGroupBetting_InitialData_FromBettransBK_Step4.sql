@@ -147,6 +147,7 @@ BEGIN
 	TRUNCATE TABLE #Tmp_Trans;
 	TRUNCATE TABLE #tmpSPU_GroupBettingCustomer;
 	TRUNCATE TABLE #tmp_match;
+	TRUNCATE TABLE #tmpSPU_GroupBettingCustomer_updated;
 
 	INSERT INTO #Tmp_Trans (TransId,Custid,Matchid,Bettype,StatusID,BetFrom,ScanDate,IsLicensee)
 	SELECT 	bt.TransId
