@@ -1,7 +1,7 @@
 /*<info serverAlias="DBCTS-bodb02" executers="" viewers="" isFunction="0"></info>*/
 /*
 	Created:	20230626@Victoria.Le
-	Task : TW Group Betting - Initial Data - Latest 60 days (Calculated from ReleasedDate = '2023-07-10')
+	Task : TW Group Betting - Initial Data - Latest 60 days (Calculated from ReleasedDate = '2023-07-12')
 	DB:	DB062		
 	
 	Description: 
@@ -13,7 +13,7 @@
 
 USE [bodb02]
 
-DECLARE	@ReleasedDate DATE = '2023-07-10'
+DECLARE	@ReleasedDate DATE = '2023-07-12'
 	,	@Day60 SMALLDATETIME
 	,	@ScannedDate SMALLDATETIME
 	,	@Today DATETIME
