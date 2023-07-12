@@ -269,7 +269,7 @@ BEGIN
 	OUTPUT INSERTED.CustId, INSERTED.SportId, INSERTED.CategoryId, INSERTED.BetCount INTO #tmpBetCount  
 	SELECT  a.CustId
 		,	a.SportGroup
-		,	CASE WHEN a.NewCategoryId = @CATEGORY_NULL THEN a.CurrentCategoryId ELSE a.NewCategoryId END
+		,	CASE WHEN a.NewCategoryId IS NULL THEN a.CurrentCategoryId ELSE a.NewCategoryId END
 		,	a.CurrentCategoryId
 		,	@CurrentDate
 		,	@CurrentDateTime
