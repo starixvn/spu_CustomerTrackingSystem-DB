@@ -92,7 +92,7 @@ BEGIN
     FROM CTS_DataCenter.CustDCSAccount AS cda
 		INNER JOIN DCS_DataCenter.Association AS ass ON cda.AccountID = ass.AccountID
     WHERE cda.SubscriberID = ip_SubscriberID AND cda.CTSCustID = ip_CTSCustID
-    ORDER BY ass.CreatedTime DESC
+    ORDER BY  ass.CreatedDate DESC, ass.CreatedTime DESC
     LIMIT ip_NoOfRecord;        
   
     INSERT INTO Temp_AssociatedDevice(AccountID, DeviceID, CTSCustID,  CreatedTime)
