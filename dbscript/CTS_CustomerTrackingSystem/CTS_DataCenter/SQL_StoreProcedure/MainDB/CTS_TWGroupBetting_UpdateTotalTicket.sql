@@ -22,8 +22,6 @@ AS
 */
 BEGIN
 	SET NOCOUNT ON;
-	
-	DECLARE @Today DATE = GETDATE();
 
 	IF OBJECT_ID('tempdb..#tmpScanningCust') IS NOT NULL
 		DROP TABLE #tmpScanningCust;
@@ -97,7 +95,7 @@ BEGIN
 	SELECT @LastSequenceId_New = MAX(SequenceId) FROM #Tmp_Trans;
 	SET @LastSequenceId_New = ISNULL(@LastSequenceId_New,@LastSequenceId);
 
-	DELETE FROM #Tmp_Trans WHERE ScanDate <> @Today OR IsLicensee = 0;
+	DELETE FROM #Tmp_Trans WHERE IsLicensee = 0;
 	
 	INSERT INTO #tmp_match (MatchId)
 	SELECT DISTINCT tmp_trans.Matchid 
@@ -115,7 +113,7 @@ BEGIN
 
 	INSERT INTO #tmpScanningCust(CustId,ScanDate,IsInserted)
 	SELECT DISTINCT tmp_trans.Custid
-		, @Today AS 'ScanDate'
+		, tmp_trans.ScanDate
 		, CASE WHEN tmp_trans.Custid IS NOT NULL AND gbc.CustId IS NULL THEN 1 ELSE 0 END AS 'IsInserted'
 	FROM #Tmp_Trans AS tmp_trans
 		LEFT JOIN dbo.SPU_GroupBettingCustomer AS gbc WITH(NOLOCK)  ON gbc.CustId = tmp_trans.Custid AND gbc.ScanDate = tmp_trans.ScanDate;
@@ -142,8 +140,6 @@ BEGIN
 		FROM dbo.SPU_GroupBettingCustomer AS gbc WITH (NOLOCK)
 			INNER JOIN #Tmp_Trans AS bt WITH (NOLOCK) ON gbc.CustId = bt.Custid	AND bt.ScanDate = gbc.ScanDate
 			LEFT JOIN #Tmp_PlatformDesktop AS b WITH (NOLOCK) ON b.BetFrom = bt.BetFrom
-		WHERE (gbc.LastCountTotalTicketDate IS NULL
-			OR (gbc.LastCountTotalTicketDate BETWEEN gbc.ScanDate AND DATEADD(MINUTE, 1470, CONVERT(DATETIME,gbc.ScanDate))))
 	)
 	UPDATE gbc WITH(UPDLOCK, ROWLOCK)
 	SET		gbc.TicketCount = CASE WHEN sc.IsInserted = 1 THEN ct.TicketCount ELSE (gbc.TicketCount + ct.TicketCount) END
