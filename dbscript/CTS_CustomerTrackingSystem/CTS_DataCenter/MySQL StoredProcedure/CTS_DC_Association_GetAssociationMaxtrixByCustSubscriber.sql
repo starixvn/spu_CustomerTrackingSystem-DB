@@ -97,7 +97,7 @@ BEGIN
 		,	MAX(AssCreatedTime) AS LastAssCreatedTime
 	FROM Temp_Matrix AS tmpMt
     GROUP BY CTSCustID
-    ORDER BY LastAssCreatedTime DESC
+    ORDER BY IsFirstCust DESC, LastAssCreatedTime DESC
     LIMIT ip_NoOfCustomer;    
 
     SELECT	tmpMt.CTSCustID
