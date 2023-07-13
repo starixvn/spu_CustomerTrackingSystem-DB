@@ -69,7 +69,7 @@ BEGIN
 		INNER JOIN DCS_DataCenter.Association AS ass ON ass.AccountID = cda.AccountID
         INNER JOIN DCS_DataCenter.Device AS dv ON ass.DeviceID = dv.DeviceID
     WHERE cus.SubscriberID = ip_SubscriberID AND cda.CTSCustID = ip_CTSCustID
-    ORDER BY ass.CreatedDate, ass.CreatedTime DESC
+    ORDER BY ass.CreatedDate DESC, ass.CreatedTime DESC
     LIMIT ip_NoOfDevice;    
 
     INSERT INTO Temp_RootDevice(DeviceID,FirstDeviceCode,CreatedTime)

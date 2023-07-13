@@ -17,10 +17,12 @@ BEGIN
 
 		Revisions:
 			- 	20230601@Casey.Huynh: Created [Redmine ID: 185787]
-			
+			-	20230706@Casey.Huynh: Show Device Association Info [Redmine ID: 190950]
+            
 		Param's Explanation (filtered by):
 			@ip_NoOfRecord = 0 GET all Ass Account
             @ip_NoOfRecord > 0 GET ip_NoOfRecord ass account
+            
 		Example:
 			CALL CTS_DC_Association_GetAssociationListByCustSubscriber(@ip_SubscriberID:=6,@ip_CTSCustID:=2605665,@ip_NoOfRecord:=30); 
             CALL CTS_DC_Association_GetAssociationListByCustSubscriber(@ip_SubscriberID:=6,@ip_CTSCustID:=2605665,@ip_NoOfRecord:=0); 
