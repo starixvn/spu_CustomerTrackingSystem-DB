@@ -9,6 +9,9 @@ USE [bodb_VR2Model]
 GO
 
 -- #0. Update Indexes
+ALTER TABLE [dbo].[CustomerClassification_BySport] DROP CONSTRAINT PK__Customer__3214EC27859ADA93;   
+ALTER TABLE [dbo].[CustomerClassification_BySport] ADD CONSTRAINT PK_CustomerClassification_BySport_ID PRIMARY KEY NONCLUSTERED (ID)
+
 DROP INDEX CIX_CustomerClassification_BySport_IsApplied  ON [dbo].[CustomerClassification_BySport];  
 CREATE CLUSTERED INDEX CIX_CustomerClassification_BySport_IsApplied_Id ON  [dbo].[CustomerClassification_BySport](
 	IsApplied ASC,
