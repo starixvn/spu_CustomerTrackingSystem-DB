@@ -48,20 +48,7 @@ BEGIN
         ,	INDEX IX_Temp_AssociatedAccount_DeviceID(DeviceID)
         ,	INDEX IX_Temp_AssociatedAccount_CTSCustID(CTSCustID)
     );
-    
-	DROP TEMPORARY TABLE IF EXISTS Temp_AssociatedAccount;
-	CREATE TEMPORARY TABLE Temp_AssociatedAccount(
-			AccountID		BIGINT UNSIGNED
-		,	DeviceID		BIGINT UNSIGNED
-        ,	CTSCustID		BIGINT UNSIGNED
-        ,	CreatedTime		DATETIME(4)
-        
-        ,	PRIMARY KEY PK_Temp_AssociatedAccount(AccountID, DeviceID)
-        ,	INDEX IX_Temp_AssociatedAccount_DeviceID(DeviceID)
-        ,	INDEX IX_Temp_AssociatedAccount_CTSCustID(CTSCustID)
-    );         
-
-   
+		   
 	DROP TEMPORARY TABLE IF EXISTS Temp_Device;
 	CREATE TEMPORARY TABLE Temp_Device(
 			DeviceID	BIGINT UNSIGNED PRIMARY KEY
