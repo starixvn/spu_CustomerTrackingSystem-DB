@@ -153,6 +153,6 @@ BEGIN
 
 	-- Clear unused data
 	DELETE FROM dbo.SPU_GroupBettingCustomer WITH (ROWLOCK)
-	WHERE ScanDate < DATEADD(day,-5, GETDATE()) AND TicketCount = 0;
+	WHERE ScanDate < DATEADD(day,-7, GETDATE()) AND TicketCount = 0 AND GBTicketCount = 0;
 
 END
