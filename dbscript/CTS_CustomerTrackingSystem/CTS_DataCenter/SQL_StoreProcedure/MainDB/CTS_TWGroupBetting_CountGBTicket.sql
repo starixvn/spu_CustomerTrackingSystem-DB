@@ -11,6 +11,7 @@ AS
 		- 20220614@Harvey.Nguyen: Add rowlock in updating 					[Redmine ID: #169671]
 		- 20220711@Harvey.Nguyen: Change solution to scan on each ticket	[Redmine ID: #169671]
 		- 20220801@Harvey.Nguyen: Update coding convention					[Redmine ID: #169671]
+		- 20230713@Victoria.Le: Add default for new columns					[Redmine ID: #189505]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_CountGBTicket]
@@ -52,11 +53,19 @@ BEGIN
 		,GBTicketCount
 		,ScanDate
 		,LastModifiedDate
+		,TicketCount
+		,ParlayTicketCount
+		,RejectTicketCount
+		,DesktopTicketCount
 		)
 	SELECT CustId
 		,COUNT(TransId)
 		,TransDate
 		,GETDATE()
+		,0
+		,0
+		,0
+		,0
 	FROM #PreGroupBettingTicket
 	WHERE IsUpdateCount = 0
 	GROUP BY CustId, TransDate;
