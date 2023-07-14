@@ -11,12 +11,13 @@
 									[Redmine ID: #189505]
 		- 20230713@Victoria.Le: 	Get latest 61 days - Change ReleasedDate = 2023-07-13
 									[Redmine ID: #189505]
+		- 20230714@Victoria.Le:		Set EndDate = '2023-05-13' [Redmine ID: #189505]
 */
 
 USE [bodb02]
 
 DECLARE	@ReleasedDate DATE = '2023-07-13'
-	,	@Day60 SMALLDATETIME
+	,	@EndDate SMALLDATETIME = '2023-05-13'
 	,	@ScannedDate SMALLDATETIME
 	,	@Today DATETIME
 	,	@TotalTicket INT = 0
@@ -141,7 +142,6 @@ SELECT b.BetFrom
 FROM DBWH.bodb_account.dbo.tbl_Betfrom AS b WITH (NOLOCK)
 WHERE b.platform2 = 'Desktop';
 
-SET @Day60 = DATEADD(DAY,-61,@ReleasedDate)
 SET @ScannedDate = @MoveBetsDay;
 
 WHILE (@ScannedDate >= @BalanceUpDay)
@@ -164,7 +164,7 @@ BEGIN
 		LEFT JOIN dbo.Dep_CustSuper AS dCust WITH (NOLOCK) ON dCust.custid = bt.srecommend
 	WHERE bt.winlostdate = @ScannedDate;
 
-	DELETE FROM #Tmp_Trans WHERE IsLicensee = 0 OR ScanDate < @Day60;
+	DELETE FROM #Tmp_Trans WHERE IsLicensee = 0 OR ScanDate < @EndDate;
 	
 	INSERT INTO #tmp_match (MatchId)
 	SELECT DISTINCT tmp_trans.Matchid 

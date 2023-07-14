@@ -7,14 +7,15 @@
 	Description: 
 
 	Revisions:	
-		- 20230626@Victoria.Le: 	Initial Writing - Update Data - 
+		- 20230626@Victoria.Le: 	Initial Writing - Update Data
 									[Redmine ID: #189505]
+		- 20230714@Victoria.Le:		Set EndDate = '2023-05-13' [Redmine ID: #189505]
 */
 
 USE [bodb02]
 
 DECLARE	@ReleasedDate DATE = '2023-07-13'
-	,	@Day60 SMALLDATETIME
+	,	@EndDate SMALLDATETIME = '2023-05-13'
 	,	@Today DATETIME
 	,	@TotalTicket INT = 0
 	,	@StartRow INT = 1
@@ -117,8 +118,6 @@ SELECT b.BetFrom
 FROM DBWH.bodb_account.dbo.tbl_Betfrom AS b WITH (NOLOCK)
 WHERE b.platform2 = 'Desktop';
 
-SET @Day60 = DATEADD(DAY,-61,@ReleasedDate);
-
 INSERT INTO #Tmp_Trans (TransId,Custid,Matchid,Bettype,StatusID,BetFrom,ScanDate,IsLicensee,SequenceID)
 SELECT 	bt.TransId
 	,	bt.custid
@@ -132,7 +131,7 @@ SELECT 	bt.TransId
 FROM dbo.bettrans AS bt WITH(NOLOCK, INDEX = IX_winlostdate)
 	LEFT JOIN dbo.Dep_CustSuper AS dCust WITH (NOLOCK) ON dCust.custid = bt.srecommend
 WHERE bt.winlostdate >= CONVERT(DATETIME,@ReleasedDate)
-	AND bt.transdate < CONVERT(DATETIME,@ReleasedDate) AND bt.transdate >= @Day60
+	AND bt.transdate < CONVERT(DATETIME,@ReleasedDate) AND bt.transdate >= @EndDate
 	;
 
 DELETE FROM #Tmp_Trans WHERE IsLicensee = 0 OR SequenceID IN (118184600830,118184600831,118184600862);
