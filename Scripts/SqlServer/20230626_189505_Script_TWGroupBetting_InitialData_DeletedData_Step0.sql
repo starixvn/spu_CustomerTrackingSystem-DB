@@ -13,7 +13,7 @@
 USE [bodb02]
 
 DECLARE @StartDate DATE = '2023-05-13'
-	,	@StopDate DATE = '2023-07-11'
+	,	@StopDate DATE = '2023-07-10'
 	,	@StartRow INT = 1
 	,	@StopRow INT 
 	,	@MaxRow INT 
@@ -84,7 +84,7 @@ BEGIN
 		,	0
 		,	0
 		,	CASE WHEN gbc_main.CustId IS NULL THEN 1 ELSE 0 END
-	FROM DBSPARE.bodb02_cts.dbo.SPU_GroupBettingCustomer AS gbc WITH (NOLOCK)
+	FROM DBSPARE.db062_bodb02_20230711.dbo.SPU_GroupBettingCustomer AS gbc WITH (NOLOCK)
 		LEFT JOIN dbo.SPU_GroupBettingCustomer AS gbc_main WITH (NOLOCK) ON gbc_main.CustId = gbc.CustId AND gbc_main.ScanDate = gbc.ScanDate
 	WHERE gbc.ScanDate = @StartDate;
 	
