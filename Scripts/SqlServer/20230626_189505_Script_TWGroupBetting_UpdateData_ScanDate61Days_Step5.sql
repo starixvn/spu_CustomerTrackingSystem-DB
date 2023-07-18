@@ -130,11 +130,11 @@ SELECT 	bt.TransId
 	,	bt.SequenceID
 FROM dbo.bettrans AS bt WITH(NOLOCK, INDEX = IX_winlostdate)
 	LEFT JOIN dbo.Dep_CustSuper AS dCust WITH (NOLOCK) ON dCust.custid = bt.srecommend
-WHERE bt.winlostdate >= CONVERT(DATETIME,@ReleasedDate)
+WHERE bt.winlostdate >= CONVERT(DATETIME,@ReleasedDate) and bt.SequenceID <= 118184600808 -- SequenceID Release
 	AND bt.transdate < CONVERT(DATETIME,@ReleasedDate) AND bt.transdate >= @EndDate
 	;
 
-DELETE FROM #Tmp_Trans WHERE IsLicensee = 0 OR SequenceID IN (118184600830,118184600831,118184600862);
+DELETE FROM #Tmp_Trans WHERE IsLicensee = 0;
 
 INSERT INTO #tmp_match (MatchId)
 SELECT DISTINCT tmp_trans.Matchid 
