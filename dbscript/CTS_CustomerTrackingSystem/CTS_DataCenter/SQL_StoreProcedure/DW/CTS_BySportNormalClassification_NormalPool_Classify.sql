@@ -114,15 +114,11 @@ BEGIN
 		ActiveDays			   INT			  NOT NULL,
 		WinDaysRate			   DECIMAL(5,2)	  NULL,
 		PerformanceTime        DATETIME       NOT NULL
-		PRIMARY KEY(CustId, SportGroup)
+		PRIMARY KEY (CustId, SportGroup)
 	);
 
 	CREATE NONCLUSTERED INDEX IX_tmpCustomerAccummulatedInfo_CurrentCategoryId ON #tmpCustomerAccummulatedInfo(
 		CurrentCategoryId
-	);
-
-	CREATE NONCLUSTERED INDEX IX_tmpCustomerAccummulatedInfo_SRecommend ON #tmpCustomerAccummulatedInfo(
-		SRecommend
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpBetCount') IS NOT NULL
@@ -138,6 +134,17 @@ BEGIN
 
 	CREATE NONCLUSTERED INDEX IX_tmpBetCount_CategoryId ON #tmpBetCount(
 		CategoryId
+	);
+
+	
+	IF	OBJECT_ID('tempdb..#tmpRelatedCustInfo') IS NOT NULL
+	DROP TABLE	#tmpRelatedCustInfo;
+
+	CREATE TABLE #tmpRelatedCustInfo(
+		CustId			INT PRIMARY KEY,
+		SiteName		VARCHAR(10),
+		IsDeposit		BIT NOT NULL DEFAULT 0,
+		SRecommend		INT
 	);
 
 	-- #1: Get list customers
@@ -213,21 +220,32 @@ BEGIN
 	WHERE NOT EXISTS (SELECT 1 FROM dbo.CustomerClassification_BySport_ScannedDailyCust AS b WITH(NOLOCK) WHERE b.CustId = a.CustId AND b.SportGroup = a.SportGroup);
 
 	-- #9: Get relevant customer info
+	INSERT INTO #tmpRelatedCustInfo (CustId)
+	SELECT DISTINCT CustId
+	FROM #tmpCustomerAccummulatedInfo;
+	
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
 	SET	   a.SRecommend = c.srecommend,
-		   a.IsSpecialSite = CASE
-								WHEN a.SportGroup = @SPORT_NONSPORT THEN NULL
-								WHEN a.SportGroup = @SPORT_ESPORT AND c.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada', 'WINHX1') THEN 1
-								WHEN a.SportGroup <> @SPORT_ESPORT AND c.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') THEN 1
-								ELSE 0	
-							 END	
-	FROM #tmpCustomerAccummulatedInfo AS a
-		INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON a.CustId = c.custid;
+		   a.SiteName = c.Site
+	FROM #tmpRelatedCustInfo AS a
+		INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON c.CustId = a.CustId;
 
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
 	SET a.IsDeposit = 1
+	FROM #tmpRelatedCustInfo AS a
+		INNER JOIN bodb02.dbo.Dep_CustSuper AS c WITH(NOLOCK) ON c.custid = a.SRecommend;
+
+	UPDATE a WITH(ROWLOCK, UPDLOCK)
+	SET a.IsDeposit = c.IsDeposit,
+		a.IsSpecialSite = CASE
+							WHEN a.SportGroup = @SPORT_NONSPORT THEN NULL
+							WHEN a.SportGroup = @SPORT_ESPORT AND c.SiteName IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada', 'WINHX1') THEN 1
+							WHEN a.SportGroup <> @SPORT_ESPORT AND c.SiteName IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') THEN 1
+							ELSE 0	
+						  END	
 	FROM #tmpCustomerAccummulatedInfo AS a
-		INNER JOIN bodb02.dbo.Dep_CustSuper AS c WITH(NOLOCK) ON a.SRecommend = c.custid;
+		INNER JOIN #tmpRelatedCustInfo AS c WITH(NOLOCK) ON c.custid = a.CustId;
+
 
 	-- #10: Classify classification by general rule
 	UPDATE t WITH(ROWLOCK, UPDLOCK)
