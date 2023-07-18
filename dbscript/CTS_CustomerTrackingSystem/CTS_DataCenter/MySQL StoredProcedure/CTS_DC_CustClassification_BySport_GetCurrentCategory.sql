@@ -34,6 +34,12 @@ BEGIN
         ,	PRIMARY KEY (CustID, SportGroup)
 	);
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_InvalidCust;
+    CREATE TEMPORARY TABLE Temp_InvalidCust(
+			CustID				BIGINT UNSIGNED
+        ,	PRIMARY KEY (CustID)
+	);
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_CustCategory;
     CREATE TEMPORARY TABLE Temp_CustCategory (
 			CustID 				BIGINT UNSIGNED
@@ -54,26 +60,32 @@ BEGIN
 			 "$[*]" COLUMNS(
 				CustID 		BIGINT UNSIGNED		PATH "$.CustId"
 			, 	SportGroup	SMALLINT UNSIGNED	PATH "$.SportGroup"	
-			 )) AS temp;       
+			 )) AS temp;
 		
-        DELETE r
-		FROM Temp_Cust AS r
-        WHERE NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomer AS c WHERE c.CustID = r.CustID AND c.CustSubID = 0);
+		INSERT INTO Temp_InvalidCust(CustID)
+		SELECT tmp.CustID
+        FROM (SELECT DISTINCT CustID FROM Temp_Cust) AS tmp
+			LEFT JOIN CTS_DataCenter.CTSCustomer AS c ON c.CustID = tmp.CustID AND c.CustSubID = 0
+        WHERE c.CustID IS NULL;
         
-    END IF;	
-	
-    #2. Get latest normal category
+		DELETE c
+		FROM Temp_Cust AS c
+			INNER JOIN Temp_InvalidCust AS r ON r.CustID = c.CustID;
+
+	END IF;	
+
+	#2. Get latest normal category
 	INSERT INTO Temp_CustCategory(CustID, SportGroup, CategoryID, CategoryGroup)
 	SELECT 	tmpIc.CustID
 		,	tmpIc.SportGroup
 		,	cls.CategoryID
-        ,	cc.CategoryGroup
+		,	cc.CategoryGroup
 	FROM Temp_Cust AS tmpIc
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport AS cls ON cls.CustID = tmpIc.CustID AND cls.SportID = tmpIc.SportGroup
-        INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cls.CategoryID;
-    
-    #3. Get Probation info
-    UPDATE Temp_CustCategory AS tmpCc
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cls.CategoryID;
+	
+	#3. Get Probation info
+	UPDATE Temp_CustCategory AS tmpCc
 		INNER JOIN CTS_DataCenter.ProbationAccountMonitor_BySport AS pro ON pro.CustID = tmpCc.CustID
 	SET IsProbationLastDay = (CASE WHEN pro.CreatedDate <= lv_LastDayProbation THEN 1 /*Up to Smart, Risky*/ ELSE 0 END)
 	WHERE tmpCc.CategoryGroup = CATEGORY_GROUP_PROBATION;
