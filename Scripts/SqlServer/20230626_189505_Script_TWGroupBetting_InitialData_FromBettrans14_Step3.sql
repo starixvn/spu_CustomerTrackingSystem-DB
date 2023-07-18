@@ -129,7 +129,7 @@ EXECUTE bodb02.dbo.Age_SelBalanceUpDay
 
 SELECT	TOP(1)
 		@BalanceUpDay	= BUDay
-	,	@MoveBetsDay	= MBDay
+	,	@MoveBetsDay	= '2023-07-12' -- MBDay Run to '2023-07-12'
 FROM #tmp_BUMBData WITH(NOLOCK);
 
 INSERT INTO #tmp_WCLeagues(LeagueId)

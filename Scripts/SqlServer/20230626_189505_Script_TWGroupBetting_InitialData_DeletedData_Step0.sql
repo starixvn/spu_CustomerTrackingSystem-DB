@@ -60,7 +60,9 @@ CREATE TABLE #tmp_batch (
 WHILE (@StartDate <= @StopDate)
 BEGIN
 	PRINT @StartDate;
-
+	
+	TRUNCATE TABLE #tmpSPU_GroupBettingCustomer;
+	
 	INSERT INTO #tmpSPU_GroupBettingCustomer
 	(
 			CustId						 	
