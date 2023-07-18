@@ -417,7 +417,7 @@ CREATE TABLE zzz_TempInitialRawTransaction (
 		TransID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
         
 	PRIMARY KEY (TransID)		
-) ENGINE=InnoDB
+) ENGINE=InnoDB;
 #==========================================================================
 #==========================INITIAL DATA================================================
 
@@ -431,6 +431,12 @@ VALUES (8000001,'CTMax','',10,1,NOW(),NULL,0,NOW(),NULL)
 
 INSERT INTO CTS_DataCenter.SystemEventStatus(EventName,Status,LastExecTime)
 VALUES('EV_DCS_Extra_Account_UpdateLastLoginTime','Stop',NOW());
+
+INSERT INTO SystemSetting(ID,VGroup,VName,VValue,UpdatedTime)
+VALUE(1,'DCS_Device_Transform','MinTransId','0',NOW())
+	,(2,'DCS_Device_Transform','MinCreatedDate','2022-12-31',NOW())
+    ,(3,'DCS_RawTrans_Transform','MinRawTransId','0',NOW())
+	,(1000, 'Initial Raw Trans', 'LastTransDate', '2022-12-31 23:59:59', NOW());
 
 #=============COPY DATA FILE FROM git ...Scripts\DCS_Extra== to 'D:/SPU/DCS_Extra/..' then import======================
 
@@ -451,12 +457,6 @@ IGNORE 1 ROWS
 	StatusValue=Cast(@StatusValue as signed)
     , IsTransformed=Cast(@IsTransformed as signed);
 
-LOAD DATA LOCAL INFILE 'D:/SPU/DCS_Extra/20230628_190118_SystemSetting.csv'
-INTO TABLE DCS_Extra.SystemSetting
-FIELDS TERMINATED BY ',' 
-ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
-IGNORE 1 ROWS;
 
 LOAD DATA LOCAL INFILE 'D:/SPU/DCS_Extra/20230628_190118_StaticList.csv'
 INTO TABLE DCS_Extra.StaticList
