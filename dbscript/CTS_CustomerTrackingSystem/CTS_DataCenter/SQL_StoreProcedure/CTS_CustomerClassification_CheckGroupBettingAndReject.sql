@@ -15,16 +15,19 @@ AS
 
 	Revisions:
 		- 20210722@Harvey.Nguyen: Created [Redmine ID: #155956]
+		- 20230626@Victoria.Le:		Get Group Betting, Reject, Desktop percent within 60 days & and current date [Redmine ID: #189505]
 
 	Param's Explanation:
 */
 BEGIN
 	
 	SET NOCOUNT ON;
+	
+	DECLARE @Today DATE;
 
 	IF OBJECT_ID('tempdb..#tmpCustomerClassification') IS NOT NULL
 	BEGIN
-		DROP TABLE	CustomerClassification;
+		DROP TABLE #tmpCustomerClassification;
 	END;
 
 	CREATE TABLE #tmpCustomerClassification (
@@ -35,44 +38,72 @@ BEGIN
 		,	TWTicketRejectRate	MONEY	NULL
 		,	TWDesktopUsageRate	MONEY	NULL
 	);	
+	
+	IF OBJECT_ID('tempdb..#tmpCustomerGroupPercentage') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpCustomerGroupPercentage;
+	END;
+
+	CREATE TABLE #tmpCustomerGroupPercentage (
+			CustId				INT NOT NULL PRIMARY KEY	
+		,	TWBetCount			INT NULL
+		,	TWGroupBettingRate	MONEY NULL	
+		,	TWTicketRejectRate	MONEY NULL
+		,	TWDesktopUsageRate	MONEY NULL
+		,	TWTicketParlayCount	INT NULL	
+	);
+	
+	SET @Today = GETDATE();
 
 	INSERT INTO #tmpCustomerClassification(CustId)
 	SELECT	val AS CustId
 	FROM	bodb02.dbo.strSplit(@custIdList, ',');
 	
+	INSERT INTO #tmpCustomerGroupPercentage (CustId, TWBetCount, TWGroupBettingRate, TWTicketRejectRate, TWDesktopUsageRate, TWTicketParlayCount)
+	SELECT 	gbc.CustId
+		,	SUM(gbc.TicketCount) AS 'TotalBetCount'
+		,  	CASE WHEN SUM(gbc.TicketCount) <> 0 THEN SUM(CONVERT(MONEY, gbc.GBTicketCount)) * 100 / SUM(CONVERT(MONEY, gbc.TicketCount)) ELSE NULL END AS 'GBPercent'
+		,  	CASE WHEN SUM(gbc.TicketCount) <> 0 THEN SUM(CONVERT(MONEY, gbc.RejectTicketCount)) * 100 / SUM(CONVERT(MONEY, gbc.TicketCount)) ELSE NULL END AS 'RejectPercent'
+		,  	CASE WHEN SUM(gbc.TicketCount) <> 0 THEN SUM(CONVERT(MONEY, gbc.DesktopTicketCount)) * 100 / SUM(CONVERT(MONEY, gbc.TicketCount)) ELSE NULL END AS 'DesktopPercent'
+		,	SUM(gbc.ParlayTicketCount) AS 'ParlayTicketCount'
+	FROM #tmpCustomerClassification AS cust WITH (NOLOCK)
+		INNER JOIN dbo.SPU_GroupBettingCustomer AS gbc WITH (NOLOCK) ON gbc.CustId = cust.CustId
+	WHERE gbc.ScanDate >= DATEADD(DAY,-60,@Today) AND gbc.ScanDate < DATEADD(DAY,1,@Today)
+	GROUP BY gbc.CustId;
+	
 	UPDATE cc
 	SET cc.CateId = 8
-		, cc.TWDesktopUsageRate = lup.DesktopPer
-		, cc.TWTicketRejectRate = lup.RejectPer
+	, 	cc.TWDesktopUsageRate = r.TWDesktopUsageRate
+	, 	cc.TWTicketRejectRate = r.TWTicketRejectRate
 	FROM #tmpCustomerClassification cc
-	INNER JOIN dbo.LicUserProfile lup WITH (NOLOCK) ON cc.CustId = lup.CustId
-	WHERE lup.ParlayPer IS NULL
-		AND lup.DesktopPer > 90
-		AND lup.RejectPer >= 30;
+		INNER JOIN #tmpCustomerGroupPercentage AS r ON cc.CustId = r.CustId
+	WHERE r.TWTicketParlayCount = 0
+		AND r.TWDesktopUsageRate > 90
+		AND r.TWTicketRejectRate >= 30;
 
 	UPDATE cc
 	SET cc.CateId = 7
-		, cc.TWBetCount = lup.TotalBetCount
-		, cc.TWGroupBettingRate = lup.GroupBettingPer
+		, cc.TWBetCount = r.TWBetCount
+		, cc.TWGroupBettingRate = r.TWGroupBettingRate
 	FROM #tmpCustomerClassification cc
-	INNER JOIN dbo.LicUserProfile lup WITH (NOLOCK) ON cc.CustId = lup.CustId
+		INNER JOIN #tmpCustomerGroupPercentage AS r ON cc.CustId = r.CustId
 	WHERE cc.CateId IS NULL
-		AND lup.ParlayPer IS NULL
-		AND (
-			lup.TotalBetCount <= 30
-			AND lup.GroupBettingPer >= 6
-			OR lup.TotalBetCount > 30
-			AND lup.GroupBettingPer >= 2
+		AND r.TWTicketParlayCount = 0
+		AND ((r.TWBetCount <= 30 AND r.TWGroupBettingRate >= 6)
+				OR (r.TWBetCount > 30 AND r.TWGroupBettingRate >= 2)
 			);
 
-	SELECT CustId AS 'CustID'
-		,CateId AS 'TaggingID'
-		,2 AS 'TaggingType'
-		,TWBetCount			
-		,TWGroupBettingRate	
-		,TWTicketRejectRate	
-		,TWDesktopUsageRate	
-	FROM #tmpCustomerClassification
+	SELECT 	CustId AS 'CustID'
+		,	CateId AS 'TaggingID'
+		,	2 AS 'TaggingType'
+		,	TWBetCount			
+		,	TWGroupBettingRate	
+		,	TWTicketRejectRate	
+		,	TWDesktopUsageRate
+	FROM #tmpCustomerClassification;
+	
+	DROP TABLE IF EXISTS #tmpCustomerClassification;
+	DROP TABLE IF EXISTS #tmpCustomerGroupPercentage;
 
 
 END;
