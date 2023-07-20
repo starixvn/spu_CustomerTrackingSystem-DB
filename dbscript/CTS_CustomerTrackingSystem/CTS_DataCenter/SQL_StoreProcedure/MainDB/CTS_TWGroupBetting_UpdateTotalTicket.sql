@@ -95,7 +95,7 @@ BEGIN
 	SELECT @LastSequenceId_New = MAX(SequenceId) FROM #Tmp_Trans;
 	SET @LastSequenceId_New = ISNULL(@LastSequenceId_New,@LastSequenceId);
 
-	DELETE FROM #Tmp_Trans WHERE IsLicensee = 0;
+	DELETE FROM #Tmp_Trans WHERE IsLicensee = 0 OR Bettype = 10;
 	
 	INSERT INTO #tmp_match (MatchId)
 	SELECT DISTINCT tmp_trans.Matchid 
