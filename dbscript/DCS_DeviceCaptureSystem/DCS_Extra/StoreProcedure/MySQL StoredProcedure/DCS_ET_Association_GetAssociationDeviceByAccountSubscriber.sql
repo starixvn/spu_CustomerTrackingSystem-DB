@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DC_ET_Association_GetAssociationDeviceByCustSubscriber`;
+DROP PROCEDURE IF EXISTS `DCS_ET_Association_GetAssociationDeviceByAccountSubscriber`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DC_ET_Association_GetAssociationDeviceByCustSubscriber`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_ET_Association_GetAssociationDeviceByAccountSubscriber`(
 		IN ip_SubscriberID	INT
 	,	IN ip_AccountID		BIGINT UNSIGNED
 	,	IN ip_NoOfRecord	INT
@@ -10,18 +10,18 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DC_ET_Association_GetAssociationDeviceB
     SQL SECURITY INVOKER
 BEGIN
 	/*
-		Created:	20230601@Casey.Huynh
+		Created:	20230720@Casey.Huynh
 		Task :		Get Association Devices List
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
-			- 	20230601@Casey.Huynh: Created [Redmine ID: 185787]
+			- 	20230720@Casey.Huynh: Created [Redmine ID: 189873]
 			
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DC_ET_Association_GetAssociationDeviceByCustSubscriber(@ip_SubscriberID:=8000001,@ip_AccountID:=19,@ip_NoOfRecord:=15); 
+			CALL DCS_ET_Association_GetAssociationDeviceByAccountSubscriber(@ip_SubscriberID:=8000001,@ip_AccountID:=19,@ip_NoOfRecord:=15); 
    
 	*/
     

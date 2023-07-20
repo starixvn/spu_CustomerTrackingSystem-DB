@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DC_ET_Association_GetAssociationMaxtrixByCustSubscriber`;
+DROP PROCEDURE IF EXISTS `DCS_ET_Association_GetAssociationMaxtrixByAccountSubscriber`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DC_ET_Association_GetAssociationMaxtrixByCustSubscriber`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_ET_Association_GetAssociationMaxtrixByAccountSubscriber`(
 		IN ip_SubscriberID	INT
 	,	IN ip_AccountID		BIGINT UNSIGNED
 	,	IN ip_NoOfCustomer	INT
@@ -11,18 +11,18 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DC_ET_Association_GetAssociationMaxtrix
     SQL SECURITY INVOKER
 BEGIN
 	/*
-		Created:	20230601@Casey.Huynh
+		Created:	20230720@Casey.Huynh
 		Task :		Get Association Account List
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
-			- 	20230601@Casey.Huynh: Created [Redmine ID: 185787]
+			- 	20230720@Casey.Huynh: Created [Redmine ID: 189873]
 			
 		Param's Explanation (filtered by):
 			
 		Example:
-				CALL DC_ET_Association_GetAssociationMaxtrixByCustSubscriber(@ip_SubscriberID:=8000001,@ip_AccountID:=19,@ip_NoOfCustomer:=16, @ip_NoOfDevice:=100);
+				CALL DCS_ET_Association_GetAssociationMaxtrixByAccountSubscriber(@ip_SubscriberID:=8000001,@ip_AccountID:=19,@ip_NoOfCustomer:=16, @ip_NoOfDevice:=100);
    
 	*/
    

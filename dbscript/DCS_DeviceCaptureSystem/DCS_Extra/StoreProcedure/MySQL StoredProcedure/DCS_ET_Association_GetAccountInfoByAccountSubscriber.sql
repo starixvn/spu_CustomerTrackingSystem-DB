@@ -1,40 +1,37 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DC_ET_Association_GetAccountInfoByCustSubscriber`;
+DROP PROCEDURE IF EXISTS `DCS_ET_Association_GetAccountInfoByAccountSubscriber`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DC_ET_Association_GetAccountInfoByCustSubscriber`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_ET_Association_GetAccountInfoByAccountSubscriber`(
 		IN ip_SubscriberID		INT
 	,	IN ip_AccountID			BIGINT UNSIGNED       
 )
     SQL SECURITY INVOKER
 BEGIN
 	/*
-		Created:	20230601@Casey.Huynh
+		Created:	20230720@Casey.Huynh
 		Task :		Search Customer by UserName in subscribers
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
-			- 	20230601@Casey.Huynh: Created [Redmine ID: 185787]
-            -	20230706@Casey.Huynh: Show Device Association Info [Redmine ID: 190950]
+			- 	20230720@Casey.Huynh: Created [Redmine ID: 189873]
 			
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DC_ET_Association_GetAccountInfoByCustSubscriber(@ip_SubscriberID:=8000001,@ip_AccountID:=19);
+			CALL DCS_ET_Association_GetAccountInfoByAccountSubscriber(@ip_SubscriberID:=8000001,@ip_AccountID:=19);
 	*/
     DECLARE lv_FirstDeviceID BIGINT UNSIGNED;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Association;
-	CREATE TEMPORARY TABLE Temp_Association(		
-			CTSCustID	BIGINT UNSIGNED
-		,	AccountID	BIGINT UNSIGNED
+	CREATE TEMPORARY TABLE Temp_Association(	
+			AccountID	BIGINT UNSIGNED
         ,	DeviceID	BIGINT 
         ,	CreatedTime	DATETIME(4)
         ,	AssociationID BIGINT UNSIGNED
         
         ,	PRIMARY KEY PK_Temp_Association(DeviceID, AccountID)
-        ,	INDEX IX_Temp_Association_CTSCustID(CTSCustID)
         ,	INDEX IX_Temp_Association_AssociationID(AssociationID)
     ); 
     

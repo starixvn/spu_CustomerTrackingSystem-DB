@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DC_ET_Association_GetAssociationListByCustSubscriber`;
+DROP PROCEDURE IF EXISTS `DCS_ET_Association_GetAssociationListByAccountSubscriber`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DC_ET_Association_GetAssociationListByCustSubscriber`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_ET_Association_GetAssociationListByAccountSubscriber`(
 		IN ip_SubscriberID		INT
 	,	IN ip_AccountID			BIGINT UNSIGNED
 	,	IN ip_NoOfRecord		INT
@@ -10,22 +10,21 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DC_ET_Association_GetAssociationListByC
     SQL SECURITY INVOKER
 BEGIN
 	/*
-		Created:	20230601@Casey.Huynh
+		Created:	20230720@Casey.Huynh
 		Task :		Get Association Account List
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
-			- 	20230601@Casey.Huynh: Created [Redmine ID: 185787]
-			-	20230706@Casey.Huynh: Show Device Association Info [Redmine ID: 190950]
+			- 	20230720@Casey.Huynh: Created [Redmine ID: 189873]
             
 		Param's Explanation (filtered by):
 			@ip_NoOfRecord = 0 GET all Ass Account
             @ip_NoOfRecord > 0 GET ip_NoOfRecord ass account
             
 		Example:
-			CALL DC_ET_Association_GetAssociationListByCustSubscriber(@ip_SubscriberID:=8000001,@ip_AccountID:=19,@ip_NoOfRecord:=30); 
-            CALL DC_ET_Association_GetAssociationListByCustSubscriber(@ip_SubscriberID:=8000001,@ip_AccountID:=19,@ip_NoOfRecord:=0); 
+			CALL DCS_ET_Association_GetAssociationListByAccountSubscriber(@ip_SubscriberID:=8000001,@ip_AccountID:=19,@ip_NoOfRecord:=1); 
+            CALL DCS_ET_Association_GetAssociationListByAccountSubscriber(@ip_SubscriberID:=8000001,@ip_AccountID:=19,@ip_NoOfRecord:=0); 
    
 	*/    
     DROP TEMPORARY TABLE IF EXISTS Temp_Association;
