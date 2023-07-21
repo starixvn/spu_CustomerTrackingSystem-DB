@@ -1,8 +1,8 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_ET_CustInfo_GetPartialByUserNameSubscriber`;
+/*<info serverAlias="CTSMain-DCS_Extra" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `DCS_ET_AccountInfo_GetPartialByUserNameSubscriber`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_ET_CustInfo_GetPartialByUserNameSubscriber`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_ET_AccountInfo_GetPartialByUserNameSubscriber`(
 		IN ip_SubscriberID		INT
 	,	IN ip_LoginName			VARCHAR(50)
 	,	IN ip_Skip				INT
@@ -23,7 +23,7 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_ET_CustInfo_GetPartialByUserNameSubscriber(@ip_SubscriberID:=8000001,@ip_LoginName:='Exciting', @ip_Skip:=0, @ip_Take:=10, @op_TotalItem1); SELECT @op_TotalItem1;
+			CALL DCS_ET_AccountInfo_GetPartialByUserNameSubscriber(@ip_SubscriberID:=8000001,@ip_LoginName:='Exciting', @ip_Skip:=0, @ip_Take:=10, @op_TotalItem1); SELECT @op_TotalItem1;
 	*/   
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Account;
