@@ -22,6 +22,7 @@ AS
 
 	Revisions:
 		- 20230601@Victoria.Le:			Initial Writing [Redmine ID: #185793]		
+		- 20230721@Victoria.Le:			Get CurrencyName from table Exchange [Redmine ID: #191401]
 
 	Params Explaination:
 
@@ -119,15 +120,16 @@ BEGIN
 		,	b.LiveHomeScore
 		,	b.LiveAwayScore
 		,	b.BetTeam
-		,	b.CurrencyName
-		,	b.currency
+		,	e.currency
+		,	e.ExchangeId
 		,	ABS(CASE WHEN @BetType IN (3,8,610)	THEN Hdp1
 						 ELSE (CASE	WHEN b.BetTeam = 'h'	THEN (b.Hdp2 - b.Hdp1)
 									WHEN b.BetTeam = 'a'	THEN (b.Hdp1 - b.Hdp2)
 								END)
 						 END)
-	FROM dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
+	FROM dbo.bettrans AS b WITH(NOLOCK)
 		INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
+		INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 	WHERE b.matchid = @MatchID
 		AND b.bettype = @BetType
 		AND b.liveindicator = @IsLive

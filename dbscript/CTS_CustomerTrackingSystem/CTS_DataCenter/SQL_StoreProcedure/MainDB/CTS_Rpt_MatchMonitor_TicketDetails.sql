@@ -23,7 +23,7 @@ ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_TicketDetails]
 	,	@FromStakeRM				MONEY = NULL
 	,	@ToStakeRM					MONEY = NULL
 	,	@MinSequenceIDTotalAll		BIGINT = NULL OUTPUT
-
+	
 	
 
 AS
@@ -49,6 +49,7 @@ AS
 		- 20230602@Long.Luu:	Add new agent as internal account [Redmine ID: #188554]
 		- 20230607@Long.Luu:	Exclude more Saba's LeagueGroupID [Redmine ID: #189439]
 		- 20230601@Victoria.Le	Show all tickets [Redmine ID: #185793]
+		- 20230721@Victoria.Le	Get CurrencyName from table Exchange [Redmine ID: #191401]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize)
@@ -352,11 +353,12 @@ BEGIN
 					,	b.liveawayscore
 					,	b.statusID
 					,	b.liveindicator
-					,	b.CurrencyName
-					,	b.currency
+					,	e.currency
+					,	e.ExchangeId
 				FROM dbo.bettrans14 AS b WITH(NOLOCK)
 					INNER JOIN #tmpTransIds AS t WITH(NOLOCK) ON t.TransId = b.transid
 					INNER JOIN dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
+					INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 				;
 			END;
 
@@ -386,11 +388,12 @@ BEGIN
 					,	b.liveawayscore
 					,	b.statusID
 					,	b.liveindicator
-					,	b.CurrencyName
-					,	b.currency
+					,	e.currency
+					,	e.ExchangeId
 				FROM dbo.bettrans AS b WITH(NOLOCK)
 					INNER JOIN #tmpTransIds AS t WITH(NOLOCK) ON t.TransId = b.transid
 					INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
+					INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 				;
 			END;
 
@@ -435,8 +438,8 @@ BEGIN
 						,	b.liveawayscore
 						,	b.statusID
 						,	b.liveindicator
-						,	b.CurrencyName
-						,	b.currency
+						,	e.currency
+						,	e.ExchangeId
 						,	ABS(CASE WHEN @BetType IN (3,8,610)	THEN Hdp1
 								 ELSE (CASE	WHEN BetTeam = 'h'	THEN (Hdp2 - Hdp1)
 											WHEN BetTeam = 'a'	THEN (Hdp1 - Hdp2)
@@ -444,6 +447,7 @@ BEGIN
 								 END)
 					FROM dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
 						INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
+						INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 						LEFT JOIN #tmpTransIds AS t ON t.TransId = b.TransId
 					WHERE	b.matchid = @MatchID
 						AND b.liveindicator = @IsLive
@@ -479,8 +483,8 @@ BEGIN
 						,	b.liveawayscore
 						,	b.statusID
 						,	b.liveindicator
-						,	b.CurrencyName
-						,	b.currency
+						,	e.currency
+						,	e.ExchangeId
 						,	ABS(CASE WHEN @BetType IN (3,8,610)	THEN Hdp1
 								 ELSE (CASE	WHEN BetTeam = 'h'	THEN (Hdp2 - Hdp1)
 											WHEN BetTeam = 'a'	THEN (Hdp1 - Hdp2)
@@ -488,6 +492,7 @@ BEGIN
 								 END)
 					FROM dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
 						INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
+						INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 					WHERE	b.matchid = @MatchID
 						AND b.liveindicator = @IsLive
 						AND b.bettype = @BetType
