@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_Extra" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_ET_AccountInfo_GetByNameSubscriber`;
+DROP PROCEDURE IF EXISTS `DCS_ET_AccountInfo_GetByLoginNameSubscriber`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_ET_AccountInfo_GetByNameSubscriber`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_ET_AccountInfo_GetByLoginNameSubscriber`(
 		IN ip_SubscriberID	INT
 	,	IN ip_LoginName		VARCHAR(50)
 )
@@ -20,8 +20,8 @@ BEGIN
 		Param's Explanation (filtered by):
 
 		Example:
-			CALL DCS_ET_AccountInfo_GetByNameSubscriber(@ip_SubscriberID:=8000001,@ip_LoginName:='Exciting8');
-			CALL DCS_ET_AccountInfo_GetByNameSubscriber(@ip_SubscriberID:=8000001,@ip_LoginName:='DenVau');
+			CALL DCS_ET_AccountInfo_GetByLoginNameSubscriber(@ip_SubscriberID:=8000001,@ip_LoginName:='Exciting8');
+			CALL DCS_ET_AccountInfo_GetByLoginNameSubscriber(@ip_SubscriberID:=8000001,@ip_LoginName:='DenVau');
 	*/   
 
 	#========SEARCH BY LoginName=====================

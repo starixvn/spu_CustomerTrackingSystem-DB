@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_Extra" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_ET_AccountInfo_GetPartialByUserNameSubscriber`;
+DROP PROCEDURE IF EXISTS `DCS_ET_AccountInfo_GetPartialByLoginNameSubscriber`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_ET_AccountInfo_GetPartialByUserNameSubscriber`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_ET_AccountInfo_GetPartialByLoginNameSubscriber`(
 		IN ip_SubscriberID		INT
 	,	IN ip_LoginName			VARCHAR(50)
 	,	IN ip_Skip				INT
@@ -23,7 +23,8 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_ET_AccountInfo_GetPartialByUserNameSubscriber(@ip_SubscriberID:=8000001,@ip_LoginName:='Exciting', @ip_Skip:=0, @ip_Take:=10, @op_TotalItem1); SELECT @op_TotalItem1;
+			CALL DCS_ET_AccountInfo_GetPartialByLoginNameSubscriber(@ip_SubscriberID:=8000001,@ip_LoginName:='ahmed', @ip_Skip:=0, @ip_Take:=10, @op_TotalItem1); SELECT @op_TotalItem1;
+            CALL DCS_ET_AccountInfo_GetPartialByLoginNameSubscriber(@ip_SubscriberID:=8000001,@ip_LoginName:='ahmedj', @ip_Skip:=0, @ip_Take:=10, @op_TotalItem1); SELECT @op_TotalItem1;
 	*/   
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Account;
@@ -43,7 +44,8 @@ BEGIN
         ,	acc.SubscriberID
         ,	acc.LastLoginTime
     FROM DCS_Extra.Account AS acc
-    WHERE acc.SubscriberID = ip_SubscriberID AND acc.LoginName LIKE CONCAT(ip_LoginName,'%');
+    WHERE acc.SubscriberID = ip_SubscriberID AND acc.LoginName LIKE CONCAT(ip_LoginName,'%')
+		AND EXISTS (SELECT 1 FROM DCS_Extra.Association AS ass WHERE ass.AccountID = acc.AccountID LIMIT 1);
 
     SET op_TotalItem = (SELECT COUNT(1) FROM Temp_Account);
     
