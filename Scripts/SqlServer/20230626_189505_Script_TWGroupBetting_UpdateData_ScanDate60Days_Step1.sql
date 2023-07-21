@@ -9,11 +9,13 @@
 	Revisions:	
 		- 20230626@Victoria.Le: 	Initial Writing - Update Data for ScanDate < '2023-07-12' AND ScanDate >  DATEADD(DAY,-60,'2023-07-12')
 									[Redmine ID: #189505]
+		- 20230713@Victoria.Le: 	Get latest 61 days - Change ReleasedDate = 2023-07-13
+									[Redmine ID: #189505]
 */
 
 USE [bodb02]
 
-DECLARE	@ReleasedDate DATE = '2023-07-12'
+DECLARE	@ReleasedDate DATE = '2023-07-13'
 	,	@Day60 SMALLDATETIME
 	,	@ScannedDate SMALLDATETIME
 	,	@StartRow INT = 1
@@ -47,8 +49,8 @@ CREATE TABLE #tmp_batch_updated (
 
 -------------------------------------------------------------------------
 
-SET @Day60 = DATEADD(DAY,-60,@ReleasedDate)
-SET @ScannedDate = DATEADD(DAY,-1,@ReleasedDate);
+SET @Day60 = DATEADD(DAY,-61,@ReleasedDate)
+SET @ScannedDate = @ReleasedDate;
 
 WHILE (@ScannedDate > @Day60)
 BEGIN
@@ -57,8 +59,7 @@ BEGIN
 	INSERT INTO #tmpSPU_GroupBettingCustomer (CustId,ScanDate)
 	SELECT gbc.CustId,gbc.ScanDate
 	FROM dbo.SPU_GroupBettingCustomer AS gbc WITH (NOLOCK)
-	WHERE gbc.ScanDate =  @ScannedDate
-		AND gbc.TicketCount <> 0;
+	WHERE gbc.ScanDate =  @ScannedDate;
 
 	SET @TotalCount_Updated = @@ROWCOUNT;
 
@@ -67,8 +68,8 @@ BEGIN
 		SET @ScannedDate_message = CONCAT('Step 1, ',@Day60, ', ', @ScannedDate);
 		PRINT @ScannedDate_message;
 
-		SET @iday = @iday + 1;
 		SET @ScannedDate = DATEADD(DAY,-@iday,@ReleasedDate);
+		SET @iday = @iday + 1;
 
 		IF (@ScannedDate <= @Day60)
 		BEGIN
@@ -84,8 +85,8 @@ BEGIN
 	SET @ScannedDate_message = CONCAT('Step 2, ', @Day60, ', ', @ScannedDate);
 	PRINT @ScannedDate_message;
 
-	SET @iday = @iday + 1;
 	SET @ScannedDate = DATEADD(DAY,-@iday,@ReleasedDate);
+	SET @iday = @iday + 1;
 
 	SET @MaxRow = (SELECT MAX(ID) FROM #tmpSPU_GroupBettingCustomer);
 	SET @StartRow = 1;

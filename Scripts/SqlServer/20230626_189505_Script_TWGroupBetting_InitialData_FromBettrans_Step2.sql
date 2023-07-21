@@ -9,12 +9,15 @@
 	Revisions:	
 		- 20230626@Victoria.Le: 	Initial Writing - Range Active
 									[Redmine ID: #189505]
+		- 20230713@Victoria.Le: 	Get latest 61 days - Change ReleasedDate = 2023-07-13
+									[Redmine ID: #189505]
+		- 20230714@Victoria.Le:		Set EndDate = '2023-05-13' [Redmine ID: #189505]
 */
 
 USE [bodb02]
 
-DECLARE	@ReleasedDate DATE = '2023-07-12'
-	,	@Day60 SMALLDATETIME
+DECLARE	@ReleasedDate DATE = '2023-07-13'
+	,	@EndDate SMALLDATETIME = '2023-05-13'
 	,	@ScannedDate SMALLDATETIME
 	,	@Today DATETIME
 	,	@TotalTicket INT = 0
@@ -31,10 +34,10 @@ DECLARE @BalanceUpDay SMALLDATETIME
 	,	@MoveBetsDay SMALLDATETIME
 ;
 
-IF	OBJECT_ID('tempdb..#BUMBData') IS NOT NULL
-	DROP TABLE	#BUMBData;
+IF	OBJECT_ID('tempdb..#tmp_BUMBData') IS NOT NULL
+	DROP TABLE	#tmp_BUMBData;
 
-CREATE TABLE	#BUMBData (
+CREATE TABLE	#tmp_BUMBData (
 		BUDay	SMALLDATETIME
 	,	MBDay	SMALLDATETIME
 );
@@ -121,13 +124,13 @@ CREATE TABLE #tmp_match (
 		MatchId		INT PRIMARY KEY
 );	
 -- ------------------------------------------------------------------------------
-INSERT INTO #BUMBData(BUDay,MBDay)
+INSERT INTO #tmp_BUMBData(BUDay,MBDay)
 EXECUTE bodb02.dbo.Age_SelBalanceUpDay
 
 SELECT	TOP(1)
 		@BalanceUpDay	= BUDay
 	,	@MoveBetsDay	= MBDay
-FROM #BUMBData WITH(NOLOCK);
+FROM #tmp_BUMBData WITH(NOLOCK);
 
 INSERT INTO #tmp_WCLeagues(LeagueId)
 SELECT DISTINCT LeagueId
@@ -139,7 +142,6 @@ SELECT b.BetFrom
 FROM DBWH.bodb_account.dbo.tbl_Betfrom AS b WITH (NOLOCK)
 WHERE b.platform2 = 'Desktop';
 
-SET @Day60 = DATEADD(DAY,-60,@ReleasedDate)
 SET @ScannedDate = DATEADD(DAY,-1,@ReleasedDate);
 
 WHILE (@ScannedDate > @MoveBetsDay)
@@ -162,7 +164,7 @@ BEGIN
 		LEFT JOIN dbo.Dep_CustSuper AS dCust WITH (NOLOCK) ON dCust.custid = bt.srecommend
 	WHERE bt.winlostdate = @ScannedDate;
 
-	DELETE FROM #Tmp_Trans WHERE IsLicensee = 0 OR ScanDate < @Day60;
+	DELETE FROM #Tmp_Trans WHERE IsLicensee = 0 OR ScanDate < @EndDate;
 	
 	INSERT INTO #tmp_match (MatchId)
 	SELECT DISTINCT tmp_trans.Matchid 
