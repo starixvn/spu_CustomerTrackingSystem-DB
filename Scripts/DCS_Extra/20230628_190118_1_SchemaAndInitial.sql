@@ -440,39 +440,76 @@ VALUE(1,'DCS_Device_Transform','MinTransId','0',NOW())
 
 #=============COPY DATA FILE FROM git ...Scripts\DCS_Extra== to 'D:/SPU/DCS_Extra/..' then import======================
 
-LOAD DATA LOCAL INFILE 'D:/SPU/DCS_Extra/20230628_190118_DeviceType.csv'
-INTO TABLE DCS_Extra.DeviceType
-FIELDS TERMINATED BY ',' 
-ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
-IGNORE 1 ROWS;
+TRUNCATE TABLE DeviceType;
+INSERT INTO DeviceType(DeviceTypeID,DeviceTypeName,GroupName,Created)
+VALUES(1,'Mobile','Mobile',NOW())
+	,(2,'Tablet','Mobile',NOW())
+	,(3,'Desktop','Desktop',NOW())
+	,(4,'Unknown','Others',NOW())
+	,(5,'Spider','Others',NOW())
+	,(6,'TvOrConsole','Others',NOW());
+    
+TRUNCATE TABLE BotDetection;
+INSERT INTO BotDetection(Value,Name,CreatedDate)
+VALUES(1,'detectAppVersion',NOW())
+,(2,'detectDocumentAttributes',NOW())
+,(4,'detectErrorTrace',NOW())
+,(8,'detectEvalLengthInconsistency',NOW())
+,(16,'detectFunctionBind',NOW())
+,(32,'detectLanguagesLengthInconsistency',NOW())
+,(64,'detectNotificationPermissions',NOW())
+,(128,'detectPluginsArray',NOW())
+,(256,'detectPluginsLengthInconsistency',NOW())
+,(512,'detectProcess',NOW())
+,(1024,'detectUserAgent',NOW())
+,(2048,'detectWebDriver',NOW())
+,(4096,'detectWebGL',NOW())
+,(8192,'detectWindowExternal',NOW())
+,(16384,'detectWindowSize',NOW())
+,(32768,'detectMimeTypesConsistent',NOW())
+,(65536,'detectProductSub',NOW())
+,(131072,'detectDistinctiveProperties',NOW())
+,(262144,'detectPlatform',NOW())
+,(524288,'detectVmFromMemoryScreenDimensions',NOW());
 
-LOAD DATA LOCAL INFILE 'D:/SPU/DCS_Extra/20230628_190118_TransStatus.csv'
-INTO TABLE DCS_Extra.TransStatus
-FIELDS TERMINATED BY ',' 
-ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
-IGNORE 1 ROWS
-(TransStatusName, @StatusValue, Notes, @IsTransformed, CreatedDate) SET
-	StatusValue=Cast(@StatusValue as signed)
-    , IsTransformed=Cast(@IsTransformed as signed);
+TRUNCATE TABLE StaticList;
+INSERT INTO StaticList(ListID,ItemID,ListCode,ListName,ItemCode,ItemName,Status,Description,CreatedDate)
+VALUES(1,1,'Flagged','Flagged','Human','Human',1,NULL,'2023-05-18 04:48:05')
+,(1,2,'Flagged','Flagged','EmptyToken','Invalid Browser Info',1,'Empty Token',NOW())
+,(1,3,'Flagged','Flagged','InvalidToken','Invalid Browser Info',1,'Invalid Token',NOW())
+,(1,4,'Flagged','Flagged','EmptyAnalysis','Invalid Browser Info',1,'Empty Analysis',NOW())
+,(1,5,'Flagged','Flagged','InvalidAnalysis','Invalid Browser Info',1,'Invalid Analysis',NOW())
+,(1,6,'Flagged','Flagged','EmptyDevice','Invalid Browser Info',1,'Empty Device',NOW())
+,(1,7,'Flagged','Flagged','InvalidDevice','Invalid Browser Info',1,'Invalid Device',NOW())
+,(1,8,'Flagged','Flagged','EmptyUserAgent','Invalid Browser Info',1,'Empty UserAgent',NOW())
+,(1,9,'Flagged','Flagged','Headless','Bot',1,'Bot - Headless Chrome',NOW())
+,(1,10,'Flagged','Flagged','awesomium','Bot',1,'Bot - Awesomium',NOW())
+,(1,11,'Flagged','Flagged','cef','Bot',1,'Bot - Cef',NOW())
+,(1,12,'Flagged','Flagged','cefsharp','Bot',1,'Bot - CefSharp',NOW())
+,(1,13,'Flagged','Flagged','coachjs','Bot',1,'Bot - CoachJS',NOW())
+,(1,14,'Flagged','Flagged','Electron','Bot',1,'Bot - Electron',NOW())
+,(1,15,'Flagged','Flagged','fminer','Bot',1,'Bot - FMiner',NOW())
+,(1,16,'Flagged','Flagged','geb','Bot',1,'Bot - Geb',NOW())
+,(1,17,'Flagged','Flagged','nightmarejs','Bot',1,'Bot - NightmareJS',NOW())
+,(1,18,'Flagged','Flagged','phantomas','Bot',1,'Bot - Phantomas',NOW())
+,(1,19,'Flagged','Flagged','phantomjs','Bot',1,'Bot - PhantomJS',NOW())
+,(1,20,'Flagged','Flagged','rhino','Bot',1,'Bot - Rhino',NOW())
+,(1,21,'Flagged','Flagged','selenium','Bot',1,'Bot - Selenium',NOW())
+,(1,22,'Flagged','Flagged','sequentum','Bot',1,'Bot - Sequentum',NOW())
+,(1,23,'Flagged','Flagged','slimerjs','Bot',1,'Bot - SlimerJS',NOW())
+,(1,24,'Flagged','Flagged','webdriverio','Bot',1,'Bot - WebDriverIO',NOW())
+,(1,25,'Flagged','Flagged','webdriver','Bot',1,'Bot - WebDriver',NOW())
+,(1,26,'Flagged','Flagged','headless_chrome','Bot',1,'Bot - Headless Chrome',NOW())
+,(1,27,'Flagged','Flagged','unknown','Bot',1,'Bot - Unknown',NOW());
 
-
-LOAD DATA LOCAL INFILE 'D:/SPU/DCS_Extra/20230628_190118_StaticList.csv'
-INTO TABLE DCS_Extra.StaticList
-FIELDS TERMINATED BY ',' 
-ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
-IGNORE 1 ROWS;
-
-LOAD DATA LOCAL INFILE 'D:/SPU/DCS_Extra/20230628_190118_BotDetection.csv'
-INTO TABLE DCS_Extra.BotDetection
-FIELDS TERMINATED BY ',' 
-ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
-IGNORE 1 ROWS
-(@Value, Name, CreatedDate) SET
-	Value=Cast(@Value as signed);
+TRUNCATE TABLE TransStatus;
+INSERT INTO TransStatus(TransStatusName,StatusValue,Notes,IsTransformed,CreatedDate)
+VALUES('Valid Transaction',0,'',1,'2019-12-11 00:00:00')
+,('Invalid Subscriber',1,'Handle At SP DCS_DC_TransformData_UnhandleSubscriberAction',0,NOW())
+,('Invalid Action Result',2,'Handle At SP DCS_DC_TransformData_UnhandleSubscriberAction',1,NOW())
+,('Invalid Devicode_Empty',4,'Handle At Web: json insert to Raw Master',1,NOW())
+,('Invalid Login Name',8,'Handle At Web:  json insert to Raw Master',0,NOW())
+,('Invalid DI',16,'Handle At Web:  json insert to Raw Master',1,NOW());
 
 #==============================DEPLOY EVENT "EV_DCS_Extra_Account_UpdateLastLogINTime" (Refer GIT: ..\dbscript\DCS_DeviceCaptureSystem\DCS_Extra\Event\..)========================================================
 SHOW Events;
