@@ -65,7 +65,7 @@ CREATE TABLE [dbo].[CustomerClassification_BySport_Log](
 	CreatedTime	DATETIME NOT NULL
 )
 
-CREATE NONCLUSTERED INDEX [IX_CustomerClassification_BySport_Log_CustId_CreatedTime] ON [dbo].[CustomerClassification_BySport_Log]
+CREATE NONCLUSTERED INDEX [IX_CustomerClassification_BySport_Log_CustId_SportGroup_FunctionId] ON [dbo].[CustomerClassification_BySport_Log]
 (
 	CustId,
 	SportGroup,
