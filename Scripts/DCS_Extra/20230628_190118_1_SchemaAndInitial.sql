@@ -100,7 +100,7 @@ CREATE TABLE Association (
   KEY IX_Association_SubscriberID_AccountID_DeviceID_CreatedDate(SubscriberID,AccountID,DeviceID,CreatedDate),
   KEY IX_Association_IsCTSTransformed (IsCTSTransformed),
   KEY IX_Association_DeviceID_AccountID_CreatedDate(DeviceID,AccountID,CreatedDate),
-  KEY KEY_AssociationID (AssociationID)
+  KEY KEY_Association(AssociationID)
 ) ENGINE=InnoDB;
 
 CREATE TABLE Device (
