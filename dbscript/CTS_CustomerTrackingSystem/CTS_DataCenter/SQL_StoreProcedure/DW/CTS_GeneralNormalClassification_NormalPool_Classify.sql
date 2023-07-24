@@ -128,7 +128,7 @@ BEGIN
 
 	CREATE TABLE #tmpBetCount(
 		CustId		INT	PRIMARY KEY,
-		SportId		SMALLINT,
+		SportGroup	SMALLINT,
 		CategoryId	SMALLINT  NOT NULL,
 		BetCount	BIGINT	  NULL
 	);
