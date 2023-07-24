@@ -109,7 +109,7 @@ BEGIN
         ,	tmpAd.AssociatedAccounts
         ,	tmpAd.AssociatedDevices
     FROM Temp_AssociatedDeviceInfo AS tmpAd
-		INNER JOIN DCS_DataCenter.Device AS dv ON dv.DeviceID = tmpAd.DeviceID
+		INNER JOIN DCS_Extra.Device AS dv ON dv.DeviceID = tmpAd.DeviceID
 	ORDER BY dv.CreatedTime DESC;     
     
 END$$

@@ -49,9 +49,7 @@ BEGIN
     FROM Temp_Association AS tmpAss
     ORDER BY tmpAss.CreatedTime ASC
     LIMIT 1;
-	SELECT lv_FirstDeviceID;
-    SELECT dv.FirstDeviceCode FROM DCS_Extra.Device AS dv WHERE dv.DeviceID = lv_FirstDeviceID;
-        SELECT dv.FirstDeviceCode FROM DCS_Extra.Device AS dv WHERE dv.DeviceID = 3260;
+
     SELECT 	COUNT(DISTINCT tmpAs1.DeviceID) AssociatedDevices
 		,	COUNT(DISTINCT ass.AccountID) AS AssociatedAccounts
         ,	MIN(tmpAs1.CreatedTime) AS FirstLogin
@@ -61,4 +59,3 @@ BEGIN
         
 END$$
 DELIMITER ;
-CALL DCS_ET_Association_GetAccountInfoByAccountSubscriberDev(@ip_SubscriberID:=8000001,@ip_AccountID:=5477);
