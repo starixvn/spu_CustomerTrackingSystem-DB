@@ -16,6 +16,7 @@ sp:BEGIN
 		Revisions:	
 			- 20220909@Aries.Nguyen:	Created  [Redmine ID: #176992] 
 			- 20230210@Long.Luu: 		Fix Customer Classification Log [Redmine ID: #183279] 
+            - 20230707@Jonas.Huynh:		Renovate normal classification [Redmine ID: #189875]
             
 		Param's Explanation (filtered by):
 
@@ -47,7 +48,8 @@ sp:BEGIN
 		,	ActionType 			TINYINT 
 		,	LastModifiedDate 	DATETIME 
 		,	LastModifiedBy 		INT UNSIGNED 
-		,	InsertDate 			DATETIME 
+		,	InsertDate 			DATETIME
+        ,	PerformanceTime		DATETIME
 		,	KEY 				IX_Temp_History_CustIDSportID (CustID, SportID)
 	);
     
@@ -93,7 +95,7 @@ sp:BEGIN
 		LEAVE sp; 
 	END IF;
 
-    INSERT INTO Temp_History(ID,CustID,CTSCustID,SportID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate,LastModifiedBy,InsertDate)
+    INSERT INTO Temp_History(ID,CustID,CTSCustID,SportID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate,LastModifiedBy,InsertDate,PerformanceTime)
     SELECT 	ID 					
 		,	CustID 				
 		,	CTSCustID 			
@@ -107,7 +109,8 @@ sp:BEGIN
 		,	ActionType 			
 		,	LastModifiedDate 	
 		,	LastModifiedBy 		
-		,	InsertDate 				 
+		,	InsertDate
+        ,   PerformanceTime
 	FROM CTS_DataCenter.CTSCustomerClassification_BySport_History
     WHERE ID BETWEEN lv_LastID AND lv_NextLastID
         AND InsertDate < lv_DateValid;
@@ -156,7 +159,7 @@ sp:BEGIN
 						WHERE k.ID = h.ID);		
         
         # take back the old log for the new active ones
-        INSERT INTO Temp_History(ID,CustID,CTSCustID,SportID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate,LastModifiedBy,InsertDate )
+        INSERT INTO Temp_History(ID,CustID,CTSCustID,SportID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate,LastModifiedBy,InsertDate,PerformanceTime)
 		SELECT 	h.ID 					
 			,	h.CustID 				
 			,	h.CTSCustID 			
@@ -170,7 +173,8 @@ sp:BEGIN
 			,	h.ActionType 			
 			,	h.LastModifiedDate 	
 			,	h.LastModifiedBy 		
-			,	h.InsertDate 				 		 
+			,	h.InsertDate 	
+            ,	h.PerformanceTime
 		FROM Temp_CustDataShouldBeRemoved AS k
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport_History AS h ON k.CustID = h.CustID AND k.SportID = h.SportID
 		WHERE h.ID < lv_LastID
@@ -195,7 +199,8 @@ sp:BEGIN
 			,	ActionType 			
 			,	LastModifiedDate 	
 			,	LastModifiedBy 		
-			,	InsertDate 		
+			,	InsertDate
+            , 	PerformanceTime
 		FROM Temp_History;
 		
 		UPDATE CTS_DataCenter.SystemParameter

@@ -18,6 +18,7 @@ AS
 	Revisions:
 		- 20230403@Jonas.Huynh: Modify betcount schedule for Normal & Good Member [Redmine ID: #185633]
 		- 20230421@Jonas.Huynh: Realtime Renovation [Redmine ID: #186678]
+		- 20230630@Jonas.Huynh: Normal renovation by Sport [Redmine ID: #189875]
 
 	Param's Explanation:
 		
@@ -55,12 +56,12 @@ BEGIN
 			SET		b.BetCount = a.BetCount
 				,	b.LastScannedDate = @CurrentDateTime
 			FROM #tmpBetCount AS a WITH(NOLOCK)
-				INNER JOIN dbo.CustomerClassification_BySport_BetCount AS b ON b.CustId = a.CustId AND b.SportId = a.SportId
+				INNER JOIN dbo.CustomerClassification_BySport_BetCount AS b ON b.CustId = a.CustId AND b.SportId = a.SportGroup
 
 			INSERT INTO dbo.CustomerClassification_BySport_BetCount(CustId, SportId, BetCount, LastScannedDate)
-			SELECT a.CustId, a.SportId, a.BetCount, @CurrentDateTime
+			SELECT a.CustId, a.SportGroup, a.BetCount, @CurrentDateTime
 			FROM #tmpBetCount AS a WITH(NOLOCK)
-				LEFT JOIN dbo.CustomerClassification_BySport_BetCount AS b WITH(NOLOCK) ON b.CustId = a.CustId AND b.SportId = a.SportId
+				LEFT JOIN dbo.CustomerClassification_BySport_BetCount AS b WITH(NOLOCK) ON b.CustId = a.CustId AND b.SportId = a.SportGroup
 			WHERE b.CustId IS NULL AND b.SportId IS NULL 
 		END;
 END;

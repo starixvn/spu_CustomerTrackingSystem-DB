@@ -17,6 +17,7 @@ BEGIN
 		Original:
 		Revisions:
 			- 20220908@Harvey.Nguyen: Created [Redmine ID: #176992]
+            - 20230707@Jonas.Huynh: Normal Renovation [Redmine ID: #189875]
 
 		Param's Explanation (filtered by):      
 			- CALL CTS_DC_CustClassification_BySport_DailyScan_GetNormal (@op_LastCategoryID, @op_LastCustID);
@@ -45,7 +46,6 @@ BEGIN
     CREATE TEMPORARY TABLE 	Temp_Normal (
             CustID					BIGINT UNSIGNED
 		,	SportID					SMALLINT
-        ,	CurrentCategoryID		SMALLINT
         ,	PRIMARY KEY (CustID, SportID)
 	);
     
@@ -88,8 +88,8 @@ BEGIN
     WHERE CategoryID = lv_LastCategoryID;
   
     SET @sql = CONCAT("
-		INSERT IGNORE INTO Temp_Normal (CustID, SportID, CurrentCategoryID)
-		SELECT 	clss.CustID, clss.SportID, clss.CategoryID
+		INSERT IGNORE INTO Temp_Normal (CustID, SportID)
+		SELECT 	clss.CustID, clss.SportID
 		FROM CTS_DataCenter.CTSCustomerClassification_BySport AS clss USE INDEX(IX_CTSCustomerClassification_BySport_CategoryID_CustID)
 		WHERE clss.CustID > ", lv_LastCustID, " ","
 			AND clss.CategoryID = ", lv_LastCategoryID, " ","
@@ -128,8 +128,8 @@ BEGIN
 		WHERE CategoryID = lv_NextCategoryID;
         
 		SET @sql =  CONCAT("
-		INSERT IGNORE INTO Temp_Normal (CustID, SportID, CurrentCategoryID)
-		SELECT 	clss.CustID, clss.SportID, clss.CategoryID
+		INSERT IGNORE INTO Temp_Normal (CustID, SportID)
+		SELECT 	clss.CustID, clss.SportID
 		FROM CTS_DataCenter.CTSCustomerClassification_BySport AS clss USE INDEX(IX_CTSCustomerClassification_BySport_CategoryID_CustID)
 		WHERE clss.CustID > 0
 			AND clss.CategoryID = ", lv_NextCategoryID," ","
@@ -174,7 +174,8 @@ BEGIN
         SET op_LastCustID = 0;
     END IF;
     
-    SELECT 	CustID, SportID, CurrentCategoryID
+    SELECT 	CustID  AS CustId, 
+			SportID AS SportGroup
     FROM Temp_Normal;
 
 END$$
