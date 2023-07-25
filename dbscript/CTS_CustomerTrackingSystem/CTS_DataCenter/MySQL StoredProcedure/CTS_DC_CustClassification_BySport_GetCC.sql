@@ -14,6 +14,7 @@ BEGIN
 		Original: 
 		Revisions:
 			- 20220909@Harvey.Nguyen: Created [RedmineID: #176992]
+            - 20230725@Jonas.Huynh: Renovate BySport [Redmine ID: #189875]
             
         Param's Explanation:     
         Example:
@@ -23,17 +24,17 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;
     CREATE TEMPORARY TABLE 		Temp_CustInfo (
         	CustID		BIGINT UNSIGNED
-		,	SportID		SMALLINT UNSIGNED	
-        ,	PRIMARY KEY (CustID, SportID)
+		,	SportGroup	SMALLINT UNSIGNED	
+        ,	PRIMARY KEY (CustID, SportGroup)
     );    
     
-    INSERT IGNORE INTO Temp_CustInfo (CustID, SportID)
+    INSERT IGNORE INTO Temp_CustInfo (CustID, SportGroup)
     SELECT DISTINCT temp.CustID
-                , 	temp.SportID
+                , 	temp.SportGroup
 	 FROM JSON_TABLE(ip_Custs,
 		"$[*]" COLUMNS(
 				CustID 				BIGINT UNSIGNED		PATH "$.CustID"	
-            , 	SportID				SMALLINT UNSIGNED	PATH "$.SportID"		
+            , 	SportGroup			SMALLINT UNSIGNED	PATH "$.SportGroup"		
 		 )) AS 	temp;              
          
 	SELECT clss.CustID
@@ -42,7 +43,7 @@ BEGIN
 		,IFNULL(cate.CustomerClass, - 1) AS CustomerClass
 		,cate.CustomerClassName
 	FROM Temp_CustInfo temp
-		INNER JOIN CTSCustomerClassification_BySport clss ON temp.CustID = clss.CustID AND temp.SportID = clss.SportID
+		INNER JOIN CTSCustomerClassification_BySport clss ON temp.CustID = clss.CustID AND temp.SportGroup = clss.SportID
 		INNER JOIN CustomerCategory cate ON cate.CategoryID = clss.CategoryID;
 
 END$$
