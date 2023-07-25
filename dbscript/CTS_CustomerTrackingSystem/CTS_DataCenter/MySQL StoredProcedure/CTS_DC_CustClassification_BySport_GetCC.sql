@@ -18,7 +18,7 @@ BEGIN
             
         Param's Explanation:     
         Example:
-			- CALL CTS_DataCenter.CTS_DC_CustClassification_BySport_GetCC('1,2,1277,555555');
+			- CALL CTS_DataCenter.CTS_DC_CustClassification_BySport_GetCC('[{"CustID": "1", "SportGroup":43}]');
 	*/ 
 
     DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;
