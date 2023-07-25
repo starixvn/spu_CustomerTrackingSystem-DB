@@ -22,6 +22,7 @@ ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_TicketDetails]
 	,	@ListScore					VARCHAR(MAX) = NULL
 	,	@FromStakeRM				MONEY = NULL
 	,	@ToStakeRM					MONEY = NULL
+	,	@BetID						BIGINT = 0
 	,	@MinSequenceIDTotalAll		BIGINT = NULL OUTPUT
 	
 	
@@ -49,7 +50,8 @@ AS
 		- 20230602@Long.Luu:	Add new agent as internal account [Redmine ID: #188554]
 		- 20230607@Long.Luu:	Exclude more Saba's LeagueGroupID [Redmine ID: #189439]
 		- 20230601@Victoria.Le	Show all tickets [Redmine ID: #185793]
-		- 20230721@Victoria.Le	Get CurrencyName from table Exchange [Redmine ID: #191401]
+		- 20230721@Victoria.Le	Get CurrencyName from table Exchange [Redmine ID: #191422]
+		- 20230724@Victoria.Le	Add condition BetID with BetType = Quarter X HDP/OU/MoneyLine [Redmine ID: #191703]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize)
@@ -454,6 +456,7 @@ BEGIN
 						AND b.bettype = @BetType
 						AND b.sequenceid < @LastScannedSequenceID
 						AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
+						AND (@BetID = 0 OR (@BetID > 0 AND @BetType IN (609,610,612) AND b.betid = @BetID))
 						AND t.TransId IS NULL;
 				END
 			ELSE 
@@ -498,6 +501,7 @@ BEGIN
 						AND b.bettype = @BetType
 						AND b.sequenceid < @LastScannedSequenceID
 						AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
+						AND (@BetID = 0 OR (@BetID > 0 AND @BetType IN (609,610,612) AND b.betid = @BetID))
 					ORDER BY b.sequenceid DESC;
 
 					SET @MinSequenceIDTotalAll = (SELECT MIN(SequenceId) FROM #tmpTickets);
