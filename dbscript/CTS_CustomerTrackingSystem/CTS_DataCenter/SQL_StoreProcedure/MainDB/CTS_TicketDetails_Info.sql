@@ -9,6 +9,7 @@ CREATE PROCEDURE [dbo].[CTS_TicketDetails_Info]
 	,	@BetType					SMALLINT = 0
 	,	@IsLive						BIT = 0
 	,	@IsExclTestCurr				BIT = 0
+	,	@BetID						BIGINT = 0
 	,	@MaxSequenceId				BIGINT OUTPUT
 	,	@TotalTicketAll				BIGINT OUTPUT
 	,	@TotalTicketLicensee		BIGINT OUTPUT
@@ -22,16 +23,19 @@ AS
 
 	Revisions:
 		- 20230601@Victoria.Le:			Initial Writing [Redmine ID: #185793]		
-		- 20230721@Victoria.Le:			Get CurrencyName from table Exchange [Redmine ID: #191401]
-
+		- 20230721@Victoria.Le:			Get CurrencyName from table Exchange [Redmine ID: #191422]
+		- 20230724@Victoria.Le:			Add condition BetID with BetType = Quarter X HDP/OU/MoneyLine [Redmine ID: #191703]
+		
 	Params Explaination:
 
 	Example:
 		DECLARE @MaxSequenceId BIGINT,@TotalTicketAll BIGINT,@TotalTicketLicensee BIGINT,@TotalTicketCredit BIGINT;
 		EXEC [dbo].[CTS_TicketDetails_Info] 
-			70095972
-		,	7
-		,	1
+			70095972 -- @MatchID
+		,	7 -- @BetType
+		,	1 -- @IsLive
+		,	0 -- @IsExclTestCurr
+		,	0 -- @BetID
 		,	@MaxSequenceId OUTPUT
 		,	@TotalTicketAll OUTPUT
 		,	@TotalTicketLicensee OUTPUT
@@ -133,7 +137,8 @@ BEGIN
 	WHERE b.matchid = @MatchID
 		AND b.bettype = @BetType
 		AND b.liveindicator = @IsLive
-		AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)));
+		AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
+		AND (@BetID = 0 OR (@BetID > 0 AND @BetType IN (609,610,612) AND b.betid = @BetID));
 
 	UPDATE t WITH(ROWLOCK, UPDLOCK)
 	SET t.IsLicensee = 1
