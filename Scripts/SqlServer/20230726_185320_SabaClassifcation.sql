@@ -23,7 +23,12 @@ CREATE NONCLUSTERED INDEX [IX_CustomerClassification_BySport_LatestActiveDay_Las
 )
 GO
 
--- #2. Add Rules
+-- #2. Add Priority
+INSERT INTO [dbo].[CustomerClassification_BySport_Priority] (GroupId, GroupName, FunctionId, FunctionName, [Priority]) 
+VALUES (1, 'ByFlow', 4, 'New Customer', 20)
+GO
+
+-- #3. Add Rules
 -- NEW
 INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount) 
 VALUES (1, 145, 201, 'New', 6, 0, 20);
