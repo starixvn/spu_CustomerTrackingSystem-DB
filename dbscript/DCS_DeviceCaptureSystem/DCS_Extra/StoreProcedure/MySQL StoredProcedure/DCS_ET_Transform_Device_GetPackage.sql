@@ -29,7 +29,9 @@ BEGIN
     DECLARE		lv_FromCreatedDate	DATE;
     DECLARE		lv_GroupLookup	    VARCHAR(128);
     DECLARE		lv_KeyLookup		VARCHAR(128);
+    DECLARE		lv_Now				DATETIME(3);
 
+    SET lv_Now = CURRENT_TIMESTAMP(3);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Trans;
     CREATE TEMPORARY TABLE Temp_Trans(	
@@ -44,8 +46,7 @@ BEGIN
     SET lv_GroupLookup 	    = 'DCS_Device_Transform';
     SET lv_KeyLookup 		= 'MinTransId';
     SET lv_FromTransID 	    = IFNULL((SELECT CAST(VValue AS UNSIGNED) FROM DCS_Extra.SystemSetting WHERE VGroup=lv_GroupLookup AND VName=lv_KeyLookup), 0);
-    
-
+   
 	SET @RowId = 0;
     INSERT INTO Temp_Trans (TransID, CreatedDate, BatchID)
     SELECT  TransID
@@ -61,6 +62,23 @@ BEGIN
 		LIMIT lv_TotalRecord
     ) AS t;
 	
+    SET lv_FromCreatedDate = (SELECT MIN(CreatedDate) FROM Temp_Trans);
+    SET lv_FromTransID = (SELECT MIN(TransID) FROM Temp_Trans);
+    
+    IF EXISTS(SELECT 1 FROM Temp_Trans) THEN 
+		# Udpate DCS_Device_Transfor > MinTransId
+		UPDATE DCS_Extra.SystemSetting
+        SET VValue = lv_FromTransID
+			, UpdatedTime = lv_Now
+        WHERE ID = 1;
+        
+        # Udpate DCS_Device_Transfor > MinCreatedDate
+		UPDATE DCS_Extra.SystemSetting
+        SET VValue = lv_FromCreatedDate
+			, UpdatedTime = lv_Now
+        WHERE ID = 2; 
+    END IF;
+    /*
     SET lv_FromTransID = IFNULL((SELECT MIN(TransID) FROM Temp_Trans), lv_FromTransID); 
     SET lv_FromCreatedDate = IFNULL((SELECT MIN(CreatedDate) FROM Temp_Trans), date_add(CURRENT_TIMESTAMP(), INTERVAL -2 WEEK));
 
@@ -81,7 +99,7 @@ BEGIN
 	ON DUPLICATE KEY UPDATE  VValue = t.VValue
                            , UpdatedTime = t.UpdatedTime;
 
-    
+    */
     #RETURN OUTPUT
     SELECT  TransID
         ,   BatchID
