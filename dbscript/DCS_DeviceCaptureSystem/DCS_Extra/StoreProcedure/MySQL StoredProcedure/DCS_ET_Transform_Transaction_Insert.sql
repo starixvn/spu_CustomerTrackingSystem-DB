@@ -29,14 +29,13 @@ BEGIN
 			- 20211129@Casey.Huynh: Remove FingerprintMoreInfo Column [Redmine ID: #165167]
 			- 20230323@Terry.Nguyen: Get InsertTime from RawTransaction [Redmine Id: #185185]
 			- 20230426@Jonathan.Doan: Get BotDetectionValue from RawTransaction [Redmine ID: #186644]
-            - 2023292023@Casey.Huynh: CTMAX, Velki, Remove insert into CTSCustomerLastLoginTimeProcess [RedmineID: #190118]
+            - 2023292023@Casey.Huynh: CTMAX, Velki, Remove insert into CTSCustomerLastLoginTimeProcess and enhance Performance [RedmineID: #190118]
             
 	    Param's Explanation (filtered by):
 		Example:
 			CALL DCS_ET_Transform_Transaction_Insert(1,200);
     */
-	DECLARE		lv_SysMinCreatedDate	DATETIME;
-    
+	DECLARE		lv_SysMinCreatedDate	DATETIME;    
 
     DROP TEMPORARY TABLE IF EXISTS Temp_RawTransaction;
 	CREATE TEMPORARY TABLE IF NOT EXISTS Temp_RawTransaction (
@@ -61,6 +60,10 @@ BEGIN
         ,   FingerprintCode		    VARCHAR(620)
         ,   BotDetectionValue		BIT(20)
         ,   BotComponentID			BIGINT UNSIGNED
+        
+		,	PRIMARY KEY (TransID)
+        ,	INDEX IX_Temp_RawTransaction_SubscriberID_LoginName(SubscriberID, LoginName)
+        ,	INDEX IX_Temp_RawTransaction_AccountID(AccountID)
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_RawTransactionInfo;
@@ -68,16 +71,10 @@ BEGIN
 		    TransID		    BIGINT UNSIGNED NOT NULL
 		,   URLID			INT 
         ,   AccountID		BIGINT	UNSIGNED
-        ,   INDEX           IX_Temp_RawTransactionInfo_TransID(TransID)
+        
+        ,   PRIMARY KEY (TransID)
     );
 
-    DROP TEMPORARY TABLE IF EXISTS Temp_Account;
-	CREATE TEMPORARY TABLE  Temp_Account(
-		    LoginName				VARCHAR(100) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NOT NULL
-		,   SubscriberID			INT 
-        ,   SubscriberType		    TINYINT	UNSIGNED	
-    );
-    
 	DROP TEMPORARY TABLE IF EXISTS Temp_LastLoginTime;
     CREATE TEMPORARY TABLE Temp_LastLoginTime(
 		    SubscriberID	INT
@@ -125,6 +122,21 @@ BEGIN
 	GROUP BY trt.SubscriberID
         ,    trt.URLDetails;    
     
+    #=============ACCOUNT=============================
+    # Update Exsting AccountID to Temp_Transaction
+    INSERT INTO Temp_RawTransactionInfo(TransID, AccountID, URLID)
+    SELECT  trt.TransID
+        ,   ac.AccountID
+        ,   ur.URLID
+    FROM Temp_RawTransaction AS trt
+        INNER JOIN	DCS_Extra.Account AS ac ON trt.SubscriberID = ac.SubscriberID  AND trt.LoginName = ac.LoginName
+	    LEFT JOIN	DCS_Extra.URL	AS ur ON trt.URLDetails = ur.URLDetails;
+    
+    UPDATE Temp_RawTransaction AS trt
+        INNER JOIN	Temp_RawTransactionInfo AS info ON trt.TransID = info.TransID  
+    SET     trt.AccountID = info.AccountID
+	    ,   trt.URLID = info.URLID;  
+        
 	# Insert New Account
     INSERT IGNORE INTO DCS_Extra.Account(LoginName, SubscriberID, SubscriberType, CreatedDate, InsertTime, CreatedTime, LastLoginTime)
     SELECT  trt.LoginName
@@ -135,7 +147,7 @@ BEGIN
         ,   MIN(trt.TransTime) AS CreatedTime
         ,   MAX(trt.TransTime) AS LastLoginTime
     FROM Temp_RawTransaction AS trt
-    WHERE NOT EXISTS (SELECT 1 FROM DCS_Extra.Account AS acc  where trt.LoginName = acc.LoginName and trt.SubscriberID = acc.SubscriberID)
+    WHERE trt.AccountID IS NULL
     GROUP BY trt.SubscriberID
         ,    trt.LoginName
         ,    trt.SubscriberType;
@@ -147,12 +159,14 @@ BEGIN
         ,   ur.URLID
     FROM Temp_RawTransaction AS trt
         INNER JOIN	DCS_Extra.Account AS ac ON trt.SubscriberID = ac.SubscriberID  AND trt.LoginName = ac.LoginName
-	    LEFT JOIN	DCS_Extra.URL	AS ur ON trt.URLDetails = ur.URLDetails;
-
+	    LEFT JOIN	DCS_Extra.URL	AS ur ON trt.URLDetails = ur.URLDetails
+	WHERE trt.AccountID IS NULL;
+	
     UPDATE Temp_RawTransaction AS trt
         INNER JOIN	Temp_RawTransactionInfo AS info ON trt.TransID = info.TransID  
     SET     trt.AccountID = info.AccountID
-	    ,   trt.URLID = info.URLID;   
+	    ,   trt.URLID = info.URLID
+	WHERE trt.AccountID IS NULL;  
     
     #Remove Temp Trans If AccountID Is NULL
     DELETE 	trt
@@ -193,7 +207,6 @@ BEGIN
         ,   trt.BotDetectionValue
         ,   trt.BotComponentID
 	FROM Temp_RawTransaction AS trt;	
-
     #================================================================
     
 	INSERT IGNORE INTO DCS_Extra.ProcessedTransaction( LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent , IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID, InsertTime, BotDetectionValue, BotComponentID)
