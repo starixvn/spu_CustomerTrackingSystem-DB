@@ -7,6 +7,23 @@
 USE [bodb_VR2Model]
 GO
 
+-- #1. New table [CustomerClassification_BySport_LatestActiveDay]
+CREATE TABLE [dbo].[CustomerClassification_BySport_LatestActiveDay](
+	CustId		  INT,
+	SportGroup	  SMALLINT,	
+	LastTransDate DATE	   NOT NULL,
+	LastTransTime DATETIME NOT NULL,
+	CreatedTime	  DATETIME NOT NULL,
+	PRIMARY KEY(CustId, SportGroup)
+)
+
+CREATE NONCLUSTERED INDEX [IX_CustomerClassification_BySport_LatestActiveDay_LastTransDate] ON [dbo].[CustomerClassification_BySport_LatestActiveDay]
+(
+	LastTransDate ASC
+)
+GO
+
+-- #2. Add Rules
 -- NEW
 INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount) 
 VALUES (1, 145, 201, 'New', 6, 0, 20);
@@ -158,3 +175,9 @@ VALUES (30, 912, 204, 'Risky', 1, 206, 25, 3000, 3); --PROBATION
 
 INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin)
 VALUES (30, 912, 204, 'Risky', 1, 203, 25, 3000, 3); --SMART 
+GO
+
+GRANT SELECT ON [dbo].[CustomerClassification_BySport_LatestActiveDay] TO [bodbSPUNet]
+GO
+GRANT VIEW DEFINITION ON [dbo].[CustomerClassification_BySport_LatestActiveDay] TO [bodbSPUNet]
+GO
