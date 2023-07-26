@@ -15,6 +15,7 @@ AS
 		- 20230601@Jonas.Huynh: Normal Renovation (Phase2) [Redmine ID: #186684]
 		- 20230627@Jonas.Huynh: Reset Balance for Credit with Inactive Normal with new place-bet [Redmine ID: #189876]
 		- 20230807@Jonas.Huynh: HF exclude Non-sport for General [Redmine ID: #192388]
+		- 20230726@Jonas.Huynh: Saba Classification [Redmine ID: #185320]
 
 	Param's Explanation:
 		@CustomersXML	 : This parameter is used to classify customer perf which bases on currentCategory
@@ -47,6 +48,9 @@ BEGIN
 			@CATEGORY_RISKY			 SMALLINT = 204,
 			@CATEGORY_GOODMEMBER	 SMALLINT = 205,
 			@CATEGORY_PROBATION		 SMALLINT = 206;
+
+	DECLARE @SportGroup_SabaVRSoccer	 TINYINT = 145,
+			@SportGroup_SabaVRBasketball TINYINT = 912;
 
 	DECLARE @ListCustIds			 VARCHAR(MAX);
 
@@ -182,8 +186,8 @@ BEGIN
 
 	DELETE a WITH (ROWLOCK)
 	FROM #tmpRawData AS a
-	WHERE a.SportGroup IN (@SportGroup_NonSport);
-	
+	WHERE a.SportGroup IN (@SportGroup_NonSport, @SportGroup_SabaVRSoccer, @SportGroup_SabaVRBasketball);
+		
 	-- #5: Calculate accumulated customer performance data
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays, PerformanceTime)
 	SELECT a.CustId,
@@ -305,7 +309,7 @@ BEGIN
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
 	SELECT a.CustId
 		,  @GENERAL_SPORTID
-		,  CASE WHEN a.CurrentCategoryId IN (@CATEGORY_SMARTPUNTER, @CATEGORY_RISKY, @CATEGORY_PROBATION) THEN @CATEGORY_SMARTINACTIVE ELSE @CATEGORY_NORMALINACTIVE END AS CategoryId
+		,  CASE WHEN a.CurrentCategoryId IN (@CATEGORY_SMARTPUNTER, @CATEGORY_RISKY, @CATEGORY_PROBATION, @CATEGORY_SMARTINACTIVE) THEN @CATEGORY_SMARTINACTIVE ELSE @CATEGORY_NORMALINACTIVE END AS CategoryId
 		,  @ToDate AS CreatedDate
 		,  @CurrentDateTime AS CreatedTime
 		,  a.TurnoverRM
