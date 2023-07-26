@@ -16,6 +16,7 @@ AS
 
 	Revisions:
 		- 20230630@Jonas.Huynh: Created [Redmine ID: #189875]
+		- 20230726@Jonas.Huynh: Saba Classification [Redmine ID: #185320]
 
 	Param's Explanation:
 		@CustomersXML	 : This parameter is used to classify customer perf which bases on currentCategory
@@ -62,6 +63,7 @@ BEGIN
 		CurrentCategoryId      SMALLINT NOT NULL,
 		IsCheckBetCount		   BIT	    NOT NULL DEFAULT 0,
 		IsProbationLastDay	   BIT		NOT NULL DEFAULT 0,
+		IsPlaceBetWithin30Days BIT		NOT NULL DEFAULT 0,
 		PRIMARY KEY (CustId, SportGroup)
 	);
 
@@ -177,7 +179,7 @@ BEGIN
 	WHERE r.BetCount = 0;
 	
 	-- #5: Calculate accumulated customer performance data
-	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, SportGroup, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays, WinDaysRate, PerformanceTime)
+	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, SportGroup, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays, WinDaysRate, PerformanceTime, CurrentCategoryId, IsCheckBetCount, IsProbationLastDay)
 	SELECT a.CustId,
 		   a.SportGroup,
 		   a.TurnoverRM,
@@ -186,17 +188,19 @@ BEGIN
 		   a.BetCount,
 		   a.ActiveDaysSportGroup,
 		   CASE WHEN  a.ActiveDaysSportGroup = 0 THEN 0 ELSE ((a.WinDaysSportGroup * 1.0) / a.ActiveDaysSportGroup) * 100 END,
-		   a.ProcessedTime
+		   a.ProcessedTime,
+		   c.CurrentCategoryId,
+		   c.IsCheckBetCount,
+		   c.IsProbationLastDay				
 	FROM #tmpRawData AS a
 		INNER JOIN #tmpCustomers AS c ON c.CustId = a.CustId AND c.SportGroup = a.SportGroup;
 
 	-- #6: Mapping customer info
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
-	SET a.CurrentCategoryId = c.CurrentCategoryId,
-		a.IsCheckBetCount = c.IsCheckBetCount,
-		a.IsProbationLastDay = c.IsProbationLastDay
-	FROM #tmpCustomerAccummulatedInfo AS a
-		INNER JOIN #tmpCustomers AS c ON a.CustId = c.custid AND a.SportGroup = c.SportGroup;
+	SET a.IsPlaceBetWithin30Days = 1
+	FROM #tmpCustomers AS a
+		INNER JOIN dbo.CustomerClassification_BySport_LatestActiveDay AS c WITH(NOLOCK) ON a.CustId = c.CustId AND a.SportGroup = c.SportGroup
+	WHERE c.LastTransDate >= @From30Date;
 
 	-- #7: Remove accounts with settle bet count has not reach the schedule (FOR REALTIME ONLY)
 	---- less than 100 settle tickets compared to last scan for Good Member
@@ -246,8 +250,24 @@ BEGIN
 	FROM #tmpCustomerAccummulatedInfo AS a
 		INNER JOIN #tmpRelatedCustInfo AS c WITH(NOLOCK) ON c.custid = a.CustId;
 
+	-- #10: Classify customer without performance 
+	INSERT INTO dbo.CustomerClassification_BySport(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
+	SELECT t.CustId
+		,  t.SportGroup
+		,  @CATEGORY_NEWMEMBER
+		,  @ToDate
+		,  @CurrentDateTime
+		,  NULL
+		,  NULL
+		,  NULL
+		,  NULL
+		,  @CurrentDateTime
+	FROM #tmpCustomers AS t
+	WHERE t.CurrentCategoryId = @CATEGORY_NULL 
+		AND t.IsPlaceBetWithin30Days = 1
+		AND NOT EXISTS (SELECT 1 FROM #tmpCustomerAccummulatedInfo AS c WHERE c.CustId = t.CustId AND c.SportGroup = t.SportGroup);
 
-	-- #10: Classify classification by general rule
+	-- #11: Classify classification by general rule
 	UPDATE t WITH(ROWLOCK, UPDLOCK)
 	SET t.NewCategoryId = b.CategoryId
 	FROM (
@@ -261,29 +281,40 @@ BEGIN
 					OR (r.RuleGroupId = 2 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM > r.WinlossRM)												-- NEW MEMBER	
 					OR (r.RuleGroupId = 3 AND a.BetCount > r.BetCount AND a.Margin < r.Margin AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays)													-- GOOD
 					OR (r.RuleGroupId = 4 AND (a.IsSpecialSite IS NULL OR a.IsSpecialSite = r.IsSpecialSite) AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin < r.Margin2)					-- NORMAL
-					OR (r.RuleGroupId = 5 AND (a.IsSpecialSite IS NULL OR a.IsSpecialSite = r.IsSpecialSite) AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND NOT (a.BetCount > r.BetCount2 AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays))	-- NORMAL
+					OR (r.RuleGroupId = 5 AND (a.IsSpecialSite IS NULL OR a.IsSpecialSite = r.IsSpecialSite) AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND NOT (a.BetCount > r.BetCount2 AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays))-- NORMAL
 					OR (r.RuleGroupId = 6 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM <= r.WinlossRM)											-- NORMAL
 					OR (r.RuleGroupId = 7 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM < r.WinlossRM)													-- NORMAL
 					OR (r.RuleGroupId = 8 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.WinlossRM <= r.WinlossRM)			-- PROBATION
 					OR (r.RuleGroupId = 9 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.WinlossRM <= r.WinlossRM)			-- PROBATION
 					OR (r.RuleGroupId = 10 AND a.CurrentCategoryId = r.CurrentCategory AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin)										-- PROBATION
 					OR (r.RuleGroupId = 11 AND a.CurrentCategoryId = r.CurrentCategory AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM >= r.WinlossRM)		-- PROBATION
-					OR (r.RuleGroupId = 12 AND a.CurrentCategoryId = r.CurrentCategory AND (r.IsProbationLastDay IS NULL OR (r.IsProbationLastDay IS NOT NULL AND a.IsProbationLastDay = r.IsProbationLastDay)) AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)			-- SMART
-					OR (r.RuleGroupId = 13 AND a.CurrentCategoryId = r.CurrentCategory AND (r.IsProbationLastDay IS NULL OR (r.IsProbationLastDay IS NOT NULL AND a.IsProbationLastDay = r.IsProbationLastDay)) AND a.BetCount >= r.BetCount AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM AND a.WinlossRM <= r.WinlossRM2)		-- SMART
+					OR (r.RuleGroupId = 12 AND a.CurrentCategoryId = r.CurrentCategory AND (r.IsProbationLastDay IS NULL OR a.IsProbationLastDay = r.IsProbationLastDay) AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)-- SMART
+					OR (r.RuleGroupId = 13 AND a.CurrentCategoryId = r.CurrentCategory AND (r.IsProbationLastDay IS NULL OR a.IsProbationLastDay = r.IsProbationLastDay) AND a.BetCount >= r.BetCount AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM AND a.WinlossRM <= r.WinlossRM2)-- SMART
 					OR (r.RuleGroupId = 14 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM AND a.WinlossRM <= r.WinlossRM2)		-- SMART
 					OR (r.RuleGroupId = 15 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM AND a.WinlossRM <= r.WinlossRM2)									-- SMART
 					OR (r.RuleGroupId = 16 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.WinlossRM > r.WinlossRM)										-- SMART
-					OR (r.RuleGroupId = 17 AND a.CurrentCategoryId = r.CurrentCategory AND (r.IsProbationLastDay IS NULL OR (r.IsProbationLastDay IS NOT NULL AND a.IsProbationLastDay = r.IsProbationLastDay)) AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)										-- RISKY
+					OR (r.RuleGroupId = 17 AND a.CurrentCategoryId = r.CurrentCategory AND (r.IsProbationLastDay IS NULL OR a.IsProbationLastDay = r.IsProbationLastDay) AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)-- RISKY
 					OR (r.RuleGroupId = 18 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM)																	-- RISKY
 					OR (r.RuleGroupId = 19 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount > r.BetCount AND a.Margin > r.Margin)	
-					OR (r.RuleGroupId = 20 AND a.CurrentCategoryId = r.CurrentCategory AND (r.IsProbationLastDay IS NULL OR (r.IsProbationLastDay IS NOT NULL AND a.IsProbationLastDay = r.IsProbationLastDay)) AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM AND a.WinDaysRate > r.WinDaysRate)	-- SMART
+					OR (r.RuleGroupId = 20 AND a.CurrentCategoryId = r.CurrentCategory AND (r.IsProbationLastDay IS NULL OR a.IsProbationLastDay = r.IsProbationLastDay) AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM AND a.WinDaysRate > r.WinDaysRate)-- SMART
 					OR (r.RuleGroupId = 21 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM <= r.WinlossRM AND a.WinDaysRate > r.WinDaysRate)	 -- SMART
-					OR (r.RuleGroupId = 22 AND a.CurrentCategoryId = r.CurrentCategory AND (r.IsProbationLastDay IS NULL OR (r.IsProbationLastDay IS NOT NULL AND a.IsProbationLastDay = r.IsProbationLastDay)) AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM AND a.WinDaysRate > r.WinDaysRate)	 -- RISKY																		-- RISKY
+					OR (r.RuleGroupId = 22 AND a.CurrentCategoryId = r.CurrentCategory AND (r.IsProbationLastDay IS NULL OR a.IsProbationLastDay = r.IsProbationLastDay) AND a.Margin > r.Margin AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM AND a.WinDaysRate > r.WinDaysRate)-- RISKY
+					OR (r.RuleGroupId = 23 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin <= r.Margin AND a.BetCount >= r.BetCount AND a.ActiveDays >= r.ActiveDays)									-- GOOD
+					OR (r.RuleGroupId = 24 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount >= r.BetCount AND a.WinlossRM <= r.WinlossRM AND a.ActiveDays >= r.ActiveDays)							-- GOOD
+					OR (r.RuleGroupId = 25 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)																-- NORMAL
+					OR (r.RuleGroupId = 26 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount >= r.BetCount AND a.WinlossRM < r.WinlossRM AND a.Margin >= r.Margin AND a.Margin <= r.Margin2)			-- PROBATION
+					OR (r.RuleGroupId = 27 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount >= r.BetCount AND a.WinlossRM < r.WinlossRM AND a.Margin > r.Margin)										-- PROBATION
+					OR (r.RuleGroupId = 28 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount >= r.BetCount AND a.WinlossRM < r.WinlossRM AND a.Margin >= r.Margin)										-- PROBATION
+					OR (r.RuleGroupId = 29 AND a.CurrentCategoryId = r.CurrentCategory AND (r.IsProbationLastDay IS NULL OR a.IsProbationLastDay = r.IsProbationLastDay) AND a.BetCount >= r.BetCount AND a.WinlossRM >= r.WinlossRM AND a.Margin >= r.Margin AND a.Margin <= r.Margin2)-- SMART
+					OR (r.RuleGroupId = 30 AND a.CurrentCategoryId = r.CurrentCategory AND (r.IsProbationLastDay IS NULL OR a.IsProbationLastDay = r.IsProbationLastDay) AND a.BetCount >= r.BetCount AND a.WinlossRM >= r.WinlossRM AND a.Margin > r.Margin)			-- RISKY
+					OR (r.RuleGroupId = 31 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount >= r.BetCount AND a.Margin > r.Margin AND a.Margin < r.Margin2)											-- NORMAL
+
+
 		) AS b
 		INNER JOIN #tmpCustomerAccummulatedInfo AS t ON t.CustId = b.CustId AND t.SportGroup = b.SportGroup
 	 WHERE b.RowNum = 1;
 
-	--#11: Insert to CustomerClassification BySport
+	--#12: Insert to CustomerClassification BySport
 	INSERT INTO dbo.CustomerClassification_BySport(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
 	OUTPUT INSERTED.CustId, INSERTED.SportId, INSERTED.CategoryId, INSERTED.BetCount INTO #tmpBetCount  
 	SELECT  a.CustId
@@ -299,8 +330,7 @@ BEGIN
 		,  ISNULL(a.PerformanceTime, @CurrentDateTime)
 	FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 
-	
-	-- #12: Update last settle betcounts
+	-- #13: Update last settle betcounts
 	EXEC dbo.CTS_NormalClassification_BetCount_Update @CurrentDateTime = @CurrentDateTime, @IsGeneralFlow = 0;
 
 	DROP TABLE #tmpCustomerAccummulatedInfo;

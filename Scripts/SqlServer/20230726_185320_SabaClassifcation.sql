@@ -45,11 +45,11 @@ INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, C
 VALUES (24, 912, 205, 'Good', 5, 200, -5, 8);
 
 -- NORMAL
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, IsSpecialSite, BetCount, Margin, Margin2) 
-VALUES (4, 145, 202, 'Normal', 4, NULL, 20, -2, 0);
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, BetCount, Margin, Margin2) 
+VALUES (31, 145, 202, 'Normal', 4, NULL, 20, -2, 0);
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, IsSpecialSite, BetCount, Margin, Margin2) 
-VALUES (4, 912, 202, 'Normal', 4, NULL, 15, -3, 0);
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, BetCount, Margin, Margin2) 
+VALUES (31, 912, 202, 'Normal', 4, NULL, 15, -3, 0);
 
 INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, IsSpecialSite, BetCount, WinlossRM) 
 VALUES (25, 145, 202, 'Normal', 4, NULL, 20, -2, 0);
