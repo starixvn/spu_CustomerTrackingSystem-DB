@@ -33,9 +33,9 @@ UPDATE r
 SET r.RuleGroupId = CASE r.RuleGroupId
 						WHEN 3 THEN 100
 						WHEN 4 THEN 200
-						WHEN 5 THEN 202
-						WHEN 6 THEN 203
-						WHEN 7 THEN 204
+						WHEN 5 THEN 201
+						WHEN 6 THEN 202
+						WHEN 7 THEN 203
 						WHEN 8 THEN 300
 						WHEN 9 THEN 302
 						WHEN 10 THEN 304
@@ -71,23 +71,23 @@ INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, C
 VALUES (101, 912, 205, 'Good', 5, 150, -3, 8);
 
 INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, BetCount, WinlossRM, ActiveDays) 
-VALUES (102, 145, 205, 'Good', 5, 200, -20, 8);
+VALUES (102, 145, 205, 'Good', 5, 200, -20000, 8);
 
 INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, BetCount, WinlossRM, ActiveDays) 
-VALUES (102, 912, 205, 'Good', 5, 200, -5, 8);
+VALUES (102, 912, 205, 'Good', 5, 200, -5000, 8);
 
 -- NORMAL
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, BetCount, Margin, Margin2) 
-VALUES (201, 145, 202, 'Normal', 4, 20, -2, 0);
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, BetCount, BetCount2, Margin, ActiveDays) 
+VALUES (204, 145, 202, 'Normal', 4, 20, 200, -2, 8);
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, BetCount, Margin, Margin2) 
-VALUES (201, 912, 202, 'Normal', 4, 15, -3, 0);
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, BetCount, BetCount2, Margin, ActiveDays) 
+VALUES (204, 912, 202, 'Normal', 4, 15, 150, -3, 8);
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, IsSpecialSite, BetCount, WinlossRM) 
-VALUES (205, 145, 202, 'Normal', 4, 20, -2, 0);
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, BetCount, BetCount2, WinlossRM, ActiveDays) 
+VALUES (205, 145, 202, 'Normal', 4, 20, 200, -20000, 8);
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, IsSpecialSite, BetCount, WinlossRM) 
-VALUES (205, 912, 202, 'Normal', 4, 15, -3, 0);
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, BetCount, BetCount2, WinlossRM, ActiveDays) 
+VALUES (205, 912, 202, 'Normal', 4, 15, 200, -5000, 8);
 
 -- PROBATION
 INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, Margin2)

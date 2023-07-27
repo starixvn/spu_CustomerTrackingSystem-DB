@@ -283,15 +283,15 @@ BEGIN
 					OR (r.RuleGroupId = 2 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM > r.WinlossRM)	
 					-- Good	
 					OR (r.RuleGroupId = 100 AND a.BetCount > r.BetCount AND a.Margin < r.Margin AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays)							
-					OR (r.RuleGroupId = 101 AND a.CurrentCategoryId = r.CurrentCategory AND a.Margin <= r.Margin AND a.BetCount >= r.BetCount AND a.ActiveDays >= r.ActiveDays)							
+					OR (r.RuleGroupId = 101 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount >= r.BetCount AND a.Margin <= r.Margin  AND a.ActiveDays >= r.ActiveDays)							
 					OR (r.RuleGroupId = 102 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount >= r.BetCount AND a.WinlossRM <= r.WinlossRM AND a.ActiveDays >= r.ActiveDays)							
 					-- Normal
-					OR (r.RuleGroupId = 200 AND (a.IsSpecialSite IS NULL OR a.IsSpecialSite = r.IsSpecialSite) AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin < r.Margin2)				
-					OR (r.RuleGroupId = 201 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount >= r.BetCount AND a.Margin > r.Margin AND a.Margin < r.Margin2)		
-					OR (r.RuleGroupId = 202 AND (a.IsSpecialSite IS NULL OR a.IsSpecialSite = r.IsSpecialSite) AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND NOT (a.BetCount > r.BetCount2 AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays))
-					OR (r.RuleGroupId = 203 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM <= r.WinlossRM)											
-					OR (r.RuleGroupId = 204 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM < r.WinlossRM)												
-					OR (r.RuleGroupId = 205 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)																
+					OR (r.RuleGroupId = 200 AND (a.IsSpecialSite IS NULL OR a.IsSpecialSite = r.IsSpecialSite) AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin < r.Margin2)						
+					OR (r.RuleGroupId = 201 AND (a.IsSpecialSite IS NULL OR a.IsSpecialSite = r.IsSpecialSite) AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND NOT (a.BetCount > r.BetCount2 AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays))
+					OR (r.RuleGroupId = 202 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM <= r.WinlossRM)											
+					OR (r.RuleGroupId = 203 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM < r.WinlossRM)												
+					OR (r.RuleGroupId = 204 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount >= r.BetCount AND NOT (a.BetCount >= r.BetCount2 AND a.Margin <= r.Margin AND a.ActiveDays >= r.ActiveDays))														
+					OR (r.RuleGroupId = 205 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount >= r.BetCount AND NOT (a.BetCount >= r.BetCount2 AND a.WinlossRM <= r.WinlossRM AND a.ActiveDays >= r.ActiveDays))														
 					-- Probation
 					OR (r.RuleGroupId = 300 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.WinlossRM <= r.WinlossRM)			
 					OR (r.RuleGroupId = 301 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount >= r.BetCount AND a.WinlossRM < r.WinlossRM AND a.Margin >= r.Margin AND a.Margin <= r.Margin2)			
