@@ -78,16 +78,16 @@ VALUES (102, 912, 205, 'Good', 5, 200, -5, 8);
 
 -- NORMAL
 INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, BetCount, Margin, Margin2) 
-VALUES (201, 145, 202, 'Normal', 4, NULL, 20, -2, 0);
+VALUES (201, 145, 202, 'Normal', 4, 20, -2, 0);
 
 INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, BetCount, Margin, Margin2) 
-VALUES (201, 912, 202, 'Normal', 4, NULL, 15, -3, 0);
+VALUES (201, 912, 202, 'Normal', 4, 15, -3, 0);
 
 INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, IsSpecialSite, BetCount, WinlossRM) 
-VALUES (205, 145, 202, 'Normal', 4, NULL, 20, -2, 0);
+VALUES (205, 145, 202, 'Normal', 4, 20, -2, 0);
 
 INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, IsSpecialSite, BetCount, WinlossRM) 
-VALUES (205, 912, 202, 'Normal', 4, NULL, 15, -3, 0);
+VALUES (205, 912, 202, 'Normal', 4, 15, -3, 0);
 
 -- PROBATION
 INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, Margin2)

@@ -49,8 +49,8 @@ BEGIN
 			@CATEGORY_GOODMEMBER	 SMALLINT = 205,
 			@CATEGORY_PROBATION		 SMALLINT = 206;
 
-	DECLARE @SportGroup_SabaVRSoccer	 TINYINT = 145,
-			@SportGroup_SabaVRBasketball TINYINT = 912;
+	DECLARE @SportGroup_SabaVRSoccer	 SMALLINT = 145,
+			@SportGroup_SabaVRBasketball SMALLINT = 912;
 
 	DECLARE @ListCustIds			 VARCHAR(MAX);
 

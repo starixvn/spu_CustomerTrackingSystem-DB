@@ -255,6 +255,7 @@ BEGIN
 	SELECT t.CustId
 		,  t.SportGroup
 		,  @CATEGORY_NEWMEMBER
+		,  @CATEGORY_NULL
 		,  @ToDate
 		,  @CurrentDateTime
 		,  NULL
