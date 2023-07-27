@@ -50,6 +50,7 @@ SET r.RuleGroupId = CASE r.RuleGroupId
 						WHEN 19 THEN 306
 						WHEN 20 THEN 401
 						WHEN 21 THEN 405
+						WHEN 22 THEN 501
 						ELSE r.RuleGroupId
 				    END
 FROM [dbo].[CustomerClassification_BySport_Rule] AS r;
