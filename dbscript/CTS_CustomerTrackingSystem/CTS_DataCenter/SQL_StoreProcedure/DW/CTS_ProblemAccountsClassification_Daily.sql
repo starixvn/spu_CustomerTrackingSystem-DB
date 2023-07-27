@@ -15,7 +15,8 @@ AS
 		- 20230601@Jonas.Huynh: Update SP get accumulated performance (Renovate Phase2) [Redmine ID: #186684]
 		- 20230627@Jonas.Huynh: Reset Balance for Credit with Inactive Normal with new place-bet [Redmine ID: #189876]
 		- 20230807@Jonas.Huynh: HF exclude Non-sport for General [Redmine ID: #192388]
-	
+		- 20230726@Jonas.Huynh: Saba Classification [Redmine ID: #185320]
+
 	Param's Explanation:
 */
 BEGIN
@@ -30,6 +31,10 @@ BEGIN
 
 	DECLARE @CurrentDateTime		DATETIME = GETDATE();
 	DECLARE @CurrentDate			DATE	 = GETDATE();
+
+	
+	DECLARE @SportGroup_SabaVRSoccer	 TINYINT = 145,
+			@SportGroup_SabaVRBasketball TINYINT = 912;
 
 	IF	OBJECT_ID('tempdb..#tmpRawData') IS NOT NULL
 		DROP TABLE	#tmpRawData;
@@ -95,7 +100,7 @@ BEGIN
 
 	DELETE a WITH (ROWLOCK)
 	FROM #tmpRawData AS a
-	WHERE a.SportGroup IN (@SportGroup_NonSport);
+	WHERE a.SportGroup IN (@SportGroup_NonSport, @SportGroup_SabaVRSoccer, @SportGroup_SabaVRBasketball);
 
 	-- #2: Sum data by custid
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, BetCount, ActiveDays)
