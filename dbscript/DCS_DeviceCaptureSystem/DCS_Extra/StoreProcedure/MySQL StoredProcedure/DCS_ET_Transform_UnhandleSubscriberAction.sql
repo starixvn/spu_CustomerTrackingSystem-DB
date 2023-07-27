@@ -44,6 +44,10 @@ BEGIN
         ,   ActionResultID		BIGINT
         ,   ActionResultStatus	TINYINT        
         ,   IsProcessed			BIT	DEFAULT 0
+        
+        ,	PRIMARY KEY (TransID)
+        ,	INDEX IX_Temp_Transaction_Action(Action)
+        ,	INDEX IX_Temp_Transaction_SubscriberIDSubscriberStatus(SubscriberID, SubscriberStatus)
     );
         
     INSERT	INTO Temp_Transaction(TransID, SubscriberName, Action, ActionResult, URLDetails, TransStatus, CreatedDate, SubscriberID, SubscriberStatus, ActionResultID, ActionResultStatus)
@@ -73,8 +77,7 @@ BEGIN
 	    ,   lv_UnhandleStatus AS ActionResultStatus # lv_UnhandleStatus_Subscriber
     FROM Temp_Transaction AS ts
     GROUP BY ts.Action
-        ,    ts.ActionResult;
-	
+        ,    ts.ActionResult;	
 	
     SET lv_NotTransformedStatus = DCS_ET_GetTransStatus_NotTransformed();
 

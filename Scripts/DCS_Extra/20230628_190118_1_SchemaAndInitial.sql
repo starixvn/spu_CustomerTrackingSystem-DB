@@ -181,7 +181,9 @@ CREATE TABLE ProcessedTransaction (
   InsertTime TIMESTAMP(4) NULL DEFAULT NULL,
   BotDetectionValue BIT(32) DEFAULT NULL,
   BotComponentID BIGINT UNSIGNED DEFAULT NULL,
+  
   PRIMARY KEY (TransID,CreatedDate),
+  UNIQUE INDEX (RawTransID,CreatedDate),
   KEY IX_ProcessedTransaction_IsProcessed (IsProcessed),
   KEY IX_ProcessedTransaction_TransTime (CreatedDate),
   KEY IX_ProcessedTransaction_SubscriberName_CreatedDate (SubscriberName,CreatedDate)
