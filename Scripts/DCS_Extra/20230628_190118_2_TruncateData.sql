@@ -1,0 +1,31 @@
+USE DCS_Extra;
+TRUNCATE TABLE Account;
+TRUNCATE TABLE AccountLastLoginTimeProcess;
+TRUNCATE TABLE ActionResult;
+TRUNCATE TABLE Association;
+TRUNCATE TABLE BotComponent;
+TRUNCATE TABLE Browser;
+TRUNCATE TABLE Device;
+TRUNCATE TABLE DeviceCode;
+TRUNCATE TABLE DeviceFingerprint;
+TRUNCATE TABLE OS;
+TRUNCATE TABLE ProcessedTransaction;
+TRUNCATE TABLE RawTransaction;
+TRUNCATE TABLE Transaction;
+TRUNCATE TABLE Transaction07;
+TRUNCATE TABLE URL;
+TRUNCATE TABLE UserAgent;
+
+SELECT * FROM DCS_Extra.SystemSetting;
+
+UPDATE SystemSetting
+SET VValue = 0
+WHERE ID IN (1,3);
+
+UPDATE SystemSetting
+SET VValue = '2022-12-31'
+WHERE ID = 2;
+
+UPDATE SystemSetting
+SET VValue = '2022-12-31 23:59:59'
+WHERE ID = 1000;
