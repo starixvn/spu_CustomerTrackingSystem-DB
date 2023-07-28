@@ -29,12 +29,12 @@ BEGIN
 	
 	DECLARE @SportGroup_NonSport	 SMALLINT = 229;
 
-	DECLARE @CurrentDateTime		DATETIME = GETDATE();
-	DECLARE @CurrentDate			DATE	 = GETDATE();
+	DECLARE @CurrentDateTime			DATETIME = GETDATE();
+	DECLARE @CurrentDate				DATE	 = GETDATE();
 
 	
-	DECLARE @SportGroup_SabaVRSoccer	 TINYINT = 145,
-			@SportGroup_SabaVRBasketball TINYINT = 912;
+	DECLARE @SportGroup_SabaVRSoccer	 SMALLINT = 145,
+			@SportGroup_SabaVRBasketball SMALLINT = 912;
 
 	IF	OBJECT_ID('tempdb..#tmpRawData') IS NOT NULL
 		DROP TABLE	#tmpRawData;
