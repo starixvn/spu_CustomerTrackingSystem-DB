@@ -134,79 +134,79 @@ VALUES (307, 912, 206, 'Probation', 3, 206, 15, 0, 1500); --PROBATION
 
 
 -- SMART
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, Margin2)
-VALUES (402, 145, 203, 'Smart', 2, 0, 30, 50000, 0, 2); --NULL
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, Margin2, IsProbationLastDay)
+VALUES (402, 145, 203, 'Smart', 2, 0, 30, 50000, 0, 2, NULL); --NULL
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, Margin2)
-VALUES (402, 145, 203, 'Smart', 2, 201, 30, 50000, 0, 2); --NEW
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, Margin2, IsProbationLastDay)
+VALUES (402, 145, 203, 'Smart', 2, 201, 30, 50000, 0, 2, NULL); --NEW
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, Margin2)
-VALUES (402, 145, 203, 'Smart', 2, 202, 30, 50000, 0, 2); --NORMAL
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, Margin2, IsProbationLastDay)
+VALUES (402, 145, 203, 'Smart', 2, 202, 30, 50000, 0, 2, NULL); --NORMAL
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, Margin2)
-VALUES (402, 145, 203, 'Smart', 2, 205, 30, 50000, 0, 2); --GOOD
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, Margin2, IsProbationLastDay)
+VALUES (402, 145, 203, 'Smart', 2, 205, 30, 50000, 0, 2, NULL); --GOOD
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, Margin2)
-VALUES (402, 145, 203, 'Smart', 2, 206, 30, 50000, 0, 2); --PROBATION
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, Margin2, IsProbationLastDay)
+VALUES (402, 145, 203, 'Smart', 2, 206, 30, 50000, 0, 2, 1); --PROBATION
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, Margin2)
-VALUES (402, 145, 203, 'Smart', 2, 204, 30, 50000, 0, 2); --RISKY
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, Margin2, IsProbationLastDay)
+VALUES (402, 145, 203, 'Smart', 2, 204, 30, 50000, 0, 2, NULL); --RISKY
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, Margin2)
-VALUES (402, 912, 203, 'Smart', 2, 0, 25, 1500, 0, 3); --NULL
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, Margin2, IsProbationLastDay)
+VALUES (402, 912, 203, 'Smart', 2, 0, 25, 1500, 0, 3, NULL); --NULL
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, Margin2)
-VALUES (402, 912, 203, 'Smart', 2, 201, 25, 1500, 0, 3); --NEW
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, Margin2, IsProbationLastDay)
+VALUES (402, 912, 203, 'Smart', 2, 201, 25, 1500, 0, 3, NULL); --NEW
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, Margin2)
-VALUES (402, 912, 203, 'Smart', 2, 202, 25, 1500, 0, 3); --NORMAL
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, Margin2, IsProbationLastDay)
+VALUES (402, 912, 203, 'Smart', 2, 202, 25, 1500, 0, 3, NULL); --NORMAL
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, Margin2)
-VALUES (402, 912, 203, 'Smart', 2, 205, 25, 1500, 0, 3); --GOOD
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, Margin2, IsProbationLastDay)
+VALUES (402, 912, 203, 'Smart', 2, 205, 25, 1500, 0, 3, NULL); --GOOD
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, Margin2)
-VALUES (402, 912, 203, 'Smart', 2, 206, 25, 1500, 0, 3); --PROBATION
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, Margin2, IsProbationLastDay)
+VALUES (402, 912, 203, 'Smart', 2, 206, 25, 1500, 0, 3, 1); --PROBATION
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, Margin2)
-VALUES (402, 912, 203, 'Smart', 2, 204, 25, 1500, 0, 3); --RISKY
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, Margin2, IsProbationLastDay)
+VALUES (402, 912, 203, 'Smart', 2, 204, 25, 1500, 0, 3, NULL); --RISKY
 
 
 --RISKY
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin) 
-VALUES (502, 145, 204, 'Risky', 1, 0, 30, 100000, 2); --NULL
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, IsProbationLastDay) 
+VALUES (502, 145, 204, 'Risky', 1, 0, 30, 100000, 2, NULL); --NULL
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin) 
-VALUES (502, 145, 204, 'Risky', 1, 201, 30, 100000, 2); --NEW
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, IsProbationLastDay) 
+VALUES (502, 145, 204, 'Risky', 1, 201, 30, 100000, 2, NULL); --NEW
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin)
-VALUES (502, 145, 204, 'Risky', 1, 202, 30, 100000, 2); --NORMAL
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, IsProbationLastDay)
+VALUES (502, 145, 204, 'Risky', 1, 202, 30, 100000, 2, NULL); --NORMAL
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin)
-VALUES (502, 145, 204, 'Risky', 1, 205, 30, 100000, 2); --GOOD
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, IsProbationLastDay)
+VALUES (502, 145, 204, 'Risky', 1, 205, 30, 100000, 2, NULL); --GOOD
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin)
-VALUES (502, 145, 204, 'Risky', 1, 206, 30, 100000, 2); --PROBATION
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, IsProbationLastDay)
+VALUES (502, 145, 204, 'Risky', 1, 206, 30, 100000, 2, 1); --PROBATION
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin)
-VALUES (502, 145, 204, 'Risky', 1, 203, 30, 100000, 2); --SMART 
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, IsProbationLastDay)
+VALUES (502, 145, 204, 'Risky', 1, 203, 30, 100000, 2, NULL); --SMART 
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin) 
-VALUES (502, 912, 204, 'Risky', 1, 0, 25, 3000, 3); --NULL
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, IsProbationLastDay) 
+VALUES (502, 912, 204, 'Risky', 1, 0, 25, 3000, 3, NULL); --NULL
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin) 
-VALUES (502, 912, 204, 'Risky', 1, 201, 25, 3000, 3); --NEW
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, IsProbationLastDay) 
+VALUES (502, 912, 204, 'Risky', 1, 201, 25, 3000, 3, NULL); --NEW
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin)
-VALUES (502, 912, 204, 'Risky', 1, 202, 25, 3000, 3); --NORMAL
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, IsProbationLastDay)
+VALUES (502, 912, 204, 'Risky', 1, 202, 25, 3000, 3, NULL); --NORMAL
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin)
-VALUES (502, 912, 204, 'Risky', 1, 205, 25, 3000, 3); --GOOD
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, IsProbationLastDay)
+VALUES (502, 912, 204, 'Risky', 1, 205, 25, 3000, 3, NULL); --GOOD
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin)
-VALUES (502, 912, 204, 'Risky', 1, 206, 25, 3000, 3); --PROBATION
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, IsProbationLastDay)
+VALUES (502, 912, 204, 'Risky', 1, 206, 25, 3000, 3, 1); --PROBATION
 
-INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin)
-VALUES (502, 912, 204, 'Risky', 1, 203, 25, 3000, 3); --SMART 
+INSERT INTO [dbo].[CustomerClassification_BySport_Rule] (RuleGroupId, SportId, CategoryId, CategoryName, Prioity, CurrentCategory, BetCount, WinlossRM, Margin, IsProbationLastDay)
+VALUES (502, 912, 204, 'Risky', 1, 203, 25, 3000, 3, NULL); --SMART 
 GO
 
 GRANT SELECT ON [dbo].[CustomerClassification_BySport_LatestActiveDay] TO [bodbSPUNet]
