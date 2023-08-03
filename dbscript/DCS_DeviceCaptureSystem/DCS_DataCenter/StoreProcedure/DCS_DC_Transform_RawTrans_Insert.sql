@@ -116,15 +116,17 @@ BEGIN
 		INNER JOIN Temp_BotDetection tmpBD ON tmpBD.ID = tmp.ID
 	SET tmp.BotDetectionValue = tmpBD.BotDetectionValue;
     
-    INSERT IGNORE INTO DCS_DataCenter.BotComponent(Code, Component, CreatedDate)
+    INSERT IGNORE INTO DCS_DataCenter.BotComponent(Code, Component, IsHuman, CreatedDate)
     WITH cte_BotComponent AS (
 		SELECT 	DISTINCT 
 				BotComponentCode AS Code
 			,	BotComponent AS Component
-		FROM Temp_Transactions AS tmp
+			,	FlaggedCode
+		FROM Temp_Transactions
     )
     SELECT 	cte.Code
 		,	cte.Component
+		,	CASE WHEN cte.FlaggedCode = 'Human' THEN 1 ELSE 0 END AS IsHuman
 		,	lv_InsertionTime AS CreatedDate
     FROM cte_BotComponent AS cte
     WHERE NOT EXISTS (SELECT 1 FROM DCS_DataCenter.BotComponent bc WHERE bc.Code = cte.Code);
