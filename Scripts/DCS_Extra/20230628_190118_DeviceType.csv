@@ -1,0 +1,7 @@
+DeviceTypeID,DeviceTypeName,GroupName,Created
+1,Mobile,Mobile,"2021-12-26 03:04:46"
+2,Tablet,Mobile,"2021-12-27 03:04:46"
+3,Desktop,Desktop,"2021-12-27 03:04:46"
+4,Unknown,Others,"2021-12-27 03:04:46"
+5,Spider,Others,"2021-12-27 03:04:46"
+6,TvOrConsole,Others,"2021-12-27 03:04:46"
