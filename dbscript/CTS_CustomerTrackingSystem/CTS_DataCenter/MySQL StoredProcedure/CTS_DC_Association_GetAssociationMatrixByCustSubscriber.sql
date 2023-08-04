@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_Association_GetAssociationMaxtrixByCustSubscriber`;
+DROP PROCEDURE IF EXISTS `CTS_DC_Association_GetAssociationMatrixByCustSubscriber`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_GetAssociationMaxtrixByCustSubscriber`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_GetAssociationMatrixByCustSubscriber`(
 		IN ip_SubscriberID	INT
 	,	IN ip_CTSCustID		BIGINT UNSIGNED
 	,	IN ip_NoOfCustomer	INT
@@ -22,7 +22,7 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-				CALL CTS_DC_Association_GetAssociationMaxtrixByCustSubscriber(@ip_SubscriberID:=120,@ip_CTSCustID:=2614369,@ip_NoOfCustomer:=16, @ip_NoOfDevice:=100);
+				CALL CTS_DC_Association_GetAssociationMatrixByCustSubscriber(@ip_SubscriberID:=120,@ip_CTSCustID:=2614369,@ip_NoOfCustomer:=16, @ip_NoOfDevice:=100);
    
 	*/
    
