@@ -28,6 +28,7 @@ sp: BEGIN
 			- 	20230111@Casey.Huynh: 	SumStake by CustID not group by Betteam [Redmine ID: 182639]
 			-	20230310@Victoria.Le:	Credit Scale Out - Split 789y Site [Redmine ID: #183140]
 			-	20230612@Casey.Huynh: 	LogInfo [Redmine ID: #185793]
+            -	20230807@Casey.Huynh: 	Renovate Arbitrage [Redmine ID: #185791]
             
 		Param's Explanation (filtered by):
 			CALL CTS_DC_MatchMonitor_RuleArbitrage_Process(@ip_LiveIndicator:=0,@ip_MaxSequenceID:=@op_MaxSequenceID,@ip_MatchID:=110100,@ip_IsMajorLeague:=0,@ip_ScoreDiff:=-2,@ip_BettypeID:=1,@ip_BetID:=0, @ip_HDP:=-0.2500);
@@ -104,7 +105,6 @@ sp: BEGIN
         ,	CustIDList				LONGTEXT NOT NULL
         ,	OldGroupIDList			VARCHAR(500)
     );	
-	
     #******************************* GET STAGING TRANS *******************************************
     IF (ip_LiveIndicator = 0) THEN
 
@@ -158,22 +158,25 @@ sp: BEGIN
             AND mms.HDP = ip_HDP;       
     END IF;
     
-    #=========REMOVE IF Cust's Total Stake < lv_RuleTotalStake
+    #=========REMOVE IF Cust Total Stake < lv_RuleTotalStake
 	INSERT INTO Temp_RemoveCust(CTSCustID)
     SELECT tmpSp.CTSCustID
     FROM Temp_StagingTrans AS tmpSp
     GROUP BY tmpSp.CTSCustID
     HAVING SUM(tmpSp.Stake) < lv_RuleTotalStake;
-
+    
     #=====================================================================
 	WHILE EXISTS (SELECT 1 FROM Temp_StagingTrans) DO        
         
         TRUNCATE TABLE Temp_RemoveGroup;
 		TRUNCATE TABLE Temp_InvalidStakeCust;
+        
+        UPDATE Temp_StagingTrans AS tmpSt
+        SET tmpSt.Processed = 0;        
 
 		#========Detect group by assocation and transdate====================
 		CALL CTS_DataCenter.CTS_DC_MatchMonitor_DetectGroup(lv_RuleTimeStep, 0);
-
+        
 		#=========REMOVE TRANS IF NO GROUP (GROUP = 0)
         DELETE tmpSt
 		FROM Temp_StagingTrans AS tmpSt
@@ -200,13 +203,14 @@ sp: BEGIN
         INSERT INTO Temp_RemoveGroup(GroupID)
         SELECT	tmpSt.GroupID 
         FROM Temp_StagingTrans AS tmpSt
+        WHERE GroupID > 0
         GROUP BY GroupID
         HAVING MIN(tmpSt.Betteam) = MAX(tmpSt.Betteam) OR COUNT(CTSCustID) = 1;
         
         DELETE tmpSt
 		FROM Temp_StagingTrans AS tmpSt
 		INNER JOIN Temp_RemoveGroup AS tmpRv ON tmpRv.GroupID = tmpSt.GroupID;		
-		
+        
         #==========INSERT VALID GROUP TO RESULT====================================================================
         
 		INSERT INTO Temp_ResultGroup(GroupID, TransIDList, CustIDList, OldGroupIDList)
@@ -217,7 +221,7 @@ sp: BEGIN
 		FROM Temp_StagingTrans  AS tmpSt
         WHERE tmpSt.GroupID > 0
         GROUP BY tmpSt.GroupID; 
-        
+                
         DELETE tmpSt
         FROM Temp_StagingTrans AS tmpSt
         WHERE tmpSt.GroupID > 0;
@@ -230,6 +234,5 @@ sp: BEGIN
         ,	tmpRg.CustIDList
         ,	tmpRg.OldGroupIDList
     FROM Temp_ResultGroup AS tmpRg;   
-    
 END$$
 DELIMITER ;
