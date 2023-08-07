@@ -35,29 +35,29 @@ sp:BEGIN
 	CREATE TEMPORARY TABLE Temp_Transaction07(
         	TransID				BIGINT UNSIGNED PRIMARY KEY
         ,	BotComponentID		BIGINT UNSIGNED DEFAULT NULL
-        ,	TransTime			DATETIME
-        , 	INDEX IX_Temp_Transaction07_TransTime(TransTime)
+        ,	CreatedDate			DATETIME
+        , 	INDEX IX_Temp_Transaction07_CreatedDate(CreatedDate)
     );
     
     DROP TEMPORARY TABLE IF EXISTS Temp_BotComponent;
 	CREATE TEMPORARY TABLE Temp_BotComponent(
         	ID					BIGINT UNSIGNED PRIMARY KEY
-        ,	MaxTransTime		DATETIME
+        ,	MaxCreatedDate		DATETIME
     );
     
     /*******GET DATA Transaction07********************/
-    INSERT INTO Temp_Transaction07(TransID, BotComponentID, TransTime)
+    INSERT INTO Temp_Transaction07(TransID, BotComponentID, CreatedDate)
     SELECT 	TransID
         ,	BotComponentID
-        ,	TransTime
+        ,	CreatedDate
 	FROM DCS_DataCenter.Transaction07
 	WHERE TransID > lv_MaxTransID
 	LIMIT ip_BatchSize;
     
     /*******INIT DATA********************/
-    INSERT INTO Temp_BotComponent(ID, MaxTransTime)
+    INSERT INTO Temp_BotComponent(ID, MaxCreatedDate)
     SELECT 	BotComponentID AS ID
-		,	MAX(TransTime) AS MaxTransTime
+		,	MAX(CreatedDate) AS MaxCreatedDate
     FROM Temp_Transaction07
     WHERE BotComponentID IS NOT NULL
     GROUP BY BotComponentID;
@@ -65,7 +65,7 @@ sp:BEGIN
     /*******UPDATE ModifiedDate********************/
 	UPDATE DCS_DataCenter.BotComponent AS main
 		INNER JOIN Temp_BotComponent AS tmp ON tmp.ID = main.ID
-	SET main.ModifiedDate = tmp.MaxTransTime;
+	SET main.ModifiedDate = tmp.MaxCreatedDate;
     
     
     /*******UPDATE SystemSetting MaxTransID********************/

@@ -128,7 +128,7 @@ BEGIN
 		,	cte.Component
 		,	CASE WHEN cte.FlaggedCode = 'Human' THEN 1 ELSE 0 END AS IsHuman
 		,	lv_InsertionTime AS CreatedDate
-		,	lv_InsertionTime AS ModifiedDate
+		,	DATE(lv_InsertionTime) AS ModifiedDate
     FROM cte_BotComponent AS cte
     WHERE NOT EXISTS (SELECT 1 FROM DCS_DataCenter.BotComponent bc WHERE bc.Code = cte.Code);
     
