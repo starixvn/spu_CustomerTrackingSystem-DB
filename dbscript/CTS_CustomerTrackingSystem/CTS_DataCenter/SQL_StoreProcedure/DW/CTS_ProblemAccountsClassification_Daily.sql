@@ -1,10 +1,4 @@
-USE [bodb_VR2Model]
-GO
-/****** Object:  StoredProcedure [dbo].[CTS_ProblemAccountsClassification_Daily]    Script Date: 9/6/2022 11:08:29 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+/*<info serverAlias="DBVR2-bodb_VR2Model" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[CTS_ProblemAccountsClassification_Daily]
 	@ListCustIds			VARCHAR(MAX),
 	@FunctionId				SMALLINT = 12
