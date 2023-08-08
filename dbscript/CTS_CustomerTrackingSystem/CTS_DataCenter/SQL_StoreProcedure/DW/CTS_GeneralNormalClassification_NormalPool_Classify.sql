@@ -1,10 +1,5 @@
-USE [bodb_VR2Model]
-GO
-/****** Object:  StoredProcedure [dbo].[CTS_GeneralNormalClassification_NormalPool_Classify]    Script Date: 6/27/2023 1:21:38 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+/*<info serverAlias="DBVR2-bodb_VR2Model" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+
 ALTER PROCEDURE [dbo].[CTS_GeneralNormalClassification_NormalPool_Classify]
 		@CustomersXML	XML
 AS
