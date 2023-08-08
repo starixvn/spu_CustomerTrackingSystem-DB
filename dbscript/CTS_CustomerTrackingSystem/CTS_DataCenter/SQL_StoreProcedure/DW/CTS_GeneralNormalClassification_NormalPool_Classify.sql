@@ -1,10 +1,5 @@
-USE [bodb_VR2Model]
-GO
-/****** Object:  StoredProcedure [dbo].[CTS_GeneralNormalClassification_NormalPool_Classify]    Script Date: 6/27/2023 1:21:38 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+/*<info serverAlias="DBVR2-bodb_VR2Model" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+
 ALTER PROCEDURE [dbo].[CTS_GeneralNormalClassification_NormalPool_Classify]
 		@CustomersXML	XML
 AS
@@ -19,6 +14,7 @@ AS
 		- 20230519@Jonas.Huynh: HF Wrong inactive category with new placebet [Redmine ID: #188464]
 		- 20230601@Jonas.Huynh: Normal Renovation (Phase2) [Redmine ID: #186684]
 		- 20230627@Jonas.Huynh: Reset Balance for Credit with Inactive Normal with new place-bet [Redmine ID: #189876]
+		- 20230807@Jonas.Huynh: HF exclude Non-sport for General [Redmine ID: #192388]
 
 	Param's Explanation:
 		@CustomersXML	 : This parameter is used to classify customer perf which bases on currentCategory
@@ -41,6 +37,7 @@ BEGIN
 	DECLARE	@ToDate					 DATE	  = GETDATE();
 	DECLARE @YesterdayDate			 DATE	  = DATEADD(DAY, -1, @ToDate);
 	DECLARE @From30Date				 DATE	  = DATEADD(DAY, -29, @ToDate);
+	DECLARE @SportGroup_NonSport	 SMALLINT = 229;
 
 	DECLARE @CATEGORY_NORMALINACTIVE SMALLINT = 1001,
 	   	    @CATEGORY_SMARTINACTIVE	 SMALLINT = 1002,
@@ -183,6 +180,10 @@ BEGIN
 	INSERT INTO #tmpRawData(CustId, SportGroup, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDaysCustID, ActiveDaysSportGroup, WindaysCustID, WinDaysSportGroup, ProcessedTime)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_CTS_GetCustAccumulatedInfo @ListCustID = @ListCustIds, @isResetBalance = 1;
 
+	DELETE a WITH (ROWLOCK)
+	FROM #tmpRawData AS a
+	WHERE a.SportGroup IN (@SportGroup_NonSport);
+	
 	-- #5: Calculate accumulated customer performance data
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays, PerformanceTime)
 	SELECT a.CustId,
