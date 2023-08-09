@@ -1,10 +1,4 @@
-USE [bodb_VR2Model]
-GO
-/****** Object:  StoredProcedure [dbo].[CTS_ProblemAccountsClassification_Daily]    Script Date: 9/6/2022 11:08:29 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+/*<info serverAlias="DBVR2-bodb_VR2Model" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[CTS_ProblemAccountsClassification_Daily]
 	@ListCustIds			VARCHAR(MAX),
 	@FunctionId				SMALLINT = 12
@@ -20,7 +14,8 @@ AS
 		- 20221118@Jonas.Huynh: Update parameter of DW SP GetCustAccumulatedInfo [Redmine ID: #179500]
 		- 20230601@Jonas.Huynh: Update SP get accumulated performance (Renovate Phase2) [Redmine ID: #186684]
 		- 20230627@Jonas.Huynh: Reset Balance for Credit with Inactive Normal with new place-bet [Redmine ID: #189876]
-
+		- 20230807@Jonas.Huynh: HF exclude Non-sport for General [Redmine ID: #192388]
+	
 	Param's Explanation:
 */
 BEGIN
@@ -30,6 +25,8 @@ BEGIN
 	DECLARE @PROBLEMACCOUNT_LOSING		INT = 0
 		,	@PROBLEMACCOUNT_KEEPSTATE	INT = 1
 		,	@PROBLEMACCOUNT_WINNING		INT = 2;  
+	
+	DECLARE @SportGroup_NonSport	 SMALLINT = 229;
 
 	DECLARE @CurrentDateTime		DATETIME = GETDATE();
 	DECLARE @CurrentDate			DATE	 = GETDATE();
@@ -95,6 +92,10 @@ BEGIN
 	-- #1: GetCustomer Accummulated data
 	INSERT INTO #tmpRawData(CustId, SportGroup, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDaysCustID, ActiveDaysSportGroup, WindaysCustID, WinDaysSportGroup, ProcessedTime)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_CTS_GetCustAccumulatedInfo @ListCustID = @ListCustIds, @isResetBalance = 1;
+
+	DELETE a WITH (ROWLOCK)
+	FROM #tmpRawData AS a
+	WHERE a.SportGroup IN (@SportGroup_NonSport);
 
 	-- #2: Sum data by custid
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, BetCount, ActiveDays)
