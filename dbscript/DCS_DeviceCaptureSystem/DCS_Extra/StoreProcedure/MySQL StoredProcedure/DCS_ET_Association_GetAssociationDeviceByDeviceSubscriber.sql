@@ -77,7 +77,9 @@ BEGIN
     INSERT INTO Temp_Account(AccountID)
     SELECT AccountID
     FROM DCS_Extra.Association AS ass 
-    WHERE ass.SubscriberID = ip_SubscriberID AND ass.DeviceID = ip_DeviceID ;  
+    WHERE ass.SubscriberID = ip_SubscriberID AND ass.DeviceID = ip_DeviceID
+    ORDER BY ass.CreatedDate DESC
+    LIMIT ip_NoOfRecord;   
     
     INSERT IGNORE INTO Temp_Device(DeviceID, CreatedTime)
 	SELECT	ass.DeviceID

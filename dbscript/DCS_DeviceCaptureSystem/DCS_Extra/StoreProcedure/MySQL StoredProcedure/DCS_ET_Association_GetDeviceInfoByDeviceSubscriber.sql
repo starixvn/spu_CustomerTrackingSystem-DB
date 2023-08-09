@@ -47,11 +47,11 @@ BEGIN
     WHERE ass.DeviceID = ip_DeviceID
 		AND ass.SubscriberID = ip_SubscriberID;
         
-	SELECT COUNT(*) 
+	SELECT COUNT(DISTINCT AccountID) 
     INTO lv_AssociatedAccounts
     FROM Temp_AssociationAccount;    
 	
-	SELECT COUNT(*) 
+	SELECT COUNT(DISTINCT ass.DeviceID) 
     INTO lv_AssociatedDevices
     FROM Temp_AssociationAccount AS tmpAa
 		INNER JOIN DCS_Extra.Association AS ass ON ass.AccountID = tmpAa.AccountID AND ass.SubscriberID = ip_SubscriberID

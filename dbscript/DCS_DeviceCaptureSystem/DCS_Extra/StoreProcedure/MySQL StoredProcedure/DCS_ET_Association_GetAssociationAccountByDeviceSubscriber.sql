@@ -54,10 +54,9 @@ BEGIN
         ,	DeviceInCommon		INT
         ,	OtherDeives			INT
         ,	AssociatedAccount	INT
-        ,	IsFirstAccount			BOOLEAN
         ,	MaxCreatedTime		DATETIME(4)
         
-        ,	INDEX IX_Temp_AssociatedAccount(IsFirstAccount DESC, MaxCreatedTime DESC)
+        ,	INDEX IX_Temp_AssociatedAccount(MaxCreatedTime DESC)
     );
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_AccountAssociation;
@@ -108,12 +107,11 @@ BEGIN
 	FROM Temp_Association AS tmpAs
         LEFT JOIN DCS_Extra.Association AS ass ON ass.SubscriberID = ip_SubscriberID AND tmpAs.DeviceID = ass.DeviceID AND tmpAs.AccountID <> ass.AccountID;
     
-    INSERT INTO Temp_AssociatedAccount(AccountID, DeviceInCommon, OtherDeives, AssociatedAccount, IsFirstAccount, MaxCreatedTime)
+    INSERT INTO Temp_AssociatedAccount(AccountID, DeviceInCommon, OtherDeives, AssociatedAccount, MaxCreatedTime)
     SELECT	tmpAs.RootAccountID AS AccountID
 		,	COUNT(DISTINCT CASE WHEN tmpAs.AssAccountID > 0 THEN tmpAs.DeviceID ELSE NULL END) AS DeviceInCommon
         ,	COUNT(DISTINCT tmpAs.DeviceID) - COUNT(DISTINCT CASE WHEN tmpAs.AssAccountID > 0 THEN tmpAs.DeviceID ELSE NULL END) AS OtherDevices
 		,	COUNT(DISTINCT CASE WHEN tmpAs.AssAccountID > 0 THEN tmpAs.AssAccountID ELSE NULL END) AS AsscociatedAccount
-        ,	MAX(CASE WHEN tmpAs.RootAccountID = ip_DeviceID THEN 1 ELSE 0 END) AS IsFirstAccount
         ,	MAX(tmpAs.CreatedTime) AS MaxCreatedTime
     FROM Temp_AccountAssociation AS tmpAs		
     GROUP BY tmpAs.RootAccountID;
@@ -125,7 +123,7 @@ BEGIN
 		,	tmpAa.AssociatedAccount
     FROM Temp_AssociatedAccount AS tmpAa	
 		INNER JOIN DCS_Extra.Account AS acc ON acc.AccountID = tmpAa.AccountID
-	ORDER BY IsFirstAccount DESC, MaxCreatedTime DESC;
+	ORDER BY tmpAa.MaxCreatedTime DESC;
 	
 END$$
 DELIMITER ;
