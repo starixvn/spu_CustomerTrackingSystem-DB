@@ -19,7 +19,8 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_ET_Transaction_InitialData_Update();
+			CALL DCS_ET_Transaction_InitialData_Update('[{"TransID":1,"CountryCode":"THA","Region":"Islamabad","City":"Manduria","ISP":"Rise Manila"},{"TransID":2,"CountryCode":"VN","Region":"Tarlac","City":"Tokyo","ISP":"Telecom Italia S.p.A."}]');
+            SELECT * FROM DCS_Extra.Transaction07;
     
     */
     DECLARE lv_LastCreatedDate DATETIME;
@@ -27,31 +28,57 @@ BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Transactions;
 	CREATE TEMPORARY TABLE Temp_Transactions(
-		TransID				BIGINT UNSIGNED PRIMARY KEY
+			TransID				BIGINT UNSIGNED PRIMARY KEY
+		,	CountryCode			VARCHAR(20)
 		,	Region				VARCHAR(128)
 		,	City				VARCHAR(128)
-		,	ServiceProvider		VARCHAR(50) 
+		,	ISP					VARCHAR(256) 
+		,	CountryID			INT
+		,	RegionID			INT
+		,	CityID				INT
+		,	ISPID				INT
     );  
 
-    INSERT INTO Temp_Transactions(TransID, Country, Region, City, ServiceProvider)
-	SELECT	TransID, Country, Region, City, ServiceProvider
+    INSERT INTO Temp_Transactions(TransID, CountryCode, Region, City, ISP)
+	SELECT	TransID, CountryCode, Region, City, ISP
 	FROM	JSON_TABLE(
 			ip_TransJs,
 			 "$[*]" COLUMNS(
-								TransID				BIGINT UNSIGNED PATH "$.TransID" 
-							,	Country				VARCHAR(50) 	PATH "$.Country"   
-                            ,	CountryCode			VARCHAR(50) 	PATH "$.CountryCode"   
-							,	Region				VARCHAR(50)  	PATH "$.Region"
-							,	City				VARCHAR(50) 	PATH "$.City"
-							,	ServiceProvider		VARCHAR(50) 	PATH "$.ServiceProvider"
+								TransID				BIGINT UNSIGNED PATH "$.TransID"  
+                            ,	CountryCode			VARCHAR(20) 	PATH "$.CountryCode"   
+							,	Region				VARCHAR(128)  	PATH "$.Region"
+							,	City				VARCHAR(128) 	PATH "$.City"
+							,	ISP					VARCHAR(256) 	PATH "$.ISP"
 				)
 		   ) AS  rt;
      
-	#========Insert Country===================
-	#========Insert Region===================
-	#========Insert City===================
-    #========Insert ServiceProvider===================
+	#========GET CountryID===================
+    UPDATE Temp_Transactions AS tmp
+		INNER JOIN DCS_Extra.Country AS c ON c.CountryCode = tmp.CountryCode
+	SET tmp.CountryID = c.CountryID;
+    
+	#========GET RegionID===================
+    UPDATE Temp_Transactions AS tmp
+		INNER JOIN DCS_Extra.Region AS c ON c.RegionName = tmp.Region
+	SET tmp.RegionID = c.RegionID;
+    
+	#========GET CityID===================
+    UPDATE Temp_Transactions AS tmp
+		INNER JOIN DCS_Extra.City AS c ON c.CityName = tmp.City
+	SET tmp.CityID = c.CityID;
+    
+	#========GET ISPID===================
+    UPDATE Temp_Transactions AS tmp
+		INNER JOIN DCS_Extra.ISP AS c ON c.ISPName = tmp.ISP
+	SET tmp.ISPID = c.ISPID;
+    
     #=============UPDATE Transaction07=================================
+    UPDATE Temp_Transactions AS tmp
+		INNER JOIN DCS_Extra.Transaction07 AS trans ON trans.TransID = tmp.TransID
+	SET 	trans.CountryID = tmp.CountryID
+		,	trans.RegionID = tmp.RegionID
+		,	trans.CityID = tmp.CityID
+		,	trans.ISPID = tmp.ISPID;
 END$$
 
 DELIMITER ;
