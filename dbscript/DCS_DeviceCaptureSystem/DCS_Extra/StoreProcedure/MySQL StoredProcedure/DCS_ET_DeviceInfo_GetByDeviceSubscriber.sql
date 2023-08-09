@@ -21,6 +21,7 @@ BEGIN
 
 		Example:
 			CALL DCS_ET_DeviceInfo_GetByDeviceSubscriber(@ip_SubscriberID:=8000001,@ip_DeviceCode:='71ea9dc88d474a96b042e0436f9c745f');
+            CALL DCS_ET_DeviceInfo_GetByDeviceSubscriber(@ip_SubscriberID:=8000001,@ip_DeviceCode:='bf2de4decc2dfc258d0ac7f148d82faa');
 	*/   
 
 	#========SEARCH BY DeviceCode=====================
@@ -36,7 +37,7 @@ BEGIN
 		AND EXISTS (SELECT 1 FROM DCS_Extra.Association AS ass WHERE ass.DeviceID = dv.DeviceID AND ass.SubscriberID = ip_SubscriberID);   
 
     #===========Return Info=============
-    IF lv_UserAgentKey > 0 THEN	
+    IF lv_UserAgentKey IS NOT NULL THEN	
 		SELECT dt.DeviceTypeName
         INTO lv_DeviceTypeName
 		FROM  DCS_Extra.UserAgent AS ua

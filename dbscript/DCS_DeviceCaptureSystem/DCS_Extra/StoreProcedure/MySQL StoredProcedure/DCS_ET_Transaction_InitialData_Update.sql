@@ -45,7 +45,7 @@ BEGIN
 							,	City				VARCHAR(50) 	PATH "$.City"
 							,	ServiceProvider		VARCHAR(50) 	PATH "$.ServiceProvider"
 				)
-		   ) AS  rt
+		   ) AS  rt;
      
 	#========Insert Country===================
 	#========Insert Region===================
