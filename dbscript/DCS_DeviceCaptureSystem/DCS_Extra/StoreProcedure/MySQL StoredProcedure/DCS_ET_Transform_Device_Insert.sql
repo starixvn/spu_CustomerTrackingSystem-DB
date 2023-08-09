@@ -25,6 +25,7 @@ BEGIN
 			- 20230316@Jonathan.Doan: Support return new device login for Alpha [Redmine ID: #185185]
 			- 20230426@Jonathan.Doan: Get BotDetectionValue from RawTransaction [Redmine ID: #186644]
             - 2023292023@Casey.Huynh: CTMAX, Velki [RedmineID: #190118]
+            - 20230809@Jonathan.Doan: Add more field for IP detail [RedmineID: #192402]
             
 	    Param's Explanation (filtered by):
         
@@ -463,7 +464,7 @@ BEGIN
     /*****MOVE TRans competed to Trans07****************************************************/
     IF err_no = 0 THEN
 		SET start_time = CURRENT_TIMESTAMP(4);
-		INSERT IGNORE INTO  DCS_Extra.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID)
+		INSERT IGNORE INTO  DCS_Extra.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, CountryID, RegionID, CityID, ISPID)
 		SELECT 	ifnull(ts.RawTransID, ts.TransID)
 			,	ts.LoginName
             ,	ts.TransTime
@@ -486,6 +487,10 @@ BEGIN
             ,	ts.InsertTime
             ,	ts.BotDetectionValue
             ,	ts.BotComponentID
+			,   ts.CountryID
+			,   ts.RegionID
+			,   ts.CityID
+			,   ts.ISPID
 		FROM DCS_Extra.Transaction AS ts
 		INNER JOIN Temp_Transaction AS tmp_rm
 			ON	ts.TransID = tmp_rm.TransID
