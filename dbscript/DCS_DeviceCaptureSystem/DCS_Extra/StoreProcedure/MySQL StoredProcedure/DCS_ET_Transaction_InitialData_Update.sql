@@ -9,7 +9,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_ET_Transaction_InitialData_Update`(
 BEGIN
 	/*
 		Created:	20230809@Casey.Huynh
-		Task :		Get Association Account List
+		Task :		Update IP Detail for Transaction 
 		DB:			CTS_DataCenter
 		Original:
 

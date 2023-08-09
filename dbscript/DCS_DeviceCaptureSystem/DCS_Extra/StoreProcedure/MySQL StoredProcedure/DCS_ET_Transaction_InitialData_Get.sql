@@ -9,7 +9,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_ET_Transaction_InitialData_Get`(
 BEGIN
 	/*
 		Created:	20230809@Casey.Huynh
-		Task :		Get Association Account List
+		Task :		Get Transaction IPID
 		DB:			CTS_DataCenter
 		Original:
 
@@ -22,7 +22,7 @@ BEGIN
 			CALL DCS_ET_Transaction_InitialData_Get();
     
     */
-    DECLARE lv_LastTransID DATETIME;
+    DECLARE lv_LastTransID BIGINT UNSIGNED;
     DECLARE lv_LastCreatedDate DATETIME;   
     
 	SELECT st.VValue
@@ -35,9 +35,11 @@ BEGIN
     FROM DCS_Extra.SystemSetting AS st
     WHERE st.ID = 1002;
     
-    SELECT TransID, IP
+    SELECT 	TransID
+		,	IPID
     FROM DCS_Extra.Transaction07
-    WHERE CreatedDate >= lv_LastCreatedDate AND TransID > lv_LastTransID
+    WHERE CreatedDate >= lv_LastCreatedDate 
+		AND TransID > lv_LastTransID
     LIMIT ip_BatchSize;
 	
 END$$
