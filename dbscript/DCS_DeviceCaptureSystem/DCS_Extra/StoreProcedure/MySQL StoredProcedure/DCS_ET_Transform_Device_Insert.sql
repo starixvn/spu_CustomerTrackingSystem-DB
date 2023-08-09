@@ -25,7 +25,6 @@ BEGIN
 			- 20230316@Jonathan.Doan: Support return new device login for Alpha [Redmine ID: #185185]
 			- 20230426@Jonathan.Doan: Get BotDetectionValue from RawTransaction [Redmine ID: #186644]
             - 2023292023@Casey.Huynh: CTMAX, Velki [RedmineID: #190118]
-            - 20230809@Jonathan.Doan: Add more field for IP detail [RedmineID: #192402]
             
 	    Param's Explanation (filtered by):
         
