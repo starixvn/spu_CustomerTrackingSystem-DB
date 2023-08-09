@@ -2,7 +2,7 @@
 DROP PROCEDURE IF EXISTS `DCS_ET_Association_GetAssociationDeviceByDeviceSubscriber`;
 
 DELIMITER $$
-CREATE DEFINER=`casey.vn`@`%` PROCEDURE `DCS_ET_Association_GetAssociationDeviceByDeviceSubscriber`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_ET_Association_GetAssociationDeviceByDeviceSubscriber`(
 		IN ip_SubscriberID	INT
 	,	IN ip_DeviceID		BIGINT UNSIGNED
 	,	IN ip_NoOfRecord	INT
@@ -10,18 +10,18 @@ CREATE DEFINER=`casey.vn`@`%` PROCEDURE `DCS_ET_Association_GetAssociationDevice
     SQL SECURITY INVOKER
 BEGIN
 	/*
-		Created:	20230720@Casey.Huynh
+		Created:	20230809@Casey.Huynh
 		Task :		Get Association Devices List
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
-			- 	20230720@Casey.Huynh: Created [Redmine ID: 189873]
+			- 	20230809@Casey.Huynh: Created [Redmine ID: 192402]
 			
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_ET_Association_GetAssociationDeviceByDeviceSubscriber(@ip_SubscriberID:=8000001,@ip_DeviceID:=19,@ip_NoOfRecord:=15); 
+			CALL DCS_ET_Association_GetAssociationDeviceByDeviceSubscriber(@ip_SubscriberID:=8000001,@ip_DeviceID:=1,@ip_NoOfRecord:=15); 
    
 	*/
     DROP TEMPORARY TABLE IF EXISTS Temp_Account;
@@ -79,7 +79,7 @@ BEGIN
     FROM DCS_Extra.Association AS ass 
     WHERE ass.SubscriberID = ip_SubscriberID AND ass.DeviceID = ip_DeviceID ;  
     
-    INSERT INTO Temp_Device(DeviceID, CreatedTime)
+    INSERT IGNORE INTO Temp_Device(DeviceID, CreatedTime)
 	SELECT	ass.DeviceID
 		,	ass.CreatedTime
     FROM DCS_Extra.Association AS ass 
