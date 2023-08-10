@@ -15,29 +15,29 @@ USE DCS_Extra;
 
 CREATE TABLE `City` (
   `CityID` int NOT NULL AUTO_INCREMENT,
-  `CityName` varchar(128) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `CityName` varchar(128) COLLATE utf8_unicode_ci NOT NULL,
   PRIMARY KEY (`CityID`),
   UNIQUE KEY `UX_City_CityName` (`CityName`)
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb3 COLLATE=utf8_unicode_ci;
 
 CREATE TABLE `Country` (
   `CountryID` int NOT NULL AUTO_INCREMENT,
-  `CountryName` varchar(64) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `CountryCode` varchar(20) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `CountryName` varchar(64) COLLATE utf8_unicode_ci NOT NULL,
+  `CountryCode` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
   PRIMARY KEY (`CountryID`),
   UNIQUE KEY `UX_Country_CountryCode` (`CountryCode`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb3 COLLATE=utf8_unicode_ci;
 
 CREATE TABLE `ISP` (
   `ISPID` int NOT NULL AUTO_INCREMENT,
-  `ISPName` varchar(256) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `ISPName` varchar(256) COLLATE utf8_unicode_ci NOT NULL,
   PRIMARY KEY (`ISPID`),
   UNIQUE KEY `UX_ISP_ISPName` (`ISPName`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb3 COLLATE=utf8_unicode_ci;
 
 CREATE TABLE `Region` (
   `RegionID` int NOT NULL AUTO_INCREMENT,
-  `RegionName` varchar(128) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `RegionName` varchar(128) COLLATE utf8_unicode_ci NOT NULL,
   PRIMARY KEY (`RegionID`),
   UNIQUE KEY `UX_Region_RegionName` (`RegionName`)
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb3 COLLATE=utf8_unicode_ci;
