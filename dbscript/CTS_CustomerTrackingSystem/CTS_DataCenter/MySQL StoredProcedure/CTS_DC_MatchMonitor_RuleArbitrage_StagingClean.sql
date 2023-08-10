@@ -17,6 +17,7 @@ BEGIN
 		Revisions:
 			- 	202212216@Casey.Huynh: Created [Redmine ID: 179502]
             -	20230109@Casey.Huynh: UpdateSoreDiff [Redmine ID: #182637]
+            -	20230810@Casey.Huynh: Remove Betteam  [Redmine ID: #192549]
             
 		Param's Explanation (filtered by):
 			CALL CTS_DC_MatchMonitor_RuleArbitrage_StagingClean(0,2);
@@ -63,11 +64,10 @@ BEGIN
         ,	ScoreDiff INT
         ,	BettypeID INT
         ,	BetID BIGINT
-        ,	Betteam VARCHAR(10)
         ,	HDP	DECIMAL(8,2)
         ,   GroupID INT
         
-        ,	PRIMARY KEY (MatchID,ScoreDiff,BettypeID, BetID, Betteam, HDP, GroupID)
+        ,	PRIMARY KEY (MatchID,ScoreDiff,BettypeID, BetID, HDP, GroupID)
     );
 
     #======Clean Staging=================================================
@@ -84,14 +84,15 @@ BEGIN
 			INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType AND mms.IsMajorLeague = tmpRs.IsMajorLeague
 		WHERE   mms.TransDate > TIMESTAMPADD(SECOND, -tmpRs.TimeStep, lv_MaxTime);  
 		
-		INSERT INTO Temp_LastGroup(MatchID, ScoreDiff, BettypeID, BetID, Betteam, HDP, GroupID)
-		SELECT 	DISTINCT mms.MatchID,  mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, HDP, mms.GroupID
+		INSERT INTO Temp_LastGroup(MatchID, ScoreDiff, BettypeID, BetID, HDP, GroupID)
+		SELECT 	DISTINCT mms.MatchID,  mms.ScoreDiff, mms.BettypeID, mms.BetID, HDP, mms.GroupID
 		FROM 	CTS_DataCenter.MatchMonitorStagingArbitrageNonLive mms
 		WHERE	mms.TransDate >= lv_MinTime AND mms.GroupID <> 0;
 	
 		DELETE mms
 		FROM CTS_DataCenter.MatchMonitorStagingArbitrageNonLive AS mms            
-			LEFT JOIN Temp_LastGroup AS tmpTg ON mms.MatchID = tmpTg.MatchID AND mms.ScoreDiff = tmpTg.ScoreDiff AND mms.BettypeID = tmpTg.BettypeID AND mms.BetID = tmpTg.BetID AND mms.Betteam = tmpTg.Betteam  AND mms.HDP = tmpTg.HDP AND mms.GroupID = tmpTg.GroupID
+			LEFT JOIN Temp_LastGroup AS tmpTg ON mms.MatchID = tmpTg.MatchID AND mms.ScoreDiff = tmpTg.ScoreDiff AND mms.BettypeID = tmpTg.BettypeID AND mms.BetID = tmpTg.BetID
+				AND mms.HDP = tmpTg.HDP AND mms.GroupID = tmpTg.GroupID
 		WHERE	mms.TransDate < lv_MinTime  AND tmpTg.GroupID IS NULL;
             
 		IF lv_LastTransID > 0 THEN	
