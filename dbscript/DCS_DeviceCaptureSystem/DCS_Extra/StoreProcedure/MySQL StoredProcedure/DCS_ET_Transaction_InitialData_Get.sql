@@ -37,6 +37,7 @@ BEGIN
     
     SELECT 	TransID
 		,	IPID
+		,	CreatedDate
     FROM DCS_Extra.Transaction07
     WHERE CreatedDate >= lv_LastCreatedDate 
 		AND TransID > lv_LastTransID

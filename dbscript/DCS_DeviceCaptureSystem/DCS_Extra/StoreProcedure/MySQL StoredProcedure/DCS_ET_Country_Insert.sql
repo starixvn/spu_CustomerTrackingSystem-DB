@@ -31,7 +31,7 @@ BEGIN
 		,	Country		 	VARCHAR(64)
     );
     
-	INSERT INTO Temp_Input(CountryCode, Country)
+	INSERT IGNORE INTO Temp_Input(CountryCode, Country)
 	SELECT	tmp.CountryCode
 		,	tmp.Country
 	FROM	JSON_TABLE(

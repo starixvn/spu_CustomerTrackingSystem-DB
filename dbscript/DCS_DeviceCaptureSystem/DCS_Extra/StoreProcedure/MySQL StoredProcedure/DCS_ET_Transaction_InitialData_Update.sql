@@ -40,7 +40,11 @@ BEGIN
     );  
 
     INSERT INTO Temp_Transactions(TransID, CountryCode, Region, City, ISP)
-	SELECT	TransID, CountryCode, Region, City, ISP
+	SELECT	TransID
+		,	CountryCode
+        ,	Region
+        ,	City
+        ,	ISP
 	FROM	JSON_TABLE(
 			ip_TransJs,
 			 "$[*]" COLUMNS(
