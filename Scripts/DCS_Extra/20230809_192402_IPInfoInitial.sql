@@ -66,4 +66,8 @@ ADD COLUMN `RegionID` INT NULL AFTER `CountryID`,
 ADD COLUMN `CityID` INT NULL AFTER `RegionID`,
 ADD COLUMN `ISPID` INT NULL AFTER `CityID`;
 
+ALTER TABLE `DCS_Extra`.`Transaction07`
+ADD INDEX IX_Transaction07_DeviceIDSubscriberID(DeviceID, SubscriberID),
+ADD INDEX IX_Transaction07_CountryID_RegionID_CityID(CountryID, RegionID, CityID);
+
 DELIMITER ;

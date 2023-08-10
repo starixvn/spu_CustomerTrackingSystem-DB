@@ -169,11 +169,11 @@ BEGIN
 	INSERT IGNORE INTO DCS_Extra.Country(CountryName, CountryCode)
 	WITH tmp_Country AS (
 		SELECT DISTINCT
-				CountryName
+				Country
 			,	CountryCode
 		FROM Temp_Transactions AS tmp
 	)
-	SELECT 		tmpCo.CountryName
+	SELECT 		tmpCo.Country
 			,	tmpCo.CountryCode
     FROM tmp_Country AS tmpCo
     WHERE NOT EXISTS (SELECT 1 FROM DCS_Extra.Country con WHERE con.CountryCode = tmpCo.CountryCode); 
@@ -187,15 +187,15 @@ BEGIN
 	INSERT IGNORE INTO DCS_Extra.Region(RegionName)
 	WITH tmp_Region AS (
 		SELECT DISTINCT
-				RegionName
+				Region
 		FROM Temp_Transactions AS tmp
 	)
-	SELECT 		tmpRe.RegionName
+	SELECT 		tmpRe.Region
     FROM tmp_Region AS tmpRe
-    WHERE NOT EXISTS (SELECT 1 FROM DCS_Extra.Region reg WHERE reg.RegionName = tmpRe.RegionName); 
+    WHERE NOT EXISTS (SELECT 1 FROM DCS_Extra.Region reg WHERE reg.RegionName = tmpRe.Region); 
 	
 	UPDATE Temp_Transactions AS tmp
-		INNER JOIN DCS_Extra.Region AS reg ON reg.RegionName = tmp.RegionName
+		INNER JOIN DCS_Extra.Region AS reg ON reg.RegionName = tmp.Region
 	SET tmp.RegionID = reg.RegionID;
 	
 	#================================
@@ -203,15 +203,15 @@ BEGIN
 	INSERT IGNORE INTO DCS_Extra.City(CityName)
 	WITH tmp_City AS (
 		SELECT DISTINCT
-				CityName
+				City
 		FROM Temp_Transactions AS tmp
 	)
-	SELECT 		tmpRe.CityName
+	SELECT 		tmpCt.City
     FROM tmp_City AS tmpCt
-    WHERE NOT EXISTS (SELECT 1 FROM DCS_Extra.City cit WHERE cit.CityName = tmpCt.CityName); 
+    WHERE NOT EXISTS (SELECT 1 FROM DCS_Extra.City cit WHERE cit.CityName = tmpCt.City); 
 	
 	UPDATE Temp_Transactions AS tmp
-		INNER JOIN DCS_Extra.City AS cit ON cit.CityName = tmp.CityName
+		INNER JOIN DCS_Extra.City AS cit ON cit.CityName = tmp.City
 	SET tmp.CityID = cit.CityID;
 	
 	#================================
@@ -219,15 +219,15 @@ BEGIN
 	INSERT IGNORE INTO DCS_Extra.ISP(ISPName)
 	WITH ISP AS (
 		SELECT DISTINCT
-				ISPName
+				ISP
 		FROM Temp_Transactions AS tmp
 	)
-	SELECT 		tmpRe.ISPName
+	SELECT 		tmpIs.ISP
     FROM ISP AS tmpIs
-    WHERE NOT EXISTS (SELECT 1 FROM DCS_Extra.ISP isp WHERE isp.ISPName = tmpIs.ISPName); 
+    WHERE NOT EXISTS (SELECT 1 FROM DCS_Extra.ISP isp WHERE isp.ISPName = tmpIs.ISP); 
 	
 	UPDATE Temp_Transactions AS tmp
-		INNER JOIN DCS_Extra.ISP AS isp ON cit.ISPName = tmp.ISPName
+		INNER JOIN DCS_Extra.ISP AS isp ON isp.ISPName = tmp.ISP
 	SET tmp.ISPID = isp.ISPID;
 	
 	#================================
