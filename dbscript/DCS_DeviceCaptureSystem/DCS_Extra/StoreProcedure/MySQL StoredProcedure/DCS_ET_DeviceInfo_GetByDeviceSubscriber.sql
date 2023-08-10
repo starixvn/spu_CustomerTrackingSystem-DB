@@ -28,7 +28,7 @@ BEGIN
     DECLARE lv_DeviceID BIGINT UNSIGNED;
     DECLARE lv_DeviceCode VARCHAR(32);
     DECLARE lv_UserAgentKey VARCHAR(32);
-    DECLARE lv_DeviceTypeName VARCHAR(20);
+    DECLARE lv_OS VARCHAR(20);
      
     SELECT	dv.DeviceID, dv.FirstDeviceCode, dv.UserAgentKey
     INTO lv_DeviceID, lv_DeviceCode, lv_UserAgentKey
@@ -38,13 +38,12 @@ BEGIN
 
     #===========Return Info=============
     IF lv_UserAgentKey IS NOT NULL THEN	
-		SELECT dt.DeviceTypeName
-        INTO lv_DeviceTypeName
+		SELECT ua.OS
+        INTO lv_OS
 		FROM  DCS_Extra.UserAgent AS ua
-			INNER JOIN DCS_Extra.DeviceType AS dt ON ua.DeviceTypeID = dt.DeviceTypeID
 		WHERE ua.UserAgentKey = lv_UserAgentKey;
 	END IF;
-	SELECT lv_DeviceID AS DeviceID , lv_DeviceCode AS DeviceCode, lv_DeviceTypeName AS DeviceTypeName;
+	SELECT lv_DeviceID AS DeviceID , lv_DeviceCode AS DeviceCode, lv_OS AS OS;
     
 END$$
 DELIMITER ;

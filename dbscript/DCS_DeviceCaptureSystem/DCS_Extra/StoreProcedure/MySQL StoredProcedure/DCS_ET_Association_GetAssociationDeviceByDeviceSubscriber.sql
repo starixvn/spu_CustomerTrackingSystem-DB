@@ -78,8 +78,7 @@ BEGIN
     SELECT AccountID
     FROM DCS_Extra.Association AS ass 
     WHERE ass.SubscriberID = ip_SubscriberID AND ass.DeviceID = ip_DeviceID
-    ORDER BY ass.CreatedDate DESC
-    LIMIT ip_NoOfRecord;   
+    ORDER BY ass.CreatedDate DESC;
     
     INSERT IGNORE INTO Temp_Device(DeviceID, CreatedTime)
 	SELECT	ass.DeviceID
