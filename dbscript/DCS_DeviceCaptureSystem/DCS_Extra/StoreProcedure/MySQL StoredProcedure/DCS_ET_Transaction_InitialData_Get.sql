@@ -3,7 +3,9 @@ DROP PROCEDURE IF EXISTS `DCS_ET_Transaction_InitialData_Get`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_ET_Transaction_InitialData_Get`(
-	ip_BatchSize INT
+		ip_BatchSize INT
+	,	ip_LastTransID_ParameterID INT
+	,	ip_LastCreatedDate_ParameterID INT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -19,7 +21,7 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_ET_Transaction_InitialData_Get();
+			CALL DCS_ET_Transaction_InitialData_Get(1, 1001, 1002);
     
     */
     DECLARE lv_LastTransID BIGINT UNSIGNED;
@@ -28,12 +30,12 @@ BEGIN
 	SELECT st.VValue
     INTO lv_LastTransID
     FROM DCS_Extra.SystemSetting AS st
-    WHERE st.ID = 1001;
+    WHERE st.ID = ip_LastTransID_ParameterID;
     
     SELECT st.VValue
     INTO lv_LastCreatedDate
     FROM DCS_Extra.SystemSetting AS st
-    WHERE st.ID = 1002;
+    WHERE st.ID = ip_LastCreatedDate_ParameterID;
     
     SELECT 	TransID
 		,	IPID

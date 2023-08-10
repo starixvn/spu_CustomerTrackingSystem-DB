@@ -30,29 +30,34 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_Transactions(
 			TransID				BIGINT UNSIGNED PRIMARY KEY
 		,	CountryCode			VARCHAR(20)
-		,	Region				VARCHAR(128)
-		,	City				VARCHAR(128)
-		,	ISP					VARCHAR(256) 
+		,	RegionName			VARCHAR(128)
+		,	CityName			VARCHAR(128)
+		,	ISPName				VARCHAR(256) 
 		,	CountryID			INT
 		,	RegionID			INT
 		,	CityID				INT
 		,	ISPID				INT
+        
+		,	KEY `IX_Temp_Transactions_CountryCode` (`CountryCode`)
+		,	KEY `IX_Temp_Transactions_RegionName` (`RegionName`)
+		,	KEY `IX_Temp_Transactions_CityName` (`CityName`)
+		,	KEY `IX_Temp_Transactions_ISPName` (`ISPName`)
     );  
 
-    INSERT INTO Temp_Transactions(TransID, CountryCode, Region, City, ISP)
+    INSERT INTO Temp_Transactions(TransID, CountryCode, RegionName, CityName, ISPName)
 	SELECT	TransID
 		,	CountryCode
-        ,	Region
-        ,	City
-        ,	ISP
+        ,	RegionName
+        ,	CityName
+        ,	ISPName
 	FROM	JSON_TABLE(
 			ip_TransJs,
 			 "$[*]" COLUMNS(
 								TransID				BIGINT UNSIGNED PATH "$.TransID"  
                             ,	CountryCode			VARCHAR(20) 	PATH "$.CountryCode"   
-							,	Region				VARCHAR(128)  	PATH "$.Region"
-							,	City				VARCHAR(128) 	PATH "$.City"
-							,	ISP					VARCHAR(256) 	PATH "$.ISP"
+							,	RegionName			VARCHAR(128)  	PATH "$.RegionName"
+							,	CityName			VARCHAR(128) 	PATH "$.CityName"
+							,	ISPName				VARCHAR(256) 	PATH "$.ISPName"
 				)
 		   ) AS  rt;
      
@@ -63,17 +68,17 @@ BEGIN
     
 	#========GET RegionID===================
     UPDATE Temp_Transactions AS tmp
-		INNER JOIN DCS_Extra.Region AS c ON c.RegionName = tmp.Region
+		INNER JOIN DCS_Extra.Region AS c ON c.RegionName = tmp.RegionName
 	SET tmp.RegionID = c.RegionID;
     
 	#========GET CityID===================
     UPDATE Temp_Transactions AS tmp
-		INNER JOIN DCS_Extra.City AS c ON c.CityName = tmp.City
+		INNER JOIN DCS_Extra.City AS c ON c.CityName = tmp.CityName
 	SET tmp.CityID = c.CityID;
     
 	#========GET ISPID===================
     UPDATE Temp_Transactions AS tmp
-		INNER JOIN DCS_Extra.ISP AS c ON c.ISPName = tmp.ISP
+		INNER JOIN DCS_Extra.ISP AS c ON c.ISPName = tmp.ISPName
 	SET tmp.ISPID = c.ISPID;
     
     #=============UPDATE Transaction07=================================
