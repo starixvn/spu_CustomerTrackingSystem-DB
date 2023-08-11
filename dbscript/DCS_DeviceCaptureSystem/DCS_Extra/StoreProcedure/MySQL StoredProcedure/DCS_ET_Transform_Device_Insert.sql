@@ -464,7 +464,7 @@ BEGIN
     /*****MOVE TRans competed to Trans07****************************************************/
     IF err_no = 0 THEN
 		SET start_time = CURRENT_TIMESTAMP(4);
-		INSERT IGNORE INTO  DCS_Extra.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, CountryID, RegionID, CityID, ISPID)
+		INSERT IGNORE INTO  DCS_Extra.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, IPInfoID)
 		SELECT 	ifnull(ts.RawTransID, ts.TransID)
 			,	ts.LoginName
             ,	ts.TransTime
@@ -487,10 +487,7 @@ BEGIN
             ,	ts.InsertTime
             ,	ts.BotDetectionValue
             ,	ts.BotComponentID
-			,   ts.CountryID
-			,   ts.RegionID
-			,   ts.CityID
-			,   ts.ISPID
+			,   ts.IPInfoID
 		FROM DCS_Extra.Transaction AS ts
 		INNER JOIN Temp_Transaction AS tmp_rm
 			ON	ts.TransID = tmp_rm.TransID

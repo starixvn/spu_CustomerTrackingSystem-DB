@@ -61,10 +61,7 @@ BEGIN
         ,   FingerprintCode		    VARCHAR(620)
         ,   BotDetectionValue		BIT(20)
         ,   BotComponentID			BIGINT UNSIGNED
-        ,   CountryID				INT
-        ,   RegionID				INT
-        ,   CityID					INT
-        ,   ISPID					INT
+        ,   IPInfoID				INT
         
 		,	PRIMARY KEY (TransID)
         ,	INDEX IX_Temp_RawTransaction_SubscriberID_LoginName(SubscriberID, LoginName)
@@ -92,7 +89,7 @@ BEGIN
     FROM DCS_Extra.SystemSetting 
     WHERE ID = 2;
 
-	INSERT INTO Temp_RawTransaction(TransID, LoginName, TransTime, SubscriberID, SubscriberType, DeviceCode , URLDetails, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, FingerprintCode, BotDetectionValue, BotComponentID, CountryID, RegionID, CityID, ISPID)
+	INSERT INTO Temp_RawTransaction(TransID, LoginName, TransTime, SubscriberID, SubscriberType, DeviceCode , URLDetails, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, FingerprintCode, BotDetectionValue, BotComponentID, IPInfoID)
 	SELECT  rt.TransID
 	    ,   rt.LoginName
         ,   rt.TransTime
@@ -111,11 +108,8 @@ BEGIN
         ,   rt.FingerprintCode
         ,   rt.BotDetectionValue
         ,   rt.BotComponentID
-        ,   rt.CountryID
-        ,   rt.RegionID
-        ,   rt.CityID
-        ,   rt.ISPID
-	FROM		DCS_Extra.RawTransaction AS rt
+        ,   rt.IPInfoID
+	FROM DCS_Extra.RawTransaction AS rt
         INNER JOIN	DCS_Extra.Subscriber AS su ON	rt.SubscriberName = su.SubscriberName
 	    INNER JOIN	DCS_Extra.ActionResult AS ar ON	rt.Action = ar.Action AND IFNULL(rt.ActionResult,'') = ar.ActionResult
 	WHERE   rt.IsProcessed = 0
@@ -195,7 +189,7 @@ BEGIN
         ,   tll.LastLoginTime
     FROM Temp_LastLoginTime AS tll;
 
-    INSERT IGNORE INTO  DCS_Extra.Transaction(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey , IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, FingerprintCode, BotDetectionValue, BotComponentID, CountryID, RegionID, CityID, ISPID)
+    INSERT IGNORE INTO  DCS_Extra.Transaction(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey , IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, FingerprintCode, BotDetectionValue, BotComponentID, IPInfoID)
    	SELECT  trt.TransID
 	    ,   trt.LoginName
         ,   trt.TransTime                
@@ -215,14 +209,11 @@ BEGIN
         ,   trt.FingerprintCode
         ,   trt.BotDetectionValue
         ,   trt.BotComponentID
-        ,   trt.CountryID
-        ,   trt.RegionID
-        ,   trt.CityID
-        ,   trt.ISPID
+        ,   trt.IPInfoID
 	FROM Temp_RawTransaction AS trt;	
     #================================================================
     
-	INSERT IGNORE INTO DCS_Extra.ProcessedTransaction( LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent , IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID, InsertTime, BotDetectionValue, BotComponentID, CountryID, RegionID, CityID, ISPID)
+	INSERT IGNORE INTO DCS_Extra.ProcessedTransaction( LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent , IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID, InsertTime, BotDetectionValue, BotComponentID, IPInfoID)
 	SELECT  rt.LoginName
         ,   rt.SubscriberName
         ,   rt.TransTime
@@ -244,10 +235,7 @@ BEGIN
 		,	rt.InsertTime
 		,	rt.BotDetectionValue
 		,	rt.BotComponentID
-        ,   rt.CountryID
-        ,   rt.RegionID
-        ,   rt.CityID
-        ,   rt.ISPID
+        ,   rt.IPInfoID
 	FROM DCS_Extra.RawTransaction AS rt
 	    INNER JOIN	Temp_RawTransaction	AS tmp_rm ON	rt.TransID = tmp_rm.TransID AND rt.CreatedDate = tmp_rm.CreatedDate;
         
