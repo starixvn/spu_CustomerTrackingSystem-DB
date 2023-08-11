@@ -38,7 +38,6 @@ BEGIN
 	DECLARE	@ToDate					 DATE	  = GETDATE();
 	DECLARE @YesterdayDate			 DATE	  = DATEADD(DAY, -1, @ToDate);
 	DECLARE @From30Date				 DATE	  = DATEADD(DAY, -29, @ToDate);
-	DECLARE @SportGroup_NonSport	 SMALLINT = 229;
 
 	DECLARE @CATEGORY_NORMALINACTIVE SMALLINT = 1001,
 	   	    @CATEGORY_SMARTINACTIVE	 SMALLINT = 1002,
@@ -50,7 +49,8 @@ BEGIN
 			@CATEGORY_PROBATION		 SMALLINT = 206;
 
 	DECLARE @SportGroup_SabaVRSoccer	 SMALLINT = 145,
-			@SportGroup_SabaVRBasketball SMALLINT = 912;
+			@SportGroup_SabaVRBasketball SMALLINT = 912,
+			@SportGroup_NonSport		 SMALLINT = 229;
 
 	DECLARE @ListCustIds			 VARCHAR(MAX);
 

@@ -25,16 +25,14 @@ BEGIN
 
 	DECLARE @PROBLEMACCOUNT_LOSING		INT = 0
 		,	@PROBLEMACCOUNT_KEEPSTATE	INT = 1
-		,	@PROBLEMACCOUNT_WINNING		INT = 2;  
-	
-	DECLARE @SportGroup_NonSport	 SMALLINT = 229;
+		,	@PROBLEMACCOUNT_WINNING		INT = 2;
 
 	DECLARE @CurrentDateTime			DATETIME = GETDATE();
 	DECLARE @CurrentDate				DATE	 = GETDATE();
 
-	
 	DECLARE @SportGroup_SabaVRSoccer	 SMALLINT = 145,
-			@SportGroup_SabaVRBasketball SMALLINT = 912;
+			@SportGroup_SabaVRBasketball SMALLINT = 912,
+			@SportGroup_NonSport		 SMALLINT = 229;
 
 	IF	OBJECT_ID('tempdb..#tmpRawData') IS NOT NULL
 		DROP TABLE	#tmpRawData;
@@ -79,13 +77,6 @@ BEGIN
 		[CustId]			ASC
 	);
 
-	-- START
-	/*-- LOG INPUT DATA
-	INSERT INTO dbo.CustomerClassification_InputLog(CustId,CreatedDate,CreatedTime,FunctionId,IsActive)
-	SELECT CustId, @CurrentDate, @CurrentDateTime, @FunctionId, IsActive
-	FROM #tmpCustomers;
-	*/
-
 	-- #0: Distinct custid
 	INSERT INTO #tmpCustomers(CustId)
 	SELECT val FROM dbo.SPU_StrSplit(@ListCustIds, ',');
@@ -113,7 +104,6 @@ BEGIN
 	GROUP BY a.CustId;
 
 	-- #3: Classify new members
-	--INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT	r.CustId
 		,	CASE
 				WHEN (r.WinlossRM < -10000) THEN @PROBLEMACCOUNT_LOSING
