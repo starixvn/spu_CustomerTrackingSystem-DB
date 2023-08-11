@@ -3,6 +3,8 @@ DROP PROCEDURE IF EXISTS `CTS_DC_Customer_DangerousScore_Insert`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Customer_DangerousScore_Insert`(
 		IN 	ip_CustInfo 		JSON
+    ,	IN  ip_IsDeposit		TINYINT(1)
+	
 	,	OUT op_ErrorMessage 	VARCHAR(200)
 )
 SQL SECURITY INVOKER
@@ -27,11 +29,13 @@ BEGIN
     INSERT INTO CTS_DataCenter.Customer_DangerousScore 
     (
 			CustID
+		,	IsDeposit
 		,	DangerousScore
 		,	CreatedDate		
 		,	LastModifiedDate	
     )
     SELECT 	js.CustID		
+		,	ip_IsDeposit	
 		,	js.DangerousScore		
 		,	lv_CreatedDate
 		,	lv_CreatedDate
