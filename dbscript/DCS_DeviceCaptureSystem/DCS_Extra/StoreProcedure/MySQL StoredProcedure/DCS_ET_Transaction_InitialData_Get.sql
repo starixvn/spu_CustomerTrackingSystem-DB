@@ -21,7 +21,7 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_ET_Transaction_InitialData_Get(2, 1001, 1002);
+			CALL DCS_ET_Transaction_InitialData_Get(10, 1001, 1002);
     
     */
     DECLARE lv_LastTransID 			BIGINT UNSIGNED;
@@ -51,6 +51,8 @@ BEGIN
 							INTO @result
 							FROM DCS_Extra.Transaction07 PARTITION(",lv_LastPartitionName,")
 							WHERE TransID < ",lv_LastTransID,"
+								AND IPInfoID IS NULL
+								AND IPID > 0
 							LIMIT 1");
         PREPARE stmt1 FROM  @sql;
 		EXECUTE stmt1;
@@ -61,6 +63,8 @@ BEGIN
 									,	'",lv_LastPartitionName,"' AS PartitionName
 								FROM DCS_Extra.Transaction07 PARTITION(",lv_LastPartitionName,")
 								WHERE TransID < ",lv_LastTransID,"
+									AND IPInfoID IS NULL
+									AND IPID > 0
 								ORDER BY TransID DESC
 								LIMIT ",ip_BatchSize);
 			PREPARE stmt1 FROM  @sql;
@@ -85,6 +89,8 @@ BEGIN
 									,	'",lv_NextPartition,"' AS PartitionName
 								FROM DCS_Extra.Transaction07 PARTITION(",lv_NextPartition,")
 								WHERE TransID < ",lv_LastTransID,"
+									AND IPInfoID IS NULL
+									AND IPID > 0
 								ORDER BY TransID DESC
 								LIMIT ",ip_BatchSize);
         

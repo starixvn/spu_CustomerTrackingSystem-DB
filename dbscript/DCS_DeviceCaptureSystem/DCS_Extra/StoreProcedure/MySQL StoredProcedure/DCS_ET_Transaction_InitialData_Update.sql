@@ -19,7 +19,7 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_ET_Transaction_InitialData_Update('[{"TransID":1,"CountryCode":"THA","Region":"Islamabad","City":"Manduria","ISP":"Rise Manila"},{"TransID":2,"CountryCode":"VN","Region":"Tarlac","City":"Tokyo","ISP":"Telecom Italia S.p.A."}]');
+			CALL DCS_ET_Transaction_InitialData_Update('[{"TransID":193915604,"IPInfoCode":8609138301568091049},{"TransID":193915605,"IPInfoCode":8467444344281531902}]');
             SELECT * FROM DCS_Extra.Transaction07;
     
     */
@@ -29,65 +29,34 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_Transactions;
 	CREATE TEMPORARY TABLE Temp_Transactions(
 			TransID				BIGINT UNSIGNED PRIMARY KEY
-		,	CountryCode			VARCHAR(20)
-		,	RegionName			VARCHAR(128)
-		,	CityName			VARCHAR(128)
-		,	ISPName				VARCHAR(256) 
-		,	CountryID			INT
-		,	RegionID			INT
-		,	CityID				INT
-		,	ISPID				INT
+		,	IPInfoCode			BIGINT
+		,	IPInfoID			INT
         
-		,	KEY `IX_Temp_Transactions_CountryCode` (`CountryCode`)
-		,	KEY `IX_Temp_Transactions_RegionName` (`RegionName`)
-		,	KEY `IX_Temp_Transactions_CityName` (`CityName`)
-		,	KEY `IX_Temp_Transactions_ISPName` (`ISPName`)
+		,	KEY `IX_Temp_Transactions_IPInfoCode` (`IPInfoCode`)
     );  
 
-    INSERT INTO Temp_Transactions(TransID, CountryCode, RegionName, CityName, ISPName)
+    INSERT INTO Temp_Transactions(TransID, IPInfoCode)
 	SELECT	TransID
-		,	CountryCode
-        ,	RegionName
-        ,	CityName
-        ,	ISPName
+		,	IPInfoCode
 	FROM	JSON_TABLE(
 			ip_TransJs,
 			 "$[*]" COLUMNS(
-								TransID				BIGINT UNSIGNED PATH "$.TransID"  
-                            ,	CountryCode			VARCHAR(20) 	PATH "$.CountryCode"   
-							,	RegionName			VARCHAR(128)  	PATH "$.RegionName"
-							,	CityName			VARCHAR(128) 	PATH "$.CityName"
-							,	ISPName				VARCHAR(256) 	PATH "$.ISPName"
+							TransID				BIGINT UNSIGNED PATH "$.TransID"  
+						,	IPInfoCode			BIGINT			PATH "$.IPInfoCode" 
 				)
 		   ) AS  rt;
      
-	#========GET CountryID===================
+	#========GET IPInfo===================
     UPDATE Temp_Transactions AS tmp
-		INNER JOIN DCS_Extra.Country AS c ON c.CountryCode = tmp.CountryCode
-	SET tmp.CountryID = c.CountryID;
+		INNER JOIN DCS_Extra.IPInfo AS ipi ON ipi.IPInfoCode = tmp.IPInfoCode
+	SET tmp.IPInfoID = ipi.IPInfoID;
     
-	#========GET RegionID===================
-    UPDATE Temp_Transactions AS tmp
-		INNER JOIN DCS_Extra.Region AS c ON c.RegionName = tmp.RegionName
-	SET tmp.RegionID = c.RegionID;
-    
-	#========GET CityID===================
-    UPDATE Temp_Transactions AS tmp
-		INNER JOIN DCS_Extra.City AS c ON c.CityName = tmp.CityName
-	SET tmp.CityID = c.CityID;
-    
-	#========GET ISPID===================
-    UPDATE Temp_Transactions AS tmp
-		INNER JOIN DCS_Extra.ISP AS c ON c.ISPName = tmp.ISPName
-	SET tmp.ISPID = c.ISPID;
-    
+    select * from Temp_Transactions AS tmp
+ 		INNER JOIN DCS_Extra.Transaction07 AS trans ON trans.TransID = tmp.TransID;
     #=============UPDATE Transaction07=================================
     UPDATE Temp_Transactions AS tmp
 		INNER JOIN DCS_Extra.Transaction07 AS trans ON trans.TransID = tmp.TransID
-	SET 	trans.CountryID = tmp.CountryID
-		,	trans.RegionID = tmp.RegionID
-		,	trans.CityID = tmp.CityID
-		,	trans.ISPID = tmp.ISPID;
+	SET trans.IPInfoID = tmp.IPInfoID;
 END$$
 
 DELIMITER ;

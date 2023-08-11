@@ -26,12 +26,3 @@ SELECT '-';
 INSERT IGNORE INTO DCS_Extra.Region(RegionName)
 SELECT '-';
 
-
-UPDATE DCS_Extra.SystemSetting
-set VValue = (select max(TransID) + 1 FROM DCS_Extra.Transaction07)
-WHERE ID = 1001;
-
-UPDATE DCS_Extra.SystemSetting
-set VName = 'LastPartitionName'
-,	VValue = 'pw202332'
-WHERE ID = 1002;
