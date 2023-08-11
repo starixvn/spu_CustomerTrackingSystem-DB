@@ -105,7 +105,7 @@ BEGIN
 			INNER JOIN DCS_Extra.Account AS acc ON acc.AccountID = ts.AccountID AND acc.SubscriberID = ts.SubscriberID
 			LEFT JOIN DCS_Extra.UserAgent AS ua ON ts.UserAgentKey = ua.UserAgentKey
 			LEFT JOIN DCS_Extra.ActionResult AS ar ON ts.ActionResultID = ar.ActionResultID
-			LEFT JOIN DCS_Extra.URL AS ur ON ts.URLID = ur.URLID AND ts.SubscriberID = ur.SubscriberID
+			LEFT JOIN DCS_Extra.URL AS ur ON ts.URLID = ur.URLID
             LEFT JOIN Temp_Flagged AS tmpFg ON ts.Flagged = tmpFg.Flagged
 		WHERE ts.SubscriberID = ",ip_SubscriberId,"
         ORDER BY ts.TransTime DESC
