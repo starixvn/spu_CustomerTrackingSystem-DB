@@ -65,13 +65,12 @@ BEGIN
 				,	ur.URLDetails
 				,	trs.IP
                 ,	tmpFg.DisplayName
-			FROM DCS_Extra.Account AS acc
-				INNER JOIN  DCS_Extra.Transaction07 trs ON acc.AccountID = trs.AccountID
+			FROM DCS_Extra.Transaction07 trs
 				LEFT JOIN DCS_Extra.UserAgent AS uag ON trs.UserAgentKey = uag.UserAgentKey
 				LEFT JOIN DCS_Extra.ActionResult AS ar ON trs.ActionResultID = ar.ActionResultID
 				LEFT JOIN DCS_Extra.URL AS ur ON trs.URLID = ur.URLID
                 LEFT JOIN Temp_Flagged AS tmpFg ON trs.Flagged = tmpFg.Flagged
-			WHERE trs.TransTime BETWEEN ip_FromDate AND ip_ToDate AND acc.SubscriberID = ip_SubscriberID AND acc.AccountID = ip_AccountID
+			WHERE trs.TransTime BETWEEN ip_FromDate AND ip_ToDate AND trs.SubscriberID = ip_SubscriberID AND trs.AccountID = ip_AccountID
 			) AS tmp
 		ORDER BY TransTime DESC            
 		LIMIT ip_Skip, ip_Take;

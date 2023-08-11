@@ -62,7 +62,7 @@ BEGIN
      
 	INSERT INTO Temp_FirstSeenDate(SubscriberID, CreatedDate)
 	SELECT	ass.SubscriberID
-		,	MIN(ass.CreatedDate) AS CreatedDate
+		,	MIN(ass.CreatedTime) AS CreatedDate
     FROM DCS_Extra.Association AS ass
     WHERE ass.DeviceID = ip_DeviceID
 	GROUP BY ass.SubscriberID;
