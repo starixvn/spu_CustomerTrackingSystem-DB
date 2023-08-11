@@ -12,6 +12,26 @@ Reviewer:
 USE DCS_Extra;
 INSERT INTO SystemSetting(ID,VGroup,VName,VValue,UpdatedTime)
 VALUE (1001, 'Initial IP Details', 'LastTransID', 0, NOW())
-	, (1002, 'Initial IP Details', 'LastCreatedDate', '2023-01-01', NOW());
+	, (1002, 'Initial IP Details', 'LastPartitionName', 'pw202332', NOW());
 
-#Intial SCHEMA TABLES
+INSERT IGNORE INTO DCS_Extra.Country(CountryName, CountryCode)
+SELECT '-', '-';
+
+INSERT IGNORE INTO DCS_Extra.City(CityName)
+SELECT '-';
+
+INSERT IGNORE INTO DCS_Extra.ISP(ISPName)
+SELECT '-';
+
+INSERT IGNORE INTO DCS_Extra.Region(RegionName)
+SELECT '-';
+
+
+UPDATE DCS_Extra.SystemSetting
+set VValue = (select max(TransID) + 1 FROM DCS_Extra.Transaction07)
+WHERE ID = 1001;
+
+UPDATE DCS_Extra.SystemSetting
+set VName = 'LastPartitionName'
+,	VValue = 'pw202332'
+WHERE ID = 1002;
