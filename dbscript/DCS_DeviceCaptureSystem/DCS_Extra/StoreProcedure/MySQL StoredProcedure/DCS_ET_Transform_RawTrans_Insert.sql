@@ -21,6 +21,7 @@ BEGIN
 			- 20230426@Jonathan.Doan: Add BotD [Redmine ID: #186644]
             - 2023292023@Casey.Huynh: CTMAX, Velki [RedmineID: #190118]
 			- 20230809@Terry.Nguyen: Add IP Info [RedmineID: #192402]
+            - 20230811@Terry.Nguyen: Update IP Info [RedmineID: #192402]
 
 		Param's Explanation (filtered by):
 			
@@ -66,14 +67,12 @@ BEGIN
         ,	BotComponent				LONGTEXT							NULL
         ,	BotComponentCode			VARCHAR(100)						NULL
 		,	Country						VARCHAR(128)						NULL
-		,	CountryCode					VARCHAR(45)							NULL
-		,	CountryID					INT	UNSIGNED						NULL
-		,	Region						VARCHAR(128)						NULL
-		,	RegionID					INT	UNSIGNED						NULL
-		,	City						VARCHAR(128)						NULL
-		,	CityID						INT	UNSIGNED						NULL
+		,	CountryCode					VARCHAR(45)							NULL		
+		,	Region						VARCHAR(128)						NULL		
+		,	City						VARCHAR(128)						NULL		
 		,	ISP							VARCHAR(128)						NULL
-		,	ISPID						INT	UNSIGNED						NULL
+		,	IPInfoID					INT	UNSIGNED						NULL
+        ,	IPInfoCode					BIGINT								NULL
         
 		,	INDEX IX_Temp_Transactions_BotComponentCode(BotComponentCode)
     );     
@@ -84,7 +83,7 @@ BEGIN
         ,	BotDetectionValue			BIT(20)		NULL		DEFAULT 0		
     );     
 		
-	INSERT INTO Temp_Transactions(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, Country, CountryCode, Region, City, ISP)
+	INSERT INTO Temp_Transactions(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, Country, CountryCode, Region, City, ISP, IPInfoCode)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -108,6 +107,7 @@ BEGIN
 		,	Region
 		,	City
 		,	ISP
+        ,	IPInfoCode
 	FROM	JSON_TABLE(
 			ip_RawTransJson,
 			 "$[*]" COLUMNS(
@@ -128,11 +128,12 @@ BEGIN
                             ,	FlaggedCode				VARCHAR(100)	PATH "$.FlaggedCode"
                             ,	BotDetection			LONGTEXT		PATH "$.BotDetection"
                             ,	BotComponent			LONGTEXT		PATH "$.BotComponent"
-							,	Country					VARCHAR(100)	PATH "$.Country"
+							,	Country					VARCHAR(128)	PATH "$.Country"
 							,	CountryCode				VARCHAR(45)		PATH "$.CountryCode"
-							,	Region					VARCHAR(100)	PATH "$.Region"
-							,	City					VARCHAR(100)	PATH "$.City"
-							,	ISP						VARCHAR(100)	PATH "$.ISP"
+							,	Region					VARCHAR(128)	PATH "$.Region"
+							,	City					VARCHAR(128)	PATH "$.City"
+							,	ISP						VARCHAR(128)	PATH "$.ISP"
+                            ,	IPInfoCode				BIGINT			PATH "$.IPInfoCode"
 				)
 		   ) AS  rt; 
            
@@ -164,76 +165,32 @@ BEGIN
 		INNER JOIN DCS_Extra.BotComponent AS bds ON bds.Code = tmp.BotComponentCode
 	SET tmp.BotComponentID = bds.ID;
 	
-	#==========================
+    
+    #==========================
 	
-	INSERT IGNORE INTO DCS_Extra.Country(CountryName, CountryCode)
-	WITH tmp_Country AS (
+	INSERT IGNORE INTO DCS_Extra.IPInfo(IPInfoCode, Country, City, Region, ISP)
+	WITH tmp_IPInfo AS (
 		SELECT DISTINCT
-				Country
-			,	CountryCode
+				IPInfoCode
+			,	Country
+            ,	City
+            ,	Region
+            ,	ISP
 		FROM Temp_Transactions AS tmp
 	)
-	SELECT 		tmpCo.Country
-			,	tmpCo.CountryCode
-    FROM tmp_Country AS tmpCo
-    WHERE NOT EXISTS (SELECT 1 FROM DCS_Extra.Country con WHERE con.CountryCode = tmpCo.CountryCode); 
+	SELECT 		tmpIP.IPInfoCode
+			,	tmpIP.Country
+            ,	tmpIP.City
+            ,	tmpIP.Region
+            ,	tmpIP.ISP
+    FROM tmp_IPInfo AS tmpIP
+    WHERE NOT EXISTS (SELECT 1 FROM DCS_Extra.IPInfo ipI WHERE ipI.IPInfoCode = tmpIP.IPInfoCode); 
 	
 	UPDATE Temp_Transactions AS tmp
-		INNER JOIN DCS_Extra.Country AS con ON con.CountryCode = tmp.CountryCode
-	SET tmp.CountryID = con.CountryID;
-	
-	#================================
-	
-	INSERT IGNORE INTO DCS_Extra.Region(RegionName)
-	WITH tmp_Region AS (
-		SELECT DISTINCT
-				Region
-		FROM Temp_Transactions AS tmp
-	)
-	SELECT 		tmpRe.Region
-    FROM tmp_Region AS tmpRe
-    WHERE NOT EXISTS (SELECT 1 FROM DCS_Extra.Region reg WHERE reg.RegionName = tmpRe.Region); 
-	
-	UPDATE Temp_Transactions AS tmp
-		INNER JOIN DCS_Extra.Region AS reg ON reg.RegionName = tmp.Region
-	SET tmp.RegionID = reg.RegionID;
-	
-	#================================
-	
-	INSERT IGNORE INTO DCS_Extra.City(CityName)
-	WITH tmp_City AS (
-		SELECT DISTINCT
-				City
-		FROM Temp_Transactions AS tmp
-	)
-	SELECT 		tmpCt.City
-    FROM tmp_City AS tmpCt
-    WHERE NOT EXISTS (SELECT 1 FROM DCS_Extra.City cit WHERE cit.CityName = tmpCt.City); 
-	
-	UPDATE Temp_Transactions AS tmp
-		INNER JOIN DCS_Extra.City AS cit ON cit.CityName = tmp.City
-	SET tmp.CityID = cit.CityID;
-	
-	#================================
-	
-	INSERT IGNORE INTO DCS_Extra.ISP(ISPName)
-	WITH ISP AS (
-		SELECT DISTINCT
-				ISP
-		FROM Temp_Transactions AS tmp
-	)
-	SELECT 		tmpIs.ISP
-    FROM ISP AS tmpIs
-    WHERE NOT EXISTS (SELECT 1 FROM DCS_Extra.ISP isp WHERE isp.ISPName = tmpIs.ISP); 
-	
-	UPDATE Temp_Transactions AS tmp
-		INNER JOIN DCS_Extra.ISP AS isp ON isp.ISPName = tmp.ISP
-	SET tmp.ISPID = isp.ISPID;
-	
-	#================================
-	
-	
-	INSERT INTO DCS_Extra.RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, InsertTime, BotDetectionValue, BotComponentID, CountryID, RegionID, CityID, ISPID)
+		INNER JOIN DCS_Extra.IPInfo AS ipI ON ipI.IPInfoCode = tmp.IPInfoCode
+	SET tmp.IPInfoID = ipI.IPInfoID;   
+    
+	INSERT INTO DCS_Extra.RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, InsertTime, BotDetectionValue, BotComponentID, IPInfoID)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -253,10 +210,7 @@ BEGIN
 		,	lv_InsertionTime as InsertTime
 		,	rt.BotDetectionValue
 		,	rt.BotComponentID
-		,	rt.CountryID
-		,	rt.RegionID
-		,	rt.CityID
-		,	rt.ISPID
+		,	rt.IPInfoID
 	FROM Temp_Transactions AS rt
 		LEFT JOIN DCS_Extra.StaticList AS sl 	ON sl.ListCode = 'Flagged'
 													AND sl.ItemCode = rt.FlaggedCode;
