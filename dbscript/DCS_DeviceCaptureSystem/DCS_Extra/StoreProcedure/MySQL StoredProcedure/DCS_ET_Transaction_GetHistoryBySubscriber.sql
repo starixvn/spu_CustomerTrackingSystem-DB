@@ -27,6 +27,7 @@ sp: BEGIN
 
 		Revisions:
 			- 	20230720@Casey.Huynh: Created [Redmine ID: 189873]
+            - 	20230809@Casey.Huynh: Show Device Info [Redmine ID: 192402]
 			
 		Param's Explanation (filtered by):
 
@@ -233,7 +234,7 @@ sp: BEGIN
                         ,	ip.ISP
                         ,	tmpFg.DisplayName
 					FROM DCS_Extra.Transaction07 AS trs
-                        INNER JOIN DCS_Extra.IPInfo AS ip ON trs.IPInfoID = ip.IPInfoID
+                        LEFT JOIN DCS_Extra.IPInfo AS ip ON trs.IPInfoID = ip.IPInfoID
 						LEFT JOIN DCS_Extra.UserAgent AS uag ON trs.UserAgentKey = uag.UserAgentKey
 						LEFT JOIN DCS_Extra.ActionResult AS ar ON trs.ActionResultID = ar.ActionResultID
 						LEFT JOIN DCS_Extra.URL AS ur ON trs.URLID = ur.URLID
@@ -288,7 +289,7 @@ sp: BEGIN
                         ,	tmpFg.DisplayName
 					FROM DCS_Extra.Transaction07 AS trs
                     	INNER JOIN Temp_Account AS tmpAcc ON trs.AccountID = tmpAcc.AccountID
-                        INNER JOIN DCS_Extra.IPInfo AS ip ON trs.IPInfoID = ip.IPInfoID
+                        LEFT JOIN DCS_Extra.IPInfo AS ip ON trs.IPInfoID = ip.IPInfoID
 						LEFT JOIN DCS_Extra.UserAgent AS uag ON trs.UserAgentKey = uag.UserAgentKey
 						LEFT JOIN DCS_Extra.ActionResult AS ar ON trs.ActionResultID = ar.ActionResultID
 						LEFT JOIN DCS_Extra.URL AS ur ON trs.URLID = ur.URLID
