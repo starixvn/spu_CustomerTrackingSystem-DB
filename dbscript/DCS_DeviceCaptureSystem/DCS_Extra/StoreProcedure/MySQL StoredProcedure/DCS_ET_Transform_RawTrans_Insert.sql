@@ -168,11 +168,12 @@ BEGIN
     
     #==========================
 	
-	INSERT IGNORE INTO DCS_Extra.IPInfo(IPInfoCode, Country, City, Region, ISP)
+	INSERT IGNORE INTO DCS_Extra.IPInfo(IPInfoCode, Country, CountryCode, City, Region, ISP)
 	WITH tmp_IPInfo AS (
 		SELECT DISTINCT
 				IPInfoCode
 			,	Country
+            ,	CountryCode
             ,	City
             ,	Region
             ,	ISP
@@ -180,6 +181,7 @@ BEGIN
 	)
 	SELECT 		tmpIP.IPInfoCode
 			,	tmpIP.Country
+            ,	tmpIP.CountryCode
             ,	tmpIP.City
             ,	tmpIP.Region
             ,	tmpIP.ISP
