@@ -21,8 +21,8 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_ET_Association_GetAssociationDeviceByDeviceSubscriber(@ip_SubscriberID:=8000001,@ip_DeviceID:=1,@ip_NoOfRecord:=15); 
-   
+			CALL DCS_ET_Association_GetAssociationDeviceByDeviceSubscriber(@ip_SubscriberID:=8000005,@ip_DeviceID:=299,@ip_NoOfRecord:=15); 
+
 	*/
     DROP TEMPORARY TABLE IF EXISTS Temp_Account;
 	CREATE TEMPORARY TABLE Temp_Account(
@@ -82,10 +82,11 @@ BEGIN
     
     INSERT IGNORE INTO Temp_Device(DeviceID, CreatedTime)
 	SELECT	ass.DeviceID
-		,	ass.CreatedTime
+		,	MAX(ass.CreatedTime) AS MaxCreatedTime
     FROM DCS_Extra.Association AS ass 
 		INNER JOIN Temp_Account AS acc ON ass.AccountID = acc.AccountID 
-    ORDER BY  ass.CreatedDate DESC, ass.CreatedTime DESC
+	GROUP BY ass.DeviceID
+    ORDER BY  MaxCreatedTime DESC
     LIMIT ip_NoOfRecord; 
     
     INSERT INTO Temp_AssociatedDevice(AccountID, DeviceID,  CreatedTime)
