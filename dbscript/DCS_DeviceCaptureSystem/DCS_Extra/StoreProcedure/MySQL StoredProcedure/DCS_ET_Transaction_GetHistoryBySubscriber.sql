@@ -242,6 +242,7 @@ sp: BEGIN
 					WHERE trs.TransTime BETWEEN ip_FromDate AND ip_ToDate
 						AND trs.DeviceID = IFNULL(lv_DeviceID,trs.DeviceID)
 						AND trs.IP LIKE CONCAT(IFNULL(ip_IP,trs.IP),'%')
+                        AND trs.SubscriberID = ip_SubscriberID
 					) AS tmp
 				ORDER BY TransTime DESC            
 				LIMIT ip_Skip, ip_Take;
@@ -351,6 +352,7 @@ sp: BEGIN
 					WHERE trs.TransTime BETWEEN ip_FromDate AND ip_ToDate
 						AND trs.DeviceID = IFNULL(lv_DeviceID,trs.DeviceID)
                         AND trs.IP LIKE CONCAT(IFNULL(ip_IP,trs.IP),'%')
+                        AND trs.SubscriberID = ip_SubscriberID
 					) AS tmp
 				ORDER BY TransTime DESC            
 				LIMIT ip_Skip, ip_Take;
