@@ -30,6 +30,7 @@ BEGIN
 			- 20230323@Terry.Nguyen: Get InsertTime from RawTransaction [Redmine Id: #185185]
 			- 20230426@Jonathan.Doan: Get BotDetectionValue from RawTransaction [Redmine ID: #186644]
             - 2023292023@Casey.Huynh: CTMAX, Velki, Remove insert into CTSCustomerLastLoginTimeProcess and enhance Performance [RedmineID: #190118]
+            - 20230809@Jonathan.Doan: Add more field for IP detail [RedmineID: #192402]
             
 	    Param's Explanation (filtered by):
 		Example:
