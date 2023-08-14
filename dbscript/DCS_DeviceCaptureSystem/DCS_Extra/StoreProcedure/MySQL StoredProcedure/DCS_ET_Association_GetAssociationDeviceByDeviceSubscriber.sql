@@ -21,7 +21,7 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_ET_Association_GetAssociationDeviceByDeviceSubscriber(@ip_SubscriberID:=8000005,@ip_DeviceID:=299,@ip_NoOfRecord:=15); 
+			CALL DCS_ET_Association_GetAssociationDeviceByDeviceSubscriber(@ip_SubscriberID:=8000005,@ip_DeviceID:=299,@ip_NoOfRecord:=15) 
 
 	*/
     DROP TEMPORARY TABLE IF EXISTS Temp_Account;
