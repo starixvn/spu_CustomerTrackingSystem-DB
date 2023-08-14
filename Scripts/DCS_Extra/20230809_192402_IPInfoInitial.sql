@@ -25,7 +25,7 @@ CREATE TABLE `IPInfo` (
   PRIMARY KEY (`IPInfoID`),
   UNIQUE KEY `UX_IPInfo_IPInfoCode` (`IPInfoCode`),
   FULLTEXT `IX_IPInfo_Country_Region_City` (`Country`,`Region`,`City`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb3 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8_unicode_ci;
 
 ALTER TABLE `DCS_Extra`.`RawTransaction` 
 ADD COLUMN `IPInfoID` INT NULL AFTER `BotComponentID`;
