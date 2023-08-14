@@ -35,10 +35,10 @@ sp: BEGIN
 	
 		Example:		
 	*/
-	DECLARE CONS_LOG 					TINYINT DEFAULT 	0; #0:LogOff, 1:LogOn
+	DECLARE CONST_LOG 					TINYINT DEFAULT 	0; #0:LogOff, 1:LogOn
 	DECLARE CONST_RULE_GROUPID 			INT 	DEFAULT 	5;
-	DECLARE CONS_SUBSCRIBERID_ALPHA		INT 	DEFAULT  	168;
-	DECLARE CONS_SUBSCRIBERID_MAXBET	INT 	DEFAULT  	169;
+	DECLARE CONST_SUBSCRIBERID_ALPHA	INT 	DEFAULT  	168;
+	DECLARE CONST_SUBSCRIBERID_MAXBET	INT 	DEFAULT  	169;
     
     
     DECLARE lv_RuleTimeStep 			SMALLINT;
@@ -50,7 +50,7 @@ sp: BEGIN
     
     #==================LOG=======================================================
     DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleArbitrage_Process';
-    IF CONS_LOG = 1 THEN     
+    IF CONST_LOG = 1 THEN     
 		INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
 		SELECT lv_SPName, CURRENT_TIMESTAMP(), CONCAT('@ip_LiveIndicator:=',ip_LiveIndicator,',@ip_MaxSequenceID:=',ip_MaxSequenceID,',@ip_MatchID:=',ip_MatchID
 		,',@ip_IsMajorLeague:=',ip_IsMajorLeague,',@ip_ScoreDiff:=',ip_ScoreDiff,',@ip_BettypeID:=',ip_BettypeID,',@ip_BetID:=',ip_BetID,',@ip_HDP:=',ip_HDP);
@@ -149,7 +149,7 @@ sp: BEGIN
 															AND agent.CustSubID = 0 
                                                             AND cus.RoleID = 1
 															AND agent.IsInternal = 0 												
-                                                            AND cus.SubscriberID IN (CONS_SUBSCRIBERID_ALPHA,CONS_SUBSCRIBERID_MAXBET)
+                                                            AND cus.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET)
         WHERE	mms.SequenceID <= ip_MaxSequenceID 
 			AND mms.MatchID = ip_MatchID 
             AND mms.ScoreDiff = ip_ScoreDiff 
