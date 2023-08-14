@@ -300,7 +300,7 @@ BEGIN
 					OR (r.RuleGroupId = 304 AND a.CurrentCategoryId = r.CurrentCategory AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin)										
 					OR (r.RuleGroupId = 305 AND a.CurrentCategoryId = r.CurrentCategory AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM >= r.WinlossRM)	
 					OR (r.RuleGroupId = 306 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount > r.BetCount AND a.Margin > r.Margin)					
-					OR (r.RuleGroupId = 307 AND a.CurrentCategoryId = r.CurrentCategory AND a.BetCount >= r.BetCount AND a.WinlossRM < r.WinlossRM AND a.Margin >= r.Margin)									
+					OR (r.RuleGroupId = 307 AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin)									
 					-- Smart
 					OR (r.RuleGroupId = 400 AND a.CurrentCategoryId = r.CurrentCategory AND (r.IsProbationLastDay IS NULL OR a.IsProbationLastDay = r.IsProbationLastDay) AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM)
 					OR (r.RuleGroupId = 401 AND a.CurrentCategoryId = r.CurrentCategory AND (r.IsProbationLastDay IS NULL OR a.IsProbationLastDay = r.IsProbationLastDay) AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.BetCount >= r.BetCount AND a.WinlossRM > r.WinlossRM AND a.WinDaysRate > r.WinDaysRate)
