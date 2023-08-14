@@ -151,6 +151,7 @@ sp: BEGIN
 				,	tmp.FirstDeviceCode	AS FirstDeviceCode
 				,	tmp.Action			AS Action
 				,	tmp.ActionResult	AS ActionResult
+                ,	tmp.UserAgent		AS UserAgent
 				,	tmp.OS				AS OS
 				,	tmp.Browser			AS Browser
 				,	tmp.URLDetails		AS URLDetails
@@ -169,6 +170,7 @@ sp: BEGIN
 						,	trs.FirstDeviceCode
 						,	ar.Action
 						,	ar.ActionResult
+                        ,	uag.UserAgent
 						,	uag.OS
 						,	uag.Browser
 						,	ur.URLDetails
@@ -206,6 +208,7 @@ sp: BEGIN
 				,	tmp.FirstDeviceCode	AS FirstDeviceCode
 				,	tmp.Action			AS Action
 				,	tmp.ActionResult	AS ActionResult
+                ,	tmp.UserAgent		AS UserAgent
 				,	tmp.OS				AS OS
 				,	tmp.Browser			AS Browser
 				,	tmp.URLDetails		AS URLDetails
@@ -224,6 +227,7 @@ sp: BEGIN
 						,	trs.FirstDeviceCode
 						,	ar.Action
 						,	ar.ActionResult
+                        ,	uag.UserAgent
 						,	uag.OS
 						,	uag.Browser
 						,	ur.URLDetails
@@ -261,6 +265,7 @@ sp: BEGIN
 				,	tmp.FirstDeviceCode	AS FirstDeviceCode
 				,	tmp.Action			AS Action
 				,	tmp.ActionResult	AS ActionResult
+                ,	tmp.UserAgent		AS UserAgent
 				,	tmp.OS				AS OS
 				,	tmp.Browser			AS Browser
 				,	tmp.URLDetails		AS URLDetails
@@ -279,6 +284,7 @@ sp: BEGIN
 						,	trs.FirstDeviceCode
 						,	ar.Action
 						,	ar.ActionResult
+                        ,	uag.UserAgent
 						,	uag.OS
 						,	uag.Browser
 						,	ur.URLDetails
@@ -316,6 +322,7 @@ sp: BEGIN
 				,	tmp.FirstDeviceCode	AS FirstDeviceCode
 				,	tmp.Action			AS Action
 				,	tmp.ActionResult	AS ActionResult
+                ,	tmp.UserAgent		AS UserAgent
 				,	tmp.OS				AS OS
 				,	tmp.Browser			AS Browser
 				,	tmp.URLDetails		AS URLDetails
@@ -334,6 +341,7 @@ sp: BEGIN
 						,	trs.FirstDeviceCode
 						,	ar.Action
 						,	ar.ActionResult
+                        ,	uag.UserAgent
 						,	uag.OS
 						,	uag.Browser
 						,	ur.URLDetails
