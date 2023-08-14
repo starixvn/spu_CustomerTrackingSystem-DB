@@ -40,7 +40,8 @@ ALTER TABLE `DCS_Extra`.`Transaction07`
 ADD COLUMN `IPInfoID` INT NULL AFTER `BotComponentID`;
 
 ALTER TABLE `DCS_Extra`.`Transaction07`
-ADD INDEX IX_Transaction07_DeviceIDSubscriberID(DeviceID, SubscriberID),
+DROP INDEX `IX_Transaction07_SubscriberID_TransTime`,
+ADD INDEX IX_Transaction07_SubscriberIDTransTimeDeviceID(SubscriberID,TransTime,DeviceID),
 ADD INDEX IX_Transaction07_IPInfoID(IPInfoID),
 ADD INDEX IX_Transaction07_IPID(IPID);
 
