@@ -19,11 +19,12 @@ BEGIN
 
 		Revisions:
 			- 	20230720@Casey.Huynh: Created [Redmine ID: 189873]
+            - 	20230809@Casey.Huynh: Show Device Info [Redmine ID: 192402]
 			
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_ET_Transaction_GetLatestBySubscriber(@ip_SubscriberID:=8000001,@ip_Length:=2000,@ip_Skip:=2, @ip_Take:=20, @op_TotalItem); SELECT @op_TotalItem;
+			CALL DCS_ET_Transaction_GetLatestBySubscriber(@ip_SubscriberID:=8000001,@ip_Length:=2000,@ip_Skip:=2, @ip_Take:=205, @op_TotalItem); SELECT @op_TotalItem;
             SELECT * FROM DCS_Extra.Transaction07 WHERE SubscriberID =8000001;
 */
 	DECLARE lv_Partition		VARCHAR(50);
@@ -39,6 +40,10 @@ BEGIN
 		,	TransTime		DATETIME(4)     
 		,	FirstDeviceCode	VARCHAR(64)
 		,	IP				VARCHAR(50)
+		,	Country		VARCHAR(128)
+        ,	City		VARCHAR(128)
+        ,	Region		VARCHAR(128)
+        ,	ISP			VARCHAR(128)
 		,	Action			VARCHAR(100)
 		,	ActionResult	VARCHAR(100)
 		,	OS				VARCHAR(100)		
@@ -87,12 +92,12 @@ BEGIN
 	WHILE (lv_LimitTrans > 0 AND lv_Partition IS NOT NULL) DO
 
         SET @sql = 	CONCAT("
-		INSERT INTO Temp_Transaction(TransTime, TransID, SubscriberID, AccountID, LoginName, FirstDeviceCode, Action, ActionResult, OS, Browser, URLDetails, IP, RobotTracking)
+		INSERT INTO Temp_Transaction(TransTime, TransID, SubscriberID, AccountID, LoginName, FirstDeviceCode, Action, ActionResult, OS, Browser, URLDetails, IP, Country, Region, City, ISP, RobotTracking)
         SELECT	ts.TransTime			
 			,	ts.TransID
             ,	ts.SubscriberID
-            ,	acc.AccountID
-			,	acc.LoginName
+            ,	ts.AccountID
+			,	ts.LoginName
 			,	ts.FirstDeviceCode
 			,	ar.Action
 			,	ar.ActionResult
@@ -100,12 +105,16 @@ BEGIN
 			,	ua.Browser
 			,	ur.URLDetails
             ,	ts.IP
+            ,	ip.Country
+			,	ip.Region
+			,	ip.City
+			,	ip.ISP
             ,	tmpFg.DisplayName AS RobotTracking
 		FROM DCS_Extra.Transaction07 PARTITION(",lv_Partition,") AS ts
-			INNER JOIN DCS_Extra.Account AS acc ON acc.AccountID = ts.AccountID AND acc.SubscriberID = ts.SubscriberID
+			LEFT JOIN DCS_Extra.IPInfo AS ip ON ip.IPInfoID = ts.IPInfoID
 			LEFT JOIN DCS_Extra.UserAgent AS ua ON ts.UserAgentKey = ua.UserAgentKey
 			LEFT JOIN DCS_Extra.ActionResult AS ar ON ts.ActionResultID = ar.ActionResultID
-			LEFT JOIN DCS_Extra.URL AS ur ON ts.URLID = ur.URLID AND ts.SubscriberID = ur.SubscriberID
+			LEFT JOIN DCS_Extra.URL AS ur ON ts.URLID = ur.URLID
             LEFT JOIN Temp_Flagged AS tmpFg ON ts.Flagged = tmpFg.Flagged
 		WHERE ts.SubscriberID = ",ip_SubscriberId,"
         ORDER BY ts.TransTime DESC
@@ -144,6 +153,10 @@ BEGIN
 		,	tmp.Browser			AS Browser
 		,	tmp.URLDetails		AS URLDetails
 		,	tmp.IP				AS IP
+		,	tmp.Country
+		,	tmp.Region
+		,	tmp.City
+		,	tmp.ISP
         ,	tmp.RobotTracking	AS RobotTracking
 	FROM Temp_Transaction AS tmp
     ORDER BY TransTime DESC
