@@ -13,6 +13,9 @@ Revisions:
 ALTER TABLE CTS_DataCenter.CustomerCategory
 ADD COLUMN ScanTaggingIntervalInSecond	BIGINT DEFAULT NULL;
 
+ALTER TABLE CTS_DataCenter.CTSCustomerClassification
+ADD COLUMN LastTaggingScannedDate	DATETIME DEFAULT NULL;
+
 UPDATE CTS_DataCenter.CustomerCategory AS cc
 SET cc.ScanTaggingIntervalInSecond = 86400
 WHERE cc.CategoryGroup IN (201, 202, 203, 204, 205, 206) 
