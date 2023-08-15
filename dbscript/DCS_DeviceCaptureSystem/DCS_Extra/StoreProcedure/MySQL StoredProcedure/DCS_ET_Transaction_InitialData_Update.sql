@@ -46,15 +46,11 @@ BEGIN
 				)
 		   ) AS  rt;
      
-	#========GET IPInfo===================
-    UPDATE Temp_Transactions AS tmp
-		INNER JOIN DCS_Extra.IPInfo AS ipi ON ipi.IPInfoCode = tmp.IPInfoCode
-	SET tmp.IPInfoID = ipi.IPInfoID;
+	UPDATE DCS_Extra.Transaction07 AS trans 
+		INNER JOIN  Temp_Transactions AS tmp ON tmp.TransID = trans.TransID
+		INNER JOIN  DCS_Extra.IPInfo AS ipi ON ipi.IPInfoCode = tmp.IPInfoCode
+	SET trans.IPInfoID = ipi.IPInfoID;
     
-    #=============UPDATE Transaction07=================================
-    UPDATE Temp_Transactions AS tmp
-		INNER JOIN DCS_Extra.Transaction07 AS trans ON trans.TransID = tmp.TransID
-	SET trans.IPInfoID = tmp.IPInfoID;
 END$$
 
 DELIMITER ;
