@@ -6,8 +6,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 ALTER PROCEDURE [dbo].[CTS_GeneralNormalClassification_NormalPool_Insert]
-		@FunctionId		SMALLINT,
-		@Priority		SMALLINT
+		@FunctionId		SMALLINT NOT NULL,
+		@Priority		SMALLINT NOT NULL
 AS
 /*
 	Created: 20230420@Jonas.Huynh
@@ -18,6 +18,7 @@ AS
 	Revisions:
 		- 20230420@Jonas.Huynh: Created [Redmine ID: #186678]
 		- 20230601@Jonas.Huynh: Normal Renovation (Phase2) [Redmine ID: #186684]
+		- 20230816@Jonas.Huynh: Tagging Classification [Redmine ID: #191400]
 
 	Param's Explanation:
         @FunctionId		: Being used to log particular function

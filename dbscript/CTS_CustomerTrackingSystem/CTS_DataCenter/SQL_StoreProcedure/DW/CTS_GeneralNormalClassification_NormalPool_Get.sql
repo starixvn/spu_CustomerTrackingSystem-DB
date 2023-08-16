@@ -16,7 +16,8 @@ AS
 
 	Revisions:
 		- 20230420@Jonas.Huynh: Created [Redmine ID: #186678]
-
+		- 20230816@Jonas.Huynh: Tagging Classification [Redmine ID: #191400]
+	
 	Param's Explanation:
 		@ScannedMaxId: This parameter is used to output scanned MaxID
 
@@ -30,13 +31,16 @@ BEGIN
 		
 	DECLARE	@BatchSize INT = 20000;
 
+	DECLARE @FunctionId_ScanTagging TINYINT = 100;
+
 	IF	OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
 	DROP TABLE	#tmpCustomers;
 
 	CREATE TABLE #tmpCustomers(
-		Id				BIGINT PRIMARY KEY IDENTITY(1,1),
-		CustId			INT UNIQUE NOT NULL,
-		IsCheckBetCount BIT DEFAULT(0)
+		Id					BIGINT PRIMARY KEY IDENTITY(1,1),
+		CustId				INT UNIQUE NOT NULL,
+		IsCheckBetCount		BIT DEFAULT(0),
+		IsScanOnlyTagging	BIT DEFAULT(0)
 	);
 
 	-- #1: Get Scanned MaxID
@@ -46,19 +50,21 @@ BEGIN
 	-- #2: Get top customers by priority
 	IF(@ScannedMaxId IS NOT NULL)
 	BEGIN
-		INSERT INTO #tmpCustomers(CustId, IsCheckBetCount)
+		INSERT INTO #tmpCustomers(CustId, IsCheckBetCount, IsScanOnlyTagging)
 		SELECT TOP(@BatchSize) c.CustId,
-			   CASE WHEN (COUNT(c.CustId) = COUNT(c.FunctionId)) AND (COUNT(c.FunctionId) = SUM(c.FunctionId)) THEN 1 ELSE 0 END
+			   CASE WHEN (COUNT(c.CustId) = COUNT(c.FunctionId)) AND (COUNT(c.FunctionId) = SUM(c.FunctionId)) THEN 1 ELSE 0 END,
+			   CASE WHEN SUM(c.FunctionId) = (COUNT(c.CustId) * @FunctionId_ScanTagging) THEN 1 ELSE 0 END
 		FROM dbo.CustomerClassification_NormalPool AS c WITH(NOLOCK)
 		WHERE c.ID <= @ScannedMaxId
 		GROUP BY c.CustId
-		ORDER BY Min(c.Priority) ASC, Min(c.ID) ASC
+		ORDER BY Min(c.Priority) ASC, Min(c.ID) ASC;
 	END
 
 	-- #3: Return dataset
 	SELECT CustId		   AS CustId, 
-		   IsCheckBetCount AS IsCheckBetCount
-	FROM #tmpCustomers
+		   IsCheckBetCount AS IsCheckBetCount,
+		   IsScanOnlyTagging   AS IsScanOnlyTagging
+	FROM #tmpCustomers;
 	
 	DROP TABLE #tmpCustomers;
 END;
