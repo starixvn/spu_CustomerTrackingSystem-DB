@@ -15,12 +15,12 @@ BEGIN
 		Original:
 
 		Revisions:
-			- 	20230809@Casey.Huynh: Created [Redmine ID: 192402]
+			- 	20230809@Casey.Huynh: Created, Return IP [Redmine ID: 192402]
 			
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_ET_Transaction_InitialData_Get(10, 1001, 1002);
+			CALL DCS_ET_Transaction_InitialData_Get(10, 1001);
     
     */
     DECLARE lv_LastTransID 			BIGINT UNSIGNED;
@@ -31,7 +31,7 @@ BEGIN
     WHERE st.ID = ip_LastTransID_ParameterID;
     
 	SELECT 	t.TransID
-		,	t.IPID 
+        ,	INET_ATON(t.IP) AS IPID
 	FROM DCS_Extra.Transaction07 AS t
 	WHERE t.TransID < lv_LastTransID
 	ORDER BY t.TransID DESC

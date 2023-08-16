@@ -20,7 +20,7 @@ BEGIN
 			
 		Example:
 			CALL DCS_ET_Transaction_InitialData_Update('[{"TransID":193915604,"IPInfoCode":8609138301568091049},{"TransID":193915605,"IPInfoCode":8467444344281531902}]');
-            SELECT * FROM DCS_Extra.Transaction07;
+            SELECT IPID,IPInfoID, t.* FROM DCS_Extra.Transaction07 AS t WHERE TransID IN (193915605,193915604);
     
     */
     DECLARE lv_LastCreatedDate DATETIME;
@@ -45,11 +45,11 @@ BEGIN
 						,	IPInfoCode			BIGINT			PATH "$.IPInfoCode" 
 				)
 		   ) AS  rt;
-     
+           
 	UPDATE DCS_Extra.Transaction07 AS trans 
 		INNER JOIN  Temp_Transactions AS tmp ON tmp.TransID = trans.TransID
 		INNER JOIN  DCS_Extra.IPInfo AS ipi ON ipi.IPInfoCode = tmp.IPInfoCode
-	SET trans.IPInfoID = ipi.IPInfoID;
+	SET trans.IPInfoID = ipi.IPInfoID , trans.IPID = INET_ATON(trans.IP);
     
 END$$
 
