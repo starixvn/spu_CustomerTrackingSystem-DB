@@ -39,11 +39,12 @@ BEGIN
                 - 20221110@Casey.Huynh: Update logic for checking Category in OldCategory table [Redmine ID: #178022]
 				- 202230426@Long.Luu: Adjust Probation's period from 20 to 15 [Redmine ID: #187433]
                 - 20230428@Jonas.Huynh: Realtime Renovation [Redmine ID: #186678]
+                - 20230816@Jonas.Huynh: Tagging Classification [Redmine ID: #191400]
                 
 		Param's Explanation (filtered by):
         
         Example:
-				- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount('[{"CustId": "43600693","CategoryId":"1000","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","TaggingID":10,"TaggingType":1,"PerformanceTime":"2021-03-31 00:00:00"}]',@or);
+				- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount('[{"CustId": "43600693","CategoryId":"1000","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","TaggingID":10,"TaggingType":1,"PerformanceTime":"2021-03-31 00:00:00", "IsScanOnlyTagging":true}]',@or);
 */ 
     DECLARE	CONST_GROUP_PA 								INT DEFAULT 0;
     DECLARE	CONST_GROUP_WRAPPER							INT DEFAULT 100;
@@ -127,6 +128,7 @@ BEGIN
 		,   SpecialCCDangerProbation   	BIT DEFAULT NULL
 		, 	ActionType					SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN; 5: Not satisfy Pass Probation*/
         ,	PerformanceTime				DATETIME
+        ,	IsScanOnlyTagging			BOOLEAN DEFAULT 0
 		, 	INDEX    			    	IX_Temp_NewClassification(CustID, DWCateGroup)  
 	); 
     
@@ -222,6 +224,7 @@ BEGIN
             , 	TaggingID				SMALLINT			PATH "$.TaggingID"
             , 	TaggingType				SMALLINT			PATH "$.TaggingType"	
 			, 	PerformanceTime			DATETIME			PATH "$.PerformanceTime"
+            , 	IsScanOnlyTagging		BOOLEAN				PATH "$.IsScanOnlyTagging"
 		 )) AS 	temp
 	 WHERE temp.DWCateGroup <> 0;
 	
@@ -494,7 +497,7 @@ BEGIN
 		, 	cate.SubscriberID = temp.SubscriberID
 		, 	cate.CategoryID = temp.NewCateID
 		, 	cate.LastModifiedDate = lv_CurrentDateTime
-		, 	cate.LastScannedDate = DATE(lv_CurrentDateTime)
+		, 	cate.LastScannedDate = CASE WHEN temp.IsScanOnlyTagging = 0 THEN DATE(lv_CurrentDateTime) ELSE cate.LastScannedDate END
     WHERE temp.ActionType = CONST_ACTIONTYPE_UPDATE;
     
     UPDATE CTS_DataCenter.CTSCustomerClassification AS cate
