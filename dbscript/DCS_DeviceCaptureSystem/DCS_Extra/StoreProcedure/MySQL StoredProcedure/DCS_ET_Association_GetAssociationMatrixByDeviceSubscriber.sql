@@ -12,17 +12,18 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_ET_Association_GetAssociationMatrix
 BEGIN
 	/*
 		Created:	20230720@Casey.Huynh
-		Task :		Get Association Account List
+		Task :		Get Matrix By Device
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
-			- 	20230720@Casey.Huynh: Created [Redmine ID: 189873]
+			- 	20230809@Casey.Huynh: Created [Redmine ID: 192402]
 			
 		Param's Explanation (filtered by):
 			
 		Example:
 				CALL DCS_ET_Association_GetAssociationMatrixByDeviceSubscriber(@ip_SubscriberID:=8000001,@ip_DeviceID:=1,@ip_NoOfCustomer:=16, @ip_NoOfDevice:=100);
+                CALL DCS_ET_Association_GetAssociationMatrixByDeviceSubscriber(8000001, 141, 15, 100);
    
 	*/
    
@@ -36,8 +37,7 @@ BEGIN
         ,	LoginName		VARCHAR(50)
         ,	AssCreatedTime	DATETIME(4)
         
-        ,	PRIMARY KEY (DeviceID, AccountID)
-        
+        ,	PRIMARY KEY (DeviceID, AccountID)        
 	);
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_RootDevice;
@@ -57,16 +57,28 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_Account(
 			AccountID 	BIGINT UNSIGNED PRIMARY KEY
 		,	LoginName	VARCHAR(50)
+        ,	CreatedTime	DATETIME(4)
 	);
     #==============================================
-	INSERT INTO Temp_Account(AccountID, LoginName)
-    SELECT	ass.AccountID
+	INSERT INTO Temp_Account(AccountID, LoginName, CreatedTime)
+    SELECT DISTINCT	ass.AccountID
 		,	acc.LoginName
+        ,	ass.CreatedTime
     FROM DCS_Extra.Association AS ass 
 		INNER JOIN DCS_Extra.Account AS acc ON acc.AccountID = ass.AccountID
     WHERE ass.SubscriberID = ip_SubscriberID AND ass.DeviceID = ip_DeviceID
     ORDER BY ass.CreatedTime DESC
     LIMIT ip_NoOfCustomer;  
+    
+    INSERT IGNORE INTO Temp_RootDevice(DeviceID,FirstDeviceCode,CreatedTime)
+    SELECT DISTINCT	dv.DeviceID
+		,	dv.FirstDeviceCode
+        ,	dv.CreatedTime
+	FROM DCS_Extra.Association AS ass
+		INNER JOIN Temp_Account AS tmpAc ON tmpAc.AccountID = ass.AccountID
+        INNER JOIN DCS_Extra.Device AS dv ON dv.DeviceID = ass.DeviceID        
+    ORDER BY  dv.CreatedTime DESC
+    LIMIT ip_NoOfDevice;    
     
     INSERT IGNORE INTO Temp_Matrix(DeviceID, FirstDeviceCode, CreatedTime, AccountID, LoginName, AssCreatedTime )
     SELECT  ass.DeviceID
@@ -77,34 +89,15 @@ BEGIN
         ,	ass.CreatedTime
 	FROM DCS_Extra.Association AS ass
 		INNER JOIN Temp_Account AS tmpAc ON tmpAc.AccountID = ass.AccountID
-        INNER JOIN DCS_Extra.Device AS dv ON dv.DeviceID = ass.DeviceID        
-    ORDER BY ass.CreatedDate DESC, ass.CreatedTime DESC
-    LIMIT ip_NoOfDevice;    
+        INNER JOIN Temp_RootDevice AS dv ON dv.DeviceID = ass.DeviceID        
+    ;
 
-    INSERT IGNORE INTO Temp_RootDevice(DeviceID,FirstDeviceCode,CreatedTime)
-    SELECT	tmpMt.DeviceID
-		,	tmpMt.FirstDeviceCode
-        ,	tmpMt.CreatedTime
-    FROM Temp_Matrix AS tmpMt;
-
-	INSERT IGNORE INTO Temp_Matrix(DeviceID, FirstDeviceCode, CreatedTime, AccountID, LoginName, AssCreatedTime)
-    SELECT  tmpRd.DeviceID
-		,	tmpRd.FirstDeviceCode
-		,	tmpRd.CreatedTime
-        ,	ass.AccountID
-        ,	tmpAc.LoginName
-        ,	ass.CreatedTime
-	FROM Temp_RootDevice AS tmpRd
-		INNER JOIN DCS_Extra.Association AS ass ON tmpRd.DeviceID = ass.DeviceID AND ass.SubscriberID = ip_SubscriberID
-        INNER JOIN Temp_Account AS tmpAc ON tmpAc.AccountID = ass.AccountID;   
- 
 	INSERT INTO Temp_AccountAssociation(AccountID, LastAssCreatedTime)
     SELECT	tmpMt.AccountID
 		,	MAX(AssCreatedTime) AS LastAssCreatedTime
 	FROM Temp_Matrix AS tmpMt
     GROUP BY tmpMt.AccountID
-    ORDER BY LastAssCreatedTime DESC
-    LIMIT ip_NoOfCustomer;    
+    ORDER BY LastAssCreatedTime DESC; 
 
     SELECT	tmpMt.AccountID
 		,	tmpMt.LoginName
