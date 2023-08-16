@@ -90,43 +90,57 @@ BEGIN
 	
     SET lv_LimitTrans = ip_Length;
 	WHILE (lv_LimitTrans > 0 AND lv_Partition IS NOT NULL) DO
-
-        SET @sql = 	CONCAT("
-		INSERT INTO Temp_Transaction(TransTime, TransID, SubscriberID, AccountID, LoginName, FirstDeviceCode, Action, ActionResult, OS, Browser, URLDetails, IP, Country, Region, City, ISP, RobotTracking)
-        SELECT	ts.TransTime			
-			,	ts.TransID
-            ,	ts.SubscriberID
-            ,	ts.AccountID
-			,	ts.LoginName
-			,	ts.FirstDeviceCode
-			,	ar.Action
-			,	ar.ActionResult
-			,	ua.OS
-			,	ua.Browser
-			,	ur.URLDetails
-            ,	ts.IP
-            ,	ip.Country
-			,	ip.Region
-			,	ip.City
-			,	ip.ISP
-            ,	tmpFg.DisplayName AS RobotTracking
-		FROM DCS_Extra.Transaction07 PARTITION(",lv_Partition,") AS ts
-			LEFT JOIN DCS_Extra.IPInfo AS ip ON ip.IPInfoID = ts.IPInfoID
-			LEFT JOIN DCS_Extra.UserAgent AS ua ON ts.UserAgentKey = ua.UserAgentKey
-			LEFT JOIN DCS_Extra.ActionResult AS ar ON ts.ActionResultID = ar.ActionResultID
-			LEFT JOIN DCS_Extra.URL AS ur ON ts.URLID = ur.URLID
-            LEFT JOIN Temp_Flagged AS tmpFg ON ts.Flagged = tmpFg.Flagged
-		WHERE ts.SubscriberID = ",ip_SubscriberId,"
-        ORDER BY ts.TransTime DESC
-        LIMIT ",lv_LimitTrans);
-        
-        PREPARE stmt1 FROM  @sql;
+		
+        SET @lv_HasData= 0;
+ 
+        SET @sql = CONCAT("SELECT 1
+							INTO @lv_HasData
+							FROM DCS_Extra.Transaction07 PARTITION(",lv_Partition,") AS ts
+							LIMIT 1");
+		PREPARE stmt1 FROM  @sql;
 		EXECUTE stmt1; 
 		DEALLOCATE PREPARE stmt1;
         
-		SET lv_TotalTrans = (SELECT COUNT(1) FROM Temp_Transaction);
+        IF @lv_HasData = 1 THEN
         
-        SET lv_LimitTrans = ip_Length - lv_TotalTrans;
+			SET @sql = 	CONCAT("
+			INSERT INTO Temp_Transaction(TransTime, TransID, SubscriberID, AccountID, LoginName, FirstDeviceCode, Action, ActionResult, OS, Browser, URLDetails, IP, Country, Region, City, ISP, RobotTracking)
+			SELECT	ts.TransTime			
+				,	ts.TransID
+				,	ts.SubscriberID
+				,	ts.AccountID
+				,	ts.LoginName
+				,	ts.FirstDeviceCode
+				,	ar.Action
+				,	ar.ActionResult
+				,	ua.OS
+				,	ua.Browser
+				,	ur.URLDetails
+				,	ts.IP
+				,	ip.Country
+				,	ip.Region
+				,	ip.City
+				,	ip.ISP
+				,	tmpFg.DisplayName AS RobotTracking
+			FROM DCS_Extra.Transaction07 PARTITION(",lv_Partition,") AS ts
+				LEFT JOIN DCS_Extra.IPInfo AS ip ON ip.IPInfoID = ts.IPInfoID
+				LEFT JOIN DCS_Extra.UserAgent AS ua ON ts.UserAgentKey = ua.UserAgentKey
+				LEFT JOIN DCS_Extra.ActionResult AS ar ON ts.ActionResultID = ar.ActionResultID
+				LEFT JOIN DCS_Extra.URL AS ur ON ts.URLID = ur.URLID
+				LEFT JOIN Temp_Flagged AS tmpFg ON ts.Flagged = tmpFg.Flagged
+			WHERE ts.SubscriberID = ",ip_SubscriberId,"
+			ORDER BY ts.TransTime DESC
+			LIMIT ",lv_LimitTrans);
+			
+			PREPARE stmt1 FROM  @sql;
+			EXECUTE stmt1; 
+			DEALLOCATE PREPARE stmt1;
+			
+			SET lv_TotalTrans = (SELECT COUNT(1) FROM Temp_Transaction);
+			
+			SET lv_LimitTrans = ip_Length - lv_TotalTrans;
+            
+        END IF;
         
         DELETE tmp
         FROM Temp_Partition AS tmp

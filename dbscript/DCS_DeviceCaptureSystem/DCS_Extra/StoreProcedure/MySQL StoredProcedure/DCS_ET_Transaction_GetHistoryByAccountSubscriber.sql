@@ -76,7 +76,7 @@ BEGIN
 				,	ip.City
 				,	ip.ISP
                 ,	tmpFg.DisplayName
-			FROM DCS_Extra.Transaction07 trs
+			FROM DCS_Extra.Transaction07 AS trs
 				LEFT JOIN DCS_Extra.IPInfo AS ip ON ip.IPInfoID = trs.IPInfoID
 				LEFT JOIN DCS_Extra.UserAgent AS uag ON trs.UserAgentKey = uag.UserAgentKey
 				LEFT JOIN DCS_Extra.ActionResult AS ar ON trs.ActionResultID = ar.ActionResultID
