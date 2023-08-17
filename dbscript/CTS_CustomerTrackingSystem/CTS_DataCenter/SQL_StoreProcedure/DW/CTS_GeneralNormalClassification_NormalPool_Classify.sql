@@ -225,23 +225,23 @@ BEGIN
 	
 	DELETE a WITH (ROWLOCK)
 	FROM #tmpCustomerAccummulatedInfo AS a
-		INNER JOIN #tmpRemoveCust AS b ON a.CustId = b.CustId
+		INNER JOIN #tmpRemoveCust AS b ON a.CustId = b.CustId;
 
 	DELETE a WITH (ROWLOCK)
 	FROM #tmpCustomers AS a
-		INNER JOIN #tmpRemoveCust AS b ON a.CustId = b.CustId
+		INNER JOIN #tmpRemoveCust AS b ON a.CustId = b.CustId;
 
 	-- #6: Insert scanned cust daily
 	UPDATE b WITH(ROWLOCK, UPDLOCK)
 	SET	b.CreatedDate = @ToDate
 	FROM #tmpCustomers AS a
-		INNER JOIN dbo.CustomerClassification_ScannedDailyCust AS b ON b.CustId = a.CustId
+		INNER JOIN dbo.CustomerClassification_ScannedDailyCust AS b ON b.CustId = a.CustId;
 
 	INSERT INTO dbo.CustomerClassification_ScannedDailyCust(CustId, CreatedDate)
 	SELECT a.CustId, @ToDate
 	FROM #tmpCustomers AS a
 		LEFT JOIN dbo.CustomerClassification_ScannedDailyCust AS b WITH(NOLOCK) ON b.CustId = a.CustId
-	WHERE b.CustId IS NULL  
+	WHERE b.CustId IS NULL;
 
 	-- #7: Classify customer without performance 
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
