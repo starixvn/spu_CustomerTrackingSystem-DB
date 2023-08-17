@@ -207,3 +207,9 @@ GRANT SELECT ON [dbo].[CustomerClassification_BySport_LatestActiveDay] TO [bodbS
 GO
 GRANT VIEW DEFINITION ON [dbo].[CustomerClassification_BySport_LatestActiveDay] TO [bodbSPUNet]
 GO
+
+
+UPDATE t WITH(ROWLOCK, UPDLOCK)
+SET t.IsProbationLastDay = 1
+FROM [dbo].[CustomerClassification_BySport_Rule] AS t WHERE RuleId IN (162, 169) AND SportId = 229;
+GO
