@@ -15,7 +15,8 @@ AS
 		- 20230601@Jonas.Huynh: Update SP get accumulated performance (Renovate Phase2) [Redmine ID: #186684]
 		- 20230627@Jonas.Huynh: Reset Balance for Credit with Inactive Normal with new place-bet [Redmine ID: #189876]
 		- 20230807@Jonas.Huynh: HF exclude Non-sport for General [Redmine ID: #192388]
-	
+		- 20230726@Jonas.Huynh: Saba Classification [Redmine ID: #185320]
+
 	Param's Explanation:
 */
 BEGIN
@@ -24,12 +25,14 @@ BEGIN
 
 	DECLARE @PROBLEMACCOUNT_LOSING		INT = 0
 		,	@PROBLEMACCOUNT_KEEPSTATE	INT = 1
-		,	@PROBLEMACCOUNT_WINNING		INT = 2;  
-	
-	DECLARE @SportGroup_NonSport	 SMALLINT = 229;
+		,	@PROBLEMACCOUNT_WINNING		INT = 2;
 
-	DECLARE @CurrentDateTime		DATETIME = GETDATE();
-	DECLARE @CurrentDate			DATE	 = GETDATE();
+	DECLARE @CurrentDateTime			DATETIME = GETDATE();
+	DECLARE @CurrentDate				DATE	 = GETDATE();
+
+	DECLARE @SportGroup_SabaVRSoccer	 SMALLINT = 145,
+			@SportGroup_SabaVRBasketball SMALLINT = 912,
+			@SportGroup_NonSport		 SMALLINT = 229;
 
 	IF	OBJECT_ID('tempdb..#tmpRawData') IS NOT NULL
 		DROP TABLE	#tmpRawData;
@@ -74,13 +77,6 @@ BEGIN
 		[CustId]			ASC
 	);
 
-	-- START
-	/*-- LOG INPUT DATA
-	INSERT INTO dbo.CustomerClassification_InputLog(CustId,CreatedDate,CreatedTime,FunctionId,IsActive)
-	SELECT CustId, @CurrentDate, @CurrentDateTime, @FunctionId, IsActive
-	FROM #tmpCustomers;
-	*/
-
 	-- #0: Distinct custid
 	INSERT INTO #tmpCustomers(CustId)
 	SELECT val FROM dbo.SPU_StrSplit(@ListCustIds, ',');
@@ -95,7 +91,7 @@ BEGIN
 
 	DELETE a WITH (ROWLOCK)
 	FROM #tmpRawData AS a
-	WHERE a.SportGroup IN (@SportGroup_NonSport);
+	WHERE a.SportGroup IN (@SportGroup_NonSport, @SportGroup_SabaVRSoccer, @SportGroup_SabaVRBasketball);
 
 	-- #2: Sum data by custid
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, BetCount, ActiveDays)
@@ -108,7 +104,6 @@ BEGIN
 	GROUP BY a.CustId;
 
 	-- #3: Classify new members
-	--INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT	r.CustId
 		,	CASE
 				WHEN (r.WinlossRM < -10000) THEN @PROBLEMACCOUNT_LOSING

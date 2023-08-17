@@ -15,6 +15,7 @@ AS
 		- 20230601@Jonas.Huynh: Normal Renovation (Phase2) [Redmine ID: #186684]
 		- 20230627@Jonas.Huynh: Reset Balance for Credit with Inactive Normal with new place-bet [Redmine ID: #189876]
 		- 20230807@Jonas.Huynh: HF exclude Non-sport for General [Redmine ID: #192388]
+		- 20230726@Jonas.Huynh: Saba Classification [Redmine ID: #185320]
 
 	Param's Explanation:
 		@CustomersXML	 : This parameter is used to classify customer perf which bases on currentCategory
@@ -37,7 +38,6 @@ BEGIN
 	DECLARE	@ToDate					 DATE	  = GETDATE();
 	DECLARE @YesterdayDate			 DATE	  = DATEADD(DAY, -1, @ToDate);
 	DECLARE @From30Date				 DATE	  = DATEADD(DAY, -29, @ToDate);
-	DECLARE @SportGroup_NonSport	 SMALLINT = 229;
 
 	DECLARE @CATEGORY_NORMALINACTIVE SMALLINT = 1001,
 	   	    @CATEGORY_SMARTINACTIVE	 SMALLINT = 1002,
@@ -47,6 +47,10 @@ BEGIN
 			@CATEGORY_RISKY			 SMALLINT = 204,
 			@CATEGORY_GOODMEMBER	 SMALLINT = 205,
 			@CATEGORY_PROBATION		 SMALLINT = 206;
+
+	DECLARE @SportGroup_SabaVRSoccer	 SMALLINT = 145,
+			@SportGroup_SabaVRBasketball SMALLINT = 912,
+			@SportGroup_NonSport		 SMALLINT = 229;
 
 	DECLARE @ListCustIds			 VARCHAR(MAX);
 
@@ -182,8 +186,8 @@ BEGIN
 
 	DELETE a WITH (ROWLOCK)
 	FROM #tmpRawData AS a
-	WHERE a.SportGroup IN (@SportGroup_NonSport);
-	
+	WHERE a.SportGroup IN (@SportGroup_NonSport, @SportGroup_SabaVRSoccer, @SportGroup_SabaVRBasketball);
+		
 	-- #5: Calculate accumulated customer performance data
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays, PerformanceTime)
 	SELECT a.CustId,
@@ -221,23 +225,23 @@ BEGIN
 	
 	DELETE a WITH (ROWLOCK)
 	FROM #tmpCustomerAccummulatedInfo AS a
-		INNER JOIN #tmpRemoveCust AS b ON a.CustId = b.CustId
+		INNER JOIN #tmpRemoveCust AS b ON a.CustId = b.CustId;
 
 	DELETE a WITH (ROWLOCK)
 	FROM #tmpCustomers AS a
-		INNER JOIN #tmpRemoveCust AS b ON a.CustId = b.CustId
+		INNER JOIN #tmpRemoveCust AS b ON a.CustId = b.CustId;
 
 	-- #6: Insert scanned cust daily
 	UPDATE b WITH(ROWLOCK, UPDLOCK)
 	SET	b.CreatedDate = @ToDate
 	FROM #tmpCustomers AS a
-		INNER JOIN dbo.CustomerClassification_ScannedDailyCust AS b ON b.CustId = a.CustId
+		INNER JOIN dbo.CustomerClassification_ScannedDailyCust AS b ON b.CustId = a.CustId;
 
 	INSERT INTO dbo.CustomerClassification_ScannedDailyCust(CustId, CreatedDate)
 	SELECT a.CustId, @ToDate
 	FROM #tmpCustomers AS a
 		LEFT JOIN dbo.CustomerClassification_ScannedDailyCust AS b WITH(NOLOCK) ON b.CustId = a.CustId
-	WHERE b.CustId IS NULL  
+	WHERE b.CustId IS NULL;
 
 	-- #7: Classify customer without performance 
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
@@ -305,7 +309,7 @@ BEGIN
 	INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
 	SELECT a.CustId
 		,  @GENERAL_SPORTID
-		,  CASE WHEN a.CurrentCategoryId IN (@CATEGORY_SMARTPUNTER, @CATEGORY_RISKY, @CATEGORY_PROBATION) THEN @CATEGORY_SMARTINACTIVE ELSE @CATEGORY_NORMALINACTIVE END AS CategoryId
+		,  CASE WHEN a.CurrentCategoryId IN (@CATEGORY_SMARTPUNTER, @CATEGORY_RISKY, @CATEGORY_PROBATION, @CATEGORY_SMARTINACTIVE) THEN @CATEGORY_SMARTINACTIVE ELSE @CATEGORY_NORMALINACTIVE END AS CategoryId
 		,  @ToDate AS CreatedDate
 		,  @CurrentDateTime AS CreatedTime
 		,  a.TurnoverRM
