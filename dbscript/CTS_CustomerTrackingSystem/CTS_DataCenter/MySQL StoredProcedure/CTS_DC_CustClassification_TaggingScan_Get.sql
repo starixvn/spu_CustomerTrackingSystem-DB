@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb,ctsAPI,ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_DailyScan_GetTagging`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_TaggingScan_Get`;
 
 DELIMITER $$
-CREATE PROCEDURE `CTS_DC_CustClassification_DailyScan_GetTagging`(
+CREATE PROCEDURE `CTS_DC_CustClassification_TaggingScan_Get`(
 		OUT op_LastCategoryID 	INT 
 	,	OUT op_LastCustID 		BIGINT UNSIGNED 
 )

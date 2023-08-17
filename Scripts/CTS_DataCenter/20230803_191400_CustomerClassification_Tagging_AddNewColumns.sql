@@ -13,13 +13,10 @@ Revisions:
 ALTER TABLE CTS_DataCenter.CustomerCategory
 ADD COLUMN ScanTaggingIntervalInSecond	BIGINT DEFAULT NULL;
 
-ALTER TABLE CTS_DataCenter.CTSCustomerClassification
-ADD COLUMN LastTaggingScannedDate	DATETIME DEFAULT NULL;
-
-UPDATE CTS_DataCenter.CustomerCategory AS cc
-SET cc.ScanTaggingIntervalInSecond = 86400
-WHERE cc.CategoryGroup IN (201, 202, 203, 204, 205, 206) 
-	AND cc.CategoryID NOT IN (234, 254, 264, 274)
+UPDATE CTS_DataCenter.CustomerCategory
+SET ScanTaggingIntervalInSecond = 86400
+WHERE CategoryGroup IN (201, 202, 203, 204, 205, 206) 
+	AND TaggingID IS NOT NULL
     AND IsActive = 1
 	AND IsUsedManually = 0;
     
