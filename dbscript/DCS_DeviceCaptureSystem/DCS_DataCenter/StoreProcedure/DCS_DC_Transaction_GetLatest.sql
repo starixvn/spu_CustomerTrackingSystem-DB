@@ -22,6 +22,7 @@ BEGIN
 			- 20230411@Casey.Huynh: Tunning Performance  [Redmine ID: #186129]
             - 20230512@Jonas.Huynh: BOTD transactions [Redmine ID: 185792]
             - 20230524@Jonas.Huynh: Fix issue wrong data type [Redmine ID: 188680]
+            - 20230816@Casey.Huynh: Tunning Performance [Redmine ID: 192402]
             
 		Param's Explanation (filtered by):
 
@@ -76,43 +77,57 @@ BEGIN
 	
     SET lv_LimitTrans = ip_Length;
 	WHILE (lv_LimitTrans > 0 AND lv_Partition IS NOT NULL) DO
-
-        SET @sql = 	CONCAT("
-		INSERT INTO Temp_Transaction(TransID, AccountID, SubscriberName, UserName, LoginID, CTSCustID, TransTime, FirstDeviceCode, IP, Flagged, Action, ActionResult, OS, Browser, URLDetails)
-        SELECT	ts.TransID
-			,	ts.AccountID
-			,	sb.SubscriberName
-			,	cus.UserName
-			,	cus.UserName2 AS LoginID
-			,	cus.CTSCustID
-			,	ts.TransTime
-			,	ts.FirstDeviceCode
-			,	ts.IP
-			,	s.ItemName AS Flagged
-			,	ar.Action
-			,	ar.ActionResult
-			,	ua.OS
-			,	ua.Browser
-			,	ur.URLDetails 
-		FROM DCS_DataCenter.Transaction07 PARTITION(",lv_Partition,") AS ts
-			INNER JOIN CTS_DataCenter.CustDCSAccount AS ca ON ts.AccountID = ca.AccountID AND ca.SubscriberID = ts.SubscriberID
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ca.CTSCustID = cus.CTSCustID 
-			LEFT JOIN DCS_DataCenter.UserAgent AS ua ON ts.UserAgentKey = ua.UserAgentKey
-			LEFT JOIN DCS_DataCenter.ActionResult AS ar ON ts.ActionResultID = ar.ActionResultID
-			LEFT JOIN DCS_DataCenter.URL AS ur ON ts.URLID = ur.URLID AND ts.SubscriberID = ur.SubscriberID
-            LEFT JOIN CTS_Admin.Subscriber AS sb ON cus.SubscriberID = sb.SubscriberID		
-            LEFT JOIN DCS_DataCenter.StaticList AS s ON s.ListID = 1 AND s.ItemID = ts.Flagged AND s.Status = 1
-		WHERE ts.SubscriberID = ",ip_SubscriberId," OR ",ip_SubscriberId," = -1
-        ORDER BY ts.TransTime DESC
-        LIMIT ",lv_LimitTrans);
-        
-        PREPARE stmt1 FROM  @sql;
+		
+        SET @lv_HasData= 0;
+ 
+        SET @sql = CONCAT("SELECT 1
+							INTO @lv_HasData
+							FROM DCS_Extra.Transaction07 PARTITION(",lv_Partition,") AS ts
+							LIMIT 1");
+		PREPARE stmt1 FROM  @sql;
 		EXECUTE stmt1; 
 		DEALLOCATE PREPARE stmt1;
         
-		SET lv_TotalTrans = (SELECT COUNT(1) FROM Temp_Transaction);
+        IF @lv_HasData = 1 THEN
         
-        SET lv_LimitTrans = ip_Length - lv_TotalTrans;
+			SET @sql = 	CONCAT("
+			INSERT INTO Temp_Transaction(TransID, AccountID, SubscriberName, UserName, LoginID, CTSCustID, TransTime, FirstDeviceCode, IP, Flagged, Action, ActionResult, OS, Browser, URLDetails)
+			SELECT	ts.TransID
+				,	ts.AccountID
+				,	sb.SubscriberName
+				,	cus.UserName
+				,	cus.UserName2 AS LoginID
+				,	cus.CTSCustID
+				,	ts.TransTime
+				,	ts.FirstDeviceCode
+				,	ts.IP
+				,	s.ItemName AS Flagged
+				,	ar.Action
+				,	ar.ActionResult
+				,	ua.OS
+				,	ua.Browser
+				,	ur.URLDetails 
+			FROM DCS_DataCenter.Transaction07 PARTITION(",lv_Partition,") AS ts
+				INNER JOIN CTS_DataCenter.CustDCSAccount AS ca ON ts.AccountID = ca.AccountID AND ca.SubscriberID = ts.SubscriberID
+				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ca.CTSCustID = cus.CTSCustID 
+				LEFT JOIN DCS_DataCenter.UserAgent AS ua ON ts.UserAgentKey = ua.UserAgentKey
+				LEFT JOIN DCS_DataCenter.ActionResult AS ar ON ts.ActionResultID = ar.ActionResultID
+				LEFT JOIN DCS_DataCenter.URL AS ur ON ts.URLID = ur.URLID AND ts.SubscriberID = ur.SubscriberID
+				LEFT JOIN CTS_Admin.Subscriber AS sb ON cus.SubscriberID = sb.SubscriberID		
+				LEFT JOIN DCS_DataCenter.StaticList AS s ON s.ListID = 1 AND s.ItemID = ts.Flagged AND s.Status = 1
+			WHERE ts.SubscriberID = ",ip_SubscriberId," OR ",ip_SubscriberId," = -1
+			ORDER BY ts.TransTime DESC
+			LIMIT ",lv_LimitTrans);
+			
+			PREPARE stmt1 FROM  @sql;
+			EXECUTE stmt1; 
+			DEALLOCATE PREPARE stmt1;
+			
+			SET lv_TotalTrans = (SELECT COUNT(1) FROM Temp_Transaction);
+			
+			SET lv_LimitTrans = ip_Length - lv_TotalTrans;
+            
+        END IF;
         
         DELETE tmp
         FROM Temp_Partition AS tmp
