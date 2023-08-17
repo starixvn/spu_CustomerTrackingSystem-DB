@@ -21,7 +21,7 @@ BEGIN
 	
 	DELETE TOP (@BatchSize) gbt
 	FROM dbo.SPU_GroupBettingTicket AS gbt WITH(ROWLOCK)
-	WHERE gbt.ScanDate < @Yesterday;
+	WHERE gbt.TransDate < @Yesterday;
 
 	IF @@ROWCOUNT = 0
 		BREAK;
