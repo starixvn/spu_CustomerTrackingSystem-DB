@@ -225,7 +225,7 @@ BEGIN
 			,  c.ActiveDays
 			,  c.PerformanceTime
 			,  1
-		FROM #tmpTaggingCust AS t
+		FROM #tmpCustomers AS t
 			LEFT JOIN #tmpCustomerAccummulatedInfo AS c ON t.CustId = c.CustId;
 	END
 	ELSE

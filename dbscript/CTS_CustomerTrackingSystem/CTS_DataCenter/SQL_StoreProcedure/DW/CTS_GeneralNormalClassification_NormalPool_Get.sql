@@ -57,6 +57,7 @@ BEGIN
 			   CASE WHEN SUM(c.FunctionId) = (COUNT(c.CustId) * @FunctionId_ScanTagging) THEN 1 ELSE 0 END
 		FROM dbo.CustomerClassification_NormalPool AS c WITH(NOLOCK)
 		WHERE c.ID <= @ScannedMaxId
+			AND NOT EXISTS (SELECT 1 FROM dbo.CustomerClassification AS cc WITH (NOLOCK) WHERE cc.IsApplied = 0 AND cc.CustId = c.CustId)
 		GROUP BY c.CustId
 		ORDER BY Min(c.Priority) ASC, Min(c.ID) ASC;
 	END
