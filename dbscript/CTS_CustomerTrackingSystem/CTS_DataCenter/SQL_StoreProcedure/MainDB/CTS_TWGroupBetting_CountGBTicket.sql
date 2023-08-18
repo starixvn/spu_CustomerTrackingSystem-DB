@@ -12,6 +12,7 @@ AS
 		- 20220711@Harvey.Nguyen: Change solution to scan on each ticket	[Redmine ID: #169671]
 		- 20220801@Harvey.Nguyen: Update coding convention					[Redmine ID: #169671]
 		- 20230713@Victoria.Le: Add default for new columns					[Redmine ID: #189505]
+		- 20230816@Victoria.Le: Only update without insert into table dbo.SPU_GroupBettingCustomer [Redmine ID: #191955]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_CountGBTicket]
@@ -47,28 +48,6 @@ BEGIN
 	SET pgbt.IsUpdateCount = 1
 	FROM #PreGroupBettingTicket AS pgbt WITH(UPDLOCK, ROWLOCK)
 	INNER JOIN dbo.SPU_GroupBettingCustomer AS gbc WITH (NOLOCK) ON pgbt.CustId = gbc.CustId AND pgbt.TransDate = gbc.ScanDate ;
-
-	INSERT INTO dbo.SPU_GroupBettingCustomer (
-		CustId
-		,GBTicketCount
-		,ScanDate
-		,LastModifiedDate
-		,TicketCount
-		,ParlayTicketCount
-		,RejectTicketCount
-		,DesktopTicketCount
-		)
-	SELECT CustId
-		,COUNT(TransId)
-		,TransDate
-		,GETDATE()
-		,0
-		,0
-		,0
-		,0
-	FROM #PreGroupBettingTicket
-	WHERE IsUpdateCount = 0
-	GROUP BY CustId, TransDate;
 
 	UPDATE gbc
 	SET gbc.GBTicketCount = TEMP.GBTicketCount
