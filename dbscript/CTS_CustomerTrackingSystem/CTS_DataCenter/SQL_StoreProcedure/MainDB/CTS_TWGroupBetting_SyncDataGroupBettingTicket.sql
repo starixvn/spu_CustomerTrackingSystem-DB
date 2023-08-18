@@ -16,6 +16,7 @@ AS
 		- 20230417@Casey.Huynh: Ignore Duplicate TransID 							[Redmine ID: #187030]
 		- 20230626@Victoria.Le: Add new columns	RulesType,IsRule1[tag by %RFM],IsRule2[tag by %CC],IsRule3[tag by %Betfrom]
 																			[Redmine ID: #189505]
+		- 20230818@Victoria.Le: Add ROWLOCK with the delete statement [Redmine ID: #191955]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_SyncDataGroupBettingTicket] 
@@ -54,7 +55,7 @@ BEGIN
 	FROM @GBTicketXML.nodes('//TWGroupBettingTicket') AS T(C)
 	OPTION (OPTIMIZE FOR (@GBTicketXML = NULL));
 
-	DELETE FROM dbo.SPU_GroupBettingTicket_History
+	DELETE FROM dbo.SPU_GroupBettingTicket_History WITH (ROWLOCK)
 	WHERE TransDate <= @ArchivedDateTicketHistory
 
 	INSERT INTO dbo.SPU_GroupBettingTicket_History (
@@ -84,7 +85,7 @@ BEGIN
 
 	IF @RunningDate > @DailyMidnight
 	BEGIN
-		DELETE FROM dbo.SPU_GroupBettingTicket
+		DELETE FROM dbo.SPU_GroupBettingTicket WITH (ROWLOCK)
 		WHERE TransDate = CONVERT(DATE, DATEADD(DAY,-1,GETDATE()));
 	END
 
