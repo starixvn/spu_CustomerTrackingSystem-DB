@@ -1,3 +1,4 @@
+/*<info serverAlias="DBVR2-bodb_VR2Model" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 USE [bodb_VR2Model]
 GO
 /****** Object:  StoredProcedure [dbo].[CTS_GeneralNormalClassification_NormalPool_Get]    Script Date: 20/04/2023 11:05:2022 PM ******/
@@ -5,7 +6,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CTS_GeneralNormalClassification_NormalPool_Get]
+ALTER PROCEDURE [dbo].[CTS_GeneralNormalClassification_NormalPool_Get]
 	@ScannedMaxId BIGINT OUTPUT
 AS
 /*
@@ -61,9 +62,9 @@ BEGIN
 	END
 
 	-- #3: Return dataset
-	SELECT CustId		   AS CustId, 
-		   IsCheckBetCount AS IsCheckBetCount,
-		   IsScanOnlyTagging   AS IsScanOnlyTagging
+	SELECT CustId			 AS CustId, 
+		   IsCheckBetCount	 AS IsCheckBetCount,
+		   IsScanOnlyTagging AS IsScanOnlyTagging
 	FROM #tmpCustomers;
 	
 	DROP TABLE #tmpCustomers;

@@ -1,8 +1,15 @@
 /*<info serverAlias="DBVR2-bodb_VR2Model" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
-
+USE [bodb_VR2Model]
+GO
+/****** Object:  StoredProcedure [dbo].[CTS_GeneralNormalClassification_NormalPool_Classify]    Script Date: 20/04/2023 11:05:2022 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
 ALTER PROCEDURE [dbo].[CTS_GeneralNormalClassification_NormalPool_Classify]
 		@CustomersXML		XML,
-		@IsScanOnlyTagging  BIT NOT NULL = 0 
+		@IsScanOnlyTagging  BIT = 0 
+AS
 /*
 	Created: 20230421@Jonas.Huynh
 	Task : Insert customers to normal pool for classification
@@ -165,7 +172,7 @@ BEGIN
 		-- #2: Get customer info
 		UPDATE a WITH(ROWLOCK, UPDLOCK)
 		SET	   a.SRecommend = c.srecommend,
-				a.IsSpecialSite = CASE WHEN c.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') THEN 1 ELSE 0 END
+			   a.IsSpecialSite = CASE WHEN c.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') THEN 1 ELSE 0 END
 		FROM #tmpCustomers AS a
 			INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON a.CustId = c.custid;
 

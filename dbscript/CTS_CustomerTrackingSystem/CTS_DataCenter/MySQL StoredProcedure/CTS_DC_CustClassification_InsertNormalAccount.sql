@@ -195,7 +195,7 @@ BEGIN
     
 	/* 1: PARSE RAW DATA */
 	INSERT IGNORE INTO Temp_NewClassification(CustID,DWCateGroup,TurnoverRM,WinlossRM,BetCount,ActiveDays,TWBetCount,TWGroupBettingRate,TWTicketRejectRate,TWDesktopUsageRate,
-		TaggingID,TaggingType,PerformanceTime)
+		TaggingID,TaggingType,PerformanceTime, IsScanOnlyTagging)
 	SELECT DISTINCT temp.CustID
 				, 	temp.DWCateGroup
                 , 	temp.TurnoverRM
@@ -209,6 +209,7 @@ BEGIN
                 ,	IFNULL(temp.TaggingID, -99)
                 , 	temp.TaggingType
                 ,	temp.PerformanceTime
+                ,	temp.IsScanOnlyTagging
 	 FROM JSON_TABLE(ip_NewClassification,
 		"$[*]" COLUMNS(
 				CustID 					BIGINT UNSIGNED		PATH "$.CustId"

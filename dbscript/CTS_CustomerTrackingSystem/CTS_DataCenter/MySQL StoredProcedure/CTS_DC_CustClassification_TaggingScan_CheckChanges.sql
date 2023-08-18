@@ -23,13 +23,6 @@ BEGIN
     
     DECLARE	CONST_GROUP_NORMAL 	INT DEFAULT 200;
     
-	DECLARE lv_LastCategoryID 	INT;
-	DECLARE lv_LastCustID 		BIGINT UNSIGNED;
-    DECLARE lv_BatchSize 		BIGINT;
-    
-    DECLARE lv_NextCategoryID 	INT;
-    DECLARE lv_NextCustID 		BIGINT UNSIGNED;
-    
     DROP TEMPORARY TABLE IF EXISTS Temp_TaggingCust;
     CREATE TEMPORARY TABLE Temp_TaggingCust(
 			CustID			BIGINT UNSIGNED PRIMARY KEY,
@@ -62,10 +55,10 @@ BEGIN
     FROM Temp_TaggingCust AS t
 		INNER JOIN CTSCustomerClassification AS c ON c.CustID = t.CustId AND c.SportGroupID = CONST_GROUP_NORMAL
 		INNER JOIN CustomerCategory AS cate ON cate.CategoryID = c.CategoryID
-    WHERE ParentID = 200 
-		AND IsActive = 1
-		AND IsUsedManually = 0
-        AND TaggingID IS NOT NULL;
+    WHERE cate.ParentID = 200 
+		AND cate.IsActive = 1
+		AND cate.IsUsedManually = 0
+        AND cate.TaggingID IS NOT NULL;
         
 	SELECT DISTINCT t.CustID AS CustID
     FROM Temp_TaggingCust AS t

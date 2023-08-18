@@ -15,7 +15,7 @@ BEGIN
 		DB:			CTS_DataCenter  
 		Original: 
 		Revisions:
-			- 20230804@Jonas.Huynh: Created [RedmineID: #176992]
+			- 20230804@Jonas.Huynh: Created [RedmineID: #191400]
             
         Param's Explanation:     
         Example:
