@@ -10,6 +10,7 @@ CREATE PROCEDURE [dbo].[CTS_TicketDetails_Info]
 	,	@IsLive						BIT = 0
 	,	@IsExclTestCurr				BIT = 0
 	,	@BetID						BIGINT = 0
+	,	@ListTransId				VARCHAR(MAX) = ''
 	,	@MaxSequenceId				BIGINT OUTPUT
 	,	@TotalTicketAll				BIGINT OUTPUT
 	,	@TotalTicketLicensee		BIGINT OUTPUT
@@ -37,6 +38,7 @@ AS
 		,	1 -- @IsLive
 		,	0 -- @IsExclTestCurr
 		,	0 -- @BetID
+		,	'' -- @ListTransId
 		,	@MaxSequenceId OUTPUT
 		,	@TotalTicketAll OUTPUT
 		,	@TotalTicketLicensee OUTPUT
@@ -47,6 +49,15 @@ AS
 */
 BEGIN
 	SET NOCOUNT ON;
+	
+	IF	OBJECT_ID('tempdb..#tmpTransIds') IS NOT NULL
+	BEGIN
+		DROP TABLE #tmpTransIds;
+	END;
+
+	CREATE TABLE #tmpTransIds(
+			TransId				BIGINT NOT NULL PRIMARY KEY
+	);
 
 	IF	OBJECT_ID('tempdb..#tmpSupportedSportBettype') IS NOT NULL
 	BEGIN
@@ -120,6 +131,12 @@ BEGIN
 			,(43,3,1,0,0,1,1)
 			,(43,20,1,0,0,1,0)
 	;
+	
+	IF @ListTransId <> ''
+	BEGIN
+		INSERT INTO #tmpTransIds (TransId)
+		SELECT ssk.value FROM STRING_SPLIT(@ListTransId, ',') ssk;
+	END;
 
 	INSERT INTO #tmpTickets (
 		SequenceId
@@ -185,17 +202,21 @@ BEGIN
 
 	CREATE INDEX IX_tmpTickets_IsLicensee ON #tmpTickets (IsLicensee, LiveHomeScore, LiveAwayScore, TicketStatus, CurrencyId, CurrencyName, Hdp, BetTeam, Danger1, Danger2, Danger3, Danger4, Danger5);
 
-	SELECT DISTINCT 
-			IsLicensee, LiveHomeScore, LiveAwayScore, TicketStatus, CurrencyId, CurrencyName, Hdp, BetTeam, Danger1, Danger2, Danger3, Danger4, Danger5
-	FROM #tmpTickets;
-
 	/*Return Output*/
 	SELECT @MaxSequenceId = (MAX(SequenceId) + 1) FROM #tmpTickets;
 	SELECT @TotalTicketAll = COUNT(1) FROM #tmpTickets;
 	SELECT @TotalTicketLicensee = COUNT(1) FROM #tmpTickets WHERE IsLicensee = 1;
 	SELECT @TotalTicketCredit = COUNT(1) FROM #tmpTickets  WHERE IsLicensee = 0;
+	
+	SELECT DISTINCT 
+			b.IsLicensee, b.LiveHomeScore, b.LiveAwayScore, b.TicketStatus, b.CurrencyId, b.CurrencyName, b.Hdp, b.BetTeam, b.Danger1, b.Danger2, b.Danger3, b.Danger4, b.Danger5
+	FROM #tmpTickets AS b
+		LEFT JOIN #tmpTransIds AS ttrans ON ttrans.TransId = b.TransId
+	WHERE ttrans.TransId IS NULL
+		;
 
 	DROP TABLE IF EXISTS #tmpSupportedSportBettype;
 	DROP TABLE IF EXISTS #tmpTickets;
+	DROP TABLE IF EXISTS #tmpTransIds;
 
 END
