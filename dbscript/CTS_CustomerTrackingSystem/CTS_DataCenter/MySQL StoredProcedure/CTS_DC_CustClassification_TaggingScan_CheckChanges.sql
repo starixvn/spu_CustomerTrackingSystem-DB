@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_TaggingScan_CheckChanges`;
 
 DELIMITER $$
 CREATE PROCEDURE `CTS_DC_CustClassification_TaggingScan_CheckChanges`(
-		IN ip_TaggingInfo JSON
+		IN ip_TaggingCust JSON
 )
 
     SQL SECURITY INVOKER
@@ -50,9 +50,9 @@ BEGIN
 	SELECT DISTINCT temp.CustID
                 ,	IFNULL(temp.TaggingID, -99)
                 , 	temp.TaggingType
-	 FROM JSON_TABLE(ip_TaggingInfo,
+	 FROM JSON_TABLE(ip_TaggingCust,
 		"$[*]" COLUMNS(
-				CustID 					BIGINT UNSIGNED		PATH "$.CustId"
+				CustID 					BIGINT UNSIGNED		PATH "$.CustID"
             , 	TaggingID				SMALLINT			PATH "$.TaggingID"
             , 	TaggingType				SMALLINT			PATH "$.TaggingType"
 		 )) AS 	temp;
@@ -67,9 +67,9 @@ BEGIN
 		AND IsUsedManually = 0
         AND TaggingID IS NOT NULL;
         
-	SELECT DISTINCT t.CustId
+	SELECT DISTINCT t.CustID AS CustID
     FROM Temp_TaggingCust AS t
-		INNER JOIN Temp_CustCategory AS c ON c.CustID = t.CustId
+		INNER JOIN Temp_CustCategory AS c ON c.CustID = t.CustID
 	WHERE t.TaggingID <> c.CurrentTaggingID;
     
 END$$
