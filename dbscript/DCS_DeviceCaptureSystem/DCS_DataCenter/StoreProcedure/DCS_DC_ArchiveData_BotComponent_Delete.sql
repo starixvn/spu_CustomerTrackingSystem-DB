@@ -26,6 +26,10 @@ sp:BEGIN
     
     DELETE FROM DCS_DataCenter.BotComponent
     WHERE ModifiedDate <= lv_LastDate;
+    
+    DELETE FROM DCS_DataCenter.BotComponent
+    WHERE ModifiedDate IS NULL
+		AND CreatedDate <= lv_LastDate;
 END$$
 
 DELIMITER ;
