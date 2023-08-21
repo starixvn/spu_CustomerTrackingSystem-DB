@@ -18,7 +18,7 @@ BEGIN
             
         Param's Explanation:     
         Example:
-			- CALL CTS_DataCenter.CTS_DC_CustClassification_TaggingScan_CheckChanges('');
+			- CALL CTS_DataCenter.CTS_DC_CustClassification_TaggingScan_CheckChanges('[{"CustID": "43600692","TaggingID":"1","TaggingType": "1"}]');
 	*/ 
     
     DECLARE	CONST_GROUP_NORMAL 	INT DEFAULT 200;
@@ -33,8 +33,6 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_CustCategory;
     CREATE TEMPORARY TABLE Temp_CustCategory(
 			CustID				BIGINT UNSIGNED PRIMARY KEY,
-            CategoryID			SMALLINT,
-            CategoryGroup		SMALLINT,
             CurrentTaggingID	SMALLINT,
             CurrentTaggingType	SMALLINT
     );
@@ -51,7 +49,7 @@ BEGIN
 		 )) AS 	temp;
     
     INSERT IGNORE INTO Temp_CustCategory(CustID, CurrentTaggingID, CurrentTaggingType)
-    SELECT t.CustID, c.CategoryID, cate.CategoryGroup, cate.TaggingID, cate.TaggingType
+    SELECT t.CustID, cate.TaggingID, cate.TaggingType
     FROM Temp_TaggingCust AS t
 		INNER JOIN CTSCustomerClassification AS c ON c.CustID = t.CustId AND c.SportGroupID = CONST_GROUP_NORMAL
 		INNER JOIN CustomerCategory AS cate ON cate.CategoryID = c.CategoryID
@@ -59,7 +57,7 @@ BEGIN
 		AND cate.IsActive = 1
 		AND cate.IsUsedManually = 0
         AND cate.TaggingID IS NOT NULL;
-        
+           
 	SELECT DISTINCT t.CustID AS CustID
     FROM Temp_TaggingCust AS t
 		INNER JOIN Temp_CustCategory AS c ON c.CustID = t.CustID

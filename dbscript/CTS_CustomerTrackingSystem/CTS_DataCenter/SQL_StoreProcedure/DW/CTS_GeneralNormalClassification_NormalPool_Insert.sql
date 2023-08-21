@@ -7,8 +7,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 ALTER PROCEDURE [dbo].[CTS_GeneralNormalClassification_NormalPool_Insert]
-		@FunctionId		SMALLINT NOT NULL,
-		@Priority		SMALLINT NOT NULL
+		@FunctionId		SMALLINT,
+		@Priority		SMALLINT
 AS
 /*
 	Created: 20230420@Jonas.Huynh
