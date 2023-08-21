@@ -35,7 +35,7 @@ sp: BEGIN
 		Example:
 			CALL CTS_DC_MatchMonitor_RuleFixedGame_Process(@ip_LiveIndicator:=0,@ip_MaxSequenceID:=@op_MaxSequenceID,@ip_MatchID:=110100,@ip_ScoreDiff:=-2,@ip_BettypeID:=1,@ip_BetID:=0, @HDP:=-0.2500, @ip_Betteam:='h');
 	*/
-    DECLARE CONS_LOG 						TINYINT DEFAULT 1; #0:LogOff, 1:LogOn
+    DECLARE CONS_LOG 						TINYINT DEFAULT 0; #0:LogOff,1:LogOn
     DECLARE	CONST_RULE_GROUPID_FIXEDGAME 	TINYINT DEFAULT 2;
 	
     DECLARE	lv_SportType					INT;
