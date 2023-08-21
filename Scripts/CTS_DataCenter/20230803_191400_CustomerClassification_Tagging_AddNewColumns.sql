@@ -11,7 +11,7 @@ Revisions:
 */
 
 ALTER TABLE CTS_DataCenter.CustomerCategory
-ADD COLUMN ScanTaggingIntervalInSecond	BIGINT DEFAULT NULL;
+ADD COLUMN ScanTaggingIntervalInSecond	BIGINT DEFAULT NULL AFTER ScanIntervalInSecond;
 
 UPDATE CTS_DataCenter.CustomerCategory
 SET ScanTaggingIntervalInSecond = 86400
