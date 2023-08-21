@@ -29,6 +29,7 @@ sp: BEGIN
 			-	20230310@Victoria.Le:	Credit Scale Out - Split 789y Site [Redmine ID: #183140]
 			-	20230612@Casey.Huynh: 	LogInfo [Redmine ID: #185793]
             -	20230807@Casey.Huynh: 	Renovate Arbitrage [Redmine ID: #185791]
+            -	20230821@Casey.Huynh: 	Fix Issue GroupID (Temp_ResultGroup.Primary) [Redmine ID: #192973]
             
 		Param's Explanation (filtered by):
 			CALL CTS_DC_MatchMonitor_RuleArbitrage_Process(@ip_LiveIndicator:=0,@ip_MaxSequenceID:=@op_MaxSequenceID,@ip_MatchID:=110100,@ip_IsMajorLeague:=0,@ip_ScoreDiff:=-2,@ip_BettypeID:=1,@ip_BetID:=0, @ip_HDP:=-0.2500);
@@ -47,7 +48,7 @@ sp: BEGIN
     DECLARE lv_RuleSportType 			INT;  
     DECLARE lv_CustIDList 				TEXT;
     DECLARE lv_LastSequenceID 			BIGINT UNSIGNED;  
-    
+	DECLARE lv_MaxResultGroup			INT;
     #==================LOG=======================================================
     DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleArbitrage_Process';
     IF CONST_LOG = 1 THEN     
@@ -150,12 +151,13 @@ sp: BEGIN
                                                             AND cus.RoleID = 1
 															AND agent.IsInternal = 0 												
                                                             AND cus.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET)
-        WHERE	mms.SequenceID <= ip_MaxSequenceID 
+       WHERE	mms.SequenceID <= ip_MaxSequenceID 
 			AND mms.MatchID = ip_MatchID 
             AND mms.ScoreDiff = ip_ScoreDiff 
             AND mms.BettypeID = ip_BettypeID
             AND mms.BetID = ip_BetID 
-            AND mms.HDP = ip_HDP;       
+            AND mms.HDP = ip_HDP;      
+
     END IF;
     
     #=========REMOVE IF Cust Total Stake < lv_RuleTotalStake
@@ -212,9 +214,12 @@ sp: BEGIN
 		INNER JOIN Temp_RemoveGroup AS tmpRv ON tmpRv.GroupID = tmpSt.GroupID;		
         
         #==========INSERT VALID GROUP TO RESULT====================================================================
+		SELECT IFNULL(MAX(GroupID),0)
+        INTO lv_MaxResultGroup
+        FROM Temp_ResultGroup;
         
 		INSERT INTO Temp_ResultGroup(GroupID, TransIDList, CustIDList, OldGroupIDList)
-		SELECT  tmpSt.GroupID
+		SELECT  lv_MaxResultGroup + tmpSt.GroupID
 			,	GROUP_CONCAT(tmpSt.TransID) AS TransIDList
 			,	GROUP_CONCAT(DISTINCT tmpSt.CustID) AS CustIDList
 			,	GROUP_CONCAT(DISTINCT CASE WHEN tmpSt.OldGroupID > 0 THEN tmpSt.OldGroupID ELSE 0 END) AS OldGroupIDList
@@ -233,6 +238,6 @@ sp: BEGIN
         ,	tmpRg.TransIDList
         ,	tmpRg.CustIDList
         ,	tmpRg.OldGroupIDList
-    FROM Temp_ResultGroup AS tmpRg;   
+    FROM Temp_ResultGroup AS tmpRg;
 END$$
 DELIMITER ;
