@@ -21,13 +21,13 @@ sp:BEGIN
 		Example:
 			CALL DCS_DC_ArchiveData_ModifiedDate_Update(100);
 	*/ 
-    DECLARE lv_SystemSettingID INT DEFAULT 4963733;
+    DECLARE CONST_TRANS07_SYSTEMARCHIVEID INT DEFAULT 4963733;
     DECLARE lv_MaxTransID BIGINT UNSIGNED;
     
     SELECT VValue
     INTO lv_MaxTransID
     FROM DCS_DataCenter.SystemSetting
-    WHERE ID = lv_SystemSettingID;
+    WHERE ID = CONST_TRANS07_SYSTEMARCHIVEID;
 
 
     /*******INIT TEMPORARY TABLE************/
@@ -77,7 +77,7 @@ sp:BEGIN
     THEN
 		UPDATE DCS_DataCenter.SystemSetting
 		SET VValue = lv_MaxTransID
-		WHERE ID = lv_SystemSettingID;
+		WHERE ID = CONST_TRANS07_SYSTEMARCHIVEID;
     END IF;
 END$$
 
