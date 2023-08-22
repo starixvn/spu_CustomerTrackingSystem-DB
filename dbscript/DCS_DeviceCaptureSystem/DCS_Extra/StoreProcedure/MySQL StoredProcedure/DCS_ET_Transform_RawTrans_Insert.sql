@@ -62,7 +62,7 @@ BEGIN
 		,	TransStatus					BIT(16)								NULL
         ,	FlaggedCode					VARCHAR(100)						NULL
         ,	BotDetection				LONGTEXT							NULL
-        ,	BotDetectionValue			BIT(20)								NULL		DEFAULT 0
+        ,	BotDetectionValue			BIT(32)								NULL		DEFAULT 0
         ,	BotComponentID				BIGINT UNSIGNED						NULL
         ,	BotComponent				LONGTEXT							NULL
         ,	BotComponentCode			VARCHAR(100)						NULL
@@ -80,7 +80,7 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_BotDetection;
 	CREATE TEMPORARY TABLE Temp_BotDetection(
 			ID							INT UNSIGNED PRIMARY KEY
-        ,	BotDetectionValue			BIT(20)		NULL		DEFAULT 0		
+        ,	BotDetectionValue			BIT(32)		NULL		DEFAULT 0		
     );     
 		
 	INSERT INTO Temp_Transactions(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, Country, CountryCode, Region, City, ISP, IPInfoCode)
@@ -148,16 +148,19 @@ BEGIN
 		INNER JOIN Temp_BotDetection tmpBD ON tmpBD.ID = tmp.ID
 	SET tmp.BotDetectionValue = tmpBD.BotDetectionValue;
     
-    INSERT IGNORE INTO DCS_Extra.BotComponent(Code, Component, CreatedDate)
+    INSERT IGNORE INTO DCS_Extra.BotComponent(Code, Component, IsHuman, CreatedDate, ModifiedDate)
     WITH cte_BotComponent AS (
 		SELECT 	DISTINCT 
 				BotComponentCode AS Code
 			,	BotComponent AS Component
+			,	FlaggedCode
 		FROM Temp_Transactions AS tmp
     )
     SELECT 	cte.Code
 		,	cte.Component
+		,	CASE WHEN cte.FlaggedCode = 'Human' THEN 1 ELSE 0 END AS IsHuman
 		,	lv_InsertionTime AS CreatedDate
+		,	DATE(lv_InsertionTime) AS ModifiedDate
     FROM cte_BotComponent AS cte
     WHERE NOT EXISTS (SELECT 1 FROM DCS_Extra.BotComponent bc WHERE bc.Code = cte.Code);
     
