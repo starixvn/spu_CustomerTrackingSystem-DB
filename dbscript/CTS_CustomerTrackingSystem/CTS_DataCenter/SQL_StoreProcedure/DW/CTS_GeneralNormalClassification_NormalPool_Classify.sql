@@ -213,7 +213,7 @@ BEGIN
 	IF (@IsScanOnlyTagging = 1)
 	BEGIN
 		-- #5: Classify Tagging (link Association, TWGB,...)
-		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, IsScanTagging)
+		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, IsScanOnlyTagging)
 		SELECT t.CustId
 			,  @GENERAL_SPORTID
 			,  t.CurrentCategoryId
