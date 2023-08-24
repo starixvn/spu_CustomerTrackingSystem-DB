@@ -56,12 +56,14 @@ BEGIN
     WHERE cate.ParentID = 200 
 		AND cate.IsActive = 1
 		AND cate.IsUsedManually = 0
-        AND cate.TaggingID IS NOT NULL;
+        AND cate.TaggingID IS NOT NULL
+        AND cate.TaggingType IS NOT NULL;
            
 	SELECT DISTINCT t.CustID AS CustID
     FROM Temp_TaggingCust AS t
 		INNER JOIN Temp_CustCategory AS c ON c.CustID = t.CustID
-	WHERE t.TaggingID <> c.CurrentTaggingID;
+	WHERE t.TaggingID <> c.CurrentTaggingID 
+		OR t.TaggingType <> c.CurrentTaggingType;
     
 END$$
 
