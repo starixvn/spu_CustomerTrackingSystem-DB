@@ -223,7 +223,7 @@ BEGIN
 			,  c.WinlossRM
 			,  c.BetCount
 			,  c.ActiveDays
-			,  c.PerformanceTime
+			,  ISNULL(c.PerformanceTime, @CurrentDateTime)
 			,  1
 		FROM #tmpCustomers AS t
 			LEFT JOIN #tmpCustomerAccummulatedInfo AS c ON t.CustId = c.CustId;
