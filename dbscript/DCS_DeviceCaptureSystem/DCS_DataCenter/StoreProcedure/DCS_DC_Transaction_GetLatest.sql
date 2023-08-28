@@ -23,11 +23,12 @@ BEGIN
             - 20230512@Jonas.Huynh: BOTD transactions [Redmine ID: 185792]
             - 20230524@Jonas.Huynh: Fix issue wrong data type [Redmine ID: 188680]
             - 20230816@Casey.Huynh: Tunning Performance [Redmine ID: 192402]
+            - 20230828@Casey.Huynh: Tunning Performance [Redmine ID: 193267]
             
 		Param's Explanation (filtered by):
 
         Example:
-			- CALL CTS_DataCenter.DCS_DC_Transaction_GetLatest(1, 100);
+			- CALL DCS_DC_Transaction_GetLatest(2, 100);
 	*/    
     DECLARE lv_Partition		VARCHAR(50);
     DECLARE	lv_TotalTrans		INT DEFAULT 0;
@@ -82,7 +83,7 @@ BEGIN
  
         SET @sql = CONCAT("SELECT 1
 							INTO @lv_HasData
-							FROM DCS_Extra.Transaction07 PARTITION(",lv_Partition,") AS ts
+							FROM DCS_DataCenter.Transaction07 PARTITION(",lv_Partition,") AS ts
 							LIMIT 1");
 		PREPARE stmt1 FROM  @sql;
 		EXECUTE stmt1; 
