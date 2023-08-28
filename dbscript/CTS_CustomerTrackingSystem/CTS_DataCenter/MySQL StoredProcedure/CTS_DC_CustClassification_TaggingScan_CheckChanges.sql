@@ -56,8 +56,7 @@ BEGIN
     WHERE cate.ParentID = 200 
 		AND cate.IsActive = 1
 		AND cate.IsUsedManually = 0
-        AND cate.TaggingID IS NOT NULL
-        AND cate.TaggingType IS NOT NULL;
+        AND cate.ScanTaggingIntervalInSecond > 0; 
            
 	SELECT DISTINCT t.CustID AS CustID
     FROM Temp_TaggingCust AS t
