@@ -23,7 +23,7 @@ BEGIN
             - 20230512@Jonas.Huynh: BOTD transactions [Redmine ID: 185792]
             - 20230524@Jonas.Huynh: Fix issue wrong data type [Redmine ID: 188680]
             - 20230816@Casey.Huynh: Tunning Performance [Redmine ID: 192402]
-            - 20230828@Casey.Huynh: Tunning Performance [Redmine ID: 193267]
+            - 20230828@Casey.Huynh: Correct DBName and Tunning Performance [Redmine ID: 193267]
             
 		Param's Explanation (filtered by):
 
@@ -109,11 +109,11 @@ BEGIN
 				,	ua.Browser
 				,	ur.URLDetails 
 			FROM DCS_DataCenter.Transaction07 PARTITION(",lv_Partition,") AS ts
-				INNER JOIN CTS_DataCenter.CustDCSAccount AS ca ON ts.AccountID = ca.AccountID AND ca.SubscriberID = ts.SubscriberID
+				INNER JOIN CTS_DataCenter.CustDCSAccount AS ca ON ts.AccountID = ca.AccountID
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ca.CTSCustID = cus.CTSCustID 
 				LEFT JOIN DCS_DataCenter.UserAgent AS ua ON ts.UserAgentKey = ua.UserAgentKey
 				LEFT JOIN DCS_DataCenter.ActionResult AS ar ON ts.ActionResultID = ar.ActionResultID
-				LEFT JOIN DCS_DataCenter.URL AS ur ON ts.URLID = ur.URLID AND ts.SubscriberID = ur.SubscriberID
+				LEFT JOIN DCS_DataCenter.URL AS ur ON ts.URLID = ur.URLID
 				LEFT JOIN CTS_Admin.Subscriber AS sb ON cus.SubscriberID = sb.SubscriberID		
 				LEFT JOIN DCS_DataCenter.StaticList AS s ON s.ListID = 1 AND s.ItemID = ts.Flagged AND s.Status = 1
 			WHERE ts.SubscriberID = ",ip_SubscriberId," OR ",ip_SubscriberId," = -1
