@@ -124,13 +124,111 @@ UPDATE DCS_DataCenter.Transaction07 PARTITION(pw999999) AS trans
 SET 	trans.Flagged = 1
 	,	trans.BotDetectionValue = 0
 	,	trans.BotComponentID = 1
-WHERE (trans.BotDetectionValue = 64
-		AND ua.BrowserID = 11)
-	OR	(trans.BotDetectionValue = 64
-		AND ua.BrowserID = 4
-		AND ua.OSID = 1
-		AND ua.UserAgent like '%HeyTap%')
-	OR	(trans.CreatedDate < '2023-07-18'
-		AND trans.BotDetectionValue = 264
-		AND ua.BrowserID = 1
-		AND ua.OSID = 1);
+WHERE CreatedDate >= '2023-07-09'
+	AND CreatedDate < '2023-07-18'
+	AND (
+			(trans.BotDetectionValue = 64
+			AND ua.BrowserID = 11)
+		OR	(trans.BotDetectionValue = 64
+			AND ua.BrowserID = 4
+			AND ua.OSID = 1
+			AND ua.UserAgent like '%HeyTap%')
+		OR	(trans.BotDetectionValue = 264
+			AND ua.BrowserID = 1
+			AND ua.OSID = 1)
+    );
+
+UPDATE DCS_DataCenter.Transaction07 PARTITION(pw999999) AS trans
+	INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = trans.UserAgentKey
+SET 	trans.Flagged = 1
+	,	trans.BotDetectionValue = 0
+	,	trans.BotComponentID = 1
+WHERE CreatedDate >= '2023-07-18'
+	AND CreatedDate < '2023-07-25'
+	AND (
+			(trans.BotDetectionValue = 64
+			AND ua.BrowserID = 11)
+		OR	(trans.BotDetectionValue = 64
+			AND ua.BrowserID = 4
+			AND ua.OSID = 1
+			AND ua.UserAgent like '%HeyTap%')
+    );
+
+UPDATE DCS_DataCenter.Transaction07 PARTITION(pw999999) AS trans
+	INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = trans.UserAgentKey
+SET 	trans.Flagged = 1
+	,	trans.BotDetectionValue = 0
+	,	trans.BotComponentID = 1
+WHERE CreatedDate >= '2023-07-25'
+	AND CreatedDate < '2023-08-01'
+	AND (
+			(trans.BotDetectionValue = 64
+			AND ua.BrowserID = 11)
+		OR	(trans.BotDetectionValue = 64
+			AND ua.BrowserID = 4
+			AND ua.OSID = 1
+			AND ua.UserAgent like '%HeyTap%')
+    );
+
+UPDATE DCS_DataCenter.Transaction07 PARTITION(pw999999) AS trans
+	INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = trans.UserAgentKey
+SET 	trans.Flagged = 1
+	,	trans.BotDetectionValue = 0
+	,	trans.BotComponentID = 1
+WHERE CreatedDate >= '2023-08-01'
+	AND CreatedDate < '2023-08-08'
+	AND (
+			(trans.BotDetectionValue = 64
+			AND ua.BrowserID = 11)
+		OR	(trans.BotDetectionValue = 64
+			AND ua.BrowserID = 4
+			AND ua.OSID = 1
+			AND ua.UserAgent like '%HeyTap%')
+    );
+
+UPDATE DCS_DataCenter.Transaction07 PARTITION(pw999999) AS trans
+	INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = trans.UserAgentKey
+SET 	trans.Flagged = 1
+	,	trans.BotDetectionValue = 0
+	,	trans.BotComponentID = 1
+WHERE CreatedDate >= '2023-08-08'
+	AND CreatedDate < '2023-08-15'
+	AND (
+			(trans.BotDetectionValue = 64
+			AND ua.BrowserID = 11)
+		OR	(trans.BotDetectionValue = 64
+			AND ua.BrowserID = 4
+			AND ua.OSID = 1
+			AND ua.UserAgent like '%HeyTap%')
+    );
+
+UPDATE DCS_DataCenter.Transaction07 PARTITION(pw999999) AS trans
+	INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = trans.UserAgentKey
+SET 	trans.Flagged = 1
+	,	trans.BotDetectionValue = 0
+	,	trans.BotComponentID = 1
+WHERE CreatedDate >= '2023-08-15'
+	AND CreatedDate < '2023-08-22'
+	AND (
+			(trans.BotDetectionValue = 64
+			AND ua.BrowserID = 11)
+		OR	(trans.BotDetectionValue = 64
+			AND ua.BrowserID = 4
+			AND ua.OSID = 1
+			AND ua.UserAgent like '%HeyTap%')
+    );
+
+UPDATE DCS_DataCenter.Transaction07 PARTITION(pw999999) AS trans
+	INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = trans.UserAgentKey
+SET 	trans.Flagged = 1
+	,	trans.BotDetectionValue = 0
+	,	trans.BotComponentID = 1
+WHERE CreatedDate >= '2023-08-22'
+	AND (
+			(trans.BotDetectionValue = 64
+			AND ua.BrowserID = 11)
+		OR	(trans.BotDetectionValue = 64
+			AND ua.BrowserID = 4
+			AND ua.OSID = 1
+			AND ua.UserAgent like '%HeyTap%')
+    );
