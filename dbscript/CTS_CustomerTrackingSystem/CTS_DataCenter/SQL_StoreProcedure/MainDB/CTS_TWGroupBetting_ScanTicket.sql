@@ -28,6 +28,7 @@ AS
 																			[Redmine ID: #189505]
 		- 20230719@Long.Luu:	  Addup Big Leagues for Soccer				[Redmine ID: #191399]
 		- 20230811@Long.Luu:	  Addup Big Leagues for Soccer				[Redmine ID: #192614]
+		- 20230829@Long.Luu:	  Addup Normal Account CC 4000				[Redmine ID: #192976]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_ScanTicket] '2022-02-15 23:10:15.983','2022-02-16 02:15:20.983',10900
@@ -328,7 +329,7 @@ BEGIN
 			,	tfs.GroupId
 		FROM #TmpSuspectTicket AS tfs WITH(NOLOCK)
 			INNER JOIN dbo.SPU_GroupBettingRule AS gbr WITH (NOLOCK) ON tfs.RuleId = gbr.RuleId
-		WHERE tfs.CustomerClass NOT IN (201,2101,2201,2001,202,2102,2202,2002)
+		WHERE tfs.CustomerClass NOT IN (201,2101,2201,2001,202,2102,2202,2002,4000)
 		GROUP BY tfs.RuleId
 			,	tfs.Betteam
 			,	tfs.MatchId
