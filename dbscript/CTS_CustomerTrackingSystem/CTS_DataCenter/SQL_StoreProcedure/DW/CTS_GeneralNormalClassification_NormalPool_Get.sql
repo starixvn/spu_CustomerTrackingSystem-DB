@@ -32,7 +32,13 @@ BEGIN
 		
 	DECLARE	@BatchSize INT = 20000;
 
-	DECLARE @FunctionId_ScanTagging TINYINT = 100;
+	DECLARE @FunctionId_Realtime	   TINYINT = 1,
+			@FunctionId_ScanTagging    TINYINT = 100;
+
+	DECLARE @ScanTaggingType_NotExist  TINYINT = 0,
+			@ScanTaggingType_Exist	   TINYINT = 1,
+			@ScanTaggingType_ExistOnly TINYINT = 2;
+
 
 	IF	OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
 	DROP TABLE	#tmpCustomers;
@@ -41,7 +47,7 @@ BEGIN
 		Id					BIGINT PRIMARY KEY IDENTITY(1,1),
 		CustId				INT UNIQUE NOT NULL,
 		IsCheckBetCount		BIT DEFAULT(0),
-		IsScanOnlyTagging	BIT DEFAULT(0)
+		IsScanOnlyTagging	TINYINT DEFAULT(0)
 	);
 
 	-- #1: Get Scanned MaxID
@@ -53,8 +59,10 @@ BEGIN
 	BEGIN
 		INSERT INTO #tmpCustomers(CustId, IsCheckBetCount, IsScanOnlyTagging)
 		SELECT TOP(@BatchSize) c.CustId,
-			   CASE WHEN (COUNT(c.CustId) = COUNT(c.FunctionId)) AND (COUNT(c.FunctionId) = SUM(c.FunctionId)) THEN 1 ELSE 0 END,
-			   CASE WHEN SUM(c.FunctionId) = (COUNT(c.CustId) * @FunctionId_ScanTagging) THEN 1 ELSE 0 END
+			   CASE WHEN SUM(CASE WHEN c.FunctionId = @FunctionId_ScanTagging THEN @FunctionId_Realtime ELSE c.FunctionId END) = (COUNT(c.CustId) * @FunctionId_Realtime) THEN 1 ELSE 0 END,
+			   CASE WHEN SUM(c.FunctionId) = (COUNT(c.CustId) * @FunctionId_ScanTagging) THEN @ScanTaggingType_ExistOnly 
+					WHEN SUM(CASE WHEN c.FunctionId = @FunctionId_ScanTagging THEN @FunctionId_ScanTagging ELSE 0 END) > 1 THEN @ScanTaggingType_Exist 
+					ELSE @ScanTaggingType_NotExist END
 		FROM dbo.CustomerClassification_NormalPool AS c WITH(NOLOCK)
 		WHERE c.ID <= @ScannedMaxId
 			AND NOT EXISTS (SELECT 1 FROM dbo.CustomerClassification AS cc WITH (NOLOCK) WHERE cc.IsApplied = 0 AND cc.CustId = c.CustId)

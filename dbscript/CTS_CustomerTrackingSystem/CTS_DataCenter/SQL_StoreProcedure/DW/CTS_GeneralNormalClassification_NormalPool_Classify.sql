@@ -31,10 +31,10 @@ AS
     Script:
         EXEC bodb_VR2Model.dbo.CTS_GeneralNormalClassification_NormalPool_Classify 
 			@CustomersXML = N'<Root>
-								<r CustId="5002646" CategoryId="201" IsNewCreated="0" IsCheckBetCount= "0" IsProbationLastDay="0"/>
-								<r CustId="5022391" CategoryId="0"  IsNewCreated="1" IsCheckBetCount= "1" IsProbationLastDay="0"/>
-								<r CustId="1275" CategoryId="205"  IsNewCreated="0" IsCheckBetCount= "1" IsProbationLastDay="1"/>
-								<r CustId="1280" CategoryId="202"  IsNewCreated="1" IsCheckBetCount= "1" IsProbationLastDay="1"/>
+								<r CustId="5002646" CategoryId="201" IsNewCreated="0" IsCheckBetCount= "0" IsProbationLastDay="0" ScanTaggingType="0"/>
+								<r CustId="5022391" CategoryId="0"  IsNewCreated="1" IsCheckBetCount= "1" IsProbationLastDay="0" ScanTaggingType="0"/>
+								<r CustId="1275" CategoryId="205"  IsNewCreated="0" IsCheckBetCount= "1" IsProbationLastDay="1" ScanTaggingType="0"/>
+								<r CustId="1280" CategoryId="202"  IsNewCreated="1" IsCheckBetCount= "1" IsProbationLastDay="1" ScanTaggingType="0"/>
 							</Root>';
 */
 BEGIN
@@ -60,6 +60,10 @@ BEGIN
 			@SportGroup_SabaVRBasketball SMALLINT = 912,
 			@SportGroup_NonSport		 SMALLINT = 229;
 
+	DECLARE @ScanTaggingType_NotExist  TINYINT = 0,
+			@ScanTaggingType_Exist	   TINYINT = 1,
+			@ScanTaggingType_ExistOnly TINYINT = 2;
+
 	DECLARE @ListCustIds			 VARCHAR(MAX);
 
 	IF OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
@@ -73,6 +77,7 @@ BEGIN
 		IsNewCreated	       BIT	    NOT NULL DEFAULT 0,
 		IsCheckBetCount		   BIT	    NOT NULL DEFAULT 0,
 		IsProbationLastDay	   BIT		NOT NULL DEFAULT 0,
+		ScanTaggingType		   TINYINT	NOT NULL DEFAULT 0,
 		IsPlaceBetWithin30Days BIT		NOT NULL DEFAULT 0,
 		IsDeposit			   BIT		NOT NULL DEFAULT 0,
 		IsSpecialSite		   BIT		NOT NULL DEFAULT 0,
@@ -160,6 +165,7 @@ BEGIN
 		,	T.C.value('./@IsNewCreated', 'BIT')			AS IsNewCreated
 		,	T.C.value('./@IsCheckBetCount', 'BIT')		AS IsCheckBetCount
 		,	T.C.value('./@IsProbationLastDay', 'BIT')	AS IsProbationLastDay
+		,	T.C.value('./@ScanTaggingType', 'BIT')		AS ScanTaggingType
 	FROM @CustomersXML.nodes('//r') AS T(C)
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 	
@@ -252,7 +258,26 @@ BEGIN
 		WHERE a.IsCheckBetCount = 1 
 				AND ((a.CurrentCategoryId = @CATEGORY_GOODMEMBER AND a.BetCount - b.BetCount < 100)
 				OR (a.CurrentCategoryId = @CATEGORY_NORMALMEMBER AND a.BetCount - b.BetCount < 20));
-	
+
+		-- #6.1: Classify Tagging (link Association, TWGB,...) If having any from tagging function
+		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, IsScanOnlyTagging)
+		SELECT r.CustId
+			,  @GENERAL_SPORTID
+			,  a.CurrentCategoryId
+			,  @ToDate AS CreatedDate
+			,  @CurrentDateTime AS CreatedTime
+			,  a.TurnoverRM
+			,  a.WinlossRM
+			,  a.BetCount
+			,  a.ActiveDays
+			,  ISNULL(a.PerformanceTime, @CurrentDateTime)
+			,  1
+		FROM #tmpRemoveCust AS r
+			INNER JOIN #tmpCustomers AS c ON c.CustId = r.CustId
+			INNER JOIN #tmpCustomerAccummulatedInfo AS a ON a.CustId = r.CustId
+		WHERE c.ScanTaggingType = @ScanTaggingType_Exist;
+
+		-- #6.2: Remove invalid realtime conditions data
 		DELETE a WITH (ROWLOCK)
 		FROM #tmpCustomerAccummulatedInfo AS a
 			INNER JOIN #tmpRemoveCust AS b ON a.CustId = b.CustId;
