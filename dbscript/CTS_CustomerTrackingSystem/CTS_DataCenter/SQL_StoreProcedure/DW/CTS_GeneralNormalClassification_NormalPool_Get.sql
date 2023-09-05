@@ -47,7 +47,7 @@ BEGIN
 		Id					BIGINT PRIMARY KEY IDENTITY(1,1),
 		CustId				INT UNIQUE NOT NULL,
 		IsCheckBetCount		BIT DEFAULT(0),
-		IsScanOnlyTagging	TINYINT DEFAULT(0)
+		ScanTaggingType  	TINYINT DEFAULT(0)
 	);
 
 	-- #1: Get Scanned MaxID
@@ -57,7 +57,7 @@ BEGIN
 	-- #2: Get top customers by priority
 	IF(@ScannedMaxId IS NOT NULL)
 	BEGIN
-		INSERT INTO #tmpCustomers(CustId, IsCheckBetCount, IsScanOnlyTagging)
+		INSERT INTO #tmpCustomers(CustId, IsCheckBetCount, ScanTaggingType)
 		SELECT TOP(@BatchSize) c.CustId,
 			   CASE WHEN SUM(CASE WHEN c.FunctionId = @FunctionId_ScanTagging THEN @FunctionId_Realtime ELSE c.FunctionId END) = (COUNT(c.CustId) * @FunctionId_Realtime) THEN 1 ELSE 0 END,
 			   CASE WHEN SUM(c.FunctionId) = (COUNT(c.CustId) * @FunctionId_ScanTagging) THEN @ScanTaggingType_ExistOnly 
@@ -73,7 +73,7 @@ BEGIN
 	-- #3: Return dataset
 	SELECT CustId			 AS CustId, 
 		   IsCheckBetCount	 AS IsCheckBetCount,
-		   IsScanOnlyTagging AS IsScanOnlyTagging
+		   ScanTaggingType   AS ScanTaggingType
 	FROM #tmpCustomers;
 	
 	DROP TABLE #tmpCustomers;
