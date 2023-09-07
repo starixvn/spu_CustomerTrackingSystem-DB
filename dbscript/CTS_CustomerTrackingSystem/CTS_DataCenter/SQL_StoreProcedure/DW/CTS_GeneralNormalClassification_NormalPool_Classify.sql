@@ -7,8 +7,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 ALTER PROCEDURE [dbo].[CTS_GeneralNormalClassification_NormalPool_Classify]
-		@CustomersXML		XML,
-		@IsScanOnlyTagging  BIT = 0 
+		@CustomersXML		XML
 AS
 /*
 	Created: 20230421@Jonas.Huynh
@@ -83,6 +82,21 @@ BEGIN
 		IsDeposit			   BIT		NOT NULL DEFAULT 0,
 		IsSpecialSite		   BIT		NOT NULL DEFAULT 0,
 		SRecommend			   INT
+	);
+	
+	CREATE NONCLUSTERED INDEX IX_tmpCustomers_ScanTaggingType ON #tmpCustomers(
+		ScanTaggingType
+	);
+
+	IF OBJECT_ID('tempdb..#tmpScanTaggingCustomer') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpScanTaggingCustomer;
+	END
+
+	CREATE TABLE #tmpScanTaggingCustomer(
+		CustId			       INT PRIMARY KEY,
+		CurrentCategoryId      SMALLINT NOT NULL,
+		ScanTaggingType		   TINYINT	NOT NULL DEFAULT 0,
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpRawData') IS NOT NULL
@@ -166,7 +180,7 @@ BEGIN
 		,	T.C.value('./@IsNewCreated', 'BIT')			AS IsNewCreated
 		,	T.C.value('./@IsCheckBetCount', 'BIT')		AS IsCheckBetCount
 		,	T.C.value('./@IsProbationLastDay', 'BIT')	AS IsProbationLastDay
-		,	T.C.value('./@ScanTaggingType', 'BIT')		AS ScanTaggingType
+		,	T.C.value('./@ScanTaggingType', 'TINYINT')	AS ScanTaggingType
 	FROM @CustomersXML.nodes('//r') AS T(C)
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 	
@@ -174,7 +188,12 @@ BEGIN
 								  FROM #tmpCustomers WITH (NOLOCK)
 								  FOR XML PATH('')), 1, 1, '');
 
-	IF (@IsScanOnlyTagging = 0)
+	DELETE a WITH (ROWLOCK)
+	OUTPUT DELETED.CustId,DELETED.CurrentCategoryId, DELETED.ScanTaggingType INTO #tmpScanTaggingCustomer(CustId, CurrentCategoryId, ScanTaggingType)
+	FROM #tmpCustomers AS a
+	WHERE ScanTaggingType = @ScanTaggingType_ExistOnly
+
+	IF (EXISTS (SELECT 1 FROM #tmpCustomers))
 	BEGIN
 		-- #2: Get customer info
 		UPDATE a WITH(ROWLOCK, UPDLOCK)
@@ -217,9 +236,9 @@ BEGIN
 	FROM #tmpRawData AS a
 	GROUP BY a.CustId;
 
-	IF (@IsScanOnlyTagging = 1)
+	IF (EXISTS (SELECT 1 FROM #tmpScanTaggingCustomer))
 	BEGIN
-		-- #5: Classify Tagging (link Association, TWGB,...)
+		-- #5.1: Classify Tagging (link Association, TWGB,...)
 		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, IsScanOnlyTagging)
 		SELECT t.CustId
 			,  @GENERAL_SPORTID
@@ -233,10 +252,16 @@ BEGIN
 			,  c.ActiveDays
 			,  ISNULL(c.PerformanceTime, @CurrentDateTime)
 			,  1
-		FROM #tmpCustomers AS t
+		FROM #tmpScanTaggingCustomer AS t
 			LEFT JOIN #tmpCustomerAccummulatedInfo AS c ON t.CustId = c.CustId;
+
+		-- #5.2: Remove Scan Tagging Performance
+		DELETE a WITH (ROWLOCK)
+		FROM #tmpCustomerAccummulatedInfo AS a
+			INNER JOIN #tmpScanTaggingCustomer AS t ON t.CustId = a.CustId;
 	END
-	ELSE
+	
+	IF (EXISTS (SELECT 1 FROM #tmpCustomers))
 	BEGIN
 		-- #5: Map relevant customer info
 		UPDATE a WITH(ROWLOCK, UPDLOCK)
@@ -390,6 +415,7 @@ BEGIN
 	DROP TABLE #tmpRawData;		
 	DROP TABLE #tmpBetCount;
 	DROP TABLE #tmpRemoveCust;
+	DROP TABLE #tmpScanTaggingCustomer;
 END;
 GO
 
