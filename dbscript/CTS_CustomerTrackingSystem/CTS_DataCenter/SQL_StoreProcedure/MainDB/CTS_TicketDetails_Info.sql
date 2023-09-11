@@ -10,7 +10,7 @@ CREATE PROCEDURE [dbo].[CTS_TicketDetails_Info]
 	,	@IsLive						BIT = 0
 	,	@IsExclTestCurr				BIT = 0
 	,	@BetID						BIGINT = 0
-	,	@ListTransId				VARCHAR(MAX) = ''
+	,	@ExclTransIdList			VARCHAR(MAX) = ''
 	,	@MaxSequenceId				BIGINT OUTPUT
 	,	@TotalTicketAll				BIGINT OUTPUT
 	,	@TotalTicketLicensee		BIGINT OUTPUT
@@ -27,6 +27,7 @@ AS
 		- 20230721@Victoria.Le:			Get CurrencyName from table Exchange [Redmine ID: #191422]
 		- 20230724@Victoria.Le:			Add condition BetID with BetType = Quarter X HDP/OU/MoneyLine [Redmine ID: #191703]
 		- 20230724@Victoria.Le:			Bettype Selection - Return interdependence of columns  [Redmine ID: #191401]
+		- 20230911@Casey.Huynh:			Return CustomerClass [Redmine ID: #193029]
 
 	Params Explaination:
 
@@ -38,7 +39,7 @@ AS
 		,	1 -- @IsLive
 		,	0 -- @IsExclTestCurr
 		,	0 -- @BetID
-		,	'' -- @ListTransId
+		,	'' -- @ExclTransIdList
 		,	@MaxSequenceId OUTPUT
 		,	@TotalTicketAll OUTPUT
 		,	@TotalTicketLicensee OUTPUT
@@ -50,12 +51,12 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 	
-	IF	OBJECT_ID('tempdb..#tmpTransIds') IS NOT NULL
+	IF	OBJECT_ID('tempdb..#tmpExcludeTransIds') IS NOT NULL
 	BEGIN
-		DROP TABLE #tmpTransIds;
+		DROP TABLE #tmpExcludeTransIds;
 	END;
 
-	CREATE TABLE #tmpTransIds(
+	CREATE TABLE #tmpExcludeTransIds(
 			TransId				BIGINT NOT NULL PRIMARY KEY
 	);
 
@@ -65,13 +66,13 @@ BEGIN
 	END;
 
 	CREATE TABLE	#tmpSupportedSportBettype(
-			SportType			SMALLINT
-		,	BetType				SMALLINT
-		,	IsFilterBetID		BIT
-		,	IsOnlySuspicious	BIT
-		,	IsFilterBetTeam		BIT
-		,	IsFilterHdp			BIT
-		,	IsOnlyGetHdp1		BIT
+			SportType				SMALLINT
+		,	BetType					SMALLINT
+		,	IsFilterBetID			BIT
+		,	IsDetectMatchMonitor	BIT
+		,	IsFilterBetTeam			BIT
+		,	IsFilterHdp				BIT
+		,	IsOnlyGetHdp1			BIT
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpTickets') IS NOT NULL
@@ -99,10 +100,11 @@ BEGIN
 		,	Danger3				TINYINT
 		,	Danger4				TINYINT
 		,	Danger5				TINYINT
+		,	CustomerClass		SMALLINT	
 	);
 
 	-- Soccer
-	INSERT INTO #tmpSupportedSportBettype(SportType,BetType,IsOnlySuspicious,IsFilterBetID,IsFilterBetTeam,IsFilterHdp,IsOnlyGetHdp1)
+	INSERT INTO #tmpSupportedSportBettype(SportType,BetType,IsDetectMatchMonitor,IsFilterBetID,IsFilterBetTeam,IsFilterHdp,IsOnlyGetHdp1)
 	VALUES	(1,1,1,0,0,1,0)
 			,(1,3,1,0,0,1,1)
 			,(1,7,1,0,0,1,0)
@@ -115,7 +117,7 @@ BEGIN
 			,(1,126,0,0,1,0,0)
 	;
 	-- Basketball
-	INSERT INTO #tmpSupportedSportBettype(SportType,BetType,IsOnlySuspicious,IsFilterBetID,IsFilterBetTeam,IsFilterHdp,IsOnlyGetHdp1)
+	INSERT INTO #tmpSupportedSportBettype(SportType,BetType,IsDetectMatchMonitor,IsFilterBetID,IsFilterBetTeam,IsFilterHdp,IsOnlyGetHdp1)
 	VALUES	(2,1,1,0,0,1,0)
 			,(2,3,1,0,0,1,1)
 			,(2,7,1,0,0,1,0)
@@ -126,16 +128,16 @@ BEGIN
 			,(2,612,1,1,0,1,0)
 	;
 	-- E-Sports
-	INSERT INTO #tmpSupportedSportBettype(SportType,BetType,IsOnlySuspicious,IsFilterBetID,IsFilterBetTeam,IsFilterHdp,IsOnlyGetHdp1)
+	INSERT INTO #tmpSupportedSportBettype(SportType,BetType,IsDetectMatchMonitor,IsFilterBetID,IsFilterBetTeam,IsFilterHdp,IsOnlyGetHdp1)
 	VALUES	(43,1,1,0,0,1,0)
 			,(43,3,1,0,0,1,1)
 			,(43,20,1,0,0,1,0)
 	;
 	
-	IF @ListTransId <> ''
+	IF @ExclTransIdList <> ''
 	BEGIN
-		INSERT INTO #tmpTransIds (TransId)
-		SELECT ssk.value FROM STRING_SPLIT(@ListTransId, ',') ssk;
+		INSERT INTO #tmpExcludeTransIds (TransId)
+		SELECT ssk.value FROM STRING_SPLIT(@ExclTransIdList, ',') ssk;
 	END;
 
 	INSERT INTO #tmpTickets (
@@ -165,7 +167,7 @@ BEGIN
 	,	b.bettype
 	,	ABS(CASE WHEN t.IsFilterHdp = 1 AND t.IsOnlyGetHdp1 = 1  THEN	b.Hdp1
 				 WHEN t.IsFilterHdp = 1 AND t.IsOnlyGetHdp1 = 0	 THEN  (CASE WHEN b.BetTeam = 'h'	THEN (b.Hdp2 - b.Hdp1)
-																			 WHEN b.BetTeam = 'a'	THEN (b.Hdp1 - b.Hdp2) END) END)
+																			 WHEN b.BetTeam = 'a'	THEN (b.Hdp1 - b.Hdp2) END) END) AS HDP
 	,	b.statusID
 	FROM dbo.bettrans AS b WITH(NOLOCK)
 		INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
@@ -184,6 +186,7 @@ BEGIN
 		,	t.Danger3 = ISNULL(c.danger3,0)
 		,	t.Danger4 = ISNULL(c.Danger4,0)
 		,	t.Danger5 = ISNULL(c.Danger5,0)
+		,	t.CustomerClass = ISNULL(c.CustomerClass,0)
 	FROM #tmpTickets AS t
 		INNER JOIN dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
 		INNER JOIN dbo.Dep_CustSuper AS cs WITH (NOLOCK) ON cs.custid = c.srecommend;
@@ -195,6 +198,7 @@ BEGIN
 		,	t.Danger3 = ISNULL(c.danger3,0)
 		,	t.Danger4 = ISNULL(c.Danger4,0)
 		,	t.Danger5 = ISNULL(c.Danger5,0)
+		,	t.CustomerClass = ISNULL(c.CustomerClass,0)
 	FROM #tmpTickets AS t
 		INNER JOIN dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
 		INNER JOIN dbo.CustProductStatus AS s WITH (NOLOCK) ON s.custid = c.custid
@@ -209,14 +213,14 @@ BEGIN
 	SELECT @TotalTicketCredit = COUNT(1) FROM #tmpTickets  WHERE IsLicensee = 0;
 	
 	SELECT DISTINCT 
-			b.IsLicensee, b.LiveHomeScore, b.LiveAwayScore, b.TicketStatus, b.CurrencyId, b.CurrencyName, b.Hdp, b.BetTeam, b.Danger1, b.Danger2, b.Danger3, b.Danger4, b.Danger5
+			b.IsLicensee, b.LiveHomeScore, b.LiveAwayScore, b.TicketStatus, b.CurrencyId, b.CurrencyName, b.Hdp, b.BetTeam, b.Danger1, b.Danger2, b.Danger3, b.Danger4, b.Danger5, b.CustomerClass
 	FROM #tmpTickets AS b
-		LEFT JOIN #tmpTransIds AS ttrans ON ttrans.TransId = b.TransId
+		LEFT JOIN #tmpExcludeTransIds AS ttrans ON ttrans.TransId = b.TransId
 	WHERE ttrans.TransId IS NULL
 		;
 
 	DROP TABLE IF EXISTS #tmpSupportedSportBettype;
 	DROP TABLE IF EXISTS #tmpTickets;
-	DROP TABLE IF EXISTS #tmpTransIds;
+	DROP TABLE IF EXISTS #tmpExcludeTransIds;
 
 END
