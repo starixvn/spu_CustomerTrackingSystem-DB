@@ -9,7 +9,7 @@ GO
 
 -- #1. Add new column
 ALTER TABLE [dbo].[CustomerClassification]
-ADD IsScanOnlyTagging BIT DEFAULT(0);
+ADD ScanTaggingType INT DEFAULT(0);
 GO
 
 -- #2. Update priority

@@ -22,23 +22,29 @@ BEGIN
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_DailyScan_GetTagging();
 	*/ 
     
-    DECLARE	CONST_GROUP_NORMAL 	INT DEFAULT 200;
+    DECLARE	CONST_GROUP_NORMAL 			INT DEFAULT 200;
     
-	DECLARE lv_LastCategoryID 	INT;
-	DECLARE lv_LastCustID 		BIGINT UNSIGNED;
-    DECLARE lv_BatchSize 		BIGINT;
+	DECLARE CONST_CATEGORY_SMART 		INT DEFAULT 203;
+    DECLARE CONST_CATEGORY_HIGHRISK 	INT DEFAULT 204;
+    DECLARE CONST_CATEGORY_PROBATION	INT DEFAULT 206;
+	
+	DECLARE lv_LastCategoryID 			INT;
+	DECLARE lv_LastCustID 				BIGINT UNSIGNED;
+    DECLARE lv_BatchSize 				BIGINT;
     
-    DECLARE lv_NextCategoryID 	INT;
-    DECLARE lv_NextCustID 		BIGINT UNSIGNED;
+    DECLARE lv_NextCategoryID 			INT;
+    DECLARE lv_NextCustID 				BIGINT UNSIGNED;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Category;
 	CREATE TEMPORARY TABLE Temp_Category(
-			CategoryID	INT PRIMARY KEY
+			CategoryID		INT PRIMARY KEY,
+            CategoryGroup	SMALLINT
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
     CREATE TEMPORARY TABLE Temp_Cust(
-			CustID 	BIGINT UNSIGNED PRIMARY KEY
+			CustID 			BIGINT UNSIGNED PRIMARY KEY,
+            CategoryID		INT NOT NULL
     );
           
     SELECT ParameterValue 
@@ -56,13 +62,13 @@ BEGIN
     FROM CTS_DataCenter.SystemParameter 
     WHERE ParameterID = 145;
    
-	INSERT INTO Temp_Category(CategoryID)
-	SELECT CategoryID
+	INSERT INTO Temp_Category(CategoryID, CategoryGroup)
+	SELECT CategoryID, CategoryGroup
 	FROM CTS_DataCenter.CustomerCategory
 	WHERE ParentID = 200 
 		AND IsActive = 1
 		AND IsUsedManually = 0 
-		AND ScanTaggingIntervalInSecond > 0; 
+		AND ScanTaggingIntervalInSecond > 0;
         
     IF lv_LastCategoryID IS NULL OR lv_LastCategoryID = 0 THEN
 		SELECT CategoryID 
@@ -72,8 +78,8 @@ BEGIN
         LIMIT 1;
 	END IF;
     
-	INSERT IGNORE INTO Temp_Cust (CustID)
-	SELECT clss.CustID
+	INSERT IGNORE INTO Temp_Cust (CustID, CategoryID)
+	SELECT clss.CustID, clss.CategoryID
 	FROM CTS_DataCenter.CTSCustomerClassification AS clss
 	WHERE clss.CustID > lv_LastCustID
 		AND clss.CategoryID = lv_LastCategoryID
@@ -99,8 +105,8 @@ BEGIN
     END IF;
     
     IF lv_NextCategoryID IS NOT NULL THEN
-		INSERT IGNORE INTO Temp_Cust (CustID)
-		SELECT clss.CustID
+		INSERT IGNORE INTO Temp_Cust (CustID, CategoryID)
+		SELECT clss.CustID, clss.CategoryID
 		FROM CTS_DataCenter.CTSCustomerClassification AS clss
 		WHERE clss.CustID > 0
 			AND clss.CategoryID = lv_NextCategoryID
@@ -133,8 +139,10 @@ BEGIN
         SET op_LastCustID = 0;
     END IF;
     
-    SELECT DISTINCT	tmp.CustID
-    FROM Temp_Cust AS tmp;
+    SELECT DISTINCT	tmp.CustID, 
+		CASE WHEN tmpc.CategoryGroup IS NOT NULL AND tmpc.CategoryGroup IN (CONST_CATEGORY_PROBATION, CONST_CATEGORY_SMART, CONST_CATEGORY_HIGHRISK) THEN 1 ELSE 0 END AS IsCheckTaggingTW
+    FROM Temp_Cust AS tmp
+		LEFT JOIN Temp_Category AS tmpc ON tmpc.CategoryID = tmp.CategoryID;
     
 END$$
 

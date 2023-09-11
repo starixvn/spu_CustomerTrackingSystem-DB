@@ -39,7 +39,6 @@ BEGIN
 			@ScanTaggingType_Exist	   TINYINT = 1,
 			@ScanTaggingType_ExistOnly TINYINT = 2;
 
-
 	IF	OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
 	DROP TABLE	#tmpCustomers;
 
