@@ -39,7 +39,7 @@ AS
 BEGIN
 	
 	SET NOCOUNT ON;
-	
+
 	DECLARE @GENERAL_SPORTID		 SMALLINT = 200;
 	DECLARE @CurrentDateTime		 DATETIME = GETDATE();
 	DECLARE	@ToDate					 DATE	  = GETDATE();
@@ -129,6 +129,7 @@ BEGIN
 		IsPlaceBetWithin30Days BIT			  NOT NULL DEFAULT 0,
 		IsProbationLastDay	   BIT			  NOT NULL DEFAULT 0,
 		IsCheckBetCount		   BIT			  NOT NULL DEFAULT 0,
+		ScanTaggingType		   TINYINT		  NOT NULL DEFAULT 0,
 		IsSpecialSite		   BIT			  NOT NULL DEFAULT 0,
 		IsDeposit			   BIT			  NOT NULL DEFAULT 0,
 		SRecommend			   INT,
@@ -239,7 +240,7 @@ BEGIN
 	IF (EXISTS (SELECT 1 FROM #tmpScanTaggingCustomer))
 	BEGIN
 		-- #5.1: Classify Tagging (link Association, TWGB,...)
-		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, IsScanOnlyTagging)
+		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, ScanTaggingType)
 		SELECT t.CustId
 			,  @GENERAL_SPORTID
 			,  t.CurrentCategoryId
@@ -251,7 +252,7 @@ BEGIN
 			,  c.BetCount
 			,  c.ActiveDays
 			,  ISNULL(c.PerformanceTime, @CurrentDateTime)
-			,  1
+			,  t.ScanTaggingType
 		FROM #tmpScanTaggingCustomer AS t
 			LEFT JOIN #tmpCustomerAccummulatedInfo AS c ON t.CustId = c.CustId;
 
@@ -269,6 +270,7 @@ BEGIN
 			a.IsCheckBetCount = c.IsCheckBetCount,
 			a.IsPlaceBetWithin30Days = c.IsPlaceBetWithin30Days,
 			a.IsProbationLastDay = c.IsProbationLastDay,
+			a.ScanTaggingType = c.ScanTaggingType,
 			a.SRecommend = c.SRecommend,
 			a.IsSpecialSite = c.IsSpecialSite,
 			a.IsDeposit = c.IsDeposit
@@ -287,7 +289,7 @@ BEGIN
 				OR (a.CurrentCategoryId = @CATEGORY_NORMALMEMBER AND a.BetCount - b.BetCount < 20));
 
 		-- #6.1: Classify Tagging (link Association, TWGB,...) If having any from tagging function
-		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, IsScanOnlyTagging)
+		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, ScanTaggingType)
 		SELECT r.CustId
 			,  @GENERAL_SPORTID
 			,  a.CurrentCategoryId
@@ -299,11 +301,10 @@ BEGIN
 			,  a.BetCount
 			,  a.ActiveDays
 			,  ISNULL(a.PerformanceTime, @CurrentDateTime)
-			,  1
+			,  @ScanTaggingType_ExistOnly
 		FROM #tmpRemoveCust AS r
-			INNER JOIN #tmpCustomers AS c ON c.CustId = r.CustId
 			INNER JOIN #tmpCustomerAccummulatedInfo AS a ON a.CustId = r.CustId
-		WHERE c.ScanTaggingType = @ScanTaggingType_Exist;
+		WHERE a.ScanTaggingType = @ScanTaggingType_Exist;
 
 		-- #6.2: Remove invalid realtime conditions data
 		DELETE a WITH (ROWLOCK)
@@ -327,7 +328,7 @@ BEGIN
 		WHERE b.CustId IS NULL;
 
 		-- #8: Classify customer without performance 
-		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
+		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, ScanTaggingType)
 		SELECT t.CustId
 			,  @GENERAL_SPORTID
 			,  CASE WHEN (t.IsNewCreated = 1 OR t.IsPlaceBetWithin30Days = 1) THEN @CATEGORY_NEWMEMBER ELSE @CATEGORY_NORMALINACTIVE END
@@ -339,6 +340,7 @@ BEGIN
 			,  NULL
 			,  NULL
 			,  @CurrentDateTime
+			,  t.ScanTaggingType
 		FROM #tmpCustomers AS t
 			LEFT JOIN #tmpCustomerAccummulatedInfo AS c ON t.CustId = c.CustId
 		WHERE c.CustId IS NULL;	
@@ -375,7 +377,7 @@ BEGIN
 			WHERE b.RowNum = 1;
 
 		--#10: Insert to CustomerClassification
-		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
+		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, ScanTaggingType)
 		OUTPUT INSERTED.CustId, @GENERAL_SPORTID, INSERTED.CategoryId, INSERTED.BetCount INTO #tmpBetCount
 		SELECT a.CustId
 			,  @GENERAL_SPORTID
@@ -388,10 +390,11 @@ BEGIN
 			,  a.BetCount
 			,  a.ActiveDays
 			,  ISNULL(a.PerformanceTime, @CurrentDateTime)
+			,  a.ScanTaggingType
 		FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 		WHERE a.IsPlaceBetWithin30Days = 1;
 
-		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
+		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, ScanTaggingType)
 		SELECT a.CustId
 			,  @GENERAL_SPORTID
 			,  CASE WHEN a.CurrentCategoryId IN (@CATEGORY_SMARTPUNTER, @CATEGORY_RISKY, @CATEGORY_PROBATION, @CATEGORY_SMARTINACTIVE) THEN @CATEGORY_SMARTINACTIVE ELSE @CATEGORY_NORMALINACTIVE END AS CategoryId
@@ -403,6 +406,7 @@ BEGIN
 			,  a.BetCount
 			,  a.ActiveDays
 			,  ISNULL(a.PerformanceTime, @CurrentDateTime)
+			,  a.ScanTaggingType
 		FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
 		WHERE a.IsPlaceBetWithin30Days = 0;
 	

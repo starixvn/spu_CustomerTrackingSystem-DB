@@ -519,7 +519,7 @@ BEGIN
 		, 	cate.SubscriberID = temp.SubscriberID
 		, 	cate.CategoryID = temp.NewCateID
 		, 	cate.LastModifiedDate = lv_CurrentDateTime
-		, 	cate.LastScannedDate = CASE WHEN temp.IsScanOnlyTagging = 0 THEN DATE(lv_CurrentDateTime) ELSE cate.LastScannedDate END
+		, 	cate.LastScannedDate = CASE WHEN temp.ScanTaggingType = CONST_SCANTAGGINGTYPE_EXISTONLY THEN cate.LastScannedDate ELSE DATE(lv_CurrentDateTime) END
     WHERE temp.ActionType = CONST_ACTIONTYPE_UPDATE;
     
     UPDATE CTS_DataCenter.CTSCustomerClassification AS cate
