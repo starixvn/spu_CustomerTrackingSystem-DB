@@ -8,6 +8,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Subscriber_Update`(
 	,	IN ip_SubscriberID			INT
 	,	IN ip_SubscriberName		VARCHAR(50)
 	,	IN ip_SubscriberType		TINYINT
+	,	IN ip_SubscriberSourceID	TINYINT
 	,	IN ip_SubscriberPrefix		VARCHAR(30)
 	,	IN ip_IsTest				BIT
 	,	IN ip_SiteList				JSON
@@ -28,11 +29,13 @@ sp: BEGIN
             - 20200911@Casey.Huynh: Return Subscriber is updated or Add New [Redmine ID: 148849]
             - 20210412@Casey.Huynh: SET DCSStatus = 1 for New Subscriber [Redmine ID: 153202]
 			- 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
+			- 20230911@Victoria.Le: Add new column SubscriberSourceID [Redmine ID: #193044]
 
 		Param's Explanation:
 			- ip_SubscriberID: 0 => Insert mode, <> 0 => Update mode, input siteID
 			- ip_SubscriberType: 0 => Credit, 1 => Licensees
             - ip_SubscriberPrefix: null => skip
+			- ip_SubscriberSourceID: 0: Others, 1: Direct API, 2: Oddsfeed
 	*/
     
     DECLARE lv_CurrentTime		DATETIME		DEFAULT CURRENT_TIME();
@@ -123,28 +126,31 @@ sp: BEGIN
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 		SELECT	27
 			,	lv_SPName
-			,	CONCAT('Update subscriber: SubID_', SubscriberID, '; SubName_', SubscriberName, '; SubPrefix_', SubscriberPrefix, '; SubType_', SubscriberType, '; IsTest_', IsTest)
+			,	CONCAT('Update subscriber: SubID_', SubscriberID, '; SubName_', SubscriberName, '; SubPrefix_', SubscriberPrefix, '; SubType_', SubscriberType, '; SubSourceID_', SubscriberSourceID, '; IsTest_', IsTest)
 			,	lv_CurrentTime
 			,	ip_UserID
 		FROM CTS_Admin.Subscriber
         WHERE SubscriberID = lv_SubscriberID
 			AND (LOWER(SubscriberName) <> LOWER(IFNULL(ip_SubscriberName, ''))
 				OR LOWER(SubscriberPrefix) <> LOWER(IFNULL(ip_SubscriberPrefix, ''))
-                OR SubscriberType <> ip_SubscriberType);
+                OR SubscriberType <> ip_SubscriberType
+				OR SubscriberSourceID <> ip_SubscriberSourceID);
         
 		UPDATE CTS_Admin.Subscriber
         SET		SubscriberName = ip_SubscriberName
 			,	SubscriberPrefix = ip_SubscriberPrefix
             ,	SubscriberType = ip_SubscriberType
+			,	SubscriberSourceID = ip_SubscriberSourceID
             ,	IsTest = ip_IsTest
 		WHERE SubscriberID = lv_SubscriberID;
         
     ELSE
 		#========= INSERT SUBSCRIBER =========
-		INSERT INTO CTS_Admin.Subscriber (SubscriberName, SubscriberPrefix, SubscriberType, SubscriberStatus, CreatedDate, CreatedBy, IsTest, DCSStatus)
+		INSERT INTO CTS_Admin.Subscriber (SubscriberName, SubscriberPrefix, SubscriberType, SubscriberSourceID, SubscriberStatus, CreatedDate, CreatedBy, IsTest, DCSStatus)
 		SELECT	ip_SubscriberName
 			,	ip_SubscriberPrefix
 			,	ip_SubscriberType
+			,	ip_SubscriberSourceID
 			,	1 AS SubscriberStatus
 			,	lv_CurrentTime
 			,	ip_UserID
@@ -160,7 +166,7 @@ sp: BEGIN
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 		VALUES	(28
 			,	lv_SPName
-			,	CONCAT('Insert subscriber: SubID_', lv_SubscriberID, '; SubName_', ip_SubscriberName, '; SubPrefix_', ip_SubscriberPrefix, '; SubType_', ip_SubscriberType, '; IsTest_', EXPORT_SET(ip_IsTest, '1', '0', '', 1))
+			,	CONCAT('Insert subscriber: SubID_', lv_SubscriberID, '; SubName_', ip_SubscriberName, '; SubPrefix_', ip_SubscriberPrefix, '; SubType_', ip_SubscriberType, '; SubSourceID_', ip_SubscriberSourceID, '; IsTest_', EXPORT_SET(ip_IsTest, '1', '0', '', 1))
 			,	lv_CurrentTime
 			,	ip_UserID);
 
