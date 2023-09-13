@@ -21,13 +21,16 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerClass;
     CREATE TEMPORARY TABLE Temp_CustomerClass(
-		  	CustomerClass 		SMALLINT UNSIGNED PRIMARY KEY
+		  	CustomerClass 		SMALLINT UNSIGNED
         ,  	CustomerClassGroup 	VARCHAR(50)
         ,	CategoryIDs			TEXT
-        ,  	OrderID 			SMALLINT
+        ,  	OrderID 			SMALLINT DEFAULT 0
         
-        ,	INDEX IX_Temp_CustomerClass_OrderID(OrderID, CustomerClass)
+        ,	PRIMARY KEY PK_Temp_CustomerClass(CustomerClassGroup ASC , CustomerClass ASC)
+        ,	INDEX IX_Temp_CustomerClass_OrderID( CustomerClass, OrderID)
     );
+    
+    
     
     INSERT IGNORE INTO Temp_CustomerClass (CustomerClassGroup, CustomerClass, CategoryIDs)
     SELECT 	'PA' AS CustomerClassGroup		    
@@ -36,10 +39,12 @@ BEGIN
 	FROM	CTS_DataCenter.CustomerCategory AS cat
 	WHERE 	cat.ParentID = 50
 		AND cat.IsActive = 1
+        AND cat.CustomerClass IS NOT NULL
 	GROUP BY cat.CustomerClass, cat.CategoryGroup;
     
 	INSERT IGNORE INTO Temp_CustomerClass (CustomerClassGroup, CustomerClass, CategoryIDs)
 	SELECT	CASE WHEN ttc.TaggingType =1 THEN 'Associated PA' 
+				 WHEN cat.CategoryGroup = 1000 THEN 'Others' 
                  ELSE 'Normal' 
 			END AS CustomerClassGroup
 		,	cat.CustomerClass
@@ -47,14 +52,17 @@ BEGIN
 	FROM	CTS_DataCenter.CustomerCategory AS cat
 		LEFT JOIN CTS_DataCenter.TaggingToCategory AS ttc ON ttc.CategoryID = cat.CategoryID	
 	WHERE 	cat.ParentID = 200
-		AND cat.IsActive = 1;
+		AND cat.IsActive = 1
+        AND cat.CustomerClass IS NOT NULL;
 
    UPDATE Temp_CustomerClass
    SET OrderID = CASE WHEN CustomerClassGroup = 'PA' THEN 1
                  WHEN CustomerClassGroup = 'Associated PA' THEN 2
                  WHEN CustomerClassGroup = 'Normal' THEN 3
+                 ELSE 4
 			END;
 	
-   SELECT CustomerClassGroup, CustomerClass, CategoryIDs FROM Temp_CustomerClass ORDER BY OrderID ASC, CustomerClass ASC; 
+   SELECT OrderID, CustomerClassGroup, CustomerClass, CategoryIDs FROM Temp_CustomerClass ORDER BY OrderID ASC, CustomerClass ASC; 
+
 END$$
 DELIMITER ;
