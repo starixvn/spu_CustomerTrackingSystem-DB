@@ -19,7 +19,7 @@ BEGIN
             
         Param's Explanation:     
         Example:
-			- CALL CTS_DataCenter.CTS_DC_CustClassification_DailyScan_GetTagging();
+			- CALL CTS_DataCenter.CTS_DC_CustClassification_TaggingScan_Get();
 	*/ 
     
     DECLARE	CONST_GROUP_NORMAL 			INT DEFAULT 200;

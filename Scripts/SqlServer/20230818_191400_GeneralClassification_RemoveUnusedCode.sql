@@ -39,7 +39,7 @@ DROP PROCEDURE IF EXISTS CTS_NormalAccountsClassification_GeneralCategorize_Init
 DROP PROCEDURE IF EXISTS CTS_NormalAccountsClassification_GeneralCategorize_InitData_xtest;
 
 -- REMOVE Unused SystemParameters
-DELETE t
+DELETE 
 FROM [dbo].[CustomerClassification_Parameter]
 WHERE [DataId] IN (1, 2, 5, 6, 7, 8);
 
