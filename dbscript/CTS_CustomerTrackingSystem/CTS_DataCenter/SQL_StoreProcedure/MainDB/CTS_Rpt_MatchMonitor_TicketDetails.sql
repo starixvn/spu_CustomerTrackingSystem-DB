@@ -91,11 +91,9 @@ BEGIN
 
 	DECLARE @BalanceUpDay			SMALLDATETIME
 		,	@MoveBetsDay			SMALLDATETIME
-		,	@Today					DATE = GETDATE();
-	
-	DECLARE @IsGetDataFromOrigin	BIT = 0
-	,	@IsGetDataFrom14		BIT = 0
-	,	@IsGetDataFromBK		BIT = 0;
+		,	@IsGetDataFromOrigin	BIT = 0
+		,	@IsGetDataFrom14		BIT = 0
+		,	@IsGetDataFromBK		BIT = 0;
 
 	--==================================================================
 	IF	OBJECT_ID('tempdb..#tmpTickets') IS NOT NULL
@@ -300,7 +298,7 @@ BEGIN
 	BEGIN
 		SELECT @IsGetDataFrom14 = 1;
 	END
-	ELSE IF @EventDate > @MoveBetsDay
+	ELSE
 	BEGIN
 		SELECT @IsGetDataFromOrigin = 1;
 	END;
@@ -309,32 +307,34 @@ BEGIN
 	-- Soccer
 	INSERT INTO #tmpSupportedSportBettype(SportType,BetType,IsDetectMatchMonitor,IsFilterBetID,IsFilterBetTeam,IsFilterHdp,IsOnlyGetHdp1)
 	VALUES	(1,1,1,0,0,1,0)
-			,(1,3,1,0,0,1,1)
-			,(1,7,1,0,0,1,0)
-			,(1,8,1,0,0,1,1)
-			,(1,2,0,0,0,1,0)
-			,(1,12,0,0,0,1,0)
-			,(1,413,0,0,1,0,0)
-			,(1,414,0,0,1,0,0)
-			,(1,6,0,0,1,0,0)
-			,(1,126,0,0,1,0,0)
+		,	(1,3,1,0,0,1,1)
+		,	(1,7,1,0,0,1,0)
+		,	(1,8,1,0,0,1,1)
+		,	(1,2,0,0,0,1,0)
+		,	(1,12,0,0,0,1,0)
+		,	(1,413,0,0,1,0,0)
+		,	(1,414,0,0,1,0,0)
+		,	(1,6,0,0,1,0,0)
+		,	(1,126,0,0,1,0,0)
+		,	(1,5,0,0,1,0,0)
+		,	(1,15,0,0,1,0,0)
 	;
 	-- Basketball
 	INSERT INTO #tmpSupportedSportBettype(SportType,BetType,IsDetectMatchMonitor,IsFilterBetID,IsFilterBetTeam,IsFilterHdp,IsOnlyGetHdp1)
 	VALUES	(2,1,1,0,0,1,0)
-			,(2,3,1,0,0,1,1)
-			,(2,7,1,0,0,1,0)
-			,(2,8,1,0,0,1,1)
-			,(2,20,1,0,0,1,0)
-			,(2,609,1,1,0,1,0)
-			,(2,610,1,1,0,1,1)
-			,(2,612,1,1,0,1,0)
+		,	(2,3,1,0,0,1,1)
+		,	(2,7,1,0,0,1,0)
+		,	(2,8,1,0,0,1,1)
+		,	(2,20,1,0,0,1,0)
+		,	(2,609,1,1,0,1,0)
+		,	(2,610,1,1,0,1,1)
+		,	(2,612,1,1,0,1,0)
 	;
 	-- E-Sports
 	INSERT INTO #tmpSupportedSportBettype(SportType,BetType,IsDetectMatchMonitor,IsFilterBetID,IsFilterBetTeam,IsFilterHdp,IsOnlyGetHdp1)
 	VALUES	(43,1,1,0,0,1,0)
-			,(43,3,1,0,0,1,1)
-			,(43,20,1,0,0,1,0)
+		,	(43,3,1,0,0,1,1)
+		,	(43,20,1,0,0,1,0)
 	;
 
 	--==========================================================================================
