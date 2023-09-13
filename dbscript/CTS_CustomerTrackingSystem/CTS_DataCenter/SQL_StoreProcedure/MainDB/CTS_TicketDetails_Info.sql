@@ -29,7 +29,7 @@ AS
 		- 20230721@Victoria.Le:			Get CurrencyName from table Exchange [Redmine ID: #191422]
 		- 20230724@Victoria.Le:			Add condition BetID with BetType = Quarter X HDP/OU/MoneyLine [Redmine ID: #191703]
 		- 20230724@Victoria.Le:			Bettype Selection - Return interdependence of columns  [Redmine ID: #191401]
-		- 20230911@Casey.Huynh:			Return CustomerClass [Redmine ID: #193029]
+		- 20230911@Casey.Huynh:			Support Filter For Suspicious Trans AND CustomerClass and  [Redmine ID: #193029]
 
 	Params Explaination:
 		@ListSuspiciousTransId: format JSON
@@ -59,11 +59,9 @@ BEGIN
 
 	DECLARE @BalanceUpDay			SMALLDATETIME
 		,	@MoveBetsDay			SMALLDATETIME
-		,	@Today					DATE = GETDATE();
-	
-	DECLARE @IsGetDataFromOrigin	BIT = 0
-	,	@IsGetDataFrom14		BIT = 0
-	,	@IsGetDataFromBK		BIT = 0;
+		,	@IsGetDataFromOrigin	BIT = 0
+		,	@IsGetDataFrom14		BIT = 0
+		,	@IsGetDataFromBK		BIT = 0;
 
 	---====================================================================================
 
@@ -113,6 +111,12 @@ BEGIN
 		,	IsFilterHdp				BIT
 		,	IsOnlyGetHdp1			BIT
 	);
+
+	CREATE CLUSTERED INDEX #CIX_tmpSupportedSportBettype_SportTypeBettype ON #tmpSupportedSportBettype (
+			SportType	ASC
+		,	Bettype		ASC
+	);
+
 
 	IF	OBJECT_ID('tempdb..#tmpSuspiciousTrans') IS NOT NULL
 	BEGIN
@@ -184,6 +188,8 @@ BEGIN
 			,(1,414,0,0,1,0,0)
 			,(1,6,0,0,1,0,0)
 			,(1,126,0,0,1,0,0)
+			,(1,5,0,0,1,0,0)
+			,(1,15,0,0,1,0,0)
 	;
 	-- Basketball
 	INSERT INTO #tmpSupportedSportBettype(SportType,BetType,IsDetectMatchMonitor,IsFilterBetID,IsFilterBetTeam,IsFilterHdp,IsOnlyGetHdp1)
