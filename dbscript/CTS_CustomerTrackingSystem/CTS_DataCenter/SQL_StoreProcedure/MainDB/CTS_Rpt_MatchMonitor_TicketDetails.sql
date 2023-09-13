@@ -6,11 +6,9 @@ SET QUOTED_IDENTIFIER ON
 GO
 ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_TicketDetails]
 		@QueryType					TINYINT = 1
-
 	,	@LastScannedSequenceID		BIGINT = 0
 	,	@IsLive						BIT = 1
 	,	@BatchSize					INT = 500
-
 	,	@ListTransId				VARCHAR(MAX) = ''
 	,	@EventDate					DATETIME = '1900-09-22'
 	,	@MatchID					INT = 0
@@ -20,12 +18,14 @@ ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_TicketDetails]
 	,	@ListCurrency				VARCHAR(MAX) = NULL
 	,	@ListHDPBetTeam				VARCHAR(MAX) = NULL
 	,	@ListScore					VARCHAR(MAX) = NULL
-	,	@FromStakeRM				MONEY = NULL
-	,	@ToStakeRM					MONEY = NULL
+	,	@CustAmountRM				MONEY = NULL
 	,	@BetID						BIGINT = 0
 	,	@ListDanger					VARCHAR(MAX) = NULL
 	,	@ListStatus					VARCHAR(50) = NULL
+	,	@ListCustomerClass			VARCHAR(MAX) = NULL
+	,	@ListExclTransId			VARCHAR(MAX) = ''
 	,	@MinSequenceIDTotalAll		BIGINT = NULL OUTPUT
+	,	@MaxSequenceId				BIGINT = NULL OUTPUT
 
 AS
 /*
@@ -54,17 +54,19 @@ AS
 		- 20230724@Victoria.Le	Add condition BetID with BetType = Quarter X HDP/OU/MoneyLine [Redmine ID: #191703]
 		- 20230724@Victoria.Le	Using STRING_SPLIT instead of dbo.f_SplitString
 								Show all tickets - Add Filter by Danger and Status [Redmine ID: #191401]
+		- 20230911@Casey.Huynh:	Filter by CustomerClass, TotalAmount by Cust, M.Gr TransList [Redmine ID: #193029]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize)
 					  2 - to show on report (get tickets by @EventDate & @ListTransId)
 					  3	- to show on report (get all tickets by @MatchID, @BetType, @IsLive, @LastScannedSequenceID, @BatchSize, @IsLicensee, @ListCurrency, 
-																@ListHDPBetTeam, @ListScore, @FromStakeRM, @ToStakeRM, @ListDanger, @ListStatus)
+																@ListHDPBetTeam, @ListScore, @CustAmountRM, @ListDanger, @ListStatus, @ListCustomerClass)
 							+ @BatchSize = 0 ==> @MinSequenceIDTotalAll: Total tickets
 							+ @BatchSize > 0 ==> @MinSequenceIDTotalAll: Min SequenceId
-							+ @BatchSize = 0 & @ListTransId <> '' ==> get total tickets (excluded  @ListTransId)
+							+ @BatchSize = 0 & @ListExclTransId <> '' & @ListTransId ==> get total tickets (By @ListTransId) AND (excluded  @ListExclTransId)
 		- @ListDanger: format JSON
 			SET @ListDanger = '[{"Danger1":10},{"Danger1":17},{"Danger1":28},{"Danger2":28},{"Danger2":6},{"Danger2":12},{"Danger3":48}]'
+
 		- @ListStatus: List StatusID
 			SET @ListStatus = '111,113,103,101,0,102,112,1,131' --Draw: 111;Lose: 113;Refund: 103;Reject: 101;Running: 0;Void: 102;Won:112;Waiting: 1;Completed: 131
 		- @BetType:
@@ -74,11 +76,14 @@ AS
 			+ @BetType IN (3,8,610) - then ABS(Hdp1)
 			+ @BetType IN (1,7,20,609,612,2,12) - if BetTeam = 'h' then ABS(Hdp2 - Hdp1) else BetTeam = 'a' then ABS(Hdp1 - Hdp2) 
 			+ @BetType IN (413,414,6,126) - then BetTeam
+
+		- @ListCustomerClass: format VARCHAR(MAX)
+		     SET = '200,201,2201'
 			
 	Example:
 		DECLARE @MinTotal BIGINT;
 		EXEC [dbo].[CTS_Rpt_MatchMonitor_TicketDetails] @QueryType = 3,@LastScannedSequenceID = 117286612760,@IsLive = 1,@BatchSize = 4000,@MatchID = 70099921,@BetType = 1, 
-		@IsLicensee = 1, @ListCurrency = '1',@ListHDPBetTeam = '0.18,0.17',@ListScore = '0 - 0, 3 - 3',@FromStakeRM = NULL,@ToStakeRM = NULL,@MinSequenceIDTotalAll = @MinTotal OUTPUT;
+		@IsLicensee = 1, @ListCurrency = '1',@ListHDPBetTeam = '0.18,0.17',@ListScore = '0 - 0, 3 - 3',@CustAmountRM = NULL,@MinSequenceIDTotalAll = @MinTotal OUTPUT;
 		SELECT @MinTotal;
 */
 BEGIN
@@ -87,157 +92,12 @@ BEGIN
 	DECLARE @BalanceUpDay			SMALLDATETIME
 		,	@MoveBetsDay			SMALLDATETIME
 		,	@Today					DATE = GETDATE();
-
-	IF	OBJECT_ID('tempdb..#tmpBUMBData') IS NOT NULL
-	BEGIN;
-		DROP TABLE	#tmpBUMBData;
-	END;
-
-	CREATE TABLE	#tmpBUMBData (
-			BUDay	SMALLDATETIME
-		,	MBDay	SMALLDATETIME
-	);
-
-	INSERT INTO #tmpBUMBData(BUDay,MBDay)
-	EXECUTE bodb02.dbo.Age_SelBalanceUpDay;
-
-	SELECT	TOP(1)
-			@BalanceUpDay	= BUDay
-		,	@MoveBetsDay	= MBDay
-	FROM #tmpBUMBData WITH(NOLOCK);
-
-	-- Initialize date range
+	
 	DECLARE @IsGetDataFromOrigin	BIT = 0
-		,	@IsGetDataFrom14		BIT = 0
-		,	@IsGetDataFromBK		BIT = 0;
+	,	@IsGetDataFrom14		BIT = 0
+	,	@IsGetDataFromBK		BIT = 0;
 
-	IF @EventDate < @BalanceUpDay
-	BEGIN
-		SELECT @IsGetDataFromBK = 1;
-	END
-	ELSE IF @EventDate <= @MoveBetsDay
-	BEGIN
-		SELECT @IsGetDataFrom14 = 1;
-	END
-	ELSE IF @EventDate > @MoveBetsDay
-	BEGIN
-		SELECT @IsGetDataFromOrigin = 1;
-	END;
-
-	IF	OBJECT_ID('tempdb..#tmpTransIds') IS NOT NULL
-	BEGIN
-		DROP TABLE #tmpTransIds;
-	END;
-
-	CREATE TABLE #tmpTransIds(
-			TransId				BIGINT NOT NULL PRIMARY KEY
-	);
-
-	IF	OBJECT_ID('tempdb..#tmpSupportedSportBettype') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpSupportedSportBettype;
-	END;
-
-	CREATE TABLE	#tmpSupportedSportBettype(
-			SportType			SMALLINT
-		,	BetType				SMALLINT
-		,	IsFilterBetID		BIT
-		,	IsOnlySuspicious	BIT
-		,	IsFilterBetTeam		BIT
-		,	IsFilterHdp			BIT
-		,	IsOnlyGetHdp1		BIT
-	);
-	
-	IF	OBJECT_ID('tempdb..#tmpSupportedCurrency') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpSupportedCurrency;
-	END;
-
-	CREATE TABLE	#tmpSupportedCurrency(
-			CurrencyId			TINYINT
-	);
-
-	IF	OBJECT_ID('tempdb..#tmpSupportedHDP') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpSupportedHDP;
-	END;
-
-	CREATE TABLE	#tmpSupportedHDP(
-			Hdp					SMALLMONEY
-	);
-
-	IF	OBJECT_ID('tempdb..#tmpSupportedScore') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpSupportedScore;
-	END;
-
-	CREATE TABLE	#tmpSupportedScore(
-			LiveHomeScore		SMALLINT
-		,	LiveAwayScore		SMALLINT
-	);
-	
-	IF	OBJECT_ID('tempdb..#tmpSupportedBetTeam') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpSupportedBetTeam;
-	END;
-
-	CREATE TABLE	#tmpSupportedBetTeam(
-			BetTeam				NVARCHAR(10)
-	);
-	
-	IF	OBJECT_ID('tempdb..#tmpSupportedStatus') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpSupportedStatus;
-	END;
-
-	CREATE TABLE	#tmpSupportedStatus(
-			StatusID			TINYINT
-	);
-
-	IF	OBJECT_ID('tempdb..#tmpSupportedDanger') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpSupportedDanger;
-	END;
-
-	CREATE TABLE	#tmpSupportedDanger(
-			Danger1				TINYINT 
-		,	Danger2				TINYINT 
-		,	Danger3				TINYINT
-		,	Danger4				TINYINT
-		,	Danger5				TINYINT 
-	);
-
-	-- Soccer
-	INSERT INTO #tmpSupportedSportBettype(SportType,BetType,IsOnlySuspicious,IsFilterBetID,IsFilterBetTeam,IsFilterHdp,IsOnlyGetHdp1)
-	VALUES	(1,1,1,0,0,1,0)
-			,(1,3,1,0,0,1,1)
-			,(1,7,1,0,0,1,0)
-			,(1,8,1,0,0,1,1)
-			,(1,2,0,0,0,1,0)
-			,(1,12,0,0,0,1,0)
-			,(1,413,0,0,1,0,0)
-			,(1,414,0,0,1,0,0)
-			,(1,6,0,0,1,0,0)
-			,(1,126,0,0,1,0,0)
-	;
-	-- Basketball
-	INSERT INTO #tmpSupportedSportBettype(SportType,BetType,IsOnlySuspicious,IsFilterBetID,IsFilterBetTeam,IsFilterHdp,IsOnlyGetHdp1)
-	VALUES	(2,1,1,0,0,1,0)
-			,(2,3,1,0,0,1,1)
-			,(2,7,1,0,0,1,0)
-			,(2,8,1,0,0,1,1)
-			,(2,20,1,0,0,1,0)
-			,(2,609,1,1,0,1,0)
-			,(2,610,1,1,0,1,1)
-			,(2,612,1,1,0,1,0)
-	;
-	-- E-Sports
-	INSERT INTO #tmpSupportedSportBettype(SportType,BetType,IsOnlySuspicious,IsFilterBetID,IsFilterBetTeam,IsFilterHdp,IsOnlyGetHdp1)
-	VALUES	(43,1,1,0,0,1,0)
-			,(43,3,1,0,0,1,1)
-			,(43,20,1,0,0,1,0)
-	;
-
+	--==================================================================
 	IF	OBJECT_ID('tempdb..#tmpTickets') IS NOT NULL
 	BEGIN
 		DROP TABLE	#tmpTickets;
@@ -283,7 +143,7 @@ BEGIN
 		,	BetFrom				NVARCHAR(4)
 	);	
 
-	CREATE CLUSTERED INDEX #CIX_tmpTickets_CustID ON #tmpTickets (
+	CREATE NONCLUSTERED INDEX #IX_tmpTickets_CustId ON #tmpTickets (
 			CustId			DESC
 	);
 
@@ -291,14 +151,208 @@ BEGIN
 			LeagueId		DESC
 	);
 
+	CREATE NONCLUSTERED INDEX #IX_tmpTickets_IsLicensee ON #tmpTickets (
+			IsLicensee		ASC
+	);
+
+	CREATE NONCLUSTERED INDEX #IX_tmpTickets_Score ON #tmpTickets (
+			LiveHomeScore		ASC
+		,	LiveAwayScore		ASC
+	);
+	
+	IF	OBJECT_ID('tempdb..#tmpBUMBData') IS NOT NULL
+	BEGIN;
+		DROP TABLE	#tmpBUMBData;
+	END;
+
+	CREATE TABLE	#tmpBUMBData (
+			BUDay	SMALLDATETIME
+		,	MBDay	SMALLDATETIME
+	);
+	
+	IF	OBJECT_ID('tempdb..#tmpTransIds') IS NOT NULL
+	BEGIN
+		DROP TABLE #tmpTransIds;
+	END;
+
+	CREATE TABLE #tmpTransIds(
+			TransId				BIGINT NOT NULL PRIMARY KEY
+	);
+
+	IF	OBJECT_ID('tempdb..#tmpExclTransIds') IS NOT NULL
+	BEGIN
+		DROP TABLE #tmpExclTransIds;
+	END;
+
+	CREATE TABLE #tmpExclTransIds(
+			TransId				BIGINT NOT NULL PRIMARY KEY
+	);
+
+	IF	OBJECT_ID('tempdb..#tmpSupportedSportBettype') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpSupportedSportBettype;
+	END;
+
+	CREATE TABLE	#tmpSupportedSportBettype(
+			SportType				SMALLINT
+		,	BetType					SMALLINT
+		,	IsFilterBetID			BIT
+		,	IsDetectMatchMonitor	BIT
+		,	IsFilterBetTeam			BIT
+		,	IsFilterHdp				BIT
+		,	IsOnlyGetHdp1			BIT
+	);
+	
+	CREATE INDEX IX_tmpSupportedSportBettype_SportTypeBetType ON #tmpSupportedSportBettype(SportType, BetType);
+
+	IF	OBJECT_ID('tempdb..#tmpSupportedCurrency') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpSupportedCurrency;
+	END;
+
+	CREATE TABLE	#tmpSupportedCurrency(
+			CurrencyId			TINYINT
+	);
+
+	IF	OBJECT_ID('tempdb..#tmpSupportedHDP') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpSupportedHDP;
+	END;
+
+	CREATE TABLE	#tmpSupportedHDP(
+			Hdp					SMALLMONEY
+	);
+
+	IF	OBJECT_ID('tempdb..#tmpSupportedScore') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpSupportedScore;
+	END;
+
+	CREATE TABLE	#tmpSupportedScore(
+			LiveHomeScore		SMALLINT
+		,	LiveAwayScore		SMALLINT
+	);
+
+	IF	OBJECT_ID('tempdb..#tmpSupportedBetTeam') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpSupportedBetTeam;
+	END;
+
+	CREATE TABLE	#tmpSupportedBetTeam(
+			BetTeam				NVARCHAR(10)
+	);
+
+	IF	OBJECT_ID('tempdb..#tmpSupportedStatus') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpSupportedStatus;
+	END;
+
+	CREATE TABLE	#tmpSupportedStatus(
+			StatusID			TINYINT
+	);
+
+	IF	OBJECT_ID('tempdb..#tmpSupportedDanger') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpSupportedDanger;
+	END;
+
+	CREATE TABLE	#tmpSupportedDanger(
+			Danger1				TINYINT 
+		,	Danger2				TINYINT 
+		,	Danger3				TINYINT
+		,	Danger4				TINYINT
+		,	Danger5				TINYINT 
+	);
+
+	IF	OBJECT_ID('tempdb..#tmpSupportedCustomerClass') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpCustomerClass;
+	END;
+
+	CREATE TABLE	#tmpCustomerClass(
+			CustomerClass		SMALLINT PRIMARY KEY 
+	);
+
+	IF	OBJECT_ID('tempdb..#tmpCustAmount') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpCustAmount;
+	END;
+
+	CREATE TABLE	#tmpCustAmount(
+			CustID	INT
+		,	Ammount INT
+	);
+
+	--=======GET BALANCE UP/ MOVE BET DAY===========================================================
+	INSERT INTO #tmpBUMBData(BUDay,MBDay)
+	EXECUTE bodb02.dbo.Age_SelBalanceUpDay;
+
+	SELECT	TOP(1)
+			@BalanceUpDay	= BUDay
+		,	@MoveBetsDay	= MBDay
+	FROM #tmpBUMBData WITH(NOLOCK);
+
+	IF @EventDate < @BalanceUpDay
+	BEGIN
+		SELECT @IsGetDataFromBK = 1;
+	END
+	ELSE IF @EventDate <= @MoveBetsDay
+	BEGIN
+		SELECT @IsGetDataFrom14 = 1;
+	END
+	ELSE IF @EventDate > @MoveBetsDay
+	BEGIN
+		SELECT @IsGetDataFromOrigin = 1;
+	END;
+
+	--==================================================================
+	-- Soccer
+	INSERT INTO #tmpSupportedSportBettype(SportType,BetType,IsDetectMatchMonitor,IsFilterBetID,IsFilterBetTeam,IsFilterHdp,IsOnlyGetHdp1)
+	VALUES	(1,1,1,0,0,1,0)
+			,(1,3,1,0,0,1,1)
+			,(1,7,1,0,0,1,0)
+			,(1,8,1,0,0,1,1)
+			,(1,2,0,0,0,1,0)
+			,(1,12,0,0,0,1,0)
+			,(1,413,0,0,1,0,0)
+			,(1,414,0,0,1,0,0)
+			,(1,6,0,0,1,0,0)
+			,(1,126,0,0,1,0,0)
+	;
+	-- Basketball
+	INSERT INTO #tmpSupportedSportBettype(SportType,BetType,IsDetectMatchMonitor,IsFilterBetID,IsFilterBetTeam,IsFilterHdp,IsOnlyGetHdp1)
+	VALUES	(2,1,1,0,0,1,0)
+			,(2,3,1,0,0,1,1)
+			,(2,7,1,0,0,1,0)
+			,(2,8,1,0,0,1,1)
+			,(2,20,1,0,0,1,0)
+			,(2,609,1,1,0,1,0)
+			,(2,610,1,1,0,1,1)
+			,(2,612,1,1,0,1,0)
+	;
+	-- E-Sports
+	INSERT INTO #tmpSupportedSportBettype(SportType,BetType,IsDetectMatchMonitor,IsFilterBetID,IsFilterBetTeam,IsFilterHdp,IsOnlyGetHdp1)
+	VALUES	(43,1,1,0,0,1,0)
+			,(43,3,1,0,0,1,1)
+			,(43,20,1,0,0,1,0)
+	;
+
+	--==========================================================================================
+
 	IF @ListTransId <> ''
 		BEGIN
 			INSERT INTO #tmpTransIds (TransId)
 			SELECT ssk.value FROM STRING_SPLIT(@ListTransId, ',') ssk;
 		END;
+	
+	IF @ListExclTransId <> ''
+		BEGIN
+			INSERT INTO #tmpExclTransIds (TransId)
+			SELECT ssk.value FROM STRING_SPLIT(@ListExclTransId, ',') ssk;
+		END; 
 
 	IF (@QueryType = 1)
-		BEGIN
+		BEGIN --Get ticket for MM Detection
 			INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,IsMajorLeague,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus,LiveIndicator)
 			SELECT	TOP (@BatchSize) b.sequenceid
 				,	b.transid
@@ -350,7 +404,7 @@ BEGIN
 				INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
 				INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
-				INNER JOIN #tmpSupportedSportBettype AS t WITH(NOLOCK) ON m.sporttype = t.SportType AND b.bettype = t.BetType AND t.IsOnlySuspicious = 1
+				INNER JOIN #tmpSupportedSportBettype AS t WITH(NOLOCK) ON m.sporttype = t.SportType AND b.bettype = t.BetType AND t.IsDetectMatchMonitor = 1
 				LEFT JOIN bodb02.dbo.f_Set_OddsTypeBettypes() AS ot ON ot.BetType = t.BetType
 			WHERE	b.sequenceid > @LastScannedSequenceID
                 AND m.eventstatus <> 'completed'
@@ -368,7 +422,7 @@ BEGIN
 				;
 		END
 	ELSE IF (@QueryType = 2)
-		BEGIN
+		BEGIN --Get Ticket for MM Details Report By @ListTransId AND @ListExclTransId (Match, Market, Bettype, Score, Site, CC, Danger, Currency, Reason, A.Gr, M.Gr, HDP, CustAmountRM, TicketStatus)
 			-- START --
 			IF @IsGetDataFromBK = 1
 			BEGIN
@@ -403,6 +457,8 @@ BEGIN
 					INNER JOIN #tmpTransIds AS t WITH(NOLOCK) ON t.TransId = b.transid
 					INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.matchid = m.matchid
 					INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
+					LEFT JOIN  #tmpExclTransIds AS excl ON excl.TransId = b.TransId
+				WHERE excl.TransId IS NULL;
 				;
 			END;
 
@@ -491,8 +547,8 @@ BEGIN
 				INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid;
 		END;	
 	ELSE IF (@QueryType = 3)
-		BEGIN
-			IF (@BatchSize = 0)
+		BEGIN --Get Ticket for MM Details Report By TransIdList AND ExclTransIdList AND (Match, Market, Bettype, Score, Site, CC, Danger, Currency, Reason, HDP, CustAmountRM, TicketStatus)
+			IF (@BatchSize = 0) ---GET Last
 				BEGIN
 					INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom)
 					SELECT b.sequenceid
@@ -529,18 +585,18 @@ BEGIN
 						INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 						INNER JOIN #tmpSupportedSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportType AND b.bettype = st.BetType 
 						INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
-						LEFT JOIN #tmpTransIds AS t ON t.TransId = b.TransId
+						LEFT JOIN #tmpExclTransIds AS excl ON excl.TransId = b.TransId
 					WHERE	b.matchid = @MatchID
 						AND b.liveindicator = @IsLive
 						AND b.bettype = @BetType
 						AND b.sequenceid < @LastScannedSequenceID
 						AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
 						AND (@BetID = 0 OR (@BetID > 0 AND st.IsFilterBetID = 1 AND b.betid = @BetID))
-						AND t.TransId IS NULL;
+						AND excl.TransId IS NULL;
 				END
 			ELSE 
 				BEGIN
-					INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom)
+					INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom,LeagueName)
 					SELECT TOP (@BatchSize) b.sequenceid
 						,	b.transid
 						,	b.transdate
@@ -573,8 +629,10 @@ BEGIN
 																							END)
 								 END)
 						,	b.BetFrom
+						,	l.leaguename
 					FROM dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
 						INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
+						INNER JOIN dbo.league AS l WITH(NOLOCK) ON l.leagueid = m.leagueid
 						INNER JOIN #tmpSupportedSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportType AND b.bettype = st.BetType 
 						INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 					WHERE	b.matchid = @MatchID
@@ -588,45 +646,33 @@ BEGIN
 					SET @MinSequenceIDTotalAll = (SELECT MIN(SequenceId) FROM #tmpTickets);
 				END;
 
+			
 			UPDATE t WITH(ROWLOCK, UPDLOCK)
-			SET t.IsLicensee = 1
+			SET t.IsLicensee	= 1
+			,	t.Danger1		= c.danger
+			,	t.Danger2		= c.danger2
+			,	t.Danger3		= c.danger3
+			,	t.Danger4		= c.Danger4
+			,	t.Danger5		= c.Danger5
+			,	t.CustomerClass	= c.CustomerClass
 			FROM #tmpTickets AS t
 				INNER JOIN dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
 				INNER JOIN dbo.Dep_CustSuper AS cs WITH (NOLOCK) ON cs.custid = c.srecommend;
 
 			UPDATE t WITH(ROWLOCK, UPDLOCK)
-			SET t.IsLicensee = 0
+			SET t.IsLicensee	= 0
+			,	t.Danger1		= c.danger
+			,	t.Danger2		= c.danger2
+			,	t.Danger3		= c.danger3
+			,	t.Danger4		= c.Danger4
+			,	t.Danger5		= c.Danger5
+			,	t.CustomerClass	= c.CustomerClass
 			FROM #tmpTickets AS t
 				INNER JOIN dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
 				INNER JOIN dbo.CustProductStatus AS s WITH (NOLOCK) ON s.custid = c.custid
 			WHERE t.IsLicensee IS NULL;
 
-			IF (@IsLicensee IS NOT NULL)
-			BEGIN
-				DELETE t
-				FROM #tmpTickets AS t
-				WHERE t.IsLicensee != @IsLicensee;
-			END;
-
-			IF (@FromStakeRM IS NOT NULL AND @ToStakeRM IS NOT NULL)
-			BEGIN
-				DELETE t
-				FROM #tmpTickets AS t
-				WHERE t.Stake < @FromStakeRM
-					OR t.Stake > @ToStakeRM;
-			END;
-
-			IF (@ListCurrency IS NOT NULL)
-			BEGIN
-				INSERT INTO #tmpSupportedCurrency (CurrencyId)
-				SELECT ssk.value FROM STRING_SPLIT(@ListCurrency, ',') ssk;
-
-				DELETE t
-				FROM #tmpTickets AS t
-					LEFT JOIN #tmpSupportedCurrency AS curr ON curr.CurrencyId = t.CurrencyId
-				WHERE curr.CurrencyId IS NULL;
-			END;
-
+			--========================Fitler By Score==================	
 			IF (@ListScore IS NOT NULL)
 			BEGIN
 				INSERT INTO #tmpSupportedScore (LiveHomeScore,LiveAwayScore)
@@ -643,55 +689,29 @@ BEGIN
 				WHERE s.LiveHomeScore IS NULL;
 			END;
 
-			IF (@ListHDPBetTeam IS NOT NULL)
-			BEGIN
-				IF EXISTS (SELECT 1 
-							FROM #tmpSupportedSportBettype AS st WITH(NOLOCK) 
-							WHERE st.BetType = @BetType AND st.IsFilterBetTeam = 1)
-				BEGIN
-					INSERT INTO #tmpSupportedBetTeam (BetTeam)
-					SELECT ssk.value FROM STRING_SPLIT(@ListHDPBetTeam, ',') ssk;
-					
-					DELETE t
-					FROM #tmpTickets AS t
-						LEFT JOIN #tmpSupportedBetTeam AS bt ON bt.BetTeam = t.BetTeam
-					WHERE bt.BetTeam IS NULL;
-				END
-				ELSE
-				BEGIN
-					INSERT INTO #tmpSupportedHDP (Hdp)
-					SELECT ssk.value FROM STRING_SPLIT(@ListHDPBetTeam, ',') ssk;
+			--========================Fitler By Site(IsLicensee)==================	
 
-					DELETE t
-					FROM #tmpTickets AS t
-						LEFT JOIN #tmpSupportedHDP AS h ON h.Hdp = t.Hdp
-					WHERE h.Hdp IS NULL;
-				END;
-			END;
-			
-			IF (@ListStatus IS NOT NULL)
+
+			IF (@IsLicensee IS NOT NULL)
 			BEGIN
-				INSERT INTO #tmpSupportedStatus (StatusID)
-				SELECT ssk.value FROM STRING_SPLIT(@ListStatus, ',') ssk;
-				
 				DELETE t
 				FROM #tmpTickets AS t
-					LEFT JOIN #tmpSupportedStatus AS s ON s.StatusID = t.TicketStatus
-				WHERE s.StatusID IS NULL;
+				WHERE t.IsLicensee != @IsLicensee;
+			END;
+			
+			--========================Fitler By CustomerClass==================	
+			IF @ListCustomerClass <> ''
+			BEGIN
+				INSERT INTO #tmpCustomerClass (CustomerClass)
+				SELECT ssk.value FROM STRING_SPLIT(@ListCustomerClass, ',') ssk;
+
+				DELETE t
+				FROM #tmpTickets AS t
+					LEFT JOIN #tmpCustomerClass AS c ON c.CustomerClass = t.CustomerClass
+				WHERE c.CustomerClass IS NULL;
 			END;
 
-			UPDATE	t WITH(ROWLOCK, UPDLOCK)
-			SET		t.Danger1		= c.danger
-				,	t.Danger2		= c.danger2
-				,	t.Danger3		= c.danger3
-				,	t.Danger4		= c.Danger4
-				,	t.Danger5		= c.Danger5
-				,	t.LeagueName	= l.leaguename
-				,	t.CustomerClass	= c.CustomerClass
-			FROM #tmpTickets AS t
-				INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON t.LeagueId = l.leagueid
-				INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid;
-				
+			--========================Fitler By Danger==================		
 			IF (@ListDanger IS NOT NULL)
 			BEGIN
 				INSERT INTO #tmpSupportedDanger (Danger1,Danger2,Danger3,Danger4,Danger5)
@@ -735,6 +755,69 @@ BEGIN
 				END;
 
 			END;
+
+			--========================Fitler By Currency==================	
+			IF (@ListCurrency IS NOT NULL)
+			BEGIN
+				INSERT INTO #tmpSupportedCurrency (CurrencyId)
+				SELECT ssk.value FROM STRING_SPLIT(@ListCurrency, ',') ssk;
+
+				DELETE t
+				FROM #tmpTickets AS t
+					LEFT JOIN #tmpSupportedCurrency AS curr ON curr.CurrencyId = t.CurrencyId
+				WHERE curr.CurrencyId IS NULL;
+			END;
+
+			--========================Fitler By HDP(Betteam)==================	
+			IF (@ListHDPBetTeam IS NOT NULL)
+			BEGIN
+				IF EXISTS (SELECT 1 
+							FROM #tmpSupportedSportBettype AS st WITH(NOLOCK) 
+							WHERE st.BetType = @BetType AND st.IsFilterBetTeam = 1)
+				BEGIN
+					INSERT INTO #tmpSupportedBetTeam (BetTeam)
+					SELECT ssk.value FROM STRING_SPLIT(@ListHDPBetTeam, ',') ssk;
+					
+					DELETE t
+					FROM #tmpTickets AS t
+						LEFT JOIN #tmpSupportedBetTeam AS bt ON bt.BetTeam = t.BetTeam
+					WHERE bt.BetTeam IS NULL;
+				END
+				ELSE
+				BEGIN
+					INSERT INTO #tmpSupportedHDP (Hdp)
+					SELECT ssk.value FROM STRING_SPLIT(@ListHDPBetTeam, ',') ssk;
+
+					DELETE t
+					FROM #tmpTickets AS t
+						LEFT JOIN #tmpSupportedHDP AS h ON h.Hdp = t.Hdp
+					WHERE h.Hdp IS NULL;
+				END;
+			END;
+
+			--========================Cust Amount(RM)==================	
+			IF (@CustAmountRM IS NOT NULL)
+			BEGIN
+				-- Delete ticket if Sum(Cust's Stake) < @CustAmountRM
+				
+
+
+				DELETE t
+				FROM #tmpTickets AS t
+				WHERE t.Stake < @CustAmountRM
+			END;
+
+			--========================Fitler By HDP(Betteam)==================	
+			IF (@ListStatus IS NOT NULL)
+			BEGIN
+				INSERT INTO #tmpSupportedStatus (StatusID)
+				SELECT ssk.value FROM STRING_SPLIT(@ListStatus, ',') ssk;
+				
+				DELETE t
+				FROM #tmpTickets AS t
+					LEFT JOIN #tmpSupportedStatus AS s ON s.StatusID = t.TicketStatus
+				WHERE s.StatusID IS NULL;
+			END;			
 		END;
 
 	-- Return data
