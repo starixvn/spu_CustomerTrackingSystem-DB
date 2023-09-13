@@ -16,14 +16,19 @@ BEGIN
             - 20200924@Lex.Khuat[138102]: Support return sub with multi sites
 			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
             - 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
+            - 20230911@Victoria.Le: Return SubscriberSourceID and SubscriberSourceName [Redmine ID: #193044]
             
 		Param's Explanation:
 	*/
+
+    DECLARE	CONST_LIST_SUBSCRIBERSOURCE         INT DEFAULT 19;
     
 	SELECT	sub.SubscriberID
 		,	sub.SubscriberName
         ,	sub.SubscriberPrefix
         ,	MAX(sg.SubscriberGroupName) AS SubscriberGroupName
+        ,   sub.SubscriberSourceID
+        ,   stat.ItemName AS SubscriberSourceName
         ,	CASE WHEN COUNT(s.SiteID) > 1 THEN NULL ELSE MAX(s.RoleMapping) END AS RoleMapping
         ,	CASE WHEN COUNT(s.SiteID) > 1 THEN NULL ELSE MAX(s.SiteID) END AS SiteID
         ,	CASE WHEN COUNT(s.SiteID) > 1 THEN CONCAT(COUNT(s.SiteID), ' Sites') ELSE MAX(s.SiteName) END AS SiteName
@@ -35,9 +40,12 @@ BEGIN
     FROM  CTS_Admin.Subscriber AS sub
         INNER JOIN CTS_DataCenter.MappingSubscriberSite AS s ON s.SubscriberID = sub.SubscriberID
         INNER JOIN CTS_DataCenter.SubscriberGroup AS sg ON s.SubscriberGroupID = sg.SubscriberGroupID
+        INNER JOIN CTS_DataCenter.StaticList AS stat ON stat.ListID = CONST_LIST_SUBSCRIBERSOURCE AND sub.SubscriberSourceID = stat.ItemID
 	GROUP BY 	sub.SubscriberID
 			,	sub.SubscriberName
             ,	sub.SubscriberPrefix
+            ,   sub.SubscriberSourceID
+            ,   stat.ItemName
             ,	CASE WHEN sub.SubscriberStatus = 1 THEN sub.SubscriberStatus ELSE 0 END
             ,	sub.CreatedDate
             ,	sub.TerminatedDate
