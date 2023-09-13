@@ -39,13 +39,15 @@ AS
 			@TicketType=1: Ticket Type = 'Suspicious'
 	Example:
 		DECLARE @MaxSequenceId BIGINT,@TotalTicketAll BIGINT,@TotalTicketLicensee BIGINT,@TotalTicketCredit BIGINT;
-		EXEC [dbo].[CTS_TicketDetails_Info] 
-			70095972 -- @MatchID
-		,	7 -- @BetType
+		EXEC [dbo].[CTS_TicketDetails_Info_xtest] 
+			72186342 -- @MatchID
+		,	NULL -- @EventDate
+		,	1 -- @BetType
 		,	1 -- @IsLive
+		,	'' -- @ListSuspiciousTransId
+		,	0  --@TicketType (0:All, 1: Suspicious)
 		,	0 -- @IsExclTestCurr
 		,	0 -- @BetID
-		,	'' -- @ExclTransIdList
 		,	@MaxSequenceId OUTPUT
 		,	@TotalTicketAll OUTPUT
 		,	@TotalTicketLicensee OUTPUT
