@@ -1,3 +1,4 @@
+/*<info serverAlias="DBVR2-bodb_VR2Model" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 USE [bodb_VR2Model]
 GO
 /****** Object:  StoredProcedure [dbo].[CTS_GeneralNormalClassification_NormalPool_Insert]    Script Date: 20/04/2023 11:05:2022 PM ******/
@@ -18,6 +19,7 @@ AS
 	Revisions:
 		- 20230420@Jonas.Huynh: Created [Redmine ID: #186678]
 		- 20230601@Jonas.Huynh: Normal Renovation (Phase2) [Redmine ID: #186684]
+		- 20230816@Jonas.Huynh: Tagging Classification [Redmine ID: #191400]
 
 	Param's Explanation:
         @FunctionId		: Being used to log particular function

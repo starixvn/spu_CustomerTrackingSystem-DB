@@ -39,11 +39,12 @@ BEGIN
                 - 20221110@Casey.Huynh: Update logic for checking Category in OldCategory table [Redmine ID: #178022]
 				- 202230426@Long.Luu: Adjust Probation's period from 20 to 15 [Redmine ID: #187433]
                 - 20230428@Jonas.Huynh: Realtime Renovation [Redmine ID: #186678]
+                - 20230816@Jonas.Huynh: Tagging Classification [Redmine ID: #191400]
                 
 		Param's Explanation (filtered by):
         
         Example:
-				- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount('[{"CustId": "43600693","CategoryId":"1000","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","TaggingID":10,"TaggingType":1,"PerformanceTime":"2021-03-31 00:00:00"}]',@or);
+				- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount('[{"CustId": "43600693","CategoryId":"1000","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","TaggingID":10,"TaggingType":1,"PerformanceTime":"2021-03-31 00:00:00", "ScanTaggingType":1}]',@or);
 */ 
     DECLARE	CONST_GROUP_PA 								INT DEFAULT 0;
     DECLARE	CONST_GROUP_WRAPPER							INT DEFAULT 100;
@@ -80,6 +81,10 @@ BEGIN
     DECLARE	CONST_LICVIP_SUSPICIOUSCATEGORY				INT DEFAULT 4;    
     DECLARE	CONST_VVIPCATEGORY							INT DEFAULT 210;    
     
+    DECLARE CONST_SCANTAGGINGTYPE_NOTEXIST  			TINYINT DEFAULT 0;
+	DECLARE	CONST_SCANTAGGINGTYPE_EXIST	   				TINYINT DEFAULT 1;
+	DECLARE	CONST_SCANTAGGINGTYPE_EXISTONLY 			TINYINT DEFAULT 2;
+            
 	DECLARE lv_CreatedBy 								INT DEFAULT 10278938;
 	DECLARE lv_CurrentDateTime 							DATETIME DEFAULT CURRENT_TIME();
     DECLARE lv_FromProbationLastDay 					DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 14 DAY);
@@ -89,7 +94,7 @@ BEGIN
     DECLARE lv_LicVIPCC_Danger							SMALLINT UNSIGNED;
     DECLARE lv_LicVIPCC_Suspicious						SMALLINT UNSIGNED;
     DECLARE lv_VVIPCC									SMALLINT UNSIGNED;
-    
+
 	DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;    
 	CREATE TEMPORARY TABLE Temp_NewClassification(	  	
 			CustID						BIGINT UNSIGNED	PRIMARY KEY
@@ -127,6 +132,7 @@ BEGIN
 		,   SpecialCCDangerProbation   	BIT DEFAULT NULL
 		, 	ActionType					SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN; 5: Not satisfy Pass Probation*/
         ,	PerformanceTime				DATETIME
+        ,	ScanTaggingType				TINYINT DEFAULT 0
 		, 	INDEX    			    	IX_Temp_NewClassification(CustID, DWCateGroup)  
 	); 
     
@@ -173,6 +179,12 @@ BEGIN
         ,	CustomerClass 			SMALLINT
 	); 
      
+	DROP TEMPORARY TABLE IF EXISTS Temp_NotEnoughDayProbation; 
+	CREATE TEMPORARY TABLE Temp_NotEnoughDayProbation(	  
+			CustID					BIGINT UNSIGNED	PRIMARY KEY,
+            ScanTaggingType			TINYINT DEFAULT 0
+	); 
+    
     /* START */
     /* INIT */    
     SELECT CustomerClass, Priority 
@@ -193,7 +205,7 @@ BEGIN
     
 	/* 1: PARSE RAW DATA */
 	INSERT IGNORE INTO Temp_NewClassification(CustID,DWCateGroup,TurnoverRM,WinlossRM,BetCount,ActiveDays,TWBetCount,TWGroupBettingRate,TWTicketRejectRate,TWDesktopUsageRate,
-		TaggingID,TaggingType,PerformanceTime)
+		TaggingID,TaggingType,PerformanceTime,ScanTaggingType)
 	SELECT DISTINCT temp.CustID
 				, 	temp.DWCateGroup
                 , 	temp.TurnoverRM
@@ -207,6 +219,7 @@ BEGIN
                 ,	IFNULL(temp.TaggingID, -99)
                 , 	temp.TaggingType
                 ,	temp.PerformanceTime
+                ,	temp.ScanTaggingType
 	 FROM JSON_TABLE(ip_NewClassification,
 		"$[*]" COLUMNS(
 				CustID 					BIGINT UNSIGNED		PATH "$.CustId"
@@ -222,6 +235,7 @@ BEGIN
             , 	TaggingID				SMALLINT			PATH "$.TaggingID"
             , 	TaggingType				SMALLINT			PATH "$.TaggingType"	
 			, 	PerformanceTime			DATETIME			PATH "$.PerformanceTime"
+            , 	ScanTaggingType			BOOLEAN				PATH "$.ScanTaggingType"
 		 )) AS 	temp
 	 WHERE temp.DWCateGroup <> 0;
 	
@@ -263,14 +277,19 @@ BEGIN
 		INNER JOIN 	ProbationAccountMonitor AS pro ON temp.CustID = pro.CustID AND pro.SportGroupID = CONST_GROUP_NORMAL;
     
     /* 5: EXCLUDE CATEGORIES THAT SHOULD NOT BE UPDATED */
-	/* 5.1: NOT PASS PROBATION RULES */ 
-    INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, ActionType)
-    SELECT DISTINCT	temp.CustID, CONST_ACTIONTYPE_IGNOREPROBATION
+	/* 5.1.1: EXCLUDE NOT PASS PROBATION RULES WITH UNCHANGED TAGGING*/ 
+    INSERT IGNORE INTO Temp_NotEnoughDayProbation(CustID, ScanTaggingType)
+    SELECT DISTINCT	temp.CustID, temp.ScanTaggingType
 	FROM 	Temp_NewClassification AS temp 
 		INNER JOIN Temp_ProbationCustomers AS pro ON temp.CustID = pro.CustID
     WHERE 	(temp.DWCateGroup IN (CONST_CATEGORY_SMART,CONST_CATEGORY_HIGHRISK,CONST_CATEGORY_PROBATION) AND pro.ScanDate > lv_FromProbationLastDay) 
 			OR (pro.ScanDate >= lv_ToProbationLastDay);
 
+    INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, ActionType)
+    SELECT DISTINCT	temp.CustID, CONST_ACTIONTYPE_IGNOREPROBATION
+	FROM 	Temp_NotEnoughDayProbation AS temp 
+    WHERE 	temp.ScanTaggingType = CONST_SCANTAGGINGTYPE_NOTEXIST;
+            
     /* 5.2: EXCLUDE PIN CATEGORY */
     INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, ActionType)
     SELECT DISTINCT temp.CustID, CONST_ACTIONTYPE_IGNOREPIN
@@ -295,6 +314,12 @@ BEGIN
 		INNER JOIN Temp_CustIgnoranceAction AS ig ON temp.CustID = ig.CustID
     SET 	temp.ActionType = ig.ActionType
 		, 	temp.IsDataChanged = 0;
+	
+    /* 5.4.3: HAS ACTION + VIEW LOG FOR PROBATION NOT ENOUGH DAY WITH NEW TAGGING */ 
+   	UPDATE Temp_NewClassification AS temp 
+		INNER JOIN Temp_NotEnoughDayProbation AS pro ON temp.CustID = pro.CustID
+    SET 	temp.ScanTaggingType = CONST_SCANTAGGINGTYPE_EXISTONLY
+    WHERE 	pro.ScanTaggingType <> CONST_SCANTAGGINGTYPE_NOTEXIST;
 	
     /* 6: GENERATE CATEGORY */
     /* 6.1: UPDATE DW CATEGORY */
@@ -494,7 +519,7 @@ BEGIN
 		, 	cate.SubscriberID = temp.SubscriberID
 		, 	cate.CategoryID = temp.NewCateID
 		, 	cate.LastModifiedDate = lv_CurrentDateTime
-		, 	cate.LastScannedDate = DATE(lv_CurrentDateTime)
+		, 	cate.LastScannedDate = CASE WHEN temp.ScanTaggingType = CONST_SCANTAGGINGTYPE_EXISTONLY THEN cate.LastScannedDate ELSE DATE(lv_CurrentDateTime) END
     WHERE temp.ActionType = CONST_ACTIONTYPE_UPDATE;
     
     UPDATE CTS_DataCenter.CTSCustomerClassification AS cate
