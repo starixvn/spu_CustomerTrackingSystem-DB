@@ -140,7 +140,10 @@ BEGIN
     END IF;
     
     SELECT DISTINCT	tmp.CustID, 
-		CASE WHEN tmpc.CategoryGroup IS NOT NULL AND tmpc.CategoryGroup IN (CONST_CATEGORY_PROBATION, CONST_CATEGORY_SMART, CONST_CATEGORY_HIGHRISK) THEN 1 ELSE 0 END AS IsCheckTaggingTW
+		CASE 
+			WHEN tmpc.CategoryGroup IS NOT NULL AND tmpc.CategoryGroup IN (CONST_CATEGORY_PROBATION, CONST_CATEGORY_SMART, CONST_CATEGORY_HIGHRISK) THEN 1 
+            ELSE 0 
+		END AS IsCheckTaggingTW
     FROM Temp_Cust AS tmp
 		LEFT JOIN Temp_Category AS tmpc ON tmpc.CategoryID = tmp.CategoryID;
     
