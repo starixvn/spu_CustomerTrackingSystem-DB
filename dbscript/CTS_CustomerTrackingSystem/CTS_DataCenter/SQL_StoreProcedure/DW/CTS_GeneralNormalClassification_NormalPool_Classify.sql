@@ -23,6 +23,7 @@ AS
 		- 20230807@Jonas.Huynh: HF exclude Non-sport for General [Redmine ID: #192388]
 		- 20230726@Jonas.Huynh: Saba Classification [Redmine ID: #185320]
 		- 20230816@Jonas.Huynh: Tagging Classification [Redmine ID: #191400]
+		- 20230915@Jonas.Huynh: HF Wrong Inactive Category for New and Realtime flow exclude S/R/P with not latest category [Redmine ID: #193050]
 
 	Param's Explanation:
 		@CustomersXML		: This parameter is used to classify customer perf which bases on currentCategory
@@ -78,7 +79,7 @@ BEGIN
 		IsCheckBetCount		   BIT	    NOT NULL DEFAULT 0,
 		IsProbationLastDay	   BIT		NOT NULL DEFAULT 0,
 		ScanTaggingType		   TINYINT	NOT NULL DEFAULT 0,
-		IsPlaceBetWithin30Days BIT		NOT NULL DEFAULT 0,
+		IsActiveWithin30Days   BIT		NOT NULL DEFAULT 0,
 		IsDeposit			   BIT		NOT NULL DEFAULT 0,
 		IsSpecialSite		   BIT		NOT NULL DEFAULT 0,
 		SRecommend			   INT
@@ -126,7 +127,7 @@ BEGIN
 		CustId				   INT			  NOT NULL,
 		CurrentCategoryId	   SMALLINT		  NOT NULL DEFAULT 0,
 		NewCategoryId		   SMALLINT		  NULL,
-		IsPlaceBetWithin30Days BIT			  NOT NULL DEFAULT 0,
+		IsActiveWithin30Days   BIT			  NOT NULL DEFAULT 0,
 		IsProbationLastDay	   BIT			  NOT NULL DEFAULT 0,
 		IsCheckBetCount		   BIT			  NOT NULL DEFAULT 0,
 		ScanTaggingType		   TINYINT		  NOT NULL DEFAULT 0,
@@ -209,10 +210,11 @@ BEGIN
 			INNER JOIN bodb02.dbo.Dep_CustSuper AS c WITH(NOLOCK) ON a.SRecommend = c.custid;
 
 		UPDATE a WITH(ROWLOCK, UPDLOCK)
-		SET a.IsPlaceBetWithin30Days = 1
+		SET a.IsActiveWithin30Days = 1
 		FROM #tmpCustomers AS a
-			INNER JOIN dbo.CustomerClassification_LatestActiveDay AS c WITH(NOLOCK) ON a.CustId = c.CustId
-		WHERE c.LastTransDate >= @From30Date;
+			LEFT JOIN dbo.CustomerClassification_LatestActiveDay AS c WITH(NOLOCK) ON a.CustId = c.CustId
+		WHERE (c.CustId IS NOT NULL AND c.LastTransDate >= @From30Date)
+			OR a.IsNewCreated = 1;
 	
 		-- #3: Update reset balance for credit - normal inactive with new placebet
 		EXEC dbo.CTS_GeneralNormalClassification_Balance_Reset @CurrentDateTime = @CurrentDateTime, @YesterdayDate = @YesterdayDate;
@@ -268,7 +270,7 @@ BEGIN
 		UPDATE a WITH(ROWLOCK, UPDLOCK)
 		SET a.CurrentCategoryId = c.CurrentCategoryId,
 			a.IsCheckBetCount = c.IsCheckBetCount,
-			a.IsPlaceBetWithin30Days = c.IsPlaceBetWithin30Days,
+			a.IsActiveWithin30Days = c.IsActiveWithin30Days,
 			a.IsProbationLastDay = c.IsProbationLastDay,
 			a.ScanTaggingType = c.ScanTaggingType,
 			a.SRecommend = c.SRecommend,
@@ -331,7 +333,7 @@ BEGIN
 		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, ScanTaggingType)
 		SELECT t.CustId
 			,  @GENERAL_SPORTID
-			,  CASE WHEN (t.IsNewCreated = 1 OR t.IsPlaceBetWithin30Days = 1) THEN @CATEGORY_NEWMEMBER ELSE @CATEGORY_NORMALINACTIVE END
+			,  CASE WHEN t.IsActiveWithin30Days = 1 THEN @CATEGORY_NEWMEMBER ELSE @CATEGORY_NORMALINACTIVE END
 			,  @CATEGORY_NULL
 			,  @ToDate AS CreatedDate
 			,  @CurrentDateTime AS CreatedTime
@@ -392,7 +394,7 @@ BEGIN
 			,  ISNULL(a.PerformanceTime, @CurrentDateTime)
 			,  a.ScanTaggingType
 		FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
-		WHERE a.IsPlaceBetWithin30Days = 1;
+		WHERE a.IsActiveWithin30Days = 1;
 
 		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, ScanTaggingType)
 		SELECT a.CustId
@@ -408,7 +410,7 @@ BEGIN
 			,  ISNULL(a.PerformanceTime, @CurrentDateTime)
 			,  a.ScanTaggingType
 		FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
-		WHERE a.IsPlaceBetWithin30Days = 0;
+		WHERE a.IsActiveWithin30Days = 0;
 	
 		-- #11: Update last settle betcounts
 		EXEC dbo.CTS_NormalClassification_BetCount_Update @CurrentDateTime = @CurrentDateTime, @IsGeneralFlow = 1;
