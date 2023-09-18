@@ -18,7 +18,8 @@ AS
 	Revisions:
 		- 20230420@Jonas.Huynh: Created [Redmine ID: #186678]
 		- 20230816@Jonas.Huynh: Tagging Classification [Redmine ID: #191400]
-	
+		- 20230915@Jonas.Huynh: HF Wrong Inactive Category for New and Realtime flow exclude S/R/P with not latest category [Redmine ID: #193050]
+		
 	Param's Explanation:
 		@ScannedMaxId: This parameter is used to output scanned MaxID
 
@@ -45,7 +46,7 @@ BEGIN
 	CREATE TABLE #tmpCustomers(
 		Id					BIGINT PRIMARY KEY IDENTITY(1,1),
 		CustId				INT UNIQUE NOT NULL,
-		IsCheckBetCount		BIT DEFAULT(0),
+		IsRealtimeOnly		BIT DEFAULT(0),
 		ScanTaggingType  	TINYINT DEFAULT(0)
 	);
 
@@ -56,9 +57,10 @@ BEGIN
 	-- #2: Get top customers by priority
 	IF(@ScannedMaxId IS NOT NULL)
 	BEGIN
-		INSERT INTO #tmpCustomers(CustId, IsCheckBetCount, ScanTaggingType)
+		INSERT INTO #tmpCustomers(CustId, IsRealtimeOnly, ScanTaggingType)
 		SELECT TOP(@BatchSize) c.CustId,
-			   CASE WHEN SUM(CASE WHEN c.FunctionId = @FunctionId_ScanTagging THEN @FunctionId_Realtime ELSE c.FunctionId END) = (COUNT(c.CustId) * @FunctionId_Realtime) THEN 1 ELSE 0 END,
+			   CASE WHEN SUM(CASE WHEN c.FunctionId = @FunctionId_ScanTagging THEN 0 ELSE c.FunctionId END) = (COUNT(CASE WHEN c.FunctionId = @FunctionId_ScanTagging THEN 0 ELSE 1 END) * @FunctionId_Realtime) THEN 1 
+					ELSE 0 END,
 			   CASE WHEN SUM(c.FunctionId) = (COUNT(c.CustId) * @FunctionId_ScanTagging) THEN @ScanTaggingType_ExistOnly 
 					WHEN SUM(CASE WHEN c.FunctionId = @FunctionId_ScanTagging THEN @FunctionId_ScanTagging ELSE 0 END) > 1 THEN @ScanTaggingType_Exist 
 					ELSE @ScanTaggingType_NotExist END
@@ -71,7 +73,7 @@ BEGIN
 
 	-- #3: Return dataset
 	SELECT CustId			 AS CustId, 
-		   IsCheckBetCount	 AS IsCheckBetCount,
+		   IsRealtimeOnly	 AS IsRealtimeOnly,
 		   ScanTaggingType   AS ScanTaggingType
 	FROM #tmpCustomers;
 	
