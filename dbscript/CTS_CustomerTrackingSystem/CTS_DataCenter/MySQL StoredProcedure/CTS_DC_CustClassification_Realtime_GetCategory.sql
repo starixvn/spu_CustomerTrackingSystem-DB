@@ -93,7 +93,9 @@ BEGIN
 				ELSE -1
 			END AS CategoryId
 	FROM Temp_Customers AS temp
-		LEFT JOIN Temp_CustomerCategory AS cate ON cate.CustID = temp.CustID;
+		LEFT JOIN Temp_CustomerCategory AS cate ON cate.CustID = temp.CustID
+	WHERE cate.CategoryID IS NULL 
+		OR (cate.CategoryID IS NOT NULL AND cate.SportGroupID = CONST_GROUP_NORMAL);
 	
     -- #3: Return customer with problem category for PA daily scan
 	SELECT DISTINCT CustID
