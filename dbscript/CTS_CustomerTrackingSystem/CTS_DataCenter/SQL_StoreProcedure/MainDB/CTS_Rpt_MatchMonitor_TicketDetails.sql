@@ -709,7 +709,7 @@ BEGIN
 
 				DELETE t
 				FROM #tmpTickets AS t
-					LEFT JOIN #tmpCustomerClass AS c ON c.CustomerClass = t.CustomerClass
+					LEFT JOIN #tmpCustomerClass AS c ON c.CustomerClass = ISNULL(t.CustomerClass,0)
 				WHERE c.CustomerClass IS NULL;
 			END;
 
