@@ -58,7 +58,7 @@ sp:BEGIN
 	FROM CTS_DataCenter.RobotDetection AS rd
     		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON rd.CustID = cus.CustID AND cus.CustSubID = 0
 	WHERE DATE(rd.CreatedDate) BETWEEN ip_FromDate AND ip_ToDate
-		AND cus.IsLicensee = IFNULL(cus.IsLicensee, ip_IsLicensee)
+		AND cus.IsLicensee = IFNULL(ip_IsLicensee,cus.IsLicensee)
     ORDER BY rd.ID ASC;
     
     #======================INSERT ROBOT IMPERVA=========================================================
@@ -70,7 +70,7 @@ sp:BEGIN
 	FROM CTS_DataCenter.RobotImperva AS ri
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ri.CustID = cus.CustID AND cus.CustSubID = 0
 	WHERE DATE(ri.CreateTime) BETWEEN ip_FromDate AND ip_ToDate
-		AND cus.IsLicensee = IFNULL(cus.IsLicensee, ip_IsLicensee)
+		AND cus.IsLicensee = IFNULL(ip_IsLicensee,cus.IsLicensee)
     ORDER BY ri.LogID ASC;
     
     #======================INSERT ROBOT COUNTER=========================================================
@@ -90,7 +90,8 @@ sp:BEGIN
 			,	CONST_ROBOTTYPE_COUNTER AS RobotType
 			,	tmpCr.RobotDate
             ,	DATE_SUB(tmpCr.RobotDate, INTERVAL DAYOFMONTH(tmpCr.RobotDate)-1 DAY) AS RobotMonth
-		FROM Temp_CounterRobot AS tmpCr;  
+		FROM Temp_CounterRobot AS tmpCr; 
+			
     END IF;
 	
     #======================RETURN DATA===============================================================
@@ -125,7 +126,6 @@ sp:BEGIN
             ,	COUNT(DISTINCT(CASE WHEN tmpCr.RobotType = 3 THEN CustID ELSE NULL END)) AS 'COUNTER'
 		FROM Temp_CustRobot AS tmpCr;
     END IF;
-    
 
 END$$
 
