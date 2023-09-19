@@ -85,10 +85,12 @@ BEGIN
 		SRecommend			   INT
 	);
 	
-	CREATE NONCLUSTERED INDEX IX_tmpCustomers_ScanTaggingType ON #tmpCustomers(
+	CREATE NONCLUSTERED INDEX IX_tmpCustomers_IsRealtimeOnly_CurrentCategoryId_ScanTaggingType ON #tmpCustomers(
+		IsRealtimeOnly,
+		CurrentCategoryId,
 		ScanTaggingType
 	);
-
+	
 	IF OBJECT_ID('tempdb..#tmpScanTaggingCustomer') IS NOT NULL
 	BEGIN
 		DROP TABLE	#tmpScanTaggingCustomer;
