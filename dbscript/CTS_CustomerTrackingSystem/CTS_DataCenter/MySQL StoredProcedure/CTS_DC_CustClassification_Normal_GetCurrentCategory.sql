@@ -62,10 +62,10 @@ BEGIN
 		EXECUTE stmt1;
 		
         INSERT INTO Temp_Cust(CustID, CreatedDate, InsertedTime)
-		SELECT tmpIc.CustID, cus.CreatedDate, cust.InsertedTime
+		SELECT tmpIc.CustID, cus.CreatedDate, cus.InsertedTime
         FROM Temp_InputCust AS tmpIc
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpIc.CustID = cus.CustID AND cus.CustSubID = 0
-			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin ON pin.CTSCustID = cus.CTSCustIDArchiveCustomer_CTSCustomer
+			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin ON pin.CTSCustID = cus.CTSCustID
 		WHERE pin.CTSCustID IS NULL;
         
 		UPDATE Temp_Cust AS tmpCust
