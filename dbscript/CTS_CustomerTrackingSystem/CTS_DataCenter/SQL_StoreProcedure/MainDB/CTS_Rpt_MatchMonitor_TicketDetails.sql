@@ -142,9 +142,10 @@ BEGIN
 		,	Hdp					SMALLMONEY
 		,	IsLicensee			BIT
 		,	BetFrom				NVARCHAR(4)
-		,	Reason				SMALLINT
-		,	AGroup				INT
-		,	MGroup				INT
+		,	Reason				SMALLINT DEFAULT 0
+		,	ListReason			VARCHAR(MAX)
+		,	AGroup				INT  DEFAULT 0
+		,	MGroup				INT  DEFAULT 0
 	);	
 
 	CREATE CLUSTERED INDEX #CIX_tmpTickets_CustId ON #tmpTickets (
@@ -491,9 +492,9 @@ BEGIN
 										WHEN st.IsFilterHdp = 1 AND st.IsOnlyGetHdp1 = 0 THEN  (CASE WHEN b.BetTeam = 'h'	THEN (b.Hdp2 - b.Hdp1)
 																									WHEN b.BetTeam = 'a'	THEN (b.Hdp1 - b.Hdp2) END) END)
 						,	b.BetFrom
-						,	tmpTs.Reason
-						,	tmpTs.AGroup
-						,	tmpTs.MGroup
+						,	ISNULL(tmpTs.Reason,0)
+						,	ISNULL(tmpTs.AGroup,0)
+						,	ISNULL(tmpTs.MGroup,0)
 					FROM #tmpTransIds AS tmpTs WITH(NOLOCK)
 						INNER JOIN bodb_Archive.dbo.bettrans_bk AS b WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 						INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.matchid = m.matchid
@@ -538,9 +539,9 @@ BEGIN
 										WHEN st.IsFilterHdp = 1 AND st.IsOnlyGetHdp1 = 0 THEN  (CASE WHEN b.BetTeam = 'h'	THEN (b.Hdp2 - b.Hdp1)
 																									WHEN b.BetTeam = 'a'	THEN (b.Hdp1 - b.Hdp2) END) END)
 						,	b.BetFrom
-						,	tmpTs.Reason
-						,	tmpTs.AGroup
-						,	tmpTs.MGroup
+						,	ISNULL(tmpTs.Reason,0)
+						,	ISNULL(tmpTs.AGroup,0)
+						,	ISNULL(tmpTs.MGroup,0)
 					FROM #tmpTransIds AS tmpTs WITH(NOLOCK)
 						INNER JOIN dbo.bettrans14 AS b WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 						INNER JOIN dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
@@ -585,9 +586,9 @@ BEGIN
 										WHEN st.IsFilterHdp = 1 AND st.IsOnlyGetHdp1 = 0 THEN  (CASE WHEN b.BetTeam = 'h'	THEN (b.Hdp2 - b.Hdp1)
 																									WHEN b.BetTeam = 'a'	THEN (b.Hdp1 - b.Hdp2) END) END)
 						,	b.BetFrom
-						,	tmpTs.Reason
-						,	tmpTs.AGroup
-						,	tmpTs.MGroup
+						,	ISNULL(tmpTs.Reason,0)
+						,	ISNULL(tmpTs.AGroup,0)
+						,	ISNULL(tmpTs.MGroup,0)
 					FROM #tmpTransIds AS tmpTs WITH(NOLOCK)
 						INNER JOIN dbo.bettrans AS b WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 						INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
@@ -631,9 +632,9 @@ BEGIN
 										 WHEN st.IsFilterHdp = 1 AND st.IsOnlyGetHdp1 = 0 THEN  (CASE WHEN b.BetTeam = 'h'	THEN (b.Hdp2 - b.Hdp1)
 																									  WHEN b.BetTeam = 'a'	THEN (b.Hdp1 - b.Hdp2) END) END)
 							,	b.BetFrom
-							,	tmpTs.Reason
-							,	tmpTs.AGroup
-							,	tmpTs.MGroup
+						,	ISNULL(tmpTs.Reason,0)
+						,	ISNULL(tmpTs.AGroup,0)
+						,	ISNULL(tmpTs.MGroup,0)
 						FROM dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
 							INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 							INNER JOIN #tmpSupportedSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportType AND b.bettype = st.BetType 
@@ -681,9 +682,9 @@ BEGIN
 																								END)
 									 END)
 							,	b.BetFrom							
-							,	tmpTs.Reason
-							,	tmpTs.AGroup
-							,	tmpTs.MGroup
+						,	ISNULL(tmpTs.Reason,0)
+						,	ISNULL(tmpTs.AGroup,0)
+						,	ISNULL(tmpTs.MGroup,0)
 						FROM dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
 							INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 							INNER JOIN dbo.league AS l WITH(NOLOCK) ON l.leagueid = m.leagueid
@@ -833,10 +834,43 @@ BEGIN
 				INSERT INTO #tmpSupportedReason (Reason)
 				SELECT ssk.value FROM STRING_SPLIT(@ListReason, ',') ssk;
 
+							IF	OBJECT_ID('tempdb..#tmpTransIdReason') IS NOT NULL
+				BEGIN
+					DROP TABLE #tmpTransIdReason;
+				END;
+
+				CREATE TABLE #tmpTransIdReason(
+						TransId			BIGINT NOT NULL PRIMARY KEY
+					,	ListReason		VARCHAR(MAX)
+					,	MinReason		SMALLINT	
+				);
+
+
+				--Delete ticket is not in Reason Filter
 				DELETE t
 				FROM #tmpTickets AS t
 					LEFT JOIN #tmpSupportedReason AS c ON c.Reason = ISNULL(t.Reason,0)
 				WHERE c.Reason IS NULL;
+
+				--Delete Dup ticket 
+				INSERT INTO #tmpTransIdReason(TransID, ListReason, MinReason)
+				SELECT	TransID
+					,	STRING_AGG( Reason, ',') WITHIN GROUP (ORDER BY Reason) AS Reason
+					,	MIN(Reason)
+				FROM #tmpTransIds WITH(NOLOCK)  
+				GROUP BY TransID
+				HAVING COUNT(TransID) > 1;
+
+				DELETE t
+				FROM #tmpTickets AS t
+					INNER JOIN #tmpTransIdReason AS tmpTr ON t.TransId = tmpTr.TransID
+				WHERE t.Reason > tmpTr.MinReason; 
+
+				UPDATE tmpTk
+				SET tmpTk.ListReason = tmpTr.ListReason
+				FROM #tmpTickets AS tmpTk
+					INNER JOIN #tmpTransIdReason AS tmpTr ON tmpTk.TransId = tmpTr.TransID
+
 			END;
 
 			--========================Fitler By AGroup==================
@@ -928,7 +962,47 @@ BEGIN
 		END
 	ELSE --Return Ticket Details
 		BEGIN
-			SELECT tmpTk.*
+			SELECT	tmpTk.SequenceId
+				,	tmpTk.TransId
+				,	tmpTk.TransDate
+				,	tmpTk.MatchId
+				,	tmpTk.EventDate
+				,	tmpTk.EventStatus
+				,	tmpTk.KickOffTime
+				,	tmpTk.HomeId
+				,	tmpTk.AwayId
+				,	tmpTk.LeagueId
+				,	tmpTk.LeagueName
+				,	tmpTk.IsMajorLeague
+				,	tmpTk.SportType
+				,	tmpTk.BetType
+				,	tmpTk.CustId
+				,	tmpTk.BetTeam
+				,	tmpTk.BetId
+				,	tmpTk.Stake
+				,	tmpTk.OrgStake
+				,	tmpTk.Odds
+				,	tmpTk.Hdp1
+				,	tmpTk.Hdp2
+				,	tmpTk.LiveHomeScore
+				,	tmpTk.LiveAwayScore
+				,	tmpTk.LiveIndicator
+				,	tmpTk.TicketStatus
+				,	tmpTk.Danger1
+				,	tmpTk.Danger2
+				,	tmpTk.Danger3
+				,	tmpTk.Danger4
+				,	tmpTk.Danger5
+				,	tmpTk.CustomerClass
+				,	tmpTk.CurrencyName
+				,	tmpTk.CurrencyId
+				,	tmpTk.Hdp
+				,	tmpTk.IsLicensee
+				,	tmpTk.BetFrom
+				,	tmpTk.Reason
+				,	ISNULL(tmpTk.ListReason,tmpTk.Reason) AS ListReason
+				,	tmpTk.AGroup
+				,	tmpTk.MGroup
 			FROM #tmpTickets AS tmpTk WITH(NOLOCK);
 		END;
 
