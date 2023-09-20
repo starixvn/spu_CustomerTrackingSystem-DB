@@ -176,13 +176,17 @@ BEGIN
 	END;
 
 	CREATE TABLE #tmpTransIds(
-			TransId		BIGINT NOT NULL PRIMARY KEY
+			TransId		BIGINT NOT NULL 
 		,	Reason		SMALLINT
 		,	AGroup		INT
 		,	MGroup		INT
 	);
 
-	
+	CREATE CLUSTERED INDEX #CIX_tmpCustAmount_CustID ON #tmpTransIds (
+			TransId	ASC
+		,	Reason	ASC
+	);
+
 
 	IF	OBJECT_ID('tempdb..#tmpSupportedSportBettype') IS NOT NULL
 	BEGIN
@@ -218,6 +222,7 @@ BEGIN
 	CREATE TABLE	#tmpSupportedReason(
 			Reason		SMALLINT PRIMARY KEY 
 	);
+
 
 	IF	OBJECT_ID('tempdb..#tmpSupportedMGroup') IS NOT NULL
 	BEGIN
