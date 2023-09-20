@@ -92,7 +92,7 @@ BEGIN
     SELECT 	DISTINCT temp.CustID AS CustID
 	FROM Temp_Customers AS temp
 		LEFT JOIN Temp_CustomerCategory AS cate ON cate.CustID = temp.CustID
-        LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin ON pin.CTSCustID = cus.CTSCustID
+        LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin ON pin.CTSCustID = cate.CTSCustID
 	WHERE  pin.CTSCustID IS NULL
 		AND (cate.CategoryID IS NULL OR (cate.CategoryID IS NOT NULL AND cate.SportGroupID = CONST_GROUP_NORMAL));
 	
