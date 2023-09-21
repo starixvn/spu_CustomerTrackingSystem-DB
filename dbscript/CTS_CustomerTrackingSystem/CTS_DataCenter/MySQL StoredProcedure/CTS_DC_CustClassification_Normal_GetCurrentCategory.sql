@@ -54,6 +54,12 @@ BEGIN
 		,	INDEX IX_Temp_CustCategory_CategoryGroup(CategoryGroup)
     );
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_ReactiveCust;
+	CREATE TEMPORARY TABLE Temp_ReactiveCust(
+			CustID 			BIGINT UNSIGNED PRIMARY KEY
+		,	ProcessedDate	DATETIME
+	);  
+    
     #1. Get valid customers
     IF ip_CustIDList IS NOT NULL THEN        
 
@@ -67,12 +73,24 @@ BEGIN
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpIc.CustID = cus.CustID AND cus.CustSubID = 0
 			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin ON pin.CTSCustID = cus.CTSCustID
 		WHERE pin.CTSCustID IS NULL;
+               
+		INSERT INTO Temp_ReactiveCust(CustID, ProcessedDate)
+		SELECT DISTINCT arc.CustID, arc.ProcessedDate
+		FROM   Temp_Cust AS tmp
+			,LATERAL 
+			(
+			   SELECT arc.CustID, arc.ProcessedDate
+			   FROM   CTS_DataCenter.ArchiveCustomer_CTSCustomer AS arc
+			   WHERE  arc.CustID = tmp.CustID AND arc.CustSubID = 0 
+			   ORDER BY arc.ID DESC
+			   LIMIT  1
+			) AS arc
+		WHERE arc.ProcessedDate IS NOT NULL;
         
 		UPDATE Temp_Cust AS tmpCust
-		INNER JOIN CTS_DataCenter.ArchiveCustomer_CTSCustomer AS arc ON arc.CustID = tmpCust.CustID AND arc.CustSubID = 0
-		SET tmpCust.IsReactived = 1
-        WHERE arc.ProcessedDate IS NOT NULL;
-	        
+			INNER JOIN Temp_ReactiveCust AS cte ON cte.CustID = tmpCust.CustID
+		SET tmpCust.IsReactived = 1;
+
     END IF;	
 	
     #2. Get latest normal category
