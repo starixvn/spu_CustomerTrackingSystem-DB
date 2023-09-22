@@ -46,6 +46,7 @@ BEGIN
 				,{"BatchId":1,"CustID":18349232,"CustStatusID":1,"UserName":"HAIFARMB01897790","UserName2":"haifa$83884255","Site":"haifa","SiteID":44,"RoleID":1,"CurrencyID":13,"Currency":"RMB","SRecommend":4359240,"MRecommend":4359287,"Recommend":4359308,"CreatedDate":"2015-06-28 07:22:00.000","Danger1":0,"Danger2":0,"Danger3":0,"CustSubID":0}]');
 	*/
 	DECLARE lv_LastArchiveID 	BIGINT UNSIGNED;
+    DECLARE	lv_CustIDList		TEXT;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomer;    
 	CREATE TEMPORARY TABLE Temp_CTSCustomer( 	  
@@ -285,6 +286,17 @@ BEGIN
 	SET   tmpCus.SubscriberID = cus.SubscriberID
 		, tmpCus.RegisterName = cus.RegisterName;      
 	
+    #====CREATE CATEGORY NEW FOR NEW MEMBER (RoleID = 0)=====================================
+    SELECT GROUP_CONCAT(CustID)
+    INTO lv_CustIDList
+    FROM Temp_CTSCustomer AS tmpCus
+    WHERE	tmpCus.DuplicateType = 0
+		AND	tmpCus.RoleID = 1
+        AND tmpCus.CustSubID = 0;
+    
+    CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount_NewCategory(lv_CustIDList);
+    
+    #=====INSERT NEW CUSTOMER=====================================
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomer(SubscriberID, CustID, CustSubID, UserName, UserName2, SiteID, Site, RoleID, Currency, CurrencyID
 			, SRecommend, MRecommend, Recommend, CreatedDate , RegisterName , CustStatusID , Danger1 ,Danger2 , Danger3 , Danger4 , Danger5, DangerSabaSc, DangerSabaBkb , InsertedTime , ModifiedTime, IsLicensee, IsInternal)
 	SELECT    tmpCus.SubscriberID
@@ -317,7 +329,6 @@ BEGIN
     FROM	Temp_CTSCustomer AS tmpCus
     WHERE	tmpCus.DuplicateType = 0;
 
-
 	INSERT INTO Temp_Result(CTSCustID,SubscriberID,CustID,UserName,RegisterName,RoleID,CustSubID)
 	SELECT	cus.CTSCustID
 		,	cus.SubscriberID
@@ -329,6 +340,8 @@ BEGIN
     FROM	Temp_CTSCustomer AS tmpCus
 		INNER JOIN 	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID AND tmpCus.CustSubID = cus.CustSubID;   
 
+    CALL CTS_DataCenter.CTS_DC_CustClassification_UpdateCustInfo(lv_CustIDList);
+    
 	#=====UPDATE CTSCustomerClassification====================
     UPDATE CTS_DataCenter.CTSCustomerClassification AS cc
     INNER JOIN Temp_Result AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= cc.CustID
