@@ -30,7 +30,7 @@ AS
 BEGIN
 	
 	SET NOCOUNT ON;
-		
+	
 	DECLARE	@BatchSize INT = 20000;
 
 	DECLARE @FunctionId_Realtime	   TINYINT = 1,
@@ -59,7 +59,8 @@ BEGIN
 	BEGIN
 		INSERT INTO #tmpCustomers(CustId, IsRealtimeOnly, ScanTaggingType)
 		SELECT TOP(@BatchSize) c.CustId,
-			   CASE WHEN SUM(CASE WHEN c.FunctionId = @FunctionId_ScanTagging THEN 0 ELSE c.FunctionId END) = (COUNT(CASE WHEN c.FunctionId = @FunctionId_ScanTagging THEN 0 ELSE 1 END) * @FunctionId_Realtime) THEN 1 
+			   CASE WHEN SUM(c.FunctionId) = (COUNT(c.ID) * @FunctionId_ScanTagging) THEN 0
+					WHEN SUM(CASE WHEN c.FunctionId = @FunctionId_ScanTagging THEN @FunctionId_Realtime ELSE c.FunctionId END) = (COUNT(c.ID) * @FunctionId_Realtime) THEN 1 
 					ELSE 0 END,
 			   CASE WHEN SUM(c.FunctionId) = (COUNT(c.CustId) * @FunctionId_ScanTagging) THEN @ScanTaggingType_ExistOnly 
 					WHEN SUM(CASE WHEN c.FunctionId = @FunctionId_ScanTagging THEN @FunctionId_ScanTagging ELSE 0 END) > 1 THEN @ScanTaggingType_Exist 

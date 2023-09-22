@@ -57,7 +57,6 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_ReactiveCust;
 	CREATE TEMPORARY TABLE Temp_ReactiveCust(
 			CustID 			BIGINT UNSIGNED PRIMARY KEY
-		,	ProcessedDate	DATETIME
 	);  
     
     #1. Get valid customers
@@ -74,8 +73,8 @@ BEGIN
 			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin ON pin.CTSCustID = cus.CTSCustID
 		WHERE pin.CTSCustID IS NULL;
                
-		INSERT INTO Temp_ReactiveCust(CustID, ProcessedDate)
-		SELECT DISTINCT arc.CustID, arc.ProcessedDate
+		INSERT INTO Temp_ReactiveCust(CustID)
+		SELECT DISTINCT arc.CustID
 		FROM   Temp_Cust AS tmp
 			,LATERAL 
 			(
