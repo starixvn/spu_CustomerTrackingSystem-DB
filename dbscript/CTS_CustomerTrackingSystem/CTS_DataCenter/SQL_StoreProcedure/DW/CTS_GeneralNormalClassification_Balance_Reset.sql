@@ -1,3 +1,4 @@
+/*<info serverAlias="DBVR2-bodb_VR2Model" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 USE [bodb_VR2Model]
 GO
 SET ANSI_NULLS ON
@@ -38,7 +39,7 @@ BEGIN
 	FROM #tmpCustomers AS a 
 	WHERE a.CurrentCategoryId = @CATEGORY_NORMALINACTIVE 
 		AND a.IsDeposit = 0
-		AND a.IsPlaceBetWithin30Days = 1
+		AND a.IsActiveWithin30Days = 1
 		AND a.IsNewCreated = 0; 
 
 	UPDATE rb WITH(ROWLOCK, UPDLOCK)

@@ -25,6 +25,7 @@ BEGIN
 			- 20230120@Long.Luu: Support special case for Inactive (return CategoryID instead of CategoryGroup)  [Redmine ID: #182997]
             - 20230120@Long.Luu: Support special case for Inactive (return CategoryID instead of CategoryGroup)  [Redmine ID: #182997]
             - 20230313@Jonas.Huynh: Get PA category for daily scan PA [Redmine ID: #184772]
+            - 20230915@Jonas.Huynh: HF Wrong Inactive Category for New and Realtime flow exclude S/R/P with not latest category [Redmine ID: #193050]
             
 		Param's Explanation (filtered by):    
 			CALL CTS_DC_CustClassification_Realtime_GetCategory('761925')
@@ -45,6 +46,7 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerCategory;
 	CREATE TEMPORARY TABLE Temp_CustomerCategory(
 			CustID					BIGINT UNSIGNED NOT NULL
+		,   CTSCustID				BIGINT UNSIGNED NOT NULL
 		,	SportGroupID			INT
         ,	CategoryID 				INT
         ,	CategoryGroup 			SMALLINT UNSIGNED
@@ -59,10 +61,11 @@ BEGIN
 			'$[*]' COLUMNS(NESTED PATH '$' COLUMNS (
 				CustID 		BIGINT UNSIGNED PATH '$'
 			))) AS temp;
-            
+	
     -- #1: Get customer category
-	INSERT INTO Temp_CustomerCategory(CustID, SportGroupID, CategoryID, CategoryGroup, RelevantCategoryID, IsOldCategory)
+	INSERT INTO Temp_CustomerCategory(CustID, CTSCustID, SportGroupID, CategoryID, CategoryGroup, RelevantCategoryID, IsOldCategory)
 	SELECT 		temp.CustID
+			,	cate.CTSCustID
 			, 	cate.SportGroupID
             ,	cate.CategoryID
             ,	cc.CategoryGroup
@@ -73,8 +76,9 @@ BEGIN
         INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
 	WHERE cate.SportGroupID in (CONST_GROUP_NORMAL, CONST_GROUP_PA);
 
-	INSERT INTO Temp_CustomerCategory(CustID, SportGroupID, CategoryID, CategoryGroup, RelevantCategoryID, IsOldCategory)
+	INSERT INTO Temp_CustomerCategory(CustID, CTSCustID, SportGroupID, CategoryID, CategoryGroup, RelevantCategoryID, IsOldCategory)
 	SELECT 		temp.CustID
+			,	cate.CTSCustID
 			, 	cate.SportGroupID
 			, 	cate.CategoryID
             ,	cc.CategoryGroup
@@ -86,14 +90,11 @@ BEGIN
 	
     -- #2: Return customer category for realtime classification
     SELECT 	DISTINCT temp.CustID AS CustID
-		,	CASE 
-				WHEN cate.CategoryID IS NULL THEN NULL
-				WHEN cate.CategoryGroup IN (CONST_CATEGORY_NEWMEMBER, CONST_CATEGORY_NORMALMEMBER, CONST_CATEGORY_GOODMEMBER) THEN cate.CategoryGroup
-				WHEN cate.CategoryGroup IN (CONST_CATEGORY_INACTIVE) THEN cate.CategoryID
-				ELSE -1
-			END AS CategoryId
 	FROM Temp_Customers AS temp
-		LEFT JOIN Temp_CustomerCategory AS cate ON cate.CustID = temp.CustID;
+		LEFT JOIN Temp_CustomerCategory AS cate ON cate.CustID = temp.CustID
+        LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin ON pin.CTSCustID = cate.CTSCustID
+	WHERE  pin.CTSCustID IS NULL
+		AND (cate.CategoryID IS NULL OR (cate.CategoryID IS NOT NULL AND cate.SportGroupID = CONST_GROUP_NORMAL));
 	
     -- #3: Return customer with problem category for PA daily scan
 	SELECT DISTINCT CustID

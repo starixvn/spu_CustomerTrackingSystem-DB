@@ -23,6 +23,7 @@ AS
 		- 20230807@Jonas.Huynh: HF exclude Non-sport for General [Redmine ID: #192388]
 		- 20230726@Jonas.Huynh: Saba Classification [Redmine ID: #185320]
 		- 20230816@Jonas.Huynh: Tagging Classification [Redmine ID: #191400]
+		- 20230915@Jonas.Huynh: HF Wrong Inactive Category for New and Realtime flow exclude S/R/P with not latest category [Redmine ID: #193050]
 
 	Param's Explanation:
 		@CustomersXML		: This parameter is used to classify customer perf which bases on currentCategory
@@ -30,10 +31,10 @@ AS
     Script:
         EXEC bodb_VR2Model.dbo.CTS_GeneralNormalClassification_NormalPool_Classify 
 			@CustomersXML = N'<Root>
-								<r CustId="5002646" CategoryId="201" IsNewCreated="0" IsCheckBetCount= "0" IsProbationLastDay="0" ScanTaggingType="0"/>
-								<r CustId="5022391" CategoryId="0"  IsNewCreated="1" IsCheckBetCount= "1" IsProbationLastDay="0" ScanTaggingType="0"/>
-								<r CustId="1275" CategoryId="205"  IsNewCreated="0" IsCheckBetCount= "1" IsProbationLastDay="1" ScanTaggingType="0"/>
-								<r CustId="1280" CategoryId="202"  IsNewCreated="1" IsCheckBetCount= "1" IsProbationLastDay="1" ScanTaggingType="0"/>
+								<r CustId="5002646" CategoryId="201" IsNewCreated="0" IsRealtimeOnly= "0" IsProbationLastDay="0" ScanTaggingType="0"/>
+								<r CustId="5022391" CategoryId="0"  IsNewCreated="1" IsRealtimeOnly= "1" IsProbationLastDay="0" ScanTaggingType="0"/>
+								<r CustId="1275" CategoryId="205"  IsNewCreated="0" IsRealtimeOnly= "1" IsProbationLastDay="1" ScanTaggingType="0"/>
+								<r CustId="1280" CategoryId="202"  IsNewCreated="1" IsRealtimeOnly= "1" IsProbationLastDay="1" ScanTaggingType="0"/>
 							</Root>';
 */
 BEGIN
@@ -75,19 +76,21 @@ BEGIN
 		CustId			       INT PRIMARY KEY,
 		CurrentCategoryId      SMALLINT NOT NULL,
 		IsNewCreated	       BIT	    NOT NULL DEFAULT 0,
-		IsCheckBetCount		   BIT	    NOT NULL DEFAULT 0,
+		IsRealtimeOnly		   BIT	    NOT NULL DEFAULT 0,
 		IsProbationLastDay	   BIT		NOT NULL DEFAULT 0,
 		ScanTaggingType		   TINYINT	NOT NULL DEFAULT 0,
-		IsPlaceBetWithin30Days BIT		NOT NULL DEFAULT 0,
+		IsActiveWithin30Days   BIT		NOT NULL DEFAULT 0,
 		IsDeposit			   BIT		NOT NULL DEFAULT 0,
 		IsSpecialSite		   BIT		NOT NULL DEFAULT 0,
 		SRecommend			   INT
 	);
 	
-	CREATE NONCLUSTERED INDEX IX_tmpCustomers_ScanTaggingType ON #tmpCustomers(
+	CREATE NONCLUSTERED INDEX IX_tmpCustomers_IsRealtimeOnly_CurrentCategoryId_ScanTaggingType ON #tmpCustomers(
+		IsRealtimeOnly,
+		CurrentCategoryId,
 		ScanTaggingType
 	);
-
+	
 	IF OBJECT_ID('tempdb..#tmpScanTaggingCustomer') IS NOT NULL
 	BEGIN
 		DROP TABLE	#tmpScanTaggingCustomer;
@@ -126,9 +129,9 @@ BEGIN
 		CustId				   INT			  NOT NULL,
 		CurrentCategoryId	   SMALLINT		  NOT NULL DEFAULT 0,
 		NewCategoryId		   SMALLINT		  NULL,
-		IsPlaceBetWithin30Days BIT			  NOT NULL DEFAULT 0,
+		IsActiveWithin30Days   BIT			  NOT NULL DEFAULT 0,
 		IsProbationLastDay	   BIT			  NOT NULL DEFAULT 0,
-		IsCheckBetCount		   BIT			  NOT NULL DEFAULT 0,
+		IsRealtimeOnly		   BIT			  NOT NULL DEFAULT 0,
 		ScanTaggingType		   TINYINT		  NOT NULL DEFAULT 0,
 		IsSpecialSite		   BIT			  NOT NULL DEFAULT 0,
 		IsDeposit			   BIT			  NOT NULL DEFAULT 0,
@@ -175,20 +178,38 @@ BEGIN
 	);
 
 	-- #1: Get list customers
-	INSERT INTO #tmpCustomers(CustId, CurrentCategoryId, IsNewCreated, IsCheckBetCount, IsProbationLastDay, ScanTaggingType)
+	INSERT INTO #tmpCustomers(CustId, CurrentCategoryId, IsNewCreated, IsRealtimeOnly, IsProbationLastDay, ScanTaggingType)
 	SELECT	T.C.value('./@CustId', 'INT')				AS CustId
 		,	T.C.value('./@CategoryId', 'SMALLINT')		AS CurrentCategoryId
 		,	T.C.value('./@IsNewCreated', 'BIT')			AS IsNewCreated
-		,	T.C.value('./@IsCheckBetCount', 'BIT')		AS IsCheckBetCount
+		,	T.C.value('./@IsRealtimeOnly', 'BIT')		AS IsRealtimeOnly
 		,	T.C.value('./@IsProbationLastDay', 'BIT')	AS IsProbationLastDay
 		,	T.C.value('./@ScanTaggingType', 'TINYINT')	AS ScanTaggingType
 	FROM @CustomersXML.nodes('//r') AS T(C)
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 	
+	-- #2: Remove realtime classification with category not in (null, new, good, normal)
+	UPDATE a WITH(ROWLOCK, UPDLOCK)
+	SET	 a.ScanTaggingType = @ScanTaggingType_ExistOnly,
+		 a.IsRealtimeOnly = 0
+	FROM #tmpCustomers AS a
+	WHERE   a.IsRealtimeOnly = 1 
+		AND a.CurrentCategoryId IN (@CATEGORY_SMARTPUNTER, @CATEGORY_RISKY, @CATEGORY_PROBATION)
+		AND a.ScanTaggingType = @ScanTaggingType_Exist;
+
+	DELETE a WITH (ROWLOCK)
+	FROM #tmpCustomers AS a
+	WHERE   a.IsRealtimeOnly = 1 
+		AND a.CurrentCategoryId IN (@CATEGORY_SMARTPUNTER, @CATEGORY_RISKY, @CATEGORY_PROBATION)
+		AND a.ScanTaggingType = @ScanTaggingType_NotExist;
+
+			
+	-- #3: Get list customers to retrieve performances
 	SELECT @ListCustIds = STUFF(( SELECT DISTINCT ',', CONVERT(VARCHAR(15), CustId) 
 								  FROM #tmpCustomers WITH (NOLOCK)
 								  FOR XML PATH('')), 1, 1, '');
 
+	-- #4: Scan tagging only
 	DELETE a WITH (ROWLOCK)
 	OUTPUT DELETED.CustId,DELETED.CurrentCategoryId, DELETED.ScanTaggingType INTO #tmpScanTaggingCustomer(CustId, CurrentCategoryId, ScanTaggingType)
 	FROM #tmpCustomers AS a
@@ -196,7 +217,7 @@ BEGIN
 
 	IF (EXISTS (SELECT 1 FROM #tmpCustomers))
 	BEGIN
-		-- #2: Get customer info
+		-- #5: Get customer info
 		UPDATE a WITH(ROWLOCK, UPDLOCK)
 		SET	   a.SRecommend = c.srecommend,
 			   a.IsSpecialSite = CASE WHEN c.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') THEN 1 ELSE 0 END
@@ -209,16 +230,17 @@ BEGIN
 			INNER JOIN bodb02.dbo.Dep_CustSuper AS c WITH(NOLOCK) ON a.SRecommend = c.custid;
 
 		UPDATE a WITH(ROWLOCK, UPDLOCK)
-		SET a.IsPlaceBetWithin30Days = 1
+		SET a.IsActiveWithin30Days = 1
 		FROM #tmpCustomers AS a
-			INNER JOIN dbo.CustomerClassification_LatestActiveDay AS c WITH(NOLOCK) ON a.CustId = c.CustId
-		WHERE c.LastTransDate >= @From30Date;
+			LEFT JOIN dbo.CustomerClassification_LatestActiveDay AS c WITH(NOLOCK) ON a.CustId = c.CustId
+		WHERE (c.CustId IS NOT NULL AND c.LastTransDate >= @From30Date)
+			OR a.IsNewCreated = 1;
 	
-		-- #3: Update reset balance for credit - normal inactive with new placebet
+		-- #6: Update reset balance for credit - normal inactive with new placebet
 		EXEC dbo.CTS_GeneralNormalClassification_Balance_Reset @CurrentDateTime = @CurrentDateTime, @YesterdayDate = @YesterdayDate;
 	END;
 
-	-- #4: Get accummulated performance
+	-- #7: Get accummulated performance
 	INSERT INTO #tmpRawData(CustId, SportGroup, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDaysCustID, ActiveDaysSportGroup, WindaysCustID, WinDaysSportGroup, ProcessedTime)
 	EXEC bodb_dwrs.dbo.Acc_Rpt_CTS_GetCustAccumulatedInfo @ListCustID = @ListCustIds, @isResetBalance = 1;
 
@@ -239,7 +261,7 @@ BEGIN
 
 	IF (EXISTS (SELECT 1 FROM #tmpScanTaggingCustomer))
 	BEGIN
-		-- #5.1: Classify Tagging (link Association, TWGB,...)
+		-- #8.1: Classify Tagging (link Association, TWGB,...)
 		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, ScanTaggingType)
 		SELECT t.CustId
 			,  @GENERAL_SPORTID
@@ -256,7 +278,7 @@ BEGIN
 		FROM #tmpScanTaggingCustomer AS t
 			LEFT JOIN #tmpCustomerAccummulatedInfo AS c ON t.CustId = c.CustId;
 
-		-- #5.2: Remove Scan Tagging Performance
+		-- #8.2: Remove Scan Tagging Performance
 		DELETE a WITH (ROWLOCK)
 		FROM #tmpCustomerAccummulatedInfo AS a
 			INNER JOIN #tmpScanTaggingCustomer AS t ON t.CustId = a.CustId;
@@ -264,11 +286,11 @@ BEGIN
 	
 	IF (EXISTS (SELECT 1 FROM #tmpCustomers))
 	BEGIN
-		-- #5: Map relevant customer info
+		-- #9: Map relevant customer info
 		UPDATE a WITH(ROWLOCK, UPDLOCK)
 		SET a.CurrentCategoryId = c.CurrentCategoryId,
-			a.IsCheckBetCount = c.IsCheckBetCount,
-			a.IsPlaceBetWithin30Days = c.IsPlaceBetWithin30Days,
+			a.IsRealtimeOnly = c.IsRealtimeOnly,
+			a.IsActiveWithin30Days = c.IsActiveWithin30Days,
 			a.IsProbationLastDay = c.IsProbationLastDay,
 			a.ScanTaggingType = c.ScanTaggingType,
 			a.SRecommend = c.SRecommend,
@@ -277,18 +299,18 @@ BEGIN
 		FROM #tmpCustomerAccummulatedInfo AS a
 			INNER JOIN #tmpCustomers AS c ON a.CustId = c.custid;
 
-		-- #6: Remove accounts with settle bet count has not reach the schedule (FOR REALTIME ONLY)
+		-- #10: Remove accounts with settle bet count has not reach the schedule (FOR REALTIME ONLY)
 		---- less than 100 settle tickets compared to last scan for Good Member
 		---- less than 20 settle tickets compared to last scan for Normal Member
 		INSERT INTO #tmpRemoveCust(CustId)
 		SELECT a.CustId
 		FROM #tmpCustomerAccummulatedInfo AS a
 			INNER JOIN dbo.CustomerClassification_BetCount AS b WITH(NOLOCK) ON a.CustId = b.CustId
-		WHERE a.IsCheckBetCount = 1 
+		WHERE a.IsRealtimeOnly = 1 
 				AND ((a.CurrentCategoryId = @CATEGORY_GOODMEMBER AND a.BetCount - b.BetCount < 100)
 				OR (a.CurrentCategoryId = @CATEGORY_NORMALMEMBER AND a.BetCount - b.BetCount < 20));
 
-		-- #6.1: Classify Tagging (link Association, TWGB,...) If having any from tagging function
+		-- #11.1: Classify Tagging (link Association, TWGB,...) If having any from tagging function
 		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, ScanTaggingType)
 		SELECT r.CustId
 			,  @GENERAL_SPORTID
@@ -306,7 +328,7 @@ BEGIN
 			INNER JOIN #tmpCustomerAccummulatedInfo AS a ON a.CustId = r.CustId
 		WHERE a.ScanTaggingType = @ScanTaggingType_Exist;
 
-		-- #6.2: Remove invalid realtime conditions data
+		-- #11.2: Remove invalid realtime conditions data
 		DELETE a WITH (ROWLOCK)
 		FROM #tmpCustomerAccummulatedInfo AS a
 			INNER JOIN #tmpRemoveCust AS b ON a.CustId = b.CustId;
@@ -315,7 +337,7 @@ BEGIN
 		FROM #tmpCustomers AS a
 			INNER JOIN #tmpRemoveCust AS b ON a.CustId = b.CustId;
 
-		-- #7: Insert scanned cust daily
+		-- #12: Insert scanned cust daily
 		UPDATE b WITH(ROWLOCK, UPDLOCK)
 		SET	b.CreatedDate = @ToDate
 		FROM #tmpCustomers AS a
@@ -327,11 +349,11 @@ BEGIN
 			LEFT JOIN dbo.CustomerClassification_ScannedDailyCust AS b WITH(NOLOCK) ON b.CustId = a.CustId
 		WHERE b.CustId IS NULL;
 
-		-- #8: Classify customer without performance 
+		-- #13: Classify customer without performance 
 		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, ScanTaggingType)
 		SELECT t.CustId
 			,  @GENERAL_SPORTID
-			,  CASE WHEN (t.IsNewCreated = 1 OR t.IsPlaceBetWithin30Days = 1) THEN @CATEGORY_NEWMEMBER ELSE @CATEGORY_NORMALINACTIVE END
+			,  CASE WHEN t.IsActiveWithin30Days = 1 THEN @CATEGORY_NEWMEMBER ELSE @CATEGORY_NORMALINACTIVE END
 			,  @CATEGORY_NULL
 			,  @ToDate AS CreatedDate
 			,  @CurrentDateTime AS CreatedTime
@@ -345,7 +367,7 @@ BEGIN
 			LEFT JOIN #tmpCustomerAccummulatedInfo AS c ON t.CustId = c.CustId
 		WHERE c.CustId IS NULL;	
 
-		-- #9: Classify classification by general rule
+		-- #14: Classify classification by general rule
 		UPDATE t WITH(ROWLOCK, UPDLOCK)
 		SET t.NewCategoryId = b.CategoryId,
 			t.CurrentCategoryId = ISNULL(t.CurrentCategoryId, b.CategoryId)
@@ -376,7 +398,7 @@ BEGIN
 			INNER JOIN #tmpCustomerAccummulatedInfo AS t ON t.CustId = b.CustId
 			WHERE b.RowNum = 1;
 
-		--#10: Insert to CustomerClassification
+		--#15: Insert to CustomerClassification
 		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, ScanTaggingType)
 		OUTPUT INSERTED.CustId, @GENERAL_SPORTID, INSERTED.CategoryId, INSERTED.BetCount INTO #tmpBetCount
 		SELECT a.CustId
@@ -392,7 +414,7 @@ BEGIN
 			,  ISNULL(a.PerformanceTime, @CurrentDateTime)
 			,  a.ScanTaggingType
 		FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
-		WHERE a.IsPlaceBetWithin30Days = 1;
+		WHERE a.IsActiveWithin30Days = 1;
 
 		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, ScanTaggingType)
 		SELECT a.CustId
@@ -408,9 +430,9 @@ BEGIN
 			,  ISNULL(a.PerformanceTime, @CurrentDateTime)
 			,  a.ScanTaggingType
 		FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
-		WHERE a.IsPlaceBetWithin30Days = 0;
+		WHERE a.IsActiveWithin30Days = 0;
 	
-		-- #11: Update last settle betcounts
+		-- #16: Update last settle betcounts
 		EXEC dbo.CTS_NormalClassification_BetCount_Update @CurrentDateTime = @CurrentDateTime, @IsGeneralFlow = 1;
 	END;
 

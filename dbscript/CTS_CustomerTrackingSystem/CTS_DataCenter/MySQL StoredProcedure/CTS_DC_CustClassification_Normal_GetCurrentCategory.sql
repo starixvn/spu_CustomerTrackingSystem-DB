@@ -17,6 +17,7 @@ BEGIN
 			- 20230120@Long.Luu [Redmine ID: #182997]: Support special case for Inactive (return CategoryID instead of CategoryGroup) 
             - 20230427@Jonas.Huynh [Redmine ID: #186678]: Renovate normal classification
             - 20230605@Jonas.Huynh [Redmine ID: #186684]: Renovate normal classification (phase2)
+            - 20230915@Jonas.Huynh [Redmine ID: #193050]: HF Wrong Inactive Category for New and Realtime flow exclude S/R/P with not latest category 
             
 		Param's Explanation:
         
@@ -40,6 +41,8 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_Cust(
 			CustID 			BIGINT UNSIGNED PRIMARY KEY
 		,	CreatedDate		DATETIME
+        ,	InsertedTime    DATETIME
+        ,   IsReactived		BIT DEFAULT(0)
     );
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustCategory;
@@ -51,6 +54,11 @@ BEGIN
 		,	INDEX IX_Temp_CustCategory_CategoryGroup(CategoryGroup)
     );
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_ReactiveCust;
+	CREATE TEMPORARY TABLE Temp_ReactiveCust(
+			CustID 			BIGINT UNSIGNED PRIMARY KEY
+	);  
+    
     #1. Get valid customers
     IF ip_CustIDList IS NOT NULL THEN        
 
@@ -58,12 +66,29 @@ BEGIN
 		PREPARE stmt1 FROM @sql;
 		EXECUTE stmt1;
 		
-        INSERT INTO Temp_Cust(CustID, CreatedDate)
-		SELECT tmpIc.CustID, cus.CreatedDate
+        INSERT INTO Temp_Cust(CustID, CreatedDate, InsertedTime)
+		SELECT tmpIc.CustID, cus.CreatedDate, cus.InsertedTime
         FROM Temp_InputCust AS tmpIc
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpIc.CustID = cus.CustID AND cus.CustSubID = 0
 			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin ON pin.CTSCustID = cus.CTSCustID
 		WHERE pin.CTSCustID IS NULL;
+               
+		INSERT INTO Temp_ReactiveCust(CustID)
+		SELECT DISTINCT arc.CustID
+		FROM   Temp_Cust AS tmp
+			,LATERAL 
+			(
+			   SELECT arc.CustID, arc.ProcessedDate
+			   FROM   CTS_DataCenter.ArchiveCustomer_CTSCustomer AS arc
+			   WHERE  arc.CustID = tmp.CustID AND arc.CustSubID = 0 
+			   ORDER BY arc.ID DESC
+			   LIMIT  1
+			) AS arc
+		WHERE arc.ProcessedDate IS NOT NULL;
+        
+		UPDATE Temp_Cust AS tmpCust
+			INNER JOIN Temp_ReactiveCust AS cte ON cte.CustID = tmpCust.CustID
+		SET tmpCust.IsReactived = 1;
 
     END IF;	
 	
@@ -91,7 +116,7 @@ BEGIN
 		INNER JOIN CTS_DataCenter.ProbationAccountMonitor AS pro ON pro.CustID = tmpCc.CustID
 	SET IsProbationLastDay = (CASE WHEN pro.CreatedDate <= lv_LastDayProbation THEN 1 /*Up to Smart, Risky*/ ELSE 0 END)
 	WHERE tmpCc.CategoryGroup = CATEGORY_GROUP_PROBATION;
-    
+           
     #4. Return data set
 	SELECT	DISTINCT tmpCust.CustID
 		,	CASE
@@ -99,7 +124,11 @@ BEGIN
                 WHEN tmpCc.CategoryGroup = CONST_GROUP_INACTIVE THEN tmpCc.CategoryID
                 ELSE tmpCc.CategoryGroup
 			END AS CategoryID
-		,   CASE WHEN tmpCust.CreatedDate >= DATE_SUB(lv_CurrentTime, INTERVAL 29 DAY) THEN 1 ELSE 0 END AS IsNewCreated
+		,   CASE 
+				WHEN tmpCust.CreatedDate >= DATE_SUB(lv_CurrentTime, INTERVAL 29 DAY) THEN 1 
+                WHEN tmpCust.InsertedTime >= DATE_SUB(lv_CurrentTime, INTERVAL 29 DAY) AND tmpCust.IsReactived = 1 THEN 1 
+                ELSE 0 
+			END AS IsNewCreated
         ,	tmpCc.IsProbationLastDay AS IsProbationLastDay
 	FROM Temp_Cust AS tmpCust
 		LEFT JOIN Temp_CustCategory AS tmpCc ON tmpCc.CustID = tmpCust.CustID;
