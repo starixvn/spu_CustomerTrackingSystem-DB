@@ -44,7 +44,7 @@ sp:BEGIN
 		,	RobotDate	DATETIME
         ,	RobotMonth	DATETIME	       
         
-        ,	PRIMARY KEY PK_Temp_CustRobot_RobotTypeCustID(RobotType, CustID)
+        ,	PRIMARY KEY PK_Temp_CustRobot_RobotTypeCustID(RobotDate, RobotType, CustID)
         ,	INDEX IX_Temp_CustRobot_RobotDateRobotTypeCustID(RobotDate, RobotType, CustID)
         ,	INDEX IX_Temp_CustRobot_RobotMonthRobotTypeCustID(RobotMonth, RobotType, CustID)
 	);   
@@ -98,9 +98,9 @@ sp:BEGIN
    
     IF ip_IsMonthly = 1 THEN
 		SELECT 	tmpCr.RobotMonth AS 'DateRange'
-			,	SUM(CASE WHEN tmpCr.RobotType = 1 THEN 1 ELSE 0 END) AS 'AI'
-            ,	SUM(CASE WHEN tmpCr.RobotType = 2 THEN 1 ELSE 0 END) AS 'IMPERVA'
-            ,	SUM(CASE WHEN tmpCr.RobotType = 3 THEN 1 ELSE 0 END) AS 'COUNTER'
+			,	COUNT(DISTINCT(CASE WHEN tmpCr.RobotType = 1 THEN CustID ELSE NULL END)) AS 'AI'
+            ,	COUNT(DISTINCT(CASE WHEN tmpCr.RobotType = 2 THEN CustID ELSE NULL END)) AS 'IMPERVA'
+            ,	COUNT(DISTINCT(CASE WHEN tmpCr.RobotType = 3 THEN CustID ELSE NULL END)) AS 'COUNTER'
             ,	COUNT(DISTINCT tmpCr.CustID) AS TotalAccount
         FROM Temp_CustRobot AS tmpCr
         GROUP BY tmpCr.RobotMonth; 
@@ -114,9 +114,9 @@ sp:BEGIN
     
 	IF ip_IsDaily = 1 THEN
 		SELECT DATE(tmpCr.RobotDate) AS 'DateRange'
-			,	SUM(CASE WHEN tmpCr.RobotType = 1 THEN 1 ELSE 0 END) AS 'AI'
-            ,	SUM(CASE WHEN tmpCr.RobotType = 2 THEN 1 ELSE 0 END) AS 'IMPERVA'
-            ,	SUM(CASE WHEN tmpCr.RobotType = 3 THEN 1 ELSE 0 END) AS 'COUNTER'
+			,	COUNT(DISTINCT(CASE WHEN tmpCr.RobotType = 1 THEN CustID ELSE NULL END)) AS 'AI'
+            ,	COUNT(DISTINCT(CASE WHEN tmpCr.RobotType = 2 THEN CustID ELSE NULL END)) AS 'IMPERVA'
+            ,	COUNT(DISTINCT(CASE WHEN tmpCr.RobotType = 3 THEN CustID ELSE NULL END)) AS 'COUNTER'
             ,	COUNT(DISTINCT tmpCr.CustID) AS TotalAccount
         FROM Temp_CustRobot AS tmpCr
         GROUP BY tmpCr.RobotDate;     
