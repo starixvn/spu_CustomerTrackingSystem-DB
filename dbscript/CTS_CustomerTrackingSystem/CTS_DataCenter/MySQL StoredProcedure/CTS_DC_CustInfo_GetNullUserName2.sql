@@ -25,8 +25,12 @@ BEGIN
         
         Example: 
 			- CALL CTS_DC_CTSCustomer_GetNULLUserName2 (500,0)
-	*/	  
-    IF ip_IsCustSub = 1 THEN
+	*/
+	DECLARE lv_MaxCTSCustID 	BIGINT UNSIGNED;
+    DECLARE lv_LastCTSCustID 	BIGINT UNSIGNED;
+    DECLARE lv_Last5Minute		DATETIME;
+    
+    IF ip_IsCustSub = 1 THEN # Get 
 		IF (ip_PreCTSCustID = 0) THEN
 			SET	ip_PreCTSCustID = 35314000; # ON PRO The First CustSubID > 0 and UserName2 IS NULL 
 		END IF;
@@ -43,6 +47,33 @@ BEGIN
 	END IF;
     
     IF ip_IsCustSub = 0 THEN
+		SELECT MAX(CTSCustID) 
+		INTO lv_MaxCTSCustID 
+		FROM CTS_DataCenter.CTSCustomer AS cus;
+		
+		SELECT TIMESTAMPADD(MINUTE, -5, cus.CreatedDate)
+		INTO lv_Last5Minute 
+		FROM CTS_DataCenter.CTSCustomer AS cus
+		WHERE cus.CTSCustID = lv_MaxCTSCustID;
+		
+		SELECT cus.CTSCustID
+		INTO lv_LastCTSCustID 
+		FROM CTS_DataCenter.CTSCustomer AS cus
+		WHERE	cus.CTSCustID > ip_LastCTSCustID
+			AND cus.CreatedDate = lv_Last5Minute
+		ORDER BY CTSCustID
+		LIMIT 1; 
+		
+		SELECT	cus.CTSCustID
+			,	cus.CustID
+			,	cus.CustSubID
+		FROM CTS_DataCenter.CTSCustomer AS cus USE INDEX(IX_CTSCustomer_UserName2_CTSCustID_CustSubID)
+		WHERE   cus.UserName2 IS NULL
+			AND cus.CTSCustID > ip_LastCTSCustID
+			AND cus.CustSubID > 0
+		ORDER BY cus.CTSCustID 
+		LIMIT ip_Size;   
+        
     END IF;
     
 END$$

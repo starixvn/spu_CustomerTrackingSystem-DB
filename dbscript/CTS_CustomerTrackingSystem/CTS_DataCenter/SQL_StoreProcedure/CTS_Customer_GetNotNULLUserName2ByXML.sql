@@ -4,7 +4,8 @@ SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
 GO
 ALTER PROCEDURE	CTS_Customer_GetNotNULLUserName2ByXML
-	@custXML	XML
+		@custXML	XML
+	,	@Is_CustSub	BIT
 AS
 /*
 	Creator:	20210115@CaseyHuynh
@@ -33,7 +34,7 @@ BEGIN;
 	END;
 
 	CREATE TABLE #tmpInputCust (
-		CustID		INT
+			CustID		INT
 		,	CustSubID	INT
 		,	CTSCustID	BIGINT
 	);
@@ -45,13 +46,29 @@ BEGIN;
 	FROM @custXML.nodes('//Customer') AS T(C)
 	OPTION (OPTIMIZE FOR (@custXML = NULL));
 	
-	SELECT	tmpCus.CustID
-		,	tmpCus.CustSubID
-		,	cusSub.UserName2
-		,	tmpCus.CTSCustID
-	FROM	dbo.CustSub AS cusSub WITH (NOLOCK)
-	INNER JOIN #tmpInputCust AS tmpCus WITH(NOLOCK) ON cusSub.subaccid = tmpCus.CustSubID
-	WHERE	cusSub.username2 IS NOT NULL AND tmpCus.CustSubID > 0
-	;
+	IF @Is_CustSub = 1
+	BEGIN
+		SELECT	tmpCus.CustID
+			,	tmpCus.CustSubID
+			,	cusSub.UserName2
+			,	tmpCus.CTSCustID
+		FROM	dbo.CustSub AS cusSub WITH (NOLOCK)
+		INNER JOIN #tmpInputCust AS tmpCus WITH(NOLOCK) ON cusSub.subaccid = tmpCus.CustSubID
+		WHERE	cusSub.username2 IS NOT NULL AND tmpCus.CustSubID > 0
+		;
+	END;
+
+		
+	IF @Is_CustSub = 0
+	BEGIN
+		SELECT	cus.CustID
+			,	0 AS CustSubID
+			,	cus.UserName2
+			,	tmpCus.CTSCustID
+		FROM	dbo.Customer AS cus WITH (NOLOCK)
+		INNER JOIN #tmpInputCust AS tmpCus WITH(NOLOCK) ON cus.CustID = cus.CustID
+		WHERE	cus.username2 IS NOT NULL;
+		;
+	END;
 END;
 GO
