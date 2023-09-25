@@ -142,7 +142,7 @@ BEGIN
 		,	Hdp					SMALLMONEY
 		,	IsLicensee			BIT
 		,	BetFrom				NVARCHAR(4)
-		,	Reason				SMALLINT DEFAULT 0
+		,	Reason				VARCHAR(50) DEFAULT '0'
 		,	ListReason			VARCHAR(MAX)
 		,	AGroup				INT  DEFAULT 0
 		,	MGroup				INT  DEFAULT 0
@@ -178,7 +178,7 @@ BEGIN
 
 	CREATE TABLE #tmpTransIds(
 			TransId		BIGINT NOT NULL 
-		,	Reason		SMALLINT
+		,	Reason		VARCHAR(50) DEFAULT '0'
 		,	AGroup		INT
 		,	MGroup		INT
 	);
@@ -221,7 +221,7 @@ BEGIN
 	END;
 
 	CREATE TABLE	#tmpSupportedReason(
-			Reason		SMALLINT PRIMARY KEY 
+			Reason		VARCHAR(50) DEFAULT '0' PRIMARY KEY 
 	);
 
 
@@ -378,7 +378,7 @@ BEGIN
 		BEGIN
 			INSERT INTO #tmpTransIds (TransID,Reason,AGroup,MGroup)
 			SELECT	ISNULL(JSON_VALUE(ssk.value, '$.TransID'),0) AS TransID
-				,	ISNULL(JSON_VALUE(ssk.value, '$.Reason'),0) AS Reason
+				,	ISNULL(JSON_VALUE(ssk.value, '$.Reason'),'0') AS Reason
 				,	ISNULL(JSON_VALUE(ssk.value, '$.AGroup'),0) AS AGroup
 				,	ISNULL(JSON_VALUE(ssk.value, '$.MGroup'),0) AS MGroup
 			FROM OPENJSON (@ListTransId) AS ssk;
@@ -492,7 +492,7 @@ BEGIN
 										WHEN st.IsFilterHdp = 1 AND st.IsOnlyGetHdp1 = 0 THEN  (CASE WHEN b.BetTeam = 'h'	THEN (b.Hdp2 - b.Hdp1)
 																									WHEN b.BetTeam = 'a'	THEN (b.Hdp1 - b.Hdp2) END) END)
 						,	b.BetFrom
-						,	ISNULL(tmpTs.Reason,0)
+						,	ISNULL(tmpTs.Reason,'0')
 						,	ISNULL(tmpTs.AGroup,0)
 						,	ISNULL(tmpTs.MGroup,0)
 					FROM #tmpTransIds AS tmpTs WITH(NOLOCK)
@@ -539,7 +539,7 @@ BEGIN
 										WHEN st.IsFilterHdp = 1 AND st.IsOnlyGetHdp1 = 0 THEN  (CASE WHEN b.BetTeam = 'h'	THEN (b.Hdp2 - b.Hdp1)
 																									WHEN b.BetTeam = 'a'	THEN (b.Hdp1 - b.Hdp2) END) END)
 						,	b.BetFrom
-						,	ISNULL(tmpTs.Reason,0)
+						,	ISNULL(tmpTs.Reason,'0')
 						,	ISNULL(tmpTs.AGroup,0)
 						,	ISNULL(tmpTs.MGroup,0)
 					FROM #tmpTransIds AS tmpTs WITH(NOLOCK)
@@ -586,7 +586,7 @@ BEGIN
 										WHEN st.IsFilterHdp = 1 AND st.IsOnlyGetHdp1 = 0 THEN  (CASE WHEN b.BetTeam = 'h'	THEN (b.Hdp2 - b.Hdp1)
 																									WHEN b.BetTeam = 'a'	THEN (b.Hdp1 - b.Hdp2) END) END)
 						,	b.BetFrom
-						,	ISNULL(tmpTs.Reason,0)
+						,	ISNULL(tmpTs.Reason,'0')
 						,	ISNULL(tmpTs.AGroup,0)
 						,	ISNULL(tmpTs.MGroup,0)
 					FROM #tmpTransIds AS tmpTs WITH(NOLOCK)
@@ -632,7 +632,7 @@ BEGIN
 										 WHEN st.IsFilterHdp = 1 AND st.IsOnlyGetHdp1 = 0 THEN  (CASE WHEN b.BetTeam = 'h'	THEN (b.Hdp2 - b.Hdp1)
 																									  WHEN b.BetTeam = 'a'	THEN (b.Hdp1 - b.Hdp2) END) END)
 							,	b.BetFrom
-						,	ISNULL(tmpTs.Reason,0)
+						,	ISNULL(tmpTs.Reason,'0')
 						,	ISNULL(tmpTs.AGroup,0)
 						,	ISNULL(tmpTs.MGroup,0)
 						FROM dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
@@ -682,7 +682,7 @@ BEGIN
 																								END)
 									 END)
 							,	b.BetFrom							
-						,	ISNULL(tmpTs.Reason,0)
+						,	ISNULL(tmpTs.Reason,'0')
 						,	ISNULL(tmpTs.AGroup,0)
 						,	ISNULL(tmpTs.MGroup,0)
 						FROM dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
@@ -842,14 +842,14 @@ BEGIN
 				CREATE TABLE #tmpTransIdReason(
 						TransId			BIGINT NOT NULL PRIMARY KEY
 					,	ListReason		VARCHAR(MAX)
-					,	MinReason		SMALLINT	
+					,	MinReason		VARCHAR(50) DEFAULT '0'	
 				);
 
 
 				--Delete ticket is not in Reason Filter
 				DELETE t
 				FROM #tmpTickets AS t
-					LEFT JOIN #tmpSupportedReason AS c ON c.Reason = ISNULL(t.Reason,0)
+					LEFT JOIN #tmpSupportedReason AS c ON c.Reason = ISNULL(t.Reason,'0')
 				WHERE c.Reason IS NULL;
 
 				--Delete Dup ticket 
