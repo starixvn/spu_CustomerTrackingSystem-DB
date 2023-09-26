@@ -6,6 +6,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustInfo_GetNullUserName2`(
 		IN ip_PreCTSCustID	INT
     ,	IN ip_Size			INT
     ,	IN ip_IsCustSub		BOOLEAN
+    ,	IN op_LastCTSCustID	BIGINT UNSIGNED
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -59,7 +60,7 @@ BEGIN
 										AND cus.CreatedDate >= lv_Last5Minute); 
 	
         SELECT cus.CTSCustID 
-        INTO lv_LastCTSCustID
+        INTO op_LastCTSCustID
 		FROM CTS_DataCenter.CTSCustomer AS cus
 		WHERE cus.CTSCustID BETWEEN ip_PreCTSCustID AND lv_MaxCTSCustID
 			AND cus.CreatedDate <= lv_Last5Minute
@@ -74,8 +75,7 @@ BEGIN
 			AND cus.CTSCustID BETWEEN ip_PreCTSCustID AND lv_MaxCTSCustID
 			AND cus.CustSubID = 0
 		ORDER BY cus.CTSCustID;
-	
-        SELECT lv_LastCTSCustID AS LastCTSCustID;
+
     END IF;
     
 END$$

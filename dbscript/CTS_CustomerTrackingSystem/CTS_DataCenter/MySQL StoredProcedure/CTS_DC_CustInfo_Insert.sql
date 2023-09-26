@@ -367,7 +367,6 @@ BEGIN
 		,	RoleID
     	,	CustSubID 
 	FROM Temp_Result;
-
   
 END$$
 DELIMITER ;
