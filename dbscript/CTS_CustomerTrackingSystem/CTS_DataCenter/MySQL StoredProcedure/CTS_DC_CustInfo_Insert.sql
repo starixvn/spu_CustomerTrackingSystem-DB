@@ -37,6 +37,7 @@ BEGIN
             - 20220930@Aries.Nguyen: Renovate Association Detection [RedmineID: #178311]
             - 20221202@Victoria.Le:	 Add columns DangerSabaSc (Saba Soccer) and DangerSabaBkb (Saba Baseketball) [Redmine ID: #181208]
 			- 20230602@Long.Luu:	Add new agent as internal account [Redmine ID: #188554]
+            - 20230926@Casey.Huynh: Create New Category before Insert New Customer [Redmine ID: #193049]
 
 		Param's Explanation (filtered by):
 		Example:
