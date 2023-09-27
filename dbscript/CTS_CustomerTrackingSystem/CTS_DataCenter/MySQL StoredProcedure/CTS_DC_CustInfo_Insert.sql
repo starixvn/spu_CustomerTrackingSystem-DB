@@ -291,12 +291,12 @@ BEGIN
     SELECT GROUP_CONCAT(CustID)
     INTO lv_CustIDList
     FROM Temp_CTSCustomer AS tmpCus
-    WHERE	tmpCus.DuplicateType = 0
-		AND	tmpCus.RoleID = 1
+    WHERE	tmpCus.RoleID = 1
         AND tmpCus.CustSubID = 0;
     
-    CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount_NewCategory(lv_CustIDList);
-    
+    IF lv_CustIDList IS NOT NULL THEN
+		CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount_NewCategory(lv_CustIDList);
+    END IF;
     #=====INSERT NEW CUSTOMER=====================================
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomer(SubscriberID, CustID, CustSubID, UserName, UserName2, SiteID, Site, RoleID, Currency, CurrencyID
 			, SRecommend, MRecommend, Recommend, CreatedDate , RegisterName , CustStatusID , Danger1 ,Danger2 , Danger3 , Danger4 , Danger5, DangerSabaSc, DangerSabaBkb , InsertedTime , ModifiedTime, IsLicensee, IsInternal)
@@ -340,8 +340,10 @@ BEGIN
     	,	cus.CustSubID
     FROM	Temp_CTSCustomer AS tmpCus
 		INNER JOIN 	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID AND tmpCus.CustSubID = cus.CustSubID;   
-
-    CALL CTS_DataCenter.CTS_DC_CustClassification_UpdateCustInfo(lv_CustIDList);
+	
+	IF lv_CustIDList IS NOT NULL THEN
+		CALL CTS_DataCenter.CTS_DC_CustClassification_UpdateCustInfo(lv_CustIDList);
+    END IF;
     
 	#=====UPDATE CTSCustomerClassification====================
     UPDATE CTS_DataCenter.CTSCustomerClassification AS cc

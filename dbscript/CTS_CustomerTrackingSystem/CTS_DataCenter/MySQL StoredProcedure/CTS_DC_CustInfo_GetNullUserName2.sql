@@ -6,7 +6,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustInfo_GetNullUserName2`(
 		IN ip_PreCTSCustID	INT
     ,	IN ip_Size			INT
     ,	IN ip_IsCustSub		BOOLEAN
-    ,	IN op_LastCTSCustID	BIGINT UNSIGNED
+    ,	OUT op_LastCTSCustID	BIGINT UNSIGNED
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -28,7 +28,6 @@ BEGIN
 			- CALL CTS_DC_CustInfo_GetNullUserName2 (@ip_PreCTSCustID:=1000237249,@ip_Size:=NULL,@ip_IsCustSub:=0);
 	*/
     DECLARE lv_MaxCTSCustID 	BIGINT UNSIGNED;
-    DECLARE lv_LastCTSCustID 	BIGINT UNSIGNED;
     DECLARE lv_Last5Minute		DATETIME;
     
     IF ip_IsCustSub = 1 THEN # Get 
@@ -49,16 +48,23 @@ BEGIN
     
     IF ip_IsCustSub = 0 THEN
 		
-		SELECT MAX(cus.CTSCustID) 
+		SELECT cus.CTSCustID
 		INTO lv_MaxCTSCustID
-		FROM CTS_DataCenter.CTSCustomer AS cus;
+		FROM CTS_DataCenter.CTSCustomer AS cus
+        ORDER BY CTSCustID DESC
+        LIMIT 1;   
         
         SET lv_Last5Minute = TIMESTAMPADD(MINUTE, -5, NOW());
-        SET lv_LastCTSCustID = ( 	SELECT IFNULL(cus.CTSCustID, lv_MaxCTSCustID)
-									FROM CTS_DataCenter.CTSCustomer AS cus
-                                    WHERE cus.CTSCustID > ip_PreCTSCustID
-										AND cus.CreatedDate >= lv_Last5Minute); 
-	
+             
+
+        SELECT CTSCustID
+        INTO op_LastCTSCustID
+		FROM CTS_DataCenter.CTSCustomer AS cus
+		WHERE cus.CTSCustID > ip_PreCTSCustID
+			AND cus.CreatedDate >= lv_Last5Minute;                                         
+       
+		SET op_LastCTSCustID = IFNULL(op_LastCTSCustID,lv_MaxCTSCustID);
+    
         SELECT cus.CTSCustID 
         INTO op_LastCTSCustID
 		FROM CTS_DataCenter.CTSCustomer AS cus
@@ -80,3 +86,4 @@ BEGIN
     
 END$$
 DELIMITER ;
+

@@ -44,10 +44,12 @@ BEGIN
 	WHERE cc.CategoryId = 201
 	LIMIT 1;
     
-    SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_Customer (CustID) VALUES ('", REPLACE(ip_CustIDList, ",", "'),('"),"');");
-	PREPARE 	stmt1 FROM @sql;
-	EXECUTE 	stmt1;    
-	
+    IF ip_CustIDList IS NOT NULL THEN
+		SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_Customer (CustID) VALUES ('", REPLACE(ip_CustIDList, ",", "'),('"),"');");
+		PREPARE 	stmt1 FROM @sql;
+		EXECUTE 	stmt1;    
+	END IF;
+    
     /* 1: INSERT CTSCustomerClassification */
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CustID, SportGroupID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
 	SELECT	tmp.CustID					AS CustID
