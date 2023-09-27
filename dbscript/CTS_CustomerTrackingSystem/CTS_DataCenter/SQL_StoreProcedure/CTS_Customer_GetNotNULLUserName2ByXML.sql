@@ -66,7 +66,7 @@ BEGIN;
 			,	cus.UserName2
 			,	tmpCus.CTSCustID
 		FROM	dbo.Customer AS cus WITH (NOLOCK)
-		INNER JOIN #tmpInputCust AS tmpCus WITH(NOLOCK) ON cus.CustID = cus.CustID
+		INNER JOIN #tmpInputCust AS tmpCus WITH(NOLOCK) ON cus.CustID = tmpCus.CustID
 		WHERE	cus.username2 IS NOT NULL;
 		;
 	END;
