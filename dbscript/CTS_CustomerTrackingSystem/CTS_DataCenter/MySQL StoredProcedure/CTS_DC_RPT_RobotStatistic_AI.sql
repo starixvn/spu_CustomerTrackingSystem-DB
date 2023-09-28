@@ -38,8 +38,7 @@ sp:BEGIN
 		,	RobotDate	DATETIME
         ,	RobotMonth	DATETIME       
         
-        ,	PRIMARY KEY PK_Temp_CustRobot_RobotTypeCustID(RobotDate, AIType, CustID)
-        ,	INDEX IX_Temp_CustRobot_RobotDateRobotTypeCustID(RobotDate, AIType, CustID)
+        ,	PRIMARY KEY PK_Temp_CustRobot_RobotDateRobotTypeCustID(RobotDate, AIType, CustID)
         ,	INDEX IX_Temp_CustRobot_RobotMonthRobotTypeCustID(RobotMonth, AIType, CustID)
 	);   
 
@@ -56,8 +55,7 @@ sp:BEGIN
 	FROM CTS_DataCenter.RobotDetection AS rd
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON rd.CustID = cus.CustID AND cus.CustSubID = 0
 	WHERE DATE(rd.CreatedDate) BETWEEN ip_FromDate AND ip_ToDate
-		AND cus.IsLicensee = IFNULL(ip_IsLicensee,cus.IsLicensee)
-    ORDER BY rd.ID ASC;
+		AND cus.IsLicensee = IFNULL(ip_IsLicensee,cus.IsLicensee);
 
     #======================RETURN DATA===============================================================
    

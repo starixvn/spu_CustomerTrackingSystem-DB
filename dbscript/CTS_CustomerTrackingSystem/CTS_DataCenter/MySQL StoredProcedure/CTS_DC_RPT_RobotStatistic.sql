@@ -44,8 +44,7 @@ sp:BEGIN
 		,	RobotDate	DATETIME
         ,	RobotMonth	DATETIME	       
         
-        ,	PRIMARY KEY PK_Temp_CustRobot_RobotTypeCustID(RobotDate, RobotType, CustID)
-        ,	INDEX IX_Temp_CustRobot_RobotDateRobotTypeCustID(RobotDate, RobotType, CustID)
+        ,	PRIMARY KEY PK_Temp_CustRobot_RobotDateRobotTypeCustID(RobotDate, RobotType, CustID)
         ,	INDEX IX_Temp_CustRobot_RobotMonthRobotTypeCustID(RobotMonth, RobotType, CustID)
 	);   
 	
@@ -58,8 +57,7 @@ sp:BEGIN
 	FROM CTS_DataCenter.RobotDetection AS rd
     		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON rd.CustID = cus.CustID AND cus.CustSubID = 0
 	WHERE DATE(rd.CreatedDate) BETWEEN ip_FromDate AND ip_ToDate
-		AND cus.IsLicensee = IFNULL(ip_IsLicensee,cus.IsLicensee)
-    ORDER BY rd.ID ASC;
+		AND cus.IsLicensee = IFNULL(ip_IsLicensee,cus.IsLicensee);
     
     #======================INSERT ROBOT IMPERVA=========================================================
 	INSERT IGNORE INTO Temp_CustRobot(CustID, RobotType, RobotDate, RobotMonth)
@@ -70,8 +68,7 @@ sp:BEGIN
 	FROM CTS_DataCenter.RobotImperva AS ri
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ri.CustID = cus.CustID AND cus.CustSubID = 0
 	WHERE DATE(ri.CreateTime) BETWEEN ip_FromDate AND ip_ToDate
-		AND cus.IsLicensee = IFNULL(ip_IsLicensee,cus.IsLicensee)
-    ORDER BY ri.LogID ASC;
+		AND cus.IsLicensee = IFNULL(ip_IsLicensee,cus.IsLicensee);
     
     #======================INSERT ROBOT COUNTER=========================================================
     IF ip_CustCounterJs <> '' THEN
