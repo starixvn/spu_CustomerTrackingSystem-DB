@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_InsertNorma
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_InsertNormalAccount_NewCategory`(
-		IN ip_CustIDList TEXT
+		IN ip_TableName VARCHAR(200)
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -18,7 +18,7 @@ BEGIN
 		Param's Explanation (filtered by):
         
         Example:
-				- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount_NewCategory('13552401,13552402,13552403');
+				- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount_NewCategory('Temp_CustNewCategory');
 */ 
 	DECLARE	CONST_GROUP_NORMAL 			INT DEFAULT 200;
     DECLARE CONST_CATEGORY_NEWMEMBER	INT DEFAULT 201;
@@ -30,6 +30,8 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
     CREATE TEMPORARY TABLE Temp_Customer(
 			CustID			INT PRIMARY KEY
+		,	IsInternal		BOOLEAN
+        ,	SiteID			INT
 	);
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustomerHistory;
@@ -43,12 +45,17 @@ BEGIN
 	FROM CTS_DataCenter.CustomerCategory AS cc
 	WHERE cc.CategoryId = 201
 	LIMIT 1;
-    
-    IF ip_CustIDList IS NOT NULL THEN
-		SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_Customer (CustID) VALUES ('", REPLACE(ip_CustIDList, ",", "'),('"),"');");
-		PREPARE 	stmt1 FROM @sql;
-		EXECUTE 	stmt1;    
-	END IF;
+
+	SET @sql =CONCAT('	INSERT IGNORE INTO Temp_Customer (CustID, IsInternal, SiteID) 
+						SELECT	ipTbl.CustID
+							,	ipTbl.IsInternal
+                            ,	ipTbl.SiteID
+						FROM ',ip_TableName,' AS ipTbl'
+						);
+	PREPARE 	stmt1 FROM @sql;
+	EXECUTE 	stmt1; 
+
+    CALL CTS_DataCenter.CTS_DC_ExcludeCustByCondition_NewCategory('Temp_Customer');
     
     /* 1: INSERT CTSCustomerClassification */
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CustID, SportGroupID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)

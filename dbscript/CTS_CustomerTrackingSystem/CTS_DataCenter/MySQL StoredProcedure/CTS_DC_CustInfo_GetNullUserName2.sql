@@ -57,11 +57,13 @@ BEGIN
         SET lv_Last5Minute = TIMESTAMPADD(MINUTE, -5, NOW());
              
 
-        SELECT CTSCustID
+        SELECT cus.CTSCustID
         INTO op_LastCTSCustID
 		FROM CTS_DataCenter.CTSCustomer AS cus
 		WHERE cus.CTSCustID > ip_PreCTSCustID
-			AND cus.CreatedDate >= lv_Last5Minute;                                         
+			AND cus.CreatedDate >= lv_Last5Minute
+		ORDER BY cus.CTSCustID
+		LIMIT 1;                                         
        
 		SET op_LastCTSCustID = IFNULL(op_LastCTSCustID,lv_MaxCTSCustID);
     

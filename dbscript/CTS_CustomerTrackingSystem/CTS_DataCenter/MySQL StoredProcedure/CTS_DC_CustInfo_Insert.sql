@@ -41,11 +41,12 @@ BEGIN
 
 		Param's Explanation (filtered by):
 		Example:
-			- CALL CTS_DataCenter.CTS_DC_CustInfo_Insert ('[
+			 CALL CTS_DataCenter.CTS_DC_CustInfo_Insert('[
 				 {"BatchId":1,"CustID":10040738,"CustStatusID":1,"UserName":"HAIFARMB01151207","UserName2":"haifa$20297251","Site":"haifa","SiteID":44,"RoleID":1,"CurrencyID":13,"Currency":"RMB","SRecommend":4359240,"MRecommend":4359287,"Recommend":4359308,"CreatedDate":"2013-01-27 05:56:00.000","Danger1":0,"Danger2":0,"Danger3":0,"CustSubID":0}
 				,{"BatchId":1,"CustID":15124347,"CustStatusID":1,"UserName":"HAIFARMB01554620","UserName2":"haifa$40834748","Site":"haifa","SiteID":44,"RoleID":1,"CurrencyID":13,"Currency":"RMB","SRecommend":4359240,"MRecommend":4359287,"Recommend":4359308,"CreatedDate":"2014-06-19 09:12:00.000","Danger1":0,"Danger2":0,"Danger3":0,"CustSubID":0}
 				,{"BatchId":1,"CustID":18349232,"CustStatusID":1,"UserName":"HAIFARMB01897790","UserName2":"haifa$83884255","Site":"haifa","SiteID":44,"RoleID":1,"CurrencyID":13,"Currency":"RMB","SRecommend":4359240,"MRecommend":4359287,"Recommend":4359308,"CreatedDate":"2015-06-28 07:22:00.000","Danger1":0,"Danger2":0,"Danger3":0,"CustSubID":0}]');
-	*/
+	
+    */
 	DECLARE lv_LastArchiveID 	BIGINT UNSIGNED;
     DECLARE	lv_CustIDList		TEXT;
     
@@ -128,6 +129,13 @@ BEGIN
     	,	CustSubID		INT UNSIGNED NOT NULL
         ,	PRIMARY KEY		PK_Temp_Result(CTSCustID)
 		,	INDEX			IX_Temp_Result_CustID(CustID,CustSubID)
+	);
+	
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustNewCategory;
+    CREATE TEMPORARY TABLE Temp_CustNewCategory(
+			CustID			INT PRIMARY KEY
+        ,	IsInternal		BOOLEAN
+        ,	SiteID			INT
 	);
 
     INSERT INTO Temp_CTSCustomer(CustID, CustStatusID, Danger1, Danger2, Danger3, Danger4, Danger5, DangerSabaSc, DangerSabaBkb, CustSubID, UserName, UserName2, SiteID, Site, RoleID, Currency, CurrencyID, SRecommend, MRecommend, Recommend, CreatedDate,IsLicensee,IsInternal)
@@ -288,15 +296,16 @@ BEGIN
 		, tmpCus.RegisterName = cus.RegisterName;      
 	
     #====CREATE CATEGORY NEW FOR NEW MEMBER (RoleID = 0)=====================================
-    SELECT GROUP_CONCAT(CustID)
-    INTO lv_CustIDList
+    INSERT INTO Temp_CustNewCategory(CustID, IsInternal, SiteID)
+    SELECT	tmpCus.CustID
+		,	tmpCus.IsInternal
+        ,	tmpCus.SiteID
     FROM Temp_CTSCustomer AS tmpCus
-    WHERE	tmpCus.RoleID = 1
-        AND tmpCus.CustSubID = 0;
+    WHERE tmpCus.RoleID = 1
+        AND tmpCus.CustSubID = 0;    
+   
+	CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount_NewCategory('Temp_CustNewCategory');
     
-    IF lv_CustIDList IS NOT NULL THEN
-		CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount_NewCategory(lv_CustIDList);
-    END IF;
     #=====INSERT NEW CUSTOMER=====================================
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomer(SubscriberID, CustID, CustSubID, UserName, UserName2, SiteID, Site, RoleID, Currency, CurrencyID
 			, SRecommend, MRecommend, Recommend, CreatedDate , RegisterName , CustStatusID , Danger1 ,Danger2 , Danger3 , Danger4 , Danger5, DangerSabaSc, DangerSabaBkb , InsertedTime , ModifiedTime, IsLicensee, IsInternal)
