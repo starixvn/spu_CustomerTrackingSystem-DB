@@ -27,7 +27,7 @@ SELECT 	trans.TransID
 FROM DCS_DataCenter.Transaction07 PARTITION(pw202324) AS trans
 WHERE trans.BotDetectionValue IN (64, 16384, 524288);
 
-UPDATE DCS_DataCenter.Transaction07 AS trans
+UPDATE DCS_DataCenter.Transaction07 PARTITION(pw202324) AS trans
 	INNER JOIN DCS_DataCenter.Transaction07_Temp AS tmp ON tmp.TransID = trans.TransID
 	INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = tmp.UserAgentKey
 SET 	trans.Flagged = 1
@@ -47,7 +47,7 @@ SELECT 	trans.TransID
 FROM DCS_DataCenter.Transaction07 PARTITION(pw202325) AS trans
 WHERE trans.BotDetectionValue IN (64, 16384, 524288);
 
-UPDATE DCS_DataCenter.Transaction07 AS trans
+UPDATE DCS_DataCenter.Transaction07 PARTITION(pw202325) AS trans
 	INNER JOIN DCS_DataCenter.Transaction07_Temp AS tmp ON tmp.TransID = trans.TransID
 	INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = tmp.UserAgentKey
 SET 	trans.Flagged = 1
@@ -67,7 +67,7 @@ SELECT 	trans.TransID
 FROM DCS_DataCenter.Transaction07 PARTITION(pw202326) AS trans
 WHERE trans.BotDetectionValue IN (64, 16384, 524288);
 
-UPDATE DCS_DataCenter.Transaction07 AS trans
+UPDATE DCS_DataCenter.Transaction07 PARTITION(pw202326) AS trans
 	INNER JOIN DCS_DataCenter.Transaction07_Temp AS tmp ON tmp.TransID = trans.TransID
 	INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = tmp.UserAgentKey
 SET 	trans.Flagged = 1
@@ -87,7 +87,7 @@ SELECT 	trans.TransID
 FROM DCS_DataCenter.Transaction07 PARTITION(pw202327) AS trans
 WHERE trans.BotDetectionValue IN (64, 16384, 524288);
 
-UPDATE DCS_DataCenter.Transaction07 AS trans
+UPDATE DCS_DataCenter.Transaction07 PARTITION(pw202327) AS trans
 	INNER JOIN DCS_DataCenter.Transaction07_Temp AS tmp ON tmp.TransID = trans.TransID
 	INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = tmp.UserAgentKey
 SET 	trans.Flagged = 1
@@ -107,7 +107,7 @@ SELECT 	trans.TransID
 FROM DCS_DataCenter.Transaction07 PARTITION(pw202328) AS trans
 WHERE trans.BotDetectionValue IN (64, 16384, 524288);
 
-UPDATE DCS_DataCenter.Transaction07 AS trans
+UPDATE DCS_DataCenter.Transaction07 PARTITION(pw202328) AS trans
 	INNER JOIN DCS_DataCenter.Transaction07_Temp AS tmp ON tmp.TransID = trans.TransID
 	INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = tmp.UserAgentKey
 SET 	trans.Flagged = 1
@@ -127,7 +127,7 @@ SELECT 	trans.TransID
 FROM DCS_DataCenter.Transaction07 PARTITION(pw202329) AS trans
 WHERE trans.BotDetectionValue IN (64, 16384, 524288);
 
-UPDATE DCS_DataCenter.Transaction07 AS trans
+UPDATE DCS_DataCenter.Transaction07 PARTITION(pw202329) AS trans
 	INNER JOIN DCS_DataCenter.Transaction07_Temp AS tmp ON tmp.TransID = trans.TransID
 	INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = tmp.UserAgentKey
 SET 	trans.Flagged = 1
@@ -147,7 +147,7 @@ SELECT 	trans.TransID
 FROM DCS_DataCenter.Transaction07 PARTITION(pw202330) AS trans
 WHERE trans.BotDetectionValue IN (64, 16384, 524288);
 
-UPDATE DCS_DataCenter.Transaction07 AS trans
+UPDATE DCS_DataCenter.Transaction07 PARTITION(pw202330) AS trans
 	INNER JOIN DCS_DataCenter.Transaction07_Temp AS tmp ON tmp.TransID = trans.TransID
 	INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = tmp.UserAgentKey
 SET 	trans.Flagged = 1
@@ -167,7 +167,7 @@ SELECT 	trans.TransID
 FROM DCS_DataCenter.Transaction07 PARTITION(pw202331) AS trans
 WHERE trans.BotDetectionValue IN (64, 16384, 524288);
 
-UPDATE DCS_DataCenter.Transaction07 AS trans
+UPDATE DCS_DataCenter.Transaction07 PARTITION(pw202331) AS trans
 	INNER JOIN DCS_DataCenter.Transaction07_Temp AS tmp ON tmp.TransID = trans.TransID
 	INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = tmp.UserAgentKey
 SET 	trans.Flagged = 1
@@ -187,7 +187,7 @@ SELECT 	trans.TransID
 FROM DCS_DataCenter.Transaction07 PARTITION(pw202332) AS trans
 WHERE trans.BotDetectionValue IN (64, 16384, 524288);
 
-UPDATE DCS_DataCenter.Transaction07 AS trans
+UPDATE DCS_DataCenter.Transaction07 PARTITION(pw202332) AS trans
 	INNER JOIN DCS_DataCenter.Transaction07_Temp AS tmp ON tmp.TransID = trans.TransID
 	INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = tmp.UserAgentKey
 SET 	trans.Flagged = 1
@@ -207,7 +207,7 @@ SELECT 	trans.TransID
 FROM DCS_DataCenter.Transaction07 PARTITION(pw202333) AS trans
 WHERE trans.BotDetectionValue IN (64, 16384, 524288);
 
-UPDATE DCS_DataCenter.Transaction07 AS trans
+UPDATE DCS_DataCenter.Transaction07 PARTITION(pw202333) AS trans
 	INNER JOIN DCS_DataCenter.Transaction07_Temp AS tmp ON tmp.TransID = trans.TransID
 	INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = tmp.UserAgentKey
 SET 	trans.Flagged = 1
@@ -227,7 +227,7 @@ SELECT 	trans.TransID
 FROM DCS_DataCenter.Transaction07 PARTITION(pw202334) AS trans
 WHERE trans.BotDetectionValue IN (64, 16384, 524288);
 
-UPDATE DCS_DataCenter.Transaction07 AS trans
+UPDATE DCS_DataCenter.Transaction07 PARTITION(pw202334) AS trans
 	INNER JOIN DCS_DataCenter.Transaction07_Temp AS tmp ON tmp.TransID = trans.TransID
 	INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = tmp.UserAgentKey
 SET 	trans.Flagged = 1
@@ -247,7 +247,7 @@ SELECT 	trans.TransID
 FROM DCS_DataCenter.Transaction07 PARTITION(pw202335) AS trans
 WHERE trans.BotDetectionValue IN (64, 16384, 524288);
 
-UPDATE DCS_DataCenter.Transaction07 AS trans
+UPDATE DCS_DataCenter.Transaction07 PARTITION(pw202335) AS trans
 	INNER JOIN DCS_DataCenter.Transaction07_Temp AS tmp ON tmp.TransID = trans.TransID
 	INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = tmp.UserAgentKey
 SET 	trans.Flagged = 1
@@ -267,7 +267,7 @@ SELECT 	trans.TransID
 FROM DCS_DataCenter.Transaction07 PARTITION(pw202336) AS trans
 WHERE trans.BotDetectionValue IN (64, 16384, 524288);
 
-UPDATE DCS_DataCenter.Transaction07 AS trans
+UPDATE DCS_DataCenter.Transaction07 PARTITION(pw202336) AS trans
 	INNER JOIN DCS_DataCenter.Transaction07_Temp AS tmp ON tmp.TransID = trans.TransID
 	INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = tmp.UserAgentKey
 SET 	trans.Flagged = 1
@@ -287,7 +287,7 @@ SELECT 	trans.TransID
 FROM DCS_DataCenter.Transaction07 PARTITION(pw202337) AS trans
 WHERE trans.BotDetectionValue IN (64, 16384, 524288);
 
-UPDATE DCS_DataCenter.Transaction07 AS trans
+UPDATE DCS_DataCenter.Transaction07 PARTITION(pw202337) AS trans
 	INNER JOIN DCS_DataCenter.Transaction07_Temp AS tmp ON tmp.TransID = trans.TransID
 	INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = tmp.UserAgentKey
 SET 	trans.Flagged = 1
@@ -307,7 +307,7 @@ SELECT 	trans.TransID
 FROM DCS_DataCenter.Transaction07 PARTITION(pw202338) AS trans
 WHERE trans.BotDetectionValue IN (64, 16384, 524288);
 
-UPDATE DCS_DataCenter.Transaction07 AS trans
+UPDATE DCS_DataCenter.Transaction07 PARTITION(pw202338) AS trans
 	INNER JOIN DCS_DataCenter.Transaction07_Temp AS tmp ON tmp.TransID = trans.TransID
 	INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = tmp.UserAgentKey
 SET 	trans.Flagged = 1
@@ -327,7 +327,7 @@ SELECT 	trans.TransID
 FROM DCS_DataCenter.Transaction07 PARTITION(pw202339) AS trans
 WHERE trans.BotDetectionValue IN (64, 16384, 524288);
 
-UPDATE DCS_DataCenter.Transaction07 AS trans
+UPDATE DCS_DataCenter.Transaction07 PARTITION(pw202339) AS trans
 	INNER JOIN DCS_DataCenter.Transaction07_Temp AS tmp ON tmp.TransID = trans.TransID
 	INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = tmp.UserAgentKey
 SET 	trans.Flagged = 1
