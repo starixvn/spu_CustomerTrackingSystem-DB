@@ -19,7 +19,7 @@ ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_TicketDetails]
 	,	@ListCurrency				VARCHAR(MAX) = NULL
 	,	@ListHDPBetTeam				VARCHAR(MAX) = NULL
 	,	@ListScore					VARCHAR(MAX) = NULL
-	,	@CustAmountRM				MONEY = NULL
+	,	@CustAmountRM				MONEY = 0
 	,	@BetID						BIGINT = 0
 	,	@ListDanger					VARCHAR(MAX) = NULL
 	,	@ListStatus					VARCHAR(50) = NULL
@@ -316,6 +316,14 @@ BEGIN
 			CustID	ASC
 	);
 
+	IF	OBJECT_ID('tempdb..#tmpCustByAmount') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmptmpCustByAmount;
+	END;
+
+	CREATE TABLE	#tmpCustByAmount(
+			CustID	INT
+	);
 	--=======GET BALANCE UP/ MOVE BET DAY===========================================================
 	INSERT INTO #tmpBUMBData(BUDay,MBDay)
 	EXECUTE bodb02.dbo.Age_SelBalanceUpDay;
@@ -453,8 +461,8 @@ BEGIN
 				AND ISNULL(b.oddstype,0) <> 0
 			ORDER BY b.sequenceid ASC
 				;
-		END
-	ELSE IF (@QueryType = 2)
+		END;
+	IF (@QueryType = 2)
 		BEGIN --Get Ticket for MM Details Report 
 			----==================GET Trans==================
 			IF @IsGetDataFromBK = 1
@@ -598,111 +606,179 @@ BEGIN
 				END
 				ELSE IF (@TicketType = 0)
 				BEGIN	
-					IF (@BatchSize = 0) ---GET TotalTicket
+					IF (@CustAmountRM > 0) 
 					BEGIN
-
-						INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
-						SELECT b.sequenceid
-							,	b.transid
-							,	b.transdate
-							,	b.matchid
-							,	m.eventdate
-							,	m.Eventstatus
-							,	m.GlobalShowTime
-							,	m.homeid
-							,	m.awayid
-							,	m.leagueid
-							,	m.sporttype
-							,	b.bettype
-							,	b.custid
-							,	b.betteam
-							,	b.betid
-							,	b.stake * b.actualrate 
-							,	b.stake
-							,	b.odds
-							,	b.hdp1
-							,	b.hdp2
-							,	b.livehomescore
-							,	b.liveawayscore
-							,	b.statusID
-							,	b.liveindicator
-							,	e.currency
-							,	e.ExchangeId
-							,	ABS(CASE WHEN st.IsFilterHdp = 1 AND st.IsOnlyGetHdp1 = 1 THEN	b.Hdp1
-										 WHEN st.IsFilterHdp = 1 AND st.IsOnlyGetHdp1 = 0 THEN  (CASE WHEN b.BetTeam = 'h'	THEN (b.Hdp2 - b.Hdp1)
-																									  WHEN b.BetTeam = 'a'	THEN (b.Hdp1 - b.Hdp2) END) END)
-							,	b.BetFrom
-						,	ISNULL(tmpTs.Reason,'0')
-						,	ISNULL(tmpTs.AGroup,0)
-						,	ISNULL(tmpTs.MGroup,0)
-						FROM dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
+						INSERT INTO #tmpCustAmount(CustID)
+						SELECT b.CustID
+						FROM dbo.bettrans AS b WITH(NOLOCK)
 							INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
-							INNER JOIN #tmpSupportedSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportType AND b.bettype = st.BetType 
+							INNER JOIN #tmpSupportedSportBettype AS t WITH(NOLOCK) ON m.sporttype = t.SportType AND b.bettype = t.BetType
 							INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
-							LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
-						WHERE	b.matchid = @MatchID
-							AND b.liveindicator = @IsLive
+						WHERE b.matchid = @MatchID
 							AND b.bettype = @BetType
+							AND b.liveindicator = @IsLive
 							AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
-							AND (@BetID = 0 OR (@BetID > 0 AND st.IsFilterBetID = 1 AND b.betid = @BetID));
+							AND (@BetID = 0 OR (@BetID > 0 AND t.IsFilterBetID = 1 AND b.betid = @BetID))
+						GROUP BY b.CustID
+						HAVING SUM(b.stake * b.actualrate) >= @CustAmountRM;	
+						
+						INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
+							SELECT b.sequenceid
+								,	b.transid
+								,	b.transdate
+								,	b.matchid
+								,	m.eventdate
+								,	m.Eventstatus
+								,	m.GlobalShowTime
+								,	m.homeid
+								,	m.awayid
+								,	m.leagueid
+								,	m.sporttype
+								,	b.bettype
+								,	b.custid
+								,	b.betteam
+								,	b.betid
+								,	b.stake * b.actualrate 
+								,	b.stake
+								,	b.odds
+								,	b.hdp1
+								,	b.hdp2
+								,	b.livehomescore
+								,	b.liveawayscore
+								,	b.statusID
+								,	b.liveindicator
+								,	e.currency
+								,	e.ExchangeId
+								,	ABS(CASE WHEN st.IsFilterHdp = 1 AND st.IsOnlyGetHdp1 = 1 THEN	b.Hdp1
+											 WHEN st.IsFilterHdp = 1 AND st.IsOnlyGetHdp1 = 0 THEN  (CASE WHEN b.BetTeam = 'h'	THEN (b.Hdp2 - b.Hdp1)
+																										  WHEN b.BetTeam = 'a'	THEN (b.Hdp1 - b.Hdp2) END) END)
+								,	b.BetFrom
+							,	ISNULL(tmpTs.Reason,'0')
+							,	ISNULL(tmpTs.AGroup,0)
+							,	ISNULL(tmpTs.MGroup,0)
+							FROM dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
+								INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
+								INNER JOIN #tmpSupportedSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportType AND b.bettype = st.BetType 
+								INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency	
+								INNER JOIN #tmpCustAmount AS tmpCa ON tmpCa.CustId = b.CustId
+								LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
+							WHERE	b.matchid = @MatchID
+								AND b.liveindicator = @IsLive
+								AND b.bettype = @BetType
+								AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
+								AND (@BetID = 0 OR (@BetID > 0 AND st.IsFilterBetID = 1 AND b.betid = @BetID));
+				
+					END;
+
+					IF (@CustAmountRM <= 0) 
+					BEGIN
+						IF (@BatchSize = 0) ---GET TotalTicket
+						BEGIN
+
+							INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
+							SELECT b.sequenceid
+								,	b.transid
+								,	b.transdate
+								,	b.matchid
+								,	m.eventdate
+								,	m.Eventstatus
+								,	m.GlobalShowTime
+								,	m.homeid
+								,	m.awayid
+								,	m.leagueid
+								,	m.sporttype
+								,	b.bettype
+								,	b.custid
+								,	b.betteam
+								,	b.betid
+								,	b.stake * b.actualrate 
+								,	b.stake
+								,	b.odds
+								,	b.hdp1
+								,	b.hdp2
+								,	b.livehomescore
+								,	b.liveawayscore
+								,	b.statusID
+								,	b.liveindicator
+								,	e.currency
+								,	e.ExchangeId
+								,	ABS(CASE WHEN st.IsFilterHdp = 1 AND st.IsOnlyGetHdp1 = 1 THEN	b.Hdp1
+											 WHEN st.IsFilterHdp = 1 AND st.IsOnlyGetHdp1 = 0 THEN  (CASE WHEN b.BetTeam = 'h'	THEN (b.Hdp2 - b.Hdp1)
+																										  WHEN b.BetTeam = 'a'	THEN (b.Hdp1 - b.Hdp2) END) END)
+								,	b.BetFrom
+							,	ISNULL(tmpTs.Reason,'0')
+							,	ISNULL(tmpTs.AGroup,0)
+							,	ISNULL(tmpTs.MGroup,0)
+							FROM dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
+								INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
+								INNER JOIN #tmpSupportedSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportType AND b.bettype = st.BetType 
+								INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
+								LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
+							WHERE	b.matchid = @MatchID
+								AND b.liveindicator = @IsLive
+								AND b.bettype = @BetType
+								AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
+								AND (@BetID = 0 OR (@BetID > 0 AND st.IsFilterBetID = 1 AND b.betid = @BetID));
 							
-					END
-					ELSE IF (@BatchSize > 0) --- GET Ticket Details 
-					BEGIN
-						INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
-						SELECT TOP (@BatchSize) b.sequenceid
-							,	b.transid
-							,	b.transdate
-							,	b.matchid
-							,	m.eventdate
-							,	m.Eventstatus
-							,	m.GlobalShowTime
-							,	m.homeid
-							,	m.awayid
-							,	m.leagueid
-							,	m.sporttype
-							,	b.bettype
-							,	b.custid
-							,	b.betteam
-							,	b.betid
-							,	b.stake * b.actualrate 
-							,	b.stake
-							,	b.odds
-							,	b.hdp1
-							,	b.hdp2
-							,	b.livehomescore
-							,	b.liveawayscore
-							,	b.statusID
-							,	b.liveindicator
-							,	e.currency
-							,	e.ExchangeId
-							,	ABS(CASE WHEN st.IsFilterHdp = 1 AND st.IsOnlyGetHdp1 = 1 THEN	b.Hdp1
-										 WHEN st.IsFilterHdp = 1 AND st.IsOnlyGetHdp1 = 0 THEN  (CASE WHEN b.BetTeam = 'h'	THEN (b.Hdp2 - b.Hdp1)
-																									  WHEN b.BetTeam = 'a'	THEN (b.Hdp1 - b.Hdp2)
-																								END)
-									 END)
-							,	b.BetFrom							
-						,	ISNULL(tmpTs.Reason,'0')
-						,	ISNULL(tmpTs.AGroup,0)
-						,	ISNULL(tmpTs.MGroup,0)
-						FROM dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
-							INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
-							INNER JOIN dbo.league AS l WITH(NOLOCK) ON l.leagueid = m.leagueid
-							INNER JOIN #tmpSupportedSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportType AND b.bettype = st.BetType 
-							INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
-							LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
-						WHERE	b.matchid = @MatchID
-							AND b.liveindicator = @IsLive
-							AND b.bettype = @BetType
-							AND b.sequenceid < @LastScannedSequenceID
-							AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
-							AND (@BetID = 0 OR (@BetID > 0 AND st.IsFilterBetID = 1 AND b.betid = @BetID))
-						ORDER BY b.sequenceid DESC;
+						END
+						ELSE IF (@BatchSize > 0) --- GET Ticket Details 
+						BEGIN
+							INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
+							SELECT TOP (@BatchSize) b.sequenceid
+								,	b.transid
+								,	b.transdate
+								,	b.matchid
+								,	m.eventdate
+								,	m.Eventstatus
+								,	m.GlobalShowTime
+								,	m.homeid
+								,	m.awayid
+								,	m.leagueid
+								,	m.sporttype
+								,	b.bettype
+								,	b.custid
+								,	b.betteam
+								,	b.betid
+								,	b.stake * b.actualrate 
+								,	b.stake
+								,	b.odds
+								,	b.hdp1
+								,	b.hdp2
+								,	b.livehomescore
+								,	b.liveawayscore
+								,	b.statusID
+								,	b.liveindicator
+								,	e.currency
+								,	e.ExchangeId
+								,	ABS(CASE WHEN st.IsFilterHdp = 1 AND st.IsOnlyGetHdp1 = 1 THEN	b.Hdp1
+											 WHEN st.IsFilterHdp = 1 AND st.IsOnlyGetHdp1 = 0 THEN  (CASE WHEN b.BetTeam = 'h'	THEN (b.Hdp2 - b.Hdp1)
+																										  WHEN b.BetTeam = 'a'	THEN (b.Hdp1 - b.Hdp2)
+																									END)
+										 END)
+								,	b.BetFrom							
+							,	ISNULL(tmpTs.Reason,'0')
+							,	ISNULL(tmpTs.AGroup,0)
+							,	ISNULL(tmpTs.MGroup,0)
+							FROM dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
+								INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
+								INNER JOIN dbo.league AS l WITH(NOLOCK) ON l.leagueid = m.leagueid
+								INNER JOIN #tmpSupportedSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportType AND b.bettype = st.BetType 
+								INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
+								LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
+							WHERE	b.matchid = @MatchID
+								AND b.liveindicator = @IsLive
+								AND b.bettype = @BetType
+								AND b.sequenceid < @LastScannedSequenceID
+								AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
+								AND (@BetID = 0 OR (@BetID > 0 AND st.IsFilterBetID = 1 AND b.betid = @BetID))
+							ORDER BY b.sequenceid DESC;
 
-						SET @MinSequenceId = (SELECT MIN(SequenceId) FROM #tmpTickets);
+							SET @MinSequenceId = (SELECT MIN(SequenceId) FROM #tmpTickets);
 
 
-					END 
+						END 
+					END;
+					
 				END;
 			END;
 
@@ -937,7 +1013,7 @@ BEGIN
 			END;		
 
 			--========================Cust Amount(RM)==================	
-			IF (@CustAmountRM IS NOT NULL)
+			IF (@CustAmountRM > 0)
 			BEGIN
 				-- Delete ticket if Sum(Cust's Stake) < @CustAmountRM
 
