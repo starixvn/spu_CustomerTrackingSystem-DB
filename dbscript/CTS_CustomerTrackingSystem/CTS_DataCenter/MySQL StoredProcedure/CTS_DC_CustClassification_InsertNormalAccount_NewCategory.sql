@@ -55,7 +55,7 @@ BEGIN
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1; 
 
-    CALL CTS_DataCenter.CTS_DC_ExcludeCustByCondition_NewCategory('Temp_Customer');
+    CALL CTS_DataCenter.CTS_DC_ExcludeCustomer(2,'Temp_Customer');
     
     /* 1: INSERT CTSCustomerClassification */
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CustID, SportGroupID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
