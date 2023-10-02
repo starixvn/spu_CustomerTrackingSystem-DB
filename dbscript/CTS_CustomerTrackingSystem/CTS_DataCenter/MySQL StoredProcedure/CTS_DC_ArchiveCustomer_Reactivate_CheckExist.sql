@@ -42,7 +42,7 @@ sp: BEGIN
 				, 	temp.ReactiveTime			
 	 FROM JSON_TABLE(ip_CustJson,
 		"$[*]" COLUMNS(
-				CustID 					BIGINT UNSIGNED		PATH "$.CustId"
+				CustID 					BIGINT UNSIGNED		PATH "$.CustID"
 			, 	ReactiveTime			DATETIME			PATH "$.LogTime"
 		 )) AS 	temp;
          
