@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_ArchiveCustomer_Reactivate_CheckExist`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_ArchiveCustomer_Reactivate_CheckExist`(
-		IN ip_CustIDs  LONGTEXT
+        IN ip_CustJson  JSON
 )
     SQL SECURITY INVOKER
 sp: BEGIN
@@ -15,6 +15,7 @@ sp: BEGIN
 
 		Revisions:
 			- 	20220713@Aries.Nguyen: Created [Redmine ID: #175406]
+            - 	20230929@Jonas.Huynh: Fix issue reactive customer with wrong category [Redmine ID: #193050]
             
 		Param's Explanation (filtered by):	
 
@@ -22,13 +23,29 @@ sp: BEGIN
 			
 	*/
     DECLARE lv_LastArchiveID 	BIGINT UNSIGNED;
+    DECLARE lv_CurrentTime 		DATETIME DEFAULT CURRENT_TIMESTAMP();
+        
+    DROP TEMPORARY TABLE IF EXISTS Temp_Customer;    
+	CREATE TEMPORARY TABLE Temp_Customer(	  	
+			CustID				BIGINT UNSIGNED PRIMARY KEY
+        , 	ReactiveTime		DATETIME
+	); 
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustReactivate;
     CREATE TEMPORARY TABLE 		Temp_CustReactivate (
         	CustID				BIGINT UNSIGNED 
-		,	ArchiveID			BIGINT UNSIGNED PRIMARY KEY 
-    );    
-    
+		,	ArchiveID			BIGINT UNSIGNED PRIMARY KEY        
+    );        
+      
+    INSERT IGNORE INTO Temp_Customer(CustID, ReactiveTime)
+	SELECT DISTINCT temp.CustID
+				, 	temp.ReactiveTime			
+	 FROM JSON_TABLE(ip_CustJson,
+		"$[*]" COLUMNS(
+				CustID 					BIGINT UNSIGNED		PATH "$.CustId"
+			, 	ReactiveTime			DATETIME			PATH "$.LogTime"
+		 )) AS 	temp;
+         
 	SELECT ParameterValue
 	INTO lv_LastArchiveID
 	FROM CTS_DataCenter.SystemParameter
@@ -37,13 +54,20 @@ sp: BEGIN
     INSERT INTO Temp_CustReactivate(ArchiveID, CustID)
 	SELECT 	ar.ID AS ArchiveID
 		,	ar.CustID
-	FROM JSON_TABLE(CONCAT('[',ip_CustIDs,']'),'$[*]' COLUMNS(NESTED PATH '$' COLUMNS (CustID BIGINT UNSIGNED PATH '$'))) AS tmp
+	FROM Temp_Customer AS tmp
 		INNER JOIN CTS_DataCenter.ArchiveCustomer_CTSCustomer AS ar ON ar.CustID = tmp.CustID AND ar.ID > lv_LastArchiveID;
         
 	UPDATE CTS_DataCenter.ArchiveCustomer_CTSCustomer AS ar 
+		INNER JOIN Temp_Customer AS c ON c.CustID = ar.CustID 
 	SET		ar.IsReactivated = 1
-		,	ar.ReactivateDate = NOW()
+		,	ar.ReactivateDate = c.ReactiveTime
     WHERE EXISTS (SELECT 1 FROM Temp_CustReactivate AS tmp WHERE ar.ID = tmp.ArchiveID);
+        
+	INSERT INTO CTS_DataCenter.ArchiveCustomer_CTSCustomer (ArchivedDate, CustID, IsReactivated, ReactivateDate, InsertTime)
+    SELECT  temp.ReactiveTime, temp.CustID, 1, temp.ReactiveTime, lv_CurrentTime
+    FROM  Temp_Customer AS temp
+		LEFT JOIN Temp_CustReactivate AS cr ON cr.CustID = temp.CustID
+    WHERE cr.CustID IS NULL;
     
     SELECT 	DISTINCT 
 			CustID

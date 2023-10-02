@@ -17,7 +17,7 @@ BEGIN
 			- 20230120@Long.Luu [Redmine ID: #182997]: Support special case for Inactive (return CategoryID instead of CategoryGroup) 
             - 20230427@Jonas.Huynh [Redmine ID: #186678]: Renovate normal classification
             - 20230605@Jonas.Huynh [Redmine ID: #186684]: Renovate normal classification (phase2)
-            - 20230915@Jonas.Huynh [Redmine ID: #193050]: HF Wrong Inactive Category for New and Realtime flow exclude S/R/P with not latest category 
+            - 20230915@Jonas.Huynh [Redmine ID: #193050]: HF Wrong Inactive Category for New and Realtime flow exclude S/R/P with not latest category
             
 		Param's Explanation:
         
@@ -80,11 +80,11 @@ BEGIN
 			(
 			   SELECT arc.CustID, arc.ProcessedDate
 			   FROM   CTS_DataCenter.ArchiveCustomer_CTSCustomer AS arc
-			   WHERE  arc.CustID = tmp.CustID AND arc.CustSubID = 0 
+			   WHERE  arc.CustID = tmp.CustID AND arc.CustSubID = 0
 			   ORDER BY arc.ID DESC
 			   LIMIT  1
 			) AS arc
-		WHERE arc.ProcessedDate IS NOT NULL;
+		WHERE arc.IsReactivated = 1;
         
 		UPDATE Temp_Cust AS tmpCust
 			INNER JOIN Temp_ReactiveCust AS cte ON cte.CustID = tmpCust.CustID
