@@ -45,7 +45,9 @@ sp: BEGIN
 				CustID 					BIGINT UNSIGNED		PATH "$.CustID"
 			, 	ReactiveTime			DATETIME			PATH "$.LogTime"
 		 )) AS 	temp;
-         
+ 
+    select * from Temp_Customer;
+    
 	SELECT ParameterValue
 	INTO lv_LastArchiveID
 	FROM CTS_DataCenter.SystemParameter
@@ -62,9 +64,9 @@ sp: BEGIN
 	SET		ar.IsReactivated = 1
 		,	ar.ReactivateDate = c.ReactiveTime
     WHERE EXISTS (SELECT 1 FROM Temp_CustReactivate AS tmp WHERE ar.ID = tmp.ArchiveID);
-        
-	INSERT INTO CTS_DataCenter.ArchiveCustomer_CTSCustomer (ArchivedDate, CustID, IsReactivated, ReactivateDate, InsertTime)
-    SELECT  temp.ReactiveTime, temp.CustID, 1, temp.ReactiveTime, lv_CurrentTime
+    
+    INSERT INTO CTS_DataCenter.ArchiveCustomer_CTSCustomer (ArchivedDate, CustID, CTSCustID, CustSubID, IsReactivated, ReactivateDate, InsertTime)
+    SELECT  temp.ReactiveTime, temp.CustID, 0, 0, 1, temp.ReactiveTime, lv_CurrentTime
     FROM  Temp_Customer AS temp
 		LEFT JOIN Temp_CustReactivate AS cr ON cr.CustID = temp.CustID
     WHERE cr.CustID IS NULL;

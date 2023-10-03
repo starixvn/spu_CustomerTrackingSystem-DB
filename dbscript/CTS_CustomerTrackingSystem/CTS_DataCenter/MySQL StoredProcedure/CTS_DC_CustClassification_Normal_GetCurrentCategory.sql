@@ -78,13 +78,14 @@ BEGIN
 		FROM   Temp_Cust AS tmp
 			,LATERAL 
 			(
-			   SELECT arc.CustID, arc.ProcessedDate
+			   SELECT arc.CustID, arc.IsReactivated, arc.ReactivateDate
 			   FROM   CTS_DataCenter.ArchiveCustomer_CTSCustomer AS arc
 			   WHERE  arc.CustID = tmp.CustID AND arc.CustSubID = 0
 			   ORDER BY arc.ID DESC
 			   LIMIT  1
 			) AS arc
-		WHERE arc.IsReactivated = 1;
+		WHERE arc.IsReactivated = 1
+			AND arc.ReactivateDate >= DATE_SUB(lv_CurrentTime, INTERVAL 29 DAY);
         
 		UPDATE Temp_Cust AS tmpCust
 			INNER JOIN Temp_ReactiveCust AS cte ON cte.CustID = tmpCust.CustID
