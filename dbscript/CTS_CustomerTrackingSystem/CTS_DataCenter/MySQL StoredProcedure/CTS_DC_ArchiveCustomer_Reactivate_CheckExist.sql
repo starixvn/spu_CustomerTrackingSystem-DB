@@ -34,9 +34,10 @@ sp: BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_CustReactivate;
     CREATE TEMPORARY TABLE 		Temp_CustReactivate (
         	CustID				BIGINT UNSIGNED 
-		,	ArchiveID			BIGINT UNSIGNED PRIMARY KEY        
+		,	ArchiveID			BIGINT UNSIGNED PRIMARY KEY
     );        
-      
+     
+     
     INSERT IGNORE INTO Temp_Customer(CustID, ReactiveTime)
 	SELECT DISTINCT temp.CustID
 				, 	temp.ReactiveTime			
@@ -58,7 +59,19 @@ sp: BEGIN
 		,	ar.CustID
 	FROM Temp_Customer AS tmp
 		INNER JOIN CTS_DataCenter.ArchiveCustomer_CTSCustomer AS ar ON ar.CustID = tmp.CustID AND ar.ID > lv_LastArchiveID;
-        
+	
+    INSERT INTO Temp_CustReactivate(ArchiveID, CustID)
+	SELECT DISTINCT r.ID, r.CustID
+	FROM   Temp_Customer AS tmp
+		,LATERAL 
+		(
+		   SELECT arc.ID, arc.CustID
+		   FROM   CTS_DataCenter.ArchiveCustomer_CTSCustomer AS arc
+		   WHERE  arc.CustID = tmp.CustID AND arc.CustSubID = 0
+		   ORDER BY arc.ID DESC
+		   LIMIT  1
+		) AS r;
+            
 	UPDATE CTS_DataCenter.ArchiveCustomer_CTSCustomer AS ar 
 		INNER JOIN Temp_Customer AS c ON c.CustID = ar.CustID 
 	SET		ar.IsReactivated = 1
