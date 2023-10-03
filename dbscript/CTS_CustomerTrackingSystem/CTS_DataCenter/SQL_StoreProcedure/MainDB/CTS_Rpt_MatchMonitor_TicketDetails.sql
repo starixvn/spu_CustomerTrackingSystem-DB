@@ -662,9 +662,10 @@ BEGIN
 								INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency	
 								INNER JOIN #tmpCustAmount AS tmpCa ON tmpCa.CustId = b.CustId
 								LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
-							WHERE	b.matchid = @MatchID
+							WHERE	b.matchid = @MatchID								
 								AND b.liveindicator = @IsLive
 								AND b.bettype = @BetType
+								AND b.sequenceid < @LastScannedSequenceID
 								AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
 								AND (@BetID = 0 OR (@BetID > 0 AND st.IsFilterBetID = 1 AND b.betid = @BetID));
 				
@@ -714,9 +715,10 @@ BEGIN
 								INNER JOIN #tmpSupportedSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportType AND b.bettype = st.BetType 
 								INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 								LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
-							WHERE	b.matchid = @MatchID
+							WHERE	b.matchid = @MatchID								
 								AND b.liveindicator = @IsLive
 								AND b.bettype = @BetType
+								AND b.sequenceid < @LastScannedSequenceID
 								AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
 								AND (@BetID = 0 OR (@BetID > 0 AND st.IsFilterBetID = 1 AND b.betid = @BetID));
 							
