@@ -15,6 +15,7 @@ AS
 	Revisions:
 		-20210115@Casey.Huynh: Created [Redmine ID: 148849]
         -20210222@Casey.Huynh: Remove Get UserName2 Info from Customer [149941]
+		-20231003@Casey.Huynh: Add Get UserName2 Info from Customer [193050]
 
 	Developer's Notes:
 		- @Example:			NULL		- Explaination [DEFAULT]
