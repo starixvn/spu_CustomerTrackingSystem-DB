@@ -100,9 +100,9 @@ CREATE TABLE DCS_DataWatch.DailyRobotMonitoring(
 ) ENGINE=InnoDB;
 
 
-DROP TABLE IF EXISTS DCS_DataWatch.TicketLite;
+DROP TABLE IF EXISTS DCS_DataWatch.BetTicketLite;
 
-CREATE TABLE DCS_DataWatch.TicketLite(
+CREATE TABLE DCS_DataWatch.BetTicketLite(
 		ID 					BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
 	, 	TransDate			DATETIME NOT NULL
 	, 	CustID				BIGINT UNSIGNED DEFAULT NULL
@@ -112,8 +112,8 @@ CREATE TABLE DCS_DataWatch.TicketLite(
 	, 	CreatedTime			DATETIME DEFAULT NULL
 	, 	ModifiedTime		DATETIME DEFAULT NULL
 	,	PRIMARY KEY (`ID`)
-	,	INDEX `IX_TicketLite_CustID` (`CustID`)
-	,	UNIQUE INDEX `UX_TicketLite_Group` (`TransDate`,`CustID`)
+	,	INDEX `IX_BetTicketLite_CustID` (`CustID`)
+	,	UNIQUE INDEX `UX_BetTicketLite_Group` (`TransDate`,`CustID`)
 ) ENGINE=InnoDB;
 -- ALTER TABLE DCS_DataWatch.TicketLite
 --     PARTITION BY RANGE (YEARWEEK(`TransDate`,0))(
