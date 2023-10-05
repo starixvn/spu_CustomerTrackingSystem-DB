@@ -30,7 +30,7 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_InputTrans(
 			ID 					BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
 		, 	TransDate			DATETIME NOT NULL
-		, 	CustID				BIGINT UNSIGNED DEFAULT NULL
+		, 	CustID				INT UNSIGNED DEFAULT NULL
 		, 	BetCount			INT UNSIGNED DEFAULT 0
 		, 	FirstBetTicketTime	DATETIME DEFAULT NULL
 		, 	LastBetTicketTime	DATETIME DEFAULT NULL
@@ -48,20 +48,20 @@ BEGIN
 			ip_InputJson,
 			 "$[*]" COLUMNS(
 					TransDate				DATETIME			PATH "$.TransDate"
-				,	CustID					BIGINT UNSIGNED		PATH "$.CustID"
+				,	CustID					INT UNSIGNED		PATH "$.CustID"
 				,	BetCount				INT UNSIGNED		PATH "$.BetCount"
 				,	FirstBetTicketTime		DATETIME			PATH "$.FirstBetTicketTime"
 				,	LastBetTicketTime		DATETIME			PATH "$.LastBetTicketTime"
 			)
 		) AS tmp;
 
-	UPDATE DCS_DataWatch.BetTicketLite AS bt
+	UPDATE DCS_DataWatch.BetTicket AS bt
 		INNER JOIN Temp_InputTrans AS tmp ON tmp.TransDate = bt.TransDate AND tmp.CustID = bt.CustID
 	SET bt.BetCount = tmp.BetCount,
 		bt.ModifiedTime = lv_CurrentDatetime,
 		tmp.IsUpdate = 1;
 
-	INSERT INTO DCS_DataWatch.BetTicketLite(TransDate, CustID, BetCount, FirstBetTicketTime, LastBetTicketTime, CreatedTime, ModifiedTime)
+	INSERT INTO DCS_DataWatch.BetTicket(TransDate, CustID, BetCount, FirstBetTicketTime, LastBetTicketTime, CreatedTime, ModifiedTime)
 	SELECT 	TransDate
 		,	CustID
         ,	BetCount

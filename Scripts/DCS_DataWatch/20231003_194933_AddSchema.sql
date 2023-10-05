@@ -31,11 +31,11 @@ INSERT INTO DCS_DataWatch.SystemSetting(ID, VGroup, VName, VValue, UpdatedTime)
 VALUES(1, 'Sumary', 'TransID', 0, CURRENT_TIMESTAMP);
 
 INSERT INTO DCS_DataWatch.SystemSetting(ID, VGroup, VName, VValue, UpdatedTime)
-VALUES(2, 'DailyMonitoring', 'Date', 0, CURRENT_TIMESTAMP);
+VALUES(2, 'MissingLoginTransaction', 'TransDate', '2023-01-01', CURRENT_TIMESTAMP);
 
-DROP TABLE IF EXISTS DCS_DataWatch.TransactionLite;
+DROP TABLE IF EXISTS DCS_DataWatch.LoginTransaction;
 
-CREATE TABLE DCS_DataWatch.TransactionLite(
+CREATE TABLE DCS_DataWatch.LoginTransaction(
 		ID 					BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
 	, 	TransDate			DATETIME NOT NULL
 	, 	SubscriberID		INT UNSIGNED DEFAULT NULL
@@ -43,38 +43,20 @@ CREATE TABLE DCS_DataWatch.TransactionLite(
 	, 	DeviceID			BIGINT UNSIGNED DEFAULT NULL
 	, 	Flagged				SMALLINT DEFAULT NULL
 	, 	TotalTrans			INT UNSIGNED DEFAULT NULL
+	, 	FirstLoginTransTime	DATETIME DEFAULT NULL
+	, 	LastLoginTransTime	DATETIME DEFAULT NULL
 	, 	CreatedTime			DATETIME DEFAULT NULL
 	, 	ModifiedTime		DATETIME DEFAULT NULL
 	,	PRIMARY KEY (`ID`)
-	,	INDEX `IX_TransactionLite_SubscriberID` (`SubscriberID`)
-	,	INDEX `IX_TransactionLite_AccountID` (`AccountID`)
+	,	INDEX `IX_LoginTransaction_SubscriberID` (`SubscriberID`)
+	,	INDEX `IX_LoginTransaction_AccountID` (`AccountID`)
 	,	UNIQUE INDEX `UX_TransactionLite_Group` (`TransDate`,`AccountID`,`SubscriberID`,`DeviceID`,`Flagged`)
 ) ENGINE=InnoDB;
--- ALTER TABLE DCS_DataWatch.TransactionLite
---     PARTITION BY RANGE (YEARWEEK(`TransDate`,0))(
---     PARTITION pw202322 VALUES LESS THAN (202323),
---     PARTITION pw202323 VALUES LESS THAN (202324),
---     PARTITION pw202324 VALUES LESS THAN (202325),
---     PARTITION pw202325 VALUES LESS THAN (202326),
---     PARTITION pw202326 VALUES LESS THAN (202327),
---     PARTITION pw202327 VALUES LESS THAN (202328),
---     PARTITION pw202328 VALUES LESS THAN (202329),
---     PARTITION pw202329 VALUES LESS THAN (202330),
---     PARTITION pw202330 VALUES LESS THAN (202331),
---     PARTITION pw202331 VALUES LESS THAN (202332),
---     PARTITION pw202332 VALUES LESS THAN (202333),
---     PARTITION pw202333 VALUES LESS THAN (202334),
---     PARTITION pw202334 VALUES LESS THAN (202335),
---     PARTITION pw202335 VALUES LESS THAN (202336),
---     PARTITION pw202336 VALUES LESS THAN (202337),
---     PARTITION pw202337 VALUES LESS THAN (202338),
---     PARTITION pw202338 VALUES LESS THAN (202339),
--- 	PARTITION pw299999 VALUES LESS THAN MAXVALUE);
 
 
-DROP TABLE IF EXISTS DCS_DataWatch.DailyTransactionMonitoring;
+DROP TABLE IF EXISTS DCS_DataWatch.DailyLoginTransactionMonitoring;
 
-CREATE TABLE DCS_DataWatch.DailyTransactionMonitoring(
+CREATE TABLE DCS_DataWatch.DailyLoginTransactionMonitoring(
 		ID 								INT UNSIGNED NOT NULL AUTO_INCREMENT
 	, 	TransDate						DATETIME NOT NULL
 	, 	SubscriberID					INT UNSIGNED DEFAULT NULL
@@ -82,72 +64,67 @@ CREATE TABLE DCS_DataWatch.DailyTransactionMonitoring(
 	, 	CreatedTime						DATETIME DEFAULT NULL
 	, 	ModifiedTime					DATETIME DEFAULT NULL
 	,	PRIMARY KEY (`ID`)
-	,	UNIQUE INDEX `UX_DailyTransactionMonitoring_TransDate_SubscriberID` (`TransDate`,`SubscriberID`)
+	,	UNIQUE INDEX `UX_DailyLoginTransactionMonitoring_Group` (`TransDate`,`SubscriberID`)
 ) ENGINE=InnoDB;
 
 
 DROP TABLE IF EXISTS DCS_DataWatch.DailyRobotMonitoring;
 
 CREATE TABLE DCS_DataWatch.DailyRobotMonitoring(
-		ID 								BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
-	,	DailyTransactionMonitoringID 	INT UNSIGNED NOT NULL
-	, 	TotalInvalidBrowers				INT UNSIGNED DEFAULT NULL
-	, 	TotalBotTrans					INT UNSIGNED DEFAULT NULL
-	, 	CreatedTime						DATETIME DEFAULT NULL
-	, 	ModifiedTime					DATETIME DEFAULT NULL
+		ID 									BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
+	,	DailyLoginTransactionMonitoringID 	INT UNSIGNED NOT NULL
+	, 	TotalInvalidBrowers					INT UNSIGNED DEFAULT NULL
+	, 	TotalBotTrans						INT UNSIGNED DEFAULT NULL
+	, 	CreatedTime							DATETIME DEFAULT NULL
+	, 	ModifiedTime						DATETIME DEFAULT NULL
 	,	PRIMARY KEY (`ID`)
-	,	UNIQUE INDEX `IX_DailyRobotMonitoring_DailyTransactionMonitoringID` (`DailyTransactionMonitoringID`)
+	,	UNIQUE INDEX `UX_DailyRobotMonitoring_DailyLoginTransactionMonitoringID` (`DailyLoginTransactionMonitoringID`)
 ) ENGINE=InnoDB;
 
 
-DROP TABLE IF EXISTS DCS_DataWatch.BetTicketLite;
+DROP TABLE IF EXISTS DCS_DataWatch.BetTicket;
 
-CREATE TABLE DCS_DataWatch.BetTicketLite(
+CREATE TABLE DCS_DataWatch.BetTicket(
 		ID 					BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
 	, 	TransDate			DATETIME NOT NULL
-	, 	CustID				BIGINT UNSIGNED DEFAULT NULL
+	, 	CustID				INT UNSIGNED DEFAULT NULL
 	, 	BetCount			INT UNSIGNED DEFAULT 0
 	, 	FirstBetTicketTime	DATETIME DEFAULT NULL
 	, 	LastBetTicketTime	DATETIME DEFAULT NULL
 	, 	CreatedTime			DATETIME DEFAULT NULL
 	, 	ModifiedTime		DATETIME DEFAULT NULL
 	,	PRIMARY KEY (`ID`)
-	,	INDEX `IX_BetTicketLite_CustID` (`CustID`)
-	,	UNIQUE INDEX `UX_BetTicketLite_Group` (`TransDate`,`CustID`)
+	,	UNIQUE INDEX `UX_BetTicket_TransDate_CustID` (`TransDate`,`CustID`)
+	,	INDEX `IX_BetTicket_CustID` (`CustID`)
 ) ENGINE=InnoDB;
--- ALTER TABLE DCS_DataWatch.TicketLite
---     PARTITION BY RANGE (YEARWEEK(`TransDate`,0))(
---     PARTITION pw202322 VALUES LESS THAN (202323),
---     PARTITION pw202323 VALUES LESS THAN (202324),
---     PARTITION pw202324 VALUES LESS THAN (202325),
---     PARTITION pw202325 VALUES LESS THAN (202326),
---     PARTITION pw202326 VALUES LESS THAN (202327),
---     PARTITION pw202327 VALUES LESS THAN (202328),
---     PARTITION pw202328 VALUES LESS THAN (202329),
---     PARTITION pw202329 VALUES LESS THAN (202330),
---     PARTITION pw202330 VALUES LESS THAN (202331),
---     PARTITION pw202331 VALUES LESS THAN (202332),
---     PARTITION pw202332 VALUES LESS THAN (202333),
---     PARTITION pw202333 VALUES LESS THAN (202334),
---     PARTITION pw202334 VALUES LESS THAN (202335),
---     PARTITION pw202335 VALUES LESS THAN (202336),
---     PARTITION pw202336 VALUES LESS THAN (202337),
---     PARTITION pw202337 VALUES LESS THAN (202338),
---     PARTITION pw202338 VALUES LESS THAN (202339),
--- 	PARTITION pw299999 VALUES LESS THAN MAXVALUE);
 
+
+DROP TABLE IF EXISTS DCS_DataWatch.CustHistory;
+
+CREATE TABLE DCS_DataWatch.CustHistory(
+		ID 					BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
+	, 	TransDate			DATETIME NOT NULL
+	, 	CustID				INT UNSIGNED DEFAULT NULL
+	, 	SubscriberID		INT UNSIGNED DEFAULT NULL
+	, 	FirstLoginTransTime	DATETIME DEFAULT NULL
+	, 	LastLoginTransTime	DATETIME DEFAULT NULL
+	, 	FirstBetTicketTime	DATETIME DEFAULT NULL
+	, 	LastBetTicketTime	DATETIME DEFAULT NULL
+	, 	CreatedTime			DATETIME DEFAULT NULL
+	, 	ModifiedTime		DATETIME DEFAULT NULL
+	,	PRIMARY KEY (`ID`)
+	,	UNIQUE INDEX `UX_CustHistory_TransDate_CustID` (`TransDate`,`CustID`)
+	,	INDEX `IX_CustHistory_SubscriberID_CustID` (`SubscriberID`, `CustID`)
+) ENGINE=InnoDB;
 
 DROP TABLE IF EXISTS DCS_DataWatch.MissingLoginTransaction;
 
 CREATE TABLE DCS_DataWatch.MissingLoginTransaction(
 		ID 					BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
 	, 	TransDate			DATETIME NOT NULL
-	, 	CustID				BIGINT UNSIGNED DEFAULT NULL
+	, 	CustID				INT UNSIGNED DEFAULT NULL
 	, 	SubscriberID		INT UNSIGNED DEFAULT NULL
-	, 	LastLoginTime		DATETIME DEFAULT NULL
-	, 	LastTicketTime		DATETIME DEFAULT NULL
 	, 	CreatedTime			DATETIME DEFAULT NULL
-	, 	ModifiedTime		DATETIME DEFAULT NULL
 	,	PRIMARY KEY (`ID`)
 	,	INDEX `IX_MissingLoginTransaction_CustID` (`CustID`)
 	,	INDEX `IX_MissingLoginTransaction_SubscriberID` (`SubscriberID`)
@@ -160,13 +137,11 @@ DROP TABLE IF EXISTS DCS_DataWatch.MissingBetTicket;
 CREATE TABLE DCS_DataWatch.MissingBetTicket(
 		ID 					BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
 	, 	TransDate			DATETIME NOT NULL
-	, 	AccountID			BIGINT UNSIGNED DEFAULT NULL
+	, 	CustID				INT UNSIGNED DEFAULT NULL
 	, 	SubscriberID		INT UNSIGNED DEFAULT NULL
-	, 	LastBetTicketTime	DATETIME DEFAULT NULL
 	, 	CreatedTime			DATETIME DEFAULT NULL
-	, 	ModifiedTime		DATETIME DEFAULT NULL
 	,	PRIMARY KEY (`ID`)
-	,	INDEX `IX_MissingBetTicket_AccountID` (`AccountID`)
+	,	INDEX `IX_MissingBetTicket_CustID` (`CustID`)
 	,	INDEX `IX_MissingBetTicket_SubscriberID` (`SubscriberID`)
-	,	UNIQUE INDEX `UX_MissingBetTicket_TransDate_AccountID` (`TransDate`,`AccountID`)
+	,	UNIQUE INDEX `UX_MissingBetTicket_TransDate_CustID` (`TransDate`,`CustID`)
 ) ENGINE=InnoDB;
