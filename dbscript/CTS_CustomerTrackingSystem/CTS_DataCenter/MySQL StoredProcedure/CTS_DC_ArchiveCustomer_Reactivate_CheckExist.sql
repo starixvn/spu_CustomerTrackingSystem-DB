@@ -35,8 +35,9 @@ sp: BEGIN
     CREATE TEMPORARY TABLE 		Temp_CustReactivate (
         	CustID				BIGINT UNSIGNED 
 		,	ArchiveID			BIGINT UNSIGNED PRIMARY KEY
+        , 	IsProcessDone		BIT DEFAULT(0)
+        , 	INDEX IX_Temp_CustReactivate_IsProcessDone(IsProcessDone)
     );        
-     
      
     INSERT IGNORE INTO Temp_Customer(CustID, ReactiveTime)
 	SELECT DISTINCT temp.CustID
@@ -44,19 +45,18 @@ sp: BEGIN
 	 FROM JSON_TABLE(ip_CustJson,
 		"$[*]" COLUMNS(
 				CustID 					BIGINT UNSIGNED		PATH "$.CustID"
-			, 	ReactiveTime			DATETIME			PATH "$.LogTime"
+			, 	ReactiveTime			DATETIME			PATH "$.LogTime"		
 		 )) AS 	temp;
- 
-    select * from Temp_Customer;
-    
+
 	SELECT ParameterValue
 	INTO lv_LastArchiveID
 	FROM CTS_DataCenter.SystemParameter
 	WHERE ParameterID = 45;
     
-    INSERT INTO Temp_CustReactivate(ArchiveID, CustID)
+    INSERT INTO Temp_CustReactivate(ArchiveID, CustID, IsProcessDone)
 	SELECT 	ar.ID AS ArchiveID
 		,	ar.CustID
+        , 	FALSE
 	FROM Temp_Customer AS tmp
 		INNER JOIN CTS_DataCenter.ArchiveCustomer_CTSCustomer AS ar ON ar.CustID = tmp.CustID AND ar.ID > lv_LastArchiveID;
 	
@@ -86,7 +86,8 @@ sp: BEGIN
     
     SELECT 	DISTINCT 
 			CustID
-    FROM Temp_CustReactivate;
+    FROM Temp_CustReactivate
+    WHERE IsProcessDone = false;
 END$$
 DELIMITER ;
 
