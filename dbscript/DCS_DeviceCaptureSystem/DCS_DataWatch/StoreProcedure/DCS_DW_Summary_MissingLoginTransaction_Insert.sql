@@ -1,13 +1,13 @@
 /*<info serverAlias="CTSMain-DCS_DataWatch" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DW_Sumary_MissingLoginTransaction_Insert`;
+DROP PROCEDURE IF EXISTS `DCS_DW_Summary_MissingLoginTrans_BetTicket_Insert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DW_Sumary_MissingLoginTransaction_Insert`()
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DW_Summary_MissingLoginTrans_BetTicket_Insert`()
 SQL SECURITY INVOKER
 BEGIN
 	/*
 	Created: 20231003@Jonathan.Doan
-	Task : Insert data into MissingLoginTransaction
+	Task : Insert data into MissingLoginTransaction, MissingBetTicket
 	DB: DCS_DataWatch
 	Original:
 
@@ -18,7 +18,7 @@ BEGIN
 
 	Example:
 		SET sql_safe_updates = 0;
-        CALL DCS_DataWatch.DCS_DW_Sumary_MissingLoginTransaction_Insert(10);
+        CALL DCS_DataWatch.DCS_DW_Summary_MissingLoginTrans_BetTicket_Insert(10);
 	*/
     DECLARE lv_CurrentDatetime DATETIME DEFAULT CURRENT_TIMESTAMP();
     DECLARE lv_MaxTransDate DATETIME DEFAULT CURRENT_TIMESTAMP();
@@ -182,5 +182,6 @@ BEGIN
     FROM Temp_CustHistory
     WHERE IsUpdate = 0;
     
+    SET lv_MaxTransDate = DATE_ADD(lv_MaxTransDate, INTERVAL 1 DAY);
 END$$
 DELIMITER ;

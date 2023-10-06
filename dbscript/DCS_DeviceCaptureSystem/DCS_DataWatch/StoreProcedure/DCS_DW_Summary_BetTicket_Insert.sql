@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataWatch" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DW_Sumary_BetTicket_Insert`;
+DROP PROCEDURE IF EXISTS `DCS_DW_Summary_BetTicket_Insert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DW_Sumary_BetTicket_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DW_Summary_BetTicket_Insert`(
     IN ip_InputJson LONGTEXT
 )
 SQL SECURITY INVOKER
@@ -20,7 +20,7 @@ BEGIN
 
 	Example:
 		SET sql_safe_updates = 0;
-        CALL DCS_DataWatch.DCS_DW_Sumary_BetTicket_Insert('[{"TransDate":"2023-10-04","CustID":1,"BetCount":100,"FirstBetTicketTime":"2023-10-04 05:04:00","LastBetTicketTime":"2023-10-04 10:05:00"}]');
+        CALL DCS_DataWatch.DCS_DW_Summary_BetTicket_Insert('[{"TransDate":"2023-10-04","CustID":1,"BetCount":100,"FirstBetTicketTime":"2023-10-04 05:04:00","LastBetTicketTime":"2023-10-04 10:05:00"}]');
 	*/
     
     DECLARE lv_CurrentDatetime DATETIME DEFAULT CURRENT_TIMESTAMP();

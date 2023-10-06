@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataWatch" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DW_Sumary_LoginTransaction_Insert`;
+DROP PROCEDURE IF EXISTS `DCS_DW_Summary_LoginTransaction_Insert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DW_Sumary_LoginTransaction_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DW_Summary_LoginTransaction_Insert`(
     IN ip_Size INT UNSIGNED
 )
 SQL SECURITY INVOKER
@@ -20,12 +20,13 @@ BEGIN
 
 	Example:
 		SET sql_safe_updates = 0;
-        CALL DCS_DataWatch.DCS_DW_Sumary_LoginTransaction_Insert(10);
+        CALL DCS_DataWatch.DCS_DW_Summary_LoginTransaction_Insert(10);
 	*/
+    DECLARE CONST_SUMMARY_TRANSID INT DEFAULT 1;
     DECLARE lv_MaxTransID  BIGINT UNSIGNED;
     DECLARE lv_CurrentDatetime DATETIME DEFAULT CURRENT_TIMESTAMP();
     
-    SET lv_MaxTransID = (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataWatch.SystemSetting WHERE ID = 1);
+    SET lv_MaxTransID = (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataWatch.SystemSetting WHERE ID = CONST_SUMMARY_TRANSID);
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Trans07;
 	DROP TEMPORARY TABLE IF EXISTS Temp_LoginTrans;
@@ -85,6 +86,8 @@ BEGIN
 	FROM DCS_DataCenter.Transaction07 AS trans
     WHERE trans.TransID > lv_MaxTransID
     LIMIT ip_Size;
+    
+    SET lv_MaxTransID = (SELECT MAX(TransID) FROM Temp_Trans07);
     
     /* == LoginTransaction == */
     INSERT INTO Temp_LoginTrans(TransDate, AccountID, SubscriberID, DeviceID, Flagged, FirstLoginTransTime, LastLoginTransTime, TotalTrans)
@@ -177,5 +180,11 @@ BEGIN
         ,	lv_CurrentDatetime AS ModifiedTime
 	FROM Temp_RobotTrans AS tmp
     WHERE tmp.IsUpdate = 0;
+    
+    IF(lv_MaxTransID IS NOT NULL AND lv_MaxTransID > 0) THEN
+        UPDATE DCS_DataWatch.SystemSetting 
+        SET VValue = lv_MaxTransID
+        WHERE ID = CONST_SUMMARY_TRANSID;
+    END IF;
 END$$
 DELIMITER ;

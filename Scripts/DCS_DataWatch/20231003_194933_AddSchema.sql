@@ -28,7 +28,7 @@ CREATE TABLE `SystemSetting` (
 ) ENGINE=InnoDB;
 
 INSERT INTO DCS_DataWatch.SystemSetting(ID, VGroup, VName, VValue, UpdatedTime)
-VALUES(1, 'Sumary', 'TransID', 0, CURRENT_TIMESTAMP);
+VALUES(1, 'Summary', 'TransID', 0, CURRENT_TIMESTAMP);
 
 INSERT INTO DCS_DataWatch.SystemSetting(ID, VGroup, VName, VValue, UpdatedTime)
 VALUES(2, 'MissingLoginTransaction', 'TransDate', '2023-01-01', CURRENT_TIMESTAMP);
