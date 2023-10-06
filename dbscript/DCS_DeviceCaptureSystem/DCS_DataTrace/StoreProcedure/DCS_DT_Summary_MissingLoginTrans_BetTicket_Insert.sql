@@ -1,14 +1,14 @@
-/*<info serverAlias="CTSMain-DCS_DataWatch" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DW_Summary_MissingLoginTrans_BetTicket_Insert`;
+/*<info serverAlias="CTSMain-DCS_DataTrace" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `DCS_DT_Summary_MissingLoginTrans_BetTicket_Insert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DW_Summary_MissingLoginTrans_BetTicket_Insert`()
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DT_Summary_MissingLoginTrans_BetTicket_Insert`()
 SQL SECURITY INVOKER
 BEGIN
 	/*
 	Created: 20231003@Jonathan.Doan
 	Task : Insert data into MissingLoginTransaction, MissingBetTicket
-	DB: DCS_DataWatch
+	DB: DCS_DataTrace
 	Original:
 
 	Revisions:
@@ -18,12 +18,12 @@ BEGIN
 
 	Example:
 		SET sql_safe_updates = 0;
-        CALL DCS_DataWatch.DCS_DW_Summary_MissingLoginTrans_BetTicket_Insert(10);
+        CALL DCS_DataTrace.DCS_DT_Summary_MissingLoginTrans_BetTicket_Insert(10);
 	*/
     DECLARE lv_CurrentDatetime DATETIME DEFAULT CURRENT_TIMESTAMP();
     DECLARE lv_MaxTransDate DATETIME DEFAULT CURRENT_TIMESTAMP();
     
-    SET lv_MaxTransDate = (SELECT DATE(VValue) FROM DCS_DataWatch.SystemSetting WHERE ID = 2);
+    SET lv_MaxTransDate = (SELECT DATE(VValue) FROM DCS_DataTrace.SystemSetting WHERE ID = 2);
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_BetTicket;
 	DROP TEMPORARY TABLE IF EXISTS Temp_LoginTransaction;
@@ -85,7 +85,7 @@ BEGIN
         ,	cts.SubscriberID
         ,	bt.FirstBetTicketTime
         ,	bt.LastBetTicketTime
-    FROM DCS_DataWatch.BetTicket AS bt
+    FROM DCS_DataTrace.BetTicket AS bt
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cts ON cts.CustID = bt.CustID AND cts.RoleID = 1
     WHERE bt.TransDate = lv_MaxTransDate;
     
@@ -95,7 +95,7 @@ BEGIN
         ,	trans.SubscriberID
         ,	MIN(trans.FirstLoginTransTime) AS FirstLoginTransTime
         ,	MAX(trans.LastLoginTransTime) AS LastLoginTransTime
-    FROM DCS_DataWatch.LoginTransaction AS trans
+    FROM DCS_DataTrace.LoginTransaction AS trans
 		INNER JOIN CTS_DataCenter.CustDCSAccount AS dcs ON dcs.AccountID = trans.AccountID
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cts ON cts.CTSCustID = dcs.CTSCustID
     WHERE trans.TransDate = lv_MaxTransDate
@@ -109,9 +109,9 @@ BEGIN
 		LEFT JOIN Temp_LoginTransaction AS tmp_trans ON tmp_trans.CustID = tmp_bt.CustID
     WHERE tmp_trans.ID IS NULL;
     
-    DELETE FROM DCS_DataWatch.MissingLoginTransaction WHERE TransDate = lv_MaxTransDate;
+    DELETE FROM DCS_DataTrace.MissingLoginTransaction WHERE TransDate = lv_MaxTransDate;
     
-    INSERT INTO DCS_DataWatch.MissingLoginTransaction(TransDate, CustID, SubscriberID, CreatedTime)
+    INSERT INTO DCS_DataTrace.MissingLoginTransaction(TransDate, CustID, SubscriberID, CreatedTime)
     SELECT 	lv_MaxTransDate AS TransDate
 		,	CustID
 		,	SubscriberID
@@ -128,9 +128,9 @@ BEGIN
     WHERE tmp_bt.ID IS NULL
 		AND tmp_trans.RoleID = 1;
     
-    DELETE FROM DCS_DataWatch.MissingBetTicket WHERE TransDate = lv_MaxTransDate;
+    DELETE FROM DCS_DataTrace.MissingBetTicket WHERE TransDate = lv_MaxTransDate;
     
-    INSERT INTO DCS_DataWatch.MissingBetTicket(TransDate, CustID, SubscriberID, CreatedTime)
+    INSERT INTO DCS_DataTrace.MissingBetTicket(TransDate, CustID, SubscriberID, CreatedTime)
     SELECT 	lv_MaxTransDate AS TransDate
 		,	CustID
 		,	SubscriberID
@@ -159,7 +159,7 @@ BEGIN
 		RIGHT JOIN Temp_BetTicket AS tmp_bt  ON tmp_bt.CustID = tmp_trans.CustID
 	WHERE tmp_trans.ID IS NULL;
     
-    UPDATE DCS_DataWatch.CustHistory AS ch
+    UPDATE DCS_DataTrace.CustHistory AS ch
 		INNER JOIN Temp_CustHistory AS tmp ON tmp.CustID = ch.CustID
 	SET 	ch.FirstLoginTransTime = tmp.FirstLoginTransTime
 		,	ch.LastLoginTransTime = tmp.LastLoginTransTime
@@ -169,7 +169,7 @@ BEGIN
 		,	tmp.IsUpdate = 1
 	WHERE ch.TransDate = lv_MaxTransDate;
     
-    INSERT INTO DCS_DataWatch.CustHistory(TransDate, CustID, SubscriberID, FirstLoginTransTime, LastLoginTransTime, FirstBetTicketTime, LastBetTicketTime, CreatedTime, ModifiedTime)
+    INSERT INTO DCS_DataTrace.CustHistory(TransDate, CustID, SubscriberID, FirstLoginTransTime, LastLoginTransTime, FirstBetTicketTime, LastBetTicketTime, CreatedTime, ModifiedTime)
     SELECT 	lv_MaxTransDate AS TransDate
 		,	CustID
 		,	SubscriberID

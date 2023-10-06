@@ -1,21 +1,21 @@
-/*<info serverAlias="CTSMain-DCS_DataWatch" databaseType="2"></info>*/
+/*<info serverAlias="CTSMain-DCS_DataTrace" databaseType="2"></info>*/
 /*
 	Creator:	20231003@Jonathan.Doan
-	Task:	 	Create new DB DCS_DataWatch [Redmine ID: #194933]
+	Task:	 	Create new DB DCS_DataTrace [Redmine ID: #194933]
 	Server:  	Master
-	DBName:		DCS_DataWatch
+	DBName:		DCS_DataTrace
     
 	Revisions: 
 			- 20231003@Jonathan.Doan: Created [Redmine ID: #194933]
 	Reviewer:
 */
 
--- CREATE DATABASE DCS_DataWatch;
+-- CREATE DATABASE DCS_DataTrace;
 
-USE DCS_DataWatch;
+USE DCS_DataTrace;
 
 
-DROP TABLE IF EXISTS DCS_DataWatch.SystemSetting;
+DROP TABLE IF EXISTS DCS_DataTrace.SystemSetting;
 
 CREATE TABLE `SystemSetting` (
   `ID` INT NOT NULL,
@@ -27,15 +27,15 @@ CREATE TABLE `SystemSetting` (
   UNIQUE KEY `UX_SystemSetting_VGroup_VName` (`VGroup`,`VName`)
 ) ENGINE=InnoDB;
 
-INSERT INTO DCS_DataWatch.SystemSetting(ID, VGroup, VName, VValue, UpdatedTime)
+INSERT INTO DCS_DataTrace.SystemSetting(ID, VGroup, VName, VValue, UpdatedTime)
 VALUES(1, 'Summary', 'TransID', 0, CURRENT_TIMESTAMP);
 
-INSERT INTO DCS_DataWatch.SystemSetting(ID, VGroup, VName, VValue, UpdatedTime)
+INSERT INTO DCS_DataTrace.SystemSetting(ID, VGroup, VName, VValue, UpdatedTime)
 VALUES(2, 'MissingLoginTransaction', 'TransDate', '2023-01-01', CURRENT_TIMESTAMP);
 
-DROP TABLE IF EXISTS DCS_DataWatch.LoginTransaction;
+DROP TABLE IF EXISTS DCS_DataTrace.LoginTransaction;
 
-CREATE TABLE DCS_DataWatch.LoginTransaction(
+CREATE TABLE DCS_DataTrace.LoginTransaction(
 		ID 					BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
 	, 	TransDate			DATETIME NOT NULL
 	, 	SubscriberID		INT UNSIGNED DEFAULT NULL
@@ -54,9 +54,9 @@ CREATE TABLE DCS_DataWatch.LoginTransaction(
 ) ENGINE=InnoDB;
 
 
-DROP TABLE IF EXISTS DCS_DataWatch.DailyLoginTransactionMonitoring;
+DROP TABLE IF EXISTS DCS_DataTrace.DailyLoginTransactionMonitoring;
 
-CREATE TABLE DCS_DataWatch.DailyLoginTransactionMonitoring(
+CREATE TABLE DCS_DataTrace.DailyLoginTransactionMonitoring(
 		ID 								INT UNSIGNED NOT NULL AUTO_INCREMENT
 	, 	TransDate						DATETIME NOT NULL
 	, 	SubscriberID					INT UNSIGNED DEFAULT NULL
@@ -68,9 +68,9 @@ CREATE TABLE DCS_DataWatch.DailyLoginTransactionMonitoring(
 ) ENGINE=InnoDB;
 
 
-DROP TABLE IF EXISTS DCS_DataWatch.DailyRobotMonitoring;
+DROP TABLE IF EXISTS DCS_DataTrace.DailyRobotMonitoring;
 
-CREATE TABLE DCS_DataWatch.DailyRobotMonitoring(
+CREATE TABLE DCS_DataTrace.DailyRobotMonitoring(
 		ID 									BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
 	,	DailyLoginTransactionMonitoringID 	INT UNSIGNED NOT NULL
 	, 	TotalInvalidBrowers					INT UNSIGNED DEFAULT NULL
@@ -82,9 +82,9 @@ CREATE TABLE DCS_DataWatch.DailyRobotMonitoring(
 ) ENGINE=InnoDB;
 
 
-DROP TABLE IF EXISTS DCS_DataWatch.BetTicket;
+DROP TABLE IF EXISTS DCS_DataTrace.BetTicket;
 
-CREATE TABLE DCS_DataWatch.BetTicket(
+CREATE TABLE DCS_DataTrace.BetTicket(
 		ID 					BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
 	, 	TransDate			DATETIME NOT NULL
 	, 	CustID				INT UNSIGNED DEFAULT NULL
@@ -99,9 +99,9 @@ CREATE TABLE DCS_DataWatch.BetTicket(
 ) ENGINE=InnoDB;
 
 
-DROP TABLE IF EXISTS DCS_DataWatch.CustHistory;
+DROP TABLE IF EXISTS DCS_DataTrace.CustHistory;
 
-CREATE TABLE DCS_DataWatch.CustHistory(
+CREATE TABLE DCS_DataTrace.CustHistory(
 		ID 					BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
 	, 	TransDate			DATETIME NOT NULL
 	, 	CustID				INT UNSIGNED DEFAULT NULL
@@ -117,9 +117,9 @@ CREATE TABLE DCS_DataWatch.CustHistory(
 	,	INDEX `IX_CustHistory_SubscriberID_CustID` (`SubscriberID`, `CustID`)
 ) ENGINE=InnoDB;
 
-DROP TABLE IF EXISTS DCS_DataWatch.MissingLoginTransaction;
+DROP TABLE IF EXISTS DCS_DataTrace.MissingLoginTransaction;
 
-CREATE TABLE DCS_DataWatch.MissingLoginTransaction(
+CREATE TABLE DCS_DataTrace.MissingLoginTransaction(
 		ID 					BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
 	, 	TransDate			DATETIME NOT NULL
 	, 	CustID				INT UNSIGNED DEFAULT NULL
@@ -132,9 +132,9 @@ CREATE TABLE DCS_DataWatch.MissingLoginTransaction(
 ) ENGINE=InnoDB;
 
 
-DROP TABLE IF EXISTS DCS_DataWatch.MissingBetTicket;
+DROP TABLE IF EXISTS DCS_DataTrace.MissingBetTicket;
 
-CREATE TABLE DCS_DataWatch.MissingBetTicket(
+CREATE TABLE DCS_DataTrace.MissingBetTicket(
 		ID 					BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
 	, 	TransDate			DATETIME NOT NULL
 	, 	CustID				INT UNSIGNED DEFAULT NULL
