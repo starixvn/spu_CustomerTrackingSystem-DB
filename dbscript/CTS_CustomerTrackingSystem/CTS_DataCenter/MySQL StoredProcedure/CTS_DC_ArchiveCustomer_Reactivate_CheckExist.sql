@@ -20,7 +20,7 @@ sp: BEGIN
 		Param's Explanation (filtered by):	
 
 		Example:
-			
+			call CTS_DataCenter.CTS_DC_ArchiveCustomer_Reactivate_CheckExist('[{"CustID":98456422,"LogTime":"2023-10-05T03:23:36.293"}]');
 	*/
     DECLARE lv_LastArchiveID 	BIGINT UNSIGNED;
     DECLARE lv_CurrentTime 		DATETIME DEFAULT CURRENT_TIMESTAMP();
