@@ -60,8 +60,10 @@ sp: BEGIN
 	FROM Temp_Customer AS tmp
 		INNER JOIN CTS_DataCenter.ArchiveCustomer_CTSCustomer AS ar ON ar.CustID = tmp.CustID AND ar.ID > lv_LastArchiveID;
 	
-    INSERT INTO Temp_CustReactivate(ArchiveID, CustID)
-	SELECT DISTINCT r.ID, r.CustID
+    INSERT INTO Temp_CustReactivate(ArchiveID, CustID, IsProcessDone)
+	SELECT DISTINCT r.ID
+		, r.CustID
+        , TRUE
 	FROM   Temp_Customer AS tmp
 		,LATERAL 
 		(
@@ -79,7 +81,13 @@ sp: BEGIN
     WHERE EXISTS (SELECT 1 FROM Temp_CustReactivate AS tmp WHERE ar.ID = tmp.ArchiveID);
     
     INSERT INTO CTS_DataCenter.ArchiveCustomer_CTSCustomer (ArchivedDate, CustID, CTSCustID, CustSubID, IsReactivated, ReactivateDate, InsertTime)
-    SELECT  temp.ReactiveTime, temp.CustID, 0, 0, 1, temp.ReactiveTime, lv_CurrentTime
+    SELECT  temp.ReactiveTime
+		, temp.CustID
+		, 0 AS CTSCustID
+        , 0 AS CustSub
+        , 1 AS IsReactivated
+        , temp.ReactiveTime
+        , lv_CurrentTime
     FROM  Temp_Customer AS temp
 		LEFT JOIN Temp_CustReactivate AS cr ON cr.CustID = temp.CustID
     WHERE cr.CustID IS NULL;
@@ -87,7 +95,7 @@ sp: BEGIN
     SELECT 	DISTINCT 
 			CustID
     FROM Temp_CustReactivate
-    WHERE IsProcessDone = false;
+    WHERE IsProcessDone = FALSE;
 END$$
 DELIMITER ;
 
