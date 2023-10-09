@@ -27,14 +27,14 @@ BEGIN
     #--Exclude CustID by SiteID from table 'ip_TableName'
     DROP TEMPORARY TABLE IF EXISTS Temp_CustExclude;
     CREATE TEMPORARY TABLE Temp_CustExclude(
-		CustID BIGINT UNSIGNED
+		CustID BIGINT UNSIGNED PRIMARY KEY
 	);
+    
     /***********GET EXCLUDE CustID BY OddsFeedSite, 8RM, BARM, CashOut **********/
 	IF(ip_QueryType = 1) THEN 		
-		/***********GET EXCLUDE CustID BY OddsFeedSite, 8RM, BARM, CashOut **********/
 		SET @insertStr =CONCAT(	"	INSERT INTO Temp_CustExclude(CustID)
 									SELECT tbl.CustID
-									FROM ",ip_TableName," as tbl 
+									FROM ",ip_TableName," AS tbl 
 										INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tbl.CustID
 										LEFT JOIN CTS_DataCenter.StaticList AS stl ON stl.ItemID = cus.SiteID
 												AND stl.ListID = 11
@@ -43,11 +43,11 @@ BEGIN
 		PREPARE insertStr FROM @insertStr;
 		EXECUTE insertStr;
     END IF;
-    /***********GET EXCLUDE CustID BY OddsFeedSite, 8RM, BARM, CashOut **********/
+    
     IF(ip_QueryType = 2) THEN 		
 		SET @insertStr =CONCAT(	"	INSERT INTO Temp_CustExclude(CustID)
 									SELECT tbl.CustID
-									FROM ",ip_TableName," as tbl 
+									FROM ",ip_TableName," AS tbl 
 										LEFT JOIN CTS_DataCenter.StaticList AS stl ON stl.ItemID = tbl.SiteID
 												AND stl.ListID = 11
 										WHERE tbl.IsInternal = 1 OR stl.ItemID IS NOT NULL");   

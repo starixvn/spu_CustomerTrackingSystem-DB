@@ -6,6 +6,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustInfo_GetNullUserName2`(
 		IN ip_PreCTSCustID		BIGINT UNSIGNED
     ,	IN ip_Size				INT
     ,	IN ip_IsCustSub			BOOLEAN
+    
     ,	OUT op_LastCTSCustID	BIGINT UNSIGNED
 )
 SQL SECURITY INVOKER

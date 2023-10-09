@@ -46,11 +46,11 @@ BEGIN
 	WHERE cc.CategoryId = 201
 	LIMIT 1;
 
-	SET @sql =CONCAT('	INSERT IGNORE INTO Temp_Customer (CustID, IsInternal, SiteID) 
+	SET @sql =CONCAT("	INSERT IGNORE INTO Temp_Customer (CustID, IsInternal, SiteID) 
 						SELECT	ipTbl.CustID
 							,	ipTbl.IsInternal
                             ,	ipTbl.SiteID
-						FROM ',ip_TableName,' AS ipTbl'
+						FROM ",ip_TableName," AS ipTbl"
 						);
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1; 
