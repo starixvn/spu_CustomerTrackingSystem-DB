@@ -58,6 +58,7 @@ AS
 		- 20230724@Victoria.Le	Using STRING_SPLIT instead of dbo.f_SplitString
 								Show all tickets - Add Filter by Danger and Status [Redmine ID: #191401]
 		- 20230911@Casey.Huynh:	Filter by CustomerClass, TotalAmount, Reason, AGroup, MGroup [Redmine ID: #193029]
+		- 20231009@Casey.Huynh: Fixed Sum CustAmount [Redmine ID: #195204]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize)
@@ -617,11 +618,12 @@ BEGIN
 						WHERE b.matchid = @MatchID
 							AND b.bettype = @BetType
 							AND b.liveindicator = @IsLive
+							AND b.sequenceid < @LastScannedSequenceID
 							AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
 							AND (@BetID = 0 OR (@BetID > 0 AND t.IsFilterBetID = 1 AND b.betid = @BetID))
 						GROUP BY b.CustID
 						HAVING SUM(b.stake * b.actualrate) >= @CustAmountRM;	
-						
+
 						INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
 							SELECT b.sequenceid
 								,	b.transid
@@ -1017,7 +1019,7 @@ BEGIN
 			--========================Cust Amount(RM)==================	
 			IF (@CustAmountRM > 0)
 			BEGIN
-				-- Delete ticket if Sum(Cust's Stake) < @CustAmountRM
+				DELETE  FROM  #tmpCustAmount;
 
 				INSERT INTO #tmpCustAmount(CustId, AmountRM)
 				SELECT	tmpTk.CustId
