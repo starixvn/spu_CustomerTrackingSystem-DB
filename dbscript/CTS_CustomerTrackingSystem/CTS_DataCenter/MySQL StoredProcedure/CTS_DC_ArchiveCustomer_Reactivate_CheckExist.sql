@@ -54,25 +54,25 @@ sp: BEGIN
 	WHERE ParameterID = 45;
     
     INSERT INTO Temp_CustReactivate(ArchiveID, CustID, IsProcessDone)
-	SELECT 	ar.ID AS ArchiveID
-		,	ar.CustID
+	SELECT 	arc.ID AS ArchiveID
+		,	arc.CustID
         , 	FALSE
 	FROM Temp_Customer AS tmp
-		INNER JOIN CTS_DataCenter.ArchiveCustomer_CTSCustomer AS ar ON ar.CustID = tmp.CustID AND ar.ID > lv_LastArchiveID;
+		INNER JOIN CTS_DataCenter.ArchiveCustomer_CTSCustomer AS arc ON arc.CustID = tmp.CustID AND arc.ID > lv_LastArchiveID;
 	
-    INSERT INTO Temp_CustReactivate(ArchiveID, CustID, IsProcessDone)
-	SELECT DISTINCT r.ID
-		, r.CustID
-        , TRUE
-	FROM   Temp_Customer AS tmp
-		,LATERAL 
-		(
-		   SELECT arc.ID, arc.CustID
-		   FROM   CTS_DataCenter.ArchiveCustomer_CTSCustomer AS arc
-		   WHERE  arc.CustID = tmp.CustID AND arc.CustSubID = 0
-		   ORDER BY arc.ID DESC
-		   LIMIT  1
-		) AS r;
+    INSERT IGNORE INTO Temp_CustReactivate(ArchiveID, CustID, IsProcessDone)
+	SELECT 	DISTINCT r.ID
+		, 	r.CustID
+        , 	TRUE
+	FROM	Temp_Customer AS tmp
+		,	LATERAL 
+			(
+			   SELECT arc.ID, arc.CustID
+			   FROM   CTS_DataCenter.ArchiveCustomer_CTSCustomer AS arc
+			   WHERE  arc.CustID = tmp.CustID AND arc.CustSubID = 0
+			   ORDER BY arc.ID DESC
+			   LIMIT  1
+			) AS r;
             
 	UPDATE CTS_DataCenter.ArchiveCustomer_CTSCustomer AS ar 
 		INNER JOIN Temp_Customer AS c ON c.CustID = ar.CustID 
@@ -82,12 +82,12 @@ sp: BEGIN
     
     INSERT INTO CTS_DataCenter.ArchiveCustomer_CTSCustomer (ArchivedDate, CustID, CTSCustID, CustSubID, IsReactivated, ReactivateDate, InsertTime)
     SELECT  temp.ReactiveTime
-		, temp.CustID
-		, 0 AS CTSCustID
-        , 0 AS CustSub
-        , 1 AS IsReactivated
-        , temp.ReactiveTime
-        , lv_CurrentTime
+		, 	temp.CustID
+		, 	0 AS CTSCustID
+		, 	0 AS CustSub
+		, 	1 AS IsReactivated
+		, 	temp.ReactiveTime
+		, 	lv_CurrentTime
     FROM  Temp_Customer AS temp
 		LEFT JOIN Temp_CustReactivate AS cr ON cr.CustID = temp.CustID
     WHERE cr.CustID IS NULL;
