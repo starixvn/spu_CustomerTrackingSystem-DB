@@ -22,7 +22,8 @@ BEGIN
 			- 20230315@Victoria.Le:		Add Robot Imperva [Redmine ID: #184773]
 			- 20230404@Victoria.Le:		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeID [Redmine ID: #185319] 
             - 20230516@Casey.Huynh:		New Category for Robot OCRD [RedmineID: #186991]
-		
+			- 20231009@Casey.Huynh:		Fixed Issue Duplicate Rescan Robot Log [RedmineID: #193049]
+            
         Param's Explanation: 
 
 		Example:
@@ -675,8 +676,7 @@ BEGIN
 		, 	pa.TargetCC
 		, 	CASE WHEN ip_IsRescan = 1 THEN CONST_SOURCETYPE_RESCANROBOT 
 				 ELSE CONST_SOURCETYPE_INSERTROBOT END AS SourceTypeID
-		,  	CASE WHEN ip_IsRescan = 1 THEN 1
-				 ELSE pa.IsDataChanged END AS IsDataChanged
+		,  	pa.IsDataChanged
 		,	pa.RobotCounter
 		,	pa.TargetDangerLevel AS TargetDangerLevel1
 		,	pa.TurnoverRM
@@ -695,7 +695,7 @@ BEGIN
 		,	pa.SportType
 		,	pa.IssueTypeID
 	FROM Temp_PA AS pa
-    WHERE (pa.IsDataChanged =  1 AND pa.IsExisted = 0)  OR ip_IsRescan = 1; 
+    WHERE (pa.IsDataChanged =  1 AND pa.IsExisted = 0); 
     
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(
 			CustID
