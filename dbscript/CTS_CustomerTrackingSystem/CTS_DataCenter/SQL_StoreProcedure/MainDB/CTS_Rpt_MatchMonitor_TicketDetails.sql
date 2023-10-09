@@ -294,7 +294,7 @@ BEGIN
 		,	Danger5				TINYINT 
 	);
 
-	IF	OBJECT_ID('tempdb..#tmpSupportedCustomerClass') IS NOT NULL
+	IF	OBJECT_ID('tempdb..#tmpCustomerClass') IS NOT NULL
 	BEGIN
 		DROP TABLE	#tmpCustomerClass;
 	END;
@@ -310,21 +310,14 @@ BEGIN
 
 	CREATE TABLE	#tmpCustAmount(
 			CustId		INT
-		,	AmountRM	INT
+		,	BetTeam		NVARCHAR(10)
 	);
 
-	CREATE CLUSTERED INDEX #CIX_tmpCustAmount_CustID ON #tmpCustAmount (
+	CREATE CLUSTERED INDEX #CIX_tmpCustAmount_CustIDBetTeam ON #tmpCustAmount (
 			CustID	ASC
+		,	BetTeam ASC
 	);
 
-	IF	OBJECT_ID('tempdb..#tmpCustByAmount') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmptmpCustByAmount;
-	END;
-
-	CREATE TABLE	#tmpCustByAmount(
-			CustID	INT
-	);
 	--=======GET BALANCE UP/ MOVE BET DAY===========================================================
 	INSERT INTO #tmpBUMBData(BUDay,MBDay)
 	EXECUTE bodb02.dbo.Age_SelBalanceUpDay;
@@ -608,21 +601,7 @@ BEGIN
 				ELSE IF (@TicketType = 0)
 				BEGIN	
 					IF (@CustAmountRM > 0) 
-					BEGIN
-						INSERT INTO #tmpCustAmount(CustID)
-						SELECT b.CustID
-						FROM dbo.bettrans AS b WITH(NOLOCK)
-							INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
-							INNER JOIN #tmpSupportedSportBettype AS t WITH(NOLOCK) ON m.sporttype = t.SportType AND b.bettype = t.BetType
-							INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
-						WHERE b.matchid = @MatchID
-							AND b.bettype = @BetType
-							AND b.liveindicator = @IsLive
-							AND b.sequenceid < @LastScannedSequenceID
-							AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
-							AND (@BetID = 0 OR (@BetID > 0 AND t.IsFilterBetID = 1 AND b.betid = @BetID))
-						GROUP BY b.CustID
-						HAVING SUM(b.stake * b.actualrate) >= @CustAmountRM;	
+					BEGIN	
 
 						INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
 							SELECT b.sequenceid
@@ -662,7 +641,6 @@ BEGIN
 								INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 								INNER JOIN #tmpSupportedSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportType AND b.bettype = st.BetType 
 								INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency	
-								INNER JOIN #tmpCustAmount AS tmpCa ON tmpCa.CustId = b.CustId
 								LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 							WHERE	b.matchid = @MatchID								
 								AND b.liveindicator = @IsLive
@@ -1019,18 +997,17 @@ BEGIN
 			--========================Cust Amount(RM)==================	
 			IF (@CustAmountRM > 0)
 			BEGIN
-				DELETE  FROM  #tmpCustAmount;
 
-				INSERT INTO #tmpCustAmount(CustId, AmountRM)
+				INSERT INTO #tmpCustAmount(CustId, BetTeam)
 				SELECT	tmpTk.CustId
-					,	SUM(tmpTk.Stake) AS AmountRM
+					,	tmpTk.BetTeam
 				FROM #tmpTickets AS tmpTk WITH(NOLOCK)
-				GROUP BY tmpTk.CustId
+				GROUP BY tmpTk.CustId, tmpTk.BetTeam
 				HAVING SUM(tmpTk.Stake) >= @CustAmountRM;
 
 				DELETE tmpTk
 				FROM #tmpTickets AS tmpTk WITH(NOLOCK)
-					LEFT JOIN #tmpCustAmount AS tmpCa WITH(NOLOCK) ON tmpCa.CustId = tmpTk.CustId
+					LEFT JOIN #tmpCustAmount AS tmpCa WITH(NOLOCK) ON tmpCa.CustId = tmpTk.CustId and tmpCa.BetTeam = tmpTk.BetTeam
 				WHERE tmpCa.CustId IS NULL;
 			END;
 		END;	
