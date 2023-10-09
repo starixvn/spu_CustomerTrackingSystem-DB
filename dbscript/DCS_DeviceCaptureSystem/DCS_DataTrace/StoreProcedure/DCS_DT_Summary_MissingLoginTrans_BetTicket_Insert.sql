@@ -183,11 +183,11 @@ BEGIN
     FROM Temp_CustHistory
     WHERE IsUpdate = 0;
     
-    IF(lv_MaxTransDate IS NOT NULL) THEN
-		SET lv_MaxTransDate = DATE_ADD(lv_MaxTransDate, INTERVAL 1 DAY);
-        UPDATE DCS_DataTrace.SystemSetting 
-        SET VValue = lv_MaxTransDate
-        WHERE ID = CONST_MISSINGLOGINTRANSACTION_TRANSDATE;
-    END IF;
+--     IF(lv_MaxTransDate IS NOT NULL) THEN
+-- 		SET lv_MaxTransDate = DATE_ADD(lv_MaxTransDate, INTERVAL 1 DAY);
+--         UPDATE DCS_DataTrace.SystemSetting 
+--         SET VValue = lv_MaxTransDate
+--         WHERE ID = CONST_MISSINGLOGINTRANSACTION_TRANSDATE;
+--     END IF;
 END$$
 DELIMITER ;

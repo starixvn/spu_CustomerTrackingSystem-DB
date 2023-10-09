@@ -70,6 +70,8 @@ BEGIN
     
 	CREATE TEMPORARY TABLE Temp_RobotTrans(
 			DailyLoginTransactionMonitoringID	INT UNSIGNED NOT NULL PRIMARY KEY 
+		, 	TransDate							DATETIME NOT NULL
+		, 	SubscriberID						INT UNSIGNED DEFAULT NULL
 		, 	TotalInvalidBrowers					INT UNSIGNED DEFAULT 0
 		, 	TotalBotTrans						INT UNSIGNED DEFAULT 0
 		, 	IsUpdate							BIT DEFAULT 0
@@ -159,22 +161,26 @@ BEGIN
 	SET tmp.DailyLoginTransactionMonitoringID = dt.ID;
     
     /* == DailyRobotMonitoring == */
-    INSERT INTO Temp_RobotTrans(DailyLoginTransactionMonitoringID, TotalInvalidBrowers, TotalBotTrans)
-    SELECT 	DailyLoginTransactionMonitoringID
+    INSERT INTO Temp_RobotTrans(DailyLoginTransactionMonitoringID, TransDate, SubscriberID, TotalInvalidBrowers, TotalBotTrans)
+    SELECT 	MIN(DailyLoginTransactionMonitoringID) AS DailyLoginTransactionMonitoringID
+        ,	TransDate
+        ,	SubscriberID
         ,	SUM(CASE WHEN Flagged BETWEEN 2 AND 8 THEN 1 ELSE 0 END ) AS TotalInvalidBrowers
         ,	SUM(CASE WHEN Flagged > 8 THEN 1 ELSE 0 END ) AS TotalBotTrans
 	FROM Temp_Trans07
-    GROUP BY DailyLoginTransactionMonitoringID;
+    GROUP BY TransDate, SubscriberID;
     
     UPDATE DCS_DataTrace.DailyRobotMonitoring AS dt
-		INNER JOIN Temp_RobotTrans AS tmp ON dt.DailyLoginTransactionMonitoringID = tmp.DailyLoginTransactionMonitoringID
+		INNER JOIN Temp_RobotTrans AS tmp ON dt.TransDate = tmp.TransDate AND dt.SubscriberID = tmp.SubscriberID
 	SET dt.TotalInvalidBrowers = dt.TotalInvalidBrowers + tmp.TotalInvalidBrowers,
 		dt.TotalBotTrans = dt.TotalBotTrans + tmp.TotalBotTrans,
 		dt.ModifiedTime = lv_CurrentDatetime,
 		tmp.IsUpdate = 1;
     
-    INSERT INTO DCS_DataTrace.DailyRobotMonitoring(DailyLoginTransactionMonitoringID, TotalInvalidBrowers, TotalBotTrans, CreatedTime, ModifiedTime)
+    INSERT INTO DCS_DataTrace.DailyRobotMonitoring(DailyLoginTransactionMonitoringID, TransDate, SubscriberID, TotalInvalidBrowers, TotalBotTrans, CreatedTime, ModifiedTime)
     SELECT 	tmp.DailyLoginTransactionMonitoringID
+        ,	tmp.TransDate
+        ,	tmp.SubscriberID
         ,	tmp.TotalInvalidBrowers
         ,	tmp.TotalBotTrans
         ,	lv_CurrentDatetime AS CreatedTime

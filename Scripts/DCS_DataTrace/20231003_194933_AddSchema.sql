@@ -31,7 +31,7 @@ INSERT INTO DCS_DataTrace.SystemSetting(ID, VGroup, VName, VValue, UpdatedTime)
 VALUES(1, 'Summary', 'TransID', 0, CURRENT_TIMESTAMP);
 
 INSERT INTO DCS_DataTrace.SystemSetting(ID, VGroup, VName, VValue, UpdatedTime)
-VALUES(2, 'MissingLoginTransaction', 'TransDate', '2023-01-01', CURRENT_TIMESTAMP);
+VALUES(2, 'Summary', 'MaxBetTicketDate', '2023-01-01', CURRENT_TIMESTAMP);
 
 DROP TABLE IF EXISTS DCS_DataTrace.LoginTransaction;
 
@@ -72,13 +72,15 @@ DROP TABLE IF EXISTS DCS_DataTrace.DailyRobotMonitoring;
 
 CREATE TABLE DCS_DataTrace.DailyRobotMonitoring(
 		ID 									BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
+	, 	TransDate							DATETIME NOT NULL
+	, 	SubscriberID						INT UNSIGNED DEFAULT NULL
 	,	DailyLoginTransactionMonitoringID 	INT UNSIGNED NOT NULL
 	, 	TotalInvalidBrowers					INT UNSIGNED DEFAULT NULL
 	, 	TotalBotTrans						INT UNSIGNED DEFAULT NULL
 	, 	CreatedTime							DATETIME DEFAULT NULL
 	, 	ModifiedTime						DATETIME DEFAULT NULL
 	,	PRIMARY KEY (`ID`)
-	,	UNIQUE INDEX `UX_DailyRobotMonitoring_DailyLoginTransactionMonitoringID` (`DailyLoginTransactionMonitoringID`)
+	,	UNIQUE INDEX `UX_DailyRobotMonitoring_TransDate_SubscriberID` (`TransDate`,`SubscriberID`)
 ) ENGINE=InnoDB;
 
 
