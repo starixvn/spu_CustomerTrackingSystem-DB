@@ -17,6 +17,7 @@ AS
         -20210427@Casey.Huynh: Add RoleID Condition [Redmine ID: 153283]
 		-20210506@Casey.Huynh: Add condition By CreatedTime and UserName2 [Redmine ID: 154633]
 		-20210514@Casey.Huynh: Remove Hardcode TraceTime [Redmine ID: 154633]
+		-20232209@Casey.Huynh: Remove Logic Keep Cust With NULL UserName2 [Redmine 193050]
 	Developer's Notes:
 		
 
@@ -27,9 +28,6 @@ BEGIN;
 	SET NOCOUNT ON;
 
 	DECLARE @custIDList VARCHAR(MAX);
-	DECLARE @TraceTime SMALLDATETIME;
-
-	SET @TraceTime = DATEADD(minute, -5, GETDATE());
 
 	IF	OBJECT_ID('tempdb..#tmpNewCust') IS NOT NULL
 		DROP TABLE	#tmpNewCust;
@@ -54,16 +52,12 @@ BEGIN;
 
 	SELECT  @custIDList = COALESCE(@custIDList + ',', '') +  CONVERT(VARCHAR(10),tmpCus.CustID)
 	FROM	#tmpNewCust AS tmpCus WITH(NOLOCK)
-	WHERE	tmpCus.RoleID BETWEEN 1 AND 4
-			AND (tmpCus.UserName2 IS NOT NULL
-					OR (tmpCus.UserName2 IS NULL AND tmpCus.CreatedDate < @TraceTime  )
-				);
+	WHERE	tmpCus.RoleID BETWEEN 1 AND 4;
 
 	EXEC CTS_Customer_GetInfoByCustIdList @custIDList;
 
 	SELECT	MAX(CustID) AS LastInsertCustID
-	FROM	#tmpNewCust AS tmpCus WITH(NOLOCK)
-	WHERE	tmpCus.CreatedDate < @TraceTime;	
+	FROM	#tmpNewCust AS tmpCus WITH(NOLOCK);	
 
 END;
 GO
