@@ -106,11 +106,11 @@ BEGIN
     GROUP BY TransDate, SubscriberID, AccountID, DeviceID, Flagged;
     
     UPDATE DCS_DataTrace.LoginTransaction AS tl
-	INNER JOIN Temp_LoginTrans AS tmp ON 	tl.TransDate = tmp.TransDate
-										AND tl.SubscriberID = tmp.SubscriberID
-										AND tl.AccountID = tmp.AccountID
-										AND tl.DeviceID = tmp.DeviceID
-										AND tl.Flagged = tmp.Flagged
+		INNER JOIN Temp_LoginTrans AS tmp ON 	tl.TransDate = tmp.TransDate
+											AND tl.SubscriberID = tmp.SubscriberID
+											AND tl.AccountID = tmp.AccountID
+											AND tl.DeviceID = tmp.DeviceID
+											AND tl.Flagged = tmp.Flagged
 	SET tl.TotalTrans = tl.TotalTrans + tmp.TotalTrans,
 		tl.FirstLoginTransTime = tmp.FirstLoginTransTime,
 		tl.LastLoginTransTime = tmp.LastLoginTransTime,
