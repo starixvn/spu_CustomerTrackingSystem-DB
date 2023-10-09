@@ -41,7 +41,6 @@ BEGIN
 		, 	DeviceID							BIGINT UNSIGNED DEFAULT NULL
 		, 	Flagged								SMALLINT DEFAULT NULL
 		, 	TransTime							DATETIME DEFAULT NULL
-		, 	DailyLoginTransactionMonitoringID	INT UNSIGNED DEFAULT NULL
 		,	KEY `IX_Temp_Trans07_TransDate_SubscriberID` (`TransDate`, `SubscriberID`)
 	);
     
@@ -69,12 +68,13 @@ BEGIN
 	);
     
 	CREATE TEMPORARY TABLE Temp_RobotTrans(
-			DailyLoginTransactionMonitoringID	INT UNSIGNED NOT NULL PRIMARY KEY 
-		, 	TransDate							DATETIME NOT NULL
-		, 	SubscriberID						INT UNSIGNED DEFAULT NULL
-		, 	TotalInvalidBrowers					INT UNSIGNED DEFAULT 0
-		, 	TotalBotTrans						INT UNSIGNED DEFAULT 0
-		, 	IsUpdate							BIT DEFAULT 0
+			ID							INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY 
+		, 	TransDate					DATETIME NOT NULL
+		, 	SubscriberID				INT UNSIGNED DEFAULT NULL
+		, 	TotalInvalidBrowers			INT UNSIGNED DEFAULT 0
+		, 	TotalBotTrans				INT UNSIGNED DEFAULT 0
+		, 	IsUpdate					BIT DEFAULT 0
+		,	KEY `IX_Temp_RobotTrans` (`TransDate`, `SubscriberID`)
 	);
     
     INSERT INTO Temp_Trans07(TransID, TransDate, AccountID, SubscriberID, DeviceID, Flagged, TransTime)
@@ -155,15 +155,9 @@ BEGIN
 	FROM Temp_TotalTrans AS tmp
     WHERE tmp.IsUpdate = 0;
     
-    UPDATE Temp_Trans07 AS tmp
-		INNER JOIN DCS_DataTrace.DailyLoginTransactionMonitoring AS dt ON dt.TransDate = tmp.TransDate
-																	AND dt.SubscriberID = tmp.SubscriberID
-	SET tmp.DailyLoginTransactionMonitoringID = dt.ID;
-    
     /* == DailyRobotMonitoring == */
-    INSERT INTO Temp_RobotTrans(DailyLoginTransactionMonitoringID, TransDate, SubscriberID, TotalInvalidBrowers, TotalBotTrans)
-    SELECT 	MIN(DailyLoginTransactionMonitoringID) AS DailyLoginTransactionMonitoringID
-        ,	TransDate
+    INSERT INTO Temp_RobotTrans(TransDate, SubscriberID, TotalInvalidBrowers, TotalBotTrans)
+    SELECT 	TransDate
         ,	SubscriberID
         ,	SUM(CASE WHEN Flagged BETWEEN 2 AND 8 THEN 1 ELSE 0 END ) AS TotalInvalidBrowers
         ,	SUM(CASE WHEN Flagged > 8 THEN 1 ELSE 0 END ) AS TotalBotTrans
@@ -177,9 +171,8 @@ BEGIN
 		dt.ModifiedTime = lv_CurrentDatetime,
 		tmp.IsUpdate = 1;
     
-    INSERT INTO DCS_DataTrace.DailyRobotMonitoring(DailyLoginTransactionMonitoringID, TransDate, SubscriberID, TotalInvalidBrowers, TotalBotTrans, CreatedTime, ModifiedTime)
-    SELECT 	tmp.DailyLoginTransactionMonitoringID
-        ,	tmp.TransDate
+    INSERT INTO DCS_DataTrace.DailyRobotMonitoring(TransDate, SubscriberID, TotalInvalidBrowers, TotalBotTrans, CreatedTime, ModifiedTime)
+    SELECT 	tmp.TransDate
         ,	tmp.SubscriberID
         ,	tmp.TotalInvalidBrowers
         ,	tmp.TotalBotTrans

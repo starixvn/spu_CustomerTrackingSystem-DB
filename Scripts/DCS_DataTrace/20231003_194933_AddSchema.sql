@@ -74,7 +74,6 @@ CREATE TABLE DCS_DataTrace.DailyRobotMonitoring(
 		ID 									BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
 	, 	TransDate							DATETIME NOT NULL
 	, 	SubscriberID						INT UNSIGNED DEFAULT NULL
-	,	DailyLoginTransactionMonitoringID 	INT UNSIGNED NOT NULL
 	, 	TotalInvalidBrowers					INT UNSIGNED DEFAULT NULL
 	, 	TotalBotTrans						INT UNSIGNED DEFAULT NULL
 	, 	CreatedTime							DATETIME DEFAULT NULL
