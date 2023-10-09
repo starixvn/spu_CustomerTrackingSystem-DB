@@ -179,7 +179,8 @@ BEGIN
         ,	lv_CurrentDatetime AS CreatedTime
         ,	lv_CurrentDatetime AS ModifiedTime
 	FROM Temp_RobotTrans AS tmp
-    WHERE tmp.IsUpdate = 0;
+    WHERE tmp.IsUpdate = 0
+		AND (tmp.TotalInvalidBrowers > 0 OR tmp.TotalBotTrans > 0);
     
     IF(lv_MaxTransID IS NOT NULL AND lv_MaxTransID > 0) THEN
         UPDATE DCS_DataTrace.SystemSetting 

@@ -61,7 +61,7 @@ BEGIN
     SELECT 	bt.CustID
         ,	cts.SubscriberID
     FROM DCS_DataTrace.BetTicket AS bt
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cts ON cts.CustID = bt.CustID AND cts.RoleID = 1
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cts ON cts.CustID = bt.CustID
     WHERE bt.ID BETWEEN ip_FromID AND ip_ToID
 		AND bt.TransDate = lv_MaxTransDate;
     
