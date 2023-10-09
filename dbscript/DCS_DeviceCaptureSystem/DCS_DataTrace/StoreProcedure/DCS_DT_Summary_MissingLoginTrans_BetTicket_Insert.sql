@@ -20,10 +20,11 @@ BEGIN
 		SET sql_safe_updates = 0;
         CALL DCS_DataTrace.DCS_DT_Summary_MissingLoginTrans_BetTicket_Insert(10);
 	*/
+    DECLARE CONST_MISSINGLOGINTRANSACTION_TRANSDATE INT DEFAULT 2;
     DECLARE lv_CurrentDatetime DATETIME DEFAULT CURRENT_TIMESTAMP();
     DECLARE lv_MaxTransDate DATETIME DEFAULT CURRENT_TIMESTAMP();
     
-    SET lv_MaxTransDate = (SELECT DATE(VValue) FROM DCS_DataTrace.SystemSetting WHERE ID = 2);
+    SET lv_MaxTransDate = (SELECT DATE(VValue) FROM DCS_DataTrace.SystemSetting WHERE ID = CONST_MISSINGLOGINTRANSACTION_TRANSDATE);
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_BetTicket;
 	DROP TEMPORARY TABLE IF EXISTS Temp_LoginTransaction;
@@ -182,6 +183,11 @@ BEGIN
     FROM Temp_CustHistory
     WHERE IsUpdate = 0;
     
-    SET lv_MaxTransDate = DATE_ADD(lv_MaxTransDate, INTERVAL 1 DAY);
+    IF(lv_MaxTransDate IS NOT NULL) THEN
+		SET lv_MaxTransDate = DATE_ADD(lv_MaxTransDate, INTERVAL 1 DAY);
+        UPDATE DCS_DataTrace.SystemSetting 
+        SET VValue = lv_MaxTransDate
+        WHERE ID = CONST_MISSINGLOGINTRANSACTION_TRANSDATE;
+    END IF;
 END$$
 DELIMITER ;

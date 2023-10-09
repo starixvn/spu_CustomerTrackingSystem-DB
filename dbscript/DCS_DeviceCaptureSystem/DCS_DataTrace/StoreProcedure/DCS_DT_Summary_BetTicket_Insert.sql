@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `DCS_DT_Summary_BetTicket_Insert`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DT_Summary_BetTicket_Insert`(
-    IN ip_InputJson LONGTEXT
+    IN ip_BetTicketJson LONGTEXT
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -45,7 +45,7 @@ BEGIN
 		,	tmp.FirstBetTicketTime
 		,	tmp.LastBetTicketTime
 	FROM JSON_TABLE(
-			ip_InputJson,
+			ip_BetTicketJson,
 			 "$[*]" COLUMNS(
 					TransDate				DATETIME			PATH "$.TransDate"
 				,	CustID					INT UNSIGNED		PATH "$.CustID"
