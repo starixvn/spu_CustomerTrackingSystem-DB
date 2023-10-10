@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataTrace" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DT_SystemSetting_GetParameterValue`;
+DROP PROCEDURE IF EXISTS `DCS_DT_SystemSetting_GetParameterByID`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DT_SystemSetting_GetParameterValue`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DT_SystemSetting_GetParameterByID`(
         IN ip_ParameterID   INT
 )
     SQL SECURITY INVOKER
@@ -18,7 +18,7 @@ BEGIN
             
 	    Param's Explanation (filtered by):
         
-        Example: CALL DCS_DT_SystemSetting_GetParameterValue(1);
+        Example: CALL DCS_DT_SystemSetting_GetParameterByID(1);
     */
     
 	SELECT	st.VValue AS ParameterValue

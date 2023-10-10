@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataTrace" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DT_SystemSetting_UpdateParameterValue`;
+DROP PROCEDURE IF EXISTS `DCS_DT_SystemSetting_UpdateParameterByID`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DT_SystemSetting_UpdateParameterValue`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DT_SystemSetting_UpdateParameterByID`(
         IN ip_ParameterID   INT
 	,	IN ip_ParameterValue VARCHAR(255)
 )
@@ -19,7 +19,7 @@ BEGIN
             
 	    Param's Explanation (filtered by):
         
-        Example: CALL DCS_DT_SystemSetting_UpdateParameterValue(1, 0);
+        Example: CALL DCS_DT_SystemSetting_UpdateParameterByID(1, 0);
     */
     
     UPDATE DCS_DataTrace.SystemSetting AS st 

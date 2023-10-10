@@ -22,18 +22,18 @@ BEGIN
         CALL DCS_DataTrace.DCS_DT_Summary_MissingLoginTransaction_GetPackage(10);
 	*/
     
-    DECLARE CONST_SUMMARY_MAXBETTICKETDATE INT DEFAULT 2;
+    DECLARE CONST_SUMMARY_MAXTRANSDATE INT DEFAULT 2;
     
     DECLARE lv_CurrentDatetime DATETIME DEFAULT CURRENT_TIMESTAMP();
 	DECLARE lv_TotalRecord INT UNSIGNED DEFAULT 0;
 	DECLARE lv_NoOfBatch INT UNSIGNED DEFAULT 0;
     DECLARE lv_MaxTransDate DATETIME DEFAULT CURRENT_TIMESTAMP();
     
-    SET lv_MaxTransDate = (SELECT DATE(VValue) FROM DCS_DataTrace.SystemSetting WHERE ID = CONST_SUMMARY_MAXBETTICKETDATE);
+    SET lv_MaxTransDate = (SELECT DATE(VValue) FROM DCS_DataTrace.SystemSetting WHERE ID = CONST_SUMMARY_MAXTRANSDATE);
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_BetTicket; 
+    DROP TEMPORARY TABLE IF EXISTS Temp_BetTransactionSummary; 
     
-    CREATE TEMPORARY TABLE Temp_BetTicket(		
+    CREATE TEMPORARY TABLE Temp_BetTransactionSummary(		
 		    MinID			BIGINT UNSIGNED
         ,   MaxID			BIGINT UNSIGNED
         ,   BatchCount		INT
@@ -41,10 +41,10 @@ BEGIN
     
 	SET @RowId = 0;
     
-    SET lv_TotalRecord = (SELECT COUNT(1) FROM DCS_DataTrace.BetTicket WHERE TransDate = lv_MaxTransDate);
+    SET lv_TotalRecord = (SELECT COUNT(1) FROM DCS_DataTrace.BetTransactionSummary WHERE TransDate = lv_MaxTransDate);
     SET lv_NoOfBatch = CEIL(lv_TotalRecord/ip_BatchSize);
     
-    INSERT INTO Temp_BetTicket (MinID, MaxID, BatchCount)
+    INSERT INTO Temp_BetTransactionSummary (MinID, MaxID, BatchCount)
     SELECT  MIN(tmp.ID) AS MinID
         ,   MAX(tmp.ID) AS MaxID
         ,   SUM(1) AS BatchCount
@@ -52,7 +52,7 @@ BEGIN
 		SELECT	@RowId := @RowId+1
 			,   ID	
 			,   CEIL(@RowId/ip_BatchSize) AS batchID
-		FROM DCS_DataTrace.BetTicket
+		FROM DCS_DataTrace.BetTransactionSummary
 		WHERE TransDate = lv_MaxTransDate
         ORDER BY ID ASC
 	) AS tmp
@@ -60,6 +60,6 @@ BEGIN
     
     SELECT	MinID
 	    ,   MaxID
-	FROM Temp_BetTicket;
+	FROM Temp_BetTransactionSummary;
 END$$
 DELIMITER ;

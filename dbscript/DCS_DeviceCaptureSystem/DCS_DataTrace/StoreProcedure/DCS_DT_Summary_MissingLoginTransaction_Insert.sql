@@ -22,67 +22,59 @@ BEGIN
 	Example:
         CALL DCS_DataTrace.DCS_DT_Summary_MissingLoginTransaction_Insert(1, 2);
 	*/
-    DECLARE CONST_SUMMARY_MAXBETTICKETDATE INT DEFAULT 2;
+    DECLARE CONST_SUMMARY_MAXTRANSDATE INT DEFAULT 2;
     
     DECLARE lv_CurrentDatetime DATETIME DEFAULT CURRENT_TIMESTAMP();
     DECLARE lv_MaxTransDate DATETIME DEFAULT CURRENT_TIMESTAMP();
     
-    SET lv_MaxTransDate = (SELECT DATE(VValue) FROM DCS_DataTrace.SystemSetting WHERE ID = CONST_SUMMARY_MAXBETTICKETDATE);
+    SET lv_MaxTransDate = (SELECT DATE(VValue) FROM DCS_DataTrace.SystemSetting WHERE ID = CONST_SUMMARY_MAXTRANSDATE);
     
-	DROP TEMPORARY TABLE IF EXISTS Temp_BetTicket;
-	DROP TEMPORARY TABLE IF EXISTS Temp_LoginTransaction;
-	DROP TEMPORARY TABLE IF EXISTS Temp_MissingBetTicket;
+	DROP TEMPORARY TABLE IF EXISTS Temp_BetTransactionSummary;
+	DROP TEMPORARY TABLE IF EXISTS Temp_LoginTransactionSummary;
     
-	CREATE TEMPORARY TABLE Temp_BetTicket(
+	CREATE TEMPORARY TABLE Temp_BetTransactionSummary(
 			ID 						BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
-		, 	CustID					INT UNSIGNED DEFAULT NULL
 		, 	SubscriberID			INT UNSIGNED DEFAULT NULL
+		, 	CustID					INT UNSIGNED DEFAULT NULL
 		,	PRIMARY KEY (`ID`)
-		,	UNIQUE KEY `UX_Temp_BetTicket_CustID` (`CustID`)
+		,	INDEX `IX_Temp_BetTransactionSummary_CustID` (`CustID`)
 	);
     
-	CREATE TEMPORARY TABLE Temp_LoginTransaction(
+	CREATE TEMPORARY TABLE Temp_LoginTransactionSummary(
 			ID 						BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
-		, 	CustID					INT UNSIGNED DEFAULT NULL
 		, 	SubscriberID			INT UNSIGNED DEFAULT NULL
+		, 	CustID					INT UNSIGNED DEFAULT NULL
 		,	PRIMARY KEY (`ID`)
-		,	INDEX `IX_Temp_LoginTransaction_CustID` (`CustID`)
-		,	UNIQUE KEY `UX_Temp_LoginTransaction_GROUP` (`SubscriberID`, `CustID`)
+		,	INDEX `IX_Temp_LoginTransactionSummary_CustID` (`CustID`)
 	);
     
-	CREATE TEMPORARY TABLE Temp_MissingBetTicket(
-			ID 						BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
-		, 	CustID					INT UNSIGNED DEFAULT NULL
-		, 	SubscriberID			INT UNSIGNED DEFAULT NULL
-		,	PRIMARY KEY (`ID`)
-	);
-    
-    INSERT INTO Temp_BetTicket(CustID, SubscriberID)
-    SELECT 	bt.CustID
-        ,	cts.SubscriberID
-    FROM DCS_DataTrace.BetTicket AS bt
+    INSERT INTO Temp_BetTransactionSummary(SubscriberID, CustID)
+    SELECT 	DISTINCT
+			cts.SubscriberID
+        ,	bt.CustID
+    FROM DCS_DataTrace.BetTransactionSummary AS bt
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cts ON cts.CustID = bt.CustID
     WHERE bt.ID BETWEEN ip_FromID AND ip_ToID
 		AND bt.TransDate = lv_MaxTransDate;
     
-    INSERT INTO Temp_LoginTransaction(CustID, SubscriberID)
+    INSERT INTO Temp_LoginTransactionSummary(SubscriberID, CustID)
     SELECT 	DISTINCT
-			cts.CustID
-        ,	trans.SubscriberID
-    FROM DCS_DataTrace.LoginTransaction AS trans
+			trans.SubscriberID
+		,	cts.CustID
+    FROM DCS_DataTrace.LoginTransactionSummary AS trans
 		INNER JOIN CTS_DataCenter.CustDCSAccount AS dcs ON dcs.AccountID = trans.AccountID
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cts ON cts.CTSCustID = dcs.CTSCustID
     WHERE trans.TransDate = lv_MaxTransDate
 		AND cts.RoleID = 1;
     
     /* == MissingLoginTransaction == */    
-    INSERT IGNORE INTO DCS_DataTrace.MissingLoginTransaction(TransDate, CustID, SubscriberID, CreatedTime)
+    INSERT IGNORE INTO DCS_DataTrace.MissingLoginTransaction(TransDate, SubscriberID, CustID, CreatedTime)
     SELECT 	lv_MaxTransDate AS TransDate
-		,	tmp_bt.CustID
 		,	tmp_bt.SubscriberID
+		,	tmp_bt.CustID
         ,	lv_CurrentDatetime AS CreatedTime
-    FROM Temp_BetTicket AS tmp_bt
-		LEFT JOIN Temp_LoginTransaction AS tmp_trans ON tmp_trans.CustID = tmp_bt.CustID
+    FROM Temp_BetTransactionSummary AS tmp_bt
+		LEFT JOIN Temp_LoginTransactionSummary AS tmp_trans ON tmp_trans.CustID = tmp_bt.CustID
 		LEFT JOIN DCS_DataTrace.MissingLoginTransaction AS mlt ON mlt.TransDate = lv_MaxTransDate AND mlt.CustID = tmp_bt.CustID
     WHERE tmp_trans.ID IS NULL
 		AND mlt.ID IS NULL;

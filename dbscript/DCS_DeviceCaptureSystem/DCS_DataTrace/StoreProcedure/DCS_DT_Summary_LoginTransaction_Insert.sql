@@ -30,8 +30,8 @@ BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Trans07;
 	DROP TEMPORARY TABLE IF EXISTS Temp_LoginTrans;
-	DROP TEMPORARY TABLE IF EXISTS Temp_TotalTrans;
-	DROP TEMPORARY TABLE IF EXISTS Temp_RobotTrans;
+	DROP TEMPORARY TABLE IF EXISTS Temp_TotalTransSummary;
+	DROP TEMPORARY TABLE IF EXISTS Temp_RobotTransSummary;
     
 	CREATE TEMPORARY TABLE Temp_Trans07(
 			TransID						BIGINT UNSIGNED NOT NULL PRIMARY KEY
@@ -55,26 +55,26 @@ BEGIN
 		, 	LastLoginTransTime			DATETIME DEFAULT NULL
 		, 	TotalTrans					INT UNSIGNED DEFAULT 0
 		, 	IsUpdate					BIT DEFAULT 0
-		,	KEY `IX_Temp_LoginTrans_Group` (`TransDate`, `SubscriberID`)
+		,	KEY `IX_Temp_LoginTrans_Group` (`TransDate`, `SubscriberID`, `AccountID`, `DeviceID`, `Flagged`)
 	);
     
-	CREATE TEMPORARY TABLE Temp_TotalTrans(
+	CREATE TEMPORARY TABLE Temp_TotalTransSummary(
 			ID							BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY 
 		, 	TransDate					DATETIME NOT NULL
 		, 	SubscriberID				INT UNSIGNED DEFAULT NULL
 		, 	TotalTrans					INT UNSIGNED DEFAULT 0
 		, 	IsUpdate					BIT DEFAULT 0
-		,	KEY `IX_Temp_TotalTrans` (`TransDate`, `SubscriberID`)
+		,	KEY `IX_Temp_TotalTransSummary_TransDate_SubscriberID` (`TransDate`, `SubscriberID`)
 	);
     
-	CREATE TEMPORARY TABLE Temp_RobotTrans(
+	CREATE TEMPORARY TABLE Temp_RobotTransSummary(
 			ID							INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY 
 		, 	TransDate					DATETIME NOT NULL
 		, 	SubscriberID				INT UNSIGNED DEFAULT NULL
 		, 	TotalInvalidBrowers			INT UNSIGNED DEFAULT 0
 		, 	TotalBotTrans				INT UNSIGNED DEFAULT 0
 		, 	IsUpdate					BIT DEFAULT 0
-		,	KEY `IX_Temp_RobotTrans` (`TransDate`, `SubscriberID`)
+		,	KEY `IX_Temp_RobotTransSummary_TransDate_SubscriberID` (`TransDate`, `SubscriberID`)
 	);
     
     INSERT INTO Temp_Trans07(TransID, TransDate, AccountID, SubscriberID, DeviceID, Flagged, TransTime)
@@ -105,7 +105,7 @@ BEGIN
 	FROM Temp_Trans07
     GROUP BY TransDate, SubscriberID, AccountID, DeviceID, Flagged;
     
-    UPDATE DCS_DataTrace.LoginTransaction AS tl
+    UPDATE DCS_DataTrace.LoginTransactionSummary AS tl
 		INNER JOIN Temp_LoginTrans AS tmp ON 	tl.TransDate = tmp.TransDate
 											AND tl.SubscriberID = tmp.SubscriberID
 											AND tl.AccountID = tmp.AccountID
@@ -117,7 +117,7 @@ BEGIN
 		tl.ModifiedTime = lv_CurrentDatetime,
 		tmp.IsUpdate = 1;
     
-    INSERT INTO DCS_DataTrace.LoginTransaction(TransDate, AccountID, SubscriberID, DeviceID, Flagged, FirstLoginTransTime, LastLoginTransTime, TotalTrans, CreatedTime, ModifiedTime)
+    INSERT INTO DCS_DataTrace.LoginTransactionSummary(TransDate, AccountID, SubscriberID, DeviceID, Flagged, FirstLoginTransTime, LastLoginTransTime, TotalTrans, CreatedTime, ModifiedTime)
     SELECT 	tmp.TransDate
 		,	tmp.AccountID
         ,	tmp.SubscriberID
@@ -131,32 +131,32 @@ BEGIN
 	FROM Temp_LoginTrans AS tmp
     WHERE tmp.IsUpdate = 0;
 
-    /* == DailyLoginTransactionMonitoring == */        
-    INSERT INTO Temp_TotalTrans(TransDate, SubscriberID, TotalTrans)
+    /* == DailyLoginTransactionSummary == */        
+    INSERT INTO Temp_TotalTransSummary(TransDate, SubscriberID, TotalTrans)
     SELECT 	TransDate
         ,	SubscriberID
         ,	COUNT(1) AS TotalTrans
-	FROM Temp_Trans07 AS tmp
+	FROM Temp_Trans07
     GROUP BY TransDate, SubscriberID;
     
-    UPDATE DCS_DataTrace.DailyLoginTransactionMonitoring AS dt
-		INNER JOIN Temp_TotalTrans AS tmp ON 	dt.TransDate = tmp.TransDate
+    UPDATE DCS_DataTrace.DailyLoginTransactionSummary AS dt
+		INNER JOIN Temp_TotalTransSummary AS tmp ON 	dt.TransDate = tmp.TransDate
 											AND dt.SubscriberID = tmp.SubscriberID
 	SET dt.TotalTrans = dt.TotalTrans + tmp.TotalTrans,
 		dt.ModifiedTime = lv_CurrentDatetime,
 		tmp.IsUpdate = 1;
     
-    INSERT INTO DCS_DataTrace.DailyLoginTransactionMonitoring(TransDate, SubscriberID, TotalTrans, CreatedTime, ModifiedTime)
+    INSERT INTO DCS_DataTrace.DailyLoginTransactionSummary(TransDate, SubscriberID, TotalTrans, CreatedTime, ModifiedTime)
     SELECT 	tmp.TransDate
         ,	tmp.SubscriberID
         ,	tmp.TotalTrans
         ,	lv_CurrentDatetime AS CreatedTime
         ,	lv_CurrentDatetime AS ModifiedTime
-	FROM Temp_TotalTrans AS tmp
+	FROM Temp_TotalTransSummary AS tmp
     WHERE tmp.IsUpdate = 0;
     
     /* == DailyRobotMonitoring == */
-    INSERT INTO Temp_RobotTrans(TransDate, SubscriberID, TotalInvalidBrowers, TotalBotTrans)
+    INSERT INTO Temp_RobotTransSummary(TransDate, SubscriberID, TotalInvalidBrowers, TotalBotTrans)
     SELECT 	TransDate
         ,	SubscriberID
         ,	SUM(CASE WHEN Flagged BETWEEN 2 AND 8 THEN 1 ELSE 0 END ) AS TotalInvalidBrowers
@@ -164,21 +164,21 @@ BEGIN
 	FROM Temp_Trans07
     GROUP BY TransDate, SubscriberID;
     
-    UPDATE DCS_DataTrace.DailyRobotMonitoring AS dt
-		INNER JOIN Temp_RobotTrans AS tmp ON dt.TransDate = tmp.TransDate AND dt.SubscriberID = tmp.SubscriberID
+    UPDATE DCS_DataTrace.DailyRobotSummary AS dt
+		INNER JOIN Temp_RobotTransSummary AS tmp ON dt.TransDate = tmp.TransDate AND dt.SubscriberID = tmp.SubscriberID
 	SET dt.TotalInvalidBrowers = dt.TotalInvalidBrowers + tmp.TotalInvalidBrowers,
 		dt.TotalBotTrans = dt.TotalBotTrans + tmp.TotalBotTrans,
 		dt.ModifiedTime = lv_CurrentDatetime,
 		tmp.IsUpdate = 1;
     
-    INSERT INTO DCS_DataTrace.DailyRobotMonitoring(TransDate, SubscriberID, TotalInvalidBrowers, TotalBotTrans, CreatedTime, ModifiedTime)
+    INSERT INTO DCS_DataTrace.DailyRobotSummary(TransDate, SubscriberID, TotalInvalidBrowers, TotalBotTrans, CreatedTime, ModifiedTime)
     SELECT 	tmp.TransDate
         ,	tmp.SubscriberID
         ,	tmp.TotalInvalidBrowers
         ,	tmp.TotalBotTrans
         ,	lv_CurrentDatetime AS CreatedTime
         ,	lv_CurrentDatetime AS ModifiedTime
-	FROM Temp_RobotTrans AS tmp
+	FROM Temp_RobotTransSummary AS tmp
     WHERE tmp.IsUpdate = 0
 		AND (tmp.TotalInvalidBrowers > 0 OR tmp.TotalBotTrans > 0);
     
