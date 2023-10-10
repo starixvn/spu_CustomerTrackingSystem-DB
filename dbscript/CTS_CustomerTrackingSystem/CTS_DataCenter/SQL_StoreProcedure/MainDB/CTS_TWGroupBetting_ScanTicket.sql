@@ -29,6 +29,7 @@ AS
 		- 20230719@Long.Luu:	  Addup Big Leagues for Soccer				[Redmine ID: #191399]
 		- 20230811@Long.Luu:	  Addup Big Leagues for Soccer				[Redmine ID: #192614]
 		- 20230829@Long.Luu:	  Addup Normal Account CC 4000				[Redmine ID: #192976]
+		- 20231010@Long.Luu:	  Addup Big Leagues for Soccer				[Redmine ID: #1925163]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_ScanTicket] '2022-02-15 23:10:15.983','2022-02-16 02:15:20.983',10900
@@ -99,7 +100,7 @@ BEGIN
 
 	INSERT INTO #TmpBigLeague (LeagueId,Sporttype)
 	SELECT	*, 1 -- Soccer
-	FROM (VALUES (3),(4),(5),(43),(1837),(356),(9540),(71697),(846),(27909),(57328),(99),(247),(130083)) AS X(a);
+	FROM (VALUES (3),(4),(5),(43),(1837),(356),(9540),(71697),(846),(27909),(57328),(99),(247),(130083),(126481)) AS X(a);
 
 	INSERT INTO #TmpBigLeague (LeagueId,Sporttype)
 	SELECT	*, 2 -- Basketball
