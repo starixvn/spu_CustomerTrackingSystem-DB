@@ -39,14 +39,14 @@ BEGIN
         ,   BatchCount		INT
     ) ENGINE = MEMORY;
     
-	set @RowId = 0;
+	SET @RowId = 0;
     
     SET lv_TotalRecord = (SELECT COUNT(1) FROM DCS_DataTrace.BetTicket WHERE TransDate = lv_MaxTransDate);
     SET lv_NoOfBatch = CEIL(lv_TotalRecord/ip_BatchSize);
     
     INSERT INTO Temp_BetTicket (MinID, MaxID, BatchCount)
-    SELECT  MIN(ID) AS MinID
-        ,   MAX(ID) AS MaxID
+    SELECT  MIN(tmp.ID) AS MinID
+        ,   MAX(tmp.ID) AS MaxID
         ,   SUM(1) AS BatchCount
 	FROM (
 		SELECT	@RowId := @RowId+1

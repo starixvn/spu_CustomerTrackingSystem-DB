@@ -34,13 +34,13 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_RobotTrans;
     
 	CREATE TEMPORARY TABLE Temp_Trans07(
-			TransID								BIGINT UNSIGNED NOT NULL PRIMARY KEY
-		, 	TransDate							DATETIME NOT NULL
-		, 	SubscriberID						INT UNSIGNED DEFAULT NULL
-		, 	AccountID							BIGINT UNSIGNED DEFAULT NULL
-		, 	DeviceID							BIGINT UNSIGNED DEFAULT NULL
-		, 	Flagged								SMALLINT DEFAULT NULL
-		, 	TransTime							DATETIME DEFAULT NULL
+			TransID						BIGINT UNSIGNED NOT NULL PRIMARY KEY
+		, 	TransDate					DATETIME NOT NULL
+		, 	SubscriberID				INT UNSIGNED DEFAULT NULL
+		, 	AccountID					BIGINT UNSIGNED DEFAULT NULL
+		, 	DeviceID					BIGINT UNSIGNED DEFAULT NULL
+		, 	Flagged						SMALLINT DEFAULT NULL
+		, 	TransTime					DATETIME DEFAULT NULL
 		,	KEY `IX_Temp_Trans07_TransDate_SubscriberID` (`TransDate`, `SubscriberID`)
 	);
     

@@ -50,7 +50,7 @@ CREATE TABLE DCS_DataTrace.LoginTransaction(
 	,	PRIMARY KEY (`ID`)
 	,	INDEX `IX_LoginTransaction_SubscriberID` (`SubscriberID`)
 	,	INDEX `IX_LoginTransaction_AccountID` (`AccountID`)
-	,	UNIQUE INDEX `UX_TransactionLite_Group` (`TransDate`,`AccountID`,`SubscriberID`,`DeviceID`,`Flagged`)
+	,	UNIQUE INDEX `UX_LoginTransaction_Group` (`TransDate`,`AccountID`,`SubscriberID`,`DeviceID`,`Flagged`)
 ) ENGINE=InnoDB;
 
 
@@ -97,25 +97,6 @@ CREATE TABLE DCS_DataTrace.BetTicket(
 	,	PRIMARY KEY (`ID`)
 	,	UNIQUE INDEX `UX_BetTicket_TransDate_CustID` (`TransDate`,`CustID`)
 	,	INDEX `IX_BetTicket_CustID` (`CustID`)
-) ENGINE=InnoDB;
-
-
-DROP TABLE IF EXISTS DCS_DataTrace.CustHistory;
-
-CREATE TABLE DCS_DataTrace.CustHistory(
-		ID 					BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
-	, 	TransDate			DATETIME NOT NULL
-	, 	CustID				INT UNSIGNED DEFAULT NULL
-	, 	SubscriberID		INT UNSIGNED DEFAULT NULL
-	, 	FirstLoginTransTime	DATETIME DEFAULT NULL
-	, 	LastLoginTransTime	DATETIME DEFAULT NULL
-	, 	FirstBetTicketTime	DATETIME DEFAULT NULL
-	, 	LastBetTicketTime	DATETIME DEFAULT NULL
-	, 	CreatedTime			DATETIME DEFAULT NULL
-	, 	ModifiedTime		DATETIME DEFAULT NULL
-	,	PRIMARY KEY (`ID`)
-	,	UNIQUE INDEX `UX_CustHistory_TransDate_CustID` (`TransDate`,`CustID`)
-	,	INDEX `IX_CustHistory_SubscriberID_CustID` (`SubscriberID`, `CustID`)
 ) ENGINE=InnoDB;
 
 DROP TABLE IF EXISTS DCS_DataTrace.MissingLoginTransaction;

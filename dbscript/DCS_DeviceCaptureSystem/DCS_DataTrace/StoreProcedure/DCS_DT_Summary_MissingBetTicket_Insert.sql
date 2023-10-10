@@ -39,7 +39,6 @@ BEGIN
 		, 	SubscriberID			INT UNSIGNED DEFAULT NULL
 		,	PRIMARY KEY (`ID`)
 		,	INDEX `IX_Temp_LoginTransaction_CustID` (`CustID`)
-		,	UNIQUE KEY `UX_Temp_LoginTransaction_GROUP` (`SubscriberID`, `CustID`)
 	);
     
 	CREATE TEMPORARY TABLE Temp_BetTicket(
@@ -68,7 +67,7 @@ BEGIN
 		AND trans.TransDate = lv_MaxTransDate
         AND cts.RoleID = 1;
     
-    INSERT INTO Temp_BetTicket(CustID, SubscriberID)
+    INSERT IGNORE INTO Temp_BetTicket(CustID, SubscriberID)
     SELECT 	bt.CustID
         ,	cts.SubscriberID
     FROM DCS_DataTrace.BetTicket AS bt
