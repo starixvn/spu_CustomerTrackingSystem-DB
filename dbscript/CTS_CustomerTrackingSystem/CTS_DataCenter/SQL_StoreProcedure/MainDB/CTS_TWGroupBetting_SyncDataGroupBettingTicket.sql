@@ -17,6 +17,7 @@ AS
 		- 20230626@Victoria.Le: Add new columns	RulesType,IsRule1[tag by %RFM],IsRule2[tag by %CC],IsRule3[tag by %Betfrom]
 																			[Redmine ID: #189505]
 		- 20230818@Victoria.Le: Add ROWLOCK with the delete statement [Redmine ID: #191955]
+		- 20231011@Victoria.Le: Keep data 14 days instead of 7 days [Redmine ID: #195298]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_SyncDataGroupBettingTicket] 
@@ -25,7 +26,7 @@ BEGIN
 	SET NOCOUNT ON;
 
 	DECLARE @GBTicketXML				XML
-		,	@ArchivedDateTicketHistory	DATETIME = DATEADD(day, -7, GETDATE())
+		,	@ArchivedDateTicketHistory	DATETIME = DATEADD(day, -14, GETDATE())
 		,	@DailyMidnight				DATETIME
 		,	@RunningDate				DATETIME
 		;
