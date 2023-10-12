@@ -23,6 +23,7 @@ BEGIN
         CALL DCS_DataTrace.DCS_DT_Summary_MissingBetTransaction_Insert(1, 2);
 	*/
     DECLARE CONST_SUMMARY_MAXTRANSDATE INT DEFAULT 2;
+    DECLARE CONST_MISSINGBETTRANSACTION_TYPE SMALLINT DEFAULT 1;
     
     DECLARE lv_CurrentDatetime DATETIME DEFAULT CURRENT_TIMESTAMP();
     DECLARE lv_MaxTransDate DATETIME DEFAULT CURRENT_TIMESTAMP();
@@ -67,15 +68,16 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cts ON cts.CustID = bt.CustID
     WHERE bt.TransDate = lv_MaxTransDate;
     
-    /* == MissingBetTransactionSummary == */
-    INSERT IGNORE INTO DCS_DataTrace.MissingBetTransaction(TransDate, SubscriberID, CustID, CreatedTime)
-    SELECT 	lv_MaxTransDate AS TransDate
+    /* == MissingTransaction == */
+    INSERT IGNORE INTO DCS_DataTrace.MissingTransaction(MissingType, TransDate, SubscriberID, CustID, CreatedTime)
+    SELECT 	CONST_MISSINGBETTRANSACTION_TYPE AS MissingType
+		,	lv_MaxTransDate AS TransDate
 		,	tmp_trans.SubscriberID
 		,	tmp_trans.CustID
         ,	lv_CurrentDatetime AS CreatedTime
     FROM Temp_LoginTransactionSummary AS tmp_trans
 		LEFT JOIN Temp_BetTransactionSummary AS tmp_bt ON tmp_bt.CustID = tmp_trans.CustID
-		LEFT JOIN DCS_DataTrace.MissingBetTransaction AS mbt ON mbt.TransDate = lv_MaxTransDate AND mbt.CustID = tmp_trans.CustID
+		LEFT JOIN DCS_DataTrace.MissingTransaction AS mbt ON mbt.MissingType = CONST_MISSINGBETTRANSACTION_TYPE AND mbt.TransDate = lv_MaxTransDate AND mbt.CustID = tmp_trans.CustID
     WHERE tmp_bt.ID IS NULL
 		AND mbt.ID IS NULL;
     
