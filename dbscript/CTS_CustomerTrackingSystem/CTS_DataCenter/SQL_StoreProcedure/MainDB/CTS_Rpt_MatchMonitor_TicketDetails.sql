@@ -59,6 +59,7 @@ AS
 								Show all tickets - Add Filter by Danger and Status [Redmine ID: #191401]
 		- 20230911@Casey.Huynh:	Filter by CustomerClass, TotalAmount, Reason, AGroup, MGroup [Redmine ID: #193029]
 		- 20231009@Casey.Huynh: Fixed Sum CustAmount [Redmine ID: #195204]
+		- 20231010@Casey.Huynh: Fixed Filter Trans With Multi Reason [Redmine ID: #195204]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize)
@@ -317,6 +318,17 @@ BEGIN
 			CustID	ASC
 		,	BetTeam ASC
 	);
+
+	IF	OBJECT_ID('tempdb..#tmpTransIdReason') IS NOT NULL
+				BEGIN
+					DROP TABLE #tmpTransIdReason;
+				END;
+
+				CREATE TABLE #tmpTransIdReason(
+						TransId			BIGINT NOT NULL PRIMARY KEY
+					,	ListReason		VARCHAR(MAX)
+					,	MinReason		VARCHAR(50) DEFAULT '0'	
+				);
 
 	--=======GET BALANCE UP/ MOVE BET DAY===========================================================
 	INSERT INTO #tmpBUMBData(BUDay,MBDay)
@@ -890,44 +902,28 @@ BEGIN
 			IF @ListReason <> ''
 			BEGIN
 				INSERT INTO #tmpSupportedReason (Reason)
-				SELECT ssk.value FROM STRING_SPLIT(@ListReason, ',') ssk;
+				SELECT ssk.value FROM STRING_SPLIT(@ListReason, ',') ssk;				
+				
+				--Delete Dup ticket 
+				INSERT INTO #tmpTransIdReason(TransID, ListReason, MinReason)
+				SELECT	tmpTr.TransID
+					,	STRING_AGG(tmpRs.Reason, ',') WITHIN GROUP (ORDER BY tmpRs.Reason) AS Reason
+					,	MIN(tmpRs.Reason)
+				FROM #tmpTransIds AS tmpTr WITH(NOLOCK)
+					LEFT JOIN #tmpSupportedReason AS tmpRs ON tmpRs.Reason = tmpTr.Reason
+				GROUP BY TransID;
 
-							IF	OBJECT_ID('tempdb..#tmpTransIdReason') IS NOT NULL
-				BEGIN
-					DROP TABLE #tmpTransIdReason;
-				END;
-
-				CREATE TABLE #tmpTransIdReason(
-						TransId			BIGINT NOT NULL PRIMARY KEY
-					,	ListReason		VARCHAR(MAX)
-					,	MinReason		VARCHAR(50) DEFAULT '0'	
-				);
-
-
+				UPDATE tmpTk
+				SET	tmpTk.ListReason = tmpTr.ListReason
+				,	tmpTk.Reason = CASE WHEN tmpTr.MinReason = tmpTk.Reason THEN tmpTr.MinReason ELSE '-1' END
+				FROM #tmpTickets AS tmpTk
+					INNER JOIN #tmpTransIdReason AS tmpTr ON tmpTk.TransId = tmpTr.TransID
+				
 				--Delete ticket is not in Reason Filter
 				DELETE t
 				FROM #tmpTickets AS t
 					LEFT JOIN #tmpSupportedReason AS c ON c.Reason = ISNULL(t.Reason,'0')
-				WHERE c.Reason IS NULL;
-
-				--Delete Dup ticket 
-				INSERT INTO #tmpTransIdReason(TransID, ListReason, MinReason)
-				SELECT	TransID
-					,	STRING_AGG( Reason, ',') WITHIN GROUP (ORDER BY Reason) AS Reason
-					,	MIN(Reason)
-				FROM #tmpTransIds WITH(NOLOCK)  
-				GROUP BY TransID
-				HAVING COUNT(TransID) > 1;
-
-				DELETE t
-				FROM #tmpTickets AS t
-					INNER JOIN #tmpTransIdReason AS tmpTr ON t.TransId = tmpTr.TransID
-				WHERE t.Reason > tmpTr.MinReason; 
-
-				UPDATE tmpTk
-				SET tmpTk.ListReason = tmpTr.ListReason
-				FROM #tmpTickets AS tmpTk
-					INNER JOIN #tmpTransIdReason AS tmpTr ON tmpTk.TransId = tmpTr.TransID
+				WHERE c.Reason IS NULL;				
 
 			END;
 
