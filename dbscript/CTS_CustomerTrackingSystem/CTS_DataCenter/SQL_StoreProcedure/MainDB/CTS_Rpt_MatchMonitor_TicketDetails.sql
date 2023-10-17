@@ -60,6 +60,7 @@ AS
 		- 20230911@Casey.Huynh:	Filter by CustomerClass, TotalAmount, Reason, AGroup, MGroup [Redmine ID: #193029]
 		- 20231009@Casey.Huynh: Fixed Sum CustAmount [Redmine ID: #195204]
 		- 20231010@Casey.Huynh: Fixed Filter Trans With Multi Reason [Redmine ID: #195204]
+		- 20231017@Victoria.Le: Modify Formula to calculate Odds - For Decimal Odds [Redmine ID: #195562]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize)
@@ -429,7 +430,9 @@ BEGIN
 													WHEN ot.OddsType IS NOT NULL THEN (CASE 
 																						WHEN b.odds <= 2 THEN (b.odds - 1)
 																						WHEN b.odds > 2 THEN -(1/(b.odds - 1)) END)
-													ELSE b.odds END)
+													ELSE (CASE 
+															WHEN b.odds <= 1 THEN b.odds
+															WHEN b.odds > 1 THEN -(1/b.odds) END) END)
 						-- Hong Kong
 						WHEN b.oddstype = 2 THEN (CASE	
 													WHEN b.odds <= 1 THEN b.odds
