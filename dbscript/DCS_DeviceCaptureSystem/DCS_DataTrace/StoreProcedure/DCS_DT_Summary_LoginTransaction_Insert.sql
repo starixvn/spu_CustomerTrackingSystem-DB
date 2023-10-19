@@ -45,13 +45,19 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_LoginTrans(
 			ID							BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY 
 		, 	TransDate					DATETIME NOT NULL
+		, 	TransWeek					INT UNSIGNED DEFAULT NULL
+		, 	TransMonth					INT UNSIGNED DEFAULT NULL
 		, 	SubscriberID				INT UNSIGNED DEFAULT NULL
+		, 	SubscriberName				VARCHAR(50) DEFAULT NULL
 		, 	AccountID					BIGINT UNSIGNED DEFAULT NULL
+		, 	CTSCustID					BIGINT UNSIGNED DEFAULT NULL
+		, 	LoginName					VARCHAR(100) DEFAULT NULL
 		, 	DeviceID					BIGINT UNSIGNED DEFAULT NULL
 		, 	Flagged						SMALLINT DEFAULT NULL
+		, 	FlaggedGroup				SMALLINT DEFAULT NULL
+		, 	TotalTrans					INT UNSIGNED DEFAULT 0
 		, 	FirstLoginTransTime			DATETIME DEFAULT NULL
 		, 	LastLoginTransTime			DATETIME DEFAULT NULL
-		, 	TotalTrans					INT UNSIGNED DEFAULT 0
 		, 	IsUpdate					BIT DEFAULT 0
 		,	KEY `IX_Temp_LoginTrans_Group` (`TransDate`, `SubscriberID`, `AccountID`, `DeviceID`, `Flagged`)
 	);
@@ -72,18 +78,30 @@ BEGIN
     SET lv_MaxTransID = (SELECT MAX(TransID) FROM Temp_Trans07);
     
     /* == LoginTransaction == */
-    INSERT INTO Temp_LoginTrans(TransDate, AccountID, SubscriberID, DeviceID, Flagged, FirstLoginTransTime, LastLoginTransTime, TotalTrans)
+    INSERT INTO Temp_LoginTrans(TransDate, SubscriberID, AccountID, DeviceID, Flagged, FirstLoginTransTime, LastLoginTransTime, TotalTrans)
     SELECT 	TransDate
-		,	AccountID
         ,	SubscriberID
+		,	AccountID
 		,	DeviceID
         ,	Flagged
         ,	MIN(TransTime) AS FirstLoginTransTime
         ,	MAX(TransTime) AS LastLoginTransTime
         ,	COUNT(1) AS TotalTrans
-	FROM Temp_Trans07
+	FROM Temp_Trans07 AS tmp
     GROUP BY TransDate, SubscriberID, AccountID, DeviceID, Flagged;
     
+    UPDATE Temp_LoginTrans AS tmp
+		LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = tmp.SubscriberID
+		LEFT JOIN DCS_DataCenter.Account AS acc ON acc.AccountID = tmp.AccountID
+		LEFT JOIN CTS_DataCenter.CustDCSAccount AS dcs ON dcs.AccountID = tmp.AccountID
+		LEFT JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.ItemID = tmp.Flagged
+	SET tmp.TransWeek = YEARWEEK(tmp.TransDate, 0),
+		tmp.TransMonth = DATE_FORMAT(tmp.TransDate, '%Y%m'),
+		tmp.SubscriberName = sub.SubscriberName,
+		tmp.LoginName = acc.LoginName,
+		tmp.CTSCustID = dcs.CTSCustID,
+		tmp.FlaggedGroup = sl.GroupItem;
+	
     UPDATE DCS_DataTrace.LoginTransactionSummary AS tl
 		INNER JOIN Temp_LoginTrans AS tmp ON 	tl.TransDate = tmp.TransDate
 											AND tl.SubscriberID = tmp.SubscriberID
@@ -96,12 +114,18 @@ BEGIN
 		tl.ModifiedTime = lv_CurrentDatetime,
 		tmp.IsUpdate = 1;
     
-    INSERT INTO DCS_DataTrace.LoginTransactionSummary(TransDate, AccountID, SubscriberID, DeviceID, Flagged, FirstLoginTransTime, LastLoginTransTime, TotalTrans, CreatedTime, ModifiedTime)
+    INSERT INTO DCS_DataTrace.LoginTransactionSummary(TransDate, TransWeek, TransMonth, SubscriberID, SubscriberName, AccountID, CTSCustID, LoginName, DeviceID, Flagged, FlaggedGroup, FirstLoginTransTime, LastLoginTransTime, TotalTrans, CreatedTime, ModifiedTime)
     SELECT 	tmp.TransDate
-		,	tmp.AccountID
+		,	tmp.TransWeek
+		,	tmp.TransMonth
         ,	tmp.SubscriberID
+        ,	tmp.SubscriberName
+		,	tmp.AccountID
+		,	tmp.CTSCustID
+		,	tmp.LoginName
 		,	tmp.DeviceID
         ,	tmp.Flagged
+        ,	tmp.FlaggedGroup
         ,	tmp.FirstLoginTransTime
         ,	tmp.LastLoginTransTime
         ,	tmp.TotalTrans
