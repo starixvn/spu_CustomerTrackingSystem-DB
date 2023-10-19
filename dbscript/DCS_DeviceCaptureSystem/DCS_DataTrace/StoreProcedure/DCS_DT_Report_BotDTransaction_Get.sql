@@ -20,24 +20,43 @@ BEGIN
 	Param's Explanation (filtered by):
 
 	Example:
-        CALL DCS_DataTrace.DCS_DT_Report_BotDTransaction_Get('2023-10-17', '2023-10-17');
+        CALL DCS_DataTrace.DCS_DT_Report_BotDTransaction_Get('2023-10-01', '2023-10-06');
 	*/
     
+	DROP TEMPORARY TABLE IF EXISTS Temp_LoginTrans;
+    
+	CREATE TEMPORARY TABLE Temp_LoginTrans(
+			ID							BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY
+		, 	TransDate					DATETIME NOT NULL
+		, 	SubscriberID				INT UNSIGNED DEFAULT NULL
+		, 	SubscriberName				VARCHAR(50) DEFAULT NULL
+		, 	FlaggedGroup				SMALLINT DEFAULT NULL
+		, 	FlaggedGroupName			VARCHAR(200) DEFAULT NULL
+		, 	TotalTrans					INT UNSIGNED DEFAULT NULL
+		,	KEY `IX_Temp_LoginTrans_FlaggedGroup` (`FlaggedGroup`)
+	);
+    
+    INSERT INTO Temp_LoginTrans(TransDate, SubscriberID, SubscriberName, FlaggedGroup, TotalTrans)
 	SELECT 	trans.TransDate
+		,	trans.SubscriberID
 		,	sub.SubscriberName
-		,	cts.Site
-		,	CASE WHEN cts.IsLicensee = 1 THEN 'Deposit' ELSE 'Credit' END AS IsLicensee
-		,	cts.Currency
-		,	sl.ItemName AS Flagged
+		,	trans.FlaggedGroup
 		,	SUM(trans.TotalTrans) AS TotalTrans
-	FROM DCS_DataTrace.LoginTransactionSummary AS trans
+	FROM DCS_DataTrace.LoginTransactionSummary AS trans FORCE INDEX (IX_LoginTransactionSummary_FlaggedGroup)
 		INNER JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = trans.SubscriberID
-		INNER JOIN CTS_DataCenter.CustDCSAccount AS dcs ON dcs.AccountID = trans.AccountID
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cts ON cts.CTSCustID = dcs.CTSCustID
-		INNER JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.ItemID = trans.Flagged
 	WHERE trans.TransDate BETWEEN ip_FromDate AND ip_ToDate
-	GROUP BY trans.TransDate, trans.SubscriberID, trans.AccountID, sl.ItemName
-    ORDER BY trans.TransDate ASC;
+	GROUP BY trans.TransDate, trans.SubscriberID, trans.FlaggedGroup;
+    
+    UPDATE Temp_LoginTrans AS tmp
+		INNER JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.GroupItem = tmp.FlaggedGroup
+	SET tmp.FlaggedGroupName = sl.ItemName;
+    
+    SELECT 	TransDate
+		,	SubscriberID
+        ,	SubscriberName
+        ,	FlaggedGroupName AS Flagged
+        ,	TotalTrans
+	FROM Temp_LoginTrans;
     
 END$$
 DELIMITER ;
