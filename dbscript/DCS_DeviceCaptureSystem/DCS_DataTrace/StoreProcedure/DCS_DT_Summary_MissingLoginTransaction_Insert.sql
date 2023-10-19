@@ -23,7 +23,7 @@ BEGIN
         CALL DCS_DataTrace.DCS_DT_Summary_MissingLoginTransaction_Insert(1, 2);
 	*/
     DECLARE CONST_SUMMARY_MAXTRANSDATE INT DEFAULT 2;
-    DECLARE CONST_MISSINGLOGINTRANSACTION_TYPE SMALLINT DEFAULT 0;
+    DECLARE CONST_MISSINGLOGINTRANSACTION_TYPE SMALLINT DEFAULT 1;
     
     DECLARE lv_CurrentDatetime DATETIME DEFAULT CURRENT_TIMESTAMP();
     DECLARE lv_MaxTransDate DATETIME DEFAULT CURRENT_TIMESTAMP();
@@ -39,6 +39,7 @@ BEGIN
 		, 	CustID					INT UNSIGNED DEFAULT NULL
 		,	PRIMARY KEY (`ID`)
 		,	INDEX `IX_Temp_BetTransactionSummary_CustID` (`CustID`)
+		,	INDEX `IX_Temp_BetTransactionSummary_SubscriberID_CustID` (`SubscriberID`, `CustID`)
 	);
     
 	CREATE TEMPORARY TABLE Temp_LoginTransactionSummary(
@@ -69,17 +70,24 @@ BEGIN
 		AND cts.RoleID = 1;
     
     /* == MissingTransaction == */    
+    DELETE tmp_bt
+	FROM Temp_BetTransactionSummary AS tmp_bt
+		INNER JOIN Temp_LoginTransactionSummary AS tmp_trans ON tmp_trans.CustID = tmp_bt.CustID;
+        
+    DELETE tmp_bt
+	FROM Temp_BetTransactionSummary AS tmp_bt
+		INNER JOIN DCS_DataTrace.MissingTransaction AS mt ON mt.TransDate = lv_MaxTransDate 
+														AND mt.SubscriberID = tmp_bt.SubscriberID 
+                                                        AND mt.MissingType = CONST_MISSINGLOGINTRANSACTION_TYPE
+														AND mt.CustID = tmp_bt.CustID;
+    
     INSERT IGNORE INTO DCS_DataTrace.MissingTransaction(MissingType, TransDate, SubscriberID, CustID, CreatedTime)
     SELECT 	CONST_MISSINGLOGINTRANSACTION_TYPE AS MissingType
 		,	lv_MaxTransDate AS TransDate
-		,	tmp_bt.SubscriberID
-		,	tmp_bt.CustID
+		,	SubscriberID
+		,	CustID
         ,	lv_CurrentDatetime AS CreatedTime
-    FROM Temp_BetTransactionSummary AS tmp_bt
-		LEFT JOIN Temp_LoginTransactionSummary AS tmp_trans ON tmp_trans.CustID = tmp_bt.CustID
-		LEFT JOIN DCS_DataTrace.MissingTransaction AS mlt ON mlt.MissingType = CONST_MISSINGLOGINTRANSACTION_TYPE AND mlt.TransDate = lv_MaxTransDate AND mlt.CustID = tmp_bt.CustID
-    WHERE tmp_trans.ID IS NULL
-		AND mlt.ID IS NULL;
+    FROM Temp_BetTransactionSummary;
     
 END$$
 DELIMITER ;

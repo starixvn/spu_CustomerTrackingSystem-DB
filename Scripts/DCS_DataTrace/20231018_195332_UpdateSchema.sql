@@ -34,7 +34,6 @@ CREATE TABLE DCS_DataTrace.LoginTransactionSummary(
 	, 	ModifiedTime		DATETIME DEFAULT NULL
 	,	PRIMARY KEY (`ID`, `TransDate`)
 	,	INDEX `IX_LoginTransactionSummary_FlaggedGroup` (`TransDate`, `SubscriberID`, `FlaggedGroup`)
-	,	INDEX `IX_LoginTransactionSummary_DeviceID` (`TransDate`, `SubscriberID`, `DeviceID`)
 	,	UNIQUE INDEX `UX_LoginTransactionSummary_Group` (`TransDate`,`SubscriberID`,`AccountID`,`DeviceID`,`Flagged`)
 ) ENGINE=InnoDB;
 ALTER TABLE DCS_DataTrace.LoginTransactionSummary
@@ -57,4 +56,5 @@ ALTER TABLE DCS_DataTrace.LoginTransactionSummary
     PARTITION pw202343 VALUES LESS THAN (202344),
 	PARTITION pw299999 VALUES LESS THAN MAXVALUE);
 
-
+ALTER TABLE `DCS_DataTrace`.`MissingTransaction` 
+CHANGE COLUMN `MissingType` `MissingType` SMALLINT NOT NULL COMMENT '1: MissingLoginTransaction; 2: MissingBetTransaction' ;
