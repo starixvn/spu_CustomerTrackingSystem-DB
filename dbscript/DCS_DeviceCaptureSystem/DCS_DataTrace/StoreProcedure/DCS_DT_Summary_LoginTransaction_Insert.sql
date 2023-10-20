@@ -30,6 +30,7 @@ BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Trans07;
 	DROP TEMPORARY TABLE IF EXISTS Temp_LoginTrans;
+	DROP TEMPORARY TABLE IF EXISTS Temp_TotalTrans;
     
 	CREATE TEMPORARY TABLE Temp_Trans07(
 			TransID						BIGINT UNSIGNED NOT NULL PRIMARY KEY
@@ -48,10 +49,7 @@ BEGIN
 		, 	TransWeek					INT UNSIGNED DEFAULT NULL
 		, 	TransMonth					INT UNSIGNED DEFAULT NULL
 		, 	SubscriberID				INT UNSIGNED DEFAULT NULL
-		, 	SubscriberName				VARCHAR(50) DEFAULT NULL
 		, 	AccountID					BIGINT UNSIGNED DEFAULT NULL
-		, 	CTSCustID					BIGINT UNSIGNED DEFAULT NULL
-		, 	LoginName					VARCHAR(100) DEFAULT NULL
 		, 	DeviceID					BIGINT UNSIGNED DEFAULT NULL
 		, 	Flagged						SMALLINT DEFAULT NULL
 		, 	FlaggedGroup				SMALLINT DEFAULT NULL
@@ -60,6 +58,16 @@ BEGIN
 		, 	LastLoginTransTime			DATETIME DEFAULT NULL
 		, 	IsUpdate					BIT DEFAULT 0
 		,	KEY `IX_Temp_LoginTrans_Group` (`TransDate`, `SubscriberID`, `AccountID`, `DeviceID`, `Flagged`)
+	);
+    
+	CREATE TEMPORARY TABLE Temp_TotalTrans(
+			ID							BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY 
+		, 	TransDate					DATETIME NOT NULL
+		, 	SubscriberID				INT UNSIGNED DEFAULT NULL
+		, 	TotalTrans					INT UNSIGNED DEFAULT 0
+		, 	TotalInvalidBrowers			INT UNSIGNED DEFAULT 0
+		, 	TotalBotTrans				INT UNSIGNED DEFAULT 0
+		, 	IsUpdate					BIT DEFAULT 0
 	);
     
     INSERT INTO Temp_Trans07(TransID, TransDate, AccountID, SubscriberID, DeviceID, Flagged, TransTime)
@@ -91,15 +99,9 @@ BEGIN
     GROUP BY TransDate, SubscriberID, AccountID, DeviceID, Flagged;
     
     UPDATE Temp_LoginTrans AS tmp
-		LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = tmp.SubscriberID
-		LEFT JOIN DCS_DataCenter.Account AS acc ON acc.AccountID = tmp.AccountID
-		LEFT JOIN CTS_DataCenter.CustDCSAccount AS dcs ON dcs.AccountID = tmp.AccountID
 		LEFT JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.ItemID = tmp.Flagged
 	SET tmp.TransWeek = YEARWEEK(tmp.TransDate, 0),
 		tmp.TransMonth = DATE_FORMAT(tmp.TransDate, '%Y%m'),
-		tmp.SubscriberName = sub.SubscriberName,
-		tmp.LoginName = acc.LoginName,
-		tmp.CTSCustID = dcs.CTSCustID,
 		tmp.FlaggedGroup = sl.GroupItem;
 	
     UPDATE DCS_DataTrace.LoginTransactionSummary AS tl
@@ -114,15 +116,12 @@ BEGIN
 		tl.ModifiedTime = lv_CurrentDatetime,
 		tmp.IsUpdate = 1;
     
-    INSERT INTO DCS_DataTrace.LoginTransactionSummary(TransDate, TransWeek, TransMonth, SubscriberID, SubscriberName, AccountID, CTSCustID, LoginName, DeviceID, Flagged, FlaggedGroup, FirstLoginTransTime, LastLoginTransTime, TotalTrans, CreatedTime, ModifiedTime)
+    INSERT INTO DCS_DataTrace.LoginTransactionSummary(TransDate, TransWeek, TransMonth, SubscriberID, AccountID, DeviceID, Flagged, FlaggedGroup, FirstLoginTransTime, LastLoginTransTime, TotalTrans, CreatedTime, ModifiedTime)
     SELECT 	tmp.TransDate
 		,	tmp.TransWeek
 		,	tmp.TransMonth
         ,	tmp.SubscriberID
-        ,	tmp.SubscriberName
 		,	tmp.AccountID
-		,	tmp.CTSCustID
-		,	tmp.LoginName
 		,	tmp.DeviceID
         ,	tmp.Flagged
         ,	tmp.FlaggedGroup
@@ -132,6 +131,35 @@ BEGIN
         ,	lv_CurrentDatetime AS CreatedTime
         ,	lv_CurrentDatetime AS ModifiedTime
 	FROM Temp_LoginTrans AS tmp
+    WHERE tmp.IsUpdate = 0;
+
+    /* == DailyLoginTransactionMonitoring == */        
+    INSERT INTO Temp_TotalTrans(TransDate, SubscriberID, TotalTrans, TotalInvalidBrowers, TotalBotTrans)
+    SELECT 	TransDate
+        ,	SubscriberID
+        ,	COUNT(1) AS TotalTrans
+        ,	SUM(CASE WHEN Flagged BETWEEN 2 AND 8 THEN 1 ELSE 0 END ) AS TotalInvalidBrowers
+        ,	SUM(CASE WHEN Flagged > 8 THEN 1 ELSE 0 END ) AS TotalBotTrans
+	FROM Temp_Trans07
+    GROUP BY TransDate, SubscriberID;
+    
+    UPDATE DCS_DataTrace.DailyLoginTransactionSummary AS trans
+		INNER JOIN Temp_TotalTrans AS tmp ON trans.TransDate = tmp.TransDate AND trans.SubscriberID = tmp.SubscriberID
+	SET trans.TotalTrans = trans.TotalTrans + tmp.TotalTrans,
+		trans.TotalInvalidBrowers = trans.TotalInvalidBrowers + tmp.TotalInvalidBrowers,
+		trans.TotalBotTrans = trans.TotalBotTrans + tmp.TotalBotTrans,
+		trans.ModifiedTime = lv_CurrentDatetime,
+		tmp.IsUpdate = 1;
+    
+    INSERT INTO DCS_DataTrace.DailyLoginTransactionSummary(TransDate, SubscriberID, TotalTrans, TotalInvalidBrowers, TotalBotTrans, CreatedTime, ModifiedTime)
+    SELECT 	tmp.TransDate
+        ,	tmp.SubscriberID
+        ,	tmp.TotalTrans
+        ,	tmp.TotalInvalidBrowers
+        ,	tmp.TotalBotTrans
+        ,	lv_CurrentDatetime AS CreatedTime
+        ,	lv_CurrentDatetime AS ModifiedTime
+	FROM Temp_TotalTrans AS tmp
     WHERE tmp.IsUpdate = 0;
     
     IF(lv_MaxTransID IS NOT NULL AND lv_MaxTransID > 0) THEN

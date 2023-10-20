@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataTrace" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DT_Report_LoginTransaction_Get`;
+DROP PROCEDURE IF EXISTS `DCS_DT_Report_DailyLoginTransactionSummary_Insert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DT_Report_LoginTransaction_Get`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DT_Report_DailyLoginTransactionSummary_Insert`(
 		IN ip_FromDate DATE
     ,	IN ip_ToDate DATE
 )
@@ -20,7 +20,7 @@ BEGIN
 	Param's Explanation (filtered by):
 
 	Example:
-        CALL DCS_DataTrace.DCS_DT_Report_LoginTransaction_Get('2023-10-17', '2023-10-17');
+        CALL DCS_DataTrace.DCS_DT_Report_DailyLoginTransactionSummary_Insert('2023-10-17', '2023-10-17');
 	*/
     
 -- 	DROP TEMPORARY TABLE IF EXISTS Temp_LoginTrans;

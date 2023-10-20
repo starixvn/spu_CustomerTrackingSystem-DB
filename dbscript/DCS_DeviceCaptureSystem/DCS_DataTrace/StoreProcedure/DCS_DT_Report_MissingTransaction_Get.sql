@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataTrace" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DT_Report_LoginTransaction_Get`;
+DROP PROCEDURE IF EXISTS `DCS_DT_Report_MissingTransaction_Get`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DT_Report_LoginTransaction_Get`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DT_Report_MissingTransaction_Get`(
 		IN ip_FromDate DATE
     ,	IN ip_ToDate DATE
 )
@@ -20,16 +20,19 @@ BEGIN
 	Param's Explanation (filtered by):
 
 	Example:
-        CALL DCS_DataTrace.DCS_DT_Report_LoginTransaction_Get('2023-10-01', '2023-10-05');
+        CALL DCS_DataTrace.DCS_DT_Report_MissingTransaction_Get('2023-10-01', '2023-10-05');
 	*/
-    SELECT 	trans.TransDate
-		,	trans.SubscriberID
-		,	sub.SubscriberName
-		,	COUNT(trans.DeviceID) AS TotalDevice
-		,	SUM(trans.TotalTrans) AS TotalTrans
-	FROM DCS_DataTrace.LoginTransactionSummary AS trans FORCE INDEX (UX_LoginTransactionSummary_Group)
-		INNER JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = trans.SubscriberID
-	WHERE trans.TransDate BETWEEN ip_FromDate AND ip_ToDate
-	GROUP BY trans.TransDate, trans.SubscriberID;
+    
+    SELECT 	mt.TransDate
+		,	mt.SubscriberID
+		,	lts.TotalTrans
+		,	COUNT(CASE WHEN mt.SubscriberID IS NULL THEN mt.CustID END) CustWithoutTrans
+		,	COUNT(CASE WHEN mt.SubscriberID IS NOT NULL THEN mt.CustID END) CustMissingTrans
+	FROM DCS_DataTrace.MissingTransaction AS mt FORCE INDEX (UX_MissingTransaction_Group)
+		INNER JOIN DCS_DataTrace.DailyLoginTransactionSummary AS lts ON lts.TransDate = mt.TransDate AND lts.SubscriberID = mt.SubscriberID
+	WHERE mt.TransDate BETWEEN ip_FromDate AND ip_ToDate
+		AND mt.MissingType = 1
+	GROUP BY mt.TransDate, mt.SubscriberID;
+    
 END$$
 DELIMITER ;
