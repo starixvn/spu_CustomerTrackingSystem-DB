@@ -12,19 +12,19 @@
 USE DCS_DataCenter;
 
 ALTER TABLE `DCS_DataCenter`.`StaticList` 
-ADD COLUMN `GroupItem` SMALLINT NULL;
+ADD COLUMN `GroupID` SMALLINT NULL;
 
 UPDATE DCS_DataCenter.StaticList
-SET GroupItem = 1
+SET GroupID = 1
 WHERE ListID = 1
 	AND ItemID = 1;
 
 UPDATE DCS_DataCenter.StaticList
-SET GroupItem = 2
+SET GroupID = 2
 WHERE ListID = 1
 	AND ItemID BETWEEN 2 AND 8;
 
 UPDATE DCS_DataCenter.StaticList
-SET GroupItem = 3
+SET GroupID = 3
 WHERE ListID = 1
 	AND ItemID > 8;
