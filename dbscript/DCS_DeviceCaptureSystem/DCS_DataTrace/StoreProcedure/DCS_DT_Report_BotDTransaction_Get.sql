@@ -30,25 +30,25 @@ BEGIN
 		, 	TransDate					DATETIME NOT NULL
 		, 	SubscriberID				INT UNSIGNED DEFAULT NULL
 		, 	SubscriberName				VARCHAR(50) DEFAULT NULL
-		, 	FlaggedGroup				SMALLINT DEFAULT NULL
+		, 	FlaggedGroupID				SMALLINT DEFAULT NULL
 		, 	FlaggedGroupName			VARCHAR(200) DEFAULT NULL
 		, 	TotalTrans					INT UNSIGNED DEFAULT NULL
-		,	KEY `IX_Temp_LoginTrans_FlaggedGroup` (`FlaggedGroup`)
+		,	KEY `IX_Temp_LoginTrans_FlaggedGroupID` (`FlaggedGroupID`)
 	);
     
-    INSERT INTO Temp_LoginTrans(TransDate, SubscriberID, SubscriberName, FlaggedGroup, TotalTrans)
+    INSERT INTO Temp_LoginTrans(TransDate, SubscriberID, SubscriberName, FlaggedGroupID, TotalTrans)
 	SELECT 	trans.TransDate
 		,	trans.SubscriberID
 		,	sub.SubscriberName
-		,	trans.FlaggedGroup
+		,	trans.FlaggedGroupID
 		,	SUM(trans.TotalTrans) AS TotalTrans
-	FROM DCS_DataTrace.LoginTransactionSummary AS trans FORCE INDEX (IX_LoginTransactionSummary_FlaggedGroup)
+	FROM DCS_DataTrace.LoginTransactionSummary AS trans FORCE INDEX (IX_LoginTransactionSummary_FlaggedGroupID)
 		INNER JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = trans.SubscriberID
 	WHERE trans.TransDate BETWEEN ip_FromDate AND ip_ToDate
-	GROUP BY trans.TransDate, trans.SubscriberID, trans.FlaggedGroup;
+	GROUP BY trans.TransDate, trans.SubscriberID, trans.FlaggedGroupID;
     
     UPDATE Temp_LoginTrans AS tmp
-		INNER JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.GroupItem = tmp.FlaggedGroup
+		INNER JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.GroupID = tmp.FlaggedGroupID
 	SET tmp.FlaggedGroupName = sl.ItemName;
     
     SELECT 	TransDate

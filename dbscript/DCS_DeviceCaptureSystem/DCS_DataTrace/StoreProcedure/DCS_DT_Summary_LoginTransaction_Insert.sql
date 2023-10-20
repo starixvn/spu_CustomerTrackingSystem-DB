@@ -52,7 +52,7 @@ BEGIN
 		, 	AccountID					BIGINT UNSIGNED DEFAULT NULL
 		, 	DeviceID					BIGINT UNSIGNED DEFAULT NULL
 		, 	Flagged						SMALLINT DEFAULT NULL
-		, 	FlaggedGroup				SMALLINT DEFAULT NULL
+		, 	FlaggedGroupID				SMALLINT DEFAULT NULL
 		, 	TotalTrans					INT UNSIGNED DEFAULT 0
 		, 	FirstLoginTransTime			DATETIME DEFAULT NULL
 		, 	LastLoginTransTime			DATETIME DEFAULT NULL
@@ -102,7 +102,7 @@ BEGIN
 		LEFT JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.ItemID = tmp.Flagged
 	SET tmp.TransWeek = YEARWEEK(tmp.TransDate, 0),
 		tmp.TransMonth = DATE_FORMAT(tmp.TransDate, '%Y%m'),
-		tmp.FlaggedGroup = sl.GroupItem;
+		tmp.FlaggedGroupID = sl.GroupID;
 	
     UPDATE DCS_DataTrace.LoginTransactionSummary AS tl
 		INNER JOIN Temp_LoginTrans AS tmp ON 	tl.TransDate = tmp.TransDate
@@ -116,7 +116,7 @@ BEGIN
 		tl.ModifiedTime = lv_CurrentDatetime,
 		tmp.IsUpdate = 1;
     
-    INSERT INTO DCS_DataTrace.LoginTransactionSummary(TransDate, TransWeek, TransMonth, SubscriberID, AccountID, DeviceID, Flagged, FlaggedGroup, FirstLoginTransTime, LastLoginTransTime, TotalTrans, CreatedTime, ModifiedTime)
+    INSERT INTO DCS_DataTrace.LoginTransactionSummary(TransDate, TransWeek, TransMonth, SubscriberID, AccountID, DeviceID, Flagged, FlaggedGroupID, FirstLoginTransTime, LastLoginTransTime, TotalTrans, CreatedTime, ModifiedTime)
     SELECT 	tmp.TransDate
 		,	tmp.TransWeek
 		,	tmp.TransMonth
@@ -124,7 +124,7 @@ BEGIN
 		,	tmp.AccountID
 		,	tmp.DeviceID
         ,	tmp.Flagged
-        ,	tmp.FlaggedGroup
+        ,	tmp.FlaggedGroupID
         ,	tmp.FirstLoginTransTime
         ,	tmp.LastLoginTransTime
         ,	tmp.TotalTrans

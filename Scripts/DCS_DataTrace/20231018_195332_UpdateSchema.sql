@@ -15,8 +15,8 @@ USE DCS_DataTrace;
 ALTER TABLE DCS_DataTrace.LoginTransactionSummary
 ADD COLUMN TransWeek INT UNSIGNED DEFAULT NULL,
 ADD COLUMN TransMonth INT UNSIGNED DEFAULT NULL,
-ADD COLUMN FlaggedGroup SMALLINT UNSIGNED DEFAULT NULL,
-ADD INDEX `IX_LoginTransactionSummary_FlaggedGroup` (`TransDate`, `SubscriberID`, `FlaggedGroup`, `Flagged`),
+ADD COLUMN FlaggedGroupID SMALLINT UNSIGNED DEFAULT NULL,
+ADD INDEX `IX_LoginTransactionSummary_FlaggedGroupID` (`TransDate`, `SubscriberID`, `FlaggedGroupID`, `Flagged`),
 DROP INDEX `IX_LoginTransactionSummary_SubscriberID`,
 DROP INDEX `IX_LoginTransactionSummary_AccountID`;
     
