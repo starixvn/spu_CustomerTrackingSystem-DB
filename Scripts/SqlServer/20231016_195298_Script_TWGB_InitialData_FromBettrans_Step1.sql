@@ -14,18 +14,14 @@ USE [bodb02]
 
 DECLARE	@EndDate DATETIME = '2023-10-03'
 	,	@ReleasedDate SMALLDATETIME = '2023-10-10'
-	,	@TransDateHistory DATE = '2023-10-09'
+	,	@BeginDate DATETIME = '2023-10-10'
 	,	@StartRow INT = 1
 	,	@StopRow INT 
 	,	@MaxRow INT 
 	,	@Threshold INT = 2000
 	,	@debug_message VARCHAR(500)
 	,	@MaxSequenceID BIGINT = 118721769938
-	,	@ScannedDate SMALLDATETIME
 	,	@Today DATETIME
-	,	@TotalTicket INT = 0
-	,	@iday INT = 1
-	,	@ScannedDate_message VARCHAR(500)
 ;
 
 IF OBJECT_ID('tempdb..#tmp_WCLeagues') IS NOT NULL
@@ -60,24 +56,6 @@ CREATE TABLE #tmpSPU_GroupBettingCustomer (
 	,	PRIMARY KEY (CustId,ScanDate)
 );
 
-IF OBJECT_ID('tempdb..#tmpSPU_GroupBettingCustomer_updated') IS NOT NULL
-	DROP TABLE #tmpSPU_GroupBettingCustomer_updated;
-
-CREATE TABLE #tmpSPU_GroupBettingCustomer_updated (
-		ID							INT IDENTITY (1,1)
-	,	CustId						INT 	
-	,	ScanDate					DATE
-	,	GBTicketCount 				INT
-	,	LastModifiedDate 			DATETIME
-	,	LastCountTotalTicketDate	DATETIME	
-	,	TicketCount					INT
-	,	RejectTicketCount			INT
-	,	DesktopTicketCount			INT
-	,	ParlayTicketCount			INT
-	,	IsInserted					BIT
-	,	PRIMARY KEY (CustId,ScanDate)
-);
-
 IF OBJECT_ID('tempdb..#tmp_batch_updated') IS NOT NULL
 	DROP TABLE #tmp_batch_updated;
 
@@ -106,7 +84,7 @@ CREATE TABLE #Tmp_Trans (
 	,	Matchid		    INT
 	,	BetFrom		    NVARCHAR(4)
 	,	ScanDate		DATE
-	,	IsLicensee		BIT
+	-- ,	IsLicensee		BIT
 	,	SequenceID		BIGINT
 	,	IsGBTicket		TINYINT 
 );
@@ -128,7 +106,7 @@ SELECT b.BetFrom
 FROM DBWH.bodb_account.dbo.tbl_Betfrom AS b WITH (NOLOCK)
 WHERE b.platform2 = 'Desktop';
 
-INSERT INTO #Tmp_Trans (TransId,Custid,Matchid,Bettype,StatusID,BetFrom,ScanDate,IsLicensee,SequenceID,IsGBTicket)
+INSERT INTO #Tmp_Trans (TransId,Custid,Matchid,Bettype,StatusID,BetFrom,ScanDate,SequenceID,IsGBTicket)
 SELECT 	bt.TransId
 	,	bt.custid
 	,	bt.matchid
@@ -136,19 +114,14 @@ SELECT 	bt.TransId
 	,	bt.statusID
 	,	bt.BetFrom
 	,	bt.transdate
-	,	CASE WHEN dCust.custid IS NOT NULL THEN 1 ELSE 0 END
 	,	bt.SequenceID
-	,	CASE WHEN (h.TransId IS NOT NULL OR hs.TransId IS NOT NULL) THEN 1 ELSE 0 END
+	,	CASE WHEN hs.TransId IS NOT NULL THEN 1 ELSE 0 END
 FROM dbo.bettrans AS bt WITH (NOLOCK)
-	LEFT JOIN dbo.Dep_CustSuper AS dCust WITH (NOLOCK) ON dCust.custid = bt.srecommend
-	LEFT JOIN dbo.SPU_GroupBettingTicket_History AS h WITH (NOLOCK) ON h.TransId = bt.TransId AND h.TransDate = @TransDateHistory
+	INNER JOIN dbo.Dep_CustSuper AS dCust WITH (NOLOCK) ON dCust.custid = bt.srecommend
 	LEFT JOIN DBSPARE.bodb02_20231009_cts.dbo.SPU_GroupBettingTicket_History AS hs WITH (NOLOCK) ON hs.TransId = bt.TransId 
-																									AND hs.TransDate < @TransDateHistory
 WHERE bt.winlostdate >= @ReleasedDate AND bt.SequenceID <= @MaxSequenceID
-	AND bt.transdate < CONVERT(DATETIME,@ReleasedDate) AND bt.transdate >= @EndDate
+	AND bt.transdate < @BeginDate AND bt.transdate >= @EndDate
 ;
-	
-DELETE FROM #Tmp_Trans WHERE IsLicensee = 0;
 
 INSERT INTO #tmp_match (MatchId)
 SELECT DISTINCT tmp_trans.Matchid 
@@ -206,13 +179,9 @@ SET		gbc.TicketCount = ct.TicketCount
 	,	gbc.GBTicketCount = ct.GBTicketCount
 FROM #tmpSPU_GroupBettingCustomer AS gbc
 	INNER JOIN cte_TicketCount_FromOrg AS ct WITH (NOLOCK) ON gbc.CustId = ct.CustId AND gbc.ScanDate = ct.ScanDate
-OPTION (LOOP JOIN);
+;
 
-INSERT INTO #tmpSPU_GroupBettingCustomer_updated (CustId, ScanDate, GBTicketCount, TicketCount, RejectTicketCount, DesktopTicketCount, ParlayTicketCount, IsInserted)
-SELECT gbc.CustId, gbc.ScanDate, gbc.GBTicketCount, gbc.TicketCount, gbc.RejectTicketCount, gbc.DesktopTicketCount, gbc.ParlayTicketCount, gbc.IsInserted
-FROM #tmpSPU_GroupBettingCustomer AS gbc;
-
-SET @MaxRow = (SELECT MAX(ID) FROM #tmpSPU_GroupBettingCustomer_updated);
+SET @MaxRow = (SELECT MAX(ID) FROM #tmpSPU_GroupBettingCustomer);
 SET @StartRow = 1;
 SET @StopRow = @Threshold;
 SET @Today = GETDATE();
@@ -227,7 +196,7 @@ BEGIN
 	DELETE gbc
 	OUTPUT deleted.CustId, deleted.ScanDate, deleted.GBTicketCount, deleted.TicketCount, deleted.RejectTicketCount, deleted.DesktopTicketCount, deleted.ParlayTicketCount, deleted.IsInserted
 	INTO #tmp_batch_updated(CustId, ScanDate, GBTicketCount, TicketCount, RejectTicketCount, DesktopTicketCount, ParlayTicketCount, IsInserted)
-	FROM #tmpSPU_GroupBettingCustomer_updated AS gbc
+	FROM #tmpSPU_GroupBettingCustomer AS gbc
 	WHERE gbc.ID BETWEEN @StartRow AND @StopRow;
 
 	IF @@ROWCOUNT = 0
@@ -265,7 +234,6 @@ END;
 DROP TABLE IF EXISTS #tmp_WCLeagues;
 DROP TABLE IF EXISTS #tmp_PlatformDesktop;
 DROP TABLE IF EXISTS #tmpSPU_GroupBettingCustomer;
-DROP TABLE IF EXISTS #tmpSPU_GroupBettingCustomer_updated;
 DROP TABLE IF EXISTS #tmp_batch_updated;
 DROP TABLE IF EXISTS #Tmp_Trans;
 DROP TABLE IF EXISTS #tmp_match;

@@ -12,8 +12,8 @@
 
 USE [bodb02]
 
-DECLARE	@EndDate SMALLDATETIME = '2023-10-03'
-	,	@ReleasedDate SMALLDATETIME = '2023-10-10'
+DECLARE	@EndDate DATE = '2023-10-03'
+	,	@ReleasedDate DATE = '2023-10-10'
 	,	@StartRow INT = 1
 	,	@StopRow INT 
 	,	@MaxRow INT 
