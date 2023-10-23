@@ -143,7 +143,7 @@ BEGIN
 	FROM Temp_Trans07
     GROUP BY TransDate, SubscriberID;
     
-    UPDATE DCS_DataTrace.DailyLoginTransactionSummary AS trans
+    UPDATE DCS_DataTrace.LoginTransactionSummaryBySubscriber AS trans
 		INNER JOIN Temp_TotalTrans AS tmp ON trans.TransDate = tmp.TransDate AND trans.SubscriberID = tmp.SubscriberID
 	SET trans.TotalTrans = trans.TotalTrans + tmp.TotalTrans,
 		trans.TotalInvalidBrowers = trans.TotalInvalidBrowers + tmp.TotalInvalidBrowers,
@@ -151,7 +151,7 @@ BEGIN
 		trans.ModifiedTime = lv_CurrentDatetime,
 		tmp.IsUpdate = 1;
     
-    INSERT INTO DCS_DataTrace.DailyLoginTransactionSummary(TransDate, SubscriberID, TotalTrans, TotalInvalidBrowers, TotalBotTrans, CreatedTime, ModifiedTime)
+    INSERT INTO DCS_DataTrace.LoginTransactionSummaryBySubscriber(TransDate, SubscriberID, TotalTrans, TotalInvalidBrowers, TotalBotTrans, CreatedTime, ModifiedTime)
     SELECT 	tmp.TransDate
         ,	tmp.SubscriberID
         ,	tmp.TotalTrans

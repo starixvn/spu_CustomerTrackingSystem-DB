@@ -13,14 +13,17 @@
 USE DCS_DataTrace;
 
 ALTER TABLE DCS_DataTrace.LoginTransactionSummary
+ADD COLUMN FlaggedGroupID SMALLINT UNSIGNED DEFAULT NULL,
 ADD COLUMN TransWeek INT UNSIGNED DEFAULT NULL,
 ADD COLUMN TransMonth INT UNSIGNED DEFAULT NULL,
-ADD COLUMN FlaggedGroupID SMALLINT UNSIGNED DEFAULT NULL,
 ADD INDEX `IX_LoginTransactionSummary_FlaggedGroupID` (`TransDate`, `SubscriberID`, `FlaggedGroupID`, `Flagged`),
-DROP INDEX `IX_LoginTransactionSummary_SubscriberID`,
-DROP INDEX `IX_LoginTransactionSummary_AccountID`;
-    
-CREATE TABLE DCS_DataTrace.DailyLoginTransactionSummary(
+ADD INDEX `IX_LoginTransactionSummary_TransWeek_SubscriberID` (`TransWeek`, `SubscriberID`),
+ADD INDEX `IX_LoginTransactionSummary_TransMonth_SubscriberID` (`TransMonth`, `SubscriberID`),
+DROP INDEX `IX_LoginTransactionSummary_SubscriberID`;
+
+drop table  DCS_DataTrace.DailyLoginTransactionSummary;
+
+CREATE TABLE DCS_DataTrace.LoginTransactionSummaryBySubscriber(
 		ID 								INT UNSIGNED NOT NULL AUTO_INCREMENT
 	, 	TransDate						DATETIME NOT NULL
 	, 	SubscriberID					INT UNSIGNED DEFAULT NULL
@@ -30,7 +33,7 @@ CREATE TABLE DCS_DataTrace.DailyLoginTransactionSummary(
 	, 	CreatedTime						DATETIME DEFAULT NULL
 	, 	ModifiedTime					DATETIME DEFAULT NULL
 	,	PRIMARY KEY (`ID`)
-	,	UNIQUE INDEX `UX_DailyLoginTransactionSummary_Group` (`TransDate`,`SubscriberID`)
+	,	UNIQUE INDEX `UX_LoginTransactionSummaryBySubscriber_Group` (`TransDate`,`SubscriberID`)
 ) ENGINE=InnoDB;
 
 
@@ -64,10 +67,6 @@ CREATE TABLE `StaticList` (
   UNIQUE KEY `UX_StaticList_ListCode_ItemCode` (`ListCode`,`ItemCode`)
 ) ENGINE=InnoDB;
 
-ALTER TABLE `DCS_DataTrace`.`MissingTransaction` 
-CHANGE COLUMN `MissingType` `MissingTransactionType` SMALLINT NOT NULL COMMENT '1: MissingLoginTransaction; 2: MissingBetTransaction' ;
-
-
 INSERT INTO DCS_DataTrace.SystemSetting(ID, VGroup, VName, VValue, UpdatedTime)
 VALUES(3, 'MissingTrans', 'LastScannedLoginTransDate', '2023-07-01', CURRENT_TIMESTAMP);
 
@@ -77,3 +76,10 @@ VALUES(4, 'MissingTrans', 'LastScannedBetTransDate', '2023-07-01', CURRENT_TIMES
 INSERT INTO DCS_DataTrace.StaticList (ListID, ItemID, ListCode, ListName, ItemCode, ItemName, Status, Description, CreatedDate) 
 VALUES ('1', '1', 'MissingTransactionType', 'MissingTransactionType', 1, 'Missing Login Transaction', '1', 'Missing Login Transaction', CURRENT_TIMESTAMP()),
 ('1', '2', 'MissingTransactionType', 'MissingTransactionType', 2, 'Missing Bet Transaction', '1', 'Missing Bet Transaction', CURRENT_TIMESTAMP());
+
+SET sql_safe_updates = 0;
+UPDATE DCS_DataTrace.LoginTransactionSummary AS trans
+	LEFT JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.ItemID = trans.Flagged
+SET trans.TransWeek = YEARWEEK(trans.TransDate, 0),
+	trans.TransMonth = DATE_FORMAT(trans.TransDate, '%Y%m'),
+	trans.FlaggedGroupID = sl.GroupID;

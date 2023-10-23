@@ -19,7 +19,7 @@ BEGIN
 	Param's Explanation (filtered by):
 
 	Example:
-        CALL DCS_DataTrace.DCS_DT_Report_LoginTransaction_GetDetailByDate('2023-10-01');
+        CALL DCS_DataTrace.DCS_DT_Report_LoginTransaction_GetDetailByDate('2023-10-04');
 	*/
     
 	SELECT 	trans.TransDate
@@ -31,6 +31,7 @@ BEGIN
 		,	cts.Currency
 		,	cc.CustomerClass
 		,	cc.CustomerClassName
+		,	sl.ItemName AS Flagged
 		,	trans.TotalTrans
 	FROM DCS_DataTrace.LoginTransactionSummary AS trans FORCE INDEX (UX_LoginTransactionSummary_Group)
 		INNER JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = trans.SubscriberID
@@ -38,6 +39,7 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cts ON cts.CTSCustID = dcs.CTSCustID
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS ctscc ON ctscc.CustID = cts.CustID AND cts.CustSubID = 0 -- Main Account
 		INNER JOIN CTS_DataCenter.CustomerCategory cc on cc.CategoryID = ctscc.CategoryID
+		LEFT JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.GroupID = trans.FlaggedGroupID
 	WHERE trans.TransDate = ip_TransDate;
 END$$
 DELIMITER ;
