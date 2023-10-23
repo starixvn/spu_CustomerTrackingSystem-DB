@@ -10,7 +10,7 @@ SQL SECURITY INVOKER
 BEGIN
 	/*
 	Created: 20231017@Jonathan.Doan
-	Task : Get report LoginTransaction
+	Task : Get report MissingTransaction
 	DB: DCS_DataTrace
 	Original:
 
@@ -22,19 +22,42 @@ BEGIN
 	Example:
         CALL DCS_DataTrace.DCS_DT_Report_MissingTransaction_Get('2023-10-01', '2023-10-05');
 	*/
+    DECLARE CONST_MISSINGLOGINTRANSACTION_TYPE SMALLINT DEFAULT 1;
     
-    SELECT 	lts.TransDate
-		,	lts.SubscriberID
+	DROP TEMPORARY TABLE IF EXISTS Temp_MissingTransaction;
+    
+	CREATE TEMPORARY TABLE Temp_MissingTransaction(
+			ID 						BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
+		, 	TransDate				DATETIME NOT NULL
+		, 	SubscriberID			INT UNSIGNED DEFAULT NULL
+		, 	CountCustWithoutTrans	INT UNSIGNED DEFAULT 0
+		, 	CountCustMissingTrans	INT UNSIGNED DEFAULT 0
+		,	PRIMARY KEY (`ID`)
+		,	INDEX `IX_Temp_MissingTransaction_TransDate_SubscriberID` (`TransDate`, `SubscriberID`)
+	);
+    
+    INSERT INTO Temp_MissingTransaction(TransDate, SubscriberID, CountCustWithoutTrans, CountCustMissingTrans)
+    SELECT 	mmt.TransDate
+		,	mmt.SubscriberID
+		,	SUM(CASE WHEN dcs.CTSCustID IS NULL THEN 1 ELSE 0 END) AS CountCustWithoutTrans
+		,	SUM(CASE WHEN dcs.CTSCustID IS NOT NULL THEN 1 ELSE 0 END) AS CountCustMissingTrans
+    FROM DCS_DataTrace.MemberMissingTransaction AS mmt
+		LEFT JOIN CTS_DataCenter.CTSCustomer AS cts ON cts.CustID = mmt.CustID AND cts.SubscriberID = mmt.SubscriberID
+		LEFT JOIN CTS_DataCenter.CustDCSAccount AS dcs ON dcs.SubscriberID = cts.SubscriberID AND dcs.CTSCustID = cts.CTSCustID
+	WHERE mmt.TransDate BETWEEN ip_FromDate AND ip_ToDate
+		AND MissingTransactionType = CONST_MISSINGLOGINTRANSACTION_TYPE
+	GROUP BY mmt.TransDate, mmt.SubscriberID;
+    
+    SELECT 	tmp.TransDate
+		,	tmp.SubscriberID
 		,	sub.SubscriberName
-		,	lts.TotalTrans
-		,	COUNT(CASE WHEN mt.SubscriberID IS NULL THEN mt.CustID END) CountCustWithoutTrans
-		,	COUNT(CASE WHEN mt.SubscriberID IS NOT NULL THEN mt.CustID END) CountCustMissingTrans
-	FROM DCS_DataTrace.DailyLoginTransactionSummary AS lts FORCE INDEX (UX_DailyLoginTransactionSummary_Group)
-		INNER JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = lts.SubscriberID
-		LEFT JOIN DCS_DataTrace.MissingTransaction AS mt ON lts.TransDate = mt.TransDate AND lts.SubscriberID = mt.SubscriberID
-	WHERE mt.TransDate BETWEEN ip_FromDate AND ip_ToDate
-		AND mt.MissingType = 1
-	GROUP BY mt.TransDate, mt.SubscriberID;
-    
+		,	tmp.CountCustWithoutTrans
+		,	tmp.CountCustMissingTrans
+		,	IFNULL(lts.TotalTrans,0) AS TotalTrans
+    FROM Temp_MissingTransaction AS tmp
+		LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = tmp.SubscriberID
+		LEFT JOIN DCS_DataTrace.DailyLoginTransactionSummary AS lts FORCE INDEX (UX_DailyLoginTransactionSummary_Group)
+																ON lts.TransDate = tmp.TransDate 
+																AND lts.SubscriberID = tmp.SubscriberID;
 END$$
 DELIMITER ;

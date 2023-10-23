@@ -3,7 +3,8 @@ DROP PROCEDURE IF EXISTS `DCS_DT_Summary_MissingBetTransaction_GetPackage`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DT_Summary_MissingBetTransaction_GetPackage`(
-		IN ip_BatchSize     INT
+		IN ip_TransDate     DATE
+	,	IN ip_BatchSize     INT
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -19,46 +20,43 @@ BEGIN
 	Param's Explanation (filtered by):
 
 	Example:
-        CALL DCS_DataTrace.DCS_DT_Summary_MissingBetTransaction_GetPackage(10);
-	*/
-    DECLARE CONST_SUMMARY_MAXTRANSDATE INT DEFAULT 2;
-    
+        CALL DCS_DataTrace.DCS_DT_Summary_MissingBetTransaction_GetPackage('2023-10-04', 10);
+	*/    
     DECLARE lv_CurrentDatetime DATETIME DEFAULT CURRENT_TIMESTAMP();
 	DECLARE lv_TotalRecord INT UNSIGNED DEFAULT 0;
 	DECLARE lv_NoOfBatch INT UNSIGNED DEFAULT 0;
-    DECLARE lv_MaxTransDate DATETIME DEFAULT CURRENT_TIMESTAMP();
     
-    SET lv_MaxTransDate = (SELECT DATE(VValue) FROM DCS_DataTrace.SystemSetting WHERE ID = CONST_SUMMARY_MAXTRANSDATE);
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_LoginTransactionSummary; 
-    
-    CREATE TEMPORARY TABLE Temp_LoginTransactionSummary(		
-		    MinID			BIGINT UNSIGNED
-        ,   MaxID			BIGINT UNSIGNED
-        ,   BatchCount		INT
-    ) ENGINE = MEMORY;
-    
-	SET @RowId = 0;
-    
-    SET lv_TotalRecord = (SELECT COUNT(1) FROM DCS_DataTrace.LoginTransactionSummary WHERE TransDate = lv_MaxTransDate);
-    SET lv_NoOfBatch = CEIL(lv_TotalRecord/ip_BatchSize);
-    
-    INSERT INTO Temp_LoginTransactionSummary (MinID, MaxID, BatchCount)
-    SELECT  MIN(tmp.ID) AS MinID
-        ,   MAX(tmp.ID) AS MaxID
-        ,   SUM(1) AS BatchCount
-	FROM (
-		SELECT	@RowId := @RowId+1
-			,   ID	
-			,   CEIL(@RowId/ip_BatchSize) AS batchID
-		FROM DCS_DataTrace.LoginTransactionSummary
-		WHERE TransDate = lv_MaxTransDate
-        ORDER BY ID ASC
-	) AS tmp
-	GROUP BY tmp.batchID;
-    
-    SELECT	MinID
-	    ,   MaxID
-	FROM Temp_LoginTransactionSummary;
+    IF EXISTS (SELECT 1 FROM DCS_DataTrace.BetTransactionSummary WHERE TransDate = ip_TransDate LIMIT 1) THEN
+		DROP TEMPORARY TABLE IF EXISTS Temp_LoginTransactionSummary; 
+		
+		CREATE TEMPORARY TABLE Temp_LoginTransactionSummary(
+				MinID			BIGINT UNSIGNED
+			,   MaxID			BIGINT UNSIGNED
+			,   BatchCount		INT
+		) ENGINE = MEMORY;
+		
+		SET @RowId = 0;
+		
+		SET lv_TotalRecord = (SELECT COUNT(1) FROM DCS_DataTrace.LoginTransactionSummary WHERE TransDate = ip_TransDate);
+		SET lv_NoOfBatch = CEIL(lv_TotalRecord/ip_BatchSize);
+		
+		INSERT INTO Temp_LoginTransactionSummary (MinID, MaxID, BatchCount)
+		SELECT  MIN(tmp.ID) AS MinID
+			,   MAX(tmp.ID) AS MaxID
+			,   SUM(1) AS BatchCount
+		FROM (
+			SELECT	@RowId := @RowId+1
+				,   ID	
+				,   CEIL(@RowId/ip_BatchSize) AS batchID
+			FROM DCS_DataTrace.LoginTransactionSummary
+			WHERE TransDate = ip_TransDate
+			ORDER BY ID ASC
+		) AS tmp
+		GROUP BY tmp.batchID;
+		
+		SELECT	MinID
+			,   MaxID
+		FROM Temp_LoginTransactionSummary;
+    END IF;
 END$$
 DELIMITER ;

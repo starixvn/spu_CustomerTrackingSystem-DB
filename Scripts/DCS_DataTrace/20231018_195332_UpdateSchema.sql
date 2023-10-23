@@ -33,5 +33,47 @@ CREATE TABLE DCS_DataTrace.DailyLoginTransactionSummary(
 	,	UNIQUE INDEX `UX_DailyLoginTransactionSummary_Group` (`TransDate`,`SubscriberID`)
 ) ENGINE=InnoDB;
 
+
+DROP TABLE DCS_DataTrace.MissingTransaction;
+
+CREATE TABLE DCS_DataTrace.MemberMissingTransaction(
+		ID 							BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
+	, 	MissingTransactionType		SMALLINT NOT NULL COMMENT '0: MissingLoginTransaction; 1: MissingBetTransaction'
+	, 	TransDate					DATETIME NOT NULL
+	, 	SubscriberID				INT UNSIGNED NOT NULL DEFAULT 0
+	, 	CustID						INT UNSIGNED NOT NULL DEFAULT 0
+	, 	CreatedTime					DATETIME DEFAULT NULL
+	,	PRIMARY KEY (`ID`)
+	,	INDEX `IX_MemberMissingTransaction_CustID` (`CustID`)
+	,	INDEX `IX_MemberMissingTransaction_SubscriberID` (`SubscriberID`)
+	,	UNIQUE INDEX `UX_MemberMissingTransaction_Group` (`TransDate`, `SubscriberID`, `MissingTransactionType`, `CustID`)
+) ENGINE=InnoDB;
+
+CREATE TABLE `StaticList` (
+  `ListID` int NOT NULL,
+  `ItemID` smallint NOT NULL,
+  `ListCode` varchar(100) DEFAULT NULL,
+  `ListName` varchar(200) DEFAULT NULL,
+  `ItemCode` varchar(100) DEFAULT NULL,
+  `ItemName` varchar(200) DEFAULT NULL,
+  `Status` tinyint(1) DEFAULT NULL,
+  `Description` varchar(200) DEFAULT NULL,
+  `CreatedDate` datetime DEFAULT NULL,
+  `GroupID` smallint DEFAULT NULL,
+  PRIMARY KEY (`ListID`,`ItemID`),
+  UNIQUE KEY `UX_StaticList_ListCode_ItemCode` (`ListCode`,`ItemCode`)
+) ENGINE=InnoDB;
+
 ALTER TABLE `DCS_DataTrace`.`MissingTransaction` 
-CHANGE COLUMN `MissingType` `MissingType` SMALLINT NOT NULL COMMENT '1: MissingLoginTransaction; 2: MissingBetTransaction' ;
+CHANGE COLUMN `MissingType` `MissingTransactionType` SMALLINT NOT NULL COMMENT '1: MissingLoginTransaction; 2: MissingBetTransaction' ;
+
+
+INSERT INTO DCS_DataTrace.SystemSetting(ID, VGroup, VName, VValue, UpdatedTime)
+VALUES(3, 'MissingTrans', 'LastScannedLoginTransDate', '2023-07-01', CURRENT_TIMESTAMP);
+
+INSERT INTO DCS_DataTrace.SystemSetting(ID, VGroup, VName, VValue, UpdatedTime)
+VALUES(4, 'MissingTrans', 'LastScannedBetTransDate', '2023-07-01', CURRENT_TIMESTAMP);
+
+INSERT INTO DCS_DataTrace.StaticList (ListID, ItemID, ListCode, ListName, ItemCode, ItemName, Status, Description, CreatedDate) 
+VALUES ('1', '1', 'MissingTransactionType', 'MissingTransactionType', 1, 'Missing Login Transaction', '1', 'Missing Login Transaction', CURRENT_TIMESTAMP()),
+('1', '2', 'MissingTransactionType', 'MissingTransactionType', 2, 'Missing Bet Transaction', '1', 'Missing Bet Transaction', CURRENT_TIMESTAMP());

@@ -1,12 +1,12 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2"></info>*/
 /*
-	Creator:	20230927@Jonathan.Doan
-	Task:	 	Correct BotD for TV&Console, NotificationPermissions Rule, IOS ver 10/11/12 [Redmine ID: #194559]
+	Creator:	20231018@Jonathan.Doan
+	Task:	 	Add field StaticList.GroupID [Redmine ID: #195332]
 	Server:  	Master
 	DBName:		DCS_DataCenter
     
 	Revisions: 
-			- 20230927@Jonathan.Doan: Created [Redmine ID: #194559]
+			- 20231018@Jonathan.Doan: Created [Redmine ID: #194559]
 	Reviewer:
 */
 USE DCS_DataCenter;

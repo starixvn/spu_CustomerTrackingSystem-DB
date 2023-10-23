@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataTrace" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DT_Summary_MissingTransaction_DeleteByDate`;
+DROP PROCEDURE IF EXISTS `DCS_DT_Summary_MemberMissingTransaction_DeleteByDate`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DT_Summary_MissingTransaction_DeleteByDate`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DT_Summary_MemberMissingTransaction_DeleteByDate`(
         IN ip_TransDate  DATE
 	,	IN ip_MissingType  SMALLINT
 )
@@ -10,7 +10,7 @@ SQL SECURITY INVOKER
 BEGIN
 	/*
 	Created: 20231017@Jonathan.Doan
-	Task : Delete MissingTransaction by Date
+	Task : Delete MemberMissingTransaction by Date
 	DB: DCS_DataTrace
 	Original:
 
@@ -20,12 +20,12 @@ BEGIN
 	Param's Explanation (filtered by):
 
 	Example:
-        CALL DCS_DataTrace.DCS_DT_Summary_MissingTransaction_DeleteByDate('2023-10-17', 0);
+        CALL DCS_DataTrace.DCS_DT_Summary_MemberMissingTransaction_DeleteByDate('2023-10-17', 0);
 	*/
     
-    DELETE FROM DCS_DataTrace.MissingTransaction
+    DELETE FROM DCS_DataTrace.MemberMissingTransaction
     WHERE TransDate = ip_TransDate
-		AND MissingType = ip_MissingType;
+		AND MissingTransactionType = ip_MissingType;
     
 END$$
 DELIMITER ;
