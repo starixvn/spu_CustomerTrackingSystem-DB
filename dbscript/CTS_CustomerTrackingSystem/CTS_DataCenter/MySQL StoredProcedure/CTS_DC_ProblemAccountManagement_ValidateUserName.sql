@@ -23,10 +23,8 @@ BEGIN
 	*/
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_UserName;
-	CREATE TEMPORARY TABLE Temp_UserName( 	 
-			
-			UserName				VARCHAR(50)
-        
+	CREATE TEMPORARY TABLE Temp_UserName( 	 			
+			UserName				VARCHAR(50)        
         ,	PRIMARY KEY 			PK_Temp_UserName_UserName (UserName)
 	);
     
