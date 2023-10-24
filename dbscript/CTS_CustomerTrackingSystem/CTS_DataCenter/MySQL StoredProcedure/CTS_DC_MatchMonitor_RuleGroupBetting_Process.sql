@@ -58,6 +58,7 @@ sp: BEGIN
 	DECLARE CONST_CLASSIFYTOTALCUST				INT DEFAULT 3;	
     DECLARE CONST_ASSOCIATIONTYPE_IP 			INT DEFAULT 4;
     DECLARE CONST_ASSOCIATIONTYPE_SHAREMATCH 	INT DEFAULT 5;
+    DECLARE CONST_SPORTTYPE_BASKETBALL 			INT DEFAULT 2;
 	#=================================================
     DECLARE lv_TimeCustID BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_MinTransDate DATETIME(3);
@@ -447,40 +448,42 @@ sp: BEGIN
 	WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tic WHERE tic.CustID = ai.FromCustID);
     
     #====================GET ASSOCIATION BY IP==================
-	INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType)
-	SELECT	tmpCus.CustID
-		,	ip.ToCustID
-		,	CONST_ASSOCIATIONTYPE_IP AS AssociationType
-	FROM Temp_Cust AS tmpCus
-		INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.FromCustID = tmpCus.CustID
-	WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tmpCdp WHERE tmpCdp.CustID = ip.ToCustID);
+    IF (lv_SportType = CONST_SPORTTYPE_BASKETBALL) THEN  
+		INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType)
+		SELECT	tmpCus.CustID
+			,	ip.ToCustID
+			,	CONST_ASSOCIATIONTYPE_IP AS AssociationType
+		FROM Temp_Cust AS tmpCus
+			INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.FromCustID = tmpCus.CustID
+		WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tmpCdp WHERE tmpCdp.CustID = ip.ToCustID);
 
-	INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType)
-	SELECT	ip.ToCustID
-		,	tmpCus.CustID
-		,	CONST_ASSOCIATIONTYPE_IP AS AssociationType
-	FROM Temp_Cust AS tmpCus
-		INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.FromCustID = tmpCus.CustID
-	WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tmpCdp WHERE tmpCdp.CustID = ip.ToCustID);
+		INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType)
+		SELECT	ip.ToCustID
+			,	tmpCus.CustID
+			,	CONST_ASSOCIATIONTYPE_IP AS AssociationType
+		FROM Temp_Cust AS tmpCus
+			INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.FromCustID = tmpCus.CustID
+		WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tmpCdp WHERE tmpCdp.CustID = ip.ToCustID);
 
-	INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType)
-	SELECT	tmpCus.CustID
-		,	ip.FromCustID
-		,	CONST_ASSOCIATIONTYPE_IP AS AssociationType
-	FROM Temp_Cust AS tmpCus 
-		INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.ToCustID = tmpCus.CustID
-	WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tmpCdp WHERE tmpCdp.CustID = ip.FromCustID);
+		INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType)
+		SELECT	tmpCus.CustID
+			,	ip.FromCustID
+			,	CONST_ASSOCIATIONTYPE_IP AS AssociationType
+		FROM Temp_Cust AS tmpCus 
+			INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.ToCustID = tmpCus.CustID
+		WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tmpCdp WHERE tmpCdp.CustID = ip.FromCustID);
 
-	INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType)
-	SELECT	ip.FromCustID
-		,	tmpCus.CustID
-		,	CONST_ASSOCIATIONTYPE_IP AS AssociationType
-	FROM Temp_Cust AS tmpCus 
-		INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.ToCustID = tmpCus.CustID
-	WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tmpCdp WHERE tmpCdp.CustID = ip.FromCustID);
- 
+		INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType)
+		SELECT	ip.FromCustID
+			,	tmpCus.CustID
+			,	CONST_ASSOCIATIONTYPE_IP AS AssociationType
+		FROM Temp_Cust AS tmpCus 
+			INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.ToCustID = tmpCus.CustID
+		WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tmpCdp WHERE tmpCdp.CustID = ip.FromCustID);
+	END IF;
+    
 	#====================GET ASSOCIATION BY SHARE MATCH==================
-    IF (ip_SharedMatches IS NOT NULL) THEN    
+    IF (lv_SportType = CONST_SPORTTYPE_BASKETBALL AND ip_SharedMatches IS NOT NULL) THEN    
 
 		INSERT IGNORE INTO Temp_AssociationByShareMatch(FromCustID, ToCustID)  
 		SELECT 	OrigID
