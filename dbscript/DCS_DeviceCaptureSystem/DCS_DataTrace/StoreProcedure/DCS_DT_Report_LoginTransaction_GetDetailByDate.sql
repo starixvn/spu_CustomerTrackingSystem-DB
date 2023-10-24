@@ -21,6 +21,19 @@ BEGIN
 	Example:
         CALL DCS_DataTrace.DCS_DT_Report_LoginTransaction_GetDetailByDate('2023-10-04');
 	*/
+	DROP TEMPORARY TABLE IF EXISTS Temp_FlaggedGroup;
+    
+	CREATE TEMPORARY TABLE Temp_FlaggedGroup(
+			FlaggedGroupID				SMALLINT UNSIGNED NOT NULL PRIMARY KEY
+		, 	FlaggedGroupName			VARCHAR(50) DEFAULT NULL
+	);
+    
+    INSERT INTO Temp_FlaggedGroup(FlaggedGroupID, FlaggedGroupName)
+    SELECT 	DISTINCT 
+			GroupID
+		,	ItemName
+    FROM DCS_DataCenter.StaticList
+    WHERE ListID = 1;
     
 	SELECT 	trans.TransDate
 		,	trans.SubscriberID
@@ -31,7 +44,7 @@ BEGIN
 		,	cts.Currency
 		,	cc.CustomerClass
 		,	cc.CustomerClassName
-		,	sl.ItemName AS Flagged
+		,	tmpF.FlaggedGroupName AS Flagged
 		,	trans.TotalTrans
 	FROM DCS_DataTrace.LoginTransactionSummary AS trans FORCE INDEX (UX_LoginTransactionSummary_Group)
 		INNER JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = trans.SubscriberID
@@ -39,7 +52,7 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cts ON cts.CTSCustID = dcs.CTSCustID
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS ctscc ON ctscc.CustID = cts.CustID AND cts.CustSubID = 0 -- Main Account
 		INNER JOIN CTS_DataCenter.CustomerCategory cc on cc.CategoryID = ctscc.CategoryID
-		LEFT JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.GroupID = trans.FlaggedGroupID
+		LEFT JOIN Temp_FlaggedGroup AS tmpF ON tmpF.FlaggedGroupID = trans.FlaggedGroupID
 	WHERE trans.TransDate = ip_TransDate;
 END$$
 DELIMITER ;

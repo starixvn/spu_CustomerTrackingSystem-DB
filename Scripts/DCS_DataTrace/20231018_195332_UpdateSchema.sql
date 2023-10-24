@@ -83,3 +83,6 @@ UPDATE DCS_DataTrace.LoginTransactionSummary AS trans
 SET trans.TransWeek = YEARWEEK(trans.TransDate, 0),
 	trans.TransMonth = DATE_FORMAT(trans.TransDate, '%Y%m'),
 	trans.FlaggedGroupID = sl.GroupID;
+    
+DROP PROCEDURE IF EXISTS `DCS_DT_Report_DailyLoginTransactionSummary_Insert`;
+DROP PROCEDURE IF EXISTS `DCS_DT_Report_DeviceTransaction_Get`;
