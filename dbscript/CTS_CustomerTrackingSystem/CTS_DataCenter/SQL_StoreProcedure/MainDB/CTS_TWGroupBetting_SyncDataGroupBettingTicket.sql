@@ -65,9 +65,12 @@ BEGIN
 			DELETE TOP(5000) gbh
 			FROM dbo.SPU_GroupBettingTicket_History gbh WITH(ROWLOCK)
 			WHERE gbh.TransDate <= @ArchivedDateTicketHistory
-
-		IF (@@ROWCOUNT = 0)
-			BREAK;
+			
+			IF (@@ROWCOUNT = 0)
+			BEGIN
+				BREAK;
+			END;
+			WAITFOR DELAY '00:00:0.100';
 		END;
 	END;
 	
@@ -103,10 +106,14 @@ BEGIN
 			DELETE TOP(5000) gb
 			FROM dbo.SPU_GroupBettingTicket gb WITH(ROWLOCK)
 			WHERE gb.TransDate = CONVERT(DATE, DATEADD(DAY,-1,GETDATE()));
-
-		IF (@@ROWCOUNT = 0)
-			BREAK;
+			
+			IF (@@ROWCOUNT = 0)
+			BEGIN
+				BREAK;
+			END;
+			WAITFOR DELAY '00:00:0.100';
 		END;
+		
 	END;
 
 	INSERT INTO dbo.SPU_GroupBettingTicket (
