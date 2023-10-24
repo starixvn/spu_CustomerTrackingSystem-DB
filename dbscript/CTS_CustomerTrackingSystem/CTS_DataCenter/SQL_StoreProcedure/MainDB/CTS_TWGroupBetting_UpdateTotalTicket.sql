@@ -16,6 +16,7 @@ AS
 		- 20221122@Long.Luu:	  Exclude WC Leagues						[Redmine ID: #181229]
 		- 20230626@Victoria.Le:	  Calculate TicketCount,RejectTicketCount,DesktopTicketCount,ParlayTicketCount
 								  And only get sportttype < 100 			[Redmine ID: #189505]
+		- 20231024@John.Ngo:	  [CTS] - Customer Classification - TW GB - Resolve Deadlock Problems [Redmine ID: #195866]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_UpdateTotalTicket] @LastScannedTime = '2022-03-10 03:39:12.230'
@@ -150,9 +151,5 @@ BEGIN
 	FROM dbo.SPU_GroupBettingCustomer AS gbc
 		INNER JOIN cte_TicketCount AS ct WITH (NOLOCK) ON gbc.CustId = ct.custid AND gbc.ScanDate = ct.ScanDate
 		LEFT JOIN #tmpScanningCust AS sc ON sc.CustId = gbc.CustId AND sc.ScanDate = gbc.ScanDate;
-
-	-- Clear unused data
-	DELETE FROM dbo.SPU_GroupBettingCustomer WITH (ROWLOCK)
-	WHERE ScanDate < DATEADD(day,-7, GETDATE()) AND TicketCount = 0 AND GBTicketCount = 0;
 
 END

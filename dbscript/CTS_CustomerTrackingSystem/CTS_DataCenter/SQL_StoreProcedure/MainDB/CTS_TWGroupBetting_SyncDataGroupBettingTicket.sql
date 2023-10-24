@@ -1,7 +1,7 @@
 /*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[CTS_TWGroupBetting_SyncDataGroupBettingTicket]
-		@GBTicketXMLString	VARCHAR(MAX)
-		,@RunningSequenceId	BIGINT
+			@GBTicketXMLString	VARCHAR(MAX)
+		,	@RunningSequenceId	BIGINT
 AS
 /*
 	Created: 20220314@Harvey.Nguyen
@@ -18,6 +18,7 @@ AS
 																			[Redmine ID: #189505]
 		- 20230818@Victoria.Le: Add ROWLOCK with the delete statement [Redmine ID: #191955]
 		- 20231011@Victoria.Le: Keep data 14 days instead of 7 days [Redmine ID: #195298]
+		- 20231024@John.Ngo:	[CTS] - Customer Classification - TW GB - Resolve Deadlock Problems [Redmine ID: #195866]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_SyncDataGroupBettingTicket] 
@@ -55,10 +56,21 @@ BEGIN
 		,	T.C.value('./@IsViolateBetFrom', 'BIT') AS IsViolateBetFrom
 	FROM @GBTicketXML.nodes('//TWGroupBettingTicket') AS T(C)
 	OPTION (OPTIMIZE FOR (@GBTicketXML = NULL));
+	
+	IF EXISTS (SELECT (1) FROM dbo.SPU_GroupBettingTicket_History gbh WITH (NOLOCK) 
+			   WHERE gbh.TransDate <= @ArchivedDateTicketHistory)
+	BEGIN
+		WHILE(1 = 1)
+		BEGIN
+			DELETE TOP(5000) gbh
+			FROM dbo.SPU_GroupBettingTicket_History gbh WITH(ROWLOCK)
+			WHERE gbh.TransDate <= @ArchivedDateTicketHistory
 
-	DELETE FROM dbo.SPU_GroupBettingTicket_History WITH (ROWLOCK)
-	WHERE TransDate <= @ArchivedDateTicketHistory
-
+		IF (@@ROWCOUNT = 0)
+			BREAK;
+		END;
+	END;
+	
 	INSERT INTO dbo.SPU_GroupBettingTicket_History (
 			TransId
 		,	TransDate
@@ -86,9 +98,16 @@ BEGIN
 
 	IF @RunningDate > @DailyMidnight
 	BEGIN
-		DELETE FROM dbo.SPU_GroupBettingTicket WITH (ROWLOCK)
-		WHERE TransDate = CONVERT(DATE, DATEADD(DAY,-1,GETDATE()));
-	END
+		WHILE(1 = 1)
+		BEGIN
+			DELETE TOP(5000) gb
+			FROM dbo.SPU_GroupBettingTicket gb WITH(ROWLOCK)
+			WHERE gb.TransDate = CONVERT(DATE, DATEADD(DAY,-1,GETDATE()));
+
+		IF (@@ROWCOUNT = 0)
+			BREAK;
+		END;
+	END;
 
 	INSERT INTO dbo.SPU_GroupBettingTicket (
 		CustId
@@ -102,5 +121,5 @@ BEGIN
 
 	DROP TABLE #TmpGroupBettingTicket
 
-END
+END;
 
