@@ -3,8 +3,8 @@ DROP PROCEDURE IF EXISTS `DCS_DT_Report_LoginTransaction_Get`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DT_Report_LoginTransaction_Get`(
-		IN ip_FromDate DATE
-    ,	IN ip_ToDate DATE
+		IN ip_FromDate 	DATE
+    ,	IN ip_ToDate 	DATE
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -27,7 +27,7 @@ BEGIN
 		,	sub.SubscriberName
 		,	COUNT(trans.DeviceID) AS TotalDevice
 		,	SUM(trans.TotalTrans) AS TotalTrans
-	FROM DCS_DataTrace.LoginTransactionSummary AS trans FORCE INDEX (UX_LoginTransactionSummary_Group)
+	FROM DCS_DataTrace.LoginTransactionSummary AS trans
 		INNER JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = trans.SubscriberID
 	WHERE trans.TransDate BETWEEN ip_FromDate AND ip_ToDate
 	GROUP BY trans.TransDate, trans.SubscriberID;

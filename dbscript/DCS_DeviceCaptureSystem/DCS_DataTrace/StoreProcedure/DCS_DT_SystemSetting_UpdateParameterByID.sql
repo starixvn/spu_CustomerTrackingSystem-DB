@@ -3,8 +3,8 @@ DROP PROCEDURE IF EXISTS `DCS_DT_SystemSetting_UpdateParameterByID`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DT_SystemSetting_UpdateParameterByID`(
-        IN ip_ParameterID   INT
-	,	IN ip_ParameterValue VARCHAR(255)
+        IN ip_ParameterID   	INT
+	,	IN ip_ParameterValue 	VARCHAR(255)
 )
     SQL SECURITY INVOKER
 BEGIN

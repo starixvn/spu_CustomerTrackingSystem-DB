@@ -3,8 +3,8 @@ DROP PROCEDURE IF EXISTS `DCS_DT_Summary_MemberMissingTransaction_DeleteByDate`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DT_Summary_MemberMissingTransaction_DeleteByDate`(
-        IN ip_TransDate  DATE
-	,	IN ip_MissingType  SMALLINT
+        IN ip_TransDate  	DATE
+	,	IN ip_MissingType  	SMALLINT
 )
 SQL SECURITY INVOKER
 BEGIN

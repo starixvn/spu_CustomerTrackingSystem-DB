@@ -3,8 +3,8 @@ DROP PROCEDURE IF EXISTS `DCS_DT_Report_BotDTransaction_Get`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DT_Report_BotDTransaction_Get`(
-		IN ip_FromDate DATE
-    ,	IN ip_ToDate DATE
+		IN ip_FromDate 	DATE
+    ,	IN ip_ToDate 	DATE
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -26,13 +26,13 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_LoginTrans;
     
 	CREATE TEMPORARY TABLE Temp_LoginTrans(
-			ID							BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY
-		, 	TransDate					DATETIME NOT NULL
-		, 	SubscriberID				INT UNSIGNED DEFAULT NULL
-		, 	SubscriberName				VARCHAR(50) DEFAULT NULL
-		, 	FlaggedGroupID				SMALLINT DEFAULT NULL
-		, 	FlaggedGroupName			VARCHAR(200) DEFAULT NULL
-		, 	TotalTrans					INT UNSIGNED DEFAULT NULL
+			ID					BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY
+		, 	TransDate			DATETIME NOT NULL
+		, 	SubscriberID		INT UNSIGNED DEFAULT NULL
+		, 	SubscriberName		VARCHAR(50) DEFAULT NULL
+		, 	FlaggedGroupID		SMALLINT DEFAULT NULL
+		, 	FlaggedGroupName	VARCHAR(200) DEFAULT NULL
+		, 	TotalTrans			INT UNSIGNED DEFAULT NULL
 		,	KEY `IX_Temp_LoginTrans_FlaggedGroupID` (`FlaggedGroupID`)
 	);
     
@@ -42,14 +42,14 @@ BEGIN
 		,	sub.SubscriberName
 		,	trans.FlaggedGroupID
 		,	SUM(trans.TotalTrans) AS TotalTrans
-	FROM DCS_DataTrace.LoginTransactionSummary AS trans FORCE INDEX (IX_LoginTransactionSummary_FlaggedGroupID)
+	FROM DCS_DataTrace.LoginTransactionSummary AS trans
 		INNER JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = trans.SubscriberID
 	WHERE trans.TransDate BETWEEN ip_FromDate AND ip_ToDate
 	GROUP BY trans.TransDate, trans.SubscriberID, trans.FlaggedGroupID;
     
     UPDATE Temp_LoginTrans AS tmp
 		INNER JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.GroupID = tmp.FlaggedGroupID
-	SET tmp.FlaggedGroupName = sl.ItemName;
+	SET tmp.FlaggedGroupName = sl.GroupName;
     
     SELECT 	TransDate
 		,	SubscriberID

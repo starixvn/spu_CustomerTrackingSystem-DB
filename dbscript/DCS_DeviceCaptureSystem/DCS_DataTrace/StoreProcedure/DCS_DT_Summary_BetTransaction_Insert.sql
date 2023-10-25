@@ -28,13 +28,13 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_InputTrans;
 	#======GET DATA FROM RAW TRANSACTION===========================
 	CREATE TEMPORARY TABLE Temp_InputTrans(
-			ID 					BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
-		, 	TransDate			DATETIME NOT NULL
-		, 	CustID				INT UNSIGNED DEFAULT NULL
-		, 	BetCount			INT UNSIGNED DEFAULT 0
-		, 	FirstBetTransactionTime	DATETIME DEFAULT NULL
-		, 	LastBetTransactionTime	DATETIME DEFAULT NULL
-		, 	IsUpdate			BOOL DEFAULT 0
+			ID 							BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
+		, 	TransDate					DATETIME NOT NULL
+		, 	CustID						INT UNSIGNED DEFAULT NULL
+		, 	BetCount					INT UNSIGNED DEFAULT 0
+		, 	FirstBetTransactionTime		DATETIME DEFAULT NULL
+		, 	LastBetTransactionTime		DATETIME DEFAULT NULL
+		, 	IsUpdate					BOOL DEFAULT 0
 		,	PRIMARY KEY (`ID`)
 	);
 	
@@ -55,6 +55,11 @@ BEGIN
 			)
 		) AS tmp;
 
+	
+    DELETE tmp
+    FROM Temp_InputTrans AS tmp
+		INNER JOIN DCS_DataTrace.BetTransactionSummary AS bt ON bt.TransDate = tmp.TransDate AND bt.CustID = tmp.CustID;
+    
 	INSERT IGNORE INTO DCS_DataTrace.BetTransactionSummary(TransDate, CustID, BetCount, FirstBetTransactionTime, LastBetTransactionTime, CreatedTime)
 	SELECT 	tmp.TransDate
 		,	tmp.CustID
@@ -62,8 +67,6 @@ BEGIN
         ,	tmp.FirstBetTransactionTime
         ,	tmp.LastBetTransactionTime
         ,	lv_CurrentDatetime AS CreatedTime
-    FROM Temp_InputTrans AS tmp
-		LEFT JOIN DCS_DataTrace.BetTransactionSummary AS bt ON bt.TransDate = tmp.TransDate AND bt.CustID = tmp.CustID
-    WHERE bt.ID IS NULL;
+    FROM Temp_InputTrans AS tmp;
 END$$
 DELIMITER ;

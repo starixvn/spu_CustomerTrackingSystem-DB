@@ -3,8 +3,8 @@ DROP PROCEDURE IF EXISTS `DCS_DT_Report_MissingTransaction_Get`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DT_Report_MissingTransaction_Get`(
-		IN ip_FromDate DATE
-    ,	IN ip_ToDate DATE
+		IN ip_FromDate 	DATE
+    ,	IN ip_ToDate 	DATE
 )
 SQL SECURITY INVOKER
 BEGIN

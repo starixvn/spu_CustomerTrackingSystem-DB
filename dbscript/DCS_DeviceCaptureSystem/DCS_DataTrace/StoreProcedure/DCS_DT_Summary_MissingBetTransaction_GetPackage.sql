@@ -22,9 +22,9 @@ BEGIN
 	Example:
         CALL DCS_DataTrace.DCS_DT_Summary_MissingBetTransaction_GetPackage('2023-10-04', 10);
 	*/    
-    DECLARE lv_CurrentDatetime DATETIME DEFAULT CURRENT_TIMESTAMP();
-	DECLARE lv_TotalRecord INT UNSIGNED DEFAULT 0;
-	DECLARE lv_NoOfBatch INT UNSIGNED DEFAULT 0;
+    DECLARE lv_CurrentDatetime 	DATETIME 		DEFAULT CURRENT_TIMESTAMP();
+	DECLARE lv_TotalRecord 		INT UNSIGNED 	DEFAULT 0;
+	DECLARE lv_NoOfBatch 		INT UNSIGNED 	DEFAULT 0;
     
     IF EXISTS (SELECT 1 FROM DCS_DataTrace.BetTransactionSummary WHERE TransDate = ip_TransDate LIMIT 1) THEN
 		DROP TEMPORARY TABLE IF EXISTS Temp_LoginTransactionSummary; 
@@ -37,8 +37,8 @@ BEGIN
 		
 		SET @RowId = 0;
 		
-		SET lv_TotalRecord = (SELECT COUNT(1) FROM DCS_DataTrace.LoginTransactionSummary WHERE TransDate = ip_TransDate);
-		SET lv_NoOfBatch = CEIL(lv_TotalRecord/ip_BatchSize);
+		SET lv_TotalRecord 	= (SELECT COUNT(1) FROM DCS_DataTrace.LoginTransactionSummary WHERE TransDate = ip_TransDate);
+		SET lv_NoOfBatch 	= CEIL(lv_TotalRecord/ip_BatchSize);
 		
 		INSERT INTO Temp_LoginTransactionSummary (MinID, MaxID, BatchCount)
 		SELECT  MIN(tmp.ID) AS MinID
