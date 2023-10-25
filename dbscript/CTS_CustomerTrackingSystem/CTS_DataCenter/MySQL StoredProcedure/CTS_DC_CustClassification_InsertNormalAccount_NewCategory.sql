@@ -71,7 +71,7 @@ BEGIN
 		UPDATE Temp_Customer AS temp
 			,	LATERAL
 				(
-					SELECT DISTINCT cc.CustID, cc.CategoryID
+					SELECT DISTINCT arc.CustID, arc.CategoryID, arc.ID
 					FROM CTS_DataCenter.ArchiveCustomer_CTSCustomer AS arc
 					WHERE arc.CustID = temp.CustID
 						AND arc.CustSubID = 0

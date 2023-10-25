@@ -735,10 +735,10 @@ sp: BEGIN
             
             IF EXISTS (SELECT 1 FROM Temp_CTSCustomerClassification_Archive) THEN
 				UPDATE CTS_DataCenter.ArchiveCustomer_CTSCustomer AS arc
-				INNER JOIN Temp_CTSCustomerClassification_Archive AS temp ON temp.ArchiveID = arc.ArchiveID,
+				INNER JOIN Temp_CTSCustomerClassification_Archive AS temp ON temp.ArchiveID = arc.ID,
 				LATERAL
 					(
-						SELECT DISTINCT cc.CustID, cc.CategoryID
+						SELECT DISTINCT cc.CustID, cc.CategoryID, cate.Priority, cc.CreatedDate
 						FROM CTS_DataCenter.CTSCustomerClassification AS cc
 							INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cc.CategoryID = cate.CategoryID
 						WHERE cc.CustID = arc.CustID
