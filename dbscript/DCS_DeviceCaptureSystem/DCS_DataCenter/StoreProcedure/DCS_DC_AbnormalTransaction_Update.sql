@@ -36,7 +36,7 @@ BEGIN
 	);
 
     IF ip_TransJson <> '' THEN
-		INSERT INTO Temp_InputTrans(
+		INSERT IGNORE INTO Temp_InputTrans(
 				ID
 			,	Status
 		)
