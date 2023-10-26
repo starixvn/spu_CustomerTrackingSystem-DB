@@ -17,6 +17,7 @@ BEGIN
 
 	Revisions:
 		- 20230321@Jonathan.Doan: Update status for Completed Data [Redmine ID: 185185]
+		- 20231026@Jonathan.Doan: Add Ignore when insert into Temp_InputTrans [Redmine ID: 196078]
 		
 	Param's Explanation (filtered by):
 
@@ -36,7 +37,7 @@ BEGIN
 	);
 
     IF ip_TransJson <> '' THEN
-		INSERT INTO Temp_InputTrans(
+		INSERT IGNORE INTO Temp_InputTrans(
 				ID
 			,	Status
 		)
