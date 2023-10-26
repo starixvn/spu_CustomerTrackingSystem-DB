@@ -30,18 +30,29 @@ BEGIN
     DECLARE lv_Count_Bot_Trans				INT;
     DECLARE lv_Count_InvalidBrowser_Trans	INT;
     
+    DECLARE lv_IsExcludeSubscriber			BIT DEFAULT(0); 	
+    DECLARE lv_SubSourceID_DirectAPI		TINYINT DEFAULT(1);
+	DECLARE lv_SubSourceID_OddsFeed			TINYINT DEFAULT(2);
+        
     DROP TEMPORARY TABLE IF EXISTS Temp_AccountID;
 	CREATE TEMPORARY TABLE Temp_AccountID(
 			AccountID	BIGINT UNSIGNED PRIMARY KEY
 	);	
+	
+    SELECT 1
+    INTO lv_IsExcludeSubscriber
+    FROM CTS_DataCenter.CTSCustomer AS cus
+		INNER JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = cus.SubscriberID
+	WHERE cus.CTSCustID = ip_CTSCustID 
+		AND sub.SubscriberSourceID IN (lv_SubSourceID_DirectAPI, lv_SubSourceID_OddsFeed);
     
-    INSERT IGNORE INTO Temp_AccountID(AccountID)
-    SELECT AccountID 
-    FROM CTS_DataCenter.CustDCSAccount
-	WHERE  CTSCustID  = ip_CTSCustID; 
-    
-    IF (SELECT 1 FROM Temp_AccountID)
+    IF (lv_IsExcludeSubscriber = 0)
     THEN
+	    INSERT IGNORE INTO Temp_AccountID(AccountID)
+		SELECT AccountID 
+		FROM CTS_DataCenter.CustDCSAccount
+		WHERE  CTSCustID  = ip_CTSCustID; 
+    
 		SELECT  SUM(sm.DeviceDesktop)
 			,   SUM(sm.DeviceMobile)
 			,   SUM(sm.TotalLogin)
