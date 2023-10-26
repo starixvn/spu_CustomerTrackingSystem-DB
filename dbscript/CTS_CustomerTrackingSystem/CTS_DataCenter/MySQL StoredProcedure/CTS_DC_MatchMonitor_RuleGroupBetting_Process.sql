@@ -10,6 +10,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleGroupBetting_Pr
     ,	IN ip_BettypeID			INT UNSIGNED
     ,	IN ip_BetID				BIGINT
     ,	IN ip_Betteam			VARCHAR(10)
+    ,	IN ip_SharedMatches		JSON
 )
     SQL SECURITY INVOKER
 sp: BEGIN
@@ -40,19 +41,24 @@ sp: BEGIN
 			- 	20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
             -	20230313@Casey.Huynh:	Applied Betting Parten OTGB [Redmine ID: #184791]
 			-	20230421@Casey.Huynh:	Enhance Rule for System Detect Classification [Redmine ID: #186814]
+            -	20231016@Casey.Huynh:	Enhance Rule for BasketBall. Adjust Group Stake to 300, Add AssociationByIP, ShareMatch(3 Match(last 7 day) [Redmine ID: 195473]
             
 		Param's Explanation (filtered by):	
+			ip_SharedMatches: JSON '[{"O": 1, "D": 2}]'
+            
 		Example:
-			- CALL CTS_DC_MatchMonitor_RuleGroupBetting_Process(1,113171940189,22081995,1,1,0,'a');
+			- CALL CTS_DC_MatchMonitor_RuleGroupBetting_Process(1,113171940189,22081995,1,1,0,'a',[{"O": 1, "D": 2}]');
 			
 	*/
-    DECLARE CONS_LOG 						TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
-    DECLARE CONST_RULE_GROUPID 				INT DEFAULT 1;
-	DECLARE CONST_ASSTYPE_BETTINGPATTERN 	INT DEFAULT 2;
-	DECLARE CONST_ASSBYAI_ACTIVESTATUS 		INT DEFAULT 1;	
-    DECLARE CONST_CLASSIFYTOTALSTAKE		DECIMAL(20,4) DEFAULT 80;
-	DECLARE CONST_CLASSIFYTOTALCUST			INT DEFAULT 3;	
-    
+    DECLARE CONS_LOG 							TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
+    DECLARE CONST_RULE_GROUPID 					INT DEFAULT 1;
+	DECLARE CONST_ASSTYPE_BETTINGPATTERN 		INT DEFAULT 2;
+	DECLARE CONST_ASSBYAI_ACTIVESTATUS 			INT DEFAULT 1;	
+    DECLARE CONST_CLASSIFYTOTALSTAKE			DECIMAL(20,4) DEFAULT 80;
+	DECLARE CONST_CLASSIFYTOTALCUST				INT DEFAULT 3;	
+    DECLARE CONST_ASSOCIATIONTYPE_IP 			INT DEFAULT 4;
+    DECLARE CONST_ASSOCIATIONTYPE_SHAREMATCH 	INT DEFAULT 5;
+    DECLARE CONST_SPORTTYPE_BASKETBALL 			INT DEFAULT 2;
 	#=================================================
     DECLARE lv_TimeCustID BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_MinTransDate DATETIME(3);
@@ -201,15 +207,15 @@ sp: BEGIN
 	CREATE TEMPORARY TABLE 		Temp_CustAssociation (
 			CustID_1 			BIGINT UNSIGNED
 		 ,	CustID_2 	    	BIGINT UNSIGNED
-		 ,	PRIMARY KEY IX_Temp_Association_CTSCustID1_CTSCustID2(CustID_1, CustID_2)
+		 ,	PRIMARY KEY IX_Temp_CustAssociation_CTSCustID1_CTSCustID2(CustID_1, CustID_2)
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Association_Remove;
 	CREATE TEMPORARY TABLE 		Temp_Association_Remove (
 			CTSCustID_1 		BIGINT UNSIGNED 
 		 ,	CTSCustID_2 	    BIGINT UNSIGNED
-		 ,	INDEX IX_Temp_Association_CTSCustID_1(CTSCustID_1)
-		 ,	INDEX IX_Temp_Association_CTSCustID_2(CTSCustID_2)
+		 ,	INDEX IX_Temp_Association_Remove_CTSCustID_1(CTSCustID_1)
+		 ,	INDEX IX_Temp_Association_Remove_CTSCustID_2(CTSCustID_2)
 	);     
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
@@ -247,6 +253,14 @@ sp: BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByAI_AssType;
 	CREATE TEMPORARY TABLE 	Temp_AssociationByAI_AssType (
 			AssTypeItemValue INT PRIMARY KEY            
+	);
+    
+	DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByShareMatch;
+	CREATE TEMPORARY TABLE 	Temp_AssociationByShareMatch (
+			FromCustID 	BIGINT  
+		,	ToCustID  	BIGINT
+        
+        ,	PRIMARY KEY Temp_AssociationByShareMatch(FromCustID,ToCustID)
 	);
     
     #===========GET AssociationByAI status is Applied==============================================    
@@ -432,7 +446,87 @@ sp: BEGIN
 		INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.ToCustID = cus.CustID
 															AND ai.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByAI_AssType AS tmpAt)
 	WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tic WHERE tic.CustID = ai.FromCustID);
-	
+    
+    #====================GET ASSOCIATION BY IP==================
+    IF (lv_SportType = CONST_SPORTTYPE_BASKETBALL) THEN  
+		INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType)
+		SELECT	tmpCus.CustID
+			,	ip.ToCustID
+			,	CONST_ASSOCIATIONTYPE_IP AS AssociationType
+		FROM Temp_Cust AS tmpCus
+			INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.FromCustID = tmpCus.CustID
+		WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tmpCdp WHERE tmpCdp.CustID = ip.ToCustID);
+
+		INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType)
+		SELECT	ip.ToCustID
+			,	tmpCus.CustID
+			,	CONST_ASSOCIATIONTYPE_IP AS AssociationType
+		FROM Temp_Cust AS tmpCus
+			INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.FromCustID = tmpCus.CustID
+		WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tmpCdp WHERE tmpCdp.CustID = ip.ToCustID);
+
+		INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType)
+		SELECT	tmpCus.CustID
+			,	ip.FromCustID
+			,	CONST_ASSOCIATIONTYPE_IP AS AssociationType
+		FROM Temp_Cust AS tmpCus 
+			INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.ToCustID = tmpCus.CustID
+		WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tmpCdp WHERE tmpCdp.CustID = ip.FromCustID);
+
+		INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType)
+		SELECT	ip.FromCustID
+			,	tmpCus.CustID
+			,	CONST_ASSOCIATIONTYPE_IP AS AssociationType
+		FROM Temp_Cust AS tmpCus 
+			INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.ToCustID = tmpCus.CustID
+		WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tmpCdp WHERE tmpCdp.CustID = ip.FromCustID);
+	END IF;
+    
+	#====================GET ASSOCIATION BY SHARE MATCH==================
+    IF (lv_SportType = CONST_SPORTTYPE_BASKETBALL AND ip_SharedMatches IS NOT NULL) THEN    
+
+		INSERT IGNORE INTO Temp_AssociationByShareMatch(FromCustID, ToCustID)  
+		SELECT 	OrigID
+			,	DestID
+		FROM JSON_TABLE(ip_SharedMatches,
+			"$[*]" COLUMNS( OrigID 		BIGINT 		PATH "$.O"                
+						,	DestID		BIGINT 		PATH "$.D"
+		)) AS js;
+
+		INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType)
+		SELECT	tmpCus.CustID
+			,	tmpSm.ToCustID
+			,	CONST_ASSOCIATIONTYPE_SHAREMATCH AS AssociationType
+		FROM Temp_Cust AS tmpCus
+			INNER JOIN Temp_AssociationByShareMatch AS tmpSm ON tmpSm.FromCustID = tmpCus.CustID
+		WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tmpCdp WHERE tmpCdp.CustID = tmpSm.ToCustID);
+
+		INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType)
+		SELECT	tmpSm.ToCustID
+			,	tmpCus.CustID
+			,	CONST_ASSOCIATIONTYPE_SHAREMATCH AS AssociationType
+		FROM Temp_Cust AS tmpCus
+			INNER JOIN Temp_AssociationByShareMatch AS tmpSm ON tmpSm.FromCustID = tmpCus.CustID
+		WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tmpCdp WHERE tmpCdp.CustID = tmpSm.ToCustID);
+
+		INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType)
+		SELECT	tmpCus.CustID
+			,	tmpSm.FromCustID
+			,	CONST_ASSOCIATIONTYPE_SHAREMATCH AS AssociationType
+		FROM Temp_Cust AS tmpCus 
+			INNER JOIN Temp_AssociationByShareMatch AS tmpSm ON tmpSm.ToCustID = tmpCus.CustID
+		WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tmpCdp WHERE tmpCdp.CustID = tmpSm.FromCustID);
+
+		INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType)
+		SELECT	tmpSm.FromCustID
+			,	tmpCus.CustID
+			,	CONST_ASSOCIATIONTYPE_SHAREMATCH AS AssociationType
+		FROM Temp_Cust AS tmpCus 
+			INNER JOIN Temp_AssociationByShareMatch AS tmpSm ON tmpSm.ToCustID = tmpCus.CustID
+		WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tmpCdp WHERE tmpCdp.CustID = tmpSm.FromCustID);
+        
+	END IF;
+    
 	#-----------------------------------------------------------Update CustId, CTSCustID of Association table------------------------------------------------
 	UPDATE Temp_Association AS ass
 	INNER JOIN Temp_Cust AS cus ON ass.CustID_1 = cus.CustID
