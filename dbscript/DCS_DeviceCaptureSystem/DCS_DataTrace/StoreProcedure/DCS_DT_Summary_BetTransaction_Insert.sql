@@ -15,6 +15,7 @@ BEGIN
 
 	Revisions:
 		- 20231003@Jonathan.Doan: Created [Redmine ID: 194933]
+		- 20231026@Jonathan.Doan: Refactor code [Redmine ID: 195332]
 		
 	Param's Explanation (filtered by):
 

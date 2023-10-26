@@ -33,6 +33,8 @@ CREATE TABLE `LoginTransactionSummary` (
 ) ENGINE=InnoDB;
 ALTER TABLE DCS_DataTrace.LoginTransactionSummary
     PARTITION BY RANGE (YEARWEEK(`TransDate`,0))(
+    PARTITION pw202326 VALUES LESS THAN (202327),
+    PARTITION pw202327 VALUES LESS THAN (202328),
     PARTITION pw202328 VALUES LESS THAN (202329),
     PARTITION pw202329 VALUES LESS THAN (202330),
     PARTITION pw202330 VALUES LESS THAN (202331),
@@ -86,11 +88,3 @@ VALUES(3, 'MissingTrans', 'LastScannedLoginTransDate', '2023-07-01', CURRENT_TIM
 
 INSERT INTO DCS_DataTrace.SystemSetting(ID, VGroup, VName, VValue, UpdatedTime)
 VALUES(4, 'MissingTrans', 'LastScannedBetTransDate', '2023-07-01', CURRENT_TIMESTAMP);
-
-SET sql_safe_updates = 0;
-UPDATE DCS_DataTrace.LoginTransactionSummary AS trans
-	LEFT JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.ItemID = trans.Flagged
-SET trans.FlaggedGroupID = sl.GroupID;
-
-DROP PROCEDURE IF EXISTS `DCS_DT_Report_DailyLoginTransactionSummary_Insert`;
-DROP PROCEDURE IF EXISTS `DCS_DT_Report_DeviceTransaction_Get`;
