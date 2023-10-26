@@ -3,8 +3,8 @@ DROP PROCEDURE IF EXISTS `DCS_DT_SystemSetting_UpdateParameterByID`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DT_SystemSetting_UpdateParameterByID`(
-        IN ip_ParameterID   INT
-	,	IN ip_ParameterValue VARCHAR(255)
+        IN ip_ParameterID   	INT
+	,	IN ip_ParameterValue 	VARCHAR(255)
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -16,6 +16,7 @@ BEGIN
 	
 	    Revisions:
 			- 20231009@Jonathan.Doan: Create [RedmineID: #190118]
+			- 20231026@Jonathan.Doan: Refactor code [Redmine ID: 195332]
             
 	    Param's Explanation (filtered by):
         

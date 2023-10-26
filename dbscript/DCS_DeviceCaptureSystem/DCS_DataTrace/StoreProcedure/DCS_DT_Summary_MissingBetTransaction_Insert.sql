@@ -3,8 +3,9 @@ DROP PROCEDURE IF EXISTS `DCS_DT_Summary_MissingBetTransaction_Insert`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DT_Summary_MissingBetTransaction_Insert`(
-        IN ip_FromID   BIGINT UNSIGNED
-    ,   IN ip_ToID     BIGINT UNSIGNED
+        IN ip_TransDate     DATE
+	,	IN ip_FromID   		BIGINT UNSIGNED
+    ,   IN ip_ToID     		BIGINT UNSIGNED
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -16,29 +17,28 @@ BEGIN
 
 	Revisions:
 		- 20231009@Jonathan.Doan: Created [Redmine ID: 194933]
+		- 20231026@Jonathan.Doan: Refactor code [Redmine ID: 195332]
 		
 	Param's Explanation (filtered by):
 
 	Example:
-        CALL DCS_DataTrace.DCS_DT_Summary_MissingBetTransaction_Insert(1, 2);
+        CALL DCS_DataTrace.DCS_DT_Summary_MissingBetTransaction_Insert('2023-10-01', 1, 2);
 	*/
-    DECLARE CONST_SUMMARY_MAXTRANSDATE INT DEFAULT 2;
-    DECLARE CONST_MISSINGBETTRANSACTION_TYPE SMALLINT DEFAULT 1;
+    DECLARE CONST_SUMMARY_MAXTRANSDATE 			INT 		DEFAULT 2;
+    DECLARE CONST_MISSINGBETTRANSACTION_TYPE 	SMALLINT 	DEFAULT 2;
     
-    DECLARE lv_CurrentDatetime DATETIME DEFAULT CURRENT_TIMESTAMP();
-    DECLARE lv_MaxTransDate DATETIME DEFAULT CURRENT_TIMESTAMP();
-    
-    SET lv_MaxTransDate = (SELECT DATE(VValue) FROM DCS_DataTrace.SystemSetting WHERE ID = CONST_SUMMARY_MAXTRANSDATE);
+    DECLARE lv_CurrentDatetime 		DATETIME DEFAULT CURRENT_TIMESTAMP();
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_LoginTransactionSummary;
 	DROP TEMPORARY TABLE IF EXISTS Temp_BetTransactionSummary;
     
 	CREATE TEMPORARY TABLE Temp_LoginTransactionSummary(
 			ID 						BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
-		, 	CustID					INT UNSIGNED DEFAULT NULL
 		, 	SubscriberID			INT UNSIGNED DEFAULT NULL
+		, 	CustID					INT UNSIGNED DEFAULT NULL
 		,	PRIMARY KEY (`ID`)
 		,	INDEX `IX_Temp_LoginTransactionSummary_CustID` (`CustID`)
+		,	INDEX `IX_Temp_LoginTransactionSummary_SubscriberID_CustID` (`SubscriberID`, `CustID`)
 	);
     
 	CREATE TEMPORARY TABLE Temp_BetTransactionSummary(
@@ -46,40 +46,47 @@ BEGIN
 		, 	CustID					INT UNSIGNED DEFAULT NULL
 		, 	SubscriberID			INT UNSIGNED DEFAULT NULL
 		,	PRIMARY KEY (`ID`)
-		,	INDEX `UX_Temp_BetTransactionSummary_CustID` (`CustID`)
+		,	INDEX `IX_Temp_BetTransactionSummary_CustID` (`CustID`)
 	);
     
-    INSERT INTO Temp_LoginTransactionSummary(CustID, SubscriberID)
+    INSERT INTO Temp_LoginTransactionSummary(SubscriberID, CustID)
     SELECT 	DISTINCT 
-			cts.CustID
-        ,	trans.SubscriberID
+			trans.SubscriberID
+		,	cts.CustID
     FROM DCS_DataTrace.LoginTransactionSummary AS trans
 		INNER JOIN CTS_DataCenter.CustDCSAccount AS dcs ON dcs.AccountID = trans.AccountID
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cts ON cts.CTSCustID = dcs.CTSCustID
     WHERE trans.ID BETWEEN ip_FromID AND ip_ToID
-		AND trans.TransDate = lv_MaxTransDate
+		AND trans.TransDate = ip_TransDate
         AND cts.RoleID = 1;
     
-    INSERT INTO Temp_BetTransactionSummary(CustID, SubscriberID)
+    INSERT INTO Temp_BetTransactionSummary(SubscriberID, CustID)
     SELECT 	DISTINCT
-			bt.CustID
-        ,	cts.SubscriberID
+			cts.SubscriberID
+		,	bt.CustID
     FROM DCS_DataTrace.BetTransactionSummary AS bt
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cts ON cts.CustID = bt.CustID
-    WHERE bt.TransDate = lv_MaxTransDate;
+    WHERE bt.TransDate = ip_TransDate;
     
     /* == MissingTransaction == */
-    INSERT IGNORE INTO DCS_DataTrace.MissingTransaction(MissingType, TransDate, SubscriberID, CustID, CreatedTime)
-    SELECT 	CONST_MISSINGBETTRANSACTION_TYPE AS MissingType
-		,	lv_MaxTransDate AS TransDate
-		,	tmp_trans.SubscriberID
-		,	tmp_trans.CustID
-        ,	lv_CurrentDatetime AS CreatedTime
+    DELETE tmp_trans
     FROM Temp_LoginTransactionSummary AS tmp_trans
-		LEFT JOIN Temp_BetTransactionSummary AS tmp_bt ON tmp_bt.CustID = tmp_trans.CustID
-		LEFT JOIN DCS_DataTrace.MissingTransaction AS mbt ON mbt.MissingType = CONST_MISSINGBETTRANSACTION_TYPE AND mbt.TransDate = lv_MaxTransDate AND mbt.CustID = tmp_trans.CustID
-    WHERE tmp_bt.ID IS NULL
-		AND mbt.ID IS NULL;
+		INNER JOIN Temp_BetTransactionSummary AS tmp_bt ON tmp_bt.CustID = tmp_trans.CustID;
+        
+    DELETE tmp_trans
+    FROM Temp_LoginTransactionSummary AS tmp_trans
+		INNER JOIN DCS_DataTrace.MemberMissingTransaction AS mt ON mt.TransDate = ip_TransDate 
+														AND mt.SubscriberID = tmp_trans.SubscriberID 
+                                                        AND mt.MissingTransactionType = CONST_MISSINGBETTRANSACTION_TYPE
+														AND mt.CustID = tmp_trans.CustID;
+    
+    INSERT IGNORE INTO DCS_DataTrace.MemberMissingTransaction(MissingTransactionType, TransDate, SubscriberID, CustID, CreatedTime)
+    SELECT 	CONST_MISSINGBETTRANSACTION_TYPE AS MissingTransactionType
+		,	ip_TransDate AS TransDate
+		,	SubscriberID
+		,	CustID
+        ,	lv_CurrentDatetime AS CreatedTime
+    FROM Temp_LoginTransactionSummary;
     
 END$$
 DELIMITER ;
