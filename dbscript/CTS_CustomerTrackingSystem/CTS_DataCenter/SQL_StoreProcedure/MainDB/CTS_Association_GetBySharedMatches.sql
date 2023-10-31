@@ -1,5 +1,6 @@
-/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+USE [bodb02]
 GO
+/****** Object:  StoredProcedure [dbo].[CTS_Association_GetBySharedMatches]    Script Date: 10/31/2023 1:04:10 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -221,7 +222,7 @@ BEGIN
 		,	b.Stake
 		,	b.Status
 	FROM #tmpCustIds AS a WITH(NOLOCK)
-		INNER JOIN dbo.bettrans14 AS b WITH(NOLOCK) ON a.CustID = b.custid		
+		INNER JOIN dbo.bettrans14 AS b WITH(NOLOCK, INDEX=IX_memberStatement14) ON a.CustID = b.custid		
 		INNER JOIN dbo.match14 AS m WITH(NOLOCK) ON b.MatchID = m.matchid
 		INNER JOIN #tmpStakeThredsHold AS s WITH(NOLOCK) ON s.SportType = m.sporttype
 		INNER JOIN dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
@@ -354,4 +355,5 @@ BEGIN
 	DROP TABLE #tmpStakeThredsHold;
 	
 END;
+
 
