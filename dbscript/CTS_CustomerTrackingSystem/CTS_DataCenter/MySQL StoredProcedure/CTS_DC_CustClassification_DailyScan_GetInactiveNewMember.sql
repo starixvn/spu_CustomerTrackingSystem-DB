@@ -18,6 +18,7 @@ sp:BEGIN
 			- 20220328@Irena.Vo: Fix bug return LastCreatedDate is NULL OR LastCTSCustID is NULL  [Redmine ID: #170610]
             - 20220331@Aries.Nguyen: Fix performance issue  [Redmine ID: #170769]            
 			- 20230207@Long.Luu: Get exact lastticketdate [Redmine ID: #183281]
+			- 20231030@Victoria.Le: Add New CategoryID - New Group Betting  [Redmine ID: #195060]
             
 		Param's Explanation (filtered by):
 		Example: 
@@ -41,7 +42,7 @@ sp:BEGIN
 			CustID 			BIGINT UNSIGNED PRIMARY KEY
 	);
     
-    INSERT INTO Temp_Category(CategoryID) VALUES (201), (231), (232), (233); 
+    INSERT INTO Temp_Category(CategoryID) VALUES (201), (231), (232), (233), (239); 
   
     SELECT ParameterValue 
     INTO lv_BatchSize 

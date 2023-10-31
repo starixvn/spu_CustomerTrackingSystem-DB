@@ -18,6 +18,7 @@ BEGIN
 		- 20230315@Victoria.Le:		Add Robot Imperva [Redmine ID: #184773]
 		- 20230404@Victoria.Le		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeId [Redmine ID: #185319] 
 		- 20230428@Jonas.Huynh: 	Realtime Renovation [Redmine ID: #186678]
+		- 20231108@Victoria.Le: 	Add First5TWGBTicketCount [Redmine ID: #195060]
         
 	Param's Explanation (filtered by):
 
@@ -65,6 +66,7 @@ BEGIN
 		,	SportType
 		,	IssueTypeID
         ,	PerformanceTime
+        ,	First5TWGBTicketCount
 	)
 	SELECT	HistoryID
         ,	CustID
@@ -107,6 +109,7 @@ BEGIN
 		,	SportType
 		,	IssueTypeID
         ,	PerformanceTime
+        ,	First5TWGBTicketCount
 	FROM JSON_TABLE(
 			ip_HistoryJson,
 			 "$[*]" COLUMNS(
@@ -151,6 +154,7 @@ BEGIN
 							,	SportType				SMALLINT			PATH "$.SportType"  
 							,	IssueTypeID				TINYINT				PATH "$.IssueTypeID"  
                             ,	PerformanceTime			DATETIME			PATH "$.PerformanceTime"  
+                            ,	First5TWGBTicketCount	TINYINT				PATH "$.First5TWGBTicketCount"  
 							)
 		   ) AS  tbl; 
 
