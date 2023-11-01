@@ -23,7 +23,8 @@ sp: BEGIN
             - 	202201021@Casey.Huynh: Group By Betteam [Redmine ID: #179439]
             -	20221205@Casey.Huynh: Rename Table [Redmine ID: #179502]
             -	20230221@Casey.Huynh: Update Rule, The same Choice [Redmine ID: #184041]
-            -	20231016@Casey.Huynh:	Enhance Rule for BasketBall. Adjust Group Stake to 300, Add AssociationByIP, ShareMatch(3 Match(last 7 day) [Redmine ID: 195473]
+            -	20231016@Casey.Huynh: Enhance Rule for BasketBall. Adjust Group Stake to 300, Add AssociationByIP, ShareMatch(3 Match(last 7 day) [Redmine ID: 195473]
+            -	20231031@Casey.Huynh: Return SportType. [Redmine ID: 195473]
             
 		Param's Explanation (filtered by):	
 
@@ -79,6 +80,7 @@ sp: BEGIN
         
         IF(lv_LastSequenceID < lv_MaxSequenceID) THEN    
      		SELECT	mms.MatchID
+				,	mms.SportType
 				,	mms.ScoreDiff
 				,	mms.BettypeID
                 ,	mms.BetID
@@ -87,7 +89,7 @@ sp: BEGIN
 			FROM CTS_DataCenter.MatchMonitorStagingGroupBettingLive AS mms
 				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType
             WHERE mms.SequenceID <= lv_MaxSequenceID
-			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam
+			GROUP BY mms.MatchID, mms.ScoreDiff, mms.SportType, mms.BettypeID, mms.BetID, mms.Betteam
 			HAVING COUNT(DISTINCT mms.CustID) > 1;      
             
 		END IF;
@@ -105,6 +107,7 @@ sp: BEGIN
         
         IF(lv_LastSequenceID < lv_MaxSequenceID) THEN            
 			SELECT	mms.MatchID
+				,	mms.SportType
 				,	mms.ScoreDiff
 				,	mms.BettypeID
                 ,	mms.BetID
@@ -113,7 +116,7 @@ sp: BEGIN
 			FROM CTS_DataCenter.MatchMonitorStagingGroupBettingNonLive AS mms
 				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpRs ON mms.SportType = tmpRs.SportType
             WHERE mms.SequenceID <= lv_MaxSequenceID
-			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam
+			GROUP BY mms.MatchID, mms.ScoreDiff, mms.SportType, mms.BettypeID, mms.BetID, mms.Betteam
 			HAVING COUNT(DISTINCT mms.CustID) > 1;            
 		END IF;        
 	END IF;
