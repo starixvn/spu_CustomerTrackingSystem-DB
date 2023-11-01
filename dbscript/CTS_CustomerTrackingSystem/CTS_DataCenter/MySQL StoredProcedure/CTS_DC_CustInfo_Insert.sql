@@ -3,7 +3,8 @@ DROP PROCEDURE IF EXISTS `CTS_DC_CustInfo_Insert`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustInfo_Insert`(
-	IN ip_CustomerList JSON
+		IN ip_CustomerList JSON
+    ,	IN ip_IsNewCustomer BOOLEAN
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -39,13 +40,14 @@ BEGIN
 			- 20230602@Long.Luu:	Add new agent as internal account [Redmine ID: #188554]
             - 20230926@Casey.Huynh: Create New Category before Insert New Customer [Redmine ID: #193049]
             - 20231024@Long.Luu: Add Agent HITRM & WINRM as internal account [Redmine ID: #195355]
-
+			- 20231024@Jonas.Huynh: HF wrong reactivated category [Redmine ID: #193050]
+            
 		Param's Explanation (filtered by):
 		Example:
 			 CALL CTS_DataCenter.CTS_DC_CustInfo_Insert('[
 				 {"BatchId":1,"CustID":10040738,"CustStatusID":1,"UserName":"HAIFARMB01151207","UserName2":"haifa$20297251","Site":"haifa","SiteID":44,"RoleID":1,"CurrencyID":13,"Currency":"RMB","SRecommend":4359240,"MRecommend":4359287,"Recommend":4359308,"CreatedDate":"2013-01-27 05:56:00.000","Danger1":0,"Danger2":0,"Danger3":0,"CustSubID":0}
 				,{"BatchId":1,"CustID":15124347,"CustStatusID":1,"UserName":"HAIFARMB01554620","UserName2":"haifa$40834748","Site":"haifa","SiteID":44,"RoleID":1,"CurrencyID":13,"Currency":"RMB","SRecommend":4359240,"MRecommend":4359287,"Recommend":4359308,"CreatedDate":"2014-06-19 09:12:00.000","Danger1":0,"Danger2":0,"Danger3":0,"CustSubID":0}
-				,{"BatchId":1,"CustID":18349232,"CustStatusID":1,"UserName":"HAIFARMB01897790","UserName2":"haifa$83884255","Site":"haifa","SiteID":44,"RoleID":1,"CurrencyID":13,"Currency":"RMB","SRecommend":4359240,"MRecommend":4359287,"Recommend":4359308,"CreatedDate":"2015-06-28 07:22:00.000","Danger1":0,"Danger2":0,"Danger3":0,"CustSubID":0}]');
+				,{"BatchId":1,"CustID":18349232,"CustStatusID":1,"UserName":"HAIFARMB01897790","UserName2":"haifa$83884255","Site":"haifa","SiteID":44,"RoleID":1,"CurrencyID":13,"Currency":"RMB","SRecommend":4359240,"MRecommend":4359287,"Recommend":4359308,"CreatedDate":"2015-06-28 07:22:00.000","Danger1":0,"Danger2":0,"Danger3":0,"CustSubID":0}]', true);
 	
     */
 	DECLARE lv_LastArchiveID 	BIGINT UNSIGNED;
@@ -296,7 +298,7 @@ BEGIN
 	SET   tmpCus.SubscriberID = cus.SubscriberID
 		, tmpCus.RegisterName = cus.RegisterName;      
 	
-    #====CREATE CATEGORY NEW FOR NEW MEMBER (RoleID = 0)=====================================
+    #====CREATE CATEGORY FOR NEW OR REACTIVATED CUSTOMER (RoleID = 0)=====================================
     INSERT INTO Temp_CustNewCategory(CustID, IsInternal, SiteID)
     SELECT	tmpCus.CustID
 		,	tmpCus.IsInternal
@@ -305,7 +307,7 @@ BEGIN
     WHERE tmpCus.RoleID = 1
         AND tmpCus.CustSubID = 0;    
    
-	CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount_NewCategory('Temp_CustNewCategory');
+	CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount_NewCategory('Temp_CustNewCategory', ip_IsNewCustomer);
     
     #=====INSERT NEW CUSTOMER=====================================
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomer(SubscriberID, CustID, CustSubID, UserName, UserName2, SiteID, Site, RoleID, Currency, CurrencyID
