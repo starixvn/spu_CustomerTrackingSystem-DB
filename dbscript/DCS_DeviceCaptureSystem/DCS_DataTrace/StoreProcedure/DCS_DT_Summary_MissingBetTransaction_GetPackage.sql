@@ -16,46 +16,53 @@ BEGIN
 
 	Revisions:
 		- 20231009@Jonathan.Doan: Created [Redmine ID: 194933]
+		- 20231101@Jonathan.Doan: HF Deadlock [Redmine ID: 195332]
 		
 	Param's Explanation (filtered by):
 
 	Example:
-        CALL DCS_DataTrace.DCS_DT_Summary_MissingBetTransaction_GetPackage('2023-10-04', 10);
+        CALL DCS_DataTrace.DCS_DT_Summary_MissingBetTransaction_GetPackage('2023-10-07', 10);
 	*/    
     DECLARE lv_CurrentDatetime 	DATETIME 		DEFAULT CURRENT_TIMESTAMP();
 	DECLARE lv_TotalRecord 		INT UNSIGNED 	DEFAULT 0;
 	DECLARE lv_NoOfBatch 		INT UNSIGNED 	DEFAULT 0;
     
     IF EXISTS (SELECT 1 FROM DCS_DataTrace.BetTransactionSummary WHERE TransDate = ip_TransDate LIMIT 1) THEN
+    
+		DROP TEMPORARY TABLE IF EXISTS Temp_GroupByAccount; 
 		DROP TEMPORARY TABLE IF EXISTS Temp_LoginTransactionSummary; 
 		
+		CREATE TEMPORARY TABLE Temp_GroupByAccount(
+				AccountID		INT UNSIGNED PRIMARY KEY
+		);
+		
 		CREATE TEMPORARY TABLE Temp_LoginTransactionSummary(
-				MinID			BIGINT UNSIGNED
-			,   MaxID			BIGINT UNSIGNED
+				ListAccountID	LONGTEXT
 			,   BatchCount		INT
-		) ENGINE = MEMORY;
+		);
 		
 		SET @RowId = 0;
 		
-		SET lv_TotalRecord 	= (SELECT COUNT(1) FROM DCS_DataTrace.LoginTransactionSummary WHERE TransDate = ip_TransDate);
+        INSERT INTO Temp_GroupByAccount(AccountID)
+        SELECT DISTINCT AccountID
+        FROM DCS_DataTrace.LoginTransactionSummary
+        WHERE TransDate = ip_TransDate;
+        
+		SET lv_TotalRecord 	= (SELECT COUNT(1) FROM Temp_GroupByAccount);
 		SET lv_NoOfBatch 	= CEIL(lv_TotalRecord/ip_BatchSize);
-		
-		INSERT INTO Temp_LoginTransactionSummary (MinID, MaxID, BatchCount)
-		SELECT  MIN(tmp.ID) AS MinID
-			,   MAX(tmp.ID) AS MaxID
-			,   SUM(1) AS BatchCount
+        
+		INSERT INTO Temp_LoginTransactionSummary (ListAccountID, BatchCount)
+		SELECT  GROUP_CONCAT(DISTINCT tmp.AccountID) AS ListAccountID
+			,   COUNT(1) AS BatchCount
 		FROM (
 			SELECT	@RowId := @RowId+1
-				,   ID	
+				,   AccountID	
 				,   CEIL(@RowId/ip_BatchSize) AS batchID
-			FROM DCS_DataTrace.LoginTransactionSummary
-			WHERE TransDate = ip_TransDate
-			ORDER BY ID ASC
+			FROM Temp_GroupByAccount
 		) AS tmp
 		GROUP BY tmp.batchID;
 		
-		SELECT	MinID
-			,   MaxID
+		SELECT ListAccountID
 		FROM Temp_LoginTransactionSummary;
     END IF;
 END$$
