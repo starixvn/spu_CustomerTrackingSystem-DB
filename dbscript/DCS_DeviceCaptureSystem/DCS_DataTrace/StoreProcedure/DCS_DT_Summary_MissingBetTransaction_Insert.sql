@@ -3,9 +3,8 @@ DROP PROCEDURE IF EXISTS `DCS_DT_Summary_MissingBetTransaction_Insert`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DT_Summary_MissingBetTransaction_Insert`(
-        IN ip_TransDate     DATE
-	,	IN ip_FromID   		BIGINT UNSIGNED
-    ,   IN ip_ToID     		BIGINT UNSIGNED
+        IN ip_TransDate    	 	DATE
+	,	IN ip_ListAccountID   	LONGTEXT
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -17,48 +16,49 @@ BEGIN
 
 	Revisions:
 		- 20231009@Jonathan.Doan: Created [Redmine ID: 194933]
-		- 20231026@Jonathan.Doan: Refactor code [Redmine ID: 195332]
+		- 20231101@Jonathan.Doan: HF Deadlock [Redmine ID: 195332]
 		
 	Param's Explanation (filtered by):
 
 	Example:
-        CALL DCS_DataTrace.DCS_DT_Summary_MissingBetTransaction_Insert('2023-10-01', 1, 2);
+        CALL DCS_DataTrace.DCS_DT_Summary_MissingBetTransaction_Insert('2023-10-07', '1,2,3,4');
 	*/
     DECLARE CONST_SUMMARY_MAXTRANSDATE 			INT 		DEFAULT 2;
     DECLARE CONST_MISSINGBETTRANSACTION_TYPE 	SMALLINT 	DEFAULT 2;
     
     DECLARE lv_CurrentDatetime 		DATETIME DEFAULT CURRENT_TIMESTAMP();
     
-	DROP TEMPORARY TABLE IF EXISTS Temp_LoginTransactionSummary;
+	DROP TEMPORARY TABLE IF EXISTS Temp_ListAccountCust;
 	DROP TEMPORARY TABLE IF EXISTS Temp_BetTransactionSummary;
     
-	CREATE TEMPORARY TABLE Temp_LoginTransactionSummary(
-			ID 						BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
-		, 	SubscriberID			INT UNSIGNED DEFAULT NULL
+	DROP TEMPORARY TABLE IF EXISTS Temp_ListAccountCust;
+	CREATE TEMPORARY TABLE Temp_ListAccountCust(
+			AccountID				BIGINT UNSIGNED PRIMARY KEY
+        , 	SubscriberID			INT UNSIGNED DEFAULT 0
 		, 	CustID					INT UNSIGNED DEFAULT NULL
-		,	PRIMARY KEY (`ID`)
-		,	INDEX `IX_Temp_LoginTransactionSummary_CustID` (`CustID`)
-		,	INDEX `IX_Temp_LoginTransactionSummary_SubscriberID_CustID` (`SubscriberID`, `CustID`)
+        
+		,	INDEX `IX_Temp_ListAccountCust_CustID` (`CustID`)
+		,	INDEX `IX_Temp_ListAccountCust_SubscriberID_CustID` (`SubscriberID`, `CustID`)
 	);
     
 	CREATE TEMPORARY TABLE Temp_BetTransactionSummary(
 			ID 						BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
 		, 	CustID					INT UNSIGNED DEFAULT NULL
-		, 	SubscriberID			INT UNSIGNED DEFAULT NULL
+		, 	SubscriberID			INT UNSIGNED DEFAULT 0
 		,	PRIMARY KEY (`ID`)
 		,	INDEX `IX_Temp_BetTransactionSummary_CustID` (`CustID`)
 	);
     
-    INSERT INTO Temp_LoginTransactionSummary(SubscriberID, CustID)
-    SELECT 	DISTINCT 
-			trans.SubscriberID
-		,	cts.CustID
-    FROM DCS_DataTrace.LoginTransactionSummary AS trans
-		INNER JOIN CTS_DataCenter.CustDCSAccount AS dcs ON dcs.AccountID = trans.AccountID
+    SET @sql = CONCAT("INSERT INTO Temp_ListAccountCust (AccountID) VALUES ('", REPLACE(ip_ListAccountID, ",", "'),('"),"');");
+	PREPARE stmt1 FROM @sql;
+	EXECUTE stmt1;
+    
+    UPDATE Temp_ListAccountCust AS tmp
+		INNER JOIN CTS_DataCenter.CustDCSAccount AS dcs ON dcs.AccountID = tmp.AccountID
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cts ON cts.CTSCustID = dcs.CTSCustID
-    WHERE trans.ID BETWEEN ip_FromID AND ip_ToID
-		AND trans.TransDate = ip_TransDate
-        AND cts.RoleID = 1;
+    SET tmp.SubscriberID = dcs.SubscriberID,
+		tmp.CustID = cts.CustID
+	WHERE cts.RoleID = 1;
     
     INSERT INTO Temp_BetTransactionSummary(SubscriberID, CustID)
     SELECT 	DISTINCT
@@ -69,16 +69,18 @@ BEGIN
     WHERE bt.TransDate = ip_TransDate;
     
     /* == MissingTransaction == */
-    DELETE tmp_trans
-    FROM Temp_LoginTransactionSummary AS tmp_trans
-		INNER JOIN Temp_BetTransactionSummary AS tmp_bt ON tmp_bt.CustID = tmp_trans.CustID;
+    DELETE FROM Temp_ListAccountCust WHERE CustID IS NULL;
+    
+    DELETE tmp_lac
+    FROM Temp_ListAccountCust AS tmp_lac
+		INNER JOIN Temp_BetTransactionSummary AS tmp_bt ON tmp_bt.CustID = tmp_lac.CustID;
         
-    DELETE tmp_trans
-    FROM Temp_LoginTransactionSummary AS tmp_trans
+    DELETE tmp_lac
+    FROM Temp_ListAccountCust AS tmp_lac
 		INNER JOIN DCS_DataTrace.MemberMissingTransaction AS mt ON mt.TransDate = ip_TransDate 
-														AND mt.SubscriberID = tmp_trans.SubscriberID 
+														AND mt.SubscriberID = tmp_lac.SubscriberID 
                                                         AND mt.MissingTransactionType = CONST_MISSINGBETTRANSACTION_TYPE
-														AND mt.CustID = tmp_trans.CustID;
+														AND mt.CustID = tmp_lac.CustID;
     
     INSERT IGNORE INTO DCS_DataTrace.MemberMissingTransaction(MissingTransactionType, TransDate, SubscriberID, CustID, CreatedTime)
     SELECT 	CONST_MISSINGBETTRANSACTION_TYPE AS MissingTransactionType
@@ -86,7 +88,7 @@ BEGIN
 		,	SubscriberID
 		,	CustID
         ,	lv_CurrentDatetime AS CreatedTime
-    FROM Temp_LoginTransactionSummary;
+    FROM Temp_ListAccountCust;
     
 END$$
 DELIMITER ;
