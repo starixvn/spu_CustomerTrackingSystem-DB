@@ -62,6 +62,7 @@ AS
 		- 20231010@Casey.Huynh: Fixed Filter Trans With Multi Reason [Redmine ID: #195204]
 		- 20231017@Victoria.Le: Modify Formula to calculate Odds - For Decimal Odds [Redmine ID: #195562]
         - 20231024@Long.Luu: 	Add Agent HITRM & WINRM as internal account [Redmine ID: #195355]
+        - 20231106@Long.Luu: 	Exclude Reject Tickets [Redmine ID: #196399]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize)
@@ -465,7 +466,7 @@ BEGIN
 				AND b.Username NOT LIKE '%Cashout%'
 				AND b.srecommend NOT IN (41430709) 
 				AND b.mrecommend NOT IN (27899314,11656504,12146012) 
-				AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369)		
+				AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369)AND b.statusID <> 101 -- Reject		
 				AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 				AND l.LeagueGroupID NOT IN (42,74,108,113,122,151) -- SABA leagues
 				AND ISNULL(b.oddstype,0) <> 0
