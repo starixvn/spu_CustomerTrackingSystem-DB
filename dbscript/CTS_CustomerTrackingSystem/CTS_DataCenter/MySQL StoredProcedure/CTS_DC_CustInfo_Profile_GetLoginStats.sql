@@ -20,7 +20,7 @@ BEGIN
             
 		Param's Explanation (filtered by):
         Example:
-			- CALL CTS_DataCenter.CTS_DC_CustInfo_Profile_GetLoginStats(200);
+			- CALL CTS_DataCenter.CTS_DC_CustInfo_Profile_GetLoginStats_xtest(2570300, '2023-08-07', '2023-11-07');
 	*/
 	DECLARE lv_CountDesktopDevice_TillYesterday 		INT;
     DECLARE lv_CountMobileDevice_TillYesterday 			INT;
@@ -56,9 +56,9 @@ BEGIN
 		FROM CTS_DataCenter.CustDCSAccount
 		WHERE  CTSCustID  = ip_CTSCustID; 
     
-		SELECT  SUM(sm.DeviceDesktop)
-			,   SUM(sm.DeviceMobile)
-			,   SUM(sm.TotalLogin)
+		SELECT  IFNULL(SUM(sm.DeviceDesktop),0)
+			,   IFNULL(SUM(sm.DeviceMobile),0)
+			,   IFNULL(SUM(sm.TotalLogin),0)
 		INTO 	lv_CountDesktopDevice_TillYesterday
 			,	lv_CountMobileDevice_TillYesterday
 			,	lv_Count_Login
@@ -124,8 +124,8 @@ BEGIN
         INTO lv_Count_Login_OnTheFly
         FROM Temp_AccountTransUserAgent;
         
-		SELECT 	SUM(CASE WHEN dv.GroupName = 'Mobile' THEN 1 ELSE 0 END) AS DeviceMobile
-			,	SUM(CASE WHEN dv.GroupName = 'Desktop' THEN 1 ELSE 0 END) AS DeviceDesktop
+		SELECT 	IFNULL(SUM(CASE WHEN dv.GroupName = 'Mobile' THEN 1 ELSE 0 END),0) AS DeviceMobile
+			,	IFNULL(SUM(CASE WHEN dv.GroupName = 'Desktop' THEN 1 ELSE 0 END),0) AS DeviceDesktop
 		INTO 	lv_CountMobileDevice_YesterdayTillNow
 			,	lv_CountDesktopDevice_YesterdayTillNow
         FROM Temp_AccountTransUserAgent AS t
@@ -141,19 +141,15 @@ BEGIN
 			AND TransDate BETWEEN ip_FromDate AND ip_ToDate;
         /* END Correct Total Trans */
             
-		SELECT 	lv_Count_Bot_Trans 											AS BotTrans
-			,	ROUND((lv_Count_Bot_Trans/lv_Count_Login)*100,2)			AS BotTransPercentage
-			,	lv_Count_InvalidBrowser_Trans 								AS InvalidBrowser
-			,	ROUND((lv_Count_InvalidBrowser_Trans/lv_Count_Login)*100,2)	AS InvalidBrowserPercentage
-			,	(lv_CountDesktopDevice_TillYesterday 
-					+ CASE WHEN lv_CountDesktopDevice_YesterdayTillNow IS NULL 
-						THEN 0 ELSE lv_CountDesktopDevice_YesterdayTillNow END) AS DesktopUsage
-			,	(lv_CountMobileDevice_TillYesterday 
-					+ CASE WHEN lv_CountMobileDevice_YesterdayTillNow IS NULL 
-						THEN 0 ELSE lv_CountMobileDevice_YesterdayTillNow END)	AS MobileUsage
-			,	lv_Count_IP 												AS IP
-			,	lv_Count_Device 											AS Device
-			,	lv_Count_Login_OnTheFly 									AS Login;
+		SELECT 	lv_Count_Bot_Trans 																AS BotTrans
+			,	ROUND((lv_Count_Bot_Trans/lv_Count_Login)*100,2)								AS BotTransPercentage
+			,	lv_Count_InvalidBrowser_Trans 													AS InvalidBrowser
+			,	ROUND((lv_Count_InvalidBrowser_Trans/lv_Count_Login)*100,2)						AS InvalidBrowserPercentage
+			,	lv_CountDesktopDevice_TillYesterday	+ lv_CountDesktopDevice_YesterdayTillNow	AS DesktopUsage
+			,	lv_CountMobileDevice_TillYesterday + lv_CountMobileDevice_YesterdayTillNow		AS MobileUsage
+			,	lv_Count_IP 																	AS IP
+			,	lv_Count_Device 																AS Device
+			,	lv_Count_Login_OnTheFly 														AS Login;
 	END IF;
 END$$
 
