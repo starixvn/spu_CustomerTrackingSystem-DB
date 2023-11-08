@@ -100,20 +100,13 @@ BEGIN
 			,	UserAgentKey	VARCHAR(32)
 		) ENGINE=InnoDB;
 		
-        INSERT INTO Temp_AccountLastSummedDate(AccountID, LastSummedDate)
-       	SELECT AccountID, ip_FromDate
-		FROM Temp_AccountID;
-        
-        WITH CTE_LastLoginTrans AS (
-			  SELECT sm.AccountID, MAX(sm.TransDate) AS LastSummedDate
-			  FROM DCS_DataCenter.SumAccountLogin AS sm
-			  WHERE sm.AccountID IN (SELECT tmp.AccountID FROM Temp_AccountID AS tmp )
-			  GROUP BY sm.AccountID
-		 )
-         UPDATE Temp_AccountLastSummedDate AS tmp
-			INNER JOIN CTE_LastLoginTrans AS cte ON cte.AccountID = tmp.AccountID
-		 SET tmp.LastSummedDate = DATE_ADD(cte.LastSummedDate, INTERVAL 1 DAY);
-        
+		INSERT INTO Temp_AccountLastSummedDate(AccountID, LastSummedDate)
+        SELECT 	tmp.AccountID, 
+				IFNULL(DATE_ADD(MAX(sm.TransDate), INTERVAL 1 DAY), ip_FromDate)
+		FROM Temp_AccountID AS tmp
+			LEFT JOIN DCS_DataCenter.SumAccountLogin AS sm ON sm.AccountID = tmp.AccountID
+		GROUP BY tmp.AccountID;
+                
         INSERT IGNORE INTO Temp_AccountTransUserAgent(TransID, UserAgentKey)
 		SELECT  t.TransID
 			,	t.UserAgentKey
