@@ -106,8 +106,8 @@ CREATE TABLE `BrowserInstanceRawFingerPrint` (
 
 CREATE TABLE `RawUserAgent` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `UserAgentCode` VARCHAR(100) NOT NULL,
-  `UserAgent` LONGTEXT,
+  `RawUserAgentCode` VARCHAR(100) NOT NULL,
+  `RawUserAgent` VARCHAR(1000) NOT NULL,
   `ClientType` VARCHAR(15) DEFAULT NULL,
   `ClientName` VARCHAR(100) DEFAULT NULL,
   `ClientVersion` VARCHAR(50) DEFAULT NULL,
@@ -123,11 +123,12 @@ CREATE TABLE `RawUserAgent` (
   `CreatedDate` DATETIME DEFAULT NULL,
   `ModifiedDate` DATETIME DEFAULT NULL,
   PRIMARY KEY (`ID`),
-  UNIQUE KEY `UX_RawUserAgent_UserAgentCode` (`UserAgentCode`),
+  UNIQUE KEY `UX_RawUserAgent_RawUserAgentCode` (`RawUserAgentCode`),
   KEY `IX_RawUserAgent_Brand` (`Brand`)
 ) ENGINE=InnoDB;
 
 ALTER TABLE RawTransaction
 ADD COLUMN CookieID BIGINT UNSIGNED DEFAULT NULL,
+ADD COLUMN RawUserAgentID BIGINT UNSIGNED DEFAULT NULL,
 ADD COLUMN RawFingerPrintID BIGINT UNSIGNED DEFAULT NULL,
 ADD COLUMN BrowserInstanceID BIGINT UNSIGNED DEFAULT NULL;
