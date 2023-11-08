@@ -1,5 +1,5 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_PA_InsertRobot`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_PA_InsertRobot`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_InsertRobot`(
@@ -22,7 +22,8 @@ BEGIN
 			- 20230315@Victoria.Le:		Add Robot Imperva [Redmine ID: #184773]
 			- 20230404@Victoria.Le:		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeID [Redmine ID: #185319] 
             - 20230516@Casey.Huynh:		New Category for Robot OCRD [RedmineID: #186991]
-		
+			- 20231009@Casey.Huynh:		Fixed Issue Duplicate Rescan Robot Log [RedmineID: #193049]
+            
         Param's Explanation: 
 
 		Example:
@@ -138,6 +139,13 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_4xCC_02(
 		CustomerClass  SMALLINT UNSIGNED PRIMARY KEY
     );
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_LastHistory;
+    CREATE TEMPORARY TABLE Temp_LastHistory(
+			CustID		INT UNSIGNED PRIMARY KEY
+        ,	CategoryID	SMALLINT UNSIGNED
+        ,	TargetCC	SMALLINT UNSIGNED
+	);    
     #=================================================
 	SELECT cat.CustomerClass INTO lv_CC_LicVipProblem FROM CTS_DataCenter.CustomerCategory AS cat WHERE cat.CategoryID = CONST_CATEGORYID_LICVIPPROBLEM;
     SELECT cat.CustomerClass INTO lv_CC_LicVip FROM CTS_DataCenter.CustomerCategory AS cat WHERE cat.CategoryID = CONST_CATEGORYID_LICVIP;
@@ -633,7 +641,24 @@ BEGIN
 	FROM Temp_PA AS pa
     WHERE pa.IsDataChanged =  1
 		AND pa.IsExisted = 0;
+ 
+	INSERT IGNORE INTO Temp_LastHistory(CustID, CategoryID, TargetCC)
+    SELECT	tmpPa.CustID
+		,	tmpHis.CategoryID
+        ,	tmpHis.TargetCC
+    FROM Temp_PA AS tmpPa,
+    LATERAL (	SELECT h.CategoryID, h.TargetCC
+				FROM CTS_DataCenter.CTSCustomerClassification_History AS h
+                WHERE h.CustID = tmpPa.CustID 
+                ORDER BY ID DESC
+                LIMIT 1) AS tmpHis;
     
+	UPDATE Temp_PA AS tmpPA
+		INNER JOIN Temp_LastHistory AS tmpHis ON tmpPA.CustID = tmpHis.CustID
+	SET tmpPA.IsDataChanged = 1
+		, tmpPA.IsExisted = 0
+	WHERE tmpPA.CategoryID <> tmpHis.CategoryID OR tmpPA.TargetCC <> tmpHis.TargetCC;     
+
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(
 			CustID
 		, 	CTSCustID
@@ -675,8 +700,7 @@ BEGIN
 		, 	pa.TargetCC
 		, 	CASE WHEN ip_IsRescan = 1 THEN CONST_SOURCETYPE_RESCANROBOT 
 				 ELSE CONST_SOURCETYPE_INSERTROBOT END AS SourceTypeID
-		,  	CASE WHEN ip_IsRescan = 1 THEN 1
-				 ELSE pa.IsDataChanged END AS IsDataChanged
+		,  	pa.IsDataChanged
 		,	pa.RobotCounter
 		,	pa.TargetDangerLevel AS TargetDangerLevel1
 		,	pa.TurnoverRM
@@ -695,7 +719,7 @@ BEGIN
 		,	pa.SportType
 		,	pa.IssueTypeID
 	FROM Temp_PA AS pa
-    WHERE (pa.IsDataChanged =  1 AND pa.IsExisted = 0)  OR ip_IsRescan = 1; 
+    WHERE pa.IsDataChanged =  1 AND pa.IsExisted = 0; 
     
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(
 			CustID
