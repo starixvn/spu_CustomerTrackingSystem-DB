@@ -61,9 +61,8 @@ BEGIN
         ,	BrowserInstanceID			BIGINT UNSIGNED						NULL
         ,	FingerprintAttribute		JSON								NULL
         ,	RawFingerPrintId			BIGINT UNSIGNED						NULL
-        ,	RawUserAgentId				BIGINT UNSIGNED						NULL
+        ,	RawUserAgentID				BIGINT UNSIGNED						NULL
         ,	RawUserAgent				VARCHAR(1000)						NULL
-        ,	RawUserAgentCode			VARCHAR(64)							NULL
         ,	RawUserAgentInfo			JSON								NULL
         
 		,	INDEX IX_Temp_Transaction_BotComponentCode(BotComponentCode)
@@ -75,7 +74,7 @@ BEGIN
         ,	BotDetectionValue			BIT(32) NULL DEFAULT 0		
     );    
 		
-	INSERT INTO Temp_Transaction(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, CookieCode, FingerprintAttribute, RawUserAgent, RawUserAgentCode, RawUserAgentInfo)
+	INSERT INTO Temp_Transaction(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, CookieCode, FingerprintAttribute, RawUserAgent, RawUserAgentInfo)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -97,7 +96,6 @@ BEGIN
 		,	rt.CookieCode
 		,	rt.FingerprintAttribute
 		,	rt.RawUserAgent
-		,	rt.RawUserAgentCode
 		,	rt.RawUserAgentInfo
 	FROM	JSON_TABLE(
 			ip_RawTransJson,
@@ -122,14 +120,18 @@ BEGIN
                             ,	CookieCode				VARCHAR(64)		PATH "$.CookieCode"
 							,	FingerprintAttribute	JSON			PATH "$.FingerprintAttribute"
 							,	RawUserAgent 			VARCHAR(1000)	PATH "$.RawUserAgent"
-							,	RawUserAgentCode 		VARCHAR(100) 	PATH "$.RawUserAgentCode"
 							,	RawUserAgentInfo		JSON			PATH "$.RawUserAgentInfo"
 				)
 		   ) AS  rt; 
            
-    /******* Insert FPS Info ********************/
+    /******* Update Temp_Transaction: CookieID ********************/
     CALL DCS_DC_Transform_Cookie_Insert('Temp_Transaction');
-    CALL DCS_DC_Transform_FingerprintAttribute_Insert('Temp_Transaction');
+    
+    /******* Update Temp_Transaction: RawFingerPrintID, BrowserInstanceID ********************/
+    /******* Insert into FingerprintAttribute ********************/
+    CALL DCS_DC_Transform_RawFingerPrint_Insert('Temp_Transaction');
+    
+    /******* Update Temp_Transaction: RawUserAgentID ********************/
     CALL DCS_DC_Transform_RawUserAgent_Insert('Temp_Transaction');
     
     /*******BotDetection, BotComponent********************/           

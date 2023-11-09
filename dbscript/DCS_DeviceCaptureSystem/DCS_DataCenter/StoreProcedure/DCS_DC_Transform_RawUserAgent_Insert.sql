@@ -59,11 +59,10 @@ BEGIN
 	SET @sql = CONCAT('INSERT INTO Temp_InputData(TmpID, RawUserAgent, RawUserAgentCode, RawUserAgentInfo) 
 						SELECT 	ID AS TmpID
 							,	RawUserAgent
-							,	RawUserAgentCode
+							,	MD5(RawUserAgent) AS RawUserAgentCode
                             ,	RawUserAgentInfo
                         FROM ', ip_TableName, 
-					' 	WHERE RawUserAgent IS NOT NULL 
-							AND RawUserAgentCode IS NOT NULL');
+					' 	WHERE RawUserAgent IS NOT NULL');
     PREPARE stmt FROM @sql;
     EXECUTE stmt;
     DEALLOCATE PREPARE stmt;
@@ -111,7 +110,7 @@ BEGIN
     
     UPDATE Temp_RawUserAgent AS tmp
 		INNER JOIN DCS_DataCenter.RawUserAgent AS ua ON ua.RawUserAgentCode = tmp.RawUserAgentCode
-	SET tmp.RawUserAgentID = ua.Id;
+	SET tmp.RawUserAgentID = ua.ID;
     
 	SET @sql = CONCAT('UPDATE ', ip_TableName,' AS tmp
 						INNER JOIN Temp_RawUserAgent AS ua ON ua.TmpID = tmp.ID

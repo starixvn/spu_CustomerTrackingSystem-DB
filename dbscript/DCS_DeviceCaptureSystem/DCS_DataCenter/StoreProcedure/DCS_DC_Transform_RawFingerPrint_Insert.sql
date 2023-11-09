@@ -1,15 +1,15 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Transform_FingerprintAttribute_Insert`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Transform_RawFingerPrint_Insert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_FingerprintAttribute_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_RawFingerPrint_Insert`(
 		IN ip_TableName VARCHAR(50)
 )
     SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created: 20231108@Jonathan.Doan
-		Task : Insert into RawFingerPrint, FingerprintAttribute
+		Task : Insert into RawFingerPrint, FingerprintAttribute, BrowserInstance
 		DB: DCS_DataCenter
 		Original:
 
@@ -19,7 +19,7 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_DC_Transform_FingerprintAttribute_Insert('Temp_Transactions');
+			CALL DCS_DC_Transform_RawFingerPrint_Insert('Temp_Transactions');
 
 	*/
     DECLARE lv_CurrentDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
@@ -36,8 +36,8 @@ BEGIN
     
 	CREATE TEMPORARY TABLE Temp_FingerPrintAttribute(
 			TmpID 									INT 				NOT NULL 
-		,	RawFingerPrintId						BIGINT UNSIGNED 	NULL
-		,	BrowserInstanceId						BIGINT UNSIGNED 	NULL
+		,	RawFingerPrintID						BIGINT UNSIGNED 	NULL
+		,	BrowserInstanceID						BIGINT UNSIGNED 	NULL
 		,	Attribute								LONGTEXT	 		NULL
 		,	FingerPrintCode							VARCHAR(64) 		NULL
 		,	BrowserInstanceCode						VARCHAR(64) 		NULL
@@ -107,11 +107,11 @@ BEGIN
     
 	UPDATE Temp_FingerPrintAttribute AS tmp
 		INNER JOIN DCS_DataCenter.RawFingerPrint AS fp ON fp.FingerPrintCode = tmp.FingerPrintCode
-	SET tmp.RawFingerPrintId = fp.Id;
+	SET tmp.RawFingerPrintID = fp.ID;
 	
-    /******* INDEX 2 RawFingerPrintId********************/
+    /******* INDEX 2 RawFingerPrintID********************/
 	ALTER TABLE Temp_FingerPrintAttribute
-	ADD INDEX IX_Temp_FingerPrintAttribute_RawFingerPrintId(RawFingerPrintId);
+	ADD INDEX IX_Temp_FingerPrintAttribute_RawFingerPrintID(RawFingerPrintID);
     
     /******* BrowserInstance ********************/      
     UPDATE Temp_FingerPrintAttribute AS tmp
@@ -137,30 +137,30 @@ BEGIN
     
 	UPDATE Temp_FingerPrintAttribute AS tmp
 		INNER JOIN DCS_DataCenter.BrowserInstance AS bi ON bi.BrowserInstanceCode = tmp.BrowserInstanceCode
-	SET tmp.BrowserInstanceId = bi.Id;
+	SET tmp.BrowserInstanceID = bi.ID;
 	
-    /******* INDEX 3 BrowserInstanceId********************/
+    /******* INDEX 3 BrowserInstanceID********************/
 	ALTER TABLE Temp_FingerPrintAttribute
-	ADD INDEX IX_Temp_FingerPrintAttribute_BrowserInstanceId(BrowserInstanceId);
+	ADD INDEX IX_Temp_FingerPrintAttribute_BrowserInstanceID(BrowserInstanceID);
     
     /******* BrowserInstanceRawFingerPrint ********************/
     UPDATE Temp_FingerPrintAttribute AS tmp
-		INNER JOIN DCS_DataCenter.BrowserInstanceRawFingerPrint AS bifp ON bifp.RawFingerPrintId = tmp.RawFingerPrintId AND bifp.BrowserInstanceId = tmp.BrowserInstanceId
+		INNER JOIN DCS_DataCenter.BrowserInstanceRawFingerPrint AS bifp ON bifp.RawFingerPrintID = tmp.RawFingerPrintID AND bifp.BrowserInstanceID = tmp.BrowserInstanceID
     SET tmp.IsNewBrowserInstanceRawFingerPrint = 0;
     
-    INSERT IGNORE INTO DCS_DataCenter.BrowserInstanceRawFingerPrint(RawFingerPrintId, BrowserInstanceId)
-    SELECT 	RawFingerPrintId
-		,	BrowserInstanceId
+    INSERT IGNORE INTO DCS_DataCenter.BrowserInstanceRawFingerPrint(RawFingerPrintID, BrowserInstanceID)
+    SELECT 	RawFingerPrintID
+		,	BrowserInstanceID
     FROM Temp_FingerPrintAttribute
     WHERE IsNewBrowserInstanceRawFingerPrint = 1;
     
     /*******FingerPrintAttribute********************/
     UPDATE Temp_FingerPrintAttribute AS tmp
-		INNER JOIN DCS_DataCenter.FingerPrintAttribute AS fpa ON fpa.RawFingerPrintId = tmp.RawFingerPrintId
+		INNER JOIN DCS_DataCenter.FingerPrintAttribute AS fpa ON fpa.RawFingerPrintID = tmp.RawFingerPrintID
     SET tmp.IsNewFingerPrintAttribute = 0;
     
-    INSERT IGNORE INTO DCS_DataCenter.FingerPrintAttribute(RawFingerPrintId, DoNotTrack, GLRenderer, Audio, Canvas, ColorDepth, ColorGamut, Contrast, Cookies, CpuClass, DeviceMemory, DomBlockers, FontPreferencePrint, Fonts, ForcedColors, HardwareConcurrency, HDR, IndexedDB, InvertedColors, Languages, LocalStorage, Math, Monochrome, OpenDatabase, OsCpu, Platform, Plugins, ReducedMotion, Resolution, SessionStorage, Timezone, TouchSupport, Vendor, VendorFlavors, WebglPrint)
-    SELECT	tmp.RawFingerPrintId
+    INSERT IGNORE INTO DCS_DataCenter.FingerPrintAttribute(RawFingerPrintID, DoNotTrack, GLRenderer, Audio, Canvas, ColorDepth, ColorGamut, Contrast, Cookies, CpuClass, DeviceMemory, DomBlockers, FontPreferencePrint, Fonts, ForcedColors, HardwareConcurrency, HDR, IndexedDB, InvertedColors, Languages, LocalStorage, Math, Monochrome, OpenDatabase, OsCpu, Platform, Plugins, ReducedMotion, Resolution, SessionStorage, Timezone, TouchSupport, Vendor, VendorFlavors, WebglPrint)
+    SELECT	tmp.RawFingerPrintID
 		,	tmp.Attribute->>'$.doNotTrack' AS DoNotTrack
 		,	tmp.Attribute->>'$.webglRenderer' AS GLRenderer
 		,	tmp.Attribute->>'$.audio'
@@ -231,11 +231,11 @@ BEGIN
 	FROM Temp_FingerPrintAttribute AS tmp
     WHERE tmp.IsNewFingerPrintAttribute = 1;
     
-    /* Update RawFingerPrintId */
+    /* Update RawFingerPrintID */
 	SET @sql = CONCAT('UPDATE ', ip_TableName,' AS tmp
 						INNER JOIN Temp_FingerPrintAttribute AS tmp_fpa ON tmp_fpa.TmpID = tmp.ID
-						SET tmp.RawFingerPrintId = tmp_fpa.RawFingerPrintId,
-							tmp.BrowserInstanceId = tmp_fpa.BrowserInstanceId');
+						SET tmp.RawFingerPrintID = tmp_fpa.RawFingerPrintID,
+							tmp.BrowserInstanceID = tmp_fpa.BrowserInstanceID');
     PREPARE stmt FROM @sql;
     EXECUTE stmt;
     DEALLOCATE PREPARE stmt;
