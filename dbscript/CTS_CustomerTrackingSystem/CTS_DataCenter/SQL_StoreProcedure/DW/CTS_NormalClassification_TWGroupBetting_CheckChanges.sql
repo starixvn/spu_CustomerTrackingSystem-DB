@@ -67,7 +67,6 @@ BEGIN
 		,	SportType				INT	
 		,	JobScannedType			TINYINT 
 		,	IsExist					BIT 
-		,	IsCheck					BIT 
 	);
 	
 	-- ----------------------------------------------------------
@@ -151,15 +150,27 @@ BEGIN
 		SET 	TotalTicketCount 	= 	tb.TotalTicketCount
 			,	GBTicketCount 		= 	tb.GBTicketCount
 			,	SportType 			= 	tb.SportType
-			,	JobScannedType		=	CASE WHEN tb.SportType IN (@SPORT_SOCCER,@SPORT_MIX) AND tb.GBTicketCount >= 4 THEN @TYPE_PASSED
+			,	JobScannedType		=	CASE WHEN tb.SportType = @SPORT_SOCCER AND tb.GBTicketCount >= 4 THEN @TYPE_PASSED
 											 WHEN tb.SportType = @SPORT_BASEKETBALL AND tb.GBTicketCount >= 3 THEN @TYPE_PASSED
-											 WHEN tb.SportType IN (@SPORT_SOCCER,@SPORT_MIX) AND tb.TotalTicketCount > 5 AND tb.GBTicketCount < 4 THEN @TYPE_FAILED
+											 WHEN tb.SportType = @SPORT_SOCCER AND tb.TotalTicketCount > 5 AND tb.GBTicketCount < 4 THEN @TYPE_FAILED
 											 WHEN tb.SportType = @SPORT_BASEKETBALL AND tb.TotalTicketCount > 5 AND tb.GBTicketCount < 3 THEN @TYPE_FAILED
 											 ELSE @TYPE_SCANNING END
 			,	LastJobScannedTime	= 	@Today
 		FROM dbo.CustomerClassification_ScannedNewCust AS cs
 			INNER JOIN #tmpBatch AS tb ON tb.CustId = cs.CustId
-		WHERE tb.IsExist = 1;
+		WHERE tb.IsExist = 1 AND tb.SportType IN (@SPORT_SOCCER,@SPORT_BASEKETBALL);
+		
+		UPDATE cs WITH (UPDLOCK,ROWLOCK)
+		SET 	TotalTicketCount 	= 	tb.TotalTicketCount
+			,	GBTicketCount 		= 	tb.GBTicketCount
+			,	SportType 			= 	tb.SportType
+			,	JobScannedType		=	CASE WHEN tb.GBTicketCount >= 4 THEN @TYPE_PASSED
+											 WHEN tb.TotalTicketCount > 5 AND tb.GBTicketCount < 4 THEN @TYPE_FAILED
+											 ELSE @TYPE_SCANNING END
+			,	LastJobScannedTime	= 	@Today
+		FROM dbo.CustomerClassification_ScannedNewCust AS cs
+			INNER JOIN #tmpBatch AS tb ON tb.CustId = cs.CustId
+		WHERE tb.IsExist = 1 AND tb.SportType IS NULL;
 
 		INSERT INTO dbo.CustomerClassification_ScannedNewCust (CustId,TotalTicketCount,GBTicketCount,SportType,CreatedTime,JobScannedType,LastJobScannedTime)
 		SELECT 	tb.CustId
@@ -167,14 +178,27 @@ BEGIN
 			,	tb.GBTicketCount
 			,	tb.SportType
 			,	@Today
-			,	CASE WHEN tb.SportType IN (@SPORT_SOCCER,@SPORT_MIX) AND tb.GBTicketCount >= 4 THEN @TYPE_PASSED
+			,	CASE WHEN tb.SportType = @SPORT_SOCCER AND tb.GBTicketCount >= 4 THEN @TYPE_PASSED
 					 WHEN tb.SportType = @SPORT_BASEKETBALL AND tb.GBTicketCount >= 3 THEN @TYPE_PASSED
-					 WHEN tb.SportType IN (@SPORT_SOCCER,@SPORT_MIX) AND tb.TotalTicketCount > 5 AND tb.GBTicketCount < 4 THEN @TYPE_FAILED
+					 WHEN tb.SportType = @SPORT_SOCCER AND tb.TotalTicketCount > 5 AND tb.GBTicketCount < 4 THEN @TYPE_FAILED
 					 WHEN tb.SportType = @SPORT_BASEKETBALL AND tb.TotalTicketCount > 5 AND tb.GBTicketCount < 3 THEN @TYPE_FAILED
 					 ELSE @TYPE_SCANNING END
 			,	@Today
 		FROM #tmpBatch AS tb
-		WHERE tb.IsExist = 0;
+		WHERE tb.IsExist = 0 AND tb.SportType IN (@SPORT_SOCCER,@SPORT_BASEKETBALL);;
+		
+		INSERT INTO dbo.CustomerClassification_ScannedNewCust (CustId,TotalTicketCount,GBTicketCount,SportType,CreatedTime,JobScannedType,LastJobScannedTime)
+		SELECT 	tb.CustId
+			,	tb.TotalTicketCount
+			,	tb.GBTicketCount
+			,	tb.SportType
+			,	@Today
+			,	CASE WHEN tb.GBTicketCount >= 4 THEN @TYPE_PASSED
+					 WHEN tb.TotalTicketCount > 5 AND tb.GBTicketCount < 4 THEN @TYPE_FAILED
+					 ELSE @TYPE_SCANNING END
+			,	@Today
+		FROM #tmpBatch AS tb
+		WHERE tb.IsExist = 0 AND tb.SportType IS NULL;
 
 		UPDATE ts
 		SET IsCheck = 1
