@@ -89,7 +89,7 @@ BEGIN
 	
 	UPDATE ts
 	SET 	IsExist = CASE WHEN cs.CustId IS NOT NULL THEN 1 ELSE 0 END
-		,	IsCheck = CASE WHEN cs.CustId IS NOT NULL AND cs.JobScannedType > 0 THEN 1 ELSE 0 END
+		,	IsCheck = CASE WHEN cs.CustId IS NOT NULL AND cs.GBTicketCount <> ts.GBTicketCount THEN 0 ELSE 1 END
 	FROM #tmpScannedNewCust AS ts WITH(NOLOCK)
 		LEFT JOIN dbo.CustomerClassification_ScannedNewCust AS cs WITH (NOLOCK) ON cs.CustId = ts.CustId
 	;
@@ -98,11 +98,12 @@ BEGIN
 	SET SportType = @SPORT_SOCCER
 	FROM #tmpScannedNewCust AS ts
 	WHERE ts.GBTicketCount >= 3
-		AND NOT EXISTS (SELECT 1 FROM #tmpRawData AS tr WITH(NOLOCK)
-									WHERE tr.CustId = ts.CustId 
-										AND tr.TicketRank <= 5
-										AND tr.IsFraud = 1
-										AND tr.SportType <> @SPORT_SOCCER)
+		AND NOT EXISTS (SELECT 1 
+						FROM #tmpRawData AS tr WITH(NOLOCK)
+						WHERE tr.CustId = ts.CustId 
+							AND tr.TicketRank <= 5
+							AND tr.IsFraud = 1
+							AND tr.SportType <> @SPORT_SOCCER)
 	;
 	
 	UPDATE ts
@@ -201,7 +202,7 @@ BEGIN
 		WHERE tb.IsExist = 0 AND tb.SportType IS NULL;
 
 		UPDATE ts
-		SET IsCheck = 1
+		SET ts.IsCheck = 1
 		FROM #tmpScannedNewCust AS ts
 			INNER JOIN #tmpBatch AS tb ON ts.CustId = tb.CustId
 		;
