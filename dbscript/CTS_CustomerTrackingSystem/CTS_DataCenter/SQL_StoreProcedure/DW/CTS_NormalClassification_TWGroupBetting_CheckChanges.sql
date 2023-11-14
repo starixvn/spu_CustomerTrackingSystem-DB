@@ -54,7 +54,7 @@ BEGIN
 		,	SportType				INT	NULL
 		,	JobScannedType			TINYINT DEFAULT 0
 		,	IsExist					BIT DEFAULT 0
-		,	IsCheck					BIT DEFAULT 0
+		,	IsChecked				BIT DEFAULT 0
 	);
 	
 	IF	OBJECT_ID('tempdb..#tmpBatch') IS NOT NULL
@@ -88,10 +88,22 @@ BEGIN
 	;
 	
 	UPDATE ts
-	SET 	IsExist = CASE WHEN cs.CustId IS NOT NULL THEN 1 ELSE 0 END
-		,	IsCheck = CASE WHEN cs.CustId IS NOT NULL AND cs.GBTicketCount <> ts.GBTicketCount THEN 0 ELSE 1 END
+	SET IsExist = CASE WHEN cs.CustId IS NOT NULL THEN 1 ELSE 0 END
 	FROM #tmpScannedNewCust AS ts WITH(NOLOCK)
 		LEFT JOIN dbo.CustomerClassification_ScannedNewCust AS cs WITH (NOLOCK) ON cs.CustId = ts.CustId
+	;
+
+	UPDATE ts
+	SET IsChecked = 0
+	FROM #tmpScannedNewCust AS ts WITH(NOLOCK)
+	WHERE ts.IsExist = 0
+	;
+
+	UPDATE ts
+	SET IsChecked = CASE WHEN cs.GBTicketCount <> ts.GBTicketCount THEN 0 ELSE 1 END
+	FROM #tmpScannedNewCust AS ts WITH(NOLOCK)
+		INNER JOIN dbo.CustomerClassification_ScannedNewCust AS cs WITH (NOLOCK) ON cs.CustId = ts.CustId
+	WHERE ts.IsExist = 1
 	;
 	
 	UPDATE ts
@@ -136,14 +148,14 @@ BEGIN
 
 	WHILE(1=1)
 	BEGIN
-		SELECT @CountRount = COUNT(1) FROM #tmpScannedNewCust WHERE IsCheck = 0;
+		SELECT @CountRount = COUNT(1) FROM #tmpScannedNewCust WHERE IsChecked = 0;
 		IF (@CountRount = 0) BREAK;
 		
 		TRUNCATE TABLE #tmpBatch;
 		INSERT INTO #tmpBatch (CustId,TotalTicketCount,GBTicketCount,SportType,JobScannedType,IsExist)
 		SELECT TOP (@Batchsize) CustId,TotalTicketCount,GBTicketCount,SportType,JobScannedType,IsExist
 		FROM #tmpScannedNewCust
-		WHERE IsCheck = 0
+		WHERE IsChecked = 0
 		ORDER BY CustId
 		;
 	
@@ -202,7 +214,7 @@ BEGIN
 		WHERE tb.IsExist = 0 AND tb.SportType IS NULL;
 
 		UPDATE ts
-		SET ts.IsCheck = 1
+		SET ts.IsChecked = 1
 		FROM #tmpScannedNewCust AS ts
 			INNER JOIN #tmpBatch AS tb ON ts.CustId = tb.CustId
 		;
