@@ -159,7 +159,7 @@ BEGIN
 		INNER JOIN DCS_DataCenter.FingerPrintAttribute AS fpa ON fpa.RawFingerPrintID = tmp.RawFingerPrintID
     SET tmp.IsNewFingerPrintAttribute = 0;
     
-    INSERT IGNORE INTO DCS_DataCenter.FingerPrintAttribute(RawFingerPrintID, DoNotTrack, GLRenderer, Audio, Canvas, ColorDepth, ColorGamut, Contrast, Cookies, CpuClass, DeviceMemory, DomBlockers, FontPreferencePrint, Fonts, ForcedColors, HardwareConcurrency, HDR, IndexedDB, InvertedColors, Languages, LocalStorage, Math, Monochrome, OpenDatabase, OsCpu, Platform, Plugins, ReducedMotion, Resolution, SessionStorage, Timezone, TouchSupport, Vendor, VendorFlavors, WebglPrint)
+    INSERT IGNORE INTO DCS_DataCenter.FingerPrintAttribute(RawFingerPrintID, DoNotTrack, GLRenderer, Audio, Canvas, ColorDepth, ColorGamut, Contrast, Cookies, CpuClass, DeviceMemory, DomBlockers, FontPreferencePrint, Fonts, ForcedColors, HardwareConcurrency, HDR, IndexedDB, InvertedColors, Languages, LocalStorage, Math, Monochrome, OpenDatabase, OsCpu, Platform, Plugins, ReducedMotion, Resolution, SessionStorage, Timezone, TouchSupport, Vendor, VendorFlavors, WebglPrint, ApplePay, Architecture, PDFViewerEnabled, PrivateClickMeasurement, ReducedTransparency, WebGlBasics, webGlExtensions)
     SELECT	tmp.RawFingerPrintID
 		,	tmp.Attribute->>'$.doNotTrack' AS DoNotTrack
 		,	tmp.Attribute->>'$.webglRenderer' AS GLRenderer
@@ -228,6 +228,19 @@ BEGIN
 		,	tmp.Attribute->>'$.vendor'
 		,	tmp.Attribute->>'$.vendorFlavors'
 		,	tmp.Attribute->>'$.webglPrint'
+		,	tmp.Attribute->>'$.applePay'
+		,	tmp.Attribute->>'$.architecture'
+		,	tmp.Attribute->>'$.pdfViewerEnabled'
+		,	CASE 	tmp.Attribute->>'$.privateClickMeasurement'
+					WHEN 'true' THEN 1
+                    WHEN 'false' THEN 0
+                    ELSE -1 END AS privateClickMeasurement
+		,	CASE 	tmp.Attribute->>'$.reducedTransparency'
+					WHEN 'true' THEN 1
+                    WHEN 'false' THEN 0
+                    ELSE -1 END AS reducedTransparency
+		,	tmp.Attribute->>'$.webGlBasics'
+		,	tmp.Attribute->>'$.webGlExtensions'
 	FROM Temp_FingerPrintAttribute AS tmp
     WHERE tmp.IsNewFingerPrintAttribute = 1;
     
