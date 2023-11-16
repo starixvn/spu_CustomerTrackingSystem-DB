@@ -69,20 +69,13 @@ BEGIN
 		BEGIN
 			-- Parse raw data
 			INSERT INTO #tmpRawFraudInfo (MatchId,DataSource,IsLive,Bettype,BetId,FraudTrans)
-			SELECT	j.MatchId
-				,	j.DataSource
-				,	j.IsLive
-				,	j.Bettype
-				,	j.BetId
-				,	j.FraudTrans
-			FROM OPENJSON (@FraudTickets) WITH (
-					MatchId			INT '$.MatchId'
-				,	DataSource		TINYINT '$.DataSource'
-				,	IsLive			BIT '$.IsLive'
-				,	Bettype			SMALLINT '$.Bettype'
-				,	BetId			BIGINT '$.BetId'
-				,	FraudTrans		VARCHAR(MAX) '$.FraudTrans'
-				) AS j;
+			SELECT	ISNULL(JSON_VALUE(ssk.value, '$.MatchId'),0) AS MatchId
+				,	ISNULL(JSON_VALUE(ssk.value, '$.DataSource'),0) AS DataSource
+				,	ISNULL(JSON_VALUE(ssk.value, '$.IsLive'),'0') AS IsLive
+				,	ISNULL(JSON_VALUE(ssk.value, '$.Bettype'),0) AS Bettype
+				,	ISNULL(JSON_VALUE(ssk.value, '$.BetId'),0) AS BetId
+				,	ISNULL(JSON_VALUE(ssk.value, '$.FraudTrans'),0) AS FraudTrans
+			FROM OPENJSON (@FraudTickets) AS ssk;
 
 			-- Pivot the fraud tickets list to transIDs
 			;WITH Temp_Intermediate(MatchId,DataSource,IsLive,Bettype,BetId,TransId,FraudTrans) AS
@@ -113,7 +106,7 @@ BEGIN
 				,	Bettype
 				,	BetId
 				,	TransId
-			FROM Temp_Intermediate WITH(NOLOCK)
+			FROM Temp_Intermediate
 			OPTION (MAXRECURSION 0);
 
 			CREATE CLUSTERED INDEX #CIX_tmpParsedFraudInfo ON #tmpParsedFraudInfo (
