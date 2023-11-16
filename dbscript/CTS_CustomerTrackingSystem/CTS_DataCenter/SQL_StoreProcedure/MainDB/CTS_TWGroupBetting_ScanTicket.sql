@@ -44,8 +44,6 @@ BEGIN
 	
 	SELECT @BatchSize += @SkipTransCount;
 
-	SET @ServerName = @@SERVERNAME;
-
 	IF OBJECT_ID('tempdb..#TmpRawTicket') IS NOT NULL
         DROP TABLE #TmpRawTicket;
 
