@@ -34,6 +34,7 @@ BEGIN
 			-	20230105@Casey.Huynh: 	Add search by InsertDate and remove ip_LeagueName [Redmine ID: #181995]
 			-	20230214@Victoria.Le	Add ip_MatchInfos to get latest EventDate and KickOffTime (GolobalShowTime) when search by EventDate 
 										Remove ip_DateType, ip_MatchSection [RedmineID: #183280]
+			- 	20231116@Long.Luu: 		Return fraud ticket list of each match-liveindicator-bettype-betid [Redmine ID: 195042]
 			
             
 		Param's Explanation (filtered by):
@@ -81,6 +82,17 @@ BEGIN
         ,	Reason			TINYINT
         ,	MatchSection	INT DEFAULT NULL
         ,	KickOffTime		DATETIME DEFAULT NULL
+        ,	PRIMARY KEY PK_Temp_MatchMonitor(MatchID,LiveIndicator,BettypeID, BetID, Reason)
+    );
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_MatchFraudTrans;
+    CREATE TEMPORARY TABLE Temp_MatchFraudTrans(
+        	MatchID 		INT
+        ,	LiveIndicator	TINYINT
+        ,	BettypeID		INT
+        ,	BetID			BIGINT
+        ,	FraudTrans		LONGTEXT
+        ,	PRIMARY KEY PK_Temp_MatchFraudTrans(MatchID,LiveIndicator,BettypeID, BetID)
     );
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Bettype;
@@ -152,7 +164,7 @@ BEGIN
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1; 
     
-    IF (IFNULL(ip_MatchInfos,'') = '') THEN # Search by Insert Date
+    IF (IFNULL(ip_MatchInfos,'') = '') THEN # Search by Scanned Date
 		INSERT INTO Temp_MatchMonitor(ID, MatchID, LiveIndicator, HomeID, AwayID, LeagueID, LeagueName, Sporttype, BettypeID, BetID, Reason)    
 		SELECT 	s.ID
 			,	s.MatchID
@@ -171,8 +183,7 @@ BEGIN
 			INNER JOIN Temp_Reason AS r ON r.ReasonID = s.Reason
 		WHERE s.InsertDate BETWEEN ip_FromDate AND ip_ToDate
 			AND s.LiveIndicator = IFNULL(ip_Market, s.LiveIndicator);
-    ELSE #ip_MatchInfos <> '' THEN # Search by Event Date
-		
+    ELSE #ip_MatchInfos <> '' THEN # Search by Event Date		
 		DROP TEMPORARY TABLE IF EXISTS Temp_MatchInfo;
 		CREATE TEMPORARY TABLE Temp_MatchInfo(
 				ID				BIGINT UNSIGNED
@@ -273,6 +284,15 @@ BEGIN
 						) js
 	WHERE NOT EXISTS (SELECT 1 FROM Temp_VerfiedTrans AS tmpVt WHERE js.TransID = tmpVt.TransID);    
 
+	INSERT INTO Temp_MatchFraudTrans(MatchID,LiveIndicator,BettypeID,BetID,FraudTrans)
+	SELECT 	t.MatchID, t.LiveIndicator, t.BettypeID, t.BetID
+		,	GROUP_CONCAT(DISTINCT d.ListTransID) AS FraudTrans
+    FROM Temp_MatchMonitor AS t
+		INNER JOIN MatchMonitorDetails AS d ON t.MatchID = d.MatchID 
+			AND t.LiveIndicator = d.LiveIndicator AND t.BettypeID = d.BettypeID AND t.BetID = d.BetID
+		INNER JOIN Temp_Reason AS r ON d.Reason = r.ReasonID
+	GROUP BY t.MatchID, t.LiveIndicator, t.BettypeID, t.BetID;
+        
     IF (ip_IsVerified IS NULL)
     THEN
 		SELECT	tmpMm.MatchID
@@ -291,7 +311,10 @@ BEGIN
 			,	NOT EXISTS(SELECT 1 FROM Temp_MatchGroup_NotVerified AS tmpNv WHERE tmpMm.MatchID = tmpNv.MatchID AND tmpMm.LiveIndicator = tmpNv.LiveIndicator 
 					AND tmpMm.BettypeID = tmpNv.BettypeID AND tmpMm.BetID = tmpNv.BetID LIMIT 1) IsVerified
             ,	GROUP_CONCAT(DISTINCT tmpMg.VerifiedBy)	AS VerifiedBy
+            ,	t.FraudTrans
 		FROM Temp_MatchMonitor AS tmpMm
+			INNER JOIN Temp_MatchFraudTrans AS t ON tmpMm.MatchID = t.MatchID AND tmpMm.LiveIndicator = t.LiveIndicator 
+					AND tmpMm.BettypeID = t.BettypeID AND tmpMm.BetID = t.BetID 
 			LEFT JOIN Temp_MatchGroup AS tmpMg ON tmpMm.MatchID = tmpMg.MatchID AND tmpMm.LiveIndicator = tmpMg.LiveIndicator 
 					AND tmpMm.BettypeID = tmpMg.BettypeID AND tmpMm.BetID = tmpMg.BetID 
 		GROUP BY tmpMm.MatchID
@@ -325,8 +348,11 @@ BEGIN
 			,	GROUP_CONCAT(DISTINCT tmpMm.Reason)	AS Reason		
 			,	0 AS IsVerified
             ,	GROUP_CONCAT(DISTINCT tmpMg.VerifiedBy)	AS VerifiedBy
+            ,	t.FraudTrans
 		FROM Temp_MatchMonitor AS tmpMm
-		INNER JOIN Temp_MatchGroup AS tmpMg ON tmpMm.MatchID = tmpMg.MatchID AND tmpMm.LiveIndicator = tmpMg.LiveIndicator 
+			INNER JOIN Temp_MatchFraudTrans AS t ON tmpMm.MatchID = t.MatchID AND tmpMm.LiveIndicator = t.LiveIndicator 
+					AND tmpMm.BettypeID = t.BettypeID AND tmpMm.BetID = t.BetID 
+			INNER JOIN Temp_MatchGroup AS tmpMg ON tmpMm.MatchID = tmpMg.MatchID AND tmpMm.LiveIndicator = tmpMg.LiveIndicator 
 					AND tmpMm.BettypeID = tmpMg.BettypeID AND tmpMm.BetID = tmpMg.BetID AND tmpMm.Reason = tmpMg.Reason
 		WHERE EXISTS(SELECT 1 FROM Temp_MatchGroup_NotVerified AS tmpNv WHERE tmpMm.MatchID = tmpNv.MatchID AND tmpMm.LiveIndicator = tmpNv.LiveIndicator 
 					AND tmpMm.BettypeID = tmpNv.BettypeID AND tmpMm.BetID = tmpNv.BetID)
@@ -361,8 +387,11 @@ BEGIN
 			,	GROUP_CONCAT(DISTINCT tmpMm.Reason)	AS Reason		
 			,	1 AS IsVerified
             ,	GROUP_CONCAT(DISTINCT tmpMg.VerifiedBy)	AS VerifiedBy
+            ,	t.FraudTrans
 		FROM Temp_MatchMonitor AS tmpMm
-		INNER JOIN Temp_MatchGroup AS tmpMg ON tmpMm.MatchID = tmpMg.MatchID AND tmpMm.LiveIndicator = tmpMg.LiveIndicator 
+			INNER JOIN Temp_MatchFraudTrans AS t ON tmpMm.MatchID = t.MatchID AND tmpMm.LiveIndicator = t.LiveIndicator 
+					AND tmpMm.BettypeID = t.BettypeID AND tmpMm.BetID = t.BetID 
+			INNER JOIN Temp_MatchGroup AS tmpMg ON tmpMm.MatchID = tmpMg.MatchID AND tmpMm.LiveIndicator = tmpMg.LiveIndicator 
 					AND tmpMm.BettypeID = tmpMg.BettypeID AND tmpMm.BetID = tmpMg.BetID AND tmpMm.Reason = tmpMg.Reason
 		WHERE NOT EXISTS(SELECT 1 FROM Temp_MatchGroup_NotVerified AS tmpNv WHERE tmpMm.MatchID = tmpNv.MatchID AND tmpMm.LiveIndicator = tmpNv.LiveIndicator 
 					AND tmpMm.BettypeID = tmpNv.BettypeID AND tmpMm.BetID = tmpNv.BetID)

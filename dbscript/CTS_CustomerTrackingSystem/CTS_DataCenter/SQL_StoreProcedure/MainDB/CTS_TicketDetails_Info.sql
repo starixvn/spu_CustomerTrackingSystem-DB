@@ -13,6 +13,9 @@ ALTER PROCEDURE [dbo].[CTS_TicketDetails_Info]
 	,	@TicketType					TINYINT = 0
 	,	@IsExclTestCurr				BIT = 0
 	,	@BetID						BIGINT = 0	
+	,	@FromTransDate				DATETIME = NULL
+	,	@ToTransDate				DATETIME = NULL
+
 	,	@MaxSequenceId				BIGINT OUTPUT
 	,	@TotalTicketAll				BIGINT OUTPUT
 	,	@TotalTicketLicensee		BIGINT OUTPUT
@@ -25,11 +28,12 @@ AS
 	DB	 : bodb02
 
 	Revisions:
-		- 20230601@Victoria.Le:			Initial Writing [Redmine ID: #185793]		
-		- 20230721@Victoria.Le:			Get CurrencyName from table Exchange [Redmine ID: #191422]
-		- 20230724@Victoria.Le:			Add condition BetID with BetType = Quarter X HDP/OU/MoneyLine [Redmine ID: #191703]
-		- 20230724@Victoria.Le:			Bettype Selection - Return interdependence of columns  [Redmine ID: #191401]
-		- 20230911@Casey.Huynh:			Support Filter For Suspicious Trans AND CustomerClass and  [Redmine ID: #193029]
+		- 20230601@Victoria.Le:		Initial Writing [Redmine ID: #185793]		
+		- 20230721@Victoria.Le:		Get CurrencyName from table Exchange [Redmine ID: #191422]
+		- 20230724@Victoria.Le:		Add condition BetID with BetType = Quarter X HDP/OU/MoneyLine [Redmine ID: #191703]
+		- 20230724@Victoria.Le:		Bettype Selection - Return interdependence of columns  [Redmine ID: #191401]
+		- 20230911@Casey.Huynh:		Support Filter For Suspicious Trans AND CustomerClass and  [Redmine ID: #193029]
+		- 20231116@Long.Luu: 		Support filter by FromTransDate-ToTransDate [Redmine ID: 195042]
 
 	Params Explaination:
 		@ListSuspiciousTransId: format JSON
@@ -39,7 +43,7 @@ AS
 			@TicketType=1: Ticket Type = 'Suspicious'
 	Example:
 		DECLARE @MaxSequenceId BIGINT,@TotalTicketAll BIGINT,@TotalTicketLicensee BIGINT,@TotalTicketCredit BIGINT;
-		EXEC [dbo].[CTS_TicketDetails_Info_xtest] 
+		EXEC [dbo].[CTS_TicketDetails_Info] 
 			72186342 -- @MatchID
 		,	NULL -- @EventDate
 		,	1 -- @BetType
@@ -64,7 +68,8 @@ BEGIN
 		,	@IsGetDataFromOrigin	BIT = 0
 		,	@IsGetDataFrom14		BIT = 0
 		,	@IsGetDataFromBK		BIT = 0;
-
+		
+	SET @ToTransDate = DATEADD(SECOND,1,@ToTransDate);
 	---====================================================================================
 
 	IF	OBJECT_ID('tempdb..#tmpTrans') IS NOT NULL
@@ -266,7 +271,8 @@ BEGIN
 				AND b.bettype = @BetType
 				AND b.liveindicator = @IsLive
 				AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
-				AND (@BetID = 0 OR (@BetID > 0 AND t.IsFilterBetID = 1 AND b.betid = @BetID));
+				AND (@BetID = 0 OR (@BetID > 0 AND t.IsFilterBetID = 1 AND b.betid = @BetID))
+				AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
 		END;
 
 		IF @TicketType = 0 --GET All Ticket
@@ -310,7 +316,8 @@ BEGIN
 				AND b.bettype = @BetType
 				AND b.liveindicator = @IsLive
 				AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
-				AND (@BetID = 0 OR (@BetID > 0 AND t.IsFilterBetID = 1 AND b.betid = @BetID));
+				AND (@BetID = 0 OR (@BetID > 0 AND t.IsFilterBetID = 1 AND b.betid = @BetID))
+				AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
 		END;
 	END;
 
@@ -355,7 +362,8 @@ BEGIN
 				AND b.bettype = @BetType
 				AND b.liveindicator = @IsLive
 				AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
-				AND (@BetID = 0 OR (@BetID > 0 AND t.IsFilterBetID = 1 AND b.betid = @BetID));
+				AND (@BetID = 0 OR (@BetID > 0 AND t.IsFilterBetID = 1 AND b.betid = @BetID))
+				AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
 		END;
 	END;
 
@@ -400,7 +408,8 @@ BEGIN
 				AND b.bettype = @BetType
 				AND b.liveindicator = @IsLive
 				AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
-				AND (@BetID = 0 OR (@BetID > 0 AND t.IsFilterBetID = 1 AND b.betid = @BetID));
+				AND (@BetID = 0 OR (@BetID > 0 AND t.IsFilterBetID = 1 AND b.betid = @BetID))
+				AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
 		END;
 	END;
 
