@@ -19,6 +19,7 @@ BEGIN
             - 20211129@Casey.Huynh: Remove FingerprintMoreInfo Column [Redmine ID: #165167]
 			- 20230327@Terry.Nguyen: Add InsertTime [Redmine ID: #185185]
 			- 20230426@Jonathan.Doan: Add BotD [Redmine ID: #186644]
+			- 20230807@Terry.Nguyen: Add Fake IP [Redmine ID: #191829]
 			- 20231108@Jonathan.Doan: Integrate FPSjs [Redmine ID: #196570]
 
 		Param's Explanation (filtered by):
@@ -56,6 +57,7 @@ BEGIN
         ,	BotComponentID				BIGINT UNSIGNED						NULL
         ,	BotComponent				LONGTEXT							NULL
         ,	BotComponentCode			VARCHAR(100)						NULL
+		,	FakeIP						VARCHAR(100) 						NULL
         ,	CookieID					BIGINT UNSIGNED						NULL
         ,	CookieCode					VARCHAR(64)							NULL
         ,	BrowserInstanceID			BIGINT UNSIGNED						NULL
@@ -74,7 +76,7 @@ BEGIN
         ,	BotDetectionValue			BIT(32) NULL DEFAULT 0		
     );    
 		
-	INSERT INTO Temp_Transaction(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, CookieCode, FingerprintAttribute, RawUserAgent, RawUserAgentInfo)
+	INSERT INTO Temp_Transaction(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, FakeIP, CookieCode, FingerprintAttribute, RawUserAgent, RawUserAgentInfo)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -93,6 +95,7 @@ BEGIN
 		,	rt.BotDetection
 		,	rt.BotComponent
 		,	MD5(rt.BotComponent) AS BotComponentCode
+		,	rt.FakeIP
 		,	rt.CookieCode
 		,	rt.FingerprintAttribute
 		,	rt.RawUserAgent
@@ -117,6 +120,7 @@ BEGIN
                             ,	FlaggedCode				VARCHAR(100)	PATH "$.FlaggedCode"
                             ,	BotDetection			LONGTEXT		PATH "$.BotDetection"
                             ,	BotComponent			LONGTEXT		PATH "$.BotComponent"
+                            ,	FakeIP					VARCHAR(100)	PATH "$.FakeIP"
                             ,	CookieCode				VARCHAR(64)		PATH "$.CookieCode"
 							,	FingerprintAttribute	JSON			PATH "$.FingerprintAttribute"
 							,	RawUserAgent 			VARCHAR(1000)	PATH "$.RawUserAgent"
@@ -168,7 +172,7 @@ BEGIN
 	
     
     /*******RawTransaction********************/
-	INSERT INTO DCS_DataCenter.RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, InsertTime, BotDetectionValue, BotComponentID, CookieID, RawUserAgentID, RawFingerPrintID, BrowserInstanceID)
+	INSERT INTO DCS_DataCenter.RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, InsertTime, BotDetectionValue, BotComponentID, FakeIP, CookieID, RawUserAgentID, RawFingerPrintID, BrowserInstanceID)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -188,6 +192,7 @@ BEGIN
 		,	lv_InsertionTime as InsertTime
 		,	rt.BotDetectionValue
 		,	rt.BotComponentID
+		,	rt.FakeIP
 		,	rt.CookieID
 		,	rt.RawUserAgentID
 		,	rt.RawFingerPrintID
