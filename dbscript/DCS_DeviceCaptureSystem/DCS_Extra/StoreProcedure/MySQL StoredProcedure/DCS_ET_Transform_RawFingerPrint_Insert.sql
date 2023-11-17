@@ -171,10 +171,10 @@ BEGIN
 		,	CASE 	tmp.Attribute->>'$.cookiesEnabled'
 					WHEN 'true' THEN 1
                     WHEN 'false' THEN 0
-                    ELSE NULL END AS Cookies
+                    ELSE -1 END AS Cookies
 		,	tmp.Attribute->>'$.cpuClass'
 		,	CASE 	tmp.Attribute->>'$.deviceMemory'
-					WHEN 'undefined' THEN NULL
+					WHEN 'undefined' THEN -1
                     ELSE tmp.Attribute->>'$.deviceMemory' END AS deviceMemory
 		,	tmp.Attribute->>'$.domBlockers'
 		,	tmp.Attribute->>'$.fontPreferencePrint'
@@ -182,30 +182,30 @@ BEGIN
 		,	CASE 	tmp.Attribute->>'$.forcedColors'
 					WHEN 'true' THEN 1
                     WHEN 'false' THEN 0
-                    ELSE NULL END AS forcedColors
+                    ELSE -1 END AS forcedColors
 		,	CASE 	tmp.Attribute->>'$.hardwareConcurrency'
-					WHEN 'undefined' THEN NULL
+					WHEN 'undefined' THEN -1
                     ELSE tmp.Attribute->>'$.hardwareConcurrency' END AS hardwareConcurrency
 		,	CASE 	tmp.Attribute->>'$.hdr'
 					WHEN 'true' THEN 1
                     WHEN 'false' THEN 0
-                    ELSE NULL END AS hdr
+                    ELSE -1 END AS hdr
 		,	CASE 	tmp.Attribute->>'$.indexedDB'
 					WHEN 'true' THEN 1
                     WHEN 'false' THEN 0
-                    ELSE NULL END AS indexedDB
+                    ELSE -1 END AS indexedDB
 		,	CASE 	tmp.Attribute->>'$.invertedColors'
 					WHEN 'true' THEN 1
                     WHEN 'false' THEN 0
-                    ELSE NULL END AS invertedColors
+                    ELSE -1 END AS invertedColors
 		,	tmp.Attribute->>'$.languagesPrint' AS Languages
 		,	CASE 	tmp.Attribute->>'$.localStorage'
 					WHEN 'true' THEN 1
                     WHEN 'false' THEN 0
-                    ELSE NULL END AS localStorage
+                    ELSE -1 END AS localStorage
 		,	tmp.Attribute->>'$.math'
 		,	CASE 	tmp.Attribute->>'$.monochrome'
-					WHEN 'undefined' THEN NULL
+					WHEN 'undefined' THEN -1
                     ELSE tmp.Attribute->>'$.monochrome' END AS monochrome
 		,	CASE 	tmp.Attribute->>'$.openDatabase'
 					WHEN 'true' THEN 1
