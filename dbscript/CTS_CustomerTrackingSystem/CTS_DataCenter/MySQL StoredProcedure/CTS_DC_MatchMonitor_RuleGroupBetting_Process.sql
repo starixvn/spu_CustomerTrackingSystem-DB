@@ -42,6 +42,7 @@ sp: BEGIN
             -	20230313@Casey.Huynh:	Applied Betting Parten OTGB [Redmine ID: #184791]
 			-	20230421@Casey.Huynh:	Enhance Rule for System Detect Classification [Redmine ID: #186814]
             -	20231016@Casey.Huynh:	Enhance Rule for BasketBall. Adjust Group Stake to 300, Add AssociationByIP, ShareMatch(3 Match(last 7 day) [Redmine ID: 195473]
+            -	20231120@Thomas.Nguyen: Add the condition stake of licensee group for Basketball: >= 50RM [Redmine ID: #188553]
             
 		Param's Explanation (filtered by):	
 			ip_SharedMatches: JSON '[{"O": 1, "D": 2}]'
@@ -54,11 +55,13 @@ sp: BEGIN
     DECLARE CONST_RULE_GROUPID 					INT DEFAULT 1;
 	DECLARE CONST_ASSTYPE_BETTINGPATTERN 		INT DEFAULT 2;
 	DECLARE CONST_ASSBYAI_ACTIVESTATUS 			INT DEFAULT 1;	
-    DECLARE CONST_CLASSIFYTOTALSTAKE			DECIMAL(20,4) DEFAULT 80;
+    DECLARE CONST_CLASSIFYTOTALSTAKE_SOCCER		DECIMAL(20,4) DEFAULT 80;
 	DECLARE CONST_CLASSIFYTOTALCUST				INT DEFAULT 3;	
     DECLARE CONST_ASSOCIATIONTYPE_IP 			INT DEFAULT 4;
     DECLARE CONST_ASSOCIATIONTYPE_SHAREMATCH 	INT DEFAULT 5;
     DECLARE CONST_SPORTTYPE_BASKETBALL 			INT DEFAULT 2;
+    DECLARE CONST_SPORTTYPE_SOCCER 				INT DEFAULT 1;
+    DECLARE CONST_CLASSIFYTOTALSTAKE_BASKETBALL	DECIMAL(20,4) DEFAULT 50;
 	#=================================================
     DECLARE lv_TimeCustID BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_MinTransDate DATETIME(3);
@@ -670,7 +673,7 @@ sp: BEGIN
         ,	tmpRg.TransIDList
         ,	tmpRg.CustIDList
         ,	tmpRg.OldGroupIDList
-        ,	(CASE WHEN tmpRg.LicCustTotalStake >= CONST_CLASSIFYTOTALSTAKE AND LicCustTotal >= CONST_CLASSIFYTOTALCUST THEN LicCustList ELSE NULL END) HighStakeLicCustList
+        ,	(CASE WHEN ((lv_SportType = CONST_SPORTTYPE_SOCCER AND tmpRg.LicCustTotalStake >= CONST_CLASSIFYTOTALSTAKE_SOCCER) OR (lv_SportType = CONST_SPORTTYPE_BASKETBALL AND tmpRg.LicCustTotalStake >= CONST_CLASSIFYTOTALSTAKE_BASKETBALL)) AND LicCustTotal >= CONST_CLASSIFYTOTALCUST THEN LicCustList ELSE NULL END) HighStakeLicCustList
     FROM Temp_ResultGroup AS tmpRg;
     
 END$$
