@@ -71,7 +71,7 @@ EXEC @ReturnCode = msdb.dbo.sp_add_jobschedule @job_id=@jobId, @name=N'Every day
 		@freq_subday_interval=10, 
 		@freq_relative_interval=0, 
 		@freq_recurrence_factor=0, 
-		@active_start_date=20231122, 
+		@active_start_date=20231121, 
 		@active_end_date=99991231, 
 		@active_start_time=0, 
 		@active_end_time=235959, 
