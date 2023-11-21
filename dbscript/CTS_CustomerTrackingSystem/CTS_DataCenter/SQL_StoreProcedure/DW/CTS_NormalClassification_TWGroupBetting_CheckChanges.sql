@@ -77,6 +77,8 @@ BEGIN
 	INSERT INTO #tmpRawData(CustId, SportType, TransId, TransDate, IsFraud, TicketRank)
 	EXEC dbo.CTS_TWGB_GetDWData @PreviousModifiedTime = @LastModifiedDate, @NewModifiedTime = @NextScannedDatetime OUTPUT;
 	
+	CREATE CLUSTERED INDEX CIX_tmpRawData_CustId ON #tmpRawData (CustId);
+	
 	INSERT INTO #tmpScannedNewCust (CustId,TotalTicketCount,GBTicketCount)
 	SELECT tr.CustId, MAX(tr.TicketRank), SUM(CASE WHEN tr.TicketRank <= 5 THEN tr.IsFraud ELSE 0 END)
 	FROM #tmpRawData AS tr WITH(NOLOCK)
