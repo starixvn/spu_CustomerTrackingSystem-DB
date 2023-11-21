@@ -1,4 +1,3 @@
-/*<info serverAlias="DBVR2-bodb_VR2Model" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 /*
     Creator: 	20231030@Tony.Nguyen
     Task:	 	New CC 2300 - TWGroupBetting Tagging New Member
