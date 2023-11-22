@@ -53,7 +53,7 @@ BEGIN
 		,	TransStatus					BIT(16)								NULL
         ,	FlaggedCode					VARCHAR(100)						NULL
         ,	BotDetection				LONGTEXT							NULL
-        ,	BotDetectionValue			BIT(32)								NULL
+        ,	BotDetectionValue			BIT(32)								NULL		DEFAULT 0
         ,	BotComponentID				BIGINT UNSIGNED						NULL
         ,	BotComponent				LONGTEXT							NULL
         ,	BotComponentCode			VARCHAR(100)						NULL
@@ -73,7 +73,7 @@ BEGIN
         
 	CREATE TEMPORARY TABLE Temp_BotDetection(
 			ID							INT UNSIGNED PRIMARY KEY
-        ,	BotDetectionValue			BIT(32) DEFAULT NULL
+        ,	BotDetectionValue			BIT(32) NULL DEFAULT 0
     );    
 		
 	INSERT INTO Temp_Transaction(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, FakeIP, CookieCode, FingerprintAttribute, RawUserAgent, RawUserAgentInfo)
