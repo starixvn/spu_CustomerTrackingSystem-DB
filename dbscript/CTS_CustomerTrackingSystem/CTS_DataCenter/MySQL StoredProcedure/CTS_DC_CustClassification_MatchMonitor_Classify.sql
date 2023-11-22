@@ -15,7 +15,7 @@ BEGIN
 			- 20220627@Casey.Huynh: Created [Redmine ID: #174218]
             - 20220908@Casey.Huynh: New CC for Classify MM [Redmine ID: #176976]
             - 20220113@Casey.Huynh: Rename Table [Redmine ID: #179502]
-            - 20231120@Thomas.Nguyen: Add the condition SportType = 1 and include Odds Crawler Robot (CategoryID 165, 166) [Redmine ID: #188553]
+            - 20231120@Thomas.Nguyen: Add the condition SportType = 2 and include Odds Crawler Robot (CategoryID 165, 166) [Redmine ID: #188553]
 
 		Param's Explanation:
         
