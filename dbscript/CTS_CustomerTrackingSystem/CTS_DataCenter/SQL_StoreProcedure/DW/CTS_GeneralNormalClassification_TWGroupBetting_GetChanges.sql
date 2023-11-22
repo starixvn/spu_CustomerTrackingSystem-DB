@@ -42,8 +42,8 @@ BEGIN
 	INSERT INTO #tmpCustScanned (CustId, LastJobScannedTime)
 	SELECT TOP(@BatchSize) cs.CustId, cs.LastJobScannedTime
 	FROM dbo.CustomerClassification_ScannedNewCust AS cs WITH (NOLOCK)
-	WHERE cs.LastJobScannedTime >= @LastJobScannedTime 
-		AND cs.IsServiceScanned = 0
+	WHERE (cs.LastJobScannedTime >= @LastJobScannedTime AND cs.IsServiceScanned = 0)
+		OR (cs.LastJobScannedTime >= @LastJobScannedTime AND cs.IsServiceScanned = 1 AND cs.LastServiceScannedTime < cs.LastJobScannedTime) -- Number of GBTickets are updated
 	ORDER BY cs.LastJobScannedTime ASC;
 	
 	SELECT @MaxServiceScannedTime = MAX(LastJobScannedTime) FROM #tmpCustScanned;
