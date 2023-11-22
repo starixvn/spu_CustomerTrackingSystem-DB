@@ -41,10 +41,11 @@ BEGIN
                 - 20230428@Jonas.Huynh: Realtime Renovation [Redmine ID: #186678]
                 - 20230816@Jonas.Huynh: Tagging Classification [Redmine ID: #191400]
                 - 20231003@Casey.Huynh:	Fix issue Duplicate Log Probation [Redmine ID: #193050]
+                - 20231030@Victoria.Le:	Add field First5TWGBTicketCount [Redmine ID: #195060]
 		Param's Explanation (filtered by):
         
         Example:
-				CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount('[{"CustId": "43600693","CategoryId":"1000","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","TaggingID":10,"TaggingType":1,"PerformanceTime":"2021-03-31 00:00:00", "ScanTaggingType":1}]',@or);
+				CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount('[{"CustId": "43600693","CategoryId":"1000","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","TaggingID":10,"TaggingType":1,"PerformanceTime":"2021-03-31 00:00:00", "ScanTaggingType":1, "SportType":NULL}]',@or);
 */ 
     DECLARE	CONST_GROUP_PA 								INT DEFAULT 0;
     DECLARE	CONST_GROUP_WRAPPER							INT DEFAULT 100;
@@ -132,6 +133,8 @@ BEGIN
 		, 	ActionType					SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN; 5: Not satisfy Pass Probation*/
         ,	PerformanceTime				DATETIME
         ,	ScanTaggingType				TINYINT DEFAULT 0
+        ,	SportType					SMALLINT DEFAULT NULL
+        ,	First5TWGBTicketCount		TINYINT UNSIGNED DEFAULT NULL
 		, 	INDEX    			    	IX_Temp_NewClassification(CustID, DWCateGroup)  
 	); 
     
@@ -204,7 +207,7 @@ BEGIN
     
 	/* 1: PARSE RAW DATA */
 	INSERT IGNORE INTO Temp_NewClassification(CustID,DWCateGroup,TurnoverRM,WinlossRM,BetCount,ActiveDays,TWBetCount,TWGroupBettingRate,TWTicketRejectRate,TWDesktopUsageRate,
-		TaggingID,TaggingType,PerformanceTime,ScanTaggingType)
+		TaggingID,TaggingType,PerformanceTime,ScanTaggingType,SportType,First5TWGBTicketCount)
 	SELECT DISTINCT temp.CustID
 				, 	temp.DWCateGroup
                 , 	temp.TurnoverRM
@@ -219,6 +222,8 @@ BEGIN
                 , 	temp.TaggingType
                 ,	temp.PerformanceTime
                 ,	temp.ScanTaggingType
+                ,	temp.SportType
+                ,	temp.First5TWGBTicketCount
 	 FROM JSON_TABLE(ip_NewClassification,
 		"$[*]" COLUMNS(
 				CustID 					BIGINT UNSIGNED		PATH "$.CustId"
@@ -235,6 +240,8 @@ BEGIN
             , 	TaggingType				SMALLINT			PATH "$.TaggingType"	
 			, 	PerformanceTime			DATETIME			PATH "$.PerformanceTime"
             , 	ScanTaggingType			BOOLEAN				PATH "$.ScanTaggingType"
+            , 	SportType				SMALLINT			PATH "$.SportType"
+            , 	First5TWGBTicketCount	TINYINT				PATH "$.First5TWGBTicketCount"
 		 )) AS 	temp
 	 WHERE temp.DWCateGroup <> 0;
 	
@@ -576,7 +583,8 @@ BEGIN
     /* 15: WRITE HISTORY LOG (VIEW ON WEB) */
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History
 	(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, TWBetCount, TWGroupBettingRate, TWTicketRejectRate, TWDesktopUsageRate
-    , ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsDataChanged, TaggingType, TargetDangerLevel1, PerformanceTime)
+    , ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsDataChanged, TaggingType, TargetDangerLevel1, PerformanceTime
+	, SportType, First5TWGBTicketCount)
 	SELECT DISTINCT	temp.CustID
 				, 	temp.CTSCustID
 				, 	temp.NewCateID
@@ -602,13 +610,16 @@ BEGIN
 				,	temp.TaggingType
 				,	temp.TargetDangerLevel AS TargetDangerLevel1
                 ,	temp.PerformanceTime
+				,	temp.SportType
+				,	temp.First5TWGBTicketCount
 	FROM 	Temp_NewClassification AS temp
 	WHERE temp.IsDataChanged  = 1;	
 
     /* 16: WRITE HISTORY LOG (TRACE DATA) */
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log
 	(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, TWBetCount, TWGroupBettingRate, TWTicketRejectRate, TWDesktopUsageRate
-    , ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsDataChanged, TaggingType, TargetDangerLevel1, PerformanceTime)
+    , ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsDataChanged, TaggingType, TargetDangerLevel1, PerformanceTime
+	, SportType, First5TWGBTicketCount)
 	SELECT DISTINCT	temp.CustID
 				, 	temp.CTSCustID
 				, 	temp.NewCateID
@@ -634,6 +645,8 @@ BEGIN
 				,	temp.TaggingType
 				,	temp.TargetDangerLevel AS TargetDangerLevel1
                 ,	temp.PerformanceTime
+				,	temp.SportType
+				,	temp.First5TWGBTicketCount
 	FROM 	Temp_NewClassification AS temp;
     
 	/* 17: RETURN UPDATED CUSTOMERS TO SERVICE FOR FUTHER STEPS */

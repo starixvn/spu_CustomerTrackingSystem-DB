@@ -30,6 +30,7 @@ AS
 		- 20230811@Long.Luu:	  Addup Big Leagues for Soccer				[Redmine ID: #192614]
 		- 20230829@Long.Luu:	  Addup Normal Account CC 4000				[Redmine ID: #192976]
 		- 20231010@Long.Luu:	  Addup Big Leagues for Soccer				[Redmine ID: #1925163]
+		- 20231030@Victoria.Le:	  New Group Betting - CC 2300 - Call SP from DW to send list fraud tickets [Redmine ID: #195060]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_ScanTicket] '2022-02-15 23:10:15.983','2022-02-16 02:15:20.983',10900
@@ -42,8 +43,6 @@ BEGIN
 		,	@CutOffDate		DATETIME = '2022-01-01';
 	
 	SELECT @BatchSize += @SkipTransCount;
-
-	SET @ServerName = @@SERVERNAME;
 
 	IF OBJECT_ID('tempdb..#TmpRawTicket') IS NOT NULL
         DROP TABLE #TmpRawTicket;
@@ -375,6 +374,7 @@ BEGIN
 								 FOR XML RAW('TWGroupBettingTicket'), ROOT);
 
 	EXEC CTS_TWGroupBetting_SyncDataGroupBettingTicket @GBTicketXMLString, @LastSequenceId_New;		
+	EXEC DBVR2.bodb_VR2Model.dbo.CTS_TWGB_UpdateDWData @GBTicketXMLString;		
 
 	DROP TABLE #TmpSuspectTicket
 	DROP TABLE #TmpBigLeague;

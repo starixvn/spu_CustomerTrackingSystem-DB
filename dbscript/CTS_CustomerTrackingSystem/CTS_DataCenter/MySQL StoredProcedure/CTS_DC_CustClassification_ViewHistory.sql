@@ -29,6 +29,7 @@ BEGIN
 			- 20220913@Casey.Huynh: 	Update Remark [Redmine ID: #176976]
 			- 20230315@Victoria.Le:		Add Robot Imperva [Redmine ID: #184773]
 			- 20230404@Victoria.Le		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeId [Redmine ID: #185319] 
+			- 20230404@Victoria.Le		Return First5TWGBTicketCount [Redmine ID: #195060] 
 			
 			
 		Param's Explanation (filtered by):		
@@ -76,6 +77,7 @@ BEGIN
 			,   temp.RobotCounter
 			,   IFNULL(u.UserName, temp.LastModifiedBy) AS CreatedBy
             ,	temp.TWBetCount
+            ,	temp.First5TWGBTicketCount
             ,	temp.TWGroupBettingRate
             ,	temp.TWTicketRejectRate
             ,	temp.TWDesktopUsageRate

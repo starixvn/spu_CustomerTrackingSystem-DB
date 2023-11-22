@@ -21,6 +21,7 @@ sp:BEGIN
 			- 20230315@Victoria.Le:		Add Robot Imperva [Redmine ID: #184773]
 			- 20230404@Victoria.Le		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeID [Redmine ID: #185319] 
 			- 20230428@Jonas.Huynh: 	Realtime Renovation [Redmine ID: #186678]
+			- 20231108@Victoria.Le: 	Add First5TWGBTicketCount [Redmine ID: #195060]
              
 		Param's Explanation (filtered by):
 
@@ -80,6 +81,7 @@ sp:BEGIN
 		,	SportType				SMALLINT
 		,	IssueTypeID				TINYINT
         ,	PerformanceTime			DATETIME
+        ,	First5TWGBTicketCount	TINYINT UNSIGNED
 		,	PRIMARY KEY (ID)
 		,	KEY 					IX_CTSCustomerClassification_History_CustID (CustID)
 	);
@@ -162,6 +164,7 @@ sp:BEGIN
 		,	SportType
 		,	IssueTypeID
         ,	PerformanceTime
+        ,	First5TWGBTicketCount
 	)
     SELECT 	ID  					
 		,	CustID  				
@@ -204,6 +207,7 @@ sp:BEGIN
 		,	SportType
 		,	IssueTypeID
         ,	PerformanceTime
+        ,	First5TWGBTicketCount
 	FROM CTS_DataCenter.CTSCustomerClassification_History
     WHERE ID BETWEEN lv_LastID AND lv_NextLastID
 		AND IsDataChanged = 1
@@ -290,6 +294,7 @@ sp:BEGIN
 			,	SportType
 			,	IssueTypeID
             ,	PerformanceTime
+            ,	First5TWGBTicketCount
 		)
 		SELECT 	ID  					
 			,	h.CustID  				
@@ -332,6 +337,7 @@ sp:BEGIN
 			,	SportType
 			,	IssueTypeID
             ,	PerformanceTime
+            ,	First5TWGBTicketCount
 		FROM Temp_CustDataShouldBeRemoved AS k
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS h ON k.CustID = h.CustID
 		WHERE h.ID < lv_LastID
@@ -385,6 +391,7 @@ sp:BEGIN
 			,	SportType
 			,	IssueTypeID
             ,	PerformanceTime
+            ,	First5TWGBTicketCount
 		FROM Temp_History;
 		
 		UPDATE CTS_DataCenter.SystemParameter
