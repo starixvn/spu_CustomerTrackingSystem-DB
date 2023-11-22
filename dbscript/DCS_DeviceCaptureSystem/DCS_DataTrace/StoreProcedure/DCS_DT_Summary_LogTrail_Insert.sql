@@ -1,4 +1,4 @@
-/*<info serverAlias="CTSMain-DCS_DataTrace" databaseType="2" executers="fpsServiceAdmin" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="CTSMain-DCS_DataTrace" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
 DROP PROCEDURE IF EXISTS `DCS_DT_Summary_LogTrail_Insert`;
 DELIMITER $$
 
