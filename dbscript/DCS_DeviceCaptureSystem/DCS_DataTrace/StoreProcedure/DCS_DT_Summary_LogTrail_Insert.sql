@@ -31,7 +31,7 @@ BEGIN
 			ID 							BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
 		, 	EventDate					DATE NOT NULL
 		, 	SubscriberID				INT UNSIGNED DEFAULT 0
-		,	EventCode 					VARCHAR(100) NULL DEFAULT NULL
+		,	EventCode 					VARCHAR(100) NULL DEFAULT ''
         , 	SystemName					VARCHAR(45) DEFAULT ''
 		, 	Source						VARCHAR(100) DEFAULT ''
         ,   Destination					VARCHAR(100) DEFAULT ''
@@ -67,12 +67,7 @@ BEGIN
 		) AS tmp;
 	
     UPDATE DCS_DataTrace.DailyLogTrailSummary AS dl
-		INNER JOIN Temp_InputLogTrail AS tmp ON 	dl.EventDate = tmp.EventDate
-											AND dl.SubscriberID = tmp.SubscriberID
-                                            AND dl.SystemName = tmp.SystemName
-											AND dl.Source = tmp.Source
-                                            AND dl.Destination = tmp.Destination
-											AND dl.Method = tmp.Method
+		INNER JOIN Temp_InputLogTrail AS tmp ON dl.EventCode = tmp.EventCode
 	SET dl.Total 			= dl.Total + tmp.Total,
 		dl.ModifiedTime 	= lv_CurrentDatetime,
 		tmp.IsUpdate 		= 1;
