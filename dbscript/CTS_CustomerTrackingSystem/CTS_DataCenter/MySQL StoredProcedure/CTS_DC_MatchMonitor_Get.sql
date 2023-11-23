@@ -34,7 +34,7 @@ BEGIN
 			-	20230214@Victoria.Le	Add ip_MatchInfos to get latest EventDate and KickOffTime (GolobalShowTime) when search by EventDate 
 										Remove ip_DateType, ip_MatchSection [RedmineID: #183280]
 			- 	20231116@Long.Luu: 		Return fraud ticket list of each match-liveindicator-bettype-betid [Redmine ID: 195042]
-			
+			-	20231120@Casey.Huynh:	Enhance Rule for Esport. Adjust Group Stake to 300, Add AssociationByIP, ShareMatch(3 Match(last 7 day) [Redmine ID: #196396]
             
 		Param's Explanation (filtered by):
 			- ip_Market: 		0 return LiveIndicator = 0, 1 return LiveIndicator = 1, NULL: Both Live And Non-Live
@@ -42,7 +42,8 @@ BEGIN
 			- ip_MatchInfos: 	= NULL: search by InsertDate
 								<> NULL: search by EventDate
 		Example:
-			-	CALL CTS_DC_MatchMonitor_Get(@ip_MatchInfos:=NULL,@ip_FromDate:='2023-01-05',@ip_ToDate:='2023-01-8',@ip_SportType:=1,@ip_Market:=1,@ip_MatchSection:='1,2,3,4',@ip_IsVerified:=NULL
+			-	CALL CTS_DC_MatchMonitor_Get(@ip_MatchInfos:=NULL,@ip_FromDate:='2023-01-05',@ip_ToDate:='2023-01-8',@ip_SportType:=1,@ip_Market:=1
+				,@ip_IsVerified:=NULL
 				,@ip_Bettypes:='[{"BettypeID":1,"BetID":0},{"BettypeID":3,"BetID":0},{"BettypeID":7,"BetID":0}]',@ip_Reason:='0,1,2');
 	*/
 	
@@ -290,6 +291,7 @@ BEGIN
         
     IF (ip_IsVerified IS NULL)
     THEN
+		
 		SELECT	tmpMm.MatchID
             ,	tmpMm.MatchSection
 			,	tmpMm.EventDate
@@ -302,6 +304,9 @@ BEGIN
             ,	tmpMm.Sporttype
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
+            ,	REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', (tmpMm.BetID MOD 1000) DIV 100), 'Y', (tmpMm.BetID MOD 1000) MOD 10) AS BettypeNameDisplay
+			,	(tmpMm.BetID MOD 1000) DIV 100 AS DetailsX
+            ,	(tmpMm.BetID MOD 1000) MOD 10 AS DetailsY
 			,	GROUP_CONCAT(DISTINCT tmpMm.Reason)	AS Reason		
 			,	NOT EXISTS(SELECT 1 FROM Temp_MatchGroup_NotVerified AS tmpNv WHERE tmpMm.MatchID = tmpNv.MatchID AND tmpMm.LiveIndicator = tmpNv.LiveIndicator 
 					AND tmpMm.BettypeID = tmpNv.BettypeID AND tmpMm.BetID = tmpNv.BetID LIMIT 1) IsVerified
@@ -323,7 +328,9 @@ BEGIN
 			,	tmpMm.LeagueName
             ,	tmpMm.Sporttype
 			,	tmpMm.BettypeID
-            ,	tmpMm.BetID;
+            ,	tmpMm.BetID
+            ,	sbs.BettypeNameDisplay
+            ;
 	END IF;
     
 	IF (ip_IsVerified = 0)
@@ -340,12 +347,15 @@ BEGIN
             ,	tmpMm.Sporttype
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
+			,	REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', (tmpMm.BetID MOD 1000) DIV 100), 'Y', (tmpMm.BetID MOD 1000) MOD 10) AS BettypeNameDisplay
+			,	(tmpMm.BetID MOD 1000) DIV 100 AS DetailsX
+            ,	(tmpMm.BetID MOD 1000) MOD 10 AS DetailsY
 			,	GROUP_CONCAT(DISTINCT tmpMm.Reason)	AS Reason		
 			,	0 AS IsVerified
             ,	GROUP_CONCAT(DISTINCT tmpMg.VerifiedBy)	AS VerifiedBy
             ,	t.FraudTrans
 		FROM Temp_MatchMonitor AS tmpMm
-			INNER JOIN Temp_MatchFraudTrans AS t ON tmpMm.MatchID = t.MatchID AND tmpMm.LiveIndicator = t.LiveIndicator 
+        LEFT JOIN CTS_DataCenter.SportBettypeSetting AS sbs ON sbs.SporttypeID = tmpMm.Sporttype AND sbs.BetTypeID = tmpMm.BettypeID
 					AND tmpMm.BettypeID = t.BettypeID AND tmpMm.BetID = t.BetID 
 			INNER JOIN Temp_MatchGroup AS tmpMg ON tmpMm.MatchID = tmpMg.MatchID AND tmpMm.LiveIndicator = tmpMg.LiveIndicator 
 					AND tmpMm.BettypeID = tmpMg.BettypeID AND tmpMm.BetID = tmpMg.BetID AND tmpMm.Reason = tmpMg.Reason
@@ -362,7 +372,9 @@ BEGIN
 			,	tmpMm.LeagueName
             ,	tmpMm.Sporttype
 			,	tmpMm.BettypeID
-            ,	tmpMm.BetID;
+            ,	tmpMm.BetID
+            ,	sbs.BettypeNameDisplay
+            ;
 	END IF;
     
     IF (ip_IsVerified = 1)
@@ -379,6 +391,9 @@ BEGIN
             ,	tmpMm.Sporttype
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
+            ,	REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', (tmpMm.BetID MOD 1000) DIV 100), 'Y', (tmpMm.BetID MOD 1000) MOD 10) AS BettypeNameDisplay
+			,	(tmpMm.BetID MOD 1000) DIV 100 AS DetailsX
+            ,	(tmpMm.BetID MOD 1000) MOD 10 AS DetailsY
 			,	GROUP_CONCAT(DISTINCT tmpMm.Reason)	AS Reason		
 			,	1 AS IsVerified
             ,	GROUP_CONCAT(DISTINCT tmpMg.VerifiedBy)	AS VerifiedBy
@@ -401,7 +416,9 @@ BEGIN
 			,	tmpMm.LeagueName
             ,	tmpMm.Sporttype
 			,	tmpMm.BettypeID
-            ,	tmpMm.BetID;
+            ,	tmpMm.BetID
+            ,	sbs.BettypeNameDisplay
+            ;
 	END IF;
                    
 END$$

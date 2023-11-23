@@ -18,6 +18,7 @@ BEGIN
 			- 20191219@Casey.Huynh: Created
 			- 20210121@John.Ngo: Enhance CTS SPs by removing ISSOLATION [Redmine ID: 148723]
 			- 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
+            - 20231122@Casey.Huynh: Return more info [Redmine ID: #196396]
 			
 		Param's Explanation (filtered by):
                 
@@ -29,6 +30,8 @@ BEGIN
         ,	sl.ListNameDisplay
         ,	sl.ItemName
         ,	sl.ItemNameDisplay
+        ,	sl.ItemValue
+		,	sl.ItemDefaultValue
         ,	sl.PriorityOrder
         ,	sl.Status
         ,	sl.Description
