@@ -50,7 +50,7 @@ BEGIN
 	
 	UPDATE cs WITH (UPDLOCK, ROWLOCK)
 	SET 	cs.IsServiceScanned = (CASE WHEN cgb.CustId IS NOT NULL THEN 1 ELSE 0 END)
-		,	cs.LastServiceScannedTime = GETDATE()
+		,	cs.LastServiceScannedTime = (CASE WHEN cgb.CustId IS NOT NULL THEN GETDATE() ELSE cs.LastServiceScannedTime END)
 	FROM dbo.CustomerClassification_ScannedNewCust AS cs
 		LEFT JOIN #tmpCustomer AS c ON c.CustId = cs.CustId
 		LEFT JOIN #tmpCustomerGroupBetting AS cgb ON cgb.CustId = cs.CustId
