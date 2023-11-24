@@ -392,7 +392,7 @@ sp:BEGIN
         INSERT INTO Temp_CustAccountID(CTSCustID, AccountID)
         SELECT tmp.CTSCustID, acc.AccountID
         FROM Temp_Cust AS tmp
-            INNER JOIN CTS_DataCenter.CustDCSAccount AS acc ON acc.CTSCustID = tmp.CTSCustID
+            INNER JOIN CTS_DataCenter.CustDCSAccount AS acc ON acc.CTSCustID = tmp.CTSCustID AND acc.SubscriberID = tmp.SubscriberID
             LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = tmp.SubscriberID AND sub.SubscriberSourceID IN (lv_SubSourceID_DirectAPI, lv_SubSourceID_OddsFeed)
         WHERE sub.SubscriberSourceID IS NULL;
         
