@@ -32,32 +32,34 @@ BEGIN
 	EXECUTE stmt1;
     
     SELECT 	tmp.RawFingerPrintID
-		,	'' AS UserAgent
-		,	'' AS BrowserFamilyCode
-		,	'' AS OSName
-		,	'' AS BrowserName
-		,	'' AS BrowserVersion
-		,	'' AS Platform
-		,	'' AS Accept
-		,	'' AS Encoding
-		,	'' AS Headers
-		,	-1 AS LocalStorage
-		,	'' AS DoNotTrack
-		,	-1 AS Cookies
-		,	'' AS Canvas
-		,	'' AS Fonts
-		,	'' AS Vendor
-		,	'' AS GLRenderer
-		,	'' AS Plugins
-		,	'' AS Languages
-		,	'' AS Resolution
-		,	'' AS Timezone
-	FROM Temp_InputRawFingerPrintID AS tmp;
-		-- INNER JOIN FPS_FingerPrint.RawFingerPrint AS fp ON fp.ID = tmp.RawFingerPrintID
--- 		INNER JOIN FPS_FingerPrint.FingerPrintAttribute AS fpa ON fpa.RawFingerPrintId = fp.Id
--- 		INNER JOIN FPS_FingerPrint.BrowserInstanceRawFingerPrint AS bisa ON bisa.RawFingerPrintId = fp.Id
--- 		INNER JOIN FPS_FingerPrint.BrowserInstance AS bis ON bis.Id = bisa.BrowserInstanceId
--- 	WHERE bis.BrowserFamilyCode = ip_BrowserFamilyCode;
+		,	bis.UserAgent
+		,	bis.BrowserFamilyCode
+		,	bis.OSName
+		,	bis.BrowserName
+		,	bis.BrowserVersion
+		,	bis.Platform
+		,	bis.Accept
+		,	bis.Encoding
+		,	bis.Headers
+		,	fpa.LocalStorage
+		,	fpa.DoNotTrack
+		,	fpa.Cookies
+		,	fpa.Canvas
+		,	fpa.Fonts
+		,	fpa.Vendor
+		,	fpa.GLRenderer
+		,	fpa.Plugins
+		,	fpa.Languages
+		,	fpa.Resolution
+		,	fpa.Timezone
+		,	fpa.ID
+		,	bisa.ID
+		,	bis.ID
+	FROM Temp_InputRawFingerPrintID AS tmp
+		INNER JOIN FPS_FingerPrint.FingerPrintAttribute AS fpa ON fpa.RawFingerPrintId = tmp.RawFingerPrintID
+		INNER JOIN FPS_FingerPrint.BrowserInstanceRawFingerPrint AS bisa ON bisa.RawFingerPrintID = tmp.RawFingerPrintID
+		INNER JOIN FPS_FingerPrint.BrowserInstance AS bis ON bis.ID = bisa.BrowserInstanceID
+ 	WHERE bis.BrowserFamilyCode = ip_BrowserFamilyCode;
     
 END$$
 

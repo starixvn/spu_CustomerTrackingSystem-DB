@@ -62,101 +62,11 @@ BEGIN
 	ALTER TABLE Temp_TransactionInfo
 	ADD INDEX IX_Temp_TransactionInfo_RawFingerPrintID (RawFingerPrintID),
 	ADD INDEX IX_Temp_TransactionInfo_CookieID (CookieID),
+	ADD INDEX IX_Temp_TransactionInfo_AccountID (AccountID),
 	ADD INDEX IX_Temp_TransactionInfo_RecoverType (RecoverType);
     
-    /* === Recover by RawFingerPrintID === */
-    UPDATE Temp_TransactionInfo AS tmp
-		INNER JOIN DCS_DataCenter.FPDeviceFingerPrint AS df ON tmp.RawFingerPrintID = df.RawFingerPrintID
-	SET 	tmp.DeviceID = df.DeviceID
-		,	tmp.RecoverType = 1;
-    
-    /* === Recover by CookieID === */
-    UPDATE Temp_TransactionInfo AS tmp
-		INNER JOIN DCS_DataCenter.DeviceCookie AS dc ON tmp.CookieID = dc.CookieID
-	SET 	tmp.DeviceID = dc.DeviceID
-		,	tmp.RecoverType = tmp.RecoverType + 2;
-    
-    
-    /* === Insert new FPDeviceFingerPrint === */
-    INSERT IGNORE INTO DCS_DataCenter.FPDeviceFingerPrint(RawFingerPrintID, DeviceID, CreatedDate)
-	WITH cte AS
-	(
-		SELECT 	DISTINCT
-				RawFingerPrintID
-			,	DeviceID
-		FROM Temp_TransactionInfo
-        WHERE RecoverType = 2
-	)
-	SELECT 	cte.RawFingerPrintID
-		,	cte.DeviceID
-		,	lv_CreatedDate
-	FROM cte;
-    
-    /* === Insert new DeviceCookie === */
-    INSERT IGNORE INTO DCS_DataCenter.DeviceCookie(CookieID, DeviceID, CreatedDate)
-	WITH cte AS
-	(
-		SELECT 	DISTINCT
-				CookieID
-			,	DeviceID
-		FROM Temp_TransactionInfo
-        WHERE RecoverType = 1
-	)
-	SELECT 	cte.CookieID
-		,	cte.DeviceID
-		,	lv_CreatedDate
-	FROM cte;
-    
-    -- /* === Insert new Device === */
---     INSERT IGNORE INTO DCS_DataCenter.FPDevice(FirstRawFingerPrintId, CreatedDate)
--- 	WITH cte AS
--- 	(
--- 		SELECT DISTINCT RawFingerPrintId
--- 		FROM Temp_TransactionInfo
--- 		WHERE DeviceID IS NULL
--- 	)
--- 	SELECT 	cte.RawFingerPrintId
--- 		,	lv_CreatedDate
--- 	FROM cte;
---     
---     
---     /* === Update new DeviceID === */
---     UPDATE Temp_TransactionInfo AS tmp
--- 		INNER JOIN DCS_DataCenter.FPDevice AS d ON tmp.RawFingerPrintID = d.RawFingerPrintID
--- 	SET tmp.DeviceID = dc.DeviceID
---     WHERE tmp.DeviceID IS NULL;
---     
---     /* === Update new FPDeviceFingerPrint === */
--- 	INSERT IGNORE INTO DCS_DataCenter.FPDeviceFingerPrint(RawFingerPrintID, DeviceID, CreatedDate)
--- 	WITH cte AS
--- 	(
--- 		SELECT 	DISTINCT
--- 				RawFingerPrintID
--- 			,	DeviceID
--- 		FROM Temp_TransactionInfo
---         WHERE RecoverType = 0
--- 			AND DeviceID IS NOT NULL
--- 	)
--- 	SELECT 	cte.RawFingerPrintID
--- 		,	cte.DeviceID
--- 		,	lv_CreatedDate
--- 	FROM cte;
---     
---     /* === Update new DeviceCookie === */
--- 	INSERT IGNORE INTO DCS_DataCenter.DeviceCookie(CookieID, DeviceID, CreatedDate)
--- 	WITH cte AS
--- 	(
--- 		SELECT 	DISTINCT
--- 				CookieID
--- 			,	DeviceID
--- 		FROM Temp_TransactionInfo
---         WHERE RecoverType = 0
--- 			AND DeviceID IS NOT NULL
--- 	)
--- 	SELECT 	cte.CookieID
--- 		,	cte.DeviceID
--- 		,	lv_CreatedDate
--- 	FROM cte;
+    /******* Update Temp_TransactionInfo: DeviceID & RecoverType ********************/
+    CALL DCS_DC_Identity_Device_UpdateExistsDeviceID('Temp_TransactionInfo');
     
     
     /* Return list trans that can recover */
@@ -203,6 +113,9 @@ BEGIN
 		LEFT JOIN DCS_DataCenter.BrowserInstanceRawFingerPrint AS bisa ON bisa.RawFingerPrintID = tmp.RawFingerPrintID AND bisa.BrowserInstanceID = tmp.BrowserInstanceID
 		LEFT JOIN DCS_DataCenter.BrowserInstance AS bis ON bis.ID = bisa.BrowserInstanceID
     WHERE tmp.DeviceID IS NULL;
+    
+    -- /******* Insert into AccountFingerPrint ********************/
+--     CALL DCS_DC_Identity_AccountFingerPrint_Insert('Temp_TransactionInfo');
     
 END$$
 
