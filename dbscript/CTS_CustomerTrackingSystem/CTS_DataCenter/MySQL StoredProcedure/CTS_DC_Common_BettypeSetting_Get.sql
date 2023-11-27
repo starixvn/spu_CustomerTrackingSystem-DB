@@ -61,7 +61,8 @@ BEGIN
 		SELECT sbs.SportTypeID
 			,	sbs.SportName
             ,	sbs.BetTypeID
-            ,	REPLACE(sbs.BettypeNameDisplay,' X ', CONCAT(' ',js.NameDetailsX,' ')) AS BettypeNameDisplay
+            ,	(CASE WHEN js.NameDetailsX <> '' THEN REPLACE(sbs.BettypeNameDisplay,' X ', CONCAT(' ',js.NameDetailsX,' '))  
+							ELSE sbs.BettypeNameDisplay END) AS BettypeNameDisplay
             ,	sbs.BetChoiceType
             ,	sbs.BetChoiceHome
             ,	sbs.BetChoiceAway

@@ -4,7 +4,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_TicketDetails]
+ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_TicketDetails_casey]
 		@QueryType					TINYINT = 1
 	,	@LastScannedSequenceID		BIGINT = 0
 	,	@IsLive						BIT = 1
@@ -13,7 +13,6 @@ ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_TicketDetails]
 	,	@EventDate					DATETIME = '1900-09-22'
 	,	@MatchID					INT = 0
 	,	@ListSportBettype			VARCHAR(MAX)
-	--,	@BetType					SMALLINT = 0
 	,	@TicketType					TINYINT = 1	
 	,	@IsLicensee					BIT = NULL
 	,	@IsExclTestCurr				BIT = 0
@@ -21,7 +20,6 @@ ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_TicketDetails]
 	,	@ListHDPBetTeam				VARCHAR(MAX) = NULL
 	,	@ListScore					VARCHAR(MAX) = NULL
 	,	@CustAmountRM				MONEY = 0
-	--,	@BetID						BIGINT = 0
 	,	@ListDanger					VARCHAR(MAX) = NULL
 	,	@ListStatus					VARCHAR(50) = NULL
 	,	@ListCustomerClass			VARCHAR(MAX) = NULL	
@@ -83,9 +81,10 @@ AS
 
 		- @ListStatus: List StatusID
 			SET @ListStatus = '111,113,103,101,0,102,112,1,131' --Draw: 111;Lose: 113;Refund: 103;Reject: 101;Running: 0;Void: 102;Won:112;Waiting: 1;Completed: 131
-		- @BetType:
-			+ @QueryType: 1&2 - Soccer: 1,3,7,8 / Basketball: 1,3,7,8,20,609,610,612 / E-Sports: 1,3,20
-						  3 - Soccer: 1,3,7,8,2,12,413,414,6,126 / Basketball: 1,3,7,8,20,609,610,612 / E-Sports: 1,3,20	
+		- @ListSportBettype: JSON
+			,@ListSportBettype='[	{"SportTypeID":1, "BetTypeID":1, "BetChoiceType":1}
+								,	{"SportTypeID":2, "BetTypeID":3, "BetChoiceType":1}
+								,	{"SportTypeID":43, "BetTypeID":9001, "BetChoiceType":1}]'	
 		- @ListHDPBetTeam: 
 			+ ABS(hdp1 - hdp2): IF BetChoiceType = 1 (2 choices)
 			+ Betteam: IF BetChoiceType = 0
@@ -655,7 +654,6 @@ BEGIN
 								AND b.liveindicator = @IsLive
 								AND b.sequenceid < @LastScannedSequenceID
 								AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
-								;
 								AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
 				
 					END;

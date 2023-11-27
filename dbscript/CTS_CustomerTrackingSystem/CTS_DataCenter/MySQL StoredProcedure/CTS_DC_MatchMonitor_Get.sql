@@ -176,7 +176,7 @@ BEGIN
 			,	s.BetID
 			,	s.Reason		# 0:Group Betting, 1: Hedging, 2: Arbitrage, 3: Fixed Game , 58: Irrigition
 		FROM   CTS_DataCenter.MatchMonitor AS s
-			INNER JOIN Temp_Bettype AS tmpBt ON s.BettypeID = tmpBt.BettypeID AND s.BetID = tmpBt.BetID
+			INNER JOIN Temp_Bettype AS tmpBt ON s.BettypeID = tmpBt.BettypeID AND s.BetID = IFNULL(tmpBt.BetID,s.BetID)
 			INNER JOIN Temp_Sporttype AS tmpSt ON s.Sporttype = tmpSt.SportType
 			INNER JOIN Temp_Reason AS r ON r.ReasonID = s.Reason
 		WHERE s.InsertDate BETWEEN ip_FromDate AND ip_ToDate
@@ -224,7 +224,7 @@ BEGIN
 											,	MatchSection	TINYINT		PATH "$.MatchSection"
 										)
 								) AS js ON js.MatchId = s.MatchId
-			INNER JOIN Temp_Bettype AS tmpBt ON s.BettypeID = tmpBt.BettypeID AND s.BetID = tmpBt.BetID
+			INNER JOIN Temp_Bettype AS tmpBt ON s.BettypeID = tmpBt.BettypeID AND s.BetID = IFNULL(tmpBt.BetID,s.BetID)
 			INNER JOIN Temp_Reason AS r ON r.ReasonID = s.Reason
 		WHERE s.LiveIndicator = IFNULL(ip_Market, s.LiveIndicator) -- and js.MatchId = 76874318
         ;
@@ -251,7 +251,8 @@ BEGIN
     SELECT js.TransID, mdv.Reason, us.UserName, mdv.MatchID, mdv.LiveIndicator, mdv.BettypeID, mdv.BetID
     FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans AS mdv
 		LEFT JOIN CTS_Admin.CTSUser AS us ON us.UserID = mdv.VerifiedBy
-		INNER JOIN Temp_MatchMonitor AS tmpMm ON mdv.MatchID = tmpMm.MatchID AND mdv.LiveIndicator = tmpMm.LiveIndicator AND mdv.BettypeID = tmpMm.BettypeID AND mdv.BetID = tmpMm.BetID 
+		INNER JOIN Temp_MatchMonitor AS tmpMm ON mdv.MatchID = tmpMm.MatchID AND mdv.LiveIndicator = tmpMm.LiveIndicator 
+				AND mdv.BettypeID = tmpMm.BettypeID AND mdv.BetID = tmpMm.BetID 
 			JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mdv.ListTransID), ',', '","'), 
 						'$[*]' COLUMNS (TransID BIGINT UNSIGNED PATH '$')
 						) js;
@@ -264,7 +265,8 @@ BEGIN
 			,	tmpMm.Reason
             ,	GROUP_CONCAT(DISTINCT tmpVt.VerifiedBy)
 	FROM Temp_MatchMonitor AS tmpMm
-		LEFT JOIN Temp_VerfiedTrans AS tmpVt ON tmpVt.MatchID = tmpMm.MatchID AND tmpVt.LiveIndicator = tmpMm.LiveIndicator AND tmpVt.BettypeID = tmpMm.BettypeID AND tmpVt.BetID = tmpMm.BetID 
+		LEFT JOIN Temp_VerfiedTrans AS tmpVt ON tmpVt.MatchID = tmpMm.MatchID AND tmpVt.LiveIndicator = tmpMm.LiveIndicator 
+        AND tmpVt.BettypeID = tmpMm.BettypeID AND tmpVt.BetID = tmpMm.BetID 
 	GROUP BY MatchID, LiveIndicator, BettypeID, BetID, Reason; 
 
 	INSERT INTO Temp_MatchGroup_NotVerified(MatchID, LiveIndicator, BettypeID, BetID)
@@ -304,9 +306,9 @@ BEGIN
             ,	tmpMm.Sporttype
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
-            ,	REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', (tmpMm.BetID MOD 1000) DIV 100), 'Y', (tmpMm.BetID MOD 1000) MOD 10) AS BettypeNameDisplay
-			,	(tmpMm.BetID MOD 1000) DIV 100 AS DetailsX
-            ,	(tmpMm.BetID MOD 1000) MOD 10 AS DetailsY
+            ,	REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', CONCAT(' ',(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END), ' ')), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END)) AS BettypeNameDisplay
+			,	(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END) AS DetailsX
+            ,	(CASE WHEN (tmpMm.BetID > 999) THEN (tmpMm.BetID MOD 100) ELSE 0 END) AS DetailsY
 			,	GROUP_CONCAT(DISTINCT tmpMm.Reason)	AS Reason		
 			,	NOT EXISTS(SELECT 1 FROM Temp_MatchGroup_NotVerified AS tmpNv WHERE tmpMm.MatchID = tmpNv.MatchID AND tmpMm.LiveIndicator = tmpNv.LiveIndicator 
 					AND tmpMm.BettypeID = tmpNv.BettypeID AND tmpMm.BetID = tmpNv.BetID LIMIT 1) IsVerified
@@ -347,7 +349,7 @@ BEGIN
             ,	tmpMm.Sporttype
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
-			,	REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', (tmpMm.BetID MOD 1000) DIV 100), 'Y', (tmpMm.BetID MOD 1000) MOD 10) AS BettypeNameDisplay
+			,	REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', CONCAT(' ',(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END), ' ')), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END)) AS BettypeNameDisplay
 			,	(tmpMm.BetID MOD 1000) DIV 100 AS DetailsX
             ,	(tmpMm.BetID MOD 1000) MOD 10 AS DetailsY
 			,	GROUP_CONCAT(DISTINCT tmpMm.Reason)	AS Reason		
@@ -391,7 +393,7 @@ BEGIN
             ,	tmpMm.Sporttype
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
-            ,	REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', (tmpMm.BetID MOD 1000) DIV 100), 'Y', (tmpMm.BetID MOD 1000) MOD 10) AS BettypeNameDisplay
+            ,	REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', CONCAT(' ',(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END), ' ')), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END)) AS BettypeNameDisplay
 			,	(tmpMm.BetID MOD 1000) DIV 100 AS DetailsX
             ,	(tmpMm.BetID MOD 1000) MOD 10 AS DetailsY
 			,	GROUP_CONCAT(DISTINCT tmpMm.Reason)	AS Reason		
@@ -423,4 +425,3 @@ BEGIN
                    
 END$$
 DELIMITER ;
-
