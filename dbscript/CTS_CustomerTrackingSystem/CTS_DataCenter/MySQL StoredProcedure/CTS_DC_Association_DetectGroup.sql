@@ -361,6 +361,36 @@ sp:BEGIN
     FROM CTE
     ON DUPLICATE KEY UPDATE AssociationType = CONCAT(AssociationType, CTE.AssociationTypeStr);
     
+	IF EXISTS (SELECT 1 
+				FROM Temp_Cust AS cus 
+					LEFT JOIN Temp_CustAssociationType AS cat ON cat.CTSCustID = cus.CTSCustID
+				WHERE cat.CTSCustID IS NULL) THEN
+							
+		DROP TEMPORARY TABLE IF EXISTS Temp_CustAssociationType_Dup;
+		CREATE TEMPORARY TABLE Temp_CustAssociationType_Dup LIKE Temp_CustAssociationType;
+		INSERT INTO Temp_CustAssociationType_Dup SELECT * FROM Temp_CustAssociationType;                    
+							
+		INSERT IGNORE INTO Temp_CustAssociationType(CTSCustID, AssociationType)
+		WITH CTE AS (SELECT cus.CTSCustID
+						,	CONCAT(IF(MAX(HasDevice) =1, ", Device","")
+								  ,IF(MAX(HasAgent) =1, ", Agent","")
+								  ,IF(MAX(HasAI) =1 OR MAX(HasAIGroup) =1, ", Betting Pattern","")
+								  ,IF(MAX(HasIP) =1, ", IP","")
+								  ,IF(MAX(HasSharedIP) =1, ", IP(last3days)","")
+								  ,IF(MAX(HasSharedMatches) =1, ", Match","")) AS AssociationTypeStr
+					FROM Temp_Cust AS cus
+						INNER JOIN Temp_Graph_Dup AS grp ON cus.CTSCustID = grp.DestID 
+						INNER JOIN Temp_Cust_Dup AS dup ON dup.CTSCustID = grp.OrigID
+						LEFT JOIN Temp_CustAssociationType_Dup AS cat ON cat.CTSCustID = cus.CTSCustID
+					WHERE cat.CTSCustID IS NULL
+					GROUP BY cus.CTSCustID)
+		SELECT CTE.CTSCustID
+			,	SUBSTR(CTE.AssociationTypeStr, 2)
+		FROM CTE
+		ON DUPLICATE KEY UPDATE AssociationType = CONCAT(AssociationType, CTE.AssociationTypeStr);
+
+	END IF;
+	
     IF (ip_IsGetLogTransInfo IS TRUE)
     THEN
 		SET lv_ToDate	= CURRENT_DATE();
