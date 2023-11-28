@@ -18,11 +18,15 @@ BEGIN
 	    Param's Explanation (filtered by):
         
         Example:
-			CALL DCS_DC_Identity_Evolution_Insert('[{"TransID":10,"RawFingerPrintID":10,"RecoverRawFingerPrintID":1}]');
+			CALL DCS_DC_Identity_Evolution_Insert('[{"TransID":7,"RecoverRawFingerPrintID":11}]');
 	*/
     DECLARE lv_CreatedDate DATETIME DEFAULT CURRENT_TIMESTAMP;
     
-	DROP TEMPORARY TABLE IF EXISTS Temp_TransactionInfo;    
+	DROP TEMPORARY TABLE IF EXISTS Temp_TransactionInfo;
+	DROP TEMPORARY TABLE IF EXISTS Temp_DeviceFingerPrint;
+	DROP TEMPORARY TABLE IF EXISTS Temp_DeviceCookie;
+	DROP TEMPORARY TABLE IF EXISTS Temp_TransactionEvolution;
+    
 	CREATE TEMPORARY TABLE Temp_TransactionInfo(
 			TransID								BIGINT UNSIGNED PRIMARY KEY
         ,	RawFingerPrintID					BIGINT UNSIGNED
@@ -31,58 +35,79 @@ BEGIN
         ,	CookieID							BIGINT UNSIGNED
 	);
     
-	INSERT INTO Temp_TransactionInfo(TransID, RawFingerPrintID, RecoverRawFingerPrintID)
+	CREATE TEMPORARY TABLE Temp_DeviceFingerPrint(
+			ID									INT UNSIGNED AUTO_INCREMENT	PRIMARY KEY 
+        ,	RawFingerPrintID					BIGINT UNSIGNED
+        ,	DeviceID							BIGINT UNSIGNED
+	);
+    
+	CREATE TEMPORARY TABLE Temp_DeviceCookie(
+			ID									INT UNSIGNED AUTO_INCREMENT	PRIMARY KEY 
+        ,	CookieID							BIGINT UNSIGNED
+        ,	DeviceID							BIGINT UNSIGNED
+	);
+    
+	CREATE TEMPORARY TABLE Temp_TransactionEvolution(
+			RawFingerPrintID					BIGINT UNSIGNED PRIMARY KEY
+        ,	RecoverRawFingerPrintID				BIGINT UNSIGNED
+        ,	DeviceID							BIGINT UNSIGNED
+	);
+    
+	INSERT INTO Temp_TransactionInfo(TransID, RecoverRawFingerPrintID)
 	SELECT	tmp.TransID
-		,	tmp.RawFingerPrintID
 		,	tmp.RecoverRawFingerPrintID
 	FROM	JSON_TABLE(
 			ip_TransJson,
 			 "$[*]" COLUMNS(
 						TransID					BIGINT UNSIGNED			PATH "$.TransID",
-						RawFingerPrintID		BIGINT UNSIGNED			PATH "$.RawFingerPrintID",
 						RecoverRawFingerPrintID	BIGINT UNSIGNED			PATH "$.RecoverRawFingerPrintID"
 				)
 		   ) AS tmp;
 
 	UPDATE Temp_TransactionInfo AS tmp
 		INNER JOIN DCS_DataCenter.Transaction AS trans ON trans.TransID = tmp.TransID
-	SET tmp.CookieID = trans.CookieID;
-        
+	SET tmp.RawFingerPrintID = trans.RawFingerPrintID
+    ,	tmp.CookieID = trans.CookieID;
+    
     /* === Add index === */
 	ALTER TABLE Temp_TransactionInfo
 	ADD INDEX IX_Temp_TransactionInfo_RawFingerPrintID (RawFingerPrintID);
     
 	UPDATE Temp_TransactionInfo AS tmp
-		INNER JOIN DCS_DataCenter.FPDeviceFingerPrint AS df ON tmp.RecoverFingerPrintID = df.RawFingerPrintID
+		INNER JOIN DCS_DataCenter.FPDeviceFingerPrint AS df ON df.RawFingerPrintID = tmp.RecoverRawFingerPrintID
 	SET tmp.DeviceID = df.DeviceID;
     
     DELETE FROM Temp_TransactionInfo WHERE DeviceID IS NULL;
     
     /* === Insert new FPDeviceFingerPrint === */
-    INSERT IGNORE INTO DCS_DataCenter.FPDeviceFingerPrint(RawFingerPrintID, DeviceID, CreatedDate)
-	SELECT 	DISTINCT
+    INSERT INTO Temp_DeviceFingerPrint(RawFingerPrintID, DeviceID)
+    SELECT	DISTINCT
 			RawFingerPrintID
 		,	DeviceID
-		,	lv_CreatedDate
 	FROM Temp_TransactionInfo
 	WHERE RawFingerPrintID IS NOT NULL;
     
+    CALL DCS_DC_Identity_DeviceFingerPrint_Insert('Temp_DeviceFingerPrint');
+    
     /* === Insert new DeviceCookie === */
-    INSERT IGNORE INTO DCS_DataCenter.DeviceCookie(CookieID, DeviceID, CreatedDate)
-	SELECT 	DISTINCT
+    INSERT INTO Temp_DeviceCookie(CookieID, DeviceID)
+    SELECT	DISTINCT
 			CookieID
 		,	DeviceID
-		,	lv_CreatedDate
-	FROM Temp_TransactionInfo AS tmp
+	FROM Temp_TransactionInfo
 	WHERE CookieID IS NOT NULL;
     
+    CALL DCS_DC_Identity_DeviceCookie_Insert('Temp_DeviceCookie');
+    
     /* === Insert new TransactionEvolution === */
-    INSERT IGNORE INTO DCS_DataCenter.TransactionEvolution(RawFingerPrintID, RecoverFingerPrintID, DeviceID, CreatedDate)
+    INSERT IGNORE INTO Temp_TransactionEvolution(RawFingerPrintID, RecoverRawFingerPrintID, DeviceID)
     SELECT	RawFingerPrintID
-		,	RecoverFingerPrintID
+		,	RecoverRawFingerPrintID
 		,	DeviceID
-		,	lv_CurrentDate AS CreatedDate
-    FROM Temp_TransactionInfo;
+	FROM Temp_TransactionInfo
+	WHERE RawFingerPrintID IS NOT NULL;
+    
+    CALL DCS_DC_Identity_TransactionEvolution_Insert('Temp_TransactionEvolution');
         
 END$$
 

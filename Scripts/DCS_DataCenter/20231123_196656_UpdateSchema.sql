@@ -69,11 +69,10 @@ CREATE TABLE `AccountFingerprint` (
 ) ENGINE=InnoDB;
 
 CREATE TABLE `TransactionEvolution` (
-  `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `RawFingerPrintID` BIGINT UNSIGNED NOT NULL,
-  `RecoverFingerPrintID` BIGINT UNSIGNED NOT NULL,
+  `RecoverRawFingerPrintID` BIGINT UNSIGNED NOT NULL,
   `DeviceID` BIGINT UNSIGNED NOT NULL,
   `CreatedDate` DATETIME DEFAULT NULL,
-  PRIMARY KEY (`ID`),
-  KEY `IX_TransactionEvolutionCompleted_DeviceID` (`DeviceID`)
+  PRIMARY KEY (`RawFingerPrintID`),
+  UNIQUE KEY `UX_TransactionEvolution_RawFingerPrintID` (`RawFingerPrintID`)
 ) ENGINE=InnoDB;

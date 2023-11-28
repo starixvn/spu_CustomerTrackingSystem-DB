@@ -23,6 +23,8 @@ BEGIN
     DECLARE lv_CreatedDate DATETIME DEFAULT CURRENT_TIMESTAMP;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_TransExistsDeviceID;
+	DROP TEMPORARY TABLE IF EXISTS Temp_DeviceFingerPrint;
+	DROP TEMPORARY TABLE IF EXISTS Temp_DeviceCookie;
         
 	CREATE TEMPORARY TABLE Temp_TransExistsDeviceID(
 			TransID				BIGINT UNSIGNED 	PRIMARY KEY
@@ -31,6 +33,18 @@ BEGIN
         ,	DeviceID			BIGINT UNSIGNED		DEFAULT NULL
 		,	RecoverType			TINYINT		 		DEFAULT 0
     );
+    
+	CREATE TEMPORARY TABLE Temp_DeviceFingerPrint(
+			ID									INT UNSIGNED AUTO_INCREMENT	PRIMARY KEY 
+        ,	RawFingerPrintID					BIGINT UNSIGNED
+        ,	DeviceID							BIGINT UNSIGNED
+	);
+    
+	CREATE TEMPORARY TABLE Temp_DeviceCookie(
+			ID									INT UNSIGNED AUTO_INCREMENT	PRIMARY KEY 
+        ,	CookieID							BIGINT UNSIGNED
+        ,	DeviceID							BIGINT UNSIGNED
+	);
     
 	SET @sql = CONCAT('INSERT INTO Temp_TransExistsDeviceID(TransID, RawFingerPrintID, CookieID) 
 						SELECT 	TransID
@@ -70,24 +84,26 @@ BEGIN
     
     
     /* === Insert new FPDeviceFingerPrint === */
-    INSERT IGNORE INTO DCS_DataCenter.FPDeviceFingerPrint(RawFingerPrintID, DeviceID, CreatedDate)
-	SELECT 	DISTINCT
+    INSERT INTO Temp_DeviceFingerPrint(RawFingerPrintID, DeviceID)
+    SELECT	DISTINCT
 			RawFingerPrintID
 		,	DeviceID
-		,	lv_CreatedDate
-	FROM Temp_TransExistsDeviceID
+	FROM Temp_TransactionInfo
 	WHERE RecoverType = 2
 		AND RawFingerPrintID IS NOT NULL;
     
+    CALL DCS_DC_Identity_DeviceFingerPrint_Insert('Temp_DeviceFingerPrint');
+    
     /* === Insert new DeviceCookie === */
-    INSERT IGNORE INTO DCS_DataCenter.DeviceCookie(CookieID, DeviceID, CreatedDate)
-	SELECT 	DISTINCT
+    INSERT INTO Temp_DeviceCookie(CookieID, DeviceID)
+    SELECT	DISTINCT
 			CookieID
 		,	DeviceID
-		,	lv_CreatedDate
-	FROM Temp_TransExistsDeviceID
+	FROM Temp_TransactionInfo
 	WHERE RecoverType = 1
 		AND CookieID IS NOT NULL;
+    
+    CALL DCS_DC_Identity_DeviceCookie_Insert('Temp_DeviceCookie');
 END$$
 
 DELIMITER ;

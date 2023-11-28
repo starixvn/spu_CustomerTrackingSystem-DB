@@ -25,6 +25,8 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_InputTrans;
 	DROP TEMPORARY TABLE IF EXISTS Temp_TransactionInfo;
 	DROP TEMPORARY TABLE IF EXISTS Temp_AccountFingerprint;
+	DROP TEMPORARY TABLE IF EXISTS Temp_DeviceFingerPrint;
+	DROP TEMPORARY TABLE IF EXISTS Temp_DeviceCookie;
     
 	CREATE TEMPORARY TABLE Temp_InputTrans(
 		TransID		BIGINT UNSIGNED PRIMARY KEY
@@ -46,6 +48,18 @@ BEGIN
         ,	RawFingerPrintID			BIGINT UNSIGNED
 		,	IsNewAccountFingerprint		TINYINT DEFAULT 1
     );
+    
+	CREATE TEMPORARY TABLE Temp_DeviceFingerPrint(
+			ID									INT UNSIGNED AUTO_INCREMENT	PRIMARY KEY 
+        ,	RawFingerPrintID					BIGINT UNSIGNED
+        ,	DeviceID							BIGINT UNSIGNED
+	);
+    
+	CREATE TEMPORARY TABLE Temp_DeviceCookie(
+			ID									INT UNSIGNED AUTO_INCREMENT	PRIMARY KEY 
+        ,	CookieID							BIGINT UNSIGNED
+        ,	DeviceID							BIGINT UNSIGNED
+	);
     
     SET @sql = CONCAT("INSERT INTO Temp_InputTrans (TransID) VALUES ('", REPLACE(ip_TransIDs, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
@@ -87,24 +101,27 @@ BEGIN
     FROM Temp_TransactionInfo;
     
     
-    /* === Update new FPDeviceFingerPrint === */
-	INSERT IGNORE INTO DCS_DataCenter.FPDeviceFingerPrint(RawFingerPrintID, DeviceID, CreatedDate)
-	SELECT 	DISTINCT
+    /* === Insert new FPDeviceFingerPrint === */
+    INSERT INTO Temp_DeviceFingerPrint(RawFingerPrintID, DeviceID)
+    SELECT	DISTINCT
 			RawFingerPrintID
 		,	DeviceID
-		,	lv_CreatedDate
 	FROM Temp_TransactionInfo
-	WHERE RecoverType in (0,2);
+	WHERE RecoverType in (0,2)
+		AND RawFingerPrintID IS NOT NULL;
     
-    /* === Update new DeviceCookie === */
-	INSERT IGNORE INTO DCS_DataCenter.DeviceCookie(CookieID, DeviceID, CreatedDate)
-	SELECT 	DISTINCT
+    CALL DCS_DC_Identity_DeviceFingerPrint_Insert('Temp_DeviceFingerPrint');
+    
+    /* === Insert new DeviceCookie === */
+    INSERT INTO Temp_DeviceCookie(CookieID, DeviceID)
+    SELECT	DISTINCT
 			CookieID
 		,	DeviceID
-		,	lv_CreatedDate
 	FROM Temp_TransactionInfo
 	WHERE RecoverType in (0,1)
 		AND CookieID IS NOT NULL;
+    
+    CALL DCS_DC_Identity_DeviceCookie_Insert('Temp_DeviceCookie');
     
     -- /******* Insert into AccountFingerPrint ********************/
 --     CALL DCS_DC_Identity_AccountFingerPrint_Insert('Temp_TransactionInfo');
