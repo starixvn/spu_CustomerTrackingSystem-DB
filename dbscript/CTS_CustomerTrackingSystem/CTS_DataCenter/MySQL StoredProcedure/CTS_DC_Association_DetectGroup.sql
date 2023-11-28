@@ -361,35 +361,87 @@ sp:BEGIN
     FROM CTE
     ON DUPLICATE KEY UPDATE AssociationType = CONCAT(AssociationType, CTE.AssociationTypeStr);
     
-	IF EXISTS (SELECT 1 
-				FROM Temp_Cust AS cus 
-					LEFT JOIN Temp_CustAssociationType AS cat ON cat.CTSCustID = cus.CTSCustID
-				WHERE cat.CTSCustID IS NULL) THEN
-							
-		DROP TEMPORARY TABLE IF EXISTS Temp_CustAssociationType_Dup;
-		CREATE TEMPORARY TABLE Temp_CustAssociationType_Dup LIKE Temp_CustAssociationType;
-		INSERT INTO Temp_CustAssociationType_Dup SELECT * FROM Temp_CustAssociationType;                    
-							
-		INSERT IGNORE INTO Temp_CustAssociationType(CTSCustID, AssociationType)
-		WITH CTE AS (SELECT cus.CTSCustID
-						,	CONCAT(IF(MAX(HasDevice) =1, ", Device","")
-								  ,IF(MAX(HasAgent) =1, ", Agent","")
-								  ,IF(MAX(HasAI) =1 OR MAX(HasAIGroup) =1, ", Betting Pattern","")
-								  ,IF(MAX(HasIP) =1, ", IP","")
-								  ,IF(MAX(HasSharedIP) =1, ", IP(last3days)","")
-								  ,IF(MAX(HasSharedMatches) =1, ", Match","")) AS AssociationTypeStr
-					FROM Temp_Cust AS cus
-						INNER JOIN Temp_Graph_Dup AS grp ON cus.CTSCustID = grp.DestID 
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustAssociationType_Dup;
+	CREATE TEMPORARY TABLE Temp_CustAssociationType_Dup LIKE Temp_CustAssociationType;
+	INSERT INTO Temp_CustAssociationType_Dup SELECT * FROM Temp_CustAssociationType;       
+	
+	INSERT IGNORE INTO Temp_CustAssociationType(CTSCustID, AssociationType)
+    SELECT 	cus.CTSCustID
+		,   'Device'
+    FROM Temp_Cust AS cus
+    WHERE EXISTS (SELECT 1
+					FROM Temp_Graph_Dup AS grp
 						INNER JOIN Temp_Cust_Dup AS dup ON dup.CTSCustID = grp.OrigID
 						LEFT JOIN Temp_CustAssociationType_Dup AS cat ON cat.CTSCustID = cus.CTSCustID
-					WHERE cat.CTSCustID IS NULL
-					GROUP BY cus.CTSCustID)
-		SELECT CTE.CTSCustID
-			,	SUBSTR(CTE.AssociationTypeStr, 2)
-		FROM CTE
-		ON DUPLICATE KEY UPDATE AssociationType = CONCAT(AssociationType, CTE.AssociationTypeStr);
-
-	END IF;
+					WHERE cus.CTSCustID = grp.DestID AND grp.HasDevice = 1
+					)
+	ON DUPLICATE KEY UPDATE AssociationType = CASE WHEN AssociationType LIKE '%Device%' THEN AssociationType
+												   ELSE CONCAT(AssociationType,', Device') END;
+	
+    INSERT IGNORE INTO Temp_CustAssociationType(CTSCustID, AssociationType)
+    SELECT 	cus.CTSCustID
+		,   'Agent'
+    FROM Temp_Cust AS cus
+    WHERE EXISTS (SELECT 1
+					FROM Temp_Graph_Dup AS grp
+						INNER JOIN Temp_Cust_Dup AS dup ON dup.CTSCustID = grp.OrigID
+						LEFT JOIN Temp_CustAssociationType_Dup AS cat ON cat.CTSCustID = cus.CTSCustID
+					WHERE cus.CTSCustID = grp.DestID AND grp.HasAgent = 1
+					)
+	ON DUPLICATE KEY UPDATE AssociationType = CASE WHEN AssociationType LIKE '%Agent%' THEN AssociationType
+												   ELSE CONCAT(AssociationType,', Agent') END;
+                                                   
+    INSERT IGNORE INTO Temp_CustAssociationType(CTSCustID, AssociationType)
+    SELECT 	cus.CTSCustID
+		,   'Betting Pattern'
+    FROM Temp_Cust AS cus
+    WHERE EXISTS (SELECT 1
+					FROM Temp_Graph_Dup AS grp
+						INNER JOIN Temp_Cust_Dup AS dup ON dup.CTSCustID = grp.OrigID
+						LEFT JOIN Temp_CustAssociationType_Dup AS cat ON cat.CTSCustID = cus.CTSCustID
+					WHERE cus.CTSCustID = grp.DestID AND (grp.HasAI = 1 OR grp.HasAIGroup = 1)
+					)
+	ON DUPLICATE KEY UPDATE AssociationType = CASE WHEN AssociationType LIKE '%Betting Pattern%' THEN AssociationType
+												   ELSE CONCAT(AssociationType,', Betting Pattern') END;
+                                                   
+    INSERT IGNORE INTO Temp_CustAssociationType(CTSCustID, AssociationType)
+    SELECT 	cus.CTSCustID
+		,   'IP'
+    FROM Temp_Cust AS cus
+    WHERE EXISTS (SELECT 1
+					FROM Temp_Graph_Dup AS grp
+						INNER JOIN Temp_Cust_Dup AS dup ON dup.CTSCustID = grp.OrigID
+						LEFT JOIN Temp_CustAssociationType_Dup AS cat ON cat.CTSCustID = cus.CTSCustID
+					WHERE cus.CTSCustID = grp.DestID AND (grp.HasIP = 1 OR grp.HasIP = 1)
+					)
+	ON DUPLICATE KEY UPDATE AssociationType = CASE WHEN AssociationType LIKE '%IP%' THEN AssociationType
+												   ELSE CONCAT(AssociationType,', IP') END;
+                                                   
+    INSERT IGNORE INTO Temp_CustAssociationType(CTSCustID, AssociationType)
+    SELECT 	cus.CTSCustID
+		,   'IP(last3days)'
+    FROM Temp_Cust AS cus
+    WHERE EXISTS (SELECT 1
+					FROM Temp_Graph_Dup AS grp
+						INNER JOIN Temp_Cust_Dup AS dup ON dup.CTSCustID = grp.OrigID
+						LEFT JOIN Temp_CustAssociationType_Dup AS cat ON cat.CTSCustID = cus.CTSCustID
+					WHERE cus.CTSCustID = grp.DestID AND (grp.HasSharedIP = 1 OR grp.HasSharedIP = 1)
+					)
+	ON DUPLICATE KEY UPDATE AssociationType = CASE WHEN AssociationType LIKE '%IP(last3days)%' THEN AssociationType
+												   ELSE CONCAT(AssociationType,', IP(last3days)') END;
+                                                   
+    INSERT IGNORE INTO Temp_CustAssociationType(CTSCustID, AssociationType)
+    SELECT 	cus.CTSCustID
+		,   'Match'
+    FROM Temp_Cust AS cus
+    WHERE EXISTS (SELECT 1
+					FROM Temp_Graph_Dup AS grp
+						INNER JOIN Temp_Cust_Dup AS dup ON dup.CTSCustID = grp.OrigID
+						LEFT JOIN Temp_CustAssociationType_Dup AS cat ON cat.CTSCustID = cus.CTSCustID
+					WHERE cus.CTSCustID = grp.DestID AND (grp.HasSharedMatches = 1 OR grp.HasSharedMatches = 1)
+					)
+	ON DUPLICATE KEY UPDATE AssociationType = CASE WHEN AssociationType LIKE '%Match%' THEN AssociationType
+												   ELSE CONCAT(AssociationType,', Match') END;
 	
     IF (ip_IsGetLogTransInfo IS TRUE)
     THEN
