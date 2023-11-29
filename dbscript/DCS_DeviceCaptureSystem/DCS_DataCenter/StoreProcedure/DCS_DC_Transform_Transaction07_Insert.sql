@@ -154,10 +154,6 @@ BEGIN
 		,	RawFingerPrintID
 		,	BrowserInstanceID
 	FROM Temp_Transaction07;
-	
-    -- DELETE trans
---     FROM DCS_DataCenter.Transaction AS trans
--- 		INNER JOIN Temp_Transaction07 AS tmp ON tmp.TransID = trans.TransID;
     
     /* === Insert new Association === */
 	SELECT JSON_ARRAYAGG(
@@ -214,6 +210,10 @@ BEGIN
     
     SET lv_NewAccountDeviceJson = IFNULL(lv_NewAccountDeviceJson,'[{}]');
 	CALL DCS_DC_Transform_NewAccountDevice_Insert(lv_NewAccountDeviceJson);
+	
+	DELETE trans
+	FROM DCS_DataCenter.Transaction AS trans
+		INNER JOIN Temp_Transaction07 AS tmp ON tmp.TransID = trans.TransID;
 END$$
 
 DELIMITER ;

@@ -37,19 +37,24 @@ BEGIN
     
 	INSERT INTO Temp_TransactionInfo(TransID, RecoverRawFingerPrintID)
 	SELECT	tmp.TransID
-		,	tmp.RecoverRawFingerPrintID
+		,	MIN(tmp.RecoverRawFingerPrintID) AS RecoverRawFingerPrintID
 	FROM	JSON_TABLE(
 			ip_TransJson,
 			 "$[*]" COLUMNS(
 						TransID					BIGINT UNSIGNED			PATH "$.TransID",
 						RecoverRawFingerPrintID	BIGINT UNSIGNED			PATH "$.RecoverRawFingerPrintID"
 				)
-		   ) AS tmp;
+		   ) AS tmp
+	WHERE tmp.TransID IS NOT NULL
+		AND tmp.RecoverRawFingerPrintID IS NOT NULL
+	GROUP BY tmp.TransID;
 
 	UPDATE Temp_TransactionInfo AS tmp
 		INNER JOIN DCS_DataCenter.Transaction AS trans ON trans.TransID = tmp.TransID
 	SET tmp.RawFingerPrintID = trans.RawFingerPrintID
     ,	tmp.CookieID = trans.CookieID;
+    
+    select * from Temp_TransactionInfo;
     
     /* === Add index === */
 	ALTER TABLE Temp_TransactionInfo

@@ -80,8 +80,19 @@ BEGIN
 	SET tmp.AssociationID = ass.AssociationID;
     
     UPDATE Temp_NewAccountDeviceInsert AS tmp
+    SET tmp.IsNewRecord = 0
+    WHERE EXISTS (
+					SELECT 1
+					FROM DCS_DataCenter.Association AS ass
+					WHERE ass.AccountID = tmp.AccountID
+						AND ass.DeviceID = tmp.DeviceID
+                        AND ass.AssociationID < lv_MaxAssociationID
+				);
+    
+    UPDATE Temp_NewAccountDeviceInsert AS tmp
 		INNER JOIN DCS_DataCenter.NewAccountDevice AS nad ON nad.AssociationID = tmp.AssociationID
-    SET tmp.IsNewRecord = 0;
+    SET tmp.IsNewRecord = 0
+    WHERE IsNewRecord = 1;
     
     INSERT IGNORE INTO DCS_DataCenter.NewAccountDevice(AssociationID, AccountID, DeviceID, RawTransID, RawCreatedDate, LoginName, TransTime, UserAgentKey, IP, Status, CreatedDate)
 	SELECT 	AssociationID

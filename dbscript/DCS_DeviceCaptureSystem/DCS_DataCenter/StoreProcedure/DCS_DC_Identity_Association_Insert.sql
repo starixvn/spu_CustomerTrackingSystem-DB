@@ -70,9 +70,10 @@ BEGIN
 													AND ass.FPDeviceID = tmp.FPDeviceID
     SET tmp.IsNewRecord = 0;
 	
-	INSERT IGNORE INTO DCS_DataCenter.Association(AccountID, DeviceID, SubscriberID, CreatedTime, CreatedDate, InsertTime)
+	INSERT IGNORE INTO DCS_DataCenter.Association(AccountID, DeviceID, FPDeviceID, SubscriberID, CreatedTime, CreatedDate, InsertTime)
 	SELECT	AccountID
 		,	DeviceID
+		,	FPDeviceID
 		,	SubscriberID
 		,	CreatedTime
 		,	CreatedDate

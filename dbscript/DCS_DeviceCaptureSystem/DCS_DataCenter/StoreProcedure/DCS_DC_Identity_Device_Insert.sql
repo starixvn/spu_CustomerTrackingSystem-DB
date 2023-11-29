@@ -117,7 +117,7 @@ BEGIN
 		AND CookieID IS NOT NULL;
     
     SET lv_DeviceCookieJson = IFNULL(lv_DeviceCookieJson,'[{}]');
-	CALL DCS_DC_Identity_DeviceFingerPrint_Insert(lv_DeviceCookieJson);
+	CALL DCS_DC_Identity_DeviceCookie_Insert(lv_DeviceCookieJson);
 
 END$$
 
