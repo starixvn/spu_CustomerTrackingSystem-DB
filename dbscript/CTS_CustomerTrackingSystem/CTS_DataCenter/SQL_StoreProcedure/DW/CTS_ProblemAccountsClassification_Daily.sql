@@ -16,7 +16,6 @@ AS
 		- 20230627@Jonas.Huynh: Reset Balance for Credit with Inactive Normal with new place-bet [Redmine ID: #189876]
 		- 20230807@Jonas.Huynh: HF exclude Non-sport for General [Redmine ID: #192388]
 		- 20230726@Jonas.Huynh: Saba Classification [Redmine ID: #185320]
-		- 20231120@Thomas.Nguyen: Use function STRING_SPLIT instead of SPU_StrSplit [Redmine ID: #188553]
 
 	Param's Explanation:
 */
@@ -80,7 +79,7 @@ BEGIN
 
 	-- #0: Distinct custid
 	INSERT INTO #tmpCustomers(CustId)
-	SELECT [value] FROM STRING_SPLIT(@ListCustIds, ',');
+	SELECT val FROM dbo.SPU_StrSplit(@ListCustIds, ',');
 
 	SELECT @ListCustIds = STUFF((SELECT ',', CONVERT(VARCHAR(15), t.CustId) 
 								FROM (SELECT DISTINCT CustId FROM #tmpCustomers WITH (NOLOCK)) AS t
