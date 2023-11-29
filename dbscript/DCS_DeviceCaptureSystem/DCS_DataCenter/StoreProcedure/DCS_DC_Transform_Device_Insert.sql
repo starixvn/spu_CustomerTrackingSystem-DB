@@ -457,14 +457,14 @@ BEGIN
     /*****MOVE TRans competed to Trans07****************************************************/
     IF err_no = 0 THEN
 		SELECT 	ts.TransID
-            ,	tmp_rm.DeviceCodeID
-            ,	tmp_rm.DeviceID
-            ,	tmp_rm.FirstDeviceCode
-            ,	tmp_rm.DeviceStatus
-            ,	tmp_rm.DeviceFingerprintID
-		FROM DCS_DataCenter.Transaction AS ts
-			INNER JOIN Temp_Transaction AS tmp_rm ON ts.TransID = tmp_rm.TransID
-		WHERE tmp_rm.DeviceID IS NOT NULL;
+            ,	tmp.DeviceCodeID
+            ,	tmp.DeviceID
+            ,	tmp.FirstDeviceCode
+            ,	tmp.DeviceStatus
+            ,	tmp.DeviceFingerprintID
+		FROM Temp_Transaction AS tmp
+			INNER JOIN DCS_DataCenter.Transaction AS ts ON ts.TransID = tmp.TransID
+		WHERE tmp.DeviceID IS NOT NULL;
 	END IF;
 	# END transform
     

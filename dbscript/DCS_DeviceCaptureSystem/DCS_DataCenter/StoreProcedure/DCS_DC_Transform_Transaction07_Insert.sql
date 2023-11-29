@@ -18,10 +18,14 @@ BEGIN
 	    Param's Explanation (filtered by):
         
         Example:
-			CALL DCS_DC_Transform_Transaction07_Insert('[{"TransID":1,"DeviceID":1,"FPDeviceID":100,"DeviceCodeID":2,"FirstDeviceCode":"DC","DeviceStatus":1,"DeviceFingerprintID":1}]');
+			CALL DCS_DC_Transform_Transaction07_Insert('[{"TransID":39,"DeviceID":2,"FPDeviceID":100,"DeviceCodeID":2,"FirstDeviceCode":"DC","DeviceStatus":1,"DeviceFingerprintID":1}]');
 	*/
+    DECLARE lv_AssociationJson LONGTEXT;
+    DECLARE lv_AccountFingerPrintJson LONGTEXT;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_InputTrans;
+	DROP TEMPORARY TABLE IF EXISTS Temp_Transaction07;
+        
 	CREATE TEMPORARY TABLE Temp_InputTrans(
 			TransID					BIGINT UNSIGNED PRIMARY KEY
 		,	DeviceID				BIGINT UNSIGNED
@@ -30,6 +34,38 @@ BEGIN
 		,	FirstDeviceCode			VARCHAR(32)
 		,	DeviceStatus			TINYINT
 		,	DeviceFingerprintID		BIGINT UNSIGNED
+	);
+        
+	CREATE TEMPORARY TABLE Temp_Transaction07(
+			TransID					BIGINT UNSIGNED PRIMARY KEY
+		,	RawTransID				BIGINT UNSIGNED
+		,	LoginName				VARCHAR(100)
+		,	TransTime				TIMESTAMP(4)
+		,	SubscriberID			INT
+		,	AccountID				BIGINT UNSIGNED
+		,	URLID					BIGINT UNSIGNED
+		,	DeviceCodeID			BIGINT UNSIGNED
+		,	DeviceID				BIGINT UNSIGNED
+		,	FirstDeviceCode			VARCHAR(64)
+		,	DeviceStatus			TINYINT
+		,	DeviceFingerprintID		BIGINT UNSIGNED
+		,	UserAgentKey			VARCHAR(32)
+		,	IP						VARCHAR(50)
+		,	IPID					DECIMAL(50,0)
+		,	ActionResultID			BIGINT
+		,	Flagged					SMALLINT
+		,	PluginID				BIGINT
+		,	TransStatus				BIT(16)
+		,	CreatedDate				DATETIME
+		,	InsertTime				TIMESTAMP(4)
+		,	BotDetectionValue		BIT(32)
+		,	BotComponentID			BIGINT UNSIGNED
+		,	FakeIP					VARCHAR(100)
+		,	CookieID				BIGINT UNSIGNED
+		,	RawUserAgentID			BIGINT UNSIGNED
+		,	RawFingerPrintID		BIGINT UNSIGNED
+		,	BrowserInstanceID		BIGINT UNSIGNED
+		,	FPDeviceID				BIGINT UNSIGNED
 	);
     
     INSERT INTO Temp_InputTrans(TransID, DeviceID, FPDeviceID, DeviceCodeID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID)
@@ -53,8 +89,113 @@ BEGIN
 					)
 		) AS tmpJs;
     
-    SELECT *
-    FROM Temp_InputTrans;
+    INSERT INTO Temp_Transaction07(TransID, RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FPDeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, FakeIP, CookieID, RawUserAgentID, RawFingerPrintID, BrowserInstanceID)
+	SELECT 	trans.TransID
+		,	ifnull(trans.RawTransID, trans.TransID) AS RawTransID
+		,	trans.LoginName
+		,	trans.TransTime
+		,	trans.SubscriberID
+		,	trans.AccountID
+		,	trans.URLID
+		,	tmp.DeviceCodeID
+		,	tmp.DeviceID
+		,	tmp.FPDeviceID
+		,	tmp.FirstDeviceCode
+		,	tmp.DeviceStatus
+		,	tmp.DeviceFingerprintID
+		,	trans.UserAgentKey
+		,	trans.IP
+		,	trans.IPID
+		,	trans.ActionResultID
+		,	trans.Flagged
+		,	trans.PluginID
+		,	trans.TransStatus
+		,	trans.CreatedDate
+		,	trans.InsertTime
+		,	trans.BotDetectionValue
+		,	trans.BotComponentID
+		,	trans.FakeIP
+		,	trans.CookieID
+		,	trans.RawUserAgentID
+		,	trans.RawFingerPrintID
+		,	trans.BrowserInstanceID
+	FROM Temp_InputTrans AS tmp
+		INNER JOIN DCS_DataCenter.Transaction AS trans ON trans.TransID = tmp.TransID
+	WHERE tmp.DeviceID IS NOT NULL;
+    
+    INSERT INTO DCS_DataCenter.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FPDeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, FakeIP, CookieID, RawUserAgentID, RawFingerPrintID, BrowserInstanceID)
+	SELECT 	RawTransID
+		,	LoginName
+		,	TransTime
+		,	SubscriberID
+		,	AccountID
+		,	URLID
+		,	DeviceCodeID
+		,	DeviceID
+		,	FPDeviceID
+		,	FirstDeviceCode
+		,	DeviceStatus
+		,	DeviceFingerprintID
+		,	UserAgentKey
+		,	IP
+		,	IPID
+		,	ActionResultID
+		,	Flagged
+		,	PluginID
+		,	TransStatus
+		,	CreatedDate
+		,	InsertTime
+		,	BotDetectionValue
+		,	BotComponentID
+		,	FakeIP
+		,	CookieID
+		,	RawUserAgentID
+		,	RawFingerPrintID
+		,	BrowserInstanceID
+	FROM Temp_Transaction07;
+	
+    -- DELETE trans
+--     FROM DCS_DataCenter.Transaction AS trans
+-- 		INNER JOIN Temp_Transaction07 AS tmp ON tmp.TransID = trans.TransID;
+    
+    /* === Insert new Association === */
+	SELECT JSON_ARRAYAGG(
+			JSON_OBJECT(
+				'AccountID'		, AccountID
+			,	'DeviceID'		, DeviceID
+			,	'FPDeviceID'	, FPDeviceID
+			,	'SubscriberID'	, SubscriberID
+			,	'CreatedTime'	, TransTime
+			,	'CreatedDate'	, CreatedDate
+			)
+		) AS json_data
+	INTO lv_AssociationJson
+	FROM Temp_Transaction07
+    WHERE AccountID IS NOT NULL
+		AND DeviceID IS NOT NULL;
+    
+    SET lv_AssociationJson = IFNULL(lv_AssociationJson,'[{}]');
+	CALL DCS_DC_Transform_Association_Insert(lv_AssociationJson);
+    
+    /* === Insert new AccountFingerPrint === */
+	SELECT JSON_ARRAYAGG(
+			JSON_OBJECT(
+				'AccountID'				, AccountID
+			,	'RawFingerPrintID'		, RawFingerPrintID
+			)
+		) AS json_data
+	INTO lv_AccountFingerPrintJson
+	FROM Temp_Transaction07
+    WHERE AccountID IS NOT NULL
+		AND RawFingerPrintID IS NOT NULL;
+    
+    SET lv_AccountFingerPrintJson = IFNULL(lv_AccountFingerPrintJson,'[{}]');
+    select lv_AccountFingerPrintJson, a.*
+    from Temp_Transaction07 a;
+	CALL DCS_DC_Identity_AccountFingerPrint_Insert(lv_AccountFingerPrintJson);
+    
+    /* === Insert into NewAccountDevice === */
+	-- CALL DCS_DC_Transform_NewAccountDevice_Insert('Temp_NewAccountDevice');
 END$$
 
 DELIMITER ;

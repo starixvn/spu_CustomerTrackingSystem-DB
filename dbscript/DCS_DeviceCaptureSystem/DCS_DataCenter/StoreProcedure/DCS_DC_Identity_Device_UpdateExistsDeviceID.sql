@@ -21,10 +21,10 @@ BEGIN
 			CALL DCS_DC_Identity_Device_UpdateExistsDeviceID('6,7,32,42,45,46,54,57');
 	*/
     DECLARE lv_CreatedDate DATETIME DEFAULT CURRENT_TIMESTAMP;
+    DECLARE lv_DeviceFingerPrintJson LONGTEXT;
+    DECLARE lv_DeviceCookieJson LONGTEXT;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_TransExistsDeviceID;
-	DROP TEMPORARY TABLE IF EXISTS Temp_DeviceFingerPrint;
-	DROP TEMPORARY TABLE IF EXISTS Temp_DeviceCookie;
         
 	CREATE TEMPORARY TABLE Temp_TransExistsDeviceID(
 			TransID				BIGINT UNSIGNED 	PRIMARY KEY
@@ -33,18 +33,6 @@ BEGIN
         ,	DeviceID			BIGINT UNSIGNED		DEFAULT NULL
 		,	RecoverType			TINYINT		 		DEFAULT 0
     );
-    
-	CREATE TEMPORARY TABLE Temp_DeviceFingerPrint(
-			ID									INT UNSIGNED AUTO_INCREMENT	PRIMARY KEY 
-        ,	RawFingerPrintID					BIGINT UNSIGNED
-        ,	DeviceID							BIGINT UNSIGNED
-	);
-    
-	CREATE TEMPORARY TABLE Temp_DeviceCookie(
-			ID									INT UNSIGNED AUTO_INCREMENT	PRIMARY KEY 
-        ,	CookieID							BIGINT UNSIGNED
-        ,	DeviceID							BIGINT UNSIGNED
-	);
     
 	SET @sql = CONCAT('INSERT INTO Temp_TransExistsDeviceID(TransID, RawFingerPrintID, CookieID) 
 						SELECT 	TransID
@@ -82,28 +70,36 @@ BEGIN
     EXECUTE stmt;
     DEALLOCATE PREPARE stmt;
     
-    
     /* === Insert new FPDeviceFingerPrint === */
-    INSERT INTO Temp_DeviceFingerPrint(RawFingerPrintID, DeviceID)
-    SELECT	DISTINCT
-			RawFingerPrintID
-		,	DeviceID
+	SELECT JSON_ARRAYAGG(
+			JSON_OBJECT(
+				'RawFingerPrintID', RawFingerPrintID,
+				'DeviceID', DeviceID
+			)
+		) AS json_data
+	INTO lv_DeviceFingerPrintJson
 	FROM Temp_TransactionInfo
 	WHERE RecoverType = 2
 		AND RawFingerPrintID IS NOT NULL;
     
-    CALL DCS_DC_Identity_DeviceFingerPrint_Insert('Temp_DeviceFingerPrint');
+    SET lv_DeviceFingerPrintJson = IFNULL(lv_DeviceFingerPrintJson,'[{}]');
+	CALL DCS_DC_Identity_DeviceFingerPrint_Insert(lv_DeviceFingerPrintJson);
     
-    /* === Insert new DeviceCookie === */
-    INSERT INTO Temp_DeviceCookie(CookieID, DeviceID)
-    SELECT	DISTINCT
-			CookieID
-		,	DeviceID
+    /* === Insert new DeviceCookie === */     
+	SELECT JSON_ARRAYAGG(
+			JSON_OBJECT(
+				'CookieID', CookieID,
+				'DeviceID', DeviceID
+			)
+		) AS json_data
+	INTO lv_DeviceCookieJson
 	FROM Temp_TransactionInfo
 	WHERE RecoverType = 1
 		AND CookieID IS NOT NULL;
     
-    CALL DCS_DC_Identity_DeviceCookie_Insert('Temp_DeviceCookie');
+    SET lv_DeviceCookieJson = IFNULL(lv_DeviceCookieJson,'[{}]');
+	CALL DCS_DC_Identity_DeviceCookie_Insert(lv_DeviceCookieJson);
+    
 END$$
 
 DELIMITER ;

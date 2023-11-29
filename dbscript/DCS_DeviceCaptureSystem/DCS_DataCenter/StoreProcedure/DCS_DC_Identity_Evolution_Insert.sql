@@ -18,14 +18,14 @@ BEGIN
 	    Param's Explanation (filtered by):
         
         Example:
-			CALL DCS_DC_Identity_Evolution_Insert('[{"TransID":7,"RecoverRawFingerPrintID":11}]');
+			CALL DCS_DC_Identity_Evolution_Insert('[{"TransID":32,"RecoverRawFingerPrintID":11},{"TransID":39,"RecoverRawFingerPrintID":13}]');
 	*/
     DECLARE lv_CreatedDate DATETIME DEFAULT CURRENT_TIMESTAMP;
+    DECLARE lv_DeviceFingerPrintJson LONGTEXT;
+    DECLARE lv_DeviceCookieJson LONGTEXT;
+    DECLARE lv_TransactionEvolutionJson LONGTEXT;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_TransactionInfo;
-	DROP TEMPORARY TABLE IF EXISTS Temp_DeviceFingerPrint;
-	DROP TEMPORARY TABLE IF EXISTS Temp_DeviceCookie;
-	DROP TEMPORARY TABLE IF EXISTS Temp_TransactionEvolution;
     
 	CREATE TEMPORARY TABLE Temp_TransactionInfo(
 			TransID								BIGINT UNSIGNED PRIMARY KEY
@@ -33,24 +33,6 @@ BEGIN
         ,	RecoverRawFingerPrintID				BIGINT UNSIGNED
         ,	DeviceID							BIGINT UNSIGNED
         ,	CookieID							BIGINT UNSIGNED
-	);
-    
-	CREATE TEMPORARY TABLE Temp_DeviceFingerPrint(
-			ID									INT UNSIGNED AUTO_INCREMENT	PRIMARY KEY 
-        ,	RawFingerPrintID					BIGINT UNSIGNED
-        ,	DeviceID							BIGINT UNSIGNED
-	);
-    
-	CREATE TEMPORARY TABLE Temp_DeviceCookie(
-			ID									INT UNSIGNED AUTO_INCREMENT	PRIMARY KEY 
-        ,	CookieID							BIGINT UNSIGNED
-        ,	DeviceID							BIGINT UNSIGNED
-	);
-    
-	CREATE TEMPORARY TABLE Temp_TransactionEvolution(
-			RawFingerPrintID					BIGINT UNSIGNED PRIMARY KEY
-        ,	RecoverRawFingerPrintID				BIGINT UNSIGNED
-        ,	DeviceID							BIGINT UNSIGNED
 	);
     
 	INSERT INTO Temp_TransactionInfo(TransID, RecoverRawFingerPrintID)
@@ -80,34 +62,47 @@ BEGIN
     DELETE FROM Temp_TransactionInfo WHERE DeviceID IS NULL;
     
     /* === Insert new FPDeviceFingerPrint === */
-    INSERT INTO Temp_DeviceFingerPrint(RawFingerPrintID, DeviceID)
-    SELECT	DISTINCT
-			RawFingerPrintID
-		,	DeviceID
+	SELECT JSON_ARRAYAGG(
+			JSON_OBJECT(
+				'RawFingerPrintID', RawFingerPrintID,
+				'DeviceID', DeviceID
+			)
+		) AS json_data
+	INTO lv_DeviceFingerPrintJson
 	FROM Temp_TransactionInfo
 	WHERE RawFingerPrintID IS NOT NULL;
     
-    CALL DCS_DC_Identity_DeviceFingerPrint_Insert('Temp_DeviceFingerPrint');
+    SET lv_DeviceFingerPrintJson = IFNULL(lv_DeviceFingerPrintJson,'[{}]');
+	CALL DCS_DC_Identity_DeviceFingerPrint_Insert(lv_DeviceFingerPrintJson);
     
-    /* === Insert new DeviceCookie === */
-    INSERT INTO Temp_DeviceCookie(CookieID, DeviceID)
-    SELECT	DISTINCT
-			CookieID
-		,	DeviceID
+    /* === Insert new DeviceCookie === */     
+	SELECT JSON_ARRAYAGG(
+			JSON_OBJECT(
+				'CookieID', CookieID,
+				'DeviceID', DeviceID
+			)
+		) AS json_data
+	INTO lv_DeviceCookieJson
 	FROM Temp_TransactionInfo
 	WHERE CookieID IS NOT NULL;
     
-    CALL DCS_DC_Identity_DeviceCookie_Insert('Temp_DeviceCookie');
+    SET lv_DeviceCookieJson = IFNULL(lv_DeviceCookieJson,'[{}]');
+	CALL DCS_DC_Identity_DeviceCookie_Insert(lv_DeviceCookieJson);
     
-    /* === Insert new TransactionEvolution === */
-    INSERT IGNORE INTO Temp_TransactionEvolution(RawFingerPrintID, RecoverRawFingerPrintID, DeviceID)
-    SELECT	RawFingerPrintID
-		,	RecoverRawFingerPrintID
-		,	DeviceID
+    /* === Insert new TransactionEvolution === */     
+	SELECT JSON_ARRAYAGG(
+			JSON_OBJECT(
+				'RawFingerPrintID', RawFingerPrintID,
+				'RecoverRawFingerPrintID', RecoverRawFingerPrintID,
+				'DeviceID', DeviceID
+			)
+		) AS json_data
+	INTO lv_TransactionEvolutionJson
 	FROM Temp_TransactionInfo
 	WHERE RawFingerPrintID IS NOT NULL;
     
-    CALL DCS_DC_Identity_TransactionEvolution_Insert('Temp_TransactionEvolution');
+    SET lv_TransactionEvolutionJson = IFNULL(lv_TransactionEvolutionJson,'[{}]');
+	CALL DCS_DC_Identity_TransactionEvolution_Insert(lv_TransactionEvolutionJson);
         
 END$$
 

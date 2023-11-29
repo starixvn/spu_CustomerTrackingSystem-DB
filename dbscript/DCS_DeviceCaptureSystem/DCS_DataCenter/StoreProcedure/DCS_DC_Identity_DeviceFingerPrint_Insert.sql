@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `DCS_DC_Identity_DeviceFingerPrint_Insert`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Identity_DeviceFingerPrint_Insert`(
-		IN ip_TableName VARCHAR(50)
+		IN ip_DeviceFingerPrintJson LONGTEXT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -19,29 +19,34 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_DC_Identity_DeviceFingerPrint_Insert('Temp_DeviceFingerPrint');
+			CALL DCS_DC_Identity_DeviceFingerPrint_Insert('[{"RawFingerPrintID":101,"DeviceID":102},{"RawFingerPrintID":103,"DeviceID":104}]');
 
 	*/
     DECLARE lv_CreatedDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 	
-	DROP TEMPORARY TABLE IF EXISTS Temp_DeviceFingerPrint;
+	DROP TEMPORARY TABLE IF EXISTS Temp_DeviceFingerPrintInsert;
         
-	CREATE TEMPORARY TABLE Temp_DeviceFingerPrint(
+	CREATE TEMPORARY TABLE Temp_DeviceFingerPrintInsert(
 			RawFingerPrintID		BIGINT UNSIGNED		PRIMARY KEY
         ,	DeviceID				BIGINT UNSIGNED		NOT NULL
 		,	IsNewRecord				TINYINT		 		DEFAULT 1
     );
     
-	SET @sql = CONCAT('INSERT IGNORE INTO Temp_DeviceFingerPrint(RawFingerPrintID, DeviceID) 
-						SELECT 	DISTINCT
-								RawFingerPrintID
-							,	DeviceID
-                        FROM ', ip_TableName);
-    PREPARE stmt FROM @sql;
-    EXECUTE stmt;
-    DEALLOCATE PREPARE stmt;
+    INSERT INTO Temp_DeviceFingerPrintInsert(RawFingerPrintID, DeviceID)
+	SELECT	tmp.RawFingerPrintID
+		,	MIN(tmp.DeviceID) AS DeviceID
+    FROM JSON_TABLE(
+			ip_DeviceFingerPrintJson,
+			 "$[*]" COLUMNS(
+							RawFingerPrintID	BIGINT UNSIGNED	PATH "$.RawFingerPrintID"
+						,	DeviceID			BIGINT UNSIGNED PATH "$.DeviceID"
+					)
+		) AS tmp
+	WHERE tmp.RawFingerPrintID IS NOT NULL
+		AND tmp.DeviceID IS NOT NULL
+	GROUP BY tmp.RawFingerPrintID;
 	 
-    UPDATE Temp_DeviceFingerPrint AS tmp
+    UPDATE Temp_DeviceFingerPrintInsert AS tmp
 		INNER JOIN DCS_DataCenter.FPDeviceFingerPrint AS df ON df.RawFingerPrintID = tmp.RawFingerPrintID
     SET tmp.IsNewRecord = 0;
 	
@@ -49,8 +54,9 @@ BEGIN
 	SELECT	RawFingerPrintID
 		,	DeviceID
 		,	lv_CreatedDate AS CreatedDate
-	FROM Temp_DeviceFingerPrint
+	FROM Temp_DeviceFingerPrintInsert
     WHERE IsNewRecord = 1;
+    
 END$$
 
 DELIMITER ;

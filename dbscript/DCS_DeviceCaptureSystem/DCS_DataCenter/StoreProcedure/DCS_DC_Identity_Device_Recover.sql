@@ -114,9 +114,6 @@ BEGIN
 		LEFT JOIN DCS_DataCenter.BrowserInstance AS bis ON bis.ID = bisa.BrowserInstanceID
     WHERE tmp.DeviceID IS NULL;
     
-    -- /******* Insert into AccountFingerPrint ********************/
---     CALL DCS_DC_Identity_AccountFingerPrint_Insert('Temp_TransactionInfo');
-    
 END$$
 
 DELIMITER ;

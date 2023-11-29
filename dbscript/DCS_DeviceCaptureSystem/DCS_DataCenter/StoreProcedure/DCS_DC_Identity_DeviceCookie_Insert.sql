@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `DCS_DC_Identity_DeviceCookie_Insert`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Identity_DeviceCookie_Insert`(
-		IN ip_TableName VARCHAR(50)
+		IN ip_DeviceCookieJson LONGTEXT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -19,29 +19,34 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_DC_Identity_DeviceCookie_Insert('Temp_DeviceCookie');
+			CALL DCS_DC_Identity_DeviceCookie_Insert('[{"CookieID": 14, "DeviceID": 8}, {"CookieID": 14, "DeviceID": 2}]');
 
 	*/
     DECLARE lv_CreatedDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 	
-	DROP TEMPORARY TABLE IF EXISTS Temp_DeviceCookie;
+	DROP TEMPORARY TABLE IF EXISTS Temp_DeviceCookieInsert;
         
-	CREATE TEMPORARY TABLE Temp_DeviceCookie(
-			CookieID				BIGINT UNSIGNED		PRIMARY KEY
-        ,	DeviceID				BIGINT UNSIGNED		NOT NULL
-		,	IsNewRecord				TINYINT		 		DEFAULT 1
+	CREATE TEMPORARY TABLE Temp_DeviceCookieInsert(
+			CookieID					BIGINT UNSIGNED		PRIMARY KEY
+        ,	DeviceID					BIGINT UNSIGNED		NOT NULL
+		,	IsNewRecord					TINYINT		 		DEFAULT 1
     );
     
-	SET @sql = CONCAT('INSERT IGNORE INTO Temp_DeviceCookie(CookieID, DeviceID) 
-						SELECT 	DISTINCT
-								CookieID
-							,	DeviceID
-                        FROM ', ip_TableName);
-    PREPARE stmt FROM @sql;
-    EXECUTE stmt;
-    DEALLOCATE PREPARE stmt;
+    INSERT INTO Temp_DeviceCookieInsert(CookieID, DeviceID)
+	SELECT	tmp.CookieID
+		,	MIN(tmp.DeviceID) AS DeviceID
+    FROM JSON_TABLE(
+			ip_DeviceCookieJson,
+			 "$[*]" COLUMNS(
+							CookieID	BIGINT UNSIGNED	PATH "$.CookieID"
+						,	DeviceID	BIGINT UNSIGNED PATH "$.DeviceID"
+					)
+		) AS tmp
+	WHERE tmp.CookieID IS NOT NULL
+		AND tmp.DeviceID IS NOT NULL
+	GROUP BY tmp.CookieID;
 	 
-    UPDATE Temp_DeviceCookie AS tmp
+    UPDATE Temp_DeviceCookieInsert AS tmp
 		INNER JOIN DCS_DataCenter.DeviceCookie AS dc ON dc.CookieID = tmp.CookieID
     SET tmp.IsNewRecord = 0;
 	
@@ -49,7 +54,7 @@ BEGIN
 	SELECT	CookieID
 		,	DeviceID
 		,	lv_CreatedDate AS CreatedDate
-	FROM Temp_DeviceCookie
+	FROM Temp_DeviceCookieInsert
     WHERE IsNewRecord = 1;
 END$$
 
