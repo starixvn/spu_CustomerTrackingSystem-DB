@@ -30,6 +30,6 @@ BEGIN
      FROM CTS_DataCenter.MatchMonitor AS mm
      WHERE	mm.ClassifyStatus = 0
 		AND ((mm.SportType = 1 AND mm.KickOffTime < lv_Sub90minute)
-			OR (mm.SportType = 2 AND mm.KickOffTime < lv_Sub60minute AND mm.MatchID > 9687291)) ; 
+			OR (mm.SportType = 2 AND mm.KickOffTime < lv_Sub60minute AND mm.ID > 9687291)) ; 
 END$$
 DELIMITER ;
