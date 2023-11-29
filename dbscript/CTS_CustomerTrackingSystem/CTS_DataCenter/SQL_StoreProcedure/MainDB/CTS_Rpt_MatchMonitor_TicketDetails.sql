@@ -4,7 +4,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_TicketDetails_casey]
+ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_TicketDetails]
 		@QueryType					TINYINT = 1
 	,	@LastScannedSequenceID		BIGINT = 0
 	,	@IsLive						BIT = 1
@@ -96,7 +96,7 @@ AS
 		DECLARE @MinSequenceId BIGINT
 		DECLARE @TotalTicket INT;
 
-		EXEC CTS_Rpt_MatchMonitor_TicketDetails_xtest
+		EXEC CTS_Rpt_MatchMonitor_TicketDetails
 		 @QueryType=1,@LastScannedSequenceID=117290386614,@IsLive=0,@BatchSize=500,@ListTransId='',@EventDate ='1900-09-22',@MatchID=0
 		 ,@ListSportBettype='[		{"SportTypeID":1, "BetTypeID":1, "BetChoiceType":1}
 								,	{"SportTypeID":43, "BetTypeID":9001, "BetChoiceType":1}
@@ -106,7 +106,7 @@ AS
 		 ,@MinSequenceId=@MinSequenceId OUTPUT,@TotalTicket=@TotalTicket OUTPUT;
 		SELECT @MinSequenceId,@TotalTicket ;
 
-		 EXEC CTS_Rpt_MatchMonitor_TicketDetails_xtest
+		 EXEC CTS_Rpt_MatchMonitor_TicketDetails
 		 @QueryType=2,@LastScannedSequenceID=1,@IsLive=0,@BatchSize=500,@ListTransId='',@EventDate ='1900-09-22',@MatchID=0
 		 ,@ListSportBettype='[ {"SportTypeID":1, "BetTypeID":413, "BetChoiceType":0},{"SportTypeID":2, "BetTypeID":609, "BetChoiceType":1},{"SportTypeID":43, "BetTypeID":9003, "BetChoiceType":1}]'
 		 ,@TicketType=1 ,@IsLicensee=NULL,@IsExclTestCurr=0,@ListCurrency=NULL,@ListHDPBetTeam=NULL,@ListScore=NULL,@CustAmountRM=0
