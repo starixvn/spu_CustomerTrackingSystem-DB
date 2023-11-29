@@ -130,35 +130,34 @@ sp:BEGIN
  
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustLogTransInfo;
 	CREATE TEMPORARY TABLE 		Temp_CustLogTransInfo (
-			AccountID						BIGINT UNSIGNED PRIMARY KEY
-		,	CTSCustID 						BIGINT UNSIGNED
+			CTSCustID 						BIGINT UNSIGNED PRIMARY KEY
 		,	CountLogin						INT DEFAULT 0
         ,	CountBotTrans					INT DEFAULT 0
         ,	CountInvalidBrowserTrans		INT DEFAULT 0
-        ,	INDEX		IX_Temp_CustLogTransInfo(CTSCustID)
 	);
     
     /*****************************Extract Data From Input**************************************************/
-    INSERT IGNORE INTO Temp_Cust(CTSCustID, CustID,Username,CustStatus,Recommend,Danger1,Danger2,Danger3,Danger4,Danger5,RoleID,CreatedDate,Processed,IsLicensee,SubscriberID)
+    INSERT IGNORE INTO Temp_Cust(CTSCustID)
 	SELECT 	tmp.CTSCustID
-		, 	cus.CustID
-        ,	cus.Username
-        ,	sta.ItemName AS CustStatus
-        ,	cus.Recommend
-        ,	cus.Danger1
-        ,	cus.Danger2
-        ,	cus.Danger3
-        ,	cus.Danger4
-        ,	cus.Danger5
-        ,	cus.RoleID
-        ,	cus.CreatedDate
-        ,	CASE WHEN cus.CTSCustID IS NULL OR cus.IsInternal = 1 THEN 1
-			ELSE 0 END AS Processed
-        ,   cus.IsLicensee
-        ,	cus.SubscriberID
-	FROM JSON_TABLE(CONCAT('[',ip_CTSCustIDs,']'),'$[*]' COLUMNS(NESTED PATH '$' COLUMNS (CTSCustID BIGINT UNSIGNED PATH '$'))) AS tmp
-		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = tmp.CTSCustID  
-        LEFT JOIN CTS_DataCenter.StaticList AS sta ON sta.ListID = 1 AND sta.ItemID = cus.CustStatusID;
+	FROM JSON_TABLE(CONCAT('[',ip_CTSCustIDs,']'),'$[*]' COLUMNS(NESTED PATH '$' COLUMNS (CTSCustID BIGINT UNSIGNED PATH '$'))) AS tmp;
+
+    UPDATE Temp_Cust AS tmp
+        LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = tmp.CTSCustID  
+        LEFT JOIN CTS_DataCenter.StaticList AS sta ON sta.ListID = 1 AND sta.ItemID = cus.CustStatusID
+    SET     tmp.CustID = cus.CustID
+        ,   tmp.Username = cus.Username
+        ,   tmp.CustStatus = sta.ItemName
+        ,   tmp.Recommend = cus.Recommend
+        ,   tmp.Danger1 = cus.Danger1
+        ,   tmp.Danger2 = cus.Danger2
+        ,   tmp.Danger3 = cus.Danger3
+        ,   tmp.Danger4 = cus.Danger4
+        ,   tmp.Danger5 = cus.Danger5
+        ,   tmp.RoleID = cus.RoleID
+        ,   tmp.CreatedDate = cus.CreatedDate
+        ,   tmp.Processed = CASE WHEN cus.CTSCustID IS NULL OR cus.IsInternal = 1 THEN 1 ELSE 0 END
+        ,   tmp.IsLicensee = cus.IsLicensee
+        ,   tmp.SubscriberID = cus.SubscriberID;   
 
     INSERT IGNORE INTO Temp_Cust_Dup(CTSCustID, CustID)
     SELECT 	CTSCustID
@@ -389,6 +388,16 @@ sp:BEGIN
                 ,	INDEX		IX_Temp_CustAccountID(CTSCustID)
         );
         
+        DROP TEMPORARY TABLE IF EXISTS Temp_CustAccLogTransInfo;
+        CREATE TEMPORARY TABLE 		Temp_CustAccLogTransInfo (
+                AccountID						BIGINT UNSIGNED PRIMARY KEY
+            ,	CTSCustID 						BIGINT UNSIGNED
+            ,	CountLogin						INT DEFAULT 0
+            ,	CountBotTrans					INT DEFAULT 0
+            ,	CountInvalidBrowserTrans		INT DEFAULT 0
+            ,	INDEX		IX_Temp_CustAccLogTransInfo(CTSCustID)
+        );
+
         INSERT INTO Temp_CustAccountID(CTSCustID, AccountID)
         SELECT tmp.CTSCustID, acc.AccountID
         FROM Temp_Cust AS tmp
@@ -410,17 +419,17 @@ sp:BEGIN
         FROM Temp_CustAccountID AS tmp
         INNER JOIN DCS_DataTrace.LoginTransactionSummary AS ls ON ls.AccountID = tmp.AccountID AND ls.TransDate BETWEEN lv_FromDate AND lv_ToDate;
         
-        INSERT INTO Temp_CustLogTransInfo(CTSCustID, AccountID)
+        INSERT INTO Temp_CustAccLogTransInfo(CTSCustID, AccountID)
         SELECT tmp.CTSCustID, tmp.AccountID
         FROM Temp_CustAccountID AS tmp;
         
-        UPDATE Temp_CustLogTransInfo AS tmp
+        UPDATE Temp_CustAccLogTransInfo AS tmp
         SET tmp.CountLogin = IFNULL((SELECT SUM(sm.TotalLogin)
                                     FROM DCS_DataCenter.SumAccountLogin AS sm
                                     WHERE sm.AccountID = tmp.AccountID AND sm.TransDate BETWEEN lv_FromDate AND lv_ToDate
                                     GROUP BY sm.AccountID),0);
 
-        UPDATE Temp_CustLogTransInfo AS tmp
+        UPDATE Temp_CustAccLogTransInfo AS tmp
         SET tmp.CountLogin = IFNULL((SELECT SUM(ls.TotalTrans) 
                                     FROM Temp_LoginTransactionSummary AS ls
                                     WHERE ls.AccountID = tmp.AccountID
@@ -435,12 +444,20 @@ sp:BEGIN
                     INNER JOIN Temp_CustAccountID AS tmp ON tmp.AccountID = ls.AccountID
                 GROUP BY ls.AccountID
         )
-        UPDATE Temp_CustLogTransInfo AS tmp
+        UPDATE Temp_CustAccLogTransInfo AS tmp
             INNER JOIN _TransCountInfo tc ON tc.AccountID = tmp.AccountID
         SET tmp.CountBotTrans = tc.CountBotTrans
             , tmp.CountInvalidBrowserTrans = tc.CountInvalidBrowserTrans
         WHERE tc.CountBotTrans <> 0 OR tc.CountInvalidBrowserTrans <> 0;
         
+        INSERT INTO Temp_CustLogTransInfo(CTSCustID, CountLogin, CountBotTrans, CountInvalidBrowserTrans)
+        SELECT ct.CTSCustID
+                , SUM(IFNULL(CountLogin,0))
+                , SUM(IFNULL(CountBotTrans,0))
+                , SUM(IFNULL(CountInvalidBrowserTrans,0))
+        FROM Temp_CustAccLogTransInfo AS ct
+        GROUP BY ct.CTSCustID;
+
     END IF;
     
     /*****************************Handle CustomerClass Info**************************************************/
