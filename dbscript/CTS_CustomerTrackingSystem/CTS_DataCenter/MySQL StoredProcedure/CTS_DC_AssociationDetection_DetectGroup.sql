@@ -137,27 +137,25 @@ sp:BEGIN
 	);
     
     /*****************************Extract Data From Input**************************************************/
-    INSERT IGNORE INTO Temp_Cust(CTSCustID)
+    INSERT IGNORE INTO Temp_Cust(CTSCustID, CustID,Username,CustStatus,Recommend,Danger1,Danger2,Danger3,Danger4,Danger5,RoleID,CreatedDate,Processed,IsLicensee)
 	SELECT 	tmp.CTSCustID
-	FROM JSON_TABLE(CONCAT('[',ip_CTSCustIDs,']'),'$[*]' COLUMNS(NESTED PATH '$' COLUMNS (CTSCustID BIGINT UNSIGNED PATH '$'))) AS tmp;
-
-    UPDATE Temp_Cust AS tmp
-        LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = tmp.CTSCustID  
-        LEFT JOIN CTS_DataCenter.StaticList AS sta ON sta.ListID = 1 AND sta.ItemID = cus.CustStatusID
-    SET     tmp.CustID = cus.CustID
-        ,   tmp.Username = cus.Username
-        ,   tmp.CustStatus = sta.ItemName
-        ,   tmp.Recommend = cus.Recommend
-        ,   tmp.Danger1 = cus.Danger1
-        ,   tmp.Danger2 = cus.Danger2
-        ,   tmp.Danger3 = cus.Danger3
-        ,   tmp.Danger4 = cus.Danger4
-        ,   tmp.Danger5 = cus.Danger5
-        ,   tmp.RoleID = cus.RoleID
-        ,   tmp.CreatedDate = cus.CreatedDate
-        ,   tmp.Processed = CASE WHEN cus.CTSCustID IS NULL OR cus.IsInternal = 1 THEN 1 ELSE 0 END
-        ,   tmp.IsLicensee = cus.IsLicensee
-        ,   tmp.SubscriberID = cus.SubscriberID;   
+		, 	cus.CustID
+        ,	cus.Username
+        ,	sta.ItemName AS CustStatus
+        ,	cus.Recommend
+        ,	cus.Danger1
+        ,	cus.Danger2
+        ,	cus.Danger3
+        ,	cus.Danger4
+        ,	cus.Danger5
+        ,	cus.RoleID
+        ,	cus.CreatedDate
+        ,	CASE WHEN cus.CTSCustID IS NULL OR cus.IsInternal = 1 THEN 1
+			ELSE 0 END AS Processed
+        ,   cus.IsLicensee
+	FROM JSON_TABLE(CONCAT('[',ip_CTSCustIDs,']'),'$[*]' COLUMNS(NESTED PATH '$' COLUMNS (CTSCustID BIGINT UNSIGNED PATH '$'))) AS tmp
+		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = tmp.CTSCustID  
+        LEFT JOIN CTS_DataCenter.StaticList AS sta ON sta.ListID = 1 AND sta.ItemID = cus.CustStatusID;   
 
     INSERT IGNORE INTO Temp_Cust_Dup(CTSCustID, CustID)
     SELECT 	CTSCustID
