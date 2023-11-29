@@ -22,6 +22,7 @@ BEGIN
 	*/
     DECLARE lv_AssociationJson LONGTEXT;
     DECLARE lv_AccountFingerPrintJson LONGTEXT;
+    DECLARE lv_NewAccountDeviceJson LONGTEXT;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_InputTrans;
 	DROP TEMPORARY TABLE IF EXISTS Temp_Transaction07;
@@ -190,12 +191,29 @@ BEGIN
 		AND RawFingerPrintID IS NOT NULL;
     
     SET lv_AccountFingerPrintJson = IFNULL(lv_AccountFingerPrintJson,'[{}]');
-    select lv_AccountFingerPrintJson, a.*
-    from Temp_Transaction07 a;
 	CALL DCS_DC_Identity_AccountFingerPrint_Insert(lv_AccountFingerPrintJson);
     
     /* === Insert into NewAccountDevice === */
-	-- CALL DCS_DC_Transform_NewAccountDevice_Insert('Temp_NewAccountDevice');
+	SELECT JSON_ARRAYAGG(
+			JSON_OBJECT(
+				'AccountID'			, AccountID
+			,	'DeviceID'			, DeviceID
+			,	'SubscriberID'		, SubscriberID
+			,	'RawTransID'		, RawTransID
+			,	'CreatedDate'		, CreatedDate
+			,	'LoginName'			, LoginName
+			,	'TransTime'			, TransTime
+			,	'UserAgentKey'		, UserAgentKey
+			,	'IP'				, IP
+			)
+		) AS json_data
+	INTO lv_NewAccountDeviceJson
+	FROM Temp_Transaction07
+    WHERE AccountID IS NOT NULL
+		AND DeviceID IS NOT NULL;
+    
+    SET lv_NewAccountDeviceJson = IFNULL(lv_NewAccountDeviceJson,'[{}]');
+	CALL DCS_DC_Transform_NewAccountDevice_Insert(lv_NewAccountDeviceJson);
 END$$
 
 DELIMITER ;
