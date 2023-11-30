@@ -10,89 +10,89 @@ Revisions:
 Reviewer:
 */
 USE CTS_DataCenter;
-DROP TABLE SportBettypeSetting;
+
 CREATE TABLE SportBettypeSetting(
 		FunctionID				TINYINT	
 	,	SportTypeID				SMALLINT NOT NULL
     ,	BetTypeID				INT NOT NULL
-	,	SportName					VARCHAR(50) NOT NULL
-    ,	BetTypeName					VARCHAR(128) NOT NULL
-    ,	BetTypeNameDetailsX			VARCHAR(100)			# IF NOT NULL then show Details(Ex:show Details for Baskateball Quater 1..., Quater 2...
-    ,	BettypeNameDisplay			VARCHAR(150) NOT NULL
-    ,	BetChoiceType				TINYINT NOT NULL		# 1: Two choices, 0: ELSE
-    ,	BetChoiceHome				VARCHAR(10)				# {"Home":"b", "Away":"a"}
-    ,	BetChoiceAway				VARCHAR(10)
-    ,	BetIDPattern				VARCHAR(20)
-	,	IsMMDetection				BOOLEAN NOT NULL
-    ,	IsDefaultSelected			BOOLEAN NOT NULL		# IF NOT NULL then show Details(Ex:show Details for Baskateball Quater 1..., Quater 2...
-    ,	PriorityOrder				INT 
-    ,	Status						TINYINT NOT NULL		# 1: Active, 0: Inactive
+	,	SportName				VARCHAR(50) NOT NULL
+    ,	BetTypeName				VARCHAR(128) NOT NULL
+    ,	BetTypeNameDetailsX		VARCHAR(100)			# IF NOT NULL then show Details(Ex:show Details for Baskateball Quater 1..., Quater 2...
+    ,	BettypeNameDisplay		VARCHAR(150) NOT NULL
+    ,	BetChoiceType			TINYINT NOT NULL		# Number of Choice show on MM
+    ,	BetChoiceHome			VARCHAR(10)				# {"Home":"h", "Away":"a"}
+    ,	BetChoiceAway			VARCHAR(10)
+    ,	BetIDPattern			VARCHAR(20)
+	,	IsMMDetection			BOOLEAN NOT NULL
+    ,	IsDefaultSelected		BOOLEAN NOT NULL		# IF NOT NULL then show Details(Ex:show Details for Baskateball Quater 1..., Quater 2...
+    ,	PriorityOrder			INT 
+    ,	Status					TINYINT NOT NULL		# 1: Active, 0: Inactive
 	
     ,	PRIMARY KEY PK_SportBettypeSetting(FunctionID,SportTypeID,BetTypeID)
 );
 
-INSERT INTO SportBettypeSetting(FunctionID,SportTypeID,BetTypeID,BetChoiceType,IsMMDetection,IsDefaultSelected,SportName,BettypeName,BettypeNameDisplay,BetChoiceHome,BetChoiceAway,BetIDPattern,BetTypeNameDetailsX,PriorityOrder,Status)
-Values(1,1,1,1,1,1,'Soccer','Handicap','HDP','h','a',null,null,1,1)
-,(1,1,3,1,1,1,'Soccer','Over/Under','O/U','h','a',null,null,2,1)
-,(1,1,7,1,1,1,'Soccer','1H Handicap','1H HDP','h','a',null,null,3,1)
-,(1,1,8,1,1,1,'Soccer','1H Over/Under','1H O/U','h','a',null,null,4,1)
-,(1,1,2,1,0,0,'Soccer','Odd/Even','O/E','h','a',null,null,25,1)
-,(1,1,12,1,0,0,'Soccer','1H Odd/Even','1H O/E','h','a',null,null,26,1)
-,(1,1,413,0,0,0,'Soccer','Correct Score (AOS)','Correct Score',null,null,null,null,27,1)
-,(1,1,414,0,0,0,'Soccer','1H Correct Score (AOS)','1H Correct Score',null,null,null,null,28,1)
-,(1,1,6,0,0,0,'Soccer','Total Goal','Total Goal',null,null,null,null,29,1)
-,(1,1,126,0,0,0,'Soccer','1H Total Goal','1H Total Goal',null,null,null,null,30,1)
-,(1,1,5,0,0,0,'Soccer','FT.1X2','FT.1X2',null,null,null,null,31,1)
-,(1,1,15,0,0,0,'Soccer','1H 1X2','1H 1X2',null,null,null,null,32,1)
-,(1,2,1,1,1,0,'Basketball','Handicap','HDP','h','a',null,null,5,1)
-,(1,2,3,1,1,0,'Basketball','Over/Under','O/U','h','a',null,null,6,1)
-,(1,2,7,1,1,0,'Basketball','1H Handicap','1H HDP','h','a',null,null,7,1)
-,(1,2,8,1,1,0,'Basketball','1H Over/Under','1H O/U','h','a',null,null,8,1)
-,(1,2,20,1,1,0,'Basketball','Moneyline','ML','h','a',null,null,9,1)
-,(1,2,609,1,1,0,'Basketball','Quarter X Handicap','Quarter X HDP','h','a','80X','1,2,3,4',10,1)
-,(1,2,610,1,1,0,'Basketball','Quarter X Over/Under','Quarter X O/U','h','a','80X','1,2,3,4',14,1)
-,(1,2,612,1,1,0,'Basketball','Quarter X Moneyline','Quarter X ML','h','a','80X','1,2,3,4',18,1)
-,(1,43,1,1,1,0,'E-Sports','Handicap','HDP','h','a',null,null,22,1)
-,(1,43,3,1,1,0,'E-Sports','Over/Under','O/U','h','a',null,null,23,1)
-,(1,43,20,1,1,0,'E-Sports','Moneyline','ML','h','a',null,null,24,1)
-,(1,43,9001,1,1,0,'E-Sports','Map X Moneyline','Map X ML','h','a','80X',null,33,1)
-,(1,43,9068,1,1,0,'E-Sports','Map X Round Y Moneyline','Map X Round Y ML','h','a','80XYY',null,34,1)
-,(1,43,9115,1,1,0,'E-Sports','Map X Total Gold Moneyline','Map X Total Gold ML','h','a','80X',null,35,1)
-,(1,43,9002,1,1,0,'E-Sports','Map X Total Kills Handicap','Map X Total Kills HDP','h','a','80X',null,36,1)
-,(1,43,9003,1,1,0,'E-Sports','Map X Total Kills Over/Under','Map X Total Kills O/U','o','u','80X',null,37,1)
-,(1,43,9005,1,1,0,'E-Sports','Map X Total Kills Odd/Even','Map X Total Kills O/E','o','e','80X',null,38,1)
-,(1,43,9006,1,1,0,'E-Sports','Map X First Blood','Map X First Blood','h','a','80X',null,39,1)
-,(1,43,9007,1,1,0,'E-Sports','Map X First to Y Kills','Map X First to Y Kills','h','a','80XYY',null,40,1)
-,(1,43,9070,1,1,0,'E-Sports','Map X Round Y Total Kills Over/Under','Map X Round Y Total Kills O/U','o','u','80XYY',null,41,1)
-,(1,43,9071,1,1,0,'E-Sports','Map X Round Y Total Kills Odd/Even','Map X Round Y Total Kills O/E','o','e','80XYY',null,42,1)
-,(1,43,9072,1,1,0,'E-Sports','Map X Round Y First Kill','Map X Round Y First Kill','h','a','80XYY',null,43,1)
-,(1,43,9077,1,1,0,'E-Sports','Map X Round Y Total Kills Handicap','Map X Round Y Total Kills HDP','h','a','80XYY',null,44,1)
-,(1,43,9089,1,1,0,'E-Sports','Map X First to Y Kills Time(Mins) Over/Under','Map X First to Y Kills Time(Mins) O/U','o','u','80XYY',null,45,1)
-,(1,43,9090,1,1,0,'E-Sports','Map X First Blood Time(Mins) Over/Under','Map X First Blood Time(Mins) O/U','o','u','80X',null,46,1)
-,(1,43,9091,1,1,0,'E-Sports','Map X Total Kills at 10 Mins Handicap','Map X Total Kills at 10 Mins HDP','h','a','80X',null,47,1)
-,(1,43,9092,1,1,0,'E-Sports','Map X Total Kills at 10 Mins Over/Under','Map X Total Kills at 10 Mins O/U','o','u','80X',null,48,1)
-,(1,43,9093,1,1,0,'E-Sports','Map X Total Kills at 20 Mins Handicap','Map X Total Kills at 20 Mins HDP','h','a','80X',null,49,1)
-,(1,43,9094,1,1,0,'E-Sports','Map X Total Kills at 20 Mins Over/Under','Map X Total Kills at 20 Mins O/U','o','u','80X',null,50,1)
-,(1,43,9095,1,1,0,'E-Sports','Map X Home Team Total Kills at 10 Mins Over/Under','Map X Home Team Total Kills at 10 Mins O/U','o','u','80X',null,51,1)
-,(1,43,9096,1,1,0,'E-Sports','Map X Away Team Total Kills at 10 Mins Over/Under','Map X Away Team Total Kills at 10 Mins O/U','o','u','80X',null,52,1)
-,(1,43,9097,1,1,0,'E-Sports','Map X Home Team Total Kills at 20 Mins Over/Under','Map X Home Team Total Kills at 20 Mins O/U','o','u','80X',null,53,1)
-,(1,43,9098,1,1,0,'E-Sports','Map X Away Team Total Kills at 20 Mins Over/Under','Map X Away Team Total Kills at 20 Mins O/U','o','u','80X',null,54,1)
-,(1,43,9099,1,1,0,'E-Sports','Map X Home Team Total Kills Over/Under','Map X Home Team Total Kills O/U','o','u','80X',null,55,1)
-,(1,43,9100,1,1,0,'E-Sports','Map X Away Team Total Kills Over/Under','Map X Away Team Total Kills O/U','o','u','80X',null,56,1)
-,(1,43,9101,1,1,0,'E-Sports','Map X 1st Kill','Map X 1st Kill','h','a','80X',null,57,1)
-,(1,43,9102,1,1,0,'E-Sports','Map X 2nd Kill','Map X 2nd Kill','h','a','80X',null,58,1)
-,(1,43,9103,1,1,0,'E-Sports','Map X 3rd Kill','Map X 3rd Kill','h','a','80X',null,59,1)
-,(1,43,9104,1,1,0,'E-Sports','Map X 4th Kill','Map X 4th Kill','h','a','80X',null,60,1)
-,(1,43,9105,1,1,0,'E-Sports','Map X 5th Kill','Map X 5th Kill','h','a','80X',null,61,1)
-,(1,43,9106,1,1,0,'E-Sports','Map X 6th Kill','Map X 6th Kill','h','a','80X',null,62,1)
-,(1,43,9107,1,1,0,'E-Sports','Map X 7th Kill','Map X 7th Kill','h','a','80X',null,63,1)
-,(1,43,9108,1,1,0,'E-Sports','Map X 8th Kill','Map X 8th Kill','h','a','80X',null,64,1)
-,(1,43,9109,1,1,0,'E-Sports','Map X 9th Kill','Map X 9th Kill','h','a','80X',null,65,1)
-,(1,43,9110,1,1,0,'E-Sports','Map X 10th Kill','Map X 10th Kill','h','a','80X',null,66,1)
-,(1,43,9111,1,1,0,'E-Sports','Map X 15th Kill','Map X 15th Kill','h','a','80X',null,67,1)
-,(1,43,9112,1,1,0,'E-Sports','Map X 20th Kill','Map X 20th Kill','h','a','80X',null,68,1)
-,(1,43,9124,1,1,0,'E-Sports','Map X Will Storm Dragon Be Killed Yes/No','Map X Will Storm Dragon Be Killed Yes/No','y','n','80X',null,69,1)
-,(1,43,9132,1,1,0,'E-Sports','Map X Will Elder Dragon Be Killed Yes/No','Map X Will Elder Dragon Be Killed Yes/No','y','n','80X',null,70,1);
+INSERT INTO SportBettypeSetting(FunctionID,SportTypeID,BetTypeID,SportName,BetTypeName,BetTypeNameDetailsX,BettypeNameDisplay,BetChoiceType,BetChoiceHome,BetChoiceAway,BetIDPattern,IsMMDetection,IsDefaultSelected,PriorityOrder,Status)
+VALUES(1,1,1,'Soccer','Handicap',null,'HDP',2,'h','a',null,1,1,1,1)
+,(1,1,2,'Soccer','Odd/Even',null,'O/E',2,'h','a',null,0,0,25,1)
+,(1,1,3,'Soccer','Over/Under',null,'O/U',2,'h','a',null,1,1,2,1)
+,(1,1,5,'Soccer','FT.1X2',null,'FT.1X2',1,null,null,null,0,0,31,1)
+,(1,1,6,'Soccer','Total Goal',null,'Total Goal',1,null,null,null,0,0,29,1)
+,(1,1,7,'Soccer','1H Handicap',null,'1H HDP',2,'h','a',null,1,1,3,1)
+,(1,1,8,'Soccer','1H Over/Under',null,'1H O/U',2,'h','a',null,1,1,4,1)
+,(1,1,12,'Soccer','1H Odd/Even',null,'1H O/E',2,'h','a',null,0,0,26,1)
+,(1,1,15,'Soccer','1H 1X2',null,'1H 1X2',1,null,null,null,0,0,32,1)
+,(1,1,126,'Soccer','1H Total Goal',null,'1H Total Goal',1,null,null,null,0,0,30,1)
+,(1,1,413,'Soccer','Correct Score (AOS)',null,'Correct Score',1,null,null,null,0,0,27,1)
+,(1,1,414,'Soccer','1H Correct Score (AOS)',null,'1H Correct Score',1,null,null,null,0,0,28,1)
+,(1,2,1,'Basketball','Handicap',null,'HDP',2,'h','a',null,1,0,5,1)
+,(1,2,3,'Basketball','Over/Under',null,'O/U',2,'h','a',null,1,0,6,1)
+,(1,2,7,'Basketball','1H Handicap',null,'1H HDP',2,'h','a',null,1,0,7,1)
+,(1,2,8,'Basketball','1H Over/Under',null,'1H O/U',2,'o','u',null,1,0,8,1)
+,(1,2,20,'Basketball','Moneyline',null,'ML',2,'h','a',null,1,0,9,1)
+,(1,2,609,'Basketball','Quarter X Handicap','1,2,3,4','Quarter X HDP',2,'h','a','80X',1,0,10,1)
+,(1,2,610,'Basketball','Quarter X Over/Under','1,2,3,4','Quarter X O/U',2,'o','u','80X',1,0,14,1)
+,(1,2,612,'Basketball','Quarter X Moneyline','1,2,3,4','Quarter X ML',2,'h','a','80X',1,0,18,1)
+,(1,43,1,'E-Sports','Handicap',null,'HDP',2,'h','a',null,1,0,22,1)
+,(1,43,3,'E-Sports','Over/Under',null,'O/U',2,'h','a',null,1,0,23,1)
+,(1,43,20,'E-Sports','Moneyline',null,'ML',2,'h','a',null,1,0,24,1)
+,(1,43,9001,'E-Sports','Map X Moneyline',null,'Map X ML',2,'h','a','80X',1,0,33,1)
+,(1,43,9002,'E-Sports','Map X Total Kills Handicap',null,'Map X Total Kills HDP',2,'h','a','80X',1,0,36,1)
+,(1,43,9003,'E-Sports','Map X Total Kills Over/Under',null,'Map X Total Kills O/U',2,'o','u','80X',1,0,37,1)
+,(1,43,9005,'E-Sports','Map X Total Kills Odd/Even',null,'Map X Total Kills O/E',2,'o','e','80X',1,0,38,1)
+,(1,43,9006,'E-Sports','Map X First Blood',null,'Map X First Blood',2,'h','a','80X',1,0,39,1)
+,(1,43,9007,'E-Sports','Map X First to Y Kills',null,'Map X First to Y Kills',2,'h','a','80XYY',1,0,40,1)
+,(1,43,9068,'E-Sports','Map X Round Y Moneyline',null,'Map X Round Y ML',2,'h','a','80XYY',1,0,34,1)
+,(1,43,9070,'E-Sports','Map X Round Y Total Kills Over/Under',null,'Map X Round Y Total Kills O/U',2,'o','u','80XYY',1,0,41,1)
+,(1,43,9071,'E-Sports','Map X Round Y Total Kills Odd/Even',null,'Map X Round Y Total Kills O/E',2,'o','e','80XYY',1,0,42,1)
+,(1,43,9072,'E-Sports','Map X Round Y First Kill',null,'Map X Round Y First Kill',2,'h','a','80XYY',1,0,43,1)
+,(1,43,9077,'E-Sports','Map X Round Y Total Kills Handicap',null,'Map X Round Y Total Kills HDP',2,'h','a','80XYY',1,0,44,1)
+,(1,43,9089,'E-Sports','Map X First to Y Kills Time(Mins) Over/Under',null,'Map X First to Y Kills Time(Mins) O/U',2,'o','u','80XYY',1,0,45,1)
+,(1,43,9090,'E-Sports','Map X First Blood Time(Mins) Over/Under',null,'Map X First Blood Time(Mins) O/U',2,'o','u','80X',1,0,46,1)
+,(1,43,9091,'E-Sports','Map X Total Kills at 10 Mins Handicap',null,'Map X Total Kills at 10 Mins HDP',2,'h','a','80X',1,0,47,1)
+,(1,43,9092,'E-Sports','Map X Total Kills at 10 Mins Over/Under',null,'Map X Total Kills at 10 Mins O/U',2,'o','u','80X',1,0,48,1)
+,(1,43,9093,'E-Sports','Map X Total Kills at 20 Mins Handicap',null,'Map X Total Kills at 20 Mins HDP',2,'h','a','80X',1,0,49,1)
+,(1,43,9094,'E-Sports','Map X Total Kills at 20 Mins Over/Under',null,'Map X Total Kills at 20 Mins O/U',2,'o','u','80X',1,0,50,1)
+,(1,43,9095,'E-Sports','Map X Home Team Total Kills at 10 Mins Over/Under',null,'Map X Home Team Total Kills at 10 Mins O/U',2,'o','u','80X',1,0,51,1)
+,(1,43,9096,'E-Sports','Map X Away Team Total Kills at 10 Mins Over/Under',null,'Map X Away Team Total Kills at 10 Mins O/U',2,'o','u','80X',1,0,52,1)
+,(1,43,9097,'E-Sports','Map X Home Team Total Kills at 20 Mins Over/Under',null,'Map X Home Team Total Kills at 20 Mins O/U',2,'o','u','80X',1,0,53,1)
+,(1,43,9098,'E-Sports','Map X Away Team Total Kills at 20 Mins Over/Under',null,'Map X Away Team Total Kills at 20 Mins O/U',2,'o','u','80X',1,0,54,1)
+,(1,43,9099,'E-Sports','Map X Home Team Total Kills Over/Under',null,'Map X Home Team Total Kills O/U',2,'o','u','80X',1,0,55,1)
+,(1,43,9100,'E-Sports','Map X Away Team Total Kills Over/Under',null,'Map X Away Team Total Kills O/U',2,'o','u','80X',1,0,56,1)
+,(1,43,9101,'E-Sports','Map X 1st Kill',null,'Map X 1st Kill',2,'h','a','80X',1,0,57,1)
+,(1,43,9102,'E-Sports','Map X 2nd Kill',null,'Map X 2nd Kill',2,'h','a','80X',1,0,58,1)
+,(1,43,9103,'E-Sports','Map X 3rd Kill',null,'Map X 3rd Kill',2,'h','a','80X',1,0,59,1)
+,(1,43,9104,'E-Sports','Map X 4th Kill',null,'Map X 4th Kill',2,'h','a','80X',1,0,60,1)
+,(1,43,9105,'E-Sports','Map X 5th Kill',null,'Map X 5th Kill',2,'h','a','80X',1,0,61,1)
+,(1,43,9106,'E-Sports','Map X 6th Kill',null,'Map X 6th Kill',2,'h','a','80X',1,0,62,1)
+,(1,43,9107,'E-Sports','Map X 7th Kill',null,'Map X 7th Kill',2,'h','a','80X',1,0,63,1)
+,(1,43,9108,'E-Sports','Map X 8th Kill',null,'Map X 8th Kill',2,'h','a','80X',1,0,64,1)
+,(1,43,9109,'E-Sports','Map X 9th Kill',null,'Map X 9th Kill',2,'h','a','80X',1,0,65,1)
+,(1,43,9110,'E-Sports','Map X 10th Kill',null,'Map X 10th Kill',2,'h','a','80X',1,0,66,1)
+,(1,43,9111,'E-Sports','Map X 15th Kill',null,'Map X 15th Kill',2,'h','a','80X',1,0,67,1)
+,(1,43,9112,'E-Sports','Map X 20th Kill',null,'Map X 20th Kill',2,'h','a','80X',1,0,68,1)
+,(1,43,9115,'E-Sports','Map X Total Gold Moneyline',null,'Map X Total Gold ML',2,'h','a','80X',1,0,35,1)
+,(1,43,9124,'E-Sports','Map X Will Storm Dragon Be Killed Yes/No',null,'Map X Will Storm Dragon Be Killed Yes/No',2,'y','n','80X',1,0,69,1)
+,(1,43,9132,'E-Sports','Map X Will Elder Dragon Be Killed Yes/No',null,'Map X Will Elder Dragon Be Killed Yes/No',2,'y','n','80X',1,0,70,1);
 
 SELECT * FROM SportBettypeSetting;
 #======================================
