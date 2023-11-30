@@ -137,7 +137,7 @@ sp:BEGIN
 	);
     
     /*****************************Extract Data From Input**************************************************/
-    INSERT IGNORE INTO Temp_Cust(CTSCustID, CustID,Username,CustStatus,Recommend,Danger1,Danger2,Danger3,Danger4,Danger5,RoleID,CreatedDate,Processed,IsLicensee)
+    INSERT IGNORE INTO Temp_Cust(CTSCustID, CustID,Username,CustStatus,Recommend,Danger1,Danger2,Danger3,Danger4,Danger5,RoleID,CreatedDate,Processed,IsLicensee,SubscriberID)
 	SELECT 	tmp.CTSCustID
 		, 	cus.CustID
         ,	cus.Username
@@ -153,6 +153,7 @@ sp:BEGIN
         ,	CASE WHEN cus.CTSCustID IS NULL OR cus.IsInternal = 1 THEN 1
 			ELSE 0 END AS Processed
         ,   cus.IsLicensee
+        ,   cus.SubscriberID
 	FROM JSON_TABLE(CONCAT('[',ip_CTSCustIDs,']'),'$[*]' COLUMNS(NESTED PATH '$' COLUMNS (CTSCustID BIGINT UNSIGNED PATH '$'))) AS tmp
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = tmp.CTSCustID  
         LEFT JOIN CTS_DataCenter.StaticList AS sta ON sta.ListID = 1 AND sta.ItemID = cus.CustStatusID;   
