@@ -15,7 +15,8 @@ BEGIN
 			- 20220627@Casey.Huynh: Created [Redmine ID: #174218]
             - 20220908@Casey.Huynh: New CC for Classify MM [Redmine ID: #176976]
             - 20220113@Casey.Huynh: Rename Table [Redmine ID: #179502]
-            
+            - 20231120@Thomas.Nguyen: Add the condition SportType = 2 and include Odds Crawler Robot (CategoryID 165, 166), Abnormal Account - Robot (CategoryID 179) [Redmine ID: #188553]
+
 		Param's Explanation:
         
 		Example:
@@ -39,7 +40,7 @@ BEGIN
 		SELECT mm.MatchID
         INTO lv_MatchID
         FROM CTS_DataCenter.MatchMonitor AS mm
-        WHERE mm.ClassifyStatus = 2	AND SportType = 1 
+        WHERE mm.ClassifyStatus = 2	AND SportType IN (1,2) 
         ORDER BY mm.KickOffTime ASC
         LIMIT 1;
         
@@ -82,7 +83,7 @@ BEGIN
 	INSERT INTO Temp_ExcludePACategoryID(CategoryID)
     SELECT CategoryID
     FROM CTS_DataCenter.CustomerCategory AS cat
-    WHERE ParentID = 50 AND CategoryID NOT IN  (57,61,163,164);   
+    WHERE ParentID = 50 AND CategoryID NOT IN  (57,61,163,164,165,166,179);   
 
     INSERT INTO Temp_MatchMonitorDetailsCust(CustID, MMDetailsID, MatchID, NoOfCust)
     WITH CTE_MatchMonitorDetials AS
