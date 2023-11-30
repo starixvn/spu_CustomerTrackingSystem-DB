@@ -113,7 +113,7 @@ BEGIN
 				,	Bettype
 				,	BetId
 				,	TransId
-			FROM Temp_Intermediate
+			FROM Temp_Intermediate WITH(NOLOCK)
 			OPTION (MAXRECURSION 0);
 
 			CREATE CLUSTERED INDEX #CIX_tmpParsedFraudInfo ON #tmpParsedFraudInfo (
