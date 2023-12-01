@@ -76,19 +76,12 @@ sp:BEGIN
         ,	CustID				BIGINT  UNSIGNED UNSIGNED
         ,	Username			VARCHAR(50)
         ,	Evidence			LONGTEXT
-        ,	MemberCTSCustID		BIGINT
-        ,	INDEX 				IX_Temp_Recommend_MemberCTSCustID(MemberCTSCustID)
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustAssociationType;
 	CREATE TEMPORARY TABLE 		Temp_CustAssociationType (
 			CTSCustID			BIGINT UNSIGNED PRIMARY KEY
 		,	AssociationType 	VARCHAR(100) DEFAULT ''
-	);
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_DestIDCount;
-	CREATE TEMPORARY TABLE 	Temp_DestIDCount (
-			DestID 	BIGINT
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_GroupResult;
@@ -122,9 +115,10 @@ sp:BEGIN
         ,	HasSharedIP			BIT DEFAULT 0
         ,	HasSharedMatches	BIT DEFAULT 0
 		,	PRIMARY KEY(OrigID, DestID)
-		,	INDEX IX_Temp_Graph(DestID,OrigID)
+		,	INDEX IX_Temp_Graph_OrigID (OrigID)
+		,	INDEX IX_Temp_Graph_DestID (DestID)
 	);
- 
+	
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustLogTransInfo;
 	CREATE TEMPORARY TABLE 		Temp_CustLogTransInfo (
 			CTSCustID 						BIGINT UNSIGNED PRIMARY KEY
@@ -161,7 +155,7 @@ sp:BEGIN
     FROM Temp_Cust
     WHERE Processed = 0;
     
-    INSERT IGNORE INTO Temp_Recommend(CTSCustID,CustID,Username,Evidence,MemberCTSCustID)
+    INSERT IGNORE INTO Temp_Recommend(CTSCustID,CustID,Username,Evidence)
     SELECT 	cus.CTSCustID
 		,	cus.CustID
 		,	cus.Username
@@ -169,7 +163,6 @@ sp:BEGIN
 			 FROM CTS_DataCenter.CustEvidence AS ce  
 				LEFT JOIN CTS_DataCenter.Evidence AS ev ON ev.EvidenceID = ce.EvidenceID
              WHERE cus.CTSCustID = ce.CTSCustID) AS Evidence
-		,	tmp.CTSCustID
     FROM Temp_Cust AS tmp
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.Recommend 
 														AND cus.IsInternal = 0
@@ -262,14 +255,6 @@ sp:BEGIN
 	)) AS js
 	ON DUPLICATE KEY UPDATE HasSharedMatches = 1;
 
-	DROP TEMPORARY TABLE IF EXISTS Temp_Graph_Dup;
-	CREATE TEMPORARY TABLE Temp_Graph_Dup LIKE Temp_Graph;
-	INSERT INTO Temp_Graph_Dup 
-	SELECT grp.* 
-	FROM Temp_Graph AS grp
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = grp.OrigID AND cus.IsInternal = 0
-		INNER JOIN CTS_DataCenter.CTSCustomer AS dup ON dup.CTSCustID = grp.DestID AND cus.IsInternal = 0;
-
     /*****************************Merge Group**************************************************/
     lp: LOOP 
 		SET lv_OrigID = NULL;
@@ -289,12 +274,14 @@ sp:BEGIN
         SET tmp.Processed = 1
         WHERE  tmp.CTSCustID = lv_OrigID;
                          
+		
+						 
 		INSERT IGNORE INTO Temp_NodeCTSCustID(CTSCustID)
 		WITH RECURSIVE CTE_Group AS ( 
 				SELECT lv_OrigID AS OrigID
 				UNION
 				SELECT CASE WHEN CTE_Group.OrigID = grp.DestID THEN grp.OrigID ELSE grp.DestID END
-				FROM Temp_Graph_Dup  AS grp
+				FROM Temp_Graph  AS grp
 					INNER JOIN CTE_Group ON CTE_Group.OrigID = grp.OrigID OR CTE_Group.OrigID = grp.DestID
 		) 
 		SELECT OrigID
@@ -345,7 +332,7 @@ sp:BEGIN
 							  ,IF(MAX(HasSharedIP) =1, ", IP(last3days)","")
 							  ,IF(MAX(HasSharedMatches) =1, ", Match","")) AS AssociationTypeStr
 				FROM Temp_Cust AS cus
-					INNER JOIN Temp_Graph_Dup AS grp ON cus.CTSCustID = grp.OrigID OR cus.CTSCustID = grp.DestID
+					INNER JOIN Temp_Graph AS grp ON cus.CTSCustID = grp.OrigID OR cus.CTSCustID = grp.DestID
 					INNER JOIN Temp_Cust_Dup AS dup ON dup.CTSCustID = grp.DestID
 				GROUP BY cus.CTSCustID)
 	SELECT CTE.CTSCustID
