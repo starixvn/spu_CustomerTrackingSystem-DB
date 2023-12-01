@@ -83,12 +83,12 @@ AS
 		- @ListStatus: List StatusID
 			SET @ListStatus = '111,113,103,101,0,102,112,1,131' --Draw: 111;Lose: 113;Refund: 103;Reject: 101;Running: 0;Void: 102;Won:112;Waiting: 1;Completed: 131
 		- @ListSportBettype: JSON
-			,@ListSportBettype='[	{"SportTypeID":1, "BetTypeID":1, "BetChoiceType":1}
-								,	{"SportTypeID":2, "BetTypeID":3, "BetChoiceType":1}
-								,	{"SportTypeID":43, "BetTypeID":9001, "BetChoiceType":1}]'	
+			,@ListSportBettype='[	{"SportTypeID":1, "BetTypeID":1, "BetChoiceType":2}
+								,	{"SportTypeID":2, "BetTypeID":3, "BetChoiceType":2}
+								,	{"SportTypeID":43, "BetTypeID":9001, "BetChoiceType":2}]'	
 		- @ListHDPBetTeam: 
-			+ ABS(hdp1 - hdp2): IF BetChoiceType = 1 (2 choices)
-			+ Betteam: IF BetChoiceType = 0
+			+ ABS(hdp1 - hdp2): IF BetChoiceType = 2 (2 choices)
+			+ Betteam: IF BetChoiceType = 1
 
 		- @ListCustomerClass: format VARCHAR(MAX)
 		     SET = '200,201,2201'
@@ -148,6 +148,8 @@ BEGIN
 		,	BetType				SMALLINT
 		,	CustId				INT
 		,	BetTeam				NVARCHAR(10)
+		,	BetChoiceHome		NVARCHAR(10)
+		,	BetChoiceAway		NVARCHAR(10)
 		,	BetId				BIGINT
 		,	Stake				MONEY
 		,	OrgStake			MONEY
@@ -224,7 +226,9 @@ BEGIN
 			SportTypeID				SMALLINT
 		,	BetTypeID				INT
 		,	BetChoiceType			TINYINT
-		,	BetIDPattern			VARCHAR(20)
+		,	BetChoiceHome			NVARCHAR(10)
+		,	BetChoiceAway			NVARCHAR(10)
+		,	BetIDPattern			NVARCHAR(20)
 		,	BetID					BIGINT
 	);
 	
@@ -377,10 +381,12 @@ BEGIN
 	--==================================================================
 	IF @ListSportBettype <> ''
 		BEGIN
-			INSERT INTO #tmpSportBettype(SportTypeID,BetTypeID,BetChoiceType,BetIDPattern,BetID)
+			INSERT INTO #tmpSportBettype(SportTypeID,BetTypeID,BetChoiceType,BetChoiceHome,BetChoiceAway,BetIDPattern,BetID)
 			SELECT	ISNULL(JSON_VALUE(ssk.value, '$.SportTypeID'),0) AS SportTypeID
 				,	ISNULL(JSON_VALUE(ssk.value, '$.BetTypeID'),0) AS BetTypeID
 				,	ISNULL(JSON_VALUE(ssk.value, '$.BetChoiceType'),0) AS BetChoiceType
+				,	ISNULL(JSON_VALUE(ssk.value, '$.BetChoiceHome'),NULL) AS BetChoiceHome
+				,	ISNULL(JSON_VALUE(ssk.value, '$.BetChoiceAway'),NULL) AS BetChoiceAway
 				,	ISNULL(JSON_VALUE(ssk.value, '$.BetIDPattern'),'') AS BetIDPattern 
 				,	ISNULL(JSON_VALUE(ssk.value, '$.BetID'),0) AS BetID--- For Query = 2
 			FROM OPENJSON (@ListSportBettype) AS ssk;
@@ -477,7 +483,8 @@ BEGIN
 			BEGIN
 				IF (@ListTransId <> '' AND @TicketType = 1) 
 				BEGIN
-					INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
+					INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetChoiceHome,BetChoiceAway
+						,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
 					SELECT 
 							b.transid
 						,	b.transdate
@@ -492,6 +499,8 @@ BEGIN
 						,	b.bettype
 						,	b.custid
 						,	b.betteam
+						,	st.BetChoiceHome
+						,	st.BetChoiceAway
 						,	b.betid
 						,	b.stake * b.actualrate 
 						,	b.stake
@@ -523,7 +532,8 @@ BEGIN
 			BEGIN
 				IF (@ListTransId <> '' AND @TicketType = 1) 
 				BEGIN
-					INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
+					INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetChoiceHome,BetChoiceAway
+						,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
 					SELECT 
 							b.transid
 						,	b.transdate
@@ -538,6 +548,8 @@ BEGIN
 						,	b.bettype
 						,	b.custid
 						,	b.betteam
+						,	st.BetChoiceHome
+						,	st.BetChoiceAway
 						,	b.betid
 						,	b.stake * b.actualrate 
 						,	b.stake
@@ -569,7 +581,8 @@ BEGIN
 			BEGIN
 				IF (@ListTransId <> '' AND @TicketType = 1) 
 				BEGIN
-					INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
+					INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetChoiceHome,BetChoiceAway
+						,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
 					SELECT b.sequenceid
 						,	b.transid
 						,	b.transdate
@@ -584,6 +597,8 @@ BEGIN
 						,	b.bettype
 						,	b.custid
 						,	b.betteam
+						,	st.BetChoiceHome
+						,	st.BetChoiceAway
 						,	b.betid
 						,	b.stake * b.actualrate 
 						,	b.stake
@@ -614,7 +629,8 @@ BEGIN
 					IF (@CustAmountRM > 0) 
 					BEGIN	
 
-						INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
+						INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetChoiceHome,BetChoiceAway
+							,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
 							SELECT b.sequenceid
 								,	b.transid
 								,	b.transdate
@@ -629,6 +645,8 @@ BEGIN
 								,	b.bettype
 								,	b.custid
 								,	b.betteam
+								,	st.BetChoiceHome
+								,	st.BetChoiceAway
 								,	b.betid
 								,	b.stake * b.actualrate 
 								,	b.stake
@@ -664,7 +682,8 @@ BEGIN
 						IF (@BatchSize = 0) ---GET TotalTicket
 						BEGIN
 
-							INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
+							INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetChoiceHome,BetChoiceAway
+								,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
 							SELECT b.sequenceid
 								,	b.transid
 								,	b.transdate
@@ -679,6 +698,8 @@ BEGIN
 								,	b.bettype
 								,	b.custid
 								,	b.betteam
+								,	st.BetChoiceHome
+								,	st.BetChoiceAway
 								,	b.betid
 								,	b.stake * b.actualrate 
 								,	b.stake
@@ -710,7 +731,8 @@ BEGIN
 						END
 						ELSE IF (@BatchSize > 0) --- GET Ticket Details 
 						BEGIN
-							INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
+							INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetChoiceHome,BetChoiceAway
+								,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
 							SELECT TOP (@BatchSize) b.sequenceid
 								,	b.transid
 								,	b.transdate
@@ -725,6 +747,8 @@ BEGIN
 								,	b.bettype
 								,	b.custid
 								,	b.betteam
+								,	st.BetChoiceHome
+								,	st.BetChoiceAway
 								,	b.betid
 								,	b.stake * b.actualrate 
 								,	b.stake
@@ -944,7 +968,7 @@ BEGIN
 			BEGIN
 				IF EXISTS (	SELECT 1 
 							FROM #tmpSportBettype AS st WITH(NOLOCK) 
-							WHERE st.BetChoiceType = 0) --Filter Betteam
+							WHERE st.BetChoiceType = 1) --Filter Betteam
 				BEGIN
 		
 					INSERT INTO #tmpSupportedBetTeam (BetTeam)
@@ -956,7 +980,9 @@ BEGIN
 					WHERE bt.BetTeam IS NULL;
 				
 				END
-				ELSE
+				ELSE IF EXISTS (	SELECT 1 
+							FROM #tmpSportBettype AS st WITH(NOLOCK) 
+							WHERE st.BetChoiceType = 2)
 				BEGIN
 					INSERT INTO #tmpSupportedHDP (Hdp) --Filter HDP
 					SELECT ssk.value FROM STRING_SPLIT(@ListHDPBetTeam, ',') ssk;
@@ -1021,6 +1047,9 @@ BEGIN
 				,	tmpTk.BetType
 				,	tmpTk.CustId
 				,	tmpTk.BetTeam
+				,	(CASE WHEN tmpTk.BetTeam = tmpTk.BetChoiceHome THEN 10
+						 WHEN tmpTk.BetTeam = tmpTk.BetChoiceAway THEN 20
+						 ELSE NULL END) AS ChoiceOrder
 				,	tmpTk.BetId
 				,	tmpTk.Stake
 				,	tmpTk.OrgStake

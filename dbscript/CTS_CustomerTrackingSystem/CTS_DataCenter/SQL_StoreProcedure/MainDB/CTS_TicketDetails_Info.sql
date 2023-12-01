@@ -42,18 +42,18 @@ AS
 			@TicketType=0: Ticket Type = 'All'
 			@TicketType=1: Ticket Type = 'Suspicious'
 		@ListSportBettype: JSON
-			,@ListSportBettype='[	{"SportTypeID":1, "BetTypeID":1, "BetChoiceType":1}
-								,	{"SportTypeID":2, "BetTypeID":3, "BetChoiceType":1}
-								,	{"SportTypeID":43, "BetTypeID":9001, "BetChoiceType":1}]'	
+			,@ListSportBettype='[	{"SportTypeID":1, "BetTypeID":1, "BetChoiceType":2}
+								,	{"SportTypeID":2, "BetTypeID":3, "BetChoiceType":2}
+								,	{"SportTypeID":43, "BetTypeID":9001, "BetChoiceType":2}]'	
 
 	Example:
 		DECLARE @MaxSequenceId BIGINT,@TotalTicketAll BIGINT,@TotalTicketLicensee BIGINT,@TotalTicketCredit BIGINT;
 		EXEC [dbo].[CTS_TicketDetails_Info] 
 			72186342 -- @MatchID
 		,	NULL -- @EventDate
-		,	'[		{"SportTypeID":1, "BetTypeID":1, "BetChoiceType":1}
-								,	{"SportTypeID":43, "BetTypeID":9001, "BetChoiceType":1}
-								,	{"SportTypeID":43, "BetTypeID":9003, "BetChoiceType":1}]'
+		,	'[		{"SportTypeID":1, "BetTypeID":1, "BetChoiceType":2}
+								,	{"SportTypeID":43, "BetTypeID":9001, "BetChoiceType":2}
+								,	{"SportTypeID":43, "BetTypeID":9003, "BetChoiceType":2}]'
 		--,	1 -- @BetType
 		,	1 -- @IsLive
 		,	'' -- @ListSuspiciousTransId
@@ -176,7 +176,7 @@ BEGIN
 			SportTypeID				SMALLINT
 		,	BetTypeID				INT
 		,	BetChoiceType			TINYINT
-		,	BetIDPattern			VARCHAR(20)
+		,	BetIDPattern			NVARCHAR(20)
 		,	BetID					BIGINT
 	);
 	--=============================================================================================
@@ -257,7 +257,7 @@ BEGIN
 				,	e.currency
 				,	e.ExchangeId
 				,	b.bettype
-				,	ABS(CASE WHEN st.BetChoiceType = 1 THEN b.Hdp1 - b.Hdp2 END) AS HDP
+				,	ABS(CASE WHEN st.BetChoiceType = 2 THEN b.Hdp1 - b.Hdp2 END) AS HDP
 				,	b.statusID
 			FROM #tmpSuspiciousDistinctTrans AS tmpTs WITH(NOLOCK)
 				INNER JOIN dbo.bettrans AS b WITH(NOLOCK) ON tmpTs.TransId = b.TransId
@@ -297,7 +297,7 @@ BEGIN
 				,	e.currency
 				,	e.ExchangeId
 				,	b.bettype
-				,	ABS(CASE WHEN st.BetChoiceType = 1 THEN b.Hdp1 - b.Hdp2 END) AS Hdp
+				,	ABS(CASE WHEN st.BetChoiceType = 2 THEN b.Hdp1 - b.Hdp2 END) AS Hdp
 				,	b.statusID				
 				,	SequenceId
 			FROM dbo.bettrans AS b WITH(NOLOCK)
@@ -338,7 +338,7 @@ BEGIN
 				,	e.currency
 				,	e.ExchangeId
 				,	b.bettype
-				,	ABS(CASE WHEN st.BetChoiceType = 1 THEN b.Hdp1 - b.Hdp2 END) AS Hdp
+				,	ABS(CASE WHEN st.BetChoiceType = 2 THEN b.Hdp1 - b.Hdp2 END) AS Hdp
 				,	b.statusID
 			FROM #tmpSuspiciousDistinctTrans AS tmpTs WITH(NOLOCK)
 				INNER JOIN dbo.bettrans14 AS b WITH(NOLOCK) ON tmpTs.TransId = b.TransId
@@ -379,7 +379,7 @@ BEGIN
 				,	e.currency
 				,	e.ExchangeId
 				,	b.bettype
-				,	ABS(CASE WHEN st.BetChoiceType = 1 THEN b.Hdp1 - b.Hdp2 END) AS Hdp
+				,	ABS(CASE WHEN st.BetChoiceType = 2 THEN b.Hdp1 - b.Hdp2 END) AS Hdp
 				,	b.statusID
 			FROM #tmpSuspiciousDistinctTrans AS tmpTs WITH(NOLOCK)
 				INNER JOIN bodb_Archive.dbo.bettrans_bk AS b WITH(NOLOCK) ON tmpTs.TransId = b.TransId
@@ -446,7 +446,7 @@ BEGIN
 	FROM #tmpTrans AS tmpTs
 		LEFT JOIN #tmpSuspiciousTrans AS tmpSt ON tmpSt.TransId = tmpTs.TransId
 	;
-
+	
 	DROP TABLE IF EXISTS #tmpSupportedSportBettype;
 	DROP TABLE IF EXISTS #tmpTrans;
 	DROP TABLE IF EXISTS #tmpExcludeTransIds;
