@@ -15,9 +15,10 @@ sp:BEGIN
 
 		Revisions:
 			- 20230807@Jonathan.Doan: Created [Redmine ID: #191960]
+			- 20231123@Jonathan.Doan: Integrate FPSjs Phrase 2 [Redmine: 196656]
             
 		Param's Explanation (filtered by):
-
+			
 		Example:
 			CALL DCS_DC_ArchiveData_ModifiedDate_Update(100);
 	*/ 
@@ -35,6 +36,12 @@ sp:BEGIN
 	CREATE TEMPORARY TABLE Temp_Transaction07(
         	TransID				BIGINT UNSIGNED PRIMARY KEY
         ,	BotComponentID		BIGINT UNSIGNED DEFAULT NULL
+        ,	CookieID			BIGINT UNSIGNED DEFAULT NULL
+        ,	RawUserAgentID		BIGINT UNSIGNED DEFAULT NULL
+        ,	RawFingerPrintID	BIGINT UNSIGNED DEFAULT NULL
+        ,	BrowserInstanceID	BIGINT UNSIGNED DEFAULT NULL
+        ,	FPDeviceID			BIGINT UNSIGNED DEFAULT NULL
+        ,	AccountID			BIGINT UNSIGNED DEFAULT NULL
         ,	CreatedDate			DATETIME
         , 	INDEX IX_Temp_Transaction07_CreatedDate(CreatedDate)
     );
@@ -45,10 +52,52 @@ sp:BEGIN
         ,	MaxCreatedDate		DATETIME
     );
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_Cookie;
+	CREATE TEMPORARY TABLE Temp_Cookie(
+        	ID					BIGINT UNSIGNED PRIMARY KEY
+        ,	MaxCreatedDate		DATETIME
+    );
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_RawUserAgent;
+	CREATE TEMPORARY TABLE Temp_RawUserAgent(
+        	ID					BIGINT UNSIGNED PRIMARY KEY
+        ,	MaxCreatedDate		DATETIME
+    );
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_RawFingerPrint;
+	CREATE TEMPORARY TABLE Temp_RawFingerPrint(
+        	ID					BIGINT UNSIGNED PRIMARY KEY
+        ,	MaxCreatedDate		DATETIME
+    );
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_BrowserInstance;
+	CREATE TEMPORARY TABLE Temp_BrowserInstance(
+        	ID					BIGINT UNSIGNED PRIMARY KEY
+        ,	MaxCreatedDate		DATETIME
+    );
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_FPDevice;
+	CREATE TEMPORARY TABLE Temp_FPDevice(
+        	ID					BIGINT UNSIGNED PRIMARY KEY
+        ,	MaxCreatedDate		DATETIME
+    );
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_Account;
+	CREATE TEMPORARY TABLE Temp_Account(
+        	ID					BIGINT UNSIGNED PRIMARY KEY
+        ,	MaxCreatedDate		DATETIME
+    );
+    
     /*******GET DATA Transaction07********************/
-    INSERT INTO Temp_Transaction07(TransID, BotComponentID, CreatedDate)
+    INSERT INTO Temp_Transaction07(TransID, BotComponentID, CookieID, RawUserAgentID, RawFingerPrintID, BrowserInstanceID, FPDeviceID, AccountID, CreatedDate)
     SELECT 	TransID
         ,	BotComponentID
+        ,	CookieID
+        ,	RawUserAgentID
+        ,	RawFingerPrintID
+        ,	BrowserInstanceID
+        ,	FPDeviceID
+        ,	AccountID
         ,	CreatedDate
 	FROM DCS_DataCenter.Transaction07
 	WHERE TransID > lv_MaxTransID
@@ -61,10 +110,76 @@ sp:BEGIN
     FROM Temp_Transaction07
     WHERE BotComponentID IS NOT NULL
     GROUP BY BotComponentID;
+    
+    INSERT INTO Temp_Cookie(ID, MaxCreatedDate)
+    SELECT 	CookieID AS ID
+		,	MAX(CreatedDate) AS MaxCreatedDate
+    FROM Temp_Transaction07
+    WHERE CookieID IS NOT NULL
+    GROUP BY CookieID;
+    
+    INSERT INTO Temp_RawUserAgent(ID, MaxCreatedDate)
+    SELECT 	RawUserAgentID AS ID
+		,	MAX(CreatedDate) AS MaxCreatedDate
+    FROM Temp_Transaction07
+    WHERE RawUserAgentID IS NOT NULL
+    GROUP BY RawUserAgentID;
+    
+    INSERT INTO Temp_RawFingerPrint(ID, MaxCreatedDate)
+    SELECT 	RawFingerPrintID AS ID
+		,	MAX(CreatedDate) AS MaxCreatedDate
+    FROM Temp_Transaction07
+    WHERE RawFingerPrintID IS NOT NULL
+    GROUP BY RawFingerPrintID;
+    
+    INSERT INTO Temp_BrowserInstance(ID, MaxCreatedDate)
+    SELECT 	BrowserInstanceID AS ID
+		,	MAX(CreatedDate) AS MaxCreatedDate
+    FROM Temp_Transaction07
+    WHERE BrowserInstanceID IS NOT NULL
+    GROUP BY BrowserInstanceID;
+    
+    INSERT INTO Temp_FPDevice(ID, MaxCreatedDate)
+    SELECT 	FPDeviceID AS ID
+		,	MAX(CreatedDate) AS MaxCreatedDate
+    FROM Temp_Transaction07
+    WHERE FPDeviceID IS NOT NULL
+    GROUP BY FPDeviceID;
+    
+    INSERT INTO Temp_Account(ID, MaxCreatedDate)
+    SELECT 	AccountID AS ID
+		,	MAX(CreatedDate) AS MaxCreatedDate
+    FROM Temp_Transaction07
+    WHERE AccountID IS NOT NULL
+    GROUP BY AccountID;
 
     /*******UPDATE ModifiedDate********************/
 	UPDATE DCS_DataCenter.BotComponent AS main
 		INNER JOIN Temp_BotComponent AS tmp ON tmp.ID = main.ID
+	SET main.ModifiedDate = tmp.MaxCreatedDate;
+    
+	UPDATE DCS_DataCenter.Cookie AS main
+		INNER JOIN Temp_Cookie AS tmp ON tmp.ID = main.ID
+	SET main.ModifiedDate = tmp.MaxCreatedDate;
+    
+	UPDATE DCS_DataCenter.RawUserAgent AS main
+		INNER JOIN Temp_RawUserAgent AS tmp ON tmp.ID = main.ID
+	SET main.ModifiedDate = tmp.MaxCreatedDate;
+    
+	UPDATE DCS_DataCenter.RawFingerPrint AS main
+		INNER JOIN Temp_RawFingerPrint AS tmp ON tmp.ID = main.ID
+	SET main.ModifiedDate = tmp.MaxCreatedDate;
+    
+	UPDATE DCS_DataCenter.BrowserInstance AS main
+		INNER JOIN Temp_BrowserInstance AS tmp ON tmp.ID = main.ID
+	SET main.ModifiedDate = tmp.MaxCreatedDate;
+    
+	UPDATE DCS_DataCenter.FPDevice AS main
+		INNER JOIN Temp_FPDevice AS tmp ON tmp.ID = main.ID
+	SET main.ModifiedDate = tmp.MaxCreatedDate;
+    
+	UPDATE DCS_DataCenter.AccountFingerprint AS main
+		INNER JOIN Temp_Account AS tmp ON tmp.ID = main.AccountID
 	SET main.ModifiedDate = tmp.MaxCreatedDate;
     
     
