@@ -19,7 +19,9 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_DC_Transform_Association_Insert('[{"DeviceID": 1, "AccountID": 300016, "FPDeviceID": 100, "CreatedDate": "2023-11-17 00:00:00.000000", "CreatedTime": "2023-11-17 10:33:46.527500", "SubscriberID": 2}]');
+			CALL DCS_DC_Transform_Association_Insert('[{"DeviceID": 3, "AccountID": 300016, "FPDeviceID": null, "CreatedDate": "2023-11-17 00:00:00.000000", "CreatedTime": "2023-11-17 10:33:46.527500", "SubscriberID": 2}]');
+			CALL DCS_DC_Transform_Association_Insert('[{"DeviceID": 6, "AccountID": 300016, "FPDeviceID": null, "CreatedDate": "2023-11-17 00:00:00.000000", "CreatedTime": "2023-11-17 10:33:46.527500", "SubscriberID": 2}]');
+        select * from Association;
 
 	*/
     DECLARE lv_CreatedDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
@@ -30,7 +32,7 @@ BEGIN
 			ID						INT UNSIGNED		NOT NULL AUTO_INCREMENT PRIMARY KEY
         ,	AccountID				BIGINT UNSIGNED		NOT NULL
         ,	DeviceID				BIGINT UNSIGNED		NOT NULL
-        ,	FPDeviceID				BIGINT UNSIGNED		NOT NULL
+        ,	FPDeviceID				BIGINT UNSIGNED		DEFAULT 0
         ,	SubscriberID			BIGINT UNSIGNED		
         ,	CreatedTime				TIMESTAMP(4)		
         ,	CreatedDate				DATETIME			
@@ -40,7 +42,7 @@ BEGIN
     INSERT INTO Temp_AssociationInsert(AccountID, DeviceID, FPDeviceID, SubscriberID, CreatedTime, CreatedDate)
 	SELECT 	tmp.AccountID
 		,	tmp.DeviceID
-		,	tmp.FPDeviceID
+		,	IFNULL(tmp.FPDeviceID,0) AS FPDeviceID
 		,	MIN(tmp.SubscriberID) AS SubscriberID
 		,	MIN(tmp.CreatedTime) AS CreatedTime
 		,	MIN(tmp.CreatedDate) AS CreatedDate
@@ -57,7 +59,6 @@ BEGIN
 		) AS tmp
 	WHERE tmp.AccountID IS NOT NULL
 		AND tmp.DeviceID IS NOT NULL
-		AND tmp.FPDeviceID IS NOT NULL
 	GROUP BY tmp.AccountID, tmp.DeviceID, tmp.FPDeviceID;
     
     /* === Add index === */
@@ -69,7 +70,7 @@ BEGIN
 													AND ass.DeviceID = tmp.DeviceID
 													AND ass.FPDeviceID = tmp.FPDeviceID
     SET tmp.IsNewRecord = 0;
-	
+    
 	INSERT IGNORE INTO DCS_DataCenter.Association(AccountID, DeviceID, FPDeviceID, SubscriberID, CreatedTime, CreatedDate, InsertTime)
 	SELECT	AccountID
 		,	DeviceID
