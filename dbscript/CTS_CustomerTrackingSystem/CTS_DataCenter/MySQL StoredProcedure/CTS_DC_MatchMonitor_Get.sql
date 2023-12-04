@@ -12,7 +12,6 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Get`(
     ,	IN 	ip_Bettypes 		JSON 			# BettypeID and BetID       
     ,	IN	ip_Reason			VARCHAR(50)
 )
-
     SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -43,12 +42,12 @@ BEGIN
 			- ip_MatchInfos: 	= NULL: search by InsertDate
 								<> NULL: search by EventDate
 		Example:
-			-	CALL CTS_DC_MatchMonitor_Get_xtest(@ip_MatchInfos:=NULL,@ip_FromDate:='2023-01-05',@ip_ToDate:='2023-01-8',@ip_SportType:=1,@ip_Market:=1,@ip_MatchSection:='1,2,3,4',@ip_IsVerified:=NULL
+			-	CALL CTS_DC_MatchMonitor_Get(@ip_MatchInfos:=NULL,@ip_FromDate:='2023-01-05',@ip_ToDate:='2023-01-8',@ip_SportType:=1,@ip_Market:=1,@ip_MatchSection:='1,2,3,4',@ip_IsVerified:=NULL
 				,@ip_Bettypes:='[{"BettypeID":1,"BetID":0},{"BettypeID":3,"BetID":0},{"BettypeID":7,"BetID":0}]',@ip_Reason:='0,1,2');
 	*/
 	
 	DECLARE lv_IsLog TINYINT DEFAULT 0;    
-	DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_Get';
+	DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_Get_xtest';
     DECLARE lv_LogInfo TEXT;
 	
 	#==================LOG=======================================================
@@ -68,8 +67,7 @@ BEGIN
       
 	DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitor;
     CREATE TEMPORARY TABLE Temp_MatchMonitor(
-			ID				BIGINT UNSIGNED
-        ,	MatchID 		INT
+        	MatchID 		INT
         ,	EventDate		DATETIME DEFAULT NULL
         ,	LiveIndicator	TINYINT
         ,	HomeID			INT
@@ -165,9 +163,8 @@ BEGIN
 	EXECUTE stmt1; 
     
     IF (IFNULL(ip_MatchInfos,'') = '') THEN # Search by Scanned Date
-		INSERT INTO Temp_MatchMonitor(ID, MatchID, LiveIndicator, HomeID, AwayID, LeagueID, LeagueName, Sporttype, BettypeID, BetID, Reason)    
-		SELECT 	s.ID
-			,	s.MatchID
+		INSERT INTO Temp_MatchMonitor(MatchID, LiveIndicator, HomeID, AwayID, LeagueID, LeagueName, Sporttype, BettypeID, BetID, Reason)    
+		SELECT 	DISTINCT s.MatchID
 			,	s.LiveIndicator
 			,	s.HomeID
 			,	s.AwayID
@@ -186,8 +183,7 @@ BEGIN
     ELSE #ip_MatchInfos <> '' THEN # Search by Event Date		
 		DROP TEMPORARY TABLE IF EXISTS Temp_MatchInfo;
 		CREATE TEMPORARY TABLE Temp_MatchInfo(
-				ID				BIGINT UNSIGNED
-			,	MatchID 		INT
+				MatchID 		INT
 			,	EventDate		DATETIME
 			,	LiveIndicator	TINYINT
 			,	HomeID			INT
@@ -203,10 +199,9 @@ BEGIN
             
 			,	INDEX IDX_Temp_MatchInfo(MatchID,BettypeID,BetID)
 		);
-		
-		INSERT IGNORE INTO Temp_MatchInfo (ID, MatchID, EventDate, LiveIndicator, HomeID, AwayID, LeagueID, LeagueName, Sporttype, BettypeID, BetID, Reason, MatchSection, KickOffTime)
-		SELECT  s.ID
-			,	js.MatchId
+                                
+		INSERT IGNORE INTO Temp_MatchInfo (MatchID, EventDate, LiveIndicator, HomeID, AwayID, LeagueID, LeagueName, Sporttype, BettypeID, BetID, Reason, MatchSection, KickOffTime)
+		SELECT  DISTINCT js.MatchId
 			,	js.EventDate
 			,	s.LiveIndicator
 			,	s.HomeID
@@ -230,11 +225,11 @@ BEGIN
 								) AS js ON js.MatchId = s.MatchId
 			INNER JOIN Temp_Bettype AS tmpBt ON s.BettypeID = tmpBt.BettypeID AND s.BetID = tmpBt.BetID
 			INNER JOIN Temp_Reason AS r ON r.ReasonID = s.Reason
-		WHERE s.LiveIndicator = IFNULL(ip_Market, s.LiveIndicator);
+		WHERE s.LiveIndicator = IFNULL(ip_Market, s.LiveIndicator) -- and js.MatchId = 76874318
+        ;
 	
-		INSERT INTO Temp_MatchMonitor(ID, MatchID, EventDate, LiveIndicator, HomeID, AwayID, LeagueID, LeagueName, Sporttype, BettypeID, BetID, Reason, MatchSection, KickOffTime)    
-		SELECT 	tmpMi.ID
-			,	tmpMi.MatchID
+		INSERT INTO Temp_MatchMonitor(MatchID, EventDate, LiveIndicator, HomeID, AwayID, LeagueID, LeagueName, Sporttype, BettypeID, BetID, Reason, MatchSection, KickOffTime)    
+		SELECT 	DISTINCT tmpMi.MatchID
 			,	tmpMi.EventDate
 			,	tmpMi.LiveIndicator
 			,	tmpMi.HomeID
