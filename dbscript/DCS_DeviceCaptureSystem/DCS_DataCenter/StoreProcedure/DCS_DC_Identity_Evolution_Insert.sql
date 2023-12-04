@@ -48,13 +48,11 @@ BEGIN
 	WHERE tmp.TransID IS NOT NULL
 		AND tmp.RecoverRawFingerPrintID IS NOT NULL
 	GROUP BY tmp.TransID;
-
+    
 	UPDATE Temp_TransactionInfo AS tmp
 		INNER JOIN DCS_DataCenter.Transaction AS trans ON trans.TransID = tmp.TransID
 	SET tmp.RawFingerPrintID = trans.RawFingerPrintID
     ,	tmp.CookieID = trans.CookieID;
-    
-    select * from Temp_TransactionInfo;
     
     /* === Add index === */
 	ALTER TABLE Temp_TransactionInfo
@@ -63,6 +61,12 @@ BEGIN
 	UPDATE Temp_TransactionInfo AS tmp
 		INNER JOIN DCS_DataCenter.FPDeviceFingerPrint AS df ON df.RawFingerPrintID = tmp.RecoverRawFingerPrintID
 	SET tmp.DeviceID = df.DeviceID;
+
+    /* === Return data === */
+    select	TransID
+		,	DeviceID AS FPDeviceID
+		,	4 AS RecoverType
+    from Temp_TransactionInfo;
     
     DELETE FROM Temp_TransactionInfo WHERE DeviceID IS NULL;
     
