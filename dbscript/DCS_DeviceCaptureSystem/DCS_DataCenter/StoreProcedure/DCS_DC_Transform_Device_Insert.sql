@@ -429,6 +429,7 @@ BEGIN
     SET de.FirstTransID = dv.FirstTransID
 		, de.FirstDeviceCode = dv.FirstDeviceCode;
     
+    
     # UPDATE back Temp_Transaction
     UPDATE Temp_Transaction AS tts
 	LEFT JOIN Temp_ExistedDevice de ON de.DeviceCode = tts.DeviceCode
@@ -446,7 +447,7 @@ BEGIN
                                         WHEN de.DeviceID > 0 AND de.IsNew = 1 THEN vrDeviceStatusNew  
 										ELSE tts.DeviceStatus
 									END;
-
+	
     GET DIAGNOSTICS rowCount = ROW_COUNT;
     INSERT INTO Temp_PerformanceStats(step_name, start_time, diff_time, stats)
     WITH CTE_Stats AS (

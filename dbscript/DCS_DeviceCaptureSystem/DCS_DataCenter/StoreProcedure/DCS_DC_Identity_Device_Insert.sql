@@ -26,7 +26,6 @@ BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_InputTrans;
 	DROP TEMPORARY TABLE IF EXISTS Temp_TransactionInfo;
-	DROP TEMPORARY TABLE IF EXISTS Temp_AccountFingerprint;
     
 	CREATE TEMPORARY TABLE Temp_InputTrans(
 		TransID		BIGINT UNSIGNED PRIMARY KEY
@@ -41,13 +40,6 @@ BEGIN
 		,	DeviceID				BIGINT UNSIGNED
 		,	RecoverType				TINYINT DEFAULT 0
 	);
-    
-	CREATE TEMPORARY TABLE Temp_AccountFingerprint(
-			ID							INT UNSIGNED AUTO_INCREMENT		PRIMARY KEY 
-        ,	AccountID					BIGINT UNSIGNED 				
-        ,	RawFingerPrintID			BIGINT UNSIGNED
-		,	IsNewAccountFingerprint		TINYINT DEFAULT 1
-    );
     
     SET @sql = CONCAT("INSERT INTO Temp_InputTrans (TransID) VALUES ('", REPLACE(ip_TransIDs, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
@@ -86,6 +78,7 @@ BEGIN
     /* === Return data === */
     SELECT 	TransID
 		,	DeviceID AS FPDeviceID
+		,	RecoverType
     FROM Temp_TransactionInfo;
     
     

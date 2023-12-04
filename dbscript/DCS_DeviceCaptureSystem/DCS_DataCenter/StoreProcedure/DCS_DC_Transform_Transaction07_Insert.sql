@@ -34,6 +34,7 @@ BEGIN
 		,	DeviceCodeID			BIGINT UNSIGNED
 		,	FirstDeviceCode			VARCHAR(32)
 		,	DeviceStatus			TINYINT
+		,	RecoverType				TINYINT
 		,	DeviceFingerprintID		BIGINT UNSIGNED
 	);
         
@@ -67,15 +68,17 @@ BEGIN
 		,	RawFingerPrintID		BIGINT UNSIGNED
 		,	BrowserInstanceID		BIGINT UNSIGNED
 		,	FPDeviceID				BIGINT UNSIGNED
+		,	RecoverType				TINYINT
 	);
     
-    INSERT INTO Temp_InputTrans(TransID, DeviceID, FPDeviceID, DeviceCodeID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID)
+    INSERT INTO Temp_InputTrans(TransID, DeviceID, FPDeviceID, DeviceCodeID, FirstDeviceCode, DeviceStatus, RecoverType, DeviceFingerprintID)
 	SELECT	tmpJs.TransID
 		,	tmpJs.DeviceID
 		,	tmpJs.FPDeviceID
         ,	tmpJs.DeviceCodeID
         ,	tmpJs.FirstDeviceCode
         ,	tmpJs.DeviceStatus
+        ,	tmpJs.RecoverType
         ,	tmpJs.DeviceFingerprintID
     FROM JSON_TABLE(
 			ip_TransJson,
@@ -86,11 +89,12 @@ BEGIN
 						,	DeviceCodeID			BIGINT UNSIGNED		PATH "$.DeviceCodeID"
 						,	FirstDeviceCode			VARCHAR(32) 		PATH "$.FirstDeviceCode"
 						,	DeviceStatus			TINYINT				PATH "$.DeviceStatus"
+						,	RecoverType				TINYINT				PATH "$.RecoverType"
 						,	DeviceFingerprintID		BIGINT UNSIGNED		PATH "$.DeviceFingerprintID"
 					)
 		) AS tmpJs;
     
-    INSERT INTO Temp_Transaction07(TransID, RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FPDeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, FakeIP, CookieID, RawUserAgentID, RawFingerPrintID, BrowserInstanceID)
+    INSERT INTO Temp_Transaction07(TransID, RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FPDeviceID, RecoverType, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, FakeIP, CookieID, RawUserAgentID, RawFingerPrintID, BrowserInstanceID)
 	SELECT 	trans.TransID
 		,	ifnull(trans.RawTransID, trans.TransID) AS RawTransID
 		,	trans.LoginName
@@ -101,6 +105,7 @@ BEGIN
 		,	tmp.DeviceCodeID
 		,	tmp.DeviceID
 		,	tmp.FPDeviceID
+		,	tmp.RecoverType
 		,	tmp.FirstDeviceCode
 		,	tmp.DeviceStatus
 		,	tmp.DeviceFingerprintID
@@ -124,7 +129,7 @@ BEGIN
 		INNER JOIN DCS_DataCenter.Transaction AS trans ON trans.TransID = tmp.TransID
 	WHERE tmp.DeviceID IS NOT NULL;
     
-    INSERT INTO DCS_DataCenter.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FPDeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, FakeIP, CookieID, RawUserAgentID, RawFingerPrintID, BrowserInstanceID)
+    INSERT INTO DCS_DataCenter.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FPDeviceID, RecoverType, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, FakeIP, CookieID, RawUserAgentID, RawFingerPrintID, BrowserInstanceID)
 	SELECT 	RawTransID
 		,	LoginName
 		,	TransTime
@@ -134,6 +139,7 @@ BEGIN
 		,	DeviceCodeID
 		,	DeviceID
 		,	FPDeviceID
+		,	RecoverType
 		,	FirstDeviceCode
 		,	DeviceStatus
 		,	DeviceFingerprintID

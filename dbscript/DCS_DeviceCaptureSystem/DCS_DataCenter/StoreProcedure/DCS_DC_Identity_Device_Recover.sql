@@ -72,6 +72,7 @@ BEGIN
     /* Return list trans that can recover */
     SELECT 	TransID
 		,	DeviceID AS FPDeviceID
+		,	RecoverType
     FROM Temp_TransactionInfo
     WHERE DeviceID IS NOT NULL;
     

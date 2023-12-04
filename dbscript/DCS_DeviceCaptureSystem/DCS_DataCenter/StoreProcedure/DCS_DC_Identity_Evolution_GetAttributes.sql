@@ -56,9 +56,9 @@ BEGIN
 		,	bisa.ID
 		,	bis.ID
 	FROM Temp_InputRawFingerPrintID AS tmp
-		INNER JOIN FPS_FingerPrint.FingerPrintAttribute AS fpa ON fpa.RawFingerPrintId = tmp.RawFingerPrintID
-		INNER JOIN FPS_FingerPrint.BrowserInstanceRawFingerPrint AS bisa ON bisa.RawFingerPrintID = tmp.RawFingerPrintID
-		INNER JOIN FPS_FingerPrint.BrowserInstance AS bis ON bis.ID = bisa.BrowserInstanceID
+		INNER JOIN DCS_DataCenter.FingerPrintAttribute AS fpa ON fpa.RawFingerPrintId = tmp.RawFingerPrintID
+		INNER JOIN DCS_DataCenter.BrowserInstanceRawFingerPrint AS bisa ON bisa.RawFingerPrintID = tmp.RawFingerPrintID
+		INNER JOIN DCS_DataCenter.BrowserInstance AS bis ON bis.ID = bisa.BrowserInstanceID
  	WHERE bis.BrowserFamilyCode = ip_BrowserFamilyCode;
     
 END$$
