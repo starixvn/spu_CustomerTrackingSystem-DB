@@ -26,6 +26,7 @@ BEGIN
 			- 20230426@Jonathan.Doan: Get BotDetectionValue from RawTransaction [Redmine ID: #186644]
             - 2023292023@Casey.Huynh: CTMAX, Velki [RedmineID: #190118]
             - 20230809@Jonathan.Doan: Add more field for IP detail [RedmineID: #192402]
+			- 20231205@Jonathan.Doan: Integrate FPSjs Phrase 2 [Redmine: 196656]
             
 	    Param's Explanation (filtered by):
         
@@ -408,26 +409,6 @@ BEGIN
 		SELECT 'NEW_FingerprintCode' AS step_name, start_time, TIMESTAMPDIFF(MICROSECOND, start_time, CURRENT_TIMESTAMP(4)) / 1000 as diff_time, JSON_OBJECT('rowCount', rowCount, 'warning', info_message, 'code', info_no, 'state', cod_name) as stats
     )
     SELECT step_name, start_time, diff_time, stats FROM CTE_Stats;
-   
-    # INSERT new Association
-    SET start_time = CURRENT_TIMESTAMP(4);
-    INSERT IGNORE INTO DCS_Extra.Association(DeviceID, AccountID, SubscriberID, CreatedTime, CreatedDate,  InsertTime)
-    SELECT de.DeviceID
-		, tts.AccountID
-		, MIN(tts.SubscriberID) AS SubscriberID
-		, MIN(tts.TransTime) AS CreatedTime
-		, MIN(tts.CreatedDate) AS CreatedDate
-		, insertionTime	AS InsertTime
-    FROM Temp_Transaction AS tts
-    INNER JOIN Temp_ExistedDevice de ON de.DeviceCode = tts.DeviceCode
-    GROUP BY  de.DeviceID, tts.AccountID;
-	
-    GET DIAGNOSTICS rowCount = ROW_COUNT;
-    INSERT INTO Temp_PerformanceStats(step_name, start_time, diff_time, stats)
-    WITH CTE_Stats AS (
-		SELECT 'NEW_Association' AS step_name, start_time, TIMESTAMPDIFF(MICROSECOND, start_time, CURRENT_TIMESTAMP(4)) / 1000 as diff_time, JSON_OBJECT('rowCount', rowCount, 'warning', info_message, 'code', info_no, 'state', cod_name) as stats
-    )
-    SELECT step_name, start_time, diff_time, stats FROM CTE_Stats;
        
     # UPDATE back Temp_ExistedDevice
     SET start_time = CURRENT_TIMESTAMP(4);
@@ -463,56 +444,16 @@ BEGIN
 	
     /*****MOVE TRans competed to Trans07****************************************************/
     IF err_no = 0 THEN
-		SET start_time = CURRENT_TIMESTAMP(4);
-		INSERT IGNORE INTO  DCS_Extra.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, IPInfoID)
-		SELECT 	ifnull(ts.RawTransID, ts.TransID)
-			,	ts.LoginName
-            ,	ts.TransTime
-            ,	ts.SubscriberID
-            ,	ts.AccountID
-            ,	ts.URLID
-            ,	tmp_rm.DeviceCodeID
-            ,	tmp_rm.DeviceID
-            ,	tmp_rm.FirstDeviceCode
-            ,	tmp_rm.DeviceStatus
-            ,	tmp_rm.DeviceFingerprintID
-            ,	ts.UserAgentKey
-            ,	ts.IP
-            ,	ts.IPID
-            ,	ts.ActionResultID
-            ,	ts.Flagged
-            ,	ts.PluginID
-            ,	ts.TransStatus
-            ,	ts.CreatedDate
-            ,	ts.InsertTime
-            ,	ts.BotDetectionValue
-            ,	ts.BotComponentID
-			,   ts.IPInfoID
-		FROM DCS_Extra.Transaction AS ts
-		INNER JOIN Temp_Transaction AS tmp_rm
-			ON	ts.TransID = tmp_rm.TransID
-		WHERE tmp_rm.DeviceID IS NOT NULL;
-        
-		#DELETE Transaction
-		DELETE ts
-		FROM DCS_Extra.Transaction AS ts
-		INNER JOIN	Temp_Transaction AS tmp_rm
-					ON	ts.TransID = tmp_rm.TransID
-		WHERE tmp_rm.DeviceID IS NOT NULL;
-
-		GET DIAGNOSTICS rowCount = ROW_COUNT;
-		INSERT INTO Temp_PerformanceStats(step_name, start_time, diff_time, stats)
-		WITH CTE_Stats AS (
-			SELECT 'MOVE_DELETE_Transaction07' AS step_name, start_time, TIMESTAMPDIFF(MICROSECOND, start_time, CURRENT_TIMESTAMP(4)) / 1000 as diff_time, JSON_OBJECT('rowCount', rowCount) as stats
-		)
-		SELECT step_name, start_time, diff_time, stats FROM CTE_Stats;
+		SELECT 	tmp.TransID
+			,	tmp.DeviceCodeID
+            ,	tmp.DeviceID
+            ,	tmp.FirstDeviceCode
+            ,	tmp.DeviceStatus
+            ,	tmp.DeviceFingerprintID
+		FROM Temp_Transaction AS tmp
+		WHERE tmp.DeviceID IS NOT NULL;
 	END IF;
 	# END transform
-    
-    # INSERT perf counter
-    #INSERT INTO MonDB.dba_SP_PerformanceStats (sch_name, sp_name, step_id, step_name, start_time, diff_time, stats, call_time, end_time)
-	#SELECT sch_name, sp_name, step_id, step_name, st.start_time, diff_time, stats, call_time, CURRENT_TIMESTAMP(4) as end_time
-	#FROM Temp_PerformanceStats st;
 END$$
 
 DELIMITER ;

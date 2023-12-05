@@ -21,8 +21,10 @@ BEGIN
 			- 20210510@Aries.Nguyen: Remove insert log dba_SP_PerformanceStats [Redmine ID: #154792]
             - 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
             - 2023292023@Casey.Huynh: CTMAX, Velki [RedmineID: #190118]
+			- 20231205@Jonathan.Doan: Integrate FPSjs Phrase 2 [Redmine: 196656]
 	    Param's Explanation (filtered by):
         Example:
+			CALL DCS_Extra.DCS_ET_Transform_RawTrans_GetPackage(0, 2, 1);
 	*/
 	DECLARE	lv_TotalRecord	INT UNSIGNED DEFAULT 0;
     DECLARE lv_FromTransID	BIGINT UNSIGNED;
@@ -59,7 +61,7 @@ BEGIN
 		    AND rt.IsProcessed = ip_IsProcessed
 		LIMIT	 lv_TotalRecord
 	) AS t
-	GROUP BY batchID;    
+	GROUP BY batchID;
 
     SET lv_FromTransID = IFNULL((SELECT MIN(MinTransID) FROM Temp_Transaction), lv_FromTransID);
     UPDATE DCS_Extra.SystemSetting 
