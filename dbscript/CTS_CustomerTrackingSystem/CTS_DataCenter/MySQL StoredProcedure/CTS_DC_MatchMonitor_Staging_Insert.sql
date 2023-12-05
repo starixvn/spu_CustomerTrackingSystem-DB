@@ -30,6 +30,7 @@ BEGIN
 			- 	20221228@Victoria.Le: Add HDP for Irrgation Rule [Redmine ID: #181990]
 			-	20230203@Victoria.Le: Change Odds Range for Fixed Game Rule - Malayisan Odds [Redmine ID: #183277]
             -	20231120@Casey.Huynh: E-Sport GB support New Bettypes, change setting table [Redmine ID: #196396]
+            -	20221103@Casey.Huynh: Enhance Hedging Rule, execlute Licensee Cust and Limit stake [Redmine ID: #192172]
             
 		Param's Explanation (filtered by):		
 
@@ -90,12 +91,13 @@ BEGIN
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorRuleSetting;
     CREATE TEMPORARY TABLE Temp_MatchMonitorRuleSetting(
-			RuleGroupID TINYINT 
+			RuleGroupID	TINYINT 
 		,	SportType INT
         ,	BettypeID	INT
-		,	LeagueType BOOLEAN
-		,	MinOdds DECIMAL(10,4) 
-		,	MaxOdds decimal(10,4)
+		,	LeagueType	BOOLEAN
+		,	MinOdds		DECIMAL(10,4) 
+		,	MaxOdds		DECIMAL(10,4)
+        ,	MinStake	DECIMAL(20,4) NULL
         
         ,	PRIMARY KEY PK_Temp_MatchMonitorRuleSetting(RuleGroupID, SportType, BettypeID, LeagueType)
         
@@ -108,7 +110,7 @@ BEGIN
 		,	mst.LeagueType
 		,	mst.MinOdds
         ,	mst.MaxOdds
-    FROM (	SELECT sbs.SportTypeID, sbs.BetTypeID, js.Reason 
+        ,	mst.HighStake
 			FROM CTS_DataCenter.SportBettypeSetting AS sbs
 			, JSON_TABLE(CONCAT('["', REPLACE(IFNULL(MMReason,''), ',', '","'), '"]'),
 								  '$[*]' COLUMNS (Reason VARCHAR(2) PATH '$')) js) AS tmp
@@ -238,7 +240,7 @@ BEGIN
                         AND ABS(tmpSt.Odds) >= tmpMst.MinOdds;
 
         #=====Staging Hedging Soccer================================
-		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingHedgingLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
+		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingHedgingLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, CTSCustID, SubscriberID, Stake, Betteam, InsertTime)
 		SELECT	tmpSt.SequenceID
 			,	tmpSt.TransID
 			,	tmpSt.TransDate
@@ -257,10 +259,13 @@ BEGIN
 			,	tmpSt.BettypeID
 			,	tmpSt.BetID
 			,	tmpSt.CustID
+            ,	tmpSt.CTSCustID 
+            ,	cus.SubscriberID
 			,	tmpSt.Stake
 			,	tmpSt.Betteam
 			,	CURRENT_TIMESTAMP(3) AS InsertTime
 		FROM Temp_Staging AS tmpSt
+			INNER JOIN CTS_DataCenter.CTSCustomer cus ON tmpSt.CustID = cus.CustID
 			INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_HEDGING
 																AND tmpMst.SportType = tmpSt.SportType 
                                                                 AND (tmpMst.LeagueType = 2 OR (tmpMst.LeagueType = tmpSt.IsMajorLeague))
@@ -360,7 +365,6 @@ BEGIN
 													AND tmpMst.BettypeID = tmpSt.BettypeID
 													AND ABS(tmpSt.Odds) >= tmpMst.MinOdds;     
 
-		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingHedgingNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, InsertTime)
 		SELECT	tmpSt.SequenceID
 			,	tmpSt.TransID
 			,	tmpSt.TransDate
@@ -378,7 +382,9 @@ BEGIN
 			,	tmpSt.ScoreDiff
 			,	tmpSt.BettypeID
 			,	tmpSt.BetID
-			,	tmpSt.CustID
+			,	tmpSt.CustID            
+            ,	tmpSt.CTSCustID
+            ,	cus.SubscriberID
 			,	tmpSt.Stake
 			,	tmpSt.Betteam
 			,	CURRENT_TIMESTAMP(3) AS InsertTime
@@ -387,6 +393,7 @@ BEGIN
 													AND tmpMst.SportType = tmpSt.SportType 
 													AND (tmpMst.LeagueType = 2 OR (tmpMst.LeagueType = tmpSt.IsMajorLeague))
 													AND tmpMst.BettypeID = tmpSt.BettypeID;     
+			AND  cus.IsLicensee = 0;     
 
         #=====Staging - Irrigation - Soccer================================        
 
