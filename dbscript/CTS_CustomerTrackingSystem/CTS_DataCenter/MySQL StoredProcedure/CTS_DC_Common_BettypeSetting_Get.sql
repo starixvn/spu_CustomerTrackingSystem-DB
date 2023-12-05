@@ -31,8 +31,8 @@ BEGIN
 		Example:        
 		Service MM Detection: CALL CTS_DC_Common_BettypeSetting_Get(@ip_FunctionID:=1,@ip_SportTypeIDList:=NULL,@ip_BettypeIDList:=NULL,@ip_IsFilterMMDetection:=1,@ip_IsShowDetailsX:=0,@ip_Status:=1); 
 		Filter MM: CALL CTS_DC_Common_BettypeSetting_Get(@ip_FunctionID:=1,@ip_SportTypeIDList:=NULL,@ip_BettypeIDList:=NULL,@ip_IsFilterMMDetection:=0,@ip_IsShowDetailsX:=1,@ip_Status:=1);
-
 	*/
+    
 	DROP TEMPORARY TABLE IF EXISTS Temp_SportTypeID;
 	CREATE TEMPORARY TABLE Temp_SportTypeID (
 			SportTypeID	INT PRIMARY KEY
@@ -63,9 +63,10 @@ BEGIN
             ,	sbs.BetTypeID
             ,	(CASE WHEN js.NameDetailsX <> '' THEN REPLACE(sbs.BettypeNameDisplay,' X ', CONCAT(' ',js.NameDetailsX,' '))  
 							ELSE sbs.BettypeNameDisplay END) AS BettypeNameDisplay
-            ,	sbs.BetChoiceType
-            ,	sbs.BetChoiceHome
-            ,	sbs.BetChoiceAway
+            ,	REPLACE(json_extract(BetChoicePattern, '$.BetChoiceHome'),'"','') AS BetChoiceHome
+            ,	REPLACE(json_extract(BetChoicePattern, '$.BetChoiceHomeDisplay'),'"','') AS BetChoiceHomeDisplay
+			,	REPLACE(json_extract(BetChoicePattern, '$.BetChoiceAway'),'"','') AS BetChoiceAway
+            ,	REPLACE(json_extract(BetChoicePattern, '$.BetChoiceAwayDisplay'),'"','') AS BetChoiceAwayDisplay
             ,	sbs.BetIDPattern
             ,	sbs.IsMMDetection
             ,	sbs.IsDefaultSelected
@@ -89,9 +90,10 @@ BEGIN
 			,	sbs.SportName
             ,	sbs.BetTypeID
             , 	sbs.BetTypeNameDisplay
-            ,	sbs.BetChoiceType
-            ,	sbs.BetChoiceHome
-            ,	sbs.BetChoiceAway
+            ,	REPLACE(json_extract(BetChoicePattern, '$.BetChoiceHome'),'"','') AS BetChoiceHome
+            ,	REPLACE(json_extract(BetChoicePattern, '$.BetChoiceHomeDisplay'),'"','') AS BetChoiceHomeDisplay
+			,	REPLACE(json_extract(BetChoicePattern, '$.BetChoiceAway'),'"','') AS BetChoiceAway
+            ,	REPLACE(json_extract(BetChoicePattern, '$.BetChoiceAwayDisplay'),'"','') AS BetChoiceAwayDisplay
             ,	sbs.BetIDPattern
             ,	sbs.IsMMDetection
             ,	sbs.IsDefaultSelected
