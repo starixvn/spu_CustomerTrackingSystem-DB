@@ -30,6 +30,10 @@ sp:BEGIN
 	*/
     DECLARE	CONST_GROUP_NORMAL 					INT DEFAULT 200;
     DECLARE	CONST_GROUP_PROBLEM 				INT DEFAULT 0;
+	
+	DECLARE CONS_RangeDevice 					BIGINT DEFAULT 10000000000;
+	DECLARE CONS_RangeAIGroup 					BIGINT DEFAULT 20000000000;
+	DECLARE CONS_RangeAgent						BIGINT DEFAULT 30000000000;
     
     DECLARE lv_OrigID 							BIGINT;
     DECLARE lv_GroupID 							BIGINT DEFAULT 1;
@@ -83,6 +87,11 @@ sp:BEGIN
 			CTSCustID			BIGINT UNSIGNED PRIMARY KEY
 		,	AssociationType 	VARCHAR(100) DEFAULT ''
 	);
+	
+	DROP TEMPORARY TABLE IF EXISTS Temp_DestIDCount;
+	CREATE TEMPORARY TABLE 	Temp_DestIDCount (
+			DestID 	BIGINT
+	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_GroupResult;
 	CREATE TEMPORARY TABLE 		Temp_GroupResult (
@@ -100,9 +109,7 @@ sp:BEGIN
 	CREATE TEMPORARY TABLE 		Temp_NodeCTSCustID (
 			CTSCustID 			BIGINT PRIMARY KEY
 	);
-    
 
-    # 1-Device, 2-Manual, 3-AI, 4-AIGroup, 5-IP, 6 - Agent, 7 - SharedIP, 8 - SharedMatches
     DROP TEMPORARY TABLE IF EXISTS Temp_Graph;
 	CREATE TEMPORARY TABLE 	Temp_Graph (
 			OrigID 				BIGINT  
@@ -141,8 +148,7 @@ sp:BEGIN
         ,	cus.Danger5
         ,	cus.RoleID
         ,	cus.CreatedDate
-        ,	CASE WHEN cus.CTSCustID IS NULL OR cus.IsInternal = 1 THEN 1
-			ELSE 0 END AS Processed
+        ,	CASE WHEN cus.CTSCustID IS NULL OR cus.IsInternal = 1 THEN 1 ELSE 0 END AS Processed
         ,   cus.IsLicensee
         ,	cus.SubscriberID
 	FROM JSON_TABLE(CONCAT('[',ip_CTSCustIDs,']'),'$[*]' COLUMNS(NESTED PATH '$' COLUMNS (CTSCustID BIGINT UNSIGNED PATH '$'))) AS tmp
@@ -169,21 +175,20 @@ sp:BEGIN
                                                         AND cus.CustSubID = 0
     WHERE tmp.RoleID = 1
         AND tmp.IsLicensee = 0;
+		
 
-	INSERT IGNORE INTO Temp_Graph(OrigID,DestID, HasDevice)
+	INSERT IGNORE INTO Temp_Graph(OrigID, DestID, HasDevice)
     SELECT 	js.OrigID
-		,	js.DestID
-        ,	CASE WHEN AssociationType = 1 THEN 1 ELSE 0 END AS HasDevice
+		,	(CONS_RangeDevice + js.DestID)
+        ,	1
 	FROM JSON_TABLE(ip_Device,
 		"$[*]" COLUMNS( OrigID 				BIGINT 		PATH "$.O"                
 					,	DestID				BIGINT 		PATH "$.D"
-					,	AssociationType		INT			PATH "$.A"
-	)) AS js
-    ON DUPLICATE KEY UPDATE HasDevice = CASE WHEN js.AssociationType = 1 THEN 1 ELSE HasDevice END;
+	)) AS js;
 
-	INSERT IGNORE INTO Temp_Graph(OrigID,DestID, HasAI, HasAIGroup)
+	INSERT INTO Temp_Graph(OrigID, DestID, HasAI, HasAIGroup)
     SELECT 	js.OrigID
-		,	js.DestID
+		,	CASE WHEN AssociationType = 4 THEN (CONS_RangeAIGroup + js.DestID) ELSE js.DestID END
         ,	CASE WHEN AssociationType = 3 THEN 1 ELSE 0 END AS HasAI
         ,	CASE WHEN AssociationType = 4 THEN 1 ELSE 0 END AS HasAIGroup
 	FROM JSON_TABLE(ip_AI,
@@ -194,60 +199,39 @@ sp:BEGIN
     ON DUPLICATE KEY UPDATE HasAI = CASE WHEN js.AssociationType = 3 THEN 1 ELSE HasAI END
                         ,   HasAIGroup = CASE WHEN js.AssociationType = 4 THEN 1 ELSE HasAIGroup END;
 
-    INSERT IGNORE INTO Temp_Graph(OrigID,DestID, HasIP)
+    INSERT INTO Temp_Graph(OrigID,DestID, HasIP)
     SELECT 	js.OrigID
 		,	js.DestID
-        ,	CASE WHEN AssociationType = 5 THEN 1 ELSE 0 END AS HasIP
+        ,	1
 	FROM JSON_TABLE(ip_IP,
 		"$[*]" COLUMNS( OrigID 				BIGINT 		PATH "$.O"                
 					,	DestID				BIGINT 		PATH "$.D"
-					,	AssociationType		INT			PATH "$.A"
 	)) AS js
-    ON DUPLICATE KEY UPDATE HasIP = CASE WHEN js.AssociationType = 5 THEN 1 ELSE HasIP END;
+    ON DUPLICATE KEY UPDATE HasIP = 1;
 
-	INSERT IGNORE INTO Temp_Graph(OrigID,DestID,HasAgent) 
-    SELECT 	OrigID
-		,	DestID
-        ,	1 AS HasAgent
+	INSERT INTO Temp_Graph(OrigID,DestID,HasAgent) 
+    SELECT 	js.OrigID
+		,	CONS_RangeAgent + js.DestID
+        ,	1
 	FROM JSON_TABLE(ip_Agent,
 		"$[*]" COLUMNS( OrigID 			BIGINT 		PATH "$.O"                
 					,	DestID			BIGINT 		PATH "$.D"
 	)) AS js
     ON DUPLICATE KEY UPDATE HasAgent = 1;
 	
-	INSERT IGNORE INTO Temp_Graph(OrigID,DestID,HasSharedIP)  
-	SELECT 	OrigID 
-		,	DestID
-		,	1 AS HasSharedIP
+	INSERT INTO Temp_Graph(OrigID,DestID,HasSharedIP)  
+	SELECT 	js.OrigID 
+		,	js.DestID
+		,	1
 	FROM JSON_TABLE(ip_SharedIP,
 		"$[*]" COLUMNS( OrigID 		BIGINT 		PATH "$.O"                
 					,	DestID		BIGINT 		PATH "$.D"
 	)) AS js
 	ON DUPLICATE KEY UPDATE HasSharedIP = 1;
 
-	INSERT IGNORE INTO Temp_Graph(OrigID,DestID,HasSharedIP)  
-	SELECT 	DestID 
-		,	OrigID
-		,	1 AS HasSharedIP
-	FROM JSON_TABLE(ip_SharedIP,
-		"$[*]" COLUMNS( OrigID 		BIGINT 		PATH "$.O"                
-					,	DestID		BIGINT 		PATH "$.D"
-	)) AS js
-	ON DUPLICATE KEY UPDATE HasSharedIP = 1;
-
-	INSERT IGNORE INTO Temp_Graph(OrigID,DestID,HasSharedMatches)  
-	SELECT 	OrigID 
-		,	DestID
-		,	1 AS HasSharedMatches
-	FROM JSON_TABLE(ip_SharedMatches,
-		"$[*]" COLUMNS( OrigID 		BIGINT 		PATH "$.O"                
-					,	DestID		BIGINT 		PATH "$.D"
-	)) AS js
-	ON DUPLICATE KEY UPDATE HasSharedMatches = 1;
-
-	INSERT IGNORE INTO Temp_Graph(OrigID,DestID,HasSharedMatches)  
-	SELECT 	DestID 
-		,	OrigID
+	INSERT INTO Temp_Graph(OrigID,DestID,HasSharedMatches)  
+	SELECT 	js.OrigID 
+		,	js.DestID
 		,	1 AS HasSharedMatches
 	FROM JSON_TABLE(ip_SharedMatches,
 		"$[*]" COLUMNS( OrigID 		BIGINT 		PATH "$.O"                
@@ -273,8 +257,6 @@ sp:BEGIN
         UPDATE Temp_Cust AS tmp
         SET tmp.Processed = 1
         WHERE  tmp.CTSCustID = lv_OrigID;
-                         
-		
 						 
 		INSERT IGNORE INTO Temp_NodeCTSCustID(CTSCustID)
 		WITH RECURSIVE CTE_Group AS ( 
@@ -323,22 +305,60 @@ sp:BEGIN
 	END LOOP;
 
     /*****************************Handle AssociationType Info**************************************************/
+    INSERT INTO Temp_DestIDCount(DestID)
+    SELECT grp.DestID
+    FROM Temp_Graph AS grp
+    WHERE EXISTS (SELECT 1 
+					FROM Temp_Cust AS cus 
+					WHERE cus.CTSCustID = grp.OrigID 
+						AND (grp.HasDevice = 1 OR grp.HasAIGroup = 1 OR grp.HasAgent = 1 ))
+    GROUP BY DestID
+    HAVING COUNT(1) > 1;
+	
+	INSERT IGNORE INTO Temp_CustAssociationType(CTSCustID, AssociationType)
+    SELECT 	cus.CTSCustID
+		,   'Device'
+    FROM Temp_Cust AS cus
+    WHERE EXISTS (	SELECT 1 
+					FROM Temp_Graph AS grp 
+						INNER JOIN Temp_DestIDCount AS des ON grp.DestID = des.DestID
+					WHERE cus.CTSCustID = grp.OrigID AND grp.HasDevice = 1);
+					
+	INSERT IGNORE INTO Temp_CustAssociationType(CTSCustID, AssociationType)
+    SELECT 	cus.CTSCustID
+		,   'Agent'
+    FROM Temp_Cust AS cus
+    WHERE EXISTS (	SELECT 1 
+					FROM Temp_Graph AS grp 
+						INNER JOIN Temp_DestIDCount AS des ON grp.DestID = des.DestID
+					WHERE cus.CTSCustID = grp.OrigID AND grp.HasAgent = 1)
+	ON DUPLICATE KEY UPDATE AssociationType = CONCAT(AssociationType, ", Agent");
+	
     INSERT IGNORE INTO Temp_CustAssociationType(CTSCustID, AssociationType)
     WITH CTE AS (SELECT cus.CTSCustID
-					,	CONCAT(IF(MAX(HasDevice) =1, ", Device","")
-							  ,IF(MAX(HasAgent) =1, ", Agent","")
-							  ,IF(MAX(HasAI) =1 OR MAX(HasAIGroup) =1, ", Betting Pattern","")
-							  ,IF(MAX(HasIP) =1, ", IP","")
-							  ,IF(MAX(HasSharedIP) =1, ", IP(last3days)","")
-							  ,IF(MAX(HasSharedMatches) =1, ", Match","")) AS AssociationTypeStr
+					,	CONCAT(IF(MAX(HasAI) =1, ", Betting Pattern","")
+                              ,IF(MAX(HasIP) =1, ", IP","")
+                              ,IF(MAX(HasSharedIP) =1, ", IP(last3days)","")
+                              ,IF(MAX(HasSharedMatches) =1, ", Match","")) AS AssociationTypeStr
 				FROM Temp_Cust AS cus
-					INNER JOIN Temp_Graph AS grp ON cus.CTSCustID = grp.OrigID OR cus.CTSCustID = grp.DestID
-					INNER JOIN Temp_Cust_Dup AS dup ON dup.CTSCustID = grp.DestID
+					INNER JOIN Temp_Graph AS grp ON (cus.CTSCustID = grp.OrigID OR cus.CTSCustID = grp.DestID) AND (grp.HasDevice = 0 OR grp.HasAIGroup = 0 OR grp.HasAgent = 0)
+                    INNER JOIN Temp_Cust_Dup AS dup ON dup.CTSCustID = grp.DestID
 				GROUP BY cus.CTSCustID)
 	SELECT CTE.CTSCustID
 		,	SUBSTR(CTE.AssociationTypeStr, 2)
     FROM CTE
     ON DUPLICATE KEY UPDATE AssociationType = CONCAT(AssociationType, CTE.AssociationTypeStr);
+    
+    INSERT INTO Temp_CustAssociationType(CTSCustID, AssociationType)
+    SELECT 	cus.CTSCustID
+		,   'Betting Pattern' 
+    FROM Temp_Cust AS cus
+    WHERE EXISTS (	SELECT 1 
+					FROM Temp_Graph AS grp 
+						INNER JOIN Temp_DestIDCount AS des ON grp.DestID = des.DestID
+					WHERE cus.CTSCustID = grp.OrigID AND grp.HasAIGroup = 1)
+	ON DUPLICATE KEY UPDATE AssociationType = CASE WHEN AssociationType LIKE '%Betting Pattern%' THEN AssociationType
+												   ELSE CONCAT(AssociationType,', Betting Pattern') END;
 	
      IF (ip_IsGetLogTransInfo IS TRUE)
     THEN
@@ -450,7 +470,6 @@ sp:BEGIN
         ,	re.CTSCustID AS AgentCTSCustID
         ,	re.Username AS AgentUsername
         ,	re.Evidence AS AgentEvidence
-        
         
         ,	(SELECT GROUP_CONCAT(DISTINCT ' ',ev.EvidenceCode) 
 			 FROM CTS_DataCenter.CustEvidence AS ce  

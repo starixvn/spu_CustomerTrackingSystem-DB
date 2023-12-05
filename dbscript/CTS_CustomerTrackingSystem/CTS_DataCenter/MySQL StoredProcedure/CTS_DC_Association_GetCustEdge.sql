@@ -25,7 +25,7 @@ BEGIN
 	*/
 	DECLARE CONST_ASSTYPE_BETTINGPATTERN 	INT DEFAULT 2;
 	DECLARE CONST_ASSBYAI_ACTIVESTATUS 		INT DEFAULT 1;    
-    DECLARE CONST_ASSTYPE_IP 				INT DEFAULT 4;
+	DECLARE CONST_ASSTYPE_IP 				INT DEFAULT 4;
 	DECLARE CONST_ASSBYIP_ACTIVESTATUS 		INT DEFAULT 1; 
 	#=============================================================================
 	
@@ -76,42 +76,24 @@ BEGIN
     
 	/*******************AssociationType = 1 >> Device*************************/
     IF ip_HasDevice = 1 THEN
-		DROP TEMPORARY TABLE IF EXISTS Temp_DeviceEdge1;
-		CREATE TEMPORARY TABLE 		Temp_DeviceEdge1 (
-				CTSCustID		BIGINT 
-			,	DCSDeviceID		BIGINT 
-			,	PRIMARY KEY	(CTSCustID, DCSDeviceID)
-            ,	INDEX IX_Temp_DeviceEdge1_DCSDeviceID(DCSDeviceID)
-		);
-        
-        DROP TEMPORARY TABLE IF EXISTS Temp_DeviceEdge2;
-		CREATE TEMPORARY TABLE 		Temp_DeviceEdge2 (
-				CTSCustID		BIGINT 
-			,	DCSDeviceID		BIGINT 
-			,	PRIMARY KEY	(CTSCustID, DCSDeviceID)
-            ,	INDEX IX_Temp_DeviceEdge2_DestID(DCSDeviceID)
+		DROP TEMPORARY TABLE IF EXISTS Temp_Device;
+		CREATE TEMPORARY TABLE 		Temp_Device (
+				DCSDeviceID		BIGINT PRIMARY KEY 
 		);
 		
-		INSERT IGNORE INTO Temp_DeviceEdge1(CTSCustID, DCSDeviceID)
-		SELECT 	cus.CTSCustID
-			,	dv.DCSDeviceID
-		FROM Temp_CustNode AS tmp
-			INNER JOIN CTS_DataCenter.AssociationByDevice AS dv ON tmp.CTSCustID =  dv.CTSCustID;
-
-		INSERT IGNORE INTO Temp_DeviceEdge2(CTSCustID, DCSDeviceID)
-		SELECT DISTINCT 
-				cus.CTSCustID
-			,	dv.DCSDeviceID
-		FROM Temp_DeviceEdge1 AS tmp
-			INNER JOIN CTS_DataCenter.AssociationByDevice AS dv ON dv.DCSDeviceID = tmp.DCSDeviceID 
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON dv.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0;
+		INSERT INTO Temp_Device(DCSDeviceID)
+		SELECT 	DISTINCT
+				dv.DCSDeviceID 
+		FROM Temp_CustNode AS cus
+			INNER JOIN CTS_DataCenter.AssociationByDevice AS dv ON dv.CTSCustID = cus.CTSCustID; 
         
 		INSERT IGNORE INTO Temp_Graph(OrigID,DestID,AssociationType)
-		SELECT  LEAST(tmp1.CTSCustID,tmp2.CTSCustID) AS OrigID
-			, 	GREATEST(tmp1.CTSCustID,tmp2.CTSCustID) AS DestID
-			,	1 AS AssociationType
-		FROM Temp_DeviceEdge1 AS tmp1
-			INNER JOIN Temp_DeviceEdge2 AS tmp2 ON tmp1.DCSDeviceID = tmp2.DCSDeviceID;
+		SELECT  cus.CTSCustID AS OrigID
+			,	tmp.DCSDeviceID AS DestID
+			,	1 AS AssociationType 
+		FROM Temp_Device AS tmp
+			INNER JOIN CTS_DataCenter.AssociationByDevice AS lv1 ON tmp.DCSDeviceID =  lv1.DCSDeviceID
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON lv1.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0;
 	END IF;
 	
     /*******************AssociationType = 3 >> AI*************************/
@@ -137,48 +119,24 @@ BEGIN
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ai.FromCustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
 		
 		/*******************AssociationType = 4 >> Group AI*************************/
-		DROP TEMPORARY TABLE IF EXISTS Temp_GroupEdge1;
-		CREATE TEMPORARY TABLE 		Temp_GroupEdge1 (
-				CustID			BIGINT 
-			,	CTSCustID		BIGINT 
-			,	GroupID			BIGINT 
-			,	PRIMARY KEY	(CustID, CTSCustID, GroupID)
-            ,	INDEX IX_Temp_GroupEdge1_GroupID(GroupID)
+		DROP TEMPORARY TABLE IF EXISTS Temp_AIGroup;
+		CREATE TEMPORARY TABLE 	Temp_AIGroup (
+				GroupID			BIGINT  PRIMARY KEY
 		);
 		
-        DROP TEMPORARY TABLE IF EXISTS Temp_GroupEdge2;
-		CREATE TEMPORARY TABLE 		Temp_GroupEdge2 (
-				CustID			BIGINT 
-			,	CTSCustID		BIGINT 
-			,	GroupID			BIGINT 
-			,	PRIMARY KEY	(CustID, CTSCustID, GroupID)
-             ,	INDEX IX_Temp_GroupEdge2_GroupID(GroupID)
-		);
-		
-		INSERT IGNORE INTO Temp_GroupEdge1(CustID, CTSCustID, GroupID)
-		SELECT DISTINCT
-				cus.CustID
-			,	cus.CTSCustID
-			, 	asg.GroupID
-		FROM Temp_CustNode AS tmp 
-			INNER JOIN CTS_DataCenter.AssociationGroupByAI AS asg ON asg.CustID = tmp.CustID
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = asg.CustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
-		
-		INSERT IGNORE INTO Temp_GroupEdge2(CustID, CTSCustID, GroupID)
-		SELECT DISTINCT
-				cus.CustID
-			,	cus.CTSCustID
-			, 	asg.GroupID
-		FROM Temp_GroupEdge1 AS tmp 
-			INNER JOIN CTS_DataCenter.AssociationGroupByAI AS asg ON asg.GroupID = tmp.GroupID AND asg.CustID != tmp.CustID
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = asg.CustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
-		
+		INSERT INTO Temp_AIGroup(GroupID)
+		SELECT	DISTINCT
+				asg.GroupID 
+		FROM Temp_CustNode AS cus 
+			INNER JOIN CTS_DataCenter.AssociationGroupByAI AS asg ON asg.CustID = cus.CustID;  
+
 		INSERT IGNORE INTO Temp_Graph(OrigID,DestID,AssociationType)
-		SELECT  LEAST(tmp1.CTSCustID,tmp2.CTSCustID) AS OrigID
-			, 	GREATEST(tmp1.CTSCustID,tmp2.CTSCustID) AS DestID
+		SELECT  cus.CTSCustID AS OrigID
+			, 	tmp.GroupID AS DestID
 			,	4 AS AssociationType
-		FROM Temp_GroupEdge1 AS tmp1
-			INNER JOIN Temp_GroupEdge2 AS tmp2 ON tmp1.GroupID = tmp2.GroupID;
+		FROM Temp_AIGroup AS tmp 
+			INNER JOIN CTS_DataCenter.AssociationGroupByAI AS asg ON tmp.GroupID = asg.GroupID
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = asg.CustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
 		
 	END IF;
 		

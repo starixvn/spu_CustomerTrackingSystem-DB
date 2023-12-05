@@ -46,10 +46,8 @@ BEGIN
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_GroupResult;
 	CREATE TEMPORARY TABLE 		Temp_GroupResult (
-			OrigID 				BIGINT 
-		,	DestID 				BIGINT 
+			CTSCustID 			BIGINT PRIMARY KEY	
 		,	GroupID 			BIGINT
-		,	PRIMARY KEY	(OrigID,DestID)
 		,	INDEX			    IX_Temp_GroupResult(GroupID)
 	);
         
@@ -62,7 +60,7 @@ BEGIN
 	CREATE TEMPORARY TABLE 		Temp_NodeCTSCustID (
 			CTSCustID 			BIGINT PRIMARY KEY
 	);
-	
+
 	#=============================================================================	
 	INSERT IGNORE INTO Temp_Cust(CTSCustID, CustID, Recommend)
 	SELECT 	cus.CTSCustID
@@ -102,14 +100,6 @@ BEGIN
 	INSERT INTO Temp_Recommend_Dup SELECT * FROM Temp_Recommend;
 	
 	CALL CTS_DataCenter.CTS_DC_Association_GetCustEdge(lv_AgentJson,1,0,0);
-	
-	DROP TEMPORARY TABLE IF EXISTS Temp_Graph_Dup;
-	CREATE TEMPORARY TABLE Temp_Graph_Dup LIKE Temp_Graph;
-	INSERT INTO Temp_Graph_Dup 
-	SELECT grp.* 
-	FROM Temp_Graph AS grp
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = grp.OrigID AND cus.IsInternal = 0
-		INNER JOIN CTS_DataCenter.CTSCustomer AS dup ON dup.CTSCustID = grp.DestID AND cus.IsInternal = 0;
 
 	lp: LOOP 
 		SET lv_OrigID = NULL;
@@ -153,38 +143,35 @@ BEGIN
         SELECT DISTINCT 
 				gr.GroupID
         FROM Temp_GroupResult AS gr
-		WHERE EXISTS (SELECT 1 FROM Temp_NodeCTSCustID AS tmp WHERE gr.OrigID = tmp.CTSCustID);
+		WHERE EXISTS (SELECT 1 FROM Temp_NodeCTSCustID AS tmp WHERE gr.CTSCustID = tmp.CTSCustID);
 		
 		IF EXISTS (SELECT 1 FROM Temp_GroupID) THEN
 			UPDATE Temp_GroupResult AS gr
             SET gr.GroupID = lv_GroupID
-            WHERE EXISTS (SELECT 1 FROM Temp_GroupID AS tmp WHERE gr.OrigID = tmp.GroupID);
+            WHERE EXISTS (SELECT 1 FROM Temp_GroupID AS tmp WHERE gr.CTSCustID = tmp.GroupID);
         END IF;
 		
-		INSERT IGNORE Temp_GroupResult(OrigID,DestID,GroupID)
-        SELECT 	lv_OrigID
-            ,	CTSCustID
+		INSERT IGNORE Temp_GroupResult(CTSCustID,GroupID)
+        SELECT 	CTSCustID
             ,	lv_GroupID
         FROM Temp_NodeCTSCustID;
 		
 		UPDATE Temp_Recommend AS tmp
         SET tmp.Processed = 1
-        WHERE  EXISTS (SELECT 1 FROM Temp_GroupResult AS gp WHERE  gp.DestID = tmp.CTSCustID);
+        WHERE  EXISTS (SELECT 1 FROM Temp_GroupResult AS gp WHERE  gp.CTSCustID = tmp.CTSCustID);
         
 		SET lv_GroupID = lv_GroupID + 1;
+		
         TRUNCATE TABLE Temp_NodeCTSCustID;
         TRUNCATE TABLE Temp_GroupID;
 	
 	END LOOP;
 
-	SELECT 	cus.CTSCustID AS OrigID 
-		 ,	cusd.CTSCustID AS DestID
+	SELECT 	cus.CTSCustID AS OrigID
+        ,	grp.GroupID AS DestID
     FROM Temp_GroupResult AS grp
-		INNER JOIN Temp_Recommend AS re ON re.CTSCustID = grp.OrigID
-		INNER JOIN Temp_Recommend_Dup AS red ON red.CTSCustID = grp.DestID
-        INNER JOIN Temp_Cust AS cus ON re.CustID = cus.Recommend
-		INNER JOIN Temp_Cust_Dup AS cusd ON red.CustID = cusd.Recommend
-	WHERE grp.OrigID <> grp.DestID;
+		INNER JOIN Temp_Recommend AS re ON re.CTSCustID = grp.CTSCustID
+        INNER JOIN Temp_Cust AS cus ON re.CustID = cus.Recommend;
 	
 END$$
 

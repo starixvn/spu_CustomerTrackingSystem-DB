@@ -45,7 +45,6 @@ BEGIN
 		,	DestID
         ,	AssociationType
     FROM Temp_Graph
-    WHERE OrigID <> DestID
     ;
 	
 END$$
