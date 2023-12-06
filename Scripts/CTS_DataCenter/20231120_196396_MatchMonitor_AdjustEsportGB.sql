@@ -28,6 +28,17 @@ CREATE TABLE SportBettypeSetting (
   PRIMARY KEY (FunctionID,SportTypeID,BetTypeID)
 ) ENGINE=InnoDB;
 
+ALTER TABLE CTS_DataCenter.SportBettypeSetting
+ADD COLUMN MMReason VARCHAR(200) AFTER IsMMDetection;
+
+SELECT * FROM CTS_DataCenter.SportBettypeSetting;
+
+SELECT * FROM CTS_DataCenter.MatchMonitorRuleSetting AS mst;
+
+UPDATE CTS_DataCenter.SportBettypeSetting
+SET MMReason = '0'
+WHERE SportTypeID = 1;
+
 INSERT INTO CTS_DataCenter.SportBettypeSetting(FunctionID,SportTypeID,BetTypeID,SportName,BetTypeName,BetTypeNameDetailsX,BettypeNameDisplay,BetChoicePattern,BetChoiceType,BetIDPattern,IsMMDetection,IsDefaultSelected,PriorityOrder,Status)
 VALUES(1,1,1,'Soccer','Handicap',null,'HDP','{"BetChoiceAway": "a", "BetChoiceHome": "h", "BetChoiceAwayDisplay": "a", "BetChoiceHomeDisplay": "h"}',2,null,1,1,1,1)
 ,(1,1,2,'Soccer','Odd/Even',null,'O/E','{"BetChoiceAway": "a", "BetChoiceHome": "h", "BetChoiceAwayDisplay": "e", "BetChoiceHomeDisplay": "o"}',2,null,0,0,25,1)
