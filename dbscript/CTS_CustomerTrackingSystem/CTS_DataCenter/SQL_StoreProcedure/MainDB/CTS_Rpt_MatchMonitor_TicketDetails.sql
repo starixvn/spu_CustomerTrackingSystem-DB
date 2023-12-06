@@ -27,6 +27,9 @@ ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_TicketDetails]
 	,	@ListReason					VARCHAR(MAX) = NULL
 	,	@ListAGroup					VARCHAR(MAX) = NULL
 	,	@ListMGroup					VARCHAR(MAX) = NULL
+	,	@FromTransDate				DATETIME = NULL
+	,	@ToTransDate				DATETIME = NULL
+
 	,	@MinSequenceId				BIGINT = NULL OUTPUT
 	,	@TotalTicket				INT = NULL OUTPUT
 
@@ -63,6 +66,7 @@ AS
 		- 20231017@Victoria.Le: Modify Formula to calculate Odds - For Decimal Odds [Redmine ID: #195562]
         - 20231024@Long.Luu: 	Add Agent HITRM & WINRM as internal account [Redmine ID: #195355]
         - 20231106@Long.Luu: 	Exclude Reject Tickets [Redmine ID: #196399]
+		- 20231116@Long.Luu: 	Support filter by FromTransDate-ToTransDate [Redmine ID: 195042]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize)
@@ -102,7 +106,8 @@ BEGIN
 		,	@IsGetDataFromOrigin	BIT = 0
 		,	@IsGetDataFrom14		BIT = 0
 		,	@IsGetDataFromBK		BIT = 0;
-
+		
+	SET @ToTransDate = DATEADD(SECOND,1,@ToTransDate);
 	--==================================================================
 	IF	OBJECT_ID('tempdb..#tmpTickets') IS NOT NULL
 	BEGIN
@@ -519,6 +524,7 @@ BEGIN
 						INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.matchid = m.matchid
 						INNER JOIN #tmpSupportedSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportType AND b.bettype = st.BetType 
 						INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
+					WHERE (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
 					;
 				END;
 			END;
@@ -566,6 +572,7 @@ BEGIN
 						INNER JOIN dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
 						INNER JOIN #tmpSupportedSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportType AND b.bettype = st.BetType 
 						INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
+					WHERE (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
 					;
 				END;
 			END;
@@ -613,6 +620,7 @@ BEGIN
 						INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 						INNER JOIN #tmpSupportedSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportType AND b.bettype = st.BetType 
 						INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
+					WHERE (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
 					;
 				END
 				ELSE IF (@TicketType = 0)
@@ -664,7 +672,8 @@ BEGIN
 								AND b.bettype = @BetType
 								AND b.sequenceid < @LastScannedSequenceID
 								AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
-								AND (@BetID = 0 OR (@BetID > 0 AND st.IsFilterBetID = 1 AND b.betid = @BetID));
+								AND (@BetID = 0 OR (@BetID > 0 AND st.IsFilterBetID = 1 AND b.betid = @BetID))
+								AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
 				
 					END;
 
@@ -717,7 +726,8 @@ BEGIN
 								AND b.bettype = @BetType
 								AND b.sequenceid < @LastScannedSequenceID
 								AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
-								AND (@BetID = 0 OR (@BetID > 0 AND st.IsFilterBetID = 1 AND b.betid = @BetID));
+								AND (@BetID = 0 OR (@BetID > 0 AND st.IsFilterBetID = 1 AND b.betid = @BetID))
+								AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
 							
 						END
 						ELSE IF (@BatchSize > 0) --- GET Ticket Details 
@@ -770,6 +780,7 @@ BEGIN
 								AND b.sequenceid < @LastScannedSequenceID
 								AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
 								AND (@BetID = 0 OR (@BetID > 0 AND st.IsFilterBetID = 1 AND b.betid = @BetID))
+								AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
 							ORDER BY b.sequenceid DESC;
 
 							SET @MinSequenceId = (SELECT MIN(SequenceId) FROM #tmpTickets);
@@ -891,7 +902,7 @@ BEGIN
 
 			END;
 			
-			--========================Fitler By Currency==================	
+			--========================Filter By Currency==================	
 			IF (@ListCurrency IS NOT NULL)
 			BEGIN
 				INSERT INTO #tmpSupportedCurrency (CurrencyId)

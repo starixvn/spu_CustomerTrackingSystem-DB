@@ -5,7 +5,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_MatchInfo]
+ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_MatchInfo]
 		@MatchIds			VARCHAR(MAX) = ''
 	,	@FromDateTime		DATETIME
 	,	@ToDateTime			DATETIME
@@ -17,8 +17,9 @@ AS
 	DB	 : bodb02
 
 	Revisions:
-		- 20230214@Victoria.Le:			Initial Writing [Redmine ID: #183280]
-		- 20230601@Victoria.Le:			Return IsGetDataFromOrigin [Redmine ID: #185793]
+		- 20230214@Victoria.Le:		Initial Writing [Redmine ID: #183280]
+		- 20230601@Victoria.Le:		Return IsGetDataFromOrigin [Redmine ID: #185793]
+		- 20231116@Long.Luu: 		Return match's datasource [Redmine ID: 195042]
 
 	Params Explaination:
 		- @MatchIds:
@@ -55,6 +56,7 @@ BEGIN
 		,	KickOffTime			DATETIME
 		,	MatchSection		TINYINT
 		,	IsGetDataFromOrigin	BIT
+		,	DataSource			TINYINT DEFAULT 0 -- 0: Origin; 1: 14; 2: _bk 
 	)
 
 	INSERT INTO #tmpMatchSection (MatchSection)
@@ -177,7 +179,7 @@ BEGIN
 
 		IF	@IsGetDataFromBK = 1
 		BEGIN
-			INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin)
+			INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin,DataSource)
 			SELECT	m.MatchId
 				,	m.EventDate
 				,	m.GlobalShowTime
@@ -190,6 +192,7 @@ BEGIN
 						ELSE 4 -- CLOSED
 					END
 				,	0 AS IsGetDataFromOrigin
+				,	2 AS DataSource
 			FROM bodb_Archive.dbo.match_bk AS m WITH(NOLOCK)
 			WHERE m.EventDate BETWEEN @FromDateBK AND @ToDateBK
 				AND m.sporttype IN (1,2,43) --1: Soccer; 2: Baseketball, 43: ESport
@@ -198,7 +201,7 @@ BEGIN
 
 		IF	@IsGetDataFrom14 = 1
 		BEGIN
-			INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin)
+			INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin,DataSource)
 			SELECT	m.MatchId
 				,	m.EventDate
 				,	m.GlobalShowTime
@@ -211,6 +214,7 @@ BEGIN
 						ELSE 4 -- CLOSED
 					END
 				,	0 AS IsGetDataFromOrigin
+				,	1 AS DataSource
 			FROM bodb02.dbo.match14 AS m WITH(NOLOCK)
 			WHERE m.EventDate BETWEEN @FromDate14 AND @ToDate14
 				AND m.sporttype IN (1,2,43) --1: Soccer; 2: Baseketball, 43: ESport
@@ -218,7 +222,7 @@ BEGIN
 
 		IF	@IsGetDataFromOrigin = 1
 		BEGIN
-			INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin)
+			INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin,DataSource)
 			SELECT	m.MatchId
 				,	m.EventDate
 				,	m.GlobalShowTime
@@ -231,6 +235,7 @@ BEGIN
 						ELSE 4 -- CLOSED
 					END
 				,	@IsGetDataFromOrigin AS IsGetDataFromOrigin
+				,	0 AS DataSource
 			FROM bodb02.dbo.Match AS m WITH(NOLOCK)
 			WHERE m.EventDate BETWEEN @FromDateOrigin AND @ToDateOrigin
 				AND m.sporttype IN (1,2,43) --1: Soccer; 2: Baseketball, 43: ESport
@@ -255,7 +260,7 @@ BEGIN
 		SELECT ssk.value FROM STRING_SPLIT (@MatchIds, ',') ssk
 
 		--FromBK
-		INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin)
+		INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin,DataSource)
 		SELECT	m.MatchId
 			,	m.EventDate
 			,	m.GlobalShowTime
@@ -268,6 +273,7 @@ BEGIN
 					ELSE 4 -- CLOSED
 				END
 			,	0 AS IsGetDataFromOrigin
+			,	2 AS DataSource
 		FROM #tmpMatches AS tm 
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON tm.MatchId = m.matchid
 		
@@ -276,7 +282,7 @@ BEGIN
 		INNER JOIN #tmpMatchesInfo AS m ON tm.MatchId = m.matchid
 
 		--From14
-		INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin)
+		INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin,DataSource)
 		SELECT	m.MatchId
 			,	m.EventDate
 			,	m.GlobalShowTime
@@ -289,6 +295,7 @@ BEGIN
 					ELSE 4 -- CLOSED
 				END
 			,	0 AS IsGetDataFromOrigin
+			,	1 AS DataSource
 		FROM #tmpMatches AS tm 
 			INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON tm.MatchId = m.matchid
 
@@ -297,7 +304,7 @@ BEGIN
 		INNER JOIN #tmpMatchesInfo AS m ON tm.MatchId = m.matchid
 
 		-- FromOrigin
-		INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin)
+		INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin,DataSource)
 		SELECT	m.MatchId
 			,	m.EventDate
 			,	m.GlobalShowTime
@@ -310,6 +317,7 @@ BEGIN
 					ELSE 4 -- CLOSED
 				END
 			,	1 AS IsGetDataFromOrigin
+			,	0 AS DataSource
 		FROM #tmpMatches AS tm
 			INNER JOIN bodb02.dbo.Match AS m WITH(NOLOCK) ON tm.MatchId = m.matchid
 
@@ -321,6 +329,7 @@ BEGIN
 		,	tmi.KickOffTime
 		,	tmi.MatchSection
 		,	tmi.IsGetDataFromOrigin
+		,	tmi.DataSource
 	FROM #tmpMatchesInfo AS tmi
 		INNER JOIN #tmpMatchSection AS tms ON tmi.MatchSection = tms.MatchSection
 
