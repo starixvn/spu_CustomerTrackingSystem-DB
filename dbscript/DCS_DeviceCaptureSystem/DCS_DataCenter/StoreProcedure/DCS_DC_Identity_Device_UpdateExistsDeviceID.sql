@@ -71,6 +71,14 @@ BEGIN
     DEALLOCATE PREPARE stmt;
     
     /* === Insert new FPDeviceFingerPrint === */
+    WITH cte_DistinctData AS (
+		SELECT 	DISTINCT
+				RawFingerPrintID
+			,	DeviceID
+		FROM Temp_TransactionInfo
+		WHERE RecoverType = 2
+			AND RawFingerPrintID IS NOT NULL
+    )
 	SELECT JSON_ARRAYAGG(
 			JSON_OBJECT(
 				'RawFingerPrintID', RawFingerPrintID,
@@ -78,14 +86,20 @@ BEGIN
 			)
 		) AS json_data
 	INTO lv_DeviceFingerPrintJson
-	FROM Temp_TransactionInfo
-	WHERE RecoverType = 2
-		AND RawFingerPrintID IS NOT NULL;
+	FROM cte_DistinctData;
     
     SET lv_DeviceFingerPrintJson = IFNULL(lv_DeviceFingerPrintJson,'[{}]');
 	CALL DCS_DC_Identity_DeviceFingerPrint_Insert(lv_DeviceFingerPrintJson);
     
-    /* === Insert new DeviceCookie === */     
+    /* === Insert new DeviceCookie === */
+    WITH cte_DistinctData AS (
+		SELECT 	DISTINCT
+				CookieID
+			,	DeviceID
+		FROM Temp_TransactionInfo
+		WHERE RecoverType = 1
+			AND CookieID IS NOT NULL
+    )
 	SELECT JSON_ARRAYAGG(
 			JSON_OBJECT(
 				'CookieID', CookieID,
@@ -93,9 +107,7 @@ BEGIN
 			)
 		) AS json_data
 	INTO lv_DeviceCookieJson
-	FROM Temp_TransactionInfo
-	WHERE RecoverType = 1
-		AND CookieID IS NOT NULL;
+	FROM cte_DistinctData;
     
     SET lv_DeviceCookieJson = IFNULL(lv_DeviceCookieJson,'[{}]');
 	CALL DCS_DC_Identity_DeviceCookie_Insert(lv_DeviceCookieJson);

@@ -41,7 +41,7 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_RawTransaction;
 	CREATE TEMPORARY TABLE IF NOT EXISTS Temp_RawTransaction (
 		    TransID					BIGINT UNSIGNED NOT NULL
-		,   LoginName				VARCHAR(100)  CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NOT NULL
+		,   LoginName				VARCHAR(100) NOT NULL
 		,   TransTime				TIMESTAMP(4) NOT NULL
 		,   SubscriberID			INT 				
         ,   AccountID				BIGINT	UNSIGNED 	
@@ -78,7 +78,7 @@ BEGIN
 
     DROP TEMPORARY TABLE IF EXISTS Temp_Account;
 	CREATE TEMPORARY TABLE  Temp_Account(
-		    LoginName				VARCHAR(100) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NOT NULL
+		    LoginName				VARCHAR(100) NOT NULL
 		,   SubscriberID			INT 
         ,   SubscriberType		    TINYINT	UNSIGNED	
     );
@@ -127,11 +127,11 @@ BEGIN
         ,   rt.RawFingerPrintID
         ,   rt.RawUserAgentID
 	FROM DCS_DataCenter.RawTransaction AS rt
-        INNER JOIN	CTS_Admin.Subscriber AS su ON	rt.SubscriberName = su.SubscriberName
-	    INNER JOIN	DCS_DataCenter.ActionResult AS ar ON	rt.Action = ar.Action AND IFNULL(rt.ActionResult,'') = ar.ActionResult
+        INNER JOIN CTS_Admin.Subscriber AS su ON rt.SubscriberName = su.SubscriberName
+	    INNER JOIN DCS_DataCenter.ActionResult AS ar ON rt.Action = ar.Action AND IFNULL(rt.ActionResult,'') = ar.ActionResult
 	WHERE   rt.IsProcessed = 0
 	    AND rt.TransID BETWEEN ip_FromTransID AND ip_ToTransID
-        AND rt.CreatedDate 	>=	lv_SysMinCreatedDate;
+        AND rt.CreatedDate >= lv_SysMinCreatedDate;
 
     #===INSERT SUBCRIBERURL    
     INSERT IGNORE INTO DCS_DataCenter.URL(URLDetails, SubscriberID, CreatedDate)
@@ -152,7 +152,7 @@ BEGIN
         ,   MIN(trt.TransTime) AS CreatedTime
         ,   MAX(trt.TransTime) AS LastLoginTime
     FROM Temp_RawTransaction AS trt
-    WHERE NOT EXISTS (SELECT 1 FROM DCS_DataCenter.Account AS acc  where trt.LoginName = acc.LoginName and trt.SubscriberID = acc.SubscriberID)
+    WHERE NOT EXISTS (SELECT 1 FROM DCS_DataCenter.Account AS acc WHERE trt.LoginName = acc.LoginName AND trt.SubscriberID = acc.SubscriberID)
     GROUP BY trt.SubscriberID
         ,    trt.LoginName
         ,    trt.SubscriberType;

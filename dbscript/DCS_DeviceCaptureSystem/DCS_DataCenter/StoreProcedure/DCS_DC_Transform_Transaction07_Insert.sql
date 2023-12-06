@@ -96,7 +96,7 @@ BEGIN
     
     INSERT INTO Temp_Transaction07(TransID, RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FPDeviceID, RecoverType, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, FakeIP, CookieID, RawUserAgentID, RawFingerPrintID, BrowserInstanceID)
 	SELECT 	trans.TransID
-		,	ifnull(trans.RawTransID, trans.TransID) AS RawTransID
+		,	IFNULL(trans.RawTransID, trans.TransID) AS RawTransID
 		,	trans.LoginName
 		,	trans.TransTime
 		,	trans.SubscriberID
@@ -129,7 +129,7 @@ BEGIN
 		INNER JOIN DCS_DataCenter.Transaction AS trans ON trans.TransID = tmp.TransID
 	WHERE tmp.DeviceID IS NOT NULL;
     
-    INSERT INTO DCS_DataCenter.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FPDeviceID, RecoverType, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, FakeIP, CookieID, RawUserAgentID, RawFingerPrintID, BrowserInstanceID)
+    INSERT IGNORE INTO DCS_DataCenter.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FPDeviceID, RecoverType, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, FakeIP, CookieID, RawUserAgentID, RawFingerPrintID, BrowserInstanceID)
 	SELECT 	RawTransID
 		,	LoginName
 		,	TransTime
@@ -162,57 +162,86 @@ BEGIN
 	FROM Temp_Transaction07;
     
     /* === Insert new Association === */
+    WITH cte_DistinctData AS (
+		SELECT	DISTINCT
+				AccountID
+			,	DeviceID
+			,	FPDeviceID
+			,	SubscriberID
+			,	TransTime
+			,	CreatedDate
+		FROM Temp_Transaction07
+		WHERE AccountID IS NOT NULL
+			AND DeviceID IS NOT NULL
+    )
 	SELECT JSON_ARRAYAGG(
 			JSON_OBJECT(
-				'AccountID'		, AccountID
-			,	'DeviceID'		, DeviceID
-			,	'FPDeviceID'	, FPDeviceID
-			,	'SubscriberID'	, SubscriberID
-			,	'CreatedTime'	, TransTime
-			,	'CreatedDate'	, CreatedDate
+					'AccountID'		, AccountID
+				,	'DeviceID'		, DeviceID
+				,	'FPDeviceID'	, FPDeviceID
+				,	'SubscriberID'	, SubscriberID
+				,	'CreatedTime'	, TransTime
+				,	'CreatedDate'	, CreatedDate
 			)
 		) AS json_data
 	INTO lv_AssociationJson
-	FROM Temp_Transaction07
-    WHERE AccountID IS NOT NULL
-		AND DeviceID IS NOT NULL;
+	FROM cte_DistinctData;
     
     SET lv_AssociationJson = IFNULL(lv_AssociationJson,'[{}]');
 	CALL DCS_DC_Transform_Association_Insert(lv_AssociationJson);
     
     /* === Insert new AccountFingerPrint === */
-	SELECT JSON_ARRAYAGG(
+    WITH cte_DistinctData AS (
+		SELECT	DISTINCT
+				AccountID
+			,	RawFingerPrintID
+		FROM Temp_Transaction07
+		WHERE AccountID IS NOT NULL
+			AND RawFingerPrintID IS NOT NULL
+    )
+    SELECT JSON_ARRAYAGG(
 			JSON_OBJECT(
-				'AccountID'				, AccountID
-			,	'RawFingerPrintID'		, RawFingerPrintID
+					'AccountID'				, AccountID
+				,	'RawFingerPrintID'		, RawFingerPrintID
 			)
 		) AS json_data
 	INTO lv_AccountFingerPrintJson
-	FROM Temp_Transaction07
-    WHERE AccountID IS NOT NULL
-		AND RawFingerPrintID IS NOT NULL;
+	FROM cte_DistinctData;
     
     SET lv_AccountFingerPrintJson = IFNULL(lv_AccountFingerPrintJson,'[{}]');
 	CALL DCS_DC_Identity_AccountFingerPrint_Insert(lv_AccountFingerPrintJson);
     
     /* === Insert into NewAccountDevice === */
+    WITH cte_DistinctData AS (
+		SELECT	DISTINCT
+				AccountID
+			,	DeviceID
+            ,	SubscriberID
+            ,	RawTransID
+            ,	CreatedDate
+            ,	LoginName
+            ,	TransTime
+            ,	UserAgentKey
+            ,	IP
+		FROM Temp_Transaction07
+		WHERE AccountID IS NOT NULL
+			AND DeviceID IS NOT NULL
+    )
 	SELECT JSON_ARRAYAGG(
 			JSON_OBJECT(
-				'AccountID'			, AccountID
-			,	'DeviceID'			, DeviceID
-			,	'SubscriberID'		, SubscriberID
-			,	'RawTransID'		, RawTransID
-			,	'CreatedDate'		, CreatedDate
-			,	'LoginName'			, LoginName
-			,	'TransTime'			, TransTime
-			,	'UserAgentKey'		, UserAgentKey
-			,	'IP'				, IP
+					'AccountID'			, AccountID
+				,	'DeviceID'			, DeviceID
+				,	'SubscriberID'		, SubscriberID
+				,	'RawTransID'		, RawTransID
+				,	'CreatedDate'		, CreatedDate
+				,	'LoginName'			, LoginName
+				,	'TransTime'			, TransTime
+				,	'UserAgentKey'		, UserAgentKey
+				,	'IP'				, IP
 			)
 		) AS json_data
 	INTO lv_NewAccountDeviceJson
-	FROM Temp_Transaction07
-    WHERE AccountID IS NOT NULL
-		AND DeviceID IS NOT NULL;
+	FROM cte_DistinctData;
     
     SET lv_NewAccountDeviceJson = IFNULL(lv_NewAccountDeviceJson,'[{}]');
 	CALL DCS_DC_Transform_NewAccountDevice_Insert(lv_NewAccountDeviceJson);
