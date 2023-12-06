@@ -47,7 +47,7 @@ BEGIN
 	*/
 	
 	DECLARE lv_IsLog TINYINT DEFAULT 0;    
-	DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_Get_xtest';
+	DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_Get';
     DECLARE lv_LogInfo TEXT;
 	
 	#==================LOG=======================================================
