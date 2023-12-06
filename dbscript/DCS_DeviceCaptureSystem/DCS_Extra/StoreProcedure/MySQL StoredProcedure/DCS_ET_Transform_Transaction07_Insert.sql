@@ -61,7 +61,7 @@ BEGIN
 		,	InsertTime				TIMESTAMP(4)
 		,	BotDetectionValue		BIT(32)
 		,	BotComponentID			BIGINT UNSIGNED
-		,	FakeIP					VARCHAR(100)
+		,	IPInfoID				INT
 		,	CookieID				BIGINT UNSIGNED
 		,	RawUserAgentID			BIGINT UNSIGNED
 		,	RawFingerPrintID		BIGINT UNSIGNED
@@ -93,7 +93,7 @@ BEGIN
 					)
 		) AS tmpJs;
     
-    INSERT INTO Temp_Transaction07(TransID, RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FPDeviceID, RecoverType, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, FakeIP, CookieID, RawUserAgentID, RawFingerPrintID, BrowserInstanceID)
+    INSERT INTO Temp_Transaction07(TransID, RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FPDeviceID, RecoverType, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, IPInfoID, CookieID, RawUserAgentID, RawFingerPrintID, BrowserInstanceID)
 	SELECT 	trans.TransID
 		,	ifnull(trans.RawTransID, trans.TransID) AS RawTransID
 		,	trans.LoginName
@@ -119,7 +119,7 @@ BEGIN
 		,	trans.InsertTime
 		,	trans.BotDetectionValue
 		,	trans.BotComponentID
-		,	trans.FakeIP
+		,	trans.IPInfoID
 		,	trans.CookieID
 		,	trans.RawUserAgentID
 		,	trans.RawFingerPrintID
@@ -128,7 +128,7 @@ BEGIN
 		INNER JOIN DCS_Extra.Transaction AS trans ON trans.TransID = tmp.TransID
 	WHERE tmp.DeviceID IS NOT NULL;
     
-    INSERT INTO DCS_Extra.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FPDeviceID, RecoverType, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, FakeIP, CookieID, RawUserAgentID, RawFingerPrintID, BrowserInstanceID)
+    INSERT IGNORE INTO DCS_Extra.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FPDeviceID, RecoverType, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, IPInfoID, CookieID, RawUserAgentID, RawFingerPrintID, BrowserInstanceID)
 	SELECT 	RawTransID
 		,	LoginName
 		,	TransTime
@@ -153,7 +153,7 @@ BEGIN
 		,	InsertTime
 		,	BotDetectionValue
 		,	BotComponentID
-		,	FakeIP
+		,	IPInfoID
 		,	CookieID
 		,	RawUserAgentID
 		,	RawFingerPrintID

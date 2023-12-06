@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `DCS_ET_Identity_Evolution_Insert`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_ET_Identity_Evolution_Insert`(
-		IN ip_DeviceFingerPrintJson LONGTEXT
+    IN ip_TransJson	LONGTEXT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -33,6 +33,7 @@ BEGIN
         ,	RecoverRawFingerPrintID				BIGINT UNSIGNED
         ,	DeviceID							BIGINT UNSIGNED
         ,	CookieID							BIGINT UNSIGNED
+        ,	AccountID							BIGINT UNSIGNED
 	);
     
 	INSERT INTO Temp_TransactionInfo(TransID, RecoverRawFingerPrintID)
@@ -51,8 +52,9 @@ BEGIN
     
 	UPDATE Temp_TransactionInfo AS tmp
 		INNER JOIN DCS_Extra.Transaction AS trans ON trans.TransID = tmp.TransID
-	SET tmp.RawFingerPrintID = trans.RawFingerPrintID
-    ,	tmp.CookieID = trans.CookieID;
+	SET tmp.RawFingerPrintID 	= trans.RawFingerPrintID,
+    	tmp.CookieID 			= trans.CookieID,
+    	tmp.AccountID 			= trans.AccountID;
     
     /* === Add index === */
 	ALTER TABLE Temp_TransactionInfo
@@ -112,7 +114,13 @@ BEGIN
     
     SET lv_TransactionEvolutionJson = IFNULL(lv_TransactionEvolutionJson,'[{}]');
 	CALL DCS_ET_Identity_TransactionEvolution_Insert(lv_TransactionEvolutionJson);
-        
+	
+    /* === Update AccountFingerprint === */
+	UPDATE DCS_Extra.AccountFingerprint AS af
+		INNER JOIN Temp_TransactionInfo AS tmp ON tmp.AccountID = af.AccountID 
+											AND tmp.RecoverRawFingerPrintID = af.RawFingerPrintID 
+	SET af.IsEvolution = 1,
+		af.ModifiedDate = lv_CreatedDate;
 END$$
 
 DELIMITER ;
