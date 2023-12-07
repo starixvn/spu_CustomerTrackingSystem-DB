@@ -13,8 +13,8 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original:
 		Revisions:
-			- 20220307@Irena.Vo: Created [Redmine ID: #159014]
-            - 20220518@Casey.Huynh: Renovate PA Process [Redmine ID: #172561]
+			- 20220307@Irena.Vo: 		Created [Redmine ID: #159014]
+            - 20220518@Casey.Huynh: 	Renovate PA Process [Redmine ID: #172561]
             
 		Param's Explanation (filtered by):
         Example:
