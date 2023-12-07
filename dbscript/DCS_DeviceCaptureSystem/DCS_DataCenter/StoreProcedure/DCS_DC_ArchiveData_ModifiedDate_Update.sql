@@ -41,7 +41,6 @@ sp:BEGIN
         ,	RawFingerPrintID	BIGINT UNSIGNED DEFAULT NULL
         ,	BrowserInstanceID	BIGINT UNSIGNED DEFAULT NULL
         ,	FPDeviceID			BIGINT UNSIGNED DEFAULT NULL
-        ,	AccountID			BIGINT UNSIGNED DEFAULT NULL
         ,	CreatedDate			DATETIME
         , 	INDEX IX_Temp_Transaction07_CreatedDate(CreatedDate)
     );
@@ -82,14 +81,8 @@ sp:BEGIN
         ,	MaxCreatedDate		DATETIME
     );
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_Account;
-	CREATE TEMPORARY TABLE Temp_Account(
-        	ID					BIGINT UNSIGNED PRIMARY KEY
-        ,	MaxCreatedDate		DATETIME
-    );
-    
     /*******GET DATA Transaction07********************/
-    INSERT INTO Temp_Transaction07(TransID, BotComponentID, CookieID, RawUserAgentID, RawFingerPrintID, BrowserInstanceID, FPDeviceID, AccountID, CreatedDate)
+    INSERT INTO Temp_Transaction07(TransID, BotComponentID, CookieID, RawUserAgentID, RawFingerPrintID, BrowserInstanceID, FPDeviceID, CreatedDate)
     SELECT 	TransID
         ,	BotComponentID
         ,	CookieID
@@ -97,7 +90,6 @@ sp:BEGIN
         ,	RawFingerPrintID
         ,	BrowserInstanceID
         ,	FPDeviceID
-        ,	AccountID
         ,	CreatedDate
 	FROM DCS_DataCenter.Transaction07
 	WHERE TransID > lv_MaxTransID
@@ -145,13 +137,6 @@ sp:BEGIN
     FROM Temp_Transaction07
     WHERE FPDeviceID IS NOT NULL
     GROUP BY FPDeviceID;
-    
-    INSERT INTO Temp_Account(ID, MaxCreatedDate)
-    SELECT 	AccountID AS ID
-		,	MAX(CreatedDate) AS MaxCreatedDate
-    FROM Temp_Transaction07
-    WHERE AccountID IS NOT NULL
-    GROUP BY AccountID;
 
     /*******UPDATE ModifiedDate********************/
 	UPDATE DCS_DataCenter.BotComponent AS main
@@ -176,10 +161,6 @@ sp:BEGIN
     
 	UPDATE DCS_DataCenter.FPDevice AS main
 		INNER JOIN Temp_FPDevice AS tmp ON tmp.ID = main.ID
-	SET main.ModifiedDate = tmp.MaxCreatedDate;
-    
-	UPDATE DCS_DataCenter.AccountFingerprint AS main
-		INNER JOIN Temp_Account AS tmp ON tmp.ID = main.AccountID
 	SET main.ModifiedDate = tmp.MaxCreatedDate;
     
     

@@ -51,9 +51,9 @@ BEGIN
     
 	UPDATE Temp_TransactionInfo AS tmp
 		INNER JOIN DCS_DataCenter.Transaction AS trans ON trans.TransID = tmp.TransID
-	SET tmp.RawFingerPrintID 	= trans.RawFingerPrintID
-    ,	tmp.CookieID 			= trans.CookieID
-    ,	tmp.AccountID 			= trans.AccountID;
+	SET tmp.RawFingerPrintID 	= trans.RawFingerPrintID,
+    	tmp.CookieID 			= trans.CookieID,
+    	tmp.AccountID 			= trans.AccountID;
     
     /* === Add index === */
 	ALTER TABLE Temp_TransactionInfo

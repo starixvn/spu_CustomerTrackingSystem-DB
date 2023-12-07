@@ -40,7 +40,7 @@ BEGIN
     INSERT INTO Temp_AssociationInsert(AccountID, DeviceID, FPDeviceID, SubscriberID, CreatedTime, CreatedDate)
 	SELECT 	tmp.AccountID
 		,	tmp.DeviceID
-		,	IFNULL(tmp.FPDeviceID,0) AS FPDeviceID
+		,	IFNULL(tmp.FPDeviceID, 0) AS FPDeviceID
 		,	MIN(tmp.SubscriberID) AS SubscriberID
 		,	MIN(tmp.CreatedTime) AS CreatedTime
 		,	MIN(tmp.CreatedDate) AS CreatedDate
@@ -57,7 +57,7 @@ BEGIN
 		) AS tmp
 	WHERE tmp.AccountID IS NOT NULL
 		AND tmp.DeviceID IS NOT NULL
-	GROUP BY tmp.AccountID, tmp.DeviceID, tmp.FPDeviceID;
+	GROUP BY tmp.AccountID, tmp.DeviceID, FPDeviceID;
     
     /* === Add index === */
 	ALTER TABLE Temp_AssociationInsert

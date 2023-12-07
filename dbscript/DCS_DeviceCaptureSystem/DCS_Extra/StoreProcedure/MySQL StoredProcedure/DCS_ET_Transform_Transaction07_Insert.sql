@@ -95,7 +95,7 @@ BEGIN
     
     INSERT INTO Temp_Transaction07(TransID, RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FPDeviceID, RecoverType, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, IPInfoID, CookieID, RawUserAgentID, RawFingerPrintID, BrowserInstanceID)
 	SELECT 	trans.TransID
-		,	ifnull(trans.RawTransID, trans.TransID) AS RawTransID
+		,	IFNULL(trans.RawTransID, trans.TransID) AS RawTransID
 		,	trans.LoginName
 		,	trans.TransTime
 		,	trans.SubscriberID
@@ -161,35 +161,51 @@ BEGIN
 	FROM Temp_Transaction07;
     
     /* === Insert new Association === */
+	WITH cte_DistinctData AS (
+		SELECT	DISTINCT
+				AccountID
+			,	DeviceID
+			,	FPDeviceID
+			,	SubscriberID
+			,	TransTime
+			,	CreatedDate
+		FROM Temp_Transaction07
+		WHERE AccountID IS NOT NULL
+			AND DeviceID IS NOT NULL
+    )
 	SELECT JSON_ARRAYAGG(
 			JSON_OBJECT(
-				'AccountID'		, AccountID
-			,	'DeviceID'		, DeviceID
-			,	'FPDeviceID'	, FPDeviceID
-			,	'SubscriberID'	, SubscriberID
-			,	'CreatedTime'	, TransTime
-			,	'CreatedDate'	, CreatedDate
+					'AccountID'		, AccountID
+				,	'DeviceID'		, DeviceID
+				,	'FPDeviceID'	, FPDeviceID
+				,	'SubscriberID'	, SubscriberID
+				,	'CreatedTime'	, TransTime
+				,	'CreatedDate'	, CreatedDate
 			)
 		) AS json_data
 	INTO lv_AssociationJson
-	FROM Temp_Transaction07
-    WHERE AccountID IS NOT NULL
-		AND DeviceID IS NOT NULL;
+	FROM cte_DistinctData;
     
     SET lv_AssociationJson = IFNULL(lv_AssociationJson,'[{}]');
 	CALL DCS_ET_Transform_Association_Insert(lv_AssociationJson);
     
     /* === Insert new AccountFingerPrint === */
-	SELECT JSON_ARRAYAGG(
+	WITH cte_DistinctData AS (
+		SELECT	DISTINCT
+				AccountID
+			,	RawFingerPrintID
+		FROM Temp_Transaction07
+		WHERE AccountID IS NOT NULL
+			AND RawFingerPrintID IS NOT NULL
+    )
+    SELECT JSON_ARRAYAGG(
 			JSON_OBJECT(
-				'AccountID'				, AccountID
-			,	'RawFingerPrintID'		, RawFingerPrintID
+					'AccountID'				, AccountID
+				,	'RawFingerPrintID'		, RawFingerPrintID
 			)
 		) AS json_data
 	INTO lv_AccountFingerPrintJson
-	FROM Temp_Transaction07
-    WHERE AccountID IS NOT NULL
-		AND RawFingerPrintID IS NOT NULL;
+	FROM cte_DistinctData;
     
     SET lv_AccountFingerPrintJson = IFNULL(lv_AccountFingerPrintJson,'[{}]');
 	CALL DCS_ET_Identity_AccountFingerPrint_Insert(lv_AccountFingerPrintJson);

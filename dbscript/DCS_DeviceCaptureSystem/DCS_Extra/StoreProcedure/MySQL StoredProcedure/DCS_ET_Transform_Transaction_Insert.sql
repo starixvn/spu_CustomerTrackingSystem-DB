@@ -42,7 +42,7 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_RawTransaction;
 	CREATE TEMPORARY TABLE IF NOT EXISTS Temp_RawTransaction (
 		    TransID					BIGINT UNSIGNED NOT NULL
-		,   LoginName				VARCHAR(100)  CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NOT NULL
+		,   LoginName				VARCHAR(100) NOT NULL
 		,   TransTime				TIMESTAMP(4) NOT NULL
 		,   SubscriberID			INT 				
         ,   AccountID				BIGINT	UNSIGNED 	

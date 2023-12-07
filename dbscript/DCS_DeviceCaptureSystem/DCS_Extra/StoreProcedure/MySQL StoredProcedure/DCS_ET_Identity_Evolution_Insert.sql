@@ -38,7 +38,7 @@ BEGIN
     
 	INSERT INTO Temp_TransactionInfo(TransID, RecoverRawFingerPrintID)
 	SELECT	tmp.TransID
-		,	MIN(tmp.RecoverRawFingerPrintID) AS RecoverRawFingerPrintID
+		,	tmp.RecoverRawFingerPrintID
 	FROM	JSON_TABLE(
 			ip_TransJson,
 			 "$[*]" COLUMNS(
@@ -47,8 +47,7 @@ BEGIN
 				)
 		   ) AS tmp
 	WHERE tmp.TransID IS NOT NULL
-		AND tmp.RecoverRawFingerPrintID IS NOT NULL
-	GROUP BY tmp.TransID;
+		AND tmp.RecoverRawFingerPrintID IS NOT NULL;
     
 	UPDATE Temp_TransactionInfo AS tmp
 		INNER JOIN DCS_Extra.Transaction AS trans ON trans.TransID = tmp.TransID
@@ -73,6 +72,13 @@ BEGIN
     DELETE FROM Temp_TransactionInfo WHERE DeviceID IS NULL;
     
     /* === Insert new FPDeviceFingerPrint === */
+	WITH cte_DistinctData AS (
+		SELECT 	DISTINCT
+				RawFingerPrintID
+			,	DeviceID
+		FROM Temp_TransactionInfo
+		WHERE RawFingerPrintID IS NOT NULL
+    )
 	SELECT JSON_ARRAYAGG(
 			JSON_OBJECT(
 				'RawFingerPrintID', RawFingerPrintID,
@@ -80,13 +86,19 @@ BEGIN
 			)
 		) AS json_data
 	INTO lv_DeviceFingerPrintJson
-	FROM Temp_TransactionInfo
-	WHERE RawFingerPrintID IS NOT NULL;
+	FROM cte_DistinctData;
     
     SET lv_DeviceFingerPrintJson = IFNULL(lv_DeviceFingerPrintJson,'[{}]');
 	CALL DCS_ET_Identity_DeviceFingerPrint_Insert(lv_DeviceFingerPrintJson);
     
-    /* === Insert new DeviceCookie === */     
+    /* === Insert new DeviceCookie === */
+	WITH cte_DistinctData AS (
+		SELECT 	DISTINCT
+				CookieID
+			,	DeviceID
+		FROM Temp_TransactionInfo
+		WHERE CookieID IS NOT NULL
+    )   
 	SELECT JSON_ARRAYAGG(
 			JSON_OBJECT(
 				'CookieID', CookieID,
@@ -94,13 +106,20 @@ BEGIN
 			)
 		) AS json_data
 	INTO lv_DeviceCookieJson
-	FROM Temp_TransactionInfo
-	WHERE CookieID IS NOT NULL;
+	FROM cte_DistinctData;
     
     SET lv_DeviceCookieJson = IFNULL(lv_DeviceCookieJson,'[{}]');
 	CALL DCS_ET_Identity_DeviceCookie_Insert(lv_DeviceCookieJson);
     
-    /* === Insert new TransactionEvolution === */     
+    /* === Insert new TransactionEvolution === */
+	WITH cte_DistinctData AS (
+		SELECT 	DISTINCT
+				RawFingerPrintID
+			,	RecoverRawFingerPrintID
+			,	DeviceID
+		FROM Temp_TransactionInfo
+		WHERE RawFingerPrintID IS NOT NULL
+    )
 	SELECT JSON_ARRAYAGG(
 			JSON_OBJECT(
 				'RawFingerPrintID', RawFingerPrintID,
@@ -109,8 +128,7 @@ BEGIN
 			)
 		) AS json_data
 	INTO lv_TransactionEvolutionJson
-	FROM Temp_TransactionInfo
-	WHERE RawFingerPrintID IS NOT NULL;
+	FROM cte_DistinctData;
     
     SET lv_TransactionEvolutionJson = IFNULL(lv_TransactionEvolutionJson,'[{}]');
 	CALL DCS_ET_Identity_TransactionEvolution_Insert(lv_TransactionEvolutionJson);
