@@ -32,6 +32,7 @@ AS
 		- 20231010@Long.Luu:	  Addup Big Leagues for Soccer				[Redmine ID: #1925163]
 		- 20231030@Victoria.Le:	  New Group Betting - CC 2300 - Call SP from DW to send list fraud tickets [Redmine ID: #195060]
 		- 20231123@Victoria.Le:	  Comment out the above code [Call SP from DW] and wait to update rule from BI TW team [Redmine ID: #195060]
+		- 20231206@Victoria.Le:	  Remove - Comment out the above code [Call SP from DW] [Redmine ID: #197958]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_ScanTicket] '2022-02-15 23:10:15.983','2022-02-16 02:15:20.983',10900
@@ -375,10 +376,9 @@ BEGIN
 								 FOR XML RAW('TWGroupBettingTicket'), ROOT);
 
 	EXEC CTS_TWGroupBetting_SyncDataGroupBettingTicket @GBTicketXMLString, @LastSequenceId_New;		
-	/*
-	-- Wait to update rule from BI TW team
+
 	EXEC DBVR2.bodb_VR2Model.dbo.CTS_TWGB_UpdateDWData @GBTicketXMLString;		
-	*/
+
 
 	DROP TABLE #TmpSuspectTicket
 	DROP TABLE #TmpBigLeague;

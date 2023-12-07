@@ -13,6 +13,7 @@ AS
 	Original:	
 	Revisions:
 		- 20231030@Victoria.Le: 	Initial Writing  [Redmine ID: #195060]
+		- 20231206@Victoria.Le: 	Change code because update IsServiceScanned incorrect  [Redmine ID: #197958]
 
 */
 BEGIN
@@ -48,10 +49,10 @@ BEGIN
 		INNER JOIN dbo.CustomerClassification_ScannedNewCust AS cs WITH (NOLOCK) ON cs.CustId = c.CustId
 	WHERE cs.JobScannedType > 0;
 	
-	UPDATE cs WITH (UPDLOCK, ROWLOCK)
-	SET 	cs.IsServiceScanned = (CASE WHEN cgb.CustId IS NOT NULL THEN 1 ELSE 0 END)
+	UPDATE cs 
+	SET 	cs.IsServiceScanned = (CASE WHEN cgb.CustId IS NOT NULL AND cs.IsServiceScanned = 0 THEN 1 ELSE cs.IsServiceScanned END)
 		,	cs.LastServiceScannedTime = (CASE WHEN cgb.CustId IS NOT NULL THEN GETDATE() ELSE cs.LastServiceScannedTime END)
-	FROM dbo.CustomerClassification_ScannedNewCust AS cs
+	FROM dbo.CustomerClassification_ScannedNewCust AS cs WITH (UPDLOCK, ROWLOCK)
 		LEFT JOIN #tmpCustomer AS c ON c.CustId = cs.CustId
 		LEFT JOIN #tmpCustomerGroupBetting AS cgb ON cgb.CustId = cs.CustId
 	;
