@@ -1,6 +1,5 @@
-USE [bodb02]
+/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 GO
-/****** Object:  StoredProcedure [dbo].[CTS_Association_GetBySharedMatches]    Script Date: 10/31/2023 1:04:10 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -22,6 +21,7 @@ AS
 		- 20230512@Victoria.Le:		Change condition with ticket stake for each cust [Redmine ID: #187978]
 		- 20230602@Long.Luu:		Add new agent as internal account [Redmine ID: #188554]
         - 20231024@Long.Luu: 		Add Agent HITRM & WINRM as internal account [Redmine ID: #195355]
+        - 20231207@Long.Luu: 		Add Agent M999RM00 as internal account [Redmine ID: #197915]
 
 	Params Explaination:
 		- @QueryType: 1 detect associations, 2 get fraud tickets, 3 get association custlist of a group, 4 get fraud tickets of a custgroup
@@ -176,7 +176,7 @@ BEGIN
 	WHERE b.winlostdate > @MoveBetsDay
 		AND b.srecommend NOT IN (41430709) 
 		AND b.mrecommend NOT IN (27899314,11656504,12146012) 
-		AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369)		
+		AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)		
 		AND b.username NOT LIKE '%CashOut' 
 		AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 		AND m.eventstatus = 'Completed'
