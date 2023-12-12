@@ -382,14 +382,22 @@ BEGIN
 	IF @ListSportBettype <> ''
 		BEGIN
 			INSERT INTO #tmpSportBettype(SportTypeID,BetTypeID,BetChoiceType,BetChoiceHome,BetChoiceAway,BetIDPattern,BetID)
-			SELECT	ISNULL(JSON_VALUE(ssk.value, '$.SportTypeID'),0) AS SportTypeID
-				,	ISNULL(JSON_VALUE(ssk.value, '$.BetTypeID'),0) AS BetTypeID
-				,	ISNULL(JSON_VALUE(ssk.value, '$.BetChoiceType'),0) AS BetChoiceType
-				,	ISNULL(JSON_VALUE(ssk.value, '$.BetChoiceHome'),NULL) AS BetChoiceHome
-				,	ISNULL(JSON_VALUE(ssk.value, '$.BetChoiceAway'),NULL) AS BetChoiceAway
-				,	ISNULL(JSON_VALUE(ssk.value, '$.BetIDPattern'),'') AS BetIDPattern 
-				,	ISNULL(JSON_VALUE(ssk.value, '$.BetID'),0) AS BetID--- For Query = 2
-			FROM OPENJSON (@ListSportBettype) AS ssk;
+			SELECT	j.SportTypeID
+				,	j.BetTypeID
+				,	j.BetChoiceType
+				,	j.BetChoiceHome
+				,	j.BetChoiceAway
+				,	j.BetIDPattern
+				,	j.BetID
+			FROM OPENJSON (@ListSportBettype) WITH (
+					SportTypeID			SMALLINT		'$.SportTypeID'
+				,	BetTypeID			INT				'$.BetTypeID'
+				,	BetChoiceType		TINYINT			'$.BetChoiceType'
+				,	BetChoiceHome		NVARCHAR(10)	'$.BetChoiceHome'
+				,	BetChoiceAway		NVARCHAR(10)	'$.BetChoiceAway'
+				,	BetIDPattern		NVARCHAR(20)	'$.BetIDPattern'
+				,	BetID				BIGINT			'$.BetID'
+				) AS j;
 		END;
 	
 	--==========================================================================================
@@ -397,11 +405,16 @@ BEGIN
 	IF @ListTransId <> ''
 		BEGIN
 			INSERT INTO #tmpTransIds (TransID,Reason,AGroup,MGroup)
-			SELECT	ISNULL(JSON_VALUE(ssk.value, '$.TransID'),0) AS TransID
-				,	ISNULL(JSON_VALUE(ssk.value, '$.Reason'),'0') AS Reason
-				,	ISNULL(JSON_VALUE(ssk.value, '$.AGroup'),0) AS AGroup
-				,	ISNULL(JSON_VALUE(ssk.value, '$.MGroup'),0) AS MGroup
-			FROM OPENJSON (@ListTransId) AS ssk;
+			SELECT	j.TransID
+				,	j.Reason
+				,	j.AGroup
+				,	j.MGroup
+			FROM OPENJSON (@ListTransId) WITH (
+					TransID		BIGINT '$.TransID'
+				,	Reason		VARCHAR(50) '$.Reason'
+				,	AGroup		INT '$.AGroup'
+				,	MGroup		INT '$.MGroup'
+				) AS j;
 		END;
 
 	IF (@QueryType = 1)
