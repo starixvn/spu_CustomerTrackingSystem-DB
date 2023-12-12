@@ -14,6 +14,7 @@ AS
 
 	Revisions:
 		- 20231116@Long.Luu: 	Initialize [Redmine ID: 195042]
+		- 20231212@Long.Luu: 	Remove duplicate tickets catched by many reasons [Redmine ID: 196396]
 
 	Params Explaination:
 		-	@FraudTickets is in Json format
@@ -69,13 +70,20 @@ BEGIN
 		BEGIN
 			-- Parse raw data
 			INSERT INTO #tmpRawFraudInfo (MatchId,DataSource,IsLive,Bettype,BetId,FraudTrans)
-			SELECT	ISNULL(JSON_VALUE(ssk.value, '$.MatchId'),0) AS MatchId
-				,	ISNULL(JSON_VALUE(ssk.value, '$.DataSource'),0) AS DataSource
-				,	ISNULL(JSON_VALUE(ssk.value, '$.IsLive'),'0') AS IsLive
-				,	ISNULL(JSON_VALUE(ssk.value, '$.Bettype'),0) AS Bettype
-				,	ISNULL(JSON_VALUE(ssk.value, '$.BetId'),0) AS BetId
-				,	ISNULL(JSON_VALUE(ssk.value, '$.FraudTrans'),0) AS FraudTrans
-			FROM OPENJSON (@FraudTickets) AS ssk;
+			SELECT	j.MatchId
+				,	j.DataSource
+				,	j.IsLive
+				,	j.Bettype
+				,	j.BetId
+				,	j.FraudTrans
+			FROM OPENJSON (@FraudTickets) WITH (
+					MatchId			INT '$.MatchId'
+				,	DataSource		TINYINT '$.DataSource'
+				,	IsLive			BIT '$.IsLive'
+				,	Bettype			SMALLINT '$.Bettype'
+				,	BetId			BIGINT '$.BetId'
+				,	FraudTrans		VARCHAR(MAX) '$.FraudTrans'
+				) AS j;
 
 			-- Pivot the fraud tickets list to transIDs
 			;WITH Temp_Intermediate(MatchId,DataSource,IsLive,Bettype,BetId,TransId,FraudTrans) AS
@@ -100,13 +108,13 @@ BEGIN
 				WHERE	FraudTrans > ''
 			)
 			INSERT INTO #tmpParsedFraudInfo(MatchId,DataSource,IsLive,Bettype,BetId,TransId)
-			SELECT	MatchId
+			SELECT	DISTINCT MatchId
 				,	DataSource
 				,	IsLive
 				,	Bettype
 				,	BetId
 				,	TransId
-			FROM Temp_Intermediate
+			FROM Temp_Intermediate WITH(NOLOCK)
 			OPTION (MAXRECURSION 0);
 
 			CREATE CLUSTERED INDEX #CIX_tmpParsedFraudInfo ON #tmpParsedFraudInfo (
