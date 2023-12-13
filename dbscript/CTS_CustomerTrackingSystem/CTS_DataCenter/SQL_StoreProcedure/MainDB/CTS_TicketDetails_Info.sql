@@ -111,28 +111,6 @@ BEGIN
 			SequenceId			ASC
 	);
 
-	
-	IF	OBJECT_ID('tempdb..#tmpSupportedSportBettype') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpSupportedSportBettype;
-	END;
-
-	CREATE TABLE	#tmpSupportedSportBettype(
-			SportType				SMALLINT
-		,	BetType					SMALLINT
-		,	IsFilterBetID			BIT
-		,	IsDetectMatchMonitor	BIT
-		,	IsFilterBetTeam			BIT
-		,	IsFilterHdp				BIT
-		,	IsOnlyGetHdp1			BIT
-	);
-
-	CREATE CLUSTERED INDEX #CIX_tmpSupportedSportBettype_SportTypeBettype ON #tmpSupportedSportBettype (
-			SportType	ASC
-		,	Bettype		ASC
-	);
-
-
 	IF	OBJECT_ID('tempdb..#tmpSuspiciousTrans') IS NOT NULL
 	BEGIN
 		DROP TABLE	#tmpSuspiciousTrans;
@@ -140,8 +118,12 @@ BEGIN
 
 	CREATE TABLE	#tmpSuspiciousTrans(
 			TransId					BIGINT NOT NULL
-		,	SuspiciousReason		VARCHAR(10)
+		,	SuspiciousReason		VARCHAR(50)
 		,	SuspiciousGroupId		INT
+	);
+
+	CREATE NONCLUSTERED INDEX #IX_tmptmpSuspiciousTrans_TransId ON #tmpSuspiciousTrans (
+			TransID		ASC
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpSuspiciousDistinctTrans') IS NOT NULL
@@ -151,10 +133,6 @@ BEGIN
 
 	CREATE TABLE	#tmpSuspiciousDistinctTrans(
 			TransId					BIGINT PRIMARY KEY NOT NULL
-	);
-
-	CREATE NONCLUSTERED INDEX #IX_tmptmpSuspiciousTrans_TransId ON #tmpSuspiciousTrans (
-			TransID		ASC
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpBUMBData') IS NOT NULL
@@ -178,6 +156,11 @@ BEGIN
 		,	BetChoiceType			TINYINT
 		,	BetIDPattern			NVARCHAR(20)
 		,	BetID					BIGINT
+	);
+
+	CREATE NONCLUSTERED INDEX #IX_tmpSportBettype_SportTypeBettype ON #tmpSportBettype (
+			SportTypeID	ASC
+		,	BetTypeID		ASC
 	);
 	--=============================================================================================
 	
@@ -206,23 +189,36 @@ BEGIN
 	--====================DEFINE SPORT BETTYPES=================================================================================================================
 	IF @ListSportBettype <> ''
 	BEGIN
+
 		INSERT INTO #tmpSportBettype(SportTypeID,BetTypeID,BetChoiceType,BetIDPattern,BetID)
-		SELECT	ISNULL(JSON_VALUE(ssk.value, '$.SportTypeID'),0) AS SportTypeID
-			,	ISNULL(JSON_VALUE(ssk.value, '$.BetTypeID'),0) AS BetTypeID
-			,	ISNULL(JSON_VALUE(ssk.value, '$.BetChoiceType'),0) AS BetChoiceType
-			,	ISNULL(JSON_VALUE(ssk.value, '$.BetIDPattern'),'') AS BetIDPattern 
-			,	ISNULL(JSON_VALUE(ssk.value, '$.BetID'),0) AS BetID--- For Query = 2
-		FROM OPENJSON (@ListSportBettype) AS ssk;
+		SELECT	j.SportTypeID
+			,	j.BetTypeID
+			,	j.BetChoiceType
+			,	j.BetIDPattern
+			,	j.BetID
+		FROM OPENJSON (@ListSportBettype) WITH (
+				SportTypeID			SMALLINT		'$.SportTypeID'
+			,	BetTypeID			INT				'$.BetTypeID'
+			,	BetChoiceType		TINYINT			'$.BetChoiceType'
+			,	BetIDPattern		NVARCHAR(20)	'$.BetIDPattern'
+			,	BetID				BIGINT			'$.BetID'
+			) AS j;
+
 	END;
 	
 	--========================================================================================
 	IF @ListSuspiciousTransId <> ''
 	BEGIN
+
 		INSERT INTO #tmpSuspiciousTrans (TransId,SuspiciousReason,SuspiciousGroupId)
-		SELECT	JSON_VALUE(ssk.value, '$.TransId') AS TransId
-			,	JSON_VALUE(ssk.value, '$.Reason') AS Reason
-			,	JSON_VALUE(ssk.value, '$.GroupId') AS Reason
-		FROM OPENJSON (@ListSuspiciousTransId) AS ssk
+		SELECT	j.TransID
+			,	j.Reason
+			,	j.GroupId
+		FROM OPENJSON (@ListSuspiciousTransId) WITH (
+				TransID		BIGINT '$.TransId'
+			,	Reason		VARCHAR(50) '$.Reason'
+			,	GroupId		INT '$.GroupId'
+			) AS j;
 
 		INSERT INTO #tmpSuspiciousDistinctTrans
 		SELECT DISTINCT tmpTs.TransId 
@@ -447,7 +443,7 @@ BEGIN
 		LEFT JOIN #tmpSuspiciousTrans AS tmpSt ON tmpSt.TransId = tmpTs.TransId
 	;
 	
-	DROP TABLE IF EXISTS #tmpSupportedSportBettype;
+	DROP TABLE IF EXISTS #tmpSportBettype;
 	DROP TABLE IF EXISTS #tmpTrans;
 	DROP TABLE IF EXISTS #tmpExcludeTransIds;
 

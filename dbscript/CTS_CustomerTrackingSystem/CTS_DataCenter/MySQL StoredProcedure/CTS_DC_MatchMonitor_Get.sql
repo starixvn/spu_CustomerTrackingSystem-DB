@@ -97,18 +97,18 @@ BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Bettype;
     CREATE TEMPORARY TABLE Temp_Bettype(
-			BettypeID 	INT UNSIGNED
+			BettypeID 	INT UNSIGNED PRIMARY KEY
         ,	BetID		BIGINT
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Sporttype;
     CREATE TEMPORARY TABLE Temp_Sporttype(
-			Sporttype 	INT
+			Sporttype 	INT PRIMARY KEY
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Reason;
     CREATE TEMPORARY TABLE Temp_Reason(
-			ReasonID 	INT
+			ReasonID 	INT PRIMARY KEY
 	);
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_MatchGroup;
@@ -156,11 +156,11 @@ BEGIN
 						)
 				) AS js;  
     
-    SET @sql = CONCAT("INSERT INTO Temp_Sporttype (Sporttype) VALUES ('", REPLACE(ip_Sporttype, ",", "'),('"),"');");
+    SET @sql = CONCAT("INSERT IGNORE INTO Temp_Sporttype (Sporttype) VALUES ('", REPLACE(ip_Sporttype, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1; 
     
-    SET @sql = CONCAT("INSERT INTO Temp_Reason (ReasonID) VALUES ('", REPLACE(ip_Reason, ",", "'),('"),"');");
+    SET @sql = CONCAT("INSERT IGNORE INTO Temp_Reason (ReasonID) VALUES ('", REPLACE(ip_Reason, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1; 
     

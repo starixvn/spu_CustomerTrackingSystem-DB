@@ -1093,7 +1093,7 @@ BEGIN
 
 	DROP TABLE IF EXISTS #tmpTransIds;
 	DROP TABLE IF EXISTS #tmpTickets;
-	DROP TABLE IF EXISTS #tmpSupportedSportBettype;
+	DROP TABLE IF EXISTS #tmpSportBettype;
 	DROP TABLE IF EXISTS #tmpSupportedCurrency;
 	DROP TABLE IF EXISTS #tmpSupportedHDP;
 	DROP TABLE IF EXISTS #tmpSupportedScore;

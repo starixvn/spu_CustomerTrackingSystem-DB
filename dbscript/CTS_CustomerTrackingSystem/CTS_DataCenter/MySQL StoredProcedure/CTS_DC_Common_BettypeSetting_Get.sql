@@ -22,7 +22,7 @@ BEGIN
 			- 	20231122@Casey.Huynh: Created [Redmine ID: #196396]
             
 		Param's Explanation (filtered by):
-        	ip_FunctionID: 1, 2...
+        	ip_FunctionID: 1, 2
 		,	ip_SportTypeIDList: NULL-Gett ALL Bettype, else '1,2,43..'
 		,	ip_BettypeIDList: NULL: Gett ALL Bettype, else '1,3,7...'
 		,	ip_IsFilterMMDetection: 1- Get DetectMonitor Bettype Only
@@ -30,19 +30,17 @@ BEGIN
         
 		Example:        
 		Service MM Detection: CALL CTS_DC_Common_BettypeSetting_Get(@ip_FunctionID:=1,@ip_SportTypeIDList:=NULL,@ip_BettypeIDList:=NULL,@ip_IsFilterMMDetection:=1,@ip_IsShowDetailsX:=0,@ip_Status:=1); 
-		Filter MM: CALL CTS_DC_Common_BettypeSetting_Get(@ip_FunctionID:=1,@ip_SportTypeIDList:=NULL,@ip_BettypeIDList:=NULL,@ip_IsFilterMMDetection:=0,@ip_IsShowDetailsX:=1,@ip_Status:=1);
+		Filter MM: CALL CTS_DC_Common_BettypeSetting_Get_UAT1(@ip_FunctionID:=1,@ip_SportTypeIDList:=NULL,@ip_BettypeIDList:=NULL,@ip_IsFilterMMDetection:=0,@ip_IsShowDetailsX:=1,@ip_Status:=1);
 	*/
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_SportTypeID;
 	CREATE TEMPORARY TABLE Temp_SportTypeID (
 			SportTypeID	INT PRIMARY KEY
-		,	INDEX IX_Temp_SportTypeID_SportTypeID(SportTypeID)
 	);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_BettypeID;
 	CREATE TEMPORARY TABLE Temp_BettypeID (
 			BettypeID	INT PRIMARY KEY
-		,	INDEX IX_Temp_SportTypeID_SportTypeID(BettypeID)
 	);
 	
     IF ip_SportTypeIDList IS NOT NULL THEN
@@ -63,6 +61,7 @@ BEGIN
             ,	sbs.BetTypeID
             ,	(CASE WHEN js.NameDetailsX <> '' THEN REPLACE(sbs.BettypeNameDisplay,' X ', CONCAT(' ',js.NameDetailsX,' '))  
 							ELSE sbs.BettypeNameDisplay END) AS BettypeNameDisplay
+			,	sbs.BetChoiceType
             ,	REPLACE(json_extract(BetChoicePattern, '$.BetChoiceHome'),'"','') AS BetChoiceHome
             ,	REPLACE(json_extract(BetChoicePattern, '$.BetChoiceHomeDisplay'),'"','') AS BetChoiceHomeDisplay
 			,	REPLACE(json_extract(BetChoicePattern, '$.BetChoiceAway'),'"','') AS BetChoiceAway
@@ -90,6 +89,7 @@ BEGIN
 			,	sbs.SportName
             ,	sbs.BetTypeID
             , 	sbs.BetTypeNameDisplay
+            ,	sbs.BetChoiceType
             ,	REPLACE(json_extract(BetChoicePattern, '$.BetChoiceHome'),'"','') AS BetChoiceHome
             ,	REPLACE(json_extract(BetChoicePattern, '$.BetChoiceHomeDisplay'),'"','') AS BetChoiceHomeDisplay
 			,	REPLACE(json_extract(BetChoicePattern, '$.BetChoiceAway'),'"','') AS BetChoiceAway
