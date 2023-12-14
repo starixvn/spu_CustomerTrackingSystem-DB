@@ -24,6 +24,7 @@ BEGIN
 			- 20211201@Casey.Huynh: Fix Issue Devicefingerprint.DeviceID = 0 [Redmine ID: #165164]
 			- 20230316@Jonathan.Doan: Support return new device login for Alpha [Redmine ID: #185185]
 			- 20230426@Jonathan.Doan: Get BotDetectionValue from RawTransaction [Redmine ID: #186644]
+			- 20230807@Terry.Nguyen: Add Fake IP [Redmine ID: #191829]
 	    Param's Explanation (filtered by):
         
         Example:
@@ -475,7 +476,7 @@ BEGIN
     /*****MOVE TRans competed to Trans07****************************************************/
     IF err_no = 0 THEN
 		SET start_time = CURRENT_TIMESTAMP(4);
-		INSERT IGNORE INTO  DCS_DataCenter.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID)
+		INSERT IGNORE INTO  DCS_DataCenter.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, FakeIP)
 		SELECT 	ifnull(ts.RawTransID, ts.TransID)
 			,	ts.LoginName
             ,	ts.TransTime
@@ -498,6 +499,7 @@ BEGIN
             ,	ts.InsertTime
             ,	ts.BotDetectionValue
             ,	ts.BotComponentID
+            ,	ts.FakeIP
 		FROM DCS_DataCenter.Transaction AS ts
 		INNER JOIN Temp_Transaction AS tmp_rm
 			ON	ts.TransID = tmp_rm.TransID

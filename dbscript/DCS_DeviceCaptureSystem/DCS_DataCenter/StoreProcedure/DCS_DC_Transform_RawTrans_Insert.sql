@@ -19,19 +19,23 @@ BEGIN
             - 20211129@Casey.Huynh: Remove FingerprintMoreInfo Column [Redmine ID: #165167]
 			- 20230327@Terry.Nguyen: Add InsertTime [Redmine ID: #185185]
 			- 20230426@Jonathan.Doan: Add BotD [Redmine ID: #186644]
+			- 20230807@Terry.Nguyen: Add Fake IP [Redmine ID: #191829]
+			- 20231108@Jonathan.Doan: Integrate FPSjs [Redmine ID: #196570]
 
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_DC_Transform_RawTrans_Insert ('[{"Action" : "login","ActionResult" : "login -> successfully","DeviceCode" : "6f6bea6ce7074622bc18a921f8be1e60","FingerprintCode" : "ade5b939c13195aaae06466b6757754413fcdc2a;0423c13edf617398aed953a6fd4e7d24","InvalidDevice" : null,"IP" : "14.167.17.120","IPId" : 245830008,"LoginName" : "U702202002","PluginID" : null,"SubscriberName" : "MAXBET789Y","TransStatus" : "0","TransTime" : "2021-11-21 00:00:00.0201","URL" : "http://m122.viva88.net:806/FpsHandler","UserAgent" : "Mozilla/5.0 (iPhone; CPU iPhone OS 15_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.1 Mobile/15E148 Safari/604.1","FlaggedCode":"headless_chrome", "BotDetection":"detectAppVersion,detectUserAgent"},{"Action" : "login","ActionResult" : "login -> successfully","DeviceCode" : "a707e6620cce48a4ada3cd3887e5d77f","FingerprintCode" : "f4cf2f4634bfd83191d70c4f1913cc79878cce5f;4c7acb513373c49e797f2f35c6e1f99d","InvalidDevice" : null,"IP" : "103.199.41.17","IPId" : 1741105425,"LoginName" : "Khanh1973","PluginID" : null,"SubscriberName" : "11BET","TransStatus" : "0","TransTime" : "2021-11-21 00:00:00.2418","URL" : "http://l9j7ma.cx5888.com/FpsHandler","UserAgent" : "Mozilla/5.0 (Linux; Android 11; CPH2113) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Mobile Safari/537.36","FlaggedCode":"unknown", "BotDetection":""}]');
+			CALL DCS_DataCenter.DCS_DC_Transform_RawTrans_Insert ('[{"Action" : "loginTest","ActionResult" : "login -> successfully","DeviceCode" : "a707e6620cce48a4ada3cd3887e5d77f","FingerprintCode" : "f4cf2f4634bfd83191d70c4f1913cc79878cce5f;4c7acb513373c49e797f2f35c6e1f99d","InvalidDevice" : null,"IP" : "103.199.41.17","IPId" : 1741105425,"LoginName" : "test006","PluginID" : null,"SubscriberName" : "11BET","TransStatus" : "0","TransTime" : "2021-11-21 00:00:00.2418","URL" : "http://l9j7ma.cx5888.com/FpsHandler","UserAgent" : "Mozilla/5.0 (Linux; Android 11; CPH2113) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Mobile Safari/537.36","FlaggedCode":"unknown", "BotDetection":"", "CookieCode":"AAA5", "FingerprintAttribute": {"FingerPrintCode":"FingerPrintCode2","Attribute":{"doNotTrack":"a","webglRenderer":"b","audio":"c","canvasPrint":"d"},"Accept":null,"Encoding":null,"Headers":null,"OSName":null,"BrowserName":null,"BrowserVersion":null,"UserAgent":null,"Platform":null,"BrowserInstanceCode":"BrowserInstanceCode1","BrowserFamilyCode":null}, "RawUserAgent":"Chrome123", "RawUserAgentCode":"RawUserAgentCode123","RawUserAgentInfo":{"ClientName":"Chrome","ClientVersion":"123.1","OSName":"Window"}}]');
 
 	*/
 	
     DECLARE lv_FlaggedHuman	INT UNSIGNED DEFAULT 1;
     DECLARE lv_InsertionTime TIMESTAMP(4) DEFAULT CURRENT_TIMESTAMP(4);
     
-	DROP TEMPORARY TABLE IF EXISTS Temp_Transactions;
-	CREATE TEMPORARY TABLE Temp_Transactions(
+	DROP TEMPORARY TABLE IF EXISTS Temp_Transaction;
+	DROP TEMPORARY TABLE IF EXISTS Temp_BotDetection;
+    
+	CREATE TEMPORARY TABLE Temp_Transaction(
 			ID							INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
 		,	LoginName					VARCHAR(100) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NOT NULL	
 		,	SubscriberName				VARCHAR(50) 						NOT NULL
@@ -53,17 +57,26 @@ BEGIN
         ,	BotComponentID				BIGINT UNSIGNED						NULL
         ,	BotComponent				LONGTEXT							NULL
         ,	BotComponentCode			VARCHAR(100)						NULL
+		,	FakeIP						VARCHAR(100) 						NULL
+        ,	CookieID					BIGINT UNSIGNED						NULL
+        ,	CookieCode					VARCHAR(64)							NULL
+        ,	BrowserInstanceID			BIGINT UNSIGNED						NULL
+        ,	FingerprintAttribute		JSON								NULL
+        ,	RawFingerPrintId			BIGINT UNSIGNED						NULL
+        ,	RawUserAgentID				BIGINT UNSIGNED						NULL
+        ,	RawUserAgent				VARCHAR(1000)						NULL
+        ,	RawUserAgentInfo			JSON								NULL
         
-		,	INDEX IX_Temp_Transactions_BotComponentCode(BotComponentCode)
+		,	INDEX IX_Temp_Transaction_BotComponentCode(BotComponentCode)
+		,	INDEX IX_Temp_Transaction_CookieCode(CookieCode)
     );     
         
-	DROP TEMPORARY TABLE IF EXISTS Temp_BotDetection;
 	CREATE TEMPORARY TABLE Temp_BotDetection(
 			ID							INT UNSIGNED PRIMARY KEY
-        ,	BotDetectionValue			BIT(32)		NULL		DEFAULT 0		
-    );     
+        ,	BotDetectionValue			BIT(32) NULL DEFAULT 0
+    );    
 		
-	INSERT INTO Temp_Transactions(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode)
+	INSERT INTO Temp_Transaction(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, FakeIP, CookieCode, FingerprintAttribute, RawUserAgent, RawUserAgentInfo)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -82,6 +95,11 @@ BEGIN
 		,	rt.BotDetection
 		,	rt.BotComponent
 		,	MD5(rt.BotComponent) AS BotComponentCode
+		,	rt.FakeIP
+		,	rt.CookieCode
+		,	rt.FingerprintAttribute
+		,	rt.RawUserAgent
+		,	rt.RawUserAgentInfo
 	FROM	JSON_TABLE(
 			ip_RawTransJson,
 			 "$[*]" COLUMNS(
@@ -102,17 +120,33 @@ BEGIN
                             ,	FlaggedCode				VARCHAR(100)	PATH "$.FlaggedCode"
                             ,	BotDetection			LONGTEXT		PATH "$.BotDetection"
                             ,	BotComponent			LONGTEXT		PATH "$.BotComponent"
+                            ,	FakeIP					VARCHAR(100)	PATH "$.FakeIP"
+                            ,	CookieCode				VARCHAR(64)		PATH "$.CookieCode"
+							,	FingerprintAttribute	JSON			PATH "$.FingerprintAttribute"
+							,	RawUserAgent 			VARCHAR(1000)	PATH "$.RawUserAgent"
+							,	RawUserAgentInfo		JSON			PATH "$.RawUserAgentInfo"
 				)
 		   ) AS  rt; 
            
+    /******* Update Temp_Transaction: CookieID ********************/
+    CALL DCS_DC_Transform_Cookie_Insert('Temp_Transaction');
+    
+    /******* Update Temp_Transaction: RawFingerPrintID, BrowserInstanceID ********************/
+    /******* Insert into FingerprintAttribute ********************/
+    CALL DCS_DC_Transform_RawFingerPrint_Insert('Temp_Transaction');
+    
+    /******* Update Temp_Transaction: RawUserAgentID ********************/
+    CALL DCS_DC_Transform_RawUserAgent_Insert('Temp_Transaction');
+    
+    /*******BotDetection, BotComponent********************/           
 	INSERT INTO Temp_BotDetection(ID, BotDetectionValue)
     SELECT 	tmp.ID
 		, 	SUM(bd.Value) as Value
-	FROM Temp_Transactions AS tmp
+	FROM Temp_Transaction AS tmp
 		INNER JOIN DCS_DataCenter.BotDetection bd ON FIND_IN_SET(bd.Name, tmp.BotDetection)
 	GROUP BY tmp.ID;
     
-	UPDATE Temp_Transactions AS tmp
+	UPDATE Temp_Transaction AS tmp
 		INNER JOIN Temp_BotDetection tmpBD ON tmpBD.ID = tmp.ID
 	SET tmp.BotDetectionValue = tmpBD.BotDetectionValue;
     
@@ -122,7 +156,7 @@ BEGIN
 				BotComponentCode AS Code
 			,	BotComponent AS Component
 			,	FlaggedCode
-		FROM Temp_Transactions
+		FROM Temp_Transaction
     )
     SELECT 	cte.Code
 		,	cte.Component
@@ -132,11 +166,13 @@ BEGIN
     FROM cte_BotComponent AS cte
     WHERE NOT EXISTS (SELECT 1 FROM DCS_DataCenter.BotComponent bc WHERE bc.Code = cte.Code);
     
-    UPDATE Temp_Transactions AS tmp
+    UPDATE Temp_Transaction AS tmp
 		INNER JOIN DCS_DataCenter.BotComponent AS bds ON bds.Code = tmp.BotComponentCode
 	SET tmp.BotComponentID = bds.ID;
 	
-	INSERT INTO DCS_DataCenter.RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, InsertTime, BotDetectionValue, BotComponentID)
+    
+    /*******RawTransaction********************/
+	INSERT INTO DCS_DataCenter.RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, InsertTime, BotDetectionValue, BotComponentID, FakeIP, CookieID, RawUserAgentID, RawFingerPrintID, BrowserInstanceID)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -156,11 +192,16 @@ BEGIN
 		,	lv_InsertionTime as InsertTime
 		,	rt.BotDetectionValue
 		,	rt.BotComponentID
-	FROM Temp_Transactions AS rt
-		LEFT JOIN DCS_DataCenter.StaticList AS sl 	ON sl.ListCode = 'Flagged'
+		,	rt.FakeIP
+		,	rt.CookieID
+		,	rt.RawUserAgentID
+		,	rt.RawFingerPrintID
+		,	rt.BrowserInstanceID
+	FROM Temp_Transaction AS rt
+		LEFT JOIN DCS_DataCenter.StaticList AS sl 	ON sl.ListID = 1 /*Flagged*/   
 													AND sl.ItemCode = rt.FlaggedCode;
 	
-    DROP TEMPORARY TABLE IF EXISTS Temp_Transactions;
+    DROP TEMPORARY TABLE IF EXISTS Temp_Transaction;
 END$$
 
 DELIMITER ;
