@@ -46,7 +46,7 @@ VALUES(1,1,1,'Soccer','Handicap',null,'HDP','{"BetChoiceAway": "a", "BetChoiceHo
 ,(1,2,1,'Basketball','Handicap',null,'HDP','{"BetChoiceAway": "a", "BetChoiceHome": "h", "BetChoiceAwayDisplay": "a", "BetChoiceHomeDisplay": "h"}',2,null,1,'0,3',0,5,1)
 ,(1,2,3,'Basketball','Over/Under',null,'O/U','{"BetChoiceAway": "a", "BetChoiceHome": "h", "BetChoiceAwayDisplay": "u", "BetChoiceHomeDisplay": "o"}',2,null,1,'0,3',0,6,1)
 ,(1,2,7,'Basketball','1H Handicap',null,'1H HDP','{"BetChoiceAway": "a", "BetChoiceHome": "h", "BetChoiceAwayDisplay": "a", "BetChoiceHomeDisplay": "h"}',2,null,1,'0,3',0,7,1)
-,(1,2,8,'Basketball','1H Over/Under',null,'1H O/U','{"BetChoiceAway": "u", "BetChoiceHome": "o", "BetChoiceAwayDisplay": "u", "BetChoiceHomeDisplay": "o"}',2,null,1,'0,3',0,8,1)
+,(1,2,8,'Basketball','1H Over/Under',null,'1H O/U','{"BetChoiceAway": "a", "BetChoiceHome": "h", "BetChoiceAwayDisplay": "u", "BetChoiceHomeDisplay": "o"}',2,null,1,'0,3',0,8,1)
 ,(1,2,20,'Basketball','Moneyline',null,'ML','{"BetChoiceAway": "a", "BetChoiceHome": "h", "BetChoiceAwayDisplay": "a", "BetChoiceHomeDisplay": "h"}',2,null,1,'0,3',0,9,1)
 ,(1,2,609,'Basketball','Quarter X Handicap','1,2,3,4','Quarter X HDP','{"BetChoiceAway": "a", "BetChoiceHome": "h", "BetChoiceAwayDisplay": "a", "BetChoiceHomeDisplay": "h"}',2,'80X',1,'0,3',0,10,1)
 ,(1,2,610,'Basketball','Quarter X Over/Under','1,2,3,4','Quarter X O/U','{"BetChoiceAway": "u", "BetChoiceHome": "o", "BetChoiceAwayDisplay": "u", "BetChoiceHomeDisplay": "o"}',2,'80X',1,'0,3',0,14,1)
