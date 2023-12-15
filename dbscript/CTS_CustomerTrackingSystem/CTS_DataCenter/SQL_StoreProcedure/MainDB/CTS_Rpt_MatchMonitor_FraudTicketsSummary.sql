@@ -14,6 +14,7 @@ AS
 
 	Revisions:
 		- 20231116@Long.Luu: 	Initialize [Redmine ID: 195042]
+		- 20231212@Long.Luu: 	Remove duplicate tickets catched by many reasons [Redmine ID: 196396]
 
 	Params Explaination:
 		-	@FraudTickets is in Json format
@@ -107,7 +108,7 @@ BEGIN
 				WHERE	FraudTrans > ''
 			)
 			INSERT INTO #tmpParsedFraudInfo(MatchId,DataSource,IsLive,Bettype,BetId,TransId)
-			SELECT	MatchId
+			SELECT	DISTINCT MatchId
 				,	DataSource
 				,	IsLive
 				,	Bettype

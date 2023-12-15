@@ -43,6 +43,7 @@ sp: BEGIN
 			-	20230421@Casey.Huynh:	Enhance Rule for System Detect Classification [Redmine ID: #186814]
             -	20231016@Casey.Huynh:	Enhance Rule for BasketBall. Adjust Group Stake to 300, Add AssociationByIP, ShareMatch(3 Match(last 7 day) [Redmine ID: 195473]
             -	20231120@Thomas.Nguyen: Add the condition stake of licensee group for Basketball: >= 50RM [Redmine ID: #188553]
+            -	20231120@Casey.Huynh:	Enhance Rule for Esport. Adjust Group Stake to 300, Add AssociationByIP, ShareMatch(3 Match(last 7 day) [Redmine ID: #196396]
             
 		Param's Explanation (filtered by):	
 			ip_SharedMatches: JSON '[{"O": 1, "D": 2}]'
@@ -61,6 +62,7 @@ sp: BEGIN
     DECLARE CONST_ASSOCIATIONTYPE_SHAREMATCH 	INT DEFAULT 5;
     DECLARE CONST_SPORTTYPE_BASKETBALL 			INT DEFAULT 2;
     DECLARE CONST_SPORTTYPE_SOCCER 				INT DEFAULT 1;
+    DECLARE CONST_SPORTTYPE_ESPORT 				INT DEFAULT 43;
     DECLARE CONST_CLASSIFYTOTALSTAKE_BASKETBALL	DECIMAL(20,4) DEFAULT 50;
 	#=================================================
     DECLARE lv_TimeCustID BIGINT UNSIGNED DEFAULT 0;
@@ -451,7 +453,7 @@ sp: BEGIN
 	WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tic WHERE tic.CustID = ai.FromCustID);
     
     #====================GET ASSOCIATION BY IP==================
-    IF (lv_SportType = CONST_SPORTTYPE_BASKETBALL) THEN  
+    IF (lv_SportType IN (CONST_SPORTTYPE_BASKETBALL,CONST_SPORTTYPE_ESPORT)) THEN  
 		INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType)
 		SELECT	tmpCus.CustID
 			,	ip.ToCustID
@@ -486,7 +488,7 @@ sp: BEGIN
 	END IF;
     
 	#====================GET ASSOCIATION BY SHARE MATCH==================
-    IF (lv_SportType = CONST_SPORTTYPE_BASKETBALL AND ip_SharedMatches IS NOT NULL) THEN    
+    IF (lv_SportType IN (CONST_SPORTTYPE_BASKETBALL,CONST_SPORTTYPE_ESPORT) AND ip_SharedMatches IS NOT NULL) THEN    
 
 		INSERT IGNORE INTO Temp_AssociationByShareMatch(FromCustID, ToCustID)  
 		SELECT 	OrigID
