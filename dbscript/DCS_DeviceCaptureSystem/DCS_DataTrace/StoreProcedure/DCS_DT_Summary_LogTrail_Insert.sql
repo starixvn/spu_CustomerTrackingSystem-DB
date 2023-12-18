@@ -20,7 +20,7 @@ BEGIN
 
 	Example:
 		SET sql_safe_updates = 0;
-        CALL DCS_DataTrace.DCS_DT_Summary_LogTrail_Insert('[{"EventDate":"2023-10-26","SubscriberID":101,"SystemName":"new fps","Source":"https://spu-fps-api.nexdev.net","Destination":"spu-fps-portal-api.nexdev.net","Method":"/api/transaction","Total":10}]');
+        CALL DCS_DataTrace.DCS_DT_Summary_LogTrail_Insert('[{"EventDate":"2023-10-26","SubscriberID":101,"SystemName":"new fps","Source":"API","Destination":"RabbitMQ","Method":"PushQueue","Total":10}]');
 	*/
     
 	DECLARE lv_CurrentDatetime DATETIME DEFAULT CURRENT_TIMESTAMP();
@@ -47,7 +47,7 @@ BEGIN
     INSERT INTO Temp_InputLogTrail(EventDate, SubscriberID, EventCode, SystemName, Source, Destination, Method, Total)
 	SELECT	tmp.EventDate
 		,	tmp.SubscriberID
-		,   MD5(CONCAT(EventDate, SubscriberID, SystemName, Source, Destination, Method)) AS EventCode
+		,   tmp.EventCode
         ,	tmp.SystemName
 		,	tmp.Source
         ,	tmp.Destination
@@ -58,6 +58,7 @@ BEGIN
 			 "$[*]" COLUMNS(
 					EventDate					DATE				PATH "$.EventDate"
 				,	SubscriberID				INT UNSIGNED		PATH "$.SubscriberID"
+                ,   EventCode					VARCHAR(100)		PATH "$.EventCode"
                 ,   SystemName					VARCHAR(45)			PATH "$.SystemName"
 				,	Source						VARCHAR(100)		PATH "$.Source"
                 ,	Destination					VARCHAR(100)		PATH "$.Destination"
