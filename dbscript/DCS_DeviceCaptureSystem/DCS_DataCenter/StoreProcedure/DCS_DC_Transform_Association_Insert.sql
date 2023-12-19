@@ -37,6 +37,7 @@ BEGIN
         ,	CreatedTime				TIMESTAMP(4)		
         ,	CreatedDate				DATETIME			
 		,	IsNewRecord				TINYINT		 		DEFAULT 1
+		,	IsNewRecordMapping		TINYINT		 		DEFAULT 1
     );
     
     INSERT INTO Temp_AssociationInsert(AccountID, DeviceID, FPDeviceID, SubscriberID, CreatedTime, CreatedDate)
@@ -68,10 +69,26 @@ BEGIN
     UPDATE Temp_AssociationInsert AS tmp
 		INNER JOIN DCS_DataCenter.Association AS ass ON ass.AccountID = tmp.AccountID 
 													AND ass.DeviceID = tmp.DeviceID
-													AND ass.FPDeviceID = tmp.FPDeviceID
     SET tmp.IsNewRecord = 0;
     
-	INSERT IGNORE INTO DCS_DataCenter.Association(AccountID, DeviceID, FPDeviceID, SubscriberID, CreatedTime, CreatedDate, InsertTime)
+	INSERT IGNORE INTO DCS_DataCenter.Association(AccountID, DeviceID, SubscriberID, CreatedTime, CreatedDate, InsertTime)
+	SELECT	AccountID
+		,	DeviceID
+		,	SubscriberID
+		,	CreatedTime
+		,	CreatedDate
+		,	lv_CreatedDate AS InsertTime
+	FROM Temp_AssociationInsert
+    WHERE IsNewRecord = 1;
+    
+    /* === Insert into AssociationMapping === */
+    UPDATE Temp_AssociationInsert AS tmp
+		INNER JOIN DCS_DataCenter.AssociationMapping AS ass ON ass.AccountID = tmp.AccountID 
+															AND ass.DeviceID = tmp.DeviceID
+															AND ass.FPDeviceID = tmp.FPDeviceID
+    SET tmp.IsNewRecordMapping = 0;
+    
+	INSERT IGNORE INTO DCS_DataCenter.AssociationMapping(AccountID, DeviceID, FPDeviceID, SubscriberID, CreatedTime, CreatedDate, InsertTime)
 	SELECT	AccountID
 		,	DeviceID
 		,	FPDeviceID
@@ -80,7 +97,7 @@ BEGIN
 		,	CreatedDate
 		,	lv_CreatedDate AS InsertTime
 	FROM Temp_AssociationInsert
-    WHERE IsNewRecord = 1;
+    WHERE IsNewRecordMapping = 1;
 END$$
 
 DELIMITER ;
