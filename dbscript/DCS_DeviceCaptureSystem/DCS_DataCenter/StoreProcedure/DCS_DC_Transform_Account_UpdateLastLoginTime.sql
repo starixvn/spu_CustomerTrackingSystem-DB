@@ -21,7 +21,7 @@ BEGIN
         Example:
 			CALL DCS_DC_Transform_Account_UpdateLastLoginTime_LongTest(5000);
 	*/ 
-	SET BatchSize = 1000;
+	SET BatchSize = 5000;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_AccountLastLogin;  
 	CREATE TEMPORARY TABLE Temp_AccountLastLogin(
