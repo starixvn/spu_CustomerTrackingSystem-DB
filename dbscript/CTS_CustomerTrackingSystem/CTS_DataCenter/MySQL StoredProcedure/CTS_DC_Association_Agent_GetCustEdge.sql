@@ -20,8 +20,8 @@ BEGIN
         Example:
 			- CALL CTS_DataCenter.CTS_DC_Association_Agent_GetCustEdge('1,2,3');
 	*/
-	DECLARE lv_GroupID 				BIGINT DEFAULT 1;
-	DECLARE CONS_RangeDevice 		BIGINT DEFAULT 10000000000;
+	DECLARE CONST_AGENT_RANGE 		BIGINT DEFAULT 3000000000;
+	DECLARE lv_GroupID 				BIGINT DEFAULT CONST_AGENT_RANGE;
 	DECLARE lv_AgentJson	 		JSON;
 	DECLARE lv_OrigID 				BIGINT;
 	DECLARE lv_Count 				INT;
@@ -29,50 +29,41 @@ BEGIN
 	#=============================================================================	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
 	CREATE TEMPORARY TABLE 	Temp_Cust (
-			CTSCustID 			BIGINT  PRIMARY KEY 
-		,	CustID   			BIGINT	
-        ,	Recommend			BIGINT
-		,	INDEX 				Temp_Cust(CustID)
-        ,	INDEX 				Temp_Cust_Recommend(Recommend)
+			CTSCustID 				BIGINT  PRIMARY KEY 
+		,	CustID   				BIGINT	
+        ,	Recommend				BIGINT
+		,	INDEX Temp_Cust_CustID (CustID)
+        ,	INDEX Temp_Cust_Recommend(Recommend)
 	);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_Recommend;
 	CREATE TEMPORARY TABLE 	Temp_Recommend (
-			CTSCustID 			BIGINT  PRIMARY KEY 
-        ,	CustID				BIGINT
-        ,	Processed 			BIT DEFAULT 0
-        ,	INDEX 				IX_Temp_Recommend_Recommend(CustID)
-        ,	INDEX				IX_Temp_Recommend_Processed(Processed)
+			CTSCustID 				BIGINT  PRIMARY KEY 
+        ,	CustID					BIGINT
+        ,	Processed 				BIT 	DEFAULT 0
+        ,	INDEX IX_Temp_Recommend_CustID(CustID)
+        ,	INDEX IX_Temp_Recommend_Processed(Processed)
 	);
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_GroupResult;
-	CREATE TEMPORARY TABLE 		Temp_GroupResult (
-			CTSCustID 			BIGINT PRIMARY KEY	
-		,	GroupID 			BIGINT
-		,	INDEX			    IX_Temp_GroupResult(GroupID)
+	CREATE TEMPORARY TABLE	Temp_GroupResult (
+			CTSCustID 				BIGINT PRIMARY KEY	
+		,	GroupID 				BIGINT
+		,	INDEX IX_Temp_GroupResult_GroupID (GroupID)
 	);
         
     DROP TEMPORARY TABLE IF EXISTS Temp_GroupID;
-	CREATE TEMPORARY TABLE 		Temp_GroupID (
-			GroupID 			BIGINT PRIMARY KEY	
+	CREATE TEMPORARY TABLE	Temp_GroupID (
+			GroupID 				BIGINT PRIMARY KEY	
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_NodeCTSCustID;
-	CREATE TEMPORARY TABLE 		Temp_NodeCTSCustID (
-			CTSCustID 			BIGINT PRIMARY KEY
-	);
-	
-	DROP TEMPORARY TABLE IF EXISTS Temp_GraphAgent;
-    CREATE TEMPORARY TABLE 	Temp_GraphAgent (
-			OrigID 				BIGINT  
-		,	DestID   			BIGINT
-		,	PRIMARY KEY(OrigID,DestID)
-		,	INDEX IX_Temp_GraphAgent_OrigID (OrigID)
-		,	INDEX IX_Temp_GraphAgent_DestID (DestID)
+	CREATE TEMPORARY TABLE	Temp_NodeCTSCustID (
+			CTSCustID 				BIGINT PRIMARY KEY
 	);
 
 	#=============================================================================	
-	INSERT IGNORE INTO Temp_Cust(CTSCustID, CustID, Recommend)
+	INSERT IGNORE INTO Temp_Cust(CTSCustID,CustID,Recommend)
 	SELECT 	cus.CTSCustID
 		, 	cus.CustID
         ,	cus.Recommend
@@ -83,7 +74,7 @@ BEGIN
                                                         AND cus.RoleID = 1
                                                         AND cus.IsLicensee = 0;
 														
-	INSERT IGNORE INTO Temp_Recommend(CTSCustID, CustID)
+	INSERT IGNORE INTO Temp_Recommend(CTSCustID,CustID)
 	SELECT 	cus.CTSCustID
         ,	cus.CustID
 	FROM Temp_Cust AS tmp
@@ -98,17 +89,10 @@ BEGIN
 		FROM Temp_Recommend
     )
     SELECT JSON_ARRAYAGG(JSON_OBJECT('CTSCustID', CTSCustID ,'CustID', CustID)) AS CustJson
-	INTO lv_AgentJson	
+	INTO lv_AgentJson
     FROM CTE;
 	
 	CALL CTS_DataCenter.CTS_DC_Association_GetCustEdge(lv_AgentJson,1,0,0);
-
-	INSERT IGNORE INTO Temp_GraphAgent (OrigID,DestID)
-	SELECT 	OrigID
-		,	(CONS_RangeDevice + DestID)
-	FROM Temp_Graph;
-	
-	DROP TABLE IF EXISTS Temp_Graph;
 
 	lp: LOOP 
 		SET lv_OrigID = NULL;
@@ -130,15 +114,15 @@ BEGIN
         
 		INSERT IGNORE INTO Temp_NodeCTSCustID(CTSCustID)
 		WITH RECURSIVE CTE_Group AS ( 
-				SELECT lv_OrigID AS OrigID
-				UNION
-				SELECT CASE WHEN CTE_Group.OrigID = grp.DestID THEN grp.OrigID ELSE grp.DestID END
-				FROM Temp_GraphAgent  AS grp
-					INNER JOIN CTE_Group ON CTE_Group.OrigID = grp.OrigID OR CTE_Group.OrigID = grp.DestID
+			SELECT lv_OrigID AS OrigID
+			UNION
+			SELECT grp.OrigID 
+			FROM Temp_Graph  AS grp
+				INNER JOIN CTE_Group ON CTE_Group.OrigID = grp.DestID
 		) 
 		SELECT cte.OrigID
         FROM CTE_Group AS cte
-		WHERE EXISTS (SELECT 1 FROM Temp_Recommend AS tmp WHERE tmp.CTSCustID = cte.OrigID);
+        WHERE EXISTS (SELECT 1 FROM Temp_Recommend AS tmp WHERE tmp.CTSCustID = cte.OrigID);
         
 		SELECT COUNT(1)
         INTO lv_Count
@@ -176,6 +160,7 @@ BEGIN
 	
 	END LOOP;
 
+    /*******************Return Data*************************/
 	SELECT 	cus.CTSCustID AS OrigID
         ,	grp.GroupID AS DestID
     FROM Temp_GroupResult AS grp

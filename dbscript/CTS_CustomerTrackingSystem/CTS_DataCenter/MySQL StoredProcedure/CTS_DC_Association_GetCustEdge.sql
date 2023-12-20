@@ -27,31 +27,35 @@ BEGIN
 	DECLARE CONST_ASSBYAI_ACTIVESTATUS 		INT DEFAULT 1;    
 	DECLARE CONST_ASSTYPE_IP 				INT DEFAULT 4;
 	DECLARE CONST_ASSBYIP_ACTIVESTATUS 		INT DEFAULT 1; 
+
+	DECLARE CONST_RangeDevice				BIGINT DEFAULT 10000000000;
+	DECLARE CONST_RangeAIGroup				BIGINT DEFAULT 20000000000;
 	#=============================================================================
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustNode;
 	CREATE TEMPORARY TABLE 	Temp_CustNode (
-			CTSCustID 			BIGINT  PRIMARY KEY 
-		,	CustID   			BIGINT	
-		,	INDEX IX_Temp_CustNode(CustID)
+			CTSCustID 						BIGINT	PRIMARY KEY 
+		,	CustID   						BIGINT	
+		,	INDEX IX_Temp_CustNode_CustID (CustID)
 	);  
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Graph;
     CREATE TEMPORARY TABLE 	Temp_Graph (
-			OrigID 				BIGINT  
-		,	DestID   			BIGINT
-		,	AssociationType		SMALLINT 
+			OrigID 							BIGINT  
+		,	DestID   						BIGINT
+		,	AssociationType					SMALLINT 
 		,	PRIMARY KEY(OrigID,DestID)
+		,	INDEX IX_Temp_Graph_DestID (DestID)
 	);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByAI_AssType;
 	CREATE TEMPORARY TABLE 	Temp_AssociationByAI_AssType (
-			AssTypeItemValue INT PRIMARY KEY            
+			AssTypeItemValue 				INT 	PRIMARY KEY            
 	);
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByIP_AssType;
 	CREATE TEMPORARY TABLE 	Temp_AssociationByIP_AssType (
-			AssTypeItemValue INT PRIMARY KEY            
+			AssTypeItemValue 				INT 	PRIMARY KEY            
 	);
 	#=============================================================================
 	
@@ -77,19 +81,19 @@ BEGIN
 	/*******************AssociationType = 1 >> Device*************************/
     IF ip_HasDevice = 1 THEN
 		DROP TEMPORARY TABLE IF EXISTS Temp_Device;
-		CREATE TEMPORARY TABLE 		Temp_Device (
-				DCSDeviceID		BIGINT PRIMARY KEY 
+		CREATE TEMPORARY TABLE 	Temp_Device (
+				DCSDeviceID			BIGINT 	PRIMARY KEY 
 		);
 		
 		INSERT INTO Temp_Device(DCSDeviceID)
-		SELECT 	DISTINCT
+		SELECT	DISTINCT
 				dv.DCSDeviceID 
 		FROM Temp_CustNode AS cus
 			INNER JOIN CTS_DataCenter.AssociationByDevice AS dv ON dv.CTSCustID = cus.CTSCustID; 
         
 		INSERT IGNORE INTO Temp_Graph(OrigID,DestID,AssociationType)
 		SELECT  cus.CTSCustID AS OrigID
-			,	tmp.DCSDeviceID AS DestID
+			,	(CONST_RangeDevice + tmp.DCSDeviceID) AS DestID
 			,	1 AS AssociationType 
 		FROM Temp_Device AS tmp
 			INNER JOIN CTS_DataCenter.AssociationByDevice AS lv1 ON tmp.DCSDeviceID =  lv1.DCSDeviceID
@@ -132,7 +136,7 @@ BEGIN
 
 		INSERT IGNORE INTO Temp_Graph(OrigID,DestID,AssociationType)
 		SELECT  cus.CTSCustID AS OrigID
-			, 	tmp.GroupID AS DestID
+			, 	(CONST_RangeAIGroup + tmp.GroupID) AS DestID
 			,	4 AS AssociationType
 		FROM Temp_AIGroup AS tmp 
 			INNER JOIN CTS_DataCenter.AssociationGroupByAI AS asg ON tmp.GroupID = asg.GroupID
@@ -161,6 +165,16 @@ BEGIN
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ip.FromCustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
 		
 	END IF;
+	
+	DROP TEMPORARY TABLE IF EXISTS Temp_Graph_Dup;
+	CREATE TEMPORARY TABLE Temp_Graph_Dup LIKE Temp_Graph;
+	INSERT INTO Temp_Graph_Dup SELECT * FROM Temp_Graph;
+	
+	INSERT IGNORE INTO Temp_Graph(OrigID,DestID,AssociationType)
+	SELECT 	DestID 
+		,	OrigID
+		,	AssociationType
+	FROM Temp_Graph_Dup;
 	
 END$$
 

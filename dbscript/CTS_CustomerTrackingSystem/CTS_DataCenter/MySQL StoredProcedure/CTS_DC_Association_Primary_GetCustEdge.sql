@@ -32,7 +32,7 @@ BEGIN
 				cus.CTSCustID
 			, 	cus.CustID
 		FROM JSON_TABLE(CONCAT('[',ip_CTSCustIDs,']'),
-							'$[*]' COLUMNS(NESTED PATH '$' COLUMNS (CTSCustID BIGINT UNSIGNED PATH '$'))) AS tmp
+								'$[*]' COLUMNS(NESTED PATH '$' COLUMNS (CTSCustID BIGINT UNSIGNED PATH '$'))) AS tmp
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = tmp.CTSCustID AND cus.IsInternal = 0
     )
     SELECT JSON_ARRAYAGG(JSON_OBJECT('CTSCustID', CTSCustID ,'CustID', CustID)) AS CustJson
@@ -44,8 +44,7 @@ BEGIN
 	SELECT 	OrigID 
 		,	DestID
         ,	AssociationType
-    FROM Temp_Graph
-    ;
+    FROM Temp_Graph;
 	
 END$$
 
