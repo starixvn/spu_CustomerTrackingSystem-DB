@@ -14,6 +14,8 @@ BEGIN
 			- 20201216@Long.Luu [Redmine ID: #132623]: Created 
             - 20230403@Jonas.Huynh [Redmine ID: #186271]: Support LAP  (ClassName) 
             - 20230517@Jonas.Huynh [Redmine ID: #188388]: Support TW BI (SabaRiskLevel) 
+			- 20231219@Long.Luu: Support more languages for CustomerClass [Redmine ID: #198364]
+            
 		Param's Explanation:
 	*/ 
     
@@ -22,9 +24,15 @@ BEGIN
 				, 	c.CustomerClass
                 , 	c.CustomerClassName		
                 , 	c.CustomerClassNameCN
+                , 	c.CategoryNameCN3
+                , 	c.CategoryNameTHB
+                , 	c.CategoryNameIND
                 , 	c.SabaIntelligent_RiskLevel		AS SabaRiskLevel
                 ,	c.SabaIntelligent_RiskLevel_TCN	AS SabaRiskLevelTCN
                 ,	c.SabaIntelligent_RiskLevel_SCN	AS SabaRiskLevelSCN
+                ,	c.SabaIntelligent_RiskLevel_CN3	AS SabaRiskLevelCN3
+                ,	c.SabaIntelligent_RiskLevel_THB	AS SabaRiskLevelTHB
+                ,	c.SabaIntelligent_RiskLevel_IND	AS SabaRiskLevelIND
 	FROM CTS_DataCenter.CustomerCategory AS c
 	WHERE c.IsActive = 1
 		AND c.CategoryNameCN IS NOT NULL 
