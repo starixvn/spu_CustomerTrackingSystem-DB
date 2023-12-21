@@ -14,6 +14,11 @@ BEGIN
         
 		Revisions:
 			- 20231117@Victoria.Le: Initial Writing - Renovate Association Detection [Redmine ID: #192172]
+		
+		---------------------------------------------------------------------------------------------------
+		[Before #192172]: CTS_DC_AssociationDetection_Agent_Detect 
+			- 20220727@Aries.Nguyen: Created [Redmine ID: #175701]
+            - 20221205@Aries.Nguyen: Re-arrange type options on Association Detection  [Redmine ID: #181207]
 
 		Param's Explanation (filtered by):
 
@@ -93,6 +98,16 @@ BEGIN
     FROM CTE;
 	
 	CALL CTS_DataCenter.CTS_DC_Association_GetCustEdge(lv_AgentJson,1,0,0);
+		
+	DROP TEMPORARY TABLE IF EXISTS Temp_Graph_Dup;
+	CREATE TEMPORARY TABLE Temp_Graph_Dup LIKE Temp_Graph;
+	INSERT INTO Temp_Graph_Dup SELECT * FROM Temp_Graph;
+	
+	INSERT IGNORE INTO Temp_Graph(OrigID,DestID,AssociationType)
+	SELECT 	DestID 
+		,	OrigID
+		,	AssociationType
+	FROM Temp_Graph_Dup;
 
 	lp: LOOP 
 		SET lv_OrigID = NULL;

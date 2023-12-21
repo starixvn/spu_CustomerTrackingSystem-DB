@@ -17,6 +17,16 @@ BEGIN
         
 		Revisions:
 			- 20231117@Victoria.Le: Initial Writing - Renovate Association Detection [Redmine ID: #192172]
+		
+		---------------------------------------------------------------------------------------------------
+		[Before #192172]: CTS_DC_AssociationDetection_GetEdge
+			- 20221006@Aries.Nguyen: 	Created [Redmine ID: #178310]
+			- 20221025@Aries.Nguyen: 	Tuning performance: Skip the processed trans  [Redmine ID: #179439]
+			- 20221205@Aries.Nguyen: 	Re-arrange type options on Association Detection  [Redmine ID: #181207]
+			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
+			- 20230313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
+            - 20230421@Casey.Huynh: 	Add AssType to AssociationByIP [Redmine ID: #185783]
+		
 
 		Param's Explanation (filtered by):
 
@@ -165,17 +175,7 @@ BEGIN
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ip.FromCustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
 		
 	END IF;
-	
-	DROP TEMPORARY TABLE IF EXISTS Temp_Graph_Dup;
-	CREATE TEMPORARY TABLE Temp_Graph_Dup LIKE Temp_Graph;
-	INSERT INTO Temp_Graph_Dup SELECT * FROM Temp_Graph;
-	
-	INSERT IGNORE INTO Temp_Graph(OrigID,DestID,AssociationType)
-	SELECT 	DestID 
-		,	OrigID
-		,	AssociationType
-	FROM Temp_Graph_Dup;
-	
+
 END$$
 
 DELIMITER ;

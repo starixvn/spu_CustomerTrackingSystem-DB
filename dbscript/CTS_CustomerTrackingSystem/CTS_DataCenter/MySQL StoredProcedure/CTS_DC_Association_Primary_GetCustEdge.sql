@@ -17,6 +17,11 @@ BEGIN
         
 		Revisions:
 			- 20231117@Victoria.Le: Initial Writing - Renovate Association Detection [Redmine ID: #192172]
+		
+		---------------------------------------------------------------------------------------------------
+		[Before #192172]: CTS_DC_AssociationDetection_Primary_GetEdge 
+			- 20220727@Aries.Nguyen: Created [Redmine ID: #175701]
+            - 20221205@Aries.Nguyen: Re-arrange type options on Association Detection  [Redmine ID: #181207]
 
 		Param's Explanation (filtered by):
 

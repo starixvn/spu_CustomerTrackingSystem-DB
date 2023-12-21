@@ -21,6 +21,17 @@ BEGIN
         
 		Revisions:
 			- 20231117@Victoria.Le: Initial Writing - Renovate Association Detection [Redmine ID: #192172]
+		
+		---------------------------------------------------------------------------------------------------
+		[Before #192172]: CTS_DC_AssociationDetection_DetectGroup 
+			- 20220727@Aries.Nguyen: Created [Redmine ID: #175701]
+            - 20220907@Aries.Nguyen: CTS - Association Detection - Display in correct CC [Redmine ID: #177559]
+            - 20220930@Aries.Nguyen: Renovate Association Detection [RedmineID: #178311]
+            - 20221101@Aries.Nguyen: Return IsLicensee value [RedmineID: #178311]
+            - 20221107@Aries.Nguyen: Missing Agent info [RedmineID: #180181]
+            - 20221205@Aries.Nguyen: Re-arrange type options on Association Detection  [Redmine ID: #181207]
+			- 20231116@Thomas.Nguyen: Return more Log Transaction info on Association Detection  [Redmine ID: #196362]
+		
 
 		Param's Explanation (filtered by):
 
@@ -179,10 +190,33 @@ BEGIN
 					"$[*]" COLUMNS( OrigID 				BIGINT 		PATH "$.O"                
 								,	DestID				BIGINT 		PATH "$.D"
 	)) AS js;
+	
+	INSERT INTO Temp_Graph(OrigID,DestID,HasDevice)
+    SELECT 	js.DestID
+		,	js.OrigID
+        ,	1
+	FROM JSON_TABLE(ip_Device,
+					"$[*]" COLUMNS( OrigID 				BIGINT 		PATH "$.O"                
+								,	DestID				BIGINT 		PATH "$.D"
+	)) AS js
+	ON DUPLICATE KEY UPDATE HasDevice = 1;
 
 	INSERT INTO Temp_Graph(OrigID,DestID,HasAI,HasAIGroup)
     SELECT 	js.OrigID
 		,	js.DestID
+        ,	CASE WHEN js.AssociationType = 3 THEN 1 ELSE 0 END AS HasAI
+        ,	CASE WHEN js.AssociationType = 4 THEN 1 ELSE 0 END AS HasAIGroup
+	FROM JSON_TABLE(ip_AI,
+					"$[*]" COLUMNS( OrigID 				BIGINT 		PATH "$.O"                
+								,	DestID				BIGINT 		PATH "$.D"
+								,	AssociationType		INT			PATH "$.A"
+	)) AS js
+    ON DUPLICATE KEY UPDATE HasAI = CASE WHEN js.AssociationType = 3 THEN 1 ELSE HasAI END
+                        ,   HasAIGroup = CASE WHEN js.AssociationType = 4 THEN 1 ELSE HasAIGroup END;
+						
+	INSERT INTO Temp_Graph(OrigID,DestID,HasAI,HasAIGroup)
+    SELECT 	js.DestID
+		,	js.OrigID
         ,	CASE WHEN js.AssociationType = 3 THEN 1 ELSE 0 END AS HasAI
         ,	CASE WHEN js.AssociationType = 4 THEN 1 ELSE 0 END AS HasAIGroup
 	FROM JSON_TABLE(ip_AI,
@@ -202,10 +236,30 @@ BEGIN
 								,	DestID				BIGINT 		PATH "$.D"
 	)) AS js
     ON DUPLICATE KEY UPDATE HasIP = 1;
+	
+	INSERT INTO Temp_Graph(OrigID,DestID,HasIP)
+    SELECT 	js.DestID
+		,	js.OrigID
+        ,	1
+	FROM JSON_TABLE(ip_IP,
+					"$[*]" COLUMNS( OrigID 				BIGINT 		PATH "$.O"                
+								,	DestID				BIGINT 		PATH "$.D"
+	)) AS js
+    ON DUPLICATE KEY UPDATE HasIP = 1;
 
 	INSERT INTO Temp_Graph(OrigID,DestID,HasAgent) 
     SELECT 	js.OrigID
 		,	js.DestID
+        ,	1
+	FROM JSON_TABLE(ip_Agent,
+		"$[*]" COLUMNS( OrigID 			BIGINT 		PATH "$.O"                
+					,	DestID			BIGINT 		PATH "$.D"
+	)) AS js
+    ON DUPLICATE KEY UPDATE HasAgent = 1;
+	
+	INSERT INTO Temp_Graph(OrigID,DestID,HasAgent) 
+    SELECT 	js.DestID
+		,	js.OrigID
         ,	1
 	FROM JSON_TABLE(ip_Agent,
 		"$[*]" COLUMNS( OrigID 			BIGINT 		PATH "$.O"                
