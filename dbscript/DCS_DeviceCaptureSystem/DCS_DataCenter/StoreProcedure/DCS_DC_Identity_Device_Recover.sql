@@ -82,6 +82,7 @@ BEGIN
 	FROM Temp_TransactionInfo AS tmp
 		INNER JOIN DCS_DataCenter.AccountFingerprint AS af ON af.AccountID = tmp.AccountID
 	WHERE af.IsEvolution = 0
+		AND af.RawFingerPrintID != tmp.RawFingerPrintID
     GROUP BY tmp.TransID;
     
     /* Return list trans that cannot recover */
