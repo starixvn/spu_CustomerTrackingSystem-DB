@@ -62,7 +62,7 @@ BEGIN
 		 )) AS tmpTable;  
     
     INSERT INTO Temp_ExistedRobotInfo(CustID, PeriodRangeType)
-	SELECT 	r.CustID
+	SELECT 	DISTINCT r.CustID
 		, 	r.PeriodRangeType
 	FROM Temp_RobotInfo AS t
 		INNER JOIN CTS_DataCenter.RobotDetection AS r ON r.CustID = t.CustID;
@@ -81,7 +81,7 @@ BEGIN
 		INNER JOIN CTS_DataCenter.RobotDetection AS r ON r.CustID = t.CustID
 	WHERE r.IsDisabled = 1;
 
-	IF ((SELECT PeriodRangeType FROM Temp_RobotInfo LIMIT 1) <> 200) THEN
+	#IF ((SELECT PeriodRangeType FROM Temp_RobotInfo LIMIT 1) <> 200) THEN
 		INSERT INTO CTS_DataCenter.RobotDetection(CustID,PeriodRangeType,IsDisabled,CreatedDate,LastModifiedDate)
 		SELECT 	t.CustID
 			, 	t.PeriodRangeType
@@ -96,7 +96,7 @@ BEGIN
 			INNER JOIN Temp_RobotInfo AS t ON r.CustID = t.CustID AND r.PeriodRangeType = t.PeriodRangeType
 		SET r.LastModifiedDate = lv_CurrentDateTime
 		WHERE t.IsNewRange = 0;
-    ELSE
+    /*ELSE
 		INSERT INTO CTS_DataCenter.RobotDetection_OCRD(CustID,PeriodRangeType,IsDisabled,CreatedDate,LastModifiedDate)
 		SELECT 	t.CustID
 			, 	t.PeriodRangeType
@@ -105,13 +105,14 @@ BEGIN
 			, 	lv_CurrentDateTime #ip_ScanDate, lv_CurrentDateTime
 		FROM Temp_RobotInfo AS t
 			LEFT JOIN Temp_DisabledRobot AS d ON t.CustID = d.CustID
-		WHERE t.IsNewRange = 1;
+		WHERE t.IsNewRange = 1
+        ON DUPLICATE KEY UPDATE LastModifiedDate = lv_CurrentDateTime;
 		
 		UPDATE CTS_DataCenter.RobotDetection_OCRD AS r
 			INNER JOIN Temp_RobotInfo AS t ON r.CustID = t.CustID AND r.PeriodRangeType = t.PeriodRangeType
 		SET r.LastModifiedDate = lv_CurrentDateTime
 		WHERE t.IsNewRange = 0;
-	END IF;
+	END IF;*/
     
     SELECT CustID, PeriodRangeType, IsNewRobot
     FROM Temp_RobotInfo;
