@@ -25,7 +25,7 @@ VALUES(149,'UnauthorizedLogin_LastScanDate_Credit','UnauthorizedLogin_LastScanDa
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
 VALUES(150,'UnauthorizedLogin_LastScanDate_Licensee','UnauthorizedLogin_LastScanDate_Licensee','DATE',NULL);
 
-SELECT * FROM CTS_DataCenter.SystemParameter WHERE ParameterID IN (147,148);
+SELECT * FROM CTS_DataCenter.SystemParameter WHERE ParameterID IN (147,148,149,150);
 
 
 INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CreatedBy,LastModifiedDate,LastModifiedBy,ScanIntervalInSecond,ScanTaggingIntervalInSecond,CategoryNameCN
@@ -42,8 +42,11 @@ VALUES(64,'System Detect Unauthorized Login','System Detect Unauthorized Login',
     ,1,4,NULL,NULL,1,2,42,1,NULL,NULL,'Problems','問題','问题','Vấn đề','Masalah','ปัญหา');
 
 SELECT * FROM CTS_DataCenter.CustomerCategory WHERE CategoryID IN (64,104);
+
 SET @CreatedDate := NOW();
 
 INSERT INTO StaticList(ListID,ItemID,ListName,ListNameDisplay,ItemName,ItemNameDisplay,ItemValue,ItemDefaultValue,ItemParentItemID,PriorityOrder,Status,Description,CreatedDate)
 VALUES 
 	(4,39,'Classification Source Type','Classification Source Type','System Detect Unauthorized Login','System Detect Unauthorized Login',NULL,NULL,NULL,39,1,'System Detect Unauthorized Login',@CreatedDate);
+
+SELECT * FROM StaticList WHERE ListID = 4 AND ItemID = 39;

@@ -1,4 +1,3 @@
--- Active: 1700468714672@@10.18.200.72@3306@CTS_DataCenter
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
 DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_DetectUnauthorizedLoginCustomer`;
 
@@ -83,7 +82,6 @@ BEGIN
                 AccountID	BIGINT UNSIGNED PRIMARY KEY
             ,	TotalTrans	INT UNSIGNED
             ,	Flagged		SMALLINT
-            /*,	INDEX		IX_Temp_LoginTransactionSummary(AccountID)*/
     );
 
     INSERT IGNORE INTO Temp_Customer(CustID, CTSCustID, FirstBetDate, SubscriberID)
@@ -112,12 +110,6 @@ BEGIN
     INSERT IGNORE INTO Temp_CustAccLogTransInfo(CTSCustID, AccountID)
     SELECT tmp.CTSCustID, tmp.AccountID
     FROM Temp_CustAccountID AS tmp;
-
-/*    INSERT IGNORE INTO Temp_CustAccLogTransInfo(CTSCustID, AccountID, CountLogin)
-    SELECT tmp.CTSCustID, tmp.AccountID, SUM(sm.TotalLogin)
-    FROM Temp_CustAccountID AS tmp
-        INNER JOIN DCS_DataCenter.SumAccountLogin AS sm ON sm.AccountID = tmp.AccountID AND sm.TransDate BETWEEN lv_FromDate AND lv_ToDate
-    GROUP BY tmp.CTSCustID, tmp.AccountID;*/
  
     UPDATE Temp_CustAccLogTransInfo AS tmp
     SET tmp.CountLogin = IFNULL((SELECT SUM(sm.TotalLogin)
