@@ -158,7 +158,7 @@ BEGIN
         INNER JOIN Temp_Customer AS cus ON cus.CTSCustID = ct.CTSCustID
     WHERE ct.BotTransPercentage > lv_Percentage_Threshold OR ct.InvalidBrowserInfoTransPercentage > lv_Percentage_Threshold;
     
-    INSERT IGNORE INTO CTS_DataCenter.CustLoginInfoDetection(CTSCustID, CustID, FirstBetDate, Bot, InvalidBrowser, BotTransPercentage, InvalidBrowserInfoTransPercentage) 
+    INSERT IGNORE INTO CTS_DataCenter.CustomerLoginInfoDetection(CTSCustID, CustID, FirstBetDate, Bot, InvalidBrowser, BotTransPercentage, InvalidBrowserInfoTransPercentage) 
     SELECT ct.CTSCustID, cus.CustID, cus.FirstBetDate, ct.CountBotTrans, ct.CountInvalidBrowserTrans, ct.BotTransPercentage, ct.InvalidBrowserInfoTransPercentage
     FROM Temp_CustUnauthorizedLogin AS ct;
     
