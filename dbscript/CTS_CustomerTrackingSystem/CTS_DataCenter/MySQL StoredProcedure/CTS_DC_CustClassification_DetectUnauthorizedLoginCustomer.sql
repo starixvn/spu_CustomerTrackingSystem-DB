@@ -21,33 +21,34 @@ BEGIN
 			-CALL CTS_DataCenter.CTS_DC_CustClassification_DetectUnauthorizedLoginCustomer
 
 	*/
+    DECLARE	CONST_CATEGORY_UNAUTHORIZEDLOGIN        INT DEFAULT 64;
+    
     DECLARE lv_FromDate                             DATE;
     DECLARE lv_ToDate                               DATE;
     DECLARE lv_SubSourceID_DirectAPI                TINYINT DEFAULT(1);
     DECLARE lv_SubSourceID_OddsFeed                 TINYINT DEFAULT(2);
     DECLARE lv_Percentage_Threshold                 DECIMAL(6,2) DEFAULT(50);
-    DECLARE	CONST_CATEGORY_UNAUTHORIZEDLOGIN        INT DEFAULT 64;
-
+    
     SET lv_ToDate	= CURRENT_DATE();
     SET lv_FromDate = DATE_ADD(lv_ToDate, INTERVAL -90 DAY);
 
     DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
 	CREATE TEMPORARY TABLE 		Temp_Customer (
 		 	CustID			BIGINT UNSIGNED		
-         ,  CTSCustID 		BIGINT UNSIGNED
-         ,  FirstBetDate    DATETIME
-         ,  SubscriberID	INT
-         ,  RoleID          TINYINT
-         ,  IsLicensee      BIT(1)
-         ,	PRIMARY KEY PK_Temp_Customer(CTSCustID)
-         ,	INDEX IX_Temp_Customer_CTSCustID(CustID)
+        ,   CTSCustID 		BIGINT UNSIGNED
+        ,   FirstBetDate    DATETIME
+        ,   SubscriberID	INT
+        ,   RoleID          TINYINT
+        ,   IsLicensee      BIT(1)
+        ,   PRIMARY KEY PK_Temp_Customer(CTSCustID)
+        ,   INDEX IX_Temp_Customer_CustID(CustID)
 	);
 
     DROP TEMPORARY TABLE IF EXISTS Temp_CustAccountID;
     CREATE TEMPORARY TABLE Temp_CustAccountID(
-                AccountID	BIGINT UNSIGNED PRIMARY KEY 
-            ,	CTSCustID	BIGINT UNSIGNED 
-            ,	INDEX		IX_Temp_CustAccountID(CTSCustID)
+            AccountID	BIGINT UNSIGNED PRIMARY KEY 
+        ,	CTSCustID	BIGINT UNSIGNED 
+        ,	INDEX		IX_Temp_CustAccountID_CTSCustID(CTSCustID)
     );
 
     DROP TEMPORARY TABLE IF EXISTS Temp_CustLogTransInfo;
@@ -81,7 +82,7 @@ BEGIN
         ,	CountLogin						INT DEFAULT 0
         ,	CountBotTrans					INT DEFAULT 0
         ,	CountInvalidBrowserTrans		INT DEFAULT 0
-        ,	INDEX		IX_Temp_CustAccLogTransInfo(CTSCustID)
+        ,	INDEX		IX_Temp_CustAccLogTransInfo_CTSCustID(CTSCustID)
     );
 
     DROP TEMPORARY TABLE IF EXISTS Temp_LoginTransactionSummary;
@@ -89,11 +90,11 @@ BEGIN
                 AccountID	BIGINT UNSIGNED
             ,	TotalTrans	INT UNSIGNED
             ,	Flagged		SMALLINT
-            ,	INDEX		IX_Temp_LoginTransactionSummary(AccountID)        
+            ,	INDEX		IX_Temp_LoginTransactionSummary_AccountID(AccountID)        
     );
 
     INSERT IGNORE INTO Temp_Customer(CustID, CTSCustID, FirstBetDate, SubscriberID, RoleID, IsLicensee)
-    SELECT tmp.CustID
+    SELECT  tmp.CustID
         ,   cus.CTSCustID
         ,   tmp.FirstBetDate
         ,   cus.SubscriberID
@@ -103,22 +104,22 @@ BEGIN
                         "$[*]" COLUMNS (CustID          BIGINT        UNSIGNED PATH "$.CustID"
                                     ,   FirstBetDate    DATETIME               PATH "$.FirstBetDate"                                           
                                 )) AS tmp
-        INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID;
+        INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID AND IsInternal = 0;
 
     INSERT IGNORE INTO Temp_CustAccountID(CTSCustID, AccountID)
-    SELECT tmp.CTSCustID, acc.AccountID
+    SELECT  tmp.CTSCustID, acc.AccountID
     FROM Temp_Customer AS tmp
         INNER JOIN CTS_DataCenter.CustDCSAccount AS acc ON acc.CTSCustID = tmp.CTSCustID
         LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = tmp.SubscriberID AND sub.SubscriberSourceID IN (lv_SubSourceID_DirectAPI, lv_SubSourceID_OddsFeed)
     WHERE sub.SubscriberSourceID IS NULL;
 
     INSERT IGNORE INTO Temp_LoginTransactionSummary(AccountID, TotalTrans, Flagged)
-    SELECT tmp.AccountID, ls.TotalTrans, ls.Flagged
+    SELECT  tmp.AccountID, ls.TotalTrans, ls.Flagged
     FROM Temp_CustAccountID AS tmp
         INNER JOIN DCS_DataTrace.LoginTransactionSummary AS ls ON ls.AccountID = tmp.AccountID AND ls.TransDate BETWEEN lv_FromDate AND lv_ToDate;
 
     INSERT IGNORE INTO Temp_CustAccLogTransInfo(CTSCustID, AccountID)
-    SELECT tmp.CTSCustID, tmp.AccountID
+    SELECT  tmp.CTSCustID, tmp.AccountID
     FROM Temp_CustAccountID AS tmp;
  
     UPDATE Temp_CustAccLogTransInfo AS tmp
@@ -133,34 +134,34 @@ BEGIN
                                 WHERE ls.AccountID = tmp.AccountID
                                 GROUP BY ls.AccountID),tmp.CountLogin);
     
-    WITH _TransCountInfo AS (
-                SELECT ls.AccountID
-                        ,SUM(CASE WHEN st.GroupID = 2 THEN ls.TotalTrans ELSE 0 END) AS CountInvalidBrowserTrans
-                        ,SUM(CASE WHEN st.GroupID = 3 THEN ls.TotalTrans ELSE 0 END) AS CountBotTrans
+    WITH CTEAccountInfo AS (
+                SELECT  ls.AccountID
+                    ,   SUM(CASE WHEN st.GroupID = 2 THEN ls.TotalTrans ELSE 0 END) AS CountInvalidBrowserTrans
+                    ,   SUM(CASE WHEN st.GroupID = 3 THEN ls.TotalTrans ELSE 0 END) AS CountBotTrans
                 FROM Temp_LoginTransactionSummary AS ls
                     INNER JOIN DCS_DataCenter.StaticList AS st ON st.ItemID = ls.Flagged AND st.ListID = 1
                     INNER JOIN Temp_CustAccountID AS tmp ON tmp.AccountID = ls.AccountID
                 GROUP BY ls.AccountID
     )
     UPDATE Temp_CustAccLogTransInfo AS tmp
-        INNER JOIN _TransCountInfo tc ON tc.AccountID = tmp.AccountID
-    SET tmp.CountBotTrans = tc.CountBotTrans
-        , tmp.CountInvalidBrowserTrans = tc.CountInvalidBrowserTrans
+        INNER JOIN CTEAccountInfo AS tc ON tc.AccountID = tmp.AccountID
+    SET     tmp.CountBotTrans = tc.CountBotTrans
+        ,   tmp.CountInvalidBrowserTrans = tc.CountInvalidBrowserTrans
     WHERE tc.CountBotTrans <> 0 OR tc.CountInvalidBrowserTrans <> 0;
     
     INSERT IGNORE INTO Temp_CustLogTransInfo(CTSCustID, CountLogin, CountBotTrans, CountInvalidBrowserTrans, BotTransPercentage, InvalidBrowserInfoTransPercentage)
-    WITH CTE_Info AS (
-        SELECT ct.CTSCustID AS CTSCustID
-            , SUM(IFNULL(CountLogin,0)) AS CountLogin
-            , SUM(IFNULL(CountBotTrans,0)) AS CountBotTrans
-            , SUM(IFNULL(CountInvalidBrowserTrans,0)) AS CountInvalidBrowserTrans
+    WITH CTECustInfo AS (
+        SELECT  ct.CTSCustID AS CTSCustID
+            ,   SUM(IFNULL(CountLogin,0)) AS CountLogin
+            ,   SUM(IFNULL(CountBotTrans,0)) AS CountBotTrans
+            ,   SUM(IFNULL(CountInvalidBrowserTrans,0)) AS CountInvalidBrowserTrans
         FROM Temp_CustAccLogTransInfo AS ct
         GROUP BY ct.CTSCustID
     )
-    SELECT cte.CTSCustID, cte.CountLogin, cte.CountBotTrans, cte.CountInvalidBrowserTrans
-            , ROUND((cte.CountBotTrans/cte.CountLogin)*100,2) AS BotTransPercentage
-            , ROUND((cte.CountInvalidBrowserTrans/cte.CountLogin)*100,2) AS InvalidBrowserInfoTransPercentage
-    FROM CTE_Info AS cte;
+    SELECT  cte.CTSCustID, cte.CountLogin, cte.CountBotTrans, cte.CountInvalidBrowserTrans
+        ,   ROUND((cte.CountBotTrans/cte.CountLogin)*100,2) AS BotTransPercentage
+        ,   ROUND((cte.CountInvalidBrowserTrans/cte.CountLogin)*100,2) AS InvalidBrowserInfoTransPercentage
+    FROM CTECustInfo AS cte;
 
     INSERT IGNORE INTO Temp_CustUnauthorizedLogin(CTSCustID, CustID, FirstBetDate, SubscriberID, RoleID, IsLicensee, CountBotTrans, CountInvalidBrowserTrans, BotTransPercentage, InvalidBrowserInfoTransPercentage)
     SELECT ct.CTSCustID, cus.CustID, cus.FirstBetDate, cus.SubscriberID, cus.RoleID, cus.IsLicensee, ct.CountBotTrans, ct.CountInvalidBrowserTrans, ct.BotTransPercentage, ct.InvalidBrowserInfoTransPercentage
@@ -173,17 +174,17 @@ BEGIN
     FROM Temp_CustUnauthorizedLogin AS ct;
     
     /*Return data*/
-    SELECT CTSCustID
-            , CustID
-            , FirstBetDate
-            , SubscriberID
-            , RoleID
-            , IsLicensee
-            , CONST_CATEGORY_UNAUTHORIZEDLOGIN AS CategoryID
-            , CountBotTrans AS Bot
-            , CountInvalidBrowserTrans AS InvalidBrowser
-            , BotTransPercentage AS BotPCT
-            , InvalidBrowserInfoTransPercentage AS InvalidBrowserPCT
+    SELECT  CTSCustID
+        ,   CustID
+        ,   FirstBetDate
+        ,   SubscriberID
+        ,   RoleID
+        ,   IsLicensee
+        ,   CONST_CATEGORY_UNAUTHORIZEDLOGIN AS CategoryID
+        ,   CountBotTrans AS Bot
+        ,   CountInvalidBrowserTrans AS InvalidBrowser
+        ,   BotTransPercentage AS BotPCT
+        ,   InvalidBrowserInfoTransPercentage AS InvalidBrowserPCT
     FROM Temp_CustUnauthorizedLogin AS ct;
 
 END$$
