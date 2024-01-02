@@ -36,6 +36,7 @@ BEGIN
          ,  CTSCustID 		BIGINT UNSIGNED
          ,  FirstBetDate    DATETIME
          ,  SubscriberID	INT
+         ,  RoleID          TINYINT
          ,	PRIMARY KEY PK_Temp_Customer(CustID)
          ,	INDEX IX_Temp_Customer_CTSCustID(CTSCustID)
 	);
@@ -60,7 +61,10 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_CustUnauthorizedLogin;
 	CREATE TEMPORARY TABLE 		Temp_CustUnauthorizedLogin (
 			CTSCustID 						    BIGINT UNSIGNED PRIMARY KEY
+        ,   CustID			                    BIGINT UNSIGNED
         ,   FirstBetDate                        DATETIME
+        ,   SubscriberID                        INT
+        ,   RoleID                              TINYINT  
         ,	CountBotTrans					    INT DEFAULT 0
         ,	CountInvalidBrowserTrans		    INT DEFAULT 0
         ,   BotTransPercentage                  DECIMAL(6,2)
@@ -84,11 +88,12 @@ BEGIN
             ,	Flagged		SMALLINT
     );
 
-    INSERT IGNORE INTO Temp_Customer(CustID, CTSCustID, FirstBetDate, SubscriberID)
+    INSERT IGNORE INTO Temp_Customer(CustID, CTSCustID, FirstBetDate, SubscriberID, RoleID)
     SELECT tmp.CustID
         ,   cus.CTSCustID
         ,   tmp.FirstBetDate
         ,   cus.SubscriberID
+        ,   cus.RoleID
     FROM JSON_TABLE(ip_ListCustJson,
                         "$[*]" COLUMNS (CustID          BIGINT        UNSIGNED PATH "$.CustID"
                                     ,   FirstBetDate    DATETIME               PATH "$.FirstBetDate"                                           
@@ -152,19 +157,21 @@ BEGIN
             , ROUND((cte.CountInvalidBrowserTrans/cte.CountLogin)*100,2) AS InvalidBrowserInfoTransPercentage
     FROM CTE_Info AS cte;
 
-    INSERT IGNORE INTO Temp_CustUnauthorizedLogin(CTSCustID, FirstBetDate, CountBotTrans, CountInvalidBrowserTrans, BotTransPercentage, InvalidBrowserInfoTransPercentage)
-    SELECT ct.CTSCustID, cus.FirstBetDate, ct.CountBotTrans, ct.CountInvalidBrowserTrans, ct.BotTransPercentage, ct.InvalidBrowserInfoTransPercentage
+    INSERT IGNORE INTO Temp_CustUnauthorizedLogin(CTSCustID, CustID, FirstBetDate, SubscriberID, RoleID ,CountBotTrans, CountInvalidBrowserTrans, BotTransPercentage, InvalidBrowserInfoTransPercentage)
+    SELECT ct.CTSCustID, cus.CustID, cus.FirstBetDate, cus.SubscriberID, cus.RoleID, ct.CountBotTrans, ct.CountInvalidBrowserTrans, ct.BotTransPercentage, ct.InvalidBrowserInfoTransPercentage
     FROM Temp_CustLogTransInfo AS ct
         INNER JOIN Temp_Customer AS cus ON cus.CTSCustID = ct.CTSCustID
     WHERE ct.BotTransPercentage > lv_Percentage_Threshold OR ct.InvalidBrowserInfoTransPercentage > lv_Percentage_Threshold;
     
     INSERT IGNORE INTO CTS_DataCenter.CustomerLoginInfoDetection(CTSCustID, CustID, FirstBetDate, Bot, InvalidBrowser, BotTransPercentage, InvalidBrowserInfoTransPercentage) 
-    SELECT ct.CTSCustID, cus.CustID, cus.FirstBetDate, ct.CountBotTrans, ct.CountInvalidBrowserTrans, ct.BotTransPercentage, ct.InvalidBrowserInfoTransPercentage
+    SELECT ct.CTSCustID, ct.CustID, ct.FirstBetDate, ct.CountBotTrans, ct.CountInvalidBrowserTrans, ct.BotTransPercentage, ct.InvalidBrowserInfoTransPercentage
     FROM Temp_CustUnauthorizedLogin AS ct;
     
     /*Return data*/
     SELECT CTSCustID
             , FirstBetDate
+            , SubscriberID
+            , RoleID
             , CountBotTrans AS Bot
             , CountInvalidBrowserTrans AS InvalidBrowser
             , BotTransPercentage AS BotPCT
