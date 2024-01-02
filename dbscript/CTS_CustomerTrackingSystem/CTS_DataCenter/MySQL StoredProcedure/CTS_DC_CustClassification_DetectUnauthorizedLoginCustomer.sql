@@ -86,9 +86,10 @@ BEGIN
 
     DROP TEMPORARY TABLE IF EXISTS Temp_LoginTransactionSummary;
     CREATE TEMPORARY TABLE Temp_LoginTransactionSummary(
-                AccountID	BIGINT UNSIGNED PRIMARY KEY
+                AccountID	BIGINT UNSIGNED
             ,	TotalTrans	INT UNSIGNED
             ,	Flagged		SMALLINT
+            ,	INDEX		IX_Temp_LoginTransactionSummary(AccountID)        
     );
 
     INSERT IGNORE INTO Temp_Customer(CustID, CTSCustID, FirstBetDate, SubscriberID, RoleID, IsLicensee)
