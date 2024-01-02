@@ -44,7 +44,7 @@ BEGIN
 		,	BrowserFamilyCode						VARCHAR(64) 		NULL
 		,	Accept									VARCHAR(200)	 	NULL
 		,	Encoding								VARCHAR(200)	 	NULL
-		,	Headers									VARCHAR(500)	 	NULL
+		,	Headers									VARCHAR(700)	 	NULL
 		,	OSName									VARCHAR(100)	 	NULL
 		,	BrowserName								VARCHAR(100)	 	NULL
 		,	BrowserVersion							VARCHAR(50)	 		NULL
