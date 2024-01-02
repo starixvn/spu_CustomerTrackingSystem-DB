@@ -37,8 +37,8 @@ BEGIN
          ,  FirstBetDate    DATETIME
          ,  SubscriberID	INT
          ,  RoleID          TINYINT
-         ,	PRIMARY KEY PK_Temp_Customer(CustID)
-         ,	INDEX IX_Temp_Customer_CTSCustID(CTSCustID)
+         ,	PRIMARY KEY PK_Temp_Customer(CTSCustID)
+         ,	INDEX IX_Temp_Customer_CTSCustID(CustID)
 	);
 
     DROP TEMPORARY TABLE IF EXISTS Temp_CustAccountID;
