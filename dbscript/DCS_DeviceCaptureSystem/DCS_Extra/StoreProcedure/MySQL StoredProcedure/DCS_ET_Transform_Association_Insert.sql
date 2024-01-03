@@ -27,14 +27,16 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_AssociationInsert;
         
 	CREATE TEMPORARY TABLE Temp_AssociationInsert(
-			ID						INT UNSIGNED		NOT NULL AUTO_INCREMENT PRIMARY KEY
-        ,	AccountID				BIGINT UNSIGNED		NOT NULL
-        ,	DeviceID				BIGINT UNSIGNED		NOT NULL
-        ,	FPDeviceID				BIGINT UNSIGNED		DEFAULT 0
-        ,	SubscriberID			BIGINT UNSIGNED		
-        ,	CreatedTime				TIMESTAMP(4)		
-        ,	CreatedDate				DATETIME			
-		,	IsNewRecord				TINYINT		 		DEFAULT 1
+			ID								INT UNSIGNED		NOT NULL AUTO_INCREMENT PRIMARY KEY
+        ,	AccountID						BIGINT UNSIGNED		NOT NULL
+        ,	DeviceID						BIGINT UNSIGNED		NOT NULL
+        ,	FPDeviceID						BIGINT UNSIGNED		DEFAULT 0
+        ,	SubscriberID					BIGINT UNSIGNED		
+        ,	CreatedTime						TIMESTAMP(4)		
+        ,	CreatedDate						DATETIME			
+		,	IsNewRecordAssociation			TINYINT		 		DEFAULT 1
+		,	IsNewRecordAssociationNew		TINYINT		 		DEFAULT 1
+		,	IsNewRecordMapping				TINYINT		 		DEFAULT 1
     );
     
     INSERT INTO Temp_AssociationInsert(AccountID, DeviceID, FPDeviceID, SubscriberID, CreatedTime, CreatedDate)
@@ -61,15 +63,49 @@ BEGIN
     
     /* === Add index === */
 	ALTER TABLE Temp_AssociationInsert
-	ADD INDEX IX_Temp_AssociationInsert_AccountID_DeviceID_FPDeviceID (AccountID, DeviceID, FPDeviceID);
+	ADD INDEX IX_Temp_AssociationInsert_AccountID_DeviceID (AccountID, DeviceID),
+	ADD INDEX IX_Temp_AssociationInsert_AccountID_FPDeviceID (AccountID, FPDeviceID);
     
+    /* === Insert into Association === */
     UPDATE Temp_AssociationInsert AS tmp
 		INNER JOIN DCS_Extra.Association AS ass ON ass.AccountID = tmp.AccountID 
 													AND ass.DeviceID = tmp.DeviceID
-													AND ass.FPDeviceID = tmp.FPDeviceID
-    SET tmp.IsNewRecord = 0;
+    SET tmp.IsNewRecordAssociation = 0;
     
-	INSERT IGNORE INTO DCS_Extra.Association(AccountID, DeviceID, FPDeviceID, SubscriberID, CreatedTime, CreatedDate, InsertTime)
+	INSERT IGNORE INTO DCS_Extra.Association(AccountID, DeviceID, SubscriberID, CreatedTime, CreatedDate, InsertTime)
+	SELECT	AccountID
+		,	DeviceID
+		,	SubscriberID
+		,	CreatedTime
+		,	CreatedDate
+		,	lv_CreatedDate AS InsertTime
+	FROM Temp_AssociationInsert
+    WHERE IsNewRecordAssociation = 1;
+    
+    /* === Insert into AssociationNew === */
+    UPDATE Temp_AssociationInsert AS tmp
+		INNER JOIN DCS_Extra.AssociationNew AS ass ON ass.AccountID = tmp.AccountID 
+													AND ass.DeviceID = tmp.FPDeviceID
+    SET tmp.IsNewRecordAssociationNew = 0;
+    
+	INSERT IGNORE INTO DCS_Extra.AssociationNew(AccountID, DeviceID, SubscriberID, CreatedTime, CreatedDate, InsertTime)
+	SELECT	AccountID
+		,	FPDeviceID AS DeviceID
+		,	SubscriberID
+		,	CreatedTime
+		,	CreatedDate
+		,	lv_CreatedDate AS InsertTime
+	FROM Temp_AssociationInsert
+    WHERE IsNewRecordAssociationNew = 1;
+    
+    /* === Insert into AssociationMapping === */
+    UPDATE Temp_AssociationInsert AS tmp
+		INNER JOIN DCS_Extra.AssociationMapping AS ass ON ass.AccountID = tmp.AccountID 
+													AND ass.DeviceID = tmp.DeviceID
+													AND ass.FPDeviceID = tmp.FPDeviceID
+    SET tmp.IsNewRecordMapping = 0;
+    
+	INSERT IGNORE INTO DCS_Extra.AssociationMapping(AccountID, DeviceID, FPDeviceID, SubscriberID, CreatedTime, CreatedDate, InsertTime)
 	SELECT	AccountID
 		,	DeviceID
 		,	FPDeviceID
@@ -78,7 +114,7 @@ BEGIN
 		,	CreatedDate
 		,	lv_CreatedDate AS InsertTime
 	FROM Temp_AssociationInsert
-    WHERE IsNewRecord = 1;
+    WHERE IsNewRecordMapping = 1;
 END$$
 
 DELIMITER ;

@@ -65,7 +65,8 @@ BEGIN
     
     /* === Add index === */
 	ALTER TABLE Temp_AssociationInsert
-	ADD INDEX IX_Temp_AssociationInsert_AccountID_DeviceID_FPDeviceID (AccountID, DeviceID, FPDeviceID);
+	ADD INDEX IX_Temp_AssociationInsert_AccountID_DeviceID (AccountID, DeviceID),
+	ADD INDEX IX_Temp_AssociationInsert_AccountID_FPDeviceID (AccountID, FPDeviceID);
     
     UPDATE Temp_AssociationInsert AS tmp
 		INNER JOIN DCS_DataCenter.Association AS ass ON ass.AccountID = tmp.AccountID

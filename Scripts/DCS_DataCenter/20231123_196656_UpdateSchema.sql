@@ -89,7 +89,7 @@ CREATE TABLE `AssociationNew` (
   `InsertTime` TIMESTAMP(4) NOT NULL
 ) ENGINE=InnoDB;
 
-INSERT INTO DCS_DataCenter.AssociationNew(AssociationID, AccountID, DeviceID, SubscriberID, CreatedTime, CreatedDate, InsertTime)
+INSERT INTO AssociationNew(AssociationID, AccountID, DeviceID, SubscriberID, CreatedTime, CreatedDate, InsertTime)
 SELECT	AssociationID
 	,	AccountID
     ,	DeviceID
@@ -99,7 +99,7 @@ SELECT	AssociationID
     ,	InsertTime
 FROM DCS_DataCenter.Association;
 
-ALTER TABLE DCS_DataCenter.AssociationNew
+ALTER TABLE AssociationNew
 ADD UNIQUE INDEX UX_AssociationNew_AccountID_DeviceID (AccountID, DeviceID);
 
 CREATE TABLE `AssociationMapping` (
