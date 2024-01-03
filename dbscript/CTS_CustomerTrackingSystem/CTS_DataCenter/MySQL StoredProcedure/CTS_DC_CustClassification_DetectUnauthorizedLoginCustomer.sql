@@ -25,9 +25,9 @@ BEGIN
     
     DECLARE lv_FromDate                             DATE;
     DECLARE lv_ToDate                               DATE;
-    DECLARE lv_SubSourceID_DirectAPI                TINYINT DEFAULT(1);
-    DECLARE lv_SubSourceID_OddsFeed                 TINYINT DEFAULT(2);
-    DECLARE lv_Percentage_Threshold                 DECIMAL(6,2) DEFAULT(50);
+    DECLARE lv_SubSourceID_DirectAPI                TINYINT DEFAULT 1;
+    DECLARE lv_SubSourceID_OddsFeed                 TINYINT DEFAULT 2;
+    DECLARE lv_Percentage_Threshold                 DECIMAL(6,2) DEFAULT 50;
     
     SET lv_ToDate	= CURRENT_DATE();
     SET lv_FromDate = DATE_ADD(lv_ToDate, INTERVAL -90 DAY);

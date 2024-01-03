@@ -17,6 +17,7 @@ BEGIN
 			- 20220628@Aries.Nguyen: Update robot classification rule [Redmine ID: #174430]            
 			- 20220830@Long.Luu: update to show for System Detect Group Betting [Redmine ID: #176976]
             - 20230515@Casey.Huynh: New Category for Robot OCRD [Redmine ID: #186991]
+			- 20240103@@Thomas.Nguyen: New Category for System Detect Unauthorized Login [RedmineID: #197710]
             
 		Param's Explanation (filtered by):
         Example:
@@ -29,7 +30,7 @@ BEGIN
 		, 	cat.CategoryGroup AS CategoryID
         ,	cat.Priority
 	FROM CTS_DataCenter.CustomerCategory AS cat
-	WHERE 	(cat.CategoryID BETWEEN 52 AND 63 OR cat.CategoryID IN (163,165))
+	WHERE 	(cat.CategoryID BETWEEN 52 AND 64 OR cat.CategoryID IN (163,165))
 		AND cat.CategoryID NOT IN (56,60,61) 
 		AND cat.IsActive = 1
 	ORDER BY cat.Priority;   
