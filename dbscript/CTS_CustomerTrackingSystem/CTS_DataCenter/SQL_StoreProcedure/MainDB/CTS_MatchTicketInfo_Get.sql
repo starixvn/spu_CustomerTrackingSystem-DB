@@ -6,7 +6,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[CTS_MatchTicketInfo_Get]
+ALTER PROCEDURE [dbo].[CTS_MatchTicketInfo_Get]
 		@MatchIds			VARCHAR(MAX) = ''
 	,	@MarketList			VARCHAR(10)  = NULL
 	,	@BettypeList		VARCHAR(MAX) = NULL
@@ -34,7 +34,7 @@ AS
 						,	{"BetType":3, "BetChoiceType":2, "BetChoiceHome":"h", "BetChoiceAway":"a", "BetID":0}
 						,	{"BetType":610, "BetChoiceType":2, "BetChoiceHome":"o", "BetChoiceAway":"u", "BetID":0}
 						,	{"BetType":126, "BetChoiceType":1}]'
-		,	@DangerList = '[{"Danger1":1},{"Danger1":10},{"Danger3":10},{"Danger4":45},{"Danger5":1},{"Danger5":5}]'
+		,	@DangerList =  '[{"Danger1":0},{"Danger1":10},{"Danger3":10},{"Danger4":45},{"Danger5":1},{"Danger5":5}]'
 		,	@MarketList = '0,1';
 
 		SELECT * FROM Bettrans WHERE MatchID = 77933629 AND Bettype = 1 
@@ -82,50 +82,17 @@ BEGIN
 	)
 
 	--=================================================================================================
-
-	IF	OBJECT_ID('tempdb..#tmpDanger1') IS NOT NULL
+		IF	OBJECT_ID('tempdb..#tmpDanger') IS NOT NULL
 	BEGIN
-		DROP TABLE	#tmpDanger1;
+		DROP TABLE	#tmpDanger;
 	END;
 
-	CREATE TABLE	#tmpDanger1(
-			Danger1				TINYINT
-	);
-
-	IF	OBJECT_ID('tempdb..#tmpDanger2') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpDanger2;
-	END;
-
-	CREATE TABLE	#tmpDanger2(
-			Danger2				TINYINT
-	);
-
-	IF	OBJECT_ID('tempdb..#tmpDanger3') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpDanger3;
-	END;
-
-	CREATE TABLE	#tmpDanger3(
-			Danger3				TINYINT
-	);
-
-	IF	OBJECT_ID('tempdb..#tmpDanger4') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpDanger4;
-	END;
-
-	CREATE TABLE	#tmpDanger4(
-			Danger4				TINYINT
-	);
-
-	IF	OBJECT_ID('tempdb..#tmpDanger5') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpDanger5;
-	END;
-
-	CREATE TABLE	#tmpDanger5(
-			Danger5				TINYINT
+	CREATE TABLE	#tmpDanger(
+			Danger1		TINYINT
+		,	Danger2		TINYINT
+		,	Danger3		TINYINT
+		,	Danger4		TINYINT
+		,	Danger5		TINYINT
 	);
 
 	--==================================================================================================
@@ -174,11 +141,11 @@ BEGIN
 				,	j.BetID
 			FROM OPENJSON (@BettypeList) WITH (
 					BetType			INT				'$.BetType'
-				,	BetChoiceType		TINYINT			'$.BetChoiceType'
-				,	BetChoiceHome		NVARCHAR(10)	'$.BetChoiceHome'
-				,	BetChoiceAway		NVARCHAR(10)	'$.BetChoiceAway'
-				,	BetIDPattern		NVARCHAR(20)	'$.BetIDPattern'
-				,	BetID				BIGINT			'$.BetID'
+				,	BetChoiceType	TINYINT			'$.BetChoiceType'
+				,	BetChoiceHome	NVARCHAR(10)	'$.BetChoiceHome'
+				,	BetChoiceAway	NVARCHAR(10)	'$.BetChoiceAway'
+				,	BetIDPattern	NVARCHAR(20)	'$.BetIDPattern'
+				,	BetID			BIGINT			'$.BetID'
 				) AS j;
 	END
 	ELSE
@@ -188,54 +155,26 @@ BEGIN
 	END;
 	
 	--========Parse @Danger From @DangerList=========================================
-	INSERT INTO #tmpDanger1 (Danger1)
-	SELECT	ISNULL(JSON_VALUE(ssk.value, '$.Danger1'),0) AS Danger1
-	FROM OPENJSON (@DangerList) AS ssk;
-
-	IF NOT EXISTS (SELECT 1 FROM #tmpDanger1)
+	IF @DangerList IS NOT NULL
 	BEGIN
-		INSERT INTO #tmpDanger1 (Danger1)
-		VALUES(NULL)
+		INSERT INTO #tmpDanger (Danger1,Danger2,Danger3,Danger4,Danger5)
+		SELECT	j.Danger1
+			,	j.Danger2
+			,	j.Danger3
+			,	j.Danger4
+			,	j.Danger5
+		FROM OPENJSON (@DangerList) WITH (
+				Danger1	TINYINT	'$.Danger1'
+			,	Danger2	TINYINT	'$.Danger2'
+			,	Danger3	TINYINT	'$.Danger3'
+			,	Danger4	TINYINT	'$.Danger4'
+			,	Danger5	TINYINT	'$.Danger5'
+			) AS j;		
 	END;
-
-	INSERT INTO #tmpDanger2 (Danger2)
-	SELECT	ISNULL(JSON_VALUE(ssk.value, '$.Danger2'),0) AS Danger2
-	FROM OPENJSON (@DangerList) AS ssk;
-
-	IF NOT EXISTS (SELECT 1 FROM #tmpDanger2)
+	ELSE
 	BEGIN
-		INSERT INTO #tmpDanger2(Danger2)
-		VALUES(NULL)
-	END;
-
-	INSERT INTO #tmpDanger3 (Danger3)
-	SELECT	ISNULL(JSON_VALUE(ssk.value, '$.Danger3'),0) AS Danger3
-	FROM OPENJSON (@DangerList) AS ssk;
-
-	IF NOT EXISTS (SELECT 1 FROM #tmpDanger3)
-	BEGIN
-		INSERT INTO #tmpDanger3(Danger3)
-		VALUES(NULL)
-	END;
-
-	INSERT INTO #tmpDanger4 (Danger4)
-	SELECT	ISNULL(JSON_VALUE(ssk.value, '$.Danger4'),0) AS Danger4
-	FROM OPENJSON (@DangerList) AS ssk;
-
-	IF NOT EXISTS (SELECT 1 FROM #tmpDanger4)
-	BEGIN
-		INSERT INTO #tmpDanger4(Danger4)
-		VALUES(NULL)
-	END;
-
-	INSERT INTO #tmpDanger5 (Danger5)
-	SELECT	ISNULL(JSON_VALUE(ssk.value, '$.Danger5'),0) AS Danger5
-	FROM OPENJSON (@DangerList) AS ssk;
-
-	IF NOT EXISTS (SELECT 1 FROM #tmpDanger5)
-	BEGIN
-		INSERT INTO #tmpDanger5(Danger5)
-		VALUES(NULL)
+		INSERT INTO #tmpDanger (Danger1,Danger2,Danger3,Danger4,Danger5)
+		VALUES(NULL,NULL,NULL,NULL,NULL)
 	END;
 
 	--==================================================================================================
@@ -263,11 +202,13 @@ BEGIN
 			INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 			INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 			INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
-			INNER JOIN #tmpDanger1 AS tmpDg1 WITH(NOLOCK) ON c.Danger = ISNULL(tmpDg1.Danger1,c.Danger)
-			INNER JOIN #tmpDanger2 AS tmpDg2 WITH(NOLOCK) ON c.Danger2 = ISNULL(tmpDg2.Danger2,c.Danger2)
-			INNER JOIN #tmpDanger3 AS tmpDg3 WITH(NOLOCK) ON c.Danger3 = ISNULL(tmpDg3.Danger3,c.Danger3)
-			INNER JOIN #tmpDanger4 AS tmpDg4 WITH(NOLOCK) ON c.Danger4 = ISNULL(tmpDg4.Danger4,c.Danger4)
-			INNER JOIN #tmpDanger5 AS tmpDg5 WITH(NOLOCK) ON c.Danger5 = ISNULL(tmpDg5.Danger5,c.Danger5)
+		WHERE EXISTS (	SELECT 1 
+						FROM  #tmpDanger AS tmpDg WITH(NOLOCK) 
+						WHERE  c.Danger = ISNULL(tmpDg.Danger1,c.Danger)
+								AND c.Danger2 = ISNULL(tmpDg.Danger2,c.Danger)
+								AND c.Danger3 = ISNULL(tmpDg.Danger3,c.Danger)
+								AND c.Danger4 = ISNULL(tmpDg.Danger4,c.Danger)
+								AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger))
 		GROUP BY b.MatchId, b.LiveIndicator, b.Bettype,tmpBt.BetChoiceType;
 
 		DELETE tm
@@ -292,11 +233,13 @@ BEGIN
 			INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 			INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 			INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
-			INNER JOIN #tmpDanger1 AS tmpDg1 WITH(NOLOCK) ON c.Danger = ISNULL(tmpDg1.Danger1,c.Danger)
-			INNER JOIN #tmpDanger2 AS tmpDg2 WITH(NOLOCK) ON c.Danger2 = ISNULL(tmpDg2.Danger2,c.Danger2)
-			INNER JOIN #tmpDanger3 AS tmpDg3 WITH(NOLOCK) ON c.Danger3 = ISNULL(tmpDg3.Danger3,c.Danger3)
-			INNER JOIN #tmpDanger4 AS tmpDg4 WITH(NOLOCK) ON c.Danger4 = ISNULL(tmpDg4.Danger4,c.Danger4)
-			INNER JOIN #tmpDanger5 AS tmpDg5 WITH(NOLOCK) ON c.Danger5 = ISNULL(tmpDg5.Danger5,c.Danger5)
+		WHERE EXISTS (	SELECT 1 
+						FROM  #tmpDanger AS tmpDg WITH(NOLOCK) 
+						WHERE  c.Danger = ISNULL(tmpDg.Danger1,c.Danger)
+								AND c.Danger2 = ISNULL(tmpDg.Danger2,c.Danger)
+								AND c.Danger3 = ISNULL(tmpDg.Danger3,c.Danger)
+								AND c.Danger4 = ISNULL(tmpDg.Danger4,c.Danger)
+								AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger))
 		GROUP BY b.MatchId, b.LiveIndicator, b.Bettype,tmpBt.BetChoiceType;
 		
 		DELETE tm
@@ -321,11 +264,13 @@ BEGIN
 			INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 			INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 			INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
-			INNER JOIN #tmpDanger1 AS tmpDg1 WITH(NOLOCK) ON c.Danger = ISNULL(tmpDg1.Danger1,c.Danger)
-			INNER JOIN #tmpDanger2 AS tmpDg2 WITH(NOLOCK) ON c.Danger2 = ISNULL(tmpDg2.Danger2,c.Danger2)
-			INNER JOIN #tmpDanger3 AS tmpDg3 WITH(NOLOCK) ON c.Danger3 = ISNULL(tmpDg3.Danger3,c.Danger3)
-			INNER JOIN #tmpDanger4 AS tmpDg4 WITH(NOLOCK) ON c.Danger4 = ISNULL(tmpDg4.Danger4,c.Danger4)
-			INNER JOIN #tmpDanger5 AS tmpDg5 WITH(NOLOCK) ON c.Danger5 = ISNULL(tmpDg5.Danger5,c.Danger5)
+		WHERE EXISTS (	SELECT 1 
+						FROM  #tmpDanger AS tmpDg WITH(NOLOCK) 
+						WHERE  c.Danger = ISNULL(tmpDg.Danger1,c.Danger)
+								AND c.Danger2 = ISNULL(tmpDg.Danger2,c.Danger)
+								AND c.Danger3 = ISNULL(tmpDg.Danger3,c.Danger)
+								AND c.Danger4 = ISNULL(tmpDg.Danger4,c.Danger)
+								AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger))
 		GROUP BY b.MatchId, b.LiveIndicator, b.Bettype,tmpBt.BetChoiceType;
 	END;
 	
