@@ -29,15 +29,16 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_AssociationInsert;
         
 	CREATE TEMPORARY TABLE Temp_AssociationInsert(
-			ID						INT UNSIGNED		NOT NULL AUTO_INCREMENT PRIMARY KEY
-        ,	AccountID				BIGINT UNSIGNED		NOT NULL
-        ,	DeviceID				BIGINT UNSIGNED		NOT NULL
-        ,	FPDeviceID				BIGINT UNSIGNED		DEFAULT 0
-        ,	SubscriberID			BIGINT UNSIGNED		
-        ,	CreatedTime				TIMESTAMP(4)		
-        ,	CreatedDate				DATETIME			
-		,	IsNewRecord				TINYINT		 		DEFAULT 1
-		,	IsNewRecordMapping		TINYINT		 		DEFAULT 1
+			ID								INT UNSIGNED		NOT NULL AUTO_INCREMENT PRIMARY KEY
+        ,	AccountID						BIGINT UNSIGNED		NOT NULL
+        ,	DeviceID						BIGINT UNSIGNED		NOT NULL
+        ,	FPDeviceID						BIGINT UNSIGNED		DEFAULT 0
+        ,	SubscriberID					BIGINT UNSIGNED		
+        ,	CreatedTime						TIMESTAMP(4)		
+        ,	CreatedDate						DATETIME			
+		,	IsNewRecordAssociation			TINYINT		 		DEFAULT 1
+		,	IsNewRecordAssociationNew		TINYINT		 		DEFAULT 1
+		,	IsNewRecordMapping				TINYINT		 		DEFAULT 1
     );
     
     INSERT INTO Temp_AssociationInsert(AccountID, DeviceID, FPDeviceID, SubscriberID, CreatedTime, CreatedDate)
@@ -67,9 +68,9 @@ BEGIN
 	ADD INDEX IX_Temp_AssociationInsert_AccountID_DeviceID_FPDeviceID (AccountID, DeviceID, FPDeviceID);
     
     UPDATE Temp_AssociationInsert AS tmp
-		INNER JOIN DCS_DataCenter.Association AS ass ON ass.AccountID = tmp.AccountID 
+		INNER JOIN DCS_DataCenter.Association AS ass ON ass.AccountID = tmp.AccountID
 													AND ass.DeviceID = tmp.DeviceID
-    SET tmp.IsNewRecord = 0;
+    SET tmp.IsNewRecordAssociation = 0;
     
 	INSERT IGNORE INTO DCS_DataCenter.Association(AccountID, DeviceID, SubscriberID, CreatedTime, CreatedDate, InsertTime)
 	SELECT	AccountID
@@ -79,7 +80,23 @@ BEGIN
 		,	CreatedDate
 		,	lv_CreatedDate AS InsertTime
 	FROM Temp_AssociationInsert
-    WHERE IsNewRecord = 1;
+    WHERE IsNewRecordAssociation = 1;
+    
+    /* === Insert into AssociationMapping === */
+    UPDATE Temp_AssociationInsert AS tmp
+		INNER JOIN DCS_DataCenter.AssociationNew AS ass ON ass.AccountID = tmp.AccountID
+														AND ass.DeviceID = tmp.FPDeviceID
+    SET tmp.IsNewRecordAssociationNew = 0;
+    
+	INSERT IGNORE INTO DCS_DataCenter.AssociationNew(AccountID, DeviceID, SubscriberID, CreatedTime, CreatedDate, InsertTime)
+	SELECT	AccountID
+		,	FPDeviceID AS DeviceID
+		,	SubscriberID
+		,	CreatedTime
+		,	CreatedDate
+		,	lv_CreatedDate AS InsertTime
+	FROM Temp_AssociationInsert
+    WHERE IsNewRecordAssociationNew = 1;
     
     /* === Insert into AssociationMapping === */
     UPDATE Temp_AssociationInsert AS tmp

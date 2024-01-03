@@ -31,18 +31,6 @@ ADD COLUMN BrowserInstanceID BIGINT UNSIGNED DEFAULT NULL,
 ADD COLUMN FPDeviceID BIGINT UNSIGNED DEFAULT NULL,
 ADD COLUMN RecoverType TINYINT DEFAULT NULL;
 
-CREATE TABLE `AssociationMapping` (
-  `ID` BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
-  `AccountID` BIGINT UNSIGNED NOT NULL,
-  `DeviceID` BIGINT UNSIGNED NOT NULL,
-  `FPDeviceID` BIGINT UNSIGNED NOT NULL,
-  `SubscriberID` int NOT NULL,
-  `CreatedTime` TIMESTAMP(4) NOT NULL,
-  `CreatedDate` TIMESTAMP NOT NULL,
-  `InsertTime` TIMESTAMP(4) NOT NULL,
-  UNIQUE KEY `UX_AssociationMapping_AccountID_DeviceID_FPDeviceID` (`AccountID`,`DeviceID`,`FPDeviceID`)
-) ENGINE=InnoDB;
-
 CREATE TABLE `FPDevice` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `FirstRawFingerPrintID` BIGINT UNSIGNED DEFAULT NULL,
@@ -89,4 +77,39 @@ CREATE TABLE `TransactionEvolution` (
   `CreatedDate` DATETIME DEFAULT NULL,
   PRIMARY KEY (`RawFingerPrintID`),
   UNIQUE KEY `UX_TransactionEvolution_RawFingerPrintID` (`RawFingerPrintID`)
+) ENGINE=InnoDB;
+
+CREATE TABLE `AssociationNew` (
+  `AssociationID` BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
+  `AccountID` BIGINT UNSIGNED NOT NULL,
+  `DeviceID` BIGINT UNSIGNED NOT NULL,
+  `SubscriberID` int NOT NULL,
+  `CreatedTime` TIMESTAMP(4) NOT NULL,
+  `CreatedDate` TIMESTAMP NOT NULL,
+  `InsertTime` TIMESTAMP(4) NOT NULL
+) ENGINE=InnoDB;
+
+INSERT INTO DCS_DataCenter.AssociationNew(AssociationID, AccountID, DeviceID, SubscriberID, CreatedTime, CreatedDate, InsertTime)
+SELECT	AssociationID
+	,	AccountID
+    ,	DeviceID
+    ,	SubscriberID
+    ,	CreatedTime
+    ,	CreatedDate
+    ,	InsertTime
+FROM DCS_DataCenter.Association;
+
+ALTER TABLE DCS_DataCenter.AssociationNew
+ADD UNIQUE INDEX UX_AssociationNew_AccountID_DeviceID (AccountID, DeviceID);
+
+CREATE TABLE `AssociationMapping` (
+  `ID` BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
+  `AccountID` BIGINT UNSIGNED NOT NULL,
+  `DeviceID` BIGINT UNSIGNED NOT NULL,
+  `FPDeviceID` BIGINT UNSIGNED NOT NULL,
+  `SubscriberID` int NOT NULL,
+  `CreatedTime` TIMESTAMP(4) NOT NULL,
+  `CreatedDate` TIMESTAMP NOT NULL,
+  `InsertTime` TIMESTAMP(4) NOT NULL,
+  UNIQUE KEY `UX_AssociationMapping_AccountID_DeviceID_FPDeviceID` (`AccountID`,`DeviceID`,`FPDeviceID`)
 ) ENGINE=InnoDB;
