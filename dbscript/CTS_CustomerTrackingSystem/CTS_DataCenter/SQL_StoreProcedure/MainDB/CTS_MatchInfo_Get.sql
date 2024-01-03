@@ -327,63 +327,111 @@ BEGIN
 				,	@ToDateOrigin		=	@ToDate
 		END
 		
-		IF	@IsGetDataFromBK = 1 AND EXISTS(SELECT 1 
-											FROM #tmpMatchSection AS tmpMs 
-											WHERE ISNULL(tmpMs.MatchSection,@MatchSection_Closed) = @MatchSection_Closed)
+		IF	@IsGetDataFromBK = 1
 		BEGIN
 		
 		INSERT INTO #tmpMatchesInfo (MatchId,MatchCode,SportType,LeagueId,EventDate,KickOffTime,HomeId,AwayId,EventStatus
 				,LiveHomeScore,LiveAwayScore,HTHomeScore,HTAwayScore,FinalHomeScore,FinalAwayScore,MatchSection,DataSource)
-		SELECT	m.MatchId
-			,	m.MatchCode
-			,	m.SportType
-			,	m.LeagueId
-			,	m.EventDate
-			,	m.GlobalShowTime
-			,	m.HomeId
-			,	m.AwayId
-			,	m.EventStatus
-			,	m.LiveHomeScore
-			,	m.LiveAwayScore
-			,	m.HTHomeScore
-			,	m.HTAwayScore
-			,	m.FinalHomeScore
-			,	m.FinalAwayScore
-			,	@MatchSection_Closed AS MatchSection
-			,	@DataSource_bk
-		FROM bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) 
-			INNER JOIN #tmpSport AS tmpSp ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
-		WHERE m.EventDate BETWEEN @FromDateBK AND @ToDateBK
+		SELECT	tmp.MatchId
+				,	tmp.MatchCode
+				,	tmp.SportType
+				,	tmp.LeagueId
+				,	tmp.EventDate
+				,	tmp.GlobalShowTime
+				,	tmp.HomeId
+				,	tmp.AwayId
+				,	tmp.EventStatus
+				,	tmp.LiveHomeScore
+				,	tmp.LiveAwayScore
+				,	tmp.HTHomeScore
+				,	tmp.HTAwayScore
+				,	tmp.FinalHomeScore
+				,	tmp.FinalAwayScore
+				,	tmp.MatchSection
+				,	@DataSource_Origin
+			FROM (
+					SELECT	m.MatchId
+						,	m.MatchCode
+						,	m.SportType
+						,	m.LeagueId
+						,	m.EventDate
+						,	m.GlobalShowTime
+						,	m.HomeId
+						,	m.AwayId
+						,	m.EventStatus
+						,	m.LiveHomeScore
+						,	m.LiveAwayScore
+						,	m.HTHomeScore
+						,	m.HTAwayScore
+						,	m.FinalHomeScore
+						,	m.FinalAwayScore
+						,	(CASE
+								WHEN m.eventstatus <> 'completed' THEN (CASE 
+																			WHEN m.GlobalShowTime <= GETDATE() THEN @MatchSection_Live --LIVE
+																			WHEN m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN @MatchSection_Today	 --TODAY
+																			WHEN m.EventDate > @Today THEN @MatchSection_Early -- EARLY
+																		END)
+								ELSE @MatchSection_Closed -- CLOSED
+							END) AS MatchSection
+					FROM bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) 
+						INNER JOIN #tmpSport AS tmpSp ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
+					WHERE m.EventDate BETWEEN @FromDateBK AND @ToDateBK
+					) AS tmp
+				INNER JOIN #tmpMatchSection AS tmpMs ON tmp.MatchSection = ISNULL(tmpMs.MatchSection,tmp.MatchSection);
 
 		END
 
-		IF	@IsGetDataFrom14 = 1 AND EXISTS(SELECT 1 
-											FROM #tmpMatchSection AS tmpMs 
-											WHERE ISNULL(tmpMs.MatchSection,@MatchSection_Closed) = @MatchSection_Closed)
+		IF	@IsGetDataFrom14 = 1
 		BEGIN
 
 			INSERT INTO #tmpMatchesInfo (MatchId,MatchCode,SportType,LeagueId,EventDate,KickOffTime,HomeId,AwayId,EventStatus
-					,LiveHomeScore,LiveAwayScore,HTHomeScore,HTAwayScore,FinalHomeScore,FinalAwayScore,MatchSection,DataSource)
-			SELECT	m.MatchId
-				,	m.MatchCode
-				,	m.SportType
-				,	m.LeagueId
-				,	m.EventDate
-				,	m.GlobalShowTime
-				,	m.HomeId
-				,	m.AwayId
-				,	m.EventStatus
-				,	m.LiveHomeScore
-				,	m.LiveAwayScore
-				,	m.HTHomeScore
-				,	m.HTAwayScore
-				,	m.FinalHomeScore
-				,	m.FinalAwayScore
-				,	@MatchSection_Closed AS MatchSection
-				,	@DataSource_14
-			FROM bodb02.dbo.match14 AS m WITH(NOLOCK) 
-				INNER JOIN #tmpSport AS tmpSp ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
-			WHERE m.EventDate BETWEEN @FromDate14 AND @ToDate14
+					,LiveHomeScore,LiveAwayScore,HTHomeScore,HTAwayScore,FinalHomeScore,FinalAwayScore,MatchSection,DataSource)			
+			SELECT	tmp.MatchId
+				,	tmp.MatchCode
+				,	tmp.SportType
+				,	tmp.LeagueId
+				,	tmp.EventDate
+				,	tmp.GlobalShowTime
+				,	tmp.HomeId
+				,	tmp.AwayId
+				,	tmp.EventStatus
+				,	tmp.LiveHomeScore
+				,	tmp.LiveAwayScore
+				,	tmp.HTHomeScore
+				,	tmp.HTAwayScore
+				,	tmp.FinalHomeScore
+				,	tmp.FinalAwayScore
+				,	tmp.MatchSection
+				,	@DataSource_Origin
+			FROM (
+					SELECT	m.MatchId
+						,	m.MatchCode
+						,	m.SportType
+						,	m.LeagueId
+						,	m.EventDate
+						,	m.GlobalShowTime
+						,	m.HomeId
+						,	m.AwayId
+						,	m.EventStatus
+						,	m.LiveHomeScore
+						,	m.LiveAwayScore
+						,	m.HTHomeScore
+						,	m.HTAwayScore
+						,	m.FinalHomeScore
+						,	m.FinalAwayScore
+						,	(CASE
+								WHEN m.eventstatus <> 'completed' THEN (CASE 
+																			WHEN m.GlobalShowTime <= GETDATE() THEN @MatchSection_Live --LIVE
+																			WHEN m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN @MatchSection_Today	 --TODAY
+																			WHEN m.EventDate > @Today THEN @MatchSection_Early -- EARLY
+																		END)
+								ELSE @MatchSection_Closed -- CLOSED
+							END) AS MatchSection
+					FROM bodb02.dbo.match14 AS m WITH(NOLOCK) 
+						INNER JOIN #tmpSport AS tmpSp ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
+					WHERE m.EventDate BETWEEN @FromDate14 AND @ToDate14
+					) AS tmp
+				INNER JOIN #tmpMatchSection AS tmpMs ON tmp.MatchSection = ISNULL(tmpMs.MatchSection,tmp.MatchSection);
 
 		END
 
