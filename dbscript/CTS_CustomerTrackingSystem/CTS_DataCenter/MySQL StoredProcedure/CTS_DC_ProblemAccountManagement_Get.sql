@@ -23,6 +23,7 @@ sp :BEGIN
 			- 20220426@Casey.Huynh: 	Add CreatedBy [Redmine ID: #171512]
 			- 20220913@Casey.Huynh: 	Add CategoryID Filter  [Redmine ID: #176976]
 			- 20230404@Victoria.Le		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeId [Redmine ID: #185319] 
+			- 20240103@@Thomas.Nguyen:  Return CategoryID [RedmineID: #197710] 
 
 		Param's Explanation (filtered by):   
         Example: 
@@ -102,6 +103,7 @@ sp :BEGIN
 	, 	cus.SiteID
 	,	cus.Currency
 	,	cus.CurrencyID
+	,	class.CategoryID
 	,	GROUP_CONCAT(DISTINCT tmpCat.CategoryName SEPARATOR ', ') AS CategoryName
 	,	MIN(class.CreatedDate) AS CreatedDate
 	,	SUBSTRING_INDEX(GROUP_CONCAT(IFNULL(us.UserName, class.CreatedBy) ORDER BY class.CreatedDate ASC,class.LastModifiedDate ASC,class.CategoryID ASC SEPARATOR ', '),',',1) AS CreatedBy
@@ -129,7 +131,8 @@ sp :BEGIN
 		, 	cus.Site
 		, 	cus.SiteID
 		,	cus.Currency
-		,	cus.CurrencyID;
+		,	cus.CurrencyID
+		,	class.CategoryID;
 	
 END$$
 DELIMITER ;

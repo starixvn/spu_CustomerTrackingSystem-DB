@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.CustomerLoginInfoDetection(
 	,	InvalidBrowser		INT UNSIGNED
 	,	BotTransPercentage	DECIMAL(6,2)
 	,	InvalidBrowserInfoTransPercentage	DECIMAL(6,2)
+	,	DetectionDate		DATETIME
     ,	PRIMARY KEY			PK_CustomerLoginInfoDetection_CTSCustID(CTSCustID)
 	,	INDEX 		 		IX_CustomerLoginInfoDetection_CustID(CustID)
 	,	INDEX 		 		IX_CustomerLoginInfoDetection_FirstBetDate(FirstBetDate)
