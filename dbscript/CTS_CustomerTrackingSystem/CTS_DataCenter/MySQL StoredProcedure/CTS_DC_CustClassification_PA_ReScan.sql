@@ -21,7 +21,8 @@ sp: BEGIN
 			- 20230315@Victoria.Le:		Add Robot Imperva [Redmine ID: #184773]
 			- 20230404@Victoria.Le		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeId [Redmine ID: #185319] 
 			- 20230517@Victoria.Le:		New Category for Robot OCRD [Redmine ID: #186991]
-		
+            - 20240103@Thomas.Nguyen:   New Category for System Detect Unauthorized Login [RedmineID: #197710]
+
         Param's Explanation:
 
 		Example:
@@ -31,6 +32,8 @@ sp: BEGIN
 	DECLARE	CONST_CATEGORYID_ROBOTUSER_LOSING 		INT DEFAULT 164;
 	DECLARE	CONST_CATEGORYID_ROBOTOCRD 				INT DEFAULT 165;
 	DECLARE	CONST_CATEGORYID_ROBOTOCRD_LOSING 		INT DEFAULT 166;
+    DECLARE	CONST_CATEGORY_UNAUTHORIZEDLOGIN 		INT DEFAULT 64;
+    DECLARE	CONST_CATEGORY_UNAUTHORIZEDLOGIN_LOSING	INT DEFAULT 104;
 
 	DECLARE	CONST_GROUP_PA 							INT DEFAULT 0;
 
@@ -113,6 +116,25 @@ sp: BEGIN
     FROM Temp_CustID AS tmp
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
     
+    /***********************Check System Detect Unauthorized Login****************************/
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, RoleID, SubscriberID, IsLicensee, IsLicenseeVIP, CategoryID, CategoryIDSource, CategoryGroup, IsDirect, IsFromCTS, IsRobot, Remark, LastModifiedDate)
+    SELECT 	tmp.CTSCustID
+		,	tmp.CustID
+        ,	tmp.RoleID 
+        ,	tmp.SubscriberID
+		,	tmp.IsLicensee
+        ,	tmp.IsLicenseeVIP
+		,	CONST_CATEGORY_UNAUTHORIZEDLOGIN AS CategoryID
+        ,	CONST_CATEGORY_UNAUTHORIZEDLOGIN AS CategoryIDSource
+        ,	CONST_CATEGORY_UNAUTHORIZEDLOGIN AS CategoryGroup
+        ,	1 AS IsDirect
+        ,   1 AS IsFromCTS
+        ,	0 AS IsRobot
+		,	JSON_OBJECT('FirstBetDate', FirstBetDate, 'Bot', Bot, 'InvalidBrowser', InvalidBrowser, 'BotPCT', BotTransPercentage, 'InvalidBrowserPCT', InvalidBrowserInfoTransPercentage, 'DetectionDate', DetectionDate) AS Remark
+        ,	cld.DetectionDate AS LastModifiedDate
+    FROM  Temp_CustInfo AS tmp
+    INNER JOIN CTS_DataCenter.CustomerLoginInfoDetection AS cld ON cld.CustID = tmp.CustID;
+
 	/***********************Check Robot Imperva****************************/
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID,RoleID,SubscriberID,IsLicensee,IsLicenseeVIP,CategoryID,CategoryIDSource, CategoryGroup,IsFromImperva,IsDirect,IsRobot,Remark,LastModifiedDate)
     SELECT 	tmp.CTSCustID
@@ -216,7 +238,7 @@ sp: BEGIN
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationOldCategory AS class USE INDEX (PRIMARY) ON class.CustID = tmp.CustID AND class.SportGroupID = CONST_GROUP_PA
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID 
-														  AND (cate.CategoryGroup NOT IN (CONST_CATEGORYID_ROBOTUSER, CONST_CATEGORYID_ROBOTUSER_LOSING, CONST_CATEGORYID_ROBOTOCRD, CONST_CATEGORYID_ROBOTOCRD_LOSING)
+														  AND (cate.CategoryGroup NOT IN (CONST_CATEGORYID_ROBOTUSER, CONST_CATEGORYID_ROBOTUSER_LOSING, CONST_CATEGORYID_ROBOTOCRD, CONST_CATEGORYID_ROBOTOCRD_LOSING, CONST_CATEGORY_UNAUTHORIZEDLOGIN, CONST_CATEGORY_UNAUTHORIZEDLOGIN_LOSING)
 															 OR (cate.CategoryGroup IN (CONST_CATEGORYID_ROBOTUSER, CONST_CATEGORYID_ROBOTUSER_LOSING, CONST_CATEGORYID_ROBOTOCRD, CONST_CATEGORYID_ROBOTOCRD_LOSING) AND (class.IsFromCTS = 1 OR class.IsFromTVS = 1)))
 	ON DUPLICATE KEY UPDATE  IsFromCTS = 1
                         ,	 Remark = class.Remark;	
@@ -261,7 +283,7 @@ sp: BEGIN
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS class USE INDEX (PRIMARY) ON class.CustID = tmp.CustID AND class.SportGroupID = CONST_GROUP_PA AND class.IsDirect = 1
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID 
-															AND (cate.CategoryGroup NOT IN (CONST_CATEGORYID_ROBOTUSER, CONST_CATEGORYID_ROBOTUSER_LOSING, CONST_CATEGORYID_ROBOTOCRD, CONST_CATEGORYID_ROBOTOCRD_LOSING)
+															AND (cate.CategoryGroup NOT IN (CONST_CATEGORYID_ROBOTUSER, CONST_CATEGORYID_ROBOTUSER_LOSING, CONST_CATEGORYID_ROBOTOCRD, CONST_CATEGORYID_ROBOTOCRD_LOSING, CONST_CATEGORY_UNAUTHORIZEDLOGIN, CONST_CATEGORY_UNAUTHORIZEDLOGIN_LOSING)
 															 OR (cate.CategoryGroup  IN (CONST_CATEGORYID_ROBOTUSER, CONST_CATEGORYID_ROBOTUSER_LOSING, CONST_CATEGORYID_ROBOTOCRD, CONST_CATEGORYID_ROBOTOCRD_LOSING) AND (class.IsFromCTS = 1 OR class.IsFromTVS = 1)))
 	ON DUPLICATE KEY UPDATE  IsFromCTS = 1
                         ,	 Remark = class.Remark;	
@@ -292,7 +314,7 @@ sp: BEGIN
 		,	class.IssueTypeID
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationOldCategory AS class USE INDEX (PRIMARY)  ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = CONST_GROUP_PA AND class.IsDirect = 1
-        STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup NOT IN (CONST_CATEGORYID_ROBOTUSER, CONST_CATEGORYID_ROBOTUSER_LOSING, CONST_CATEGORYID_ROBOTOCRD, CONST_CATEGORYID_ROBOTOCRD_LOSING)
+        STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup NOT IN (CONST_CATEGORYID_ROBOTUSER, CONST_CATEGORYID_ROBOTUSER_LOSING, CONST_CATEGORYID_ROBOTOCRD, CONST_CATEGORYID_ROBOTOCRD_LOSING, CONST_CATEGORY_UNAUTHORIZEDLOGIN, CONST_CATEGORY_UNAUTHORIZEDLOGIN_LOSING)
 	WHERE NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassificationVVIP AS vv WHERE vv.CustID = class.CustID)
     ON DUPLICATE KEY UPDATE  Remark = CASE WHEN  class.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN class.Remark
 										   ELSE Temp_CustCategory.Remark END
@@ -324,7 +346,7 @@ sp: BEGIN
 		,	class.IssueTypeID
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS class USE INDEX (PRIMARY) ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.SportGroupID = CONST_GROUP_PA AND class.IsDirect = 1
-        STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup NOT IN (CONST_CATEGORYID_ROBOTUSER, CONST_CATEGORYID_ROBOTUSER_LOSING, CONST_CATEGORYID_ROBOTOCRD, CONST_CATEGORYID_ROBOTOCRD_LOSING)
+        STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroup NOT IN (CONST_CATEGORYID_ROBOTUSER, CONST_CATEGORYID_ROBOTUSER_LOSING, CONST_CATEGORYID_ROBOTOCRD, CONST_CATEGORYID_ROBOTOCRD_LOSING, CONST_CATEGORY_UNAUTHORIZEDLOGIN, CONST_CATEGORY_UNAUTHORIZEDLOGIN_LOSING)
 	ON DUPLICATE KEY UPDATE  Remark = CASE WHEN  class.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN class.Remark
 										   ELSE Temp_CustCategory.Remark END
 						,	LastModifiedDate = CASE WHEN class.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN class.LastModifiedDate
