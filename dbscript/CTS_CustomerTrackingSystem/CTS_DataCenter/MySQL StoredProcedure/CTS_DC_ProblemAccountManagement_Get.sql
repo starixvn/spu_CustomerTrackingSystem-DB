@@ -23,7 +23,7 @@ sp :BEGIN
 			- 20220426@Casey.Huynh: 	Add CreatedBy [Redmine ID: #171512]
 			- 20220913@Casey.Huynh: 	Add CategoryID Filter  [Redmine ID: #176976]
 			- 20230404@Victoria.Le		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeId [Redmine ID: #185319] 
-			- 20240103@@Thomas.Nguyen:  Return CategoryID [RedmineID: #197710] 
+			- 20240103@Thomas.Nguyen:   Return CategoryID [RedmineID: #197710] 
 
 		Param's Explanation (filtered by):   
         Example: 
