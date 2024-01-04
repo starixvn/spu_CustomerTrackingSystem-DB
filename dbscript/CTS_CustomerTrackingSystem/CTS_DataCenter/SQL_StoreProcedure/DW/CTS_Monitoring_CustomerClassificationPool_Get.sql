@@ -7,8 +7,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE PROCEDURE [dbo].[CTS_Monitoring_CustomerClassificationPool_Get]
-	@GeneralPoolCount BIGINT OUTPUT,
-	@BySportPoolCount BIGINT OUTPUT
+	@GeneralRecord BIGINT OUTPUT,
+	@BySportRecord BIGINT OUTPUT
 AS
 /*
 	Created: 20240102@Jonas.Huynh
@@ -28,10 +28,10 @@ BEGIN
 	
 	SET NOCOUNT ON;
 
-	SELECT @NextScannedDateTime = COUNT(1)
+	SELECT @GeneralRecord = COUNT(1)
 	FROM [dbo].[CustomerClassification_NormalPool] WITH (NOLOCK);
 	
-	SELECT @BySportPoolCount = COUNT(1)
+	SELECT @BySportRecord = COUNT(1)
 	FROM [dbo].[CustomerClassification_BySport_NormalPool] WITH (NOLOCK);
 END;
 GO
