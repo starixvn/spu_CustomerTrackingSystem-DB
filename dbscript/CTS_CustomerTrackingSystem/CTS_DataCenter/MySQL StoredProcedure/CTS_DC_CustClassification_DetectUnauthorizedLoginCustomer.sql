@@ -138,13 +138,13 @@ BEGIN
                                 GROUP BY ls.AccountID),tmp.CountLogin);
     
     WITH CTEAccountInfo AS (
-                SELECT  ls.AccountID
-                    ,   SUM(CASE WHEN st.GroupID = 2 THEN ls.TotalTrans ELSE 0 END) AS CountInvalidBrowserTrans
-                    ,   SUM(CASE WHEN st.GroupID = 3 THEN ls.TotalTrans ELSE 0 END) AS CountBotTrans
-                FROM Temp_LoginTransactionSummary AS ls
-                    INNER JOIN DCS_DataCenter.StaticList AS st ON st.ItemID = ls.Flagged AND st.ListID = 1
-                    INNER JOIN Temp_CustAccountID AS tmp ON tmp.AccountID = ls.AccountID
-                GROUP BY ls.AccountID
+        SELECT  ls.AccountID
+            ,   SUM(CASE WHEN st.GroupID = 2 THEN ls.TotalTrans ELSE 0 END) AS CountInvalidBrowserTrans
+            ,   SUM(CASE WHEN st.GroupID = 3 THEN ls.TotalTrans ELSE 0 END) AS CountBotTrans
+        FROM Temp_LoginTransactionSummary AS ls
+            INNER JOIN DCS_DataCenter.StaticList AS st ON st.ItemID = ls.Flagged AND st.ListID = 1
+            INNER JOIN Temp_CustAccountID AS tmp ON tmp.AccountID = ls.AccountID
+        GROUP BY ls.AccountID
     )
     UPDATE Temp_CustAccLogTransInfo AS tmp
         INNER JOIN CTEAccountInfo AS tc ON tc.AccountID = tmp.AccountID

@@ -22,5 +22,4 @@ CREATE TABLE IF NOT EXISTS CustomerLoginInfoDetection(
 	,	InvalidBrowserInfoTransPercentage	DECIMAL(6,2)
 	,	DetectionDate						DATETIME
 	,	INDEX IX_CustomerLoginInfoDetection_CTSCustID(CTSCustID)
-	,	INDEX IX_CustomerLoginInfoDetection_FirstBetDate(FirstBetDate)
 );
