@@ -86,21 +86,24 @@ CREATE TABLE `AssociationNew` (
   `SubscriberID` int NOT NULL,
   `CreatedTime` TIMESTAMP(4) NOT NULL,
   `CreatedDate` TIMESTAMP NOT NULL,
-  `InsertTime` TIMESTAMP(4) NOT NULL
+  `InsertedTime` TIMESTAMP(4) NOT NULL
 ) ENGINE=InnoDB;
 
-INSERT INTO AssociationNew(AssociationID, AccountID, DeviceID, SubscriberID, CreatedTime, CreatedDate, InsertTime)
+INSERT INTO AssociationNew(AssociationID, AccountID, DeviceID, SubscriberID, CreatedTime, CreatedDate, InsertedTime)
 SELECT	AssociationID
 	,	AccountID
     ,	DeviceID
     ,	SubscriberID
     ,	CreatedTime
     ,	CreatedDate
-    ,	InsertTime
-FROM DCS_DataCenter.Association;
+    ,	InsertTime AS InsertedTime
+FROM Association;
 
 ALTER TABLE AssociationNew
-ADD UNIQUE INDEX UX_AssociationNew_AccountID_DeviceID (AccountID, DeviceID);
+ADD UNIQUE INDEX UX_AssociationNew_AccountID_DeviceID (AccountID, DeviceID),
+ADD INDEX IX_AssociationNew_SubscriberID_AccountID_DeviceID_CreatedDate (SubscriberID, AccountID, DeviceID, CreatedDate),
+ADD INDEX IX_Association_DeviceID_AccountID_CreatedDate (DeviceID, AccountID, CreatedDate);
+
 
 CREATE TABLE `AssociationMapping` (
   `ID` BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,

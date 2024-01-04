@@ -89,13 +89,13 @@ BEGIN
 														AND ass.DeviceID = tmp.FPDeviceID
     SET tmp.IsNewRecordAssociationNew = 0;
     
-	INSERT IGNORE INTO DCS_DataCenter.AssociationNew(AccountID, DeviceID, SubscriberID, CreatedTime, CreatedDate, InsertTime)
+	INSERT IGNORE INTO DCS_DataCenter.AssociationNew(AccountID, DeviceID, SubscriberID, CreatedTime, CreatedDate, InsertedTime)
 	SELECT	AccountID
 		,	FPDeviceID AS DeviceID
 		,	SubscriberID
 		,	CreatedTime
 		,	CreatedDate
-		,	lv_CreatedDate AS InsertTime
+		,	lv_CreatedDate AS InsertedTime
 	FROM Temp_AssociationInsert
     WHERE IsNewRecordAssociationNew = 1;
     
@@ -106,14 +106,14 @@ BEGIN
 															AND ass.FPDeviceID = tmp.FPDeviceID
     SET tmp.IsNewRecordMapping = 0;
     
-	INSERT IGNORE INTO DCS_DataCenter.AssociationMapping(AccountID, DeviceID, FPDeviceID, SubscriberID, CreatedTime, CreatedDate, InsertTime)
+	INSERT IGNORE INTO DCS_DataCenter.AssociationMapping(AccountID, DeviceID, FPDeviceID, SubscriberID, CreatedTime, CreatedDate, InsertedTime)
 	SELECT	AccountID
 		,	DeviceID
 		,	FPDeviceID
 		,	SubscriberID
 		,	CreatedTime
 		,	CreatedDate
-		,	lv_CreatedDate AS InsertTime
+		,	lv_CreatedDate AS InsertedTime
 	FROM Temp_AssociationInsert
     WHERE IsNewRecordMapping = 1;
 END$$
