@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP procedure IF EXISTS `CTS_DataCenter`.`DCS_DC_Monitoring_LastLoginProcess_Get`;
+DROP procedure IF EXISTS `DCS_DataCenter`.`DCS_DC_Monitoring_LoginTransactionProcess_Get`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`DCS_DC_Monitoring_LastLoginProcess_Get`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DataCenter`.`DCS_DC_Monitoring_LoginTransactionProcess_Get`(
 	 OUT op_RecordNumber	BIGINT
 ) 
     SQL SECURITY INVOKER
@@ -21,7 +21,7 @@ BEGIN
     
 	SELECT 	COUNT(1)
 	INTO	op_RecordNumber
-    FROM DCS_DataCenter.AccountLastLoginTimeProcess;
+    FROM 	DCS_DataCenter.AccountLastLoginTimeProcess;
 
 END$$
 DELIMITER ;
