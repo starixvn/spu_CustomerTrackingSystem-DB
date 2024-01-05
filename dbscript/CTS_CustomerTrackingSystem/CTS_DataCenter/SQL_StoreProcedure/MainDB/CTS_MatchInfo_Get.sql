@@ -24,8 +24,9 @@ AS
 		- 20230102@Casey.Huynh: Filter Match by @FromDate,@ToDate,@SportList,@MatchSectionList [Redmine ID: #196361]
 
 	Params Explaination:
-		EXECUTE [dbo].[CTS_MatchInfo_Get_xtest] @MatchIds = '74703210,74703212,74703213,77743434,77743439,77935592,77391610,77391589,77391614';
-		EXECUTE [dbo].[CTS_MatchInfo_Get_xtest] @MatchIds = NULL,@FromDate='2023-10-01', @ToDate='2024-01-02', @SportList	= NULL, @MatchSectionList = NULL ;
+		EXECUTE [dbo].[CTS_MatchInfo_Get] @MatchIds = '74703210,74703212,74703213,77743434,77743439,77935592,77391610,77391589,77391614';
+		EXECUTE [dbo].[CTS_MatchInfo_Get] @MatchIds = NULL,@FromDate='2024-01-01', @ToDate='2024-01-02', @SportList	= NULL, @MatchSectionList = NULL ;
+		EXECUTE [dbo].[CTS_MatchInfo_Get] @MatchIds = NULL,@FromDate='2024-01-01', @ToDate = NULL, @SportList = NULL, @MatchSectionList = NULL ;
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -201,8 +202,14 @@ BEGIN
 		FROM #tmpMatches AS tm WITH(NOLOCK)
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON tm.MatchId = m.matchid;
 	END;
-	ELSE IF (@FromDate IS NOT NULL AND @ToDate IS NOT NULL)-- GET Match Info By @FromDate, @ToDate, @SportList, @MatchSectionList
+	ELSE IF (@FromDate IS NOT NULL)-- GET Match Info By @FromDate, @ToDate, @SportList, @MatchSectionList
 	BEGIN
+		--=========Parse @ToDate===================================================
+		IF (@ToDate IS NULL)
+		BEGIN
+			SET @ToDate = (	SELECT MAX(m.EventDate) 
+							FROM dbo.Match AS m WITH(NOLOCK))
+		END
 		--=========Parse Sport From @SportList======================================
 		IF @SportList IS NOT NULL
 		BEGIN
