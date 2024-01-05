@@ -32,7 +32,7 @@ AS
 		EXECUTE [dbo].[CTS_MatchTicketInfo_Get] @MatchIds = '77933629,77933630,77933651'--,67089553,77935045,76886100'
 		,	@BettypeList='[	{"BetType":1, "BetChoiceType":2, "BetChoiceHome":"h", "BetChoiceAway":"a", "BetID":0}
 						,	{"BetType":3, "BetChoiceType":2, "BetChoiceHome":"h", "BetChoiceAway":"a", "BetID":0}
-						,	{"BetType":610, "BetChoiceType":2, "BetChoiceHome":"o", "BetChoiceAway":"u", "BetID":0}
+						,	{"BetType":610, "BetChoiceType":2, "BetChoiceHome":"o", "BetChoiceAway":"u", "BetID":801}
 						,	{"BetType":126, "BetChoiceType":1}]'
 		,	@DangerList =  '[{"Danger1":0},{"Danger1":10},{"Danger3":10},{"Danger4":45},{"Danger5":1},{"Danger5":5}]'
 		,	@MarketList = '0,1';
@@ -105,6 +105,7 @@ BEGIN
 			MatchId			INT NOT NULL
 		,	LiveIndicator	BIT
 		,	Bettype			INT NOT NULL
+		,	BetID			BIGINT
 		,	BetChoiceType	TINYINT
 		,	TotalAmountHome DECIMAL(20,4) -- IF BetChoiceType = 1  then TOTAL ALL
 		,	TotalAmountAway DECIMAL(20,4)  -- IF BetChoiceType = 1 then 0
@@ -115,6 +116,7 @@ BEGIN
 	CREATE CLUSTERED INDEX #CIX_tmpMatchesInfo_MatchIdBettype ON #tmpMatchesInfo (
 			MatchId	ASC
 		,	Bettype ASC
+		,	BetID	ASC
 	);
 
 	--=========Parse Market From @MarketList======================================
@@ -184,10 +186,11 @@ BEGIN
 		INSERT INTO #tmpMatches (MatchId)
 		SELECT ssk.value FROM STRING_SPLIT (@MatchIds, ',') ssk;
 		
-		INSERT INTO #tmpMatchesInfo (MatchId,LiveIndicator, Bettype,BetChoiceType,TotalAmountHome,TotalAmountAway,TotalTicketHome,TotalTicketAway)
+		INSERT INTO #tmpMatchesInfo (MatchId,LiveIndicator, Bettype, BetID, BetChoiceType,TotalAmountHome,TotalAmountAway,TotalTicketHome,TotalTicketAway)
 		SELECT	b.MatchId
 			,	b.LiveIndicator
 			,	b.Bettype
+			,	ISNULL(tmpBt.BetID,0)
 			,	tmpBt.BetChoiceType
 			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceHome THEN b.stake * b.actualrate 
 						ELSE b.stake * b.actualrate END) AS TotalAmountHome
@@ -209,16 +212,17 @@ BEGIN
 								AND c.Danger3 = ISNULL(tmpDg.Danger3,c.Danger)
 								AND c.Danger4 = ISNULL(tmpDg.Danger4,c.Danger)
 								AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger))
-		GROUP BY b.MatchId, b.LiveIndicator, b.Bettype,tmpBt.BetChoiceType;
+		GROUP BY b.MatchId, b.LiveIndicator, b.Bettype, tmpBt.BetID, tmpBt.BetChoiceType;
 
 		DELETE tm
 		FROM #tmpMatches AS tm
 		INNER JOIN #tmpMatchesInfo AS m WITH(NOLOCK) ON tm.MatchId = m.matchid;
 
-		INSERT INTO #tmpMatchesInfo (MatchId,LiveIndicator, Bettype,BetChoiceType,TotalAmountHome,TotalAmountAway,TotalTicketHome,TotalTicketAway)
+		INSERT INTO #tmpMatchesInfo (MatchId,LiveIndicator, Bettype, BetID, BetChoiceType,TotalAmountHome,TotalAmountAway,TotalTicketHome,TotalTicketAway)
 		SELECT	b.MatchId
 			,	b.LiveIndicator
 			,	b.Bettype
+			,	ISNULL(tmpBt.BetID,0)
 			,	tmpBt.BetChoiceType
 			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceHome THEN b.stake * b.actualrate 
 						ELSE b.stake * b.actualrate END) AS TotalAmountHome
@@ -240,16 +244,17 @@ BEGIN
 								AND c.Danger3 = ISNULL(tmpDg.Danger3,c.Danger)
 								AND c.Danger4 = ISNULL(tmpDg.Danger4,c.Danger)
 								AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger))
-		GROUP BY b.MatchId, b.LiveIndicator, b.Bettype,tmpBt.BetChoiceType;
+		GROUP BY b.MatchId, b.LiveIndicator, b.Bettype, tmpBt.BetID, tmpBt.BetChoiceType;
 		
 		DELETE tm
 		FROM #tmpMatches AS tm
 			INNER JOIN #tmpMatchesInfo AS m WITH(NOLOCK) ON tm.MatchId = m.matchid;
-
-		INSERT INTO #tmpMatchesInfo (MatchId,LiveIndicator, Bettype,BetChoiceType,TotalAmountHome,TotalAmountAway,TotalTicketHome,TotalTicketAway)
+		
+		INSERT INTO #tmpMatchesInfo (MatchId,LiveIndicator, Bettype, BetID, BetChoiceType,TotalAmountHome,TotalAmountAway,TotalTicketHome,TotalTicketAway)
 		SELECT	b.MatchId
 			,	b.LiveIndicator
 			,	b.Bettype
+			,	ISNULL(tmpBt.BetID,0)
 			,	tmpBt.BetChoiceType
 			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceHome THEN b.stake * b.actualrate 
 						ELSE b.stake * b.actualrate END) AS TotalAmountHome
@@ -271,7 +276,7 @@ BEGIN
 								AND c.Danger3 = ISNULL(tmpDg.Danger3,c.Danger)
 								AND c.Danger4 = ISNULL(tmpDg.Danger4,c.Danger)
 								AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger))
-		GROUP BY b.MatchId, b.LiveIndicator, b.Bettype,tmpBt.BetChoiceType;
+		GROUP BY b.MatchId, b.LiveIndicator, b.Bettype, tmpBt.BetID, tmpBt.BetChoiceType;
 	END;
 	
 
@@ -279,6 +284,7 @@ BEGIN
 	SELECT	tmpMi.MatchId
 		,	tmpMi.LiveIndicator
 		,	tmpMi.Bettype
+		,	tmpMi.BetID
 		,	tmpMi.BetChoiceType
 		,	tmpMi.TotalAmountHome
 		,	tmpMi.TotalAmountAway
