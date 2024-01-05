@@ -10,8 +10,8 @@ ALTER PROCEDURE [dbo].[CTS_MatchInfo_Get]
 		@MatchIds			VARCHAR(MAX) = ''
 	,	@FromDate			DATETIME = NULL
 	,	@ToDate				DATETIME = NULL
-	,	@SportList			VARCHAR(MAX) = NULL
-	,	@MatchSectionList	VARCHAR(100) = NULL
+	,	@SportList			VARCHAR(MAX) = ''
+	,	@MatchSectionList	VARCHAR(100) = ''
 	
 AS
 /*
@@ -25,8 +25,7 @@ AS
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_MatchInfo_Get] @MatchIds = '74703210,74703212,74703213,77743434,77743439,77935592,77391610,77391589,77391614';
-		EXECUTE [dbo].[CTS_MatchInfo_Get] @MatchIds = NULL,@FromDate='2024-01-01', @ToDate='2024-01-02', @SportList	= NULL, @MatchSectionList = NULL ;
-		EXECUTE [dbo].[CTS_MatchInfo_Get] @MatchIds = NULL,@FromDate='2024-01-01', @ToDate = NULL, @SportList = NULL, @MatchSectionList = NULL ;
+		EXECUTE [dbo].[CTS_MatchInfo_Get] @MatchIds = NULL,@FromDate='2024-01-01', @ToDate='2024-01-02', @SportList	= '1,2,3,154', @MatchSectionList = '1,2,3,4' ;
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -211,29 +210,11 @@ BEGIN
 							FROM dbo.Match AS m WITH(NOLOCK))
 		END
 		--=========Parse Sport From @SportList======================================
-		IF @SportList IS NOT NULL
-		BEGIN
-			INSERT INTO #tmpSport (SportType)
-			SELECT ssk.value FROM STRING_SPLIT (@SportList, ',') ssk;
-		END;
-		ELSE 
-		BEGIN
-			INSERT INTO #tmpSport (SportType)
-			VALUES(NULL)
-		END;
-
+		INSERT INTO #tmpSport (SportType)
+		SELECT ssk.value FROM STRING_SPLIT (@SportList, ',') ssk;
 		--========Parse MatchSection From @MatchSection=========================================
-		IF @MatchSectionList IS NOT NULL
-		BEGIN
-			INSERT INTO #tmpMatchSection(MatchSection)
-			SELECT ssk.value FROM STRING_SPLIT (@MatchSectionList, ',') ssk;
-		END;
-		ELSE 
-		BEGIN
-			INSERT INTO #tmpMatchSection(MatchSection)
-			VALUES(NULL)
-		END;
-
+		INSERT INTO #tmpMatchSection(MatchSection)
+		SELECT ssk.value FROM STRING_SPLIT (@MatchSectionList, ',') ssk;
 
 		--===========================================
 		IF	OBJECT_ID('tempdb..#BUMBData') IS NOT NULL

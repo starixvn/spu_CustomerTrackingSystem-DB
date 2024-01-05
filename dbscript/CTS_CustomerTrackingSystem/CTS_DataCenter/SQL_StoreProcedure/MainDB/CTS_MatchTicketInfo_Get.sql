@@ -8,9 +8,9 @@ GO
 
 ALTER PROCEDURE [dbo].[CTS_MatchTicketInfo_Get]
 		@MatchIds			VARCHAR(MAX) = ''
-	,	@MarketList			VARCHAR(10)  = NULL
-	,	@BettypeList		VARCHAR(MAX) = NULL
-	,	@DangerList			VARCHAR(MAX) = NULL
+	,	@MarketList			VARCHAR(10)  = ''
+	,	@BettypeList		VARCHAR(MAX) = '[]' --JSON
+	,	@DangerList			VARCHAR(MAX) = '[]' --JSON
 	
 	
 AS
@@ -82,7 +82,7 @@ BEGIN
 	)
 
 	--=================================================================================================
-		IF	OBJECT_ID('tempdb..#tmpDanger') IS NOT NULL
+	IF	OBJECT_ID('tempdb..#tmpDanger') IS NOT NULL
 	BEGIN
 		DROP TABLE	#tmpDanger;
 	END;
@@ -120,46 +120,28 @@ BEGIN
 	);
 
 	--=========Parse Market From @MarketList======================================
-	IF @MarketList <> ''
-	BEGIN
-			INSERT INTO #tmpMarket(LiveIndicator)
-			SELECT ssk.value FROM STRING_SPLIT (@MarketList, ',') ssk;
-	END
-	ELSE
-	BEGIN
-		INSERT INTO #tmpMarket(LiveIndicator)
-		VALUES(NULL);
-	END;
+	INSERT INTO #tmpMarket(LiveIndicator)
+	SELECT ssk.value FROM STRING_SPLIT (@MarketList, ',') ssk;
 
 	--=========Parse Bettype From @BettypeList======================================
-	IF @BettypeList <> ''
-	BEGIN
-			INSERT INTO #tmpBettype(BetType,BetChoiceType,BetChoiceHome,BetChoiceAway,BetIDPattern,BetID)
-			SELECT	j.BetType
-				,	j.BetChoiceType
-				,	j.BetChoiceHome
-				,	j.BetChoiceAway
-				,	j.BetIDPattern
-				,	j.BetID
-			FROM OPENJSON (@BettypeList) WITH (
-					BetType			INT				'$.BetType'
-				,	BetChoiceType	TINYINT			'$.BetChoiceType'
-				,	BetChoiceHome	NVARCHAR(10)	'$.BetChoiceHome'
-				,	BetChoiceAway	NVARCHAR(10)	'$.BetChoiceAway'
-				,	BetIDPattern	NVARCHAR(20)	'$.BetIDPattern'
-				,	BetID			BIGINT			'$.BetID'
-				) AS j;
-	END
-	ELSE
-	BEGIN
-		INSERT INTO #tmpBettype(BetType,BetChoiceType,BetChoiceHome,BetChoiceAway,BetIDPattern,BetID)
-		VALUES(NULL,NULL,NULL,NULL,NULL,NULL);
-	END;
+	INSERT INTO #tmpBettype(BetType,BetChoiceType,BetChoiceHome,BetChoiceAway,BetIDPattern,BetID)
+	SELECT	j.BetType
+		,	j.BetChoiceType
+		,	j.BetChoiceHome
+		,	j.BetChoiceAway
+		,	j.BetIDPattern
+		,	j.BetID
+	FROM OPENJSON (@BettypeList) WITH (
+			BetType			INT				'$.BetType'
+		,	BetChoiceType	TINYINT			'$.BetChoiceType'
+		,	BetChoiceHome	NVARCHAR(10)	'$.BetChoiceHome'
+		,	BetChoiceAway	NVARCHAR(10)	'$.BetChoiceAway'
+		,	BetIDPattern	NVARCHAR(20)	'$.BetIDPattern'
+		,	BetID			BIGINT			'$.BetID'
+		) AS j;
 	
 	--========Parse @Danger From @DangerList=========================================
-	IF @DangerList IS NOT NULL
-	BEGIN
-		INSERT INTO #tmpDanger (Danger1,Danger2,Danger3,Danger4,Danger5)
+	INSERT INTO #tmpDanger (Danger1,Danger2,Danger3,Danger4,Danger5)
 		SELECT	j.Danger1
 			,	j.Danger2
 			,	j.Danger3
@@ -172,12 +154,6 @@ BEGIN
 			,	Danger4	TINYINT	'$.Danger4'
 			,	Danger5	TINYINT	'$.Danger5'
 			) AS j;		
-	END;
-	ELSE
-	BEGIN
-		INSERT INTO #tmpDanger (Danger1,Danger2,Danger3,Danger4,Danger5)
-		VALUES(NULL,NULL,NULL,NULL,NULL)
-	END;
 
 	--==================================================================================================
 	IF @MatchIds <> '' --GET Match Info By List MatchID
