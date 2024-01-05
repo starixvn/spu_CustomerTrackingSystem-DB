@@ -30,6 +30,7 @@ BEGIN
     SELECT 		ID
 			,	IssueTypeID	
 			,	CustID
+            ,	`Value`
             ,	TrackingInfo
             ,	CreatedTime
     FROM CTS_DataCenter.JobMonitoring_IncorrectData
