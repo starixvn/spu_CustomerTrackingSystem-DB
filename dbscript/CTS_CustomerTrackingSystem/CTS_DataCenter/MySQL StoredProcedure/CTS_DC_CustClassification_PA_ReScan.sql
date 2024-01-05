@@ -130,7 +130,7 @@ sp: BEGIN
         ,	1 AS IsDirect
         ,   1 AS IsFromCTS
         ,	0 AS IsRobot
-		,	JSON_OBJECT('FirstBetDate', FirstBetDate, 'Bot', Bot, 'InvalidBrowser', InvalidBrowser, 'BotPCT', BotTransPercentage, 'InvalidBrowserPCT', InvalidBrowserInfoTransPercentage, 'DetectionDate', DetectionDate) AS Remark
+		,	JSON_OBJECT('FirstBetDate', cld.FirstBetDate, 'Bot', cld.Bot, 'InvalidBrowser', cld.InvalidBrowser, 'BotPCT', cld.BotTransPercentage, 'InvalidBrowserPCT', cld.InvalidBrowserInfoTransPercentage, 'DetectionDate', cld.DetectionDate) AS Remark
         ,	cld.DetectionDate AS LastModifiedDate
     FROM  Temp_CustInfo AS tmp
     INNER JOIN CTS_DataCenter.CustomerLoginInfoDetection AS cld ON cld.CustID = tmp.CustID;

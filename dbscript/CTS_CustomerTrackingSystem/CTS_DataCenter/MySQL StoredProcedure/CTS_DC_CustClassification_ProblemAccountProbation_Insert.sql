@@ -22,6 +22,7 @@ BEGIN
 			- 202208018@Long.Luu: Exclude wrapper categories from rescan PA flow [Redmine ID: #174219]          
 			- 20220817@Long.Luu: Rearrange CC's IDs [Redmine ID: #175698]
             - 20230517@Casey.Huynh:	New Category for Robot OCRD [Redmine ID: #186991]
+            - 20240103@Thomas.Nguyen: New Category for System Detect Unauthorized Login [RedmineID: #197710]
 
 		Param's Explanation (filtered by):      
 			- CALL CTS_DC_CustClassification_ProblemAccountProbation_Insert ('[{"CustID": 123,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10}]');
@@ -30,11 +31,14 @@ BEGIN
     DECLARE	CONST_CATEGORYID_ROBOTUSER_LOSING 		INT DEFAULT 164;
     DECLARE	CONST_CATEGORYID_ROBOTOCRD 				INT DEFAULT 165;
     DECLARE	CONST_CATEGORYID_ROBOTOCRD_LOSING 		INT DEFAULT 166;
-    
+    DECLARE	CONST_CATEGORYID_UNAUTHORIZEDLOGIN 		    INT DEFAULT 64;
+    DECLARE	CONST_CATEGORYID_UNAUTHORIZEDLOGIN_LOSING	INT DEFAULT 104;
+
     DECLARE	CONST_ACTIONTYPE_UPDATE 			INT DEFAULT 1;
     DECLARE CONST_SOURCETYPE_PROBLEMDIRECT		INT DEFAULT 31;
     DECLARE CONST_SOURCETYPE_PROBLEMAFFECT		INT DEFAULT 32;
     DECLARE CONST_SOURCETYPE_RESCANROBOT		INT DEFAULT 36;
+    DECLARE CONST_SOURCETYPE_RESCAN_UNAUTHORIZEDLOGIN		INT DEFAULT 39;
     
     DECLARE	CONST_LICBACATEGORY					INT DEFAULT 2;
     DECLARE	CONST_LICVIP_DANGEROUSCATEGORY		INT DEFAULT 3;
@@ -68,7 +72,8 @@ BEGIN
         ,	IsDirect				BIT
         ,	IsLicenseeVIP			BIT
         ,	IsLicenseeBA			BIT
-        , 	IsDataChanged			BIT 
+        , 	IsDataChanged			BIT
+        ,	Remark				    VARCHAR(500)
         , 	PRIMARY KEY(CustID,CategoryID)  
     );  
     
@@ -141,15 +146,18 @@ BEGIN
     UPDATE Temp_PA AS t 
 		INNER JOIN CTS_DataCenter.CustomerCategory AS c ON t.CategoryID = c.CategoryID AND c.RelevantCategoryID IS NOT NULL
         LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS s ON t.CustID = s.CustID
+        LEFT JOIN CTS_DataCenter.CustomerLoginInfoDetection AS cld ON cld.CustID = t.CustID
     SET 	t.TargetCC = 	CASE
 								WHEN s.CustomerClass IS NOT NULL THEN s.CustomerClass
                                 WHEN t.IsLicenseeVIP = 1 AND c.IsDangerProbation = 1 THEN lv_LicVIPCC_Suspicious
                                 WHEN t.IsLicenseeVIP = 1 AND c.IsDangerProbation = 0 THEN lv_LicVIPCC_Danger
                                 WHEN t.IsLicenseeBA = 1 AND c.Priority > lv_LicBAPriority THEN lv_LicBACC
                                 ELSE t.TargetCC
-							END;
+							END
+            t.Remark   = CASE WHEN cld.CustID IS NOT NULL THEN JSON_OBJECT('FirstBetDate', cld.FirstBetDate, 'Bot', cld.Bot, 'InvalidBrowser', cld.InvalidBrowser, 'BotPCT', cld.BotTransPercentage, 'InvalidBrowserPCT', cld.InvalidBrowserInfoTransPercentage, 'DetectionDate', cld.DetectionDate)
+                                ELSE t.Remark END;
     
-    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays)
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, Remark)
 	SELECT  CustID
 		, 	CTSCustID
 		, 	RelevantCategoryID
@@ -160,7 +168,8 @@ BEGIN
 		, 	1 AS IsAuto
 		, 	NOW() AS InsertDate
 		, 	TargetCC
-		, 	CASE WHEN RelevantCategoryID IN (CONST_CATEGORYID_ROBOTUSER, CONST_CATEGORYID_ROBOTUSER_LOSING,CONST_CATEGORYID_ROBOTOCRD, CONST_CATEGORYID_ROBOTOCRD_LOSING) THEN CONST_SOURCETYPE_RESCANROBOT
+		, 	CASE WHEN RelevantCategoryID IN (CONST_CATEGORYID_UNAUTHORIZEDLOGIN, CONST_CATEGORYID_UNAUTHORIZEDLOGIN_LOSING) THEN CONST_SOURCETYPE_RESCAN_UNAUTHORIZEDLOGIN
+                 WHEN RelevantCategoryID IN (CONST_CATEGORYID_ROBOTUSER, CONST_CATEGORYID_ROBOTUSER_LOSING,CONST_CATEGORYID_ROBOTOCRD, CONST_CATEGORYID_ROBOTOCRD_LOSING) THEN CONST_SOURCETYPE_RESCANROBOT
 				 WHEN IsDirect = 1 THEN CONST_SOURCETYPE_PROBLEMDIRECT
 				 ELSE CONST_SOURCETYPE_PROBLEMAFFECT END AS SourceTypeID
 		,   IsDataChanged
@@ -169,11 +178,12 @@ BEGIN
         ,	WinlossRM
         , 	BetCount
         , 	ActiveDays
+        ,   Remark
 	FROM Temp_PA
     WHERE IsDataChanged = 1
 		AND SportGroupID <> CONST_SPORTGROUP_WRAPPER;
 
-    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays)
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, Remark)
 	SELECT  CustID
 		, 	CTSCustID
 		, 	CASE WHEN IsDataChanged = 1 THEN RelevantCategoryID ELSE CategoryID END AS CategoryID
@@ -184,7 +194,8 @@ BEGIN
 		, 	1 AS IsAuto
 		, 	NOW() AS InsertDate
 		, 	TargetCC
-		, 	CASE WHEN RelevantCategoryID IN (CONST_CATEGORYID_ROBOTUSER, CONST_CATEGORYID_ROBOTUSER_LOSING,CONST_CATEGORYID_ROBOTOCRD, CONST_CATEGORYID_ROBOTOCRD_LOSING) THEN CONST_SOURCETYPE_RESCANROBOT
+		, 	CASE WHEN RelevantCategoryID IN (CONST_CATEGORYID_UNAUTHORIZEDLOGIN, CONST_CATEGORYID_UNAUTHORIZEDLOGIN_LOSING) THEN CONST_SOURCETYPE_RESCAN_UNAUTHORIZEDLOGIN
+                 WHEN RelevantCategoryID IN (CONST_CATEGORYID_ROBOTUSER, CONST_CATEGORYID_ROBOTUSER_LOSING,CONST_CATEGORYID_ROBOTOCRD, CONST_CATEGORYID_ROBOTOCRD_LOSING) THEN CONST_SOURCETYPE_RESCANROBOT
 				 WHEN IsDirect = 1 THEN CONST_SOURCETYPE_PROBLEMDIRECT
 				 ELSE CONST_SOURCETYPE_PROBLEMAFFECT END AS SourceTypeID
 		,   IsDataChanged
@@ -193,6 +204,7 @@ BEGIN
         ,	WinlossRM
         , 	BetCount
         , 	ActiveDays
+        ,   Remark
 	FROM Temp_PA;
     
 	SELECT 	DISTINCT

@@ -12,7 +12,7 @@ Reviewer:
 
 USE CTS_DataCenter;
 
-CREATE TABLE IF NOT EXISTS CustomerLoginInfoDetection(
+CREATE TABLE CustomerLoginInfoDetection(
 		CustID								INT UNSIGNED NOT NULL PRIMARY KEY
 	,	CTSCustID							BIGINT UNSIGNED NOT NULL
 	, 	FirstBetDate						DATETIME
