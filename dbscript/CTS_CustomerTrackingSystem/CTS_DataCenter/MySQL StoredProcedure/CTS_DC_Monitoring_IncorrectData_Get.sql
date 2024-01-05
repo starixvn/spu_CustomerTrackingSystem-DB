@@ -34,7 +34,7 @@ BEGIN
             ,	CreatedTime
     FROM CTS_DataCenter.JobMonitoring_IncorrectData
 	WHERE ID > lv_LastScanID
-    ORDER BY ID DESC
+    ORDER BY ID ASC
     LIMIT CONST_BATCHSIZE;   
     
 END$$
