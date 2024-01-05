@@ -27,13 +27,16 @@ BEGIN
 	FROM CTS_DataCenter.SystemParameter 
 	WHERE ParameterID = 151; 
    
-    SELECT 		ID
-			,	IssueTypeID	
-			,	CustID
-            ,	`Value`
-            ,	TrackingInfo
-            ,	CreatedTime
-    FROM CTS_DataCenter.JobMonitoring_IncorrectData
+    SELECT 		a.ID
+			,	a.IssueTypeID	
+			,	a.CustID
+            ,	a.`Value`
+            ,	a.TrackingInfo
+            ,	a.CreatedTime
+            ,	s.ItemID
+            ,	CASE WHEN s.ItemID IS NOT NULL THEN TRUE ELSE FALSE END AS IsIssueTypeValid
+    FROM CTS_DataCenter.JobMonitoring_IncorrectData AS a
+		LEFT JOIN CTS_DataCenter.StaticList AS s ON s.ListID = 20 AND s.ItemID = a.IssueTypeID
 	WHERE ID > lv_LastScanID
     ORDER BY ID ASC
     LIMIT CONST_BATCHSIZE;   
