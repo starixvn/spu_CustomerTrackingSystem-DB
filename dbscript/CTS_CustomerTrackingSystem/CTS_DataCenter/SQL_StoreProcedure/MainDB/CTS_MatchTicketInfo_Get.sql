@@ -29,7 +29,7 @@ AS
 		
 		,@DangerList='[	[{"Danger1":1,"Danger2":3},{"Danger1":2},{"Danger1":28},{"Danger2":28},{"Danger2":6},{"Danger2":12},{"Danger3":48}]'
 		
-		EXECUTE [dbo].[CTS_MatchTicketInfo_Get] @MatchIds = '77933629,77933630,77933651'--,67089553,77935045,76886100'
+		EXECUTE [dbo].[CTS_MatchTicketInfo_Get] @MatchIds = '77936152,77933630,77933651'--,67089553,77935045,76886100'
 		,	@BettypeList='[	{"BetType":1, "BetChoiceType":2, "BetChoiceHome":"h", "BetChoiceAway":"a", "BetID":0}
 						,	{"BetType":3, "BetChoiceType":2, "BetChoiceHome":"h", "BetChoiceAway":"a", "BetID":0}
 						,	{"BetType":610, "BetChoiceType":2, "BetChoiceHome":"o", "BetChoiceAway":"u", "BetID":801}
@@ -37,7 +37,6 @@ AS
 		,	@DangerList =  '[{"Danger1":0},{"Danger1":10},{"Danger3":10},{"Danger4":45},{"Danger5":1},{"Danger5":5}]'
 		,	@MarketList = '0,1';
 
-		SELECT * FROM Bettrans WHERE MatchID = 77933629 AND Bettype = 1 
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -51,10 +50,24 @@ BEGIN
 	END;
 
 	CREATE TABLE #tmpMatches(
+			MatchId		INT
+		,	EventDate	DATETIME
+	);
+
+	CREATE CLUSTERED INDEX #CIX_tmpMatches_MatchId ON #tmpMatches(MatchId);	
+
+	--=================================================================================================
+	IF	OBJECT_ID('tempdb..#tmpInputMatches') IS NOT NULL
+	BEGIN
+		DROP TABLE #tmpInputMatches;
+	END;
+
+	CREATE TABLE #tmpInputMatches(
 		MatchId		INT 
 	);
 
-	CREATE INDEX IX_tmpMatches_MatchId ON #tmpMatches(MatchId);
+	CREATE CLUSTERED INDEX #CIX_tmpInputMatches_MatchId ON #tmpInputMatches(MatchId);	
+	
 	--=================================================================================================
 	IF	OBJECT_ID('tempdb..#tmpMarket') IS NOT NULL
 	BEGIN
@@ -73,7 +86,7 @@ BEGIN
 
 	CREATE TABLE	#tmpBetType(
 			SportTypeID				SMALLINT
-		,	BetType				INT
+		,	BetType					INT
 		,	BetChoiceType			TINYINT
 		,	BetChoiceHome			NVARCHAR(10)
 		,	BetChoiceAway			NVARCHAR(10)
@@ -107,8 +120,8 @@ BEGIN
 		,	Bettype			INT NOT NULL
 		,	BetID			BIGINT
 		,	BetChoiceType	TINYINT
-		,	TotalAmountHome DECIMAL(20,4) -- IF BetChoiceType = 1  then TOTAL ALL
-		,	TotalAmountAway DECIMAL(20,4)  -- IF BetChoiceType = 1 then 0
+		,	TotalAmountHome MONEY -- IF BetChoiceType = 1  then TOTAL ALL
+		,	TotalAmountAway MONEY  -- IF BetChoiceType = 1 then 0
 		,	TotalTicketHome INT -- IF BetChoiceType = 1  then TOTAL ALL
 		,	TotalTicketAway INT  -- IF BetChoiceType = 1 then 0
 	);
@@ -155,25 +168,33 @@ BEGIN
 			,	Danger5	TINYINT	'$.Danger5'
 			) AS j;		
 
+
 	--==================================================================================================
 	IF @MatchIds <> '' --GET Match Info By List MatchID
 	BEGIN
 
-		INSERT INTO #tmpMatches (MatchId)
+		INSERT INTO #tmpInputMatches(MatchId)
 		SELECT ssk.value FROM STRING_SPLIT (@MatchIds, ',') ssk;
+
+		INSERT INTO #tmpMatches(MatchId)
+		SELECT tmpMt.MatchID
+		FROM #tmpInputMatches AS tmpMt
+			INNER JOIN bodb02.dbo.Match m WITH(NOLOCK) ON tmpMt.MatchId = m.MatchId;
 		
 		INSERT INTO #tmpMatchesInfo (MatchId,LiveIndicator, Bettype, BetID, BetChoiceType,TotalAmountHome,TotalAmountAway,TotalTicketHome,TotalTicketAway)
 		SELECT	b.MatchId
 			,	b.LiveIndicator
 			,	b.Bettype
-			,	ISNULL(tmpBt.BetID,0)
+			,	ISNULL(tmpBt.BetID,0) AS BetID
 			,	tmpBt.BetChoiceType
 			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceHome THEN b.stake * b.actualrate 
-						ELSE b.stake * b.actualrate END) AS TotalAmountHome
+						WHEN tmpBt.BetChoiceType = 1 THEN b.stake * b.actualrate 
+						ELSE 0 END) AS TotalAmountHome
 			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN b.stake * b.actualrate 
 						ELSE 0 END) AS TotalAmountAway
 			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceHome THEN 1 
-						ELSE 1 END) AS TotalTicketHome
+						WHEN tmpBt.BetChoiceType = 1 THEN 1
+						ELSE 0 END) AS TotalTicketHome
 			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN 1 
 						ELSE 0 END) AS TotalTicketAway
 		FROM #tmpMatches AS tm WITH(NOLOCK)
@@ -190,9 +211,16 @@ BEGIN
 								AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger))
 		GROUP BY b.MatchId, b.LiveIndicator, b.Bettype, tmpBt.BetID, tmpBt.BetChoiceType;
 
-		DELETE tm
-		FROM #tmpMatches AS tm
-		INNER JOIN #tmpMatchesInfo AS m WITH(NOLOCK) ON tm.MatchId = m.matchid;
+		DELETE tmpIM
+		FROM #tmpInputMatches AS tmpIM
+		INNER JOIN #tmpMatches AS tmpMt WITH(NOLOCK) ON tmpMt.MatchId = tmpIM.matchid;
+
+		TRUNCATE TABLE #tmpMatches;
+
+		INSERT INTO #tmpMatches(MatchId)
+		SELECT tmpMt.MatchID
+		FROM #tmpInputMatches AS tmpMt
+			INNER JOIN bodb02.dbo.Match14 b WITH(NOLOCK) ON tmpMt.MatchId = b.MatchId;
 
 		INSERT INTO #tmpMatchesInfo (MatchId,LiveIndicator, Bettype, BetID, BetChoiceType,TotalAmountHome,TotalAmountAway,TotalTicketHome,TotalTicketAway)
 		SELECT	b.MatchId
@@ -201,11 +229,13 @@ BEGIN
 			,	ISNULL(tmpBt.BetID,0)
 			,	tmpBt.BetChoiceType
 			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceHome THEN b.stake * b.actualrate 
-						ELSE b.stake * b.actualrate END) AS TotalAmountHome
+						WHEN tmpBt.BetChoiceType = 1 THEN b.stake * b.actualrate 
+						ELSE 0 END) AS TotalAmountHome
 			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN b.stake * b.actualrate 
 						ELSE 0 END) AS TotalAmountAway
 			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceHome THEN 1 
-						ELSE 1 END) AS TotalTicketHome
+						WHEN tmpBt.BetChoiceType = 1 THEN 1
+						ELSE 0 END) AS TotalTicketHome
 			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN 1 
 						ELSE 0 END) AS TotalTicketAway
 		FROM #tmpMatches AS tm WITH(NOLOCK)
@@ -222,9 +252,16 @@ BEGIN
 								AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger))
 		GROUP BY b.MatchId, b.LiveIndicator, b.Bettype, tmpBt.BetID, tmpBt.BetChoiceType;
 		
-		DELETE tm
-		FROM #tmpMatches AS tm
-			INNER JOIN #tmpMatchesInfo AS m WITH(NOLOCK) ON tm.MatchId = m.matchid;
+		DELETE tmpIM
+		FROM #tmpInputMatches AS tmpIM
+		INNER JOIN #tmpMatches AS tmpMt WITH(NOLOCK) ON tmpMt.MatchId = tmpIM.matchid;
+
+		TRUNCATE TABLE #tmpMatches;
+
+		INSERT INTO #tmpMatches(MatchId, EventDate)
+		SELECT tmpMt.MatchID, b.EventDate
+		FROM #tmpInputMatches AS tmpMt
+			INNER JOIN bodb_Archive.dbo.Match_bk b WITH(NOLOCK) ON tmpMt.MatchId = b.MatchId;
 		
 		INSERT INTO #tmpMatchesInfo (MatchId,LiveIndicator, Bettype, BetID, BetChoiceType,TotalAmountHome,TotalAmountAway,TotalTicketHome,TotalTicketAway)
 		SELECT	b.MatchId
@@ -233,15 +270,17 @@ BEGIN
 			,	ISNULL(tmpBt.BetID,0)
 			,	tmpBt.BetChoiceType
 			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceHome THEN b.stake * b.actualrate 
-						ELSE b.stake * b.actualrate END) AS TotalAmountHome
+						WHEN tmpBt.BetChoiceType = 1 THEN b.stake * b.actualrate 
+						ELSE 0 END) AS TotalAmountHome
 			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN b.stake * b.actualrate 
 						ELSE 0 END) AS TotalAmountAway
 			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceHome THEN 1 
-						ELSE 1 END) AS TotalTicketHome
+						WHEN tmpBt.BetChoiceType = 1 THEN 1
+						ELSE 0 END) AS TotalTicketHome
 			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN 1 
 						ELSE 0 END) AS TotalTicketAway
 		FROM #tmpMatches AS tm WITH(NOLOCK)
-			INNER JOIN bodb_Archive.dbo.Bettrans_bk AS b WITH(NOLOCK) ON b.MatchId = tm.matchid
+			INNER JOIN bodb_Archive.dbo.Bettrans_bk AS b WITH(NOLOCK) ON b.MatchId = tm.matchid AND tm.EventDate = b.winlostdate
 			INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 			INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 			INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
