@@ -36,7 +36,7 @@ BEGIN
 	CREATE TEMPORARY TABLE 		Temp_Customer (
 		 	CustID			BIGINT UNSIGNED		
         ,   CTSCustID 		BIGINT UNSIGNED
-        ,   FirstBetDate    DATETIME
+        ,   FirstBetDate    DATETIME(3)
         ,   SubscriberID	INT
         ,   RoleID          TINYINT
         ,   IsLicensee      BIT(1)
@@ -65,7 +65,7 @@ BEGIN
 	CREATE TEMPORARY TABLE 		Temp_CustUnauthorizedLogin (
 			CTSCustID 						    BIGINT UNSIGNED PRIMARY KEY
         ,   CustID			                    BIGINT UNSIGNED
-        ,   FirstBetDate                        DATETIME
+        ,   FirstBetDate                        DATETIME(3)
         ,   SubscriberID                        INT
         ,   RoleID                              TINYINT
         ,   IsLicensee                          BIT(1)  
@@ -103,7 +103,7 @@ BEGIN
         ,   cus.IsLicensee
     FROM JSON_TABLE(ip_ListCustJson,
                         "$[*]" COLUMNS (CustID          BIGINT        UNSIGNED PATH "$.CustID"
-                                    ,   FirstBetDate    DATETIME               PATH "$.FirstBetDate"                                           
+                                    ,   FirstBetDate    DATETIME(3)            PATH "$.FirstBetDate"                                           
                                 )) AS tmp
         INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID AND IsInternal = 0
         LEFT JOIN CTS_DataCenter.CustomerLoginInfoDetection AS cld ON cld.CustID = tmp.CustID

@@ -15,7 +15,7 @@ USE CTS_DataCenter;
 CREATE TABLE CustomerLoginInfoDetection(
 		CustID								INT UNSIGNED NOT NULL PRIMARY KEY
 	,	CTSCustID							BIGINT UNSIGNED NOT NULL
-	, 	FirstBetDate						DATETIME
+	, 	FirstBetDate						DATETIME(3)
 	,	Bot									INT UNSIGNED
 	,	InvalidBrowser						INT UNSIGNED
 	,	BotTransPercentage					DECIMAL(6,2)
