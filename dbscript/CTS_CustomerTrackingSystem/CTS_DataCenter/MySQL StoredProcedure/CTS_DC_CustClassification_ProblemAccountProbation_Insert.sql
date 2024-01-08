@@ -145,18 +145,21 @@ BEGIN
 
     UPDATE Temp_PA AS t 
 		INNER JOIN CTS_DataCenter.CustomerCategory AS c ON t.CategoryID = c.CategoryID AND c.RelevantCategoryID IS NOT NULL
-        LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS s ON t.CustID = s.CustID
-        LEFT JOIN CTS_DataCenter.CustomerLoginInfoDetection AS cld ON cld.CustID = t.CustID
+        LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS s ON t.CustID = s.CustID       
     SET 	t.TargetCC = 	CASE
 								WHEN s.CustomerClass IS NOT NULL THEN s.CustomerClass
                                 WHEN t.IsLicenseeVIP = 1 AND c.IsDangerProbation = 1 THEN lv_LicVIPCC_Suspicious
                                 WHEN t.IsLicenseeVIP = 1 AND c.IsDangerProbation = 0 THEN lv_LicVIPCC_Danger
                                 WHEN t.IsLicenseeBA = 1 AND c.Priority > lv_LicBAPriority THEN lv_LicBACC
                                 ELSE t.TargetCC
-							END
-            t.Remark   = CASE WHEN cld.CustID IS NOT NULL THEN JSON_OBJECT('FirstBetDate', cld.FirstBetDate, 'Bot', cld.Bot, 'InvalidBrowser', cld.InvalidBrowser, 'BotPCT', cld.BotTransPercentage, 'InvalidBrowserPCT', cld.InvalidBrowserInfoTransPercentage, 'DetectionDate', cld.DetectionDate)
-                                ELSE t.Remark END;
+							END;
     
+    UPDATE Temp_PA AS t
+        LEFT JOIN CTS_DataCenter.CustomerLoginInfoDetection AS cld ON cld.CustID = t.CustID
+    SET  t.Remark   =   CASE    WHEN cld.CustID IS NOT NULL THEN JSON_OBJECT('FirstBetDate', cld.FirstBetDate, 'Bot', cld.Bot, 'InvalidBrowser', cld.InvalidBrowser, 'BotPCT', cld.BotTransPercentage, 'InvalidBrowserPCT', cld.InvalidBrowserInfoTransPercentage, 'DetectionDate', cld.DetectionDate)
+                                ELSE t.Remark END
+    WHERE t.RelevantCategoryID IN (CONST_CATEGORYID_UNAUTHORIZEDLOGIN, CONST_CATEGORYID_UNAUTHORIZEDLOGIN_LOSING);
+
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, Remark)
 	SELECT  CustID
 		, 	CTSCustID
