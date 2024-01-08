@@ -22,8 +22,7 @@ BEGIN
 			CALL DCS_DC_Transform_Association_Insert('[{"DeviceID": 3, "AccountID": 300016, "FPDeviceID": null, "CreatedDate": "2023-11-17 00:00:00.000000", "CreatedTime": "2023-11-17 10:33:46.527500", "SubscriberID": 2}]');
 			CALL DCS_DC_Transform_Association_Insert('[{"DeviceID": 6, "AccountID": 300016, "FPDeviceID": null, "CreatedDate": "2023-11-17 00:00:00.000000", "CreatedTime": "2023-11-17 10:33:46.527500", "SubscriberID": 2}]');
         select * from Association;
-
-	*/
+*/
     DECLARE lv_CreatedDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_AssociationInsert;
@@ -31,7 +30,7 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_AssociationInsert(
 			ID								INT UNSIGNED		NOT NULL AUTO_INCREMENT PRIMARY KEY
         ,	AccountID						BIGINT UNSIGNED		NOT NULL
-        ,	DeviceID						BIGINT UNSIGNED		NOT NULL
+        ,	DeviceID						BIGINT UNSIGNED		DEFAULT 0
         ,	FPDeviceID						BIGINT UNSIGNED		DEFAULT 0
         ,	SubscriberID					BIGINT UNSIGNED		
         ,	CreatedTime						TIMESTAMP(4)		
@@ -43,7 +42,7 @@ BEGIN
     
     INSERT INTO Temp_AssociationInsert(AccountID, DeviceID, FPDeviceID, SubscriberID, CreatedTime, CreatedDate)
 	SELECT 	tmp.AccountID
-		,	tmp.DeviceID
+		,	IFNULL(tmp.DeviceID, 0) AS DeviceID
 		,	IFNULL(tmp.FPDeviceID, 0) AS FPDeviceID
 		,	MIN(tmp.SubscriberID) AS SubscriberID
 		,	MIN(tmp.CreatedTime) AS CreatedTime
@@ -60,7 +59,6 @@ BEGIN
 					)
 		) AS tmp
 	WHERE tmp.AccountID IS NOT NULL
-		AND tmp.DeviceID IS NOT NULL
 	GROUP BY tmp.AccountID, tmp.DeviceID, FPDeviceID;
     
     /* === Add index === */
@@ -81,23 +79,25 @@ BEGIN
 		,	CreatedDate
 		,	lv_CreatedDate AS InsertTime
 	FROM Temp_AssociationInsert
-    WHERE IsNewRecordAssociation = 1;
+    WHERE IsNewRecordAssociation = 1
+		AND DeviceID > 0;
     
     /* === Insert into AssociationMapping === */
     UPDATE Temp_AssociationInsert AS tmp
 		INNER JOIN DCS_DataCenter.AssociationNew AS ass ON ass.AccountID = tmp.AccountID
-														AND ass.DeviceID = tmp.FPDeviceID
+														AND ass.DeviceID = (CASE WHEN tmp.FPDeviceID = 0 THEN tmp.DeviceID ELSE tmp.FPDeviceID END)
     SET tmp.IsNewRecordAssociationNew = 0;
     
 	INSERT IGNORE INTO DCS_DataCenter.AssociationNew(AccountID, DeviceID, SubscriberID, CreatedTime, CreatedDate, InsertedTime)
 	SELECT	AccountID
-		,	FPDeviceID AS DeviceID
+		,	(CASE WHEN FPDeviceID = 0 THEN DeviceID ELSE FPDeviceID END) AS DeviceID
 		,	SubscriberID
 		,	CreatedTime
 		,	CreatedDate
 		,	lv_CreatedDate AS InsertedTime
 	FROM Temp_AssociationInsert
-    WHERE IsNewRecordAssociationNew = 1;
+    WHERE IsNewRecordAssociationNew = 1
+		AND (FPDeviceID > 0 OR DeviceID > 0);
     
     /* === Insert into AssociationMapping === */
     UPDATE Temp_AssociationInsert AS tmp
@@ -115,7 +115,8 @@ BEGIN
 		,	CreatedDate
 		,	lv_CreatedDate AS InsertedTime
 	FROM Temp_AssociationInsert
-    WHERE IsNewRecordMapping = 1;
+    WHERE IsNewRecordMapping = 1
+		AND (FPDeviceID > 0 OR DeviceID > 0);
 END$$
 
 DELIMITER ;
