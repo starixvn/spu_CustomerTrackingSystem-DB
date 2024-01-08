@@ -15,8 +15,9 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.JobMonitoring_IncorrectData (
     , 	TrackingInfo	VARCHAR(500) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_unicode_ci' NULL
     , 	CustID			INT
     ,	`Value`			BIGINT 
+	, 	CreatedDate		DATE NOT NULL DEFAULT (CURRENT_DATE)
     , 	CreatedTime		DATETIME NOT NULL 
-	, 	INDEX			IX_JobMonitoring_IncorrectData_IssueTypeID(IssueTypeID)
+	, 	INDEX			IX_JobMonitoring_IncorrectData_IssueTypeID_CreatedDate(IssueTypeID, CreatedDate)
 ) ENGINE=INNODB;
 
 INSERT INTO `CTS_DataCenter`.`SystemParameter` (`ParameterID`, `ParameterName`, `ParameterDesc`, `ParameterDataType`, `ParameterValue`) 
