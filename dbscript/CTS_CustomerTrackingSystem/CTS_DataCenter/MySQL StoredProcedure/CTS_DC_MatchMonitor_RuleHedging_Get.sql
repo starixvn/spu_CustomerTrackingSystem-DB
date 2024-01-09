@@ -18,7 +18,7 @@ sp: BEGIN
 			- 	202200929@Casey.Huynh: Created [Redmine ID: #178310]
             - 	202201021@Casey.Huynh: Group By Betteam [Redmine ID: #179439]
             -	20221205@Casey.Huynh: Rename Table [Redmine ID: #179502]
-            -	20221103@Casey.Huynh: Enhance Hedging Rule [Redmine ID: #192172]
+            -	20240109@Casey.Huynh: Enhance Hedging Rule [Redmine ID: #192172]
             
 		Param's Explanation (filtered by):	
 
@@ -129,13 +129,10 @@ sp: BEGIN
 				,	mms.Betteam
                 ,	MIN(mms.SportType) AS SportType
 				,	IFNULL(tmpOg.GroupID,0) AS OldGroup
-                ,	GROUP_CONCAT(CASE WHEN CustID IS NOT NULL THEN JSON_OBJECT(	'CTSCustID', mms.CTSCustID,
-																				'CustID', mms.CustID
-																				) ELSE NULL END) CustList
-				
-				,	CASE WHEN COUNT(DISTINCT CASE WHEN mms.SubscriberID IN (CONS_SUBSCRIBERID_ALPHA,CONS_SUBSCRIBERID_MAXBET) THEN mms.CustID ELSE NULL END) > 1 
-												THEN GROUP_CONCAT(DISTINCT CASE WHEN mms.SubscriberID IN (CONS_SUBSCRIBERID_ALPHA,CONS_SUBSCRIBERID_MAXBET) THEN mms.CustID ELSE NULL END)
-								ELSE NULL END AS DetectAgentAssCustIDList
+                ,	GROUP_CONCAT(DISTINCT mms.CTSCustID) AS CTSCustIDList
+				,	CASE WHEN COUNT(DISTINCT CASE WHEN mms.SubscriberID IN (CONS_SUBSCRIBERID_ALPHA,CONS_SUBSCRIBERID_MAXBET) THEN mms.CTSCustID ELSE NULL END) > 1 
+												THEN GROUP_CONCAT(DISTINCT CASE WHEN mms.SubscriberID IN (CONS_SUBSCRIBERID_ALPHA,CONS_SUBSCRIBERID_MAXBET) THEN mms.CTSCustID ELSE NULL END)
+								ELSE NULL END AS AgentDetect_CTSCustIDList
 				,	GROUP_CONCAT(mms.SequenceID) AS SequenceIDList
 			FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms
 				LEFT JOIN Temp_OldGroup AS tmpOg ON mms.MatchID = tmpOg.MatchID AND mms.ScoreDiff = tmpOg.ScoreDiff AND mms.BettypeID = tmpOg.BettypeID
@@ -193,15 +190,10 @@ sp: BEGIN
 				,	mms.Betteam
                 ,	MIN(mms.SportType) AS SportType
 				,	IFNULL(tmpOg.GroupID,0) AS OldGroup
-				#,	GROUP_CONCAT(DISTINCT mms.CustID) AS CustIDList
-                
-				,	JSON_OBJECT(
-				  'CustID', mms.CustID,
-				  'CTSCustID', mms.CTSCustID
-				) AS CustList
-				,	CASE WHEN COUNT(DISTINCT CASE WHEN mms.SubscriberID IN (CONS_SUBSCRIBERID_ALPHA,CONS_SUBSCRIBERID_MAXBET) THEN mms.CustID ELSE NULL END) > 1 
-												THEN GROUP_CONCAT(DISTINCT CASE WHEN mms.SubscriberID IN (CONS_SUBSCRIBERID_ALPHA,CONS_SUBSCRIBERID_MAXBET) THEN mms.CustID ELSE NULL END)
-								ELSE NULL END AS DetectAgentAssCustIDList
+				,	GROUP_CONCAT(DISTINCT mms.CTSCustID) AS CTSCustIDList
+				,	CASE WHEN COUNT(DISTINCT CASE WHEN mms.SubscriberID IN (CONS_SUBSCRIBERID_ALPHA,CONS_SUBSCRIBERID_MAXBET) THEN mms.CTSCustID ELSE NULL END) > 1 
+												THEN GROUP_CONCAT(DISTINCT CASE WHEN mms.SubscriberID IN (CONS_SUBSCRIBERID_ALPHA,CONS_SUBSCRIBERID_MAXBET) THEN mms.CTSCustID ELSE NULL END)
+								ELSE NULL END AS AgentDetect_CTSCustIDList
 				,	GROUP_CONCAT(mms.SequenceID) AS SequenceIDList
 			FROM  CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
 				LEFT JOIN Temp_OldGroup AS tmpOg ON mms.MatchID = tmpOg.MatchID AND mms.ScoreDiff = tmpOg.ScoreDiff AND mms.BettypeID = tmpOg.BettypeID

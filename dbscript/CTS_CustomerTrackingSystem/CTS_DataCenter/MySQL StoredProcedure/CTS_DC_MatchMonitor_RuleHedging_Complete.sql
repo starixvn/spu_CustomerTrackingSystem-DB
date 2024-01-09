@@ -32,7 +32,7 @@ BEGIN
             - 	20221021@Casey.Huynh: Group By Betteam [Redmine ID: #179439]
             -	20221205@Casey.Huynh: Rename Table [Redmine ID: #179502]
             -	20230612@Casey.Huynh: LogInfo [Redmine ID: #185793]
-            -	20221103@Casey.Huynh: Enhance Hedging Rule [Redmine ID: #192172]
+            -	20240109@Casey.Huynh: Enhance Hedging Rule [Redmine ID: #192172]
 		Param's Explanation (filtered by):			
 
 		Example:

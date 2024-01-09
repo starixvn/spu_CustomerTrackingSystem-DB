@@ -30,7 +30,7 @@ BEGIN
 			- 	20221228@Victoria.Le: Add HDP for Irrgation Rule [Redmine ID: #181990]
 			-	20230203@Victoria.Le: Change Odds Range for Fixed Game Rule - Malayisan Odds [Redmine ID: #183277]
             -	20231120@Casey.Huynh: E-Sport GB support New Bettypes, change setting table [Redmine ID: #196396]
-            -	20221103@Casey.Huynh: Enhance Hedging Rule, execlute Licensee Cust and Limit stake [Redmine ID: #192172]
+            -	20240109@Casey.Huynh: Enhance Hedging Rule, execlute Licensee Cust and Limit stake [Redmine ID: #192172]
             
 		Param's Explanation (filtered by):		
 
