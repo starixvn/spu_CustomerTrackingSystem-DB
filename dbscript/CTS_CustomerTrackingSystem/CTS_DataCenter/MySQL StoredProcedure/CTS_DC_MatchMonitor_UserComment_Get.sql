@@ -18,6 +18,7 @@ BEGIN
 
 		Revisions:
 			-	20231023@Casey.Huynh: Created [Redmine ID: #195043]
+            -	20240109@Casey.Huynh: Switch StaticList To Match Monitor Comment List  (ListID = 21)
             
 		Param's Explanation (filtered by):
 		
@@ -26,7 +27,7 @@ BEGIN
 	*/
     DECLARE CONST_COMMENTTYPE_INCORRECT	TINYINT DEFAULT 0;
     DECLARE CONST_COMMENTTYPE_CORRECT	TINYINT DEFAULT 1;
-    DECLARE CONST_STATICLIST_MMREASON	TINYINT DEFAULT 16;
+    DECLARE CONST_STATICLIST_MMREASON	TINYINT DEFAULT 21;
 
     #========GET Match Monitor comment list=======================   
     SELECT	mm.MMUserCommentID

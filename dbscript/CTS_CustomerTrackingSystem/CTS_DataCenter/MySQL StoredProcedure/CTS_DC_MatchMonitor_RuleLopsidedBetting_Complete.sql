@@ -1,15 +1,15 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_RuleLopsidedBet_Complete`;
+DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_RuleLopsidedBetting_Complete`;
 DELIMITER $$
 
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleLopsidedBet_Complete`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleLopsidedBetting_Complete`(
 		IN ip_LopsideBetInfo JSON
 )
   SQL SECURITY INVOKER
 	BEGIN
 	/*
 		Created:	20240105@Casey.Huynh
-		Task :		Match Monitor Rule LopsidedBet
+		Task :		Match Monitor Rule LopsidedBetting
 		DB:			CTS_DataCenter
 		Original:
 
@@ -19,7 +19,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleLopsidedBet_Com
 		Param's Explanation (filtered by):	
 
 		Example:
-			CALL CTS_DC_MatchMonitor_RuleLopsidedBet_Complete(
+			CALL CTS_DC_MatchMonitor_RuleLopsidedBetting_Complete(
                 @ip_TransGroup:='[{"MatchID":1,"LeagueID":1,"SportType":1,"EventDate":"2024-01-05","HomeID":1,"AwayID":2,"Liveindicator":1,"BettypeID":1,"HDP1":0.25,"HDP2":0,"ListCustID":"1,2,3","ListTransID":"1,2,3"}
 								, {"MatchID":1,"LeagueID":1,"SportType":1,"EventDate":"2024-01-05","HomeID":1,"AwayID":2,"Liveindicator":1,"BettypeID":1,"HDP1":0.05,"HDP2":0,"ListCustID":"1,2,3","ListTransID":"4,5,6"}
 								, {"MatchID":1,"LeagueID":1,"SportType":1,"EventDate":"2024-01-05","HomeID":1,"AwayID":2,"Liveindicator":1,"BettypeID":1,"HDP1":0,"HDP2":0.25,"ListCustID":"1,2,3","ListTransID":"7,8,9"}]');
@@ -30,8 +30,8 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleLopsidedBet_Com
    
     #================================================================================  
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_LopsidedBet;
-    CREATE TEMPORARY TABLE Temp_LopsidedBet
+    DROP TEMPORARY TABLE IF EXISTS Temp_LopsidedBetting;
+    CREATE TEMPORARY TABLE Temp_LopsidedBetting
     (
 			MatchID 		TINYINT
 		,	LeagueID		INT
@@ -45,12 +45,12 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleLopsidedBet_Com
         ,	ListCustID		LONGTEXT
         ,	ListTransID		LONGTEXT
         
-        ,	PRIMARY KEY PK_Temp_LopsidedBet(MatchID,Liveindicator,BettypeID,HDP)
+        ,	PRIMARY KEY PK_Temp_LopsidedBetting(MatchID,Liveindicator,BettypeID,HDP)
     );
     
     #===================================================================
-    DROP TEMPORARY TABLE IF EXISTS Temp_LopsidedBetGroup;
-    CREATE TEMPORARY TABLE Temp_LopsidedBetGroup
+    DROP TEMPORARY TABLE IF EXISTS Temp_LopsidedBettingGroup;
+    CREATE TEMPORARY TABLE Temp_LopsidedBettingGroup
     (
 			MatchID 		TINYINT
         ,	Liveindicator	BOOLEAN
@@ -58,10 +58,10 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleLopsidedBet_Com
 		,	HDP				DECIMAL(8,4)
         ,	MaxGroup		INT
         
-        ,	PRIMARY KEY PK_Temp_LopsidedBet(MatchID,Liveindicator,BettypeID,HDP)
+        ,	PRIMARY KEY PK_Temp_LopsidedBetting(MatchID,Liveindicator,BettypeID,HDP)
     );
     
-    INSERT IGNORE INTO Temp_LopsidedBet(MatchID,LeagueID,SportType,EventDate,HomeID,AwayID,Liveindicator,BettypeID,HDP,ListCustID,ListTransID)
+    INSERT IGNORE INTO Temp_LopsidedBetting(MatchID,LeagueID,SportType,EventDate,HomeID,AwayID,Liveindicator,BettypeID,HDP,ListCustID,ListTransID)
 	SELECT 	js.MatchID
 		,	js.LeagueID
 		,	js.SportType
@@ -101,7 +101,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleLopsidedBet_Com
 		,	MAX(tmpLB.ListTransID)
         ,	MAX(tmpLB.EventDate)
 		,	CURRENT_TIMESTAMP(3) AS InsertTime
-	FROM Temp_LopsidedBet AS tmpLB
+	FROM Temp_LopsidedBetting AS tmpLB
 		LEFT JOIN MatchMonitorDetails AS mmd ON mmd.MatchID = tmpLB.MatchID AND mmd.Liveindicator = tmpLB.Liveindicator 
 														AND mmd.BettypeID = tmpLB.BettypeID AND mmd.HDP = tmpLB.HDP
                                                         AND mmd.Reason = CONST_MMREASON
@@ -122,7 +122,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleLopsidedBet_Com
 		,	CONST_MMREASON AS Reason 
         ,	CURRENT_TIMESTAMP(3) AS InsertTime
         ,	DATE(CURRENT_TIMESTAMP(3)) AS InsertTime
-	FROM Temp_LopsidedBet AS tmpLB;
+	FROM Temp_LopsidedBetting AS tmpLB;
     		
 END$$
 DELIMITER ;
