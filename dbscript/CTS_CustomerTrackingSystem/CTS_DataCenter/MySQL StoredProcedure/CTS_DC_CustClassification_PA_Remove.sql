@@ -17,6 +17,7 @@ BEGIN
 		Revisions:
             - 20220519@Casey.Huynh: Renovate PA Process [Redmine ID: #172561]
             - 20230530@Casey.Huynh: Return IsCleanPA (1: Remove All PA, 0: Exists PA)
+			- 20240109@Thomas.Nguyen: Remove cust in CustomerLoginInfoDetection when cust is unmarked [RedmineID: #197710]
         Param's Explanation (filtered by):
 			- ip_ByType: 1: Category, 2: Reason
         Example:
@@ -187,6 +188,11 @@ BEGIN
     DELETE cls
     FROM CTS_DataCenter.CTSCustomerClassification AS cls
 		INNER JOIN Temp_CustPA AS tmpCp ON cls.CustID = tmpCp.CustID AND cls.SportGroupID = CONST_PA_SPORTGROUP AND cls.CategoryID = tmpCp.CategoryID
+	WHERE tmpCp.IsRemovedPA = 1;
+
+	DELETE cld
+	FROM CTS_DataCenter.CustomerLoginInfoDetection AS cld
+		INNER JOIN Temp_CustPA AS tmpCp ON cld.CustID = tmpCp.CustID
 	WHERE tmpCp.IsRemovedPA = 1;
 
   #**********INSERT LOG FOR IsDataChange: CategoryID OR CC********#

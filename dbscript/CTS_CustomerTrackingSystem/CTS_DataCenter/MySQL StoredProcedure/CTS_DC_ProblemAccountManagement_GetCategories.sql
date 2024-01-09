@@ -17,7 +17,7 @@ BEGIN
 			- 20220628@Aries.Nguyen: Update robot classification rule [Redmine ID: #174430]            
 			- 20220830@Long.Luu: update to show for System Detect Group Betting [Redmine ID: #176976]
             - 20230515@Casey.Huynh: New Category for Robot OCRD [Redmine ID: #186991]
-			- 20240103@@Thomas.Nguyen: New Category for System Detect Unauthorized Login [RedmineID: #197710]
+			- 20240103@Thomas.Nguyen: New Category for System Detect Unauthorized Login [RedmineID: #197710]
             
 		Param's Explanation (filtered by):
         Example:
