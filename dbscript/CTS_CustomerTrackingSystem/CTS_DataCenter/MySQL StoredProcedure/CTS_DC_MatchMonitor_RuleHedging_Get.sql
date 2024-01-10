@@ -84,7 +84,7 @@ sp: BEGIN
     INTO lv_NoOfRow
     FROM CTS_DataCenter.SystemParameter AS s
     WHERE s.ParameterID = 123;
-    
+
 	IF ip_LiveIndicator = 1 THEN #=============Live Trans==================
 		
 		SELECT sys.ParameterValue
@@ -108,7 +108,9 @@ sp: BEGIN
         SELECT TIMESTAMPADD(SECOND, lv_Rule_MinTimeStep, mms.TransDate)
         INTO lv_MaxTransDate
         FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms
-        WHERE mms.SequenceID = lv_LastSequenceID;        
+        WHERE mms.SequenceID >= lv_LastSequenceID
+        ORDER BY mms.SequenceID ASC
+        LIMIT 1;        
 
         SELECT MAX(tmp.SequenceID)
         INTO lv_MaxSequenceID
@@ -169,7 +171,9 @@ sp: BEGIN
         SELECT TIMESTAMPADD(SECOND, lv_Rule_MinTimeStep, mms.TransDate)
         INTO lv_MaxTransDate
         FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
-        WHERE mms.SequenceID = lv_LastSequenceID;        
+        WHERE mms.SequenceID >= lv_LastSequenceID
+        ORDER BY mms.SequenceID ASC
+        LIMIT 1;        
 
         SELECT MAX(tmp.SequenceID)
         INTO lv_MaxSequenceID
@@ -209,5 +213,5 @@ sp: BEGIN
 	END IF;
  
 END$$
-DELIMITER ;
+DELIMITER ;N
 
