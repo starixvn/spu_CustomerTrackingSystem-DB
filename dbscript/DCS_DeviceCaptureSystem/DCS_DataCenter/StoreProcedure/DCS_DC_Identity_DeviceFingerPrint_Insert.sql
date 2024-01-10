@@ -42,8 +42,8 @@ BEGIN
 						,	DeviceID			BIGINT UNSIGNED PATH "$.DeviceID"
 					)
 		) AS tmp
-	WHERE tmp.RawFingerPrintID IS NOT NULL
-		AND tmp.DeviceID IS NOT NULL
+	WHERE IFNULL(tmp.RawFingerPrintID,0) > 0
+		AND IFNULL(tmp.DeviceID,0) > 0
 	GROUP BY tmp.RawFingerPrintID;
 	 
     UPDATE Temp_DeviceFingerPrintInsert AS tmp

@@ -42,8 +42,8 @@ BEGIN
 						,	DeviceID	BIGINT UNSIGNED PATH "$.DeviceID"
 					)
 		) AS tmp
-	WHERE tmp.CookieID IS NOT NULL
-		AND tmp.DeviceID IS NOT NULL
+	WHERE IFNULL(tmp.CookieID,0) > 0
+		AND IFNULL(tmp.DeviceID,0) > 0
 	GROUP BY tmp.CookieID;
 	 
     UPDATE Temp_DeviceCookieInsert AS tmp
