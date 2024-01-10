@@ -33,7 +33,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleLopsidedBetting
     DROP TEMPORARY TABLE IF EXISTS Temp_LopsidedBetting;
     CREATE TEMPORARY TABLE Temp_LopsidedBetting
     (
-			MatchID 		TINYINT
+			MatchID 		INT
 		,	LeagueID		INT
         ,	SportType		INT
         ,	EventDate 		DATETIME
@@ -52,7 +52,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleLopsidedBetting
     DROP TEMPORARY TABLE IF EXISTS Temp_LopsidedBettingGroup;
     CREATE TEMPORARY TABLE Temp_LopsidedBettingGroup
     (
-			MatchID 		TINYINT
+			MatchID 		INT
         ,	Liveindicator	BOOLEAN
         ,	BettypeID		INT
 		,	HDP				DECIMAL(8,4)
@@ -75,7 +75,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleLopsidedBetting
 		,	js.ListTransID
 	FROM JSON_TABLE(ip_LopsideBetInfo,
 					 "$[*]" COLUMNS(
-								MatchID 		TINYINT PATH "$.MatchID" 
+								MatchID 		INT PATH "$.MatchID" 
 							,	LeagueID		INT PATH "$.LeagueID" 
 							,	SportType		INT PATH "$.SportType" 
 							,	EventDate 		DATETIME PATH "$.EventDate" 
