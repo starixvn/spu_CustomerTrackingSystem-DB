@@ -57,6 +57,8 @@ BEGIN
     END IF;
     #==================LOG=======================================================   
     #==========================================================================
+    #Error Code: 1054. Unknown column 'tmpSt.CTSCustID' in 'field list'
+
     DROP TEMPORARY TABLE IF EXISTS Temp_Staging;
 	CREATE TEMPORARY TABLE Temp_Staging(
 			SequenceID		BIGINT UNSIGNED NOT NULL
@@ -241,7 +243,8 @@ BEGIN
                         AND ABS(tmpSt.Odds) >= tmpMst.MinOdds;
 
         #=====Staging Hedging Soccer Live================================
-		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingHedgingLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, CTSCustID, SubscriberID, Stake, Betteam, InsertTime)
+		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingHedgingLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID
+        , CTSCustID, SubscriberID, Stake, Betteam, InsertTime)
 		SELECT	tmpSt.SequenceID
 			,	tmpSt.TransID
 			,	tmpSt.TransDate
@@ -260,12 +263,13 @@ BEGIN
 			,	tmpSt.BettypeID
 			,	tmpSt.BetID
 			,	tmpSt.CustID
-            ,	tmpSt.CTSCustID 
+            ,	cus.CTSCustID 
             ,	cus.SubscriberID
 			,	tmpSt.Stake
 			,	tmpSt.Betteam
 			,	CURRENT_TIMESTAMP(3) AS InsertTime
 		FROM Temp_Staging AS tmpSt
+			INNER JOIN CTS_DataCenter.CTSCustomer cus ON tmpSt.CustID = cus.CustID
 			INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_HEDGING
 																AND tmpMst.SportType = tmpSt.SportType 
                                                                 AND (tmpMst.LeagueType = 2 OR (tmpMst.LeagueType = tmpSt.IsMajorLeague))
@@ -374,12 +378,13 @@ BEGIN
 			,	tmpSt.BettypeID
 			,	tmpSt.BetID
 			,	tmpSt.CustID
-            ,	tmpSt.CTSCustID 
+            ,	cus.CTSCustID 
             ,	cus.SubscriberID
 			,	tmpSt.Stake
 			,	tmpSt.Betteam
 			,	CURRENT_TIMESTAMP(3) AS InsertTime
 		FROM Temp_Staging AS tmpSt
+			INNER JOIN CTS_DataCenter.CTSCustomer cus ON tmpSt.CustID = cus.CustID
 			INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_HEDGING
 																AND tmpMst.SportType = tmpSt.SportType 
                                                                 AND (tmpMst.LeagueType = 2 OR (tmpMst.LeagueType = tmpSt.IsMajorLeague))
