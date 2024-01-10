@@ -34,11 +34,11 @@ INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,Displ
     ,IsProbation,ProblemCaseID,IsHedgingReasonMM,RootTaggingID,IsPAProbation,DangerLevelType,Priority,IsDangerProbation,OldCustomerClass,SabaSportType,SabaIntelligent_RiskLevel,SabaIntelligent_RiskLevel_TCN,SabaIntelligent_RiskLevel_SCN,SabaIntelligent_RiskLevel_CN3,SabaIntelligent_RiskLevel_IND,SabaIntelligent_RiskLevel_THB)
 VALUES(64,'System Detect Unauthorized Login','System Detect Unauthorized Login',50,64,1,0,NOW(),NULL,NULL,NULL,0,NULL,'系统侦测軟件登入'
     ,'Hệ thống Cảnh Báo Đăng Nhập Bất Thường','ระบบแจ้งเตือนการเข้าสู่ระบบที่ไม่ปกติ','Sistem Peringatan Login Tidak Biasa',64,NULL,NULL,64,'CTS',NULL,NULL,NULL,NULL,NULL,305,'Problems'
-    ,'问题',305,104,NULL,NULL,NULL,NULL
+    ,'問題',305,104,NULL,NULL,NULL,NULL
     ,0,4,NULL,NULL,0,2,42,0,NULL,NULL,'Problems','問題','问题','Vấn đề','Masalah','ปัญหา')
  ,(104,'System Detect Unauthorized Login (Losing)','System Detect Unauthorized Login (Losing)',50,104,1,0,NOW(),NULL,NULL,NULL,0,NULL,'系统侦测軟件登入（输钱）'
     ,'Hệ thống Cảnh Báo Đăng Nhập Bất Thường (Thua)','ระบบแจ้งเตือนการเข้าสู่ระบบที่ไม่ปกติ (แพ้)','Sistem Peringatan Login Tidak Biasa (Kalah)',104,NULL,NULL,104,'CTS',NULL,NULL,NULL,NULL,NULL,3005,'Problems -'
-    ,'问题 -',3005,64,NULL,NULL,NULL,NULL
+    ,'問題-',3005,64,NULL,NULL,NULL,NULL
     ,1,4,NULL,NULL,1,2,42,1,NULL,NULL,'Problems','問題','问题','Vấn đề','Masalah','ปัญหา');
 
 SELECT * FROM CTS_DataCenter.CustomerCategory WHERE CategoryID IN (64,104);
