@@ -3,7 +3,8 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_DetectUnaut
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_DetectUnauthorizedLoginCustomer`(
-		IN ip_ListCustJson JSON
+		IN ip_ListCustJson  JSON
+    ,   IN ip_ProcessedDate DATE
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -24,13 +25,11 @@ BEGIN
     DECLARE	CONST_CATEGORY_UNAUTHORIZEDLOGIN        INT DEFAULT 64;
     
     DECLARE lv_FromDate                             DATE;
-    DECLARE lv_ToDate                               DATE;
     DECLARE lv_SubSourceID_DirectAPI                TINYINT DEFAULT 1;
     DECLARE lv_SubSourceID_OddsFeed                 TINYINT DEFAULT 2;
     DECLARE lv_Percentage_Threshold                 DECIMAL(6,2) DEFAULT 50;
     
-    SET lv_ToDate	= CURRENT_DATE();
-    SET lv_FromDate = DATE_ADD(lv_ToDate, INTERVAL -90 DAY);
+    SET lv_FromDate = DATE_ADD(ip_ProcessedDate, INTERVAL -90 DAY);
 
     DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
 	CREATE TEMPORARY TABLE 		Temp_Customer (
@@ -119,7 +118,7 @@ BEGIN
     INSERT IGNORE INTO Temp_LoginTransactionSummary(AccountID, TotalTrans, Flagged)
     SELECT  tmp.AccountID, ls.TotalTrans, ls.Flagged
     FROM Temp_CustAccountID AS tmp
-        INNER JOIN DCS_DataTrace.LoginTransactionSummary AS ls ON ls.AccountID = tmp.AccountID AND ls.TransDate BETWEEN lv_FromDate AND lv_ToDate;
+        INNER JOIN DCS_DataTrace.LoginTransactionSummary AS ls ON ls.AccountID = tmp.AccountID AND ls.TransDate BETWEEN lv_FromDate AND ip_ProcessedDate;
 
     INSERT IGNORE INTO Temp_CustAccLogTransInfo(CTSCustID, AccountID)
     SELECT  tmp.CTSCustID, tmp.AccountID
@@ -128,7 +127,7 @@ BEGIN
     UPDATE Temp_CustAccLogTransInfo AS tmp
     SET tmp.CountLogin = IFNULL((SELECT SUM(sm.TotalLogin)
                                 FROM DCS_DataCenter.SumAccountLogin AS sm
-                                WHERE sm.AccountID = tmp.AccountID AND sm.TransDate BETWEEN lv_FromDate AND lv_ToDate
+                                WHERE sm.AccountID = tmp.AccountID AND sm.TransDate BETWEEN lv_FromDate AND ip_ProcessedDate
                                 GROUP BY sm.AccountID),0);
 
     UPDATE Temp_CustAccLogTransInfo AS tmp
@@ -167,7 +166,7 @@ BEGIN
     FROM CTECustInfo AS cte;
 
     INSERT IGNORE INTO Temp_CustUnauthorizedLogin(CTSCustID, CustID, FirstBetDate, SubscriberID, RoleID, IsLicensee, CountBotTrans, CountInvalidBrowserTrans, BotTransPercentage, InvalidBrowserInfoTransPercentage, DetectionDate)
-    SELECT ct.CTSCustID, cus.CustID, cus.FirstBetDate, cus.SubscriberID, cus.RoleID, cus.IsLicensee, ct.CountBotTrans, ct.CountInvalidBrowserTrans, ct.BotTransPercentage, ct.InvalidBrowserInfoTransPercentage, NOW()
+    SELECT ct.CTSCustID, cus.CustID, cus.FirstBetDate, cus.SubscriberID, cus.RoleID, cus.IsLicensee, ct.CountBotTrans, ct.CountInvalidBrowserTrans, ct.BotTransPercentage, ct.InvalidBrowserInfoTransPercentage, ip_ProcessedDate
     FROM Temp_CustLogTransInfo AS ct
         INNER JOIN Temp_Customer AS cus ON cus.CTSCustID = ct.CTSCustID
     WHERE ct.BotTransPercentage > lv_Percentage_Threshold OR ct.InvalidBrowserInfoTransPercentage > lv_Percentage_Threshold;
