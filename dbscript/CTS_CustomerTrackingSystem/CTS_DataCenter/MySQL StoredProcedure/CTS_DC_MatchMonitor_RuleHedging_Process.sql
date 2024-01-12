@@ -118,10 +118,11 @@ sp: BEGIN
 	GROUP BY tmpCg.GroupID;
 
     #===============CHECK Is Hedging Group====================
+    SET lv_GroupID = 0;
     SET lv_GroupID = (	SELECT tmpRg.GroupID
 							FROM Temp_ResultGroup AS tmpRg
 							WHERE tmpRg.IsHedging = 0 AND tmpRg.GroupID > lv_GroupID 
-								AND tmpRg.TotalStake > lv_RuleTotalStake
+								AND tmpRg.TotalStake >= lv_RuleTotalStake
 							ORDER BY tmpRg.GroupID
 							LIMIT 1);
     
@@ -131,7 +132,7 @@ sp: BEGIN
 		FROM Temp_ResultGroup AS tmpRg
 		WHERE tmpRg.GroupID = lv_GroupID;
 
-        CALL CTS_DC_Association_IsAssociatedHedgingCustByCustIDList(lv_CustIDList, lv_IsHedging);
+        CALL CTS_DataCenter.CTS_DC_Association_IsAssociatedHedgingCustByCustIDList(lv_CustIDList, lv_IsHedging);
         
         IF lv_IsHedging = 1 THEN    
 			UPDATE Temp_ResultGroup AS tmpRg
@@ -150,7 +151,7 @@ sp: BEGIN
         SET lv_GroupID = (	SELECT tmpRg.GroupID
 							FROM Temp_ResultGroup AS tmpRg
 							WHERE tmpRg.IsHedging = 0 AND tmpRg.GroupID > lv_GroupID
-								AND tmpRg.TotalStake > lv_RuleTotalStake
+								AND tmpRg.TotalStake >= lv_RuleTotalStake
 							ORDER BY tmpRg.GroupID
 							LIMIT 1);
     END WHILE;
