@@ -56,9 +56,16 @@ BEGIN
     
     /* === Recover by CookieID === */
     UPDATE Temp_TransExistsDeviceID AS tmp
+		INNER JOIN DCS_Extra.DeviceCookie AS dc ON tmp.CookieID = dc.CookieID 
+													AND tmp.DeviceID = dc.DeviceID
+	SET tmp.RecoverType = tmp.RecoverType + 2
+	WHERE tmp.DeviceID IS NOT NULL;
+        
+    UPDATE Temp_TransExistsDeviceID AS tmp
 		INNER JOIN DCS_Extra.DeviceCookie AS dc ON tmp.CookieID = dc.CookieID
 	SET 	tmp.DeviceID = dc.DeviceID
-		,	tmp.RecoverType = tmp.RecoverType + 2;
+		,	tmp.RecoverType = 2
+	WHERE tmp.DeviceID IS NULL;
     
     
     /* === Update data to source table === */

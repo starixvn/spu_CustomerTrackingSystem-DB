@@ -26,6 +26,8 @@ BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_InputTrans;
 	DROP TEMPORARY TABLE IF EXISTS Temp_TransactionInfo;
+	DROP TEMPORARY TABLE IF EXISTS Temp_DistinctRawFingerPrint;
+	DROP TEMPORARY TABLE IF EXISTS Temp_DistinctCookie;
     
 	CREATE TEMPORARY TABLE Temp_InputTrans(
 		TransID		BIGINT UNSIGNED PRIMARY KEY
@@ -41,19 +43,28 @@ BEGIN
 		,	RecoverType				TINYINT DEFAULT 0
 	);
     
+	CREATE TEMPORARY TABLE Temp_DistinctRawFingerPrint(
+			FirstRawFingerPrintID	BIGINT UNSIGNED NOT NULL PRIMARY KEY
+		,	FirstCookieID			BIGINT UNSIGNED
+	);
+    
+	CREATE TEMPORARY TABLE Temp_DistinctCookie(
+			FirstCookieID			BIGINT UNSIGNED NOT NULL PRIMARY KEY
+		,	IsNewRecord				TINYINT	DEFAULT 1
+	);
+    
     SET @sql = CONCAT("INSERT INTO Temp_InputTrans (TransID) VALUES ('", REPLACE(ip_TransIDs, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
     
     INSERT INTO Temp_TransactionInfo(TransID, RawFingerPrintID, CookieID, AccountID, BrowserInstanceID)
     SELECT	trans.TransID
-		,	trans.RawFingerPrintID
-        ,	trans.CookieID
+		,	IFNULL(trans.RawFingerPrintID, 0) AS RawFingerPrintID
+        ,	IFNULL(trans.CookieID, 0) AS CookieID
         ,	trans.AccountID
         ,	trans.BrowserInstanceID
     FROM Temp_InputTrans AS tmp
-		INNER JOIN DCS_Extra.Transaction AS trans ON trans.TransID = tmp.TransID
-	WHERE trans.RawFingerPrintID IS NOT NULL;
+		INNER JOIN DCS_Extra.Transaction AS trans ON trans.TransID = tmp.TransID;
     
     /* === Add index === */
 	ALTER TABLE Temp_TransactionInfo
@@ -62,18 +73,64 @@ BEGIN
     /******* Update Temp_TransactionInfo: DeviceID & RecoverType ********************/
     CALL DCS_ET_Identity_Device_UpdateExistsDeviceID('Temp_TransactionInfo');
     
-    /* === Insert new Device === */
-    INSERT IGNORE INTO DCS_Extra.FPDevice(FirstRawFingerPrintID, CreatedDate)
-	SELECT 	DISTINCT 
-			RawFingerPrintID
-		,	lv_CreatedDate
-	FROM Temp_TransactionInfo
-    WHERE DeviceID IS NULL;
+    /* GROUP BY FPID, min CookieID */
+    INSERT INTO Temp_DistinctRawFingerPrint(FirstRawFingerPrintID, FirstCookieID)
+    SELECT	RawFingerPrintID AS FirstRawFingerPrintID
+		,	MIN(CookieID) AS FirstCookieID
+    FROM Temp_TransactionInfo
+    WHERE DeviceID IS NULL
+		AND RawFingerPrintID > 0
+		AND CookieID > 0
+    GROUP BY RawFingerPrintID;
     
-    /* === Update new DeviceID === */
+    INSERT IGNORE INTO Temp_DistinctRawFingerPrint(FirstRawFingerPrintID, FirstCookieID)
+    SELECT	RawFingerPrintID AS FirstRawFingerPrintID
+		,	0 AS FirstCookieID
+    FROM Temp_TransactionInfo
+    WHERE DeviceID IS NULL
+		AND RawFingerPrintID > 0
+		AND CookieID = 0
+    GROUP BY RawFingerPrintID;
+    
+    /* Insert into FPDevice */
+    INSERT IGNORE INTO DCS_Extra.FPDevice(FirstRawFingerPrintID, FirstCookieID, CreatedDate)
+	SELECT 	FirstRawFingerPrintID
+		,	FirstCookieID
+		,	lv_CreatedDate
+	FROM Temp_DistinctRawFingerPrint;
+    
+    /* Update deviceID by RawFingerPrintID */
     UPDATE Temp_TransactionInfo AS tmp
-		INNER JOIN DCS_Extra.FPDevice AS d ON tmp.RawFingerPrintID = d.FirstRawFingerPrintID
-	SET tmp.DeviceID = d.ID;
+		INNER JOIN DCS_Extra.FPDevice AS d ON d.FirstRawFingerPrintID = tmp.RawFingerPrintID
+	SET tmp.DeviceID = d.ID
+    WHERE tmp.DeviceID IS NULL;
+    
+    /* Insert into FPDevice if DeviceID IS NULL AND CookieID > 0 (Group by CookieID)*/
+    INSERT INTO Temp_DistinctCookie(FirstCookieID)
+	SELECT 	DISTINCT 
+			CookieID AS FirstCookieID
+	FROM Temp_TransactionInfo
+    WHERE DeviceID IS NULL
+		AND RawFingerPrintID = 0
+        AND CookieID > 0;
+        
+	UPDATE Temp_DistinctCookie AS tmp
+		INNER JOIN DCS_Extra.FPDevice AS d ON d.FirstCookieID = tmp.FirstCookieID
+    SET tmp.IsNewRecord = 0;
+    
+    INSERT IGNORE INTO DCS_Extra.FPDevice(FirstRawFingerPrintID, FirstCookieID, CreatedDate)
+	SELECT 	DISTINCT 
+			0 AS FirstRawFingerPrintID
+		,	FirstCookieID
+		,	lv_CreatedDate
+	FROM Temp_DistinctCookie
+    WHERE IsNewRecord = 1;
+    
+    /* Update deviceID by CookieID (DeviceID IS NULL) */
+    UPDATE Temp_TransactionInfo AS tmp
+		INNER JOIN DCS_Extra.FPDevice AS d ON d.FirstCookieID = tmp.CookieID
+	SET tmp.DeviceID = d.ID
+    WHERE tmp.DeviceID IS NULL;
 
     /* === Return data === */
     SELECT 	TransID

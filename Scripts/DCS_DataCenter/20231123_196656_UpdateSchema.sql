@@ -31,7 +31,6 @@ ADD COLUMN BrowserInstanceID BIGINT UNSIGNED DEFAULT NULL,
 ADD COLUMN FPDeviceID BIGINT UNSIGNED DEFAULT NULL,
 ADD COLUMN RecoverType TINYINT DEFAULT NULL;
 
-
 CREATE TABLE `FPDevice` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `FirstRawFingerPrintID` BIGINT UNSIGNED DEFAULT NULL,
@@ -39,7 +38,8 @@ CREATE TABLE `FPDevice` (
   `CreatedDate` DATETIME DEFAULT NULL,
   `ModifiedDate` DATETIME DEFAULT NULL,
   PRIMARY KEY (`ID`),
-  UNIQUE KEY `UX_FPDevice_FirstRawFingerPrintID_FirstCookieID` (`FirstRawFingerPrintID`, `FirstCookieID`)
+  UNIQUE KEY `UX_FPDevice_FirstRawFingerPrintID_FirstCookieID` (`FirstRawFingerPrintID`, `FirstCookieID`),
+  KEY `IX_FPDevice_FirstCookieID` (`FirstCookieID`)
 ) ENGINE=InnoDB AUTO_INCREMENT=300000001;
 
 CREATE TABLE `FPDeviceFingerPrint` (
