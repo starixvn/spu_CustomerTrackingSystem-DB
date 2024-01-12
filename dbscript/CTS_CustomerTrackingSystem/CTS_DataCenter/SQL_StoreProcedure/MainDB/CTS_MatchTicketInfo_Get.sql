@@ -7,11 +7,18 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 ALTER PROCEDURE [dbo].[CTS_MatchTicketInfo_Get]
-		@MatchIds			VARCHAR(MAX) = ''
+		@FromDate			DATETIME = NULL
+	,	@ToDate				DATETIME = NULL
+	,	@SportList			VARCHAR(MAX) = ''
+	,	@LeagueEvent		VARCHAR(100) 
 	,	@MarketList			VARCHAR(10)  = ''
 	,	@BettypeList		VARCHAR(MAX) = '[]' --JSON
 	,	@DangerList			VARCHAR(MAX) = '[]' --JSON
-	
+
+	,	@MatchSection		TINYINT
+	,	@BatchSize			INT = 500
+	,	@LastEventDate		DATE
+	,	@LastMatchID		INT
 	
 AS
 /*
@@ -35,7 +42,12 @@ AS
 						,	{"BetType":610, "BetChoiceType":2, "BetChoiceHome":"o", "BetChoiceAway":"u", "BetID":801}
 						,	{"BetType":126, "BetChoiceType":1}]'
 		,	@DangerList =  '[{"Danger1":0},{"Danger1":10},{"Danger3":10},{"Danger4":45},{"Danger5":1},{"Danger5":5}]'
-		,	@MarketList = '0,1';
+		,	@MarketList = '0,1'
+		,	@MatchSection		TINYINT	
+		
+		,	@LastEventDate		DATE
+		,	@LastMatchID		INT
+		,	@BatchSize			INT = 500;
 
 */
 BEGIN
@@ -43,6 +55,77 @@ BEGIN
 
 	DECLARE @Today			DATE = GETDATE();
 
+	DECLARE @BalanceUpDay	SMALLDATETIME
+		,	@MoveBetsDay	SMALLDATETIME
+
+	DECLARE @IsGetDataFromOrigin	BIT = 0
+		,	@IsGetDataFrom14		BIT = 0
+		,	@IsGetDataFromBK		BIT = 0
+
+	DECLARE @FromDateOrigin			SMALLDATETIME = NULL
+		,	@ToDateOrigin			SMALLDATETIME = NULL
+		,	@FromDate14				SMALLDATETIME = NULL
+		,	@ToDate14				SMALLDATETIME = NULL
+		,	@FromDateBK				SMALLDATETIME = NULL
+		,	@ToDateBK				SMALLDATETIME = NULL
+
+	DECLARE @MatchSection_Live		TINYINT = 1
+		,	@MatchSection_Today		TINYINT = 2
+		,	@MatchSection_Early		TINYINT = 3
+		,	@MatchSection_Closed	TINYINT = 4;
+
+	DECLARE @DataSource_Origin	TINYINT = 0
+		,	@DataSource_14		TINYINT = 1
+		,	@DataSource_bk		TINYINT = 2;
+
+	--===============================================================================================
+	IF	OBJECT_ID('tempdb..#tmpSport') IS NOT NULL
+	BEGIN
+		DROP TABLE #tmpSport
+	END
+
+	CREATE TABLE #tmpSport (
+		SportType	TINYINT
+	);
+
+	CREATE INDEX IX_tmpSport_SportType ON #tmpSport(SportType);
+	--=================================================================================================
+
+	IF	OBJECT_ID('tempdb..#tmpMatchSection') IS NOT NULL
+	BEGIN
+		DROP TABLE #tmpMatchSection
+	END
+
+	CREATE TABLE #tmpMatchSection (
+		MatchSection	TINYINT
+	);
+	--=============================================================================================
+	IF	OBJECT_ID('tempdb..#tmpMatchesInfo') IS NOT NULL
+	BEGIN
+		DROP TABLE #tmpMatchesInfo;
+	END;
+
+	CREATE TABLE #tmpMatchesInfo (
+			MatchId				INT NOT NULL PRIMARY KEY
+		,	MatchCode			NVARCHAR(50)
+		,	SportType			SMALLINT
+		,	LeagueId			INT
+		,	EventDate			DATETIME
+		,	KickOffTime			DATETIME
+		,	HomeId				INT
+		,	AwayId				INT
+		,	EventStatus			NVARCHAR(50)
+		,	LiveHomeScore		INT
+		,	LiveAwayScore		INT
+		,	HTHomeScore			INT
+		,	HTAwayScore			INT
+		,	FinalHomeScore		INT
+		,	FinalAwayScore		INT
+		,	MatchSection		TINYINT
+		,	DataSource			TINYINT
+	);
+
+	CREATE INDEX IX_tmpMatchesInfo_EventDate ON #tmpMatchesInfo(EventDate DESC);
 	--=================================================================================================
 	IF	OBJECT_ID('tempdb..#tmpMatches') IS NOT NULL
 	BEGIN
@@ -108,30 +191,6 @@ BEGIN
 		,	Danger5		TINYINT
 	);
 
-	--==================================================================================================
-	IF	OBJECT_ID('tempdb..#tmpMatchesInfo') IS NOT NULL
-	BEGIN
-		DROP TABLE #tmpMatchesInfo;
-	END;
-
-	CREATE TABLE #tmpMatchesInfo (
-			MatchId			INT NOT NULL
-		,	LiveIndicator	BIT
-		,	Bettype			INT NOT NULL
-		,	BetID			BIGINT
-		,	BetChoiceType	TINYINT
-		,	TotalAmountHome MONEY -- IF BetChoiceType = 1  then TOTAL ALL
-		,	TotalAmountAway MONEY  -- IF BetChoiceType = 1 then 0
-		,	TotalTicketHome INT -- IF BetChoiceType = 1  then TOTAL ALL
-		,	TotalTicketAway INT  -- IF BetChoiceType = 1 then 0
-	);
-
-	CREATE CLUSTERED INDEX #CIX_tmpMatchesInfo_MatchIdBettype ON #tmpMatchesInfo (
-			MatchId	ASC
-		,	Bettype ASC
-		,	BetID	ASC
-	);
-
 	--=========Parse Market From @MarketList======================================
 	INSERT INTO #tmpMarket(LiveIndicator)
 	SELECT ssk.value FROM STRING_SPLIT (@MarketList, ',') ssk;
@@ -169,20 +228,232 @@ BEGIN
 			) AS j;		
 
 
-	--==================================================================================================
-	IF @MatchIds <> '' --GET Match Info By List MatchID
+--==================================================================================================
+--=========Parse @ToDate===================================================
+	IF (@ToDate IS NULL)
+	BEGIN
+		SET @ToDate = (	SELECT MAX(m.EventDate) 
+						FROM dbo.Match AS m WITH(NOLOCK))
+	END
+	--=========Parse Sport From @SportList======================================
+	INSERT INTO #tmpSport (SportType)
+	SELECT ssk.value FROM STRING_SPLIT (@SportList, ',') ssk;
+	--========Parse MatchSection From @MatchSection=========================================
+	INSERT INTO #tmpMatchSection(MatchSection)
+	SELECT ssk.value FROM STRING_SPLIT (@MatchSectionList, ',') ssk;
+
+	--===========================================
+	IF	OBJECT_ID('tempdb..#BUMBData') IS NOT NULL
+	BEGIN
+		DROP TABLE	#BUMBData
+	END
+
+	CREATE TABLE	#BUMBData (
+			BUDay	SMALLDATETIME
+		,	MBDay	SMALLDATETIME
+	)
+
+	INSERT INTO #BUMBData(BUDay,MBDay)
+	EXECUTE bodb02.dbo.Age_SelBalanceUpDay
+
+	SELECT	TOP(1)
+			@BalanceUpDay	= BUDay
+		,	@MoveBetsDay	= MBDay
+	FROM #BUMBData WITH(NOLOCK)
+	
+	-- For @FromDate
+	IF @FromDate < @BalanceUpDay
+	BEGIN
+		SET @IsGetDataFromBK = 1
+	END
+	ELSE IF @FromDate <= @MoveBetsDay
+	BEGIN
+		SET @IsGetDataFrom14 = 1
+	END
+	ELSE IF @FromDate > @MoveBetsDay
+	BEGIN
+		SET @IsGetDataFromOrigin = 1
+	END
+
+	-- For @ToDate
+	IF @ToDate < @BalanceUpDay
+	BEGIN
+		SET @IsGetDataFromBK = 1
+	END
+	ELSE IF @ToDate <= @MoveBetsDay
+	BEGIN
+		SET @IsGetDataFrom14 = 1
+	END
+	ELSE IF @ToDate > @MoveBetsDay
+	BEGIN
+		SET @IsGetDataFromOrigin = 1
+	END
+
+	IF @FromDate < @BalanceUpDay AND @ToDate > @MoveBetsDay
+	BEGIN
+		SET @IsGetDataFromBK		= 1
+		SET @IsGetDataFrom14		= 1
+		SET @IsGetDataFromOrigin	= 1
+	END
+
+	IF (@IsGetDataFromBK = 1 AND @IsGetDataFromOrigin = 1)
+		OR (@IsGetDataFromBK = 1 AND @IsGetDataFrom14 = 1 AND @IsGetDataFromOrigin = 1)
+	BEGIN
+		SELECT	@FromDateOrigin		=	DATEADD(DD,1,@MoveBetsDay)
+			,	@ToDateOrigin		=	@ToDate
+			,	@FromDate14			=	@BalanceUpDay
+			,	@ToDate14			=	@MoveBetsDay
+			,	@FromDateBK			=	@FromDate 
+			,	@ToDateBK			=	DATEADD(DD,-1,@BalanceUpDay)
+	END
+
+	IF @IsGetDataFromBK = 1 AND @IsGetDataFrom14 = 1 AND @IsGetDataFromOrigin = 0
+	BEGIN
+		SELECT	@FromDate14			=	@BalanceUpDay
+			,	@ToDate14			=	@ToDate
+			,	@FromDateBK			=	@FromDate 
+			,	@ToDateBK			=	DATEADD(DD,-1,@BalanceUpDay)
+	END
+
+	IF @IsGetDataFromBK = 0 AND @IsGetDataFrom14 = 1 AND @IsGetDataFromOrigin = 1
+	BEGIN
+		SELECT	@FromDateOrigin		=	DATEADD(DD,1,@MoveBetsDay)
+			,	@ToDateOrigin		=	@ToDate
+			,	@FromDate14			=	@FromDate
+			,	@ToDate14			=	@MoveBetsDay
+	END
+
+	IF @IsGetDataFromBK = 1 AND @IsGetDataFrom14 = 0 AND @IsGetDataFromOrigin = 0
+	BEGIN
+		SELECT	@FromDateBK			=	@FromDate 
+			,	@ToDateBK			=	@ToDate
+	END
+
+	IF @IsGetDataFromBK = 0 AND @IsGetDataFrom14 = 1 AND @IsGetDataFromOrigin = 0
+	BEGIN
+		SELECT	@FromDate14			=	@FromDate
+			,	@ToDate14			=	@ToDate
+	END
+
+	IF @IsGetDataFromBK = 0 AND @IsGetDataFrom14 = 0 AND @IsGetDataFromOrigin = 1
+	BEGIN
+		SELECT	@FromDateOrigin		=	@FromDate
+			,	@ToDateOrigin		=	@ToDate
+	END
+	
+	IF	@IsGetDataFromOrigin = 1
 	BEGIN
 
-		INSERT INTO #tmpInputMatches(MatchId)
-		SELECT ssk.value FROM STRING_SPLIT (@MatchIds, ',') ssk;
+		INSERT INTO #tmpMatchesInfo (MatchId,MatchCode,SportType,LeagueId,EventDate,KickOffTime,HomeId,AwayId,EventStatus
+		,LiveHomeScore,LiveAwayScore,HTHomeScore,HTAwayScore,FinalHomeScore,FinalAwayScore,MatchSection,DataSource)
+			
+		SELECT	tmp.MatchId
+			,	tmp.MatchCode
+			,	tmp.SportType
+			,	tmp.LeagueId
+			,	tmp.EventDate
+			,	tmp.GlobalShowTime
+			,	tmp.HomeId
+			,	tmp.AwayId
+			,	tmp.EventStatus
+			,	tmp.LiveHomeScore
+			,	tmp.LiveAwayScore
+			,	tmp.HTHomeScore
+			,	tmp.HTAwayScore
+			,	tmp.FinalHomeScore
+			,	tmp.FinalAwayScore
+			,	tmp.MatchSection
+			,	@DataSource_Origin
+		FROM (
+				SELECT	m.MatchId
+					,	m.MatchCode
+					,	m.SportType
+					,	m.LeagueId
+					,	m.EventDate
+					,	m.GlobalShowTime
+					,	m.HomeId
+					,	m.AwayId
+					,	m.EventStatus
+					,	m.LiveHomeScore
+					,	m.LiveAwayScore
+					,	m.HTHomeScore
+					,	m.HTAwayScore
+					,	m.FinalHomeScore
+					,	m.FinalAwayScore
+					,	(CASE
+							WHEN m.eventstatus <> 'completed' THEN (CASE 
+																		WHEN m.GlobalShowTime <= GETDATE() THEN @MatchSection_Live --LIVE
+																		WHEN m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN @MatchSection_Today	 --TODAY
+																		WHEN m.EventDate > @Today THEN @MatchSection_Early -- EARLY
+																	END)
+							ELSE @MatchSection_Closed -- CLOSED
+						END) AS MatchSection
+				FROM bodb02.dbo.match AS m WITH(NOLOCK) 
+					INNER JOIN #tmpSport AS tmpSp ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
+				WHERE m.EventDate BETWEEN @FromDateOrigin AND @ToDateOrigin
+				) AS tmp
+					
 
-		INSERT INTO #tmpMatches(MatchId)
-		SELECT tmpMt.MatchID
-		FROM #tmpInputMatches AS tmpMt
-			INNER JOIN bodb02.dbo.Match m WITH(NOLOCK) ON tmpMt.MatchId = m.MatchId;
+	END;
+	
+	IF	@IsGetDataFrom14 = 1 AND @MatchSection = @MatchSection_Closed
+	BEGIN
+		INSERT INTO #tmpMatchesInfo (MatchId,MatchCode,SportType,LeagueId,EventDate,KickOffTime,HomeId,AwayId,EventStatus
+			,LiveHomeScore,LiveAwayScore,HTHomeScore,HTAwayScore,FinalHomeScore,FinalAwayScore,MatchSection,DataSource)
+		SELECT	m.MatchId
+					,	m.MatchCode
+					,	m.SportType
+					,	m.LeagueId
+					,	m.EventDate
+					,	m.GlobalShowTime
+					,	m.HomeId
+					,	m.AwayId
+					,	m.EventStatus
+					,	m.LiveHomeScore
+					,	m.LiveAwayScore
+					,	m.HTHomeScore
+					,	m.HTAwayScore
+					,	m.FinalHomeScore
+					,	m.FinalAwayScore
+					,	@MatchSection_Closed AS MatchSection
+					,	@DataSource_14
+		FROM bodb02.dbo.match14 AS m WITH(NOLOCK) 
+			INNER JOIN #tmpSport AS tmpSp ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
+		WHERE m.EventDate BETWEEN @FromDate14 AND @ToDate14
+
+	END
+
+	IF	@IsGetDataFromBK = 1 AND @MatchSection = @MatchSection_Closed
+	BEGIN
 		
-		INSERT INTO #tmpMatchesInfo (MatchId,LiveIndicator, Bettype, BetID, BetChoiceType,TotalAmountHome,TotalAmountAway,TotalTicketHome,TotalTicketAway)
-		SELECT	b.MatchId
+		INSERT INTO #tmpMatchesInfo (MatchId,MatchCode,SportType,LeagueId,EventDate,KickOffTime,HomeId,AwayId,EventStatus
+			,LiveHomeScore,LiveAwayScore,HTHomeScore,HTAwayScore,FinalHomeScore,FinalAwayScore,MatchSection,DataSource)
+		SELECT	m.MatchId
+			,	m.MatchCode
+			,	m.SportType
+			,	m.LeagueId
+			,	m.EventDate
+			,	m.GlobalShowTime
+			,	m.HomeId
+			,	m.AwayId
+			,	m.EventStatus
+			,	m.LiveHomeScore
+			,	m.LiveAwayScore
+			,	m.HTHomeScore
+			,	m.HTAwayScore
+			,	m.FinalHomeScore
+			,	m.FinalAwayScore
+			,	@MatchSection_Closed AS MatchSection
+			,	@DataSource_bk
+		FROM bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) 
+			INNER JOIN #tmpSport AS tmpSp ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
+		WHERE m.EventDate BETWEEN @FromDateBK AND @ToDateBK;
+
+	END
+		
+		--INSERT INTO #tmpMatchesInfo (MatchId,LiveIndicator, Bettype, BetID, BetChoiceType,TotalAmountHome,TotalAmountAway,TotalTicketHome,TotalTicketAway)
+		SELECT	tm.*
+			--,	b.MatchId
 			,	b.LiveIndicator
 			,	b.Bettype
 			,	ISNULL(tmpBt.BetID,0) AS BetID
@@ -197,7 +468,8 @@ BEGIN
 						ELSE 0 END) AS TotalTicketHome
 			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN 1 
 						ELSE 0 END) AS TotalTicketAway
-		FROM #tmpMatches AS tm WITH(NOLOCK)
+
+		FROM #tmpMatchesInfo AS tm WITH(NOLOCK)
 			INNER JOIN bodb02.dbo.Bettrans AS b WITH(NOLOCK) ON b.MatchId = tm.matchid
 			INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 			INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
@@ -222,8 +494,9 @@ BEGIN
 		FROM #tmpInputMatches AS tmpMt
 			INNER JOIN bodb02.dbo.Match14 b WITH(NOLOCK) ON tmpMt.MatchId = b.MatchId;
 
-		INSERT INTO #tmpMatchesInfo (MatchId,LiveIndicator, Bettype, BetID, BetChoiceType,TotalAmountHome,TotalAmountAway,TotalTicketHome,TotalTicketAway)
-		SELECT	b.MatchId
+		--INSERT INTO #tmpMatchesInfo (MatchId,LiveIndicator, Bettype, BetID, BetChoiceType,TotalAmountHome,TotalAmountAway,TotalTicketHome,TotalTicketAway)
+		SELECT	tm.*
+			--,	b.MatchId
 			,	b.LiveIndicator
 			,	b.Bettype
 			,	ISNULL(tmpBt.BetID,0)
@@ -238,7 +511,7 @@ BEGIN
 						ELSE 0 END) AS TotalTicketHome
 			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN 1 
 						ELSE 0 END) AS TotalTicketAway
-		FROM #tmpMatches AS tm WITH(NOLOCK)
+		FROM #tmpMatchesInfo AS tm WITH(NOLOCK)
 			INNER JOIN bodb02.dbo.Bettrans14 AS b WITH(NOLOCK) ON b.MatchId = tm.matchid
 			INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 			INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
@@ -294,7 +567,6 @@ BEGIN
 		GROUP BY b.MatchId, b.LiveIndicator, b.Bettype, tmpBt.BetID, tmpBt.BetChoiceType;
 	END;
 	
-
 	-- Return data
 	SELECT	tmpMi.MatchId
 		,	tmpMi.LiveIndicator
@@ -310,7 +582,6 @@ BEGIN
 	DROP TABLE #tmpMatches;
 	DROP TABLE #tmpMatchesInfo;
 
-END;
 
 GO
 /*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
