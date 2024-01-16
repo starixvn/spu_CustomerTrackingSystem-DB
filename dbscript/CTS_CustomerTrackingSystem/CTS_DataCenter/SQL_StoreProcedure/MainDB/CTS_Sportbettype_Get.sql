@@ -86,10 +86,13 @@ BEGIN
 		,	b.Typeid
 		,	b.Typenamee
 	FROM (	SELECT DISTINCT sb.SportType, sb.BetType 
-			FROM dbo.SportBettypeMatrix sb WITH(NOLOCK)
+			FROM dbo.SportBettypeMatrix AS sb WITH(NOLOCK)
 				INNER JOIN #tmpBettype AS tmpBt ON sb.BetType = ISNULL(tmpBt.BettypeId,sb.BetType)
 				INNER JOIN #tmpSporttype AS tmpSt ON sb.SportType = ISNULL(tmpSt.SporttypeId,sb.Sporttype)
-			WHERE sb.ProductID = ISNULL(sb.ProductID, @ProductID)) AS tmp
+			WHERE sb.ProductID = ISNULL(sb.ProductID, @ProductID)
+				AND sb.SportType NOT IN (27, 154) --Exclude Cricket and Horse Racing Fixed Odds
+				AND sb.IsTest = 0
+		) AS tmp
 		INNER JOIN dbo.Sports AS s WITH(NOLOCK) ON tmp.SportType = s.SportType
 		INNER JOIN dbo.Bettype AS b WITH(NOLOCK) ON tmp.Bettype = b.typeid
 	ORDER BY s.SportType, b.Typeid;
