@@ -17,6 +17,7 @@ BEGIN
 		Revisions:
             - 20220519@Casey.Huynh: Renovate PA Process [Redmine ID: #172561]
             - 20230530@Casey.Huynh: Return IsCleanPA (1: Remove All PA, 0: Exists PA)
+			- 20240109@Thomas.Nguyen: Remove cust in CustomerLoginInfoDetection when cust is unmarked [RedmineID: #197710]
         Param's Explanation (filtered by):
 			- ip_ByType: 1: Category, 2: Reason
         Example:
@@ -30,6 +31,8 @@ BEGIN
     DECLARE CONST_NORMAL_SPORTGROUP INT DEFAULT 200;
     DECLARE CONST_USERLOG_LOGTYPE SMALLINT DEFAULT 33;
     DECLARE CONST_SPNAME VARCHAR(100) DEFAULT 'CTS_DC_CustClassification_PA_Remove';
+	DECLARE	CONST_CATEGORY_UNAUTHORIZEDLOGIN 		INT DEFAULT 64;
+    DECLARE	CONST_CATEGORY_UNAUTHORIZEDLOGIN_LOSING	INT DEFAULT 104;
     DECLARE lv_LogInfo VARCHAR(500);
 	DECLARE lv_CreatedBy INT UNSIGNED;
     DECLARE lv_NoOfCust INT;
@@ -188,6 +191,11 @@ BEGIN
     FROM CTS_DataCenter.CTSCustomerClassification AS cls
 		INNER JOIN Temp_CustPA AS tmpCp ON cls.CustID = tmpCp.CustID AND cls.SportGroupID = CONST_PA_SPORTGROUP AND cls.CategoryID = tmpCp.CategoryID
 	WHERE tmpCp.IsRemovedPA = 1;
+
+	DELETE cld
+	FROM CTS_DataCenter.CustomerLoginInfoDetection AS cld
+		INNER JOIN Temp_CustPA AS tmpCp ON cld.CustID = tmpCp.CustID
+	WHERE tmpCp.IsRemovedPA = 1 AND tmpCp.CategoryID IN (CONST_CATEGORY_UNAUTHORIZEDLOGIN, CONST_CATEGORY_UNAUTHORIZEDLOGIN_LOSING);
 
   #**********INSERT LOG FOR IsDataChange: CategoryID OR CC********#
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType

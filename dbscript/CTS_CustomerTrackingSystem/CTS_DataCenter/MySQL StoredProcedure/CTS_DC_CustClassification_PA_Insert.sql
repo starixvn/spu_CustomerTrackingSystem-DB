@@ -23,6 +23,7 @@ BEGIN
 			- 20221007@Harvey.Nguyen: 		Change CTSCustomerClassificationOldPA -> CTSCustomerClassificationOldCategory [Redmine ID: #178022]
 			- 20230404@Victoria.Le			TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeID [Redmine ID: #185319] 
 			- 20230601@Victoria.Le:			Add TVSRequestID <> 0 for TVSRequestID IS NOT NULL [Redmine ID: #189023]
+			- 20231228@Thomas.Nguyen:		Update SourceTypeID for System Detect Unauthorized Login [Redmine ID: #197710]
             
         Param's Explanation (filtered by):
 			- ip_InputType: 1: Category, 2: Reason
@@ -44,6 +45,8 @@ BEGIN
 	DECLARE CONST_SPNAME					VARCHAR(100) DEFAULT 'CTS_DC_CustClassification_PA_Insert';
 	DECLARE CONST_LICVIPPROBLEM_CATEGORYID	SMALLINT UNSIGNED DEFAULT 3;
 	DECLARE CONST_LICVIPNORMAL_CATEGORYID	SMALLINT UNSIGNED DEFAULT 4;    
+	DECLARE	CONST_CATEGORY_UNAUTHORIZEDLOGIN 		INT DEFAULT 64;
+    DECLARE	CONST_CATEGORY_UNAUTHORIZEDLOGIN_LOSING	INT DEFAULT 104;
 
 	DECLARE lv_LicVIPProblem_CC				SMALLINT UNSIGNED;
 	DECLARE lv_LicVIPNormal_CC				SMALLINT UNSIGNED; 
@@ -417,7 +420,8 @@ BEGIN
 		, 	tmpPa.ActionType
 		, 	NOW() AS InsertDate
 		, 	tmpPa.TargetCC
-		, 	(CASE	WHEN tmpPa.MatchID IS NOT NULL OR Remark LIKE 'Auto MatchID: %' THEN 35
+		, 	(CASE	WHEN tmpPa.CategoryID IN (CONST_CATEGORY_UNAUTHORIZEDLOGIN, CONST_CATEGORY_UNAUTHORIZEDLOGIN_LOSING) THEN 39
+					WHEN tmpPa.MatchID IS NOT NULL OR Remark LIKE 'Auto MatchID: %' THEN 35
 					WHEN tmpPa.IsDirectPA = 1 THEN 31 
 					WHEN tmpPa.IsDirectPA = 0 THEN 32 END) AS SourceTypeID
 		,  	1 AS IsDataChanged
@@ -452,7 +456,8 @@ BEGIN
 		,	1 AS IsAuto 
 		,	NOW() AS InsertDate
 		,	tmpPa.TargetCC
-        ,	(CASE	WHEN tmpPa.MatchID IS NOT NULL OR Remark LIKE 'Auto MatchID: %' THEN 35
+        ,	(CASE	WHEN tmpPa.CategoryID IN (CONST_CATEGORY_UNAUTHORIZEDLOGIN, CONST_CATEGORY_UNAUTHORIZEDLOGIN_LOSING) THEN 39
+					WHEN tmpPa.MatchID IS NOT NULL OR Remark LIKE 'Auto MatchID: %' THEN 35
 					WHEN tmpPa.IsDirectPA = 1 THEN 31 
 					WHEN tmpPa.IsDirectPA = 0 THEN 32 END) AS SourceTypeID
 		,	tmpPa.IsDataChanged
