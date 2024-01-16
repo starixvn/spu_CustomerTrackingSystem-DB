@@ -279,15 +279,6 @@ BEGIN
 
 
 	--==========Parse Team From @TeamEvent===================================================================
-	IF(@LeagueEvent <> '')
-	BEGIN
-		INSERT INTO #tmpTeam(TeamID, TeamName)
-		SELECT	t.TeamID
-			,	t.TeamName
-		FROM bodb02.dbo.team AS t WITH(NOLOCK)
-		WHERE t.teamname LIKE '%'+@LeagueEvent+'%';
-	END;
-
 	IF	OBJECT_ID('tempdb..#tmpMatchByLeagueEvent') IS NOT NULL
 	BEGIN
 		DROP TABLE	#tmpMatchByLeagueEvent;
@@ -723,9 +714,10 @@ BEGIN
 		,	l.LeagueName
 		,	m.EventDate
 		,	m.GlobalShowTime
-		,	h.TeamName
+		,	m.homeid
+		,	h.TeamName AS HomeName
 		,	m.AwayId
-		,	a.TeamName
+		,	a.TeamName AS AwayName
 		,	m.EventStatus
 		,	m.LiveHomeScore
 		,	m.LiveAwayScore
