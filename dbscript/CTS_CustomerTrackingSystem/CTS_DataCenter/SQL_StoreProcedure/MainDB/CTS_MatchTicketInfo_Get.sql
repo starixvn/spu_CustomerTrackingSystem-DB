@@ -423,7 +423,7 @@ BEGIN
 			INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 			INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
 		WHERE m.EventDate BETWEEN @FromDateOrigin AND @ToDateOrigin
-            AND m.EventDate < @LastEventDate
+ --           AND m.EventDate < @LastEventDate
 			AND m.MatchID < @LastMatchID
 			AND (CASE
 					WHEN m.eventstatus <> 'completed' THEN (CASE 
@@ -522,7 +522,7 @@ BEGIN
 			INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 			INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
 		WHERE m.EventDate BETWEEN @FromDate14 AND @ToDate14
-            AND m.EventDate < @LastEventDate
+      --      AND m.EventDate < @LastEventDate
 			AND m.MatchID < @LastMatchID
 		AND EXISTS (SELECT 1 
 					FROM  #tmpDanger AS tmpDg WITH(NOLOCK) 
@@ -606,7 +606,7 @@ BEGIN
 			INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 			INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
 		WHERE m.EventDate BETWEEN @FromDateBK AND @ToDateBK
-            AND m.EventDate < @LastEventDate
+       --     AND m.EventDate < @LastEventDate
 			AND m.MatchID < @LastMatchID
 		AND EXISTS (SELECT 1 
 					FROM  #tmpDanger AS tmpDg WITH(NOLOCK) 
