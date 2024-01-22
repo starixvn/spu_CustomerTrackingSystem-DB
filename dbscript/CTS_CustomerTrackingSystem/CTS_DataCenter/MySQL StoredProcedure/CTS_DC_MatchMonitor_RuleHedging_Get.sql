@@ -112,16 +112,14 @@ sp: BEGIN
         ORDER BY mms.SequenceID ASC
         LIMIT 1;        
 
-        SELECT MAX(tmp.SequenceID)
+		SELECT mms.SequenceID
         INTO lv_MaxSequenceID
-        FROM (	SELECT mms.SequenceID
-				FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms 
-                WHERE mms.TransDate <= lv_MaxTransDate 
-                ORDER BY mms.SequenceID 
-                LIMIT lv_NoOfRow) AS tmp;
-        
-        SET op_MaxSequenceID = IFNULL(lv_MaxSequenceID,0) ;
-       
+		FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms 
+		WHERE mms.TransDate <= lv_MaxTransDate 
+			AND mms.SequenceID > lv_LastSequenceID
+		ORDER BY mms.SequenceID DESC
+		LIMIT 1;
+
         IF(lv_LastSequenceID < lv_MaxSequenceID) THEN # If Has New Trans   
 			
 			SELECT	mms.MatchID
@@ -144,8 +142,16 @@ sp: BEGIN
 			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, IFNULL(tmpOg.GroupID,0)
 			HAVING COUNT(DISTINCT mms.CustID) > 1
 			ORDER BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, IFNULL(tmpOg.GroupID,0);
-					
-		END IF;
+			
+            SET op_MaxSequenceID = lv_MaxSequenceID ;
+            
+		ELSE # Get Next Trans > 3 minute to Clear Trans
+			SET op_MaxSequenceID = (SELECT mms.SequenceID 
+						FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms
+						WHERE mms.SequenceID > lv_LastSequenceID
+						ORDER BY mms.SequenceID ASC
+						LIMIT 1);
+		END IF;      
         
 	ELSE #=============NON Live Trans==================
     
@@ -182,9 +188,7 @@ sp: BEGIN
                 WHERE mms.TransDate <= lv_MaxTransDate 
                 ORDER BY mms.SequenceID 
                 LIMIT lv_NoOfRow) AS tmp;
-        
-        SET op_MaxSequenceID = IFNULL(lv_MaxSequenceID, 0) ;
-       
+
         IF	(lv_LastSequenceID < lv_MaxSequenceID) THEN # If Has New Trans   
 			
 			SELECT	mms.MatchID
@@ -207,11 +211,20 @@ sp: BEGIN
 			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID
 			HAVING COUNT(DISTINCT mms.CustID) > 1
 			ORDER BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID;
-					
+            
+            SET op_MaxSequenceID = lv_MaxSequenceID;
+		ELSE # # Get Next Trans > 3 minute to Clear Trans
+
+			SET op_MaxSequenceID = (SELECT mms.SequenceID 
+									FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
+                                    WHERE mms.SequenceID > lv_LastSequenceID
+                                    ORDER BY mms.SequenceID ASC
+                                    LIMIT 1);
 		END IF;
         
 	END IF;
  
 END$$
-DELIMITER ;N
+DELIMITER ;
+
 
