@@ -104,19 +104,33 @@ sp: BEGIN
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
     
-	INSERT INTO Temp_ResultGroup(GroupID, OldGroupIDList, IsHedging, TotalStake, CustIDList, TransIDList, SequenceIDList)
-    SELECT  tmpCg.GroupID
-		,	GROUP_CONCAT(DISTINCT CASE WHEN mms.GroupID > 0 THEN mms.GroupID ELSE 0 END) AS OldGroupIDList
-        ,	MAX(mms.IsHedging) AS IsHedging
-        ,	SUM(mms.Stake) AS TotalStake
-        ,	GROUP_CONCAT(DISTINCT mms.CustID) AS CustIDList
-        ,	GROUP_CONCAT(mms.TransID) AS TransIDList
-        ,	GROUP_CONCAT(mms.SequenceID) AS SequenceIDList
-    FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms
-		INNER JOIN Temp_SequenceID AS tmpSq ON mms.SequenceID = tmpSq.SequenceID
-		INNER JOIN Temp_CustGroup AS tmpCg ON mms.CustID = tmpCg.CustID
-	GROUP BY tmpCg.GroupID;
-
+    IF (ip_LiveIndicator = 1) THEN
+		INSERT INTO Temp_ResultGroup(GroupID, OldGroupIDList, IsHedging, TotalStake, CustIDList, TransIDList, SequenceIDList)
+		SELECT  tmpCg.GroupID
+			,	GROUP_CONCAT(DISTINCT CASE WHEN mms.GroupID > 0 THEN mms.GroupID ELSE 0 END) AS OldGroupIDList
+			,	MAX(mms.IsHedging) AS IsHedging
+			,	SUM(mms.Stake) AS TotalStake
+			,	GROUP_CONCAT(DISTINCT mms.CustID) AS CustIDList
+			,	GROUP_CONCAT(mms.TransID) AS TransIDList
+			,	GROUP_CONCAT(mms.SequenceID) AS SequenceIDList
+		FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms
+			INNER JOIN Temp_SequenceID AS tmpSq ON mms.SequenceID = tmpSq.SequenceID
+			INNER JOIN Temp_CustGroup AS tmpCg ON mms.CustID = tmpCg.CustID
+		GROUP BY tmpCg.GroupID;
+	ELSE 
+		INSERT INTO Temp_ResultGroup(GroupID, OldGroupIDList, IsHedging, TotalStake, CustIDList, TransIDList, SequenceIDList)
+		SELECT  tmpCg.GroupID
+			,	GROUP_CONCAT(DISTINCT CASE WHEN mms.GroupID > 0 THEN mms.GroupID ELSE 0 END) AS OldGroupIDList
+			,	MAX(mms.IsHedging) AS IsHedging
+			,	SUM(mms.Stake) AS TotalStake
+			,	GROUP_CONCAT(DISTINCT mms.CustID) AS CustIDList
+			,	GROUP_CONCAT(mms.TransID) AS TransIDList
+			,	GROUP_CONCAT(mms.SequenceID) AS SequenceIDList
+		FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
+			INNER JOIN Temp_SequenceID AS tmpSq ON mms.SequenceID = tmpSq.SequenceID
+			INNER JOIN Temp_CustGroup AS tmpCg ON mms.CustID = tmpCg.CustID
+		GROUP BY tmpCg.GroupID;
+    END IF;
     #===============CHECK Is Hedging Group====================
     SET lv_GroupID = 0;
     SET lv_GroupID = (	SELECT tmpRg.GroupID
