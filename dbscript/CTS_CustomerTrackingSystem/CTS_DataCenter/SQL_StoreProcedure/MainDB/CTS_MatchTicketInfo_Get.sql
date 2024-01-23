@@ -82,6 +82,7 @@ BEGIN
 		,	@DataSource_bk		TINYINT = 2;
 	
 	DECLARE @PreMatchId INT;
+	DECLARE @TotalRow INT;
 	--===============================================================================================
 	IF	OBJECT_ID('tempdb..#tmpSport') IS NOT NULL
 	BEGIN
@@ -422,8 +423,7 @@ BEGIN
 			INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 			INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 			INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
-		WHERE m.EventDate BETWEEN @FromDateOrigin AND @ToDateOrigin
- --           AND m.EventDate < @LastEventDate
+		WHERE m.EventDate = @ToDateOrigin
 			AND m.MatchID < @LastMatchID
 			AND (CASE
 					WHEN m.eventstatus <> 'completed' THEN (CASE 
@@ -440,59 +440,106 @@ BEGIN
 						AND c.Danger3 = ISNULL(tmpDg.Danger3,c.Danger3)
 						AND c.Danger4 = ISNULL(tmpDg.Danger4,c.Danger4)
 						AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger5))
-	GROUP BY  m.eventdate, m.MatchId, b.Bettype, b.LiveIndicator, tmpBt.BetID
-	ORDER BY m.eventdate DESC, m.matchid DESC,  b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;
-    
-    SELECT TOP(1) 
-			@PreMatchId = tmpMt.MatchId
-    FROM  #tmpMatchesTicketInfo AS tmpMt
-    ORDER BY tmpMt.eventdate ASC, tmpMt.matchid ASC;
-
-	DELETE tmpMt FROM #tmpMatchesTicketInfo AS tmpMt WHERE tmpMt.MatchID = @PreMatchId 
-
-	INSERT INTO #tmpMatchesTicketInfo (EventDate, MatchId,LiveIndicator, Bettype, BetID, BetChoiceType,TotalAmountHome,TotalAmountAway,TotalTicketHome,TotalTicketAway)
-	SELECT	
-		m.EventDate						
-	,	m.MatchId
-	,	b.LiveIndicator
-	,	b.Bettype
-	,	ISNULL(tmpBt.BetID,0)
-    ,	MAX(tmpBt.BetChoiceType)
-	,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceHome THEN b.stake * b.actualrate 
-				WHEN tmpBt.BetChoiceType = 1 THEN b.stake * b.actualrate 
-				ELSE 0 END) AS TotalAmountHome
-	,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN b.stake * b.actualrate 
-				ELSE 0 END) AS TotalAmountAway
-	,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceHome THEN 1 
-				WHEN tmpBt.BetChoiceType = 1 THEN 1
-				ELSE 0 END) AS TotalTicketHome
-	,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN 1 
-				ELSE 0 END) AS TotalTicketAway	
-	FROM bodb02.dbo.match AS m WITH(NOLOCK)				
-		INNER JOIN #tmpSport AS tmpSp ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
-		INNER JOIN bodb02.dbo.bettrans AS b ON b.MatchID = m.MatchID 
-		INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
-		INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
-		INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
-	WHERE  m.MatchID = @PreMatchID
-		AND (CASE
-				WHEN m.eventstatus <> 'completed' THEN (CASE 
-															WHEN m.GlobalShowTime <= GETDATE() THEN @MatchSection_Live --LIVE
-															WHEN m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN @MatchSection_Today	 --TODAY
-															WHEN m.EventDate > @Today THEN @MatchSection_Early -- EARLY
-														END)
-				ELSE @MatchSection_Closed -- CLOSED
-			END) = @MatchSection
-	AND EXISTS (SELECT 1 
-				FROM  #tmpDanger AS tmpDg WITH(NOLOCK) 
-				WHERE  c.Danger = ISNULL(tmpDg.Danger1,c.Danger)
-					AND c.Danger2 = ISNULL(tmpDg.Danger2,c.Danger2)
-					AND c.Danger3 = ISNULL(tmpDg.Danger3,c.Danger3)
-					AND c.Danger4 = ISNULL(tmpDg.Danger4,c.Danger4)
-					AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger5))
-	GROUP BY  m.eventdate, m.MatchId, b.Bettype, b.LiveIndicator, tmpBt.BetID
-	ORDER BY m.eventdate DESC, m.matchid DESC,  b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;
+		GROUP BY  m.eventdate, m.MatchId, b.Bettype, b.LiveIndicator, tmpBt.BetID
+		ORDER BY m.eventdate DESC, m.matchid DESC,  b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;
 	
+		SET @TotalRow = (SELECT COUNT(1) FROM #tmpMatchesTicketInfo)
+
+		IF (@TotalRow < @BatchSize) 
+		BEGIN
+			INSERT INTO #tmpMatchesTicketInfo (EventDate, MatchId,LiveIndicator, Bettype, BetID, BetChoiceType,TotalAmountHome,TotalAmountAway,TotalTicketHome,TotalTicketAway)
+			SELECT	TOP(@BatchSize-@TotalRow) 
+				m.EventDate						
+			,	m.MatchId
+			,	b.LiveIndicator
+			,	b.Bettype
+			,	ISNULL(tmpBt.BetID,0)
+			,	MAX(tmpBt.BetChoiceType)
+			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceHome THEN b.stake * b.actualrate 
+						WHEN tmpBt.BetChoiceType = 1 THEN b.stake * b.actualrate 
+						ELSE 0 END) AS TotalAmountHome
+			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN b.stake * b.actualrate 
+						ELSE 0 END) AS TotalAmountAway
+			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceHome THEN 1 
+						WHEN tmpBt.BetChoiceType = 1 THEN 1
+						ELSE 0 END) AS TotalTicketHome
+			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN 1 
+						ELSE 0 END) AS TotalTicketAway	
+			FROM bodb02.dbo.match AS m WITH(NOLOCK)				
+				INNER JOIN #tmpSport AS tmpSp ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
+				INNER JOIN bodb02.dbo.bettrans AS b ON b.MatchID = m.MatchID 
+				INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
+				INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
+				INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
+			WHERE m.EventDate BETWEEN @FromDateOrigin AND DATEADD(DAY,-1,@ToDateOrigin)
+				AND (CASE
+						WHEN m.eventstatus <> 'completed' THEN (CASE 
+																	WHEN m.GlobalShowTime <= GETDATE() THEN @MatchSection_Live --LIVE
+																	WHEN m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN @MatchSection_Today	 --TODAY
+																	WHEN m.EventDate > @Today THEN @MatchSection_Early -- EARLY
+																END)
+						ELSE @MatchSection_Closed -- CLOSED
+					END) = @MatchSection
+			AND EXISTS (SELECT 1 
+						FROM  #tmpDanger AS tmpDg WITH(NOLOCK) 
+						WHERE  c.Danger = ISNULL(tmpDg.Danger1,c.Danger)
+							AND c.Danger2 = ISNULL(tmpDg.Danger2,c.Danger2)
+							AND c.Danger3 = ISNULL(tmpDg.Danger3,c.Danger3)
+							AND c.Danger4 = ISNULL(tmpDg.Danger4,c.Danger4)
+							AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger5))
+			GROUP BY  m.eventdate, m.MatchId, b.Bettype, b.LiveIndicator, tmpBt.BetID
+			ORDER BY m.eventdate DESC, m.matchid DESC,  b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;
+    
+			SELECT TOP(1) 
+					@PreMatchId = tmpMt.MatchId
+			FROM  #tmpMatchesTicketInfo AS tmpMt
+			ORDER BY tmpMt.eventdate ASC, tmpMt.matchid ASC;
+
+			DELETE tmpMt FROM #tmpMatchesTicketInfo AS tmpMt WHERE tmpMt.MatchID = @PreMatchId 
+
+			INSERT INTO #tmpMatchesTicketInfo (EventDate, MatchId,LiveIndicator, Bettype, BetID, BetChoiceType,TotalAmountHome,TotalAmountAway,TotalTicketHome,TotalTicketAway)
+			SELECT	
+				m.EventDate						
+			,	m.MatchId
+			,	b.LiveIndicator
+			,	b.Bettype
+			,	ISNULL(tmpBt.BetID,0)
+			,	MAX(tmpBt.BetChoiceType)
+			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceHome THEN b.stake * b.actualrate 
+						WHEN tmpBt.BetChoiceType = 1 THEN b.stake * b.actualrate 
+						ELSE 0 END) AS TotalAmountHome
+			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN b.stake * b.actualrate 
+						ELSE 0 END) AS TotalAmountAway
+			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceHome THEN 1 
+						WHEN tmpBt.BetChoiceType = 1 THEN 1
+						ELSE 0 END) AS TotalTicketHome
+			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN 1 
+						ELSE 0 END) AS TotalTicketAway	
+			FROM bodb02.dbo.match AS m WITH(NOLOCK)				
+				INNER JOIN #tmpSport AS tmpSp ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
+				INNER JOIN bodb02.dbo.bettrans AS b ON b.MatchID = m.MatchID 
+				INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
+				INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
+				INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
+			WHERE  m.MatchID = @PreMatchID
+				AND (CASE
+						WHEN m.eventstatus <> 'completed' THEN (CASE 
+																	WHEN m.GlobalShowTime <= GETDATE() THEN @MatchSection_Live --LIVE
+																	WHEN m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN @MatchSection_Today	 --TODAY
+																	WHEN m.EventDate > @Today THEN @MatchSection_Early -- EARLY
+																END)
+						ELSE @MatchSection_Closed -- CLOSED
+					END) = @MatchSection
+			AND EXISTS (SELECT 1 
+						FROM  #tmpDanger AS tmpDg WITH(NOLOCK) 
+						WHERE  c.Danger = ISNULL(tmpDg.Danger1,c.Danger)
+							AND c.Danger2 = ISNULL(tmpDg.Danger2,c.Danger2)
+							AND c.Danger3 = ISNULL(tmpDg.Danger3,c.Danger3)
+							AND c.Danger4 = ISNULL(tmpDg.Danger4,c.Danger4)
+							AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger5))
+			GROUP BY  m.eventdate, m.MatchId, b.Bettype, b.LiveIndicator, tmpBt.BetID
+			ORDER BY m.eventdate DESC, m.matchid DESC,  b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;
+		END
 	END
 
 	IF	(@IsGetDataFrom14 = 1) and (@MatchSection = @MatchSection_Closed)
@@ -521,9 +568,16 @@ BEGIN
 			INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 			INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 			INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
-		WHERE m.EventDate BETWEEN @FromDate14 AND @ToDate14
-      --      AND m.EventDate < @LastEventDate
+		WHERE m.EventDate = @ToDateOrigin
 			AND m.MatchID < @LastMatchID
+			AND (CASE
+					WHEN m.eventstatus <> 'completed' THEN (CASE 
+																WHEN m.GlobalShowTime <= GETDATE() THEN @MatchSection_Live --LIVE
+																WHEN m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN @MatchSection_Today	 --TODAY
+																WHEN m.EventDate > @Today THEN @MatchSection_Early -- EARLY
+															END)
+					ELSE @MatchSection_Closed -- CLOSED
+				END) = @MatchSection
 		AND EXISTS (SELECT 1 
 					FROM  #tmpDanger AS tmpDg WITH(NOLOCK) 
 					WHERE  c.Danger = ISNULL(tmpDg.Danger1,c.Danger)
@@ -531,57 +585,112 @@ BEGIN
 						AND c.Danger3 = ISNULL(tmpDg.Danger3,c.Danger3)
 						AND c.Danger4 = ISNULL(tmpDg.Danger4,c.Danger4)
 						AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger5))
-	GROUP BY  m.eventdate, m.MatchId, b.Bettype, b.LiveIndicator, tmpBt.BetID
-	ORDER BY m.eventdate DESC, m.matchid DESC,  b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;
+		GROUP BY  m.eventdate, m.MatchId, b.Bettype, b.LiveIndicator, tmpBt.BetID
+		ORDER BY m.eventdate DESC, m.matchid DESC,  b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;
+	
+		SET @TotalRow = (SELECT COUNT(1) FROM #tmpMatchesTicketInfo)
+
+		IF (@TotalRow < @BatchSize) 
+		BEGIN
+			INSERT INTO #tmpMatchesTicketInfo (EventDate, MatchId,LiveIndicator, Bettype, BetID, BetChoiceType,TotalAmountHome,TotalAmountAway,TotalTicketHome,TotalTicketAway)
+			SELECT	TOP(@BatchSize-@TotalRow) 
+				m.EventDate						
+			,	m.MatchId
+			,	b.LiveIndicator
+			,	b.Bettype
+			,	ISNULL(tmpBt.BetID,0)
+			,	MAX(tmpBt.BetChoiceType)
+			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceHome THEN b.stake * b.actualrate 
+						WHEN tmpBt.BetChoiceType = 1 THEN b.stake * b.actualrate 
+						ELSE 0 END) AS TotalAmountHome
+			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN b.stake * b.actualrate 
+						ELSE 0 END) AS TotalAmountAway
+			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceHome THEN 1 
+						WHEN tmpBt.BetChoiceType = 1 THEN 1
+						ELSE 0 END) AS TotalTicketHome
+			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN 1 
+						ELSE 0 END) AS TotalTicketAway	
+			FROM bodb02.dbo.match14 AS m WITH(NOLOCK)				
+				INNER JOIN #tmpSport AS tmpSp ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
+				INNER JOIN bodb02.dbo.bettrans14 AS b ON b.MatchID = m.MatchID 
+				INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
+				INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
+				INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
+			WHERE m.EventDate BETWEEN @FromDateOrigin AND DATEADD(DAY,-1,@ToDateOrigin)
+				AND (CASE
+						WHEN m.eventstatus <> 'completed' THEN (CASE 
+																	WHEN m.GlobalShowTime <= GETDATE() THEN @MatchSection_Live --LIVE
+																	WHEN m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN @MatchSection_Today	 --TODAY
+																	WHEN m.EventDate > @Today THEN @MatchSection_Early -- EARLY
+																END)
+						ELSE @MatchSection_Closed -- CLOSED
+					END) = @MatchSection
+			AND EXISTS (SELECT 1 
+						FROM  #tmpDanger AS tmpDg WITH(NOLOCK) 
+						WHERE  c.Danger = ISNULL(tmpDg.Danger1,c.Danger)
+							AND c.Danger2 = ISNULL(tmpDg.Danger2,c.Danger2)
+							AND c.Danger3 = ISNULL(tmpDg.Danger3,c.Danger3)
+							AND c.Danger4 = ISNULL(tmpDg.Danger4,c.Danger4)
+							AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger5))
+			GROUP BY  m.eventdate, m.MatchId, b.Bettype, b.LiveIndicator, tmpBt.BetID
+			ORDER BY m.eventdate DESC, m.matchid DESC,  b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;
     
-    SELECT TOP(1) 
-			@PreMatchId = tmpMt.MatchId
-    FROM  #tmpMatchesTicketInfo AS tmpMt
-    ORDER BY tmpMt.eventdate ASC, tmpMt.matchid ASC;
+			SELECT TOP(1) 
+					@PreMatchId = tmpMt.MatchId
+			FROM  #tmpMatchesTicketInfo AS tmpMt
+			ORDER BY tmpMt.eventdate ASC, tmpMt.matchid ASC;
 
-	DELETE tmpMt FROM #tmpMatchesTicketInfo AS tmpMt WHERE tmpMt.MatchID = @PreMatchId 
+			DELETE tmpMt FROM #tmpMatchesTicketInfo AS tmpMt WHERE tmpMt.MatchID = @PreMatchId 
 
-
-	INSERT INTO #tmpMatchesTicketInfo (EventDate, MatchId,LiveIndicator, Bettype, BetID, BetChoiceType,TotalAmountHome,TotalAmountAway,TotalTicketHome,TotalTicketAway)
-	SELECT	
-		m.EventDate						
-	,	m.MatchId
-	,	b.LiveIndicator
-	,	b.Bettype
-	,	ISNULL(tmpBt.BetID,0)
-    ,	MAX(tmpBt.BetChoiceType)
-	,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceHome THEN b.stake * b.actualrate 
-				WHEN tmpBt.BetChoiceType = 1 THEN b.stake * b.actualrate 
-				ELSE 0 END) AS TotalAmountHome
-	,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN b.stake * b.actualrate 
-				ELSE 0 END) AS TotalAmountAway
-	,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceHome THEN 1 
-				WHEN tmpBt.BetChoiceType = 1 THEN 1
-				ELSE 0 END) AS TotalTicketHome
-	,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN 1 
-				ELSE 0 END) AS TotalTicketAway	
-	FROM bodb02.dbo.match14 AS m WITH(NOLOCK)			
-		INNER JOIN #tmpSport AS tmpSp ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
-		INNER JOIN bodb02.dbo.bettrans14 AS b ON b.MatchID = m.MatchID 
-		INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
-		INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
-		INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
-	WHERE  m.MatchID = @PreMatchID
-	AND EXISTS (SELECT 1 
-				FROM  #tmpDanger AS tmpDg WITH(NOLOCK) 
-				WHERE  c.Danger = ISNULL(tmpDg.Danger1,c.Danger)
-					AND c.Danger2 = ISNULL(tmpDg.Danger2,c.Danger2)
-					AND c.Danger3 = ISNULL(tmpDg.Danger3,c.Danger3)
-					AND c.Danger4 = ISNULL(tmpDg.Danger4,c.Danger4)
-					AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger5))
-	GROUP BY  m.eventdate, m.MatchId, b.Bettype, b.LiveIndicator, tmpBt.BetID
-	ORDER BY m.eventdate DESC, m.matchid DESC,  b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;
+			INSERT INTO #tmpMatchesTicketInfo (EventDate, MatchId,LiveIndicator, Bettype, BetID, BetChoiceType,TotalAmountHome,TotalAmountAway,TotalTicketHome,TotalTicketAway)
+			SELECT	
+				m.EventDate						
+			,	m.MatchId
+			,	b.LiveIndicator
+			,	b.Bettype
+			,	ISNULL(tmpBt.BetID,0)
+			,	MAX(tmpBt.BetChoiceType)
+			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceHome THEN b.stake * b.actualrate 
+						WHEN tmpBt.BetChoiceType = 1 THEN b.stake * b.actualrate 
+						ELSE 0 END) AS TotalAmountHome
+			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN b.stake * b.actualrate 
+						ELSE 0 END) AS TotalAmountAway
+			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceHome THEN 1 
+						WHEN tmpBt.BetChoiceType = 1 THEN 1
+						ELSE 0 END) AS TotalTicketHome
+			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN 1 
+						ELSE 0 END) AS TotalTicketAway	
+			FROM bodb02.dbo.match14 AS m WITH(NOLOCK)				
+				INNER JOIN #tmpSport AS tmpSp ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
+				INNER JOIN bodb02.dbo.bettrans14 AS b ON b.MatchID = m.MatchID 
+				INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
+				INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
+				INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
+			WHERE  m.MatchID = @PreMatchID
+				AND (CASE
+						WHEN m.eventstatus <> 'completed' THEN (CASE 
+																	WHEN m.GlobalShowTime <= GETDATE() THEN @MatchSection_Live --LIVE
+																	WHEN m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN @MatchSection_Today	 --TODAY
+																	WHEN m.EventDate > @Today THEN @MatchSection_Early -- EARLY
+																END)
+						ELSE @MatchSection_Closed -- CLOSED
+					END) = @MatchSection
+			AND EXISTS (SELECT 1 
+						FROM  #tmpDanger AS tmpDg WITH(NOLOCK) 
+						WHERE  c.Danger = ISNULL(tmpDg.Danger1,c.Danger)
+							AND c.Danger2 = ISNULL(tmpDg.Danger2,c.Danger2)
+							AND c.Danger3 = ISNULL(tmpDg.Danger3,c.Danger3)
+							AND c.Danger4 = ISNULL(tmpDg.Danger4,c.Danger4)
+							AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger5))
+			GROUP BY  m.eventdate, m.MatchId, b.Bettype, b.LiveIndicator, tmpBt.BetID
+			ORDER BY m.eventdate DESC, m.matchid DESC,  b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;
+		END
 	
 	END
 
 	IF	(@IsGetDataFromBK = 1) and (@MatchSection = @MatchSection_Closed)
 	BEGIN
-	   	INSERT INTO #tmpMatchesTicketInfo (EventDate, MatchId,LiveIndicator, Bettype, BetID, BetChoiceType,TotalAmountHome,TotalAmountAway,TotalTicketHome,TotalTicketAway)
+	   			INSERT INTO #tmpMatchesTicketInfo (EventDate, MatchId,LiveIndicator, Bettype, BetID, BetChoiceType,TotalAmountHome,TotalAmountAway,TotalTicketHome,TotalTicketAway)
 		SELECT	TOP(@BatchSize) 
 			m.EventDate						
 		,	m.MatchId
@@ -599,15 +708,22 @@ BEGIN
 					ELSE 0 END) AS TotalTicketHome
 		,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN 1 
 					ELSE 0 END) AS TotalTicketAway	
-		FROM bodb_Archive.dbo.Match_bk AS m WITH(NOLOCK)			
+		FROM bodb_Archive.dbo.Match_bk AS m WITH(NOLOCK)				
 			INNER JOIN #tmpSport AS tmpSp ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
 			INNER JOIN bodb_Archive.dbo.Bettrans_bk AS b ON b.MatchID = m.MatchID 
 			INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 			INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 			INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
-		WHERE m.EventDate BETWEEN @FromDateBK AND @ToDateBK
-       --     AND m.EventDate < @LastEventDate
+		WHERE m.EventDate = @ToDateOrigin
 			AND m.MatchID < @LastMatchID
+			AND (CASE
+					WHEN m.eventstatus <> 'completed' THEN (CASE 
+																WHEN m.GlobalShowTime <= GETDATE() THEN @MatchSection_Live --LIVE
+																WHEN m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN @MatchSection_Today	 --TODAY
+																WHEN m.EventDate > @Today THEN @MatchSection_Early -- EARLY
+															END)
+					ELSE @MatchSection_Closed -- CLOSED
+				END) = @MatchSection
 		AND EXISTS (SELECT 1 
 					FROM  #tmpDanger AS tmpDg WITH(NOLOCK) 
 					WHERE  c.Danger = ISNULL(tmpDg.Danger1,c.Danger)
@@ -615,50 +731,106 @@ BEGIN
 						AND c.Danger3 = ISNULL(tmpDg.Danger3,c.Danger3)
 						AND c.Danger4 = ISNULL(tmpDg.Danger4,c.Danger4)
 						AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger5))
-	GROUP BY  m.eventdate, m.MatchId, b.Bettype, b.LiveIndicator, tmpBt.BetID
-	ORDER BY m.eventdate DESC, m.matchid DESC,  b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;
+		GROUP BY  m.eventdate, m.MatchId, b.Bettype, b.LiveIndicator, tmpBt.BetID
+		ORDER BY m.eventdate DESC, m.matchid DESC,  b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;
+	
+		SET @TotalRow = (SELECT COUNT(1) FROM #tmpMatchesTicketInfo)
+
+		IF (@TotalRow < @BatchSize) 
+		BEGIN
+			INSERT INTO #tmpMatchesTicketInfo (EventDate, MatchId,LiveIndicator, Bettype, BetID, BetChoiceType,TotalAmountHome,TotalAmountAway,TotalTicketHome,TotalTicketAway)
+			SELECT	TOP(@BatchSize-@TotalRow) 
+				m.EventDate						
+			,	m.MatchId
+			,	b.LiveIndicator
+			,	b.Bettype
+			,	ISNULL(tmpBt.BetID,0)
+			,	MAX(tmpBt.BetChoiceType)
+			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceHome THEN b.stake * b.actualrate 
+						WHEN tmpBt.BetChoiceType = 1 THEN b.stake * b.actualrate 
+						ELSE 0 END) AS TotalAmountHome
+			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN b.stake * b.actualrate 
+						ELSE 0 END) AS TotalAmountAway
+			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceHome THEN 1 
+						WHEN tmpBt.BetChoiceType = 1 THEN 1
+						ELSE 0 END) AS TotalTicketHome
+			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN 1 
+						ELSE 0 END) AS TotalTicketAway	
+			FROM bodb_Archive.dbo.Match_bk AS m WITH(NOLOCK)				
+				INNER JOIN #tmpSport AS tmpSp ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
+				INNER JOIN bodb_Archive.dbo.Bettrans_bk AS b ON b.MatchID = m.MatchID 
+				INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
+				INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
+				INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
+			WHERE m.EventDate BETWEEN @FromDateOrigin AND DATEADD(DAY,-1,@ToDateOrigin)
+				AND (CASE
+						WHEN m.eventstatus <> 'completed' THEN (CASE 
+																	WHEN m.GlobalShowTime <= GETDATE() THEN @MatchSection_Live --LIVE
+																	WHEN m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN @MatchSection_Today	 --TODAY
+																	WHEN m.EventDate > @Today THEN @MatchSection_Early -- EARLY
+																END)
+						ELSE @MatchSection_Closed -- CLOSED
+					END) = @MatchSection
+			AND EXISTS (SELECT 1 
+						FROM  #tmpDanger AS tmpDg WITH(NOLOCK) 
+						WHERE  c.Danger = ISNULL(tmpDg.Danger1,c.Danger)
+							AND c.Danger2 = ISNULL(tmpDg.Danger2,c.Danger2)
+							AND c.Danger3 = ISNULL(tmpDg.Danger3,c.Danger3)
+							AND c.Danger4 = ISNULL(tmpDg.Danger4,c.Danger4)
+							AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger5))
+			GROUP BY  m.eventdate, m.MatchId, b.Bettype, b.LiveIndicator, tmpBt.BetID
+			ORDER BY m.eventdate DESC, m.matchid DESC,  b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;
     
-    SELECT TOP(1) 
-			@PreMatchId = tmpMt.MatchId
-    FROM  #tmpMatchesTicketInfo AS tmpMt
-    ORDER BY tmpMt.eventdate ASC, tmpMt.matchid ASC;
+			SELECT TOP(1) 
+					@PreMatchId = tmpMt.MatchId
+			FROM  #tmpMatchesTicketInfo AS tmpMt
+			ORDER BY tmpMt.eventdate ASC, tmpMt.matchid ASC;
 
-	DELETE tmpMt FROM #tmpMatchesTicketInfo AS tmpMt WHERE tmpMt.MatchID = @PreMatchId 
+			DELETE tmpMt FROM #tmpMatchesTicketInfo AS tmpMt WHERE tmpMt.MatchID = @PreMatchId 
 
-	INSERT INTO #tmpMatchesTicketInfo (EventDate, MatchId,LiveIndicator, Bettype, BetID, BetChoiceType,TotalAmountHome,TotalAmountAway,TotalTicketHome,TotalTicketAway)
-	SELECT	
-		m.EventDate						
-	,	m.MatchId
-	,	b.LiveIndicator
-	,	b.Bettype
-	,	ISNULL(tmpBt.BetID,0)
-    ,	MAX(tmpBt.BetChoiceType)
-	,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceHome THEN b.stake * b.actualrate 
-				WHEN tmpBt.BetChoiceType = 1 THEN b.stake * b.actualrate 
-				ELSE 0 END) AS TotalAmountHome
-	,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN b.stake * b.actualrate 
-				ELSE 0 END) AS TotalAmountAway
-	,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceHome THEN 1 
-				WHEN tmpBt.BetChoiceType = 1 THEN 1
-				ELSE 0 END) AS TotalTicketHome
-	,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN 1 
-				ELSE 0 END) AS TotalTicketAway	
-	FROM bodb_Archive.dbo.Match_bk AS m WITH(NOLOCK)					
-		INNER JOIN #tmpSport AS tmpSp ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
-		INNER JOIN bodb_Archive.dbo.bettrans_bk AS b ON b.MatchID = m.MatchID 
-		INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
-		INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
-		INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
-	WHERE  m.MatchID = @PreMatchID
-	AND EXISTS (SELECT 1 
-				FROM  #tmpDanger AS tmpDg WITH(NOLOCK) 
-				WHERE  c.Danger = ISNULL(tmpDg.Danger1,c.Danger)
-					AND c.Danger2 = ISNULL(tmpDg.Danger2,c.Danger2)
-					AND c.Danger3 = ISNULL(tmpDg.Danger3,c.Danger3)
-					AND c.Danger4 = ISNULL(tmpDg.Danger4,c.Danger4)
-					AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger5))
-	GROUP BY  m.eventdate, m.MatchId, b.Bettype, b.LiveIndicator, tmpBt.BetID
-	ORDER BY m.eventdate DESC, m.matchid DESC,  b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;
+			INSERT INTO #tmpMatchesTicketInfo (EventDate, MatchId,LiveIndicator, Bettype, BetID, BetChoiceType,TotalAmountHome,TotalAmountAway,TotalTicketHome,TotalTicketAway)
+			SELECT	
+				m.EventDate						
+			,	m.MatchId
+			,	b.LiveIndicator
+			,	b.Bettype
+			,	ISNULL(tmpBt.BetID,0)
+			,	MAX(tmpBt.BetChoiceType)
+			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceHome THEN b.stake * b.actualrate 
+						WHEN tmpBt.BetChoiceType = 1 THEN b.stake * b.actualrate 
+						ELSE 0 END) AS TotalAmountHome
+			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN b.stake * b.actualrate 
+						ELSE 0 END) AS TotalAmountAway
+			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceHome THEN 1 
+						WHEN tmpBt.BetChoiceType = 1 THEN 1
+						ELSE 0 END) AS TotalTicketHome
+			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN 1 
+						ELSE 0 END) AS TotalTicketAway	
+			FROM bodb_Archive.dbo.Match_bk AS m WITH(NOLOCK)				
+				INNER JOIN #tmpSport AS tmpSp ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
+				INNER JOIN bodb_Archive.dbo.Bettrans_bk AS b ON b.MatchID = m.MatchID 
+				INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
+				INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
+				INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
+			WHERE  m.MatchID = @PreMatchID
+				AND (CASE
+						WHEN m.eventstatus <> 'completed' THEN (CASE 
+																	WHEN m.GlobalShowTime <= GETDATE() THEN @MatchSection_Live --LIVE
+																	WHEN m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN @MatchSection_Today	 --TODAY
+																	WHEN m.EventDate > @Today THEN @MatchSection_Early -- EARLY
+																END)
+						ELSE @MatchSection_Closed -- CLOSED
+					END) = @MatchSection
+			AND EXISTS (SELECT 1 
+						FROM  #tmpDanger AS tmpDg WITH(NOLOCK) 
+						WHERE  c.Danger = ISNULL(tmpDg.Danger1,c.Danger)
+							AND c.Danger2 = ISNULL(tmpDg.Danger2,c.Danger2)
+							AND c.Danger3 = ISNULL(tmpDg.Danger3,c.Danger3)
+							AND c.Danger4 = ISNULL(tmpDg.Danger4,c.Danger4)
+							AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger5))
+			GROUP BY  m.eventdate, m.MatchId, b.Bettype, b.LiveIndicator, tmpBt.BetID
+			ORDER BY m.eventdate DESC, m.matchid DESC,  b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;
+		END
 	
 	END;
 
@@ -695,7 +867,8 @@ BEGIN
 		INNER JOIN League l WITH(NOLOCK) ON m.LeagueId = l.leagueid 
 		INNER JOIN bodb02.dbo.Team AS h ON m.Homeid = h.TeamId 
 		INNER JOIN bodb02.dbo.Team AS a ON m.awayid = a.TeamId
-	WHERE	l.IsTest = 0
+	WHERE l.IsTest = 0
+	
 		AND	(	l.LeagueName LIKE '%' + @LeagueEvent + '%'
 				OR  h.TeamName LIKE '%' + @LeagueEvent + '%'
 				OR  a.TeamName LIKE '%' + @LeagueEvent + '%')
