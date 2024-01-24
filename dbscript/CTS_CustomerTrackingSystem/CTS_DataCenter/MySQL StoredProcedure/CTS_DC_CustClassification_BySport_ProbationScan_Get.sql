@@ -30,7 +30,7 @@ sp: BEGIN
 			,	pro.SportID AS SportGroup
     FROM		CTS_DataCenter.ProbationAccountMonitor_BySport AS pro
 	WHERE	(pro.LastScannedDate IS NULL OR pro.LastScannedDate < lv_CurrentDate)
-			AND (pro.CreatedDate < lv_ToLastDay) -- and pro.CustID = -1
+			AND (pro.CreatedDate < lv_ToLastDay)
             AND	EXISTS (SELECT 1
 						FROM CTS_Archive.CTSCustomerAssociationStatus AS arc
                         WHERE arc.CTSCustID = pro.CTSCustID AND arc.LastTicketDate >= lv_From30Date)
