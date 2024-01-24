@@ -103,7 +103,7 @@ BEGIN
 							 WHERE pro.CustID = clss.CustID AND pro.SportID = clss.SportID)
 			AND EXISTS (SELECT 1
 						FROM CTS_Archive.CTSCustomerAssociationStatus AS arc
-                        WHERE arc.CustID = clss.CustID AND arc.LastTicketDate >= lv_From30Date)
+                        WHERE arc.CustID = clss.CustID AND arc.LastTicketDate >=", lv_From30Date,")
 		ORDER BY 	clss.CustID ASC
             , 		clss.SportID ASC
 		LIMIT ", lv_BatchSize, ";");
@@ -149,7 +149,7 @@ BEGIN
 							 WHERE pro.CustID = clss.CustID AND pro.SportID = clss.SportID)
 			AND EXISTS (SELECT 1
 						FROM CTS_Archive.CTSCustomerAssociationStatus AS arc
-						WHERE arc.CustID = clss.CustID AND arc.LastTicketDate >= lv_From30Date)
+						WHERE arc.CustID = clss.CustID AND arc.LastTicketDate >=", lv_From30Date,")
 		ORDER BY clss.CustID ASC
             , 	 clss.SportID ASC
 		LIMIT ", lv_BatchSize,";");
