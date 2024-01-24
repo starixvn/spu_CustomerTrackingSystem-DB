@@ -418,8 +418,8 @@ BEGIN
 		,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN 1 
 					ELSE 0 END) AS TotalTicketAway	
 		FROM bodb02.dbo.match AS m WITH(NOLOCK)				
-			INNER JOIN #tmpSport AS tmpSp ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
-			INNER JOIN bodb02.dbo.bettrans AS b ON b.MatchID = m.MatchID 
+			INNER JOIN #tmpSport AS tmpSp WITH(NOLOCK) ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
+			INNER JOIN bodb02.dbo.bettrans AS b WITH(NOLOCK) ON b.MatchID = m.MatchID 
 			INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 			INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 			INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
@@ -443,7 +443,7 @@ BEGIN
 		GROUP BY  m.eventdate, m.MatchId, b.Bettype, b.LiveIndicator, tmpBt.BetID
 		ORDER BY m.eventdate DESC, m.matchid DESC,  b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;
 	
-		SET @TotalRow = (SELECT COUNT(1) FROM #tmpMatchesTicketInfo)
+		SET @TotalRow = (SELECT COUNT(1) FROM #tmpMatchesTicketInfo WITH(NOLOCK))
 
 		IF (@TotalRow < @BatchSize) 
 		BEGIN
@@ -466,8 +466,8 @@ BEGIN
 			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN 1 
 						ELSE 0 END) AS TotalTicketAway	
 			FROM bodb02.dbo.match AS m WITH(NOLOCK)				
-				INNER JOIN #tmpSport AS tmpSp ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
-				INNER JOIN bodb02.dbo.bettrans AS b ON b.MatchID = m.MatchID 
+				INNER JOIN #tmpSport AS tmpSp WITH(NOLOCK) ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
+				INNER JOIN bodb02.dbo.bettrans AS b WITH(NOLOCK) ON b.MatchID = m.MatchID 
 				INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 				INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 				INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
@@ -492,7 +492,7 @@ BEGIN
     
 			SELECT TOP(1) 
 					@PreMatchId = tmpMt.MatchId
-			FROM  #tmpMatchesTicketInfo AS tmpMt
+			FROM  #tmpMatchesTicketInfo AS tmpMt WITH(NOLOCK)
 			ORDER BY tmpMt.eventdate ASC, tmpMt.matchid ASC;
 
 			DELETE tmpMt FROM #tmpMatchesTicketInfo AS tmpMt WHERE tmpMt.MatchID = @PreMatchId 
@@ -516,8 +516,8 @@ BEGIN
 			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN 1 
 						ELSE 0 END) AS TotalTicketAway	
 			FROM bodb02.dbo.match AS m WITH(NOLOCK)				
-				INNER JOIN #tmpSport AS tmpSp ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
-				INNER JOIN bodb02.dbo.bettrans AS b ON b.MatchID = m.MatchID 
+				INNER JOIN #tmpSport AS tmpSp WITH(NOLOCK) ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
+				INNER JOIN bodb02.dbo.bettrans AS b WITH(NOLOCK) ON b.MatchID = m.MatchID 
 				INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 				INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 				INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
@@ -563,8 +563,8 @@ BEGIN
 		,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN 1 
 					ELSE 0 END) AS TotalTicketAway	
 		FROM bodb02.dbo.match14 AS m WITH(NOLOCK)				
-			INNER JOIN #tmpSport AS tmpSp ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
-			INNER JOIN bodb02.dbo.bettrans14 AS b ON b.MatchID = m.MatchID 
+			INNER JOIN #tmpSport AS tmpSp WITH(NOLOCK) ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
+			INNER JOIN bodb02.dbo.bettrans14 AS b WITH(NOLOCK) ON b.MatchID = m.MatchID 
 			INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 			INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 			INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
@@ -588,7 +588,7 @@ BEGIN
 		GROUP BY  m.eventdate, m.MatchId, b.Bettype, b.LiveIndicator, tmpBt.BetID
 		ORDER BY m.eventdate DESC, m.matchid DESC,  b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;
 	
-		SET @TotalRow = (SELECT COUNT(1) FROM #tmpMatchesTicketInfo)
+		SET @TotalRow = (SELECT COUNT(1) FROM #tmpMatchesTicketInfo WITH(NOLOCK))
 
 		IF (@TotalRow < @BatchSize) 
 		BEGIN
@@ -611,8 +611,8 @@ BEGIN
 			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN 1 
 						ELSE 0 END) AS TotalTicketAway	
 			FROM bodb02.dbo.match14 AS m WITH(NOLOCK)				
-				INNER JOIN #tmpSport AS tmpSp ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
-				INNER JOIN bodb02.dbo.bettrans14 AS b ON b.MatchID = m.MatchID 
+				INNER JOIN #tmpSport AS tmpSp WITH(NOLOCK) ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
+				INNER JOIN bodb02.dbo.bettrans14 AS b WITH(NOLOCK) ON b.MatchID = m.MatchID 
 				INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 				INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 				INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
@@ -637,7 +637,7 @@ BEGIN
     
 			SELECT TOP(1) 
 					@PreMatchId = tmpMt.MatchId
-			FROM  #tmpMatchesTicketInfo AS tmpMt
+			FROM  #tmpMatchesTicketInfo AS tmpMt WITH(NOLOCK)
 			ORDER BY tmpMt.eventdate ASC, tmpMt.matchid ASC;
 
 			DELETE tmpMt FROM #tmpMatchesTicketInfo AS tmpMt WHERE tmpMt.MatchID = @PreMatchId 
@@ -661,8 +661,8 @@ BEGIN
 			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN 1 
 						ELSE 0 END) AS TotalTicketAway	
 			FROM bodb02.dbo.match14 AS m WITH(NOLOCK)				
-				INNER JOIN #tmpSport AS tmpSp ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
-				INNER JOIN bodb02.dbo.bettrans14 AS b ON b.MatchID = m.MatchID 
+				INNER JOIN #tmpSport AS tmpSp WITH(NOLOCK) ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
+				INNER JOIN bodb02.dbo.bettrans14 AS b WITH(NOLOCK) ON b.MatchID = m.MatchID 
 				INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 				INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 				INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
@@ -690,7 +690,7 @@ BEGIN
 
 	IF	(@IsGetDataFromBK = 1) and (@MatchSection = @MatchSection_Closed)
 	BEGIN
-	   			INSERT INTO #tmpMatchesTicketInfo (EventDate, MatchId,LiveIndicator, Bettype, BetID, BetChoiceType,TotalAmountHome,TotalAmountAway,TotalTicketHome,TotalTicketAway)
+	   	INSERT INTO #tmpMatchesTicketInfo (EventDate, MatchId,LiveIndicator, Bettype, BetID, BetChoiceType,TotalAmountHome,TotalAmountAway,TotalTicketHome,TotalTicketAway)
 		SELECT	TOP(@BatchSize) 
 			m.EventDate						
 		,	m.MatchId
@@ -709,8 +709,8 @@ BEGIN
 		,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN 1 
 					ELSE 0 END) AS TotalTicketAway	
 		FROM bodb_Archive.dbo.Match_bk AS m WITH(NOLOCK)				
-			INNER JOIN #tmpSport AS tmpSp ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
-			INNER JOIN bodb_Archive.dbo.Bettrans_bk AS b ON b.MatchID = m.MatchID 
+			INNER JOIN #tmpSport AS tmpSp WITH(NOLOCK) ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
+			INNER JOIN bodb_Archive.dbo.Bettrans_bk AS b WITH(NOLOCK) ON b.MatchID = m.MatchID 
 			INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 			INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 			INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
@@ -734,7 +734,7 @@ BEGIN
 		GROUP BY  m.eventdate, m.MatchId, b.Bettype, b.LiveIndicator, tmpBt.BetID
 		ORDER BY m.eventdate DESC, m.matchid DESC,  b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;
 	
-		SET @TotalRow = (SELECT COUNT(1) FROM #tmpMatchesTicketInfo)
+		SET @TotalRow = (SELECT COUNT(1) FROM #tmpMatchesTicketInfo WITH(NOLOCK) )
 
 		IF (@TotalRow < @BatchSize) 
 		BEGIN
@@ -757,8 +757,8 @@ BEGIN
 			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN 1 
 						ELSE 0 END) AS TotalTicketAway	
 			FROM bodb_Archive.dbo.Match_bk AS m WITH(NOLOCK)				
-				INNER JOIN #tmpSport AS tmpSp ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
-				INNER JOIN bodb_Archive.dbo.Bettrans_bk AS b ON b.MatchID = m.MatchID 
+				INNER JOIN #tmpSport AS tmpSp WITH(NOLOCK) ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
+				INNER JOIN bodb_Archive.dbo.Bettrans_bk AS b WITH(NOLOCK) ON b.MatchID = m.MatchID 
 				INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 				INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 				INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
@@ -783,7 +783,7 @@ BEGIN
     
 			SELECT TOP(1) 
 					@PreMatchId = tmpMt.MatchId
-			FROM  #tmpMatchesTicketInfo AS tmpMt
+			FROM  #tmpMatchesTicketInfo AS tmpMt WITH(NOLOCK)
 			ORDER BY tmpMt.eventdate ASC, tmpMt.matchid ASC;
 
 			DELETE tmpMt FROM #tmpMatchesTicketInfo AS tmpMt WHERE tmpMt.MatchID = @PreMatchId 
@@ -807,8 +807,8 @@ BEGIN
 			,	SUM(CASE WHEN tmpBt.BetChoiceType = 2 AND b.betteam = tmpBt.BetChoiceAway THEN 1 
 						ELSE 0 END) AS TotalTicketAway	
 			FROM bodb_Archive.dbo.Match_bk AS m WITH(NOLOCK)				
-				INNER JOIN #tmpSport AS tmpSp ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
-				INNER JOIN bodb_Archive.dbo.Bettrans_bk AS b ON b.MatchID = m.MatchID 
+				INNER JOIN #tmpSport AS tmpSp WITH(NOLOCK) ON m.sporttype = ISNULL(tmpSp.SportType,m.sporttype)
+				INNER JOIN bodb_Archive.dbo.Bettrans_bk AS b WITH(NOLOCK) ON b.MatchID = m.MatchID 
 				INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 				INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 				INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
@@ -836,7 +836,7 @@ BEGIN
 
 	SELECT TOP(1) EventDate AS LastEventDate
 		,	MatchId AS LastMatchId
-	FROM #tmpMatchesTicketInfo
+	FROM #tmpMatchesTicketInfo WITH(NOLOCK)
 	ORDER BY EventDate ASC, MatchId ASC
 	;
 
@@ -862,11 +862,11 @@ BEGIN
 		,	tmp.TotalAmountAway
 		,	tmp.TotalTicketHome
 		,	tmp.TotalTicketAway
-		FROM #tmpMatchesTicketInfo tmp
-		Inner JOIN Match m WITH(NOLOCK) ON tmp.MatchID = m.MatchID
-		INNER JOIN League l WITH(NOLOCK) ON m.LeagueId = l.leagueid 
-		INNER JOIN bodb02.dbo.Team AS h ON m.Homeid = h.TeamId 
-		INNER JOIN bodb02.dbo.Team AS a ON m.awayid = a.TeamId
+		FROM #tmpMatchesTicketInfo AS tmp WITH(NOLOCK)
+		Inner JOIN Match AS m WITH(NOLOCK) ON tmp.MatchID = m.MatchID
+		INNER JOIN League AS l WITH(NOLOCK) ON m.LeagueId = l.leagueid 
+		INNER JOIN bodb02.dbo.Team AS h WITH(NOLOCK) ON m.Homeid = h.TeamId 
+		INNER JOIN bodb02.dbo.Team AS a WITH(NOLOCK) ON m.awayid = a.TeamId
 	WHERE l.IsTest = 0
 	
 		AND	(	l.LeagueName LIKE '%' + @LeagueEvent + '%'
