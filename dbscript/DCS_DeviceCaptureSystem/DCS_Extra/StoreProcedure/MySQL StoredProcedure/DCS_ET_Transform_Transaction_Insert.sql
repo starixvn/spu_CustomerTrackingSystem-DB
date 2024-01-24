@@ -31,18 +31,17 @@ BEGIN
 			- 20230426@Jonathan.Doan: Get BotDetectionValue from RawTransaction [Redmine ID: #186644]
             - 2023292023@Casey.Huynh: CTMAX, Velki, Remove insert into CTSCustomerLastLoginTimeProcess and enhance Performance [RedmineID: #190118]
             - 20230809@Jonathan.Doan: Add more field for IP detail [RedmineID: #192402]
-			- 20231205@Jonathan.Doan: Integrate FPSjs Phrase 2 [Redmine: 196656]
             
 	    Param's Explanation (filtered by):
 		Example:
 			CALL DCS_ET_Transform_Transaction_Insert(1,200);
     */
 	DECLARE		lv_SysMinCreatedDate	DATETIME;    
-	
+
     DROP TEMPORARY TABLE IF EXISTS Temp_RawTransaction;
 	CREATE TEMPORARY TABLE IF NOT EXISTS Temp_RawTransaction (
 		    TransID					BIGINT UNSIGNED NOT NULL
-		,   LoginName				VARCHAR(100) NOT NULL
+		,   LoginName				VARCHAR(100)  CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NOT NULL
 		,   TransTime				TIMESTAMP(4) NOT NULL
 		,   SubscriberID			INT 				
         ,   AccountID				BIGINT	UNSIGNED 	
@@ -63,10 +62,6 @@ BEGIN
         ,   BotDetectionValue		BIT(20)
         ,   BotComponentID			BIGINT UNSIGNED
         ,   IPInfoID				INT
-        ,	CookieID				BIGINT UNSIGNED
-        ,	BrowserInstanceID		BIGINT UNSIGNED
-        ,	RawFingerPrintID		BIGINT UNSIGNED
-        ,	RawUserAgentID			BIGINT UNSIGNED
         
 		,	PRIMARY KEY (TransID)
         ,	INDEX IX_Temp_RawTransaction_SubscriberID_LoginName(SubscriberID, LoginName)
@@ -94,7 +89,7 @@ BEGIN
     FROM DCS_Extra.SystemSetting 
     WHERE ID = 2;
 
-	INSERT INTO Temp_RawTransaction(TransID, LoginName, TransTime, SubscriberID, SubscriberType, DeviceCode , URLDetails, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, FingerprintCode, BotDetectionValue, BotComponentID, IPInfoID, CookieID, BrowserInstanceID, RawFingerPrintID, RawUserAgentID)
+	INSERT INTO Temp_RawTransaction(TransID, LoginName, TransTime, SubscriberID, SubscriberType, DeviceCode , URLDetails, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, FingerprintCode, BotDetectionValue, BotComponentID, IPInfoID)
 	SELECT  rt.TransID
 	    ,   rt.LoginName
         ,   rt.TransTime
@@ -114,10 +109,6 @@ BEGIN
         ,   rt.BotDetectionValue
         ,   rt.BotComponentID
         ,   rt.IPInfoID
-        ,   rt.CookieID
-        ,   rt.BrowserInstanceID
-        ,   rt.RawFingerPrintID
-        ,   rt.RawUserAgentID	 
 	FROM DCS_Extra.RawTransaction AS rt
         INNER JOIN	DCS_Extra.Subscriber AS su ON	rt.SubscriberName = su.SubscriberName
 	    INNER JOIN	DCS_Extra.ActionResult AS ar ON	rt.Action = ar.Action AND IFNULL(rt.ActionResult,'') = ar.ActionResult
@@ -197,8 +188,8 @@ BEGIN
     SELECT  tll.AccountID
         ,   tll.LastLoginTime
     FROM Temp_LastLoginTime AS tll;
-    
-    INSERT IGNORE INTO  DCS_Extra.Transaction(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey , IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, FingerprintCode, BotDetectionValue, BotComponentID, IPInfoID, CookieID, BrowserInstanceID, RawFingerPrintID, RawUserAgentID)
+
+    INSERT IGNORE INTO  DCS_Extra.Transaction(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey , IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, FingerprintCode, BotDetectionValue, BotComponentID, IPInfoID)
    	SELECT  trt.TransID
 	    ,   trt.LoginName
         ,   trt.TransTime                
@@ -219,15 +210,10 @@ BEGIN
         ,   trt.BotDetectionValue
         ,   trt.BotComponentID
         ,   trt.IPInfoID
-        ,   trt.CookieID
-        ,   trt.BrowserInstanceID
-        ,   trt.RawFingerPrintID
-        ,   trt.RawUserAgentID	  
 	FROM Temp_RawTransaction AS trt;	
-
     #================================================================
     
-	INSERT IGNORE INTO DCS_Extra.ProcessedTransaction( LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent , IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID, InsertTime, BotDetectionValue, BotComponentID, IPInfoID, CookieID, BrowserInstanceID, RawFingerPrintID, RawUserAgentID)
+	INSERT IGNORE INTO DCS_Extra.ProcessedTransaction( LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent , IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID, InsertTime, BotDetectionValue, BotComponentID, IPInfoID)
 	SELECT  rt.LoginName
         ,   rt.SubscriberName
         ,   rt.TransTime
@@ -250,15 +236,12 @@ BEGIN
 		,	rt.BotDetectionValue
 		,	rt.BotComponentID
         ,   rt.IPInfoID
-        ,   rt.CookieID
-        ,   rt.BrowserInstanceID
-        ,   rt.RawFingerPrintID
-        ,   rt.RawUserAgentID
 	FROM DCS_Extra.RawTransaction AS rt
 	    INNER JOIN	Temp_RawTransaction	AS tmp_rm ON	rt.TransID = tmp_rm.TransID AND rt.CreatedDate = tmp_rm.CreatedDate;
         
 	DELETE rt
 	FROM DCS_Extra.RawTransaction AS rt
 	    INNER JOIN	Temp_RawTransaction	AS tmp_rm ON rt.TransID = tmp_rm.TransID AND rt.CreatedDate = tmp_rm.CreatedDate;
+    
 END$$
 DELIMITER ;
