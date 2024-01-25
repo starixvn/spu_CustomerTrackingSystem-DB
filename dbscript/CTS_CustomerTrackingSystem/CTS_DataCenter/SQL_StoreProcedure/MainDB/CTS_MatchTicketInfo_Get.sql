@@ -14,7 +14,7 @@ ALTER PROCEDURE [dbo].[CTS_MatchTicketInfo_Get]
 	,	@LeagueEvent		VARCHAR(500) = ''
 	,	@MarketList			VARCHAR(10)  = ''
 	,	@BettypeList		VARCHAR(MAX) = '[]' --JSON
-	,	@DangerList			VARCHAR(MAX) = '[]' --JSON
+	,	@DangerList			VARCHAR(MAX) = NULL --JSON
 	,	@MatchSection		TINYINT = 1
 
 	,	@BatchSize			INT = 100
@@ -36,7 +36,7 @@ AS
 		
 		,@DangerList='[	[{"Danger1":1,"Danger2":20},{"Danger3":30},{"Danger1":28},{"Danger2":28},{"Danger2":6},{"Danger2":12},{"Danger3":48}]'
 		
-		EXECUTE [dbo].[CTS_MatchTicketInfo_Get_Casey] 
+		EXECUTE [dbo].[CTS_MatchTicketInfo_Get] 
 		@FromDate			='2024-01-08'
 	,	@ToDate				= NULL
 	,	@SportList			= '1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,99,154'
@@ -65,12 +65,12 @@ BEGIN
 		,	@IsGetDataFrom14		BIT = 0
 		,	@IsGetDataFromBK		BIT = 0
 
-	DECLARE @FromDateOrigin			SMALLDATETIME = NULL
-		,	@ToDateOrigin			SMALLDATETIME = NULL
-		,	@FromDate14				SMALLDATETIME = NULL
-		,	@ToDate14				SMALLDATETIME = NULL
-		,	@FromDateBK				SMALLDATETIME = NULL
-		,	@ToDateBK				SMALLDATETIME = NULL
+	DECLARE @FromDateOrigin			DATETIME = NULL
+		,	@ToDateOrigin			DATETIME = NULL
+		,	@FromDate14				DATETIME = NULL
+		,	@ToDate14				DATETIME = NULL
+		,	@FromDateBK				DATETIME = NULL
+		,	@ToDateBK				DATETIME = NULL
 
 	DECLARE @MatchSection_Live		TINYINT = 1
 		,	@MatchSection_Today		TINYINT = 2
@@ -82,6 +82,8 @@ BEGIN
 		,	@DataSource_bk		TINYINT = 2;
 	
 	DECLARE @PreMatchId INT;
+	DECLARE @PreEventDate INT;
+	DECLARE @IsFilterDanger BIT = 0;
 	DECLARE @TotalRow INT;
 	--===============================================================================================
 	IF	OBJECT_ID('tempdb..#tmpSport') IS NOT NULL
@@ -196,6 +198,50 @@ BEGIN
 		,	Danger5		TINYINT
 	);
 
+	IF	OBJECT_ID('tempdb..#tmpDanger1') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpDanger1;
+	END;
+
+	CREATE TABLE	#tmpDanger1(
+		Danger1		TINYINT
+	);
+
+	IF	OBJECT_ID('tempdb..#tmpDanger2') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpDanger2;
+	END;
+
+	CREATE TABLE	#tmpDanger2(
+		Danger2		TINYINT
+	);
+
+	IF	OBJECT_ID('tempdb..#tmpDanger3') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpDanger3;
+	END;
+
+	CREATE TABLE	#tmpDanger3(
+		Danger3		TINYINT
+	);
+
+	IF	OBJECT_ID('tempdb..#tmpDanger4') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpDanger4;
+	END;
+
+	CREATE TABLE	#tmpDanger4(
+		Danger4		TINYINT
+	);
+
+	IF	OBJECT_ID('tempdb..#tmpDanger5') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpDanger5;
+	END;
+
+	CREATE TABLE	#tmpDanger5(
+		Danger5		TINYINT
+	);
 	--==============================================================================	
 	IF	OBJECT_ID('tempdb..#tmpMatchByLeagueEvent') IS NOT NULL
 	BEGIN
@@ -256,6 +302,7 @@ BEGIN
 	--========Parse @Danger From @DangerList=========================================
 	IF @DangerList IS NOT NULL
 	BEGIN
+		SET @IsFilterDanger = 1;
 		INSERT INTO #tmpDanger (Danger1,Danger2,Danger3,Danger4,Danger5)
 			SELECT	j.Danger1
 				,	j.Danger2
@@ -269,12 +316,28 @@ BEGIN
 				,	Danger4	TINYINT	'$.Danger4'
 				,	Danger5	TINYINT	'$.Danger5'
 				) AS j;		
+		
+		INSERT INTO #tmpDanger1 (Danger1)
+		SELECT Danger1
+		FROM #tmpDanger WITH(NOLOCK) WHERE Danger1 > 0
+
+		INSERT INTO #tmpDanger2 (Danger2)
+		SELECT Danger2
+		FROM #tmpDanger WITH(NOLOCK) WHERE Danger2 > 0
+
+		INSERT INTO #tmpDanger3 (Danger3)
+		SELECT Danger3
+		FROM #tmpDanger WITH(NOLOCK) WHERE Danger3 > 0
+
+		INSERT INTO #tmpDanger4 (Danger4)
+		SELECT Danger4
+		FROM #tmpDanger WITH(NOLOCK) WHERE Danger4 > 0
+		
+		INSERT INTO #tmpDanger5 (Danger5)
+		SELECT Danger5
+		FROM #tmpDanger WITH(NOLOCK) WHERE Danger5 > 0
 	END
-	ELSE 
-	BEGIN
-		INSERT INTO #tmpDanger (Danger1,Danger2,Danger3,Danger4,Danger5)
-		VALUES(NULL,NULL,NULL,NULL,NULL)
-	END;
+	;
 
 	--==================================================================================================
 	--=========Date Range===================================================
@@ -423,6 +486,11 @@ BEGIN
 			INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 			INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 			INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
+			LEFT JOIN  #tmpDanger1 AS tmpDg1 WITH(NOLOCK) ON tmpDg1.Danger1 = c.danger
+			LEFT JOIN  #tmpDanger2 AS tmpDg2 WITH(NOLOCK) ON tmpDg2.Danger2 = c.danger2
+			LEFT JOIN  #tmpDanger3 AS tmpDg3 WITH(NOLOCK) ON tmpDg3.Danger3 = c.danger3
+			LEFT JOIN  #tmpDanger4 AS tmpDg4 WITH(NOLOCK) ON tmpDg4.Danger4 = c.danger4
+			LEFT JOIN  #tmpDanger5 AS tmpDg5 WITH(NOLOCK) ON tmpDg5.Danger5 = c.danger5
 		WHERE m.EventDate = @ToDateOrigin
 			AND m.MatchID < @LastMatchID
 			AND (CASE
@@ -433,13 +501,7 @@ BEGIN
 															END)
 					ELSE @MatchSection_Closed -- CLOSED
 				END) = @MatchSection
-		AND EXISTS (SELECT 1 
-					FROM  #tmpDanger AS tmpDg WITH(NOLOCK) 
-					WHERE  c.Danger = ISNULL(tmpDg.Danger1,c.Danger)
-						AND c.Danger2 = ISNULL(tmpDg.Danger2,c.Danger2)
-						AND c.Danger3 = ISNULL(tmpDg.Danger3,c.Danger3)
-						AND c.Danger4 = ISNULL(tmpDg.Danger4,c.Danger4)
-						AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger5))
+		AND (ISNULL(tmpDg1.Danger1,0)+ ISNULL(tmpDg2.danger2,0) + ISNULL(tmpDg3.danger3,0) + ISNULL(tmpDg4.danger4,0) + ISNULL(tmpDg5.danger5,0) > 0 OR @IsFilterDanger = 0)
 		GROUP BY  m.eventdate, m.MatchId, b.Bettype, b.LiveIndicator, tmpBt.BetID
 		ORDER BY m.eventdate DESC, m.matchid DESC,  b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;
 	
@@ -471,6 +533,11 @@ BEGIN
 				INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 				INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 				INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
+				LEFT JOIN  #tmpDanger1 AS tmpDg1 WITH(NOLOCK) ON tmpDg1.Danger1 = c.danger
+				LEFT JOIN  #tmpDanger2 AS tmpDg2 WITH(NOLOCK) ON tmpDg2.Danger2 = c.danger2
+				LEFT JOIN  #tmpDanger3 AS tmpDg3 WITH(NOLOCK) ON tmpDg3.Danger3 = c.danger3
+				LEFT JOIN  #tmpDanger4 AS tmpDg4 WITH(NOLOCK) ON tmpDg4.Danger4 = c.danger4
+				LEFT JOIN  #tmpDanger5 AS tmpDg5 WITH(NOLOCK) ON tmpDg5.Danger5 = c.danger5
 			WHERE m.EventDate BETWEEN @FromDateOrigin AND DATEADD(DAY,-1,@ToDateOrigin)
 				AND (CASE
 						WHEN m.eventstatus <> 'completed' THEN (CASE 
@@ -480,13 +547,7 @@ BEGIN
 																END)
 						ELSE @MatchSection_Closed -- CLOSED
 					END) = @MatchSection
-			AND EXISTS (SELECT 1 
-						FROM  #tmpDanger AS tmpDg WITH(NOLOCK) 
-						WHERE  c.Danger = ISNULL(tmpDg.Danger1,c.Danger)
-							AND c.Danger2 = ISNULL(tmpDg.Danger2,c.Danger2)
-							AND c.Danger3 = ISNULL(tmpDg.Danger3,c.Danger3)
-							AND c.Danger4 = ISNULL(tmpDg.Danger4,c.Danger4)
-							AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger5))
+			AND (ISNULL(tmpDg1.Danger1,0)+ ISNULL(tmpDg2.danger2,0) + ISNULL(tmpDg3.danger3,0) + ISNULL(tmpDg4.danger4,0) + ISNULL(tmpDg5.danger5,0) > 0 OR @IsFilterDanger = 0)
 			GROUP BY  m.eventdate, m.MatchId, b.Bettype, b.LiveIndicator, tmpBt.BetID
 			ORDER BY m.eventdate DESC, m.matchid DESC,  b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;
     
@@ -521,6 +582,11 @@ BEGIN
 				INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 				INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 				INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
+				LEFT JOIN  #tmpDanger1 AS tmpDg1 WITH(NOLOCK) ON tmpDg1.Danger1 = c.danger
+				LEFT JOIN  #tmpDanger2 AS tmpDg2 WITH(NOLOCK) ON tmpDg2.Danger2 = c.danger2
+				LEFT JOIN  #tmpDanger3 AS tmpDg3 WITH(NOLOCK) ON tmpDg3.Danger3 = c.danger3
+				LEFT JOIN  #tmpDanger4 AS tmpDg4 WITH(NOLOCK) ON tmpDg4.Danger4 = c.danger4
+				LEFT JOIN  #tmpDanger5 AS tmpDg5 WITH(NOLOCK) ON tmpDg5.Danger5 = c.danger5
 			WHERE  m.MatchID = @PreMatchID
 				AND (CASE
 						WHEN m.eventstatus <> 'completed' THEN (CASE 
@@ -530,13 +596,7 @@ BEGIN
 																END)
 						ELSE @MatchSection_Closed -- CLOSED
 					END) = @MatchSection
-			AND EXISTS (SELECT 1 
-						FROM  #tmpDanger AS tmpDg WITH(NOLOCK) 
-						WHERE  c.Danger = ISNULL(tmpDg.Danger1,c.Danger)
-							AND c.Danger2 = ISNULL(tmpDg.Danger2,c.Danger2)
-							AND c.Danger3 = ISNULL(tmpDg.Danger3,c.Danger3)
-							AND c.Danger4 = ISNULL(tmpDg.Danger4,c.Danger4)
-							AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger5))
+			AND (ISNULL(tmpDg1.Danger1,0)+ ISNULL(tmpDg2.danger2,0) + ISNULL(tmpDg3.danger3,0) + ISNULL(tmpDg4.danger4,0) + ISNULL(tmpDg5.danger5,0) > 0 OR @IsFilterDanger = 0)
 			GROUP BY  m.eventdate, m.MatchId, b.Bettype, b.LiveIndicator, tmpBt.BetID
 			ORDER BY m.eventdate DESC, m.matchid DESC,  b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;
 		END
@@ -568,7 +628,12 @@ BEGIN
 			INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 			INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 			INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
-		WHERE m.EventDate = @ToDateOrigin
+			LEFT JOIN  #tmpDanger1 AS tmpDg1 WITH(NOLOCK) ON tmpDg1.Danger1 = c.danger
+			LEFT JOIN  #tmpDanger2 AS tmpDg2 WITH(NOLOCK) ON tmpDg2.Danger2 = c.danger2
+			LEFT JOIN  #tmpDanger3 AS tmpDg3 WITH(NOLOCK) ON tmpDg3.Danger3 = c.danger3
+			LEFT JOIN  #tmpDanger4 AS tmpDg4 WITH(NOLOCK) ON tmpDg4.Danger4 = c.danger4
+			LEFT JOIN  #tmpDanger5 AS tmpDg5 WITH(NOLOCK) ON tmpDg5.Danger5 = c.danger5
+		WHERE m.EventDate = @ToDate14
 			AND m.MatchID < @LastMatchID
 			AND (CASE
 					WHEN m.eventstatus <> 'completed' THEN (CASE 
@@ -578,13 +643,7 @@ BEGIN
 															END)
 					ELSE @MatchSection_Closed -- CLOSED
 				END) = @MatchSection
-		AND EXISTS (SELECT 1 
-					FROM  #tmpDanger AS tmpDg WITH(NOLOCK) 
-					WHERE  c.Danger = ISNULL(tmpDg.Danger1,c.Danger)
-						AND c.Danger2 = ISNULL(tmpDg.Danger2,c.Danger2)
-						AND c.Danger3 = ISNULL(tmpDg.Danger3,c.Danger3)
-						AND c.Danger4 = ISNULL(tmpDg.Danger4,c.Danger4)
-						AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger5))
+			AND (ISNULL(tmpDg1.Danger1,0)+ ISNULL(tmpDg2.danger2,0) + ISNULL(tmpDg3.danger3,0) + ISNULL(tmpDg4.danger4,0) + ISNULL(tmpDg5.danger5,0) > 0 OR @IsFilterDanger = 0)
 		GROUP BY  m.eventdate, m.MatchId, b.Bettype, b.LiveIndicator, tmpBt.BetID
 		ORDER BY m.eventdate DESC, m.matchid DESC,  b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;
 	
@@ -616,7 +675,12 @@ BEGIN
 				INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 				INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 				INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
-			WHERE m.EventDate BETWEEN @FromDateOrigin AND DATEADD(DAY,-1,@ToDateOrigin)
+				LEFT JOIN  #tmpDanger1 AS tmpDg1 WITH(NOLOCK) ON tmpDg1.Danger1 = c.danger
+				LEFT JOIN  #tmpDanger2 AS tmpDg2 WITH(NOLOCK) ON tmpDg2.Danger2 = c.danger2
+				LEFT JOIN  #tmpDanger3 AS tmpDg3 WITH(NOLOCK) ON tmpDg3.Danger3 = c.danger3
+				LEFT JOIN  #tmpDanger4 AS tmpDg4 WITH(NOLOCK) ON tmpDg4.Danger4 = c.danger4
+				LEFT JOIN  #tmpDanger5 AS tmpDg5 WITH(NOLOCK) ON tmpDg5.Danger5 = c.danger5
+			WHERE m.EventDate BETWEEN @FromDate14 AND DATEADD(DAY,-1,@ToDate14)
 				AND (CASE
 						WHEN m.eventstatus <> 'completed' THEN (CASE 
 																	WHEN m.GlobalShowTime <= GETDATE() THEN @MatchSection_Live --LIVE
@@ -625,18 +689,13 @@ BEGIN
 																END)
 						ELSE @MatchSection_Closed -- CLOSED
 					END) = @MatchSection
-			AND EXISTS (SELECT 1 
-						FROM  #tmpDanger AS tmpDg WITH(NOLOCK) 
-						WHERE  c.Danger = ISNULL(tmpDg.Danger1,c.Danger)
-							AND c.Danger2 = ISNULL(tmpDg.Danger2,c.Danger2)
-							AND c.Danger3 = ISNULL(tmpDg.Danger3,c.Danger3)
-							AND c.Danger4 = ISNULL(tmpDg.Danger4,c.Danger4)
-							AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger5))
+			AND (ISNULL(tmpDg1.Danger1,0)+ ISNULL(tmpDg2.danger2,0) + ISNULL(tmpDg3.danger3,0) + ISNULL(tmpDg4.danger4,0) + ISNULL(tmpDg5.danger5,0) > 0 OR @IsFilterDanger = 0)
 			GROUP BY  m.eventdate, m.MatchId, b.Bettype, b.LiveIndicator, tmpBt.BetID
 			ORDER BY m.eventdate DESC, m.matchid DESC,  b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;
     
 			SELECT TOP(1) 
 					@PreMatchId = tmpMt.MatchId
+				,	@PreEventDate	= @PreEventDate
 			FROM  #tmpMatchesTicketInfo AS tmpMt WITH(NOLOCK)
 			ORDER BY tmpMt.eventdate ASC, tmpMt.matchid ASC;
 
@@ -666,6 +725,11 @@ BEGIN
 				INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 				INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 				INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
+				LEFT JOIN  #tmpDanger1 AS tmpDg1 WITH(NOLOCK) ON tmpDg1.Danger1 = c.danger
+				LEFT JOIN  #tmpDanger2 AS tmpDg2 WITH(NOLOCK) ON tmpDg2.Danger2 = c.danger2
+				LEFT JOIN  #tmpDanger3 AS tmpDg3 WITH(NOLOCK) ON tmpDg3.Danger3 = c.danger3
+				LEFT JOIN  #tmpDanger4 AS tmpDg4 WITH(NOLOCK) ON tmpDg4.Danger4 = c.danger4
+				LEFT JOIN  #tmpDanger5 AS tmpDg5 WITH(NOLOCK) ON tmpDg5.Danger5 = c.danger5
 			WHERE  m.MatchID = @PreMatchID
 				AND (CASE
 						WHEN m.eventstatus <> 'completed' THEN (CASE 
@@ -675,13 +739,7 @@ BEGIN
 																END)
 						ELSE @MatchSection_Closed -- CLOSED
 					END) = @MatchSection
-			AND EXISTS (SELECT 1 
-						FROM  #tmpDanger AS tmpDg WITH(NOLOCK) 
-						WHERE  c.Danger = ISNULL(tmpDg.Danger1,c.Danger)
-							AND c.Danger2 = ISNULL(tmpDg.Danger2,c.Danger2)
-							AND c.Danger3 = ISNULL(tmpDg.Danger3,c.Danger3)
-							AND c.Danger4 = ISNULL(tmpDg.Danger4,c.Danger4)
-							AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger5))
+			AND (ISNULL(tmpDg1.Danger1,0)+ ISNULL(tmpDg2.danger2,0) + ISNULL(tmpDg3.danger3,0) + ISNULL(tmpDg4.danger4,0) + ISNULL(tmpDg5.danger5,0) > 0 OR @IsFilterDanger = 0)
 			GROUP BY  m.eventdate, m.MatchId, b.Bettype, b.LiveIndicator, tmpBt.BetID
 			ORDER BY m.eventdate DESC, m.matchid DESC,  b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;
 		END
@@ -714,7 +772,12 @@ BEGIN
 			INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 			INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 			INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
-		WHERE m.EventDate = @ToDateOrigin
+			LEFT JOIN  #tmpDanger1 AS tmpDg1 WITH(NOLOCK) ON tmpDg1.Danger1 = c.danger
+			LEFT JOIN  #tmpDanger2 AS tmpDg2 WITH(NOLOCK) ON tmpDg2.Danger2 = c.danger2
+			LEFT JOIN  #tmpDanger3 AS tmpDg3 WITH(NOLOCK) ON tmpDg3.Danger3 = c.danger3
+			LEFT JOIN  #tmpDanger4 AS tmpDg4 WITH(NOLOCK) ON tmpDg4.Danger4 = c.danger4
+			LEFT JOIN  #tmpDanger5 AS tmpDg5 WITH(NOLOCK) ON tmpDg5.Danger5 = c.danger5
+		WHERE m.EventDate = @ToDateBK
 			AND m.MatchID < @LastMatchID
 			AND (CASE
 					WHEN m.eventstatus <> 'completed' THEN (CASE 
@@ -724,13 +787,7 @@ BEGIN
 															END)
 					ELSE @MatchSection_Closed -- CLOSED
 				END) = @MatchSection
-		AND EXISTS (SELECT 1 
-					FROM  #tmpDanger AS tmpDg WITH(NOLOCK) 
-					WHERE  c.Danger = ISNULL(tmpDg.Danger1,c.Danger)
-						AND c.Danger2 = ISNULL(tmpDg.Danger2,c.Danger2)
-						AND c.Danger3 = ISNULL(tmpDg.Danger3,c.Danger3)
-						AND c.Danger4 = ISNULL(tmpDg.Danger4,c.Danger4)
-						AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger5))
+		AND (ISNULL(tmpDg1.Danger1,0)+ ISNULL(tmpDg2.danger2,0) + ISNULL(tmpDg3.danger3,0) + ISNULL(tmpDg4.danger4,0) + ISNULL(tmpDg5.danger5,0) > 0 OR @IsFilterDanger = 0)
 		GROUP BY  m.eventdate, m.MatchId, b.Bettype, b.LiveIndicator, tmpBt.BetID
 		ORDER BY m.eventdate DESC, m.matchid DESC,  b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;
 	
@@ -762,7 +819,12 @@ BEGIN
 				INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 				INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 				INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
-			WHERE m.EventDate BETWEEN @FromDateOrigin AND DATEADD(DAY,-1,@ToDateOrigin)
+				LEFT JOIN  #tmpDanger1 AS tmpDg1 WITH(NOLOCK) ON tmpDg1.Danger1 = c.danger
+				LEFT JOIN  #tmpDanger2 AS tmpDg2 WITH(NOLOCK) ON tmpDg2.Danger2 = c.danger2
+				LEFT JOIN  #tmpDanger3 AS tmpDg3 WITH(NOLOCK) ON tmpDg3.Danger3 = c.danger3
+				LEFT JOIN  #tmpDanger4 AS tmpDg4 WITH(NOLOCK) ON tmpDg4.Danger4 = c.danger4
+				LEFT JOIN  #tmpDanger5 AS tmpDg5 WITH(NOLOCK) ON tmpDg5.Danger5 = c.danger5
+			WHERE m.EventDate BETWEEN @FromDateBK AND DATEADD(DAY,-1,@ToDateBK)
 				AND (CASE
 						WHEN m.eventstatus <> 'completed' THEN (CASE 
 																	WHEN m.GlobalShowTime <= GETDATE() THEN @MatchSection_Live --LIVE
@@ -771,18 +833,13 @@ BEGIN
 																END)
 						ELSE @MatchSection_Closed -- CLOSED
 					END) = @MatchSection
-			AND EXISTS (SELECT 1 
-						FROM  #tmpDanger AS tmpDg WITH(NOLOCK) 
-						WHERE  c.Danger = ISNULL(tmpDg.Danger1,c.Danger)
-							AND c.Danger2 = ISNULL(tmpDg.Danger2,c.Danger2)
-							AND c.Danger3 = ISNULL(tmpDg.Danger3,c.Danger3)
-							AND c.Danger4 = ISNULL(tmpDg.Danger4,c.Danger4)
-							AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger5))
+			AND (ISNULL(tmpDg1.Danger1,0)+ ISNULL(tmpDg2.danger2,0) + ISNULL(tmpDg3.danger3,0) + ISNULL(tmpDg4.danger4,0) + ISNULL(tmpDg5.danger5,0) > 0 OR @IsFilterDanger = 0)
 			GROUP BY  m.eventdate, m.MatchId, b.Bettype, b.LiveIndicator, tmpBt.BetID
 			ORDER BY m.eventdate DESC, m.matchid DESC,  b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;
     
 			SELECT TOP(1) 
 					@PreMatchId = tmpMt.MatchId
+				,	@PreEventDate = tmpMt.EventDate
 			FROM  #tmpMatchesTicketInfo AS tmpMt WITH(NOLOCK)
 			ORDER BY tmpMt.eventdate ASC, tmpMt.matchid ASC;
 
@@ -812,7 +869,13 @@ BEGIN
 				INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 				INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 				INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
+				LEFT JOIN  #tmpDanger1 AS tmpDg1 WITH(NOLOCK) ON tmpDg1.Danger1 = c.danger
+				LEFT JOIN  #tmpDanger2 AS tmpDg2 WITH(NOLOCK) ON tmpDg2.Danger2 = c.danger2
+				LEFT JOIN  #tmpDanger3 AS tmpDg3 WITH(NOLOCK) ON tmpDg3.Danger3 = c.danger3
+				LEFT JOIN  #tmpDanger4 AS tmpDg4 WITH(NOLOCK) ON tmpDg4.Danger4 = c.danger4
+				LEFT JOIN  #tmpDanger5 AS tmpDg5 WITH(NOLOCK) ON tmpDg5.Danger5 = c.danger5
 			WHERE  m.MatchID = @PreMatchID
+				AND m.eventdate = @PreEventDate
 				AND (CASE
 						WHEN m.eventstatus <> 'completed' THEN (CASE 
 																	WHEN m.GlobalShowTime <= GETDATE() THEN @MatchSection_Live --LIVE
@@ -821,13 +884,7 @@ BEGIN
 																END)
 						ELSE @MatchSection_Closed -- CLOSED
 					END) = @MatchSection
-			AND EXISTS (SELECT 1 
-						FROM  #tmpDanger AS tmpDg WITH(NOLOCK) 
-						WHERE  c.Danger = ISNULL(tmpDg.Danger1,c.Danger)
-							AND c.Danger2 = ISNULL(tmpDg.Danger2,c.Danger2)
-							AND c.Danger3 = ISNULL(tmpDg.Danger3,c.Danger3)
-							AND c.Danger4 = ISNULL(tmpDg.Danger4,c.Danger4)
-							AND c.Danger5 = ISNULL(tmpDg.Danger5,c.Danger5))
+			AND (ISNULL(tmpDg1.Danger1,0)+ ISNULL(tmpDg2.danger2,0) + ISNULL(tmpDg3.danger3,0) + ISNULL(tmpDg4.danger4,0) + ISNULL(tmpDg5.danger5,0) > 0 OR @IsFilterDanger = 0)
 			GROUP BY  m.eventdate, m.MatchId, b.Bettype, b.LiveIndicator, tmpBt.BetID
 			ORDER BY m.eventdate DESC, m.matchid DESC,  b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;
 		END
