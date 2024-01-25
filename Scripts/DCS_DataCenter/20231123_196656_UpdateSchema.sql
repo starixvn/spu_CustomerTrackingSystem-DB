@@ -64,21 +64,21 @@ CREATE TABLE `AccountFingerprint` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `AccountID` BIGINT UNSIGNED DEFAULT NULL,
   `RawFingerPrintID` BIGINT UNSIGNED DEFAULT NULL,
-  `IsEvolution` TINYINT DEFAULT '0',
+  `IsEvolved` TINYINT DEFAULT '0',
   `CreatedDate` DATETIME DEFAULT NULL,
   `ModifiedDate` DATETIME DEFAULT NULL,
   PRIMARY KEY (`ID`),
   UNIQUE KEY `UX_AccountFingerprint_AccountID_RawFingerPrintID` (`AccountID`,`RawFingerPrintID`),
-  KEY `IX_AccountFingerprint_IsEvolution` (`IsEvolution`)
+  KEY `IX_AccountFingerprint_IsEvolved` (`IsEvolved`)
 ) ENGINE=InnoDB;
 
-CREATE TABLE `TransactionEvolution` (
+CREATE TABLE `EvolvedTransaction` (
   `RawFingerPrintID` BIGINT UNSIGNED NOT NULL,
   `RecoverRawFingerPrintID` BIGINT UNSIGNED NOT NULL,
   `DeviceID` BIGINT UNSIGNED NOT NULL,
   `CreatedDate` DATETIME DEFAULT NULL,
   PRIMARY KEY (`RawFingerPrintID`),
-  UNIQUE KEY `UX_TransactionEvolution_RawFingerPrintID` (`RawFingerPrintID`)
+  UNIQUE KEY `UX_EvolvedTransaction_RawFingerPrintID` (`RawFingerPrintID`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE `AssociationNew` (

@@ -23,7 +23,7 @@ BEGIN
     DECLARE lv_CreatedDate DATETIME DEFAULT CURRENT_TIMESTAMP;
     DECLARE lv_DeviceFingerPrintJson LONGTEXT;
     DECLARE lv_DeviceCookieJson LONGTEXT;
-    DECLARE lv_TransactionEvolutionJson LONGTEXT;
+    DECLARE lv_EvolvedTransactionJson LONGTEXT;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_TransactionInfo;
     
@@ -111,7 +111,7 @@ BEGIN
     SET lv_DeviceCookieJson = IFNULL(lv_DeviceCookieJson,'[{}]');
 	CALL DCS_DC_Identity_DeviceCookie_Insert(lv_DeviceCookieJson);
     
-    /* === Insert new TransactionEvolution === */
+    /* === Insert new EvolvedTransaction === */
     WITH cte_DistinctData AS (
 		SELECT 	DISTINCT
 				RawFingerPrintID
@@ -127,17 +127,17 @@ BEGIN
 				'DeviceID', DeviceID
 			)
 		) AS json_data
-	INTO lv_TransactionEvolutionJson
+	INTO lv_EvolvedTransactionJson
 	FROM cte_DistinctData;
     
-    SET lv_TransactionEvolutionJson = IFNULL(lv_TransactionEvolutionJson,'[{}]');
-	CALL DCS_DC_Identity_TransactionEvolution_Insert(lv_TransactionEvolutionJson);
+    SET lv_EvolvedTransactionJson = IFNULL(lv_EvolvedTransactionJson,'[{}]');
+	CALL DCS_DC_Identity_EvolvedTransaction_Insert(lv_EvolvedTransactionJson);
     
     /* === Update AccountFingerprint === */
 	UPDATE DCS_DataCenter.AccountFingerprint AS af
 		INNER JOIN Temp_TransactionInfo AS tmp ON tmp.AccountID = af.AccountID 
 											AND tmp.RecoverRawFingerPrintID = af.RawFingerPrintID 
-	SET af.IsEvolution = 1,
+	SET af.IsEvolved = 1,
 		af.ModifiedDate = lv_CreatedDate;
         
 END$$
