@@ -35,6 +35,7 @@ BEGIN
 										Remove ip_DateType, ip_MatchSection [RedmineID: #183280]
 			- 	20231116@Long.Luu: 		Return fraud ticket list of each match-liveindicator-bettype-betid [Redmine ID: 195042]
 			- 	20231120@Casey.Huynh:	Enhance Rule for Esport. Adjust Group Stake to 300, Add AssociationByIP, ShareMatch(3 Match(last 7 day) [Redmine ID: #196396]
+			-	20240123@Casey.Huynh:	Return Quater X Details BetID [Redmine ID: #200120]
           
 		Param's Explanation (filtered by):
 			- ip_Market: 		0 return LiveIndicator = 0, 1 return LiveIndicator = 1, NULL: Both Live And Non-Live
@@ -97,8 +98,10 @@ BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Bettype;
     CREATE TEMPORARY TABLE Temp_Bettype(
-			BettypeID 	INT UNSIGNED PRIMARY KEY
+			BettypeID 	INT UNSIGNED
         ,	BetID		BIGINT
+        
+        ,	INDEX IX_Temp_Bettype(BettypeID,BetID)
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Sporttype;
