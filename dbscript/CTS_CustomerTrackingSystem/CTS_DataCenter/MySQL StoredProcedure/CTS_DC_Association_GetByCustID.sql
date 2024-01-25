@@ -66,6 +66,7 @@ BEGIN
 	CREATE TEMPORARY TABLE 		Temp_CustAssociation_LastTicketDate_Valid (
 			CTSCustID 			BIGINT UNSIGNED PRIMARY KEY
 		 ,	CustID 				BIGINT UNSIGNED 
+		 ,	LastTicketDate		DATETIME
 		 ,	INDEX IX_Temp_CustAss_LTD_CustID(CustID)
 	);
 
@@ -279,8 +280,8 @@ BEGIN
 	FROM Temp_Association_Duplicate
 	WHERE CustID_1 != ip_CustID AND CustID_2 = ip_CustID;
 	
-	INSERT INTO Temp_CustAssociation_LastTicketDate_Valid (CTSCustID, CustID)
-	SELECT cass.CTSCustID, cass.CustID
+	INSERT INTO Temp_CustAssociation_LastTicketDate_Valid (CTSCustID, CustID, LastTicketDate)
+	SELECT cass.CTSCustID, cass.CustID, ar.LastTicketDate
 	FROM Temp_CustAssociation AS cass
 		INNER JOIN CTS_Archive.CTSCustomerAssociationStatus AS ar ON ar.CTSCustID = cass.CTSCustID
 	WHERE ar.LastTicketDate IS NOT NULL 
@@ -292,19 +293,23 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_CustAss_LastTD_Valid_Dup LIKE Temp_CustAssociation_LastTicketDate_Valid;
 
 	
-	SELECT ass.CustID_2 AS CustID, ass.AssociationType AS AssociationTypeID, CASE WHEN ass.AssociationType = 1 THEN 'Device'
-																		WHEN ass.AssociationType = 3 OR ass.AssociationType = 4 THEN 'Betting Pattern'
-																		WHEN ass.AssociationType = 5 THEN 'IP' END AS AssociationTypeName
+	SELECT 	ass.CustID_2 AS CustID
+		, 	ass.AssociationType AS AssociationTypeID
+		, 	CASE WHEN ass.AssociationType = 1 THEN 'Device'
+				 WHEN ass.AssociationType = 3 OR ass.AssociationType = 4 THEN 'Betting Pattern'
+				 WHEN ass.AssociationType = 5 THEN 'IP' END AS AssociationTypeName
+		,	ltd.LastTicketDate AS LastTicketDate
 	FROM Temp_Association AS ass
-	WHERE ass.CustID_1 = ip_CustID 
-		AND EXISTS (SELECT 1 FROM Temp_CustAssociation_LastTicketDate_Valid AS ltd WHERE ltd.CustID = ass.CustID_2)
+		INNER JOIN Temp_CustAssociation_LastTicketDate_Valid AS ltd ON ass.CustID_1 = ip_CustID AND ltd.CustID = ass.CustID_2
 	UNION
-	SELECT ass.CustID_2 AS CustID, ass.AssociationType AS AssociationTypeID, CASE WHEN ass.AssociationType = 1 THEN 'Device'
-																		WHEN ass.AssociationType = 3 OR ass.AssociationType = 4 THEN 'Betting Pattern'
-																		WHEN ass.AssociationType = 5 THEN 'IP' END AS AssociationTypeName
+	SELECT 	ass.CustID_2 AS CustID
+		, 	ass.AssociationType AS AssociationTypeID
+		, 	CASE WHEN ass.AssociationType = 1 THEN 'Device'
+				 WHEN ass.AssociationType = 3 OR ass.AssociationType = 4 THEN 'Betting Pattern'
+				 WHEN ass.AssociationType = 5 THEN 'IP' END AS AssociationTypeName
+		,	ltd.LastTicketDate AS LastTicketDate
 	FROM Temp_Association_Duplicate AS ass
-	WHERE ass.CustID_2 = ip_CustID 
-		AND EXISTS (SELECT 1 FROM Temp_CustAss_LastTD_Valid_Dup AS ltd WHERE ltd.CustID = ass.CustID_1);
+		INNER JOIN Temp_CustAss_LastTD_Valid_Dup AS ltd ON ass.CustID_2 = ip_CustID AND ltd.CustID = ass.CustID_1;
 		
 END$$
 
