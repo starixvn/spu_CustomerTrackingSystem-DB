@@ -71,6 +71,12 @@ sp: BEGIN
         ,	INDEX IX_Temp_ResultGroup(GroupID)
     );
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
+	CREATE TEMPORARY TABLE 		Temp_Cust (
+		 	CustID 	BIGINT UNSIGNED PRIMARY KEY
+	); 
+    
+    #=======================================================================
 	SELECT st.TotalStake
 	INTO 	lv_RuleTotalStake
 	FROM CTS_DataCenter.MatchMonitorRuleSetting AS st 
@@ -138,29 +144,39 @@ sp: BEGIN
 							WHERE tmpRg.IsHedging = 0 AND tmpRg.GroupID > lv_GroupID 
 								AND tmpRg.TotalStake >= lv_RuleTotalStake
 							ORDER BY tmpRg.GroupID
-							LIMIT 1);
-    
+							LIMIT 1);    
+        
     WHILE lv_GroupID IS NOT NULL DO    
+    
+		TRUNCATE TABLE Temp_Cust;
+        SET lv_IsHedging = 0;
+        
 		SELECT tmpRg.CustIDList
 		INTO lv_CustIDList
 		FROM Temp_ResultGroup AS tmpRg
 		WHERE tmpRg.GroupID = lv_GroupID;
+		
+        SET @sql = CONCAT("INSERT IGNORE INTO Temp_Cust(CustID) VALUES ('", REPLACE(lv_CustIDList, ",", "'),('"),"');");
+		PREPARE stmt1 FROM @sql;
+		EXECUTE stmt1;
 
-        CALL CTS_DataCenter.CTS_DC_Association_IsAssociatedHedgingCustByCustIDList(lv_CustIDList, lv_IsHedging);
+		SET lv_IsHedging = (SELECT 1 
+							FROM Temp_Cust AS tmpCus 
+								INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cla ON cla.CustID = tmpCus.CustID
+								INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID
+							WHERE cla.SportGroupID = 0
+							AND cc.IsHedgingReasonMM = 1
+							LIMIT 1);
+                            
+        IF lv_IsHedging = 0 THEN
+			CALL CTS_DataCenter.CTS_DC_Association_IsAssociatedHedgingCustByCustIDList(lv_CustIDList, lv_IsHedging);
+        END IF;
         
         IF lv_IsHedging = 1 THEN    
 			UPDATE Temp_ResultGroup AS tmpRg
 			SET tmpRg.IsHedging = 1
-            WHERE tmpRg.GroupID = lv_GroupID;
-            
+            WHERE tmpRg.GroupID = lv_GroupID;            
         END IF;
-        
-        SELECT tmpRg.GroupID
-		INTO lv_GroupID
-		FROM Temp_ResultGroup AS tmpRg
-		WHERE tmpRg.IsHedging = 0 AND tmpRg.GroupID > lv_GroupID
-		ORDER BY tmpRg.GroupID
-		LIMIT 1;
         
         SET lv_GroupID = (	SELECT tmpRg.GroupID
 							FROM Temp_ResultGroup AS tmpRg
