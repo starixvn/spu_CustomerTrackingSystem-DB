@@ -25,6 +25,7 @@ BEGIN
 			- 20230316@Jonathan.Doan: Support return new device login for Alpha [Redmine ID: #185185]
 			- 20230426@Jonathan.Doan: Get BotDetectionValue from RawTransaction [Redmine ID: #186644]
 			- 20230807@Terry.Nguyen: Add Fake IP [Redmine ID: #191829]
+			- 20231123@Jonathan.Doan: Integrate FPSjs Phrase 2 [Redmine: 196656]
 	    Param's Explanation (filtered by):
         
         Example:
@@ -174,7 +175,7 @@ BEGIN
 	FROM DCS_DataCenter.Transaction tmpTrans
 	INNER JOIN CTE_Trans t ON tmpTrans.TransId = t.TransId
     ORDER BY t.TransId ASC;
-
+    
     GET DIAGNOSTICS batchCount = ROW_COUNT;
     INSERT INTO Temp_PerformanceStats(step_name, start_time, diff_time, stats)
     WITH CTE_Stats AS (
@@ -420,26 +421,6 @@ BEGIN
 		SELECT 'NEW_FingerprintCode' AS step_name, start_time, TIMESTAMPDIFF(MICROSECOND, start_time, CURRENT_TIMESTAMP(4)) / 1000 as diff_time, JSON_OBJECT('rowCount', rowCount, 'warning', info_message, 'code', info_no, 'state', cod_name) as stats
     )
     SELECT step_name, start_time, diff_time, stats FROM CTE_Stats;
-   
-    # INSERT new Association
-    SET start_time = CURRENT_TIMESTAMP(4);
-    INSERT IGNORE INTO DCS_DataCenter.Association(DeviceID, AccountID, SubscriberID, CreatedTime, CreatedDate,  InsertTime)
-    SELECT de.DeviceID
-		, tts.AccountID
-		, MIN(tts.SubscriberID) AS SubscriberID
-		, MIN(tts.TransTime) AS CreatedTime
-		, MIN(tts.CreatedDate) AS CreatedDate
-		, insertionTime	AS InsertTime
-    FROM Temp_Transaction AS tts
-    INNER JOIN Temp_ExistedDevice de ON de.DeviceCode = tts.DeviceCode
-    GROUP BY  de.DeviceID, tts.AccountID;
-	
-    GET DIAGNOSTICS rowCount = ROW_COUNT;
-    INSERT INTO Temp_PerformanceStats(step_name, start_time, diff_time, stats)
-    WITH CTE_Stats AS (
-		SELECT 'NEW_Association' AS step_name, start_time, TIMESTAMPDIFF(MICROSECOND, start_time, CURRENT_TIMESTAMP(4)) / 1000 as diff_time, JSON_OBJECT('rowCount', rowCount, 'warning', info_message, 'code', info_no, 'state', cod_name) as stats
-    )
-    SELECT step_name, start_time, diff_time, stats FROM CTE_Stats;
        
     # UPDATE back Temp_ExistedDevice
     SET start_time = CURRENT_TIMESTAMP(4);
@@ -447,6 +428,7 @@ BEGIN
     INNER JOIN DCS_DataCenter.Device dv ON dv.DeviceID = de.DeviceID
     SET de.FirstTransID = dv.FirstTransID
 		, de.FirstDeviceCode = dv.FirstDeviceCode;
+    
     
     # UPDATE back Temp_Transaction
     UPDATE Temp_Transaction AS tts
@@ -465,109 +447,24 @@ BEGIN
                                         WHEN de.DeviceID > 0 AND de.IsNew = 1 THEN vrDeviceStatusNew  
 										ELSE tts.DeviceStatus
 									END;
-
+	
     GET DIAGNOSTICS rowCount = ROW_COUNT;
     INSERT INTO Temp_PerformanceStats(step_name, start_time, diff_time, stats)
     WITH CTE_Stats AS (
 		SELECT 'UPDATE_Temp_Transaction' AS step_name, start_time, TIMESTAMPDIFF(MICROSECOND, start_time, CURRENT_TIMESTAMP(4)) / 1000 as diff_time, JSON_OBJECT('rowCount', rowCount) as stats
     )
     SELECT step_name, start_time, diff_time, stats FROM CTE_Stats;
-	
+    
     /*****MOVE TRans competed to Trans07****************************************************/
     IF err_no = 0 THEN
-		SET start_time = CURRENT_TIMESTAMP(4);
-		INSERT IGNORE INTO  DCS_DataCenter.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, FakeIP)
-		SELECT 	ifnull(ts.RawTransID, ts.TransID)
-			,	ts.LoginName
-            ,	ts.TransTime
-            ,	ts.SubscriberID
-            ,	ts.AccountID
-            ,	ts.URLID
-            ,	tmp_rm.DeviceCodeID
-            ,	tmp_rm.DeviceID
-            ,	tmp_rm.FirstDeviceCode
-            ,	tmp_rm.DeviceStatus
-            ,	tmp_rm.DeviceFingerprintID
-            ,	ts.UserAgentKey
-            ,	ts.IP
-            ,	ts.IPID
-            ,	ts.ActionResultID
-            ,	ts.Flagged
-            ,	ts.PluginID
-            ,	ts.TransStatus
-            ,	ts.CreatedDate
-            ,	ts.InsertTime
-            ,	ts.BotDetectionValue
-            ,	ts.BotComponentID
-            ,	ts.FakeIP
-		FROM DCS_DataCenter.Transaction AS ts
-		INNER JOIN Temp_Transaction AS tmp_rm
-			ON	ts.TransID = tmp_rm.TransID
-		WHERE tmp_rm.DeviceID IS NOT NULL;
-        
-		/*****Add NewAccountDevice****************************************************/		
-        SET lv_MaxAssociationID = IFNULL((SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE VGroup=lv_AbnormalTransaction_VGroup AND VName=lv_AbnormalTransaction_VName), 0);
-            
-		INSERT INTO Temp_NewAccountDevice(AssociationID, AccountID, DeviceID, TransID)
-        WITH cte_device AS(
-			SELECT 	tmpD.DeviceID
-				,	tmp.AccountID
-                ,	MIN(tmp.TransID) AS TransID
-			FROM Temp_Transaction AS tmp
-				INNER JOIN Temp_ExistedDevice AS tmpD ON tmpD.DeviceCode = tmp.DeviceCode
-			WHERE tmp.SubscriberID IN (2,168,271,2339,13659) /*Sub Alpha*/
-			GROUP BY tmpD.DeviceID, tmp.AccountID
-        )
-        SELECT 	ass.AssociationID
-			,	cte.AccountID
-			,	cte.DeviceID
-            ,	cte.TransID
-        FROM cte_device AS cte
-			INNER JOIN DCS_DataCenter.Association AS ass ON ass.AssociationID > lv_MaxAssociationID
-														AND ass.AccountID = cte.AccountID 
-														AND ass.DeviceID = cte.DeviceID;
-        
-		INSERT IGNORE INTO DCS_DataCenter.NewAccountDevice(AssociationID, AccountID, DeviceID, RawTransID, RawCreatedDate, LoginName, TransTime, UserAgentKey, IP, Status, CreatedDate)
-		SELECT 	tmp.AssociationID
-			, 	tmp.AccountID
-			, 	tmp.DeviceID
-			, 	trans.RawTransID
-			, 	trans.CreatedDate AS RawCreatedDate
-			, 	trans.LoginName
-			, 	trans.TransTime
-			, 	trans.UserAgentKey
-			, 	trans.IP
-            ,	0 AS Status
-            ,	insertionTime AS CreatedDate
-		FROM Temp_NewAccountDevice AS tmp
-            INNER JOIN DCS_DataCenter.Transaction AS trans ON trans.TransID = tmp.TransID
-		WHERE NOT EXISTS (SELECT 1 FROM DCS_DataCenter.NewAccountDevice AS nad WHERE nad.AssociationID = tmp.AssociationID);
-            
-		SELECT MAX(AssociationID)
-        INTO lv_MaxAssociationID
-        FROM Temp_NewAccountDevice;
-        
-        IF lv_MaxAssociationID IS NOT NULL AND lv_MaxAssociationID > 0 THEN
-			UPDATE DCS_DataCenter.SystemSetting
-			SET VValue = lv_MaxAssociationID
-			WHERE VGroup=lv_AbnormalTransaction_VGroup
-				AND VName=lv_AbnormalTransaction_VName;
-		END IF;
-        
-		/*****END Add NewAccountDevice****************************************************/
-		#DELETE Transaction
-		DELETE ts
-		FROM DCS_DataCenter.Transaction AS ts
-		INNER JOIN	Temp_Transaction AS tmp_rm
-					ON	ts.TransID = tmp_rm.TransID
-		WHERE tmp_rm.DeviceID IS NOT NULL;
-
-		GET DIAGNOSTICS rowCount = ROW_COUNT;
-		INSERT INTO Temp_PerformanceStats(step_name, start_time, diff_time, stats)
-		WITH CTE_Stats AS (
-			SELECT 'MOVE_DELETE_Transaction07' AS step_name, start_time, TIMESTAMPDIFF(MICROSECOND, start_time, CURRENT_TIMESTAMP(4)) / 1000 as diff_time, JSON_OBJECT('rowCount', rowCount) as stats
-		)
-		SELECT step_name, start_time, diff_time, stats FROM CTE_Stats;
+		SELECT 	tmp.TransID
+            ,	tmp.DeviceCodeID
+            ,	tmp.DeviceID
+            ,	tmp.FirstDeviceCode
+            ,	tmp.DeviceStatus
+            ,	tmp.DeviceFingerprintID
+		FROM Temp_Transaction AS tmp
+		WHERE tmp.DeviceID IS NOT NULL;
 	END IF;
 	# END transform
     

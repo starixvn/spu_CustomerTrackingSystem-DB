@@ -24,16 +24,16 @@ BEGIN
 	*/
     DECLARE lv_CurrentDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 	
-	DROP TEMPORARY TABLE IF EXISTS Temp_Cookie;
+	DROP TEMPORARY TABLE IF EXISTS Temp_CookieInsert;
         
-	CREATE TEMPORARY TABLE Temp_Cookie(
+	CREATE TEMPORARY TABLE Temp_CookieInsert(
 			TmpID			INT UNSIGNED 		PRIMARY KEY
         ,	CookieID		BIGINT UNSIGNED		DEFAULT NULL
         ,	CookieCode		VARCHAR(64) 		NOT NULL
 		,	IsNewCookie		TINYINT		 		DEFAULT 1
     );
     
-	SET @sql = CONCAT('INSERT INTO Temp_Cookie(TmpID, CookieCode) 
+	SET @sql = CONCAT('INSERT INTO Temp_CookieInsert(TmpID, CookieCode) 
 						SELECT 	ID AS TmpID
 							,	CookieCode 
                         FROM ', ip_TableName, 
@@ -42,10 +42,10 @@ BEGIN
     EXECUTE stmt;
     DEALLOCATE PREPARE stmt;
 	
-	ALTER TABLE Temp_Cookie
-	ADD INDEX IX_Temp_Cookie_CookieCode (CookieCode);
+	ALTER TABLE Temp_CookieInsert
+	ADD INDEX IX_Temp_CookieInsert_CookieCode (CookieCode);
 	 
-    UPDATE Temp_Cookie AS tmp
+    UPDATE Temp_CookieInsert AS tmp
 		INNER JOIN DCS_DataCenter.Cookie AS c ON c.CookieCode = tmp.CookieCode
     SET tmp.IsNewCookie = 0;
 	
@@ -53,15 +53,15 @@ BEGIN
 	SELECT	DISTINCT
 			CookieCode
 		,	lv_CurrentDate AS CreatedDate
-	FROM Temp_Cookie
+	FROM Temp_CookieInsert
     WHERE IsNewCookie = 1;
     
-	UPDATE Temp_Cookie AS tmp
+	UPDATE Temp_CookieInsert AS tmp
 		INNER JOIN DCS_DataCenter.Cookie AS c ON c.CookieCode = tmp.CookieCode
 	SET tmp.CookieID = c.ID;
     
 	SET @sql = CONCAT('UPDATE ', ip_TableName,' AS tmp
-						INNER JOIN Temp_Cookie AS c ON c.TmpID = tmp.ID
+						INNER JOIN Temp_CookieInsert AS c ON c.TmpID = tmp.ID
                         SET tmp.CookieID = c.CookieID');
     PREPARE stmt FROM @sql;
     EXECUTE stmt;
