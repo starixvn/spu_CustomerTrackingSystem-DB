@@ -18,7 +18,8 @@ BEGIN
 		Revisions:
 			- 20220908@Harvey.Nguyen: Created [Redmine ID: #176992]
             - 20230707@Jonas.Huynh: Normal Renovation [Redmine ID: #189875]
-
+			- 20240124@Jonas.Huynh: Exclude inactive customer within 30days [Redmine ID: #199632]
+            
 		Param's Explanation (filtered by):      
 			- CALL CTS_DC_CustClassification_BySport_DailyScan_GetNormal (@op_LastCategoryID, @op_LastCustID);
 	*/
@@ -35,6 +36,9 @@ BEGIN
     DECLARE lv_NextCategoryID 		INT;
     DECLARE lv_NextCustID 			BIGINT UNSIGNED;
     DECLARE lv_NextScanDateValid 	DATETIME;
+    
+    DECLARE lv_CurrentDate 			DATE DEFAULT CURRENT_DATE();
+    DECLARE lv_From30Date 			DATE DEFAULT DATE_SUB(lv_CurrentDate, INTERVAL 29 DAY);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Category;
 	CREATE TEMPORARY TABLE Temp_Category(
@@ -97,6 +101,9 @@ BEGIN
 			AND NOT EXISTS (SELECT 1 
 							 FROM  CTS_DataCenter.ProbationAccountMonitor_BySport AS pro 
 							 WHERE pro.CustID = clss.CustID AND pro.SportID = clss.SportID)
+			AND EXISTS (SELECT 1
+						FROM CTS_Archive.CTSCustomerAssociationStatus AS arc
+                        WHERE arc.CustID = clss.CustID AND arc.LastTicketDate >=", lv_From30Date,")
 		ORDER BY 	clss.CustID ASC
             , 		clss.SportID ASC
 		LIMIT ", lv_BatchSize, ";");
@@ -117,6 +124,9 @@ BEGIN
 			AND NOT EXISTS (SELECT 1 
 							 FROM  CTS_DataCenter.ProbationAccountMonitor_BySport AS pro 
 							 WHERE pro.CustID = clss.CustID AND pro.SportID = clss.SportID)
+			AND EXISTS (SELECT 1
+						FROM CTS_Archive.CTSCustomerAssociationStatus AS arc
+                        WHERE arc.CustID = clss.CustID AND arc.LastTicketDate >= lv_From30Date)
 		ORDER BY cate.CategoryID ASC
 		LIMIT 1; 
     END IF;
@@ -137,6 +147,9 @@ BEGIN
 			AND NOT EXISTS (SELECT 1 
 							 FROM  CTS_DataCenter.ProbationAccountMonitor_BySport AS pro 
 							 WHERE pro.CustID = clss.CustID AND pro.SportID = clss.SportID)
+			AND EXISTS (SELECT 1
+						FROM CTS_Archive.CTSCustomerAssociationStatus AS arc
+						WHERE arc.CustID = clss.CustID AND arc.LastTicketDate >=", lv_From30Date,")
 		ORDER BY clss.CustID ASC
             , 	 clss.SportID ASC
 		LIMIT ", lv_BatchSize,";");
