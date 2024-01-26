@@ -15,6 +15,7 @@ BEGIN
 		 
 	    Revisions:
 			- 20231123@Jonathan.Doan: Integrate FPSjs Phrase 2 [Redmine: 196656]
+			- 20240126@Jonathan.Doan: HF for case RawFingerPrintID and CookieID Null [Redmine: 200335]
 	    Param's Explanation (filtered by):
         
         Example:
@@ -102,7 +103,7 @@ BEGIN
     
     /* Update deviceID by RawFingerPrintID */
     UPDATE Temp_TransactionInfo AS tmp
-		INNER JOIN DCS_DataCenter.FPDevice AS d ON d.FirstRawFingerPrintID = tmp.RawFingerPrintID
+		INNER JOIN DCS_DataCenter.FPDevice AS d ON d.FirstRawFingerPrintID = tmp.RawFingerPrintID AND tmp.RawFingerPrintID != 0
 	SET tmp.DeviceID = d.ID
     WHERE tmp.DeviceID IS NULL;
     
@@ -129,7 +130,7 @@ BEGIN
     
     /* Update deviceID by CookieID (DeviceID IS NULL) */
     UPDATE Temp_TransactionInfo AS tmp
-		INNER JOIN DCS_DataCenter.FPDevice AS d ON d.FirstCookieID = tmp.CookieID
+		INNER JOIN DCS_DataCenter.FPDevice AS d ON d.FirstCookieID = tmp.CookieID AND tmp.CookieID != 0
 	SET tmp.DeviceID = d.ID
     WHERE tmp.DeviceID IS NULL;
 
