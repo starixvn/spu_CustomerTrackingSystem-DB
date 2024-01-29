@@ -22,21 +22,10 @@ WHERE CreatedDate > '2024-01-24'
 	AND FPDeviceID > 0;
 
 -- Init data Association from 2024-01-25
-SELECT 	AssociationID
-	,	AccountID
-	,	DeviceID
-INTO @lv_AssociationID, @lv_AccountID, @lv_DeviceID
-FROM Association
-WHERE CreatedDate = '2024-01-25'
-ORDER BY AssociationID ASC
-LIMIT 1;
-
-SELECT AssociationID
-INTO @lv_AssociationNewID
-FROM AssociationNew
-WHERE AccountID = @lv_AccountID
-	AND DeviceID = @lv_DeviceID
-LIMIT 1;
+SET @lv_AssociationID = 226431264;
+SET @lv_AccountID = 90521530;
+SET @lv_DeviceID = 130807816;
+SET @lv_AssociationNewID = 63523526;
 
 DELETE FROM AssociationNew
 WHERE AssociationID >= @lv_AssociationNewID;
