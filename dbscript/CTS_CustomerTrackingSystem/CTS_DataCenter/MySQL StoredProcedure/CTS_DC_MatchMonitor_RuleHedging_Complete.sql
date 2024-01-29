@@ -60,6 +60,8 @@ BEGIN
     DECLARE lv_LeagueName		VARCHAR(500);
     DECLARE	lv_Sporttype		INT;
     DECLARE lv_IsHedging		BOOLEAN;
+	
+	DECLARE lv_TransIDList_TargetGroupID 		LONGTEXT;
     #==================LOG=======================================================
     DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleArbitrage_Process';
     IF CONS_LOG = 1 THEN     
@@ -92,6 +94,16 @@ BEGIN
         
         ,	PRIMARY KEY Temp_HedgingGroup(GroupID)
     );   
+	
+	DROP TEMPORARY TABLE IF EXISTS Temp_HedgingOldGroup;
+    CREATE TEMPORARY TABLE Temp_HedgingOldGroup(
+			GroupID					INT PRIMARY KEY
+    ); 
+	
+	DROP TEMPORARY TABLE IF EXISTS Temp_HedgingTrans;
+    CREATE TEMPORARY TABLE Temp_HedgingTrans(
+			TransID					BIGINT PRIMARY KEY
+    ); 
     
     INSERT IGNORE INTO Temp_TransGroup(GroupID, IsHedging, OldGroupIDList, CustIDList, TransIDList)
 	SELECT  js.GroupID
@@ -144,6 +156,9 @@ BEGIN
     #========Hedging Group========================
     IF EXISTS (SELECT 1 FROM Temp_HedgingGroup AS tmpTg) THEN
 		hg: LOOP 
+			TRUNCATE TABLE Temp_HedgingOldGroup;
+			TRUNCATE TABLE Temp_HedgingTrans;
+		
 			SET lv_GroupID = 0;
 			SELECT tmpTg.GroupID, tmpTg.TransIDList, tmpTg.CustIDList, tmpTg.OldGroupIDList, tmpTg.IsHedging
 			INTO lv_GroupID,  lv_TransIDList, lv_CustIDList, lv_OldGroupIDList, lv_IsHedging
@@ -164,10 +179,33 @@ BEGIN
 			SET lv_TargetGroupID =  lv_TargetGroupID + 1;  
 			
 			CALL CTS_DC_Sys_SplitStringToTempItemTable(lv_OldGroupIDList,',','INT');
+			INSERT IGNORE INTO Temp_HedgingOldGroup (GroupID) SELECT * FROM TempItemTable;
 				
 			SELECT Item INTO lv_TargetGroupID FROM TempItemTable WHERE Item <> 0 ORDER BY Item ASC LIMIT 1;
 			SELECT COUNT(1) INTO lv_NoOfOldGroupID FROM TempItemTable WHERE Item <> 0;
 			SET lv_TargetGroupID = IFNULL(lv_TargetGroupID,0);
+			
+			SELECT 	mmd.ListTransID
+			INTO 	lv_TransIDList_TargetGroupID
+			FROM 	CTS_DataCenter.MatchMonitorDetails AS mmd
+			WHERE 	mmd.MatchID = ip_MatchID AND mmd.LiveIndicator = ip_LiveIndicator
+				AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID  
+				AND mmd.Betteam = ip_Betteam AND mmd.ScoreDiff = ip_ScoreDiff 
+				AND mmd.Reason = CONS_MMREASON_HEDGING AND mmd.GroupID = lv_TargetGroupID; 
+                
+			IF lv_TransIDList_TargetGroupID IS NOT NULL THEN
+			
+				CALL CTS_DC_Sys_SplitStringToTempItemTable(lv_TransIDList,',','BIGINT');
+				INSERT IGNORE INTO Temp_HedgingTrans (TransID) SELECT * FROM TempItemTable;
+				
+				CALL CTS_DC_Sys_SplitStringToTempItemTable(lv_TransIDList_TargetGroupID,',','BIGINT');
+				INSERT IGNORE INTO Temp_HedgingTrans (TransID) SELECT * FROM TempItemTable;
+				
+				SELECT GROUP_CONCAT(TransID)
+				INTO lv_TransIDList
+				FROM Temp_HedgingTrans;
+			
+            END IF;
 					
 			IF(lv_NoOfOldGroupID = 0) THEN # INSERT NEW GROUP
 				INSERT IGNORE INTO CTS_DataCenter.MatchMonitorDetails(MatchID, LiveIndicator, ScoreDiff, BettypeID, BetID, Betteam, EventDate, GroupID, LiveHomeScore, LiveAwayScore, ListCustID, ListTransID, Reason)##LOG185793
@@ -186,7 +224,7 @@ BEGIN
 			IF (lv_NoOfOldGroupID > 1) THEN # MERGE GROUP        
 				DELETE mmd
 				FROM CTS_DataCenter.MatchMonitorDetails AS mmd
-					INNER JOIN TempItemTable AS tmpIt ON mmd.GroupID = tmpIt.Item
+					INNER JOIN Temp_HedgingOldGroup AS tmpIt ON mmd.GroupID = tmpIt.GroupID
 				WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID 
 					AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID 
 					AND mmd.Betteam = ip_Betteam AND mmd.ScoreDiff = ip_ScoreDiff 
