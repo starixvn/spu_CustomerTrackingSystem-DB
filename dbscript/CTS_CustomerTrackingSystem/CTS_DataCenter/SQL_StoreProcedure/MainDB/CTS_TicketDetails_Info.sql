@@ -15,10 +15,11 @@ ALTER PROCEDURE [dbo].[CTS_TicketDetails_Info]
 	,	@FromTransDate				DATETIME = NULL
 	,	@ToTransDate				DATETIME = NULL
 
-	,	@MaxSequenceId				BIGINT OUTPUT
-	,	@TotalTicketAll				BIGINT OUTPUT
-	,	@TotalTicketLicensee		BIGINT OUTPUT
-	,	@TotalTicketCredit			BIGINT OUTPUT
+	,	@MaxSequenceId				BIGINT		OUTPUT
+	,	@MaxTransDate				DATETIME	OUTPUT
+	,	@TotalTicketAll				BIGINT		OUTPUT
+	,	@TotalTicketLicensee		BIGINT		OUTPUT
+	,	@TotalTicketCredit			BIGINT		OUTPUT
 
 AS
 /*
@@ -33,14 +34,16 @@ AS
 		- 20230724@Victoria.Le:		Bettype Selection - Return interdependence of columns  [Redmine ID: #191401]
 		- 20230911@Casey.Huynh:		Support Filter For Suspicious Trans AND CustomerClass and  [Redmine ID: #193029]
 		- 20231116@Long.Luu: 		Support filter by FromTransDate-ToTransDate [Redmine ID: 195042]
-		- 20231122@Casey.Huynh:			Create SportBetType Setting and New E-Sports Bettypes [Redmine ID: #196396]
+		- 20231122@Casey.Huynh:		Create SportBetType Setting and New E-Sports Bettypes [Redmine ID: #196396]
+		- 20240129@Casey.Huynh:		Support Danger Monitor Details In 7 days [Redmine ID: #196361]
 
 	Params Explaination:
 		@ListSuspiciousTransId: format JSON
 			@ListSuspiciousTransId = '[{"TransId":1, "Reason":'HED', "GroupId":1},{"TransId":1, "Reason":'GB', "GroupId":1},{"TransId":2, "Reason":'GB', "GroupId":1},{"TransId":3, "Reason":'HED', "Group":1}]'
 		@TicketType	: TINYINT
-			@TicketType=0: Ticket Type = 'All'
+			@TicketType=0: Ticket Type = 'All-MatchMonitor'			
 			@TicketType=1: Ticket Type = 'Suspicious'
+			@TicketType=2: Ticket Type = 'All-Danger Monitor'
 		@ListSportBettype: JSON
 			,@ListSportBettype='[	{"SportTypeID":1, "BetTypeID":1, "BetChoiceType":2}
 								,	{"SportTypeID":2, "BetTypeID":3, "BetChoiceType":2}
@@ -106,9 +109,14 @@ BEGIN
 		,	Danger5				TINYINT
 		,	CustomerClass		SMALLINT
 		,	SequenceId			BIGINT
+		,	TransDate			DATETIME
 	);
 	CREATE NONCLUSTERED INDEX #IX_tmpTickets_SequenceId ON #tmpTrans (
 			SequenceId			ASC
+	);
+
+	CREATE NONCLUSTERED INDEX #IX_tmpTickets_TransDate ON #tmpTrans (
+			TransDate			ASC
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpSuspiciousTrans') IS NOT NULL
@@ -228,7 +236,8 @@ BEGIN
 
 	IF @IsGetDataFromOrigin = 1 -- Get data from Bettrans
 	BEGIN
-		IF @TicketType = 1 --GET Suspicious Ticket Only
+
+    IF @TicketType = 1 --GET Suspicious Ticket Only
 		BEGIN
 			INSERT INTO #tmpTrans (
 					TransId
@@ -266,7 +275,7 @@ BEGIN
 				AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
 		END;
 
-		IF @TicketType = 0 --GET All Ticket
+    IF @TicketType IN (0,2) --GET All Ticket
 		BEGIN
 
 			INSERT INTO #tmpTrans (
@@ -309,8 +318,10 @@ BEGIN
 
 	IF @IsGetDataFrom14 = 1
 	BEGIN
+        
 		IF @TicketType = 1 --GET Suspicious Ticket Only
 		BEGIN
+
 			INSERT INTO #tmpTrans (
 					TransId
 				,	CustId
@@ -346,6 +357,48 @@ BEGIN
 				AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
 				AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
 		END;
+
+		IF @TicketType = 2 --GET All Ticket FOR Danger
+		BEGIN
+
+			INSERT INTO #tmpTrans (
+					TransId
+				,	CustId
+				,	Hdp1
+				,	Hdp2
+				,	LiveHomeScore
+				,	LiveAwayScore
+				,	BetTeam
+				,	CurrencyName
+				,	CurrencyId
+				,	BetType
+				,	Hdp
+				,	TicketStatus				
+				,	TransDate)
+			SELECT	b.TransId
+				,	b.custid
+				,	b.Hdp1
+				,	b.Hdp2
+				,	b.LiveHomeScore
+				,	b.LiveAwayScore
+				,	b.BetTeam
+				,	e.currency
+				,	e.ExchangeId
+				,	b.bettype
+				,	ABS(CASE WHEN st.BetChoiceType = 2 THEN b.Hdp1 - b.Hdp2 END) AS Hdp
+				,	b.statusID				
+				,	b.TransDate
+			FROM dbo.bettrans14 AS b WITH(NOLOCK)
+				INNER JOIN dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
+				INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID
+				INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
+			WHERE b.matchid = @MatchID
+				AND b.liveindicator = @IsLive
+				AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
+				AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
+
+		END;
+
 	END;
 
 	IF @IsGetDataFromBK = 1
@@ -417,11 +470,12 @@ BEGIN
 	CREATE INDEX IX_tmpTickets_IsLicensee ON #tmpTrans (IsLicensee, LiveHomeScore, LiveAwayScore, TicketStatus, CurrencyId, CurrencyName, Hdp, BetTeam, Danger1, Danger2, Danger3, Danger4, Danger5);
 
 	/*Return Output*/
-	SELECT @MaxSequenceId = (MAX(SequenceId) + 1) FROM #tmpTrans;
+	SELECT @MaxSequenceId = (MAX(SequenceId) + 1) FROM #tmpTrans WITH(NOLOCK);
+	SELECT @MaxTransDate = DATEADD(SECOND,1,MAX(TransDate)) FROM #tmpTrans WITH(NOLOCK);
 	SELECT @TotalTicketAll = COUNT(1) FROM #tmpTrans;
 	SELECT @TotalTicketLicensee = COUNT(1) FROM #tmpTrans WHERE IsLicensee = 1;
 	SELECT @TotalTicketCredit = COUNT(1) FROM #tmpTrans  WHERE IsLicensee = 0;
-	
+
 	SELECT	DISTINCT 
 			tmpTs.LiveHomeScore
 		,	tmpTs.LiveAwayScore
@@ -445,6 +499,6 @@ BEGIN
 	
 	DROP TABLE IF EXISTS #tmpSportBettype;
 	DROP TABLE IF EXISTS #tmpTrans;
-	DROP TABLE IF EXISTS #tmpExcludeTransIds;
+	DROP TABLE IF EXISTS #tmpExcludeTransIds;  
 
 END
