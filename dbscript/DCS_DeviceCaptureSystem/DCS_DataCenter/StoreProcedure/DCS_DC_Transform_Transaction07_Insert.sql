@@ -172,7 +172,6 @@ BEGIN
 			,	CreatedDate
 		FROM Temp_Transaction07
 		WHERE AccountID IS NOT NULL
-			AND DeviceID IS NOT NULL
     )
 	SELECT JSON_ARRAYAGG(
 			JSON_OBJECT(
