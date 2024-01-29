@@ -68,15 +68,12 @@ AS
 		- 20231116@Long.Luu: 	Support filter by FromTransDate-ToTransDate [Redmine ID: 195042]
         - 20231207@Long.Luu: 	Add Agent M999RM00 as internal account [Redmine ID: #197915]
 		- 20231120@Casey.Huynh:	Enhance Rule for Esport. Adjust Group Stake to 300, Add AssociationByIP, ShareMatch(3 Match(last 7 day) [Redmine ID: #196396]
+		- 20240129@Casey.Huynh: Support Danger Monitor Details In 7 days [Redmine ID: #196361]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize)
 					  2 - to show on report (get tickets by @EventDate & @ListTransId)
-					  3	- to show on report (get all tickets by @MatchID, @BetType, @IsLive, @LastScannedSequenceID, @BatchSize, @IsLicensee, @ListCurrency, 
-																@ListHDPBetTeam, @ListScore, @CustAmountRM, @ListDanger, @ListStatus, @ListCustomerClass)
-							+ @BatchSize = 0 ==> @MinSequenceId: Total tickets
-							+ @BatchSize > 0 ==> @MinSequenceId: Min SequenceId
-							+ @BatchSize = 0 & @ListExclTransId <> '' & @ListTransId ==> get total tickets (By @ListTransId) AND (excluded  @ListExclTransId)
+					  3	- to Show ticket for Danger (get tickets by @EventDate & @ListTransId)
 		- @ListDanger: format JSON
 			SET @ListDanger = '[{"Danger1":10},{"Danger1":17},{"Danger1":28},{"Danger2":28},{"Danger2":6},{"Danger2":12},{"Danger3":48}]'
 
