@@ -160,6 +160,7 @@ BEGIN
 			TRUNCATE TABLE Temp_HedgingTrans;
 		
 			SET lv_GroupID = 0;
+			SET lv_TransIDList_TargetGroupID = NULL;
 			SELECT tmpTg.GroupID, tmpTg.TransIDList, tmpTg.CustIDList, tmpTg.OldGroupIDList, tmpTg.IsHedging
 			INTO lv_GroupID,  lv_TransIDList, lv_CustIDList, lv_OldGroupIDList, lv_IsHedging
 			FROM Temp_HedgingGroup AS tmpTg
