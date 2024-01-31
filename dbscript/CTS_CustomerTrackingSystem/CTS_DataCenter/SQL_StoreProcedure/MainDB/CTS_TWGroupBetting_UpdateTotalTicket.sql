@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-bodb_CTS" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[CTS_TWGroupBetting_UpdateTotalTicket]
 		@BatchSize				INT
 	,	@LastSequenceId			BIGINT
@@ -7,7 +7,7 @@ AS
 /*
 	Created: 20220314@Harvey.Nguyen
 	Task : Caculate Group betting ticket
-	DB	 : DBCTS.bodb02
+	DB	 : DBCTS.bodb_CTS
 
 	Revisions:
 		- 20220314@Harvey.Nguyen: Scan ticket 								[Redmine ID: #169671]
@@ -17,6 +17,7 @@ AS
 		- 20230626@Victoria.Le:	  Calculate TicketCount,RejectTicketCount,DesktopTicketCount,ParlayTicketCount
 								  And only get sportttype < 100 			[Redmine ID: #189505]
 		- 20231024@John.Ngo:	  [CTS] - Customer Classification - TW GB - Resolve Deadlock Problems [Redmine ID: #195866]
+		- 20240130@Victoria.Le:	  Change tables - TWGB Migrate data from bodb02 to bodb_CTS [Redmine ID: #191955]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_UpdateTotalTicket] @LastScannedTime = '2022-03-10 03:39:12.230'
@@ -71,7 +72,7 @@ BEGIN
 
 	INSERT INTO #Tmp_WCLeagues(LeagueId)
 	SELECT DISTINCT LeagueId
-	FROM dbo.league WITH(NOLOCK)
+	FROM bodb02.dbo.league WITH(NOLOCK)
 	WHERE ProgramID = '2022' AND DisplayMode = 2;
 	
 	INSERT INTO #Tmp_PlatformDesktop(BetFrom)
@@ -88,8 +89,8 @@ BEGIN
 		,	bt.BetFrom
 		,	bt.transdate
 		,	CASE WHEN dCust.custid IS NOT NULL THEN 1 ELSE 0 END
-	FROM dbo.bettrans AS bt WITH(NOLOCK)
-		LEFT JOIN dbo.Dep_CustSuper AS dCust WITH (NOLOCK) ON dCust.custid = bt.srecommend
+	FROM bodb02.dbo.bettrans AS bt WITH(NOLOCK)
+		LEFT JOIN bodb02.dbo.Dep_CustSuper AS dCust WITH (NOLOCK) ON dCust.custid = bt.srecommend
 	WHERE bt.sequenceid > @LastSequenceId
 	ORDER BY bt.sequenceid ASC;
 
@@ -101,7 +102,7 @@ BEGIN
 	INSERT INTO #tmp_match (MatchId)
 	SELECT DISTINCT tmp_trans.Matchid 
 	FROM #Tmp_Trans AS tmp_trans
-		INNER JOIN dbo.match AS m WITH (NOLOCK) ON m.matchid = tmp_trans.MatchId
+		INNER JOIN bodb02.dbo.match AS m WITH (NOLOCK) ON m.matchid = tmp_trans.MatchId
 		LEFT JOIN #Tmp_WCLeagues AS wc WITH(NOLOCK) ON m.leagueid = wc.LeagueId
 	WHERE tmp_trans.Matchid <> 29 
 		AND m.Sporttype < 100
@@ -117,9 +118,9 @@ BEGIN
 		, tmp_trans.ScanDate
 		, CASE WHEN tmp_trans.Custid IS NOT NULL AND gbc.CustId IS NULL THEN 1 ELSE 0 END AS 'IsInserted'
 	FROM #Tmp_Trans AS tmp_trans
-		LEFT JOIN dbo.SPU_GroupBettingCustomer AS gbc WITH(NOLOCK)  ON gbc.CustId = tmp_trans.Custid AND gbc.ScanDate = tmp_trans.ScanDate;
+		LEFT JOIN dbo.TWGroupBettingCustomer AS gbc WITH(NOLOCK)  ON gbc.CustId = tmp_trans.Custid AND gbc.ScanDate = tmp_trans.ScanDate;
 
-	INSERT INTO dbo.SPU_GroupBettingCustomer(CustId,ScanDate,GBTicketCount,TicketCount,ParlayTicketCount,RejectTicketCount,DesktopTicketCount)
+	INSERT INTO dbo.TWGroupBettingCustomer(CustId,ScanDate,GBTicketCount,TicketCount,ParlayTicketCount,RejectTicketCount,DesktopTicketCount)
 	SELECT	sc.CustId
 		,	sc.ScanDate
 		,	0
@@ -128,7 +129,7 @@ BEGIN
 		,	0
 		,	0 
 	FROM #tmpScanningCust AS sc WITH(NOLOCK)
-		LEFT JOIN dbo.SPU_GroupBettingCustomer AS gbc WITH(NOLOCK) ON sc.CustId = gbc.CustId AND sc.ScanDate = gbc.ScanDate
+		LEFT JOIN dbo.TWGroupBettingCustomer AS gbc WITH(NOLOCK) ON sc.CustId = gbc.CustId AND sc.ScanDate = gbc.ScanDate
 	WHERE gbc.CustId IS NULL AND sc.IsInserted = 1;
 
 	;WITH cte_TicketCount AS (
@@ -138,7 +139,7 @@ BEGIN
 			,	SUM(CASE WHEN bt.StatusID = 101 THEN 1 ELSE 0 END) OVER (PARTITION BY bt.Custid,gbc.ScanDate) AS 'RejectTicketCount'
 			,	SUM(CASE WHEN b.BetFrom IS NOT NULL THEN 1 ELSE 0 END) OVER (PARTITION BY bt.Custid,gbc.ScanDate) AS 'DesktopTicketCount'		
 			,	SUM(CASE WHEN bt.Bettype IN (29,38) THEN 1 ELSE 0 END) OVER (PARTITION BY bt.Custid,gbc.ScanDate) AS 'ParlayTicketCount'		
-		FROM dbo.SPU_GroupBettingCustomer AS gbc WITH (NOLOCK)
+		FROM dbo.TWGroupBettingCustomer AS gbc WITH (NOLOCK)
 			INNER JOIN #Tmp_Trans AS bt WITH (NOLOCK) ON gbc.CustId = bt.Custid	AND bt.ScanDate = gbc.ScanDate
 			LEFT JOIN #Tmp_PlatformDesktop AS b WITH (NOLOCK) ON b.BetFrom = bt.BetFrom
 	)
@@ -148,7 +149,7 @@ BEGIN
 		,	gbc.DesktopTicketCount = CASE WHEN sc.IsInserted = 1 THEN ct.DesktopTicketCount ELSE (gbc.DesktopTicketCount + ct.DesktopTicketCount) END 
 		,	gbc.ParlayTicketCount = CASE WHEN sc.IsInserted = 1 THEN ct.ParlayTicketCount ELSE (gbc.ParlayTicketCount + ct.ParlayTicketCount) END 
 		,	gbc.LastCountTotalTicketDate = GETDATE()
-	FROM dbo.SPU_GroupBettingCustomer AS gbc
+	FROM dbo.TWGroupBettingCustomer AS gbc
 		INNER JOIN cte_TicketCount AS ct WITH (NOLOCK) ON gbc.CustId = ct.custid AND gbc.ScanDate = ct.ScanDate
 		LEFT JOIN #tmpScanningCust AS sc ON sc.CustId = gbc.CustId AND sc.ScanDate = gbc.ScanDate;
 
