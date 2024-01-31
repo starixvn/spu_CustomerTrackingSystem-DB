@@ -1,7 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
 /*
 	Creator:	20240102@Jonas.Huynh
-	Task:	 	Enhance Monitoring Job
+	Task:	 	MM Detail - Hold Key
 	Server:  	CTSMain
 	DBName:		CTS_DataCenter
 
@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorHoldKey_ActionLog (
 		ID				BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY 
     ,	UserID			INT UNSIGNED NOT NULL
     , 	Status			BOOLEAN
-	, 	CreatedDate		DATETIME NOT NULL DEFAULT (CURRENT_DATETIME)
+	, 	CreatedDate		DATETIME NOT NULL DEFAULT (NOW())
 	, 	INDEX			IX_MatchMonitorHoldKey_ActionLog_CreatedDate(CreatedDate)
 ) ENGINE=INNODB; 
 

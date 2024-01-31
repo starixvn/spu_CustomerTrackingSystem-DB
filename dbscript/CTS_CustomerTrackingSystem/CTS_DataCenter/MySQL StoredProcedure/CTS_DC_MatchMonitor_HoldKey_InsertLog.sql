@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_HoldKey_InsertLog`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_HoldKey_InsertLog`(
-		IN ip_UserID	BIGINT UNSIGNED
+		IN ip_UserID	INT UNSIGNED
     , 	IN ip_Status	BOOLEAN
 )
     SQL SECURITY INVOKER
