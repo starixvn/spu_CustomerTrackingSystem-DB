@@ -16,6 +16,7 @@ ALTER PROCEDURE [dbo].[CTS_MatchTicketInfo_Get]
 	,	@BettypeList		VARCHAR(MAX) = '[]' --JSON
 	,	@DangerList			VARCHAR(MAX) = NULL --JSON
 	,	@MatchSection		TINYINT = 1
+	,	@IsExclTestCurr		BIT = 0
 
 	,	@BatchSize			INT = 100
 	,	@LastEventDate		DATE = NULL
@@ -40,7 +41,7 @@ AS
 		@FromDate			='2024-01-08'
 	,	@ToDate				= NULL
 	,	@SportList			= '1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,99,154'
-	,	@LeagueEvent		= 'cup'
+	,	@LeagueEvent		= ''
 	,	@MarketList			= '0,1'
 	,	@BettypeList		= '[	{"BetType":1, "BetChoiceType":2, "BetChoiceHome":"h", "BetChoiceAway":"a", "BetID":0}
 						,	{"BetType":3, "BetChoiceType":2, "BetChoiceHome":"h", "BetChoiceAway":"a", "BetID":0}
@@ -48,6 +49,8 @@ AS
 						,	{"BetType":126, "BetChoiceType":1}]' --JSON
 	,	@DangerList			= NULL
 	,	@MatchSection		= 1
+	,	@IsExclTestCurr		= 1
+
 	,	@BatchSize			= 100
 	,	@LastEventDate		= NULL
 	,	@LastMatchID		= NULL 
@@ -566,6 +569,7 @@ BEGIN
 			LEFT JOIN  #tmpDanger4 AS tmpDg4 WITH(NOLOCK) ON tmpDg4.Danger4 = c.danger4
 			LEFT JOIN  #tmpDanger5 AS tmpDg5 WITH(NOLOCK) ON tmpDg5.Danger5 = c.danger5
 		WHERE (ISNULL(tmpDg1.Danger1,0)+ ISNULL(tmpDg2.danger2,0) + ISNULL(tmpDg3.danger3,0) + ISNULL(tmpDg4.danger4,0) + ISNULL(tmpDg5.danger5,0) > 0 OR @IsFilterDanger = 0)
+			AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
 		GROUP BY  tmpMt.eventdate, tmpMt.MatchId, tmpMt.HomeId, tmpMt.AwayId, tmpMt.SportType, tmpMt.LeagueId, b.Bettype, b.LiveIndicator, tmpBt.BetID
 		ORDER BY tmpMt.eventdate DESC, tmpMt.matchid DESC, b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;		
 	END
@@ -678,6 +682,7 @@ BEGIN
 			LEFT JOIN  #tmpDanger4 AS tmpDg4 WITH(NOLOCK) ON tmpDg4.Danger4 = c.danger4
 			LEFT JOIN  #tmpDanger5 AS tmpDg5 WITH(NOLOCK) ON tmpDg5.Danger5 = c.danger5
 		WHERE (ISNULL(tmpDg1.Danger1,0)+ ISNULL(tmpDg2.danger2,0) + ISNULL(tmpDg3.danger3,0) + ISNULL(tmpDg4.danger4,0) + ISNULL(tmpDg5.danger5,0) > 0 OR @IsFilterDanger = 0)
+			AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
 		GROUP BY  tmpMt.eventdate, tmpMt.MatchId, tmpMt.HomeId, tmpMt.AwayId, tmpMt.SportType, tmpMt.LeagueId, b.Bettype, b.LiveIndicator, tmpBt.BetID
 		ORDER BY tmpMt.eventdate DESC, tmpMt.matchid DESC, b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;	
 

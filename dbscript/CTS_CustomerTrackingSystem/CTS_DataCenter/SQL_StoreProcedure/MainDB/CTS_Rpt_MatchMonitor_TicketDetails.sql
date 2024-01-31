@@ -1084,6 +1084,7 @@ BEGIN
 						INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID 
 						INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 					WHERE (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
+						AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
 					;
 				END;
 				ELSE IF (@TicketType = 0)
@@ -1172,7 +1173,7 @@ BEGIN
 							,	ISNULL(tmpTs.Reason,'0')
 							,	ISNULL(tmpTs.AGroup,0)
 							,	ISNULL(tmpTs.MGroup,0)
-							FROM dbo.bettrans14 AS b WITH(NOLOCK, INDEX=IX_sequenceid)
+							FROM dbo.bettrans14 AS b WITH(NOLOCK)
 								INNER JOIN dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
 								INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID 
 								INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
@@ -1283,6 +1284,7 @@ BEGIN
 						INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID 
 						INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 					WHERE (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
+						AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
 					;
 				END
 				ELSE IF (@TicketType = 0)
