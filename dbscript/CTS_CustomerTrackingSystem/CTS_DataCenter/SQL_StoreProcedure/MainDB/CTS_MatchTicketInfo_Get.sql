@@ -613,11 +613,6 @@ BEGIN
             
 			SET @TotalRow = (SELECT COUNT(1) FROM #tmpMatch WITH(NOLOCK))
 
-			SELECT TOP(1) tmpMt.EventDate AS LastEventDate
-			,	tmpMt.MatchId AS LastMatchId
-			FROM #tmpMatch AS tmpMt WITH(NOLOCK)
-			ORDER BY EventDate ASC, MatchId ASC
-
 			IF (@TotalRow < @BatchSize)
 			BEGIN
 				SET @ToDate14 = DATEADD(DAY,-1,@ToDate14);
@@ -656,6 +651,11 @@ BEGIN
 					,		m.MatchId DESC;		
 			END;
 			
+			SELECT TOP(1) tmpMt.EventDate AS LastEventDate
+				,	tmpMt.MatchId AS LastMatchId
+			FROM #tmpMatch AS tmpMt WITH(NOLOCK)
+			ORDER BY EventDate ASC, MatchId ASC
+
 			SELECT	tmpMt.EventDate						
 			,	tmpMt.MatchId
 			,	b.LiveIndicator
