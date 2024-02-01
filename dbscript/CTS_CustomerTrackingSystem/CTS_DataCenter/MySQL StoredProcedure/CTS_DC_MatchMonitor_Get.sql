@@ -36,7 +36,8 @@ BEGIN
 			- 	20231116@Long.Luu: 		Return fraud ticket list of each match-liveindicator-bettype-betid [Redmine ID: 195042]
 			- 	20231120@Casey.Huynh:	Enhance Rule for Esport. Adjust Group Stake to 300, Add AssociationByIP, ShareMatch(3 Match(last 7 day) [Redmine ID: #196396]
 			-	20240123@Casey.Huynh:	Return Quater X Details BetID [Redmine ID: #200120]
-          
+			-	20240201@Thomas.Nguyen:	Remove column LeagueName [Redmine ID: #197706]
+
 		Param's Explanation (filtered by):
 			- ip_Market: 		0 return LiveIndicator = 0, 1 return LiveIndicator = 1, NULL: Both Live And Non-Live
             - ip_Reason: 		0:Group Betting, 1: Hedging, 2: Arbitrage, 3: Fixed Game
@@ -76,7 +77,6 @@ BEGIN
         ,	HomeID			INT
         ,	AwayID			INT
         ,	LeagueID		INT
-        ,	LeagueName		VARCHAR(500) 
         ,	Sporttype		INT
         ,	BettypeID		INT
         ,	BetID			BIGINT
@@ -168,13 +168,12 @@ BEGIN
 	EXECUTE stmt1; 
     
     IF (IFNULL(ip_MatchInfos,'') = '') THEN # Search by Scanned Date
-		INSERT INTO Temp_MatchMonitor(MatchID, LiveIndicator, HomeID, AwayID, LeagueID, LeagueName, Sporttype, BettypeID, BetID, Reason)    
+		INSERT INTO Temp_MatchMonitor(MatchID, LiveIndicator, HomeID, AwayID, LeagueID, Sporttype, BettypeID, BetID, Reason)    
 		SELECT 	DISTINCT s.MatchID
 			,	s.LiveIndicator
 			,	s.HomeID
 			,	s.AwayID
-			,	s.LeagueID                
-			,	s.LeagueName
+			,	s.LeagueID
 			,	s.Sporttype
 			,	s.BettypeID
 			,	s.BetID
@@ -193,8 +192,7 @@ BEGIN
 			,	LiveIndicator	TINYINT
 			,	HomeID			INT
 			,	AwayID			INT
-			,	LeagueID		INT
-			,	LeagueName		VARCHAR(500) 
+			,	LeagueID		INT 
 			,	Sporttype		INT
 			,	BettypeID		INT
 			,	BetID			BIGINT
@@ -205,14 +203,13 @@ BEGIN
 			,	INDEX IDX_Temp_MatchInfo(MatchID,BettypeID,BetID)
 		);
                                 
-		INSERT IGNORE INTO Temp_MatchInfo (MatchID, EventDate, LiveIndicator, HomeID, AwayID, LeagueID, LeagueName, Sporttype, BettypeID, BetID, Reason, MatchSection, KickOffTime)
+		INSERT IGNORE INTO Temp_MatchInfo (MatchID, EventDate, LiveIndicator, HomeID, AwayID, LeagueID, Sporttype, BettypeID, BetID, Reason, MatchSection, KickOffTime)
 		SELECT  DISTINCT js.MatchId
 			,	js.EventDate
 			,	s.LiveIndicator
 			,	s.HomeID
 			,	s.AwayID
-			,	s.LeagueID                
-			,	s.LeagueName
+			,	s.LeagueID
 			,	s.Sporttype
 			,	s.BettypeID
 			,	s.BetID
@@ -233,14 +230,13 @@ BEGIN
 		WHERE s.LiveIndicator = IFNULL(ip_Market, s.LiveIndicator) -- and js.MatchId = 76874318
         ;
 	
-		INSERT INTO Temp_MatchMonitor(MatchID, EventDate, LiveIndicator, HomeID, AwayID, LeagueID, LeagueName, Sporttype, BettypeID, BetID, Reason, MatchSection, KickOffTime)    
+		INSERT INTO Temp_MatchMonitor(MatchID, EventDate, LiveIndicator, HomeID, AwayID, LeagueID, Sporttype, BettypeID, BetID, Reason, MatchSection, KickOffTime)    
 		SELECT 	DISTINCT tmpMi.MatchID
 			,	tmpMi.EventDate
 			,	tmpMi.LiveIndicator
 			,	tmpMi.HomeID
 			,	tmpMi.AwayID
-			,	tmpMi.LeagueID                
-			,	tmpMi.LeagueName
+			,	tmpMi.LeagueID
 			,	tmpMi.Sporttype
 			,	tmpMi.BettypeID
 			,	tmpMi.BetID
@@ -302,8 +298,7 @@ BEGIN
 			,	tmpMm.LiveIndicator AS Market
 			,	tmpMm.HomeID
 			,	tmpMm.AwayID
-			,	tmpMm.LeagueID                
-			,	tmpMm.LeagueName
+			,	tmpMm.LeagueID
             ,	tmpMm.Sporttype
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
@@ -329,8 +324,7 @@ BEGIN
 			,	tmpMm.LiveIndicator
 			,	tmpMm.HomeID
 			,	tmpMm.AwayID
-			,	tmpMm.LeagueID                
-			,	tmpMm.LeagueName
+			,	tmpMm.LeagueID
             ,	tmpMm.Sporttype
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
@@ -346,8 +340,7 @@ BEGIN
 			,	tmpMm.LiveIndicator AS Market
 			,	tmpMm.HomeID
 			,	tmpMm.AwayID
-			,	tmpMm.LeagueID                
-			,	tmpMm.LeagueName
+			,	tmpMm.LeagueID
             ,	tmpMm.Sporttype
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
@@ -373,8 +366,7 @@ BEGIN
 			,	tmpMm.LiveIndicator
 			,	tmpMm.HomeID
 			,	tmpMm.AwayID
-			,	tmpMm.LeagueID                
-			,	tmpMm.LeagueName
+			,	tmpMm.LeagueID
             ,	tmpMm.Sporttype
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
@@ -390,8 +382,7 @@ BEGIN
 			,	tmpMm.LiveIndicator AS Market
 			,	tmpMm.HomeID
 			,	tmpMm.AwayID
-			,	tmpMm.LeagueID                
-			,	tmpMm.LeagueName
+			,	tmpMm.LeagueID
             ,	tmpMm.Sporttype
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
@@ -417,8 +408,7 @@ BEGIN
 			,	tmpMm.LiveIndicator
 			,	tmpMm.HomeID
 			,	tmpMm.AwayID
-			,	tmpMm.LeagueID                
-			,	tmpMm.LeagueName
+			,	tmpMm.LeagueID
             ,	tmpMm.Sporttype
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
