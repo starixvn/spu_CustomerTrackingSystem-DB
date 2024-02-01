@@ -15,12 +15,14 @@ ALTER PROCEDURE [dbo].[CTS_MatchTicketInfo_Get]
 	,	@MarketList			VARCHAR(10)  = ''
 	,	@BettypeList		VARCHAR(MAX) = '[]' --JSON
 	,	@DangerList			VARCHAR(MAX) = NULL --JSON
-	,	@MatchSection		TINYINT = 1
-	,	@IsExclTestCurr		BIT = 0
+	,	@MatchSection		TINYINT = 1	
 
 	,	@BatchSize			INT = 100
 	,	@LastEventDate		DATE = NULL
 	,	@LastMatchID		INT =NULL
+
+	--,	@IsExclTestCurr			BIT = 1
+	--,	@IsExclInternalAccount	BIT = 1
 AS
 /*
 	Created: 20240102@Casey.Huynh
@@ -563,13 +565,20 @@ BEGIN
 			INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 			INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 			INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
+		--	INNER JOIN bodb02.dbo.Customer AS cus WITH(NOLOCK) ON cus.CustId = b.CustId
 			LEFT JOIN  #tmpDanger1 AS tmpDg1 WITH(NOLOCK) ON tmpDg1.Danger1 = c.danger
 			LEFT JOIN  #tmpDanger2 AS tmpDg2 WITH(NOLOCK) ON tmpDg2.Danger2 = c.danger2
 			LEFT JOIN  #tmpDanger3 AS tmpDg3 WITH(NOLOCK) ON tmpDg3.Danger3 = c.danger3
 			LEFT JOIN  #tmpDanger4 AS tmpDg4 WITH(NOLOCK) ON tmpDg4.Danger4 = c.danger4
 			LEFT JOIN  #tmpDanger5 AS tmpDg5 WITH(NOLOCK) ON tmpDg5.Danger5 = c.danger5
 		WHERE (ISNULL(tmpDg1.Danger1,0)+ ISNULL(tmpDg2.danger2,0) + ISNULL(tmpDg3.danger3,0) + ISNULL(tmpDg4.danger4,0) + ISNULL(tmpDg5.danger5,0) > 0 OR @IsFilterDanger = 0)
+		/*
 			AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
+			AND (@IsExclInternalAccount = 0 OR (b.srecommend NOT IN (41430709)
+												AND b.mrecommend NOT IN (27899314,11656504,12146012)
+												AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+												AND cus.site NOT IN ('Nextbet','9wickets','9wsports')))
+		*/
 		GROUP BY  tmpMt.eventdate, tmpMt.MatchId, tmpMt.HomeId, tmpMt.AwayId, tmpMt.SportType, tmpMt.LeagueId, b.Bettype, b.LiveIndicator, tmpBt.BetID
 		ORDER BY tmpMt.eventdate DESC, tmpMt.matchid DESC, b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;		
 	END
@@ -676,13 +685,20 @@ BEGIN
 				INNER JOIN #tmpBetType AS tmpBt WITH(NOLOCK) ON b.bettype = ISNULL(tmpBt.BetType,b.bettype) AND tmpBt.betID = b.betid
 				INNER JOIN #tmpMarket AS tmpMk WITH(NOLOCK) ON b.liveindicator = ISNULL(tmpMk.LiveIndicator,b.LiveIndicator)
 				INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON c.CustId = b.CustId
+			--	INNER JOIN bodb02.dbo.Customer AS cus WITH(NOLOCK) ON cus.CustId = b.CustId
 				LEFT JOIN  #tmpDanger1 AS tmpDg1 WITH(NOLOCK) ON tmpDg1.Danger1 = c.danger
 			LEFT JOIN  #tmpDanger2 AS tmpDg2 WITH(NOLOCK) ON tmpDg2.Danger2 = c.danger2
 			LEFT JOIN  #tmpDanger3 AS tmpDg3 WITH(NOLOCK) ON tmpDg3.Danger3 = c.danger3
 			LEFT JOIN  #tmpDanger4 AS tmpDg4 WITH(NOLOCK) ON tmpDg4.Danger4 = c.danger4
 			LEFT JOIN  #tmpDanger5 AS tmpDg5 WITH(NOLOCK) ON tmpDg5.Danger5 = c.danger5
 		WHERE (ISNULL(tmpDg1.Danger1,0)+ ISNULL(tmpDg2.danger2,0) + ISNULL(tmpDg3.danger3,0) + ISNULL(tmpDg4.danger4,0) + ISNULL(tmpDg5.danger5,0) > 0 OR @IsFilterDanger = 0)
+			/*
 			AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
+			AND (@IsExclInternalAccount = 0 OR (b.srecommend NOT IN (41430709)
+												AND b.mrecommend NOT IN (27899314,11656504,12146012)
+												AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+												AND cus.site NOT IN ('Nextbet','9wickets','9wsports')))	
+			*/
 		GROUP BY  tmpMt.eventdate, tmpMt.MatchId, tmpMt.HomeId, tmpMt.AwayId, tmpMt.SportType, tmpMt.LeagueId, b.Bettype, b.LiveIndicator, tmpBt.BetID
 		ORDER BY tmpMt.eventdate DESC, tmpMt.matchid DESC, b.Bettype ASC, b.LiveIndicator DESC, tmpBt.BetID ASC;	
 

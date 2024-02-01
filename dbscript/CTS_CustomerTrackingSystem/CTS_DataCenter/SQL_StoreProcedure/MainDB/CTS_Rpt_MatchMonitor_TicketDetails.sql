@@ -1084,8 +1084,7 @@ BEGIN
 						INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID 
 						INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 					WHERE (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
-						AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
-					;
+
 				END;
 				ELSE IF (@TicketType = 0)
 					BEGIN
@@ -1133,8 +1132,8 @@ BEGIN
 							LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 						WHERE	b.matchid = @MatchID								
 							AND b.liveindicator = @IsLive
-							AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
-							AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
+							AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
+							
 						END;
 					 IF (@BatchSize > 0)
 						BEGIN
@@ -1181,8 +1180,7 @@ BEGIN
 							WHERE	b.matchid = @MatchID
 								AND b.liveindicator = @IsLive
 								AND b.TransDate < @LastTransDate 
-								AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
-								AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
+								AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))											
 							ORDER BY b.TransDate DESC;
 
 							SET @MinTransDate= (SELECT MIN(TransDate) FROM #tmpTickets WITH(NOLOCK));
@@ -1230,7 +1228,6 @@ BEGIN
 							WHERE	b.matchid = @MatchID
 								AND b.liveindicator = @IsLive
 								AND b.TransDate = @MinTransDate
-								AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
 								AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
 								AND tmpTk.TransID IS NULL;
 
@@ -1284,7 +1281,6 @@ BEGIN
 						INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID 
 						INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 					WHERE (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
-						AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
 					;
 				END
 				ELSE IF (@TicketType = 0)
@@ -1334,7 +1330,6 @@ BEGIN
 							WHERE	b.matchid = @MatchID								
 								AND b.liveindicator = @IsLive
 								AND b.sequenceid < @LastScannedSequenceID
-								AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
 								AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
 				
 					END;
@@ -1387,7 +1382,6 @@ BEGIN
 							WHERE	b.matchid = @MatchID								
 								AND b.liveindicator = @IsLive
 								AND b.sequenceid < @LastScannedSequenceID
-								AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
 								AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
 							
 						END
@@ -1437,7 +1431,6 @@ BEGIN
 							WHERE	b.matchid = @MatchID
 								AND b.liveindicator = @IsLive
 								AND b.sequenceid < @LastScannedSequenceID
-								AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
 								AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
 							ORDER BY b.sequenceid DESC;
 
