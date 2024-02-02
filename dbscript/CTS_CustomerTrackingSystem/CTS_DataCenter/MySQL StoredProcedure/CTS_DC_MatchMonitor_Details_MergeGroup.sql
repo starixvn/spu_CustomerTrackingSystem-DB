@@ -87,11 +87,11 @@ BEGIN
     INSERT IGNORE INTO Temp_ExcludeTrans(TransID, Reason, ScoreDiff)
     SELECT tmpTg.TransID, tmpTg.Reason, tmpTg.ScoreDiff
     FROM Temp_TransGroup AS tmpTg
-    WHERE Reason NOT IN (CONST_REASON_FIXEDGAME,CONST_REASON_LOPSIDEDBETTING);
+    WHERE Reason IN (CONST_REASON_FIXEDGAME,CONST_REASON_LOPSIDEDBETTING);
 
     DELETE tmpTg
     FROM Temp_TransGroup AS tmpTg
-    WHERE tmpTg.Reason NOT IN (CONST_REASON_FIXEDGAME,CONST_REASON_LOPSIDEDBETTING);  
+    WHERE tmpTg.Reason IN (CONST_REASON_FIXEDGAME,CONST_REASON_LOPSIDEDBETTING);  
     #==================================================
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_Group;
