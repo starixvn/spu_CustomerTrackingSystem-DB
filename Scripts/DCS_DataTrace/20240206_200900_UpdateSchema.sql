@@ -29,7 +29,7 @@ CREATE TABLE `DCSConsumer_Log` (
 ) ENGINE=InnoDB;
 
 
-INSERT INTO `DCS_DataTrace`.`StaticList` (`ListID`, `ListCode`, `ListName`, `ItemID`, `ItemCode`, `ItemName`, `Status`, `CreatedDate`) 
-VALUES 	(2, 'DCSConsumer_LogType', 'DCSConsumer_LogType', 1, 'SessionKeyNull', 'SessionKey is Null', '1', CURRENT_TIMESTAMP())
-	,	(2, 'DCSConsumer_LogType', 'DCSConsumer_LogType', 2, 'SessionKeyEmpty', 'SessionKey is Empty', '1', CURRENT_TIMESTAMP())
-	,	(2, 'DCSConsumer_LogType', 'DCSConsumer_LogType', 3, 'RedisValueEmpty', 'RedisValue is Empty', '1', CURRENT_TIMESTAMP());
+INSERT INTO `DCS_DataCenter`.`StaticList` (`ListID`, `ListCode`, `ListName`, `ItemID`, `ItemCode`, `ItemName`, `Status`, `CreatedDate`) 
+VALUES 	(3, 'DCSConsumer_LogType', 'DCSConsumer_LogType', 1, 'SessionKeyNull', 'SessionKey is Null', '1', CURRENT_TIMESTAMP())
+	,	(3, 'DCSConsumer_LogType', 'DCSConsumer_LogType', 2, 'SessionKeyEmpty', 'SessionKey is Empty', '1', CURRENT_TIMESTAMP())
+	,	(3, 'DCSConsumer_LogType', 'DCSConsumer_LogType', 3, 'RedisValueEmpty', 'RedisValue is Empty', '1', CURRENT_TIMESTAMP());
