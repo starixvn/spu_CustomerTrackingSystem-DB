@@ -20,13 +20,14 @@ BEGIN
 
 	Example:
 		SET sql_safe_updates = 0;
-        CALL DCS_DataTrace.DCS_DT_Log_DCSConsumerLog_Insert('[{"SessionKey":"123","LoginName":"Test01","SubscriberName":"Alpha","TransTime":"2024-02-06 13:54:12.123","UserAgent":"Mozilla Chrome 120","URL":"http://localhost:5000"},{"SessionKey":"124","LoginName":"Test02","SubscriberName":"Alpha1","TransTime":"2024-02-06 13:54:12.123","UserAgent":"Mozilla Chrome 121","URL":"http://localhost:5001"}]');
+        CALL DCS_DataTrace.DCS_DT_Log_DCSConsumerLog_Insert('[{"LogType":1,"SessionKey":"123","LoginName":"Test01","SubscriberName":"Alpha","TransTime":"2024-02-06 13:54:12.123","UserAgent":"Mozilla Chrome 120","URL":"http://localhost:5000"},{"LogType":2,"LoginName":"Test02","SubscriberName":"Alpha1","TransTime":"2024-02-06 13:54:12.123","UserAgent":"Mozilla Chrome 121","URL":"http://localhost:5001"}]');
 	*/
     
 	DECLARE lv_CurrentDatetime DATETIME DEFAULT CURRENT_TIMESTAMP();
     
-    INSERT IGNORE INTO DCS_DataTrace.DCSConsumer_Log(SessionKey, LoginName, SubscriberName, TransTime, UserAgent, URL, CreatedDate, InsertedTime)
-	SELECT	tmp.SessionKey
+    INSERT IGNORE INTO DCS_DataTrace.DCSConsumer_Log(LogType, SessionKey, LoginName, SubscriberName, TransTime, UserAgent, URL, CreatedDate, InsertedTime)
+	SELECT	tmp.LogType
+		,	tmp.SessionKey
 		,	tmp.LoginName
 		,   tmp.SubscriberName
         ,	tmp.TransTime
@@ -37,7 +38,8 @@ BEGIN
 	FROM JSON_TABLE(
 			ip_ConsumerLogJson,
 			 "$[*]" COLUMNS(
-					SessionKey			VARCHAR(100)		PATH "$.SessionKey"
+					LogType				SMALLINT			PATH "$.LogType"
+				,	SessionKey			VARCHAR(100)		PATH "$.SessionKey"
 				,	LoginName			VARCHAR(100)		PATH "$.LoginName"
                 ,   SubscriberName		VARCHAR(50)			PATH "$.SubscriberName"
 				,	TransTime			TIMESTAMP(4)		PATH "$.TransTime"
