@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCTS-bodb_CTS" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-WASAVerse" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[CTS_TWGroupBetting_UpdateTotalTicket]
 		@BatchSize				INT
 	,	@LastSequenceId			BIGINT
@@ -7,7 +7,7 @@ AS
 /*
 	Created: 20220314@Harvey.Nguyen
 	Task : Caculate Group betting ticket
-	DB	 : DBCTS.bodb_CTS
+	DB	 : DBCTS.WASAVerse
 
 	Revisions:
 		- 20220314@Harvey.Nguyen: Scan ticket 								[Redmine ID: #169671]
@@ -17,7 +17,7 @@ AS
 		- 20230626@Victoria.Le:	  Calculate TicketCount,RejectTicketCount,DesktopTicketCount,ParlayTicketCount
 								  And only get sportttype < 100 			[Redmine ID: #189505]
 		- 20231024@John.Ngo:	  [CTS] - Customer Classification - TW GB - Resolve Deadlock Problems [Redmine ID: #195866]
-		- 20240130@Victoria.Le:	  Change tables - TWGB Migrate data from bodb02 to bodb_CTS [Redmine ID: #191955]
+		- 20240130@Victoria.Le:	  Change tables - TWGB Migrate data from bodb02 to WASAVerse [Redmine ID: #191955]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_UpdateTotalTicket] @LastScannedTime = '2022-03-10 03:39:12.230'

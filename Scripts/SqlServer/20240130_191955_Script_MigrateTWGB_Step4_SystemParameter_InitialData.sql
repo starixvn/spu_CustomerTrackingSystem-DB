@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCTS-bodb_CTS" executers="" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCTS-WASAVerse" executers="" viewers="" isFunction="0"></info>*/
 /*
 	Creator:	20240130@Victoria.Le
 	Task:		Initial Data for SystemParameter - Need to get the latest value of paramid before deploying
@@ -9,7 +9,7 @@
 */
 
 
-USE	bodb_CTS;
+USE	WASAVerse;
 GO
 
 INSERT INTO dbo.SystemParameter(ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue) VALUES 

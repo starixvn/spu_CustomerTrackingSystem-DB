@@ -1,10 +1,10 @@
-/*<info serverAlias="DBCTS-bodb_CTS" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-WASAVerse" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[CTS_TWGroupBetting_CountGBTicket]
 AS
 /*
 	Created: 20220314@Harvey.Nguyen
 	Task : Caculate Group betting ticket
-	DB	 : DBCTS.bodb_CTS
+	DB	 : DBCTS.WASAVerse
 
 	Revisions:
 		- 20220314@Harvey.Nguyen: Scan ticket 								[Redmine ID: #169671]
@@ -13,7 +13,7 @@ AS
 		- 20220801@Harvey.Nguyen: Update coding convention					[Redmine ID: #169671]
 		- 20230713@Victoria.Le: Add default for new columns					[Redmine ID: #189505]
 		- 20230816@Victoria.Le: Only update without insert into table dbo.SPU_GroupBettingCustomer [Redmine ID: #191955]
-		- 20240130@Victoria.Le:	Change tables - TWGB Migrate data from bodb02 to bodb_CTS [Redmine ID: #191955]
+		- 20240130@Victoria.Le:	Change tables - TWGB Migrate data from bodb02 to WASAVerse [Redmine ID: #191955]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_CountGBTicket]

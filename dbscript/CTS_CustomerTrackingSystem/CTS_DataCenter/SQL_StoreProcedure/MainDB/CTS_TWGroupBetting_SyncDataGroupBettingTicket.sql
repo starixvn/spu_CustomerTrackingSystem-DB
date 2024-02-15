@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCTS-bodb_CTS" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-WASAVerse" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[CTS_TWGroupBetting_SyncDataGroupBettingTicket]
 			@GBTicketXMLString	VARCHAR(MAX)
 		,	@RunningSequenceId	BIGINT
@@ -6,7 +6,7 @@ AS
 /*
 	Created: 20220314@Harvey.Nguyen
 	Task : Insert group betting ticket from DB061 -> DB062 %
-	DB	 : DBCTS.bodb_CTS
+	DB	 : DBCTS.WASAVerse
 
 	Revisions:
 		- 20220314@Harvey.Nguyen: Init sp 											[Redmine ID: #170160]
@@ -19,7 +19,7 @@ AS
 		- 20230818@Victoria.Le: Add ROWLOCK with the delete statement [Redmine ID: #191955]
 		- 20231011@Victoria.Le: Keep data 14 days instead of 7 days [Redmine ID: #195298]
 		- 20231024@John.Ngo:	[CTS] - Customer Classification - TW GB - Resolve Deadlock Problems [Redmine ID: #195866]
-		- 20240130@Victoria.Le:	Change tables - TWGB Migrate data from bodb02 to bodb_CTS [Redmine ID: #191955]
+		- 20240130@Victoria.Le:	Change tables - TWGB Migrate data from bodb02 to WASAVerse [Redmine ID: #191955]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_SyncDataGroupBettingTicket] 

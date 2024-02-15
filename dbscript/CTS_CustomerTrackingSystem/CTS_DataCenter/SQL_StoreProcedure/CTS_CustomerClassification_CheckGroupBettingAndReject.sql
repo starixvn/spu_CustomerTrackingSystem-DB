@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCTS-bodb_CTS" executers="bodbSPUNet" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-WASAVerse" executers="bodbSPUNet" viewers="" isFunction="0" isNested="0"></info>*/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -10,13 +10,13 @@ AS
 /*
 	Created: 20210722@Harvey.Nguyen
 	Task : New categories/CC for TW group betting detection
-	DB: bodb_CTS
+	DB: WASAVerse
 	Original:
 
 	Revisions:
 		- 20210722@Harvey.Nguyen: Created [Redmine ID: #155956]
 		- 20230626@Victoria.Le:		Get Group Betting, Reject, Desktop percent within 60 days & and current date [Redmine ID: #189505]
-		- 20240130@Victoria.Le:	  	Change tables - TWGB Migrate data from bodb02 to bodb_CTS [Redmine ID: #191955]
+		- 20240130@Victoria.Le:	  	Change tables - TWGB Migrate data from bodb02 to WASAVerse [Redmine ID: #191955]
 	Param's Explanation:
 */
 BEGIN

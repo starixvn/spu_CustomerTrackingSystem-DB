@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCTS-bodb_CTS" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCTS-WASAVerse" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[CTS_TWGroupBetting_ScanTicket]
 		@BatchSize				INT,
 		@Step					INT,
@@ -13,7 +13,7 @@ AS
 /*
 	Created: 20220314@Harvey.Nguyen
 	Task : Caculate TW Group betting %
-	DB	 : DBCTS.bodb_CTS
+	DB	 : DBCTS.WASAVerse
 
 	Revisions:
 		- 20220314@Harvey.Nguyen: Scan ticket								[Redmine ID: #169671]
@@ -33,7 +33,7 @@ AS
 		- 20231030@Victoria.Le:	  New Group Betting - CC 2300 - Call SP from DW to send list fraud tickets [Redmine ID: #195060]
 		- 20231123@Victoria.Le:	  Comment out the above code [Call SP from DW] and wait to update rule from BI TW team [Redmine ID: #195060]
 		- 20231206@Victoria.Le:	  Remove - Comment out the above code [Call SP from DW] [Redmine ID: #197958]
-		- 20240130@Victoria.Le:	  Change tables - TWGB Migrate data from bodb02 to bodb_CTS [Redmine ID: #191955]
+		- 20240130@Victoria.Le:	  Change tables - TWGB Migrate data from bodb02 to WASAVerse [Redmine ID: #191955]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_ScanTicket] '2022-02-15 23:10:15.983','2022-02-16 02:15:20.983',10900

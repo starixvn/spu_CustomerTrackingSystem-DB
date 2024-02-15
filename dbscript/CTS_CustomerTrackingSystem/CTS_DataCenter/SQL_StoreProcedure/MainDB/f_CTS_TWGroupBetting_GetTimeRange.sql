@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCTS-bodb_CTS" selectors="bodbSPUNet" isFunction="1" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-WASAVerse" selectors="bodbSPUNet" isFunction="1" isNested="0"></info>*/
 
 CREATE FUNCTION [dbo].[f_CTS_TWGroupBetting_GetTimeRange] (
 	@FromTime DATETIME, 
@@ -10,12 +10,12 @@ AS
 /*
 	Created by: 20220308@Harvey.Nguyen
 	Task: Calculate TW group betting percent
-	DB: DBCTS.bodb_CTS
+	DB: DBCTS.WASAVerse
 	Original: 
 	
 	Revisions:
 		- 20220308@Harvey: Initial function [Redmine: #169670]
-		- 20240130@Victoria.Le:	Change tables - TWGB Migrate data from bodb02 to bodb_CTS [Redmine ID: #191955]
+		- 20240130@Victoria.Le:	Change tables - TWGB Migrate data from bodb02 to WASAVerse [Redmine ID: #191955]
 	Explanation's Param:
 		
 */   

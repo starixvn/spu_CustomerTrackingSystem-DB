@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCTS-bodb_CTS" executers="" viewers="" isFunction="0"></info>*/
+/*<info serverAlias="DBCTS-WASAVerse" executers="" viewers="" isFunction="0"></info>*/
 /*
 	Creator:	20240130@Victoria.Le
 	Task:		Create userlogin on new database
@@ -9,7 +9,7 @@
 */
 
 
-USE	bodb_CTS;
+USE	WASAVerse;
 GO
 
 IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name='vnSPU')
