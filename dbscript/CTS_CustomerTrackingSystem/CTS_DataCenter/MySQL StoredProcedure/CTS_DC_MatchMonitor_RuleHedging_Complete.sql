@@ -40,9 +40,10 @@ BEGIN
 			CALL CTS_DC_MatchMonitor_RuleHedging_Complete(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=114089577333,@ip_MatchID:=48310358,@ip_ScoreDiff:=0,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a','[{"GroupID":4,"Reason":0,"TransIDList":"114089577333,114089576830","CustIDList":"55706032,55895790","OldGroupIDList":"0"}]');
 			
 		*/ 
-	DECLARE CONS_LOG 				TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
+	DECLARE CONS_LOG 				TINYINT DEFAULT 1; #0:LogOff, 1:LogOn
     DECLARE CONS_MMREASON_HEDGING	INT	DEFAULT	1;
     
+	DECLARE lv_LogTime			DATETIME(4) DEFAULT current_timestamp(4);
     DECLARE lv_GroupID 			INT;
     DECLARE lv_TransIDList 		LONGTEXT;
     DECLARE lv_CustIDList		LONGTEXT;
@@ -63,10 +64,10 @@ BEGIN
 	
 	DECLARE lv_TransIDList_TargetGroupID 		LONGTEXT;
     #==================LOG=======================================================
-    DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleArbitrage_Process';
+    DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleHedging_Complete';
     IF CONS_LOG = 1 THEN     
 		INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText, JsonString1)
-		SELECT lv_SPName, CURRENT_TIMESTAMP(), CONCAT('@ip_LiveIndicator:=',ip_LiveIndicator,',@ip_MaxSequenceID:=',ip_MaxSequenceID,',@ip_MatchID:=',ip_MatchID
+		SELECT lv_SPName, CURRENT_TIMESTAMP(4), CONCAT('lv_LogTime_Start:=',lv_LogTime,',@ip_LiveIndicator:=',ip_LiveIndicator,',@ip_MaxSequenceID:=',ip_MaxSequenceID,',@ip_MatchID:=',ip_MatchID
 		,',@ip_ScoreDiff:=',ip_ScoreDiff,',@ip_BettypeID:=',ip_BettypeID,',@ip_BetID:=',ip_BetID,',@ip_Betteam:=',ip_Betteam), ip_TransGroup;
     END IF;
     #==================LOG=======================================================  
@@ -317,7 +318,13 @@ BEGIN
             
 			DELETE tmptg
 			FROM Temp_TransGroup AS tmptg WHERE GroupID = lv_GroupID;
+            
 		END LOOP;
+    END IF;
+    
+	IF CONS_LOG = 1 THEN     
+		INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
+		SELECT lv_SPName, current_timestamp(4), CONCAT('lv_LogTime_end:=',lv_LogTime);
     END IF;
 END$$
 DELIMITER ;
