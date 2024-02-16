@@ -14,6 +14,7 @@ AS
 	Revisions:
 		- 20231030@Victoria.Le: 	Initial Writing  [Redmine ID: #195060]
 		- 20231206@Victoria.Le: 	Change code because update IsServiceScanned incorrect  [Redmine ID: #197958]
+		- 20240216@Victoria.Le: 	Resolve Deadlock [Redmine ID: #200973]
 
 */
 BEGIN
@@ -50,11 +51,10 @@ BEGIN
 	WHERE cs.JobScannedType > 0;
 	
 	UPDATE cs 
-	SET 	cs.IsServiceScanned = (CASE WHEN cgb.CustId IS NOT NULL AND cs.IsServiceScanned = 0 THEN 1 ELSE cs.IsServiceScanned END)
-		,	cs.LastServiceScannedTime = (CASE WHEN cgb.CustId IS NOT NULL THEN GETDATE() ELSE cs.LastServiceScannedTime END)
+	SET 	cs.IsServiceScanned = (CASE WHEN cs.IsServiceScanned = 0 THEN 1 ELSE cs.IsServiceScanned END)
+		,	cs.LastServiceScannedTime = GETDATE()
 	FROM dbo.CustomerClassification_ScannedNewCust AS cs WITH (UPDLOCK, ROWLOCK)
-		LEFT JOIN #tmpCustomer AS c ON c.CustId = cs.CustId
-		LEFT JOIN #tmpCustomerGroupBetting AS cgb ON cgb.CustId = cs.CustId
+		INNER JOIN #tmpCustomerGroupBetting AS cgb ON cgb.CustId = cs.CustId
 	;
 	
 	SELECT 	cgb.CustId AS 'CustID'
