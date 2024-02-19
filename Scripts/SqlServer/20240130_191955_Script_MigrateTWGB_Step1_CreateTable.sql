@@ -35,7 +35,7 @@ CREATE TABLE [dbo].[TWGroupBettingRule](
 	[CustClassLimitPercent] [tinyint] NULL,
 	[BetFromLimitValue] [varchar](50) NULL,
 	[BetFromLimitPercent] [tinyint] NULL,
-PRIMARY KEY CLUSTERED
+ CONSTRAINT [PK_TWGroupBettingRule] PRIMARY KEY CLUSTERED
 (
 	[RuleId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [IDX]
@@ -47,7 +47,7 @@ CREATE TABLE [dbo].[TWGroupBettingTicket](
 	[CustId] [int] NOT NULL,
 	[TransId] [bigint] NOT NULL,
 	[TransDate] [date] NULL,
-PRIMARY KEY CLUSTERED
+ CONSTRAINT [PK_TWGroupBettingTicket] PRIMARY KEY CLUSTERED
 (
 	[TransId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [IDX]
@@ -69,7 +69,7 @@ CREATE TABLE [dbo].[TWGroupBettingTicket_History](
 	[IsRule2] [bit] NULL,
 	[IsRule3] [bit] NULL,
 	[InsertTime] [datetime] NULL,
-PRIMARY KEY CLUSTERED 
+ CONSTRAINT [PK_TWGroupBettingTicket_History] PRIMARY KEY CLUSTERED 
 (
 	[TransId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [IDX]
@@ -108,7 +108,7 @@ CREATE TABLE [dbo].[TWGroupBettingCustomer](
 	[RejectTicketCount] [int] NULL,
 	[DesktopTicketCount] [int] NULL,
 	[ParlayTicketCount] [int] NULL,
-PRIMARY KEY CLUSTERED 
+CONSTRAINT [PK_TWGroupBettingCustomer] PRIMARY KEY CLUSTERED 
 (
 	[CustId] ASC,
 	[ScanDate] DESC
@@ -133,7 +133,7 @@ CREATE TABLE [dbo].[SystemParameter](
 	[ParameterDesc] [varchar](200) NOT NULL,
 	[ParameterDataType] [varchar](50) NOT NULL,
 	[ParameterValue] [varchar](200) NOT NULL,
-PRIMARY KEY CLUSTERED 
+ CONSTRAINT [PK_SystemParameter] PRIMARY KEY CLUSTERED 
 (
 	[ParameterID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [IDX]
@@ -151,7 +151,7 @@ CREATE TABLE [dbo].[TWGroupBettingCustomer_Archive](
 	[RejectTicketCount] [int] NULL,
 	[DesktopTicketCount] [int] NULL,
 	[ParlayTicketCount] [int] NULL,
-PRIMARY KEY CLUSTERED 
+CONSTRAINT [PK_TWGroupBettingCustomer_Archive] PRIMARY KEY CLUSTERED 
 (
 	[CustId] ASC,
 	[ScanDate] DESC
