@@ -51,7 +51,7 @@ BEGIN
 	WHERE cs.JobScannedType > 0;
 	
 	UPDATE cs 
-	SET 	cs.IsServiceScanned = (CASE WHEN cs.IsServiceScanned = 0 THEN 1 ELSE cs.IsServiceScanned END)
+	SET 	cs.IsServiceScanned = 1
 		,	cs.LastServiceScannedTime = GETDATE()
 	FROM dbo.CustomerClassification_ScannedNewCust AS cs WITH (UPDLOCK, ROWLOCK)
 		INNER JOIN #tmpCustomerGroupBetting AS cgb ON cgb.CustId = cs.CustId
