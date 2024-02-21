@@ -20,3 +20,6 @@ ALTER TABLE MatchMonitorStagingHedgingNonLive
 ,	ADD COLUMN IsHedging BOOLEAN DEFAULT 0 AFTER GroupID
 ,	ADD COLUMN SubscriberID INT UNSIGNED AFTER CustID;
 
+ALTER TABLE MatchMonitorDetails
+DROP INDEX  IX_MatchMonitorDetails_GroupIDIsHedging;
+
