@@ -1,3 +1,4 @@
+/*<info serverAlias="DBVR2-bodb_VR2Model" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 GO
 SET ANSI_NULLS ON
 GO
@@ -69,3 +70,10 @@ BEGIN
 	DROP TABLE IF EXISTS #tmpCustomerGroupBetting;
 	
 END;
+GO
+
+
+GRANT EXECUTE ON [dbo].[CTS_CustomerClassification_CheckNewGroupBetting] TO [bodbSPUNet]
+GO
+GRANT VIEW DEFINITION ON [dbo].[CTS_CustomerClassification_CheckNewGroupBetting] TO [bodbSPUNet]
+GO
