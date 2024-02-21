@@ -11,9 +11,9 @@
 */
 USE DCS_DataTrace;
 
-DROP TABLE IF EXISTS FPSScriptException;
+DROP TABLE IF EXISTS FPSJavascriptException;
 
-CREATE TABLE `FPSScriptException` (
+CREATE TABLE `FPSJavascriptException` (
   `ID` BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
   `ScriptVersion` VARCHAR(20) DEFAULT NULL,
   `FunctionName` VARCHAR(100) DEFAULT NULL,
@@ -22,13 +22,13 @@ CREATE TABLE `FPSScriptException` (
   `ApiUrl` VARCHAR(250) DEFAULT NULL,
   `HostName` VARCHAR(250) DEFAULT NULL,
   `SessionKey` VARCHAR(200) DEFAULT NULL,
-  `OldCookie` VARCHAR(100) DEFAULT NULL,
+  `DeviceCode` VARCHAR(100) DEFAULT NULL,
   `NewCookie` VARCHAR(100) DEFAULT NULL,
   `RealIP` VARCHAR(50) DEFAULT NULL,
   `FakeIP` VARCHAR(50) DEFAULT NULL,
   `CreatedDate` DATE DEFAULT NULL,
   `InsertedTime` TIMESTAMP DEFAULT NULL,
   
-  KEY `IX_FPSScriptException_CreatedDate_FunctionName` (`CreatedDate`,`FunctionName`),
-  KEY `IX_FPSScriptException_ScriptVersion` (`ScriptVersion`)
+  KEY `IX_FPSJavascriptException_CreatedDate_FunctionName` (`CreatedDate`,`FunctionName`),
+  KEY `IX_FPSJavascriptException_ScriptVersion` (`ScriptVersion`)
 ) ENGINE=InnoDB;
