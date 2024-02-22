@@ -13,7 +13,7 @@ BEGIN
 
 		Revisions:
 			- 	20230222@Casey.Huynh: Created [Redmine ID: 181995]   
-            -	20240201@Casey.Huynh: Enhance Performance [Redmine ID: xxxx ]
+            -	20240201@Casey.Huynh: Enhance Performance [Redmine ID: 197706]
             
 		Param's Explanation (filtered by):
 		

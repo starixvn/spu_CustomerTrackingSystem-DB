@@ -18,7 +18,7 @@ BEGIN
 
 		Revisions:
 			-	20231023@Casey.Huynh: Created [Redmine ID: #195043]
-            -	20240109@Casey.Huynh: Switch StaticList To Match Monitor Comment List  (ListID = 21)
+            -	20240109@Casey.Huynh: Switch StaticList To Match Monitor Comment List  (ListID = 21) [Redmine ID: #197706]
             
 		Param's Explanation (filtered by):
 		
