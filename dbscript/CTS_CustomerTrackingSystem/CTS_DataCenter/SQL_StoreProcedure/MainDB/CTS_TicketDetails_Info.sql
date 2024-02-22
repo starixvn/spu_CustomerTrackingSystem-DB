@@ -36,6 +36,7 @@ AS
 		- 20231116@Long.Luu: 		Support filter by FromTransDate-ToTransDate [Redmine ID: 195042]
 		- 20231122@Casey.Huynh:		Create SportBetType Setting and New E-Sports Bettypes [Redmine ID: #196396]
 		- 20240129@Casey.Huynh:		Support Danger Monitor Details In 7 days [Redmine ID: #196361]
+		- 20240129@Thomas.Nguyen:	Return more column IsCashout [Redmine ID: #199634]
 
 	Params Explaination:
 		@ListSuspiciousTransId: format JSON
@@ -110,6 +111,7 @@ BEGIN
 		,	CustomerClass		SMALLINT
 		,	SequenceId			BIGINT
 		,	TransDate			DATETIME
+		,	IsCashout			BIT
 	);
 	CREATE NONCLUSTERED INDEX #IX_tmpTickets_SequenceId ON #tmpTrans (
 			SequenceId			ASC
@@ -236,8 +238,7 @@ BEGIN
 
 	IF @IsGetDataFromOrigin = 1 -- Get data from Bettrans
 	BEGIN
-
-    IF @TicketType = 1 --GET Suspicious Ticket Only
+		IF @TicketType = 1 --GET Suspicious Ticket Only
 		BEGIN
 			INSERT INTO #tmpTrans (
 					TransId
@@ -251,7 +252,8 @@ BEGIN
 				,	CurrencyId
 				,	BetType
 				,	Hdp
-				,	TicketStatus)
+				,	TicketStatus
+				,	IsCashout)
 			SELECT	b.TransId
 				,	b.custid
 				,	b.Hdp1
@@ -264,6 +266,7 @@ BEGIN
 				,	b.bettype
 				,	ABS(CASE WHEN st.BetChoiceType = 2 THEN b.Hdp1 - b.Hdp2 END) AS HDP
 				,	b.statusID
+				,	CASE WHEN b.betdaqid = -2 THEN 1 ELSE 0 END AS IsCashout
 			FROM #tmpSuspiciousDistinctTrans AS tmpTs WITH(NOLOCK)
 				INNER JOIN dbo.bettrans AS b WITH(NOLOCK) ON tmpTs.TransId = b.TransId
 				INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
@@ -291,7 +294,8 @@ BEGIN
 				,	BetType
 				,	Hdp
 				,	TicketStatus				
-				,	SequenceId)
+				,	SequenceId
+				,	IsCashout)
 			SELECT	b.TransId
 				,	b.custid
 				,	b.Hdp1
@@ -305,6 +309,7 @@ BEGIN
 				,	ABS(CASE WHEN st.BetChoiceType = 2 THEN b.Hdp1 - b.Hdp2 END) AS Hdp
 				,	b.statusID				
 				,	SequenceId
+				,	CASE WHEN b.betdaqid = -2 THEN 1 ELSE 0 END AS IsCashout
 			FROM dbo.bettrans AS b WITH(NOLOCK)
 				INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID
@@ -318,7 +323,6 @@ BEGIN
 
 	IF @IsGetDataFrom14 = 1
 	BEGIN
-        
 		IF @TicketType = 1 --GET Suspicious Ticket Only
 		BEGIN
 
@@ -334,7 +338,8 @@ BEGIN
 				,	CurrencyId
 				,	BetType
 				,	hdp
-				,	TicketStatus)
+				,	TicketStatus
+				,	IsCashout)
 			SELECT	b.TransId
 				,	b.custid
 				,	b.Hdp1
@@ -347,6 +352,7 @@ BEGIN
 				,	b.bettype
 				,	ABS(CASE WHEN st.BetChoiceType = 2 THEN b.Hdp1 - b.Hdp2 END) AS Hdp
 				,	b.statusID
+				,	CASE WHEN b.betdaqid = -2 THEN 1 ELSE 0 END AS IsCashout
 			FROM #tmpSuspiciousDistinctTrans AS tmpTs WITH(NOLOCK)
 				INNER JOIN dbo.bettrans14 AS b WITH(NOLOCK) ON tmpTs.TransId = b.TransId
 				INNER JOIN dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
@@ -396,9 +402,7 @@ BEGIN
 				AND b.liveindicator = @IsLive
 				AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
 				AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
-
 		END;
-
 	END;
 
 	IF @IsGetDataFromBK = 1
@@ -417,7 +421,8 @@ BEGIN
 				,	CurrencyId
 				,	BetType
 				,	Hdp
-				,	TicketStatus)
+				,	TicketStatus
+				,	IsCashout)
 			SELECT	b.TransId
 				,	b.custid
 				,	b.Hdp1
@@ -430,6 +435,7 @@ BEGIN
 				,	b.bettype
 				,	ABS(CASE WHEN st.BetChoiceType = 2 THEN b.Hdp1 - b.Hdp2 END) AS Hdp
 				,	b.statusID
+				,	CASE WHEN b.betdaqid = -2 THEN 1 ELSE 0 END AS IsCashout
 			FROM #tmpSuspiciousDistinctTrans AS tmpTs WITH(NOLOCK)
 				INNER JOIN bodb_Archive.dbo.bettrans_bk AS b WITH(NOLOCK) ON tmpTs.TransId = b.TransId
 				INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.matchid = m.matchid
@@ -475,7 +481,7 @@ BEGIN
 	SELECT @TotalTicketAll = COUNT(1) FROM #tmpTrans;
 	SELECT @TotalTicketLicensee = COUNT(1) FROM #tmpTrans WHERE IsLicensee = 1;
 	SELECT @TotalTicketCredit = COUNT(1) FROM #tmpTrans  WHERE IsLicensee = 0;
-
+	
 	SELECT	DISTINCT 
 			tmpTs.LiveHomeScore
 		,	tmpTs.LiveAwayScore
@@ -493,12 +499,13 @@ BEGIN
 		,	tmpTs.Hdp
 		,	tmpTs.Betteam
 		,	tmpTs.TicketStatus
+		,	tmpTs.IsCashout
 	FROM #tmpTrans AS tmpTs
 		LEFT JOIN #tmpSuspiciousTrans AS tmpSt ON tmpSt.TransId = tmpTs.TransId
 	;
 	
 	DROP TABLE IF EXISTS #tmpSportBettype;
 	DROP TABLE IF EXISTS #tmpTrans;
-	DROP TABLE IF EXISTS #tmpExcludeTransIds;  
+	DROP TABLE IF EXISTS #tmpExcludeTransIds;
 
 END

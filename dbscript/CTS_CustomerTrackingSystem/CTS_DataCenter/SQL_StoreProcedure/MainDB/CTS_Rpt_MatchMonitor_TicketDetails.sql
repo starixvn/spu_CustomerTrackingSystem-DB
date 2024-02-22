@@ -29,6 +29,7 @@ CREATE PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_TicketDetails]
 	,	@ListMGroup					VARCHAR(MAX) = NULL
 	,	@FromTransDate				DATETIME = NULL
 	,	@ToTransDate				DATETIME = NULL
+	,	@IsCashout					BIT = NULL
 
 	,	@MinSequenceId				BIGINT = NULL OUTPUT
 	,	@MinTransDate				DATETIME = NULL OUTPUT
@@ -71,9 +72,11 @@ AS
         - 20231207@Long.Luu: 	Add Agent M999RM00 as internal account [Redmine ID: #197915]
 		- 20231120@Casey.Huynh:	Enhance Rule for Esport. Adjust Group Stake to 300, Add AssociationByIP, ShareMatch(3 Match(last 7 day) [Redmine ID: #196396]
 		- 20240129@Casey.Huynh: Support Danger Monitor Details In 7 days [Redmine ID: #196361]
+		- 20240129@Thomas.Nguyen: Return more column MalayOdds and add filter by Cashout [Redmine ID: #199634]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize)
+					 
 					  2 - to show on report (get tickets by @EventDate & @ListTransId). Support the Last 3 Days
 					  3	- to Show Support the Last 7 days
 		- @ListDanger: format JSON
@@ -174,6 +177,9 @@ BEGIN
 		,	ListReason			VARCHAR(MAX)
 		,	AGroup				INT  DEFAULT 0
 		,	MGroup				INT  DEFAULT 0
+		,	OddsType			TINYINT
+		,	MalayOdds			SMALLMONEY
+		,	IsCashout			BIT
 	);	
 
 	CREATE CLUSTERED INDEX #CIX_tmpTickets_CustId ON #tmpTickets (
@@ -189,6 +195,10 @@ BEGIN
 		,	LiveAwayScore		ASC
 	);
 	
+	CREATE NONCLUSTERED INDEX #IX_tmpTickets_IsCashout ON #tmpTickets (
+			IsCashout		ASC
+	);
+
 	IF	OBJECT_ID('tempdb..#tmpBUMBData') IS NOT NULL
 	BEGIN;
 		DROP TABLE	#tmpBUMBData;
@@ -488,6 +498,7 @@ BEGIN
 			ORDER BY b.sequenceid ASC
 				;
 		END;
+
 	IF (@QueryType = 2) --Get Date for MM Monitor
 		BEGIN --Get Ticket for MM Details Report 
 			----==================GET Trans==================
@@ -496,7 +507,7 @@ BEGIN
 				IF (@ListTransId <> '' AND @TicketType = 1) 
 				BEGIN
 					INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetChoiceHome,BetChoiceAway
-						,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
+						,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup, OddsType, IsCashout)
 					SELECT 
 							b.transid
 						,	b.transdate
@@ -530,6 +541,8 @@ BEGIN
 						,	ISNULL(tmpTs.Reason,'0')
 						,	ISNULL(tmpTs.AGroup,0)
 						,	ISNULL(tmpTs.MGroup,0)
+						,	b.oddstype
+						,	CASE WHEN b.betdaqid = -2 THEN 1 ELSE 0 END AS IsCashout
 					FROM #tmpTransIds AS tmpTs WITH(NOLOCK)
 						INNER JOIN bodb_Archive.dbo.bettrans_bk AS b WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 						INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.matchid = m.matchid
@@ -545,7 +558,7 @@ BEGIN
 				IF (@ListTransId <> '' AND @TicketType = 1) 
 				BEGIN
 					INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetChoiceHome,BetChoiceAway
-						,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
+						,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup, OddsType, IsCashout)
 					SELECT 
 							b.transid
 						,	b.transdate
@@ -579,6 +592,8 @@ BEGIN
 						,	ISNULL(tmpTs.Reason,'0')
 						,	ISNULL(tmpTs.AGroup,0)
 						,	ISNULL(tmpTs.MGroup,0)
+						,	b.oddstype
+						,	CASE WHEN b.betdaqid = -2 THEN 1 ELSE 0 END AS IsCashout
 					FROM #tmpTransIds AS tmpTs WITH(NOLOCK)
 						INNER JOIN dbo.bettrans14 AS b WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 						INNER JOIN dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
@@ -594,7 +609,7 @@ BEGIN
 				IF (@ListTransId <> '' AND @TicketType = 1) 
 				BEGIN
 					INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetChoiceHome,BetChoiceAway
-						,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
+						,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup, OddsType, IsCashout)
 					SELECT b.sequenceid
 						,	b.transid
 						,	b.transdate
@@ -628,6 +643,8 @@ BEGIN
 						,	ISNULL(tmpTs.Reason,'0')
 						,	ISNULL(tmpTs.AGroup,0)
 						,	ISNULL(tmpTs.MGroup,0)
+						,	b.oddstype
+						,	CASE WHEN b.betdaqid = -2 THEN 1 ELSE 0 END AS IsCashout
 					FROM #tmpTransIds AS tmpTs WITH(NOLOCK)
 						INNER JOIN dbo.bettrans AS b WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 						INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
@@ -642,7 +659,7 @@ BEGIN
 					BEGIN	
 
 						INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetChoiceHome,BetChoiceAway
-							,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
+							,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup, OddsType, IsCashout)
 							SELECT b.sequenceid
 								,	b.transid
 								,	b.transdate
@@ -676,6 +693,8 @@ BEGIN
 							,	ISNULL(tmpTs.Reason,'0')
 							,	ISNULL(tmpTs.AGroup,0)
 							,	ISNULL(tmpTs.MGroup,0)
+								,	b.oddstype
+								,	CASE WHEN b.betdaqid = -2 THEN 1 ELSE 0 END AS IsCashout
 							FROM dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
 								INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 								INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID
@@ -695,7 +714,7 @@ BEGIN
 						BEGIN
 
 							INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetChoiceHome,BetChoiceAway
-								,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
+								,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup, OddsType, IsCashout)
 							SELECT b.sequenceid
 								,	b.transid
 								,	b.transdate
@@ -729,6 +748,8 @@ BEGIN
 							,	ISNULL(tmpTs.Reason,'0')
 							,	ISNULL(tmpTs.AGroup,0)
 							,	ISNULL(tmpTs.MGroup,0)
+								,	b.oddstype
+								,	CASE WHEN b.betdaqid = -2 THEN 1 ELSE 0 END AS IsCashout
 							FROM dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
 								INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 								INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID
@@ -744,7 +765,7 @@ BEGIN
 						ELSE IF (@BatchSize > 0) --- GET Ticket Details 
 						BEGIN
 							INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetChoiceHome,BetChoiceAway
-								,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
+								,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup, OddsType, IsCashout)
 							SELECT TOP (@BatchSize) b.sequenceid
 								,	b.transid
 								,	b.transdate
@@ -778,6 +799,8 @@ BEGIN
 							,	ISNULL(tmpTs.Reason,'0')
 							,	ISNULL(tmpTs.AGroup,0)
 							,	ISNULL(tmpTs.MGroup,0)
+								,	b.oddstype
+								,	CASE WHEN b.betdaqid = -2 THEN 1 ELSE 0 END AS IsCashout
 							FROM dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
 								INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 								INNER JOIN dbo.league AS l WITH(NOLOCK) ON l.leagueid = m.leagueid
@@ -825,6 +848,31 @@ BEGIN
 				INNER JOIN dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
 				INNER JOIN dbo.CustProductStatus AS s WITH (NOLOCK) ON s.custid = c.custid
 			WHERE t.IsLicensee IS NULL;
+
+			----==================UPDATE Malay Odds==================
+			UPDATE t WITH(ROWLOCK, UPDLOCK)
+			SET t.MalayOdds = CASE 
+								-- Decimal
+								WHEN t.oddstype = 1 THEN (CASE
+															WHEN ot.OddsType IS NOT NULL THEN (CASE 
+																								WHEN t.odds <= 2 THEN (t.odds - 1)
+																								WHEN t.odds > 2 THEN -(1/NULLIF((t.odds - 1),0)) END)
+															ELSE (CASE 
+																	WHEN t.odds <= 1 THEN t.odds
+																	WHEN t.odds > 1 THEN -(1/NULLIF(t.odds,0)) END) END)
+								-- Hong Kong
+								WHEN t.oddstype = 2 THEN (CASE	
+															WHEN t.odds <= 1 THEN t.odds
+															WHEN t.odds > 1 THEN -(1/NULLIF(t.odds,0)) END)
+								-- Indonesia
+								WHEN t.oddstype = 3 THEN -(1/NULLIF(t.odds,0))
+								-- Malaysian & Myanmar
+								WHEN t.oddstype IN (4,6) THEN t.odds
+								-- US
+								WHEN t.oddstype = 5 THEN -(1/NULLIF(t.odds,0))
+							END
+			FROM #tmpTickets AS t
+				LEFT JOIN bodb02.dbo.f_Set_OddsTypeBettypes() AS ot ON ot.BetType = t.BetType;
 
 			----==================FILTERS=========================		
 			
@@ -1033,6 +1081,14 @@ BEGIN
 				FROM #tmpTickets AS tmpTk WITH(NOLOCK)
 					LEFT JOIN #tmpCustAmount AS tmpCa WITH(NOLOCK) ON tmpCa.CustId = tmpTk.CustId and tmpCa.BetTeam = tmpTk.BetTeam
 				WHERE tmpCa.CustId IS NULL;
+			END;
+
+			--========================Fitler By Cashout==================	
+			IF (@IsCashout IS NOT NULL)
+			BEGIN
+				DELETE t
+				FROM #tmpTickets AS t
+				WHERE t.IsCashout != @IsCashout;
 			END;
 		END;	
 	
@@ -1780,6 +1836,7 @@ BEGIN
 				,	ISNULL(tmpTk.ListReason,tmpTk.Reason) AS ListReason
 				,	tmpTk.AGroup
 				,	tmpTk.MGroup
+				,	tmpTk.MalayOdds
 			FROM #tmpTickets AS tmpTk WITH(NOLOCK);
 		END;
 
