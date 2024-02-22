@@ -38,7 +38,7 @@ BEGIN
 			CALL CTS_DataCenter.CTS_DC_MatchMonitor_Staging_Insert(0,'[{"SportType": 1,"SequenceID": 1003,"IsMajorLeague": 0,"TransID": 1003,"TransDate" : "2021-05-17 07:48:52.533","MatchID" : 43614953,"EventDate" : "2021-05-17 00:00:00","KickOffTime" : "2021-05-17 00:00:00","EventStatus" : "running","HomeID" : 953,"AwayID" : 113,"LeagueID" : 3,"Bettype" : 3, "BetID" : 0,  "LiveIndicator" : "1","CustID" : 12500792,"Stake" : 20,"Betteam" : "a", "Odds" : "0.1","LiveHomeScore" : 0,"LiveAwayScore" : 2,"LeagueName":"ABC League"}]');
 			
 	*/
-    DECLARE CONS_LOG 						TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
+    DECLARE CONST_LOG 						TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
 	DECLARE CONST_RULE_GROUPID_GROUPBETTING	INT DEFAULT 1;
     DECLARE CONST_RULE_GROUPID_FIXEDGAME	INT DEFAULT 2;
     DECLARE CONST_RULE_GROUPID_HEDGING		INT DEFAULT 3;
@@ -51,7 +51,7 @@ BEGIN
     
     #==================LOG=======================================================
     DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_Staging_Insert';
-    IF CONS_LOG = 1 THEN     
+    IF CONST_LOG = 1 THEN     
 		INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
 		SELECT lv_SPName, CURRENT_TIMESTAMP(), CONCAT('@ip_LiveIndicator:=',ip_LiveIndicator);
     END IF;

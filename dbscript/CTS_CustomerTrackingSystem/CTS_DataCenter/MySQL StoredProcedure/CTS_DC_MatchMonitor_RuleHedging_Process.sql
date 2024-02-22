@@ -38,11 +38,11 @@ sp: BEGIN
 			- CALL CTS_DC_MatchMonitor_RuleHedging_Process(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=113171940189,@ip_MatchID:=22081995,@ip_ScoreDiff:=1,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a');
 			
 	*/
-	DECLARE CONS_LOG 					TINYINT DEFAULT 	0; 		#0:LogOff, 1:LogOn
-	DECLARE CONS_SUBSCRIBERID_ALPHA		INT 	DEFAULT  	168;
-	DECLARE CONS_SUBSCRIBERID_MAXBET	INT 	DEFAULT  	169;
-    DECLARE CONS_MMRULEGROUP_HEDGING	INT		DEFAULT		3;
-    DECLARE CONS_MMREASON_HEDGING		INT		DEFAULT		1;
+	DECLARE CONST_LOG 					TINYINT DEFAULT 	0; 		#0:LogOff, 1:LogOn
+	DECLARE CONST_SUBSCRIBERID_ALPHA	INT 	DEFAULT  	168;
+	DECLARE CONST_SUBSCRIBERID_MAXBET	INT 	DEFAULT  	169;
+    DECLARE CONST_MMRULEGROUP_HEDGING	INT		DEFAULT		3;
+    DECLARE CONST_MMREASON_HEDGING		INT		DEFAULT		1;
 
 	DECLARE lv_TimeStep 				SMALLINT;
 	DECLARE lv_RuleTotalStake 			DECIMAL(20,4);
@@ -52,7 +52,7 @@ sp: BEGIN
 
     #==================LOG=======================================================
     DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleHedging_Process';
-    IF CONS_LOG = 1 THEN     
+    IF CONST_LOG = 1 THEN     
 		INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
 		SELECT lv_SPName, CURRENT_TIMESTAMP(), CONCAT('@ip_LiveIndicator:=',ip_LiveIndicator,',@ip_MatchID:=',ip_MatchID
 		,',@ip_ScoreDiff:=',ip_ScoreDiff,',@ip_BettypeID:=',ip_BettypeID,',@ip_BetID:=',ip_Betteam,',@ip_HDP:=',ip_Betteam);
@@ -80,9 +80,9 @@ sp: BEGIN
 	SELECT st.TotalStake
 	INTO 	lv_RuleTotalStake
 	FROM CTS_DataCenter.MatchMonitorRuleSetting AS st 
-	WHERE 	st.RuleGroupID = CONS_MMRULEGROUP_HEDGING 
+	WHERE 	st.RuleGroupID = CONST_MMRULEGROUP_HEDGING 
 			AND st.SportType = ip_SportType 
-			AND st.Reason = CONS_MMREASON_HEDGING AND st.RuleStatus = 1
+			AND st.Reason = CONST_MMREASON_HEDGING AND st.RuleStatus = 1
 	LIMIT 1;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustGroup;
