@@ -75,35 +75,31 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_TransGroup;
     CREATE TEMPORARY TABLE Temp_TransGroup
     (
-			GroupID 				INT
+			GroupID 				INT PRIMARY KEY
         ,	IsHedging 				BOOLEAN
         ,	OldGroupIDList			VARCHAR(500)
         ,	CustIDList 				TEXT
         ,	TransIDList				TEXT 
-        
-        ,	PRIMARY KEY Temp_HedgingGroup(GroupID)
     );    
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_HedgingGroup;
     CREATE TEMPORARY TABLE Temp_HedgingGroup
     (
-			GroupID 				INT
+			GroupID 				INT PRIMARY KEY
         ,	IsHedging 				BOOLEAN
         ,	OldGroupIDList			VARCHAR(500)
         ,	CustIDList 				TEXT
         ,	TransIDList				TEXT 
-        
-        ,	PRIMARY KEY Temp_HedgingGroup(GroupID)
     );   
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_HedgingOldGroup;
     CREATE TEMPORARY TABLE Temp_HedgingOldGroup(
-			GroupID					INT PRIMARY KEY
+			GroupID INT PRIMARY KEY
     ); 
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_HedgingTrans;
     CREATE TEMPORARY TABLE Temp_HedgingTrans(
-			TransID					BIGINT PRIMARY KEY
+			TransID	BIGINT PRIMARY KEY
     ); 
     
     INSERT IGNORE INTO Temp_TransGroup(GroupID, IsHedging, OldGroupIDList, CustIDList, TransIDList)
@@ -249,7 +245,8 @@ BEGIN
 					
 					PREPARE 	stmt1 FROM @sql;
 					EXECUTE 	stmt1;
-			END IF;		
+			END IF;	
+            
 			IF(ip_LiveIndicator = 0) THEN			
 					SET @sql = 	CONCAT("UPDATE CTS_DataCenter.MatchMonitorStagingHedgingNonLive
 										SET	GroupID = ",lv_TargetGroupID,"
@@ -262,6 +259,7 @@ BEGIN
 			
 			DELETE tmptg
 			FROM Temp_HedgingGroup AS tmptg WHERE GroupID = lv_GroupID;
+            
 		END LOOP;
 		
 		#========UPDATE MatchMonitor===================================    
