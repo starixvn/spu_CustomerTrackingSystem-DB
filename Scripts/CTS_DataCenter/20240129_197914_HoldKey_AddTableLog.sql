@@ -12,6 +12,7 @@ Revisions:
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorHoldKey_ActionLog (
 		ID				BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY 
     ,	UserID			INT UNSIGNED NOT NULL
+    ,	MatchID			INT NOT NULL
     , 	Status			BOOLEAN
 	, 	CreatedDate		DATETIME NOT NULL DEFAULT (NOW())
 	, 	INDEX			IX_MatchMonitorHoldKey_ActionLog_CreatedDate(CreatedDate)
