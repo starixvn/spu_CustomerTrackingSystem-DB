@@ -11,8 +11,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleHedging_Process
     ,	IN ip_Betteam			VARCHAR(10)
     ,	IN ip_SportType			INT
     ,	IN ip_SequenceIDList	TEXT		# SequenceID List from SP CTS_DC_MatchMonitor_RuleHedging_Get
-    ,	IN ip_CustGroup			JSON 		# Group Return from DC_Association_DetectGroup
-    
+    ,	IN ip_CustGroup			JSON 		# Group Return from DC_Association_DetectGroup    
 )
       
     SQL SECURITY INVOKER
@@ -32,6 +31,7 @@ sp: BEGIN
 			-	20230310@Victoria.Le:	Credit Scale Out - Split 789y Site [Redmine ID: #183140]
             -	20230612@Casey.Huynh: 	LogInfo [Redmine ID: #185793]
             -	20240109@Casey.Huynh:	Enhance Hedging Rule [Redmine ID: #192172]
+            -	20240223@Casey.Huynh:	Fix Issue Return [Redmine ID: #201271]
 			
 		Param's Explanation (filtered by):	
 		Example:
@@ -160,15 +160,16 @@ sp: BEGIN
 		PREPARE stmt1 FROM @sql;
 		EXECUTE stmt1;
 
-		SET lv_IsHedging = (SELECT 1 
-							FROM Temp_Cust AS tmpCus 
-								INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cla ON cla.CustID = tmpCus.CustID
-								INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID
-							WHERE cla.SportGroupID = 0
-							AND cc.IsHedgingReasonMM = 1
-							LIMIT 1);
+		SELECT 1 
+		INTO lv_IsHedging
+		FROM Temp_Cust AS tmpCus 
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cla ON cla.CustID = tmpCus.CustID
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID
+		WHERE cla.SportGroupID = 0
+		AND cc.IsHedgingReasonMM = 1
+		LIMIT 1;
                             
-        IF lv_IsHedging = 0 THEN
+        IF lv_IsHedging <> 1 THEN
 			CALL CTS_DataCenter.CTS_DC_Association_IsAssociatedHedgingCustByCustIDList(lv_CustIDList, lv_IsHedging);
         END IF;
         
