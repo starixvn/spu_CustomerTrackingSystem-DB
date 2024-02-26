@@ -9,6 +9,7 @@
 	Revisions:	
 		- 20240124@Victoria.Le: 	Initial Writing [Redmine ID: #192172]
         - 20240223@Victoria.Le: 	Initial Writing [Redmine ID: #201271]
+        - 20240226@Victoria.Le: 	TRUNCATE table to rerun event [Redmine ID: #201271]
 		
 	Param's Explanation (filtered by):
 
@@ -16,9 +17,13 @@
 */
 USE CTS_DataCenter;
 
+/*
 UPDATE SystemParameter
 SET ParameterValue = DATE_ADD(CURRENT_DATE(), INTERVAL 1 DAY)
 WHERE ParameterID = 141;
 
 ALTER EVENT EV_CTS_DC_MatchMonitor_Wrapper
 	ENABLE;
+*/
+
+TRUNCATE TABLE MatchMonitor_AssociationDetection_Monitor;
