@@ -15,6 +15,7 @@ sp:BEGIN
 	Revisions:	
 		- 20230614@Victoria.Le: 	Initial Writing [Redmine ID: #185793]
 		- 20230614@Victoria.Le: 	Update SP after renovating SP Association Detection and Match Monitor Rule Hedging [Redmine ID: #192172]
+		- 20240226@Victoria.Le: 	Get incorrect column for next loop: LogInfo >> ListCustID [Redmine ID: #201271]
 		
 	Param's Explanation (filtered by):
 
@@ -123,7 +124,7 @@ sp:BEGIN
 			SET ParameterValue = lv_MMDetailsID
 			WHERE ParameterID = 142; 
             
-            SELECT LogInfo,InsertTime,ID
+            SELECT ListCustID,InsertTime,ID
             INTO lv_LogInfo,lv_MMDetailsInsertTime,lv_Next_MMDetailsID
             FROM CTS_DataCenter.MatchMonitorDetails
             WHERE ID > lv_MMDetailsID
