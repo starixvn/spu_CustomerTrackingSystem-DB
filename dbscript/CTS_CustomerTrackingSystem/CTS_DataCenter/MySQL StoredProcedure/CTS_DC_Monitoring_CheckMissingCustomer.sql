@@ -47,7 +47,7 @@ BEGIN
 			)
 	) AS js; 
     
-    IF ip_TypeID = 2 THEN
+    IF ip_QueryTypeID = 2 THEN
         SELECT lv_MaxCTSCustID = MAX(CTSCustID)
         FROM CTS_DataCenter.CTSCustomer;
 
