@@ -56,8 +56,8 @@ BEGIN
 	SET @Today = GETDATE();
 
 	INSERT INTO #tmpCustomerClassification(CustId)
-	SELECT	val AS CustId
-	FROM	bodb02.dbo.strSplit(@custIdList, ',');
+	SELECT	ssk.value
+	FROM 	STRING_SPLIT(@custIdList, ',') AS ssk;
 	
 	INSERT INTO #tmpCustomerGroupPercentage (CustId, TWBetCount, TWGroupBettingRate, TWTicketRejectRate, TWDesktopUsageRate, TWTicketParlayCount)
 	SELECT 	gbc.CustId
