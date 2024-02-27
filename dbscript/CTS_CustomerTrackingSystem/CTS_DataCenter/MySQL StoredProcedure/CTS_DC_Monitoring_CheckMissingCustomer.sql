@@ -37,17 +37,16 @@ BEGIN
         ,	PRIMARY KEY (CustID, CustSubID)
 	);
 	
-    INSERT INTO Temp_CTSCustomer(CTSCustID, CustID, CustSubID)
-	SELECT	 	CTSCustID
-			,	CustID	
+    INSERT INTO Temp_CTSCustomer(CustID, CustSubID)
+	SELECT	 	CustID	
 			,	CustSubID
 	FROM JSON_TABLE(ip_CustomerList,
 		 "$[*]" COLUMNS(
 				CustID		INT	UNSIGNED	PATH "$.CustID" 
 			,	CustSubID	INT	UNSIGNED 	PATH "$.CustSubID"
 			)
-	) AS js;
-       
+	) AS js; 
+    
     IF ip_TypeID = 2 THEN
         SELECT lv_MaxCTSCustID = MAX(CTSCustID)
         FROM CTS_DataCenter.CTSCustomer;
@@ -63,7 +62,7 @@ BEGIN
 			OR UserName IS NULL);
 		
         SELECT lv_MaxCTSCustID;
-	ELSE
+	ELSE		
 		SELECT 	tcust.CustID
 			,	tcust.CustSubID
 		FROM Temp_CTSCustomer AS tcust
