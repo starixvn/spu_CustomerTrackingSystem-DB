@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS CTS_DataCenter.MatchMonitorHoldKey_ActionLog (
     ,	MatchID			INT NOT NULL
     , 	Status			BOOLEAN
 	, 	CreatedDate		DATETIME NOT NULL DEFAULT (NOW())
-	, 	INDEX			IX_MatchMonitorHoldKey_ActionLog_CreatedDate(CreatedDate)
+	, 	INDEX			IX_MatchMonitorHoldKey_ActionLog_MatchID(MatchID)
 ) ENGINE=INNODB; 
 
 INSERT INTO SPU_Stats.Function(FunctionId,FunctionName,SystemId) VALUES(80,'MatchMonitorDetailHoldKeyUpdate',1);							
