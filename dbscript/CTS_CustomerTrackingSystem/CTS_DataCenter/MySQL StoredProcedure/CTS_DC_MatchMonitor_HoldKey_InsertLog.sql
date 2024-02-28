@@ -22,7 +22,7 @@ BEGIN
         CALL CTS_DC_MatchMonitor_HoldKey_InsertLog (10, true);
 	*/
         
-    INSERT INTO CTS_DataCenter.MatchMonitorHoldKey_ActionLog(UserID, Status)
+    INSERT INTO CTS_DataCenter.MatchMonitorHoldKey_ActionLog(UserID, MatchID, Status)
 	SELECT		ip_UserId, ip_MatchID, ip_Status;
 
 END$$
