@@ -1,13 +1,13 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
 /*
-    Creator:	20221118@Aries.Nguyen
-    Task:	 	Match Monitor Irrigation
+    Creator:	20240229@Casey.Huynh
+    Task:	 	Match Monitor
     Server:  	Master
     DBName:		CTS_DataCenter
 
     Revisions: 
-		    - 20221118@Aries.Nguyen: Init data tbl StaticList [Redmine ID: #179499]
-    Reviewer:
+		    - 20240229@Casey.Huynh: Init data tbl StaticList [Redmine ID: #197706]
+    Reviewer: Long.Lưu
 */
 USE CTS_DataCenter;
 
