@@ -12,8 +12,8 @@ BEGIN
 		Original:
 
 		Revisions:
-			- 	20230222@Casey.Huynh: Created [Redmine ID: 181995]
-    
+			- 	20230222@Casey.Huynh: Created [Redmine ID: 181995]   
+            -	20240201@Casey.Huynh: Enhance Performance [Redmine ID: 197706]
             
 		Param's Explanation (filtered by):
 		
@@ -53,6 +53,7 @@ BEGIN
     SELECT	tmp.FromID
 		,	tmp.ToID
     FROM Temp_Input AS tmp;
+    
 
     INSERT IGNORE INTO Temp_Association(FromID, ToID)
     SELECT	tmp.ToID
@@ -75,17 +76,17 @@ BEGIN
             LEAVE lp; 
         END IF;
         
-		INSERT IGNORE INTO Temp_Group(FromID,ToID)
+		INSERT IGNORE INTO Temp_Group(FromID)
 		WITH RECURSIVE CTE_Group AS
 		(
-		  SELECT lv_FromID AS FromID, lv_ToID AS ToID
+		  SELECT lv_FromID AS FromID
 		  UNION
-		  SELECT tmpAs.FromID, tmpAs.ToID
+		  SELECT tmpAs.ToID AS FromID
 		  FROM Temp_Association AS tmpAs
-		  JOIN CTE_Group ON (CTE_Group.FromID = tmpAs.ToID OR CTE_Group.FromID = tmpAs.ToID ) 
+		  JOIN CTE_Group ON (CTE_Group.FromID = tmpAs.FromID) 
           WHERE tmpAs.GroupID IS  NULL
 		)
-        SELECT FromID, ToID FROM CTE_Group;
+        SELECT FromID FROM CTE_Group;
         
         UPDATE Temp_Association AS tmpAs
         INNER JOIN Temp_Group tmpGr ON tmpGr.FromID = tmpAs.FromID

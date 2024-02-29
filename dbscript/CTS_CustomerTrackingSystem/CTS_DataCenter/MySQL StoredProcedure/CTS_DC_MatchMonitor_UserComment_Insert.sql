@@ -10,7 +10,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_UserComment_Insert`
     ,	IN ip_BettypeID			INT UNSIGNED
     ,	IN ip_BetID				BIGINT    
     ,	IN ip_UserComment		VARCHAR(1000)
-    ,	IN ip_CorrectReason		TINYINT				#-1: Others, Else MM Reason
+    ,	IN ip_CorrectReason		INT #-1: Others, Else MM Reason
     ,	IN ip_IncorrectReason	JSON       
 )
     SQL SECURITY INVOKER
@@ -23,6 +23,7 @@ BEGIN
 
 		Revisions:
 			-	20231023@Casey.Huynh: Created [Redmine ID: #195043]
+            - 	20240205@Casey.Huynh: Exclude Lopsided Bet [Redmine ID: #197706]
             
 		Param's Explanation (filtered by):
 		
@@ -82,7 +83,7 @@ BEGIN
 		,	js.FromTransInfo
         ,	js.ToTransInfo
     FROM JSON_TABLE(ip_IncorrectReason,
-					"$[*]" COLUMNS	(	Reason 			TINYINT		PATH "$.Reason"                
+					"$[*]" COLUMNS	(	Reason 			INT		PATH "$.Reason"                
 									,	FromTransInfo	VARCHAR(30) PATH "$.FromTransInfo"
 									,	ToTransInfo		VARCHAR(30)	PATH "$.ToTransInfo"
 									)

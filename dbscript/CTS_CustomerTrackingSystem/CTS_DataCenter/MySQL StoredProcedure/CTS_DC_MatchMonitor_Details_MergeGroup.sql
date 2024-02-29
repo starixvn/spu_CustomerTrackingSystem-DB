@@ -14,7 +14,7 @@ BEGIN
 
 		Revisions:
 			- 	20230222@Casey.Huynh: Created [Redmine ID: 181995]
-    
+			- 	20240105@Casey.Huynh: Exclude Lopsided Bet [Redmine ID: 197706]
             
 		Param's Explanation (filtered by):
 		
@@ -28,6 +28,7 @@ BEGIN
 
 	*/
     DECLARE CONST_REASON_FIXEDGAME INT DEFAULT 3;
+    DECLARE CONST_REASON_LOPSIDEDBETTING INT DEFAULT 4;
     
 	DECLARE lv_MergeGroupID INT;
     DECLARE lv_GroupID BIGINT UNSIGNED;
@@ -86,11 +87,11 @@ BEGIN
     INSERT IGNORE INTO Temp_ExcludeTrans(TransID, Reason, ScoreDiff)
     SELECT tmpTg.TransID, tmpTg.Reason, tmpTg.ScoreDiff
     FROM Temp_TransGroup AS tmpTg
-    WHERE Reason = CONST_REASON_FIXEDGAME;
+    WHERE Reason IN (CONST_REASON_FIXEDGAME,CONST_REASON_LOPSIDEDBETTING);
 
     DELETE tmpTg
     FROM Temp_TransGroup AS tmpTg
-    WHERE tmpTg.Reason = CONST_REASON_FIXEDGAME;    
+    WHERE tmpTg.Reason IN (CONST_REASON_FIXEDGAME,CONST_REASON_LOPSIDEDBETTING);  
     #==================================================
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_Group;
