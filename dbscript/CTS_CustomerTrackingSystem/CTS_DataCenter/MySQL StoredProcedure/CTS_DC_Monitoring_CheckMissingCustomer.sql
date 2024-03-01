@@ -21,11 +21,11 @@ BEGIN
             - 20240223@Jonas.Huynh: Customer Info Monitoring  [Redmine ID: 198000]
             
 		Param's Explanation (filtered by):
-			- ip_QueryTypeID: 1-Customer Missing, 2-CustInfo Missing
+			- ip_QueryTypeID: 1-Customer Missing, 2-Incorrect CustInfo
             
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_Monitoring_CheckMissingCustomer (
-            '[{"CustID":82355840,"CustSubID":0}]', null, 1);
+            '[{"CustID":82355840,"CustSubID":0}]', NULL, 1);
 
 	*/
     DECLARE lv_MaxCTSCustID		BIGINT;
@@ -48,25 +48,26 @@ BEGIN
 	) AS js; 
     
     IF ip_QueryTypeID = 2 THEN
-        SELECT lv_MaxCTSCustID = MAX(CTSCustID)
-        FROM CTS_DataCenter.CTSCustomer;
+        SET lv_MaxCTSCustID = (SELECT MAX(CTSCustID) FROM CTS_DataCenter.CTSCustomer);
 
 		SELECT DISTINCT CustID
-		FROM CTS_DataCenter.CTSCustomer 
-		WHERE CTSCustID > ip_LastCTSCustID AND CTSCustID <= lv_MaxCTSCustID
-			AND CurrencyID NOT IN (20,27,28)
-			AND (IsLicensee IS NULL
-			OR SiteID = 0
-			OR SubscriberID IS NULL 
-			OR Site IS NULL 
-			OR UserName IS NULL);
-		
+		FROM CTS_DataCenter.CTSCustomer AS c
+			LEFT JOIN CTS_DataCenter.MappingSubscriberSite AS m ON m.SiteID = c.SiteID
+		WHERE c.CTSCustID > ip_LastCTSCustID 
+			AND c.CTSCustID <= lv_MaxCTSCustID
+			AND c.CurrencyID NOT IN (20,27,28)
+			AND (c.IsLicensee IS NULL
+				OR c.SiteID = 0
+				OR (c.SubscriberID IS NULL AND m.SubscriberID IS NOT NULL)
+				OR c.Site IS NULL 
+				OR c.UserName IS NULL);
+			
         SELECT lv_MaxCTSCustID;
 	ELSE		
 		SELECT 	tcust.CustID
 			,	tcust.CustSubID
 		FROM Temp_CTSCustomer AS tcust
-			LEFT JOIN CTS_DataCenter.CTSCustomer AS cust ON tcust.CustID = cust.CustID	AND tcust.CustSubID = cust.CustSubID
+			LEFT JOIN CTS_DataCenter.CTSCustomer AS cust ON tcust.CustID = cust.CustID AND tcust.CustSubID = cust.CustSubID
 		WHERE cust.CustID IS NULL;
     END IF;
 
