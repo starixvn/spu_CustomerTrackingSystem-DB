@@ -12,15 +12,17 @@
 USE	WASAVerse;
 GO
 
-IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name='vnSPU')
-BEGIN
-	CREATE USER vnSPU FOR LOGIN vnSPU;
-END;
-GO
-
+/* -- Local Account
 IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name='sputeam')
 BEGIN
 	CREATE USER sputeam FOR LOGIN sputeam;
+END;
+GO
+*/
+
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name='vnSPU')
+BEGIN
+	CREATE USER vnSPU FOR LOGIN vnSPU;
 END;
 GO
 
