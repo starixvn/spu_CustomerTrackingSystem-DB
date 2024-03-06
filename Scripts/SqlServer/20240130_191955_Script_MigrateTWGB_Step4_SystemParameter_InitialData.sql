@@ -2,7 +2,7 @@
 /*
 	Creator:	20240130@Victoria.Le
 	Task:		Initial Data for SystemParameter - Need to get the latest value of paramid before deploying
-	Server:		DB061 & DB062
+	Server:		DB061 & DB062 - ONLY SIT
 	
 	Revisions:
 			- 20240130@Victoria.Le: Initial Writing - Step 4[Redmine: #191955]	
