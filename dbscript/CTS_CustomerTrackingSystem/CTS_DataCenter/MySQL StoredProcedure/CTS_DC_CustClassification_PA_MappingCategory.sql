@@ -24,7 +24,8 @@ BEGIN
 			- 20220913@Casey.Huynh: 	Update Remark [Redmine ID: #176976]
 			- 20230404@Victoria.Le		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeID [Redmine ID: #185319] 
 			- 20230601@Victoria.Le:		Add TVSRequestID <> 0 for TVSRequestID IS NOT NULL [Redmine ID: #189023]
-            
+            - 20240306@Thomas.Nguyen:	Add log table for tracking TVS void request [Redmine ID: #xxxxx]
+
 		Param's Explanation (filtered by):      
 			CALL CTS_DC_CustClassification_PA_MappingCategory ('Category','[{"CustID": 3679910,"ReasonID": 3679910,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10, "MatchID": 1}]');
 	*/
@@ -243,6 +244,41 @@ BEGIN
     END IF;   
  
     IF ip_InputType = 'Reason' THEN
+		INSERT INTO CTS_DataCenter.TVSVoidRequest_Log(TVSRequestID,CustIDs,ReasonID,CreatedBy,CreatedDate,IsParlay,SportType,IssueTypeID)
+		WITH CTECustInfo AS (
+			SELECT	tmpJs.TVSRequestID AS TVSRequestID
+				,	tmpJs.CustID AS CustID
+				,	CASE WHEN tmpJs.IssueTypeID = 13 AND tmpR.ReasonID IS NOT NULL THEN tmpR.MappingReasonID
+						ELSE tmpJs.ReasonID END AS ReasonID
+				,	tmpJs.CreatedBy AS CreatedBy
+				,	tmpJs.IsParlay AS IsParlay
+				,	tmpJs.SportType AS SportType
+				,	tmpJs.IssueTypeID AS IssueTypeID
+			FROM JSON_TABLE(ip_CustInfo,
+				"$[*]" COLUMNS(
+						CustID 			BIGINT UNSIGNED		PATH "$.CustID"
+					,	ReasonID		INT 				PATH "$.ReasonID"
+					, 	CreatedBy		INT UNSIGNED		PATH "$.CreatedBy"
+					, 	IsFromTVS		BOOLEAN 			PATH "$.IsFromTVS"
+					, 	TVSRequestID	BIGINT UNSIGNED		PATH "$.TVSRequestID"
+					,	IsParlay		BOOLEAN 			PATH "$.IsParlay"
+					,	SportType		SMALLINT 			PATH "$.SportType"
+					,	IssueTypeID		TINYINT 			PATH "$.IssueTypeID"
+				)) AS tmpJs
+				LEFT JOIN Temp_MappingReason AS tmpR ON tmpR.ReasonID = tmpJs.ReasonID
+			WHERE tmpJs.IsFromTVS = 1
+		)
+		SELECT	TVSRequestID
+			,	GROUP_CONCAT(DISTINCT CustID)
+			,	ReasonID
+			,	CreatedBy
+			,	CURRENT_TIMESTAMP(3) AS CreatedDate
+			,	IsParlay
+			,	SportType
+			,	IssueTypeID
+		FROM CTECustInfo AS cte
+		GROUP BY TVSRequestID, ReasonID, CreatedBy, IsParlay, SportType, IssueTypeID;
+
 		INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, InputCategoryID, InputCategoryGroup,  IsLicensee, CreatedBy, Remark, IsDirectPA
 			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, SpecialCC, IsProbation, RelevantCategoryID
 			, TVSRequestID, ReasonID, PinCTSCustID, IsParlay, SportType, IssueTypeID)
