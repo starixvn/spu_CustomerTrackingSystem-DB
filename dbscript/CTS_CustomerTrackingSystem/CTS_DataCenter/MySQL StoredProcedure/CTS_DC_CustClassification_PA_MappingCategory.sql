@@ -24,7 +24,7 @@ BEGIN
 			- 20220913@Casey.Huynh: 	Update Remark [Redmine ID: #176976]
 			- 20230404@Victoria.Le		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeID [Redmine ID: #185319] 
 			- 20230601@Victoria.Le:		Add TVSRequestID <> 0 for TVSRequestID IS NOT NULL [Redmine ID: #189023]
-            - 20240306@Thomas.Nguyen:	Add log table for tracking TVS void request [Redmine ID: #xxxxx]
+            - 20240306@Thomas.Nguyen:	Add log table for tracking TVS void request [Redmine ID: #201993]
 
 		Param's Explanation (filtered by):      
 			CALL CTS_DC_CustClassification_PA_MappingCategory ('Category','[{"CustID": 3679910,"ReasonID": 3679910,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10, "MatchID": 1}]');

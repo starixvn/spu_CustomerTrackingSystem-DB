@@ -19,7 +19,7 @@ BEGIN
 			- 20230315@Victoria.Le:		Add Robot Imperva [Redmine ID: #184773]
 			- 20230404@Victoria.Le:		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeID [Redmine ID: #185319] 
 			- 20230601@Victoria.Le:		Add TVSRequestID <> 0 for TVSRequestID IS NOT NULL [Redmine ID: #189023]
-            - 20240306@Thomas.Nguyen:	Add column InsertedTime [Redmine ID: #xxxxx]
+            - 20240306@Thomas.Nguyen:	Add column InsertedTime [Redmine ID: #201993]
 
         Param's Explanation (filtered by):
         
@@ -114,8 +114,8 @@ BEGIN
     WHERE EvidenceID IS NOT NULL;
 
 	/* LOG THE VOID REQUEST FOR FURTHER TRACKING */
-	INSERT INTO CTS_DataCenter.TVSVoidRequest_History (TVSRequestID,CustIDs,ReasonID,CreatedBy,CreatedDate,InsertedTime,IsParlay,SportType,IssueTypeID)
-	SELECT TVSRequestID, GROUP_CONCAT(DISTINCT CustID), ReasonID, CreatedBy, NOW(), CURRENT_TIMESTAMP(3),IsParlay,SportType,IssueTypeID
+	INSERT INTO CTS_DataCenter.TVSVoidRequest_History (TVSRequestID,CustIDs,ReasonID,CreatedBy,CreatedDate,IsParlay,SportType,IssueTypeID,InsertedTime)
+	SELECT TVSRequestID, GROUP_CONCAT(DISTINCT CustID), ReasonID, CreatedBy, NOW(),IsParlay,SportType,IssueTypeID, CURRENT_TIMESTAMP(3)
 	FROM Temp_PA
 	WHERE IsFromTVS = 1
 	GROUP BY TVSRequestID, ReasonID, CreatedBy, IsParlay, SportType, IssueTypeID;
