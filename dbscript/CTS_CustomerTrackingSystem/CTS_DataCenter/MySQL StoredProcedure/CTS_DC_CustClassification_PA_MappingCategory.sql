@@ -244,7 +244,7 @@ BEGIN
     END IF;   
  
     IF ip_InputType = 'Reason' THEN
-		INSERT INTO CTS_DataCenter.TVSVoidRequest_Log(TVSRequestID,CustIDs,ReasonID,CreatedBy,CreatedDate,IsParlay,SportType,IssueTypeID)
+		INSERT INTO CTS_DataCenter.TVSVoidRequest_Log(TVSRequestID,CustIDs,ReasonID,CreatedBy,CreatedDate,CreatedTime,IsParlay,SportType,IssueTypeID)
 		WITH CTECustInfo AS (
 			SELECT	tmpJs.TVSRequestID AS TVSRequestID
 				,	tmpJs.CustID AS CustID
@@ -272,7 +272,8 @@ BEGIN
 			,	GROUP_CONCAT(DISTINCT CustID)
 			,	ReasonID
 			,	CreatedBy
-			,	CURRENT_TIMESTAMP(3) AS CreatedDate
+			,	NOW() AS CreatedDate
+			,	CURRENT_TIMESTAMP(3) AS CreatedTime
 			,	IsParlay
 			,	SportType
 			,	IssueTypeID
