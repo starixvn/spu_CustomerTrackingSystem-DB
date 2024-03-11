@@ -2,7 +2,7 @@
 /*
 	Creator:	20240130@Victoria.Le
 	Task:		Initial Data for SystemParameter - Need to get the latest value of paramid before deploying
-	Server:		DB061 & DB062 - ONLY SIT
+	Server:		DB061 & DB062 
 	
 	Revisions:
 			- 20240130@Victoria.Le: Initial Writing - Step 4[Redmine: #191955]	
@@ -19,6 +19,9 @@ INSERT INTO dbo.SystemParameter(ParameterID, ParameterName, ParameterDesc, Param
 ,	(5,'TWGroupBetting_CountTotalTicket_LastSequenceId','TWGroupBetting_CountTotalTicket_LastSequenceId','BIGINT','0')
 ,	(6,'TWGroupBetting_CountTotalTicket_Interruptted','TWGroupBetting_CountTotalTicket_Interruptted','BIT','0')
 ;
+
+/*
+-- ONLY SIT
 GO
 INSERT [dbo].[TWGroupBettingGroupingRule] ([RuleId], [IsBigLeague], [Bettype], [IsLive], [Sporttype]) VALUES (1, 1, 1, 0, 1)
 INSERT [dbo].[TWGroupBettingGroupingRule] ([RuleId], [IsBigLeague], [Bettype], [IsLive], [Sporttype]) VALUES (1, 1, 3, 0, 1)
@@ -76,3 +79,5 @@ INSERT [dbo].[TWGroupBettingRule] ([RuleId], [RuleName], [LimitSecond], [TicketC
 INSERT [dbo].[TWGroupBettingRule] ([RuleId], [RuleName], [LimitSecond], [TicketCountLimit], [RFMLimitValue], [RFMLimitPercent], [CustClassLimitValue], [CustClassLimitPercent], [BetFromLimitValue], [BetFromLimitPercent]) VALUES (17, N'RuleType17', 5, 5, 8, 50, N'1,2', 50, N'x,z', 50)
 SET IDENTITY_INSERT [dbo].[TWGroupBettingRule] OFF
 GO
+
+*/
