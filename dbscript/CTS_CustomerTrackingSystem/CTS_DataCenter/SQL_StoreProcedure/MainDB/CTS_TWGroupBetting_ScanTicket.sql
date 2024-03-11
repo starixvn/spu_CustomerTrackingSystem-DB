@@ -378,7 +378,7 @@ BEGIN
 
 	EXEC dbo.CTS_TWGroupBetting_SyncDataGroupBettingTicket @GBTicketXMLString, @LastSequenceId_New;		
 
-	-- EXEC DBVR2.bodb_VR2Model.dbo.CTS_TWGB_UpdateDWData @GBTicketXMLString;		
+	EXEC DBVR2.bodb_VR2Model.dbo.CTS_TWGB_UpdateDWData @GBTicketXMLString;		
 
 
 	DROP TABLE #TmpSuspectTicket
