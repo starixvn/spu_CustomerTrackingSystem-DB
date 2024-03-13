@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-WASAVerse" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[CTS_TWGroupBetting_SyncDataGroupBettingTicket]
 			@GBTicketXMLString	VARCHAR(MAX)
 		,	@RunningSequenceId	BIGINT
@@ -6,7 +6,7 @@ AS
 /*
 	Created: 20220314@Harvey.Nguyen
 	Task : Insert group betting ticket from DB061 -> DB062 %
-	DB	 : DBCTS.bodb02
+	DB	 : DBCTS.WASAVerse
 
 	Revisions:
 		- 20220314@Harvey.Nguyen: Init sp 											[Redmine ID: #170160]
@@ -19,6 +19,7 @@ AS
 		- 20230818@Victoria.Le: Add ROWLOCK with the delete statement [Redmine ID: #191955]
 		- 20231011@Victoria.Le: Keep data 14 days instead of 7 days [Redmine ID: #195298]
 		- 20231024@John.Ngo:	[CTS] - Customer Classification - TW GB - Resolve Deadlock Problems [Redmine ID: #195866]
+		- 20240130@Victoria.Le:	Change tables - TWGB Migrate data from bodb02 to WASAVerse [Redmine ID: #191955]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_SyncDataGroupBettingTicket] 
@@ -57,13 +58,13 @@ BEGIN
 	FROM @GBTicketXML.nodes('//TWGroupBettingTicket') AS T(C)
 	OPTION (OPTIMIZE FOR (@GBTicketXML = NULL));
 	
-	IF EXISTS (SELECT (1) FROM dbo.SPU_GroupBettingTicket_History gbh WITH (NOLOCK) 
+	IF EXISTS (SELECT (1) FROM dbo.TWGroupBettingTicket_History gbh WITH (NOLOCK) 
 			   WHERE gbh.TransDate <= @ArchivedDateTicketHistory)
 	BEGIN
 		WHILE(1 = 1)
 		BEGIN
 			DELETE TOP(5000) gbh
-			FROM dbo.SPU_GroupBettingTicket_History gbh WITH(ROWLOCK)
+			FROM dbo.TWGroupBettingTicket_History gbh WITH(ROWLOCK)
 			WHERE gbh.TransDate <= @ArchivedDateTicketHistory
 			
 			IF (@@ROWCOUNT = 0)
@@ -74,7 +75,7 @@ BEGIN
 		END;
 	END;
 	
-	INSERT INTO dbo.SPU_GroupBettingTicket_History (
+	INSERT INTO dbo.TWGroupBettingTicket_History (
 			TransId
 		,	TransDate
 		,	RulesType
@@ -89,12 +90,12 @@ BEGIN
 		,	tmp.IsViolateCC
 		,	tmp.IsViolateBetFrom
 	FROM #TmpGroupBettingTicket AS tmp
-		INNER JOIN dbo.SPU_GroupBettingRule	AS gbr WITH(NOLOCK) ON tmp.RuleId = gbr.RuleId
-		LEFT JOIN dbo.SPU_GroupBettingTicket_History AS his WITH(NOLOCK) ON tmp.TransID = his.TransID
+		INNER JOIN dbo.TWGroupBettingRule	AS gbr WITH(NOLOCK) ON tmp.RuleId = gbr.RuleId
+		LEFT JOIN dbo.TWGroupBettingTicket_History AS his WITH(NOLOCK) ON tmp.TransID = his.TransID
 	WHERE his.TransID IS NULL;
 
 	SELECT @RunningDate = transdate
-	FROM dbo.bettrans WITH (NOLOCK)
+	FROM bodb02.dbo.bettrans WITH (NOLOCK)
 	WHERE sequenceid = @RunningSequenceId;
 
 	SET @DailyMidnight = DATEADD(MINUTE, 30, CONVERT(SMALLDATETIME, CONVERT(DATE, @RunningDate)));
@@ -104,7 +105,7 @@ BEGIN
 		WHILE(1 = 1)
 		BEGIN
 			DELETE TOP(5000) gb
-			FROM dbo.SPU_GroupBettingTicket gb WITH(ROWLOCK)
+			FROM dbo.TWGroupBettingTicket gb WITH(ROWLOCK)
 			WHERE gb.TransDate = CONVERT(DATE, DATEADD(DAY,-1,GETDATE()));
 			
 			IF (@@ROWCOUNT = 0)
@@ -116,7 +117,7 @@ BEGIN
 		
 	END;
 
-	INSERT INTO dbo.SPU_GroupBettingTicket (
+	INSERT INTO dbo.TWGroupBettingTicket (
 		CustId
 		,TransId
 		,TransDate

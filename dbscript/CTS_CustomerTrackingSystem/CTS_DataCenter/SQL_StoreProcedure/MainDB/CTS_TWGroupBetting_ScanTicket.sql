@@ -1,4 +1,4 @@
-﻿/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+﻿/*<info serverAlias="DBCTS-WASAVerse" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[CTS_TWGroupBetting_ScanTicket]
 		@BatchSize				INT,
 		@Step					INT,
@@ -13,7 +13,7 @@ AS
 /*
 	Created: 20220314@Harvey.Nguyen
 	Task : Caculate TW Group betting %
-	DB	 : DBCTS.bodb02
+	DB	 : DBCTS.WASAVerse
 
 	Revisions:
 		- 20220314@Harvey.Nguyen: Scan ticket								[Redmine ID: #169671]
@@ -33,6 +33,7 @@ AS
 		- 20231030@Victoria.Le:	  New Group Betting - CC 2300 - Call SP from DW to send list fraud tickets [Redmine ID: #195060]
 		- 20231123@Victoria.Le:	  Comment out the above code [Call SP from DW] and wait to update rule from BI TW team [Redmine ID: #195060]
 		- 20231206@Victoria.Le:	  Remove - Comment out the above code [Call SP from DW] [Redmine ID: #197958]
+		- 20240130@Victoria.Le:	  Change tables - TWGB Migrate data from bodb02 to WASAVerse [Redmine ID: #191955]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_ScanTicket] '2022-02-15 23:10:15.983','2022-02-16 02:15:20.983',10900
@@ -116,7 +117,7 @@ BEGIN
 
 	INSERT INTO #Tmp_WCLeagues(LeagueId)
 	SELECT DISTINCT LeagueId
-	FROM dbo.league WITH(NOLOCK)
+	FROM bodb02.dbo.league WITH(NOLOCK)
 	WHERE ProgramID = '2022' AND DisplayMode = 2;
 
 	INSERT INTO #TmpRawTicket (SequenceId, Transid, TransdateSec, Custid, Matchid, Sporttype, Bettype, Betteam, BetFrom, Liveindicator, IsBigLeague, IsWCLeague, RFM)
@@ -142,10 +143,10 @@ BEGIN
 					ELSE 0
 				END 'IsWCLeague'
 			, pf.Tag
-	FROM dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
-		INNER JOIN dbo.Dep_CustSuper AS dCust WITH (NOLOCK) ON  dCust.custid = b.srecommend
-		INNER JOIN dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
-		LEFT JOIN dbo.LicUserProfile AS pf WITH (NOLOCK) ON b.Custid = pf.CustId
+	FROM bodb02.dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
+		INNER JOIN bodb02.dbo.Dep_CustSuper AS dCust WITH (NOLOCK) ON  dCust.custid = b.srecommend
+		INNER JOIN bodb02.dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
+		LEFT JOIN bodb02.dbo.LicUserProfile AS pf WITH (NOLOCK) ON b.Custid = pf.CustId
 		LEFT JOIN #TmpBigLeague AS bl WITH (NOLOCK) ON m.leagueid = bl.LeagueId
 		LEFT JOIN #Tmp_WCLeagues AS wc WITH(NOLOCK) ON m.leagueid = wc.LeagueId
 	WHERE b.sequenceid > @LastSequenceId
@@ -180,7 +181,7 @@ BEGIN
 	UPDATE t WITH(UPDLOCK, ROWLOCK)
 	SET t.CustomerClass = ci.CustomerClass
 	FROM #TmpRawTicket t
-	INNER JOIN dbo.custinfo ci WITH (NOLOCK) ON ci.custid = t.Custid;
+	INNER JOIN bodb02.dbo.custinfo ci WITH (NOLOCK) ON ci.custid = t.Custid;
 
 	INSERT INTO #TmpSuspectTicket (Transid, TransdateSec, Custid, Matchid, Sporttype, Bettype, Betteam, BetFrom, Liveindicator, RFM, CustomerClass, RuleId, IsBigLeague, GroupId)
     SELECT	rawTrans.Transid 
@@ -200,7 +201,7 @@ BEGIN
     FROM #TmpRawTicket AS scannedTicket WITH (NOLOCK)
 		INNER JOIN #TmpRawTicket AS rawTrans WITH (NOLOCK) ON scannedTicket.TransdateSec > @LastTransSec AND 
 			rawTrans.TransdateSec BETWEEN scannedTicket.TransdateSec - @Step AND scannedTicket.TransdateSec
-		INNER JOIN dbo.SPU_GroupBettingGroupingRule AS gr WITH (NOLOCK) ON rawTrans.IsBigLeague = gr.IsBigLeague
+		INNER JOIN dbo.TWGroupBettingGroupingRule AS gr WITH (NOLOCK) ON rawTrans.IsBigLeague = gr.IsBigLeague
 			AND rawTrans.Bettype = gr.Bettype
 			AND rawTrans.Liveindicator = gr.IsLive
 			AND rawTrans.Sporttype = gr.Sporttype;
@@ -218,7 +219,7 @@ BEGIN
 			,	COUNT(1) AS 'TicketCount'
 			,	st.GroupId
 		FROM #TmpSuspectTicket AS st WITH (NOLOCK)
-			INNER JOIN dbo.SPU_GroupBettingRule AS gbr WITH (NOLOCK) ON st.RuleId = gbr.RuleId
+			INNER JOIN dbo.TWGroupBettingRule AS gbr WITH (NOLOCK) ON st.RuleId = gbr.RuleId
 		GROUP BY st.RuleId
 			,	st.Betteam
 			,	st.Matchid
@@ -258,7 +259,7 @@ BEGIN
 				END AS 'IsViolateBetFrom'
 			,tfs.GroupId
 		FROM #TmpSuspectTicket AS tfs
-			INNER JOIN dbo.SPU_GroupBettingRule AS gbr WITH (NOLOCK) ON tfs.RuleId = gbr.RuleId
+			INNER JOIN dbo.TWGroupBettingRule AS gbr WITH (NOLOCK) ON tfs.RuleId = gbr.RuleId
 		WHERE tfs.BetFrom IN ('x','z')
 		GROUP BY tfs.RuleId
 			,	tfs.Betteam
@@ -294,7 +295,7 @@ BEGIN
 				END AS 'IsViolatedRFM'
 			,	tfs.GroupId
 		FROM #TmpSuspectTicket AS tfs WITH(NOLOCK)
-			INNER JOIN dbo.SPU_GroupBettingRule AS gbr WITH(NOLOCK) ON tfs.RuleId = gbr.RuleId
+			INNER JOIN dbo.TWGroupBettingRule AS gbr WITH(NOLOCK) ON tfs.RuleId = gbr.RuleId
 		WHERE tfs.RFM > gbr.RFMLimitValue
 		GROUP BY tfs.RuleId
 			,	tfs.Betteam
@@ -330,7 +331,7 @@ BEGIN
 				END 'IsViolateCC'
 			,	tfs.GroupId
 		FROM #TmpSuspectTicket AS tfs WITH(NOLOCK)
-			INNER JOIN dbo.SPU_GroupBettingRule AS gbr WITH (NOLOCK) ON tfs.RuleId = gbr.RuleId
+			INNER JOIN dbo.TWGroupBettingRule AS gbr WITH (NOLOCK) ON tfs.RuleId = gbr.RuleId
 		WHERE tfs.CustomerClass NOT IN (201,2101,2201,2001,202,2102,2202,2002,4000)
 		GROUP BY tfs.RuleId
 			,	tfs.Betteam
@@ -346,10 +347,10 @@ BEGIN
 		INNER JOIN tempTable ON tempTable.RuleId = tfs.RuleId AND tempTable.Betteam = tfs.Betteam 
 			AND tempTable.GroupId = tfs.GroupId AND tempTable.MatchId = tfs.MatchId AND tempTable.Bettype = tfs.Bettype;
 
-	-- Delete existing ticket in dbo.SPU_GroupBettingTicket
+	-- Delete existing ticket in dbo.TWGroupBettingTicket
 	DELETE st WITH(ROWLOCK)
 	FROM #TmpSuspectTicket AS st
-	INNER JOIN dbo.SPU_GroupBettingTicket gbt WITH (NOLOCK) ON st.Transid = gbt.TransId;
+	INNER JOIN dbo.TWGroupBettingTicket gbt WITH (NOLOCK) ON st.Transid = gbt.TransId;
 								
 	WITH CTE_1 AS
 	(
@@ -375,7 +376,7 @@ BEGIN
 								 WHERE RN = 1
 								 FOR XML RAW('TWGroupBettingTicket'), ROOT);
 
-	EXEC CTS_TWGroupBetting_SyncDataGroupBettingTicket @GBTicketXMLString, @LastSequenceId_New;		
+	EXEC dbo.CTS_TWGroupBetting_SyncDataGroupBettingTicket @GBTicketXMLString, @LastSequenceId_New;		
 
 	EXEC DBVR2.bodb_VR2Model.dbo.CTS_TWGB_UpdateDWData @GBTicketXMLString;		
 

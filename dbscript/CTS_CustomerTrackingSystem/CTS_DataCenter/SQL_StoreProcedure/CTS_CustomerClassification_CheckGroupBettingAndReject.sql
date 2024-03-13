@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-WASAVerse" executers="bodbSPUNet" viewers="" isFunction="0" isNested="0"></info>*/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -10,13 +10,13 @@ AS
 /*
 	Created: 20210722@Harvey.Nguyen
 	Task : New categories/CC for TW group betting detection
-	DB: bodb02
+	DB: WASAVerse
 	Original:
 
 	Revisions:
 		- 20210722@Harvey.Nguyen: Created [Redmine ID: #155956]
 		- 20230626@Victoria.Le:		Get Group Betting, Reject, Desktop percent within 60 days & and current date [Redmine ID: #189505]
-
+		- 20240130@Victoria.Le:	  	Change tables - TWGB Migrate data from bodb02 to WASAVerse [Redmine ID: #191955]
 	Param's Explanation:
 */
 BEGIN
@@ -56,8 +56,8 @@ BEGIN
 	SET @Today = GETDATE();
 
 	INSERT INTO #tmpCustomerClassification(CustId)
-	SELECT	val AS CustId
-	FROM	bodb02.dbo.strSplit(@custIdList, ',');
+	SELECT	ssk.value
+	FROM 	STRING_SPLIT(@custIdList, ',') AS ssk;
 	
 	INSERT INTO #tmpCustomerGroupPercentage (CustId, TWBetCount, TWGroupBettingRate, TWTicketRejectRate, TWDesktopUsageRate, TWTicketParlayCount)
 	SELECT 	gbc.CustId
@@ -67,7 +67,7 @@ BEGIN
 		,  	CASE WHEN SUM(gbc.TicketCount) <> 0 THEN SUM(CONVERT(MONEY, gbc.DesktopTicketCount)) * 100 / SUM(CONVERT(MONEY, gbc.TicketCount)) ELSE NULL END AS 'DesktopPercent'
 		,	SUM(gbc.ParlayTicketCount) AS 'ParlayTicketCount'
 	FROM #tmpCustomerClassification AS cust WITH (NOLOCK)
-		INNER JOIN dbo.SPU_GroupBettingCustomer AS gbc WITH (NOLOCK) ON gbc.CustId = cust.CustId
+		INNER JOIN dbo.TWGroupBettingCustomer AS gbc WITH (NOLOCK) ON gbc.CustId = cust.CustId
 	WHERE gbc.ScanDate >= DATEADD(DAY,-60,@Today) AND gbc.ScanDate < DATEADD(DAY,1,@Today)
 	GROUP BY gbc.CustId;
 	
