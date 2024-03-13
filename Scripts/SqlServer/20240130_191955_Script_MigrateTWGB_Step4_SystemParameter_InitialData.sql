@@ -5,18 +5,18 @@
 	Server:		DB061 & DB062 
 	
 	Revisions:
-			- 20240130@Victoria.Le: Initial Writing - Step 4[Redmine: #191955]	
+			- 20240130@Victoria.Le: Initial Writing - Step 4[Redmine: #191955]
 */
 
 
 USE	WASAVerse;
 GO
 INSERT INTO dbo.SystemParameter(ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue) VALUES 
-	(1,'TWGroupBetting_LastScanTime','TWGroupBetting_LastScanTransSec','BIGINT','0')
-,	(2,'TWGroupBetting_SkipTransCount','TWGroupBetting_SkipTransCount','INT','0')
-,	(3,'TWGroupBetting_LastSequenceId','TWGroupBetting_LastSequenceId','BIGINT','0')
+	(1,'TWGroupBetting_LastScanTime','TWGroupBetting_LastScanTransSec','BIGINT','69285595')
+,	(2,'TWGroupBetting_SkipTransCount','TWGroupBetting_SkipTransCount','INT','156')
+,	(3,'TWGroupBetting_LastSequenceId','TWGroupBetting_LastSequenceId','BIGINT','119657555317')
 ,	(4,'TWGroupBetting_CountTotalTicket_BatchSize','TWGroupBetting_CountTotalTicket_BatchSize','INT','5000')
-,	(5,'TWGroupBetting_CountTotalTicket_LastSequenceId','TWGroupBetting_CountTotalTicket_LastSequenceId','BIGINT','0')
+,	(5,'TWGroupBetting_CountTotalTicket_LastSequenceId','TWGroupBetting_CountTotalTicket_LastSequenceId','BIGINT','119657556648')
 ,	(6,'TWGroupBetting_CountTotalTicket_Interruptted','TWGroupBetting_CountTotalTicket_Interruptted','BIT','0')
 ;
 
