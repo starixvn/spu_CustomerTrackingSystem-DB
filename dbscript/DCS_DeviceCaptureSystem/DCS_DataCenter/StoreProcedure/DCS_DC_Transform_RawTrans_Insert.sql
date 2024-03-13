@@ -21,11 +21,12 @@ BEGIN
 			- 20230426@Jonathan.Doan: Add BotD [Redmine ID: #186644]
 			- 20230807@Terry.Nguyen: Add Fake IP [Redmine ID: #191829]
 			- 20231108@Jonathan.Doan: Integrate FPSjs [Redmine ID: #196570]
+            - 20240313@Teddy.le : Add JsChallengeID  [Redmine ID: #196667]
 
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_DataCenter.DCS_DC_Transform_RawTrans_Insert ('[{"Action" : "loginTest","ActionResult" : "login -> successfully","DeviceCode" : "a707e6620cce48a4ada3cd3887e5d77f","FingerprintCode" : "f4cf2f4634bfd83191d70c4f1913cc79878cce5f;4c7acb513373c49e797f2f35c6e1f99d","InvalidDevice" : null,"IP" : "103.199.41.17","IPId" : 1741105425,"LoginName" : "test006","PluginID" : null,"SubscriberName" : "11BET","TransStatus" : "0","TransTime" : "2021-11-21 00:00:00.2418","URL" : "http://l9j7ma.cx5888.com/FpsHandler","UserAgent" : "Mozilla/5.0 (Linux; Android 11; CPH2113) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Mobile Safari/537.36","FlaggedCode":"unknown", "BotDetection":"", "CookieCode":"AAA5", "FingerprintAttribute": {"FingerPrintCode":"FingerPrintCode2","Attribute":{"doNotTrack":"a","webglRenderer":"b","audio":"c","canvasPrint":"d"},"Accept":null,"Encoding":null,"Headers":null,"OSName":null,"BrowserName":null,"BrowserVersion":null,"UserAgent":null,"Platform":null,"BrowserInstanceCode":"BrowserInstanceCode1","BrowserFamilyCode":null}, "RawUserAgent":"Chrome123", "RawUserAgentCode":"RawUserAgentCode123","RawUserAgentInfo":{"ClientName":"Chrome","ClientVersion":"123.1","OSName":"Window"}}]');
+			CALL DCS_DataCenter.DCS_DC_Transform_RawTrans_Insert('[{"Action" : "loginTest","ActionResult" : "login -> successfully","DeviceCode" : "a707e6620cce48a4ada3cd3887e5d77f","FingerprintCode" : "f4cf2f4634bfd83191d70c4f1913cc79878cce5f;4c7acb513373c49e797f2f35c6e1f99d","InvalidDevice" : null,"IP" : "103.199.41.17","IPId" : 1741105425,"LoginName" : "test006","PluginID" : null,"SubscriberName" : "11BET","TransStatus" : "0","TransTime" : "2021-11-21 00:00:00.2418","URL" : "http://l9j7ma.cx5888.com/FpsHandler","UserAgent" : "Mozilla/5.0 (Linux; Android 11; CPH2113) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Mobile Safari/537.36","FlaggedCode":"unknown", "BotDetection":"", "CookieCode":"AAA5", "FingerprintAttribute": {"FingerPrintCode":"FingerPrintCode2","Attribute":{"doNotTrack":"a","webglRenderer":"b","audio":"c","canvasPrint":"d"},"Accept":null,"Encoding":null,"Headers":null,"OSName":null,"BrowserName":null,"BrowserVersion":null,"UserAgent":null,"Platform":null,"BrowserInstanceCode":"BrowserInstanceCode1","BrowserFamilyCode":null}, "RawUserAgent":"Chrome123", "RawUserAgentCode":"RawUserAgentCode123","RawUserAgentInfo":{"ClientName":"Chrome","ClientVersion":"123.1","OSName":"Window"}, "RawJsChallengeInfo":{"CreatedTime":"2021-11-21 00:00:00.2418","ChallengeCode": "21321-32123-32131-9428-7da2941624ac", "ChallengeIds":"1,2", "Expect":"12,3", "Actual":"12,3", "Parameters":"2,3", "ExeServerTimeInSecond": 10, "ExeClientTimeInSecond": 5, "Result" : 1}}]');
 
 	*/
 	
@@ -66,7 +67,8 @@ BEGIN
         ,	RawUserAgentID				BIGINT UNSIGNED						NULL
         ,	RawUserAgent				VARCHAR(1000)						NULL
         ,	RawUserAgentInfo			JSON								NULL
-        
+        ,	RawJsChallengeInfo			JSON								NULL
+        ,   JsChallengeID				BIGINT UNSIGNED						NULL
 		,	INDEX IX_Temp_Transaction_BotComponentCode(BotComponentCode)
 		,	INDEX IX_Temp_Transaction_CookieCode(CookieCode)
     );     
@@ -76,7 +78,7 @@ BEGIN
         ,	BotDetectionValue			BIT(32) NULL DEFAULT 0
     );    
 		
-	INSERT INTO Temp_Transaction(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, FakeIP, CookieCode, FingerprintAttribute, RawUserAgent, RawUserAgentInfo)
+	INSERT INTO Temp_Transaction(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, FakeIP, CookieCode, FingerprintAttribute, RawUserAgent, RawUserAgentInfo, RawJsChallengeInfo)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -100,6 +102,7 @@ BEGIN
 		,	rt.FingerprintAttribute
 		,	rt.RawUserAgent
 		,	rt.RawUserAgentInfo
+        ,   rt.RawJsChallengeInfo
 	FROM	JSON_TABLE(
 			ip_RawTransJson,
 			 "$[*]" COLUMNS(
@@ -125,6 +128,7 @@ BEGIN
 							,	FingerprintAttribute	JSON			PATH "$.FingerprintAttribute"
 							,	RawUserAgent 			VARCHAR(1000)	PATH "$.RawUserAgent"
 							,	RawUserAgentInfo		JSON			PATH "$.RawUserAgentInfo"
+                            ,	RawJsChallengeInfo		JSON			PATH "$.RawJsChallengeInfo"
 				)
 		   ) AS  rt; 
            
@@ -137,6 +141,9 @@ BEGIN
     
     /******* Update Temp_Transaction: RawUserAgentID ********************/
     CALL DCS_DC_Transform_RawUserAgent_Insert('Temp_Transaction');
+    
+    /******* Update Temp_Transaction: JsChallengeID ********************/
+    CALL DCS_DC_Transform_JSChallengeInfo_Insert('Temp_Transaction');
     
     /*******BotDetection, BotComponent********************/           
 	INSERT INTO Temp_BotDetection(ID, BotDetectionValue)
@@ -172,7 +179,7 @@ BEGIN
 	
     
     /*******RawTransaction********************/
-	INSERT INTO DCS_DataCenter.RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, InsertTime, BotDetectionValue, BotComponentID, FakeIP, CookieID, RawUserAgentID, RawFingerPrintID, BrowserInstanceID)
+	INSERT INTO DCS_DataCenter.RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, InsertTime, BotDetectionValue, BotComponentID, FakeIP, CookieID, RawUserAgentID, RawFingerPrintID, BrowserInstanceID, JsChallengeID)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -197,6 +204,7 @@ BEGIN
 		,	rt.RawUserAgentID
 		,	rt.RawFingerPrintID
 		,	rt.BrowserInstanceID
+        ,   rt.JsChallengeID
 	FROM Temp_Transaction AS rt
 		LEFT JOIN DCS_DataCenter.StaticList AS sl 	ON sl.ListID = 1 /*Flagged*/   
 													AND sl.ItemCode = rt.FlaggedCode;
