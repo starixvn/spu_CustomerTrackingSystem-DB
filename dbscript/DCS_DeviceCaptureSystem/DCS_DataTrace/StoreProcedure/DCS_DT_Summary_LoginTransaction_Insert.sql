@@ -42,9 +42,7 @@ BEGIN
 		, 	TransDate					DATETIME NOT NULL
 		, 	SubscriberID				INT UNSIGNED DEFAULT NULL
 		, 	AccountID					BIGINT UNSIGNED DEFAULT NULL
-		, 	RawUserAgentID				BIGINT UNSIGNED DEFAULT NULL
-		, 	NoDeviceID					INT DEFAULT NULL 
-		, 	NoFPDeviceID				INT DEFAULT NULL
+		, 	DeviceID					BIGINT UNSIGNED DEFAULT NULL
 		, 	Flagged						SMALLINT DEFAULT NULL
 		, 	FlaggedGroupID				SMALLINT DEFAULT NULL
 		, 	TransTime					DATETIME DEFAULT NULL
@@ -57,16 +55,14 @@ BEGIN
 		, 	TransDate					DATETIME NOT NULL
 		, 	SubscriberID				INT UNSIGNED DEFAULT NULL
 		, 	AccountID					BIGINT UNSIGNED DEFAULT NULL
-		, 	RawUserAgentID				BIGINT UNSIGNED DEFAULT NULL
+		, 	DeviceID					BIGINT UNSIGNED DEFAULT NULL
 		, 	Flagged						SMALLINT DEFAULT NULL
 		, 	FlaggedGroupID				SMALLINT DEFAULT NULL
 		, 	TotalTrans					INT UNSIGNED DEFAULT 0
-		, 	TotalNoDeviceTrans			INT UNSIGNED DEFAULT 0
-		, 	TotalNoFPDeviceTrans		INT UNSIGNED DEFAULT 0
 		, 	FirstLoginTransTime			DATETIME DEFAULT NULL
 		, 	LastLoginTransTime			DATETIME DEFAULT NULL
 		, 	IsUpdate					BIT DEFAULT 0
-		,	KEY `IX_Temp_LoginTrans_Group` (`TransDate`, `SubscriberID`, `AccountID`, `RawUserAgentID`, `Flagged`)
+		,	KEY `IX_Temp_LoginTrans_Group` (`TransDate`, `SubscriberID`, `AccountID`, `DeviceID`, `Flagged`)
 	);
     
 	CREATE TEMPORARY TABLE Temp_TotalTrans(
@@ -74,24 +70,20 @@ BEGIN
 		, 	TransDate					DATETIME NOT NULL
 		, 	SubscriberID				INT UNSIGNED DEFAULT NULL
 		, 	TotalTrans					INT UNSIGNED DEFAULT 0
-		, 	TotalNoDeviceTrans			INT UNSIGNED DEFAULT 0
-		, 	TotalNoFPDeviceTrans		INT UNSIGNED DEFAULT 0
 		, 	TotalInvalidBrowers			INT UNSIGNED DEFAULT 0
 		, 	TotalBotTrans				INT UNSIGNED DEFAULT 0
 		, 	IsUpdate					BIT DEFAULT 0
 	);
     
-    INSERT INTO Temp_Trans07(TransID, TransDate, AccountID, SubscriberID, RawUserAgentID, Flagged, TransTime, NoDeviceID, NoFPDeviceID)
+    INSERT INTO Temp_Trans07(TransID, TransDate, AccountID, SubscriberID, DeviceID, Flagged, TransTime)
     SELECT 	trans.TransID
 		,	DATE(trans.TransTime) AS TransDate
 		,	IFNULL(trans.AccountID,0) AS AccountID
         ,	IFNULL(trans.SubscriberID,0) AS SubscriberID
-		,	IFNULL(trans.RawUserAgentID,0) AS RawUserAgentID
+		,	0 AS DeviceID
         ,	IFNULL(trans.Flagged,0) AS Flagged
         ,	trans.TransTime
-        ,	CASE WHEN IFNULL(trans.DeviceID,0) = 0 THEN 1 ELSE 0 END AS NoDeviceID
-        ,	CASE WHEN IFNULL(trans.FPDeviceID,0) = 0 THEN 1 ELSE 0 END AS NoFPDeviceID
-	FROM DCS_DataCenter.Transaction07 AS trans
+	FROM DCS_DataTrace.RawTransaction07 AS trans
     WHERE trans.TransID > lv_MaxTransID
     ORDER BY trans.TransID ASC
     LIMIT ip_Size;
@@ -103,59 +95,51 @@ BEGIN
     SET lv_MaxTransID = (SELECT MAX(TransID) FROM Temp_Trans07);
     
     /* == LoginTransaction == */
-    INSERT INTO Temp_LoginTrans(TransDate, SubscriberID, AccountID, RawUserAgentID, Flagged, FlaggedGroupID, FirstLoginTransTime, LastLoginTransTime, TotalTrans, TotalNoDeviceTrans, TotalNoFPDeviceTrans)
+    INSERT INTO Temp_LoginTrans(TransDate, SubscriberID, AccountID, DeviceID, Flagged, FlaggedGroupID, FirstLoginTransTime, LastLoginTransTime, TotalTrans)
     SELECT 	TransDate
         ,	SubscriberID
 		,	AccountID
-		,	RawUserAgentID
+		,	DeviceID
         ,	Flagged
         ,	FlaggedGroupID
         ,	MIN(TransTime) AS FirstLoginTransTime
         ,	MAX(TransTime) AS LastLoginTransTime
         ,	COUNT(1) AS TotalTrans
-        ,	SUM(NoDeviceID) AS TotalNoDeviceTrans
-        ,	SUM(NoFPDeviceID) AS TotalNoFPDeviceTrans
-	FROM Temp_Trans07
-    GROUP BY TransDate, SubscriberID, AccountID, RawUserAgentID, Flagged, FlaggedGroupID;
+	FROM Temp_Trans07 AS tmp
+    GROUP BY TransDate, SubscriberID, AccountID, DeviceID, Flagged, FlaggedGroupID;
 	
-    UPDATE DCS_DataTrace.LoginTransactionSummary_Daily AS lt
-		INNER JOIN Temp_LoginTrans AS tmp ON 	lt.TransDate 		= tmp.TransDate
-											AND lt.SubscriberID 	= tmp.SubscriberID
-											AND lt.AccountID 		= tmp.AccountID
-											AND lt.RawUserAgentID 	= tmp.RawUserAgentID
-											AND lt.Flagged 			= tmp.Flagged
-	SET lt.TotalTrans 			= lt.TotalTrans + tmp.TotalTrans,
-		lt.TotalNoDeviceTrans 	= lt.TotalNoDeviceTrans + tmp.TotalNoDeviceTrans,
-		lt.TotalNoFPDeviceTrans = lt.TotalNoFPDeviceTrans + tmp.TotalNoFPDeviceTrans,
-		lt.FirstLoginTransTime 	= tmp.FirstLoginTransTime,
-		lt.LastLoginTransTime 	= tmp.LastLoginTransTime,
-		lt.ModifiedTime 		= lv_CurrentDatetime,
+    UPDATE DCS_DataTrace.LoginTransactionSummary AS tl
+		INNER JOIN Temp_LoginTrans AS tmp ON 	tl.TransDate = tmp.TransDate
+											AND tl.SubscriberID = tmp.SubscriberID
+											AND tl.AccountID = tmp.AccountID
+											AND tl.DeviceID = tmp.DeviceID
+											AND tl.Flagged = tmp.Flagged
+	SET tl.TotalTrans 			= tl.TotalTrans + tmp.TotalTrans,
+		tl.FirstLoginTransTime 	= tmp.FirstLoginTransTime,
+		tl.LastLoginTransTime 	= tmp.LastLoginTransTime,
+		tl.ModifiedTime 		= lv_CurrentDatetime,
 		tmp.IsUpdate 			= 1;
     
-    INSERT INTO DCS_DataTrace.LoginTransactionSummary_Daily(TransDate, SubscriberID, AccountID, RawUserAgentID, Flagged, FlaggedGroupID, FirstLoginTransTime, LastLoginTransTime, TotalTrans, TotalNoDeviceTrans, TotalNoFPDeviceTrans, CreatedTime, ModifiedTime)
+    INSERT INTO DCS_DataTrace.LoginTransactionSummary(TransDate, SubscriberID, AccountID, DeviceID, Flagged, FlaggedGroupID, FirstLoginTransTime, LastLoginTransTime, TotalTrans, CreatedTime, ModifiedTime)
     SELECT 	tmp.TransDate
         ,	tmp.SubscriberID
 		,	tmp.AccountID
-		,	tmp.RawUserAgentID
+		,	tmp.DeviceID
         ,	tmp.Flagged
         ,	tmp.FlaggedGroupID
         ,	tmp.FirstLoginTransTime
         ,	tmp.LastLoginTransTime
         ,	tmp.TotalTrans
-        ,	tmp.TotalNoDeviceTrans
-        ,	tmp.TotalNoFPDeviceTrans
         ,	lv_CurrentDatetime AS CreatedTime
         ,	lv_CurrentDatetime AS ModifiedTime
 	FROM Temp_LoginTrans AS tmp
     WHERE tmp.IsUpdate = 0;
 
     /* == DailyLoginTransactionMonitoring == */        
-    INSERT INTO Temp_TotalTrans(TransDate, SubscriberID, TotalTrans, TotalNoDeviceTrans, TotalNoFPDeviceTrans, TotalInvalidBrowers, TotalBotTrans)
+    INSERT INTO Temp_TotalTrans(TransDate, SubscriberID, TotalTrans, TotalInvalidBrowers, TotalBotTrans)
     SELECT 	TransDate
         ,	SubscriberID
         ,	COUNT(1) AS TotalTrans
-        ,	SUM(NoDeviceID) AS TotalNoDeviceTrans
-        ,	SUM(NoFPDeviceID) AS TotalNoFPDeviceTrans
         ,	SUM(CASE WHEN FlaggedGroupID = CONST_FLAGGEDGROUPID_INVALIDBROWSER THEN 1 ELSE 0 END ) AS TotalInvalidBrowers
         ,	SUM(CASE WHEN FlaggedGroupID = CONST_FLAGGEDGROUPID_BOTTRANS THEN 1 ELSE 0 END ) AS TotalBotTrans
 	FROM Temp_Trans07
@@ -163,20 +147,16 @@ BEGIN
     
     UPDATE DCS_DataTrace.LoginTransactionSummaryBySubscriber AS trans
 		INNER JOIN Temp_TotalTrans AS tmp ON trans.TransDate = tmp.TransDate AND trans.SubscriberID = tmp.SubscriberID
-	SET trans.TotalTrans 			= trans.TotalTrans 				+ tmp.TotalTrans,
-		trans.TotalNoDeviceTrans 	= trans.TotalNoDeviceTrans 		+ tmp.TotalNoDeviceTrans,
-		trans.TotalNoFPDeviceTrans 	= trans.TotalNoFPDeviceTrans 	+ tmp.TotalNoFPDeviceTrans,
-		trans.TotalInvalidBrowers 	= trans.TotalInvalidBrowers 	+ tmp.TotalInvalidBrowers,
-		trans.TotalBotTrans 		= trans.TotalBotTrans 			+ tmp.TotalBotTrans,
+	SET trans.TotalTrans 			= trans.TotalTrans 			+ tmp.TotalTrans,
+		trans.TotalInvalidBrowers 	= trans.TotalInvalidBrowers + tmp.TotalInvalidBrowers,
+		trans.TotalBotTrans 		= trans.TotalBotTrans 		+ tmp.TotalBotTrans,
 		trans.ModifiedTime 			= lv_CurrentDatetime,
 		tmp.IsUpdate = 1;
     
-    INSERT INTO DCS_DataTrace.LoginTransactionSummaryBySubscriber(TransDate, SubscriberID, TotalTrans, TotalNoDeviceTrans, TotalNoFPDeviceTrans, TotalInvalidBrowers, TotalBotTrans, CreatedTime, ModifiedTime)
+    INSERT INTO DCS_DataTrace.LoginTransactionSummaryBySubscriber(TransDate, SubscriberID, TotalTrans, TotalInvalidBrowers, TotalBotTrans, CreatedTime, ModifiedTime)
     SELECT 	tmp.TransDate
         ,	tmp.SubscriberID
         ,	tmp.TotalTrans
-        ,	tmp.TotalNoDeviceTrans
-        ,	tmp.TotalNoFPDeviceTrans
         ,	tmp.TotalInvalidBrowers
         ,	tmp.TotalBotTrans
         ,	lv_CurrentDatetime AS CreatedTime
