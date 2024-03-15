@@ -128,8 +128,9 @@ BEGIN
     
     #================Mapping Category================
     CALL CTS_DC_CustClassification_PA_MappingCategory_xpre(ip_InputType,ip_ProblemAccounts);
-    
-	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationOldCategory(CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
+
+	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationOldCategory(CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, Remark, CreatedDate
+		, CreatedBy, LastModifiedDate, LastModifiedBy
 		, LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsDirect, InsertTime, TVSRequestID, IsParlay, SportType, IssueTypeID) 
     SELECT	tmpPa.CustID
 		,	tmpPa.CTSCustID

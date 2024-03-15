@@ -18,7 +18,9 @@ BEGIN
             
 		Example:
 			CALL CTS_DataCenter.CTS_DC_DangerousDetection_GetLatest_xpre(@ip_IsLicensee:=0);
-	*/    
+	*/
+    DECLARE  CONST_CATEGORYID_EARLYWARNINGMEMBER	INT DEFAULT 190;
+    
     DECLARE lv_LastScannedDate DATETIME(3);
 	DECLARE lv_LastCustID BIGINT UNSIGNED;
     DECLARE lv_BatchSize SMALLINT;
@@ -42,35 +44,38 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
     CREATE TEMPORARY TABLE Temp_Cust(
 			CustID				BIGINT UNSIGNED PRIMARY KEY
-		,	Remark				VARCHAR(500)
+		,	ClassifiedScore		DECIMAL(8,4)
+		,	ClassifiedDate		DATETIME(3)
         ,	LastModifiedDate	DATETIME(3)
     );
     
-    INSERT INTO Temp_Cust(CustID, Remark, LastModifiedDate)
+    INSERT INTO Temp_Cust(CustID, ClassifiedScore, ClassifiedDate, LastModifiedDate)
     SELECT	cd.CustID
-		, 	CONCAT('Detection Date: ',DATE(cd.ClassifiedDate),' - Dangerous Score: ', FLOOR(cd.ClassifiedScore*100),'%') AS Remark
+		, 	cd.ClassifiedScore
+        ,	cd.ClassifiedDate
 		,	cd.LastModifiedDate
     FROM CTS_DataCenter.Customer_DangerousScore AS cd
     WHERE cd.IsLicensee = ip_IsLicensee
 		AND cd.LastModifiedDate = lv_LastScannedDate
 		AND cd.CustID > lv_LastCustID
         AND cd.ClassifiedScore IS NOT NULL
-	ORDER BY cd.CustID ASC
+	ORDER BY cd.LastModifiedDate ASC, cd.CustID ASC
 	LIMIT lv_BatchSize;
     
     SET lv_TotalRow = (SELECT COUNT(1) FROM Temp_Cust) ;
     
     IF lv_TotalRow < lv_BatchSize THEN
     
-        INSERT INTO Temp_Cust(CustID, Remark, LastModifiedDate)
+        INSERT INTO Temp_Cust(CustID, ClassifiedScore, ClassifiedDate, LastModifiedDate)
 		SELECT	cd.CustID
-			,	CONCAT('Detection Date: ',DATE(cd.ClassifiedDate),' - Dangerous Score: ', FLOOR(cd.ClassifiedScore*100),'%') AS Remark
-			,	cd.LastModifiedDate
+			, 	cd.ClassifiedScore
+			,	cd.ClassifiedDate
+            ,	cd.LastModifiedDate
 		FROM CTS_DataCenter.Customer_DangerousScore AS cd
 		WHERE cd.IsLicensee = ip_IsLicensee
 			AND cd.LastModifiedDate > lv_LastScannedDate
             AND cd.ClassifiedScore IS NOT NULL
-		ORDER BY cd.CustID ASC
+		ORDER BY cd.LastModifiedDate ASC, cd.CustID ASC
 		LIMIT lv_BatchSize;
     
     END IF;
@@ -81,9 +86,15 @@ BEGIN
     SELECT lv_LastScannedDate AS LastScannedDate , lv_LastCustID AS LastCustID;
     
     SELECT	tmp.CustID
-		, 	tmp.Remark
-		, 	tmp.LastModifiedDate
-	FROM Temp_Cust AS tmp;
+		, 	tmp.ClassifiedScore
+        ,	tmp.ClassifiedDate
+        ,	cus.CTSCustID
+        ,	cus.SubscriberID
+        ,	cus.RoleID
+        ,	CONST_CATEGORYID_EARLYWARNINGMEMBER AS CategoryID
+        ,	CONST_CATEGORYID_EARLYWARNINGMEMBER AS CategoryGroup
+	FROM Temp_Cust AS tmp
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmp.CustID = cus.CustID AND cus.CustSubID = 0;
     
 END$$	
 DELIMITER ;

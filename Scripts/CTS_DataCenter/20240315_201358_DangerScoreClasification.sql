@@ -63,10 +63,10 @@ SELECT * FROM StaticList WHERE ListID = 22
 ;
 #====Initial Category(2800, 2801)================================================================================
 INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate,CreatedBy,LastModifiedDate,LastModifiedBy,ScanIntervalInSecond,CategoryNameCN,CategoryNameCN3,CategoryNameTHB,CategoryNameIND,CategoryGroup,TaggingID,TaggingType,ReasonID,SourceType,AFCFraudID,EvidenceID_Licensee,EvidenceCode_Licensee,EvidenceID_Credit,EvidenceCode_Credit,CustomerClass,CustomerClassName,CustomerClassNameCN,CustomerClassException,RelevantCategoryID,ABIDangerLevel_Licensee,ABIDangerLevelException_Licensee,ABIDangerLevel_Credit,ABIDangerLevelException_Credit,IsProbation,ProblemCaseID,IsHedgingReasonMM,RootTaggingID,IsPAProbation,DangerLevelType,Priority,IsDangerProbation,OldCustomerClass,SabaSportType,SabaIntelligent_RiskLevel,SabaIntelligent_RiskLevel_TCN,SabaIntelligent_RiskLevel_SCN,SabaIntelligent_RiskLevel_CN3,SabaIntelligent_RiskLevel_THB,SabaIntelligent_RiskLevel_IND,GroupPriority)
-VALUES (190,'Early Warning Members','Early Warning Members',50,199,1,0,NOW(),NULL,NULL,NULL,NULL,'预警会员',NULL,NULL,NULL,190,NULL,NULL,NULL,'AI',NULL,NULL,NULL,NULL,NULL,2800,'Dangerous','危險',2800,191,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,53,0,NULL,NULL,'Dangerous','危險','危险',NULL,NULL,NULL,50500)
-	,(191,'Early Warning Members (Losing)','Early Warning Members (Losing)',50,199,1,0,NOW(),NULL,NULL,NULL,NULL,'预警会员 (输钱)',NULL,NULL,NULL,191,NULL,NULL,NULL,'AI',NULL,NULL,NULL,NULL,NULL,2801,'Dangerous-','危險 -',2801,190,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,53,1,NULL,NULL,'Dangerous','危險','危险',NULL,NULL,NULL,50500)
+VALUES (190,'Early Warning Members','Early Warning Members',50,199,1,0,NOW(),NULL,NULL,NULL,NULL,'预警会员',NULL,NULL,NULL,190,NULL,NULL,NULL,'AI',NULL,NULL,NULL,NULL,NULL,2800,'Dangerous','危險',2800,191,NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,53,0,NULL,NULL,'Dangerous','危險','危险',NULL,NULL,NULL,50500)
+	,(191,'Early Warning Members (Losing)','Early Warning Members (Losing)',50,199,1,0,NOW(),NULL,NULL,NULL,NULL,'预警会员 (输钱)',NULL,NULL,NULL,191,NULL,NULL,NULL,'AI',NULL,NULL,NULL,NULL,NULL,2801,'Dangerous-','危險 -',2801,190,NULL,NULL,NULL,NULL,1,NULL,NULL,NULL,NULL,NULL,53,1,NULL,NULL,'Dangerous','危險','危险',NULL,NULL,NULL,50500)
 ;
-SELECT * FROM CustomerCategory
+SELECT * FROM CustomerCategory WHERE CategoryID IN (190, 191, 54,94)
 ;
 #====Initial ClassifiedScore, ClassifiedDate FOR Credit Customer======================================================
 UPDATE Customer_DangerousScore

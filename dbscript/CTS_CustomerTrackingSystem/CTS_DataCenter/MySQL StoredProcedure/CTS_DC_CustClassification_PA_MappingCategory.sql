@@ -30,6 +30,7 @@ BEGIN
 		Param's Explanation (filtered by):      
 			CALL CTS_DC_CustClassification_PA_MappingCategory ('Category','[{"CustID": 3679910,"ReasonID": 3679910,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10, "MatchID": 1}]');
 	*/
+
     #=======================================================================================================
     DROP TEMPORARY TABLE IF EXISTS Temp_PA;    
 	CREATE TEMPORARY TABLE Temp_PA(	  
@@ -197,7 +198,7 @@ BEGIN
 			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin on tmpJs.CTSCustID = pin.CTSCustID # Exclude IF Cust is Pin Category
 			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CTSCustID = sp.CTSCustID AND sp.CustomerClass NOT IN (SELECT DISTINCT tmp.CustomerClass FROM Temp_SpecialCategory AS tmp)
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.CategoryID;		
-    
+
 		INSERT IGNORE INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
 		SELECT DISTINCT t.CustID
 			,	CASE 
@@ -217,7 +218,7 @@ BEGIN
 								ELSE 0  # NOT LOSING
 							END)
 		WHERE t.WinlossStatus = 1;
-    
+
 		UPDATE Temp_PA AS tmpPA,
 		LATERAL(SELECT 	cat.CategoryGroup
 					,	cat.CustomerClass
