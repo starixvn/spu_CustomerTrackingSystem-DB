@@ -25,7 +25,7 @@ CREATE TABLE SpecialCustomerClass_History
 	LastModifiedBy int DEFAULT NULL,
 	LastModifiedDate datetime DEFAULT NULL,
 	CreatedFromFunction tinyint NOT NULL,
-	Remark char(200) COLLATE utf8_unicode_ci DEFAULT NULL,
+	Remark varchar(500) COLLATE utf8_unicode_ci DEFAULT NULL,
 	PRIMARY KEY (ID),
 	KEY IX_SpecialCustomerClass_History_CTSCustID (CTSCustID)
 );
@@ -44,4 +44,21 @@ CREATE TABLE SpecialCustomerClass_BySport (
   PRIMARY KEY (CTSCustID,SportID),
   KEY IX_SpecialCustomerClass_SubscriberID (SubscriberID),
   KEY IX_SpecialCustomerClass_CustID (CustID)
+);
+
+
+CREATE TABLE SpecialCustomerClass_BySport_History 
+(
+	ID bigint unsigned NOT NULL AUTO_INCREMENT,
+	CTSCustID bigint unsigned NOT NULL,
+	CustID int unsigned NOT NULL,
+	SubscriberID int NOT NULL,
+	CustomerClass smallint DEFAULT NULL,
+	CreatedBy int NOT NULL,
+	CreatedDate datetime NOT NULL,
+	LastModifiedBy int DEFAULT NULL,
+	LastModifiedDate datetime DEFAULT NULL,
+	Remark varchar(500) COLLATE utf8_unicode_ci DEFAULT NULL,
+	PRIMARY KEY (ID),
+	KEY IX_SpecialCustomerClass_History_CTSCustID (CTSCustID)
 );
