@@ -17,7 +17,7 @@ BEGIN
 			- 20240315@Casey.Huynh: 	Created [Redmine ID: #201538]
             
 		Example:
-			CALL CTS_DataCenter.CTS_DC_DangerousDetection_GetLatest(@ip_IsLicensee:=0);
+			CALL CTS_DataCenter.CTS_DC_DangerousDetection_GetLatest_xpre(@ip_IsLicensee:=0);
 	*/    
     DECLARE lv_LastScannedDate DATETIME(3);
 	DECLARE lv_LastCustID BIGINT UNSIGNED;
@@ -42,11 +42,13 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
     CREATE TEMPORARY TABLE Temp_Cust(
 			CustID				BIGINT UNSIGNED PRIMARY KEY
+		,	Remark				VARCHAR(500)
         ,	LastModifiedDate	DATETIME(3)
     );
     
-    INSERT INTO Temp_Cust(CustID, LastModifiedDate)
+    INSERT INTO Temp_Cust(CustID, Remark, LastModifiedDate)
     SELECT	cd.CustID
+		, 	CONCAT('Detection Date: ',DATE(cd.ClassifiedDate),' - Dangerous Score: ', FLOOR(cd.ClassifiedScore*100),'%') AS Remark
 		,	cd.LastModifiedDate
     FROM CTS_DataCenter.Customer_DangerousScore AS cd
     WHERE cd.IsLicensee = ip_IsLicensee
@@ -60,8 +62,9 @@ BEGIN
     
     IF lv_TotalRow < lv_BatchSize THEN
     
-        INSERT INTO Temp_Cust(CustID, LastModifiedDate)
+        INSERT INTO Temp_Cust(CustID, Remark, LastModifiedDate)
 		SELECT	cd.CustID
+			,	CONCAT('Detection Date: ',DATE(cd.ClassifiedDate),' - Dangerous Score: ', FLOOR(cd.ClassifiedScore*100),'%') AS Remark
 			,	cd.LastModifiedDate
 		FROM CTS_DataCenter.Customer_DangerousScore AS cd
 		WHERE cd.IsLicensee = ip_IsLicensee
@@ -78,6 +81,7 @@ BEGIN
     SELECT lv_LastScannedDate AS LastScannedDate , lv_LastCustID AS LastCustID;
     
     SELECT	tmp.CustID
+		, 	tmp.Remark
 		, 	tmp.LastModifiedDate
 	FROM Temp_Cust AS tmp;
     
