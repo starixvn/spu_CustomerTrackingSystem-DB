@@ -78,8 +78,6 @@ BEGIN
 		, 	TotalBotTrans				INT UNSIGNED DEFAULT 0
 		, 	TotalNoDeviceTrans			INT UNSIGNED DEFAULT 0
 		, 	TotalNoFPDeviceTrans		INT UNSIGNED DEFAULT 0
-		, 	CountUserAgent				INT UNSIGNED DEFAULT 0
-		, 	CountDevice					INT UNSIGNED DEFAULT 0
 		, 	IsUpdate					BIT DEFAULT 0
 	);
     
@@ -176,7 +174,7 @@ BEGIN
 
     
     /* == TotalTransByAccount == */
-    INSERT INTO Temp_TotalTransByAccount(TransDate, SubscriberID, AccountID, TotalTrans, TotalInvalidBrowers, TotalBotTrans, TotalNoDeviceTrans, TotalNoFPDeviceTrans, CountUserAgent, CountDevice)
+    INSERT INTO Temp_TotalTransByAccount(TransDate, SubscriberID, AccountID, TotalTrans, TotalInvalidBrowers, TotalBotTrans, TotalNoDeviceTrans, TotalNoFPDeviceTrans)
     SELECT 	TransDate
         ,	SubscriberID
         ,	AccountID
@@ -185,8 +183,6 @@ BEGIN
         ,	SUM(IsBotTrans) AS TotalBotTrans
         ,	SUM(CASE WHEN DeviceID = 0 THEN 1 ELSE 0 END) AS TotalNoDeviceTrans
         ,	SUM(CASE WHEN FPDeviceID = 0 THEN 1 ELSE 0 END) AS TotalNoFPDeviceTrans
-        ,	COUNT(DISTINCT CASE WHEN RawUserAgentID = 0 THEN NULL ELSE RawUserAgentID END) AS CountUserAgent
-        ,	COUNT(DISTINCT CASE WHEN DeviceID = 0 THEN NULL ELSE DeviceID END) AS CountDevice
 	FROM Temp_Trans07
     GROUP BY TransDate, SubscriberID, AccountID;
     
@@ -202,12 +198,10 @@ BEGIN
 		,	trans.TotalBotTrans 		= trans.TotalBotTrans 			+ tmp.TotalBotTrans
 		,	trans.TotalNoDeviceTrans 	= trans.TotalNoDeviceTrans 		+ tmp.TotalNoDeviceTrans
 		,	trans.TotalNoFPDeviceTrans 	= trans.TotalNoFPDeviceTrans 	+ tmp.TotalNoFPDeviceTrans
-		,	trans.CountUserAgent 		= trans.CountUserAgent 			+ tmp.CountUserAgent
-		,	trans.CountDevice 			= trans.CountDevice 			+ tmp.CountDevice
 		,	trans.ModifiedTime 			= lv_CurrentDatetime
 		,	tmp.IsUpdate = 1;
         
-    INSERT INTO DCS_DataTrace.LoginTransactionSummaryByAccount(TransDate, SubscriberID, AccountID, TotalTrans, TotalInvalidBrowers, TotalBotTrans, TotalNoDeviceTrans, TotalNoFPDeviceTrans, CountUserAgent, CountDevice, CreatedTime, ModifiedTime)
+    INSERT INTO DCS_DataTrace.LoginTransactionSummaryByAccount(TransDate, SubscriberID, AccountID, TotalTrans, TotalInvalidBrowers, TotalBotTrans, TotalNoDeviceTrans, TotalNoFPDeviceTrans, CreatedTime, ModifiedTime)
     SELECT 	tmp.TransDate
         ,	tmp.SubscriberID
         ,	tmp.AccountID
@@ -216,8 +210,6 @@ BEGIN
         ,	tmp.TotalBotTrans
         ,	tmp.TotalNoDeviceTrans
         ,	tmp.TotalNoFPDeviceTrans
-        ,	tmp.CountUserAgent
-        ,	tmp.CountDevice
         ,	lv_CurrentDatetime AS CreatedTime
         ,	lv_CurrentDatetime AS ModifiedTime
 	FROM Temp_TotalTransByAccount AS tmp
@@ -263,9 +255,6 @@ BEGIN
 		INNER JOIN DCS_DataTrace.RawUserAgent AS ua ON ua.ID = tmp.RawUserAgentID
     GROUP BY TransDate, BrowserID, OSID, DeviceTypeID;
     
-        
-	SELECT * FROM Temp_Trans07;
-    
     ALTER TABLE Temp_TotalTransByBrowser
     ADD KEY IX_Temp_TotalTransByBrowser_Group(TransDate, BrowserID, OSID, DeviceTypeID);
     
@@ -279,8 +268,6 @@ BEGIN
 		,	trans.TotalBotTrans 		= trans.TotalBotTrans + tmp.TotalBotTrans
 		,	trans.ModifiedTime 			= lv_CurrentDatetime
 		,	tmp.IsUpdate = 1;
-        
-	SELECT * FROM Temp_TotalTransByBrowser;
     
     INSERT INTO DCS_DataTrace.LoginTransactionSummaryByBrowser(TransDate, BrowserID, OSID, DeviceTypeID, TotalTrans, TotalInvalidBrowers, TotalBotTrans, CreatedTime, ModifiedTime)
     SELECT 	tmp.TransDate

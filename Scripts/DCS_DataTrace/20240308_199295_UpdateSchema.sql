@@ -11,6 +11,8 @@
 */
 USE DCS_DataTrace;
 
+DROP TABLE DCS_DataTrace.LoginTransactionSummaryBySubscriber;
+
 CREATE TABLE `RawTransaction07` (
 	`TransID`				BIGINT UNSIGNED 	NOT NULL
   ,	`LoginName` 			VARCHAR(100) 
@@ -72,11 +74,6 @@ CREATE TABLE `LoginTransactionSummaryByBrowser` (
   ,	KEY `IX_LoginTransactionSummaryByBrowser_OSID` (`OSID`)
 ) ENGINE=InnoDB;
 
-DROP TABLE DCS_DataTrace.LoginTransactionSummaryBySubscriber;
--- ALTER TABLE DCS_DataTrace.LoginTransactionSummaryBySubscriber
--- 	ADD COLUMN TotalNoDeviceTrans INT UNSIGNED 
--- ,	ADD COLUMN TotalNoFPDeviceTrans INT UNSIGNED ;
-
 CREATE TABLE `RawUserAgent` (
 	`ID` 				BIGINT UNSIGNED 	NOT NULL
   ,	`UserAgent` 		VARCHAR(1000) 		NOT NULL
@@ -103,7 +100,7 @@ CREATE TABLE `Browser` (
 ) ENGINE=InnoDB;
 
 CREATE TABLE `OS` (
-  `ID` 					BIGINT UNSIGNED 	NOT NULL AUTO_INCREMENT
+	`ID` 				BIGINT UNSIGNED 	NOT NULL AUTO_INCREMENT
   ,	`OSCode` 			VARCHAR(32) 		NOT NULL
   ,	`OSName` 			VARCHAR(100) 		
   ,	`OSShortName` 		VARCHAR(50) 		
