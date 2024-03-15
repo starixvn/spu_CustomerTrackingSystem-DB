@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin,ctsService,ctsAPIAdmin,ctsAPI,ctsWebAdmin,ctsWeb" isFunction="0" isNested="1"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_PA_MappingCategory`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_PA_MappingCategory_xpre`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_MappingCategory`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_MappingCategory_xpre`(
 		IN 		ip_InputType	VARCHAR(20)	#"Category, Reason"
     ,	IN 		ip_CustInfo 	JSON
 	
@@ -25,7 +25,8 @@ BEGIN
 			- 20230404@Victoria.Le		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeID [Redmine ID: #185319] 
 			- 20230601@Victoria.Le:		Add TVSRequestID <> 0 for TVSRequestID IS NOT NULL [Redmine ID: #189023]
             - 20240306@Thomas.Nguyen:	Add log table for tracking TVS void request [Redmine ID: #201993]
-
+			- 20240315@Casey.Huynh: 	Classify Danger Score, Add GroupPriority [Redmine ID: #201358]
+            
 		Param's Explanation (filtered by):      
 			CALL CTS_DC_CustClassification_PA_MappingCategory ('Category','[{"CustID": 3679910,"ReasonID": 3679910,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10, "MatchID": 1}]');
 	*/
@@ -77,7 +78,9 @@ BEGIN
         ,	MatchID					INT
 		,	IsParlay 				BIT DEFAULT NULL
 		,	SportType				SMALLINT DEFAULT NULL 
-		,	IssueTypeID 			TINYINT DEFAULT NULL 
+		,	IssueTypeID 			TINYINT DEFAULT NULL
+        ,	GroupPriority			INT
+        ,	ParentID				SMALLINT UNSIGNED
         , 	PRIMARY KEY PK_Temp_PA(CustID,InputCategoryID)  
         ,	INDEX IX_Temp_PA(IsDataChanged,LastModifiedDate)
     );  
@@ -128,7 +131,7 @@ BEGIN
     IF ip_InputType = 'Category' THEN    
         INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, InputCategoryID, InputCategoryGroup,  IsLicensee, CreatedBy, Remark, IsDirectPA
 			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsDataChanged, SpecialCC, IsProbation, RelevantCategoryID
-			, LastModifiedDate, PinCTSCustID, MatchID, TVSRequestID, IsParlay, SportType, IssueTypeID)
+			, LastModifiedDate, PinCTSCustID, MatchID, TVSRequestID, IsParlay, SportType, IssueTypeID, GroupPriority, ParentID)
 		SELECT 	DISTINCT tmpJs.CustID
 			,	tmpJs.CTSCustID
 			,	tmpJs.RoleID
@@ -161,6 +164,8 @@ BEGIN
 			,	tmpJs.IsParlay
 			,	tmpJs.SportType
 			,	tmpJs.IssueTypeID
+            ,	cat.GroupPriority
+            ,	cat.ParentID
 		FROM JSON_TABLE(ip_CustInfo,
 			"$[*]" COLUMNS(
 							CustID 				BIGINT UNSIGNED		PATH "$.CustID"
@@ -282,7 +287,7 @@ BEGIN
 
 		INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, InputCategoryID, InputCategoryGroup,  IsLicensee, CreatedBy, Remark, IsDirectPA
 			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, SpecialCC, IsProbation, RelevantCategoryID
-			, TVSRequestID, ReasonID, PinCTSCustID, IsParlay, SportType, IssueTypeID)
+			, TVSRequestID, ReasonID, PinCTSCustID, IsParlay, SportType, IssueTypeID, GroupPriority)
 		SELECT	DISTINCT tmpJs.CustID
 			,	cus.CTSCustID
 			,	cus.RoleID
@@ -314,6 +319,8 @@ BEGIN
 			,	tmpJs.IsParlay
 			,	tmpJs.SportType
 			,	tmpJs.IssueTypeID
+            ,	tmpLtr.GroupPriority
+            ,	tmpLtr.ParentID
             FROM JSON_TABLE(ip_CustInfo,
 			"$[*]" COLUMNS(
 					CustID 			BIGINT UNSIGNED		PATH "$.CustID"
@@ -339,7 +346,7 @@ BEGIN
 			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON cus.CTSCustID = sp.CTSCustID 
 																	AND sp.CustomerClass NOT IN (SELECT DISTINCT tmp.CustomerClass FROM Temp_SpecialCategory AS tmp)
 			LEFT JOIN Temp_MappingReason AS tmpR ON tmpR.ReasonID = tmpJs.ReasonID,
-            LATERAL (SELECT cat.CategoryGroup, cat.RelevantCategoryID 
+            LATERAL (SELECT cat.CategoryGroup, cat.RelevantCategoryID, cat.GroupPriority, cat.ParentID
 					 FROM CTS_DataCenter.CustomerCategory AS cat 
 					 WHERE cat.ReasonID = CASE WHEN tmpJs.IssueTypeID = 13 AND tmpR.ReasonID IS NOT NULL THEN tmpR.MappingReasonID
 											   ELSE tmpJs.ReasonID END

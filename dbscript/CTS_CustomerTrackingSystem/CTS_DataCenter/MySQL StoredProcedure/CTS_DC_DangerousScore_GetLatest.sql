@@ -1,0 +1,85 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_DangerousDetection_GetLatest_xpre`;
+
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_DangerousDetection_GetLatest_xpre`(
+	ip_IsLicensee TINYINT
+)
+    SQL SECURITY INVOKER
+BEGIN
+	/*
+		Created:	20240315@Casey.Huynh
+		Task:		Get Latest Cust Dangerous Score Info to push to CTS 
+		DB:			CTS_DataCenter
+		Original: 
+
+		Revisions:
+			- 20240315@Casey.Huynh: 	Created [Redmine ID: #201538]
+            
+		Example:
+			CALL CTS_DataCenter.CTS_DC_DangerousDetection_GetLatest(@ip_IsLicensee:=0);
+	*/    
+    DECLARE lv_LastScannedDate DATETIME(3);
+	DECLARE lv_LastCustID BIGINT UNSIGNED;
+    DECLARE lv_BatchSize SMALLINT;
+    DECLARE lv_TotalRow SMALLINT;
+    
+    SELECT sys.ParameterValue
+    INTO lv_LastScannedDate
+    FROM CTS_DataCenter.SystemParameter AS sys
+    WHERE sys.ParameterID = 153;
+    
+    SELECT sys.ParameterValue
+    INTO lv_LastCustID
+    FROM CTS_DataCenter.SystemParameter AS sys
+    WHERE sys.ParameterID = 154;
+    
+    SELECT sys.ParameterValue
+    INTO lv_BatchSize
+    FROM CTS_DataCenter.SystemParameter AS sys
+    WHERE sys.ParameterID = 155;
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
+    CREATE TEMPORARY TABLE Temp_Cust(
+			CustID				BIGINT UNSIGNED PRIMARY KEY
+        ,	LastModifiedDate	DATETIME(3)
+    );
+    
+    INSERT INTO Temp_Cust(CustID, LastModifiedDate)
+    SELECT	cd.CustID
+		,	cd.LastModifiedDate
+    FROM CTS_DataCenter.Customer_DangerousScore AS cd
+    WHERE cd.IsLicensee = ip_IsLicensee
+		AND cd.LastModifiedDate = lv_LastScannedDate
+		AND cd.CustID > lv_LastCustID
+        AND cd.ClassifiedScore IS NOT NULL
+	ORDER BY cd.CustID ASC
+	LIMIT lv_BatchSize;
+    
+    SET lv_TotalRow = (SELECT COUNT(1) FROM Temp_Cust) ;
+    
+    IF lv_TotalRow < lv_BatchSize THEN
+    
+        INSERT INTO Temp_Cust(CustID, LastModifiedDate)
+		SELECT	cd.CustID
+			,	cd.LastModifiedDate
+		FROM CTS_DataCenter.Customer_DangerousScore AS cd
+		WHERE cd.IsLicensee = ip_IsLicensee
+			AND cd.LastModifiedDate > lv_LastScannedDate
+            AND cd.ClassifiedScore IS NOT NULL
+		ORDER BY cd.CustID ASC
+		LIMIT lv_BatchSize;
+    
+    END IF;
+    
+    SET lv_LastScannedDate = (SELECT MAX(LastModifiedDate) FROM Temp_Cust);
+    SET lv_LastCustID = (SELECT MAX(CustID) FROM Temp_Cust WHERE LastModifiedDate = lv_LastScannedDate);
+    
+    SELECT lv_LastScannedDate AS LastScannedDate , lv_LastCustID AS LastCustID;
+    
+    SELECT	tmp.CustID
+		, 	tmp.LastModifiedDate
+	FROM Temp_Cust AS tmp;
+    
+END$$	
+DELIMITER ;

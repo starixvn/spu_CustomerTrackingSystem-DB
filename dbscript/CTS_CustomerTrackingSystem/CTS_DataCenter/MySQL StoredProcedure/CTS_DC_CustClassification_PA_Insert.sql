@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_PA_Insert`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_PA_Insert_xpre`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_Insert_xpre`(
 		IN ip_InputType			VARCHAR(20) 
     ,	IN ip_IsToQueue			BOOLEAN
     ,   IN ip_ProblemAccounts 	JSON
@@ -24,7 +24,7 @@ BEGIN
 			- 20230404@Victoria.Le			TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeID [Redmine ID: #185319] 
 			- 20230601@Victoria.Le:			Add TVSRequestID <> 0 for TVSRequestID IS NOT NULL [Redmine ID: #189023]
 			- 20231228@Thomas.Nguyen:		Update SourceTypeID for System Detect Unauthorized Login [Redmine ID: #197710]
-            
+            - 20240315@Casey.Huynh: 		Classify Danger Score, Lower GroupPriority is remove when the same ParentID [Redmine ID: #201358]
         Param's Explanation (filtered by):
 			- ip_InputType: 1: Category, 2: Reason
         Example:
@@ -127,7 +127,7 @@ BEGIN
 	);
     
     #================Mapping Category================
-    CALL CTS_DC_CustClassification_PA_MappingCategory(ip_InputType,ip_ProblemAccounts);
+    CALL CTS_DC_CustClassification_PA_MappingCategory_xpre(ip_InputType,ip_ProblemAccounts);
     
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationOldCategory(CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
 		, LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsDirect, InsertTime, TVSRequestID, IsParlay, SportType, IssueTypeID) 
@@ -201,8 +201,21 @@ BEGIN
     
     DELETE clss
     FROM CTS_DataCenter.CTSCustomerClassification AS clss
-		INNER JOIN Temp_PA AS tmpPa ON tmpPa.CustID = clss.CustID AND clss.SportGroupID = CONST_SPORTGROUP_NORMAL;       
+		INNER JOIN Temp_PA AS tmpPa ON tmpPa.CustID = clss.CustID 	WHERE clss.SportGroupID = CONST_SPORTGROUP_NORMAL;       
 	#WHERE NOT EXISTS (SELECT 1 FROM Temp_WrapperCategory AS tmpWr WHERE tmpWr.CategoryID = cls.CategoryID);
+    
+    #=============REMOVE PA Base on GroupPriorty==========================
+    DELETE clss
+    FROM CTS_DataCenter.CTSCustomerClassification AS clss
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID
+		INNER JOIN Temp_PA AS tmpPa ON tmpPa.CustID = clss.CustID
+	WHERE cat.ParentID = tmpPa.ParentID AND cat.GroupPriority >  tmpPa.GroupPriority;
+    
+	DELETE tmpPa
+    FROM Temp_PA AS tmpPa 
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON tmpPa.CustID = clss.CustID
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID		
+	WHERE cat.ParentID = tmpPa.ParentID AND cat.GroupPriority <  tmpPa.GroupPriority;
     
     #=============REMOVE PA PROBATION LIST WHEN IsProbation = 0=============
     DELETE pro
