@@ -22,32 +22,7 @@ BEGIN
 	Example:
         CALL DCS_DataTrace.DCS_DT_Report_LoginTransactionByAccount_GetByDateRange('2024-03-15', '2024-03-15');
 	*/
-    
-	DROP TEMPORARY TABLE IF EXISTS Temp_CountRawTransaction07;
-    
-	CREATE TEMPORARY TABLE Temp_CountRawTransaction07(
-			ID						INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY
-		, 	TransDate				DATE NOT NULL
-		, 	SubscriberID			INT UNSIGNED
-		, 	AccountID				BIGINT UNSIGNED
-		, 	CountUserAgent			INT UNSIGNED DEFAULT 0
-		, 	CountDevice				INT UNSIGNED DEFAULT 0
-	);
-    
-    INSERT INTO Temp_CountRawTransaction07(TransDate, SubscriberID, AccountID, CountUserAgent, CountDevice)
-    SELECT 	CreatedDate AS TransDate
-		,	SubscriberID
-        ,	AccountID
-        ,	COUNT(DISTINCT CASE WHEN RawUserAgentID = 0 THEN NULL ELSE RawUserAgentID END) AS CountUserAgent
-        ,	COUNT(DISTINCT CASE WHEN DeviceID = 0 THEN NULL ELSE DeviceID END) AS CountDevice
-    FROM DCS_DataTrace.RawTransaction07 AS trans
-    WHERE CreatedDate BETWEEN ip_FromDate AND ip_ToDate
-    GROUP BY TransDate, SubscriberID, AccountID;
-    
-    ALTER TABLE Temp_CountRawTransaction07
-    ADD KEY IX_Temp_CountRawTransaction07_Group(TransDate, SubscriberID, AccountID);
-    
-    select 	trans.TransDate
+    SELECT 	trans.TransDate
 		,	trans.SubscriberID
 		,	sub.SubscriberName
 		,	trans.AccountID
@@ -55,17 +30,12 @@ BEGIN
 		,	cus.CustID
 		,	cus.Site
 		,	CASE WHEN cus.IsLicensee = 1 THEN 'Deposit' ELSE 'Credit' END as _type
-		,	case sub.SubscriberSourceID when 0 THEN 'Others' WHEN 1 THEN 'Direct API' WHEN 1 THEN 'OddsFeed' ELSE 'Unknow' END AS LicenseeType 
+		,	CASE sub.SubscriberSourceID WHEN 0 THEN 'Others' WHEN 1 THEN 'Direct API' WHEN 1 THEN 'OddsFeed' ELSE 'Unknow' END AS LicenseeType 
 		,	SUM(trans.TotalTrans) AS TotalTrans
 		,	SUM(trans.TotalInvalidBrowers) AS TotalInvalidBrowers
 		,	SUM(trans.TotalBotTrans) AS TotalBotTrans
 		,	SUM(trans.TotalNoDeviceTrans) AS TotalNoDeviceTrans
-		,	MAX(tmp.CountUserAgent) AS CountUserAgent
-		,	MAX(tmp.CountDevice) AS CountDevice
 	from DCS_DataTrace.LoginTransactionSummaryByAccount AS trans
-		LEFT JOIN Temp_CountRawTransaction07 AS tmp ON 	trans.TransDate = tmp.TransDate
-													AND trans.SubscriberID = tmp.SubscriberID
-													AND trans.AccountID = tmp.AccountID
 		INNER JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = trans.SubscriberID
 		INNER JOIN DCS_DataCenter.Account AS acc ON acc.AccountID = trans.AccountID
 		INNER JOIN CTS_DataCenter.CustDCSAccount AS cda ON cda.AccountID = trans.AccountID
