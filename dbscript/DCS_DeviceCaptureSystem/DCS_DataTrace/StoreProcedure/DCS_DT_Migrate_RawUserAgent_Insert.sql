@@ -1,9 +1,9 @@
 /*<info serverAlias="CTSMain-DCS_DataTrace" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DT_Transform_RawUserAgent_Insert`;
+DROP PROCEDURE IF EXISTS `DCS_DT_Migrate_RawUserAgent_Insert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DT_Transform_RawUserAgent_Insert`(
-    IN ip_RawUserAgentIDs	LONGTEXT
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DT_Migrate_RawUserAgent_Insert`(
+    IN ip_Size INT UNSIGNED
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -20,19 +20,19 @@ BEGIN
 
 	Example:
 		SET sql_safe_updates = 0;
-        CALL DCS_DataTrace.DCS_DT_Transform_RawUserAgent_Insert(10);
+        CALL DCS_DataTrace.DCS_DT_Migrate_RawUserAgent_Insert(10);
 	*/
+    DECLARE CONST_MIGRATEDATA_MAXRAWUSERAGENTID INT DEFAULT 7;
+    
+    DECLARE lv_MaxRawUserAgentID BIGINT UNSIGNED;
     DECLARE lv_CreatedDate DATETIME DEFAULT CURRENT_TIMESTAMP;
     
-	DROP TEMPORARY TABLE IF EXISTS Temp_InputRawUserAgentID;
+    SET lv_MaxRawUserAgentID = (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataTrace.SystemSetting WHERE ID = CONST_MIGRATEDATA_MAXRAWUSERAGENTID);
+    
 	DROP TEMPORARY TABLE IF EXISTS Temp_RawUserAgent;
 	DROP TEMPORARY TABLE IF EXISTS Temp_Browser;
 	DROP TEMPORARY TABLE IF EXISTS Temp_OS;
 	DROP TEMPORARY TABLE IF EXISTS Temp_DeviceType;
-    
-	CREATE TEMPORARY TABLE Temp_InputRawUserAgentID(
-		RawUserAgentID		BIGINT UNSIGNED PRIMARY KEY
-	);
     
 	CREATE TEMPORARY TABLE Temp_RawUserAgent(
 			ID						BIGINT UNSIGNED PRIMARY KEY
@@ -90,9 +90,6 @@ BEGIN
         , 	UNIQUE KEY `UX_Temp_DeviceType_DeviceTypeCode` (`DeviceTypeCode`)
 	);
     
-    SET @sql = CONCAT("INSERT INTO Temp_InputRawUserAgentID (RawUserAgentID) VALUES ('", REPLACE(ip_RawUserAgentIDs, ",", "'),('"),"');");
-	PREPARE stmt1 FROM @sql;
-	EXECUTE stmt1;
     
     INSERT IGNORE INTO Temp_RawUserAgent(ID, RawUserAgentCode, RawUserAgent, BrowserCode, ClientType, ClientName, ClientVersion, OSCode, OSName, OSShortName, OSVersion, DeviceTypeCode, Device, Brand, Model)
     SELECT 	ua.ID
@@ -110,9 +107,11 @@ BEGIN
 		,	ua.Device
 		,	ua.Brand
 		,	ua.Model
-    FROM Temp_InputRawUserAgentID AS tmp
- 		INNER JOIN DCS_DataCenter.RawUserAgent AS ua ON ua.ID = tmp.RawUserAgentID
-	WHERE NOT EXISTS (SELECT 1 FROM DCS_DataTrace.RawUserAgent as ua WHERE ua.ID = tmp.RawUserAgentID);
+    FROM DCS_DataCenter.RawUserAgent AS ua
+    WHERE ua.ID > lv_MaxRawUserAgentID
+    LIMIT ip_Size;
+    
+    SET lv_MaxRawUserAgentID = (SELECT MAX(ID) FROM Temp_RawUserAgent);
     
     /***== Insert Browser ==***/
     INSERT IGNORE INTO Temp_Browser(BrowserCode, BrowserType, BrowserName, BrowserVersion)
@@ -150,9 +149,6 @@ BEGIN
 		,	OSShortName
 		,	OSVersion
     FROM Temp_RawUserAgent;
-	
-	ALTER TABLE Temp_OS
-	ADD INDEX IX_Temp_OS_OSCode (OSCode);
 	 
     UPDATE Temp_OS AS tmp
 		INNER JOIN DCS_DataTrace.OS AS os ON os.OSCode = tmp.OSCode
@@ -181,9 +177,6 @@ BEGIN
 		,	Brand
 		,	Model
     FROM Temp_RawUserAgent;
-	
-	ALTER TABLE Temp_DeviceType
-	ADD INDEX IX_Temp_DeviceType_DeviceTypeCode (DeviceTypeCode);
 	 
     UPDATE Temp_DeviceType AS tmp
 		INNER JOIN DCS_DataTrace.DeviceType AS dt ON dt.DeviceTypeCode = tmp.DeviceTypeCode
@@ -213,6 +206,13 @@ BEGIN
 		,	DeviceTypeID
 		,	lv_CreatedDate AS CreatedDate
     FROM Temp_RawUserAgent;
+
     
+    /* == Update SystemSetting == */
+    IF(lv_MaxRawUserAgentID IS NOT NULL AND lv_MaxRawUserAgentID > 0) THEN
+        UPDATE DCS_DataTrace.SystemSetting 
+        SET VValue = lv_MaxRawUserAgentID
+        WHERE ID = CONST_MIGRATEDATA_MAXRAWUSERAGENTID;
+    END IF;    
 END$$
 DELIMITER ;
