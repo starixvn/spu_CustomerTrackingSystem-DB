@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb,ctsService,ctsAPI" isFunction="0" isNested="0"></info>*/
-DROP procedure IF EXISTS `CTS_DC_CustClassification_PA_Dangerous_ReScan`;
+DROP procedure IF EXISTS `CTS_DC_CustClassification_PA_Dangerous_ReScan_xpre`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_Dangerous_ReScan`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_Dangerous_ReScan_xpre`(
 		IN ip_CustIDs	LONGTEXT
 )
     SQL SECURITY INVOKER
@@ -18,7 +18,7 @@ sp: BEGIN
         Param's Explanation:
 
 		Example:
-			- CALL CTS_DataCenter.CTS_DC_CustClassification_PA_Dangerous_ReScan("1,2,3,4, 11");
+			- CALL CTS_DataCenter.CTS_DC_CustClassification_PA_Dangerous_ReScan_xpre("1,2,3,4, 11");
 	*/ 
 	DECLARE	CONST_CATEGORYID_EARLYWARININGMEMBER INT DEFAULT 190;
 	DECLARE	CONST_CATEGORYID_EARLYWARININGMEMBER_LOSING INT DEFAULT 191;
