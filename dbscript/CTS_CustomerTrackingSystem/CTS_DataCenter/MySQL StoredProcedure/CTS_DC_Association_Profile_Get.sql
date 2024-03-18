@@ -52,6 +52,7 @@ sp : BEGIN
 	*/
 	DECLARE CONST_ASSTYPE_BETTINGPATTERN INT DEFAULT 2;
     DECLARE CONS_ASSBYAI_ACTIVESTATUS INT DEFAULT 1;
+    DECLARE CONST_GROUPPRIORITY_DANGEROUS INT DEFAULT 50500;
     #==================================================
 	DECLARE lv_CustID INT;
     
@@ -104,6 +105,7 @@ sp : BEGIN
     CREATE TEMPORARY TABLE 	Temp_Classification (
 			CTSCustID 		BIGINT UNSIGNED
 		,	ParentID		SMALLINT UNSIGNED
+        ,	GroupPriority	INT
 		,	CategoryIDs		VARCHAR(1000)
 		,	CategoryNames	VARCHAR(5000)
 		,	IsProbation		BIT DEFAULT 0
@@ -386,9 +388,10 @@ sp : BEGIN
 		WHERE cate.CTSCustID IS NULL;
     END IF;
     
-    INSERT IGNORE INTO Temp_Classification(CTSCustID, ParentID, CategoryIDs, CategoryNames,IsProbation)
+    INSERT IGNORE INTO Temp_Classification(CTSCustID, ParentID, GroupPriority, CategoryIDs, CategoryNames,IsProbation)
 	SELECT	tmpAcc.CTSCustID
 		,	cc.ParentID -- Each Customer has only 1 ParentID
+        ,	cc.GroupPriority
 		,	GROUP_CONCAT(DISTINCT cate.CategoryID SEPARATOR ',') 
         ,	GROUP_CONCAT(DISTINCT cc.CategoryName SEPARATOR ',')
 		,	MAX(cc.IsProbation)
@@ -396,7 +399,7 @@ sp : BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CTSCustID = tmpAcc.CTSCustID
         INNER JOIN Temp_CategoryID AS tmpCate ON tmpCate.CategoryID = cate.CategoryID
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = tmpCate.CategoryID 
-	GROUP BY tmpAcc.CTSCustID, cc.ParentID;
+	GROUP BY tmpAcc.CTSCustID, cc.ParentID, cc.GroupPriority;
     
     /* Update IsFiltered */
     UPDATE 	Temp_AssociatedAccount AS tmpAcc
@@ -424,6 +427,9 @@ sp : BEGIN
 		,	tmpCS.ParentID AS ParentIDs
 		,	tmpCS.CategoryIDs AS CategoryIDs
 		,	tmpCS.CategoryNames AS CategoryNames
+        ,	(CASE 	WHEN tmpCS.ParentID = 200 THEN 3
+					WHEN tmpCS.ParentID = 50  AND GroupPriority = CONST_GROUPPRIORITY_DANGEROUS THEN 2
+                    ELSE 1 END)
 		,	tmpCS.IsProbation AS IsProbation
 		,	t.GroupIDList AS GroupIDs
 		,	t.OriginGroupIDList AS OriginGroupIDs
