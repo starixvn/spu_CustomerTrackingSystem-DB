@@ -28,11 +28,12 @@ AS
 		- 20220707@Long.Luu:	Get Lic VIP & BA Info [Redmine ID: 174219]
 		- 20220822@Long.Luu:	Return more data [Redmine ID: 175698]
 		- 20221205@Victoria.Le:	Return more data: DangerSabaSc (Saba Soccer) and DangerSabaBkb (Saba Baseketball) [Redmine ID: #181208]
+		- 20240318@Casey.Huynh: Return empty if not existing CustInfo, CustProductStatus , CustInfo, Dep_CustSuper ([Redmine ID: #198000]
 
 	Developer's Notes:
 		- @sourceType: 0- GET New Customer Info, 1- Get Info Customer table, 2-Get CustInfo table, 3 GET Info CustProductStatus table
 
-	EXEC CTS_Customer_GetInfoByCustIdList '1,2,3', 0
+	EXEC CTS_Customer_GetInfoByCustIdList '1,2,3,4,5,6', 0	
 		
 */
 BEGIN;
@@ -74,9 +75,13 @@ BEGIN;
 		,	IsLicenseeBA	BIT DEFAULT 0		
 	);
 
-	INSERT	INTO #tmpCustomers (CustId)
-	SELECT	val AS CustId
-	FROM	bodb02.dbo.strSplit(@custIdList, ',');
+	INSERT INTO #tmpCustomers (CustId)
+	SELECT ssk.value FROM STRING_SPLIT (@custIdList, ',') ssk;
+
+	--=============CHECK EXISTING==============================
+	DECLARE @IsExisting BIT = 1;
+
+	--=========================================================
 
 	IF (@sourceType IN (0,1,2))
 	BEGIN
@@ -170,6 +175,13 @@ BEGIN;
 			INNER JOIN bodb02.dbo.CustProductStatus AS s WITH(NOLOCK) ON a.custid = s.custid;
 	END;
 
+	--==============CHECK EXISTING====================
+	IF EXISTS (SELECT 1 FROM #tmpCustomers AS tmp WHERE tmp.IsLicensee IS NULL)
+	BEGIN
+		RETURN;
+	END;
+
+	--============================================
 	IF (@sourceType = 0)
 	BEGIN
 		SELECT	a.CustId		AS CustID

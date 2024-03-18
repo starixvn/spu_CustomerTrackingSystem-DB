@@ -9,7 +9,7 @@ ALTER PROCEDURE	CTS_Customer_GetNewCustomerInfo
 AS
 /*
 	Creator:	20200118@Casey.Huynh
-	Task:		Get New customer - [Redmine ID: #148849]
+	Task:		Get New customer - [Redmine ID: 148849]
 	Database:	DBCTS.bodb02
 	
 	Revisions:
@@ -19,6 +19,7 @@ AS
 		-20210514@Casey.Huynh: Remove Hardcode TraceTime [Redmine ID: 154633]
 		-20232209@Casey.Huynh: Remove Logic Keep Cust With NULL UserName2 [Redmine 193050]
 		-20231222@Casey.Huynh: Enhance Get new Cust If Existing in CustInfo [Redmine 198667]
+		-20240318@Casey.Huynh: Move logic check existing CustInfo to sp get CustInfo by CustList([Redmine ID: 198000]
 
 	Developer's Notes:
 		
@@ -30,7 +31,6 @@ BEGIN;
 	SET NOCOUNT ON;
 
 	DECLARE @custIDList	VARCHAR(MAX);
-	DECLARE @MaxCustId	INT;
 
 	IF	OBJECT_ID('tempdb..#tmpNewCust') IS NOT NULL
 		DROP TABLE	#tmpNewCust;
@@ -40,33 +40,18 @@ BEGIN;
 	,	CreatedDate	SMALLDATETIME
 	,	RoleID		TINYINT
 	,	UserName2	VARCHAR(50)
-	,	CustInfoId  INT 
 	,	PRIMARY KEY (CustId)
 	);
 
-	INSERT INTO #tmpNewCust(CustId, CreatedDate, RoleId, UserName2, CustInfoId)
+	INSERT INTO #tmpNewCust(CustId, CreatedDate, RoleId, UserName2)
 	SELECT	TOP (@rowSize) 
 			c.CustId
 		,	c.CreatDate
 		,	c.RoleId
 		,	c.UserName2
-		,	ci.CustId AS CustInfoId
 	FROM	dbo.Customer AS c WITH(NOLOCK)
-		LEFT JOIN dbo.CustInfo AS ci WITH(NOLOCK) ON ci.CustId = c.CustId
 	WHERE	c.CustId > @LastCustId
 	ORDER BY c.CustId ASC;			
-	
-	SET @MaxCustId = (	SELECT TOP(1) tmpCus.CustId - 1 
-						FROM #tmpNewCust AS tmpCus WITH(NOLOCK) 
-						WHERE tmpCus.CustInfoId IS NULL 
-						ORDER BY tmpCus.CustId ASC);
-
-	IF @MaxCustId IS NOT NULL 
-	BEGIN
-		DELETE tmpCus
-		FROM #tmpNewCust AS tmpCus
-		WHERE tmpCus.CustId > @MaxCustId;
-	END;
 
 	SELECT  @custIDList = COALESCE(@custIDList + ',', '') +  CONVERT(VARCHAR(10),tmpCus.CustID)
 	FROM	#tmpNewCust AS tmpCus WITH(NOLOCK)
