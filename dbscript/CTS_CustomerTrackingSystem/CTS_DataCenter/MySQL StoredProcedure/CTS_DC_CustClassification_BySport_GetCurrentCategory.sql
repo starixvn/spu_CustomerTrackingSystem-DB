@@ -87,7 +87,7 @@ BEGIN
 	#3. Get Probation info    
 	UPDATE Temp_CustCategory AS tmpCc
 		INNER JOIN CTS_DataCenter.ProbationAccountMonitor_BySport AS pro ON pro.CustID = tmpCc.CustID
-        INNER JOIN CTS_DataCenter.StaticList AS s ON s.ListID = 23 AND s.SportGroup = tmpCc.SportGroup 
+        INNER JOIN CTS_DataCenter.StaticList AS s ON s.ListID = 23 AND s.ItemID = tmpCc.SportGroup 
 	SET IsProbationLastDay = (CASE WHEN pro.CreatedDate <= DATE_SUB(lv_CurrentDate, INTERVAL CAST(s.ItemValue AS UNSIGNED) DAY) THEN 1 /*Up to Smart, Risky*/ ELSE 0 END)
 	WHERE tmpCc.CategoryGroup = CATEGORY_GROUP_PROBATION;
     
