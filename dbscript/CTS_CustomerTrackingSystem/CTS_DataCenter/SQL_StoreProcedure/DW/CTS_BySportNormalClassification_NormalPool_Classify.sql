@@ -1,3 +1,4 @@
+/*<info serverAlias="DBVR2-bodb_VR2Model" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 USE [bodb_VR2Model]
 GO
 /****** Object:  StoredProcedure [dbo].[CTS_BySportNormalClassification_NormalPool_Classify] ******/
@@ -5,7 +6,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CTS_BySportNormalClassification_NormalPool_Classify]
+ALTER PROCEDURE [dbo].[CTS_BySportNormalClassification_NormalPool_Classify]
 	@CustomersXML	XML
 AS
 /*
