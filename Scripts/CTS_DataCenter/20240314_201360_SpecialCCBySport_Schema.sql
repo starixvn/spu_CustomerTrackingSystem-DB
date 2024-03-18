@@ -12,6 +12,12 @@ Reviewer:
 
 USE CTS_DataCenter;
 
+ALTER TABLE CTSCustomerClassification_BySport_History
+ADD Remark VARCHAR(500);
+
+ALTER TABLE CTSCustomerClassification_BySport_Log
+ADD Remark VARCHAR(500);
+
 CREATE TABLE SpecialCustomerClass_History 
 (
 	ID bigint unsigned NOT NULL AUTO_INCREMENT,
@@ -52,6 +58,7 @@ CREATE TABLE SpecialCustomerClass_BySport_History
 	ID bigint unsigned NOT NULL AUTO_INCREMENT,
 	CTSCustID bigint unsigned NOT NULL,
 	CustID int unsigned NOT NULL,
+	SportID SMALLINT UNSIGNED,
 	SubscriberID int NOT NULL,
 	CustomerClass smallint DEFAULT NULL,
 	CreatedBy int NOT NULL,

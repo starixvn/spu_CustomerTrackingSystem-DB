@@ -13,7 +13,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_SpecialCustClass_Insert`(
     /*,	OUT op_ErrorMessage				VARCHAR(200)*/
 )
     SQL SECURITY INVOKER
-sp: BEGIN
+BEGIN
 		/*
 		Created:	20200905@Long.Luu
 		Task:		Insert special customer class 
@@ -45,6 +45,7 @@ sp: BEGIN
 	DECLARE lv_CreatedBy 			INT DEFAULT 10278938;
     DECLARE lv_LicVIPCC_Danger		SMALLINT UNSIGNED;
     DECLARE lv_LicVIPCC_Suspicious	SMALLINT UNSIGNED;
+	DECLARE lv_SportID				SMALLINT UNSIGNED;
  /*   
 	DECLARE	CONST_CATEGORYID_VVIP 	INT DEFAULT 210;
     DECLARE	CONST_GROUP_NORMAL		INT DEFAULT 200;
@@ -64,7 +65,9 @@ sp: BEGIN
 		,	CustID				INT UNSIGNED
 		,	SportID				SMALLINT UNSIGNED
 		,	SubscriberID		INT		
-		,	PRIMARY KEY (CustID, SportID)		
+		,	IsLicenseeVIP		TINYINT
+		,	PRIMARY KEY (CustID, SportID)
+		,	KEY IX_Temp_Customer_SportID (SportID)
     );    
  /*   
     DROP TEMPORARY TABLE IF EXISTS Temp_AffectedDevices;
@@ -81,13 +84,13 @@ sp: BEGIN
     CREATE TEMPORARY TABLE Temp_NewCustomerClass(
 			CTSCustID 				BIGINT UNSIGNED
 		,	CustID					INT UNSIGNED
-		/*,	SportID					SMALLINT UNSIGNED DEFAULT 0*/
+		,	SportID					SMALLINT UNSIGNED DEFAULT 0
         ,	SubscriberID			INT
         ,	CustomerClass			SMALLINT
         ,	IsDataChanged			BIT DEFAULT 0
         ,	Is4x					BIT DEFAULT 0        
         ,	Is4xDangerProbation		BIT DEFAULT 0
-		,	PRIMARY KEY (CustID)
+		,	PRIMARY KEY (CustID, SportID)
 	);
     
     /* INIT */        
@@ -174,7 +177,7 @@ sp: BEGIN
 									,	SportID			SMALLINT UNSIGNED   	PATH '$.SportID'
 									,	SubscriberID	INT						PATH '$.SubscriberID'
 									,	IsLicenseeVIP	TINYINT					PATH '$.IsLicenseeVIP'
-								)) AS tmp
+								)) AS tmp;
 
 	IF EXISTS (SELECT 1 FROM Temp_Customer WHERE SportID = 0) THEN
 		INSERT INTO Temp_NewCustomerClass(CTSCustID, CustID, SubscriberID, CustomerClass, IsDataChanged, Is4x, Is4xDangerProbation)
@@ -232,13 +235,13 @@ sp: BEGIN
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 		SELECT	19 AS LogTypeID
 			,	lv_SPName
-			,	CONCAT('Insert SpecialCustomerClass: CustNo.: ', COUNT(1), ';CustList: ', GROUP_CONCAT(CTSCustID), ';ip_CustomerClass: ', ip_CustomerClass) AS LogInfo
+			,	CONCAT('Insert SpecialCustomerClass: CTSCustList: ', GROUP_CONCAT(CTSCustID), ';ip_CustomerClass: ', ip_CustomerClass) AS LogInfo
 			,	lv_CurrentDateTime
 			,	ip_CreatedBy
 		FROM Temp_NewCustomerClass;
 
 		/*	INSERT LOG	*/
-		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History (CustID, CTSCustID, LastModifiedDate, LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
+		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History (CustID, CTSCustID, LastModifiedDate, LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, Remark)
 		SELECT    sp.CustID
 				, sp.CTSCustID
 				, lv_CurrentDateTime
@@ -253,10 +256,11 @@ sp: BEGIN
 					END AS CustomerClass
 				, 10 -- item name = Add Customer Class
 				, 1 -- View History 
+				, ip_Remark
 		FROM Temp_NewCustomerClass AS sp
 		WHERE sp.IsDataChanged = 1;
 
-		INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, LastModifiedDate, LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
+		INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, LastModifiedDate, LastModifiedBy, ActionType,  IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, Remark)
 		SELECT    sp.CustID
 				, sp.CTSCustID
 				, lv_CurrentDateTime
@@ -271,6 +275,7 @@ sp: BEGIN
 					END AS CustomerClass
 				, 10 -- item name = Add Customer Class
 				, 1 -- View History
+				, ip_Remark
 		FROM Temp_NewCustomerClass AS sp;
 		
 		/* GET LATEST CC */
@@ -278,23 +283,37 @@ sp: BEGIN
 				CustId
 			,	CustomerClass
 			,	-1 AS Category
+			,	0 AS SportID
 			,	lv_CurrentDateTime AS ScannedTime 
 		FROM Temp_NewCustomerClass;
 	END IF;
 
 	IF EXISTS (SELECT 1 FROM Temp_Customer WHERE SportID <> 0) THEN
+		DELETE tmp
+		FROM Temp_NewCustomerClass AS tmp
+		WHERE tmp.SportID = 0;
+
+		INSERT INTO Temp_NewCustomerClass(CTSCustID, CustID, SportID, SubscriberID, CustomerClass)
+		SELECT	t.CTSCustID
+			,	t.CustID
+			,	t.SportID
+			,	t.SubscriberID
+			,	ip_CustomerClass
+		FROM Temp_Customer AS t
+		WHERE t.SportID <> 0;
+
 		/*	INSERT VALID SPECIAL CUSTOMER CLASS	*/
 		INSERT INTO CTS_DataCenter.SpecialCustomerClass_BySport(CTSCustID, CustID, SportID, SubscriberID, CustomerClass, CreatedBy, CreatedDate, LastModifiedBy, LastModifiedDate)
 		SELECT 	CTSCustID
 			,	CustID
 			,	SportID
 			,	SubscriberID
-			,	ip_CustomerClass
+			,	CustomerClass
 			,	ip_CreatedBy
 			,	lv_CurrentDateTime
 			,	ip_CreatedBy
 			,	lv_CurrentDateTime
-		FROM Temp_Customer;
+		FROM Temp_NewCustomerClass;
 
 		/*	INSERT LOG FOR SPECIAL CUSTOMER CLASS	*/
 		INSERT INTO CTS_DataCenter.SpecialCustomerClass_BySport_History(CTSCustID, CustID, SportID, SubscriberID, CustomerClass, CreatedBy, CreatedDate, LastModifiedBy, LastModifiedDate, Remark)
@@ -302,21 +321,56 @@ sp: BEGIN
 			,	CustID
 			,	SportID
 			,	SubscriberID
-			,	ip_CustomerClass
+			,	CustomerClass
 			,	ip_CreatedBy
 			,	lv_CurrentDateTime
 			,	ip_CreatedBy
 			,	lv_CurrentDateTime
 			,	ip_Remark
-		FROM Temp_Customer;
+		FROM Temp_NewCustomerClass;
+
+		SELECT DISTINCT SportID
+		INTO lv_SportID
+		FROM Temp_NewCustomerClass;
 
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 		SELECT	19 AS LogTypeID
 			,	lv_SPName
-			,	CONCAT('Insert SpecialCustomerClass_BySport: CustNo.: ', COUNT(1), ';CustList: ', GROUP_CONCAT(CTSCustID), ';ip_CustomerClass: ', ip_CustomerClass) AS LogInfo
+			,	CONCAT('Insert SpecialCustomerClass_BySport: CTSCustList: ', GROUP_CONCAT(CTSCustID),';SportID: ', lv_SportID, ';ip_CustomerClass: ', ip_CustomerClass) AS LogInfo
 			,	lv_CurrentDateTime
 			,	ip_CreatedBy
-		FROM Temp_Customer;
+		FROM Temp_NewCustomerClass;
+
+		/*	INSERT LOG	*/
+		INSERT INTO CTS_DataCenter.CTSCustomerClassification_BySport_History (CustID, CTSCustID, SportID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, Remark)
+		SELECT	CustID
+			,	CTSCustID
+			,	SportID
+			,	lv_CurrentDateTime
+			,	ip_CreatedBy
+			,	0  -- insert
+			,	DATE(lv_CurrentDateTime)
+			, 	CustomerClass
+			,	ip_Remark
+		FROM Temp_NewCustomerClass;
+
+		INSERT INTO CTS_DataCenter.CTSCustomerClassification_BySport_Log(CustID, CTSCustID, SportID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, Remark)
+		SELECT	CustID
+			,	CTSCustID
+			,	SportID
+			,	lv_CurrentDateTime
+			,	ip_CreatedBy
+			,	0  -- insert
+			,	DATE(lv_CurrentDateTime)
+			, 	ip_CustomerClass
+			,	ip_Remark
+		FROM Temp_NewCustomerClass;
+
+		/* GET LATEST CC */
+		SELECT	CustID
+			,	SportID
+			,	CustomerClass
+		FROM Temp_NewCustomerClass;
 	END IF;
 END$$
 DELIMITER ;

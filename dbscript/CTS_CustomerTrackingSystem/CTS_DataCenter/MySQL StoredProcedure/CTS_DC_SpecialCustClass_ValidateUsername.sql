@@ -4,7 +4,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_SpecialCustClass_ValidateUsername`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_SpecialCustClass_ValidateUsername`(
-		IN ip_FunctionID	TINYINT /*1: Add, 2: Remove*/
+		IN ip_ActionType	TINYINT
 	,	IN ip_ListUser 		JSON	
 )
     SQL SECURITY INVOKER
@@ -19,7 +19,7 @@ BEGIN
 			- 20240314@Thomas.Nguyen: Created [Redmine ID: #201360]
 		
 		Param's Explanation (filtered by):   
-            
+            - ip_ActionType: 0: Add, 2: Remove
 		Example:			
 			- CALL CTS_DataCenter.CTS_DC_SpecialCustClass_ValidateUsername('');
 	*/
@@ -35,11 +35,10 @@ BEGIN
 		,	SportID		    SMALLINT UNSIGNED
 		,	SubscriberID	INT
 		,	IsLicenseeVIP	TINYINT
-		,	IsExistedCust   BIT DEFAULT 0
-		,	ValidatedID	    TINYINT DEFAULT 1 /* 0: not existed in CTS, 1: valid, 2: not a member, 3: marked VVIP, 4: marked Special CC*/
-		,	PRIMARY KEY (Username, SportID)
+		,	IsExistedCust   BIT
+		,	ValidatedID	    TINYINT /* 0: not existed in CTS, 1: valid, 2: not a member, 3: marked VVIP, 4: marked Special CC*/
+		,	PRIMARY KEY (CTSCustID, SportID)
 		,	KEY IX_Temp_Cust_IsExistedCust_CTSCustID (IsExistedCust, ValidatedID, SportID)
-		,	KEY IX_Temp_Cust_CustID (CustID)
 	);
     
 	INSERT IGNORE INTO Temp_Cust(Username,CTSCustID,CustID,SportID,SubscriberID,IsLicenseeVIP,IsExistedCust,ValidatedID)
@@ -69,17 +68,17 @@ BEGIN
 	WHERE tmp.IsExistedCust = 0;
 
 	UPDATE Temp_Cust AS tmp
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS class ON class.CustID = tmp.CustID 
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS class ON class.CTSCustID = tmp.CTSCustID 
 	SET tmp.ValidatedID	= 3
 	WHERE tmp.IsExistedCust = 1 AND class.SportGroupID = CONST_GROUP_NORMAL AND class.CategoryID = CONST_CATEGORYID_VVIP;
 	
 	UPDATE Temp_Cust AS tmp
-		INNER JOIN CTS_DataCenter.SpecialCustomerClass AS scc ON scc.CustID = tmp.CustID
+		INNER JOIN CTS_DataCenter.SpecialCustomerClass AS scc ON scc.CTSCustID = tmp.CTSCustID
 	SET tmp.ValidatedID = 4
 	WHERE tmp.IsExistedCust = 1 AND tmp.ValidatedID = 1 AND tmp.SportID = 0 AND scc.CreatedFromFunction = 1;
 
 	UPDATE Temp_Cust AS tmp
-		INNER JOIN CTS_DataCenter.SpecialCustomerClass_BySport AS sbs ON sbs.CustID = tmp.CustID AND sbs.SportID = tmp.SportID
+		INNER JOIN CTS_DataCenter.SpecialCustomerClass_BySport AS sbs ON sbs.CTSCustID = tmp.CTSCustID AND sbs.SportID = tmp.SportID
 	SET tmp.ValidatedID = 4
 	WHERE tmp.IsExistedCust = 1 AND tmp.ValidatedID = 1 AND tmp.SportID <> 0;
 
@@ -90,7 +89,7 @@ BEGIN
 		,	tmp.SubscriberID
 		,	tmp.IsLicenseeVIP
 		,	tmp.ValidatedID
-		,	CASE WHEN tmp.IsExistedCust = 1 AND ((ip_FunctionID = 1 AND tmp.ValidatedID = 1) OR (ip_FunctionID = 2 AND tmp.ValidatedID = 4)) THEN 1 ELSE 0 END IsValid
+		,	CASE WHEN tmp.IsExistedCust = 1 AND ((ip_ActionType = 0 AND tmp.ValidatedID = 1) OR (ip_ActionType = 2 AND tmp.ValidatedID = 4)) THEN 1 ELSE 0 END IsValid
 	FROM Temp_Cust AS tmp;
 
 END$$
