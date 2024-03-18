@@ -18,6 +18,7 @@ AS
 	Revisions:
 		- 20230630@Jonas.Huynh: Created [Redmine ID: #189875]
 		- 20230726@Jonas.Huynh: Saba Classification [Redmine ID: #185320]
+		- 20240318@Jonas.Huynh: Renovate Non-Sport Rules [Redmine ID: #201359]
 
 	Param's Explanation:
 		@CustomersXML	 : This parameter is used to classify customer perf which bases on currentCategory
