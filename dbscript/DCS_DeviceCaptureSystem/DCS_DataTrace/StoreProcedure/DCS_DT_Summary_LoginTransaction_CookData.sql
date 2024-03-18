@@ -22,14 +22,15 @@ BEGIN
 		SET sql_safe_updates = 0;
         CALL DCS_DataTrace.DCS_DT_Summary_LoginTransaction_CookData(10);
 	*/
-    DECLARE CONST_COOKDATA_COOKRAWTRANS07_TRANSID 	INT 		DEFAULT 6;
+    DECLARE CONST_COOKDATA_TRANSACTION07_TRANSID 	INT 		DEFAULT 5;
     DECLARE CONST_FLAGGEDGROUPID_INVALIDBROWSER		SMALLINT 	DEFAULT 2;
     DECLARE CONST_FLAGGEDGROUPID_BOTTRANS 			SMALLINT 	DEFAULT 3;
     
     DECLARE lv_MaxTransID  			BIGINT UNSIGNED;
+    DECLARE lv_RawUserAgentIDs		LONGTEXT;
     DECLARE lv_CurrentDatetime 		DATETIME DEFAULT CURRENT_TIMESTAMP();
     
-    SET lv_MaxTransID = (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataTrace.SystemSetting WHERE ID = CONST_COOKDATA_COOKRAWTRANS07_TRANSID);
+    SET lv_MaxTransID = (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataTrace.SystemSetting WHERE ID = CONST_COOKDATA_TRANSACTION07_TRANSID);
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Trans07;
 	DROP TEMPORARY TABLE IF EXISTS Temp_LoginTrans;
@@ -102,23 +103,24 @@ BEGIN
 	);
     
     INSERT INTO Temp_Trans07(TransID, TransDate, AccountID, SubscriberID, DeviceID, FPDeviceID, RawUserAgentID, Flagged, TransTime)
-    SELECT 	trans.TransID
-		,	trans.CreatedDate AS TransDate
-        ,	IFNULL(trans.AccountID, 0) AS AccountID
-        ,	IFNULL(trans.SubscriberID, 0) AS SubscriberID
-        ,	IFNULL(trans.DeviceID, 0) AS DeviceID
-        ,	IFNULL(trans.FPDeviceID, 0) AS FPDeviceID
-        ,	IFNULL(trans.RawUserAgentID, 0) AS RawUserAgentID
-        ,	IFNULL(trans.Flagged, 0) AS Flagged
-        ,	trans.TransTime
-	FROM DCS_DataTrace.RawTransaction07 AS trans
-    WHERE trans.TransID > lv_MaxTransID
-    ORDER BY trans.TransID ASC
+    SELECT 	TransID
+		,	CreatedDate AS TransDate
+        ,	IFNULL(AccountID, 0) AS AccountID
+        ,	IFNULL(SubscriberID, 0) AS SubscriberID
+        ,	IFNULL(DeviceID, 0) AS DeviceID
+        ,	IFNULL(FPDeviceID, 0) AS FPDeviceID
+        ,	IFNULL(RawUserAgentID, 0) AS RawUserAgentID
+        ,	IFNULL(Flagged, 0) AS Flagged
+        ,	TransTime
+	FROM DCS_DataCenter.Transaction07
+    WHERE TransID > lv_MaxTransID
+    ORDER BY TransID ASC
     LIMIT ip_Size;
     
     ALTER TABLE Temp_Trans07
     ADD KEY IX_Temp_Trans07_Flagged (Flagged),
-    ADD KEY IX_Temp_Trans07_TransID_SubscriberID (TransID, SubscriberID);
+    ADD KEY IX_Temp_Trans07_TransID_SubscriberID (TransID, SubscriberID),
+    ADD KEY IX_Temp_Trans07_RawUserAgentID (RawUserAgentID);
     
     UPDATE Temp_Trans07 AS tmp
 		INNER JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.ItemID = tmp.Flagged
@@ -127,6 +129,15 @@ BEGIN
 		,	tmp.IsBotTrans = (CASE WHEN tmp.FlaggedGroupID = CONST_FLAGGEDGROUPID_BOTTRANS THEN 1 ELSE 0 END);
         
     SET lv_MaxTransID = (SELECT MAX(TransID) FROM Temp_Trans07);
+    
+    /* === Migration RawUserAgent === */
+	SELECT GROUP_CONCAT(DISTINCT RawUserAgentID)
+	INTO lv_RawUserAgentIDs
+	FROM Temp_Trans07
+	WHERE RawUserAgentID IS NOT NULL;
+    
+    SET lv_RawUserAgentIDs = IFNULL(lv_RawUserAgentIDs,'');
+	CALL DCS_DT_Migrate_RawUserAgent_Insert(lv_RawUserAgentIDs);
     
     /* == LoginTransaction == */
     INSERT INTO Temp_LoginTrans(TransDate, SubscriberID, AccountID, DeviceID, Flagged, FlaggedGroupID, FirstLoginTransTime, LastLoginTransTime, TotalTrans)
@@ -287,7 +298,7 @@ BEGIN
     IF(lv_MaxTransID IS NOT NULL AND lv_MaxTransID > 0) THEN
         UPDATE DCS_DataTrace.SystemSetting 
         SET VValue = lv_MaxTransID
-        WHERE ID = CONST_COOKDATA_COOKRAWTRANS07_TRANSID;
+        WHERE ID = CONST_COOKDATA_TRANSACTION07_TRANSID;
     END IF;
 END$$
 DELIMITER ;

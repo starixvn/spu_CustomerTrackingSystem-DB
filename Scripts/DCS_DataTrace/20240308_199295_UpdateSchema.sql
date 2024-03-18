@@ -13,20 +13,6 @@ USE DCS_DataTrace;
 
 DROP TABLE DCS_DataTrace.LoginTransactionSummaryBySubscriber;
 
-CREATE TABLE `RawTransaction07` (
-	`TransID`				BIGINT UNSIGNED 	NOT NULL
-  ,	`LoginName` 			VARCHAR(100) 
-  ,	`TransTime` 			TIMESTAMP(4) 
-  ,	`SubscriberID` 			INT 
-  ,	`AccountID` 			BIGINT UNSIGNED 
-  ,	`DeviceID` 				BIGINT UNSIGNED 
-  ,	`Flagged`				SMALLINT
-  ,	`CreatedDate` 			DATETIME			NOT NULL
-  ,	`RawUserAgentID` 		BIGINT UNSIGNED
-  ,	`FPDeviceID` 			BIGINT UNSIGNED
-  ,	PRIMARY KEY (`TransID`)
-) ENGINE=InnoDB;
-
 CREATE TABLE `LoginTransactionSummaryByAccount` (
 	`ID`					BIGINT UNSIGNED	 	NOT NULL AUTO_INCREMENT
   ,	`TransDate`				DATE			 	NOT NULL
@@ -126,6 +112,4 @@ CREATE TABLE `DeviceType` (
 
 
 INSERT IGNORE INTO `DCS_DataTrace`.`SystemSetting` (`ID`,`VGroup`,`VName`,`VValue`,`UpdatedTime`) 
-VALUES 	(5,'CookData','InitRawTrans07.TransID',0,CURRENT_TIMESTAMP())
-,		(6,'CookData','CookRawTrans07.TransID',0,CURRENT_TIMESTAMP())
-,		(7,'MigrateData','MaxRawUserAgentID',0,CURRENT_TIMESTAMP());
+VALUES 	(5,'CookData','Transaction07.TransID',0,CURRENT_TIMESTAMP());
