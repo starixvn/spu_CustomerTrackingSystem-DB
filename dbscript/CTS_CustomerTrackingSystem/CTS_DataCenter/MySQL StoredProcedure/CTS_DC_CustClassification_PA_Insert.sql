@@ -25,15 +25,18 @@ BEGIN
 			- 20230601@Victoria.Le:			Add TVSRequestID <> 0 for TVSRequestID IS NOT NULL [Redmine ID: #189023]
 			- 20231228@Thomas.Nguyen:		Update SourceTypeID for System Detect Unauthorized Login [Redmine ID: #197710]
             - 20240315@Casey.Huynh: 		Classify Danger Score, Lower GroupPriority is remove when the same ParentID [Redmine ID: #201358]
+            
         Param's Explanation (filtered by):
 			- ip_InputType: 1: Category, 2: Reason
         Example:
-			
+		
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_PA_Insert('Category',0,'[
-					{"CustID":3679910,"CTSCustID":16,"RoleID":1,"SubscriberID":130,"IsLicensee":1,"IsDirectPA":1,"IsFromTVS":0,"IsFromTW":0, "IsFromPAM":1,"IsRobot":0,"CategoryID":92,"CategoryGroup":92,"Remark":"Na test"
+					{"CustID":3679910,"CTSCustID":16,"RoleID":1,"SubscriberID":130,"IsLicensee":1,"IsDirectPA":1,"IsFromTVS":0,"IsFromTW":0, "IsFromPAM":1,"IsRobot":0
+                    ,"CategoryID":190,"CategoryGroup":190,"Remark":"Test"
 					,"CreatedBy":10278938,"WinlossStatus":0,"TurnoverRM":20000,"WinlossRM":-11000,"BetCount":100,"ActiveDays":10}]');
 	*/   
-
+	DECLARE	CONST_GROUP_DANGEROUS	INT DEFAULT 50500;
+    
 	DECLARE lv_CurrentDateTime				DATETIME DEFAULT CURRENT_TIME(); 
 	DECLARE	CONST_SPORTGROUP_PA 			TINYINT DEFAULT 0;
 	DECLARE CONST_ACTIONTYPE_INSERT 		INT DEFAULT 0;
@@ -128,7 +131,7 @@ BEGIN
 	);
     
     #================Mapping Category================
-    CALL CTS_DC_CustClassification_PA_MappingCategory(ip_InputType,ip_ProblemAccounts);
+    CALL CTS_DC_CustClassification_PA_MappingCategory_xpre(ip_InputType,ip_ProblemAccounts);
 
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationOldCategory(CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, Remark, CreatedDate
 		, CreatedBy, LastModifiedDate, LastModifiedBy
@@ -160,7 +163,8 @@ BEGIN
     DELETE tmpPa
     FROM Temp_PA AS tmpPa
     WHERE tmpPa.PinCTSCustID IS NOT NULL; 
-    
+    #Error Code: 1054. Unknown column 'tmpPa.IsFromAI' in 'field list'
+
 	INSERT IGNORE INTO Temp_CustProbationStatus(CustID, CTSCustID, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsProbation, WinlossStatus, IsLicensee)
     SELECT DISTINCT tmpPa.CustID
 		,	tmpPa.CTSCustID
@@ -568,6 +572,7 @@ BEGIN
 	SELECT	DISTINCT 
 			tmpPa.CustID
 		,	tmpPa.CTSCustID
+        , 	(CASE WHEN tmpPa.GroupPriority = CONST_GROUP_DANGEROUS THEN 2 ELSE 1 END) AS CategoryType
     FROM Temp_PA AS tmpPa; 
 
 	# INSERT INTO CTS_Log.CTSDebugLog(SPName, InsertTime, OtherText, JsonString1)
