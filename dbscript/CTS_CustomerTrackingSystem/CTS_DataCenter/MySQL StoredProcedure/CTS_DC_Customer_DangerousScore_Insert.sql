@@ -1,7 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_Customer_DangerousScore_Insert_xpre`;
+DROP PROCEDURE IF EXISTS `CTS_DC_Customer_DangerousScore_Insert`;
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Customer_DangerousScore_Insert_xpre`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Customer_DangerousScore_Insert`(
 		IN  ip_IsLicensee		TINYINT(1)
 	,	IN 	ip_CustInfo 		JSON
   

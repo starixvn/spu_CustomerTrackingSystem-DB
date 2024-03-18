@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin,ctsService,ctsAPIAdmin,ctsAPI,ctsWebAdmin,ctsWeb" isFunction="0" isNested="1"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_PA_MappingCategory_xpre`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_PA_MappingCategory`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_MappingCategory_xpre`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_MappingCategory`(
 		IN 		ip_InputType	VARCHAR(20)	#"Category, Reason"
     ,	IN 		ip_CustInfo 	JSON
 	
@@ -67,6 +67,7 @@ BEGIN
         ,	IsFromTVS				BOOLEAN DEFAULT 0
         ,	IsFromTW				BOOLEAN DEFAULT 0
         ,	IsFromCTS				BOOLEAN DEFAULT 0
+        ,	IsFromAI				BOOLEAN DEFAULT 0
         ,	IsDataChanged			BOOLEAN DEFAULT 0 	# 0: Not Change, 1: Changed (IF call from SpecialCC function THEN 1 ELSE 0)
         ,	DataChangeType			TINYINT DEFAULT 0	# 0: New OR Change Category, 1: Change Probation Status, 2: NOT CHANGE
         ,	OldCategoryID		    SMALLINT
@@ -131,7 +132,7 @@ BEGIN
     
     IF ip_InputType = 'Category' THEN    
         INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, InputCategoryID, InputCategoryGroup,  IsLicensee, CreatedBy, Remark, IsDirectPA
-			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsDataChanged, SpecialCC, IsProbation, RelevantCategoryID
+			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsDataChanged, SpecialCC, IsProbation, RelevantCategoryID
 			, LastModifiedDate, PinCTSCustID, MatchID, TVSRequestID, IsParlay, SportType, IssueTypeID, GroupPriority, ParentID)
 		SELECT 	DISTINCT tmpJs.CustID
 			,	tmpJs.CTSCustID
@@ -151,6 +152,7 @@ BEGIN
 			,	tmpJs.IsFromTVS
 			,	tmpJs.IsFromTW
 			,	tmpJs.IsFromCTS
+            ,	tmpJs.IsFromAI
 			,	tmpJs.IsDataChanged
             ,	sp.CustomerClass
 			,	(CASE 	WHEN tmpJs.WinlossStatus = 0 THEN 1  # PROBATION
@@ -187,6 +189,7 @@ BEGIN
 						, 	IsFromTVS			BOOLEAN 			PATH "$.IsFromTVS"
 						, 	IsFromTW			BOOLEAN 			PATH "$.IsFromTW"
 						, 	IsFromCTS			BOOLEAN 			PATH "$.IsFromCTS"
+                        , 	IsFromAI			BOOLEAN 			PATH "$.IsFromAI"
 						, 	IsDataChanged		BOOLEAN 			PATH "$.IsDataChanged"
 						, 	LastModifiedDate	DATETIME 			PATH "$.LastModifiedDate"
 						, 	MatchID				INT 				PATH "$.MatchID"	
@@ -287,7 +290,7 @@ BEGIN
 		GROUP BY TVSRequestID, ReasonID, CreatedBy, IsParlay, SportType, IssueTypeID;
 
 		INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, InputCategoryID, InputCategoryGroup,  IsLicensee, CreatedBy, Remark, IsDirectPA
-			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, SpecialCC, IsProbation, RelevantCategoryID
+			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, SpecialCC, IsProbation, RelevantCategoryID
 			, TVSRequestID, ReasonID, PinCTSCustID, IsParlay, SportType, IssueTypeID, GroupPriority)
 		SELECT	DISTINCT tmpJs.CustID
 			,	cus.CTSCustID
@@ -307,6 +310,7 @@ BEGIN
 			,	tmpJs.IsFromTVS
 			,	tmpJs.IsFromTW
 			,	tmpJs.IsFromCTS
+            ,	tmpJs.IsFromAI
             ,	sp.CustomerClass
 			,	(CASE 	WHEN tmpJs.WinlossStatus = 0 THEN 1  # PROBATION
                         ELSE 0  # NOT PROBATION (WinlossStatus IN (1, NULL, 2))
@@ -336,6 +340,7 @@ BEGIN
 				, 	IsFromTVS		BOOLEAN 			PATH "$.IsFromTVS"
 				, 	IsFromTW		BOOLEAN 			PATH "$.IsFromTW"
 				, 	IsFromCTS		BOOLEAN 			PATH "$.IsFromCTS"
+                , 	IsFromAI		BOOLEAN 			PATH "$.IsFromAI"
                 , 	TVSRequestID	BIGINT UNSIGNED		PATH "$.TVSRequestID"
                 , 	Remark			VARCHAR(500) 		PATH "$.Remark"
 				,	IsParlay		BOOLEAN 			PATH "$.IsParlay"

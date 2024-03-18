@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_DangerousDetection_GetLatest_xpre`;
+DROP PROCEDURE IF EXISTS `CTS_DC_DangerousDetection_GetLatest`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_DangerousDetection_GetLatest_xpre`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_DangerousDetection_GetLatest`(
 	ip_IsLicensee TINYINT
 )
     SQL SECURITY INVOKER
@@ -17,7 +17,7 @@ BEGIN
 			- 20240315@Casey.Huynh: 	Created [Redmine ID: #201538]
             
 		Example:
-			CALL CTS_DataCenter.CTS_DC_DangerousDetection_GetLatest_xpre(@ip_IsLicensee:=0);
+			CALL CTS_DataCenter.CTS_DC_DangerousDetection_GetLatest(@ip_IsLicensee:=0);
 	*/
     DECLARE  CONST_CATEGORYID_EARLYWARNINGMEMBER	INT DEFAULT 190;
     
@@ -64,8 +64,7 @@ BEGIN
     
     SET lv_TotalRow = (SELECT COUNT(1) FROM Temp_Cust) ;
     
-    IF lv_TotalRow < lv_BatchSize THEN
-    
+    IF lv_TotalRow < lv_BatchSize THEN    
         INSERT INTO Temp_Cust(CustID, ClassifiedScore, ClassifiedDate, LastModifiedDate)
 		SELECT	cd.CustID
 			, 	cd.ClassifiedScore
