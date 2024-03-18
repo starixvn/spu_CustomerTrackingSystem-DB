@@ -14,11 +14,14 @@ BEGIN
 			- 20210316@Casey.Huynh: Created [Redmine ID: #150457]
             - 20210727@Irena.Vo: Enhance Category filter [Redmine ID: #159142]
 			- 20210805@Irena.Vo: Update get Category filter [Redmine ID: #155956]
+            - 20240318@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
 			
 		Param's Explanation (filtered by):
         Example:
-			- CALL CTS_DC_Category_Get();
+				CALL CTS_DC_Category_Get();
 	*/
+    DECLARE	CONST_GROUP_DANGEROUS	INT DEFAULT 50500;
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_CategoryFilter;
     CREATE TEMPORARY TABLE Temp_CategoryFilter(
 			ID 				SMALLINT
@@ -26,15 +29,15 @@ BEGIN
         ,  	CategoryName 	TEXT
         ,  	CategoryIDs 	LONGTEXT
     );
-    
+
     INSERT IGNORE INTO Temp_CategoryFilter (CategoryGroup, CategoryName, CategoryIDs)
-    SELECT 	'Problem Account Category' AS CategoryGroup		    
+    SELECT 	(CASE WHEN GroupPriority = CONST_GROUP_DANGEROUS THEN 'Normal Account Category' ELSE 'Problem Account Category' END) AS CategoryGroup		    
 		,	cat.CategoryName
 		,	GROUP_CONCAT(cat.CategoryID SEPARATOR ',')  AS CategoryIDs  
 	FROM	CTS_DataCenter.CustomerCategory AS cat
 	WHERE 	cat.ParentID = 50
 		AND cat.IsActive = 1
-	GROUP BY cat.CategoryName, cat.CategoryGroup
+	GROUP BY cat.CategoryName, cat.CategoryGroup, GroupPriority
     UNION
 	SELECT	CASE WHEN ttc.TaggingType = 1 THEN 'PA Associated Category' 
 				 WHEN cat.CategoryGroup = 1000 THEN 'Others' 

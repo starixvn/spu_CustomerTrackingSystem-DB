@@ -31,11 +31,14 @@ BEGIN
 			- 20211115@Irena.Vo: Re-priortize Robot and other PA categories  [Redmine ID: #164344]
 			- 20220328@Aries.Nguyen: Add new category/class for PA Probation [Redmine ID: #170468]
 			- 20220531@Aries.Nguyen: Renovate process PA [Redmine ID: #172561]
+            - 20240318@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
             
 		Param's Explanation:
         
 		Example:
-			- CALL CTS_DataCenter.CTS_DC_CustClassification_Get('1');
+			- CALL CTS_DataCenter.CTS_DC_CustClassification_Get('25');
+            
+            SELECT T
 	 */ 	
     DECLARE	CONST_GROUP_NORMAL 		INT DEFAULT 200;
     DECLARE	CONST_GROUP_PA 			INT DEFAULT 50;
@@ -61,7 +64,9 @@ BEGIN
 					END)
 				,	cc.CategoryName
                 ,	cc.CategoryGroup
-				,	(CASE WHEN cc.ParentID = CONST_GROUP_PA THEN 2 WHEN cc.ParentID = CONST_GROUP_NORMAL  THEN 1 END) 
+				,	(CASE WHEN cc.ParentID = CONST_GROUP_PA AND GroupPriority = 50000 THEN 1
+							WHEN cc.ParentID = CONST_GROUP_PA AND GroupPriority = 50500 THEN 2
+                            WHEN cc.ParentID = CONST_GROUP_NORMAL  THEN 3 END) 
 				,	cc.ParentID
 				,	IsPAProbation AS IsProbation
 	FROM	CTS_DataCenter.CTSCustomerClassification AS cate

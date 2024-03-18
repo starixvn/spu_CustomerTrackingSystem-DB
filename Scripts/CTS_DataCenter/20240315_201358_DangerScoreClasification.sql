@@ -66,7 +66,7 @@ INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,Displ
 VALUES (190,'Early Warning Members','Early Warning Members',50,199,1,0,NOW(),NULL,NULL,NULL,NULL,'预警会员',NULL,NULL,NULL,190,NULL,NULL,NULL,'AI',NULL,NULL,NULL,NULL,NULL,2800,'Dangerous','危險',2800,191,NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,53,0,NULL,NULL,'Dangerous','危險','危险',NULL,NULL,NULL,50500)
 	,(191,'Early Warning Members (Losing)','Early Warning Members (Losing)',50,199,1,0,NOW(),NULL,NULL,NULL,NULL,'预警会员 (输钱)',NULL,NULL,NULL,191,NULL,NULL,NULL,'AI',NULL,NULL,NULL,NULL,NULL,2801,'Dangerous-','危險 -',2801,190,NULL,NULL,NULL,NULL,1,NULL,NULL,NULL,NULL,NULL,53,1,NULL,NULL,'Dangerous','危險','危险',NULL,NULL,NULL,50500)
 ;
-SELECT * FROM CustomerCategory WHERE CategoryID IN (190, 191, 54,94)
+SELECT cat.* FROM CustomerCategory cat WHERE CategoryID IN (190, 191) #, 54,94)
 ;
 #====Initial ClassifiedScore, ClassifiedDate FOR Credit Customer======================================================
 UPDATE Customer_DangerousScore
