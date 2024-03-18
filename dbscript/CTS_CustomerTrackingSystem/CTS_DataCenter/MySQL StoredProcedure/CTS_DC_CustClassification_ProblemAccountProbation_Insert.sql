@@ -23,6 +23,7 @@ BEGIN
 			- 20220817@Long.Luu: Rearrange CC's IDs [Redmine ID: #175698]
             - 20230517@Casey.Huynh:	New Category for Robot OCRD [Redmine ID: #186991]
             - 20240103@Thomas.Nguyen: New Category for System Detect Unauthorized Login [RedmineID: #197710]
+            - 20240318@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
 
 		Param's Explanation (filtered by):      
 			- CALL CTS_DC_CustClassification_ProblemAccountProbation_Insert ('[{"CustID": 123,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10}]');
@@ -211,11 +212,14 @@ BEGIN
 	FROM Temp_PA;
     
 	SELECT 	DISTINCT
-			CustID
-		,	CTSCustID
-        ,	CASE WHEN CategoryID IN (CONST_CATEGORYID_ROBOTUSER, CONST_CATEGORYID_ROBOTUSER_LOSING,CONST_CATEGORYID_ROBOTOCRD, CONST_CATEGORYID_ROBOTOCRD_LOSING) THEN 1
+			tmp.CustID
+		,	tmp.CTSCustID
+        ,	CASE WHEN tmp.CategoryID IN (CONST_CATEGORYID_ROBOTUSER, CONST_CATEGORYID_ROBOTUSER_LOSING,CONST_CATEGORYID_ROBOTOCRD, CONST_CATEGORYID_ROBOTOCRD_LOSING) THEN 1
 			ELSE 0 END AS ISRobot
-    FROM Temp_PA
+		,	(CASE WHEN GroupPriority = 50500 THEN 2 ELSE 1 END) AS CategoryType #1: PA, 2: 2800
+    FROM Temp_PA AS tmp
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON tmp.CategoryID = cat.CategoryID
     WHERE IsDataChanged = 1; 
+    
 END$$
 DELIMITER ;
