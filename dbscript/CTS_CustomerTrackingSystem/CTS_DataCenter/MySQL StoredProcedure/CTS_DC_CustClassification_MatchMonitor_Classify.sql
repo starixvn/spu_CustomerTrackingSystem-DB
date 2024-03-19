@@ -16,12 +16,15 @@ BEGIN
             - 20220908@Casey.Huynh: New CC for Classify MM [Redmine ID: #176976]
             - 20220113@Casey.Huynh: Rename Table [Redmine ID: #179502]
             - 20231120@Thomas.Nguyen: Add the condition SportType = 2 and include Odds Crawler Robot (CategoryID 165, 166), Abnormal Account - Robot (CategoryID 179) [Redmine ID: #188553]
-
+			- 20240319@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
+            
 		Param's Explanation:
         
 		Example:
 			CALL CTS_DataCenter.CTS_DC_CustClassification_MatchMonitor_Classify();
 	 */ 
+	DECLARE	CONST_GROUP_DANGEROUS	INT DEFAULT 50500;
+    
 	DECLARE lv_PackSize INT;
 	DECLARE lv_MatchID INT;
     
@@ -83,7 +86,8 @@ BEGIN
 	INSERT INTO Temp_ExcludePACategoryID(CategoryID)
     SELECT CategoryID
     FROM CTS_DataCenter.CustomerCategory AS cat
-    WHERE ParentID = 50 AND CategoryID NOT IN  (57,61,163,164,165,166,179);   
+    WHERE ParentID = 50 AND CategoryID NOT IN  (57,61,163,164,165,166,179)
+		AND GroupPriority <> CONST_GROUP_DANGEROUS;   
 
     INSERT INTO Temp_MatchMonitorDetailsCust(CustID, MMDetailsID, MatchID, NoOfCust)
     WITH CTE_MatchMonitorDetials AS
