@@ -33,7 +33,7 @@ AS
 	Developer's Notes:
 		- @sourceType: 0- GET New Customer Info, 1- Get Info Customer table, 2-Get CustInfo table, 3 GET Info CustProductStatus table
 
-	EXEC CTS_Customer_GetInfoByCustIdList '1,2,3,4,5,6', 0	
+	EXEC CTS_Customer_GetInfoByCustIdList '1,2,3,95396080', 0	
 		
 */
 BEGIN;
@@ -43,6 +43,9 @@ BEGIN;
 		,	@MBC_ACCOUNTSTATUS_DISABLED		INT = 2
 		,	@MBC_ACCOUNTSTATUS_CLOSED		INT = 3
 		,	@MBC_ACCOUNTSTATUS_SUSPENDED	INT = 4;
+
+	--=============CHECK EXISTING==============================
+	DECLARE @CheckExisting BIT = 1;
 
 	IF OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
 	BEGIN
@@ -77,9 +80,6 @@ BEGIN;
 
 	INSERT INTO #tmpCustomers (CustId)
 	SELECT ssk.value FROM STRING_SPLIT (@custIdList, ',') ssk;
-
-	--=============CHECK EXISTING==============================
-	DECLARE @IsExisting BIT = 1;
 
 	--=========================================================
 
@@ -178,77 +178,81 @@ BEGIN;
 	--==============CHECK EXISTING====================
 	IF EXISTS (SELECT 1 FROM #tmpCustomers AS tmp WHERE tmp.IsLicensee IS NULL)
 	BEGIN
-		RETURN;
-	END;
-
-	--============================================
-	IF (@sourceType = 0)
-	BEGIN
-		SELECT	a.CustId		AS CustID
-			,	a.Username		AS UserName
-			,	a.Username2		AS UserName2
-			,	a.SiteId		AS SiteID
-			,	a.[Site]		AS 'Site'
-			,	a.RoleId		AS RoleID
-			,	a.CurrencyId	AS CurrencyID
-			,	a.Currency		AS Currency
-			,	a.Srecommend	AS SRecommend
-			,	a.Mrecommend	AS MRecommend
-			,	a.Recommend		AS Recommend
-			,	a.CreatedDate	AS CreatedDate
-			,	a.CustStatusID	AS CustStatusID
-			,	a.Danger1		AS Danger1
-			,	a.Danger2		AS Danger2
-			,	a.Danger3		AS Danger3			
-			,	a.Danger4		AS Danger4
-			,	a.Danger5		AS Danger5
-			,	a.DangerSabaSc	AS DangerSabaSc
-			,	a.DangerSabaBkb	AS DangerSabaBkb
-			,	a.IsLicensee	AS IsLicensee
-			,	a.IsLicenseeVIP	AS IsLicenseeVIP
-			,	a.IsLicenseeBA	AS IsLicenseeBA
-		FROM #tmpCustomers AS a WITH(NOLOCK);
-	END;
-
-	IF (@sourceType = 1)
-	BEGIN
-		SELECT	a.CustId		AS CustID
-			,	a.Username		AS UserName
-			,	a.Username2		AS UserName2
-			,	a.SiteId		AS SiteID
-			,	a.[Site]		AS 'Site'
-			,	a.RoleId		AS RoleID
-			,	a.CurrencyId	AS CurrencyID
-			,	a.Currency		AS Currency
-			,	a.Srecommend	AS SRecommend
-			,	a.Mrecommend	AS MRecommend
-			,	a.Recommend		AS Recommend
-			,	a.CreatedDate	AS CreatedDate
-			,	a.IsLicensee	AS IsLicensee
-			,	a.IsLicenseeVIP	AS IsLicenseeVIP
-			,	a.IsLicenseeBA	AS IsLicenseeBA
+		SELECT TOP(1) *
 		FROM #tmpCustomers AS a WITH(NOLOCK)
-	END;
+		WHERE CustID < 0;
+	END
+	ELSE
+	BEGIN
+		--============================================
+		IF (@sourceType = 0)
+		BEGIN
+			SELECT	a.CustId		AS CustID
+				,	a.Username		AS UserName
+				,	a.Username2		AS UserName2
+				,	a.SiteId		AS SiteID
+				,	a.[Site]		AS 'Site'
+				,	a.RoleId		AS RoleID
+				,	a.CurrencyId	AS CurrencyID
+				,	a.Currency		AS Currency
+				,	a.Srecommend	AS SRecommend
+				,	a.Mrecommend	AS MRecommend
+				,	a.Recommend		AS Recommend
+				,	a.CreatedDate	AS CreatedDate
+				,	a.CustStatusID	AS CustStatusID
+				,	a.Danger1		AS Danger1
+				,	a.Danger2		AS Danger2
+				,	a.Danger3		AS Danger3			
+				,	a.Danger4		AS Danger4
+				,	a.Danger5		AS Danger5
+				,	a.DangerSabaSc	AS DangerSabaSc
+				,	a.DangerSabaBkb	AS DangerSabaBkb
+				,	a.IsLicensee	AS IsLicensee
+				,	a.IsLicenseeVIP	AS IsLicenseeVIP
+				,	a.IsLicenseeBA	AS IsLicenseeBA
+			FROM #tmpCustomers AS a WITH(NOLOCK);
+		END;
 
-	IF (@sourceType = 2)
-	BEGIN
-		SELECT	a.CustID		AS CustID
-			,	a.CustStatusID	AS CustStatusID
-			,	a.Danger1		AS Danger1
-			,	a.Danger2		AS Danger2
-			,	a.Danger3		AS Danger3		
-			,	a.Danger4		AS Danger4
-			,	a.Danger5		AS Danger5
-			,	a.DangerSabaSc	AS DangerSabaSc
-			,	a.DangerSabaBkb	AS DangerSabaBkb
-		FROM #tmpCustomers AS a WITH(NOLOCK);
-	END;
+		IF (@sourceType = 1)
+		BEGIN
+			SELECT	a.CustId		AS CustID
+				,	a.Username		AS UserName
+				,	a.Username2		AS UserName2
+				,	a.SiteId		AS SiteID
+				,	a.[Site]		AS 'Site'
+				,	a.RoleId		AS RoleID
+				,	a.CurrencyId	AS CurrencyID
+				,	a.Currency		AS Currency
+				,	a.Srecommend	AS SRecommend
+				,	a.Mrecommend	AS MRecommend
+				,	a.Recommend		AS Recommend
+				,	a.CreatedDate	AS CreatedDate
+				,	a.IsLicensee	AS IsLicensee
+				,	a.IsLicenseeVIP	AS IsLicenseeVIP
+				,	a.IsLicenseeBA	AS IsLicenseeBA
+			FROM #tmpCustomers AS a WITH(NOLOCK)
+		END;
+
+		IF (@sourceType = 2)
+		BEGIN
+			SELECT	a.CustID		AS CustID
+				,	a.CustStatusID	AS CustStatusID
+				,	a.Danger1		AS Danger1
+				,	a.Danger2		AS Danger2
+				,	a.Danger3		AS Danger3		
+				,	a.Danger4		AS Danger4
+				,	a.Danger5		AS Danger5
+				,	a.DangerSabaSc	AS DangerSabaSc
+				,	a.DangerSabaBkb	AS DangerSabaBkb
+			FROM #tmpCustomers AS a WITH(NOLOCK);
+		END;
 	
-	IF (@sourceType = 3)
-	BEGIN
-		SELECT	a.CustID		AS CustID
-			,	a.CustStatusID	AS CustStatusID
-		FROM #tmpCustomers AS a WITH(NOLOCK);
+		IF (@sourceType = 3)
+		BEGIN
+			SELECT	a.CustID		AS CustID
+				,	a.CustStatusID	AS CustStatusID
+			FROM #tmpCustomers AS a WITH(NOLOCK);
+		END;
 	END;
 END;
 
