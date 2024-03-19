@@ -20,28 +20,28 @@ BEGIN
         Example:
 				CALL CTS_DC_Category_Get();
 	*/
-    DECLARE	CONST_GROUP_DANGEROUS	INT DEFAULT 50500;
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_CategoryFilter;
-    CREATE TEMPORARY TABLE Temp_CategoryFilter(
-			ID 				SMALLINT
-        ,  	CategoryGroup 	TEXT
-        ,  	CategoryName 	TEXT
-        ,  	CategoryIDs 	LONGTEXT
-    );
+	DECLARE	CONST_GROUP_DANGEROUS	INT DEFAULT 50500;
 
-    INSERT IGNORE INTO Temp_CategoryFilter (CategoryGroup, CategoryName, CategoryIDs)
-    SELECT 	(CASE WHEN GroupPriority = CONST_GROUP_DANGEROUS THEN 'Normal Account Category' ELSE 'Problem Account Category' END) AS CategoryGroup		    
+	DROP TEMPORARY TABLE IF EXISTS Temp_CategoryFilter;
+	CREATE TEMPORARY TABLE Temp_CategoryFilter(
+			ID 				SMALLINT
+		,  	CategoryGroup 	TEXT
+		,  	CategoryName 	TEXT
+		,  	CategoryIDs 	LONGTEXT
+	);
+
+	INSERT IGNORE INTO Temp_CategoryFilter (CategoryGroup, CategoryName, CategoryIDs)
+	SELECT 	(CASE WHEN GroupPriority = CONST_GROUP_DANGEROUS THEN 'Normal Account Category' ELSE 'Problem Account Category' END) AS CategoryGroup		    
 		,	cat.CategoryName
 		,	GROUP_CONCAT(cat.CategoryID SEPARATOR ',')  AS CategoryIDs  
 	FROM	CTS_DataCenter.CustomerCategory AS cat
 	WHERE 	cat.ParentID = 50
 		AND cat.IsActive = 1
 	GROUP BY cat.CategoryName, cat.CategoryGroup, GroupPriority
-    UNION
+	UNION
 	SELECT	CASE WHEN ttc.TaggingType = 1 THEN 'PA Associated Category' 
 				 WHEN cat.CategoryGroup = 1000 THEN 'Others' 
-                 ELSE 'Normal Account Category' 
+				 ELSE 'Normal Account Category' 
 			END AS CategoryGroup
 		,	cat.CategoryName
 		,	cat.CategoryID AS CategoryIDs
@@ -50,17 +50,21 @@ BEGIN
 	WHERE 	cat.ParentID = 200
 		AND cat.IsActive = 1
 	UNION
-    SELECT 'Others'  AS CategoryGroup
+	SELECT 'Others'  AS CategoryGroup
 		,  'No Category' AS CategoryName
-        , 	0 AS CategoryIDs;
-   
-   UPDATE Temp_CategoryFilter
-   SET ID = CASE WHEN CategoryGroup = 'Problem Account Category' THEN 1
-                 WHEN CategoryGroup = 'PA Associated Category' THEN 2
-                 WHEN CategoryGroup = 'Normal Account Category' THEN 3
-                 ELSE 4
+		, 	0 AS CategoryIDs;
+
+	UPDATE Temp_CategoryFilter
+	SET ID = CASE WHEN CategoryGroup = 'Problem Account Category' THEN 1
+				 WHEN CategoryGroup = 'PA Associated Category' THEN 2
+				 WHEN CategoryGroup = 'Normal Account Category' THEN 3
+				 ELSE 4
 			END;
-	
-   SELECT CategoryGroup, CategoryName, CategoryIDs FROM Temp_CategoryFilter ORDER BY ID ASC, CategoryName ASC; 
+
+	SELECT	CategoryGroup
+		,	CategoryName
+		,	CategoryIDs
+	FROM Temp_CategoryFilter
+	ORDER BY ID ASC, CategoryName ASC; 
 END$$
 DELIMITER ;

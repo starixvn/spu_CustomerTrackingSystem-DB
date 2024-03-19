@@ -47,6 +47,8 @@ BEGIN
     DECLARE	CONST_CATEGORYGROUP_BADROBOT 	INT DEFAULT 163;
     DECLARE	CONST_CATEGORYGROUP_GOODROBOT	INT DEFAULT 164;
     
+    DECLARE	CONST_GROUP_DANGEROUS	INT DEFAULT 50500;
+    
 	DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory;
     CREATE TEMPORARY TABLE Temp_LatestRecordOfCategory(
 			CategoryID		SMALLINT UNSIGNED
@@ -64,9 +66,9 @@ BEGIN
 					END)
 				,	cc.CategoryName
                 ,	cc.CategoryGroup
-				,	(CASE WHEN cc.ParentID = CONST_GROUP_PA AND GroupPriority = 50000 THEN 1
-							WHEN cc.ParentID = CONST_GROUP_PA AND GroupPriority = 50500 THEN 2
-                            WHEN cc.ParentID = CONST_GROUP_NORMAL  THEN 3 END) 
+				,	(CASE WHEN cc.ParentID = CONST_GROUP_PA AND GroupPriority = CONST_GROUP_DANGEROUS THEN 2
+							WHEN cc.ParentID = CONST_GROUP_PA THEN 1
+                            WHEN cc.ParentID = CONST_GROUP_NORMAL  THEN 3 END) AS CategoryType
 				,	cc.ParentID
 				,	IsPAProbation AS IsProbation
 	FROM	CTS_DataCenter.CTSCustomerClassification AS cate

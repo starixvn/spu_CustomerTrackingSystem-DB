@@ -32,7 +32,7 @@ BEGIN
 		
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_PA_Insert('Category',0,'[
 					{"CustID":3679910,"CTSCustID":16,"RoleID":1,"SubscriberID":130,"IsLicensee":1,"IsDirectPA":1,"IsFromTVS":0,"IsFromTW":0, "IsFromPAM":1,"IsRobot":0
-                    ,"CategoryID":190,"CategoryGroup":190,"Remark":"Test"
+                    ,"CategoryID":65,"CategoryGroup":65,"Remark":"Test"
 					,"CreatedBy":10278938,"WinlossStatus":0,"TurnoverRM":20000,"WinlossRM":-11000,"BetCount":100,"ActiveDays":10}]');
 	*/   
 	DECLARE	CONST_GROUP_DANGEROUS	INT DEFAULT 50500;
@@ -131,7 +131,7 @@ BEGIN
 	);
     
     #================Mapping Category================
-    CALL CTS_DC_CustClassification_PA_MappingCategory_xpre(ip_InputType,ip_ProblemAccounts);
+    CALL CTS_DC_CustClassification_PA_MappingCategory(ip_InputType,ip_ProblemAccounts);
 
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationOldCategory(CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, Remark, CreatedDate
 		, CreatedBy, LastModifiedDate, LastModifiedBy

@@ -52,7 +52,7 @@ sp : BEGIN
 	*/
 	DECLARE CONST_ASSTYPE_BETTINGPATTERN INT DEFAULT 2;
     DECLARE CONS_ASSBYAI_ACTIVESTATUS INT DEFAULT 1;
-    DECLARE CONST_GROUPPRIORITY_DANGEROUS INT DEFAULT 50500;
+    DECLARE CONST_GROUP_DANGEROUS INT DEFAULT 50500;
     #==================================================
 	DECLARE lv_CustID INT;
     
@@ -428,7 +428,7 @@ sp : BEGIN
 		,	tmpCS.CategoryIDs AS CategoryIDs
 		,	tmpCS.CategoryNames AS CategoryNames
         ,	(CASE 	WHEN tmpCS.ParentID = 200 THEN 3
-					WHEN tmpCS.ParentID = 50  AND GroupPriority = CONST_GROUPPRIORITY_DANGEROUS THEN 2
+					WHEN tmpCS.ParentID = 50  AND GroupPriority = CONST_GROUP_DANGEROUS THEN 2
                     ELSE 1 END)
 		,	tmpCS.IsProbation AS IsProbation
 		,	t.GroupIDList AS GroupIDs
