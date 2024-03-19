@@ -26,16 +26,21 @@ BEGIN
 		Param's Explanation:
 
 	*/ 
-	DECLARE lv_remark VARCHAR(50);
+	DECLARE	CONST_GROUP_DANGEROUS	INT DEFAULT 50500;
+    
+    DECLARE lv_remark VARCHAR(50);
+	DECLARE	lv_GroupNormal	VARCHAR(50);
+		
+	SET lv_GroupNormal = (SELECT CategoryName FROM CustomerCategory WHERE CategoryID = 200);	
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustID;
     CREATE TEMPORARY TABLE Temp_CustID (
-			CustID 			BIGINT UNSIGNED PRIMARY KEY
+		CustID 			BIGINT UNSIGNED PRIMARY KEY
     );
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ParentID;
     CREATE TEMPORARY TABLE Temp_ParentID (
-			ParentID 		SMALLINT UNSIGNED PRIMARY KEY
+		ParentID 		SMALLINT UNSIGNED PRIMARY KEY
     );
     
     IF IFNULL(ip_CustIDs, '') <> '' THEN
@@ -71,7 +76,8 @@ BEGIN
 	GROUP BY cla.CustID, CategoryID;
 
     SELECT DISTINCT	c.CustID AS CustID
-		,	b.CategoryName AS ParentCategoryName
+		,	(	CASE WHEN a.GroupPriority =  CONST_GROUP_DANGEROUS THEN lv_GroupNormal 
+					ELSE b.CategoryName END) AS ParentCategoryName
 		,	a.CategoryName
     FROM Temp_LatestRecordOfCategory AS c
 		INNER JOIN CTS_DataCenter.CustomerCategory AS a ON c.CategoryID = a.CategoryID

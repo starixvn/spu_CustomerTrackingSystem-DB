@@ -29,8 +29,10 @@ sp:BEGIN
 		Param's Explanation (filtered by):
 
         Example:
-			- CALL CTS_DC_AssociationDetection_DetectGroup("17,18,20,22",'[{"O":11111,"D":17,"A":1},{"O":11111,"D":18,"A":1},{"O":17,"D":11111,"A":1},{"O":18,"D":11111,"A":1}]','[{"O":20,"D":1},{"O":22,"D":1}]','[{"O":20,"D":22}]','[{"O":20,"D":22}]');
-	*/
+			CALL CTS_DC_AssociationDetection_DetectGroup('1277,1280,1284, 1314,200'
+			,'[{"O":11111,"D":17,"A":1},{"O":11111,"D":18,"A":1},{"O":17,"D":11111,"A":1},{"O":18,"D":11111,"A":1}]'
+			,'[{"O":20,"D":1},{"O":22,"D":1}]','[{"O":20,"D":22}]','[{"O":20,"D":22}]', 0);	
+*/
     DECLARE	CONST_GROUP_NORMAL 					INT DEFAULT 200;
     DECLARE	CONST_GROUP_PROBLEM 				INT DEFAULT 0;
     
@@ -498,6 +500,7 @@ sp:BEGIN
         ,   MAX(cat.IsPAProbation) AS IsPAProbation
         
         ,	cusclss.CustomerClass
+        ,	cusclss.CategoryType
         ,	cti.CountBotTrans AS BotTransSum
         ,	ROUND((cti.CountBotTrans/cti.CountLogin)*100,2) AS BotTransPercentage
 		,	cti.CountInvalidBrowserTrans AS InvalidBrowserInfoTransSum
@@ -517,6 +520,7 @@ sp:BEGIN
         ,	cus.Username
         ,	cus.CustStatus
         ,	cusclss.CustomerClass
+        ,	cusclss.CategoryType
         ,	cus.Danger1
         ,	cus.Danger2
         ,	cus.Danger3

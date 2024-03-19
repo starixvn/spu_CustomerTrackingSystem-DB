@@ -15,7 +15,8 @@ BEGIN
 		Revisions:
 			- 20220930@Aries.Nguyen: 	Created [RedmineID: #178311]
 			- 20230118@Victoria.Le: 	Return ParentID & TaggingType to definite whether Customer is Problem Account/Normal Categories links with PA [RedmineID: #181995]
-
+			- 20240319@Casey.Huynh: 	Classify Danger Score [Redmine ID: #201358]
+            
         Param's Explanation:     
         Example:
 			- CALL CTS_DataCenter.CTS_DC_Common_GetCCAndDangerLevel('1,2,1277,555555');
@@ -28,6 +29,9 @@ BEGIN
     DECLARE	CONST_LICVIP_DANGEROUSCATEGORY		INT DEFAULT 3;
     DECLARE	CONST_LICVIP_SUSPICIOUSCATEGORY		INT DEFAULT 4;    
     DECLARE	CONST_VVIPCATEGORY					INT DEFAULT 210;
+    
+    DECLARE	CONST_GROUP_DANGEROUS				INT DEFAULT 50500;
+    DECLARE	CONST_PARENTID_PA					INT DEFAULT 50;
     
     DECLARE	lv_LicVIP_DangerousCCName 			VARCHAR(50);
     DECLARE	lv_LicVIP_SuspiciousCCName			VARCHAR(50);
@@ -56,11 +60,12 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_CustCateInfo;
     CREATE TEMPORARY TABLE 		Temp_CustCateInfo (
         	CustID				BIGINT UNSIGNED PRIMARY KEY
-		,	CategoryID			INT
+		,	CategoryID			INT        
 		,	IsDangerProbation	BIT DEFAULT 0
 		,	CustomerClass		INT
         ,	CustomerClassName  	VARCHAR(50)
 		,	ParentID			SMALLINT
+        ,	GroupPriority		INT
 		,	TaggingType			SMALLINT
         ,	DangerLevel			INT
 		,	DangerLevelType		SMALLINT  
@@ -80,9 +85,10 @@ BEGIN
 		,	CustomerClass		INT
         ,	CustomerClassName  	VARCHAR(50)
 		,	ParentID			SMALLINT
+        ,	CategoryType		TINYINT
 		,	TaggingType			SMALLINT
         ,	DangerLevel			INT
-		,	DangerLevelType		SMALLINT  
+		,	DangerLevelType		SMALLINT        
         ,	INDEX 				IX_Temp_CustClassificationInfo_CustID(CustID)
     );  
      
@@ -137,13 +143,14 @@ BEGIN
 						, clss.LastModifiedDate DESC
                 LIMIT 1) AS clss
 	GROUP BY tmp.CustID;
-                
-    INSERT INTO Temp_CustCateInfo(CustID,CategoryID,CustomerClass,CustomerClassName,ParentID,TaggingType,DangerLevel,DangerLevelType)
+        
+    INSERT INTO Temp_CustCateInfo(CustID,CategoryID,CustomerClass,CustomerClassName,ParentID,GroupPriority,TaggingType,DangerLevel,DangerLevelType)
     SELECT 	tmp.CustID
 		,	clss.CategoryID
 		,	clss.CustomerClass
         ,	clss.CustomerClassName  
 		,	clss.ParentID
+        ,	clss.GroupPriority
 		,	clss.TaggingType
         ,	dangerlvl.DangerLevel
         ,	CASE 
@@ -183,6 +190,7 @@ BEGIN
 							ELSE tmp.SpecialCCName
 						END AS CustomerClassName
 					,	cate.ParentID
+                    ,	cate.GroupPriority
 					,	cate.TaggingType
 				FROM CTS_DataCenter.CTSCustomerClassification AS clss
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID
@@ -203,12 +211,15 @@ BEGIN
 						, c.LastModifiedDate DESC
                 LIMIT 1) AS dangerlvl;
                 
-	INSERT INTO Temp_CustClassificationInfo(CustID, CategoryID, CustomerClass, CustomerClassName, ParentID, TaggingType, DangerLevel, DangerLevelType)	
+	INSERT INTO Temp_CustClassificationInfo(CustID, CategoryID, CustomerClass, CustomerClassName, ParentID, CategoryType, TaggingType, DangerLevel, DangerLevelType)	
 	SELECT 	tmp.CustID
-		,	cate.CategoryID
+		,	cate.CategoryID        
 		,	IFNULL(cate.CustomerClass,-1) AS CustomerClass
         ,	cate.CustomerClassName  
 		,	cate.ParentID
+        ,	(CASE 	WHEN cate.ParentID = CONST_PARENTID_PA AND cate.GroupPriority = CONST_GROUP_DANGEROUS THEN 2
+					WHEN cate.ParentID = CONST_PARENTID_PA THEN 1
+                    ELSE 3 END ) AS CategoryType
 		,	cate.TaggingType
         ,	cate.DangerLevel
         ,	cate.DangerLevelType 

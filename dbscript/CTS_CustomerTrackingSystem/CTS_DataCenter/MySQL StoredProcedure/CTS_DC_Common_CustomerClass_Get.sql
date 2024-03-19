@@ -18,6 +18,12 @@ BEGIN
         Example:
 			- CALL CTS_DC_Common_CustomerClass_Get();
 	*/
+    DECLARE	CONST_GROUPNAME_PA 				VARCHAR(100) DEFAULT 'PA';
+	DECLARE	CONST_GROUPNAME_NORMAL 			VARCHAR(100) DEFAULT 'Normal';
+	DECLARE	CONST_GROUPNAME_ASSOCIATEDPA 	VARCHAR(100) DEFAULT 'Associated PA';
+	DECLARE	CONST_GROUPNAME_OTHERS			VARCHAR(100) DEFAULT 'Others';
+    
+    DECLARE	CONST_GROUP_DANGEROUS	INT DEFAULT 50500;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerClass;
     CREATE TEMPORARY TABLE Temp_CustomerClass(
@@ -30,23 +36,22 @@ BEGIN
         ,	INDEX IX_Temp_CustomerClass_OrderID( CustomerClass, OrderID)
     );
     
-    
-    
     INSERT IGNORE INTO Temp_CustomerClass (CustomerClassGroup, CustomerClass, CategoryIDs)
-    SELECT 	'PA' AS CustomerClassGroup		    
+    SELECT 	(CASE WHEN cat.GroupPriority = CONST_GROUP_DANGEROUS THEN CONST_GROUPNAME_NORMAL
+					ELSE CONST_GROUPNAME_PA END) AS CustomerClassGroup		    
 		,	cat.CustomerClass
 		,	GROUP_CONCAT(cat.CategoryID SEPARATOR ',')  AS CategoryIDs  
 	FROM	CTS_DataCenter.CustomerCategory AS cat
 	WHERE 	cat.ParentID = 50
 		AND cat.IsActive = 1
         AND cat.CustomerClass IS NOT NULL
-	GROUP BY cat.CustomerClass, cat.CategoryGroup;
+	GROUP BY cat.CustomerClass, cat.CategoryGroup, cat.GroupPriority;
     
 	INSERT IGNORE INTO Temp_CustomerClass (CustomerClassGroup, CustomerClass, CategoryIDs)
-	SELECT	CASE WHEN ttc.TaggingType =1 THEN 'Associated PA' 
-				 WHEN cat.CategoryGroup = 1000 THEN 'Others' 
-                 ELSE 'Normal' 
-			END AS CustomerClassGroup
+	SELECT	(CASE WHEN ttc.TaggingType =1 THEN CONST_GROUPNAME_ASSOCIATEDPA 
+				 WHEN cat.CategoryGroup = 1000 THEN CONST_GROUPNAME_OTHERS 
+                 ELSE CONST_GROUPNAME_NORMAL 
+			END) AS CustomerClassGroup
 		,	cat.CustomerClass
 		,	cat.CategoryID AS CategoryIDs
 	FROM	CTS_DataCenter.CustomerCategory AS cat
@@ -56,13 +61,18 @@ BEGIN
         AND cat.CustomerClass IS NOT NULL;
 
    UPDATE Temp_CustomerClass
-   SET OrderID = CASE WHEN CustomerClassGroup = 'PA' THEN 1
-                 WHEN CustomerClassGroup = 'Associated PA' THEN 2
-                 WHEN CustomerClassGroup = 'Normal' THEN 3
+   SET OrderID = CASE WHEN CustomerClassGroup = CONST_GROUPNAME_PA THEN 1
+                 WHEN CustomerClassGroup = CONST_GROUPNAME_ASSOCIATEDPA THEN 2
+                 WHEN CustomerClassGroup = CONST_GROUPNAME_NORMAL THEN 3
                  ELSE 4
 			END;
 	
-   SELECT OrderID, CustomerClassGroup, CustomerClass, CategoryIDs FROM Temp_CustomerClass ORDER BY OrderID ASC, CustomerClass ASC; 
+   SELECT	OrderID
+		,	CustomerClassGroup
+        ,	CustomerClass
+        ,	CategoryIDs 
+   FROM Temp_CustomerClass 
+   ORDER BY OrderID ASC, CustomerClass ASC; 
 
 END$$
 DELIMITER ;
