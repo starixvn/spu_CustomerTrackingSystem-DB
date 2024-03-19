@@ -31,6 +31,7 @@ CREATE TABLE SpecialCustomerClass_History
 	LastModifiedBy int DEFAULT NULL,
 	LastModifiedDate datetime DEFAULT NULL,
 	CreatedFromFunction tinyint NOT NULL,
+	ActionType tinyint,
 	Remark varchar(500) COLLATE utf8_unicode_ci DEFAULT NULL,
 	PRIMARY KEY (ID),
 	KEY IX_SpecialCustomerClass_History_CTSCustID (CTSCustID)
@@ -65,6 +66,7 @@ CREATE TABLE SpecialCustomerClass_BySport_History
 	CreatedDate datetime NOT NULL,
 	LastModifiedBy int DEFAULT NULL,
 	LastModifiedDate datetime DEFAULT NULL,
+	ActionType tinyint,
 	Remark varchar(500) COLLATE utf8_unicode_ci DEFAULT NULL,
 	PRIMARY KEY (ID),
 	KEY IX_SpecialCustomerClass_History_CTSCustID (CTSCustID)

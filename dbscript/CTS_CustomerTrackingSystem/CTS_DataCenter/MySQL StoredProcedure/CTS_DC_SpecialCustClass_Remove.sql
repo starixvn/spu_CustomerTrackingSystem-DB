@@ -6,7 +6,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_SpecialCustClass_Remove`(
     	IN ip_ListCust					JSON    
 	/*	IN ip_CTSCustID     BIGINT UNSIGNED*/
 	,	IN ip_Remark					VARCHAR(500)
-    ,   IN ip_CreatedBy					INT
+    ,   IN ip_RemovedBy					INT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -35,18 +35,21 @@ BEGIN
 			CTSCustID			BIGINT UNSIGNED
 		,	CustID				INT UNSIGNED
 		,	SportID				SMALLINT UNSIGNED
+		,	SubscriberID		INT
 		,	PRIMARY KEY (CTSCustID, SportID)
 		,	KEY IX_Temp_Customer_SportID (SportID)
     );   
 
-	INSERT INTO Temp_Customer(CTSCustID,CustID,SportID)
+	INSERT INTO Temp_Customer(CTSCustID,CustID,SportID,SubscriberID)
 	SELECT	tmp.CTSCustID
 		,	tmp.CustID
 		,	tmp.SportID
+		,	tmp.SubscriberID
 	FROM JSON_TABLE(ip_ListCust, 
 						'$[*]' COLUMNS (CTSCustID		BIGINT UNSIGNED			PATH '$.CTSCustID'
 									,	CustID			INT UNSIGNED			PATH '$.CustID'
 									,	SportID			SMALLINT UNSIGNED   	PATH '$.SportID'
+									,	SubscriberID	INT						PATH '$.SubscriberID'
 								)) AS tmp;
     -- Get customer info
     /*SELECT CustID
@@ -69,14 +72,30 @@ BEGIN
 			INNER JOIN Temp_Customer AS tmp ON tmp.CTSCustID = s.CTSCustID AND tmp.SportID = 0
 		WHERE s.CreatedFromFunction = 1;
 		
+		INSERT INTO CTS_DataCenter.SpecialCustomerClass_History(CTSCustID, CustID, RootCTSCustID, SubscriberID, CustomerClass, CreatedBy, CreatedDate, LastModifiedBy, LastModifiedDate, CreatedFromFunction, Remark, ActionType)
+		SELECT 	CTSCustID
+			,	CustID
+			,	CTSCustID
+			,	SubscriberID
+			,	-1 AS CustomerClass
+			,	ip_RemovedBy
+			,	lv_CurrentDateTime
+			,	ip_RemovedBy
+			,	lv_CurrentDateTime
+			,   1 -- for Special Customer
+			,	ip_Remark
+			,	2 -- remove
+		FROM Temp_Customer AS tmp
+		WHERE tmp.SportID = 0;
+
 		/*INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-		VALUES(20, lv_SPName, CONCAT('Remove special customer class: ip_CTSCustID_ ', ip_CTSCustID) , DATE(lv_CurrentDateTime), ip_CreatedBy);*/
+		VALUES(20, lv_SPName, CONCAT('Remove special customer class: ip_CTSCustID_ ', ip_CTSCustID) , DATE(lv_CurrentDateTime), ip_RemovedBy);*/
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 		SELECT	20 AS LogTypeID
 			,	lv_SPName
 			,	CONCAT('Remove special customer class: CTSCustList: ', GROUP_CONCAT(tmp.CTSCustID))
 			,	DATE(lv_CurrentDateTime)
-			,	ip_CreatedBy
+			,	ip_RemovedBy
 		FROM Temp_Customer AS tmp
 		WHERE tmp.SportID = 0;
 
@@ -85,7 +104,7 @@ BEGIN
 		SELECT  tmp.CustID
 			,   tmp.CTSCustID
 			,   lv_CurrentDateTime
-			,   ip_CreatedBy
+			,   ip_RemovedBy
 			,   2 -- remove
 			,   0 -- manual
 			,   DATE(lv_CurrentDateTime)
@@ -100,7 +119,7 @@ BEGIN
 		SELECT  tmp.CustID
 			,   tmp.CTSCustID
 			,   lv_CurrentDateTime
-			,   ip_CreatedBy
+			,   ip_RemovedBy
 			,   2 -- remove
 			,   0 -- manual
 			,   DATE(lv_CurrentDateTime)
@@ -119,6 +138,21 @@ BEGIN
 			INNER JOIN Temp_Customer AS tmp ON tmp.CTSCustID = sb.CTSCustID AND tmp.SportID = sb.SportID
 		WHERE tmp.SportID <> 0;
 		
+		INSERT INTO CTS_DataCenter.SpecialCustomerClass_BySport_History(CTSCustID, CustID, SportID, SubscriberID, CustomerClass, CreatedBy, CreatedDate, LastModifiedBy, LastModifiedDate, Remark, ActionType)
+		SELECT 	CTSCustID
+			,	CustID
+			,	SportID
+			,	SubscriberID
+			,	-1 AS CustomerClass
+			,	ip_RemovedBy
+			,	lv_CurrentDateTime
+			,	ip_RemovedBy
+			,	lv_CurrentDateTime
+			,	ip_Remark
+			,	2 -- remove
+		FROM Temp_Customer AS tmp
+		WHERE tmp.SportID <> 0;
+
 		SELECT JSON_ARRAYAGG(JSON_OBJECT('CTSCustID',CTSCustID,'SportID',SportID))
 		INTO lv_ListCustInfo
 		FROM Temp_Customer AS tmp
@@ -129,7 +163,7 @@ BEGIN
 			,	lv_SPName
 			,	CONCAT('Remove special customer class by sport: CTSCustList: ', lv_ListCustInfo)
 			,	DATE(lv_CurrentDateTime)
-			,	ip_CreatedBy
+			,	ip_RemovedBy
 		FROM Temp_Customer AS tmp
 		WHERE tmp.SportID <> 0;
 
@@ -139,7 +173,7 @@ BEGIN
 			,   tmp.CTSCustID
 			,	tmp.SportID
 			,   lv_CurrentDateTime
-			,   ip_CreatedBy
+			,   ip_RemovedBy
 			,   2 -- remove
 			,   DATE(lv_CurrentDateTime)
 			,   -1
@@ -152,7 +186,7 @@ BEGIN
 			,   tmp.CTSCustID
 			,	tmp.SportID
 			,   lv_CurrentDateTime
-			,   ip_CreatedBy
+			,   ip_RemovedBy
 			,   2 -- remove
 			,   DATE(lv_CurrentDateTime)
 			,   -1

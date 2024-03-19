@@ -215,7 +215,7 @@ BEGIN
 		FROM Temp_NewCustomerClass;
 
 		/*	INSERT LOG FOR SPECIAL CUSTOMER CLASS	*/
-		INSERT INTO CTS_DataCenter.SpecialCustomerClass_History(CTSCustID, CustID, RootCTSCustID, SubscriberID, CustomerClass, CreatedBy, CreatedDate, LastModifiedBy, LastModifiedDate, CreatedFromFunction, Remark)
+		INSERT INTO CTS_DataCenter.SpecialCustomerClass_History(CTSCustID, CustID, RootCTSCustID, SubscriberID, CustomerClass, CreatedBy, CreatedDate, LastModifiedBy, LastModifiedDate, CreatedFromFunction, Remark, ActionType)
 		SELECT 	CTSCustID
 			,	CustID
 			,	CTSCustID
@@ -227,6 +227,7 @@ BEGIN
 			,	lv_CurrentDateTime
 			,   1 -- for Special Customer
 			,	ip_Remark
+			,	0 -- insert
 		FROM Temp_NewCustomerClass;
 /*
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
@@ -316,7 +317,7 @@ BEGIN
 		FROM Temp_NewCustomerClass;
 
 		/*	INSERT LOG FOR SPECIAL CUSTOMER CLASS	*/
-		INSERT INTO CTS_DataCenter.SpecialCustomerClass_BySport_History(CTSCustID, CustID, SportID, SubscriberID, CustomerClass, CreatedBy, CreatedDate, LastModifiedBy, LastModifiedDate, Remark)
+		INSERT INTO CTS_DataCenter.SpecialCustomerClass_BySport_History(CTSCustID, CustID, SportID, SubscriberID, CustomerClass, CreatedBy, CreatedDate, LastModifiedBy, LastModifiedDate, Remark, ActionType)
 		SELECT 	CTSCustID
 			,	CustID
 			,	SportID
@@ -327,6 +328,7 @@ BEGIN
 			,	ip_CreatedBy
 			,	lv_CurrentDateTime
 			,	ip_Remark
+			,	0 -- insert
 		FROM Temp_NewCustomerClass;
 
 		SELECT DISTINCT SportID
