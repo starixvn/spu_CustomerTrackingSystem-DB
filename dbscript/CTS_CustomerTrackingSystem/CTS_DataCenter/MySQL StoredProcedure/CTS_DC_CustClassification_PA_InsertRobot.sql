@@ -28,7 +28,7 @@ BEGIN
         Param's Explanation: 
 
 		Example:
-			CALL CTS_DC_CustClassification_PA_InsertRobot_Casey('[{"CustID":1309,"CategoryID":163,"RobotCounter":null,"IsFromTW":false,
+			CALL CTS_DC_CustClassification_PA_InsertRobot('[{"CustID":1309,"CategoryID":163,"RobotCounter":null,"IsFromTW":false,
 				"IsFromCTS":false,"IsFromAI":true,"IsFromImperva":true,"IsFromTVS":false,"TVSRequestID":0,"IsParlay":null,"SportType":null,
 				"IssueTypeID":0,"IsDirect":true,"Remark":"Imperva","CreatedBy":10278938,"TurnoverRM":null,"WinlossRM":null,"WinlossStatus":null,
 				"BetCount":null,"ActiveDays":null}

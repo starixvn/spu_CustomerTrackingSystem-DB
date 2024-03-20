@@ -18,6 +18,8 @@ BEGIN
             - 20220519@Casey.Huynh: Renovate PA Process [Redmine ID: #172561]
             - 20230530@Casey.Huynh: Return IsCleanPA (1: Remove All PA, 0: Exists PA)
 			- 20240109@Thomas.Nguyen: Remove cust in CustomerLoginInfoDetection when cust is unmarked [RedmineID: #197710]
+            - 20240420@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
+            
         Param's Explanation (filtered by):
 			- ip_ByType: 1: Category, 2: Reason
         Example:
@@ -28,11 +30,12 @@ BEGIN
     DECLARE lv_CurrentDateTime	DATETIME DEFAULT CURRENT_TIME(); 
     DECLARE	CONST_PA_SPORTGROUP TINYINT DEFAULT 0;
     DECLARE CONST_ACTIONTYPE_REMOVE INT DEFAULT 2;
-    DECLARE CONST_NORMAL_SPORTGROUP INT DEFAULT 200;
     DECLARE CONST_USERLOG_LOGTYPE SMALLINT DEFAULT 33;
     DECLARE CONST_SPNAME VARCHAR(100) DEFAULT 'CTS_DC_CustClassification_PA_Remove';
 	DECLARE	CONST_CATEGORY_UNAUTHORIZEDLOGIN 		INT DEFAULT 64;
     DECLARE	CONST_CATEGORY_UNAUTHORIZEDLOGIN_LOSING	INT DEFAULT 104;
+    DECLARE CONST_GROUP_DANGEROUS INT DEFAULT 50500;
+    
     DECLARE lv_LogInfo VARCHAR(500);
 	DECLARE lv_CreatedBy INT UNSIGNED;
     DECLARE lv_NoOfCust INT;
@@ -120,7 +123,7 @@ BEGIN
         ,	(CASE WHEN (tmpIc.IsExceptDirectDownline = 1 AND  cls.IsDirect = 1 AND ip_IsFromQueue = 1 )  THEN 0 ELSE 1 END) AS IsRemovedPA    
     FROM Temp_InputCust AS tmpIc
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON tmpIc.CustID = cls.CustID AND cls.SportGroupID = CONST_PA_SPORTGROUP
-        INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID; 
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.GroupPriority <> CONST_GROUP_DANGEROUS; 
     
 	INSERT INTO CTS_DataCenter.CustEvidenceAffectedQueueRemove(CTSCustID, EvidenceID, Created)
     SELECT	tmpCp.CTSCustID
