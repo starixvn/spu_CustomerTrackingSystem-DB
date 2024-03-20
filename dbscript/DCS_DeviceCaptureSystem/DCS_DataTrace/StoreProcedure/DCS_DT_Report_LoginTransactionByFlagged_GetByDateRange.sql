@@ -24,7 +24,7 @@ BEGIN
 	*/
     select 	trans.TransDate
 		,	trans.Flagged
-		,	sl.ItemName AS FlaggedName
+		,	sl.Description AS FlaggedName
 		,	SUM(trans.TotalTrans) AS TotalTrans
 	from DCS_DataTrace.LoginTransactionSummaryByFlagged AS trans
 		INNER JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.ItemID = trans.Flagged

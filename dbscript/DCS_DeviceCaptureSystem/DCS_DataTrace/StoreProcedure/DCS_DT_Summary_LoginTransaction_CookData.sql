@@ -256,15 +256,15 @@ BEGIN
     /* == TotalTransByBrowser == */
     INSERT INTO Temp_TotalTransByBrowser(TransDate, BrowserID, OSID, DeviceTypeID, TotalTrans, TotalInvalidBrowers, TotalBotTrans)
     SELECT 	tmp.TransDate
-        ,	ua.BrowserID
-        ,	ua.OSID
-        ,	ua.DeviceTypeID
+        ,	IFNULL(ua.BrowserID, 0) AS _BrowserID
+        ,	IFNULL(ua.OSID, 0) AS _OSID
+        ,	IFNULL(ua.DeviceTypeID, 0) AS _DeviceTypeID
         ,	COUNT(1) AS TotalTrans
         ,	SUM(tmp.IsInvalidBrowers) AS TotalInvalidBrowers
         ,	SUM(tmp.IsBotTrans) AS TotalBotTrans
 	FROM Temp_Trans07 AS tmp
-		INNER JOIN DCS_DataTrace.RawUserAgent AS ua ON ua.ID = tmp.RawUserAgentID
-    GROUP BY TransDate, BrowserID, OSID, DeviceTypeID;
+		LEFT JOIN DCS_DataTrace.RawUserAgent AS ua ON ua.ID = tmp.RawUserAgentID
+    GROUP BY tmp.TransDate, _BrowserID, _OSID, _DeviceTypeID;
     
     ALTER TABLE Temp_TotalTransByBrowser
     ADD KEY IX_Temp_TotalTransByBrowser_Group(TransDate, BrowserID, OSID, DeviceTypeID);
