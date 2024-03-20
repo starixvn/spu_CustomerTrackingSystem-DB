@@ -37,6 +37,8 @@ sp : BEGIN
 			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
             - 20230313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
             - 20230421@Casey.Huynh: 	Handle Fist Association Date [Redmine ID: #185783]
+            - 20240319@Casey.Huynh: 	Classify Danger Score [Redmine ID: #201358]
+            
 		Param's Explanation (filtered by):
 			- ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual, 4 - IP
             - ip_AssociationStatus: 0 - All, 1 - Linked, 2 - UnLinked

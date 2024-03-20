@@ -66,7 +66,7 @@ BEGIN
 					END)
 				,	cc.CategoryName
                 ,	cc.CategoryGroup
-				,	(CASE WHEN cc.ParentID = CONST_GROUP_PA AND GroupPriority = CONST_GROUP_DANGEROUS THEN 2
+				,	(CASE WHEN cc.ParentID = CONST_GROUP_PA AND cc.GroupPriority = CONST_GROUP_DANGEROUS THEN 2
 							WHEN cc.ParentID = CONST_GROUP_PA THEN 1
                             WHEN cc.ParentID = CONST_GROUP_NORMAL  THEN 3 END) AS CategoryType
 				,	cc.ParentID

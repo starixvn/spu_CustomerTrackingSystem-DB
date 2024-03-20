@@ -23,6 +23,7 @@ BEGIN
 			- 20230404@Victoria.Le:		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeID [Redmine ID: #185319] 
             - 20230516@Casey.Huynh:		New Category for Robot OCRD [RedmineID: #186991]
 			- 20231009@Casey.Huynh:		Fixed Issue Duplicate Rescan Robot Log [RedmineID: #193049]
+            - 20240319@Casey.Huynh: 	Classify Danger Score [Redmine ID: #201358]
             
         Param's Explanation: 
 
@@ -569,7 +570,7 @@ BEGIN
 	DELETE 
     FROM CTS_DataCenter.CTSCustomerClassification AS clss
     WHERE EXISTS (SELECT 1 
-				  FROM  Temp_PA AS pa  
+				  FROM  Temp_PA AS pa
                   WHERE pa.CustID = clss.CustID  
 					AND pa.IsDataChanged = 1
 					AND clss.SportGroupID = CONST_SPORTGROUP_NORMAL);
