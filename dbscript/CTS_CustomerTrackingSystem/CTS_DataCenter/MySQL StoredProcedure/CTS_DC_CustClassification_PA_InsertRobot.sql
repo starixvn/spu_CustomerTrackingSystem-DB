@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_PA_InsertRobot`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_PA_InsertRobot_Casey`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_InsertRobot`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_InsertRobot_Casey`(
 		IN 		ip_CustInfo 	JSON
 	,	IN		ip_IsRescan		BIT
 )
@@ -28,7 +28,7 @@ BEGIN
         Param's Explanation: 
 
 		Example:
-			CALL CTS_DC_CustClassification_PA_InsertRobot_xtest('[{"CustID":1309,"CategoryID":163,"RobotCounter":null,"IsFromTW":false,
+			CALL CTS_DC_CustClassification_PA_InsertRobot_Casey('[{"CustID":1309,"CategoryID":163,"RobotCounter":null,"IsFromTW":false,
 				"IsFromCTS":false,"IsFromAI":true,"IsFromImperva":true,"IsFromTVS":false,"TVSRequestID":0,"IsParlay":null,"SportType":null,
 				"IssueTypeID":0,"IsDirect":true,"Remark":"Imperva","CreatedBy":10278938,"TurnoverRM":null,"WinlossRM":null,"WinlossStatus":null,
 				"BetCount":null,"ActiveDays":null}
@@ -44,17 +44,18 @@ BEGIN
     DECLARE	CONST_CATEGORYID_LICVIPPROBLEM 		INT DEFAULT 3;
     DECLARE	CONST_CATEGORYID_LICVIP				INT DEFAULT 4;
     DECLARE CONST_SPORTGROUP_NORMAL 			INT DEFAULT 200;
+    DECLARE	CONST_SPORTGROUP_PA 				INT DEFAULT 0;
     DECLARE	CONST_CATEGORY_RISKY 				INT DEFAULT 203;
     DECLARE	CONST_CATEGORY_SMART				INT DEFAULT 204;
     
-    DECLARE	CONST_CATEGORYID_VIPNORMAL 			INT DEFAULT 4;
-    
-    DECLARE	CONST_GROUP_PA 						INT DEFAULT 0;
+    DECLARE	CONST_CATEGORYID_VIPNORMAL 			INT DEFAULT 4;    
     
 	DECLARE CONST_SOURCETYPE_RESCANROBOT		INT DEFAULT 36;
     DECLARE CONST_SOURCETYPE_INSERTROBOT		INT DEFAULT 37;
     
     DECLARE	CONST_ACTIONTYPE_UPDATE 			INT DEFAULT 1;
+    
+    DECLARE	CONST_GROUP_DANGEROUS	INT DEFAULT 50500;
     
     DECLARE lv_Now								DATETIME DEFAULT NOW();
     DECLARE lv_CreatedBy 						INT DEFAULT 10278938;
@@ -293,6 +294,7 @@ BEGIN
 
     CALL CTS_DataCenter.CTS_DC_CustClassification_PA_RemoveOldTVSRequest();
     
+    #======MOVE TVS Category To OldCategory IF is VVIP or Is Pin=======================
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationOldCategory(
 			CustID
 		, 	CTSCustID
@@ -322,7 +324,7 @@ BEGIN
 		, 	pa.SubscriberID
 
 		, 	pa.CategoryID
-		, 	CONST_GROUP_PA AS SportGroupID
+		, 	CONST_SPORTGROUP_PA AS SportGroupID
 		,	pa.IsFromTW
 		,	pa.IsFromCTS
 		,	pa.IsFromAI
@@ -567,13 +569,17 @@ BEGIN
 		,	pa.IsExisted = 1
 		;
 
-	DELETE 
+	DELETE clss
     FROM CTS_DataCenter.CTSCustomerClassification AS clss
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON clss.CategoryID = cat.CategoryID
     WHERE EXISTS (SELECT 1 
 				  FROM  Temp_PA AS pa
                   WHERE pa.CustID = clss.CustID  
 					AND pa.IsDataChanged = 1
-					AND clss.SportGroupID = CONST_SPORTGROUP_NORMAL);
+					AND (	clss.SportGroupID = CONST_SPORTGROUP_NORMAL
+							OR (clss.SportGroupID = CONST_SPORTGROUP_PA AND cat.GroupPriority = CONST_GROUP_DANGEROUS)
+						)
+					);
                     
     DELETE pro
     FROM CTS_DataCenter.ProbationAccountMonitor AS pro
@@ -621,7 +627,7 @@ BEGIN
 		, 	pa.SubscriberID
 
 		, 	pa.CategoryID
-		, 	CONST_GROUP_PA AS SportGroupID
+		, 	CONST_SPORTGROUP_PA AS SportGroupID
 		,	pa.IsFromTW
 		,	pa.IsFromCTS
 		,	pa.IsFromAI
@@ -693,7 +699,7 @@ BEGIN
 	SELECT 	pa.CustID
 		, 	pa.CTSCustID
 		, 	pa.CategoryID
-		, 	CONST_GROUP_PA AS SportGroupID
+		, 	CONST_SPORTGROUP_PA AS SportGroupID
 		, 	lv_Now AS LastModifiedDate
 		, 	pa.CreatedBy AS LastModifiedBy
 		, 	1 AS ActionType
@@ -755,7 +761,7 @@ BEGIN
 	SELECT 	pa.CustID
 		, 	pa.CTSCustID
 		, 	pa.CategoryID
-		, 	CONST_GROUP_PA AS SportGroupID
+		, 	CONST_SPORTGROUP_PA AS SportGroupID
 		, 	lv_Now AS LastModifiedDate
 		, 	pa.CreatedBy AS LastModifiedBy
 		, 	1 AS ActionType

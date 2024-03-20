@@ -22,7 +22,8 @@ BEGIN
             - 20210622@Aries.Nguyen: Update coding convention  [Redmine ID: #157203]
             - 20220331@Harvey.Nguyen: refactor code [Redmine ID: #170802]
 			- 20220426@Harvey.Nguyen: fix bug return duplicate category [Redmine ID: #170802]
-
+			- 20240320@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
+            
 		Param's Explanation:
 
 	*/ 
