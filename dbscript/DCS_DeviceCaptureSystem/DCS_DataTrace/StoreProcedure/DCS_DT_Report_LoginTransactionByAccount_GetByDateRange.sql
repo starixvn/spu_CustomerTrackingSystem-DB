@@ -29,7 +29,7 @@ BEGIN
 		,	acc.LoginName
 		,	cus.CustID
 		,	cus.Site
-		,	CASE WHEN cus.IsLicensee = 1 THEN 'Deposit' ELSE 'Credit' END as _type
+		,	CASE WHEN cus.IsLicensee = 1 THEN 'Deposit' ELSE 'Credit' END as PaymentType
 		,	CASE sub.SubscriberSourceID WHEN 0 THEN 'Others' WHEN 1 THEN 'Direct API' WHEN 1 THEN 'OddsFeed' ELSE 'Unknow' END AS LicenseeType 
 		,	SUM(trans.TotalTrans) AS TotalTrans
 		,	SUM(trans.TotalInvalidBrowers) AS TotalInvalidBrowers

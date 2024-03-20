@@ -28,10 +28,10 @@ BEGIN
 	DECLARE lv_NoOfBatch 		INT UNSIGNED 	DEFAULT 0;
     
     /* Check LoginTransactionSummary exists data */
-    IF EXISTS (SELECT 1 FROM DCS_DataTrace.LoginTransactionSummary WHERE TransDate = ip_TransDate LIMIT 1) THEN
+    IF EXISTS (SELECT 1 FROM DCS_DataTrace.LoginTransactionSummaryByAccount WHERE TransDate = ip_TransDate LIMIT 1) THEN
 		DROP TEMPORARY TABLE IF EXISTS Temp_BetTransactionSummary; 
 		
-		CREATE TEMPORARY TABLE Temp_BetTransactionSummary(		
+		CREATE TEMPORARY TABLE Temp_BetTransactionSummary(
 				MinID			BIGINT UNSIGNED
 			,   MaxID			BIGINT UNSIGNED
 			,   BatchCount		INT

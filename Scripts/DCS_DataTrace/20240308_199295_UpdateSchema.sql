@@ -113,3 +113,9 @@ CREATE TABLE `DeviceType` (
 
 INSERT IGNORE INTO `DCS_DataTrace`.`SystemSetting` (`ID`,`VGroup`,`VName`,`VValue`,`UpdatedTime`) 
 VALUES 	(5,'CookData','Transaction07.TransID',0,CURRENT_TIMESTAMP());
+
+DROP PROCEDURE IF EXISTS `DCS_DT_Summary_LoginTransaction_Insert`;
+DROP PROCEDURE IF EXISTS `DCS_DT_Report_LoginTransaction_Get`;
+DROP PROCEDURE IF EXISTS `DCS_DT_Report_BotDTransaction_Get`;
+DROP PROCEDURE IF EXISTS `DCS_DT_Report_LoginTransaction_GetDetailByDate`;
+
