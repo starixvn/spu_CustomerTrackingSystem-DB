@@ -56,8 +56,8 @@ SELECT * FROM SystemParameter WHERE ParameterID IN (153, 154,155)
 ;
 #====Staticlist for Rule================================================================================
 INSERT INTO StaticList(ListID, ItemID, ListName, ListNameDisplay, ItemName, ItemNameDisplay, ItemValue, ItemDefaultValue, ItemParentItemID, PriorityOrder, Status, Description, CreatedDate)
-VALUES	(22, 1, 'Clasification Danger Score Rule', 'CreditMinScore', 'Credit Min Score','Credit Min Score', 0.45 ,NULL, NULL, NULL, 1, NULL,  NOW())
-	,	(22, 2, 'Clasification Danger Score Rule', 'CreditMaxScore', 'Credit Max Score', 'Credit Max Score', 0.95, NULL, NULL, NULL, 1, NULL,  NOW())
+VALUES	(22, 1, 'Classification Danger Score Rule', 'CreditMinScore', 'Credit Min Score','Credit Min Score', 0.45 ,NULL, NULL, NULL, 1, NULL,  NOW())
+	,	(22, 2, 'Classification Danger Score Rule', 'CreditMaxScore', 'Credit Max Score', 'Credit Max Score', 0.95, NULL, NULL, NULL, 1, NULL,  NOW())
 ;
 SELECT * FROM StaticList WHERE ListID = 22
 ;
@@ -72,8 +72,8 @@ SELECT cat.IsPAProbation, cat.* FROM CustomerCategory cat WHERE CategoryID IN (6
 ;
 #====Initial ClassifiedScore, ClassifiedDate FOR Credit Customer======================================================
 UPDATE Customer_DangerousScore
-SET ClassifiedScore = DangerScore
+SET ClassifiedScore = DangerousScore
 	, ClassifiedDate = LastModifiedDate
-WHERE DangerScore BETWEEN 0.45 AND 0.95
+WHERE DangerousScore BETWEEN 0.45 AND 0.95
 	AND IsLicensee = 0
 ;
