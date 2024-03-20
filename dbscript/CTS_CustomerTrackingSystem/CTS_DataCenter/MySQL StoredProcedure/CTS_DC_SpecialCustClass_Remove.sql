@@ -168,7 +168,7 @@ BEGIN
 		WHERE tmp.SportID <> 0;
 
 		-- Insert Log
-		INSERT INTO CTS_DataCenter.CTSCustomerClassification_BySport_History(CustID, CTSCustID, SportID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, Remark)
+		INSERT INTO CTS_DataCenter.CTSCustomerClassification_BySport_History(CustID, CTSCustID, SportID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, Remark, SourceTypeID)
 		SELECT  tmp.CustID
 			,   tmp.CTSCustID
 			,	tmp.SportID
@@ -178,10 +178,11 @@ BEGIN
 			,   DATE(lv_CurrentDateTime)
 			,   -1
 			,   ip_Remark
+			,	10
 		FROM Temp_Customer AS tmp
 		WHERE tmp.SportID <> 0;	
 
-		INSERT INTO CTS_DataCenter.CTSCustomerClassification_BySport_Log(CustID, CTSCustID, SportID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, Remark)
+		INSERT INTO CTS_DataCenter.CTSCustomerClassification_BySport_Log(CustID, CTSCustID, SportID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, Remark, SourceTypeID)
 		SELECT  tmp.CustID
 			,   tmp.CTSCustID
 			,	tmp.SportID
@@ -191,6 +192,7 @@ BEGIN
 			,   DATE(lv_CurrentDateTime)
 			,   -1
 			,   ip_Remark
+			,	10
 		FROM Temp_Customer AS tmp
 		WHERE tmp.SportID <> 0;
 	END IF;

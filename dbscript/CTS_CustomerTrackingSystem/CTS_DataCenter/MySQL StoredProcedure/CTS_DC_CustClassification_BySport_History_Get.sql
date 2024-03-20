@@ -37,10 +37,12 @@ BEGIN
 		,	clh.TargetCC
 		,	clh.LastModifiedDate 
 		,	IFNULL(us.UserName, clh.LastModifiedBy) AS CreatedBy
+		,	s.ItemNameDisplay 
 		,	clh.Remark
     FROM	CTS_DataCenter.CTSCustomerClassification_BySport_History AS clh
 		LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON clh.CategoryID = cat.CategoryID
         LEFT JOIN CTS_Admin.CTSUser AS us ON clh.LastModifiedBy = us.UserID
+		LEFT JOIN CTS_DataCenter.StaticList AS s ON s.ListID = 4 AND clh.SourceTypeID = s.ItemID
     WHERE	clh.CTSCustID = ip_CTSCustID AND clh.SportID = ip_SportID
     ORDER BY clh.LastModifiedDate DESC;
     

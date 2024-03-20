@@ -344,7 +344,7 @@ BEGIN
 		FROM Temp_NewCustomerClass;
 
 		/*	INSERT LOG	*/
-		INSERT INTO CTS_DataCenter.CTSCustomerClassification_BySport_History (CustID, CTSCustID, SportID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, Remark)
+		INSERT INTO CTS_DataCenter.CTSCustomerClassification_BySport_History (CustID, CTSCustID, SportID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, Remark, SourceTypeID)
 		SELECT	CustID
 			,	CTSCustID
 			,	SportID
@@ -354,9 +354,10 @@ BEGIN
 			,	DATE(lv_CurrentDateTime)
 			, 	CustomerClass
 			,	ip_Remark
+			,	10
 		FROM Temp_NewCustomerClass;
 
-		INSERT INTO CTS_DataCenter.CTSCustomerClassification_BySport_Log(CustID, CTSCustID, SportID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, Remark)
+		INSERT INTO CTS_DataCenter.CTSCustomerClassification_BySport_Log(CustID, CTSCustID, SportID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, Remark, SourceTypeID)
 		SELECT	CustID
 			,	CTSCustID
 			,	SportID
@@ -366,6 +367,7 @@ BEGIN
 			,	DATE(lv_CurrentDateTime)
 			, 	ip_CustomerClass
 			,	ip_Remark
+			,	10
 		FROM Temp_NewCustomerClass;
 
 		/* GET LATEST CC */

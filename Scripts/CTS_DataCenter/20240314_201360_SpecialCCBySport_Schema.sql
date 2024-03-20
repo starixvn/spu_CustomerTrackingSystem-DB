@@ -15,8 +15,14 @@ USE CTS_DataCenter;
 ALTER TABLE CTSCustomerClassification_BySport_History
 ADD Remark VARCHAR(500);
 
+ALTER TABLE CTSCustomerClassification_BySport_History
+ADD SourceTypeID SMALLINT;
+
 ALTER TABLE CTSCustomerClassification_BySport_Log
 ADD Remark VARCHAR(500);
+
+ALTER TABLE CTSCustomerClassification_BySport_Log
+ADD SourceTypeID SMALLINT;
 
 CREATE TABLE SpecialCustomerClass_History 
 (
