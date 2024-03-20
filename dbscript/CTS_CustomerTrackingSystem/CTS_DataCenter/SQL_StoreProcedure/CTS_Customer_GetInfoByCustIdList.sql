@@ -176,11 +176,11 @@ BEGIN;
 	END;
 
 	--==============CHECK EXISTING====================
-	IF EXISTS (SELECT 1 FROM #tmpCustomers AS tmp WHERE tmp.IsLicensee IS NULL AND tmp.CurrencyId NOT IN (20,27,28))
+	IF EXISTS (SELECT 1 FROM #tmpCustomers AS tmp WITH(NOLOCK) WHERE (tmp.IsLicensee IS NULL OR tmp.SiteId IS NULL) AND tmp.CurrencyId NOT IN (20,27,28))
 	BEGIN
 		SELECT TOP(1) *
-		FROM #tmpCustomers AS a WITH(NOLOCK)
-		WHERE CustID < 0;
+		FROM #tmpCustomers AS tmp WITH(NOLOCK)
+		WHERE tmp.CustID < 0;
 	END
 	ELSE
 	BEGIN
