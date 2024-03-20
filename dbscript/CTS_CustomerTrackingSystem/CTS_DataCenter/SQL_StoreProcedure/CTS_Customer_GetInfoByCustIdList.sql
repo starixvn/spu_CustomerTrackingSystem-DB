@@ -34,7 +34,7 @@ AS
 		- @sourceType: 0- GET New Customer Info, 1- Get Info Customer table, 2-Get CustInfo table, 3 GET Info CustProductStatus table
 
 	EXEC CTS_Customer_GetInfoByCustIdList '1,2,3,95396080', 0	
-		
+
 */
 BEGIN;
 	SET NOCOUNT ON;
@@ -176,7 +176,7 @@ BEGIN;
 	END;
 
 	--==============CHECK EXISTING====================
-	IF EXISTS (SELECT 1 FROM #tmpCustomers AS tmp WHERE tmp.IsLicensee IS NULL)
+	IF EXISTS (SELECT 1 FROM #tmpCustomers AS tmp WHERE tmp.IsLicensee IS NULL AND tmp.CurrencyId NOT IN (20,27,28))
 	BEGIN
 		SELECT TOP(1) *
 		FROM #tmpCustomers AS a WITH(NOLOCK)
