@@ -21,7 +21,8 @@ BEGIN
         
 		Revisions:
 			- 20231117@Victoria.Le: Initial Writing - Renovate Association Detection [Redmine ID: #192172]
-		
+			- 20240319@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
+            
 		---------------------------------------------------------------------------------------------------
 		[Before #192172]: CTS_DC_AssociationDetection_DetectGroup 
 			- 20220727@Aries.Nguyen: Created [Redmine ID: #175701]
@@ -31,7 +32,7 @@ BEGIN
             - 20221107@Aries.Nguyen: Missing Agent info [RedmineID: #180181]
             - 20221205@Aries.Nguyen: Re-arrange type options on Association Detection  [Redmine ID: #181207]
 			- 20231116@Thomas.Nguyen: Return more Log Transaction info on Association Detection  [Redmine ID: #196362]
-		
+			
 
 		Param's Explanation (filtered by):
 
@@ -547,6 +548,7 @@ BEGIN
         ,   MAX(cat.IsPAProbation) AS IsPAProbation
         
         ,	cusclss.CustomerClass
+        ,	cusclss.CategoryType
         ,	cti.CountBotTrans AS BotTransSum
         ,	ROUND((cti.CountBotTrans/cti.CountLogin)*100,2) AS BotTransPercentage
 		,	cti.CountInvalidBrowserTrans AS InvalidBrowserInfoTransSum
@@ -566,6 +568,7 @@ BEGIN
 		,	cus.Username
 		,	cus.CustStatus
 		,	cusclss.CustomerClass
+        ,	cusclss.CategoryType
 		,	cus.Danger1
 		,	cus.Danger2
 		,	cus.Danger3
