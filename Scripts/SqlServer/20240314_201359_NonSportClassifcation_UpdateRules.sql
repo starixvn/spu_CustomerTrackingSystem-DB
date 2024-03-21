@@ -1,3 +1,4 @@
+/*<info serverAlias="DBVR2-bodb_VR2Model" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 /*
     Creator: 	20240314@Jonas.Huynh
     Task:	 	Renovate Non-Sport Rules [Redmine ID: #201359]
