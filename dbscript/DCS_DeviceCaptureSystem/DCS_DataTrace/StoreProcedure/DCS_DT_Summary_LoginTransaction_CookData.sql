@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `DCS_DT_Summary_LoginTransaction_CookData`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DT_Summary_LoginTransaction_CookData`(
-    IN ip_Size INT UNSIGNED
+    IN ip_BatchSize INT UNSIGNED
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -115,7 +115,7 @@ BEGIN
 	FROM DCS_DataCenter.Transaction07
     WHERE TransID > lv_MaxTransID
     ORDER BY TransID ASC
-    LIMIT ip_Size;
+    LIMIT ip_BatchSize;
     
     ALTER TABLE Temp_Trans07
     ADD KEY IX_Temp_Trans07_Flagged (Flagged),
@@ -130,16 +130,16 @@ BEGIN
         
     SET lv_MaxTransID = (SELECT MAX(TransID) FROM Temp_Trans07);
     
-    /* === Migration RawUserAgent === */
+    /* === Insert RawUserAgent === */
 	SELECT GROUP_CONCAT(DISTINCT RawUserAgentID)
 	INTO lv_RawUserAgentIDs
 	FROM Temp_Trans07
 	WHERE RawUserAgentID IS NOT NULL;
     
     SET lv_RawUserAgentIDs = IFNULL(lv_RawUserAgentIDs,'');
-	CALL DCS_DT_Migrate_RawUserAgent_Insert(lv_RawUserAgentIDs);
+	CALL DCS_DT_Summary_RawUserAgent_Insert(lv_RawUserAgentIDs);
     
-    /* == LoginTransaction == */
+    /* == Insert into LoginTransactionSummary == */
     INSERT INTO Temp_LoginTrans(TransDate, SubscriberID, AccountID, DeviceID, Flagged, FlaggedGroupID, FirstLoginTransTime, LastLoginTransTime, TotalTrans)
     SELECT 	TransDate
         ,	SubscriberID
@@ -184,7 +184,7 @@ BEGIN
     WHERE tmp.IsUpdate = 0;
 
     
-    /* == TotalTransByAccount == */
+    /* == Insert into LoginTransactionSummaryByAccount == */
     INSERT INTO Temp_TotalTransByAccount(TransDate, SubscriberID, AccountID, TotalTrans, TotalInvalidBrowers, TotalBotTrans, TotalNoDeviceTrans, TotalNoFPDeviceTrans)
     SELECT 	TransDate
         ,	SubscriberID
@@ -226,7 +226,7 @@ BEGIN
 	FROM Temp_TotalTransByAccount AS tmp
     WHERE tmp.IsUpdate = 0;
     
-    /* == TotalTransByFlagged == */
+    /* == Insert into LoginTransactionSummaryByFlagged == */
     INSERT INTO Temp_TotalTransByFlagged(TransDate, Flagged, TotalTrans)
     SELECT 	TransDate
         ,	Flagged
@@ -253,7 +253,7 @@ BEGIN
 	FROM Temp_TotalTransByFlagged AS tmp
     WHERE tmp.IsUpdate = 0;
     
-    /* == TotalTransByBrowser == */
+    /* == Insert into LoginTransactionSummaryByBrowser == */
     INSERT INTO Temp_TotalTransByBrowser(TransDate, BrowserID, OSID, DeviceTypeID, TotalTrans, TotalInvalidBrowers, TotalBotTrans)
     SELECT 	tmp.TransDate
         ,	IFNULL(ua.BrowserID, 0) AS _BrowserID

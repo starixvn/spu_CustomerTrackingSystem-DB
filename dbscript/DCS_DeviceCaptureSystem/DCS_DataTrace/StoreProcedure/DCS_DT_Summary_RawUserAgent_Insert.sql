@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataTrace" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DT_Migrate_RawUserAgent_Insert`;
+DROP PROCEDURE IF EXISTS `DCS_DT_Summary_RawUserAgent_Insert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DT_Migrate_RawUserAgent_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DT_Summary_RawUserAgent_Insert`(
     IN ip_RawUserAgentIDs	LONGTEXT
 )
 SQL SECURITY INVOKER
@@ -20,7 +20,7 @@ BEGIN
 
 	Example:
 		SET sql_safe_updates = 0;
-        CALL DCS_DataTrace.DCS_DT_Migrate_RawUserAgent_Insert(10);
+        CALL DCS_DataTrace.DCS_DT_Summary_RawUserAgent_Insert(10);
 	*/
     DECLARE lv_CreatedDate DATETIME DEFAULT CURRENT_TIMESTAMP;
     
