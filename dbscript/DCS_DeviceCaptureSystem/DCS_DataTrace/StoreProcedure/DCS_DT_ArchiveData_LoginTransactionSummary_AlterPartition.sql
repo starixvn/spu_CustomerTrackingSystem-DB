@@ -23,12 +23,13 @@ BEGIN
         CALL DCS_DataTrace.DCS_DT_ArchiveData_LoginTransactionSummary_AlterPartition(2);
 	*/
 	
-    DECLARE lv_CurrentDate			DATETIME DEFAULT NOW();
-    DECLARE lv_LastWeekDate			DATETIME DEFAULT DATE_SUB(lv_CurrentDate, INTERVAL ip_RetentionPartitions + 1 WEEK);
-    DECLARE lv_LastPartition		VARCHAR(50) DEFAULT CONCAT('pw',YEARWEEK(lv_LastWeekDate));
+    DECLARE lv_CurrentDate				DATETIME DEFAULT NOW();
+    DECLARE lv_LastWeekDate				DATETIME DEFAULT DATE_SUB(lv_CurrentDate, INTERVAL ip_RetentionPartitions + 1 WEEK);
+    DECLARE lv_MinPartitionRetention	VARCHAR(50) DEFAULT CONCAT('pw',YEARWEEK(lv_LastWeekDate));
+    DECLARE lv_MaxPartitionExisted		VARCHAR(50);
     
-    DECLARE lv_DropPartition		LONGTEXT;
-    DECLARE lv_AlterPartition		LONGTEXT;
+    DECLARE lv_DropPartition			LONGTEXT;
+    DECLARE lv_AlterPartition			LONGTEXT;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Partition;
     CREATE TEMPORARY TABLE Temp_Partition(
@@ -48,7 +49,7 @@ BEGIN
 	SELECT GROUP_CONCAT(tmp.PartitionName SEPARATOR ',')
     INTO lv_DropPartition
     FROM Temp_Partition AS tmp
-    WHERE tmp.PartitionName <= lv_LastPartition;
+    WHERE tmp.PartitionName <= lv_MinPartitionRetention;
     
     IF lv_DropPartition IS NOT NULL THEN        
 		SET @sql = CONCAT('ALTER TABLE DCS_DataTrace.LoginTransactionSummary DROP PARTITION ',lv_DropPartition,';');
@@ -57,19 +58,26 @@ BEGIN
 		DEALLOCATE PREPARE stmt;
     END IF;
     
-    WITH RECURSIVE week_numbers AS (
-		SELECT YEARWEEK(DATE_ADD(lv_CurrentDate, INTERVAL 1 WEEK)) AS week_number, CONCAT('pw',YEARWEEK(lv_CurrentDate)) AS partition_name, 1 AS rn
-		UNION ALL
-		SELECT YEARWEEK(DATE_ADD(lv_CurrentDate, INTERVAL rn + 1 WEEK)) AS week_number, CONCAT('pw',YEARWEEK(DATE_ADD(lv_CurrentDate, INTERVAL rn WEEK))) AS partition_name, rn + 1
-		FROM week_numbers
-		WHERE rn < ip_RetentionPartitions
-	)
-	SELECT GROUP_CONCAT(CONCAT('PARTITION ',partition_name,' VALUES LESS THAN (',week_number,')') SEPARATOR ',')
-    INTO lv_AlterPartition
-	FROM week_numbers AS wno
-		LEFT JOIN Temp_Partition AS tmp ON tmp.PartitionName = wno.partition_name
-	WHERE tmp.PartitionOrdinalPosition IS NULL;
+    SELECT MAX(PartitionName)
+    INTO lv_MaxPartitionExisted
+    FROM Temp_Partition
+    WHERE PartitionName != 'pw299999';
     
+    SET lv_LastWeekDate = DATE_ADD(lv_LastWeekDate, INTERVAL 1 WEEK);
+    WITH RECURSIVE WeekNumbers AS (
+		SELECT CONCAT('pw',YEARWEEK(lv_LastWeekDate)) AS partition_name, YEARWEEK(DATE_ADD(lv_LastWeekDate, INTERVAL 1 WEEK)) AS week_number, 1 AS rn
+		UNION ALL
+		SELECT CONCAT('pw',YEARWEEK(DATE_ADD(lv_LastWeekDate, INTERVAL rn WEEK))) AS partition_name, YEARWEEK(DATE_ADD(lv_LastWeekDate, INTERVAL rn + 1 WEEK)) AS week_number, rn + 1
+		FROM WeekNumbers
+		WHERE rn < ip_RetentionPartitions + 2
+	)
+	SELECT GROUP_CONCAT(CONCAT('PARTITION ',wn.partition_name,' VALUES LESS THAN (',wn.week_number,')') SEPARATOR ',')
+    INTO lv_AlterPartition
+	FROM WeekNumbers AS wn
+		LEFT JOIN Temp_Partition AS tmp ON tmp.PartitionName = wn.partition_name
+	WHERE tmp.PartitionOrdinalPosition IS NULL
+		AND wn.partition_name > IFNULL(lv_MaxPartitionExisted,'');
+
     IF lv_AlterPartition IS NOT NULL THEN
 		SET @sql = CONCAT('
 			ALTER TABLE DCS_DataTrace.LoginTransactionSummary
