@@ -13,7 +13,7 @@ sp: BEGIN
 		DB:			CTS_DataCenter 
 		Original: 
 		Revisions:  
-			- 20240315@Casey.Huynh:	Created [Redmine ID: #201358]
+			- 20240321@Casey.Huynh:	Created [Redmine ID: #201358]
 
         Param's Explanation:
 

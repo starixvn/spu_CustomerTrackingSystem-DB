@@ -23,7 +23,7 @@ BEGIN
 		Example:
 			CALL CTS_DataCenter.CTS_DC_CustClassification_MatchMonitor_Classify();
 	 */ 
-	DECLARE	CONST_GROUP_DANGEROUS	INT DEFAULT 50500;
+	DECLARE	CONST_GROUPPRIORITY_DANGEROUS	SMALLINT UNSIGNED DEFAULT 5700;
     
 	DECLARE lv_PackSize INT;
 	DECLARE lv_MatchID INT;
@@ -84,10 +84,10 @@ BEGIN
     );
 
 	INSERT INTO Temp_ExcludePACategoryID(CategoryID)
-    SELECT CategoryID
+    SELECT cat.CategoryID
     FROM CTS_DataCenter.CustomerCategory AS cat
-    WHERE ParentID = 50 AND CategoryID NOT IN  (57,61,163,164,165,166,179)
-		AND GroupPriority <> CONST_GROUP_DANGEROUS;   
+    WHERE cat.ParentID = 50 AND cat.CategoryID NOT IN  (57,61,163,164,165,166,179)
+		AND cat.GroupPriority <> CONST_GROUPPRIORITY_DANGEROUS;   
 
     INSERT INTO Temp_MatchMonitorDetailsCust(CustID, MMDetailsID, MatchID, NoOfCust)
     WITH CTE_MatchMonitorDetials AS

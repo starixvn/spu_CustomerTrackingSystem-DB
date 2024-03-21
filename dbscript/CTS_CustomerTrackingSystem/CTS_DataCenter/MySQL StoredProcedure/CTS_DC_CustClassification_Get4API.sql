@@ -27,7 +27,7 @@ BEGIN
 		Param's Explanation:
 
 	*/ 
-	DECLARE	CONST_GROUP_DANGEROUS	INT DEFAULT 50500;
+	DECLARE	CONST_GROUPPRIORITY_DANGEROUS	SMALLINT UNSIGNED DEFAULT 5700;
     
     DECLARE lv_remark VARCHAR(50);
 	DECLARE	lv_GroupNormal	VARCHAR(50);
@@ -77,7 +77,7 @@ BEGIN
 	GROUP BY cla.CustID, CategoryID;
 
     SELECT DISTINCT	c.CustID AS CustID
-		,	(	CASE WHEN a.GroupPriority =  CONST_GROUP_DANGEROUS THEN lv_GroupNormal 
+		,	(	CASE WHEN a.GroupPriority =  CONST_GROUPPRIORITY_DANGEROUS THEN lv_GroupNormal 
 					ELSE b.CategoryName END) AS ParentCategoryName
 		,	a.CategoryName
     FROM Temp_LatestRecordOfCategory AS c

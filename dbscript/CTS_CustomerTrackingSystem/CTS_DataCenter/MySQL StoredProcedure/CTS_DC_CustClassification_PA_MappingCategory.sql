@@ -25,7 +25,7 @@ BEGIN
 			- 20230404@Victoria.Le		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeID [Redmine ID: #185319] 
 			- 20230601@Victoria.Le:		Add TVSRequestID <> 0 for TVSRequestID IS NOT NULL [Redmine ID: #189023]
             - 20240306@Thomas.Nguyen:	Add log table for tracking TVS void request [Redmine ID: #201993]
-			- 20240315@Casey.Huynh: 	Classify Danger Score, Add GroupPriority [Redmine ID: #201358]
+			- 20240321@Casey.Huynh: 	Classify Danger Score, Add GroupPriority [Redmine ID: #201358]
             
 		Param's Explanation (filtered by):      
 			CALL CTS_DC_CustClassification_PA_MappingCategory ('Category','[{"CustID": 3679910,"ReasonID": 3679910,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10, "MatchID": 1}]');
@@ -81,7 +81,7 @@ BEGIN
 		,	IsParlay 				BIT DEFAULT NULL
 		,	SportType				SMALLINT DEFAULT NULL 
 		,	IssueTypeID 			TINYINT DEFAULT NULL
-        ,	GroupPriority			INT
+        ,	GroupPriority			SMALLINT UNSIGNED
         ,	ParentID				SMALLINT UNSIGNED
         , 	PRIMARY KEY PK_Temp_PA(CustID,InputCategoryID)  
         ,	INDEX IX_Temp_PA(IsDataChanged,LastModifiedDate)

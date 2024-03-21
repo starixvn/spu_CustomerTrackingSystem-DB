@@ -20,7 +20,7 @@ BEGIN
         Example:
 				CALL CTS_DC_Category_Get();
 	*/
-	DECLARE	CONST_GROUP_DANGEROUS	INT DEFAULT 50500;
+	DECLARE	CONST_GROUPPRIORITY_DANGEROUS	SMALLINT UNSIGNED DEFAULT 5700;
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_CategoryFilter;
 	CREATE TEMPORARY TABLE Temp_CategoryFilter(
@@ -31,7 +31,7 @@ BEGIN
 	);
 
 	INSERT IGNORE INTO Temp_CategoryFilter (CategoryGroup, CategoryName, CategoryIDs)
-	SELECT 	(CASE WHEN GroupPriority = CONST_GROUP_DANGEROUS THEN 'Normal Account Category' ELSE 'Problem Account Category' END) AS CategoryGroup		    
+	SELECT 	(CASE WHEN GroupPriority = CONST_GROUPPRIORITY_DANGEROUS THEN 'Normal Account Category' ELSE 'Problem Account Category' END) AS CategoryGroup		    
 		,	cat.CategoryName
 		,	GROUP_CONCAT(cat.CategoryID SEPARATOR ',')  AS CategoryIDs  
 	FROM	CTS_DataCenter.CustomerCategory AS cat

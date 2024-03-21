@@ -34,7 +34,7 @@ BEGIN
     DECLARE CONST_SPNAME VARCHAR(100) DEFAULT 'CTS_DC_CustClassification_PA_Remove';
 	DECLARE	CONST_CATEGORY_UNAUTHORIZEDLOGIN 		INT DEFAULT 64;
     DECLARE	CONST_CATEGORY_UNAUTHORIZEDLOGIN_LOSING	INT DEFAULT 104;
-    DECLARE CONST_GROUP_DANGEROUS INT DEFAULT 50500;
+    DECLARE CONST_GROUPPRIORITY_DANGEROUS SMALLINT UNSIGNED DEFAULT 5700;
     
     DECLARE lv_LogInfo VARCHAR(500);
 	DECLARE lv_CreatedBy INT UNSIGNED;
@@ -123,7 +123,7 @@ BEGIN
         ,	(CASE WHEN (tmpIc.IsExceptDirectDownline = 1 AND  cls.IsDirect = 1 AND ip_IsFromQueue = 1 )  THEN 0 ELSE 1 END) AS IsRemovedPA    
     FROM Temp_InputCust AS tmpIc
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON tmpIc.CustID = cls.CustID AND cls.SportGroupID = CONST_PA_SPORTGROUP
-        INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.GroupPriority <> CONST_GROUP_DANGEROUS; 
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.GroupPriority <> CONST_GROUPPRIORITY_DANGEROUS; 
     
 	INSERT INTO CTS_DataCenter.CustEvidenceAffectedQueueRemove(CTSCustID, EvidenceID, Created)
     SELECT	tmpCp.CTSCustID

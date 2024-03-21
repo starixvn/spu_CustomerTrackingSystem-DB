@@ -14,7 +14,7 @@ BEGIN
 		Original: 
 
 		Revisions:
-			- 20240315@Casey.Huynh: 	Created [Redmine ID: #201538]
+			- 20240321@Casey.Huynh: 	Created [Redmine ID: #201538]
             
 		Example:
 			CALL CTS_DataCenter.CTS_DC_DangerousDetection_GetLatest(@ip_IsLicensee:=0);

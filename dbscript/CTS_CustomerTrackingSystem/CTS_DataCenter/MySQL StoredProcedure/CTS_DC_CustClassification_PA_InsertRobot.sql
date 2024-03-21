@@ -55,7 +55,7 @@ BEGIN
     
     DECLARE	CONST_ACTIONTYPE_UPDATE 			INT DEFAULT 1;
     
-    DECLARE	CONST_GROUP_DANGEROUS	INT DEFAULT 50500;
+    DECLARE	CONST_GROUPPRIORITY_DANGEROUS	SMALLINT UNSIGNED DEFAULT 5700;
     
     DECLARE lv_Now								DATETIME DEFAULT NOW();
     DECLARE lv_CreatedBy 						INT DEFAULT 10278938;
@@ -577,7 +577,7 @@ BEGIN
                   WHERE pa.CustID = clss.CustID  
 					AND pa.IsDataChanged = 1
 					AND (	clss.SportGroupID = CONST_SPORTGROUP_NORMAL
-							OR (clss.SportGroupID = CONST_SPORTGROUP_PA AND cat.GroupPriority = CONST_GROUP_DANGEROUS)
+							OR (clss.SportGroupID = CONST_SPORTGROUP_PA AND cat.GroupPriority = CONST_GROUPPRIORITY_DANGEROUS)
 						)
 					);
                     

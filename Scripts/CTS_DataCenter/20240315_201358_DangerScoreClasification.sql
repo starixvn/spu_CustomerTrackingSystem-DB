@@ -36,28 +36,27 @@ ALTER TABLE Customer_DangerousScore
 ;
 
 ALTER TABLE CustomerCategory
-	ADD COLUMN GroupPriority INT
+	ADD COLUMN GroupPriority SMALLINT UNSIGNED
 ;
 
 UPDATE CustomerCategory 
-SET GroupPriority = 50000 #ParentID*1000
-WHERE ParentID = 50
+SET GroupPriority = ParentID*100+200
 ;
 
 SELECT Priority, c.* FROM CustomerCategory c WHERE ParentID = 50 
 ;
 #====Parameter for Classify  New================================================================================
 INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
-VALUES	(153, 'ClassificationNewDangerScoreCredit_LastDate','Customer_DangerousScore.LastModifiedDate', 'DATETIME(3)', '2023-08-23')
-	,	(154, 'ClassificationNewDangerScoreCredit_LastCustID','Customer_DangerousScore.CustID', 'INT', '0')
-    ,	(155, 'ClassificationNewDangerScoreCredit_BatchSize',NULL, 'INT', '1000')
+VALUES	(153, 'ClassificationDangerousScoreCredit_LastDate','Customer_DangerousScore.LastModifiedDate', 'DATETIME(3)', '2023-08-23')
+	,	(154, 'ClassificationDangerousScoreCredit_LastCustID','Customer_DangerousScore.CustID', 'INT', '0')
+    ,	(155, 'ClassificationDangerousScoreCredit_BatchSize',NULL, 'INT', '1000')
 ;
 SELECT * FROM SystemParameter WHERE ParameterID IN (153, 154,155)
 ;
 #====Staticlist for Rule================================================================================
 INSERT INTO StaticList(ListID, ItemID, ListName, ListNameDisplay, ItemName, ItemNameDisplay, ItemValue, ItemDefaultValue, ItemParentItemID, PriorityOrder, Status, Description, CreatedDate)
-VALUES	(22, 1, 'Classification Danger Score Rule', 'CreditMinScore', 'Credit Min Score','Credit Min Score', 0.45 ,NULL, NULL, NULL, 1, NULL,  NOW())
-	,	(22, 2, 'Classification Danger Score Rule', 'CreditMaxScore', 'Credit Max Score', 'Credit Max Score', 0.95, NULL, NULL, NULL, 1, NULL,  NOW())
+VALUES	(22, 1, 'Classification Dangerous Score Rule', 'CreditMinDangerousScore', 'Credit Min Dangerous Score','Credit Min Dangerous Score', 0.45 ,NULL, NULL, NULL, 1, NULL,  NOW())
+	,	(22, 2, 'Classification Dangerous Score Rule', 'CreditMaxDangerousScore', 'Credit Max Dangerous Score', 'Credit Max Dangerous Score', 0.95, NULL, NULL, NULL, 1, NULL,  NOW())
 ;
 SELECT * FROM StaticList WHERE ListID = 22
 ;
@@ -65,10 +64,10 @@ SELECT * FROM StaticList WHERE ListID = 22
 INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,DisplayOrder,IsActive,IsUsedManually,CreatedDate
 ,CreatedBy,LastModifiedDate,LastModifiedBy,ScanIntervalInSecond,CategoryNameCN,CategoryNameCN3,CategoryNameTHB,CategoryNameIND,CategoryGroup,TaggingID,TaggingType,ReasonID,SourceType,AFCFraudID,EvidenceID_Licensee,EvidenceCode_Licensee,EvidenceID_Credit,EvidenceCode_Credit,CustomerClass,CustomerClassName,CustomerClassNameCN,CustomerClassException,RelevantCategoryID,ABIDangerLevel_Licensee,ABIDangerLevelException_Licensee,ABIDangerLevel_Credit,ABIDangerLevelException_Credit,IsProbation,ProblemCaseID,IsHedgingReasonMM,RootTaggingID
 ,IsPAProbation,DangerLevelType,Priority,IsDangerProbation,OldCustomerClass,SabaSportType,SabaIntelligent_RiskLevel,SabaIntelligent_RiskLevel_TCN,SabaIntelligent_RiskLevel_SCN,SabaIntelligent_RiskLevel_CN3,SabaIntelligent_RiskLevel_THB,SabaIntelligent_RiskLevel_IND,GroupPriority)
-VALUES (65,'Early Warning Members','Early Warning Members',50,199,1,0,NOW(),NULL,NULL,NULL,NULL,'预警会员',NULL,NULL,NULL,65,NULL,NULL,NULL,'AI',NULL,NULL,NULL,NULL,NULL,2800,'Dangerous','危險',2800,105,NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,0,NULL,53,0,NULL,NULL,'Dangerous','危險','危险',NULL,NULL,NULL,50500)
-	,(105,'Early Warning Members (Losing)','Early Warning Members (Losing)',50,199,1,0,NOW(),NULL,NULL,NULL,NULL,'预警会员 (输钱)',NULL,NULL,NULL,105,NULL,NULL,NULL,'AI',NULL,NULL,NULL,NULL,NULL,2801,'Dangerous-','危險 -',2801,65,NULL,NULL,NULL,NULL,1,NULL,NULL,NULL,1,NULL,53,1,NULL,NULL,'Dangerous','危險','危险',NULL,NULL,NULL,50500)
+VALUES (65,'Early Warning Members','Early Warning Members',50,199,1,0,NOW(),NULL,NULL,NULL,NULL,'预警会员',NULL,NULL,NULL,65,NULL,NULL,NULL,'AI',NULL,NULL,NULL,NULL,NULL,2800,'Dangerous','危險',2800,105,NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,0,NULL,53,0,NULL,NULL,'Dangerous','危險','危险',NULL,NULL,NULL,5700)
+	,(105,'Early Warning Members (Losing)','Early Warning Members (Losing)',50,199,1,0,NOW(),NULL,NULL,NULL,NULL,'预警会员 (输钱)',NULL,NULL,NULL,105,NULL,NULL,NULL,'AI',NULL,NULL,NULL,NULL,NULL,2801,'Dangerous-','危險 -',2801,65,NULL,NULL,NULL,NULL,1,NULL,NULL,NULL,1,NULL,53,1,NULL,NULL,'Dangerous','危險','危险',NULL,NULL,NULL,5700)
 ;
-SELECT cat.IsPAProbation, cat.* FROM CustomerCategory cat WHERE CategoryID IN (65, 105)#, 54,94)
+SELECT cat.IsPAProbation, cat.GroupPriority, cat.Priority, cat.* FROM CustomerCategory cat WHERE CategoryID IN (65, 105, 54,94)
 ;
 #====Initial ClassifiedScore, ClassifiedDate FOR Credit Customer======================================================
 UPDATE Customer_DangerousScore

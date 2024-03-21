@@ -30,7 +30,7 @@ BEGIN
     DECLARE	CONST_LICVIP_SUSPICIOUSCATEGORY		INT DEFAULT 4;    
     DECLARE	CONST_VVIPCATEGORY					INT DEFAULT 210;
     
-    DECLARE	CONST_GROUP_DANGEROUS				INT DEFAULT 50500;
+    DECLARE	CONST_GROUPPRIORITY_DANGEROUS				SMALLINT UNSIGNED DEFAULT 5700;
     DECLARE	CONST_PARENTID_PA					INT DEFAULT 50;
     
     DECLARE	lv_LicVIP_DangerousCCName 			VARCHAR(50);
@@ -65,7 +65,7 @@ BEGIN
 		,	CustomerClass		INT
         ,	CustomerClassName  	VARCHAR(50)
 		,	ParentID			SMALLINT
-        ,	GroupPriority		INT
+        ,	GroupPriority		SMALLINT UNSIGNED
 		,	TaggingType			SMALLINT
         ,	DangerLevel			INT
 		,	DangerLevelType		SMALLINT  
@@ -217,7 +217,7 @@ BEGIN
 		,	IFNULL(cate.CustomerClass,-1) AS CustomerClass
         ,	cate.CustomerClassName  
 		,	cate.ParentID
-        ,	(CASE 	WHEN cate.ParentID = CONST_PARENTID_PA AND cate.GroupPriority = CONST_GROUP_DANGEROUS THEN 2
+        ,	(CASE 	WHEN cate.ParentID = CONST_PARENTID_PA AND cate.GroupPriority = CONST_GROUPPRIORITY_DANGEROUS THEN 2
 					WHEN cate.ParentID = CONST_PARENTID_PA THEN 1
                     ELSE 3 END ) AS CategoryType
 		,	cate.TaggingType
