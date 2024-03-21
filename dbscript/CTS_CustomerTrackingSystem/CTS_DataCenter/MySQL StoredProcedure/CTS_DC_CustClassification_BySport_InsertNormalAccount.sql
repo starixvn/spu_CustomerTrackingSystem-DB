@@ -18,6 +18,7 @@ BEGIN
 				- 20220830@Harvey.Nguyen: Created [Redmine ID: #177434]
 				- 202230426@Long.Luu: Adjust Probation's period from 20 to 15 [Redmine ID: #187433]
                 - 20230704@Jonas.Huynh: Normal Renovation [Redmine ID: #189875]
+               	- 20240318@Jonas.Huynh: Config Probation Days [Redmine ID: #201359]
                 
 		Param's Explanation (filtered by):
         
@@ -40,8 +41,8 @@ BEGIN
     
 	DECLARE lv_CreatedBy 								INT DEFAULT 10278938;
 	DECLARE lv_CurrentDateTime 							DATETIME DEFAULT CURRENT_TIME();
-    DECLARE lv_FromProbationLastDay 					DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 14 DAY);
-	DECLARE lv_ToProbationLastDay 						DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 2 DAY);
+    DECLARE lv_CurrentDate								DATE DEFAULT CURRENT_DATE();
+	DECLARE lv_ToProbationLastDay 						DATE DEFAULT DATE_SUB(lv_CurrentDate, INTERVAL 2 DAY);
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;    
 	CREATE TEMPORARY TABLE Temp_NewClassification(	  	
@@ -76,7 +77,8 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_ProbationCustomers(	  	
 			CustID					BIGINT UNSIGNED
 		,	SportID					SMALLINT
-        , 	ProbationDate			DATE      
+        , 	ProbationDate			DATE     
+        ,	LastProbationDay		DATE
         ,	PRIMARY KEY (CustID, SportID)
 	); 
     
@@ -141,7 +143,7 @@ BEGIN
     /* 2: EXCLUDE INTERNAL CUSTOMERS */      
     CALL CTS_DC_ExcludeCustByCondition('Temp_NewClassification');
     
-    /* 3: GET CUSTOMER INFO */
+    /* 3: GET CUSTOMER INFO */   
     INSERT IGNORE INTO Temp_ExistedCustomers(CustID, CTSCustID)
     SELECT 	DISTINCT cust.CustID
 		, 	cust.CTSCustID
@@ -153,26 +155,27 @@ BEGIN
 		INNER JOIN Temp_ExistedCustomers AS ec ON temp.CustID = ec.CustID
 	SET		temp.CTSCustID = ec.CTSCustID;
     
-    /*4: GET PROBATION CUSTOMERS */
-    INSERT IGNORE INTO Temp_ProbationCustomers(CustID, SportID, ProbationDate)
-    SELECT DISTINCT prob.CustID, prob.SportID, prob.CreatedDate
+    /*4: GET PROBATION CUSTOMERS */ 
+    INSERT IGNORE INTO Temp_ProbationCustomers(CustID, SportID, ProbationDate, LastProbationDay)
+    SELECT DISTINCT prob.CustID, prob.SportID, prob.CreatedDate, DATE_SUB(lv_CurrentDate, INTERVAL CAST(s.ItemValue AS UNSIGNED) DAY)
     FROM 	Temp_NewClassification AS temp
-		INNER JOIN 	ProbationAccountMonitor_BySport AS prob ON temp.CustID = prob.CustID AND temp.SportID =  prob.SportID;
-
-    /* 5: EXCLUDE CUSTOMERS THAT SHOULD NOT BE SCANNED */
+		INNER JOIN 	CTS_DataCenter.ProbationAccountMonitor_BySport AS prob ON temp.CustID = prob.CustID AND temp.SportID =  prob.SportID
+        INNER JOIN 	CTS_DataCenter.StaticList AS s ON s.ListID = 23 AND s.ItemID = temp.SportID;
+    
+    /* 5: EXCLUDE CUSTOMERS THAT SHOULD NOT BE SCANNED */    
     INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, SportID, ActionType)
     SELECT DISTINCT	temp.CustID, temp.SportID, CONST_ACTIONTYPE_IGNOREPROBATION
 	FROM 	Temp_NewClassification AS temp 
 		INNER JOIN Temp_ProbationCustomers AS pro ON temp.CustID = pro.CustID AND temp.SportID =  pro.SportID
-    WHERE 	(temp.DWCateID IN (CONST_CATEGORY_SMART, CONST_CATEGORY_HIGHRISK, CONST_CATEGORY_PROBATION) AND pro.ProbationDate > lv_FromProbationLastDay) 
+    WHERE 	(temp.DWCateID IN (CONST_CATEGORY_SMART, CONST_CATEGORY_HIGHRISK, CONST_CATEGORY_PROBATION) AND pro.ProbationDate > pro.LastProbationDay) 
 			OR (pro.ProbationDate >= lv_ToProbationLastDay);
     
     /* 5.4: UPDATE BACK TO Temp_NewClassification */
-	/* 5.4.1: HAS ACTION + NO VIEW LOG FAIL PROBATION FOR > 20 LAST DAYS */ 
+	/* 5.4.1: HAS ACTION + NO VIEW LOG FAIL PROBATION FOR > PROBATION LAST DAYS */ 
     UPDATE Temp_NewClassification AS temp
 		INNER JOIN  Temp_ProbationCustomers AS pro ON pro.CustID = temp.CustID AND pro.SportID = temp.SportID
 	SET 	temp.IsDataChanged = 0
-    WHERE 	(temp.DWCateID = CONST_CATEGORY_PROBATION AND pro.ProbationDate < lv_FromProbationLastDay);
+    WHERE 	(temp.DWCateID = CONST_CATEGORY_PROBATION AND pro.ProbationDate < pro.LastProbationDay);
     
     /* 5.4.2: NO ACTION + VIEW LOG FOR IGNORE CASES */ 
    	UPDATE Temp_NewClassification AS temp 

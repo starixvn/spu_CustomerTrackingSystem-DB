@@ -13,7 +13,8 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original: 
 		Revisions:
-			- 20230703@Jonas.Huynh [Redmine ID: #189875]: Created 
+			- 20230703@Jonas.Huynh: Created [Redmine ID: #189875]
+			- 20240318@Jonas.Huynh: Config Probation Days [Redmine ID: #201359]
             
 		Param's Explanation:
         
@@ -25,7 +26,6 @@ BEGIN
 	DECLARE	CATEGORY_GROUP_PROBATION	INT DEFAULT 206;
 	DECLARE lv_CurrentTime 				DATETIME DEFAULT CURRENT_TIMESTAMP();
 	DECLARE lv_CurrentDate 				DATE DEFAULT CURRENT_DATE();
-    DECLARE lv_LastDayProbation 		DATE DEFAULT DATE_SUB(lv_CurrentDate, INTERVAL 14 DAY); /*Up to 15 Last Day*/
        
     DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
     CREATE TEMPORARY TABLE Temp_Cust(
@@ -84,10 +84,11 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport AS cls ON cls.CustID = tmpIc.CustID AND cls.SportID = tmpIc.SportGroup
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cls.CategoryID;
 	
-	#3. Get Probation info
+	#3. Get Probation info    
 	UPDATE Temp_CustCategory AS tmpCc
 		INNER JOIN CTS_DataCenter.ProbationAccountMonitor_BySport AS pro ON pro.CustID = tmpCc.CustID
-	SET IsProbationLastDay = (CASE WHEN pro.CreatedDate <= lv_LastDayProbation THEN 1 /*Up to Smart, Risky*/ ELSE 0 END)
+        INNER JOIN CTS_DataCenter.StaticList AS s ON s.ListID = 23 AND s.ItemID = tmpCc.SportGroup 
+	SET IsProbationLastDay = (CASE WHEN pro.CreatedDate <= DATE_SUB(lv_CurrentDate, INTERVAL CAST(s.ItemValue AS UNSIGNED) DAY) THEN 1 /*Up to Smart, Risky*/ ELSE 0 END)
 	WHERE tmpCc.CategoryGroup = CATEGORY_GROUP_PROBATION;
     
     #4. Return data set
