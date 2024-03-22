@@ -4,7 +4,6 @@ DROP procedure IF EXISTS `CTS_DC_SpecialCustClass_Remove`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_SpecialCustClass_Remove`(
     	IN ip_ListCust					JSON    
-	/*	IN ip_CTSCustID     BIGINT UNSIGNED*/
 	,	IN ip_Remark					VARCHAR(500)
     ,   IN ip_RemovedBy					INT
 )
@@ -51,18 +50,6 @@ BEGIN
 									,	SportID			SMALLINT UNSIGNED   	PATH '$.SportID'
 									,	SubscriberID	INT						PATH '$.SubscriberID'
 								)) AS tmp;
-    -- Get customer info
-    /*SELECT CustID
-    INTO lv_CustID
-    FROM CTS_DataCenter.CTSCustomer 
-    WHERE CTSCustID = ip_CTSCustID;    */
-    
-    -- Get CC
-    /*SELECT CustomerClass
-    INTO lv_CustomerClass
-    FROM CTS_DataCenter.SpecialCustomerClass
-    WHERE   CTSCustID = ip_CTSCustID 
-        AND CreatedFromFunction = 1;*/
     
 	/*For General*/
 	IF EXISTS (SELECT 1 FROM Temp_Customer WHERE SportID = 0) THEN
@@ -88,8 +75,6 @@ BEGIN
 		FROM Temp_Customer AS tmp
 		WHERE tmp.SportID = 0;
 
-		/*INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-		VALUES(20, lv_SPName, CONCAT('Remove special customer class: ip_CTSCustID_ ', ip_CTSCustID) , DATE(lv_CurrentDateTime), ip_RemovedBy);*/
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 		SELECT	20 AS LogTypeID
 			,	lv_SPName
@@ -130,6 +115,7 @@ BEGIN
 		FROM Temp_Customer AS tmp
 		WHERE tmp.SportID = 0;
 	END IF;
+
 	/*For BySport*/
 	IF EXISTS (SELECT 1 FROM Temp_Customer WHERE SportID <> 0) THEN
 		-- Remove old CC
@@ -178,7 +164,7 @@ BEGIN
 			,   DATE(lv_CurrentDateTime)
 			,   -1
 			,   ip_Remark
-			,	10
+			,	12
 		FROM Temp_Customer AS tmp
 		WHERE tmp.SportID <> 0;	
 
@@ -192,7 +178,7 @@ BEGIN
 			,   DATE(lv_CurrentDateTime)
 			,   -1
 			,   ip_Remark
-			,	10
+			,	12
 		FROM Temp_Customer AS tmp
 		WHERE tmp.SportID <> 0;
 	END IF;

@@ -15,7 +15,7 @@ BEGIN
 		Original:
 		Revisions: 
 				- 20220908@Casey.Huynh: Created [Redmine ID: #176992]
-                - 20240320@Thomas.Nguyen: Return more column Remark [Redmine ID: #201360]
+                - 20240320@Thomas.Nguyen: Return more Remark, SourceTypeName, SourceTypeID [Redmine ID: #201360]
 
 		Param's Explanation:
         
@@ -37,8 +37,9 @@ BEGIN
 		,	clh.TargetCC
 		,	clh.LastModifiedDate 
 		,	IFNULL(us.UserName, clh.LastModifiedBy) AS CreatedBy
-		,	s.ItemNameDisplay 
+		,	s.ItemNameDisplay AS SourceTypeName
 		,	clh.Remark
+		,	s.ItemID AS SourceTypeID
     FROM	CTS_DataCenter.CTSCustomerClassification_BySport_History AS clh
 		LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON clh.CategoryID = cat.CategoryID
         LEFT JOIN CTS_Admin.CTSUser AS us ON clh.LastModifiedBy = us.UserID
