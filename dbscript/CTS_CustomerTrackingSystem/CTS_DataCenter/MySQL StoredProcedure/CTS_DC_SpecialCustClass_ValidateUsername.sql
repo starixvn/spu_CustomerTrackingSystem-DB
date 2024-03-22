@@ -29,7 +29,7 @@ BEGIN
 
     DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
     CREATE TEMPORARY TABLE Temp_Cust(
-			Username 	    VARCHAR(50) 
+			Username 	    VARCHAR(50)
 		,	CTSCustID	    BIGINT UNSIGNED
 		,	CustID		    INT UNSIGNED
 		,	SportID		    SMALLINT UNSIGNED
@@ -37,8 +37,9 @@ BEGIN
 		,	IsLicenseeVIP	TINYINT
 		,	IsExistedCust   BIT
 		,	ValidatedID	    TINYINT /* 0: not existed in CTS, 1: valid, 2: not a member, 3: marked VVIP, 4: marked Special CC*/
-		,	PRIMARY KEY (CTSCustID, SportID)
-		,	KEY IX_Temp_Cust_IsExistedCust_CTSCustID (IsExistedCust, ValidatedID, SportID)
+		,	PRIMARY KEY (Username,SportID)
+		,	KEY IX_Temp_Cust_CTSCustID_SportID (CTSCustID, SportID)
+		,	KEY IX_Temp_Cust_IsExistedCust_ValidatedID_SportID (IsExistedCust, ValidatedID, SportID)
 	);
     
 	INSERT IGNORE INTO Temp_Cust(Username,CTSCustID,CustID,SportID,SubscriberID,IsLicenseeVIP,IsExistedCust,ValidatedID)
