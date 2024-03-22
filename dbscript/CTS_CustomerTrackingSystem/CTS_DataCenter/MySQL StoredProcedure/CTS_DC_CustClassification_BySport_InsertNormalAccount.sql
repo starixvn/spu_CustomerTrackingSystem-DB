@@ -18,8 +18,9 @@ BEGIN
 				- 20220830@Harvey.Nguyen: Created [Redmine ID: #177434]
 				- 202230426@Long.Luu: Adjust Probation's period from 20 to 15 [Redmine ID: #187433]
                 - 20230704@Jonas.Huynh: Normal Renovation [Redmine ID: #189875]
-               	- 20240318@Jonas.Huynh: Config Probation Days [Redmine ID: #201359]
-                
+				- 20240318@Jonas.Huynh: Config Probation Days [Redmine ID: #201359]
+                - 20240321@Thomas.Nguyen: Add logic for Special CC BySport [Redmine ID: #201360]
+
 		Param's Explanation (filtered by):
         
         Example:
@@ -63,6 +64,7 @@ BEGIN
         ,	TargetCC					SMALLINT
 		, 	ActionType					SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN; 5: Not satisfy Pass Probation*/
         ,	PerformanceTime				DATETIME
+		,	SpecialCC					INT
 		, 	INDEX    			    	IX_Temp_NewClassification(CustID, DWCateID)  
         ,	PRIMARY KEY (CustID, SportID)
 	); 
@@ -143,7 +145,7 @@ BEGIN
     /* 2: EXCLUDE INTERNAL CUSTOMERS */      
     CALL CTS_DC_ExcludeCustByCondition('Temp_NewClassification');
     
-    /* 3: GET CUSTOMER INFO */   
+    /* 3: GET CUSTOMER INFO */
     INSERT IGNORE INTO Temp_ExistedCustomers(CustID, CTSCustID)
     SELECT 	DISTINCT cust.CustID
 		, 	cust.CTSCustID
@@ -155,7 +157,11 @@ BEGIN
 		INNER JOIN Temp_ExistedCustomers AS ec ON temp.CustID = ec.CustID
 	SET		temp.CTSCustID = ec.CTSCustID;
     
-    /*4: GET PROBATION CUSTOMERS */ 
+	UPDATE Temp_NewClassification AS temp
+		INNER JOIN  CTS_DataCenter.SpecialCustomerClass_BySport AS sb ON sb.CTSCustID = temp.CTSCustID AND sb.SportID = temp.SportID
+	SET temp.SpecialCC = sb.CustomerClass;
+
+    /*4: GET PROBATION CUSTOMERS */
     INSERT IGNORE INTO Temp_ProbationCustomers(CustID, SportID, ProbationDate, LastProbationDay)
     SELECT DISTINCT prob.CustID, prob.SportID, prob.CreatedDate, DATE_SUB(lv_CurrentDate, INTERVAL CAST(s.ItemValue AS UNSIGNED) DAY)
     FROM 	Temp_NewClassification AS temp
@@ -225,7 +231,7 @@ BEGIN
     /* 8: GENERATE TARGET CC */
     UPDATE Temp_NewClassification AS tmp 
 		LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = tmp.NewCateID
-	SET 	tmp.TargetCC = cate.CustomerClass
+	SET 	tmp.TargetCC = IFNULL(tmp.SpecialCC, cate.CustomerClass)
 	WHERE 	tmp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE, CONST_ACTIONTYPE_IGNOREPROBATION);
 	
     /* 8 PLUS:  */
@@ -257,7 +263,7 @@ BEGIN
     
     UPDATE Temp_NewClassification AS tmp
 		INNER JOIN CustomerCategory AS cate ON tmp.OldCateID = cate.CategoryID
-    SET tmp.TargetCC =	cate.CustomerClass
+    SET tmp.TargetCC =	IFNULL(tmp.SpecialCC, cate.CustomerClass)
 		,	tmp.NewCateID = tmp.OldCateID
         , 	tmp.NewCateGroup = tmp.OldCateGroup
     WHERE tmp.ActionType = CONST_ACTIONTYPE_IGNOREPROBATION;

@@ -21,7 +21,7 @@ sp: BEGIN
 			-	20220519@Aries.Nguyen: 	Clean data Classification BySport tables   [Redmine ID: #176992]
 			- 	20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
 			- 	20231023@Jonas.Huynh:	HF wrong reactivated category [Redmine ID: #193050]
-			-	20240321@Thomas.Nguyen:	Clean data for Special CC BySport/History and history of special CC general [Redmine ID: #193050]
+			-	20240321@Thomas.Nguyen:	Clean data for Special CC BySport/History and history of special CC general [Redmine ID: #201360]
 
 		Param's Explanation (filtered by):	
         
