@@ -21,6 +21,7 @@ sp: BEGIN
 			-	20220519@Aries.Nguyen: 	Clean data Classification BySport tables   [Redmine ID: #176992]
 			- 	20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
 			- 	20231023@Jonas.Huynh:	HF wrong reactivated category [Redmine ID: #193050]
+			-	20240321@Thomas.Nguyen:	Clean data for Special CC BySport/History and history of special CC general [Redmine ID: #193050]
 
 		Param's Explanation (filtered by):	
         
@@ -1842,10 +1843,124 @@ sp: BEGIN
             SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
-        SET lv_Table = 'CTS_DataCenter.CTSCustomer';
+        SET lv_Table = 'CTS_DataCenter.SpecialCustomerClass_BySport';
 	 END IF;    
-     
-    /*************************************** 36. CTS_DataCenter.CTSCustomer ************************************/
+
+	/*************************************** 37. CTS_DataCenter.SpecialCustomerClass_BySport **************************/
+    IF (lv_Table = 'CTS_DataCenter.SpecialCustomerClass_BySport') THEN
+		IF EXISTS (SELECT 1  FROM CTS_DataCenter.SpecialCustomerClass_BySport As sp WHERE sp.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
+			DROP TEMPORARY TABLE IF EXISTS Temp_SpecialCustomerClass_BySport_Clean;
+			CREATE TEMPORARY TABLE Temp_SpecialCustomerClass_BySport_Clean(
+					CTSCustID   			BIGINT UNSIGNED 
+				,	SportID					SMALLINT
+                ,	PRIMARY KEY(CTSCustID, SportID)
+			);
+            
+            INSERT IGNORE INTO Temp_SpecialCustomerClass_BySport_Clean(CTSCustID, SportID)
+            SELECT 	sp.CTSCustID
+				,	sp.SportID
+			FROM CTS_DataCenter.SpecialCustomerClass_BySport As sp
+			WHERE  sp.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)
+			LIMIT lv_CleanTableBatchSize;
+            
+			DELETE sp
+			FROM CTS_DataCenter.SpecialCustomerClass_BySport AS sp
+				INNER JOIN Temp_SpecialCustomerClass_BySport_Clean AS tmp ON tmp.CTSCustID = sp.CTSCustID
+																AND tmp.SportID = sp.SportID;
+			
+			UPDATE  CTS_DataCenter.SystemParameter 
+			SET ParameterValue = 'CTS_DataCenter.SpecialCustomerClass_BySport'
+			WHERE ParameterID = 46;
+			
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_SpecialCustomerClass_BySport_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
+        END IF;
+        
+        SET lv_Table = 'CTS_DataCenter.SpecialCustomerClass_History';
+	 END IF;    
+
+	/*************************************** 38. CTS_DataCenter.SpecialCustomerClass_History **************************/
+    IF (lv_Table = 'CTS_DataCenter.SpecialCustomerClass_History') THEN
+		IF EXISTS (SELECT 1  FROM CTS_DataCenter.SpecialCustomerClass_History As sp WHERE sp.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
+			DROP TEMPORARY TABLE IF EXISTS Temp_SpecialCustomerClass_History_Clean;
+			CREATE TEMPORARY TABLE Temp_SpecialCustomerClass_History_Clean(
+					ID   BIGINT UNSIGNED PRIMARY KEY
+			);
+            
+            INSERT IGNORE INTO Temp_SpecialCustomerClass_History_Clean(ID)
+            SELECT 	sp.ID
+			FROM CTS_DataCenter.SpecialCustomerClass_History As sp
+			WHERE  sp.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)
+			LIMIT lv_CleanTableBatchSize;
+            
+			DELETE sp
+			FROM CTS_DataCenter.SpecialCustomerClass_History AS sp
+				INNER JOIN Temp_SpecialCustomerClass_History_Clean AS tmp ON tmp.ID = sp.ID
+																AND tmp.SportID = sp.SportID;
+			
+			UPDATE  CTS_DataCenter.SystemParameter 
+			SET ParameterValue = 'CTS_DataCenter.SpecialCustomerClass_History'
+			WHERE ParameterID = 46;
+			
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_SpecialCustomerClass_History_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
+        END IF;
+        
+        SET lv_Table = 'CTS_DataCenter.SpecialCustomerClass_BySport_History';
+	 END IF;
+
+	/*************************************** 39. CTS_DataCenter.SpecialCustomerClass_BySport_History **************************/
+    IF (lv_Table = 'CTS_DataCenter.SpecialCustomerClass_BySport_History') THEN
+		IF EXISTS (SELECT 1  FROM CTS_DataCenter.SpecialCustomerClass_BySport_History As sp WHERE sp.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
+			DROP TEMPORARY TABLE IF EXISTS Temp_SpecialCustomerClass_BySport_History_Clean;
+			CREATE TEMPORARY TABLE Temp_SpecialCustomerClass_BySport_History_Clean(
+					ID   BIGINT UNSIGNED PRIMARY KEY
+			);
+            
+            INSERT IGNORE INTO Temp_SpecialCustomerClass_BySport_History_Clean(ID)
+            SELECT 	sp.ID
+			FROM CTS_DataCenter.SpecialCustomerClass_BySport_History As sp
+			WHERE  sp.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)
+			LIMIT lv_CleanTableBatchSize;
+            
+			DELETE sp
+			FROM CTS_DataCenter.SpecialCustomerClass_BySport_History AS sp
+				INNER JOIN Temp_SpecialCustomerClass_BySport_History_Clean AS tmp ON tmp.ID = sp.ID
+																AND tmp.SportID = sp.SportID;
+			
+			UPDATE  CTS_DataCenter.SystemParameter 
+			SET ParameterValue = 'CTS_DataCenter.SpecialCustomerClass_BySport_History'
+			WHERE ParameterID = 46;
+			
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_SpecialCustomerClass_BySport_History_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
+        END IF;
+        
+        SET lv_Table = 'CTS_DataCenter.CTSCustomer';
+	 END IF;
+
+    /*************************************** 40. CTS_DataCenter.CTSCustomer ************************************/
 	
     DELETE cus
 	FROM CTS_DataCenter.CTSCustomer AS cus
