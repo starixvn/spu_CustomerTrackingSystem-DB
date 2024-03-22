@@ -44,19 +44,18 @@ CREATE TABLE SpecialCustomerClass_History
 );
 
 CREATE TABLE SpecialCustomerClass_BySport (
-  CTSCustID bigint unsigned NOT NULL,
-  CustID int unsigned NOT NULL,
-  SportID SMALLINT UNSIGNED,
-  SubscriberID int NOT NULL,
-  CustomerClass smallint DEFAULT NULL,
-  CreatedBy int NOT NULL,
-  CreatedDate datetime NOT NULL,
-  LastModifiedBy int DEFAULT NULL,
-  LastModifiedDate datetime DEFAULT NULL,
-  /*`CreatedFromFunction` tinyint NOT NULL COMMENT '1: Normal, 11: VVIP, 21: Pin Category',*/
-  PRIMARY KEY (CTSCustID,SportID),
-  KEY IX_SpecialCustomerClass_SubscriberID (SubscriberID),
-  KEY IX_SpecialCustomerClass_CustID (CustID)
+	CTSCustID bigint unsigned NOT NULL,
+	CustID int unsigned NOT NULL,
+	SportID SMALLINT UNSIGNED,
+	SubscriberID int NOT NULL,
+	CustomerClass smallint DEFAULT NULL,
+	CreatedBy int NOT NULL,
+	CreatedDate datetime NOT NULL,
+	LastModifiedBy int DEFAULT NULL,
+	LastModifiedDate datetime DEFAULT NULL,
+	PRIMARY KEY (CTSCustID,SportID),
+	KEY IX_SpecialCustomerClass_BySport_SubscriberID (SubscriberID),
+	KEY IX_SpecialCustomerClass_BySport_CustID (CustID)
 );
 
 
@@ -75,5 +74,5 @@ CREATE TABLE SpecialCustomerClass_BySport_History
 	ActionType tinyint,
 	Remark varchar(500) COLLATE utf8_unicode_ci DEFAULT NULL,
 	PRIMARY KEY (ID),
-	KEY IX_SpecialCustomerClass_History_CTSCustID (CTSCustID)
+	KEY IX_SpecialCustomerClass_BySport_History_CTSCustID (CTSCustID)
 );
