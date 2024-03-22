@@ -361,7 +361,7 @@ BEGIN
 		,	(CASE WHEN cat.IsDangerProbation = 1 THEN CONST_LICVIPNORMAL_CATEGORYID ELSE CONST_LICVIPPROBLEM_CATEGORYID END)
 		,	(CASE WHEN cat.IsDangerProbation = 1 THEN lv_LicVIPNormal_CC ELSE lv_LicVIPProblem_CC END)	
     FROM Temp_PA AS tmpPa 
-		INNER JOIN CustomerCategory AS cat ON tmpPa.CategoryID = cat.CategoryID;
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON tmpPa.CategoryID = cat.CategoryID;
     
 	INSERT IGNORE INTO Temp_VIPCust(CustID, CategoryID, CustomerClass, IsChanged)
     SELECT	cus.CustID
@@ -506,7 +506,7 @@ BEGIN
     
 		# INSERT SMA PA TO QUEUE PA AS 
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationQueue(CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryID, CategoryGroup, LastDownlineCTSCustID
-			, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, ActionType, InsertTime, TVSRequestID)
+			, IsFromTVS, IsFromTW, IsFromCTS, ActionType, InsertTime, TVSRequestID)
 		SELECT tmpPa.CTSCustID
 			,	tmpPa.CustID
 			,	tmpPa.RoleID
@@ -519,7 +519,6 @@ BEGIN
             ,	tmpPa.IsFromTVS AS IsFromTVS
             ,	tmpPa.IsFromTW AS IsFromTW
             ,	tmpPa.IsFromCTS AS IsFromCTS
-            ,	tmpPa.IsFromAI AS IsFromAI
 			,	3 AS ActionType # 0: Mark PA
 			,	CURRENT_TIMESTAMP(3) AS InsertTime
 			,	tmpPa.TVSRequestID
