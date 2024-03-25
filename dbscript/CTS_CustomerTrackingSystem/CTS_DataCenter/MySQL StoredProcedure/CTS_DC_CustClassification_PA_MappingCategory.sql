@@ -291,7 +291,7 @@ BEGIN
 
 		INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, RoleID, SubscriberID, InputCategoryID, InputCategoryGroup,  IsLicensee, CreatedBy, Remark, IsDirectPA
 			, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, SpecialCC, IsProbation, RelevantCategoryID
-			, TVSRequestID, ReasonID, PinCTSCustID, IsParlay, SportType, IssueTypeID, GroupPriority)
+			, TVSRequestID, ReasonID, PinCTSCustID, IsParlay, SportType, IssueTypeID, GroupPriority, ParentID)
 		SELECT	DISTINCT tmpJs.CustID
 			,	cus.CTSCustID
 			,	cus.RoleID
@@ -357,8 +357,8 @@ BEGIN
 					 WHERE cat.ReasonID = CASE WHEN tmpJs.IssueTypeID = 13 AND tmpR.ReasonID IS NOT NULL THEN tmpR.MappingReasonID
 											   ELSE tmpJs.ReasonID END
 					 LIMIT 1) tmpLtr;
-		                
-		CALL CTS_DC_CustClassification_PA_RemoveOldTVSRequest(); 
+    
+		CALL CTS_DataCenter.CTS_DC_CustClassification_PA_RemoveOldTVSRequest(); 
         
         INSERT INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
 		SELECT DISTINCT t.CustID
@@ -368,7 +368,7 @@ BEGIN
 				END AS WinlossStatus
 		FROM Temp_PA AS t
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS c ON t.CustID = c.CustID
-            INNER JOIN CustomerCategory AS cc ON c.CategoryID = cc.CategoryID
+            INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON c.CategoryID = cc.CategoryID
 		WHERE c.SportGroupID = 0;
 		
 		UPDATE Temp_PA AS t

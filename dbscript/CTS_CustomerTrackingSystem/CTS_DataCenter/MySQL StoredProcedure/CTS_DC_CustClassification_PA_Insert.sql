@@ -1,5 +1,5 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_PA_Insert`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_PA_Insert`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_PA_Insert`(
@@ -131,7 +131,7 @@ BEGIN
 	);
     
     #================Mapping Category================
-    CALL CTS_DC_CustClassification_PA_MappingCategory(ip_InputType,ip_ProblemAccounts);
+    CALL CTS_DataCenter.CTS_DC_CustClassification_PA_MappingCategory(ip_InputType,ip_ProblemAccounts);
 
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationOldCategory(CustID, CTSCustID, SubscriberID, SportGroupID, CategoryID, Remark, CreatedDate
 		, CreatedBy, LastModifiedDate, LastModifiedBy
