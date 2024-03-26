@@ -19,7 +19,7 @@ AS
 		- 20230630@Jonas.Huynh: Created [Redmine ID: #189875]
 		- 20230726@Jonas.Huynh: Saba Classification [Redmine ID: #185320]
 		- 20240318@Jonas.Huynh: Renovate Non-Sport Rules [Redmine ID: #201359]
-		- 20240320@Thomas.Nguyen: Add logic for without performance customers removed by manual action [Redmine ID: #201360]
+		- 20240320@Thomas.Nguyen: Classify customers without performance that were removed special CC from manual action [Redmine ID: #201360]
 
 	Param's Explanation:
 		@CustomersXML	 : This parameter is used to classify customer perf which bases on currentCategory
