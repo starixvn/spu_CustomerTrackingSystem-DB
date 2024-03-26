@@ -21,7 +21,7 @@ BEGIN
 		Param's Explanation (filtered by):   
             - ip_ActionType: 0: Add, 2: Remove
 		Example:			
-			- CALL CTS_DataCenter.CTS_DC_SpecialCustClass_ValidateUsername('');
+			- CALL CTS_DataCenter.CTS_DC_SpecialCustClass_ValidateUsername(0,'[{"Username":"member11","SportID":1}]');
 	*/
     
 	DECLARE	CONST_CATEGORYID_VVIP 	INT DEFAULT 210;

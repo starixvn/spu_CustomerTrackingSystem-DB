@@ -23,6 +23,8 @@ BEGIN
 		   - 20240319@Thomas.Nguyen: Add input param SportList and get data for BySport [Redmine ID: #201360]
            
 		Param's Explanation (filtered by):
+		Example:			
+			- CALL CTS_DataCenter.CALL CTS_DC_SpecialCustClass_GetAll(TRUE,'','0,1');
 	*/        
 	DECLARE lv_IsGetSpecialCCGeneral BIT DEFAULT 0;
 
@@ -41,7 +43,7 @@ BEGIN
 	END IF;
 
     IF (ip_IsGetAllInfo = 1) THEN
-		WITH CTESpecialCC AS (
+		WITH CTE_SpecialCC AS (
 			SELECT 	s.CTSCustID
 				,	s.CustID
 				, 	c.UserName
@@ -85,7 +87,7 @@ BEGIN
 			,	cs.CreatedDate
 			,	cs.SportID
 			,	cs.Remark
-		FROM CTESpecialCC AS cs
+		FROM CTE_SpecialCC AS cs
 		ORDER BY cs.CreatedDate DESC;
     ELSE
 		SELECT CustID

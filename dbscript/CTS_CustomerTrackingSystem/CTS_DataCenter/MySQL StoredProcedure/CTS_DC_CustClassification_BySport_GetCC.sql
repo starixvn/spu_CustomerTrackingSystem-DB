@@ -50,8 +50,8 @@ BEGIN
 			,	clss.SportID
 			,	IFNULL(cate.CustomerClass, - 1) AS CustomerClass
 		FROM Temp_CustInfo temp
-			INNER JOIN CTSCustomerClassification_BySport clss ON temp.CustID = clss.CustID AND temp.SportGroup = clss.SportID
-			INNER JOIN CustomerCategory cate ON cate.CategoryID = clss.CategoryID;
+			INNER JOIN CTSCustomerClassification_BySport AS clss ON temp.CustID = clss.CustID AND temp.SportGroup = clss.SportID
+			INNER JOIN CustomerCategory AS cate ON cate.CategoryID = clss.CategoryID;
 	END IF;
 
 END$$

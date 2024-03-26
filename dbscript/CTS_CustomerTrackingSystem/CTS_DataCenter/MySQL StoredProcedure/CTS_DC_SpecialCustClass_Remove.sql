@@ -23,6 +23,8 @@ BEGIN
 			- 20240318@Thomas.Nguyen: Support list custs, add comment/log and special CC by sport [Redmine ID: #201360]
         
 		Param's Explanation (filtered by):
+		Example:
+			- CALL CTS_DataCenter.CALL CTS_DC_SpecialCustClass_Remove('[{"CustID":999,"CTSCustID":999,"SubscriberID":160,"SportID":1}]','removed by admin',8);
 	*/
     
     DECLARE lv_CurrentDateTime  DATETIME DEFAULT CURRENT_TIME();

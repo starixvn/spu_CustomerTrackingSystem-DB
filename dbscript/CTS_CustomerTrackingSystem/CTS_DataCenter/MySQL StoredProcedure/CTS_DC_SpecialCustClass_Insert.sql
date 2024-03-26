@@ -31,6 +31,8 @@ BEGIN
 
 		Param's Explanation (filtered by):
 			- Maximum Customer Class number for input param = 127 
+		Example:
+			- CALL CTS_DataCenter.CTS_DC_SpecialCustClass_Insert('[{"CustID":2237314,"CTSCustID":2485,"SubscriberID":130,"IsLicenseeVIP":0,"SportID":1}]',1001,'added by admin',8);
 	*/    
     
     DECLARE	lv_CurrentDateTime		DATETIME DEFAULT CURRENT_TIME();
