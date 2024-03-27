@@ -73,6 +73,7 @@ AS
 		- 20231120@Casey.Huynh:	Enhance Rule for Esport. Adjust Group Stake to 300, Add AssociationByIP, ShareMatch(3 Match(last 7 day) [Redmine ID: #196396]
 		- 20240129@Casey.Huynh: Support Danger Monitor Details In 7 days [Redmine ID: #196361]
 		- 20240129@Thomas.Nguyen: Return more column MalayOdds and add filter by Cashout [Redmine ID: #199634]
+		- 20240322@Vitoria.Le: 	Optimize query by considering to remove temporarily table  [Redmine ID: #201380]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize)
@@ -127,6 +128,15 @@ BEGIN
 		,	@IsGetDataFromBK		BIT = 0;
 		
 	SET @ToTransDate = DATEADD(SECOND,1,@ToTransDate);
+	--==================================================================
+	DECLARE @tmpBUMBData AS TABLE (BUDay DATETIME,	MBDay DATETIME);
+	DECLARE @tmpSupportedCurrency AS TABLE (CurrencyId TINYINT);
+	DECLARE @tmpSupportedReason AS TABLE (Reason VARCHAR(50) DEFAULT '0' PRIMARY KEY);
+	DECLARE @tmpSupportedHDP AS TABLE (Hdp SMALLMONEY);
+	DECLARE @tmpSupportedBetTeam AS TABLE (BetTeam	NVARCHAR(10));
+	DECLARE @tmpSupportedStatus AS TABLE (StatusID TINYINT);
+	DECLARE @tmpSupportedDanger AS TABLE (Danger1 TINYINT, Danger2 TINYINT, Danger3 TINYINT, Danger4 TINYINT, Danger5 TINYINT);
+	
 	--==================================================================
 	IF	OBJECT_ID('tempdb..#tmpTickets') IS NOT NULL
 	BEGIN
@@ -198,16 +208,6 @@ BEGIN
 	CREATE NONCLUSTERED INDEX #IX_tmpTickets_IsCashout ON #tmpTickets (
 			IsCashout		ASC
 	);
-
-	IF	OBJECT_ID('tempdb..#tmpBUMBData') IS NOT NULL
-	BEGIN;
-		DROP TABLE	#tmpBUMBData;
-	END;
-
-	CREATE TABLE	#tmpBUMBData (
-			BUDay	SMALLDATETIME
-		,	MBDay	SMALLDATETIME
-	);
 	
 	IF	OBJECT_ID('tempdb..#tmpTransIds') IS NOT NULL
 	BEGIN
@@ -243,25 +243,6 @@ BEGIN
 	
 	CREATE INDEX IX_tmpSportBettype_SportTypeIDBetTypeID ON #tmpSportBettype(SportTypeID, BetTypeID);
 
-	IF	OBJECT_ID('tempdb..#tmpSupportedCurrency') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpSupportedCurrency;
-	END;
-
-	CREATE TABLE	#tmpSupportedCurrency(
-			CurrencyId			TINYINT
-	);
-
-	IF	OBJECT_ID('tempdb..#tmpSupportedReason') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpSupportedReason;
-	END;
-
-	CREATE TABLE	#tmpSupportedReason(
-			Reason		VARCHAR(50) DEFAULT '0' PRIMARY KEY 
-	);
-
-
 	IF	OBJECT_ID('tempdb..#tmpSupportedMGroup') IS NOT NULL
 	BEGIN
 		DROP TABLE	#tmpSupportedMGroup;
@@ -280,15 +261,6 @@ BEGIN
 			AGroup		INT PRIMARY KEY 
 	);
 
-	IF	OBJECT_ID('tempdb..#tmpSupportedHDP') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpSupportedHDP;
-	END;
-
-	CREATE TABLE	#tmpSupportedHDP(
-			Hdp					SMALLMONEY
-	);
-
 	IF	OBJECT_ID('tempdb..#tmpSupportedScore') IS NOT NULL
 	BEGIN
 		DROP TABLE	#tmpSupportedScore;
@@ -297,37 +269,6 @@ BEGIN
 	CREATE TABLE	#tmpSupportedScore(
 			LiveHomeScore		SMALLINT
 		,	LiveAwayScore		SMALLINT
-	);
-
-	IF	OBJECT_ID('tempdb..#tmpSupportedBetTeam') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpSupportedBetTeam;
-	END;
-
-	CREATE TABLE	#tmpSupportedBetTeam(
-			BetTeam				NVARCHAR(10)
-	);
-
-	IF	OBJECT_ID('tempdb..#tmpSupportedStatus') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpSupportedStatus;
-	END;
-
-	CREATE TABLE	#tmpSupportedStatus(
-			StatusID			TINYINT
-	);
-
-	IF	OBJECT_ID('tempdb..#tmpSupportedDanger') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpSupportedDanger;
-	END;
-
-	CREATE TABLE	#tmpSupportedDanger(
-			Danger1				TINYINT 
-		,	Danger2				TINYINT 
-		,	Danger3				TINYINT
-		,	Danger4				TINYINT
-		,	Danger5				TINYINT 
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpCustomerClass') IS NOT NULL
@@ -366,13 +307,10 @@ BEGIN
 	);
 
 	--=======GET BALANCE UP/ MOVE BET DAY===========================================================
-	INSERT INTO #tmpBUMBData(BUDay,MBDay)
+	INSERT INTO @tmpBUMBData(BUDay,MBDay)
 	EXECUTE bodb02.dbo.Age_SelBalanceUpDay;
 
-	SELECT	TOP(1)
-			@BalanceUpDay	= BUDay
-		,	@MoveBetsDay	= MBDay
-	FROM #tmpBUMBData WITH(NOLOCK);
+	SELECT	TOP(1) @BalanceUpDay	= BUDay , @MoveBetsDay	= MBDay FROM @tmpBUMBData ;
 
 	IF @EventDate < @BalanceUpDay
 	BEGIN
@@ -916,7 +854,7 @@ BEGIN
 			--========================Fitler By Danger==================		
 			IF (@ListDanger IS NOT NULL)
 			BEGIN
-				INSERT INTO #tmpSupportedDanger (Danger1,Danger2,Danger3,Danger4,Danger5)
+				INSERT INTO @tmpSupportedDanger (Danger1,Danger2,Danger3,Danger4,Danger5)
 				SELECT	ISNULL(JSON_VALUE(ssk.value, '$.Danger1'),0) AS Danger1
 					,	ISNULL(JSON_VALUE(ssk.value, '$.Danger2'),0) AS Danger2
 					,	ISNULL(JSON_VALUE(ssk.value, '$.Danger3'),0) AS Danger3
@@ -924,15 +862,15 @@ BEGIN
 					,	ISNULL(JSON_VALUE(ssk.value, '$.Danger5'),0) AS Danger5
 				FROM OPENJSON (@ListDanger) AS ssk;
 				
-				IF NOT EXISTS (SELECT 1 FROM #tmpSupportedDanger AS t WHERE t.Danger1 = 0 AND t.Danger2 = 0 AND t.Danger3 = 0 AND t.Danger4 = 0 AND t.Danger5 = 0)
+				IF NOT EXISTS (SELECT 1 FROM @tmpSupportedDanger AS t WHERE t.Danger1 = 0 AND t.Danger2 = 0 AND t.Danger3 = 0 AND t.Danger4 = 0 AND t.Danger5 = 0)
 				BEGIN
 					DELETE t
 					FROM #tmpTickets AS t
-						LEFT JOIN #tmpSupportedDanger AS d1 ON d1.Danger1 = t.Danger1 AND t.Danger1 > 0
-						LEFT JOIN #tmpSupportedDanger AS d2 ON d2.Danger2 = t.Danger2 AND t.Danger2 > 0
-						LEFT JOIN #tmpSupportedDanger AS d3 ON d3.Danger3 = t.Danger3 AND t.Danger3 > 0
-						LEFT JOIN #tmpSupportedDanger AS d4 ON d4.Danger4 = t.Danger4 AND t.Danger4 > 0
-						LEFT JOIN #tmpSupportedDanger AS d5 ON d5.Danger5 = t.Danger5 AND t.Danger5 > 0
+						LEFT JOIN @tmpSupportedDanger AS d1 ON d1.Danger1 = t.Danger1 AND t.Danger1 > 0
+						LEFT JOIN @tmpSupportedDanger AS d2 ON d2.Danger2 = t.Danger2 AND t.Danger2 > 0
+						LEFT JOIN @tmpSupportedDanger AS d3 ON d3.Danger3 = t.Danger3 AND t.Danger3 > 0
+						LEFT JOIN @tmpSupportedDanger AS d4 ON d4.Danger4 = t.Danger4 AND t.Danger4 > 0
+						LEFT JOIN @tmpSupportedDanger AS d5 ON d5.Danger5 = t.Danger5 AND t.Danger5 > 0
 					WHERE d1.Danger1 IS NULL 
 						AND d2.Danger2 IS NULL 
 						AND d3.Danger3 IS NULL
@@ -943,11 +881,11 @@ BEGIN
 				BEGIN
 					DELETE t
 					FROM #tmpTickets AS t
-						LEFT JOIN #tmpSupportedDanger AS d1 ON d1.Danger1 = t.Danger1 AND t.Danger1 > 0
-						LEFT JOIN #tmpSupportedDanger AS d2 ON d2.Danger2 = t.Danger2 AND t.Danger2 > 0
-						LEFT JOIN #tmpSupportedDanger AS d3 ON d3.Danger3 = t.Danger3 AND t.Danger3 > 0
-						LEFT JOIN #tmpSupportedDanger AS d4 ON d4.Danger4 = t.Danger4 AND t.Danger4 > 0
-						LEFT JOIN #tmpSupportedDanger AS d5 ON d5.Danger5 = t.Danger5 AND t.Danger5 > 0
+						LEFT JOIN @tmpSupportedDanger AS d1 ON d1.Danger1 = t.Danger1 AND t.Danger1 > 0
+						LEFT JOIN @tmpSupportedDanger AS d2 ON d2.Danger2 = t.Danger2 AND t.Danger2 > 0
+						LEFT JOIN @tmpSupportedDanger AS d3 ON d3.Danger3 = t.Danger3 AND t.Danger3 > 0
+						LEFT JOIN @tmpSupportedDanger AS d4 ON d4.Danger4 = t.Danger4 AND t.Danger4 > 0
+						LEFT JOIN @tmpSupportedDanger AS d5 ON d5.Danger5 = t.Danger5 AND t.Danger5 > 0
 					WHERE NOT (t.Danger1 = 0 AND t.Danger2 = 0 AND t.Danger3 = 0 AND t.Danger4 = 0 AND t.Danger5 = 0)
 						AND d1.Danger1 IS NULL 
 						AND d2.Danger2 IS NULL 
@@ -961,19 +899,19 @@ BEGIN
 			--========================Filter By Currency==================	
 			IF (@ListCurrency IS NOT NULL)
 			BEGIN
-				INSERT INTO #tmpSupportedCurrency (CurrencyId)
+				INSERT INTO @tmpSupportedCurrency (CurrencyId)
 				SELECT ssk.value FROM STRING_SPLIT(@ListCurrency, ',') ssk;
 
 				DELETE t
 				FROM #tmpTickets AS t
-					LEFT JOIN #tmpSupportedCurrency AS curr ON curr.CurrencyId = t.CurrencyId
+					LEFT JOIN @tmpSupportedCurrency AS curr ON curr.CurrencyId = t.CurrencyId
 				WHERE curr.CurrencyId IS NULL;
 			END;
 
 			--========================Fitler By Reason==================
 			IF @ListReason <> ''
 			BEGIN
-				INSERT INTO #tmpSupportedReason (Reason)
+				INSERT INTO @tmpSupportedReason (Reason)
 				SELECT ssk.value FROM STRING_SPLIT(@ListReason, ',') ssk;				
 				
 				--Delete Dup ticket 
@@ -982,7 +920,7 @@ BEGIN
 					,	STRING_AGG(tmpRs.Reason, ',') WITHIN GROUP (ORDER BY tmpRs.Reason) AS Reason
 					,	MIN(tmpRs.Reason)
 				FROM #tmpTransIds AS tmpTr WITH(NOLOCK)
-					LEFT JOIN #tmpSupportedReason AS tmpRs ON tmpRs.Reason = tmpTr.Reason
+					LEFT JOIN @tmpSupportedReason AS tmpRs ON tmpRs.Reason = tmpTr.Reason
 				GROUP BY TransID;
 
 				UPDATE tmpTk
@@ -994,7 +932,7 @@ BEGIN
 				--Delete ticket is not in Reason Filter
 				DELETE t
 				FROM #tmpTickets AS t
-					LEFT JOIN #tmpSupportedReason AS c ON c.Reason = ISNULL(t.Reason,'0')
+					LEFT JOIN @tmpSupportedReason AS c ON c.Reason = ISNULL(t.Reason,'0')
 				WHERE c.Reason IS NULL;				
 
 			END;
@@ -1031,12 +969,12 @@ BEGIN
 							WHERE st.BetChoiceType = 1) --Filter Betteam
 				BEGIN
 		
-					INSERT INTO #tmpSupportedBetTeam (BetTeam)
+					INSERT INTO @tmpSupportedBetTeam (BetTeam)
 					SELECT ssk.value FROM STRING_SPLIT(@ListHDPBetTeam, ',') ssk;
 					
 					DELETE t
 					FROM #tmpTickets AS t
-						LEFT JOIN #tmpSupportedBetTeam AS bt ON bt.BetTeam = t.BetTeam
+						LEFT JOIN @tmpSupportedBetTeam AS bt ON bt.BetTeam = t.BetTeam
 					WHERE bt.BetTeam IS NULL;
 				
 				END
@@ -1044,12 +982,12 @@ BEGIN
 							FROM #tmpSportBettype AS st WITH(NOLOCK) 
 							WHERE st.BetChoiceType = 2)
 				BEGIN
-					INSERT INTO #tmpSupportedHDP (Hdp) --Filter HDP
+					INSERT INTO @tmpSupportedHDP (Hdp) --Filter HDP
 					SELECT ssk.value FROM STRING_SPLIT(@ListHDPBetTeam, ',') ssk;
 
 					DELETE t
 					FROM #tmpTickets AS t
-						LEFT JOIN #tmpSupportedHDP AS h ON h.Hdp = t.Hdp
+						LEFT JOIN @tmpSupportedHDP AS h ON h.Hdp = t.Hdp
 					WHERE h.Hdp IS NULL;
 				END;
 			END;			
@@ -1057,12 +995,12 @@ BEGIN
 			--========================Fitler By Status==================	
 			IF (@ListStatus IS NOT NULL)
 			BEGIN
-				INSERT INTO #tmpSupportedStatus (StatusID)
+				INSERT INTO @tmpSupportedStatus (StatusID)
 				SELECT ssk.value FROM STRING_SPLIT(@ListStatus, ',') ssk;
 				
 				DELETE t
 				FROM #tmpTickets AS t
-					LEFT JOIN #tmpSupportedStatus AS s ON s.StatusID = t.TicketStatus
+					LEFT JOIN @tmpSupportedStatus AS s ON s.StatusID = t.TicketStatus
 				WHERE s.StatusID IS NULL;
 			END;		
 
@@ -1139,7 +1077,7 @@ BEGIN
 						INNER JOIN dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
 						INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID 
 						INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
-					WHERE (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
+					WHERE (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
 
 				END;
 				ELSE IF (@TicketType = 0)
@@ -1559,8 +1497,17 @@ BEGIN
 			,	t.Danger5		= c.Danger5
 			,	t.CustomerClass	= c.CustomerClass
 			FROM #tmpTickets AS t
-				INNER JOIN dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
-				INNER JOIN dbo.Dep_CustSuper AS cs WITH (NOLOCK) ON cs.custid = c.srecommend;
+				INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
+				INNER JOIN bodb02.dbo.Customer AS cust WITH(NOLOCK) ON cust.CustId = c.custid
+				INNER JOIN bodb02.dbo.Dep_CustSuper AS cs WITH (NOLOCK) ON cs.custid = c.srecommend
+			WHERE cust.site NOT IN ('Nextbet','9wickets','9wsports')
+			AND cust.username NOT LIKE '%Cashout%'
+			AND cust.mrecommend NOT IN (27899314,11656504,12146012) 
+			AND cust.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+			AND (CASE WHEN @IsExclTestCurr = 0 THEN 1 
+					  WHEN @IsExclTestCurr = 1 AND cust.currency NOT IN (20,27,28) THEN 1 
+					  ELSE 0 END = 1)
+			AND cust.srecommend NOT IN (41430709);
 
 			UPDATE t WITH(ROWLOCK, UPDLOCK)
 			SET t.IsLicensee	= 0
@@ -1572,8 +1519,19 @@ BEGIN
 			,	t.CustomerClass	= c.CustomerClass
 			FROM #tmpTickets AS t
 				INNER JOIN dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
+				INNER JOIN bodb02.dbo.Customer AS cust WITH(NOLOCK) ON cust.CustId = c.custid
 				INNER JOIN dbo.CustProductStatus AS s WITH (NOLOCK) ON s.custid = c.custid
-			WHERE t.IsLicensee IS NULL;
+			WHERE t.IsLicensee IS NULL
+			AND cust.site NOT IN ('Nextbet','9wickets','9wsports')
+			AND cust.username NOT LIKE '%Cashout%'
+			AND cust.mrecommend NOT IN (27899314,11656504,12146012) 
+			AND cust.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+			AND (CASE WHEN @IsExclTestCurr = 0 THEN 1 
+					  WHEN @IsExclTestCurr = 1 AND cust.currency NOT IN (20,27,28) THEN 1 
+					  ELSE 0 END = 1)
+			AND cust.srecommend NOT IN (41430709);
+			
+			DELETE FROM #tmpTickets WHERE IsLicensee IS NULL;
 
 			----==================FILTERS=========================		
 			
@@ -1617,7 +1575,7 @@ BEGIN
 			--========================Fitler By Danger==================		
 			IF (@ListDanger IS NOT NULL)
 			BEGIN
-				INSERT INTO #tmpSupportedDanger (Danger1,Danger2,Danger3,Danger4,Danger5)
+				INSERT INTO @tmpSupportedDanger (Danger1,Danger2,Danger3,Danger4,Danger5)
 				SELECT	ISNULL(JSON_VALUE(ssk.value, '$.Danger1'),0) AS Danger1
 					,	ISNULL(JSON_VALUE(ssk.value, '$.Danger2'),0) AS Danger2
 					,	ISNULL(JSON_VALUE(ssk.value, '$.Danger3'),0) AS Danger3
@@ -1625,15 +1583,15 @@ BEGIN
 					,	ISNULL(JSON_VALUE(ssk.value, '$.Danger5'),0) AS Danger5
 				FROM OPENJSON (@ListDanger) AS ssk;
 				
-				IF NOT EXISTS (SELECT 1 FROM #tmpSupportedDanger AS t WHERE t.Danger1 = 0 AND t.Danger2 = 0 AND t.Danger3 = 0 AND t.Danger4 = 0 AND t.Danger5 = 0)
+				IF NOT EXISTS (SELECT 1 FROM @tmpSupportedDanger AS t WHERE t.Danger1 = 0 AND t.Danger2 = 0 AND t.Danger3 = 0 AND t.Danger4 = 0 AND t.Danger5 = 0)
 				BEGIN
 					DELETE t
 					FROM #tmpTickets AS t
-						LEFT JOIN #tmpSupportedDanger AS d1 ON d1.Danger1 = t.Danger1 AND t.Danger1 > 0
-						LEFT JOIN #tmpSupportedDanger AS d2 ON d2.Danger2 = t.Danger2 AND t.Danger2 > 0
-						LEFT JOIN #tmpSupportedDanger AS d3 ON d3.Danger3 = t.Danger3 AND t.Danger3 > 0
-						LEFT JOIN #tmpSupportedDanger AS d4 ON d4.Danger4 = t.Danger4 AND t.Danger4 > 0
-						LEFT JOIN #tmpSupportedDanger AS d5 ON d5.Danger5 = t.Danger5 AND t.Danger5 > 0
+						LEFT JOIN @tmpSupportedDanger AS d1 ON d1.Danger1 = t.Danger1 AND t.Danger1 > 0
+						LEFT JOIN @tmpSupportedDanger AS d2 ON d2.Danger2 = t.Danger2 AND t.Danger2 > 0
+						LEFT JOIN @tmpSupportedDanger AS d3 ON d3.Danger3 = t.Danger3 AND t.Danger3 > 0
+						LEFT JOIN @tmpSupportedDanger AS d4 ON d4.Danger4 = t.Danger4 AND t.Danger4 > 0
+						LEFT JOIN @tmpSupportedDanger AS d5 ON d5.Danger5 = t.Danger5 AND t.Danger5 > 0
 					WHERE d1.Danger1 IS NULL 
 						AND d2.Danger2 IS NULL 
 						AND d3.Danger3 IS NULL
@@ -1644,11 +1602,11 @@ BEGIN
 				BEGIN
 					DELETE t
 					FROM #tmpTickets AS t
-						LEFT JOIN #tmpSupportedDanger AS d1 ON d1.Danger1 = t.Danger1 AND t.Danger1 > 0
-						LEFT JOIN #tmpSupportedDanger AS d2 ON d2.Danger2 = t.Danger2 AND t.Danger2 > 0
-						LEFT JOIN #tmpSupportedDanger AS d3 ON d3.Danger3 = t.Danger3 AND t.Danger3 > 0
-						LEFT JOIN #tmpSupportedDanger AS d4 ON d4.Danger4 = t.Danger4 AND t.Danger4 > 0
-						LEFT JOIN #tmpSupportedDanger AS d5 ON d5.Danger5 = t.Danger5 AND t.Danger5 > 0
+						LEFT JOIN @tmpSupportedDanger AS d1 ON d1.Danger1 = t.Danger1 AND t.Danger1 > 0
+						LEFT JOIN @tmpSupportedDanger AS d2 ON d2.Danger2 = t.Danger2 AND t.Danger2 > 0
+						LEFT JOIN @tmpSupportedDanger AS d3 ON d3.Danger3 = t.Danger3 AND t.Danger3 > 0
+						LEFT JOIN @tmpSupportedDanger AS d4 ON d4.Danger4 = t.Danger4 AND t.Danger4 > 0
+						LEFT JOIN @tmpSupportedDanger AS d5 ON d5.Danger5 = t.Danger5 AND t.Danger5 > 0
 					WHERE NOT (t.Danger1 = 0 AND t.Danger2 = 0 AND t.Danger3 = 0 AND t.Danger4 = 0 AND t.Danger5 = 0)
 						AND d1.Danger1 IS NULL 
 						AND d2.Danger2 IS NULL 
@@ -1662,19 +1620,19 @@ BEGIN
 			--========================Filter By Currency==================	
 			IF (@ListCurrency IS NOT NULL)
 			BEGIN
-				INSERT INTO #tmpSupportedCurrency (CurrencyId)
+				INSERT INTO @tmpSupportedCurrency (CurrencyId)
 				SELECT ssk.value FROM STRING_SPLIT(@ListCurrency, ',') ssk;
 
 				DELETE t
 				FROM #tmpTickets AS t
-					LEFT JOIN #tmpSupportedCurrency AS curr ON curr.CurrencyId = t.CurrencyId
+					LEFT JOIN @tmpSupportedCurrency AS curr ON curr.CurrencyId = t.CurrencyId
 				WHERE curr.CurrencyId IS NULL;
 			END;
 
 			--========================Fitler By Reason==================
 			IF @ListReason <> ''
 			BEGIN
-				INSERT INTO #tmpSupportedReason (Reason)
+				INSERT INTO @tmpSupportedReason (Reason)
 				SELECT ssk.value FROM STRING_SPLIT(@ListReason, ',') ssk;				
 				
 				--Delete Dup ticket 
@@ -1683,7 +1641,7 @@ BEGIN
 					,	STRING_AGG(tmpRs.Reason, ',') WITHIN GROUP (ORDER BY tmpRs.Reason) AS Reason
 					,	MIN(tmpRs.Reason)
 				FROM #tmpTransIds AS tmpTr WITH(NOLOCK)
-					LEFT JOIN #tmpSupportedReason AS tmpRs ON tmpRs.Reason = tmpTr.Reason
+					LEFT JOIN @tmpSupportedReason AS tmpRs ON tmpRs.Reason = tmpTr.Reason
 				GROUP BY TransID;
 
 				UPDATE tmpTk
@@ -1695,7 +1653,7 @@ BEGIN
 				--Delete ticket is not in Reason Filter
 				DELETE t
 				FROM #tmpTickets AS t
-					LEFT JOIN #tmpSupportedReason AS c ON c.Reason = ISNULL(t.Reason,'0')
+					LEFT JOIN @tmpSupportedReason AS c ON c.Reason = ISNULL(t.Reason,'0')
 				WHERE c.Reason IS NULL;				
 
 			END;
@@ -1732,12 +1690,12 @@ BEGIN
 							WHERE st.BetChoiceType = 1) --Filter Betteam
 				BEGIN
 		
-					INSERT INTO #tmpSupportedBetTeam (BetTeam)
+					INSERT INTO @tmpSupportedBetTeam (BetTeam)
 					SELECT ssk.value FROM STRING_SPLIT(@ListHDPBetTeam, ',') ssk;
 					
 					DELETE t
 					FROM #tmpTickets AS t
-						LEFT JOIN #tmpSupportedBetTeam AS bt ON bt.BetTeam = t.BetTeam
+						LEFT JOIN @tmpSupportedBetTeam AS bt ON bt.BetTeam = t.BetTeam
 					WHERE bt.BetTeam IS NULL;
 				
 				END
@@ -1745,12 +1703,12 @@ BEGIN
 							FROM #tmpSportBettype AS st WITH(NOLOCK) 
 							WHERE st.BetChoiceType = 2)
 				BEGIN
-					INSERT INTO #tmpSupportedHDP (Hdp) --Filter HDP
+					INSERT INTO @tmpSupportedHDP (Hdp) --Filter HDP
 					SELECT ssk.value FROM STRING_SPLIT(@ListHDPBetTeam, ',') ssk;
 
 					DELETE t
 					FROM #tmpTickets AS t
-						LEFT JOIN #tmpSupportedHDP AS h ON h.Hdp = t.Hdp
+						LEFT JOIN @tmpSupportedHDP AS h ON h.Hdp = t.Hdp
 					WHERE h.Hdp IS NULL;
 				END;
 			END;			
@@ -1758,12 +1716,12 @@ BEGIN
 			--========================Fitler By Status==================	
 			IF (@ListStatus IS NOT NULL)
 			BEGIN
-				INSERT INTO #tmpSupportedStatus (StatusID)
+				INSERT INTO @tmpSupportedStatus (StatusID)
 				SELECT ssk.value FROM STRING_SPLIT(@ListStatus, ',') ssk;
 				
 				DELETE t
 				FROM #tmpTickets AS t
-					LEFT JOIN #tmpSupportedStatus AS s ON s.StatusID = t.TicketStatus
+					LEFT JOIN @tmpSupportedStatus AS s ON s.StatusID = t.TicketStatus
 				WHERE s.StatusID IS NULL;
 			END;		
 
@@ -1843,12 +1801,12 @@ BEGIN
 	DROP TABLE IF EXISTS #tmpTransIds;
 	DROP TABLE IF EXISTS #tmpTickets;
 	DROP TABLE IF EXISTS #tmpSportBettype;
-	DROP TABLE IF EXISTS #tmpSupportedCurrency;
-	DROP TABLE IF EXISTS #tmpSupportedHDP;
+	DROP TABLE IF EXISTS #tmpSupportedMGroup;
+	DROP TABLE IF EXISTS #tmpSupportedAGroup;
 	DROP TABLE IF EXISTS #tmpSupportedScore;
-	DROP TABLE IF EXISTS #tmpSupportedBetTeam;
-	DROP TABLE IF EXISTS #tmpSupportedStatus;
-	DROP TABLE IF EXISTS #tmpSupportedDanger;
+	DROP TABLE IF EXISTS #tmpCustomerClass;
+	DROP TABLE IF EXISTS #tmpCustAmount;
+	DROP TABLE IF EXISTS #tmpTransIdReason;
 
 END;
 
