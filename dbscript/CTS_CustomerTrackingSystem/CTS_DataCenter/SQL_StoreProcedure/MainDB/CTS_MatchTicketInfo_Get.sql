@@ -380,14 +380,7 @@ BEGIN
 			,	l.LeagueName
 			,	m.EventDate
 			,	m.GlobalShowTime
-			,	(CASE 
-						WHEN m.EventStatus <> 'completed' THEN (CASE 
-																	WHEN m.GlobalShowTime <= GETDATE() THEN @MatchSection_Live
-																	WHEN m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN @MatchSection_Today
-																	WHEN m.EventDate > @Today THEN @MatchSection_Early
-																END)
-						ELSE @MatchSection_Closed
-				END) AS MatchSection
+			,	mss.MatchSection
 			,	m.SportType
 			,	m.homeid AS HomeId
 			,	h.TeamName AS HomeName
@@ -407,6 +400,13 @@ BEGIN
 				INNER JOIN bodb02.dbo.team AS h WITH(NOLOCK) ON h.TeamId = m.homeid 
 				INNER JOIN bodb02.dbo.team AS a WITH(NOLOCK) ON a.TeamId = m.awayid
 				INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid 
+				CROSS APPLY (SELECT TOP 1 ms.Id AS MatchSection
+							 FROM @tmpMatchSection AS ms
+							 WHERE 1 = CASE WHEN ms.Id = @MatchSection_Closed AND m.EventStatus = ms.EventStatus THEN 1
+										    WHEN ms.Id = @MatchSection_Live AND m.GlobalShowTime <= GETDATE() THEN 1
+										    WHEN ms.Id = @MatchSection_Today AND m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN 1
+										    WHEN ms.Id = @MatchSection_Early AND m.EventDate > @Today THEN 1
+											ELSE 0 END) AS mss
 			WHERE l.IsTest = 0 AND m.isTestMatch = 0 AND m.IsDeleted = 0 
 				AND (CASE WHEN @IsExcludeSabaGroup = 1 AND l.LeagueGroupID NOT IN (42,74,108,113,122,151)
 								AND EXISTS (SELECT 1 FROM @tmpSport AS s WHERE m.SportType = s.SportType) THEN 1
@@ -416,13 +416,6 @@ BEGIN
 								AND EXISTS (SELECT 1 FROM @tmpSportSabaLeagueGroup AS sl 
 														WHERE m.SportType = sl.SportType AND l.LeagueGroupID = sl.LeagueGroupID) THEN 1
 						  ELSE 0 END = 1)
-				AND EXISTS (SELECT TOP 1 1 
-							FROM @tmpMatchSection AS ms 
-							WHERE 1 = CASE WHEN ms.Id = @MatchSection_Closed AND m.EventStatus = ms.EventStatus THEN 1
-										   WHEN ms.Id = @MatchSection_Live AND m.GlobalShowTime <= GETDATE() THEN 1
-										   WHEN ms.Id = @MatchSection_Today AND m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN 1
-										   WHEN ms.Id = @MatchSection_Early AND m.EventDate > @Today THEN 1
-										   ELSE 0 END)
 				AND (l.LeagueName LIKE '%' + @LeagueEvent + '%'
 						OR h.TeamName LIKE '%' + @LeagueEvent + '%'
 						OR a.TeamName LIKE '%' + @LeagueEvent + '%')
@@ -436,7 +429,7 @@ BEGIN
 			,	l.LeagueName
 			,	m.EventDate
 			,	m.GlobalShowTime
-			,	@MatchSection_Closed AS MatchSection
+			,	mss.MatchSection
 			,	m.SportType
 			,	m.homeid AS HomeId
 			,	h.TeamName AS HomeName
@@ -456,6 +449,10 @@ BEGIN
 				INNER JOIN bodb02.dbo.team AS h WITH(NOLOCK) ON h.TeamId = m.homeid 
 				INNER JOIN bodb02.dbo.team AS a WITH(NOLOCK) ON a.TeamId = m.awayid
 				INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid 
+				CROSS APPLY (SELECT TOP 1 ms.Id AS MatchSection
+							 FROM @tmpMatchSection AS ms
+							 WHERE 1 = CASE WHEN ms.Id = @MatchSection_Closed AND m.EventStatus = ms.EventStatus THEN 1
+											ELSE 0 END) AS mss
 			WHERE l.IsTest = 0 AND m.isTestMatch = 0
 				AND (CASE WHEN @IsExcludeSabaGroup = 1 AND l.LeagueGroupID NOT IN (42,74,108,113,122,151)
 								AND EXISTS (SELECT 1 FROM @tmpSport AS s WHERE m.SportType = s.SportType) THEN 1
@@ -465,10 +462,6 @@ BEGIN
 								AND EXISTS (SELECT 1 FROM @tmpSportSabaLeagueGroup AS sl 
 														WHERE m.SportType = sl.SportType AND l.LeagueGroupID = sl.LeagueGroupID) THEN 1
 						  ELSE 0 END = 1)
-				AND EXISTS (SELECT TOP 1 1 
-							FROM @tmpMatchSection AS ms 
-							WHERE 1 = CASE WHEN ms.Id = @MatchSection_Closed AND m.EventStatus = ms.EventStatus THEN 1
-										   ELSE 0 END)
 				AND (l.LeagueName LIKE '%' + @LeagueEvent + '%'
 						OR h.TeamName LIKE '%' + @LeagueEvent + '%'
 						OR a.TeamName LIKE '%' + @LeagueEvent + '%')
@@ -477,16 +470,8 @@ BEGIN
 	END
 	ELSE
 	BEGIN
-		SELECT 	tms.MatchId,m.leagueid AS LeagueId,l.LeagueName,m.EventDate,m.GlobalShowTime
-			,	(CASE 
-						WHEN m.EventStatus <> 'completed' THEN (CASE 
-																	WHEN m.GlobalShowTime <= GETDATE() THEN @MatchSection_Live
-																	WHEN m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN @MatchSection_Today
-																	WHEN m.EventDate > @Today THEN @MatchSection_Early
-																END)
-						ELSE @MatchSection_Closed
-				END) AS MatchSection
-			,	m.SportType,m.homeid AS HomeId,h.TeamName AS HomeName,m.awayid AS AwayId,a.TeamName AS AwayName,tms.LiveIndicator
+		SELECT 	tms.MatchId,m.leagueid AS LeagueId,l.LeagueName,m.EventDate,m.GlobalShowTime,mss.MatchSection,m.SportType
+			,	m.homeid AS HomeId,h.TeamName AS HomeName,m.awayid AS AwayId,a.TeamName AS AwayName,tms.LiveIndicator
 			,	tms.Bettype,tms.BetID,tms.BetChoiceType,tms.TotalAmountHome,tms.TotalAmountAway,tms.TotalTicketHome
 			,	tms.TotalTicketAway,tms.IsFrom14
 		FROM #tmpMatchSum AS tms
@@ -494,6 +479,13 @@ BEGIN
 			INNER JOIN bodb02.dbo.team AS h WITH(NOLOCK) ON h.TeamId = m.homeid 
 			INNER JOIN bodb02.dbo.team AS a WITH(NOLOCK) ON a.TeamId = m.awayid
 			INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid 
+			CROSS APPLY (SELECT TOP 1 ms.Id AS MatchSection
+						 FROM @tmpMatchSection AS ms
+						 WHERE 1 = CASE WHEN ms.Id = @MatchSection_Closed AND m.EventStatus = ms.EventStatus THEN 1
+										WHEN ms.Id = @MatchSection_Live AND m.GlobalShowTime <= GETDATE() THEN 1
+										WHEN ms.Id = @MatchSection_Today AND m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN 1
+										WHEN ms.Id = @MatchSection_Early AND m.EventDate > @Today THEN 1
+										ELSE 0 END) AS mss
 		WHERE l.IsTest = 0 AND m.isTestMatch = 0 AND m.IsDeleted = 0 
 			AND (CASE WHEN @IsExcludeSabaGroup = 1 AND l.LeagueGroupID NOT IN (42,74,108,113,122,151)
 							AND EXISTS (SELECT 1 FROM @tmpSport AS s WHERE m.SportType = s.SportType) THEN 1
@@ -503,18 +495,11 @@ BEGIN
 							AND EXISTS (SELECT 1 FROM @tmpSportSabaLeagueGroup AS sl 
 													WHERE m.SportType = sl.SportType AND l.LeagueGroupID = sl.LeagueGroupID) THEN 1
 					  ELSE 0 END = 1)
-			AND EXISTS (SELECT TOP 1 1 
-						FROM @tmpMatchSection AS ms 
-						WHERE 1 = CASE WHEN ms.Id = @MatchSection_Closed AND m.EventStatus = ms.EventStatus THEN 1
-									   WHEN ms.Id = @MatchSection_Live AND m.GlobalShowTime <= GETDATE() THEN 1
-									   WHEN ms.Id = @MatchSection_Today AND m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN 1
-									   WHEN ms.Id = @MatchSection_Early AND m.EventDate > @Today THEN 1
-									   ELSE 0 END)
 			AND (l.LeagueName LIKE '%' + @LeagueEvent + '%'
 					OR h.TeamName LIKE '%' + @LeagueEvent + '%'
 					OR a.TeamName LIKE '%' + @LeagueEvent + '%')
 		UNION ALL
-		SELECT 	tms.MatchId,m.leagueid AS LeagueId,l.LeagueName,m.EventDate,m.GlobalShowTime,@MatchSection_Closed AS MatchSection,m.SportType
+		SELECT 	tms.MatchId,m.leagueid AS LeagueId,l.LeagueName,m.EventDate,m.GlobalShowTime,mss.MatchSection,m.SportType
 			,	m.homeid AS HomeId,h.TeamName AS HomeName,m.awayid AS AwayId,a.TeamName AS AwayName,tms.LiveIndicator
 			,	tms.Bettype,tms.BetID,tms.BetChoiceType,tms.TotalAmountHome,tms.TotalAmountAway,tms.TotalTicketHome
 			,	tms.TotalTicketAway,tms.IsFrom14
@@ -523,6 +508,10 @@ BEGIN
 			INNER JOIN bodb02.dbo.team AS h WITH(NOLOCK) ON h.TeamId = m.homeid 
 			INNER JOIN bodb02.dbo.team AS a WITH(NOLOCK) ON a.TeamId = m.awayid
 			INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid 
+			CROSS APPLY (SELECT TOP 1 ms.Id AS MatchSection
+						 FROM @tmpMatchSection AS ms
+						 WHERE 1 = CASE WHEN ms.Id = @MatchSection_Closed AND m.EventStatus = ms.EventStatus THEN 1
+										ELSE 0 END) AS mss
 		WHERE l.IsTest = 0 AND m.isTestMatch = 0
 			AND (CASE WHEN @IsExcludeSabaGroup = 1 AND l.LeagueGroupID NOT IN (42,74,108,113,122,151)
 							AND EXISTS (SELECT 1 FROM @tmpSport AS s WHERE m.SportType = s.SportType) THEN 1
@@ -532,10 +521,6 @@ BEGIN
 							AND EXISTS (SELECT 1 FROM @tmpSportSabaLeagueGroup AS sl 
 													WHERE m.SportType = sl.SportType AND l.LeagueGroupID = sl.LeagueGroupID) THEN 1
 					  ELSE 0 END = 1)
-			AND EXISTS (SELECT TOP 1 1 
-						FROM @tmpMatchSection AS ms 
-						WHERE 1 = CASE WHEN ms.Id = @MatchSection_Closed AND m.EventStatus = ms.EventStatus THEN 1
-									   ELSE 0 END)
 			AND (l.LeagueName LIKE '%' + @LeagueEvent + '%'
 					OR h.TeamName LIKE '%' + @LeagueEvent + '%'
 					OR a.TeamName LIKE '%' + @LeagueEvent + '%')
