@@ -15,6 +15,7 @@ BEGIN
 		Revisions:
 			- 	20230222@Casey.Huynh: Created [Redmine ID: 181995]
 			- 	20240105@Casey.Huynh: Exclude Lopsided Bet [Redmine ID: 197706]
+            - 	20240327@Casey.Huynh: Fix PK Temp_ExcludeTrans [Redmine ID: 202972]
             
 		Param's Explanation (filtered by):
 		
@@ -58,9 +59,11 @@ BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_ExcludeTrans;
 	CREATE TEMPORARY TABLE Temp_ExcludeTrans(
-			TransID BIGINT UNSIGNED PRIMARY KEY
+			TransID BIGINT UNSIGNED
 		,	ScoreDiff INT
         ,	Reason	INT
+        ,	GroupID BIGINT UNSIGNED
+        ,	PRIMARY KEY PK_Temp_ExcludeTrans_ReasonTransID(Reason,TransID)
 	);   
 	
 	INSERT IGNORE INTO Temp_TransGroup(TransID, ScoreDiff, Reason, GroupID, Betteam, CustID)
@@ -80,12 +83,10 @@ BEGIN
 							,	CustID			BIGINT UNSIGNED PATH "$.CustID" 
 						)
 				) AS js;
-	
-
     
     #===========EXCLUDE "FIXED GAME" WHEN MERG GROUP===========
-    INSERT IGNORE INTO Temp_ExcludeTrans(TransID, Reason, ScoreDiff)
-    SELECT tmpTg.TransID, tmpTg.Reason, tmpTg.ScoreDiff
+    INSERT IGNORE INTO Temp_ExcludeTrans(TransID, Reason, ScoreDiff, GroupID)
+    SELECT tmpTg.TransID, tmpTg.Reason, tmpTg.ScoreDiff, GroupID
     FROM Temp_TransGroup AS tmpTg
     WHERE Reason IN (CONST_REASON_FIXEDGAME,CONST_REASON_LOPSIDEDBETTING);
 
@@ -176,8 +177,9 @@ BEGIN
     SET tmpTg.MergeGroupID = tmpAs.GroupID;  
 	
     #================================================================
+
     INSERT INTO Temp_TransGroup(TransID, Reason, ScoreDiff, GroupID)
-    SELECT TransID, Reason, ScoreDiff, 0
+    SELECT TransID, Reason, ScoreDiff, GroupID
     FROM Temp_ExcludeTrans;
     
     SELECT TransID
