@@ -380,6 +380,14 @@ BEGIN
 			,	l.LeagueName
 			,	m.EventDate
 			,	m.GlobalShowTime
+			,	(CASE 
+						WHEN m.EventStatus <> 'completed' THEN (CASE 
+																	WHEN m.GlobalShowTime <= GETDATE() THEN @MatchSection_Live
+																	WHEN m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN @MatchSection_Today
+																	WHEN m.EventDate > @Today THEN @MatchSection_Early
+																END)
+						ELSE @MatchSection_Closed
+				END) AS MatchSection
 			,	m.SportType
 			,	m.homeid AS HomeId
 			,	h.TeamName AS HomeName
@@ -428,6 +436,7 @@ BEGIN
 			,	l.LeagueName
 			,	m.EventDate
 			,	m.GlobalShowTime
+			,	@MatchSection_Closed AS MatchSection
 			,	m.SportType
 			,	m.homeid AS HomeId
 			,	h.TeamName AS HomeName
@@ -468,8 +477,16 @@ BEGIN
 	END
 	ELSE
 	BEGIN
-		SELECT 	tms.MatchId,m.leagueid AS LeagueId,l.LeagueName,m.EventDate,m.GlobalShowTime,m.SportType
-			,	m.homeid AS HomeId,h.TeamName AS HomeName,m.awayid AS AwayId,a.TeamName AS AwayName,tms.LiveIndicator
+		SELECT 	tms.MatchId,m.leagueid AS LeagueId,l.LeagueName,m.EventDate,m.GlobalShowTime
+			,	(CASE 
+						WHEN m.EventStatus <> 'completed' THEN (CASE 
+																	WHEN m.GlobalShowTime <= GETDATE() THEN @MatchSection_Live
+																	WHEN m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN @MatchSection_Today
+																	WHEN m.EventDate > @Today THEN @MatchSection_Early
+																END)
+						ELSE @MatchSection_Closed
+				END) AS MatchSection
+			,	m.SportType,m.homeid AS HomeId,h.TeamName AS HomeName,m.awayid AS AwayId,a.TeamName AS AwayName,tms.LiveIndicator
 			,	tms.Bettype,tms.BetID,tms.BetChoiceType,tms.TotalAmountHome,tms.TotalAmountAway,tms.TotalTicketHome
 			,	tms.TotalTicketAway,tms.IsFrom14
 		FROM #tmpMatchSum AS tms
@@ -497,7 +514,7 @@ BEGIN
 					OR h.TeamName LIKE '%' + @LeagueEvent + '%'
 					OR a.TeamName LIKE '%' + @LeagueEvent + '%')
 		UNION ALL
-		SELECT 	tms.MatchId,m.leagueid AS LeagueId,l.LeagueName,m.EventDate,m.GlobalShowTime,m.SportType
+		SELECT 	tms.MatchId,m.leagueid AS LeagueId,l.LeagueName,m.EventDate,m.GlobalShowTime,@MatchSection_Closed AS MatchSection,m.SportType
 			,	m.homeid AS HomeId,h.TeamName AS HomeName,m.awayid AS AwayId,a.TeamName AS AwayName,tms.LiveIndicator
 			,	tms.Bettype,tms.BetID,tms.BetChoiceType,tms.TotalAmountHome,tms.TotalAmountAway,tms.TotalTicketHome
 			,	tms.TotalTicketAway,tms.IsFrom14
