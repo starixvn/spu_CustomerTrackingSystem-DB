@@ -63,7 +63,7 @@ BEGIN
         ,	Reason	INT
 	);   
 	
-	INSERT INTO Temp_TransGroup(TransID, ScoreDiff, Reason, GroupID, Betteam, CustID)
+	INSERT IGNORE INTO Temp_TransGroup(TransID, ScoreDiff, Reason, GroupID, Betteam, CustID)
 	SELECT  js.TransID
 		,	js.ScoreDiff
 		,	js.Reason
