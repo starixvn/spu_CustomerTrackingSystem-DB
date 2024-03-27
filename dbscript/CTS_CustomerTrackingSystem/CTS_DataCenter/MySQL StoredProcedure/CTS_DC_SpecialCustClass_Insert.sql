@@ -198,9 +198,7 @@ BEGIN
 	END IF;
 
 	IF EXISTS (SELECT 1 FROM Temp_Customer WHERE SportID <> 0) THEN
-		DELETE tmp
-		FROM Temp_NewCustomerClass AS tmp
-		WHERE tmp.SportID = 0;
+		TRUNCATE TABLE Temp_NewCustomerClass;
 
 		INSERT INTO Temp_NewCustomerClass(CTSCustID, CustID, SportID, SubscriberID, CustomerClass)
 		SELECT	t.CTSCustID
