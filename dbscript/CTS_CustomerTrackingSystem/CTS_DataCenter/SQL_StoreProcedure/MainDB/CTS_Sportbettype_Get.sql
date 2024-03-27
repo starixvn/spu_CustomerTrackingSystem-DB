@@ -6,7 +6,6 @@ SET QUOTED_IDENTIFIER ON
 GO
 ALTER PROCEDURE [dbo].[CTS_SportBettype_Get]
 		@ProductId INT
-	,	@SporttypeList VARCHAR(MAX) = NULL
 	,	@BettypeList VARCHAR(MAX) = NULL
 
 AS
@@ -17,84 +16,101 @@ AS
 
 	Revisions:
 		- 20231226@Casey.Huynh:	Create [Redmine ID: #196361]		
+		- 20240322@Vitoria.Le:	Danger Page Main - Get List SportType,Bettype which they ared seperated by LeagueGroupID [Redmine ID: #201380]		
 
 	Params Explaination:		
-
+		- LeagueGroupID	|	LeagueGroupName 		|	SportType
+			42			|		Virtual				|		0 -- GET FROM SportBettypeMatrix
+			74			|	Virtual Sport Bacarrat	|		1
+			108			|		Virtual Futsal		|		1
+			113			|		SABA PinGoal		|		1
+			122			|	SABA Basketball PinGoal	|		2
+			151			|	SABA E-Sports PinGoal	|		43
+		- SportGroup:
+			1: Main Sport - SportType IN (1,2,5,6,7,8,9,18,43,50)
+			2: Saba Virtual Sport
+			3: Others
+		- SportType IN (1,2,5,6,7,8,9,18,43,50):
+			1: 	Soccer | 2: Basketball | 5: Tennis
+			6: 	Volleyball | 7: Snooker/Pool	| 8: Baseball
+			9: 	Badminton | 18: Table Tennis | 43: E-Sports
+			50: Cricket
+			....
+			
 	Example:
 		EXEC CTS_SportBettype_Get @ProductID=1, @BettypeList='1,2,3,6,7,8,12,126,413,414,20,609,610,612'
-		EXEC CTS_SportBettype_Get 1, null
-		EXEC CTS_SportBettype_Get @ProductID=1, @BettypeList='1,2,3,6,7,8,12,126,413,414,20,609,610,612', @SporttypeList = '1,8'
+		EXEC CTS_SportBettype_Get @ProductID=1
 */
 BEGIN
 	SET NOCOUNT ON;
-
-	DECLARE @IsFilterBettype BIT = 0;
-
-	IF	OBJECT_ID('tempdb..#tmpBettype') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpBettype;
-	END;
-
-	CREATE TABLE	#tmpBettype(
-		BettypeId	INT
-	);
-
-	CREATE NONCLUSTERED INDEX #IX_tmpBettype_BettypeId ON #tmpBettype (
-			BettypeId		ASC
-	);
-
 	
-	IF	OBJECT_ID('tempdb..#tmpSporttype') IS NOT NULL
+	IF	OBJECT_ID('tempdb..#tmpSportBettype') IS NOT NULL
 	BEGIN
-		DROP TABLE	#tmpSporttype;
+		DROP TABLE	#tmpSportBettype;
 	END;
 
-	CREATE TABLE	#tmpSporttype(
-		SporttypeId	INT
+	CREATE TABLE	#tmpSportBettype(
+			SporttypeId		INT
+		,	BettypeId		INT
 	);
-
-	CREATE NONCLUSTERED INDEX #IX_tmpSporttype_BettypeId ON #tmpSporttype (
-			SporttypeId		ASC
-	);
-
-
-	IF (@BettypeList IS NOT NULL)
-		BEGIN
-			INSERT INTO #tmpBettype (BettypeId)
-			SELECT ssk.value FROM STRING_SPLIT(@BettypeList, ',') ssk;
-		END
-	ELSE
-		BEGIN
-			INSERT INTO #tmpBettype (BettypeId)
-			VALUES(NULL);
-		END;
-
-
-	IF (@SporttypeList IS NOT NULL)
-		BEGIN
-			INSERT INTO #tmpSporttype (SporttypeId)
-			SELECT ssk.value FROM STRING_SPLIT(@SporttypeList, ',') ssk;
-		END
-	ELSE
-		BEGIN
-			INSERT INTO #tmpSporttype(SporttypeId)
-			VALUES(NULL);
-		END;
-
-	SELECT	s.SportType
+	
+	INSERT INTO #tmpSportBettype (SporttypeId,BettypeId)
+	SELECT DISTINCT sb.SportType, sb.BetType 
+	FROM bodb02.dbo.SportBettypeMatrix AS sb WITH(NOLOCK)
+	WHERE sb.ProductID = @ProductID
+		AND (CASE WHEN @BettypeList IS NULL THEN 1
+				  WHEN @BettypeList IS NOT NULL AND sb.BetType IN (SELECT value FROM STRING_SPLIT(@BettypeList, ',')) THEN 1
+				  ELSE 0 END = 1)
+		AND sb.IsTest = 0
+		AND sb.SportType NOT IN (27, 154) --Exclude Cricket and Horse Racing Fixed Odds
+		AND sb.BetType NOT IN (9, 29, 999) -- Exclude Parlay and Odds Spread Adjustment
+		AND sb.SubProduct NOT IN ('CO-Cashout', 'CO-Bought', 'CO-Comm', 'CO-Winloss',
+								  'Bet Builder');
+	
+	CREATE NONCLUSTERED INDEX #IX_tmpSportBettype_SporttypeId ON #tmpSportBettype (SporttypeId,BettypeId);
+	
+	WITH CTE_Saba_1 AS (
+		SELECT DISTINCT tmp.SporttypeId, tmp.BettypeId, l.LeagueGroupID
+		FROM bodb02.dbo.League AS l WITH (NOLOCK)
+			INNER JOIN #tmpSportBettype AS tmp ON tmp.SporttypeId = l.SportType
+		WHERE l.LeagueGroupID = 42 
+	), CTE_Saba_2 AS (
+		SELECT DISTINCT tmp.SporttypeId, tmp.BettypeId, lg.GroupID AS LeagueGroupID, lg.GroupName AS LeagueGroupName
+		FROM bodb02.dbo.LeagueGroup AS lg WITH (NOLOCK)
+			INNER JOIN #tmpSportBettype AS tmp ON tmp.SporttypeId = lg.SportType
+		WHERE lg.GroupID IN (74,108,113,122,151) 
+	), CTE_All AS (
+		SELECT SporttypeId,BettypeId,LeagueGroupID,NULL AS LeagueGroupName
+		FROM CTE_Saba_1
+		UNION ALL
+		SELECT SporttypeId,BettypeId,LeagueGroupID,LeagueGroupName
+		FROM CTE_Saba_2
+	)
+	SELECT DISTINCT
+			(CASE WHEN s.SportType in(1,2,5,6,7,8,9,18,43,50) THEN 1
+				  ELSE 3 END) AS SportGroup 
 		,	s.SportName
-		,	b.Typeid
-		,	b.Typenamee
-	FROM (	SELECT DISTINCT sb.SportType, sb.BetType 
-			FROM dbo.SportBettypeMatrix AS sb WITH(NOLOCK)
-				INNER JOIN #tmpBettype AS tmpBt ON sb.BetType = ISNULL(tmpBt.BettypeId,sb.BetType)
-				INNER JOIN #tmpSporttype AS tmpSt ON sb.SportType = ISNULL(tmpSt.SporttypeId,sb.Sporttype)
-			WHERE sb.ProductID = ISNULL(sb.ProductID, @ProductID)
-				AND sb.SportType NOT IN (27, 154) --Exclude Cricket and Horse Racing Fixed Odds
-				AND sb.IsTest = 0
-		) AS tmp
-		INNER JOIN dbo.Sports AS s WITH(NOLOCK) ON tmp.SportType = s.SportType
-		INNER JOIN dbo.Bettype AS b WITH(NOLOCK) ON tmp.Bettype = b.typeid
-	ORDER BY s.SportType, b.Typeid;
-
+		,	s.SportName AS SportNameDisplay
+		,	sb.SporttypeId
+		,	NULL AS LeagueGroupID
+		,	sb.BettypeId 
+	FROM #tmpSportBettype AS sb
+		INNER JOIN bodb02.dbo.Sports AS s WITH(NOLOCK) ON s.SportType = sb.SporttypeId
+		INNER JOIN bodb02.dbo.Bettype AS b WITH(NOLOCK) ON b.typeid = sb.BettypeId
+	UNION
+	SELECT DISTINCT 
+			2 AS SportGroup 
+		,	s.SportName
+		,	(CASE WHEN c.LeagueGroupID = 42 THEN 'Virtual ' + s.SportName 
+				  ELSE c.LeagueGroupName END) AS SportNameDisplay
+		,	c.SporttypeId
+		,	c.LeagueGroupID
+		,	c.BettypeId 
+	FROM CTE_All AS c
+		INNER JOIN bodb02.dbo.Sports AS s WITH(NOLOCK) ON s.SportType = c.SporttypeId
+		INNER JOIN bodb02.dbo.Bettype AS b WITH(NOLOCK) ON b.typeid = c.BettypeId
+	ORDER BY SportGroup ASC, SporttypeId ASC;
+	
+	DROP TABLE IF EXISTS #tmpSportBettype;
+	
 END
