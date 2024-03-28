@@ -124,6 +124,11 @@ BEGIN
 	SELECT	TOP(1) @BalanceUpDay = BUDay, @MoveBetsDay	= MBDay
 	FROM @tmpBUMBData;
 	
+	IF (@ToDate IS NULL)
+	BEGIN
+		SET @ToDate = (SELECT MAX(m.EventDate) FROM bodb02.dbo.Match AS m WITH(NOLOCK));
+	END
+	
 	SELECT 	@FDate = @FromDate, @TDate = @ToDate;
 	
 	INSERT INTO @tmpSport (SportType)
