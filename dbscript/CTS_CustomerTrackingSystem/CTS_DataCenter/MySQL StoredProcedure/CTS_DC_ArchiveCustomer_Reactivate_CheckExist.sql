@@ -20,7 +20,7 @@ sp: BEGIN
 		Param's Explanation (filtered by):	
 
 		Example:
-			call CTS_DataCenter.CTS_DC_ArchiveCustomer_Reactivate_CheckExist('[{"CustID":98456422,"LogTime":"2023-10-05T03:23:36.293"}]');
+			CALL CTS_DataCenter.CTS_DC_ArchiveCustomer_Reactivate_CheckExist('[{"CustID":98456422,"LogTime":"2023-10-05T03:23:36.293"}]');
 	*/
     DECLARE lv_LastArchiveID 	BIGINT UNSIGNED;
     DECLARE lv_CurrentTime 		DATETIME DEFAULT CURRENT_TIMESTAMP();
@@ -58,7 +58,7 @@ sp: BEGIN
 		,	arc.CustID
         , 	FALSE
 	FROM Temp_Customer AS tmp
-		INNER JOIN CTS_DataCenter.ArchiveCustomer_CTSCustomer AS arc ON arc.CustID = tmp.CustID AND arc.ID > lv_LastArchiveID;
+		INNER JOIN CTS_DataCenter.ArchiveCustomer_CTSCustomer AS arc ON arc.CustID = tmp.CustID AND arc.ID > lv_LastArchiveID AND arc.IsReactivated = 0;
 	
     INSERT IGNORE INTO Temp_CustReactivate(ArchiveID, CustID, IsProcessDone)
 	SELECT 	DISTINCT r.ID
