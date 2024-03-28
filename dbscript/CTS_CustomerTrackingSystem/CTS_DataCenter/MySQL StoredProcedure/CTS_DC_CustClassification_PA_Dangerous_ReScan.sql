@@ -51,7 +51,7 @@ sp: BEGIN
         ,	CONST_CATEGORYID_EARLYWARININGMEMBER AS CategoryGroup
         , 	ltr.ClassifiedScore
         ,	ltr.ClassifiedDate
-        ,	0 AS IsDirect
+        ,	NULL AS IsDirect
         ,	1 AS IsDangerousScore
     FROM  Temp_CustID AS tmp,
     LATERAL (SELECT cd.ClassifiedScore, cd.ClassifiedDate
