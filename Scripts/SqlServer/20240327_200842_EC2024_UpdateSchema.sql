@@ -1,4 +1,4 @@
-/*<info serverAlias="DBVR2-bodb_VR2Model" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBVR2-bodb_VR2Model" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 /*
     Creator: 	20240327@Jonas.Huynh
     Task:	 	EC2024 - Resolve Locking [Redmine ID: #200842]
@@ -10,22 +10,21 @@ GO
 
 -- #1. ADD NEW COLUMN
 ALTER TABLE [dbo].[CustomerClassification]
-ADD [RowVersion] ROWVERSION;
+ADD [RowVersion] ROWVERSION NOT NULL;
 GO
 
 ALTER TABLE [dbo].[CustomerClassification_BySport]
-ADD [RowVersion] ROWVERSION;
+ADD [RowVersion] ROWVERSION NOT NULL;
 GO
 
 -- #2. DROP INDEXES
 DROP INDEX [CIX_CustomerClassification_IsApplied_Id] ON [dbo].[CustomerClassification];
 DROP INDEX [IX_CustomerClassification_CreatedDate] ON [dbo].[CustomerClassification];
-DROP INDEX [IX_CustomerClassification_CustId] ON [dbo].[CustomerClassification];
+DROP INDEX [IX_CustomerClassification_CustIdSportIdCategoryId] ON [dbo].[CustomerClassification];
 DROP INDEX [IX_CustomerClassification_Id] ON [dbo].[CustomerClassification];
 GO
 
 DROP INDEX [CIX_CustomerClassification_BySport_IsApplied_Id] ON [dbo].[CustomerClassification_BySport];
-DROP INDEX [IX_CustomerClassification_BySport_CustIdSportId] ON [dbo].[CustomerClassification_BySport];
 GO
 
 -- #3. CREATE NEW INDEXES

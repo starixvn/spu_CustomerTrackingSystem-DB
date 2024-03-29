@@ -1,3 +1,4 @@
+/*<info serverAlias="DBVR2-bodb_VR2Model" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 USE [bodb_VR2Model]
 GO
 /****** Object:  StoredProcedure [dbo].[CTS_NormalAccountsClassification_BySport_Archive]    Script Date: 11/23/2022 11:48:34 PM ******/
@@ -25,21 +26,28 @@ BEGIN
 	
 	SET NOCOUNT ON;
 
-	DECLARE @From30Date		DATE = DATEADD(DAY, - 30, GETDATE());
-	DECLARE @BatchSize		INT = 1000000
-		,	@RowCount		INT = 1000000;
+	DECLARE @BATCHSIZE					INT		= 1000000;
+	DECLARE @ROWCOUNT					INT		= 1000000;
+	DECLARE @BYSPORT_LASTSCANNEDROW		TINYINT = 2;
 
-	WHILE @RowCount = @BatchSize
+	DECLARE @From30Date					DATE	= DATEADD(DAY, - 30, GETDATE());
+	DECLARE @LastScannedRow				BIGINT;
+
+	SELECT @LastScannedRow = CAST(CAST([Value] AS BIGINT) AS ROWVERSION) 
+	FROM dbo.CustomerClassification_Parameter WITH(NOLOCK) WHERE [DataId] = @BYSPORT_LASTSCANNEDROW;
+
+	WHILE @ROWCOUNT = @BATCHSIZE
 		BEGIN
-			DELETE TOP(@BatchSize) c WITH(ROWLOCK)
+			DELETE TOP(@BATCHSIZE) c WITH(ROWLOCK)
 			FROM dbo.CustomerClassification_BySport AS c
-			WHERE c.IsApplied = 1 AND c.CreatedDate < @From30Date
+			WHERE c.[Rowversion] <= @LastScannedRow AND c.CreatedDate < @From30Date
 
-			SET @RowCount = @@ROWCOUNT;
+			SET @ROWCOUNT = @@ROWCOUNT;
 		END;
 END;
-
-GRANT EXECUTE ON [dbo].[CTS_NormalAccountsClassification_BySport_Archive] TO [bodbSPUNet]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CTS_NormalAccountsClassification_BySport_Archive] TO [bodbSPUNet]
+
+GRANT EXECUTE ON [dbo].[CTS_NormalAccountsClassification_BySport_Archive] TO [wsv_cts]
+GO
+GRANT VIEW DEFINITION ON [dbo].[CTS_NormalAccountsClassification_BySport_Archive] TO [wsv_cts]
 GO
