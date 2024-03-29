@@ -20,6 +20,7 @@ BEGIN
             - 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]  
 
 	    Param's Explanation (filtered by):
+			CALL DCS_DC_Transform_Device_GetPackage(2, 10);
 	*/
 	
 	DECLARE		lv_TotalRecord		INT UNSIGNED DEFAULT 0;
