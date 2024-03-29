@@ -564,7 +564,7 @@ BEGIN
         ,	tmpPa.CreatedBy
         ,	lv_CurrentDateTime AS CreatedDate
 	FROM Temp_PA AS tmpPa
-	WHERE tmpPa.DataChangeType = 0 OR tmpPa.IsFromOldPA = 1;  
+	WHERE (tmpPa.ToEvidenceID) IS NOT NULL AND (tmpPa.DataChangeType = 0 OR tmpPa.IsFromOldPA = 1);  
 
 	#=====RETURN UPDATED CUSTOMERS TO SERVICE FOR FUTHER STEPS===========
 	SELECT	DISTINCT 
