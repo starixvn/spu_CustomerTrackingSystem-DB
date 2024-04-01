@@ -71,7 +71,7 @@ BEGIN
 	UPDATE Temp_Cust AS tmp
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS class ON class.CTSCustID = tmp.CTSCustID 
 	SET tmp.ValidatedID	= 3
-	WHERE tmp.IsExistedCust = 1 AND class.SportGroupID = CONST_GROUP_NORMAL AND class.CategoryID = CONST_CATEGORYID_VVIP;
+	WHERE tmp.IsExistedCust = 1 AND tmp.ValidatedID = 1 AND tmp.SportID = 0 AND class.SportGroupID = CONST_GROUP_NORMAL AND class.CategoryID = CONST_CATEGORYID_VVIP;
 	
 	UPDATE Temp_Cust AS tmp
 		INNER JOIN CTS_DataCenter.SpecialCustomerClass AS scc ON scc.CTSCustID = tmp.CTSCustID
