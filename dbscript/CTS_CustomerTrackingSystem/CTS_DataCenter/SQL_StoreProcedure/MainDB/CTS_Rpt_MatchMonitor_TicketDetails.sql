@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-bodb02" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 GO
 SET ANSI_NULLS ON
 GO
@@ -721,33 +721,7 @@ BEGIN
 					
 				END;
 			END;
-
-			----==================UPDATE Trans Info==================
-			UPDATE t WITH(ROWLOCK, UPDLOCK)
-			SET t.IsLicensee	= 1
-			,	t.Danger1		= c.danger
-			,	t.Danger2		= c.danger2
-			,	t.Danger3		= c.danger3
-			,	t.Danger4		= c.Danger4
-			,	t.Danger5		= c.Danger5
-			,	t.CustomerClass	= c.CustomerClass
-			FROM #tmpTickets AS t
-				INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
-				INNER JOIN bodb02.dbo.Dep_CustSuper AS cs WITH (NOLOCK) ON cs.custid = c.srecommend;
-
-			UPDATE t WITH(ROWLOCK, UPDLOCK)
-			SET t.IsLicensee	= 0
-			,	t.Danger1		= c.danger
-			,	t.Danger2		= c.danger2
-			,	t.Danger3		= c.danger3
-			,	t.Danger4		= c.Danger4
-			,	t.Danger5		= c.Danger5
-			,	t.CustomerClass	= c.CustomerClass
-			FROM #tmpTickets AS t
-				INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
-				INNER JOIN bodb02.dbo.CustProductStatus AS s WITH (NOLOCK) ON s.custid = c.custid
-			WHERE t.IsLicensee IS NULL;
-
+			
 			----==================UPDATE Malay Odds==================
 			UPDATE t WITH(ROWLOCK, UPDLOCK)
 			SET t.MalayOdds = CASE 
@@ -772,19 +746,6 @@ BEGIN
 							END
 			FROM #tmpTickets AS t
 				LEFT JOIN bodb02.dbo.f_Set_OddsTypeBettypes() AS ot ON ot.BetType = t.BetType;
-
-			----==================FILTERS=========================		
-			IF (@ListScore IS NOT NULL) OR (@IsLicensee IS NOT NULL) OR (@ListCustomerClass <> '') OR (@ListDanger IS NOT NULL)
-				OR (@ListCurrency IS NOT NULL) OR (@ListReason <> '') OR (@ListAGroup <> '') OR (@ListMGroup <> '') OR (@ListHDPBetTeam IS NOT NULL)
-				OR (@ListStatus IS NOT NULL) OR (@CustAmountRM > 0) OR (@CustAmountRM > 0) OR (@IsCashout IS NOT NULL)
-			BEGIN
-				SET @IsFilter = 1;
-			END;
-			
-			IF (@IsFilter = 1)
-			BEGIN
-				GOTO CHECK_FILTER;
-			END;
 
 		END;	
 	
@@ -879,11 +840,18 @@ BEGIN
 							,	ISNULL(tmpTs.MGroup,0)
 							FROM bodb02.dbo.bettrans14 AS b WITH(NOLOCK)
 								INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
+								INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
 								INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID
 								INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency	
 								LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 							WHERE	b.matchid = @MatchID								
 								AND b.liveindicator = @IsLive
+								AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
+								AND c.site NOT IN ('Nextbet','9wickets','9wsports')
+								AND b.username NOT LIKE '%Cashout%'
+								AND b.mrecommend NOT IN (27899314,11656504,12146012) 
+								AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+								AND b.srecommend NOT IN (41430709)
 								AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
 				
 					END;
@@ -927,12 +895,19 @@ BEGIN
 						,	ISNULL(tmpTs.MGroup,0)
 						FROM bodb02.dbo.bettrans14 AS b WITH(NOLOCK)
 							INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
+							INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
 							INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON l.leagueid = m.leagueid
 							INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID 
 							INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 							LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 						WHERE	b.matchid = @MatchID
 							AND b.liveindicator = @IsLive
+							AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
+							AND c.site NOT IN ('Nextbet','9wickets','9wsports')
+							AND b.username NOT LIKE '%Cashout%'
+							AND b.mrecommend NOT IN (27899314,11656504,12146012) 
+							AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+							AND b.srecommend NOT IN (41430709)
 							AND b.TransDate < @LastTransDate
 							AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
 						ORDER BY b.TransDate DESC;
@@ -975,12 +950,18 @@ BEGIN
 						,	ISNULL(tmpTs.MGroup,0)
 						FROM bodb02.dbo.bettrans14 AS b WITH(NOLOCK)
 							INNER JOIN dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
+							INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
 							INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID 
 							INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 							LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 							LEFT JOIN #tmpTickets AS tmpTk WITH(NOLOCK) ON tmpTk.TransID = b.TransID
 						WHERE	b.matchid = @MatchID
 							AND b.liveindicator = @IsLive
+							AND c.site NOT IN ('Nextbet','9wickets','9wsports')
+							AND b.username NOT LIKE '%Cashout%'
+							AND b.mrecommend NOT IN (27899314,11656504,12146012) 
+							AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+							AND b.srecommend NOT IN (41430709)
 							AND b.TransDate = @MinTransDate
 							AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
 							AND tmpTk.TransID IS NULL;
@@ -1077,11 +1058,17 @@ BEGIN
 						,	ISNULL(tmpTs.MGroup,0)
 						FROM bodb02.dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
 							INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
+							INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
 							INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID
 							INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency	
 							LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 						WHERE	b.matchid = @MatchID								
 							AND b.liveindicator = @IsLive
+							AND c.site NOT IN ('Nextbet','9wickets','9wsports')
+							AND b.username NOT LIKE '%Cashout%'
+							AND b.mrecommend NOT IN (27899314,11656504,12146012) 
+							AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+							AND b.srecommend NOT IN (41430709)
 							AND b.sequenceid < @LastScannedSequenceID
 							AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
 				
@@ -1127,12 +1114,18 @@ BEGIN
 						,	ISNULL(tmpTs.MGroup,0)
 						FROM bodb02.dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
 							INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
+							INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
 							INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON l.leagueid = m.leagueid
 							INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID 
 							INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 							LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 						WHERE	b.matchid = @MatchID
 							AND b.liveindicator = @IsLive
+							AND c.site NOT IN ('Nextbet','9wickets','9wsports')
+							AND b.username NOT LIKE '%Cashout%'
+							AND b.mrecommend NOT IN (27899314,11656504,12146012) 
+							AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+							AND b.srecommend NOT IN (41430709)
 							AND b.sequenceid < @LastScannedSequenceID
 							AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
 						ORDER BY b.sequenceid DESC;
@@ -1144,67 +1137,46 @@ BEGIN
 				END;
 			END;
 
-			----==================UPDATE Trans Info==================
-			UPDATE t WITH(ROWLOCK, UPDLOCK)
-			SET t.IsLicensee	= 1
-			,	t.Danger1		= c.danger
-			,	t.Danger2		= c.danger2
-			,	t.Danger3		= c.danger3
-			,	t.Danger4		= c.Danger4
-			,	t.Danger5		= c.Danger5
-			,	t.CustomerClass	= c.CustomerClass
-			FROM #tmpTickets AS t
-				INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
-				INNER JOIN bodb02.dbo.Customer AS cust WITH(NOLOCK) ON cust.CustId = c.custid
-				INNER JOIN bodb02.dbo.Dep_CustSuper AS cs WITH (NOLOCK) ON cs.custid = c.srecommend
-			WHERE cust.site NOT IN ('Nextbet','9wickets','9wsports')
-			AND cust.username NOT LIKE '%Cashout%'
-			AND cust.mrecommend NOT IN (27899314,11656504,12146012) 
-			AND cust.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
-			AND (CASE WHEN @IsExclTestCurr = 0 THEN 1 
-					  WHEN @IsExclTestCurr = 1 AND cust.currency NOT IN (20,27,28) THEN 1 
-					  ELSE 0 END = 1)
-			AND cust.srecommend NOT IN (41430709);
-
-			UPDATE t WITH(ROWLOCK, UPDLOCK)
-			SET t.IsLicensee	= 0
-			,	t.Danger1		= c.danger
-			,	t.Danger2		= c.danger2
-			,	t.Danger3		= c.danger3
-			,	t.Danger4		= c.Danger4
-			,	t.Danger5		= c.Danger5
-			,	t.CustomerClass	= c.CustomerClass
-			FROM #tmpTickets AS t
-				INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
-				INNER JOIN bodb02.dbo.Customer AS cust WITH(NOLOCK) ON cust.CustId = c.custid
-				INNER JOIN bodb02.dbo.CustProductStatus AS s WITH (NOLOCK) ON s.custid = c.custid
-			WHERE t.IsLicensee IS NULL
-			AND cust.site NOT IN ('Nextbet','9wickets','9wsports')
-			AND cust.username NOT LIKE '%Cashout%'
-			AND cust.mrecommend NOT IN (27899314,11656504,12146012) 
-			AND cust.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
-			AND (CASE WHEN @IsExclTestCurr = 0 THEN 1 
-					  WHEN @IsExclTestCurr = 1 AND cust.currency NOT IN (20,27,28) THEN 1 
-					  ELSE 0 END = 1)
-			AND cust.srecommend NOT IN (41430709);
-			
-			DELETE FROM #tmpTickets WHERE IsLicensee IS NULL;
-
-			----==================FILTERS=========================		
-			
-			IF (@ListScore IS NOT NULL) OR (@IsLicensee IS NOT NULL) OR (@ListCustomerClass <> '') OR (@ListDanger IS NOT NULL)
-				OR (@ListCurrency IS NOT NULL) OR (@ListReason <> '') OR (@ListAGroup <> '') OR (@ListMGroup <> '') OR (@ListHDPBetTeam IS NOT NULL)
-				OR (@ListStatus IS NOT NULL) OR (@CustAmountRM > 0) OR (@CustAmountRM > 0) OR (@IsCashout IS NOT NULL)
-			BEGIN
-				SET @IsFilter = 1;
-			END;
-			
-			IF (@IsFilter = 1)
-			BEGIN
-				GOTO CHECK_FILTER;
-			END;
-			
 		END;
+	
+	----==================UPDATE Trans Info==================
+	UPDATE t WITH(ROWLOCK, UPDLOCK)
+	SET t.IsLicensee	= 1
+	,	t.Danger1		= c.danger
+	,	t.Danger2		= c.danger2
+	,	t.Danger3		= c.danger3
+	,	t.Danger4		= c.Danger4
+	,	t.Danger5		= c.Danger5
+	,	t.CustomerClass	= c.CustomerClass
+	FROM #tmpTickets AS t
+		INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
+		INNER JOIN bodb02.dbo.Dep_CustSuper AS cs WITH (NOLOCK) ON cs.custid = c.srecommend;
+
+	UPDATE t WITH(ROWLOCK, UPDLOCK)
+	SET t.IsLicensee	= 0
+	,	t.Danger1		= c.danger
+	,	t.Danger2		= c.danger2
+	,	t.Danger3		= c.danger3
+	,	t.Danger4		= c.Danger4
+	,	t.Danger5		= c.Danger5
+	,	t.CustomerClass	= c.CustomerClass
+	FROM #tmpTickets AS t
+		INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
+		INNER JOIN bodb02.dbo.CustProductStatus AS s WITH (NOLOCK) ON s.custid = c.custid
+	WHERE t.IsLicensee IS NULL;
+	
+	----==================FILTERS=========================		
+	IF (@ListScore IS NOT NULL) OR (@IsLicensee IS NOT NULL) OR (@ListCustomerClass <> '') OR (@ListDanger IS NOT NULL)
+		OR (@ListCurrency IS NOT NULL) OR (@ListReason <> '') OR (@ListAGroup <> '') OR (@ListMGroup <> '') OR (@ListHDPBetTeam IS NOT NULL)
+		OR (@ListStatus IS NOT NULL) OR (@CustAmountRM > 0) OR (@CustAmountRM > 0) OR (@IsCashout IS NOT NULL)
+	BEGIN
+		SET @IsFilter = 1;
+	END;
+	
+	IF (@IsFilter = 1)
+	BEGIN
+		GOTO CHECK_FILTER;
+	END;
 	
 	CHECK_FILTER:
 		IF (@IsFilter = 1)
@@ -1488,4 +1460,3 @@ BEGIN
 END;
 
 GO
-/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/

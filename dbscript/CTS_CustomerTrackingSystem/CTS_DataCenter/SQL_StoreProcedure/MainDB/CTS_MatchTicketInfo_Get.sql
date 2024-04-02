@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-bodb02" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 /*
 USE [bodb02]
 GO
@@ -73,7 +73,7 @@ BEGIN
 	--===============================================================================================
 	DECLARE @tmpBUMBData AS TABLE (BUDay DATETIME,	MBDay DATETIME);
 	DECLARE @tmpSport AS TABLE (SportType TINYINT PRIMARY KEY);
-	DECLARE @tmpMatchSection AS TABLE (Id TINYINT, EventStatus NVARCHAR(50));
+	DECLARE @tmpMatchSection AS TABLE (Id TINYINT, EventStatus NVARCHAR(50), IsFrom14 BIT DEFAULT 0);
 	DECLARE @tmpSportSabaLeagueGroup AS TABLE (SportType TINYINT, LeagueGroupID INT INDEX IX_SabaLeagueGroup);
 
 	IF	OBJECT_ID('tempdb..#tmpBetType') IS NOT NULL
@@ -153,16 +153,21 @@ BEGIN
 	INSERT INTO @tmpMatchSection (Id, EventStatus)
 	SELECT 	ssk.value
 		,	CASE 
-				WHEN ssk.value IN (@MatchSection_Live,@MatchSection_Today,@MatchSection_Early) THEN 'running'
 				WHEN ssk.value = @MatchSection_Closed THEN 'Completed'
+				WHEN ssk.value IN (@MatchSection_Live,@MatchSection_Today,@MatchSection_Early) THEN 'running'
 				ELSE ''
 			END
 	FROM STRING_SPLIT(@MatchSection, ',') AS ssk;
 	
-	IF EXISTS (SELECT 1 FROM @tmpMatchSection WHERE Id = @MatchSection_Closed)
+	IF EXISTS (SELECT 1 FROM @tmpMatchSection WHERE Id IN (@MatchSection_Live,@MatchSection_Today,@MatchSection_Early))
 	BEGIN
 		INSERT INTO @tmpMatchSection (Id, EventStatus)
-		VALUES (@MatchSection_Closed, 'Closed'), (@MatchSection_Closed, 'Postponed'), (@MatchSection_Closed, 'internal');
+		SELECT Id,a
+		FROM (VALUES ('Closed'),('Postponed'),('internal'))  AS X(a)
+			CROSS APPLY (SELECT Id 
+						FROM @tmpMatchSection
+						WHERE Id IN (@MatchSection_Live,@MatchSection_Today,@MatchSection_Early)) AS ms;
+		
 	END;
 	
 	WITH CTE_Danger AS (
@@ -364,6 +369,13 @@ BEGIN
 
 		IF (@@ROWCOUNT > 0)
 		BEGIN
+			IF EXISTS (SELECT 1 FROM @tmpMatchSection WHERE Id = @MatchSection_Closed)
+			BEGIN
+				INSERT INTO @tmpMatchSection (Id, IsFrom14, EventStatus)
+				SELECT @MatchSection_Closed, 1, *
+				FROM (VALUES ('Completed'),('Closed'),('Postponed'),('internal'))  AS X(a);
+			END;
+			
 			IF (@IsFromActive14 = 0)
 			BEGIN
 				SET @IsFromActive14 = 2;
@@ -407,11 +419,12 @@ BEGIN
 				INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid 
 				CROSS APPLY (SELECT TOP 1 ms.Id AS MatchSection
 							 FROM @tmpMatchSection AS ms
-							 WHERE 1 = CASE WHEN ms.Id = @MatchSection_Closed AND m.EventStatus = ms.EventStatus THEN 1
-										    WHEN ms.Id = @MatchSection_Live AND m.GlobalShowTime <= GETDATE() THEN 1
-										    WHEN ms.Id = @MatchSection_Today AND m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN 1
-										    WHEN ms.Id = @MatchSection_Early AND m.EventDate > @Today THEN 1
-											ELSE 0 END) AS mss
+							 WHERE ms.IsFrom14 = 0
+								AND 1 = CASE WHEN m.EventStatus <> 'completed' THEN (CASE WHEN ms.Id = @MatchSection_Live AND m.GlobalShowTime <= GETDATE() THEN 1
+																						WHEN ms.Id = @MatchSection_Today AND m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN 1
+																						WHEN ms.Id = @MatchSection_Early AND m.EventDate > @Today THEN 1 END)
+											 WHEN m.EventStatus = ms.EventStatus AND ms.Id = @MatchSection_Closed THEN 1
+											 ELSE 0 END) AS mss
 			WHERE l.IsTest = 0 AND m.isTestMatch = 0 AND m.IsDeleted = 0 
 				AND (CASE WHEN @IsExcludeSabaGroup = 1 AND l.LeagueGroupID NOT IN (42,74,108,113,122,151)
 								AND EXISTS (SELECT 1 FROM @tmpSport AS s WHERE m.SportType = s.SportType) THEN 1
@@ -456,8 +469,9 @@ BEGIN
 				INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid 
 				CROSS APPLY (SELECT TOP 1 ms.Id AS MatchSection
 							 FROM @tmpMatchSection AS ms
-							 WHERE 1 = CASE WHEN ms.Id = @MatchSection_Closed AND m.EventStatus = ms.EventStatus THEN 1
-											ELSE 0 END) AS mss
+							 WHERE ms.IsFrom14 = 1
+								AND 1 = CASE WHEN ms.Id = @MatchSection_Closed AND m.EventStatus = ms.EventStatus THEN 1
+											 ELSE 0 END) AS mss
 			WHERE l.IsTest = 0 AND m.isTestMatch = 0
 				AND (CASE WHEN @IsExcludeSabaGroup = 1 AND l.LeagueGroupID NOT IN (42,74,108,113,122,151)
 								AND EXISTS (SELECT 1 FROM @tmpSport AS s WHERE m.SportType = s.SportType) THEN 1
@@ -486,11 +500,12 @@ BEGIN
 			INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid 
 			CROSS APPLY (SELECT TOP 1 ms.Id AS MatchSection
 						 FROM @tmpMatchSection AS ms
-						 WHERE 1 = CASE WHEN ms.Id = @MatchSection_Closed AND m.EventStatus = ms.EventStatus THEN 1
-										WHEN ms.Id = @MatchSection_Live AND m.GlobalShowTime <= GETDATE() THEN 1
-										WHEN ms.Id = @MatchSection_Today AND m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN 1
-										WHEN ms.Id = @MatchSection_Early AND m.EventDate > @Today THEN 1
-										ELSE 0 END) AS mss
+						 WHERE ms.IsFrom14 = 0
+							AND 1 = CASE WHEN m.EventStatus <> 'completed' THEN (CASE WHEN ms.Id = @MatchSection_Live AND m.GlobalShowTime <= GETDATE() THEN 1
+																					WHEN ms.Id = @MatchSection_Today AND m.EventDate = @Today AND m.GlobalShowTime > GETDATE() THEN 1
+																					WHEN ms.Id = @MatchSection_Early AND m.EventDate > @Today THEN 1 END)
+										 WHEN m.EventStatus = ms.EventStatus AND ms.Id = @MatchSection_Closed THEN 1
+										 ELSE 0 END) AS mss
 		WHERE l.IsTest = 0 AND m.isTestMatch = 0 AND m.IsDeleted = 0 
 			AND (CASE WHEN @IsExcludeSabaGroup = 1 AND l.LeagueGroupID NOT IN (42,74,108,113,122,151)
 							AND EXISTS (SELECT 1 FROM @tmpSport AS s WHERE m.SportType = s.SportType) THEN 1
@@ -515,8 +530,9 @@ BEGIN
 			INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid 
 			CROSS APPLY (SELECT TOP 1 ms.Id AS MatchSection
 						 FROM @tmpMatchSection AS ms
-						 WHERE 1 = CASE WHEN ms.Id = @MatchSection_Closed AND m.EventStatus = ms.EventStatus THEN 1
-										ELSE 0 END) AS mss
+						 WHERE ms.IsFrom14 = 1
+							AND 1 = CASE WHEN ms.Id = @MatchSection_Closed AND m.EventStatus = ms.EventStatus THEN 1
+										 ELSE 0 END) AS mss
 		WHERE l.IsTest = 0 AND m.isTestMatch = 0
 			AND (CASE WHEN @IsExcludeSabaGroup = 1 AND l.LeagueGroupID NOT IN (42,74,108,113,122,151)
 							AND EXISTS (SELECT 1 FROM @tmpSport AS s WHERE m.SportType = s.SportType) THEN 1
