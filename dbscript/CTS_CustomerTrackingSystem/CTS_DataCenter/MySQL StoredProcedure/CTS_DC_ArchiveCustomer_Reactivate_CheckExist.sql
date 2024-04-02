@@ -16,7 +16,7 @@ sp: BEGIN
 		Revisions:
 			- 	20220713@Aries.Nguyen: Created [Redmine ID: #175406]
             - 	20230929@Jonas.Huynh: Fix issue reactive customer with wrong category [Redmine ID: #193050]
-            
+            - 	20240328@Casey.huynh: Enhance Customer Insert flow [Redmine ID: #198000]
 		Param's Explanation (filtered by):	
 
 		Example:
