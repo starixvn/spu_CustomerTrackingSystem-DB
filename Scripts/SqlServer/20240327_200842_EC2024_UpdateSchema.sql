@@ -8,28 +8,23 @@
 USE [bodb_VR2Model]
 GO
 
--- #1. ADD NEW COLUMN
-ALTER TABLE [dbo].[CustomerClassification]
-ADD [RowVersion] ROWVERSION NOT NULL;
-GO
-
-ALTER TABLE [dbo].[CustomerClassification_BySport]
-ADD [RowVersion] ROWVERSION NOT NULL;
-GO
-
--- #2. DROP INDEXES
-DROP INDEX [CIX_CustomerClassification_IsApplied_Id] ON [dbo].[CustomerClassification];
-DROP INDEX [IX_CustomerClassification_CreatedDate] ON [dbo].[CustomerClassification];
-DROP INDEX [IX_CustomerClassification_CustIdSportIdCategoryId] ON [dbo].[CustomerClassification];
-DROP INDEX [IX_CustomerClassification_Id] ON [dbo].[CustomerClassification];
-GO
-
-DROP INDEX [CIX_CustomerClassification_BySport_IsApplied_Id] ON [dbo].[CustomerClassification_BySport];
-GO
-
--- #3. CREATE NEW INDEXES
-ALTER TABLE [dbo].[CustomerClassification]
-ADD CONSTRAINT [PK_CustomerClassification] PRIMARY KEY (ID);
+-- #1. CREATE GENERAL TABLE 
+CREATE TABLE [dbo].[CustomerClassification](
+	[ID]					BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	[RowVersion]			ROWVERSION		NOT NULL,
+	[CustId]				INT				NOT NULL,
+	[SportId]				INT				NOT NULL,
+	[CurrentCategoryId]		SMALLINT		NULL,
+	[CategoryId]			SMALLINT		NOT NULL,
+	[CreatedDate]			DATE			NOT NULL,
+	[CreatedTime]			DATETIME		NULL,
+	[TurnoverRM]			DECIMAL(19, 4)	NULL,
+	[WinlossRM]				DECIMAL(19, 4)	NULL,
+	[BetCount]				BIGINT			NULL,
+	[ActiveDays]			INT				NULL,
+	[PerformanceTime]		DATETIME		NULL,
+	[ScanTaggingType]		INT				NULL
+)
 GO
 
 CREATE NONCLUSTERED INDEX [IX_CustomerClassification_RowVersion] ON [dbo].[CustomerClassification]
@@ -38,18 +33,49 @@ CREATE NONCLUSTERED INDEX [IX_CustomerClassification_RowVersion] ON [dbo].[Custo
 );
 GO
 
+CREATE NONCLUSTERED INDEX [IX_CustomerClassification_CustId] ON [dbo].[CustomerClassification]
+(
+	[CustId] ASC
+)
+GO
+
+-- #2.  CREATE BY-SPORT TABLE 
+CREATE TABLE [dbo].[CustomerClassification_BySport](
+	[ID]					BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	[RowVersion]			ROWVERSION		NOT NULL,
+	[CustId]				INT				NOT NULL,
+	[SportId]				INT				NOT NULL,
+	[CurrentCategoryId]		SMALLINT		NULL,
+	[CategoryId]			SMALLINT		NOT NULL,
+	[CreatedDate]			DATE			NOT NULL,
+	[CreatedTime]			DATETIME		NULL,
+	[TurnoverRM]			DECIMAL(19, 4)	NULL,
+	[WinlossRM]				DECIMAL(19, 4)	NULL,
+	[BetCount]				BIGINT			NULL,
+	[ActiveDays]			INT				NULL,
+	[PerformanceTime]		DATETIME		NULL
+)
+GO
+
 CREATE NONCLUSTERED INDEX [IX_CustomerClassification_BySport_RowVersion] ON [dbo].[CustomerClassification_BySport]
 (
 	[RowVersion]
 );
 GO
 
--- #7. Add System Parameter
+CREATE NONCLUSTERED INDEX [IX_CustomerClassification_BySport_CustIdSportId] ON [dbo].[CustomerClassification_BySport]
+(
+	[CustId] ASC,
+	[SportId] ASC
+)
+GO
+
+-- #3. ADD SYSTEM PARAMETER
 DECLARE @GeneralValue BIGINT;
 DECLARE @BysportValue BIGINT;
 
-SELECT @GeneralValue = CAST(MAX([RowVersion]) AS BIGINT) FROM dbo.CustomerClassification WITH(NOLOCK);
-SELECT @BysportValue = CAST(MAX([RowVersion]) AS BIGINT) FROM dbo.CustomerClassification_BySport WITH(NOLOCK);
+SELECT @GeneralValue = CAST(MIN([RowVersion]) AS BIGINT) FROM dbo.CustomerClassification WITH(NOLOCK);
+SELECT @BysportValue = CAST(MIN([RowVersion]) AS BIGINT) FROM dbo.CustomerClassification_BySport WITH(NOLOCK);
 
 INSERT INTO [dbo].[CustomerClassification_Parameter] ([DataId], [DataDescription], [DataType], [Value]) 
 VALUES (1, 'Normal Accounts Classification - General - Lastest Scan Rowversion', 'ROWVERSION', CONVERT(VARCHAR(200), @GeneralValue));
