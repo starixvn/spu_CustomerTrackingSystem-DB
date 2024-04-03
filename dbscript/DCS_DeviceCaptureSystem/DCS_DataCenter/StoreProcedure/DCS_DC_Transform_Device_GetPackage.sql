@@ -18,65 +18,91 @@ BEGIN
             - 20201012@Casey.Huynh: Add Trace Performance log
             - 20210510@Aries.Nguyen: Remove insert log dba_SP_PerformanceStats [Redmine ID: #154792]
             - 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]  
+            - 20240403@Jonathan.Doan: The same AccountID must be in the same batch [Redmine ID: #202878]  
 
 	    Param's Explanation (filtered by):
-			CALL DCS_DC_Transform_Device_GetPackage(2, 10);
+			CALL DCS_DC_Transform_Device_GetPackage(100, 2);
 	*/
     DECLARE 	CONST_DEVICE_TRANSFORM_MINTRANSID 		INT 		DEFAULT 1;
     DECLARE 	CONST_DEVICE_TRANSFORM_MINCREATEDDATE 	INT 		DEFAULT 2;
 	
-	DECLARE		lv_TotalRecord		INT UNSIGNED DEFAULT 0;
-	DECLARE		lv_RateBatch		DECIMAL(4,2);
-    DECLARE 	lv_FromTransID		BIGINT UNSIGNED;
-    DECLARE		lv_FromCreatedDate	DATE;
+	DECLARE		lv_TotalRecord			INT UNSIGNED DEFAULT 0;
+	DECLARE		lv_RateBatch			DECIMAL(4,2);
+    DECLARE 	lv_FromTransID			BIGINT UNSIGNED;
+    DECLARE		lv_FromCreatedDate		DATE;
+    DECLARE		lv_CountAccountID		INT;
+    DECLARE		lv_NoOfBatchOfAccountID	INT;
 
     DROP TEMPORARY TABLE IF EXISTS Temp_Trans;
+    DROP TEMPORARY TABLE IF EXISTS Temp_Account;
+    
     CREATE TEMPORARY TABLE Temp_Trans(	
 		    TransID		BIGINT	UNSIGNED PRIMARY KEY
+		,   AccountID	BIGINT	UNSIGNED
 		,   BatchID		INT
         ,   CreatedDate	DATE
-    ) ENGINE=MEMORY; 
+    );
+    
+    CREATE TEMPORARY TABLE Temp_Account(	
+		    AccountID	BIGINT	UNSIGNED PRIMARY KEY
+		,   BatchID		INT
+    );
     
 	SET lv_TotalRecord 	    = ip_NoOfTickets*ip_NoOfBatch;
     SET lv_FromTransID 	    = (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_DEVICE_TRANSFORM_MINTRANSID);
 
-	SET @RowId = 0;
-    INSERT INTO Temp_Trans (TransID, CreatedDate, BatchID)
-    SELECT  TransID
-        ,   CreatedDate
-        ,   BatchID
-    FROM (
-		SELECT	@RowId := @RowId + 1
-		    ,   ts.TransID
-            ,   ts.CreatedDate
-		    ,   CEIL(@RowId/ip_NoOfTickets) AS BatchID
-		FROM DCS_DataCenter.Transaction AS ts
-		WHERE ts.TransId >= lv_FromTransID
-        ORDER BY ts.AccountID
-		LIMIT lv_TotalRecord
-    ) AS t;
-	
-    SET lv_FromTransID = IFNULL((SELECT MIN(TransID) FROM Temp_Trans), lv_FromTransID); 
-    SET lv_FromCreatedDate = IFNULL((SELECT MIN(CreatedDate) FROM Temp_Trans), DATE_ADD(CURRENT_TIMESTAMP(), INTERVAL -2 WEEK));
-
-    IF(lv_FromTransID IS NOT NULL AND lv_FromTransID > 0) THEN
-		UPDATE DCS_DataCenter.SystemSetting
-		SET 	VValue = CONCAT('', lv_FromTransID)
-			,	UpdatedTime = CURRENT_TIMESTAMP()
-		WHERE ID = CONST_DEVICE_TRANSFORM_MINTRANSID;
-    END IF;
-
-    IF(lv_FromCreatedDate IS NOT NULL) THEN
-		UPDATE DCS_DataCenter.SystemSetting
-		SET 	VValue = CONCAT('', lv_FromCreatedDate)
-			,	UpdatedTime = CURRENT_TIMESTAMP()
-		WHERE ID = CONST_DEVICE_TRANSFORM_MINCREATEDDATE;
-    END IF;
+    INSERT INTO Temp_Trans(TransID, AccountID, CreatedDate)
+	SELECT	TransID
+		,   AccountID
+		,   CreatedDate
+	FROM DCS_DataCenter.Transaction
+	WHERE TransID >= lv_FromTransID
+	ORDER BY TransID ASC
+	LIMIT lv_TotalRecord;
     
-    #RETURN OUTPUT
-    SELECT  TransID
-        ,   BatchID
-    FROM Temp_Trans;
+    ALTER TABLE Temp_Trans
+    ADD KEY IX_Temp_Trans_AccountID (AccountID);
+
+    INSERT INTO Temp_Account(AccountID)
+	SELECT DISTINCT AccountID
+	FROM Temp_Trans;
+    
+    SET lv_CountAccountID = (SELECT COUNT(1) FROM Temp_Account);
+    
+	SET @RowId = 0;
+    IF(lv_CountAccountID IS NOT NULL AND lv_CountAccountID > 0) THEN
+		SET lv_NoOfBatchOfAccountID = lv_CountAccountID / ip_NoOfBatch;
+    
+		UPDATE Temp_Account
+		SET BatchID = CEIL(@RowId := @RowId + 1 / lv_NoOfBatchOfAccountID)
+		ORDER BY AccountID;
+        
+        UPDATE Temp_Trans AS tmpT
+			INNER JOIN Temp_Account AS tmpA ON tmpA.AccountID = tmpT.AccountID
+		SET tmpT.BatchID = tmpA.BatchID;
+        
+		SET lv_FromTransID = IFNULL((SELECT MIN(TransID) FROM Temp_Trans), lv_FromTransID); 
+		SET lv_FromCreatedDate = IFNULL((SELECT MIN(CreatedDate) FROM Temp_Trans), DATE_ADD(CURRENT_TIMESTAMP(), INTERVAL -2 WEEK));
+
+		IF(lv_FromTransID IS NOT NULL AND lv_FromTransID > 0) THEN
+			UPDATE DCS_DataCenter.SystemSetting
+			SET 	VValue = CONCAT('', lv_FromTransID)
+				,	UpdatedTime = CURRENT_TIMESTAMP()
+			WHERE ID = CONST_DEVICE_TRANSFORM_MINTRANSID;
+		END IF;
+
+		IF(lv_FromCreatedDate IS NOT NULL) THEN
+			UPDATE DCS_DataCenter.SystemSetting
+			SET 	VValue = CONCAT('', lv_FromCreatedDate)
+				,	UpdatedTime = CURRENT_TIMESTAMP()
+			WHERE ID = CONST_DEVICE_TRANSFORM_MINCREATEDDATE;
+		END IF;
+		
+		#RETURN OUTPUT
+		SELECT  TransID
+			,   BatchID
+		FROM Temp_Trans;
+    END IF;
     
 END$$
 DELIMITER ;
