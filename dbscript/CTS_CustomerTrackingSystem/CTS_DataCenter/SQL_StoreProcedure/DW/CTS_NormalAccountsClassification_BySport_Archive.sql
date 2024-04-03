@@ -6,7 +6,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CTS_NormalAccountsClassification_BySport_Archive]
+ALTER PROCEDURE [dbo].[CTS_NormalAccountsClassification_BySport_Archive]
 AS
 /*
 	Created: 20221123@Jonas.Huynh
@@ -16,6 +16,7 @@ AS
 
 	Revisions:
 		- 20201123@Jonas.Huynh: Created
+		- 20240327@Jonas.Huynh: EC2024 - Resolve Locking [Redmine ID: #200842]
 
 	Param's Explanation:
 	Example: 
