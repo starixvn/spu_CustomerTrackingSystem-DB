@@ -32,23 +32,35 @@ BEGIN
 	
 	SET NOCOUNT ON;
 	
-	DECLARE	@CurrentTime DATETIME = GETDATE();
+	DECLARE @BATCHSIZE		INT = 2000;
+	DECLARE	@CURRENTTIME	DATETIME = GETDATE();
 
-	 -- #1: Insert Log
-	INSERT INTO dbo.CustomerClassification_Log(CustId, FunctionId, CreatedTime)
-	SELECT	a.CustId
-		,	@FunctionId
-		,	@CurrentTime
-	FROM #tmpCustomers AS a;
+	DECLARE @TotalRecords	INT = (SELECT COUNT(1) FROM #tmpCustomers);
+	DECLARE @Offset			INT = 0;
+
+	WHILE @Offset < @TotalRecords
+	BEGIN
+		-- #1: Insert Log
+		INSERT INTO dbo.CustomerClassification_Log(CustId, FunctionId, CreatedTime)
+		SELECT	a.CustId
+			,	@FunctionId
+			,	@CURRENTTIME
+		FROM #tmpCustomers AS a
+		ORDER BY a.CustId
+		OFFSET @Offset ROWS
+		FETCH NEXT @BATCHSIZE ROWS ONLY;
+
+		SET @Offset = @Offset + @BATCHSIZE;
+	END;
 
 	-- #2: Insert to normal pool
 	INSERT INTO dbo.CustomerClassification_NormalPool(CustId, [Priority], FunctionId, CreatedTime)
 	SELECT	a.CustId
 		,	@Priority
 		,	@FunctionId
-		,	@CurrentTime
+		,	@CURRENTTIME
 	FROM #tmpCustomers AS a
-		
+
 	DROP TABLE #tmpCustomers;
 END;
 GO
