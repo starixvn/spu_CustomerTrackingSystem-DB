@@ -32,7 +32,7 @@ BEGIN
 	
 	SET NOCOUNT ON;
 	
-	DECLARE @BATCHSIZE		INT = 2000;
+	DECLARE @BATCHSIZE		INT = 4000;
 	DECLARE	@CURRENTTIME	DATETIME = GETDATE();
 
 	DECLARE @TotalRecords	INT = (SELECT COUNT(1) FROM #tmpCustomers);
@@ -40,9 +40,10 @@ BEGIN
 
 	WHILE @Offset < @TotalRecords
 	BEGIN
-		-- #1: Insert Log
-		INSERT INTO dbo.CustomerClassification_Log(CustId, FunctionId, CreatedTime)
+		INSERT INTO dbo.CustomerClassification_NormalPool(CustId, [Priority], FunctionId, CreatedTime)
+		OUTPUT INSERTED.CustId, @FunctionId, @CURRENTTIME INTO dbo.CustomerClassification_Log(CustId, FunctionId, CreatedTime)  
 		SELECT	a.CustId
+			,	@Priority
 			,	@FunctionId
 			,	@CURRENTTIME
 		FROM #tmpCustomers AS a
@@ -53,16 +54,13 @@ BEGIN
 		SET @Offset = @Offset + @BATCHSIZE;
 	END;
 
-	-- #2: Insert to normal pool
-	INSERT INTO dbo.CustomerClassification_NormalPool(CustId, [Priority], FunctionId, CreatedTime)
-	SELECT	a.CustId
-		,	@Priority
-		,	@FunctionId
-		,	@CURRENTTIME
-	FROM #tmpCustomers AS a
-
 	DROP TABLE #tmpCustomers;
 END;
+GO
+
+GRANT EXECUTE ON [dbo].[CTS_GeneralNormalClassification_NormalPool_Insert] TO [wsv_cts]
+GO
+GRANT VIEW DEFINITION ON [dbo].[CTS_GeneralNormalClassification_NormalPool_Insert] TO [wsv_cts]
 GO
 
 GRANT EXECUTE ON [dbo].[CTS_GeneralNormalClassification_NormalPool_Insert] TO [bodbSPUNet]
