@@ -60,7 +60,7 @@ BEGIN
 		FROM dbo.CustomerClassification_BySport_NormalPool AS np WITH(NOLOCK)
 		WHERE np.ID <= @ScannedMaxId 
 			AND NOT EXISTS (SELECT 1 FROM dbo.CustomerClassification_BySport AS cc WITH (NOLOCK) 
-							WHERE cc.[Rowversion] > @LastScannedRow 
+							WHERE cc.[RowVersion] > @LastScannedRow 
 								AND cc.CustId = np.CustId
 								AND cc.SportId = np.SportGroup)
 		GROUP BY np.CustId, np.SportGroup

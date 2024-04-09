@@ -41,7 +41,7 @@ BEGIN
 		BEGIN
 			DELETE TOP(@BATCHSIZE) c WITH(ROWLOCK)
 			FROM dbo.CustomerClassification_BySport AS c
-			WHERE c.[Rowversion] <= @LastScannedRow AND c.CreatedDate < @From30Date
+			WHERE c.[RowVersion] <= @LastScannedRow AND c.CreatedDate < @From30Date
 
 			SET @ROWCOUNT = @@ROWCOUNT;
 		END;
