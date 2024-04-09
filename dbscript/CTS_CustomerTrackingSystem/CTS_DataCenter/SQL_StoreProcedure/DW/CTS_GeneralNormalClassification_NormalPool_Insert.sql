@@ -20,6 +20,7 @@ AS
 		- 20230420@Jonas.Huynh: Created [Redmine ID: #186678]
 		- 20230601@Jonas.Huynh: Normal Renovation (Phase2) [Redmine ID: #186684]
 		- 20230816@Jonas.Huynh: Tagging Classification [Redmine ID: #191400]
+		- 20240327@Jonas.Huynh: EC2024 - Resolve Locking [Redmine ID: #200842]
 
 	Param's Explanation:
         @FunctionId		: Being used to log particular function
