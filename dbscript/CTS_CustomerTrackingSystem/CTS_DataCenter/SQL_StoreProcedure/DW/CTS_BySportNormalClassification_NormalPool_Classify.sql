@@ -1,4 +1,4 @@
-/*<info serverAlias="DBVR2-bodb_VR2Model" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBVR2-bodb_VR2Model" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 USE [bodb_VR2Model]
 GO
 /****** Object:  StoredProcedure [dbo].[CTS_BySportNormalClassification_NormalPool_Classify] ******/
@@ -19,7 +19,6 @@ AS
 		- 20230630@Jonas.Huynh: Created [Redmine ID: #189875]
 		- 20230726@Jonas.Huynh: Saba Classification [Redmine ID: #185320]
 		- 20240318@Jonas.Huynh: Renovate Non-Sport Rules [Redmine ID: #201359]
-		- 20240320@Thomas.Nguyen: Classify customers without performance that were removed special CC from manual action [Redmine ID: #201360]
 
 	Param's Explanation:
 		@CustomersXML	 : This parameter is used to classify customer perf which bases on currentCategory
@@ -52,8 +51,7 @@ BEGIN
 	DECLARE @CurrentDate			DATE	 = GETDATE();
 	DECLARE	@ToDate					DATE	 = GETDATE();
 	DECLARE @From30Date				DATE	 = DATEADD(DAY, -29, @ToDate);
-	DECLARE @Priority_ManualAction		TINYINT = 10;
-	DECLARE @FunctionId_ManualAction	TINYINT = 5;
+
 	DECLARE @ListCustIds			VARCHAR(MAX);
 
 	IF OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
@@ -269,9 +267,7 @@ BEGIN
 		,  @CurrentDateTime
 	FROM #tmpCustomers AS t
 	WHERE t.CurrentCategoryId = @CATEGORY_NULL 
-		AND (t.IsPlaceBetWithin30Days = 1 OR EXISTS (	SELECT TOP 1 1 
-														FROM CustomerClassification_BySport_NormalPool cb WITH(NOLOCK) 
-														WHERE cb.CustId = t.CustId AND cb.SportGroup = t.SportGroup AND cb.FunctionId = @FunctionId_ManualAction AND cb.[Priority] = @Priority_ManualAction))
+		AND t.IsPlaceBetWithin30Days = 1
 		AND NOT EXISTS (SELECT 1 FROM #tmpCustomerAccummulatedInfo AS c WHERE c.CustId = t.CustId AND c.SportGroup = t.SportGroup);
 
 	-- #11: Classify classification by general rule
@@ -353,7 +349,7 @@ BEGIN
 END;
 GO
 
-GRANT EXECUTE ON [dbo].[CTS_BySportNormalClassification_NormalPool_Classify] TO [wsv_cts]
+GRANT EXECUTE ON [dbo].[CTS_BySportNormalClassification_NormalPool_Classify] TO [bodbSPUNet]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CTS_BySportNormalClassification_NormalPool_Classify] TO [wsv_cts]
+GRANT VIEW DEFINITION ON [dbo].[CTS_BySportNormalClassification_NormalPool_Classify] TO [bodbSPUNet]
 GO
