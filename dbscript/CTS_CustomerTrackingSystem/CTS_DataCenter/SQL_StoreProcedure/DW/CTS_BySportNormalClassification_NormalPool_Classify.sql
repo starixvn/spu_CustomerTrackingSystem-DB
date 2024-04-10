@@ -1,4 +1,4 @@
-/*<info serverAlias="DBVR2-bodb_VR2Model" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBVR2-bodb_VR2Model" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 USE [bodb_VR2Model]
 GO
 /****** Object:  StoredProcedure [dbo].[CTS_BySportNormalClassification_NormalPool_Classify] ******/
@@ -370,7 +370,7 @@ BEGIN
 END;
 GO
 
-GRANT EXECUTE ON [dbo].[CTS_BySportNormalClassification_NormalPool_Classify] TO [bodbSPUNet]
+GRANT EXECUTE ON [dbo].[CTS_BySportNormalClassification_NormalPool_Classify] TO [wsv_cts]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CTS_BySportNormalClassification_NormalPool_Classify] TO [bodbSPUNet]
+GRANT VIEW DEFINITION ON [dbo].[CTS_BySportNormalClassification_NormalPool_Classify] TO [wsv_cts]
 GO
