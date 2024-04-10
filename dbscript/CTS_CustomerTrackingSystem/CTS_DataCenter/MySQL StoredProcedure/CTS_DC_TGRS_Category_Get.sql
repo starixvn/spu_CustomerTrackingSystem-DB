@@ -12,11 +12,14 @@ BEGIN
 	Original:
 	Revisions:
 		- 20230608@Victoria.Le:		Initial Writing [Redmine ID: #187083]
+		- 20240410@Long.Luu:		Add special rule for CC2800/2801: considered as Normal by User but has been arranged as a PA in DB [Redmine ID: #201358]
 		
 	Param's Explanation (filtered by):
 	Example:
 		- CALL CTS_DC_TGRS_Category_Get();
 */
+	DECLARE CONST_CATEGORYGROUP_NORMAL 	SMALLINT DEFAULT 200;
+	DECLARE CONST_CATEGORYGROUP_PA 		SMALLINT DEFAULT 50;
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustomerCategory;
     CREATE TEMPORARY TABLE Temp_CustomerCategory(
@@ -43,9 +46,9 @@ BEGIN
 		WHERE cc.CustomerClass IS NOT NULL
 			AND cc.IsActive = 1
 	)
-	SELECT 	CASE WHEN c.ParentID = 200 AND TaggingType  = 0 AND CategoryGroup <> 1000 THEN 1 -- Normal
-				 WHEN c.ParentID = 200 AND TaggingType <> 0  THEN 2 -- Normal linked Problem
-				 WHEN c.ParentID = 50 THEN 3  -- Problem Account
+	SELECT 	CASE WHEN c.ParentID = CONST_CATEGORYGROUP_NORMAL AND TaggingType  = 0 AND CategoryGroup <> 1000 THEN 1 -- Normal
+				 WHEN c.ParentID = CONST_CATEGORYGROUP_NORMAL AND TaggingType <> 0  THEN 2 -- Normal linked Problem
+				 WHEN c.ParentID = CONST_CATEGORYGROUP_PA THEN 3  -- Problem Account
 				 ELSE 4 -- Other
 			END AS CustomerClassGroupID
 		,	c.CustomerClass
@@ -78,6 +81,11 @@ BEGIN
         ,	s.CategoryName
     FROM Temp_SpecialCustomerClass AS s
     ;
+    
+    # Special rule for CC2800/2801: considered as Normal by User but has been arranged as a PA in DB
+    UPDATE Temp_CustomerCategory
+    SET CustomerClassGroupID = 1
+    WHERE CustomerClass IN (2800,2801);
     
     SELECT 	CustomerClassGroupID
 		,	CASE WHEN CustomerClassGroupID = 1 THEN 'Normal'
