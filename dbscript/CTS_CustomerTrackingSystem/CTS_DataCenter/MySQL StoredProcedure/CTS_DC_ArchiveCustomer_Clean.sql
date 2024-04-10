@@ -1902,8 +1902,7 @@ sp: BEGIN
             
 			DELETE sp
 			FROM CTS_DataCenter.SpecialCustomerClass_History AS sp
-				INNER JOIN Temp_SpecialCustomerClass_History_Clean AS tmp ON tmp.ID = sp.ID
-																AND tmp.SportID = sp.SportID;
+				INNER JOIN Temp_SpecialCustomerClass_History_Clean AS tmp ON tmp.ID = sp.ID;
 			
 			UPDATE  CTS_DataCenter.SystemParameter 
 			SET ParameterValue = 'CTS_DataCenter.SpecialCustomerClass_History'
@@ -1939,8 +1938,7 @@ sp: BEGIN
             
 			DELETE sp
 			FROM CTS_DataCenter.SpecialCustomerClass_BySport_History AS sp
-				INNER JOIN Temp_SpecialCustomerClass_BySport_History_Clean AS tmp ON tmp.ID = sp.ID
-																AND tmp.SportID = sp.SportID;
+				INNER JOIN Temp_SpecialCustomerClass_BySport_History_Clean AS tmp ON tmp.ID = sp.ID;
 			
 			UPDATE  CTS_DataCenter.SystemParameter 
 			SET ParameterValue = 'CTS_DataCenter.SpecialCustomerClass_BySport_History'
