@@ -1846,7 +1846,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.SpecialCustomerClass_BySport';
 	 END IF;    
 
-	/*************************************** 37. CTS_DataCenter.SpecialCustomerClass_BySport **************************/
+	/*************************************** 36. CTS_DataCenter.SpecialCustomerClass_BySport **************************/
     IF (lv_Table = 'CTS_DataCenter.SpecialCustomerClass_BySport') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.SpecialCustomerClass_BySport As sp WHERE sp.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_SpecialCustomerClass_BySport_Clean;
@@ -1886,7 +1886,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.SpecialCustomerClass_History';
 	 END IF;    
 
-	/*************************************** 38. CTS_DataCenter.SpecialCustomerClass_History **************************/
+	/*************************************** 37. CTS_DataCenter.SpecialCustomerClass_History **************************/
     IF (lv_Table = 'CTS_DataCenter.SpecialCustomerClass_History') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.SpecialCustomerClass_History As sp WHERE sp.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_SpecialCustomerClass_History_Clean;
@@ -1923,7 +1923,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.SpecialCustomerClass_BySport_History';
 	 END IF;
 
-	/*************************************** 39. CTS_DataCenter.SpecialCustomerClass_BySport_History **************************/
+	/*************************************** 38. CTS_DataCenter.SpecialCustomerClass_BySport_History **************************/
     IF (lv_Table = 'CTS_DataCenter.SpecialCustomerClass_BySport_History') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.SpecialCustomerClass_BySport_History As sp WHERE sp.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_SpecialCustomerClass_BySport_History_Clean;
@@ -1960,7 +1960,7 @@ sp: BEGIN
         SET lv_Table = 'CTS_DataCenter.CTSCustomer';
 	 END IF;
 
-    /*************************************** 40. CTS_DataCenter.CTSCustomer ************************************/
+    /*************************************** 39. CTS_DataCenter.CTSCustomer ************************************/
 	
     DELETE cus
 	FROM CTS_DataCenter.CTSCustomer AS cus
