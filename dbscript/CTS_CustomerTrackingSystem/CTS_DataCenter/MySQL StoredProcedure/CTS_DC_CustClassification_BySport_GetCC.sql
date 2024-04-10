@@ -46,12 +46,12 @@ BEGIN
 		FROM Temp_CustInfo AS tmp 
 		INNER JOIN SpecialCustomerClass_BySport AS sb ON sb.CustID = tmp.CustID AND sb.SportID = tmp.SportGroup;
 	ELSE     
-		SELECT	clss.CustID
-			,	clss.SportID
+		SELECT	temp.CustID
+			,	temp.SportGroup AS SportID
 			,	IFNULL(cate.CustomerClass, - 1) AS CustomerClass
 		FROM Temp_CustInfo temp
-			INNER JOIN CTSCustomerClassification_BySport AS clss ON temp.CustID = clss.CustID AND temp.SportGroup = clss.SportID
-			INNER JOIN CustomerCategory AS cate ON cate.CategoryID = clss.CategoryID;
+			LEFT JOIN CTSCustomerClassification_BySport AS clss ON temp.CustID = clss.CustID AND temp.SportGroup = clss.SportID
+			LEFT JOIN CustomerCategory AS cate ON cate.CategoryID = clss.CategoryID;
 	END IF;
 
 END$$
