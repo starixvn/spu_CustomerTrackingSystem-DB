@@ -215,7 +215,6 @@ BEGIN
 			,	MIN(t.TransID) 		AS FirstTransID
 			,	MIN(t.TransTime) 	AS CreatedTime
 			,	MIN(t.CreatedDate) 	AS CreatedDate
-            ,	lv_InsertionTime	AS InsertTime
 		FROM Temp_Transaction AS t
         WHERE NOT EXISTS (SELECT 1 FROM Temp_ExistedDevice AS de WHERE de.DeviceCode = t.DeviceCode)
 			AND NOT EXISTS (SELECT 1 FROM Temp_RecoveredDevice AS dr WHERE dr.DeviceCode = t.DeviceCode)
@@ -226,7 +225,7 @@ BEGIN
 		,	tts.FirstTransID
 		,	tts.CreatedTime
 		,	tts.CreatedDate
-		,	tts.InsertTime
+		,	lv_InsertionTime AS InsertTime
 	FROM CTE_DeviceCode AS tts
 	INNER JOIN DCS_DataCenter.Device AS dv ON dv.FirstDeviceCode = tts.DeviceCode;
 
@@ -237,7 +236,6 @@ BEGIN
 			,	MIN(t.TransID) 		AS FirstTransID
 			,	MIN(t.TransTime) 	AS CreatedTime
 			,	MIN(t.CreatedDate) 	AS CreatedDate
-            ,	lv_InsertionTime	AS InsertTime
 		FROM Temp_Transaction AS t
         WHERE NOT EXISTS (SELECT 1 FROM Temp_ExistedDevice AS de WHERE de.DeviceCode = t.DeviceCode)
         GROUP BY t.DeviceCode
@@ -254,7 +252,7 @@ BEGIN
 		,	tts.FirstTransID
 		,	tts.CreatedTime
 		,	tts.CreatedDate
-		,	tts.InsertTime
+		,	lv_InsertionTime AS InsertTime
 	FROM CTE_DeviceCode AS tts
 		INNER JOIN CTE_NewCodeOldDeviceID AS dr ON dr.DeviceCode = tts.DeviceCode
 		LEFT JOIN DCS_DataCenter.DeviceCode AS dc ON dc.DeviceCode = dr.RecoverCode AND dc.DeviceID > 0
