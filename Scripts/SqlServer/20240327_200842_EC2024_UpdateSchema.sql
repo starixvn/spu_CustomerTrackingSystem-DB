@@ -27,15 +27,16 @@ CREATE TABLE [dbo].[CustomerClassification](
 )
 GO
 
-CREATE NONCLUSTERED INDEX [IX_CustomerClassification_RowVersion] ON [dbo].[CustomerClassification]
+CREATE NONCLUSTERED INDEX [IX_CustomerClassification_CustIdRowVersion] ON [dbo].[CustomerClassification]
 (
+	[CustId],
 	[RowVersion]
 );
 GO
 
-CREATE NONCLUSTERED INDEX [IX_CustomerClassification_CustId] ON [dbo].[CustomerClassification]
+CREATE NONCLUSTERED INDEX [IX_CustomerClassification_RowVersion] ON [dbo].[CustomerClassification]
 (
-	[CustId] ASC
+	[RowVersion] DESC
 )
 GO
 
@@ -57,16 +58,17 @@ CREATE TABLE [dbo].[CustomerClassification_BySport](
 )
 GO
 
-CREATE NONCLUSTERED INDEX [IX_CustomerClassification_BySport_RowVersion] ON [dbo].[CustomerClassification_BySport]
+CREATE NONCLUSTERED INDEX [IX_CustomerClassification_BySport_CustIdSportIdRowVersion] ON [dbo].[CustomerClassification_BySport]
 (
+	[CustId] ASC,
+	[SportId] ASC,
 	[RowVersion]
 );
 GO
 
-CREATE NONCLUSTERED INDEX [IX_CustomerClassification_BySport_CustIdSportId] ON [dbo].[CustomerClassification_BySport]
+CREATE NONCLUSTERED INDEX [IX_CustomerClassification_BySport_RowVersion] ON [dbo].[CustomerClassification_BySport]
 (
-	[CustId] ASC,
-	[SportId] ASC
+	[RowVersion] DESC
 )
 GO
 

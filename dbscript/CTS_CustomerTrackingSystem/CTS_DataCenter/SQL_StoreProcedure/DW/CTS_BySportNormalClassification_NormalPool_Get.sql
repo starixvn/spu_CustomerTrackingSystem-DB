@@ -32,7 +32,7 @@ BEGIN
 	
 	DECLARE	@BATCHSIZE					INT		= 20000;
 	DECLARE @BYSPORT_LASTSCANNEDROW		TINYINT = 2;
-	DECLARE @LastScannedRow				BIGINT;
+	DECLARE @LastScannedRow				ROWVERSION;
 
 	IF	OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
 	DROP TABLE	#tmpCustomers;
