@@ -1,9 +1,10 @@
 /*<info serverAlias="DBCTS-bodb02" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
-GO
+
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE [dbo].[CTS_TicketDetails_Info]
 		@MatchID					INT = 0
 	,	@EventDate					DATETIME = '1900-09-22'
@@ -511,8 +512,9 @@ BEGIN
 		INNER JOIN dbo.CustProductStatus AS s WITH (NOLOCK) ON s.custid = c.custid
 	WHERE t.IsLicensee IS NULL;
 	
-	CREATE INDEX IX_tmpTickets_IsLicensee ON #tmpTrans (IsLicensee, LiveHomeScore, LiveAwayScore, TicketStatus, CurrencyId, CurrencyName, Hdp, BetTeam, Danger1, Danger2, Danger3, Danger4, Danger5);
-
+	-- CREATE INDEX IX_tmpTickets_IsLicensee ON #tmpTrans (IsLicensee, LiveHomeScore, LiveAwayScore, TicketStatus, CurrencyId, CurrencyName, Hdp, BetTeam, Danger1, Danger2, Danger3, Danger4, Danger5);
+	CREATE NONCLUSTERED INDEX IX_tmpTrans_IsLicensee ON #tmpTrans (IsLicensee) INCLUDE (LiveHomeScore,LiveAwayScore,CustomerClass,Danger1,Danger2,Danger3,Danger4,Danger5,CurrencyId,CurrencyName,Hdp,Betteam,TicketStatus);
+	
 	/*Return Output*/
 	SELECT @MaxSequenceId = (MAX(SequenceId) + 1) FROM #tmpTrans WITH(NOLOCK);
 	SELECT @MaxTransDate = DATEADD(SECOND,1,MAX(TransDate)) FROM #tmpTrans WITH(NOLOCK);

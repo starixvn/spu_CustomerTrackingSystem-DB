@@ -1,9 +1,9 @@
 /*<info serverAlias="DBCTS-bodb02" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
-GO
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 ALTER PROCEDURE [dbo].[CTS_SportBettype_Get]
 		@ProductId INT
 	,	@BettypeList VARCHAR(MAX) = NULL
@@ -97,7 +97,7 @@ BEGIN
 	FROM #tmpSportBettype AS sb
 		INNER JOIN bodb02.dbo.Sports AS s WITH(NOLOCK) ON s.SportType = sb.SporttypeId
 		INNER JOIN bodb02.dbo.Bettype AS b WITH(NOLOCK) ON b.typeid = sb.BettypeId
-	UNION
+	UNION ALL
 	SELECT DISTINCT 
 			2 AS SportGroup 
 		,	s.SportName

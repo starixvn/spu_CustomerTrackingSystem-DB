@@ -1,12 +1,9 @@
 /*<info serverAlias="DBCTS-bodb02" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
-/*
-USE [bodb02]
-GO
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-*/
+
 ALTER PROCEDURE [dbo].[CTS_MatchTicketInfo_Get]
 		@FromDate			DATETIME = NULL
 	,	@ToDate				DATETIME = NULL
@@ -58,12 +55,12 @@ BEGIN
 		,	@MoveBetsDay			DATETIME
 		,	@FDate 					DATETIME 
 		, 	@TDate 					DATETIME 
-		
+
 		,	@MatchSection_Live		TINYINT = 1
 		,	@MatchSection_Today		TINYINT = 2
 		,	@MatchSection_Early		TINYINT = 3
 		,	@MatchSection_Closed	TINYINT = 4
-		
+
 		,	@DangerType				TINYINT
 		,	@Danger					TINYINT
 		,	@IsExcludeSabaGroup		BIT = 1
@@ -82,12 +79,12 @@ BEGIN
 	END;
 
 	CREATE TABLE #tmpBetType (
-				BetType			INT
-			,	BetChoiceType	TINYINT 		
-			,	BetChoiceHome	NVARCHAR(10) 	
-			,	BetChoiceAway	NVARCHAR(10) 	
-			,	BetIdPattern	NVARCHAR(20)	
-			,	BetId			BIGINT			
+			BetType			INT
+		,	BetChoiceType	TINYINT 		
+		,	BetChoiceHome	NVARCHAR(10) 	
+		,	BetChoiceAway	NVARCHAR(10) 	
+		,	BetIdPattern	NVARCHAR(20)	
+		,	BetId			BIGINT			
 	);
 	
 	IF	OBJECT_ID('tempdb..#tmpDangerCust') IS NOT NULL
@@ -197,14 +194,14 @@ BEGIN
 		FROM bodb02.dbo.CustInfo AS cust WITH(NOLOCK)
 			INNER JOIN bodb02.dbo.Customer AS cs WITH (NOLOCK) ON cs.custid = cust.custid 
 		WHERE cs.site NOT IN ('Nextbet','9wickets','9wsports')
-			AND cust.username NOT LIKE '%Cashout%'
-			AND cust.mrecommend NOT IN (27899314,11656504,12146012) 
-			AND cust.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+			AND cs.username NOT LIKE '%Cashout%'
+			AND cs.mrecommend NOT IN (27899314,11656504,12146012) 
+			AND cs.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
 			AND (CASE WHEN @IsExclTestCurr = 0 THEN 1 
-					  WHEN @IsExclTestCurr = 1 AND cust.currency NOT IN (20,27,28) THEN 1 
+					  WHEN @IsExclTestCurr = 1 AND cs.currency NOT IN (20,27,28) THEN 1 
 					  ELSE 0 END = 1)
-			AND cust.srecommend NOT IN (41430709) 
-			AND cust.RoleId = 1
+			AND cs.srecommend NOT IN (41430709) 
+			AND cs.RoleId = 1
 			AND cust.danger > 0 AND cust.danger = @Danger
 			;
 	END;
@@ -215,14 +212,14 @@ BEGIN
 		FROM bodb02.dbo.CustInfo AS cust WITH(NOLOCK)
 			INNER JOIN bodb02.dbo.Customer AS cs WITH (NOLOCK) ON cs.custid = cust.custid
 		WHERE cs.site NOT IN ('Nextbet','9wickets','9wsports')
-			AND cust.username NOT LIKE '%Cashout%'
-			AND cust.mrecommend NOT IN (27899314,11656504,12146012) 
-			AND cust.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+			AND cs.username NOT LIKE '%Cashout%'
+			AND cs.mrecommend NOT IN (27899314,11656504,12146012) 
+			AND cs.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
 			AND (CASE WHEN @IsExclTestCurr = 0 THEN 1 
-					  WHEN @IsExclTestCurr = 1 AND cust.currency NOT IN (20,27,28) THEN 1 
+					  WHEN @IsExclTestCurr = 1 AND cs.currency NOT IN (20,27,28) THEN 1 
 					  ELSE 0 END = 1)
-			AND cust.srecommend NOT IN (41430709) 
-			AND cust.RoleId = 1
+			AND cs.srecommend NOT IN (41430709) 
+			AND cs.RoleId = 1
 			AND cust.danger2 > 0 AND cust.danger2 = @Danger
 			;
 	END;
@@ -233,14 +230,14 @@ BEGIN
 		FROM bodb02.dbo.CustInfo AS cust WITH(NOLOCK)
 			INNER JOIN bodb02.dbo.Customer AS cs WITH (NOLOCK) ON cs.custid = cust.custid 
 		WHERE cs.site NOT IN ('Nextbet','9wickets','9wsports')
-			AND cust.username NOT LIKE '%Cashout%'
-			AND cust.mrecommend NOT IN (27899314,11656504,12146012) 
-			AND cust.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+			AND cs.username NOT LIKE '%Cashout%'
+			AND cs.mrecommend NOT IN (27899314,11656504,12146012) 
+			AND cs.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
 			AND (CASE WHEN @IsExclTestCurr = 0 THEN 1 
-					  WHEN @IsExclTestCurr = 1 AND cust.currency NOT IN (20,27,28) THEN 1 
+					  WHEN @IsExclTestCurr = 1 AND cs.currency NOT IN (20,27,28) THEN 1 
 					  ELSE 0 END = 1)
-			AND cust.srecommend NOT IN (41430709) 
-			AND cust.RoleId = 1
+			AND cs.srecommend NOT IN (41430709) 
+			AND cs.RoleId = 1
 			AND cust.danger3 > 0 AND cust.danger3 = @Danger
 			;
 	END;
@@ -251,14 +248,14 @@ BEGIN
 		FROM bodb02.dbo.CustInfo AS cust WITH(NOLOCK)
 			INNER JOIN bodb02.dbo.Customer AS cs WITH (NOLOCK) ON cs.custid = cust.custid 
 		WHERE cs.site NOT IN ('Nextbet','9wickets','9wsports')
-			AND cust.username NOT LIKE '%Cashout%'
-			AND cust.mrecommend NOT IN (27899314,11656504,12146012) 
-			AND cust.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+			AND cs.username NOT LIKE '%Cashout%'
+			AND cs.mrecommend NOT IN (27899314,11656504,12146012) 
+			AND cs.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
 			AND (CASE WHEN @IsExclTestCurr = 0 THEN 1 
-					  WHEN @IsExclTestCurr = 1 AND cust.currency NOT IN (20,27,28) THEN 1 
+					  WHEN @IsExclTestCurr = 1 AND cs.currency NOT IN (20,27,28) THEN 1 
 					  ELSE 0 END = 1)
-			AND cust.srecommend NOT IN (41430709) 
-			AND cust.RoleId = 1
+			AND cs.srecommend NOT IN (41430709) 
+			AND cs.RoleId = 1
 			AND cust.danger4 > 0 AND cust.danger4 = @Danger
 			;
 	END;
@@ -269,14 +266,14 @@ BEGIN
 		FROM bodb02.dbo.CustInfo AS cust WITH(NOLOCK)
 			INNER JOIN bodb02.dbo.Customer AS cs WITH (NOLOCK) ON cs.custid = cust.custid 
 		WHERE cs.site NOT IN ('Nextbet','9wickets','9wsports')
-			AND cust.username NOT LIKE '%Cashout%'
-			AND cust.mrecommend NOT IN (27899314,11656504,12146012) 
-			AND cust.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+			AND cs.username NOT LIKE '%Cashout%'
+			AND cs.mrecommend NOT IN (27899314,11656504,12146012) 
+			AND cs.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
 			AND (CASE WHEN @IsExclTestCurr = 0 THEN 1 
-					  WHEN @IsExclTestCurr = 1 AND cust.currency NOT IN (20,27,28) THEN 1 
+					  WHEN @IsExclTestCurr = 1 AND cs.currency NOT IN (20,27,28) THEN 1 
 					  ELSE 0 END = 1)
-			AND cust.srecommend NOT IN (41430709) 
-			AND cust.RoleId = 1
+			AND cs.srecommend NOT IN (41430709) 
+			AND cs.RoleId = 1
 			AND cust.danger5 > 0 AND cust.danger5 = @Danger
 			;
 	END;

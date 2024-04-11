@@ -1,9 +1,10 @@
 /*<info serverAlias="DBCTS-bodb02" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
-GO
+
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_TicketDetails]
 		@QueryType					TINYINT = 1
 	,	@LastScannedSequenceID		BIGINT = 0
@@ -73,10 +74,11 @@ AS
 		- 20231120@Casey.Huynh:	Enhance Rule for Esport. Adjust Group Stake to 300, Add AssociationByIP, ShareMatch(3 Match(last 7 day) [Redmine ID: #196396]
 		- 20240129@Casey.Huynh: Support Danger Monitor Details In 7 days [Redmine ID: #196361]
 		- 20240129@Thomas.Nguyen: Return more column MalayOdds and add filter by Cashout [Redmine ID: #199634]
-		- 20240322@Vitoria.Le: 	Optimize query by considering to remove temporarily table  [Redmine ID: #201380]
+		- 20240322@Vitoria.Le: 	Optimize query by considering to remove temporarily table  
+									And Separate between QueryType = 1 and QueryType in (2,3) [Redmine ID: #201380]
 
 	Params Explaination:
-		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize)
+		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize) >> refer to new SP CTS_Rpt_MatchMonitor_GetTicketInfo
 					 
 					  2 - to show on report (get tickets by @EventDate & @ListTransId). Support the Last 3 Days
 					  3	- to Show Support the Last 7 days
@@ -126,13 +128,10 @@ BEGIN
 		,	@IsGetDataFromOrigin	BIT = 0
 		,	@IsGetDataFrom14		BIT = 0
 		,	@IsGetDataFromBK		BIT = 0
-		,	@IsFilter				BIT = 0;
-		
-	SET @ToTransDate = DATEADD(SECOND,1,@ToTransDate);
-	--==================================================================
+		,	@IsFilter				BIT = 0
+		;
+
 	DECLARE @tmpBUMBData AS TABLE (BUDay DATETIME,	MBDay DATETIME);
-	DECLARE @tmpSupportedReason AS TABLE (Reason VARCHAR(50) DEFAULT '0' PRIMARY KEY);
-	DECLARE @tmpSupportedDanger AS TABLE (Danger1 TINYINT, Danger2 TINYINT, Danger3 TINYINT, Danger4 TINYINT, Danger5 TINYINT);
 	
 	--==================================================================
 	IF	OBJECT_ID('tempdb..#tmpTickets') IS NOT NULL
@@ -188,23 +187,11 @@ BEGIN
 		,	MalayOdds			SMALLMONEY
 		,	IsCashout			BIT
 	);	
-
-	CREATE CLUSTERED INDEX #CIX_tmpTickets_CustId ON #tmpTickets (
-			CustId			DESC
-	);
-
-	CREATE NONCLUSTERED INDEX #IX_tmpTickets_IsLicensee ON #tmpTickets (
-			IsLicensee		ASC
-	);
-
-	CREATE NONCLUSTERED INDEX #IX_tmpTickets_Score ON #tmpTickets (
-			LiveHomeScore		ASC
-		,	LiveAwayScore		ASC
-	);
 	
-	CREATE NONCLUSTERED INDEX #IX_tmpTickets_IsCashout ON #tmpTickets (
-			IsCashout		ASC
-	);
+	CREATE CLUSTERED INDEX #CIX_tmpTickets_CustId ON #tmpTickets (CustId,CurrencyId,BetTeam);
+	
+	CREATE NONCLUSTERED INDEX #CIX_tmpTickets_Group ON #tmpTickets (TransId) 
+		INCLUDE (LiveHomeScore,LiveAwayScore,IsLicensee,CustomerClass,Danger1,Danger2,Danger3,Danger4,Danger5,Reason,AGroup,MGroup,Hdp,TicketStatus,IsCashout);
 	
 	IF	OBJECT_ID('tempdb..#tmpTransIds') IS NOT NULL
 	BEGIN
@@ -216,11 +203,6 @@ BEGIN
 		,	Reason		VARCHAR(50) DEFAULT '0'
 		,	AGroup		INT
 		,	MGroup		INT
-	);
-
-	CREATE CLUSTERED INDEX #CIX_tmpCustAmount_CustID ON #tmpTransIds (
-			TransId	ASC
-		,	Reason	ASC
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpSportBettype') IS NOT NULL
@@ -238,35 +220,8 @@ BEGIN
 		,	BetID					BIGINT
 	);
 	
-	CREATE INDEX IX_tmpSportBettype_SportTypeIDBetTypeID ON #tmpSportBettype(SportTypeID, BetTypeID);
-
-
-	IF	OBJECT_ID('tempdb..#tmpCustAmount') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpCustAmount;
-	END;
-
-	CREATE TABLE	#tmpCustAmount(
-			CustId		INT
-		,	BetTeam		NVARCHAR(10)
-	);
-
-	CREATE CLUSTERED INDEX #CIX_tmpCustAmount_CustIDBetTeam ON #tmpCustAmount (
-			CustID	ASC
-		,	BetTeam ASC
-	);
-
-	IF	OBJECT_ID('tempdb..#tmpTransIdReason') IS NOT NULL
-	BEGIN
-		DROP TABLE #tmpTransIdReason;
-	END;
-
-	CREATE TABLE #tmpTransIdReason(
-			TransId			BIGINT NOT NULL PRIMARY KEY
-		,	ListReason		VARCHAR(MAX)
-		,	MinReason		VARCHAR(50) DEFAULT '0'	
-	);
-
+	SET @ToTransDate = DATEADD(SECOND,1,@ToTransDate);
+	
 	--=======GET BALANCE UP/ MOVE BET DAY===========================================================
 	INSERT INTO @tmpBUMBData(BUDay,MBDay)
 	EXECUTE bodb02.dbo.Age_SelBalanceUpDay;
@@ -306,10 +261,11 @@ BEGIN
 				,	BetIDPattern		NVARCHAR(20)	'$.BetIDPattern'
 				,	BetID				BIGINT			'$.BetID'
 				) AS j;
+				
+			CREATE NONCLUSTERED INDEX IX_tmpSportBettype_Group ON #tmpSportBettype(SportTypeID, BetTypeID);
+			
 		END;
 	
-	--==========================================================================================
-
 	IF @ListTransId <> ''
 		BEGIN
 			INSERT INTO #tmpTransIds (TransID,Reason,AGroup,MGroup)
@@ -323,79 +279,8 @@ BEGIN
 				,	AGroup		INT '$.AGroup'
 				,	MGroup		INT '$.MGroup'
 				) AS j;
-		END;
-
-	IF (@QueryType = 1)
-		BEGIN --Get ticket for MM Detection
-			INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,LeagueName,IsMajorLeague,SportType,BetType,CustId,BetTeam,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus,LiveIndicator)
-			SELECT	TOP (@BatchSize) b.sequenceid
-				,	b.transid
-				,	b.transdate
-				,	b.matchid
-				,	m.eventdate
-				,	m.Eventstatus
-				,	m.GlobalShowTime
-				,	m.homeid
-				,	m.awayid
-				,	m.leagueid
-				,	l.leaguename
-				,	CASE 
-						WHEN l.LeagueGroupID IN (1,2,3) THEN 1
-						ELSE 0
-					END AS IsMajorLeague
-				,	m.sporttype
-				,	b.bettype
-				,	b.custid
-				,	b.betteam
-				,	b.betid
-				,	b.stake * b.actualrate
-				,	b.stake
-				,	CASE 
-						-- Decimal
-						WHEN b.oddstype = 1 THEN (CASE
-													WHEN ot.OddsType IS NOT NULL THEN (CASE 
-																						WHEN b.odds <= 2 THEN (b.odds - 1)
-																						WHEN b.odds > 2 THEN -(1/(b.odds - 1)) END)
-													ELSE (CASE 
-															WHEN b.odds <= 1 THEN b.odds
-															WHEN b.odds > 1 THEN -(1/b.odds) END) END)
-						-- Hong Kong
-						WHEN b.oddstype = 2 THEN (CASE	
-													WHEN b.odds <= 1 THEN b.odds
-													WHEN b.odds > 1 THEN -(1/b.odds) END)
-						-- Indonesia
-						WHEN b.oddstype = 3 THEN -(1/NULLIF(b.odds,0))
-						-- Malaysian & Myanmar
-						WHEN b.oddstype IN (4,6) THEN b.odds
-						-- US
-						WHEN b.oddstype = 5 THEN -(1/NULLIF(b.odds,0))
-					END AS odds
-				,	b.hdp1
-				,	b.hdp2
-				,	b.livehomescore
-				,	b.liveawayscore
-				,	b.statusID
-				,	b.liveindicator
-			FROM bodb02.dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
-				INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
-				INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
-				INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
-				INNER JOIN #tmpSportBettype AS t WITH(NOLOCK) ON m.sporttype = t.SportTypeID AND b.bettype = t.BetTypeID
-				LEFT JOIN bodb02.dbo.f_Set_OddsTypeBettypes() AS ot ON ot.BetType = t.BetTypeID
-			WHERE	b.sequenceid > @LastScannedSequenceID
-				AND m.eventstatus <> 'completed'
-				AND b.LiveIndicator = @IsLive
-				AND b.Currency NOT IN (20,27,28)
-				AND b.BetFrom NOT IN ('p','m','w','0','3','6')
-				AND b.Username NOT LIKE '%Cashout%'
-				AND b.srecommend NOT IN (41430709) 
-				AND b.mrecommend NOT IN (27899314,11656504,12146012) 
-				AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)AND b.statusID <> 101 -- Reject		
-				AND c.site NOT IN ('Nextbet','9wickets','9wsports')
-				AND l.LeagueGroupID NOT IN (42,74,108,113,122,151) -- SABA leagues
-				AND ISNULL(b.oddstype,0) <> 0
-			ORDER BY b.sequenceid ASC
-				;
+				
+			CREATE CLUSTERED INDEX CIX_tmpTransIds_Group ON #tmpTransIds (TransId, Reason);
 		END;
 
 	IF (@QueryType = 2) --Get Date for MM Monitor
@@ -549,8 +434,7 @@ BEGIN
 						INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 						INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID 
 						INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
-					WHERE (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
-					;
+					WHERE (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
 				END
 				ELSE IF (@TicketType = 0)
 				BEGIN	
@@ -594,24 +478,22 @@ BEGIN
 							,	ISNULL(tmpTs.MGroup,0)
 								,	b.oddstype
 								,	CASE WHEN b.betdaqid = -2 THEN 1 ELSE 0 END AS IsCashout
-							FROM bodb02.dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
+							FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 								INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 								INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID
 								INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency	
 								LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
-							WHERE	b.matchid = @MatchID								
+							WHERE	b.sequenceid < @LastScannedSequenceID								
+								AND b.matchid = @MatchID
 								AND b.liveindicator = @IsLive
-								AND b.sequenceid < @LastScannedSequenceID
 								AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
 								AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
-				
 					END;
 
 					IF (@CustAmountRM <= 0) 
 					BEGIN
 						IF (@BatchSize = 0) ---GET TotalTicket
 						BEGIN
-
 							INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetChoiceHome,BetChoiceAway
 								,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup, OddsType, IsCashout)
 							SELECT b.sequenceid
@@ -649,17 +531,16 @@ BEGIN
 							,	ISNULL(tmpTs.MGroup,0)
 								,	b.oddstype
 								,	CASE WHEN b.betdaqid = -2 THEN 1 ELSE 0 END AS IsCashout
-							FROM bodb02.dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
+							FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 								INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 								INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID
 								INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 								LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
-							WHERE	b.matchid = @MatchID								
+							WHERE	b.sequenceid < @LastScannedSequenceID							
+								AND b.matchid = @MatchID	
 								AND b.liveindicator = @IsLive
-								AND b.sequenceid < @LastScannedSequenceID
 								AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
 								AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
-							
 						END
 						ELSE IF (@BatchSize > 0) --- GET Ticket Details 
 						BEGIN
@@ -700,22 +581,20 @@ BEGIN
 							,	ISNULL(tmpTs.MGroup,0)
 								,	b.oddstype
 								,	CASE WHEN b.betdaqid = -2 THEN 1 ELSE 0 END AS IsCashout
-							FROM bodb02.dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
+							FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 								INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 								INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON l.leagueid = m.leagueid
 								INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID 
 								INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 								LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
-							WHERE	b.matchid = @MatchID
+							WHERE	b.sequenceid < @LastScannedSequenceID
+								AND b.matchid = @MatchID
 								AND b.liveindicator = @IsLive
-								AND b.sequenceid < @LastScannedSequenceID
 								AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
 								AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
 							ORDER BY b.sequenceid DESC;
 
 							SET @MinSequenceId = (SELECT MIN(SequenceId) FROM #tmpTickets);
-
-
 						END 
 					END;
 					
@@ -746,7 +625,6 @@ BEGIN
 							END
 			FROM #tmpTickets AS t
 				LEFT JOIN bodb02.dbo.f_Set_OddsTypeBettypes() AS ot ON ot.BetType = t.BetType;
-
 		END;	
 	
 	IF (@QueryType = 3) --Get Date for Danger Monitor
@@ -1056,20 +934,20 @@ BEGIN
 						,	ISNULL(tmpTs.Reason,'0')
 						,	ISNULL(tmpTs.AGroup,0)
 						,	ISNULL(tmpTs.MGroup,0)
-						FROM bodb02.dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
+						FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 							INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 							INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
 							INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID
 							INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency	
 							LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
-						WHERE	b.matchid = @MatchID								
+						WHERE	b.sequenceid < @LastScannedSequenceID							
+							AND b.matchid = @MatchID	
 							AND b.liveindicator = @IsLive
 							AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 							AND b.username NOT LIKE '%Cashout%'
 							AND b.mrecommend NOT IN (27899314,11656504,12146012) 
 							AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
 							AND b.srecommend NOT IN (41430709)
-							AND b.sequenceid < @LastScannedSequenceID
 							AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
 				
 					END;
@@ -1112,21 +990,21 @@ BEGIN
 						,	ISNULL(tmpTs.Reason,'0')
 						,	ISNULL(tmpTs.AGroup,0)
 						,	ISNULL(tmpTs.MGroup,0)
-						FROM bodb02.dbo.bettrans AS b WITH(NOLOCK, INDEX=IX_sequenceid)
+						FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 							INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 							INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
 							INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON l.leagueid = m.leagueid
 							INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID 
 							INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 							LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
-						WHERE	b.matchid = @MatchID
+						WHERE	b.sequenceid < @LastScannedSequenceID
+							AND b.matchid = @MatchID
 							AND b.liveindicator = @IsLive
 							AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 							AND b.username NOT LIKE '%Cashout%'
 							AND b.mrecommend NOT IN (27899314,11656504,12146012) 
 							AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
 							AND b.srecommend NOT IN (41430709)
-							AND b.sequenceid < @LastScannedSequenceID
 							AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
 						ORDER BY b.sequenceid DESC;
 
@@ -1222,6 +1100,8 @@ BEGIN
 			--========================Fitler By Danger==================		
 			IF (@ListDanger IS NOT NULL)
 			BEGIN
+				DECLARE @tmpSupportedDanger AS TABLE (Danger1 TINYINT, Danger2 TINYINT, Danger3 TINYINT, Danger4 TINYINT, Danger5 TINYINT);
+			
 				INSERT INTO @tmpSupportedDanger (Danger1,Danger2,Danger3,Danger4,Danger5)
 				SELECT	ISNULL(JSON_VALUE(ssk.value, '$.Danger1'),0) AS Danger1
 					,	ISNULL(JSON_VALUE(ssk.value, '$.Danger2'),0) AS Danger2
@@ -1279,6 +1159,19 @@ BEGIN
 			--========================Fitler By Reason==================
 			IF (@ListReason <> '')
 			BEGIN
+				DECLARE @tmpSupportedReason AS TABLE (Reason VARCHAR(50) DEFAULT '0' PRIMARY KEY);
+				
+				IF	OBJECT_ID('tempdb..#tmpTransIdReason') IS NOT NULL
+				BEGIN
+					DROP TABLE #tmpTransIdReason;
+				END;
+
+				CREATE TABLE #tmpTransIdReason(
+						TransId			BIGINT NOT NULL PRIMARY KEY
+					,	ListReason		VARCHAR(MAX)
+					,	MinReason		VARCHAR(50) DEFAULT '0'	
+				);
+			
 				INSERT INTO @tmpSupportedReason (Reason)
 				SELECT ssk.value FROM STRING_SPLIT(@ListReason, ',') ssk;				
 				
@@ -1374,12 +1267,24 @@ BEGIN
 			--========================Cust Amount(RM)==================	
 			IF (@CustAmountRM > 0)
 			BEGIN
+				IF	OBJECT_ID('tempdb..#tmpCustAmount') IS NOT NULL
+				BEGIN
+					DROP TABLE	#tmpCustAmount;
+				END;
+
+				CREATE TABLE	#tmpCustAmount(
+						CustId		INT
+					,	BetTeam		NVARCHAR(10)
+				);
+			
 				INSERT INTO #tmpCustAmount(CustId, BetTeam)
 				SELECT	tmpTk.CustId
 					,	tmpTk.BetTeam
 				FROM #tmpTickets AS tmpTk WITH(NOLOCK)
 				GROUP BY tmpTk.CustId, tmpTk.BetTeam
 				HAVING SUM(tmpTk.Stake) >= @CustAmountRM;
+
+				CREATE CLUSTERED INDEX CIX_tmpCustAmount_Group ON #tmpCustAmount (CustID, BetTeam);
 
 				DELETE tmpTk
 				FROM #tmpTickets AS tmpTk WITH(NOLOCK)
