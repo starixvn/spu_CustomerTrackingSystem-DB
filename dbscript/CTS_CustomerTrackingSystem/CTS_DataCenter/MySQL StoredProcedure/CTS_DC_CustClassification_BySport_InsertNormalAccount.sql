@@ -40,6 +40,9 @@ BEGIN
 	DECLARE CONST_ACTIONTYPE_REMOVE 					INT DEFAULT 2;
     DECLARE CONST_ACTIONTYPE_IGNOREPROBATION 			INT DEFAULT 5;
     
+	DECLARE CONST_SOURCETYPE_SAMECATEGORY 				INT DEFAULT 0;
+    DECLARE CONST_SOURCETYPE_LESSTHAN10TICKETS			INT DEFAULT 1;
+
 	DECLARE lv_CreatedBy 								INT DEFAULT 10278938;
 	DECLARE lv_CurrentDateTime 							DATETIME DEFAULT CURRENT_TIME();
     DECLARE lv_CurrentDate								DATE DEFAULT CURRENT_DATE();
@@ -65,6 +68,7 @@ BEGIN
 		, 	ActionType					SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN; 5: Not satisfy Pass Probation*/
         ,	PerformanceTime				DATETIME
 		,	SpecialCC					INT
+		,	SourceTypeID      			SMALLINT
 		, 	INDEX    			    	IX_Temp_NewClassification(CustID, DWCateID)  
         ,	PRIMARY KEY (CustID, SportID)
 	); 
@@ -223,6 +227,12 @@ BEGIN
 								  END)
 	 WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);
 
+	UPDATE 	Temp_NewClassification AS temp 
+	SET 	temp.SourceTypeID = (CASE WHEN (temp.OldCateGroup IS NULL OR temp.OldCateGroup = CONST_CATEGORY_NEWMEMBER) AND temp.NewCateGroup = CONST_CATEGORY_NEWMEMBER THEN CONST_SOURCETYPE_LESSTHAN10TICKETS
+                                      WHEN temp.OldCateGroup = temp.NewCateGroup THEN CONST_SOURCETYPE_SAMECATEGORY
+								END)
+	WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);
+
     /* 7: GENERATE DATA NO CHANGED */   
     UPDATE 	Temp_NewClassification AS temp
 	SET 	temp.IsDataChanged = (CASE WHEN temp.NewCateID = temp.OldCateID THEN 0 /*No update category*/ ELSE temp.IsDataChanged END)
@@ -273,7 +283,8 @@ BEGIN
 		,	ActionType = CONST_ACTIONTYPE_UPDATE
     WHERE IsDataChanged = 0 
 		AND ((TargetCC <> OldTargetCC) OR (OldCateID <> NewCateID))
-		AND ActionType = CONST_ACTIONTYPE_IGNOREPROBATION;
+		AND (ActionType = CONST_ACTIONTYPE_IGNOREPROBATION 
+			OR SourceTypeID IN (CONST_SOURCETYPE_SAMECATEGORY, CONST_SOURCETYPE_LESSTHAN10TICKETS));
     
     /* 11: UPDATE CTS CLASSIFICATION */
     UPDATE CTS_DataCenter.CTSCustomerClassification_BySport AS cate
@@ -323,7 +334,7 @@ BEGIN
 
     /* 15: WRITE HISTORY LOG (VIEW ON WEB) */
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport_History
-	(CustID, CTSCustID, CategoryID, SportID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, ActionType, InsertDate, TargetCC, PerformanceTime)
+	(CustID, CTSCustID, CategoryID, SportID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, ActionType, InsertDate, TargetCC, PerformanceTime, SourceTypeID)
 	SELECT DISTINCT	temp.CustID
 				, 	temp.CTSCustID
 				, 	temp.NewCateID
@@ -338,12 +349,13 @@ BEGIN
 				, 	DATE(lv_CurrentDateTime)
 				,	temp.TargetCC 
                 ,	temp.PerformanceTime	
+				,	temp.SourceTypeID
 	FROM 	Temp_NewClassification AS temp
 	WHERE temp.IsDataChanged  = 1;
 	
     /* 16: WRITE HISTORY LOG (TRACE DATA) */
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport_Log
-	(CustID, CTSCustID, CategoryID, SportID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, ActionType, InsertDate, TargetCC, OldCategoryID, DWCategoryID, IsDataChanged, PerformanceTime)
+	(CustID, CTSCustID, CategoryID, SportID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount, ActiveDays, ActionType, InsertDate, TargetCC, OldCategoryID, DWCategoryID, IsDataChanged, PerformanceTime, SourceTypeID)
 	SELECT DISTINCT	temp.CustID
 				, 	temp.CTSCustID
 				, 	temp.NewCateID
@@ -361,6 +373,7 @@ BEGIN
                 , 	temp.DWCateID
 				,   temp.IsDataChanged
                 ,	temp.PerformanceTime
+				,	temp.SourceTypeID
 	FROM 	Temp_NewClassification AS temp;
     
 	/* 17: RETURN UPDATED CUSTOMERS TO SERVICE FOR FUTHER STEPS */
