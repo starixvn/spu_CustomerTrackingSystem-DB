@@ -146,6 +146,8 @@ BEGIN
 		,	BetIDPattern	NVARCHAR(20)	'$.BetIDPattern'
 		,	BetID			BIGINT			'$.BetID'
 		) AS j;
+		
+	CREATE NONCLUSTERED INDEX CIX_tmpBetType_BetType ON #tmpBetType (BetType) INCLUDE (BetID);
 	
 	INSERT INTO @tmpMatchSection (Id, EventStatus)
 	SELECT 	ssk.value
