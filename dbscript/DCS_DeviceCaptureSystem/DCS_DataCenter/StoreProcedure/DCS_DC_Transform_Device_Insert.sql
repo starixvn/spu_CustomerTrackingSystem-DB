@@ -205,7 +205,7 @@ BEGIN
     WHERE tts.DeviceCode IS NOT NULL
 		AND NOT EXISTS (SELECT 1 FROM Temp_ExistedDevice AS de WHERE de.DeviceCode = tts.DeviceCode)
 		AND NOT EXISTS (SELECT 1 FROM Temp_RecoveredDevice AS dr WHERE dr.DeviceCode = tts.DeviceCode)
-    GROUP BY tts.DeviceCode, tts.UserAgentKey;
+    GROUP BY tts.DeviceCode, tts.UserAgentKey; #--> Use GROUP BY UserAgentKey combined with INSERT IGNORE to correctly retrieve the UserAgentKey of the first record
     
     # INSERT new DeviceCode
     # NEW code - new DeviceID
