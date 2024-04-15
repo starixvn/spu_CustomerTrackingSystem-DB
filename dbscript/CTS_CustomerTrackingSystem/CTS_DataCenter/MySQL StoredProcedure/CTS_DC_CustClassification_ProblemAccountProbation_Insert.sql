@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_ProblemAccountProbation_Insert`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_ProblemAccountProbation_Insert_xpre`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_ProblemAccountProbation_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_ProblemAccountProbation_Insert_xpre`(
 		IN ip_ProblemAccount 	JSON
 )
     SQL SECURITY INVOKER
@@ -24,6 +24,7 @@ BEGIN
             - 20230517@Casey.Huynh:	New Category for Robot OCRD [Redmine ID: #186991]
             - 20240103@Thomas.Nguyen: New Category for System Detect Unauthorized Login [RedmineID: #197710]
             - 20240318@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
+            - 20240415@Casey.Huynh: Fix Missing DangerScrore info in remark [Redmine ID: #203889]
 
 		Param's Explanation (filtered by):      
 			- CALL CTS_DC_CustClassification_ProblemAccountProbation_Insert ('[{"CustID": 123,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10}]');
@@ -34,7 +35,9 @@ BEGIN
     DECLARE	CONST_CATEGORYID_ROBOTOCRD_LOSING 		INT DEFAULT 166;
     DECLARE	CONST_CATEGORYID_UNAUTHORIZEDLOGIN 		    INT DEFAULT 64;
     DECLARE	CONST_CATEGORYID_UNAUTHORIZEDLOGIN_LOSING	INT DEFAULT 104;
-
+    DECLARE	CONST_CATEGORYID_EARLYWARININGMEMBER	 	INT DEFAULT 65;
+	DECLARE	CONST_CATEGORYID_EARLYWARININGMEMBER_LOSING	INT DEFAULT 105;
+    
     DECLARE	CONST_ACTIONTYPE_UPDATE 			INT DEFAULT 1;
     DECLARE CONST_SOURCETYPE_PROBLEMDIRECT		INT DEFAULT 31;
     DECLARE CONST_SOURCETYPE_PROBLEMAFFECT		INT DEFAULT 32;
@@ -46,7 +49,7 @@ BEGIN
     DECLARE	CONST_LICVIP_SUSPICIOUSCATEGORY		INT DEFAULT 4;    
     DECLARE	CONST_VVIPCATEGORY					INT DEFAULT 210;   
     DECLARE CONST_SPORTGROUP_WRAPPER			INT DEFAULT 100;
-	DECLARE	CONST_GROUPPRIORITY_DANGEROUS				SMALLINT UNSIGNED DEFAULT 5700;
+	DECLARE	CONST_GROUPPRIORITY_DANGEROUS		SMALLINT UNSIGNED DEFAULT 5700;
     
 	DECLARE lv_CreatedBy 						INT DEFAULT 10278938;
     DECLARE lv_CurrentDateTime 					DATETIME DEFAULT CURRENT_TIME(); 
@@ -161,6 +164,11 @@ BEGIN
     SET  t.Remark   =   CASE    WHEN cld.CustID IS NOT NULL THEN JSON_OBJECT('FirstBetDate', cld.FirstBetDate, 'Bot', cld.Bot, 'InvalidBrowser', cld.InvalidBrowser, 'BotPCT', cld.BotTransPercentage, 'InvalidBrowserPCT', cld.InvalidBrowserInfoTransPercentage, 'DetectionDate', cld.DetectionDate)
                                 ELSE t.Remark END
     WHERE t.RelevantCategoryID IN (CONST_CATEGORYID_UNAUTHORIZEDLOGIN, CONST_CATEGORYID_UNAUTHORIZEDLOGIN_LOSING);
+    
+    UPDATE Temp_PA AS t
+	INNER JOIN CTS_DataCenter.Customer_DangerousScore AS cd ON t.CustID = cd.CustID
+    SET  t.Remark = CONCAT('Detection Date: ',DATE_FORMAT(cd.ClassifiedDate, '%d %b, %Y'),' - Dangerous Score: ',CAST(cd.ClassifiedScore*100 AS DECIMAL(5,2)),'%')
+    WHERE t.RelevantCategoryID IN (CONST_CATEGORYID_EARLYWARININGMEMBER, CONST_CATEGORYID_EARLYWARININGMEMBER_LOSING);
 
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, Remark)
 	SELECT  CustID
