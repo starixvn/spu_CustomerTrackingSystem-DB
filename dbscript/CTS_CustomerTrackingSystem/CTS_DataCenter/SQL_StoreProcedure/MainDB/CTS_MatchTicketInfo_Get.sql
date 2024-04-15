@@ -147,8 +147,6 @@ BEGIN
 		,	BetID			BIGINT			'$.BetID'
 		) AS j;
 		
-	CREATE NONCLUSTERED INDEX CIX_tmpBetType_BetType ON #tmpBetType (BetType) INCLUDE (BetID);
-	
 	INSERT INTO @tmpMatchSection (Id, EventStatus)
 	SELECT 	ssk.value
 		,	CASE 
@@ -307,7 +305,7 @@ BEGIN
 						 ELSE 0 END) AS TotalTicketAway
 		FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 			INNER JOIN #tmpDangerCust AS cust WITH(NOLOCK) ON cust.custid = b.custid
-			INNER JOIN #tmpBetType AS t WITH(NOLOCK) ON b.bettype = t.bettype AND t.BetId = b.betid
+			INNER JOIN #tmpBetType AS t WITH(NOLOCK) ON b.bettype = t.bettype
 		WHERE b.winlostdate >= @FDate AND b.winlostdate <= @TDate
 			AND (CASE WHEN @MarketList = '' THEN 1
 					  WHEN @MarketList <> '' AND b.LiveIndicator IN (SELECT ssk.value FROM STRING_SPLIT (@MarketList, ',') AS ssk) THEN 1
@@ -357,7 +355,7 @@ BEGIN
 				,	1
 			FROM bodb02.dbo.bettrans14 AS b WITH(NOLOCK)
 				INNER JOIN #tmpDangerCust AS cust WITH(NOLOCK) ON cust.custid = b.custid
-				INNER JOIN #tmpBetType AS t WITH(NOLOCK) ON b.bettype = t.bettype AND t.BetId = b.betid
+				INNER JOIN #tmpBetType AS t WITH(NOLOCK) ON b.bettype = t.bettype
 			WHERE b.winlostdate BETWEEN @FDate AND @TDate
 				AND (CASE WHEN @MarketList = '' THEN 1
 					      WHEN @MarketList <> '' AND b.LiveIndicator IN (SELECT ssk.value FROM STRING_SPLIT (@MarketList, ',') AS ssk) THEN 1
