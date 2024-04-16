@@ -34,7 +34,7 @@ AS
 		- 20231123@Victoria.Le:	  Comment out the above code [Call SP from DW] and wait to update rule from BI TW team [Redmine ID: #195060]
 		- 20231206@Victoria.Le:	  Remove - Comment out the above code [Call SP from DW] [Redmine ID: #197958]
 		- 20240130@Victoria.Le:	  Change tables - TWGB Migrate data from bodb02 to WASAVerse [Redmine ID: #191955]
-		- 20240416@Victoria.Le:	  Remove the statement which calling SP from DW - Exclude EC2024 - Adjustment rules [Redmine ID: #203848]
+		- 20240416@Victoria.Le:	  Remove the statement which calling SP from DW - Exclude EC2024 - Adjustment rules [Redmine ID: #203848] [Redmine ID: #202847]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_ScanTicket] '2022-02-15 23:10:15.983','2022-02-16 02:15:20.983',10900
@@ -160,7 +160,7 @@ BEGIN
 
 	CREATE CLUSTERED INDEX #CIX_TmpRawTicket_Transdate ON #TmpRawTicket (TransdateSec ASC);
 	CREATE NONCLUSTERED INDEX IX_TmpRawTicket_CustID ON #TmpRawTicket (Custid ASC);
-	CREATE NONCLUSTERED INDEX IX_TmpRawTicket_IsWCLeague ON #TmpRawTicket (IsSpecialLeague ASC);
+	CREATE NONCLUSTERED INDEX IX_TmpRawTicket_IsSpecialLeague ON #TmpRawTicket (IsSpecialLeague ASC);
 
 	SET @SkipTransCount_New = 0;
 	;WITH cte_stats AS (
