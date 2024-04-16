@@ -305,11 +305,16 @@ BEGIN
 						 ELSE 0 END) AS TotalTicketAway
 		FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 			INNER JOIN #tmpDangerCust AS cust WITH(NOLOCK) ON cust.custid = b.custid
-			INNER JOIN #tmpBetType AS t WITH(NOLOCK) ON b.bettype = t.bettype
+			CROSS APPLY (
+					SELECT bt.BetID, bt.BetChoiceType,bt.BetChoiceHome,bt.BetChoiceAway
+					FROM #tmpBetType AS bt WITH(NOLOCK)
+					WHERE b.Bettype = bt.Bettype
+				) AS t
 		WHERE b.winlostdate >= @FDate AND b.winlostdate <= @TDate
 			AND (CASE WHEN @MarketList = '' THEN 1
 					  WHEN @MarketList <> '' AND b.LiveIndicator IN (SELECT ssk.value FROM STRING_SPLIT (@MarketList, ',') AS ssk) THEN 1
 					  ELSE 0 END = 1)
+			AND b.BetID = t.BetID
 		GROUP BY b.MatchId, t.BetChoiceType, b.Bettype, b.LiveIndicator, b.BetId
 		-- OPTION (RECOMPILE)
 		;
@@ -355,11 +360,16 @@ BEGIN
 				,	1
 			FROM bodb02.dbo.bettrans14 AS b WITH(NOLOCK)
 				INNER JOIN #tmpDangerCust AS cust WITH(NOLOCK) ON cust.custid = b.custid
-				INNER JOIN #tmpBetType AS t WITH(NOLOCK) ON b.bettype = t.bettype
+				CROSS APPLY (
+					SELECT bt.BetID,bt.BetChoiceType,bt.BetChoiceHome,bt.BetChoiceAway
+					FROM #tmpBetType AS bt WITH(NOLOCK)
+					WHERE b.Bettype = bt.Bettype
+				) AS t
 			WHERE b.winlostdate BETWEEN @FDate AND @TDate
 				AND (CASE WHEN @MarketList = '' THEN 1
 					      WHEN @MarketList <> '' AND b.LiveIndicator IN (SELECT ssk.value FROM STRING_SPLIT (@MarketList, ',') AS ssk) THEN 1
 					      ELSE 0 END = 1)
+				AND b.BetID = t.BetID
 			GROUP BY b.MatchId, t.BetChoiceType, b.Bettype, b.LiveIndicator, b.BetId
 			-- OPTION (RECOMPILE)
 			;
