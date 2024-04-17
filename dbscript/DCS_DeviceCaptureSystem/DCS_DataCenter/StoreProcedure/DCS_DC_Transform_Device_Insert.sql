@@ -289,6 +289,26 @@ BEGIN
 		, de.FirstDeviceCode = dv.FirstDeviceCode;
 
     # UPDATE back Temp_Transaction
+    INSERT INTO TestFlowTransferDevice_Jonathan(tts_TransID, tts_DeviceID, tts_FirstDeviceCode, tts_DeviceCode, tts_DeviceCodeID, tts_AccountID, tts_FingerprintCode, tts_DeviceFingerprintID, tts_DeviceStatus, de_DeviceID, de_DeviceCode, de_DeviceCodeID, de_FirstDeviceCode, de_FirstTransID, de_IsNew, dr_AccountID, dr_DeviceID, dr_DeviceCode, dr_FingerprintCode, dr_RecoverCode, df_DeviceID, df_FingerprintCode, df_DeviceFingerprintID, new_DeviceID, new_FirstDeviceCode, new_DeviceCodeID, new_DeviceFingerprintID, new_DeviceStatus)
+    SELECT tts.TransID, tts.DeviceID, tts.FirstDeviceCode, tts.DeviceCode, tts.DeviceCodeID, tts.AccountID, tts.FingerprintCode, tts.DeviceFingerprintID, tts.DeviceStatus, de.DeviceID, de.DeviceCode, de.DeviceCodeID, de.FirstDeviceCode, de.FirstTransID, de.IsNew, dr.AccountID, dr.DeviceID, dr.DeviceCode, dr.FingerprintCode, dr.RecoverCode, df.DeviceID, df.FingerprintCode, df.DeviceFingerprintID
+    ,	IF(de.DeviceID > 0, de.DeviceID, tts.DeviceID) AS new_DeviceID
+    ,	IF(de.DeviceID > 0, de.FirstDeviceCode, tts.FirstDeviceCode) AS new_FirstDeviceCode
+    ,	IF(de.DeviceID > 0, de.DeviceCodeID, tts.DeviceCodeID) AS new_DeviceCodeID
+    ,	IF(df.DeviceFingerprintID > 0, df.DeviceFingerprintID, tts.DeviceFingerprintID) AS new_DeviceFingerprintID
+    ,	CASE 
+			WHEN de.DeviceID > 0 AND tts.TransId > de.FirstTransID AND dr.DeviceID IS NULL THEN vrDeviceStatusOld
+			WHEN dr.DeviceID > 0 OR dr.RecoverCode IS NOT NULL THEN vrDeviceStatusRecover
+			WHEN de.DeviceID > 0 AND de.IsNew = 1 THEN vrDeviceStatusNew  
+			ELSE tts.DeviceStatus
+		END AS new_DeviceStatus
+    FROM Temp_Transaction AS tts
+		LEFT JOIN Temp_ExistedDevice AS de ON de.DeviceCode = tts.DeviceCode
+		LEFT JOIN Temp_RecoveredDevice AS dr ON dr.AccountID = tts.AccountID 
+											AND dr.DeviceCode = tts.DeviceCode 
+											AND dr.FingerprintCode = tts.FingerprintCode
+		LEFT JOIN DCS_DataCenter.DeviceFingerprint df ON df.DeviceID = de.DeviceID 
+													AND df.FingerprintCode = tts.FingerprintCode;
+    
     UPDATE Temp_Transaction AS tts
 		LEFT JOIN Temp_ExistedDevice AS de ON de.DeviceCode = tts.DeviceCode
 		LEFT JOIN Temp_RecoveredDevice AS dr ON dr.AccountID = tts.AccountID 
@@ -304,7 +324,7 @@ BEGIN
 										WHEN de.DeviceID > 0 AND tts.TransId > de.FirstTransID AND dr.DeviceID IS NULL THEN vrDeviceStatusOld
 										WHEN dr.DeviceID > 0 OR dr.RecoverCode IS NOT NULL THEN vrDeviceStatusRecover
                                         WHEN de.DeviceID > 0 AND de.IsNew = 1 THEN vrDeviceStatusNew  
-										ELSE tts.DeviceStatus
+										ELSE tts.DeviceStatus 
 									END;
 
 	SELECT 	TransID
