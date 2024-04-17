@@ -17,6 +17,7 @@ AS
 
 	Revisions:
 		- 20230420@Jonas.Huynh: Created [Redmine ID: #186678]
+		- 20240327@Jonas.Huynh: EC2024 - Resolve Locking [Redmine ID: #200842]
 
 	Param's Explanation:
 		@ListCustId	 : This parameter is used to clear processed customer from normal pool
@@ -35,7 +36,14 @@ BEGIN
 		DROP TABLE	#tmpCustomers;
 	END
 
+	IF OBJECT_ID('tempdb..#tmpIDs') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpIDs;
+	END
+
 	CREATE TABLE #tmpCustomers (CustId INT PRIMARY KEY);
+
+	CREATE TABLE #tmpIDs (ID INT PRIMARY KEY);
 
 	-- #1: Get Customers
     INSERT INTO  #tmpCustomers (CustID) 
@@ -45,17 +53,25 @@ BEGIN
 	-- #2: Clear normal pool
 	IF(@ScannedMaxId IS NOT NULL)
 	BEGIN
-		DELETE r WITH (ROWLOCK)
-		FROM dbo.CustomerClassification_NormalPool AS r
-			INNER JOIN #tmpCustomers AS c ON c.CustId = r.CustId
-		WHERE r.ID <= @ScannedMaxId;
+
+	INSERT INTO #tmpIDs (ID)
+	SELECT p.ID
+	FROM dbo.[CustomerClassification_NormalPool] AS p WITH(NOLOCK)
+		INNER JOIN #tmpCustomers AS t ON t.CustId = p.CustId
+	WHERE p.ID <= @ScannedMaxId;
+
+	DELETE r WITH (ROWLOCK)
+	FROM #tmpIDs AS r
+		INNER LOOP JOIN dbo.[CustomerClassification_NormalPool] AS c ON c.ID = r.ID;
+
 	END;
 	
 	DROP TABLE #tmpCustomers;
+	DROP TABLE #tmpIDs;
 END;
 GO
 
-GRANT EXECUTE ON [dbo].[CTS_GeneralNormalClassification_NormalPool_Clear] TO [bodbSPUNet]
+GRANT EXECUTE ON [dbo].[CTS_GeneralNormalClassification_NormalPool_Clear] TO [wsv_cts]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CTS_GeneralNormalClassification_NormalPool_Clear] TO [bodbSPUNet]
+GRANT VIEW DEFINITION ON [dbo].[CTS_GeneralNormalClassification_NormalPool_Clear] TO [wsv_cts]
 GO
