@@ -82,6 +82,16 @@ CREATE NONCLUSTERED INDEX [IX_CustomerClassification_NormalPool_CustId] ON [dbo]
 );
 GO
 
+DROP INDEX [IX_CustomerClassification_BySport_NormalPool_Priority_CustId_SportGroup] ON [dbo].[CustomerClassification_BySport_NormalPool];
+GO
+
+CREATE NONCLUSTERED INDEX [IX_CustomerClassification_BySport_NormalPool_CustId_SportGroup] ON [dbo].[CustomerClassification_BySport_NormalPool]
+(
+	CustId,
+	SportGroup
+);
+GO
+
 -- #4. ADD SYSTEM PARAMETER
 DECLARE @GeneralValue BIGINT;
 DECLARE @BysportValue BIGINT;

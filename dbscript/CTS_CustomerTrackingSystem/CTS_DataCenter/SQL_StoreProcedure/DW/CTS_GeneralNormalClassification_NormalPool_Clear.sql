@@ -36,13 +36,13 @@ BEGIN
 		DROP TABLE	#tmpCustomers;
 	END
 
+	CREATE TABLE #tmpCustomers (CustId INT PRIMARY KEY);
+
 	IF OBJECT_ID('tempdb..#tmpIDs') IS NOT NULL
 	BEGIN
 		DROP TABLE	#tmpIDs;
 	END
-
-	CREATE TABLE #tmpCustomers (CustId INT PRIMARY KEY);
-
+	   
 	CREATE TABLE #tmpIDs (ID INT PRIMARY KEY);
 
 	-- #1: Get Customers
@@ -53,17 +53,15 @@ BEGIN
 	-- #2: Clear normal pool
 	IF(@ScannedMaxId IS NOT NULL)
 	BEGIN
+		INSERT INTO #tmpIDs (ID)
+		SELECT p.ID
+		FROM [dbo].[CustomerClassification_NormalPool] AS p WITH(NOLOCK)
+			INNER JOIN #tmpCustomers AS t ON t.CustId = p.CustId
+		WHERE p.ID <= @ScannedMaxId;
 
-	INSERT INTO #tmpIDs (ID)
-	SELECT p.ID
-	FROM dbo.[CustomerClassification_NormalPool] AS p WITH(NOLOCK)
-		INNER JOIN #tmpCustomers AS t ON t.CustId = p.CustId
-	WHERE p.ID <= @ScannedMaxId;
-
-	DELETE r WITH (ROWLOCK)
-	FROM #tmpIDs AS r
-		INNER LOOP JOIN dbo.[CustomerClassification_NormalPool] AS c ON c.ID = r.ID;
-
+		DELETE r WITH (ROWLOCK)
+		FROM #tmpIDs AS r
+			INNER LOOP JOIN [dbo].[CustomerClassification_NormalPool] AS c ON c.ID = r.ID;
 	END;
 	
 	DROP TABLE #tmpCustomers;
