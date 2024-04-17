@@ -23,7 +23,7 @@ WHERE c.CategoryID IN (65,105)
 UPDATE CTSCustomerClassification AS c
 INNER JOIN CTSCustomerClassification_History AS h ON c.CustID = h.CustID
 INNER JOIN Customer_DangerousScore AS cd ON cd.CustID = h.CustID
-SET h.Remark = CONCAT('Detection Date: ', DATE_FORMAT(cd.ClassifiedDate, '%d %b, %Y'),' - Dangerous Score: ',CAST(cd.ClassifiedScore*100 AS DECIMAL(5,2)),'%')
+SET h.Remark = CONCAT('Detection Date: ', DATE_FORMAT(cd.ClassifiedDate, '%b %d, %Y'),' - Dangerous Score: ',CAST(cd.ClassifiedScore*100 AS DECIMAL(5,2)),'%')
 WHERE c.CategoryID IN (65,105)
 	AND h.CategoryID IN (65,105)
     AND h.Remark IS NULL;

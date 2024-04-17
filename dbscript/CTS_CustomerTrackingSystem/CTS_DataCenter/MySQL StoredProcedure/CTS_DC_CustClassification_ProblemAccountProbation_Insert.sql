@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_ProblemAccountProbation_Insert_xpre`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_ProblemAccountProbation_Insert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_ProblemAccountProbation_Insert_xpre`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_ProblemAccountProbation_Insert`(
 		IN ip_ProblemAccount 	JSON
 )
     SQL SECURITY INVOKER
@@ -167,7 +167,7 @@ BEGIN
     
     UPDATE Temp_PA AS t
 	INNER JOIN CTS_DataCenter.Customer_DangerousScore AS cd ON t.CustID = cd.CustID
-    SET  t.Remark = CONCAT('Detection Date: ',DATE_FORMAT(cd.ClassifiedDate, '%d %b, %Y'),' - Dangerous Score: ',CAST(cd.ClassifiedScore*100 AS DECIMAL(5,2)),'%')
+    SET  t.Remark = CONCAT('Detection Date: ',DATE_FORMAT(cd.ClassifiedDate, '%b %d, %Y'),' - Dangerous Score: ',CAST(cd.ClassifiedScore*100 AS DECIMAL(5,2)),'%')
     WHERE t.RelevantCategoryID IN (CONST_CATEGORYID_EARLYWARININGMEMBER, CONST_CATEGORYID_EARLYWARININGMEMBER_LOSING);
 
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, Remark)
