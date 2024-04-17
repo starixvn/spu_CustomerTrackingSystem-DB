@@ -289,8 +289,9 @@ BEGIN
 		, de.FirstDeviceCode = dv.FirstDeviceCode;
 
     # UPDATE back Temp_Transaction
-    INSERT INTO TestFlowTransferDevice_Jonathan(tts_TransID, tts_DeviceID, tts_FirstDeviceCode, tts_DeviceCode, tts_DeviceCodeID, tts_AccountID, tts_FingerprintCode, tts_DeviceFingerprintID, tts_DeviceStatus, de_DeviceID, de_DeviceCode, de_DeviceCodeID, de_FirstDeviceCode, de_FirstTransID, de_IsNew, dr_AccountID, dr_DeviceID, dr_DeviceCode, dr_FingerprintCode, dr_RecoverCode, df_DeviceID, df_FingerprintCode, df_DeviceFingerprintID, new_DeviceID, new_FirstDeviceCode, new_DeviceCodeID, new_DeviceFingerprintID, new_DeviceStatus)
-    SELECT tts.TransID, tts.DeviceID, tts.FirstDeviceCode, tts.DeviceCode, tts.DeviceCodeID, tts.AccountID, tts.FingerprintCode, tts.DeviceFingerprintID, tts.DeviceStatus, de.DeviceID, de.DeviceCode, de.DeviceCodeID, de.FirstDeviceCode, de.FirstTransID, de.IsNew, dr.AccountID, dr.DeviceID, dr.DeviceCode, dr.FingerprintCode, dr.RecoverCode, df.DeviceID, df.FingerprintCode, df.DeviceFingerprintID
+    INSERT INTO TestFlowTransferDevice_Jonathan(InsertTime, tts_TransID, tts_DeviceID, tts_FirstDeviceCode, tts_DeviceCode, tts_DeviceCodeID, tts_AccountID, tts_FingerprintCode, tts_DeviceFingerprintID, tts_DeviceStatus, de_DeviceID, de_DeviceCode, de_DeviceCodeID, de_FirstDeviceCode, de_FirstTransID, de_IsNew, dr_AccountID, dr_DeviceID, dr_DeviceCode, dr_FingerprintCode, dr_RecoverCode, df_DeviceID, df_FingerprintCode, df_DeviceFingerprintID, new_DeviceID, new_FirstDeviceCode, new_DeviceCodeID, new_DeviceFingerprintID, new_DeviceStatus)
+    SELECT lv_InsertionTime
+    ,	tts.TransID, tts.DeviceID, tts.FirstDeviceCode, tts.DeviceCode, tts.DeviceCodeID, tts.AccountID, tts.FingerprintCode, tts.DeviceFingerprintID, tts.DeviceStatus, de.DeviceID, de.DeviceCode, de.DeviceCodeID, de.FirstDeviceCode, de.FirstTransID, de.IsNew, dr.AccountID, dr.DeviceID, dr.DeviceCode, dr.FingerprintCode, dr.RecoverCode, df.DeviceID, df.FingerprintCode, df.DeviceFingerprintID
     ,	IF(de.DeviceID > 0, de.DeviceID, tts.DeviceID) AS new_DeviceID
     ,	IF(de.DeviceID > 0, de.FirstDeviceCode, tts.FirstDeviceCode) AS new_FirstDeviceCode
     ,	IF(de.DeviceID > 0, de.DeviceCodeID, tts.DeviceCodeID) AS new_DeviceCodeID
@@ -326,6 +327,15 @@ BEGIN
                                         WHEN de.DeviceID > 0 AND de.IsNew = 1 THEN vrDeviceStatusNew  
 										ELSE tts.DeviceStatus 
 									END;
+
+    INSERT INTO ExistedDevice_Jonathan(DeviceID, DeviceCode, DeviceCodeID, FirstTransID, FirstDeviceCode, IsNew, InsertTime)
+    SELECT DeviceID, DeviceCode, DeviceCodeID, FirstTransID, FirstDeviceCode, IsNew, lv_InsertionTime
+    FROM Temp_ExistedDevice;
+    
+    INSERT INTO RecoveredDevice_Jonathan(AccountID, DeviceCode, FingerprintCode, DeviceID, RecoverCode, InsertTime)
+    SELECT AccountID, DeviceCode, FingerprintCode, DeviceID, RecoverCode, lv_InsertionTime
+    FROM Temp_RecoveredDevice;
+
 
 	SELECT 	TransID
 		,	DeviceCodeID
