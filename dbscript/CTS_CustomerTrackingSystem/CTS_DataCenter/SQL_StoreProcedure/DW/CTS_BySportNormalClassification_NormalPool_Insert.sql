@@ -61,8 +61,3 @@ GRANT EXECUTE ON [dbo].[CTS_BySportNormalClassification_NormalPool_Insert] TO [w
 GO
 GRANT VIEW DEFINITION ON [dbo].[CTS_BySportNormalClassification_NormalPool_Insert] TO [wsv_cts]
 GO
-
-GRANT EXECUTE ON [dbo].[CTS_BySportNormalClassification_NormalPool_Insert] TO [bodbSPUNet]
-GO
-GRANT VIEW DEFINITION ON [dbo].[CTS_BySportNormalClassification_NormalPool_Insert] TO [bodbSPUNet]
-GO
