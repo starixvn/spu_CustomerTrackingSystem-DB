@@ -10,20 +10,16 @@
     Reviewer: Long.Lưu
 */
 USE CTS_DataCenter;
-#====Count on '2024-04-15': 47 rows========================
-SELECT COUNT(1)
-FROM CTSCustomerClassification AS c
-INNER JOIN CTSCustomerClassification_History AS h ON c.CustID = h.CustID
-INNER JOIN Customer_DangerousScore AS cd ON cd.CustID = h.CustID
-WHERE c.CategoryID IN (65,105)
-	AND h.CategoryID IN (65,105)
-    AND h.Remark IS NULL;
+#============================
 
-#================================
-UPDATE CTSCustomerClassification AS c
-INNER JOIN CTSCustomerClassification_History AS h ON c.CustID = h.CustID
+SELECT COUNT(1)
+FROM  CTSCustomerClassification_History AS h 
+INNER JOIN Customer_DangerousScore AS cd ON cd.CustID = h.CustID
+WHERE h.CategoryID IN (65,105)
+    AND h.InsertDate > '2024-04-07'; #3741
+
+UPDATE CTSCustomerClassification_History AS h 
 INNER JOIN Customer_DangerousScore AS cd ON cd.CustID = h.CustID
 SET h.Remark = CONCAT('Detection Date: ', DATE_FORMAT(cd.ClassifiedDate, '%b %d, %Y'),' - Dangerous Score: ',CAST(cd.ClassifiedScore*100 AS DECIMAL(5,2)),'%')
-WHERE c.CategoryID IN (65,105)
-	AND h.CategoryID IN (65,105)
-    AND h.Remark IS NULL;
+WHERE h.CategoryID IN (65,105)
+    AND h.InsertDate > '2024-04-07';
