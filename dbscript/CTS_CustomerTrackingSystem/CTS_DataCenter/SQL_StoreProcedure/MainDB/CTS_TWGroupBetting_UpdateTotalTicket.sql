@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCTS-WASAVerse" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-WASAVerse" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[CTS_TWGroupBetting_UpdateTotalTicket]
 		@BatchSize				INT
 	,	@LastSequenceId			BIGINT
@@ -18,6 +18,7 @@ AS
 								  And only get sportttype < 100 			[Redmine ID: #189505]
 		- 20231024@John.Ngo:	  [CTS] - Customer Classification - TW GB - Resolve Deadlock Problems [Redmine ID: #195866]
 		- 20240130@Victoria.Le:	  Change tables - TWGB Migrate data from bodb02 to WASAVerse [Redmine ID: #191955]
+		- 20240416@Victoria.Le:	  Exclude EC2024 [Redmine ID: #202847]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_UpdateTotalTicket] @LastScannedTime = '2022-03-10 03:39:12.230'
@@ -35,10 +36,10 @@ BEGIN
 		,	PRIMARY KEY (CustId,ScanDate)
 	);
 
-	IF OBJECT_ID('tempdb..#Tmp_WCLeagues') IS NOT NULL
-		DROP TABLE #Tmp_WCLeagues;
+	IF OBJECT_ID('tempdb..#TmpSpecialEventLeague') IS NOT NULL
+		DROP TABLE #TmpSpecialEventLeague;
 
-	CREATE TABLE #Tmp_WCLeagues (
+	CREATE TABLE #TmpSpecialEventLeague (
 			LeagueId	INT PRIMARY KEY
 	);
 	
@@ -70,10 +71,11 @@ BEGIN
 			MatchId		INT PRIMARY KEY
 	);	
 
-	INSERT INTO #Tmp_WCLeagues(LeagueId)
+	INSERT INTO #TmpSpecialEventLeague(LeagueId)
 	SELECT DISTINCT LeagueId
 	FROM bodb02.dbo.league WITH(NOLOCK)
-	WHERE ProgramID = '2022' AND DisplayMode = 2;
+	WHERE ProgramID = '2024' AND DisplayMode = 3; -- EC
+	-- WHERE ProgramID = '2022' AND DisplayMode = 2; -- WC
 	
 	INSERT INTO #Tmp_PlatformDesktop(BetFrom)
 	SELECT b.BetFrom
@@ -103,10 +105,10 @@ BEGIN
 	SELECT DISTINCT tmp_trans.Matchid 
 	FROM #Tmp_Trans AS tmp_trans
 		INNER JOIN bodb02.dbo.match AS m WITH (NOLOCK) ON m.matchid = tmp_trans.MatchId
-		LEFT JOIN #Tmp_WCLeagues AS wc WITH(NOLOCK) ON m.leagueid = wc.LeagueId
+		LEFT JOIN #TmpSpecialEventLeague AS sl WITH(NOLOCK) ON m.leagueid = sl.LeagueId
 	WHERE tmp_trans.Matchid <> 29 
 		AND m.Sporttype < 100
-		AND wc.LeagueId IS NULL;
+		AND sl.LeagueId IS NULL;
 		
 	DELETE tmp_trans
 	FROM #Tmp_Trans AS tmp_trans
