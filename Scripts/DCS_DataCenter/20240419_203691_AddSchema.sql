@@ -9,7 +9,10 @@ USE DCS_DataCenter;
 
 DROP TABLE IF EXISTS DCS_DataCenter.ArchiveAccount_NotUsed;
 CREATE TABLE `ArchiveAccount_NotUsed` (
-  `AccountID` BIGINT UNSIGNED NOT NULL PRIMARY KEY
+  `AccountID` BIGINT UNSIGNED NOT NULL PRIMARY KEY,
+  `SubscriberID` INT,
+  `LoginName` VARCHAR(100),
+  KEY `IX_ArchiveAccount_NotUsed_SubscriberID_LoginName` (`SubscriberID`,`LoginName`)
 ) ENGINE=InnoDB;
  
 DROP TABLE IF EXISTS DCS_DataCenter.ArchiveAccountIP_NotUsed;
@@ -53,3 +56,8 @@ CREATE TABLE `ArchiveDeviceCode_NotUsed` (
   KEY `IX_ArchiveDeviceCode_NotUsed_DeviceID` (`DeviceID`)
 ) ENGINE=InnoDB;
 
+INSERT INTO DCS_DataCenter.SystemSetting(ID, VGroup, VName, VValue, UpdatedTime)
+SELECT 4963734, 'System_Archive', 'MaxAccountID', 0, CURRENT_TIMESTAMP();
+
+INSERT INTO DCS_DataCenter.SystemSetting(ID, VGroup, VName, VValue, UpdatedTime)
+SELECT 4963735, 'System_Archive', 'MinAccountLastLoginTime', '2023-01-01', CURRENT_TIMESTAMP();
