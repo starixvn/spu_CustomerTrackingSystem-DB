@@ -13,7 +13,7 @@ AS
 	Original:	
 	Revisions:
 		- 20231030@Victoria.Le: 	Initial Writing  [Redmine ID: #195060]
-
+		- 20240417@Thomas.Nguyen: 	Return DetectedDate, GBBetCount   [Redmine ID: #200854]
 */
 BEGIN
 	
@@ -40,7 +40,7 @@ BEGIN
 	WHERE DataId = @LastJobScannedTime_ParamId;
 	
 	INSERT INTO #tmpCustScanned (CustId, LastJobScannedTime)
-	SELECT TOP(@BatchSize) cs.CustId, cs.LastJobScannedTime
+	SELECT TOP(@BatchSize) cs.CustId, cs.LastJobScannedTime, cs.CreatedTime AS DetectedDate, cs.GBTicketCount AS GBBetCount
 	FROM dbo.CustomerClassification_ScannedNewCust AS cs WITH (NOLOCK)
 	WHERE (cs.LastJobScannedTime >= @LastJobScannedTime AND cs.IsServiceScanned = 0)
 		OR (cs.LastJobScannedTime >= @LastJobScannedTime AND cs.IsServiceScanned = 1 AND cs.LastServiceScannedTime < cs.LastJobScannedTime) -- Number of GBTickets are updated
