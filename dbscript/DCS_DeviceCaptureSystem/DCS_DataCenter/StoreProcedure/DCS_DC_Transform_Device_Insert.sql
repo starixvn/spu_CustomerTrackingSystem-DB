@@ -119,6 +119,11 @@ BEGIN
 		INNER JOIN DCS_DataCenter.Transaction AS trans ON trans.TransID = cte.TransID
     ORDER BY cte.TransID ASC;
     
+    INSERT INTO DCS_DataCenter.Transaction_Jonathan(TransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, FingerprintCode, FingerprintMoreInfo, RawTransID, BotDetectionValue, BotComponentID, FakeIP, CookieID, RawUserAgentID, RawFingerPrintID, BrowserInstanceID, ip_TransJson)
+    SELECT trans.TransID, trans.LoginName, trans.TransTime, trans.SubscriberID, trans.AccountID, trans.URLID, trans.DeviceCodeID, trans.DeviceID, trans.FirstDeviceCode, trans.DeviceStatus, trans.DeviceFingerprintID, trans.UserAgentKey, trans.IP, trans.IPID, trans.ActionResultID, trans.Flagged, trans.PluginID, trans.TransStatus, trans.CreatedDate, trans.InsertTime, trans.DeviceCode, trans.FingerprintCode, trans.FingerprintMoreInfo, trans.RawTransID, trans.BotDetectionValue, trans.BotComponentID, trans.FakeIP, trans.CookieID, trans.RawUserAgentID, trans.RawFingerPrintID, trans.BrowserInstanceID, ip_TransJson
+	FROM Temp_Transaction AS tmp
+		INNER JOIN DCS_DataCenter.Transaction AS trans ON trans.TransID = tmp.TransID;
+    
     # START
     -- existed device
     INSERT INTO Temp_ExistedDevice (DeviceID, DeviceCode, DeviceCodeID)
