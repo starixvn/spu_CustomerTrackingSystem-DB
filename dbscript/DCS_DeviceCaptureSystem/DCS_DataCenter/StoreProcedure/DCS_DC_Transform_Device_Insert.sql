@@ -41,6 +41,12 @@ BEGIN
     DECLARE lv_InsertionTime TIMESTAMP(4);
     SET lv_InsertionTime = CURRENT_TIMESTAMP(4);
     
+    
+    /*******LOG TEST********************/
+	INSERT INTO CTS_Log.FPSLog(SpName, JsonString, OtherText, InsertTime)
+	SELECT 'DCS_DC_Transform_Device_Insert', ip_TransJson, NULL, CURRENT_TIMESTAMP();
+    /*******LOG TEST********************/
+    
     #============================================
 	DROP TEMPORARY TABLE IF EXISTS Temp_Transaction;
     DROP TEMPORARY TABLE IF EXISTS Temp_ExistedDevice;

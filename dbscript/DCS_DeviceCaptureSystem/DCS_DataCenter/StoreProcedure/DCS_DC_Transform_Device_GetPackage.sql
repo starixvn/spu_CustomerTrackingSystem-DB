@@ -36,6 +36,11 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Trans;
     DROP TEMPORARY TABLE IF EXISTS Temp_Account;
     
+    /*******LOG TEST********************/
+	INSERT INTO CTS_Log.FPSLog(SpName, JsonString, OtherText, InsertTime)
+	SELECT 'DCS_DC_Transform_Device_GetPackage', NULL,CONCAT('ip_NoOfTickets:',ip_NoOfTickets,'ip_NoOfBatch:',ip_NoOfBatch), CURRENT_TIMESTAMP();
+    /*******LOG TEST********************/
+    
     CREATE TEMPORARY TABLE Temp_Trans(	
 		    TransID		BIGINT	UNSIGNED PRIMARY KEY
 		,   AccountID	BIGINT	UNSIGNED
