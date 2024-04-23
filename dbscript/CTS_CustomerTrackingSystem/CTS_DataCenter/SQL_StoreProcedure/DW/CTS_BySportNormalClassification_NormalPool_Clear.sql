@@ -71,9 +71,9 @@ BEGIN
 			INNER JOIN #tmpCustomers AS t ON t.CustId = p.CustId AND p.SportGroup = t.SportGroup
 		WHERE p.ID <= @ScannedMaxId;
 
-		DELETE r WITH (ROWLOCK)
-		FROM #tmpIDs AS r
-			INNER LOOP JOIN [dbo].[CustomerClassification_BySport_NormalPool] AS c ON c.ID = r.ID;
+		DELETE c WITH (ROWLOCK)
+		FROM [dbo].[CustomerClassification_BySport_NormalPool] AS c 
+			INNER LOOP JOIN #tmpIDs AS r ON r.ID = c.ID;
 	END;
 	
 	DROP TABLE #tmpCustomers;
