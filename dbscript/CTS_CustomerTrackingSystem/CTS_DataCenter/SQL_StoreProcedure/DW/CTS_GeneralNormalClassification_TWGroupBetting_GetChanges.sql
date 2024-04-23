@@ -1,3 +1,4 @@
+/*<info serverAlias="DBVR2-bodb_VR2Model" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 GO
 SET ANSI_NULLS ON
 GO
@@ -13,7 +14,7 @@ AS
 	Original:	
 	Revisions:
 		- 20231030@Victoria.Le: 	Initial Writing  [Redmine ID: #195060]
-		- 20240417@Thomas.Nguyen: 	Return DetectedDate, GBBetCount   [Redmine ID: #200854]
+		- 20240417@Thomas.Nguyen: 	Return DetectedDate, GBBetCount, SportType   [Redmine ID: #200854]
 */
 BEGIN
 	
@@ -32,6 +33,8 @@ BEGIN
 	CREATE TABLE #tmpCustScanned(
 			CustId		  			INT PRIMARY KEY
 		,	LastJobScannedTime		DATETIME
+		,	GBTicketCount			INT
+		,	SportType				INT
 	);
 	
 	-- Get Last Job Scanned Datetime
@@ -39,18 +42,23 @@ BEGIN
 	FROM dbo.CustomerClassification_Parameter WITH(NOLOCK)
 	WHERE DataId = @LastJobScannedTime_ParamId;
 	
-	INSERT INTO #tmpCustScanned (CustId, LastJobScannedTime)
-	SELECT TOP(@BatchSize) cs.CustId, cs.LastJobScannedTime, cs.CreatedTime AS DetectedDate, cs.GBTicketCount AS GBBetCount
+	INSERT INTO #tmpCustScanned (CustId, LastJobScannedTime, GBTicketCount, SportType)
+	SELECT TOP(@BatchSize) cs.CustId, cs.LastJobScannedTime, cs.GBTicketCount, cs.SportType
 	FROM dbo.CustomerClassification_ScannedNewCust AS cs WITH (NOLOCK)
-	WHERE (cs.LastJobScannedTime >= @LastJobScannedTime AND cs.IsServiceScanned = 0)
-		OR (cs.LastJobScannedTime >= @LastJobScannedTime AND cs.IsServiceScanned = 1 AND cs.LastServiceScannedTime < cs.LastJobScannedTime) -- Number of GBTickets are updated
+	WHERE cs.JobScannedType = 2 AND cs.LastJobScannedTime >= @LastJobScannedTime	
+		/*((cs.LastJobScannedTime >= @LastJobScannedTime AND cs.IsServiceScanned = 0)
+		OR (cs.LastJobScannedTime >= @LastJobScannedTime AND cs.IsServiceScanned = 1 AND cs.LastServiceScannedTime < cs.LastJobScannedTime)) -- Number of GBTickets are updated */
+
 	ORDER BY cs.LastJobScannedTime ASC;
 	
 	SELECT @MaxServiceScannedTime = MAX(LastJobScannedTime) FROM #tmpCustScanned;
 	
 	SET @NextScannedDateTime = ISNULL(@MaxServiceScannedTime,@LastJobScannedTime);
 
-	SELECT CustId
+	SELECT	CustId
+		,	LastJobScannedTime AS DetectedDate
+		,	GBTicketCount
+		,	SportType
 	FROM #tmpCustScanned;
 
 	DROP TABLE IF EXISTS #tmpCustScanned;

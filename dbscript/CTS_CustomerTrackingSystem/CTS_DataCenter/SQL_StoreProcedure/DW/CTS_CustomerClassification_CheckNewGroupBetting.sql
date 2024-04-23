@@ -1,4 +1,4 @@
-/*<info serverAlias="DBVR2-bodb_VR2Model" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBVR2-bodb_VR2Model" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 GO
 SET ANSI_NULLS ON
 GO
@@ -16,6 +16,7 @@ AS
 		- 20231030@Victoria.Le: 	Initial Writing  [Redmine ID: #195060]
 		- 20231206@Victoria.Le: 	Change code because update IsServiceScanned incorrect  [Redmine ID: #197958]
 		- 20240216@Victoria.Le: 	Resolve Deadlock [Redmine ID: #200973]
+		- 20240423@Thomas.Nguyen: 	Return DetectedDate and remove updating IsServiceScanned, LastServiceScannedTime [Redmine ID: #200854]
 
 */
 BEGIN
@@ -39,30 +40,34 @@ BEGIN
 		,	GBTicketCount		INT 
 		,	SportType			INT
 		,	JobScannedType		TINYINT		
+		,	DetectedDate		DATETIME 
 	);
 	
 	INSERT INTO #tmpCustomer(CustId)
 	SELECT ssk.value
 	FROM STRING_SPLIT(@custIdList, ',') ssk;
 	
-	INSERT INTO #tmpCustomerGroupBetting (CustId, GBTicketCount, SportType, JobScannedType)
-	SELECT cs.CustId, cs.GBTicketCount, cs.SportType, cs.JobScannedType
+	INSERT INTO #tmpCustomerGroupBetting (CustId, GBTicketCount, SportType, JobScannedType, DetectedDate)
+	SELECT cs.CustId, cs.GBTicketCount, cs.SportType, cs.JobScannedType, cs.LastJobScannedTime
 	FROM #tmpCustomer AS c
 		INNER JOIN dbo.CustomerClassification_ScannedNewCust AS cs WITH (NOLOCK) ON cs.CustId = c.CustId
 	WHERE cs.JobScannedType > 0;
 	
+	/*
 	UPDATE cs 
 	SET 	cs.IsServiceScanned = 1
 		,	cs.LastServiceScannedTime = GETDATE()
 	FROM dbo.CustomerClassification_ScannedNewCust AS cs WITH (UPDLOCK, ROWLOCK)
 		INNER JOIN #tmpCustomerGroupBetting AS cgb ON cgb.CustId = cs.CustId
 	;
-	
+	*/
+
 	SELECT 	cgb.CustId AS 'CustID'
-		,	9 AS 'TaggingID'
-		,	2 AS 'TaggingType'
-		,	cgb.GBTicketCount AS 'First5TWGBTicketCount'
+		/*,	9 AS 'TaggingID'
+		,	2 AS 'TaggingType'*/
+		,	cgb.GBTicketCount
 		,	cgb.SportType AS 'SportType'
+		,	cgb.DetectedDate
 	FROM #tmpCustomerGroupBetting AS cgb
 	WHERE cgb.JobScannedType = 2;
 	
@@ -73,7 +78,7 @@ END;
 GO
 
 
-GRANT EXECUTE ON [dbo].[CTS_CustomerClassification_CheckNewGroupBetting] TO [bodbSPUNet]
+GRANT EXECUTE ON [dbo].[CTS_CustomerClassification_CheckNewGroupBetting] TO [wsv_cts]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CTS_CustomerClassification_CheckNewGroupBetting] TO [bodbSPUNet]
+GRANT VIEW DEFINITION ON [dbo].[CTS_CustomerClassification_CheckNewGroupBetting] TO [wsv_cts]
 GO
