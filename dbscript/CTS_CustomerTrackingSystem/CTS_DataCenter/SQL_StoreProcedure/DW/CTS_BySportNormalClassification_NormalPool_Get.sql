@@ -49,7 +49,8 @@ BEGIN
 	FROM dbo.CustomerClassification_BySport_NormalPool AS c WITH(NOLOCK);
 
 	SELECT @LastScannedRow = CAST(CAST([Value] AS BIGINT) AS ROWVERSION) 
-	FROM dbo.CustomerClassification_Parameter WITH(NOLOCK) WHERE [DataId] = @BYSPORT_LASTSCANNEDROW;
+	FROM dbo.CustomerClassification_Parameter WITH(NOLOCK) 
+	WHERE [DataId] = @BYSPORT_LASTSCANNEDROW;
 
 	-- #2: Get top customers by priority
 	IF(@ScannedMaxId IS NOT NULL)
@@ -60,9 +61,9 @@ BEGIN
 		FROM dbo.CustomerClassification_BySport_NormalPool AS np WITH(NOLOCK)
 		WHERE np.ID <= @ScannedMaxId 
 			AND NOT EXISTS (SELECT 1 FROM dbo.CustomerClassification_BySport AS cc WITH (NOLOCK) 
-							WHERE cc.[RowVersion] > @LastScannedRow 
-								AND cc.CustId = np.CustId
-								AND cc.SportId = np.SportGroup)
+							WHERE cc.CustId = np.CustId
+								AND cc.SportId = np.SportGroup
+								AND cc.[RowVersion] > @LastScannedRow)
 		GROUP BY np.CustId, np.SportGroup
 		ORDER BY Min(np.Priority) ASC, Min(np.ID) ASC
 	END

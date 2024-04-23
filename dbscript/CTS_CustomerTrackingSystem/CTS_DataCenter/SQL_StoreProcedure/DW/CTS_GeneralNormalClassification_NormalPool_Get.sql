@@ -62,7 +62,8 @@ BEGIN
 	FROM dbo.CustomerClassification_NormalPool AS c WITH(NOLOCK);
 
 	SELECT @LastScannedRow = CAST(CAST([Value] AS BIGINT) AS ROWVERSION) 
-	FROM dbo.CustomerClassification_Parameter WITH(NOLOCK) WHERE [DataId] = @GENERAL_LASTSCANNEDROW;
+	FROM dbo.CustomerClassification_Parameter WITH(NOLOCK) 
+	WHERE [DataId] = @GENERAL_LASTSCANNEDROW;
 
 	-- #2: Get top customers by priority
 	IF(@ScannedMaxId IS NOT NULL)
