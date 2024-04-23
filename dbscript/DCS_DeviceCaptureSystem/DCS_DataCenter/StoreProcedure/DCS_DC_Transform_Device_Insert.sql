@@ -310,7 +310,7 @@ BEGIN
     ,	CASE 
 			WHEN de.DeviceID > 0 AND tts.TransId > de.FirstTransID AND dr.DeviceID IS NULL THEN vrDeviceStatusOld
 			WHEN dr.DeviceID > 0 OR dr.RecoverCode IS NOT NULL THEN vrDeviceStatusRecover
-			WHEN de.DeviceID > 0 AND de.IsNew = 1 THEN vrDeviceStatusNew  
+            WHEN de.DeviceID > 0 AND (tts.TransId = de.FirstTransID OR de.IsNew = 1) THEN vrDeviceStatusNew  
 			ELSE tts.DeviceStatus
 		END AS new_DeviceStatus
     FROM Temp_Transaction AS tts
@@ -335,7 +335,7 @@ BEGIN
 		, tts.DeviceStatus 			= CASE 
 										WHEN de.DeviceID > 0 AND tts.TransId > de.FirstTransID AND dr.DeviceID IS NULL THEN vrDeviceStatusOld
 										WHEN dr.DeviceID > 0 OR dr.RecoverCode IS NOT NULL THEN vrDeviceStatusRecover
-                                        WHEN de.DeviceID > 0 AND de.IsNew = 1 THEN vrDeviceStatusNew  
+                                        WHEN de.DeviceID > 0 AND (tts.TransId = de.FirstTransID OR de.IsNew = 1) THEN vrDeviceStatusNew  
 										ELSE tts.DeviceStatus 
 									END;
 
