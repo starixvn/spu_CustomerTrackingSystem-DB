@@ -32,9 +32,12 @@ SELECT * FROM CTS_DataCenter.CustomerCategory WHERE CategoryID IN (67,107);
 UPDATE CustomerCategory
 SET ParentID = 150
     , GroupPriority = 15200
-    , SportGroupID = 150
 WHERE CategoryID IN (65,105);
- 	
 
+UPDATE CTSCustomerClassification
+SET SportGroupID = 150
+WHERE CategoryID IN (65,105);
+
+SELECT * FROM CTS_DataCenter.CustomerCategory WHERE CategoryID IN (65,105);
  	
 
