@@ -1,3 +1,4 @@
+/*<info serverAlias="DBVR2-bodb_VR2Model" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 USE [bodb_VR2Model]
 GO
 /****** Object:  StoredProcedure [dbo].[CTS_GeneralNormalClassification_NormalPool_Classify]    Script Date: 20/04/2023 11:05:2022 PM ******/
@@ -24,6 +25,7 @@ AS
 		- 20230816@Jonas.Huynh: Tagging Classification [Redmine ID: #191400]
 		- 20230915@Jonas.Huynh: HF Wrong Inactive Category for New and Realtime flow exclude S/R/P with not latest category [Redmine ID: #193050]
 		- 20231030@Victoria.Le: New Member Classify Tagging [Redmine ID: #195060]
+		- 20240424@Thomas.Nguyen: Remove logic New Member Classify Tagging [Redmine ID: #200854]
 
 	Param's Explanation:
 		@CustomersXML		: This parameter is used to classify customer perf which bases on currentCategory
@@ -31,10 +33,10 @@ AS
     Script:
         EXEC bodb_VR2Model.dbo.CTS_GeneralNormalClassification_NormalPool_Classify 
 			@CustomersXML = N'<Root>
-								<r CustId="5002646" CategoryId="201" IsNewCreated="0" IsRealtimeOnly= "0" IsProbationLastDay="0" ScanTaggingType="0" IsScanTaggingNewCust='1'/>
-								<r CustId="5022391" CategoryId="0"  IsNewCreated="1" IsRealtimeOnly= "1" IsProbationLastDay="0" ScanTaggingType="0" IsScanTaggingNewCust='0'/>
-								<r CustId="1275" CategoryId="205"  IsNewCreated="0" IsRealtimeOnly= "1" IsProbationLastDay="1" ScanTaggingType="0" IsScanTaggingNewCust='0'/>
-								<r CustId="1280" CategoryId="202"  IsNewCreated="1" IsRealtimeOnly= "1" IsProbationLastDay="1" ScanTaggingType="0" IsScanTaggingNewCust='0'/>
+								<r CustId="5002646" CategoryId="201" IsNewCreated="0" IsRealtimeOnly= "0" IsProbationLastDay="0" ScanTaggingType="0"/>
+								<r CustId="5022391" CategoryId="0"  IsNewCreated="1" IsRealtimeOnly= "1" IsProbationLastDay="0" ScanTaggingType="0"/>
+								<r CustId="1275" CategoryId="205"  IsNewCreated="0" IsRealtimeOnly= "1" IsProbationLastDay="1" ScanTaggingType="0"/>
+								<r CustId="1280" CategoryId="202"  IsNewCreated="1" IsRealtimeOnly= "1" IsProbationLastDay="1" ScanTaggingType="0"/>
 							</Root>';
 */
 BEGIN
@@ -79,7 +81,6 @@ BEGIN
 		IsRealtimeOnly		   BIT	    NOT NULL DEFAULT 0,
 		IsProbationLastDay	   BIT		NOT NULL DEFAULT 0,
 		ScanTaggingType		   TINYINT	NOT NULL DEFAULT 0,
-		IsScanTaggingNewCust   BIT		NOT NULL DEFAULT 0,
 		IsActiveWithin30Days   BIT		NOT NULL DEFAULT 0,
 		IsDeposit			   BIT		NOT NULL DEFAULT 0,
 		IsSpecialSite		   BIT		NOT NULL DEFAULT 0,
@@ -101,16 +102,6 @@ BEGIN
 		CustId			       INT PRIMARY KEY,
 		CurrentCategoryId      SMALLINT NOT NULL,
 		ScanTaggingType		   TINYINT	NOT NULL DEFAULT 0
-	);
-	
-	IF OBJECT_ID('tempdb..#tmpScanTaggingNewCust') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpScanTaggingNewCust;
-	END
-
-	CREATE TABLE #tmpScanTaggingNewCust(
-		CustId			       INT PRIMARY KEY,
-		CurrentCategoryId      SMALLINT NOT NULL
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpRawData') IS NOT NULL
@@ -189,14 +180,13 @@ BEGIN
 	);
 
 	-- #1: Get list customers
-	INSERT INTO #tmpCustomers(CustId, CurrentCategoryId, IsNewCreated, IsRealtimeOnly, IsProbationLastDay, ScanTaggingType, IsScanTaggingNewCust)
+	INSERT INTO #tmpCustomers(CustId, CurrentCategoryId, IsNewCreated, IsRealtimeOnly, IsProbationLastDay, ScanTaggingType)
 	SELECT	T.C.value('./@CustId', 'INT')				AS CustId
 		,	T.C.value('./@CategoryId', 'SMALLINT')		AS CurrentCategoryId
 		,	T.C.value('./@IsNewCreated', 'BIT')			AS IsNewCreated
 		,	T.C.value('./@IsRealtimeOnly', 'BIT')		AS IsRealtimeOnly
 		,	T.C.value('./@IsProbationLastDay', 'BIT')	AS IsProbationLastDay
 		,	T.C.value('./@ScanTaggingType', 'TINYINT')	AS ScanTaggingType
-		,	T.C.value('./@IsScanTaggingNewCust', 'BIT')	AS IsScanTaggingNewCust
 	FROM @CustomersXML.nodes('//r') AS T(C)
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 	
@@ -247,14 +237,6 @@ BEGIN
 			LEFT JOIN dbo.CustomerClassification_LatestActiveDay AS c WITH(NOLOCK) ON a.CustId = c.CustId
 		WHERE (c.CustId IS NOT NULL AND c.LastTransDate >= @From30Date)
 			OR a.IsNewCreated = 1;
-
-		UPDATE a WITH(ROWLOCK, UPDLOCK)
-		SET a.IsActiveWithin30Days = 1
-		FROM #tmpCustomers AS a
-			LEFT JOIN dbo.CustomerClassification_ScannedNewCust AS cs WITH (NOLOCK) ON cs.CustId = a.CustId
-		WHERE a.IsScanTaggingNewCust = 1
-			AND ((cs.CustId IS NOT NULL AND CONVERT(DATE,cs.LastJobScannedTime) >= @From30Date)
-				OR a.IsNewCreated = 1);
 	
 		-- #6: Update reset balance for credit - normal inactive with new placebet
 		EXEC dbo.CTS_GeneralNormalClassification_Balance_Reset @CurrentDateTime = @CurrentDateTime, @YesterdayDate = @YesterdayDate;
@@ -278,42 +260,6 @@ BEGIN
 			MAX(a.ProcessedTime)
 	FROM #tmpRawData AS a
 	GROUP BY a.CustId;
-
-	-- Scan tagging new member
-	DELETE a WITH (ROWLOCK)
-	OUTPUT DELETED.CustId,DELETED.CurrentCategoryId INTO #tmpScanTaggingNewCust(CustId, CurrentCategoryId)
-	FROM #tmpCustomers AS a
-		LEFT JOIN #tmpCustomerAccummulatedInfo AS c ON a.CustId = c.CustId
-	WHERE a.IsDeposit = 1
-		AND a.IsScanTaggingNewCust = @ScanTaggingType_Exist
-		AND ((c.CustId IS NOT NULL AND c.BetCount < 10)
-			OR c.CustId IS NULL);
-		
-	IF (EXISTS (SELECT 1 FROM #tmpScanTaggingNewCust))
-	BEGIN
-		-- #8.0.1: Classify Tagging (link TWGB)
-		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, ScanTaggingType)
-		SELECT t.CustId
-			,  @GENERAL_SPORTID
-			,  CASE WHEN t.CurrentCategoryId IN (@CATEGORY_NULL,@CATEGORY_NORMALINACTIVE) THEN @CATEGORY_NEWMEMBER
-					ELSE t.CurrentCategoryId END
-			,  t.CurrentCategoryId
-			,  @ToDate AS CreatedDate
-			,  @CurrentDateTime AS CreatedTime
-			,  CASE WHEN c.CustId IS NOT NULL THEN c.TurnoverRM ELSE NULL END
-			,  CASE WHEN c.CustId IS NOT NULL THEN c.WinlossRM ELSE NULL END
-			,  CASE WHEN c.CustId IS NOT NULL THEN c.BetCount ELSE NULL END
-			,  CASE WHEN c.CustId IS NOT NULL THEN c.ActiveDays ELSE NULL END
-			,  ISNULL(c.PerformanceTime, @CurrentDateTime)
-			,  0
-		FROM #tmpScanTaggingNewCust AS t
-			LEFT JOIN #tmpCustomerAccummulatedInfo AS c ON t.CustId = c.CustId;
-			
-		-- #8.0.2: Remove Scan Tagging Performance
-		DELETE a WITH (ROWLOCK)
-		FROM #tmpCustomerAccummulatedInfo AS a
-			INNER JOIN #tmpScanTaggingNewCust AS t ON t.CustId = a.CustId;
-	END;
 
 	IF (EXISTS (SELECT 1 FROM #tmpScanTaggingCustomer))
 	BEGIN
@@ -498,11 +444,10 @@ BEGIN
 	DROP TABLE #tmpBetCount;
 	DROP TABLE #tmpRemoveCust;
 	DROP TABLE #tmpScanTaggingCustomer;
-	DROP TABLE #tmpScanTaggingNewCust;
 END;
 GO
 
-GRANT EXECUTE ON [dbo].[CTS_GeneralNormalClassification_NormalPool_Classify] TO [bodbSPUNet]
+GRANT EXECUTE ON [dbo].[CTS_GeneralNormalClassification_NormalPool_Classify] TO [wsv_cts]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CTS_GeneralNormalClassification_NormalPool_Classify] TO [bodbSPUNet]
+GRANT VIEW DEFINITION ON [dbo].[CTS_GeneralNormalClassification_NormalPool_Classify] TO [wsv_cts]
 GO

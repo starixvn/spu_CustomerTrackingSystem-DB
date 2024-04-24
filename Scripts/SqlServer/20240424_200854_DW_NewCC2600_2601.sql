@@ -1,0 +1,17 @@
+/*<info serverAlias="DBVR2-bodb_VR2Model" databaseType="1"></info>*/
+/*
+Creator:	20240424@Thomas.Nguyen
+Task:	 	New CC 2600/2601.
+Server:  	DBVR2
+DBName:		bodb_VR2Model
+
+Revisions: 
+		- 20240424@Thomas.Nguyen: Created [Redmine ID: #200854]
+Reviewer:
+*/
+
+USE bodb_VR2Model;
+
+#=================================================
+INSERT INTO CustomerClassification_Parameter(DataId,DataDescription,DataType,Value)
+SELECT 14, 'Normal Accounts Classification - InitialGroupBetting - Service - Last Scanned CustID', 'BIGINT' , 0;

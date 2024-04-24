@@ -25,7 +25,7 @@ BEGIN
 			- 20230601@Victoria.Le:			Add TVSRequestID <> 0 for TVSRequestID IS NOT NULL [Redmine ID: #189023]
 			- 20231228@Thomas.Nguyen:		Update SourceTypeID for System Detect Unauthorized Login [Redmine ID: #197710]
             - 20240315@Casey.Huynh: 		Classify Danger Score, Lower GroupPriority is remove when the same ParentID [Redmine ID: #201358]
-            - 20240423@Thomas.Nguyen:		Classify initial group betting - Add SportGroupID = 150, return CategoryType = 2 when ParentID = 150 [Redmine ID: #197710]
+            - 20240423@Thomas.Nguyen:		Classify initial group betting - Add SportGroupID = 150, return CategoryType = 2 when ParentID = 150 [Redmine ID: #200854]
 
         Param's Explanation (filtered by):
 			- ip_InputType: 1: Category, 2: Reason
