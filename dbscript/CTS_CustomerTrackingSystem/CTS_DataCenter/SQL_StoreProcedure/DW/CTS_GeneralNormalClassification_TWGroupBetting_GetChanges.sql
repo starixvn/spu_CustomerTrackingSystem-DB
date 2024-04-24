@@ -6,6 +6,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 CREATE PROCEDURE [dbo].[CTS_GeneralNormalClassification_TWGroupBetting_GetChanges]
 		@NextScannedDateTime DATETIME2 OUTPUT
+	,	@NextScannedCustID BIGINT OUTPUT
 AS
 /*
 	Created: 	20231030@Victoria.Le
@@ -14,7 +15,7 @@ AS
 	Original:	
 	Revisions:
 		- 20231030@Victoria.Le: 	Initial Writing  [Redmine ID: #195060]
-		- 20240417@Thomas.Nguyen: 	Return DetectedDate, GBBetCount, SportType   [Redmine ID: #200854]
+		- 20240417@Thomas.Nguyen: 	Add last scanned CustID and return DetectedDate, GBBetCount, SportType   [Redmine ID: #200854]
 */
 BEGIN
 	
@@ -22,8 +23,10 @@ BEGIN
 	
 	DECLARE @BatchSize INT = 20000;
 	DECLARE	@LastJobScannedTime DATETIME2;
+	DECLARE	@LastScannedCustID BIGINT;
 	DECLARE	@MaxServiceScannedTime DATETIME2;
 	DECLARE @LastJobScannedTime_ParamId TINYINT = 7;
+	DECLARE @LastScannedCustID_ParamId TINYINT = 10;
 	
 	IF	OBJECT_ID('tempdb..#tmpCustScanned') IS NOT NULL
 	BEGIN
@@ -42,17 +45,26 @@ BEGIN
 	FROM dbo.CustomerClassification_Parameter WITH(NOLOCK)
 	WHERE DataId = @LastJobScannedTime_ParamId;
 	
+	--Get Last Scanned CustID
+	SELECT @LastScannedCustID = [Value]
+	FROM dbo.CustomerClassification_Parameter WITH(NOLOCK)
+	WHERE DataId = @LastScannedCustID_ParamId;
+
 	INSERT INTO #tmpCustScanned (CustId, LastJobScannedTime, GBTicketCount, SportType)
 	SELECT TOP(@BatchSize) cs.CustId, cs.LastJobScannedTime, cs.GBTicketCount, cs.SportType
 	FROM dbo.CustomerClassification_ScannedNewCust AS cs WITH (NOLOCK)
-	WHERE cs.JobScannedType = 2 AND cs.LastJobScannedTime >= @LastJobScannedTime	
+	WHERE cs.JobScannedType = 2 AND cs.LastJobScannedTime >= @LastJobScannedTime AND CustID > @LastScannedCustID
 		/*((cs.LastJobScannedTime >= @LastJobScannedTime AND cs.IsServiceScanned = 0)
 		OR (cs.LastJobScannedTime >= @LastJobScannedTime AND cs.IsServiceScanned = 1 AND cs.LastServiceScannedTime < cs.LastJobScannedTime)) -- Number of GBTickets are updated */
 
-	ORDER BY cs.LastJobScannedTime ASC;
+	ORDER BY cs.LastJobScannedTime ASC, CustID ASC;
 	
 	SELECT @MaxServiceScannedTime = MAX(LastJobScannedTime) FROM #tmpCustScanned;
+
+	SELECT @NextScannedCustID = MAX(CustId) FROM #tmpCustScanned;
 	
+	SET @NextScannedCustID = ISNULL(@NextScannedCustID, @LastScannedCustID)
+
 	SET @NextScannedDateTime = ISNULL(@MaxServiceScannedTime,@LastJobScannedTime);
 
 	SELECT	CustId
