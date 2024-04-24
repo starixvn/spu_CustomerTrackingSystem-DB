@@ -151,7 +151,7 @@ sp: BEGIN
 			
             SET op_MaxSequenceID = lv_MaxSequenceID ;
             
-		ELSE # Get Next Trans > 3 minute to Clear Trans
+		ELSE # Get Next Trans > 3 minute 
         
 			SELECT  mms.SequenceID, TIMESTAMPADD(SECOND, -lv_Rule_MinTimeStep, mms.TransDate) AS MaxTransDate 
 			INTO	lv_NextSequenceID, lv_MinTransDate
@@ -170,6 +170,16 @@ sp: BEGIN
             IF lv_NextSequenceID IS NOT NULL THEN 
 				SET lv_MaxSequenceID = lv_NextSequenceID;
                 
+                DROP TEMPORARY TABLE IF EXISTS Temp_Last3mCust;
+                CREATE TEMPORARY TABLE Temp_Last3mCust(
+					CustID BIGINT UNSIGNED PRIMARY KEY
+				);
+                
+                INSERT INTO Temp_Last3mCust(CustID)
+                SELECT DISTINCT CustID
+                FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms
+                WHERE mms.SequenceID BETWEEN lv_MinSequenceID AND lv_MaxSequenceID;               
+                
                 SELECT	mms.MatchID
 				,	mms.ScoreDiff
 				,	mms.BettypeID
@@ -186,7 +196,8 @@ sp: BEGIN
 					LEFT JOIN Temp_OldGroup AS tmpOg ON mms.MatchID = tmpOg.MatchID AND mms.ScoreDiff = tmpOg.ScoreDiff AND mms.BettypeID = tmpOg.BettypeID
 														AND mms.BetID = tmpOg.BetID AND mms.Betteam = tmpOg.Betteam AND mms.TransDate <= tmpOg.MaxTransDate
 														AND (mms.GroupID = tmpOg.GroupID OR mms.GroupID = 0)
-				WHERE mms.SequenceID BETWEEN lv_MinSequenceID AND lv_MaxSequenceID
+				WHERE (mms.SequenceID BETWEEN lv_MinSequenceID AND lv_MaxSequenceID) 
+					OR (EXISTS (SELECT mms.CustID FROM Temp_Last3mCust AS tmpCus WHERE tmpCus.CustID = mms.CustID) AND mms.SequenceID < lv_MinSequenceID)
 				GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID
 				HAVING COUNT(DISTINCT mms.CustID) > 1
 				ORDER BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID;
@@ -264,7 +275,7 @@ sp: BEGIN
 			
             SET op_MaxSequenceID = lv_MaxSequenceID ;
             
-		ELSE # Get Next Trans > 3 minute to Clear Trans
+		ELSE # Get Next Trans > 3 minute 
         
 			SELECT  mms.SequenceID, TIMESTAMPADD(SECOND, -lv_Rule_MinTimeStep, mms.TransDate) AS MaxTransDate 
 			INTO	lv_NextSequenceID, lv_MinTransDate
@@ -283,6 +294,16 @@ sp: BEGIN
             IF lv_NextSequenceID IS NOT NULL THEN 
 				SET lv_MaxSequenceID = lv_NextSequenceID;
                 
+                DROP TEMPORARY TABLE IF EXISTS Temp_Last3mCust;
+                CREATE TEMPORARY TABLE Temp_Last3mCust(
+					CustID BIGINT UNSIGNED PRIMARY KEY
+				);
+                
+                INSERT INTO Temp_Last3mCust(CustID)
+                SELECT DISTINCT CustID
+                FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
+                WHERE mms.SequenceID BETWEEN lv_MinSequenceID AND lv_MaxSequenceID;
+                
                 SELECT	mms.MatchID
 				,	mms.ScoreDiff
 				,	mms.BettypeID
@@ -299,7 +320,8 @@ sp: BEGIN
 					LEFT JOIN Temp_OldGroup AS tmpOg ON mms.MatchID = tmpOg.MatchID AND mms.ScoreDiff = tmpOg.ScoreDiff AND mms.BettypeID = tmpOg.BettypeID
 														AND mms.BetID = tmpOg.BetID AND mms.Betteam = tmpOg.Betteam AND mms.TransDate <= tmpOg.MaxTransDate
 														AND (mms.GroupID = tmpOg.GroupID OR mms.GroupID = 0)
-				WHERE mms.SequenceID BETWEEN lv_MinSequenceID AND lv_MaxSequenceID
+				WHERE (mms.SequenceID BETWEEN lv_MinSequenceID AND lv_MaxSequenceID) 
+					OR (EXISTS (SELECT mms.CustID FROM Temp_Last3mCust AS tmpCus WHERE tmpCus.CustID = mms.CustID) AND mms.SequenceID < lv_MinSequenceID)
 				GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID
 				HAVING COUNT(DISTINCT mms.CustID) > 1
 				ORDER BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID;
