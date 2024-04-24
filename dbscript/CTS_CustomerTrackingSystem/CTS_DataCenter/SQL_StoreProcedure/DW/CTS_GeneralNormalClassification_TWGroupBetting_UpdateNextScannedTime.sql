@@ -24,7 +24,7 @@ BEGIN
 
 	DECLARE @LastJobScannedTime_ParamId TINYINT = 7;
 	DECLARE	@LastJobScannedTime DATETIME2;
-	DECLARE @LastScannedCustID_ParamId TINYINT = 10;
+	DECLARE @LastScannedCustID_ParamId TINYINT = 14;
 	DECLARE	@LastScannedCustID BIGINT;
 
 	SELECT @LastJobScannedTime = CONVERT(DATETIME2, [Value], 121)

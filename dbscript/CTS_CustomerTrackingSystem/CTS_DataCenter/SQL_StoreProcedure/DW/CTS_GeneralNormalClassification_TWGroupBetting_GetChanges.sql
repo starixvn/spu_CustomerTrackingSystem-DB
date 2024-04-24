@@ -26,7 +26,7 @@ BEGIN
 	DECLARE	@LastScannedCustID BIGINT;
 	DECLARE	@MaxServiceScannedTime DATETIME2;
 	DECLARE @LastJobScannedTime_ParamId TINYINT = 7;
-	DECLARE @LastScannedCustID_ParamId TINYINT = 10;
+	DECLARE @LastScannedCustID_ParamId TINYINT = 14;
 	
 	IF	OBJECT_ID('tempdb..#tmpCustScanned') IS NOT NULL
 	BEGIN
