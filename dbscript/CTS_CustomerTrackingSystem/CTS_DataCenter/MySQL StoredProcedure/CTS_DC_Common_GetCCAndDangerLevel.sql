@@ -16,7 +16,7 @@ BEGIN
 			- 20220930@Aries.Nguyen: 	Created [RedmineID: #178311]
 			- 20230118@Victoria.Le: 	Return ParentID & TaggingType to definite whether Customer is Problem Account/Normal Categories links with PA [RedmineID: #181995]
 			- 20240319@Casey.Huynh: 	Classify Danger Score [Redmine ID: #201358]
-            - 20240424@Thomas.Nguyen:	Classify initial group betting - Add ParentID = 150, SportGroupID = 150 [Redmine ID: #200854]
+            - 20240424@Thomas.Nguyen:	Classify Initial Group Betting - Add ParentID = 150, SportGroupID = 150 [Redmine ID: #200854]
 
         Param's Explanation:     
         Example:

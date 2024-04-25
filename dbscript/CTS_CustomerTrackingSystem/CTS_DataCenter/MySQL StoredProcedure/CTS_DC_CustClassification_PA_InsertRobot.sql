@@ -24,7 +24,8 @@ BEGIN
             - 20230516@Casey.Huynh:		New Category for Robot OCRD [RedmineID: #186991]
 			- 20231009@Casey.Huynh:		Fixed Issue Duplicate Rescan Robot Log [RedmineID: #193049]
             - 20240319@Casey.Huynh: 	Classify Danger Score [Redmine ID: #201358]
-            
+            - 20240425@Thomas.Nguyen:	Classify Initial Group Betting - Add SportGroupID = 150 [Redmine ID: #200854]
+			
         Param's Explanation: 
 
 		Example:
@@ -45,6 +46,7 @@ BEGIN
     DECLARE	CONST_CATEGORYID_LICVIP				INT DEFAULT 4;
     DECLARE CONST_SPORTGROUP_NORMAL 			INT DEFAULT 200;
     DECLARE	CONST_SPORTGROUP_PA 				INT DEFAULT 0;
+	DECLARE	CONST_GROUP_POTENTIALPA 			INT DEFAULT 150;
     DECLARE	CONST_CATEGORY_RISKY 				INT DEFAULT 203;
     DECLARE	CONST_CATEGORY_SMART				INT DEFAULT 204;
     
@@ -576,9 +578,7 @@ BEGIN
 				  FROM  Temp_PA AS pa
                   WHERE pa.CustID = clss.CustID  
 					AND pa.IsDataChanged = 1
-					AND (	clss.SportGroupID = CONST_SPORTGROUP_NORMAL
-							OR (clss.SportGroupID = CONST_SPORTGROUP_PA AND cat.GroupPriority = CONST_GROUPPRIORITY_DANGEROUS)
-						)
+					AND clss.SportGroupID IN (CONST_SPORTGROUP_NORMAL, CONST_GROUP_POTENTIALPA)
 					);
                     
     DELETE pro

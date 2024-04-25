@@ -17,13 +17,13 @@ BEGIN
             - 20220113@Casey.Huynh: Rename Table [Redmine ID: #179502]
             - 20231120@Thomas.Nguyen: Add the condition SportType = 2 and include Odds Crawler Robot (CategoryID 165, 166), Abnormal Account - Robot (CategoryID 179) [Redmine ID: #188553]
 			- 20240319@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
-            
+            - 20240425@Thomas.Nguyen: Classify Initial Group Betting - Remove GroupPriority [Redmine ID: #200854]    
+
 		Param's Explanation:
         
 		Example:
 			CALL CTS_DataCenter.CTS_DC_CustClassification_MatchMonitor_Classify();
-	 */ 
-	DECLARE	CONST_GROUPPRIORITY_DANGEROUS	SMALLINT UNSIGNED DEFAULT 5700;
+	 */
     
 	DECLARE lv_PackSize INT;
 	DECLARE lv_MatchID INT;
@@ -86,8 +86,7 @@ BEGIN
 	INSERT INTO Temp_ExcludePACategoryID(CategoryID)
     SELECT cat.CategoryID
     FROM CTS_DataCenter.CustomerCategory AS cat
-    WHERE cat.ParentID = 50 AND cat.CategoryID NOT IN  (57,61,163,164,165,166,179)
-		AND cat.GroupPriority <> CONST_GROUPPRIORITY_DANGEROUS;   
+    WHERE cat.ParentID = 50 AND cat.CategoryID NOT IN  (57,61,163,164,165,166,179);   
 
     INSERT INTO Temp_MatchMonitorDetailsCust(CustID, MMDetailsID, MatchID, NoOfCust)
     WITH CTE_MatchMonitorDetials AS

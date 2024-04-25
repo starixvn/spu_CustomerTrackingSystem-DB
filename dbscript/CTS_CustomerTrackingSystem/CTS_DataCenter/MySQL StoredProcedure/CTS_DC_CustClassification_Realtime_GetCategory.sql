@@ -26,13 +26,15 @@ BEGIN
             - 20230120@Long.Luu: Support special case for Inactive (return CategoryID instead of CategoryGroup)  [Redmine ID: #182997]
             - 20230313@Jonas.Huynh: Get PA category for daily scan PA [Redmine ID: #184772]
             - 20230915@Jonas.Huynh: HF Wrong Inactive Category for New and Realtime flow exclude S/R/P with not latest category [Redmine ID: #193050]
-            
+            - 20240425@Thomas.Nguyen: Classify Initial Group Betting - Add SportGroupID = 150 [Redmine ID: #200854]
+
 		Param's Explanation (filtered by):    
 			CALL CTS_DC_CustClassification_Realtime_GetCategory('761925')
 	*/  
     DECLARE	CONST_GROUP_NORMAL 			INT DEFAULT 200;
 	DECLARE	CONST_GROUP_PA 				INT DEFAULT 0;
-	
+	DECLARE	CONST_GROUP_POTENTIALPA 	INT DEFAULT 150;
+
     DECLARE	CONST_CATEGORY_NEWMEMBER 	INT DEFAULT 201;
 	DECLARE	CONST_CATEGORY_NORMALMEMBER INT DEFAULT 202;
 	DECLARE	CONST_CATEGORY_GOODMEMBER	INT DEFAULT 205;
@@ -74,7 +76,7 @@ BEGIN
 	FROM Temp_Customers AS temp
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID
         INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
-	WHERE cate.SportGroupID in (CONST_GROUP_NORMAL, CONST_GROUP_PA);
+	WHERE cate.SportGroupID in (CONST_GROUP_NORMAL, CONST_GROUP_PA, CONST_GROUP_POTENTIALPA);
 
 	INSERT INTO Temp_CustomerCategory(CustID, CTSCustID, SportGroupID, CategoryID, CategoryGroup, RelevantCategoryID, IsOldCategory)
 	SELECT 		temp.CustID
@@ -99,7 +101,7 @@ BEGIN
     -- #3: Return customer with problem category for PA daily scan
 	SELECT DISTINCT CustID
     FROM Temp_CustomerCategory 
-    WHERE SportGroupID = CONST_GROUP_PA
+    WHERE SportGroupID IN (CONST_GROUP_PA, CONST_GROUP_POTENTIALPA)
 		AND RelevantCategoryID IS NOT NULL
         AND IsOldCategory = FALSE;
 	

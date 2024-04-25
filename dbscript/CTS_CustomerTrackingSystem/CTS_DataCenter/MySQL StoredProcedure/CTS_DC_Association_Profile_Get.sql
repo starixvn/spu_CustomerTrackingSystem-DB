@@ -38,7 +38,8 @@ sp : BEGIN
             - 20230313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
             - 20230421@Casey.Huynh: 	Handle Fist Association Date [Redmine ID: #185783]
             - 20240319@Casey.Huynh: 	Classify Danger Score [Redmine ID: #201358]
-            
+            - 20240425@Thomas.Nguyen:	Classify Initial Group Betting - Add ParentID = 150 [Redmine ID: #200854]
+
 		Param's Explanation (filtered by):
 			- ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual, 4 - IP
             - ip_AssociationStatus: 0 - All, 1 - Linked, 2 - UnLinked
@@ -54,7 +55,8 @@ sp : BEGIN
 	*/
 	DECLARE CONST_ASSTYPE_BETTINGPATTERN INT DEFAULT 2;
     DECLARE CONS_ASSBYAI_ACTIVESTATUS INT DEFAULT 1;
-    DECLARE CONST_GROUPPRIORITY_DANGEROUS SMALLINT UNSIGNED DEFAULT 5700;
+	DECLARE	CONST_PARENTID_POTENTIALPA 			INT DEFAULT 150;
+	DECLARE	CONST_PARENTID_NORMAL 				INT DEFAULT 200;
     #==================================================
 	DECLARE lv_CustID INT;
     
@@ -429,8 +431,8 @@ sp : BEGIN
 		,	tmpCS.ParentID AS ParentIDs
 		,	tmpCS.CategoryIDs AS CategoryIDs
 		,	tmpCS.CategoryNames AS CategoryNames
-        ,	(CASE 	WHEN tmpCS.ParentID = 200 THEN 3
-					WHEN tmpCS.ParentID = 50  AND GroupPriority = CONST_GROUPPRIORITY_DANGEROUS THEN 2
+        ,	(CASE 	WHEN tmpCS.ParentID = CONST_PARENTID_NORMAL THEN 3
+					WHEN tmpCS.ParentID = CONST_PARENTID_POTENTIALPA THEN 2
                     ELSE 1 END) AS CategoryType
 		,	tmpCS.IsProbation AS IsProbation
 		,	t.GroupIDList AS GroupIDs

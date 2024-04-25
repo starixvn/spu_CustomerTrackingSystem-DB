@@ -15,3 +15,7 @@ USE bodb_VR2Model;
 #=================================================
 INSERT INTO CustomerClassification_Parameter(DataId,DataDescription,DataType,Value)
 SELECT 14, 'Normal Accounts Classification - InitialGroupBetting - Service - Last Scanned CustID', 'BIGINT' , 0;
+
+DELETE p WITH(ROWLOCK)
+FROM CustomerClassification_Priority p
+WHERE p.FunctionId = 8;
