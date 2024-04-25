@@ -43,7 +43,7 @@ BEGIN
 
 		END;
 	
-	IF (@NextScannedCustID > @LastScannedCustID)
+	IF (@NextScannedCustID <> @LastScannedCustID)
 		BEGIN
 			UPDATE dbo.CustomerClassification_Parameter WITH(ROWLOCK, UPDLOCK)
 			SET [Value] = @NextScannedCustID
