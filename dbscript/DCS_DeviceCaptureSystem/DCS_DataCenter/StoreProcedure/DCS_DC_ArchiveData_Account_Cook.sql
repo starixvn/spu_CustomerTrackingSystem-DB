@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_ArchiveData_ArchiveTable_CookData`;
+DROP PROCEDURE IF EXISTS `DCS_DC_ArchiveData_Account_Cook`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_ArchiveData_ArchiveTable_CookData`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_ArchiveData_Account_Cook`(
     IN ip_BatchSize INT UNSIGNED
 )
 SQL SECURITY INVOKER
@@ -16,7 +16,7 @@ BEGIN
 		Revisions:
 			- 20240419@Jonathan.Doan: Created [Redmine ID: #203691]
 		Param's Explanation (filtered by):
-			CALL DCS_DC_ArchiveData_ArchiveTable_CookData(50);
+			CALL DCS_DC_ArchiveData_Account_Cook(50);
 	*/
     DECLARE CONST_SYSTEM_ARCHIVE_MAXACCOUNTID 				INT DEFAULT 4963734;
     DECLARE CONST_SYSTEM_ARCHIVE_MINACCOUNTLASTLOGINTIME	INT DEFAULT 4963735;
@@ -78,24 +78,27 @@ BEGIN
 				WHERE cust.SubscriberID = tmp.SubscriberID
 					AND (cust.Username = tmp.LoginName OR cust.Username2 = tmp.LoginName));
 
-	INSERT IGNORE INTO DCS_DataCenter.ArchiveAccount_NotUsed(AccountID)
-	SELECT AccountID
+
+	INSERT IGNORE INTO DCS_DataCenter.ArchiveAccount_NotUsed(AccountID, SubscriberID, LoginName)
+	SELECT	AccountID
+		,	SubscriberID
+		,	LoginName
     FROM Temp_Account;
     
-    INSERT IGNORE INTO DCS_DataCenter.ArchiveAccountIP_NotUsed(ID, AccountID)
-    SELECT	accIP.ID
+    INSERT IGNORE INTO DCS_DataCenter.ArchiveAccountIP_NotUsed(AccountIPID, AccountID)
+    SELECT	accIP.ID AS AccountIPID
 		,	accIP.AccountID
 	FROM Temp_Account AS tmp
 		INNER JOIN DCS_DataCenter.AccountIP AS accIP ON accIP.AccountID = tmp.AccountID;
     
-    INSERT IGNORE INTO DCS_DataCenter.ArchiveAccountDevice_NotUsed(ID, AccountID)
-    SELECT	accD.ID
+    INSERT IGNORE INTO DCS_DataCenter.ArchiveAccountDevice_NotUsed(AccountDeviceID, AccountID)
+    SELECT	accD.ID AS AccountDeviceID
 		,	accD.AccountID
 	FROM Temp_Account AS tmp
 		INNER JOIN DCS_DataCenter.AccountDevice AS accD ON accD.AccountID = tmp.AccountID;
     
-    INSERT IGNORE INTO DCS_DataCenter.ArchiveAccountFingerprint_NotUsed(ID, AccountID)
-    SELECT	accF.ID
+    INSERT IGNORE INTO DCS_DataCenter.ArchiveAccountFingerprint_NotUsed(AccountFingerprintID, AccountID)
+    SELECT	accF.ID AS AccountFingerprintID
 		,	accF.AccountID
 	FROM Temp_Account AS tmp
 		INNER JOIN DCS_DataCenter.AccountFingerprint AS accF ON accF.AccountID = tmp.AccountID;

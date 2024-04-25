@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_ArchiveData_ArchiveTable_RecheckData`;
+DROP PROCEDURE IF EXISTS `DCS_DC_ArchiveData_Account_Recheck`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_ArchiveData_ArchiveTable_RecheckData`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_ArchiveData_Account_Recheck`(
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -15,7 +15,7 @@ BEGIN
 		Revisions:
 			- 20240419@Jonathan.Doan: Created [Redmine ID: #203691]
 		Param's Explanation (filtered by):
-			CALL DCS_DC_ArchiveData_ArchiveTable_RecheckData();
+			CALL DCS_DC_ArchiveData_Account_Recheck();
 	*/
     DECLARE CONST_SYSTEM_ARCHIVE_MINACCOUNTLASTLOGINTIME	INT DEFAULT 4963735;
     DECLARE lv_MinAccountLastLoginTime  	DATE;
@@ -33,11 +33,21 @@ BEGIN
 			DeviceID 		BIGINT UNSIGNED NOT NULL PRIMARY KEY
     );
     
+	/* === Collect Data === */
     INSERT INTO Temp_AccountReActived(AccountID)
-    SELECT aa.AccountID
+    SELECT DISTINCT aa.AccountID
 	FROM DCS_DataCenter.ArchiveAccount_NotUsed AS aa
 		INNER JOIN DCS_DataCenter.Account AS acc ON acc.AccountID = aa.AccountID
-	WHERE acc.LastLoginTime >= lv_MinAccountLastLoginTime;
+	WHERE acc.LastLoginTime >= lv_MinAccountLastLoginTime
+		OR acc.IsCTSTransformed > -1
+		OR EXISTS (SELECT 1
+				FROM CTS_DataCenter.CustDCSAccount AS cda
+				WHERE cda.AccountID = aa.AccountID)
+		OR EXISTS (SELECT 1
+				FROM CTS_DataCenter.CTSCustomer AS cust
+				WHERE cust.SubscriberID = aa.SubscriberID
+					AND (cust.Username = aa.LoginName OR cust.Username2 = aa.LoginName));
+                    
     
     INSERT INTO Temp_DeviceReActived(DeviceID)
     SELECT DISTINCT aa.DeviceID
@@ -45,6 +55,7 @@ BEGIN
 		INNER JOIN Temp_AccountReActived AS tmp ON tmp.AccountID = aa.AccountID;
         
     
+	/* === Delete === */
     DELETE aa
     FROM DCS_DataCenter.ArchiveAccount_NotUsed AS aa
 		INNER JOIN Temp_AccountReActived AS tmp ON tmp.AccountID = aa.AccountID;
