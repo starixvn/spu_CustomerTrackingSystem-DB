@@ -25,6 +25,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleFixedGame_Compl
 			- 20220726@Casey.Huynh: Created [Redmine ID: #175700]
             - 20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
             - 20221205@Casey.Huynh: Rename Table [Redmine ID: #181205]
+            - 20240425@Casey.Huynh: Change DataType TEXT to LONGTEXT [Redmine ID: #200842]
             
 		Param's Explanation (filtered by):	
 
@@ -44,15 +45,15 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleFixedGame_Compl
     DECLARE lv_LeagueName			VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
     DECLARE	lv_Sporttype			INT;
     DECLARE	lv_IsMajorLeague		BOOLEAN;
-    DECLARE	lv_DetailsTransIDList	TEXT;
-    DECLARE	lv_DetailsCustIDList	TEXT;
+    DECLARE	lv_DetailsTransIDList	LONGTEXT;
+    DECLARE	lv_DetailsCustIDList	LONGTEXT;
     DECLARE	lv_DetailsID			INT;
 	DECLARE lv_EventDate 			DATE;
     DECLARE lv_LiveHomeScore		SMALLINT UNSIGNED;
     DECLARE lv_LiveAwayScore		SMALLINT UNSIGNED;
     DECLARE lv_MaxTransDate			DATETIME(3);	
-    DECLARE	lv_NewTransIDList		TEXT;
-    DECLARE	lv_NewCustIDList		TEXT;
+    DECLARE	lv_NewTransIDList		LONGTEXT;
+    DECLARE	lv_NewCustIDList		LONGTEXT;
     DECLARE	lv_Rule_Duration		SMALLINT; 
     DECLARE	lv_Reason				INT;
     
