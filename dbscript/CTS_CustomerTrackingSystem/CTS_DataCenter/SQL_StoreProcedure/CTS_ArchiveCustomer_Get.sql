@@ -15,6 +15,7 @@ AS
 	
 	Revisions:
 		- 20210205@CaseyHuynh: Created [Redmine ID: 159611]
+		- 20240426@Jonas.Huynh: Enhance Archived Customers [Redmine ID: 203323]
 
 	Developer's Notes:
     
@@ -67,7 +68,7 @@ BEGIN;
 		INSERT INTO #tmpArchivedCustomers(ArchivedDate, CustID)
 		SELECT		TOP(@rowSize) cus.ArchivedDate
 					, cus.CustID
-		FROM		bodb02.dbo.Dep_Customer_Archived AS cus WITH(NOLOCK)
+		FROM		Bodb_Archive_Customer_Licensee.dbo.custInfo AS cus WITH(NOLOCK)
 		WHERE		cus.ArchivedDate = @lastArchiveDate
 					AND cus.CustId > @lastCustId
 		ORDER BY	cus.CustID ASC;
@@ -79,7 +80,7 @@ BEGIN;
 			INSERT INTO #tmpArchivedCustomers(ArchivedDate, CustID)
 			SELECT		TOP(@rowSize - @rowCount) cus.ArchivedDate
 					,	cus.CustID
-			FROM		bodb02.dbo.Dep_Customer_Archived AS cus WITH(NOLOCK)
+			FROM		Bodb_Archive_Customer_Licensee.dbo.custInfo AS cus WITH(NOLOCK)
 			WHERE		cus.ArchivedDate > @lastArchiveDate
 			ORDER BY	cus.ArchivedDate ASC, cus.CustID ASC;
 		END;
