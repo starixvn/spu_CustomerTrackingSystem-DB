@@ -20,6 +20,7 @@ AS
 		- 20230726@Jonas.Huynh: Saba Classification [Redmine ID: #185320]
 		- 20240318@Jonas.Huynh: Renovate Non-Sport Rules [Redmine ID: #201359]
 		- 20240320@Thomas.Nguyen: Classify customers without performance that were removed special CC from manual action [Redmine ID: #201360]
+		- 20240426@Jonas.Huynh: Exclude New Parlay SportGroup [Redmine ID: #203600]
 
 	Param's Explanation:
 		@CustomersXML	 : This parameter is used to classify customer perf which bases on currentCategory
@@ -37,25 +38,26 @@ BEGIN
 	
 	SET NOCOUNT ON;
 
-	DECLARE	@CATEGORY_NULL			SMALLINT = 0,
-			@CATEGORY_NEWMEMBER		SMALLINT = 201,
-			@CATEGORY_NORMALMEMBER	SMALLINT = 202,
-			@CATEGORY_GOODMEMBER	SMALLINT = 205,
-			@CATEGORY_CCRESET		SMALLINT = -1;
+	DECLARE	@CATEGORY_NULL				SMALLINT = 0,
+			@CATEGORY_NEWMEMBER			SMALLINT = 201,
+			@CATEGORY_NORMALMEMBER		SMALLINT = 202,
+			@CATEGORY_GOODMEMBER		SMALLINT = 205,
+			@CATEGORY_CCRESET			SMALLINT = -1;
 
-	DECLARE @SPORT_SOCCER			SMALLINT = 1,
-			@SPORT_BASKETBALL		SMALLINT = 2,
-			@SPORT_ESPORT			SMALLINT = 43,
-			@SPORT_OTHERSPORT		SMALLINT = 99,
-			@SPORT_NONSPORT			SMALLINT = 229;
+	DECLARE @SPORT_SOCCER				SMALLINT = 1,
+			@SPORT_BASKETBALL			SMALLINT = 2,
+			@SPORT_ESPORT				SMALLINT = 43,
+			@SPORT_OTHERSPORT			SMALLINT = 99,
+			@SPORT_PARLAY				SMALLINT = 107,
+			@SPORT_NONSPORT				SMALLINT = 229;
 
-	DECLARE @CurrentDateTime		DATETIME = GETDATE();
-	DECLARE @CurrentDate			DATE	 = GETDATE();
-	DECLARE	@ToDate					DATE	 = GETDATE();
-	DECLARE @From30Date				DATE	 = DATEADD(DAY, -29, @ToDate);
+	DECLARE @CurrentDateTime			DATETIME = GETDATE();
+	DECLARE @CurrentDate				DATE	 = GETDATE();
+	DECLARE	@ToDate						DATE	 = GETDATE();
+	DECLARE @From30Date					DATE	 = DATEADD(DAY, -29, @ToDate);
 	DECLARE @Priority_ManualAction		TINYINT = 10;  
 	DECLARE @FunctionId_ManualAction	TINYINT = 5;  
-	DECLARE @ListCustIds			VARCHAR(MAX);
+	DECLARE @ListCustIds				VARCHAR(MAX);
 
 	IF OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
 	BEGIN
@@ -181,7 +183,8 @@ BEGIN
 	-- #4: Remove SportType with no perf (void/reject/exclude/... tickets)
 	DELETE r WITH(ROWLOCK)
 	FROM #tmpRawData AS r
-	WHERE r.BetCount = 0;
+	WHERE r.BetCount = 0 
+		OR r.SportGroup = @SPORT_PARLAY;
 	
 	-- #5: Calculate accumulated customer performance data
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, SportGroup, TurnoverRM, WinlossRM, Margin, BetCount, ActiveDays, WinDaysRate, PerformanceTime, CurrentCategoryId, IsCheckBetCount, IsProbationLastDay)
