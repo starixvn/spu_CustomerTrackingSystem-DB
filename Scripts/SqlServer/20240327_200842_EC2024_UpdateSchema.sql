@@ -93,15 +93,9 @@ CREATE NONCLUSTERED INDEX [IX_CustomerClassification_BySport_NormalPool_CustId_S
 GO
 
 -- #4. ADD SYSTEM PARAMETER
-DECLARE @GeneralValue BIGINT;
-DECLARE @BysportValue BIGINT;
-
-SELECT @GeneralValue = CAST(MIN([RowVersion]) AS BIGINT) FROM dbo.CustomerClassification WITH(NOLOCK);
-SELECT @BysportValue = CAST(MIN([RowVersion]) AS BIGINT) FROM dbo.CustomerClassification_BySport WITH(NOLOCK);
+INSERT INTO [dbo].[CustomerClassification_Parameter] ([DataId], [DataDescription], [DataType], [Value]) 
+VALUES (1, 'Normal Accounts Classification - General - Lastest Scan Rowversion', 'ROWVERSION', CONVERT(VARCHAR(200), 0));
 
 INSERT INTO [dbo].[CustomerClassification_Parameter] ([DataId], [DataDescription], [DataType], [Value]) 
-VALUES (1, 'Normal Accounts Classification - General - Lastest Scan Rowversion', 'ROWVERSION', CONVERT(VARCHAR(200), @GeneralValue));
-
-INSERT INTO [dbo].[CustomerClassification_Parameter] ([DataId], [DataDescription], [DataType], [Value]) 
-VALUES (2, 'Normal Accounts Classification - BySport - Lastest Scan Rowversion', 'ROWVERSION', CONVERT(VARCHAR(200), @BysportValue));
+VALUES (2, 'Normal Accounts Classification - BySport - Lastest Scan Rowversion', 'ROWVERSION', CONVERT(VARCHAR(200), 0));
 GO
