@@ -13,13 +13,15 @@ BEGIN
 	Revisions:
 		- 20230608@Victoria.Le:		Initial Writing [Redmine ID: #187083]
 		- 20240410@Long.Luu:		Add special rule for CC2800/2801: considered as Normal by User but has been arranged as a PA in DB [Redmine ID: #201358]
-		
+		- 20240426@Thomas.Nguyen:	Classify Initial Group Betting - Add ParentID = 150 [Redmine ID: #200854]
+
 	Param's Explanation (filtered by):
 	Example:
 		- CALL CTS_DC_TGRS_Category_Get();
 */
 	DECLARE CONST_CATEGORYGROUP_NORMAL 	SMALLINT DEFAULT 200;
 	DECLARE CONST_CATEGORYGROUP_PA 		SMALLINT DEFAULT 50;
+	DECLARE	CONST_CATEGORYGROUP_POTENTIALPA		SMALLINT DEFAULT 150;
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustomerCategory;
     CREATE TEMPORARY TABLE Temp_CustomerCategory(
@@ -46,7 +48,7 @@ BEGIN
 		WHERE cc.CustomerClass IS NOT NULL
 			AND cc.IsActive = 1
 	)
-	SELECT 	CASE WHEN c.ParentID = CONST_CATEGORYGROUP_NORMAL AND TaggingType  = 0 AND CategoryGroup <> 1000 THEN 1 -- Normal
+	SELECT 	CASE WHEN (c.ParentID = CONST_CATEGORYGROUP_NORMAL AND TaggingType  = 0 AND CategoryGroup <> 1000) OR (c.ParentID = CONST_CATEGORYGROUP_POTENTIALPA) THEN 1 -- Normal
 				 WHEN c.ParentID = CONST_CATEGORYGROUP_NORMAL AND TaggingType <> 0  THEN 2 -- Normal linked Problem
 				 WHEN c.ParentID = CONST_CATEGORYGROUP_PA THEN 3  -- Problem Account
 				 ELSE 4 -- Other
@@ -81,11 +83,6 @@ BEGIN
         ,	s.CategoryName
     FROM Temp_SpecialCustomerClass AS s
     ;
-    
-    # Special rule for CC2800/2801: considered as Normal by User but has been arranged as a PA in DB
-    UPDATE Temp_CustomerCategory
-    SET CustomerClassGroupID = 1
-    WHERE CustomerClass IN (2800,2801);
     
     SELECT 	CustomerClassGroupID
 		,	CASE WHEN CustomerClassGroupID = 1 THEN 'Normal'
