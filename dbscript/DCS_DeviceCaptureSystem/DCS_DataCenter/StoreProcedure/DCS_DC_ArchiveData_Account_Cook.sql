@@ -54,7 +54,6 @@ BEGIN
 	FROM DCS_DataCenter.Account AS acc
 	WHERE acc.AccountID > lv_MaxAccountID
 		AND acc.LastLoginTime < lv_MinAccountLastLoginTime
-		AND acc.IsCTSTransformed = -1
 	ORDER BY AccountID ASC
     LIMIT ip_BatchSize;
 
@@ -75,8 +74,13 @@ BEGIN
 	FROM Temp_Account AS tmp
 	WHERE EXISTS (SELECT 1 
 				FROM CTS_DataCenter.CTSCustomer AS cust 
-				WHERE cust.SubscriberID = tmp.SubscriberID
-					AND (cust.Username = tmp.LoginName OR cust.Username2 = tmp.LoginName));
+				WHERE cust.Username = tmp.LoginName);
+                    
+	DELETE tmp
+	FROM Temp_Account AS tmp
+	WHERE EXISTS (SELECT 1 
+				FROM CTS_DataCenter.CTSCustomer AS cust 
+				WHERE cust.Username2 = tmp.LoginName);
 
 
 	INSERT IGNORE INTO DCS_DataCenter.ArchiveAccount_NotUsed(AccountID, SubscriberID, LoginName)
@@ -85,20 +89,20 @@ BEGIN
 		,	LoginName
     FROM Temp_Account;
     
-    INSERT IGNORE INTO DCS_DataCenter.ArchiveAccountIP_NotUsed(AccountIPID, AccountID)
-    SELECT	accIP.ID AS AccountIPID
+    INSERT IGNORE INTO DCS_DataCenter.ArchiveAccountIP_NotUsed(ID, AccountID)
+    SELECT	accIP.ID
 		,	accIP.AccountID
 	FROM Temp_Account AS tmp
 		INNER JOIN DCS_DataCenter.AccountIP AS accIP ON accIP.AccountID = tmp.AccountID;
     
-    INSERT IGNORE INTO DCS_DataCenter.ArchiveAccountDevice_NotUsed(AccountDeviceID, AccountID)
-    SELECT	accD.ID AS AccountDeviceID
+    INSERT IGNORE INTO DCS_DataCenter.ArchiveAccountDevice_NotUsed(ID, AccountID)
+    SELECT	accD.ID
 		,	accD.AccountID
 	FROM Temp_Account AS tmp
 		INNER JOIN DCS_DataCenter.AccountDevice AS accD ON accD.AccountID = tmp.AccountID;
     
-    INSERT IGNORE INTO DCS_DataCenter.ArchiveAccountFingerprint_NotUsed(AccountFingerprintID, AccountID)
-    SELECT	accF.ID AS AccountFingerprintID
+    INSERT IGNORE INTO DCS_DataCenter.ArchiveAccountFingerprint_NotUsed(ID, AccountID)
+    SELECT	accF.ID
 		,	accF.AccountID
 	FROM Temp_Account AS tmp
 		INNER JOIN DCS_DataCenter.AccountFingerprint AS accF ON accF.AccountID = tmp.AccountID;

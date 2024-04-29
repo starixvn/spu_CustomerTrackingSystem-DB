@@ -3,7 +3,9 @@ DROP PROCEDURE IF EXISTS `DCS_DC_ArchiveData_Account_Archive`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_ArchiveData_Account_Archive`(
-    IN ip_BatchSize INT UNSIGNED
+		IN ip_BatchSize INT UNSIGNED
+        
+	,	OUT op_RowCount BIGINT UNSIGNED
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -16,10 +18,9 @@ BEGIN
 		Revisions:
 			- 20240419@Jonathan.Doan: Created [Redmine ID: #203691]
 		Param's Explanation (filtered by):
-			CALL DCS_DC_ArchiveData_Account_Archive(50);
+            CALL DCS_DataCenter.DCS_DC_ArchiveData_Account_Archive(50, @rowCount); SELECT @rowCount;
 	*/
-    DECLARE lv_RowCount INT DEFAULT 0;
-    
+    SET op_RowCount = 0;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Account;
     DROP TEMPORARY TABLE IF EXISTS Temp_Association;
@@ -48,15 +49,15 @@ BEGIN
     );
     
     CREATE TEMPORARY TABLE Temp_AccountIP(
-			AccountIPID 	BIGINT UNSIGNED NOT NULL PRIMARY KEY
+			ID 	BIGINT UNSIGNED NOT NULL PRIMARY KEY
     );
     
     CREATE TEMPORARY TABLE Temp_AccountDevice(
-			AccountDeviceID BIGINT UNSIGNED NOT NULL PRIMARY KEY
+			ID BIGINT UNSIGNED NOT NULL PRIMARY KEY
     );
     
     CREATE TEMPORARY TABLE Temp_AccountFingerprint(
-			AccountFingerprintID BIGINT UNSIGNED NOT NULL PRIMARY KEY
+			ID BIGINT UNSIGNED NOT NULL PRIMARY KEY
     );
     
     INSERT INTO Temp_Account(AccountID)
@@ -80,18 +81,18 @@ BEGIN
 	FROM DCS_DataCenter.ArchiveDeviceCode_NotUsed
 	LIMIT ip_BatchSize;
     
-    INSERT INTO Temp_AccountIP(AccountIPID)
-	SELECT AccountIPID
+    INSERT INTO Temp_AccountIP(ID)
+	SELECT ID
 	FROM DCS_DataCenter.ArchiveAccountIP_NotUsed
 	LIMIT ip_BatchSize;
     
-    INSERT INTO Temp_AccountDevice(AccountDeviceID)
-	SELECT AccountDeviceID
+    INSERT INTO Temp_AccountDevice(ID)
+	SELECT ID
 	FROM DCS_DataCenter.ArchiveAccountDevice_NotUsed
 	LIMIT ip_BatchSize;
     
-    INSERT INTO Temp_AccountFingerprint(AccountFingerprintID)
-	SELECT AccountFingerprintID
+    INSERT INTO Temp_AccountFingerprint(ID)
+	SELECT ID
 	FROM DCS_DataCenter.ArchiveAccountFingerprint_NotUsed
 	LIMIT ip_BatchSize;
     
@@ -100,25 +101,25 @@ BEGIN
 	FROM DCS_DataCenter.Account AS acc
 		INNER JOIN Temp_Account AS tmp ON tmp.AccountID = acc.AccountID;
 	
-    SET lv_RowCount = lv_RowCount + ROW_COUNT();
+    SET op_RowCount = op_RowCount + ROW_COUNT();
         
 	DELETE sumAcc
 	FROM DCS_DataCenter.SumAccountLogin AS sumAcc
 		INNER JOIN Temp_Account AS tmp ON tmp.AccountID = sumAcc.AccountID;
 	
-    SET lv_RowCount = lv_RowCount + ROW_COUNT();
+    SET op_RowCount = op_RowCount + ROW_COUNT();
         
 	DELETE sumAccTotal
 	FROM DCS_DataCenter.SumAccountLoginTotal AS sumAccTotal
 		INNER JOIN Temp_Account AS tmp ON tmp.AccountID = sumAccTotal.AccountID;
 	
-    SET lv_RowCount = lv_RowCount + ROW_COUNT();
+    SET op_RowCount = op_RowCount + ROW_COUNT();
         
 	DELETE arcAcc
     FROM DCS_DataCenter.ArchiveAccount_NotUsed AS arcAcc
 		INNER JOIN Temp_Account AS tmp ON tmp.AccountID = arcAcc.AccountID;
 	
-    SET lv_RowCount = lv_RowCount + ROW_COUNT();
+    SET op_RowCount = op_RowCount + ROW_COUNT();
     
     /* DELETE Association */
 	DELETE ass
@@ -126,87 +127,87 @@ BEGIN
 		INNER JOIN Temp_Association AS tmp ON tmp.AccountID = ass.AccountID
 										AND tmp.DeviceID = ass.DeviceID;
 	
-    SET lv_RowCount = lv_RowCount + ROW_COUNT();
+    SET op_RowCount = op_RowCount + ROW_COUNT();
                                         
 	DELETE arcAss
 	FROM DCS_DataCenter.ArchiveAssociation_NotUsed AS arcAss
 		INNER JOIN Temp_Association AS tmp ON tmp.AccountID = arcAss.AccountID
 										AND tmp.DeviceID = arcAss.DeviceID;
 	
-    SET lv_RowCount = lv_RowCount + ROW_COUNT();
+    SET op_RowCount = op_RowCount + ROW_COUNT();
     
     /* DELETE Device & DeviceFingerprint*/
 	DELETE dv
 	FROM DCS_DataCenter.Device AS dv
 		INNER JOIN Temp_Device AS tmp ON tmp.DeviceID = dv.DeviceID;
 	
-    SET lv_RowCount = lv_RowCount + ROW_COUNT();
+    SET op_RowCount = op_RowCount + ROW_COUNT();
         
 	DELETE dvf
 	FROM DCS_DataCenter.DeviceFingerprint AS dvf
 		INNER JOIN Temp_Device AS tmp ON tmp.DeviceID = dvf.DeviceID;
 	
-    SET lv_RowCount = lv_RowCount + ROW_COUNT();
+    SET op_RowCount = op_RowCount + ROW_COUNT();
 
 	DELETE arcDv
     FROM DCS_DataCenter.ArchiveDevice_NotUsed AS arcDv
 		INNER JOIN Temp_Device AS tmp ON tmp.DeviceID = arcDv.DeviceID;
 	
-    SET lv_RowCount = lv_RowCount + ROW_COUNT();
+    SET op_RowCount = op_RowCount + ROW_COUNT();
     
     /* DELETE DeviceCode */
 	DELETE dvc
 	FROM DCS_DataCenter.DeviceCode AS dvc
 		INNER JOIN Temp_DeviceCode AS tmp ON tmp.DeviceCodeID = dvc.DeviceCodeID;
 	
-    SET lv_RowCount = lv_RowCount + ROW_COUNT();
+    SET op_RowCount = op_RowCount + ROW_COUNT();
 
 	DELETE arcDvc
     FROM DCS_DataCenter.ArchiveDeviceCode_NotUsed AS arcDvc
 		INNER JOIN Temp_DeviceCode AS tmp ON tmp.DeviceCodeID = arcDvc.DeviceCodeID;
 	
-    SET lv_RowCount = lv_RowCount + ROW_COUNT();
+    SET op_RowCount = op_RowCount + ROW_COUNT();
     
     /* DELETE AccountIP */
 	DELETE accIp
 	FROM DCS_DataCenter.AccountIP AS accIp
-		INNER JOIN Temp_AccountIP AS tmp ON tmp.AccountIPID = accIp.ID;
+		INNER JOIN Temp_AccountIP AS tmp ON tmp.ID = accIp.ID;
 	
-    SET lv_RowCount = lv_RowCount + ROW_COUNT();
+    SET op_RowCount = op_RowCount + ROW_COUNT();
 
 	DELETE arcAccIp
     FROM DCS_DataCenter.ArchiveAccountIP_NotUsed AS arcAccIp
-		INNER JOIN Temp_AccountIP AS tmp ON tmp.AccountIPID = arcAccIp.AccountIPID;
+		INNER JOIN Temp_AccountIP AS tmp ON tmp.ID = arcAccIp.ID;
 	
-    SET lv_RowCount = lv_RowCount + ROW_COUNT();
+    SET op_RowCount = op_RowCount + ROW_COUNT();
     
     /* DELETE AccountDevice */
 	DELETE accDv
 	FROM DCS_DataCenter.AccountDevice AS accDv
-		INNER JOIN Temp_AccountDevice AS tmp ON tmp.AccountDeviceID = accDv.ID;
+		INNER JOIN Temp_AccountDevice AS tmp ON tmp.ID = accDv.ID;
 	
-    SET lv_RowCount = lv_RowCount + ROW_COUNT();
+    SET op_RowCount = op_RowCount + ROW_COUNT();
 
 	DELETE arcAccDv
     FROM DCS_DataCenter.ArchiveAccountDevice_NotUsed AS arcAccDv
-		INNER JOIN Temp_AccountDevice AS tmp ON tmp.AccountDeviceID = arcAccDv.AccountDeviceID;
+		INNER JOIN Temp_AccountDevice AS tmp ON tmp.ID = arcAccDv.ID;
 	
-    SET lv_RowCount = lv_RowCount + ROW_COUNT();
+    SET op_RowCount = op_RowCount + ROW_COUNT();
     
     /* DELETE AccountFingerprint */
 	DELETE accFp
 	FROM DCS_DataCenter.AccountFingerprint AS accFp
-		INNER JOIN Temp_AccountFingerprint AS tmp ON tmp.AccountFingerprintID = accFp.ID;
+		INNER JOIN Temp_AccountFingerprint AS tmp ON tmp.ID = accFp.ID;
 	
-    SET lv_RowCount = lv_RowCount + ROW_COUNT();
+    SET op_RowCount = op_RowCount + ROW_COUNT();
 
 	DELETE arcAccFp
     FROM DCS_DataCenter.ArchiveAccountFingerprint_NotUsed AS arcAccFp
-		INNER JOIN Temp_AccountFingerprint AS tmp ON tmp.AccountFingerprintID = arcAccFp.AccountFingerprintID;
+		INNER JOIN Temp_AccountFingerprint AS tmp ON tmp.ID = arcAccFp.ID;
 	
-    SET lv_RowCount = lv_RowCount + ROW_COUNT();
+    SET op_RowCount = op_RowCount + ROW_COUNT();
 
-	SELECT lv_RowCount;
+	SELECT op_RowCount;
     
 END$$
 

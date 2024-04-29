@@ -17,21 +17,21 @@ CREATE TABLE `ArchiveAccount_NotUsed` (
  
 DROP TABLE IF EXISTS DCS_DataCenter.ArchiveAccountIP_NotUsed;
 CREATE TABLE `ArchiveAccountIP_NotUsed` (
-  `AccountIPID` BIGINT UNSIGNED NOT NULL PRIMARY KEY,
+  `ID` BIGINT UNSIGNED NOT NULL PRIMARY KEY,
   `AccountID` BIGINT UNSIGNED DEFAULT NULL,
   KEY `IX_ArchiveAccountIP_NotUsed_AccountID` (`AccountID`)
 ) ENGINE=InnoDB;
  
 DROP TABLE IF EXISTS DCS_DataCenter.ArchiveAccountFingerprint_NotUsed;
 CREATE TABLE `ArchiveAccountFingerprint_NotUsed` (
-  `AccountFingerprintID` BIGINT UNSIGNED NOT NULL PRIMARY KEY,
+  `ID` BIGINT UNSIGNED NOT NULL PRIMARY KEY,
   `AccountID` BIGINT UNSIGNED DEFAULT NULL,
   KEY `IX_ArchiveAccountFingerprint_NotUsed_AccountID` (`AccountID`)
 ) ENGINE=InnoDB;
 
 DROP TABLE IF EXISTS DCS_DataCenter.ArchiveAccountDevice_NotUsed;
 CREATE TABLE `ArchiveAccountDevice_NotUsed` (
-  `AccountDeviceID` BIGINT UNSIGNED NOT NULL PRIMARY KEY,
+  `ID` BIGINT UNSIGNED NOT NULL PRIMARY KEY,
   `AccountID` BIGINT UNSIGNED DEFAULT NULL,
   KEY `IX_ArchiveAccountDevice_NotUsed_AccountID` (`AccountID`)
 ) ENGINE=InnoDB;
