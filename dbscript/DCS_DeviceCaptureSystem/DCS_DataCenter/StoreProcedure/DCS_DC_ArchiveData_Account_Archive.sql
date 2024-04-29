@@ -5,7 +5,7 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_ArchiveData_Account_Archive`(
 		IN ip_BatchSize INT UNSIGNED
         
-	,	OUT op_RowCount BIGINT UNSIGNED
+	,	OUT op_RowCount INT
 )
 SQL SECURITY INVOKER
 BEGIN

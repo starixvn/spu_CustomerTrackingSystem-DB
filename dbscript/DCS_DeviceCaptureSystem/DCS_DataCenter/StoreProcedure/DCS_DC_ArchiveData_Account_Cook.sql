@@ -3,7 +3,9 @@ DROP PROCEDURE IF EXISTS `DCS_DC_ArchiveData_Account_Cook`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_ArchiveData_Account_Cook`(
-    IN ip_BatchSize INT UNSIGNED
+		IN ip_BatchSize INT UNSIGNED
+        
+	,	OUT op_ShouldContinue INT
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -149,6 +151,10 @@ BEGIN
         UPDATE DCS_DataCenter.SystemSetting 
         SET VValue = lv_MaxAccountID
         WHERE ID = CONST_SYSTEM_ARCHIVE_MAXACCOUNTID;
+        
+		SET op_ShouldContinue = 1;
+	ELSE
+		SET op_ShouldContinue = 0;
     END IF;
     
 END$$
