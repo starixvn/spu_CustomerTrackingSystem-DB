@@ -24,9 +24,10 @@ AS
 */
 BEGIN;
 	SET NOCOUNT ON;
+
+	DECLARE	@toDate			DATETIME = GETDATE();
+	DECLARE	@maxArchiveDate	DATETIME = DATEADD(MINUTE, -1, @toDate);
 	DECLARE	@rowCount		INT;
-	DECLARE	@maxArchiveDate	DATETIME;
-	DECLARE @custIdList		VARCHAR(MAX);
 
 	IF	OBJECT_ID('tempdb..#tmpArchivedCustomers') IS NOT NULL
 		DROP TABLE	#tmpArchivedCustomers;
@@ -60,6 +61,7 @@ BEGIN;
 					,	cus.CustID
 			FROM		bodb_Customer.dbo.CustInfo_Old AS cus WITH(NOLOCK)
 			WHERE		cus.ArchiveDate > @lastArchiveDate
+						AND cus.ArchiveDate <= @maxArchiveDate
 			ORDER BY	cus.ArchiveDate ASC, cus.CustID ASC;
 		END;
 	END;
@@ -82,6 +84,7 @@ BEGIN;
 					,	cus.CustID
 			FROM		Bodb_Archive_Customer_Licensee.dbo.custInfo AS cus WITH(NOLOCK)
 			WHERE		cus.ArchivedDate > @lastArchiveDate
+						AND cus.ArchivedDate <= @maxArchiveDate
 			ORDER BY	cus.ArchivedDate ASC, cus.CustID ASC;
 		END;
 	END;
