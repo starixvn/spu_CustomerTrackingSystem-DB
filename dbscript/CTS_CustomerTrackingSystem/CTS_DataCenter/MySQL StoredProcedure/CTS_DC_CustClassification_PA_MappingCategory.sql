@@ -33,7 +33,10 @@ BEGIN
 	*/
 
     #=======================================================================================================
-    DROP TEMPORARY TABLE IF EXISTS Temp_PA;    
+    DECLARE	CONST_SPORTGROUP_PA 			TINYINT DEFAULT 0;
+	DECLARE	CONST_SPORTGROUP_POTENTIALPA 	INT DEFAULT 150;
+	
+	DROP TEMPORARY TABLE IF EXISTS Temp_PA;    
 	CREATE TEMPORARY TABLE Temp_PA(	  
 		/*Cust info*/
 			CustID					BIGINT UNSIGNED 
@@ -212,7 +215,7 @@ BEGIN
 		FROM Temp_PA AS t
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS c ON t.CustID = c.CustID
             INNER JOIN CustomerCategory AS cc ON c.CategoryID = cc.CategoryID
-		WHERE c.SportGroupID IN (0, 150);
+		WHERE c.SportGroupID IN (CONST_SPORTGROUP_PA, CONST_SPORTGROUP_POTENTIALPA);
 		
 		UPDATE Temp_PA AS t
 			INNER JOIN Temp_PAWinlossStatus AS r ON t.CustID = r.CustID
@@ -370,7 +373,7 @@ BEGIN
 		FROM Temp_PA AS t
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS c ON t.CustID = c.CustID
             INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON c.CategoryID = cc.CategoryID
-		WHERE c.SportGroupID IN (0, 150);
+		WHERE c.SportGroupID IN (CONST_SPORTGROUP_PA, CONST_SPORTGROUP_POTENTIALPA);
 		
 		UPDATE Temp_PA AS t
 			INNER JOIN Temp_PAWinlossStatus AS r ON t.CustID = r.CustID
