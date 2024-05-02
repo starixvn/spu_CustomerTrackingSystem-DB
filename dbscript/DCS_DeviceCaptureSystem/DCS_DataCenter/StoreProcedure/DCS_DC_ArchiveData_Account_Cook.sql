@@ -21,13 +21,13 @@ BEGIN
 			CALL DCS_DC_ArchiveData_Account_Cook(50);
 	*/
     DECLARE CONST_SYSTEM_ARCHIVE_MAXACCOUNTID 				INT DEFAULT 4963734;
-    DECLARE CONST_SYSTEM_ARCHIVE_MINACCOUNTLASTLOGINTIME	INT DEFAULT 4963735;
+    DECLARE CONST_SYSTEM_ARCHIVE_ACCOUNTARCHIVECUTOFFDATE	INT DEFAULT 4963735;
     
     DECLARE lv_MaxAccountID  				BIGINT UNSIGNED;
-    DECLARE lv_MinAccountLastLoginTime  	DATE;
+    DECLARE lv_AccountArchiveCutoffDate  	DATE;
     
     SET lv_MaxAccountID = (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_SYSTEM_ARCHIVE_MAXACCOUNTID);
-    SET lv_MinAccountLastLoginTime = (SELECT DATE(VValue) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_SYSTEM_ARCHIVE_MINACCOUNTLASTLOGINTIME);
+    SET lv_AccountArchiveCutoffDate = (SELECT DATE(VValue) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_SYSTEM_ARCHIVE_ACCOUNTARCHIVECUTOFFDATE);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Account;
     DROP TEMPORARY TABLE IF EXISTS Temp_Association;
@@ -55,7 +55,7 @@ BEGIN
 		,	acc.LoginName
 	FROM DCS_DataCenter.Account AS acc
 	WHERE acc.AccountID > lv_MaxAccountID
-		AND acc.LastLoginTime < lv_MinAccountLastLoginTime
+		AND acc.LastLoginTime < lv_AccountArchiveCutoffDate
 	ORDER BY AccountID ASC
     LIMIT ip_BatchSize;
 

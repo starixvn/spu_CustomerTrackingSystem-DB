@@ -17,10 +17,10 @@ BEGIN
 		Param's Explanation (filtered by):
 			CALL DCS_DC_ArchiveData_Account_Recheck();
 	*/
-    DECLARE CONST_SYSTEM_ARCHIVE_MINACCOUNTLASTLOGINTIME	INT DEFAULT 4963735;
-    DECLARE lv_MinAccountLastLoginTime  	DATE;
+    DECLARE CONST_SYSTEM_ARCHIVE_ACCOUNTARCHIVECUTOFFDATE	INT DEFAULT 4963735;
+    DECLARE lv_AccountArchiveCutoffDate  	DATE;
     
-    SET lv_MinAccountLastLoginTime = (SELECT DATE(VValue) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_SYSTEM_ARCHIVE_MINACCOUNTLASTLOGINTIME);
+    SET lv_AccountArchiveCutoffDate = (SELECT DATE(VValue) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_SYSTEM_ARCHIVE_ACCOUNTARCHIVECUTOFFDATE);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_AccountReActived;
     DROP TEMPORARY TABLE IF EXISTS Temp_DeviceReActived;
@@ -38,7 +38,7 @@ BEGIN
     SELECT DISTINCT aa.AccountID
 	FROM DCS_DataCenter.ArchiveAccount_NotUsed AS aa
 		INNER JOIN DCS_DataCenter.Account AS acc ON acc.AccountID = aa.AccountID
-	WHERE acc.LastLoginTime >= lv_MinAccountLastLoginTime
+	WHERE acc.LastLoginTime >= lv_AccountArchiveCutoffDate
 		OR EXISTS (SELECT 1
 				FROM CTS_DataCenter.CustDCSAccount AS cda
 				WHERE cda.AccountID = aa.AccountID)

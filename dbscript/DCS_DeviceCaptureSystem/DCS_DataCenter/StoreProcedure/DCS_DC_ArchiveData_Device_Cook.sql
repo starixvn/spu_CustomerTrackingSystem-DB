@@ -20,9 +20,11 @@ BEGIN
 		Param's Explanation (filtered by):
             CALL DCS_DataCenter.DCS_DC_ArchiveData_Device_Cook(50, @shouldContinue); SELECT @shouldContinue;
 	*/
-    DECLARE CONST_SYSTEM_ARCHIVE_MAXDEVICEID INT DEFAULT 4963734;
+    DECLARE CONST_SYSTEM_ARCHIVE_MAXDEVICEID INT DEFAULT 4963736;
     
     DECLARE lv_MaxDeviceID  BIGINT UNSIGNED;
+    
+    SET lv_MaxDeviceID = (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_SYSTEM_ARCHIVE_MAXDEVICEID);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Device;
     
@@ -33,7 +35,8 @@ BEGIN
     INSERT INTO Temp_Device(DeviceID)
     SELECT dv.DeviceID
     FROM DCS_DataCenter.Device AS dv
-    WHERE NOT EXISTS (SELECT 1 FROM DCS_DataCenter.Association AS ass WHERE ass.DeviceID = dv.DeviceID)
+    WHERE dv.DeviceID > lv_MaxDeviceID
+		AND NOT EXISTS (SELECT 1 FROM DCS_DataCenter.Association AS ass WHERE ass.DeviceID = dv.DeviceID)
     ORDER BY dv.DeviceID ASC
     LIMIT ip_BatchSize;
     
