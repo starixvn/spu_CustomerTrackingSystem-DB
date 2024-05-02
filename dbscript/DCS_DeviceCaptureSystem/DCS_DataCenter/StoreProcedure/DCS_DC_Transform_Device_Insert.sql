@@ -35,7 +35,7 @@ BEGIN
 
 	DECLARE vrDeviceStatusNew			TINYINT DEFAULT 1;			# New Device
 	DECLARE vrDeviceStatusOld			TINYINT DEFAULT 2;			# Old Device
-	DECLARE vrDeviceStatusRecover		TINYINT DEFAULT 3;			# Recover Devic
+	DECLARE vrDeviceStatusRecover		TINYINT DEFAULT 3;			# Recover Device
 	
     # STATS count
     DECLARE lv_InsertionTime TIMESTAMP(4);
@@ -84,7 +84,7 @@ BEGIN
         ,	DeviceID			BIGINT UNSIGNED
         ,	RecoverCode 		VARCHAR(32)
         ,	PRIMARY KEY 		PK_Temp_RecoveredDevice(AccountID, DeviceCode,FingerprintCode)
-        ,	INDEX 				Temp_RecoveredDevice_Recover(DeviceCode, DeviceID, RecoverCode)
+        ,	INDEX 				IX_Temp_RecoveredDevice_DeviceCode_DeviceID_RecoverCode(DeviceCode, DeviceID, RecoverCode)
 	);
     
     CREATE TEMPORARY TABLE Temp_RecoverDeviceByBet(
@@ -92,7 +92,7 @@ BEGIN
         ,	AccountID			BIGINT UNSIGNED
         ,	DeviceCode			VARCHAR(32)
         ,	FingerprintCode 	VARCHAR(620)
-        ,	INDEX 				CTE_RecoverDeviceByBet_Recover(AccountID,DeviceCode,FingerprintCode)
+        ,	INDEX 				IX_Temp_RecoverDeviceByBet_AccountID_DeviceCode_FingerprintCode(AccountID,DeviceCode,FingerprintCode)
     );
 	
     
