@@ -26,7 +26,7 @@ BEGIN
 			- 20230426@Jonathan.Doan: Get BotDetectionValue from RawTransaction [Redmine ID: #186644]
 			- 20230807@Terry.Nguyen: Add Fake IP [Redmine ID: #191829]
 			- 20231123@Jonathan.Doan: Integrate FPSjs Phrase 2 [Redmine: 196656]
-			- 20240326@Jonathan.Doan: Enhance for EC24 [Redmine: 202878]
+			- 20240326@Jonathan.Doan: Enhance for EC24 [Redmine: 202878] 
 	    Param's Explanation (filtered by):
         
         Example:
