@@ -60,4 +60,7 @@ INSERT INTO DCS_DataCenter.SystemSetting(ID, VGroup, VName, VValue, UpdatedTime)
 SELECT 4963734, 'System_Archive', 'MaxAccountID', 0, CURRENT_TIMESTAMP();
 
 INSERT INTO DCS_DataCenter.SystemSetting(ID, VGroup, VName, VValue, UpdatedTime)
-SELECT 4963735, 'System_Archive', 'MinAccountLastLoginTime', '2023-01-01', CURRENT_TIMESTAMP();
+SELECT 4963735, 'System_Archive', 'AccountArchiveCutoffDate', '2023-01-01', CURRENT_TIMESTAMP();
+
+INSERT INTO DCS_DataCenter.SystemSetting(ID, VGroup, VName, VValue, UpdatedTime)
+SELECT 4963736, 'System_Archive', 'MaxDeviceID', 0, CURRENT_TIMESTAMP();

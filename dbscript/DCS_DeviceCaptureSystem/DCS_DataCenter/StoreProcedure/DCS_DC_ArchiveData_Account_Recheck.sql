@@ -39,14 +39,15 @@ BEGIN
 	FROM DCS_DataCenter.ArchiveAccount_NotUsed AS aa
 		INNER JOIN DCS_DataCenter.Account AS acc ON acc.AccountID = aa.AccountID
 	WHERE acc.LastLoginTime >= lv_MinAccountLastLoginTime
-		OR acc.IsCTSTransformed > -1
 		OR EXISTS (SELECT 1
 				FROM CTS_DataCenter.CustDCSAccount AS cda
 				WHERE cda.AccountID = aa.AccountID)
 		OR EXISTS (SELECT 1
 				FROM CTS_DataCenter.CTSCustomer AS cust
-				WHERE cust.SubscriberID = aa.SubscriberID
-					AND (cust.Username = aa.LoginName OR cust.Username2 = aa.LoginName));
+				WHERE cust.Username = aa.LoginName)
+		OR EXISTS (SELECT 1
+				FROM CTS_DataCenter.CTSCustomer AS cust
+				WHERE cust.Username2 = aa.LoginName);
                     
     
     INSERT INTO Temp_DeviceReActived(DeviceID)
@@ -60,29 +61,29 @@ BEGIN
     FROM DCS_DataCenter.ArchiveAccount_NotUsed AS aa
 		INNER JOIN Temp_AccountReActived AS tmp ON tmp.AccountID = aa.AccountID;
     
-    DELETE aa
-    FROM DCS_DataCenter.ArchiveAccountIP_NotUsed AS aa
-		INNER JOIN Temp_AccountReActived AS tmp ON tmp.AccountID = aa.AccountID;
+    DELETE aaIp
+    FROM DCS_DataCenter.ArchiveAccountIP_NotUsed AS aaIp
+		INNER JOIN Temp_AccountReActived AS tmp ON tmp.AccountID = aaIp.AccountID;
     
-    DELETE aa
-    FROM DCS_DataCenter.ArchiveAccountFingerprint_NotUsed AS aa
-		INNER JOIN Temp_AccountReActived AS tmp ON tmp.AccountID = aa.AccountID;
+    DELETE aaFp
+    FROM DCS_DataCenter.ArchiveAccountFingerprint_NotUsed AS aaFp
+		INNER JOIN Temp_AccountReActived AS tmp ON tmp.AccountID = aaFp.AccountID;
     
-    DELETE aa
-    FROM DCS_DataCenter.ArchiveAccountDevice_NotUsed AS aa
-		INNER JOIN Temp_AccountReActived AS tmp ON tmp.AccountID = aa.AccountID;
+    DELETE aaDv
+    FROM DCS_DataCenter.ArchiveAccountDevice_NotUsed AS aaDv
+		INNER JOIN Temp_AccountReActived AS tmp ON tmp.AccountID = aaDv.AccountID;
     
-    DELETE aa
-    FROM DCS_DataCenter.ArchiveAssociation_NotUsed AS aa
-		INNER JOIN Temp_AccountReActived AS tmp ON tmp.AccountID = aa.AccountID;
+    DELETE aaAss
+    FROM DCS_DataCenter.ArchiveAssociation_NotUsed AS aaAss
+		INNER JOIN Temp_AccountReActived AS tmp ON tmp.AccountID = aaAss.AccountID;
         
     DELETE ad
     FROM DCS_DataCenter.ArchiveDevice_NotUsed AS ad
 		INNER JOIN Temp_DeviceReActived AS tmp ON tmp.DeviceID = ad.DeviceID;
         
-    DELETE ad
-    FROM DCS_DataCenter.ArchiveDeviceCode_NotUsed AS ad
-		INNER JOIN Temp_DeviceReActived AS tmp ON tmp.DeviceID = ad.DeviceID;
+    DELETE adc
+    FROM DCS_DataCenter.ArchiveDeviceCode_NotUsed AS adc
+		INNER JOIN Temp_DeviceReActived AS tmp ON tmp.DeviceID = adc.DeviceID;
     
     
 END$$

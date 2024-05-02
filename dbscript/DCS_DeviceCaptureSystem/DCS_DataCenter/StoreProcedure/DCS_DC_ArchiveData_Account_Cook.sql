@@ -135,11 +135,11 @@ BEGIN
 					LIMIT 1)
 	ORDER BY tmp.DeviceID;
     
-    INSERT IGNORE INTO ArchiveDevice_NotUsed(DeviceID)
+    INSERT IGNORE INTO DCS_DataCenter.ArchiveDevice_NotUsed(DeviceID)
     SELECT DeviceID
     FROM Temp_Device;
     
-    INSERT IGNORE INTO ArchiveDeviceCode_NotUsed(DeviceCodeID, DeviceCode, DeviceID)
+    INSERT IGNORE INTO DCS_DataCenter.ArchiveDeviceCode_NotUsed(DeviceCodeID, DeviceCode, DeviceID)
     SELECT	dc.DeviceCodeID
 		,	dc.DeviceCode
         ,	dc.DeviceID

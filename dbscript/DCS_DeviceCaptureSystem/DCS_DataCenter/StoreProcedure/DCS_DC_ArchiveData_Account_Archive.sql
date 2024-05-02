@@ -206,8 +206,6 @@ BEGIN
 		INNER JOIN Temp_AccountFingerprint AS tmp ON tmp.ID = arcAccFp.ID;
 	
     SET op_RowCount = op_RowCount + ROW_COUNT();
-
-	SELECT op_RowCount;
     
 END$$
 
