@@ -42,7 +42,7 @@ sp: BEGIN
 			- 20230516@Casey.Huynh:			New Category for Robot OCRD [RedmineID: #186991]
             - 20231228@Thomas.Nguyen:		New Category for System Detect Unauthorized Login [RedmineID: #197710]
             - 20240315@Casey.Huynh: 		Classify Danger Score [Redmine ID: #201358]
-			- 20240424@Thomas.Nguyen:		Classify Initial Group Betting - Add ParentID = 150, SportGroupID = 150 [Redmine ID: #200854]
+			- 20240424@Thomas.Nguyen:		Classify Initial Group Betting - Add SportGroupID = 150 [Redmine ID: #200854]
 
 		Param's Explanation:
 			ip_FromAction: From Web(1),From Service VVIPDownLine(2), From Insert NewCustomer(3)

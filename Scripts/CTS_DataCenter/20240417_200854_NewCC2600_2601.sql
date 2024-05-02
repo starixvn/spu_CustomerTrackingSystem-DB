@@ -39,5 +39,5 @@ SET SportGroupID = 150
 WHERE CategoryID IN (65,105);
 
 SELECT * FROM CTS_DataCenter.CustomerCategory WHERE CategoryID IN (65,105);
- 	
+SELECT * FROM CTS_DataCenter.CTSCustomerClassification WHERE CategoryID IN (65,105);
 
