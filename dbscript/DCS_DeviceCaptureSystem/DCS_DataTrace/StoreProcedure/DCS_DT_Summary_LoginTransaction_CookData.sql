@@ -15,6 +15,7 @@ BEGIN
 
 	Revisions:
 		- 20240314@Jonathan.Doan: Created [Redmine ID: 199295]
+		- 20240503@Jonathan.Doan: HotFix FlaggedGroupID is incorrect [Redmine ID: 204733]
 		
 	Param's Explanation (filtered by):
 
@@ -125,8 +126,8 @@ BEGIN
     UPDATE Temp_Trans07 AS tmp
 		INNER JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.ItemID = tmp.Flagged
 	SET 	tmp.FlaggedGroupID = sl.GroupID
-		,	tmp.IsInvalidBrowers = (CASE WHEN tmp.FlaggedGroupID = CONST_FLAGGEDGROUPID_INVALIDBROWSER THEN 1 ELSE 0 END)
-		,	tmp.IsBotTrans = (CASE WHEN tmp.FlaggedGroupID = CONST_FLAGGEDGROUPID_BOTTRANS THEN 1 ELSE 0 END);
+		,	tmp.IsInvalidBrowers = (CASE WHEN sl.GroupID = CONST_FLAGGEDGROUPID_INVALIDBROWSER THEN 1 ELSE 0 END)
+		,	tmp.IsBotTrans = (CASE WHEN sl.GroupID = CONST_FLAGGEDGROUPID_BOTTRANS THEN 1 ELSE 0 END);
         
     SET lv_MaxTransID = (SELECT MAX(TransID) FROM Temp_Trans07);
     
