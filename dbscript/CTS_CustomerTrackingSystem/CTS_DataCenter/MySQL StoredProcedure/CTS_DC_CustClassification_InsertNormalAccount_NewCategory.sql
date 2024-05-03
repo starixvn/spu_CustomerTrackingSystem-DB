@@ -16,7 +16,8 @@ BEGIN
 		Revisions: 
 				- 20230921@Casey.Huynh: Created [Redmine ID: #193050]
                 - 20231024@Jonas.Huynh: HF wrong reactivated category [Redmine ID: #193050]
-                    
+                - 20240502@Jonas.Huynh: Handle duplicate categories [Redmine ID: #203323]
+                
 		Param's Explanation (filtered by):
         
         Example:
@@ -68,6 +69,10 @@ BEGIN
         SET 	temp.CategoryID = CONST_CATEGORY_NEWMEMBER
 			,	temp.CustomerClass = cc.CustomerClass;
      ELSE
+		DELETE tmp
+		FROM Temp_Customer AS tmp
+		WHERE EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification AS clss WHERE clss.CustID = tmp.CustID);
+		
 		UPDATE Temp_Customer AS temp
 			,	LATERAL
 				(
