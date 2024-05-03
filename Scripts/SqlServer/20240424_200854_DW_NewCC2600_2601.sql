@@ -21,3 +21,6 @@ FROM CustomerClassification_Priority p
 WHERE p.FunctionId = 8;
 
 DROP PROCEDURE IF EXISTS `CTS_GeneralNormalClassification_TWGroupBetting_Preprocess`;
+
+ALTER TABLE CustomerClassification_ScannedNewCust
+ALTER COLUMN LastJobScannedTime DATETIME2;
