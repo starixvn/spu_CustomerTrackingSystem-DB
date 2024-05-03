@@ -35,7 +35,7 @@ BEGIN
 
 	CREATE TABLE #tmpCustScanned(
 			CustId		  			INT PRIMARY KEY
-		,	LastJobScannedTime		DATETIME
+		,	LastJobScannedTime		DATETIME2
 		,	GBTicketCount			INT
 		,	SportType				INT
 	);
