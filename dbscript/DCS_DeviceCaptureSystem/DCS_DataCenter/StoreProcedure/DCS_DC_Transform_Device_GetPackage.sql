@@ -18,7 +18,8 @@ BEGIN
             - 20201012@Casey.Huynh: Add Trace Performance log
             - 20210510@Aries.Nguyen: Remove insert log dba_SP_PerformanceStats [Redmine ID: #154792]
             - 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]  
-            - 20240403@Jonathan.Doan: The same AccountID must be in the same batch [Redmine ID: #202878]  
+            - 20240403@Jonathan.Doan: The same AccountID must be in the same batch [Redmine ID: #202878]
+            - 20240503@Jonathan.Doan: HF Division by 0 [Redmine ID: #204757]
 
 	    Param's Explanation (filtered by):
 			CALL DCS_DC_Transform_Device_GetPackage(100, 2);
@@ -71,7 +72,7 @@ BEGIN
     
 	SET @RowId = 0;
     IF(lv_CountAccountID IS NOT NULL AND lv_CountAccountID > 0) THEN
-		SET lv_NoOfBatchOfAccountID = lv_CountAccountID / ip_NoOfBatch;
+		SET lv_NoOfBatchOfAccountID = CEIL(lv_CountAccountID / ip_NoOfBatch);
     
 		UPDATE Temp_Account
 		SET BatchID = CEIL(@RowId := @RowId + 1 / lv_NoOfBatchOfAccountID)
