@@ -218,13 +218,13 @@ BEGIN
     FROM CTS_DataCenter.CTSCustomerClassification AS clss
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID
 		INNER JOIN Temp_PA AS tmpPa ON tmpPa.CustID = clss.CustID
-	WHERE cat.GroupPriority >  tmpPa.GroupPriority;
+	WHERE cat.GroupPriority >  tmpPa.GroupPriority AND clss.SportGroupID IN (CONST_SPORTGROUP_PA, CONST_SPORTGROUP_POTENTIALPA);
     
 	DELETE tmpPa
     FROM Temp_PA AS tmpPa 
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON tmpPa.CustID = clss.CustID
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID		
-	WHERE cat.GroupPriority <  tmpPa.GroupPriority;
+	WHERE cat.GroupPriority <  tmpPa.GroupPriority AND clss.SportGroupID IN (CONST_SPORTGROUP_PA, CONST_SPORTGROUP_POTENTIALPA);
     
     #=============REMOVE PA PROBATION LIST WHEN IsProbation = 0=============
     DELETE pro
