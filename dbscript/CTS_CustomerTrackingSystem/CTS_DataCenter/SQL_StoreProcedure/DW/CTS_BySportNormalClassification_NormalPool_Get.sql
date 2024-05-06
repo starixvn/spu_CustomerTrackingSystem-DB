@@ -1,3 +1,4 @@
+/*<info serverAlias="DBVR2-bodb_VR2Model" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 USE [bodb_VR2Model]
 GO
 /****** Object:  StoredProcedure [dbo].[CTS_BySportNormalClassification_NormalPool_Get]    ******/
@@ -16,6 +17,7 @@ AS
 
 	Revisions:
 		- 20230630@Jonas.Huynh: Created [Redmine ID: #189875]
+		- 20240327@Jonas.Huynh: EC2024 - Resolve Locking [Redmine ID: #200842]
 
 	Param's Explanation:
 		@ScannedMaxId: This parameter is used to output scanned MaxID
@@ -27,8 +29,10 @@ AS
 BEGIN
 	
 	SET NOCOUNT ON;
-		
-	DECLARE	@BatchSize INT = 20000;
+	
+	DECLARE	@BATCHSIZE					INT		= 20000;
+	DECLARE @BYSPORT_LASTSCANNEDROW		TINYINT = 2;
+	DECLARE @LastScannedRow				ROWVERSION;
 
 	IF	OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
 	DROP TABLE	#tmpCustomers;
@@ -44,15 +48,22 @@ BEGIN
 	SELECT @ScannedMaxId = MAX(c.ID)
 	FROM dbo.CustomerClassification_BySport_NormalPool AS c WITH(NOLOCK);
 
+	SELECT @LastScannedRow = CAST(CAST([Value] AS BIGINT) AS ROWVERSION) 
+	FROM dbo.CustomerClassification_Parameter WITH(NOLOCK) 
+	WHERE [DataId] = @BYSPORT_LASTSCANNEDROW;
+
 	-- #2: Get top customers by priority
 	IF(@ScannedMaxId IS NOT NULL)
 	BEGIN
 		INSERT INTO #tmpCustomers(CustId, SportGroup, IsCheckBetCount)
-		SELECT TOP(@BatchSize) np.CustId, np.SportGroup,
+		SELECT TOP(@BATCHSIZE) np.CustId, np.SportGroup,
 			   CASE WHEN (COUNT(np.CustId) = COUNT(np.FunctionId)) AND (COUNT(np.FunctionId) = SUM(np.FunctionId)) THEN 1 ELSE 0 END
 		FROM dbo.CustomerClassification_BySport_NormalPool AS np WITH(NOLOCK)
 		WHERE np.ID <= @ScannedMaxId 
-			AND NOT EXISTS (SELECT 1 FROM dbo.CustomerClassification_BySport AS cc WITH (NOLOCK) WHERE cc.IsApplied = 0 AND cc.CustId = np.CustId AND cc.SportId = np.SportGroup)
+			AND NOT EXISTS (SELECT 1 FROM dbo.CustomerClassification_BySport AS cc WITH (NOLOCK) 
+							WHERE cc.CustId = np.CustId
+								AND cc.SportId = np.SportGroup
+								AND cc.[RowVersion] > @LastScannedRow)
 		GROUP BY np.CustId, np.SportGroup
 		ORDER BY Min(np.Priority) ASC, Min(np.ID) ASC
 	END
@@ -68,7 +79,7 @@ BEGIN
 END;
 GO
 
-GRANT EXECUTE ON [dbo].[CTS_BySportNormalClassification_NormalPool_Get] TO [bodbSPUNet]
+GRANT EXECUTE ON [dbo].[CTS_BySportNormalClassification_NormalPool_Get] TO [wsv_cts]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CTS_BySportNormalClassification_NormalPool_Get] TO [bodbSPUNet]
+GRANT VIEW DEFINITION ON [dbo].[CTS_BySportNormalClassification_NormalPool_Get] TO [wsv_cts]
 GO

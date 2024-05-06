@@ -1,3 +1,4 @@
+/*<info serverAlias="DBVR2-bodb_VR2Model" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 USE [bodb_VR2Model]
 GO
 /****** Object:  StoredProcedure [dbo].[CTS_BySportNormalClassification_NormalPool_Insert]    Script Date: 30/06/2023 11:05:2022 PM ******/
@@ -17,6 +18,7 @@ AS
 
 	Revisions:
 		- 20230630@Jonas.Huynh: Created [Redmine ID: #189875]
+		- 20240327@Jonas.Huynh: EC2024 - Resolve Locking [Redmine ID: #200842]
 
 	Param's Explanation:
         @FunctionId		: Being used to log particular function
@@ -28,30 +30,34 @@ BEGIN
 	
 	SET NOCOUNT ON;
 	
-	DECLARE	@CurrentTime DATETIME = GETDATE();
+	DECLARE @BATCHSIZE		INT = 4000;
+	DECLARE	@CURRENTTIME	DATETIME = GETDATE();
 
-	 -- #1: Insert Log
-	INSERT INTO dbo.CustomerClassification_BySport_Log(CustId, SportGroup, FunctionId, CreatedTime)
-	SELECT	a.CustId
-		,	a.SportGroup
-		,	@FunctionId
-		,	@CurrentTime
-	FROM #tmpCustomers AS a;
+	DECLARE @TotalRecords	INT = (SELECT COUNT(1) FROM #tmpCustomers);
+	DECLARE @Offset			INT = 0;
 
-	-- #2: Insert to normal pool
-	INSERT INTO dbo.CustomerClassification_BySport_NormalPool(CustId, SportGroup, [Priority], FunctionId, CreatedTime)
-	SELECT	a.CustId
-		,	a.SportGroup
-		,	@Priority
-		,	@FunctionId
-		,	@CurrentTime
-	FROM #tmpCustomers AS a
+	WHILE @Offset < @TotalRecords
+	BEGIN
+		INSERT INTO dbo.CustomerClassification_BySport_NormalPool(CustId, SportGroup, [Priority], FunctionId, CreatedTime)
+		OUTPUT INSERTED.CustId, INSERTED.SportGroup, @FunctionId, @CURRENTTIME INTO dbo.CustomerClassification_BySport_Log(CustId, SportGroup, FunctionId, CreatedTime)  
+		SELECT	a.CustId
+			,	a.SportGroup
+			,	@Priority
+			,	@FunctionId
+			,	@CurrentTime
+		FROM #tmpCustomers AS a
+		ORDER BY a.CustId, a.SportGroup
+		OFFSET @Offset ROWS
+		FETCH NEXT @BATCHSIZE ROWS ONLY;
+
+		SET @Offset = @Offset + @BATCHSIZE;
+	END;
 		
 	DROP TABLE #tmpCustomers;
 END;
 GO
 
-GRANT EXECUTE ON [dbo].[CTS_BySportNormalClassification_NormalPool_Insert] TO [bodbSPUNet]
+GRANT EXECUTE ON [dbo].[CTS_BySportNormalClassification_NormalPool_Insert] TO [wsv_cts]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CTS_BySportNormalClassification_NormalPool_Insert] TO [bodbSPUNet]
+GRANT VIEW DEFINITION ON [dbo].[CTS_BySportNormalClassification_NormalPool_Insert] TO [wsv_cts]
 GO
