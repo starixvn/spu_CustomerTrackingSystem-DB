@@ -83,7 +83,7 @@ BEGIN
 		,	a.CategoryName
     FROM Temp_LatestRecordOfCategory AS c
 		INNER JOIN CTS_DataCenter.CustomerCategory AS a ON c.CategoryID = a.CategoryID
-        INNER JOIN CTS_DataCenter.CustomerCategory AS b ON a.ParentID = b.CategoryID;  
+        LEFT JOIN CTS_DataCenter.CustomerCategory AS b ON a.ParentID = b.CategoryID;  
 	
 	# Begin: Cleanup
 	DROP TEMPORARY TABLE Temp_LatestRecordOfCategory;
