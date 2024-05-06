@@ -44,7 +44,7 @@ BEGIN
 		DROP TABLE	#tmpIDs;
 	END
 	   
-	CREATE TABLE #tmpIDs (ID INT PRIMARY KEY);
+	CREATE TABLE #tmpIDs (ID BIGINT PRIMARY KEY);
 
 	-- #1: Get Customers
     INSERT INTO  #tmpCustomers (CustID) 
@@ -61,8 +61,8 @@ BEGIN
 		WHERE p.ID <= @ScannedMaxId;
 
 		DELETE c WITH (ROWLOCK)
-		FROM [dbo].[CustomerClassification_NormalPool] AS c
-			INNER LOOP JOIN #tmpIDs AS r ON r.ID = c.ID;
+		FROM #tmpIDs AS r 
+			INNER LOOP JOIN [dbo].[CustomerClassification_NormalPool] AS c ON r.ID = c.ID;
 	END;
 	
 	DROP TABLE #tmpCustomers;
