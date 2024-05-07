@@ -141,7 +141,7 @@ BEGIN
     SELECT	tmpPa.CustID
 		,	tmpPa.CTSCustID
         ,	tmpPa.SubscriberID
-        ,	CASE WHEN ParentID = CONST_PARENTID_POTENTIALPA THEN CONST_SPORTGROUP_POTENTIALPA ELSE CONST_SPORTGROUP_PA END AS SportGroupID
+        ,	CONST_SPORTGROUP_PA AS SportGroupID
         ,	tmpPa.CategoryID
         ,	tmpPa.Remark
         ,	NOW() AS CreatedDate
@@ -160,7 +160,7 @@ BEGIN
 		,	tmpPa.SportType
 		,	tmpPa.IssueTypeID
 	FROM Temp_PA AS tmpPa
-	WHERE tmpPa.PinCTSCustID IS NOT NULL; 
+	WHERE tmpPa.PinCTSCustID IS NOT NULL AND tmpPa.ParentID <> CONST_PARENTID_POTENTIALPA;
     
     DELETE tmpPa
     FROM Temp_PA AS tmpPa
