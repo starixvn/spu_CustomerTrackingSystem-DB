@@ -5,7 +5,7 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_ArchiveData_Device_Archive`(
 		IN ip_BatchSize INT UNSIGNED
         
-	,	OUT op_RowCount INT
+	,	OUT op_ShouldContinue INT
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -18,9 +18,8 @@ BEGIN
 		Revisions:
 			- 20240502@Jonathan.Doan: Created [Redmine ID: #203691]
 		Param's Explanation (filtered by):
-            CALL DCS_DataCenter.DCS_DC_ArchiveData_Device_Archive(50, @rowCount); SELECT @rowCount;
+            CALL DCS_DataCenter.DCS_DC_ArchiveData_Device_Archive(50, @shouldContinue); SELECT @shouldContinue;
 	*/
-    SET op_RowCount = 0;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Device;
     DROP TEMPORARY TABLE IF EXISTS Temp_ReActiveDevice;
@@ -38,27 +37,12 @@ BEGIN
 			DeviceCodeID 	BIGINT UNSIGNED NOT NULL PRIMARY KEY
     );
     
+    /* == Get data needing archiving == */
     INSERT INTO Temp_Device(DeviceID)
 	SELECT DeviceID
 	FROM DCS_DataCenter.ArchiveDevice_NotUsed
 	LIMIT ip_BatchSize;
     
-    /* == Check Device ReActive == */
-    INSERT INTO Temp_ReActiveDevice(DeviceID)
-    SELECT tmp.DeviceID
-    FROM Temp_Device AS tmp
-    WHERE EXISTS (SELECT 1 FROM DCS_DataCenter.Association AS ass WHERE ass.DeviceID = tmp.DeviceID);
-    
-    DELETE tmpD
-	FROM Temp_Device AS tmpD
-		INNER JOIN Temp_ReActiveDevice AS tmpRA ON tmpRA.DeviceID = tmpD.DeviceID;
-    
-    DELETE adv
-	FROM DCS_DataCenter.ArchiveDevice_NotUsed AS adv
-		INNER JOIN Temp_ReActiveDevice AS tmpRA ON tmpRA.DeviceID = adv.DeviceID;
-	
-    
-    /* == Get DeviceCodeID == */
     INSERT INTO Temp_DeviceCode(DeviceCodeID)
 	SELECT DeviceCodeID
 	FROM DCS_DataCenter.ArchiveDeviceCode_NotUsed
@@ -68,33 +52,33 @@ BEGIN
 	DELETE dv
 	FROM DCS_DataCenter.Device AS dv
 		INNER JOIN Temp_Device AS tmp ON tmp.DeviceID = dv.DeviceID;
-	
-    SET op_RowCount = op_RowCount + ROW_COUNT();
         
 	DELETE dvf
 	FROM DCS_DataCenter.DeviceFingerprint AS dvf
 		INNER JOIN Temp_Device AS tmp ON tmp.DeviceID = dvf.DeviceID;
-	
-    SET op_RowCount = op_RowCount + ROW_COUNT();
 
 	DELETE arcDv
     FROM DCS_DataCenter.ArchiveDevice_NotUsed AS arcDv
 		INNER JOIN Temp_Device AS tmp ON tmp.DeviceID = arcDv.DeviceID;
-	
-    SET op_RowCount = op_RowCount + ROW_COUNT();
     
     /* == Archive DeviceCode not used == */
 	DELETE dvc
 	FROM DCS_DataCenter.DeviceCode AS dvc
 		INNER JOIN Temp_DeviceCode AS tmp ON tmp.DeviceCodeID = dvc.DeviceCodeID;
-	
-    SET op_RowCount = op_RowCount + ROW_COUNT();
 
 	DELETE arcDvc
     FROM DCS_DataCenter.ArchiveDeviceCode_NotUsed AS arcDvc
 		INNER JOIN Temp_DeviceCode AS tmp ON tmp.DeviceCodeID = arcDvc.DeviceCodeID;
+
 	
-    SET op_RowCount = op_RowCount + ROW_COUNT();
+    /* Update op_ShouldContinue */
+    IF (EXISTS (SELECT 1 FROM DCS_DataCenter.ArchiveDevice_NotUsed LIMIT 1)) THEN
+		SET op_ShouldContinue = 1;
+	ELSEIF (EXISTS (SELECT 1 FROM DCS_DataCenter.ArchiveDeviceCode_NotUsed LIMIT 1)) THEN
+		SET op_ShouldContinue = 1;
+	ELSE
+		SET op_ShouldContinue = 0;
+	END IF;
     
 END$$
 

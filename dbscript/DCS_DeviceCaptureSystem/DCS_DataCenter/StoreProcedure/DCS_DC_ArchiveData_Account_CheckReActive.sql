@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_ArchiveData_Account_Recheck`;
+DROP PROCEDURE IF EXISTS `DCS_DC_ArchiveData_Account_CheckReActive`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_ArchiveData_Account_Recheck`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_ArchiveData_Account_CheckReActive`(
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -15,7 +15,7 @@ BEGIN
 		Revisions:
 			- 20240419@Jonathan.Doan: Created [Redmine ID: #203691]
 		Param's Explanation (filtered by):
-			CALL DCS_DC_ArchiveData_Account_Recheck();
+			CALL DCS_DC_ArchiveData_Account_CheckReActive();
 	*/
     DECLARE CONST_SYSTEM_ARCHIVE_ACCOUNTARCHIVECUTOFFDATE	INT DEFAULT 4963735;
     DECLARE lv_AccountArchiveCutoffDate  	DATE;
