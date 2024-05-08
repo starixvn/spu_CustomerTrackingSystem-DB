@@ -128,7 +128,7 @@ BEGIN
         ,   rt.RawUserAgentID
 	FROM DCS_DataCenter.RawTransaction AS rt
         INNER JOIN CTS_Admin.Subscriber AS su ON rt.SubscriberName = su.SubscriberName
-	    INNER JOIN DCS_DataCenter.ActionResult AS ar ON rt.Action = ar.Action AND IFNULL(rt.ActionResult,'') = ar.ActionResult
+	    LEFT JOIN DCS_DataCenter.ActionResult AS ar ON rt.Action = ar.Action AND IFNULL(rt.ActionResult,'') = ar.ActionResult
 	WHERE   rt.IsProcessed = 0
 	    AND rt.TransID BETWEEN ip_FromTransID AND ip_ToTransID
         AND rt.CreatedDate >= lv_SysMinCreatedDate;
