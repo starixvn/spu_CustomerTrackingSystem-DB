@@ -13,7 +13,7 @@ BEGIN
 		Original:
 		Revisions:
             - 20230313@Jonas.Huynh: Get PA category for daily scan PA [Redmine ID: #184772]
-            - 20240423@Thomas.Nguyen: Classify Initial Group Betting - Return CurrentCategoryID [RedmineID: #200854]
+            - 20240423@Thomas.Nguyen: Classify Initial Group Betting - Return list Cust to get Remark for Initial GB [RedmineID: #200854]
 
 		Param's Explanation (filtered by):    
 			CALL CTS_DC_CustClassification_DailyScanPA_GetFromQueue()
@@ -48,14 +48,14 @@ BEGIN
 		WHERE CreatedTime <= lv_LastScannedTime
 		ORDER BY ID ASC
 		LIMIT lv_BatchSize)
-	SELECT DISTINCT ct.CustID
+	SELECT DISTINCT CustID
     FROM cte;
     
 	SELECT CustID
 	FROM Temp_Customers;
 
 	/*Return list Cust to get Remark for Initial GB*/
-	SELECT	CustID
+	SELECT	cust.CustID
 	FROM Temp_Customers AS cust
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = cust.CustID
 	WHERE cate.CategoryID IN (CONST_CATEGORYID_INITIALGB, CONST_CATEGORYID_INITIALGB_LOSING);
