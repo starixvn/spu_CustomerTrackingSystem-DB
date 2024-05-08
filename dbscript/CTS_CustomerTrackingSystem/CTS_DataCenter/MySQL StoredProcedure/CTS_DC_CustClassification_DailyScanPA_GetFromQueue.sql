@@ -21,7 +21,14 @@ BEGIN
    
     DECLARE lv_BatchSize 			INT;
     DECLARE lv_LastScannedTime		DATETIME;
-	
+	DECLARE	CONST_CATEGORYID_INITIALGB	 		INT DEFAULT 67;
+	DECLARE	CONST_CATEGORYID_INITIALGB_LOSING	INT DEFAULT 107; 
+
+	DROP TEMPORARY TABLE IF EXISTS Temp_Customers;
+	CREATE TEMPORARY TABLE Temp_Customers(
+			CustID					BIGINT UNSIGNED
+	);
+
 	SELECT ParameterValue 
     INTO lv_BatchSize 
     FROM CTS_DataCenter.SystemParameter 
@@ -34,6 +41,7 @@ BEGIN
 	
     SET lv_LastScannedTime = DATE_ADD(lv_LastScannedTime, INTERVAL 24 HOUR);
     
+	INSERT INTO Temp_Customers(CustID)
 	WITH cte AS ( 
 		SELECT ID, CustID
 		FROM CTS_DataCenter.CTSCustomerClassification_DailyPAQueue
@@ -41,9 +49,16 @@ BEGIN
 		ORDER BY ID ASC
 		LIMIT lv_BatchSize)
 	SELECT DISTINCT ct.CustID
-				,	cate.CategoryID AS CurrentCategoryID
-    FROM cte AS ct
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = ct.CustID;
+    FROM cte;
     
+	SELECT CustID
+	FROM Temp_Customers;
+
+	/*Return list Cust to get Remark for Initial GB*/
+	SELECT	CustID
+	FROM Temp_Customers AS cust
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = cust.CustID
+	WHERE cate.CategoryID IN (CONST_CATEGORYID_INITIALGB, CONST_CATEGORYID_INITIALGB_LOSING);
+
 END$$
 DELIMITER ;
