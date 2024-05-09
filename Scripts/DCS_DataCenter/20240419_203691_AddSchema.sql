@@ -56,6 +56,11 @@ CREATE TABLE `ArchiveDeviceCode_NotUsed` (
   KEY `IX_ArchiveDeviceCode_NotUsed_DeviceID` (`DeviceID`)
 ) ENGINE=InnoDB;
 
+DROP TABLE IF EXISTS DCS_DataCenter.ReActiveAccount;
+CREATE TABLE `ReActiveAccount` (
+  `AccountID` BIGINT UNSIGNED NOT NULL PRIMARY KEY
+) ENGINE=InnoDB;
+
 INSERT INTO DCS_DataCenter.SystemSetting(ID, VGroup, VName, VValue, UpdatedTime)
 SELECT 4963734, 'System_Archive', 'MaxAccountID', 0, CURRENT_TIMESTAMP();
 

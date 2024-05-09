@@ -54,7 +54,11 @@ BEGIN
     SELECT DISTINCT aa.DeviceID
     FROM DCS_DataCenter.ArchiveAssociation_NotUsed AS aa
 		INNER JOIN Temp_AccountReActived AS tmp ON tmp.AccountID = aa.AccountID;
-        
+	
+	/* === Store data ReActiveAccount === */
+    INSERT INTO DCS_DataCenter.ReActiveAccount(AccountID)
+    SELECT AccountID
+    FROM Temp_AccountReActived;
     
 	/* === Delete === */
     DELETE aa
