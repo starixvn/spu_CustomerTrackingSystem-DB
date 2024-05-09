@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCTS-WASAVerse" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-WASAVerse" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[CTS_TWGroupBetting_SyncDataGroupBettingTicket]
 			@GBTicketXMLString	VARCHAR(MAX)
 		,	@RunningSequenceId	BIGINT
@@ -20,6 +20,7 @@ AS
 		- 20231011@Victoria.Le: Keep data 14 days instead of 7 days [Redmine ID: #195298]
 		- 20231024@John.Ngo:	[CTS] - Customer Classification - TW GB - Resolve Deadlock Problems [Redmine ID: #195866]
 		- 20240130@Victoria.Le:	Change tables - TWGB Migrate data from bodb02 to WASAVerse [Redmine ID: #191955]
+		- 20240509@Victoria.Le: Incorrect logic to clean up data yesterday of table TWGroupBettingTicket [Redmine ID: #204731]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_SyncDataGroupBettingTicket] 
@@ -106,7 +107,7 @@ BEGIN
 		BEGIN
 			DELETE TOP(5000) gb
 			FROM dbo.TWGroupBettingTicket gb WITH(ROWLOCK)
-			WHERE gb.TransDate = CONVERT(DATE, DATEADD(DAY,-1,GETDATE()));
+			WHERE gb.TransDate = CONVERT(DATE, DATEADD(DAY,-1,@RunningDate));
 			
 			IF (@@ROWCOUNT = 0)
 			BEGIN
