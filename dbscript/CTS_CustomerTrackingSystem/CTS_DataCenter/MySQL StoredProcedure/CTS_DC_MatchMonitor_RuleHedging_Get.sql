@@ -19,6 +19,7 @@ sp: BEGIN
             - 	202201021@Casey.Huynh: Group By Betteam [Redmine ID: #179439]
             -	20221205@Casey.Huynh: Rename Table [Redmine ID: #179502]
             -	20240109@Casey.Huynh: Enhance Hedging Rule [Redmine ID: #192172]
+            -	20240509@Casey.Huynh: HF Hedging StepTime, Add column TransDateToSecond [Redmine ID: #204228]
             
 		Param's Explanation (filtered by):	
 
@@ -62,7 +63,6 @@ sp: BEGIN
 		,	BetID			BIGINT NOT NULL
 		,	Betteam			VARCHAR(10) NOT NULL
 		,	GroupID			INT NOT NULL
-        ,	MaxTransDate	DATETIME(4)
 		
 		,	PRIMARY KEY PK_Temp_OldGroup(MatchID,ScoreDiff,BettypeID,BetID,Betteam, GroupID)
 	);
@@ -91,18 +91,17 @@ sp: BEGIN
         INTO lv_LastSequenceID
         FROM CTS_DataCenter.SystemParameter AS sys
         WHERE ParameterID = 120;      
-        
-		INSERT INTO Temp_OldGroup(MatchID, ScoreDiff, BettypeID, BetID, Betteam, GroupID, MaxTransDate)
+
+		INSERT INTO Temp_OldGroup(MatchID, ScoreDiff, BettypeID, BetID, Betteam, GroupID)
         SELECT	mms.MatchID
 			,	mms.ScoreDiff
             ,	mms.BettypeID
             ,	mms.BetID
             ,	mms.Betteam
             ,	mms.GroupID
-            ,	TIMESTAMPADD(SECOND, lv_Rule_MinTimeStep, MAX(TransDate)) AS MaxTransDate
         FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms
-		WHERE mms.SequenceID <= lv_LastSequenceID
-        GROUP BY MatchID, ScoreDiff, BettypeID, BetID, Betteam, GroupID;  
+		WHERE mms.SequenceID <= lv_LastSequenceID AND mms.GroupID > 0
+        GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, mms.GroupID;  
                             
         #==========Get Next Trans In TimeStep==================
         SELECT TIMESTAMPADD(SECOND, lv_Rule_MinTimeStep, mms.TransDate)
@@ -121,14 +120,14 @@ sp: BEGIN
 		LIMIT 1;
 
         IF(lv_LastSequenceID < lv_MaxSequenceID) THEN # If Has New Trans   
-			
+
 			SELECT	mms.MatchID
 				,	mms.ScoreDiff
 				,	mms.BettypeID
 				,	mms.BetID
 				,	mms.Betteam
                 ,	MIN(mms.SportType) AS SportType
-				,	IFNULL(tmpOg.GroupID,0) AS OldGroup
+				,	tmpOg.GroupID AS OldGroup
                 ,	GROUP_CONCAT(DISTINCT mms.CTSCustID) AS CTSCustIDList
 				,	CASE WHEN COUNT(DISTINCT CASE WHEN mms.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET) THEN mms.CTSCustID ELSE NULL END) > 1 
 												THEN GROUP_CONCAT(DISTINCT CASE WHEN mms.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET) THEN mms.CTSCustID ELSE NULL END)
@@ -136,12 +135,12 @@ sp: BEGIN
 				,	GROUP_CONCAT(mms.SequenceID) AS SequenceIDList
 			FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms
 				LEFT JOIN Temp_OldGroup AS tmpOg ON mms.MatchID = tmpOg.MatchID AND mms.ScoreDiff = tmpOg.ScoreDiff AND mms.BettypeID = tmpOg.BettypeID
-													AND mms.BetID = tmpOg.BetID AND mms.Betteam = tmpOg.Betteam AND mms.TransDate <= tmpOg.MaxTransDate
+													AND mms.BetID = tmpOg.BetID AND mms.Betteam = tmpOg.Betteam
 													AND (mms.GroupID = tmpOg.GroupID OR mms.GroupID = 0)
 			WHERE mms.SequenceID <= lv_MaxSequenceID 
-			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, IFNULL(tmpOg.GroupID,0)
+			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID
 			HAVING COUNT(DISTINCT mms.CustID) > 1
-			ORDER BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, IFNULL(tmpOg.GroupID,0);
+			ORDER BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID;
 			
             SET op_MaxSequenceID = lv_MaxSequenceID ;
             
@@ -161,17 +160,17 @@ sp: BEGIN
         WHERE ParameterID = 121;
         
         #========================================================
-        INSERT INTO Temp_OldGroup(MatchID, ScoreDiff, BettypeID, BetID, Betteam, GroupID, MaxTransDate)
+        INSERT INTO Temp_OldGroup(MatchID, ScoreDiff, BettypeID, BetID, Betteam, GroupID)
         SELECT	mms.MatchID
 			,	mms.ScoreDiff
             ,	mms.BettypeID
             ,	mms.BetID
             ,	mms.Betteam
             ,	mms.GroupID
-            ,	TIMESTAMPADD(SECOND, lv_Rule_MinTimeStep, MAX(TransDate)) AS MaxTransDate
         FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
 		WHERE mms.SequenceID <= lv_LastSequenceID
-        GROUP BY MatchID, ScoreDiff, BettypeID, BetID, Betteam, GroupID;  
+			AND mms.GroupID > 0
+        GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, mms.GroupID;  
                             
         #==========Get Next Trans In TimeStep==================
         SELECT TIMESTAMPADD(SECOND, lv_Rule_MinTimeStep, mms.TransDate)
@@ -190,7 +189,6 @@ sp: BEGIN
                 LIMIT lv_NoOfRow) AS tmp;
 
         IF	(lv_LastSequenceID < lv_MaxSequenceID) THEN # If Has New Trans   
-			
 			SELECT	mms.MatchID
 				,	mms.ScoreDiff
 				,	mms.BettypeID
@@ -205,7 +203,7 @@ sp: BEGIN
 				,	GROUP_CONCAT(mms.SequenceID) AS SequenceIDList
 			FROM  CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
 				LEFT JOIN Temp_OldGroup AS tmpOg ON mms.MatchID = tmpOg.MatchID AND mms.ScoreDiff = tmpOg.ScoreDiff AND mms.BettypeID = tmpOg.BettypeID
-													AND mms.BetID = tmpOg.BetID AND mms.Betteam = tmpOg.Betteam AND mms.TransDate <= tmpOg.MaxTransDate
+													AND mms.BetID = tmpOg.BetID AND mms.Betteam = tmpOg.Betteam 
 													AND (mms.GroupID = tmpOg.GroupID OR mms.GroupID = 0)
 			WHERE mms.SequenceID <= lv_MaxSequenceID 
 			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID
@@ -226,5 +224,4 @@ sp: BEGIN
  
 END$$
 DELIMITER ;
-
 

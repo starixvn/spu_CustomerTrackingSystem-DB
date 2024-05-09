@@ -31,16 +31,14 @@ sp: BEGIN
 			-	20230310@Victoria.Le:	Credit Scale Out - Split 789y Site [Redmine ID: #183140]
             -	20230612@Casey.Huynh: 	LogInfo [Redmine ID: #185793]
             -	20240109@Casey.Huynh:	Enhance Hedging Rule [Redmine ID: #192172]
-            -	20240223@Casey.Huynh:	Fix Issue Return [Redmine ID: #201271]
+            -	20240509@Casey.Huynh: 	HF Hedging StepTime [Redmine ID: #204228]
 			
 		Param's Explanation (filtered by):	
 		Example:
 			- CALL CTS_DC_MatchMonitor_RuleHedging_Process(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=113171940189,@ip_MatchID:=22081995,@ip_ScoreDiff:=1,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a');
 			
 	*/
-	DECLARE CONST_LOG 					TINYINT DEFAULT 	0; 		#0:LogOff, 1:LogOn
-	DECLARE CONST_SUBSCRIBERID_ALPHA	INT 	DEFAULT  	168;
-	DECLARE CONST_SUBSCRIBERID_MAXBET	INT 	DEFAULT  	169;
+	DECLARE CONST_LOG 					TINYINT DEFAULT 	0;
     DECLARE CONST_MMRULEGROUP_HEDGING	INT		DEFAULT		3;
     DECLARE CONST_MMREASON_HEDGING		INT		DEFAULT		1;
 
@@ -192,7 +190,10 @@ sp: BEGIN
 		,	tmpRg.OldGroupIDList		
         ,	tmpRg.CustIDList
         ,	tmpRg.TransIDList        
-    FROM Temp_ResultGroup AS tmpRg;
+    FROM Temp_ResultGroup AS tmpRg
+    WHERE IsHedging = 1;
+    
+    SELECT '11,13,16' AS CTSCustIDList, '11,13' AS AgentDetect_CTSCustIDList, '1,2,3,8' AS SequenceIDList;
     
 END$$
 DELIMITER ;

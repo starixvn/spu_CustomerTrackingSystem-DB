@@ -31,6 +31,7 @@ BEGIN
 			-	20230203@Victoria.Le: Change Odds Range for Fixed Game Rule - Malayisan Odds [Redmine ID: #183277]
             -	20231120@Casey.Huynh: E-Sport GB support New Bettypes, change setting table [Redmine ID: #196396]
             -	20240109@Casey.Huynh: Enhance Hedging Rule, execlute Licensee Cust and Limit stake [Redmine ID: #192172]
+            -	20240509@Casey.Huynh: HF Hedging StepTime, Add column TransDateToSecond [Redmine ID: #204228]
             
 		Param's Explanation (filtered by):		
 
@@ -243,11 +244,12 @@ BEGIN
                         AND ABS(tmpSt.Odds) >= tmpMst.MinOdds;
 
         #=====Staging Hedging Soccer Live================================
-		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingHedgingLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID
+		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingHedgingLive(SequenceID, TransID, TransDate, TransDateToSecond, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID
         , CTSCustID, SubscriberID, Stake, Betteam, InsertTime)
 		SELECT	tmpSt.SequenceID
 			,	tmpSt.TransID
 			,	tmpSt.TransDate
+			,	UNIX_TIMESTAMP(tmpSt.TransDate) AS TransDateToSecond 
 			,	tmpSt.LeagueName
 			,	tmpSt.SportType
 			,	tmpSt.MatchID
@@ -359,10 +361,11 @@ BEGIN
 													AND ABS(tmpSt.Odds) >= tmpMst.MinOdds;     
                                                     
 		#=====Staging Hedging Soccer Live================================
-		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingHedgingNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, CTSCustID, SubscriberID, Stake, Betteam, InsertTime)
+		INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingHedgingNonLive(SequenceID, TransID, TransDate, TransDateToSecond, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, CTSCustID, SubscriberID, Stake, Betteam, InsertTime)
 		SELECT	tmpSt.SequenceID
 			,	tmpSt.TransID
 			,	tmpSt.TransDate
+            ,	UNIX_TIMESTAMP(tmpSt.TransDate) AS TransDateToSecond 
 			,	tmpSt.LeagueName
 			,	tmpSt.SportType
 			,	tmpSt.MatchID
