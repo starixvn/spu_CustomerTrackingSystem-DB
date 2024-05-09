@@ -1,6 +1,6 @@
 /*<info serverAlias="DBCTS-WASAVerse" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 ALTER PROCEDURE [dbo].[CTS_TWGroupBetting_SyncDataGroupBettingTicket]
-			@GBTicketXMLString	VARCHAR(MAX)
+			@GBTicketString		VARCHAR(MAX)
 		,	@RunningSequenceId	BIGINT
 AS
 /*
@@ -21,60 +21,51 @@ AS
 		- 20231024@John.Ngo:	[CTS] - Customer Classification - TW GB - Resolve Deadlock Problems [Redmine ID: #195866]
 		- 20240130@Victoria.Le:	Change tables - TWGB Migrate data from bodb02 to WASAVerse [Redmine ID: #191955]
 		- 20240509@Victoria.Le: Incorrect logic to clean up data yesterday of table TWGroupBettingTicket [Redmine ID: #204731]
-
+		- 20240405@Victoria.Le:	Edit SP to improve performance [Redmine ID: #200842]
+		
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_SyncDataGroupBettingTicket] 
 */
 BEGIN
 	SET NOCOUNT ON;
 
-	DECLARE @GBTicketXML				XML
-		,	@ArchivedDateTicketHistory	DATETIME = DATEADD(day, -14, GETDATE())
-		,	@DailyMidnight				DATETIME
-		,	@RunningDate				DATETIME
+DECLARE 	@DailyMidnightFrom				DATETIME
+		,	@DailyMidnightTo				DATETIME
+		,	@RunningDate					DATETIME
+		,	@Today							DATETIME = GETDATE()
+		,	@CleanTicketFlag_ParameterID	SMALLINT = 7
+		,	@CleanTicketFlag_READY			SMALLINT = 0
+		,	@CleanTicketFlag_WAITING		SMALLINT = -1
 		;
-	SET @GBTicketXML = CONVERT(XML,@GBTicketXMLString);
 
 	IF OBJECT_ID('tempdb..#TmpGroupBettingTicket') IS NOT NULL
 		DROP TABLE #TmpGroupBettingTicket;
 
 	CREATE TABLE #TmpGroupBettingTicket (
-		TransId		BIGINT	PRIMARY KEY
-		,CustId		INT
-		,TransDate	DATE
-		,RuleId				TINYINT
-		,IsViolateRFM		BIT
-		,IsViolateCC		BIT
-		,IsViolateBetFrom	BIT
+			TransId				BIGINT	
+		,	CustId				INT
+		,	TransDate			DATE
+		,	RuleId				TINYINT
+		,	RulesType			VARCHAR(100)
+		,	IsViolateRFM		BIT
+		,	IsViolateCC			BIT
+		,	IsViolateBetFrom	BIT
 	);
 
-	INSERT INTO #TmpGroupBettingTicket (TransId, Custid, TransDate, RuleId, IsViolateRFM, IsViolateCC, IsViolateBetFrom)
-	SELECT	T.C.value('./@TransId', 'BIGINT') AS TransId
-		,	T.C.value('./@CustId', 'INT') AS CustId
-		,	T.C.value('./@TransDate', 'DATE') AS TransDate
-		,	T.C.value('./@RuleId', 'TINYINT') AS RuleId
-		,	T.C.value('./@IsViolateRFM', 'BIT') AS IsViolateRFM
-		,	T.C.value('./@IsViolateCC', 'BIT') AS IsViolateCC
-		,	T.C.value('./@IsViolateBetFrom', 'BIT') AS IsViolateBetFrom
-	FROM @GBTicketXML.nodes('//TWGroupBettingTicket') AS T(C)
-	OPTION (OPTIMIZE FOR (@GBTicketXML = NULL));
-	
-	IF EXISTS (SELECT (1) FROM dbo.TWGroupBettingTicket_History gbh WITH (NOLOCK) 
-			   WHERE gbh.TransDate <= @ArchivedDateTicketHistory)
-	BEGIN
-		WHILE(1 = 1)
-		BEGIN
-			DELETE TOP(5000) gbh
-			FROM dbo.TWGroupBettingTicket_History gbh WITH(ROWLOCK)
-			WHERE gbh.TransDate <= @ArchivedDateTicketHistory
-			
-			IF (@@ROWCOUNT = 0)
-			BEGIN
-				BREAK;
-			END;
-			WAITFOR DELAY '00:00:0.100';
-		END;
-	END;
+	INSERT INTO #TmpGroupBettingTicket (TransId, Custid, TransDate, RuleId, RulesType, IsViolateRFM, IsViolateCC, IsViolateBetFrom)
+	SELECT j.TransId, j.Custid, j.TransDate, j.RuleId, gbr.RuleName, j.IsViolateRFM, j.IsViolateCC, j.IsViolateBetFrom
+	FROM OPENJSON(@GBTicketString) WITH (		
+			TransId				BIGINT		'$.TransId' 
+		,	CustId				INT			'$.CustId' 
+		,	TransDate			DATE		'$.TransDate' 
+		,	RuleId				TINYINT		'$.RuleId' 
+		,	IsViolateRFM		BIT			'$.IsViolateRFM' 
+		,	IsViolateCC			BIT			'$.IsViolateCC' 
+		,	IsViolateBetFrom	BIT			'$.IsViolateBetFrom' 
+	) AS j
+		INNER JOIN dbo.TWGroupBettingRule AS gbr WITH(NOLOCK) ON j.RuleId = gbr.RuleId;
+		
+	CREATE CLUSTERED INDEX #CIX_TmpGroupBettingTicket_TransId ON #TmpGroupBettingTicket (TransId);
 	
 	INSERT INTO dbo.TWGroupBettingTicket_History (
 			TransId
@@ -86,49 +77,50 @@ BEGIN
 		)
 	SELECT 	tmp.TransId
 		,	tmp.TransDate
-		,	gbr.RuleName
+		,	tmp.RulesType
 		,	tmp.IsViolateRFM
 		,	tmp.IsViolateCC
 		,	tmp.IsViolateBetFrom
 	FROM #TmpGroupBettingTicket AS tmp
-		INNER JOIN dbo.TWGroupBettingRule	AS gbr WITH(NOLOCK) ON tmp.RuleId = gbr.RuleId
 		LEFT JOIN dbo.TWGroupBettingTicket_History AS his WITH(NOLOCK) ON tmp.TransID = his.TransID
 	WHERE his.TransID IS NULL;
-
-	SELECT @RunningDate = transdate
-	FROM bodb02.dbo.bettrans WITH (NOLOCK)
-	WHERE sequenceid = @RunningSequenceId;
-
-	SET @DailyMidnight = DATEADD(MINUTE, 30, CONVERT(SMALLDATETIME, CONVERT(DATE, @RunningDate)));
-
-	IF @RunningDate > @DailyMidnight
-	BEGIN
-		WHILE(1 = 1)
-		BEGIN
-			DELETE TOP(5000) gb
-			FROM dbo.TWGroupBettingTicket gb WITH(ROWLOCK)
-			WHERE gb.TransDate = CONVERT(DATE, DATEADD(DAY,-1,@RunningDate));
-			
-			IF (@@ROWCOUNT = 0)
-			BEGIN
-				BREAK;
-			END;
-			WAITFOR DELAY '00:00:0.100';
-		END;
-		
-	END;
-
+	
 	INSERT INTO dbo.TWGroupBettingTicket (
-		CustId
-		,TransId
-		,TransDate
+			CustId
+		,	TransId
+		,	TransDate
 		)
-	SELECT Custid
-		,TransId
-		,TransDate
-	FROM #TmpGroupBettingTicket
-
-	DROP TABLE #TmpGroupBettingTicket
-
+	SELECT 	tmp.Custid
+		,	tmp.TransId
+		,	tmp.TransDate
+	FROM #TmpGroupBettingTicket AS tmp
+		LEFT JOIN dbo.TWGroupBettingTicket AS t WITH(NOLOCK) ON tmp.TransID = t.TransID
+	WHERE t.TransID IS NULL;
+	
+	SELECT @DailyMidnightFrom 	= DATEADD(MINUTE, 30, CONVERT(SMALLDATETIME, CONVERT(DATE, @Today)));
+	SELECT @DailyMidnightTo 	= DATEADD(MINUTE, 60, CONVERT(SMALLDATETIME, CONVERT(DATE, @Today)));
+	
+	IF (@Today > @DailyMidnightFrom AND @Today < @DailyMidnightTo)
+	BEGIN 
+		SELECT @RunningDate = transdate
+		FROM bodb02.dbo.bettrans WITH (NOLOCK)
+		WHERE sequenceid = @RunningSequenceId; -- '2024-05-07 23:05:05'
+		
+		SELECT @DailyMidnightFrom 	= DATEADD(MINUTE, 30, CONVERT(SMALLDATETIME, CONVERT(DATE, @RunningDate))); -- '2024-05-07 00:30:00'
+		SELECT @DailyMidnightTo 	= DATEADD(MINUTE, 60, CONVERT(SMALLDATETIME, CONVERT(DATE, @RunningDate))); -- '2024-05-07 01:00:00'
+		
+		IF (@RunningDate > @DailyMidnightFrom 
+				AND @RunningDate < @DailyMidnightTo 
+				AND CONVERT(DATE, @RunningDate) =  CONVERT(DATE, @Today)) 
+		BEGIN
+			UPDATE 	dbo.SystemParameter WITH(UPDLOCK, ROWLOCK)
+			SET 	ParameterValue 	= @CleanTicketFlag_WAITING
+			WHERE 	ParameterID 	= @CleanTicketFlag_ParameterID
+				AND ParameterValue 	= @CleanTicketFlag_READY;
+		END;
+	END;
+	
+	DROP TABLE IF EXISTS #TmpGroupBettingTicket;
+	
 END;
 

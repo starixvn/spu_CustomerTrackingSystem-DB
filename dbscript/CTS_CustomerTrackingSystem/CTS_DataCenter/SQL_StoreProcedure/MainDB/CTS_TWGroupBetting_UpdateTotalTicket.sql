@@ -19,49 +19,39 @@ AS
 		- 20231024@John.Ngo:	  [CTS] - Customer Classification - TW GB - Resolve Deadlock Problems [Redmine ID: #195866]
 		- 20240130@Victoria.Le:	  Change tables - TWGB Migrate data from bodb02 to WASAVerse [Redmine ID: #191955]
 		- 20240416@Victoria.Le:	  Exclude EC2024 [Redmine ID: #202847]
+		- 20240405@Victoria.Le:	  Edit SP to improve performance [Redmine ID: #200842]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_UpdateTotalTicket] @LastScannedTime = '2022-03-10 03:39:12.230'
 */
 BEGIN
 	SET NOCOUNT ON;
+	
+	DECLARE @TmpSpecialEventLeague AS TABLE (LeagueId INT PRIMARY KEY);
+	DECLARE @TmpPlatformDesktop AS TABLE (BetFrom VARCHAR(5) PRIMARY KEY);
 
 	IF OBJECT_ID('tempdb..#tmpScanningCust') IS NOT NULL
 		DROP TABLE #tmpScanningCust;
 
 	CREATE TABLE #tmpScanningCust(
-			CustId		INT
-		,	ScanDate	DATE
-		,	IsInserted	BIT DEFAULT 0
-		,	PRIMARY KEY (CustId,ScanDate)
-	);
-
-	IF OBJECT_ID('tempdb..#TmpSpecialEventLeague') IS NOT NULL
-		DROP TABLE #TmpSpecialEventLeague;
-
-	CREATE TABLE #TmpSpecialEventLeague (
-			LeagueId	INT PRIMARY KEY
-	);
-	
-	IF OBJECT_ID('tempdb..#Tmp_PlatformDesktop') IS NOT NULL
-		DROP TABLE #Tmp_PlatformDesktop;
-
-	CREATE TABLE #Tmp_PlatformDesktop (
-			BetFrom		VARCHAR(5) PRIMARY KEY
+			CustId			INT
+		,	ScanDate		DATE
+		,	GBTicketCount	INT DEFAULT 0
+		,	IsInserted		BIT DEFAULT 0
 	);
 
 	IF OBJECT_ID('tempdb..#Tmp_Trans') IS NOT NULL
 		DROP TABLE #Tmp_Trans;
 
 	CREATE TABLE #Tmp_Trans (
-			SequenceId		BIGINT PRIMARY KEY
+			ID 				INT IDENTITY(1,1)
+		,	SequenceId		BIGINT
 		,	Custid			INT
 		,	Bettype			SMALLINT
 		,	StatusID		TINYINT
 		,	Matchid		    INT
 		,	BetFrom		    NVARCHAR(4)
 		,	ScanDate		DATE
-		,	IsLicensee		BIT
 	);
 	
 	IF OBJECT_ID('tempdb..#tmp_match') IS NOT NULL
@@ -71,18 +61,18 @@ BEGIN
 			MatchId		INT PRIMARY KEY
 	);	
 
-	INSERT INTO #TmpSpecialEventLeague(LeagueId)
+	INSERT INTO @TmpSpecialEventLeague(LeagueId)
 	SELECT DISTINCT LeagueId
 	FROM bodb02.dbo.league WITH(NOLOCK)
 	WHERE ProgramID = '2024' AND DisplayMode = 3; -- EC
 	-- WHERE ProgramID = '2022' AND DisplayMode = 2; -- WC
 	
-	INSERT INTO #Tmp_PlatformDesktop(BetFrom)
+	INSERT INTO @TmpPlatformDesktop(BetFrom)
 	SELECT b.BetFrom
 	FROM DBWH.bodb_account.dbo.tbl_Betfrom AS b WITH (NOLOCK)
 	WHERE b.platform2 = 'Desktop';
 
-	INSERT INTO #Tmp_Trans (SequenceId,Custid,Matchid,Bettype,StatusID,BetFrom,ScanDate,IsLicensee)
+	INSERT INTO #Tmp_Trans (SequenceId,Custid,Matchid,Bettype,StatusID,BetFrom,ScanDate)
 	SELECT TOP (@BatchSize) bt.sequenceid
 		,	bt.custid
 		,	bt.matchid
@@ -90,22 +80,35 @@ BEGIN
 		,	bt.statusID
 		,	bt.BetFrom
 		,	bt.transdate
-		,	CASE WHEN dCust.custid IS NOT NULL THEN 1 ELSE 0 END
 	FROM bodb02.dbo.bettrans AS bt WITH(NOLOCK)
-		LEFT JOIN bodb02.dbo.Dep_CustSuper AS dCust WITH (NOLOCK) ON dCust.custid = bt.srecommend
+		INNER JOIN bodb02.dbo.Dep_CustSuper AS dCust WITH (NOLOCK) ON dCust.custid = bt.srecommend
 	WHERE bt.sequenceid > @LastSequenceId
+		AND bt.currency <> 20
+		AND bt.bettype <> 10
 	ORDER BY bt.sequenceid ASC;
+	
+	CREATE CLUSTERED INDEX #CIX_Tmp_Trans_CustId_ScanDate ON #Tmp_Trans (Custid,ScanDate);
+	CREATE NONCLUSTERED INDEX #CIX_Tmp_Trans_Matchid ON #Tmp_Trans (Matchid);
+	CREATE NONCLUSTERED INDEX #CIX_Tmp_Trans_SequenceId ON #Tmp_Trans (SequenceId);
 
 	SELECT @LastSequenceId_New = MAX(SequenceId) FROM #Tmp_Trans;
 	SET @LastSequenceId_New = ISNULL(@LastSequenceId_New,@LastSequenceId);
 
-	DELETE FROM #Tmp_Trans WHERE IsLicensee = 0 OR Bettype = 10;
+	WITH CTE_RN AS (
+		SELECT 	ID
+			,	ROW_NUMBER() OVER(PARTITION BY SequenceId ORDER BY SequenceId) AS RN
+		FROM #Tmp_Trans
+	)
+	DELETE tmp_trans
+	FROM #Tmp_Trans AS tmp_trans
+		INNER JOIN CTE_RN AS c ON tmp_trans.ID = c.ID
+	WHERE c.RN > 1;
 	
 	INSERT INTO #tmp_match (MatchId)
 	SELECT DISTINCT tmp_trans.Matchid 
 	FROM #Tmp_Trans AS tmp_trans
 		INNER JOIN bodb02.dbo.match AS m WITH (NOLOCK) ON m.matchid = tmp_trans.MatchId
-		LEFT JOIN #TmpSpecialEventLeague AS sl WITH(NOLOCK) ON m.leagueid = sl.LeagueId
+		LEFT JOIN @TmpSpecialEventLeague AS sl ON m.leagueid = sl.LeagueId
 	WHERE tmp_trans.Matchid <> 29 
 		AND m.Sporttype < 100
 		AND sl.LeagueId IS NULL;
@@ -116,11 +119,25 @@ BEGIN
 	WHERE tmp_trans.Matchid <> 29 AND tmp_match.MatchId IS NULL;
 
 	INSERT INTO #tmpScanningCust(CustId,ScanDate,IsInserted)
-	SELECT DISTINCT tmp_trans.Custid
-		, tmp_trans.ScanDate
-		, CASE WHEN tmp_trans.Custid IS NOT NULL AND gbc.CustId IS NULL THEN 1 ELSE 0 END AS 'IsInserted'
+	SELECT DISTINCT 
+			tmp_trans.Custid
+		, 	tmp_trans.ScanDate
+		, 	CASE WHEN tmp_trans.Custid IS NOT NULL AND gbc.CustId IS NULL THEN 1 ELSE 0 END AS 'IsInserted'
 	FROM #Tmp_Trans AS tmp_trans
-		LEFT JOIN dbo.TWGroupBettingCustomer AS gbc WITH(NOLOCK)  ON gbc.CustId = tmp_trans.Custid AND gbc.ScanDate = tmp_trans.ScanDate;
+		LEFT JOIN dbo.TWGroupBettingCustomer AS gbc WITH(NOLOCK) ON gbc.CustId = tmp_trans.Custid AND gbc.ScanDate = tmp_trans.ScanDate;
+	
+	CREATE CLUSTERED INDEX #CIX_tmpScanningCust_CustId_ScanDate ON #tmpScanningCust (Custid,ScanDate);
+	
+	UPDATE sc
+	SET	sc.GBTicketCount = TEMP.GBTicketCount
+	FROM #tmpScanningCust AS sc 
+	INNER JOIN (
+		SELECT 	CustId
+			,	TransDate
+			,	COUNT(TransId) 'GBTicketCount'
+		FROM dbo.TWGroupBettingTicket AS gbt WITH (NOLOCK)
+		GROUP BY CustId,TransDate
+		) AS TEMP ON TEMP.CustId = sc.CustId AND TEMP.TransDate = sc.ScanDate;
 
 	INSERT INTO dbo.TWGroupBettingCustomer(CustId,ScanDate,GBTicketCount,TicketCount,ParlayTicketCount,RejectTicketCount,DesktopTicketCount)
 	SELECT	sc.CustId
@@ -134,6 +151,14 @@ BEGIN
 		LEFT JOIN dbo.TWGroupBettingCustomer AS gbc WITH(NOLOCK) ON sc.CustId = gbc.CustId AND sc.ScanDate = gbc.ScanDate
 	WHERE gbc.CustId IS NULL AND sc.IsInserted = 1;
 
+	UPDATE 	gbc WITH(UPDLOCK, ROWLOCK)
+	SET 	gbc.GBTicketCount = sc.GBTicketCount
+		,	gbc.LastModifiedDate = GETDATE()
+	FROM dbo.TWGroupBettingCustomer AS gbc
+		INNER JOIN #tmpScanningCust AS sc ON sc.CustId = gbc.CustId AND sc.ScanDate = gbc.ScanDate
+	WHERE gbc.GBTicketCount <> sc.GBTicketCount
+	;
+
 	;WITH cte_TicketCount AS (
 		SELECT DISTINCT bt.Custid
 			,	gbc.ScanDate
@@ -143,7 +168,7 @@ BEGIN
 			,	SUM(CASE WHEN bt.Bettype IN (29,38) THEN 1 ELSE 0 END) OVER (PARTITION BY bt.Custid,gbc.ScanDate) AS 'ParlayTicketCount'		
 		FROM dbo.TWGroupBettingCustomer AS gbc WITH (NOLOCK)
 			INNER JOIN #Tmp_Trans AS bt WITH (NOLOCK) ON gbc.CustId = bt.Custid	AND bt.ScanDate = gbc.ScanDate
-			LEFT JOIN #Tmp_PlatformDesktop AS b WITH (NOLOCK) ON b.BetFrom = bt.BetFrom
+			LEFT JOIN @TmpPlatformDesktop AS b ON b.BetFrom = bt.BetFrom
 	)
 	UPDATE gbc WITH(UPDLOCK, ROWLOCK)
 	SET		gbc.TicketCount = CASE WHEN sc.IsInserted = 1 THEN ct.TicketCount ELSE (gbc.TicketCount + ct.TicketCount) END
@@ -154,5 +179,9 @@ BEGIN
 	FROM dbo.TWGroupBettingCustomer AS gbc
 		INNER JOIN cte_TicketCount AS ct WITH (NOLOCK) ON gbc.CustId = ct.custid AND gbc.ScanDate = ct.ScanDate
 		LEFT JOIN #tmpScanningCust AS sc ON sc.CustId = gbc.CustId AND sc.ScanDate = gbc.ScanDate;
+		
+	DROP TABLE IF EXISTS #tmpScanningCust;
+	DROP TABLE IF EXISTS #Tmp_Trans;
+	DROP TABLE IF EXISTS #tmp_match;
 
-END
+END;
