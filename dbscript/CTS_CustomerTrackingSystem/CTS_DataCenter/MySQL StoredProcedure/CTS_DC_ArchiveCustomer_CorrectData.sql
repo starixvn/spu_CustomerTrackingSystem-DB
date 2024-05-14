@@ -101,7 +101,7 @@ sp: BEGIN
     FROM Temp_ArchiveCTSCustomer AS cus;
 	
     INSERT INTO CTS_DataCenter.Adhoc_202405_CustMissingArchive(CustID, ArchivedDate, CreatedTime)
-    SELECT 		CustID
+    SELECT 	DISTINCT CustID
 			,	ArchivedDate
             ,	lv_CurrentDateTime
     FROM Temp_ArchiveCTSCustomer;

@@ -92,6 +92,11 @@ BEGIN;
 		END;
 	END;
 
-	SELECT tmpCus.ArchivedDate, tmpCus.CustID FROM #tmpArchivedCustomers;
+	SELECT ArchivedDate, CustID FROM #tmpArchivedCustomers;
 END;
+GO
+
+GRANT EXECUTE ON [dbo].[CTS_ArchivedCustomerMissing_Get] TO [wsv_cts]
+GO
+GRANT VIEW DEFINITION ON [dbo].[CTS_ArchivedCustomerMissing_Get] TO [wsv_cts]
 GO
