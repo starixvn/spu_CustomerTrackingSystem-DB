@@ -10,8 +10,8 @@ ALTER PROCEDURE	CTS_ArchivedCustomerMissing_Get
     ,	@custType			TINYINT
 AS
 /*
-	Creator:	20240510@CaseyHuynh
-	Task:		Get Archive Customer to Correct Data [Redmine ID: 204368]
+	Creator:	20240510@Jonas.Huynh
+	Task:		Get Achived Customer Missing [Redmine ID: 204368]
 	Database:	bodb_Customer
 	
 	Revisions:
@@ -49,7 +49,7 @@ BEGIN;
 		FROM		bodb_Customer.dbo.CustInfo_Old AS arc WITH(NOLOCK)
 		WHERE		arc.ArchiveDate = @lastArchiveDate
 					AND arc.CustId > @lastCustId
-					AND NOT EXISTS (SELECT 1 FROM bodb02.dbo.Customer AS cust WITH(NOLOCK) WHERE cust.CustID = cus.CustID)
+					AND NOT EXISTS (SELECT 1 FROM bodb02.dbo.Customer AS cust WITH(NOLOCK) WHERE cust.CustID = arc.CustID)
 		ORDER BY	arc.CustID ASC;
 
 		SET @rowCount = (SELECT COUNT(1) FROM #tmpArchivedCustomers AS tmpCus)
@@ -62,7 +62,7 @@ BEGIN;
 			FROM		bodb_Customer.dbo.CustInfo_Old AS arc WITH(NOLOCK)
 			WHERE		arc.ArchiveDate > @lastArchiveDate
 						AND arc.ArchiveDate <= @maxArchiveDate
-						AND NOT EXISTS (SELECT 1 FROM bodb02.dbo.Customer AS cust WITH(NOLOCK) WHERE cust.CustID = cus.CustID)
+						AND NOT EXISTS (SELECT 1 FROM bodb02.dbo.Customer AS cust WITH(NOLOCK) WHERE cust.CustID = arc.CustID)
 			ORDER BY	arc.ArchiveDate ASC, arc.CustID ASC;
 		END;
 	END;
@@ -74,7 +74,7 @@ BEGIN;
 		FROM		Bodb_Archive_Customer_Licensee.dbo.custInfo AS arc WITH(NOLOCK)
 		WHERE		arc.ArchivedDate = @lastArchiveDate
 					AND arc.CustId > @lastCustId
-					AND NOT EXISTS (SELECT 1 FROM bodb02.dbo.Customer AS cust WITH(NOLOCK) WHERE cust.CustID = cus.CustID)
+					AND NOT EXISTS (SELECT 1 FROM bodb02.dbo.Customer AS cust WITH(NOLOCK) WHERE cust.CustID = arc.CustID)
 		ORDER BY	arc.CustID ASC;
 
 		SET @rowCount = (SELECT COUNT(1) FROM #tmpArchivedCustomers AS tmpCus)
@@ -87,7 +87,7 @@ BEGIN;
 			FROM		Bodb_Archive_Customer_Licensee.dbo.custInfo AS arc WITH(NOLOCK)
 			WHERE		arc.ArchivedDate > @lastArchiveDate
 						AND arc.ArchivedDate <= @maxArchiveDate
-						AND NOT EXISTS (SELECT 1 FROM bodb02.dbo.Customer AS cust WITH(NOLOCK) WHERE cust.CustID = cus.CustID)
+						AND NOT EXISTS (SELECT 1 FROM bodb02.dbo.Customer AS cust WITH(NOLOCK) WHERE cust.CustID = arc.CustID)
 			ORDER BY	arc.ArchivedDate ASC, arc.CustID ASC;
 		END;
 	END;
