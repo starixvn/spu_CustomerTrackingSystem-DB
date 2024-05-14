@@ -100,7 +100,7 @@ sp: BEGIN
         ,	CURRENT_TIMESTAMP(3)
     FROM Temp_ArchiveCTSCustomer AS cus;
 	
-    INSERT INTO CTS_DataCenter.Adhoc_ArchivedCustMissing(CustID, ArchivedDate, CreatedTime)
+    INSERT INTO CTS_DataCenter.Adhoc_202405_CustMissingArchive(CustID, ArchivedDate, CreatedTime)
     SELECT 		CustID
 			,	ArchivedDate
             ,	lv_CurrentDateTime
