@@ -41,3 +41,28 @@ WHERE CategoryID IN (65,105);
 SELECT * FROM CTS_DataCenter.CustomerCategory WHERE CategoryID IN (65,105);
 SELECT * FROM CTS_DataCenter.CTSCustomerClassification WHERE CategoryID IN (65,105);
 
+/*Get list Cust for init CC 2600/2601*/
+CREATE TEMPORARY TABLE CustLatestCCNewGB (CustID BIGINT);
+INSERT INTO CustLatestCCNewGB (CustID)
+WITH CTE_CustNewGB AS (
+	SELECT clss.CustID, clss.CategoryID
+	FROM CTS_DataCenter.CTSCustomerClassification AS clss
+	WHERE  clss.CategoryID = 239
+)
+, CTE_CustLatestCC AS (
+    SELECT clss.CustID, clss.CategoryID
+    FROM CTE_CustNewGB AS cte,
+    LATERAL(SELECT clss.CustID, clss.CategoryID
+            FROM CTS_DataCenter.CTSCustomerClassification AS clss
+                INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID
+            WHERE cte.CustID = clss.CustID
+            ORDER BY  cate.Priority ASC  
+                    , clss.LastModifiedDate DESC
+            LIMIT 1) AS clss
+)
+SELECT cng.CustID
+FROM CTE_CustNewGB AS cng
+    INNER JOIN CTE_CustLatestCC AS clc
+ON cng.CustID = clc.CustID AND cng.CategoryID = clc.CategoryID;
+
+SELECT * FROM CustLatestCCNewGB;
