@@ -22,6 +22,10 @@ BEGIN
 	DECLARE CONST_CATEGORYGROUP_NORMAL 	SMALLINT DEFAULT 200;
 	DECLARE CONST_CATEGORYGROUP_PA 		SMALLINT DEFAULT 50;
 	DECLARE	CONST_CATEGORYGROUP_POTENTIALPA		SMALLINT DEFAULT 150;
+	DECLARE CONST_CCGROUPID_NORMAL 				SMALLINT DEFAULT 1;
+	DECLARE CONST_CCGROUPID_NORMALLINKED 		SMALLINT DEFAULT 2;
+	DECLARE CONST_CCGROUPID_PA 					SMALLINT DEFAULT 3;
+	DECLARE CONST_CCGROUPID_OTHER 				SMALLINT DEFAULT 4;
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustomerCategory;
     CREATE TEMPORARY TABLE Temp_CustomerCategory(
@@ -48,10 +52,10 @@ BEGIN
 		WHERE cc.CustomerClass IS NOT NULL
 			AND cc.IsActive = 1
 	)
-	SELECT 	CASE WHEN (c.ParentID = CONST_CATEGORYGROUP_NORMAL AND TaggingType  = 0 AND CategoryGroup <> 1000) OR (c.ParentID = CONST_CATEGORYGROUP_POTENTIALPA) THEN 1 -- Normal
-				 WHEN c.ParentID = CONST_CATEGORYGROUP_NORMAL AND TaggingType <> 0  THEN 2 -- Normal linked Problem
-				 WHEN c.ParentID = CONST_CATEGORYGROUP_PA THEN 3  -- Problem Account
-				 ELSE 4 -- Other
+	SELECT 	CASE WHEN (c.ParentID = CONST_CATEGORYGROUP_NORMAL AND TaggingType  = 0 AND CategoryGroup <> 1000) OR (c.ParentID = CONST_CATEGORYGROUP_POTENTIALPA) THEN CONST_CCGROUPID_NORMAL -- Normal
+				 WHEN c.ParentID = CONST_CATEGORYGROUP_NORMAL AND TaggingType <> 0  THEN CONST_CCGROUPID_NORMALLINKED -- Normal linked Problem
+				 WHEN c.ParentID = CONST_CATEGORYGROUP_PA THEN CONST_CCGROUPID_PA  -- Problem Account
+				 ELSE CONST_CCGROUPID_OTHER -- Other
 			END AS CustomerClassGroupID
 		,	c.CustomerClass
 		,	c.CategoryName
@@ -85,10 +89,10 @@ BEGIN
     ;
     
     SELECT 	CustomerClassGroupID
-		,	CASE WHEN CustomerClassGroupID = 1 THEN 'Normal'
-				 WHEN CustomerClassGroupID = 2 THEN 'Normal Linked Problem'
-                 WHEN CustomerClassGroupID = 3 THEN 'Problem Account'
-                 WHEN CustomerClassGroupID = 4 THEN 'Others'
+		,	CASE WHEN CustomerClassGroupID = CONST_CCGROUPID_NORMAL THEN 'Normal'
+				 WHEN CustomerClassGroupID = CONST_CCGROUPID_NORMALLINKED THEN 'Normal Linked Problem'
+                 WHEN CustomerClassGroupID = CONST_CCGROUPID_PA THEN 'Problem Account'
+                 WHEN CustomerClassGroupID = CONST_CCGROUPID_OTHER THEN 'Others'
 			END AS CustomerClassGroupName
 		,	CustomerClass
         ,	CategoryName
