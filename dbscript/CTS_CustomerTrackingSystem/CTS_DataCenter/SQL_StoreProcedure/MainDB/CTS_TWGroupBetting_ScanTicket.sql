@@ -132,8 +132,8 @@ BEGIN
 			, 	pf.Tag AS RFM
 			, 	cust.CustomerClass
 	FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
-		INNER JOIN bodb02.dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 		INNER JOIN bodb02.dbo.custinfo AS cust WITH (NOLOCK) ON  cust.custid = b.custid
+		INNER JOIN bodb02.dbo.match AS m WITH (NOLOCK) ON b.matchid = m.matchid
 		LEFT JOIN bodb02.dbo.LicUserProfile AS pf WITH (NOLOCK) ON b.Custid = pf.CustId
 		LEFT JOIN @TmpBigLeague AS bl ON bl.LeagueId = m.LeagueId
 	WHERE b.sequenceid > @LastSequenceId
@@ -141,11 +141,11 @@ BEGIN
 		AND b.currency <> 20
 		AND b.bettype IN (1,3,7,8,609,610)
 		AND m.sporttype IN (1,2)
-		AND EXISTS (SELECT 1 FROM bodb02.dbo.Dep_CustSuper AS dCust WITH (NOLOCK) WHERE dCust.custid = b.srecommend)
+		AND EXISTS (SELECT 1 FROM bodb02.dbo.Dep_CustSuper AS dCust WITH (NOLOCK) WHERE dCust.custid = cust.srecommend)
 		AND 1 = (CASE WHEN m.LeagueId IN (SELECT LeagueId FROM @TmpSpecialEventLeague) THEN 0 ELSE 1 END)
 	ORDER BY b.sequenceid ASC;		
 
-	CREATE NONCLUSTERED INDEX #CIX_TmpRawTicket_Transdate1 ON #TmpRawTicket (TransdateSec) INCLUDE (TransdateSecStep);
+	CREATE CLUSTERED INDEX #CIX_TmpRawTicket_Transdate1 ON #TmpRawTicket (TransdateSec,TransdateSecStep);
 
 	SET @SkipTransCount_New = 0;
 	;WITH cte_stats AS (
@@ -187,10 +187,6 @@ BEGIN
 												AND cr.Betteam = ct.Betteam 
 		INNER JOIN dbo.TWGroupBettingRule AS gbr WITH (NOLOCK) ON cr.RuleId = gbr.RuleId
 	WHERE ct.TicketCount > ct.TicketCountLimit;
-
-	CREATE NONCLUSTERED INDEX IX_SuspectTicket_RuleId ON #TmpSuspectTicket (RuleId) INCLUDE (BetFrom,RFM,CustomerClass);
-	CREATE NONCLUSTERED INDEX IX_SuspectTicket_Group ON #TmpSuspectTicket (RuleId,GroupId,MatchId,Bettype,Betteam);
-	CREATE NONCLUSTERED INDEX IX_SuspectTicket_IsExists ON #TmpSuspectTicket (IsExists) INCLUDE (IsViolateBetFrom,IsViolateRFM,IsViolateCC);
 
 	;WITH tempTable_BetFrom AS (
 		SELECT tfs.RuleId,tfs.GroupId,tfs.MatchId,tfs.Bettype,tfs.Betteam
