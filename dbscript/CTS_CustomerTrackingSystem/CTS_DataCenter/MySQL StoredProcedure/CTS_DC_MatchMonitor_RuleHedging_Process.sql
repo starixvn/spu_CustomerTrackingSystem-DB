@@ -247,7 +247,7 @@ sp: BEGIN
     
 	SELECT	tmpRg.GroupID
 		,	tmpRg.IsHedging
-		#,	tmpRg.OldGroupIDList		
+		,	tmpRg.OldGroupIDList		
         ,	tmpRg.CustIDList
         ,	tmpRg.TransIDList        
     FROM Temp_Group AS tmpRg
