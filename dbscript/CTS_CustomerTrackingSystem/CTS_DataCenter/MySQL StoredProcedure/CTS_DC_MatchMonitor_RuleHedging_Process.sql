@@ -128,7 +128,7 @@ sp: BEGIN
 			,	tmp.StepTimeGroup
             ,	MAX(tmp.IsHedging) AS IsHedging
             ,	GROUP_CONCAT(tmp.TransID) AS TransIDList
-            ,	GROUP_CONCAT(DISTINCT tmp.CTSCustID) AS CustIDList
+            ,	GROUP_CONCAT(DISTINCT tmp.CustID) AS CustIDList
             ,	GROUP_CONCAT(DISTINCT tmp.CTSCustID) AS CTSCustIDList
 			,	CASE WHEN COUNT(DISTINCT CASE WHEN tmp.SubscriberID IN (',CONST_SUBSCRIBERID_ALPHA,' , ',CONST_SUBSCRIBERID_MAXBET, ') THEN tmp.CTSCustID ELSE NULL END) > 1 
 												THEN GROUP_CONCAT(DISTINCT CASE WHEN tmp.SubscriberID IN (',CONST_SUBSCRIBERID_ALPHA,' , ',CONST_SUBSCRIBERID_MAXBET,') THEN tmp.CTSCustID ELSE NULL END)
