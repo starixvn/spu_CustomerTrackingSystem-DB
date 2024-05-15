@@ -81,6 +81,7 @@ sp: BEGIN
 			GroupID INT
 		,	StepTimeGroup	BIGINT
 		,	TransIDList		LONGTEXT
+        ,	OldGroupIDList	VARCHAR(500)
 		,	CustIDList		LONGTEXT
 		,	CTSCustIDList	LONGTEXT
         ,	IsHedging		BOOLEAN
@@ -123,11 +124,12 @@ sp: BEGIN
     IF (ip_LiveIndicator = 1) THEN
     
         SET  @sqlString = CONCAT('
-        INSERT INTO Temp_Group(GroupID, StepTimeGroup, IsHedging, TransIDList, CustIDList, CTSCustIDList, AgentDetect_CTSCustIDList, SequenceIDList)        
+        INSERT INTO Temp_Group(GroupID, StepTimeGroup, IsHedging, TransIDList, OldGroupIDList, CustIDList, CTSCustIDList, AgentDetect_CTSCustIDList, SequenceIDList)        
         SELECT	MIN(tmp.GroupID) AS GroupID
 			,	tmp.StepTimeGroup
             ,	MAX(tmp.IsHedging) AS IsHedging
             ,	GROUP_CONCAT(tmp.TransID) AS TransIDList
+			,	GROUP_CONCAT(DISTINCT tmp.OldGroupID) AS OldGroupIDList
             ,	GROUP_CONCAT(DISTINCT tmp.CustID) AS CustIDList
             ,	GROUP_CONCAT(DISTINCT tmp.CTSCustID) AS CTSCustIDList
 			,	CASE WHEN COUNT(DISTINCT CASE WHEN tmp.SubscriberID IN (',CONST_SUBSCRIBERID_ALPHA,' , ',CONST_SUBSCRIBERID_MAXBET, ') THEN tmp.CTSCustID ELSE NULL END) > 1 
@@ -139,6 +141,7 @@ sp: BEGIN
 						,	LAST_VALUE(mms.TransDateToSecond)OVER W AS StepTimeGroup
                         ,	mms.IsHedging
 						,	mms.TransID
+                        ,	mms.GroupID AS OldGroupID
 						,	mms.CustID
 						, 	mms.CTSCustID
 						,	mms.SubscriberID

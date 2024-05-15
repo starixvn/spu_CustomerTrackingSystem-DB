@@ -133,7 +133,7 @@ BEGIN
     DELETE tmpTg
     FROM Temp_TransGroup AS tmpTg
     WHERE tmpTg.IsHedging = 1; 
-    
+
     #======Update MatchMonitorDetails====================================  
 
     IF (ip_LiveIndicator = 1) THEN
@@ -157,7 +157,7 @@ BEGIN
 		hg: LOOP 
 			TRUNCATE TABLE Temp_HedgingOldGroup;
 			TRUNCATE TABLE Temp_HedgingTrans;
-		
+		    
 			SET lv_GroupID = 0;
 			SET lv_TransIDList_TargetGroupID = NULL;
 			SELECT tmpTg.GroupID, tmpTg.TransIDList, tmpTg.CustIDList, tmpTg.OldGroupIDList, tmpTg.IsHedging
@@ -177,10 +177,11 @@ BEGIN
 			
 			SET lv_TargetGroupID = IFNULL(lv_TargetGroupID,0);
 			SET lv_TargetGroupID =  lv_TargetGroupID + 1;  
-			
+            
+            
 			CALL CTS_DC_Sys_SplitStringToTempItemTable(lv_OldGroupIDList,',','INT');
 			INSERT IGNORE INTO Temp_HedgingOldGroup (GroupID) SELECT * FROM TempItemTable;
-				
+
 			SELECT Item INTO lv_TargetGroupID FROM TempItemTable WHERE Item <> 0 ORDER BY Item ASC LIMIT 1;
 			SELECT COUNT(1) INTO lv_NoOfOldGroupID FROM TempItemTable WHERE Item <> 0;
 			SET lv_TargetGroupID = IFNULL(lv_TargetGroupID,0);
@@ -328,3 +329,4 @@ BEGIN
     END IF;
 END$$
 DELIMITER ;
+
