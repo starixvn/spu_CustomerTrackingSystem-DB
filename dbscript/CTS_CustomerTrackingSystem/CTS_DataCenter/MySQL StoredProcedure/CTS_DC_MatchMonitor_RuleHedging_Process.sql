@@ -38,11 +38,13 @@ sp: BEGIN
 			- CALL CTS_DC_MatchMonitor_RuleHedging_Process(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=113171940189,@ip_MatchID:=22081995,@ip_ScoreDiff:=1,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a');
 			
 	*/
-	DECLARE CONST_LOG 					TINYINT DEFAULT 	0;
-    DECLARE CONST_MMRULEGROUP_HEDGING	INT		DEFAULT		3;
-    DECLARE CONST_MMREASON_HEDGING		INT		DEFAULT		1;
+	DECLARE CONST_LOG 					TINYINT DEFAULT 0;
+	DECLARE CONST_SUBSCRIBERID_ALPHA	INT DEFAULT 168;
+	DECLARE CONST_SUBSCRIBERID_MAXBET	INT DEFAULT 169;
+    DECLARE CONST_MMRULEGROUP_HEDGING	INT DEFAULT 3;
+    DECLARE CONST_MMREASON_HEDGING		INT DEFAULT 1;
 
-	DECLARE lv_TimeStep 				SMALLINT;
+	DECLARE lv_RuleTimeStep 				SMALLINT;
 	DECLARE lv_RuleTotalStake 			DECIMAL(20,4);
 	DECLARE lv_CustIDList 				TEXT;
 	DECLARE lv_IsHedging 				BOOLEAN;
@@ -74,15 +76,25 @@ sp: BEGIN
 		 	CustID 	BIGINT UNSIGNED PRIMARY KEY
 	); 
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_Group;
+	CREATE TEMPORARY TABLE Temp_Group(
+			GroupID INT
+		,	StepTimeGroup	BIGINT
+		,	TransIDList		LONGTEXT
+		,	CustIDList		LONGTEXT
+		,	CTSCustIDList	LONGTEXT
+        ,	IsHedging		BOOLEAN
+		,	AgentDetect_CTSCustIDList LONGTEXT
+		,	SequenceIDList LONGTEXT);
     #=======================================================================
-	SELECT st.TotalStake
-	INTO 	lv_RuleTotalStake
+	SELECT 	st.TotalStake, st.TimeStep
+	INTO 	lv_RuleTotalStake, lv_RuleTimeStep
 	FROM CTS_DataCenter.MatchMonitorRuleSetting AS st 
 	WHERE 	st.RuleGroupID = CONST_MMRULEGROUP_HEDGING 
 			AND st.SportType = ip_SportType 
 			AND st.Reason = CONST_MMREASON_HEDGING AND st.RuleStatus = 1
 	LIMIT 1;
-    
+
     DROP TEMPORARY TABLE IF EXISTS Temp_CustGroup;
     CREATE TEMPORARY TABLE Temp_CustGroup(
 			CustID		BIGINT
@@ -109,6 +121,43 @@ sp: BEGIN
 	EXECUTE stmt1;
     
     IF (ip_LiveIndicator = 1) THEN
+    
+        SET  @sqlString = CONCAT('
+        INSERT INTO Temp_Group(GroupID, StepTimeGroup, IsHedging, TransIDList, CustIDList, CTSCustIDList, AgentDetect_CTSCustIDList, SequenceIDList)        
+        SELECT	MIN(tmp.GroupID) AS GroupID
+			,	tmp.StepTimeGroup
+            ,	MAX(tmp.IsHedging) AS IsHedging
+            ,	GROUP_CONCAT(tmp.TransID) AS TransIDList
+            ,	GROUP_CONCAT(DISTINCT tmp.CTSCustID) AS CustIDList
+            ,	GROUP_CONCAT(DISTINCT tmp.CTSCustID) AS CTSCustIDList
+			,	CASE WHEN COUNT(DISTINCT CASE WHEN tmp.SubscriberID IN (',CONST_SUBSCRIBERID_ALPHA,' , ',CONST_SUBSCRIBERID_MAXBET, ') THEN tmp.CTSCustID ELSE NULL END) > 1 
+												THEN GROUP_CONCAT(DISTINCT CASE WHEN tmp.SubscriberID IN (',CONST_SUBSCRIBERID_ALPHA,' , ',CONST_SUBSCRIBERID_MAXBET,') THEN tmp.CTSCustID ELSE NULL END)
+								ELSE NULL END AS AgentDetect_CTSCustIDList
+			,	GROUP_CONCAT(tmp.SequenceID)
+        FROM	(
+					SELECT 	tmpCg.GroupID
+						,	LAST_VALUE(mms.TransDateToSecond)OVER W AS StepTimeGroup
+                        ,	mms.IsHedging
+						,	mms.TransID
+						,	mms.CustID
+						, 	mms.CTSCustID
+						,	mms.SubscriberID
+                        ,	mms.TransDateToSecond
+						,	mms.SequenceID
+						, 	mms.Stake
+					FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms
+						INNER JOIN Temp_SequenceID AS tmpSq ON mms.SequenceID = tmpSq.SequenceID
+						INNER JOIN Temp_CustGroup AS tmpCg ON mms.CustID = tmpCg.CustID
+						WINDOW w AS (PARTITION BY GroupID ORDER BY TransDateToSecond ASC RANGE BETWEEN CURRENT ROW AND ',lv_RuleTimeStep,' FOLLOWING)
+				) AS tmp
+        GROUP BY tmp.StepTimeGroup
+        HAVING	SUM(tmp.Stake) >= ',lv_RuleTotalStake,'	
+				AND COUNT(DISTINCT tmp.CustID) > 1');
+                
+        PREPARE stmt1 FROM @sqlString;
+
+		EXECUTE stmt1;
+        
 		INSERT INTO Temp_ResultGroup(GroupID, OldGroupIDList, IsHedging, TotalStake, CustIDList, TransIDList, SequenceIDList)
 		SELECT  tmpCg.GroupID
 			,	GROUP_CONCAT(DISTINCT CASE WHEN mms.GroupID > 0 THEN mms.GroupID ELSE 0 END) AS OldGroupIDList
@@ -121,7 +170,8 @@ sp: BEGIN
 			INNER JOIN Temp_SequenceID AS tmpSq ON mms.SequenceID = tmpSq.SequenceID
 			INNER JOIN Temp_CustGroup AS tmpCg ON mms.CustID = tmpCg.CustID
 		GROUP BY tmpCg.GroupID;
-	ELSE 
+        
+	ELSE #(ip_LiveIndicator = 0)
 		INSERT INTO Temp_ResultGroup(GroupID, OldGroupIDList, IsHedging, TotalStake, CustIDList, TransIDList, SequenceIDList)
 		SELECT  tmpCg.GroupID
 			,	GROUP_CONCAT(DISTINCT CASE WHEN mms.GroupID > 0 THEN mms.GroupID ELSE 0 END) AS OldGroupIDList
@@ -136,22 +186,33 @@ sp: BEGIN
 		GROUP BY tmpCg.GroupID;
     END IF;
     #===============CHECK Is Hedging Group====================
+    
+	DROP TEMPORARY TABLE IF EXISTS Temp_Completed;
+	CREATE TEMPORARY TABLE Temp_Completed(GroupID INT PRIMARY KEY, IsHedging BOOLEAN);
+	
+	INSERT INTO Temp_Completed(GroupID, IsHedging)
+	SELECT tmpGp.GroupID
+		, MAX(tmpGp.IsHedging) AS IsHedging
+	FROM Temp_Group AS tmpGp
+	GROUP BY tmpGp.GroupID
+	HAVING COUNT(DISTINCT tmpGp.StepTimeGroup) = 1;
+    
     SET lv_GroupID = 0;
-    SET lv_GroupID = (	SELECT tmpRg.GroupID
-							FROM Temp_ResultGroup AS tmpRg
-							WHERE tmpRg.IsHedging = 0 AND tmpRg.GroupID > lv_GroupID 
-								AND tmpRg.TotalStake >= lv_RuleTotalStake
-							ORDER BY tmpRg.GroupID
-							LIMIT 1);    
-        
+    SET lv_GroupID = (	SELECT tmp.GroupID
+						FROM Temp_Completed AS tmp
+						WHERE tmp.IsHedging = 0 AND tmp.GroupID > lv_GroupID 
+						ORDER BY tmp.GroupID
+						LIMIT 1);    
+
     WHILE lv_GroupID IS NOT NULL DO    
     
 		TRUNCATE TABLE Temp_Cust;
+        
         SET lv_IsHedging = 0;
         
 		SELECT tmpRg.CustIDList
 		INTO lv_CustIDList
-		FROM Temp_ResultGroup AS tmpRg
+		FROM Temp_Group AS tmpRg
 		WHERE tmpRg.GroupID = lv_GroupID;
 		
         SET @sql = CONCAT("INSERT IGNORE INTO Temp_Cust(CustID) VALUES ('", REPLACE(lv_CustIDList, ",", "'),('"),"');");
@@ -172,28 +233,33 @@ sp: BEGIN
         END IF;
         
         IF lv_IsHedging = 1 THEN    
-			UPDATE Temp_ResultGroup AS tmpRg
+			UPDATE Temp_Group AS tmpRg
 			SET tmpRg.IsHedging = 1
             WHERE tmpRg.GroupID = lv_GroupID;            
         END IF;
         
-        SET lv_GroupID = (	SELECT tmpRg.GroupID
-							FROM Temp_ResultGroup AS tmpRg
-							WHERE tmpRg.IsHedging = 0 AND tmpRg.GroupID > lv_GroupID
-								AND tmpRg.TotalStake >= lv_RuleTotalStake
-							ORDER BY tmpRg.GroupID
-							LIMIT 1);
+		SET lv_GroupID = (	SELECT tmp.GroupID
+							FROM Temp_Completed AS tmp
+							WHERE tmp.IsHedging = 0 AND tmp.GroupID > lv_GroupID 
+							ORDER BY tmp.GroupID
+							LIMIT 1);   
     END WHILE;
     
 	SELECT	tmpRg.GroupID
 		,	tmpRg.IsHedging
-		,	tmpRg.OldGroupIDList		
+		#,	tmpRg.OldGroupIDList		
         ,	tmpRg.CustIDList
         ,	tmpRg.TransIDList        
-    FROM Temp_ResultGroup AS tmpRg
-    WHERE IsHedging = 1;
-    
-    SELECT '11,13,16' AS CTSCustIDList, '11,13' AS AgentDetect_CTSCustIDList, '1,2,3,8' AS SequenceIDList;
+    FROM Temp_Group AS tmpRg
+		INNER JOIN Temp_Completed AS tmpCp ON tmpRg.GroupID = tmpRg.GroupID
+    WHERE tmpRg.IsHedging = 1;
+
+    SELECT	CTSCustIDList
+		,	AgentDetect_CTSCustIDList
+        ,	SequenceIDList
+    FROM Temp_Group AS tmpRg
+		LEFT JOIN Temp_Completed AS tmpCp ON tmpRg.GroupID = tmpRg.GroupID
+	WHERE tmpCp.GroupID IS NULL;
     
 END$$
 DELIMITER ;
