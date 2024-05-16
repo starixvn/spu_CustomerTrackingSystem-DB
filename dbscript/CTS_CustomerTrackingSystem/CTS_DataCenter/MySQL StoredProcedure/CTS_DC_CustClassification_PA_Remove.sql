@@ -19,7 +19,8 @@ BEGIN
             - 20230530@Casey.Huynh: Return IsCleanPA (1: Remove All PA, 0: Exists PA)
 			- 20240109@Thomas.Nguyen: Remove cust in CustomerLoginInfoDetection when cust is unmarked [RedmineID: #197710]
             - 20240420@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
-            
+            - 20240424@Thomas.Nguyen: Classify initial group betting - Add ParentID = 150 [Redmine ID: #200854]
+
         Param's Explanation (filtered by):
 			- ip_ByType: 1: Category, 2: Reason
         Example:
@@ -34,7 +35,7 @@ BEGIN
     DECLARE CONST_SPNAME VARCHAR(100) DEFAULT 'CTS_DC_CustClassification_PA_Remove';
 	DECLARE	CONST_CATEGORY_UNAUTHORIZEDLOGIN 		INT DEFAULT 64;
     DECLARE	CONST_CATEGORY_UNAUTHORIZEDLOGIN_LOSING	INT DEFAULT 104;
-    DECLARE CONST_GROUPPRIORITY_DANGEROUS SMALLINT UNSIGNED DEFAULT 5700;
+	DECLARE CONST_PARENTID_POTENTIALPA				INT DEFAULT 150;
     
     DECLARE lv_LogInfo VARCHAR(500);
 	DECLARE lv_CreatedBy INT UNSIGNED;
@@ -123,7 +124,7 @@ BEGIN
         ,	(CASE WHEN (tmpIc.IsExceptDirectDownline = 1 AND  cls.IsDirect = 1 AND ip_IsFromQueue = 1 )  THEN 0 ELSE 1 END) AS IsRemovedPA    
     FROM Temp_InputCust AS tmpIc
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON tmpIc.CustID = cls.CustID AND cls.SportGroupID = CONST_PA_SPORTGROUP
-        INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.GroupPriority <> CONST_GROUPPRIORITY_DANGEROUS; 
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.ParentID <> CONST_PARENTID_POTENTIALPA; 
     
 	INSERT INTO CTS_DataCenter.CustEvidenceAffectedQueueRemove(CTSCustID, EvidenceID, Created)
     SELECT	tmpCp.CTSCustID

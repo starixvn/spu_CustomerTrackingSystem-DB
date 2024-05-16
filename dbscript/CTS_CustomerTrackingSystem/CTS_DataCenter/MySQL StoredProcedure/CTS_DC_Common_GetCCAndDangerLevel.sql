@@ -16,7 +16,8 @@ BEGIN
 			- 20220930@Aries.Nguyen: 	Created [RedmineID: #178311]
 			- 20230118@Victoria.Le: 	Return ParentID & TaggingType to definite whether Customer is Problem Account/Normal Categories links with PA [RedmineID: #181995]
 			- 20240319@Casey.Huynh: 	Classify Danger Score [Redmine ID: #201358]
-            
+            - 20240424@Thomas.Nguyen:	Classify Initial Group Betting - Add ParentID = 150, SportGroupID = 150 [Redmine ID: #200854]
+
         Param's Explanation:     
         Example:
 			- CALL CTS_DataCenter.CTS_DC_Common_GetCCAndDangerLevel('1,2,1277,555555');
@@ -24,15 +25,16 @@ BEGIN
 	DECLARE	CONST_GROUP_NORMAL 					INT DEFAULT 200;
 	DECLARE	CONST_GROUP_WRAPPER 				INT DEFAULT 100;
     DECLARE	CONST_GROUP_PROBLEM 				INT DEFAULT 0;
-        
+    DECLARE	CONST_GROUP_POTENTIALPA 			INT DEFAULT 150;
+
     DECLARE	CONST_LICBACATEGORY					INT DEFAULT 2;
     DECLARE	CONST_LICVIP_DANGEROUSCATEGORY		INT DEFAULT 3;
     DECLARE	CONST_LICVIP_SUSPICIOUSCATEGORY		INT DEFAULT 4;    
     DECLARE	CONST_VVIPCATEGORY					INT DEFAULT 210;
     
-    DECLARE	CONST_GROUPPRIORITY_DANGEROUS				SMALLINT UNSIGNED DEFAULT 5700;
     DECLARE	CONST_PARENTID_PA					INT DEFAULT 50;
-    
+	DECLARE	CONST_PARENTID_POTENTIALPA 			INT DEFAULT 150;
+
     DECLARE	lv_LicVIP_DangerousCCName 			VARCHAR(50);
     DECLARE	lv_LicVIP_SuspiciousCCName			VARCHAR(50);
     DECLARE	lv_LicBACC_Name						VARCHAR(50);
@@ -138,7 +140,7 @@ BEGIN
 				FROM CTS_DataCenter.CTSCustomerClassification AS clss
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID
                 WHERE clss.CustID = tmp.CustID
-					AND clss.SportGroupID IN (CONST_GROUP_PROBLEM, CONST_GROUP_NORMAL)
+					AND clss.SportGroupID IN (CONST_GROUP_PROBLEM, CONST_GROUP_NORMAL, CONST_GROUP_POTENTIALPA)
                 ORDER BY  cate.Priority ASC  
 						, clss.LastModifiedDate DESC
                 LIMIT 1) AS clss
@@ -195,7 +197,7 @@ BEGIN
 				FROM CTS_DataCenter.CTSCustomerClassification AS clss
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID
                 WHERE clss.CustID = tmp.CustID
-					AND clss.SportGroupID IN (CONST_GROUP_PROBLEM, CONST_GROUP_WRAPPER, CONST_GROUP_NORMAL)
+					AND clss.SportGroupID IN (CONST_GROUP_PROBLEM, CONST_GROUP_WRAPPER, CONST_GROUP_NORMAL, CONST_GROUP_POTENTIALPA)
                 ORDER BY  cate.Priority ASC  
 						, clss.LastModifiedDate DESC
                 LIMIT 1) AS clss,
@@ -206,7 +208,7 @@ BEGIN
 				FROM CTS_DataCenter.CTSCustomerClassification AS c
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON c.CategoryID = cc.CategoryID
                 WHERE c.CustID = tmp.CustID
-					AND c.SportGroupID IN (CONST_GROUP_PROBLEM, CONST_GROUP_NORMAL)
+					AND c.SportGroupID IN (CONST_GROUP_PROBLEM, CONST_GROUP_NORMAL, CONST_GROUP_POTENTIALPA)
                 ORDER BY  cc.Priority ASC  
 						, c.LastModifiedDate DESC
                 LIMIT 1) AS dangerlvl;
@@ -217,7 +219,7 @@ BEGIN
 		,	IFNULL(cate.CustomerClass,-1) AS CustomerClass
         ,	cate.CustomerClassName  
 		,	cate.ParentID
-        ,	(CASE 	WHEN cate.ParentID = CONST_PARENTID_PA AND cate.GroupPriority = CONST_GROUPPRIORITY_DANGEROUS THEN 2
+        ,	(CASE 	WHEN cate.ParentID = CONST_PARENTID_POTENTIALPA THEN 2
 					WHEN cate.ParentID = CONST_PARENTID_PA THEN 1
                     ELSE 3 END ) AS CategoryType
 		,	cate.TaggingType

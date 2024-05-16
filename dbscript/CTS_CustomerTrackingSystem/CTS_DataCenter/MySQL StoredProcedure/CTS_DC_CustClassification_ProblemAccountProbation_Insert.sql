@@ -25,6 +25,7 @@ BEGIN
             - 20240103@Thomas.Nguyen: New Category for System Detect Unauthorized Login [RedmineID: #197710]
             - 20240318@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
             - 20240415@Casey.Huynh: Fix Missing DangerScrore info in remark [Redmine ID: #203889]
+            - 20240423@Thomas.Nguyen: Classify Initial Group Betting - Add Remark [RedmineID: #200854]
 
 		Param's Explanation (filtered by):      
 			- CALL CTS_DC_CustClassification_ProblemAccountProbation_Insert ('[{"CustID": 123,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10}]');
@@ -49,7 +50,7 @@ BEGIN
     DECLARE	CONST_LICVIP_SUSPICIOUSCATEGORY		INT DEFAULT 4;    
     DECLARE	CONST_VVIPCATEGORY					INT DEFAULT 210;   
     DECLARE CONST_SPORTGROUP_WRAPPER			INT DEFAULT 100;
-	DECLARE	CONST_GROUPPRIORITY_DANGEROUS		SMALLINT UNSIGNED DEFAULT 5700;
+    DECLARE	CONST_PARENTID_POTENTIALPA			INT DEFAULT 150;
     
 	DECLARE lv_CreatedBy 						INT DEFAULT 10278938;
     DECLARE lv_CurrentDateTime 					DATETIME DEFAULT CURRENT_TIME(); 
@@ -96,7 +97,7 @@ BEGIN
     FROM CustomerCategory WHERE CategoryID = CONST_LICVIP_SUSPICIOUSCATEGORY;    
     
     /* START */
-    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, CategoryID, RelevantCategoryID, SportGroupID,TargetCC,TargetDangerLevel1, IsDangerProbation, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsDirect,IsLicenseeVIP,IsLicenseeBA, IsDataChanged)
+    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, CategoryID, RelevantCategoryID, SportGroupID,TargetCC,TargetDangerLevel1, IsDangerProbation, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsDirect,IsLicenseeVIP,IsLicenseeBA, IsDataChanged, Remark)
 	SELECT 	js.CustID
 		,	cust.CTSCustID
         ,	clss.CategoryID
@@ -119,6 +120,7 @@ BEGIN
                  WHEN js.WinlossStatus = 2 AND cate.IsDangerProbation = 0 THEN 0  /*Win + PA => No Change  */
                  WHEN js.WinlossStatus = 2 AND cate.IsDangerProbation = 1 THEN 1  /*Win + Probation => Update */
 			END AS IsDataChanged
+        ,   js.Remark
 	FROM JSON_TABLE(ip_ProblemAccount,
 		"$[*]" COLUMNS(
 				CustID 			BIGINT UNSIGNED			PATH "$.CustID"
@@ -126,7 +128,8 @@ BEGIN
 			,	TurnoverRM		DECIMAL(20,4) 			PATH "$.TurnoverRM"	
             ,	WinlossRM		DECIMAL(20,4) 			PATH "$.WinlossRM"	
 			,	BetCount		BIGINT 					PATH "$.BetCount"	
-            ,	ActiveDays		INT 					PATH "$.ActiveDays"	
+            ,	ActiveDays		INT 					PATH "$.ActiveDays"
+            ,   Remark          VARCHAR(500)            PATH "$.Remark"	
 		 )) AS js
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON js.CustID = cust.CustID AND cust.CustSubID = 0 AND cust.IsInternal = 0
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CustID = js.CustID
@@ -225,7 +228,7 @@ BEGIN
 		,	tmp.CTSCustID
         ,	CASE WHEN tmp.CategoryID IN (CONST_CATEGORYID_ROBOTUSER, CONST_CATEGORYID_ROBOTUSER_LOSING,CONST_CATEGORYID_ROBOTOCRD, CONST_CATEGORYID_ROBOTOCRD_LOSING) THEN 1
 			ELSE 0 END AS ISRobot
-		,	(CASE WHEN GroupPriority = CONST_GROUPPRIORITY_DANGEROUS THEN 2 ELSE 1 END) AS CategoryType #1: PA, 2: 2800
+		,	(CASE WHEN cat.ParentID = CONST_PARENTID_POTENTIALPA THEN 2 ELSE 1 END) AS CategoryType #1: PA, 2: potential PA
     FROM Temp_PA AS tmp
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON tmp.CategoryID = cat.CategoryID
     WHERE IsDataChanged = 1; 

@@ -21,6 +21,7 @@ AS
 		- 20230915@Jonas.Huynh: HF Wrong Inactive Category for New and Realtime flow exclude S/R/P with not latest category [Redmine ID: #193050]
 		- 20231030@Victoria.Le: New Member Classify Tagging [Redmine ID: #195060]
 		- 20240327@Jonas.Huynh: EC2024 - Resolve Locking [Redmine ID: #200842]
+		- 20240426@Thomas.Nguyen: Remove logic New Member Classify Tagging [Redmine ID: #200854]
 
 	Param's Explanation:
 		@ScannedMaxId: This parameter is used to output scanned MaxID
@@ -36,8 +37,7 @@ BEGIN
 	DECLARE	@BATCHSIZE						INT 	= 20000;
 
 	DECLARE @FUNCTIONID_REALTIME			TINYINT = 1,
-			@FUNCTIONID_SCANTAGGING			TINYINT = 100,
-			@FUNCTIONID_SCANTAGGING_NEWCUST	TINYINT = 8;
+			@FUNCTIONID_SCANTAGGING			TINYINT = 100;
 
 	DECLARE @SCANTAGGINGTYPE_NOTEXIST		TINYINT = 0,
 			@SCANTAGGINGTYPE_EXIST			TINYINT = 1,
@@ -50,11 +50,10 @@ BEGIN
 	DROP TABLE	#tmpCustomers;
 
 	CREATE TABLE #tmpCustomers(
-		Id						BIGINT PRIMARY KEY IDENTITY(1,1),
-		CustId					INT UNIQUE NOT NULL,
-		IsRealtimeOnly			BIT DEFAULT(0),
-		ScanTaggingType  		TINYINT DEFAULT(0),
-		IsScanTaggingNewCust	BIT DEFAULT(0)
+		Id					BIGINT PRIMARY KEY IDENTITY(1,1),
+		CustId				INT UNIQUE NOT NULL,
+		IsRealtimeOnly		BIT DEFAULT(0),
+		ScanTaggingType  	TINYINT DEFAULT(0)
 	);
 
 	-- #1: Get Scanned MaxID
@@ -68,16 +67,13 @@ BEGIN
 	-- #2: Get top customers by priority
 	IF(@ScannedMaxId IS NOT NULL)
 	BEGIN
-		INSERT INTO #tmpCustomers(CustId, IsRealtimeOnly, ScanTaggingType, IsScanTaggingNewCust)
+		INSERT INTO #tmpCustomers(CustId, IsRealtimeOnly, ScanTaggingType)
 		SELECT TOP(@BATCHSIZE) c.CustId,
 			   CASE WHEN SUM(c.FunctionId) = (COUNT(c.ID) * @FUNCTIONID_SCANTAGGING) THEN 0
 					WHEN SUM(CASE WHEN c.FunctionId = @FUNCTIONID_SCANTAGGING THEN @FUNCTIONID_REALTIME ELSE c.FunctionId END) = (COUNT(c.ID) * @FUNCTIONID_REALTIME) THEN 1 
 					ELSE 0 END,
 			   CASE WHEN SUM(c.FunctionId) = (COUNT(c.CustId) * @FUNCTIONID_SCANTAGGING) THEN @SCANTAGGINGTYPE_EXISTONLY 
 					WHEN SUM(CASE WHEN c.FunctionId = @FUNCTIONID_SCANTAGGING THEN @FUNCTIONID_SCANTAGGING ELSE 0 END) > 1 THEN @SCANTAGGINGTYPE_EXIST 
-					ELSE @SCANTAGGINGTYPE_NOTEXIST END,
-			   CASE WHEN SUM(c.FunctionId) = (COUNT(c.CustId) * @FUNCTIONID_SCANTAGGING_NEWCUST) THEN @SCANTAGGINGTYPE_EXIST 
-					WHEN SUM(CASE WHEN c.FunctionId = @FUNCTIONID_SCANTAGGING_NEWCUST THEN @FUNCTIONID_SCANTAGGING_NEWCUST ELSE 0 END) > 1 THEN @SCANTAGGINGTYPE_EXIST  
 					ELSE @SCANTAGGINGTYPE_NOTEXIST END
 		FROM dbo.CustomerClassification_NormalPool AS c WITH(NOLOCK)
 		WHERE c.ID <= @ScannedMaxId
@@ -87,10 +83,9 @@ BEGIN
 	END
 
 	-- #3: Return dataset
-	SELECT CustId			 	AS CustId, 
-		   IsRealtimeOnly	 	AS IsRealtimeOnly,
-		   ScanTaggingType   	AS ScanTaggingType,
-		   IsScanTaggingNewCust	AS IsScanTaggingNewCust
+	SELECT CustId			 AS CustId, 
+		   IsRealtimeOnly	 AS IsRealtimeOnly,
+		   ScanTaggingType   AS ScanTaggingType
 	FROM #tmpCustomers;
 	
 	DROP TABLE #tmpCustomers;

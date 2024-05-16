@@ -15,12 +15,15 @@ BEGIN
             - 20210727@Irena.Vo: Enhance Category filter [Redmine ID: #159142]
 			- 20210805@Irena.Vo: Update get Category filter [Redmine ID: #155956]
             - 20240318@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
-			
+			- 20240425@Thomas.Nguyen: Classify Initial Group Betting - Add ParentID = 150 [Redmine ID: #200854]
+
 		Param's Explanation (filtered by):
         Example:
 				CALL CTS_DC_Category_Get();
 	*/
-	DECLARE	CONST_GROUPPRIORITY_DANGEROUS	SMALLINT UNSIGNED DEFAULT 5700;
+	DECLARE	CONST_PARENTID_PA 					INT DEFAULT 50;
+	DECLARE	CONST_PARENTID_POTENTIALPA 			INT DEFAULT 150;
+	DECLARE	CONST_PARENTID_NORMAL 				INT DEFAULT 200;
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_CategoryFilter;
 	CREATE TEMPORARY TABLE Temp_CategoryFilter(
@@ -31,13 +34,21 @@ BEGIN
 	);
 
 	INSERT IGNORE INTO Temp_CategoryFilter (CategoryGroup, CategoryName, CategoryIDs)
-	SELECT 	(CASE WHEN GroupPriority = CONST_GROUPPRIORITY_DANGEROUS THEN 'Normal Account Category' ELSE 'Problem Account Category' END) AS CategoryGroup		    
+	SELECT 	'Problem Account Category' AS CategoryGroup		    
 		,	cat.CategoryName
 		,	GROUP_CONCAT(cat.CategoryID SEPARATOR ',')  AS CategoryIDs  
 	FROM	CTS_DataCenter.CustomerCategory AS cat
-	WHERE 	cat.ParentID = 50
+	WHERE 	cat.ParentID = CONST_PARENTID_PA
 		AND cat.IsActive = 1
-	GROUP BY cat.CategoryName, cat.CategoryGroup, GroupPriority
+	GROUP BY cat.CategoryName, cat.CategoryGroup
+	UNION
+	SELECT 	'Normal Account Category' AS CategoryGroup		    
+		,	cat.CategoryName
+		,	GROUP_CONCAT(cat.CategoryID SEPARATOR ',')  AS CategoryIDs  
+	FROM	CTS_DataCenter.CustomerCategory AS cat
+	WHERE 	cat.ParentID = CONST_PARENTID_POTENTIALPA
+		AND cat.IsActive = 1
+	GROUP BY cat.CategoryName, cat.CategoryGroup
 	UNION
 	SELECT	CASE WHEN ttc.TaggingType = 1 THEN 'PA Associated Category' 
 				 WHEN cat.CategoryGroup = 1000 THEN 'Others' 
@@ -47,7 +58,7 @@ BEGIN
 		,	cat.CategoryID AS CategoryIDs
 	FROM	CTS_DataCenter.CustomerCategory AS cat
 		LEFT JOIN CTS_DataCenter.TaggingToCategory AS ttc ON ttc.CategoryID = cat.CategoryID	
-	WHERE 	cat.ParentID = 200
+	WHERE 	cat.ParentID = CONST_PARENTID_NORMAL
 		AND cat.IsActive = 1
 	UNION
 	SELECT 'Others'  AS CategoryGroup

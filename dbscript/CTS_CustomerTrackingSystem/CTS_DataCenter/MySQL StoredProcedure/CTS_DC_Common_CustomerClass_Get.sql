@@ -14,7 +14,8 @@ BEGIN
 		Revisions:
 			- 20230912@Casey.Huynh: Created [Redmine ID: #193029]
             - 20240318@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
-			
+			- 20240425@Thomas.Nguyen: Classify Initial Group Betting - Add ParentID = 150 [Redmine ID: #200854]
+
 		Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DC_Common_CustomerClass_Get();
@@ -24,7 +25,9 @@ BEGIN
 	DECLARE	CONST_GROUPNAME_ASSOCIATEDPA 	VARCHAR(100) DEFAULT 'Associated PA';
 	DECLARE	CONST_GROUPNAME_OTHERS			VARCHAR(100) DEFAULT 'Others';
     
-    DECLARE	CONST_GROUPPRIORITY_DANGEROUS	SMALLINT UNSIGNED DEFAULT 5700;
+    DECLARE	CONST_PARENTID_PA 				INT DEFAULT 50;
+	DECLARE	CONST_PARENTID_POTENTIALPA 		INT DEFAULT 150;
+	DECLARE	CONST_PARENTID_NORMAL 			INT DEFAULT 200;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerClass;
     CREATE TEMPORARY TABLE Temp_CustomerClass(
@@ -38,16 +41,25 @@ BEGIN
     );
     
     INSERT IGNORE INTO Temp_CustomerClass (CustomerClassGroup, CustomerClass, CategoryIDs)
-    SELECT 	(CASE WHEN cat.GroupPriority = CONST_GROUPPRIORITY_DANGEROUS THEN CONST_GROUPNAME_NORMAL
-					ELSE CONST_GROUPNAME_PA END) AS CustomerClassGroup		    
+    SELECT 	CONST_GROUPNAME_PA AS CustomerClassGroup		    
 		,	cat.CustomerClass
 		,	GROUP_CONCAT(cat.CategoryID SEPARATOR ',')  AS CategoryIDs  
 	FROM	CTS_DataCenter.CustomerCategory AS cat
-	WHERE 	cat.ParentID = 50
+	WHERE 	cat.ParentID = CONST_PARENTID_PA
 		AND cat.IsActive = 1
         AND cat.CustomerClass IS NOT NULL
-	GROUP BY cat.CustomerClass, cat.CategoryGroup, cat.GroupPriority;
+	GROUP BY cat.CustomerClass, cat.CategoryGroup;
     
+	INSERT IGNORE INTO Temp_CustomerClass (CustomerClassGroup, CustomerClass, CategoryIDs)
+    SELECT 	CONST_GROUPNAME_NORMAL AS CustomerClassGroup		    
+		,	cat.CustomerClass
+		,	GROUP_CONCAT(cat.CategoryID SEPARATOR ',')  AS CategoryIDs  
+	FROM	CTS_DataCenter.CustomerCategory AS cat
+	WHERE 	cat.ParentID = CONST_PARENTID_POTENTIALPA
+		AND cat.IsActive = 1
+        AND cat.CustomerClass IS NOT NULL
+	GROUP BY cat.CustomerClass, cat.CategoryGroup;
+
 	INSERT IGNORE INTO Temp_CustomerClass (CustomerClassGroup, CustomerClass, CategoryIDs)
 	SELECT	(CASE WHEN ttc.TaggingType =1 THEN CONST_GROUPNAME_ASSOCIATEDPA 
 				 WHEN cat.CategoryGroup = 1000 THEN CONST_GROUPNAME_OTHERS 
@@ -57,7 +69,7 @@ BEGIN
 		,	cat.CategoryID AS CategoryIDs
 	FROM	CTS_DataCenter.CustomerCategory AS cat
 		LEFT JOIN CTS_DataCenter.TaggingToCategory AS ttc ON ttc.CategoryID = cat.CategoryID	
-	WHERE 	cat.ParentID = 200
+	WHERE 	cat.ParentID = CONST_PARENTID_NORMAL
 		AND cat.IsActive = 1
         AND cat.CustomerClass IS NOT NULL;
 

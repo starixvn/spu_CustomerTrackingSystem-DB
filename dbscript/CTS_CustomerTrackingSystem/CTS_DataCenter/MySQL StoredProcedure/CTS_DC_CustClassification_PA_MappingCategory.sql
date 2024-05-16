@@ -26,13 +26,17 @@ BEGIN
 			- 20230601@Victoria.Le:		Add TVSRequestID <> 0 for TVSRequestID IS NOT NULL [Redmine ID: #189023]
             - 20240306@Thomas.Nguyen:	Add log table for tracking TVS void request [Redmine ID: #201993]
 			- 20240321@Casey.Huynh: 	Classify Danger Score, Add GroupPriority [Redmine ID: #201358]
-            
+            - 20240423@Thomas.Nguyen: 	Classify initial group betting - Add SportGroupID = 150 [Redmine ID: #200854]
+
 		Param's Explanation (filtered by):      
 			CALL CTS_DC_CustClassification_PA_MappingCategory ('Category','[{"CustID": 3679910,"ReasonID": 3679910,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10, "MatchID": 1}]');
 	*/
 
     #=======================================================================================================
-    DROP TEMPORARY TABLE IF EXISTS Temp_PA;    
+    DECLARE	CONST_SPORTGROUP_PA 			TINYINT DEFAULT 0;
+	DECLARE	CONST_SPORTGROUP_POTENTIALPA 	INT DEFAULT 150;
+	
+	DROP TEMPORARY TABLE IF EXISTS Temp_PA;    
 	CREATE TEMPORARY TABLE Temp_PA(	  
 		/*Cust info*/
 			CustID					BIGINT UNSIGNED 
@@ -211,7 +215,7 @@ BEGIN
 		FROM Temp_PA AS t
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS c ON t.CustID = c.CustID
             INNER JOIN CustomerCategory AS cc ON c.CategoryID = cc.CategoryID
-		WHERE c.SportGroupID = 0;
+		WHERE c.SportGroupID IN (CONST_SPORTGROUP_PA, CONST_SPORTGROUP_POTENTIALPA);
 		
 		UPDATE Temp_PA AS t
 			INNER JOIN Temp_PAWinlossStatus AS r ON t.CustID = r.CustID
@@ -369,7 +373,7 @@ BEGIN
 		FROM Temp_PA AS t
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS c ON t.CustID = c.CustID
             INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON c.CategoryID = cc.CategoryID
-		WHERE c.SportGroupID = 0;
+		WHERE c.SportGroupID IN (CONST_SPORTGROUP_PA, CONST_SPORTGROUP_POTENTIALPA);
 		
 		UPDATE Temp_PA AS t
 			INNER JOIN Temp_PAWinlossStatus AS r ON t.CustID = r.CustID

@@ -16,7 +16,8 @@ sp : BEGIN
 			- 20230207@Long.Luu: 		Get exact lastticketdate [Redmine ID: #183281]
 			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
 			- 20230421@Casey.Huynh: 	Add AssType to AssociationByIP [Redmine ID: #185783]
-            
+            - 20240426@Thomas.Nguyen:	Classify Initial Group Betting - Add ParentID = 150 [Redmine ID: #200854]
+
         Param's Explanation (filtered by):
 
         Example:  
@@ -29,6 +30,7 @@ sp : BEGIN
 
     DECLARE	CONST_PA 					INT DEFAULT 50;
 	DECLARE	CONST_NORMAL 				INT DEFAULT 200;
+	DECLARE	CONST_POTENTIALPA 			INT DEFAULT 150;
 
     DECLARE	CONST_Tagging_Normal 		INT DEFAULT 0;
     DECLARE	CONST_Tagging_WithPA 		INT DEFAULT 1;
@@ -116,8 +118,8 @@ sp : BEGIN
 			LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON tmp.CTSCustID = cus.CTSCustID
             LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON tmp.CTSCustID = cls.CTSCustID
             LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON cls.CategoryID = cate.CategoryID
-        WHERE  (cus.CustStatusID IN (2,3,4,12,13,14) AND cate.ParentID = CONST_NORMAL AND cate.TaggingType = CONST_Tagging_Normal AND tmp.Days >= CONST_15Days)
-			OR (cus.CustStatusID NOT IN (2,3,4,12,13,14) AND cate.ParentID = CONST_NORMAL  AND cate.TaggingType = CONST_Tagging_Normal AND tmp.Days >= CONST_30Days)
+        WHERE  (cus.CustStatusID IN (2,3,4,12,13,14) AND ((cate.ParentID = CONST_NORMAL AND cate.TaggingType = CONST_Tagging_Normal) OR (cate.ParentID = CONST_POTENTIALPA)) AND tmp.Days >= CONST_15Days)
+			OR (cus.CustStatusID NOT IN (2,3,4,12,13,14) AND ((cate.ParentID = CONST_NORMAL  AND cate.TaggingType = CONST_Tagging_Normal) OR (cate.ParentID = CONST_POTENTIALPA)) AND tmp.Days >= CONST_30Days)
             OR (cate.ParentID = CONST_NORMAL  AND cate.TaggingType IN (CONST_Tagging_WithPA,CONST_Tagging_TW) AND tmp.Days >= CONST_60Days)
             OR (cate.ParentID = CONST_PA   AND tmp.Days >= CONST_90Days);
         

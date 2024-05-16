@@ -23,15 +23,16 @@ BEGIN
             - 20220331@Harvey.Nguyen: refactor code [Redmine ID: #170802]
 			- 20220426@Harvey.Nguyen: fix bug return duplicate category [Redmine ID: #170802]
 			- 20240320@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
-            
+            - 20240425@Thomas.Nguyen: Classify Initial Group Betting - Add ParentID = 150 [Redmine ID: #200854]
+
 		Param's Explanation:
 
 	*/ 
-	DECLARE	CONST_GROUPPRIORITY_DANGEROUS	SMALLINT UNSIGNED DEFAULT 5700;
     
     DECLARE lv_remark VARCHAR(50);
 	DECLARE	lv_GroupNormal	VARCHAR(50);
-		
+	DECLARE	CONST_PARENTID_POTENTIALPA 	INT DEFAULT 150;
+
 	SET lv_GroupNormal = (SELECT CategoryName FROM CustomerCategory WHERE CategoryID = 200);	
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustID;
@@ -77,12 +78,12 @@ BEGIN
 	GROUP BY cla.CustID, CategoryID;
 
     SELECT DISTINCT	c.CustID AS CustID
-		,	(	CASE WHEN a.GroupPriority =  CONST_GROUPPRIORITY_DANGEROUS THEN lv_GroupNormal 
+		,	(	CASE WHEN a.ParentID = CONST_PARENTID_POTENTIALPA THEN lv_GroupNormal 
 					ELSE b.CategoryName END) AS ParentCategoryName
 		,	a.CategoryName
     FROM Temp_LatestRecordOfCategory AS c
 		INNER JOIN CTS_DataCenter.CustomerCategory AS a ON c.CategoryID = a.CategoryID
-        INNER JOIN CTS_DataCenter.CustomerCategory AS b ON a.ParentID = b.CategoryID;  
+        LEFT JOIN CTS_DataCenter.CustomerCategory AS b ON a.ParentID = b.CategoryID;  
 	
 	# Begin: Cleanup
 	DROP TEMPORARY TABLE Temp_LatestRecordOfCategory;

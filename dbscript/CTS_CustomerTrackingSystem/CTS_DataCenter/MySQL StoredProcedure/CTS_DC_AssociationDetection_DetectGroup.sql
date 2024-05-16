@@ -25,7 +25,8 @@ sp:BEGIN
             - 20221107@Aries.Nguyen: Missing Agent info [RedmineID: #180181]
             - 20221205@Aries.Nguyen: Re-arrange type options on Association Detection  [Redmine ID: #181207]
 			- 20231116@Thomas.Nguyen: Return more Log Transaction info on Association Detection  [Redmine ID: #196362]
-            
+            - 20240425@Thomas.Nguyen: Classify Initial Group Betting - Add SportGroupID = 150 [Redmine ID: #200854]
+
 		Param's Explanation (filtered by):
 
         Example:
@@ -35,7 +36,8 @@ sp:BEGIN
 */
     DECLARE	CONST_GROUP_NORMAL 					INT DEFAULT 200;
     DECLARE	CONST_GROUP_PROBLEM 				INT DEFAULT 0;
-    
+    DECLARE	CONST_GROUP_POTENTIALPA 			INT DEFAULT 150;
+
     DECLARE lv_OrigID 		BIGINT;
     DECLARE lv_GroupID 		BIGINT DEFAULT 1;
     DECLARE lv_CustIDs 		LONGTEXT;
@@ -510,7 +512,7 @@ sp:BEGIN
         LEFT JOIN Temp_CustClassificationInfo AS cusclss ON cus.CustID = cusclss.CustID
         LEFT JOIN  Temp_CustAssociationType AS asTy ON cus.CTSCustID = asTy.CTSCustID
         LEFT JOIN Temp_Recommend AS re ON cus.Recommend = re.CustID
-		LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON cus.CustID = clss.CustID AND  clss.SportGroupID IN (CONST_GROUP_PROBLEM, CONST_GROUP_NORMAL)
+		LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON cus.CustID = clss.CustID AND  clss.SportGroupID IN (CONST_GROUP_PROBLEM, CONST_GROUP_NORMAL, CONST_GROUP_POTENTIALPA)
         LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID
         LEFT JOIN Temp_CustLogTransInfo AS cti ON cti.CTSCustID = cus.CTSCustID
 	GROUP BY cus.RowNumber 

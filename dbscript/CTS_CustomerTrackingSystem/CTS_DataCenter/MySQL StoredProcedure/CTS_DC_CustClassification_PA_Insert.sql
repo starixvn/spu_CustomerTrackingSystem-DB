@@ -25,7 +25,8 @@ BEGIN
 			- 20230601@Victoria.Le:			Add TVSRequestID <> 0 for TVSRequestID IS NOT NULL [Redmine ID: #189023]
 			- 20231228@Thomas.Nguyen:		Update SourceTypeID for System Detect Unauthorized Login [Redmine ID: #197710]
             - 20240315@Casey.Huynh: 		Classify Danger Score, Lower GroupPriority is remove when the same ParentID [Redmine ID: #201358]
-            
+            - 20240423@Thomas.Nguyen:		Classify initial group betting - Add SportGroupID = 150, return CategoryType = 2 when ParentID = 150 [Redmine ID: #200854]
+
         Param's Explanation (filtered by):
 			- ip_InputType: 1: Category, 2: Reason
         Example:
@@ -35,10 +36,10 @@ BEGIN
                     ,"CategoryID":65,"CategoryGroup":65,"Remark":"Test"
 					,"CreatedBy":10278938,"WinlossStatus":0,"TurnoverRM":20000,"WinlossRM":-11000,"BetCount":100,"ActiveDays":10}]');
 	*/   
-	DECLARE	CONST_GROUPPRIORITY_DANGEROUS	SMALLINT UNSIGNED DEFAULT 5700;
-    
+
 	DECLARE lv_CurrentDateTime				DATETIME DEFAULT CURRENT_TIME(); 
 	DECLARE	CONST_SPORTGROUP_PA 			TINYINT DEFAULT 0;
+	DECLARE	CONST_SPORTGROUP_POTENTIALPA 	INT DEFAULT 150;
 	DECLARE CONST_ACTIONTYPE_INSERT 		INT DEFAULT 0;
 	DECLARE	CONST_ACTIONTYPE_UPDATE 		INT DEFAULT 1;
 	DECLARE CONST_SPORTGROUP_NORMAL 		INT DEFAULT 200;
@@ -50,6 +51,7 @@ BEGIN
 	DECLARE CONST_LICVIPNORMAL_CATEGORYID	SMALLINT UNSIGNED DEFAULT 4;    
 	DECLARE	CONST_CATEGORY_UNAUTHORIZEDLOGIN 		INT DEFAULT 64;
     DECLARE	CONST_CATEGORY_UNAUTHORIZEDLOGIN_LOSING	INT DEFAULT 104;
+	DECLARE	CONST_PARENTID_POTENTIALPA				INT DEFAULT 150;
 
 	DECLARE lv_LicVIPProblem_CC				SMALLINT UNSIGNED;
 	DECLARE lv_LicVIPNormal_CC				SMALLINT UNSIGNED; 
@@ -158,7 +160,7 @@ BEGIN
 		,	tmpPa.SportType
 		,	tmpPa.IssueTypeID
 	FROM Temp_PA AS tmpPa
-	WHERE tmpPa.PinCTSCustID IS NOT NULL; 
+	WHERE tmpPa.PinCTSCustID IS NOT NULL AND tmpPa.ParentID <> CONST_PARENTID_POTENTIALPA;
     
     DELETE tmpPa
     FROM Temp_PA AS tmpPa
@@ -216,13 +218,13 @@ BEGIN
     FROM CTS_DataCenter.CTSCustomerClassification AS clss
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID
 		INNER JOIN Temp_PA AS tmpPa ON tmpPa.CustID = clss.CustID
-	WHERE cat.ParentID = tmpPa.ParentID AND cat.GroupPriority >  tmpPa.GroupPriority;
+	WHERE cat.GroupPriority >  tmpPa.GroupPriority AND clss.SportGroupID IN (CONST_SPORTGROUP_PA, CONST_SPORTGROUP_POTENTIALPA);
     
 	DELETE tmpPa
     FROM Temp_PA AS tmpPa 
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON tmpPa.CustID = clss.CustID
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID		
-	WHERE cat.ParentID = tmpPa.ParentID AND cat.GroupPriority <  tmpPa.GroupPriority;
+	WHERE cat.GroupPriority <  tmpPa.GroupPriority AND clss.SportGroupID IN (CONST_SPORTGROUP_PA, CONST_SPORTGROUP_POTENTIALPA);
     
     #=============REMOVE PA PROBATION LIST WHEN IsProbation = 0=============
     DELETE pro
@@ -260,7 +262,7 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON tmpPa.CustID = cls.CustID
         INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID
         LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpPa.CustID = sp.CustID 			
-	WHERE cls.SportGroupID = CONST_SPORTGROUP_PA;
+	WHERE cls.SportGroupID IN (CONST_SPORTGROUP_PA, CONST_SPORTGROUP_POTENTIALPA);
     
     UPDATE Temp_PA AS tmpPa
 		INNER JOIN CTS_DataCenter.CTSCustomerClassificationOldCategory AS cls ON tmpPa.CustID = cls.CustID 
@@ -411,7 +413,7 @@ BEGIN
 		,	tmpPa.CTSCustID
 		, 	tmpPa.SubscriberID
 		, 	tmpPa.CategoryGroup AS CategoryID
-		, 	CONST_SPORTGROUP_PA AS SportGroupID
+		, 	CASE WHEN tmpPa.ParentID = CONST_PARENTID_POTENTIALPA THEN CONST_SPORTGROUP_POTENTIALPA ELSE CONST_SPORTGROUP_PA END AS SportGroupID
 		, 	NOW()
 		, 	tmpPa.CreatedBy
 		, 	IFNULL(tmpPa.LastModifiedDate, NOW()) AS LastModifiedDate
@@ -437,7 +439,7 @@ BEGIN
 	SELECT 	tmpPa.CustID
 		, 	tmpPa.CTSCustID
 		, 	tmpPa.CategoryID
-		, 	CONST_SPORTGROUP_PA AS SportGroupID
+		, 	CASE WHEN tmpPa.ParentID = CONST_PARENTID_POTENTIALPA THEN CONST_SPORTGROUP_POTENTIALPA ELSE CONST_SPORTGROUP_PA END AS SportGroupID
 		, 	NOW() AS LastModifiedDate
 		, 	tmpPa.CreatedBy AS LastModifiedBy
 		, 	tmpPa.ActionType
@@ -473,7 +475,7 @@ BEGIN
 	SELECT 	tmpPa.CustID
 		,	tmpPa.CTSCustID
 		,	tmpPa.CategoryID
-		,	CONST_SPORTGROUP_PA AS SportGroupID
+		,	CASE WHEN tmpPa.ParentID = CONST_PARENTID_POTENTIALPA THEN CONST_SPORTGROUP_POTENTIALPA ELSE CONST_SPORTGROUP_PA END AS SportGroupID
 		,	IFNULL(tmpPa.LastModifiedDate,NOW())
 		,	tmpPa.CreatedBy AS LastModifiedBy
 		,	tmpPa.ActionType
@@ -570,7 +572,7 @@ BEGIN
 	SELECT	DISTINCT 
 			tmpPa.CustID
 		,	tmpPa.CTSCustID
-        , 	(CASE WHEN tmpPa.GroupPriority = CONST_GROUPPRIORITY_DANGEROUS THEN 2 ELSE 1 END) AS CategoryType
+        , 	(CASE WHEN tmpPa.ParentID = CONST_PARENTID_POTENTIALPA THEN 2 ELSE 1 END) AS CategoryType
     FROM Temp_PA AS tmpPa; 
 
 	# INSERT INTO CTS_Log.CTSDebugLog(SPName, InsertTime, OtherText, JsonString1)

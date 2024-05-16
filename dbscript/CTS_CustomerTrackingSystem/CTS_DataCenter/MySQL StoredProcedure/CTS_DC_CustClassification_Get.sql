@@ -32,7 +32,8 @@ BEGIN
 			- 20220328@Aries.Nguyen: Add new category/class for PA Probation [Redmine ID: #170468]
 			- 20220531@Aries.Nguyen: Renovate process PA [Redmine ID: #172561]
             - 20240318@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
-            
+            - 20240424@Thomas.Nguyen: Classify initial group betting - Add ParentID = 150 [Redmine ID: #200854]
+
 		Param's Explanation:
         
 		Example:
@@ -42,12 +43,11 @@ BEGIN
 	 */ 	
     DECLARE	CONST_GROUP_NORMAL 		INT DEFAULT 200;
     DECLARE	CONST_GROUP_PA 			INT DEFAULT 50;
-    
+    DECLARE	CONST_GROUP_POTENTIALPA INT DEFAULT 150;
+
     DECLARE	CONST_CATEGORYGROUP_ROBOT 		INT DEFAULT 61;
     DECLARE	CONST_CATEGORYGROUP_BADROBOT 	INT DEFAULT 163;
     DECLARE	CONST_CATEGORYGROUP_GOODROBOT	INT DEFAULT 164;
-    
-    DECLARE	CONST_GROUPPRIORITY_DANGEROUS	SMALLINT UNSIGNED DEFAULT 5700;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory;
     CREATE TEMPORARY TABLE Temp_LatestRecordOfCategory(
@@ -66,7 +66,7 @@ BEGIN
 					END)
 				,	cc.CategoryName
                 ,	cc.CategoryGroup
-				,	(CASE WHEN cc.ParentID = CONST_GROUP_PA AND cc.GroupPriority = CONST_GROUPPRIORITY_DANGEROUS THEN 2
+				,	(CASE WHEN cc.ParentID = CONST_GROUP_POTENTIALPA THEN 2
 							WHEN cc.ParentID = CONST_GROUP_PA THEN 1
                             WHEN cc.ParentID = CONST_GROUP_NORMAL  THEN 3 END) AS CategoryType
 				,	cc.ParentID
@@ -74,7 +74,7 @@ BEGIN
 	FROM	CTS_DataCenter.CTSCustomerClassification AS cate
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
     WHERE	cate.CTSCustID = ip_CTSCustID 
-		AND cc.ParentID IN (CONST_GROUP_PA, CONST_GROUP_NORMAL)
+		AND cc.ParentID IN (CONST_GROUP_PA, CONST_GROUP_NORMAL, CONST_GROUP_POTENTIALPA)
         AND cc.IsActive = 1;
     
     IF (SELECT COUNT(DISTINCT ParentID) FROM Temp_LatestRecordOfCategory) > 1 THEN

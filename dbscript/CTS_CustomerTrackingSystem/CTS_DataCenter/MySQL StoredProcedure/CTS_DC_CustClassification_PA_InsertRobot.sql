@@ -24,7 +24,8 @@ BEGIN
             - 20230516@Casey.Huynh:		New Category for Robot OCRD [RedmineID: #186991]
 			- 20231009@Casey.Huynh:		Fixed Issue Duplicate Rescan Robot Log [RedmineID: #193049]
             - 20240319@Casey.Huynh: 	Classify Danger Score [Redmine ID: #201358]
-            
+            - 20240425@Thomas.Nguyen:	Classify Initial Group Betting - Add SportGroupID = 150 [Redmine ID: #200854]
+			
         Param's Explanation: 
 
 		Example:
@@ -45,6 +46,8 @@ BEGIN
     DECLARE	CONST_CATEGORYID_LICVIP				INT DEFAULT 4;
     DECLARE CONST_SPORTGROUP_NORMAL 			INT DEFAULT 200;
     DECLARE	CONST_SPORTGROUP_PA 				INT DEFAULT 0;
+	DECLARE	CONST_SPORTGROUP_POTENTIALPA 		INT DEFAULT 150;
+	DECLARE	CONST_SPORTGROUP_WRAPPER 			INT DEFAULT 100;
     DECLARE	CONST_CATEGORY_RISKY 				INT DEFAULT 203;
     DECLARE	CONST_CATEGORY_SMART				INT DEFAULT 204;
     
@@ -54,8 +57,6 @@ BEGIN
     DECLARE CONST_SOURCETYPE_INSERTROBOT		INT DEFAULT 37;
     
     DECLARE	CONST_ACTIONTYPE_UPDATE 			INT DEFAULT 1;
-    
-    DECLARE	CONST_GROUPPRIORITY_DANGEROUS	SMALLINT UNSIGNED DEFAULT 5700;
     
     DECLARE lv_Now								DATETIME DEFAULT NOW();
     DECLARE lv_CreatedBy 						INT DEFAULT 10278938;
@@ -537,7 +538,7 @@ BEGIN
 		INNER JOIN Temp_PA AS pa ON pa.CustID = cate.CustID
         INNER JOIN CTS_DataCenter.CustomerCategory AS tbl ON cate.RelevantCategoryID = tbl.CategoryID 
     WHERE cate.IsChangeWinloss = 1 
-        AND cate.SportGroupID != 100;
+        AND cate.SportGroupID NOT IN (CONST_SPORTGROUP_WRAPPER, CONST_SPORTGROUP_POTENTIALPA);
     
     DELETE tmp
     FROM Temp_ExistCate AS tmp
@@ -576,9 +577,7 @@ BEGIN
 				  FROM  Temp_PA AS pa
                   WHERE pa.CustID = clss.CustID  
 					AND pa.IsDataChanged = 1
-					AND (	clss.SportGroupID = CONST_SPORTGROUP_NORMAL
-							OR (clss.SportGroupID = CONST_SPORTGROUP_PA AND cat.GroupPriority = CONST_GROUPPRIORITY_DANGEROUS)
-						)
+					AND clss.SportGroupID IN (CONST_SPORTGROUP_NORMAL, CONST_SPORTGROUP_POTENTIALPA)
 					);
                     
     DELETE pro

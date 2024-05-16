@@ -16,6 +16,7 @@ BEGIN
 			- 20211214@Aries.Nguyen: Created [Redmine ID: #165105]
 			- 20220407@Irena.Vo: Get additional date for New Member(no bet in 30 last days), PA, Robot [Redmine ID: #170468]
 			- 20220603@Long.Luu: Merge Robot AI & Robot TW [Redmine ID: #172561]
+			- 20240425@Thomas.Nguyen: Classify Initial Group Betting - Add SportGroupID = 150 [Redmine ID: #200854]
 
 		Param's Explanation (filtered by):
         Example:
@@ -23,7 +24,8 @@ BEGIN
 	*/
     DECLARE	CONST_GROUP_NORMAL 				INT DEFAULT 200;
     DECLARE	CONST_GROUP_PROBLEM				INT DEFAULT 0;
-    
+    DECLARE	CONST_GROUP_POTENTIALPA 		INT DEFAULT 150;
+
     DECLARE	CONST_CATEGORYGROUP_PROBATION 	INT DEFAULT 206;
     DECLARE	CONST_CATEGORYGROUP_NEWMEMBER 	INT DEFAULT 201;
     DECLARE	CONST_CATEGORYGROUP_ROBOT 		INT DEFAULT 61;
@@ -57,7 +59,7 @@ BEGIN
     FROM CTS_DataCenter.CTSCustomerClassification AS clss
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID =  clss.CategoryID
     WHERE clss.CTSCustID = ip_CTSCustID
-			AND clss.SportGroupID = CONST_GROUP_PROBLEM 
+			AND clss.SportGroupID IN (CONST_GROUP_PROBLEM , CONST_GROUP_POTENTIALPA)
             AND cate.CategoryGroup NOT IN (CONST_CATEGORYGROUP_ROBOT, CONST_CATEGORYGROUP_BADROBOT, CONST_CATEGORYGROUP_GOODROBOT)
     LIMIT 1;
     
