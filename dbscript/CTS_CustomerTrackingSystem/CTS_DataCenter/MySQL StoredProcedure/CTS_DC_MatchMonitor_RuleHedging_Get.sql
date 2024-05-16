@@ -157,10 +157,9 @@ sp: BEGIN
 		SELECT sys.ParameterValue
         INTO lv_LastSequenceID
         FROM CTS_DataCenter.SystemParameter AS sys
-        WHERE ParameterID = 121;
-        
-        #========================================================
-        INSERT INTO Temp_OldGroup(MatchID, ScoreDiff, BettypeID, BetID, Betteam, GroupID)
+        WHERE ParameterID = 121;      
+
+		INSERT INTO Temp_OldGroup(MatchID, ScoreDiff, BettypeID, BetID, Betteam, GroupID)
         SELECT	mms.MatchID
 			,	mms.ScoreDiff
             ,	mms.BettypeID
@@ -168,8 +167,7 @@ sp: BEGIN
             ,	mms.Betteam
             ,	mms.GroupID
         FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
-		WHERE mms.SequenceID <= lv_LastSequenceID
-			AND mms.GroupID > 0
+		WHERE mms.SequenceID <= lv_LastSequenceID AND mms.GroupID > 0
         GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, mms.GroupID;  
                             
         #==========Get Next Trans In TimeStep==================
@@ -180,44 +178,45 @@ sp: BEGIN
         ORDER BY mms.SequenceID ASC
         LIMIT 1;        
 
-        SELECT MAX(tmp.SequenceID)
+		SELECT mms.SequenceID
         INTO lv_MaxSequenceID
-        FROM (	SELECT mms.SequenceID
-				FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms 
-                WHERE mms.TransDate <= lv_MaxTransDate 
-                ORDER BY mms.SequenceID 
-                LIMIT lv_NoOfRow) AS tmp;
+		FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms 
+		WHERE mms.TransDate <= lv_MaxTransDate 
+			AND mms.SequenceID > lv_LastSequenceID
+		ORDER BY mms.SequenceID DESC
+		LIMIT 1;
 
-        IF	(lv_LastSequenceID < lv_MaxSequenceID) THEN # If Has New Trans   
+        IF(lv_LastSequenceID < lv_MaxSequenceID) THEN # If Has New Trans   
+
 			SELECT	mms.MatchID
 				,	mms.ScoreDiff
 				,	mms.BettypeID
 				,	mms.BetID
 				,	mms.Betteam
                 ,	MIN(mms.SportType) AS SportType
-				#,	IFNULL(tmpOg.GroupID,0) AS OldGroup
-				,	GROUP_CONCAT(DISTINCT mms.CTSCustID) AS CTSCustIDList
+			#	,	tmpOg.GroupID AS OldGroup
+                ,	GROUP_CONCAT(DISTINCT mms.CTSCustID) AS CTSCustIDList
 				,	CASE WHEN COUNT(DISTINCT CASE WHEN mms.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET) THEN mms.CTSCustID ELSE NULL END) > 1 
 												THEN GROUP_CONCAT(DISTINCT CASE WHEN mms.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET) THEN mms.CTSCustID ELSE NULL END)
 								ELSE NULL END AS AgentDetect_CTSCustIDList
 				,	GROUP_CONCAT(mms.SequenceID) AS SequenceIDList
-			FROM  CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
+			FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
 				LEFT JOIN Temp_OldGroup AS tmpOg ON mms.MatchID = tmpOg.MatchID AND mms.ScoreDiff = tmpOg.ScoreDiff AND mms.BettypeID = tmpOg.BettypeID
-													AND mms.BetID = tmpOg.BetID AND mms.Betteam = tmpOg.Betteam 
+													AND mms.BetID = tmpOg.BetID AND mms.Betteam = tmpOg.Betteam
 													AND (mms.GroupID = tmpOg.GroupID OR mms.GroupID = 0)
 			WHERE mms.SequenceID <= lv_MaxSequenceID 
 			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID
 			HAVING COUNT(DISTINCT mms.CustID) > 1
 			ORDER BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID;
+			
+            SET op_MaxSequenceID = lv_MaxSequenceID ;
             
-            SET op_MaxSequenceID = lv_MaxSequenceID;
-		ELSE # # Get Next Trans > 3 minute to Clear Trans
-
+		ELSE # Get Next Trans > 3 minute to Clear Trans
 			SET op_MaxSequenceID = (SELECT mms.SequenceID 
-									FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
-                                    WHERE mms.SequenceID > lv_LastSequenceID
-                                    ORDER BY mms.SequenceID ASC
-                                    LIMIT 1);
+						FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
+						WHERE mms.SequenceID > lv_LastSequenceID
+						ORDER BY mms.SequenceID ASC
+						LIMIT 1);
 		END IF;
         
 	END IF;
