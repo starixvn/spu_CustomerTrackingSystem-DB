@@ -24,7 +24,6 @@ sp: BEGIN
 	*/
     DECLARE lv_MaxArchiveTime 	DATETIME(3);
     DECLARE lv_MaxCustID 		INT UNSIGNED;
-    DECLARE lv_CurrentDateTime	DATETIME DEFAULT CURRENT_TIME();
    
    DROP TEMPORARY TABLE IF EXISTS Temp_InputCustomer;
     CREATE TEMPORARY TABLE Temp_InputCustomer(
@@ -103,7 +102,7 @@ sp: BEGIN
     INSERT INTO CTS_DataCenter.Adhoc_202405_CustMissingArchive(CustID, ArchivedDate, CreatedTime)
     SELECT 	DISTINCT CustID
 			,	ArchivedDate
-            ,	lv_CurrentDateTime
+            ,	CURRENT_TIMESTAMP(3)
     FROM Temp_ArchiveCTSCustomer;
     
     IF EXISTS(SELECT 1 FROM  Temp_InputCustomer)

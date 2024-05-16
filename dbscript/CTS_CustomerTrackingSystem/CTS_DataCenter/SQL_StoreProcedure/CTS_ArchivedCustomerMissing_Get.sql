@@ -19,7 +19,7 @@ AS
 
 	Developer's Notes:
     
-	EXEC CTS_ArchiveCustomer_Get '2021-02-03 03:35:51.810','2021-02-03 03:35:51.810',100,150,1	
+	EXEC CTS_ArchivedCustomerMissing_Get '2021-02-03 03:35:51.810','2021-02-03 03:35:51.810',100,150,1	
 
 */
 BEGIN;
@@ -33,7 +33,7 @@ BEGIN;
 	
 	CREATE TABLE #tmpArchivedCustomers (
 			ArchivedDate DATETIME
-		,	CustId		INT
+		,	CustId		 INT
 	);
 	
 	CREATE CLUSTERED INDEX IX_tmpArchivedCustomers_ArchivedDateCustId ON #tmpArchivedCustomers(
@@ -71,7 +71,7 @@ BEGIN;
 		INSERT INTO #tmpArchivedCustomers(ArchivedDate, CustID)
 		SELECT		TOP(@rowSize) arc.ArchivedDate
 					, arc.CustID
-		FROM		Bodb_Archive_Customer_Licensee.dbo.custInfo AS arc WITH(NOLOCK)
+		FROM		bodb02.dbo.Dep_Customer_Archived AS arc WITH(NOLOCK)
 		WHERE		arc.ArchivedDate = @lastArchiveDate
 					AND arc.CustId > @lastCustId
 					AND NOT EXISTS (SELECT 1 FROM bodb02.dbo.Customer AS cust WITH(NOLOCK) WHERE cust.CustID = arc.CustID)
@@ -84,7 +84,7 @@ BEGIN;
 			INSERT INTO #tmpArchivedCustomers(ArchivedDate, CustID)
 			SELECT		TOP(@rowSize - @rowCount) arc.ArchivedDate
 					,	arc.CustID
-			FROM		Bodb_Archive_Customer_Licensee.dbo.custInfo AS arc WITH(NOLOCK)
+			FROM		bodb02.dbo.Dep_Customer_Archived AS arc WITH(NOLOCK)
 			WHERE		arc.ArchivedDate > @lastArchiveDate
 						AND arc.ArchivedDate <= @maxArchiveDate
 						AND NOT EXISTS (SELECT 1 FROM bodb02.dbo.Customer AS cust WITH(NOLOCK) WHERE cust.CustID = arc.CustID)
