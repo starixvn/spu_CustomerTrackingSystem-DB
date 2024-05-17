@@ -21,12 +21,21 @@ AS
 		- 20240416@Victoria.Le:	  Exclude EC2024 [Redmine ID: #202847]
 		- 20240405@Victoria.Le:	  Edit SP to improve performance [Redmine ID: #200842]
 		- 20240405@Victoria.Le:	  GBTicketCount is being updated latency because schedule of service ScanTicket [Redmine ID: #200842]
+		- 20240405@Victoria.Le:	  Not update GBTicketCount when table TWGroupBettingTicket is being deleted data by job [Redmine ID: #200842]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_UpdateTotalTicket] @LastScannedTime = '2022-03-10 03:39:12.230'
 */
 BEGIN
 	SET NOCOUNT ON;
+	
+	DECLARE 	@CleanTicketFlag_ParameterID			SMALLINT = 7
+			,	@CleanTicketFlag_Value					SMALLINT
+			,	@CleanTicketFlag_READY					SMALLINT = 0
+			,	@CleanTicketFlag_WAITING				SMALLINT = -1
+			,	@CleanTicketFlag_INPROGRESS				SMALLINT = 1
+			,	@CleanTicketFlag_FINISH					SMALLINT = 2
+			;
 	
 	DECLARE @TmpSpecialEventLeague AS TABLE (LeagueId INT PRIMARY KEY);
 	DECLARE @TmpPlatformDesktop AS TABLE (BetFrom VARCHAR(5) PRIMARY KEY);
@@ -138,18 +147,6 @@ BEGIN
 	
 	CREATE CLUSTERED INDEX #CIX_tmpScanningCust_CustId_ScanDate ON #tmpScanningCust (Custid,ScanDate);
 	
-	INSERT INTO #tmpTWGroupBettingTicket (CustId,ScanDate,GBTicketCount)
-	SELECT 	gbt.CustId
-		,	gbt.TransDate
-		,	COUNT(gbt.TransId)
-	FROM dbo.TWGroupBettingTicket AS gbt WITH (NOLOCK)
-	GROUP BY gbt.CustId,gbt.TransDate;
-	
-	UPDATE sc
-	SET	sc.GBTicketCount = TEMP.GBTicketCount
-	FROM #tmpScanningCust AS sc 
-	INNER JOIN #tmpTWGroupBettingTicket AS TEMP ON TEMP.CustId = sc.CustId AND TEMP.ScanDate = sc.ScanDate;
-
 	INSERT INTO dbo.TWGroupBettingCustomer(CustId,ScanDate,GBTicketCount,TicketCount,ParlayTicketCount,RejectTicketCount,DesktopTicketCount)
 	SELECT	sc.CustId
 		,	sc.ScanDate
@@ -161,24 +158,52 @@ BEGIN
 	FROM #tmpScanningCust AS sc WITH(NOLOCK)
 		LEFT JOIN dbo.TWGroupBettingCustomer AS gbc WITH(NOLOCK) ON sc.CustId = gbc.CustId AND sc.ScanDate = gbc.ScanDate
 	WHERE gbc.CustId IS NULL AND sc.IsInserted = 1;
-
-	UPDATE 	gbc WITH(UPDLOCK, ROWLOCK)
-	SET 	gbc.GBTicketCount = sc.GBTicketCount
-		,	gbc.LastModifiedDate = GETDATE()
-	FROM dbo.TWGroupBettingCustomer AS gbc
-		INNER JOIN #tmpScanningCust AS sc ON sc.CustId = gbc.CustId AND sc.ScanDate = gbc.ScanDate
-	WHERE gbc.GBTicketCount <> sc.GBTicketCount
-	;
 	
-	UPDATE 	gbc WITH(UPDLOCK, ROWLOCK)
-	SET 	gbc.GBTicketCount = gbt.GBTicketCount
-		,	gbc.LastModifiedDate = GETDATE()
-	FROM dbo.TWGroupBettingCustomer AS gbc
-		INNER JOIN #tmpTWGroupBettingTicket AS gbt ON gbt.CustId = gbc.CustId AND gbt.ScanDate = gbc.ScanDate
-		LEFT JOIN #tmpScanningCust AS sc ON sc.CustId = gbc.CustId AND sc.ScanDate = gbc.ScanDate
-	WHERE sc.CustId IS NULL
-		AND gbc.GBTicketCount <> gbt.GBTicketCount
-	;
+	SELECT 	@CleanTicketFlag_Value = s.ParameterValue
+    FROM 	dbo.SystemParameter AS s WITH (NOLOCK)
+    WHERE 	s.ParameterID = @CleanTicketFlag_ParameterID;
+	
+	INSERT INTO #tmpTWGroupBettingTicket (CustId,ScanDate,GBTicketCount)
+	SELECT 	gbt.CustId
+		,	gbt.TransDate
+		,	COUNT(gbt.TransId)
+	FROM dbo.TWGroupBettingTicket AS gbt WITH (NOLOCK)
+	GROUP BY gbt.CustId,gbt.TransDate;
+	
+	UPDATE sc
+	SET	sc.GBTicketCount = TEMP.GBTicketCount
+	FROM #tmpScanningCust AS sc 
+	INNER JOIN #tmpTWGroupBettingTicket AS TEMP ON TEMP.CustId = sc.CustId AND TEMP.ScanDate = sc.ScanDate;
+	
+	IF (@CleanTicketFlag_Value = @CleanTicketFlag_FINISH)
+	BEGIN
+		UPDATE 	gbc WITH(UPDLOCK, ROWLOCK)
+		SET 	gbc.GBTicketCount = sc.GBTicketCount
+			,	gbc.LastModifiedDate = GETDATE()
+		FROM dbo.TWGroupBettingCustomer AS gbc
+			INNER JOIN #tmpScanningCust AS sc ON sc.CustId = gbc.CustId AND sc.ScanDate = gbc.ScanDate
+		WHERE gbc.GBTicketCount <> sc.GBTicketCount;
+		
+		UPDATE 	gbc WITH(UPDLOCK, ROWLOCK)
+		SET 	gbc.GBTicketCount = gbt.GBTicketCount
+			,	gbc.LastModifiedDate = GETDATE()
+		FROM dbo.TWGroupBettingCustomer AS gbc
+			INNER JOIN #tmpTWGroupBettingTicket AS gbt ON gbt.CustId = gbc.CustId AND gbt.ScanDate = gbc.ScanDate
+			LEFT JOIN #tmpScanningCust AS sc ON sc.CustId = gbc.CustId AND sc.ScanDate = gbc.ScanDate
+		WHERE sc.CustId IS NULL
+			AND gbc.GBTicketCount <> gbt.GBTicketCount;
+	
+	END
+	ELSE IF (@CleanTicketFlag_Value = @CleanTicketFlag_READY)
+	BEGIN
+		UPDATE 	gbc WITH(UPDLOCK, ROWLOCK)
+		SET 	gbc.GBTicketCount = sc.GBTicketCount
+			,	gbc.LastModifiedDate = GETDATE()
+		FROM dbo.TWGroupBettingCustomer AS gbc
+			INNER JOIN #tmpScanningCust AS sc ON sc.CustId = gbc.CustId AND sc.ScanDate = gbc.ScanDate
+		WHERE gbc.GBTicketCount <> sc.GBTicketCount;
+	
+	END;
 
 	;WITH cte_TicketCount AS (
 		SELECT DISTINCT bt.Custid
