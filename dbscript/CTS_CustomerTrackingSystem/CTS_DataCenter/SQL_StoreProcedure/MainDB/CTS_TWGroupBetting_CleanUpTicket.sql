@@ -8,6 +8,7 @@ AS
 
 	Revisions:
 		- 20240405@Victoria.Le:	Initial Writing [Redmine ID: #200842]
+		- 20240405@Victoria.Le:	Enhance SP to not update Flag if there is no data to delete [Redmine ID: #200842]
 		
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_CleanUpTicket] 
@@ -33,6 +34,8 @@ BEGIN
 		,	@BatchSize								INT = 5000
 		,	@RC										INT = 0
 		,	@DeletedCount							INT = 0
+		,	@IsExists_TicketHistory					BIT = 0
+		,	@IsExists_Ticket						BIT = 0
 		;
 		
 	SELECT 	@CleanTicketFlag_Value = s.ParameterValue
@@ -44,15 +47,10 @@ BEGIN
 	BEGIN
 		RETURN;
 	END
-	ELSE IF (@CleanTicketFlag_Value = @CleanTicketFlag_FINISH)
+	ELSE IF (@CleanTicketFlag_Value = @CleanTicketFlag_FINISH) 
+			OR (@CleanTicketFlag_Value = @CleanTicketFlag_WAITING)
 	BEGIN
-		UPDATE 	dbo.SystemParameter WITH(UPDLOCK, ROWLOCK)
-		SET 	ParameterValue = @CleanTicketFlag_READY
-		WHERE 	ParameterID = @CleanTicketFlag_ParameterID
-			AND ParameterValue = @CleanTicketFlag_FINISH;
-	END
-	ELSE IF (@CleanTicketFlag_Value = @CleanTicketFlag_WAITING)
-	BEGIN
+	
 		SELECT 	@RemainDays_TicketHistory_Value = s.ParameterValue
 		FROM 	dbo.SystemParameter AS s WITH (NOLOCK)
 		WHERE 	s.ParameterID = @RemainDays_TicketHistory_ParameterID;
@@ -65,71 +63,100 @@ BEGIN
 		SET @ArchivedDate_Ticket 		= DATEADD(DAY, -@RemainDays_Ticket_Value, GETDATE());
 	
 		IF EXISTS (SELECT 1 FROM dbo.TWGroupBettingTicket_History AS gbh WITH (NOLOCK)
-					WHERE gbh.TransDate <= @ArchivedDate_TicketHistory)
+						WHERE gbh.TransDate <= @ArchivedDate_TicketHistory)
 		BEGIN
-			UPDATE 	dbo.SystemParameter WITH(UPDLOCK, ROWLOCK)
-			SET 	ParameterValue = @CleanTicketFlag_INPROGRESS
-			WHERE 	ParameterID = @CleanTicketFlag_ParameterID
-				AND ParameterValue = @CleanTicketFlag_WAITING;
-		
-			WHILE(1 = 1)
-			BEGIN
-				DELETE TOP(@BatchSize) gbh
-				FROM dbo.TWGroupBettingTicket_History AS gbh WITH(ROWLOCK)
-				WHERE gbh.TransDate <= @ArchivedDate_TicketHistory;
-				
-				SET @RC = @@ROWCOUNT;
-				IF (@RC = 0)
-				BEGIN
-					BREAK;
-				END
-				ELSE
-				BEGIN
-					SET @DeletedCount = @DeletedCount + @RC;
-				END;
-				
-				WAITFOR DELAY '00:00:0.100';
-			END;
-			
+			SET @IsExists_TicketHistory = 1;
 		END;
 		
 		IF EXISTS (SELECT 1 FROM dbo.TWGroupBettingTicket AS gb WITH (NOLOCK)
-					WHERE gb.TransDate <= @ArchivedDate_Ticket)
+						WHERE gb.TransDate <= @ArchivedDate_Ticket)	
 		BEGIN
-			UPDATE 	dbo.SystemParameter WITH(UPDLOCK, ROWLOCK)
-			SET 	ParameterValue = @CleanTicketFlag_INPROGRESS
-			WHERE 	ParameterID = @CleanTicketFlag_ParameterID
-				AND ParameterValue = @CleanTicketFlag_WAITING;
+			SET @IsExists_Ticket = 1;
+		END;
 		
-			WHILE(1 = 1)
+		-- ------------------------------------------------
+		IF @CleanTicketFlag_Value = @CleanTicketFlag_WAITING
+		BEGIN
+			IF @IsExists_TicketHistory = 1 
 			BEGIN
-				DELETE TOP(@BatchSize) gb
-				FROM dbo.TWGroupBettingTicket AS gb WITH(ROWLOCK)
-				WHERE gb.TransDate <= @ArchivedDate_Ticket;
-				
-				SET @RC = @@ROWCOUNT;
-				IF (@RC = 0)
+				UPDATE 	dbo.SystemParameter WITH(UPDLOCK, ROWLOCK)
+				SET 	ParameterValue = @CleanTicketFlag_INPROGRESS
+				WHERE 	ParameterID = @CleanTicketFlag_ParameterID
+					AND ParameterValue = @CleanTicketFlag_WAITING;
+			
+				WHILE(1 = 1)
 				BEGIN
-					BREAK;
-				END
-				ELSE
-				BEGIN
-					SET @DeletedCount = @DeletedCount + @RC;
+					DELETE TOP(@BatchSize) gbh
+					FROM dbo.TWGroupBettingTicket_History AS gbh WITH(ROWLOCK)
+					WHERE gbh.TransDate <= @ArchivedDate_TicketHistory;
+					
+					SET @RC = @@ROWCOUNT;
+					IF (@RC = 0)
+					BEGIN
+						BREAK;
+					END
+					ELSE
+					BEGIN
+						SET @DeletedCount = @DeletedCount + @RC;
+					END;
+					
+					WAITFOR DELAY '00:00:0.100';
 				END;
 				
-				WAITFOR DELAY '00:00:0.100';
+			END;
+		
+			IF @IsExists_Ticket = 1
+			BEGIN
+				UPDATE 	dbo.SystemParameter WITH(UPDLOCK, ROWLOCK)
+				SET 	ParameterValue = @CleanTicketFlag_INPROGRESS
+				WHERE 	ParameterID = @CleanTicketFlag_ParameterID
+					AND ParameterValue = @CleanTicketFlag_WAITING;
+			
+				WHILE(1 = 1)
+				BEGIN
+					DELETE TOP(@BatchSize) gb
+					FROM dbo.TWGroupBettingTicket AS gb WITH(ROWLOCK)
+					WHERE gb.TransDate <= @ArchivedDate_Ticket;
+					
+					SET @RC = @@ROWCOUNT;
+					IF (@RC = 0)
+					BEGIN
+						BREAK;
+					END
+					ELSE
+					BEGIN
+						SET @DeletedCount = @DeletedCount + @RC;
+					END;
+					
+					WAITFOR DELAY '00:00:0.100';
+				END;
+				
 			END;
 			
-		END;
-		
-		IF (@DeletedCount > 0)
+			IF (@DeletedCount > 0)
+			BEGIN
+				UPDATE 	dbo.SystemParameter WITH(UPDLOCK, ROWLOCK)
+				SET 	ParameterValue 	= @CleanTicketFlag_FINISH
+				WHERE 	ParameterID 	= @CleanTicketFlag_ParameterID
+					AND ParameterValue 	= @CleanTicketFlag_INPROGRESS;
+			END;
+			
+		END
+		ELSE IF @CleanTicketFlag_Value = @CleanTicketFlag_FINISH
 		BEGIN
-			UPDATE 	dbo.SystemParameter WITH(UPDLOCK, ROWLOCK)
-			SET 	ParameterValue 	= @CleanTicketFlag_FINISH
-			WHERE 	ParameterID 	= @CleanTicketFlag_ParameterID
-				AND ParameterValue 	= @CleanTicketFlag_INPROGRESS;
+			IF @IsExists_TicketHistory = 0 AND @IsExists_Ticket = 0
+			BEGIN
+				RETURN;
+			END
+			ELSE
+			BEGIN
+				UPDATE 	dbo.SystemParameter WITH(UPDLOCK, ROWLOCK)
+				SET 	ParameterValue = @CleanTicketFlag_READY
+				WHERE 	ParameterID = @CleanTicketFlag_ParameterID
+					AND ParameterValue = @CleanTicketFlag_FINISH;
+			END;
 		END;
-	
+
 	END;
 
 END;
