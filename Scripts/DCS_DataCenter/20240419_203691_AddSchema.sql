@@ -61,6 +61,15 @@ CREATE TABLE `ReActiveAccount` (
   `AccountID` BIGINT UNSIGNED NOT NULL PRIMARY KEY
 ) ENGINE=InnoDB;
 
+DROP TABLE IF EXISTS DCS_DataCenter.ArchiveAccount_RowCount;
+CREATE TABLE `ArchiveAccount_RowCount` (
+  `ID` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `InsertTime` timestamp NOT NULL,
+  `TableArchived` VARCHAR(100),
+  `RowCount` INT UNSIGNED DEFAULT 0,
+  KEY `IX_ArchiveAccount_RowCount_TableArchived` (`TableArchived`)
+) ENGINE=InnoDB;
+
 INSERT INTO DCS_DataCenter.SystemSetting(ID, VGroup, VName, VValue, UpdatedTime)
 SELECT 4963734, 'System_Archive', 'MaxAccountID', 0, CURRENT_TIMESTAMP();
 
