@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `DCS_DC_Transform_Account_UpdateLastLoginTime`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_Account_UpdateLastLoginTime`(
-		IN BatchSize 	INT
+		IN ip_BatchSize 	INT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -14,12 +14,13 @@ BEGIN
 		Original:
 
 		Revisions:
-			- 20231205@Long.Luu: Created
+			- 20231205@Long.Luu: 		Created
+			- 20240521@Victoria.Le: 	Edit SP [Redmine ID: #200842]
 			
 		Param's Explanation (filtered by):
         
         Example:
-			CALL DCS_DC_Transform_Account_UpdateLastLoginTime_LongTest(5000);
+			CALL DCS_DC_Transform_Account_UpdateLastLoginTime(5000);
 	*/ 
     
     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
@@ -29,11 +30,12 @@ BEGIN
         SELECT 'DCS_DC_Transform_Account_UpdateLastLoginTime', @errCode, @errMsg, NOW(), NOW();
         
 		UPDATE CTS_DataCenter.SystemEventStatus 
-		SET Status = 'Stop' 
+		SET 	Status = 'Stop' 
+			,  	LastExecTime = NOW()
 		WHERE EventName = 'EV_DCS_DataCenter_Account_UpdateLastLoginTime' ;
     END;
     
-	SET BatchSize = 5000;
+	SET ip_BatchSize = 3000;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_AccountLastLogin;  
 	CREATE TEMPORARY TABLE Temp_AccountLastLogin(
@@ -43,12 +45,19 @@ BEGIN
     );
     
     INSERT INTO Temp_AccountLastLogin(ID, AccountID, LastLoginTime)
-    SELECT 	MAX(acc.ID)
-		,	acc.AccountID
-        ,	MAX(acc.LastLoginTime)
-    FROM DCS_DataCenter.AccountLastLoginTimeProcess AS acc
-    GROUP BY acc.AccountID
-    LIMIT BatchSize;
+    SELECT 	MAX(main.ID)
+		,	main.AccountID
+		,	MAX(main.LastLoginTime)
+	FROM DCS_DataCenter.AccountLastLoginTimeProcess AS main
+		INNER JOIN (
+						SELECT DISTINCT tll.AccountID, tll.ID
+						FROM DCS_DataCenter.AccountLastLoginTimeProcess AS tll
+							INNER JOIN DCS_DataCenter.Account AS acc ON acc.AccountID = tll.AccountID
+						ORDER BY tll.ID ASC
+						LIMIT ip_BatchSize 
+						FOR UPDATE OF acc SKIP LOCKED
+					) AS sub ON sub.AccountID = main.AccountID
+	GROUP BY main.AccountID;
     
     UPDATE DCS_DataCenter.Account AS acc
         INNER JOIN	Temp_AccountLastLogin AS tll ON acc.AccountID = tll.AccountID
@@ -68,29 +77,36 @@ BEGIN
         ,	IsValid			BIT DEFAULT 1
     );
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustInvalid;  
+	DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustInvalid;  
 	CREATE TEMPORARY TABLE Temp_CTSCustInvalid(
-			CTSCustID 		BIGINT UNSIGNED
-        ,	INDEX 			IX_Temp_CTSCustInvalid_CTSCustID(CTSCustID)
-    );
+			CTSCustID 		BIGINT UNSIGNED PRIMARY KEY
+	);
     
     INSERT INTO Temp_CTSCustomerLastLogin(ID, CTSCustID, LastLoginTime)
-    SELECT 	MAX(cus.ID)
-		,	cus.CTSCustID
-        ,	MAX(cus.LastLoginTime)
-    FROM DCS_DataCenter.CTSCustomerLastLoginTimeProcess AS cus
-    GROUP BY cus.CTSCustID
-    LIMIT BatchSize;
+    SELECT 	MAX(main.ID)
+		,	main.CTSCustID
+		,	MAX(main.LastLoginTime)
+	FROM DCS_DataCenter.CTSCustomerLastLoginTimeProcess AS main
+		INNER JOIN (
+						SELECT DISTINCT tll.CTSCustID, tll.ID
+						FROM DCS_DataCenter.CTSCustomerLastLoginTimeProcess AS tll
+							INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = tll.CTSCustID
+						ORDER BY tll.ID ASC
+						LIMIT ip_BatchSize
+						FOR UPDATE OF cus SKIP LOCKED 
+					) AS sub ON sub.CTSCustID = main.CTSCustID
+	GROUP BY main.CTSCustID;
     
-    INSERT INTO Temp_CTSCustInvalid(CTSCustID)
+    INSERT IGNORE INTO Temp_CTSCustInvalid(CTSCustID)
     SELECT cus.CTSCustID
     FROM CTS_DataCenter.CTSCustomer AS cus
 		INNER JOIN 	Temp_CTSCustomerLastLogin AS tmp_cus ON cus.CTSCustID = tmp_cus.CTSCustID
 	WHERE cus.LastLoginTime > tmp_cus.LastLoginTime;
     
-    UPDATE Temp_CTSCustomerLastLogin AS cust
-    SET cust.IsValid = 0
-    WHERE cust.CTSCustID IN (SELECT CTSCustID FROM Temp_CTSCustInvalid);
+    UPDATE Temp_CTSCustomerLastLogin AS cus
+		INNER JOIN Temp_CTSCustInvalid AS ci ON ci.CTSCustID = cus.CTSCustID
+    SET cus.IsValid = 0
+	;
 	
 	UPDATE CTS_DataCenter.CTSCustomer  cus
 		INNER JOIN 	Temp_CTSCustomerLastLogin AS tmp_cus ON cus.CTSCustID = tmp_cus.CTSCustID AND tmp_cus.IsValid = 1
@@ -101,7 +117,7 @@ BEGIN
 		INNER JOIN Temp_CTSCustomerLastLogin AS t ON acc.CTSCustID = t.CTSCustID
     WHERE acc.ID <= t.ID;
     /*
-	SET BatchSize = 5000;
+	SET ip_BatchSize = 5000;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_AccountLastLoginTimeProcess;  
 	CREATE TEMPORARY TABLE Temp_AccountLastLoginTimeProcess(
@@ -118,7 +134,7 @@ BEGIN
         ,	acc.LastLoginTime
     FROM DCS_DataCenter.AccountLastLoginTimeProcess AS acc
     ORDER BY acc.ID ASC
-    LIMIT BatchSize;
+    LIMIT ip_BatchSize;
     
     UPDATE DCS_DataCenter.Account 	AS acc
         INNER JOIN	Temp_AccountLastLoginTimeProcess AS tll ON acc.AccountID = tll.AccountID
@@ -150,7 +166,7 @@ BEGIN
         ,	cus.LastLoginTime
     FROM DCS_DataCenter.CTSCustomerLastLoginTimeProcess AS cus
     ORDER BY cus.ID ASC
-    LIMIT BatchSize;
+    LIMIT ip_BatchSize;
     
     INSERT INTO Temp_CTSCustInvalid(CTSCustID)
     SELECT cus.CTSCustID
