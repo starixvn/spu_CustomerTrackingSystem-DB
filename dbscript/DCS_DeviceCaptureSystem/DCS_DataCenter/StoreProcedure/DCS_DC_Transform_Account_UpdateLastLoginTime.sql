@@ -15,7 +15,7 @@ BEGIN
 
 		Revisions:
 			- 20231205@Long.Luu: 		Created
-			- 20240521@Victoria.Le: 	Edit SP [Redmine ID: #200842]
+			- 20240521@Victoria.Le: 	Edit SP [Redmine ID: #205345]
 			
 		Param's Explanation (filtered by):
         
@@ -90,7 +90,7 @@ BEGIN
 		INNER JOIN (
 						SELECT DISTINCT tll.CTSCustID, tll.ID
 						FROM DCS_DataCenter.CTSCustomerLastLoginTimeProcess AS tll
-							INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = tll.CTSCustID
+							LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = tll.CTSCustID
 						ORDER BY tll.ID ASC
 						LIMIT ip_BatchSize
 						FOR UPDATE OF cus SKIP LOCKED 
