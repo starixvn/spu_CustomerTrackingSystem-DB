@@ -15,31 +15,58 @@ BEGIN
 
 		Revisions:
 			- 20240321@Casey.Huynh: 	Created [Redmine ID: #201538]
+			- 20240521@Victoria.Le: 	Danger Score - Deposit [Redmine ID: #205166]
             
 		Example:
 			CALL CTS_DataCenter.CTS_DC_DangerousDetection_GetLatest(@ip_IsLicensee:=0);
 	*/
     DECLARE  CONST_CATEGORYID_EARLYWARNINGMEMBER	INT DEFAULT 65;
     
-    DECLARE lv_LastScannedDate DATETIME(3);
+	DECLARE lv_LastScannedDate DATETIME(3);
 	DECLARE lv_LastCustID BIGINT UNSIGNED;
     DECLARE lv_BatchSize SMALLINT;
     DECLARE lv_TotalRow SMALLINT;
-    
-    SELECT sys.ParameterValue
-    INTO lv_LastScannedDate
-    FROM CTS_DataCenter.SystemParameter AS sys
-    WHERE sys.ParameterID = 153;
-    
-    SELECT sys.ParameterValue
-    INTO lv_LastCustID
-    FROM CTS_DataCenter.SystemParameter AS sys
-    WHERE sys.ParameterID = 154;
-    
-    SELECT sys.ParameterValue
-    INTO lv_BatchSize
-    FROM CTS_DataCenter.SystemParameter AS sys
-    WHERE sys.ParameterID = 155;
+	
+	DECLARE lv_LastScannedDate_Adhoc DATE;
+	
+	IF (ip_IsLicensee = 0) THEN
+		SELECT sys.ParameterValue
+		INTO lv_LastScannedDate
+		FROM CTS_DataCenter.SystemParameter AS sys
+		WHERE sys.ParameterID = 153;
+		
+		SELECT sys.ParameterValue
+		INTO lv_LastCustID
+		FROM CTS_DataCenter.SystemParameter AS sys
+		WHERE sys.ParameterID = 154;
+		
+		SELECT sys.ParameterValue
+		INTO lv_BatchSize
+		FROM CTS_DataCenter.SystemParameter AS sys
+		WHERE sys.ParameterID = 155;
+	END IF;
+	
+    IF (ip_IsLicensee = 1) THEN
+		SELECT sys.ParameterValue
+		INTO lv_LastScannedDate
+		FROM CTS_DataCenter.SystemParameter AS sys
+		WHERE sys.ParameterID = 156;
+		
+		SELECT sys.ParameterValue
+		INTO lv_LastCustID
+		FROM CTS_DataCenter.SystemParameter AS sys
+		WHERE sys.ParameterID = 157;
+		
+		SELECT sys.ParameterValue
+		INTO lv_BatchSize
+		FROM CTS_DataCenter.SystemParameter AS sys
+		WHERE sys.ParameterID = 158;
+		
+		SELECT sys.ParameterValue
+		INTO lv_LastScannedDate_Adhoc
+		FROM CTS_DataCenter.SystemParameter AS sys
+		WHERE sys.ParameterID = 153;
+	END IF;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
     CREATE TEMPORARY TABLE Temp_Cust(
@@ -59,6 +86,8 @@ BEGIN
 		AND cd.LastModifiedDate = lv_LastScannedDate
 		AND cd.CustID > lv_LastCustID
         AND cd.ClassifiedScore IS NOT NULL
+		AND (ip_IsLicensee = 0 
+				OR (ip_IsLicensee = 1 AND DATE(LastModifiedDate) <= lv_LastScannedDate_Adhoc))
 	ORDER BY cd.LastModifiedDate ASC, cd.CustID ASC
 	LIMIT lv_BatchSize;
     
@@ -74,6 +103,8 @@ BEGIN
 		WHERE cd.IsLicensee = ip_IsLicensee
 			AND cd.LastModifiedDate > lv_LastScannedDate
             AND cd.ClassifiedScore IS NOT NULL
+			AND (ip_IsLicensee = 0 
+					OR (ip_IsLicensee = 1 AND DATE(LastModifiedDate) <= lv_LastScannedDate_Adhoc))
 		ORDER BY cd.LastModifiedDate ASC, cd.CustID ASC
 		LIMIT lv_BatchSize;
     

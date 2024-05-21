@@ -17,6 +17,7 @@ BEGIN
 		Revisions: 
 				- 20230515@Victoria.le:		Initial Writing [Redmine ID: #186191]
                 - 20240315@Casey.Huynh: 	Classify Danger Score [Redmine ID: #201358]
+                - 20240521@Victoria.Le: 	Classify Danger Score - Deposit [Redmine ID: #205166]
 
 		Example:
 			CALL CTS_DC_Customer_DangerousScore_Insert (@ip_IsLicensee:= 0,@ip_CustInfo:='[{"CustID":1275,"DangerousScore":0.2},{"CustID":1277,"DangerousScore":0.45},{"CustID":1280,"DangerousScore":0.95},{"CustID":1282,"DangerousScore":0.96}]');
@@ -26,6 +27,8 @@ BEGIN
 	DECLARE lv_CreatedDate DATETIME(3);
 	DECLARE lv_RuleCreditMinScore DECIMAL(8,4);
     DECLARE lv_RuleCreditMaxScore DECIMAL(8,4);
+	
+	DECLARE lv_RuleDepositMinScore DECIMAL(8,4);
     
     #====================================================
 	SET lv_CreatedDate = CURRENT_TIMESTAMP();
@@ -39,6 +42,11 @@ BEGIN
     INTO lv_RuleCreditMaxScore
     FROM CTS_DataCenter.StaticList
     WHERE  ListID = 22 AND ItemID = 2;
+	
+	SELECT ItemValue
+    INTO lv_RuleDepositMinScore
+    FROM CTS_DataCenter.StaticList
+    WHERE  ListID = 22 AND ItemID = 3;
 
     INSERT INTO CTS_DataCenter.Customer_DangerousScore 
     (
@@ -55,16 +63,27 @@ BEGIN
 		,	js.DangerousScore		
 		,	lv_CreatedDate
 		,	lv_CreatedDate
-        ,	(CASE WHEN ip_IsLicensee = 0 AND js.DangerousScore BETWEEN lv_RuleCreditMinScore AND lv_RuleCreditMaxScore THEN js.DangerousScore ELSE NULL END) AS ClassifiedScore
-        ,	(CASE WHEN ip_IsLicensee = 0 AND js.DangerousScore BETWEEN lv_RuleCreditMinScore AND lv_RuleCreditMaxScore THEN lv_CreatedDate ELSE NULL END) AS ClassifiedDate
+        ,	(CASE WHEN ip_IsLicensee = 0 AND js.DangerousScore BETWEEN lv_RuleCreditMinScore AND lv_RuleCreditMaxScore THEN js.DangerousScore 
+				  WHEN ip_IsLicensee = 1 AND js.DangerousScore >= lv_RuleDepositMinScore THEN js.DangerousScore 
+				  ELSE NULL 
+			 END) AS ClassifiedScore
+        ,	(CASE WHEN ip_IsLicensee = 0 AND js.DangerousScore BETWEEN lv_RuleCreditMinScore AND lv_RuleCreditMaxScore THEN lv_CreatedDate 
+				  WHEN ip_IsLicensee = 1 AND js.DangerousScore >= lv_RuleDepositMinScore THEN lv_CreatedDate
+				  ELSE NULL 
+			 END) AS ClassifiedDate
 	FROM JSON_TABLE(ip_CustInfo,
 					"$[*]" COLUMNS( 	CustID				INT 			PATH "$.CustID"
 									,	DangerousScore		DECIMAL(8,4)	PATH "$.DangerousScore"
 					)) AS js
 	ON DUPLICATE KEY UPDATE DangerousScore 		= js.DangerousScore
 						,	LastModifiedDate 	= lv_CreatedDate
-						,	ClassifiedScore = (CASE WHEN ClassifiedScore IS NULL AND ip_IsLicensee = 0 AND js.DangerousScore BETWEEN lv_RuleCreditMinScore AND lv_RuleCreditMaxScore THEN js.DangerousScore ELSE ClassifiedScore END)
-                        ,	ClassifiedDate = (CASE WHEN ClassifiedDate IS NULL AND ip_IsLicensee = 0 AND js.DangerousScore BETWEEN lv_RuleCreditMinScore AND lv_RuleCreditMaxScore THEN lv_CreatedDate ELSE ClassifiedDate END)
+						,	ClassifiedScore = (CASE WHEN ClassifiedScore IS NULL AND ip_IsLicensee = 0 AND js.DangerousScore BETWEEN lv_RuleCreditMinScore AND lv_RuleCreditMaxScore THEN js.DangerousScore 
+													WHEN ClassifiedScore IS NULL AND ip_IsLicensee = 1 AND js.DangerousScore >= lv_RuleDepositMinScore THEN js.DangerousScore 
+													ELSE ClassifiedScore END)
+                        ,	ClassifiedDate = (CASE WHEN ClassifiedDate IS NULL AND ip_IsLicensee = 0 AND js.DangerousScore BETWEEN lv_RuleCreditMinScore AND lv_RuleCreditMaxScore THEN lv_CreatedDate 
+												   WHEN ClassifiedDate IS NULL AND ip_IsLicensee = 1 AND js.DangerousScore >= lv_RuleDepositMinScore THEN lv_CreatedDate
+												   ELSE ClassifiedDate END)
 	;
+	
 END$$
 DELIMITER ;
