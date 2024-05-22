@@ -27,8 +27,6 @@ BEGIN
     DECLARE lv_BatchSize SMALLINT;
     DECLARE lv_TotalRow SMALLINT;
 	
-	DECLARE lv_LastScannedDate_Adhoc DATE;
-	
 	IF (ip_IsLicensee = 0) THEN
 		SELECT sys.ParameterValue
 		INTO lv_LastScannedDate
@@ -61,11 +59,6 @@ BEGIN
 		INTO lv_BatchSize
 		FROM CTS_DataCenter.SystemParameter AS sys
 		WHERE sys.ParameterID = 158;
-		
-		SELECT sys.ParameterValue
-		INTO lv_LastScannedDate_Adhoc
-		FROM CTS_DataCenter.SystemParameter AS sys
-		WHERE sys.ParameterID = 153;
 	END IF;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
@@ -86,8 +79,6 @@ BEGIN
 		AND cd.LastModifiedDate = lv_LastScannedDate
 		AND cd.CustID > lv_LastCustID
         AND cd.ClassifiedScore IS NOT NULL
-		AND (ip_IsLicensee = 0 
-				OR (ip_IsLicensee = 1 AND DATE(LastModifiedDate) <= lv_LastScannedDate_Adhoc))
 	ORDER BY cd.LastModifiedDate ASC, cd.CustID ASC
 	LIMIT lv_BatchSize;
     
@@ -103,8 +94,6 @@ BEGIN
 		WHERE cd.IsLicensee = ip_IsLicensee
 			AND cd.LastModifiedDate > lv_LastScannedDate
             AND cd.ClassifiedScore IS NOT NULL
-			AND (ip_IsLicensee = 0 
-					OR (ip_IsLicensee = 1 AND DATE(LastModifiedDate) <= lv_LastScannedDate_Adhoc))
 		ORDER BY cd.LastModifiedDate ASC, cd.CustID ASC
 		LIMIT lv_BatchSize;
     
