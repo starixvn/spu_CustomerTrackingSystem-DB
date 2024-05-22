@@ -24,6 +24,7 @@ AS
 	Revisions:
 		- 20240102@Casey.Huynh: Created [Redmine ID: #196361]
 		- 20240322@Vitoria.Le: 	Change inputs to optimize query data [Redmine ID: #201380]
+		- 20240521@Thomas.Nguyen: Remove hardcode 2 Agent WINRM and M999RM00 as internal accounts for Danger Monitor [Redmine ID: #205239]
 
 	Params Explaination:
 		,@BettypeList='[	{"BetType":1, "BetChoiceType":2}
@@ -196,7 +197,7 @@ BEGIN
 		WHERE cs.site NOT IN ('Nextbet','9wickets','9wsports')
 			AND cs.username NOT LIKE '%Cashout%'
 			AND cs.mrecommend NOT IN (27899314,11656504,12146012) 
-			AND cs.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+			AND cs.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
 			AND (CASE WHEN @IsExclTestCurr = 0 THEN 1 
 					  WHEN @IsExclTestCurr = 1 AND cs.currency NOT IN (20,27,28) THEN 1 
 					  ELSE 0 END = 1)
@@ -214,7 +215,7 @@ BEGIN
 		WHERE cs.site NOT IN ('Nextbet','9wickets','9wsports')
 			AND cs.username NOT LIKE '%Cashout%'
 			AND cs.mrecommend NOT IN (27899314,11656504,12146012) 
-			AND cs.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+			AND cs.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
 			AND (CASE WHEN @IsExclTestCurr = 0 THEN 1 
 					  WHEN @IsExclTestCurr = 1 AND cs.currency NOT IN (20,27,28) THEN 1 
 					  ELSE 0 END = 1)
@@ -232,7 +233,7 @@ BEGIN
 		WHERE cs.site NOT IN ('Nextbet','9wickets','9wsports')
 			AND cs.username NOT LIKE '%Cashout%'
 			AND cs.mrecommend NOT IN (27899314,11656504,12146012) 
-			AND cs.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+			AND cs.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
 			AND (CASE WHEN @IsExclTestCurr = 0 THEN 1 
 					  WHEN @IsExclTestCurr = 1 AND cs.currency NOT IN (20,27,28) THEN 1 
 					  ELSE 0 END = 1)
@@ -250,7 +251,7 @@ BEGIN
 		WHERE cs.site NOT IN ('Nextbet','9wickets','9wsports')
 			AND cs.username NOT LIKE '%Cashout%'
 			AND cs.mrecommend NOT IN (27899314,11656504,12146012) 
-			AND cs.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+			AND cs.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
 			AND (CASE WHEN @IsExclTestCurr = 0 THEN 1 
 					  WHEN @IsExclTestCurr = 1 AND cs.currency NOT IN (20,27,28) THEN 1 
 					  ELSE 0 END = 1)
@@ -268,7 +269,7 @@ BEGIN
 		WHERE cs.site NOT IN ('Nextbet','9wickets','9wsports')
 			AND cs.username NOT LIKE '%Cashout%'
 			AND cs.mrecommend NOT IN (27899314,11656504,12146012) 
-			AND cs.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+			AND cs.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
 			AND (CASE WHEN @IsExclTestCurr = 0 THEN 1 
 					  WHEN @IsExclTestCurr = 1 AND cs.currency NOT IN (20,27,28) THEN 1 
 					  ELSE 0 END = 1)

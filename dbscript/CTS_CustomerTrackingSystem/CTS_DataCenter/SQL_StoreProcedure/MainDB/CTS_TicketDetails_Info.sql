@@ -39,6 +39,7 @@ AS
 		- 20240129@Casey.Huynh:		Support Danger Monitor Details In 7 days [Redmine ID: #196361]
 		- 20240129@Thomas.Nguyen:	Return more column IsCashout [Redmine ID: #199634]
 		- 20240322@Vitoria.Le: 		Exclude Internal Account for Danger Monitor [Redmine ID: #201380]
+		- 20240521@Thomas.Nguyen:	Remove hardcode 2 Agent WINRM and M999RM00 as internal accounts for Danger Monitor [Redmine ID: #205239]
 
 	Params Explaination:
 		@ListSuspiciousTransId: format JSON
@@ -436,7 +437,7 @@ BEGIN
 				AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 				AND c.username NOT LIKE '%Cashout%'
 				AND c.mrecommend NOT IN (27899314,11656504,12146012) 
-				AND c.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+				AND c.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
 				AND c.srecommend NOT IN (41430709)
 				AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
 		END;
@@ -481,7 +482,7 @@ BEGIN
 				AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 				AND c.username NOT LIKE '%Cashout%'
 				AND c.mrecommend NOT IN (27899314,11656504,12146012) 
-				AND c.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+				AND c.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
 				AND c.srecommend NOT IN (41430709)
 				AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
 		END;

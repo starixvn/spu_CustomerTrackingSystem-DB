@@ -76,6 +76,7 @@ AS
 		- 20240129@Thomas.Nguyen: Return more column MalayOdds and add filter by Cashout [Redmine ID: #199634]
 		- 20240322@Vitoria.Le: 	Optimize query by considering to remove temporarily table  
 									And Separate between QueryType = 1 and QueryType in (2,3) [Redmine ID: #201380]
+		- 20240521@Thomas.Nguyen: Remove hardcode 2 Agent WINRM and M999RM00 as internal accounts for Danger Monitor [Redmine ID: #205239]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize) >> refer to new SP CTS_Rpt_MatchMonitor_GetTicketInfo
@@ -728,7 +729,7 @@ BEGIN
 								AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 								AND b.username NOT LIKE '%Cashout%'
 								AND b.mrecommend NOT IN (27899314,11656504,12146012) 
-								AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+								AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
 								AND b.srecommend NOT IN (41430709)
 								AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
 				
@@ -784,7 +785,7 @@ BEGIN
 							AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 							AND b.username NOT LIKE '%Cashout%'
 							AND b.mrecommend NOT IN (27899314,11656504,12146012) 
-							AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+							AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
 							AND b.srecommend NOT IN (41430709)
 							AND b.TransDate < @LastTransDate
 							AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
@@ -838,7 +839,7 @@ BEGIN
 							AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 							AND b.username NOT LIKE '%Cashout%'
 							AND b.mrecommend NOT IN (27899314,11656504,12146012) 
-							AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+							AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
 							AND b.srecommend NOT IN (41430709)
 							AND b.TransDate = @MinTransDate
 							AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
@@ -946,7 +947,7 @@ BEGIN
 							AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 							AND b.username NOT LIKE '%Cashout%'
 							AND b.mrecommend NOT IN (27899314,11656504,12146012) 
-							AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+							AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
 							AND b.srecommend NOT IN (41430709)
 							AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
 				
@@ -1003,7 +1004,7 @@ BEGIN
 							AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 							AND b.username NOT LIKE '%Cashout%'
 							AND b.mrecommend NOT IN (27899314,11656504,12146012) 
-							AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+							AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
 							AND b.srecommend NOT IN (41430709)
 							AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
 						ORDER BY b.sequenceid DESC;
