@@ -37,3 +37,8 @@ VALUES	(156, 'ClassificationDangerousScoreDeposit_LastDate','Customer_DangerousS
 ;
 
 select * from SystemParameter where ParameterID in (156,157,158);
+
+UPDATE CustomerCategory SET CategoryNameCN3 = 'Thành viên cảnh báo sớm', CategoryNameTHB = 'สมาชิกที่ได้รับการแจ้งเตือนล่วงหน้า', CategoryNameIND = 'Anggota Peringatan Dini' WHERE CategoryID = 65;
+UPDATE CustomerCategory SET CategoryNameCN3 = 'Thành viên cảnh báo sớm (Thua)', CategoryNameTHB = 'สมาชิกที่ได้รับการเตือนล่วงหน้า (ขาดทุน)', CategoryNameIND = 'Anggota Peringatan Dini (Kalah)' WHERE CategoryID = 105;
+
+SELECT CategoryNameCN3,CategoryNameTHB,CategoryNameIND FROM CustomerCategory WHERE CategoryID IN (65,105);
