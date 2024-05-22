@@ -113,8 +113,8 @@ sp: BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Group;
 	CREATE TEMPORARY TABLE Temp_Group(
-			GroupID INT
-		,	TimeGroupID	BIGINT
+			GroupID 		INT
+		,	TimeGroupID		BIGINT PRIMARY KEY
 		,	TransIDList		LONGTEXT
         ,	OldGroupIDList	VARCHAR(500)
 		,	CustIDList		LONGTEXT
@@ -200,7 +200,7 @@ sp: BEGIN
         SELECT	MIN(tmp.GroupID) AS GroupID
 			,	tmp.TimeGroupID
             ,	MAX(tmp.IsHedging) AS IsHedging
-            ,	GROUP_CONCAT(tmp.TransID) AS TransIDList
+            ,	GROUP_CONCAT(tmp.TransID ORDER BY tmp.TransID) AS TransIDList
 			,	GROUP_CONCAT(DISTINCT tmp.OldGroupID) AS OldGroupIDList
             ,	GROUP_CONCAT(DISTINCT tmp.CustID) AS CustIDList
             ,	GROUP_CONCAT(DISTINCT tmp.CTSCustID) AS CTSCustIDList
@@ -255,7 +255,7 @@ sp: BEGIN
         SELECT	MIN(tmp.GroupID) AS GroupID
 			,	tmp.TimeGroupID
             ,	MAX(tmp.IsHedging) AS IsHedging
-            ,	GROUP_CONCAT(tmp.TransID) AS TransIDList
+            ,	GROUP_CONCAT(tmp.TransID ORDER BY tmp.TransID) AS TransIDList
 			,	GROUP_CONCAT(DISTINCT tmp.OldGroupID) AS OldGroupIDList
             ,	GROUP_CONCAT(DISTINCT tmp.CustID) AS CustIDList
             ,	GROUP_CONCAT(DISTINCT tmp.CTSCustID) AS CTSCustIDList
