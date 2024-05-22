@@ -63,37 +63,44 @@ BEGIN
     INSERT INTO Temp_Account(AccountID)
 	SELECT AccountID
 	FROM DCS_DataCenter.ArchiveAccount_NotUsed
+	ORDER BY AccountID ASC
 	LIMIT ip_BatchSize;
     
     INSERT INTO Temp_Association(AccountID, DeviceID)
 	SELECT	AccountID
 		,	DeviceID
 	FROM DCS_DataCenter.ArchiveAssociation_NotUsed
+	ORDER BY AccountID ASC, DeviceID ASC
 	LIMIT ip_BatchSize;
     
     INSERT INTO Temp_Device(DeviceID)
 	SELECT DeviceID
 	FROM DCS_DataCenter.ArchiveDevice_NotUsed
+	ORDER BY DeviceID ASC
 	LIMIT ip_BatchSize;
     
     INSERT INTO Temp_DeviceCode(DeviceCodeID)
 	SELECT DeviceCodeID
 	FROM DCS_DataCenter.ArchiveDeviceCode_NotUsed
+	ORDER BY DeviceCodeID ASC
 	LIMIT ip_BatchSize;
     
     INSERT INTO Temp_AccountIP(ID)
 	SELECT ID
 	FROM DCS_DataCenter.ArchiveAccountIP_NotUsed
+	ORDER BY ID ASC
 	LIMIT ip_BatchSize;
     
     INSERT INTO Temp_AccountDevice(ID)
 	SELECT ID
 	FROM DCS_DataCenter.ArchiveAccountDevice_NotUsed
+	ORDER BY ID ASC
 	LIMIT ip_BatchSize;
     
     INSERT INTO Temp_AccountFingerprint(ID)
 	SELECT ID
 	FROM DCS_DataCenter.ArchiveAccountFingerprint_NotUsed
+	ORDER BY ID ASC
 	LIMIT ip_BatchSize;
     
     /* DELETE Account */

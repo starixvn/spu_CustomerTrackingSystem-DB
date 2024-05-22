@@ -42,11 +42,13 @@ BEGIN
     INSERT INTO Temp_Device(DeviceID)
 	SELECT DeviceID
 	FROM DCS_DataCenter.ArchiveDevice_NotUsed
+	ORDER BY DeviceID ASC
 	LIMIT ip_BatchSize;
     
     INSERT INTO Temp_DeviceCode(DeviceCodeID)
 	SELECT DeviceCodeID
 	FROM DCS_DataCenter.ArchiveDeviceCode_NotUsed
+	ORDER BY DeviceCodeID ASC
 	LIMIT ip_BatchSize;
     
     /* == Archive Device & DeviceFingerprint not used == */

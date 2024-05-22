@@ -12,7 +12,7 @@ CREATE TABLE `ArchiveAccount_NotUsed` (
   `AccountID` BIGINT UNSIGNED NOT NULL PRIMARY KEY,
   `SubscriberID` INT,
   `LoginName` VARCHAR(100),
-  KEY `IX_ArchiveAccount_NotUsed_SubscriberID_LoginName` (`SubscriberID`,`LoginName`)
+  KEY `IX_ArchiveAccount_NotUsed_LoginName_SubscriberID` (`LoginName`, `SubscriberID`)
 ) ENGINE=InnoDB;
  
 DROP TABLE IF EXISTS DCS_DataCenter.ArchiveAccountIP_NotUsed;

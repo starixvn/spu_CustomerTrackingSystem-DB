@@ -69,7 +69,7 @@ BEGIN
 				WHERE cda.AccountID = tmp.AccountID);
 	
     ALTER TABLE Temp_Account
-    ADD KEY IX_Temp_Account_SubscriberID_LoginName(SubscriberID, LoginName);
+    ADD KEY IX_Temp_Account_LoginName_SubscriberID(LoginName, SubscriberID);
 
 	/* === Delete records that exist in CTSCustomer but not in CustDCSAccount === */
 	DELETE tmp
@@ -82,7 +82,8 @@ BEGIN
 	FROM Temp_Account AS tmp
 	WHERE EXISTS (SELECT 1 
 				FROM CTS_DataCenter.CTSCustomer AS cust 
-				WHERE cust.Username2 = tmp.LoginName);
+				WHERE cust.RegisterName = tmp.LoginName
+					AND cust.SubscriberID = tmp.SubscriberID);
 
 
 	INSERT IGNORE INTO DCS_DataCenter.ArchiveAccount_NotUsed(AccountID, SubscriberID, LoginName)
@@ -133,7 +134,7 @@ BEGIN
 					WHERE ass.DeviceID = tmp.DeviceID
 						AND ass.AccountID NOT IN (SELECT AccountID FROM Temp_Account)
 					LIMIT 1)
-	ORDER BY tmp.DeviceID;
+	ORDER BY tmp.DeviceID ASC;
     
     INSERT IGNORE INTO DCS_DataCenter.ArchiveDevice_NotUsed(DeviceID)
     SELECT DeviceID

@@ -47,7 +47,8 @@ BEGIN
 				WHERE cust.Username = aa.LoginName)
 		OR EXISTS (SELECT 1
 				FROM CTS_DataCenter.CTSCustomer AS cust
-				WHERE cust.Username2 = aa.LoginName);
+				WHERE cust.RegisterName = aa.LoginName
+					AND cust.SubscriberID = aa.SubscriberID);
                     
     
     INSERT INTO Temp_DeviceReActived(DeviceID)
