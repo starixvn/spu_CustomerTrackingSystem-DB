@@ -19,7 +19,7 @@ sp: BEGIN
             - 	202201021@Casey.Huynh: Group By Betteam [Redmine ID: #179439]
             -	20221205@Casey.Huynh: Rename Table [Redmine ID: #179502]
             -	20240109@Casey.Huynh: Enhance Hedging Rule [Redmine ID: #192172]
-            -	20240509@Casey.Huynh: HF Hedging StepTime, Add column TransDateToSecond [Redmine ID: #204228]
+            -	20240509@Casey.Huynh: HF Hedging StepTime [Redmine ID: #204228]
             
 		Param's Explanation (filtered by):	
 
@@ -34,7 +34,7 @@ sp: BEGIN
     DECLARE lv_MaxSequenceID	BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_MaxTransDate		DATETIME(3);
     DECLARE lv_Rule_RuleGroupID	TINYINT DEFAULT 3;
-    DECLARE lv_Rule_MinTimeStep	SMALLINT;
+    DECLARE lv_Rule_TimeStep	SMALLINT;
     DECLARE lv_NoOfRow			INT DEFAULT 5000;
     
     #==================LOG=======================================================
@@ -75,10 +75,11 @@ sp: BEGIN
     FROM CTS_DataCenter.MatchMonitorRuleSetting AS s
     WHERE s.RuleGroupID = lv_Rule_RuleGroupID AND s.RuleStatus=1;
 
-	SELECT MIN(s.TimeStep)
-    INTO lv_Rule_MinTimeStep
-    FROM CTS_DataCenter.MatchMonitorRuleSetting AS s
-    WHERE s.RuleGroupID = lv_Rule_RuleGroupID AND s.RuleStatus=1;
+	SELECT	s.TimeStep
+    INTO	lv_Rule_TimeStep
+    FROM	CTS_DataCenter.MatchMonitorRuleSetting AS s
+    WHERE	s.RuleGroupID = lv_Rule_RuleGroupID AND s.RuleStatus=1 
+    LIMIT	1;
     
     SELECT s.ParameterValue
     INTO lv_NoOfRow
@@ -104,7 +105,7 @@ sp: BEGIN
         GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, mms.GroupID;  
                             
         #==========Get Next Trans In TimeStep==================
-        SELECT TIMESTAMPADD(SECOND, lv_Rule_MinTimeStep, mms.TransDate)
+        SELECT TIMESTAMPADD(SECOND, lv_Rule_TimeStep, mms.TransDate)
         INTO lv_MaxTransDate
         FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms
         WHERE mms.SequenceID >= lv_LastSequenceID
@@ -171,7 +172,7 @@ sp: BEGIN
         GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, mms.GroupID;  
                             
         #==========Get Next Trans In TimeStep==================
-        SELECT TIMESTAMPADD(SECOND, lv_Rule_MinTimeStep, mms.TransDate)
+        SELECT TIMESTAMPADD(SECOND, lv_Rule_TimeStep, mms.TransDate)
         INTO lv_MaxTransDate
         FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
         WHERE mms.SequenceID >= lv_LastSequenceID
