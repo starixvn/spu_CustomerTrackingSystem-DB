@@ -6,7 +6,7 @@
     DBName:		CTS_DataCenter
 
     Revisions: 
-		    - 20240509@Casey.Huynh: Created [Redmine ID: #204228]
+		    - 20240509@Casey.Huynh: Created [Redmine ID: #204338]
     Reviewer: Long.Lưu
 */
 USE CTS_DataCenter;

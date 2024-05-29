@@ -19,7 +19,7 @@ sp: BEGIN
             - 	202201021@Casey.Huynh: Group By Betteam [Redmine ID: #179439]
             -	20221205@Casey.Huynh: Rename Table [Redmine ID: #179502]
             -	20240109@Casey.Huynh: Enhance Hedging Rule [Redmine ID: #192172]
-            -	20240509@Casey.Huynh: HF Hedging StepTime [Redmine ID: #204228]
+            -	20240509@Casey.Huynh: HF Hedging StepTime [Redmine ID: #204338]
             
 		Param's Explanation (filtered by):	
 
@@ -27,13 +27,14 @@ sp: BEGIN
 			CALL  CTS_DC_MatchMonitor_RuleHedging_Get(@ip_LiveIndicator:=1,@op_MaxSequenceID);
 	*/
     DECLARE CONST_LOG					TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
-	DECLARE CONST_SUBSCRIBERID_ALPHA		INT DEFAULT 168;
+	DECLARE CONST_SUBSCRIBERID_ALPHA	INT DEFAULT 168;
 	DECLARE CONST_SUBSCRIBERID_MAXBET	INT DEFAULT 169;
+    DECLARE CONST_MMRULEGROUP_HEDGING	INT DEFAULT 3;
+    DECLARE CONST_MMREASON_HEDGING		INT DEFAULT 1;
     
 	DECLARE lv_LastSequenceID	BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_MaxSequenceID	BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_MaxTransDate		DATETIME(3);
-    DECLARE lv_Rule_RuleGroupID	TINYINT DEFAULT 3;
     DECLARE lv_Rule_TimeStep	SMALLINT;
     DECLARE lv_NoOfRow			INT DEFAULT 5000;
     
@@ -73,12 +74,12 @@ sp: BEGIN
         ,	s.TotalStake
         ,	s.HighStake
     FROM CTS_DataCenter.MatchMonitorRuleSetting AS s
-    WHERE s.RuleGroupID = lv_Rule_RuleGroupID AND s.RuleStatus=1;
-
+    WHERE s.RuleGroupID = CONST_MMRULEGROUP_HEDGING AND s.RuleStatus=1;
+    
 	SELECT	s.TimeStep
     INTO	lv_Rule_TimeStep
     FROM	CTS_DataCenter.MatchMonitorRuleSetting AS s
-    WHERE	s.RuleGroupID = lv_Rule_RuleGroupID AND s.RuleStatus=1 
+    WHERE	s.RuleGroupID = CONST_MMRULEGROUP_HEDGING AND s.Reason = CONST_MMREASON_HEDGING AND s.RuleStatus=1 
     LIMIT	1;
     
     SELECT s.ParameterValue

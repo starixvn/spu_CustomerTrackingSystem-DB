@@ -31,7 +31,7 @@ BEGIN
 			-	20230203@Victoria.Le: Change Odds Range for Fixed Game Rule - Malayisan Odds [Redmine ID: #183277]
             -	20231120@Casey.Huynh: E-Sport GB support New Bettypes, change setting table [Redmine ID: #196396]
             -	20240109@Casey.Huynh: Enhance Hedging Rule, execlute Licensee Cust and Limit stake [Redmine ID: #192172]
-            -	20240509@Casey.Huynh: HF Hedging StepTime, Add column TransDateToSecond [Redmine ID: #204228]
+            -	20240509@Casey.Huynh: HF Hedging StepTime, Add column TransDateToSecond [Redmine ID: #204338]
             
 		Param's Explanation (filtered by):		
 
@@ -57,8 +57,6 @@ BEGIN
 		SELECT lv_SPName, CURRENT_TIMESTAMP(), CONCAT('@ip_LiveIndicator:=',ip_LiveIndicator);
     END IF;
     #==================LOG=======================================================   
-    #==========================================================================
-    #Error Code: 1054. Unknown column 'tmpSt.CTSCustID' in 'field list'
 
     DROP TEMPORARY TABLE IF EXISTS Temp_Staging;
 	CREATE TEMPORARY TABLE Temp_Staging(

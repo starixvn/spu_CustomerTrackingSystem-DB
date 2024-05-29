@@ -31,7 +31,7 @@ sp: BEGIN
 			-	20230310@Victoria.Le:	Credit Scale Out - Split 789y Site [Redmine ID: #183140]
             -	20230612@Casey.Huynh: 	LogInfo [Redmine ID: #185793]
             -	20240109@Casey.Huynh:	Enhance Hedging Rule [Redmine ID: #192172]
-            -	20240509@Casey.Huynh: 	HF Hedging StepTime [Redmine ID: #204228]
+            -	20240509@Casey.Huynh: 	HF Hedging StepTime [Redmine ID: #204338]
 			
 		Param's Explanation (filtered by):	
 		Example:
@@ -128,8 +128,7 @@ sp: BEGIN
 	SELECT 	st.TotalStake, st.TimeStep
 	INTO 	lv_RuleTotalStake, lv_RuleTimeStep
 	FROM CTS_DataCenter.MatchMonitorRuleSetting AS st 
-	WHERE 	st.RuleGroupID = CONST_MMRULEGROUP_HEDGING 
-			AND st.SportType = ip_SportType 
+	WHERE 	st.RuleGroupID = CONST_MMRULEGROUP_HEDGING AND st.SportType = ip_SportType 
 			AND st.Reason = CONST_MMREASON_HEDGING AND st.RuleStatus = 1
 	LIMIT 1;
 
