@@ -5,7 +5,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_GetTicketInfo]
+ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_GetTicketInfo_xtest]
 		@QueryType					TINYINT = 1
 	,	@LastScannedSequenceID		BIGINT = 0
 	,	@IsLive						BIT = 1
@@ -26,14 +26,19 @@ AS
 					 
 	Example:
 
-		EXEC CTS_Rpt_MatchMonitor_GetTicketInfo @QueryType=1,@LastScannedSequenceID=117290386614,@IsLive=0,@BatchSize=500,@ListTransId=''
-		 ,@ListSportBettype='[		{"SportTypeID":1, "BetTypeID":1, "BetChoiceType":1}
-								,	{"SportTypeID":43, "BetTypeID":9001, "BetChoiceType":1}
-								,	{"SportTypeID":43, "BetTypeID":9003, "BetChoiceType":1}]';
+		EXEC CTS_Rpt_MatchMonitor_GetTicketInfo @QueryType=1
+			,@LastScannedSequenceID=119779209696
+			,@IsLive=1
+			,@BatchSize=500
+			,@ListSportBettype='[		{"SportTypeID":1, "BetTypeID":1, "BetChoiceType":1}
+									,	{"SportTypeID":1, "BetTypeID":3, "BetChoiceType":1}
+									,	{"SportTypeID":1, "BetTypeID":7, "BetChoiceType":1}
+									,	{"SportTypeID":1, "BetTypeID":8, "BetChoiceType":1}
+									,	{"SportTypeID":43, "BetTypeID":9001, "BetChoiceType":1}
+									,	{"SportTypeID":43, "BetTypeID":9003, "BetChoiceType":1}]';
 */
 BEGIN
 	SET NOCOUNT ON;
-
 	
 	IF	OBJECT_ID('tempdb..#tmpSportBettype') IS NOT NULL
 	BEGIN
@@ -77,6 +82,7 @@ BEGIN
 	--==========================================================================================
 	IF (@QueryType = 1)
 	BEGIN --Get ticket for MM Detection
+		
 		SELECT	TOP (@BatchSize) 
 				b.sequenceid 				AS SequenceId
 			,	b.transid 					AS TransId
@@ -126,6 +132,7 @@ BEGIN
 			,	b.liveawayscore 			AS LiveAwayScore
 			,	b.statusID 					AS TicketStatus
 			,	b.liveindicator 			AS LiveIndicator
+			,	(CASE WHEN l.LeagueGroupID = 42 THEN LeagueGroupID ELSE NULL END) AS LeagueGroupID
 		FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 			INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 			INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
@@ -142,7 +149,8 @@ BEGIN
 			AND b.mrecommend NOT IN (27899314,11656504,12146012) 
 			AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)AND b.statusID <> 101 -- Reject		
 			AND c.site NOT IN ('Nextbet','9wickets','9wsports')
-			AND l.LeagueGroupID NOT IN (42,74,108,113,122,151) -- SABA leagues
+			AND (l.LeagueGroupID NOT IN (42,74,108,113,122,151)
+				 OR (l.LeagueGroupID = 42 AND m.Sporttype = 1))-- SABA leagues
 			AND ISNULL(b.oddstype,0) <> 0
 		ORDER BY b.sequenceid ASC;
 		
