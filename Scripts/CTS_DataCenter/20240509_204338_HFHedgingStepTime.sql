@@ -12,7 +12,11 @@
 USE CTS_DataCenter;
 #============================
 ALTER TABLE MatchMonitorStagingHedgingLive
-ADD COLUMN TransDateToSecond BIGINT AFTER TransDate;
+ADD COLUMN TransDateToSecond BIGINT AFTER TransDate
+, ADD INDEX IX_MatchMonitorStagingHedgingLive_TransDateToSecond(TransDateToSecond)
+, DROP INDEX IX_MatchMonitorStagingHedgingLive_TransDate;
 
 ALTER TABLE MatchMonitorStagingHedgingNonLive
-ADD COLUMN TransDateToSecond BIGINT AFTER TransDate;
+ADD COLUMN TransDateToSecond BIGINT AFTER TransDate
+, ADD INDEX IX_MatchMonitorStagingHedgingNonLive_TransDateToSecond(TransDateToSecond)
+, DROP INDEX IX_MatchMonitorStagingHedgingNonLive_TransDate;

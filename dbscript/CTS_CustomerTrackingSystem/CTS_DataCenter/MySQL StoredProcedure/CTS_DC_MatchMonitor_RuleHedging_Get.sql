@@ -34,7 +34,7 @@ sp: BEGIN
     
 	DECLARE lv_LastSequenceID	BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_MaxSequenceID	BIGINT UNSIGNED DEFAULT 0;
-    DECLARE lv_MaxTransDate		DATETIME(3);
+	DECLARE lv_MaxTime			BIGINT;
     DECLARE lv_Rule_TimeStep	SMALLINT;
     DECLARE lv_NoOfRow			INT DEFAULT 5000;
     
@@ -106,8 +106,9 @@ sp: BEGIN
         GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, mms.GroupID;  
                             
         #==========Get Next Trans In TimeStep==================
-        SELECT TIMESTAMPADD(SECOND, lv_Rule_TimeStep, mms.TransDate)
-        INTO lv_MaxTransDate
+       
+        SELECT mms.TransDateToSecond + lv_Rule_TimeStep
+        INTO lv_MaxTime
         FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms
         WHERE mms.SequenceID >= lv_LastSequenceID
         ORDER BY mms.SequenceID ASC
@@ -116,7 +117,7 @@ sp: BEGIN
 		SELECT mms.SequenceID
         INTO lv_MaxSequenceID
 		FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms 
-		WHERE mms.TransDate <= lv_MaxTransDate 
+		WHERE mms.TransDateToSecond <= lv_MaxTime 
 			AND mms.SequenceID > lv_LastSequenceID
 		ORDER BY mms.SequenceID DESC
 		LIMIT 1;
@@ -129,7 +130,6 @@ sp: BEGIN
 				,	mms.BetID
 				,	mms.Betteam
                 ,	MIN(mms.SportType) AS SportType
-			#	,	tmpOg.GroupID AS OldGroup
                 ,	GROUP_CONCAT(DISTINCT mms.CTSCustID) AS CTSCustIDList
 				,	CASE WHEN COUNT(DISTINCT CASE WHEN mms.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET) THEN mms.CTSCustID ELSE NULL END) > 1 
 												THEN GROUP_CONCAT(DISTINCT CASE WHEN mms.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET) THEN mms.CTSCustID ELSE NULL END)
@@ -173,8 +173,9 @@ sp: BEGIN
         GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, mms.GroupID;  
                             
         #==========Get Next Trans In TimeStep==================
-        SELECT TIMESTAMPADD(SECOND, lv_Rule_TimeStep, mms.TransDate)
-        INTO lv_MaxTransDate
+       
+        SELECT mms.TransDateToSecond + lv_Rule_TimeStep
+        INTO lv_MaxTime
         FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
         WHERE mms.SequenceID >= lv_LastSequenceID
         ORDER BY mms.SequenceID ASC
@@ -183,7 +184,7 @@ sp: BEGIN
 		SELECT mms.SequenceID
         INTO lv_MaxSequenceID
 		FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms 
-		WHERE mms.TransDate <= lv_MaxTransDate 
+		WHERE mms.TransDateToSecond <= lv_MaxTime 
 			AND mms.SequenceID > lv_LastSequenceID
 		ORDER BY mms.SequenceID DESC
 		LIMIT 1;
@@ -196,7 +197,6 @@ sp: BEGIN
 				,	mms.BetID
 				,	mms.Betteam
                 ,	MIN(mms.SportType) AS SportType
-			#	,	tmpOg.GroupID AS OldGroup
                 ,	GROUP_CONCAT(DISTINCT mms.CTSCustID) AS CTSCustIDList
 				,	CASE WHEN COUNT(DISTINCT CASE WHEN mms.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET) THEN mms.CTSCustID ELSE NULL END) > 1 
 												THEN GROUP_CONCAT(DISTINCT CASE WHEN mms.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET) THEN mms.CTSCustID ELSE NULL END)
@@ -219,7 +219,7 @@ sp: BEGIN
 						WHERE mms.SequenceID > lv_LastSequenceID
 						ORDER BY mms.SequenceID ASC
 						LIMIT 1);
-		END IF;
+		END IF;  
         
 	END IF;
  
