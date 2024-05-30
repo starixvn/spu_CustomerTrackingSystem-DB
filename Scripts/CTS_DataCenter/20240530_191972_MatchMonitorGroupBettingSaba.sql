@@ -33,11 +33,10 @@ CREATE TABLE MatchMonitorStagingGroupBettingSabaLive(
 	,	AwayID				INT DEFAULT NULL
 	,	LeagueID			INT DEFAULT NULL	
 	,	LeagueName			VARCHAR(500) DEFAULT NULL
-	,	IsMajorLeague		TINYINT(1) DEFAULT NULL
     ,	InsertTime			DATETIME(3) DEFAULT NULL
 	,	PRIMARY KEY (SequenceID)
-	,	INDEX IX_MatchMonitorStagingGroupBettingSabaLive_TransToDate(TransToDate)
-	,	INDEX IX_MatchMonitorStagingGroupBettingSabaLive_RuleGroup(MatchID,ScoreDiff,BettypeID,Betteam,GroupID)
+	,	INDEX IX_MatchMonitorStagingGroupBettingSabaLive_TransDateToSecond(TransDateToSecond)
+	,	INDEX IX_MatchMonitorStagingGroupBettingSabaLive_RuleGroup(MatchID, ScoreDiff, BettypeID, Betteam, GroupID)
 ) ENGINE=InnoDB;
 
 
@@ -63,11 +62,19 @@ CREATE TABLE MatchMonitorStagingGroupBettingSabaNonLive(
 	,	AwayID				INT DEFAULT NULL
 	,	LeagueID			INT DEFAULT NULL	
 	,	LeagueName			VARCHAR(500) DEFAULT NULL
-	,	IsMajorLeague		TINYINT(1) DEFAULT NULL
     ,	InsertTime			DATETIME(3) DEFAULT NULL
 	,	PRIMARY KEY (SequenceID)
-	,	INDEX IX_MatchMonitorStagingGroupBettingSabaLive_TransToDate(TransToDate)
-	,	INDEX IX_MatchMonitorStagingGroupBettingSabaLive_RuleGroup(MatchID,ScoreDiff,BettypeID,Betteam,GroupID)
+	,	INDEX IX_MatchMonitorStagingGroupBettingSabaLive_TransDateToSecond(TransDateToSecond)
+	,	INDEX IX_MatchMonitorStagingGroupBettingSabaLive_RuleGroup(MatchID, ScoreDiff, BettypeID, Betteam, GroupID)
 ) ENGINE=InnoDB;
 
+#=======================INITIAL SERVICE PARAMETERs================================
+# DELETE del FROM SystemParameter del WHERE ParameterID IN (162, 163, 164);
+INSERT INTO SystemParameter(ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
+VALUE	(162,'MatchMonitor_GBSabaLive_LastSequenceID', NULL,'BIGINT UNSIGNED',0)
+	,	(163,'MatchMonitor_GBSabaNonLive_LastSequenceID', NULL,'BIGINT UNSIGNED',0)
+	,	(164,'MatchMonitor_GBSabaNonLive_BatchSize', NULL,'INT',5000);
+#=================Initial Rule Setting============================================
 
+INSERT INTO MatchMonitorRuleSetting(RuleGroupID, RuleGroupDesc, Reason, SportType, ReasonName, SportName, TimeStep, TotalStake, HighStake, ModifiedDate, Comments)
+VALUES	(6, 'Group Betting Saba Detect', 0, 1, 'Group Betting', NULL, 60, 500, NULL, NOW(), 'Time Step In Seconds');
