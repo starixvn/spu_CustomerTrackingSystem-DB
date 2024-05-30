@@ -68,6 +68,40 @@ CREATE TABLE MatchMonitorStagingGroupBettingSabaNonLive(
 	,	INDEX IX_MatchMonitorStagingGroupBettingSabaLive_RuleGroup(MatchID, ScoreDiff, BettypeID, Betteam, GroupID)
 ) ENGINE=InnoDB;
 
+ALTER TABLE MatchMonitor
+ADD COLUMN LeagueGroupID INT AFTER LeagueID;
+
+ALTER TABLE SportBettypeSetting
+ADD COLUMN LeagueGroupID INT DEFAULT 0 AFTER SportTypeID,
+DROP PRIMARY KEY,
+ADD PRIMARY KEY (FunctionID,LeagueGroupID,SportTypeID,BetTypeID);
+
+ALTER TABLE MatchMonitorRuleSetting
+ADD COLUMN LeagueGroupID INT DEFAULT 0 AFTER Reason;
+
+#=======================INITIAL SPORTSETTING
+# 4 rows
+INSERT INTO CTS_DataCenter.SportBettypeSetting(FunctionID, LeagueGroupID, SportTypeID, BetTypeID, SportName, BetTypeName, BetTypeNameDetailsX, BettypeNameDisplay, BetChoicePattern, BetChoiceType, BetIDPattern, IsMMDetection, MMReason, IsDefaultSelected, PriorityOrder, Status)
+SELECT
+		FunctionID
+	,	42 LeagueGroupID
+	,	SportTypeID
+	,	BetTypeID
+	,	SportName
+	,	BetTypeName
+	,	BetTypeNameDetailsX
+	,	BettypeNameDisplay
+	,	BetChoicePattern
+	,	BetChoiceType
+	,	BetIDPattern
+	,	IsMMDetection
+	,	0 AS MMReason
+	,	IsDefaultSelected
+	,	PriorityOrder
+	,	Status
+FROM SportBettypeSetting
+WHERE FunctionID = 1 AND SportTypeID = 1 AND IsMMDetection = 1;
+
 #=======================INITIAL SERVICE PARAMETERs================================
 # DELETE del FROM SystemParameter del WHERE ParameterID IN (162, 163, 164);
 INSERT INTO SystemParameter(ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
@@ -76,5 +110,5 @@ VALUE	(162,'MatchMonitor_GBSabaLive_LastSequenceID', NULL,'BIGINT UNSIGNED',0)
 	,	(164,'MatchMonitor_GBSabaNonLive_BatchSize', NULL,'INT',5000);
 #=================Initial Rule Setting============================================
 
-INSERT INTO MatchMonitorRuleSetting(RuleGroupID, RuleGroupDesc, Reason, SportType, ReasonName, SportName, TimeStep, TotalStake, HighStake, ModifiedDate, Comments)
-VALUES	(6, 'Group Betting Saba Detect', 0, 1, 'Group Betting', NULL, 60, 500, NULL, NOW(), 'Time Step In Seconds');
+INSERT INTO MatchMonitorRuleSetting(RuleGroupID, RuleGroupDesc, Reason, LeagueGroupID, SportType, ReasonName, SportName, TimeStep, TotalStake, HighStake, ModifiedDate, Comments)
+VALUES	(6, 'Group Betting Saba Detect', 0, 42, 1, 'Group Betting', NULL, 60, 500, NULL, NOW(), 'Time Step In Seconds');
