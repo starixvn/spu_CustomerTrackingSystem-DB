@@ -25,8 +25,8 @@ AS
 
 	Params Explaination:
 		- @QueryType: 1 detect associations, 2 get fraud tickets, 3 get association custlist of a group, 4 get fraud tickets of a custgroup
-
-	Example:
+f
+	Example
 		EXECUTE [dbo].[CTS_Association_GetBySharedMatches] @ListCustId = '2,3',@RootCustId=2,@QueryType=1;
 */
 BEGIN
