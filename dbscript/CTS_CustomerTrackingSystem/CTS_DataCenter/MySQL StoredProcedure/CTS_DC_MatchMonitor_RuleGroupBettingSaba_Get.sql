@@ -24,10 +24,8 @@ sp: BEGIN
 	*/
  
     DECLARE CONST_LOG					TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
-	DECLARE CONST_SUBSCRIBERID_ALPHA	INT DEFAULT 168;
-	DECLARE CONST_SUBSCRIBERID_MAXBET	INT DEFAULT 169;
-    DECLARE CONST_MMRULEGROUP_HEDGING	INT DEFAULT 3;
-    DECLARE CONST_MMREASON_HEDGING		INT DEFAULT 1;
+    DECLARE CONST_MMRULEGROUP_GROUPBETTINGSABA	INT DEFAULT 6;
+    DECLARE CONST_MMREASON_GROUPBETTINGSABA		INT DEFAULT 0;
     
 	DECLARE lv_LastSequenceID	BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_MaxSequenceID	BIGINT UNSIGNED DEFAULT 0;
@@ -43,16 +41,6 @@ sp: BEGIN
     END IF;
     #==================LOG======================================================= 
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorRuleSetting;
-	CREATE TEMPORARY TABLE Temp_MatchMonitorRuleSetting(
-			SportType	INT
-		,	TotalStake	DECIMAL(20,4)
-        ,	HighStake	DECIMAL(20,4)
-		
-		,	PRIMARY KEY PK_Temp_MatchMonitorRuleSetting(SportType)
-	);
-    
-    #===============================================================================================
 	DROP TEMPORARY TABLE IF EXISTS Temp_OldGroup;
 	CREATE TEMPORARY TABLE Temp_OldGroup(
 			MatchID			INT NOT NULL		
@@ -66,30 +54,23 @@ sp: BEGIN
 	);
     
     #===============================================================================================
-    INSERT INTO Temp_MatchMonitorRuleSetting(SportType, TotalStake, HighStake)
-    SELECT	s.SportType
-        ,	s.TotalStake
-        ,	s.HighStake
-    FROM CTS_DataCenter.MatchMonitorRuleSetting AS s
-    WHERE s.RuleGroupID = CONST_MMRULEGROUP_HEDGING AND s.RuleStatus=1;
-    
 	SELECT	s.TimeStep
     INTO	lv_Rule_TimeStep
     FROM	CTS_DataCenter.MatchMonitorRuleSetting AS s
-    WHERE	s.RuleGroupID = CONST_MMRULEGROUP_HEDGING AND s.Reason = CONST_MMREASON_HEDGING AND s.RuleStatus=1 
+    WHERE	s.RuleGroupID = CONST_MMRULEGROUP_GROUPBETTINGSABA AND s.Reason = CONST_MMREASON_GROUPBETTINGSABA AND s.RuleStatus=1 
     LIMIT	1;
     
     SELECT s.ParameterValue
     INTO lv_NoOfRow
     FROM CTS_DataCenter.SystemParameter AS s
-    WHERE s.ParameterID = 123;
+    WHERE s.ParameterID = 164;
 
 	IF ip_LiveIndicator = 1 THEN #=============Live Trans==================
 		
 		SELECT sys.ParameterValue
         INTO lv_LastSequenceID
         FROM CTS_DataCenter.SystemParameter AS sys
-        WHERE ParameterID = 120;      
+        WHERE ParameterID = 162;      
 
 		INSERT INTO Temp_OldGroup(MatchID, ScoreDiff, BettypeID, BetID, Betteam, GroupID)
         SELECT	mms.MatchID
@@ -98,22 +79,21 @@ sp: BEGIN
             ,	mms.BetID
             ,	mms.Betteam
             ,	mms.GroupID
-        FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms
+        FROM CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive AS mms
 		WHERE mms.SequenceID <= lv_LastSequenceID AND mms.GroupID > 0
         GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, mms.GroupID;  
                             
-        #==========Get Next Trans In TimeStep==================
-       
+        #==========Get Next Trans In TimeStep==================       
         SELECT mms.TransDateToSecond + lv_Rule_TimeStep
         INTO lv_MaxTime
-        FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms
+        FROM CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive AS mms
         WHERE mms.SequenceID >= lv_LastSequenceID
         ORDER BY mms.SequenceID ASC
         LIMIT 1;        
 
 		SELECT mms.SequenceID
         INTO lv_MaxSequenceID
-		FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms 
+		FROM CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive AS mms 
 		WHERE mms.TransDateToSecond <= lv_MaxTime 
 			AND mms.SequenceID > lv_LastSequenceID
 		ORDER BY mms.SequenceID DESC
@@ -128,11 +108,8 @@ sp: BEGIN
 				,	mms.Betteam
                 ,	MIN(mms.SportType) AS SportType
                 ,	GROUP_CONCAT(DISTINCT mms.CTSCustID) AS CTSCustIDList
-				,	CASE WHEN COUNT(DISTINCT CASE WHEN mms.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET) THEN mms.CTSCustID ELSE NULL END) > 1 
-												THEN GROUP_CONCAT(DISTINCT CASE WHEN mms.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET) THEN mms.CTSCustID ELSE NULL END)
-								ELSE NULL END AS AgentDetect_CTSCustIDList
 				,	GROUP_CONCAT(mms.SequenceID) AS SequenceIDList
-			FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms
+			FROM CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive AS mms
 				LEFT JOIN Temp_OldGroup AS tmpOg ON mms.MatchID = tmpOg.MatchID AND mms.ScoreDiff = tmpOg.ScoreDiff AND mms.BettypeID = tmpOg.BettypeID
 													AND mms.BetID = tmpOg.BetID AND mms.Betteam = tmpOg.Betteam
 													AND (mms.GroupID = tmpOg.GroupID OR mms.GroupID = 0)
@@ -145,7 +122,7 @@ sp: BEGIN
             
 		ELSE # Get Next Trans > 3 minute to Clear Trans
 			SET op_MaxSequenceID = (SELECT mms.SequenceID 
-						FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms
+						FROM CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive AS mms
 						WHERE mms.SequenceID > lv_LastSequenceID
 						ORDER BY mms.SequenceID ASC
 						LIMIT 1);
@@ -156,7 +133,7 @@ sp: BEGIN
 		SELECT sys.ParameterValue
         INTO lv_LastSequenceID
         FROM CTS_DataCenter.SystemParameter AS sys
-        WHERE ParameterID = 121;      
+        WHERE ParameterID = 163;      
 
 		INSERT INTO Temp_OldGroup(MatchID, ScoreDiff, BettypeID, BetID, Betteam, GroupID)
         SELECT	mms.MatchID
@@ -165,22 +142,21 @@ sp: BEGIN
             ,	mms.BetID
             ,	mms.Betteam
             ,	mms.GroupID
-        FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
+        FROM CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive AS mms
 		WHERE mms.SequenceID <= lv_LastSequenceID AND mms.GroupID > 0
         GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, mms.GroupID;  
                             
-        #==========Get Next Trans In TimeStep==================
-       
+        #==========Get Next Trans In TimeStep==================       
         SELECT mms.TransDateToSecond + lv_Rule_TimeStep
         INTO lv_MaxTime
-        FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
+        FROM CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive AS mms
         WHERE mms.SequenceID >= lv_LastSequenceID
         ORDER BY mms.SequenceID ASC
         LIMIT 1;        
 
 		SELECT mms.SequenceID
         INTO lv_MaxSequenceID
-		FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms 
+		FROM CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive AS mms 
 		WHERE mms.TransDateToSecond <= lv_MaxTime 
 			AND mms.SequenceID > lv_LastSequenceID
 		ORDER BY mms.SequenceID DESC
@@ -199,7 +175,7 @@ sp: BEGIN
 												THEN GROUP_CONCAT(DISTINCT CASE WHEN mms.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET) THEN mms.CTSCustID ELSE NULL END)
 								ELSE NULL END AS AgentDetect_CTSCustIDList
 				,	GROUP_CONCAT(mms.SequenceID) AS SequenceIDList
-			FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
+			FROM CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive AS mms
 				LEFT JOIN Temp_OldGroup AS tmpOg ON mms.MatchID = tmpOg.MatchID AND mms.ScoreDiff = tmpOg.ScoreDiff AND mms.BettypeID = tmpOg.BettypeID
 													AND mms.BetID = tmpOg.BetID AND mms.Betteam = tmpOg.Betteam
 													AND (mms.GroupID = tmpOg.GroupID OR mms.GroupID = 0)
@@ -212,7 +188,7 @@ sp: BEGIN
             
 		ELSE # Get Next Trans > 3 minute to Clear Trans
 			SET op_MaxSequenceID = (SELECT mms.SequenceID 
-						FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
+						FROM CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive AS mms
 						WHERE mms.SequenceID > lv_LastSequenceID
 						ORDER BY mms.SequenceID ASC
 						LIMIT 1);

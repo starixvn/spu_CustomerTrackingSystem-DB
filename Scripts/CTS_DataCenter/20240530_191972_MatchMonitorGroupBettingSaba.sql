@@ -20,8 +20,10 @@ CREATE TABLE MatchMonitorStagingGroupBettingSabaLive(
 	,	SportType			INT NOT NULL
 	,	ScoreDiff			INT NOT NULL
 	,	BettypeID			INT NOT NULL
-	,	Betteam				VARCHAR(10) DEFAULT NULL
-	,	CustID				BIGINT UNSIGNED DEFAULT NULL
+    ,	BetID				BIGINT NOT NULL
+	,	Betteam				VARCHAR(10) NOT NULL
+	,	CustID				BIGINT UNSIGNED NOT NULL
+    ,	CTSCustID			BIGINT UNSIGNED NOT NULL
 	,	Stake				DECIMAL(20,4) DEFAULT NULL
 	,	GroupID				INT DEFAULT '0'
 	,	LiveHomeScore		INT DEFAULT NULL
@@ -31,12 +33,13 @@ CREATE TABLE MatchMonitorStagingGroupBettingSabaLive(
 	,	EventStatus			VARCHAR(50) DEFAULT NULL
 	,	HomeID				INT DEFAULT NULL
 	,	AwayID				INT DEFAULT NULL
-	,	LeagueID			INT DEFAULT NULL	
+	,	LeagueID			INT DEFAULT NULL
+	,	LeagueGroupID		INT
 	,	LeagueName			VARCHAR(500) DEFAULT NULL
     ,	InsertTime			DATETIME(3) DEFAULT NULL
-	,	PRIMARY KEY (SequenceID)
+	,	PRIMARY KEY PK_MatchMonitorStagingGroupBettingSabaLive_SequenceID(SequenceID)
 	,	INDEX IX_MatchMonitorStagingGroupBettingSabaLive_TransDateToSecond(TransDateToSecond)
-	,	INDEX IX_MatchMonitorStagingGroupBettingSabaLive_RuleGroup(MatchID, ScoreDiff, BettypeID, Betteam, GroupID)
+	,	INDEX IX_MatchMonitorStagingGroupBettingSabaLive_RuleGroup(MatchID, ScoreDiff, BettypeID, BetID, Betteam, GroupID)
 ) ENGINE=InnoDB;
 
 
@@ -49,8 +52,10 @@ CREATE TABLE MatchMonitorStagingGroupBettingSabaNonLive(
 	,	SportType			INT NOT NULL
 	,	ScoreDiff			INT NOT NULL
 	,	BettypeID			INT NOT NULL
-	,	Betteam				VARCHAR(10) DEFAULT NULL
-	,	CustID				BIGINT UNSIGNED DEFAULT NULL
+    ,	BetID				BIGINT NOT NULL
+	,	Betteam				VARCHAR(10) NOT NULL
+	,	CustID				BIGINT UNSIGNED NOT NULL
+    ,	CTSCustID			BIGINT UNSIGNED NOT NULL
 	,	Stake				DECIMAL(20,4) DEFAULT NULL
 	,	GroupID				INT DEFAULT '0'
 	,	LiveHomeScore		INT DEFAULT NULL
@@ -60,12 +65,13 @@ CREATE TABLE MatchMonitorStagingGroupBettingSabaNonLive(
 	,	EventStatus			VARCHAR(50) DEFAULT NULL
 	,	HomeID				INT DEFAULT NULL
 	,	AwayID				INT DEFAULT NULL
-	,	LeagueID			INT DEFAULT NULL	
+	,	LeagueID			INT DEFAULT NULL
+	,	LeagueGroupID		INT
 	,	LeagueName			VARCHAR(500) DEFAULT NULL
     ,	InsertTime			DATETIME(3) DEFAULT NULL
-	,	PRIMARY KEY (SequenceID)
-	,	INDEX IX_MatchMonitorStagingGroupBettingSabaLive_TransDateToSecond(TransDateToSecond)
-	,	INDEX IX_MatchMonitorStagingGroupBettingSabaLive_RuleGroup(MatchID, ScoreDiff, BettypeID, Betteam, GroupID)
+	,	PRIMARY KEY PK_MatchMonitorStagingGroupBettingSabaNonLive_SequenceID(SequenceID)
+	,	INDEX IX_MatchMonitorStagingGroupBettingSabaNonLive_TransDateToSecond(TransDateToSecond)
+	,	INDEX IX_MatchMonitorStagingGroupBettingSabaNonLive_RuleGroup(MatchID, ScoreDiff, BettypeID, BetID, Betteam, GroupID)
 ) ENGINE=InnoDB;
 
 ALTER TABLE MatchMonitor
