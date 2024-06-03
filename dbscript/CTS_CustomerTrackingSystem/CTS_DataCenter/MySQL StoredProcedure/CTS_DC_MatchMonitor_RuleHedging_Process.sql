@@ -31,6 +31,7 @@ sp: BEGIN
 			-	20230310@Victoria.Le:	Credit Scale Out - Split 789y Site [Redmine ID: #183140]
             -	20230612@Casey.Huynh: 	LogInfo [Redmine ID: #185793]
             -	20240109@Casey.Huynh:	Enhance Hedging Rule [Redmine ID: #192172]
+            -	20240223@Casey.Huynh:	Fix Issue Return [Redmine ID: #201271]
             -	20240509@Casey.Huynh: 	HF Hedging StepTime [Redmine ID: #204338]
 			
 		Param's Explanation (filtered by):	
