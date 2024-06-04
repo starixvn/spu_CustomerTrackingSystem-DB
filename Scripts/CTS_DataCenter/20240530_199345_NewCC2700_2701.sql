@@ -18,6 +18,7 @@ CREATE TABLE Customer_InitialSmart (
 ,   Probability DECIMAL(8,4)
 ,   PredictTime DATETIME(3)
 ,   InsertedTime DATETIME(3)
+,   KEY IX_Customer_InitialSmart_InsertedTime_CustID (InsertedTime,CustID);
 );
 
 /*For tracking when receiving duplicate cust */

@@ -3,7 +3,6 @@ DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_InitialSmart_Insert`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_InitialSmart_Insert`(
 		IN 	ip_CustInfo 		JSON
-    ,   OUT op_IsCustExist 	    TINYINT
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -30,6 +29,11 @@ BEGIN
 		,   PredictTime 	    DATETIME(3)
 	);
 
+	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedCust;
+	CREATE TEMPORARY TABLE Temp_ExistedCust(
+			CustID 				BIGINT NOT NULL PRIMARY KEY
+	);
+
 	INSERT IGNORE INTO Temp_Customer(CustID, Probability, PredictTime)
     SELECT	tmp.CustID
 		,	tmp.Probability
@@ -41,20 +45,19 @@ BEGIN
                                 )) AS tmp
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID AND cus.IsInternal = 0;
 
-	IF EXISTS (	SELECT 1
-				FROM CTS_DataCenter.Customer_InitialSmart AS cs
-					INNER JOIN Temp_Customer AS tmp	ON tmp.CustID = cs.CustID) THEN
+	INSERT IGNORE INTO Temp_ExistedCust(CustID)
+	SELECT tmp.CustID
+	FROM CTS_DataCenter.Customer_InitialSmart AS cs
+		INNER JOIN Temp_Customer AS tmp	ON tmp.CustID = cs.CustID;
+
+	IF EXISTS (	SELECT 1 FROM Temp_ExistedCust) THEN
 		INSERT INTO CTS_DataCenter.Customer_InitialSmart_Log (CustID, Probability, PredictTime, InsertedTime)
 		SELECT	tmp.CustID
 			,	tmp.Probability
 			,	tmp.PredictTime
             ,   lv_CreatedDate
-		FROM CTS_DataCenter.Customer_InitialSmart AS cs
-			INNER JOIN Temp_Customer AS tmp	ON tmp.CustID = cs.CustID;
-
-        SET op_IsCustExist = 1;
-    ELSE 
-        SET op_IsCustExist = 0;
+		FROM Temp_ExistedCust AS tec
+			INNER JOIN Temp_Customer AS tmp ON tmp.CustID = tec.CustID;
 	END IF;
 
     INSERT IGNORE INTO CTS_DataCenter.Customer_InitialSmart (CustID, Probability, PredictTime, InsertedTime)
@@ -64,5 +67,8 @@ BEGIN
         ,   lv_CreatedDate
 	FROM Temp_Customer AS tmp;
 	
+	SELECT tec.CustID
+	FROM Temp_ExistedCust AS tec;
+
 END$$
 DELIMITER ;
