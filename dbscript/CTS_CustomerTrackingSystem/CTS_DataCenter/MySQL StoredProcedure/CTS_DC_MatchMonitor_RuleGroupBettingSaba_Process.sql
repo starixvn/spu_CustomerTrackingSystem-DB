@@ -9,7 +9,6 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleGroupBettingSab
     ,	IN ip_BettypeID			INT UNSIGNED
     ,	IN ip_BetID				BIGINT
     ,	IN ip_Betteam			VARCHAR(10)
-    ,	IN ip_SportType			INT
     ,	IN ip_SequenceIDList	TEXT		# SequenceID List from SP CTS_DC_MatchMonitor_RuleGroupBettingSaba_Process
     ,	IN ip_CustGroup			JSON 		# Group Return from DC_Association_DetectGroup    
 )
@@ -28,14 +27,19 @@ sp: BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL CTS_DC_MatchMonitor_RuleGroupBettingSaba_Process(@ip_LiveIndicator:=1
-            ,@ip_MaxSequenceID:=113171940189,@ip_MatchID:=22081995,@ip_ScoreDiff:=1,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a');
+			CALL CTS_DC_MatchMonitor_RuleGroupBettingSaba_Process(
+            @ip_LiveIndicator:=1
+            ,@ip_MatchID:=22081995
+            ,@ip_ScoreDiff:=1
+            ,@ip_BettypeID:=1
+            ,@ip_BetID:=0
+            ,@ip_Betteam:='a'
+            ,@ip_SequenceIDList:=''
+            ,@ip_CustGroup:='[{"CustID":,"GroupID":},{"CustID":,"GroupID":}]');
 						
 	*/
 	
 	DECLARE CONST_LOG 					TINYINT DEFAULT 0;
-#	DECLARE CONST_SUBSCRIBERID_ALPHA	INT DEFAULT 168;
-#	DECLARE CONST_SUBSCRIBERID_MAXBET	INT DEFAULT 169;
     DECLARE CONST_MMRULEGROUP_GROUPBETTINGSABA	INT DEFAULT 6;
     DECLARE CONST_MMREASON_GROUPBETTINGSABA		INT DEFAULT 0;
 
@@ -62,7 +66,6 @@ sp: BEGIN
         ,	TransID			BIGINT
         ,	CustID			BIGINT
         ,	CTSCustID		BIGINT
-        ,	SubscriberID	INT
         ,	Stake			DECIMAL(20,4)
         ,	OldGroupID		INT
         ,	TimeGroupID		INT
@@ -79,7 +82,6 @@ sp: BEGIN
         ,	TransID			BIGINT
         ,	CustID			BIGINT
         ,	CTSCustID		BIGINT
-        ,	SubscriberID	INT
         ,	Stake			DECIMAL(20,4)
         ,	OldGroupID		INT
         
@@ -117,8 +119,7 @@ sp: BEGIN
 	SELECT 	st.TotalStake, st.TimeStep
 	INTO 	lv_RuleTotalStake, lv_RuleTimeStep
 	FROM CTS_DataCenter.MatchMonitorRuleSetting AS st 
-	WHERE 	st.RuleGroupID = CONST_MMRULEGROUP_GROUPBETTINGSABA AND st.SportType = ip_SportType 
-			AND st.Reason = CONST_MMREASON_GROUPBETTINGSABA AND st.RuleStatus = 1
+	WHERE 	st.RuleGroupID = CONST_MMRULEGROUP_GROUPBETTINGSABA AND st.RuleStatus = 1
 	LIMIT 1;
 
     DROP TEMPORARY TABLE IF EXISTS Temp_CustGroup;
@@ -148,7 +149,7 @@ sp: BEGIN
     
     IF (ip_LiveIndicator = 1) THEN
     
-		INSERT INTO Temp_Trans(GroupID, OrderNum ,SequenceID,TransDateToSecond,TransID,CustID,CTSCustID, SubscriberID, Stake, OldGroupID)
+		INSERT INTO Temp_Trans(GroupID, OrderNum ,SequenceID,TransDateToSecond,TransID,CustID,CTSCustID, Stake, OldGroupID)
         SELECT	tmpCg.GroupID
 			,	ROW_NUMBER() OVER (PARTITION BY tmpCg.GroupID ORDER BY SequenceID ) AS OrderNum			
 			,	mms.SequenceID
@@ -156,14 +157,13 @@ sp: BEGIN
 			,	mms.TransID
 			,	mms.CustID
 			,	mms.CTSCustID
-            ,	mms.SubscriberID
 			,	mms.Stake
             ,	mms.GroupID
         FROM	CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive AS mms
 			INNER JOIN Temp_SequenceID AS tmpSq ON tmpSq.SequenceID = mms.SequenceID
 			INNER JOIN Temp_CustGroup AS tmpCg ON tmpCg.CustID = mms.CustID;
             
-		INSERT INTO Temp_Trans2(GroupID, OrderNum, SequenceID,TransDateToSecond,TransID,CustID,CTSCustID,SubscriberID,Stake,OldGroupID)
+		INSERT INTO Temp_Trans2(GroupID, OrderNum, SequenceID,TransDateToSecond,TransID,CustID,CTSCustID,Stake,OldGroupID)
 		SELECT tmpTs.GroupID
 			,	tmpTs.OrderNum
             ,	tmpTs.SequenceID
@@ -171,7 +171,6 @@ sp: BEGIN
             ,	tmpTs.TransID
             ,	tmpTs.CustID
             ,	tmpTs.CTSCustID
-            ,	tmpTs.SubscriberID
             ,	tmpTs.Stake
             ,	tmpTs.OldGroupID
 		FROM Temp_Trans AS tmpTs;
@@ -195,7 +194,7 @@ sp: BEGIN
 
 	ELSE #(ip_LiveIndicator = 0)
 		
-		INSERT INTO Temp_Trans(GroupID, OrderNum ,SequenceID,TransDateToSecond,TransID,CustID,CTSCustID, SubscriberID, Stake, OldGroupID)
+		INSERT INTO Temp_Trans(GroupID, OrderNum ,SequenceID,TransDateToSecond,TransID,CustID,CTSCustID, Stake, OldGroupID)
         SELECT	tmpCg.GroupID
 			,	ROW_NUMBER() OVER (PARTITION BY tmpCg.GroupID ORDER BY SequenceID ) AS OrderNum			
 			,	mms.SequenceID
@@ -203,14 +202,13 @@ sp: BEGIN
 			,	mms.TransID
 			,	mms.CustID
 			,	mms.CTSCustID
-            ,	mms.SubscriberID
 			,	mms.Stake
             ,	mms.GroupID
         FROM	CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive AS mms
 			INNER JOIN Temp_SequenceID AS tmpSq ON tmpSq.SequenceID = mms.SequenceID
 			INNER JOIN Temp_CustGroup AS tmpCg ON tmpCg.CustID = mms.CustID;
             
-		INSERT INTO Temp_Trans2(GroupID, OrderNum, SequenceID, TransDateToSecond, TransID, CustID, CTSCustID, SubscriberID, Stake, OldGroupID)
+		INSERT INTO Temp_Trans2(GroupID, OrderNum, SequenceID, TransDateToSecond, TransID, CustID, CTSCustID, Stake, OldGroupID)
 		SELECT tmpTs.GroupID
 			,	tmpTs.OrderNum
             ,	tmpTs.SequenceID
@@ -218,7 +216,6 @@ sp: BEGIN
             ,	tmpTs.TransID
             ,	tmpTs.CustID
             ,	tmpTs.CTSCustID
-            ,	tmpTs.SubscriberID
             ,	tmpTs.Stake
             ,	tmpTs.OldGroupID
 		FROM Temp_Trans AS tmpTs;
