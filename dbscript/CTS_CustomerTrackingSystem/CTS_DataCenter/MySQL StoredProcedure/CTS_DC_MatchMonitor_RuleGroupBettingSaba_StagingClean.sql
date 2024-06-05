@@ -20,7 +20,7 @@ BEGIN
 		Param's Explanation (filtered by):		
             
 		Example:
-			CALL CTS_DC_MatchMonitor_RuleGroupBettingSabaSaba_StagingClean(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=2);
+			CALL CTS_DC_MatchMonitor_RuleGroupBettingSaba_StagingClean(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=119780351005);
             
 	*/
     DECLARE CONS_LOG 			TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
