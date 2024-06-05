@@ -299,7 +299,7 @@ sp: BEGIN
 				,	tmpSt.Betteam
 				,	CURRENT_TIMESTAMP(3) AS InsertTime
 			FROM Temp_Staging AS tmpSt
-				LEFT JOIN CTS_DataCenter.CTSCustomer cus ON tmpSt.CustID = cus.CustID
+				INNER JOIN CTS_DataCenter.CTSCustomer cus ON tmpSt.CustID = cus.CustID
 				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_HEDGING
 																	AND tmpMst.SportType = tmpSt.SportType 
 																	AND (tmpMst.LeagueType = 2 OR (tmpMst.LeagueType = tmpSt.IsMajorLeague))
