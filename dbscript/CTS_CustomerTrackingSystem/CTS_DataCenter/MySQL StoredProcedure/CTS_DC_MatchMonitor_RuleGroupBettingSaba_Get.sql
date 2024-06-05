@@ -171,9 +171,6 @@ sp: BEGIN
 				,	mms.Betteam
                 ,	MIN(mms.SportType) AS SportType
                 ,	GROUP_CONCAT(DISTINCT mms.CTSCustID) AS CTSCustIDList
-				,	CASE WHEN COUNT(DISTINCT CASE WHEN mms.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET) THEN mms.CTSCustID ELSE NULL END) > 1 
-												THEN GROUP_CONCAT(DISTINCT CASE WHEN mms.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET) THEN mms.CTSCustID ELSE NULL END)
-								ELSE NULL END AS AgentDetect_CTSCustIDList
 				,	GROUP_CONCAT(mms.SequenceID) AS SequenceIDList
 			FROM CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive AS mms
 				LEFT JOIN Temp_OldGroup AS tmpOg ON mms.MatchID = tmpOg.MatchID AND mms.ScoreDiff = tmpOg.ScoreDiff AND mms.BettypeID = tmpOg.BettypeID
@@ -186,13 +183,13 @@ sp: BEGIN
 			
             SET op_MaxSequenceID = lv_MaxSequenceID ;
             
-		ELSE # Get Next Trans > 3 minute to Clear Trans
+		ELSE # Get Next Trans > 1 minute to Clear Trans
 			SET op_MaxSequenceID = (SELECT mms.SequenceID 
 						FROM CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive AS mms
 						WHERE mms.SequenceID > lv_LastSequenceID
 						ORDER BY mms.SequenceID ASC
 						LIMIT 1);
-		END IF;  
+		END IF;
         
 	END IF;
  

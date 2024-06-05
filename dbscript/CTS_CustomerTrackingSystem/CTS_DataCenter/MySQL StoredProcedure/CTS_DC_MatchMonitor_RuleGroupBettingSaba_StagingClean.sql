@@ -20,11 +20,11 @@ BEGIN
 		Param's Explanation (filtered by):		
             
 		Example:
-			CALL CTS_DC_MatchMonitor_RuleHedgingSaba_StagingClean(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=2);
+			CALL CTS_DC_MatchMonitor_RuleGroupBettingSabaSaba_StagingClean(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=2);
             
 	*/
     DECLARE CONS_LOG 			TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
-    DECLARE CONST_RULE_GROUPID  TINYINT DEFAULT 3; # Hedging
+    DECLARE CONST_RULE_GROUPID  TINYINT DEFAULT 6; # GroupBettingSaba
  
 	DECLARE	lv_LastTransID 		BIGINT; 
 	DECLARE	lv_FromTime 		BIGINT;
@@ -75,12 +75,12 @@ BEGIN
     
 		SELECT 	MAX(mms.TransDateToSecond), MAX(mms.TransID)
 		INTO 	lv_ToTime, lv_LastTransID
-		FROM	CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms
+		FROM	CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive AS mms
         WHERE	mms.SequenceID <= ip_MaxSequenceID;      
 		
         SELECT  mms.TransDateToSecond
         INTO 	lv_FromTime
-		FROM	CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms
+		FROM	CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive AS mms
         WHERE	mms.SequenceID <= ip_MaxSequenceID
 			AND mms.TransDateToSecond > lv_ToTime - lv_Rule_TimeStep
 		ORDER BY mms.TransDateToSecond ASC
@@ -88,13 +88,13 @@ BEGIN
 		
 		INSERT INTO Temp_LastGroupIDGroup(MatchID, ScoreDiff, BettypeID, BetID, Betteam, GroupID)
 		SELECT 	DISTINCT mms.MatchID,  mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, mms.GroupID
-		FROM 	CTS_DataCenter.MatchMonitorStagingHedgingLive mms
+		FROM 	CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive mms
 		WHERE	mms.GroupID <> 0
 			AND	mms.TransDateToSecond BETWEEN lv_FromTime AND lv_ToTime; 
         
 		#=====Remove GroupID > 0 AND NOT IN Last Step Time Group===================
 		DELETE mms
-		FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms            
+		FROM CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive AS mms            
 			LEFT JOIN Temp_LastGroupIDGroup AS tmpTg ON mms.MatchID = tmpTg.MatchID AND mms.ScoreDiff = tmpTg.ScoreDiff AND mms.BettypeID = tmpTg.BettypeID
 				AND mms.BetID = tmpTg.BetID AND mms.Betteam = tmpTg.Betteam AND mms.GroupID = tmpTg.GroupID
 		WHERE	mms.GroupID > 0 
@@ -103,7 +103,7 @@ BEGIN
 		
         #=====Remove GroupID > 0 AND NOT IN Last Step Time Group===================
         WHILE EXISTS (	SELECT 1 
-						FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms 
+						FROM CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive AS mms 
 						WHERE mms.GroupID = 0 AND mms.TransDateToSecond < lv_FromTime
                         LIMIT 1)
 		DO	
@@ -111,12 +111,12 @@ BEGIN
 			TRUNCATE TABLE Temp_LastCustIDGroup;
 			INSERT INTO Temp_LastCustIDGroup(MatchID, ScoreDiff, BettypeID, BetID, Betteam, CustID)
 			SELECT	DISTINCT mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, mms.CustID
-			FROM 	CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms
+			FROM 	CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive AS mms
 			WHERE	mms.GroupID = 0
 				AND	mms.TransDateToSecond BETWEEN lv_FromTime AND lv_ToTime;
        
             DELETE mms
-			FROM CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms            
+			FROM CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive AS mms            
 				LEFT JOIN Temp_LastCustIDGroup AS tmpCus ON mms.MatchID = tmpCus.MatchID AND mms.ScoreDiff = tmpCus.ScoreDiff AND mms.BettypeID = tmpCus.BettypeID
 							AND mms.BetID = tmpCus.BetID AND mms.Betteam = tmpCus.Betteam AND tmpCus.CustID = mms.CustID 
 			WHERE	mms.GroupID = 0 
@@ -126,13 +126,13 @@ BEGIN
             #===Get Previous Time Group===============    
 			SELECT 	MAX(mms.TransDateToSecond)
 			INTO 	lv_ToTime
-			FROM	CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms
+			FROM	CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive AS mms
 			WHERE	mms.TransDateToSecond < lv_FromTime
 				AND mms.GroupID = 0; 
             
             SELECT  mms.TransDateToSecond
 			INTO 	lv_FromTime
-			FROM	CTS_DataCenter.MatchMonitorStagingHedgingLive AS mms
+			FROM	CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive AS mms
 			WHERE	mms.SequenceID <= ip_MaxSequenceID
 				AND mms.TransDateToSecond > lv_ToTime - lv_Rule_TimeStep
                 AND mms.GroupID = 0 
@@ -152,12 +152,12 @@ BEGIN
     
 		SELECT 	MAX(mms.TransDateToSecond), MAX(mms.TransID)
 		INTO 	lv_ToTime, lv_LastTransID
-		FROM	CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
+		FROM	CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive AS mms
         WHERE	mms.SequenceID <= ip_MaxSequenceID;      
 		
         SELECT  mms.TransDateToSecond
         INTO 	lv_FromTime
-		FROM	CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
+		FROM	CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive AS mms
         WHERE	mms.SequenceID <= ip_MaxSequenceID
 			AND mms.TransDateToSecond > lv_ToTime - lv_Rule_TimeStep
 		ORDER BY mms.TransDateToSecond ASC
@@ -165,13 +165,13 @@ BEGIN
 		
 		INSERT INTO Temp_LastGroupIDGroup(MatchID, ScoreDiff, BettypeID, BetID, Betteam, GroupID)
 		SELECT 	DISTINCT mms.MatchID,  mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, mms.GroupID
-		FROM 	CTS_DataCenter.MatchMonitorStagingHedgingNonLive mms
+		FROM 	CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive mms
 		WHERE	mms.GroupID <> 0
 			AND	mms.TransDateToSecond BETWEEN lv_FromTime AND lv_ToTime; 
         
 		#=====Remove GroupID > 0 AND NOT IN Last Step Time Group===================
 		DELETE mms
-		FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms            
+		FROM CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive AS mms            
 			LEFT JOIN Temp_LastGroupIDGroup AS tmpTg ON mms.MatchID = tmpTg.MatchID AND mms.ScoreDiff = tmpTg.ScoreDiff AND mms.BettypeID = tmpTg.BettypeID
 				AND mms.BetID = tmpTg.BetID AND mms.Betteam = tmpTg.Betteam AND mms.GroupID = tmpTg.GroupID
 		WHERE	mms.GroupID > 0 
@@ -180,7 +180,7 @@ BEGIN
 
         #=====Remove GroupID > 0 AND NOT IN Last Step Time Group===================
         WHILE EXISTS (	SELECT 1 
-						FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms 
+						FROM CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive AS mms 
 						WHERE mms.GroupID = 0 AND mms.TransDateToSecond < lv_FromTime
                         LIMIT 1)
 		DO	
@@ -188,12 +188,12 @@ BEGIN
 			TRUNCATE TABLE Temp_LastCustIDGroup;
 			INSERT INTO Temp_LastCustIDGroup(MatchID, ScoreDiff, BettypeID, BetID, Betteam, CustID)
 			SELECT	DISTINCT mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, mms.CustID
-			FROM 	CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
+			FROM 	CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive AS mms
 			WHERE	mms.GroupID = 0
 				AND	mms.TransDateToSecond BETWEEN lv_FromTime AND lv_ToTime;
        
             DELETE mms
-			FROM CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms            
+			FROM CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive AS mms            
 				LEFT JOIN Temp_LastCustIDGroup AS tmpCus ON mms.MatchID = tmpCus.MatchID AND mms.ScoreDiff = tmpCus.ScoreDiff AND mms.BettypeID = tmpCus.BettypeID
 							AND mms.BetID = tmpCus.BetID AND mms.Betteam = tmpCus.Betteam AND tmpCus.CustID = mms.CustID 
 			WHERE	mms.GroupID = 0 
@@ -203,13 +203,13 @@ BEGIN
             #===Get Previous Time Group===============    
 			SELECT 	MAX(mms.TransDateToSecond)
 			INTO 	lv_ToTime
-			FROM	CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
+			FROM	CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive AS mms
 			WHERE	mms.TransDateToSecond < lv_FromTime
 				AND mms.GroupID = 0; 
             
             SELECT  mms.TransDateToSecond
 			INTO 	lv_FromTime
-			FROM	CTS_DataCenter.MatchMonitorStagingHedgingNonLive AS mms
+			FROM	CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive AS mms
 			WHERE	mms.SequenceID <= ip_MaxSequenceID
 				AND mms.TransDateToSecond > lv_ToTime - lv_Rule_TimeStep
                 AND mms.GroupID = 0 
