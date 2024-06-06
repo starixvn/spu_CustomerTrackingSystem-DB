@@ -26,6 +26,7 @@ BEGIN
 	DECLARE lv_LastScannedDate DATETIME(3);
 	DECLARE lv_LastScannedCustID BIGINT UNSIGNED;
     DECLARE lv_BatchSize SMALLINT;
+    DECLARE lv_SecondBatchSize SMALLINT;
     DECLARE lv_TotalRow SMALLINT;
 	
     SELECT sys.ParameterValue
@@ -45,10 +46,11 @@ BEGIN
 
     DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
     CREATE TEMPORARY TABLE Temp_Customer(
-			CustID				BIGINT UNSIGNED PRIMARY KEY
+			CustID				BIGINT UNSIGNED
 		,	Probability		    DECIMAL(8,4)
         ,   PredictTime 	    DATETIME(3)
         ,   InsertedTime        DATETIME(3)
+        ,   PRIMARY KEY (InsertedTime, CustID)
     );
     
     INSERT INTO Temp_Customer(CustID, Probability, PredictTime, InsertedTime)
@@ -64,7 +66,9 @@ BEGIN
     
     SET lv_TotalRow = (SELECT COUNT(1) FROM Temp_Customer);
     
-    IF lv_TotalRow < lv_BatchSize THEN    
+    IF lv_TotalRow < lv_BatchSize THEN   
+        SET lv_SecondBatchSize = lv_BatchSize - lv_TotalRow;
+        
         INSERT INTO Temp_Customer(CustID, Probability, PredictTime, InsertedTime)
 		SELECT	cs.CustID
             , 	cs.Probability
@@ -73,7 +77,7 @@ BEGIN
 		FROM CTS_DataCenter.Customer_InitialSmart AS cs
 		WHERE cs.InsertedTime > lv_LastScannedDate
 		ORDER BY cs.InsertedTime ASC, cs.CustID ASC
-		LIMIT lv_BatchSize;
+		LIMIT lv_SecondBatchSize;
     END IF;
     
     SET op_NextScannedDateTime = IFNULL((SELECT MAX(InsertedTime) FROM Temp_Customer), lv_LastScannedDate);
