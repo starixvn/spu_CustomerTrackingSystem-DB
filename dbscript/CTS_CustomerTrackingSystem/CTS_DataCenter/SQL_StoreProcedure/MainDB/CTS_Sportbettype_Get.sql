@@ -6,9 +6,7 @@ GO
 
 ALTER PROCEDURE [dbo].[CTS_SportBettype_Get]
 		@ProductId INT
-	,	@SabaLeagueGroupID VARCHAR(MAX) = ''
 	,	@BettypeList VARCHAR(MAX) = NULL
-
 
 AS
 /*
@@ -38,29 +36,14 @@ AS
 			9: 	Badminton | 18: Table Tennis | 43: E-Sports
 			50: Cricket
 			....
-		- LeagueGroupId
-			NULL: All
 			
 	Example:
-		
-		EXEC CTS_SportBettype_Get_xtest @ProductID=1, @SabaLeagueGroupID = '42,74', @BettypeList='1,2,3,6,7,8,12,126,413,414,20,609,610,612'
-			
-		
+		EXEC CTS_SportBettype_Get @ProductID=1, @BettypeList='1,2,3,6,7,8,12,126,413,414,20,609,610,612'
 		EXEC CTS_SportBettype_Get @ProductID=1
 */
 BEGIN
 	SET NOCOUNT ON;
 	
-	IF	OBJECT_ID('tempdb..#tmpSabaLeagueGroup') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpSabaLeagueGroup;
-	END;
-
-	CREATE TABLE	#tmpSabaLeagueGroup(
-			LeagueGroupID	INT
-	);
-	
-		
 	IF	OBJECT_ID('tempdb..#tmpSportBettype') IS NOT NULL
 	BEGIN
 		DROP TABLE	#tmpSportBettype;
@@ -70,18 +53,7 @@ BEGIN
 			SporttypeId		INT
 		,	BettypeId		INT
 	);
-	IF(@SabaLeagueGroupID <> '')
-	BEGIN
-		INSERT INTO #tmpSabaLeagueGroup(LeagueGroupID)
-		SELECT VALUE FROM STRING_SPLIT(@SabaLeagueGroupID, ',');
-	END
-	ELSE
-	BEGIN
-		INSERT INTO #tmpSabaLeagueGroup(LeagueGroupID)
-		SELECT NULL;
-
-	END;
-
+	
 	INSERT INTO #tmpSportBettype (SporttypeId,BettypeId)
 	SELECT DISTINCT sb.SportType, sb.BetType 
 	FROM bodb02.dbo.SportBettypeMatrix AS sb WITH(NOLOCK)
@@ -96,18 +68,16 @@ BEGIN
 								  'Bet Builder');
 	
 	CREATE NONCLUSTERED INDEX #IX_tmpSportBettype_SporttypeId ON #tmpSportBettype (SporttypeId,BettypeId);
-
+	
 	WITH CTE_Saba_1 AS (
-		SELECT DISTINCT tmp.SporttypeId, tmp.BettypeId, lg.LeagueGroupID
-		FROM bodb02.dbo.League AS lg WITH (NOLOCK)
-			INNER JOIN #tmpSportBettype AS tmp ON tmp.SporttypeId = lg.SportType
-			INNER JOIN #tmpSabaLeagueGroup AS tmpLg ON ISNULL(tmpLg.LeagueGroupID,lg.LeagueGroupID) = lg.LeagueGroupID
-		WHERE lg.LeagueGroupID = 42 
+		SELECT DISTINCT tmp.SporttypeId, tmp.BettypeId, l.LeagueGroupID
+		FROM bodb02.dbo.League AS l WITH (NOLOCK)
+			INNER JOIN #tmpSportBettype AS tmp ON tmp.SporttypeId = l.SportType
+		WHERE l.LeagueGroupID = 42 
 	), CTE_Saba_2 AS (
 		SELECT DISTINCT tmp.SporttypeId, tmp.BettypeId, lg.GroupID AS LeagueGroupID, lg.GroupName AS LeagueGroupName
 		FROM bodb02.dbo.LeagueGroup AS lg WITH (NOLOCK)
 			INNER JOIN #tmpSportBettype AS tmp ON tmp.SporttypeId = lg.SportType
-			INNER JOIN #tmpSabaLeagueGroup AS tmpLg ON ISNULL(tmpLg.LeagueGroupID,lg.GroupID) = lg.GroupID
 		WHERE lg.GroupID IN (74,108,113,122,151) 
 	), CTE_All AS (
 		SELECT SporttypeId,BettypeId,LeagueGroupID,NULL AS LeagueGroupName
@@ -139,10 +109,8 @@ BEGIN
 	FROM CTE_All AS c
 		INNER JOIN bodb02.dbo.Sports AS s WITH(NOLOCK) ON s.SportType = c.SporttypeId
 		INNER JOIN bodb02.dbo.Bettype AS b WITH(NOLOCK) ON b.typeid = c.BettypeId
-
 	ORDER BY SportGroup ASC, SporttypeId ASC;
 	
 	DROP TABLE IF EXISTS #tmpSportBettype;
 	
 END
-

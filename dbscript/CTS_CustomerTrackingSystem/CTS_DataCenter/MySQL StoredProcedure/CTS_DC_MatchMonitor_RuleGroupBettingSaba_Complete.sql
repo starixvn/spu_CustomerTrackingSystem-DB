@@ -27,9 +27,9 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL CTS_DC_MatchMonitor_RuleGroupBettingSaba_Complete_xtest(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=119780351005,@ip_MatchID:=1
+			CALL CTS_DC_MatchMonitor_RuleGroupBettingSaba_Complete(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=119780351005,@ip_MatchID:=1
 			,@ip_ScoreDiff:=0,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a'
-			,'[{"GroupID":1,"Reason":0,"TransIDList":"254608225414938624,254608225414938626","CustIDList":"1319,1320","OldGroupIDList":"0"}]');
+			,'[{"GroupID":1,"Reason":0,"TransIDList":"254608225414938624,254608225414938626","CustIDList":"1319,1320"}]');
 		
 	*/
         
@@ -68,8 +68,6 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_TransGroup
     (
 			GroupID 				INT PRIMARY KEY
-        ,	IsGroupBettingSaba 				BOOLEAN
-        ,	OldGroupIDList			VARCHAR(500)
         ,	CustIDList 				TEXT
         ,	TransIDList				TEXT 
     );    
@@ -78,8 +76,6 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_GroupBettingSabaGroup
     (
 			GroupID 				INT PRIMARY KEY
-        ,	IsGroupBettingSaba 				BOOLEAN
-        ,	OldGroupIDList			VARCHAR(500)
         ,	CustIDList 				TEXT
         ,	TransIDList				TEXT 
     );   
@@ -94,24 +90,21 @@ BEGIN
 			TransID	BIGINT PRIMARY KEY
     ); 
     
-    INSERT IGNORE INTO Temp_TransGroup(GroupID, OldGroupIDList, CustIDList, TransIDList)
+    INSERT IGNORE INTO Temp_TransGroup(GroupID, CustIDList, TransIDList)
 	SELECT  js.GroupID
-		,	js.OldGroupIDList
 		,	js.CustIDList
         ,	js.TransIDList
 	FROM JSON_TABLE(ip_TransGroup,
 					 "$[*]" COLUMNS(
 								GroupID			INT PATH "$.GroupID" 
-							,	OldGroupIDList	TEXT PATH "$.OldGroupIDList" 
 							,	CustIDList		TEXT PATH "$.CustIDList" 
                             ,	TransIDList		TEXT PATH "$.TransIDList"
                             ,	SequenceIDList	TEXT PATH "$.SequenceIDList" 
 						)
 				) AS js;     
     
-    INSERT INTO Temp_GroupBettingSabaGroup(GroupID, OldGroupIDList, CustIDList, TransIDList)
+    INSERT INTO Temp_GroupBettingSabaGroup(GroupID, CustIDList, TransIDList)
     SELECT  tmpTg.GroupID
-		,	tmpTg.OldGroupIDList
 		,	tmpTg.CustIDList
         ,	tmpTg.TransIDList
 	FROM Temp_TransGroup AS tmpTg;
@@ -133,7 +126,6 @@ BEGIN
 		WHERE mms.SequenceID <= ip_MaxSequenceID AND mms.MatchID = ip_MatchID AND mms.BettypeID = ip_BettypeID AND mms.BetID = ip_BetID  AND mms.Betteam = ip_Betteam AND mms.ScoreDiff = ip_ScoreDiff
 		LIMIT 1;	 
 	END IF;
-SELECT lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName, lv_LeagueGroupID, lv_Sporttype;
     #========GroupBettingSaba Group========================
     IF EXISTS (SELECT 1 FROM Temp_GroupBettingSabaGroup AS tmpTg) THEN
 		hg: LOOP 
@@ -155,14 +147,14 @@ SELECT lv_EventDate, lv_LiveHomeScore, lv_LiveAwayScore, lv_EventDate, lv_KickOf
             CALL CTS_DC_Sys_SplitStringToTempItemTable(lv_TransIDList,',','BIGINT');
             
 			INSERT IGNORE INTO Temp_GroupBettingSabaTrans (TransID) SELECT * FROM TempItemTable;   
-SELECT * FROM Temp_GroupBettingSabaTrans;
+
             IF (ip_LiveIndicator = 1) THEN
             
 				INSERT IGNORE INTO Temp_GroupBettingSabaOldGroup
 				SELECT DISTINCT(mms.GroupID)
 				FROM Temp_GroupBettingSabaTrans AS tmpTs
 					INNER JOIN MatchMonitorStagingGroupBettingSabaLive AS mms ON mms.TransID = tmpTs.TransID;     
- SELECT * FROM Temp_GroupBettingSabaOldGroup;                   
+                 
 			ELSEIF (ip_LiveIndicator = 0) THEN
     
 				INSERT IGNORE INTO Temp_GroupBettingSabaOldGroup

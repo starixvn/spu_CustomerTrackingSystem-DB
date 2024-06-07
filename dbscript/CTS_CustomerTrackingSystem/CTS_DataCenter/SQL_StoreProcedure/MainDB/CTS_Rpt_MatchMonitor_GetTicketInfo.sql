@@ -5,7 +5,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_GetTicketInfo_xtest]
+ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_GetTicketInfo]
 		@QueryType					TINYINT = 1
 	,	@LastScannedSequenceID		BIGINT = 0
 	,	@IsLive						BIT = 1
@@ -20,6 +20,7 @@ AS
 
 	Revisions:
 		- 20240411@Vitoria.Le: 	Separate between QueryType = 1 and QueryType in (2,3)  [Redmine ID: #201380]
+		- 20240607@CaseyHuynh:	Return Saba Scocer Ticket [Redmine ID: #191972]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service MM Staging (get tickets by @LastScannedTransID, @IsLive & @BatchSize & @ListSportBettype)

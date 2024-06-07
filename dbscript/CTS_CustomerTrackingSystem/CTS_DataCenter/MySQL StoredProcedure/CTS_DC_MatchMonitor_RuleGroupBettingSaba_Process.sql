@@ -248,57 +248,8 @@ sp: BEGIN
 	FROM Temp_Group AS tmpGp
 	GROUP BY tmpGp.GroupID
 	HAVING COUNT(DISTINCT tmpGp.TimeGroupID) = 1 AND MAX(IsValidGroup) = 1;
-/* 
-    SET lv_GroupID = 0;
-    SET lv_GroupID = (	SELECT tmp.GroupID
-						FROM Temp_Completed AS tmp
-						WHERE tmp.IsGroupBettingSaba = 0 AND tmp.GroupID > lv_GroupID 
-						ORDER BY tmp.GroupID
-						LIMIT 1);    
 
-    WHILE lv_GroupID IS NOT NULL DO    
-    
-		TRUNCATE TABLE Temp_Cust;
-        
-        SET lv_IsGroupBettingSaba = 0;
-        
-		SELECT tmpRg.CustIDList
-		INTO lv_CustIDList
-		FROM Temp_Group AS tmpRg
-		WHERE tmpRg.GroupID = lv_GroupID;
-		
-        SET @sql = CONCAT("INSERT IGNORE INTO Temp_Cust(CustID) VALUES ('", REPLACE(lv_CustIDList, ",", "'),('"),"');");
-		PREPARE stmt1 FROM @sql;
-		EXECUTE stmt1;
-
-		SELECT 1 
-		INTO lv_IsGroupBettingSaba
-		FROM Temp_Cust AS tmpCus 
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cla ON cla.CustID = tmpCus.CustID
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID
-		WHERE cla.SportGroupID = 0
-		AND cc.IsGroupBettingSabaReasonMM = 1
-		LIMIT 1;
-                            
-        IF lv_IsGroupBettingSaba <> 1 THEN
-			CALL CTS_DataCenter.CTS_DC_Association_IsAssociatedGroupBettingSabaCustByCustIDList(lv_CustIDList, lv_IsGroupBettingSaba);
-        END IF;
-        
-        IF lv_IsGroupBettingSaba = 1 THEN    
-			UPDATE Temp_Group AS tmpRg
-			SET tmpRg.IsGroupBettingSaba = 1
-            WHERE tmpRg.GroupID = lv_GroupID;            
-        END IF;
-        
-		SET lv_GroupID = (	SELECT tmp.GroupID
-							FROM Temp_Completed AS tmp
-							WHERE tmp.IsGroupBettingSaba = 0 AND tmp.GroupID > lv_GroupID 
-							ORDER BY tmp.GroupID
-							LIMIT 1);   
-    END WHILE;
-   */ 
-	SELECT	tmpGr.GroupID
-		,	tmpGr.OldGroupIDList		
+	SELECT	tmpGr.GroupID	
         ,	tmpGr.CustIDList
         ,	tmpGr.TransIDList        
     FROM Temp_Group AS tmpGr
