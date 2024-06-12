@@ -31,6 +31,7 @@ sp: BEGIN
     DECLARE lv_MaxSequenceID	BIGINT UNSIGNED DEFAULT 0;
 	DECLARE lv_MaxTime			BIGINT;
     DECLARE lv_Rule_TimeStep	SMALLINT;
+    DECLARE	lv_RuleTotalStake	DECIMAL(20,4);
     DECLARE lv_NoOfRow			INT DEFAULT 5000;
     
     #==================LOG=======================================================
@@ -54,12 +55,12 @@ sp: BEGIN
 	);
     
     #===============================================================================================
-	SELECT	s.TimeStep
-    INTO	lv_Rule_TimeStep
+	SELECT	s.TimeStep, s.TotalStake
+    INTO	lv_Rule_TimeStep, lv_RuleTotalStake
     FROM	CTS_DataCenter.MatchMonitorRuleSetting AS s
     WHERE	s.RuleGroupID = CONST_MMRULEGROUP_GROUPBETTINGSABA AND s.Reason = CONST_MMREASON_GROUPBETTINGSABA AND s.RuleStatus=1 
     LIMIT	1;
-    
+
     SELECT s.ParameterValue
     INTO lv_NoOfRow
     FROM CTS_DataCenter.SystemParameter AS s
@@ -116,6 +117,7 @@ sp: BEGIN
 			WHERE mms.SequenceID <= lv_MaxSequenceID 
 			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID
 			HAVING COUNT(DISTINCT mms.CustID) > 1
+				AND SUM(Stake) >= lv_RuleTotalStake 
 			ORDER BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID;
 			
             SET op_MaxSequenceID = lv_MaxSequenceID ;
@@ -178,7 +180,8 @@ sp: BEGIN
 													AND (mms.GroupID = tmpOg.GroupID OR mms.GroupID = 0)
 			WHERE mms.SequenceID <= lv_MaxSequenceID 
 			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID
-			HAVING COUNT(DISTINCT mms.CustID) > 1
+			HAVING COUNT(DISTINCT mms.CustID) > 1				
+				AND SUM(Stake) >= lv_RuleTotalStake 
 			ORDER BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID;
 			
             SET op_MaxSequenceID = lv_MaxSequenceID ;

@@ -9,7 +9,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleGroupBettingSab
     ,	IN ip_BettypeID			INT UNSIGNED
     ,	IN ip_BetID				BIGINT
     ,	IN ip_Betteam			VARCHAR(10)
-    ,	IN ip_SequenceIDList	TEXT		# SequenceID List from SP CTS_DC_MatchMonitor_RuleGroupBettingSaba_Process
+    ,	IN ip_SequenceIDList	LONGTEXT		# SequenceID List from SP CTS_DC_MatchMonitor_RuleGroupBettingSaba_Process
     ,	IN ip_CustGroup			JSON 		# Group Return from DC_Association_DetectGroup    
 )
       
@@ -34,8 +34,8 @@ sp: BEGIN
             ,@ip_BettypeID:=1
             ,@ip_BetID:=0
             ,@ip_Betteam:='a'
-            ,@ip_SequenceIDList:=''
-            ,@ip_CustGroup:='[{"CustID":,"GroupID":},{"CustID":,"GroupID":}]');
+            ,@ip_SequenceIDList:='1,2'
+            ,@ip_CustGroup:='[{"CustID":1,"GroupID":1},{"CustID":2,"GroupID":1}]');
 						
 	*/
 	
@@ -45,7 +45,7 @@ sp: BEGIN
 
 	DECLARE lv_RuleTimeStep 				SMALLINT;
 	DECLARE lv_RuleTotalStake 			DECIMAL(20,4);
-	DECLARE lv_CustIDList 				TEXT;
+	DECLARE lv_CustIDList 				LONGTEXT;
 	DECLARE lv_GroupID 					INT; 
 
     #==================LOG=======================================================
@@ -59,46 +59,35 @@ sp: BEGIN
     #==================LOG=======================================================   
 	DROP TEMPORARY TABLE IF EXISTS Temp_Trans;
     CREATE TEMPORARY TABLE Temp_Trans(
-			GroupID			INT
-		,	OrderNum		INT
-        ,	SequenceID		BIGINT
-        ,	TransDateToSecond BIGINT
-        ,	TransID			BIGINT
-        ,	CustID			BIGINT
-        ,	CTSCustID		BIGINT
-        ,	Stake			DECIMAL(20,4)
-        ,	OldGroupID		INT
-        ,	TimeGroupID		INT
+			GroupID				INT
+		,	OrderNum			INT
+        ,	SequenceID			BIGINT
+        ,	TransDateToSecond	BIGINT
+        ,	TransID				BIGINT
+        ,	CustID				BIGINT
+        ,	CTSCustID			BIGINT
+        ,	Stake				DECIMAL(20,4)
+        ,	OldGroupID			INT
+        ,	TimeGroupID			INT
 		
         ,	PRIMARY KEY PK_Temp_Trans_GroupID_OrderNum(GroupID, OrderNum)
     );
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Trans2;
     CREATE TEMPORARY TABLE Temp_Trans2(
-			GroupID			INT
-		,	OrderNum		INT
-        ,	SequenceID		BIGINT
-        ,	TransDateToSecond BIGINT
-        ,	TransID			BIGINT
-        ,	CustID			BIGINT
-        ,	CTSCustID		BIGINT
-        ,	Stake			DECIMAL(20,4)
-        ,	OldGroupID		INT
+			GroupID				INT
+		,	OrderNum			INT
+        ,	SequenceID			BIGINT
+        ,	TransDateToSecond	BIGINT
+        ,	TransID				BIGINT
+        ,	CustID				BIGINT
+        ,	CTSCustID			BIGINT
+        ,	Stake				DECIMAL(20,4)
+        ,	OldGroupID			INT
         
         ,	PRIMARY KEY PK_Temp_Trans_GroupID_OrderNum(GroupID, OrderNum)
     );
-    
-	DROP TEMPORARY TABLE IF EXISTS Temp_ResultGroup;
-    CREATE TEMPORARY TABLE Temp_ResultGroup(
-			GroupID			INT PRIMARY KEY	
-        ,	TotalStake		DECIMAL(20,4)
-		,	OldGroupIDList	VARCHAR(500)
-        ,	CustIDList		TEXT NOT NULL
-        ,	TransIDList		TEXT NOT NULL        
-        ,	SequenceIDList	TEXT NOT NULL 
-        ,	INDEX IX_Temp_ResultGroup(GroupID)
-    );
-    
+       
     DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
 	CREATE TEMPORARY TABLE 		Temp_Cust (
 		 	CustID 	BIGINT UNSIGNED PRIMARY KEY
@@ -163,16 +152,10 @@ sp: BEGIN
 			INNER JOIN Temp_SequenceID AS tmpSq ON tmpSq.SequenceID = mms.SequenceID
 			INNER JOIN Temp_CustGroup AS tmpCg ON tmpCg.CustID = mms.CustID;
             
-		INSERT INTO Temp_Trans2(GroupID, OrderNum, SequenceID,TransDateToSecond,TransID,CustID,CTSCustID,Stake,OldGroupID)
-		SELECT tmpTs.GroupID
+		INSERT INTO Temp_Trans2(GroupID, OrderNum, TransDateToSecond)
+		SELECT	tmpTs.GroupID
 			,	tmpTs.OrderNum
-            ,	tmpTs.SequenceID
             ,	tmpTs.TransDateToSecond
-            ,	tmpTs.TransID
-            ,	tmpTs.CustID
-            ,	tmpTs.CTSCustID
-            ,	tmpTs.Stake
-            ,	tmpTs.OldGroupID
 		FROM Temp_Trans AS tmpTs;
 
         SET @n=0;
@@ -208,16 +191,10 @@ sp: BEGIN
 			INNER JOIN Temp_SequenceID AS tmpSq ON tmpSq.SequenceID = mms.SequenceID
 			INNER JOIN Temp_CustGroup AS tmpCg ON tmpCg.CustID = mms.CustID;
             
-		INSERT INTO Temp_Trans2(GroupID, OrderNum, SequenceID, TransDateToSecond, TransID, CustID, CTSCustID, Stake, OldGroupID)
-		SELECT tmpTs.GroupID
+		INSERT INTO Temp_Trans2(GroupID, OrderNum, TransDateToSecond)
+		SELECT	tmpTs.GroupID
 			,	tmpTs.OrderNum
-            ,	tmpTs.SequenceID
             ,	tmpTs.TransDateToSecond
-            ,	tmpTs.TransID
-            ,	tmpTs.CustID
-            ,	tmpTs.CTSCustID
-            ,	tmpTs.Stake
-            ,	tmpTs.OldGroupID
 		FROM Temp_Trans AS tmpTs;
 
         SET @n=0;

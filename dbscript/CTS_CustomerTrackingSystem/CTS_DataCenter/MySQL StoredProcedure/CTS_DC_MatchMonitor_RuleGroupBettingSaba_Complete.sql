@@ -68,16 +68,16 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_TransGroup
     (
 			GroupID 				INT PRIMARY KEY
-        ,	CustIDList 				TEXT
-        ,	TransIDList				TEXT 
+        ,	CustIDList 				LONGTEXT
+        ,	TransIDList				LONGTEXT 
     );    
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_GroupBettingSabaGroup;
     CREATE TEMPORARY TABLE Temp_GroupBettingSabaGroup
     (
 			GroupID 				INT PRIMARY KEY
-        ,	CustIDList 				TEXT
-        ,	TransIDList				TEXT 
+        ,	CustIDList 				LONGTEXT
+        ,	TransIDList				LONGTEXT 
     );   
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_GroupBettingSabaOldGroup;
@@ -97,9 +97,9 @@ BEGIN
 	FROM JSON_TABLE(ip_TransGroup,
 					 "$[*]" COLUMNS(
 								GroupID			INT PATH "$.GroupID" 
-							,	CustIDList		TEXT PATH "$.CustIDList" 
-                            ,	TransIDList		TEXT PATH "$.TransIDList"
-                            ,	SequenceIDList	TEXT PATH "$.SequenceIDList" 
+							,	CustIDList		LONGTEXT PATH "$.CustIDList" 
+                            ,	TransIDList		LONGTEXT PATH "$.TransIDList"
+                            ,	SequenceIDList	LONGTEXT PATH "$.SequenceIDList" 
 						)
 				) AS js;     
     
