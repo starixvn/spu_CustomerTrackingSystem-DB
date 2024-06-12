@@ -42,8 +42,7 @@ BEGIN
                         "$[*]" COLUMNS (CustID          	BIGINT			UNSIGNED	PATH "$.CustID"
 									,	Probability			DECIMAL(8,4)				PATH "$.Probability"
                                     ,   PredictTime		    DATETIME(3)					PATH "$.PredictTime"                                           
-                                )) AS tmp
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID AND cus.IsInternal = 0;
+                                )) AS tmp;
 
 	INSERT IGNORE INTO Temp_ExistedCust(CustID)
 	SELECT tmp.CustID

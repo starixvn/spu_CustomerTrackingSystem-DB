@@ -93,7 +93,7 @@ BEGIN
         ,   tmp.Probability
         ,   tmp.PredictTime AS DetectedDate
 	FROM Temp_Customer AS tmp
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmp.CustID = cus.CustID AND cus.CustSubID = 0;
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmp.CustID = cus.CustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
     
 END$$	
 DELIMITER ;
