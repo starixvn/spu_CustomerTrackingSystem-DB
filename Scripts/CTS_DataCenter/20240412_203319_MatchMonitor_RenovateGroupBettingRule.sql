@@ -85,8 +85,7 @@ ALTER TABLE MatchMonitorStagingGroupBettingLive
 	DROP INDEX IX_MatchMonitorStagingGroupBettingLive_TransDate
 ,	DROP INDEX IX_MatchMonitorStagingGroupBettingLive_RuleGroup
 ,	ADD CTSCustID BIGINT UNSIGNED AFTER CustID
-,	ADD COLUMN SubscriberID INT UNSIGNED AFTER CTSCustID
-,	ADD COLUMN IsLicensee BIGINT AFTER SubscriberID
+,	ADD COLUMN IsLicensee BOOLEAN AFTER CTSCustID
 ,	ADD COLUMN TransDateToSecond BIGINT AFTER TransDate
 ,	ADD INDEX IX_MatchMonitorStagingGroupBettingLive_TransDateToSecond(TransDateToSecond)
 ,	ADD INDEX IX_MatchMonitorStagingGroupBettingLive_RuleGroup (MatchID,ScoreDiff,BettypeID,BetID,Betteam,GroupID);
@@ -95,8 +94,7 @@ ALTER TABLE MatchMonitorStagingGroupBettingNonLive
 	DROP INDEX IX_MatchMonitorStagingGroupBettingNonLive_TransDate
 ,	DROP INDEX IX_MatchMonitorStagingGroupBettingNonLive_RuleGroup
 ,	ADD CTSCustID BIGINT UNSIGNED AFTER CustID
-,	ADD COLUMN SubscriberID INT UNSIGNED AFTER CTSCustID
-,	ADD COLUMN IsLicensee BIGINT AFTER SubscriberID
+,	ADD COLUMN IsLicensee BOOLEAN AFTER CTSCustID
 ,	ADD COLUMN TransDateToSecond BIGINT AFTER TransDate
 ,	ADD INDEX IX_MatchMonitorStagingGroupBettingNonLive_TransDateToSecond(TransDateToSecond)
 ,	ADD INDEX IX_MatchMonitorStagingGroupBettingNonLive_RuleGroup (MatchID,ScoreDiff,BettypeID,BetID,Betteam,GroupID);

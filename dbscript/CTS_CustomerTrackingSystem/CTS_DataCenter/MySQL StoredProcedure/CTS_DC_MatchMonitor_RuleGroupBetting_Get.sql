@@ -105,11 +105,11 @@ sp: BEGIN
         IF(lv_LastSequenceID < lv_MaxSequenceID) THEN # If Has New Trans   
 
 			SELECT	mms.MatchID
+                ,	MIN(mms.SportType) AS SportType
 				,	mms.ScoreDiff
 				,	mms.BettypeID
 				,	mms.BetID
 				,	mms.Betteam
-                ,	MIN(mms.SportType) AS SportType
                 ,	GROUP_CONCAT(DISTINCT mms.CTSCustID) AS CTSCustIDList
 				,	GROUP_CONCAT(mms.SequenceID) AS SequenceIDList
 			FROM CTS_DataCenter.MatchMonitorStagingGroupBettingLive AS mms
@@ -167,12 +167,12 @@ sp: BEGIN
 
         IF(lv_LastSequenceID < lv_MaxSequenceID) THEN # If Has New Trans   
 
-			SELECT	mms.MatchID
+			SELECT	mms.MatchID				
+                ,	MIN(mms.SportType) AS SportType
 				,	mms.ScoreDiff
 				,	mms.BettypeID
 				,	mms.BetID
 				,	mms.Betteam
-                ,	MIN(mms.SportType) AS SportType
                 ,	GROUP_CONCAT(DISTINCT mms.CTSCustID) AS CTSCustIDList
 				,	GROUP_CONCAT(mms.SequenceID) AS SequenceIDList
 			FROM CTS_DataCenter.MatchMonitorStagingGroupBettingNonLive AS mms

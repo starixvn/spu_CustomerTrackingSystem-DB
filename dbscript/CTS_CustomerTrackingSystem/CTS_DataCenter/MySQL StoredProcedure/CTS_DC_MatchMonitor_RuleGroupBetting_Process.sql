@@ -5,12 +5,12 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleGroupBetting_Process`(
 		IN ip_LiveIndicator		BOOLEAN
 	,	IN ip_MatchID			INT UNSIGNED
+    ,	IN ip_SportType			INT
     ,	IN ip_ScoreDiff			INT 
     ,	IN ip_BettypeID			INT UNSIGNED
     ,	IN ip_BetID				BIGINT
-    ,	IN ip_Betteam			VARCHAR(10)
-    ,	IN ip_SportType			INT
-    ,	IN ip_SequenceIDList	TEXT		# SequenceID List from SP CTS_DC_MatchMonitor_RuleGroupBetting_Get
+    ,	IN ip_Betteam			VARCHAR(10)    
+    ,	IN ip_SequenceIDList	LONGTEXT	# SequenceID List from SP CTS_DC_MatchMonitor_RuleGroupBetting_Get
     ,	IN ip_CustGroup			JSON 		# Group Return from DC_Association_DetectGroup    
 )
       
@@ -51,24 +51,32 @@ sp: BEGIN
             
 		Param's Explanation (filtered by):	
 		Example:
-			Example:
-			CALL CTS_DC_MatchMonitor_RuleGroupBetting_Process(
-             @ip_LiveIndicator:=1
-            ,@ip_MatchID:=22081995
-            ,@ip_ScoreDiff:=1
-            ,@ip_BettypeID:=1
-            ,@ip_BetID:=0
-            ,@ip_Betteam:='a'
-            ,@ip_SequenceIDList:=''
-            ,@ip_CustGroup:='[{"CustID":,"GroupID":},{"CustID":,"GroupID":}]');
+		CALL CTS_DC_MatchMonitor_RuleGroupBetting_Process(
+		 @ip_LiveIndicator:=0
+		,@ip_MatchID:=83540268
+		,@SportType:=1
+		,@ip_ScoreDiff:=0
+		,@ip_BettypeID:=1
+		,@ip_BetID:=0
+		,@ip_Betteam:='h'
+		,@ip_SequenceIDList:='119780925578,119780925587,119780925590,119780925602,119780925608,119780925617,119780925620,119780925626,119780925638,119780925659,119780925665,119780925677,119780925680,119780925689,119780925692,119780925695,119780925704,119780925713,119780925719,119780925725,119780925728,119780925734,119780925752,119780925758,119780925770'
+		,@ip_CustGroup:='[	{"CustID":2707638,"GroupID":1}
+						,	{"CustID":3945374,"GroupID":1}
+						,	{"CustID":12362695,"GroupID":2}
+						,	{"CustID":12362735,"GroupID":2}]'
+			);
 						
 	*/
 	
-	DECLARE CONST_LOG 						TINYINT DEFAULT 0;
-    DECLARE CONST_MMRULEGROUP_GROUPBETTING	INT DEFAULT 1;
-    DECLARE CONST_MMREASON_GROUPBETTING		INT DEFAULT 0;
-	DECLARE CONST_CLASSIFYTOTALSTAKE_SOCCER	DECIMAL(20,4) DEFAULT 80;
-	DECLARE CONST_CLASSIFYTOTALCUST			INT DEFAULT 3;
+	DECLARE CONST_LOG 							TINYINT DEFAULT 0;
+    DECLARE CONST_MMRULEGROUP_GROUPBETTING		INT DEFAULT 1;
+    DECLARE CONST_MMREASON_GROUPBETTING			INT DEFAULT 0;
+	DECLARE CONST_CLASSIFYTOTALSTAKE_SOCCER		DECIMAL(20,4) DEFAULT 80;
+    DECLARE CONST_CLASSIFYTOTALSTAKE_BASKETBALL	DECIMAL(20,4) DEFAULT 50;
+	DECLARE CONST_CLASSIFYTOTALCUST				INT DEFAULT 3;
+    DECLARE CONST_SPORTTYPE_BASKETBALL 			INT DEFAULT 2;
+    DECLARE CONST_SPORTTYPE_SOCCER 				INT DEFAULT 1;
+    DECLARE CONST_SPORTTYPE_ESPORT 				INT DEFAULT 43;
 
 	DECLARE lv_RuleTimeStep 				SMALLINT;
 	DECLARE lv_RuleTotalStake 				DECIMAL(20,4);
@@ -130,9 +138,11 @@ sp: BEGIN
 		,	CustIDList			LONGTEXT
 		,	CTSCustIDList		LONGTEXT
 		,	SequenceIDList		LONGTEXT
-        ,	IsValidGroup		BOOLEAN
+        ,	LicCustList 		LONGTEXT
         ,	LicCustTotalStake	INT
         ,	LicCustTotal		INT
+        ,	IsValidGroup		BOOLEAN
+        
 	);
     #=======================================================================
 	SELECT 	st.TotalStake, st.TimeStep
@@ -165,10 +175,9 @@ sp: BEGIN
 	SET @sql = CONCAT("INSERT INTO Temp_SequenceID (SequenceID) VALUES ('", REPLACE(ip_SequenceIDList, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
-    
     IF (ip_LiveIndicator = 1) THEN
-    
-		INSERT INTO Temp_Trans(GroupID, OrderNum ,SequenceID,TransDateToSecond,TransID,CustID,CTSCustID, Stake, OldGroupID)
+  
+		INSERT INTO Temp_Trans(GroupID, OrderNum ,SequenceID,TransDateToSecond,TransID,CustID,CTSCustID, Stake, OldGroupID,IsLicensee)
         SELECT	tmpCg.GroupID
 			,	ROW_NUMBER() OVER (PARTITION BY tmpCg.GroupID ORDER BY SequenceID ) AS OrderNum			
 			,	mms.SequenceID
@@ -208,15 +217,15 @@ sp: BEGIN
             ,	GROUP_CONCAT(DISTINCT tmp.CustID) AS CustIDList
             ,	GROUP_CONCAT(DISTINCT tmp.CTSCustID) AS CTSCustIDList
 			,	GROUP_CONCAT(tmp.SequenceID)
-            ,	SUM((CASE WHEN tmp.IsLicensee = 1 THEN tmpSt.Stake ELSE 0 END)) AS LicCustTotalStake
-			,	COUNT(DISTINCT (CASE WHEN tmp.IsLicensee = 1 THEN cus.CustID ELSE NULL END)) AS LicCustTotal
+            ,	SUM((CASE WHEN tmp.IsLicensee = 1 THEN tmp.Stake ELSE 0 END)) AS LicCustTotalStake
+			,	COUNT(DISTINCT (CASE WHEN tmp.IsLicensee = 1 THEN tmp.CustID ELSE NULL END)) AS LicCustTotal
             ,	(CASE WHEN COUNT(DISTINCT CustID) > 1 AND SUM(Stake) >= lv_RuleTotalStake THEN 1 ELSE 0 END) AS IsValidGroup
         FROM Temp_Trans AS tmp
         GROUP BY TimeGroupID;
 
 	ELSE #(ip_LiveIndicator = 0)
-		
-		INSERT INTO Temp_Trans(GroupID, OrderNum ,SequenceID,TransDateToSecond,TransID,CustID,CTSCustID, Stake, OldGroupID)
+
+		INSERT INTO Temp_Trans(GroupID, OrderNum ,SequenceID,TransDateToSecond,TransID,CustID,CTSCustID, Stake, OldGroupID,IsLicensee)
         SELECT	tmpCg.GroupID
 			,	ROW_NUMBER() OVER (PARTITION BY tmpCg.GroupID ORDER BY SequenceID ) AS OrderNum			
 			,	mms.SequenceID
@@ -226,6 +235,7 @@ sp: BEGIN
 			,	mms.CTSCustID
 			,	mms.Stake
             ,	mms.GroupID
+            ,	mms.IsLicensee
         FROM	CTS_DataCenter.MatchMonitorStagingGroupBettingNonLive AS mms
 			INNER JOIN Temp_SequenceID AS tmpSq ON tmpSq.SequenceID = mms.SequenceID
 			INNER JOIN Temp_CustGroup AS tmpCg ON tmpCg.CustID = mms.CustID;
@@ -256,8 +266,8 @@ sp: BEGIN
             ,	GROUP_CONCAT(DISTINCT tmp.CustID) AS CustIDList
             ,	GROUP_CONCAT(DISTINCT tmp.CTSCustID) AS CTSCustIDList
 			,	GROUP_CONCAT(tmp.SequenceID)
-			,	SUM((CASE WHEN tmp.IsLicensee = 1 THEN tmpSt.Stake ELSE 0 END)) AS LicCustTotalStake
-			,	COUNT(DISTINCT (CASE WHEN tmp.IsLicensee = 1 THEN cus.CustID ELSE NULL END)) AS LicCustTotal
+			,	SUM((CASE WHEN tmp.IsLicensee = 1 THEN tmp.Stake ELSE 0 END)) AS LicCustTotalStake
+			,	COUNT(DISTINCT (CASE WHEN tmp.IsLicensee = 1 THEN tmp.CustID ELSE NULL END)) AS LicCustTotal
             ,	(CASE WHEN COUNT(DISTINCT CustID) > 1 AND SUM(Stake) >= lv_RuleTotalStake THEN 1 ELSE 0 END) AS IsValidGroup
         FROM Temp_Trans AS tmp
         GROUP BY TimeGroupID;
@@ -275,7 +285,9 @@ sp: BEGIN
 	SELECT	tmpGr.GroupID	
         ,	tmpGr.CustIDList
         ,	tmpGr.TransIDList
-        ,	(CASE WHEN ((lv_SportType = CONST_SPORTTYPE_SOCCER AND tmpRg.LicCustTotalStake >= CONST_CLASSIFYTOTALSTAKE_SOCCER) OR (lv_SportType = CONST_SPORTTYPE_BASKETBALL AND tmpRg.LicCustTotalStake >= CONST_CLASSIFYTOTALSTAKE_BASKETBALL)) AND LicCustTotal >= CONST_CLASSIFYTOTALCUST THEN LicCustList ELSE NULL END) HighStakeLicCustList
+        ,	(CASE WHEN ((		ip_SportType = CONST_SPORTTYPE_SOCCER AND tmpGr.LicCustTotalStake >= CONST_CLASSIFYTOTALSTAKE_SOCCER) 
+							OR (ip_SportType = CONST_SPORTTYPE_BASKETBALL AND tmpGr.LicCustTotalStake >= CONST_CLASSIFYTOTALSTAKE_BASKETBALL)) 
+						AND tmpGr.LicCustTotal >= CONST_CLASSIFYTOTALCUST THEN tmpGr.LicCustList ELSE NULL END) HighStakeLicCustList
     FROM Temp_Group AS tmpGr
 		INNER JOIN Temp_Completed AS tmpCp ON tmpGr.GroupID = tmpCp.GroupID
     WHERE tmpCp.GroupID IS NOT NULL AND tmpGr.IsValidGroup = 1;
