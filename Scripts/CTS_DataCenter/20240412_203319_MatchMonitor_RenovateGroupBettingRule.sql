@@ -45,6 +45,7 @@ CREATE TABLE MatchMonitorStagingGroupBettingLive (
   KEY IX_MatchMonitorStagingGroupBettingLive_RuleGroup (MatchID,ScoreDiff,BettypeID,BetID,GroupID),
   KEY IX_MatchMonitorStagingGroupBettingLive_TransID (TransID)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8_unicode_ci;
+
 CREATE TABLE MatchMonitorStagingGroupBettingNonLive (
   SequenceID bigint unsigned NOT NULL,
   TransID bigint unsigned NOT NULL,
@@ -84,8 +85,9 @@ ALTER TABLE MatchMonitorStagingGroupBettingLive
 	DROP INDEX IX_MatchMonitorStagingGroupBettingLive_TransDate
 ,	DROP INDEX IX_MatchMonitorStagingGroupBettingLive_RuleGroup
 ,	ADD CTSCustID BIGINT UNSIGNED AFTER CustID
-,	ADD COLUMN SubscriberID INT UNSIGNED AFTER CustID
-,	ADD COLUMN TransDateToSecond BIGINT AFTER CustID
+,	ADD COLUMN SubscriberID INT UNSIGNED AFTER CTSCustID
+,	ADD COLUMN IsLicensee BIGINT AFTER SubscriberID
+,	ADD COLUMN TransDateToSecond BIGINT AFTER TransDate
 ,	ADD INDEX IX_MatchMonitorStagingGroupBettingLive_TransDateToSecond(TransDateToSecond)
 ,	ADD INDEX IX_MatchMonitorStagingGroupBettingLive_RuleGroup (MatchID,ScoreDiff,BettypeID,BetID,Betteam,GroupID);
 
@@ -93,8 +95,9 @@ ALTER TABLE MatchMonitorStagingGroupBettingNonLive
 	DROP INDEX IX_MatchMonitorStagingGroupBettingNonLive_TransDate
 ,	DROP INDEX IX_MatchMonitorStagingGroupBettingNonLive_RuleGroup
 ,	ADD CTSCustID BIGINT UNSIGNED AFTER CustID
-,	ADD COLUMN SubscriberID INT UNSIGNED AFTER CustID
-,	ADD COLUMN TransDateToSecond BIGINT AFTER CustID
+,	ADD COLUMN SubscriberID INT UNSIGNED AFTER CTSCustID
+,	ADD COLUMN IsLicensee BIGINT AFTER SubscriberID
+,	ADD COLUMN TransDateToSecond BIGINT AFTER TransDate
 ,	ADD INDEX IX_MatchMonitorStagingGroupBettingNonLive_TransDateToSecond(TransDateToSecond)
 ,	ADD INDEX IX_MatchMonitorStagingGroupBettingNonLive_RuleGroup (MatchID,ScoreDiff,BettypeID,BetID,Betteam,GroupID);
 

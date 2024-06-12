@@ -49,10 +49,12 @@ BEGIN
     DECLARE CONS_MMREASON_GROUPBETTING	INT	DEFAULT	0;
     
 	DECLARE lv_LogTime			DATETIME(4) DEFAULT current_timestamp(4);
-    DECLARE lv_GroupID 			INT;
-    DECLARE lv_TransIDList 		LONGTEXT;
-    DECLARE lv_OldTransList 	LONGTEXT;    
-    DECLARE lv_CustIDList		LONGTEXT;
+    DECLARE lv_GroupID 					INT;
+    DECLARE lv_TransIDList 				LONGTEXT;
+    DECLARE lv_OldTransList 			LONGTEXT;    
+    DECLARE lv_CustIDList				LONGTEXT;
+    DECLARE lv_HighStakeLicCustList		LONGTEXT;
+    
     DECLARE lv_NoOfOldGroupID	INT;
     DECLARE lv_EventDate 		DATE;
     DECLARE lv_LiveHomeScore	SMALLINT UNSIGNED;
@@ -79,16 +81,18 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_TransGroup
     (
 			GroupID 				INT PRIMARY KEY
-        ,	CustIDList 				TEXT
-        ,	TransIDList				TEXT 
+        ,	CustIDList 				LONGTEXT
+        ,	TransIDList				LONGTEXT 
+        ,	HighStakeLicCustList	LONGTEXT
     );    
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_GroupBettingGroup;
     CREATE TEMPORARY TABLE Temp_GroupBettingGroup
     (
 			GroupID 				INT PRIMARY KEY
-        ,	CustIDList 				TEXT
-        ,	TransIDList				TEXT 
+        ,	CustIDList 				LONGTEXT
+        ,	TransIDList				LONGTEXT
+        ,	HighStakeLicCustList	LONGTEXT
     );   
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_GroupBettingOldGroup;
@@ -107,17 +111,18 @@ BEGIN
         ,	js.TransIDList
 	FROM JSON_TABLE(ip_TransGroup,
 					 "$[*]" COLUMNS(
-								GroupID			INT PATH "$.GroupID" 
-							,	CustIDList		TEXT PATH "$.CustIDList" 
-                            ,	TransIDList		TEXT PATH "$.TransIDList"
-                            ,	SequenceIDList	TEXT PATH "$.SequenceIDList" 
+								GroupID					INT PATH "$.GroupID" 
+							,	CustIDList				LONGTEXT PATH "$.CustIDList" 
+                            ,	TransIDList				LONGTEXT PATH "$.TransIDList"
+                            ,	HighStakeLicCustList	LONGTEXT PATH "$.HighStakeLicCustList" 
 						)
 				) AS js;     
     
-    INSERT INTO Temp_GroupBettingGroup(GroupID, CustIDList, TransIDList)
+    INSERT INTO Temp_GroupBettingGroup(GroupID, CustIDList, TransIDList, HighStakeLicCustList)
     SELECT  tmpTg.GroupID
 		,	tmpTg.CustIDList
         ,	tmpTg.TransIDList
+        ,	tmpTg.HighStakeLicCustList
 	FROM Temp_TransGroup AS tmpTg;
 
     #======Update MatchMonitorDetails====================================  
@@ -145,10 +150,11 @@ BEGIN
 
 			SET lv_GroupID = 0;
 
-			SELECT tmpTg.GroupID, tmpTg.TransIDList, tmpTg.CustIDList
-			INTO lv_GroupID,  lv_TransIDList, lv_CustIDList
+			SELECT tmpTg.GroupID, tmpTg.TransIDList, tmpTg.CustIDList, tmpTg.HighStakeLicCustList
+			INTO lv_GroupID,  lv_TransIDList, lv_CustIDList, lv_HighStakeLicCustList
 			FROM Temp_GroupBettingGroup AS tmpTg
-			ORDER BY tmpTg.GroupID ASC LIMIT 1;        
+			ORDER BY tmpTg.GroupID ASC 
+            LIMIT 1;        
 			  
 			IF lv_GroupID =0 
 			THEN			

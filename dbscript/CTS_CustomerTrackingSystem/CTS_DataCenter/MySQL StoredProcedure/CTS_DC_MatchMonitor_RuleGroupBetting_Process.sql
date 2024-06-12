@@ -53,7 +53,7 @@ sp: BEGIN
 		Example:
 			Example:
 			CALL CTS_DC_MatchMonitor_RuleGroupBetting_Process(
-            @ip_LiveIndicator:=1
+             @ip_LiveIndicator:=1
             ,@ip_MatchID:=22081995
             ,@ip_ScoreDiff:=1
             ,@ip_BettypeID:=1
@@ -64,14 +64,16 @@ sp: BEGIN
 						
 	*/
 	
-	DECLARE CONST_LOG 					TINYINT DEFAULT 0;
-    DECLARE CONST_MMRULEGROUP_GROUPBETTING	INT DEFAULT 6;
+	DECLARE CONST_LOG 						TINYINT DEFAULT 0;
+    DECLARE CONST_MMRULEGROUP_GROUPBETTING	INT DEFAULT 1;
     DECLARE CONST_MMREASON_GROUPBETTING		INT DEFAULT 0;
+	DECLARE CONST_CLASSIFYTOTALSTAKE_SOCCER	DECIMAL(20,4) DEFAULT 80;
+	DECLARE CONST_CLASSIFYTOTALCUST			INT DEFAULT 3;
 
 	DECLARE lv_RuleTimeStep 				SMALLINT;
-	DECLARE lv_RuleTotalStake 			DECIMAL(20,4);
-	DECLARE lv_CustIDList 				TEXT;
-	DECLARE lv_GroupID 					INT; 
+	DECLARE lv_RuleTotalStake 				DECIMAL(20,4);
+	DECLARE lv_CustIDList 					LONGTEXT;
+	DECLARE lv_GroupID 						INT; 
 
     #==================LOG=======================================================
     DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleGroupBetting_Process';
@@ -94,7 +96,8 @@ sp: BEGIN
         ,	Stake			DECIMAL(20,4)
         ,	OldGroupID		INT
         ,	TimeGroupID		INT
-		
+		,	IsLicensee		BOOLEAN
+        
         ,	PRIMARY KEY PK_Temp_Trans_GroupID_OrderNum(GroupID, OrderNum)
     );
     
@@ -112,33 +115,24 @@ sp: BEGIN
         
         ,	PRIMARY KEY PK_Temp_Trans_GroupID_OrderNum(GroupID, OrderNum)
     );
-    
-	DROP TEMPORARY TABLE IF EXISTS Temp_ResultGroup;
-    CREATE TEMPORARY TABLE Temp_ResultGroup(
-			GroupID			INT PRIMARY KEY	
-        ,	TotalStake		DECIMAL(20,4)
-		,	OldGroupIDList	VARCHAR(500)
-        ,	CustIDList		TEXT NOT NULL
-        ,	TransIDList		TEXT NOT NULL        
-        ,	SequenceIDList	TEXT NOT NULL 
-        ,	INDEX IX_Temp_ResultGroup(GroupID)
-    );
-    
+       
     DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
-	CREATE TEMPORARY TABLE 		Temp_Cust (
+	CREATE TEMPORARY TABLE Temp_Cust (
 		 	CustID 	BIGINT UNSIGNED PRIMARY KEY
 	); 
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Group;
 	CREATE TEMPORARY TABLE Temp_Group(
-			GroupID 		INT
-		,	TimeGroupID		BIGINT PRIMARY KEY
-		,	TransIDList		LONGTEXT
-        ,	OldGroupIDList	VARCHAR(500)
-		,	CustIDList		LONGTEXT
-		,	CTSCustIDList	LONGTEXT
-		,	SequenceIDList	LONGTEXT
-        ,	IsValidGroup	BOOLEAN
+			GroupID 			INT
+		,	TimeGroupID			BIGINT PRIMARY KEY
+		,	TransIDList			LONGTEXT
+        ,	OldGroupIDList		VARCHAR(500)
+		,	CustIDList			LONGTEXT
+		,	CTSCustIDList		LONGTEXT
+		,	SequenceIDList		LONGTEXT
+        ,	IsValidGroup		BOOLEAN
+        ,	LicCustTotalStake	INT
+        ,	LicCustTotal		INT
 	);
     #=======================================================================
 	SELECT 	st.TotalStake, st.TimeStep
@@ -184,6 +178,7 @@ sp: BEGIN
 			,	mms.CTSCustID
 			,	mms.Stake
             ,	mms.GroupID
+            ,	mms.IsLicensee
         FROM	CTS_DataCenter.MatchMonitorStagingGroupBettingLive AS mms
 			INNER JOIN Temp_SequenceID AS tmpSq ON tmpSq.SequenceID = mms.SequenceID
 			INNER JOIN Temp_CustGroup AS tmpCg ON tmpCg.CustID = mms.CustID;
@@ -205,7 +200,7 @@ sp: BEGIN
 			LEFT JOIN Temp_Trans2 AS t2 ON t.GroupID = t2.GroupID AND t.OrderNum = t2.OrderNum  +1 AND t.TransDateToSecond - t2.TransDateToSecond <= 180
 		SET t.TimeGroupID = (CASE WHEN t2.OrderNum IS NOT NULL THEN @n ELSE @n:=@n+1  END);
 		
-        INSERT INTO Temp_Group(GroupID, TimeGroupID, TransIDList, OldGroupIDList, CustIDList, CTSCustIDList, SequenceIDList, IsValidGroup)        
+        INSERT INTO Temp_Group(GroupID, TimeGroupID, TransIDList, OldGroupIDList, CustIDList, CTSCustIDList, SequenceIDList, LicCustTotalStake, LicCustTotal, IsValidGroup)        
         SELECT	MIN(tmp.GroupID) AS GroupID
 			,	tmp.TimeGroupID
             ,	GROUP_CONCAT(tmp.TransID ORDER BY tmp.TransID) AS TransIDList
@@ -213,6 +208,8 @@ sp: BEGIN
             ,	GROUP_CONCAT(DISTINCT tmp.CustID) AS CustIDList
             ,	GROUP_CONCAT(DISTINCT tmp.CTSCustID) AS CTSCustIDList
 			,	GROUP_CONCAT(tmp.SequenceID)
+            ,	SUM((CASE WHEN tmp.IsLicensee = 1 THEN tmpSt.Stake ELSE 0 END)) AS LicCustTotalStake
+			,	COUNT(DISTINCT (CASE WHEN tmp.IsLicensee = 1 THEN cus.CustID ELSE NULL END)) AS LicCustTotal
             ,	(CASE WHEN COUNT(DISTINCT CustID) > 1 AND SUM(Stake) >= lv_RuleTotalStake THEN 1 ELSE 0 END) AS IsValidGroup
         FROM Temp_Trans AS tmp
         GROUP BY TimeGroupID;
@@ -251,7 +248,7 @@ sp: BEGIN
 			LEFT JOIN Temp_Trans2 AS t2 ON t.GroupID = t2.GroupID AND t.OrderNum = t2.OrderNum + 1 AND t.TransDateToSecond - t2.TransDateToSecond <= 180
 		SET t.TimeGroupID = (CASE WHEN t2.OrderNum IS NOT NULL THEN @n ELSE @n:=@n+1  END);
 		
-        INSERT INTO Temp_Group(GroupID, TimeGroupID, TransIDList, OldGroupIDList, CustIDList, CTSCustIDList, SequenceIDList, IsValidGroup)        
+        INSERT INTO Temp_Group(GroupID, TimeGroupID, TransIDList, OldGroupIDList, CustIDList, CTSCustIDList, SequenceIDList, LicCustTotalStake, LicCustTotal, IsValidGroup)        
         SELECT	MIN(tmp.GroupID) AS GroupID
 			,	tmp.TimeGroupID
             ,	GROUP_CONCAT(tmp.TransID ORDER BY tmp.TransID) AS TransIDList
@@ -259,6 +256,8 @@ sp: BEGIN
             ,	GROUP_CONCAT(DISTINCT tmp.CustID) AS CustIDList
             ,	GROUP_CONCAT(DISTINCT tmp.CTSCustID) AS CTSCustIDList
 			,	GROUP_CONCAT(tmp.SequenceID)
+			,	SUM((CASE WHEN tmp.IsLicensee = 1 THEN tmpSt.Stake ELSE 0 END)) AS LicCustTotalStake
+			,	COUNT(DISTINCT (CASE WHEN tmp.IsLicensee = 1 THEN cus.CustID ELSE NULL END)) AS LicCustTotal
             ,	(CASE WHEN COUNT(DISTINCT CustID) > 1 AND SUM(Stake) >= lv_RuleTotalStake THEN 1 ELSE 0 END) AS IsValidGroup
         FROM Temp_Trans AS tmp
         GROUP BY TimeGroupID;
@@ -275,7 +274,8 @@ sp: BEGIN
 
 	SELECT	tmpGr.GroupID	
         ,	tmpGr.CustIDList
-        ,	tmpGr.TransIDList        
+        ,	tmpGr.TransIDList
+        ,	(CASE WHEN ((lv_SportType = CONST_SPORTTYPE_SOCCER AND tmpRg.LicCustTotalStake >= CONST_CLASSIFYTOTALSTAKE_SOCCER) OR (lv_SportType = CONST_SPORTTYPE_BASKETBALL AND tmpRg.LicCustTotalStake >= CONST_CLASSIFYTOTALSTAKE_BASKETBALL)) AND LicCustTotal >= CONST_CLASSIFYTOTALCUST THEN LicCustList ELSE NULL END) HighStakeLicCustList
     FROM Temp_Group AS tmpGr
 		INNER JOIN Temp_Completed AS tmpCp ON tmpGr.GroupID = tmpCp.GroupID
     WHERE tmpCp.GroupID IS NOT NULL AND tmpGr.IsValidGroup = 1;
