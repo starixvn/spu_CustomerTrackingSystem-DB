@@ -42,9 +42,9 @@ BEGIN
 	#=============================================================================
 	DROP TEMPORARY TABLE IF EXISTS Temp_Graph;
     CREATE TEMPORARY TABLE 	Temp_Graph (
-			OrigID 		BIGINT UNSIGNED
-		,	DestID   	BIGINT UNSIGNED
-		,	PRIMARY KEY PK_Temp_Graph_OrigID_DestID(OrigID, DestID)
+			OrigCustID 		BIGINT UNSIGNED
+		,	DestCustID   	BIGINT UNSIGNED
+		,	PRIMARY KEY PK_Temp_Graph_OrigCustID_DestCustID(OrigCustID, DestCustID)
 	);
 	
     #=============================================================================
@@ -62,6 +62,7 @@ BEGIN
         DROP TEMPORARY TABLE IF EXISTS Temp_CustDevice;
 		CREATE TEMPORARY TABLE 	Temp_CustDevice (
 				CTSCustID		BIGINT UNSIGNED
+			,	CustID			INT
 			,   DCSDeviceID		BIGINT UNSIGNED
 			
 			,	PRIMARY KEY PK_Temp_CustDevice_DCSDeviceID_CTSCustID(DCSDeviceID, CTSCustID)
@@ -70,6 +71,7 @@ BEGIN
 		DROP TEMPORARY TABLE IF EXISTS Temp_CustDevice2;
 		CREATE TEMPORARY TABLE Temp_CustDevice2 (
 				CTSCustID		BIGINT UNSIGNED
+			,	CustID			INT
 			,   DCSDeviceID		BIGINT UNSIGNED
 			
 			,	PRIMARY KEY PK_Temp_CustDevice2_DCSDeviceID_CTSCustID(DCSDeviceID, CTSCustID)
@@ -81,11 +83,12 @@ BEGIN
 		);
         
 		#=============================================================================        
-		INSERT IGNORE INTO Temp_CustDevice(CTSCustID, DCSDeviceID)
-		SELECT 	cus.CTSCustID 
+		INSERT IGNORE INTO Temp_CustDevice(CTSCustID, CustID, DCSDeviceID)
+		SELECT 	tmpCn.CTSCustID 
+			,	tmpCn.CustID
 			, 	dv.DCSDeviceID
-		FROM Temp_CustNode AS cus
-		INNER JOIN CTS_DataCenter.AssociationByDevice AS dv ON dv.CTSCustID = cus.CTSCustID;
+		FROM Temp_CustNode AS tmpCn
+		INNER JOIN CTS_DataCenter.AssociationByDevice AS dv ON dv.CTSCustID = tmpCn.CTSCustID;
 
 		INSERT INTO Temp_DeviceOneCust(DCSDeviceID)
 		SELECT 	DCSDeviceID
@@ -97,14 +100,15 @@ BEGIN
 		FROM Temp_CustDevice AS tmp
 		WHERE tmp.DCSDeviceID IN (SELECT DCSDeviceID FROM Temp_DeviceOneCust);
 		
-		INSERT INTO Temp_CustDevice2(CTSCustID, DCSDeviceID)
+		INSERT INTO Temp_CustDevice2(CTSCustID, CustID, DCSDeviceID)
 		SELECT	tmpCd.CTSCustID
+			,	tmpCd.CustID
 			,	tmpCd.DCSDeviceID
         FROM Temp_CustDevice AS tmpCd;
 
-		INSERT IGNORE INTO Temp_Graph(OrigID, DestID)
-		SELECT LEAST(tmpDv.CTSCustID,tmpDv2.CTSCustID)
-			,  GREATEST(tmpDv.CTSCustID,tmpDv2.CTSCustID)
+		INSERT IGNORE INTO Temp_Graph(OrigCustID, DestCustID)
+		SELECT LEAST(tmpDv.CustID,tmpDv2.CustID)
+			,  GREATEST(tmpDv.CustID,tmpDv2.CustID)
 		FROM Temp_CustDevice AS tmpDv
 			INNER JOIN Temp_CustDevice2 AS tmpDv2 ON tmpDv2.DCSDeviceID = tmpDv.DCSDeviceID AND tmpDv.CTSCustID != tmpDv2.CTSCustID;
 		
@@ -138,21 +142,21 @@ BEGIN
 			FROM CTS_DataCenter.AssociationTypeSetting AS atd
 			WHERE atd.AssTypeID = CONST_ASSTYPE_BETTINGPATTERN AND atd.AssTypeItemStatus = CONST_ACTIVESTATUS; 
 
-			INSERT IGNORE INTO Temp_Graph(OrigID, DestID)
-			SELECT	LEAST(tmpCd.CTSCustID,ltr.CTSCustID)
-				,	GREATEST(tmpCd.CTSCustID,ltr.CTSCustID)
+			INSERT IGNORE INTO Temp_Graph(OrigCustID, DestCustID)
+			SELECT	LEAST(tmpCd.CustID,ltr.CustID)
+				,	GREATEST(tmpCd.CustID,ltr.CustID)
 			FROM Temp_CustNode AS tmpCd
-				,	LATERAL (	SELECT tmpCd2.CTSCustID
+				,	LATERAL (	SELECT tmpCd2.CTSCustID, tmpCd2.CustID
 								FROM CTS_DataCenter.AssociationByAI AS ai
 									INNER JOIN Temp_CustNode2 AS tmpCd2 ON ai.ToCustID = tmpCd2.CustID
                                 WHERE ai.FromCustID = tmpCd.CustID AND ai.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_GraphByAI_AssType AS tmpAt)
 							) AS ltr;
-                            
-			INSERT IGNORE INTO Temp_Graph(OrigID, DestID)
-			SELECT	LEAST(tmpCd.CTSCustID,ltr.CTSCustID)
-				,	GREATEST(tmpCd.CTSCustID,ltr.CTSCustID)
+            
+			INSERT IGNORE INTO Temp_Graph(OrigCustID, DestCustID)
+			SELECT	LEAST(tmpCd.CustID,ltr.CustID)
+				,	GREATEST(tmpCd.CustID,ltr.CustID)
 			FROM Temp_CustNode AS tmpCd
-				,	LATERAL (	SELECT tmpCd2.CTSCustID
+				,	LATERAL (	SELECT tmpCd2.CTSCustID, tmpCd2.CustID
 								FROM CTS_DataCenter.AssociationByAI AS ai
 									INNER JOIN Temp_CustNode2 AS tmpCd2 ON ai.FromCustID = tmpCd2.CustID
                                 WHERE ai.ToCustID = tmpCd.CustID AND ai.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_GraphByAI_AssType AS tmpAt)
@@ -171,21 +175,21 @@ BEGIN
 			FROM CTS_DataCenter.AssociationTypeSetting AS atd
 			WHERE atd.AssTypeID = CONST_ASSTYPE_IP AND atd.AssTypeItemStatus = CONST_ACTIVESTATUS; 
 
-			INSERT IGNORE INTO Temp_Graph(OrigID, DestID)
-			SELECT	LEAST(tmpCd.CTSCustID,ltr.CTSCustID)
-				,	GREATEST(tmpCd.CTSCustID,ltr.CTSCustID)
+			INSERT IGNORE INTO Temp_Graph(OrigCustID, DestCustID)
+			SELECT	LEAST(tmpCd.CustID,ltr.CustID)
+				,	GREATEST(tmpCd.CustID,ltr.CustID)
 			FROM Temp_CustNode AS tmpCd
-				,	LATERAL (	SELECT tmpCd2.CTSCustID
+				,	LATERAL (	SELECT tmpCd2.CTSCustID, tmpCd2.CustID
 								FROM CTS_DataCenter.AssociationByIP AS ip
 									INNER JOIN Temp_CustNode2 AS tmpCd2 ON ip.ToCustID = tmpCd2.CustID
                                 WHERE ip.FromCustID = tmpCd.CustID AND ip.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_GraphByIP_AssType AS tmpAt)
 							) AS ltr;
                             
-			INSERT IGNORE INTO Temp_Graph(OrigID, DestID)
-			SELECT	LEAST(tmpCd.CTSCustID,ltr.CTSCustID)
-				,	GREATEST(tmpCd.CTSCustID,ltr.CTSCustID)
+			INSERT IGNORE INTO Temp_Graph(OrigCustID, DestCustID)
+			SELECT	LEAST(tmpCd.CustID,ltr.CustID)
+				,	GREATEST(tmpCd.CustID,ltr.CustID)
 			FROM Temp_CustNode AS tmpCd
-				,	LATERAL (	SELECT tmpCd2.CTSCustID
+				,	LATERAL (	SELECT tmpCd2.CTSCustID, tmpCd2.CustID
 								FROM CTS_DataCenter.AssociationByIP AS ip
 									INNER JOIN Temp_CustNode2 AS tmpCd2 ON ip.FromCustID = tmpCd2.CustID
                                 WHERE ip.ToCustID = tmpCd.CustID AND ip.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_GraphByIP_AssType AS tmpAt)
@@ -193,8 +197,8 @@ BEGIN
 		END IF;
     END IF;
     
-	SELECT 	OrigID 
-		,	DestID
+	SELECT 	OrigCustID 
+		,	DestCustID
     FROM Temp_Graph;
 	
 END$$

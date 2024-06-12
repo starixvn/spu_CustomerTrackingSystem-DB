@@ -99,9 +99,16 @@ ALTER TABLE MatchMonitorStagingGroupBettingNonLive
 ,	ADD INDEX IX_MatchMonitorStagingGroupBettingNonLive_TransDateToSecond(TransDateToSecond)
 ,	ADD INDEX IX_MatchMonitorStagingGroupBettingNonLive_RuleGroup (MatchID,ScoreDiff,BettypeID,BetID,Betteam,GroupID);
 
-UPDATE MatchMonitorStagingGroupBettingLive
-SET TransDateToSecond = UNIX_TIMESTAMP(TransDate);
+UPDATE MatchMonitorStagingGroupBettingLive AS gbl
+	LEFT JOIN CTSCustomer AS cus ON cus.CustID = gbl.CustID
+SET gbl.TransDateToSecond = UNIX_TIMESTAMP(TransDate)
+	, gbl.CTSCustID = cus.CTSCustID
+    , gbl.IsLicensee = cus.IsLicensee;
 
-UPDATE MatchMonitorStagingGroupBettingNonLive
-SET TransDateToSecond = UNIX_TIMESTAMP(TransDate);
+UPDATE MatchMonitorStagingGroupBettingNonLive AS gbn
+	LEFT JOIN CTSCustomer AS cus ON cus.CustID = gbn.CustID
+SET gbn.TransDateToSecond = UNIX_TIMESTAMP(TransDate)
+	, gbn.CTSCustID = cus.CTSCustID
+    , gbn.IsLicensee = cus.IsLicensee;
+
 

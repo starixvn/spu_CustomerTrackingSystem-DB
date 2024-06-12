@@ -70,7 +70,6 @@ sp: BEGIN
 	
 	DECLARE CONST_LOG 							TINYINT DEFAULT 0;
     DECLARE CONST_MMRULEGROUP_GROUPBETTING		INT DEFAULT 1;
-    DECLARE CONST_MMREASON_GROUPBETTING			INT DEFAULT 0;
 	DECLARE CONST_CLASSIFYTOTALSTAKE_SOCCER		DECIMAL(20,4) DEFAULT 80;
     DECLARE CONST_CLASSIFYTOTALSTAKE_BASKETBALL	DECIMAL(20,4) DEFAULT 50;
 	DECLARE CONST_CLASSIFYTOTALCUST				INT DEFAULT 3;
@@ -107,6 +106,7 @@ sp: BEGIN
 		,	IsLicensee		BOOLEAN
         
         ,	PRIMARY KEY PK_Temp_Trans_GroupID_OrderNum(GroupID, OrderNum)
+        ,	INDEX IX_Temp_Trans_TimeGroupID(TimeGroupID)
     );
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Trans2;
@@ -147,8 +147,10 @@ sp: BEGIN
     #=======================================================================
 	SELECT 	st.TotalStake, st.TimeStep
 	INTO 	lv_RuleTotalStake, lv_RuleTimeStep
-	FROM CTS_DataCenter.MatchMonitorRuleSetting AS st 
-	WHERE 	st.RuleGroupID = CONST_MMRULEGROUP_GROUPBETTING AND st.RuleStatus = 1
+	FROM	CTS_DataCenter.MatchMonitorRuleSetting AS st 
+	WHERE 	st.RuleGroupID = CONST_MMRULEGROUP_GROUPBETTING
+		AND st.RuleStatus = 1
+        AND st.SportType = ip_SportType
 	LIMIT 1;
 
     DROP TEMPORARY TABLE IF EXISTS Temp_CustGroup;
@@ -177,7 +179,7 @@ sp: BEGIN
 	EXECUTE stmt1;
     IF (ip_LiveIndicator = 1) THEN
   
-		INSERT INTO Temp_Trans(GroupID, OrderNum ,SequenceID,TransDateToSecond,TransID,CustID,CTSCustID, Stake, OldGroupID,IsLicensee)
+		INSERT INTO Temp_Trans(GroupID, OrderNum , SequenceID, TransDateToSecond, TransID, CustID, CTSCustID, Stake, OldGroupID, IsLicensee)
         SELECT	tmpCg.GroupID
 			,	ROW_NUMBER() OVER (PARTITION BY tmpCg.GroupID ORDER BY SequenceID ) AS OrderNum			
 			,	mms.SequenceID
