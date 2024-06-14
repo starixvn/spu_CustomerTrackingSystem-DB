@@ -39,10 +39,10 @@ BEGIN
 		Param's Explanation (filtered by):	
 
 		Example:
-			CALL CTS_DC_MatchMonitor_RuleGroupBetting_Complete(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=119780351005,@ip_MatchID:=1
+			CALL CTS_DC_MatchMonitor_RuleGroupBetting_Complete(@ip_LiveIndicator:=1,@ip_MaxSequenceID:=119780351005,@ip_MatchID:=4
 			,@ip_ScoreDiff:=0,@ip_BettypeID:=1,@ip_BetID:=0,@ip_Betteam:='a'
-			,'[{"GroupID":1,"Reason":0,"TransIDList":"254608225414938624,254608225414938626","CustIDList":"1319,1320"}]');
-		
+			,'[{"GroupID":1,"Reason":0,"TransIDList":"254608225414938624,254608225414938626","CustIDList":"1319,1320", "HighStakeLicCustList":"1319,1320"}]');
+ 
 	*/
         
 	DECLARE CONS_LOG 				TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
@@ -105,10 +105,11 @@ BEGIN
 			TransID	BIGINT PRIMARY KEY
     ); 
     
-    INSERT IGNORE INTO Temp_TransGroup(GroupID, CustIDList, TransIDList)
+    INSERT IGNORE INTO Temp_TransGroup(GroupID, CustIDList, TransIDList,HighStakeLicCustList)
 	SELECT  js.GroupID
 		,	js.CustIDList
         ,	js.TransIDList
+        ,	js.HighStakeLicCustList
 	FROM JSON_TABLE(ip_TransGroup,
 					 "$[*]" COLUMNS(
 								GroupID					INT PATH "$.GroupID" 
@@ -117,7 +118,7 @@ BEGIN
                             ,	HighStakeLicCustList	LONGTEXT PATH "$.HighStakeLicCustList" 
 						)
 				) AS js;     
-    
+
     INSERT INTO Temp_GroupBettingGroup(GroupID, CustIDList, TransIDList, HighStakeLicCustList)
     SELECT  tmpTg.GroupID
 		,	tmpTg.CustIDList
@@ -199,9 +200,9 @@ BEGIN
 
 				SET lv_TargetGroupID =  lv_TargetGroupID + 1;
                 
-				INSERT IGNORE INTO CTS_DataCenter.MatchMonitorDetails(MatchID, LiveIndicator, ScoreDiff, BettypeID, BetID, Betteam, EventDate, GroupID, LiveHomeScore, LiveAwayScore, ListCustID, ListTransID, Reason)##LOG185793
+				INSERT IGNORE INTO CTS_DataCenter.MatchMonitorDetails(MatchID, LiveIndicator, ScoreDiff, BettypeID, BetID, Betteam, EventDate, GroupID, LiveHomeScore, LiveAwayScore, ListCustID, ListTransID, HighStakeLicCustList, Reason)##LOG185793
 				VALUES(ip_MatchID, ip_LiveIndicator, ip_ScoreDiff, ip_BettypeID, ip_BetID, ip_Betteam, lv_EventDate, lv_TargetGroupID, lv_LiveHomeScore, lv_LiveAwayScore
-				, lv_CustIDList, lv_TransIDList, CONS_MMREASON_GROUPBETTING);      
+				, lv_CustIDList, lv_TransIDList, lv_HighStakeLicCustList, CONS_MMREASON_GROUPBETTING);      
 
 			END IF; 
 	
@@ -216,7 +217,8 @@ BEGIN
 					UPDATE IGNORE CTS_DataCenter.MatchMonitorDetails AS mmd 
 					SET mmd.GroupID = lv_TargetGroupID, mmd.ListCustID = lv_CustIDList, mmd.ListTransID = lv_TransIDList, mmd.Reason = CONS_MMREASON_GROUPBETTING
 					WHERE  mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID 
-						AND mmd.Betteam = ip_Betteam AND mmd.ScoreDiff = ip_ScoreDiff AND mmd.GroupID = lv_TargetGroupID  AND mmd.Reason = CONS_MMREASON_GROUPBETTING;
+						AND mmd.Betteam = ip_Betteam AND mmd.ScoreDiff = ip_ScoreDiff AND mmd.GroupID = lv_TargetGroupID  
+                        AND mmd.HighStakeLicCustList = lv_HighStakeLicCustList AND mmd.Reason = CONS_MMREASON_GROUPBETTING;
 				END IF;
 				
 			END IF;        
