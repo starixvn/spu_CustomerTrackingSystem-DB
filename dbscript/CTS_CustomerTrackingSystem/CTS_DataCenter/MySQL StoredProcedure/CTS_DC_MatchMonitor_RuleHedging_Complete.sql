@@ -34,7 +34,7 @@ BEGIN
             -	20230612@Casey.Huynh: LogInfo [Redmine ID: #185793]
             -	20240109@Casey.Huynh: Enhance Hedging Rule [Redmine ID: #192172]
             -	20240509@Casey.Huynh: HF Hedging StepTime [Redmine ID: #204338]
-            -	20240617@Casey.Huynh: HF Hedging StepTime [Redmine ID: #206564]
+            -	20240617@Casey.Huynh: Update DataType [Redmine ID: #206564]
             
 		Param's Explanation (filtered by):			
 
