@@ -34,6 +34,7 @@ BEGIN
             -	20230612@Casey.Huynh: LogInfo [Redmine ID: #185793]
             -	20240109@Casey.Huynh: Enhance Hedging Rule [Redmine ID: #192172]
             -	20240509@Casey.Huynh: HF Hedging StepTime [Redmine ID: #204338]
+            -	20240617@Casey.Huynh: HF Hedging StepTime [Redmine ID: #206564]
             
 		Param's Explanation (filtered by):			
 
@@ -50,7 +51,7 @@ BEGIN
     DECLARE lv_TransIDList 		LONGTEXT;
     DECLARE lv_OldTransList 	LONGTEXT;    
     DECLARE lv_CustIDList		LONGTEXT;
-    DECLARE lv_OldGroupIDList	TEXT;
+    DECLARE lv_OldGroupIDList	LONGTEXT;
     DECLARE lv_NoOfOldGroupID	INT;
     DECLARE lv_EventDate 		DATE;
     DECLARE lv_LiveHomeScore	SMALLINT UNSIGNED;
@@ -80,8 +81,8 @@ BEGIN
 			GroupID 				INT PRIMARY KEY
         ,	IsHedging 				BOOLEAN
         ,	OldGroupIDList			VARCHAR(500)
-        ,	CustIDList 				TEXT
-        ,	TransIDList				TEXT 
+        ,	CustIDList 				LONGTEXT
+        ,	TransIDList				LONGTEXT 
     );    
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_HedgingGroup;
@@ -90,8 +91,8 @@ BEGIN
 			GroupID 				INT PRIMARY KEY
         ,	IsHedging 				BOOLEAN
         ,	OldGroupIDList			VARCHAR(500)
-        ,	CustIDList 				TEXT
-        ,	TransIDList				TEXT 
+        ,	CustIDList 				LONGTEXT
+        ,	TransIDList				LONGTEXT 
     );   
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_HedgingOldGroup;
@@ -114,10 +115,10 @@ BEGIN
 					 "$[*]" COLUMNS(
 								GroupID			INT PATH "$.GroupID" 
 							,	IsHedging		BOOLEAN PATH "$.IsHedging"
-							,	OldGroupIDList	TEXT PATH "$.OldGroupIDList" 
-							,	CustIDList		TEXT PATH "$.CustIDList" 
-                            ,	TransIDList		TEXT PATH "$.TransIDList"
-                            ,	SequenceIDList	TEXT PATH "$.SequenceIDList" 
+							,	OldGroupIDList	LONGTEXT PATH "$.OldGroupIDList" 
+							,	CustIDList		LONGTEXT PATH "$.CustIDList" 
+                            ,	TransIDList		LONGTEXT PATH "$.TransIDList"
+                            ,	SequenceIDList	LONGTEXT PATH "$.SequenceIDList" 
 						)
 				) AS js;     
     

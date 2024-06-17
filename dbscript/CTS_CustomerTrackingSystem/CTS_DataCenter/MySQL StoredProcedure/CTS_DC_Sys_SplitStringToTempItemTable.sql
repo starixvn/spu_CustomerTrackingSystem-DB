@@ -1,6 +1,7 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsOwner" isFunction="0" isNested="1"></info>*/
+DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_Sys_SplitStringToTempItemTable;
 DELIMITER $$
-DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_Sys_SplitStringToTempItemTable$$
-CREATE DEFINER=fps@`%` PROCEDURE CTS_DataCenter.CTS_DC_Sys_SplitStringToTempItemTable(IN ip_String TEXT, IN ip_Seperator VARCHAR(10), IN ip_toDataType VARCHAR(100))
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE CTS_DataCenter.CTS_DC_Sys_SplitStringToTempItemTable(IN ip_String LONGTEXT, IN ip_Seperator VARCHAR(10), IN ip_toDataType VARCHAR(100))
 BEGIN
 	/*
 		Created:	20200604@Casey.Huynh
@@ -9,6 +10,7 @@ BEGIN
 		Original:
 
 		Revisions:
+			-	20240617@Casey.Huynh: HF Hedging StepTime [Redmine ID: #206564]
         
 		Param's Explanation (filtered by):
                 
