@@ -10,7 +10,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleHedging_Process
     ,	IN ip_BetID				BIGINT
     ,	IN ip_Betteam			VARCHAR(10)
     ,	IN ip_SportType			INT
-    ,	IN ip_SequenceIDList	TEXT		# SequenceID List from SP CTS_DC_MatchMonitor_RuleHedging_Get
+    ,	IN ip_SequenceIDList	LONGTEXT		# SequenceID List from SP CTS_DC_MatchMonitor_RuleHedging_Get
     ,	IN ip_CustGroup			JSON 		# Group Return from DC_Association_DetectGroup    
 )
       
@@ -33,6 +33,7 @@ sp: BEGIN
             -	20240109@Casey.Huynh:	Enhance Hedging Rule [Redmine ID: #192172]
             -	20240223@Casey.Huynh:	Fix Issue Return [Redmine ID: #201271]
             -	20240509@Casey.Huynh: 	HF Hedging StepTime [Redmine ID: #204338]
+            -	20240617@Casey.Huynh: Update Data Type [Redmine ID: #206564]
 			
 		Param's Explanation (filtered by):	
 		Example:
@@ -47,7 +48,7 @@ sp: BEGIN
 
 	DECLARE lv_RuleTimeStep 				SMALLINT;
 	DECLARE lv_RuleTotalStake 			DECIMAL(20,4);
-	DECLARE lv_CustIDList 				TEXT;
+	DECLARE lv_CustIDList 				LONGTEXT;
 	DECLARE lv_IsHedging 				BOOLEAN;
 	DECLARE lv_GroupID 					INT; 
 
@@ -94,19 +95,7 @@ sp: BEGIN
         
         ,	PRIMARY KEY PK_Temp_Trans_GroupID_OrderNum(GroupID, OrderNum)
     );
-    
-	DROP TEMPORARY TABLE IF EXISTS Temp_ResultGroup;
-    CREATE TEMPORARY TABLE Temp_ResultGroup(
-			GroupID			INT PRIMARY KEY	
-		,	IsHedging		BOOLEAN
-        ,	TotalStake		DECIMAL(20,4)
-		,	OldGroupIDList	VARCHAR(500)
-        ,	CustIDList		TEXT NOT NULL
-        ,	TransIDList		TEXT NOT NULL        
-        ,	SequenceIDList	TEXT NOT NULL 
-        ,	INDEX IX_Temp_ResultGroup(GroupID)
-    );
-    
+
     DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
 	CREATE TEMPORARY TABLE 		Temp_Cust (
 		 	CustID 	BIGINT UNSIGNED PRIMARY KEY

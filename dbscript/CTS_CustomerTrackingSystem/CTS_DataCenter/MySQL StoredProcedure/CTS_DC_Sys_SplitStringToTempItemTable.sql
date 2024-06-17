@@ -1,6 +1,8 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin,ctsService,ctsAPIAdmin,ctsAPI,ctsWebAdmin,ctsWeb" isFunction="0" isNested="1"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_Sys_SplitStringToTempItemTable`;
 DELIMITER $$
-DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_Sys_SplitStringToTempItemTable$$
-CREATE DEFINER=fps@`%` PROCEDURE CTS_DataCenter.CTS_DC_Sys_SplitStringToTempItemTable(IN ip_String TEXT, IN ip_Seperator VARCHAR(10), IN ip_toDataType VARCHAR(100))
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Sys_SplitStringToTempItemTable`(IN ip_String LONGTEXT, IN ip_Seperator VARCHAR(10), IN ip_toDataType VARCHAR(100))
+    SQL SECURITY INVOKER
 BEGIN
 	/*
 		Created:	20200604@Casey.Huynh
@@ -9,11 +11,12 @@ BEGIN
 		Original:
 
 		Revisions:
+			-	20240617@Casey.Huynh: Update Data Type [Redmine ID: #206564]
         
 		Param's Explanation (filtered by):
                 
 
-    	*/ 
+   */ 
         
         
 	DROP TEMPORARY TABLE IF EXISTS TempItemTable;
