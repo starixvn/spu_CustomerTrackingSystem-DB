@@ -4,240 +4,301 @@ DELIMITER $$
 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleArbitrage_Process`(
 		IN ip_LiveIndicator		BOOLEAN
-	,	IN ip_MaxSequenceID		BIGINT UNSIGNED
-	,	IN ip_MatchID			INT 
+	,	IN ip_MatchID			INT UNSIGNED
     ,	IN ip_IsMajorLeague 	BOOLEAN
     ,	IN ip_ScoreDiff			INT 
-    ,	IN ip_BettypeID			INT
+    ,	IN ip_BettypeID			INT UNSIGNED
     ,	IN ip_BetID				BIGINT
     ,	IN ip_HDP				DECIMAL(8,4)   
-
-		
+    ,	IN ip_SequenceIDList	LONGTEXT	# SequenceID List from SP CTS_DC_MatchMonitor_RuleArbitrage_Get
+    ,	IN ip_CustGroup			JSON 		# Group Return from DC_Association_DetectGroup    
 )
+      
     SQL SECURITY INVOKER
 sp: BEGIN
 	/*
-		Created:	202212216@Casey.Huynh
-		Task :		Match Monitor Arbitrage Rule
+    
+		Created:	20210526@Casey.Huynh
+		Task :		Match Monitor Rule Process
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
-			- 	202212216@Casey.Huynh: 	Created [Redmine ID: 179502]
-			- 	20230109@Casey.Huynh: 	SumStake by CustID [Redmine ID: 182639]
-			- 	20230111@Casey.Huynh: 	SumStake by CustID not group by Betteam [Redmine ID: 182639]
-			-	20230310@Victoria.Le:	Credit Scale Out - Split 789y Site [Redmine ID: #183140]
-			-	20230612@Casey.Huynh: 	LogInfo [Redmine ID: #185793]
-            -	20230807@Casey.Huynh: 	Renovate Arbitrage [Redmine ID: #185791]
-            -	20230821@Casey.Huynh: 	Fix Issue GroupID (Temp_ResultGroup.Primary) [Redmine ID: #192973]
+			- 	20210526@Casey.Huynh: 	Created [Redmine ID: 152883]
+			-	20210719@Casey.Huynh: 	Fix Issue Rule Trans.StepTime and AssGroup [Redmine ID: 158946]
+			-	20210830@Casey.Huynh: 	Update Rule seperate Live and NonLive and move to Slave [Redmine ID: 159195]
+			-	20211019@Aries.Nguyen: 	Use FEDERATED  table [Redmine ID: 163400]
+			-	20211102@Aries.Nguyen: 	Fix FEDERATED connection fail[Redmine ID: 163400]
+			-	20211111@Casey.Huynh: 	Fix Issue Trans of the same Cust not merge Group [Redmine ID: 164558]
+			-	20220110@Casey.Huynh: 	Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
+			-	20220217@Casey.Huynh: 	Enhance MM, Update TO >= 1000 [Redmine ID: 168736]
+			- 	20220422@Irena.Vo: 		Mapping Is Hedging Reason (MM) from table CustomerCategory [Redmine ID: #170468]
+			-	20220815@Casey.Huynh: 	Scale Out DB [Redmine ID: #176472]
+			- 	20220830@Casey.Huynh: 	New Category for Classify Group Betting [Redmine ID: #176976]
+			-	202200929@Casey.Huynh: 	Seperate By Sport [Redmine ID: #178310]
+			-	20221021@Casey.Huynh: 	Fixed Clean Data Staging [Redmine ID: #179427]
+			-	20221027@Casey.Huynh: 	Seperate pool Staging [RedmineID: 179439]
+			-	20221205@Casey.Huynh: 	Rename Table and remove (Arbitrage,Hedging) [Redmine ID: #179502]
+			-	20230221@Casey.Huynh: 	Update Rule, The same Choice [Redmine ID: #184041]
+			- 	20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
+            -	20230313@Casey.Huynh:	Applied Betting Parten OTGB [Redmine ID: #184791]
+			-	20230421@Casey.Huynh:	Enhance Rule for System Detect Classification [Redmine ID: #186814]
+            -	20231016@Casey.Huynh:	Enhance Rule for BasketBall. Adjust Group Stake to 300, Add AssociationByIP, ShareMatch(3 Match(last 7 day) [Redmine ID: 195473]
+            -	20231120@Thomas.Nguyen: Add the condition stake of licensee group for Basketball: >= 50RM [Redmine ID: #188553]
+            -	20231120@Casey.Huynh:	Enhance Rule for Esport. Adjust Group Stake to 300, Add AssociationByIP, ShareMatch(3 Match(last 7 day) [Redmine ID: #196396]
+            - 	20240417@Casey.Huynh: 	Renovate Arbitrage Rule [Redmine ID: #203319]
             
-		Param's Explanation (filtered by):
-			CALL CTS_DC_MatchMonitor_RuleArbitrage_Process(@ip_LiveIndicator:=0,@ip_MaxSequenceID:=@op_MaxSequenceID,@ip_MatchID:=110100,@ip_IsMajorLeague:=0,@ip_ScoreDiff:=-2,@ip_BettypeID:=1,@ip_BetID:=0, @ip_HDP:=-0.2500);
-	
-		Example:		
+		Param's Explanation (filtered by):	
+		Example:
+		CALL CTS_DC_MatchMonitor_RuleArbitrage_Process(
+		 @ip_LiveIndicator:=0
+		,@ip_MatchID:=83540268
+		,@SportType:=1
+		,@ip_ScoreDiff:=0
+		,@ip_BettypeID:=1
+		,@ip_BetID:=0
+		,@ip_Betteam:='h'
+		,@ip_SequenceIDList:='119780925578,119780925587,119780925590,119780925602,119780925608,119780925617,119780925620,119780925626,119780925638,119780925659,119780925665,119780925677,119780925680,119780925689,119780925692,119780925695,119780925704,119780925713,119780925719,119780925725,119780925728,119780925734,119780925752,119780925758,119780925770'
+		,@ip_CustGroup:='[	{"CustID":2707638,"GroupID":1}
+						,	{"CustID":3945374,"GroupID":1}
+						,	{"CustID":12362695,"GroupID":2}
+						,	{"CustID":12362735,"GroupID":2}]'
+			);
+						
 	*/
-	DECLARE CONST_LOG 					TINYINT DEFAULT 	0; #0:LogOff, 1:LogOn
-	DECLARE CONST_RULE_GROUPID 			INT 	DEFAULT 	5;
-	DECLARE CONST_SUBSCRIBERID_ALPHA	INT 	DEFAULT  	168;
-	DECLARE CONST_SUBSCRIBERID_MAXBET	INT 	DEFAULT  	169;
-    
-    
-    DECLARE lv_RuleTimeStep 			SMALLINT;
-    DECLARE lv_RuleTotalStake 			DECIMAL(20,4);
-    DECLARE lv_RuleReason 				INT;
-    DECLARE lv_RuleSportType 			INT;  
-    DECLARE lv_CustIDList 				TEXT;
-    DECLARE lv_LastSequenceID 			BIGINT UNSIGNED;  
-	DECLARE lv_MaxResultGroup			INT;
+	
+	DECLARE CONST_LOG 							TINYINT DEFAULT 0;
+    DECLARE CONST_MMRULEGROUP_Arbitrage			INT DEFAULT 0;
+	DECLARE CONST_CLASSIFYTOTALSTAKE_SOCCER		DECIMAL(20,4) DEFAULT 80;
+    DECLARE CONST_CLASSIFYTOTALSTAKE_BASKETBALL	DECIMAL(20,4) DEFAULT 50;
+	DECLARE CONST_CLASSIFYTOTALCUST				INT DEFAULT 3;
+    DECLARE CONST_SPORTTYPE_BASKETBALL 			INT DEFAULT 2;
+    DECLARE CONST_SPORTTYPE_SOCCER 				INT DEFAULT 1;
+    DECLARE CONST_SPORTTYPE_ESPORT 				INT DEFAULT 43;
+
+	DECLARE lv_RuleTimeStep 				SMALLINT;
+	DECLARE lv_RuleTotalStake 				DECIMAL(20,4);
+	DECLARE lv_CustIDList 					LONGTEXT;
+	DECLARE lv_GroupID 						INT; 
+
     #==================LOG=======================================================
     DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleArbitrage_Process';
     IF CONST_LOG = 1 THEN     
 		INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
-		SELECT lv_SPName, CURRENT_TIMESTAMP(), CONCAT('@ip_LiveIndicator:=',ip_LiveIndicator,',@ip_MaxSequenceID:=',ip_MaxSequenceID,',@ip_MatchID:=',ip_MatchID
-		,',@ip_IsMajorLeague:=',ip_IsMajorLeague,',@ip_ScoreDiff:=',ip_ScoreDiff,',@ip_BettypeID:=',ip_BettypeID,',@ip_BetID:=',ip_BetID,',@ip_HDP:=',ip_HDP);
+		SELECT lv_SPName, CURRENT_TIMESTAMP(), CONCAT('@ip_LiveIndicator:=',ip_LiveIndicator,',@ip_MatchID:=',ip_MatchID
+		,',@ip_ScoreDiff:=',ip_ScoreDiff,',@ip_BettypeID:=',ip_BettypeID,',@ip_BetID:=',ip_BetID,',@ip_HDP:=',ip_HDP);
     END IF;
+    
     #==================LOG=======================================================   
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_StagingTrans;
-    CREATE TEMPORARY TABLE Temp_StagingTrans(
-			SequenceID		BIGINT UNSIGNED NOT NULL
-		,	TransID			BIGINT UNSIGNED NOT NULL PRIMARY KEY
-        ,	TransDate		DATETIME(3)  NOT NULL
-        ,	TransDateSecond	BIGINT 
-        ,	CustID			BIGINT NOT NULL
-        ,	CTSCustID		BIGINT 
-        , 	AgentCTSCustID	BIGINT 
-        ,	OldGroupID		INT 
+	DROP TEMPORARY TABLE IF EXISTS Temp_Trans;
+    CREATE TEMPORARY TABLE Temp_Trans(
+			GroupID			INT
+		,	OrderNum		INT
+        ,	SequenceID		BIGINT
+        ,	TransDateToSecond BIGINT
+        ,	TransID			BIGINT
+        ,	CustID			BIGINT
+        ,	CTSCustID		BIGINT
         ,	Stake			DECIMAL(20,4)
-        ,	Betteam			VARCHAR(10)
-        ,	HDP				DECIMAL(8,4)
-        ,	GroupID			INT DEFAULT 0
-        , 	Processed		TINYINT
+        ,	OldGroupID		INT
+        ,	TimeGroupID		INT
+		,	IsLicensee		BOOLEAN
         
-        ,	INDEX IX_Temp_StagingTrans_CTSCustID(CTSCustID) 
-        ,	INDEX IX_Temp_StagingTrans_AgentCTSCustID(AgentCTSCustID) 
-        ,	INDEX IX_Temp_StagingTrans_Processed(Processed) 
-        ,	INDEX IX_Temp_StagingTrans_SequenceID(SequenceID) 
-    );	
+        ,	PRIMARY KEY PK_Temp_Trans_GroupID_OrderNum(GroupID, OrderNum)
+        ,	INDEX IX_Temp_Trans_TimeGroupID(TimeGroupID)
+    );
+    
+	DROP TEMPORARY TABLE IF EXISTS Temp_Trans2;
+    CREATE TEMPORARY TABLE Temp_Trans2(
+			GroupID			INT
+		,	OrderNum		INT
+        ,	SequenceID		BIGINT
+        ,	TransDateToSecond BIGINT
+        ,	TransID			BIGINT
+        ,	CustID			BIGINT
+        ,	CTSCustID		BIGINT
+        ,	Stake			DECIMAL(20,4)
+        ,	OldGroupID		INT
         
-	DROP TEMPORARY TABLE IF EXISTS Temp_RemoveCust;
-    CREATE TEMPORARY TABLE Temp_RemoveCust(
-			CTSCustID BIGINT UNSIGNED PRIMARY KEY
-    );	
-	
-    DROP TEMPORARY TABLE IF EXISTS Temp_InvalidStakeCust;
-    CREATE TEMPORARY TABLE Temp_InvalidStakeCust(
-			GroupID INT
-		,	CTSCustID BIGINT UNSIGNED 		
+        ,	PRIMARY KEY PK_Temp_Trans_GroupID_OrderNum(GroupID, OrderNum)
+    );
+       
+    DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
+	CREATE TEMPORARY TABLE Temp_Cust (
+		 	CustID 	BIGINT UNSIGNED PRIMARY KEY
+	); 
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_Group;
+	CREATE TEMPORARY TABLE Temp_Group(
+			GroupID 			INT
+		,	TimeGroupID			BIGINT PRIMARY KEY
+		,	TransIDList			LONGTEXT
+        ,	OldGroupIDList		VARCHAR(500)
+		,	CustIDList			LONGTEXT
+		,	CTSCustIDList		LONGTEXT
+		,	SequenceIDList		LONGTEXT
+        ,	LicCustList 		LONGTEXT
+        ,	LicCustTotalStake	INT
+        ,	LicCustTotal		INT
+        ,	IsValidGroup		BOOLEAN
         
-        ,	PRIMARY KEY (GroupID, CTSCustID)
-    );	
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_RemoveGroup;
-    CREATE TEMPORARY TABLE Temp_RemoveGroup(
-			GroupID INT PRIMARY KEY
-    );	
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_ResultGroup;
-    CREATE TEMPORARY TABLE Temp_ResultGroup(
-			GroupID					INT PRIMARY KEY
-		,	Reason					INT
-        ,	TransIDList				LONGTEXT NOT NULL
-        ,	CustIDList				LONGTEXT NOT NULL
-        ,	OldGroupIDList			VARCHAR(500)
-    );	
-    #******************************* GET STAGING TRANS *******************************************
-    IF (ip_LiveIndicator = 0) THEN
-
-		SELECT ParameterValue
-        INTO lv_LastSequenceID
-		FROM CTS_DataCenter.SystemParameter AS sys
-		WHERE ParameterID = 128;
-    
-		SELECT mms.SportType 
-        INTO lv_RuleSportType 
-        FROM CTS_DataCenter.MatchMonitorStagingArbitrageNonLive AS mms 
-        WHERE mms.MatchID = ip_MatchID 
-        LIMIT 1;
-
-        SELECT 	st.TimeStep
-			, 	st.TotalStake
-			, 	st.Reason
-		INTO 	lv_RuleTimeStep
-			, 	lv_RuleTotalStake
-			,	lv_RuleReason
-		FROM 	CTS_DataCenter.MatchMonitorRuleSetting AS st 
-		WHERE 	st.RuleGroupID = CONST_RULE_GROUPID 
-			AND st.SportType = lv_RuleSportType 
+	);
+    #=======================================================================
+	SELECT 	st.TotalStake, st.TimeStep
+	INTO 	lv_RuleTotalStake, lv_RuleTimeStep
+	FROM	CTS_DataCenter.MatchMonitorRuleSetting AS st 
+	WHERE 	st.RuleGroupID = CONST_MMRULEGROUP_Arbitrage
+        AND st.SportType = ip_SportType 
 			AND (st.LeagueType = ip_IsMajorLeague OR st.LeagueType = 2)
-            AND st.RuleStatus = 1;
+            AND st.RuleStatus = 1
+	LIMIT 1;
 
-		INSERT INTO Temp_StagingTrans(TransID, SequenceID, TransDate, TransDateSecond, CustID, CTSCustID, AgentCTSCustID, OldGroupID, Stake, Betteam, Processed)
-        SELECT	mms.TransID
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustGroup;
+    CREATE TEMPORARY TABLE Temp_CustGroup(
+			CustID		BIGINT
+        ,	GroupID		INT
+	);
+    
+    INSERT INTO Temp_CustGroup(CustID, GroupID)
+    SELECT  js.CustID
+		,	js.GroupID
+	FROM JSON_TABLE(ip_CustGroup,
+					 "$[*]" COLUMNS(
+								CustID		BIGINT UNSIGNED PATH "$.CustID" 	
+							,	GroupID		INT PATH "$.GroupID"
+						)
+					) AS js;  
+    
+	DROP TEMPORARY TABLE IF EXISTS Temp_SequenceID;
+    CREATE TEMPORARY TABLE Temp_SequenceID (
+			SequenceID	BIGINT UNSIGNED PRIMARY KEY
+    );
+    
+	SET @sql = CONCAT("INSERT INTO Temp_SequenceID (SequenceID) VALUES ('", REPLACE(ip_SequenceIDList, ",", "'),('"),"');");
+	PREPARE stmt1 FROM @sql;
+	EXECUTE stmt1;
+    IF (ip_LiveIndicator = 1) THEN
+  
+		INSERT INTO Temp_Trans(GroupID, OrderNum , SequenceID, TransDateToSecond, TransID, CustID, CTSCustID, Stake, OldGroupID, IsLicensee)
+        SELECT	tmpCg.GroupID
+			,	ROW_NUMBER() OVER (PARTITION BY tmpCg.GroupID ORDER BY SequenceID ) AS OrderNum			
 			,	mms.SequenceID
-			,	mms.TransDate
-            ,	TO_SECONDS(mms.TransDate) AS TransDateSecond
-            ,	mms.CustID
-            ,	cus.CTSCustID
-            ,	agent.CTSCustID  AS AgentCTSCustID       
+			,	mms.TransDateToSecond
+			,	mms.TransID
+			,	mms.CustID
+			,	mms.CTSCustID
+			,	mms.Stake
             ,	mms.GroupID
-            ,	mms.Stake
-            ,	mms.Betteam
-            ,	(CASE WHEN mms.SequenceID > lv_LastSequenceID THEN 0 ELSE 1 END) AS Processed
-		FROM CTS_DataCenter.MatchMonitorStagingArbitrageNonLive AS mms			
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = mms.CustID AND cus.CustSubID = 0
-            LEFT JOIN CTS_DataCenter.CTSCustomer AS agent ON agent.CustID = cus.Recommend 
-															AND agent.CustSubID = 0 
-                                                            AND cus.RoleID = 1
-															AND agent.IsInternal = 0 												
-                                                            AND cus.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET)
-       WHERE	mms.SequenceID <= ip_MaxSequenceID 
-			AND mms.MatchID = ip_MatchID 
-            AND mms.ScoreDiff = ip_ScoreDiff 
-            AND mms.BettypeID = ip_BettypeID
-            AND mms.BetID = ip_BetID 
-            AND mms.HDP = ip_HDP;      
+            ,	mms.IsLicensee
+        FROM	CTS_DataCenter.MatchMonitorStagingArbitrageLive AS mms
+			INNER JOIN Temp_SequenceID AS tmpSq ON tmpSq.SequenceID = mms.SequenceID
+			INNER JOIN Temp_CustGroup AS tmpCg ON tmpCg.CustID = mms.CustID;
+            
+		INSERT INTO Temp_Trans2(GroupID, OrderNum, SequenceID,TransDateToSecond,TransID,CustID,CTSCustID,Stake,OldGroupID)
+		SELECT tmpTs.GroupID
+			,	tmpTs.OrderNum
+            ,	tmpTs.SequenceID
+            ,	tmpTs.TransDateToSecond
+            ,	tmpTs.TransID
+            ,	tmpTs.CustID
+            ,	tmpTs.CTSCustID
+            ,	tmpTs.Stake
+            ,	tmpTs.OldGroupID
+		FROM Temp_Trans AS tmpTs;
 
+        SET @n=0;
+        UPDATE Temp_Trans AS t
+			LEFT JOIN Temp_Trans2 AS t2 ON t.GroupID = t2.GroupID AND t.OrderNum = t2.OrderNum  +1 AND t.TransDateToSecond - t2.TransDateToSecond <= 180
+		SET t.TimeGroupID = (CASE WHEN t2.OrderNum IS NOT NULL THEN @n ELSE @n:=@n+1  END);
+		
+        INSERT INTO Temp_Group(GroupID, TimeGroupID, TransIDList, OldGroupIDList, CustIDList, CTSCustIDList, SequenceIDList, LicCustTotalStake, LicCustTotal, IsValidGroup)        
+        SELECT	MIN(tmp.GroupID) AS GroupID
+			,	tmp.TimeGroupID
+            ,	GROUP_CONCAT(tmp.TransID ORDER BY tmp.TransID) AS TransIDList
+			,	GROUP_CONCAT(DISTINCT tmp.OldGroupID) AS OldGroupIDList
+            ,	GROUP_CONCAT(DISTINCT tmp.CustID) AS CustIDList
+            ,	GROUP_CONCAT(DISTINCT tmp.CTSCustID) AS CTSCustIDList
+			,	GROUP_CONCAT(tmp.SequenceID)
+            ,	SUM((CASE WHEN tmp.IsLicensee = 1 THEN tmp.Stake ELSE 0 END)) AS LicCustTotalStake
+			,	COUNT(DISTINCT (CASE WHEN tmp.IsLicensee = 1 THEN tmp.CustID ELSE NULL END)) AS LicCustTotal
+            ,	(CASE WHEN COUNT(DISTINCT CustID) > 1 AND SUM(Stake) >= lv_RuleTotalStake THEN 1 ELSE 0 END) AS IsValidGroup
+        FROM Temp_Trans AS tmp
+        GROUP BY TimeGroupID;
+
+	ELSE #(ip_LiveIndicator = 0)
+
+		INSERT INTO Temp_Trans(GroupID, OrderNum ,SequenceID,TransDateToSecond,TransID,CustID,CTSCustID, Stake, OldGroupID,IsLicensee)
+        SELECT	tmpCg.GroupID
+			,	ROW_NUMBER() OVER (PARTITION BY tmpCg.GroupID ORDER BY SequenceID ) AS OrderNum			
+			,	mms.SequenceID
+			,	mms.TransDateToSecond
+			,	mms.TransID
+			,	mms.CustID
+			,	mms.CTSCustID
+			,	mms.Stake
+            ,	mms.GroupID
+            ,	mms.IsLicensee
+        FROM	CTS_DataCenter.MatchMonitorStagingArbitrageNonLive AS mms
+			INNER JOIN Temp_SequenceID AS tmpSq ON tmpSq.SequenceID = mms.SequenceID
+			INNER JOIN Temp_CustGroup AS tmpCg ON tmpCg.CustID = mms.CustID;
+            
+		INSERT INTO Temp_Trans2(GroupID, OrderNum, SequenceID, TransDateToSecond, TransID, CustID, CTSCustID, Stake, OldGroupID)
+		SELECT tmpTs.GroupID
+			,	tmpTs.OrderNum
+            ,	tmpTs.SequenceID
+            ,	tmpTs.TransDateToSecond
+            ,	tmpTs.TransID
+            ,	tmpTs.CustID
+            ,	tmpTs.CTSCustID
+            ,	tmpTs.Stake
+            ,	tmpTs.OldGroupID
+		FROM Temp_Trans AS tmpTs;
+
+        SET @n=0;
+        
+        UPDATE Temp_Trans AS t
+			LEFT JOIN Temp_Trans2 AS t2 ON t.GroupID = t2.GroupID AND t.OrderNum = t2.OrderNum + 1 AND t.TransDateToSecond - t2.TransDateToSecond <= 180
+		SET t.TimeGroupID = (CASE WHEN t2.OrderNum IS NOT NULL THEN @n ELSE @n:=@n+1  END);
+		
+        INSERT INTO Temp_Group(GroupID, TimeGroupID, TransIDList, OldGroupIDList, CustIDList, CTSCustIDList, SequenceIDList, LicCustTotalStake, LicCustTotal, IsValidGroup)        
+        SELECT	MIN(tmp.GroupID) AS GroupID
+			,	tmp.TimeGroupID
+            ,	GROUP_CONCAT(tmp.TransID ORDER BY tmp.TransID) AS TransIDList
+			,	GROUP_CONCAT(DISTINCT tmp.OldGroupID) AS OldGroupIDList
+            ,	GROUP_CONCAT(DISTINCT tmp.CustID) AS CustIDList
+            ,	GROUP_CONCAT(DISTINCT tmp.CTSCustID) AS CTSCustIDList
+			,	GROUP_CONCAT(tmp.SequenceID)
+			,	SUM((CASE WHEN tmp.IsLicensee = 1 THEN tmp.Stake ELSE 0 END)) AS LicCustTotalStake
+			,	COUNT(DISTINCT (CASE WHEN tmp.IsLicensee = 1 THEN tmp.CustID ELSE NULL END)) AS LicCustTotal
+            ,	(CASE WHEN COUNT(DISTINCT CustID) > 1 AND SUM(Stake) >= lv_RuleTotalStake THEN 1 ELSE 0 END) AS IsValidGroup
+        FROM Temp_Trans AS tmp
+        GROUP BY TimeGroupID;
     END IF;
     
-    #=========REMOVE IF Cust Total Stake < lv_RuleTotalStake
-	INSERT INTO Temp_RemoveCust(CTSCustID)
-    SELECT tmpSp.CTSCustID
-    FROM Temp_StagingTrans AS tmpSp
-    GROUP BY tmpSp.CTSCustID
-    HAVING SUM(tmpSp.Stake) < lv_RuleTotalStake;
-    
-    #=====================================================================
-	WHILE EXISTS (SELECT 1 FROM Temp_StagingTrans) DO        
-        
-        TRUNCATE TABLE Temp_RemoveGroup;
-		TRUNCATE TABLE Temp_InvalidStakeCust;
-        
-        UPDATE Temp_StagingTrans AS tmpSt
-        SET tmpSt.Processed = 0;        
+	DROP TEMPORARY TABLE IF EXISTS Temp_Completed;
+	CREATE TEMPORARY TABLE Temp_Completed(GroupID INT PRIMARY KEY);
+	
+	INSERT INTO Temp_Completed(GroupID)
+	SELECT tmpGp.GroupID
+	FROM Temp_Group AS tmpGp
+	GROUP BY tmpGp.GroupID
+	HAVING COUNT(DISTINCT tmpGp.TimeGroupID) = 1 AND MAX(IsValidGroup) = 1;
 
-		#========Detect group by assocation and transdate====================
-		CALL CTS_DataCenter.CTS_DC_MatchMonitor_DetectGroup(lv_RuleTimeStep, 0);
-        
-		#=========REMOVE TRANS IF NO GROUP (GROUP = 0)
-        DELETE tmpSt
-		FROM Temp_StagingTrans AS tmpSt
-		WHERE GroupID = 0;
-        
-        #=========RESET GROUPID = 0 IF EXISTS INVALID TOTAL STAKE
-		INSERT INTO Temp_InvalidStakeCust(GroupID, CTSCustID)
-		SELECT	tmpSt.GroupID
-			,	tmpSt.CTSCustID
-		FROM Temp_StagingTrans AS tmpSt
-		GROUP BY tmpSt.CTSCustID, tmpSt.GroupID
-		HAVING SUM(tmpSt.Stake) < lv_RuleTotalStake;
-        
-		DELETE tmpSt
-		FROM Temp_StagingTrans AS tmpSt
-		INNER JOIN Temp_InvalidStakeCust AS tmpRg ON tmpRg.GroupID = tmpSt.GroupID AND tmpRg.CTSCustID = tmpSt.CTSCustID;
-        
-        #======SET GROUPID = 0 TO RESCAN====================================================================
-        UPDATE Temp_StagingTrans AS tmpSt
-        SET GroupID = 0
-        WHERE tmpSt.GroupID IN (SELECT DISTINCT tmpRg.GroupID FROM Temp_InvalidStakeCust AS tmpRg);
-        
-        #=======REMOVE GROUP IF INVALID BETTEAM AND TOTAL CUSTs < 2============================================       
-        INSERT INTO Temp_RemoveGroup(GroupID)
-        SELECT	tmpSt.GroupID 
-        FROM Temp_StagingTrans AS tmpSt
-        WHERE GroupID > 0
-        GROUP BY GroupID
-        HAVING MIN(tmpSt.Betteam) = MAX(tmpSt.Betteam) OR COUNT(CTSCustID) = 1;
-        
-        DELETE tmpSt
-		FROM Temp_StagingTrans AS tmpSt
-		INNER JOIN Temp_RemoveGroup AS tmpRv ON tmpRv.GroupID = tmpSt.GroupID;		
-        
-        #==========INSERT VALID GROUP TO RESULT====================================================================
-		SELECT IFNULL(MAX(GroupID),0)
-        INTO lv_MaxResultGroup
-        FROM Temp_ResultGroup;
-        
-		INSERT INTO Temp_ResultGroup(GroupID, TransIDList, CustIDList, OldGroupIDList)
-		SELECT  lv_MaxResultGroup + tmpSt.GroupID
-			,	GROUP_CONCAT(tmpSt.TransID) AS TransIDList
-			,	GROUP_CONCAT(DISTINCT tmpSt.CustID) AS CustIDList
-			,	GROUP_CONCAT(DISTINCT CASE WHEN tmpSt.OldGroupID > 0 THEN tmpSt.OldGroupID ELSE 0 END) AS OldGroupIDList
-		FROM Temp_StagingTrans  AS tmpSt
-        WHERE tmpSt.GroupID > 0
-        GROUP BY tmpSt.GroupID; 
-                
-        DELETE tmpSt
-        FROM Temp_StagingTrans AS tmpSt
-        WHERE tmpSt.GroupID > 0;
-		
-    END WHILE;               
+	SELECT	tmpGr.GroupID	
+        ,	tmpGr.CustIDList
+        ,	tmpGr.TransIDList
+        ,	(CASE WHEN ((		ip_SportType = CONST_SPORTTYPE_SOCCER AND tmpGr.LicCustTotalStake >= CONST_CLASSIFYTOTALSTAKE_SOCCER) 
+							OR (ip_SportType = CONST_SPORTTYPE_BASKETBALL AND tmpGr.LicCustTotalStake >= CONST_CLASSIFYTOTALSTAKE_BASKETBALL)) 
+						AND tmpGr.LicCustTotal >= CONST_CLASSIFYTOTALCUST THEN tmpGr.LicCustList ELSE NULL END) HighStakeLicCustList
+    FROM Temp_Group AS tmpGr
+		INNER JOIN Temp_Completed AS tmpCp ON tmpGr.GroupID = tmpCp.GroupID
+    WHERE tmpCp.GroupID IS NOT NULL AND tmpGr.IsValidGroup = 1;
+
+    SELECT	tmpGr.CTSCustIDList
+        ,	tmpGr.SequenceIDList
+    FROM Temp_Group AS tmpGr
+		LEFT JOIN Temp_Completed AS tmpCp ON tmpGr.GroupID = tmpCp.GroupID
+	WHERE tmpCp.GroupID IS NULL AND tmpGr.IsValidGroup = 1;
     
-	SELECT	tmpRg.GroupID
-		,	lv_RuleReason AS Reason
-        ,	tmpRg.TransIDList
-        ,	tmpRg.CustIDList
-        ,	tmpRg.OldGroupIDList
-    FROM Temp_ResultGroup AS tmpRg;
 END$$
 DELIMITER ;
