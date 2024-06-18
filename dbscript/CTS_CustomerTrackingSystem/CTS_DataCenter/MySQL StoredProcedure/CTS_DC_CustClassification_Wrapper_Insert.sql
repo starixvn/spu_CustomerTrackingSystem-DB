@@ -1,0 +1,52 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_Wrapper_Insert`;
+
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Wrapper_Insert`(
+		IN	ip_InputCategoryType	INT 
+		IN	ip_FromAction			TINYINT
+		IN	ip_UplineRoleID			TINYINT
+		IN	ip_QueueID				BIGINT
+		IN	ip_AffectDownline		BIT(1)
+		-- IN	ip_IsToQueue			BOOLEAN
+		IN	ip_CustInfo				JSON
+		IN	ip_CustomerClass		SMALLINT
+		IN	ip_Remark				VARCHAR(500)	
+		IN	ip_CreatedBy			INT
+)
+SQL SECURITY INVOKER
+BEGIN
+/*
+		Created:	20240618@Victoria.Le
+		Task:		Insert main customer categories for Customer Classification
+		DB:			CTS_DataCenter
+		
+		Revisions: 
+			-	20240618@Victoria.Le: 		Initial Writing [Redmine ID: #205317]
+			
+		Param's Expanation:
+			- 
+*/
+
+
+	DECLARE	CONST_CATEGORYTYPEID_VVIP 				INT ;
+    DECLARE	CONST_CATEGORYTYPEID_WRAPPER			INT ;
+	DECLARE	CONST_CATEGORYTYPEID_PA 				INT ;
+    DECLARE	CONST_CATEGORYTYPEID_POTENTIALPA 		INT ;
+	DECLARE	CONST_CATEGORYTYPEID_NORMAL 			INT ;
+	
+	SET CONST_CATEGORYTYPEID_VVIP 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGORYTYPEID_VVIP');
+	SET CONST_CATEGORYTYPEID_WRAPPER 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGORYTYPEID_WRAPPER');
+	SET CONST_CATEGORYTYPEID_PA 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGORYTYPEID_PA');
+	SET CONST_CATEGORYTYPEID_POTENTIALPA 	= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGORYTYPEID_POTENTIALPA');
+	SET CONST_CATEGORYTYPEID_NORMAL			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGORYTYPEID_NORMAL');
+	
+	SELECT CONST_CATEGORYTYPEID_VVIP;
+	SELECT CONST_CATEGORYTYPEID_WRAPPER;
+	SELECT CONST_CATEGORYTYPEID_PA;
+	SELECT CONST_CATEGORYTYPEID_POTENTIALPA;
+	SELECT CONST_CATEGORYTYPEID_NORMAL;
+	
+	
+END$$
+DELIMITER ;
