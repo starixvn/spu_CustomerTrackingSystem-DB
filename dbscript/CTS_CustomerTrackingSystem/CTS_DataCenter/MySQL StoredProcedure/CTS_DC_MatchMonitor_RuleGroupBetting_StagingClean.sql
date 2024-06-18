@@ -152,7 +152,7 @@ BEGIN
 		IF lv_LastTransID > 0 THEN	
 			UPDATE 	CTS_DataCenter.SystemParameter AS sys
 			SET 	sys.ParameterValue = ip_MaxSequenceID
-			WHERE 	sys.ParameterID = 162;
+			WHERE 	sys.ParameterID = 47;
 		END IF;        
 	END IF;
     
@@ -230,7 +230,7 @@ BEGIN
         
 			UPDATE 	CTS_DataCenter.SystemParameter AS sys
 			SET 	sys.ParameterValue = ip_MaxSequenceID
-			WHERE 	sys.ParameterID = 163;
+			WHERE 	sys.ParameterID = 48;
             
 		END IF;
 		
