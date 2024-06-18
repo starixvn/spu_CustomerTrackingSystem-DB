@@ -17,6 +17,7 @@ AS
 
 	Revisions:
 		- 20230627@Jonas.Huynh: Reset Balance for Credit with Inactive Normal with new place-bet [Redmine ID: #189876]
+		- 20240618@Jonas.Nguyen: Renovate CC - Phase 2 [Redmine ID: #205317]
 
 	Param's Explanation:
 		
@@ -25,7 +26,7 @@ BEGIN
 	
 	SET NOCOUNT ON;
 	
-	DECLARE @CATEGORY_NORMALINACTIVE SMALLINT = 1001;
+	DECLARE @CATEGORY_NORMALINACTIVE SMALLINT = 40700;
 
 	IF	OBJECT_ID('tempdb..#tmpResetBalance') IS NOT NULL
 	DROP TABLE	#tmpResetBalance;

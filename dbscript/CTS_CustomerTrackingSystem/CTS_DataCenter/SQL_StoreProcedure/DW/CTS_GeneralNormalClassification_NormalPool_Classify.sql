@@ -26,6 +26,7 @@ AS
 		- 20230915@Jonas.Huynh: HF Wrong Inactive Category for New and Realtime flow exclude S/R/P with not latest category [Redmine ID: #193050]
 		- 20231030@Victoria.Le: New Member Classify Tagging [Redmine ID: #195060]
 		- 20240424@Thomas.Nguyen: Remove logic New Member Classify Tagging [Redmine ID: #200854]
+		- 20240618@Jonas.Nguyen: Renovate CC - Phase 2 [Redmine ID: #205317]
 
 	Param's Explanation:
 		@CustomersXML		: This parameter is used to classify customer perf which bases on currentCategory
@@ -50,14 +51,14 @@ BEGIN
 	DECLARE @From30Date				 DATE	  = DATEADD(DAY, -29, @ToDate);
 
 	DECLARE @CATEGORY_NULL			 SMALLINT = 0,
-			@CATEGORY_NORMALINACTIVE SMALLINT = 1001,
-	   	    @CATEGORY_SMARTINACTIVE	 SMALLINT = 1002,
-			@CATEGORY_NEWMEMBER		 SMALLINT = 201,
-			@CATEGORY_NORMALMEMBER	 SMALLINT = 202,
-			@CATEGORY_SMARTPUNTER	 SMALLINT = 203,
-			@CATEGORY_RISKY			 SMALLINT = 204,
-			@CATEGORY_GOODMEMBER	 SMALLINT = 205,
-			@CATEGORY_PROBATION		 SMALLINT = 206;
+			@CATEGORY_NORMALINACTIVE SMALLINT = 40700,
+	   	    @CATEGORY_SMARTINACTIVE	 SMALLINT = 40701,
+			@CATEGORY_NEW			 SMALLINT = 40100,
+			@CATEGORY_GOOD			 SMALLINT = 40200,
+			@CATEGORY_NORMAL		 SMALLINT = 40300,
+			@CATEGORY_PROBATION		 SMALLINT = 40400,
+			@CATEGORY_SMART			 SMALLINT = 40500,
+			@CATEGORY_RISKY			 SMALLINT = 40600;
 
 	DECLARE @SportGroup_SabaVRSoccer	 SMALLINT = 145,
 			@SportGroup_SabaVRBasketball SMALLINT = 912,
@@ -196,13 +197,13 @@ BEGIN
 		 a.IsRealtimeOnly = 0
 	FROM #tmpCustomers AS a
 	WHERE   a.IsRealtimeOnly = 1 
-		AND a.CurrentCategoryId IN (@CATEGORY_SMARTPUNTER, @CATEGORY_RISKY, @CATEGORY_PROBATION)
+		AND a.CurrentCategoryId IN (@CATEGORY_SMART, @CATEGORY_RISKY, @CATEGORY_PROBATION)
 		AND a.ScanTaggingType = @ScanTaggingType_Exist;
 
 	DELETE a WITH (ROWLOCK)
 	FROM #tmpCustomers AS a
 	WHERE   a.IsRealtimeOnly = 1 
-		AND a.CurrentCategoryId IN (@CATEGORY_SMARTPUNTER, @CATEGORY_RISKY, @CATEGORY_PROBATION)
+		AND a.CurrentCategoryId IN (@CATEGORY_SMART, @CATEGORY_RISKY, @CATEGORY_PROBATION)
 		AND a.ScanTaggingType = @ScanTaggingType_NotExist;
 
 			
@@ -309,8 +310,8 @@ BEGIN
 		FROM #tmpCustomerAccummulatedInfo AS a
 			INNER JOIN dbo.CustomerClassification_BetCount AS b WITH(NOLOCK) ON a.CustId = b.CustId
 		WHERE a.IsRealtimeOnly = 1 
-				AND ((a.CurrentCategoryId = @CATEGORY_GOODMEMBER AND a.BetCount - b.BetCount < 100)
-				OR (a.CurrentCategoryId = @CATEGORY_NORMALMEMBER AND a.BetCount - b.BetCount < 20));
+				AND ((a.CurrentCategoryId = @CATEGORY_GOOD AND a.BetCount - b.BetCount < 100)
+				OR (a.CurrentCategoryId = @CATEGORY_NORMAL AND a.BetCount - b.BetCount < 20));
 
 		-- #11.1: Classify Tagging (link Association, TWGB,...) If having any from tagging function
 		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, ScanTaggingType)
@@ -355,7 +356,7 @@ BEGIN
 		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, ScanTaggingType)
 		SELECT t.CustId
 			,  @GENERAL_SPORTID
-			,  CASE WHEN t.IsActiveWithin30Days = 1 THEN @CATEGORY_NEWMEMBER ELSE @CATEGORY_NORMALINACTIVE END
+			,  CASE WHEN t.IsActiveWithin30Days = 1 THEN @CATEGORY_NEW ELSE @CATEGORY_NORMALINACTIVE END
 			,  @CATEGORY_NULL
 			,  @ToDate AS CreatedDate
 			,  @CurrentDateTime AS CreatedTime
@@ -421,7 +422,7 @@ BEGIN
 		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, ScanTaggingType)
 		SELECT a.CustId
 			,  @GENERAL_SPORTID
-			,  CASE WHEN a.CurrentCategoryId IN (@CATEGORY_SMARTPUNTER, @CATEGORY_RISKY, @CATEGORY_PROBATION, @CATEGORY_SMARTINACTIVE) THEN @CATEGORY_SMARTINACTIVE ELSE @CATEGORY_NORMALINACTIVE END AS CategoryId
+			,  CASE WHEN a.CurrentCategoryId IN (@CATEGORY_SMART, @CATEGORY_RISKY, @CATEGORY_PROBATION, @CATEGORY_SMARTINACTIVE) THEN @CATEGORY_SMARTINACTIVE ELSE @CATEGORY_NORMALINACTIVE END AS CategoryId
 			,  a.CurrentCategoryId
 			,  @ToDate AS CreatedDate
 			,  @CurrentDateTime AS CreatedTime

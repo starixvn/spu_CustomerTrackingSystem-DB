@@ -19,7 +19,8 @@ AS
 		- 20230403@Jonas.Huynh: Modify betcount schedule for Normal & Good Member [Redmine ID: #185633]
 		- 20230421@Jonas.Huynh: Realtime Renovation [Redmine ID: #186678]
 		- 20230630@Jonas.Huynh: Normal renovation by Sport [Redmine ID: #189875]
-
+		- 20240618@Jonas.Nguyen: Renovate CC - Phase 2 [Redmine ID: #205317]
+	
 	Param's Explanation:
 		
 */
@@ -27,13 +28,14 @@ BEGIN
 	
 	SET NOCOUNT ON;
 	
-	DECLARE @GENERAL_SPORTID		SMALLINT = 200;
-	DECLARE @CATEGORY_NORMALMEMBER	INT		 = 202
-		,	@CATEGORY_GOODMEMBER	INT		 = 205;
+	DECLARE @GENERAL_SPORTID	SMALLINT = 200;
+
+	DECLARE @CATEGORY_GOOD		SMALLINT = 40200,
+			@CATEGORY_NORMAL	SMALLINT = 40300;
 
 	DELETE a WITH(ROWLOCK)
 	FROM #tmpBetCount AS a
-	WHERE a.CategoryId NOT IN (@CATEGORY_NORMALMEMBER, @CATEGORY_GOODMEMBER);
+	WHERE a.CategoryId NOT IN (@CATEGORY_NORMAL, @CATEGORY_GOOD);
 
 	IF (@IsGeneralFlow = 1)
 		BEGIN
