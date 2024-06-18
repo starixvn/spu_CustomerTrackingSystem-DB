@@ -406,7 +406,10 @@ BEGIN
 		OUTPUT INSERTED.CustId, @GENERAL_SPORTID, INSERTED.CategoryId, INSERTED.BetCount INTO #tmpBetCount
 		SELECT a.CustId
 			,  @GENERAL_SPORTID
-			,  CASE WHEN a.NewCategoryId IS NULL THEN a.CurrentCategoryId ELSE a.NewCategoryId END
+			,  CASE 
+					WHEN a.NewCategoryId IS NULL THEN a.CurrentCategoryId 
+					WHEN a.NewCategoryId IN (@CATEGORY_SMART, @CATEGORY_RISKY) AND a.CurrentCategoryId NOT IN (@CATEGORY_PROBATION, @CATEGORY_SMART, @CATEGORY_RISKY) THEN @CATEGORY_PROBATION
+					ELSE a.NewCategoryId END
 			,  a.CurrentCategoryId
 			,  @ToDate AS CreatedDate
 			,  @CurrentDateTime AS CreatedTime
