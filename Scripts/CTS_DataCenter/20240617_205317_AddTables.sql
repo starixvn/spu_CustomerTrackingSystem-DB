@@ -16,7 +16,7 @@ CREATE TABLE CustomerCategorySettings
 (
 	CategoryID INT UNSIGNED NOT NULL,
 	CategoryGroupID INT UNSIGNED NOT NULL,
-	CategoryType TINYINT UNSIGNED, /* 1: VVIP, 2: Wrapper, 3: PA, 4: Potential PA, 5: Normal */
+	CategoryTypeID TINYINT UNSIGNED COMMENT '1: VVIP, 2: Wrapper, 3: PA, 4: Potential PA, 5: Normal',
 	IsParallelParentID BIT(1),
 	IsMultiCateIDSameParentID BIT(1),
 	IsKeepOldCateID BIT(1),
@@ -49,7 +49,7 @@ CREATE TABLE Customer_InitialGroupBetting
 
 CREATE TABLE TVSVoidRequest
 (
-	ID BIGINT UNSIGNED NOT NULL
+	ID BIGINT UNSIGNED NOT NULL,
     TVSRequestID BIGINT UNSIGNED,
     CustID BIGINT UNSIGNED NOT NULL,
     ReasonID INT,
@@ -84,3 +84,128 @@ CREATE TABLE TWRobotUser
 	InsertedDate DATETIME,
 	PRIMARY KEY (CustID, CategoryID)
 );
+
+
+/*RENAME old table CustomerCategory before executing the script below*/
+CREATE TABLE CustomerCategory 
+( 
+	CategoryID INT UNSIGNED NOT NULL AUTO_INCREMENT, 
+	CategoryName VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci, 
+	CategorySpec VARCHAR(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci, 
+	ParentID INT unsigned, 
+	CustomerClass SMALLINT UNSIGNED, 
+	CustomerClassName VARCHAR(50) COLLATE utf8_unicode_ci, 
+	CategoryGroupID INT UNSIGNED, 
+	CategoryPriority SMALLINT UNSIGNED,
+	CustomerClassPriority SMALLINT UNSIGNED,
+	BussinessCategoryGroupID INT UNSIGNED,
+	--DisplayOrder TINYINT unsigned NOT NULL, 
+	IsActive BIT(1) DEFAULT b'1', 
+	--IsUsedManually BIT(1) DEFAULT b'0', 
+	ScanIntervalInSecond BIGINT, 
+	ScanTaggingIntervalInSecond BIGINT, 
+	RootTaggingID SMALLINT UNSIGNED, 
+	RelevantCategoryID INT UNSIGNED, 
+	ProblemCaseID SMALLINT UNSIGNED, 
+	MMReasonID INT, 
+	TVSReasonID INT, 
+	IsPAProbation BIT(1), 
+	IsDangerProbation TINYINT(1) DEFAULT '0', 
+	AFCFraudID INT, 
+	DataSource VARCHAR(50) COLLATE utf8_unicode_ci, 
+	CreatedDate DATETIME, 
+	--CreatedBy INT UNSIGNED, 
+	--LastModifiedDate DATETIME, 
+	--LastModifiedBy INT UNSIGNED, 
+	CategoryNameCN VARCHAR(50) CHARACTER SET utf8 COLLATE utf8_general_ci, 
+	CategoryNameCN3 VARCHAR(50) COLLATE utf8_unicode_ci, 
+	CategoryNameTHB VARCHAR(50) COLLATE utf8_unicode_ci, 
+	CategoryNameIND VARCHAR(50) COLLATE utf8_unicode_ci, 
+	CustomerClassNameCN VARCHAR(50) COLLATE utf8_unicode_ci, 
+	SabaSportType VARCHAR(50) COMMENT '1:Soccer or 2:Basketball', 
+	TaggingID SMALLINT, 
+	TaggingType SMALLINT, 
+	ABIDangerLevel_Licensee SMALLINT UNSIGNED, 
+	ABIDangerLevel_Credit SMALLINT UNSIGNED, 
+	DangerLevelType SMALLINT, 	
+	--EvidenceCode_Licensee VARCHAR(10) COLLATE utf8_unicode_ci, 
+	--EvidenceCode_Credit VARCHAR(10) COLLATE utf8_unicode_ci, 
+	OldCategoryID INT UNSIGNED,
+	Ext_CategoryGroupID INT UNSIGNED,
+	Ext_EvidenceID_Licensee SMALLINT, 
+	Ext_EvidenceID_Credit SMALLINT, 
+	Ext_SabaIntelligentRiskLevel VARCHAR(50) CHARACTER SET utf8 COLLATE utf8_unicode_ci, 
+	Ext_SabaIntelligentRiskLevelTCN VARCHAR(50) CHARACTER SET utf8 COLLATE utf8_unicode_ci, 
+	Ext_SabaIntelligentRiskLevelSCN VARCHAR(50) CHARACTER SET utf8 COLLATE utf8_unicode_ci, 
+	Ext_SabaIntelligentRiskLevelCN3 VARCHAR(50) COLLATE utf8_unicode_ci, 
+	Ext_SabaIntelligentRiskLevelTHB VARCHAR(50) COLLATE utf8_unicode_ci, 
+	Ext_SabaIntelligentRiskLevelIND VARCHAR(50) COLLATE utf8_unicode_ci, 
+	--ABIDangerLevelException_Licensee SMALLINT UNSIGNED, 	
+	--ABIDangerLevelException_Credit SMALLINT UNSIGNED, 
+	--IsProbation BIT(1) DEFAULT b'0', 
+	--Priority SMALLINT, 
+	--OldCustomerClass SMALLINT UNSIGNED, 
+	--GroupPriority SMALLINT UNSIGNED, 
+	PRIMARY KEY (CategoryID), 
+	KEY IX_CustomerCategory_ParentID (ParentID), 
+	KEY IX_CustomerCategory_IsActive (IsActive),
+	KEY IX_CustomerCategory_CategoryGroup (CategoryGroup), 
+	KEY IX_CustomerCategory_ReasonID (ReasonID) 
+);
+
+/*CTSCustomerClassification*/
+ALTER TABLE CTSCustomerClassification
+RENAME SportGroupID TO ParentID;
+
+ALTER TABLE CTSCustomerClassification
+MODIFY COLUMN ParentID INT UNSIGNED;
+
+ALTER TABLE CTSCustomerClassification
+MODIFY COLUMN CategoryID INT UNSIGNED;
+
+ALTER TABLE CTSCustomerClassification
+ADD IsAffectToDownline BIT(1);
+
+/*CTSCustomerClassification_History*/
+ALTER TABLE CTSCustomerClassification_History
+RENAME SportGroupID TO ParentID;
+
+ALTER TABLE CTSCustomerClassification_History
+MODIFY COLUMN ParentID INT UNSIGNED;
+
+ALTER TABLE CTSCustomerClassification_History
+MODIFY COLUMN CategoryID INT UNSIGNED;
+
+ALTER TABLE CTSCustomerClassification_History
+RENAME FromCategoryID TO OldCategoryID;
+
+ALTER TABLE CTSCustomerClassification_History
+MODIFY COLUMN OldCategoryID INT UNSIGNED;
+
+ALTER TABLE CTSCustomerClassification_History
+RENAME ToCategoryID TO DWCategoryID;
+
+ALTER TABLE CTSCustomerClassification_History
+MODIFY COLUMN DWCategoryID INT UNSIGNED;
+
+ALTER TABLE CTSCustomerClassification_History
+RENAME IsDirect TO IsAffectedFromUpline;
+
+/*CTSCustomerClassification_Log*/
+ALTER TABLE CTSCustomerClassification_Log
+RENAME SportGroupID TO ParentID;
+
+ALTER TABLE CTSCustomerClassification_Log
+MODIFY COLUMN ParentID INT UNSIGNED;
+
+ALTER TABLE CTSCustomerClassification_Log
+RENAME FromCategoryID TO OldCategoryID;
+
+ALTER TABLE CTSCustomerClassification_Log
+MODIFY COLUMN OldCategoryID INT UNSIGNED;
+
+ALTER TABLE CTSCustomerClassification_Log
+RENAME ToCategoryID TO DWCategoryID;
+
+ALTER TABLE CTSCustomerClassification_Log
+MODIFY COLUMN DWCategoryID INT UNSIGNED;
