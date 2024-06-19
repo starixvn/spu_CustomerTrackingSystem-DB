@@ -16,24 +16,13 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleArbitrage_Compl
   SQL SECURITY INVOKER
 BEGIN
 	/*
-		Created:	20210526@Casey.Huynh
-		Task :		Match Monitor Insert trans ticket to Staging table
+		Created:	202212216@Casey.Huynh
+		Task :		Match Monitor Arbitrage Rule
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
-			- 	20210526@Casey.Huynh: Created [Redmine ID: 152883]
-            -	20210719@Casey.Huynh: Fix Issue Rule Trans.StepTime and AssGroup [Redmine ID: 158946]
-            -	20210830@Casey.Huynh: Update Rule seperate Live and NonLive and move to Slave [Redmine ID: 159195]
-            -	20211213@Casey.Huynh: Enhance MM, Add column LeagueName [Redmine ID: 165606]
-			-	20220110@Casey.Huynh: Enhance MM, Add SportType, Betteam, BetID [Redmine ID: 166986]
-            -	20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
-            - 	20220830@Casey.Huynh: New Category for Classify Group Betting [Redmine ID: #176976]
-            -	202200929@Casey.Huynh: Seperate By Sport [Redmine ID: #178310]
-            - 	202201021@Casey.Huynh: Group By Betteam [Redmine ID: #179439]
-            -	20221205@Casey.Huynh: Rename Table [Redmine ID: #179502]
-            -	20230202@Casey.Huynh: HF Missing Insert HighStakeLicCustList [Redmine ID: #183324]
-            -	20230221@Casey.Huynh: Update Rule, The same Choice [Redmine ID: #184041]
+			- 	202212216@Casey.Huynh: Created [Redmine ID: 179502]
             - 	20240417@Casey.Huynh: Renovate Arbitrage Rule [Redmine ID: #203319]
             
 		Param's Explanation (filtered by):	

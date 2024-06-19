@@ -9,20 +9,15 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleArbitrage_Stagi
     SQL SECURITY INVOKER
 BEGIN
 	/*
-		Created:	20210526@Casey.Huynh
-		Task :		Match Monitor Insert trans ticket to Staging table
+		Created:	202212216@Casey.Huynh
+		Task :		Match Monitor Arbitrage Rule
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
-			- 	20210526@Casey.Huynh: Created [Redmine ID: 159195]
-            -	20220110@Casey.Huynh: Enhance MM, Add SportType, HDP, BetID [Redmine ID: 166986]
-            -	20220815@Casey.Huynh: Scale Out DB [Redmine ID: #176472]
-            -	202200929@Casey.Huynh: Seperate By Sport [Redmine ID: #178310]
-            -	20221021@Casey.Huynh: Fixed Clean Data Staging [Redmine ID: #179427]
-            -	20221027@Casey.Huynh: Seperate pool Staging [RedmineID: 179439]
-            -	20221205@Casey.Huynh: Rename Table [Redmine ID: #179502]
+			- 	202212216@Casey.Huynh: Created [Redmine ID: 179502]
             -	20230109@Casey.Huynh: UpdateSoreDiff [Redmine ID: #182637]
+            -	20230810@Casey.Huynh: Remove Betteam  [Redmine ID: #192549]
             - 	20240417@Casey.Huynh: Renovate Arbitrage Rule [Redmine ID: #203319]
             
 		Param's Explanation (filtered by):
@@ -38,7 +33,7 @@ BEGIN
 	DECLARE	lv_FromTime 		BIGINT;
     DECLARE	lv_ToTime 			BIGINT; 
     DECLARE lv_Rule_TimeStep	SMALLINT;
-    
+
     #==================LOG=======================================================
     DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleArbitrage_StagingClean';
     IF CONS_LOG = 1 THEN     
@@ -158,6 +153,6 @@ BEGIN
 		END IF;
 		
 	END IF;
-    
+
 END$$
 DELIMITER ;

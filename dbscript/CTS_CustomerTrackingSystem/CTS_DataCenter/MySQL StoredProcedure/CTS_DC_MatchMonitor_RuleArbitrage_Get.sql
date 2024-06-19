@@ -9,16 +9,13 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleArbitrage_Get`(
     SQL SECURITY INVOKER
 sp: BEGIN
 	/*
-		Created:	202200929@Casey.Huynh
-		Task :		Match Monitor Rule for Soccer Arbitrage
+		Created:	202212216@Casey.Huynh
+		Task :		Match Monitor Arbitrage Rule
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
-			- 	202200929@Casey.Huynh: Created [Redmine ID: #178310]
-            - 	202201021@Casey.Huynh: Group By Betteam [Redmine ID: #179439]
-            -	20221205@Casey.Huynh: Rename Table [Redmine ID: #179502]
-            -	20240109@Casey.Huynh: Enhance Arbitrage Rule [Redmine ID: #192172]
+			- 	202212216@Casey.Huynh: Created [Redmine ID: 179502]
             - 	20240617@Casey.Huynh: Renovate Arbitrage Rule [Redmine ID: #203319]
             
 		Param's Explanation (filtered by):	
@@ -59,6 +56,21 @@ sp: BEGIN
 	);
     
     #===============================================================================================
+    DROP TEMPORARY TABLE IF EXISTS Temp_TotalStake;
+    CREATE TEMPORARY TABLE Temp_TotalStake(
+			IsMajorLeague BOOLEAN
+		,	TotalStake DECIMAL(20,4)
+	);
+    
+	INSERT INTO Temp_TotalStake(IsMajorLeague, TotalStake)
+    SELECT 	DISTINCT
+			s.LeagueType
+		,	s.TotalStake
+    FROM	CTS_DataCenter.MatchMonitorRuleSetting AS s
+    WHERE	s.RuleGroupID = CONST_MMRULEGROUP_ARBITRAGE 
+		AND s.Reason = CONST_MMREASON_ARBITRAGE 
+        AND s.RuleStatus = 1;   
+
 	SELECT	s.TimeStep
     INTO	lv_Rule_TimeStep
     FROM	CTS_DataCenter.MatchMonitorRuleSetting AS s
@@ -121,14 +133,16 @@ sp: BEGIN
 								ELSE NULL END AS AgentDetect_CTSCustIDList
 				,	GROUP_CONCAT(mms.SequenceID) AS SequenceIDList
 			FROM CTS_DataCenter.MatchMonitorStagingArbitrageNonLive AS mms
+				INNER JOIN Temp_TotalStake AS tmpTs ON tmpTs.IsMajorLeague = mms.IsMajorLeague
 				LEFT JOIN Temp_OldGroup AS tmpOg ON mms.MatchID = tmpOg.MatchID AND mms.ScoreDiff = tmpOg.ScoreDiff AND mms.BettypeID = tmpOg.BettypeID
 													AND mms.BetID = tmpOg.BetID AND mms.HDP = tmpOg.HDP	AND (mms.GroupID = tmpOg.GroupID OR mms.GroupID = 0)
 			WHERE mms.SequenceID <= lv_MaxSequenceID 
-			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.HDP, tmpOg.GroupID
+			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.HDP, tmpOg.GroupID, tmpTs.TotalStake
 			HAVING COUNT(DISTINCT mms.CustID) > 1
 				AND COUNT(DISTINCT mms.Betteam) = 2
-			ORDER BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.HDP, tmpOg.GroupID;
-			
+                AND SUM(mms.Stake) > tmpTs.TotalStake
+			ORDER BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.HDP, tmpOg.GroupID, tmpTs.TotalStake;
+
             SET op_MaxSequenceID = lv_MaxSequenceID ;
             
 		ELSE # Get Next Trans > 1 minute to Clear Trans
