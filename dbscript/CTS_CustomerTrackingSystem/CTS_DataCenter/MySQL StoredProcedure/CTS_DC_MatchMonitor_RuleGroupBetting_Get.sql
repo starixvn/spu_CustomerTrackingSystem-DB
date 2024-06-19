@@ -57,10 +57,27 @@ sp: BEGIN
 	);
     
     #===============================================================================================
+    DROP TEMPORARY TABLE IF EXISTS Temp_TotalStake;
+    CREATE TEMPORARY TABLE Temp_TotalStake(
+			SportType 	INT
+		,	TotalStake	DECIMAL(20,4)
+	);
+    
+	INSERT INTO Temp_TotalStake(SportType, TotalStake)
+    SELECT 	DISTINCT
+			s.SportType
+		,	s.TotalStake
+    FROM	CTS_DataCenter.MatchMonitorRuleSetting AS s
+    WHERE	s.RuleGroupID = CONST_MMRULEGROUP_GROUPBETTING 
+		AND s.Reason = CONST_MMREASON_GROUPBETTING 
+        AND s.RuleStatus = 1;   
+    
 	SELECT	s.TimeStep
     INTO	lv_Rule_TimeStep
     FROM	CTS_DataCenter.MatchMonitorRuleSetting AS s
-    WHERE	s.RuleGroupID = CONST_MMRULEGROUP_GROUPBETTING AND s.Reason = CONST_MMREASON_GROUPBETTING AND s.RuleStatus=1 
+    WHERE	s.RuleGroupID = CONST_MMRULEGROUP_GROUPBETTING
+		AND s.Reason = CONST_MMREASON_GROUPBETTING 
+        AND s.RuleStatus=1 
     LIMIT	1;
     
     SELECT s.ParameterValue
@@ -113,13 +130,15 @@ sp: BEGIN
                 ,	GROUP_CONCAT(DISTINCT mms.CTSCustID) AS CTSCustIDList
 				,	GROUP_CONCAT(mms.SequenceID) AS SequenceIDList
 			FROM CTS_DataCenter.MatchMonitorStagingGroupBettingLive AS mms
+				INNER JOIN Temp_TotalStake AS tmpTs ON tmpTs.SportType = mms.SportType
 				LEFT JOIN Temp_OldGroup AS tmpOg ON mms.MatchID = tmpOg.MatchID AND mms.ScoreDiff = tmpOg.ScoreDiff AND mms.BettypeID = tmpOg.BettypeID
 													AND mms.BetID = tmpOg.BetID AND mms.Betteam = tmpOg.Betteam
 													AND (mms.GroupID = tmpOg.GroupID OR mms.GroupID = 0)
 			WHERE mms.SequenceID <= lv_MaxSequenceID 
-			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID
+			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID, tmpTs.TotalStake
 			HAVING COUNT(DISTINCT mms.CustID) > 1
-			ORDER BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID;
+				AND SUM(mms.Stake) > tmpTs.TotalStake
+			ORDER BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID, tmpTs.TotalStake;
 			
             SET op_MaxSequenceID = lv_MaxSequenceID ;
             
@@ -176,13 +195,15 @@ sp: BEGIN
                 ,	GROUP_CONCAT(DISTINCT mms.CTSCustID) AS CTSCustIDList
 				,	GROUP_CONCAT(mms.SequenceID) AS SequenceIDList
 			FROM CTS_DataCenter.MatchMonitorStagingGroupBettingNonLive AS mms
+				INNER JOIN Temp_TotalStake AS tmpTs ON tmpTs.SportType = mms.SportType
 				LEFT JOIN Temp_OldGroup AS tmpOg ON mms.MatchID = tmpOg.MatchID AND mms.ScoreDiff = tmpOg.ScoreDiff AND mms.BettypeID = tmpOg.BettypeID
 													AND mms.BetID = tmpOg.BetID AND mms.Betteam = tmpOg.Betteam
 													AND (mms.GroupID = tmpOg.GroupID OR mms.GroupID = 0)
 			WHERE mms.SequenceID <= lv_MaxSequenceID 
-			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID
+			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID, tmpTs.TotalStake
 			HAVING COUNT(DISTINCT mms.CustID) > 1
-			ORDER BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID;
+				AND SUM(mms.Stake) > tmpTs.TotalStake
+			ORDER BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID, tmpTs.TotalStake;
 			
             SET op_MaxSequenceID = lv_MaxSequenceID ;
             
