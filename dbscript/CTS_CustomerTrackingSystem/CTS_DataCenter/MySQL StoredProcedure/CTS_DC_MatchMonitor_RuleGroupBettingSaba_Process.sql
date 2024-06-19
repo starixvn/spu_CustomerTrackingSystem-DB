@@ -9,7 +9,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_RuleGroupBettingSab
     ,	IN ip_BettypeID			INT UNSIGNED
     ,	IN ip_BetID				BIGINT
     ,	IN ip_Betteam			VARCHAR(10)
-    ,	IN ip_SequenceIDList	LONGTEXT		# SequenceID List from SP CTS_DC_MatchMonitor_RuleGroupBettingSaba_Process
+    ,	IN ip_SequenceIDList	LONGTEXT	# SequenceID List from SP CTS_DC_MatchMonitor_RuleGroupBettingSaba_Process
     ,	IN ip_CustGroup			JSON 		# Group Return from DC_Association_DetectGroup    
 )
       

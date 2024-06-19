@@ -20,7 +20,7 @@ sp: BEGIN
 		Param's Explanation (filtered by):			
 		
 		Example:
-			CALL CTS_DC_MatchMonitor_RuleGroupBettingSaba_Get(@ip_LiveIndicator:=1,@op_MaxSequenceID);
+			CALL CTS_DC_MatchMonitor_RuleGroupBettingSaba_Get(@ip_LiveIndicator:=1,@op_MaxSequenceID)
 	*/
  
     DECLARE CONST_LOG					TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
