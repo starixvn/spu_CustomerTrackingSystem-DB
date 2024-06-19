@@ -57,16 +57,45 @@ BEGIN
 		
 		,	SportID						SMALLINT UNSIGNED DEFAULT 0 -- SpecialCC
 		,	CustomerClass				SMALLINT UNSIGNED
-		
+
+		,	IsDataChanged				BIT(1) DEFAULT 1 /*0: No change category => No Action*/
+
 		,	IsDangerProbation			BIT(1) -- LicVIP
 		,	CategoryID					INT UNSIGNED
 		,	CategoryPriority			SMALLINT UNSIGNED  -- Priority
 		,	CreatedBy 					INT UNSIGNED
 		
+		,	ExistCategoryID 			INT UNSIGNED -- PA
+		,	CategoryGroupID				INT UNSIGNED
+        ,	TargetCC					SMALLINT		
+		,	TargetDangerLevel			SMALLINT
+		, 	ToEvidenceID				SMALLINT
+		,	IsPAProbation				BIT(1) -- IsProbation
+        ,	RelevantCategoryID 			SMALLINT UNSIGNED
+        ,	RelevantCategoryGroupID		SMALLINT UNSIGNED
+		,	RelevantIsPAProbation		BIT(1) -- RelevantIsProbation
+        ,	LastModifiedDate			DATETIME(3)
+		,	Remark						VARCHAR(500)
+		,	IsFromTVS					BIT(1)  DEFAULT 0
+        ,	IsFromTW					BIT(1)  DEFAULT 0
+        ,	IsFromCTS					BIT(1)  DEFAULT 0
+        ,	IsFromAI					BIT(1)  DEFAULT 0
+		,	TVSRequestID				BIGINT UNSIGNED
+		,	IsTVSParlay					BIT(1) DEFAULT NULL
+		,	TVSSportType				SMALLINT DEFAULT NULL 
+		,	TVSIssueTypeID 				TINYINT DEFAULT NULL 
+        , 	TVSReasonID		   			INT
+        ,	IsFromOldPA					BIT(1)	
+		,   SpecialCC	       			SMALLINT  
+        ,	SpecialCCName				VARCHAR(50)
+		,   SpecialCCPriority   		SMALLINT DEFAULT -1
+		,   SpecialCCDangerProbation   	BIT(1) DEFAULT NULL
 		, 	TurnoverRM					DECIMAL(20,4)
+		, 	WinlossStatus				SMALLINT
 		, 	WinlossRM					DECIMAL(20,4)
 		, 	BetCount					BIGINT
 		, 	ActiveDays					INT	
+		
         ,	TWBetCount					BIGINT
         ,	TWGroupBettingRate			DECIMAL(10,4)
         ,	TWTicketRejectRate			DECIMAL(10,4)
@@ -82,14 +111,10 @@ BEGIN
 		,	NewCateID					SMALLINT
         ,	NewIsDangerProbation		BIT(1) DEFAULT 0
 		,	SourceTypeID      			SMALLINT
-		,	IsDataChanged				BIT(1) DEFAULT 1 /*0: No change category => No Action*/
+
         ,	OldTargetCC					SMALLINT
-        ,	TargetCC					SMALLINT
-		,	TargetDangerLevel			SMALLINT
-		,   SpecialCC	       			INT  
-        ,	SpecialCCName				VARCHAR(50)
-		,   SpecialCCPriority   		SMALLINT DEFAULT -1
-		,   SpecialCCDangerProbation   	BIT(1) DEFAULT NULL
+
+
 		, 	ActionType					SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN; 5: Not satisfy Pass Probation*/
         ,	PerformanceTime				DATETIME
         ,	ScanTaggingType				TINYINT DEFAULT 0
