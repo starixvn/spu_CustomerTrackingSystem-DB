@@ -26,8 +26,9 @@ BEGIN
 				+ CONST_CATEGORYTYPEID_POTENTIALPA	>> 4
 				+ CONST_CATEGORYTYPEID_NORMAL		>> 5
 			
-			SELECT ItemID FROM CTS_DataCenter.StaticList WHERE ListID = 6; -- Return CategoryTypeID
-			SELECT ItemParentItemID FROM CTS_DataCenter.StaticList WHERE ListID = 6; -- Return ParentID
+			SELECT ItemDefaultValue FROM CTS_DataCenter.StaticList WHERE ListID = 6;
+			
+			CTS_DC_CategoryTypeParent_Get ('CONST_CATETYPEID_VVIP');
 */
 
 	DECLARE CONST_LIST_CLASSIFICATION		INT DEFAULT 6;
