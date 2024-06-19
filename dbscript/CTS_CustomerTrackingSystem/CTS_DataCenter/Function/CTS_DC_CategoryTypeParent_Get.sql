@@ -30,52 +30,29 @@ BEGIN
 			SELECT ItemParentItemID FROM CTS_DataCenter.StaticList WHERE ListID = 6; -- Return ParentID
 */
 
-	DECLARE lv_GetTypeID	 			INT;
-	DECLARE lv_CateTypeParentID 		INT UNSIGNED;
+	DECLARE CONST_LIST_CLASSIFICATION		INT DEFAULT 6;
+	DECLARE lv_GetTypeID	 				INT;
+	DECLARE lv_CateTypeParentID 			INT UNSIGNED;
+	
+	SET ip_CateTypeParentName	= UPPER(ip_CateTypeParentName);
     
-    IF ip_CateTypeParentName LIKE 'CONST_CATEGORYTYPEID%' THEN
+    IF ip_CateTypeParentName LIKE '%CATETYPE%' THEN
 		SET lv_GetTypeID = 1;
-	ELSEIF ip_CateTypeParentName LIKE 'CONST_PARENTID%' THEN
+	ELSEIF ip_CateTypeParentName LIKE '%PARENT%' THEN
 		SET lv_GetTypeID = 2;
+	ELSEIF ip_CateTypeParentName LIKE '%CATEID%' THEN
+		SET lv_GetTypeID = 3;
+	ELSEIF ip_CateTypeParentName LIKE '%CATEGROUPID%' THEN
+		SET lv_GetTypeID = 4;
 	END IF;
 	
-    IF lv_GetTypeID = 1 THEN
-		IF ip_CateTypeParentName = 'CONST_CATEGORYTYPEID_VVIP' THEN
-			SET lv_CateTypeParentID 	= 1;
-			
-		ELSEIF ip_CateTypeParentName = 'CONST_CATEGORYTYPEID_WRAPPER' THEN 
-			SET lv_CateTypeParentID 	= 2;
-			
-		ELSEIF ip_CateTypeParentName = 'CONST_CATEGORYTYPEID_PA' THEN 
-			SET lv_CateTypeParentID 	= 3;
-			
-		ELSEIF ip_CateTypeParentName = 'CONST_CATEGORYTYPEID_POTENTIALPA' THEN 
-			SET lv_CateTypeParentID 	= 4;
-			
-		ELSEIF ip_CateTypeParentName = 'CONST_CATEGORYTYPEID_NORMAL' THEN 
-			SET lv_CateTypeParentID 	= 5;
-		
-		END IF;
-	END IF;
+
+	SET lv_CateTypeParentID = (	SELECT 	stl.ItemDefaultValue
+								FROM 	CTS_DataCenter.StaticList AS stl
+								WHERE 	stl.ListID = CONST_LIST_CLASSIFICATION 
+									AND stl.ItemParentItemID = lv_GetTypeID
+									AND stl.ItemName = ip_CateTypeParentName);
 	
-    IF lv_GetTypeID = 2 THEN
-		IF ip_CateTypeParentName = 'CONST_PARENTID_VVIP' THEN
-			SET lv_CateTypeParentID		= 1000;
-			
-		ELSEIF ip_CateTypeParentName = 'CONST_PARENTID_WRAPPER' THEN 
-			SET lv_CateTypeParentID	 	= 10000;
-			
-		ELSEIF ip_CateTypeParentName = 'CONST_PARENTID_PA' THEN 
-			SET lv_CateTypeParentID	 	= 20000;
-			
-		ELSEIF ip_CateTypeParentName = 'CONST_PARENTID_POTENTIALPA' THEN 
-			SET lv_CateTypeParentID 	= 30000;
-			
-		ELSEIF ip_CateTypeParentName = 'CONST_PARENTID_NORMAL' THEN 
-			SET lv_CateTypeParentID 	= 40000;
-		
-		END IF;
-	END IF;
     
 	RETURN (lv_CateTypeParentID);
 

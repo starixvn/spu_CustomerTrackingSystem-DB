@@ -1,14 +1,14 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_Wrapper_Insert`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_Insert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Wrapper_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Insert`(
 		IN	ip_InputCategoryType	INT 
 		IN	ip_FromAction			TINYINT
 		IN	ip_UplineRoleID			TINYINT
 		IN	ip_QueueID				BIGINT
 		IN	ip_AffectDownline		BIT(1)
-		-- IN	ip_IsToQueue			BOOLEAN
+		IN	ip_IsToQueue			BIT(1)
 		IN	ip_CustInfo				JSON
 		IN	ip_CustomerClass		SMALLINT
 		IN	ip_Remark				VARCHAR(500)	
