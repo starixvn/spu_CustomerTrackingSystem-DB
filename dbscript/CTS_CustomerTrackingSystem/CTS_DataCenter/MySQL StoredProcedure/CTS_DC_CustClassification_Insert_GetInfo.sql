@@ -6,6 +6,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Insert_GetInf
 		IN	ip_InputFlowID			INT 
 		IN	ip_FromAction			TINYINT
 		IN	ip_CustInfo				JSON
+		OUT op_MaxCTSCustID			BIGINT
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -21,18 +22,17 @@ BEGIN
 			- 
 */
 
-
-	DECLARE CONST_CATETYPEID_VVIP 			INT;
-	DECLARE CONST_CATETYPEID_WRAPPER 		INT;
-	DECLARE CONST_CATETYPEID_PA 			INT;
-	DECLARE CONST_CATETYPEID_POTENTIALPA 	INT;
-	DECLARE CONST_CATETYPEID_NORMAL 		INT;
+	DECLARE CONST_CATEID_VVIP 				INT;
+	DECLARE CONST_CATEID_LICVIPSUSPICIOUS 	INT;
+	DECLARE CONST_CATEID_LICVIPDANGEROUS 	INT;
+	DECLARE CONST_CATEID_LICBA 				INT;
 	
-	SET CONST_CATETYPEID_VVIP 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATETYPEID_VVIP');
-	SET CONST_CATETYPEID_WRAPPER 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATETYPEID_WRAPPER');
-	SET CONST_CATETYPEID_PA 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATETYPEID_PA');
-	SET CONST_CATETYPEID_POTENTIALPA 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATETYPEID_POTENTIALPA');
-	SET CONST_CATETYPEID_NORMAL 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATETYPEID_NORMAL');
+    DECLARE lv_MaxCTSCustID					BIGINT UNSIGNED;
+	
+	SET CONST_CATEID_VVIP 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
+	SET CONST_CATEID_LICVIPSUSPICIOUS 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPSUSPICIOUS');
+	SET CONST_CATEID_LICVIPDANGEROUS 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPDANGEROUS');
+	SET CONST_CATEID_LICBA 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICBA');
 	
 	IF ip_InputFlowID IN (1,2,3,4) THEN /*ip_InputFlowID: VVIP/SpecialCC/LicVIP/LicBA*/
 	
@@ -44,11 +44,12 @@ BEGIN
 			,	RoleID						INT		
 			,	Remark						VARCHAR(500)
 			,	CreatedBy					BIGINT UNSIGNED
-			,	IsExistVVIP					BIT(1) DEFAULT 0
+			,	IsVVIP						BIT(1) DEFAULT 0
 			,	IsLicenseeVIP				BIT(1) DEFAULT 0
 			,	IsLicenseeBA				BIT(1) DEFAULT 0
 			,	IsDirect					BIT(1) DEFAULT 0
 			,	CustomerClass				SMALLINT UNSIGNED
+			,	SportID						SMALLINT UNSIGNED DEFAULT 0
 			,	PRIMARY KEY (CustID)
 		);
 		
@@ -60,17 +61,109 @@ BEGIN
 			,	RoleID						INT		
 			,	Remark						VARCHAR(500)
 			,	CreatedBy					BIGINT UNSIGNED
-			,	IsExistVVIP					BIT(1) DEFAULT 0
+			,	IsVVIP						BIT(1) DEFAULT 0
 			,	IsLicenseeVIP				BIT(1) DEFAULT 0
 			,	IsLicenseeBA				BIT(1) DEFAULT 0
 			,	IsDirect					BIT(1) DEFAULT 0
+			,	SportID						SMALLINT UNSIGNED  DEFAULT 0	
 			,	CustomerClass				SMALLINT UNSIGNED
 			,	CategoryPriority			SMALLINT UNSIGNED
 			,	CustomerClassPriority		SMALLINT UNSIGNED
 			,	IsDangerProbation			BIT(1) DEFAULT 0
-			,	IsDataChanged				BIT(1) DEFAULT 1	/*0: No change category => No Action*/
+			,	IsDataChanged				BIT(1) DEFAULT 0	/*0: No change category => No Action*/
 			,	PRIMARY KEY (CustID)
 		);
+		
+		IF ip_InputFlowID = 1 THEN /*VVIP*/
+			INSERT INTO Temp_NewClassification (CustID, CTSCustID, SubscriberID, RoleID, Remark, CreatedBy, IsVVIP, IsDirect)
+			SELECT DISTINCT 
+					temp.CustID, temp.CTSCustID, temp.SubscriberID, temp.RoleID, temp.CreatedBy, temp.Remark
+				,	(CASE WHEN cls.CustID IS NOT NULL THEN 1 ELSE 0 END) AS IsVVIP
+				,	(CASE WHEN ip_FromAction = 1 THEN 1 ELSE 0 END) AS IsDirect
+			FROM JSON_TABLE(ip_CustJson,
+							 "$[*]" COLUMNS(
+													CustID 			BIGINT UNSIGNED	PATH "$.CustID"
+												,	CTSCustID 		BIGINT UNSIGNED	PATH "$.CTSCustID"
+												,	RoleID			INT				PATH "$.RoleID"
+												,	SubscriberID 	INT UNSIGNED	PATH "$.SubscriberID"
+												,	CreatedBy 		BIGINT UNSIGNED	PATH "$.CreatedBy"            
+												,	Remark			VARCHAR(500)	PATH "$.Remark"
+											 )) AS temp
+				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID 
+																				AND cls.CategoryID = CONST_CATEID_VVIP;
+			
+			SELECT MAX(tmpCus.CTSCustID)
+			INTO op_MaxCTSCustID
+			FROM Temp_NewClassification AS tmpCus;
+			
+			
+		ELSEIF ip_InputFlowID = 2 THEN /*SpecialCC*/
+			INSERT INTO Temp_Customer (CustID, CTSCustID, SportID, SubscriberID, Remark, CreatedBy, IsLicenseeVIP, CustomerClass)
+			SELECT CustID, CTSCustID, SubscriberID, SportID, Remark, CreatedBy, IsLicenseeVIP, CustomerClass
+			FROM JSON_TABLE(ip_CustJson,
+							 "$[*]" COLUMNS(
+													CustID 			BIGINT UNSIGNED		PATH "$.CustID"
+												,	CTSCustID 		BIGINT UNSIGNED		PATH "$.CTSCustID"
+												,	SportID			SMALLINT UNSIGNED   PATH '$.SportID'
+												,	SubscriberID 	INT UNSIGNED		PATH "$.SubscriberID"
+												,	IsLicenseeVIP	BIT(1)				PATH "$.IsLicenseeVIP"            
+												,	CustomerClass	SMALLINT			PATH "$.CustomerClass"            
+												,	CreatedBy 		BIGINT UNSIGNED		PATH "$.CreatedBy"          
+												,	Remark			VARCHAR(500)		PATH "$.Remark"
+											 )) AS temp;
+											 
+			IF EXISTS (INSERT INTO Temp_Customer WHERE SportID = 0) THEN
+											 
+				INSERT INTO Temp_NewClassification (CustID, CTSCustID, SportID, SubscriberID, Remark, CreatedBy, IsLicenseeVIP, CustomerClass, IsDataChanged)
+				SELECT 	temp.CustID, temp.CTSCustID, temp.SportID, temp.SubscriberID, temp.Remark, temp.CreatedBy, temp.IsLicenseeVIP, temp.CustomerClass
+					, 	CASE WHEN temp.IsLicenseeVIP = 1 AND cls.CustID IS NULL THEN 0 ELSE 1 END AS IsDataChanged
+				FROM Temp_Customer AS temp
+					LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID 
+																					AND cls.CategoryID = CONST_CATEID_LICVIPSUSPICIOUS
+				WHERE temp.SportID = 0;
+			
+			END IF;
+			
+			IF EXISTS (INSERT INTO Temp_Customer WHERE SportID <> 0) THEN
+											 
+				INSERT INTO Temp_NewClassification (CustID, CTSCustID, SportID, SubscriberID, Remark, CreatedBy, IsLicenseeVIP, CustomerClass)
+				SELECT temp.CustID, temp.CTSCustID, temp.SportID, temp.SubscriberID, temp.Remark, temp.CreatedBy, temp.IsLicenseeVIP, temp.CustomerClass
+				FROM Temp_Customer AS temp
+				WHERE temp.SportID <> 0;
+			
+			END IF;
+			
+		ELSEIF ip_InputFlowID = 3 THEN	/*LicVIP*/
+			INSERT INTO Temp_Customer (CustID, CTSCustID, SubscriberID, CreatedBy, IsLicenseeVIP)
+			SELECT temp.CustID, temp.CTSCustID, temp.SubscriberID, temp.CreatedBy
+				,	(CASE WHEN cls.CustID IS NOT NULL THEN 1 ELSE 0 END) AS IsLicenseeVIP
+			FROM JSON_TABLE(ip_CustJson,
+							 "$[*]" COLUMNS(
+													CustID 			BIGINT UNSIGNED	PATH "$.CustID"
+												,	CreatedBy 		BIGINT UNSIGNED	PATH "$.CreatedBy"
+											 )) AS temp
+				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON  temp.CustID = cus.CustID AND cus.CustSubID = 0
+				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID 
+																				AND cls.CategoryID IN (CONST_CATEID_LICVIPSUSPICIOUS,CONST_CATEID_LICVIPDANGEROUS);
+			
+		ELSEIF ip_InputFlowID = 4 THEN /*LicBA*/
+			INSERT INTO Temp_Customer (CustID, CTSCustID, SubscriberID, CreatedBy, IsLicenseeBA)
+			SELECT temp.CustID, temp.CTSCustID, temp.SubscriberID, temp.CreatedBy
+				,	(CASE WHEN cls.CustID IS NOT NULL THEN 1 ELSE 0 END) AS IsLicenseeBA
+			FROM JSON_TABLE(ip_CustJson,
+							 "$[*]" COLUMNS(
+													CustID 			BIGINT UNSIGNED	PATH "$.CustID"
+												,	CreatedBy 		BIGINT UNSIGNED	PATH "$.CreatedBy"
+											 )) AS temp
+				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON  temp.CustID = cus.CustID AND cus.CustSubID = 0
+				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID 
+																				AND cls.CategoryID = CONST_CATEID_LICBA;
+			
+		
+		END IF;
+		
+		
+		
 	
 	ELSEIF ip_InputFlowID IN (5,6,7,8) THEN	/*ip_InputFlowID: PA/PotentialPA/Robot/Normal*/
 
@@ -83,7 +176,7 @@ BEGIN
 			,	IsLicensee					BIT(1) DEFAULT 0
 			,	IsLicenseeVIP				BIT(1) DEFAULT 0
 			,	IsLicenseeBA				BIT(1) DEFAULT 0
-			,	IsExitsVIP					BIT(1) DEFAULT 0
+			,	IsVVIP						BIT(1) DEFAULT 0
 			
 			, 	TurnoverRM					DECIMAL(20,4)
 			, 	WinlossRM					DECIMAL(20,4)
@@ -117,7 +210,7 @@ BEGIN
 			,	RelevantCategoryGroupID   	SMALLINT UNSIGNED
 			,	RelevantIsPAProbation	   	BIT(1) -- RelevantIsProbation
 			
-			,	IsDataChanged				BIT(1) DEFAULT 1 	/* 0: Not Change, 1: Changed (IF call from SpecialCC function THEN 1 ELSE 0) */
+			,	IsDataChanged				BIT(1) DEFAULT 0 	/* 0: Not Change, 1: Changed (IF call from SpecialCC function THEN 1 ELSE 0) */
 			,	DataChangeType				TINYINT DEFAULT 0	/* 0: New OR Change Category, 1: Change Probation Status, 2: NOT CHANGE */
 
 			, 	WinlossStatus				SMALLINT /*LOSING  = 0 (PROBATION), KEEPSTATE = 1 (NOT CHANGE), WINNING = 2 (NOT PROBATION);*/
