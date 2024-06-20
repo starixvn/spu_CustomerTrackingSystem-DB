@@ -1,3 +1,4 @@
+/*<info serverAlias="DBVR2-bodb_VR2Model" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 USE [bodb_VR2Model]
 GO
 /****** Object:  StoredProcedure [dbo].[CTS_NormalClassification_BetCount_Update]    Script Date: 03/04/2023 14:24:2022 PM ******/
@@ -69,8 +70,8 @@ BEGIN
 END;
 GO
 
-GRANT EXECUTE ON [dbo].[CTS_NormalClassification_BetCount_Update] TO [bodbSPUNet]
+GRANT EXECUTE ON [dbo].[CTS_NormalClassification_BetCount_Update] TO [wsv_cts]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CTS_NormalClassification_BetCount_Update] TO [bodbSPUNet]
+GRANT VIEW DEFINITION ON [dbo].[CTS_NormalClassification_BetCount_Update] TO [wsv_cts]
 GO
 

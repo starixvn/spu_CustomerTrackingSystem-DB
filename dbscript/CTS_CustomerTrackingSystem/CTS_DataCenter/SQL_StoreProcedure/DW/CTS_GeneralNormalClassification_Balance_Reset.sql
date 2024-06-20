@@ -1,4 +1,4 @@
-/*<info serverAlias="DBVR2-bodb_VR2Model" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBVR2-bodb_VR2Model" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 USE [bodb_VR2Model]
 GO
 SET ANSI_NULLS ON
@@ -60,8 +60,8 @@ BEGIN
 END;
 GO
 
-GRANT EXECUTE ON [dbo].[CTS_GeneralNormalClassification_Balance_Reset] TO [bodbSPUNet]
+GRANT EXECUTE ON [dbo].[CTS_GeneralNormalClassification_Balance_Reset] TO [wsv_cts]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CTS_GeneralNormalClassification_Balance_Reset] TO [bodbSPUNet]
+GRANT VIEW DEFINITION ON [dbo].[CTS_GeneralNormalClassification_Balance_Reset] TO [wsv_cts]
 GO
 
