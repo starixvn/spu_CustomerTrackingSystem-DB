@@ -21,7 +21,7 @@ CREATE TABLE CustomerCategorySettings
 	IsMultiCateIDSameParentID BIT(1),
 	IsKeepOldCateID BIT(1),
 	PRIMARY KEY (CategoryID, CategoryGroupID),
-	KEY IX_CustCateSettings_CategoryType (CategoryType)
+	KEY IX_CustCateSettings_CategoryTypeID (CategoryTypeID)
 );
 
 CREATE TABLE CustomerClassification_Remark
@@ -136,63 +136,6 @@ CREATE TABLE CustomerCategory
 	PRIMARY KEY (CategoryID), 
 	KEY IX_CustomerCategory_ParentID (ParentID), 
 	KEY IX_CustomerCategory_IsActive (IsActive),
-	KEY IX_CustomerCategory_CategoryGroup (CategoryGroup), 
-	KEY IX_CustomerCategory_ReasonID (ReasonID) 
+	KEY IX_CustomerCategory_CategoryGroup (CategoryGroupID), 
+	KEY IX_CustomerCategory_ReasonID (MMReasonID) 
 );
-
-/*CTSCustomerClassification*/
-ALTER TABLE CTSCustomerClassification
-RENAME COLUMN SportGroupID TO ParentID;
-
-ALTER TABLE CTSCustomerClassification
-MODIFY COLUMN ParentID INT UNSIGNED;
-
-ALTER TABLE CTSCustomerClassification
-MODIFY COLUMN CategoryID INT UNSIGNED;
-
-ALTER TABLE CTSCustomerClassification
-ADD IsAffectToDownline BIT(1);
-
-/*CTSCustomerClassification_History*/
-ALTER TABLE CTSCustomerClassification_History
-RENAME COLUMN SportGroupID TO ParentID;
-
-ALTER TABLE CTSCustomerClassification_History
-MODIFY COLUMN ParentID INT UNSIGNED;
-
-ALTER TABLE CTSCustomerClassification_History
-MODIFY COLUMN CategoryID INT UNSIGNED;
-
-ALTER TABLE CTSCustomerClassification_History
-RENAME COLUMN FromCategoryID TO OldCategoryID;
-
-ALTER TABLE CTSCustomerClassification_History
-MODIFY COLUMN OldCategoryID INT UNSIGNED;
-
-ALTER TABLE CTSCustomerClassification_History
-RENAME COLUMN ToCategoryID TO DWCategoryID;
-
-ALTER TABLE CTSCustomerClassification_History
-MODIFY COLUMN DWCategoryID INT UNSIGNED;
-
-ALTER TABLE CTSCustomerClassification_History
-RENAME COLUMN IsDirect TO IsAffectedFromUpline;
-
-/*CTSCustomerClassification_Log*/
-ALTER TABLE CTSCustomerClassification_Log
-RENAME COLUMN SportGroupID TO ParentID;
-
-ALTER TABLE CTSCustomerClassification_Log
-MODIFY COLUMN ParentID INT UNSIGNED;
-
-ALTER TABLE CTSCustomerClassification_Log
-RENAME COLUMN FromCategoryID TO OldCategoryID;
-
-ALTER TABLE CTSCustomerClassification_Log
-MODIFY COLUMN OldCategoryID INT UNSIGNED;
-
-ALTER TABLE CTSCustomerClassification_Log
-RENAME COLUMN ToCategoryID TO DWCategoryID;
-
-ALTER TABLE CTSCustomerClassification_Log
-MODIFY COLUMN DWCategoryID INT UNSIGNED;
