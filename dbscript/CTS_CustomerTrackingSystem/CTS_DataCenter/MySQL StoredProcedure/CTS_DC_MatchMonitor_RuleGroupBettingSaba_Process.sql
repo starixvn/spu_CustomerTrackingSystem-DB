@@ -233,7 +233,8 @@ sp: BEGIN
 		INNER JOIN Temp_Completed AS tmpCp ON tmpGr.GroupID = tmpCp.GroupID
     WHERE tmpCp.GroupID IS NOT NULL AND tmpGr.IsValidGroup = 1;
 
-    SELECT	tmpGr.CTSCustIDList
+    SELECT	tmpGr.CustIDList
+		,	tmpGr.CTSCustIDList
         ,	tmpGr.SequenceIDList
     FROM Temp_Group AS tmpGr
 		LEFT JOIN Temp_Completed AS tmpCp ON tmpGr.GroupID = tmpCp.GroupID

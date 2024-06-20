@@ -108,6 +108,7 @@ sp: BEGIN
 				,	mms.BetID
 				,	mms.Betteam
                 ,	MIN(mms.SportType) AS SportType
+                ,	GROUP_CONCAT(DISTINCT mms.CustID) AS CustIDList
                 ,	GROUP_CONCAT(DISTINCT mms.CTSCustID) AS CTSCustIDList
 				,	GROUP_CONCAT(mms.SequenceID) AS SequenceIDList
 			FROM CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive AS mms
@@ -172,6 +173,7 @@ sp: BEGIN
 				,	mms.BetID
 				,	mms.Betteam
                 ,	MIN(mms.SportType) AS SportType
+                ,	GROUP_CONCAT(DISTINCT mms.CustID) AS CustIDList
                 ,	GROUP_CONCAT(DISTINCT mms.CTSCustID) AS CTSCustIDList
 				,	GROUP_CONCAT(mms.SequenceID) AS SequenceIDList
 			FROM CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive AS mms
