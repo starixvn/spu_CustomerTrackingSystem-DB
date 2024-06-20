@@ -28,7 +28,7 @@ CREATE TABLE CustomerClassification_Remark
 (
 	CategoryID INT UNSIGNED NOT NULL,
 	RemarkID SMALLINT UNSIGNED,
-	RemarkTemplate VARCHAR(MAX),
+	RemarkTemplate TEXT,
 	UserComment VARCHAR(1000),
 	Description VARCHAR(200),
 	InsertedDate DATETIME,
@@ -142,7 +142,7 @@ CREATE TABLE CustomerCategory
 
 /*CTSCustomerClassification*/
 ALTER TABLE CTSCustomerClassification
-RENAME SportGroupID TO ParentID;
+RENAME COLUMN SportGroupID TO ParentID;
 
 ALTER TABLE CTSCustomerClassification
 MODIFY COLUMN ParentID INT UNSIGNED;
@@ -155,7 +155,7 @@ ADD IsAffectToDownline BIT(1);
 
 /*CTSCustomerClassification_History*/
 ALTER TABLE CTSCustomerClassification_History
-RENAME SportGroupID TO ParentID;
+RENAME COLUMN SportGroupID TO ParentID;
 
 ALTER TABLE CTSCustomerClassification_History
 MODIFY COLUMN ParentID INT UNSIGNED;
@@ -164,35 +164,35 @@ ALTER TABLE CTSCustomerClassification_History
 MODIFY COLUMN CategoryID INT UNSIGNED;
 
 ALTER TABLE CTSCustomerClassification_History
-RENAME FromCategoryID TO OldCategoryID;
+RENAME COLUMN FromCategoryID TO OldCategoryID;
 
 ALTER TABLE CTSCustomerClassification_History
 MODIFY COLUMN OldCategoryID INT UNSIGNED;
 
 ALTER TABLE CTSCustomerClassification_History
-RENAME ToCategoryID TO DWCategoryID;
+RENAME COLUMN ToCategoryID TO DWCategoryID;
 
 ALTER TABLE CTSCustomerClassification_History
 MODIFY COLUMN DWCategoryID INT UNSIGNED;
 
 ALTER TABLE CTSCustomerClassification_History
-RENAME IsDirect TO IsAffectedFromUpline;
+RENAME COLUMN IsDirect TO IsAffectedFromUpline;
 
 /*CTSCustomerClassification_Log*/
 ALTER TABLE CTSCustomerClassification_Log
-RENAME SportGroupID TO ParentID;
+RENAME COLUMN SportGroupID TO ParentID;
 
 ALTER TABLE CTSCustomerClassification_Log
 MODIFY COLUMN ParentID INT UNSIGNED;
 
 ALTER TABLE CTSCustomerClassification_Log
-RENAME FromCategoryID TO OldCategoryID;
+RENAME COLUMN FromCategoryID TO OldCategoryID;
 
 ALTER TABLE CTSCustomerClassification_Log
 MODIFY COLUMN OldCategoryID INT UNSIGNED;
 
 ALTER TABLE CTSCustomerClassification_Log
-RENAME ToCategoryID TO DWCategoryID;
+RENAME COLUMN ToCategoryID TO DWCategoryID;
 
 ALTER TABLE CTSCustomerClassification_Log
 MODIFY COLUMN DWCategoryID INT UNSIGNED;

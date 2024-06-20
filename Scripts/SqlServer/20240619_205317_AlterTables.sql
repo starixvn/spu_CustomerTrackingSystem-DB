@@ -13,14 +13,14 @@ Reviewer:
 USE bodb_VR2Model;
 
 ALTER TABLE CustomerClassification_Rule
-MODIFY COLUMN CategoryId INT UNSIGNED;
+ALTER COLUMN CategoryId INT;
 
 ALTER TABLE CustomerClassification_Rule
-MODIFY COLUMN CurrentCategory INT UNSIGNED;
+ALTER COLUMN CurrentCategory INT;
 
 ALTER TABLE CustomerClassification_BySport_Rule
-MODIFY COLUMN CategoryId INT UNSIGNED;
+ALTER COLUMN CategoryId INT;
 
 ALTER TABLE CustomerClassification_BySport_Rule
-MODIFY COLUMN CurrentCategory INT UNSIGNED;
+ALTER COLUMN CurrentCategory INT;
 
