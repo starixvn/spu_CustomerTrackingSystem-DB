@@ -16,12 +16,12 @@ CREATE TABLE CustomerCategorySettings
 (
 	CategoryID INT UNSIGNED NOT NULL,
 	CategoryGroupID INT UNSIGNED NOT NULL,
-	CategoryTypeID TINYINT UNSIGNED COMMENT '1: VVIP, 2: Wrapper, 3: PA, 4: Potential PA, 5: Normal',
+	ParentID INT UNSIGNED,
 	IsParallelParentID BIT(1),
 	IsMultiCateIDSameParentID BIT(1),
 	IsKeepOldCateID BIT(1),
 	PRIMARY KEY (CategoryID, CategoryGroupID),
-	KEY IX_CustCateSettings_CategoryTypeID (CategoryTypeID)
+	KEY IX_CustCateSettings_ParentID (ParentID)
 );
 
 CREATE TABLE CustomerClassification_Remark
@@ -29,7 +29,7 @@ CREATE TABLE CustomerClassification_Remark
 	CategoryID INT UNSIGNED NOT NULL,
 	RemarkID SMALLINT UNSIGNED,
 	RemarkTemplate TEXT,
-	UserComment VARCHAR(1000),
+	/*UserComment VARCHAR(1000),*/
 	Description VARCHAR(200),
 	InsertedDate DATETIME,
 	PRIMARY KEY (RemarkID),
@@ -56,8 +56,7 @@ CREATE TABLE TVSVoidRequest
     CreatedBy INT,
     IsParlay BIT(1),
     SportType SMALLINT,
-	IsPA BIT(1),
-	IsRobot BIT(1),
+	RequestTypeID TINYINT COMMENT '1: PA, 2: Robot'
     IssueTypeID TINYINT,
 	ClassifiedDate DATETIME(3),
     InsertedDate DATETIME,
@@ -102,13 +101,12 @@ CREATE TABLE CustomerCategory
 	IsActive BIT(1) DEFAULT b'1', 
 	ScanIntervalInSecond BIGINT, 
 	ScanTaggingIntervalInSecond BIGINT, 
-	RootTaggingID SMALLINT UNSIGNED, 
 	RelevantCategoryID INT UNSIGNED, 
 	ProblemCaseID SMALLINT UNSIGNED, 
 	MMReasonID INT, 
 	TVSReasonID INT, 
 	IsPAProbation BIT(1), 
-	IsDangerProbation TINYINT(1) DEFAULT '0', 
+	IsDangerProbation BIT(1) DEFAULT '0', 
 	AFCFraudID INT, 
 	DataSource VARCHAR(50) COLLATE utf8_unicode_ci, 
 	CreatedDate DATETIME,
@@ -118,8 +116,9 @@ CREATE TABLE CustomerCategory
 	CategoryNameIND VARCHAR(50) COLLATE utf8_unicode_ci, 
 	CustomerClassNameCN VARCHAR(50) COLLATE utf8_unicode_ci, 
 	SabaSportType VARCHAR(50) COMMENT '1:Soccer or 2:Basketball', 
-	TaggingID SMALLINT, 
+	TaggingID SMALLINT,
 	TaggingType SMALLINT, 
+	RootTaggingID SMALLINT UNSIGNED,
 	ABIDangerLevel_Licensee SMALLINT UNSIGNED, 
 	ABIDangerLevel_Credit SMALLINT UNSIGNED, 
 	DangerLevelType SMALLINT, 
