@@ -210,15 +210,18 @@ BEGIN
 				SELECT mmd.ListTransID
                 INTO lv_OldTransList
                 FROM CTS_DataCenter.MatchMonitorDetails AS mmd 
-                WHERE  mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID 
-					AND mmd.Betteam = ip_Betteam AND mmd.ScoreDiff = ip_ScoreDiff AND mmd.GroupID = lv_TargetGroupID  AND mmd.Reason = CONS_MMREASON_GROUPBETTING;
+                WHERE  mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID
+					AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID 
+					AND mmd.Betteam = ip_Betteam AND mmd.ScoreDiff = ip_ScoreDiff 
+                    AND mmd.GroupID = lv_TargetGroupID  AND mmd.Reason = CONS_MMREASON_GROUPBETTING;
                 
                 IF LENGTH(lv_OldTransList) < LENGTH(lv_TransIDList) THEN					
 					UPDATE IGNORE CTS_DataCenter.MatchMonitorDetails AS mmd 
 					SET mmd.GroupID = lv_TargetGroupID, mmd.ListCustID = lv_CustIDList, mmd.ListTransID = lv_TransIDList, mmd.Reason = CONS_MMREASON_GROUPBETTING
-					WHERE  mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID 
-						AND mmd.Betteam = ip_Betteam AND mmd.ScoreDiff = ip_ScoreDiff AND mmd.GroupID = lv_TargetGroupID  
-                        AND mmd.HighStakeLicCustList = lv_HighStakeLicCustList AND mmd.Reason = CONS_MMREASON_GROUPBETTING;
+					WHERE  mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID 
+						AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID 
+						AND mmd.Betteam = ip_Betteam AND mmd.ScoreDiff = ip_ScoreDiff 
+                        AND mmd.GroupID = lv_TargetGroupID AND mmd.Reason = CONS_MMREASON_GROUPBETTING;
 				END IF;
 				
 			END IF;        
