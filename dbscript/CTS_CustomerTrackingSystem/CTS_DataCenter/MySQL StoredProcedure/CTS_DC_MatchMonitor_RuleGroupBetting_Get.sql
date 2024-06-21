@@ -114,7 +114,7 @@ sp: BEGIN
 		SELECT mms.SequenceID
         INTO lv_MaxSequenceID
 		FROM CTS_DataCenter.MatchMonitorStagingGroupBettingLive AS mms 
-		WHERE mms.TransDateToSecond < lv_MaxTime 
+		WHERE mms.TransDateToSecond <= lv_MaxTime 
 			AND mms.SequenceID > lv_LastSequenceID
 		ORDER BY mms.SequenceID DESC
 		LIMIT 1;
@@ -184,7 +184,7 @@ sp: BEGIN
 		SELECT mms.SequenceID
         INTO lv_MaxSequenceID
 		FROM CTS_DataCenter.MatchMonitorStagingGroupBettingNonLive AS mms 
-		WHERE mms.TransDateToSecond < lv_MaxTime 
+		WHERE mms.TransDateToSecond <= lv_MaxTime 
 			AND mms.SequenceID > lv_LastSequenceID
 		ORDER BY mms.SequenceID DESC
 		LIMIT 1;
