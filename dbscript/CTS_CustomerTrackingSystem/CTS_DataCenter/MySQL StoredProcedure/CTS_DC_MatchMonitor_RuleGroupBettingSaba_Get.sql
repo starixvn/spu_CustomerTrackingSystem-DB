@@ -121,6 +121,10 @@ sp: BEGIN
 				AND SUM(Stake) >= lv_RuleTotalStake 
 			ORDER BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID;
 			
+            SELECT DISTINCT CustID, CTSCustID
+            FROM CTS_DataCenter.MatchMonitorStagingGroupBettingLive AS mms
+            WHERE mms.SequenceID <= lv_MaxSequenceID;
+            
             SET op_MaxSequenceID = lv_MaxSequenceID ;
             
 		ELSE # Get Next Trans > 3 minute to Clear Trans
@@ -186,6 +190,10 @@ sp: BEGIN
 				AND SUM(Stake) >= lv_RuleTotalStake 
 			ORDER BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID;
 			
+            SELECT DISTINCT CustID, CTSCustID
+            FROM CTS_DataCenter.MatchMonitorStagingGroupBettingNonLive AS mms
+            WHERE mms.SequenceID <= lv_MaxSequenceID;
+            
             SET op_MaxSequenceID = lv_MaxSequenceID ;
             
 		ELSE # Get Next Trans > 1 minute to Clear Trans
