@@ -55,7 +55,7 @@ CREATE TABLE TVSVoidRequest
     ReasonID INT,
     CreatedBy INT,
     IsParlay BIT(1),
-    SportType SMALLINT,
+    SportType INT,
 	RequestTypeID TINYINT COMMENT '1: PA, 2: Robot'
     IssueTypeID TINYINT,
 	ClassifiedDate DATETIME(3),
