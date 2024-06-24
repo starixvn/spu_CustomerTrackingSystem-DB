@@ -90,7 +90,7 @@ BEGIN
         INTO 	lv_FromTime
 		FROM	CTS_DataCenter.MatchMonitorStagingGroupBettingLive AS mms
         WHERE	mms.SequenceID <= ip_MaxSequenceID
-			AND mms.TransDateToSecond > lv_ToTime - lv_Rule_TimeStep
+			AND mms.TransDateToSecond >= lv_ToTime - lv_Rule_TimeStep
 		ORDER BY mms.TransDateToSecond ASC
         LIMIT 1;  
 		
@@ -142,7 +142,7 @@ BEGIN
 			INTO 	lv_FromTime
 			FROM	CTS_DataCenter.MatchMonitorStagingGroupBettingLive AS mms
 			WHERE	mms.SequenceID <= ip_MaxSequenceID
-				AND mms.TransDateToSecond > lv_ToTime - lv_Rule_TimeStep
+				AND mms.TransDateToSecond >= lv_ToTime - lv_Rule_TimeStep
                 AND mms.GroupID = 0 
 			ORDER BY mms.TransDateToSecond ASC
 			LIMIT 1;  
@@ -167,7 +167,7 @@ BEGIN
         INTO 	lv_FromTime
 		FROM	CTS_DataCenter.MatchMonitorStagingGroupBettingNonLive AS mms
         WHERE	mms.SequenceID <= ip_MaxSequenceID
-			AND mms.TransDateToSecond > lv_ToTime - lv_Rule_TimeStep
+			AND mms.TransDateToSecond >= lv_ToTime - lv_Rule_TimeStep
 		ORDER BY mms.TransDateToSecond ASC
         LIMIT 1;  
 		
@@ -199,7 +199,7 @@ BEGIN
 			FROM 	CTS_DataCenter.MatchMonitorStagingGroupBettingNonLive AS mms
 			WHERE	mms.GroupID = 0
 				AND	mms.TransDateToSecond BETWEEN lv_FromTime AND lv_ToTime;
-       
+
             DELETE mms
 			FROM CTS_DataCenter.MatchMonitorStagingGroupBettingNonLive AS mms            
 				LEFT JOIN Temp_LastCustIDGroup AS tmpCus ON mms.MatchID = tmpCus.MatchID AND mms.ScoreDiff = tmpCus.ScoreDiff AND mms.BettypeID = tmpCus.BettypeID
@@ -219,7 +219,7 @@ BEGIN
 			INTO 	lv_FromTime
 			FROM	CTS_DataCenter.MatchMonitorStagingGroupBettingNonLive AS mms
 			WHERE	mms.SequenceID <= ip_MaxSequenceID
-				AND mms.TransDateToSecond > lv_ToTime - lv_Rule_TimeStep
+				AND mms.TransDateToSecond >= lv_ToTime - lv_Rule_TimeStep
                 AND mms.GroupID = 0 
 			ORDER BY mms.TransDateToSecond ASC
 			LIMIT 1;  
