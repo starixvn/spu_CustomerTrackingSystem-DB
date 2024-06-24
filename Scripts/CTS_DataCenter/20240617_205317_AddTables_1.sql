@@ -31,7 +31,7 @@ CREATE TABLE CustomerClassification_Remark
 	RemarkTemplate TEXT,
 	/*UserComment VARCHAR(1000),*/
 	Description VARCHAR(200),
-	InsertedDate DATETIME,
+	CreatedDate DATETIME,
 	PRIMARY KEY (RemarkID),
 	KEY IX_CustClass_Remark_CategoryID (CategoryID)
 );
@@ -43,7 +43,7 @@ CREATE TABLE Customer_InitialGroupBetting
 	SportType INT,
 	SourceCreatedDate DATETIME(3),
 	ClassifiedDate DATETIME(3),
-	InsertedDate DATETIME,
+	CreatedDate DATETIME,
 	PRIMARY KEY (CustID)
 );
 
@@ -71,7 +71,7 @@ CREATE TABLE CTSRobotUser
 	CategoryID INT UNSIGNED NOT NULL,
 	Remark VARCHAR(500),
 	ClassifiedDate DATETIME(3),
-	InsertedDate DATETIME,
+	CreatedDate DATETIME,
 	PRIMARY KEY (CustID, CategoryID)
 );
 
@@ -81,7 +81,7 @@ CREATE TABLE TWRobotUser
 	CategoryID INT UNSIGNED NOT NULL,
 	RobotCounter SMALLINT,
 	ClassifiedDate DATETIME(3),
-	InsertedDate DATETIME,
+	CreatedDate DATETIME,
 	PRIMARY KEY (CustID, CategoryID)
 );
 
@@ -136,6 +136,6 @@ CREATE TABLE CustomerCategory
 	PRIMARY KEY (CategoryID), 
 	KEY IX_CustomerCategory_ParentID (ParentID), 
 	KEY IX_CustomerCategory_IsActive (IsActive),
-	KEY IX_CustomerCategory_CategoryGroup (CategoryGroupID), 
+	KEY IX_CustomerCategory_CategoryGroupID (CategoryGroupID), 
 	KEY IX_CustomerCategory_ReasonID (MMReasonID) 
 );

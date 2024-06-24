@@ -116,15 +116,22 @@ BEGIN
         ,   ScanTaggingType			TINYINT DEFAULT 0
 	); 
 
+	DROP TEMPORARY TABLE IF EXISTS Temp_PAWinlossStatus;    
+	CREATE TEMPORARY TABLE Temp_PAWinlossStatus(	
+			CustID					BIGINT UNSIGNED PRIMARY KEY
+        , 	WinlossStatus			SMALLINT /*LOSING  = 0 (PROBATION), WINNING = 2 (NOT PROBATION);*/
+	);
+
 	/* EXCLUDE INTERNAL CUSTOMERS */      
 	CALL CTS_DC_ExcludeCustByCondition('Temp_NewClassification');
 
 	IF ip_InputFlowID = 8 THEN
 		 /*4: GET PROBATION CUSTOMERS */
 		INSERT IGNORE INTO Temp_ProbationCustomer(CustID, ScanDate)
-		SELECT pro.CustID, pro.CreatedDate
+		SELECT clss.CustID, clss.CreatedDate
 		FROM 	Temp_NewClassification AS tmp
-			INNER JOIN CTS_DataCenter.ProbationAccountMonitor AS pro ON tmp.CustID = pro.CustID AND pro.SportGroupID = tmp.ParentID;
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON tmp.CustID = clss.CustID AND clss.ParentID = tmp.ParentID
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = clss.CategoryID AND cate.CategoryGroupID = CONST_CATEGROUPID_PROBATION;
 		
 		/* 5: EXCLUDE CATEGORIES THAT SHOULD NOT BE UPDATED */
 		/* 5.1.1: EXCLUDE NOT PASS PROBATION RULES WITH UNCHANGED TAGGING*/ 
@@ -170,10 +177,65 @@ BEGIN
         SET 	temp.ScanTaggingType = CONST_SCANTAGGINGTYPE_EXISTONLY
         WHERE 	pro.ScanTaggingType <> CONST_SCANTAGGINGTYPE_NOTEXIST;
 
-	ELSEIF ip_InputFlowID IN (50,6) THEN
+	ELSEIF ip_InputFlowID IN (6,50,51) THEN
 
+		IF ip_InputFlowID IN (6,50) THEN
+			INSERT IGNORE INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
+			SELECT DISTINCT tmp.CustID
+				,	CASE 
+						WHEN cate.IsDangerProbation = 1 THEN 0
+						ELSE 2
+					END AS WinlossStatus
+			FROM Temp_NewClassification AS tmp
+				INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON tmp.CustID = clss.CustID
+				INNER JOIN CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID
+			WHERE clss.ParentID IN (CONST_PARENTID_PA, CONST_PARENTID_POTENTIALPA);
+			
+			UPDATE Temp_NewClassification AS tmp
+				INNER JOIN Temp_PAWinlossStatus AS ps ON tmp.CustID = ps.CustID
+			SET tmp.WinlossStatus = ps.WinlossStatus,
+				tmp.IsPAProbation = (CASE WHEN ps.WinlossStatus = 0 THEN 1  # LOSING
+											ELSE 0  # NOT LOSING
+									END)
+			WHERE tmp.WinlossStatus = 1;
+
+			UPDATE Temp_NewClassification AS tmp,
+			LATERAL(SELECT 	cat.CategoryGroupID
+						,	cat.CustomerClass
+						,	cat.ABIDangerLevel_Licensee
+						,	cat.ABIDangerLevel_Credit
+						,	cat.Ext_EvidenceID_Licensee
+						,	cat.Ext_EvidenceID_Credit
+						,	cat.RelevantCategoryID
+					FROM CTS_DataCenter.CustomerCategory AS cat 
+					WHERE cat.CategoryID IN (tmp.InputCategoryID, tmp.RelevantCategoryID) AND cat.IsPAProbation = tmp.IsPAProbation LIMIT 1) AS tmpCat
+			SET 	tmp.DWCategoryGroupID = tmpCat.CategoryGroupID	
+				,	tmp.CategoryID = tmpCat.CategoryGroupID
+				,	tmp.TargetCC = (CASE 	WHEN tmp.SpecialCC IS NOT NULL THEN tmp.SpecialCC ELSE IFNULL(tmpCat.CustomerClass,-99) END)
+				,	tmp.TargetDangerLevel = (CASE WHEN tmp.IsLicensee = 1 THEN tmpCat.ABIDangerLevel_Licensee
+													WHEN tmp.IsLicensee = 0 THEN tmpCat.ABIDangerLevel_Credit END) 
+				,	tmp.ToEvidenceID = (CASE 	WHEN tmp.IsLicensee = 1 THEN tmpCat.EvidenceID_Licensee
+												WHEN tmp.IsLicensee = 0 THEN tmpCat.EvidenceID_Credit
+												ELSE NULL END)
+				,	tmp.RelevantCategoryID = tmpCat.RelevantCategoryID;
+		
+			UPDATE Temp_NewClassification AS tmp,
+			LATERAL(SELECT 	cat.CategoryGroupID
+						,	cat.IsPAProbation
+					FROM CTS_DataCenter.CustomerCategory  AS cat 
+					WHERE cat.CategoryID = tmp.RelevantCategoryID LIMIT 1) AS tmpCat
+			SET 	tmp.RelevantCategoryGroupID = tmpCat.CategoryGroupID	
+				,	tmp.RelevantCategoryID = tmpCat.CategoryGroupID
+				,	tmp.RelevantIsProbation = tmpCat.IsPAProbation;
+		ELSEIF ip_InputFlowID = 51	   
+
+    END IF;   
+	
+
+	
+/*
 	ELSEIF ip_InputFlowID = 7 THEN
-
+*/
 	
 	
 	END IF;
