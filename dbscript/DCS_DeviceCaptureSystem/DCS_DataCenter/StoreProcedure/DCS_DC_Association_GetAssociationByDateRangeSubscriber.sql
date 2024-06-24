@@ -1,17 +1,16 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Association_GetAssociationByDateRangeSubscriber`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Association_GetAssociationByAccountSubscriber`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Association_GetAssociationByDateRangeSubscriber`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Association_GetAssociationByAccountSubscriber`(
 		IN	ip_SubscriberID	INT	    
-    ,	IN	ip_FromDate		DATETIME
-    ,	IN	ip_Limit		INT
+    ,	IN	ip_Account		VARCHAR(100)
     )
     SQL SECURITY INVOKER
 proc_label: BEGIN
 	/*
 		Created:	20240611@Terry.Nguyen
-		Task:		Get association by Range Date and Subscriber [Redmine ID: 206262]
+		Task:		Get association by Account and Subscriber [Redmine ID: 206262]
 		DB:			DCS_DataCenter
 		Original:
 
@@ -21,33 +20,43 @@ proc_label: BEGIN
         Param's Explanation (filtered by):
 
 		Example:
-			CALL DCS_DC_Association_GetAssociationByDateRangeSubscriber(@ip_SubscriberID:=2,@ip_FromDate:='2024-06-12 00:17:31.0000',@ip_Limit:=100); 			
+			CALL DCS_DC_Association_GetAssociationByAccountSubscriber(@ip_SubscriberID:=2,@ip_Account:='xxxx'); 			
             
 	*/ 	   
      
-    SELECT 		tmp.AssociationID	AS AssociationID
-			,	tmp.DeviceID		AS DeviceID			
-			,	ip_SubscriberID		AS SubscriberID						
-			,	tmp.LoginName		AS LoginName
-			,	tmp.FirstDeviceCode	AS FirstDeviceCode
-			,	tmp.CreatedTime		AS CreatedTime
-			,	tmp.AccountID		AS AccountID
-            
-		FROM	(
-				SELECT 	ass.AssociationID
-					,	ass.DeviceID
-                    ,	dev.FirstDeviceCode
-                    ,	ass.AccountID
-                    ,	acc.LoginName
-                    ,	ass.CreatedTime
-				FROM	DCS_DataCenter.Association ass 				
-					INNER JOIN DCS_DataCenter.Device AS dev ON ass.DeviceID = dev.DeviceID
-					INNER JOIN DCS_DataCenter.Account AS acc ON ass.AccountID = acc.AccountID
-				WHERE ass.CreatedTime >= ip_FromDate
-					AND ass.SubscriberID = ip_SubscriberID
-				) AS tmp
-			ORDER BY ass.CreatedTime DESC
-            LIMIT ip_Limit;    
+	DROP TEMPORARY TABLE IF EXISTS Temp_Association;
+	CREATE TEMPORARY TABLE Temp_Association(					
+			AccountID	BIGINT UNSIGNED
+        ,	DeviceID	BIGINT 
+        ,	CreatedTime	DATETIME(4)
+        ,	AssociationID BIGINT UNSIGNED
+        
+        ,	PRIMARY KEY PK_Temp_Association(DeviceID, AccountID)        
+        ,	INDEX IX_Temp_Association_AssociationID(AssociationID)
+    ); 
+    
+    INSERT INTO Temp_Association(AccountID, DeviceID, CreatedTime, AssociationID)
+    SELECT	acc.AccountID
+        ,	ass.DeviceID
+        ,	ass.CreatedTime
+        ,	ass.AssociationID
+	FROM DCS_DataCenter.Account AS acc 
+        INNER JOIN DCS_DataCenter.Association AS ass ON acc.AccountID = ass.AccountID 
+    WHERE acc.SubscriberID = ip_SubscriberID AND acc.LoginName = ip_Account; 
+     
+     SELECT tmpAss.DeviceID
+		,	dv.FirstDeviceCode AS Device
+        , 	dv.CreatedTime AS FirstSeenDate
+	FROM Temp_Association tmpAss 
+	INNER JOIN DCS_DataCenter.Device As dv ON dv.DeviceID = tmpAss.DeviceID;
+
+	SELECT acc.AccountID
+		, 	acc.LoginName AS Account
+        , 	ass.CreatedTime AS FirstAssociationDate
+	FROM Temp_Association tmpAss
+	INNER JOIN DCS_DataCenter.Association AS ass ON tmpAss.DeviceID = ass.DeviceID AND ass.AccountID <> tmpAss.AccountID AND ass.SubscriberID = ip_SubscriberID
+	INNER JOIN DCS_DataCenter.Account AS acc ON acc.AccountID = ass.AccountID;    
+     
     
 END$$
 
