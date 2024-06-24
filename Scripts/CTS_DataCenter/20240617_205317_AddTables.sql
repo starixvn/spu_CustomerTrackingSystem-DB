@@ -56,12 +56,13 @@ CREATE TABLE TVSVoidRequest
     CreatedBy INT,
     IsParlay BIT(1),
     SportType INT,
-	RequestTypeID TINYINT COMMENT '1: PA, 2: Robot'
+	RequestTypeID TINYINT COMMENT '1: PA, 2: Robot',
     IssueTypeID TINYINT,
 	ClassifiedDate DATETIME(3),
-    InsertedDate DATETIME,
+    CreatedDate DATETIME,
+	InsertedTime DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3),
     PRIMARY KEY (ID),
-    KEY IX_TVSVoidRequest_ReasonID (ReasonID)
+    KEY IX_TVSVoidRequest_CustID_CreatedDate (CustID, CreatedDate)
 );
 
 CREATE TABLE CTSRobotUser
