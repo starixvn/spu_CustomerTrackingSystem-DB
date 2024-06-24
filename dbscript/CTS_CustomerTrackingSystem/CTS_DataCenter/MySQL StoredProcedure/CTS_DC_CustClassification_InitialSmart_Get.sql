@@ -48,15 +48,15 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_Customer(
 			CustID				BIGINT UNSIGNED
 		,	Probability		    DECIMAL(8,4)
-        ,   PredictTime 	    DATETIME(3)
+        ,   SourceCreatedDate 	DATETIME(3)
         ,   InsertedTime        DATETIME(3)
         ,   PRIMARY KEY (InsertedTime, CustID)
     );
     
-    INSERT INTO Temp_Customer(CustID, Probability, PredictTime, InsertedTime)
+    INSERT INTO Temp_Customer(CustID, Probability, SourceCreatedDate, InsertedTime)
     SELECT	cs.CustID
 		, 	cs.Probability
-        ,	cs.PredictTime
+        ,	cs.SourceCreatedDate
 		,	cs.InsertedTime
     FROM CTS_DataCenter.Customer_InitialSmart AS cs
     WHERE cs.InsertedTime = lv_LastScannedDate
@@ -69,10 +69,10 @@ BEGIN
     IF lv_TotalRow < lv_BatchSize THEN   
         SET lv_SecondBatchSize = lv_BatchSize - lv_TotalRow;
         
-        INSERT INTO Temp_Customer(CustID, Probability, PredictTime, InsertedTime)
+        INSERT INTO Temp_Customer(CustID, Probability, SourceCreatedDate, InsertedTime)
 		SELECT	cs.CustID
             , 	cs.Probability
-            ,	cs.PredictTime
+            ,	cs.SourceCreatedDate
             ,	cs.InsertedTime
 		FROM CTS_DataCenter.Customer_InitialSmart AS cs
 		WHERE cs.InsertedTime > lv_LastScannedDate
@@ -91,7 +91,7 @@ BEGIN
         ,	CONST_CATEGORYID_INITIALSMART AS CategoryID
         ,	CONST_CATEGORYID_INITIALSMART AS CategoryGroup
         ,   tmp.Probability
-        ,   tmp.PredictTime AS DetectedDate
+        ,   tmp.SourceCreatedDate AS DetectedDate
 	FROM Temp_Customer AS tmp
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmp.CustID = cus.CustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
     

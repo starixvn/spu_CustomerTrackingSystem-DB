@@ -29,7 +29,7 @@ BEGIN
         ,	CONST_CATEGORYID_INITIALSMART AS CategoryID
         ,	CONST_CATEGORYID_INITIALSMART AS CategoryGroup
         ,   cs.Probability
-        ,   cs.PredictTime AS DetectedDate
+        ,   cs.SourceCreatedDate AS DetectedDate
 	FROM JSON_TABLE(REPLACE(JSON_ARRAY(ip_CustIDs), ',', '","'), 
 						'$[*]' COLUMNS (CustID BIGINT UNSIGNED PATH '$')
 							) AS tmp

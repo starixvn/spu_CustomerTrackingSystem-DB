@@ -16,7 +16,7 @@ USE CTS_DataCenter;
 CREATE TABLE Customer_InitialSmart (
     CustID BIGINT UNSIGNED NOT NULL PRIMARY KEY
 ,   Probability DECIMAL(8,4)
-,   PredictTime DATETIME(3)
+,   SourceCreatedDate DATETIME(3)
 ,   InsertedTime DATETIME(3)
 ,   KEY IX_Customer_InitialSmart_InsertedTime_CustID (InsertedTime,CustID);
 );
@@ -26,7 +26,7 @@ CREATE TABLE Customer_InitialSmart_Log (
     ID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY
 ,   CustID BIGINT UNSIGNED NOT NULL
 ,   Probability DECIMAL(8,4)
-,   PredictTime DATETIME(3)
+,   SourceCreatedDate DATETIME(3)
 ,   InsertedTime DATETIME(3) 
 ,   KEY IX_Customer_InitialSmart_Log_CustID (CustID)
 );

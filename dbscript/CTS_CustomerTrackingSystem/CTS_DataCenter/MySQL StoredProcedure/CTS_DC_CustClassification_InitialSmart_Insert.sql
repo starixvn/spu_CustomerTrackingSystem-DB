@@ -26,7 +26,7 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_Customer(
 			CustID 				BIGINT NOT NULL PRIMARY KEY
 		,   Probability 		DECIMAL(8,4)
-		,   PredictTime 	    DATETIME(3)
+		,   SourceCreatedDate 	DATETIME(3)
 	);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedCust;
@@ -34,14 +34,14 @@ BEGIN
 			CustID 				BIGINT NOT NULL PRIMARY KEY
 	);
 
-	INSERT IGNORE INTO Temp_Customer(CustID, Probability, PredictTime)
+	INSERT IGNORE INTO Temp_Customer(CustID, Probability, SourceCreatedDate)
     SELECT	tmp.CustID
 		,	tmp.Probability
-		,	tmp.PredictTime
+		,	tmp.SourceCreatedDate
     FROM JSON_TABLE(ip_CustInfo,
-                        "$[*]" COLUMNS (CustID          	BIGINT			UNSIGNED	PATH "$.CustID"
-									,	Probability			DECIMAL(8,4)				PATH "$.Probability"
-                                    ,   PredictTime		    DATETIME(3)					PATH "$.PredictTime"                                           
+                        "$[*]" COLUMNS (CustID          			BIGINT			UNSIGNED	PATH "$.CustID"
+									,	Probability					DECIMAL(8,4)				PATH "$.Probability"
+                                    ,   SourceCreatedDate		    DATETIME(3)					PATH "$.PredictTime"                                           
                                 )) AS tmp;
 
 	INSERT IGNORE INTO Temp_ExistedCust(CustID)
@@ -50,19 +50,19 @@ BEGIN
 		INNER JOIN Temp_Customer AS tmp	ON tmp.CustID = cs.CustID;
 
 	IF EXISTS (	SELECT 1 FROM Temp_ExistedCust) THEN
-		INSERT INTO CTS_DataCenter.Customer_InitialSmart_Log (CustID, Probability, PredictTime, InsertedTime)
+		INSERT INTO CTS_DataCenter.Customer_InitialSmart_Log (CustID, Probability, SourceCreatedDate, InsertedTime)
 		SELECT	tmp.CustID
 			,	tmp.Probability
-			,	tmp.PredictTime
+			,	tmp.SourceCreatedDate
             ,   lv_CreatedDate
 		FROM Temp_ExistedCust AS tec
 			INNER JOIN Temp_Customer AS tmp ON tmp.CustID = tec.CustID;
 	END IF;
 
-    INSERT IGNORE INTO CTS_DataCenter.Customer_InitialSmart (CustID, Probability, PredictTime, InsertedTime)
+    INSERT IGNORE INTO CTS_DataCenter.Customer_InitialSmart (CustID, Probability, SourceCreatedDate, InsertedTime)
     SELECT	tmp.CustID
 		,	tmp.Probability
-		,	tmp.PredictTime
+		,	tmp.SourceCreatedDate
         ,   lv_CreatedDate
 	FROM Temp_Customer AS tmp;
 	
