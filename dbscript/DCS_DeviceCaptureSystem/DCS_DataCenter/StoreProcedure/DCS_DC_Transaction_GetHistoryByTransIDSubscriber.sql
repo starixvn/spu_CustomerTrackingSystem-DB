@@ -1,10 +1,10 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Transaction_GetHistoryByDateRangeSubscriber`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Transaction_GetHistoryByTransIDSubscriber`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transaction_GetHistoryByDateRangeSubscriber`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transaction_GetHistoryByTransIDSubscriber`(
 		IN	ip_SubscriberID	INT	
-    ,	IN	ip_FromDate		DATETIME
+    ,	IN	ip_TransID		BIGINT
     ,	IN	ip_Limit 		INT
     )
     SQL SECURITY INVOKER
@@ -21,7 +21,7 @@ proc_label: BEGIN
         Param's Explanation (filtered by):
 
 		Example:
-			CALL DCS_DC_Transaction_GetHistoryByDateRangeSubscriber(@ip_SubscriberID:=2,@ip_FromDate:='2023-01-01',@ip_Limit:=100); 			
+			CALL DCS_DC_Transaction_GetHistoryByTransIDSubscriber(@ip_SubscriberID:=2,@ip_TransID:=1234,@ip_Limit:=100); 			
             
 	*/ 
 	
@@ -68,10 +68,9 @@ proc_label: BEGIN
 					LEFT JOIN DCS_DataCenter.ActionResult AS ar ON trs.ActionResultID = ar.ActionResultID
 					LEFT JOIN DCS_DataCenter.URL AS ur ON trs.URLID = ur.URLID
                     LEFT JOIN Temp_Flagged AS tmpFg ON trs.Flagged = tmpFg.Flagged
-				WHERE trs.TransTime >= ip_FromDate
+				WHERE trs.TransID > ip_TransID
 					AND trs.SubscriberID = ip_SubscriberID
 				) AS tmp
-			ORDER BY TransTime DESC
             LIMIT ip_Limit;    
     
 END$$
