@@ -41,7 +41,7 @@ CREATE TABLE Customer_InitialGroupBetting
 	CustID BIGINT UNSIGNED NOT NULL,
 	GBTicketCount INT,
 	SportType INT,
-	DetectedDate DATETIME(3),
+	SourceCreatedDate DATETIME(3),
 	ClassifiedDate DATETIME(3),
 	InsertedDate DATETIME,
 	PRIMARY KEY (CustID)

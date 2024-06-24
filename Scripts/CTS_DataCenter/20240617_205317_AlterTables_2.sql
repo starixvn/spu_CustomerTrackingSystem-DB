@@ -26,6 +26,9 @@ MODIFY COLUMN CategoryID INT UNSIGNED;
 ALTER TABLE CTSCustomerClassification
 ADD IsAffectToDownline BIT(1);
 
+ALTER TABLE CTSCustomerClassification
+ADD RoleID TINYINT;
+
 /*CTSCustomerClassification_History*/
 ALTER TABLE CTSCustomerClassification_History
 RENAME COLUMN SportGroupID TO ParentID;
