@@ -4,9 +4,9 @@ DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_Insert_GetInfo`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Insert_GetInfo`(
 		IN	ip_InputFlowID			INT 
-		IN	ip_FromAction			TINYINT
-		IN	ip_CustInfo				JSON
-		OUT op_MaxCTSCustID			BIGINT
+	,	IN	ip_FromAction			TINYINT
+	,	IN	ip_CustInfo				JSON
+	,	OUT op_MaxCTSCustID			BIGINT
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -290,7 +290,7 @@ BEGIN
 				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.CategoryID;	
 			
 			
-		IF ip_InputFlowID = 51 THEN /*PA - ip_InputType = 'Reason'*/
+		ELSEIF ip_InputFlowID = 51 THEN /*PA - ip_InputType = 'Reason'*/
 			INSERT INTO Temp_NewClassification(
 				CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,  IsLicensee, CreatedBy, IsDirect
 			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsDataChanged, SpecialCC, IsPAProbation
@@ -421,8 +421,52 @@ BEGIN
 				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.CategoryID;	
 				
 		ELSEIF ip_InputFlowID = 8 THEN /*Normal*/
-		
-		
+			INSERT INTO Temp_NewClassification(
+				CustID,CTSCustID,DWCategoryGroupID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TWBetCount,TWGroupBettingRate
+				,TWTicketRejectRate,TWDesktopUsageRate,TaggingID,TaggingType,PerformanceTime,ScanTaggingType
+				,SubscriberID,IsLicensee,IsLicenseeVIP,IsLicenseeBA,IsVVIP)
+			SELECT DISTINCT
+					tmpJs.CustID
+				,	cust.CTSCustID
+				, 	tmpJs.DWCategoryGroupID
+                , 	tmpJs.TurnoverRM
+                , 	tmpJs.WinlossRM
+                , 	tmpJs.BetCount
+                , 	tmpJs.ActiveDays
+                ,	tmpJs.TWBetCount
+                , 	tmpJs.TWGroupBettingRate
+                , 	tmpJs.TWTicketRejectRate
+                , 	tmpJs.TWDesktopUsageRate
+                ,	IFNULL(tmpJs.TaggingID, -99)
+                , 	tmpJs.TaggingType
+                ,	tmpJs.PerformanceTime
+                ,	tmpJs.ScanTaggingType
+				,	cust.SubscriberID
+				,	cust.IsLicensee
+				,	cust.IsLicenseeVIP
+				,	cust.IsLicenseeBA
+				,	(CASE WHEN cls.CustID IS NOT NULL THEN 1 ELSE 0 END) AS IsVVIP
+			FROM JSON_TABLE(ip_CustInfo,
+							"$[*]" COLUMNS(
+												CustID 					BIGINT UNSIGNED		PATH "$.CustId"
+											, 	DWCategoryGroupID		SMALLINT UNSIGNED	PATH "$.CategoryId"
+											, 	TurnoverRM				DECIMAL(20,4)		PATH "$.TurnoverRM"
+											, 	WinlossRM				DECIMAL(20,4)		PATH "$.WinlossRM"
+											, 	BetCount				BIGINT				PATH "$.BetCount"
+											, 	ActiveDays				INT					PATH "$.ActiveDays"		
+											,	TWBetCount				BIGINT				PATH "$.TWBetCount"
+											,	TWGroupBettingRate		DECIMAL(10,4)		PATH "$.TWGroupBettingRate"
+											,	TWTicketRejectRate		DECIMAL(10,4)		PATH "$.TWTicketRejectRate"
+											,	TWDesktopUsageRate		DECIMAL(10,4)		PATH "$.TWDesktopUsageRate"
+											, 	TaggingID				SMALLINT			PATH "$.TaggingID"
+											, 	TaggingType				SMALLINT			PATH "$.TaggingType"	
+											, 	PerformanceTime			DATETIME			PATH "$.PerformanceTime"
+											, 	ScanTaggingType			BIT(1)				PATH "$.ScanTaggingType"
+										)) AS tmpJs
+				LEFT JOIN CTS_DataCenter.CTSCustomer AS cust ON tmpJs.CustID = cust.CustID AND cust.CustSubID = 0
+				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls on tmpJs.CustID = cls.CustID AND cls.CategoryID = CONST_CATEID_VVIP
+			WHERE tmpJs.DWCategoryGroupID <> 0;
+				
 		END IF;
 		
 	END IF;

@@ -33,6 +33,9 @@ BEGIN
 	DECLARE CONST_CATETYPEID_POTENTIALPA 	INT;
 	DECLARE CONST_CATETYPEID_NORMAL 		INT;
 	
+	DECLARE lv_MaxCTSCustID					BIGINT
+	
+	
 	SET CONST_CATETYPEID_VVIP 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATETYPEID_VVIP');
 	SET CONST_CATETYPEID_WRAPPER 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATETYPEID_WRAPPER');
 	SET CONST_CATETYPEID_PA 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATETYPEID_PA');
@@ -40,21 +43,28 @@ BEGIN
 	SET CONST_CATETYPEID_NORMAL 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATETYPEID_NORMAL');
 	
 	/*STEP 1: Parse raw data and get custinfo*/
-	CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_GetInfo (ip_InputFlowID,ip_FromAction,ip_CustInfo);
+	CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_GetInfo (ip_InputFlowID,ip_FromAction,ip_CustInfo,lv_MaxCTSCustID);
 	
 	
 	/*STEP 2: Preprocess*/
-	CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_PreProcess ();
+	-- CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_PreProcess ();
 	
 	
 	/*STEP 3: Process*/
-	CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_Process ();
+	-- CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_Process ();
 	
 	
 	/*STEP 4: Complete*/
-	CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_Complete ();
+	-- CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_Complete ();
 	
 	
 	/*STEP N: Return data*/
+	SELECT DISTINCT 
+			CTSCustID
+		,  	CustID
+		,	ParentID
+		,	Ext_CategoryGroupID
+	FROM Temp_NewClassification AS temp;
+	
 END$$
 DELIMITER ;

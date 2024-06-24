@@ -20,6 +20,7 @@ BEGIN
 			- 20230404@Victoria.Le:		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeID [Redmine ID: #185319] 
 			- 20230601@Victoria.Le:		Add TVSRequestID <> 0 for TVSRequestID IS NOT NULL [Redmine ID: #189023]
             - 20240306@Thomas.Nguyen:	Add column InsertedTime [Redmine ID: #201993]
+			- 20240624@Victoria.Le:		Renovate CC Phase 2 [Redmine ID: #205317]
 
         Param's Explanation (filtered by):
         
@@ -31,6 +32,8 @@ BEGIN
     DECLARE CONST_WINLOSSSTATUS_LOSING		SMALLINT DEFAULT 0;
     DECLARE CONST_WINLOSSSTATUS_KEEP		SMALLINT DEFAULT 1;
     DECLARE CONST_WINLOSSSTATUS_WINNING		SMALLINT DEFAULT 2;
+	DECLARE CONST_TVSRequestTypeID_PA		TINYINT DEFAULT 1;
+	DECLARE CONST_TVSRequestTypeID_ROBOT	TINYINT DEFAULT 2;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedEvidence;    
 	CREATE TEMPORARY TABLE Temp_ExistedEvidence(	  
@@ -54,15 +57,31 @@ BEGIN
     
     /* REMOVE FROM OLD PA  */
     UPDATE Temp_PA AS t
-		INNER JOIN CTS_DataCenter.CTSCustomerClassificationOldCategory AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
+		INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = d.CategoryID
 	SET d.IsFromTVS = 0
-	WHERE IFNULL(t.TVSRequestID,0) <> 0;
+	WHERE IFNULL(t.TVSRequestID,0) <> 0
+		AND ccs.IsKeepOldCateID = 1
+		AND EXISTS (SELECT 1
+					FROM CTS_DataCenter.CTSCustomerClassification AS cls
+						INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cls.CategoryID
+					WHERE d.CustID = cls.CustID
+						AND (cs.IsParallelParentID = 1 OR IsMultiCateIDSameParentID = 1)
+					);
     
     DELETE d
     FROM Temp_PA AS t
-		INNER JOIN CTS_DataCenter.CTSCustomerClassificationOldCategory AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
+		INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = d.CategoryID
 	WHERE IFNULL(t.TVSRequestID,0) <> 0
-		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0 AND d.IsFromImperva = 0);
+		AND ccs.IsKeepOldCateID = 1
+		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0 AND d.IsFromImperva = 0)
+		AND EXISTS (SELECT 1
+					FROM CTS_DataCenter.CTSCustomerClassification AS cls
+						INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cls.CategoryID
+					WHERE d.CustID = cls.CustID
+						AND (cs.IsParallelParentID = 1 OR IsMultiCateIDSameParentID = 1)
+					);
     
     /* REMOVE FROM CLASSIFICATION HISTORY  */    
 	DELETE d
@@ -76,7 +95,13 @@ BEGIN
     FROM Temp_PA AS t
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
         INNER JOIN CTS_DataCenter.CustomerCategory AS c ON d.CategoryID = c.CategoryID
-	WHERE IFNULL(t.TVSRequestID,0) <> 0;    
+	WHERE IFNULL(t.TVSRequestID,0) <> 0
+		AND NOT EXISTS (SELECT 1
+						FROM CTS_DataCenter.CTSCustomerClassification AS cls
+							INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cls.CategoryID
+						WHERE d.CustID = cls.CustID
+							AND (cs.IsParallelParentID = 1 OR IsMultiCateIDSameParentID = 1)
+						);  
     
     UPDATE Temp_PA AS t
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
@@ -85,13 +110,25 @@ BEGIN
 									WHEN t.WinlossStatus = CONST_WINLOSSSTATUS_KEEP THEN CONST_WINLOSSSTATUS_WINNING
                                     ELSE t.WinlossStatus
 								END
-	WHERE IFNULL(t.TVSRequestID,0) <> 0;
+	WHERE IFNULL(t.TVSRequestID,0) <> 0
+		AND NOT EXISTS (SELECT 1
+						FROM CTS_DataCenter.CTSCustomerClassification AS cls
+							INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cls.CategoryID
+						WHERE d.CustID = cls.CustID
+							AND (cs.IsParallelParentID = 1 OR IsMultiCateIDSameParentID = 1)
+						);
     
 	DELETE d
     FROM Temp_PA AS t
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
 	WHERE IFNULL(t.TVSRequestID,0) <> 0
-		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0 AND d.IsFromImperva = 0);
+		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0 AND d.IsFromImperva = 0)
+		AND NOT EXISTS (SELECT 1
+						FROM CTS_DataCenter.CTSCustomerClassification AS cls
+							INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cls.CategoryID
+						WHERE d.CustID = cls.CustID
+							AND (cs.IsParallelParentID = 1 OR IsMultiCateIDSameParentID = 1)
+						);
       
 	/* REMOVE FROM CUSTOMER EVIDENCE  */ 
     DELETE d
@@ -114,11 +151,13 @@ BEGIN
     WHERE EvidenceID IS NOT NULL;
 
 	/* LOG THE VOID REQUEST FOR FURTHER TRACKING */
-	INSERT INTO CTS_DataCenter.TVSVoidRequest_History (TVSRequestID,CustIDs,ReasonID,CreatedBy,CreatedDate,IsParlay,SportType,IssueTypeID,CreatedTime)
-	SELECT TVSRequestID, GROUP_CONCAT(DISTINCT CustID), ReasonID, CreatedBy, NOW(),IsParlay,SportType,IssueTypeID, CURRENT_TIMESTAMP(3)
-	FROM Temp_PA
-	WHERE IsFromTVS = 1
-	GROUP BY TVSRequestID, ReasonID, CreatedBy, IsParlay, SportType, IssueTypeID;
-    
+	INSERT INTO CTS_DataCenter.TVSVoidRequest (TVSRequestID,CustID,ReasonID,CreatedBy,IsParlay,SportType,IssueTypeID,RequestTypeID)
+	SELECT 	t.TVSRequestID,t.CustID,t.ReasonID,t.CreatedBy,t.IsParlay,t.SportType,t.IssueTypeID,t.RequestTypeID
+		,	CASE WHEN c.CustomerClassName = 'Robot' THEN CONST_TVSRequestTypeID_ROBOT ELSE CONST_TVSRequestTypeID_PA END AS RequestTypeID
+    FROM Temp_PA AS t
+		INNER JOIN CTS_DataCenter.CustomerCategory AS c ON t.CategoryID = c.CategoryID
+															AND t.ReasonID = c.ReasonID
+	WHERE t.IsFromTVS = 1;
+	
 END$$
 DELIMITER ;
