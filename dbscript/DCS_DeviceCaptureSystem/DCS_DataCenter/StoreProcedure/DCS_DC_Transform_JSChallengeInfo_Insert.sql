@@ -6,7 +6,7 @@ DROP procedure IF EXISTS `DCS_DataCenter`.`DCS_DC_Transform_JSChallengeInfo_Inse
 DELIMITER $$
 USE `DCS_DataCenter`$$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_JSChallengeInfo_Insert`(
-		IN ip_TableName VARCHAR(50)
+		IN ip_JSChallengeInfoJson	LONGTEXT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -18,73 +18,65 @@ BEGIN
 
 		Revisions:
 			- 20240313@Teddy.le [Redmine ID: #196667]
+			- 20240621@Jonathan.Doan: Change data flow v5.1 [Redmine ID: #206403]
 
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_DC_Transform_JSChallengeInfo_Insert();
+			CALL DCS_DC_Transform_JSChallengeInfo_Insert('[{"CreatedTime":"2024-01-01","ChallengeCode":"ChallengeCode1","ChallengeIds":"ChallengeIds1","Expect":"Expect1","Actual":"Actual1","Parameters":"Parameters1","ExeServerTimeInSecond":1,"ExeClientTimeInSecond":2,"Result":3,"ErrMsg":"ErrMsg1"}]');
 
 	*/
     DECLARE lv_CurrentDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 	
-	DROP TEMPORARY TABLE IF EXISTS Temp_InputData;
 	DROP TEMPORARY TABLE IF EXISTS Temp_JSChallengeInfo;
     
-	CREATE TEMPORARY TABLE Temp_InputData(
-			TmpID			 			BIGINT UNSIGNED	NOT NULL
-		,	CreatedTime					TIMESTAMP(4)	NOT NULL
-        ,	RawJsChallengeInfo			LONGTEXT		NULL
-        ,	PRIMARY KEY (TmpID)
-    );
-    
 	CREATE TEMPORARY TABLE Temp_JSChallengeInfo(
-			TmpID			 			BIGINT UNSIGNED		NOT NULL  
-		,	JsChallengeID	 			BIGINT UNSIGNED    	NULL  
-        ,	CreatedTime 				TIMESTAMP(4) NOT NULL
-        ,	ChallengeCode 				VARCHAR(50)
-		,   ChallengeIds 				VARCHAR(50) NULL DEFAULT ''
-		,   Expect 						VARCHAR(100) NULL DEFAULT ''
-		,   Actual 						VARCHAR(100) NULL DEFAULT ''
-		,  	Parameters 					VARCHAR(300) NULL DEFAULT ''
-		,   ExeServerTimeInSecond 		INT UNSIGNED NOT NULL DEFAULT 0
-		,   ExeClientTimeInSecond 		INT UNSIGNED NOT NULL DEFAULT 0
-		,   Result 						TINYINT NOT NULL DEFAULT 0
-		,   ErrMsg 						VARCHAR(300) NULL DEFAULT ''
+			ID				 			INT UNSIGNED AUTO_INCREMENT		NOT NULL
+		,	CreatedTime 				TIMESTAMP(4)    				NOT NULL
+		,	ChallengeCode				VARCHAR(50) 					NOT NULL
+		,	ChallengeIds				VARCHAR(50) 					NULL DEFAULT ''
+		,	Expect		 				VARCHAR(100) 					NULL DEFAULT ''
+		,	Actual		 				VARCHAR(100) 					NULL DEFAULT ''
+		,	Parameters	 				VARCHAR(300) 					NULL DEFAULT ''
+		,	ExeServerTimeInSecond		INT UNSIGNED  					NOT NULL DEFAULT 0
+		,	ExeClientTimeInSecond		INT UNSIGNED  					NOT NULL DEFAULT 0
+		,	Result		 				TINYINT		 					NOT NULL DEFAULT 0
+		,	ErrMsg	 					VARCHAR(300) 					NULL
         
-        ,	PRIMARY KEY (TmpID)
+        ,	PRIMARY KEY (ID)
     );
     
-	SET @sql = CONCAT('INSERT INTO Temp_InputData(TmpID, CreatedTime, RawJsChallengeInfo) 
-						SELECT 	ID AS TmpID
-							,	TransTime
-                            ,   RawJsChallengeInfo
-                        FROM ', ip_TableName, 
-					' 	WHERE RawJsChallengeInfo IS NOT NULL');
-                    
-    PREPARE stmt FROM @sql;
-    EXECUTE stmt;
-    DEALLOCATE PREPARE stmt;
     
-    INSERT IGNORE INTO Temp_JSChallengeInfo(TmpID, CreatedTime, ChallengeCode, ChallengeIds, Expect, Actual, Parameters, ExeServerTimeInSecond, ExeClientTimeInSecond, Result, ErrMsg)
-    SELECT 	TmpID
-		,	CreatedTime
-		,	RawJsChallengeInfo->>'$.ChallengeCode'
-		,	RawJsChallengeInfo->>'$.ChallengeIds'
-		,	RawJsChallengeInfo->>'$.Expect'
-		,	RawJsChallengeInfo->>'$.Actual'
-		,	RawJsChallengeInfo->>'$.Parameters'
-		,	RawJsChallengeInfo->>'$.ExeServerTimeInSecond'
-		,	RawJsChallengeInfo->>'$.ExeClientTimeInSecond'
-        ,   RawJsChallengeInfo->>'$.Result'
-		,	RawJsChallengeInfo->>'$.ErrMsg'
-    FROM Temp_InputData;
+    INSERT INTO Temp_JSChallengeInfo(CreatedTime, ChallengeCode, ChallengeIds, Expect, Actual, Parameters, ExeServerTimeInSecond, ExeClientTimeInSecond, Result, ErrMsg)
+    SELECT	rt.CreatedTime
+		,	rt.ChallengeCode
+		,	rt.ChallengeIds
+		,	rt.Expect
+		,	rt.Actual
+		,	rt.Parameters
+		,	rt.ExeServerTimeInSecond
+		,	rt.ExeClientTimeInSecond
+		,	rt.Result
+		,	rt.ErrMsg
+	FROM JSON_TABLE(
+			ip_JSChallengeInfoJson,
+			 "$[*]" COLUMNS(
+						CreatedTime				TIMESTAMP(4) 	PATH "$.CreatedTime"
+					,	ChallengeCode			VARCHAR(50) 	PATH "$.ChallengeCode"
+					,	ChallengeIds			VARCHAR(50) 	PATH "$.ChallengeIds"
+					,	Expect					VARCHAR(100) 	PATH "$.Expect"
+					,	Actual					VARCHAR(100) 	PATH "$.Actual"
+					,	Parameters				VARCHAR(300) 	PATH "$.Parameters"
+					,	ExeServerTimeInSecond	INT UNSIGNED 	PATH "$.ExeServerTimeInSecond"
+					,	ExeClientTimeInSecond	INT UNSIGNED 	PATH "$.ExeClientTimeInSecond"
+					,	Result					TINYINT 		PATH "$.Result"
+					,	ErrMsg					VARCHAR(300) 	PATH "$.ErrMsg"
+				)
+		   ) AS  rt
+	WHERE rt.ChallengeCode IS NOT NULL;
     
-    ALTER TABLE Temp_JSChallengeInfo
-	ADD INDEX UX_Temp_JSChallengeInfo_ChallengeCode (ChallengeCode);
-    
-	INSERT IGNORE INTO DCS_DataCenter.JSChallengeInfo (CreatedTime, ChallengeCode, ChallengeIds, Expect, Actual, Parameters, ExeServerTimeInSecond, ExeClientTimeInSecond, Result, ErrMsg)
-	SELECT	DISTINCT
-			tmp.CreatedTime
+	INSERT IGNORE INTO DCS_DataCenter.JSChallengeInfo(CreatedTime, ChallengeCode, ChallengeIds, Expect, Actual, Parameters, ExeServerTimeInSecond, ExeClientTimeInSecond, Result, ErrMsg)
+	SELECT	tmp.CreatedTime
 		,	tmp.ChallengeCode
 		,	tmp.ChallengeIds
 		,	tmp.Expect
@@ -95,17 +87,6 @@ BEGIN
         ,   tmp.Result
 		,	tmp.ErrMsg
 	FROM Temp_JSChallengeInfo AS tmp;
-    
-    UPDATE Temp_JSChallengeInfo AS tmp
-		INNER JOIN DCS_DataCenter.JSChallengeInfo AS ua ON ua.ChallengeCode = tmp.ChallengeCode
-	SET tmp.JsChallengeID = ua.ID;
-    
-	SET @sql = CONCAT('UPDATE ', ip_TableName,' AS tmp
-						INNER JOIN Temp_JSChallengeInfo AS ua ON ua.TmpID = tmp.ID
-                        SET tmp.JsChallengeID = ua.JsChallengeID');
-    PREPARE stmt FROM @sql;
-    EXECUTE stmt;
-    DEALLOCATE PREPARE stmt;
     
 END$$
 

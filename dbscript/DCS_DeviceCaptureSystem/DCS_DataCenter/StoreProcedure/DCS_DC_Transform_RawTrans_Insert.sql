@@ -22,6 +22,7 @@ BEGIN
 			- 20230807@Terry.Nguyen: Add Fake IP [Redmine ID: #191829]
 			- 20231108@Jonathan.Doan: Integrate FPSjs [Redmine ID: #196570]
             - 20240313@Teddy.le : Add JsChallengeID  [Redmine ID: #196667]
+			- 20240621@Jonathan.Doan: Change data flow v5.1 [Redmine ID: #206403]
 
 		Param's Explanation (filtered by):
 			
@@ -59,18 +60,13 @@ BEGIN
         ,	BotComponent				LONGTEXT							NULL
         ,	BotComponentCode			VARCHAR(100)						NULL
 		,	FakeIP						VARCHAR(100) 						NULL
-        ,	CookieID					BIGINT UNSIGNED						NULL
         ,	CookieCode					VARCHAR(64)							NULL
-        ,	BrowserInstanceID			BIGINT UNSIGNED						NULL
-        ,	FingerprintAttribute		JSON								NULL
-        ,	RawFingerPrintId			BIGINT UNSIGNED						NULL
-        ,	RawUserAgentID				BIGINT UNSIGNED						NULL
-        ,	RawUserAgent				VARCHAR(1000)						NULL
-        ,	RawUserAgentInfo			JSON								NULL
-        ,	RawJsChallengeInfo			JSON								NULL
-        ,   JsChallengeID				BIGINT UNSIGNED						NULL
+        ,	RawFingerPrintCode			VARCHAR(64)							NULL
+        ,	BrowserInstanceCode			VARCHAR(64)							NULL
+        ,	RawUserAgentCode			VARCHAR(64)							NULL
+        ,	ChallengeCode				VARCHAR(64)							NULL
+
 		,	INDEX IX_Temp_Transaction_BotComponentCode(BotComponentCode)
-		,	INDEX IX_Temp_Transaction_CookieCode(CookieCode)
     );     
         
 	CREATE TEMPORARY TABLE Temp_BotDetection(
@@ -78,7 +74,7 @@ BEGIN
         ,	BotDetectionValue			BIT(32) NULL DEFAULT 0
     );    
 		
-	INSERT INTO Temp_Transaction(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, FakeIP, CookieCode, FingerprintAttribute, RawUserAgent, RawUserAgentInfo, RawJsChallengeInfo)
+	INSERT INTO Temp_Transaction(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, FakeIP, CookieCode, RawFingerPrintCode, BrowserInstanceCode, RawUserAgentCode, ChallengeCode)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -99,10 +95,10 @@ BEGIN
 		,	MD5(rt.BotComponent) AS BotComponentCode
 		,	rt.FakeIP
 		,	rt.CookieCode
-		,	rt.FingerprintAttribute
-		,	rt.RawUserAgent
-		,	rt.RawUserAgentInfo
-        ,   rt.RawJsChallengeInfo
+		,	rt.RawFingerPrintCode
+		,	rt.BrowserInstanceCode
+		,	rt.RawUserAgentCode
+		,	rt.ChallengeCode
 	FROM	JSON_TABLE(
 			ip_RawTransJson,
 			 "$[*]" COLUMNS(
@@ -125,26 +121,14 @@ BEGIN
                             ,	BotComponent			LONGTEXT		PATH "$.BotComponent"
                             ,	FakeIP					VARCHAR(100)	PATH "$.FakeIP"
                             ,	CookieCode				VARCHAR(64)		PATH "$.CookieCode"
-							,	FingerprintAttribute	JSON			PATH "$.FingerprintAttribute"
-							,	RawUserAgent 			VARCHAR(1000)	PATH "$.RawUserAgent"
-							,	RawUserAgentInfo		JSON			PATH "$.RawUserAgentInfo"
-                            ,	RawJsChallengeInfo		JSON			PATH "$.RawJsChallengeInfo"
+                            ,	RawFingerPrintCode		VARCHAR(64)		PATH "$.RawFingerPrintCode"
+                            ,	BrowserInstanceCode		VARCHAR(64)		PATH "$.BrowserInstanceCode"
+                            ,	RawUserAgentCode		VARCHAR(64)		PATH "$.RawUserAgentCode"
+                            ,	ChallengeCode			VARCHAR(64)		PATH "$.ChallengeCode"
 				)
 		   ) AS  rt; 
            
-    /******* Update Temp_Transaction: CookieID ********************/
-    CALL DCS_DC_Transform_Cookie_Insert('Temp_Transaction');
-    
-    /******* Update Temp_Transaction: RawFingerPrintID, BrowserInstanceID ********************/
-    /******* Insert into FingerprintAttribute ********************/
-    CALL DCS_DC_Transform_RawFingerPrint_Insert('Temp_Transaction');
-    
-    /******* Update Temp_Transaction: RawUserAgentID ********************/
-    CALL DCS_DC_Transform_RawUserAgent_Insert('Temp_Transaction');
-    
-    /******* Update Temp_Transaction: JsChallengeID ********************/
-    CALL DCS_DC_Transform_JSChallengeInfo_Insert('Temp_Transaction');
-    
+	select CookieCode, RawFingerPrintCode, BrowserInstanceCode,RawUserAgentCode,ChallengeCode from Temp_Transaction;
     /*******BotDetection, BotComponent********************/           
 	INSERT INTO Temp_BotDetection(ID, BotDetectionValue)
     SELECT 	tmp.ID
@@ -179,7 +163,7 @@ BEGIN
 	
     
     /*******RawTransaction********************/
-	INSERT INTO DCS_DataCenter.RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, InsertTime, BotDetectionValue, BotComponentID, FakeIP, CookieID, RawUserAgentID, RawFingerPrintID, BrowserInstanceID, JsChallengeID)
+	INSERT INTO DCS_DataCenter.RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, InsertTime, BotDetectionValue, BotComponentID, FakeIP, CookieCode, RawFingerPrintCode, BrowserInstanceCode, RawUserAgentCode, ChallengeCode)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -200,11 +184,11 @@ BEGIN
 		,	rt.BotDetectionValue
 		,	rt.BotComponentID
 		,	rt.FakeIP
-		,	rt.CookieID
-		,	rt.RawUserAgentID
-		,	rt.RawFingerPrintID
-		,	rt.BrowserInstanceID
-        ,   rt.JsChallengeID
+        ,   rt.CookieCode
+        ,   rt.RawFingerPrintCode
+        ,   rt.BrowserInstanceCode
+        ,   rt.RawUserAgentCode
+        ,   rt.ChallengeCode
 	FROM Temp_Transaction AS rt
 		LEFT JOIN DCS_DataCenter.StaticList AS sl 	ON sl.ListID = 1 /*Flagged*/   
 													AND sl.ItemCode = rt.FlaggedCode;

@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `DCS_DC_Transform_Cookie_Insert`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_Cookie_Insert`(
-		IN ip_TableName VARCHAR(50)
+    IN ip_CookieCodes	LONGTEXT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -15,11 +15,12 @@ BEGIN
 
 		Revisions:
 			- 20231108@Jonathan.Doan: Created [Redmine ID: #196570]
+			- 20240621@Jonathan.Doan: Change data flow v5.1 [Redmine ID: #206403]
 
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_DC_Transform_Cookie_Insert('Temp_Transaction');
+			CALL DCS_DC_Transform_Cookie_Insert('123,345');
 
 	*/
     DECLARE lv_CurrentDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
@@ -27,24 +28,15 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_CookieInsert;
         
 	CREATE TEMPORARY TABLE Temp_CookieInsert(
-			TmpID			INT UNSIGNED 		PRIMARY KEY
-        ,	CookieID		BIGINT UNSIGNED		DEFAULT NULL
-        ,	CookieCode		VARCHAR(64) 		NOT NULL
-		,	IsNewCookie		TINYINT		 		DEFAULT 1
+			ID				INT UNSIGNED AUTO_INCREMENT		PRIMARY KEY
+        ,	CookieCode		VARCHAR(64) 					NOT NULL
+		,	IsNewCookie		TINYINT		 					DEFAULT 1
     );
     
-	SET @sql = CONCAT('INSERT INTO Temp_CookieInsert(TmpID, CookieCode) 
-						SELECT 	ID AS TmpID
-							,	CookieCode 
-                        FROM ', ip_TableName, 
-					' WHERE CookieCode IS NOT NULL');
-    PREPARE stmt FROM @sql;
-    EXECUTE stmt;
-    DEALLOCATE PREPARE stmt;
-	
-	ALTER TABLE Temp_CookieInsert
-	ADD INDEX IX_Temp_CookieInsert_CookieCode (CookieCode);
-	 
+    SET @sql = CONCAT("INSERT INTO Temp_CookieInsert (CookieCode) VALUES ('", REPLACE(ip_CookieCodes, ",", "'),('"),"');");
+	PREPARE stmt1 FROM @sql;
+	EXECUTE stmt1;
+    
     UPDATE Temp_CookieInsert AS tmp
 		INNER JOIN DCS_DataCenter.Cookie AS c ON c.CookieCode = tmp.CookieCode
     SET tmp.IsNewCookie = 0;
@@ -56,16 +48,6 @@ BEGIN
 	FROM Temp_CookieInsert
     WHERE IsNewCookie = 1;
     
-	UPDATE Temp_CookieInsert AS tmp
-		INNER JOIN DCS_DataCenter.Cookie AS c ON c.CookieCode = tmp.CookieCode
-	SET tmp.CookieID = c.ID;
-    
-	SET @sql = CONCAT('UPDATE ', ip_TableName,' AS tmp
-						INNER JOIN Temp_CookieInsert AS c ON c.TmpID = tmp.ID
-                        SET tmp.CookieID = c.CookieID');
-    PREPARE stmt FROM @sql;
-    EXECUTE stmt;
-    DEALLOCATE PREPARE stmt;
 END$$
 
 DELIMITER ;
