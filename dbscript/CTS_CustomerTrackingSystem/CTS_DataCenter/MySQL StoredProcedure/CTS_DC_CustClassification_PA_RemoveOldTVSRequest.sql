@@ -35,12 +35,12 @@ BEGIN
 	DECLARE CONST_TVSRequestTypeID_PA		TINYINT DEFAULT 1;
 	DECLARE CONST_TVSRequestTypeID_ROBOT	TINYINT DEFAULT 2;
     
-	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedEvidence;    
+	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedEvidence;
 	CREATE TEMPORARY TABLE Temp_ExistedEvidence(	  
-			CTSCustID				BIGINT UNSIGNED 
-        ,	EvidenceID_Licensee 	SMALLINT	        
-        ,	EvidenceID_Credit 		SMALLINT	
-        ,  	INDEX IX_Temp_ExistedEvidence_CTSCustIDEvidenceID(CTSCustID, EvidenceID_Licensee, EvidenceID_Credit)
+			CTSCustID					BIGINT UNSIGNED 
+        ,	Ext_EvidenceID_Licensee 	SMALLINT	        
+        ,	Ext_EvidenceID_Credit 		SMALLINT	
+        ,  	INDEX IX_Temp_ExistedEvidence_CTSCustIDEvidenceID(Ext_EvidenceID_Credit)
     );
     
     /* REMOVE FROM QUEUE  */
@@ -58,30 +58,16 @@ BEGIN
     /* REMOVE FROM OLD PA  */
     UPDATE Temp_PA AS t
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
-		INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = d.CategoryID
 	SET d.IsFromTVS = 0
 	WHERE IFNULL(t.TVSRequestID,0) <> 0
-		AND ccs.IsKeepOldCateID = 1
-		AND EXISTS (SELECT 1
-					FROM CTS_DataCenter.CTSCustomerClassification AS cls
-						INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cls.CategoryID
-					WHERE d.CustID = cls.CustID
-						AND (cs.IsParallelParentID = 1 OR IsMultiCateIDSameParentID = 1)
-					);
+		AND ((t.IsExistVVIP = 1 OR t.IsExistWrapper = 1) AND t.IsExistKeepOldCateID = 1);
     
     DELETE d
     FROM Temp_PA AS t
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
-		INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = d.CategoryID
 	WHERE IFNULL(t.TVSRequestID,0) <> 0
-		AND ccs.IsKeepOldCateID = 1
-		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0 AND d.IsFromImperva = 0)
-		AND EXISTS (SELECT 1
-					FROM CTS_DataCenter.CTSCustomerClassification AS cls
-						INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cls.CategoryID
-					WHERE d.CustID = cls.CustID
-						AND (cs.IsParallelParentID = 1 OR IsMultiCateIDSameParentID = 1)
-					);
+		AND ((t.IsExistVVIP = 1 OR t.IsExistWrapper = 1) AND t.IsExistKeepOldCateID = 1)
+		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0 AND d.IsFromImperva = 0);
     
     /* REMOVE FROM CLASSIFICATION HISTORY  */    
 	DELETE d
@@ -90,18 +76,13 @@ BEGIN
 	WHERE IFNULL(t.TVSRequestID,0) <> 0;
         
     /* REMOVE FROM CLASSIFICATION  */
-    INSERT INTO Temp_ExistedEvidence(CTSCustID, EvidenceID_Licensee, EvidenceID_Credit)
-    SELECT DISTINCT t.CTSCustID, c.EvidenceID_Licensee, c.EvidenceID_Credit
+    INSERT INTO Temp_ExistedEvidence(CTSCustID, Ext_EvidenceID_Licensee, Ext_EvidenceID_Credit)
+    SELECT DISTINCT t.CTSCustID, c.Ext_EvidenceID_Licensee, c.Ext_EvidenceID_Credit
     FROM Temp_PA AS t
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
         INNER JOIN CTS_DataCenter.CustomerCategory AS c ON d.CategoryID = c.CategoryID
 	WHERE IFNULL(t.TVSRequestID,0) <> 0
-		AND NOT EXISTS (SELECT 1
-						FROM CTS_DataCenter.CTSCustomerClassification AS cls
-							INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cls.CategoryID
-						WHERE d.CustID = cls.CustID
-							AND (cs.IsParallelParentID = 1 OR IsMultiCateIDSameParentID = 1)
-						);  
+		AND (t.IsExistVVIP = 0 AND t.IsExistWrapper = 0);
     
     UPDATE Temp_PA AS t
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
@@ -111,30 +92,20 @@ BEGIN
                                     ELSE t.WinlossStatus
 								END
 	WHERE IFNULL(t.TVSRequestID,0) <> 0
-		AND NOT EXISTS (SELECT 1
-						FROM CTS_DataCenter.CTSCustomerClassification AS cls
-							INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cls.CategoryID
-						WHERE d.CustID = cls.CustID
-							AND (cs.IsParallelParentID = 1 OR IsMultiCateIDSameParentID = 1)
-						);
+		AND (t.IsExistVVIP = 0 AND t.IsExistWrapper = 0);
     
 	DELETE d
     FROM Temp_PA AS t
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
 	WHERE IFNULL(t.TVSRequestID,0) <> 0
 		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0 AND d.IsFromImperva = 0)
-		AND NOT EXISTS (SELECT 1
-						FROM CTS_DataCenter.CTSCustomerClassification AS cls
-							INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cls.CategoryID
-						WHERE d.CustID = cls.CustID
-							AND (cs.IsParallelParentID = 1 OR IsMultiCateIDSameParentID = 1)
-						);
+		AND (t.IsExistVVIP = 0 AND t.IsExistWrapper = 0);
       
 	/* REMOVE FROM CUSTOMER EVIDENCE  */ 
     DELETE d
     FROM Temp_ExistedEvidence AS t
 		INNER JOIN CTS_DataCenter.CustEvidence AS d ON t.CTSCustID = d.CTSCustID 
-			AND (t.EvidenceID_Credit = d.EvidenceID OR t.EvidenceID_Licensee = d.EvidenceID)
+			AND (t.Ext_EvidenceID_Credit = d.EvidenceID OR t.Ext_EvidenceID_Licensee = d.EvidenceID)
 	WHERE d.Level = 0;    		
 	
     /* REMOVE AFFECTED EVIDENCE  */ 
@@ -142,7 +113,7 @@ BEGIN
 	WITH CTE_data (CTSCustID,EvidenceID) AS 
     (
 		SELECT	t.CTSCustID
-			,	CASE WHEN d.IsLicensee = 1 THEN EvidenceID_Licensee ELSE EvidenceID_Credit END
+			,	CASE WHEN d.IsLicensee = 1 THEN Ext_EvidenceID_Licensee ELSE Ext_EvidenceID_Credit END
 		FROM Temp_ExistedEvidence AS t
 			INNER JOIN CTSCustomer AS d ON t.CTSCustID = d.CTSCustID
 	)   
@@ -151,12 +122,13 @@ BEGIN
     WHERE EvidenceID IS NOT NULL;
 
 	/* LOG THE VOID REQUEST FOR FURTHER TRACKING */
-	INSERT INTO CTS_DataCenter.TVSVoidRequest (TVSRequestID,CustID,ReasonID,CreatedBy,IsParlay,SportType,IssueTypeID,RequestTypeID)
+	INSERT INTO CTS_DataCenter.TVSVoidRequest (TVSRequestID,CustID,ReasonID,CreatedBy,IsParlay,SportType,IssueTypeID,RequestTypeID,CreatedDate)
 	SELECT 	t.TVSRequestID,t.CustID,t.ReasonID,t.CreatedBy,t.IsParlay,t.SportType,t.IssueTypeID,t.RequestTypeID
 		,	CASE WHEN c.CustomerClassName = 'Robot' THEN CONST_TVSRequestTypeID_ROBOT ELSE CONST_TVSRequestTypeID_PA END AS RequestTypeID
+		,	NOW()
     FROM Temp_PA AS t
 		INNER JOIN CTS_DataCenter.CustomerCategory AS c ON t.CategoryID = c.CategoryID
-															AND t.ReasonID = c.ReasonID
+															AND t.ReasonID = c.TVSReasonID
 	WHERE t.IsFromTVS = 1;
 	
 END$$

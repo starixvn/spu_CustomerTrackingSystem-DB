@@ -139,7 +139,7 @@ BEGIN
 			,	IsLicensee					BIT(1) DEFAULT 0
 			,	IsLicenseeVIP				BIT(1) DEFAULT 0
 			,	IsLicenseeBA				BIT(1) DEFAULT 0
-			,	IsExistVVIP						BIT(1) DEFAULT 0
+			,	IsExistVVIP					BIT(1) DEFAULT 0
 			,	IsExistWrapper				BIT(1) DEFAULT 0
 			,	IsExistPA					BIT(1) DEFAULT 0
 			,	IsExistRobot				BIT(1) DEFAULT 0 
@@ -507,12 +507,13 @@ BEGIN
 					 
 		UPDATE Temp_NewClassification AS temp
 		SET temp.IsExistKeepOldCateID = 1
-		WHERE EXISTS (	SELECT 1
+		WHERE (temp.IsExistVVIP = 1 OR temp.IsExistWrapper = 1 OR temp.IsExistPA = 1)
+			AND EXISTS (SELECT 1
 						FROM CTS_DataCenter.CTSCustomerClassification AS cls
 							INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cls.CategoryID
 						WHERE temp.CustID = cls.CustID
 							AND cs.IsKeepOldCateID = 1
-					 );
+						);
 		
 	END IF;
 	
