@@ -42,7 +42,6 @@ CREATE TABLE Customer_InitialGroupBetting
 	GBTicketCount INT,
 	SportType INT,
 	SourceCreatedDate DATETIME(3),
-	ClassifiedDate DATETIME(3),
 	CreatedDate DATETIME,
 	PRIMARY KEY (CustID)
 );
@@ -52,17 +51,17 @@ CREATE TABLE TVSVoidRequest
 	ID BIGINT UNSIGNED NOT NULL,
     TVSRequestID BIGINT UNSIGNED,
     CustID BIGINT UNSIGNED NOT NULL,
-    ReasonID INT,
+    TVSReasonID INT,
 	IssueTypeID TINYINT,
     CreatedBy INT,
     IsParlay BIT(1),
     SportType INT,
 	RequestTypeID TINYINT COMMENT '1: PA, 2: Robot',
-	ClassifiedDate DATETIME(3),
     CreatedDate DATETIME,
 	InsertedTime DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3),
     PRIMARY KEY (ID),
-    KEY IX_TVSVoidRequest_CustID_CreatedDate (CustID, CreatedDate)
+    KEY IX_TVSVoidRequest_CustID_CreatedDate (CustID, CreatedDate),
+	KEY IX_TVSVoidRequest_TVSReasonID (TVSReasonID)
 );
 
 CREATE TABLE CTSRobotUser
@@ -70,7 +69,6 @@ CREATE TABLE CTSRobotUser
 	CustID BIGINT UNSIGNED NOT NULL,
 	CategoryID INT UNSIGNED NOT NULL,
 	Remark VARCHAR(500),
-	ClassifiedDate DATETIME(3),
 	CreatedDate DATETIME,
 	PRIMARY KEY (CustID, CategoryID)
 );
@@ -80,7 +78,6 @@ CREATE TABLE TWRobotUser
 	CustID BIGINT UNSIGNED NOT NULL,
 	CategoryID INT UNSIGNED NOT NULL,
 	RobotCounter SMALLINT,
-	ClassifiedDate DATETIME(3),
 	CreatedDate DATETIME,
 	PRIMARY KEY (CustID, CategoryID)
 );

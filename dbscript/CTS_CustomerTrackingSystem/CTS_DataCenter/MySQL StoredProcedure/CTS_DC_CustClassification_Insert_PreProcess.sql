@@ -177,7 +177,7 @@ BEGIN
         SET 	temp.ScanTaggingType = CONST_SCANTAGGINGTYPE_EXISTONLY
         WHERE 	pro.ScanTaggingType <> CONST_SCANTAGGINGTYPE_NOTEXIST;
 
-	ELSEIF ip_InputFlowID IN (6,50,51) THEN
+/*	ELSEIF ip_InputFlowID IN (6,50,51) THEN
 
 		IF ip_InputFlowID IN (6,50) THEN
 			INSERT IGNORE INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
@@ -214,8 +214,8 @@ BEGIN
 				,	tmp.TargetCC = (CASE 	WHEN tmp.SpecialCC IS NOT NULL THEN tmp.SpecialCC ELSE IFNULL(tmpCat.CustomerClass,-99) END)
 				,	tmp.TargetDangerLevel = (CASE WHEN tmp.IsLicensee = 1 THEN tmpCat.ABIDangerLevel_Licensee
 													WHEN tmp.IsLicensee = 0 THEN tmpCat.ABIDangerLevel_Credit END) 
-				,	tmp.ToEvidenceID = (CASE 	WHEN tmp.IsLicensee = 1 THEN tmpCat.EvidenceID_Licensee
-												WHEN tmp.IsLicensee = 0 THEN tmpCat.EvidenceID_Credit
+				,	tmp.ToEvidenceID = (CASE 	WHEN tmp.IsLicensee = 1 THEN tmpCat.Ext_EvidenceID_Licensee
+												WHEN tmp.IsLicensee = 0 THEN tmpCat.Ext_EvidenceID_Credit
 												ELSE NULL END)
 				,	tmp.RelevantCategoryID = tmpCat.RelevantCategoryID;
 		
@@ -226,16 +226,13 @@ BEGIN
 					WHERE cat.CategoryID = tmp.RelevantCategoryID LIMIT 1) AS tmpCat
 			SET 	tmp.RelevantCategoryGroupID = tmpCat.CategoryGroupID	
 				,	tmp.RelevantCategoryID = tmpCat.CategoryGroupID
-				,	tmp.RelevantIsProbation = tmpCat.IsPAProbation;
-		ELSEIF ip_InputFlowID = 51	   
+				,	tmp.RelevantIsPAProbation = tmpCat.IsPAProbation;
+*/
+	ELSEIF ip_InputFlowID IN (6,50,51) THEN
+		/*Insert cust has pin/vvip into CTSCustomerClassification*/
+		/*clear temp for these cust*/
+
+	ELSEIF ip_InputFlowID IN (7,51) THEN	   
+		CALL CTS_DataCenter.CTS_DC_CustClassification_PA_RemoveOldTVSRequest();
 
     END IF;   
-	
-
-	
-/*
-	ELSEIF ip_InputFlowID = 7 THEN
-*/
-	
-	
-	END IF;

@@ -132,7 +132,7 @@ BEGIN
 
 		DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;    
 		CREATE TEMPORARY TABLE Temp_NewClassification(	  	
-				CustID						BIGINT UNSIGNED	PRIMARY KEY
+				CustID						BIGINT UNSIGNED
 			, 	CTSCustID					BIGINT 
 			,	SubscriberID 				INT UNSIGNED
 			,	RoleID						INT		
