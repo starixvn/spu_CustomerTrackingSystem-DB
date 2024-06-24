@@ -62,8 +62,8 @@ BEGIN
 	SELECT DISTINCT 
 			CTSCustID
 		,  	CustID
-		,	ParentID
-		,	Ext_CategoryGroupID
+		,	TargetCC
+		,	SportID
 	FROM Temp_NewClassification AS temp;
 	
 END$$

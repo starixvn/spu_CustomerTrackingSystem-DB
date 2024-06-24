@@ -26,6 +26,10 @@ BEGIN
 	DECLARE CONST_CATEID_LICVIPSUSPICIOUS 	INT;
 	DECLARE CONST_CATEID_LICVIPDANGEROUS 	INT;
 	DECLARE CONST_CATEID_LICBA 				INT;
+	DECLARE CONST_PARENTID_VVIP 			INT;
+	DECLARE CONST_PARENTID_WRAPPER 			INT;
+	DECLARE CONST_PARENTID_PA 				INT;
+	
 	
     DECLARE lv_MaxCTSCustID					BIGINT UNSIGNED;
     DECLARE lv_LicVIPPriority				SMALLINT UNSIGNED;
@@ -35,6 +39,9 @@ BEGIN
 	SET CONST_CATEID_LICVIPSUSPICIOUS 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPSUSPICIOUS');
 	SET CONST_CATEID_LICVIPDANGEROUS 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPDANGEROUS');
 	SET CONST_CATEID_LICBA 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICBA');
+	SET CONST_PARENTID_VVIP 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
+	SET CONST_PARENTID_WRAPPER 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
+	SET CONST_PARENTID_PA 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
 	
 	IF ip_InputFlowID IN (1,2,3,4) THEN /*ip_InputFlowID: VVIP/SpecialCC/LicVIP/LicBA*/
 	
@@ -46,26 +53,25 @@ BEGIN
 			,	RoleID						INT		
 			,	Remark						VARCHAR(500)
 			,	CreatedBy					INT UNSIGNED
-			,	IsVVIP						BIT(1) DEFAULT 0
+			,	IsExistVVIP					BIT(1) DEFAULT 0
 			,	IsLicenseeVIP				BIT(1) DEFAULT 0
 			,	IsLicenseeBA				BIT(1) DEFAULT 0
 			,	IsDirect					BIT(1) DEFAULT 0
 			,	SportID						SMALLINT UNSIGNED  DEFAULT 0	
-			,	CustomerClass				SMALLINT UNSIGNED
+			,	TargetCC					SMALLINT UNSIGNED
 			,	CategoryPriority			SMALLINT UNSIGNED
 			,	CustomerClassPriority		SMALLINT UNSIGNED
 			,	CategoryID					INT
-			,	Ext_CategoryGroupID			INT
 			,	IsDangerProbation			BIT(1) DEFAULT 0
 			,	IsDataChanged				BIT(1) DEFAULT 0	/*0: No change category => No Action*/
 			,	PRIMARY KEY (CustID,SportID)
 		);
 
 		IF ip_InputFlowID = 1 THEN /*VVIP*/
-			INSERT INTO Temp_NewClassification (CustID, CTSCustID, SubscriberID, RoleID, Remark, CreatedBy, IsVVIP, IsDirect)
+			INSERT INTO Temp_NewClassification (CustID, CTSCustID, SubscriberID, RoleID, Remark, CreatedBy, IsExistVVIP, IsDirect)
 			SELECT DISTINCT 
-					temp.CustID, temp.CTSCustID, temp.SubscriberID, temp.RoleID, temp.CreatedBy, temp.Remark
-				,	(CASE WHEN cls.CustID IS NOT NULL THEN 1 ELSE 0 END) AS IsVVIP
+					tmpJs.CustID, tmpJs.CTSCustID, tmpJs.SubscriberID, tmpJs.RoleID, tmpJs.Remark, tmpJs.CreatedBy
+				,	(CASE WHEN cls.CustID IS NOT NULL THEN 1 ELSE 0 END) AS IsExistVVIP
 				,	(CASE WHEN ip_FromAction = 1 THEN 1 ELSE 0 END) AS IsDirect
 			FROM JSON_TABLE(ip_CustJson,
 							 "$[*]" COLUMNS(
@@ -75,9 +81,9 @@ BEGIN
 												,	SubscriberID 	INT UNSIGNED	PATH "$.SubscriberID"
 												,	CreatedBy 		INT UNSIGNED	PATH "$.CreatedBy"            
 												,	Remark			VARCHAR(500)	PATH "$.Remark"
-											 )) AS temp
-				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID 
-																				AND cls.CategoryID = CONST_CATEID_VVIP;
+											 )) AS tmpJs
+				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON tmpJs.CustID = cls.CustID 
+																				AND cls.ParentID = CONST_PARENTID_VVIP;
 			
 			SELECT MAX(tmpCus.CTSCustID)
 			INTO op_MaxCTSCustID
@@ -85,8 +91,8 @@ BEGIN
 			
 			
 		ELSEIF ip_InputFlowID = 2 THEN /*SpecialCC*/
-			INSERT INTO Temp_NewClassification (CustID, CTSCustID, SportID, SubscriberID, Remark, CreatedBy, IsLicenseeVIP, CustomerClass)
-			SELECT CustID, CTSCustID, SubscriberID, SportID, Remark, CreatedBy, IsLicenseeVIP, CustomerClass
+			INSERT INTO Temp_NewClassification (CustID, CTSCustID, SportID, SubscriberID, Remark, CreatedBy, IsLicenseeVIP, TargetCC)
+			SELECT tmpJs.CustID, tmpJs.CTSCustID, tmpJs.SubscriberID, tmpJs.SportID, tmpJs.Remark, tmpJs.CreatedBy, tmpJs.IsLicenseeVIP, tmpJs.TargetCC
 			FROM JSON_TABLE(ip_CustJson,
 							 "$[*]" COLUMNS(
 													CustID 			BIGINT UNSIGNED		PATH "$.CustID"
@@ -94,37 +100,31 @@ BEGIN
 												,	SportID			SMALLINT UNSIGNED   PATH '$.SportID'
 												,	SubscriberID 	INT UNSIGNED		PATH "$.SubscriberID"
 												,	IsLicenseeVIP	BIT(1)				PATH "$.IsLicenseeVIP"            
-												,	CustomerClass	SMALLINT			PATH "$.CustomerClass"            
+												,	TargetCC	SMALLINT				PATH "$.CustomerClass"            
 												,	CreatedBy 		INT UNSIGNED		PATH "$.CreatedBy"          
 												,	Remark			VARCHAR(500)		PATH "$.Remark"
-											 )) AS temp;
+											 )) AS tmpJs;
 			
 		ELSEIF ip_InputFlowID = 3 THEN	/*LicVIP*/
 			INSERT INTO Temp_NewClassification (CustID, CTSCustID, SubscriberID, CreatedBy, IsLicenseeVIP)
-			SELECT temp.CustID, temp.CTSCustID, temp.SubscriberID, temp.CreatedBy
-				,	(CASE WHEN cls.CustID IS NOT NULL THEN 1 ELSE 0 END) AS IsLicenseeVIP
+			SELECT tmpJs.CustID, cus.CTSCustID, tmpJs.SubscriberID, tmpJs.CreatedBy, cus.IsLicenseeVIP
 			FROM JSON_TABLE(ip_CustJson,
 							 "$[*]" COLUMNS(
 													CustID 			BIGINT UNSIGNED	PATH "$.CustID"
 												,	CreatedBy 		INT UNSIGNED	PATH "$.CreatedBy"
-											 )) AS temp
-				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON  temp.CustID = cus.CustID AND cus.CustSubID = 0
-				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID 
-																				AND cls.CategoryID IN (CONST_CATEID_LICVIPSUSPICIOUS,CONST_CATEID_LICVIPDANGEROUS);
+											 )) AS tmpJs
+				LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0;
 			
 			
 		ELSEIF ip_InputFlowID = 4 THEN /*LicBA*/
 			INSERT INTO Temp_NewClassification (CustID, CTSCustID, SubscriberID, CreatedBy, IsLicenseeBA)
-			SELECT temp.CustID, temp.CTSCustID, temp.SubscriberID, temp.CreatedBy
-				,	(CASE WHEN cls.CustID IS NOT NULL THEN 1 ELSE 0 END) AS IsLicenseeBA
+			SELECT tmpJs.CustID, cus.CTSCustID, tmpJs.SubscriberID, tmpJs.CreatedBy, cus.IsLicenseeBA
 			FROM JSON_TABLE(ip_CustJson,
 							 "$[*]" COLUMNS(
 													CustID 			BIGINT UNSIGNED	PATH "$.CustID"
 												,	CreatedBy 		INT UNSIGNED	PATH "$.CreatedBy"
-											 )) AS temp
-				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON  temp.CustID = cus.CustID AND cus.CustSubID = 0
-				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID 
-																				AND cls.CategoryID = CONST_CATEID_LICBA;
+											 )) AS tmpJs
+				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON  tmpJs.CustID = cus.CustID AND cus.CustSubID = 0;
 		
 		END IF;
 
@@ -139,7 +139,11 @@ BEGIN
 			,	IsLicensee					BIT(1) DEFAULT 0
 			,	IsLicenseeVIP				BIT(1) DEFAULT 0
 			,	IsLicenseeBA				BIT(1) DEFAULT 0
-			,	IsVVIP						BIT(1) DEFAULT 0
+			,	IsExistVVIP						BIT(1) DEFAULT 0
+			,	IsExistWrapper				BIT(1) DEFAULT 0
+			,	IsExistPA					BIT(1) DEFAULT 0
+			,	IsExistRobot				BIT(1) DEFAULT 0 
+			,	IsExistKeepOldCateID		BIT(1) DEFAULT 0 
 			
 			, 	TurnoverRM					DECIMAL(20,4)
 			, 	WinlossRM					DECIMAL(20,4)
@@ -165,7 +169,6 @@ BEGIN
 			,	TargetDangerLevel			SMALLINT UNSIGNED
 			,	CategoryPriority			SMALLINT UNSIGNED 
 			,	CustomerClassPriority		SMALLINT UNSIGNED 
-			,	Ext_CategoryGroupID			INT
 			,	MatchID						INT
 			
 			, 	ToEvidenceID				SMALLINT
@@ -178,8 +181,6 @@ BEGIN
 			,	DataChangeType				TINYINT DEFAULT 0	/* 0: New OR Change Category, 1: Change Probation Status, 2: NOT CHANGE */
 
 			, 	WinlossStatus				SMALLINT /*LOSING  = 0 (PROBATION), KEEPSTATE = 1 (NOT CHANGE), WINNING = 2 (NOT PROBATION);*/
-			,	IsFromOldPA					BIT(1) DEFAULT 0
-			,	IsExisted					BIT(1) DEFAULT 0 -- Robot
 			
 			,	IsFromTVS					BIT(1)  DEFAULT 0
 			,	TVSRequestID				BIGINT UNSIGNED
@@ -218,10 +219,10 @@ BEGIN
 		
 		IF ip_InputFlowID IN (50,6) THEN /*PA - ip_InputType = 'Category' | PotentialPA*/
 			INSERT INTO Temp_NewClassification(
-				CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,  IsLicensee, CreatedBy, Remark, IsDirect
+				CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,  IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsDirect
 			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsDataChanged
 			, 	SpecialCC, IsPAProbation, RelevantCategoryID, LastModifiedDate, MatchID, TVSRequestID, IsTVSParlay, SportType
-			, 	TVSIssueTypeID, CategoryPriority, CustomerClassPriority, ParentID, IsVVIP)
+			, 	TVSIssueTypeID, CategoryPriority, CustomerClassPriority, ParentID)
 			SELECT 	tmpJs.CustID
 				,	tmpJs.CTSCustID
 				,	tmpJs.RoleID
@@ -229,6 +230,8 @@ BEGIN
 				,	tmpJs.CategoryID
 				,	tmpJs.CategoryGroupID
 				,	tmpJs.IsLicensee
+				,	cus.IsLicenseeVIP
+				,	cus.IsLicenseeBA
 				,	tmpJs.CreatedBy 
 				,	(CASE WHEN tmpJs.MatchID IS NOT NULL THEN CONCAT('Auto MatchID: ', MatchID) ELSE tmpJs.Remark END) AS Remark
 				,	tmpJs.IsDirect
@@ -255,7 +258,6 @@ BEGIN
 				,	cat.CategoryPriority
 				,	cat.CustomerClassPriority
 				,	cat.ParentID
-				,	(CASE WHEN cls.CustID IS NOT NULL THEN 1 ELSE 0 END) AS IsVVIP
 			FROM JSON_TABLE(ip_CustInfo,
 							"$[*]" COLUMNS(
 												CustID 				BIGINT UNSIGNED		PATH "$.CustID"
@@ -285,17 +287,16 @@ BEGIN
 											,	TVSIssueTypeID		TINYINT 			PATH "$.IssueTypeID"
 											,	SportType			SMALLINT 			PATH "$.SportType"
 											)) AS tmpJs
-				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls on tmpJs.CustID = cls.CustID AND cls.CategoryID = CONST_CATEID_VVIP
-				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID 
-				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.CategoryID;	
-			
-			
+				LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID
+				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.CategoryID
+				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID;	
+
 		ELSEIF ip_InputFlowID = 51 THEN /*PA - ip_InputType = 'Reason'*/
 			INSERT INTO Temp_NewClassification(
-				CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,  IsLicensee, CreatedBy, IsDirect
+				CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,  IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, IsDirect
 			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsDataChanged, SpecialCC, IsPAProbation
 			, 	RelevantCategoryID, TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID, CategoryPriority, CustomerClassPriority
-			, 	ParentID, IsVVIP)
+			, 	ParentID)
 			SELECT 	tmpJs.CustID
 				,	cus.CTSCustID
 				,	cus.RoleID
@@ -303,6 +304,8 @@ BEGIN
 				,	cat.CategoryID
 				,	cat.CategoryGroupID
 				,	cus.IsLicensee
+				,	cus.IsLicenseeVIP
+				,	cus.IsLicenseeBA
 				,	tmpJs.CreatedBy 
 				,	tmpJs.IsDirect
 				, 	IFNULL(tmpJs.WinlossStatus,2) AS  WinlossStatus
@@ -323,7 +326,6 @@ BEGIN
 				,	cat.CategoryPriority
 				,	cat.CustomerClassPriority
 				,	cat.ParentID
-				,	(CASE WHEN cls.CustID IS NOT NULL THEN 1 ELSE 0 END) AS IsVVIP
 			FROM JSON_TABLE(ip_CustInfo,
 							"$[*]" COLUMNS(
 												CustID 			BIGINT UNSIGNED		PATH "$.CustID"
@@ -346,22 +348,23 @@ BEGIN
 											,	TVSIssueTypeID	TINYINT 			PATH "$.IssueTypeID"
 										)) AS tmpJs
 				LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
-				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls on tmpJs.CustID = cls.CustID AND cls.CategoryID = CONST_CATEID_VVIP
 				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID 
-				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.TVSReasonID = tmpJs.TVSReasonID;	
-		
+				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.TVSReasonID = tmpJs.TVSReasonID;
+				
 		ELSEIF ip_InputFlowID = 7 THEN /*Robot*/
 			INSERT INTO Temp_NewClassification(
-				CustID, CTSCustID, SubscriberID, DWCategoryID, DWCategoryGroupID,  IsLicensee, CreatedBy, Remark, IsDirect
+				CustID, CTSCustID, SubscriberID, DWCategoryID, DWCategoryGroupID,  IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsDirect
 			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsDataChanged
 			, 	SpecialCC, IsPAProbation, RelevantCategoryID, TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID, CategoryPriority
-			, 	CustomerClassPriority, ParentID, IsVVIP, TWRobotCounter, IsFromImperva)
+			, 	CustomerClassPriority, ParentID, TWRobotCounter, IsFromImperva)
 			SELECT 	tmpJs.CustID
 				,	tmpJs.CTSCustID
 				, 	tmpJs.SubscriberID
 				,	tmpJs.CategoryID
 				,	tmpJs.CategoryGroupID
 				,	tmpJs.IsLicensee
+				,	cus.IsLicenseeVIP
+				,	cus.IsLicenseeBA
 				,	tmpJs.CreatedBy 
 				,	(CASE WHEN tmpJs.MatchID IS NOT NULL THEN CONCAT('Auto MatchID: ', MatchID) ELSE tmpJs.Remark END) AS Remark
 				,	tmpJs.IsDirect
@@ -386,7 +389,6 @@ BEGIN
 				,	cat.CategoryPriority
 				,	cat.CustomerClassPriority
 				,	cat.ParentID
-				,	(CASE WHEN cls.CustID IS NOT NULL THEN 1 ELSE 0 END) AS IsVVIP
 				,	tmpJs.TWRobotCounter
 				,	tmpJs.IsFromImperva
 			FROM JSON_TABLE(ip_CustInfo,
@@ -416,18 +418,17 @@ BEGIN
 											,	TVSIssueTypeID	TINYINT				PATH "$.IssueTypeID"
 										)) AS tmpJs
 				LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
-				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls on tmpJs.CustID = cls.CustID AND cls.CategoryID = CONST_CATEID_VVIP
 				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID 
-				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.CategoryID;	
+				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.CategoryID;
 				
 		ELSEIF ip_InputFlowID = 8 THEN /*Normal*/
 			INSERT INTO Temp_NewClassification(
 				CustID,CTSCustID,DWCategoryGroupID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TWBetCount,TWGroupBettingRate
 				,TWTicketRejectRate,TWDesktopUsageRate,TaggingID,TaggingType,PerformanceTime,ScanTaggingType
-				,SubscriberID,IsLicensee,IsLicenseeVIP,IsLicenseeBA,IsVVIP)
+				,SubscriberID,IsLicensee,IsLicenseeVIP,IsLicenseeBA)
 			SELECT DISTINCT
 					tmpJs.CustID
-				,	cust.CTSCustID
+				,	cus.CTSCustID
 				, 	tmpJs.DWCategoryGroupID
                 , 	tmpJs.TurnoverRM
                 , 	tmpJs.WinlossRM
@@ -441,11 +442,10 @@ BEGIN
                 , 	tmpJs.TaggingType
                 ,	tmpJs.PerformanceTime
                 ,	tmpJs.ScanTaggingType
-				,	cust.SubscriberID
-				,	cust.IsLicensee
-				,	cust.IsLicenseeVIP
-				,	cust.IsLicenseeBA
-				,	(CASE WHEN cls.CustID IS NOT NULL THEN 1 ELSE 0 END) AS IsVVIP
+				,	cus.SubscriberID
+				,	cus.IsLicensee
+				,	cus.IsLicenseeVIP
+				,	cus.IsLicenseeBA
 			FROM JSON_TABLE(ip_CustInfo,
 							"$[*]" COLUMNS(
 												CustID 					BIGINT UNSIGNED		PATH "$.CustId"
@@ -463,11 +463,56 @@ BEGIN
 											, 	PerformanceTime			DATETIME			PATH "$.PerformanceTime"
 											, 	ScanTaggingType			BIT(1)				PATH "$.ScanTaggingType"
 										)) AS tmpJs
-				LEFT JOIN CTS_DataCenter.CTSCustomer AS cust ON tmpJs.CustID = cust.CustID AND cust.CustSubID = 0
-				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls on tmpJs.CustID = cls.CustID AND cls.CategoryID = CONST_CATEID_VVIP
+				LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpJs.CustID = cus.CustID AND cus.CustSubID = 0
 			WHERE tmpJs.DWCategoryGroupID <> 0;
-				
 		END IF;
+		
+		UPDATE Temp_NewClassification AS temp
+		SET temp.IsExistVVIP = 1
+		WHERE EXISTS (	SELECT 1
+						FROM CTS_DataCenter.CTSCustomerClassification AS cls
+							INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cls.CategoryID
+						WHERE temp.CustID = cls.CustID
+							AND cs.ParentID = CONST_PARENTID_VVIP
+					 );
+		
+		
+		UPDATE Temp_NewClassification AS temp
+		SET temp.IsExistWrapper = 1
+		WHERE EXISTS (	SELECT 1
+						FROM CTS_DataCenter.CTSCustomerClassification AS cls
+							INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cls.CategoryID
+						WHERE temp.CustID = cls.CustID
+							AND cs.ParentID = CONST_PARENTID_WRAPPER
+					 );
+					 
+					 
+		UPDATE Temp_NewClassification AS temp
+		SET temp.IsExistPA = 1
+		WHERE EXISTS (	SELECT 1
+						FROM CTS_DataCenter.CTSCustomerClassification AS cls
+							INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cls.CategoryID
+						WHERE temp.CustID = cls.CustID
+							AND cs.ParentID = CONST_PARENTID_PA
+					 );
+					 
+		UPDATE Temp_NewClassification AS temp
+		SET temp.IsExistRobot = 1
+		WHERE EXISTS (	SELECT 1
+						FROM CTS_DataCenter.CTSCustomerClassification AS cls
+							INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cls.CategoryID 
+						WHERE temp.CustID = cls.CustID
+							AND cat.IsActive = 1 AND cat.CustomerClassName = 'Robot'
+					 );
+					 
+		UPDATE Temp_NewClassification AS temp
+		SET temp.IsExistKeepOldCateID = 1
+		WHERE EXISTS (	SELECT 1
+						FROM CTS_DataCenter.CTSCustomerClassification AS cls
+							INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cls.CategoryID
+						WHERE temp.CustID = cls.CustID
+							AND cs.IsKeepOldCateID = 1
+					 );
 		
 	END IF;
 	
