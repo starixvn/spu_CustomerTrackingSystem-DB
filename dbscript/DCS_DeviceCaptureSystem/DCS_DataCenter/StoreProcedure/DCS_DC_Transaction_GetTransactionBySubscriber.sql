@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Transaction_GetHistoryByTransIDSubscriber`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Transaction_GetTransactionBySubscriber`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transaction_GetHistoryByTransIDSubscriber`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transaction_GetTransactionBySubscriber`(
 		IN	ip_SubscriberID	INT	
     ,	IN	ip_TransID		BIGINT
     ,	IN	ip_Limit 		INT
@@ -21,7 +21,7 @@ proc_label: BEGIN
         Param's Explanation (filtered by):
 
 		Example:
-			CALL DCS_DC_Transaction_GetHistoryByTransIDSubscriber(@ip_SubscriberID:=2,@ip_TransID:=1234,@ip_Limit:=100); 			
+			CALL DCS_DC_Transaction_GetTransactionBySubscriber(@ip_SubscriberID:=2,@ip_TransID:=1234,@ip_Limit:=100); 			
             
 	*/ 
 	
@@ -71,6 +71,7 @@ proc_label: BEGIN
 				WHERE trs.TransID > ip_TransID
 					AND trs.SubscriberID = ip_SubscriberID
 				) AS tmp
+			ORDER BY TransID ASC
             LIMIT ip_Limit;    
     
 END$$

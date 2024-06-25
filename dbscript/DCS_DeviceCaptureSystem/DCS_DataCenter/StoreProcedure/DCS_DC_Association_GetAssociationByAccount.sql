@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Association_GetAssociationByAccountSubscriber`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Association_GetAssociationByAccount`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Association_GetAssociationByAccountSubscriber`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Association_GetAssociationByAccount`(
 		IN	ip_SubscriberID	INT	    
     ,	IN	ip_Account		VARCHAR(100)
     )
@@ -20,7 +20,7 @@ proc_label: BEGIN
         Param's Explanation (filtered by):
 
 		Example:
-			CALL DCS_DC_Association_GetAssociationByAccountSubscriber(@ip_SubscriberID:=2,@ip_Account:='xxxx'); 			
+			CALL DCS_DC_Association_GetAssociationByAccount(@ip_SubscriberID:=2,@ip_Account:='xxxx'); 			
             
 	*/ 	   
      
@@ -48,14 +48,16 @@ proc_label: BEGIN
 		,	dv.FirstDeviceCode AS Device
         , 	dv.CreatedTime AS FirstSeenDate
 	FROM Temp_Association tmpAss 
-	INNER JOIN DCS_DataCenter.Device As dv ON dv.DeviceID = tmpAss.DeviceID;
+	INNER JOIN DCS_DataCenter.Device As dv ON dv.DeviceID = tmpAss.DeviceID
+    ORDER BY FirstSeenDate ASC;
 
 	SELECT acc.AccountID
 		, 	acc.LoginName AS Account
         , 	ass.CreatedTime AS FirstAssociationDate
 	FROM Temp_Association tmpAss
 	INNER JOIN DCS_DataCenter.Association AS ass ON tmpAss.DeviceID = ass.DeviceID AND ass.AccountID <> tmpAss.AccountID AND ass.SubscriberID = ip_SubscriberID
-	INNER JOIN DCS_DataCenter.Account AS acc ON acc.AccountID = ass.AccountID;    
+	INNER JOIN DCS_DataCenter.Account AS acc ON acc.AccountID = ass.AccountID
+    ORDER BY FirstAssociationDate ASC;    
      
     
 END$$
