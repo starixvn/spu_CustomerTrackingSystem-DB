@@ -1,4 +1,4 @@
-*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="1"></info>*/
 DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_Insert_PreProcess`;
 
 DELIMITER $$
@@ -18,39 +18,14 @@ BEGIN
 		Param's Explanation (filtered by):
         
         Example:
-				CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_PreProcess('[{"CustId": "43600693","CategoryId":"1000","CreatedTime":"2021-03-31 00:00:00","TurnoverRM":"100","WinlossRM":"10","BetCount":"15","ActiveDays":"10","TaggingID":10,"TaggingType":1,"PerformanceTime":"2021-03-31 00:00:00", "ScanTaggingType":1, "SportType":NULL}]',@or);
+				CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_PreProcess(6);
 */ 
-	DECLARE CONST_CATETYPEID_VVIP 			INT;
-	DECLARE CONST_CATETYPEID_WRAPPER 		INT;
-	DECLARE CONST_CATETYPEID_PA 			INT;
-	DECLARE CONST_CATETYPEID_POTENTIALPA 	INT;
-	DECLARE CONST_CATETYPEID_NORMAL 		INT;
-
-/*
-	DECLARE CONST_CATEID_VVIP				INT;
-	DECLARE CONST_CATEID_LICBA				INT;
-	DECLARE CONST_CATEID_LICVIPSUSPICIOUS	INT;
-	DECLARE CONST_CATEID_LICVIPDANGEROUS	INT;
-	DECLARE CONST_CATEID_SPECIALCC			INT;
-	DECLARE CONST_CATEID_ROBOTUSER			INT;
-	DECLARE CONST_CATEID_ROBOTOCRD			INT;
-	DECLARE CONST_CATEID_ROBOTUSERLOSING	INT;
-	DECLARE CONST_CATEID_ROBOTOCRDLOSING	INT;
-	DECLARE CONST_CATEID_NEW				INT;
-*/
-    DECLARE CONST_CATEGROUPID_NEW           INT;
-    DECLARE CONST_CATEGROUPID_NORMAL        INT;
-    DECLARE CONST_CATEGROUPID_GOOD          INT;
     DECLARE CONST_CATEGROUPID_PROBATION     INT;
     DECLARE CONST_CATEGROUPID_SMART         INT;
     DECLARE CONST_CATEGROUPID_RISKY         INT;
-    DECLARE CONST_CATEGROUPID_INACTIVE      INT;
 
-    DECLARE CONST_PARENTID_VVIP             INT;
-    DECLARE CONST_PARENTID_WRAPPER          INT;
     DECLARE CONST_PARENTID_PA               INT;
     DECLARE CONST_PARENTID_POTENTIALPA      INT;
-    DECLARE CONST_PARENTID_NORMAL           INT;
 
     DECLARE CONST_ACTIONTYPE_INSERT 					INT DEFAULT 0;
 	DECLARE	CONST_ACTIONTYPE_UPDATE 					INT DEFAULT 1;
@@ -58,7 +33,6 @@ BEGIN
     DECLARE CONST_ACTIONTYPE_EXISTEDPA 					INT DEFAULT 3;
     /*DECLARE CONST_ACTIONTYPE_IGNOREPIN 					INT DEFAULT 4;*/
     DECLARE CONST_ACTIONTYPE_IGNOREPROBATION 			INT DEFAULT 5;
-    DECLARE CONST_ACTIONTYPE_IGNOREVVIP                 INT DEFAULT 4;
 
     DECLARE CONST_SCANTAGGINGTYPE_NOTEXIST  			TINYINT DEFAULT 0;
 	DECLARE	CONST_SCANTAGGINGTYPE_EXIST	   				TINYINT DEFAULT 1;
@@ -67,36 +41,12 @@ BEGIN
 	DECLARE lv_FromProbationLastDay 		DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 14 DAY);
 	DECLARE lv_ToProbationLastDay 			DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 2 DAY);
 
-	SET CONST_CATETYPEID_VVIP 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATETYPEID_VVIP');
-	SET CONST_CATETYPEID_WRAPPER 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATETYPEID_WRAPPER');
-	SET CONST_CATETYPEID_PA 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATETYPEID_PA');
-	SET CONST_CATETYPEID_POTENTIALPA 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATETYPEID_POTENTIALPA');
-	SET CONST_CATETYPEID_NORMAL 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATETYPEID_NORMAL');
-/*
-	SET CONST_CATEID_VVIP 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
-	SET CONST_CATEID_LICBA 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICBA');
-	SET CONST_CATEID_LICVIPSUSPICIOUS 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPSUSPICIOUS');
-	SET CONST_CATEID_LICVIPDANGEROUS 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPDANGEROUS');
-	SET CONST_CATEID_SPECIALCC 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_SPECIALCC');
-	SET CONST_CATEID_ROBOTUSER 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTUSER');
-	SET CONST_CATEID_ROBOTOCRD 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTOCRD');
-	SET CONST_CATEID_ROBOTUSERLOSING 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTUSERLOSING');
-	SET CONST_CATEID_ROBOTOCRDLOSING 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTOCRDLOSING');
-	SET CONST_CATEID_NEW 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_NEW');
-*/
-    SET CONST_CATEGROUPID_NEW 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_NEW');
-    SET CONST_CATEGROUPID_NORMAL 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_NORMAL');
-    SET CONST_CATEGROUPID_GOOD 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_GOOD');
     SET CONST_CATEGROUPID_PROBATION 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_PROBATION');
     SET CONST_CATEGROUPID_SMART 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_SMART');
     SET CONST_CATEGROUPID_RISKY 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_RISKY');
-    SET CONST_CATEGROUPID_INACTIVE 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_INACTIVE');
 
-    SET CONST_PARENTID_VVIP 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
-    SET CONST_PARENTID_WRAPPER 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
     SET CONST_PARENTID_PA 				    = CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
     SET CONST_PARENTID_POTENTIALPA 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
-    SET CONST_PARENTID_NORMAL 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
 
     DROP TEMPORARY TABLE IF EXISTS Temp_ProbationCustomer;    
 	CREATE TEMPORARY TABLE Temp_ProbationCustomer(	  	
@@ -115,13 +65,13 @@ BEGIN
 			CustID					BIGINT UNSIGNED	PRIMARY KEY
         ,   ScanTaggingType			TINYINT DEFAULT 0
 	); 
-
+/*
 	DROP TEMPORARY TABLE IF EXISTS Temp_PAWinlossStatus;    
 	CREATE TEMPORARY TABLE Temp_PAWinlossStatus(	
 			CustID					BIGINT UNSIGNED PRIMARY KEY
         , 	WinlossStatus			SMALLINT /*LOSING  = 0 (PROBATION), WINNING = 2 (NOT PROBATION);*/
 	);
-
+*/
 	/* EXCLUDE INTERNAL CUSTOMERS */      
 	CALL CTS_DC_ExcludeCustByCondition('Temp_NewClassification');
 
@@ -228,11 +178,42 @@ BEGIN
 				,	tmp.RelevantCategoryID = tmpCat.CategoryGroupID
 				,	tmp.RelevantIsPAProbation = tmpCat.IsPAProbation;
 */
-	ELSEIF ip_InputFlowID IN (6,50,51) THEN
-		/*Insert cust has pin/vvip into CTSCustomerClassification*/
-		/*clear temp for these cust*/
-
 	ELSEIF ip_InputFlowID IN (7,51) THEN	   
 		CALL CTS_DataCenter.CTS_DC_CustClassification_PA_RemoveOldTVSRequest();
+	ELSEIF ip_InputFlowID IN (6,50,51) THEN
+		/*Insert cust has pin/vvip into CTSCustomerClassification*/
+		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CustID, CTSCustID, SubscriberID, ParentID, CategoryID, Remark, CreatedDate
+		, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsDirect, InsertTime, TVSRequestID, IsParlay, SportType, IssueTypeID, IsAffectToDownline, RoleID) 
+		SELECT	tmp.CustID
+			,	tmp.CTSCustID
+			,	tmp.SubscriberID
+			,	CONST_PARENTID_PA
+			,	tmp.CategoryID
+			,	tmp.Remark
+			,	NOW() AS CreatedDate
+			,	tmp.CreatedBy
+			,	NOW() AS LastModifiedDate
+			,	tmp.CreatedBy AS LastModifiedBy
+			,	NOW() AS LastScannedDate
+			,	tmp.IsFromTVS
+			,	tmp.IsFromTW
+			,	tmp.IsFromCTS
+			,	tmp.IsFromAI
+			,	tmp.IsDirect
+			,	CURRENT_TIMESTAMP(3) AS InsertTime
+			,	tmp.TVSRequestID
+			,	tmp.IsTVSParlay
+			,	tmp.SportType
+			,	tmp.TVSIssueTypeID
+			,	0 AS IsAffectToDownline
+			,	tmp.RoleID
+		FROM Temp_NewClassification AS tmp
+		INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = tmp.CategoryID AND ccs.IsKeepOldCateID = 1;
+		WHERE tmp.IsExistVVIP = 1;
+		
+		/*clear temp for these cust*/
+		DELETE tmp
+    	FROM Temp_NewClassification AS tmp
+    	WHERE tmp.IsExistVVIP = 1;
 
     END IF;   
