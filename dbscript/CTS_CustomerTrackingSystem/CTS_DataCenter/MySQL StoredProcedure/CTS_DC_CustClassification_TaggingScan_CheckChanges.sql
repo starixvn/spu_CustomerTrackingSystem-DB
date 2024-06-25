@@ -15,13 +15,18 @@ BEGIN
 		Original: 
 		Revisions:
 			- 20230817@Jonas.Huynh: Created [RedmineID: #191400]
+            - 20240619@Jonas.Huynh: Renovate CC [Redmine ID: #205317] 
             
         Param's Explanation:     
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_TaggingScan_CheckChanges('[{"CustID": "43600692","TaggingID":"1","TaggingType": "1"}]');
 	*/ 
     
-    DECLARE	CONST_GROUP_NORMAL 	INT DEFAULT 200;
+    DECLARE	CONST_PARENTID_NORMAL 	INT;
+    DECLARE	CONST_PARENTID_WRAPPER 	INT;
+    
+    SET CONST_PARENTID_NORMAL 	= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
+    SET CONST_PARENTID_WRAPPER 	= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
     
     DROP TEMPORARY TABLE IF EXISTS Temp_TaggingCust;
     CREATE TEMPORARY TABLE Temp_TaggingCust(
@@ -49,14 +54,22 @@ BEGIN
 		 )) AS 	temp;
     
     INSERT IGNORE INTO Temp_CustCategory(CustID, CurrentTaggingID, CurrentTaggingType)
-    SELECT t.CustID, cate.TaggingID, cate.TaggingType
+    SELECT t.CustID
+		,	t.TaggingID
+        , 	t.TaggingType
     FROM Temp_TaggingCust AS t
-		INNER JOIN CTSCustomerClassification AS c ON c.CustID = t.CustId AND c.SportGroupID = CONST_GROUP_NORMAL
-		INNER JOIN CustomerCategory AS cate ON cate.CategoryID = c.CategoryID
-    WHERE cate.ParentID = 200 
-		AND cate.IsActive = 1
-		AND cate.IsUsedManually = 0
-        AND cate.ScanTaggingIntervalInSecond > 0; 
+		, LATERAL	
+			(	SELECT cc.CustID, cc.CategoryID, ca.ParentID, ca.ScanTaggingIntervalInSecond
+				FROM CTS_DataCenter.CTSCustomerClassification AS cc 
+					INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID 
+				WHERE t.CustID = cc.CustID 
+					AND ca.ParentID <> CONST_PARENTID_WRAPPER
+                    AND ca.IsActive = 1
+				ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
+				LIMIT 1
+		   ) tmplc ON t.CustID = tmplc.CustID
+	WHERE tmplc.ParentID = CONST_PARENTID_NORMAL
+        AND tmplc.ScanTaggingIntervalInSecond > 0;
            
 	SELECT DISTINCT t.CustID AS CustID
     FROM Temp_TaggingCust AS t

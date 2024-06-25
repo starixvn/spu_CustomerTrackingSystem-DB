@@ -19,20 +19,25 @@ BEGIN
             - 20230605@Jonas.Huynh [Redmine ID: #186684]: Renovate normal classification (phase2)
             - 20230915@Jonas.Huynh [Redmine ID: #193050]: HF Wrong Inactive Category for New and Realtime flow exclude S/R/P with not latest category
             - 20231024@Jonas.Huynh [Redmine ID: #193050]: Rollback code
-             
+			- 20240619@Jonas.Huynh [Redmine ID: #205317]: Renovate CC 
+            
 		Param's Explanation:
         
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_Normal_GetCurrentCategory('5941,5942,100,7681925');
 	 */ 	
-    DECLARE	CONST_GROUP_NORMAL 			INT DEFAULT 200;
-    DECLARE	CONST_GROUP_INACTIVE 		INT DEFAULT 1000;
-	DECLARE lv_CurrentTime 				DATETIME DEFAULT CURRENT_TIMESTAMP();
-	DECLARE lv_CurrentDate 				DATE DEFAULT CURRENT_DATE();
+	DECLARE	CONST_GROUP_PROBATION 	INT ;
+    DECLARE	CONST_GROUP_NORMAL		INT ;
+	DECLARE	CONST_GROUP_INACTIVE 	INT ;
     
-    DECLARE	CATEGORY_GROUP_PROBATION	INT DEFAULT 206;
-    DECLARE lv_LastDayProbation 		DATE DEFAULT DATE_SUB(lv_CurrentDate, INTERVAL 14 DAY); /*Up to 15 Last Day*/
-    
+	DECLARE lv_CurrentTime 			DATETIME DEFAULT CURRENT_TIMESTAMP();
+	DECLARE lv_CurrentDate 			DATE DEFAULT CURRENT_DATE();
+    DECLARE lv_LastDayProbation 	DATE DEFAULT DATE_SUB(lv_CurrentDate, INTERVAL 14 DAY); /*Up to 15 Last Day*/
+       
+	SET CONST_PARENTID_NORMAL 		= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
+    SET CONST_GROUP_INACTIVE 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_INACTIVE');
+    SET CONST_GROUP_PROBATION 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_PROBATION');
+        
     DROP TEMPORARY TABLE IF EXISTS Temp_InputCust;
     CREATE TEMPORARY TABLE Temp_InputCust(
 			CustID 		BIGINT UNSIGNED PRIMARY KEY
@@ -68,36 +73,31 @@ BEGIN
         INSERT INTO Temp_Cust(CustID, CreatedDate)
 		SELECT tmpIc.CustID, cus.CreatedDate
         FROM Temp_InputCust AS tmpIc
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpIc.CustID = cus.CustID AND cus.CustSubID = 0
-			LEFT JOIN CTS_DataCenter.PinCustomerCategory AS pin ON pin.CTSCustID = cus.CTSCustID
-		WHERE pin.CTSCustID IS NULL;
-
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpIc.CustID = cus.CustID AND cus.CustSubID = 0;
     END IF;	
 	
     #2. Get latest normal category
 	INSERT INTO Temp_CustCategory(CustID, CategoryID, CategoryGroup)
-	SELECT 	tmpIc.CustID
-		,	cls.CategoryID
-        ,	cc.CategoryGroup
-	FROM Temp_Cust AS tmpIc
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls  ON cls.CustID = tmpIc.CustID
-        INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cls.CategoryID
-	WHERE cls.SportGroupID = CONST_GROUP_NORMAL;
-
-    INSERT INTO Temp_CustCategory(CustID, CategoryID, CategoryGroup)
-	SELECT 	tmpIc.CustID
-		, 	cls.CategoryID
-		,	cc.CategoryGroup
-	FROM Temp_Cust AS tmpIc
-		INNER JOIN CTS_DataCenter.CTSCustomerClassificationOldCategory  AS cls ON cls.CustID = tmpIc.CustID
-        INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cls.CategoryID
-	WHERE cls.SportGroupID = CONST_GROUP_NORMAL;
-    
+	SELECT 	tmpc.CustID
+		,	tmplc.CategoryID
+        ,	tmplc.CategoryGroup
+	FROM Temp_Cust AS tmpc
+		, LATERAL	
+			(	SELECT cc.CustID, cc.CategoryID, ca.CategoryGroup
+				FROM CTS_DataCenter.CTSCustomerClassification AS cc 
+					INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
+				WHERE tmpc.CustID = cc.CustID
+					AND ca.IsActive = 1
+				ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
+				LIMIT 1
+		   ) tmplc 
+        INNER JOIN CTS_DataCenter.CustomerCategorySettings AS s ON s.CategoryType = CONST_PARENTID_NORMAL AND s.CategoryID = tmlc.CategoryID;
+   
     #3. Get Probation info
     UPDATE Temp_CustCategory AS tmpCc
 		INNER JOIN CTS_DataCenter.ProbationAccountMonitor AS pro ON pro.CustID = tmpCc.CustID
-	SET IsProbationLastDay = (CASE WHEN pro.CreatedDate <= lv_LastDayProbation THEN 1 /*Up to Smart, Risky*/ ELSE 0 END)
-	WHERE tmpCc.CategoryGroup = CATEGORY_GROUP_PROBATION;
+        INNER JOIN CTS_DataCenter.CustomerCategorySettings AS s ON s.CategoryType = CONST_GROUP_PROBATION AND s.CategoryID = tmpCc.CategoryID
+	SET IsProbationLastDay = (CASE WHEN pro.CreatedDate <= lv_LastDayProbation THEN 1 /*Up to Smart, Risky*/ ELSE 0 END);
            
     #4. Return data set
 	SELECT	DISTINCT tmpCust.CustID
