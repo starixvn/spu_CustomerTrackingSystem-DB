@@ -121,7 +121,7 @@ sp: BEGIN
         IF(lv_LastSequenceID < lv_MaxSequenceID) THEN # If Has New Trans   
 
 			SELECT	mms.MatchID
-				,	MIN(mms.SportType) AS IsMajorLeague
+				,	MIN(mms.SportType) AS SportType
                 ,	MIN(mms.IsMajorLeague) AS IsMajorLeague
 				,	mms.ScoreDiff
 				,	mms.BettypeID
