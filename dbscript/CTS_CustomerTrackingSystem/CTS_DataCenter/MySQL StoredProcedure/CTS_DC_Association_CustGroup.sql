@@ -10,27 +10,18 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_CustGroup`(
     SQL SECURITY INVOKER
 BEGIN
 	/*
-		Created:	20230105@Casey.Huynh
-		Task :		CTS_DC_MatchMonitor_Details_MergeReasonGroup
+		Created:	20240415@Casey.Huynh
+		Task :		Enhance Group Betting Match Monitor
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
-			- 	20230222@Casey.Huynh: Created [Redmine ID: 181995]   
-            -	20240201@Casey.Huynh: Enhance Performance [Redmine ID: 197706]
+			- 	20240610@Casey.Huynh: Created [Redmine ID: #203319]   
             
 		Param's Explanation (filtered by):
 		
 		Example:
-        This Function Is Detect Group Association BY input Assocation list table
-            DROP TEMPORARY TABLE IF EXISTS Temp_Graph;
-			CREATE TEMPORARY TABLE Temp_Graph(
-					OrigID 	BIGINT UNSIGNED
-				,	OrigID	BIGINT UNSIGNED
-				,	PRIMARY KEY PK_Temp_Association(OrigID,OrigID)
-			);
-		
-			CALL CTS_DC_Association_CustGroup(@ip_Device:='[{"O":1,"D":2},{"O":2,"D":3},{"O":4,"D":5}]'
+			CALL CTS_DC_Association_CustGroup_xpre(@ip_Device:='[{"O":1,"D":2},{"O":2,"D":3},{"O":4,"D":5}]'
             , @ip_AI:='[]'
             , @ip_IP:='[]'
             , @ip_SharedMatches:='[]');
