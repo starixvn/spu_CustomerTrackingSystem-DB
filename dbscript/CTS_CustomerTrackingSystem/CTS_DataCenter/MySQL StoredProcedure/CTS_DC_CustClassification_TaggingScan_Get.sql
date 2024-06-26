@@ -27,9 +27,9 @@ BEGIN
 	DECLARE CONST_CATEGROUPID_SMART 	INT ;
     DECLARE CONST_CATEGROUPID_RISKY 	INT ;
 
-    DECLARE lv_BatchSize 				BIGINT;
-    DECLARE lv_LastCategoryID 			INT;
-    DECLARE lv_NextCategoryID 			INT;
+    DECLARE lv_BatchSize 				INT;
+    DECLARE lv_LastCategoryID 			BIGINT UNSIGNED;
+    DECLARE lv_NextCategoryID 			BIGINT UNSIGNED;
     DECLARE lv_LastCustID 				BIGINT UNSIGNED;
     DECLARE lv_NextCustID 				BIGINT UNSIGNED;
     
