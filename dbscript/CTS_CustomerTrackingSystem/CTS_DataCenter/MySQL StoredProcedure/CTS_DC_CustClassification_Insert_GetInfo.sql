@@ -56,23 +56,30 @@ BEGIN
 			,	IsExistVVIP					BIT(1) DEFAULT 0
 			,	IsLicenseeVIP				BIT(1) DEFAULT 0
 			,	IsLicenseeBA				BIT(1) DEFAULT 0
-			,	IsDirect					BIT(1) DEFAULT 0
+			,	IsAffectedFromUpline		BIT(1) DEFAULT 0
 			,	SportID						SMALLINT UNSIGNED  DEFAULT 0	
 			,	TargetCC					SMALLINT UNSIGNED
 			,	CategoryPriority			SMALLINT UNSIGNED
 			,	CustomerClassPriority		SMALLINT UNSIGNED
 			,	CategoryID					INT
+			,	ParentID					INT UNSIGNED
 			,	IsDangerProbation			BIT(1) DEFAULT 0
 			,	IsDataChanged				BIT(1) DEFAULT 0	/*0: No change category => No Action*/
+			,	IsReturnData				BIT(1) DEFAULT 0
 			,	PRIMARY KEY (CustID,SportID)
 		);
 
 		IF ip_InputFlowID = 1 THEN /*VVIP*/
-			INSERT INTO Temp_NewClassification (CustID, CTSCustID, SubscriberID, RoleID, Remark, CreatedBy, IsExistVVIP, IsDirect)
+			INSERT INTO Temp_NewClassification (
+					CustID, CTSCustID, SubscriberID, RoleID, Remark, CreatedBy, IsExistVVIP, IsAffectedFromUpline
+				,	ParentID, CategoryID, IsReturnData)
 			SELECT DISTINCT 
 					tmpJs.CustID, tmpJs.CTSCustID, tmpJs.SubscriberID, tmpJs.RoleID, tmpJs.Remark, tmpJs.CreatedBy
 				,	(CASE WHEN cls.CustID IS NOT NULL THEN 1 ELSE 0 END) AS IsExistVVIP
-				,	(CASE WHEN ip_FromAction = 1 THEN 1 ELSE 0 END) AS IsDirect
+				,	(CASE WHEN ip_FromAction = 1 THEN 1 ELSE 0 END) AS IsAffectedFromUpline
+				,	CONST_PARENTID_VVIP
+				,	CONST_CATEID_VVIP
+				,	(CASE WHEN cls.CustID IS NOT NULL THEN 0 ELSE 1 END) AS IsReturnData
 			FROM JSON_TABLE(ip_CustJson,
 							 "$[*]" COLUMNS(
 													CustID 			BIGINT UNSIGNED	PATH "$.CustID"
@@ -91,8 +98,11 @@ BEGIN
 			
 			
 		ELSEIF ip_InputFlowID = 2 THEN /*SpecialCC*/
-			INSERT INTO Temp_NewClassification (CustID, CTSCustID, SportID, SubscriberID, Remark, CreatedBy, IsLicenseeVIP, TargetCC)
-			SELECT tmpJs.CustID, tmpJs.CTSCustID, tmpJs.SubscriberID, tmpJs.SportID, tmpJs.Remark, tmpJs.CreatedBy, tmpJs.IsLicenseeVIP, tmpJs.TargetCC
+			INSERT INTO Temp_NewClassification (
+				CustID, CTSCustID, SportID, SubscriberID, Remark, CreatedBy, IsLicenseeVIP, TargetCC, IsDataChanged, IsReturnData)
+			SELECT 	tmpJs.CustID, tmpJs.CTSCustID, tmpJs.SubscriberID, tmpJs.SportID, tmpJs.Remark, tmpJs.CreatedBy, tmpJs.IsLicenseeVIP, tmpJs.TargetCC
+				, 	CASE WHEN tmpJs.IsLicenseeVIP = 1 AND cls.CustID IS NOT NULL THEN 1 ELSE 0  AS IsDataChanged
+				, 	1 AS IsReturnData
 			FROM JSON_TABLE(ip_CustJson,
 							 "$[*]" COLUMNS(
 													CustID 			BIGINT UNSIGNED		PATH "$.CustID"
@@ -100,10 +110,14 @@ BEGIN
 												,	SportID			SMALLINT UNSIGNED   PATH '$.SportID'
 												,	SubscriberID 	INT UNSIGNED		PATH "$.SubscriberID"
 												,	IsLicenseeVIP	BIT(1)				PATH "$.IsLicenseeVIP"            
-												,	TargetCC	SMALLINT				PATH "$.CustomerClass"            
+												,	TargetCC		SMALLINT			PATH "$.CustomerClass"            
 												,	CreatedBy 		INT UNSIGNED		PATH "$.CreatedBy"          
 												,	Remark			VARCHAR(500)		PATH "$.Remark"
-											 )) AS tmpJs;
+											 )) AS tmpJs
+				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = tmpJs.CustID 
+																				AND cls.ParentID = CONST_PARENTID_WRAPPER
+																				AND cls.CategoryID = CONST_CATEID_LICVIPSUSPICIOUS
+				;
 			
 		ELSEIF ip_InputFlowID = 3 THEN	/*LicVIP*/
 			INSERT INTO Temp_NewClassification (CustID, CTSCustID, SubscriberID, CreatedBy, IsLicenseeVIP)
@@ -179,6 +193,7 @@ BEGIN
 			
 			,	IsDataChanged				BIT(1) DEFAULT 0 	/* 0: Not Change, 1: Changed (IF call from SpecialCC function THEN 1 ELSE 0) */
 			,	DataChangeType				TINYINT DEFAULT 0	/* 0: New OR Change Category, 1: Change Probation Status, 2: NOT CHANGE */
+			,	SourceTypeID      			SMALLINT
 
 			, 	WinlossStatus				SMALLINT /*LOSING  = 0 (PROBATION), KEEPSTATE = 1 (NOT CHANGE), WINNING = 2 (NOT PROBATION);*/
 			
@@ -212,7 +227,7 @@ BEGIN
 			,	LastModifiedDate			DATETIME(3)
 			, 	ActionType					SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN; 5: Not satisfy Pass Probation*/
 			,	CreatedBy					INT UNSIGNED
-			,	IsDirect					BIT(1) DEFAULT 0
+			,	IsAffectedFromUpline		BIT(1) DEFAULT 0
 
 			, 	PRIMARY KEY (CustID, DWCategoryGroupID)  
 		); 
