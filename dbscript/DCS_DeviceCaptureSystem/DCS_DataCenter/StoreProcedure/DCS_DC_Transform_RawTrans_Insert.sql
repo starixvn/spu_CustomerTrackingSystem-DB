@@ -27,7 +27,7 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_DataCenter.DCS_DC_Transform_RawTrans_Insert('[{"Action" : "loginTest","ActionResult" : "login -> successfully","DeviceCode" : "a707e6620cce48a4ada3cd3887e5d77f","FingerprintCode" : "f4cf2f4634bfd83191d70c4f1913cc79878cce5f;4c7acb513373c49e797f2f35c6e1f99d","InvalidDevice" : null,"IP" : "103.199.41.17","IPId" : 1741105425,"LoginName" : "test006","PluginID" : null,"SubscriberName" : "11BET","TransStatus" : "0","TransTime" : "2021-11-21 00:00:00.2418","URL" : "http://l9j7ma.cx5888.com/FpsHandler","UserAgent" : "Mozilla/5.0 (Linux; Android 11; CPH2113) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Mobile Safari/537.36","FlaggedCode":"unknown", "BotDetection":"", "CookieCode":"AAA5", "FingerprintAttribute": {"FingerPrintCode":"FingerPrintCode2","Attribute":{"doNotTrack":"a","webglRenderer":"b","audio":"c","canvasPrint":"d"},"Accept":null,"Encoding":null,"Headers":null,"OSName":null,"BrowserName":null,"BrowserVersion":null,"UserAgent":null,"Platform":null,"BrowserInstanceCode":"BrowserInstanceCode1","BrowserFamilyCode":null}, "RawUserAgent":"Chrome123", "RawUserAgentCode":"RawUserAgentCode123","RawUserAgentInfo":{"ClientName":"Chrome","ClientVersion":"123.1","OSName":"Window"}, "RawJsChallengeInfo":{"CreatedTime":"2021-11-21 00:00:00.2418","ChallengeCode": "21321-32123-32131-9428-7da2941624ac", "ChallengeIds":"1,2", "Expect":"12,3", "Actual":"12,3", "Parameters":"2,3", "ExeServerTimeInSecond": 10, "ExeClientTimeInSecond": 5, "Result" : 1}}]');
+			CALL DCS_DataCenter.DCS_DC_Transform_RawTrans_Insert('[{"LoginName":"testz","SubscriberName":"Alpha","TransTime":"2024-06-26T09:30:22.1678","CreatedDate":"0001-01-01T00:00:00","DeviceCode":"464d165f74c441ee924c2c7adedba28f","FingerprintCode":"75f5834ffbb965923fa1b4e867c47beed230e081;58e4ec9612dd39a0cd99a0d7e1fe9ce4","FingerprintMoreInfo":"rGMAUmSIRW5iU9EJCzUkbsp/BtnFdh0z0sHpjkVJDY8=","UserAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36","IP":"::1","FakeIP":"","IPId":1,"IsIPV6":true,"PluginID":0,"URL":"http://localhost:60207","Action":"Login","ActionResult":"Successfull","InvalidDevice":null,"TransStatus":0,"FPSTransId":0,"FlaggedCode":"Human","BotDetection":"","BotComponent":"","CookieCode":"4132559cff0869c7e6958530cb914fa17f16f3fea6c4bf389604b02f5966d34c","RawFingerPrintCode":null,"BrowserInstanceCode":"a811b6c2f6a5d39d8e6cc9e5a807d025","BrowserFamilyCode":"7a8f56652855ae80aae2e34dc5dc4e81","ChallengeCode":"dd61a2aab50f41738effdeacc3c927ff","RawUserAgentCode":"a16ddaab909d2cf27fce353f26dd2ff2"}]');
 
 	*/
 	
@@ -39,32 +39,32 @@ BEGIN
     
 	CREATE TEMPORARY TABLE Temp_Transaction(
 			ID							INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
-		,	LoginName					VARCHAR(100) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NOT NULL	
-		,	SubscriberName				VARCHAR(50) 						NOT NULL
-		,	TransTime					TIMESTAMP(4)	 					NOT NULL
-		,	DeviceCode					VARCHAR(32) 						NULL		COMMENT 'Device Inject Code: 32 characters is auto generated'
-		,	FingerprintCode				VARCHAR(620)						NULL		COMMENT 'Device Fingerprint Codes, the hashcode bases on the set attributes'    
-		,	UserAgent					VARCHAR(1000)						NULL
-		,	IP							VARCHAR(50) 						NULL
-        ,	IPID						DECIMAL(50,0)						NULL
-		,	PluginID					BIGINT 								NULL	
-		,	URL							VARCHAR(500) 						NULL
-        ,	`Action`					VARCHAR(100) 						NULL
-		,	ActionResult				VARCHAR(100) 						NULL
-		,	InvalidDevice				VARCHAR(1000)						CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NULL
-		,	TransStatus					BIT(16)								NULL
-        ,	FlaggedCode					VARCHAR(100)						NULL
-        ,	BotDetection				LONGTEXT							NULL
-        ,	BotDetectionValue			BIT(32)								NULL		DEFAULT 0
-        ,	BotComponentID				BIGINT UNSIGNED						NULL
-        ,	BotComponent				LONGTEXT							NULL
-        ,	BotComponentCode			VARCHAR(100)						NULL
-		,	FakeIP						VARCHAR(100) 						NULL
-        ,	CookieCode					VARCHAR(64)							NULL
-        ,	RawFingerPrintCode			VARCHAR(64)							NULL
-        ,	BrowserInstanceCode			VARCHAR(64)							NULL
-        ,	RawUserAgentCode			VARCHAR(64)							NULL
-        ,	ChallengeCode				VARCHAR(64)							NULL
+		,	LoginName					VARCHAR(100) 				NOT NULL	
+		,	SubscriberName				VARCHAR(50) 				NOT NULL
+		,	TransTime					TIMESTAMP(4)	 			NOT NULL
+		,	DeviceCode					VARCHAR(32) 				NULL		COMMENT 'Device Inject Code: 32 characters is auto generated'
+		,	FingerprintCode				VARCHAR(620)				NULL		COMMENT 'Device Fingerprint Codes, the hashcode bases on the set attributes'    
+		,	UserAgent					VARCHAR(1000)				NULL
+		,	IP							VARCHAR(50) 				NULL
+        ,	IPID						DECIMAL(50,0)				NULL
+		,	PluginID					BIGINT 						NULL	
+		,	URL							VARCHAR(500) 				NULL
+        ,	`Action`					VARCHAR(100) 				NULL
+		,	ActionResult				VARCHAR(100) 				NULL
+		,	InvalidDevice				VARCHAR(1000)				CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' NULL
+		,	TransStatus					BIT(16)						NULL
+        ,	FlaggedCode					VARCHAR(100)				NULL
+        ,	BotDetection				LONGTEXT					NULL
+        ,	BotDetectionValue			BIT(32)						NULL		DEFAULT 0
+        ,	BotComponentID				BIGINT UNSIGNED				NULL
+        ,	BotComponent				LONGTEXT					NULL
+        ,	BotComponentCode			VARCHAR(100)				NULL
+		,	FakeIP						VARCHAR(100) 				NULL
+        ,	CookieCode					VARCHAR(64)					NULL
+        ,	RawFingerPrintCode			VARCHAR(64)					NULL
+        ,	BrowserInstanceCode			VARCHAR(64)					NULL
+        ,	RawUserAgentCode			VARCHAR(64)					NULL
+        ,	ChallengeCode				VARCHAR(64)					NULL
 
 		,	INDEX IX_Temp_Transaction_BotComponentCode(BotComponentCode)
     );     
@@ -128,7 +128,6 @@ BEGIN
 				)
 		   ) AS  rt; 
            
-	select CookieCode, RawFingerPrintCode, BrowserInstanceCode,RawUserAgentCode,ChallengeCode from Temp_Transaction;
     /*******BotDetection, BotComponent********************/           
 	INSERT INTO Temp_BotDetection(ID, BotDetectionValue)
     SELECT 	tmp.ID

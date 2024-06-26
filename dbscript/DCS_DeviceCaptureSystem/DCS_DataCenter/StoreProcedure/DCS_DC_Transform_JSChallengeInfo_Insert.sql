@@ -32,7 +32,6 @@ BEGIN
     
 	CREATE TEMPORARY TABLE Temp_JSChallengeInfo(
 			ID				 			INT UNSIGNED AUTO_INCREMENT		NOT NULL
-		,	CreatedTime 				TIMESTAMP(4)    				NOT NULL
 		,	ChallengeCode				VARCHAR(50) 					NOT NULL
 		,	ChallengeIds				VARCHAR(50) 					NULL DEFAULT ''
 		,	Expect		 				VARCHAR(100) 					NULL DEFAULT ''
@@ -47,9 +46,8 @@ BEGIN
     );
     
     
-    INSERT INTO Temp_JSChallengeInfo(CreatedTime, ChallengeCode, ChallengeIds, Expect, Actual, Parameters, ExeServerTimeInSecond, ExeClientTimeInSecond, Result, ErrMsg)
-    SELECT	rt.CreatedTime
-		,	rt.ChallengeCode
+    INSERT INTO Temp_JSChallengeInfo(ChallengeCode, ChallengeIds, Expect, Actual, Parameters, ExeServerTimeInSecond, ExeClientTimeInSecond, Result, ErrMsg)
+    SELECT	rt.ChallengeCode
 		,	rt.ChallengeIds
 		,	rt.Expect
 		,	rt.Actual
@@ -61,8 +59,7 @@ BEGIN
 	FROM JSON_TABLE(
 			ip_JSChallengeInfoJson,
 			 "$[*]" COLUMNS(
-						CreatedTime				TIMESTAMP(4) 	PATH "$.CreatedTime"
-					,	ChallengeCode			VARCHAR(50) 	PATH "$.ChallengeCode"
+						ChallengeCode			VARCHAR(50) 	PATH "$.ChallengeCode"
 					,	ChallengeIds			VARCHAR(50) 	PATH "$.ChallengeIds"
 					,	Expect					VARCHAR(100) 	PATH "$.Expect"
 					,	Actual					VARCHAR(100) 	PATH "$.Actual"
@@ -76,7 +73,7 @@ BEGIN
 	WHERE rt.ChallengeCode IS NOT NULL;
     
 	INSERT IGNORE INTO DCS_DataCenter.JSChallengeInfo(CreatedTime, ChallengeCode, ChallengeIds, Expect, Actual, Parameters, ExeServerTimeInSecond, ExeClientTimeInSecond, Result, ErrMsg)
-	SELECT	tmp.CreatedTime
+	SELECT	lv_CurrentDate AS CreatedTime
 		,	tmp.ChallengeCode
 		,	tmp.ChallengeIds
 		,	tmp.Expect

@@ -63,8 +63,8 @@ BEGIN
 	FROM JSON_TABLE(
 			ip_RawUserAgentJson,
 			 "$[*]" COLUMNS(
-						RawUserAgent		VARCHAR(1000) 	PATH "$.RawUserAgent"
-					,	RawUserAgentCode	VARCHAR(100) 	PATH "$.RawUserAgentCode"
+						RawUserAgent		VARCHAR(1000) 	PATH "$.UserAgent"
+					,	RawUserAgentCode	VARCHAR(100) 	PATH "$.UserAgentCode"
 					,	ClientType			VARCHAR(15) 	PATH "$.ClientType"
 					,	ClientName			VARCHAR(100) 	PATH "$.ClientName"
 					,	ClientVersion		VARCHAR(50) 	PATH "$.ClientVersion"
