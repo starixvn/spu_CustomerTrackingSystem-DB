@@ -217,3 +217,5 @@ BEGIN
     	WHERE tmp.IsExistVVIP = 1;
 
     END IF;   
+END$$
+DELIMITER ;
