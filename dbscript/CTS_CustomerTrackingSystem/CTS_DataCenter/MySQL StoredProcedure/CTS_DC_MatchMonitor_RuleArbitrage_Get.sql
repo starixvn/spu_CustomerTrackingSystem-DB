@@ -21,7 +21,9 @@ sp: BEGIN
 		Param's Explanation (filtered by):	
 
 		Example:
-			CALL  CTS_DC_MatchMonitor_RuleArbitrage_Get(@ip_LiveIndicator:=1,@op_MaxSequenceID);
+			CALL  CTS_DC_MatchMonitor_RuleArbitrage_Get_casey(@ip_LiveIndicator:=0,@op_MaxSequenceID);
+            SELECT * FROM SystemParameter WHERE ParameterID = 128
+            Create table MatchMonitorStagingArbitrageNonLive_Casey SELECT * FROM MatchMonitorStagingArbitrageNonLive
 	*/
     DECLARE CONST_LOG					TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
     DECLARE CONST_MMRULEGROUP_ARBITRAGE	INT DEFAULT 5;
@@ -83,7 +85,7 @@ sp: BEGIN
     WHERE s.ParameterID = 129;
 
 	IF ip_LiveIndicator = 0 THEN #=============Live Trans==================
-		
+
 		SELECT sys.ParameterValue
         INTO lv_LastSequenceID
         FROM CTS_DataCenter.SystemParameter AS sys
@@ -101,7 +103,7 @@ sp: BEGIN
         GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.HDP, mms.GroupID
         HAVING COUNT(DISTINCT mms.CustID) > 1 
 					AND COUNT(DISTINCT mms.Betteam) = 2;
-                            
+                      
         #==========Get Next Trans In TimeStep==================       
         SELECT mms.TransDateToSecond + lv_Rule_TimeStep
         INTO lv_MaxTime
@@ -119,30 +121,36 @@ sp: BEGIN
 		LIMIT 1;
 
         IF(lv_LastSequenceID < lv_MaxSequenceID) THEN # If Has New Trans   
-
-			SELECT	mms.MatchID
-				,	MIN(mms.SportType) AS SportType
-                ,	MIN(mms.IsMajorLeague) AS IsMajorLeague
-				,	mms.ScoreDiff
-				,	mms.BettypeID
-				,	mms.BetID
-				,	mms.HDP
-                ,	GROUP_CONCAT(DISTINCT mms.CTSCustID) AS CTSCustIDList
-                ,	CASE WHEN COUNT(DISTINCT CASE WHEN mms.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET) THEN mms.CTSCustID ELSE NULL END) > 1 
-												THEN GROUP_CONCAT(DISTINCT CASE WHEN mms.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET) THEN mms.CTSCustID ELSE NULL END)
-								ELSE NULL END AS AgentDetect_CTSCustIDList
-				,	GROUP_CONCAT(mms.SequenceID) AS SequenceIDList
-			FROM CTS_DataCenter.MatchMonitorStagingArbitrageNonLive AS mms
-				INNER JOIN Temp_TotalStake AS tmpTs ON tmpTs.IsMajorLeague = mms.IsMajorLeague
-				LEFT JOIN Temp_OldGroup AS tmpOg ON mms.MatchID = tmpOg.MatchID AND mms.ScoreDiff = tmpOg.ScoreDiff AND mms.BettypeID = tmpOg.BettypeID
-													AND mms.BetID = tmpOg.BetID AND mms.HDP = tmpOg.HDP	AND (mms.GroupID = tmpOg.GroupID OR mms.GroupID = 0)
-			WHERE mms.SequenceID <= lv_MaxSequenceID 
-			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.HDP, tmpOg.GroupID, tmpTs.TotalStake
-			HAVING COUNT(DISTINCT mms.CustID) > 1
-				AND COUNT(DISTINCT mms.Betteam) = 2
-                AND SUM(mms.Stake) > tmpTs.TotalStake
-			ORDER BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.HDP, tmpOg.GroupID, tmpTs.TotalStake;
-
+				            
+            SELECT tmp.MatchID, MIN(tmp.SportType) AS SportType, MIN(tmp.IsMajorLeague) AS IsMajorLeague , tmp.ScoreDiff, tmp.BettypeID, tmp.BetID, tmp.HDP
+				, GROUP_CONCAT(tmp.CTSCustID)  AS CTSCustIDList
+				, CASE WHEN COUNT(DISTINCT tmp.Agent_CTSCustID) > 0 THEN GROUP_CONCAT(tmp.Agent_CTSCustID) ELSE NULL END AS AgentDetect_CTSCustIDList
+				, GROUP_CONCAT(tmp.SequenceIDList)  AS SequenceIDList				
+			FROM (SELECT	mms.MatchID
+						,	MIN(mms.SportType) AS SportType
+						,	MIN(mms.IsMajorLeague) AS IsMajorLeague
+						,	mms.ScoreDiff
+						,	mms.BettypeID
+						,	mms.BetID
+						,	mms.HDP
+                        ,	tmpOg.GroupID
+						,	MIN(mms.Betteam) AS MinBetteam
+                        ,	MAX(mms.Betteam) AS MaxBetteam
+						,	mms.CTSCustID
+						,	CASE WHEN mms.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET) THEN mms.CTSCustID ELSE NULL END AS Agent_CTSCustID
+						,	GROUP_CONCAT(mms.SequenceID) AS SequenceIDList
+				FROM CTS_DataCenter.MatchMonitorStagingArbitrageNonLive AS mms
+					INNER JOIN Temp_TotalStake AS tmpTs ON tmpTs.IsMajorLeague = mms.IsMajorLeague
+					LEFT JOIN Temp_OldGroup AS tmpOg ON mms.MatchID = tmpOg.MatchID AND mms.ScoreDiff = tmpOg.ScoreDiff AND mms.BettypeID = tmpOg.BettypeID
+														AND mms.BetID = tmpOg.BetID AND mms.HDP = tmpOg.HDP	AND (mms.GroupID = tmpOg.GroupID OR mms.GroupID = 0)
+				WHERE mms.SequenceID <= lv_MaxSequenceID 
+				GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.HDP, tmpOg.GroupID, mms.CTSCustID, mms.SubscriberID, tmpTs.TotalStake
+                HAVING SUM(mms.Stake) >= tmpTs.TotalStake
+				) AS tmp
+			GROUP BY tmp.MatchID, tmp.ScoreDiff, tmp.BettypeID, tmp.BetID, tmp.HDP, tmp.GroupID
+            HAVING COUNT(DISTINCT tmp.CTSCustID) > 1 AND MIN(tmp.MinBetteam) <> MAX(tmp.MaxBetteam)
+			ORDER BY tmp.MatchID, tmp.ScoreDiff, tmp.BettypeID, tmp.BetID, tmp.HDP, tmp.GroupID;
+            
             SET op_MaxSequenceID = lv_MaxSequenceID ;
             
 		ELSE # Get Next Trans > 1 minute to Clear Trans
@@ -157,5 +165,3 @@ sp: BEGIN
  
 END$$
 DELIMITER ;
-
-
