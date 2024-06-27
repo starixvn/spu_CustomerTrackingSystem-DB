@@ -12,13 +12,24 @@ ADD COLUMN `CookieCode` VARCHAR(64) NULL,
 ADD COLUMN `RawFingerPrintCode` VARCHAR(64) NULL,
 ADD COLUMN `BrowserInstanceCode` VARCHAR(64) NULL,
 ADD COLUMN `RawUserAgentCode` VARCHAR(64) NULL,
-ADD COLUMN `ChallengeCode` VARCHAR(64) NULL,
+ADD COLUMN `ChallengeCode` VARCHAR(50) NULL,
 DROP COLUMN `CookieID`,
 DROP COLUMN `RawFingerPrintID`,
 DROP COLUMN `BrowserInstanceID`,
 DROP COLUMN `RawUserAgentID`,
 DROP COLUMN `JsChallengeID`;
 
+ALTER TABLE `DCS_DataCenter`.`ProcessedTransaction`
+ADD COLUMN `CookieCode` VARCHAR(64) NULL,
+ADD COLUMN `RawFingerPrintCode` VARCHAR(64) NULL,
+ADD COLUMN `BrowserInstanceCode` VARCHAR(64) NULL,
+ADD COLUMN `RawUserAgentCode` VARCHAR(64) NULL,
+ADD COLUMN `ChallengeCode` VARCHAR(50) NULL,
+DROP COLUMN `CookieID`,
+DROP COLUMN `RawFingerPrintID`,
+DROP COLUMN `BrowserInstanceID`,
+DROP COLUMN `RawUserAgentID`,
+DROP COLUMN `JsChallengeID`;
 
 
 ALTER TABLE `DCS_DataCenter`.`JSChallengeInfo`

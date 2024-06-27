@@ -64,7 +64,7 @@ BEGIN
         ,	RawFingerPrintCode			VARCHAR(64)					NULL
         ,	BrowserInstanceCode			VARCHAR(64)					NULL
         ,	RawUserAgentCode			VARCHAR(64)					NULL
-        ,	ChallengeCode				VARCHAR(64)					NULL
+        ,	ChallengeCode				VARCHAR(50)					NULL
 
 		,	INDEX IX_Temp_Transaction_BotComponentCode(BotComponentCode)
     );     
@@ -124,7 +124,7 @@ BEGIN
                             ,	RawFingerPrintCode		VARCHAR(64)		PATH "$.RawFingerPrintCode"
                             ,	BrowserInstanceCode		VARCHAR(64)		PATH "$.BrowserInstanceCode"
                             ,	RawUserAgentCode		VARCHAR(64)		PATH "$.RawUserAgentCode"
-                            ,	ChallengeCode			VARCHAR(64)		PATH "$.ChallengeCode"
+                            ,	ChallengeCode			VARCHAR(50)		PATH "$.ChallengeCode"
 				)
 		   ) AS  rt; 
            

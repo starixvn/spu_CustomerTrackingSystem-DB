@@ -31,6 +31,7 @@ BEGIN
 			- 20230426@Jonathan.Doan: Get BotDetectionValue from RawTransaction [Redmine ID: #186644]
 			- 20230807@Terry.Nguyen: Add Fake IP [Redmine: 191829]
 			- 20231123@Jonathan.Doan: Integrate FPSjs Phrase 2 [Redmine: 196656]
+			- 20240627@Jonathan.Doan: Change data flow v5.1 [Redmine ID: #206403]
 	    Param's Explanation (filtered by):
 		Example:
 			CALL DCS_DC_Transform_Transaction_Insert(1,200);
@@ -66,12 +67,17 @@ BEGIN
         ,	BrowserInstanceID		BIGINT UNSIGNED
         ,	RawFingerPrintID		BIGINT UNSIGNED
         ,	RawUserAgentID			BIGINT UNSIGNED
+        ,	CookieCode				VARCHAR(64)
+        ,	RawFingerPrintCode		VARCHAR(64)
+        ,	BrowserInstanceCode		VARCHAR(64)
+        ,	RawUserAgentCode		VARCHAR(64)
+        ,	ChallengeCode			VARCHAR(50)
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_RawTransactionInfo;
 	CREATE TEMPORARY TABLE  Temp_RawTransactionInfo(
 		    TransID		    BIGINT UNSIGNED NOT NULL
-		,   URLID			INT 
+		,   URLID			INT
         ,   AccountID		BIGINT	UNSIGNED
         ,   INDEX           IX_Temp_RawTransactionInfo_TransID(TransID)
     );
@@ -102,7 +108,7 @@ BEGIN
     WHERE VGroup = "DCS_Device_Transform" 
         AND VName = "MinCreatedDate";
         
-	INSERT INTO Temp_RawTransaction(TransID, LoginName, TransTime, SubscriberID, SubscriberType, DeviceCode , URLDetails, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, FingerprintCode, BotDetectionValue, BotComponentID, FakeIP, CookieID, BrowserInstanceID, RawFingerPrintID, RawUserAgentID)
+	INSERT INTO Temp_RawTransaction(TransID, LoginName, TransTime, SubscriberID, SubscriberType, DeviceCode , URLDetails, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, FingerprintCode, BotDetectionValue, BotComponentID, FakeIP, CookieCode, RawFingerPrintCode, BrowserInstanceCode, RawUserAgentCode, ChallengeCode)
 	SELECT  rt.TransID
 	    ,   rt.LoginName
         ,   rt.TransTime
@@ -122,16 +128,25 @@ BEGIN
         ,   rt.BotDetectionValue
         ,   rt.BotComponentID
         ,   rt.FakeIP
-        ,   rt.CookieID
-        ,   rt.BrowserInstanceID
-        ,   rt.RawFingerPrintID
-        ,   rt.RawUserAgentID
+        ,   rt.CookieCode
+        ,   rt.RawFingerPrintCode
+        ,   rt.BrowserInstanceCode
+        ,   rt.RawUserAgentCode
+        ,   rt.ChallengeCode
 	FROM DCS_DataCenter.RawTransaction AS rt
         INNER JOIN CTS_Admin.Subscriber AS su ON rt.SubscriberName = su.SubscriberName
 	    LEFT JOIN DCS_DataCenter.ActionResult AS ar ON rt.Action = ar.Action AND IFNULL(rt.ActionResult,'') = ar.ActionResult
 	WHERE   rt.IsProcessed = 0
 	    AND rt.TransID BETWEEN ip_FromTransID AND ip_ToTransID
         AND rt.CreatedDate >= lv_SysMinCreatedDate;
+        
+	
+    /* === Add index for Temp_RawTransaction === */
+	ALTER TABLE Temp_RawTransaction
+	ADD INDEX IX_Temp_RawTransaction_CookieCode (CookieCode),
+	ADD INDEX IX_Temp_RawTransaction_RawFingerPrintCode (RawFingerPrintCode),
+	ADD INDEX IX_Temp_RawTransaction_BrowserInstanceCode (BrowserInstanceCode),
+	ADD INDEX IX_Temp_RawTransaction_RawUserAgentCode (RawUserAgentCode);
 
     #===INSERT SUBCRIBERURL    
     INSERT IGNORE INTO DCS_DataCenter.URL(URLDetails, SubscriberID, CreatedDate)
@@ -207,6 +222,24 @@ BEGIN
         ,   LastLoginTime
     FROM  Temp_LastLoginTimeCTSCust AS tmp_cus;
 
+	/* ======= UPDATE ID ========= */
+	UPDATE Temp_RawTransaction AS tmp
+		LEFT JOIN DCS_DataCenter.Cookie AS ck ON ck.CookieCode = tmp.CookieCode
+	SET tmp.CookieID = CASE WHEN tmp.CookieCode IS NULL THEN NULL ELSE IFNULL(ck.ID, 0) END;
+
+	UPDATE Temp_RawTransaction AS tmp
+		LEFT JOIN DCS_DataCenter.RawFingerPrint AS fp ON fp.FingerPrintCode = tmp.RawFingerPrintCode
+	SET tmp.RawFingerPrintID = CASE WHEN tmp.RawFingerPrintCode IS NULL THEN NULL ELSE IFNULL(fp.ID, 0) END;
+
+	UPDATE Temp_RawTransaction AS tmp
+		LEFT JOIN DCS_DataCenter.BrowserInstance AS bi ON bi.BrowserInstanceCode = tmp.BrowserInstanceCode
+	SET tmp.BrowserInstanceID = CASE WHEN tmp.BrowserInstanceCode IS NULL THEN NULL ELSE IFNULL(bi.ID, 0) END;
+
+	UPDATE Temp_RawTransaction AS tmp
+		LEFT JOIN DCS_DataCenter.RawUserAgent AS ua ON ua.RawUserAgentCode = tmp.RawUserAgentCode
+	SET tmp.RawUserAgentID = CASE WHEN tmp.RawUserAgentCode IS NULL THEN NULL ELSE IFNULL(ua.ID, 0) END;
+
+	/* ======= INSERT Transaction ========= */
     INSERT IGNORE INTO  DCS_DataCenter.Transaction(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey , IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, FingerprintCode, BotDetectionValue, BotComponentID, FakeIP, CookieID, BrowserInstanceID, RawFingerPrintID, RawUserAgentID)
    	SELECT  trt.TransID
 	    ,   trt.LoginName
@@ -236,7 +269,7 @@ BEGIN
 
     #================================================================
     
-	INSERT IGNORE INTO DCS_DataCenter.ProcessedTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent , IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID, InsertTime, BotDetectionValue, BotComponentID, FakeIP, CookieID, BrowserInstanceID, RawFingerPrintID, RawUserAgentID)
+	INSERT IGNORE INTO DCS_DataCenter.ProcessedTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent , IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID, InsertTime, BotDetectionValue, BotComponentID, FakeIP, CookieCode, RawFingerPrintCode, BrowserInstanceCode, RawUserAgentCode, ChallengeCode)
 	SELECT  rt.LoginName
         ,   rt.SubscriberName
         ,   rt.TransTime
@@ -259,18 +292,17 @@ BEGIN
 		,	rt.BotDetectionValue
 		,	rt.BotComponentID
 		,	rt.FakeIP
-        ,   rt.CookieID
-        ,   rt.BrowserInstanceID
-        ,   rt.RawFingerPrintID
-        ,   rt.RawUserAgentID
+        ,   rt.CookieCode
+        ,   rt.RawFingerPrintCode
+        ,   rt.BrowserInstanceCode
+        ,   rt.RawUserAgentCode
+        ,   rt.ChallengeCode
 	FROM DCS_DataCenter.RawTransaction AS rt
 	    INNER JOIN	Temp_RawTransaction	AS tmp_rm ON	rt.TransID = tmp_rm.TransID AND rt.CreatedDate = tmp_rm.CreatedDate;
         
 	DELETE rt
 	FROM DCS_DataCenter.RawTransaction AS rt
 	    INNER JOIN	Temp_RawTransaction	AS tmp_rm ON rt.TransID = tmp_rm.TransID AND rt.CreatedDate = tmp_rm.CreatedDate;
-    
-
     
 END$$
 DELIMITER ;
