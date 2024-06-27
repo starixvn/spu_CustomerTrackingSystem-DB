@@ -68,6 +68,15 @@ BEGIN
 			,	IsReturnData				BIT(1) DEFAULT 0
 			,	PRIMARY KEY (CustID,SportID)
 		);
+		
+		DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
+		CREATE TEMPORARY TABLE Temp_Customer (
+				CustID					BIGINT UNSIGNED PRIMARY KEY
+			, 	CTSCustID				BIGINT UNSIGNED
+			, 	SubscriberID			INT 
+			,	CreatedBy 				INT UNSIGNED
+			, 	IsLicenseeBA			INT 
+		);
 
 		IF ip_InputFlowID = 1 THEN /*VVIP*/
 			INSERT INTO Temp_NewClassification (
@@ -80,7 +89,7 @@ BEGIN
 				,	CONST_PARENTID_VVIP
 				,	CONST_CATEID_VVIP
 				,	(CASE WHEN cls.CustID IS NOT NULL THEN 0 ELSE 1 END) AS IsReturnData
-			FROM JSON_TABLE(ip_CustJson,
+			FROM JSON_TABLE(ip_CustInfo,
 							 "$[*]" COLUMNS(
 													CustID 			BIGINT UNSIGNED	PATH "$.CustID"
 												,	CTSCustID 		BIGINT UNSIGNED	PATH "$.CTSCustID"
@@ -103,7 +112,7 @@ BEGIN
 			SELECT 	tmpJs.CustID, tmpJs.CTSCustID, tmpJs.SubscriberID, tmpJs.SportID, tmpJs.Remark, tmpJs.CreatedBy, tmpJs.IsLicenseeVIP, tmpJs.TargetCC
 				, 	CASE WHEN tmpJs.IsLicenseeVIP = 1 AND cls.CustID IS NOT NULL THEN 1 ELSE 0  AS IsDataChanged
 				, 	1 AS IsReturnData
-			FROM JSON_TABLE(ip_CustJson,
+			FROM JSON_TABLE(ip_CustInfo,
 							 "$[*]" COLUMNS(
 													CustID 			BIGINT UNSIGNED		PATH "$.CustID"
 												,	CTSCustID 		BIGINT UNSIGNED		PATH "$.CTSCustID"
@@ -120,9 +129,9 @@ BEGIN
 				;
 			
 		ELSEIF ip_InputFlowID = 3 THEN	/*LicVIP*/
-			INSERT INTO Temp_NewClassification (CustID, CTSCustID, SubscriberID, CreatedBy, IsLicenseeVIP)
+			INSERT INTO Temp_Customer (CustID, CTSCustID, SubscriberID, CreatedBy, IsLicenseeVIP)
 			SELECT tmpJs.CustID, cus.CTSCustID, tmpJs.SubscriberID, tmpJs.CreatedBy, cus.IsLicenseeVIP
-			FROM JSON_TABLE(ip_CustJson,
+			FROM JSON_TABLE(ip_CustInfo,
 							 "$[*]" COLUMNS(
 													CustID 			BIGINT UNSIGNED	PATH "$.CustID"
 												,	CreatedBy 		INT UNSIGNED	PATH "$.CreatedBy"
@@ -131,9 +140,9 @@ BEGIN
 			
 			
 		ELSEIF ip_InputFlowID = 4 THEN /*LicBA*/
-			INSERT INTO Temp_NewClassification (CustID, CTSCustID, SubscriberID, CreatedBy, IsLicenseeBA)
+			INSERT INTO Temp_Customer (CustID, CTSCustID, SubscriberID, CreatedBy, IsLicenseeBA)
 			SELECT tmpJs.CustID, cus.CTSCustID, tmpJs.SubscriberID, tmpJs.CreatedBy, cus.IsLicenseeBA
-			FROM JSON_TABLE(ip_CustJson,
+			FROM JSON_TABLE(ip_CustInfo,
 							 "$[*]" COLUMNS(
 													CustID 			BIGINT UNSIGNED	PATH "$.CustID"
 												,	CreatedBy 		INT UNSIGNED	PATH "$.CreatedBy"
@@ -200,7 +209,7 @@ BEGIN
 			,	IsFromTVS					BIT(1)  DEFAULT 0
 			,	TVSRequestID				BIGINT UNSIGNED
 			, 	TVSReasonID		   			INT
-			,	TVSSportType				SMALLINT DEFAULT NULL 
+			,	SportType					SMALLINT DEFAULT NULL 
 			,	TVSIssueTypeID 				TINYINT DEFAULT NULL 
 			,	IsTVSParlay					BIT(1) DEFAULT NULL
 			
@@ -301,6 +310,7 @@ BEGIN
 											,	IsTVSParlay			BIT(1)  			PATH "$.IsParlay"
 											,	TVSIssueTypeID		TINYINT 			PATH "$.IssueTypeID"
 											,	SportType			SMALLINT 			PATH "$.SportType"
+											, 	PerformanceTime		DATETIME			PATH "$.PerformanceTime"
 											)) AS tmpJs
 				LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID
 				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.CategoryID
@@ -391,6 +401,7 @@ BEGIN
 											,	IsTVSParlay		BIT(1)	 			PATH "$.IsParlay"
 											,	SportType		SMALLINT 			PATH "$.SportType"
 											,	TVSIssueTypeID	TINYINT 			PATH "$.IssueTypeID"
+											, 	PerformanceTime	DATETIME			PATH "$.PerformanceTime"
 										)) AS tmpJs
 				LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
 				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID 
@@ -491,6 +502,7 @@ BEGIN
 											,	IsTVSParlay		BIT(1) 				PATH "$.IsParlay"
 											,	SportType		SMALLINT			PATH "$.SportType"
 											,	TVSIssueTypeID	TINYINT				PATH "$.IssueTypeID"
+											, 	PerformanceTime	DATETIME			PATH "$.PerformanceTime"
 										)) AS tmpJs
 				LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
 				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID 
