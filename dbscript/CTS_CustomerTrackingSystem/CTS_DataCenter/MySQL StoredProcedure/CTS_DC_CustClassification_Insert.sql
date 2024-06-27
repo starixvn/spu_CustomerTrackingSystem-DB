@@ -156,121 +156,113 @@ BEGIN
 
 	ELSEIF ip_InputFlowID = 2 THEN /*SpecialCC*/
 		/*General*/
-		IF EXISTS (SELECT 1 FROM Temp_NewClassification WHERE SportID = 0) THEN
 
-			UPDATE CTS_DataCenter.CTSCustomerClassification AS cls
-				INNER JOIN Temp_NewCustomerClass AS temp ON temp.CustID = cls.CustID 
-															AND cls.ParentID = CONST_PARENTID_WRAPPER
-															AND cls.CategoryID = CONST_CATEID_LICVIPSUSPICIOUS
-			SET cls.CategoryID = CONST_CATEID_LICVIPDANGEROUS
-			WHERE temp.IsDataChanged = 1 AND temp.IsExistWrapper = 1;
-			
-			/*	INSERT VALID SPECIAL CUSTOMER CLASS	*/
-			INSERT INTO CTS_DataCenter.SpecialCustomerClass(
-					CTSCustID, CustID, RootCTSCustID, SubscriberID, CustomerClass, CreatedBy, CreatedDate, LastModifiedBy, LastModifiedDate, CreatedFromFunction)
-			SELECT 	temp.CTSCustID
-				,	temp.CustID
-				,	temp.CTSCustID AS RootCTSCustID
-				,	temp.SubscriberID
-				,	temp.CustomerClass
-				,	temp.CreatedBy
-				,	lv_CurrentDateTime AS CreatedDate
-				,	temp.CreatedBy AS LastModifiedBy
-				,	lv_CurrentDateTime AS LastModifiedDate
-				,   1 AS CreatedFromFunction -- for Special Customer
-			FROM Temp_NewCustomerClass AS temp;
-			
-			/*	INSERT LOG FOR SPECIAL CUSTOMER CLASS	*/
-			INSERT INTO CTS_DataCenter.SpecialCustomerClass_History(
-					CTSCustID, CustID, RootCTSCustID, SubscriberID, CustomerClass, CreatedBy
-				, 	CreatedDate, LastModifiedBy, LastModifiedDate, CreatedFromFunction, Remark, ActionType)
-			SELECT 	temp.CTSCustID
-				,	temp.CustID
-				,	temp.CTSCustID
-				,	temp.SubscriberID
-				,	temp.CustomerClass
-				,	temp.CreatedBy
-				,	lv_CurrentDateTime AS CreatedDate
-				,	temp.CreatedBy AS LastModifiedBy
-				,	lv_CurrentDateTime AS LastModifiedDate
-				,   1 AS CreatedFromFunction -- for Special Customer
-				,	temp.Remark
-				,	0 AS ActionType -- insert
-			FROM Temp_NewCustomerClass AS temp;
-			
-			/*	INSERT */
-			INSERT INTO CTS_DataCenter.CTSCustomerClassification (
-					CustID, CTSCustID, SubscriberID, ParentID, CategoryID, CreatedDate, CreatedBy
-				, 	LastModifiedDate, LastModifiedBy, LastScannedDate, ActionType, IsAuto, Remark)
-			SELECT  temp.CustID
-				, 	temp.CTSCustID
-				,	temp.SubscriberID
-				,	CONST_PARENTID_WRAPPER AS ParentID
-				,	CONST_CATEID_SPECIALCC AS CategoryID
-				, 	lv_CurrentDateTime AS CreatedDate
-				, 	temp.CreatedBy AS CreatedBy
-				, 	lv_CurrentDateTime AS LastModifiedDate
-				, 	temp.CreatedBy AS LastModifiedBy
-				, 	DATE(lv_CurrentDateTime) AS LastScannedDate
-				, 	0  AS ActionType 
-				, 	0  AS IsAuto
-				, 	temp.Remark
-			FROM Temp_NewCustomerClass AS temp
-			WHERE temp.IsDataChanged = 1 
-				AND NOT EXISTS (SELECT 1
-								FROM CTS_DataCenter.CTSCustomerClassification AS cls
-								WHERE cls.CustID = temp.CustID
-									AND cls.CategoryID = CONST_CATEID_SPECIALCC
-								);
-			
-			/*	INSERT HISTORY	*/
-			INSERT INTO CTS_DataCenter.CTSCustomerClassification_History (
-					CustID, CTSCustID, ParentID, CategoryID, LastModifiedDate, LastModifiedBy, ActionType
-				, 	IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, Remark)
-			SELECT  temp.CustID
-				, 	temp.CTSCustID
-				,	CONST_PARENTID_WRAPPER AS ParentID
-				,	CONST_CATEID_SPECIALCC AS CategoryID
-				, 	lv_CurrentDateTime AS LastModifiedDate
-				, 	temp.CreatedBy AS LastModifiedBy
-				, 	0  AS ActionType 
-				, 	0  AS IsAuto
-				, 	DATE(lv_CurrentDateTime) AS InsertDate
-				,	temp.CustomerClass AS TargetCC
-				, 	10 AS SourceTypeID
-				, 	temp.IsDataChanged
-				, 	temp.Remark
-			FROM Temp_NewCustomerClass AS temp
-			WHERE temp.IsDataChanged = 1;
-			
-			/*	INSERT LOG*/
-			INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log (
-					CustID, CTSCustID, ParentID, CategoryID, LastModifiedDate, LastModifiedBy, ActionType
-				, 	IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, Remark)
-			SELECT  temp.CustID
-				, 	temp.CTSCustID
-				,	CONST_PARENTID_WRAPPER AS ParentID
-				,	CONST_CATEID_SPECIALCC AS CategoryID
-				, 	lv_CurrentDateTime AS LastModifiedDate
-				, 	temp.CreatedBy AS LastModifiedBy
-				, 	0  AS ActionType 
-				, 	0  AS IsAuto
-				, 	DATE(lv_CurrentDateTime) AS InsertDate
-				,	temp.CustomerClass AS TargetCC
-				, 	10 AS SourceTypeID
-				, 	temp.IsDataChanged
-				, 	temp.Remark
-			FROM Temp_NewCustomerClass AS temp
-			WHERE temp.IsDataChanged = 1;
-			
-		END IF;
+		UPDATE CTS_DataCenter.CTSCustomerClassification AS cls
+			INNER JOIN Temp_NewCustomerClass AS temp ON temp.CustID = cls.CustID 
+														AND cls.ParentID = CONST_PARENTID_WRAPPER
+														AND cls.CategoryID = CONST_CATEID_LICVIPSUSPICIOUS
+		SET cls.CategoryID = CONST_CATEID_LICVIPDANGEROUS
+		WHERE temp.IsDataChanged = 1 AND temp.IsExistWrapper = 1;
 		
+		/*	INSERT VALID SPECIAL CUSTOMER CLASS	*/
+		INSERT INTO CTS_DataCenter.SpecialCustomerClass(
+				CTSCustID, CustID, RootCTSCustID, SubscriberID, CustomerClass, CreatedBy, CreatedDate, LastModifiedBy, LastModifiedDate, CreatedFromFunction)
+		SELECT 	temp.CTSCustID
+			,	temp.CustID
+			,	temp.CTSCustID AS RootCTSCustID
+			,	temp.SubscriberID
+			,	temp.CustomerClass
+			,	temp.CreatedBy
+			,	lv_CurrentDateTime AS CreatedDate
+			,	temp.CreatedBy AS LastModifiedBy
+			,	lv_CurrentDateTime AS LastModifiedDate
+			,   1 AS CreatedFromFunction -- for Special Customer
+		FROM Temp_NewCustomerClass AS temp;
 		
-		/*BySport*/
-		-- IF EXISTS (SELECT 1 FROM Temp_NewClassification WHERE SportID <> 0) THEN
+		/*	INSERT LOG FOR SPECIAL CUSTOMER CLASS	*/
+		INSERT INTO CTS_DataCenter.SpecialCustomerClass_History(
+				CTSCustID, CustID, RootCTSCustID, SubscriberID, CustomerClass, CreatedBy
+			, 	CreatedDate, LastModifiedBy, LastModifiedDate, CreatedFromFunction, Remark, ActionType)
+		SELECT 	temp.CTSCustID
+			,	temp.CustID
+			,	temp.CTSCustID
+			,	temp.SubscriberID
+			,	temp.CustomerClass
+			,	temp.CreatedBy
+			,	lv_CurrentDateTime AS CreatedDate
+			,	temp.CreatedBy AS LastModifiedBy
+			,	lv_CurrentDateTime AS LastModifiedDate
+			,   1 AS CreatedFromFunction -- for Special Customer
+			,	temp.Remark
+			,	0 AS ActionType -- insert
+		FROM Temp_NewCustomerClass AS temp;
 		
+		/*	INSERT */
+		INSERT INTO CTS_DataCenter.CTSCustomerClassification (
+				CustID, CTSCustID, SubscriberID, ParentID, CategoryID, CreatedDate, CreatedBy
+			, 	LastModifiedDate, LastModifiedBy, LastScannedDate, ActionType, IsAuto, Remark)
+		SELECT  temp.CustID
+			, 	temp.CTSCustID
+			,	temp.SubscriberID
+			,	CONST_PARENTID_WRAPPER AS ParentID
+			,	CONST_CATEID_SPECIALCC AS CategoryID
+			, 	lv_CurrentDateTime AS CreatedDate
+			, 	temp.CreatedBy AS CreatedBy
+			, 	lv_CurrentDateTime AS LastModifiedDate
+			, 	temp.CreatedBy AS LastModifiedBy
+			, 	DATE(lv_CurrentDateTime) AS LastScannedDate
+			, 	0  AS ActionType 
+			, 	0  AS IsAuto
+			, 	temp.Remark
+		FROM Temp_NewCustomerClass AS temp
+		WHERE temp.IsDataChanged = 1 
+			AND NOT EXISTS (SELECT 1
+							FROM CTS_DataCenter.CTSCustomerClassification AS cls
+							WHERE cls.CustID = temp.CustID
+								AND cls.CategoryID = CONST_CATEID_SPECIALCC
+							);
+		
+		/*	INSERT HISTORY	*/
+		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History (
+				CustID, CTSCustID, ParentID, CategoryID, LastModifiedDate, LastModifiedBy, ActionType
+			, 	IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, Remark)
+		SELECT  temp.CustID
+			, 	temp.CTSCustID
+			,	CONST_PARENTID_WRAPPER AS ParentID
+			,	CONST_CATEID_SPECIALCC AS CategoryID
+			, 	lv_CurrentDateTime AS LastModifiedDate
+			, 	temp.CreatedBy AS LastModifiedBy
+			, 	0  AS ActionType 
+			, 	0  AS IsAuto
+			, 	DATE(lv_CurrentDateTime) AS InsertDate
+			,	temp.CustomerClass AS TargetCC
+			, 	10 AS SourceTypeID
+			, 	temp.IsDataChanged
+			, 	temp.Remark
+		FROM Temp_NewCustomerClass AS temp
+		WHERE temp.IsDataChanged = 1;
+		
+		/*	INSERT LOG*/
+		INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log (
+				CustID, CTSCustID, ParentID, CategoryID, LastModifiedDate, LastModifiedBy, ActionType
+			, 	IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, Remark)
+		SELECT  temp.CustID
+			, 	temp.CTSCustID
+			,	CONST_PARENTID_WRAPPER AS ParentID
+			,	CONST_CATEID_SPECIALCC AS CategoryID
+			, 	lv_CurrentDateTime AS LastModifiedDate
+			, 	temp.CreatedBy AS LastModifiedBy
+			, 	0  AS ActionType 
+			, 	0  AS IsAuto
+			, 	DATE(lv_CurrentDateTime) AS InsertDate
+			,	temp.CustomerClass AS TargetCC
+			, 	10 AS SourceTypeID
+			, 	temp.IsDataChanged
+			, 	temp.Remark
+		FROM Temp_NewCustomerClass AS temp
+		WHERE temp.IsDataChanged = 1;
+			
 
-		-- END IF;
 		
 	ELSEIF ip_InputFlowID = 3 THEN /*LicVIP*/
 		
@@ -446,7 +438,6 @@ BEGIN
 		,  	CustID
 		,	TargetCC AS CustomerClass
 		,  	CategoryID /*-1 AS Category; SpecialCC4x*/
-		,	SportID
 		,	lv_CurrentDateTime AS ScannedTime 
 	FROM Temp_NewClassification AS temp
 	WHERE temp.IsReturnData = 1;

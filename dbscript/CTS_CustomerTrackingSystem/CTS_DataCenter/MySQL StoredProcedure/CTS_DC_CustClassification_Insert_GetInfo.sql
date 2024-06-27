@@ -56,8 +56,7 @@ BEGIN
 			,	IsExistVVIP					BIT(1) DEFAULT 0
 			,	IsLicenseeVIP				BIT(1) DEFAULT 0
 			,	IsLicenseeBA				BIT(1) DEFAULT 0
-			,	IsAffectedFromUpline		BIT(1) DEFAULT 0
-			,	SportID						SMALLINT UNSIGNED  DEFAULT 0	
+			,	IsAffectedFromUpline		BIT(1) DEFAULT 0	
 			,	TargetCC					SMALLINT UNSIGNED
 			,	CategoryPriority			SMALLINT UNSIGNED
 			,	CustomerClassPriority		SMALLINT UNSIGNED
@@ -66,7 +65,7 @@ BEGIN
 			,	IsDangerProbation			BIT(1) DEFAULT 0
 			,	IsDataChanged				BIT(1) DEFAULT 0	/*0: No change category => No Action*/
 			,	IsReturnData				BIT(1) DEFAULT 0
-			,	PRIMARY KEY (CustID,SportID)
+			,	PRIMARY KEY (CustID)
 		);
 		
 		DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
@@ -108,15 +107,14 @@ BEGIN
 			
 		ELSEIF ip_InputFlowID = 2 THEN /*SpecialCC*/
 			INSERT INTO Temp_NewClassification (
-				CustID, CTSCustID, SportID, SubscriberID, Remark, CreatedBy, IsLicenseeVIP, TargetCC, IsDataChanged, IsReturnData)
-			SELECT 	tmpJs.CustID, tmpJs.CTSCustID, tmpJs.SubscriberID, tmpJs.SportID, tmpJs.Remark, tmpJs.CreatedBy, tmpJs.IsLicenseeVIP, tmpJs.TargetCC
+				CustID, CTSCustID, SubscriberID, Remark, CreatedBy, IsLicenseeVIP, TargetCC, IsDataChanged, IsReturnData)
+			SELECT 	tmpJs.CustID, tmpJs.CTSCustID, tmpJs.SubscriberID, tmpJs.Remark, tmpJs.CreatedBy, tmpJs.IsLicenseeVIP, tmpJs.TargetCC
 				, 	CASE WHEN tmpJs.IsLicenseeVIP = 1 AND cls.CustID IS NOT NULL THEN 1 ELSE 0  AS IsDataChanged
 				, 	1 AS IsReturnData
 			FROM JSON_TABLE(ip_CustInfo,
 							 "$[*]" COLUMNS(
 													CustID 			BIGINT UNSIGNED		PATH "$.CustID"
 												,	CTSCustID 		BIGINT UNSIGNED		PATH "$.CTSCustID"
-												,	SportID			SMALLINT UNSIGNED   PATH '$.SportID'
 												,	SubscriberID 	INT UNSIGNED		PATH "$.SubscriberID"
 												,	IsLicenseeVIP	BIT(1)				PATH "$.IsLicenseeVIP"            
 												,	TargetCC		SMALLINT			PATH "$.CustomerClass"            
