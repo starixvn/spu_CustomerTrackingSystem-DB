@@ -26,14 +26,11 @@ CREATE TABLE CustomerCategorySettings
 
 CREATE TABLE CustomerClassification_Remark
 (
-	CategoryID INT UNSIGNED NOT NULL,
-	RemarkID SMALLINT UNSIGNED,
+	RemarkID SMALLINT UNSIGNED NOT NULL,
 	RemarkTemplate TEXT,
-	/*UserComment VARCHAR(1000),*/
 	Description VARCHAR(200),
-	CreatedDate DATETIME,
-	PRIMARY KEY (RemarkID),
-	KEY IX_CustClass_Remark_CategoryID (CategoryID)
+	CreatedDate DATETIME DEFAULT NOW(),
+	PRIMARY KEY (RemarkID)
 );
 
 CREATE TABLE Customer_InitialGroupBetting

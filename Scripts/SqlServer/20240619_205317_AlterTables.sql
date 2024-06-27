@@ -24,3 +24,14 @@ ALTER COLUMN CategoryId INT;
 ALTER TABLE CustomerClassification_BySport_Rule
 ALTER COLUMN CurrentCategory INT;
 
+ALTER TABLE CustomerClassification
+ALTER COLUMN CategoryId INT;
+
+ALTER TABLE CustomerClassification
+ALTER COLUMN CurrentCategoryId INT;
+
+ALTER TABLE CustomerClassification_bysport
+ALTER COLUMN CategoryId INT;
+
+ALTER TABLE CustomerClassification_bysport
+ALTER COLUMN CurrentCategoryId INT;

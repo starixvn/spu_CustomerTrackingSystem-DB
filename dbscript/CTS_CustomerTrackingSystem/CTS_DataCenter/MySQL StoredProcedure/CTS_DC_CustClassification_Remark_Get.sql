@@ -45,6 +45,20 @@ BEGIN
 	DECLARE	CONST_CATEID_INITIALSMART		 			INT;
     DECLARE	CONST_CATEID_INITIALSMARTLOSING			INT;
 
+    DECLARE lv_LicBA_CategoryName				VARCHAR(50);
+    DECLARE lv_LicBA_CC							SMALLINT UNSIGNED;
+    DECLARE lv_LicVIPProblem_CC					SMALLINT UNSIGNED;
+    DECLARE lv_LicVIPNormal_CC					SMALLINT UNSIGNED;
+    DECLARE lv_LicVIPProblem_CategoryName		VARCHAR(50);
+    DECLARE lv_LicVIPNormal_CategoryName		VARCHAR(50);        
+    
+    DECLARE lv_Delimiter VARCHAR(5);
+
+    SET lv_Delimiter = '|';
+
+    SET CONST_CATEID_LICBA 		                    = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICBA');
+    SET CONST_CATEID_LICVIPSUSPICIOUS 		        = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPSUSPICIOUS');
+    SET CONST_CATEID_LICVIPDANGEROUS 		        = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPDANGEROUS');
     SET CONST_CATEID_UNAUTHORIZEDLOGIN 		        = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_UNAUTHORIZEDLOGIN');
     SET CONST_CATEID_UNAUTHORIZEDLOGINLOSING 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_UNAUTHORIZEDLOGINLOSING');
     SET CONST_CATEID_EARLYWARNINGMEMBERS 		    = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_EARLYWARNINGMEMBERS');
@@ -54,9 +68,20 @@ BEGIN
     SET CONST_CATEID_INITIALSMART 		            = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INITIALSMART');
     SET CONST_CATEID_INITIALSMARTLOSING 		    = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INITIALSMARTLOSING');
 
-    DECLARE lv_Delimiter VARCHAR(5);
+    SELECT cat.CategoryName, cat.CustomerClass
+    INTO lv_LicBA_CategoryName, lv_LicBA_CC
+    FROM CTS_DataCenter.CustomerCategory AS cat
+    WHERE cat.CategoryID = CONST_CATEID_LICBA;  
 
-    SET lv_Delimiter = '|';
+    SELECT cat.CategoryName, cat.CustomerClass
+    INTO lv_LicVIPProblem_CategoryName, lv_LicVIPProblem_CC
+    FROM CTS_DataCenter.CustomerCategory AS cat
+    WHERE cat.CategoryID = CONST_CATEID_LICBA;
+    
+    SELECT cat.CategoryName, cat.CustomerClass
+    INTO lv_LicVIPNormal_CategoryName, lv_LicVIPNormal_CC
+    FROM CTS_DataCenter.CustomerCategory AS cat
+    WHERE cat.CategoryID = CONST_CATEID_LICVIPSUSPICIOUS;        
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustRemark;
 	CREATE TEMPORARY TABLE 	Temp_CustRemark (
@@ -70,10 +95,19 @@ BEGIN
 		INSERT IGNORE INTO Temp_CustRemark(CustID, CategoryID, Remark)
         SELECT  tmp.CustID
             ,   tmp.CategoryID
-            ,   CONCAT(cr.RemarkTemplate, lv_Delimiter, IFNULL(tmp.Remark,''))
+            ,   CONCAT(CASE WHEN tmp.TargetCC = lv_LicVIPProblem_CC THEN lv_LicVIPProblem_CategoryName
+                            WHEN tmp.TargetCC = lv_LicVIPNormal_CC THEN lv_LicVIPNormal_CategoryName
+                            WHEN tmp.TargetCC = lv_LicBA_CC THEN lv_LicBA_CategoryName,' ',cr.RemarkTemplate)
+                        ELSE CONCAT(cr.RemarkTemplate, lv_Delimiter, IFNULL(tmp.Remark,'')) END
 		FROM Temp_NewClassification AS tmp
 		    INNER JOIN CTS_DataCenter.CustomerClassification_Remark AS cr ON cr.RemarkID = tmp.SourceTypeID
         WHERE tmp.SourceTypeID IS NOT NULL;
+
+/*
+,   '[LicVIP]', CASE    WHEN temp.TargetCC = lv_LicVIPProblem_CC THEN lv_LicVIPProblem_CategoryName
+						                    WHEN temp.TargetCC = lv_LicVIPNormal_CC THEN lv_LicVIPNormal_CategoryName ELSE '' END
+                    ,   '[LicBA]',  CASE	WHEN temp.TargetCC = lv_LicBA_CC THEN lv_LicBA_CategoryName ELSE '' END
+*/
 
         SELECT	CustID
 		    ,	CategoryID
@@ -94,45 +128,47 @@ BEGIN
             UPDATE Temp_CustRemark AS tmp
                 INNER JOIN CustomerLoginInfoDetection AS cld ON cld.CustID = tmp.CustID
             SET tmp.Remark = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tmp.Remark,'[FBDate]', DATE_FORMAT(cld.FirstBetDate, '%b %d, %Y')
-                                ,'[DetectionDate]', DATE_FORMAT(cld.SourceCreatedDate, '%b %d, %Y'), '[Bot]', cld.Bot,'[BotPCT]',cld.BotTransPercentage,'[InvalidBrowser]'
+                                ,'[DetectedDate]', DATE_FORMAT(cld.SourceCreatedDate, '%b %d, %Y'), '[Bot]', cld.Bot,'[BotPCT]',cld.BotTransPercentage,'[InvalidBrowser]'
                                 ,cld.InvalidBrowser,'[InvalidBrowserPCT]',cld.InvalidBrowserInfoTransPercentage))))))
             WHERE tmp.CategoryID IN (CONST_CATEID_UNAUTHORIZEDLOGIN, CONST_CATEID_UNAUTHORIZEDLOGINLOSING);
 
         ELSEIF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_EARLYWARNINGMEMBERS, CONST_CATEID_EARLYWARNINGMEMBERSLOSING))
             UPDATE Temp_CustRemark AS tmp
                 INNER JOIN Customer_DangerousScore AS cds ON cds.CustID = tmp.CustID
-            SET tmp.Remark = REPLACE(REPLACE(REPLACE(tmp.Remark,'[DetectionDate]', DATE_FORMAT(cds.ClassifiedDate, '%b %d, %Y'), '[DangerousScore]', CAST(cds.ClassifiedScore*100 AS DECIMAL(5,2)))))
+            SET tmp.Remark = REPLACE(REPLACE(REPLACE(tmp.Remark,'[DetectedDate]', DATE_FORMAT(cds.ClassifiedDate, '%b %d, %Y'), '[DangerousScore]', CAST(cds.ClassifiedScore*100 AS DECIMAL(5,2)))))
             WHERE tmp.CategoryID IN (CONST_CATEID_EARLYWARNINGMEMBERS, CONST_CATEID_EARLYWARNINGMEMBERSLOSING);
 
         ELSEIF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_INITIALSMART, CONST_CATEID_INITIALSMARTLOSING))
             UPDATE Temp_CustRemark AS tmp
                 INNER JOIN Customer_InitialSmart AS cis ON cis.CustID = tmp.CustID
-            SET tmp.Remark = REPLACE(REPLACE(tmp.Remark,'[DetectionDate]', DATE_FORMAT(cis.SourceCreatedDate, '%b %d, %Y'), '[Probability]', cis.Probability))
+            SET tmp.Remark = REPLACE(REPLACE(tmp.Remark,'[DetectedDate]', DATE_FORMAT(cis.SourceCreatedDate, '%b %d, %Y'), '[Probability]', cis.Probability))
             WHERE tmp.CategoryID IN (CONST_CATEID_INITIALSMART, CONST_CATEID_INITIALSMARTLOSING);
 
         ELSEIF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_INITIALGB, CONST_CATEID_INITIALGBLOSING))
             UPDATE Temp_CustRemark AS tmp
                 INNER JOIN Customer_InitialGroupBetting AS cgb ON cgb.CustID = tmp.CustID
-            SET tmp.Remark = REPLACE(REPLACE(REPLACE(tmp.Remark,'[DetectionDate]', DATE_FORMAT(cgb.SourceCreatedDate, '%b %d, %Y'), '[GBTicketCount]', cgb.GBTicketCount, '[Sport]', cgb.SportType)))
+            SET tmp.Remark = REPLACE(REPLACE(REPLACE(tmp.Remark,'[DetectedDate]', DATE_FORMAT(cgb.SourceCreatedDate, '%b %d, %Y'), '[GBTicketCount]', cgb.GBTicketCount, '[Sport]', cgb.SportType)))
             WHERE tmp.CategoryID IN (CONST_CATEID_INITIALGB, CONST_CATEID_INITIALGBLOSING);
         END IF;
 
         SELECT	CustID
 		    ,	CategoryID
 		    ,	REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(cust.Remark, 
-                    '[TVSRequestID]', tmp.TVSRequestID
-                ,   '[Winloss]', tmp.WinlossRM
-                ,   'TVSSportType', tmp.TVSSportType
-                ,   '[Margin]', (tmp.WinlossRM/tmp.TurnoverRM) * 100
-                ,   '[BetCount]', tmp.BetCount
-                ,   '[Turnover]', tmp.TurnoverRM
-                ,   '[ActiveDays]', tmp.ActiveDays
-                ,   '[TWBetCount]', tmp.TWBetCount
-                ,   '[TWGBRate]', tmp.TWGroupBettingRate
-                ,   '[TWDesktopUsageRate]', tmp.TWDesktopUsageRate
-                ,   '[TWTicketRejectRate]', tmp.TWTicketRejectRate
-                ,   '[TWRobotCounter]', tmp.TWRobotCounter
-                ,   '[MatchID]', tmp.MatchID )))))))))))))
+                        '[TVSRequestID]', tmp.TVSRequestID
+                    ,   '[Winloss]', tmp.WinlossRM
+                    ,   '[TVSSportType]', tmp.TVSSportType
+                    ,   '[Margin]', CASE WHEN tmp.TurnOverRM = 0 THEN 0 ELSE (tmp.WinlossRM/tmp.TurnoverRM) * 100 END
+                    ,   '[BetCount]', tmp.BetCount
+                    ,   '[TurnOver]', tmp.TurnoverRM
+                    ,   '[ActiveDays]', tmp.ActiveDays
+                    /*,   '[TWBetCount]', tmp.TWBetCount*/
+                    ,   '[TWGBRate]', tmp.TWGroupBettingRate
+                    ,   '[TWDesktopUsageRate]', tmp.TWDesktopUsageRate
+                    ,   '[TWTicketRejectRate]', tmp.TWTicketRejectRate
+                    ,   '[TWRobotCounter]', tmp.TWRobotCounter
+                    ,   '[MatchID]', tmp.MatchID 
+                    ,   '[UserComment]', IFNULL(tmp.Remark,'')
+                    )))))))))))))
 	    FROM Temp_CustRemark AS cust
         INNER JOIN Temp_NewClassification AS tmp ON tmp.CustID = cust.CustID;
 	END IF;
@@ -156,7 +192,7 @@ BEGIN
 , {LicVIP}
 , {LicBA} 
 
-Detection Date: [DetectionDate] - GB Bet Count: [GBTicketCount] - Sport: [Sport] | Turnover: [Turnover] | Win loss: [Winloss] | Margin: [Margin] | Bet Count: [BetCount]
+Detection Date: [DetectedDate] - GB Bet Count: [GBTicketCount] - Sport: [Sport] | Turnover: [Turnover] | Win loss: [Winloss] | Margin: [Margin] | Bet Count: [BetCount]
 Customer_InitialGroupBetting
 Customer_InitialSmart
 Customer_DangerousScore
