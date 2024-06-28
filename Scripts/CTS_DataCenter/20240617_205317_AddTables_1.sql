@@ -20,6 +20,7 @@ CREATE TABLE CustomerCategorySettings
 	IsParallelParentID BIT(1),
 	IsMultiCateIDSameParentID BIT(1),
 	IsKeepOldCateID BIT(1),
+	RemarkTemplateID SMALLINT,
 	PRIMARY KEY (CategoryID, CategoryGroupID),
 	KEY IX_CustCateSettings_ParentID (ParentID)
 );

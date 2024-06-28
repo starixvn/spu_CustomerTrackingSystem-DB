@@ -45,6 +45,15 @@ BEGIN
 	DECLARE	CONST_CATEID_INITIALSMART		 			INT;
     DECLARE	CONST_CATEID_INITIALSMARTLOSING			INT;
 
+    DECLARE CONST_REMARKID_TVSREQUESTIDPARLAY       INT DEFAULT 40;
+    DECLARE CONST_REMARKID_TVSBETIDPARLAY           INT DEFAULT 41;
+    DECLARE CONST_REMARKID_ROBOTFROMTW              INT DEFAULT 50;
+    DECLARE CONST_REMARKID_ROBOTFROMIMPERVA         INT DEFAULT 51;
+    DECLARE CONST_REMARKID_ROBOTFROMAI              INT DEFAULT 52;
+    DECLARE CONST_REMARKID_ROBOTFROMCTS             INT DEFAULT 53;
+    DECLARE CONST_REMARKID_ROBOTFROMTVSREQUESTID    INT DEFAULT 54;
+    DECLARE CONST_REMARKID_ROBOTFROMTVSBETID        INT DEFAULT 55;
+
     DECLARE lv_LicBA_CategoryName				VARCHAR(50);
     DECLARE lv_LicBA_CC							SMALLINT UNSIGNED;
     DECLARE lv_LicVIPProblem_CC					SMALLINT UNSIGNED;
@@ -56,6 +65,10 @@ BEGIN
 
     SET lv_Delimiter = '|';
 
+    SET CONST_CATEID_ROBOTUSER 		                = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTUSER');
+    SET CONST_CATEID_ROBOTOCRD 		                = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTOCRD');
+    SET CONST_CATEID_ROBOTUSERLOSING 		        = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTUSERLOSING');
+    SET CONST_CATEID_ROBOTOCRDLOSING 		        = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTOCRDLOSING');
     SET CONST_CATEID_LICBA 		                    = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICBA');
     SET CONST_CATEID_LICVIPSUSPICIOUS 		        = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPSUSPICIOUS');
     SET CONST_CATEID_LICVIPDANGEROUS 		        = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPDANGEROUS');
@@ -91,6 +104,17 @@ BEGIN
 			,	PRIMARY KEY (CustID, CategoryID)	
 	);
 
+    IF EXISTS (SELECT 1 FROM Temp_NewClassification AS tmp
+                        INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = tmp.CategoryID
+                        WHERE cs.RemarkID IS NOT NULL)
+        INSERT IGNORE INTO Temp_CustRemark(CustID, CategoryID, Remark)
+        SELECT  tmp.CustID
+            ,   tmp.CategoryID
+            ,   cr.RemarkTemplate
+        FROM Temp_NewClassification AS tmp
+            INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = tmp.CategoryID AND cs.RemarkID IS NOT NULL
+            INNER JOIN CTS_DataCenter.CustomerClassification_Remark AS cr ON cr.RemarkID = cs.RemarkTemplateID;
+
 	IF ip_InputFlowID IN (1,2,3,4) THEN /*ip_InputFlowID: VVIP/SpecialCC/LicVIP/LicBA*/
 		INSERT IGNORE INTO Temp_CustRemark(CustID, CategoryID, Remark)
         SELECT  tmp.CustID
@@ -103,12 +127,6 @@ BEGIN
 		    INNER JOIN CTS_DataCenter.CustomerClassification_Remark AS cr ON cr.RemarkID = tmp.SourceTypeID
         WHERE tmp.SourceTypeID IS NOT NULL;
 
-/*
-,   '[LicVIP]', CASE    WHEN temp.TargetCC = lv_LicVIPProblem_CC THEN lv_LicVIPProblem_CategoryName
-						                    WHEN temp.TargetCC = lv_LicVIPNormal_CC THEN lv_LicVIPNormal_CategoryName ELSE '' END
-                    ,   '[LicBA]',  CASE	WHEN temp.TargetCC = lv_LicBA_CC THEN lv_LicBA_CategoryName ELSE '' END
-*/
-
         SELECT	CustID
 		    ,	CategoryID
 		    ,	Remark
@@ -116,6 +134,29 @@ BEGIN
 
 	END IF;
 	ELSE /*IF ip_InputFlowID IN (50,51,6,7,8): PA/PotentialPA/Robot/Normal*/
+        INSERT IGNORE INTO Temp_CustRemark(CustID, CategoryID, Remark)
+        WITH CTECustRemarkID AS (
+        SELECT  tmp.CustID
+            ,   tmp.CategoryID
+            ,   CASE    
+                    WHEN tmp.IsFromTVS = 1 AND TVSRequestID > 0 AND tmp.WinlossRM IS NOT NULL AND tmp.TVSSportType > 0 AND tmp.IsTVSParlay = 1 THEN CONST_REMARKID_TVSREQUESTIDPARLAY
+                    WHEN tmp.IsFromTVS = 1 AND TVSRequestID = 0 AND tmp.WinlossRM IS NOT NULL AND tmp.TVSSportType > 0 AND tmp.IsTVSParlay = 1 THEN CONST_REMARKID_TVSBETIDPARLAY
+                    WHEN tmp.CategoryID IN (CONST_CATEID_ROBOTUSER, CONST_CATEID_ROBOTOCRD, CONST_CATEID_ROBOTUSERLOSING, CONST_CATEID_ROBOTOCRDLOSING) THEN
+                        CASE    WHEN tmp.IsFromTW = 1 THEN CONST_REMARKID_ROBOTFROMTW
+                                WHEN tmp.IsFromImperva = 1 THEN CONST_REMARKID_ROBOTFROMIMPERVA
+                                WHEN tmp.IsFromAI = 1 THEN CONST_REMARKID_ROBOTFROMAI
+                                WHEN tmp.IsFromCTS = 1 THEN CONST_REMARKID_ROBOTFROMCTS
+                                WHEN tmp.IsFromTVS = 1 AND TVSRequestID > 0 THEN CONST_REMARKID_ROBOTFROMTVSREQUESTID
+                                WHEN tmp.IsFromTVS = 1 AND TVSRequestID = 0 THEN CONST_REMARKID_ROBOTFROMTVSBETID END
+                    END AS RemarkID
+        FROM Temp_NewClassification AS tmp
+        )
+        SELECT  cte.CustID
+            ,   cte.CategoryID
+            ,   cr.RemarkTemplate
+        FROM CTECustRemarkID AS cte
+        INNER JOIN CTS_DataCenter.CustomerClassification_Remark AS cr ON cr.RemarkID = cte.RemarkID;
+
         INSERT IGNORE INTO Temp_CustRemark(CustID, CategoryID, Remark)
         SELECT  tmp.CustID
             ,   tmp.CategoryID
