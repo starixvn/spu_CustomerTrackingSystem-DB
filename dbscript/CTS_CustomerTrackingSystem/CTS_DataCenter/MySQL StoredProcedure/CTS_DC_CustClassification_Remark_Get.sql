@@ -63,8 +63,6 @@ BEGIN
     
     DECLARE lv_Delimiter VARCHAR(5);
 
-    /*SET lv_Delimiter = "|";*/
-
     SET CONST_CATEID_ROBOTUSER 		                = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTUSER');
     SET CONST_CATEID_ROBOTOCRD 		                = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTOCRD');
     SET CONST_CATEID_ROBOTUSERLOSING 		        = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTUSERLOSING');
