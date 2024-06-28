@@ -63,7 +63,7 @@ BEGIN
     
     DECLARE lv_Delimiter VARCHAR(5);
 
-    SET lv_Delimiter = "|";
+    /*SET lv_Delimiter = "|";*/
 
     SET CONST_CATEID_ROBOTUSER 		                = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTUSER');
     SET CONST_CATEID_ROBOTOCRD 		                = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTOCRD');
@@ -123,7 +123,7 @@ BEGIN
 						CONCAT(CASE WHEN tmp.TargetCC = lv_LicVIPProblem_CC THEN lv_LicVIPProblem_CategoryName
 								WHEN tmp.TargetCC = lv_LicVIPNormal_CC THEN lv_LicVIPNormal_CategoryName
 								WHEN tmp.TargetCC = lv_LicBA_CC THEN lv_LicBA_CategoryName END,' ',cr.RemarkTemplate)
-					ELSE CONCAT(cr.RemarkTemplate, lv_Delimiter, IFNULL(tmp.Remark,'')) END AS Remark
+					ELSE CONCAT(cr.RemarkTemplate, '|', IFNULL(tmp.Remark,'')) END AS Remark
 			FROM Temp_NewClassification AS tmp
 				INNER JOIN CTS_DataCenter.CustomerClassification_Remark AS cr ON cr.RemarkID = tmp.SourceTypeID
 			WHERE tmp.SourceTypeID IS NOT NULL;
