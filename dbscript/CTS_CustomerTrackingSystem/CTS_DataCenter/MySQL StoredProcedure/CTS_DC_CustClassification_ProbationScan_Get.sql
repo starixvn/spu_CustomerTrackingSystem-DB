@@ -3,7 +3,9 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_ProbationSc
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE  `CTS_DataCenter`.`CTS_DC_CustClassification_ProbationScan_Get`(
-	IN ip_NoOfRecord 			INT
+		IN 	ip_NoOfRecord 			INT
+	,	OUT	op_LastCustID			INT
+	,	OUT	op_LastCategoryID		INT
 )
     SQL SECURITY INVOKER 
 sp: BEGIN
