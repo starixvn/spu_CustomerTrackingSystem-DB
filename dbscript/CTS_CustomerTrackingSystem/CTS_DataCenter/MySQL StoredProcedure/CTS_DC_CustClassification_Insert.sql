@@ -337,12 +337,83 @@ BEGIN
 					OR temp.CategoryPriority > lv_LicVIP_Suspicious_Priority);
 
 		UPDATE CTS_DataCenter.CTSCustomer AS cus
-			INNER JOIN Temp_Customer AS tmpCus ON cus.CTSCustID = tmpCus.CTSCustID
+			INNER JOIN Temp_Customer AS temp ON cus.CTSCustID = temp.CTSCustID
 		SET 	cus.IsLicenseeVIP = 1
 			, 	cus.ModifiedTime = lv_CurrentDateTime
 		WHERE cus.IsLicenseeVIP <> 1;   
 		
+		IF EXISTS (SELECT 1 FROM Temp_NewClassification AS temp) THEN
+			INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
+				CTSCustID, CustID, SubscriberID, ParentID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsAffectedFromUpline) 
+			SELECT	temp.CTSCustID
+				,	temp.CustID
+				,	temp.SubscriberID
+				,	CONST_PARENTID_WRAPPER AS ParentID
+				,	(CASE WHEN temp.IsDangerProbation = 1 THEN CONST_CATEID_LICVIPSUSPICIOUS ELSE CONST_CATEID_LICVIPDANGEROUS END) AS CategoryID
+				,	lv_CurrentDateTime AS CreatedDate
+				,	temp.CreatedBy
+				,	lv_CurrentDateTime AS LastModifiedDate
+				,	temp.CreatedBy AS LastModifiedBy
+				,	DATE(lv_CurrentDateTime) LastScannedDate
+				,	1 AS IsAffectedFromUpline
+			FROM Temp_CustCategory AS temp;
 		
+			/*Insert history*/
+			INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(
+					CustID, CTSCustID, ParentID, CategoryID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, IsAffectedFromUpline)
+			SELECT 	temp.CustID
+				, 	temp.CTSCustID
+				,	CONST_PARENTID_WRAPPER AS ParentID
+				,	(CASE WHEN temp.IsDangerProbation = 1 THEN CONST_CATEID_LICVIPSUSPICIOUS ELSE CONST_CATEID_LICVIPDANGEROUS END) AS CategoryID
+				,	CONST_CATEID_LICBA AS CategoryID 
+				, 	lv_CurrentDateTime AS LastModifiedDate
+				, 	temp.CreatedBy AS LastModifiedBy
+				,	0  AS ActionType
+				,	0  AS IsAuto
+				,   DATE(lv_CurrentDateTime) AS InsertDate
+				,   temp.TargetCC
+				,   38 AS SourceTypeID
+				,	1 AS IsDataChanged
+				,	1 AS IsAffectedFromUpline
+			FROM Temp_CustCategory AS temp;
+			
+			/*Insert log*/
+			INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(
+					CustID, CTSCustID, ParentID, CategoryID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, IsAffectedFromUpline)
+			SELECT 	temp.CustID
+				, 	temp.CTSCustID
+				,	CONST_PARENTID_WRAPPER AS ParentID
+				,	(CASE WHEN temp.IsDangerProbation = 1 THEN CONST_CATEID_LICVIPSUSPICIOUS ELSE CONST_CATEID_LICVIPDANGEROUS END) AS CategoryID
+				, 	lv_CurrentDateTime AS LastModifiedDate
+				, 	temp.CreatedBy AS LastModifiedBy
+				,	0  AS ActionType
+				,	0  AS IsAuto
+				,   DATE(lv_CurrentDateTime) AS InsertDate
+				,   temp.TargetCC
+				,   38 AS SourceTypeID
+				,	temp.IsDataChanged
+				,	1 AS IsAffectedFromUpline
+			FROM Temp_CustCategory AS temp;
+			
+		ELSE
+			INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
+					CTSCustID, CustID, SubscriberID, SportGroupID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsAffectedFromUpline) 
+			SELECT	temp.CTSCustID
+				,	temp.CustID
+				,	temp.SubscriberID
+				,	CONST_PARENTID_WRAPPER AS ParentID
+				,	CONST_CATEID_LICBA AS CategoryID 
+				,	lv_CurrentDateTime AS CreatedDate
+				,	temp.CreatedBy
+				,	lv_CurrentDateTime AS LastModifiedDate
+				,	temp.CreatedBy AS LastModifiedBy
+				,	DATE(lv_CurrentDateTime) LastScannedDate
+				,	1 AS IsAffectedFromUpline
+			FROM Temp_Customer AS temp
+				LEFT JOIN Temp_NewClassification AS tmpCat ON tmpCat.CustID = temp.CustID
+			WHERE tmpCat.CustID IS NULL;
+
+		END IF;
     
 	
 	ELSEIF ip_InputFlowID = 4 THEN /*LicBA*/
@@ -419,6 +490,7 @@ BEGIN
 				,	lv_CurrentDateTime AS LastModifiedDate
 				,	temp.CreatedBy AS LastModifiedBy
 				,	DATE(lv_CurrentDateTime) LastScannedDate
+				,	1 AS IsAffectedFromUpline
 			FROM Temp_CustCategory AS temp;
 		
 			/*Insert history*/
@@ -435,7 +507,8 @@ BEGIN
 				,   DATE(lv_CurrentDateTime) AS InsertDate
 				,   temp.TargetCC
 				,   38 AS SourceTypeID
-				,	temp.IsDataChanged
+				,	1 AS IsDataChanged
+				,	1 AS IsAffectedFromUpline
 			FROM Temp_CustCategory AS temp;
 			
 			/*Insert log*/
@@ -453,6 +526,7 @@ BEGIN
 				,   temp.TargetCC
 				,   38 AS SourceTypeID
 				,	temp.IsDataChanged
+				,	1 AS IsAffectedFromUpline
 			FROM Temp_CustCategory AS temp;
 			
 		ELSE
@@ -468,13 +542,18 @@ BEGIN
 				,	lv_CurrentDateTime AS LastModifiedDate
 				,	temp.CreatedBy AS LastModifiedBy
 				,	DATE(lv_CurrentDateTime) LastScannedDate
+				,	1 AS IsAffectedFromUpline
 			FROM Temp_Customer AS temp
 				LEFT JOIN Temp_NewClassification AS tmpCat ON tmpCat.CustID = temp.CustID
 			WHERE tmpCat.CustID IS NULL;
 		
 		END IF;
 
+	
+	-- ELSEIF ip_InputFlowID = 4 THEN 
+	-- ELSE
 		
+	
 	END IF;
 	
 	
