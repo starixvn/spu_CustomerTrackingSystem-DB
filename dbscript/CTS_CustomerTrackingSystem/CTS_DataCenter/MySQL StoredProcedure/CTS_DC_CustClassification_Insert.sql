@@ -4,13 +4,13 @@ DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_Insert`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Insert`(
 		IN	ip_InputFlowID			INT 
-		IN	ip_FromAction			TINYINT
-		IN	ip_UplineRoleID			TINYINT
-		IN	ip_QueueID				BIGINT
-		IN	ip_AffectDownline		BIT(1)
-		IN	ip_IsToQueue			BIT(1)
-		IN	ip_CustInfo				JSON
-		OUT op_ErrorMessage 		VARCHAR(200)
+	,	IN	ip_FromAction			TINYINT
+	,	IN	ip_UplineRoleID			TINYINT
+	,	IN	ip_QueueID				BIGINT
+	,	IN	ip_AffectDownline		BIT(1)
+	,	IN	ip_IsToQueue			BIT(1)
+	,	IN	ip_CustInfo				JSON
+	,	OUT op_ErrorMessage 		VARCHAR(200)
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -37,7 +37,7 @@ BEGIN
 	DECLARE CONST_PARENTID_WRAPPER 			INT;
 	DECLARE CONST_PARENTID_PA 				INT;
 	
-	DECLARE lv_MaxCTSCustID					BIGINT
+	DECLARE lv_MaxCTSCustID					BIGINT;
 	DECLARE lv_SourceTypeID					INT;  
 	DECLARE lv_BACatePriority				SMALLINT;
 	DECLARE lv_LicVIP_Dangerous_Priority	SMALLINT;
@@ -82,10 +82,10 @@ BEGIN
 								AND cs.IsKeepOldCateID = 1);	
 									
 		DELETE cls							
-		FROM CTS_DataCenter.SpecialCustomerClass AS scc							
-			INNER JOIN Temp_NewClassification AS temp ON scc.CustID = temp.CustID						
+		FROM CTS_DataCenter.SpecialCustomerClass AS cls							
+			INNER JOIN Temp_NewClassification AS temp ON cls.CustID = temp.CustID						
 		WHERE temp.IsExistVVIP = 0							
-			AND scc.CreatedFromFunction = 1;
+			AND cls.CreatedFromFunction = 1;
 
 		/*Insert VVIP*/
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification (
@@ -287,7 +287,7 @@ BEGIN
 		SELECT cat.Priority
 		INTO lv_LicVIP_Suspicious_Priority
 		FROM CTS_DataCenter.CustomerCategory AS cat
-		WHERE cat.CategoryID IN (CONST_CATEID_LICVIPSUSPICIOUS)
+		WHERE cat.CategoryID IN (CONST_CATEID_LICVIPSUSPICIOUS);
 		
 		INSERT INTO Temp_NewClassification(
 				CustID, CTSCustID, SubscriberID, CreatedBy, IsLicenseeVIP, ParentID, CategoryID, IsDangerProbation, CategoryPriority, CustomerClassPriority, TargetCC ) 
