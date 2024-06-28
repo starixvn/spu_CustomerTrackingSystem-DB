@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `DCS_DC_Transform_Cookie_Insert`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_Cookie_Insert`(
-    IN ip_CookieCodes	LONGTEXT
+	IN ip_CookieJson	LONGTEXT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -20,7 +20,7 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_DC_Transform_Cookie_Insert('123,345');
+			CALL DCS_DC_Transform_Cookie_Insert('[{"CookieCode":"123","FirstTransTime":"2024-06-21 12:10:01.1234"}]');
 
 	*/
     DECLARE lv_CurrentDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
@@ -30,23 +30,36 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_CookieInsert(
 			ID				INT UNSIGNED AUTO_INCREMENT		PRIMARY KEY
         ,	CookieCode		VARCHAR(64) 					NOT NULL
+        ,	FirstTransTime	TIMESTAMP(4)
+        
 		,	IsNewCookie		TINYINT		 					DEFAULT 1
     );
     
-    SET @sql = CONCAT("INSERT INTO Temp_CookieInsert (CookieCode) VALUES ('", REPLACE(ip_CookieCodes, ",", "'),('"),"');");
-	PREPARE stmt1 FROM @sql;
-	EXECUTE stmt1;
+    INSERT INTO Temp_CookieInsert(CookieCode, FirstTransTime)
+    SELECT	jt.CookieCode
+		,	jt.FirstTransTime
+	FROM JSON_TABLE(
+			ip_CookieJson,
+			 "$[*]" COLUMNS(
+						CookieCode			VARCHAR(64) 	PATH "$.CookieCode"
+					,	FirstTransTime		TIMESTAMP(4) 	PATH "$.FirstTransTime"
+				)
+		   ) AS jt;
+	
+	ALTER TABLE Temp_CookieInsert
+	ADD INDEX IX_Temp_CookieInsert_CookieCode (CookieCode);
     
     UPDATE Temp_CookieInsert AS tmp
 		INNER JOIN DCS_DataCenter.Cookie AS c ON c.CookieCode = tmp.CookieCode
     SET tmp.IsNewCookie = 0;
 	
-	INSERT IGNORE INTO DCS_DataCenter.Cookie(CookieCode, CreatedDate)
-	SELECT	DISTINCT
-			CookieCode
+	INSERT IGNORE INTO DCS_DataCenter.Cookie(CookieCode, FirstTransTime, CreatedDate)
+	SELECT	CookieCode
+		,	MIN(FirstTransTime) AS FirstTransTime
 		,	lv_CurrentDate AS CreatedDate
 	FROM Temp_CookieInsert
-    WHERE IsNewCookie = 1;
+    WHERE IsNewCookie = 1
+    GROUP BY CookieCode;
     
 END$$
 
