@@ -24,6 +24,7 @@ BEGIN
 			- 20220426@Harvey.Nguyen: fix bug return duplicate category [Redmine ID: #170802]
 			- 20240320@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
             - 20240425@Thomas.Nguyen: Classify Initial Group Betting - Add ParentID = 150 [Redmine ID: #200854]
+			- 20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode ParentID [Redmine ID: #205317]
 
 		Param's Explanation:
 
@@ -31,10 +32,13 @@ BEGIN
     
     DECLARE lv_remark VARCHAR(50);
 	DECLARE	lv_GroupNormal	VARCHAR(50);
-	DECLARE	CONST_PARENTID_POTENTIALPA 	INT DEFAULT 150;
+	DECLARE	CONST_PARENTID_POTENTIALPA 	INT;
+	DECLARE CONST_CATEID_NORMAL	INT;
 
-	SET lv_GroupNormal = (SELECT CategoryName FROM CustomerCategory WHERE CategoryID = 200);	
-    
+	SET CONST_PARENTID_POTENTIALPA 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
+	SET CONST_CATEID_NORMAL 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_NORMAL');
+	SET lv_GroupNormal = (SELECT CategoryName FROM CustomerCategory WHERE CategoryID = CONST_CATEID_NORMAL);	
+
     DROP TEMPORARY TABLE IF EXISTS Temp_CustID;
     CREATE TEMPORARY TABLE Temp_CustID (
 		CustID 			BIGINT UNSIGNED PRIMARY KEY

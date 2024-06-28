@@ -119,6 +119,7 @@ CREATE TABLE CustomerCategory
 	ABIDangerLevel_Credit SMALLINT UNSIGNED, 
 	DangerLevelType SMALLINT, 
 	OldCategoryID INT UNSIGNED,
+	ColorTypeID TINYINT UNSIGNED,
 	Ext_CategoryGroupID INT UNSIGNED,
 	Ext_EvidenceID_Licensee SMALLINT, 
 	Ext_EvidenceID_Credit SMALLINT, 

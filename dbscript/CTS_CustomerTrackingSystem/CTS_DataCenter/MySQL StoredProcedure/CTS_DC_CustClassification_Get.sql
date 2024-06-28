@@ -33,6 +33,7 @@ BEGIN
 			- 20220531@Aries.Nguyen: Renovate process PA [Redmine ID: #172561]
             - 20240318@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
             - 20240424@Thomas.Nguyen: Classify initial group betting - Add ParentID = 150 [Redmine ID: #200854]
+			- 20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode, PinCustomerCategory and return more IsVVIP, IsPA, IsPotentialPA, ColorTypeID [Redmine ID: #205317]
 
 		Param's Explanation:
         
@@ -41,51 +42,45 @@ BEGIN
             
             SELECT T
 	 */ 	
-    DECLARE	CONST_GROUP_NORMAL 		INT DEFAULT 200;
-    DECLARE	CONST_GROUP_PA 			INT DEFAULT 50;
-    DECLARE	CONST_GROUP_POTENTIALPA INT DEFAULT 150;
+	DECLARE CONST_PARENTID_PA               INT;
+    DECLARE CONST_PARENTID_POTENTIALPA      INT;
+	DECLARE CONST_PARENTID_NORMAL      		INT;
+	DECLARE CONST_CATEID_VVIP				INT;
 
-    DECLARE	CONST_CATEGORYGROUP_ROBOT 		INT DEFAULT 61;
-    DECLARE	CONST_CATEGORYGROUP_BADROBOT 	INT DEFAULT 163;
-    DECLARE	CONST_CATEGORYGROUP_GOODROBOT	INT DEFAULT 164;
-    
+	SET CONST_PARENTID_PA 				    = CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
+    SET CONST_PARENTID_POTENTIALPA 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
+	SET CONST_PARENTID_NORMAL 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
+	SET CONST_CATEID_VVIP 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
+
 	DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory;
     CREATE TEMPORARY TABLE Temp_LatestRecordOfCategory(
 			CategoryID		SMALLINT UNSIGNED
 		,   CategoryName   	VARCHAR(200) 
-        ,	CategoryGroup   SMALLINT UNSIGNED
-		,   CategoryType    SMALLINT UNSIGNED /*1: ParentID = 200, 2: ParentID = 50*/
+        ,	CategoryGroupID   SMALLINT UNSIGNED
 		,	ParentID		SMALLINT UNSIGNED
 		,	IsProbation		BIT DEFAULT 0
+		,	ColorTypeID		TINYINT UNSIGNED
     );
    
-	INSERT INTO Temp_LatestRecordOfCategory(CategoryID, CategoryName,CategoryGroup, CategoryType, ParentID, IsProbation)
+	INSERT INTO Temp_LatestRecordOfCategory(CategoryID, CategoryName,CategoryGroupID, ParentID, IsProbation, ColorTypeID)
 	SELECT DISTINCT (CASE 
-                        WHEN cc.ParentID = CONST_GROUP_PA THEN cc.CategoryGroup
+                        WHEN cc.ParentID = CONST_PARENTID_PA THEN cc.CategoryGroupID
                         ELSE cate.CategoryID 
 					END)
 				,	cc.CategoryName
-                ,	cc.CategoryGroup
-				,	(CASE WHEN cc.ParentID = CONST_GROUP_POTENTIALPA THEN 2
-							WHEN cc.ParentID = CONST_GROUP_PA THEN 1
-                            WHEN cc.ParentID = CONST_GROUP_NORMAL  THEN 3 END) AS CategoryType
+                ,	cc.CategoryGroupID
 				,	cc.ParentID
 				,	IsPAProbation AS IsProbation
+				,	cc.ColorTypeID
 	FROM	CTS_DataCenter.CTSCustomerClassification AS cate
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
     WHERE	cate.CTSCustID = ip_CTSCustID 
-		AND cc.ParentID IN (CONST_GROUP_PA, CONST_GROUP_NORMAL, CONST_GROUP_POTENTIALPA)
+		AND cc.ParentID IN (CONST_PARENTID_PA, CONST_PARENTID_NORMAL, CONST_PARENTID_POTENTIALPA)
         AND cc.IsActive = 1;
     
     IF (SELECT COUNT(DISTINCT ParentID) FROM Temp_LatestRecordOfCategory) > 1 THEN
-		DELETE FROM Temp_LatestRecordOfCategory WHERE ParentID = CONST_GROUP_NORMAL;
+		DELETE FROM Temp_LatestRecordOfCategory WHERE ParentID = CONST_PARENTID_NORMAL;
     END IF;
-    
-    IF EXISTS (SELECT 1 FROM CTS_DataCenter.PinCustomerCategory WHERE CTSCustID = ip_CTSCustID) THEN 
-		SELECT 1 AS IsPinCategory;
-	ELSE 
-		SELECT 0 AS IsPinCategory;
-	END IF;
         
 	IF EXISTS (SELECT 1 FROM CTS_DataCenter.TaggingExclusion WHERE CTSCustID = ip_CTSCustID) THEN 
 		SELECT 1 AS IsExcludedTagAssPA;
@@ -93,12 +88,15 @@ BEGIN
 		SELECT 0 AS IsExcludedTagAssPA;
 	END IF; 
 
-	SELECT	CategoryType 
-		,	CategoryID
+	SELECT	CategoryID
 		,	CategoryName
-        ,	CategoryGroup
+        ,	CategoryGroupID
 		,	ParentID
 		,	IsProbation 
+		,	CASE WHEN CategoryID = CONST_CATEID_VVIP THEN 1 ELSE 0 END AS IsVVIP
+		,	CASE WHEN ParentID = CONST_PARENTID_PA THEN 1 ELSE 0 END AS IsPA
+		,	CASE WHEN ParentID = CONST_PARENTID_POTENTIALPA THEN 1 ELSE 0 END AS IsPotentialPA
+		,	ColorTypeID
 	FROM Temp_LatestRecordOfCategory;
 END$$
 DELIMITER ;

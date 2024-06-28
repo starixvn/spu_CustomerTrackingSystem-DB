@@ -27,6 +27,7 @@ sp : BEGIN
 			- 20210427@Aries.Nguyen: Enhance performance [Redmine ID: #152509] 
 			- 20210915@Aries.Nguyen: Remove DeviceAssociationDay table [Redmine ID: #160470]
             - 20240425@Thomas.Nguyen: Classify Initial Group Betting - Add ParentID = 150 [Redmine ID: #200854]
+			- 20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode ParentID [Redmine ID: #205317]
 
 		Param's Explanation (filtered by):
             - ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual
@@ -37,9 +38,13 @@ sp : BEGIN
 			- CALL CTS_DataCenter.CTS_DC_RPT_AssociatedAccount('1,11','4414',0,0,'2021-01-28','2021-01-30',41,0,100, @op_TotalItems);
 
 	*/    
-	DECLARE	CONST_PARENTID_PA 					INT DEFAULT 50;
-	DECLARE	CONST_PARENTID_POTENTIALPA 			INT DEFAULT 150;
-	DECLARE	CONST_PARENTID_NORMAL 				INT DEFAULT 200;
+	DECLARE	CONST_PARENTID_PA 					INT;
+	DECLARE	CONST_PARENTID_POTENTIALPA 			INT;
+	DECLARE	CONST_PARENTID_NORMAL 				INT;
+
+	SET CONST_PARENTID_PA 				    = CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
+    SET CONST_PARENTID_POTENTIALPA 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
+	SET CONST_PARENTID_NORMAL 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
 
 	IF (ip_SubscriberIDs IS NULL OR ip_SubscriberIDs = '' OR ip_SubscriberIDs = -1) 
 		OR (ip_AssociationStatus IS NULL OR ip_AssociationStatus = -1)

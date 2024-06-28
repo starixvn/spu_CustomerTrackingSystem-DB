@@ -39,6 +39,7 @@ sp : BEGIN
             - 20230421@Casey.Huynh: 	Handle Fist Association Date [Redmine ID: #185783]
             - 20240319@Casey.Huynh: 	Classify Danger Score [Redmine ID: #201358]
             - 20240425@Thomas.Nguyen:	Classify Initial Group Betting - Add ParentID = 150 [Redmine ID: #200854]
+			- 20240628@Thomas.Nguyen: 	Renovate CC phase 2 - Remove hardcode and return more IsPA, IsPotentialPA [Redmine ID: #205317]
 
 		Param's Explanation (filtered by):
 			- ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual, 4 - IP
@@ -55,8 +56,8 @@ sp : BEGIN
 	*/
 	DECLARE CONST_ASSTYPE_BETTINGPATTERN INT DEFAULT 2;
     DECLARE CONS_ASSBYAI_ACTIVESTATUS INT DEFAULT 1;
-	DECLARE	CONST_PARENTID_POTENTIALPA 			INT DEFAULT 150;
-	DECLARE	CONST_PARENTID_NORMAL 				INT DEFAULT 200;
+	DECLARE CONST_PARENTID_PA               	INT;
+	DECLARE	CONST_PARENTID_POTENTIALPA 			INT;
     #==================================================
 	DECLARE lv_CustID INT;
     
@@ -76,6 +77,9 @@ sp : BEGIN
 		INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
 		SELECT lv_SPName, CURRENT_TIMESTAMP(), @LogInfo; 
 	END IF;  
+	
+	SET CONST_PARENTID_PA 				    = CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
+    SET CONST_PARENTID_POTENTIALPA 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
 	#========================================================================
     IF (ip_SubscriberIDs IS NULL OR ip_SubscriberIDs = '' OR ip_SubscriberIDs = -1) OR  (ip_CategoryIDs IS NULL OR ip_CategoryIDs = '' OR ip_CategoryIDs = -1) THEN
 		LEAVE sp;
@@ -431,12 +435,11 @@ sp : BEGIN
 		,	tmpCS.ParentID AS ParentIDs
 		,	tmpCS.CategoryIDs AS CategoryIDs
 		,	tmpCS.CategoryNames AS CategoryNames
-        ,	(CASE 	WHEN tmpCS.ParentID = CONST_PARENTID_NORMAL THEN 3
-					WHEN tmpCS.ParentID = CONST_PARENTID_POTENTIALPA THEN 2
-                    ELSE 1 END) AS CategoryType
 		,	tmpCS.IsProbation AS IsProbation
 		,	t.GroupIDList AS GroupIDs
 		,	t.OriginGroupIDList AS OriginGroupIDs
+		,	CASE WHEN tmpCS.ParentID = CONST_PARENTID_PA THEN 1 ELSE 0 END AS IsPA
+		,	CASE WHEN tmpCS.ParentID = CONST_PARENTID_POTENTIALPA THEN 1 ELSE 0 END AS IsPotentialPA
 	FROM Temp_AssociatedAccount AS tmpAcc
 		INNER JOIN Temp_Classification AS tmpCS ON tmpCS.CTSCustID = tmpAcc.CTSCustID
 		LEFT JOIN Temp_CustomerGroup AS t ON tmpAcc.CustID = t.CustID
