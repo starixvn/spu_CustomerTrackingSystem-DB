@@ -67,8 +67,9 @@ BEGIN
                     AND ca.IsActive = 1
 				ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
 				LIMIT 1
-		   ) tmplc ON t.CustID = tmplc.CustID
-	WHERE tmplc.ParentID = CONST_PARENTID_NORMAL
+		   ) tmplc 
+	WHERE t.CustID = tmplc.CustID
+		AND tmplc.ParentID = CONST_PARENTID_NORMAL
         AND tmplc.ScanTaggingIntervalInSecond > 0;
            
 	SELECT DISTINCT t.CustID AS CustID
