@@ -31,10 +31,10 @@ BEGIN
         ,	Remark			VARCHAR(300)
         ,	CategoryID		SMALLINT
         ,	CategoryGroup	INT
-        ,	IsFromTVS		BIT(0)
-        ,	IsFromTW		BIT(0)
-        ,	IsFromCTS		BIT(0)
-        ,	TVSRequestID	BIT(0)
+        ,	IsFromTVS		BIT(1)
+        ,	IsFromTW		BIT(1)
+        ,	IsFromCTS		BIT(1)
+        ,	TVSRequestID	BIT(1)
 	);
     
 	SET @sql =CONCAT("	INSERT IGNORE INTO Temp_Customer (CustID, IsInternal, SiteID) 
@@ -72,7 +72,7 @@ BEGIN
 		,	ip_ActionType
 		,	CURRENT_TIMESTAMP(3) AS InsertTime
 		,	tmpPa.TVSRequestID
-	FROM Temp_PA AS tmpPa        
+	FROM Temp_Customer AS tmpPa        
 	WHERE tmpPa.RoleID > 1
 	ORDER BY tmpPa.LastModifiedDate, tmpPa.CategoryID;
 END$$
