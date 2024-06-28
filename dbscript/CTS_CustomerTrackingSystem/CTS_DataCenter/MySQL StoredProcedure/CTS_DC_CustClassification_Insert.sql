@@ -40,7 +40,11 @@ BEGIN
 	DECLARE lv_MaxCTSCustID					BIGINT
 	DECLARE lv_SourceTypeID					INT;  
 	DECLARE lv_BACatePriority				SMALLINT;
+	DECLARE lv_LicVIP_Dangerous_Priority	SMALLINT;
+	DECLARE lv_LicVIP_Suspicious_Priority	SMALLINT;
     DECLARE lv_BA_CC						SMALLINT;
+    DECLARE lv_LicVIP_Suspicious_CC			SMALLINT;
+    DECLARE lv_LicVIP_Dangerous_CC			SMALLINT;
 	
 	DECLARE lv_LogTypeID					INT DEFAULT 10;
 	DECLARE	lv_CurrentDateTime				DATETIME DEFAULT CURRENT_TIME();
@@ -265,18 +269,90 @@ BEGIN
 
 		
 	ELSEIF ip_InputFlowID = 3 THEN /*LicVIP*/
+		SELECT cat.CustomerClass
+		INTO lv_LicVIP_Dangerous_CC
+		FROM CTS_DataCenter.CustomerCategory AS cat
+		WHERE cat.CategoryID = CONST_CATEID_LICVIPDANGEROUS;
 		
+		SELECT cat.CustomerClass
+		INTO lv_LicVIP_Suspicious_CC
+		FROM CTS_DataCenter.CustomerCategory AS cat
+		WHERE cat.CategoryID = CONST_CATEID_LICVIPSUSPICIOUS;   
+		
+		SELECT cat.Priority
+		INTO lv_LicVIP_Dangerous_Priority
+		FROM CTS_DataCenter.CustomerCategory AS cat
+		WHERE cat.CategoryID = CONST_CATEID_LICVIPDANGEROUS;
+		
+		SELECT cat.Priority
+		INTO lv_LicVIP_Suspicious_Priority
+		FROM CTS_DataCenter.CustomerCategory AS cat
+		WHERE cat.CategoryID IN (CONST_CATEID_LICVIPSUSPICIOUS)
+		
+		INSERT INTO Temp_NewClassification(
+				CustID, CTSCustID, SubscriberID, CreatedBy, IsLicenseeVIP, ParentID, CategoryID, IsDangerProbation, CategoryPriority, CustomerClassPriority, TargetCC ) 
+		WITH CTE_LastCategory AS
+		(
+		 SELECT	temp.CustID
+			,	temp.CTSCustID
+			,	temp.SubscriberID
+			,	temp.CreatedBy
+			,	temp.IsLicenseeVIP
+			,	tmpLastCat.ParentID
+			,	tmpLastCat.CategoryID
+			,	tmpLastCat.CategoryPriority
+			,	tmpLastCat.CustomerClassPriority
+			,	tmpLastCat.IsDangerProbation
+			,	tmpLastCat.CustomerClass
+			
+		FROM Temp_Customer AS temp,
+		LATERAL (
+				SELECT cls.ParentID, cls.CategoryID, cat.CategoryPriority, cat.CustomerClassPriority, cat.IsDangerProbation, cat.CustomerClass 
+				FROM CTS_DataCenter.CTSCustomerClassification AS cls
+					LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cls.CategoryID 
+				WHERE cls.CustID = temp.CustID
+				ORDER BY cls.CustID, cls.LastModifiedDate DESC
+				LIMIT 1
+			 ) AS tmpLastCat
+		) 
+		SELECT cte.CustID
+		,	cte.CTSCustID
+		,	cte.SubscriberID
+		,	cte.CreatedBy
+		,	cte.IsLicenseeVIP
+		,	cte.ParentID
+		,	cte.CategoryID
+		,	cte.IsDangerProbation
+		,	cte.CategoryPriority
+		,	cte.CustomerClassPriority
+		,	cte.CustomerClass
+		FROM  CTE_LastCategory AS cte; 
 	
+		UPDATE Temp_NewClassification AS temp
+		SET 	temp.IsDataChanged = 1
+			, 	temp.TargetCC = (CASE WHEN temp.IsDangerProbation = 1 THEN lv_LicVIP_Suspicious_CC ELSE lv_LicVIP_Dangerous_CC END)
+		WHERE temp.IsLicenseeVIP <> 1 
+			AND ( temp.CategoryPriority IS NULL 
+					OR temp.CategoryPriority > lv_LicVIP_Dangerous_Priority
+					OR temp.CategoryPriority > lv_LicVIP_Suspicious_Priority);
+
+		UPDATE CTS_DataCenter.CTSCustomer AS cus
+			INNER JOIN Temp_Customer AS tmpCus ON cus.CTSCustID = tmpCus.CTSCustID
+		SET 	cus.IsLicenseeVIP = 1
+			, 	cus.ModifiedTime = lv_CurrentDateTime
+		WHERE cus.IsLicenseeVIP <> 1;   
+		
+		
+    
 	
 	ELSEIF ip_InputFlowID = 4 THEN /*LicBA*/
 		SELECT cat.CategoryPriority, cat.CustomerClass
 		INTO lv_BACatePriority, lv_BA_CC
 		FROM CTS_DataCenter.CustomerCategory AS cat
-		WHERE cat.CategoryID = CONST_CATEID_LICBA
-		LIMIT 1;
+		WHERE cat.CategoryID = CONST_CATEID_LICBA;
 	
 		INSERT INTO Temp_NewClassification(
-				CustID, CTSCustID, SubscriberID, CreatedBy, IsLicenseeBA, CategoryID, CategoryPriority, CustomerClassPriority, TargetCC ) 
+				CustID, CTSCustID, SubscriberID, CreatedBy, IsLicenseeBA, ParentID, CategoryID, CategoryPriority, CustomerClassPriority, TargetCC ) 
 		WITH CTE_LastCategory AS
 		(
 		 SELECT	temp.CustID
@@ -284,13 +360,14 @@ BEGIN
 			,	temp.SubscriberID
 			,	temp.CreatedBy
 			,	temp.IsLicenseeBA
+			,	tmpLastCat.ParentID
 			,	tmpLastCat.CategoryID
 			,	tmpLastCat.CategoryPriority
 			,	tmpLastCat.CustomerClassPriority
 			,	tmpLastCat.CustomerClass
 		 FROM Temp_Customer AS temp,
 		 LATERAL (
-					SELECT cls.CategoryID, cat.CategoryPriority, cat.CustomerClassPriority, cat.CustomerClass 
+					SELECT cls.ParentID, cls.CategoryID, cat.CategoryPriority, cat.CustomerClassPriority, cat.CustomerClass 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
 						LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cls.CategoryID 
 																			AND cat.CategoryPriority < lv_BACatePriority
@@ -304,6 +381,7 @@ BEGIN
 		,	cte.SubscriberID
 		,	cte.CreatedBy
 		,	cte.IsLicenseeBA
+		,	cte.ParentID
 		,	cte.CategoryID
 		,	cte.CategoryPriority
 		,	cte.CustomerClassPriority
@@ -391,7 +469,7 @@ BEGIN
 				,	temp.CreatedBy AS LastModifiedBy
 				,	DATE(lv_CurrentDateTime) LastScannedDate
 			FROM Temp_Customer AS temp
-			LEFT JOIN Temp_CustCategory AS tmpCat ON tmpCat.CustID = temp.CustID
+				LEFT JOIN Temp_NewClassification AS tmpCat ON tmpCat.CustID = temp.CustID
 			WHERE tmpCat.CustID IS NULL;
 		
 		END IF;
