@@ -483,7 +483,7 @@ BEGIN
 	
 	
 	/*STEP 3: Process*/
-	-- CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_Process ();
+	CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_Process (ip_InputFlowID);
 	
 	
 	/*STEP 4: Complete*/

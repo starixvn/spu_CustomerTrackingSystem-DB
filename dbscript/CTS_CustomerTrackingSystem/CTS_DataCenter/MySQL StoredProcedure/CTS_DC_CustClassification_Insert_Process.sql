@@ -3,10 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_Insert_Process`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Insert_Process`(
-		IN	ip_InputFlowID			INT 
-	,	IN	ip_FromAction			TINYINT
-	,	IN	ip_CustInfo				JSON
-	,	OUT op_MaxCTSCustID			BIGINT
+		IN	ip_InputFlowID			INT
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -22,7 +19,7 @@ BEGIN
 			- 
 */
 
-
+	CALL CTS_DataCenter.CTS_DC_CustClassification_Remark_Get(ip_InputFlowID); 
 
 END$$
 DELIMITER ;
