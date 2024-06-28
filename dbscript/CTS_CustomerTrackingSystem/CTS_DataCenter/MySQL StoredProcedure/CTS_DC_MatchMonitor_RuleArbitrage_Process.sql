@@ -189,7 +189,7 @@ sp: BEGIN
 												THEN GROUP_CONCAT(DISTINCT CASE WHEN tmp.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET) THEN tmp.CTSCustID ELSE NULL END)
 								ELSE NULL END AS AgentDetect_CTSCustIDList
 			,	GROUP_CONCAT(tmp.SequenceID) AS SequenceIDList
-            ,	(CASE WHEN COUNT(DISTINCT CustID) > 1 AND SUM(Stake) >= lv_RuleTotalStake THEN 1 ELSE 0 END) AS IsValidGroup
+            ,	(CASE WHEN COUNT(DISTINCT CustID) > 1 THEN 1 ELSE 0 END) AS IsValidGroup
         FROM Temp_Trans AS tmp
         GROUP BY TimeGroupID;
     END IF;
@@ -209,13 +209,28 @@ sp: BEGIN
     FROM Temp_Group AS tmpGr
 		INNER JOIN Temp_Completed AS tmpCp ON tmpGr.GroupID = tmpCp.GroupID
     WHERE tmpCp.GroupID IS NOT NULL AND tmpGr.IsValidGroup = 1;
-
-    SELECT	tmpGr.CTSCustIDList
-		,	tmpGr.AgentDetect_CTSCustIDList
-        ,	tmpGr.SequenceIDList
-    FROM Temp_Group AS tmpGr
-		LEFT JOIN Temp_Completed AS tmpCp ON tmpGr.GroupID = tmpCp.GroupID
-	WHERE tmpCp.GroupID IS NULL AND tmpGr.IsValidGroup = 1;
+	
+	SELECT	GROUP_CONCAT(tmp.CTSCustID) AS CTSCustIDList
+		,	GROUP_CONCAT(tmp.Agent_CTSCustID) AS AgentDetect_CTSCustIDList
+		,	GROUP_CONCAT(tmp.SequenceIDList) AS SequenceIDList
+	FROM (	SELECT	tmpGr.GroupID
+				,	mms.CTSCustID
+				,	CASE WHEN COUNT(DISTINCT CASE WHEN mms.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET) THEN mms.CTSCustID ELSE NULL END) > 1 
+													THEN GROUP_CONCAT(DISTINCT CASE WHEN mms.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET) THEN mms.CTSCustID ELSE NULL END)
+											ELSE NULL END AS Agent_CTSCustID
+                ,	GROUP_CONCAT(mms.SequenceID) AS SequenceIDList
+			FROM Temp_Group AS tmpGr
+			JOIN JSON_TABLE(REPLACE(JSON_ARRAY(tmpGr.SequenceIDList), ',', '","'), 
+							'$[*]' COLUMNS (SequenceID BIGINT UNSIGNED PATH '$')
+							) js
+			INNER JOIN CTS_DataCenter.MatchMonitorStagingArbitrageNonLive AS mms ON js.SequenceID = mms.SequenceID	
+			LEFT JOIN Temp_Completed AS tmpCp ON tmpGr.GroupID = tmpCp.GroupID
+            WHERE tmpCp.GroupID IS NULL AND tmpGr.IsValidGroup = 1
+			GROUP BY tmpGr.GroupID, mms.CTSCustID
+            HAVING SUM(mms.Stake) >= lv_RuleTotalStake
+          ) AS tmp
+	GROUP BY GroupID
+    HAVING COUNT(DISTINCT CTSCustID) > 1;
     
 END$$
 DELIMITER ;
