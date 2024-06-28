@@ -115,25 +115,25 @@ BEGIN
             INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = tmp.CategoryID AND cs.RemarkID IS NOT NULL
             INNER JOIN CTS_DataCenter.CustomerClassification_Remark AS cr ON cr.RemarkID = cs.RemarkTemplateID;
 
-	IF ip_InputFlowID IN (1,2,3,4) THEN /*ip_InputFlowID: VVIP/SpecialCC/LicVIP/LicBA*/
-		INSERT IGNORE INTO Temp_CustRemark(CustID, CategoryID, Remark)
-        SELECT  tmp.CustID
-            ,   tmp.CategoryID
-			,	CASE WHEN tmp.TargetCC IN (lv_LicVIPProblem_CC,lv_LicVIPNormal_CC,lv_LicBA_CC) THEN
-					CONCAT(CASE WHEN tmp.TargetCC = lv_LicVIPProblem_CC THEN lv_LicVIPProblem_CategoryName
-                            WHEN tmp.TargetCC = lv_LicVIPNormal_CC THEN lv_LicVIPNormal_CategoryName
-                            WHEN tmp.TargetCC = lv_LicBA_CC THEN lv_LicBA_CategoryName END,' ',cr.RemarkTemplate)
-				ELSE CONCAT(cr.RemarkTemplate, lv_Delimiter, IFNULL(tmp.Remark,'')) END AS Remark
-		FROM Temp_NewClassification AS tmp
-		    INNER JOIN CTS_DataCenter.CustomerClassification_Remark AS cr ON cr.RemarkID = tmp.SourceTypeID
-        WHERE tmp.SourceTypeID IS NOT NULL;
+		IF ip_InputFlowID IN (1,2,3,4) THEN /*ip_InputFlowID: VVIP/SpecialCC/LicVIP/LicBA*/
+			INSERT IGNORE INTO Temp_CustRemark(CustID, CategoryID, Remark)
+			SELECT  tmp.CustID
+				,   tmp.CategoryID
+				,	CASE WHEN tmp.TargetCC IN (lv_LicVIPProblem_CC,lv_LicVIPNormal_CC,lv_LicBA_CC) THEN
+						CONCAT(CASE WHEN tmp.TargetCC = lv_LicVIPProblem_CC THEN lv_LicVIPProblem_CategoryName
+								WHEN tmp.TargetCC = lv_LicVIPNormal_CC THEN lv_LicVIPNormal_CategoryName
+								WHEN tmp.TargetCC = lv_LicBA_CC THEN lv_LicBA_CategoryName END,' ',cr.RemarkTemplate)
+					ELSE CONCAT(cr.RemarkTemplate, lv_Delimiter, IFNULL(tmp.Remark,'')) END AS Remark
+			FROM Temp_NewClassification AS tmp
+				INNER JOIN CTS_DataCenter.CustomerClassification_Remark AS cr ON cr.RemarkID = tmp.SourceTypeID
+			WHERE tmp.SourceTypeID IS NOT NULL;
 
-        SELECT	CustID
-		    ,	CategoryID
-		    ,	Remark
-	    FROM Temp_CustRemark;
+			SELECT	CustID
+				,	CategoryID
+				,	Remark
+			FROM Temp_CustRemark;
 
-	END IF;
+		END IF;
 	ELSE /*IF ip_InputFlowID IN (50,51,6,7,8): PA/PotentialPA/Robot/Normal*/
         INSERT IGNORE INTO Temp_CustRemark(CustID, CategoryID, Remark)
         WITH CTECustRemarkID AS (
