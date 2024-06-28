@@ -106,7 +106,7 @@ BEGIN
 
     IF EXISTS (SELECT 1 FROM Temp_NewClassification AS tmp
                         INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = tmp.CategoryID
-                        WHERE cs.RemarkID IS NOT NULL)
+                        WHERE cs.RemarkID IS NOT NULL) THEN
         INSERT IGNORE INTO Temp_CustRemark(CustID, CategoryID, Remark)
         SELECT  tmp.CustID
             ,   tmp.CategoryID
@@ -119,10 +119,11 @@ BEGIN
 		INSERT IGNORE INTO Temp_CustRemark(CustID, CategoryID, Remark)
         SELECT  tmp.CustID
             ,   tmp.CategoryID
-            ,   CONCAT(CASE WHEN tmp.TargetCC = lv_LicVIPProblem_CC THEN lv_LicVIPProblem_CategoryName
+			,	CASE WHEN tmp.TargetCC IN (lv_LicVIPProblem_CC,lv_LicVIPNormal_CC,lv_LicBA_CC) THEN
+					CONCAT(CASE WHEN tmp.TargetCC = lv_LicVIPProblem_CC THEN lv_LicVIPProblem_CategoryName
                             WHEN tmp.TargetCC = lv_LicVIPNormal_CC THEN lv_LicVIPNormal_CategoryName
-                            WHEN tmp.TargetCC = lv_LicBA_CC THEN lv_LicBA_CategoryName,' ',cr.RemarkTemplate)
-                        ELSE CONCAT(cr.RemarkTemplate, lv_Delimiter, IFNULL(tmp.Remark,'')) END
+                            WHEN tmp.TargetCC = lv_LicBA_CC THEN lv_LicBA_CategoryName END,' ',cr.RemarkTemplate)
+				ELSE CONCAT(cr.RemarkTemplate, lv_Delimiter, IFNULL(tmp.Remark,'')) END AS Remark
 		FROM Temp_NewClassification AS tmp
 		    INNER JOIN CTS_DataCenter.CustomerClassification_Remark AS cr ON cr.RemarkID = tmp.SourceTypeID
         WHERE tmp.SourceTypeID IS NOT NULL;
@@ -165,51 +166,50 @@ BEGIN
 		    INNER JOIN CTS_DataCenter.CustomerClassification_Remark AS cr ON cr.RemarkID = tmp.SourceTypeID
         WHERE tmp.SourceTypeID IS NOT NULL;
 
-        IF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_UNAUTHORIZEDLOGIN, CONST_CATEID_UNAUTHORIZEDLOGINLOSING))
+        IF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_UNAUTHORIZEDLOGIN, CONST_CATEID_UNAUTHORIZEDLOGINLOSING)) THEN
             UPDATE Temp_CustRemark AS tmp
                 INNER JOIN CustomerLoginInfoDetection AS cld ON cld.CustID = tmp.CustID
-            SET tmp.Remark = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tmp.Remark,'[FBDate]', DATE_FORMAT(cld.FirstBetDate, '%b %d, %Y')
-                                ,'[DetectedDate]', DATE_FORMAT(cld.SourceCreatedDate, '%b %d, %Y'), '[Bot]', cld.Bot,'[BotPCT]',cld.BotTransPercentage,'[InvalidBrowser]'
-                                ,cld.InvalidBrowser,'[InvalidBrowserPCT]',cld.InvalidBrowserInfoTransPercentage))))))
+            SET tmp.Remark = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tmp.Remark,'[FBDate]', DATE_FORMAT(cld.FirstBetDate, '%b %d, %Y'))
+								,'[DetectedDate]', DATE_FORMAT(cld.SourceCreatedDate, '%b %d, %Y')), '[Bot]', cld.Bot),'[BotPCT]',cld.BotTransPercentage),'[InvalidBrowser]'
+                                ,cld.InvalidBrowser),'[InvalidBrowserPCT]',cld.InvalidBrowserInfoTransPercentage)
             WHERE tmp.CategoryID IN (CONST_CATEID_UNAUTHORIZEDLOGIN, CONST_CATEID_UNAUTHORIZEDLOGINLOSING);
 
-        ELSEIF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_EARLYWARNINGMEMBERS, CONST_CATEID_EARLYWARNINGMEMBERSLOSING))
+        ELSEIF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_EARLYWARNINGMEMBERS, CONST_CATEID_EARLYWARNINGMEMBERSLOSING)) THEN
             UPDATE Temp_CustRemark AS tmp
                 INNER JOIN Customer_DangerousScore AS cds ON cds.CustID = tmp.CustID
-            SET tmp.Remark = REPLACE(REPLACE(REPLACE(tmp.Remark,'[DetectedDate]', DATE_FORMAT(cds.ClassifiedDate, '%b %d, %Y'), '[DangerousScore]', CAST(cds.ClassifiedScore*100 AS DECIMAL(5,2)))))
+            SET tmp.Remark = REPLACE(REPLACE(tmp.Remark,'[DetectedDate]', DATE_FORMAT(cds.ClassifiedDate, '%b %d, %Y')), '[DangerousScore]', CAST(cds.ClassifiedScore*100 AS DECIMAL(5,2)))
             WHERE tmp.CategoryID IN (CONST_CATEID_EARLYWARNINGMEMBERS, CONST_CATEID_EARLYWARNINGMEMBERSLOSING);
 
-        ELSEIF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_INITIALSMART, CONST_CATEID_INITIALSMARTLOSING))
+        ELSEIF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_INITIALSMART, CONST_CATEID_INITIALSMARTLOSING)) THEN
             UPDATE Temp_CustRemark AS tmp
                 INNER JOIN Customer_InitialSmart AS cis ON cis.CustID = tmp.CustID
-            SET tmp.Remark = REPLACE(REPLACE(tmp.Remark,'[DetectedDate]', DATE_FORMAT(cis.SourceCreatedDate, '%b %d, %Y'), '[Probability]', cis.Probability))
+            SET tmp.Remark = REPLACE(REPLACE(tmp.Remark,'[DetectedDate]', DATE_FORMAT(cis.SourceCreatedDate, '%b %d, %Y')), '[Probability]', cis.Probability)
             WHERE tmp.CategoryID IN (CONST_CATEID_INITIALSMART, CONST_CATEID_INITIALSMARTLOSING);
 
-        ELSEIF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_INITIALGB, CONST_CATEID_INITIALGBLOSING))
+        ELSEIF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_INITIALGB, CONST_CATEID_INITIALGBLOSING)) THEN
             UPDATE Temp_CustRemark AS tmp
                 INNER JOIN Customer_InitialGroupBetting AS cgb ON cgb.CustID = tmp.CustID
-            SET tmp.Remark = REPLACE(REPLACE(REPLACE(tmp.Remark,'[DetectedDate]', DATE_FORMAT(cgb.SourceCreatedDate, '%b %d, %Y'), '[GBTicketCount]', cgb.GBTicketCount, '[Sport]', cgb.SportType)))
+            SET tmp.Remark = REPLACE(REPLACE(REPLACE(tmp.Remark,'[DetectedDate]', DATE_FORMAT(cgb.SourceCreatedDate, '%b %d, %Y')), '[GBTicketCount]', cgb.GBTicketCount), '[Sport]', cgb.SportType)
             WHERE tmp.CategoryID IN (CONST_CATEID_INITIALGB, CONST_CATEID_INITIALGBLOSING);
         END IF;
 
         SELECT	CustID
 		    ,	CategoryID
 		    ,	REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(cust.Remark, 
-                        '[TVSRequestID]', tmp.TVSRequestID
-                    ,   '[Winloss]', tmp.WinlossRM
-                    ,   '[TVSSportType]', tmp.TVSSportType
-                    ,   '[Margin]', CASE WHEN tmp.TurnOverRM = 0 THEN 0 ELSE (tmp.WinlossRM/tmp.TurnoverRM) * 100 END
-                    ,   '[BetCount]', tmp.BetCount
-                    ,   '[TurnOver]', tmp.TurnoverRM
-                    ,   '[ActiveDays]', tmp.ActiveDays
+                        '[TVSRequestID]', tmp.TVSRequestID)
+                    ,   '[Winloss]', tmp.WinlossRM)
+                    ,   '[TVSSportType]', tmp.TVSSportType)
+                    ,   '[Margin]', CASE WHEN tmp.TurnOverRM = 0 THEN 0 ELSE (tmp.WinlossRM/tmp.TurnoverRM) * 100 END)
+                    ,   '[BetCount]', tmp.BetCount)
+                    ,   '[TurnOver]', tmp.TurnoverRM)
+                    ,   '[ActiveDays]', tmp.ActiveDays)
                     /*,   '[TWBetCount]', tmp.TWBetCount*/
-                    ,   '[TWGBRate]', tmp.TWGroupBettingRate
-                    ,   '[TWDesktopUsageRate]', tmp.TWDesktopUsageRate
-                    ,   '[TWTicketRejectRate]', tmp.TWTicketRejectRate
-                    ,   '[TWRobotCounter]', tmp.TWRobotCounter
-                    ,   '[MatchID]', tmp.MatchID 
-                    ,   '[UserComment]', IFNULL(tmp.Remark,'')
-                    )))))))))))))
+                    ,   '[TWGBRate]', tmp.TWGroupBettingRate)
+                    ,   '[TWDesktopUsageRate]', tmp.TWDesktopUsageRate)
+                    ,   '[TWTicketRejectRate]', tmp.TWTicketRejectRate)
+                    ,   '[TWRobotCounter]', tmp.TWRobotCounter)
+                    ,   '[MatchID]', tmp.MatchID)
+                    ,   '[UserComment]', IFNULL(tmp.Remark,''))
 	    FROM Temp_CustRemark AS cust
         INNER JOIN Temp_NewClassification AS tmp ON tmp.CustID = cust.CustID;
 	END IF;
