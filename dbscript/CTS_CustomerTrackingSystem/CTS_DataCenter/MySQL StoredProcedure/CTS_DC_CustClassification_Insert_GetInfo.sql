@@ -29,6 +29,7 @@ BEGIN
 	DECLARE CONST_PARENTID_VVIP 			INT;
 	DECLARE CONST_PARENTID_WRAPPER 			INT;
 	DECLARE CONST_PARENTID_PA 				INT;
+	DECLARE CONST_PARENTID_POTENTIALPA		INT;
 	
 	
     DECLARE lv_MaxCTSCustID					BIGINT UNSIGNED;
@@ -42,6 +43,7 @@ BEGIN
 	SET CONST_PARENTID_VVIP 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
 	SET CONST_PARENTID_WRAPPER 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
 	SET CONST_PARENTID_PA 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
+	SET CONST_PARENTID_POTENTIALPA			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
 	
 	IF ip_InputFlowID IN (1,2,3,4) THEN /*ip_InputFlowID: VVIP/SpecialCC/LicVIP/LicBA*/
 	
@@ -163,6 +165,7 @@ BEGIN
 			,	IsExistVVIP					BIT(1) DEFAULT 0
 			,	IsExistWrapper				BIT(1) DEFAULT 0
 			,	IsExistPA					BIT(1) DEFAULT 0
+			,	IsExistPotentialPA			BIT(1) DEFAULT 0
 			,	IsExistRobot				BIT(1) DEFAULT 0 
 			,	IsExistKeepOldCateID		BIT(1) DEFAULT 0 
 			
@@ -228,7 +231,7 @@ BEGIN
 
 			,   SpecialCC	       			SMALLINT  
 			,	SpecialCCName				VARCHAR(50)
-			,   SpecialCCPriority   		SMALLINT DEFAULT -1
+			,   SpecialCCCatePriority  		SMALLINT DEFAULT -1
 			,   SpecialCCDangerProbation   	BIT(1) DEFAULT NULL
 			
 			,	LastModifiedDate			DATETIME(3)
@@ -539,7 +542,7 @@ BEGIN
 			INSERT INTO Temp_NewClassification(
 				CustID,CTSCustID,DWCategoryGroupID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TWBetCount,TWGroupBettingRate
 				,TWTicketRejectRate,TWDesktopUsageRate,TaggingID,TaggingType,PerformanceTime,ScanTaggingType
-				,SubscriberID,IsLicensee,IsLicenseeVIP,IsLicenseeBA)
+				,SubscriberID,IsLicensee,IsLicenseeVIP,IsLicenseeBA,SpecialCC)
 			SELECT DISTINCT
 					tmpJs.CustID
 				,	cus.CTSCustID
@@ -560,6 +563,7 @@ BEGIN
 				,	cus.IsLicensee
 				,	cus.IsLicenseeVIP
 				,	cus.IsLicenseeBA
+				,	sp.CustomerClass AS SpecialCC
 			FROM JSON_TABLE(ip_CustInfo,
 							"$[*]" COLUMNS(
 												CustID 					BIGINT UNSIGNED		PATH "$.CustId"
@@ -578,6 +582,7 @@ BEGIN
 											, 	ScanTaggingType			BIT(1)				PATH "$.ScanTaggingType"
 										)) AS tmpJs
 				LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpJs.CustID = cus.CustID AND cus.CustSubID = 0
+				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID 
 			WHERE tmpJs.DWCategoryGroupID <> 0;
 		END IF;
 		
@@ -585,9 +590,8 @@ BEGIN
 		SET temp.IsExistVVIP = 1
 		WHERE EXISTS (	SELECT 1
 						FROM CTS_DataCenter.CTSCustomerClassification AS cls
-							INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cls.CategoryID
 						WHERE temp.CustID = cls.CustID
-							AND cs.ParentID = CONST_PARENTID_VVIP
+							AND cls.ParentID = CONST_PARENTID_VVIP
 					 );
 		
 		
@@ -595,9 +599,8 @@ BEGIN
 		SET temp.IsExistWrapper = 1
 		WHERE EXISTS (	SELECT 1
 						FROM CTS_DataCenter.CTSCustomerClassification AS cls
-							INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cls.CategoryID
 						WHERE temp.CustID = cls.CustID
-							AND cs.ParentID = CONST_PARENTID_WRAPPER
+							AND cls.ParentID = CONST_PARENTID_WRAPPER
 					 );
 					 
 					 
@@ -605,9 +608,16 @@ BEGIN
 		SET temp.IsExistPA = 1
 		WHERE EXISTS (	SELECT 1
 						FROM CTS_DataCenter.CTSCustomerClassification AS cls
-							INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cls.CategoryID
 						WHERE temp.CustID = cls.CustID
-							AND cs.ParentID = CONST_PARENTID_PA
+							AND cls.ParentID = CONST_PARENTID_PA
+					 );
+					 
+		UPDATE Temp_NewClassification AS temp
+		SET temp.IsExistPotentialPA = 1
+		WHERE EXISTS (	SELECT 1
+						FROM CTS_DataCenter.CTSCustomerClassification AS cls
+						WHERE temp.CustID = cls.CustID
+							AND cls.ParentID = CONST_PARENTID_POTENTIALPA
 					 );
 					 
 		UPDATE Temp_NewClassification AS temp

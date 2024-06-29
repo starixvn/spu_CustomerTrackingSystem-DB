@@ -20,164 +20,137 @@ BEGIN
         Example:
 				CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_PreProcess(6);
 */ 
-    DECLARE CONST_CATEGROUPID_PROBATION     INT;
-    DECLARE CONST_CATEGROUPID_SMART         INT;
-    DECLARE CONST_CATEGROUPID_RISKY         INT;
+	/* DECLARE Variable */
+    DECLARE CONST_CATEGROUPID_PROBATION     			INT;
+    DECLARE CONST_CATEGROUPID_SMART         			INT;
+    DECLARE CONST_CATEGROUPID_RISKY         			INT;
 
-    DECLARE CONST_PARENTID_PA               INT;
-    DECLARE CONST_PARENTID_POTENTIALPA      INT;
+    DECLARE CONST_PARENTID_PA               			INT;
+    DECLARE CONST_PARENTID_POTENTIALPA      			INT;
+    DECLARE CONST_CATETYPEID_NORMAL		      			INT;
+	
+    DECLARE CONST_CATEID_PROBATION		      			INT;
 
     DECLARE CONST_ACTIONTYPE_INSERT 					INT DEFAULT 0;
 	DECLARE	CONST_ACTIONTYPE_UPDATE 					INT DEFAULT 1;
 	DECLARE CONST_ACTIONTYPE_REMOVE 					INT DEFAULT 2;
     DECLARE CONST_ACTIONTYPE_EXISTEDPA 					INT DEFAULT 3;
-    /*DECLARE CONST_ACTIONTYPE_IGNOREPIN 					INT DEFAULT 4;*/
     DECLARE CONST_ACTIONTYPE_IGNOREPROBATION 			INT DEFAULT 5;
 
     DECLARE CONST_SCANTAGGINGTYPE_NOTEXIST  			TINYINT DEFAULT 0;
 	DECLARE	CONST_SCANTAGGINGTYPE_EXIST	   				TINYINT DEFAULT 1;
 	DECLARE	CONST_SCANTAGGINGTYPE_EXISTONLY 			TINYINT DEFAULT 2;
 
-	DECLARE lv_FromProbationLastDay 		DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 14 DAY);
-	DECLARE lv_ToProbationLastDay 			DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 2 DAY);
+	DECLARE lv_ProbationCatePriority					SMALLINT;
+	DECLARE lv_FromProbationLastDay 					DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 14 DAY);
+	DECLARE lv_ToProbationLastDay 						DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 2 DAY);
 
-    SET CONST_CATEGROUPID_PROBATION 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_PROBATION');
-    SET CONST_CATEGROUPID_SMART 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_SMART');
-    SET CONST_CATEGROUPID_RISKY 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_RISKY');
+	/* GET Variable */
+    SET CONST_CATEGROUPID_PROBATION 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_PROBATION');
+    SET CONST_CATEGROUPID_SMART 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_SMART');
+    SET CONST_CATEGROUPID_RISKY 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_RISKY');
 
-    SET CONST_PARENTID_PA 				    = CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
-    SET CONST_PARENTID_POTENTIALPA 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
+    SET CONST_PARENTID_PA 				    			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
+    SET CONST_PARENTID_POTENTIALPA 						= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
+    SET CONST_CATETYPEID_NORMAL	 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATETYPEID_NORMAL');
+	
+	SET CONST_CATEID_PROBATION							= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_PROBATION');
 
-    DROP TEMPORARY TABLE IF EXISTS Temp_ProbationCustomer;    
-	CREATE TEMPORARY TABLE Temp_ProbationCustomer(	  	
-			CustID					BIGINT UNSIGNED	PRIMARY KEY
-        , 	ScanDate				DATE      
-	);
-
-	DROP TEMPORARY TABLE IF EXISTS Temp_CustIgnoranceAction;    
-	CREATE TEMPORARY TABLE Temp_CustIgnoranceAction(	  	
-			CustID					BIGINT UNSIGNED	PRIMARY KEY
-        , 	ActionType				SMALLINT      
-	); 
-
-    DROP TEMPORARY TABLE IF EXISTS Temp_NotEnoughDayProbation; 
-	CREATE TEMPORARY TABLE Temp_NotEnoughDayProbation(	  
-			CustID					BIGINT UNSIGNED	PRIMARY KEY
-        ,   ScanTaggingType			TINYINT DEFAULT 0
-	); 
-/*
-	DROP TEMPORARY TABLE IF EXISTS Temp_PAWinlossStatus;    
-	CREATE TEMPORARY TABLE Temp_PAWinlossStatus(	
-			CustID					BIGINT UNSIGNED PRIMARY KEY
-        , 	WinlossStatus			SMALLINT /*LOSING  = 0 (PROBATION), WINNING = 2 (NOT PROBATION);*/
-	);
-*/
-	/* EXCLUDE INTERNAL CUSTOMERS */      
+	/* SETP 0: EXCLUDE INTERNAL CUSTOMERS */      
 	CALL CTS_DC_ExcludeCustByCondition('Temp_NewClassification');
+	
+	/* SETP 1: SpecialCC */ 
+	UPDATE Temp_NewClassification AS temp
+		LEFT JOIN CTS_DataCenter.CustomerCategory AS cc ON temp.SpecialCC = cc.CustomerClass
+															AND c.IsActive = 1
+	SET 	temp.SpecialCCName = cc.CustomerClassName
+		,	temp.SpecialCCCatePriority = cc.CategoryPriority
+		,	temp.SpecialCCDangerProbation = cc.IsDangerProbation
+	WHERE temp.SpecialCC <> 0;
 
-	IF ip_InputFlowID = 8 THEN
-		 /*4: GET PROBATION CUSTOMERS */
-		INSERT IGNORE INTO Temp_ProbationCustomer(CustID, ScanDate)
-		SELECT clss.CustID, clss.CreatedDate
-		FROM 	Temp_NewClassification AS tmp
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON tmp.CustID = clss.CustID AND clss.ParentID = tmp.ParentID
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = clss.CategoryID AND cate.CategoryGroupID = CONST_CATEGROUPID_PROBATION;
+	IF ip_InputFlowID = 8 THEN /* Normal */
+		 
+		/* TEMPORARY TABLE */
+		DROP TEMPORARY TABLE IF EXISTS Temp_ProbationCustomer;    
+		CREATE TEMPORARY TABLE Temp_ProbationCustomer(	  	
+				CustID					BIGINT UNSIGNED	PRIMARY KEY
+			, 	ScanDate				DATE   
+			,	IsPassProbationRule		BIT(1)
+		);
+
+		DROP TEMPORARY TABLE IF EXISTS Temp_CustIgnoranceAction;    
+		CREATE TEMPORARY TABLE Temp_CustIgnoranceAction(	  	
+				CustID					BIGINT UNSIGNED	PRIMARY KEY
+			, 	ActionType				SMALLINT      
+		); 
+
+		DROP TEMPORARY TABLE IF EXISTS Temp_NotEnoughDayProbation; 
+		CREATE TEMPORARY TABLE Temp_NotEnoughDayProbation(	  
+				CustID					BIGINT UNSIGNED	PRIMARY KEY
+			,   ScanTaggingType			TINYINT DEFAULT 0
+		); 
 		
-		/* 5: EXCLUDE CATEGORIES THAT SHOULD NOT BE UPDATED */
-		/* 5.1.1: EXCLUDE NOT PASS PROBATION RULES WITH UNCHANGED TAGGING*/ 
-		INSERT IGNORE INTO Temp_NotEnoughDayProbation(CustID, ScanTaggingType)
-		SELECT	tmp.CustID, tmp.ScanTaggingType
-		FROM 	Temp_NewClassification AS tmp
-			INNER JOIN Temp_ProbationCustomer AS pro ON tmp.CustID = pro.CustID
-		WHERE 	(tmp.DWCategoryGroupID IN (CONST_CATEGROUPID_SMART,CONST_CATEGROUPID_RISKY,CONST_CATEGROUPID_PROBATION) AND pro.ScanDate > lv_FromProbationLastDay) 
-				    OR (pro.ScanDate >= lv_ToProbationLastDay);
+		SELECT cat.CategoryPriority
+		INTO lv_ProbationCatePriority
+		FROM CTS_DataCenter.CustomerCategory AS cat
+		WHERE cat.CategoryID = CONST_CATEID_PROBATION;
+		
+		 /*4: GET PROBATION CUSTOMERS */
+		INSERT IGNORE INTO Temp_ProbationCustomer(CustID, ScanDate, ScanTaggingType, IsPassProbationRule)
+		SELECT 	cls.CustID
+			, 	cls.LastScannedDate
+			, 	temp.ScanTaggingType
+			, 	CASE WHEN cls.LastScannedDate >= lv_ToProbationLastDay THEN 0 ELSE 1 END AS IsPassProbationRule
+		FROM Temp_NewClassification AS temp
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID
+		WHERE cls.CategoryID = CONST_CATEID_PROBATION;
+		
+		/*DWCategoryGroupID IN (CONST_CATEGORY_SMART,CONST_CATEGORY_HIGHRISK,CONST_CATEGORY_PROBATION)*/
+		UPDATE Temp_ProbationCustomer AS temp
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.DWCategoryGroupID = temp.CategoryGroupID
+		SET temp.IsPassProbationRule = CASE WHEN temp.ScanDate > lv_FromProbationLastDay THEN 0 ELSE 1 END
+		WHERE cate.ParentID = CONST_CATETYPEID_NORMAL
+			cate.CategoryPriority <= lv_ProbationCatePriority;
+		
+		INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, ActionType)
+		SELECT	temp.CustID, CONST_ACTIONTYPE_IGNOREPROBATION
+		FROM 	Temp_ProbationCustomer AS temp 
+		WHERE 	temp.IsPassProbationRule = 0
+			AND temp.ScanTaggingType = CONST_SCANTAGGINGTYPE_NOTEXIST;
 
-		INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, ActionType)
-		SELECT	tmp.CustID, CONST_ACTIONTYPE_IGNOREPROBATION
-		FROM 	Temp_NotEnoughDayProbation AS tmp 
-		WHERE 	tmp.ScanTaggingType = CONST_SCANTAGGINGTYPE_NOTEXIST;
-	/*		
-		/* 5.2: EXCLUDE PIN CATEGORY */
-		INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, ActionType)
-		SELECT tmp.CustID, CONST_ACTIONTYPE_IGNOREPIN
-		FROM Temp_NewClassification AS tmp
-			INNER JOIN CTS_DataCenter.PinCustomerCategory AS pin on pin.CTSCustID = tmp.CTSCustID;
-	*/	
         INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, ActionType)
-		SELECT DISTINCT tmp.CustID, CONST_ACTIONTYPE_EXISTEDPA
-		FROM Temp_NewClassification AS tmp
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CustID = tmp.CustID AND clss.ParentID IN (CONST_PARENTID_PA, CONST_PARENTID_POTENTIALPA);
+		SELECT DISTINCT temp.CustID, CONST_ACTIONTYPE_EXISTEDPA
+		FROM Temp_NewClassification AS temp
+		WHERE temp.ParentID IN (CONST_PARENTID_PA,CONST_PARENTID_POTENTIALPA);
 		
 		/* 5.4: UPDATE BACK TO Temp_NewClassification */
 		/* 5.4.1: HAS ACTION + NO VIEW LOG FAIL PROBATION FOR > 20 LAST DAYS */ 
-		UPDATE Temp_NewClassification AS tmp
-			INNER JOIN  Temp_ProbationCustomer AS pro ON pro.CustID = tmp.CustID
-		SET 	tmp.IsDataChanged = 0
-		WHERE 	(tmp.DWCategoryGroupID = CONST_CATEGROUPID_PROBATION AND pro.ScanDate < lv_FromProbationLastDay);
+		UPDATE Temp_NewClassification AS temp
+			INNER JOIN  Temp_ProbationCustomer AS pro ON pro.CustID = temp.CustID
+		SET temp.IsDataChanged = 0
+		WHERE temp.DWCategoryGroupID = CONST_CATEGROUPID_PROBATION 
+			AND pro.ScanDate < lv_FromProbationLastDay;
 		
 		/* 5.4.2: NO ACTION + VIEW LOG FOR IGNORE CASES */ 
-		UPDATE Temp_NewClassification AS tmp 
-			INNER JOIN Temp_CustIgnoranceAction AS ig ON tmp.CustID = ig.CustID
-		SET 	tmp.ActionType = ig.ActionType
-			, 	tmp.IsDataChanged = 0;
+		UPDATE Temp_NewClassification AS temp 
+			INNER JOIN Temp_CustIgnoranceAction AS ig ON temp.CustID = ig.CustID
+		SET 	temp.ActionType = ig.ActionType
+			, 	temp.IsDataChanged = 0;
 
         /* 5.4.3: HAS ACTION + VIEW LOG FOR PROBATION NOT ENOUGH DAY WITH NEW TAGGING */ 
         UPDATE Temp_NewClassification AS tmp 
-            INNER JOIN Temp_NotEnoughDayProbation AS pro ON temp.CustID = pro.CustID
+            INNER JOIN Temp_ProbationCustomer AS pro ON temp.CustID = pro.CustID AND pro.IsPassProbationRule = 0
         SET 	temp.ScanTaggingType = CONST_SCANTAGGINGTYPE_EXISTONLY
         WHERE 	pro.ScanTaggingType <> CONST_SCANTAGGINGTYPE_NOTEXIST;
-
-/*	ELSEIF ip_InputFlowID IN (6,50,51) THEN
-
-		IF ip_InputFlowID IN (6,50) THEN
-			INSERT IGNORE INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
-			SELECT DISTINCT tmp.CustID
-				,	CASE 
-						WHEN cate.IsDangerProbation = 1 THEN 0
-						ELSE 2
-					END AS WinlossStatus
-			FROM Temp_NewClassification AS tmp
-				INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON tmp.CustID = clss.CustID
-				INNER JOIN CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID
-			WHERE clss.ParentID IN (CONST_PARENTID_PA, CONST_PARENTID_POTENTIALPA);
-			
-			UPDATE Temp_NewClassification AS tmp
-				INNER JOIN Temp_PAWinlossStatus AS ps ON tmp.CustID = ps.CustID
-			SET tmp.WinlossStatus = ps.WinlossStatus,
-				tmp.IsPAProbation = (CASE WHEN ps.WinlossStatus = 0 THEN 1  # LOSING
-											ELSE 0  # NOT LOSING
-									END)
-			WHERE tmp.WinlossStatus = 1;
-
-			UPDATE Temp_NewClassification AS tmp,
-			LATERAL(SELECT 	cat.CategoryGroupID
-						,	cat.CustomerClass
-						,	cat.ABIDangerLevel_Licensee
-						,	cat.ABIDangerLevel_Credit
-						,	cat.Ext_EvidenceID_Licensee
-						,	cat.Ext_EvidenceID_Credit
-						,	cat.RelevantCategoryID
-					FROM CTS_DataCenter.CustomerCategory AS cat 
-					WHERE cat.CategoryID IN (tmp.InputCategoryID, tmp.RelevantCategoryID) AND cat.IsPAProbation = tmp.IsPAProbation LIMIT 1) AS tmpCat
-			SET 	tmp.DWCategoryGroupID = tmpCat.CategoryGroupID	
-				,	tmp.CategoryID = tmpCat.CategoryGroupID
-				,	tmp.TargetCC = (CASE 	WHEN tmp.SpecialCC IS NOT NULL THEN tmp.SpecialCC ELSE IFNULL(tmpCat.CustomerClass,-99) END)
-				,	tmp.TargetDangerLevel = (CASE WHEN tmp.IsLicensee = 1 THEN tmpCat.ABIDangerLevel_Licensee
-													WHEN tmp.IsLicensee = 0 THEN tmpCat.ABIDangerLevel_Credit END) 
-				,	tmp.ToEvidenceID = (CASE 	WHEN tmp.IsLicensee = 1 THEN tmpCat.Ext_EvidenceID_Licensee
-												WHEN tmp.IsLicensee = 0 THEN tmpCat.Ext_EvidenceID_Credit
-												ELSE NULL END)
-				,	tmp.RelevantCategoryID = tmpCat.RelevantCategoryID;
 		
-			UPDATE Temp_NewClassification AS tmp,
-			LATERAL(SELECT 	cat.CategoryGroupID
-						,	cat.IsPAProbation
-					FROM CTS_DataCenter.CustomerCategory  AS cat 
-					WHERE cat.CategoryID = tmp.RelevantCategoryID LIMIT 1) AS tmpCat
-			SET 	tmp.RelevantCategoryGroupID = tmpCat.CategoryGroupID	
-				,	tmp.RelevantCategoryID = tmpCat.CategoryGroupID
-				,	tmp.RelevantIsPAProbation = tmpCat.IsPAProbation;
-*/
+		/* 6: GENERATE CATEGORY */
+		/* 6.1: UPDATE DW CATEGORY */
+		UPDATE Temp_NewClassification AS temp 
+			LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryGroupID = temp.DWCategoryGroupID 
+																AND cate.TaggingType = temp.TaggingType 
+																AND tag.TaggingID = temp.TaggingID
+		SET temp.DWCategoryID = IFNULL(cate.CategoryID,temp.DWCategoryGroupID);
+
 	ELSEIF ip_InputFlowID IN (7,51) THEN	   
 		CALL CTS_DataCenter.CTS_DC_CustClassification_PA_RemoveOldTVSRequest();
 	ELSEIF ip_InputFlowID IN (6,50,51) THEN
