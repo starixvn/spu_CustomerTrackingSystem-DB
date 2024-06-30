@@ -244,7 +244,7 @@ BEGIN
 		
 		IF ip_InputFlowID IN (50,6) THEN /*PA - ip_InputType = 'Category' | PotentialPA*/
 			INSERT INTO Temp_NewClassification(
-				CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsAffectedFromUpline
+				CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsAffectedFromUpline
 			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsDataChanged
 			, 	SpecialCC, IsPAProbation, RelevantCategoryID, LastModifiedDate, MatchID, TVSRequestID, IsTVSParlay, SportType
 			, 	TVSIssueTypeID, CategoryPriority, CustomerClassPriority, ParentID)
@@ -253,6 +253,7 @@ BEGIN
 				,	tmpJs.RoleID
 				, 	tmpJs.SubscriberID
 				,	tmpJs.DWCategoryID
+				,	cat.CategoryGroupID
 				,	tmpJs.IsLicensee
 				,	cus.IsLicenseeVIP
 				,	cus.IsLicenseeBA
@@ -270,7 +271,7 @@ BEGIN
 				,	tmpJs.IsFromAI
 				,	tmpJs.IsDataChanged
 				,	sp.CustomerClass AS SpecialCC
-				,	cat.IsPAProbation		
+				,	(CASE WHEN tmpJs.WinlossStatus = 0 THEN 1 ELSE 0 END) AS IsPAProbation	/*1: PROBATION, 0: NOT PROBATION*/
 				,	cat.RelevantCategoryID
 				,	tmpJs.LastModifiedDate
 				,	tmpJs.MatchID
@@ -370,7 +371,7 @@ BEGIN
 				,	tmpJs.IsFromTVS
 				,	tmpJs.IsDataChanged
 				,	sp.CustomerClass AS SpecialCC
-				,	cat.IsPAProbation		
+				,	(CASE WHEN tmpJs.WinlossStatus = 0 THEN 1 ELSE 0 END) AS IsPAProbation	/*1: PROBATION, 0: NOT PROBATION*/		
 				,	cat.RelevantCategoryID
 				,	CASE WHEN IFNULL(tmpJs.TVSRequestID,0) = 0 AND tmpJs.IsFromTVS = 0 THEN NULL
 						 ELSE tmpJs.TVSRequestID END AS TVSRequestID
@@ -438,14 +439,15 @@ BEGIN
 				
 		ELSEIF ip_InputFlowID = 7 THEN /*Robot*/
 			INSERT INTO Temp_NewClassification(
-				CustID, CTSCustID, SubscriberID, DWCategoryID, IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsAffectedFromUpline
+				CustID, CTSCustID, SubscriberID, DWCategoryID, DWCategoryGroupID, IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsAffectedFromUpline
 			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsDataChanged
 			, 	SpecialCC, IsPAProbation, RelevantCategoryID, TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID, CategoryPriority
 			, 	CustomerClassPriority, ParentID, TWRobotCounter, IsFromImperva)
 			SELECT 	tmpJs.CustID
 				,	tmpJs.CTSCustID
 				, 	tmpJs.SubscriberID
-				,	tmpJs.DWCategoryID
+				,	tmpJs.DWCategoryID				
+				,	cat.CategoryGroupID
 				,	tmpJs.IsLicensee
 				,	cus.IsLicenseeVIP
 				,	cus.IsLicenseeBA
@@ -463,7 +465,7 @@ BEGIN
 				,	tmpJs.IsFromAI
 				,	tmpJs.IsDataChanged
 				,	sp.CustomerClass AS SpecialCC
-				,	cat.IsPAProbation		
+				,	(CASE WHEN tmpJs.WinlossStatus = 0 THEN 1 ELSE 0 END) AS IsPAProbation	/*1: PROBATION, 0: NOT PROBATION*/
 				,	cat.RelevantCategoryID
 				,	CASE WHEN IFNULL(tmpJs.TVSRequestID,0) = 0 AND tmpJs.IsFromTVS = 0 THEN NULL
 						 ELSE tmpJs.TVSRequestID END AS TVSRequestID
@@ -540,13 +542,14 @@ BEGIN
 				
 		ELSEIF ip_InputFlowID = 8 THEN /*Normal*/
 			INSERT INTO Temp_NewClassification(
-				CustID,CTSCustID,DWCategoryGroupID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TWBetCount,TWGroupBettingRate
+				CustID,CTSCustID,DWCategoryID,DWCategoryGroupID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TWBetCount,TWGroupBettingRate
 				,TWTicketRejectRate,TWDesktopUsageRate,TaggingID,TaggingType,PerformanceTime,ScanTaggingType
 				,SubscriberID,IsLicensee,IsLicenseeVIP,IsLicenseeBA,SpecialCC)
 			SELECT DISTINCT
 					tmpJs.CustID
 				,	cus.CTSCustID
 				, 	tmpJs.DWCategoryID
+				, 	tmpJs.DWCategoryGroupID
                 , 	tmpJs.TurnoverRM
                 , 	tmpJs.WinlossRM
                 , 	tmpJs.BetCount
@@ -568,6 +571,7 @@ BEGIN
 							"$[*]" COLUMNS(
 												CustID 					BIGINT UNSIGNED		PATH "$.CustId"
 											, 	DWCategoryID			SMALLINT UNSIGNED	PATH "$.CategoryId"
+											, 	DWCategoryGroupID		SMALLINT UNSIGNED	PATH "$.CategoryGroupID"
 											, 	TurnoverRM				DECIMAL(20,4)		PATH "$.TurnoverRM"
 											, 	WinlossRM				DECIMAL(20,4)		PATH "$.WinlossRM"
 											, 	BetCount				BIGINT				PATH "$.BetCount"
