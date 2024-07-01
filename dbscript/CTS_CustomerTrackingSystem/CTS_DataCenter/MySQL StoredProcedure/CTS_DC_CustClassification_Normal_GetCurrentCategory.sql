@@ -52,10 +52,10 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_CustCategory;
     CREATE TEMPORARY TABLE Temp_CustCategory (
 			CustID 				BIGINT UNSIGNED PRIMARY KEY
-        ,	CategoryID			INT
-        ,	CategoryGroup		SMALLINT
+        ,	CategoryID			INT UNSIGNED
+        ,	CategoryGroupID		INT UNSIGNED
         ,	IsProbationLastDay	BIT DEFAULT(0)
-		,	INDEX IX_Temp_CustCategory_CategoryGroup(CategoryGroup)
+		,	INDEX IX_Temp_CustCategory_CategoryGroup(CategoryGroupID)
     );
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ReactiveCust;
@@ -77,13 +77,13 @@ BEGIN
     END IF;	
 	
     #2. Get latest normal category
-	INSERT INTO Temp_CustCategory(CustID, CategoryID, CategoryGroup)
+	INSERT INTO Temp_CustCategory(CustID, CategoryID, CategoryGroupID)
 	SELECT 	tmpc.CustID
 		,	tmplc.CategoryID
-        ,	tmplc.CategoryGroup
+        ,	tmplc.CategoryGroupID
 	FROM Temp_Cust AS tmpc
 		, LATERAL	
-			(	SELECT cc.CustID, cc.CategoryID, ca.CategoryGroup
+			(	SELECT cc.CustID, cc.CategoryID, ca.CategoryGroupID
 				FROM CTS_DataCenter.CTSCustomerClassification AS cc 
 					INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
 				WHERE tmpc.CustID = cc.CustID
@@ -91,7 +91,7 @@ BEGIN
 				ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
 				LIMIT 1
 		   ) tmplc 
-        INNER JOIN CTS_DataCenter.CustomerCategorySettings AS s ON s.CategoryType = CONST_PARENTID_NORMAL AND s.CategoryID = tmlc.CategoryID;
+        INNER JOIN CTS_DataCenter.CustomerCategorySettings AS s ON s.ParentID = CONST_PARENTID_NORMAL AND s.CategoryID = tmlc.CategoryID;
    
     #3. Get Probation info
     UPDATE Temp_CustCategory AS tmpCc
