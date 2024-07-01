@@ -84,6 +84,7 @@ sp: BEGIN
         ,	Stake			DECIMAL(20,4)
         ,	OldGroupID		INT
         ,	TimeGroupID		INT
+        ,	Betteam			VARCHAR(10)
         
         ,	PRIMARY KEY PK_Temp_Trans_GroupID_OrderNum(GroupID, OrderNum)
         ,	INDEX IX_Temp_Trans_TimeGroupID(TimeGroupID)
@@ -152,7 +153,7 @@ sp: BEGIN
     
     IF (ip_LiveIndicator = 0) THEN
   
-		INSERT INTO Temp_Trans(GroupID, OrderNum ,SequenceID,TransDateToSecond,TransID,CustID,CTSCustID, Stake, OldGroupID)
+		INSERT INTO Temp_Trans(GroupID, OrderNum ,SequenceID,TransDateToSecond,TransID,CustID,CTSCustID, Stake, OldGroupID,Betteam)
         SELECT	tmpCg.GroupID
 			,	ROW_NUMBER() OVER (PARTITION BY tmpCg.GroupID ORDER BY SequenceID ) AS OrderNum			
 			,	mms.SequenceID
@@ -162,6 +163,7 @@ sp: BEGIN
 			,	mms.CTSCustID
 			,	mms.Stake
             ,	mms.GroupID
+            ,	mms.Betteam
         FROM	CTS_DataCenter.MatchMonitorStagingArbitrageNonLive AS mms
 			INNER JOIN Temp_SequenceID AS tmpSq ON tmpSq.SequenceID = mms.SequenceID
 			INNER JOIN Temp_CustGroup AS tmpCg ON tmpCg.CustID = mms.CustID;
@@ -177,7 +179,7 @@ sp: BEGIN
         UPDATE Temp_Trans AS t
 			LEFT JOIN Temp_Trans2 AS t2 ON t.GroupID = t2.GroupID AND t.OrderNum = t2.OrderNum + 1 AND t.TransDateToSecond - t2.TransDateToSecond <= 180
 		SET t.TimeGroupID = (CASE WHEN t2.OrderNum IS NOT NULL THEN @n ELSE @n:=@n+1  END);
-		
+
         INSERT INTO Temp_Group(GroupID, TimeGroupID, TransIDList, OldGroupIDList, CustIDList, CTSCustIDList, AgentDetect_CTSCustIDList, SequenceIDList, IsValidGroup)        
         SELECT	MIN(tmp.GroupID) AS GroupID
 			,	tmp.TimeGroupID
@@ -189,7 +191,7 @@ sp: BEGIN
 												THEN GROUP_CONCAT(DISTINCT CASE WHEN tmp.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET) THEN tmp.CTSCustID ELSE NULL END)
 								ELSE NULL END AS AgentDetect_CTSCustIDList
 			,	GROUP_CONCAT(tmp.SequenceID) AS SequenceIDList
-            ,	(CASE WHEN COUNT(DISTINCT CustID) > 1 THEN 1 ELSE 0 END) AS IsValidGroup
+            ,	(CASE WHEN COUNT(DISTINCT CustID) > 1 AND COUNT(DISTINCT tmp.Betteam) > 1 THEN 1 ELSE 0 END) AS IsValidGroup
         FROM Temp_Trans AS tmp
         GROUP BY TimeGroupID;
     END IF;
@@ -217,6 +219,8 @@ sp: BEGIN
 				,	mms.CTSCustID
 				,	(CASE WHEN mms.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET) THEN mms.CTSCustID ELSE NULL END) AS Agent_CTSCustID
                 ,	GROUP_CONCAT(mms.SequenceID) AS SequenceIDList
+                , 	MIN(Betteam) AS MinBetteam
+                ,	MAX(Betteam) AS MaxBetteam
 			FROM Temp_Group AS tmpGr
 			JOIN JSON_TABLE(REPLACE(JSON_ARRAY(tmpGr.SequenceIDList), ',', '","'), 
 							'$[*]' COLUMNS (SequenceID BIGINT UNSIGNED PATH '$')
@@ -228,7 +232,7 @@ sp: BEGIN
             HAVING SUM(mms.Stake) >= lv_RuleTotalStake
           ) AS tmp
 	GROUP BY GroupID
-    HAVING COUNT(DISTINCT CTSCustID) > 1;    
+    HAVING COUNT(DISTINCT CTSCustID) > 1 AND Min(MinBetteam) <> MAX(MaxBetteam);    
     
 END$$
 DELIMITER ;
