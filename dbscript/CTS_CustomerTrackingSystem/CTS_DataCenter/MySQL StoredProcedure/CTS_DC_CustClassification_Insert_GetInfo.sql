@@ -165,9 +165,10 @@ BEGIN
 			,	IsExistVVIP					BIT(1) DEFAULT 0
 			,	IsExistWrapper				BIT(1) DEFAULT 0
 			,	IsExistPA					BIT(1) DEFAULT 0
-			,	IsExistPotentialPA			BIT(1) DEFAULT 0
-			,	IsExistRobot				BIT(1) DEFAULT 0 
-			,	IsExistKeepOldCateID		BIT(1) DEFAULT 0 
+			-- ,	IsExistPotentialPA			BIT(1) DEFAULT 0
+			-- ,	IsExistRobot				BIT(1) DEFAULT 0 
+			-- ,	IsExistKeepOldCateID		BIT(1) DEFAULT 0 
+			,	IsFromOldPA					BIT(1) DEFAULT 0
 			
 			, 	TurnoverRM					DECIMAL(20,4)
 			, 	WinlossRM					DECIMAL(20,4)
@@ -591,7 +592,9 @@ BEGIN
 		END IF;
 		
 		UPDATE Temp_NewClassification AS temp
-		SET temp.IsExistVVIP = 1
+		SET 	temp.IsExistVVIP = 1
+			,	IsFromOldPA = 1
+			,	IsDataChanged = 1
 		WHERE EXISTS (	SELECT 1
 						FROM CTS_DataCenter.CTSCustomerClassification AS cls
 						WHERE temp.CustID = cls.CustID
@@ -600,7 +603,9 @@ BEGIN
 		
 		
 		UPDATE Temp_NewClassification AS temp
-		SET temp.IsExistWrapper = 1
+		SET 	temp.IsExistWrapper = 1
+			,	IsFromOldPA = 1
+			,	IsDataChanged = 1
 		WHERE EXISTS (	SELECT 1
 						FROM CTS_DataCenter.CTSCustomerClassification AS cls
 						WHERE temp.CustID = cls.CustID
@@ -616,7 +621,7 @@ BEGIN
 							AND cls.ParentID = CONST_PARENTID_PA
 					 );
 					 
-		UPDATE Temp_NewClassification AS temp
+		/*UPDATE Temp_NewClassification AS temp
 		SET temp.IsExistPotentialPA = 1
 		WHERE EXISTS (	SELECT 1
 						FROM CTS_DataCenter.CTSCustomerClassification AS cls
@@ -641,7 +646,7 @@ BEGIN
 							INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cls.CategoryID
 						WHERE temp.CustID = cls.CustID
 							AND cs.IsKeepOldCateID = 1
-						);
+						);*/
 		
 	END IF;
 	

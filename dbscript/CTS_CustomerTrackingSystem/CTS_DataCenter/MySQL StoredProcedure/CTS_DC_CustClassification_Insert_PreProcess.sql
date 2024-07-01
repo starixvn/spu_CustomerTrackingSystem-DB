@@ -22,8 +22,6 @@ BEGIN
 */ 
 	/* DECLARE Variable */
     DECLARE CONST_CATEGROUPID_PROBATION     			INT;
-    DECLARE CONST_CATEGROUPID_SMART         			INT;
-    DECLARE CONST_CATEGROUPID_RISKY         			INT;
 
     DECLARE CONST_PARENTID_PA               			INT;
     DECLARE CONST_PARENTID_POTENTIALPA      			INT;
@@ -44,77 +42,15 @@ BEGIN
 	DECLARE lv_ProbationCatePriority					SMALLINT;
 	DECLARE lv_FromProbationLastDay 					DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 14 DAY);
 	DECLARE lv_ToProbationLastDay 						DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 2 DAY);
-	DECLARE	lv_CurrentDateTime							DATETIME DEFAULT CURRENT_TIME();
-
 
 	/* GET Variable */
     SET CONST_CATEGROUPID_PROBATION 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_PROBATION');
-    SET CONST_CATEGROUPID_SMART 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_SMART');
-    SET CONST_CATEGROUPID_RISKY 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_RISKY');
 
     SET CONST_PARENTID_PA 				    			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
     SET CONST_PARENTID_POTENTIALPA 						= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
     SET CONST_PARENTID_NORMAL	 						= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
 	
 	SET CONST_CATEID_PROBATION							= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_PROBATION');
-
-	/*TEMP OLD TABLE*/
-	DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomerClassification_Old;
-	CREATE TEMPORARY TABLE Temp_CTSCustomerClassification_Old (
-			CustID					BIGINT UNSIGNED
-		,	CTSCustID				BIGINT UNSIGNED
-		,	SubscriberID			INT UNSIGNED
-		,	ParentID				INT UNSIGNED
-		,	CategoryID				INT
-		,	Remark					VARCHAR(500)
-		,	CreatedDate				DATETIME(3)
-		,	CreatedBy				INT UNSIGNED
-		,	LastModifiedDate		DATETIME(3)
-		,	LastModifiedBy			INT UNSIGNED
-		,	LastScannedDate			DATETIME
-		,	IsFromTVS				BIT(1) 
-		,	IsFromTW				BIT(1) 
-		,	IsFromCTS				BIT(1) 
-		,	IsFromAI				BIT(1) 
-		,	IsAffectedFromUpline	BIT(1)
-		,	InsertTime				DATETIME
-		,	TVSRequestID			BIGINT UNSIGNED			
-		,	IsParlay				BIT(1) 
-		,	SportType				SMALLINT DEFAULT NULL 
-		,	IssueTypeID				TINYINT DEFAULT NULL 
-		,	IsAffectedFromUpline	BIT(1)
-		,	IsNew					BIT(1) DEFAULT 1
-		,	INDEX IDX_Temp_CC_Old (CustID,CategoryID)
-	) 
-	
-	DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomerClassification_Exist;
-	CREATE TEMPORARY TABLE Temp_CTSCustomerClassification_Exist (
-			CustID					BIGINT UNSIGNED
-		,	CTSCustID				BIGINT UNSIGNED
-		,	SubscriberID			INT UNSIGNED
-		,	ParentID				INT UNSIGNED
-		,	CategoryID				INT
-		,	Remark					VARCHAR(500)
-		,	CreatedDate				DATETIME(3)
-		,	CreatedBy				INT UNSIGNED
-		,	LastModifiedDate		DATETIME(3)
-		,	LastModifiedBy			INT UNSIGNED
-		,	LastScannedDate			DATETIME
-		,	IsFromTVS				BIT(1) 
-		,	IsFromTW				BIT(1) 
-		,	IsFromCTS				BIT(1) 
-		,	IsFromAI				BIT(1) 
-		,	IsAffectedFromUpline	BIT(1)
-		,	InsertTime				DATETIME
-		,	TVSRequestID			BIGINT UNSIGNED			
-		,	IsParlay				BIT(1) 
-		,	SportType				SMALLINT DEFAULT NULL 
-		,	IssueTypeID				TINYINT DEFAULT NULL 
-		,	IsAffectedFromUpline	BIT(1)
-		,	IsNew					BIT(1) DEFAULT 1
-		,	INDEX IDX_Temp_CC_Exist (CustID,CategoryID)
-	
-	) 
 
 	/* SETP 0: EXCLUDE INTERNAL CUSTOMERS */      
 	CALL CTS_DC_ExcludeCustByCondition('Temp_NewClassification');
@@ -203,95 +139,8 @@ BEGIN
         SET 	temp.ScanTaggingType = CONST_SCANTAGGINGTYPE_EXISTONLY
         WHERE 	pro.ScanTaggingType <> CONST_SCANTAGGINGTYPE_NOTEXIST;
 		
-		/* 6: GENERATE CATEGORY */
-		/* 6.1: UPDATE DW CATEGORY */
-		UPDATE Temp_NewClassification AS temp 
-			LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryGroupID = temp.DWCategoryGroupID 
-																AND cate.TaggingType = temp.TaggingType 
-																AND tag.TaggingID = temp.TaggingID
-		SET temp.DWCategoryID = IFNULL(cate.CategoryID,temp.DWCategoryGroupID);
-
-		
-	ELSEIF ip_InputFlowID IN (50,51,6,7) THEN	 
-	
-		IF ip_InputFlowID IN (51,7) THEN /*PA-Reason,Robot*/
-			CALL CTS_DataCenter.CTS_DC_CustClassification_PA_RemoveOldTVSRequest();
-		END IF;
-		
-		/*Insert cust has pin/vvip into CTSCustomerClassification*/
-		INSERT IGNORE INTO Temp_CTSCustomerClassification_Old(
-				CustID, CTSCustID, SubscriberID, ParentID, CategoryID, Remark, CreatedDate
-			, 	CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsFromTVS
-			, 	IsFromTW, IsFromCTS, IsFromAI, InsertTime, TVSRequestID, IsParlay
-			, 	SportType, IssueTypeID, IsAffectedFromUpline) 
-		SELECT	temp.CustID
-			,	temp.CTSCustID
-			,	temp.SubscriberID
-			,	ccs.ParentID
-			,	temp.CategoryID
-			,	temp.Remark
-			,	lv_CurrentDateTime AS CreatedDate
-			,	temp.CreatedBy
-			,	lv_CurrentDateTime AS LastModifiedDate
-			,	temp.CreatedBy AS LastModifiedBy
-			,	DATE(lv_CurrentDateTime) AS LastScannedDate
-			,	temp.IsFromTVS
-			,	temp.IsFromTW
-			,	temp.IsFromCTS
-			,	temp.IsFromAI
-			,	lv_CurrentDateTime AS InsertTime
-			,	temp.TVSRequestID
-			,	temp.IsTVSParlay
-			,	temp.SportType
-			,	temp.TVSIssueTypeID
-			,	temp.IsAffectedFromUpline
-		FROM Temp_NewClassification AS temp
-			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = temp.CategoryID 
-																			AND ccs.IsKeepOldCateID = 1
-		WHERE temp.IsExistVVIP = 1;
-		
-		/*clear temp for these cust*/
-		DELETE FROM Temp_NewClassification AS temp
-    	WHERE temp.IsExistVVIP = 1;
-
-		INSERT IGNORE INTO Temp_CTSCustomerClassification_Exist(
-				CustID, CTSCustID, ParentID, ExistCategoryID, CategoryID, CategoryGroupID
-			, 	IsPAProbation, LastModifiedDate, CreatedBy, Remark, IsAffectedFromUpline
-			, 	TVSRequestID, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, RelevantCategoryID
-			,	IsFromOldPA, SpecialCC, CustomerClass, CategoryPriority, IsParlay, SportType, IssueTypeID
-		)
-		SELECT	temp.CustID
-			,	temp.CTSCustID
-			,	temp.ParentID
-			,	cls.CategoryID AS ExistCategoryID
-			,	cat.CategoryGroupID AS CategoryID
-			,	cat.CategoryGroupID AS CategoryGroupID
-			,	cat.IsPAProbation
-			,	cls.LastModifiedDate
-			,	cls.CreatedBy
-			,	cls.Remark
-			, 	cls.IsAffectedFromUpline
-			,	cls.TVSRequestID
-			,	cls.IsFromTVS
-			, 	cls.IsFromTW
-			, 	cls.IsFromCTS
-			, 	cls.IsFromAI
-			,	cat.RelevantCategoryID
-			,	0 AS IsFromOldPA
-			,	IFNULL(sp.CustomerClass,temp.SpecialCC) AS SpecialCC
-			,	IFNULL(sp.CustomerClass,cat.CustomerClass) AS CustomerClass
-			,	cat.CategoryPriority
-			,	cls.IsParlay
-			,	cls.SportType
-			,	cls.IssueTypeID
-		FROM Temp_NewClassification AS temp
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = temp.CustID
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID
-			LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON temp.CustID = sp.CustID 	
-		WHERE ccs.ParentID IN (CONST_PARENTID_PA,CONST_PARENTID_POTENTIALPA);
-		
-		
-		
+	ELSEIF ip_InputFlowID IN (51,7) THEN
+		CALL CTS_DataCenter.CTS_DC_CustClassification_PA_RemoveOldTVSRequest();
 
     END IF;   
 END$$
