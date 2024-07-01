@@ -83,7 +83,7 @@ BEGIN
         ,	CASE WHEN tmplc.CategoryGroupID = CONST_GROUP_PROBATION AND tmplc.CreatedDate <= lv_LastDayProbation THEN 1 ELSE 0 END /*Up to Smart, Risky*/
 	FROM Temp_Cust AS tmpc
 		, LATERAL	
-			(	SELECT cc.CustID, cc.CategoryID, ca.CategoryGroupID, cc.CreatedDate
+			(	SELECT cc.CustID, cc.CategoryID, ca.CategoryGroupID, cc.CreatedDate, cc.ParentID
 				FROM CTS_DataCenter.CTSCustomerClassification AS cc 
 					INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
 				WHERE tmpc.CustID = cc.CustID
@@ -91,14 +91,14 @@ BEGIN
 				ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
 				LIMIT 1
 		   ) tmplc 
-        INNER JOIN CTS_DataCenter.CustomerCategorySettings AS s ON s.ParentID = CONST_PARENTID_NORMAL AND s.CategoryID = tmlc.CategoryID;
+	WHERE tmplc.ParentID = CONST_PARENTID_NORMAL;
    
     #3. Return data set
 	SELECT	DISTINCT tmpCust.CustID
 		,	CASE
-				WHEN tmpCc.CategoryGroup IS NULL THEN 0
-                WHEN tmpCc.CategoryGroup = CONST_GROUP_INACTIVE THEN tmpCc.CategoryID
-                ELSE tmpCc.CategoryGroup
+				WHEN tmpCc.CategoryGroupID IS NULL THEN 0
+                WHEN tmpCc.CategoryGroupID = CONST_GROUP_INACTIVE THEN tmpCc.CategoryID
+                ELSE tmpCc.CategoryGroupID
 			END AS CategoryID
 		,   CASE WHEN tmpCust.CreatedDate >= DATE_SUB(lv_CurrentTime, INTERVAL 29 DAY) THEN 1 ELSE 0 END AS IsNewCreated
         ,	tmpCc.IsProbationLastDay AS IsProbationLastDay
