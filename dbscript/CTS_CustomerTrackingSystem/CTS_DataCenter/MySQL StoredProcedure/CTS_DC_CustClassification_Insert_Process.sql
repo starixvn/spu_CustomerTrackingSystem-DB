@@ -117,7 +117,7 @@ BEGIN
 
 	
 	
-	ELSE IF ip_InputFlowID IN (50,51,6,7) THEN
+	ELSEIF ip_InputFlowID IN (50,51,6,7) THEN
 		INSERT INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
 		SELECT DISTINCT 
 				temp.CustID
