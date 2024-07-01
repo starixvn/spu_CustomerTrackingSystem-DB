@@ -71,7 +71,7 @@ sp: BEGIN
 	SELECT ca.CategoryID
 	FROM CTS_DataCenter.CustomerCategorySettings AS s
 		INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = s.CategoryID
-	WHERE a.ParentID = CONST_CATEGROUPID_PROBATION 
+	WHERE ca.CategoryGroupID = CONST_CATEGROUPID_PROBATION 
 		AND ca.IsActive = 1;
         
 	 IF lv_LastCategoryID IS NULL OR lv_LastCategoryID = 0 THEN
@@ -83,25 +83,25 @@ sp: BEGIN
 	END IF;
     
     INSERT INTO Temp_Cust(CustID)
-    SELECT 	cc.CustID
-    FROM	CTS_DataCenter.CTSCustomerClassification AS cc
+    SELECT 	clss.CustID
+    FROM	CTS_DataCenter.CTSCustomerClassification AS clss
 		,	LATERAL	
-				(	SELECT cc2.CustID, cc2.CategoryGroupID 
-					FROM CTS_DataCenter.CTSCustomerClassification AS cc2 
-						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc2.CategoryID
-					WHERE cc2.CustID = cc.CustID
+				(	SELECT cc.CustID, cc.CategoryID, ca.CategoryGroupID, cc.LastScannedDate, cc.CreatedDate
+					FROM CTS_DataCenter.CTSCustomerClassification AS cc 
+						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
+					WHERE cc.CustID = cc.CustID
 						AND ca.IsActive = 1
-					ORDER BY ca.CategoryPriority ASC, cc2.CreatedDate DESC
+					ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
 					LIMIT 1
 			   ) AS tmplc
-	WHERE cc.CustID > lv_LastCustID
-		AND cc.CategoryID = lv_LastCategoryID
-        AND cc.ParentID = CONST_PARENTID_NORMAL
+	WHERE clss.CustID > lv_LastCustID
+		AND clss.CategoryID = lv_LastCategoryID
+        AND clss.ParentID = CONST_PARENTID_NORMAL
 		AND tmplc.CategoryID = lv_LastCategoryID
-		AND (cc.LastScannedDate IS NULL OR cc.LastScannedDate < lv_CurrentDate)
-		AND (cc.CreatedDate < lv_ToLastDay)
-	ORDER BY cc.CategoryID ASC
-		,	 cc.CustID ASC
+		AND (tmplc.LastScannedDate IS NULL OR tmplc.LastScannedDate < lv_CurrentDate)
+		AND (tmplc.CreatedDate < lv_ToLastDay)
+	ORDER BY clss.CategoryID ASC
+		,	 clss.CustID ASC
 	LIMIT	lv_BatchSize;
     
     IF NOT EXISTS (SELECT 1 FROM Temp_Cust) THEN
@@ -119,33 +119,33 @@ sp: BEGIN
 			    ) AS tmplc
 		WHERE cate.CategoryID > lv_LastCategoryID
 			AND tmplc.CategoryID > lv_LastCategoryID
-			AND (cc.LastScannedDate IS NULL OR cc.LastScannedDate < lv_CurrentDate)
-			AND (cc.CreatedDate < lv_ToLastDay)
+			AND (tmplc.LastScannedDate IS NULL OR tmplc.LastScannedDate < lv_CurrentDate)
+			AND (tmplc.CreatedDate < lv_ToLastDay)
 		ORDER BY cate.CategoryID ASC
 		LIMIT 1; 
      END IF;
      
      IF lv_NextCategoryID IS NOT NULL THEN
 		INSERT IGNORE INTO Temp_Cust (CustID)
-		SELECT 	cc.CustID
-		FROM	CTS_DataCenter.CTSCustomerClassification AS cc
+		SELECT 	clss.CustID
+		FROM	CTS_DataCenter.CTSCustomerClassification AS clss
 			,	LATERAL	
-					(	SELECT cc2.CustID, cc2.CategoryGroupID 
-						FROM CTS_DataCenter.CTSCustomerClassification AS cc2 
-							INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc2.CategoryID
-						WHERE cc2.CustID = cc.CustID
+					(	SELECT cc.CustID, cc.CategoryID, cc.CategoryGroupID, cc.LastScannedDate, cc.CreatedDate 
+						FROM CTS_DataCenter.CTSCustomerClassification AS cc 
+							INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
+						WHERE cc.CustID = clss.CustID
 							AND ca.IsActive = 1
-						ORDER BY ca.CategoryPriority ASC, cc2.CreatedDate DESC
+						ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
 						LIMIT 1
 				   ) AS tmplc
-		WHERE cc.CustID > lv_LastCustID
-			AND cc.CategoryID = lv_LastCategoryID
-			AND cc.ParentID = CONST_PARENTID_NORMAL
+		WHERE clss.CustID > lv_LastCustID
+			AND clss.CategoryID = lv_LastCategoryID
+			AND clss.ParentID = CONST_PARENTID_NORMAL
 			AND tmplc.CategoryID = lv_NextCategoryID
-			AND (cc.LastScannedDate IS NULL OR cc.LastScannedDate < lv_CurrentDate)
-			AND (cc.CreatedDate < lv_ToLastDay)
-		ORDER BY cc.CategoryID ASC
-			,	 cc.CustID ASC
+			AND (tmplc.LastScannedDate IS NULL OR tmplc.LastScannedDate < lv_CurrentDate)
+			AND (tmplc.CreatedDate < lv_ToLastDay)
+		ORDER BY clss.CategoryID ASC
+			,	 clss.CustID ASC
 		LIMIT	lv_BatchSize;
 	ELSE
 		SET lv_NextCategoryID = lv_LastCategoryID;
