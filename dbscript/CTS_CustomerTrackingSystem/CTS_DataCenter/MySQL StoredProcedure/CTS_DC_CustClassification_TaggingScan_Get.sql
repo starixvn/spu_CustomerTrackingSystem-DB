@@ -40,14 +40,14 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Category;
 	CREATE TEMPORARY TABLE Temp_Category(
-			CategoryID		INT PRIMARY KEY,
-            CategoryGroup	SMALLINT
+			CategoryID			INT UNSIGNED PRIMARY KEY,
+            CategoryGroupID		INT UNSIGNED
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
     CREATE TEMPORARY TABLE Temp_Cust(
 			CustID 			BIGINT UNSIGNED PRIMARY KEY,
-            CategoryID		INT NOT NULL
+            CategoryID		INT UNSIGNED NOT NULL
     );
           
     SELECT ParameterValue 
@@ -65,8 +65,8 @@ BEGIN
     FROM CTS_DataCenter.SystemParameter 
     WHERE ParameterID = 145;
    
-	INSERT INTO Temp_Category(CategoryID, CategoryGroup)
-	SELECT CategoryID, CategoryGroup
+	INSERT INTO Temp_Category(CategoryID, CategoryGroupID)
+	SELECT CategoryID, CategoryGroupID
 	FROM CTS_DataCenter.CustomerCategory
 	WHERE ParentID = CONST_PARENTID_NORMAL 
 		AND IsActive = 1
@@ -161,7 +161,7 @@ BEGIN
     
     SELECT DISTINCT	tmp.CustID, 
 		CASE 
-			WHEN tmpc.CategoryGroup IS NOT NULL AND tmpc.CategoryGroup IN (CONST_CATEGROUPID_PROBATION, CONST_CATEGROUPID_SMART, CONST_CATEGROUPID_RISKY) THEN 1 
+			WHEN tmpc.CategoryGroupID IS NOT NULL AND tmpc.CategoryGroupID IN (CONST_CATEGROUPID_PROBATION, CONST_CATEGROUPID_SMART, CONST_CATEGROUPID_RISKY) THEN 1 
             ELSE 0 
 		END AS IsCheckTaggingTW
     FROM Temp_Cust AS tmp
