@@ -15,6 +15,7 @@ BEGIN
 			- 20230912@Casey.Huynh: Created [Redmine ID: #193029]
             - 20240318@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
 			- 20240425@Thomas.Nguyen: Classify Initial Group Betting - Add ParentID = 150 [Redmine ID: #200854]
+			- 20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode ParentID [Redmine ID: #205317]
 
 		Param's Explanation (filtered by):
         Example:

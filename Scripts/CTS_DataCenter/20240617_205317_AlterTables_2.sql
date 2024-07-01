@@ -52,7 +52,7 @@ ALTER TABLE CTSCustomerClassification_History
 MODIFY COLUMN DWCategoryID INT UNSIGNED;
 
 ALTER TABLE CTSCustomerClassification_History
-RENAME COLUMN IsDirect TO IsAffectedFromUpline;
+RENAME COLUMN IsDirect TO IsMarkedDirectly;
 
 /*CTSCustomerClassification_Log*/
 ALTER TABLE CTSCustomerClassification_Log

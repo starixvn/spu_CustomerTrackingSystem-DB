@@ -102,7 +102,7 @@ CREATE TABLE CustomerCategory
 	MMReasonID INT, 
 	TVSReasonID INT, 
 	IsPAProbation BIT(1), 
-	IsDangerProbation BIT(1) DEFAULT '0', 
+	IsDangerProbation BIT(1) DEFAULT 0, 
 	AFCFraudID INT, 
 	DataSource VARCHAR(50) COLLATE utf8_unicode_ci, 
 	CreatedDate DATETIME,
