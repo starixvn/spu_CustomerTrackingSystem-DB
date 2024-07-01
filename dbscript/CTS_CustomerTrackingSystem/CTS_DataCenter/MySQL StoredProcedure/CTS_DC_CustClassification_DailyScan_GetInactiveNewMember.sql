@@ -51,7 +51,7 @@ sp:BEGIN
     INSERT INTO Temp_Category(CategoryID)
     SELECT s.CategoryID
 	FROM CTS_DataCenter.CustomerCategorySettings AS s
-		INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryGroupID = s.CategoryGroupID
+		INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = s.CategoryID
 	WHERE ca.CategoryGroupID = CONST_CATEGROUPID_NEW 
 		AND ca.IsActive = 1;
   
@@ -93,8 +93,8 @@ sp:BEGIN
 			    ) AS tmplc 
 		WHERE clss.CustID > ", lv_LastCustID," ","
 			AND clss.CategoryID = ",lv_LastCategoryID," ","
-			AND clss.CreatedDate <= '",lv_ScanDateValid,"' ","
-            AND tmplc.CategoryID =", lv_LastCategoryID,"' ","
+			AND clss.CreatedDate <= ",lv_ScanDateValid," ","
+            AND tmplc.CategoryID = ", lv_LastCategoryID," ","
 			AND NOT EXISTS (SELECT 1 
 							FROM  CTS_Archive.CTSCustomerAssociationStatus AS ticket 
 							WHERE ticket.CTSCustID = clss.CTSCustID
@@ -113,7 +113,7 @@ sp:BEGIN
         INTO 	lv_NextCategoryID
 		FROM Temp_Category  AS cate
 				, LATERAL	
-					(	SELECT cc.CustID, cc.CategoryID, cc.CreatedDate
+					(	SELECT cc.CTSCustID, cc.CustID, cc.CategoryID, cc.CreatedDate
 						FROM CTS_DataCenter.CTSCustomerClassification AS cc 
 							INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
 						WHERE cate.CategoryID = ca.CategoryID 
@@ -125,7 +125,7 @@ sp:BEGIN
 			AND tmplc.CreatedDate <= lv_ScanDateValid
             AND NOT EXISTS (SELECT 1 
 							FROM  CTS_Archive.CTSCustomerAssociationStatus AS ticket 
-							WHERE ticket.CTSCustID = clss.CTSCustID
+							WHERE ticket.CTSCustID = tmplc.CTSCustID
 								AND IFNULL(ticket.LastTicketDate, ticket.Created) > lv_ScanDateValid)
 		ORDER BY cate.CategoryID ASC
 		LIMIT 1; 
