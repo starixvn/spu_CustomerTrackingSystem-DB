@@ -16,18 +16,21 @@ BEGIN
 			- 20210805@Irena.Vo: Update get Category filter [Redmine ID: #155956]
             - 20240318@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
 			- 20240425@Thomas.Nguyen: Classify Initial Group Betting - Add ParentID = 150 [Redmine ID: #200854]
+			- 20240626@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode ParentID [Redmine ID: #205317]
 
 		Param's Explanation (filtered by):
         Example:
 				CALL CTS_DC_Category_Get();
 	*/
-	DECLARE	CONST_PARENTID_PA 					INT;
-	DECLARE	CONST_PARENTID_POTENTIALPA 			INT;
-	DECLARE	CONST_PARENTID_NORMAL 				INT;
+	DECLARE CONST_BIZCATEGROUPID_PA				INT;
+	DECLARE CONST_BIZCATEGROUPID_ASSOCIATEDPA	INT;
+	DECLARE CONST_BIZCATEGROUPID_NORMAL			INT;
+	DECLARE CONST_BIZCATEGROUPID_INACTIVE		INT;
 
-	SET CONST_PARENTID_PA 				    = CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
-    SET CONST_PARENTID_POTENTIALPA 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
-	SET CONST_PARENTID_NORMAL 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
+	SET CONST_BIZCATEGROUPID_PA				= CTS_DC_CategoryTypeParent_Get ('CONST_BIZCATEGROUPID_PA');
+	SET CONST_BIZCATEGROUPID_ASSOCIATEDPA	= CTS_DC_CategoryTypeParent_Get ('CONST_BIZCATEGROUPID_ASSOCIATEDPA');
+	SET CONST_BIZCATEGROUPID_NORMAL			= CTS_DC_CategoryTypeParent_Get ('CONST_BIZCATEGROUPID_NORMAL');
+	SET CONST_BIZCATEGROUPID_INACTIVE 		= CTS_DC_CategoryTypeParent_Get ('CONST_BIZCATEGROUPID_INACTIVE');
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_CategoryFilter;
 	CREATE TEMPORARY TABLE Temp_CategoryFilter(
@@ -37,45 +40,55 @@ BEGIN
 		,  	CategoryIDs 	LONGTEXT
 	);
 
-	INSERT IGNORE INTO Temp_CategoryFilter (CategoryGroup, CategoryName, CategoryIDs)
-	SELECT 	'Problem Account Category' AS CategoryGroup		    
+	INSERT IGNORE INTO Temp_CategoryFilter (ID, CategoryGroup, CategoryName, CategoryIDs)
+	SELECT 	cat.BussinessCategoryGroupID AS ID
+		,	'Problem Account Category' AS CategoryGroup		    
 		,	cat.CategoryName
 		,	GROUP_CONCAT(cat.CategoryID SEPARATOR ',')  AS CategoryIDs  
 	FROM	CTS_DataCenter.CustomerCategory AS cat
-	WHERE 	cat.ParentID = CONST_PARENTID_PA
+	WHERE 	cat.BussinessCategoryGroupID = CONST_BIZCATEGROUPID_PA
 		AND cat.IsActive = 1
-	GROUP BY cat.CategoryName, cat.CategoryGroup
+	GROUP BY cat.CategoryName, cat.BussinessCategoryGroupID
 	UNION
-	SELECT 	'Normal Account Category' AS CategoryGroup		    
+	SELECT 	cat.BussinessCategoryGroupID AS ID
+		,	'PA Associated Category' AS CategoryGroup		    
 		,	cat.CategoryName
-		,	GROUP_CONCAT(cat.CategoryID SEPARATOR ',')  AS CategoryIDs  
+		,	cat.CategoryID AS CategoryIDs  
 	FROM	CTS_DataCenter.CustomerCategory AS cat
-	WHERE 	cat.ParentID = CONST_PARENTID_POTENTIALPA
+	WHERE 	cat.BussinessCategoryGroupID = CONST_BIZCATEGROUPID_ASSOCIATEDPA
 		AND cat.IsActive = 1
-	GROUP BY cat.CategoryName, cat.CategoryGroup
+	GROUP BY cat.CategoryName, cat.BussinessCategoryGroupID
 	UNION
-	SELECT	CASE WHEN ttc.TaggingType = 1 THEN 'PA Associated Category' 
-				 WHEN cat.CategoryGroup = 1000 THEN 'Others' 
-				 ELSE 'Normal Account Category' 
-			END AS CategoryGroup
+	SELECT	cat.BussinessCategoryGroupID AS ID
+		,	'Normal Account Category' AS CategoryGroup
 		,	cat.CategoryName
 		,	cat.CategoryID AS CategoryIDs
 	FROM	CTS_DataCenter.CustomerCategory AS cat
-		LEFT JOIN CTS_DataCenter.TaggingToCategory AS ttc ON ttc.CategoryID = cat.CategoryID	
-	WHERE 	cat.ParentID = CONST_PARENTID_NORMAL
+	WHERE 	cat.BussinessCategoryGroupID = CONST_BIZCATEGROUPID_NORMAL
 		AND cat.IsActive = 1
+	GROUP BY cat.CategoryName, cat.BussinessCategoryGroupID
 	UNION
-	SELECT 'Others'  AS CategoryGroup
-		,  'No Category' AS CategoryName
+	SELECT	cat.BussinessCategoryGroupID AS ID
+		,	'Others' AS CategoryGroup
+		,	cat.CategoryName
+		,	cat.CategoryID AS CategoryIDs
+	FROM	CTS_DataCenter.CustomerCategory AS cat
+	WHERE 	cat.BussinessCategoryGroupID = CONST_BIZCATEGROUPID_INACTIVE
+		AND cat.IsActive = 1
+	GROUP BY cat.CategoryName, cat.BussinessCategoryGroupID
+	UNION
+	SELECT CONST_BIZCATEGROUPID_INACTIVE AS ID
+		,	'Others'  AS CategoryGroup
+		,	'No Category' AS CategoryName
 		, 	0 AS CategoryIDs;
-
+/*
 	UPDATE Temp_CategoryFilter
 	SET ID = CASE WHEN CategoryGroup = 'Problem Account Category' THEN 1
 				 WHEN CategoryGroup = 'PA Associated Category' THEN 2
 				 WHEN CategoryGroup = 'Normal Account Category' THEN 3
 				 ELSE 4
 			END;
-
+*/
 	SELECT	CategoryGroup
 		,	CategoryName
 		,	CategoryIDs

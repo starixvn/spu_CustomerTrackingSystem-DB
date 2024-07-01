@@ -37,7 +37,7 @@ BEGIN
 	
 	SET ip_CateTypeParentName	= UPPER(ip_CateTypeParentName);
     
-    IF ip_CateTypeParentName LIKE '%CATETYPE%' THEN
+    IF ip_CateTypeParentName LIKE '%BIZCATEGROUPID%' THEN
 		SET lv_GetTypeID = 1;
 	ELSEIF ip_CateTypeParentName LIKE '%PARENT%' THEN
 		SET lv_GetTypeID = 2;
