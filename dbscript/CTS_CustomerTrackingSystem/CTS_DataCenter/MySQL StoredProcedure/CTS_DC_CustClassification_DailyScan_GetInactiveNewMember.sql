@@ -19,19 +19,25 @@ sp:BEGIN
             - 20220331@Aries.Nguyen: Fix performance issue  [Redmine ID: #170769]            
 			- 20230207@Long.Luu: Get exact lastticketdate [Redmine ID: #183281]
 			- 20231030@Victoria.Le: Add New CategoryID - New Group Betting  [Redmine ID: #195060]
-            
-		Param's Explanation (filtered by):
+            - 20240620@Jonas.Huynh: Renovate CC [RedmineID: #205317]
+		
+        Param's Explanation (filtered by):
 		Example: 
 			- CALL CTS_DC_CustClassification_DailyScan_GetInactiveNewMember (@op_LastCategoryID, @op_LastCustID);
-	*/    
-	DECLARE lv_LastCategoryID 		INT;
-	DECLARE lv_LastCustID 			BIGINT UNSIGNED;
-    DECLARE lv_BatchSize 			BIGINT;
-
-    DECLARE lv_NextCategoryID 		INT;
-    DECLARE lv_NextCustID 			BIGINT UNSIGNED;
-	DECLARE lv_ScanDateValid 		DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 29 DAY);
+	*/   
     
+    DECLARE	CONST_CATEGROUPID_NEW			INT;
+    
+	DECLARE lv_LastCategoryID 				INT;
+	DECLARE lv_LastCustID 					BIGINT UNSIGNED;
+    DECLARE lv_BatchSize 					BIGINT;
+
+    DECLARE lv_NextCategoryID 				INT;
+    DECLARE lv_NextCustID 					BIGINT UNSIGNED;
+	DECLARE lv_ScanDateValid 				DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 29 DAY);
+    
+	SET CONST_CATEGROUPID_NEW 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_NEW');
+
     DROP TEMPORARY TABLE IF EXISTS Temp_Category;
 	CREATE TEMPORARY TABLE Temp_Category(
 			CategoryID				INT PRIMARY KEY 	
@@ -42,7 +48,12 @@ sp:BEGIN
 			CustID 			BIGINT UNSIGNED PRIMARY KEY
 	);
     
-    INSERT INTO Temp_Category(CategoryID) VALUES (201), (231), (232), (233), (239); 
+    INSERT INTO Temp_Category(CategoryID)
+    SELECT s.CategoryID
+	FROM CTS_DataCenter.CustomerCategorySettings AS s
+		INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryGroup = s.CategoryGroupID
+	WHERE ca.CategoryGroupID = CONST_CATEGROUPID_NEW 
+		AND ca.IsActive = 1;
   
     SELECT ParameterValue 
     INTO lv_BatchSize 
@@ -71,9 +82,19 @@ sp:BEGIN
 		INSERT IGNORE INTO Temp_InactiveNewMember (CustID)
 		SELECT 	clss.CustID
 		FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID_CustID)
+			,	LATERAL	
+				(	SELECT cc.CustID, cc.CategoryID
+					FROM CTS_DataCenter.CTSCustomerClassification AS cc 
+						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
+					WHERE cc.CustID = clss.CustID
+						AND ca.IsActive = 1
+					ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
+					LIMIT 1
+			    ) AS tmplc 
 		WHERE clss.CustID > ", lv_LastCustID," ","
 			AND clss.CategoryID = ",lv_LastCategoryID," ","
 			AND clss.CreatedDate <= '",lv_ScanDateValid,"' ","
+            AND tmplc.CategoryID =", lv_LastCategoryID,"' ","
 			AND NOT EXISTS (SELECT 1 
 							FROM  CTS_Archive.CTSCustomerAssociationStatus AS ticket 
 							WHERE ticket.CTSCustID = clss.CTSCustID
@@ -91,9 +112,17 @@ sp:BEGIN
 		SELECT 	cate.CategoryID
         INTO 	lv_NextCategoryID
 		FROM Temp_Category  AS cate
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON cate.CategoryID = clss.CategoryID 
+				, LATERAL	
+					(	SELECT cc.CustID, cc.CategoryID, cc.CreatedDate
+						FROM CTS_DataCenter.CTSCustomerClassification AS cc 
+							INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
+						WHERE cate.CategoryID = ca.CategoryID 
+							AND ca.IsActive = 1
+						ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
+						LIMIT 1
+					) AS tmplc
 		WHERE cate.CategoryID > lv_LastCategoryID
-			AND clss.CreatedDate <= lv_ScanDateValid
+			AND tmplc.CreatedDate <= lv_ScanDateValid
             AND NOT EXISTS (SELECT 1 
 							FROM  CTS_Archive.CTSCustomerAssociationStatus AS ticket 
 							WHERE ticket.CTSCustID = clss.CTSCustID
@@ -107,9 +136,19 @@ sp:BEGIN
 		INSERT IGNORE INTO Temp_InactiveNewMember (CustID)
 		SELECT 	clss.CustID
 		FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID_CustID)
+			,	LATERAL	
+				(	SELECT cc.CustID, cc.CategoryID
+					FROM CTS_DataCenter.CTSCustomerClassification AS cc 
+						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
+					WHERE cc.CustID = clss.CustID
+						AND ca.IsActive = 1
+					ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
+					LIMIT 1
+			   ) AS tmplc 
 		WHERE clss.CustID > 0
 			AND clss.CategoryID = ", lv_NextCategoryID," ","
 			AND clss.CreatedDate <= '", lv_ScanDateValid,"' ","
+            AND tmplc.CategoryID = ", lv_NextCategoryID," ","
 			AND NOT EXISTS (SELECT 1 
 							FROM  CTS_Archive.CTSCustomerAssociationStatus AS ticket 
 							WHERE ticket.CTSCustID = clss.CTSCustID
