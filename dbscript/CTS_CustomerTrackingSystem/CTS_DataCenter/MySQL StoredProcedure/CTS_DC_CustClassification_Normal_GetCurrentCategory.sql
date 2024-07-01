@@ -65,7 +65,6 @@ BEGIN
     
     #1. Get valid customers
     IF ip_CustIDList IS NOT NULL THEN        
-
 		SET @sql = CONCAT("INSERT INTO Temp_InputCust(CustID) VALUES ('", REPLACE(ip_CustIDList, ",", "'),('"),"');");
 		PREPARE stmt1 FROM @sql;
 		EXECUTE stmt1;
@@ -77,13 +76,14 @@ BEGIN
     END IF;	
 	
     #2. Get latest normal category
-	INSERT INTO Temp_CustCategory(CustID, CategoryID, CategoryGroupID)
+	INSERT INTO Temp_CustCategory(CustID, CategoryID, CategoryGroupID, IsProbationLastDay)
 	SELECT 	tmpc.CustID
 		,	tmplc.CategoryID
         ,	tmplc.CategoryGroupID
+        ,	CASE WHEN tmplc.CategoryGroupID = CONST_GROUP_PROBATION AND tmplc.CreatedDate <= lv_LastDayProbation THEN 1 ELSE 0 END /*Up to Smart, Risky*/
 	FROM Temp_Cust AS tmpc
 		, LATERAL	
-			(	SELECT cc.CustID, cc.CategoryID, ca.CategoryGroupID
+			(	SELECT cc.CustID, cc.CategoryID, ca.CategoryGroupID, cc.CreatedDate
 				FROM CTS_DataCenter.CTSCustomerClassification AS cc 
 					INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
 				WHERE tmpc.CustID = cc.CustID
@@ -93,13 +93,7 @@ BEGIN
 		   ) tmplc 
         INNER JOIN CTS_DataCenter.CustomerCategorySettings AS s ON s.ParentID = CONST_PARENTID_NORMAL AND s.CategoryID = tmlc.CategoryID;
    
-    #3. Get Probation info
-    UPDATE Temp_CustCategory AS tmpCc
-		INNER JOIN CTS_DataCenter.ProbationAccountMonitor AS pro ON pro.CustID = tmpCc.CustID
-        INNER JOIN CTS_DataCenter.CustomerCategorySettings AS s ON s.CategoryType = CONST_GROUP_PROBATION AND s.CategoryID = tmpCc.CategoryID
-	SET IsProbationLastDay = (CASE WHEN pro.CreatedDate <= lv_LastDayProbation THEN 1 /*Up to Smart, Risky*/ ELSE 0 END);
-           
-    #4. Return data set
+    #3. Return data set
 	SELECT	DISTINCT tmpCust.CustID
 		,	CASE
 				WHEN tmpCc.CategoryGroup IS NULL THEN 0
