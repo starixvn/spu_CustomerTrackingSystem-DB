@@ -82,7 +82,7 @@ CREATE TABLE TWRobotUser
 
 
 /*RENAME old table CustomerCategory before executing the script below*/
-CREATE TABLE CustomerCategory 
+CREATE TABLE CustomerCategory_205317
 ( 
 	CategoryID INT UNSIGNED NOT NULL AUTO_INCREMENT, 
 	CategoryName VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci, 
