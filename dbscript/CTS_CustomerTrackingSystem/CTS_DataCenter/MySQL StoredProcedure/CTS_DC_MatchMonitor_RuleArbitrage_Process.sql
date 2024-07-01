@@ -211,13 +211,11 @@ sp: BEGIN
     WHERE tmpCp.GroupID IS NOT NULL AND tmpGr.IsValidGroup = 1;
 	
 	SELECT	GROUP_CONCAT(tmp.CTSCustID) AS CTSCustIDList
-		,	GROUP_CONCAT(tmp.Agent_CTSCustID) AS AgentDetect_CTSCustIDList
+		,	(CASE WHEN COUNT(DISTINCT Agent_CTSCustID ) > 1 THEN GROUP_CONCAT(DISTINCT Agent_CTSCustID) ELSE NULL END) AS AgentDetect_CTSCustIDList
 		,	GROUP_CONCAT(tmp.SequenceIDList) AS SequenceIDList
 	FROM (	SELECT	tmpGr.GroupID
 				,	mms.CTSCustID
-				,	CASE WHEN COUNT(DISTINCT CASE WHEN mms.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET) THEN mms.CTSCustID ELSE NULL END) > 1 
-													THEN GROUP_CONCAT(DISTINCT CASE WHEN mms.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET) THEN mms.CTSCustID ELSE NULL END)
-											ELSE NULL END AS Agent_CTSCustID
+				,	(CASE WHEN mms.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET) THEN mms.CTSCustID ELSE NULL END) AS Agent_CTSCustID
                 ,	GROUP_CONCAT(mms.SequenceID) AS SequenceIDList
 			FROM Temp_Group AS tmpGr
 			JOIN JSON_TABLE(REPLACE(JSON_ARRAY(tmpGr.SequenceIDList), ',', '","'), 
@@ -226,11 +224,11 @@ sp: BEGIN
 			INNER JOIN CTS_DataCenter.MatchMonitorStagingArbitrageNonLive AS mms ON js.SequenceID = mms.SequenceID	
 			LEFT JOIN Temp_Completed AS tmpCp ON tmpGr.GroupID = tmpCp.GroupID
             WHERE tmpCp.GroupID IS NULL AND tmpGr.IsValidGroup = 1
-			GROUP BY tmpGr.GroupID, mms.CTSCustID
+			GROUP BY tmpGr.GroupID, mms.CTSCustID, mms.SubscriberID
             HAVING SUM(mms.Stake) >= lv_RuleTotalStake
           ) AS tmp
 	GROUP BY GroupID
-    HAVING COUNT(DISTINCT CTSCustID) > 1;
+    HAVING COUNT(DISTINCT CTSCustID) > 1;    
     
 END$$
 DELIMITER ;
