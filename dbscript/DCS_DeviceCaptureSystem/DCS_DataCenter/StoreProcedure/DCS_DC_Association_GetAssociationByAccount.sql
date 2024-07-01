@@ -4,7 +4,7 @@ DROP PROCEDURE IF EXISTS `DCS_DC_Association_GetAssociationByAccount`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Association_GetAssociationByAccount`(
 		IN	ip_SubscriberID	INT	    
-    ,	IN	ip_Account		VARCHAR(100)
+    ,	IN	ip_AccountName	VARCHAR(100)
     )
     SQL SECURITY INVOKER
 proc_label: BEGIN
@@ -20,7 +20,7 @@ proc_label: BEGIN
         Param's Explanation (filtered by):
 
 		Example:
-			CALL DCS_DC_Association_GetAssociationByAccount(@ip_SubscriberID:=2,@ip_Account:='xxxx'); 			
+			CALL DCS_DC_Association_GetAssociationByAccount(@ip_SubscriberID:=2,@ip_AccountName:='xxxx'); 			
             
 	*/ 	   
      
@@ -42,21 +42,21 @@ proc_label: BEGIN
         ,	ass.AssociationID
 	FROM DCS_DataCenter.Account AS acc 
         INNER JOIN DCS_DataCenter.Association AS ass ON acc.AccountID = ass.AccountID 
-    WHERE acc.SubscriberID = ip_SubscriberID AND acc.LoginName = ip_Account; 
+    WHERE acc.SubscriberID = ip_SubscriberID AND acc.LoginName = ip_AccountName; 
      
      SELECT tmpAss.DeviceID
 		,	dv.FirstDeviceCode AS Device
         , 	dv.CreatedTime AS FirstSeenDate
 	FROM Temp_Association tmpAss 
-	INNER JOIN DCS_DataCenter.Device As dv ON dv.DeviceID = tmpAss.DeviceID
+		INNER JOIN DCS_DataCenter.Device AS dv ON dv.DeviceID = tmpAss.DeviceID
     ORDER BY FirstSeenDate ASC;
 
 	SELECT acc.AccountID
 		, 	acc.LoginName AS Account
         , 	ass.CreatedTime AS FirstAssociationDate
 	FROM Temp_Association tmpAss
-	INNER JOIN DCS_DataCenter.Association AS ass ON tmpAss.DeviceID = ass.DeviceID AND ass.AccountID <> tmpAss.AccountID AND ass.SubscriberID = ip_SubscriberID
-	INNER JOIN DCS_DataCenter.Account AS acc ON acc.AccountID = ass.AccountID
+		INNER JOIN DCS_DataCenter.Association AS ass ON tmpAss.DeviceID = ass.DeviceID AND ass.AccountID <> tmpAss.AccountID AND ass.SubscriberID = ip_SubscriberID
+		INNER JOIN DCS_DataCenter.Account AS acc ON acc.AccountID = ass.AccountID
     ORDER BY FirstAssociationDate ASC;    
      
     

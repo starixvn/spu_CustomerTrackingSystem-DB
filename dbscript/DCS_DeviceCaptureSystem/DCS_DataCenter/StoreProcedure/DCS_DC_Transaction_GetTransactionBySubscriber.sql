@@ -5,7 +5,7 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transaction_GetTransactionBySubscriber`(
 		IN	ip_SubscriberID	INT	
     ,	IN	ip_TransID		BIGINT
-    ,	IN	ip_Limit 		INT
+    ,	IN	ip_BatchSize 	INT
     )
     SQL SECURITY INVOKER
 proc_label: BEGIN
@@ -21,7 +21,7 @@ proc_label: BEGIN
         Param's Explanation (filtered by):
 
 		Example:
-			CALL DCS_DC_Transaction_GetTransactionBySubscriber(@ip_SubscriberID:=2,@ip_TransID:=1234,@ip_Limit:=100); 			
+			CALL DCS_DC_Transaction_GetTransactionBySubscriber(@ip_SubscriberID:=2,@ip_TransID:=1234,@ip_BatchSize:=100); 			
             
 	*/ 
 	
@@ -63,7 +63,7 @@ proc_label: BEGIN
 					,	ur.URLDetails
 					,	trs.IP
                     ,	tmpFg.DisplayName                   
-				FROM	DCS_DataCenter.Transaction07 trs 				
+				FROM	DCS_DataCenter.Transaction07 AS trs 				
 					LEFT JOIN DCS_DataCenter.UserAgent AS uag ON trs.UserAgentKey = uag.UserAgentKey
 					LEFT JOIN DCS_DataCenter.ActionResult AS ar ON trs.ActionResultID = ar.ActionResultID
 					LEFT JOIN DCS_DataCenter.URL AS ur ON trs.URLID = ur.URLID
@@ -72,7 +72,7 @@ proc_label: BEGIN
 					AND trs.SubscriberID = ip_SubscriberID
 				) AS tmp
 			ORDER BY TransID ASC
-            LIMIT ip_Limit;    
+            LIMIT ip_BatchSize;    
     
 END$$
 
