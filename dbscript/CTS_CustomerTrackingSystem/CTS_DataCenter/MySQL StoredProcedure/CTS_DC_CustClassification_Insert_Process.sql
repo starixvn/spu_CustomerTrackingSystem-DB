@@ -29,6 +29,8 @@ BEGIN
 	DECLARE CONST_PARENTID_PA 				INT;
     DECLARE CONST_PARENTID_POTENTIALPA      INT;
     DECLARE CONST_PARENTID_NORMAL		    INT;
+	DECLARE CONST_CC_LICVIPSUSPICIOUS 		INT;
+	DECLARE CONST_CC_LICVIPDANGEROUS 		INT;
 	
 	DECLARE	CONST_ACTIONTYPE_UPDATE 		INT DEFAULT 1;
 	
@@ -47,6 +49,8 @@ BEGIN
 	SET CONST_PARENTID_PA 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
 	SET CONST_PARENTID_POTENTIALPA			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
 	SET CONST_PARENTID_NORMAL	 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
+	SET CONST_CC_LICVIPSUSPICIOUS 			= CTS_DC_CategoryTypeParent_Get ('CONST_CC_LICVIPSUSPICIOUS');
+	SET CONST_CC_LICVIPDANGEROUS	 		= CTS_DC_CategoryTypeParent_Get ('CONST_CC_LICVIPDANGEROUS');
 	
 	/*TEMP OLD TABLE*/
 	DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomerClassification_Old;
@@ -105,6 +109,19 @@ BEGIN
 		,	IsLicensee				BIT(1)
 	);   
 	
+	DROP TEMPORARY TABLE IF EXISTS Temp_LicVIPCust;
+    CREATE TEMPORARY TABLE Temp_LicVIPCust(
+			CustID					INT UNSIGNED PRIMARY KEY
+		,	CategoryID 				INT UNSIGNED
+        ,	CustomerClass 			INT UNSIGNED
+	); 
+	
+	DROP TEMPORARY TABLE IF EXISTS Temp_LastHistory;
+    CREATE TEMPORARY TABLE Temp_LastHistory(
+			CustID					INT UNSIGNED PRIMARY KEY
+        ,	CategoryID				INT UNSIGNED
+        ,	TargetCC				INT UNSIGNED
+	);
 	
 	IF ip_InputFlowID = 8 THEN
 		/* 6: GENERATE CATEGORY */
@@ -350,7 +367,36 @@ BEGIN
 				AND temp_old.IsNew = 0
 				AND temp_old.IsRemove = 0
 			;    
+		
+		INSERT IGNORE INTO Temp_LicVIPCust(CustID, CategoryID, CustomerClass)
+		SELECT	temp.CustID
+			,	CASE WHEN cat.IsDangerProbation = 1 THEN CONST_CATEID_LICVIPSUSPICIOUS ELSE CONST_CATEID_LICVIPDANGEROUS END
+			,	CASE WHEN cat.IsDangerProbation = 1 THEN CONST_CC_LICVIPSUSPICIOUS ELSE CONST_CC_LICVIPDANGEROUS END
+		FROM Temp_NewClassification AS temp
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = temp.NewCategoryID
+		WHERE temp.IsLicenseeVIP = 1;
+		;    
 
+		UPDATE Temp_NewClassification AS temp
+			INNER JOIN Temp_LicVIPCust AS tmpVip ON temp.CustID = tmpVip.CustID
+		SET temp.TargetCC = IFNULL(temp.SpecialCC, tmpVip.CustomerClass)
+		WHERE temp.SpecialCC IS NULL; 
+		
+		INSERT IGNORE INTO Temp_LastHistory(CustID, CategoryID, TargetCC)
+		SELECT temp.CustID, tmpHis.CategoryID, tmpHis.TargetCC
+		FROM Temp_NewClassification AS temp,
+		LATERAL (	SELECT h.CategoryID, h.TargetCC
+					FROM CTS_DataCenter.CTSCustomerClassification_History AS h
+					WHERE h.CustID = temp.CustID 
+					ORDER BY ID DESC
+					LIMIT 1) AS tmpHis;
+					
+		UPDATE Temp_NewClassification AS temp
+			INNER JOIN Temp_LastHistory AS tmpHis ON temp.CustID = tmpHis.CustID
+		SET temp.IsDataChanged = 1
+		WHERE temp.NewCategoryGroupID <> tmpHis.CategoryID 
+			OR temp.TargetCC <> tmpHis.TargetCC; 
+		
 		
 	END IF;
 	

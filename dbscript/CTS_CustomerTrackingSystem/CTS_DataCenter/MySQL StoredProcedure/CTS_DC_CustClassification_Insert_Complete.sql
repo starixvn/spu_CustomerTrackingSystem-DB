@@ -76,6 +76,114 @@ BEGIN
 																		AND temp_old.ExistCategoryID = cls.CategoryID
 	WHERE temp_old.IsNew = 0 AND temp_old.IsRemove = 1;
 	
+	UPDATE IGNORE CTS_DataCenter.CTSCustomerClassification AS cls
+        INNER JOIN Temp_NewClassification AS temp ON cls.CustID = temp.CustID AND cls.CategoryID = temp.OldCategoryID 
+																					AND temp.DataChangeType = 1
+	SET 	cls.CTSCustID 			=  temp.CTSCustID
+		,	cls.CategoryID 			=  temp.CategoryID
+		, 	cls.LastScannedDate 	=  DATE(lv_CurrentDateTime); 
+	
+	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
+			CustID, CTSCustID, SubscriberID, CategoryID, ParentID, CreatedDate, CreatedBy, LastModifiedDate
+		, 	LastModifiedBy, LastScannedDate, IsMarkedDirect, Remark, IsFromCTS, IsFromAI, IsFromTVS, IsFromTW
+		, 	TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID)
+	SELECT 	temp.CustID
+		,	temp.CTSCustID
+		, 	temp.SubscriberID
+		, 	temp.NewCategoryGroupID AS CategoryID
+		, 	temp.ParentID
+		, 	NOW()
+		, 	temp.CreatedBy
+		, 	IFNULL(temp.LastModifiedDate, NOW()) AS LastModifiedDate
+		, 	temp.CreatedBy AS LastModifiedBy
+		, 	NOW() AS LastScannedDate
+        ,	temp.IsMarkedDirect
+        ,	temp.Remark
+        ,	temp.IsFromCTS
+        ,	temp.IsFromAI
+        ,	temp.IsFromTVS
+        ,	temp.IsFromTW
+        ,	temp.TVSRequestID
+		,	temp.IsTVSParlay
+		,	temp.SportType
+		,	temp.TVSIssueTypeID
+	FROM Temp_NewClassification AS temp 
+    WHERE temp.DataChangeType = 0 OR temp.IsFromOldPA = 1;   
+	
+	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(
+			CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType
+		, 	InsertDate, TargetCC, SourceTypeID, IsDataChanged, TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays
+		, 	IsMarkedDirect, Remark, TVSRequestID, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsParlay, SportType, IssueTypeID )
+	SELECT 	temp.CustID
+		, 	temp.CTSCustID
+		, 	temp.NewCategoryID
+		,	temp.ParentID
+		, 	NOW() AS LastModifiedDate
+		, 	temp.CreatedBy AS LastModifiedBy
+		, 	temp.ActionType
+		, 	NOW() AS InsertDate
+		, 	temp.TargetCC
+		, 	(CASE	WHEN ccs.CategoryID IS NOT NULL THEN ccs.RemarkTemplateID
+					WHEN temp.MatchID IS NOT NULL OR ccs.CategoryID IS NOT NULL THEN ccs.RemarkTemplateID
+					WHEN temp.IsMarkedDirect = 1 THEN 31 
+					WHEN temp.IsMarkedDirect = 0 THEN 32 END) AS SourceTypeID
+		,  	1 AS IsDataChanged
+		,	temp.TargetDangerLevel AS TargetDangerLevel1
+		,	temp.TurnoverRM
+		,	temp.WinlossRM
+		, 	temp.BetCount
+		, 	temp.ActiveDays
+        ,	temp.IsMarkedDirect
+        ,	temp.Remark
+        ,	temp.TVSRequestID
+        ,	temp.IsFromTVS
+        ,	temp.IsFromTW
+        ,	temp.IsFromCTS
+        ,	temp.IsFromAI
+		,	temp.IsTVSParlay
+		,	temp.SportType
+		,	temp.TVSIssueTypeID
+	FROM Temp_NewClassification AS temp
+		LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = temp.NewCategoryID 
+	WHERE temp.IsDataChanged = 1 
+    ORDER BY temp.LastModifiedDate ASC, temp.NewCategoryID ASC;
+	
+	INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(
+			CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate
+		, 	TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, IsMarkedDirect, Remark, TVSRequestID
+		, 	IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsParlay, SportType, IssueTypeID)
+	SELECT 	temp.CustID
+		,	temp.CTSCustID
+		,	temp.NewCategoryID
+		,	temp.ParentID
+		,	IFNULL(temp.LastModifiedDate,NOW())
+		,	temp.CreatedBy AS LastModifiedBy
+		,	temp.ActionType
+		,	1 AS IsAuto 
+		,	NOW() AS InsertDate
+		,	temp.TargetCC
+		, 	(CASE	WHEN ccs.CategoryID IS NOT NULL THEN ccs.RemarkTemplateID
+					WHEN temp.MatchID IS NOT NULL OR ccs.CategoryID IS NOT NULL THEN ccs.RemarkTemplateID
+					WHEN temp.IsMarkedDirect = 1 THEN 31 
+					WHEN temp.IsMarkedDirect = 0 THEN 32 END) AS SourceTypeID
+		,	temp.IsDataChanged
+		,	temp.TargetDangerLevel AS TargetDangerLevel1
+		,	temp.TurnoverRM
+		,	temp.WinlossRM
+		,	temp.BetCount
+		,	temp.ActiveDays
+		,	temp.IsMarkedDirect
+        ,	temp.Remark
+		,	temp.TVSRequestID
+        ,	temp.IsFromTVS
+        ,	temp.IsFromTW
+        ,	temp.IsFromCTS
+        ,	temp.IsFromAI
+		,	temp.IsTVSParlay
+		,	temp.SportType
+		,	temp.TVSIssueTypeID
+	FROM Temp_NewClassification AS temp
+		LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = temp.NewCategoryID ;
 	
 END$$
 DELIMITER ;

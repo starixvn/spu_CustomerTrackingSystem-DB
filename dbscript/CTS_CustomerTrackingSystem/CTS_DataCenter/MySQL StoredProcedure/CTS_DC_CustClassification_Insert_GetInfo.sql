@@ -198,8 +198,8 @@ BEGIN
 			
 			, 	ToEvidenceID				SMALLINT
 			
-			, 	RelevantCategoryID			SMALLINT UNSIGNED
-			,	RelevantCategoryGroupID   	SMALLINT UNSIGNED
+			, 	RelevantCategoryID			INT UNSIGNED
+			,	RelevantCategoryGroupID   	INT UNSIGNED
 			,	RelevantIsPAProbation	   	BIT(1) -- RelevantIsProbation
 			
 			,	IsDataChanged				BIT(1) DEFAULT 0 	/* 0: Not Change, 1: Changed (IF call from SpecialCC function THEN 1 ELSE 0) */
@@ -387,7 +387,7 @@ BEGIN
 												CustID 						BIGINT UNSIGNED		PATH "$.CustID"
 											,	TVSReasonID					INT 				PATH "$.ReasonID"
 											, 	CreatedBy					INT UNSIGNED		PATH "$.CreatedBy"
-											, 	IsMarkedDirect		BIT(1)				PATH "$.IsDirectPA"
+											, 	IsMarkedDirect				BIT(1)				PATH "$.IsDirectPA"
 											,	WinlossStatus				SMALLINT 			PATH "$.WinlossStatus" 
 											,	TurnoverRM					DECIMAL(20,4)		PATH "$.TurnoverRM"
 											,	WinlossRM					DECIMAL(20,4) 		PATH "$.WinlossRM"
@@ -570,9 +570,9 @@ BEGIN
 				,	sp.CustomerClass AS SpecialCC
 			FROM JSON_TABLE(ip_CustInfo,
 							"$[*]" COLUMNS(
-												CustID 					BIGINT UNSIGNED		PATH "$.CustId"
-											, 	DWCategoryID			SMALLINT UNSIGNED	PATH "$.CategoryId"
-											, 	DWCategoryGroupID		SMALLINT UNSIGNED	PATH "$.CategoryGroupID"
+												CustID 					BIGINT UNSIGNED		PATH "$.CustID"
+											, 	DWCategoryID			INT UNSIGNED		PATH "$.CategoryID"
+											, 	DWCategoryGroupID		INT UNSIGNED		PATH "$.CategoryGroupID"
 											, 	TurnoverRM				DECIMAL(20,4)		PATH "$.TurnoverRM"
 											, 	WinlossRM				DECIMAL(20,4)		PATH "$.WinlossRM"
 											, 	BetCount				BIGINT				PATH "$.BetCount"
