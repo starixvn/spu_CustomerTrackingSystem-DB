@@ -123,8 +123,7 @@ BEGIN
 												,	CreatedBy 		INT UNSIGNED		PATH "$.CreatedBy"          
 												,	Remark			VARCHAR(500)		PATH "$.Remark"
 											 )) AS tmpJs
-				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = tmpJs.CustID 
-																				AND cls.ParentID = CONST_PARENTID_WRAPPER
+				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = tmpJs.CustID
 																				AND cls.CategoryID = CONST_CATEID_LICVIPSUSPICIOUS
 				;
 			
@@ -165,7 +164,7 @@ BEGIN
 			,	IsExistVVIP					BIT(1) DEFAULT 0
 			,	IsExistWrapper				BIT(1) DEFAULT 0
 			,	IsExistPA					BIT(1) DEFAULT 0
-			-- ,	IsExistPotentialPA			BIT(1) DEFAULT 0
+			,	IsExistPotentialPA			BIT(1) DEFAULT 0
 			-- ,	IsExistRobot				BIT(1) DEFAULT 0 
 			-- ,	IsExistKeepOldCateID		BIT(1) DEFAULT 0 
 			,	IsFromOldPA					BIT(1) DEFAULT 0
@@ -238,8 +237,8 @@ BEGIN
 			,	LastModifiedDate			DATETIME(3)
 			, 	ActionType					SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN; 5: Not satisfy Pass Probation*/
 			,	CreatedBy					INT UNSIGNED
-			,	IsMarkedDirect		BIT(1) DEFAULT 0
-
+			,	IsMarkedDirect				BIT(1) DEFAULT 0
+			,	IsReturnData				BIT(1) DEFAULT 1
 			, 	PRIMARY KEY (CustID, DWCategoryGroupID)  
 		); 
 		
@@ -621,7 +620,7 @@ BEGIN
 							AND cls.ParentID = CONST_PARENTID_PA
 					 );
 					 
-		/*UPDATE Temp_NewClassification AS temp
+		UPDATE Temp_NewClassification AS temp
 		SET temp.IsExistPotentialPA = 1
 		WHERE EXISTS (	SELECT 1
 						FROM CTS_DataCenter.CTSCustomerClassification AS cls
@@ -629,7 +628,7 @@ BEGIN
 							AND cls.ParentID = CONST_PARENTID_POTENTIALPA
 					 );
 					 
-		UPDATE Temp_NewClassification AS temp
+		/*UPDATE Temp_NewClassification AS temp
 		SET temp.IsExistRobot = 1
 		WHERE EXISTS (	SELECT 1
 						FROM CTS_DataCenter.CTSCustomerClassification AS cls

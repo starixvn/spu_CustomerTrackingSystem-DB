@@ -33,6 +33,7 @@ BEGIN
 	DECLARE	CONST_ACTIONTYPE_UPDATE 					INT DEFAULT 1;
 	DECLARE CONST_ACTIONTYPE_REMOVE 					INT DEFAULT 2;
     DECLARE CONST_ACTIONTYPE_EXISTEDPA 					INT DEFAULT 3;
+    DECLARE CONST_ACTIONTYPE_EXISTEDVVIP				INT DEFAULT 4;
     DECLARE CONST_ACTIONTYPE_IGNOREPROBATION 			INT DEFAULT 5;
 
     DECLARE CONST_SCANTAGGINGTYPE_NOTEXIST  			TINYINT DEFAULT 0;
@@ -62,7 +63,7 @@ BEGIN
 	SET 	temp.SpecialCCName = cc.CustomerClassName
 		,	temp.SpecialCCCatePriority = cc.CategoryPriority
 		,	temp.SpecialCCDangerProbation = cc.IsDangerProbation
-	WHERE temp.SpecialCC <> 0;
+	WHERE temp.SpecialCC IS NOT NULL;
 
 	IF ip_InputFlowID = 8 THEN /* Normal */
 		 
@@ -78,6 +79,7 @@ BEGIN
 		CREATE TEMPORARY TABLE Temp_CustIgnoranceAction(	  	
 				CustID					BIGINT UNSIGNED	PRIMARY KEY
 			, 	ActionType				SMALLINT      
+			,	IsReturnData			BIT(1)
 		); 
 
 		DROP TEMPORARY TABLE IF EXISTS Temp_NotEnoughDayProbation; 
@@ -108,16 +110,21 @@ BEGIN
 		WHERE cate.ParentID = CONST_PARENTID_NORMAL
 			cate.CategoryPriority <= lv_ProbationCatePriority;
 		
-		INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, ActionType)
-		SELECT	temp.CustID, CONST_ACTIONTYPE_IGNOREPROBATION
+		INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, ActionType, IsReturnData)
+		SELECT	temp.CustID, CONST_ACTIONTYPE_IGNOREPROBATION, 0 AS IsReturnData
 		FROM 	Temp_ProbationCustomer AS temp 
 		WHERE 	temp.IsPassProbationRule = 0
 			AND temp.ScanTaggingType = CONST_SCANTAGGINGTYPE_NOTEXIST;
-
-        INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, ActionType)
-		SELECT DISTINCT temp.CustID, CONST_ACTIONTYPE_EXISTEDPA
+			
+		INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, ActionType, IsReturnData)
+		SELECT DISTINCT temp.CustID, CONST_ACTIONTYPE_IGNOREVVIP, 0 AS IsReturnData
 		FROM Temp_NewClassification AS temp
-		WHERE temp.ParentID IN (CONST_PARENTID_PA,CONST_PARENTID_POTENTIALPA);
+		WHERE temp.IsExistVVIP = 1;
+
+        INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, ActionType, IsReturnData)
+		SELECT DISTINCT temp.CustID, CONST_ACTIONTYPE_EXISTEDPA, 0 AS IsReturnData
+		FROM Temp_NewClassification AS temp
+		WHERE temp.IsExistPA = 1 OR temp.IsExistPotentialPA = 1;
 		
 		/* 5.4: UPDATE BACK TO Temp_NewClassification */
 		/* 5.4.1: HAS ACTION + NO VIEW LOG FAIL PROBATION FOR > 20 LAST DAYS */ 
@@ -131,13 +138,22 @@ BEGIN
 		UPDATE Temp_NewClassification AS temp 
 			INNER JOIN Temp_CustIgnoranceAction AS ig ON temp.CustID = ig.CustID
 		SET 	temp.ActionType = ig.ActionType
-			, 	temp.IsDataChanged = 0;
+			, 	temp.IsDataChanged = 0
+			, 	IsReturnData = ig.IsReturnData;
 
         /* 5.4.3: HAS ACTION + VIEW LOG FOR PROBATION NOT ENOUGH DAY WITH NEW TAGGING */ 
         UPDATE Temp_NewClassification AS temp 
             INNER JOIN Temp_ProbationCustomer AS pro ON temp.CustID = pro.CustID AND pro.IsPassProbationRule = 0
         SET 	temp.ScanTaggingType = CONST_SCANTAGGINGTYPE_EXISTONLY
         WHERE 	pro.ScanTaggingType <> CONST_SCANTAGGINGTYPE_NOTEXIST;
+		
+		/* 6: GENERATE CATEGORY */
+		/* 6.1: UPDATE DW CATEGORY */
+		UPDATE Temp_NewClassification AS temp 
+			LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryGroupID = temp.DWCategoryGroupID 
+																AND cate.TaggingType = temp.TaggingType 
+																AND tag.TaggingID = temp.TaggingID
+		SET temp.DWCategoryID = IFNULL(cate.CategoryID,temp.DWCategoryGroupID);
 		
 	ELSEIF ip_InputFlowID IN (51,7) THEN
 		CALL CTS_DataCenter.CTS_DC_CustClassification_PA_RemoveOldTVSRequest();

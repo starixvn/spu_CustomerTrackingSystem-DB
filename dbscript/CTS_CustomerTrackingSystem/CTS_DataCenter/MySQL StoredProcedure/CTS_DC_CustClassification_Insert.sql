@@ -39,6 +39,8 @@ BEGIN
 	
 	DECLARE lv_MaxCTSCustID					BIGINT;
 	DECLARE lv_SourceTypeID					INT;  
+	DECLARE lv_ActionType					INT;  
+	DECLARE lv_IsAuto						BIT(1);  
 	DECLARE lv_BACatePriority				SMALLINT;
 	DECLARE lv_LicVIP_Dangerous_Priority	SMALLINT;
 	DECLARE lv_LicVIP_Suspicious_Priority	SMALLINT;
@@ -71,6 +73,7 @@ BEGIN
 									WHEN ip_FromAction = 3 THEN 30
 							  END;
 							  
+		SET lv_IsAuto = 0;
 		
 		/*Remove all categories which IsKeepOldCateID = 0*/							
 		DELETE cls							
@@ -109,7 +112,6 @@ BEGIN
 		FROM Temp_NewClassification AS temp
 		WHERE temp.IsExistVVIP = 0;
 		
-		
 		/*Insert VVIP history*/
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(
 				CustID, CTSCustID, ParentID, CategoryID, LastModifiedDate
@@ -123,7 +125,7 @@ BEGIN
 			,   DATE(lv_CurrentDateTime) AS InsertDate  
 			, 	temp.CreatedBy AS LastModifiedBy
 			,	temp.Remark
-			,	0 AS IsAuto
+			,	lv_IsAuto AS IsAuto
 			,   cat.CustomerClass.CustomerClass AS TargetCC
 			,   lv_SourceTypeID AS SourceTypeID
 			,	1 AS IsDataChanged
@@ -143,7 +145,7 @@ BEGIN
 			, 	lv_CurrentDateTime AS LastModifiedDate
 			,   DATE(lv_CurrentDateTime) AS InsertDate
 			, 	temp.CreatedBy AS LastModifiedBy
-			,	0 AS IsAuto
+			,	lv_IsAuto AS IsAuto
 			,   cat.CustomerClass AS TargetCC
 			,   lv_SourceTypeID AS SourceTypeID
 			,	1 AS IsDataChanged
@@ -159,14 +161,16 @@ BEGIN
 		END IF;
 
 	ELSEIF ip_InputFlowID = 2 THEN /*SpecialCC*/
+		SET lv_SourceTypeID = 10;
+		SET lv_ActionType 	= 0;
+		SET lv_IsAuto 		= 0;
+	
 		/*General*/
-
 		UPDATE CTS_DataCenter.CTSCustomerClassification AS cls
-			INNER JOIN Temp_NewCustomerClass AS temp ON temp.CustID = cls.CustID 
-														AND cls.ParentID = CONST_PARENTID_WRAPPER
+			INNER JOIN Temp_NewCustomerClass AS temp ON temp.CustID = cls.CustID
 														AND cls.CategoryID = CONST_CATEID_LICVIPSUSPICIOUS
 		SET cls.CategoryID = CONST_CATEID_LICVIPDANGEROUS
-		WHERE temp.IsDataChanged = 1 AND temp.IsExistWrapper = 1;
+		WHERE temp.IsDataChanged = 1 AND temp.IsLicenseeVIP = 1;
 		
 		/*	INSERT VALID SPECIAL CUSTOMER CLASS	*/
 		INSERT INTO CTS_DataCenter.SpecialCustomerClass(
@@ -198,7 +202,7 @@ BEGIN
 			,	lv_CurrentDateTime AS LastModifiedDate
 			,   1 AS CreatedFromFunction -- for Special Customer
 			,	temp.Remark
-			,	0 AS ActionType -- insert
+			,	lv_ActionType AS ActionType -- insert
 		FROM Temp_NewCustomerClass AS temp;
 		
 		/*	INSERT */
@@ -208,22 +212,23 @@ BEGIN
 		SELECT  temp.CustID
 			, 	temp.CTSCustID
 			,	temp.SubscriberID
-			,	CONST_PARENTID_WRAPPER AS ParentID
-			,	CONST_CATEID_SPECIALCC AS CategoryID
+			,	ccs.ParentID
+			,	ccs.CategoryID
 			, 	lv_CurrentDateTime AS CreatedDate
 			, 	temp.CreatedBy AS CreatedBy
 			, 	lv_CurrentDateTime AS LastModifiedDate
 			, 	temp.CreatedBy AS LastModifiedBy
 			, 	DATE(lv_CurrentDateTime) AS LastScannedDate
-			, 	0  AS ActionType 
-			, 	0  AS IsAuto
+			, 	lv_ActionType  AS ActionType 
+			, 	lv_IsAuto AS IsAuto
 			, 	temp.Remark
 		FROM Temp_NewCustomerClass AS temp
-		WHERE temp.IsDataChanged = 1 
+			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = temp.CategoryID
+		WHERE temp.IsDataChanged = 1 AND cls.CategoryID = CONST_CATEID_SPECIALCC 
 			AND NOT EXISTS (SELECT 1
 							FROM CTS_DataCenter.CTSCustomerClassification AS cls
 							WHERE cls.CustID = temp.CustID
-								AND cls.CategoryID = CONST_CATEID_SPECIALCC
+								cls.CategoryID = ccs.CategoryID
 							);
 		
 		/*	INSERT HISTORY	*/
@@ -232,19 +237,20 @@ BEGIN
 			, 	IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, Remark)
 		SELECT  temp.CustID
 			, 	temp.CTSCustID
-			,	CONST_PARENTID_WRAPPER AS ParentID
-			,	CONST_CATEID_SPECIALCC AS CategoryID
+			,	ccs.ParentID
+			,	ccs.CategoryID
 			, 	lv_CurrentDateTime AS LastModifiedDate
 			, 	temp.CreatedBy AS LastModifiedBy
-			, 	0  AS ActionType 
-			, 	0  AS IsAuto
+			, 	lv_ActionType  AS ActionType 
+			, 	lv_IsAuto AS IsAuto
 			, 	DATE(lv_CurrentDateTime) AS InsertDate
 			,	temp.CustomerClass AS TargetCC
-			, 	10 AS SourceTypeID
+			, 	lv_SourceTypeID AS SourceTypeID
 			, 	temp.IsDataChanged
 			, 	temp.Remark
 		FROM Temp_NewCustomerClass AS temp
-		WHERE temp.IsDataChanged = 1;
+			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = temp.CategoryID
+		WHERE temp.IsDataChanged = 1 AND cls.CategoryID = CONST_CATEID_SPECIALCC ;
 		
 		/*	INSERT LOG*/
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log (
@@ -256,11 +262,11 @@ BEGIN
 			,	CONST_CATEID_SPECIALCC AS CategoryID
 			, 	lv_CurrentDateTime AS LastModifiedDate
 			, 	temp.CreatedBy AS LastModifiedBy
-			, 	0  AS ActionType 
-			, 	0  AS IsAuto
+			, 	lv_ActionType AS ActionType 
+			, 	lv_IsAuto AS IsAuto
 			, 	DATE(lv_CurrentDateTime) AS InsertDate
 			,	temp.CustomerClass AS TargetCC
-			, 	10 AS SourceTypeID
+			, 	lv_SourceTypeID AS SourceTypeID
 			, 	temp.IsDataChanged
 			, 	temp.Remark
 		FROM Temp_NewCustomerClass AS temp
@@ -269,6 +275,8 @@ BEGIN
 
 		
 	ELSEIF ip_InputFlowID = 3 THEN /*LicVIP*/
+		SET lv_SourceTypeID = 28;
+	
 		SELECT cat.CustomerClass
 		INTO lv_LicVIP_Dangerous_CC
 		FROM CTS_DataCenter.CustomerCategory AS cat
@@ -372,7 +380,7 @@ BEGIN
 				,	0  AS IsAuto
 				,   DATE(lv_CurrentDateTime) AS InsertDate
 				,   temp.TargetCC
-				,   38 AS SourceTypeID
+				,   lv_SourceTypeID AS SourceTypeID
 				,	1 AS IsDataChanged
 				,	1 AS IsMarkedDirect
 			FROM Temp_CustCategory AS temp;
@@ -390,7 +398,7 @@ BEGIN
 				,	0  AS IsAuto
 				,   DATE(lv_CurrentDateTime) AS InsertDate
 				,   temp.TargetCC
-				,   38 AS SourceTypeID
+				,   lv_SourceTypeID AS SourceTypeID
 				,	temp.IsDataChanged
 				,	1 AS IsMarkedDirect
 			FROM Temp_CustCategory AS temp;
@@ -548,20 +556,13 @@ BEGIN
 			WHERE tmpCat.CustID IS NULL;
 		
 		END IF;
-
-	
-	-- ELSEIF ip_InputFlowID = 4 THEN 
-	
-	
-	-- ELSEIF ip_InputFlowID = 4 THEN 
-	-- ELSE
 		
 	
 	END IF;
 	
 	
 	/*STEP 2: Preprocess*/
-	-- CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_PreProcess ();
+	CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_PreProcess (ip_InputFlowID);
 	
 	
 	/*STEP 3: Process*/
@@ -588,9 +589,14 @@ BEGIN
 			,	lv_CurrentDateTime AS CreatedDate
 			,	ip_CreatedBy AS CreatedBy
 		FROM Temp_NewClassification;
-	
-	
+
 	END IF;
+	
+	/*
+	IF (ip_IsToQueue = 1) THEN
+		CALL CTS_DC_CustClassification_AffectedDownline_Insert ();
+	END IF;
+	*/
 	
 	/*STEP N: Return data*/
 	SELECT DISTINCT 
