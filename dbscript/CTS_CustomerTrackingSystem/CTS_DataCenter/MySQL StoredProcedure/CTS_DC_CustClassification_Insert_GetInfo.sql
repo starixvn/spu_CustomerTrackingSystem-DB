@@ -58,7 +58,7 @@ BEGIN
 			,	IsExistVVIP					BIT(1) DEFAULT 0
 			,	IsLicenseeVIP				BIT(1) DEFAULT 0
 			,	IsLicenseeBA				BIT(1) DEFAULT 0
-			,	IsAffectedFromUpline		BIT(1) DEFAULT 0	
+			,	IsMarkedDirect		BIT(1) DEFAULT 0	
 			,	TargetCC					SMALLINT UNSIGNED
 			,	CategoryPriority			SMALLINT UNSIGNED
 			,	CustomerClassPriority		SMALLINT UNSIGNED
@@ -81,12 +81,12 @@ BEGIN
 
 		IF ip_InputFlowID = 1 THEN /*VVIP*/
 			INSERT INTO Temp_NewClassification (
-					CustID, CTSCustID, SubscriberID, RoleID, Remark, CreatedBy, IsExistVVIP, IsAffectedFromUpline
+					CustID, CTSCustID, SubscriberID, RoleID, Remark, CreatedBy, IsExistVVIP, IsMarkedDirect
 				,	ParentID, CategoryID, IsReturnData)
 			SELECT DISTINCT 
 					tmpJs.CustID, tmpJs.CTSCustID, tmpJs.SubscriberID, tmpJs.RoleID, tmpJs.Remark, tmpJs.CreatedBy
 				,	(CASE WHEN cls.CustID IS NOT NULL THEN 1 ELSE 0 END) AS IsExistVVIP
-				,	(CASE WHEN ip_FromAction = 1 THEN 1 ELSE 0 END) AS IsAffectedFromUpline
+				,	(CASE WHEN ip_FromAction = 1 THEN 1 ELSE 0 END) AS IsMarkedDirect
 				,	CONST_PARENTID_VVIP
 				,	CONST_CATEID_VVIP
 				,	(CASE WHEN cls.CustID IS NOT NULL THEN 0 ELSE 1 END) AS IsReturnData
@@ -238,14 +238,14 @@ BEGIN
 			,	LastModifiedDate			DATETIME(3)
 			, 	ActionType					SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN; 5: Not satisfy Pass Probation*/
 			,	CreatedBy					INT UNSIGNED
-			,	IsAffectedFromUpline		BIT(1) DEFAULT 0
+			,	IsMarkedDirect		BIT(1) DEFAULT 0
 
 			, 	PRIMARY KEY (CustID, DWCategoryGroupID)  
 		); 
 		
 		IF ip_InputFlowID IN (50,6) THEN /*PA - ip_InputType = 'Category' | PotentialPA*/
 			INSERT INTO Temp_NewClassification(
-				CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsAffectedFromUpline
+				CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirect
 			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsDataChanged
 			, 	SpecialCC, IsPAProbation, RelevantCategoryID, LastModifiedDate, MatchID, TVSRequestID, IsTVSParlay, SportType
 			, 	TVSIssueTypeID, CategoryPriority, CustomerClassPriority, ParentID)
@@ -260,7 +260,7 @@ BEGIN
 				,	cus.IsLicenseeBA
 				,	tmpJs.CreatedBy 
 				,	(CASE WHEN tmpJs.MatchID IS NOT NULL THEN CONCAT('Auto MatchID: ', MatchID) ELSE tmpJs.Remark END) AS Remark
-				,	tmpJs.IsAffectedFromUpline
+				,	tmpJs.IsMarkedDirect
 				, 	IFNULL(tmpJs.WinlossStatus,2) AS  WinlossStatus
 				, 	tmpJs.TurnoverRM
 				, 	tmpJs.WinlossRM 
@@ -294,7 +294,7 @@ BEGIN
 											,	IsLicensee					BIT(1)				PATH "$.IsLicensee"
 											, 	CreatedBy					INT UNSIGNED		PATH "$.CreatedBy"
 											, 	Remark						VARCHAR(500)		PATH "$.Remark"
-											, 	IsAffectedFromUpline		BIT(1)				PATH "$.IsDirectPA"
+											, 	IsMarkedDirect		BIT(1)				PATH "$.IsDirectPA"
 											,	WinlossStatus				SMALLINT 			PATH "$.WinlossStatus" 
 											,	TurnoverRM					DECIMAL(20,4)		PATH "$.TurnoverRM"
 											,	WinlossRM					DECIMAL(20,4) 		PATH "$.WinlossRM"
@@ -324,7 +324,7 @@ BEGIN
 								,	IsFromCTS = CASE WHEN tmpJs.IsFromCTS = 1 THEN 1 ELSE Temp_PA.IsFromCTS END
 								,	IsFromAI = CASE WHEN tmpJs.IsFromAI = 1 THEN 1 ELSE Temp_PA.IsFromAI END
 								,	IsFromTVS = CASE WHEN tmpJs.IsFromTVS = 1 THEN 1 ELSE Temp_PA.IsFromTVS END
-								,	IsAffectedFromUpline = CASE WHEN tmpJs.IsAffectedFromUpline = 1 THEN 1 ELSE Temp_PA.IsAffectedFromUpline END
+								,	IsMarkedDirect = CASE WHEN tmpJs.IsMarkedDirect = 1 THEN 1 ELSE Temp_PA.IsMarkedDirect END
 								,	IsTVSParlay = CASE WHEN Temp_PA.TVSRequestID IS NULL 
 																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
 															THEN tmpJs.IsTVSParlay 
@@ -349,7 +349,7 @@ BEGIN
 
 		ELSEIF ip_InputFlowID = 51 THEN /*PA - ip_InputType = 'Reason'*/
 			INSERT INTO Temp_NewClassification(
-				CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,  IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, IsAffectedFromUpline
+				CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,  IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, IsMarkedDirect
 			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsDataChanged, SpecialCC, IsPAProbation
 			, 	RelevantCategoryID, TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID, CategoryPriority, CustomerClassPriority
 			, 	ParentID)
@@ -363,7 +363,7 @@ BEGIN
 				,	cus.IsLicenseeVIP
 				,	cus.IsLicenseeBA
 				,	tmpJs.CreatedBy 
-				,	tmpJs.IsAffectedFromUpline
+				,	tmpJs.IsMarkedDirect
 				, 	IFNULL(tmpJs.WinlossStatus,2) AS  WinlossStatus
 				, 	tmpJs.TurnoverRM
 				, 	tmpJs.WinlossRM 
@@ -387,7 +387,7 @@ BEGIN
 												CustID 						BIGINT UNSIGNED		PATH "$.CustID"
 											,	TVSReasonID					INT 				PATH "$.ReasonID"
 											, 	CreatedBy					INT UNSIGNED		PATH "$.CreatedBy"
-											, 	IsAffectedFromUpline		BIT(1)				PATH "$.IsDirectPA"
+											, 	IsMarkedDirect		BIT(1)				PATH "$.IsDirectPA"
 											,	WinlossStatus				SMALLINT 			PATH "$.WinlossStatus" 
 											,	TurnoverRM					DECIMAL(20,4)		PATH "$.TurnoverRM"
 											,	WinlossRM					DECIMAL(20,4) 		PATH "$.WinlossRM"
@@ -415,7 +415,7 @@ BEGIN
 								,	IsFromCTS = CASE WHEN tmpJs.IsFromCTS = 1 THEN 1 ELSE Temp_PA.IsFromCTS END
 								,	IsFromAI = CASE WHEN tmpJs.IsFromAI = 1 THEN 1 ELSE Temp_PA.IsFromAI END
 								,	IsFromTVS = CASE WHEN tmpJs.IsFromTVS = 1 THEN 1 ELSE Temp_PA.IsFromTVS END
-								,	IsAffectedFromUpline = CASE WHEN tmpJs.IsAffectedFromUpline = 1 THEN 1 ELSE Temp_PA.IsAffectedFromUpline END
+								,	IsMarkedDirect = CASE WHEN tmpJs.IsMarkedDirect = 1 THEN 1 ELSE Temp_PA.IsMarkedDirect END
 								,	IsTVSParlay = CASE WHEN Temp_PA.TVSRequestID IS NULL 
 																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
 															THEN tmpJs.IsTVSParlay 
@@ -440,7 +440,7 @@ BEGIN
 				
 		ELSEIF ip_InputFlowID = 7 THEN /*Robot*/
 			INSERT INTO Temp_NewClassification(
-				CustID, CTSCustID, SubscriberID, DWCategoryID, DWCategoryGroupID, IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsAffectedFromUpline
+				CustID, CTSCustID, SubscriberID, DWCategoryID, DWCategoryGroupID, IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirect
 			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsDataChanged
 			, 	SpecialCC, IsPAProbation, RelevantCategoryID, TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID, CategoryPriority
 			, 	CustomerClassPriority, ParentID, TWRobotCounter, IsFromImperva)
@@ -454,7 +454,7 @@ BEGIN
 				,	cus.IsLicenseeBA
 				,	tmpJs.CreatedBy 
 				,	(CASE WHEN tmpJs.MatchID IS NOT NULL THEN CONCAT('Auto MatchID: ', MatchID) ELSE tmpJs.Remark END) AS Remark
-				,	tmpJs.IsAffectedFromUpline
+				,	tmpJs.IsMarkedDirect
 				, 	IFNULL(tmpJs.WinlossStatus,2) AS  WinlossStatus
 				, 	tmpJs.TurnoverRM
 				, 	tmpJs.WinlossRM 
@@ -496,7 +496,7 @@ BEGIN
 											, 	IsFromTVS				BIT(1)  			PATH "$.IsFromTVS"
 											,	IsFromImperva			BIT(1) 				PATH "$.IsFromImperva"
 											, 	TVSRequestID			BIGINT UNSIGNED 	PATH "$.TVSRequestID"
-											, 	IsAffectedFromUpline	BIT(1)  			PATH "$.IsDirect"
+											, 	IsMarkedDirect	BIT(1)  			PATH "$.IsDirect"
 
 											, 	Remark					VARCHAR(500)		PATH "$.Remark"
 											, 	CreatedBy				INT UNSIGNED		PATH "$.CreatedBy"
@@ -518,7 +518,7 @@ BEGIN
 								,	IsFromAI = CASE WHEN tmpJs.IsFromAI = 1 THEN 1 ELSE Temp_PA.IsFromAI END
 								,	IsFromTVS = CASE WHEN tmpJs.IsFromTVS = 1 THEN 1 ELSE Temp_PA.IsFromTVS END
 								,	IsFromImperva = CASE WHEN tmpJs.IsFromImperva = 1 THEN 1 ELSE Temp_PA.IsFromImperva END
-								,	IsAffectedFromUpline = CASE WHEN tmpJs.IsAffectedFromUpline = 1 THEN 1 ELSE Temp_PA.IsAffectedFromUpline END
+								,	IsMarkedDirect = CASE WHEN tmpJs.IsMarkedDirect = 1 THEN 1 ELSE Temp_PA.IsMarkedDirect END
 								,	IsTVSParlay = CASE WHEN Temp_PA.TVSRequestID IS NULL 
 																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
 															THEN tmpJs.IsTVSParlay 

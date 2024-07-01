@@ -69,13 +69,13 @@ BEGIN
 		,	IsFromTW				BIT(1) 
 		,	IsFromCTS				BIT(1) 
 		,	IsFromAI				BIT(1) 
-		,	IsAffectedFromUpline	BIT(1)
+		,	IsMarkedDirect	BIT(1)
 		,	InsertTime				DATETIME
 		,	TVSRequestID			BIGINT UNSIGNED			
 		,	IsTVSParlay				BIT(1) 
 		,	SportType				SMALLINT DEFAULT NULL 
 		,	IssueTypeID				TINYINT DEFAULT NULL 
-		,	IsAffectedFromUpline	BIT(1)
+		,	IsMarkedDirect	BIT(1)
 		,	SpecialCC	       		SMALLINT 
 		,	CustomerClass			SMALLINT 
 		,	CategoryPriority		SMALLINT UNSIGNED
@@ -169,7 +169,7 @@ BEGIN
 				CustID, CTSCustID, SubscriberID, ParentID, CategoryID, Remark, CreatedDate
 			, 	CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsFromTVS
 			, 	IsFromTW, IsFromCTS, IsFromAI, InsertTime, TVSRequestID, IsTVSParlay
-			, 	SportType, TVSIssueTypeID, IsAffectedFromUpline) 
+			, 	SportType, TVSIssueTypeID, IsMarkedDirect) 
 		SELECT	temp.CustID
 			,	temp.CTSCustID
 			,	temp.SubscriberID
@@ -190,7 +190,7 @@ BEGIN
 			,	temp.IsTVSParlay
 			,	temp.SportType
 			,	temp.TVSIssueTypeID
-			,	temp.IsAffectedFromUpline
+			,	temp.IsMarkedDirect
 		FROM Temp_NewClassification AS temp
 			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = temp.NewCategoryID 
 																			AND ccs.IsKeepOldCateID = 1
@@ -204,7 +204,7 @@ BEGIN
 				CustID, CTSCustID, SubscriberID, ParentID, CategoryID, CategoryGroupID, ExistCategoryID, RelevantCategoryID
 			, 	Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsFromTVS
 			, 	IsFromTW, IsFromCTS, IsFromAI, InsertTime, TVSRequestID, IsTVSParlay
-			, 	SportType, TVSIssueTypeID, IsAffectedFromUpline, SpecialCC, CustomerClass
+			, 	SportType, TVSIssueTypeID, IsMarkedDirect, SpecialCC, CustomerClass
 			,	CategoryPriority, IsPAProbation, IsNew, IsRemove) 
 		SELECT	cls.CustID
 			,	cls.CTSCustID
@@ -229,7 +229,7 @@ BEGIN
 			,	cls.IsTVSParlay
 			,	cls.SportType
 			,	cls.TVSIssueTypeID
-			,	cls.IsAffectedFromUpline
+			,	cls.IsMarkedDirect
 			,	temp.SpecialCC
 			,	IFNULL(temp.SpecialCC,cc.CustomerClass)
 			,	cc.CategoryPriority
@@ -299,7 +299,7 @@ BEGIN
 		
 		INSERT INTO Temp_NewClassification(
 				CustID, CTSCustID, DWCategoryID, OldCategoryID, NewCategoryID, TargetCC,  TargetDangerLevel
-			, 	ToEvidenceID, Remark, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsAffectedFromUpline
+			, 	ToEvidenceID, Remark, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsMarkedDirect
 			, 	IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsDataChanged, DataChangeType
 			, 	LastModifiedDate, CreatedBy, IsPAProbation, TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID)
 		SELECT 		temp_old.CustID
@@ -319,7 +319,7 @@ BEGIN
 				,	tmpCp.WinlossRM
 				,	tmpCp.BetCount
 				,	tmpCp.ActiveDays
-				,	temp_old.IsAffectedFromUpline
+				,	temp_old.IsMarkedDirect
 				,	temp_old.IsFromTVS
 				,	temp_old.IsFromTW
 				,	temp_old.IsFromCTS

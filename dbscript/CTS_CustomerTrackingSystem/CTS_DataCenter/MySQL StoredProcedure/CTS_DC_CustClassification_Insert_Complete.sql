@@ -42,8 +42,39 @@ BEGIN
 	SET CONST_PARENTID_PA 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
 	
 	-- ADD MAIN TABLE CC - FROM OLD - isnew = 1
+	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
+			CustID, CTSCustID, SubscriberID, ParentID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
+		, 	LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsMarkedDirect, InsertTime, TVSRequestID, IsParlay, SportType, IssueTypeID) 
+	SELECT temp_old.CustID
+		, temp_old.CTSCustID
+        , temp_old.SubscriberID
+        , temp_old.ParentID
+        , temp_old.CategoryID
+        , temp_old.Remark
+        , temp_old.CreatedDate
+        , temp_old.CreatedBy
+        , temp_old.LastModifiedDate
+        , temp_old.LastModifiedBy
+        , temp_old.LastScannedDate
+        , temp_old.IsFromTVS
+        , temp_old.IsFromTW
+        , temp_old.IsFromCTS
+        , temp_old.IsFromAI
+        , temp_old.IsMarkedDirect
+        , CURRENT_TIMESTAMP(3) AS InsertTime
+        , temp_old.TVSRequestID
+		, temp_old.IsParlay
+		, temp_old.SportType
+		, temp_old.IssueTypeID
+    FROM Temp_CTSCustomerClassification_Old AS temp_old
+	WHERE temp_old.IsNew = 1;
 	
 	-- DELETE MAIN TABLE - FROM OLD - isnew = 0 + IsRemove = 1
+	DELETE cls
+	FROM CTS_DataCenter.CTSCustomerClassification AS cls
+		INNER JOIN Temp_CTSCustomerClassification_Old AS temp_old ON temp_old.CustID = cls.CustID
+																		AND temp_old.ExistCategoryID = cls.CategoryID
+	WHERE temp_old.IsNew = 0 AND temp_old.IsRemove = 1;
 	
 	
 END$$

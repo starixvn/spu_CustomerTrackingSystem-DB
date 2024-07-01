@@ -91,7 +91,7 @@ BEGIN
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification (
 				CustID, CTSCustID, SubscriberID, RoleID, ParentID, CategoryID
 			, 	Remark, CreatedBy, LastModifiedBy, CreatedDate, LastModifiedDate
-			, 	LastScannedDate, IsAffectToDownline, IsAffectedFromUpline)
+			, 	LastScannedDate, IsAffectToDownline, IsMarkedDirect)
 		SELECT 	temp.CustID
 			, 	temp.CTSCustID
 			, 	temp.SubscriberID
@@ -105,7 +105,7 @@ BEGIN
 			,   lv_CurrentDateTime AS LastModifiedDate 
 			,   DATE(lv_CurrentDateTime) AS LastScannedDate 
 			,	ip_AffectDownline AS IsAffectToDownline
-			,	temp.IsAffectedFromUpline
+			,	temp.IsMarkedDirect
 		FROM Temp_NewClassification AS temp
 		WHERE temp.IsExistVVIP = 0;
 		
@@ -114,7 +114,7 @@ BEGIN
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(
 				CustID, CTSCustID, ParentID, CategoryID, LastModifiedDate
 			, 	InsertDate, LastModifiedBy, Remark, IsAuto, TargetCC, SourceTypeID
-			, 	IsDataChanged, IsAffectedFromUpline)
+			, 	IsDataChanged, IsMarkedDirect)
 		SELECT 	temp.CustID
 			, 	temp.CTSCustID
 			,	temp.ParentID
@@ -127,7 +127,7 @@ BEGIN
 			,   cat.CustomerClass.CustomerClass AS TargetCC
 			,   lv_SourceTypeID AS SourceTypeID
 			,	1 AS IsDataChanged
-			, 	temp.IsAffectedFromUpline
+			, 	temp.IsMarkedDirect
 		FROM Temp_NewClassification AS temp
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = temp.CategoryID
 		WHERE temp.IsExistVVIP = 0;
@@ -135,7 +135,7 @@ BEGIN
 		/*Insert VVIP log*/
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(
 				CustID, CTSCustID, ParentID, CategoryID ,LastModifiedDate, InsertDate, LastModifiedBy
-			, 	IsAuto, TargetCC, SourceTypeID, IsDataChanged, IsAffectedFromUpline)
+			, 	IsAuto, TargetCC, SourceTypeID, IsDataChanged, IsMarkedDirect)
 		SELECT 	temp.CustID
 			, 	temp.CTSCustID
 			,	temp.ParentID
@@ -147,7 +147,7 @@ BEGIN
 			,   cat.CustomerClass AS TargetCC
 			,   lv_SourceTypeID AS SourceTypeID
 			,	1 AS IsDataChanged
-			,	temp.IsAffectedFromUpline
+			,	temp.IsMarkedDirect
 		FROM Temp_NewClassification AS temp
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = temp.CategoryID
 		WHERE temp.IsExistVVIP = 0;
@@ -344,7 +344,7 @@ BEGIN
 		
 		IF EXISTS (SELECT 1 FROM Temp_NewClassification AS temp) THEN
 			INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
-				CTSCustID, CustID, SubscriberID, ParentID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsAffectedFromUpline) 
+				CTSCustID, CustID, SubscriberID, ParentID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsMarkedDirect) 
 			SELECT	temp.CTSCustID
 				,	temp.CustID
 				,	temp.SubscriberID
@@ -355,12 +355,12 @@ BEGIN
 				,	lv_CurrentDateTime AS LastModifiedDate
 				,	temp.CreatedBy AS LastModifiedBy
 				,	DATE(lv_CurrentDateTime) LastScannedDate
-				,	1 AS IsAffectedFromUpline
+				,	1 AS IsMarkedDirect
 			FROM Temp_CustCategory AS temp;
 		
 			/*Insert history*/
 			INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(
-					CustID, CTSCustID, ParentID, CategoryID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, IsAffectedFromUpline)
+					CustID, CTSCustID, ParentID, CategoryID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, IsMarkedDirect)
 			SELECT 	temp.CustID
 				, 	temp.CTSCustID
 				,	CONST_PARENTID_WRAPPER AS ParentID
@@ -374,12 +374,12 @@ BEGIN
 				,   temp.TargetCC
 				,   38 AS SourceTypeID
 				,	1 AS IsDataChanged
-				,	1 AS IsAffectedFromUpline
+				,	1 AS IsMarkedDirect
 			FROM Temp_CustCategory AS temp;
 			
 			/*Insert log*/
 			INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(
-					CustID, CTSCustID, ParentID, CategoryID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, IsAffectedFromUpline)
+					CustID, CTSCustID, ParentID, CategoryID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, IsMarkedDirect)
 			SELECT 	temp.CustID
 				, 	temp.CTSCustID
 				,	CONST_PARENTID_WRAPPER AS ParentID
@@ -392,12 +392,12 @@ BEGIN
 				,   temp.TargetCC
 				,   38 AS SourceTypeID
 				,	temp.IsDataChanged
-				,	1 AS IsAffectedFromUpline
+				,	1 AS IsMarkedDirect
 			FROM Temp_CustCategory AS temp;
 			
 		ELSE
 			INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
-					CTSCustID, CustID, SubscriberID, SportGroupID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsAffectedFromUpline) 
+					CTSCustID, CustID, SubscriberID, SportGroupID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsMarkedDirect) 
 			SELECT	temp.CTSCustID
 				,	temp.CustID
 				,	temp.SubscriberID
@@ -408,7 +408,7 @@ BEGIN
 				,	lv_CurrentDateTime AS LastModifiedDate
 				,	temp.CreatedBy AS LastModifiedBy
 				,	DATE(lv_CurrentDateTime) LastScannedDate
-				,	1 AS IsAffectedFromUpline
+				,	1 AS IsMarkedDirect
 			FROM Temp_Customer AS temp
 				LEFT JOIN Temp_NewClassification AS tmpCat ON tmpCat.CustID = temp.CustID
 			WHERE tmpCat.CustID IS NULL;
@@ -490,7 +490,7 @@ BEGIN
 				,	lv_CurrentDateTime AS LastModifiedDate
 				,	temp.CreatedBy AS LastModifiedBy
 				,	DATE(lv_CurrentDateTime) LastScannedDate
-				,	1 AS IsAffectedFromUpline
+				,	1 AS IsMarkedDirect
 			FROM Temp_CustCategory AS temp;
 		
 			/*Insert history*/
@@ -508,7 +508,7 @@ BEGIN
 				,   temp.TargetCC
 				,   38 AS SourceTypeID
 				,	1 AS IsDataChanged
-				,	1 AS IsAffectedFromUpline
+				,	1 AS IsMarkedDirect
 			FROM Temp_CustCategory AS temp;
 			
 			/*Insert log*/
@@ -526,7 +526,7 @@ BEGIN
 				,   temp.TargetCC
 				,   38 AS SourceTypeID
 				,	temp.IsDataChanged
-				,	1 AS IsAffectedFromUpline
+				,	1 AS IsMarkedDirect
 			FROM Temp_CustCategory AS temp;
 			
 		ELSE
@@ -542,7 +542,7 @@ BEGIN
 				,	lv_CurrentDateTime AS LastModifiedDate
 				,	temp.CreatedBy AS LastModifiedBy
 				,	DATE(lv_CurrentDateTime) LastScannedDate
-				,	1 AS IsAffectedFromUpline
+				,	1 AS IsMarkedDirect
 			FROM Temp_Customer AS temp
 				LEFT JOIN Temp_NewClassification AS tmpCat ON tmpCat.CustID = temp.CustID
 			WHERE tmpCat.CustID IS NULL;
@@ -550,7 +550,7 @@ BEGIN
 		END IF;
 
 	
-	ELSEIF ip_InputFlowID = 4 THEN 
+	-- ELSEIF ip_InputFlowID = 4 THEN 
 	
 	
 	-- ELSEIF ip_InputFlowID = 4 THEN 
@@ -569,7 +569,7 @@ BEGIN
 	
 	
 	/*STEP 4: Complete*/
-	-- CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_Complete ();
+	CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_Complete (ip_InputFlowID);
 	
 	/*STEP 5: User Log*/
 	IF ip_FromAction = 1 THEN /*VVIP*/
