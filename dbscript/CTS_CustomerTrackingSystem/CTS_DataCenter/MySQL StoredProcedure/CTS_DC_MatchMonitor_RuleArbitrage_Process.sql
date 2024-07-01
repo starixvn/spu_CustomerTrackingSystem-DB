@@ -179,7 +179,7 @@ sp: BEGIN
         UPDATE Temp_Trans AS t
 			LEFT JOIN Temp_Trans2 AS t2 ON t.GroupID = t2.GroupID AND t.OrderNum = t2.OrderNum + 1 AND t.TransDateToSecond - t2.TransDateToSecond <= 180
 		SET t.TimeGroupID = (CASE WHEN t2.OrderNum IS NOT NULL THEN @n ELSE @n:=@n+1  END);
-
+        
         INSERT INTO Temp_Group(GroupID, TimeGroupID, TransIDList, OldGroupIDList, CustIDList, CTSCustIDList, AgentDetect_CTSCustIDList, SequenceIDList, IsValidGroup)        
         SELECT	MIN(tmp.GroupID) AS GroupID
 			,	tmp.TimeGroupID
@@ -212,27 +212,29 @@ sp: BEGIN
 		INNER JOIN Temp_Completed AS tmpCp ON tmpGr.GroupID = tmpCp.GroupID
     WHERE tmpCp.GroupID IS NOT NULL AND tmpGr.IsValidGroup = 1;
 	
+  
+    
 	SELECT	GROUP_CONCAT(tmp.CTSCustID) AS CTSCustIDList
 		,	(CASE WHEN COUNT(DISTINCT Agent_CTSCustID ) > 1 THEN GROUP_CONCAT(DISTINCT Agent_CTSCustID) ELSE NULL END) AS AgentDetect_CTSCustIDList
 		,	GROUP_CONCAT(tmp.SequenceIDList) AS SequenceIDList
-	FROM (	SELECT	tmpGr.GroupID
+	FROM (	SELECT	tmpGr.TimeGroupID
 				,	mms.CTSCustID
 				,	(CASE WHEN mms.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET) THEN mms.CTSCustID ELSE NULL END) AS Agent_CTSCustID
-                ,	GROUP_CONCAT(mms.SequenceID) AS SequenceIDList
-                , 	MIN(Betteam) AS MinBetteam
-                ,	MAX(Betteam) AS MaxBetteam
+				,	GROUP_CONCAT(mms.SequenceID) AS SequenceIDList
+				, 	MIN(Betteam) AS MinBetteam
+				,	MAX(Betteam) AS MaxBetteam
 			FROM Temp_Group AS tmpGr
 			JOIN JSON_TABLE(REPLACE(JSON_ARRAY(tmpGr.SequenceIDList), ',', '","'), 
 							'$[*]' COLUMNS (SequenceID BIGINT UNSIGNED PATH '$')
 							) js
 			INNER JOIN CTS_DataCenter.MatchMonitorStagingArbitrageNonLive AS mms ON js.SequenceID = mms.SequenceID	
 			LEFT JOIN Temp_Completed AS tmpCp ON tmpGr.GroupID = tmpCp.GroupID
-            WHERE tmpCp.GroupID IS NULL AND tmpGr.IsValidGroup = 1
-			GROUP BY tmpGr.GroupID, mms.CTSCustID, mms.SubscriberID
-            HAVING SUM(mms.Stake) >= lv_RuleTotalStake
-          ) AS tmp
-	GROUP BY GroupID
-    HAVING COUNT(DISTINCT CTSCustID) > 1 AND Min(MinBetteam) <> MAX(MaxBetteam);    
+			WHERE tmpCp.GroupID IS NULL AND tmpGr.IsValidGroup = 1
+			GROUP BY tmpGr.TimeGroupID, mms.CTSCustID, mms.SubscriberID
+			HAVING SUM(mms.Stake) >= lv_RuleTotalStake
+		  ) AS tmp
+	GROUP BY tmp.TimeGroupID
+	HAVING COUNT(DISTINCT CTSCustID) > 1 AND Min(MinBetteam) <> MAX(MaxBetteam);    
     
 END$$
 DELIMITER ;
