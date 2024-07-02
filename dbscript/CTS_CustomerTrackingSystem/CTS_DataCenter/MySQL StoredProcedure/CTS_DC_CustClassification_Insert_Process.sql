@@ -218,26 +218,26 @@ BEGIN
 		UPDATE Temp_NewClassification AS tmp 
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = tmp.NewCategoryID
 		SET tmp.TargetCC = CASE  
-								WHEN (tmp.SpecialCC IS NULL) OR (tmp.SpecialCCPriority <> -1)
+								WHEN (tmp.SpecialCC IS NULL) OR (tmp.SpecialCCCatePriority <> -1)
 									THEN CASE
 											WHEN cate.CustomerClass = CONST_CC_VVIP 
 												THEN CONST_CC_VVIP                                                
-											WHEN tmp.IsLicenseeVIP = 1 AND cate.CategoryPriority > tmp.SpecialCCPriority 
+											WHEN tmp.IsLicenseeVIP = 1 AND cate.CategoryPriority > tmp.SpecialCCCatePriority 
 													AND tmp.SpecialCCDangerProbation = 1 
 												THEN CONST_CC_LICVIPSUSPICIOUS
-											WHEN tmp.IsLicenseeVIP = 1 AND cate.CategoryPriority > tmp.SpecialCCPriority 
+											WHEN tmp.IsLicenseeVIP = 1 AND cate.CategoryPriority > tmp.SpecialCCCatePriority 
 													AND tmp.SpecialCCDangerProbation IS NOT NULL 
 												THEN CONST_CC_LICVIPDANGEROUS
 											WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 
 												THEN CONST_CC_LICVIPSUSPICIOUS
 											WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 
 												THEN CONST_CC_LICVIPDANGEROUS                                                
-											WHEN tmp.IsLicenseeBA = 1 AND tmp.SpecialCCPriority <> -1 
-													AND tmp.SpecialCCPriority < lv_LicBAPriority 
+											WHEN tmp.IsLicenseeBA = 1 AND tmp.SpecialCCCatePriority <> -1 
+													AND tmp.SpecialCCCatePriority < lv_LicBAPriority 
 												THEN tmp.SpecialCC  
 											WHEN tmp.IsLicenseeBA = 1 AND cate.CategoryPriority > lv_LicBAPriority 
 												THEN CONST_CC_LICBA                                            
-											WHEN tmp.SpecialCCPriority <> -1 AND cate.CategoryPriority > tmp.SpecialCCPriority 
+											WHEN tmp.SpecialCCCatePriority <> -1 AND cate.CategoryPriority > tmp.SpecialCCCatePriority 
 												THEN tmp.SpecialCC
 											ELSE cate.CustomerClass
 										END
@@ -274,26 +274,26 @@ BEGIN
 		UPDATE Temp_NewClassification AS tmp
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON tmp.OldCategoryID = cate.CategoryID
 		SET tmp.TargetCC = 	CASE  
-								WHEN (tmp.SpecialCC IS NULL) OR (tmp.SpecialCCPriority <> -1)
+								WHEN (tmp.SpecialCC IS NULL) OR (tmp.SpecialCCCatePriority <> -1)
 										THEN CASE
 												WHEN cate.CustomerClass = CONST_CC_VVIP 
 													THEN CONST_CC_VVIP
-												WHEN tmp.IsLicenseeVIP = 1 AND cate.CategoryPriority > tmp.SpecialCCPriority 
+												WHEN tmp.IsLicenseeVIP = 1 AND cate.CategoryPriority > tmp.SpecialCCCatePriority 
 														AND tmp.SpecialCCDangerProbation = 1 
 													THEN CONST_CC_LICVIPSUSPICIOUS
-												WHEN tmp.IsLicenseeVIP = 1 AND cate.CategoryPriority > tmp.SpecialCCPriority 
+												WHEN tmp.IsLicenseeVIP = 1 AND cate.CategoryPriority > tmp.SpecialCCCatePriority 
 														AND tmp.SpecialCCDangerProbation IS NOT NULL 
 													THEN CONST_CC_LICVIPDANGEROUS
 												WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 
 													THEN CONST_CC_LICVIPSUSPICIOUS
 												WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 
 													THEN CONST_CC_LICVIPDANGEROUS
-												WHEN tmp.IsLicenseeBA = 1 AND tmp.SpecialCCPriority <> -1 
-														AND tmp.SpecialCCPriority < lv_LicBAPriority 
+												WHEN tmp.IsLicenseeBA = 1 AND tmp.SpecialCCCatePriority <> -1 
+														AND tmp.SpecialCCCatePriority < lv_LicBAPriority 
 													THEN tmp.SpecialCC    
 												WHEN tmp.IsLicenseeBA = 1 AND cate.CategoryPriority > lv_LicBAPriority 
 													THEN CONST_CC_LICBA                                            
-												WHEN tmp.SpecialCCPriority <> -1 AND cate.CategoryPriority > tmp.SpecialCCPriority 
+												WHEN tmp.SpecialCCCatePriority <> -1 AND cate.CategoryPriority > tmp.SpecialCCCatePriority 
 													THEN tmp.SpecialCC
 												ELSE cate.CustomerClass
 											END
