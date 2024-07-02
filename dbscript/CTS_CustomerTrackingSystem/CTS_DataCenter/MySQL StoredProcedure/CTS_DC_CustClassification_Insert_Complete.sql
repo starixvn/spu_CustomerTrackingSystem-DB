@@ -41,7 +41,7 @@ BEGIN
 	SET CONST_PARENTID_WRAPPER 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
 	SET CONST_PARENTID_PA 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
 	
-	IF ip_InputFlowID = 8 THEN
+	IF ip_InputFlowID = 8 THEN /*Normal*/
 		UPDATE CTS_DataCenter.CTSCustomerClassification AS cate
 			INNER JOIN Temp_NewClassification AS temp ON temp.CustID = cate.CustID 
 															AND cate.ParentID = CONST_GROUP_WRAPPER
