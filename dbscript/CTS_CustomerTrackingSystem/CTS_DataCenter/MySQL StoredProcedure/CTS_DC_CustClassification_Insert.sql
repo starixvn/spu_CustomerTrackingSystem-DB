@@ -23,7 +23,9 @@ BEGIN
 			-	20240618@Victoria.Le: 		Initial Writing [Redmine ID: #205317]
 			
 		Param's Expanation:
-			- 
+		
+		Example:
+			- CALL CTS_DC_CustClassification_Insert(8, 0, 0, 0, false, false, '[{"CustID":1275,"CategoryID":40700,"CategoryGroupID":0,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":1280,"CategoryID":0,"CategoryGroupID":40100,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":5002646,"CategoryID":40700,"CategoryGroupID":0,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":5022391,"CategoryID":0,"CategoryGroupID":40100,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0}]', @outParam7);
 */
 
 
@@ -44,7 +46,7 @@ BEGIN
 	DECLARE lv_BACatePriority				SMALLINT;
     DECLARE lv_BA_CC						SMALLINT;
 	
-	DECLARE lv_LogTypeID					INT DEFAULT 10;
+	DECLARE lv_LogTypeID					INT;
 	DECLARE	lv_CurrentDateTime				DATETIME DEFAULT CURRENT_TIME();
 	
 	
@@ -560,6 +562,8 @@ BEGIN
 	
 	/*STEP 5: User Log*/
 	IF ip_FromAction = 1 THEN /*VVIP*/
+		SET lv_LogTypeID = 10;
+		
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 		SELECT  lv_LogTypeID
 			, 	lv_SPName
@@ -568,6 +572,8 @@ BEGIN
             , 	temp.CreatedBy
         FROM Temp_NewClassification AS temp;
 	ELSEIF ip_InputFlowID = 2 THEN
+		SET lv_LogTypeID = 19;
+	
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 		SELECT	19 AS LogTypeID
 			,	lv_SPName
