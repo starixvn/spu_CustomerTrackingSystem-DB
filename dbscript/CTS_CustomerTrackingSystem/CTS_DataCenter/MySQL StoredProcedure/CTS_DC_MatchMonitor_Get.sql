@@ -154,6 +154,27 @@ BEGIN
         ,	INDEX IX_Temp_MatchGroup(MatchID,LiveIndicator,BettypeID, BetID, Reason)
 	);
     
+	DROP TEMPORARY TABLE IF EXISTS Temp_MatchInfo;
+	CREATE TEMPORARY TABLE Temp_MatchInfo(
+			MatchID 		INT
+		,	EventDate		DATETIME
+		,	LiveIndicator	TINYINT
+		,	HomeID			INT
+		,	AwayID			INT
+		,	LeagueID		INT 
+		,	SporttypeID		INT
+		,	LeagueGroupID	INT
+		,	BettypeID		INT
+		,	BetID			BIGINT
+		,	Reason			TINYINT
+		,	MatchSection	INT 
+		,	KickOffTime		DATETIME
+		
+		,	INDEX IX_Temp_MatchInfo_MatchIDBettypeIDBetID(MatchID,BettypeID,BetID)
+	);
+	
+	#================================================================================
+    
 	INSERT IGNORE INTO Temp_Sporttype(LeagueGroupID, SportTypeID)
 	SELECT  js.LeagueGroupID
 		,	js.SportTypeID
@@ -196,24 +217,6 @@ BEGIN
 		WHERE mm.InsertDate BETWEEN ip_FromDate AND ip_ToDate
 			AND mm.LiveIndicator = IFNULL(ip_Market, mm.LiveIndicator);        
     ELSE #ip_MatchInfos <> '' THEN # Search by Event Date		
-		DROP TEMPORARY TABLE IF EXISTS Temp_MatchInfo;
-		CREATE TEMPORARY TABLE Temp_MatchInfo(
-				MatchID 		INT
-			,	EventDate		DATETIME
-			,	LiveIndicator	TINYINT
-			,	HomeID			INT
-			,	AwayID			INT
-			,	LeagueID		INT 
-			,	SporttypeID		INT
-            ,	LeagueGroupID	INT
-			,	BettypeID		INT
-			,	BetID			BIGINT
-			,	Reason			TINYINT
-			,	MatchSection	INT 
-			,	KickOffTime		DATETIME
-            
-			,	INDEX IDX_Temp_MatchInfo(MatchID,BettypeID,BetID)
-		);
                                 
 		INSERT IGNORE INTO Temp_MatchInfo (MatchID, EventDate, LiveIndicator, HomeID, AwayID, LeagueID, SporttypeID,LeagueGroupID, BettypeID, BetID, Reason, MatchSection, KickOffTime)
 		SELECT  DISTINCT js.MatchId
