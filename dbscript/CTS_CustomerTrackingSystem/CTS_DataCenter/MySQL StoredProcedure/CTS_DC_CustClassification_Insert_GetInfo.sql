@@ -135,7 +135,7 @@ BEGIN
 													CustID 			BIGINT UNSIGNED	PATH "$.CustID"
 												,	CreatedBy 		INT UNSIGNED	PATH "$.CreatedBy"
 											 )) AS tmpJs
-				LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0;
+				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0;
 			
 			
 		ELSEIF ip_InputFlowID = 4 THEN /*LicBA*/
@@ -312,7 +312,7 @@ BEGIN
 											,	SportType					SMALLINT 			PATH "$.SportType"
 											, 	PerformanceTime				DATETIME			PATH "$.PerformanceTime"
 											)) AS tmpJs
-				LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID
+				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID
 				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.DWCategoryID
 				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID
 			ON DUPLICATE KEY UPDATE TurnoverRM = IFNULL(Temp_PA.TurnoverRM, tmpJs.TurnoverRM)  
@@ -504,7 +504,7 @@ BEGIN
 											,	TVSIssueTypeID			TINYINT				PATH "$.IssueTypeID"
 											, 	PerformanceTime			DATETIME			PATH "$.PerformanceTime"
 										)) AS tmpJs
-				LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
+				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
 				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID 
 				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.DWCategoryID
 			ON DUPLICATE KEY UPDATE TWRobotCounter = IFNULL(Temp_PA.TWRobotCounter, tmpJs.TWRobotCounter)
@@ -585,7 +585,7 @@ BEGIN
 											, 	PerformanceTime			DATETIME			PATH "$.PerformanceTime"
 											, 	ScanTaggingType			BIT(1)				PATH "$.ScanTaggingType"
 										)) AS tmpJs
-				LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpJs.CustID = cus.CustID AND cus.CustSubID = 0
+				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpJs.CustID = cus.CustID AND cus.CustSubID = 0
 				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID 
 			WHERE tmpJs.DWCategoryGroupID <> 0;
 		END IF;

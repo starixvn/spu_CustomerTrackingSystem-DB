@@ -106,7 +106,7 @@ BEGIN
 		CREATE TEMPORARY TABLE Temp_OldClassification(	  
 				CustID					BIGINT UNSIGNED	PRIMARY KEY
 			,	OldCateGroupID 			INT
-			,	OldCateID 				INT
+			,	OldCategoryID			INT
 			,	OldIsDangerProbation	BIT(1) DEFAULT 0
 			,	FromOldCategory			BIT(1) DEFAULT 0	
 		); 
@@ -123,9 +123,15 @@ BEGIN
 			,	CustomerClass 			SMALLINT
 		); 
 		
+		DROP TEMPORARY TABLE IF EXISTS Temp_UpdateCustomerClass;    
+		CREATE TEMPORARY TABLE Temp_UpdateCustomerClass(	  
+				CustID					BIGINT UNSIGNED	PRIMARY KEY
+			,	CustomerClass 			SMALLINT
+		); 
+		
 		-- ----------------------------------------------
 		INSERT IGNORE INTO Temp_OldClassification (
-			CustID, OldCateGroupID, OldCateID, OldIsDangerProbation)
+			CustID, OldCateGroupID, OldCategoryID, OldIsDangerProbation)
 		SELECT DISTINCT temp.CustID, cc.CategoryGroupID, cls.CategoryID, cc.IsDangerProbation
 		FROM Temp_NewClassification AS temp
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID 
@@ -134,7 +140,7 @@ BEGIN
 		WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_IGNOREPROBATION);
 		
 		INSERT IGNORE INTO Temp_OldClassification (
-			CustID, OldCateGroupID, OldCateID, OldIsDangerProbation, FromOldCategory)
+			CustID, OldCateGroupID, OldCategoryID, OldIsDangerProbation, FromOldCategory)
 		SELECT DISTINCT temp.CustID, cc.CategoryGroupID, cls.CategoryID, cc.IsDangerProbation, 1 AS FromOldCategory
 		FROM Temp_NewClassification AS temp
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID 
@@ -146,7 +152,7 @@ BEGIN
 		UPDATE Temp_NewClassification AS n
 			LEFT JOIN Temp_OldClassification AS o ON n.CustID = o.CustID
 		SET n.OldCategoryGroupID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGROUPID_NEW ELSE o.OldCateGroupID END,
-			n.OldCategoryID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGROUPID_NEW ELSE o.OldCateID END,
+			n.OldCategoryID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGROUPID_NEW ELSE o.OldCategoryID END,
 			n.OldIsDangerProbation = CASE WHEN o.CustID IS NULL THEN 1 ELSE o.OldIsDangerProbation END,
 			n.ActionType = CASE WHEN o.CustID IS NULL OR FromOldCategory = 1 THEN CONST_ACTIONTYPE_INSERT ELSE CONST_ACTIONTYPE_UPDATE END
 		WHERE n.ActionType IN (CONST_ACTIONTYPE_INSERT);
@@ -154,7 +160,7 @@ BEGIN
 		UPDATE Temp_NewClassification AS n
 			LEFT JOIN Temp_OldClassification AS o ON n.CustID = o.CustID
 		SET n.OldCategoryGroupID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGROUPID_NEW ELSE o.OldCateGroupID END,
-			n.OldCategoryID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGROUPID_NEW ELSE o.OldCateID END
+			n.OldCategoryID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGROUPID_NEW ELSE o.OldCategoryID END
 		WHERE n.ActionType IN (CONST_ACTIONTYPE_IGNOREPROBATION);
 		
 		UPDATE Temp_NewClassification AS temp 
@@ -300,24 +306,24 @@ BEGIN
 								ELSE tmp.SpecialCC
 							END
 			,	tmp.NewCategoryID = tmp.OldCategoryID
-			, 	tmp.NewCateGroup = tmp.OldCategoryGroupID
+			, 	tmp.NewCategoryGroupID = tmp.OldCategoryGroupID
 			,	tmp.NewIsDangerProbation = cate.IsDangerProbation
 		WHERE tmp.ActionType = CONST_ACTIONTYPE_IGNOREPROBATION;
 	
 		UPDATE Temp_NewClassification
 		SET 	IsDataChanged = 1
 			,	SourceTypeID = (CASE 
-									WHEN  NewCateGroup IN (CONST_CATEGROUPID_SMART, CONST_CATEGROUPID_RISKY) 
+									WHEN  NewCategoryGroupID IN (CONST_CATEGROUPID_SMART, CONST_CATEGROUPID_RISKY) 
 										THEN CONST_SOURCETYPE_PASSPROBATION
-									WHEN NewCateGroup = CONST_CATEGROUPID_INACTIVE AND NewCategoryID = CONST_CATEID_INACTIVENORMAL 
+									WHEN NewCategoryGroupID = CONST_CATEGROUPID_INACTIVE AND NewCategoryID = CONST_CATEID_INACTIVENORMAL 
 										THEN CONST_SOURCETYPE_INACTIVENORMAL 
-									WHEN NewCateGroup = CONST_CATEGROUPID_INACTIVE AND NewCategoryID = CONST_CATEID_INACTIVESMART 
+									WHEN NewCategoryGroupID = CONST_CATEGROUPID_INACTIVE AND NewCategoryID = CONST_CATEID_INACTIVESMART 
 										THEN CONST_SOURCETYPE_INACTIVEPROPUNTER
 									ELSE CONST_SOURCETYPE_SCANONSCHEDULE
 								END)
 			,	ActionType = CONST_ACTIONTYPE_UPDATE
 		WHERE IsDataChanged = 0 
-			AND ((TargetCC <> OldTargetCC) OR (OldCateID <> NewCategoryID))
+			AND ((TargetCC <> OldTargetCC) OR (OldCategoryID <> NewCategoryID))
 			AND (SourceTypeID IN (CONST_SOURCETYPE_SAMECATEGORY, CONST_SOURCETYPE_LESSTHAN10TICKETS )
 				OR ActionType = CONST_ACTIONTYPE_IGNOREPROBATION);    
 		

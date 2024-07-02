@@ -52,7 +52,7 @@ BEGIN
 	IF ip_InputFlowID = 8 THEN /*Normal*/
 		UPDATE CTS_DataCenter.CTSCustomerClassification AS cate
 			INNER JOIN Temp_NewClassification AS temp ON temp.CustID = cate.CustID 
-															AND cate.ParentID = CONST_GROUP_WRAPPER
+															AND cate.ParentID = CONST_PARENTID_WRAPPER
 		SET   	cate.CategoryID = 	CASE 
 										WHEN temp.NewIsDangerProbation = 1 
 											THEN CONST_CATEID_LICVIPSUSPICIOUS
@@ -65,7 +65,7 @@ BEGIN
 		FROM CTS_DataCenter.CTSCustomerClassification AS del
 			INNER JOIN Temp_NewClassification AS temp ON del.CustID = temp.CustID 
 															AND del.ParentID = CONST_PARENTID_NORMAL
-			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.ParentID = del.ParentID AND ccs.IsKeepOldCategoryID = 0 
+			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.ParentID = del.ParentID AND ccs.IsKeepOldCateID = 0 
 		WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT;
 		
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
