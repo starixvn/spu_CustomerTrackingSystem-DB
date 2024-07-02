@@ -24,14 +24,21 @@ BEGIN
 	DECLARE CONST_CATEID_LICVIPSUSPICIOUS 	INT;
 	DECLARE CONST_CATEID_LICVIPDANGEROUS 	INT;
 	DECLARE CONST_CATEID_LICBA 				INT;
+	
 	DECLARE CONST_PARENTID_VVIP 			INT;
 	DECLARE CONST_PARENTID_WRAPPER 			INT;
 	DECLARE CONST_PARENTID_PA 				INT;
+	DECLARE CONST_PARENTID_NORMAL			INT;
+	
+	DECLARE CONST_ACTIONTYPE_INSERT 		INT DEFAULT 0;
+	DECLARE	CONST_ACTIONTYPE_UPDATE 		INT DEFAULT 1;
 	
 	
     DECLARE lv_MaxCTSCustID					BIGINT UNSIGNED;
     DECLARE lv_LicVIPPriority				SMALLINT UNSIGNED;
     DECLARE lv_LicBAPriority				SMALLINT UNSIGNED;
+    DECLARE lv_CreatedBy 					INT DEFAULT 10278938;
+	DECLARE	lv_CurrentDateTime				DATETIME DEFAULT CURRENT_TIME();
 	
 	SET CONST_CATEID_VVIP 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
 	SET CONST_CATEID_LICVIPSUSPICIOUS 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPSUSPICIOUS');
@@ -40,6 +47,7 @@ BEGIN
 	SET CONST_PARENTID_VVIP 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
 	SET CONST_PARENTID_WRAPPER 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
 	SET CONST_PARENTID_PA 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
+	SET CONST_PARENTID_NORMAL 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
 	
 	IF ip_InputFlowID = 8 THEN /*Normal*/
 		UPDATE CTS_DataCenter.CTSCustomerClassification AS cate
@@ -47,28 +55,28 @@ BEGIN
 															AND cate.ParentID = CONST_GROUP_WRAPPER
 		SET   	cate.CategoryID = 	CASE 
 										WHEN temp.NewIsDangerProbation = 1 
-											THEN CONST_LICVIP_SUSPICIOUSCATEGORY
-										ELSE CONST_LICVIP_DANGEROUSCATEGORY 
+											THEN CONST_CATEID_LICVIPSUSPICIOUS
+										ELSE CONST_CATEID_LICVIPDANGEROUS 
 									END
-		WHERE cate.CategoryID IN (CONST_LICVIP_SUSPICIOUSCATEGORY,CONST_LICVIP_DANGEROUSCATEGORY)
+		WHERE cate.CategoryID IN (CONST_CATEID_LICVIPSUSPICIOUS,CONST_CATEID_LICVIPDANGEROUS)
 			AND temp.IsDataChanged = 1;
 		
 		DELETE del
 		FROM CTS_DataCenter.CTSCustomerClassification AS del
 			INNER JOIN Temp_NewClassification AS temp ON del.CustID = temp.CustID 
-															AND del.ParentID = CONST_GROUP_NORMAL
-			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.ParentID = del.ParentID AND ccs.IsKeepOldCateID = 0 
+															AND del.ParentID = CONST_PARENTID_NORMAL
+			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.ParentID = del.ParentID AND ccs.IsKeepOldCategoryID = 0 
 		WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT;
 		
-		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification
+		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
 				CustID,CTSCustID,SubscriberID,ParentID,CategoryID,CreatedDate,CreatedBy,LastModifiedDate
 			,	LastModifiedBy,LastScannedDate)
 		SELECT DISTINCT 
 				temp.CustID
 			, 	temp.CTSCustID
 			, 	temp.SubscriberID
-			, 	CONST_GROUP_NORMAL
-			, 	temp.NewCateID
+			, 	CONST_PARENTID_NORMAL
+			, 	temp.NewCategoryID
 			, 	lv_CurrentDateTime
 			, 	lv_CreatedBy
 			, 	lv_CurrentDateTime
@@ -80,14 +88,47 @@ BEGIN
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History (
 				CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, TurnoverRM
 			, 	WinlossRM, BetCount, ActiveDays, TWBetCount, TWGroupBettingRate, TWTicketRejectRate, TWDesktopUsageRate
-			, 	ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsDataChanged
-			, 	TaggingType, TargetDangerLevel1, PerformanceTime, SportType)
+			, 	IsAuto, InsertDate, TargetCC, SourceTypeID, OldCategoryID, DWCategoryID, IsDataChanged
+			, 	TaggingType, TargetDangerLevel1, PerformanceTime)
 		SELECT DISTINCT	
 				temp.CustID
 			, 	temp.CTSCustID
-			, 	temp.NewCateID
-			, 	CONST_GROUP_NORMAL
-			, 	lv_CurrentDateTime
+			, 	temp.NewCategoryID AS CategoryID
+			, 	CONST_PARENTID_NORMAL AS ParentID
+			, 	lv_CurrentDateTime AS LastModifiedDate
+			, 	lv_CreatedBy AS LastModifiedBy
+			, 	temp.TurnoverRM
+			, 	temp.WinlossRM
+			, 	temp.BetCount
+			, 	temp.ActiveDays
+			,	temp.TWBetCount
+			, 	temp.TWGroupBettingRate
+			, 	temp.TWTicketRejectRate
+			, 	temp.TWDesktopUsageRate
+			, 	1 AS IsAuto
+			, 	DATE(lv_CurrentDateTime) AS InsertDate
+			,	temp.TargetCC 
+			,   temp.SourceTypeID
+			, 	temp.OldCategoryID 
+			, 	temp.DWCategoryID
+			,   temp.IsDataChanged
+			,	temp.TaggingType
+			,	temp.TargetDangerLevel AS TargetDangerLevel1
+			,	temp.PerformanceTime
+		FROM 	Temp_NewClassification AS temp
+		WHERE temp.IsDataChanged  = 1;	
+		/*
+̣		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log (
+				CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM
+			, 	BetCount, ActiveDays, TWBetCount, TWGroupBettingRate, TWTicketRejectRate, TWDesktopUsageRate
+			, 	IsAuto, InsertDate, TargetCC, SourceTypeID, OldCategoryID, DWCategoryID, IsDataChanged
+			, 	TaggingType, TargetDangerLevel1)
+		SELECT DISTINCT	
+				temp.CustID
+			, 	temp.CTSCustID
+			, 	temp.NewCategoryID AS CategoryID
+			, 	CONST_PARENTID_NORMAL AS ParentID
+			, 	lv_CurrentDateTime AS LastModifiedDate
 			, 	lv_CreatedBy
 			, 	temp.TurnoverRM
 			, 	temp.WinlossRM
@@ -97,61 +138,25 @@ BEGIN
 			, 	temp.TWGroupBettingRate
 			, 	temp.TWTicketRejectRate
 			, 	temp.TWDesktopUsageRate
-			, 	temp.ActionType
 			, 	1 AS IsAuto
 			, 	DATE(lv_CurrentDateTime)
 			,	temp.TargetCC 
 			,   temp.SourceTypeID
-			, 	temp.OldCateID 
-			, 	temp.DWCateID
+			, 	temp.OldCategoryID 
+			, 	temp.DWCategoryID
 			,   temp.IsDataChanged
 			,	temp.TaggingType
 			,	temp.TargetDangerLevel AS TargetDangerLevel1
 			,	temp.PerformanceTime
-			,	temp.SportType
-		FROM 	Temp_NewClassification AS temp
-		WHERE temp.IsDataChanged  = 1;	
-		
-̣		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log (
-				CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM
-			, 	BetCount, ActiveDays, TWBetCount, TWGroupBettingRate, TWTicketRejectRate, TWDesktopUsageRate
-			, 	ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsDataChanged
-			, 	TaggingType, TargetDangerLevel1, PerformanceTime, SportType)
-		SELECT DISTINCT	
-				temp.CustID
-			, 	temp.CTSCustID
-			, 	temp.NewCateID
-			, 	CONST_GROUP_NORMAL
-			, 	lv_CurrentDateTime
-			, 	lv_CreatedBy
-			, 	temp.TurnoverRM
-			, 	temp.WinlossRM
-			, 	temp.BetCount
-			, 	temp.ActiveDays
-			,	temp.TWBetCount
-			, 	temp.TWGroupBettingRate
-			, 	temp.TWTicketRejectRate
-			, 	temp.TWDesktopUsageRate
-			, 	temp.ActionType
-			, 	1
-			, 	DATE(lv_CurrentDateTime)
-			,	temp.TargetCC 
-			,   temp.SourceTypeID
-			, 	temp.OldCateID 
-			, 	temp.DWCateID
-			,   temp.IsDataChanged
-			,	temp.TaggingType
-			,	temp.TargetDangerLevel AS TargetDangerLevel1
-			,	temp.PerformanceTime
-			,	temp.SportType
 		FROM 	Temp_NewClassification AS temp;
-		
+		*/
 		
 	ELSEIF ip_InputFlowID IN (50,51,6,7) THEN 
 		-- ADD MAIN TABLE CC - FROM OLD - isnew = 1
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
 				CustID, CTSCustID, SubscriberID, ParentID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
-			, 	LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsMarkedDirect, InsertTime, TVSRequestID, IsParlay, SportType, IssueTypeID) 
+			, 	LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsMarkedDirect, InsertTime, TVSRequestID, IsParlay
+			, 	SportType, IssueTypeID) 
 		SELECT temp_old.CustID
 			, temp_old.CTSCustID
 			, temp_old.SubscriberID

@@ -224,7 +224,7 @@ BEGIN
 			AND NOT EXISTS (SELECT 1
 							FROM CTS_DataCenter.CTSCustomerClassification AS cls
 							WHERE cls.CustID = temp.CustID
-								cls.CategoryID = ccs.CategoryID
+								AND cls.CategoryID = ccs.CategoryID
 							);
 		
 		/*	INSERT HISTORY	*/
@@ -400,7 +400,7 @@ BEGIN
 				,	DATE(lv_CurrentDateTime) LastScannedDate
 				,	1 AS IsMarkedDirect
 			FROM Temp_Customer AS temp
-				LEFT JOIN Temp_NewClassification AS tmpCat ON tmpCat.CustID = temp.CustID;
+				LEFT JOIN Temp_NewClassification AS tmpCat ON tmpCat.CustID = temp.CustID
 			WHERE tmpCat.CustID IS NULL;
 
 		END IF;

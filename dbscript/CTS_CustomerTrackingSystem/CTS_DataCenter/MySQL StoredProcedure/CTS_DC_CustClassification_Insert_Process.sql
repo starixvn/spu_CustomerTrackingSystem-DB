@@ -637,7 +637,7 @@ BEGIN
 			,	CASE WHEN cat.IsDangerProbation = 1 THEN CONST_CC_LICVIPSUSPICIOUS ELSE CONST_CC_LICVIPDANGEROUS END
 		FROM Temp_NewClassification AS temp
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = temp.NewCategoryID
-		WHERE temp.IsLicenseeVIP = 1;
+		WHERE temp.IsLicenseeVIP = 1
 		;    
 
 		UPDATE Temp_NewClassification AS temp
