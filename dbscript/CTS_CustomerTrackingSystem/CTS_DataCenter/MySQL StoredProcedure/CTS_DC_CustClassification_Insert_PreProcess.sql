@@ -59,7 +59,7 @@ BEGIN
 	/* SETP 1: SpecialCC */ 
 	UPDATE Temp_NewClassification AS temp
 		LEFT JOIN CTS_DataCenter.CustomerCategory AS cc ON temp.SpecialCC = cc.CustomerClass
-															AND c.IsActive = 1
+															AND cc.IsActive = 1
 	SET 	temp.SpecialCCName = cc.CustomerClassName
 		,	temp.SpecialCCCatePriority = cc.CategoryPriority
 		,	temp.SpecialCCDangerProbation = cc.IsDangerProbation
@@ -71,7 +71,9 @@ BEGIN
 		DROP TEMPORARY TABLE IF EXISTS Temp_ProbationCustomer;    
 		CREATE TEMPORARY TABLE Temp_ProbationCustomer(	  	
 				CustID					BIGINT UNSIGNED	PRIMARY KEY
-			, 	ScanDate				DATE   
+			,	DWCategoryGroupID		INT UNSIGNED
+			, 	ScanDate				DATE
+			,	ScanTaggingType			TINYINT DEFAULT 0   
 			,	IsPassProbationRule		BIT(1)
 		);
 
@@ -81,12 +83,6 @@ BEGIN
 			, 	ActionType				SMALLINT      
 			,	IsReturnData			BIT(1)
 		); 
-
-		DROP TEMPORARY TABLE IF EXISTS Temp_NotEnoughDayProbation; 
-		CREATE TEMPORARY TABLE Temp_NotEnoughDayProbation(	  
-				CustID					BIGINT UNSIGNED	PRIMARY KEY
-			,   ScanTaggingType			TINYINT DEFAULT 0
-		); 
 		
 		SELECT cat.CategoryPriority
 		INTO lv_ProbationCatePriority
@@ -94,8 +90,9 @@ BEGIN
 		WHERE cat.CategoryID = CONST_CATEID_PROBATION;
 		
 		 /*4: GET PROBATION CUSTOMERS */
-		INSERT IGNORE INTO Temp_ProbationCustomer(CustID, ScanDate, ScanTaggingType, IsPassProbationRule)
+		INSERT IGNORE INTO Temp_ProbationCustomer(CustID, DWCategoryGroupID, ScanDate, ScanTaggingType, IsPassProbationRule)
 		SELECT 	cls.CustID
+			,	temp.DWCategoryGroupID	
 			, 	cls.LastScannedDate
 			, 	temp.ScanTaggingType
 			, 	CASE WHEN cls.LastScannedDate >= lv_ToProbationLastDay THEN 0 ELSE 1 END AS IsPassProbationRule
@@ -105,7 +102,7 @@ BEGIN
 		
 		/*DWCategoryGroupID IN (CONST_CATEGORY_SMART,CONST_CATEGORY_HIGHRISK,CONST_CATEGORY_PROBATION)*/
 		UPDATE Temp_ProbationCustomer AS temp
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.DWCategoryGroupID = temp.CategoryGroupID
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON temp.DWCategoryGroupID = cate.CategoryGroupID
 		SET temp.IsPassProbationRule = CASE WHEN temp.ScanDate > lv_FromProbationLastDay THEN 0 ELSE 1 END
 		WHERE cate.ParentID = CONST_PARENTID_NORMAL AND	cate.CategoryPriority <= lv_ProbationCatePriority;
 		
@@ -116,7 +113,7 @@ BEGIN
 			AND temp.ScanTaggingType = CONST_SCANTAGGINGTYPE_NOTEXIST;
 			
 		INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, ActionType, IsReturnData)
-		SELECT DISTINCT temp.CustID, CONST_ACTIONTYPE_IGNOREVVIP, 0 AS IsReturnData
+		SELECT DISTINCT temp.CustID, CONST_ACTIONTYPE_EXISTEDVVIP, 0 AS IsReturnData
 		FROM Temp_NewClassification AS temp
 		WHERE temp.IsExistVVIP = 1;
 
@@ -138,7 +135,7 @@ BEGIN
 			INNER JOIN Temp_CustIgnoranceAction AS ig ON temp.CustID = ig.CustID
 		SET 	temp.ActionType = ig.ActionType
 			, 	temp.IsDataChanged = 0
-			, 	IsReturnData = ig.IsReturnData;
+			, 	temp.IsReturnData = ig.IsReturnData;
 
         /* 5.4.3: HAS ACTION + VIEW LOG FOR PROBATION NOT ENOUGH DAY WITH NEW TAGGING */ 
         UPDATE Temp_NewClassification AS temp 
@@ -151,7 +148,7 @@ BEGIN
 		UPDATE Temp_NewClassification AS temp 
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryGroupID = temp.DWCategoryGroupID 
 																AND cate.TaggingType = temp.TaggingType 
-																AND tag.TaggingID = temp.TaggingID
+																AND cate.TaggingID = temp.TaggingID
 		SET temp.DWCategoryID = IFNULL(cate.CategoryID,temp.DWCategoryGroupID);
 		
 	ELSEIF ip_InputFlowID IN (51,7) THEN

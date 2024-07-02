@@ -17,19 +17,25 @@ BEGIN
 				- 20230921@Casey.Huynh: Created [Redmine ID: #193050]
                 - 20231024@Jonas.Huynh: HF wrong reactivated category [Redmine ID: #193050]
                 - 20240502@Jonas.Huynh: Handle duplicate categories [Redmine ID: #203323]
-                
+                - 20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode CategoryID, ParentID [Redmine ID: #205317]
+
 		Param's Explanation (filtered by):
         
         Example:
 				- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount_NewCategory('Temp_CustNewCategory', true);
 */ 
-	DECLARE	CONST_GROUP_NORMAL 				INT DEFAULT 200;
-    DECLARE CONST_CATEGORY_NEWMEMBER		INT DEFAULT 201;
-    DECLARE CONST_CATEGORY_NORMALINACTIVE	INT DEFAULT 1001;
-    DECLARE CONST_CATEGORY_SMARTINACTIVE	INT DEFAULT 1002;
+	DECLARE	CONST_PARENTID_NORMAL 			INT;
+    DECLARE CONST_CATEID_NEW				INT;
+    DECLARE CONST_CATEID_NORMALINACTIVE		INT;
+    DECLARE CONST_CATEID_SMARTINACTIVE		INT;
     DECLARE CONST_CREATEDBY					INT DEFAULT 10278938;
     
-	DECLARE lv_CurrentDateTime 			DATETIME DEFAULT CURRENT_TIME();
+	DECLARE lv_CurrentDateTime 				DATETIME DEFAULT CURRENT_TIME();
+
+	SET CONST_PARENTID_NORMAL				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
+	SET CONST_CATEID_NEW					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_NEW');
+	SET CONST_CATEID_NORMALINACTIVE			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_NORMALINACTIVE');
+	SET CONST_CATEID_SMARTINACTIVE			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_SMARTINACTIVE');
 
     #=====================================================
     DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
@@ -65,8 +71,8 @@ BEGIN
      /* 0: INSERT CTSCustomerClassification */
      IF ip_IsNewCustomer = TRUE	THEN
 		UPDATE Temp_Customer AS temp
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = CONST_CATEGORY_NEWMEMBER
-        SET 	temp.CategoryID = CONST_CATEGORY_NEWMEMBER
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = CONST_CATEID_NEW
+        SET 	temp.CategoryID = CONST_CATEID_NEW
 			,	temp.CustomerClass = cc.CustomerClass;
      ELSE
 		DELETE tmp
@@ -85,8 +91,8 @@ BEGIN
 					LIMIT 1
 				) AS arc
 		SET temp.CategoryID = CASE
-								WHEN arc.CategoryID = CONST_CATEGORY_NORMALINACTIVE THEN CONST_CATEGORY_NORMALINACTIVE
-								WHEN arc.CategoryID = CONST_CATEGORY_SMARTINACTIVE THEN CONST_CATEGORY_SMARTINACTIVE
+								WHEN arc.CategoryID = CONST_CATEID_NORMALINACTIVE THEN CONST_CATEID_NORMALINACTIVE
+								WHEN arc.CategoryID = CONST_CATEID_SMARTINACTIVE THEN CONST_CATEID_SMARTINACTIVE
 								ELSE NULL
 							  END;
                               
@@ -101,9 +107,9 @@ BEGIN
      WHERE tmp.CategoryID IS NULL;
 
     /* 1: INSERT CTSCustomerClassification */
-    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CustID, SportGroupID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CustID, ParentID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
 	SELECT	tmp.CustID					AS CustID
-		,	CONST_GROUP_NORMAL			AS SportGroupID
+		,	CONST_PARENTID_NORMAL		AS ParentID
 		,	tmp.CategoryID				AS CategoryID
 		,	lv_CurrentDateTime			AS CreatedDate
 		,	CONST_CREATEDBY				AS CreatedBy
@@ -119,9 +125,9 @@ BEGIN
 		LEFT JOIN CTSCustomerClassification_History AS cls ON tmp.CustID = cls.CustID
 	WHERE cls.CustID IS NULL;
     
-	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, SportGroupID, CategoryID, TurnoverRM, WinlossRM, BetCount, ActiveDays, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsDataChanged, ActionType, IsAuto, LastModifiedDate, LastModifiedBy, InsertDate, TaggingType, TWGroupBettingRate, TWTicketRejectRate, TWBetCount, TWDesktopUsageRate)
+	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, ParentID, CategoryID, TurnoverRM, WinlossRM, BetCount, ActiveDays, TargetCC, SourceTypeID, OldCategoryID, DWCategoryID, IsDataChanged, ActionType, IsAuto, LastModifiedDate, LastModifiedBy, InsertDate, TaggingType, TWGroupBettingRate, TWTicketRejectRate, TWBetCount, TWDesktopUsageRate)
 	SELECT	tmp.CustID					AS CustID
-		,	CONST_GROUP_NORMAL			AS SportGroupID
+		,	CONST_PARENTID_NORMAL		AS ParentID
 		,	tmp.CategoryID				AS CategoryID
 		,	0	AS TurnoverRM
 		,	0	AS WinlossRM
@@ -129,8 +135,8 @@ BEGIN
 		,	0	AS ActiveDays
 		,	tmp.CustomerClass			AS TargetCC
 		,	1	AS SourceTypeID
-		,	tmp.CategoryID				AS FromCategoryID
-		,	tmp.CategoryID				AS ToCategoryID
+		,	tmp.CategoryID				AS OldCategoryID
+		,	tmp.CategoryID				AS DWCategoryID
 		,	1	AS IsDataChanged
 		,	0	AS ActionType
 		,	1	AS IsAuto
@@ -145,9 +151,9 @@ BEGIN
 	FROM 	Temp_CustomerHistory AS tmp;
 
     /* 3: WRITE CTSCustomerClassification_Log(TRACE DATA) */
-	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, SportGroupID, CategoryID, TurnoverRM, WinlossRM, BetCount, ActiveDays, TargetCC, SourceTypeID, FromCategoryID, ToCategoryID, IsDataChanged, ActionType, IsAuto, LastModifiedDate, LastModifiedBy, InsertDate, TaggingType, TWGroupBettingRate, TWTicketRejectRate, TWBetCount, TWDesktopUsageRate)
+	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, ParentID, CategoryID, TurnoverRM, WinlossRM, BetCount, ActiveDays, TargetCC, SourceTypeID, OldCategoryID, DWCategoryID, IsDataChanged, ActionType, IsAuto, LastModifiedDate, LastModifiedBy, InsertDate, TaggingType, TWGroupBettingRate, TWTicketRejectRate, TWBetCount, TWDesktopUsageRate)
 	SELECT	tmp.CustID					AS CustID
-		,	CONST_GROUP_NORMAL			AS SportGroupID
+		,	CONST_PARENTID_NORMAL		AS ParentID
 		,	tmp.CategoryID				AS CategoryID
 		,	0	AS TurnoverRM
 		,	0	AS WinlossRM
@@ -155,8 +161,8 @@ BEGIN
 		,	0	AS ActiveDays
 		,	tmp.CustomerClass			AS TargetCC
 		,	1	AS SourceTypeID
-		,	tmp.CategoryID				AS FromCategoryID
-		,	tmp.CategoryID				AS ToCategoryID
+		,	tmp.CategoryID				AS OldCategoryID
+		,	tmp.CategoryID				AS DWCategoryID
 		,	1	AS IsDataChanged
 		,	0	AS ActionType
 		,	1	AS IsAuto
