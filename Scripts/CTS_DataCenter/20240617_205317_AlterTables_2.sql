@@ -62,6 +62,9 @@ ALTER TABLE CTSCustomerClassification_Log
 MODIFY COLUMN ParentID INT UNSIGNED;
 
 ALTER TABLE CTSCustomerClassification_Log
+MODIFY COLUMN CategoryID INT UNSIGNED;
+
+ALTER TABLE CTSCustomerClassification_Log
 RENAME COLUMN FromCategoryID TO OldCategoryID;
 
 ALTER TABLE CTSCustomerClassification_Log
@@ -72,3 +75,6 @@ RENAME COLUMN ToCategoryID TO DWCategoryID;
 
 ALTER TABLE CTSCustomerClassification_Log
 MODIFY COLUMN DWCategoryID INT UNSIGNED;
+
+ALTER TABLE CTSCustomerClassification_Log
+RENAME COLUMN IsDirect TO IsMarkedDirectly;

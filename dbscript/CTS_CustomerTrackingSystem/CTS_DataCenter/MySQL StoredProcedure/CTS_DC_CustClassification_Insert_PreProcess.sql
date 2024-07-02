@@ -1,4 +1,4 @@
-*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="1"></info>*/
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="1"></info>*/
 DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_Insert_PreProcess`;
 
 DELIMITER $$
@@ -107,8 +107,7 @@ BEGIN
 		UPDATE Temp_ProbationCustomer AS temp
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.DWCategoryGroupID = temp.CategoryGroupID
 		SET temp.IsPassProbationRule = CASE WHEN temp.ScanDate > lv_FromProbationLastDay THEN 0 ELSE 1 END
-		WHERE cate.ParentID = CONST_PARENTID_NORMAL
-			cate.CategoryPriority <= lv_ProbationCatePriority;
+		WHERE cate.ParentID = CONST_PARENTID_NORMAL AND	cate.CategoryPriority <= lv_ProbationCatePriority;
 		
 		INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, ActionType, IsReturnData)
 		SELECT	temp.CustID, CONST_ACTIONTYPE_IGNOREPROBATION, 0 AS IsReturnData
