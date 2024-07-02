@@ -104,6 +104,9 @@ BEGIN
         FROM CTS_DataCenter.CTSCustomerClassification_History AS clss
             INNER JOIN CTS_DataCenter.CustomerClassification_Remark AS cr ON cr.RemarkID = clss.SourceTypeID
 		WHERE 	clss.CTSCustID = ip_CTSCustID AND clss.IsDataChanged = 1 AND clss.SourceTypeID IS NOT NULL;
+	/*
+	Detect SourceTypeID for historical data 
+	*/
 
 		IF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_UNAUTHORIZEDLOGIN, CONST_CATEID_UNAUTHORIZEDLOGINLOSING)) THEN
             UPDATE Temp_CustRemark AS tmp
