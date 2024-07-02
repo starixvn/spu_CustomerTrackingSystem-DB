@@ -99,7 +99,7 @@ BEGIN
     -- #3: Return customer with problem category for PA daily scan
 	SELECT DISTINCT CustID
     FROM Temp_CustomerCategory 
-    WHERE ParentID IN (CONST_GROUP_PA, CONST_GROUP_POTENTIALPA)
+    WHERE ParentID IN (CONST_PARENTID_PA, CONST_PARENTID_POTENTIALPA)
 		AND RelevantCategoryID IS NOT NULL;
 	
 END$$
