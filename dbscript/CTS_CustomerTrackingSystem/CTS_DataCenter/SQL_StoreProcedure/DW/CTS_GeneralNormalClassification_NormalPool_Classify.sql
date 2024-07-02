@@ -44,31 +44,31 @@ BEGIN
 	
 	SET NOCOUNT ON;
 
-	DECLARE @GENERAL_SPORTID		 SMALLINT = 200;
-	DECLARE @CurrentDateTime		 DATETIME = GETDATE();
-	DECLARE	@ToDate					 DATE	  = GETDATE();
-	DECLARE @YesterdayDate			 DATE	  = DATEADD(DAY, -1, @ToDate);
-	DECLARE @From30Date				 DATE	  = DATEADD(DAY, -29, @ToDate);
+	DECLARE @GENERAL_SPORTID				SMALLINT = 200;
+	DECLARE @CurrentDateTime				DATETIME = GETDATE();
+	DECLARE	@ToDate							DATE	  = GETDATE();
+	DECLARE @YesterdayDate					DATE	  = DATEADD(DAY, -1, @ToDate);
+	DECLARE @From30Date						DATE	  = DATEADD(DAY, -29, @ToDate);
 
-	DECLARE @CATEGORY_NULL			 SMALLINT = 0,
-			@CATEGORY_NORMALINACTIVE SMALLINT = 40700,
-	   	    @CATEGORY_SMARTINACTIVE	 SMALLINT = 40701,
-			@CATEGORY_NEW			 SMALLINT = 40100,
-			@CATEGORY_GOOD			 SMALLINT = 40200,
-			@CATEGORY_NORMAL		 SMALLINT = 40300,
-			@CATEGORY_PROBATION		 SMALLINT = 40400,
-			@CATEGORY_SMART			 SMALLINT = 40500,
-			@CATEGORY_RISKY			 SMALLINT = 40600;
+	DECLARE @CATEGORY_NULL					INT = 0,
+			@CATEGORY_NORMALINACTIVE		INT = 40700,
+	   	    @CATEGORY_SMARTINACTIVE			INT = 40701,
+			@CATEGORY_NEW					INT = 40100,
+			@CATEGORY_GOOD					INT = 40200,
+			@CATEGORY_NORMAL				INT = 40300,
+			@CATEGORY_PROBATION				INT = 40400,
+			@CATEGORY_SMART					INT = 40500,
+			@CATEGORY_RISKY					INT = 40600;
 
-	DECLARE @SportGroup_SabaVRSoccer	 SMALLINT = 145,
-			@SportGroup_SabaVRBasketball SMALLINT = 912,
-			@SportGroup_NonSport		 SMALLINT = 229;
+	DECLARE @SportGroup_SabaVRSoccer		SMALLINT = 145,
+			@SportGroup_SabaVRBasketball	SMALLINT = 912,
+			@SportGroup_NonSport			SMALLINT = 229;
 
-	DECLARE @ScanTaggingType_NotExist  TINYINT = 0,
-			@ScanTaggingType_Exist	   TINYINT = 1,
-			@ScanTaggingType_ExistOnly TINYINT = 2;
+	DECLARE @ScanTaggingType_NotExist		TINYINT = 0,
+			@ScanTaggingType_Exist			TINYINT = 1,
+			@ScanTaggingType_ExistOnly		TINYINT = 2;
 
-	DECLARE @ListCustIds			 VARCHAR(MAX);
+	DECLARE @ListCustIds					VARCHAR(MAX);
 
 	IF OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
 	BEGIN
@@ -77,7 +77,7 @@ BEGIN
 
 	CREATE TABLE #tmpCustomers(
 		CustId			       INT PRIMARY KEY,
-		CurrentCategoryId      SMALLINT NOT NULL,
+		CurrentCategoryId      INT		NOT NULL,
 		IsNewCreated	       BIT	    NOT NULL DEFAULT 0,
 		IsRealtimeOnly		   BIT	    NOT NULL DEFAULT 0,
 		IsProbationLastDay	   BIT		NOT NULL DEFAULT 0,
@@ -101,7 +101,7 @@ BEGIN
 
 	CREATE TABLE #tmpScanTaggingCustomer(
 		CustId			       INT PRIMARY KEY,
-		CurrentCategoryId      SMALLINT NOT NULL,
+		CurrentCategoryId      INT		NOT NULL,
 		ScanTaggingType		   TINYINT	NOT NULL DEFAULT 0
 	);
 
@@ -130,8 +130,8 @@ BEGIN
 
 	CREATE TABLE #tmpCustomerAccummulatedInfo(
 		CustId				   INT			  NOT NULL,
-		CurrentCategoryId	   SMALLINT		  NOT NULL DEFAULT 0,
-		NewCategoryId		   SMALLINT		  NULL,
+		CurrentCategoryId	   INT			  NOT NULL DEFAULT 0,
+		NewCategoryId		   INT			  NULL,
 		IsActiveWithin30Days   BIT			  NOT NULL DEFAULT 0,
 		IsProbationLastDay	   BIT			  NOT NULL DEFAULT 0,
 		IsRealtimeOnly		   BIT			  NOT NULL DEFAULT 0,
@@ -165,8 +165,8 @@ BEGIN
 	CREATE TABLE #tmpBetCount(
 		CustId		INT	PRIMARY KEY,
 		SportGroup	SMALLINT,
-		CategoryId	SMALLINT  NOT NULL,
-		BetCount	BIGINT	  NULL
+		CategoryId	INT	NOT NULL,
+		BetCount	BIGINT NULL
 	);
 
 	CREATE NONCLUSTERED INDEX IX_tmpBetCount_CategoryId ON #tmpBetCount(
@@ -183,7 +183,7 @@ BEGIN
 	-- #1: Get list customers
 	INSERT INTO #tmpCustomers(CustId, CurrentCategoryId, IsNewCreated, IsRealtimeOnly, IsProbationLastDay, ScanTaggingType)
 	SELECT	T.C.value('./@CustId', 'INT')				AS CustId
-		,	T.C.value('./@CategoryId', 'SMALLINT')		AS CurrentCategoryId
+		,	T.C.value('./@CategoryId', 'INT')			AS CurrentCategoryId
 		,	T.C.value('./@IsNewCreated', 'BIT')			AS IsNewCreated
 		,	T.C.value('./@IsRealtimeOnly', 'BIT')		AS IsRealtimeOnly
 		,	T.C.value('./@IsProbationLastDay', 'BIT')	AS IsProbationLastDay
