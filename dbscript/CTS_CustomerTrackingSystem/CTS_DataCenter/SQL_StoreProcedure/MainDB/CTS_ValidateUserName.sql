@@ -19,7 +19,7 @@ AS
 		
 			
 	Example:
-		EXEC CTS_ValidateUsername @UsernameList = '305RM,922SD,832NSD'
+		EXEC CTS_ValidateUsername @UsernameList = '305RM,922SD,832NSD,10938DUETO'
 */
 BEGIN
 	SET NOCOUNT ON;

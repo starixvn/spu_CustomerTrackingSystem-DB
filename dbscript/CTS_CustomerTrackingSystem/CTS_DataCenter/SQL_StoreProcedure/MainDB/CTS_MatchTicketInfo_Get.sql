@@ -27,6 +27,7 @@ AS
 		- 20240102@Casey.Huynh: Created [Redmine ID: #196361]
 		- 20240322@Vitoria.Le: 	Change inputs to optimize query data [Redmine ID: #201380]
 		- 20240521@Thomas.Nguyen: Remove hardcode 2 Agent WINRM and M999RM00 as internal accounts for Danger Monitor [Redmine ID: #205239]
+		- 20240702@Casey.Huynh:	Add Filter by Username and LeagueGroup  [Redmine ID: #206494]	
 
 	Params Explaination:
 		,@BettypeList='[	{"BetType":1, "BetChoiceType":2}
