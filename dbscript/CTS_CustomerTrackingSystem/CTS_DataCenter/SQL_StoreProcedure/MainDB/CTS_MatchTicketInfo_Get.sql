@@ -4,17 +4,19 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [dbo].[CTS_MatchTicketInfo_Get]
-		@FromDate			DATETIME = NULL
-	,	@ToDate				DATETIME = NULL
-	,	@SportList			VARCHAR(MAX) = ''
-	,	@LeagueEvent		VARCHAR(500) = ''
-	,	@MarketList			VARCHAR(10)  = ''
-	,	@BettypeList		VARCHAR(MAX) = '[]' --JSON
-	,	@MatchSection		VARCHAR(10) = '' 	-- STRING
-	,	@DangerLevels		VARCHAR(10)
+CREATE PROCEDURE [dbo].[CTS_MatchTicketInfo_Get]
+		@FromDate				DATETIME = NULL
+	,	@ToDate					DATETIME = NULL
+	,	@SportList				VARCHAR(MAX) = ''
+	,	@LeagueEvent			VARCHAR(500) = ''
+	,	@MarketList				VARCHAR(10)  = ''
+	,	@BettypeList			VARCHAR(MAX) = '[]' --JSON
+	,	@MatchSection			VARCHAR(10) = '' 	-- STRING
+	,	@DangerLevels			VARCHAR(10)
 	,	@SportSabaLeagueGroup	VARCHAR(200) = ''
-	,	@IsExclTestCurr		BIT = 1
+	,	@UserNameList			VARCHAR(MAX)=''
+	,	@LeagueGroupList		VARCHAR(MAX)=''
+	,	@IsExclTestCurr			BIT = 1
 AS
 /*
 	Created: 20240102@Casey.Huynh
@@ -31,7 +33,8 @@ AS
 						,	{"BetType":2, "BetChoiceType":2}
 						,	{"BetType":126, "BetChoiceType":1}]'
 		
-		EXECUTE [dbo].[CTS_MatchTicketInfo_Get] 
+		EXECUTE [dbo].[CTS_MatchTicketInfo_Get]
+		@UserName			= 
 		@FromDate			='2024-01-08'
 	,	@ToDate				= NULL
 	,	@SportList			= '1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,99,154'
@@ -88,15 +91,33 @@ BEGIN
 		,	BetId			BIGINT			
 	);
 	
-	IF	OBJECT_ID('tempdb..#tmpDangerCust') IS NOT NULL
+	IF	OBJECT_ID('tempdb..#tmpCustomer') IS NOT NULL
 	BEGIN
-		DROP TABLE	#tmpDangerCust;
+		DROP TABLE	#tmpCustomer;
 	END;
 
-	CREATE TABLE	#tmpDangerCust(
+	CREATE TABLE	#tmpCustomer(
 			CustId				INT 	
 	);
+
+	IF	OBJECT_ID('tempdb..#tmpUsername') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpUsername;
+	END;
+
+	CREATE TABLE	#tmpUsername(
+			UserName	VARCHAR(50) 	
+	);
 	
+	IF	OBJECT_ID('tempdb..#tmpLeagueGroup') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpLeagueGroup;
+	END;
+
+	CREATE TABLE	#tmpLeagueGroup(
+			LeagueGroupID	INT 	
+	);
+
 	IF	OBJECT_ID('tempdb..#tmpMatchSum') IS NOT NULL
 	BEGIN
 		DROP TABLE #tmpMatchSum;
@@ -131,6 +152,18 @@ BEGIN
 	
 	INSERT INTO @tmpSport (SportType)
 	SELECT ssk.value FROM STRING_SPLIT (@SportList, ',') AS ssk;
+
+	IF @UserNameList <> ''
+	BEGIN
+		INSERT INTO #tmpUsername(UserName)
+		SELECT ssk.value FROM STRING_SPLIT (@UserNameList, ',') AS ssk;
+	END;
+
+	IF @LeagueGroupList <> ''
+	BEGIN
+		INSERT INTO #tmpLeagueGroup(LeagueGroupID)
+		SELECT ssk.value FROM STRING_SPLIT (@LeagueGroupList, ',') AS ssk;
+	END;
 	
 	INSERT INTO #tmpBetType(BetType,BetChoiceType,BetChoiceHome,BetChoiceAway,BetIdPattern,BetId)
 	SELECT	j.BetType
@@ -188,98 +221,108 @@ BEGIN
 		WHERE LEN(ssk.value) > 0;
 	END;
 
-	IF @DangerType = 1 
+	IF @UsernameList <> ''
 	BEGIN
-		INSERT INTO #tmpDangerCust(CustId)
-		SELECT cust.custid
-		FROM bodb02.dbo.CustInfo AS cust WITH(NOLOCK)
-			INNER JOIN bodb02.dbo.Customer AS cs WITH (NOLOCK) ON cs.custid = cust.custid 
-		WHERE cs.site NOT IN ('Nextbet','9wickets','9wsports')
-			AND cs.username NOT LIKE '%Cashout%'
-			AND cs.mrecommend NOT IN (27899314,11656504,12146012) 
-			AND cs.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
-			AND (CASE WHEN @IsExclTestCurr = 0 THEN 1 
-					  WHEN @IsExclTestCurr = 1 AND cs.currency NOT IN (20,27,28) THEN 1 
-					  ELSE 0 END = 1)
-			AND cs.srecommend NOT IN (41430709) 
-			AND cs.RoleId = 1
-			AND cust.danger > 0 AND cust.danger = @Danger
-			;
-	END;
-	IF @DangerType = 2
+		INSERT INTO #tmpCustomer(CustId)
+		SELECT cs.custid
+		FROM bodb02.dbo.Customer AS cs WITH (NOLOCK) 
+			INNER JOIN #tmpUsername AS un WITH(NOLOCK) ON un.username = cs.username;
+	END
+	ELSE
 	BEGIN
-		INSERT INTO #tmpDangerCust(CustId)
-		SELECT cust.custid
-		FROM bodb02.dbo.CustInfo AS cust WITH(NOLOCK)
-			INNER JOIN bodb02.dbo.Customer AS cs WITH (NOLOCK) ON cs.custid = cust.custid
-		WHERE cs.site NOT IN ('Nextbet','9wickets','9wsports')
-			AND cs.username NOT LIKE '%Cashout%'
-			AND cs.mrecommend NOT IN (27899314,11656504,12146012) 
-			AND cs.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
-			AND (CASE WHEN @IsExclTestCurr = 0 THEN 1 
-					  WHEN @IsExclTestCurr = 1 AND cs.currency NOT IN (20,27,28) THEN 1 
-					  ELSE 0 END = 1)
-			AND cs.srecommend NOT IN (41430709) 
-			AND cs.RoleId = 1
-			AND cust.danger2 > 0 AND cust.danger2 = @Danger
-			;
-	END;
-	IF @DangerType = 3
-	BEGIN
-		INSERT INTO #tmpDangerCust(CustId)
-		SELECT cust.custid
-		FROM bodb02.dbo.CustInfo AS cust WITH(NOLOCK)
-			INNER JOIN bodb02.dbo.Customer AS cs WITH (NOLOCK) ON cs.custid = cust.custid 
-		WHERE cs.site NOT IN ('Nextbet','9wickets','9wsports')
-			AND cs.username NOT LIKE '%Cashout%'
-			AND cs.mrecommend NOT IN (27899314,11656504,12146012) 
-			AND cs.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
-			AND (CASE WHEN @IsExclTestCurr = 0 THEN 1 
-					  WHEN @IsExclTestCurr = 1 AND cs.currency NOT IN (20,27,28) THEN 1 
-					  ELSE 0 END = 1)
-			AND cs.srecommend NOT IN (41430709) 
-			AND cs.RoleId = 1
-			AND cust.danger3 > 0 AND cust.danger3 = @Danger
-			;
-	END;
-	IF @DangerType = 4
-	BEGIN
-		INSERT INTO #tmpDangerCust(CustId)
-		SELECT cust.custid
-		FROM bodb02.dbo.CustInfo AS cust WITH(NOLOCK)
-			INNER JOIN bodb02.dbo.Customer AS cs WITH (NOLOCK) ON cs.custid = cust.custid 
-		WHERE cs.site NOT IN ('Nextbet','9wickets','9wsports')
-			AND cs.username NOT LIKE '%Cashout%'
-			AND cs.mrecommend NOT IN (27899314,11656504,12146012) 
-			AND cs.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
-			AND (CASE WHEN @IsExclTestCurr = 0 THEN 1 
-					  WHEN @IsExclTestCurr = 1 AND cs.currency NOT IN (20,27,28) THEN 1 
-					  ELSE 0 END = 1)
-			AND cs.srecommend NOT IN (41430709) 
-			AND cs.RoleId = 1
-			AND cust.danger4 > 0 AND cust.danger4 = @Danger
-			;
-	END;
-	IF @DangerType = 5
-	BEGIN
-		INSERT INTO #tmpDangerCust(CustId)
-		SELECT cust.custid
-		FROM bodb02.dbo.CustInfo AS cust WITH(NOLOCK)
-			INNER JOIN bodb02.dbo.Customer AS cs WITH (NOLOCK) ON cs.custid = cust.custid 
-		WHERE cs.site NOT IN ('Nextbet','9wickets','9wsports')
-			AND cs.username NOT LIKE '%Cashout%'
-			AND cs.mrecommend NOT IN (27899314,11656504,12146012) 
-			AND cs.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
-			AND (CASE WHEN @IsExclTestCurr = 0 THEN 1 
-					  WHEN @IsExclTestCurr = 1 AND cs.currency NOT IN (20,27,28) THEN 1 
-					  ELSE 0 END = 1)
-			AND cs.srecommend NOT IN (41430709) 
-			AND cs.RoleId = 1
-			AND cust.danger5 > 0 AND cust.danger5 = @Danger
-			;
+		IF @DangerType = 1 
+		BEGIN
+			INSERT INTO #tmpCustomer(CustId)
+			SELECT cust.custid
+			FROM bodb02.dbo.CustInfo AS cust WITH(NOLOCK)
+				INNER JOIN bodb02.dbo.Customer AS cs WITH (NOLOCK) ON cs.custid = cust.custid 
+			WHERE cs.site NOT IN ('Nextbet','9wickets','9wsports')
+				AND cs.username NOT LIKE '%Cashout%'
+				AND cs.mrecommend NOT IN (27899314,11656504,12146012) 
+				AND cs.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
+				AND (CASE WHEN @IsExclTestCurr = 0 THEN 1 
+						  WHEN @IsExclTestCurr = 1 AND cs.currency NOT IN (20,27,28) THEN 1 
+						  ELSE 0 END = 1)
+				AND cs.srecommend NOT IN (41430709) 
+				AND cs.RoleId = 1
+				AND cust.danger > 0 AND cust.danger = @Danger
+				;
+		END;
+		IF @DangerType = 2
+		BEGIN
+			INSERT INTO #tmpCustomer(CustId)
+			SELECT cust.custid
+			FROM bodb02.dbo.CustInfo AS cust WITH(NOLOCK)
+				INNER JOIN bodb02.dbo.Customer AS cs WITH (NOLOCK) ON cs.custid = cust.custid
+			WHERE cs.site NOT IN ('Nextbet','9wickets','9wsports')
+				AND cs.username NOT LIKE '%Cashout%'
+				AND cs.mrecommend NOT IN (27899314,11656504,12146012) 
+				AND cs.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
+				AND (CASE WHEN @IsExclTestCurr = 0 THEN 1 
+						  WHEN @IsExclTestCurr = 1 AND cs.currency NOT IN (20,27,28) THEN 1 
+						  ELSE 0 END = 1)
+				AND cs.srecommend NOT IN (41430709) 
+				AND cs.RoleId = 1
+				AND cust.danger2 > 0 AND cust.danger2 = @Danger
+				;
+		END;
+		IF @DangerType = 3
+		BEGIN
+			INSERT INTO #tmpCustomer(CustId)
+			SELECT cust.custid
+			FROM bodb02.dbo.CustInfo AS cust WITH(NOLOCK)
+				INNER JOIN bodb02.dbo.Customer AS cs WITH (NOLOCK) ON cs.custid = cust.custid 
+			WHERE cs.site NOT IN ('Nextbet','9wickets','9wsports')
+				AND cs.username NOT LIKE '%Cashout%'
+				AND cs.mrecommend NOT IN (27899314,11656504,12146012) 
+				AND cs.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
+				AND (CASE WHEN @IsExclTestCurr = 0 THEN 1 
+						  WHEN @IsExclTestCurr = 1 AND cs.currency NOT IN (20,27,28) THEN 1 
+						  ELSE 0 END = 1)
+				AND cs.srecommend NOT IN (41430709) 
+				AND cs.RoleId = 1
+				AND cust.danger3 > 0 AND cust.danger3 = @Danger
+				;
+		END;
+		IF @DangerType = 4
+		BEGIN
+			INSERT INTO #tmpCustomer(CustId)
+			SELECT cust.custid
+			FROM bodb02.dbo.CustInfo AS cust WITH(NOLOCK)
+				INNER JOIN bodb02.dbo.Customer AS cs WITH (NOLOCK) ON cs.custid = cust.custid 
+			WHERE cs.site NOT IN ('Nextbet','9wickets','9wsports')
+				AND cs.username NOT LIKE '%Cashout%'
+				AND cs.mrecommend NOT IN (27899314,11656504,12146012) 
+				AND cs.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
+				AND (CASE WHEN @IsExclTestCurr = 0 THEN 1 
+						  WHEN @IsExclTestCurr = 1 AND cs.currency NOT IN (20,27,28) THEN 1 
+						  ELSE 0 END = 1)
+				AND cs.srecommend NOT IN (41430709) 
+				AND cs.RoleId = 1
+				AND cust.danger4 > 0 AND cust.danger4 = @Danger
+				;
+		END;
+		IF @DangerType = 5
+		BEGIN
+			INSERT INTO #tmpCustomer(CustId)
+			SELECT cust.custid
+			FROM bodb02.dbo.CustInfo AS cust WITH(NOLOCK)
+				INNER JOIN bodb02.dbo.Customer AS cs WITH (NOLOCK) ON cs.custid = cust.custid 
+			WHERE cs.site NOT IN ('Nextbet','9wickets','9wsports')
+				AND cs.username NOT LIKE '%Cashout%'
+				AND cs.mrecommend NOT IN (27899314,11656504,12146012) 
+				AND cs.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
+				AND (CASE WHEN @IsExclTestCurr = 0 THEN 1 
+						  WHEN @IsExclTestCurr = 1 AND cs.currency NOT IN (20,27,28) THEN 1 
+						  ELSE 0 END = 1)
+				AND cs.srecommend NOT IN (41430709) 
+				AND cs.RoleId = 1
+				AND cust.danger5 > 0 AND cust.danger5 = @Danger
+				;
+		END;
 	END;
 
-	CREATE CLUSTERED INDEX CIX_tmpDangerCust ON #tmpDangerCust(CustId);
+	CREATE CLUSTERED INDEX CIX_tmpDangerCust ON #tmpCustomer(CustId);
 
 	IF @Todate > @MoveBetsDay
 	BEGIN
@@ -305,7 +348,7 @@ BEGIN
 			,	SUM(CASE WHEN t.BetChoiceType = 2 AND b.betteam = t.BetChoiceAway THEN 1 
 						 ELSE 0 END) AS TotalTicketAway
 		FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
-			INNER JOIN #tmpDangerCust AS cust WITH(NOLOCK) ON cust.custid = b.custid
+			INNER JOIN #tmpCustomer AS cust WITH(NOLOCK) ON cust.custid = b.custid
 			CROSS APPLY (
 					SELECT bt.BetID, bt.BetChoiceType,bt.BetChoiceHome,bt.BetChoiceAway
 					FROM #tmpBetType AS bt WITH(NOLOCK)
@@ -360,7 +403,7 @@ BEGIN
 							ELSE 0 END) AS TotalTicketAway
 				,	1
 			FROM bodb02.dbo.bettrans14 AS b WITH(NOLOCK)
-				INNER JOIN #tmpDangerCust AS cust WITH(NOLOCK) ON cust.custid = b.custid
+				INNER JOIN #tmpCustomer AS cust WITH(NOLOCK) ON cust.custid = b.custid
 				CROSS APPLY (
 					SELECT bt.BetID,bt.BetChoiceType,bt.BetChoiceHome,bt.BetChoiceAway
 					FROM #tmpBetType AS bt WITH(NOLOCK)
@@ -558,7 +601,7 @@ BEGIN
 	END;
 	
 	DROP TABLE IF EXISTS #tmpBetType;
-	DROP TABLE IF EXISTS #tmpDangerCust;
+	DROP TABLE IF EXISTS #tmpCustomer;
 	DROP TABLE IF EXISTS #tmpMatchSum;
 
 END;
