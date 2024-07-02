@@ -15,7 +15,8 @@ proc_label: BEGIN
 		Original:
 
 		Revisions:
-		- 20240611@Terry.Nguyen: 		Initial [Redmine ID: #206262]	           
+		- 20240611@Terry.Nguyen: 		Initial [Redmine ID: #206262]	
+		- 20240702@Terry.Nguyen:		Get Min Create Time for First Seen Date	[Redmine ID: #206262]
 		
         Param's Explanation (filtered by):
 
@@ -46,17 +47,21 @@ proc_label: BEGIN
      
      SELECT tmpAss.DeviceID
 		,	dv.FirstDeviceCode AS Device
-        , 	dv.CreatedTime AS FirstSeenDate
+        , 	MIN(dv.CreatedTime) AS FirstSeenDate
 	FROM Temp_Association tmpAss 
 		INNER JOIN DCS_DataCenter.Device AS dv ON dv.DeviceID = tmpAss.DeviceID
+	GROUP BY 	tmpAss.DeviceID
+			,	dv.FirstDeviceCode 
     ORDER BY FirstSeenDate ASC;
 
 	SELECT acc.AccountID
 		, 	acc.LoginName AS Account
-        , 	ass.CreatedTime AS FirstAssociationDate
+        , 	MIN(ass.CreatedTime) AS FirstAssociationDate
 	FROM Temp_Association tmpAss
 		INNER JOIN DCS_DataCenter.Association AS ass ON tmpAss.DeviceID = ass.DeviceID AND ass.AccountID <> tmpAss.AccountID AND ass.SubscriberID = ip_SubscriberID
 		INNER JOIN DCS_DataCenter.Account AS acc ON acc.AccountID = ass.AccountID
+	GROUP BY	acc.AccountID
+			,	acc.LoginName
     ORDER BY FirstAssociationDate ASC;    
      
     
