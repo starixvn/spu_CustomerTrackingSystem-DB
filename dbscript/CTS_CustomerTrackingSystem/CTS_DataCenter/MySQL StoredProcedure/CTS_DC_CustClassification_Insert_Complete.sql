@@ -69,12 +69,13 @@ BEGIN
 		WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT;
 		
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
-				CustID,CTSCustID,SubscriberID,ParentID,CategoryID,CreatedDate,CreatedBy,LastModifiedDate
+				CustID,CTSCustID,SubscriberID,RoleID,ParentID,CategoryID,CreatedDate,CreatedBy,LastModifiedDate
 			,	LastModifiedBy,LastScannedDate)
 		SELECT DISTINCT 
 				temp.CustID
 			, 	temp.CTSCustID
 			, 	temp.SubscriberID
+			, 	temp.RoleID
 			, 	CONST_PARENTID_NORMAL
 			, 	temp.NewCategoryID
 			, 	lv_CurrentDateTime
@@ -153,12 +154,13 @@ BEGIN
 	ELSEIF ip_InputFlowID IN (50,51,6,7) THEN 
 		-- ADD MAIN TABLE CC - FROM OLD - isnew = 1
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
-				CustID, CTSCustID, SubscriberID, ParentID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
-			, 	LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsMarkedDirect, InsertTime, TVSRequestID, IsParlay
+				CustID, CTSCustID, SubscriberID,RoleID, ParentID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
+			, 	LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsMarkedDirectly, InsertTime, TVSRequestID, IsParlay
 			, 	SportType, IssueTypeID) 
 		SELECT temp_old.CustID
 			, temp_old.CTSCustID
 			, temp_old.SubscriberID
+			, temp_old.RoleID
 			, temp_old.ParentID
 			, temp_old.CategoryID
 			, temp_old.Remark
@@ -171,7 +173,7 @@ BEGIN
 			, temp_old.IsFromTW
 			, temp_old.IsFromCTS
 			, temp_old.IsFromAI
-			, temp_old.IsMarkedDirect
+			, temp_old.IsMarkedDirectly
 			, CURRENT_TIMESTAMP(3) AS InsertTime
 			, temp_old.TVSRequestID
 			, temp_old.IsParlay
@@ -195,12 +197,13 @@ BEGIN
 			, 	cls.LastScannedDate 	=  DATE(lv_CurrentDateTime); 
 		
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
-				CustID, CTSCustID, SubscriberID, CategoryID, ParentID, CreatedDate, CreatedBy, LastModifiedDate
-			, 	LastModifiedBy, LastScannedDate, IsMarkedDirect, Remark, IsFromCTS, IsFromAI, IsFromTVS, IsFromTW
+				CustID, CTSCustID, SubscriberID, RoleID, CategoryID, ParentID, CreatedDate, CreatedBy, LastModifiedDate
+			, 	LastModifiedBy, LastScannedDate, IsMarkedDirectly, Remark, IsFromCTS, IsFromAI, IsFromTVS, IsFromTW
 			, 	TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID)
 		SELECT 	temp.CustID
 			,	temp.CTSCustID
 			, 	temp.SubscriberID
+			, 	temp.RoleID
 			, 	temp.NewCategoryGroupID AS CategoryID
 			, 	temp.ParentID
 			, 	NOW()
@@ -208,7 +211,7 @@ BEGIN
 			, 	IFNULL(temp.LastModifiedDate, NOW()) AS LastModifiedDate
 			, 	temp.CreatedBy AS LastModifiedBy
 			, 	NOW() AS LastScannedDate
-			,	temp.IsMarkedDirect
+			,	temp.IsMarkedDirectly
 			,	temp.Remark
 			,	temp.IsFromCTS
 			,	temp.IsFromAI
@@ -224,7 +227,7 @@ BEGIN
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(
 				CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType
 			, 	InsertDate, TargetCC, SourceTypeID, IsDataChanged, TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays
-			, 	IsMarkedDirect, Remark, TVSRequestID, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsParlay, SportType, IssueTypeID )
+			, 	IsMarkedDirectly, Remark, TVSRequestID, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsParlay, SportType, IssueTypeID )
 		SELECT 	temp.CustID
 			, 	temp.CTSCustID
 			, 	temp.NewCategoryID
@@ -236,15 +239,15 @@ BEGIN
 			, 	temp.TargetCC
 			, 	(CASE	WHEN ccs.CategoryID IS NOT NULL THEN ccs.RemarkTemplateID
 						WHEN temp.MatchID IS NOT NULL OR ccs.CategoryID IS NOT NULL THEN ccs.RemarkTemplateID
-						WHEN temp.IsMarkedDirect = 1 THEN 31 
-						WHEN temp.IsMarkedDirect = 0 THEN 32 END) AS SourceTypeID
+						WHEN temp.IsMarkedDirectly = 1 THEN 31 
+						WHEN temp.IsMarkedDirectly = 0 THEN 32 END) AS SourceTypeID
 			,  	1 AS IsDataChanged
 			,	temp.TargetDangerLevel AS TargetDangerLevel1
 			,	temp.TurnoverRM
 			,	temp.WinlossRM
 			, 	temp.BetCount
 			, 	temp.ActiveDays
-			,	temp.IsMarkedDirect
+			,	temp.IsMarkedDirectly
 			,	temp.Remark
 			,	temp.TVSRequestID
 			,	temp.IsFromTVS
@@ -261,7 +264,7 @@ BEGIN
 		
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(
 				CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate
-			, 	TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, IsMarkedDirect, Remark, TVSRequestID
+			, 	TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, IsMarkedDirectly, Remark, TVSRequestID
 			, 	IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsParlay, SportType, IssueTypeID)
 		SELECT 	temp.CustID
 			,	temp.CTSCustID
@@ -275,15 +278,15 @@ BEGIN
 			,	temp.TargetCC
 			, 	(CASE	WHEN ccs.CategoryID IS NOT NULL THEN ccs.RemarkTemplateID
 						WHEN temp.MatchID IS NOT NULL OR ccs.CategoryID IS NOT NULL THEN ccs.RemarkTemplateID
-						WHEN temp.IsMarkedDirect = 1 THEN 31 
-						WHEN temp.IsMarkedDirect = 0 THEN 32 END) AS SourceTypeID
+						WHEN temp.IsMarkedDirectly = 1 THEN 31 
+						WHEN temp.IsMarkedDirectly = 0 THEN 32 END) AS SourceTypeID
 			,	temp.IsDataChanged
 			,	temp.TargetDangerLevel AS TargetDangerLevel1
 			,	temp.TurnoverRM
 			,	temp.WinlossRM
 			,	temp.BetCount
 			,	temp.ActiveDays
-			,	temp.IsMarkedDirect
+			,	temp.IsMarkedDirectly
 			,	temp.Remark
 			,	temp.TVSRequestID
 			,	temp.IsFromTVS
