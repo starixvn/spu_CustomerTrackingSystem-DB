@@ -36,11 +36,7 @@ BEGIN
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_ViewHistory_UAT4(25);
 	*/  
-	/* 
-		DECLARE CONST_LICBA_CATEGORYID				SMALLINT UNSIGNED DEFAULT 2;
-        DECLARE CONST_LICVIPPROBLEM_CATEGORYID		SMALLINT UNSIGNED DEFAULT 3;
-		DECLARE CONST_LICVIPNORMAL_CATEGORYID		SMALLINT UNSIGNED DEFAULT 4;        
-      */  
+ 
 		DECLARE CONST_CATEID_LICBA 						INT;
     	DECLARE CONST_CATEID_LICVIPSUSPICIOUS 			INT;
     	DECLARE CONST_CATEID_LICVIPDANGEROUS 			INT;
@@ -66,12 +62,12 @@ BEGIN
     	DECLARE CONST_REMARKID_ROBOTFROMTVSREQUESTID    INT;
     	DECLARE CONST_REMARKID_ROBOTFROMTVSBETID        INT;
 
-        DECLARE lv_LicBA_CategoryName				VARCHAR(50);
-		DECLARE lv_LicBA_CC							SMALLINT UNSIGNED;
-		DECLARE lv_LicVIPProblem_CC					SMALLINT UNSIGNED;
-		DECLARE lv_LicVIPNormal_CC					SMALLINT UNSIGNED;
-        DECLARE lv_LicVIPProblem_CategoryName		VARCHAR(50);
-        DECLARE lv_LicVIPNormal_CategoryName		VARCHAR(50);        
+        DECLARE lv_LicBA_CategoryName					VARCHAR(50);
+		DECLARE lv_LicBA_CC								SMALLINT UNSIGNED;
+		DECLARE lv_LicVIPProblem_CC						SMALLINT UNSIGNED;
+		DECLARE lv_LicVIPNormal_CC						SMALLINT UNSIGNED;
+        DECLARE lv_LicVIPProblem_CategoryName			VARCHAR(50);
+        DECLARE lv_LicVIPNormal_CategoryName			VARCHAR(50);        
         
 		SET CONST_CATEID_LICBA 		                    = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICBA');
     	SET CONST_CATEID_LICVIPSUSPICIOUS 		        = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPSUSPICIOUS');
@@ -118,34 +114,24 @@ BEGIN
 					HistoryID			BIGINT UNSIGNED NOT NULL PRIMARY KEY
 				,	CustID				BIGINT UNSIGNED
 				,	CategoryID			INT
+				,	SourceTypeID		SMALLINT UNSIGNED
 				,	Remark				TEXT
 				,	KEY IX_Temp_CustRemark_CustID_CateID(CustID, CategoryID)	
 		);
 
-		INSERT IGNORE INTO Temp_CustRemark(HistoryID, CustID, CategoryID, Remark)
-        SELECT  clss.ID
-			,	clss.CustID
-            ,   clss.CategoryID
-            ,   cr.RemarkTemplate
-        FROM CTS_DataCenter.CTSCustomerClassification_History AS clss
-            INNER JOIN CTS_DataCenter.CustomerClassification_Remark AS cr ON cr.RemarkID = clss.SourceTypeID
-		WHERE 	clss.CTSCustID = ip_CTSCustID AND clss.IsDataChanged = 1 AND clss.SourceTypeID IS NOT NULL;
-	/*
-	Detect SourceTypeID for historical data 
-	*/
-		INSERT IGNORE INTO Temp_CustRemark(HistoryID, CustID, CategoryID, Remark)
+		INSERT IGNORE INTO Temp_CustRemark(HistoryID, CustID, CategoryID, SourceTypeID, Remark)
 		SELECT  clss.ID
 			,	clss.CustID
             ,   clss.CategoryID
+			,	clss.SourceTypeID
 			,	NULL AS Remark
 		FROM CTS_DataCenter.CTSCustomerClassification_History AS clss	
-		WHERE 	clss.CTSCustID = ip_CTSCustID AND clss.IsDataChanged = 1 AND clss.SourceTypeID IS NULL;
+		WHERE 	clss.CTSCustID = ip_CTSCustID AND clss.IsDataChanged = 1;
 
 		UPDATE Temp_CustRemark AS tmp
 			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = tmp.CategoryID AND cs.RemarkTemplateID IS NOT NULL
             INNER JOIN CTS_DataCenter.CustomerClassification_Remark AS cr ON cr.RemarkID = cs.RemarkTemplateID
-		SET tmp.Remark = cr.RemarkTemplate
-		WHERE tmp.Remark IS NULL;
+		SET tmp.Remark = cr.RemarkTemplate;
 
 		DROP TEMPORARY TABLE IF EXISTS Temp_CustRemark_Duplicate; 
 		CREATE TEMPORARY TABLE Temp_CustRemark_Duplicate LIKE Temp_CustRemark;
@@ -178,6 +164,11 @@ BEGIN
 			INNER JOIN CTECustRemarkID AS cte ON cte.CustID = tmp.CustID AND cte.CategoryID = tmp.CategoryID
         	INNER JOIN CTS_DataCenter.CustomerClassification_Remark AS cr ON cr.RemarkID = cte.RemarkID
 		SET tmp.Remark = cr.RemarkTemplate;
+
+		UPDATE Temp_CustRemark AS tmp
+			INNER JOIN CTS_DataCenter.CustomerClassification_Remark AS cr ON cr.RemarkID = tmp.SourceTypeID
+		SET tmp.Remark = cr.RemarkTemplate
+		WHERE tmp.Remark IS NULL AND tmp.SourceTypeID IS NOT NULL;
 
 		IF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_UNAUTHORIZEDLOGIN, CONST_CATEID_UNAUTHORIZEDLOGINLOSING)) THEN
             UPDATE Temp_CustRemark AS tmp
@@ -227,19 +218,19 @@ BEGIN
             ,	temp.TWDesktopUsageRate
 			/*,	(CASE WHEN temp.Remark LIKE 'Auto MatchID: %' THEN REPLACE(temp.Remark,'Auto MatchID: ','') ELSE temp.Remark END) AS Remark*/
 			,	REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tmpcr.Remark, 
-                        '[TVSRequestID]', temp.TVSRequestID)
-                    ,   '[Winloss]', temp.WinlossRM)
-                    ,   '[TVSSportType]', temp.SportType)
-                    ,   '[Margin]', CASE WHEN temp.TurnOverRM = 0 THEN 0 ELSE (temp.WinlossRM/temp.TurnoverRM) * 100 END)
-                    ,   '[BetCount]', temp.BetCount)
-                    ,   '[TurnOver]', temp.TurnoverRM)
-                    ,   '[ActiveDays]', temp.ActiveDays)
+                        '[TVSRequestID]', IFNULL(temp.TVSRequestID,0))
+                    ,   '[Winloss]', IFNULL(temp.WinlossRM,0))
+                    ,   '[TVSSportType]', IFNULL(temp.SportType,0))
+                    ,   '[Margin]', CASE WHEN IFNULL(temp.TurnOverRM,0) = 0 THEN 0 ELSE (temp.WinlossRM/temp.TurnOverRM) * 100 END)
+                    ,   '[BetCount]', IFNULL(temp.BetCount,0))
+                    ,   '[TurnOver]', IFNULL(temp.TurnOverRM,0))
+                    ,   '[ActiveDays]', IFNULL(temp.ActiveDays,0))
                     /*,   '[TWBetCount]', temp.TWBetCount*/
-                    ,   '[TWGBRate]', temp.TWGroupBettingRate)
-                    ,   '[TWDesktopUsageRate]', temp.TWDesktopUsageRate)
-                    ,   '[TWTicketRejectRate]', temp.TWTicketRejectRate)
-                    ,   '[TWRobotCounter]', temp.RobotCounter)
-                    ,   '[MatchID]', CASE WHEN temp.Remark LIKE 'Auto MatchID: %' THEN REPLACE(temp.Remark,'Auto MatchID: ','') END)
+                    ,   '[TWGBRate]', IFNULL(temp.TWGroupBettingRate,0))
+                    ,   '[TWDesktopUsageRate]', IFNULL(temp.TWDesktopUsageRate,0))
+                    ,   '[TWTicketRejectRate]', IFNULL(temp.TWTicketRejectRate,0))
+                    ,   '[TWRobotCounter]', IFNULL(temp.RobotCounter,0))
+                    ,   '[MatchID]', CASE WHEN temp.Remark LIKE 'Auto MatchID: %' THEN REPLACE(temp.Remark,'Auto MatchID: ','') ELSE '' END)
                     ,   '[UserComment]', IFNULL(temp.Remark,'')) AS Remark
 			,	temp.TVSRequestID
             ,	temp.IsFromTVS
