@@ -117,12 +117,12 @@ BEGIN
 			,	temp.PerformanceTime
 		FROM 	Temp_NewClassification AS temp
 		WHERE temp.IsDataChanged  = 1;	
-		/*
-̣		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log (
+        
+        INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log (
 				CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM
 			, 	BetCount, ActiveDays, TWBetCount, TWGroupBettingRate, TWTicketRejectRate, TWDesktopUsageRate
 			, 	IsAuto, InsertDate, TargetCC, SourceTypeID, OldCategoryID, DWCategoryID, IsDataChanged
-			, 	TaggingType, TargetDangerLevel1)
+			, 	TaggingType, TargetDangerLevel1, PerformanceTime)
 		SELECT DISTINCT	
 				temp.CustID
 			, 	temp.CTSCustID
@@ -149,8 +149,7 @@ BEGIN
 			,	temp.TargetDangerLevel AS TargetDangerLevel1
 			,	temp.PerformanceTime
 		FROM 	Temp_NewClassification AS temp;
-		*/
-		
+
 	ELSEIF ip_InputFlowID IN (50,51,6,7) THEN 
 		-- ADD MAIN TABLE CC - FROM OLD - isnew = 1
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
