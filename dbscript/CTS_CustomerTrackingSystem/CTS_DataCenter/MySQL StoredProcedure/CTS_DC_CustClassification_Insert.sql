@@ -47,6 +47,7 @@ BEGIN
     DECLARE lv_BA_CC						SMALLINT;
 	
 	DECLARE lv_LogTypeID					INT;
+	DECLARE lv_ActionType					INT;
 	DECLARE	lv_CurrentDateTime				DATETIME DEFAULT CURRENT_TIME();
 	
 	
@@ -584,11 +585,11 @@ BEGIN
 
 	END IF;
 	
-	/*
-	IF (ip_IsToQueue = 1) THEN
-		CALL CTS_DC_CustClassification_AffectedDownline_Insert ();
+
+	IF (ip_IsToQueue = 1 OR (ip_FromAction = 2 AND ip_AffectDownline = 1)) THEN
+		CALL CTS_DC_CustClassification_AffectedDownline_Insert ('Temp_NewClassification',ip_InputFlowID);
 	END IF;
-	*/
+
 	
 	/*STEP N: Return data*/
 	SELECT DISTINCT 
