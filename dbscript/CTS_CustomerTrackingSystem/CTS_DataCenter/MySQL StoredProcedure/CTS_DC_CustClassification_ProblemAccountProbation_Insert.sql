@@ -63,22 +63,22 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_PA(	  
 			CustID					BIGINT UNSIGNED  
 		, 	CTSCustID				BIGINT UNSIGNED 
-        ,	SportGroupID			SMALLINT UNSIGNED DEFAULT 0 
-        , 	CategoryID				SMALLINT UNSIGNED
+        ,	ParentID				INT UNSIGNED DEFAULT 0 
+        , 	CategoryID				INT UNSIGNED
         , 	RelevantCategoryID 	    SMALLINT UNSIGNED
         , 	TargetCC 				SMALLINT UNSIGNED
         , 	TargetDangerLevel1 		SMALLINT 
-        ,	IsDangerProbation 		BIT
+        ,	IsDangerProbation 		BIT(1)
         , 	WinlossStatus			SMALLINT /*LOSING  = 0,KEEPSTATE = 1, WINNING = 2;*/
-        , 	IsLicensee				BIT
+        , 	IsLicensee				BIT(1)
         ,	TurnoverRM				DECIMAL(20,4)
         ,	WinlossRM				DECIMAL(20,4)
         , 	BetCount				BIGINT 
-        , 	ActiveDays				INT 
-        ,	IsDirect				BIT
-        ,	IsLicenseeVIP			BIT
-        ,	IsLicenseeBA			BIT
-        , 	IsDataChanged			BIT
+        , 	ActiveDays				BIT(1) 
+        ,	IsDirect				BIT(1)
+        ,	IsLicenseeVIP			BIT(1)
+        ,	IsLicenseeBA			BIT(1)
+        , 	IsDataChanged			BIT(1)
         ,	Remark				    VARCHAR(500)
         , 	PRIMARY KEY(CustID,CategoryID)  
     );  
@@ -97,12 +97,12 @@ BEGIN
     FROM CustomerCategory WHERE CategoryID = CONST_LICVIP_SUSPICIOUSCATEGORY;    
     
     /* START */
-    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, CategoryID, RelevantCategoryID, SportGroupID,TargetCC,TargetDangerLevel1, IsDangerProbation, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsDirect,IsLicenseeVIP,IsLicenseeBA, IsDataChanged, Remark)
+    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, CategoryID, RelevantCategoryID, ParentID,TargetCC,TargetDangerLevel1, IsDangerProbation, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsDirect,IsLicenseeVIP,IsLicenseeBA, IsDataChanged, Remark)
 	SELECT 	js.CustID
 		,	cust.CTSCustID
         ,	clss.CategoryID
         ,	cate.RelevantCategoryID
-        ,	clss.SportGroupID
+        ,	clss.ParentID
         ,	desCate.TargetCC
         ,	desCate.TargetDangerLevel1
         ,	cate.IsDangerProbation
@@ -145,7 +145,7 @@ BEGIN
     WHERE EXISTS (SELECT 1 FROM CTS_DataCenter.PinCustomerCategory AS pin WHERE pin.CTSCustID = pa.CTSCustID); 
         
     UPDATE CTS_DataCenter.CTSCustomerClassification AS clss
-    INNER JOIN Temp_PA AS tmp ON tmp.CustID = clss.CustID AND tmp.SportGroupID = clss.SportGroupID AND tmp.CategoryID = clss.CategoryID 
+    INNER JOIN Temp_PA AS tmp ON tmp.CustID = clss.CustID AND tmp.ParentID = clss.ParentID AND tmp.CategoryID = clss.CategoryID 
     SET 	clss.CategoryID = tmp.RelevantCategoryID
         ,	clss.LastModifiedBy = lv_CreatedBy
         ,	tmp.CategoryID = tmp.RelevantCategoryID 

@@ -18,18 +18,30 @@ BEGIN
 		Revisions:
 			- 20220328@Aries.Nguyen: Created [Redmine ID: #170468]
             - 20221007@Harvey.Nguyen: Return CurrentCategoryID [Redmine ID: #178022]
+            - 20240702@Victoria.le: Renovate CC - Phase2 - Remove hardcode [Redmine ID: #205317]
 
 		Param's Explanation (filtered by):      
 			- CALL CTS_DC_CustClassification_DailyScan_GetNormal (@op_LastCategoryID, @op_LastCustID);
 	*/
-	DECLARE lv_LastCategoryID 		INT;
-	DECLARE lv_LastCustID 			BIGINT UNSIGNED;
-    DECLARE lv_BatchSize 			BIGINT;
-    DECLARE lv_ScanDateValid 		DATETIME;
-    
-    DECLARE lv_NextCategoryID 		INT;
-    DECLARE lv_NextCustID 			BIGINT UNSIGNED;
-    DECLARE lv_NextScanDateValid 	DATETIME;
+	
+	DECLARE CONST_PARENTID_VVIP 						INT;
+	DECLARE CONST_PARENTID_NORMAL		    			INT;
+
+	DECLARE CONST_CATEGROUPID_PROBATION	    			INT;
+
+	DECLARE lv_LastCategoryID 							INT;
+	DECLARE lv_LastCustID 								BIGINT UNSIGNED;
+	DECLARE lv_BatchSize 								BIGINT;
+	DECLARE lv_ScanDateValid 							DATETIME;
+
+	DECLARE lv_NextCategoryID 							INT;
+	DECLARE lv_NextCustID 								BIGINT UNSIGNED;
+	DECLARE lv_NextScanDateValid 						DATETIME;
+
+	SET CONST_PARENTID_VVIP 							= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
+	SET CONST_PARENTID_NORMAL 							= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
+
+	SET CONST_CATEGROUPID_PROBATION						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_PROBATION');
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Category;
 	CREATE TEMPORARY TABLE Temp_Category(
@@ -47,9 +59,8 @@ BEGIN
 	SELECT 	CategoryID
         , 	DATE_SUB(NOW(), INTERVAL ScanIntervalInSecond - 86400 SECOND)
 	FROM CTS_DataCenter.CustomerCategory
-	WHERE ParentID = 200 
+	WHERE ParentID = CONST_PARENTID_NORMAL 
 		AND IsActive = 1
-		AND IsUsedManually = 0 
 		AND ScanIntervalInSecond > 0; 
     
     SELECT ParameterValue 
@@ -88,12 +99,13 @@ BEGIN
 			AND clss.CategoryID = ",lv_LastCategoryID," ","
 			AND clss.LastScannedDate <= '",lv_ScanDateValid,"' ","
 			AND NOT EXISTS (SELECT 1 
-							 FROM  CTS_DataCenter.PinCustomerCategory AS pin 
-							 WHERE pin.CTSCustID = clss.CTSCustID)
+							 FROM  CTS_DataCenter.CTSCustomerClassification AS vvip
+							 WHERE vvip.ParentID = CONST_PARENTID_VVIP)
 			AND NOT EXISTS (SELECT 1 
-							 FROM  CTS_DataCenter.ProbationAccountMonitor AS pro 
+							 FROM  CTS_DataCenter.CTSCustomerClassification AS pro 
+								INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = pro.CategoryID AND cate.IsActive = 1
 							 WHERE pro.CustID = clss.CustID 
-								AND pro.SportGroupID = 200)
+								AND cate.CategoryGroupID = CONST_CATEGROUPID_PROBATION)
 		ORDER BY clss.CategoryID ASC
 			,	 clss.CustID ASC
 		LIMIT ",lv_BatchSize,";");
@@ -112,12 +124,13 @@ BEGIN
 		WHERE cate.CategoryID > lv_LastCategoryID
 			AND clss.LastScannedDate <= cate.ScanDate
             AND NOT EXISTS (SELECT 1 
-							 FROM  CTS_DataCenter.PinCustomerCategory AS pin 
-							 WHERE pin.CTSCustID = clss.CTSCustID)
+							 FROM  CTS_DataCenter.CTSCustomerClassification AS vvip
+							 WHERE vvip.ParentID = CONST_PARENTID_VVIP)
 			AND NOT EXISTS (SELECT 1 
-							 FROM  CTS_DataCenter.ProbationAccountMonitor AS pro 
+							 FROM  CTS_DataCenter.CTSCustomerClassification AS pro 
+								INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = pro.CategoryID AND cate.IsActive = 1
 							 WHERE pro.CustID = clss.CustID 
-								AND pro.SportGroupID = 200)
+								AND cate.CategoryGroupID = CONST_CATEGROUPID_PROBATION)
 		ORDER BY cate.CategoryID ASC
 		LIMIT 1; 
     END IF;
@@ -136,12 +149,13 @@ BEGIN
 			AND clss.CategoryID = ", lv_NextCategoryID," ","
 			AND clss.LastScannedDate <= '", lv_NextScanDateValid,"' ","
 			AND NOT EXISTS (SELECT 1 
-							 FROM  CTS_DataCenter.PinCustomerCategory AS pin 
-							 WHERE pin.CTSCustID = clss.CTSCustID)
+							 FROM  CTS_DataCenter.CTSCustomerClassification AS vvip
+							 WHERE vvip.ParentID = CONST_PARENTID_VVIP)
 			AND NOT EXISTS (SELECT 1 
-							 FROM  CTS_DataCenter.ProbationAccountMonitor AS pro 
+							 FROM  CTS_DataCenter.CTSCustomerClassification AS pro 
+								INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = pro.CategoryID AND cate.IsActive = 1
 							 WHERE pro.CustID = clss.CustID 
-								AND pro.SportGroupID = 200)
+								AND cate.CategoryGroupID = CONST_CATEGROUPID_PROBATION)
 		ORDER BY clss.CategoryID ASC
 			,	 clss.CustID ASC
 		LIMIT ", lv_BatchSize,";");
