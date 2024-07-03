@@ -109,6 +109,7 @@ BEGIN
 			,	OldCategoryID			INT
 			,	OldIsDangerProbation	BIT(1) DEFAULT 0
 			,	FromOldCategory			BIT(1) DEFAULT 0	
+			,	IsRemove				BIT(1) DEFAULT 1	
 		); 
 		
 		DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomerClassificationOldCategory;
@@ -131,21 +132,23 @@ BEGIN
 		
 		-- ----------------------------------------------
 		INSERT IGNORE INTO Temp_OldClassification (
-			CustID, OldCateGroupID, OldCategoryID, OldIsDangerProbation)
-		SELECT DISTINCT temp.CustID, cc.CategoryGroupID, cls.CategoryID, cc.IsDangerProbation
+			CustID, OldCateGroupID, OldCategoryID, OldIsDangerProbation, IsRemove)
+		SELECT DISTINCT temp.CustID, cc.CategoryGroupID, cls.CategoryID, cc.IsDangerProbation, ccs.IsKeepOldCateID
 		FROM Temp_NewClassification AS temp
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID 
 																			AND cls.ParentID = CONST_PARENTID_NORMAL
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cls.CategoryID 
+			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON cc.CategoryID = ccs.CategoryID 
 		WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_IGNOREPROBATION);
 		
 		INSERT IGNORE INTO Temp_OldClassification (
-			CustID, OldCateGroupID, OldCategoryID, OldIsDangerProbation, FromOldCategory)
-		SELECT DISTINCT temp.CustID, cc.CategoryGroupID, cls.CategoryID, cc.IsDangerProbation, 1 AS FromOldCategory
+			CustID, OldCateGroupID, OldCategoryID, OldIsDangerProbation, FromOldCategory, IsRemove)
+		SELECT DISTINCT temp.CustID, cc.CategoryGroupID, cls.CategoryID, cc.IsDangerProbation, 1 AS FromOldCategory, ccs.IsKeepOldCateID
 		FROM Temp_NewClassification AS temp
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID 
 																			AND cls.ParentID = CONST_PARENTID_NORMAL
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cls.CategoryID 
+			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON cc.CategoryID = ccs.CategoryID 
 		WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_IGNOREPROBATION)
 			AND temp.IsExistWrapper = 1;
 			
@@ -154,7 +157,9 @@ BEGIN
 		SET n.OldCategoryGroupID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGROUPID_NEW ELSE o.OldCateGroupID END,
 			n.OldCategoryID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGROUPID_NEW ELSE o.OldCategoryID END,
 			n.OldIsDangerProbation = CASE WHEN o.CustID IS NULL THEN 1 ELSE o.OldIsDangerProbation END,
-			n.ActionType = CASE WHEN o.CustID IS NULL OR FromOldCategory = 1 THEN CONST_ACTIONTYPE_INSERT ELSE CONST_ACTIONTYPE_UPDATE END
+			n.ActionType = CASE WHEN o.CustID IS NULL OR (o.FromOldCategory = 1 AND o.IsRemove = 0) OR (o.FromOldCategory = 0 AND o.IsRemove = 0) 
+									THEN CONST_ACTIONTYPE_INSERT 
+								ELSE CONST_ACTIONTYPE_UPDATE END
 		WHERE n.ActionType IN (CONST_ACTIONTYPE_INSERT);
 		
 		UPDATE Temp_NewClassification AS n

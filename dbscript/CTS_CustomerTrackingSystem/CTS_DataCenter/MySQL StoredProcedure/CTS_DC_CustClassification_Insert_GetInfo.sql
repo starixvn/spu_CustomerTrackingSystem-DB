@@ -201,7 +201,7 @@ BEGIN
 			,	RelevantCategoryGroupID   	INT UNSIGNED
 			,	RelevantIsPAProbation	   	BIT(1) -- RelevantIsProbation
 			
-			,	IsDataChanged				BIT(1) DEFAULT 0 	/* 0: Not Change, 1: Changed (IF call from SpecialCC function THEN 1 ELSE 0) */
+			,	IsDataChanged				BIT(1) DEFAULT 1 	/* 0: Not Change, 1: Changed (IF call from SpecialCC function THEN 1 ELSE 0) */
 			,	DataChangeType				TINYINT DEFAULT 0	/* 0: New OR Change Category, 1: Change Probation Status, 2: NOT CHANGE */
 			,	SourceTypeID      			SMALLINT
 
@@ -239,7 +239,7 @@ BEGIN
 			,	CreatedBy					INT UNSIGNED
 			,	IsMarkedDirect				BIT(1) DEFAULT 0
 			,	IsReturnData				BIT(1) DEFAULT 1
-			, 	PRIMARY KEY (CustID, DWCategoryGroupID)  
+			, 	PRIMARY KEY (CustID, DWCategoryID)
 		); 
 		
 		IF ip_InputFlowID IN (50,6) THEN /*PA - ip_InputType = 'Category' | PotentialPA*/
@@ -293,7 +293,7 @@ BEGIN
 											,	IsLicensee					BIT(1)				PATH "$.IsLicensee"
 											, 	CreatedBy					INT UNSIGNED		PATH "$.CreatedBy"
 											, 	Remark						VARCHAR(500)		PATH "$.Remark"
-											, 	IsMarkedDirect		BIT(1)				PATH "$.IsDirectPA"
+											, 	IsMarkedDirect				BIT(1)				PATH "$.IsDirectPA"
 											,	WinlossStatus				SMALLINT 			PATH "$.WinlossStatus" 
 											,	TurnoverRM					DECIMAL(20,4)		PATH "$.TurnoverRM"
 											,	WinlossRM					DECIMAL(20,4) 		PATH "$.WinlossRM"
@@ -586,9 +586,16 @@ BEGIN
 											, 	ScanTaggingType			BIT(1)				PATH "$.ScanTaggingType"
 										)) AS tmpJs
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpJs.CustID = cus.CustID AND cus.CustSubID = 0
-				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID 
-			WHERE tmpJs.DWCategoryGroupID <> 0;
+				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID;
+			-- WHERE tmpJs.DWCategoryGroupID <> 0;
 		END IF;
+		
+		UPDATE Temp_NewClassification AS temp
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = temp.DWCategoryID
+		SET temp.DWCategoryGroupID = cat.CategoryGroupID
+		WHERE temp.DWCategoryID IS NOT NULL
+			AND temp.DWCategoryGroupID IS NULL
+		;
 		
 		UPDATE Temp_NewClassification AS temp
 		SET 	temp.IsExistVVIP = 1
