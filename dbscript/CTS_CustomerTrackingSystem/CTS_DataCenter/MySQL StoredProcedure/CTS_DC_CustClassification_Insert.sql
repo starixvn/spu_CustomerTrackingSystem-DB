@@ -47,7 +47,6 @@ BEGIN
     DECLARE lv_BA_CC						SMALLINT;
 	
 	DECLARE lv_LogTypeID					INT;
-	DECLARE lv_ActionType					INT;
 	DECLARE	lv_CurrentDateTime				DATETIME DEFAULT CURRENT_TIME();
 	
 	
