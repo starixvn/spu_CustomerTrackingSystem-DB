@@ -115,6 +115,7 @@ sp : BEGIN
 		,	ParentID		SMALLINT UNSIGNED
 		,	CategoryIDs		VARCHAR(1000)
 		,	CategoryNames	VARCHAR(5000)
+		,	ColorTypeIDs	VARCHAR(100)
 		,	IsPAProbation		BIT DEFAULT 0
         , 	PRIMARY KEY (CTSCustID)
 	);
@@ -395,14 +396,20 @@ sp : BEGIN
 		WHERE cate.CTSCustID IS NULL;
     END IF;
     
-    INSERT IGNORE INTO Temp_Classification(CTSCustID, ParentID, CategoryIDs, CategoryNames,IsPAProbation)
+    INSERT IGNORE INTO Temp_Classification(CTSCustID, ParentID, CategoryIDs, ColorTypeIDs, CategoryNames,IsPAProbation)
 	SELECT	tmpAcc.CTSCustID
 		,	cc.ParentID -- Each Customer has only 1 ParentID
 		,	GROUP_CONCAT(DISTINCT cate.CategoryID SEPARATOR ',') 
         ,	GROUP_CONCAT(DISTINCT cc.CategoryName SEPARATOR ',')
+		,	GROUP_CONCAT(DISTINCT cc.ColorTypeID SEPARATOR ',')
 		,	MAX(cc.IsPAProbation)
 	FROM	Temp_AssociatedAccount AS tmpAcc
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CTSCustID = tmpAcc.CTSCustID
+		,	LATERAL (	SELECT cat.CategoryID
+						FROM CTS_DataCenter.CTSCustomerClassification AS clss
+							INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID
+						WHERE clss.CTSCustID = tmpAcc.CTSCustID
+						ORDER BY cat.CategoryPriority ASC, clss.CreatedDate DESC) AS cate
+		/*INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CTSCustID = tmpAcc.CTSCustID*/
         INNER JOIN Temp_CategoryID AS tmpCate ON tmpCate.CategoryID = cate.CategoryID
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = tmpCate.CategoryID 
 	GROUP BY tmpAcc.CTSCustID, cc.ParentID;
@@ -433,6 +440,7 @@ sp : BEGIN
 		,	tmpCS.ParentID AS ParentIDs
 		,	tmpCS.CategoryIDs AS CategoryIDs
 		,	tmpCS.CategoryNames AS CategoryNames
+		,	tmpCS.ColorTypeIDs AS ColorTypeIDs
 		,	tmpCS.IsPAProbation AS IsProbation
 		,	t.GroupIDList AS GroupIDs
 		,	t.OriginGroupIDList AS OriginGroupIDs
