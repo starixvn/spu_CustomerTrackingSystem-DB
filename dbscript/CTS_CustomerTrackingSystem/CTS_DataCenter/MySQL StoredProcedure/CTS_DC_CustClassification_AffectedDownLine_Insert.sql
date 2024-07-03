@@ -4,7 +4,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_AffectedDownline_Insert`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_AffectedDownline_Insert`(
 		 IN ip_TableName	VARCHAR(200)
-    ,    IN ip_ActionType	TINYINT
+    ,    IN ip_InputFlowID 	INT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -20,21 +20,25 @@ BEGIN
 		Param's Explanation (filtered by):
 			- ip_ActionType: 1:Insert VVIP, 2:Remove VVIP, 3:Mark PA, 4:UnMark PA
 	*/
+    DECLARE	CONST_ACTION_INSERTVVIP 	INT DEFAULT 1;
+	DECLARE	CONST_ACTION_REMOVEVVIP 	INT DEFAULT 2;
+	DECLARE	CONST_ACTION_MARKPA 		INT DEFAULT 3;
+	DECLARE	CONST_ACTION_UNMARKPA	 	INT DEFAULT 4;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
     CREATE TEMPORARY TABLE Temp_Customer(
-			CTSCustID		BIGINT PRIMARY KEY
-		,	CustID			BIGINT
-        ,	RoleID			TINYINT
-        ,	SubscriberID	INT
-        ,	CreatedBy		BIGINT
-        ,	Remark			VARCHAR(300)
-        ,	CategoryID		SMALLINT
-        ,	CategoryGroup	INT
-        ,	IsFromTVS		BIT(1)
-        ,	IsFromTW		BIT(1)
-        ,	IsFromCTS		BIT(1)
-        ,	TVSRequestID	BIT(1)
+			CTSCustID			BIGINT PRIMARY KEY
+		,	CustID				BIGINT
+        ,	RoleID				TINYINT
+        ,	SubscriberID		INT
+        ,	CreatedBy			BIGINT
+        ,	Remark				VARCHAR(300)
+        ,	CategoryID			SMALLINT
+        ,	CategoryGroupID		INT
+        ,	IsFromTVS			BIT(1)
+        ,	IsFromTW			BIT(1)
+        ,	IsFromCTS			BIT(1)
+        ,	TVSRequestID		BIT(1)
 	);
     
 	SET @sql =CONCAT("	INSERT IGNORE INTO Temp_Customer (CustID, IsInternal, SiteID) 
@@ -45,7 +49,7 @@ BEGIN
                             ,	ipTbl.CreatedBy
                             ,	ipTbl.Remark
                             ,	ipTbl.CategoryID
-                            ,	ipTbl.CategoryGroup
+                            ,	ipTbl.CategoryGroupID
                             ,	ipTbl.IsFromTVS
                             ,	ipTbl.IsFromTW
                             ,	ipTbl.IsFromCTS
@@ -55,7 +59,7 @@ BEGIN
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1; 
     
-	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationQueue(CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryID, CategoryGroup, LastDownlineCTSCustID
+	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationQueue(CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryID, CategoryGroupID, LastDownlineCTSCustID
 		, IsFromTVS, IsFromTW, IsFromCTS, ActionType, InsertTime, TVSRequestID)
 	SELECT tmpPa.CTSCustID
 		,	tmpPa.CustID
@@ -64,12 +68,17 @@ BEGIN
 		,	tmpPa.CreatedBy
 		,	tmpPa.Remark        
 		,	tmpPa.CategoryID
-		,	tmpPa.CategoryGroup
+		,	tmpPa.CategoryGroupID
 		,	0 AS LastDownlineCTSCustID
 		,	tmpPa.IsFromTVS 
 		,	tmpPa.IsFromTW
 		,	tmpPa.IsFromCTS
-		,	ip_ActionType
+		,	CASE	
+				WHEN ip_InputFlowID = 1 THEN CONST_ACTION_INSERTVVIP
+                WHEN ip_InputFlowID = 50 THEN CONST_ACTION_MARKPA
+                WHEN ip_InputFlowID = 98 THEN CONST_ACTION_UNMARKPA
+                WHEN ip_InputFlowID = 100 THEN CONST_ACTION_REMOVEVVIP
+			END AS ActionType
 		,	CURRENT_TIMESTAMP(3) AS InsertTime
 		,	tmpPa.TVSRequestID
 	FROM Temp_Customer AS tmpPa        
