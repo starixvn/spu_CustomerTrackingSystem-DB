@@ -4,7 +4,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[CTS_MatchTicketInfo_Get]
+ALTER PROCEDURE [dbo].[CTS_MatchTicketInfo_Get]
 		@FromDate				DATETIME = NULL
 	,	@ToDate					DATETIME = NULL
 	,	@SportList				VARCHAR(MAX) = ''
@@ -47,6 +47,8 @@ AS
 								,	{"BetType":126, "BetChoiceType":1}]' --JSON
 	,	@MatchSection		= '1,2' -- multi selection instead of single selection
 	,	@DangerLevels       = '1_10' -- remove @DangerList= NULL due to single seletion
+	,	@UserNameList		=''
+	,	@LeagueGroupList	=''
 	,	@SportSabaLgGroup	= '1_42,1_74,50_42'
 	,	@IsExclTestCurr		= 1
 	
@@ -164,6 +166,11 @@ BEGIN
 	BEGIN
 		INSERT INTO #tmpLeagueGroup(LeagueGroupID)
 		SELECT ssk.value FROM STRING_SPLIT (@LeagueGroupList, ',') AS ssk;
+	END
+	ELSE 
+	BEGIN
+		INSERT INTO #tmpLeagueGroup(LeagueGroupID)
+		SELECT NULL;
 	END;
 	
 	INSERT INTO #tmpBetType(BetType,BetChoiceType,BetChoiceHome,BetChoiceAway,BetIdPattern,BetId)
@@ -468,7 +475,8 @@ BEGIN
 				INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON m.MatchId = tms.MatchId AND tms.IsFrom14 = 0
 				INNER JOIN bodb02.dbo.team AS h WITH(NOLOCK) ON h.TeamId = m.homeid 
 				INNER JOIN bodb02.dbo.team AS a WITH(NOLOCK) ON a.TeamId = m.awayid
-				INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid 
+				INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
+				INNER JOIN #tmpLeagueGroup AS lg WITH(NOLOCK) ON l.LeagueGroupID = ISNULL(lg.LeagueGroupID,l.LeagueGroupID)
 				CROSS APPLY (SELECT TOP 1 ms.Id AS MatchSection
 							 FROM @tmpMatchSection AS ms
 							 WHERE ms.IsFrom14 = 0
@@ -518,7 +526,8 @@ BEGIN
 				INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON m.MatchId = tms.MatchId AND tms.IsFrom14 = 1
 				INNER JOIN bodb02.dbo.team AS h WITH(NOLOCK) ON h.TeamId = m.homeid 
 				INNER JOIN bodb02.dbo.team AS a WITH(NOLOCK) ON a.TeamId = m.awayid
-				INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid 
+				INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
+				INNER JOIN #tmpLeagueGroup AS lg WITH(NOLOCK) ON l.LeagueGroupID = ISNULL(lg.LeagueGroupID,l.LeagueGroupID)
 				CROSS APPLY (SELECT TOP 1 ms.Id AS MatchSection
 							 FROM @tmpMatchSection AS ms
 							 WHERE ms.IsFrom14 = 1
@@ -549,7 +558,8 @@ BEGIN
 			INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON m.MatchId = tms.MatchId AND tms.IsFrom14 = 0
 			INNER JOIN bodb02.dbo.team AS h WITH(NOLOCK) ON h.TeamId = m.homeid 
 			INNER JOIN bodb02.dbo.team AS a WITH(NOLOCK) ON a.TeamId = m.awayid
-			INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid 
+			INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
+			INNER JOIN #tmpLeagueGroup AS lg WITH(NOLOCK) ON l.LeagueGroupID = ISNULL(lg.LeagueGroupID,l.LeagueGroupID)
 			CROSS APPLY (SELECT TOP 1 ms.Id AS MatchSection
 						 FROM @tmpMatchSection AS ms
 						 WHERE ms.IsFrom14 = 0
@@ -580,6 +590,7 @@ BEGIN
 			INNER JOIN bodb02.dbo.team AS h WITH(NOLOCK) ON h.TeamId = m.homeid 
 			INNER JOIN bodb02.dbo.team AS a WITH(NOLOCK) ON a.TeamId = m.awayid
 			INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid 
+			INNER JOIN #tmpLeagueGroup AS lg WITH(NOLOCK) ON l.LeagueGroupID = ISNULL(lg.LeagueGroupID,l.LeagueGroupID)
 			CROSS APPLY (SELECT TOP 1 ms.Id AS MatchSection
 						 FROM @tmpMatchSection AS ms
 						 WHERE ms.IsFrom14 = 1

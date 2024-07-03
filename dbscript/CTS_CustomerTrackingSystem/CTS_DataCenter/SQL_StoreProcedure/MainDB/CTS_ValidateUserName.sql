@@ -41,7 +41,7 @@ BEGIN
 
 	SELECT	cus.UserName
 		,	cus.CustId
-	FROM bodb02.dbo.Customer AS cus
-		INNER JOIN #tmpUsername AS tmp ON cus.Username = tmp.Username;
+	FROM bodb02.dbo.Customer AS cus WITH(NOLOCK)
+		INNER JOIN #tmpUsername AS tmp WITH(NOLOCK) ON cus.Username = tmp.Username;
 	
 END
