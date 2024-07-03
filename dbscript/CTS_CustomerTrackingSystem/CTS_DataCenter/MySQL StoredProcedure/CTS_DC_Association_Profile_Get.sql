@@ -113,10 +113,9 @@ sp : BEGIN
     CREATE TEMPORARY TABLE 	Temp_Classification (
 			CTSCustID 		BIGINT UNSIGNED
 		,	ParentID		SMALLINT UNSIGNED
-        ,	GroupPriority	SMALLINT UNSIGNED
 		,	CategoryIDs		VARCHAR(1000)
 		,	CategoryNames	VARCHAR(5000)
-		,	IsProbation		BIT DEFAULT 0
+		,	IsPAProbation		BIT DEFAULT 0
         , 	PRIMARY KEY (CTSCustID)
 	);
     
@@ -396,18 +395,17 @@ sp : BEGIN
 		WHERE cate.CTSCustID IS NULL;
     END IF;
     
-    INSERT IGNORE INTO Temp_Classification(CTSCustID, ParentID, GroupPriority, CategoryIDs, CategoryNames,IsProbation)
+    INSERT IGNORE INTO Temp_Classification(CTSCustID, ParentID, CategoryIDs, CategoryNames,IsPAProbation)
 	SELECT	tmpAcc.CTSCustID
 		,	cc.ParentID -- Each Customer has only 1 ParentID
-        ,	cc.GroupPriority
 		,	GROUP_CONCAT(DISTINCT cate.CategoryID SEPARATOR ',') 
         ,	GROUP_CONCAT(DISTINCT cc.CategoryName SEPARATOR ',')
-		,	MAX(cc.IsProbation)
+		,	MAX(cc.IsPAProbation)
 	FROM	Temp_AssociatedAccount AS tmpAcc
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CTSCustID = tmpAcc.CTSCustID
         INNER JOIN Temp_CategoryID AS tmpCate ON tmpCate.CategoryID = cate.CategoryID
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = tmpCate.CategoryID 
-	GROUP BY tmpAcc.CTSCustID, cc.ParentID, cc.GroupPriority;
+	GROUP BY tmpAcc.CTSCustID, cc.ParentID;
     
     /* Update IsFiltered */
     UPDATE 	Temp_AssociatedAccount AS tmpAcc
@@ -435,7 +433,7 @@ sp : BEGIN
 		,	tmpCS.ParentID AS ParentIDs
 		,	tmpCS.CategoryIDs AS CategoryIDs
 		,	tmpCS.CategoryNames AS CategoryNames
-		,	tmpCS.IsProbation AS IsProbation
+		,	tmpCS.IsPAProbation AS IsProbation
 		,	t.GroupIDList AS GroupIDs
 		,	t.OriginGroupIDList AS OriginGroupIDs
 		,	CASE WHEN tmpCS.ParentID = CONST_PARENTID_PA THEN 1 ELSE 0 END AS IsPA

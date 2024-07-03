@@ -20,7 +20,7 @@ BEGIN
 			- 20230119@Victoria.Le		Change to check IsRobot from CTSCustomerClassification instead of RobotDetection [Redmine ID: #181995]
 			- 20230517@Victoria.Le		New Category for Robot OCRD [Redmine ID: #186991]
             - 20230530@Victoria.Le		Hotfix to resolve duplicate primary key [Redmine ID: #188921]
-            
+            - 20240628@Thomas.Nguyen:	Renovate CC phase 2 - Remove hardcode CategoryID [Redmine ID: #205317]
 
 		Explanation:
 			- RobotType: 2-Bad | 1-Good | 0-Observed | -1-No classification | -2-Not Robot

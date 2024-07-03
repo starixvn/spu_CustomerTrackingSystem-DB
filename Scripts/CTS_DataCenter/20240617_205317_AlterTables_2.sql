@@ -29,6 +29,9 @@ ADD IsAffectToDownline BIT(1);
 ALTER TABLE CTSCustomerClassification
 ADD RoleID TINYINT;
 
+ALTER TABLE CTSCustomerClassification
+RENAME COLUMN IsDirect TO IsMarkedDirectly;
+
 /*CTSCustomerClassification_History*/
 ALTER TABLE CTSCustomerClassification_History
 RENAME COLUMN SportGroupID TO ParentID;

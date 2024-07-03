@@ -53,7 +53,7 @@ BEGIN
 	SELECT 	cat.BussinessCategoryGroupID AS ID
 		,	'PA Associated Category' AS CategoryGroup		    
 		,	cat.CategoryName
-		,	cat.CategoryID AS CategoryIDs  
+		,	GROUP_CONCAT(cat.CategoryID SEPARATOR ',')  AS CategoryIDs
 	FROM	CTS_DataCenter.CustomerCategory AS cat
 	WHERE 	cat.BussinessCategoryGroupID = CONST_BIZCATEGROUPID_PAASSOCIATED
 		AND cat.IsActive = 1
@@ -62,7 +62,7 @@ BEGIN
 	SELECT	cat.BussinessCategoryGroupID AS ID
 		,	'Normal Account Category' AS CategoryGroup
 		,	cat.CategoryName
-		,	cat.CategoryID AS CategoryIDs
+		,	GROUP_CONCAT(cat.CategoryID SEPARATOR ',')  AS CategoryIDs
 	FROM	CTS_DataCenter.CustomerCategory AS cat
 	WHERE 	cat.BussinessCategoryGroupID = CONST_BIZCATEGROUPID_NORMAL
 		AND cat.IsActive = 1
@@ -71,7 +71,7 @@ BEGIN
 	SELECT	cat.BussinessCategoryGroupID AS ID
 		,	'Others' AS CategoryGroup
 		,	cat.CategoryName
-		,	cat.CategoryID AS CategoryIDs
+		,	GROUP_CONCAT(cat.CategoryID SEPARATOR ',')  AS CategoryIDs
 	FROM	CTS_DataCenter.CustomerCategory AS cat
 	WHERE 	cat.BussinessCategoryGroupID = CONST_BIZCATEGROUPID_INACTIVE
 		AND cat.IsActive = 1

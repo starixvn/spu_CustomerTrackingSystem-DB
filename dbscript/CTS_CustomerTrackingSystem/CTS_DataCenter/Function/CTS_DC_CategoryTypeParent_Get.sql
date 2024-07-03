@@ -45,6 +45,8 @@ BEGIN
 		SET lv_GetTypeID = 3;
 	ELSEIF ip_CateTypeParentName LIKE '%CATEGROUPID%' THEN
 		SET lv_GetTypeID = 4;
+	ELSEIF ip_CateTypeParentName LIKE '%REMARKID%' THEN
+		SET lv_GetTypeID = 8;
 	END IF;
 	
 

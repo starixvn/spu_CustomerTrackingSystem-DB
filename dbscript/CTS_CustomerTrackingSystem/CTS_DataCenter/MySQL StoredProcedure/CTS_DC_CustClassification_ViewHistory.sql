@@ -52,6 +52,19 @@ BEGIN
 		DECLARE	CONST_CATEID_INITIALGBLOSING			INT;
 		DECLARE	CONST_CATEID_INITIALSMART		 		INT;
 		DECLARE	CONST_CATEID_INITIALSMARTLOSING			INT;
+		DECLARE CONST_CATEID_ROBOTUSER 					INT;
+    	DECLARE CONST_CATEID_ROBOTOCRD 					INT;
+    	DECLARE CONST_CATEID_ROBOTUSERLOSING 			INT;
+    	DECLARE CONST_CATEID_ROBOTOCRDLOSING 			INT;
+
+		DECLARE CONST_REMARKID_TVSREQUESTIDPARLAY       INT;
+    	DECLARE CONST_REMARKID_TVSBETIDPARLAY           INT;
+    	DECLARE CONST_REMARKID_ROBOTFROMTW              INT;
+    	DECLARE CONST_REMARKID_ROBOTFROMIMPERVA         INT;
+    	DECLARE CONST_REMARKID_ROBOTFROMAI              INT;
+    	DECLARE CONST_REMARKID_ROBOTFROMCTS             INT;
+    	DECLARE CONST_REMARKID_ROBOTFROMTVSREQUESTID    INT;
+    	DECLARE CONST_REMARKID_ROBOTFROMTVSBETID        INT;
 
         DECLARE lv_LicBA_CategoryName				VARCHAR(50);
 		DECLARE lv_LicBA_CC							SMALLINT UNSIGNED;
@@ -71,6 +84,19 @@ BEGIN
 		SET CONST_CATEID_INITIALGBLOSING 		        = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INITIALGBLOSING');
 		SET CONST_CATEID_INITIALSMART 		            = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INITIALSMART');
 		SET CONST_CATEID_INITIALSMARTLOSING 		    = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INITIALSMARTLOSING');
+		SET CONST_CATEID_ROBOTUSER 		                = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTUSER');
+    	SET CONST_CATEID_ROBOTOCRD 		                = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTOCRD');
+    	SET CONST_CATEID_ROBOTUSERLOSING 		        = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTUSERLOSING');
+    	SET CONST_CATEID_ROBOTOCRDLOSING 		        = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTOCRDLOSING');
+
+		SET CONST_REMARKID_TVSREQUESTIDPARLAY       	= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_TVSREQUESTIDPARLAY');
+    	SET CONST_REMARKID_TVSBETIDPARLAY           	= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_TVSBETIDPARLAY');
+    	SET CONST_REMARKID_ROBOTFROMTW              	= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_ROBOTFROMTW');
+    	SET CONST_REMARKID_ROBOTFROMIMPERVA         	= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_ROBOTFROMIMPERVA');
+    	SET CONST_REMARKID_ROBOTFROMAI              	= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_ROBOTFROMAI');
+    	SET CONST_REMARKID_ROBOTFROMCTS             	= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_ROBOTFROMCTS');
+    	SET CONST_REMARKID_ROBOTFROMTVSREQUESTID    	= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_ROBOTFROMTVSREQUESTID');
+    	SET CONST_REMARKID_ROBOTFROMTVSBETID        	= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_ROBOTFROMTVSBETID');
 
         SELECT cat.CategoryName, cat.CustomerClass
         INTO lv_LicVIPProblem_CategoryName, lv_LicVIPProblem_CC
@@ -107,6 +133,51 @@ BEGIN
 	/*
 	Detect SourceTypeID for historical data 
 	*/
+		INSERT IGNORE INTO Temp_CustRemark(HistoryID, CustID, CategoryID, Remark)
+		SELECT  clss.ID
+			,	clss.CustID
+            ,   clss.CategoryID
+			,	NULL AS Remark
+		FROM CTS_DataCenter.CTSCustomerClassification_History AS clss	
+		WHERE 	clss.CTSCustID = ip_CTSCustID AND clss.IsDataChanged = 1 AND clss.SourceTypeID IS NULL;
+
+		UPDATE Temp_CustRemark AS tmp
+			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = tmp.CategoryID AND cs.RemarkTemplateID IS NOT NULL
+            INNER JOIN CTS_DataCenter.CustomerClassification_Remark AS cr ON cr.RemarkID = cs.RemarkTemplateID
+		SET tmp.Remark = cr.RemarkTemplate
+		WHERE tmp.Remark IS NULL;
+
+		DROP TEMPORARY TABLE IF EXISTS Temp_CustRemark_Duplicate; 
+		CREATE TEMPORARY TABLE Temp_CustRemark_Duplicate LIKE Temp_CustRemark;
+		INSERT INTO Temp_CustRemark_Duplicate(HistoryID, CustID, CategoryID, Remark)
+		SELECT	HistoryID
+			,	CustID
+			,	CategoryID
+			,	Remark
+		FROM Temp_CustRemark
+		WHERE Remark IS NULL;
+
+		WITH CTECustRemarkID AS (
+        SELECT  tmp.CustID
+            ,   tmp.CategoryID
+            ,   CASE    
+                    WHEN clss.IsFromTVS = 1 AND clss.TVSRequestID > 0 AND clss.WinlossRM IS NOT NULL AND clss.SportType > 0 AND clss.IsParlay = 1 THEN CONST_REMARKID_TVSREQUESTIDPARLAY
+                    WHEN clss.IsFromTVS = 1 AND clss.TVSRequestID = 0 AND clss.WinlossRM IS NOT NULL AND clss.SportType > 0 AND clss.IsParlay = 1 THEN CONST_REMARKID_TVSBETIDPARLAY
+                    WHEN tmp.CategoryID IN (CONST_CATEID_ROBOTUSER, CONST_CATEID_ROBOTOCRD, CONST_CATEID_ROBOTUSERLOSING, CONST_CATEID_ROBOTOCRDLOSING) THEN
+                        CASE    WHEN clss.IsFromTW = 1 								THEN CONST_REMARKID_ROBOTFROMTW
+                                WHEN clss.IsFromImperva = 1 						THEN CONST_REMARKID_ROBOTFROMIMPERVA
+                                WHEN clss.IsFromAI = 1 								THEN CONST_REMARKID_ROBOTFROMAI
+                                WHEN clss.IsFromCTS = 1 							THEN CONST_REMARKID_ROBOTFROMCTS
+                                WHEN clss.IsFromTVS = 1 AND clss.TVSRequestID > 0 	THEN CONST_REMARKID_ROBOTFROMTVSREQUESTID
+                                WHEN clss.IsFromTVS = 1 AND clss.TVSRequestID = 0 	THEN CONST_REMARKID_ROBOTFROMTVSBETID END
+                    END AS RemarkID
+        FROM Temp_CustRemark_Duplicate AS tmp
+			INNER JOIN CTSCustomerClassification_History AS clss ON tmp.HistoryID = clss.ID
+        )
+		UPDATE Temp_CustRemark AS tmp
+			INNER JOIN CTECustRemarkID AS cte ON cte.CustID = tmp.CustID AND cte.CategoryID = tmp.CategoryID
+        	INNER JOIN CTS_DataCenter.CustomerClassification_Remark AS cr ON cr.RemarkID = cte.RemarkID
+		SET tmp.Remark = cr.RemarkTemplate;
 
 		IF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_UNAUTHORIZEDLOGIN, CONST_CATEID_UNAUTHORIZEDLOGINLOSING)) THEN
             UPDATE Temp_CustRemark AS tmp
@@ -183,9 +254,9 @@ BEGIN
 			,	temp.IsParlay
 			,	temp.SportType
 			,	temp.IssueTypeID
-		FROM 	CTS_DataCenter.CTSCustomerClassification_History_205317 AS temp
+		FROM 	CTS_DataCenter.CTSCustomerClassification_History AS temp
 			LEFT JOIN Temp_CustRemark AS tmpcr ON tmpcr.HistoryID = temp.ID
-			LEFT JOIN CTS_DataCenter.CustomerCategory_205317 AS cc1 ON temp.CategoryID = cc1.CategoryID
+			LEFT JOIN CTS_DataCenter.CustomerCategory AS cc1 ON temp.CategoryID = cc1.CategoryID
 			LEFT JOIN CTS_DataCenter.StaticList AS s ON s.ListID = 4 AND temp.SourceTypeID = s.ItemID
 			LEFT JOIN CTS_Admin.CTSUser AS u ON temp.LastModifiedBy = u.UserID
         WHERE 	temp.CTSCustID = ip_CTSCustID AND temp.IsDataChanged = 1
