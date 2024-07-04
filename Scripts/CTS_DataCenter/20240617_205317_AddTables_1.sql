@@ -97,9 +97,8 @@ CREATE TABLE CustomerCategory
 	IsActive BIT(1) DEFAULT b'1', 
 	ScanIntervalInSecond BIGINT, 
 	ScanTaggingIntervalInSecond BIGINT, 
-	RelevantCategoryID INT UNSIGNED, 
-	ProblemCaseID SMALLINT UNSIGNED, 
-	MMReasonID INT, 
+	RelevantCategoryID INT UNSIGNED,
+	IsHedgingReasonMM BIT(1),
 	TVSReasonID INT, 
 	IsPAProbation BIT(1), 
 	IsDangerProbation BIT(1) DEFAULT 0, 
@@ -133,5 +132,5 @@ CREATE TABLE CustomerCategory
 	KEY IX_CustomerCategory_ParentID (ParentID), 
 	KEY IX_CustomerCategory_IsActive (IsActive),
 	KEY IX_CustomerCategory_CategoryGroupID (CategoryGroupID), 
-	KEY IX_CustomerCategory_ReasonID (MMReasonID) 
+	KEY IX_CustomerCategory_ReasonID (IsHedgingReasonMM) 
 );

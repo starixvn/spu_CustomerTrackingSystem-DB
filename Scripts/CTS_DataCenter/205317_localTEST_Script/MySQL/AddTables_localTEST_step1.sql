@@ -1,0 +1,136 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
+/*
+Creator:	20240617@Thomas.Nguyen
+Task:	 	add tables
+Server:  	Master
+DBName:		CTS_DataCenter
+
+Revisions: 
+		- 20240617@Thomas.Nguyen: Created [Redmine ID: #205317]
+Reviewer:
+*/
+
+USE CTS_DataCenter;
+
+CREATE TABLE CustomerCategorySettings
+(
+	CategoryID INT UNSIGNED NOT NULL,
+	CategoryGroupID INT UNSIGNED NOT NULL,
+	ParentID INT UNSIGNED,
+	IsParallelParentID BIT(1),
+	IsMultiCateIDSameParentID BIT(1),
+	IsKeepOldCateID BIT(1),
+	RemarkTemplateID SMALLINT,
+	PRIMARY KEY (CategoryID, CategoryGroupID),
+	KEY IX_CustCateSettings_ParentID (ParentID)
+);
+
+CREATE TABLE CustomerClassification_Remark
+(
+	RemarkID SMALLINT UNSIGNED NOT NULL,
+	RemarkTemplate TEXT,
+	Description VARCHAR(200),
+	CreatedDate DATETIME DEFAULT NOW(),
+	PRIMARY KEY (RemarkID)
+);
+
+CREATE TABLE Customer_InitialGroupBetting
+(
+	CustID BIGINT UNSIGNED NOT NULL,
+	GBTicketCount INT,
+	SportType INT,
+	SourceCreatedDate DATETIME(3),
+	CreatedDate DATETIME,
+	PRIMARY KEY (CustID)
+);
+
+CREATE TABLE TVSVoidRequest
+(
+	ID BIGINT UNSIGNED NOT NULL,
+    TVSRequestID BIGINT UNSIGNED,
+    CustID BIGINT UNSIGNED NOT NULL,
+    TVSReasonID INT,
+	IssueTypeID TINYINT,
+    CreatedBy INT,
+    IsParlay BIT(1),
+    SportType INT,
+	RequestTypeID TINYINT COMMENT '1: PA, 2: Robot',
+    CreatedDate DATETIME,
+	InsertedTime DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3),
+    PRIMARY KEY (ID),
+    KEY IX_TVSVoidRequest_CustID_CreatedDate (CustID, CreatedDate),
+	KEY IX_TVSVoidRequest_TVSReasonID (TVSReasonID)
+);
+
+CREATE TABLE CTSRobotUser
+(
+	CustID BIGINT UNSIGNED NOT NULL,
+	CategoryID INT UNSIGNED NOT NULL,
+	Remark VARCHAR(500),
+	CreatedDate DATETIME,
+	PRIMARY KEY (CustID, CategoryID)
+);
+
+CREATE TABLE TWRobotUser
+(
+	CustID BIGINT UNSIGNED NOT NULL,
+	CategoryID INT UNSIGNED NOT NULL,
+	RobotCounter SMALLINT,
+	CreatedDate DATETIME,
+	PRIMARY KEY (CustID, CategoryID)
+);
+
+
+/*RENAME old table CustomerCategory before executing the script below*/
+CREATE TABLE CustomerCategory
+( 
+	CategoryID INT UNSIGNED NOT NULL AUTO_INCREMENT, 
+	CategoryName VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci, 
+	CategorySpec VARCHAR(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci, 
+	ParentID INT unsigned, 
+	CustomerClass SMALLINT UNSIGNED, 
+	CustomerClassName VARCHAR(50) COLLATE utf8_unicode_ci, 
+	CategoryGroupID INT UNSIGNED, 
+	CategoryPriority SMALLINT UNSIGNED,
+	CustomerClassPriority SMALLINT UNSIGNED,
+	BussinessCategoryGroupID INT UNSIGNED,
+	IsActive BIT(1) DEFAULT b'1', 
+	ScanIntervalInSecond BIGINT, 
+	ScanTaggingIntervalInSecond BIGINT, 
+	RelevantCategoryID INT UNSIGNED, 
+	IsHedgingReasonMM BIT(1), 
+	TVSReasonID INT, 
+	IsPAProbation BIT(1), 
+	IsDangerProbation BIT(1) DEFAULT 0, 
+	AFCFraudID INT, 
+	DataSource VARCHAR(50) COLLATE utf8_unicode_ci, 
+	CreatedDate DATETIME,
+	CategoryNameCN VARCHAR(50) CHARACTER SET utf8 COLLATE utf8_general_ci, 
+	CategoryNameCN3 VARCHAR(50) COLLATE utf8_unicode_ci, 
+	CategoryNameTHB VARCHAR(50) COLLATE utf8_unicode_ci, 
+	CategoryNameIND VARCHAR(50) COLLATE utf8_unicode_ci, 
+	CustomerClassNameCN VARCHAR(50) COLLATE utf8_unicode_ci, 
+	SabaSportType VARCHAR(50) COMMENT '1:Soccer or 2:Basketball', 
+	TaggingID SMALLINT,
+	TaggingType SMALLINT, 
+	RootTaggingID SMALLINT UNSIGNED,
+	ABIDangerLevel_Licensee SMALLINT UNSIGNED, 
+	ABIDangerLevel_Credit SMALLINT UNSIGNED, 
+	DangerLevelType SMALLINT, 
+	OldCategoryID INT UNSIGNED,
+	ColorTypeID TINYINT UNSIGNED,
+	Ext_CategoryGroupID INT UNSIGNED,
+	Ext_EvidenceID_Licensee SMALLINT, 
+	Ext_EvidenceID_Credit SMALLINT, 
+	Ext_SabaIntelligentRiskLevel VARCHAR(50) CHARACTER SET utf8 COLLATE utf8_unicode_ci, 
+	Ext_SabaIntelligentRiskLevelTCN VARCHAR(50) CHARACTER SET utf8 COLLATE utf8_unicode_ci, 
+	Ext_SabaIntelligentRiskLevelSCN VARCHAR(50) CHARACTER SET utf8 COLLATE utf8_unicode_ci, 
+	Ext_SabaIntelligentRiskLevelCN3 VARCHAR(50) COLLATE utf8_unicode_ci, 
+	Ext_SabaIntelligentRiskLevelTHB VARCHAR(50) COLLATE utf8_unicode_ci, 
+	Ext_SabaIntelligentRiskLevelIND VARCHAR(50) COLLATE utf8_unicode_ci, 
+	PRIMARY KEY (CategoryID), 
+	KEY IX_CustomerCategory_ParentID (ParentID), 
+	KEY IX_CustomerCategory_IsActive (IsActive),
+	KEY IX_CustomerCategory_CategoryGroupID (CategoryGroupID), 
+	KEY IX_CustomerCategory_ReasonID (IsHedgingReasonMM) 
+);

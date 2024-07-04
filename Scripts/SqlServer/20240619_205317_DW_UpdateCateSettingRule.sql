@@ -45,3 +45,45 @@ SET cbr.CategoryID 		= CASE cbr.CategoryID
 							WHEN 205 THEN 40200
 							WHEN 206 THEN 40400 END
 FROM CustomerClassification_BySport_Rule AS cbr;
+
+UPDATE cr WITH(ROWLOCK, UPDLOCK)
+SET cr.CategoryID 		= CASE cr.CategoryID 
+							WHEN 201 THEN 40100
+							WHEN 202 THEN 40300
+							WHEN 203 THEN 40500
+							WHEN 204 THEN 40600
+							WHEN 205 THEN 40200
+							WHEN 206 THEN 40400 
+							WHEN 1001 THEN 40700
+							WHEN 1002 THEN 40701 END
+,	cr.CurrentCategoryId	= CASE cr.CurrentCategoryId 
+							WHEN 201 THEN 40100
+							WHEN 202 THEN 40300
+							WHEN 203 THEN 40500
+							WHEN 204 THEN 40600
+							WHEN 205 THEN 40200
+							WHEN 206 THEN 40400 
+							WHEN 1001 THEN 40700
+							WHEN 1002 THEN 40701 END
+FROM CustomerClassification AS cr;
+
+UPDATE cr WITH(ROWLOCK, UPDLOCK)
+SET cr.CategoryID 		= CASE cr.CategoryID 
+							WHEN 201 THEN 40100
+							WHEN 202 THEN 40300
+							WHEN 203 THEN 40500
+							WHEN 204 THEN 40600
+							WHEN 205 THEN 40200
+							WHEN 206 THEN 40400
+							WHEN 1001 THEN 40700
+							WHEN 1002 THEN 40701 END
+,	cr.CurrentCategoryId	= CASE cr.CurrentCategoryId 
+							WHEN 201 THEN 40100
+							WHEN 202 THEN 40300
+							WHEN 203 THEN 40500
+							WHEN 204 THEN 40600
+							WHEN 205 THEN 40200
+							WHEN 206 THEN 40400 
+							WHEN 1001 THEN 40700
+							WHEN 1002 THEN 40701 END
+FROM CustomerClassification_bysport AS cr;
