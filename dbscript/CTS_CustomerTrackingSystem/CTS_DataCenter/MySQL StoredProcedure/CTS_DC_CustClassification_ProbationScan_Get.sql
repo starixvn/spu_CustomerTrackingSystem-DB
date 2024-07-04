@@ -89,7 +89,7 @@ sp: BEGIN
 				(	SELECT cc.CustID, cc.CategoryID, ca.CategoryGroupID, cc.LastScannedDate, cc.CreatedDate
 					FROM CTS_DataCenter.CTSCustomerClassification AS cc 
 						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
-					WHERE cc.CustID = cc.CustID
+					WHERE cc.CustID = clss.CustID
 						AND ca.IsActive = 1
 					ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
 					LIMIT 1
