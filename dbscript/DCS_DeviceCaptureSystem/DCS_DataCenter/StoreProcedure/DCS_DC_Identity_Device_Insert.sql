@@ -16,6 +16,7 @@ BEGIN
 	    Revisions:
 			- 20231123@Jonathan.Doan: Integrate FPSjs Phrase 2 [Redmine: 196656]
 			- 20240126@Jonathan.Doan: HF for case RawFingerPrintID and CookieID Null [Redmine: 200335]
+			- 20240627@Jonathan.Doan: Change data flow v5.1 [Redmine ID: #206403]
 	    Param's Explanation (filtered by):
         
         Example:
@@ -23,12 +24,9 @@ BEGIN
 	*/
     DECLARE lv_CreatedDate DATETIME DEFAULT CURRENT_TIMESTAMP;
     DECLARE lv_DeviceFingerPrintJson LONGTEXT;
-    DECLARE lv_DeviceCookieJson LONGTEXT;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_InputTrans;
 	DROP TEMPORARY TABLE IF EXISTS Temp_TransactionInfo;
-	DROP TEMPORARY TABLE IF EXISTS Temp_DistinctRawFingerPrint;
-	DROP TEMPORARY TABLE IF EXISTS Temp_DistinctCookie;
     
 	CREATE TEMPORARY TABLE Temp_InputTrans(
 		TransID		BIGINT UNSIGNED PRIMARY KEY
@@ -37,31 +35,19 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_TransactionInfo(
 			TransID					BIGINT UNSIGNED NOT NULL PRIMARY KEY
 		,	RawFingerPrintID		BIGINT UNSIGNED
-		,	CookieID				BIGINT UNSIGNED
 		,	AccountID				BIGINT UNSIGNED
 		,	BrowserInstanceID		BIGINT UNSIGNED
 		,	DeviceID				BIGINT UNSIGNED
 		,	RecoverType				TINYINT DEFAULT 0
 	);
     
-	CREATE TEMPORARY TABLE Temp_DistinctRawFingerPrint(
-			FirstRawFingerPrintID	BIGINT UNSIGNED NOT NULL PRIMARY KEY
-		,	FirstCookieID			BIGINT UNSIGNED
-	);
-    
-	CREATE TEMPORARY TABLE Temp_DistinctCookie(
-			FirstCookieID			BIGINT UNSIGNED NOT NULL PRIMARY KEY
-		,	IsNewRecord				TINYINT	DEFAULT 1
-	);
-    
     SET @sql = CONCAT("INSERT INTO Temp_InputTrans (TransID) VALUES ('", REPLACE(ip_TransIDs, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
     
-    INSERT INTO Temp_TransactionInfo(TransID, RawFingerPrintID, CookieID, AccountID, BrowserInstanceID)
+    INSERT INTO Temp_TransactionInfo(TransID, RawFingerPrintID, AccountID, BrowserInstanceID)
     SELECT	trans.TransID
 		,	IFNULL(trans.RawFingerPrintID, 0) AS RawFingerPrintID
-        ,	IFNULL(trans.CookieID, 0) AS CookieID
         ,	trans.AccountID
         ,	trans.BrowserInstanceID
     FROM Temp_InputTrans AS tmp
@@ -74,32 +60,15 @@ BEGIN
     /******* Update Temp_TransactionInfo: DeviceID & RecoverType ********************/
     CALL DCS_DC_Identity_Device_UpdateExistsDeviceID('Temp_TransactionInfo');
     
-    /* GROUP BY FPID, min CookieID */
-    INSERT INTO Temp_DistinctRawFingerPrint(FirstRawFingerPrintID, FirstCookieID)
-    SELECT	RawFingerPrintID AS FirstRawFingerPrintID
-		,	MIN(CookieID) AS FirstCookieID
-    FROM Temp_TransactionInfo
-    WHERE DeviceID IS NULL
-		AND RawFingerPrintID > 0
-		AND CookieID > 0
-    GROUP BY RawFingerPrintID;
-    
-    INSERT IGNORE INTO Temp_DistinctRawFingerPrint(FirstRawFingerPrintID, FirstCookieID)
-    SELECT	RawFingerPrintID AS FirstRawFingerPrintID
-		,	0 AS FirstCookieID
-    FROM Temp_TransactionInfo
-    WHERE DeviceID IS NULL
-		AND RawFingerPrintID > 0
-		AND CookieID = 0
-    GROUP BY RawFingerPrintID;
-    
-    
-    /* Insert into FPDevice */
+    /* INSERT INTO FPDevice */
     INSERT IGNORE INTO DCS_DataCenter.FPDevice(FirstRawFingerPrintID, FirstCookieID, CreatedDate)
-	SELECT 	FirstRawFingerPrintID
-		,	FirstCookieID
+    SELECT	DISTINCT 
+			RawFingerPrintID AS FirstRawFingerPrintID
+		,	0 AS FirstCookieID
 		,	lv_CreatedDate
-	FROM Temp_DistinctRawFingerPrint;
+    FROM Temp_TransactionInfo
+    WHERE DeviceID IS NULL
+		AND RawFingerPrintID > 0;
     
     /* Update deviceID by RawFingerPrintID */
     UPDATE Temp_TransactionInfo AS tmp
@@ -107,39 +76,11 @@ BEGIN
 	SET tmp.DeviceID = d.ID
     WHERE tmp.DeviceID IS NULL;
     
-    /* Insert into FPDevice if DeviceID IS NULL AND CookieID > 0 (Group by CookieID)*/
-    INSERT INTO Temp_DistinctCookie(FirstCookieID)
-	SELECT 	DISTINCT 
-			CookieID AS FirstCookieID
-	FROM Temp_TransactionInfo
-    WHERE DeviceID IS NULL
-		AND RawFingerPrintID = 0
-        AND CookieID > 0;
-        
-	UPDATE Temp_DistinctCookie AS tmp
-		INNER JOIN DCS_DataCenter.FPDevice AS d ON d.FirstCookieID = tmp.FirstCookieID
-    SET tmp.IsNewRecord = 0;
-    
-    INSERT IGNORE INTO DCS_DataCenter.FPDevice(FirstRawFingerPrintID, FirstCookieID, CreatedDate)
-	SELECT 	DISTINCT 
-			0 AS FirstRawFingerPrintID
-		,	FirstCookieID
-		,	lv_CreatedDate
-	FROM Temp_DistinctCookie
-    WHERE IsNewRecord = 1;
-    
-    /* Update deviceID by CookieID (DeviceID IS NULL) */
-    UPDATE Temp_TransactionInfo AS tmp
-		INNER JOIN DCS_DataCenter.FPDevice AS d ON d.FirstCookieID = tmp.CookieID AND tmp.CookieID != 0
-	SET tmp.DeviceID = d.ID
-    WHERE tmp.DeviceID IS NULL;
-
     /* === Return data === */
     SELECT 	TransID
 		,	DeviceID AS FPDeviceID
 		,	RecoverType
     FROM Temp_TransactionInfo;
-    
     
     /* === Insert new FPDeviceFingerPrint === */
     WITH cte_DistinctData AS (
@@ -147,7 +88,7 @@ BEGIN
 				RawFingerPrintID
 			,	DeviceID
 		FROM Temp_TransactionInfo
-		WHERE RecoverType in (0,2)
+		WHERE RecoverType = 0
 			AND RawFingerPrintID IS NOT NULL
     )
 	SELECT JSON_ARRAYAGG(
@@ -162,27 +103,6 @@ BEGIN
     SET lv_DeviceFingerPrintJson = IFNULL(lv_DeviceFingerPrintJson,'[{}]');
 	CALL DCS_DC_Identity_DeviceFingerPrint_Insert(lv_DeviceFingerPrintJson);
     
-    /* === Insert new DeviceCookie === */
-    WITH cte_DistinctData AS (
-		SELECT 	DISTINCT
-				CookieID
-			,	DeviceID
-		FROM Temp_TransactionInfo
-		WHERE RecoverType in (0,1)
-			AND CookieID IS NOT NULL
-    )
-	SELECT JSON_ARRAYAGG(
-			JSON_OBJECT(
-				'CookieID', CookieID,
-				'DeviceID', DeviceID
-			)
-		) AS json_data
-	INTO lv_DeviceCookieJson
-	FROM cte_DistinctData;
-    
-    SET lv_DeviceCookieJson = IFNULL(lv_DeviceCookieJson,'[{}]');
-	CALL DCS_DC_Identity_DeviceCookie_Insert(lv_DeviceCookieJson);
-
 END$$
 
 DELIMITER ;

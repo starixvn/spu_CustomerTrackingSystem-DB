@@ -15,6 +15,7 @@ BEGIN
 		 
 	    Revisions:
 			- 20231127@Jonathan.Doan: Integrate FPSjs Phrase 2 [Redmine: 196656]
+			- 20240627@Jonathan.Doan: Change data flow v5.1 [Redmine ID: #206403]
 	    Param's Explanation (filtered by):
         
         Example:
@@ -22,7 +23,6 @@ BEGIN
 	*/
     DECLARE lv_CreatedDate DATETIME DEFAULT CURRENT_TIMESTAMP;
     DECLARE lv_DeviceFingerPrintJson LONGTEXT;
-    DECLARE lv_DeviceCookieJson LONGTEXT;
     DECLARE lv_EvolvedTransactionJson LONGTEXT;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_TransactionInfo;
@@ -32,7 +32,6 @@ BEGIN
         ,	RawFingerPrintID					BIGINT UNSIGNED
         ,	RecoverRawFingerPrintID				BIGINT UNSIGNED
         ,	DeviceID							BIGINT UNSIGNED
-        ,	CookieID							BIGINT UNSIGNED
         ,	AccountID							BIGINT UNSIGNED
 	);
     
@@ -52,7 +51,6 @@ BEGIN
 	UPDATE Temp_TransactionInfo AS tmp
 		INNER JOIN DCS_DataCenter.Transaction AS trans ON trans.TransID = tmp.TransID
 	SET tmp.RawFingerPrintID 	= trans.RawFingerPrintID,
-    	tmp.CookieID 			= trans.CookieID,
     	tmp.AccountID 			= trans.AccountID;
     
     /* === Add index === */
@@ -90,26 +88,6 @@ BEGIN
     
     SET lv_DeviceFingerPrintJson = IFNULL(lv_DeviceFingerPrintJson,'[{}]');
 	CALL DCS_DC_Identity_DeviceFingerPrint_Insert(lv_DeviceFingerPrintJson);
-    
-    /* === Insert new DeviceCookie === */
-    WITH cte_DistinctData AS (
-		SELECT 	DISTINCT
-				CookieID
-			,	DeviceID
-		FROM Temp_TransactionInfo
-		WHERE CookieID IS NOT NULL
-    )   
-	SELECT JSON_ARRAYAGG(
-			JSON_OBJECT(
-				'CookieID', CookieID,
-				'DeviceID', DeviceID
-			)
-		) AS json_data
-	INTO lv_DeviceCookieJson
-	FROM cte_DistinctData;
-    
-    SET lv_DeviceCookieJson = IFNULL(lv_DeviceCookieJson,'[{}]');
-	CALL DCS_DC_Identity_DeviceCookie_Insert(lv_DeviceCookieJson);
     
     /* === Insert new EvolvedTransaction === */
     WITH cte_DistinctData AS (
