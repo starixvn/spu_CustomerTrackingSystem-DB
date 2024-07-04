@@ -73,7 +73,7 @@ BEGIN
 		,	IsDangerProbation	BIT DEFAULT 0
 		,	CustomerClass		INT
         ,	CustomerClassName  	VARCHAR(50)
-		,	ParentID			SMALLINT
+		,	ParentID			INT
 		,	TaggingType			SMALLINT
         ,	DangerLevel			INT
 		,	DangerLevelType		SMALLINT  
@@ -92,7 +92,7 @@ BEGIN
 		,	CategoryID			INT
 		,	CustomerClass		INT
         ,	CustomerClassName  	VARCHAR(50)
-		,	ParentID			SMALLINT
+		,	ParentID			INT
         ,	CategoryType		TINYINT
 		,	TaggingType			SMALLINT
         ,	DangerLevel			INT
