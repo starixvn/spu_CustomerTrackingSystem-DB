@@ -18,7 +18,8 @@ BEGIN
 			- 20220830@Long.Luu: update to show for System Detect Group Betting [Redmine ID: #176976]
             - 20230515@Casey.Huynh: New Category for Robot OCRD [Redmine ID: #186991]
 			- 20240103@Thomas.Nguyen: New Category for System Detect Unauthorized Login [RedmineID: #197710]
-            
+            - 20240626@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode CategoryID [Redmine ID: #205317]
+
 		Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DC_ProblemAccountManagement_GetCategories();
@@ -31,7 +32,6 @@ BEGIN
         ,	cat.Priority
 	FROM CTS_DataCenter.CustomerCategory AS cat
 	WHERE 	(cat.CategoryID BETWEEN 52 AND 64 OR cat.CategoryID IN (163,165))
-		AND cat.CategoryID NOT IN (56,60,61) 
 		AND cat.IsActive = 1
 	ORDER BY cat.Priority;   
 

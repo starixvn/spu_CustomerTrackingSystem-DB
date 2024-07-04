@@ -41,41 +41,41 @@ BEGIN
 	);
 
 	INSERT IGNORE INTO Temp_CategoryFilter (ID, CategoryGroup, CategoryName, CategoryIDs)
-	SELECT 	cat.BussinessCategoryGroupID AS ID
+	SELECT 	cat.BusinessCategoryGroupID AS ID
 		,	'Problem Account Category' AS CategoryGroup		    
 		,	cat.CategoryName
 		,	GROUP_CONCAT(cat.CategoryID SEPARATOR ',')  AS CategoryIDs  
 	FROM	CTS_DataCenter.CustomerCategory AS cat
-	WHERE 	cat.BussinessCategoryGroupID = CONST_BIZCATEGROUPID_PA
+	WHERE 	cat.BusinessCategoryGroupID = CONST_BIZCATEGROUPID_PA
 		AND cat.IsActive = 1
-	GROUP BY cat.CategoryName, cat.BussinessCategoryGroupID
+	GROUP BY cat.CategoryName, cat.BusinessCategoryGroupID
 	UNION
-	SELECT 	cat.BussinessCategoryGroupID AS ID
+	SELECT 	cat.BusinessCategoryGroupID AS ID
 		,	'PA Associated Category' AS CategoryGroup		    
 		,	cat.CategoryName
 		,	GROUP_CONCAT(cat.CategoryID SEPARATOR ',')  AS CategoryIDs
 	FROM	CTS_DataCenter.CustomerCategory AS cat
-	WHERE 	cat.BussinessCategoryGroupID = CONST_BIZCATEGROUPID_PAASSOCIATED
+	WHERE 	cat.BusinessCategoryGroupID = CONST_BIZCATEGROUPID_PAASSOCIATED
 		AND cat.IsActive = 1
-	GROUP BY cat.CategoryName, cat.BussinessCategoryGroupID
+	GROUP BY cat.CategoryName, cat.BusinessCategoryGroupID
 	UNION
-	SELECT	cat.BussinessCategoryGroupID AS ID
+	SELECT	cat.BusinessCategoryGroupID AS ID
 		,	'Normal Account Category' AS CategoryGroup
 		,	cat.CategoryName
 		,	GROUP_CONCAT(cat.CategoryID SEPARATOR ',')  AS CategoryIDs
 	FROM	CTS_DataCenter.CustomerCategory AS cat
-	WHERE 	cat.BussinessCategoryGroupID = CONST_BIZCATEGROUPID_NORMAL
+	WHERE 	cat.BusinessCategoryGroupID = CONST_BIZCATEGROUPID_NORMAL
 		AND cat.IsActive = 1
-	GROUP BY cat.CategoryName, cat.BussinessCategoryGroupID
+	GROUP BY cat.CategoryName, cat.BusinessCategoryGroupID
 	UNION
-	SELECT	cat.BussinessCategoryGroupID AS ID
+	SELECT	cat.BusinessCategoryGroupID AS ID
 		,	'Others' AS CategoryGroup
 		,	cat.CategoryName
 		,	GROUP_CONCAT(cat.CategoryID SEPARATOR ',')  AS CategoryIDs
 	FROM	CTS_DataCenter.CustomerCategory AS cat
-	WHERE 	cat.BussinessCategoryGroupID = CONST_BIZCATEGROUPID_OTHERS
+	WHERE 	cat.BusinessCategoryGroupID = CONST_BIZCATEGROUPID_OTHERS
 		AND cat.IsActive = 1
-	GROUP BY cat.CategoryName, cat.BussinessCategoryGroupID
+	GROUP BY cat.CategoryName, cat.BusinessCategoryGroupID
 	UNION
 	SELECT CONST_BIZCATEGROUPID_OTHERS AS ID
 		,	'Others'  AS CategoryGroup

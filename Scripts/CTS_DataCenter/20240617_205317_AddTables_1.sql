@@ -93,7 +93,7 @@ CREATE TABLE CustomerCategory
 	CategoryGroupID INT UNSIGNED, 
 	CategoryPriority SMALLINT UNSIGNED,
 	CustomerClassPriority SMALLINT UNSIGNED,
-	BussinessCategoryGroupID INT UNSIGNED,
+	BusinessCategoryGroupID INT UNSIGNED,
 	IsActive BIT(1) DEFAULT b'1', 
 	ScanIntervalInSecond BIGINT, 
 	ScanTaggingIntervalInSecond BIGINT, 
