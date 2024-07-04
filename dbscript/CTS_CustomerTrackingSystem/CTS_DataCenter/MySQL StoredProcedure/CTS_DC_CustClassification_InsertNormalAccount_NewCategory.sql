@@ -43,7 +43,7 @@ BEGIN
 			CustID			INT PRIMARY KEY
 		,	IsInternal		BOOLEAN
         ,	SiteID			INT
-        ,	CategoryID		SMALLINT DEFAULT NULL
+        ,	CategoryID		INT DEFAULT NULL
         ,	CustomerClass	SMALLINT
         ,	INDEX			IX_Temp_Customer_CategoryID(CategoryID)
 	);
@@ -52,7 +52,7 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_CustomerHistory(
 			CustID			INT PRIMARY KEY
 		,	CustomerClass	SMALLINT NOT NULL
-        ,   CategoryID		SMALLINT NOT NULL
+        ,   CategoryID		INT NOT NULL
 	);
     
     #=====================================================   
