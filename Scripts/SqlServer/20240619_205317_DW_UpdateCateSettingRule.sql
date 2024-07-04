@@ -17,7 +17,7 @@ SET cr.CategoryID 		= CASE cr.CategoryID
 							WHEN 203 THEN 40500
 							WHEN 204 THEN 40600
 							WHEN 205 THEN 40200
-							WHEN 206 THEN 40400 END
+							WHEN 206 THEN 40400 ELSE cr.CategoryID END
 ,	cr.CurrentCategory	= CASE cr.CurrentCategory 
 							WHEN 201 THEN 40100
 							WHEN 202 THEN 40300
@@ -26,7 +26,7 @@ SET cr.CategoryID 		= CASE cr.CategoryID
 							WHEN 205 THEN 40200
 							WHEN 206 THEN 40400 
 							WHEN 1001 THEN 40700
-							WHEN 1002 THEN 40701 END
+							WHEN 1002 THEN 40701 ELSE cr.CurrentCategory END
 FROM CustomerClassification_Rule AS cr;
 
 UPDATE cbr WITH(ROWLOCK, UPDLOCK)
@@ -36,14 +36,14 @@ SET cbr.CategoryID 		= CASE cbr.CategoryID
 							WHEN 203 THEN 40500
 							WHEN 204 THEN 40600
 							WHEN 205 THEN 40200
-							WHEN 206 THEN 40400 END
+							WHEN 206 THEN 40400 ELSE cbr.CategoryID END
 ,	cbr.CurrentCategory = CASE cbr.CurrentCategory 
 							WHEN 201 THEN 40100
 							WHEN 202 THEN 40300
 							WHEN 203 THEN 40500
 							WHEN 204 THEN 40600
 							WHEN 205 THEN 40200
-							WHEN 206 THEN 40400 END
+							WHEN 206 THEN 40400 ELSE cbr.CurrentCategory END
 FROM CustomerClassification_BySport_Rule AS cbr;
 
 UPDATE cr WITH(ROWLOCK, UPDLOCK)
@@ -55,7 +55,7 @@ SET cr.CategoryID 		= CASE cr.CategoryID
 							WHEN 205 THEN 40200
 							WHEN 206 THEN 40400 
 							WHEN 1001 THEN 40700
-							WHEN 1002 THEN 40701 END
+							WHEN 1002 THEN 40701 ELSE cr.CategoryID END
 ,	cr.CurrentCategoryId	= CASE cr.CurrentCategoryId 
 							WHEN 201 THEN 40100
 							WHEN 202 THEN 40300
@@ -64,7 +64,7 @@ SET cr.CategoryID 		= CASE cr.CategoryID
 							WHEN 205 THEN 40200
 							WHEN 206 THEN 40400 
 							WHEN 1001 THEN 40700
-							WHEN 1002 THEN 40701 END
+							WHEN 1002 THEN 40701 ELSE cr.CurrentCategoryId END
 FROM CustomerClassification AS cr;
 
 UPDATE cr WITH(ROWLOCK, UPDLOCK)
@@ -76,7 +76,7 @@ SET cr.CategoryID 		= CASE cr.CategoryID
 							WHEN 205 THEN 40200
 							WHEN 206 THEN 40400
 							WHEN 1001 THEN 40700
-							WHEN 1002 THEN 40701 END
+							WHEN 1002 THEN 40701 ELSE cr.CategoryID END
 ,	cr.CurrentCategoryId	= CASE cr.CurrentCategoryId 
 							WHEN 201 THEN 40100
 							WHEN 202 THEN 40300
@@ -85,5 +85,5 @@ SET cr.CategoryID 		= CASE cr.CategoryID
 							WHEN 205 THEN 40200
 							WHEN 206 THEN 40400 
 							WHEN 1001 THEN 40700
-							WHEN 1002 THEN 40701 END
+							WHEN 1002 THEN 40701 ELSE cr.CurrentCategoryId END
 FROM CustomerClassification_bysport AS cr;
