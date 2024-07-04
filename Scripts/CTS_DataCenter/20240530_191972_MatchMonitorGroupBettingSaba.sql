@@ -1,7 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
 /*
-Creator:	20231114@Casey.Huynh
-Task:	 	Match Monitor Enhance Match Monitor Group Betting Rule
+Creator:	20240530@Casey.Huynh
+Task:	 	Match Monitor Group Betting Saba
 Server:  	Master
 DBName:		CTS_DataCenter
 
