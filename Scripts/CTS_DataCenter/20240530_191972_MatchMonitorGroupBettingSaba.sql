@@ -117,4 +117,4 @@ VALUE	(162,'MatchMonitor_GBSabaLive_LastSequenceID', NULL,'BIGINT UNSIGNED',0)
 #=================Initial Rule Setting============================================
 
 INSERT INTO MatchMonitorRuleSetting(RuleGroupID, RuleGroupDesc, Reason, LeagueGroupID, SportType, ReasonName, SportName, TimeStep, TotalStake, HighStake, ModifiedDate, Comments)
-VALUES	(6, 'Group Betting Saba Detect', 0, 42, 1, 'Group Betting', NULL, 60, 500, NULL, NOW(), 'Time Step In Seconds');
+VALUES	(6, 'Group Betting Saba Detect', 0, 42, 1, 'Group Betting', 'Soccer', 60, 500, NULL, NOW(), 'Time Step In Seconds');
