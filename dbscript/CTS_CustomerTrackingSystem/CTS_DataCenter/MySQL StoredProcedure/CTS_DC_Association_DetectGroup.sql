@@ -33,7 +33,7 @@ BEGIN
             - 20221205@Aries.Nguyen: Re-arrange type options on Association Detection  [Redmine ID: #181207]
 			- 20231116@Thomas.Nguyen: Return more Log Transaction info on Association Detection  [Redmine ID: #196362]
 			- 20240425@Thomas.Nguyen: Classify Initial Group Betting - Add SportGroupID = 150 [Redmine ID: #200854]
-			- 20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode ParentID [Redmine ID: #205317]
+			- 20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode ParentID and return ColorTypeID [Redmine ID: #205317]
 
 		Param's Explanation (filtered by):
 
@@ -552,7 +552,7 @@ BEGIN
         ,	TRIM(GROUP_CONCAT(DISTINCT cat.CategoryID)) AS CategoryIDs
         ,	TRIM(GROUP_CONCAT(DISTINCT cat.ParentID)) AS ParentIDs
         ,   MAX(cat.IsPAProbation) AS IsPAProbation
-        
+        ,	TRIM(GROUP_CONCAT(DISTINCT cat.ColorTypeID)) AS ColorTypeIDs
         ,	cusclss.CustomerClass
         ,	cusclss.CategoryType
         ,	cti.CountBotTrans AS BotTransSum
