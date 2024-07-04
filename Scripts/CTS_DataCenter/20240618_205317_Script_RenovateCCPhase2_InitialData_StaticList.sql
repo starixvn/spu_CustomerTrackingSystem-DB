@@ -10,6 +10,10 @@ Revisions:
 Reviewer:
 */
 
+USE CTS_DataCenter;
+
+DELETE FROM StaticList WHERE ListID = 6;
+
 SET @CURRENTDATE := NOW();
 
 INSERT INTO StaticList (ListID, ItemID, ListName, ListNameDisplay, ItemName, ItemNameDisplay, ItemParentItemID, ItemDefaultValue, ItemValue, PriorityOrder, Status, Description, CreatedDate)
