@@ -163,7 +163,7 @@ sp: BEGIN
     SELECT 	tmp.CTSCustID
 		,	tmp.CustID
         ,	class.CategoryID
-        ,	CASE WHEN class.CategoryGroupID IN (CONST_CATEGROUPID_INFOBET, CONST_CATEGROUPID_INFOBETLOSING) THEN CONST_CATEID_INFOBET
+        ,	CASE WHEN cate.CategoryGroupID IN (CONST_CATEGROUPID_INFOBET, CONST_CATEGROUPID_INFOBETLOSING) THEN CONST_CATEID_INFOBET
 				 WHEN cate.IsDangerProbation = 1 THEN cate.RelevantCategoryID
 				 ELSE class.CategoryID END AS CategoryIDSource
         ,	cate.CategoryGroupID 
