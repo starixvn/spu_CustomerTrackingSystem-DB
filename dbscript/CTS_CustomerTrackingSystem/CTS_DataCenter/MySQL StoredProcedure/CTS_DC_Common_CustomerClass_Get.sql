@@ -29,10 +29,12 @@ BEGIN
 	DECLARE	CONST_PARENTID_PA 					INT;
 	DECLARE	CONST_PARENTID_POTENTIALPA 			INT;
 	DECLARE	CONST_PARENTID_NORMAL 				INT;
+	DECLARE CONST_CATEGROUPID_INACTIVE			INT;
 
 	SET CONST_PARENTID_PA 				    = CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
     SET CONST_PARENTID_POTENTIALPA 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
 	SET CONST_PARENTID_NORMAL 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
+	SET CONST_CATEGROUPID_INACTIVE 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_INACTIVE');
 
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerClass;
     CREATE TEMPORARY TABLE Temp_CustomerClass(
@@ -53,7 +55,7 @@ BEGIN
 	WHERE 	cat.ParentID = CONST_PARENTID_PA
 		AND cat.IsActive = 1
         AND cat.CustomerClass IS NOT NULL
-	GROUP BY cat.CustomerClass, cat.CategoryGroup;
+	GROUP BY cat.CustomerClass, cat.CategoryGroupID;
     
 	INSERT IGNORE INTO Temp_CustomerClass (CustomerClassGroup, CustomerClass, CategoryIDs)
     SELECT 	CONST_GROUPNAME_NORMAL AS CustomerClassGroup		    
@@ -63,17 +65,16 @@ BEGIN
 	WHERE 	cat.ParentID = CONST_PARENTID_POTENTIALPA
 		AND cat.IsActive = 1
         AND cat.CustomerClass IS NOT NULL
-	GROUP BY cat.CustomerClass, cat.CategoryGroup;
+	GROUP BY cat.CustomerClass, cat.CategoryGroupID;
 
 	INSERT IGNORE INTO Temp_CustomerClass (CustomerClassGroup, CustomerClass, CategoryIDs)
-	SELECT	(CASE WHEN ttc.TaggingType =1 THEN CONST_GROUPNAME_ASSOCIATEDPA 
-				 WHEN cat.CategoryGroup = 1000 THEN CONST_GROUPNAME_OTHERS 
+	SELECT	(CASE WHEN cat.TaggingType =1 THEN CONST_GROUPNAME_ASSOCIATEDPA 
+				 WHEN cat.CategoryGroupID = CONST_CATEGROUPID_INACTIVE THEN CONST_GROUPNAME_OTHERS 
                  ELSE CONST_GROUPNAME_NORMAL 
 			END) AS CustomerClassGroup
 		,	cat.CustomerClass
 		,	cat.CategoryID AS CategoryIDs
 	FROM	CTS_DataCenter.CustomerCategory AS cat
-		LEFT JOIN CTS_DataCenter.TaggingToCategory AS ttc ON ttc.CategoryID = cat.CategoryID	
 	WHERE 	cat.ParentID = CONST_PARENTID_NORMAL
 		AND cat.IsActive = 1
         AND cat.CustomerClass IS NOT NULL;
