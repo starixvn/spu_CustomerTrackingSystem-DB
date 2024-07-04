@@ -35,6 +35,7 @@ sp: BEGIN
             -	20240509@Casey.Huynh: 	HF Hedging StepTime [Redmine ID: #204338]
             -	20240617@Casey.Huynh:	Update Data Type [Redmine ID: #206564]
             -	20240724@Casey.Huynh:	Enhance Rule [Redmine ID: #207523]
+	    - 	20240703@Victoria.Le	Renovate CC Phase2 [Redmine ID: #205317]
 			
 		Param's Explanation (filtered by):	
 		Example:
@@ -46,12 +47,15 @@ sp: BEGIN
 	DECLARE CONST_SUBSCRIBERID_MAXBET	INT DEFAULT 169;
     DECLARE CONST_MMRULEGROUP_HEDGING	INT DEFAULT 3;
     DECLARE CONST_MMREASON_HEDGING		INT DEFAULT 1;
+	DECLARE CONST_PARENTID_PA 			INT;
 
 	DECLARE lv_RuleTimeStep 				SMALLINT;
 	DECLARE lv_RuleTotalStake 			DECIMAL(20,4);
 	DECLARE lv_CustIDList 				LONGTEXT;
 	DECLARE lv_IsHedging 				BOOLEAN;
 	DECLARE lv_GroupID 					INT; 
+	
+	SET CONST_PARENTID_PA 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
 
     #==================LOG=======================================================
     DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleHedging_Process';
@@ -84,7 +88,15 @@ sp: BEGIN
     CREATE TEMPORARY TABLE Temp_Trans2(
 			GroupID			INT
 		,	OrderNum		INT
+        ,	SequenceID		BIGINT
         ,	TransDateToSecond BIGINT
+        ,	TransID			BIGINT
+        ,	CustID			BIGINT
+        ,	CTSCustID		BIGINT
+        ,	SubscriberID	INT
+        ,	Stake			DECIMAL(20,4)
+		,	IsHedging		BOOLEAN
+        ,	OldGroupID		INT
         
         ,	PRIMARY KEY PK_Temp_Trans_GroupID_OrderNum(GroupID, OrderNum)
     );
@@ -161,7 +173,15 @@ sp: BEGIN
 		INSERT INTO Temp_Trans2(GroupID, OrderNum, TransDateToSecond)
 		SELECT tmpTs.GroupID
 			,	tmpTs.OrderNum
+            ,	tmpTs.SequenceID
             ,	tmpTs.TransDateToSecond
+            ,	tmpTs.TransID
+            ,	tmpTs.CustID
+            ,	tmpTs.CTSCustID
+            ,	tmpTs.SubscriberID
+            ,	tmpTs.Stake
+            ,	tmpTs.IsHedging
+            ,	tmpTs.OldGroupID
 		FROM Temp_Trans AS tmpTs;
 
         SET @n=0;
@@ -204,10 +224,18 @@ sp: BEGIN
 			INNER JOIN Temp_SequenceID AS tmpSq ON tmpSq.SequenceID = mms.SequenceID
 			INNER JOIN Temp_CustGroup AS tmpCg ON tmpCg.CustID = mms.CustID;
             
-		INSERT INTO Temp_Trans2(GroupID, OrderNum, TransDateToSecond)
+		INSERT INTO Temp_Trans2(GroupID, OrderNum, SequenceID,TransDateToSecond,TransID,CustID,CTSCustID,SubscriberID,Stake,IsHedging,OldGroupID)
 		SELECT tmpTs.GroupID
 			,	tmpTs.OrderNum
+            ,	tmpTs.SequenceID
             ,	tmpTs.TransDateToSecond
+            ,	tmpTs.TransID
+            ,	tmpTs.CustID
+            ,	tmpTs.CTSCustID
+            ,	tmpTs.SubscriberID
+            ,	tmpTs.Stake
+            ,	tmpTs.IsHedging
+            ,	tmpTs.OldGroupID
 		FROM Temp_Trans AS tmpTs;
 
         SET @n=0;
@@ -271,8 +299,8 @@ sp: BEGIN
 		INTO lv_IsHedging
 		FROM Temp_Cust AS tmpCus 
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cla ON cla.CustID = tmpCus.CustID
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID
-		WHERE cla.SportGroupID = 0
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
+		WHERE cla.ParentID = CONST_PARENTID_PA
 		AND cc.IsHedgingReasonMM = 1
 		LIMIT 1;
    

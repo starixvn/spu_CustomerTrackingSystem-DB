@@ -125,14 +125,10 @@ BEGIN
 		LEFT JOIN CTSCustomerClassification_History AS cls ON tmp.CustID = cls.CustID
 	WHERE cls.CustID IS NULL;
     
-	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, ParentID, CategoryID, TurnoverRM, WinlossRM, BetCount, ActiveDays, TargetCC, SourceTypeID, OldCategoryID, DWCategoryID, IsDataChanged, ActionType, IsAuto, LastModifiedDate, LastModifiedBy, InsertDate, TaggingType, TWGroupBettingRate, TWTicketRejectRate, TWBetCount, TWDesktopUsageRate)
+	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, ParentID, CategoryID, TargetCC, SourceTypeID, OldCategoryID, DWCategoryID, IsDataChanged, ActionType, IsAuto, LastModifiedDate, LastModifiedBy, InsertDate)
 	SELECT	tmp.CustID					AS CustID
 		,	CONST_PARENTID_NORMAL		AS ParentID
 		,	tmp.CategoryID				AS CategoryID
-		,	0	AS TurnoverRM
-		,	0	AS WinlossRM
-		,	0	AS BetCount
-		,	0	AS ActiveDays
 		,	tmp.CustomerClass			AS TargetCC
 		,	1	AS SourceTypeID
 		,	tmp.CategoryID				AS OldCategoryID
@@ -142,23 +138,14 @@ BEGIN
 		,	1	AS IsAuto
 		,	lv_CurrentDateTime			AS LastModifiedDate
 		,	CONST_CREATEDBY				AS LastModifiedBy
-		,	lv_CurrentDateTime			AS InsertDate
-		,	0	AS TaggingType
-		,	0	AS TWGroupBettingRate
-		,	0	AS TWTicketRejectRate
-		,	0	AS TWDesktopUsageRate
-		,	0	AS TWBetCount
+		,	DATE(lv_CurrentDateTime)	AS InsertDate
 	FROM 	Temp_CustomerHistory AS tmp;
 
     /* 3: WRITE CTSCustomerClassification_Log(TRACE DATA) */
-	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, ParentID, CategoryID, TurnoverRM, WinlossRM, BetCount, ActiveDays, TargetCC, SourceTypeID, OldCategoryID, DWCategoryID, IsDataChanged, ActionType, IsAuto, LastModifiedDate, LastModifiedBy, InsertDate, TaggingType, TWGroupBettingRate, TWTicketRejectRate, TWBetCount, TWDesktopUsageRate)
+	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, ParentID, CategoryID, TargetCC, SourceTypeID, OldCategoryID, DWCategoryID, IsDataChanged, ActionType, IsAuto, LastModifiedDate, LastModifiedBy, InsertDate)
 	SELECT	tmp.CustID					AS CustID
 		,	CONST_PARENTID_NORMAL		AS ParentID
 		,	tmp.CategoryID				AS CategoryID
-		,	0	AS TurnoverRM
-		,	0	AS WinlossRM
-		,	0	AS BetCount
-		,	0	AS ActiveDays
 		,	tmp.CustomerClass			AS TargetCC
 		,	1	AS SourceTypeID
 		,	tmp.CategoryID				AS OldCategoryID
@@ -168,12 +155,7 @@ BEGIN
 		,	1	AS IsAuto
 		,	lv_CurrentDateTime			AS LastModifiedDate
 		,	CONST_CREATEDBY				AS LastModifiedBy
-		,	lv_CurrentDateTime			AS InsertDate
-		,	0	AS TaggingType
-		,	0	AS TWGroupBettingRate
-		,	0	AS TWTicketRejectRate
-		,	0	AS TWBetCount
-		,	0	AS TWDesktopUsageRate
+		,	DATE(lv_CurrentDateTime)	AS InsertDate
 	FROM 	Temp_Customer AS tmp;
     
 END$$

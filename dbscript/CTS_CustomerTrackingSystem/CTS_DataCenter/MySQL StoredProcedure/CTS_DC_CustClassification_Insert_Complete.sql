@@ -140,7 +140,7 @@ BEGIN
 			, 	temp.TWTicketRejectRate
 			, 	temp.TWDesktopUsageRate
 			, 	1 AS IsAuto
-			, 	DATE(lv_CurrentDateTime)
+			, 	DATE(lv_CurrentDateTime) AS InsertDate
 			,	temp.TargetCC 
 			,   temp.SourceTypeID
 			, 	temp.OldCategoryID 
@@ -206,11 +206,11 @@ BEGIN
 			, 	temp.RoleID
 			, 	temp.NewCategoryGroupID AS CategoryID
 			, 	temp.ParentID
-			, 	NOW()
+			, 	lv_CurrentDateTime AS CreatedDate
 			, 	temp.CreatedBy
-			, 	IFNULL(temp.LastModifiedDate, NOW()) AS LastModifiedDate
+			, 	IFNULL(temp.LastModifiedDate, lv_CurrentDateTime) AS LastModifiedDate
 			, 	temp.CreatedBy AS LastModifiedBy
-			, 	NOW() AS LastScannedDate
+			, 	DATE(lv_CurrentDateTime) AS LastScannedDate
 			,	temp.IsMarkedDirectly
 			,	temp.Remark
 			,	temp.IsFromCTS
@@ -235,7 +235,7 @@ BEGIN
 			, 	NOW() AS LastModifiedDate
 			, 	temp.CreatedBy AS LastModifiedBy
 			, 	temp.ActionType
-			, 	NOW() AS InsertDate
+			, 	DATE(lv_CurrentDateTime) AS InsertDate
 			, 	temp.TargetCC
 			, 	(CASE	WHEN ccs.CategoryID IS NOT NULL THEN ccs.RemarkTemplateID
 						WHEN temp.MatchID IS NOT NULL OR ccs.CategoryID IS NOT NULL THEN ccs.RemarkTemplateID
@@ -270,11 +270,11 @@ BEGIN
 			,	temp.CTSCustID
 			,	temp.NewCategoryID
 			,	temp.ParentID
-			,	IFNULL(temp.LastModifiedDate,NOW())
+			,	IFNULL(temp.LastModifiedDate,lv_CurrentDateTime)
 			,	temp.CreatedBy AS LastModifiedBy
 			,	temp.ActionType
 			,	1 AS IsAuto 
-			,	NOW() AS InsertDate
+			,	DATE(lv_CurrentDateTime) AS InsertDate
 			,	temp.TargetCC
 			, 	(CASE	WHEN ccs.CategoryID IS NOT NULL THEN ccs.RemarkTemplateID
 						WHEN temp.MatchID IS NOT NULL OR ccs.CategoryID IS NOT NULL THEN ccs.RemarkTemplateID

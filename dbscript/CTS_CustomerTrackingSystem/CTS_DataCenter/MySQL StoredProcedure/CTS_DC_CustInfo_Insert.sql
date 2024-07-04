@@ -42,7 +42,8 @@ BEGIN
             - 20231024@Long.Luu: Add Agent HITRM & WINRM as internal account [Redmine ID: #195355]
 			- 20231024@Jonas.Huynh: HF wrong reactivated category [Redmine ID: #193050]
 			- 20231207@Long.Luu: 	Add Agent M999RM00 as internal account [Redmine ID: #197915]
-            
+			- 20240703@Victoria.Le	Renovate CC Phase2 [Redmine ID: #205317]
+            - 20240703@Victoria.Le	Renovate CC Phase2 [Redmine ID: #205317]
 		Param's Explanation (filtered by):
 		Example:
 			 CALL CTS_DataCenter.CTS_DC_CustInfo_Insert('[
@@ -52,7 +53,6 @@ BEGIN
 	
     */
 	DECLARE lv_LastArchiveID 	BIGINT UNSIGNED;
-    DECLARE	lv_CustIDList		TEXT;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomer;    
 	CREATE TEMPORARY TABLE Temp_CTSCustomer( 	  
@@ -309,7 +309,7 @@ BEGIN
         AND tmpCus.CustSubID = 0;    
    
 	CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount_NewCategory('Temp_CustNewCategory', ip_IsNewCustomer);
-    
+   
     #=====INSERT NEW CUSTOMER=====================================
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomer(SubscriberID, CustID, CustSubID, UserName, UserName2, SiteID, Site, RoleID, Currency, CurrencyID
 			, SRecommend, MRecommend, Recommend, CreatedDate , RegisterName , CustStatusID , Danger1 ,Danger2 , Danger3 , Danger4 , Danger5, DangerSabaSc, DangerSabaBkb , InsertedTime , ModifiedTime, IsLicensee, IsInternal)
@@ -352,27 +352,19 @@ BEGIN
 		,	cus.RoleID
     	,	cus.CustSubID
     FROM	Temp_CTSCustomer AS tmpCus
-		INNER JOIN 	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID AND tmpCus.CustSubID = cus.CustSubID;   
-	
-	IF lv_CustIDList IS NOT NULL THEN
-		CALL CTS_DataCenter.CTS_DC_CustClassification_UpdateCustInfo(lv_CustIDList);
-    END IF;
-    
+		INNER JOIN 	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID AND tmpCus.CustSubID = cus.CustSubID; 
+		
 	#=====UPDATE CTSCustomerClassification====================
     UPDATE CTS_DataCenter.CTSCustomerClassification AS cc
     INNER JOIN Temp_Result AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= cc.CustID
     SET		cc.CTSCustID = tmpCus.CTSCustID
-		,	cc.SubscriberID = tmpCus.SubscriberID;
+		,	cc.SubscriberID = tmpCus.SubscriberID
+		,	cc.RoleID = tmpCus.RoleID;
             
 	#=====UPDATE CTSCustomerClassification_History====================
     UPDATE CTS_DataCenter.CTSCustomerClassification_History AS ch
     INNER JOIN Temp_Result AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= ch.CustID
     SET	ch.CTSCustID = tmpCus.CTSCustID;
-	
-    #=====UPDATE ProbationAccountMonitor====================
-    UPDATE CTS_DataCenter.ProbationAccountMonitor AS pa
-    INNER JOIN Temp_Result AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= pa.CustID
-    SET	pa.CTSCustID = tmpCus.CTSCustID;
 
 	SELECT	CTSCustID
 		,	SubscriberID
