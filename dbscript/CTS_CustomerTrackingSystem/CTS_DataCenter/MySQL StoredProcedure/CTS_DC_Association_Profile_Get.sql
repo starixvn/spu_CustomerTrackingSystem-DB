@@ -396,7 +396,7 @@ sp : BEGIN
 		WHERE cate.CTSCustID IS NULL;
     END IF;
     
-    INSERT IGNORE INTO Temp_Classification(CTSCustID, ParentID, CategoryIDs, ColorTypeIDs, CategoryNames,IsPAProbation)
+    INSERT IGNORE INTO Temp_Classification(CTSCustID, ParentID, CategoryIDs, CategoryNames, ColorTypeIDs, IsPAProbation)
 	SELECT	tmpAcc.CTSCustID
 		,	cc.ParentID -- Each Customer has only 1 ParentID
 		,	GROUP_CONCAT(DISTINCT cate.CategoryID SEPARATOR ',') 
