@@ -49,16 +49,16 @@ sp: BEGIN
     DECLARE CONST_MMREASON_HEDGING		INT DEFAULT 1;
 	DECLARE CONST_PARENTID_PA 			INT;
 
-	DECLARE lv_RuleTimeStep 				SMALLINT;
+	DECLARE lv_RuleTimeStep 			SMALLINT;
 	DECLARE lv_RuleTotalStake 			DECIMAL(20,4);
 	DECLARE lv_CustIDList 				LONGTEXT;
 	DECLARE lv_IsHedging 				BOOLEAN;
 	DECLARE lv_GroupID 					INT; 
-	
+	DECLARE lv_SPName 					VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleHedging_Process';
+    
 	SET CONST_PARENTID_PA 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
 
     #==================LOG=======================================================
-    DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleHedging_Process';
     IF CONST_LOG = 1 THEN     
 		INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
 		SELECT lv_SPName, CURRENT_TIMESTAMP(), CONCAT('@ip_LiveIndicator:=',ip_LiveIndicator,',@ip_MatchID:=',ip_MatchID
