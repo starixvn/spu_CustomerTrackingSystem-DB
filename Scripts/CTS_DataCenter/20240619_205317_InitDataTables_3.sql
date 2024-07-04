@@ -144,7 +144,7 @@ VALUES
 (40701,'Smart (inactive)','Pro Punter Inactive',902,'Dangerous -',40000,40700,1000,1000,40,1,Null,Null,Null,Null,Null,Null,0,0,Null,Null,'2021/07/19 05:13:45','不活跃精明玩家','Thông minh (không hoạt động)','สมาร์ท (ไม่ทำงาน)','Pintar (tidak berfungsi)','危險-',Null,Null,0,Null,Null,1,1002,Null,Null,Null,'Dangerous','危險','危险','Nguy hiểm','อันตราย','Berbahaya',2);
 
 INSERT INTO CustomerCategorySettings(CategoryID,CategoryGroupID,ParentID,IsParallelParentID,IsMultiCateIDSameParentID,IsKeepOldCateID,RemarkTemplateID)
-VALUES(1010,1010,1000,1,0,0),
+VALUES(1010,1010,1000,1,0,0,NULL),
 (10100,10100,10000,1,1,1,NULL),
 (10200,10200,10000,1,1,1,NULL),
 (10201,10200,10000,1,1,1,NULL),
