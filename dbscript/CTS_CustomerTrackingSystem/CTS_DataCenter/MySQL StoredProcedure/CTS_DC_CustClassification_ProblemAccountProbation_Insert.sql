@@ -31,27 +31,17 @@ BEGIN
 		Param's Explanation (filtered by):      
 			- CALL CTS_DC_CustClassification_ProblemAccountProbation_Insert ('[{"CustID": 123,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10}]');
 	*/ 
-    DECLARE	CONST_CATEGORYID_ROBOTUSER 				INT DEFAULT 163;
-    DECLARE	CONST_CATEGORYID_ROBOTUSER_LOSING 		INT DEFAULT 164;
-    DECLARE	CONST_CATEGORYID_ROBOTOCRD 				INT DEFAULT 165;
-    DECLARE	CONST_CATEGORYID_ROBOTOCRD_LOSING 		INT DEFAULT 166;
-    DECLARE	CONST_CATEGORYID_UNAUTHORIZEDLOGIN 		    INT DEFAULT 64;
-    DECLARE	CONST_CATEGORYID_UNAUTHORIZEDLOGIN_LOSING	INT DEFAULT 104;
-    DECLARE	CONST_CATEGORYID_EARLYWARNINGMEMBER	 	INT DEFAULT 65;
-	DECLARE	CONST_CATEGORYID_EARLYWARNINGMEMBER_LOSING	INT DEFAULT 105;
-    
+	DECLARE CONST_CATEID_VVIP 					INT;
+	DECLARE CONST_CATEID_LICVIPSUSPICIOUS 		INT;
+	DECLARE CONST_CATEID_LICVIPDANGEROUS 		INT;
+	DECLARE CONST_CATEID_LICBA 					INT;
+	
+	DECLARE CONST_PARENTID_POTENTIALPA			INT;
+	DECLARE CONST_PARENTID_WRAPPER 				INT;
+	-- ---------------------------------------------------------------
     DECLARE	CONST_ACTIONTYPE_UPDATE 			INT DEFAULT 1;
     DECLARE CONST_SOURCETYPE_PROBLEMDIRECT		INT DEFAULT 31;
     DECLARE CONST_SOURCETYPE_PROBLEMAFFECT		INT DEFAULT 32;
-    DECLARE CONST_SOURCETYPE_RESCANROBOT		INT DEFAULT 36;
-    DECLARE CONST_SOURCETYPE_RESCAN_UNAUTHORIZEDLOGIN		INT DEFAULT 39;
-    
-    DECLARE	CONST_LICBACATEGORY					INT DEFAULT 2;
-    DECLARE	CONST_LICVIP_DANGEROUSCATEGORY		INT DEFAULT 3;
-    DECLARE	CONST_LICVIP_SUSPICIOUSCATEGORY		INT DEFAULT 4;    
-    DECLARE	CONST_VVIPCATEGORY					INT DEFAULT 210;   
-    DECLARE CONST_SPORTGROUP_WRAPPER			INT DEFAULT 100;
-    DECLARE	CONST_PARENTID_POTENTIALPA			INT DEFAULT 150;
     
 	DECLARE lv_CreatedBy 						INT DEFAULT 10278938;
     DECLARE lv_CurrentDateTime 					DATETIME DEFAULT CURRENT_TIME(); 
@@ -59,6 +49,14 @@ BEGIN
     DECLARE lv_LicBAPriority					SMALLINT UNSIGNED;
     DECLARE lv_LicVIPCC_Danger					SMALLINT UNSIGNED;
     DECLARE lv_LicVIPCC_Suspicious				SMALLINT UNSIGNED;
+   -- ---------------------------------------------------------------
+	SET CONST_CATEID_VVIP 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
+	SET CONST_CATEID_LICVIPSUSPICIOUS 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPSUSPICIOUS');
+	SET CONST_CATEID_LICVIPDANGEROUS 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPDANGEROUS');
+	SET CONST_CATEID_LICBA 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICBA');
+	
+	SET CONST_PARENTID_WRAPPER 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
+	SET CONST_PARENTID_POTENTIALPA				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
    
 	DROP TEMPORARY TABLE IF EXISTS Temp_PA;    
 	CREATE TEMPORARY TABLE Temp_PA(	  
@@ -76,7 +74,7 @@ BEGIN
         ,	WinlossRM				DECIMAL(20,4)
         , 	BetCount				BIGINT 
         , 	ActiveDays				BIT(1) 
-        ,	IsDirect				BIT(1)
+        ,	IsMarkedDirectly		BIT(1)
         ,	IsLicenseeVIP			BIT(1)
         ,	IsLicenseeBA			BIT(1)
         , 	IsDataChanged			BIT(1)
@@ -87,7 +85,7 @@ BEGIN
     /* INIT */    
     SELECT CustomerClass, Priority 
     INTO lv_LicBACC, lv_LicBAPriority
-    FROM CustomerCategory WHERE CategoryID = CONST_LICBACATEGORY;
+    FROM CustomerCategory WHERE CategoryID = CONST_CATEID_LICBA;
     
     SELECT CustomerClass
     INTO lv_LicVIPCC_Danger
@@ -95,10 +93,12 @@ BEGIN
     
     SELECT CustomerClass
     INTO lv_LicVIPCC_Suspicious
-    FROM CustomerCategory WHERE CategoryID = CONST_LICVIP_SUSPICIOUSCATEGORY;    
+    FROM CustomerCategory WHERE CategoryID = CONST_CATEID_LICVIPSUSPICIOUS;    
     
     /* START */
-    INSERT IGNORE INTO Temp_PA(CustID, CTSCustID, CategoryID, RelevantCategoryID, ParentID,TargetCC,TargetDangerLevel1, IsDangerProbation, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsDirect,IsLicenseeVIP,IsLicenseeBA, IsDataChanged, Remark)
+    INSERT IGNORE INTO Temp_PA(
+			CustID, CTSCustID, CategoryID, RelevantCategoryID, ParentID,TargetCC,TargetCCName,TargetDangerLevel1, IsDangerProbation
+		, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsMarkedDirectly,IsLicenseeVIP,IsLicenseeBA, IsDataChanged, Remark)
 	SELECT 	js.CustID
 		,	cust.CTSCustID
         ,	clss.CategoryID
@@ -112,7 +112,7 @@ BEGIN
         , 	js.WinlossRM
         , 	js.BetCount
         , 	js.ActiveDays
-        ,	clss.IsDirect
+        ,	clss.IsMarkedDirectly
         ,	cust.IsLicenseeVIP
         ,	cust.IsLicenseeBA
         ,	CASE WHEN js.WinlossStatus = 1 THEN 0 /*No Change*/
@@ -134,16 +134,19 @@ BEGIN
 		 )) AS js
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON js.CustID = cust.CustID AND cust.CustSubID = 0 AND cust.IsInternal = 0
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CustID = js.CustID
-        INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID AND cate.RelevantCategoryID IS NOT NULL,
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID AND cate.IsActive = 1 AND cate.RelevantCategoryID IS NOT NULL,
         LATERAL (SELECT CASE WHEN cust.IsLicensee = 1 THEN tbl.ABIDangerLevel_Licensee  ELSE tbl.ABIDangerLevel_Credit END AS TargetDangerLevel1
 					,	tbl.CustomerClass AS TargetCC
                  FROM CTS_DataCenter.CustomerCategory AS tbl 
-                 WHERE cate.RelevantCategoryID = tbl.CategoryID 
+                 WHERE cate.RelevantCategoryID = tbl.CategoryID AND tbl.IsActive = 1
                  LIMIT 1) AS desCate; 
     
     DELETE pa
     FROM Temp_PA AS pa
-    WHERE EXISTS (SELECT 1 FROM CTS_DataCenter.PinCustomerCategory AS pin WHERE pin.CTSCustID = pa.CTSCustID); 
+    WHERE EXISTS (	SELECT 1 
+					FROM CTS_DataCenter.CTSCustomerClassification AS clss 
+					WHERE clss.CTSCustID = pa.CTSCustID
+						AND clss.CategoryID = CONST_CATEID_VVIP); 
         
     UPDATE CTS_DataCenter.CTSCustomerClassification AS clss
     INNER JOIN Temp_PA AS tmp ON tmp.CustID = clss.CustID AND tmp.ParentID = clss.ParentID AND tmp.CategoryID = clss.CategoryID 
@@ -153,7 +156,9 @@ BEGIN
     WHERE tmp.IsDataChanged = 1;
 
     UPDATE Temp_PA AS t 
-		INNER JOIN CTS_DataCenter.CustomerCategory AS c ON t.CategoryID = c.CategoryID AND c.RelevantCategoryID IS NOT NULL
+		INNER JOIN CTS_DataCenter.CustomerCategory AS c ON t.CategoryID = c.CategoryID 
+																AND c.IsActive = 1
+																AND c.RelevantCategoryID IS NOT NULL
         LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS s ON t.CustID = s.CustID       
     SET 	t.TargetCC = 	CASE
 								WHEN s.CustomerClass IS NOT NULL THEN s.CustomerClass
@@ -162,76 +167,66 @@ BEGIN
                                 WHEN t.IsLicenseeBA = 1 AND c.Priority > lv_LicBAPriority THEN lv_LicBACC
                                 ELSE t.TargetCC
 							END;
-    
-    UPDATE Temp_PA AS t
-        LEFT JOIN CTS_DataCenter.CustomerLoginInfoDetection AS cld ON cld.CustID = t.CustID
-    SET  t.Remark   =   CASE    WHEN cld.CustID IS NOT NULL THEN JSON_OBJECT('FirstBetDate', cld.FirstBetDate, 'Bot', cld.Bot, 'InvalidBrowser', cld.InvalidBrowser, 'BotPCT', cld.BotTransPercentage, 'InvalidBrowserPCT', cld.InvalidBrowserInfoTransPercentage, 'DetectionDate', cld.DetectionDate)
-                                ELSE t.Remark END
-    WHERE t.RelevantCategoryID IN (CONST_CATEGORYID_UNAUTHORIZEDLOGIN, CONST_CATEGORYID_UNAUTHORIZEDLOGIN_LOSING);
-    
-    UPDATE Temp_PA AS t
-	INNER JOIN CTS_DataCenter.Customer_DangerousScore AS cd ON t.CustID = cd.CustID
-    SET  t.Remark = CONCAT('Detection Date: ',DATE_FORMAT(cd.ClassifiedDate, '%b %d, %Y'),' - Dangerous Score: ',CAST(cd.ClassifiedScore*100 AS DECIMAL(5,2)),'%')
-    WHERE t.RelevantCategoryID IN (CONST_CATEGORYID_EARLYWARNINGMEMBER, CONST_CATEGORYID_EARLYWARNINGMEMBER_LOSING);
 
-    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, Remark)
-	SELECT  CustID
-		, 	CTSCustID
-		, 	RelevantCategoryID
-		, 	SportGroupID
-		, 	NOW() AS LastModifiedDate
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(
+			CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate
+		, 	TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, Remark)
+	SELECT  tmp.CustID
+		, 	tmp.CTSCustID
+		, 	tmp.RelevantCategoryID
+		, 	ParentID
+		, 	lv_CurrentDateTime AS LastModifiedDate
 		, 	lv_CreatedBy AS LastModifiedBy
 		, 	CONST_ACTIONTYPE_UPDATE AS ActionType
 		, 	1 AS IsAuto
-		, 	NOW() AS InsertDate
+		, 	DATE(lv_CurrentDateTime) AS InsertDate
 		, 	TargetCC
-		, 	CASE WHEN RelevantCategoryID IN (CONST_CATEGORYID_UNAUTHORIZEDLOGIN, CONST_CATEGORYID_UNAUTHORIZEDLOGIN_LOSING) THEN CONST_SOURCETYPE_RESCAN_UNAUTHORIZEDLOGIN
-                 WHEN RelevantCategoryID IN (CONST_CATEGORYID_ROBOTUSER, CONST_CATEGORYID_ROBOTUSER_LOSING,CONST_CATEGORYID_ROBOTOCRD, CONST_CATEGORYID_ROBOTOCRD_LOSING) THEN CONST_SOURCETYPE_RESCANROBOT
-				 WHEN IsDirect = 1 THEN CONST_SOURCETYPE_PROBLEMDIRECT
+		, 	CASE WHEN ccs.CategoryID IS NOT NULL THEN ccs.RemarkTemplateID 
+				 WHEN ccs.CategoryID IS NULL AND tmp.IsMarkedDirectly = 1 THEN CONST_SOURCETYPE_PROBLEMDIRECT
 				 ELSE CONST_SOURCETYPE_PROBLEMAFFECT END AS SourceTypeID
-		,   IsDataChanged
-        ,	TargetDangerLevel1
-        ,	TurnoverRM
-        ,	WinlossRM
-        , 	BetCount
-        , 	ActiveDays
-        ,   Remark
-	FROM Temp_PA
-    WHERE IsDataChanged = 1
-		AND SportGroupID <> CONST_SPORTGROUP_WRAPPER;
+		,   tmp.IsDataChanged
+        ,	tmp.TargetDangerLevel1
+        ,	tmp.TurnoverRM
+        ,	tmp.WinlossRM
+        , 	tmp.BetCount
+        , 	tmp.ActiveDays
+        ,   tmp.Remark
+	FROM Temp_PA AS tmp
+		LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = tmp.RelevantCategoryID
+    WHERE tmp.IsDataChanged = 1
+		AND ParentID <> CONST_PARENTID_WRAPPER;
 
-    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, SportGroupID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, Remark)
-	SELECT  CustID
-		, 	CTSCustID
-		, 	CASE WHEN IsDataChanged = 1 THEN RelevantCategoryID ELSE CategoryID END AS CategoryID
-		, 	SportGroupID
-		, 	NOW() AS LastModifiedDate
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, Remark)
+	SELECT  tmp.CustID
+		, 	tmp.CTSCustID
+		, 	CASE WHEN tmp.IsDataChanged = 1 THEN tmp.RelevantCategoryID ELSE tmp.CategoryID END AS CategoryID
+		, 	tmp.ParentID
+		, 	lv_CurrentDateTime AS LastModifiedDate
 		, 	lv_CreatedBy AS LastModifiedBy
 		, 	CONST_ACTIONTYPE_UPDATE AS ActionType
 		, 	1 AS IsAuto
-		, 	NOW() AS InsertDate
+		, 	DATE(lv_CurrentDateTime) AS InsertDate
 		, 	TargetCC
-		, 	CASE WHEN RelevantCategoryID IN (CONST_CATEGORYID_UNAUTHORIZEDLOGIN, CONST_CATEGORYID_UNAUTHORIZEDLOGIN_LOSING) THEN CONST_SOURCETYPE_RESCAN_UNAUTHORIZEDLOGIN
-                 WHEN RelevantCategoryID IN (CONST_CATEGORYID_ROBOTUSER, CONST_CATEGORYID_ROBOTUSER_LOSING,CONST_CATEGORYID_ROBOTOCRD, CONST_CATEGORYID_ROBOTOCRD_LOSING) THEN CONST_SOURCETYPE_RESCANROBOT
-				 WHEN IsDirect = 1 THEN CONST_SOURCETYPE_PROBLEMDIRECT
+		, 	CASE WHEN ccs.CategoryID IS NOT NULL THEN ccs.RemarkTemplateID 
+				 WHEN ccs.CategoryID IS NULL AND tmp.IsMarkedDirectly = 1 THEN CONST_SOURCETYPE_PROBLEMDIRECT
 				 ELSE CONST_SOURCETYPE_PROBLEMAFFECT END AS SourceTypeID
-		,   IsDataChanged
-        ,	TargetDangerLevel1
-        ,	TurnoverRM
-        ,	WinlossRM
-        , 	BetCount
-        , 	ActiveDays
-        ,   Remark
-	FROM Temp_PA;
+		,   tmp.IsDataChanged
+        ,	tmp.TargetDangerLevel1
+        ,	tmp.TurnoverRM
+        ,	tmp.WinlossRM
+        , 	tmp.BetCount
+        , 	tmp.ActiveDays
+        ,   tmp.Remark
+	FROM Temp_PA AS tmp
+		LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = tmp.RelevantCategoryID;
     
 	SELECT 	DISTINCT
 			tmp.CustID
 		,	tmp.CTSCustID
-        ,	CASE WHEN tmp.CategoryID IN (CONST_CATEGORYID_ROBOTUSER, CONST_CATEGORYID_ROBOTUSER_LOSING,CONST_CATEGORYID_ROBOTOCRD, CONST_CATEGORYID_ROBOTOCRD_LOSING) THEN 1
-			ELSE 0 END AS ISRobot
+        ,	CASE WHEN cat.CustomerClassName = 'Robot' THEN 1 ELSE 0 END AS ISRobot
 		,	(CASE WHEN cat.ParentID = CONST_PARENTID_POTENTIALPA THEN 2 ELSE 1 END) AS CategoryType #1: PA, 2: potential PA
     FROM Temp_PA AS tmp
-		INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON tmp.CategoryID = cat.CategoryID
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON tmp.CategoryID = cat.CategoryID AND cat.IsActive = 1
     WHERE IsDataChanged = 1; 
     
 END$$
