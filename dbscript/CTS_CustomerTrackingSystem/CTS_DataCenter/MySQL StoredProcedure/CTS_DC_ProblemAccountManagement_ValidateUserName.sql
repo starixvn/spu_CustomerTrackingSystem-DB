@@ -15,12 +15,17 @@ BEGIN
 		Revisions:
 			- 20220307@Irena.Vo: 		Created [Redmine ID: #159014]
             - 20220518@Casey.Huynh: 	Renovate PA Process [Redmine ID: #172561]
+			- 20240703@Victoria.Le: 	Renovate CC phase 2 - Remove Table PinCustomerCategory  [Redmine ID: #205317]
             
 		Param's Explanation (filtered by):
         Example:
 			CALL CTS_DC_ProblemAccountManagement_ValidateUserName('338HK,338HK,188HK,SMMH,djjdhdh,078HK,078HKSub01,BODOGACCAUD,BODOGACCUS$88,SA-SD$CashOut'); #--> Return Error
 			CALL CTS_DC_ProblemAccountManagement_ValidateUserName('338HK,338HK,188HK,SMMH,078HK');# --> Pass validate username
 	*/
+
+	DECLARE CONST_CATEID_VVIP 				INT;	
+
+	SET CONST_CATEID_VVIP 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_UserName;
 	CREATE TEMPORARY TABLE Temp_UserName( 	 			
@@ -71,7 +76,7 @@ BEGIN
 				  WHEN c.CustSubID <> 0 THEN 'Sub Account'
                   WHEN (c.IsLicensee = 1 AND c.RoleID > 1) THEN 'Upline Licensee Account'
                   WHEN (c.IsInternal = 1) THEN 'Internal Account'
-                  WHEN (SELECT 1 FROM CTS_DataCenter.PinCustomerCategory AS pin WHERE pin.CTSCustID = c.CTSCustID) IS NOT NULL THEN 'Existing Pin Category'
+                  WHEN (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification AS cls WHERE cls.CTSCustID = c.CTSCustID AND cls.CategoryID = CONST_CATEID_VVIP) IS NOT NULL THEN 'VVIP'
                   ELSE NULL
 			END) AS ErrorMsg
 	FROM Temp_UserName AS u

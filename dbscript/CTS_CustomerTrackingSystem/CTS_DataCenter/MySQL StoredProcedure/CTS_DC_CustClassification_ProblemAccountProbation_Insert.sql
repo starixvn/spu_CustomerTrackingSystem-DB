@@ -15,17 +15,18 @@ BEGIN
 		Original:
 		Revisions:
 			- 20220328@Aries.Nguyen: Created [Redmine ID: #170468]
-            - 20220426@Aries.Nguyen: CTS - Daily PA Scan - Check Losing lead to show Created Date is wrong in PAM [Redmine ID: #171972]
-            - 20220607@Aries.Nguyen: Renovate PA process [Redmine ID: #172561]
-            - 20220628@Aries.Nguyen: Update robot classification rule [Redmine ID: #174430]
-            - 20220628@Aries.Nguyen: Update robot classification rule [Redmine ID: #174430]
+			- 20220426@Aries.Nguyen: CTS - Daily PA Scan - Check Losing lead to show Created Date is wrong in PAM [Redmine ID: #171972]
+			- 20220607@Aries.Nguyen: Renovate PA process [Redmine ID: #172561]
+			- 20220628@Aries.Nguyen: Update robot classification rule [Redmine ID: #174430]
+			- 20220628@Aries.Nguyen: Update robot classification rule [Redmine ID: #174430]
 			- 202208018@Long.Luu: Exclude wrapper categories from rescan PA flow [Redmine ID: #174219]          
 			- 20220817@Long.Luu: Rearrange CC's IDs [Redmine ID: #175698]
-            - 20230517@Casey.Huynh:	New Category for Robot OCRD [Redmine ID: #186991]
-            - 20240103@Thomas.Nguyen: New Category for System Detect Unauthorized Login [RedmineID: #197710]
-            - 20240318@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
-            - 20240415@Casey.Huynh: Fix Missing DangerScrore info in remark [Redmine ID: #203889]
-            - 20240423@Thomas.Nguyen: Classify Initial Group Betting - Add Remark [RedmineID: #200854]
+			- 20230517@Casey.Huynh:	New Category for Robot OCRD [Redmine ID: #186991]
+			- 20240103@Thomas.Nguyen: New Category for System Detect Unauthorized Login [RedmineID: #197710]
+			- 20240318@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
+			- 20240415@Casey.Huynh: Fix Missing DangerScrore info in remark [Redmine ID: #203889]
+			- 20240423@Thomas.Nguyen: Classify Initial Group Betting - Add Remark [RedmineID: #200854]
+			- 20240703@Victoria.Le:   Renovate CC phase 2 - Remove Table PinCustomerCategory  [Redmine ID: #205317]
 
 		Param's Explanation (filtered by):      
 			- CALL CTS_DC_CustClassification_ProblemAccountProbation_Insert ('[{"CustID": 123,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10}]');
@@ -65,7 +66,7 @@ BEGIN
 		, 	CTSCustID				BIGINT UNSIGNED 
         ,	ParentID				INT UNSIGNED DEFAULT 0 
         , 	CategoryID				INT UNSIGNED
-        , 	RelevantCategoryID 	    SMALLINT UNSIGNED
+        , 	RelevantCategoryID 	    INT UNSIGNED
         , 	TargetCC 				SMALLINT UNSIGNED
         , 	TargetDangerLevel1 		SMALLINT 
         ,	IsDangerProbation 		BIT(1)
