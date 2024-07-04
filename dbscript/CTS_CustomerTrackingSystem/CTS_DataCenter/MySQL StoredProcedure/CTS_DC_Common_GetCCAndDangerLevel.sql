@@ -74,7 +74,6 @@ BEGIN
 		,	CustomerClass		INT
         ,	CustomerClassName  	VARCHAR(50)
 		,	ParentID			SMALLINT
-        ,	GroupPriority		SMALLINT UNSIGNED
 		,	TaggingType			SMALLINT
         ,	DangerLevel			INT
 		,	DangerLevelType		SMALLINT  
@@ -102,7 +101,7 @@ BEGIN
     );  
      
 	/* INIT */    
-    SELECT CustomerClass, Priority, CustomerClassName
+    SELECT CustomerClass, CategoryPriority, CustomerClassName
     INTO lv_LicBACC, lv_LicBAPriority, lv_LicBACC_Name
     FROM CustomerCategory WHERE CategoryID = CONST_CATEID_LICBA;
     
@@ -133,25 +132,24 @@ BEGIN
 		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = tmp.CustID;
     
 	INSERT INTO Temp_CustLatestCate(CustID,LatesCCPriority)
-    SELECT tmp.CustID, MIN(clss.Priority)
+    SELECT tmp.CustID, MIN(clss.CategoryPriority)
     FROM Temp_CustInfo AS tmp,
-		LATERAL(SELECT 	cate.Priority
+		LATERAL(SELECT 	cate.CategoryPriority
 				FROM CTS_DataCenter.CTSCustomerClassification AS clss
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID
                 WHERE clss.CustID = tmp.CustID
 					AND clss.ParentID IN (CONST_PARENTID_PA, CONST_PARENTID_NORMAL, CONST_PARENTID_POTENTIALPA)
-                ORDER BY  cate.Priority ASC  
+                ORDER BY  cate.CategoryPriority ASC  
 						, clss.LastModifiedDate DESC
                 LIMIT 1) AS clss
 	GROUP BY tmp.CustID;
         
-    INSERT INTO Temp_CustCateInfo(CustID,CategoryID,CustomerClass,CustomerClassName,ParentID,GroupPriority,TaggingType,DangerLevel,DangerLevelType)
+    INSERT INTO Temp_CustCateInfo(CustID,CategoryID,CustomerClass,CustomerClassName,ParentID,TaggingType,DangerLevel,DangerLevelType)
     SELECT 	tmp.CustID
 		,	clss.CategoryID
 		,	clss.CustomerClass
         ,	clss.CustomerClassName  
 		,	clss.ParentID
-        ,	clss.GroupPriority
 		,	clss.TaggingType
         ,	dangerlvl.DangerLevel
         ,	CASE 
@@ -160,7 +158,7 @@ BEGIN
 			END AS DangerLevelType
     FROM Temp_CustInfo AS tmp
 		INNER JOIN Temp_CustLatestCate AS t ON tmp.CustID = t.CustID,
-		LATERAL(SELECT 	CASE WHEN clss.ParentID = CONST_PARENTID_PA AND tmp.SpecialCC IS NULL THEN cate.CategoryGroup 
+		LATERAL(SELECT 	CASE WHEN clss.ParentID = CONST_PARENTID_PA AND tmp.SpecialCC IS NULL THEN cate.CategoryGroupID 
 							 ELSE NULL END AS CategoryID
 					,	CASE  
 							WHEN (tmp.SpecialCC IS NULL) OR (tmp.SpecialCCPriority <> -1)
@@ -170,8 +168,8 @@ BEGIN
                                             WHEN tmp.IsLicenseeVIP = 1 AND t.LatesCCPriority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation IS NOT NULL THEN lv_LicVIPCC_Danger
 											WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN lv_LicVIPCC_Suspicious
                                             WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN lv_LicVIPCC_Danger
-                                            WHEN tmp.IsLicenseeBA = 1 AND cate.Priority > lv_LicBAPriority THEN lv_LicBACC                                            
-                                            WHEN tmp.SpecialCCPriority <> -1 AND cate.Priority > tmp.SpecialCCPriority THEN tmp.SpecialCC
+                                            WHEN tmp.IsLicenseeBA = 1 AND cate.CategoryPriority > lv_LicBAPriority THEN lv_LicBACC                                            
+                                            WHEN tmp.SpecialCCPriority <> -1 AND cate.CategoryPriority > tmp.SpecialCCPriority THEN tmp.SpecialCC
                                             ELSE cate.CustomerClass
 										END
 							ELSE tmp.SpecialCC
@@ -184,20 +182,19 @@ BEGIN
                                             WHEN tmp.IsLicenseeVIP = 1 AND t.LatesCCPriority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation = 0 THEN lv_LicVIP_DangerousCCName
 											WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN lv_LicVIP_SuspiciousCCName
                                             WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN lv_LicVIP_DangerousCCName
-                                            WHEN tmp.IsLicenseeBA = 1 AND cate.Priority > lv_LicBAPriority THEN lv_LicBACC_Name                                            
-                                            WHEN tmp.SpecialCCPriority <> -1 AND cate.Priority > tmp.SpecialCCPriority THEN tmp.SpecialCCName
+                                            WHEN tmp.IsLicenseeBA = 1 AND cate.CategoryPriority > lv_LicBAPriority THEN lv_LicBACC_Name                                            
+                                            WHEN tmp.SpecialCCPriority <> -1 AND cate.CategoryPriority > tmp.SpecialCCPriority THEN tmp.SpecialCCName
                                             ELSE cate.CustomerClassName
 										END
 							ELSE tmp.SpecialCCName
 						END AS CustomerClassName
 					,	cate.ParentID
-                    ,	cate.GroupPriority
 					,	cate.TaggingType
 				FROM CTS_DataCenter.CTSCustomerClassification AS clss
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID
                 WHERE clss.CustID = tmp.CustID
 					AND clss.ParentID IN (CONST_PARENTID_PA, CONST_PARENTID_WRAPPER, CONST_PARENTID_NORMAL, CONST_PARENTID_POTENTIALPA)
-                ORDER BY  cate.Priority ASC  
+                ORDER BY  cate.CategoryPriority ASC  
 						, clss.LastModifiedDate DESC
                 LIMIT 1) AS clss,
 		LATERAL(SELECT 	CASE WHEN tmp.IsLicensee = 1 THEN cc.ABIDangerLevel_Licensee
@@ -208,7 +205,7 @@ BEGIN
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON c.CategoryID = cc.CategoryID
                 WHERE c.CustID = tmp.CustID
 					AND c.ParentID IN (CONST_PARENTID_PA, CONST_PARENTID_NORMAL, CONST_PARENTID_POTENTIALPA)
-                ORDER BY  cc.Priority ASC  
+                ORDER BY  cc.CategoryPriority ASC  
 						, c.LastModifiedDate DESC
                 LIMIT 1) AS dangerlvl;
                 
