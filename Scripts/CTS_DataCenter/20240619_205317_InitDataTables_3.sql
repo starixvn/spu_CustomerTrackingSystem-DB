@@ -330,3 +330,9 @@ VALUES (1,'Account has less than 10 bets for first time scan','New: New Customer
 (54,'Void by RequestID: [TVSRequestID] | Win loss: [Winloss]',''),
 (55,'Void by BetID |  Win loss: [Winloss]',''),
 (56,'[UserComment] | Win loss: [Winloss]','');
+
+INSERT INTO `CTS_DataCenter`.`SystemParameter`
+(`ParameterID`,`ParameterName`,`ParameterDesc`,`ParameterDataType`,`ParameterValue`) VALUES
+(165, 'CustClassification_ProbationScan_BatchSize', 'CustClassification_ProbationScan_BatchSize', 'BIGINT', 5000),
+(166, 'CustClassification_ProbationScan_LastCategoryID', 'CustClassification_ProbationScan_LastCategoryID', 'BIGINT', 203),
+(167, 'CustClassification_ProbationScan_LastCustID', 'CustClassification_ProbationScan_LastCustID', 'BIGINT', 0);
