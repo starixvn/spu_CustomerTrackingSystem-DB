@@ -38,7 +38,7 @@ BEGIN
 	
 	DECLARE CONST_PARENTID_POTENTIALPA			INT;
 	DECLARE CONST_PARENTID_WRAPPER 				INT;
-	-- ---------------------------------------------------------------
+
     DECLARE	CONST_ACTIONTYPE_UPDATE 			INT DEFAULT 1;
     DECLARE CONST_SOURCETYPE_PROBLEMDIRECT		INT DEFAULT 31;
     DECLARE CONST_SOURCETYPE_PROBLEMAFFECT		INT DEFAULT 32;
@@ -49,7 +49,7 @@ BEGIN
     DECLARE lv_LicBAPriority					SMALLINT UNSIGNED;
     DECLARE lv_LicVIPCC_Danger					SMALLINT UNSIGNED;
     DECLARE lv_LicVIPCC_Suspicious				SMALLINT UNSIGNED;
-   -- ---------------------------------------------------------------
+
 	SET CONST_CATEID_VVIP 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
 	SET CONST_CATEID_LICVIPSUSPICIOUS 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPSUSPICIOUS');
 	SET CONST_CATEID_LICVIPDANGEROUS 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPDANGEROUS');
@@ -224,7 +224,6 @@ BEGIN
 			tmp.CustID
 		,	tmp.CTSCustID
         ,	CASE WHEN cat.CustomerClassName = 'Robot' THEN 1 ELSE 0 END AS ISRobot
-		,	(CASE WHEN cat.ParentID = CONST_PARENTID_POTENTIALPA THEN 2 ELSE 1 END) AS CategoryType #1: PA, 2: potential PA
     FROM Temp_PA AS tmp
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON tmp.CategoryID = cat.CategoryID AND cat.IsActive = 1
     WHERE IsDataChanged = 1; 
