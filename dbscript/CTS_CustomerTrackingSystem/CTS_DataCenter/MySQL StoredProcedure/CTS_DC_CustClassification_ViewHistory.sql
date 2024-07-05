@@ -219,11 +219,11 @@ BEGIN
 			/*,	(CASE WHEN temp.Remark LIKE 'Auto MatchID: %' THEN REPLACE(temp.Remark,'Auto MatchID: ','') ELSE temp.Remark END) AS Remark*/
 			,	REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tmpcr.Remark, 
                         '[TVSRequestID]', IFNULL(temp.TVSRequestID,0))
-                    ,   '[Winloss]', IFNULL(temp.WinlossRM,0))
+                    ,   '[Winloss]', IFNULL(FORMAT(temp.WinlossRM, 2),0))
                     ,   '[TVSSportType]', IFNULL(temp.SportType,0))
-                    ,   '[Margin]', CASE WHEN IFNULL(temp.TurnOverRM,0) = 0 THEN 0 ELSE (temp.WinlossRM/temp.TurnOverRM) * 100 END)
+                    ,   '[Margin]', CASE WHEN IFNULL(temp.TurnOverRM,0) = 0 THEN 0 ELSE ROUND((temp.WinlossRM/temp.TurnOverRM) * 100, 3) END)
                     ,   '[BetCount]', IFNULL(temp.BetCount,0))
-                    ,   '[TurnOver]', IFNULL(temp.TurnOverRM,0))
+                    ,   '[TurnOver]', IFNULL(FORMAT(temp.TurnOverRM, 2),0))
                     ,   '[ActiveDays]', IFNULL(temp.ActiveDays,0))
                     /*,   '[TWBetCount]', temp.TWBetCount*/
                     ,   '[TWGBRate]', IFNULL(temp.TWGroupBettingRate,0))
