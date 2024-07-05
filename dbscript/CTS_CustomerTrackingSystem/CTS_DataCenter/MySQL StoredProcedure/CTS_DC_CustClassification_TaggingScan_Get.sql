@@ -82,22 +82,22 @@ BEGIN
     
     INSERT IGNORE INTO Temp_Cust (CustID, CategoryID)
     SELECT tmplc.CustID, tmplc.CategoryID
-	FROM CTS_DataCenter.CTSCustomerClassification AS cc
+	FROM CTS_DataCenter.CTSCustomerClassification AS clss
 		,	LATERAL	
-				(	SELECT cc2.CustID, cc2.CategoryID
-					FROM CTS_DataCenter.CTSCustomerClassification AS cc2 
-						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc2.CategoryID
-					WHERE cc2.CustID = cc.CustID
+				(	SELECT cc.CustID, cc.CategoryID
+					FROM CTS_DataCenter.CTSCustomerClassification AS cc 
+						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
+					WHERE cc.CustID = clss.CustID
 						AND ca.IsActive = 1
-					ORDER BY ca.CategoryPriority ASC, cc2.CreatedDate DESC
+					ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
 					LIMIT 1
 			   ) AS tmplc 
-	WHERE cc.CustID > lv_LastCustID
-		AND cc.CategoryID = lv_LastCategoryID
-		AND cc.ParentID = CONST_PARENTID_NORMAL
+	WHERE clss.CustID > lv_LastCustID
+		AND clss.CategoryID = lv_LastCategoryID
+		AND clss.ParentID = CONST_PARENTID_NORMAL
 		AND tmplc.CategoryID = lv_LastCategoryID
-	ORDER BY cc.CategoryID ASC
-		,	 cc.CustID ASC
+	ORDER BY clss.CategoryID ASC
+		,	 clss.CustID ASC
 	LIMIT lv_BatchSize;
     
     IF NOT EXISTS (SELECT 1 FROM Temp_Cust) THEN
@@ -120,20 +120,21 @@ BEGIN
     
     IF lv_NextCategoryID IS NOT NULL THEN
 		INSERT IGNORE INTO Temp_Cust (CustID, CategoryID)
-		SELECT clss.CustID, clss.CategoryID
+		SELECT tmplc.CustID, tmplc.CategoryID
 		FROM CTS_DataCenter.CTSCustomerClassification AS clss
 			,	LATERAL	
-				(	SELECT cc2.CustID, cc2.CategoryID
-					FROM CTS_DataCenter.CTSCustomerClassification AS cc2 
-						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc2.CategoryID
-					WHERE cc2.CustID = cc.CustID
+				(	SELECT cc.CustID, cc.CategoryID
+					FROM CTS_DataCenter.CTSCustomerClassification AS cc 
+						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
+					WHERE cc.CustID = clss.CustID
 						AND ca.IsActive = 1
-					ORDER BY ca.CategoryPriority ASC, cc2.CreatedDate DESC
+					ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
 					LIMIT 1
 			   ) AS tmplc 
-		WHERE cc.CustID > 0
-			AND cc.CategoryID = lv_NextCategoryID
-			AND cc.ParentID = CONST_PARENTID_NORMAL
+		WHERE clss.CustID > 0
+			AND clss.CategoryID = lv_NextCategoryID
+			AND clss.ParentID = CONST_PARENTID_NORMAL
+           	AND tmplc.CategoryID = lv_NextCategoryID
 		ORDER BY clss.CategoryID ASC
 			,	 clss.CustID ASC
 		LIMIT lv_BatchSize;
