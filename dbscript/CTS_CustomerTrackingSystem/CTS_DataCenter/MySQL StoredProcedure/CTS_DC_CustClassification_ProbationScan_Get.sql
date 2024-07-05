@@ -55,17 +55,17 @@ sp: BEGIN
     SELECT ParameterValue 
     INTO lv_BatchSize 
     FROM CTS_DataCenter.SystemParameter 
-    WHERE ParameterID = 143; 
-    
-	SELECT ParameterValue 
-    INTO lv_LastCustID 
-    FROM CTS_DataCenter.SystemParameter 
-    WHERE ParameterID = 145;
+    WHERE ParameterID = 165; 
     
     SELECT ParameterValue 
     INTO lv_LastCategoryID
     FROM CTS_DataCenter.SystemParameter 
-    WHERE ParameterID = 145;
+    WHERE ParameterID = 166;
+    
+	SELECT ParameterValue 
+    INTO lv_LastCustID 
+    FROM CTS_DataCenter.SystemParameter 
+    WHERE ParameterID = 167; 
     
  	INSERT INTO Temp_Category(CategoryID)
 	SELECT ca.CategoryID
