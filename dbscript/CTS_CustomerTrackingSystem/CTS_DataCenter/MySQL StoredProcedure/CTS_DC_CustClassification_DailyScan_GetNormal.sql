@@ -52,7 +52,7 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Normal;
     CREATE TEMPORARY TABLE 	Temp_Normal (
 			CustID 					BIGINT UNSIGNED PRIMARY KEY
-		,	CurrentCategoryID		SMALLINT
+		,	CurrentCategoryID		INT
 	);
     
     INSERT INTO Temp_Category(CategoryID, ScanDate)
@@ -100,12 +100,12 @@ BEGIN
 			AND clss.LastScannedDate <= '",lv_ScanDateValid,"' ","
 			AND NOT EXISTS (SELECT 1 
 							 FROM  CTS_DataCenter.CTSCustomerClassification AS vvip
-							 WHERE vvip.ParentID = CONST_PARENTID_VVIP)
+							 WHERE vvip.ParentID = ",CONST_PARENTID_VVIP,")
 			AND NOT EXISTS (SELECT 1 
 							 FROM  CTS_DataCenter.CTSCustomerClassification AS pro 
 								INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = pro.CategoryID AND cate.IsActive = 1
 							 WHERE pro.CustID = clss.CustID 
-								AND cate.CategoryGroupID = CONST_CATEGROUPID_PROBATION)
+								AND cate.CategoryGroupID = ", CONST_CATEGROUPID_PROBATION, ")
 		ORDER BY clss.CategoryID ASC
 			,	 clss.CustID ASC
 		LIMIT ",lv_BatchSize,";");
@@ -150,12 +150,12 @@ BEGIN
 			AND clss.LastScannedDate <= '", lv_NextScanDateValid,"' ","
 			AND NOT EXISTS (SELECT 1 
 							 FROM  CTS_DataCenter.CTSCustomerClassification AS vvip
-							 WHERE vvip.ParentID = CONST_PARENTID_VVIP)
+							 WHERE vvip.ParentID = ",CONST_PARENTID_VVIP,")
 			AND NOT EXISTS (SELECT 1 
 							 FROM  CTS_DataCenter.CTSCustomerClassification AS pro 
 								INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = pro.CategoryID AND cate.IsActive = 1
 							 WHERE pro.CustID = clss.CustID 
-								AND cate.CategoryGroupID = CONST_CATEGROUPID_PROBATION)
+								AND cate.CategoryGroupID = ",CONST_CATEGROUPID_PROBATION,")
 		ORDER BY clss.CategoryID ASC
 			,	 clss.CustID ASC
 		LIMIT ", lv_BatchSize,";");
@@ -187,7 +187,7 @@ BEGIN
     END IF;
     
     SELECT DISTINCT	tmpNr.CustID
-		,	cc.CategoryGroup AS CurrentCategoryID
+		,	cc.CategoryGroupID AS CurrentCategoryID
     FROM Temp_Normal AS tmpNr
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON tmpNr.CurrentCategoryID = cc.CategoryID;
 
