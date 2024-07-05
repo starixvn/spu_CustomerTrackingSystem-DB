@@ -39,8 +39,8 @@ BEGIN
 			, 	cat.RelevantCategoryID AS RelevantCategoryGroup
 			, 	cat.CategoryGroup AS CategoryID
 			,	cat.CategoryPriority AS Priority
-			,	CASE WHEN cat.CategoryID = CONST_CATEID_ROBOTUSER AS IsRobotUser
-			,	CASE WHEN cat.CategoryID = CONST_CATEID_ROBOTOCRD AS IsRobotOCRD
+			,	CASE WHEN cat.CategoryID = CONST_CATEID_ROBOTUSER THEN 1 ELSE O END AS IsRobotUser
+			,	CASE WHEN cat.CategoryID = CONST_CATEID_ROBOTOCRD THEN 1 ELSE O END AS IsRobotOCRD
 		FROM CTS_DataCenter.CustomerCategory AS cat
 		WHERE 	(cat.CategoryID BETWEEN 52 AND 64 OR cat.CategoryID IN (163,165))
 			AND cat.IsActive = 1
