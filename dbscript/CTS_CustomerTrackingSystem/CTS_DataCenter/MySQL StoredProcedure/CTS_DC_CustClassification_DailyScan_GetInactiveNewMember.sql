@@ -91,10 +91,10 @@ sp:BEGIN
 					ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
 					LIMIT 1
 			    ) AS tmplc 
-		WHERE clss.CustID > ", lv_LastCustID," ","
-			AND clss.CategoryID = ",lv_LastCategoryID," ","
-			AND clss.CreatedDate <= ",lv_ScanDateValid," ","
-            AND tmplc.CategoryID = ", lv_LastCategoryID," ","
+		WHERE clss.CustID > '", lv_LastCustID," ","'
+			AND clss.CategoryID = '",lv_LastCategoryID," ","'
+			AND clss.CreatedDate <= '",lv_ScanDateValid," ","'
+            AND tmplc.CategoryID = '", lv_LastCategoryID," ","'
 			AND NOT EXISTS (SELECT 1 
 							FROM  CTS_Archive.CTSCustomerAssociationStatus AS ticket 
 							WHERE ticket.CTSCustID = clss.CTSCustID
@@ -146,9 +146,9 @@ sp:BEGIN
 					LIMIT 1
 			   ) AS tmplc 
 		WHERE clss.CustID > 0
-			AND clss.CategoryID = ", lv_NextCategoryID," ","
-			AND clss.CreatedDate <= '", lv_ScanDateValid,"' ","
-            AND tmplc.CategoryID = ", lv_NextCategoryID," ","
+			AND clss.CategoryID = '", lv_NextCategoryID," ","'
+			AND clss.CreatedDate <= '", lv_ScanDateValid,"' ","'
+            AND tmplc.CategoryID = '", lv_NextCategoryID," ","'
 			AND NOT EXISTS (SELECT 1 
 							FROM  CTS_Archive.CTSCustomerAssociationStatus AS ticket 
 							WHERE ticket.CTSCustID = clss.CTSCustID

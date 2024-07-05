@@ -130,7 +130,7 @@ sp: BEGIN
 		SELECT 	clss.CustID
 		FROM	CTS_DataCenter.CTSCustomerClassification AS clss
 			,	LATERAL	
-					(	SELECT cc.CustID, cc.CategoryID, cc.CategoryGroupID, cc.LastScannedDate, cc.CreatedDate 
+					(	SELECT cc.CustID, cc.CategoryID, ca.CategoryGroupID, cc.LastScannedDate, cc.CreatedDate 
 						FROM CTS_DataCenter.CTSCustomerClassification AS cc 
 							INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
 						WHERE cc.CustID = clss.CustID
@@ -138,8 +138,8 @@ sp: BEGIN
 						ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
 						LIMIT 1
 				   ) AS tmplc
-		WHERE clss.CustID > lv_LastCustID
-			AND clss.CategoryID = lv_LastCategoryID
+		WHERE clss.CustID > 0
+			AND clss.CategoryID = lv_NextCategoryID
 			AND clss.ParentID = CONST_PARENTID_NORMAL
 			AND tmplc.CategoryID = lv_NextCategoryID
 			AND (tmplc.LastScannedDate IS NULL OR tmplc.LastScannedDate < lv_CurrentDate)

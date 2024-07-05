@@ -23,11 +23,14 @@ BEGIN
 		   - 20220210@Aries.Nguyen: Re-arrange customer category/class for good/bad robot [Redmine ID: #167726]
 		   - 20220323@Aries.Nguyen: No detect Association with 3 Problem Accounts (Both have Group Betting and Hedging) [Redmine ID: #170363]
            - 20220422@Irena.Vo: Mapping Root Tagging from table CustomerCategory [Redmine ID: #170468]
+           - 20240620@Jonas.Huynh: 	Renovate CC [RedmineID: #205317]
+           
 		Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetTaggingByAssociationWithPA('1268,38665541,17004,32339123379301,3481646');
 	*/
-    DECLARE	CONST_GROUP_PA 						INT DEFAULT 0;
+    
+    DECLARE	CONST_PARENTID_PA		INT;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_InputCustomers;
     CREATE TEMPORARY TABLE 	Temp_InputCustomers (
@@ -82,6 +85,8 @@ BEGIN
         ,	PRIMARY KEY 	PK_Temp_AssociationRemoveAccounts (FromCTSCustID,ToCTSCustID)
         ,	KEY				IX_Temp_AssociationRemoveAccounts_ToCTSCustID (ToCTSCustID)
 	); 
+   
+	SET CONST_PARENTID_PA 	= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
     
     SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_InputCustomers (CustID) VALUES ('", REPLACE(ip_ListCustID, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
@@ -103,6 +108,7 @@ BEGIN
 		INNER JOIN CTS_DataCenter.AssociationByDevice AS asCus ON asCus.DCSDeviceID = asDv.DCSDeviceID AND asCus.CTSCustID <> asDv.CTSCustID
 	WHERE 	cus.TaggingType = 1;
     
+    /*
 	INSERT IGNORE INTO Temp_CustAssociation(CustID, CTSCustID, CTSCustID_Aff)
 	SELECT 	cus.CustID, cus.CTSCustID, asMa.ToCTSCustID  
 	FROM 	Temp_Customer AS cus 
@@ -114,6 +120,7 @@ BEGIN
     FROM 	Temp_Customer AS cus 
 		INNER JOIN CTS_DataCenter.AssociationByManual AS asMa ON asMa.ToCTSCustID = cus.CTSCustID
     WHERE 	cus.TaggingType = 1;
+    */
 
 	INSERT INTO Temp_SubAccounts(CTSCustID)
     SELECT DISTINCT cus.CTSCustID
@@ -143,14 +150,22 @@ BEGIN
     FROM 	Temp_CustAssociation;
     
     INSERT INTO Temp_PA(CTSCustID, RootTaggingID)
-    SELECT 	cus.CTSCustID, cc.RootTaggingID
+    SELECT 	tmplc.CTSCustID, tmplc.RootTaggingID
 	FROM 	Temp_CustLevel1 AS cus
-		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CTSCustID = cus.CTSCustID AND cate.SportGroupID = CONST_GROUP_PA
-		STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID =  cate.CategoryID
-    WHERE	cc.RootTaggingID IS NOT NULL
-    ON DUPLICATE KEY UPDATE RootTaggingID = CASE WHEN cc.RootTaggingID = 10 THEN 10
-												 WHEN cc.RootTaggingID = 10 AND Temp_PA.RootTaggingID <> 10 THEN 8
-												 WHEN cc.RootTaggingID = 8 AND Temp_PA.RootTaggingID = 10 THEN 10
+		,	LATERAL	
+			  (		SELECT cc.CTSCustID, ca.ParentID, ca.RootTaggingID
+					FROM CTS_DataCenter.CTSCustomerClassification AS cc 
+						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
+					WHERE cc.CTSCustID = cus.CTSCustID
+						AND ca.IsActive = 1
+					ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
+					LIMIT 1
+			   ) AS tmplc
+    WHERE	tmplc.ParentID = CONST_PARENTID_PA
+		AND tmplc.RootTaggingID IS NOT NULL
+    ON DUPLICATE KEY UPDATE RootTaggingID = CASE WHEN tmplc.RootTaggingID = 10 THEN 10
+												 WHEN tmplc.RootTaggingID = 10 AND Temp_PA.RootTaggingID <> 10 THEN 8
+												 WHEN tmplc.RootTaggingID = 8 AND Temp_PA.RootTaggingID = 10 THEN 10
 											END;
     
     INSERT INTO Temp_CustAssociationPA (CustID, TaggingID)
