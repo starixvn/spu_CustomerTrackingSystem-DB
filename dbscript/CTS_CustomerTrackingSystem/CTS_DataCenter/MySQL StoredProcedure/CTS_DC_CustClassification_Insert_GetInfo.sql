@@ -4,9 +4,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_Insert_GetInfo`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Insert_GetInfo`(
 		IN	ip_InputFlowID			INT 
-	,	IN	ip_FromAction			TINYINT
 	,	IN	ip_CustInfo				JSON
-	,	OUT op_MaxCTSCustID			BIGINT
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -24,8 +22,6 @@ BEGIN
 
 	DECLARE CONST_CATEID_VVIP 				INT;
 	DECLARE CONST_CATEID_LICVIPSUSPICIOUS 	INT;
-	-- DECLARE CONST_CATEID_LICVIPDANGEROUS 	INT;
-	-- DECLARE CONST_CATEID_LICBA 				INT;
 	DECLARE CONST_PARENTID_VVIP 			INT;
 	DECLARE CONST_PARENTID_WRAPPER 			INT;
 	DECLARE CONST_PARENTID_PA 				INT;
@@ -33,8 +29,6 @@ BEGIN
 	
 	
     DECLARE lv_MaxCTSCustID					BIGINT UNSIGNED;
-    -- DECLARE lv_LicVIPPriority			SMALLINT UNSIGNED;
-    -- DECLARE lv_LicBAPriority				SMALLINT UNSIGNED;
 	
 	SET CONST_CATEID_VVIP 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
 	SET CONST_CATEID_LICVIPSUSPICIOUS 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPSUSPICIOUS');
@@ -58,7 +52,6 @@ BEGIN
 			,	IsExistVVIP					BIT(1) DEFAULT 0
 			,	IsLicenseeVIP				BIT(1) DEFAULT 0
 			,	IsLicenseeBA				BIT(1) DEFAULT 0
-			,	IsMarkedDirectly		BIT(1) DEFAULT 0	
 			,	TargetCC					SMALLINT UNSIGNED
 			,	CategoryPriority			SMALLINT UNSIGNED
 			,	CustomerClassPriority		SMALLINT UNSIGNED
@@ -72,21 +65,19 @@ BEGIN
 		
 		DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
 		CREATE TEMPORARY TABLE Temp_Customer (
-				CustID					BIGINT UNSIGNED PRIMARY KEY
-			, 	CTSCustID				BIGINT UNSIGNED
-			, 	SubscriberID			INT 
-			,	CreatedBy 				INT UNSIGNED
-			, 	IsLicenseeBA			INT 
+				CustID						BIGINT UNSIGNED PRIMARY KEY
+			, 	CTSCustID					BIGINT UNSIGNED
+			, 	SubscriberID				INT 
+			,	CreatedBy 					INT UNSIGNED
+			, 	IsLicenseeBA				INT 
 		);
 
 		IF ip_InputFlowID = 1 THEN /*VVIP*/
 			INSERT INTO Temp_NewClassification (
-					CustID, CTSCustID, SubscriberID, RoleID, Remark, CreatedBy, IsExistVVIP, IsMarkedDirectly
-				,	ParentID, CategoryID, IsReturnData)
+					CustID, CTSCustID, SubscriberID, RoleID, Remark, CreatedBy, IsExistVVIP, ParentID, CategoryID, IsReturnData)
 			SELECT DISTINCT 
 					tmpJs.CustID, tmpJs.CTSCustID, tmpJs.SubscriberID, tmpJs.RoleID, tmpJs.Remark, tmpJs.CreatedBy
 				,	(CASE WHEN cls.CustID IS NOT NULL THEN 1 ELSE 0 END) AS IsExistVVIP
-				,	(CASE WHEN ip_FromAction = 1 THEN 1 ELSE 0 END) AS IsMarkedDirectly
 				,	CONST_PARENTID_VVIP
 				,	CONST_CATEID_VVIP
 				,	(CASE WHEN cls.CustID IS NOT NULL THEN 0 ELSE 1 END) AS IsReturnData
@@ -101,12 +92,7 @@ BEGIN
 											 )) AS tmpJs
 				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON tmpJs.CustID = cls.CustID 
 																				AND cls.ParentID = CONST_PARENTID_VVIP;
-			
-			SELECT MAX(tmpCus.CTSCustID)
-			INTO op_MaxCTSCustID
-			FROM Temp_NewClassification AS tmpCus;
-			
-			
+																				
 		ELSEIF ip_InputFlowID = 2 THEN /*SpecialCC*/
 			INSERT INTO Temp_NewClassification (
 				CustID, CTSCustID, SubscriberID, RoleID, Remark, CreatedBy, IsLicenseeVIP, TargetCC, IsDataChanged, IsReturnData)
@@ -237,7 +223,7 @@ BEGIN
 			,	LastModifiedDate			DATETIME(3)
 			, 	ActionType					SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN; 5: Not satisfy Pass Probation*/
 			,	CreatedBy					INT UNSIGNED
-			,	IsMarkedDirectly				BIT(1) DEFAULT 0
+			,	IsMarkedDirectly			BIT(1) DEFAULT 0
 			,	IsReturnData				BIT(1) DEFAULT 1
 			, 	PRIMARY KEY (CustID, DWCategoryID)
 		); 
@@ -293,7 +279,7 @@ BEGIN
 											,	IsLicensee					BIT(1)				PATH "$.IsLicensee"
 											, 	CreatedBy					INT UNSIGNED		PATH "$.CreatedBy"
 											, 	Remark						VARCHAR(500)		PATH "$.Remark"
-											, 	IsMarkedDirectly				BIT(1)				PATH "$.IsDirectPA"
+											, 	IsMarkedDirectly			BIT(1)				PATH "$.IsDirectPA"
 											,	WinlossStatus				SMALLINT 			PATH "$.WinlossStatus" 
 											,	TurnoverRM					DECIMAL(20,4)		PATH "$.TurnoverRM"
 											,	WinlossRM					DECIMAL(20,4) 		PATH "$.WinlossRM"
