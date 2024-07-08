@@ -55,11 +55,11 @@ BEGIN
     
     INSERT IGNORE INTO Temp_CustCategory(CustID, CurrentTaggingID, CurrentTaggingType)
     SELECT t.CustID
-		,	t.TaggingID
-        , 	t.TaggingType
+		,	tmplc.TaggingID
+        , 	tmplc.TaggingType
     FROM Temp_TaggingCust AS t
 		, LATERAL	
-			(	SELECT cc.CustID, cc.CategoryID, ca.ParentID, ca.ScanTaggingIntervalInSecond
+			(	SELECT cc.CustID, cc.CategoryID, ca.ParentID, ca.ScanTaggingIntervalInSecond, ca.TaggingID, ca.TaggingType
 				FROM CTS_DataCenter.CTSCustomerClassification AS cc 
 					INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID 
 				WHERE t.CustID = cc.CustID 

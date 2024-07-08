@@ -30,7 +30,8 @@ sp: BEGIN
 	*/
     DECLARE	CONST_PARENTID_NORMAL			INT;
     DECLARE	CONST_CATEGROUPID_PROBATION		INT;
-       
+    DECLARE CONST_PARENTID_WRAPPER			INT;   
+    
 	DECLARE lv_BatchSize 					INT;
     DECLARE lv_LastCustID					BIGINT UNSIGNED;
     DECLARE lv_NextCustID 					BIGINT UNSIGNED;
@@ -40,6 +41,7 @@ sp: BEGIN
     DECLARE lv_ToLastDay 					DATE DEFAULT DATE_SUB(lv_CurrentDate, INTERVAL 2 DAY); /*Up to 3 Last Day*/
     
     SET CONST_PARENTID_NORMAL 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
+    SET CONST_PARENTID_WRAPPER 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
 	SET CONST_CATEGROUPID_PROBATION 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_PROBATION');
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Category;
@@ -91,6 +93,7 @@ sp: BEGIN
 						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
 					WHERE cc.CustID = clss.CustID
 						AND ca.IsActive = 1
+                        AND ca.ParentID <> CONST_PARENTID_WRAPPER 
 					ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
 					LIMIT 1
 			   ) AS tmplc
@@ -115,6 +118,7 @@ sp: BEGIN
 						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
 					WHERE cc.CustID = clss.CustID
 						AND ca.IsActive = 1
+						AND ca.ParentID <> CONST_PARENTID_WRAPPER 
 					ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
 					LIMIT 1
 			    ) AS tmplc
@@ -136,6 +140,7 @@ sp: BEGIN
 							INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
 						WHERE cc.CustID = clss.CustID
 							AND ca.IsActive = 1
+							AND ca.ParentID <> CONST_PARENTID_WRAPPER 
 						ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
 						LIMIT 1
 				   ) AS tmplc

@@ -23,6 +23,7 @@ BEGIN
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_TaggingScan_Get();
 	*/ 
     DECLARE	CONST_PARENTID_NORMAL		INT ;
+    DECLARE CONST_PARENTID_WRAPPER		INT	;
 	DECLARE CONST_CATEGROUPID_PROBATION	INT	;            
 	DECLARE CONST_CATEGROUPID_SMART 	INT ;
     DECLARE CONST_CATEGROUPID_RISKY 	INT ;
@@ -34,10 +35,11 @@ BEGIN
     DECLARE lv_NextCustID 				BIGINT UNSIGNED;
     
     SET CONST_PARENTID_NORMAL 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
+    SET CONST_PARENTID_WRAPPER 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
 	SET CONST_CATEGROUPID_PROBATION 	= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_PROBATION');
 	SET CONST_CATEGROUPID_SMART 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_SMART');
     SET CONST_CATEGROUPID_RISKY 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_RISKY');
-    
+        
     DROP TEMPORARY TABLE IF EXISTS Temp_Category;
 	CREATE TEMPORARY TABLE Temp_Category(
 			CategoryID			INT UNSIGNED PRIMARY KEY,
@@ -89,6 +91,7 @@ BEGIN
 						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
 					WHERE cc.CustID = clss.CustID
 						AND ca.IsActive = 1
+                        AND ca.ParentID <> CONST_PARENTID_WRAPPER 
 					ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
 					LIMIT 1
 			   ) AS tmplc 
@@ -111,6 +114,7 @@ BEGIN
 						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
 					WHERE cc.CustID = clss.CustID
 						AND ca.IsActive = 1
+                        AND ca.ParentID <> CONST_PARENTID_WRAPPER
 					ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
 					LIMIT 1
 			    ) AS tmplc
@@ -129,6 +133,7 @@ BEGIN
 						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
 					WHERE cc.CustID = clss.CustID
 						AND ca.IsActive = 1
+                        AND ca.ParentID <> CONST_PARENTID_WRAPPER
 					ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
 					LIMIT 1
 			   ) AS tmplc 
