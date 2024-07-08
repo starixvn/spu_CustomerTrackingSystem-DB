@@ -26,21 +26,25 @@ sp: BEGIN
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustInfo_CheckCategoryInfoNewCust(@op_LastCTSCustID);SELECT @op_LastCTSCustID;
 	*/
-    DECLARE CONST_CATEGROUPID_ROBOTUSER INT;
-    DECLARE CONST_CATEGROUPID_ROBOTOCRD INT;
-    DECLARE CONST_CATEGROUPID_INFOBET INT;
-    DECLARE CONST_CATEGROUPID_INFOBETLOSING INT;
-    DECLARE CONST_CATEID_INFOBET INT;
+    DECLARE CONST_PARENTID_VVIP 						  INT;
+    DECLARE	CONST_PARENTID_PA 					      INT;
+    DECLARE CONST_CATEGROUPID_ROBOTUSER       INT;
+    DECLARE CONST_CATEGROUPID_ROBOTOCRD       INT;
+    DECLARE CONST_CATEGROUPID_INFOBET         INT;
+    DECLARE CONST_CATEGROUPID_INFOBETLOSING   INT;
+    DECLARE CONST_CATEID_INFOBET              INT;
 
     DECLARE lv_LastCTSCustID 	BIGINT UNSIGNED;
     DECLARE lv_BatchSize 		INT UNSIGNED;
     DECLARE lv_MaxCTSCustID 	BIGINT UNSIGNED;
      
-    SET CONST_CATEGROUPID_ROBOTUSER				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_ROBOTUSER');
-    SET CONST_CATEGROUPID_ROBOTOCRD				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_ROBOTOCRD');
-    SET CONST_CATEGROUPID_INFOBET				  = CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_INFOBET');
-    SET CONST_CATEGROUPID_INFOBETLOSING		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_INFOBETLOSING');
-    SET CONST_CATEID_INFOBET				      = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INFOBET');
+    SET CONST_PARENTID_VVIP 							    = CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
+    SET CONST_PARENTID_PA 				            = CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
+    SET CONST_CATEGROUPID_ROBOTUSER				    = CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_ROBOTUSER');
+    SET CONST_CATEGROUPID_ROBOTOCRD				    = CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_ROBOTOCRD');
+    SET CONST_CATEGROUPID_INFOBET				      = CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_INFOBET');
+    SET CONST_CATEGROUPID_INFOBETLOSING		    = CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_INFOBETLOSING');
+    SET CONST_CATEID_INFOBET				          = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INFOBET');
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;
     CREATE TEMPORARY TABLE Temp_CustInfo(
@@ -138,7 +142,7 @@ sp: BEGIN
 		,	tmp.CustID
 		,	vip.CreatedBy
     FROM Temp_CustInfo AS tmp		
-		INNER JOIN CTS_DataCenter.CTSCustomerClassificationVVIP AS vip ON vip.CustID = tmp.DirectUpLine AND vip.IsAffectToDownline = 1;
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS vip ON vip.CustID = tmp.DirectUpLine AND vip.IsAffectToDownline = 1 AND vip.ParentID = CONST_PARENTID_VVIP;
     
     INSERT IGNORE INTO Temp_VVIPCust(CTSCustID,CustID,CreatedBy)
     SELECT 	tmp.CTSCustID
@@ -174,7 +178,7 @@ sp: BEGIN
         ,	class.IsFromCTS
         ,	class.LastModifiedDate
     FROM Temp_CustInfo AS tmp    
-		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS class USE INDEX (PRIMARY) ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.ParentID = 0 
+		    STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS class USE INDEX (PRIMARY) ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.ParentID = CONST_PARENTID_PA 
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroupID NOT IN (CONST_CATEGROUPID_ROBOTUSER,CONST_CATEGROUPID_ROBOTOCRD);
 	 
     SELECT	tmp.CTSCustID
