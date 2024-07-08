@@ -322,7 +322,7 @@ BEGIN
 		
 		UPDATE Temp_NewClassification AS temp 
 			INNER JOIN CTS_DataCenter.CustomerCategory AS d ON d.CategoryID = temp.NewCategoryID 
-		SET 	temp.TargetDangerLevel = CASE WHEN temp.IsLicensee = 1 THEN d.ABIDangerLevel_Licensee ELSE d.ABIDangerLevel_Credit END
+		SET 	temp.TargetDangerLevel = CASE WHEN temp.IsLicensee = 1 THEN d.Ext_ABIDangerLevel_Licensee ELSE d.Ext_ABIDangerLevel_Credit END
 		WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE); 
 	
 	ELSEIF ip_InputFlowID IN (50,51,6,7) THEN
@@ -385,7 +385,8 @@ BEGIN
 							,	cat.RelevantCategoryID
 						FROM CTS_DataCenter.CustomerCategory AS cat 
 						WHERE cat.CategoryID IN (temp.DWCategoryID, temp.RelevantCategoryID) 
-							AND cat.IsPAProbation = temp.IsPAProbation LIMIT 1) AS tmpCat
+							AND cat.IsPAProbation = temp.IsPAProbation 
+						LIMIT 1) AS tmpCat
 		SET 	temp.NewCategoryGroupID = tmpCat.CategoryGroupID	
 			,	temp.NewCategoryID = tmpCat.CategoryGroupID
 			,	temp.TargetCC = (CASE 	WHEN temp.SpecialCC IS NOT NULL THEN temp.SpecialCC 
@@ -401,7 +402,9 @@ BEGIN
 			,	LATERAL(SELECT 	cat.CategoryGroupID
 							,	cat.IsPAProbation
 						FROM CTS_DataCenter.CustomerCategory  AS cat 
-						WHERE cat.CategoryID = temp.RelevantCategoryID LIMIT 1) AS tmpCat
+						WHERE cat.CategoryID = temp.RelevantCategoryID 
+						LIMIT 1) AS tmpCat
+		SET 	temp.RelevantCategoryGroupID = tmpCat.CategoryGroupID	
 		SET 	temp.RelevantCategoryGroupID = tmpCat.CategoryGroupID	
 			,	temp.RelevantCategoryID = tmpCat.CategoryGroupID
 			,	temp.RelevantIsPAProbation = tmpCat.IsPAProbation;   
@@ -454,7 +457,7 @@ BEGIN
 			,	cls.SubscriberID
 			,	CASE WHEN cls.ParentID = CONST_PARENTID_NORMAL THEN NULL ELSE cc.ParentID END AS ParentID
 			,	CASE WHEN cls.ParentID = CONST_PARENTID_NORMAL THEN cc.CategoryID ELSE cc.CategoryGroupID END AS CategoryID
-			,	CASE WHEN cls.ParentID = CONST_PARENTID_NORMAL THEN NULL ELSE cc.CategoryGroupID END AS CategoryGroupID
+			,	CASE WHEN cls.ParentID = CONST_PARENTID_NORMAL THEN NULL ELSE cc.CategoryGroupID END AS CategoryGroupID /*NORMAL NOT CONSIDER TO WIN/LOSE >> SET NULL*/
 			,	CASE WHEN cls.ParentID = CONST_PARENTID_NORMAL THEN NULL ELSE cls.CategoryID END AS ExistCategoryID
 			,	cc.RelevantCategoryID
 			,	cls.Remark
@@ -482,11 +485,13 @@ BEGIN
 							THEN (CASE 	WHEN ccs.IsMultiCateIDSameParentID = 0 AND ccs.IsKeepOldCateID = 1 THEN 0
 										WHEN ccs.IsMultiCateIDSameParentID = 0 AND ccs.IsKeepOldCateID = 0 THEN 1
 										WHEN ccs.IsMultiCateIDSameParentID = 1 THEN 0 END)
-					 ELSE NULL END AS IsRemove
+					 ELSE 
+						(CASE 	WHEN ccs.IsMultiCateIDSameParentID = 1 THEN 0
+								WHEN ccs.IsMultiCateIDSameParentID = 0 NULL END) END AS IsRemove
 		FROM CTS_DataCenter.CTSCustomerClassification AS cls
 			INNER JOIN Temp_NewClassification AS temp ON temp.CustID = cls.CustID
 			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = cls.CategoryID 
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = ccs.CategoryID 
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = ccs.CategoryID AND cc.IsActive = 1
 		WHERE cls.ParentID IN (CONST_PARENTID_PA,PARENTID_POTENTIALPA,CONST_PARENTID_NORMAL)
 		;
 
@@ -555,8 +560,7 @@ BEGIN
 				, 	(CASE 	WHEN tmpCp.IsLicensee = 1 THEN tmpLt.Ext_ABIDangerLevel_Licensee
 							WHEN tmpCp.IsLicensee = 0 THEN tmpLt.Ext_ABIDangerLevel_Credit END) AS TargetDangerLevel
 				,	(CASE 	WHEN tmpCp.IsLicensee = 1 THEN tmpLt.Ext_EvidenceID_Licensee
-							WHEN tmpCp.IsLicensee = 0 THEN tmpLt.Ext_EvidenceID_Credit 
-							ELSE NULL END) AS ToEvidenceID
+							WHEN tmpCp.IsLicensee = 0 THEN tmpLt.Ext_EvidenceID_Credit ELSE NULL END) AS ToEvidenceID
 				,	temp_old.Remark
 				,	tmpCp.TurnoverRM
 				,	tmpCp.WinlossRM
@@ -600,8 +604,7 @@ BEGIN
 			,	CASE WHEN cat.IsDangerProbation = 1 THEN CONST_CC_LICVIPSUSPICIOUS ELSE CONST_CC_LICVIPDANGEROUS END
 		FROM Temp_NewClassification AS temp
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = temp.NewCategoryID
-		WHERE temp.IsLicenseeVIP = 1
-		;    
+		WHERE temp.IsLicenseeVIP = 1;    
 
 		UPDATE Temp_NewClassification AS temp
 			INNER JOIN Temp_LicVIPCust AS tmpVip ON temp.CustID = tmpVip.CustID
@@ -622,7 +625,6 @@ BEGIN
 		SET temp.IsDataChanged = 1
 		WHERE temp.NewCategoryGroupID <> tmpHis.CategoryID 
 			OR temp.TargetCC <> tmpHis.TargetCC; 
-		
 		
 	END IF;
 	

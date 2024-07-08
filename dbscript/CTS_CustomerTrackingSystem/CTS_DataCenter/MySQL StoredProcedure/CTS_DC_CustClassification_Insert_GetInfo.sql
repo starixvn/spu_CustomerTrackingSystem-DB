@@ -187,7 +187,7 @@ BEGIN
 			,	RelevantCategoryGroupID   	INT UNSIGNED
 			,	RelevantIsPAProbation	   	BIT(1) -- RelevantIsProbation
 			
-			,	IsDataChanged				BIT(1) DEFAULT 1 	/* 0: Not Change, 1: Changed (IF call from SpecialCC function THEN 1 ELSE 0) */
+			,	IsDataChanged				BIT(1) 	/* 0: Not Change, 1: Changed (IF call from SpecialCC function THEN 1 ELSE 0) */
 			,	DataChangeType				TINYINT DEFAULT 0	/* 0: New OR Change Category, 1: Change Probation Status, 2: NOT CHANGE */
 			,	SourceTypeID      			SMALLINT
 
@@ -196,13 +196,12 @@ BEGIN
 			,	IsFromTVS					BIT(1)  DEFAULT 0
 			,	TVSRequestID				BIGINT UNSIGNED
 			, 	TVSReasonID		   			INT
-			,	SportType					SMALLINT DEFAULT NULL 
 			,	TVSIssueTypeID 				TINYINT DEFAULT NULL 
 			,	IsTVSParlay					BIT(1) DEFAULT NULL
+			,	SportType					SMALLINT DEFAULT NULL 
 			
-			,	IsFromCTS					BIT(1)  DEFAULT 0
-			,	IsFromAI					BIT(1)  DEFAULT 0
-			,	IsFromImperva				BIT(1) 	DEFAULT 0
+			,	SourceCreatedDate			DATETIME(3)
+			,	GBTicketCount				INT
 
 			,	IsFromTW					BIT(1)  DEFAULT 0
 			,	TWRobotCounter				INT -- RobotCounter
@@ -210,6 +209,10 @@ BEGIN
 			,	TWGroupBettingRate			DECIMAL(10,4)
 			,	TWTicketRejectRate			DECIMAL(10,4)
 			,	TWDesktopUsageRate			DECIMAL(10,4)
+			
+			,	IsFromCTS					BIT(1)  DEFAULT 0
+			,	IsFromAI					BIT(1)  DEFAULT 0
+			,	IsFromImperva				BIT(1) 	DEFAULT 0
 			
 			,	TaggingID					SMALLINT
 			,	TaggingType					SMALLINT	
@@ -228,12 +231,12 @@ BEGIN
 			, 	PRIMARY KEY (CustID, DWCategoryID)
 		); 
 		
-		IF ip_InputFlowID IN (50,6) THEN /*PA - ip_InputType = 'Category' | PotentialPA*/
+		IF ip_InputFlowID IN (50) THEN /*PA - ip_InputType = 'Category'*/
 			INSERT INTO Temp_NewClassification(
 				CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
 			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsDataChanged
 			, 	SpecialCC, IsPAProbation, RelevantCategoryID, LastModifiedDate, MatchID, TVSRequestID, IsTVSParlay, SportType
-			, 	TVSIssueTypeID, CategoryPriority, CustomerClassPriority, ParentID)
+			, 	TVSIssueTypeID, CategoryPriority, CustomerClassPriority, ParentID, IsReturnData, IsDataChanged, PerformanceTime)
 			SELECT 	tmpJs.CustID
 				,	tmpJs.CTSCustID
 				,	tmpJs.RoleID
@@ -269,6 +272,9 @@ BEGIN
 				,	cat.CategoryPriority
 				,	cat.CustomerClassPriority
 				,	cat.ParentID
+				,	1 AS IsReturnData
+				,	0 AS IsDataChanged
+				,	tmpJs.PerformanceTime
 			FROM JSON_TABLE(ip_CustInfo,
 							"$[*]" COLUMNS(
 												CustID 						BIGINT UNSIGNED		PATH "$.CustID"
@@ -289,14 +295,13 @@ BEGIN
 											, 	IsFromTW					BIT(1) 				PATH "$.IsFromTW"
 											, 	IsFromCTS					BIT(1) 				PATH "$.IsFromCTS"
 											, 	IsFromAI					BIT(1) 				PATH "$.IsFromAI"
-											, 	IsDataChanged				BIT(1) 				PATH "$.IsDataChanged"
 											, 	LastModifiedDate			DATETIME(3)			PATH "$.LastModifiedDate"
 											, 	MatchID						INT 				PATH "$.MatchID"	
 											, 	TVSRequestID				BIGINT UNSIGNED		PATH "$.TVSRequestID"
 											,	IsTVSParlay					BIT(1)  			PATH "$.IsParlay"
 											,	TVSIssueTypeID				TINYINT 			PATH "$.IssueTypeID"
 											,	SportType					SMALLINT 			PATH "$.SportType"
-											, 	PerformanceTime				DATETIME			PATH "$.PerformanceTime"
+											, 	PerformanceTime				DATETIME(3)			PATH "$.PerformanceTime"
 											)) AS tmpJs
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID
 				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.DWCategoryID
@@ -337,7 +342,7 @@ BEGIN
 				CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,  IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, IsMarkedDirectly
 			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsDataChanged, SpecialCC, IsPAProbation
 			, 	RelevantCategoryID, TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID, CategoryPriority, CustomerClassPriority
-			, 	ParentID)
+			, 	ParentID, IsReturnData, IsDataChanged, PerformanceTime)
 			SELECT 	tmpJs.CustID
 				,	cus.CTSCustID
 				,	cus.RoleID
@@ -367,12 +372,15 @@ BEGIN
 				,	cat.CategoryPriority
 				,	cat.CustomerClassPriority
 				,	cat.ParentID
+				,	1 AS IsReturnData
+				,	0 AS IsDataChanged
+				,	tmpJs.PerformanceTime
 			FROM JSON_TABLE(ip_CustInfo,
 							"$[*]" COLUMNS(
 												CustID 						BIGINT UNSIGNED		PATH "$.CustID"
 											,	TVSReasonID					INT 				PATH "$.ReasonID"
 											, 	CreatedBy					INT UNSIGNED		PATH "$.CreatedBy"
-											, 	IsMarkedDirectly				BIT(1)				PATH "$.IsDirectPA"
+											, 	IsMarkedDirectly			BIT(1)				PATH "$.IsDirectPA"
 											,	WinlossStatus				SMALLINT 			PATH "$.WinlossStatus" 
 											,	TurnoverRM					DECIMAL(20,4)		PATH "$.TurnoverRM"
 											,	WinlossRM					DECIMAL(20,4) 		PATH "$.WinlossRM"
@@ -387,7 +395,7 @@ BEGIN
 											,	IsTVSParlay					BIT(1)	 			PATH "$.IsParlay"
 											,	SportType					SMALLINT 			PATH "$.SportType"
 											,	TVSIssueTypeID				TINYINT 			PATH "$.IssueTypeID"
-											, 	PerformanceTime				DATETIME			PATH "$.PerformanceTime"
+											, 	PerformanceTime				DATETIME(3)			PATH "$.PerformanceTime"
 										)) AS tmpJs
 				LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
 				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID 
@@ -422,13 +430,83 @@ BEGIN
 															THEN tmpJs.TVSRequestID 
 														ELSE Temp_PA.TVSRequestID END
 								;
+								
+			/*INSERT INTO TABLE TVS_LOG*/
 				
+		IF ip_InputFlowID IN (6) THEN /*ip_InputType = PotentialPA*/
+			INSERT IGNORE INTO Temp_NewClassification(
+				CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
+			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTW, IsFromCTS, IsFromAI, IsDataChanged
+			, 	SpecialCC, IsPAProbation, RelevantCategoryID, CategoryPriority, CustomerClassPriority
+			, 	ParentID, IsReturnData, IsDataChanged, PerformanceTime, SportType, SourceCreatedDate, GBTicketCount)
+			SELECT 	tmpJs.CustID
+				,	tmpJs.CTSCustID
+				,	tmpJs.RoleID
+				, 	tmpJs.SubscriberID
+				,	tmpJs.DWCategoryID
+				,	cat.CategoryGroupID
+				,	tmpJs.IsLicensee
+				,	cus.IsLicenseeVIP
+				,	cus.IsLicenseeBA
+				,	tmpJs.CreatedBy 
+				,	tmpJs.Remark
+				,	tmpJs.IsMarkedDirectly
+				, 	IFNULL(tmpJs.WinlossStatus,2) AS  WinlossStatus
+				, 	tmpJs.TurnoverRM
+				, 	tmpJs.WinlossRM 
+				, 	tmpJs.BetCount 
+				, 	tmpJs.ActiveDays
+				,	tmpJs.IsFromTW
+				,	tmpJs.IsFromCTS
+				,	tmpJs.IsFromAI
+				,	tmpJs.IsDataChanged
+				,	sp.CustomerClass AS SpecialCC
+				,	(CASE WHEN tmpJs.WinlossStatus = 0 THEN 1 ELSE 0 END) AS IsPAProbation	/*1: PROBATION, 0: NOT PROBATION*/
+				,	cat.RelevantCategoryID
+				,	cat.CategoryPriority
+				,	cat.CustomerClassPriority
+				,	cat.ParentID
+				,	1 AS IsReturnData
+				,	0 AS IsDataChanged
+				,	tmpJs.PerformanceTime
+				,	tmpJs.SportType
+				,	tmpJs.SourceCreatedDate
+				,	tmpJs.GBTicketCount
+			FROM JSON_TABLE(ip_CustInfo,
+							"$[*]" COLUMNS(
+												CustID 						BIGINT UNSIGNED		PATH "$.CustID"
+											,	CTSCustID 					BIGINT UNSIGNED		PATH "$.CTSCustID"
+											,	RoleID 						INT					PATH "$.RoleID" 
+											,	SubscriberID 				INT UNSIGNED		PATH "$.SubscriberID"
+											,	DWCategoryID				INT UNSIGNED		PATH "$.CategoryID"
+											,	IsLicensee					BIT(1)				PATH "$.IsLicensee"
+											, 	CreatedBy					INT UNSIGNED		PATH "$.CreatedBy"
+											, 	Remark						VARCHAR(500)		PATH "$.Remark"
+											, 	IsMarkedDirectly			BIT(1)				PATH "$.IsDirectPA"
+											,	WinlossStatus				SMALLINT 			PATH "$.WinlossStatus" 
+											,	TurnoverRM					DECIMAL(20,4)		PATH "$.TurnoverRM"
+											,	WinlossRM					DECIMAL(20,4) 		PATH "$.WinlossRM"
+											, 	BetCount					BIGINT 				PATH "$.BetCount"
+											, 	ActiveDays					INT 				PATH "$.ActiveDays"
+											, 	IsFromTW					BIT(1) 				PATH "$.IsFromTW"
+											, 	IsFromCTS					BIT(1) 				PATH "$.IsFromCTS"
+											, 	IsFromAI					BIT(1) 				PATH "$.IsFromAI"
+											, 	PerformanceTime				DATETIME(3)			PATH "$.PerformanceTime"
+											,	SportType					SMALLINT 			PATH "$.SportType"
+											, 	SourceCreatedDate			DATETIME(3)			PATH "$.DetectionDate"
+											, 	GBTicketCount				INT					PATH "$.GBTicketCount"
+											)) AS tmpJs
+				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID
+				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.DWCategoryID
+				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID;
+		
+		
 		ELSEIF ip_InputFlowID = 7 THEN /*Robot*/
 			INSERT INTO Temp_NewClassification(
 				CustID, CTSCustID, SubscriberID, RoleID, DWCategoryID, DWCategoryGroupID, IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
 			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsDataChanged
 			, 	SpecialCC, IsPAProbation, RelevantCategoryID, TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID, CategoryPriority
-			, 	CustomerClassPriority, ParentID, TWRobotCounter, IsFromImperva)
+			, 	CustomerClassPriority, ParentID, TWRobotCounter, IsFromImperva, IsReturnData, IsDataChanged, PerformanceTime)
 			SELECT 	tmpJs.CustID
 				,	tmpJs.CTSCustID
 				, 	tmpJs.SubscriberID
@@ -439,7 +517,7 @@ BEGIN
 				,	cus.IsLicenseeVIP
 				,	cus.IsLicenseeBA
 				,	tmpJs.CreatedBy 
-				,	(CASE WHEN tmpJs.MatchID IS NOT NULL THEN CONCAT('Auto MatchID: ', MatchID) ELSE tmpJs.Remark END) AS Remark
+				,	tmpJs.Remark
 				,	tmpJs.IsMarkedDirectly
 				, 	IFNULL(tmpJs.WinlossStatus,2) AS  WinlossStatus
 				, 	tmpJs.TurnoverRM
@@ -464,6 +542,9 @@ BEGIN
 				,	cat.ParentID
 				,	tmpJs.TWRobotCounter
 				,	tmpJs.IsFromImperva
+				,	1 AS IsReturnData
+				,	0 AS IsDataChanged
+				,	tmpJs.PerformanceTime
 			FROM JSON_TABLE(ip_CustInfo,
 							"$[*]" COLUMNS(
 												CustID 					BIGINT UNSIGNED		PATH "$.CustID"                
@@ -482,14 +563,14 @@ BEGIN
 											, 	IsFromTVS				BIT(1)  			PATH "$.IsFromTVS"
 											,	IsFromImperva			BIT(1) 				PATH "$.IsFromImperva"
 											, 	TVSRequestID			BIGINT UNSIGNED 	PATH "$.TVSRequestID"
-											, 	IsMarkedDirectly	BIT(1)  			PATH "$.IsDirect"
+											, 	IsMarkedDirectly		BIT(1)  			PATH "$.IsDirect"
 
 											, 	Remark					VARCHAR(500)		PATH "$.Remark"
 											, 	CreatedBy				INT UNSIGNED		PATH "$.CreatedBy"
 											,	IsTVSParlay				BIT(1) 				PATH "$.IsParlay"
 											,	SportType				SMALLINT			PATH "$.SportType"
 											,	TVSIssueTypeID			TINYINT				PATH "$.IssueTypeID"
-											, 	PerformanceTime			DATETIME			PATH "$.PerformanceTime"
+											, 	PerformanceTime			DATETIME(3)			PATH "$.PerformanceTime"
 										)) AS tmpJs
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
 				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID 
@@ -526,12 +607,12 @@ BEGIN
 															THEN tmpJs.TVSRequestID 
 														ELSE Temp_PA.TVSRequestID END
 								;
-				
+			/*INSERT INTO TABLE TVS_LOG*/
 		ELSEIF ip_InputFlowID = 8 THEN /*Normal*/
 			INSERT INTO Temp_NewClassification(
 				CustID,CTSCustID,DWCategoryID,DWCategoryGroupID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TWBetCount,TWGroupBettingRate
 				,TWTicketRejectRate,TWDesktopUsageRate,TaggingID,TaggingType,PerformanceTime,ScanTaggingType
-				,SubscriberID,RoleID,IsLicensee,IsLicenseeVIP,IsLicenseeBA,SpecialCC)
+				,SubscriberID,RoleID,IsLicensee,IsLicenseeVIP,IsLicenseeBA,SpecialCC,IsReturnData,IsDataChanged)
 			SELECT DISTINCT
 					tmpJs.CustID
 				,	cus.CTSCustID
@@ -555,6 +636,8 @@ BEGIN
 				,	cus.IsLicenseeVIP
 				,	cus.IsLicenseeBA
 				,	sp.CustomerClass AS SpecialCC
+				,	1 AS IsReturnData
+				,	1 AS IsDataChanged
 			FROM JSON_TABLE(ip_CustInfo,
 							"$[*]" COLUMNS(
 												CustID 					BIGINT UNSIGNED		PATH "$.CustID"
@@ -570,7 +653,7 @@ BEGIN
 											,	TWDesktopUsageRate		DECIMAL(10,4)		PATH "$.TWDesktopUsageRate"
 											, 	TaggingID				SMALLINT			PATH "$.TaggingID"
 											, 	TaggingType				SMALLINT			PATH "$.TaggingType"	
-											, 	PerformanceTime			DATETIME			PATH "$.PerformanceTime"
+											, 	PerformanceTime			DATETIME(3)			PATH "$.PerformanceTime"
 											, 	ScanTaggingType			BIT(1)				PATH "$.ScanTaggingType"
 										)) AS tmpJs
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpJs.CustID = cus.CustID AND cus.CustSubID = 0
