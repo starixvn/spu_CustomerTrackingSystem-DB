@@ -106,15 +106,16 @@ sp:BEGIN
 		SELECT 	cate.CategoryID
         INTO 	lv_NextCategoryID
 		FROM Temp_Category  AS cate
-				, LATERAL	
-					(	SELECT cc.CTSCustID, cc.CustID, cc.CategoryID, cc.CreatedDate
-						FROM CTS_DataCenter.CTSCustomerClassification AS cc 
-							INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
-						WHERE cate.CategoryID = ca.CategoryID 
-							AND ca.IsActive = 1
-						ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
-						LIMIT 1
-					) AS tmplc
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CategoryID = cate.CategoryID
+			,	LATERAL	
+				(	SELECT cc.CTSCustID, cc.CustID, cc.CategoryID, cc.CreatedDate
+					FROM CTS_DataCenter.CTSCustomerClassification AS cc 
+						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
+					WHERE cc.CustID = clss.CustID
+						AND ca.IsActive = 1
+					ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
+					LIMIT 1
+				) AS tmplc
 		WHERE cate.CategoryID > lv_LastCategoryID
 			AND tmplc.CreatedDate <= lv_ScanDateValid
             AND NOT EXISTS (SELECT 1 
