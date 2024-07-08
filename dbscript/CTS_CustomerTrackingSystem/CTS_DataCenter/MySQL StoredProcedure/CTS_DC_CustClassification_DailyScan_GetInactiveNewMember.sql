@@ -77,37 +77,31 @@ sp:BEGIN
 		ORDER BY CategoryID ASC
         LIMIT 1;
 	END  IF;
- 
-    SET @sql = 	CONCAT("
-		INSERT IGNORE INTO Temp_InactiveNewMember (CustID)
-		SELECT 	clss.CustID
-		FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID_CustID)
-			,	LATERAL	
-				(	SELECT cc.CustID, cc.CategoryID
-					FROM CTS_DataCenter.CTSCustomerClassification AS cc 
-						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
-					WHERE cc.CustID = clss.CustID
-						AND ca.IsActive = 1
-					ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
-					LIMIT 1
-			    ) AS tmplc 
-		WHERE clss.CustID > '", lv_LastCustID," ","'
-			AND clss.CategoryID = '",lv_LastCategoryID," ","'
-			AND clss.CreatedDate <= '",lv_ScanDateValid," ","'
-            AND tmplc.CategoryID = '", lv_LastCategoryID," ","'
-			AND NOT EXISTS (SELECT 1 
-							FROM  CTS_Archive.CTSCustomerAssociationStatus AS ticket 
-							WHERE ticket.CTSCustID = clss.CTSCustID
-								AND IFNULL(ticket.LastTicketDate, ticket.Created) > '",lv_ScanDateValid,"')
-		ORDER BY clss.CategoryID ASC
-			,	 clss.CustID ASC
-		LIMIT ",lv_BatchSize,";");
 	
-    
-    PREPARE stmt1 FROM  @sql;
-    EXECUTE stmt1; 
-	DEALLOCATE PREPARE stmt1;
-  
+    INSERT IGNORE INTO Temp_InactiveNewMember (CustID)
+	SELECT 	clss.CustID
+	FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID_CustID)
+		,	LATERAL	
+			(	SELECT cc.CustID, cc.CategoryID
+				FROM CTS_DataCenter.CTSCustomerClassification AS cc 
+					INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
+				WHERE cc.CustID = clss.CustID
+					AND ca.IsActive = 1
+				ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
+				LIMIT 1
+			) AS tmplc 
+	WHERE clss.CustID > lv_LastCustID
+		AND clss.CategoryID = lv_LastCategoryID
+		AND clss.CreatedDate <= lv_ScanDateValid
+		AND tmplc.CategoryID = lv_LastCategoryID
+		AND NOT EXISTS (SELECT 1 
+						FROM  CTS_Archive.CTSCustomerAssociationStatus AS ticket 
+						WHERE ticket.CTSCustID = clss.CTSCustID
+							AND IFNULL(ticket.LastTicketDate, ticket.Created) > lv_ScanDateValid)
+	ORDER BY clss.CategoryID ASC
+		,	 clss.CustID ASC
+	LIMIT lv_BatchSize;
+        
     IF NOT EXISTS (SELECT 1 FROM Temp_InactiveNewMember) THEN
 		SELECT 	cate.CategoryID
         INTO 	lv_NextCategoryID
@@ -132,7 +126,6 @@ sp:BEGIN
     END IF;
     
     IF lv_NextCategoryID IS NOT NULL THEN
-		SET @sql =  CONCAT("
 		INSERT IGNORE INTO Temp_InactiveNewMember (CustID)
 		SELECT 	clss.CustID
 		FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID_CustID)
@@ -146,20 +139,16 @@ sp:BEGIN
 					LIMIT 1
 			   ) AS tmplc 
 		WHERE clss.CustID > 0
-			AND clss.CategoryID = '", lv_NextCategoryID," ","'
-			AND clss.CreatedDate <= '", lv_ScanDateValid,"' ","'
-            AND tmplc.CategoryID = '", lv_NextCategoryID," ","'
+			AND clss.CategoryID = lv_NextCategoryID
+			AND clss.CreatedDate <= lv_ScanDateValid
+            AND tmplc.CategoryID = lv_NextCategoryID
 			AND NOT EXISTS (SELECT 1 
 							FROM  CTS_Archive.CTSCustomerAssociationStatus AS ticket 
 							WHERE ticket.CTSCustID = clss.CTSCustID
-								AND IFNULL(ticket.LastTicketDate, ticket.Created) > '",lv_ScanDateValid,"')
+								AND IFNULL(ticket.LastTicketDate, ticket.Created) > lv_ScanDateValid)
 		ORDER BY clss.CategoryID ASC
 			,	 clss.CustID ASC
-		LIMIT ", lv_BatchSize,";");
-    
-		PREPARE stmt1 FROM  @sql;
-		EXECUTE stmt1; 
-		DEALLOCATE PREPARE stmt1;
+		LIMIT lv_BatchSize;
         
 	ELSE
 		SET lv_NextCategoryID = lv_LastCategoryID;
