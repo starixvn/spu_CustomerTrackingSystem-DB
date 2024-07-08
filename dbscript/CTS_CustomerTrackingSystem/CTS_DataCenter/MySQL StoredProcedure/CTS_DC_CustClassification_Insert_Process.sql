@@ -136,38 +136,6 @@ BEGIN
 		,	INDEX IX_Temp_CC_Old (CustID,CategoryID)
 	);
 	
-	DROP TEMPORARY TABLE IF EXISTS Temp_PAWinlossStatus;    
-	CREATE TEMPORARY TABLE Temp_PAWinlossStatus(	
-			CustID					BIGINT UNSIGNED PRIMARY KEY
-		, 	WinlossStatus			SMALLINT /*LOSING  = 0 (PROBATION), WINNING = 2 (NOT PROBATION);*/
-	);
-	
-	DROP TEMPORARY TABLE IF EXISTS Temp_CustProbationStatus ;
-	CREATE TEMPORARY TABLE Temp_CustProbationStatus(
-			CustID 					INT UNSIGNED PRIMARY KEY
-		,	CTSCustID 				BIGINT UNSIGNED
-		,	IsPAProbation			BIT(1)
-		,	TurnoverRM				DECIMAL(20,4)
-		,	WinlossRM				DECIMAL(20,4)
-		, 	BetCount				BIGINT 
-		, 	ActiveDays				INT
-		,	WinlossStatus			TINYINT
-		,	IsLicensee				BIT(1)
-	);   
-	
-	DROP TEMPORARY TABLE IF EXISTS Temp_LicVIPCust;
-	CREATE TEMPORARY TABLE Temp_LicVIPCust(
-			CustID					INT UNSIGNED PRIMARY KEY
-		,	CategoryID 				INT UNSIGNED
-		,	CustomerClass 			INT UNSIGNED
-	); 
-	
-	DROP TEMPORARY TABLE IF EXISTS Temp_LastHistory;
-	CREATE TEMPORARY TABLE Temp_LastHistory(
-			CustID					INT UNSIGNED PRIMARY KEY
-		,	CategoryID				INT UNSIGNED
-		,	TargetCC				INT UNSIGNED
-	);
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_UpdateCustomerClass;    
 	CREATE TEMPORARY TABLE Temp_UpdateCustomerClass(	  
