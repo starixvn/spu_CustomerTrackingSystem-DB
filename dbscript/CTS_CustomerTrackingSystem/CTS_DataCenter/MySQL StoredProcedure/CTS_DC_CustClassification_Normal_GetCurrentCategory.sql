@@ -29,12 +29,14 @@ BEGIN
 	DECLARE	CONST_GROUP_PROBATION 	INT ;
 	DECLARE	CONST_GROUP_INACTIVE 	INT ;
 	DECLARE	CONST_PARENTID_NORMAL 	INT ;
+    DECLARE CONST_PARENTID_WRAPPER	INT	;   
     
 	DECLARE lv_CurrentTime 			DATETIME DEFAULT CURRENT_TIMESTAMP();
 	DECLARE lv_CurrentDate 			DATE DEFAULT CURRENT_DATE();
     DECLARE lv_LastDayProbation 	DATE DEFAULT DATE_SUB(lv_CurrentDate, INTERVAL 14 DAY); /*Up to 15 Last Day*/
        
 	SET CONST_PARENTID_NORMAL 		= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
+    SET CONST_PARENTID_WRAPPER 		= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
     SET CONST_GROUP_INACTIVE 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_INACTIVE');
     SET CONST_GROUP_PROBATION 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_PROBATION');
         
@@ -88,6 +90,7 @@ BEGIN
 					INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
 				WHERE tmpc.CustID = cc.CustID
 					AND ca.IsActive = 1
+                    AND ca.ParentID <> CONST_PARENTID_WRAPPER 
 				ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
 				LIMIT 1
 		   ) tmplc 
