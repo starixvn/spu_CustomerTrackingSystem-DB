@@ -16,14 +16,12 @@ BEGIN
 
 	Revisions:	
 		- 20230614@Victoria.Le: 	Initial Writing [Redmine ID: #185793]
-		
+		- 20240708@Thomas.Nguyen:	Renovate CC phase 2 - Remove unused CONST params [Redmine ID: #205317]
+
 	Param's Explanation (filtered by):
 
 	Example: CALL CTS_DataCenter.CTS_DC_AssociationDetection_DetectGroup_Monitor('3717173,3720243,3720262,3722388,55725774,55698841,65491199');
 */
-
-	DECLARE	CONST_GROUP_NORMAL 				INT DEFAULT 200;
-    DECLARE	CONST_GROUP_PROBLEM 			INT DEFAULT 0;
 	
 	DECLARE CONST_ASSTYPE_BETTINGPATTERN 	INT DEFAULT 2;
 	DECLARE CONST_ASSTYPE_IP 				INT DEFAULT 4;
