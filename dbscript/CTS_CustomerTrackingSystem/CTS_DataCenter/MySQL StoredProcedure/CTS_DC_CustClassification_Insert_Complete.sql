@@ -155,7 +155,7 @@ BEGIN
 		-- ADD MAIN TABLE CC - FROM OLD - isnew = 1
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
 				CustID, CTSCustID, SubscriberID,RoleID, ParentID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
-			, 	LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, IsMarkedDirectly, InsertTime, TVSRequestID, IsParlay
+			, 	LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, IsMarkedDirectly, TVSRequestID, IsParlay
 			, 	SportType, IssueTypeID) 
 		SELECT 	temp_old.CustID
 			, 	temp_old.CTSCustID
@@ -175,11 +175,10 @@ BEGIN
 			, 	temp_old.IsFromAI
 			, 	temp_old.IsFromImperva
 			, 	temp_old.IsMarkedDirectly
-			, 	lv_CurrentDateTime AS InsertTime
 			, 	temp_old.TVSRequestID
-			, 	temp_old.IsParlay
+			, 	temp_old.IsTVSParlay
 			, 	temp_old.SportType
-			, 	temp_old.IssueTypeID
+			, 	temp_old.TVSIssueTypeID
 		FROM Temp_CTSCustomerClassification_Old AS temp_old
 		WHERE temp_old.IsNew = 1;
 		
@@ -194,7 +193,7 @@ BEGIN
 			INNER JOIN Temp_NewClassification AS temp ON cls.CustID = temp.CustID AND cls.CategoryID = temp.OldCategoryID 
 																						AND temp.DataChangeType = 1
 		SET 	cls.CTSCustID 			=  temp.CTSCustID
-			,	cls.CategoryID 			=  temp.CategoryID
+			,	cls.CategoryID 			=  temp.NewCategoryID
 			, 	cls.LastScannedDate 	=  DATE(lv_CurrentDateTime); 
 		
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
@@ -230,7 +229,7 @@ BEGIN
 				CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType
 			, 	InsertDate, TargetCC, SourceTypeID, IsDataChanged, TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays
 			, 	IsMarkedDirectly, Remark, TVSRequestID, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, IsParlay, SportType
-			, 	IssueTypeID, TWRobotCounter)
+			, 	IssueTypeID, RobotCounter)
 		SELECT 	temp.CustID
 			, 	temp.CTSCustID
 			, 	temp.NewCategoryID AS CategoryID
@@ -270,7 +269,7 @@ BEGIN
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(
 				CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate
 			, 	TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, IsMarkedDirectly, Remark, TVSRequestID
-			, 	IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, IsParlay, SportType, IssueTypeID, TWRobotCounter)
+			, 	IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, IsParlay, SportType, IssueTypeID, RobotCounter)
 		SELECT 	temp.CustID
 			,	temp.CTSCustID
 			,	temp.NewCategoryID
