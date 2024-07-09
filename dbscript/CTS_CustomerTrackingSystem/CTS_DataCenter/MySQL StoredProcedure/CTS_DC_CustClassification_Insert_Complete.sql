@@ -151,7 +151,7 @@ BEGIN
 			,	temp.PerformanceTime
 		FROM 	Temp_NewClassification AS temp;
 
-	ELSEIF ip_InputFlowID IN (50,51,6,7) THEN 
+	ELSEIF (ip_InputFlowID IN (50,51,6,7) OR ip_InputFlowID IN (150,151,16,17)) THEN
 		-- ADD MAIN TABLE CC - FROM OLD - isnew = 1
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
 				CustID, CTSCustID, SubscriberID,RoleID, ParentID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
