@@ -507,11 +507,11 @@ BEGIN
 			, 	CustomerClassPriority, ParentID, TWRobotCounter, IsFromImperva, IsReturnData, IsDataChanged, PerformanceTime)
 			SELECT 	tmpJs.CustID
 				,	cus.CTSCustID
-				, 	tmpJs.SubscriberID
+				, 	cus.SubscriberID
 				, 	cus.RoleID
 				,	tmpJs.DWCategoryID				
 				,	cat.CategoryGroupID
-				,	tmpJs.IsLicensee
+				,	cus.IsLicensee
 				,	cus.IsLicenseeVIP
 				,	cus.IsLicenseeBA
 				,	tmpJs.CreatedBy 
