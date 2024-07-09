@@ -120,13 +120,15 @@ BEGIN
 		,	IsFromTVS				BIT(1) 
 		,	IsFromTW				BIT(1) 
 		,	IsFromCTS				BIT(1) 
-		,	IsFromAI				BIT(1) 
+		,	IsFromAI				BIT(1)
+		,	IsFromImperva			BIT(1)
 		,	InsertTime				DATETIME
 		,	TVSRequestID			BIGINT UNSIGNED			
 		,	IsTVSParlay				BIT(1) 
 		,	SportType				SMALLINT DEFAULT NULL 
-		,	IssueTypeID				TINYINT DEFAULT NULL 
+		,	TVSIssueTypeID			TINYINT DEFAULT NULL 
 		,	IsMarkedDirectly		BIT(1)
+		,	TWRobotCounter			INT
 		,	SpecialCC	       		SMALLINT 
 		,	CustomerClass			SMALLINT 
 		,	CategoryPriority		SMALLINT UNSIGNED
@@ -367,7 +369,7 @@ BEGIN
 		FROM Temp_NewClassification AS temp
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID
             INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cls.CategoryID = cc.CategoryID
-		WHERE cls.ParentID IN (CONST_SPORTGROUP_PA, CONST_SPORTGROUP_POTENTIALPA);
+		WHERE cls.ParentID IN (CONST_PARENTID_PA, CONST_PARENTID_POTENTIALPA);
 		
 		UPDATE Temp_NewClassification AS temp
 			INNER JOIN Temp_PAWinlossStatus AS r ON temp.CustID = r.CustID
@@ -473,9 +475,9 @@ BEGIN
 			,	cls.IsFromImperva
 			,	lv_CurrentDateTime AS InsertTime
 			,	cls.TVSRequestID
-			,	cls.IsTVSParlay
+			,	cls.IsParlay
 			,	cls.SportType
-			,	cls.TVSIssueTypeID
+			,	cls.IssueTypeID
 			,	cls.IsMarkedDirectly
 			,	temp.SpecialCC
 			,	IFNULL(temp.SpecialCC,cc.CustomerClass)
@@ -493,7 +495,7 @@ BEGIN
 			INNER JOIN Temp_NewClassification AS temp ON temp.CustID = cls.CustID
 			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = cls.CategoryID 
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = ccs.CategoryID AND cc.IsActive = 1
-		WHERE cls.ParentID IN (CONST_PARENTID_PA,PARENTID_POTENTIALPA,CONST_PARENTID_NORMAL);
+		WHERE cls.ParentID IN (CONST_PARENTID_PA,CONST_PARENTID_POTENTIALPA,CONST_PARENTID_NORMAL);
 
 		DELETE temp
 		FROM Temp_NewClassification AS temp 
