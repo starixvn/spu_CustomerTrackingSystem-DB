@@ -197,8 +197,8 @@ BEGIN
                 ORDER BY  cate.CategoryPriority ASC  
 						, clss.LastModifiedDate DESC
                 LIMIT 1) AS clss,
-		LATERAL(SELECT 	CASE WHEN tmp.IsLicensee = 1 THEN cc.ABIDangerLevel_Licensee
-							 WHEN tmp.IsLicensee = 0 THEN cc.ABIDangerLevel_Credit
+		LATERAL(SELECT 	CASE WHEN tmp.IsLicensee = 1 THEN cc.Ext_ABIDangerLevel_Licensee
+							 WHEN tmp.IsLicensee = 0 THEN cc.Ext_ABIDangerLevel_Credit
 						 END AS DangerLevel
                     ,	cc.DangerLevelType 
 				FROM CTS_DataCenter.CTSCustomerClassification AS c

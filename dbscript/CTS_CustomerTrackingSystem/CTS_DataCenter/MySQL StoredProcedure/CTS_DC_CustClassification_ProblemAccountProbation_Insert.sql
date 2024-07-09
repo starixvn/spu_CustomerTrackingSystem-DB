@@ -135,7 +135,7 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON js.CustID = cust.CustID AND cust.CustSubID = 0 AND cust.IsInternal = 0
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CustID = js.CustID
         INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID AND cate.IsActive = 1 AND cate.RelevantCategoryID IS NOT NULL,
-        LATERAL (SELECT CASE WHEN cust.IsLicensee = 1 THEN tbl.ABIDangerLevel_Licensee  ELSE tbl.ABIDangerLevel_Credit END AS TargetDangerLevel1
+        LATERAL (SELECT CASE WHEN cust.IsLicensee = 1 THEN tbl.Ext_ABIDangerLevel_Licensee  ELSE tbl.Ext_ABIDangerLevel_Credit END AS TargetDangerLevel1
 					,	tbl.CustomerClass AS TargetCC
                  FROM CTS_DataCenter.CustomerCategory AS tbl 
                  WHERE cate.RelevantCategoryID = tbl.CategoryID AND tbl.IsActive = 1
