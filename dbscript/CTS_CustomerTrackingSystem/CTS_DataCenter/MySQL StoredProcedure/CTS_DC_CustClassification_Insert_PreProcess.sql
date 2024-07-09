@@ -28,6 +28,7 @@ BEGIN
     DECLARE CONST_PARENTID_NORMAL		      			INT;
 	
     DECLARE CONST_CATEID_PROBATION		      			INT;
+	DECLARE CONST_CATEGROUPID_INACTIVE					INT;
 
     DECLARE CONST_ACTIONTYPE_INSERT 					INT DEFAULT 0;
 	DECLARE	CONST_ACTIONTYPE_UPDATE 					INT DEFAULT 1;
@@ -52,6 +53,7 @@ BEGIN
     SET CONST_PARENTID_NORMAL	 						= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
 	
 	SET CONST_CATEID_PROBATION							= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_PROBATION');
+	SET CONST_CATEGROUPID_INACTIVE						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_INACTIVE');
 
 	/* SETP 0: EXCLUDE INTERNAL CUSTOMERS */      
 	CALL CTS_DC_ExcludeCustByCondition('Temp_NewClassification');
@@ -149,7 +151,8 @@ BEGIN
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryGroupID = temp.DWCategoryGroupID 
 																AND cate.TaggingType = temp.TaggingType 
 																AND cate.TaggingID = temp.TaggingID
-		SET temp.DWCategoryID = IFNULL(cate.CategoryID,temp.DWCategoryGroupID);
+		SET temp.DWCategoryID = cate.CategoryID
+		WHERE temp.DWCategoryGroupID <> CONST_CATEGROUPID_INACTIVE;
 		
 	ELSEIF ip_InputFlowID IN (51,7) THEN
 		CALL CTS_DataCenter.CTS_DC_CustClassification_PA_RemoveOldTVSRequest();
