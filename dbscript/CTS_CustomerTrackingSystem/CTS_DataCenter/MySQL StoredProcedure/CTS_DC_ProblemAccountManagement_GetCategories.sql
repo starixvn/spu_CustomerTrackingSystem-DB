@@ -24,7 +24,7 @@ BEGIN
 
 		Param's Explanation (filtered by):
         Example:
-			- CALL CTS_DC_ProblemAccountManagement_GetCategories();
+			- CALL CTS_DC_ProblemAccountManagement_GetCategories(1);
 	*/
 	DECLARE CONST_CATEID_INFOBET				INT;
 	DECLARE CONST_CATEID_GROUPBETTING			INT;
@@ -57,6 +57,7 @@ BEGIN
 			, 	cat.RelevantCategoryID AS RelevantCategoryGroup
 			, 	cat.CategoryGroupID AS CategoryID
 			,	cat.CategoryPriority AS Priority
+			,	CASE WHEN cat.CategoryID = CONST_CATEID_ROBOTUSER THEN 1 ELSE 0 END AS IsRobot
 		FROM CTS_DataCenter.CustomerCategory AS cat
 		WHERE	cat.CategoryID IN (CONST_CATEID_INFOBET, CONST_CATEID_GROUPBETTING, CONST_CATEID_HEDGING, CONST_CATEID_ARBITRAGE, CONST_CATEID_FIXEDGAME, CONST_CATEID_IRRIGATION
 									, CONST_CATEID_FORMULABET, CONST_CATEID_ROBOTUSER)
@@ -69,6 +70,7 @@ BEGIN
 			, 	cat.RelevantCategoryID AS RelevantCategoryGroup
 			, 	cat.CategoryGroupID AS CategoryID
 			,	cat.CategoryPriority AS Priority
+			,	CASE WHEN cat.CategoryID IN (CONST_CATEID_ROBOTUSER, CONST_CATEID_ROBOTOCRD) THEN 1 ELSE 0 END AS IsRobot
 			,	CASE WHEN cat.CategoryID IN (CONST_CATEID_SYSTEMDETECTGB, CONST_CATEID_UNAUTHORIZEDLOGIN, CONST_CATEID_ROBOTOCRD) THEN 1 ELSE 0 END AS IsDisabled
 		FROM CTS_DataCenter.CustomerCategory AS cat
 		WHERE 	cat.CategoryID IN (CONST_CATEID_INFOBET, CONST_CATEID_GROUPBETTING, CONST_CATEID_HEDGING, CONST_CATEID_ARBITRAGE, CONST_CATEID_FIXEDGAME, CONST_CATEID_IRRIGATION
