@@ -154,7 +154,7 @@ BEGIN
         ,	dangerlvl.DangerLevel
         ,	CASE 
 				WHEN dangerlvl.DangerLevel IS NULL THEN 0
-				ELSE dangerlvl.DangerLevelType 
+				ELSE dangerlvl.Ext_DangerLevelType 
 			END AS DangerLevelType
     FROM Temp_CustInfo AS tmp
 		INNER JOIN Temp_CustLatestCate AS t ON tmp.CustID = t.CustID,
@@ -200,7 +200,7 @@ BEGIN
 		LATERAL(SELECT 	CASE WHEN tmp.IsLicensee = 1 THEN cc.Ext_ABIDangerLevel_Licensee
 							 WHEN tmp.IsLicensee = 0 THEN cc.Ext_ABIDangerLevel_Credit
 						 END AS DangerLevel
-                    ,	cc.DangerLevelType 
+                    ,	cc.Ext_DangerLevelType 
 				FROM CTS_DataCenter.CTSCustomerClassification AS c
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON c.CategoryID = cc.CategoryID
                 WHERE c.CustID = tmp.CustID
