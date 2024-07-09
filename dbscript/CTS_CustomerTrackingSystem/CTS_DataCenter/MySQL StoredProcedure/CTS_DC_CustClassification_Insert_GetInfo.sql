@@ -233,7 +233,7 @@ BEGIN
 			, 	PRIMARY KEY (CustID, DWCategoryID)
 		); 
 		
-		IF ip_InputFlowID IN (50) THEN /*PA - ip_InputType = 'Category'*/
+		IF ip_InputFlowID IN (50,150) THEN /*PA - ip_InputType = 'Category'*/
 			INSERT INTO Temp_NewClassification(
 				CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
 			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI
@@ -338,7 +338,7 @@ BEGIN
 														ELSE Temp_NewClassification.TVSRequestID END
 								;
 
-		ELSEIF ip_InputFlowID = 51 THEN /*PA - ip_InputType = 'Reason'*/
+		ELSEIF ip_InputFlowID IN (51,151) THEN /*PA - ip_InputType = 'Reason'*/
 			INSERT INTO Temp_NewClassification(
 				CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,  IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, IsMarkedDirectly
 			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, SpecialCC, IsPAProbation
@@ -433,7 +433,7 @@ BEGIN
 								
 			/*INSERT INTO TABLE TVS_LOG*/
 				
-		ELSEIF ip_InputFlowID IN (6) THEN /*ip_InputType = PotentialPA*/
+		ELSEIF ip_InputFlowID IN (6,16) THEN /*ip_InputType = PotentialPA*/
 			INSERT IGNORE INTO Temp_NewClassification(
 				CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
 			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTW, IsFromCTS, IsFromAI
@@ -499,7 +499,7 @@ BEGIN
 				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.DWCategoryID
 				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID;
                 
-		ELSEIF ip_InputFlowID = 7 THEN /*Robot*/
+		ELSEIF ip_InputFlowID IN (7,17) THEN /*Robot*/
 			INSERT INTO Temp_NewClassification(
 				CustID, CTSCustID, SubscriberID, RoleID, DWCategoryID, DWCategoryGroupID, IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
 			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI

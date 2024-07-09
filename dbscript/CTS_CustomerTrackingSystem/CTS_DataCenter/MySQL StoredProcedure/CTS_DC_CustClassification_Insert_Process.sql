@@ -327,7 +327,7 @@ BEGIN
 		SET 	temp.TargetDangerLevel = CASE WHEN temp.IsLicensee = 1 THEN d.Ext_ABIDangerLevel_Licensee ELSE d.Ext_ABIDangerLevel_Credit END
 		WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE); 
 	
-	ELSEIF ip_InputFlowID IN (50,51,6,7) THEN
+	ELSEIF (ip_InputFlowID IN (50,51,6,7) OR ip_InputFlowID IN (150,151,16,17)) THEN
 		
 		DROP TEMPORARY TABLE IF EXISTS Temp_PAWinlossStatus;    
 		CREATE TEMPORARY TABLE Temp_PAWinlossStatus(	
