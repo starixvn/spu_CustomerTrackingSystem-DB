@@ -18,6 +18,7 @@ BEGIN
  
 		Revisions:
 			- 20220601@Casey.Huynh: Created [Redmine ID: #172061]
+            - 20240628@Thomas.Nguyen: Renovate CC phase 2 - Change column CategoryGroup to CategoryGroupID  [Redmine ID: #205317]
 
 		Param's Explanation:
         
@@ -56,7 +57,7 @@ BEGIN
     
 		,   que.CTSCustID, que.CustID, que.SubscriberID, que.RoleID
         
-		, 	IFNULL(que.CategoryID,-1) AS CategoryID, IFNULL(que.CategoryGroup,-1) AS CategoryGroup
+		, 	IFNULL(que.CategoryID,-1) AS CategoryID, IFNULL(que.CategoryGroupID,-1) AS CategoryGroup
         
         , 	que.CreatedBy, IFNULL(que.Remark,'') AS Remark
         

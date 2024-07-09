@@ -81,3 +81,14 @@ MODIFY COLUMN DWCategoryID INT UNSIGNED;
 
 ALTER TABLE CTSCustomerClassification_Log
 RENAME COLUMN IsDirect TO IsMarkedDirectly;
+
+/*CTSCustomerClassificationQueue*/
+ALTER TABLE CTSCustomerClassificationQueue
+RENAME COLUMN CategoryGroup TO CategoryGroupID;
+
+ALTER TABLE CTSCustomerClassificationQueue
+RENAME COLUMN IsDirect TO IsMarkedDirectly;
+
+ALTER TABLE CTSCustomerClassificationQueue
+MODIFY COLUMN CategoryID INT UNSIGNED;
+

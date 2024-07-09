@@ -39,21 +39,24 @@ BEGIN
         ,	IsFromTW			BIT(1)
         ,	IsFromCTS			BIT(1)
         ,	TVSRequestID		BIT(1)
+		,	LastModifiedDate	DATETIME(3)
 	);
     
-	SET @sql =CONCAT("	INSERT IGNORE INTO Temp_Customer (CustID, IsInternal, SiteID) 
+	SET @sql =CONCAT("	INSERT IGNORE INTO Temp_Customer (CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark
+							, CategoryID, CategoryGroupID, IsFromTVS, IsFromTW, IsFromCTS, TVSRequestID, LastModifiedDate) 
 						SELECT	ipTbl.CTSCustID
 							,	ipTbl.CustID
                             ,	ipTbl.RoleID
                             ,	ipTbl.SubscriberID
                             ,	ipTbl.CreatedBy
                             ,	ipTbl.Remark
-                            ,	ipTbl.CategoryID
-                            ,	ipTbl.CategoryGroupID
+                            ,	ipTbl.NewCategoryID
+                            ,	ipTbl.NewCategoryGroupID
                             ,	ipTbl.IsFromTVS
                             ,	ipTbl.IsFromTW
                             ,	ipTbl.IsFromCTS
                             ,	ipTbl.TVSRequestID
+							,	ipTbl.LastModifiedDate
 						FROM ",ip_TableName," AS ipTbl"
 						);
 	PREPARE 	stmt1 FROM @sql;
