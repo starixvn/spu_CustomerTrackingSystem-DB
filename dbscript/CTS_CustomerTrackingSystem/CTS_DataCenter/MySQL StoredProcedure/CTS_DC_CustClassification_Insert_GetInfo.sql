@@ -434,7 +434,7 @@ BEGIN
 								
 			/*INSERT INTO TABLE TVS_LOG*/
 				
-		IF ip_InputFlowID IN (6) THEN /*ip_InputType = PotentialPA*/
+		ELSEIF ip_InputFlowID IN (6) THEN /*ip_InputType = PotentialPA*/
 			INSERT IGNORE INTO Temp_NewClassification(
 				CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
 			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTW, IsFromCTS, IsFromAI, IsDataChanged
@@ -500,8 +500,7 @@ BEGIN
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID
 				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.DWCategoryID
 				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID;
-		
-		
+                
 		ELSEIF ip_InputFlowID = 7 THEN /*Robot*/
 			INSERT INTO Temp_NewClassification(
 				CustID, CTSCustID, SubscriberID, RoleID, DWCategoryID, DWCategoryGroupID, IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
@@ -705,7 +704,7 @@ BEGIN
 						WHERE temp.CustID = cls.CustID
 							AND cls.ParentID = CONST_PARENTID_POTENTIALPA
 					 );
-					 
+	
 		/*UPDATE Temp_NewClassification AS temp
 		SET temp.IsExistRobot = 1
 		WHERE EXISTS (	SELECT 1
@@ -724,9 +723,8 @@ BEGIN
 						WHERE temp.CustID = cls.CustID
 							AND cs.IsKeepOldCateID = 1
 						);*/
-		
-	END IF;
-	
-	
+    
+    END IF;
+    
 END$$
 DELIMITER ;

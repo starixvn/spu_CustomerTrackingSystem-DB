@@ -156,7 +156,7 @@ BEGIN
 			LEFT JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID
 		SET 	temp.OldCategoryGroupID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGROUPID_NEW ELSE o.CategoryGroupID END
 			,	temp.OldCategoryID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGROUPID_NEW ELSE o.CategoryID END
-			,	temp.ActionType = CASE 	WHEN o.CustID IS NULL OR (o.IsNew = 0 AND o.IsRemove = 0) 
+			,	temp.ActionType = CASE 	WHEN o.CustID IS NULL OR (o.IsNew = 1 AND o.IsRemove = 0) 
 											THEN CONST_ACTIONTYPE_INSERT 
 										ELSE CONST_ACTIONTYPE_UPDATE END
 		WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT;
@@ -405,7 +405,6 @@ BEGIN
 						WHERE cat.CategoryID = temp.RelevantCategoryID 
 						LIMIT 1) AS tmpCat
 		SET 	temp.RelevantCategoryGroupID = tmpCat.CategoryGroupID	
-		SET 	temp.RelevantCategoryGroupID = tmpCat.CategoryGroupID	
 			,	temp.RelevantCategoryID = tmpCat.CategoryGroupID
 			,	temp.RelevantIsPAProbation = tmpCat.IsPAProbation;   
 		
@@ -452,7 +451,7 @@ BEGIN
 			, 	Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsFromTVS
 			, 	IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, InsertTime, TVSRequestID, IsTVSParlay
 			, 	SportType, TVSIssueTypeID, IsMarkedDirectly, SpecialCC, CustomerClass, CategoryPriority, IsPAProbation
-			, 	IsNew, IsRemove, ) 
+			, 	IsNew, IsRemove) 
 		SELECT	cls.CustID
 			,	cls.CTSCustID
 			,	cls.SubscriberID
@@ -489,8 +488,7 @@ BEGIN
 										WHEN ccs.IsMultiCateIDSameParentID = 1 THEN 0 END)
 					 ELSE 
 						(CASE 	WHEN ccs.IsMultiCateIDSameParentID = 1 THEN 0
-								WHEN ccs.IsMultiCateIDSameParentID = 0 NULL END) END AS IsRemove
-			,	
+								WHEN ccs.IsMultiCateIDSameParentID = 0 THEN NULL END) END AS IsRemove
 		FROM CTS_DataCenter.CTSCustomerClassification AS cls
 			INNER JOIN Temp_NewClassification AS temp ON temp.CustID = cls.CustID
 			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = cls.CategoryID 
@@ -550,7 +548,7 @@ BEGIN
 		INSERT INTO Temp_NewClassification(
 				CustID, CTSCustID, DWCategoryID, OldCategoryID, NewCategoryID, TargetCC,  TargetDangerLevel
 			, 	ToEvidenceID, Remark, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsMarkedDirectly
-			, 	IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsDataChanged, DataChangeType
+			, 	IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, IsDataChanged, DataChangeType
 			, 	LastModifiedDate, CreatedBy, IsPAProbation, TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID)
 		SELECT 		temp_old.CustID
 				,	temp_old.CTSCustID
@@ -573,6 +571,7 @@ BEGIN
 				,	temp_old.IsFromTW
 				,	temp_old.IsFromCTS
 				,	temp_old.IsFromAI
+				,	temp_old.IsFromImperva
 				,	1 AS IsDataChanged
 				,	(CASE WHEN tmpCp.WinlossStatus = NULL THEN NULL ELSE 1 END) AS DataChangeType
 				,	temp_old.LastModifiedDate
